@@ -15,9 +15,7 @@
 # All Rights Reserved.
 
 SWIGFLAGS = -DHAVE_LONG_LONG $(INCLUDES)
-INCLUDES = \
-	../include \
-	-I$(PYTHONINC) 
+INCLUDES = ../include $(PYTHON_INCS) 
 
 _odbc_la_LDFLAGS = -module
 X_CFLAGS =
@@ -26,7 +24,7 @@ lib_odbc = {
 	PREFIX =
 	NAME = _odbc
 	SOURCES = odbc.py.i
-	LIBS = ../driver/libMonetODBC
+	LIBS = ../driver/libMonetODBC $(PYTHON_LIBS)
 	DIR = $(prefix)/$(PYTHON_LIBDIR)
 }
 
