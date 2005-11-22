@@ -1314,6 +1314,10 @@ struct PFla_pair_t
 PFbui_fn_distinct_values (const PFla_op_t *loop __attribute__((unused)),
 			     struct PFla_pair_t *args)
 {
+    PFalg_attlist_t sortby;
+    sortby.count = 0;
+    sortby.atts  = NULL;
+
     (void) loop; /* pacify picky compilers that do not understand
                     "__attribute__((unused))" */
 
@@ -1323,7 +1327,7 @@ PFbui_fn_distinct_values (const PFla_op_t *loop __attribute__((unused)),
                                  project (args[0].rel,
                                       proj (att_iter, att_iter),
                                       proj (att_item, att_item))),
-                             att_pos, sortby (), att_iter),
+                             att_pos, sortby, att_iter),
                   .frag = args[0].frag };
 }
 
