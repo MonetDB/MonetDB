@@ -134,6 +134,8 @@ static str mirrorRef;
 static str kdifferenceRef;
 static str calcRef;
 static str sumRef;
+static str maxRef;
+static str minRef;
 
 static void MTinit(){
 	if(matRef == NULL){
@@ -142,6 +144,8 @@ static void MTinit(){
 		calcRef = putName("calc",4);
 		newRef = putName("new",3);
 		batRef = putName("bat",3);
+		minRef = putName("min",3);
+		maxRef = putName("max",3);
 		sumRef = putName("sum",3);
 		reverseRef = putName("reverse",7);
 		mirrorRef = putName("mirror",6);
@@ -383,6 +387,38 @@ Handle the rewrite v:=aggr.count(b) and sum()
 			r = newInstruction(mb,ASSIGNsymbol);
 			getArg(r,0)= getArg(p,0);
 			pushInt(mb,r,0);
+			pushInstruction(mb,r);
+			for(k=1; k< mat[m]->argc; k++){
+				int v= newTmpVariable(mb,TYPE_int);
+				q= newInstruction(mb,ASSIGNsymbol);
+				setModuleId(q,aggrRef);
+				setFunctionId(q,functionId(p));
+				getArg(q,0)= v;
+				setVarUsed(mb,v,TRUE);
+				setVarInitialized(mb,v);
+				q= pushArgument(mb,q,getArg(mat[m],k));
+				pushInstruction(mb,q);
+
+				q= newInstruction(mb,ASSIGNsymbol);
+				setModuleId(q,calcRef);
+				setFunctionId(q,plusRef);
+				getArg(q,0)= getArg(r,0);
+				q= pushArgument(mb,q,getArg(r,0));
+				q= pushArgument(mb,q,v);
+				pushInstruction(mb,q);
+			}
+			continue;
+		} 
+@-
+And the min/max is as easy
+@c
+		if( ((moduleId(p)==aggrRef && functionId(p)== maxRef) || 
+			(moduleId(p)==aggrRef && functionId(p)==minRef )) &&
+			p->argc==3 &&
+			(m=isMATalias(getArg(p,1),mvar,mtop)) >= 0){
+			r = newInstruction(mb,ASSIGNsymbol);
+			getArg(r,0)= getArg(p,0);
+			pushNil(mb,r,getArgType(mb,p,0));
 			pushInstruction(mb,r);
 			for(k=1; k< mat[m]->argc; k++){
 				int v= newTmpVariable(mb,TYPE_int);
