@@ -1,0 +1,192 @@
+@f constant
+@a Peter Boncz 
+@v 0.1 
+@t Constant MIL Algebra
+
+Front-ends that represent tables as BAT[void,T] may try to optimize the
+sitation that the tail value is equal vor all tuples (a 'constant column').
+
+This may happen in SQL, but is especially prevalent in Xquery. It is hard
+to optimize away constants inside GDK. Also, even if the storage layer could
+prevent the allocation of full column space for a constant, the BAT algebra
+operators that work on top of it, should often perform a different
+(simple) operation that the normal algorithm (think of select, join, etc).
+Therefore, it seems that the algebra language level would be a good place to 
+handle constant optimizations.
+
+This module is a first attempt to do so.
+
+The below MIL constant algebra provides BAT algebra-like functionality on 
+MIL columns represented as single constants. It should be loaded *before*
+any of the (bat,algebra,xtables) modules, because it uses the *any* type 
+to indicate constant parameters in the command signatures. The variants 
+where any resolves to BAT, are covered by the (bat,algebra,xtables) modules;
+thus the constant module should be loaded first.
+@m
+.MODULE constant;
+
+.COMMAND texist (any::1 b, any::1 h) : bit = CMDconstEqual;
+"exist(b,v); where the first parameter is interpreted as a constant column"
+
+.COMMAND find(any::1 b, oid h) : any::1 = CMDconstFirstOid;
+"find(b,v); where the first parameter is interpreted as a constant column"
+
+.COMMAND fetch (any::1 b, int h) : any::1 = CMDconstFirstInt;
+"fetch(b,v); where the first parameter is interpreted as a constant column"
+
+.COMMAND fetch (any::1 b, lng h) : any::1 = CMDconstFirstLng;
+"fetch(b,v); where the first parameter is interpreted as a constant column"
+
+.COMMAND sample (any::1 b, int h) : any::1 = CMDconstFirstInt;
+"sample(b,cnt); where the first parameter is interpreted as a constant column"
+
+.COMMAND slice (any::1 b, int lo, int hi) : any::1 = CMDconstSliceInt;
+"slice(b,lo,hi); where the first parameter is interpreted as a constant column"
+
+.COMMAND slice (any::1 b, lng lo, lng hi) : any::1 = CMDconstSliceLng;
+"slice(b,lo,hi); where the first parameter is interpreted as a constant column"
+
+.COMMAND tmark (any::1 b, oid val) : any::1 = CMDconstFirstOid;
+"mark_rev(b,c); where the first parameter is interpreted as a constant column"
+
+.COMMAND copy ( any::1 b) : any::1 = CMDconstCopy;
+"copy(b); where the first parameter is interpreted as a constant column"
+
+.COMMAND tsort ( any::1 b) : any::1 = CMDconstCopy;
+"tsort(b); where the first parameter is interpreted as a constant column"
+
+.COMMAND tsort_rev ( any::1 b) : any::1 = CMDconstCopy;
+"tsort_rev(b); where the first parameter is interpreted as a constant column"
+
+.COMMAND chk_order ( any::1 b) : any::1 = CMDconstCopy;
+"chk_order(b); where the first parameter is interpreted as a constant column"
+
+.COMMAND project(any b, any::1 val) : any::1 = CMDconstSecond;
+"project(b,c); where the first parameter is interpreted as a constant column"
+
+.COMMAND CTrefine ( BAT[oid,oid] ct, any::1 b) : BAT[oid,oid] = CMDconstFirstBat;
+"CTrefine(ct,b); where the second parameter is interpreted as a constant column"
+
+.COMMAND CTgroup ( any::1 b) : any::1 = CMDconstCopy;
+"CTgroup(b); where the first parameter is interpreted as a constant column"
+
+.COMMAND CTgroup ( BAT[oid,oid] ct, any::1 b) : BAT[oid,oid] = CMDconstFirstBat;
+"CTgroup(ct,b); where the second parameter is interpreted as a constant column"
+
+.COMMAND min ( any::1 b ) : any::1 = CMDconstCopy;
+"min(b); where the first parameter is interpreted as a constant column"
+
+.COMMAND max ( any::1 b ) : any::1 = CMDconstCopy;
+"max(b); where the first parameter is interpreted as a constant column"
+
+.COMMAND avg ( any::1 b ) : any::1 = CMDconstCopy;
+"avg(b); where the first parameter is interpreted as a constant column"
+
+.END constant;
+@mil
+proc kdiff ( BAT[any::1,any::2] b, any::1 c) : BAT[any::1,any::2]
+{
+    return b.fetch([!=](b,c).ord_uselect(true));
+}
+
+proc kintersect ( BAT[any::1,any::2] b, any::1 c) : BAT[any::1,any::2]
+{
+    return b.ord_select(c);
+}
+
+proc CTgroup ( oid b, BAT[oid,any] b) : BAT[oid,oid]
+{
+    return CTgroup(b);
+}
+
+proc CTrefine ( oid b, BAT[oid,any] b) : BAT[oid,oid]
+{
+    return tsort(b);
+}
+
+@c
+#include <gdk.h>
+int
+CMDconstEqual(bit *ret, ptr v1, int tpe, ptr v2)
+{
+        int (*cmp)(ptr, ptr) = BATatoms[tpe].atomCmp;
+        ptr nil = ATOMnilptr(tpe);
+
+	if (tpe == TYPE_bat) {
+		GDKerror("const operation on a BAT\n");
+        	return GDK_FAIL;
+        } else if ((*cmp)(v1, nil) == 0 || (*cmp)(v2, nil) == 0) {
+                *ret = bit_nil;
+        } else {
+                *ret = ((*cmp)( v1, v2) == 0);
+        }
+        return GDK_SUCCEED;
+}
+
+int
+CMDconstCopy(ptr ret, ptr val, int tpe)
+{
+	if (tpe == TYPE_bat) {
+		GDKerror("const operation on a BAT\n");
+        	return GDK_FAIL;
+	} else if (ATOMextern(tpe)) {
+		size_t len = ATOMlen(tpe, val);
+		*(ptr*) ret = (ptr) GDKmalloc(len);
+		memcpy(*(ptr*) ret, val, len); 
+	} else {
+		memcpy(ret, val, ATOMsize(tpe)); 
+	}
+        return GDK_SUCCEED;
+}
+
+int
+CMDconstFirstInt(ptr ret, ptr v1, int t1, int* v2)
+{
+	(void) v2; 
+	return CMDconstCopy(ret, v1, t1);
+}
+
+int
+CMDconstFirstOid(ptr ret, ptr v1, int t1, oid* v2)
+{
+	(void) v2; 
+	return CMDconstCopy(ret, v1, t1);
+}
+
+int
+CMDconstFirstLng(ptr ret, ptr v1, int t1, lng* v2)
+{
+	(void) v2; 
+	return CMDconstCopy(ret, v1, t1);
+}
+
+int
+CMDconstFirstBat(BAT **ret, BAT* b, ptr val, int tpe)
+{
+	BBPfix(b->batCacheid);
+	*ret = b; (void) val; (void) tpe;
+	return GDK_SUCCEED;
+}
+
+int
+CMDconstSliceInt(ptr ret, ptr val, int tpe, int* lo, int* hi)
+{
+	(void) lo; (void) hi; 
+	return CMDconstCopy(ret, val, tpe);
+}
+
+int
+CMDconstSliceLng(ptr ret, ptr val, int tpe, lng* lo, lng* hi)
+{
+	(void) lo; (void) hi; 
+	return CMDconstCopy(ret, val, tpe);
+}
+
+int
+CMDconstSecond(ptr ret, ptr v1, int t1, ptr v2, int t2)
+{
+	(void) v1;
+	(void) t1;
+	return CMDconstCopy(ret, v2, t2);
+}
+
