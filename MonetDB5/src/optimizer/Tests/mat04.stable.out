@@ -1,0 +1,209 @@
+stdout of test 'mat04` in directory 'src/optimizer` itself:
+
+
+# 22:52:23 >  
+# 22:52:23 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=32255 --set sql_port=41881 --set xquery_port=57613 --set monet_prompt= --trace --dbname=mTests_src_optimizer  mat04.mal < /dev/null
+# 22:52:23 >  
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_optimizer
+# Visit http://monetdb.cwi.nl/ for further information.
+## select i, sum(j) from t group by i having i>4;
+#mdb.list();
+##   v3:bat[:void,:int]  := sql.bind("sys","t","i",0);
+#    v3v0:= bat.new(:void,:int);
+#    bat.insert(v3v0,nil,0);
+#    v3v1:= bat.new(:void,:int);
+#    bat.insert(v3v1,nil,1);
+#    v3:= mat.new(v3v0,v3v1);
+#
+##   v47:bat[:void,:int]  := sql.bind("sys","t","j",0);
+#    v47v0:= bat.new(:void,:int);
+#    bat.insert(v47v0,nil,0);
+#    v47v1:= bat.new(:void,:int);
+#    bat.insert(v47v1,nil,1);
+#    v47:= mat.new(v47v0,v47v1);
+#
+##   v9:bat[:void,:oid]  := sql.bindvdbat("sys","t",0);
+#	v9 := bat.new(:void,:oid);
+#    v11 := bat.reverse(v9);
+#    v13 := algebra.kdifference(v3,v11);
+#    v18 := algebra.markT(v13,0@0);
+#    v20 := bat.reverse(v18);
+#    v22 := algebra.join(v20,v3);
+#    (ext26,grp24):= group.new(v22);
+#    v28 := bat.mirror(ext26);
+#    v30 := algebra.join(v20,v3);
+#    v32 := algebra.join(v28,v30);
+#    v35 := calc.int(3);
+#    v37 := algebra.uselect(v32,v35,nil:int,false,false);
+#    v41 := algebra.semijoin(v28,v37);
+#    v43 := algebra.join(v20,v3);
+#    v45 := algebra.join(v41,v43);
+#    v53 := algebra.join(v20,v47);
+#    v57 := algebra.select(v53,nil:int,nil:int,false,false);
+#    v59 := bat.reverse(grp24);
+#    v61 := algebra.semijoin(v59,v37);
+#    v63 := bat.reverse(v61);
+#    v65 := aggr.sum(v57,v63,v41);
+##   v67 := sql.resultSet(2,3,v45);
+##   sql.rsColumn(v67,"t","i","int",32,0,v45);
+##   sql.rsColumn(v67,"t","sumvj","bigint",64,0,v65);
+##   sql.exportResult(v67);
+#	io.print(v45,v65);
+#
+#optimizer.multitable();
+#
+function user.main():void;	# 0  (main:void)
+# select i, sum(j) from t group by i having i>4; 	# 1  (_2:str)
+    mdb.list();	# 2 MDBlist (_3:void)
+#   v3:bat[:void,:int]  := sql.bind("sys","t","i",0); 	# 3  (_5:str)
+    v3v0 := bat.new(:void,:int);	# 4 CMDBATnew (v3v0:bat[:void,:int])<-(_7:void)(_8:int)
+    bat.insert(v3v0,nil,0);	# 5 BKCinsert_bun (_9:void)<-(v3v0:bat[:void,:int])(_10:void)(_11:int)
+    v3v1 := bat.new(:void,:int);	# 6 CMDBATnew (v3v1:bat[:void,:int])<-(_7:void)(_8:int)
+    bat.insert(v3v1,nil,1);	# 7 BKCinsert_bun (_13:void)<-(v3v1:bat[:void,:int])(_10:void)(_14:int)
+    v3 := mat.new(v3v0,v3v1);	# 8 MATnew (v3:bat[:void,:int])<-(v3v0:bat[:void,:int])(v3v1:bat[:void,:int])
+#   v47:bat[:void,:int]  := sql.bind("sys","t","j",0); 	# 9  (_17:str)
+    v47v0 := bat.new(:void,:int);	# 10 CMDBATnew (v47v0:bat[:void,:int])<-(_7:void)(_8:int)
+    bat.insert(v47v0,nil,0);	# 11 BKCinsert_bun (_19:void)<-(v47v0:bat[:void,:int])(_10:void)(_11:int)
+    v47v1 := bat.new(:void,:int);	# 12 CMDBATnew (v47v1:bat[:void,:int])<-(_7:void)(_8:int)
+    bat.insert(v47v1,nil,1);	# 13 BKCinsert_bun (_21:void)<-(v47v1:bat[:void,:int])(_10:void)(_14:int)
+    v47 := mat.new(v47v0,v47v1);	# 14 MATnew (v47:bat[:void,:int])<-(v47v0:bat[:void,:int])(v47v1:bat[:void,:int])
+#   v9:bat[:void,:oid]  := sql.bindvdbat("sys","t",0); 	# 15  (_24:str)
+    v9 := bat.new(:void,:oid);	# 16 CMDBATnew (v9:bat[:void,:oid])<-(_7:void)(_26:oid)
+    v11 := bat.reverse(v9);	# 17 BKCreverse (v11:bat[:oid,:void])<-(v9:bat[:void,:oid])
+    _62 := algebra.kdifference(v3v0,v11);	# 18 ALGkdiff (_62:bat[:oid,:int])<-(v3v0:bat[:void,:int])(v11:bat[:oid,:void])
+    _63 := algebra.kdifference(v3v1,v11);	# 19 ALGkdiff (_63:bat[:oid,:int])<-(v3v1:bat[:void,:int])(v11:bat[:oid,:void])
+    v13 := mat.new(_62,_63);	# 20 MATnew (v13:bat[:oid,:int])<-(_62:bat[:oid,:int])(_63:bat[:oid,:int])
+    _64 := algebra.markT(_62,0@0);	# 21 ALGtmark (_64:bat[:oid,:void])<-(_62:bat[:oid,:int])(_30:oid)
+    _65 := algebra.markT(_63,0@0);	# 22 ALGtmark (_65:bat[:oid,:void])<-(_63:bat[:oid,:int])(_30:oid)
+    v18 := mat.new(_64,_65);	# 23 MATnew (v18:bat[:oid,:void])<-(_64:bat[:oid,:void])(_65:bat[:oid,:void])
+    _66 := bat.reverse(_64);	# 24 BKCreverse (_66:bat[:void,:oid])<-(_64:bat[:oid,:void])
+    _67 := bat.reverse(_65);	# 25 BKCreverse (_67:bat[:void,:oid])<-(_65:bat[:oid,:void])
+    v20 := mat.new(_66,_67);	# 26 MATnew (v20:bat[:void,:oid])<-(_66:bat[:void,:oid])(_67:bat[:void,:oid])
+    v20 := mat.pack(_66,_67);	# 27 MATpack (v20:bat[:void,:oid])<-(_66:bat[:void,:oid])(_67:bat[:void,:oid])
+    _68 := algebra.join(v20,v3v0);	# 28 ALGjoin (_68:bat[:void,:int])<-(v20:bat[:void,:oid])(v3v0:bat[:void,:int])
+    _69 := algebra.join(v20,v3v1);	# 29 ALGjoin (_69:bat[:void,:int])<-(v20:bat[:void,:oid])(v3v1:bat[:void,:int])
+    v22 := mat.new(_68,_69);	# 30 MATnew (v22:bat[:void,:int])<-(_68:bat[:void,:int])(_69:bat[:void,:int])
+    v22 := mat.pack(_68,_69);	# 31 MATpack (v22:bat[:void,:int])<-(_68:bat[:void,:int])(_69:bat[:void,:int])
+    (ext26,grp24):= group.new(v22);	# 32 GRPgroup (ext26:bat[:void,:int])(grp24:bat[:void,:oid])<-(v22:bat[:void,:int])
+    v28 := bat.mirror(ext26);	# 33 BKCmirror (v28:bat[:void,:void])<-(ext26:bat[:void,:int])
+    _70 := algebra.join(v20,v3v0);	# 34 ALGjoin (_70:bat[:void,:int])<-(v20:bat[:void,:oid])(v3v0:bat[:void,:int])
+    _71 := algebra.join(v20,v3v1);	# 35 ALGjoin (_71:bat[:void,:int])<-(v20:bat[:void,:oid])(v3v1:bat[:void,:int])
+    v30 := mat.new(_70,_71);	# 36 MATnew (v30:bat[:void,:int])<-(_70:bat[:void,:int])(_71:bat[:void,:int])
+    _72 := algebra.join(v28,_70);	# 37 ALGjoin (_72:bat[:void,:int])<-(v28:bat[:void,:void])(_70:bat[:void,:int])
+    _73 := algebra.join(v28,_71);	# 38 ALGjoin (_73:bat[:void,:int])<-(v28:bat[:void,:void])(_71:bat[:void,:int])
+    v32 := mat.new(_72,_73);	# 39 MATnew (v32:bat[:void,:int])<-(_72:bat[:void,:int])(_73:bat[:void,:int])
+    v35 := calc.int(3);	# 40 CALCint2int (v35:int)<-(_39:int)
+    _74 := algebra.uselect(_72,v35,nil:int,false,false);	# 41 ALGuselectInclusive (_74:bat[:void,:int])<-(_72:bat[:void,:int])(v35:int)(_41:int)(_42:bit)(_42:bit)
+    _75 := algebra.uselect(_73,v35,nil:int,false,false);	# 42 ALGuselectInclusive (_75:bat[:void,:int])<-(_73:bat[:void,:int])(v35:int)(_41:int)(_42:bit)(_42:bit)
+    v37 := mat.new(_74,_75);	# 43 MATnew (v37:bat[:void,:int])<-(_74:bat[:void,:int])(_75:bat[:void,:int])
+    v37 := mat.pack(_74,_75);	# 44 MATpack (v37:bat[:void,:int])<-(_74:bat[:void,:int])(_75:bat[:void,:int])
+    v41 := algebra.semijoin(v28,v37);	# 45 ALGsemijoin (v41:bat[:void,:void])<-(v28:bat[:void,:void])(v37:bat[:void,:int])
+    _76 := algebra.join(v20,v3v0);	# 46 ALGjoin (_76:bat[:void,:int])<-(v20:bat[:void,:oid])(v3v0:bat[:void,:int])
+    _77 := algebra.join(v20,v3v1);	# 47 ALGjoin (_77:bat[:void,:int])<-(v20:bat[:void,:oid])(v3v1:bat[:void,:int])
+    v43 := mat.new(_76,_77);	# 48 MATnew (v43:bat[:void,:int])<-(_76:bat[:void,:int])(_77:bat[:void,:int])
+    _78 := algebra.join(v41,_76);	# 49 ALGjoin (_78:bat[:void,:int])<-(v41:bat[:void,:void])(_76:bat[:void,:int])
+    _79 := algebra.join(v41,_77);	# 50 ALGjoin (_79:bat[:void,:int])<-(v41:bat[:void,:void])(_77:bat[:void,:int])
+    v45 := mat.new(_78,_79);	# 51 MATnew (v45:bat[:void,:int])<-(_78:bat[:void,:int])(_79:bat[:void,:int])
+    _80 := algebra.join(v20,v47v0);	# 52 ALGjoin (_80:bat[:void,:int])<-(v20:bat[:void,:oid])(v47v0:bat[:void,:int])
+    _81 := algebra.join(v20,v47v1);	# 53 ALGjoin (_81:bat[:void,:int])<-(v20:bat[:void,:oid])(v47v1:bat[:void,:int])
+    v53 := mat.new(_80,_81);	# 54 MATnew (v53:bat[:void,:int])<-(_80:bat[:void,:int])(_81:bat[:void,:int])
+    _82 := algebra.select(_80,nil:int,nil:int,false,false);	# 55 ALGselectInclusive (_82:bat[:void,:int])<-(_80:bat[:void,:int])(_41:int)(_41:int)(_42:bit)(_42:bit)
+    _83 := algebra.select(_81,nil:int,nil:int,false,false);	# 56 ALGselectInclusive (_83:bat[:void,:int])<-(_81:bat[:void,:int])(_41:int)(_41:int)(_42:bit)(_42:bit)
+    v57 := mat.new(_82,_83);	# 57 MATnew (v57:bat[:void,:int])<-(_82:bat[:void,:int])(_83:bat[:void,:int])
+    v59 := bat.reverse(grp24);	# 58 BKCreverse (v59:bat[:oid,:void])<-(grp24:bat[:void,:oid])
+    v61 := algebra.semijoin(v59,v37);	# 59 ALGsemijoin (v61:bat[:oid,:void])<-(v59:bat[:oid,:void])(v37:bat[:void,:int])
+    v63 := bat.reverse(v61);	# 60 BKCreverse (v63:bat[:void,:oid])<-(v61:bat[:oid,:void])
+    v57 := mat.pack(_82,_83);	# 61 MATpack (v57:bat[:void,:int])<-(_82:bat[:void,:int])(_83:bat[:void,:int])
+    v65 := aggr.sum(v57,v63,v41);	# 62 AX3aggrX3_sum3_int_lng (v65:bat[:void,:lng])<-(v57:bat[:void,:int])(v63:bat[:void,:oid])(v41:bat[:void,:void])
+#   v67 := sql.resultSet(2,3,v45); 	# 63  (_53:str)
+#   sql.rsColumn(v67,"t","i","int",32,0,v45); 	# 64  (_55:str)
+#   sql.rsColumn(v67,"t","sumvj","bigint",64,0,v65); 	# 65  (_57:str)
+#   sql.exportResult(v67); 	# 66  (_59:str)
+    v45 := mat.pack(_78,_79);	# 67 MATpack (v45:bat[:void,:int])<-(_78:bat[:void,:int])(_79:bat[:void,:int])
+    io.print(v45,v65);	# 68 IOtable (_60:int)<-(v45:bat[:void,:int])(v65:bat[:void,:lng])
+end main;	# 69  
+function user.main():void;
+# select i, sum(j) from t group by i having i>4; 
+    mdb.list();
+#   v3:bat[:void,:int]  := sql.bind("sys","t","i",0); 
+    v3v0 := bat.new(:void,:int);
+    bat.insert(v3v0,nil,0);
+    v3v1 := bat.new(:void,:int);
+    bat.insert(v3v1,nil,1);
+    v3 := mat.new(v3v0,v3v1);
+#   v47:bat[:void,:int]  := sql.bind("sys","t","j",0); 
+    v47v0 := bat.new(:void,:int);
+    bat.insert(v47v0,nil,0);
+    v47v1 := bat.new(:void,:int);
+    bat.insert(v47v1,nil,1);
+    v47 := mat.new(v47v0,v47v1);
+#   v9:bat[:void,:oid]  := sql.bindvdbat("sys","t",0); 
+    v9 := bat.new(:void,:oid);
+    v11 := bat.reverse(v9);
+    _62 := algebra.kdifference(v3v0,v11);
+    _63 := algebra.kdifference(v3v1,v11);
+    v13 := mat.new(_62,_63);
+    _64 := algebra.markT(_62,0@0);
+    _65 := algebra.markT(_63,0@0);
+    v18 := mat.new(_64,_65);
+    _66 := bat.reverse(_64);
+    _67 := bat.reverse(_65);
+    v20 := mat.new(_66,_67);
+    v20 := mat.pack(_66,_67);
+    _68 := algebra.join(v20,v3v0);
+    _69 := algebra.join(v20,v3v1);
+    v22 := mat.new(_68,_69);
+    v22 := mat.pack(_68,_69);
+    (ext26,grp24):= group.new(v22);
+    v28 := bat.mirror(ext26);
+    _70 := algebra.join(v20,v3v0);
+    _71 := algebra.join(v20,v3v1);
+    v30 := mat.new(_70,_71);
+    _72 := algebra.join(v28,_70);
+    _73 := algebra.join(v28,_71);
+    v32 := mat.new(_72,_73);
+    v35 := calc.int(3);
+    _74 := algebra.uselect(_72,v35,nil:int,false,false);
+    _75 := algebra.uselect(_73,v35,nil:int,false,false);
+    v37 := mat.new(_74,_75);
+    v37 := mat.pack(_74,_75);
+    v41 := algebra.semijoin(v28,v37);
+    _76 := algebra.join(v20,v3v0);
+    _77 := algebra.join(v20,v3v1);
+    v43 := mat.new(_76,_77);
+    _78 := algebra.join(v41,_76);
+    _79 := algebra.join(v41,_77);
+    v45 := mat.new(_78,_79);
+    _80 := algebra.join(v20,v47v0);
+    _81 := algebra.join(v20,v47v1);
+    v53 := mat.new(_80,_81);
+    _82 := algebra.select(_80,nil:int,nil:int,false,false);
+    _83 := algebra.select(_81,nil:int,nil:int,false,false);
+    v57 := mat.new(_82,_83);
+    v59 := bat.reverse(grp24);
+    v61 := algebra.semijoin(v59,v37);
+    v63 := bat.reverse(v61);
+    v57 := mat.pack(_82,_83);
+    v65 := aggr.sum(v57,v63,v41);
+#   v67 := sql.resultSet(2,3,v45); 
+#   sql.rsColumn(v67,"t","i","int",32,0,v45); 
+#   sql.rsColumn(v67,"t","sumvj","bigint",64,0,v65); 
+#   sql.exportResult(v67); 
+    v45 := mat.pack(_78,_79);
+    io.print(v45,v65);
+end main;
+#-------------------------#
+# h	t	t	  # name
+# void	int	lng	  # type
+#-------------------------#
+
+# 22:52:23 >  
+# 22:52:23 >  Done.
+# 22:52:23 >  
+
