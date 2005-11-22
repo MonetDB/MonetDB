@@ -15,7 +15,6 @@ for i; do
     case "$i" in
     --prefix=*)
 	PREFIX="${i#--prefix=}"
-	break
 	;;
     esac
 done
