@@ -2172,7 +2172,7 @@ THRprintf(stream *s, const char *format, ...)
 	p += n;
 
 	n = 0;
-	if (stream_write(s, bf, p - bf, 1) != 1 || stream_flush(s) != 0)
+	if (stream_write(s, bf, p - bf, 1) != 1)
 		n = -1;
 	if (bf != THRprintbuf)
 		free(bf);
