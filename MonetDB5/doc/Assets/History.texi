@@ -33,8 +33,8 @@ relationship suite on the power provided by the early MonetDB
 implementations. In the years following, many technical innovations
 were paired with strong industrial maturing of the software base.
 
-@strong{The Open-Source Challenge [2003-now]}
-Moving into the open-source field required a large number of
+@strong{The Open-Source Challenge [2003-2006]}
+Moving MonetDB Version 4 into the open-source field required a large number of
 extensions to the code base. It became utmost important to
 support a decent implementation of the SQL99 standard,
 the bulk of application programming interfaces.
@@ -42,17 +42,17 @@ the bulk of application programming interfaces.
 The culprit of this activity was the first official release in 2004
 and the release of the XQuery front-end in 2005.
 
-@strong{The Road Ahead: MonetDB Version 5, X100, Armada}
-Several projects are underway to carve out new versions of
-the MonetDB family. This reference manual describes the
-in-s and out-s of MonetDB Version 5, a multi-year activity
-to clean up the software backbone and better support for
-simple database requests.
+@strong{The Road Ahead [2006-}
+This manual marks the alpha-release of MonetDB Version 5,
+the result of a multi-year activity to clean up the software 
+backbone and to better support for simple database requests.
+(See @ref{Backward compatibility})
 
+@strong{The future: X100, Armada}
 Extensions and renovation of the kernel are tackled in
-the AMDB project, which provides high-volume access to
-columns stored in compressed form. A separate volcano-style
-interpreter is developed in the X100 project, which aims to provide 
+the X100 project, which provides high-volume access to
+columns stored in compressed form. 
+Its volcano-style interpreter aims to provide 
 performance in I/O-dominant and streaming settings using
 vectorized processing and Just-In-Time (de)compression.
 

@@ -16,40 +16,41 @@ interact with the system. [see section x]
 * When not to consider MonetDB::
 @end menu
 @node When to consider MonetDB, When not to consider MonetDB, Features and Limitations, TOC
-@subsubsection When to consider MonetDB ?
+@subsection When to consider MonetDB ?
 @strong{A high-performance database management system.}
-MonetDB is an easily accessible open-source DBMS for SQL-/XQuery-based
+MonetDB is an easy accessible open-source DBMS for SQL-[XQuery-]based
 applications and database research projects. 
 Its origin goes back over a decade, when we decided that the database hotset
 - the part used by the applications - can be largely held in main-memory
 or where a few columns of a broad relational table are sufficient to
 handle a request.
-Exploit cache-conscious algorithms proved pivotal for these design decisions.
+Further exploitation of cache-conscious algorithms proved 
+pivotal for these design decisions.
 @c is the above the meant?
 
 @strong{A multi-model system.}
 MonetDB supports multiple query language front-ends. Aside from
-its proprietary language, called MonetDB Assembler Language (MAL),
+its proprietary language, called the MonetDB Assembler Language (MAL),
 it supports ANSI SQL-99 and W3C XQuery. Their underlying logical
 data model and computational scheme differs widely. The system is designed
-to provide a common ground for both and is prepared to support
+to provide a common ground for both languages and it is prepared to support
 languages based on yet another data model or processing paradigm.
 
 @strong{A binary-relation database kernel.}
 MonetDB is built on the canonical representation of database
 containers, namely binary relations.
-The datastructures are geared towards efficient representation of these
-binary relations when they mimic a n-ary relational scheme.
+The datastructures are geared towards their efficient representation 
+when they mimic a n-ary relational scheme.
 
 This led to an architecture where the traditional page-pool is
-replaced by a much larger granularity, called the BATs. They are
+replaced by one with a much larger granularity, called the BATs. They are
 sizeable entities -up to hundreds of megabytes- swapped into
 memory upon need.
 The benefit of this approach has been shown in numerous papers
 in scientific literature.
 
 @strong{A broad spectrum database system.}
-MonetDB is continuously developed to support a broad application
+MonetDB is continuously further developed to support a broad application
 field. Although originally developed for Analytical CRM products,
 it is now being used at the low-end scale as an embedded
 relational kernel and projects are underway to tackle the huge
@@ -70,10 +71,10 @@ MonetDB has been developed over many years of research at
 are easily accessible to others.
 Be it through publication in the scientific domain or publication of the
 software components involved.
-Subscribing to the MonetDB users mailing list gives a glimpse of the
-@c 'catch a glimpse' is the saying
-audience and helps to justify the on-and-off office hours put into
-its development and maintenance.
+The MonetDB users mailing list is the access point to a larger audience
+for advice. A subscription to the mailing list helps the developer's
+team to justify the on-and-off office hours put into
+MonetDB's development and maintenance.
 
 @node When not to consider MonetDB, The History of MonetDB, When to consider MonetDB, TOC
 @subsection When not to consider MonetDB ?
@@ -113,9 +114,8 @@ execution of OLTP transactions.
 MonetDB has not been designed with a strong focus on
 security. The major precautions have been taken, but are incomplete
 when access to the hosting machine is granted or when direct access
-is granted to the MonetDB programming language features.
-@c which language??
-The system should preferably be deployed in a sand-boxed environment
+is granted to the Monet Assembler Language features.
+The system is preferably deployed in a sand-boxed environment
 where remote access is encapsulated in a dedicated application framework.
 
 @strong{Scaleing over multiple machines.}
@@ -124,9 +124,8 @@ infrastructure. Instead, we move towards an architecture where
 multiple autonomous MonetDB instances are joining together to process
 a large and distributed workload.
 
-In the multimedia applications we have exploited the inherent
+In the multimedia applications we have exploited successfully the inherent
 data parallelism to speedup processing and reduce the synchronization cost.
-The underlying platforms were 16-32 Linux-based cluster computers with
-@c 16-32??
+The underlying platforms were Linux-based cluster computers with
 sizeable main memories.
 
