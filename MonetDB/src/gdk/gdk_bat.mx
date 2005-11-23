@@ -1782,6 +1782,10 @@ BAT *
 BATsetaccess(BAT *b, int mode)
 {
 	BATcheck(b, "BATsetaccess");
+	if (VIEWparent(b) && mode != BAT_READ) {
+		if (VIEWreset(b) == NULL)
+			return NULL;
+	}
 	if (b->batRestricted != mode) {
 		int m1 = 0, bak1 = b->batBuns->storage;
 		int m2 = 0, bak2 = b->hheap ? b->hheap->storage : -1;
@@ -1792,10 +1796,6 @@ BATsetaccess(BAT *b, int mode)
 		int reload = FALSE;
 		int remap = FALSE;
 
-		if (VIEWparent(b) && mode != BAT_READ) {
-			if (VIEWreset(b) == NULL)
-				return NULL;
-		}
 		if (b->batSharecnt && mode != BAT_READ) {
 			GDKwarning("BATsetaccess: %s has %d views; deliver a copy.\n", BATgetId(b), b->batSharecnt);
 			b = BATsetaccess(batcopy(b, b->htype, b->ttype, TRUE), mode);
