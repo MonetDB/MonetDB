@@ -151,6 +151,7 @@ unsorted l with a sorted r; in that case it always uses binary search.
 @= mergejoin
 	if (((!BATtvoid(l)) || l->tseqbase != oid_nil) &&
 	    ((!BAThvoid(r)) || r->hseqbase != oid_nil || nil_on_miss)) {
+		assert(r->htype != TYPE_void);
 		while (l_start < l_last) {
 			ptr v2, v1 = BUNt@2(l, l_start);
 			int neq = 1;
@@ -297,23 +298,22 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate)
 		break;
 #endif
 	default:
+		/* watch it: l->tvarsized may be set due to void l */
 		if (l->tvarsized) {
 			var = ATOMstorage(l->ttype);
 
 			if (r->hvarsized) {
+				/* l and r both real varsized types */
 				@:mergejoin(atom,var,var,var)@
 			} else {
+				/* l is void, r is oid */
 				loc = ATOMstorage(r->htype);
 				@:mergejoin(atom,var,loc,loc)@
 			}
 		} else {
+			/* we can't handle void r anyway, so don't worry about it here */
 			loc = ATOMstorage(l->ttype);
-			if (r->hvarsized) {
-				var = ATOMstorage(r->htype);
-				@:mergejoin(atom,loc,var,var)@
-			} else {
-				@:mergejoin(atom,loc,loc,loc)@
-			}
+			@:mergejoin(atom,loc,loc,loc)@
 		}
 		break;
 	}
@@ -351,10 +351,16 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate)
 	return NULL;
 }
 
+static BAT * batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap);
+
 static BAT *
 batmergejoin(BAT *l, BAT *r, size_t estimate, bit swap)
 {
 	@:joincheck(BATmergejoin,l->ttype,r->htype)@
+        if (BAThdense(r) || (swap && BATtdense(l))) {
+            /* batmergejoin can't handle void tail columns at all (fetchjoin is better anyway) */
+            return batfetchjoin(l, r, estimate, swap);
+        }
 	if (swap && (((BAThordered(r) & 1) == 0) || ((BATtordered(l) & 1) && (BATcount(l) > BATcount(r))))) {
 		/* reverse join if required (r not sorted) or if l is larger (quick jump through l with binary search) */
 		BAT *bn = mergejoin(BATmirror(r), BATmirror(l), NULL, NULL, estimate);
