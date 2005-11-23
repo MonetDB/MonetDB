@@ -82,6 +82,12 @@ thus the constant module should be loaded first.
 .COMMAND avg ( any::1 b ) : any::1 = CMDconstCopy;
 "avg(b); where the first parameter is interpreted as a constant column"
 
+.COMMAND {min} ( any::1 b, BAT[oid,oid] g, BAT[oid,any] e) : any::1 = CMDconstAggr;
+"min(b); where the first parameter is interpreted as a constant column"
+
+.COMMAND {max} ( any::1 b, BAT[oid,oid] g, BAT[oid,any] e) : any::1 = CMDconstAggr;
+"max(b); where the first parameter is interpreted as a constant column"
+
 .END constant;
 @mil
 proc kdiff ( BAT[any::1,any::2] b, any::1 c) : BAT[any::1,any::2]
@@ -104,6 +110,16 @@ proc CTrefine ( oid b, BAT[oid,any] b) : BAT[oid,oid]
     return tsort(b);
 }
 
+proc {sum} ( any::1 b, BAT[oid,oid] g, BAT[oid,any] e) : any::1 
+{
+    var fcn := monet_atomtbl.reverse().find(b.type());
+    return [*fcn]({count}(g.reverse(), e, false)).[*](b);
+}
+
+proc {avg} ( any::1 b, BAT[oid,oid] g, BAT[oid,any] e) : any 
+{
+    return [dbl](b);
+}
 @c
 #include <gdk.h>
 int
@@ -189,4 +205,13 @@ CMDconstSecond(ptr ret, ptr v1, int t1, ptr v2, int t2)
 	(void) t1;
 	return CMDconstCopy(ret, v2, t2);
 }
+
+int
+CMDconstAggr(ptr ret, ptr v, int t, BAT *b1, BAT *b2)
+{
+	(void) b1;
+	(void) b2;
+	return CMDconstCopy(ret, v, t);
+}
+
 
