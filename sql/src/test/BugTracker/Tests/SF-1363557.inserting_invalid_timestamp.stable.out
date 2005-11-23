@@ -1,0 +1,41 @@
+stdout of test 'SF-1363557.inserting_invalid_timestamp` in directory 'src/test/BugTracker` itself:
+
+
+# 16:23:39 >  
+# 16:23:39 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=32237 --set sql_port=47860 --set xquery_port=51785 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 16:23:39 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 16:23:39 >  
+# 16:23:39 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=47860  < SF-1363557.inserting_invalid_timestamp.sql
+# 16:23:39 >  
+
+# 6 # querytype
+# 7 # querytype
+# 7 # querytype
+# 7 # querytype
+# 3 # querytype
+# foo # table_name
+# bar # name
+# timestamp # type
+# 19 # length
+# 0 # tuplecount
+# 0 # id
+# 6 # querytype
+# 7 # querytype
+
+# 16:23:39 >  
+# 16:23:39 >  Done.
+# 16:23:39 >  
+
