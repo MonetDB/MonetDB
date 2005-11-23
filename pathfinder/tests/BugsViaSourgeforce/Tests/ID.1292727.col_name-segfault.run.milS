@@ -53,7 +53,7 @@ a0000 := loop_lifted_child_step_with_nsloc_test (a0002, a0003, a0004, ws, 0, "",
 a0001 := a0000.fetch (0);
 a0005 := a0000.fetch (1);
 a0006 := a0000.fetch (2);
-if (a0006.is_fake_project ()) {
+if (a0006.is_constant_bat ()) {
     a0006 := a0001.project (a0006.fetch (0));
 } else {
 }

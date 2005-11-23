@@ -34,12 +34,13 @@
 char* PFcompile_MonetDB (char* xquery, char* mode, char** prologue, char** query, char** epilogue);
 
 /* get a document by URL (if not in cache, fetch it) */
-char* PFurlcache(char *url);
+char* PFurlcache(char *url, int keep);
 
 /* flush the url cache */
 void PFurlcache_flush();
 
-const char* PFinitMIL();   /* MIL pattern for global variable definitions */
+const char* PFinitMIL();   /* MIL pattern for module init */
+const char* PFvarMIL();    /* MIL pattern for global variable definitions */
 const char* PFstartMIL();  /* MIL pattern for starting query execution */
 const char* PFdocbatMIL(); /* MIL pattern for adding a shredded document to the ws */
 const char* PFudfMIL();    /* MIL pattern for calling a UDF */

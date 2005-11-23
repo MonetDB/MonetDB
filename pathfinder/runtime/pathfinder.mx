@@ -1,6 +1,6 @@
 @' pathfinder.mx
 @'
-@' Monet runtime support for the Pathfinder XQuery compiler
+@' XQuery runtime environment
 @'
 @' Copyright Notice:
 @' -----------------
@@ -39,7 +39,6 @@
 @m
 .MODULE pathfinder;
 
-.USE pf_support;
 .USE streams;
 
 .BUILTIN xquery_server(Stream in, Stream out) : void = CMDxquery_server;
@@ -50,18 +49,20 @@
  usage:  var result := xquery(\"xml\", \"1+1\", false); printf(result);
  or:  printf(xquery(\"xml\", \"1+1\"));"
 
-.COMMAND xquery_start_query_cache() : ptr = CMDxquery_start_query_cache;
- "handle to pass to mapi_listen to let it use the query plan cache (also flushes the cache when called)."
+.COMMAND xquery_start_query_cache(lng maxsize) : ptr = CMDxquery_start_query_cache;
+ "handle to pass to mapi_listen to let it use the query plan cache (also flushes the cache when called).
+  if nonzero, the parameter is a per-connection size limit to the plan cache in bytes"
 
 .PRELUDE = xquery_prelude;
 .EPILOGUE = xquery_epilogue;
 
 .END pathfinder;
 @mil
-module(mapi);
+module(mapi);       # remote client access
+module(monettime); 
 
-PROC pfstart(bit open) : void {
-    mapi_listen(int(monet_environment.find("xquery_port")), 5, "xquery_server", open, xquery_start_query_cache()).fork();
+PROC pfstart(bit open, lng sz) : void {
+    mapi_listen(int(monet_environment.find("xquery_port")), 5, "xquery_server", open, xquery_start_query_cache(sz)).fork();
 }
 ADDHELP("pfstart", "boncz", "April 2005",
 "PARAMETERS:\n\
@@ -72,7 +73,7 @@ start the xquery server.",
 "pathfinder");
 
 PROC pfstart() : void {
-    pfstart(false);
+    pfstart(false, 0LL);
 }
 
 PROC xquery_server_start(bit global) : void {
@@ -142,8 +143,34 @@ PROC xquery_server_start() : void {
 # - HEIGTH     : BAT[void,int] enumeration of the fragments / maximal
 #                depth of the fragment (starts with 0@0 - WS)
 
+module(pf_support); 
+
 # get a handle to the global lock
-var pf_lock := pflock();
+var pf_lock := pflock(); 
+
+# note that these variables may not be shared by parallel MIL clients
+var doc_query; # bat[oid,int] active working-sets (queries) that use a particular document 
+var doc_sema;  # bat[oid,sema] used by delete_doc to wait until all doc users have gone
+
+# initialize doc_query and doc_sema (use BBP as global mechanism to discover initialization)
+lock_set(pf_lock);
+if (not(isnil(CATCH(bat("doc_name").count())))) {
+    # create doc_name table in case it does not exist
+    new(oid,str).persists(true).bbpname("doc_name");
+    new(oid,str).persists(true).bbpname("doc_location");
+    new(oid,timestamp).persists(true).bbpname("doc_timestamp");
+    new(oid,int).persists(true).bbpname("doc_height");
+    new(oid,lng).persists(true).bbpname("doc_size");
+    new(str,lng).persists(true).bbpname("uri_lifetime");
+}
+if (isnil(CATCH(bat("doc_query").count()))) {
+    doc_query := bat("doc_query"); 
+    doc_sema := bat("doc_sema"); 
+} else {
+    (doc_query := new(oid,int)).bbpname("doc_query"); 
+    (doc_sema := new(oid,monet_atomtbl.find("sema"))).bbpname("doc_sema"); 
+}
+lock_unset(pf_lock);
 
 # DEFINITION of constants concerning the data model
 const PRE_BASE := 0@0;
@@ -237,54 +264,42 @@ const PROP_PRE := PROP_PRE_0;
 # NODE is not a type but all node types
 # can be retrieved with 'select(NODE,int(nil))'
 
+@= create_ws
+    ws_nme.insert(nil,toLower("@1"));
+    ws_oid.insert(nil,oid(@1));
+    ws_tpe.insert(nil,@3);
+    ws_htp.insert(nil,@4);
+    ws_ttp.insert(nil,@5);
+    ws_seq.insert(nil,@6);
+@mil
+# the ws_* bats contain a recipe for creating a new ws
+var ws_nme := bat(void,str,WS_SIZE); 
+var ws_oid := bat(void,oid,WS_SIZE); 
+var ws_tpe := bat(void,int,WS_SIZE); 
+var ws_htp := bat(void,int,WS_SIZE); 
+var ws_ttp := bat(void,int,WS_SIZE); 
+var ws_seq := bat(void,oid,WS_SIZE); 
+@:ws(create)@
+ws_nme.access(BAT_READ).seqbase(0@0);
+ws_oid.access(BAT_READ).seqbase(0@0);
+ws_tpe.access(BAT_READ).seqbase(0@0);
+ws_htp.access(BAT_READ).seqbase(0@0);
+ws_ttp.access(BAT_READ).seqbase(0@0);
+ws_seq.access(BAT_READ).seqbase(0@0);
 
-var doc_query; # bat[oid,int] active working-sets (queries) that use a particular document 
-var doc_sema;  # bat[oid,sema] used by delete_doc to wait until all doc users have gone
-
-PROC doc_init() : void
+PROC ws_bat(int tpe, int htp, int ttp, oid seq) : BAT[void,any]
 {
-    # check if anythimg is initialized at all
-    if (type(doc_query) != bat) {
-        if (not(isnil(CATCH(bat("doc_name").count())))) {
-            # create doc_name table in case it does not exist
-            new(oid,str).persists(true).bbpname("doc_name");
-            new(oid,str).persists(true).bbpname("doc_location");
-            new(oid,timestamp).persists(true).bbpname("doc_timestamp");
-            new(oid,int).persists(true).bbpname("doc_height");
-            new(oid,lng).persists(true).bbpname("doc_size");
-            new(str,lng).persists(true).bbpname("uri_lifetime");
-        }
-        if (isnil(CATCH(bat("doc_query").count()))) {
-            doc_query := bat("doc_query"); 
-            doc_sema := bat("doc_sema"); 
-        } else {
-            (doc_query := new(oid,int)).bbpname("doc_query"); 
-            (doc_sema := new(oid,sema)).bbpname("doc_sema"); 
-        }
-    }
-}
-
-PROC doc_check(str name) : bit
-{
-    doc_init();
-    return bat("doc_name").reverse().exist(name);
+    if (ttp != void) { # a bat of bats (persistent or view)
+        var b := bat(htp,ttp);
+        if (not(isnil(seq))) b.seqbase(seq); 
+        return bat(void,bat).seqbase(PRE_BASE).insert(nil, b);
+    } 
+    return bat(void,tpe).seqbase(PRE_BASE); # a constant bat
 }
 
 PROC create_ws () : BAT[void,bat]
 {
-    var ws := bat(void,bat,WS_SIZE).seqbase(PRE_BASE);
-
-    # use our ws macro to instatiate a working set with the proper types
-@= create_ws
-    if (@5 != void) { # a bat of bats (persistent or view)
-        var b := bat(@4,@5);
-        if (not(isnil(@6))) b.seqbase(@6); 
-        ws.insert(nil, bat(void,bat).seqbase(PRE_BASE).insert(nil, b));
-    } else {
-        ws.insert(nil, bat(void,@3).seqbase(PRE_BASE)); # a constant bat
-    }
-@mil
-    @:ws(create)@
+    var ws := [ws_bat](ws_tpe, ws_htp, ws_ttp, ws_seq);
 
     # fill the constant bats with initial values
     ws.fetch(DOC_LOADED).seqbase(1@0);
@@ -368,7 +383,7 @@ PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts,
 
     # always make sure not to cause errors while holding the lock
     lock_set(pf_lock);
-    err := CATCH(exists := doc_check(name));
+    err := CATCH(exists := bat("doc_name").texist(name));
     lock_unset(pf_lock);
 
     if (not(isnil(err))) ERROR(err);
@@ -377,14 +392,11 @@ PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts,
     # shred it unlocked
     var docBAT := new(str,bat,WS_SIZE); # contains all new bats
     var us := usec();
-    var shredRES := shred2bats(location,opt);
+    var shredRES := shred2bats(location,"",opt);
 
-    # use the ws macro to get the the basic working set (excluding views, constants and indices)
-@= shred_doc_ws
-    if (and(=(@3, bat), <(@1, DOC_LOADED)))
-        docBAT.insert(toLower("@1"), shredRES.fetch(@1));
-@mil
-    @:ws(shred_doc)@
+    # insert all bats from resBAT in docBAT
+    var ins := ws_tpe.ord_uselect(bat).mirror().ord_select(nil,oid(-(DOC_LOADED,1))).mirror();
+    [insert](const docBAT, ins.leftfetchjoin(ws_nme), ins.leftfetchjoin(ws_oid).leftjoin(shredRES));
 
     # these are simple concatenations (to accelerate combPRINT_WS_SZined lookup)
     docBAT.insert("qn_prefix_uri", docBAT.find("qn_prefix").[+](str('\1')).[+](docBAT.find("qn_uri")));
@@ -401,9 +413,9 @@ PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts,
     var knd_pre_bat := docBAT.find("kind_pre" + "_" + str(chr(48 + ELEMENT))).reverse().mirror();
     var prop_pre_bat := knd_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().chk_order();
     if (not(ordered(prop_pre_bat))) {
-        var _prop := prop_pre_bat.mark(0@0).reverse();
-        var _pre  := prop_pre_bat.reverse().mark(0@0).reverse();
-        var ord := _prop.reverse().sort().reverse();
+        var _prop := prop_pre_bat.hmark(0@0);
+        var _pre  := prop_pre_bat.tmark(0@0);
+        var ord := _prop.tsort();
             ord := ord.CTrefine(_pre).mark(nil);
         prop_pre_bat := prop_pre_bat.fetch(ord);
         prop_pre_bat := prop_pre_bat.chk_order();
@@ -413,9 +425,9 @@ PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts,
     knd_pre_bat := docBAT.find("kind_pre" + "_" + str(chr(48 + PI))).reverse().mirror();
     prop_pre_bat := knd_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().chk_order();
     if (not(ordered(prop_pre_bat))) {
-        var _prop := prop_pre_bat.mark(0@0).reverse();
-        var _pre  := prop_pre_bat.reverse().mark(0@0).reverse();
-        var ord := _prop.reverse().sort().reverse();
+        var _prop := prop_pre_bat.hmark(0@0);
+        var _pre  := prop_pre_bat.tmark(0@0);
+        var ord := _prop.tsort();
             ord := ord.CTrefine(_pre).mark(nil);
         prop_pre_bat := prop_pre_bat.fetch(ord);
         prop_pre_bat := prop_pre_bat.chk_order();
@@ -492,16 +504,8 @@ PROC delete_doc_locked(oid doc_oid) : bit
         doc_sema.delete(doc_oid, sem);
     }
 
-    # use the ws macro to get the names of all non-(view or constant) bats
-@= getlower_ws
-    if (@3 = bat)
-        docBAT.insert(nil, toLower("@1"));
-@mil
-    @:ws(getlower)@
-    docBAT := docBAT.access(BAT_READ);
-
     # docBAT becomes [name,bat]
-    docBAT := [bat]([+](docBAT, str(int(doc_oid))).reverse().mirror());
+    docBAT := [bat]([+](ws_tpe.uselect(bat).mirror().join(ws_nme), str(int(doc_oid))).reverse().mirror());
 
     # rename the bats so even in case of failure they don't bother us directly anymore
     [rename](docBAT, [+]([+]("rm_", mirror(docBAT)), +("_" , str(lng(current_timestamp()))))).access(BAT_WRITE);
@@ -531,7 +535,7 @@ PROC delete_doc(str name) : void
 
     # always make sure not to cause errors while holding the lock
     lock_set(pf_lock);
-    err := CATCH(exists := doc_check(name));
+    err := CATCH(exists := bat("doc_name").texist(name));
     lock_unset(pf_lock);
 
     if (not(isnil(err))) ERROR(err);
@@ -553,7 +557,6 @@ delete the persistent BATS that store the document.",
 
 PROC delete_all_docs_locked(bit cachedOnly) : void
 {
-    doc_init();
     bat("doc_timestamp").copy()@batloop() {
         if (or(cachedOnly, not(isnil($t))))
             delete_doc_locked($h);
@@ -591,9 +594,9 @@ PROC add_doc_locked(str name, int ws) : oid
     var lim := timestamp(nil);
 
     # check if the document already existed
-    if (doc_check(name)) {
+    if (bat("doc_name").texist(name)) {
         doc_oid := bat("doc_name").reverse().find(name);
-    } else if (bat("doc_location").reverse().exist(name)) {
+    } else if (bat("doc_location").texist(name)) {
         # existed as cached location (URI): must check timestamp
         var doc_oid := bat("doc_location").reverse().find(name);
     }
@@ -641,14 +644,6 @@ PROC add_doc_locked(str name, int ws) : oid
     return doc_oid;
 }
 
-# if docid != "", it holds the str(id) of the persistent doc
-# if not, the temporary document is in tmp_doc (by name without id)
-PROC lookup_bat(BAT[str,bat] tmp_doc, str name, str docid) : bat[any,any]
-{
-    if (docid != "") return bat(name + docid);
-    return tmp_doc.find(name);
-}
-
 PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, str docid, int height) : oid
 {
     # add it to the working set
@@ -658,16 +653,20 @@ PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, str docid, int 
         ws.fetch(DOC_LOADED).insert(nil,name);
         frag := oid(ws.fetch(DOC_LOADED).count());
 
-        # use the ws macro to instantiate all non-(view or constant) bats
-@= add_doc_bat_ws
-        if (@3 = bat)
-            ws.fetch(@1).insert(nil,docBAT.lookup_bat(toLower("@1"), docid));
-@mil
-        @:ws(add_doc_bat)@
+        # use the ws_* bats to add all bats to the working set in a multiplex
+        var src := ws_tpe.ord_uselect(bat).mirror().leftfetchjoin(ws_nme);
+        var dst := src.mirror().leftfetchjoin(ws);
+        if (docid != "") 
+            # if docid != "", it holds the str(id) of the persistent doc
+            src := [bat]([+](src, docid));
+        else
+            # if not, the temporary document has been shredded into docBAT
+            src := src.leftjoin(docBAT);
+        [insert](dst, nil, src);
 
         # create views
-        ws.fetch(PRE_FRAG).insert(nil,fake_project(frag));
-        ws.fetch(ATTR_FRAG).insert(nil,fake_project(frag));
+        ws.fetch(PRE_FRAG).insert(nil,constant2bat(frag));
+        ws.fetch(ATTR_FRAG).insert(nil,constant2bat(frag));
 
         # adapt constants
         ws.fetch(FRAG).replace(0@0,frag);
@@ -752,7 +751,7 @@ PROC xmlcache_add_rule(str uri, any lifetime) : void {
 }
 PROC xmlcache_add_rule(str uri, lng lifetime) : void {
     lock_set(pf_lock);
-    var err := CATCH({ doc_init(); bat("uri_lifetime").delete(uri); bat("uri_lifetime").insert(uri, lifetime); });
+    var err := CATCH({ bat("uri_lifetime").delete(uri); bat("uri_lifetime").insert(uri, lifetime); });
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
 }
@@ -761,7 +760,7 @@ ADDHELP("xmlcache_add_rule", "boncz", "May 2005",
 
 PROC xmlcache_del_rule(str uri) : void {
     lock_set(pf_lock);
-    var err := CATCH({doc_init(); bat("uri_lifetime").delete(uri);});
+    var err := CATCH({ bat("uri_lifetime").delete(uri);});
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
 }
@@ -770,7 +769,7 @@ ADDHELP("xmlcache_del_rule", "boncz", "May 2005",
 
 PROC xmlcache_print_rules() : void {
     lock_set(pf_lock);
-    var err := CATCH({ doc_init(); table(bat("uri_lifetime").mark(0@0).reverse().col_name("URI-prefix"), bat("uri_lifetime").reverse().mark(0@0).reverse().col_name("liftime-secs")); });
+    var err := CATCH({  table(bat("uri_lifetime").hmark(0@0).col_name("URI-prefix"), bat("uri_lifetime").tmark(0@0).col_name("liftime-secs")); });
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
 }
@@ -779,7 +778,7 @@ ADDHELP("xmlcache_print_rules", "boncz", "May 2005",
 
 PROC xmlcache_print() : void {
     lock_set(pf_lock);
-    var err := CATCH({ doc_init(); table(bat("doc_name").col_name("alias"), bat("doc_location").col_name("URI"), bat("doc_size").col_name("size"), bat("doc_timestamp").select(timestamp(nil),timestamp(nil)).col_name("valid-thru")); });
+    var err := CATCH({  table(bat("doc_name").col_name("alias"), bat("doc_location").col_name("URI"), bat("doc_size").col_name("size"), bat("doc_timestamp").select(timestamp(nil),timestamp(nil)).col_name("valid-thru")); });
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
 }
@@ -788,13 +787,12 @@ ADDHELP("xmlcache_print", "boncz", "May 2005",
 
 PROC xmldb_print() : void {
     lock_set(pf_lock);
-    var err := CATCH({ doc_init(); table(mirror(bat("doc_timestamp").uselect(timestamp(nil))).join(bat("doc_name")).col_name("alias"), bat("doc_location").col_name("URI"), bat("doc_size").col_name("size")); });
+    var err := CATCH({  table(mirror(bat("doc_timestamp").uselect(timestamp(nil))).join(bat("doc_name")).col_name("alias"), bat("doc_location").col_name("URI"), bat("doc_size").col_name("size")); });
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("xmldb_print", "boncz", "May 2005",
 "DESCRIPTION:\nshows the actual content of the persistent XML document database (not the XML document cache).\n\nThis consists of all documents explicitly shredded with shred_doc(URI, alias).",  "pathfinder");
-
 
 @= c_decl_ws
 #define @1 @2
@@ -817,26 +815,29 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
 #define XTRACT_KIND(X)  (X & 63)
 #define XTRACT_FRAG(X)  (X >> 6)
 
-/*
- * execute a XQuery function 'method(..params..)'
+/* xquery_method : execute a loop-lifted xquery function
  *
- * out     = stream where XML output should be printed on
- * module  = url of module where 'method' is declared
- * method  = xquery function name
- * 
- * argc     = #params
- * argcnt[] = #items per param
- * argtpe[] = xquery type of item (as string, e.g. 'xs:integer')
- * argval[] = str representation of item (e.g. '42') 
+ * argc          = #params
+ * itercnt       = #iterations
+ * argcnt[iter]  = #items per param 
+ * argtpe[]      = xquery type of each parameter (as string, e.g. 'xs:integer')
+ * argval[]      = str representation of item (e.g. '42')
  *
  * docBAT   = optional shredded document table, that is added to working set
- *            paramas of type xs:anyNode may refer to pre-oids from this table.
+ *            params of type xs:anyNode are represented as int pre-numbers.
  *
- * we return an error string, or NULL iff everything went A-OK
+ * we return an error string, or NULL iff everything went A-OK  
  */
-pathfinder_export char* 
-xquery_method(stream *out, char* module, char *method, int argc, int* argcnt, char** argtpe, char** argval, BAT* docBAT);
-
+char*
+xquery_method(stream *out, 
+              char* module, 
+              char *method, 
+              int argc, 
+              int itercnt, 
+              int** argcnt, 
+              str* argtpe, 
+              str* argval, 
+              BAT* docBAT);
 
 #endif
 @c
@@ -885,6 +886,20 @@ xquery_typenr(char* tpe)
     return i;
 }
 
+/*
+ * find the common ancestor of two xquery types
+ */
+static int
+xquery_type_common_ancestor(int t1, int t2) 
+{
+    if (t1 < 0 || t1 >= XQUERY_TYPES) return t2;
+    if (t2 < 0 || t2 >= XQUERY_TYPES) return t1;
+    while(t1 != t2) {
+        if (t1 < t2) t1 = xquery_types[t1].parent;  
+        else         t2 = xquery_types[t2].parent;  
+    }
+    return t1;
+} 
 
 /* representation of a xquery function signature */
 typedef struct {
@@ -900,6 +915,7 @@ typedef struct {
 typedef struct _xquery_function {
     struct _xquery_function *next;
     oid vid;                      /* vid of first param */
+    lng size;                     /* byte size of prepared tree */
     xquery_sig *sig;              /* method signature */
     char* mil;                    /* generated MIL */
     char  proc[1];                /* MIL procname */
@@ -915,7 +931,7 @@ typedef struct _xquery_module {
     char url[1];                  /* module url */
 } xquery_module;
 
-/* global list keeps of known modules and their function declarations */
+/* global list of known modules and their function declarations */
 xquery_module *xquery_compiled_modules = NULL;
 
 
@@ -924,8 +940,10 @@ typedef struct _xquery_prepared_function {
     struct _xquery_prepared_function *next;
     xquery_function *def;         /* function definition */
     YYSTREE lt;                   /* cached MIL tree */
+    unsigned int lru;             /* least recently used stamp */
 } xquery_prepared_function;
 
+unsigned int xquery_lru = 0;
 
 /* loaded modules */
 typedef struct _xquery_loaded_module {
@@ -938,8 +956,16 @@ typedef struct _xquery_loaded_module {
 
 /* cached MIL client + Xquery specific context */
 typedef struct {
-    int inuse;
-    Cntxt stk, repeat_stk;
+    int inuse; 
+
+    /* xquery_clients[stk].stk == stk; MIL client is monet_clients[stk] */
+    Cntxt stk; /* stack to execute module prologues and non-cacheable queries in */  
+
+    /* MIL child context of ctx->stk; it is marked as a reusable stack frame so variable records are kept */
+    Cntxt repeat_stk; /* stk to execute the prepated function trees in  for fast reuse */ 
+
+    /* last MIL variable that should be cleared after execution */ 
+    Variable lastvar; 
 
     /* value parsing buffer reuse */
     int vallen;
@@ -955,7 +981,7 @@ typedef struct {
     /* live BAT handles (note we gave them a memory refcount in BBP) */
     BAT *proc_vid, *var_usage;
     BAT *dbl_values, *int_values, *str_values;
-    BAT *fun_vid000, *fun_iter000, *fun_item000, *fun_kind000;
+    BAT *fun_vid000, *fun_iter000, *fun_item000, *fun_kind000, *loop000;
 
     /* pointers into MIL variable records (to set values) */
     int *docBAT; 
@@ -966,6 +992,9 @@ typedef struct {
     size_t var_usage_size; 
     size_t proc_vid_size;
 
+    /* size of the cached procs */
+    size_t cachesize;
+
     xquery_prepared_function* prepared_functions;
     xquery_loaded_module *loaded_modules; 
 } xquery_client;
@@ -973,7 +1002,10 @@ typedef struct {
 /* xquery context cache corresponds slot-by-slot with monet_clients */
 xquery_client xquery_clients[MAXCLIENTS + 1];
 
+size_t xquery_client_bytes = 64<<20; /* 64MB of procs should be enough for anyone */
+
 MT_Lock pf_compiler_lock;
+MT_Lock pf_module_lock;
 MT_Lock pf_cache_lock;
 
 #include "compile_interface.h"
@@ -1005,7 +1037,9 @@ MT_Lock pf_cache_lock;
  * execute parsed MIL tree, return error(-1)/ok(0)
  */
 static int 
-xquery_tree_exec(xquery_client *ctx, YYSTREE t, int repeat) 
+xquery_tree_exec(xquery_client *ctx, 
+                 YYSTREE t, 
+                 int repeat) 
 { 
     ValRecord res;
     int ret = interpret(repeat?ctx->repeat_stk:ctx->stk, t, &res);
@@ -1026,7 +1060,8 @@ xquery_tree_exec(xquery_client *ctx, YYSTREE t, int repeat)
  * parse MIL buffer into a tree
  */
 static YYSTREE 
-xquery_mil2tree(xquery_client *ctx, char* buf) 
+xquery_mil2tree(xquery_client *ctx, 
+                char* buf) 
 { 
     Client c = monet_clients + ctx->stk;
     YYSTREE ret = NULL, treebak = c->tree;
@@ -1047,7 +1082,9 @@ xquery_mil2tree(xquery_client *ctx, char* buf)
  * execute MIL buffer (parse & execute), return error(-1)/ok(0)
  */
 static int 
-xquery_mil_exec(xquery_client *ctx, char* buf, int debug) 
+xquery_mil_exec(xquery_client *ctx,  
+                char* buf, 
+                int debug) 
 {
     int ret = 0;
     YYSTREE t;
@@ -1068,29 +1105,41 @@ xquery_mil_exec(xquery_client *ctx, char* buf, int debug)
  * We collect the MIL scripts in three sections (prologue,query,epilogue).
  * The query may be NULL, in which case we mean that it should be ignored. 
  */
-#define PFURLCACHE(fcn, query) {\
+#define PFURLCACHE(fcn, query, cache) {\
     char *url = query;\
-    query = PFurlcache(url);\
+    query = PFurlcache(url, cache);\
     if (query == NULL) {\
         err = (char*) alloca(strlen(url)+80);\
         sprintf(err, "%s(%s): could not retrieve query\n", fcn, url);\
 }    }
 static int
-xquery_compile_exec(xquery_client *ctx, char *mode, char* xquery, int is_url, char** prologue, char** query, char** epilogue)
+xquery_compile_exec(xquery_client *ctx, 
+                    char *mode,  
+                    char* xquery, 
+                    int is_url, 
+                    char** prologue, 
+                    char** query, 
+                    char** epilogue)
 {
-    int len=0, ret = 0, debug = strstr(mode,"debug") != NULL;
+    int is_mil = 0, len=0, ret = 0, debug = strstr(mode,"debug") != NULL;
     char *mapi = strstr(mode, "mapi")?"=":"";
     char *err = NULL;
 
     MT_set_lock(pf_compiler_lock, "xquery_compile_exec");
     if (is_url) {
-        PFURLCACHE("xquery_compile_exec", xquery);
+        int l = strlen(xquery);
+        is_mil = (l > 4 && xquery[l-4] == '.' && xquery[l-3] == 'm' && xquery[l-2] == 'i' && xquery[l-1] == 'l');
+        PFURLCACHE("xquery_compile_exec", xquery, !is_mil);
     }
     if (err == NULL) {
         char *del = NULL;
-        err = PFcompile_MonetDB(xquery, mode, prologue, &del, epilogue);
-        if (err == NULL || (prologue && *prologue) || (del && *del) || (epilogue && *epilogue)) {
-            ret = 1;
+        if (is_mil && query == NULL) {
+            *prologue = xquery; *epilogue = NULL;
+        } else {
+            err = PFcompile_MonetDB(xquery, mode, prologue, &del, epilogue);
+        }
+        if (err == NULL || (prologue && *prologue) || (del && *del)) {
+            ret = 1; /* no errors, or some MIL script came out still */
         }
         if (query) {
             *query = del;
@@ -1147,19 +1196,19 @@ xquery_compile_exec(xquery_client *ctx, char *mode, char* xquery, int is_url, ch
  *
  * xquery_sig*
  * xquery_sig_init(char *proc)
- * - infer the xquery function signature from the mangled MIl procname (return NULL on error)
+ * - infer the xquery function signature from the mangled MIL procname (return NULL on error)
  *
  * int
- * xquery_sig_match(xquery_sig *sig, int argc, int* argcnt, int *argtpe)
+ * xquery_sig_match(xquery_sig *sig, int argc, int* mincnt, int* maxcnt, int *argtpe)
  * - check whether sig can match the actual parameters (return true/false)
  *
  * xquery_function* 
- * xquery_resolve(xquery_client *ctx, char *ns, char *method, int argc, int* argcnt, int* argtpe)
+ * xquery_resolve(xquery_client *ctx, char *ns, char *method, int argc, int *mincnt, int* maxcnt, int* argtpe)
  * - resolve a method call in the current xquery context (return NULL if not resolved)
  *
  * char*
  * xquery_function_call(xquery_client *ctx, int msec, char* mode, char *ns, char *method, 
- *                      int argc, int* argcnt, char** argtpe, char** argval, BAT *docBAT) {
+ *                      int argc, int itercnt, int** argcnt, char** argtpe, char** argval, BAT *docBAT)
  * - call a function ns:method(). try to use the function cache (ie re-use a cached MIL tree).
  *   otherwise generate MIL yourself, interpret it (and cache it). Returns error string (NULL if ok).
  */
@@ -1170,12 +1219,16 @@ xquery_compile_exec(xquery_client *ctx, char *mode, char* xquery, int is_url, ch
 static xquery_sig* 
 xquery_sig_init(char *proc) 
 {
-    xquery_sig* sig = (xquery_sig*) GDKmalloc(sizeof(xquery_sig)+strlen(proc)); 
     char *cur = (char*) alloca(strlen(proc)); 
+    xquery_sig* sig;
     int len = 0;
 
-    strcpy(cur, proc + 3); /* skip fn_ */
+    proc = strchr(proc, '_'); /* skip ns_' */
+    if (proc == NULL) return NULL;
+    strcpy(cur, ++proc);
+    sig = (xquery_sig*) GDKmalloc(sizeof(xquery_sig)+strlen(proc)); 
     if (sig == NULL) return NULL;
+
     sig->argc = sig->zero = sig->multiple = 0;
 
     /* get method name */
@@ -1237,12 +1290,12 @@ xquery_sig_init(char *proc)
  * check whether sig can match the actual parameters (return true/false)
  */
 static int
-xquery_sig_match(xquery_sig *sig, int argc, int* argcnt, int *argtpe) 
+xquery_sig_match(xquery_sig *sig, int argc, int* mincnt, int* maxcnt, int *argtpe) 
 {
     int i, tpe[MAXPARAMS];
-    for(i=0; i< argc; i++) {
-        if (argcnt[i] == 0 && !(sig->zero & (1<<i))) return 0; 
-        if (argcnt[i] > 1 && !(sig->multiple & (1<<i))) return 0; 
+    for(i=0; i < argc; i++) {
+        if (mincnt[i] == 0 && !(sig->zero & (1<<i))) return 0; 
+        if (maxcnt[i] > 1 && !(sig->multiple & (1<<i))) return 0; 
         tpe[i] = argtpe[i];
         while(sig->tpe[i] != tpe[i]) {
             if (tpe[i] >= XQUERY_TYPES) return 0;
@@ -1259,7 +1312,7 @@ xquery_sig_match(xquery_sig *sig, int argc, int* argcnt, int *argtpe)
  * resolve a method call in the current xquery context (return NULL if nonresolved)
  */
 static xquery_function*
-xquery_resolve(xquery_client *ctx, char *ns, char *method, int argc, int* argcnt, int* argtpe) 
+xquery_resolve(xquery_client *ctx, char *ns, char *method, int argc, int *mincnt, int* maxcnt, int* argtpe) 
 {
     xquery_loaded_module *mod = ctx->loaded_modules;
     int nslen = strlen(ns);
@@ -1270,7 +1323,7 @@ xquery_resolve(xquery_client *ctx, char *ns, char *method, int argc, int* argcnt
             xquery_function *fun = mod->def->functions;
             while(fun) {
                 if (argc == fun->sig->argc && strcmp(method, fun->sig->name) == 0) {
-                    if (xquery_sig_match(fun->sig, argc, argcnt, argtpe)) return fun;
+                    if (xquery_sig_match(fun->sig, argc, mincnt, maxcnt, argtpe)) return fun;
                 }
                 fun = fun->next;
             }
@@ -1283,10 +1336,10 @@ xquery_resolve(xquery_client *ctx, char *ns, char *method, int argc, int* argcnt
 
 @= seqbase
     BATseqbase(ctx->@1, @2);
-    if (debug) l += snprintf(mil+l, XQUERY_BUFSIZE-l, "@1.seqbase(" @3 ");\n");
+    if (debug) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.seqbase(" @3 ");\n");
 @= bunins
     if (BUNins(ctx->@1, @2, @3) == NULL) return "xquery_method: allocation error while inserting in @1";
-    if (debug) l += snprintf(mil+l, XQUERY_BUFSIZE-l, "@1.insert(nil," @5 @6 ");\n", @4 @3);
+    if (debug) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.insert(nil," @5 @6 ");\n", @4 @3);
 @c
 /*
  * call a function ns:method(). try to use the function cache (ie re-use a cached MIL tree).
@@ -1294,112 +1347,145 @@ xquery_resolve(xquery_client *ctx, char *ns, char *method, int argc, int* argcnt
  */
 static char xquery_function_error[80] = "xquery_method: error during execution.\n";
 static char* 
-xquery_function_call(xquery_client *ctx, int msec, char *mode, char *ns, char *method, int argc, int* argcnt, char** argtpe, char** argval, BAT *docBAT) 
+xquery_function_call(xquery_client *ctx, 
+                     int msec, 
+                     char *mode, 
+                     char *ns, 
+                     char *method, 
+                     int argc, 
+                     int itercnt, 
+                     int** argcnt, 
+                     char** argtpe, 
+                     char** argval, 
+                     BAT *docBAT) 
 {
     xquery_prepared_function *prepfun = ctx->prepared_functions;
     xquery_function *fun;
-    int i, j, k, l=0, tpe[MAXPARAMS];
+    int i, j, k, l, m=0, tpe[MAXPARAMS], mincnt[MAXPARAMS], maxcnt[MAXPARAMS];
     int debug = (strstr(mode,"debug") != NULL);
     char mil[XQUERY_BUFSIZE], *src, *cur = mil, *end = mil + XQUERY_BUFSIZE-1;
 
-    /* look up type numbers */
-    for(k=i=0; i<argc; i++) {
-        for(j=0; j<argcnt[i]; j++,k++) {
-            tpe[k] = xquery_typenr(argtpe[k]);
-            if (tpe[k] >= XQUERY_TYPES) 
-                return (char*) -1; /* can't make a quick function resolution if unknown types are involved */
+    /* determine minimum and maximum sequence of the parameters, and the common ancestor type of each sequence  */
+    for(l=i=0; i<argc; i++) {
+        mincnt[i] = maxcnt[i] = argcnt[0][i];
+        tpe[i] = -1;
+        for(j=0; j<itercnt; j++) {
+            if (argcnt[j][i] > maxcnt[i]) maxcnt[i] = argcnt[j][i];
+            if (argcnt[j][i] < mincnt[i]) mincnt[i] = argcnt[j][i];
+            for(k=0; k<argcnt[j][i]; k++,l++) {
+                int t = xquery_typenr(argtpe[l]);
+                if (t >= XQUERY_TYPES) 
+                    return (char*) -1; /* can't make a quick function resolution if unknown types are involved */
+                tpe[i] = xquery_type_common_ancestor(tpe[i],t);
+            }
         }
     }
-    fun = xquery_resolve(ctx, ns, method, argc, argcnt, tpe);
+    /* try to resolve the parameters */
+    fun = xquery_resolve(ctx, ns, method, argc, mincnt, maxcnt, tpe);
     if (fun == NULL)
         return (char*) -1; /* no such udf. but it may be a built-in, actually */
 
+    /* create a prepared function record for this MIL client */
     while(prepfun && prepfun->def != fun) prepfun = prepfun->next;
-
     if (prepfun == NULL) {
-        /* construct MIL query, if not in cache of ctx */ 
         prepfun = (xquery_prepared_function*) GDKmalloc(sizeof(xquery_prepared_function));
         if (prepfun == NULL)
             return "xquery_function_call: allocation failed.\n";
         prepfun->def = fun;
         prepfun->lt = NULL;
+        prepfun->next = ctx->prepared_functions;
+        ctx->prepared_functions = prepfun;
     }
-    if (prepfun->lt == NULL || (debug && fun->mil == NULL)) {
-        /* create working set */
-        int ret;
+        
+    /* generate small MIL query that calls the function PROC */
+    if (fun->mil == NULL) {
+        MT_set_lock(pf_cache_lock, "xquery_function_call");
+        if (fun->mil == NULL) {
+            /* create working set */
+            int ret;
   
-        src = (char*) PFstartMIL();
-        while(*src && cur < end) *cur++ = *src++;
-
-        if (docBAT) {
-            /* add shredded soap message to the working set */
-            src = (char*) PFdocbatMIL();
+            src = (char*) PFstartMIL();
             while(*src && cur < end) *cur++ = *src++;
+
+            if (docBAT) {
+                /* add shredded soap message to the working set */
+                src = (char*) PFdocbatMIL();
+                while(*src && cur < end) *cur++ = *src++;
+            }
+
+            /* call UDF */
+            ret = snprintf(cur, XQUERY_BUFSIZE-(cur-mil), 
+                           PFudfMIL(), 
+                           fun->proc, 0, 0, 0,0, 0, 0, 0, 0, fun->sig->name, fun->sig->name, 0, 0, 0, 0);
+            if (ret > 0) cur += ret;
+
+            /* destroy working set */
+            ret = snprintf(cur, XQUERY_BUFSIZE-(cur-mil), PFstopMIL());
+            if (ret > 0) cur += ret;
+
+            /* done! execute the script */
+            *cur = 0;
+            if (cur >= end) {
+                return "xquery_function_call: generated MIL query exceeds buffer size.\n";
+            }
+            fun->mil = GDKstrdup(mil);
         }
-
-        /* call UDF */
-        ret = snprintf(cur, XQUERY_BUFSIZE-(cur-mil), PFudfMIL(), fun->proc+3, 0,0,0,0, 0,0,0,0,fun->sig->name,fun->sig->name,0,0,0,0);
-        if (ret > 0) cur += ret;
-
-        /* destroy working set */
-        ret = snprintf(cur, XQUERY_BUFSIZE-(cur-mil), PFstopMIL());
-        if (ret > 0) cur += ret;
-
-        /* done! execute the script */
-        *cur = 0;
-        if (cur >= end) {
-            return "xquery_function_call: generated MIL query exceeds buffer size.\n";
-        }
-
-        /* small chance of MT memory leak; but only in debug mode; no need to lock here */ 
-        if (debug && fun->mil == NULL) fun->mil = GDKstrdup(mil);
+        MT_unset_lock(pf_cache_lock, "xquery_function_call");
     }
+
+    /* if no MIL tree is available, create it now */
     if (prepfun->lt == NULL) {
-        prepfun->lt = xquery_mil2tree(ctx, mil);
+        prepfun->lt = xquery_mil2tree(ctx, fun->mil);
         if (prepfun->lt == NULL) {
             GDKfree(prepfun);
             return "xquery_function_call: error during parsing .\n";
         }
-        prepfun->next = ctx->prepared_functions;
-        ctx->prepared_functions = prepfun;
     }
 
-    /* put params into them */
+    /* put the actual parameters into the fun_* bats (and *_values containers) */
     @:seqbase(fun_vid000, oid_nil, "nil")@
     @:seqbase(fun_iter000, oid_nil, "nil")@
     @:seqbase(fun_kind000, oid_nil, "nil")@
     @:seqbase(fun_item000, oid_nil, "nil")@
+    @:seqbase(loop000, oid_nil, "nil")@
 
-    for(k=i=0; i<argc; i++) {
-        for(j=0; j<argcnt[i]; j++,k++) {
-            oid nil = oid_nil, one = 1, vid = i + fun->vid;
-            char c = xquery_types[tpe[k]].name[3];
+    for(l=i=0; i<argc; i++) {
+        for(j=0; j<itercnt; j++) {
+            oid nil = oid_nil, vid = i + fun->vid, iter = j+1;
+            if (i == 0 && j > 0) {
+                @:bunins(loop000, &nil, &iter, (size_t) *(oid*), SZFMT, "@0")@
+            }
+            for(k=0; k<argcnt[j][i]; k++,l++) {
+                int t = xquery_typenr(argtpe[l]);
+                char c = xquery_types[t].name[3];
 
-            if (ATOMfromstr(xquery_types[tpe[k]].monet_tpe, &ctx->val, &ctx->vallen, argval[k]) <= 0)
-                return "xquery_function_call: illegal parameter value.\n";
+                if (ATOMfromstr(xquery_types[t].monet_tpe, &ctx->val, &ctx->vallen, argval[l]) <= 0)
+                    return "xquery_function_call: illegal parameter value.\n";
 
-            @:bunins(fun_vid000, &nil, &vid, (size_t) *(oid*), SZFMT, "@0")@
-            @:bunins(fun_iter000, &nil, &one, (size_t) *(oid*), SZFMT, "@0")@
-            @:bunins(fun_kind000, &nil, &xquery_types[tpe[k]].kind, *(int*), "%d")@
-            if (c == 'i') { /* xs:integer */
-                oid item = BATcount(ctx->int_values);
-                @:bunins(int_values, &nil, ctx->val, *(lng*), LLFMT, "LL")@
-                @:bunins(fun_item000, &nil, &item, (size_t) *(oid*), SZFMT, "@0")@
-            } else if (c == 'd') { /* xs:double or xs:decimal */
-                oid item = BATcount(ctx->dbl_values);
-                @:bunins(dbl_values, &nil, ctx->val, *(dbl*), "%g")@
-                @:bunins(fun_item000, &nil, &item , (size_t) *(oid*), SZFMT, "@0")@
-            } else if (c == 's') { /* xs:string */
-                oid item = BATcount(ctx->str_values);
-                @:bunins(str_values, &nil, ctx->val, (str), "\"%s\"")@
-                @:bunins(fun_item000, &nil, &item, (size_t) *(oid*), SZFMT, "@0")@
-            } else if (docBAT == NULL) { 
-                return "xquery_function_call: node parameter without docBAT.\n";
-            } else {
-                @:bunins(fun_item000, &nil, ctx->val, (size_t) *(oid*), SZFMT, "@0")@
+                @:bunins(fun_vid000, &nil, &vid, (size_t) *(oid*), SZFMT, "@0")@
+                @:bunins(fun_iter000, &nil, &iter, (size_t) *(oid*), SZFMT, "@0")@
+                @:bunins(fun_kind000, &nil, &xquery_types[t].kind, *(int*), "%d")@
+                if (c == 'i') { /* xs:integer */
+                    oid item = BATcount(ctx->int_values);
+                    @:bunins(int_values, &nil, ctx->val, *(lng*), LLFMT, "LL")@
+                    @:bunins(fun_item000, &nil, &item, (size_t) *(oid*), SZFMT, "@0")@
+                } else if (c == 'd') { /* xs:double or xs:decimal */
+                    oid item = BATcount(ctx->dbl_values);
+                    @:bunins(dbl_values, &nil, ctx->val, *(dbl*), "%g")@
+                    @:bunins(fun_item000, &nil, &item , (size_t) *(oid*), SZFMT, "@0")@
+                } else if (c == 's') { /* xs:string */
+                    oid item = BATcount(ctx->str_values);
+                    @:bunins(str_values, &nil, ctx->val, (str), "\"%s\"")@
+                    @:bunins(fun_item000, &nil, &item, (size_t) *(oid*), SZFMT, "@0")@
+                } else if (docBAT == NULL) { 
+                    return "xquery_function_call: node parameter without docBAT.\n";
+                } else {
+                    @:bunins(fun_item000, &nil, ctx->val, (size_t) *(oid*), SZFMT, "@0")@
+                }
             }
         }
     }
+    @:seqbase(loop000, 0, "0@0")@
     @:seqbase(fun_vid000, 0, "0@0")@
     @:seqbase(fun_iter000, 0, "0@0")@
     @:seqbase(fun_kind000, 0, "0@0")@
@@ -1407,12 +1493,13 @@ xquery_function_call(xquery_client *ctx, int msec, char *mode, char *ns, char *m
 
     /* for debugging purposes, we simulate a full MIL on the log; even if parts are cached */
     if (debug) { 
-        /* MIL corresponding to BUNins clls we made */
+        /* MIL corresponding to BUNins calls we made from C */
         stream_write(ctx->fderr, mil, strlen(mil), 1);
-        /* MIL corresponding to UDF call sequence (even if we already have it cached */
+        /* MIL corresponding to UDF call sequence (even if we already have it cached) */
         stream_write(ctx->fderr, fun->mil, strlen(fun->mil), 1);
     }
 
+    /* set the MIL docBAT and getType variables to the actual values */
     ctx->docBAT[0] = docBAT?docBAT->batCacheid:0;
     if (*(ctx->genType) == NULL || strcmp(*(ctx->genType), mode)) { 
         if (*(ctx->genType)) GDKfree(*(ctx->genType));
@@ -1420,8 +1507,30 @@ xquery_function_call(xquery_client *ctx, int msec, char *mode, char *ns, char *m
     }
 
     *(ctx->time_compile) = GDKms() - msec;
-    /* re-execute tree */
-    return xquery_tree_exec(ctx, prepfun->lt, 1)?NULL:xquery_function_error;
+
+    /* Done preparing the query. Time to (re-)execute the MIL tree */
+    prepfun->lru = xquery_lru++;
+    if (xquery_tree_exec(ctx, prepfun->lt, 1)) {
+        size_t dummy;
+        if (fun->size == 0)
+            fun->size = Myysize(prepfun->lt, &dummy);
+
+        /* keep the prepared function cache within a certain size */
+        ctx->cachesize += fun->size;
+        while (ctx->cachesize > xquery_client_bytes) {
+             xquery_prepared_function *kill=NULL,*cur;
+             unsigned int lru = xquery_lru;
+             for(cur=ctx->prepared_functions; cur; cur=cur->next)
+                 if (cur->lt && cur->lru < lru) { kill = cur; lru = cur->lru; }
+             if (kill) {
+                 Myyfree(kill->lt);
+                 kill->lt = NULL;
+                 ctx->cachesize -= kill->def->size; 
+             }
+        }
+        return NULL;
+    }
+    return xquery_function_error;
 }
 
 
@@ -1464,7 +1573,9 @@ xquery_module_free(xquery_module *mod)
  * get an xquery module, compile it and cache it (return NULL on error)
  */
 xquery_module*
-xquery_module_compile(xquery_client *ctx, char* mode, char *url) 
+xquery_module_compile(xquery_client *ctx, 
+                      char* mode, 
+                      char *url) 
 {
     xquery_module *mod = GDKmalloc(sizeof(xquery_module)+strlen(url));
     BAT *b = ctx->proc_vid;
@@ -1490,6 +1601,7 @@ xquery_module_compile(xquery_client *ctx, char* mode, char *url)
         fun->vid = *(lng*) BUNtail(b,p);
         fun->sig = xquery_sig_init(fun->proc);
         fun->mil = NULL;
+        fun->size = 0;
         if (fun->sig == NULL) {
             GDKfree(fun);
         } else {
@@ -1507,7 +1619,10 @@ xquery_module_compile(xquery_client *ctx, char* mode, char *url)
  * If not, fetch&compile. Returns error string or NULL if ok.
  */
 static char* 
-xquery_module_load(xquery_client *ctx, char* mode, char *ns, char *url) 
+xquery_module_load(xquery_client *ctx, 
+                   char* mode, 
+                   char *ns, 
+                   char *url) 
 {
     xquery_loaded_module *mod, *prev = NULL;
     int nslen = strlen(ns);
@@ -1530,20 +1645,16 @@ xquery_module_load(xquery_client *ctx, char* mode, char *ns, char *url)
         if (mod == NULL) 
             return "xquery_module_load: could not allocate.\n";
 
-        MT_set_lock(pf_cache_lock, "xquery_module_load");
+        MT_set_lock(pf_module_lock, "xquery_module_load");
         for(mod->def = xquery_compiled_modules; mod->def; mod->def = mod->def->next) 
             if (strcmp(mod->def->url, url) == 0) break;
         if (mod->def == NULL)
             mod->def = xquery_module_compile(ctx, mode, url);
-        MT_unset_lock(pf_cache_lock, "xquery_module_load");
+        MT_unset_lock(pf_module_lock, "xquery_module_load");
 
         if (mod->def == NULL) {
             GDKfree(mod);
             return "xquery_module_load: could not load module.\n";
-        }
-        if (!xquery_mil_exec(ctx, mod->def->prologue, 0)) {
-            GDKfree(mod);
-            return "xquery_module_load: module execution error.\n";
         }
         ctx->var_usage_size = BATcount(ctx->var_usage);
         ctx->proc_vid_size = BATcount(ctx->proc_vid);
@@ -1588,7 +1699,8 @@ static int xquery_caching = 0;
  * allocate a new xquery client, returns client cntxt (0 on error)
  */
 static xquery_client* 
-xquery_client_alloc(stream *fdin, stream *fdout) 
+xquery_client_alloc(stream *fdin, 
+                    stream *fdout) 
 {
     xquery_client *ctx = NULL;
     int i;
@@ -1639,6 +1751,11 @@ xquery_client_init(xquery_client *ctx)
         if (!xquery_mil_exec(ctx, (char*) PFinitMIL(), 0))
             return "xquery_client_init: failed to execute init script.\n"; 
 
+        ctx->lastvar = monet_cntxt[ctx->stk].var;
+
+        if (!xquery_mil_exec(ctx, (char*) PFvarMIL(), 0))
+            return "xquery_client_init: failed to execute variable declarations.\n"; 
+
         v = VARfind(&ctx->stk, "docBAT");
         if (v == NULL) 
             return "xquery_client_init: failed to lookup docBAT variable.\n"; 
@@ -1663,9 +1780,11 @@ xquery_client_init(xquery_client *ctx)
         @:find_bat(fun_iter000)@
         @:find_bat(fun_item000)@
         @:find_bat(fun_kind000)@
+        @:find_bat(loop000)@
 
         ctx->var_usage_size = BATcount(ctx->var_usage);
         ctx->proc_vid_size = BATcount(ctx->proc_vid);
+        ctx->cachesize = 0;
         ctx->loaded_modules = NULL;
         ctx->prepared_functions = NULL;
         ctx->buflen = XQUERY_BUFSIZE;
@@ -1680,28 +1799,7 @@ xquery_client_init(xquery_client *ctx)
         ctx->repeat_stk = CNTXTnew(ctx->stk);
         CNTXTuse(ctx->repeat_stk);
         monet_cntxt[ctx->repeat_stk].reuse = TRUE;
-    } else {
-        /* undo any inserts by the query into the var_usage bats */
-        size_t delta_var_usage = BATcount(ctx->var_usage) - ctx->var_usage_size;
-        size_t delta_proc_vid = BATcount(ctx->proc_vid) - ctx->proc_vid_size;
-        oid nil = oid_nil;
-
-        BATsetcount(ctx->var_usage, ctx->var_usage_size);
-        ctx->var_usage->batBuns->free -= delta_var_usage*BUNsize(ctx->var_usage);
-
-        BATsetcount(ctx->proc_vid, ctx->proc_vid_size);
-        ctx->proc_vid->batBuns->free -= delta_proc_vid*BUNsize(ctx->proc_vid);
-
-        /* empty all bats */
-        BATclear(ctx->fun_vid000);
-        BATclear(ctx->fun_iter000);
-        BATclear(ctx->fun_kind000);
-        BATclear(ctx->fun_item000);
-        BATclear(ctx->dbl_values);
-        BATclear(ctx->int_values);
-        BATclear(ctx->str_values);
-        BUNins(ctx->str_values, &nil, str_nil);
-    }
+    } 
     return NULL;
 }
 
@@ -1714,7 +1812,8 @@ xquery_client_init(xquery_client *ctx)
  * free a xquery cache context (forever).
  */
 static void 
-xquery_client_free(xquery_client *ctx, int closeclient) 
+xquery_client_free(xquery_client *ctx, 
+                   int closeclient) 
 {
     xquery_prepared_function *fun= ctx->prepared_functions; 
     xquery_loaded_module *mod= ctx->loaded_modules; 
@@ -1723,7 +1822,7 @@ xquery_client_free(xquery_client *ctx, int closeclient)
         xquery_loaded_module *del = mod;
         mod = mod->next;
         /* free all modules */
-        if (!xquery_mil_exec(ctx, del->def->epilogue, 0))
+        if (del->def->epilogue && !xquery_mil_exec(ctx, del->def->epilogue, 0))
             fprintf(stderr, "xquery_server: client %d error dropping %s\n", ctx->stk, del->def->url);
         GDKfree(mod);
     }
@@ -1755,6 +1854,7 @@ xquery_client_free(xquery_client *ctx, int closeclient)
     @:unfix(fun_iter000)@
     @:unfix(fun_item000)@
     @:unfix(fun_kind000)@
+    @:unfix(loop000)@
 
     /* close the MIL client session */
     monet_cntxt[ctx->repeat_stk].reuse = FALSE;
@@ -1770,11 +1870,42 @@ xquery_client_free(xquery_client *ctx, int closeclient)
  * end of xquery execution (struct stays alive for reuse).
  */
 static void 
-xquery_client_end(xquery_client *ctx, int forever) 
+xquery_client_end(xquery_client *ctx, 
+                  int forever) 
 {
-    MT_set_lock(pf_cache_lock, "xquery_client_end");
+    oid nil = oid_nil, zero = 0, one = 1;
+    Variable v;
+
+    /* undo any inserts by the query into the var_usage bats */
+    size_t delta_var_usage = BATcount(ctx->var_usage) - ctx->var_usage_size;
+    size_t delta_proc_vid = BATcount(ctx->proc_vid) - ctx->proc_vid_size;
+    BATsetcount(ctx->var_usage, ctx->var_usage_size);
+    ctx->var_usage->batBuns->free -= delta_var_usage*BUNsize(ctx->var_usage);
+    BATsetcount(ctx->proc_vid, ctx->proc_vid_size);
+    ctx->proc_vid->batBuns->free -= delta_proc_vid*BUNsize(ctx->proc_vid);
+
+    /* empty all bats (static varibales) */
+    BATclear(ctx->loop000);
+    BUNins(ctx->loop000, &zero, &one);
+
+    BATclear(ctx->fun_vid000);
+    BATclear(ctx->fun_iter000);
+    BATclear(ctx->fun_kind000);
+    BATclear(ctx->fun_item000);
+    BATclear(ctx->dbl_values);
+    BATclear(ctx->int_values);
+    BATclear(ctx->str_values);
+    BUNins(ctx->str_values, &nil, str_nil);
+
+    /* nil-assign all other variables */
+    for(v=monet_cntxt[ctx->stk].var; v != ctx->lastvar; v = v->next) {
+        ATOMunfix(v->binding.vtype, VALptr(&v->binding));
+        VALclear(&v->binding);
+    }
     monet_clients[ctx->stk].fdin = NULL; 
     monet_clients[ctx->stk].fdout = NULL; 
+
+    MT_set_lock(pf_cache_lock, "xquery_client_end");
     if (forever) {
         xquery_client_free(ctx, 1);
     } else {
@@ -1865,7 +1996,7 @@ xquery_parse_ident(char* p)
 {
     while(*p == '_' || (*p >= 'a' && *p <= 'z') ||
                        (*p >= 'A' && *p <= 'Z') ||
-                       (*p >= '0' && *p <= '9') || (*p < 0)) p++;
+                       (*p >= '0' && *p <= '9') || *(unsigned char*) p >= 128) p++;
     return p;
 }
 
@@ -1902,7 +2033,9 @@ xquery_parse_space(char* p)
  * parse an XML datamodel string. Deliver an unescaped version as a result 
  */
 static inline char* 
-xquery_parse_string(char* p, char *buf, int len) 
+xquery_parse_string(char* p, 
+                    char *buf, 
+                    int len) 
 {
     char *q = buf, *r = buf+len-1;
     int sep1 = *p++;
@@ -1971,7 +2104,9 @@ xquery_parse_string(char* p, char *buf, int len)
  * parse an XML datamodel numeric, and determine its minimal type (xs:integer, xs:decimal or xs:double) 
  */
 static inline char* 
-xquery_parse_numeric(char* p, char **tpe) {
+xquery_parse_numeric(char* p, 
+                     char **tpe) 
+{
     *tpe = "xs:integer";
     if (p[0] == '-' || p[0] == '+') p++;
     while(p[0] >= '0' && p[0] <= '9') p++;
@@ -1997,7 +2132,10 @@ xquery_parse_numeric(char* p, char **tpe) {
  * from a cached MIL tree. Otherwise use pathfinder to compile. Returns error string (NULL if ok).
  */
 static char*
-xquery_prepare(xquery_client *ctx, int msec, char* mode, char* query) 
+xquery_prepare(xquery_client *ctx, 
+               int msec, 
+               char* mode, 
+               char* query) 
 {
     int nsbuf = 0, loaded_modules = 0;
     char *ns = (char*)&nsbuf, *nsend = ns, *locend, *loc = NULL, *p = query;
@@ -2007,6 +2145,8 @@ xquery_prepare(xquery_client *ctx, int msec, char* mode, char* query)
     if (strstr(mode,"debug") != NULL) {
         /* for debugging purposes, we simulate a full MIL on the log; even if parts are cached */
         char *prologue = (char*) PFinitMIL();
+        stream_write(ctx->fderr, prologue, strlen(prologue), 1);
+        prologue = (char*) PFvarMIL();
         stream_write(ctx->fderr, prologue, strlen(prologue), 1);
     }
     while(*p && err == NULL) {
@@ -2123,15 +2263,18 @@ xquery_prepare(xquery_client *ctx, int msec, char* mode, char* query)
                     err = "xquery_prepare: unexpected characters after ';'.\n";
                 } else {
                     /* all set: make the call */
+                    int* cnt_ptr = cnt;    
                     char nsbak = *nsend, locbak = *locend;
                     *nsend = 0; *locend = 0;
-                    err = xquery_function_call(ctx, msec, mode, ns, loc, argc, cnt, tpe, param, NULL);
+                    err = xquery_function_call(ctx, msec, mode, ns, loc, argc, 1, &cnt_ptr, tpe, param, NULL);
                     *nsend = nsbak; *locend = locbak;
                 }
             }
         }
     }
-    if (err == (char*) -1) {
+    if (err == xquery_function_error) {
+        err = (char*) -1; /* execution error in xquery_function_call */
+    } else if (err == (char*) -1) {
         char *sec1 = NULL;
         char *sec2 = NULL;
         char *sec3 = NULL;
@@ -2142,9 +2285,7 @@ xquery_prepare(xquery_client *ctx, int msec, char* mode, char* query)
         if (sec1) free(sec1);
         if (sec2) free(sec2);
         if (sec3) free(sec3);
-    }  else if (err == xquery_function_error) {
-        err = (char*) -1; /* execution error in xquery_function_call */
-    }
+    } 
     return err;
 }
 
@@ -2171,7 +2312,9 @@ xquery_prepare(xquery_client *ctx, int msec, char* mode, char* query)
  */  
 #define XQUERY_CHALLENGE "::mserver_xquery:4\n"
 static int
-xquery_server_end(xquery_client *ctx, Thread t, char *err) 
+xquery_server_end(xquery_client *ctx, 
+                  Thread t, 
+                  char *err) 
 {
     Client c = monet_clients + ctx->stk;
     if (err) 
@@ -2191,8 +2334,13 @@ xquery_server_end(xquery_client *ctx, Thread t, char *err)
     return err?GDK_FAIL:GDK_SUCCEED;
 }
 
+        
+extern int view_client_size(BAT **ret, int*stk);
+
 int
-CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
+CMDxquery_server(Cntxt stk, 
+                 YYSTREE lt, 
+                 ValPtr res)
 {
     stream **In, **Out;
     stream *in = NULL, *out = NULL;
@@ -2276,6 +2424,20 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
             stream_write(ctx->fderr, err, strlen(err), 1);
         }
     }
+    if (strstr(p, "debug")) {
+        /* memory debugging */
+        xquery_prepared_function *fun = ctx->prepared_functions;
+        BAT *b = NULL;
+        view_client_size(&b, &stk);
+        if (b) {
+           while(fun) {
+               BUNins(b, fun->def->proc, &fun->def->size);
+               fun = fun->next;
+            } 
+            BATprintf(GDKstdout, b);
+            BBPreclaim(b);
+        } 
+    }
 
     /* end of session */
     stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1);
@@ -2287,7 +2449,9 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
  * mapi_listen may call this routine to get a recycled MIL client session from the xquery query cache
  */
 Client
-CMDxquery_client_alloc(stream *fdin, stream *fdout) {
+CMDxquery_client_alloc(stream *fdin, 
+                       stream *fdout) 
+{
     xquery_client *ctx = xquery_client_alloc(fdin,fdout);
     if (ctx) {
         Client c = monet_clients + ctx->stk;
@@ -2304,8 +2468,10 @@ CMDxquery_client_alloc(stream *fdin, stream *fdout) {
  * flush the cache and return a magic pointer. It must be passed to mapi_listen to enable caching.
  */
 int
-CMDxquery_start_query_cache(ptr *res) {
+CMDxquery_start_query_cache(ptr *res, lng *maxsize) 
+{
     xquery_client_flushall();
+    if (*maxsize > 0) xquery_client_bytes = *maxsize;
     *res = (ptr) CMDxquery_client_alloc;
     return GDK_SUCCEED;
 }
@@ -2314,7 +2480,9 @@ CMDxquery_start_query_cache(ptr *res) {
  * execute xquery and return the result in a string.
  */
 int
-CMDxquery(Cntxt stk, YYSTREE lt, ValPtr res)
+CMDxquery(Cntxt stk, 
+          YYSTREE lt, 
+          ValPtr res)
 {
     int msec = GDKms();
     char *mode = "xml", *xquery = NULL, *err = NULL;
@@ -2341,9 +2509,12 @@ CMDxquery(Cntxt stk, YYSTREE lt, ValPtr res)
     err = xquery_client_init(ctx);
     MT_unset_lock(pf_cache_lock, "CMDxquery");
 
-    if (err == NULL && *is_url) {
-        PFURLCACHE("CMDxquery", xquery);
+    if (err == NULL && *is_url == TRUE) { 
+        MT_set_lock(pf_compiler_lock, "CMDxquery");
+        PFURLCACHE("CMDxquery", xquery, 1);
+        MT_unset_lock(pf_compiler_lock, "CMDxquery");
     }
+
     if (err == NULL) {
         buffer *b = buffer_create(XQUERY_BUFSIZE);
         if (b) {
@@ -2390,7 +2561,15 @@ CMDxquery(Cntxt stk, YYSTREE lt, ValPtr res)
  * call a method in a temporary xquery client context
  */  
 char*
-xquery_method(stream *out, char* module, char *method, int argc, int* argcnt, char** argtpe, char** argval, BAT* docBAT)
+xquery_method(stream *out, 
+              char* module, 
+              char *method, 
+              int argc, 
+              int itercnt, 
+              int** argcnt, 
+              str* argtpe, 
+              str* argval, 
+              BAT* docBAT)
 {
     int msec = GDKms();
     xquery_client *ctx = xquery_client_alloc(NULL, out);
@@ -2402,6 +2581,7 @@ xquery_method(stream *out, char* module, char *method, int argc, int* argcnt, ch
     err = xquery_client_init(ctx);
 
     if (argc > 1000) {
+        /* hack: pass argc+1000 and you get debug output */
         stream *s = open_wstream("soap.mil");
         char *prologue = (char*) PFinitMIL();
         if (s) {
@@ -2416,7 +2596,7 @@ xquery_method(stream *out, char* module, char *method, int argc, int* argcnt, ch
         err = xquery_module_load(ctx, "xml-noroot", ns="soap", module); 
 
     if (err == NULL) { 
-        err = xquery_function_call(ctx, msec, mode, ns, method, argc, argcnt, argtpe, argval, docBAT);
+        err = xquery_function_call(ctx, msec, mode, ns, method, argc, itercnt, argcnt, argtpe, argval, docBAT);
         if (err == (char*) -1) err = "xquery_method: function could not be resolved.\n";
     }
 
@@ -2436,12 +2616,13 @@ xquery_prelude()
 {
     int i;
     pf_compiler_lock = MT_create_lock();
+    pf_module_lock = MT_create_lock();
     pf_cache_lock = MT_create_lock();
 
     memset(xquery_clients, 0, sizeof(xquery_client)*(MAXCLIENTS+1));
     for(i=1; i<=MAXCLIENTS; i++)        
         xquery_clients[i].stk = i;
-  
+   
     xquery_compiled_modules = NULL;
     return NULL;
 }

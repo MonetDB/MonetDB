@@ -28,6 +28,7 @@ implementation on top of MonetDB within the "Pathfinder" project.
 @m
 .MODULE pf_support;
 
+.USE malalgebra;
 .USE lock;
 .USE monettime;
 
@@ -184,6 +185,71 @@ tuple will be in the result for this group."
 .COMMAND lastmod_time(str filename) : timestamp = CMDlastmod_time;
  "return the last modification time of a file"
 
+@- Constant Columns
+
+In XQuery, we often have the case that BAT[void,T] all contain the same tail value
+'constant columns'. In this case, we represent the column variable by a MIL
+constant. The new 'constant' MIL module mimicks the BAT algebra on such constants.
+
+Regrettably, we cannot always represent constants as single MIL (non-bat) values.
+Constants sometimes *need* to go into bats-of-bats. Particular cases in XQuery are 
+the working set BAT[void,BAT] that contains a set of columns, and the result of staircase 
+join (idem dito). 
+
+Our solution here is to represent constant columns inside a bat of bats as a 'fake' 
+BAT[void,T] with a single entry [nil,c].  The routines constant2bat/bat2constant switch
+between the MIL constant and the 'fake' BAT[nil,c] representation (obviously, non-constant
+bats are unaffected by these calls).
+
+Representing a column by a single value is not a full representation of the column.
+The missing information is the size of the column and its seqbase. Due to
+this, the full MIL algebra cannot be supported on top of constants, and it becomes
+sometimes necessary to still materialize constants. To make this possible,
+the milprint_summer code introduces a variable ipik (in addition to iter-pos-kind-item),
+that holds a 'true' BAT with a real void-head (ipik is one of iter-pos-kind-item, which
+can never *all be constants -- hence the name). This BAT can be used as a second
+parameter to 'materialize(col,ipik)' whose result is a 'true' BAT. If a column variable 
+is already a 'true' BAT, it is unaffected by the 'materialize()' command. 
+
+It would have been better to have the full MIL algebra supported transparently 
+on constants. Now the developer has to worry about all operations being supported, and 
+if not, use a materialize().  
+
+TODO: leftfetchjoin() sometimes returns a 'fake' BAT representation of a constant instead
+of a constant. In fact, in some places in milprint_summer the 'fake' BAT
+representation is used instead of the MIL constant representation. We should at 
+least make sure that at the end of each operator, all 'fake' BATs have been
+transformed into MIL constants.
+
+Hopefully, in Monet5 we will get better support for representing constant columns 
+in BATs that can do aways with explicit use of fake_project in the generated MIL.
+@m
+.COMMAND is_constant_bat(any) : bit = CMDisFakeProject;
+"checks whether the parameter is a BAT[nil,c] constant column"
+
+.COMMAND constant2bat(any col) : bat[any,any] = CMDfakeProject;
+"if a column is a MIL constant c, change it into a BAT[nil,c] constant column."
+
+.COMMAND bat2constant(any col) : any = CMDdeFakeProject;
+"convert BAT[nil,c] constant column into a simple MIL constant 'c'"
+
+.COMMAND materialize(any::1 value, bat[oid,any] extent) : bat[oid,any::1] = CMDmaterializeConst;
+"materialize a MIL constant into a real BAT, using the second extent BAT to blow it up"
+
+.COMMAND materialize(bat[any::1,any::2] value, bat[oid,any] extent) : bat[any::1,any::2] = CMDmaterializeFake;
+"make sure the first parameter is a materialized BAT (i.e. if it is BAT[nil,c] substitute nil with the extent head column)."
+
+.COMMAND leftfetchjoin ( BAT[oid,oid] left, any::1 right) : BAT[void,any::1] = CMDposjoinFake;
+"leftfetchjoin(l,r); where the second parameter is a constant; return a BAT[nil,c]"
+
+.COMMAND leftfetchjoin ( oid left, any::1 right) : any::1 = CMDposjoinConst;
+"leftfetchjoin(l,r); where the first parameter is a MIL constant. Return a MIL constant (assumes join hits!)."
+
+.COMMAND leftfetchjoin ( oid left, BAT[oid,any::1] right) : any::1 = CMDposjoinConstBAT;
+"leftfetchjoin(l,r); where the first parameter is a MIL constant. Return a MIL constant (assumes join hits!)."
+
+.COMMAND leftfetchjoin ( BAT[any::1,oid] left, BAT[oid,any::2] right) : BAT[any::1,any::2] = CMDposjoin;
+"leftfetchjoin(l,r); with awareness that both params may be BAT[nil,c]. Return a BAT (potentially BAT[nil,c])."
 
 @- Path steps (staircase join) 
 @m
@@ -279,15 +345,13 @@ axis step evaluation on the @2 axis from the given context."
 .END pf_support;
 
 @mil
-module(alarm);
-module(aggrX3);
-module(bat_arith);
-module(malalgebra);
-module(mmath);
-module(xtables);
-module(pcre);
+module("xtables");
+module("aggrX3");
+module("bat_arith");
+module("mmath");
+module("pcre");
 
-# global constants using in the MIL mapping
+# global constants using in the MIL translation
 const empty_bat := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
 const empty_kind_bat := bat(void,int,0).seqbase(0@0).access(BAT_READ);
 const EMPTY_STRING := 0@0;
@@ -295,15 +359,18 @@ const empty_dbl__bat := bat(void,dbl,0).seqbase(0@0).access(BAT_READ);
 const empty_dec__bat := empty_dbl__bat;
 const empty_str__bat := bat(void,str,0).seqbase(0@0).access(BAT_READ);
 const empty_int__bat := bat(void,lng,0).seqbase(0@0).access(BAT_READ);
-const bool_not := bat(oid,oid,2).insert(0@0,1@0).insert(1@0,0@0).access(BAT_READ);
+const bool_not := bat(void,oid,2).insert(nil,1@0).insert(nil,0@0).seqbase(0@0).access(BAT_READ);
 
-PROC shred2bats(str location, str opt) : bat[oid, bat]
+proc tmark_grp_unique( any iter, BAT[oid,any] ipik) : BAT[oid,oid]
 {
-    return shred2bats(location, "", opt);
+    return ipik.mark(1@0);
 }
-ADDHELP("shred2bats", "zhang", "Aug 31 2005",
-	"Shortcut of shred2bats(location, \"\", opt)\n",
-	"pf_support");
+
+proc tmark_grp_unique( BAT[any,any] iter, BAT[oid,any] ipik) : BAT[oid,oid]
+{
+    if (is_constant_bat(iter)) return ipik.mark(1@0);
+    return iter.mark_grp(iter.tunique(), 1@0);
+}
 
 PROC get_type (bat[void,int] kind, int type_) : bat[oid,void]
 {
@@ -345,158 +412,110 @@ PROC get_types (bat[void,int] kind) : bat[void,int]
         return kind.[and](63); # 63 = 2^6 - 1
 }
 
-PROC tuniqueALT (bat[any::1,any::2] input) : bat[any::2,void] {
-	input := input.reverse().mark(nil).reverse();
-	if (input.tail() = "string") {
-    		return bat(str,void).key(true).insert(input.reverse()).reverse().access(BAT_READ);
-    	} else { 
-		return tunique(input);
-	}
-}
 
-PROC chk_order( BAT[any::1,any::2] b ) : bat[any::1,any::2] 
-{
-        VAR h1 := b.ordered();
-        VAR t1 := b.reverse().ordered();
-	return b;
-}
-PROC chk_order( BAT[any::1,any::2] b, bit warn ) : int 
-{
-        VAR h1 := b.ordered();
-        VAR t1 := b.reverse().ordered();
-        VAR rtrn := 0;
-        if (not(h1)) {
-		# head is not sorted
-                rtrn :or= 4;
-        }
-        if (not(t1)) {
-		# tail is not sorted
-                rtrn :or= 8;
-        }
-        return rtrn;
-}
-ADDHELP("chk_order", "manegold", "Jul 24 2004",
-	" Simple proc that triggers property checking on BAT b.\n"+
-	" If 'warn' is 'TRUE', warnings are issued if properties\n"+
-	" (e.g., sortedness) do hold, but the respective flags were not set.\n"+
-	" The return value 'r' is a 4-bit pattern, where the bits indicate\n"+
-	" the following when set:\n"+
-	"  0 (and(r,1)==1): 'ordered'-flag of head did change,\n"+
-	"  1 (and(r,2)==2): 'ordered'-flag of tail did change,\n"+
-	"  2 (and(r,4)==4): head is not sorted,\n"+
-	"  3 (and(r,8)==8): tail is not sorted.",
-	"pf_support");
+@- order-preserving xquery join with existential semantics
 
-proc fetch(bat[any::1,any::2] b, bat[void,any] sel) : bat[any::1,any::2] {
-	var cnt := sel.count();
-	var lo := int(sel.seqbase());
-	var hi := lo + cnt - 1;
-	if ((cnt = 0) or isnil(lo)) {
-		lo := 1; hi := 0;
-	}
-	return b.slice(lo,hi);
-}
+The below proc handles xquery theta-joins between l[oid,any::1] and r[oid,any::1]
+(iter,value) combinations with a join predicate PRED = { LT, LE, EQ, GE, GT }.
 
+The result are the [oid,oid] iter numbers that should be ordered on head, and within 
+head on tail (hence the term 'htordered') to preserve proper xquery sequence order.
 
-proc htordered_unique_thetajoin( bat[oid,any::2] l, 
-                                 int mode, 
-                                 bat[any::2,oid] r ) : bat[oid,oid] {
-	return htordered_unique_thetajoin( nil, l, mode, r, nil );
-}
+We may also get optional lx[void,any] and rx[void,any] bats that substitute the
+head and tail result oid-s for something else (backmapping). These lx/rx are not always 
+present though.  They are pushed inside the thetajoin when sampling indicates the result 
+will become big, or when the any types are smaller than oid-s (thus always make the 
+result smaller).  In this case it is better to go into the join with the substitution 
+already performed.  In other cases, the  substitution is done after computing the join.
 
-proc htordered_unique_thetajoin( bat[any::1,oid] lx, bat[oid,any::2] l, 
-                                 int mode, 
-                                 bat[any::2,oid] r ) : bat[any::1,oid] {
-	return htordered_unique_thetajoin( lx, l, mode, r, nil );
-}
+The join is *existential*, that is, each [iter_l,iter_r] is unique in the result,
+and should be there iff there exists any [iter_l,v_l] and [iter_r,v_r] for which 
+(v_l PRED v_r) holds. 
 
-proc htordered_unique_thetajoin( bat[oid,any::2] l, 
-                                 int mode, 
-                                 bat[any::2,oid] r, bat[oid,any::3] rx ) : bat[oid,any::3] {
-	return htordered_unique_thetajoin( nil, l, mode, r, rx );
-}
+For equi-joins, we compute the full join and then eliminate
+duplicate [oid,oid] combinations. Given the htordered result characteristic, this will 
+use a merge-algorithm. However for <,>,<=,>= we even *avoid* duplicates by joining {min}(l) 
+with {max}(r) for <,<= (and vice versa for >,>=). Note  that these {min}() and {max}() 
+are also efficient as they also can use a merge-algorithm for aggregation.
 
-@= bat_any1_oid
-bat[any::1,oid]
-@
-@= bat_oid_any3
-bat[oid,any::3]
+For non-equi-joins, use use either sort-merge or nested-loop join. Note that the latter join 
+does not require any reordering to achieve htordered-ness. This is a plus, but nested-loop is 
+of course quadratic in complexity. On the other hand, non-equi-joins tend to be quadratic 
+in their result size anyway. We check this using run-time sampling. Nested-loop is chosen if 
+sampling indicates a large join result.
+
+Finally, the theta-join is loop-lifted, in that it may be executed between two loop-lifted
+expressions. In that case, only matching outer iterations (lo and ro) should be joined on value. 
+In effect, it requires a join condition "(l_val PRED r_val) and (lo = ro)". As MonetDB cannot 
+handle such multi-column theta-joins efficiently, the current solution exploits the fact
+that the loop-lifted iterations appear contiguous in both inputs. Thus, each iteration
+is a slice of both input BATs. We just go through all outer iterations, take slices, and
+execute the join for corresponding iter slices on l and r; concatenating all results.
 @mil
 var samp256 := bat(void,lng,256LL);
 { var i := 0LL; while(i < 256LL) { samp256.insert(nil,i); i :+= 1LL; } samp256.seqbase(0@0); }
 
-@:htordered_unique_thetajoin( void           , void           , oid   , oid   ,                              ,                            ,                                               )@
-
-@:htordered_unique_thetajoin( @:bat_any1_oid@, void           , any::1, oid   , @:lx_join_opt@               , @:lx_join(l)@              , @:lx_join(join_order)@                        )@
-
-@:htordered_unique_thetajoin( void           , @:bat_oid_any3@, oid   , any::3,                @:rx_join_opt@,               @:rx_join(r)@,                        @:rx_join(join_order)@ )@
-
-@:htordered_unique_thetajoin( @:bat_any1_oid@, @:bat_oid_any3@, any::1, any::3, @:lx_join_opt@ @:rx_join_opt@, @:lx_join(l)@ @:rx_join(r)@, @:lx_join(join_order)@ @:rx_join(join_order)@ )@
-
-@= lx_join_opt
-    # try to reduce footprint, first:
-    # join with lx only if it's smaller than l
-    if (htype(lx) <= 3) { # <= sht  hence  < oid
-        @:lx_join(l)@
-    }
-@
-@= rx_join_opt
-    # try to reduce footprint, first:
-    # join with rx only if it's smaller than r
-    if (htype(rx) <= 3) { # <= sht  hence  < oid
-        @:rx_join(r)@
-    }
-@
-@= lx_join
-    if (not(isnil(lx))) {
-        @1 := reverse(leftfetchjoin(reverse(@1),reverse(lx)));
-        lx := nil;
-    }
-@
-@= rx_join
-    if (not(isnil(rx))) {
-        @1 := leftfetchjoin(@1,rx);
-        rx := nil;
-    }
-@mil
-@= htordered_unique_thetajoin
-proc htordered_unique_thetajoin( @1 lx, bat[oid,any::2] l,
-                                 int mode,
-                                 bat[any::2,oid] r, @2 rx ) : bat[@3,@4]
+proc htordered_unique_thetajoin( int mode,
+                                 bat[oid,any::1] l, bat[oid,any::1] r,
+                                 any lx, any rx) : bat[any,any]
 {
-    if ((int(l).count() = 0LL) or (int(r).count() = 0LL)) { 
-        # if present, join with lx/rx
-        @6
-        return l.join(r); 
-    }
-    if (not(l.ordered()) or not(r.reverse().ordered())) {
-        ERROR("htordered_unique_thetajoin(): ordered l.head and r.tail columns (iters) expected.\n");
-    }
+    var lcnt := int(l).count();
+    var rcnt := int(r).count();
+    if ((lcnt = 0LL) or (rcnt = 0LL))
+        return bat(oid,oid,1LL).access(BAT_READ);
 
+    if (not(ordered(l)) or not(ordered(r)))
+        ERROR("htordered_unique_thetajoin(): ordered left and right head columns (iters) expected.\n");
+
+    if (rcnt = 1LL) {
+        # it is a selection; not a join
+        var v := r.fetch(0);
+        var t := r.reverse().fetch(0);
+        var lo := (mode >= EQ).ifthenelse(v,cast(nil,ttype(l)));
+        var hi := (mode <= EQ).ifthenelse(v,cast(nil,ttype(l)));
+        var sel;
+        if ((mode = GT) or (mode = LT)) {
+            sel := l.ord_select(lo,hi).[!=](v).ord_uselect(true);
+        } else {
+            sel := l.ord_uselect(lo,hi);
+        }
+        if (type(lx) = bat) sel := reverse(reverse(sel).leftfetchjoin(lx));
+        if (type(rx) = bat) t := rx.find(t);
+        return sel.project(t);
+    }
+    if (lcnt = 1LL) {
+        return reverse(htordered_unique_thetajoin(-(mode), r, l, rx, lx));
+    }
     if (mode != EQ) {
         # try to reduce footprint, first:
         # join with lx/rx only if smaller than l/r
-        @5
+        if (type(lx) = bat) {
+            if (htype(lx) <= sht) { l := reverse(leftfetchjoin(reverse(l),lx)); lx := nil; }
+        }
+        if (type(rx) = bat) {
+            if (htype(rx) <= sht) { r := reverse(leftfetchjoin(reverse(r),rx)); rx := nil; }
+        }
         # trick: as we eliminate double matches anyway, let's not generate them to start with
         # pumps are efficient because merge-based
         if ((mode = GT) or (mode = GE)) {
             l := {max}(l);
-            r := {min}(r.reverse()).reverse();
+            r := {min}(r);
         } else {
             l := {min}(l);
-            r := {max}(r.reverse()).reverse();
+            r := {max}(r);
         }
         var samp := [oid]([*](samp256, int(l).count()/256LL)).leftfetchjoin(l.reverse().mark(0@0).reverse());
-        var res := nlthetajoin(samp, r, mode, int(r).count() * 64LL);
+        var res := nlthetajoin(samp, reverse(r), mode, int(r).count() * 64LL);
         if (((2LL * batsize(res) * int(l).count()) / (1LL + int(samp).count())) > mem_maxsize()) {
             var cnt := int(res).count(); res := nil;
             # if not done, yet, join with lx/rx
-            @6
-            # a large intermediate result is better handled with nested loop
-            return nlthetajoin(l, r, mode, ((cnt+cnt) / int(samp).count())*int(r).count()); # no reordering necessary!!
+            if (type(lx) = bat) l := reverse(leftfetchjoin(reverse(l),lx));
+            if (type(rx) = bat) r := reverse(leftfetchjoin(reverse(r),rx));
+            # a large intermediate result is better handled with nested loop (no reordering necessary)
+            return nlthetajoin(l, reverse(r), mode, ((cnt+cnt) / int(samp).count())*int(r).count());
         }
     }
-    var join_order := leftthetajoin(l, r, mode);
+    var join_order := leftthetajoin(l, reverse(r), mode);
 
     # avoid error (lng(max(bat(oid,oid))) = nil)
     if (join_order.count() = 0) { return join_order; }
@@ -510,243 +529,78 @@ proc htordered_unique_thetajoin( @1 lx, bat[oid,any::2] l,
     }
     join_order := join_order.fetch(sorting); # this may hurt as well
     # joins with lx/rx can only be done after the CTrefine() and kunique()
-    @7
+    if (type(lx) = bat) join_order := reverse(leftfetchjoin(reverse(join_order),lx));
+    if (type(rx) = bat) join_order := leftfetchjoin(join_order,rx);
     return join_order;
 }
-@mil
 
-PROC min (int i) : int
+proc log2(lng i) : int 
 {
-	return i;
+  var n := 0;
+  while(i > 1LL)  {
+     i >>= 1; n :+= 1;
+  }
+  return n;
 }
 
-PROC max (int i) : int
+var lng_oid := ifthenelse(isnil(oid(LNG_MAX)),lng,oid);
+
+# loop-lifted variant; lo and ro are the outer iteration numbers that should match
+proc ll_htordered_unique_thetajoin( int mode,
+                                    bat[oid,any::2] l, bat[oid,any::2] r,
+                                    bat[void,oid] lo, bat[void,oid] ro,
+                                    any lx, any rx) : bat[any,any]
 {
-	return i;
+    var lo_histo := histogram(lo), lr_histo := reverse(lo_histo);
+    var ro_histo := histogram(ro), rr_histo := reverse(ro_histo);
+    var li := 0LL, lp := 0LL, lc := count(int(lo_histo));
+    var ri := 0LL, rp := 0LL, rc := count(int(ro_histo));
+    var b := new(void,bat,min(lc,rc));
+    var tpe := ttype(lo);
+
+    if (not(reverse(lo).ordered()) or not(reverse(ro).ordered()))
+        ERROR("htordered_unique_thetajoin(): ordered left and right outer columns (iters) expected.\n");
+
+    # in case of integer equi-join, we shift iter and value together in a lng and do a single join on that
+    if ((mode = EQ) and or(or((tpe = int), (tpe = oid)), (tpe = lng)))  {
+        var iter_max := 32;
+        var combine := true;
+        if ((tpe = lng) or (tpe = lng_oid)) {
+            iter_max := log2(lng(max(max(lr_histo),max(rr_histo))));
+            combine := (iter_max + log2(lng(max(max(l),max(r))))) < 64;
+        }
+        if (combine) {
+            lo := [lng](lo).access(BAT_WRITE); 
+            ro := [lng](ro).access(BAT_WRITE); 
+	    [:+=](lo, [<<]([lng](l.tmark(0@0)), iter_max)).access(BAT_READ);
+	    [:+=](ro, [<<]([lng](r.tmark(0@0)), iter_max)).access(BAT_READ);
+	    l := l.mark(0@0).leftfetchjoin(lo); 
+	    r := r.mark(0@0).leftfetchjoin(ro); 
+            return htordered_unique_thetajoin(EQ, l, r, lx, rx);
+        }
+    }
+
+    # otherwise iterate over the outer scopes; execute the join only for a single outer iter at a time
+    while((lp < lc) and (rp < rc)) {
+        var lv := lr_histo.fetch(lp);
+        var rv := rr_histo.fetch(rp);
+        var ln := lng(lo_histo.fetch(lp));
+        var rn := lng(ro_histo.fetch(rp));
+        if (lv = rv) {
+            # only join corresponding slices of l an r
+            var bn := htordered_unique_thetajoin(mode, l.slice(li,li+ln-1), r.slice(ri,ri+rn-1), lx, rx);
+            if (count(int(bn)) > 0LL) b.insert(nil, bn);
+        }
+        if (lv <= rv) { lp :+= 1; li :+= ln; }
+        if (rv <= lv) { rp :+= 1; ri :+= rn; }
+    }
+
+    # concatenate all results
+    if (count(int(b)) = 1LL) return b.fetch(0);
+    var bn := bat(oid, oid, sum_lng([count]([int](b)))).access(BAT_WRITE);
+    if (count(int(b)) > 0LL) [insert](const bn,b);
+    return bn.access(BAT_READ);
 }
-
-PROC [max] (int i, int j) : int
-{
-	return max(i, j);
-}
-
-PROC [+] (int l, int r) : int
-{
-	return l + r;
-}
-
-PROC [-] (int l, int r) : int
-{
-	return l - r;
-}
-
-PROC [lng] (int i) : lng
-{
-	return lng(i);
-}
-
-PROC fetch(dbl b, int p) : dbl
-{
-	return b;
-}
-
-PROC slice(oid b, int l, int h) : oid
-{
-	return b;
-}
-
-PROC slice(int b, int l, int h) : int
-{
-	return b;
-}
-
-@:fake(oid)@
-@:fake(chr)@
-@:fake(int)@
-@:fake(lng)@
-@:fake(dbl)@
-@:fake(str)@
-
-@= fake
-
-PROC fake_project (@1 c) : bat[void,@1]
-{
-    	return new(void,@1,1).seqbase(nil).insert(nil,c).access(BAT_READ);
-}
-
-PROC fake_project (bat[void,@1] b) : bat[void,@1]
-{
-    	return b;
-}
-
-PROC is_fake_project (bat[oid,@1] b) : bit
-{
-	return and( and( count(b) = 1, isnil(seqbase(b)) ), htype(b) = 0 );
-}
-
-PROC de_fake_project (bat[void,@1] b, bat[void,oid] x) : @1	#bat[void,@1]
-{
-	if (not(is_fake_project(b))) {
-		return b;
-	}
-	if (is_fake_project(x)) {
-		ERROR("de_fake_project: second argument must not be a 'fake_project'!\n");
-	}
-	return b.fetch(0);	#x.project(b.fetch(0));
-}
-
-PROC de_fake_project (@1 b, bat[void,oid] x) : @1	
-{
-	return b;
-}
-
-PROC de_NO_project (bat[oid,@1] b, bat[void,oid] x) : bat[void,@1]
-{
-	if (not(is_fake_project(b))) {
-		return b;
-	}
-	if (is_fake_project(x)) {
-		ERROR("de_NO_project: second argument must not be a 'fake_project'!\n");
-	}
-	return x.project(b.fetch(0));
-}
-
-PROC de_NO_project (@1 c, bat[void,oid] x) : bat[void,@1]
-{
-	if (is_fake_project(x)) {
-		ERROR("de_NO_project: second argument must not be a 'fake_project'!\n");
-	}
-	return x.project(c);
-}
-
-PROC fake_leftfetchjoin (bat[oid,oid] l, bat[void,@1] r) : bat[oid,@1]
-{
-#	if (is_fake_project(l)) {
-#		ERROR("fake_leftfetchjoin: first argument must not be a 'fake_project'!\n");
-#	}
-	if (is_fake_project(r)) {
-		return r;
-	} else {
-		return leftfetchjoin(l,r);
-	}
-}
-
-PROC fake_leftfetchjoin (bat[oid,oid] l, @1 c) : bat[oid,@1]
-{
-	return fake_project(c);
-}
-
-PROC fake_leftfetchjoin (oid c, bat[void,@1] r) : @1
-{
-	if (is_fake_project(r)) {
-		ERROR("fake_leftfetchjoin: second argument must not be a 'fake_project'!\n");
-	}
-	return r.find(c);
-}
-
-PROC de_fake_leftfetchjoin (bat[void,oid] l, bat[void,@1] r, bat[void,oid] x) : bat[void,@1]
-{
-	if (is_fake_project(r)) {
-		ERROR("de_fake_leftfetchjoin: second argument must not be a 'fake_project'!\n");
-	}
-	if (not(is_fake_project(l))) {
-		return leftfetchjoin(l,r);
-	}
-	if (is_fake_project(x)) {
-		ERROR("de_fake_leftfetchjoin: third argument must not be a 'fake_project'!\n");
-	}
-	var c := r.find(l.fetch(0));
-	return x.project(c);
-}
-
-PROC de_fake_leftfetchjoin (bat[void,oid] l, @1 c, bat[void,oid] x) : bat[void,@1]
-{
-	if (not(is_fake_project(l))) {
-		return l.project(c);
-	}
-	if (is_fake_project(x)) {
-		ERROR("de_fake_leftfetchjoin: third argument must not be a 'fake_project'!\n");
-	}
-	return x.project(c);
-}
-
-PROC de_fake_leftfetchjoin (bat[oid,oid] l, bat[void,@1] r) : bat[oid,@1]
-{
-	if (is_fake_project(reverse(l))) {
-		if (is_fake_project(r)) {
-			ERROR("de_fake_leftfetchjoin: second argument must not be a 'fake_project'!\n");
-		}
-		var c := l.reverse().fetch(0);
-		return r.reverse().project(c).reverse();
-	}
-	if (is_fake_project(l)) {
-		if (is_fake_project(r)) {
-			ERROR("de_fake_leftfetchjoin: second argument must not be a 'fake_project'!\n");
-		}
-		return leftfetchjoin(l,r);
-	}
-	if (is_fake_project(r)) {
-		var c := r.fetch(0);
-		return l.project(c);
-	}
-	return leftfetchjoin(l,r);
-}
-
-PROC de_fake_leftfetchjoin (bat[int,oid] l, bat[void,@1] r) : bat[int,@1]
-{
-	if (is_fake_project(reverse(l))) {
-		if (is_fake_project(r)) {
-			ERROR("de_fake_leftfetchjoin: second argument must not be a 'fake_project'!\n");
-		}
-		var c := l.reverse().fetch(0);
-		return r.reverse().project(c).reverse();
-	}
-	if (is_fake_project(r)) {
-		var c := r.fetch(0);
-		return l.project(c);
-	}
-	return leftfetchjoin(l,r);
-}
-
-PROC de_fake_leftfetchjoin (bat[oid,oid] l, @1 c) : bat[oid,@1]
-{
-	if (is_fake_project(l)) {
-		ERROR("de_fake_leftfetchjoin: first argument must not be a 'fake_project'!\n");
-	}
-	if (is_fake_project(reverse(l))) {
-		ERROR("de_fake_leftfetchjoin: first argument must not be a (reversed) 'fake_project'!\n");
-	}
-	return l.project(c);
-}
-
-PROC de_fake_leftfetchjoin (bat[int,oid] l, @1 c) : bat[int,@1]
-{
-	if (is_fake_project(reverse(l))) {
-		ERROR("de_fake_leftfetchjoin: first argument must not be a (reversed) 'fake_project'!\n");
-	}
-	return l.project(c);
-}
-
-PROC CTrefine(bat[void,oid] b, @1 c) : bat[void,oid]
-{
-	return b;
-}
-
-@:fake_fetch(@1,int)@
-@:fake_fetch(@1,oid)@
-
-@
-@= fake_fetch
-PROC fake_fetch (bat[void,@1] b, @2 p) : @1
-{
-	if (is_fake_project(b)) {
-		return b.fetch(0);
-	} else {
-		return b.fetch(p);
-	}
-}
-
-@mil
 
 @- loop-lifted staircase join
 @mil
@@ -777,7 +631,6 @@ PROC fake_fetch (bat[void,@1] b, @2 p) : @1
 @:step(parent,parent,lev_parent,@:level_intro@,@:level_code@,,)@
 @:step(following_sibling,following-sibling,lev_fs,@:level_intro@,@:level_code@,,)@
 @:step(preceding_sibling,preceding-sibling,lev_ps,@:level_intro@,@:level_code@,,)@
-
 @:step(following,following,following_void,,@:sizes_code@,@:foll_prec_code@,@:doc_pre@)@
 @:step(preceding,preceding,preceding_void,,@:sizes_code@,@:foll_prec_code@,@:doc_pre@)@
 
@@ -863,7 +716,7 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 			# =>  result is a simple slice of cands
 			@:descs_per_item(@1,0)@
 			result := new(void,bat,2).seqbase(0@0)
-			          .insert(nil,fake_project(iter.fetch(0)))
+			          .insert(nil,constant2bat(iter.fetch(0)))
 			          .insert(nil,item_descs.mark(0@0).reverse())
 			          .access(BAT_READ);
 			return result;
@@ -895,7 +748,7 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 
 	# pre-sort input
 	if ( and(order,1) = 0 ) {
-		var ord := item.reverse().sort().reverse();
+		var ord := item.tsort();
 		    ord := ord.CTrefine(iter).mark(0@0).reverse();
 		iter := ord.leftfetchjoin(iter);
 		item := ord.leftfetchjoin(item);
@@ -918,7 +771,7 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 	if ( (and(order,2) = 2) and not(ordered(reverse(result.fetch(1)))) ) {
 		iter := result.fetch(0);
 		item := result.fetch(1);
-		var ord := item.reverse().sort().reverse();
+		var ord := item.tsort();
 		    ord := ord.CTrefine(iter).mark(0@0).reverse();
 		result := new(void,bat,2).seqbase(0@0)
 		          .insert(nil,ord.leftfetchjoin(iter).chk_order())
@@ -930,7 +783,7 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 	if ( (and(order,2) = 0) and not(ordered(reverse(result.fetch(0)))) ) {
 		iter := result.fetch(0);
 		item := result.fetch(1);
-		var ord := iter.reverse().sort().reverse();
+		var ord := iter.tsort();
 		    ord := ord.CTrefine(item).mark(0@0).reverse();
 		result := new(void,bat,2).seqbase(0@0)
 		          .insert(nil,ord.leftfetchjoin(iter).chk_order())
@@ -988,7 +841,7 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
     @4
     var heights := ws.fetch(HEIGHT).fetch(frag);
 
-    var unq := {count}(iter.reverse(), iter.tunique());
+    var unq := {count}(iter.reverse(), iter.tunique(),FALSE);
 
     var offset := 0;
     var ctx_slice;
@@ -997,10 +850,10 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
 
     var res_iter, res_item;
     if (count(unq) = 1) {
-        res_iter := fake_project(unq.reverse().fetch(0));
+        res_iter := constant2bat(unq.reverse().fetch(0));
 	ctx_slice := ctx.reverse().mark(nil);
 	ctx_slice := ctx_slice.chk_order(); # have to check because step expects it sorted
-        res_item := @3( @5, ctx_slice, @7 heights, pre_sizes.count()).mark(0@0).reverse();
+        res_item := @3( @5, ctx_slice, @7 heights, pre_sizes.count()).hmark(0@0);
         res_item := res_item.chk_order();
     } else {
         res_iter := bat(void,oid);
@@ -1008,12 +861,12 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
         unq@batloop () {
             ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().mark(nil);
             ctx_slice := ctx_slice.chk_order(); # have to check because step expects it sorted
-            var res := @3( @5, ctx_slice, @7 heights, pre_sizes.count()).mark(nil).reverse();
+            var res := @3( @5, ctx_slice, @7 heights, pre_sizes.count()).hmark(nil);
             res := res.chk_order();
             res_item.insert(res);
             var l := count(res);
             if (l <= $t) {
-                res_iter.insert(iter.slice(offset, offset + l - 1).reverse().mark(nil).reverse());
+                res_iter.insert(iter.slice(offset, offset + l - 1).tmark(nil));
             } else {
                 res_iter.insert(res.project($h));
             }
@@ -1046,9 +899,9 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @:loop_lifted_scj_wrap1(descendant)@
 @:loop_lifted_scj_wrap1(descendant_or_self)@
 
+@:loop_lifted_scj_step1(parent)@
 @:loop_lifted_scj_step1(following)@
 @:loop_lifted_scj_step1(following_sibling)@
-@:loop_lifted_scj_step1(parent)@
 @:loop_lifted_scj_step1(preceding)@
 @:loop_lifted_scj_step1(preceding_sibling)@
 @
@@ -1094,7 +947,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @= nsloc_post
  {
 	var pre_frag := ws.fetch(PRE_FRAG).fetch(theFrag);
-	if (is_fake_project(pre_frag)) {
+	if (is_constant_bat(pre_frag)) {
 		var frag := pre_frag.fetch(0);
 		pre_frag := nil;
 		var qn_nsloc := ws.fetch(QN_LOC_URI).fetch(frag);
@@ -1109,11 +962,11 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 			}
 			pre_prop := nil;
 			qn_nsloc := nil;
-			tmp_res := result_part_item.leftjoin(pre_nsloc).mark(0@0).reverse();
+			tmp_res := result_part_item.leftjoin(pre_nsloc).hmark(0@0);
 		} else {
 			var res_prop := result_part_item.leftjoin(pre_prop);
 			pre_prop := nil;
-			tmp_res := res_prop.leftjoin(qn_nsloc).mark(0@0).reverse();
+			tmp_res := res_prop.leftjoin(qn_nsloc).hmark(0@0);
 		}
 	} else {
 		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
@@ -1122,17 +975,17 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		    pre_prop := nil;
 		var res_frag := result_part_item.leftjoin(pre_frag);
 		    pre_frag := nil;
-		var X_res    := res_prop.mark(0@0).reverse();
-		var X_prop   := res_prop.reverse().mark(0@0).reverse();
+		var X_res    := res_prop.hmark(0@0);
+		var X_prop   := res_prop.tmark(0@0);
 		    res_prop := nil;
-		var X_frag   := res_frag.reverse().mark(0@0).reverse();
+		var X_frag   := res_frag.tmark(0@0);
 		    res_frag := nil;
 		var X_nsloc  := mposjoin(X_prop, X_frag, ws.fetch(QN_LOC_URI));
 		    X_prop   := nil;
 		    X_frag   := nil;
 		var _X       := X_nsloc.ord_uselect(loc+str('\1')+ns).reverse();
 		    X_nsloc  := nil;
-		tmp_res := _X.leftfetchjoin(X_res).reverse().mark(0@0).reverse();
+		tmp_res := _X.leftfetchjoin(X_res).tmark(0@0);
 	}
 	@:mapping_code@
  }
@@ -1150,7 +1003,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @= ns_loc_post
  {
 	var pre_frag := ws.fetch(PRE_FRAG).fetch(theFrag);
-	if (is_fake_project(pre_frag)) {
+	if (is_constant_bat(pre_frag)) {
 		var frag := pre_frag.fetch(0);
 		pre_frag := nil;
 		var @1_@2 := ws.fetch(@3_@4).fetch(frag);
@@ -1165,11 +1018,11 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 			}
 			pre_prop := nil;
 			@1_@2 := nil;
-			tmp_res := result_part_item.leftjoin(pre_@2).mark(0@0).reverse();
+			tmp_res := result_part_item.leftjoin(pre_@2).hmark(0@0);
 		} else {
 			var res_prop := result_part_item.leftjoin(pre_prop);
 			pre_prop := nil;
-			tmp_res := res_prop.leftjoin(@1_@2).mark(0@0).reverse();
+			tmp_res := res_prop.leftjoin(@1_@2).hmark(0@0);
 		}
 	} else {
 		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
@@ -1178,17 +1031,17 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		    pre_prop := nil;
 		var res_frag := result_part_item.leftjoin(pre_frag);
 		    pre_frag := nil;
-		var X_res    := res_prop.mark(0@0).reverse();
-		var X_prop   := res_prop.reverse().mark(0@0).reverse();
+		var X_res    := res_prop.hmark(0@0);
+		var X_prop   := res_prop.tmark(0@0);
 		    res_prop := nil;
-		var X_frag   := res_frag.reverse().mark(0@0).reverse();
+		var X_frag   := res_frag.tmark(0@0);
 		    res_frag := nil;
 		var X_@2     := mposjoin(X_prop, X_frag, ws.fetch(@3_@4));
 		    X_prop   := nil;
 		    X_frag   := nil;
 		var _X       := X_@2.ord_uselect(@2).reverse();
 		    X_@2     := nil;
-		tmp_res := _X.leftfetchjoin(X_res).reverse().mark(0@0).reverse();
+		tmp_res := _X.leftfetchjoin(X_res).tmark(0@0);
 	}
 	@:mapping_code@
  }
@@ -1196,13 +1049,13 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @= kind_post
  {
 	var pre_kind := ws.fetch(KIND_PRE + int(@1)).fetch(theFrag).reverse();
-	tmp_res := result_part_item.leftjoin(pre_kind).mark(0@0).reverse();
+	tmp_res := result_part_item.leftjoin(pre_kind).hmark(0@0);
 	pre_kind := nil;
 	@:mapping_code@
  }
 @
 @= mapping_code
-	result_part_iter := tmp_res.fake_leftfetchjoin(result_part_iter);
+	result_part_iter := tmp_res.leftfetchjoin(result_part_iter);
 	result_part_item := tmp_res.leftfetchjoin(result_part_item);
 	tmp_res := nil;
 @
@@ -1219,14 +1072,14 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		var max_cand := max(cands);
 		var max_item := max(result_part_item);
 		if ( max_cand < max_item ) {
-			tmp_res := result_part_item.ord_uselect(oid(nil),max_cand).mark(0@0).reverse();
+			tmp_res := result_part_item.ord_uselect(oid(nil),max_cand).hmark(0@0);
 			@:mapping_code@
 		}
 	}
  }
 @
 @= no_pre
-	cands := ws.fetch(PRE_SIZE).fetch(theFrag).mark(nil).reverse();
+	cands := ws.fetch(PRE_SIZE).fetch(theFrag).hmark(nil);
 	cands := cands.chk_order();
 @
 @= kind_pre
@@ -1237,7 +1090,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @= nsloc_pre
  {
 	var pre_frag := ws.fetch(PRE_FRAG).fetch(theFrag);
-	if (is_fake_project(pre_frag)) {
+	if (is_constant_bat(pre_frag)) {
 		var frag := pre_frag.fetch(0);
 		pre_frag := nil;
 		var qn_nsloc := ws.fetch(QN_LOC_URI).fetch(frag);
@@ -1256,10 +1109,10 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 	} else {
 		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
 		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
-		var X_pre    := pre_prop.mark(0@0).reverse();
-		var X_prop   := pre_prop.reverse().mark(0@0).reverse();
+		var X_pre    := pre_prop.hmark(0@0);
+		var X_prop   := pre_prop.tmark(0@0);
 		    pre_prop := nil;
-		var X_frag   := pre_frag.reverse().mark(0@0).reverse();
+		var X_frag   := pre_frag.tmark(0@0);
 		    pre_frag := nil;
 		var X_nsloc  := mposjoin(X_prop, X_frag, ws.fetch(QN_LOC_URI));
 		    X_prop   := nil;
@@ -1291,7 +1144,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @= ns_loc_pre
  {
 	var pre_frag := ws.fetch(PRE_FRAG).fetch(theFrag);
-	if (is_fake_project(pre_frag)) {
+	if (is_constant_bat(pre_frag)) {
 		var frag := pre_frag.fetch(0);
 		pre_frag := nil;
 		var @1_@2 := ws.fetch(@3_@4).fetch(frag);
@@ -1310,10 +1163,10 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 	} else {
 		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
 		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
-		var X_pre    := pre_prop.mark(0@0).reverse();
-		var X_prop   := pre_prop.reverse().mark(0@0).reverse();
+		var X_pre    := pre_prop.hmark(0@0);
+		var X_prop   := pre_prop.tmark(0@0);
 		    pre_prop := nil;
-		var X_frag   := pre_frag.reverse().mark(0@0).reverse();
+		var X_frag   := pre_frag.tmark(0@0);
 		    pre_frag := nil;
 		var X_@2     := mposjoin(X_prop, X_frag, ws.fetch(@3_@4));
 		    X_prop   := nil;
@@ -1340,26 +1193,26 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @= loop_lifted_scj_wrap_pre
 @:loop_lifted_scj_step2(@1,,,,,                                             @:params2@,@:no_pre@        )@
 @:loop_lifted_scj_step2(@1,_with_kind_test,  @:kind_args@, @:kind_params@,, @:params2@,@:kind_pre(kind)@)@
+@:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,,@:params2@,@:nsloc_pre@     )@
 @:loop_lifted_scj_step2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,,   @:params2@,@:ns_pre@        )@
 @:loop_lifted_scj_step2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,,  @:params2@,@:loc_pre@       )@
 @:loop_lifted_scj_step2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,,  @:params2@,@:target_pre@    )@
-@:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,,@:params2@,@:nsloc_pre@     )@
 @
 @= loop_lifted_scj_wrap_post
 @:loop_lifted_scj_step2(@1,,,,,                                                               @:params2@,@:no_pre@)@
 @:loop_lifted_scj_step2(@1,_with_kind_test,  @:kind_args@, @:kind_params@, @:kind_post(kind)@,@:params2@,@:no_pre@)@
+@:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,@:nsloc_post@,     @:params2@,@:no_pre@)@
 @:loop_lifted_scj_step2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,   @:ns_post@,        @:params2@,@:no_pre@)@
 @:loop_lifted_scj_step2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,  @:loc_post@,       @:params2@,@:no_pre@)@
 @:loop_lifted_scj_step2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,  @:target_post@,    @:params2@,@:no_pre@)@
-@:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,@:nsloc_post@,     @:params2@,@:no_pre@)@
 @
 @= loop_lifted_scj_step1
 @:loop_lifted_scj_step2(@1,,,,,,                                                               )@
 @:loop_lifted_scj_step2(@1,_with_kind_test,  @:kind_args@, @:kind_params@, @:kind_post(kind)@,,)@
+@:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,@:nsloc_post@     ,,)@
 @:loop_lifted_scj_step2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,   @:ns_post@        ,,)@
 @:loop_lifted_scj_step2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,  @:loc_post@       ,,)@
 @:loop_lifted_scj_step2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,  @:target_post@    ,,)@
-@:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,@:nsloc_post@     ,,)@
 @
 #==================================================================
 # actual definition of the scj proc
@@ -1374,7 +1227,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
         var result := @1 (result_part_iter, result_part_item, theFrag, ws, order @3);
 	result_part_iter := result.fetch(0);
 	result_part_item := result.fetch(1);
-        result_part_frag := fake_project(theFrag);
+        result_part_frag := constant2bat(theFrag);
 	cands := nil;
 
 	# post-test
@@ -1420,7 +1273,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
         result_part_item := nil;
         result_part_frag := nil;
     } else {
-        var result_part_frag := frag.ord_uselect(theFrag).mark(0@0).reverse();
+        var result_part_frag := frag.ord_uselect(theFrag).hmark(0@0);
         var result_part_iter := result_part_frag.leftfetchjoin(iter);
         var result_part_item := result_part_frag.leftfetchjoin(item);
 
@@ -1436,7 +1289,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
         var res_mu;
 	uniqueFrag.slice(1,uniqueFrag.count() - 1)@batloop () {
 	    theFrag := $h;
-            result_part_frag := frag.ord_uselect(theFrag).mark(0@0).reverse();
+            result_part_frag := frag.ord_uselect(theFrag).hmark(0@0);
             result_part_iter := result_part_frag.leftfetchjoin(iter);
             result_part_item := result_part_frag.leftfetchjoin(item);
 
@@ -1491,8 +1344,9 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 #define oidoid_bunfastins(b,h,t) lnglng_bunfastins(b,h,t);
 #define oidoid_bunfastins_nocheck_noinc(b,p,h,t) lnglng_bunfastins_nocheck_noinc(b,p,h,t);
 #endif
-
-static bit is_fake_project (BAT* b)
+@c
+static int 
+is_fake_project (BAT* b)
 {
 	BATcheck(b, "is_fake_project");
 	if ((BATcount(b)==1) && (b->hseqbase==oid_nil)) {
@@ -1501,7 +1355,147 @@ static bit is_fake_project (BAT* b)
 		return FALSE;
 	}
 }
+int 
+CMDisFakeProject(bit *r, ptr v, int tpe) {
+	*r = (tpe == TYPE_bat)?is_fake_project((BAT*) v):0;
+	return GDK_SUCCEED;
+}
 
+int
+CMDfakeProject(BAT **res, ptr val, int tpe) 
+{
+	if (tpe == TYPE_bat) {
+		*res = (BAT*) val;
+		BBPfix((*res)->batCacheid);
+		return GDK_SUCCEED;
+	}
+	*res = BATnew(TYPE_void, tpe, 1);
+	if (*res && BUNins(*res, ATOMnilptr(TYPE_oid), val)) {
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
+}
+
+extern int CMDconstCopy(ptr ret, ptr val, int tpe);
+int
+CMDdeFakeProject(ptr ret, int *tpe, ptr val, int t) 
+{
+	if (t == TYPE_bat) {
+		BAT *b = (BAT*) val;
+		if (!is_fake_project(b)) {
+			*tpe = TYPE_bat;
+			*(BAT**) ret = b;
+			BBPfix(b->batCacheid);
+			return GDK_SUCCEED;
+		}
+		val = BUNtail(b, BUNfirst(b));
+		t = ATOMtype(b->ttype);
+	} 
+	return CMDconstCopy(ret, val, *tpe = t);
+}
+
+
+int
+CMDposjoinFake(BAT** ret, BAT *b, ptr v2, int t2)
+{
+	/* due to function resolution, we know that v2 must be a simple constant or an illegal bat */
+	if (t2 == TYPE_bat) {
+		GDKerror("positional join(x,%s): second param is not a dense bat (or fake project).\n",
+                         BBP_logical(((BAT*) v2)->batCacheid));
+		return GDK_FAIL;
+	}
+	if (BAThdense(b)) {
+		/* in case of a void column, we should be able to reconstruct it later with an ipik */
+		return CMDfakeProject(ret, v2, t2);
+	}
+	*ret = BATconst(b, t2, v2);
+	return *ret?GDK_SUCCEED:GDK_FAIL;
+
+}
+
+int
+CMDposjoinConst(ptr ret, oid *id, ptr val, int tpe)
+{
+	if (tpe == TYPE_bat) {
+		BAT *b = (BAT*) val;
+		BUN r;
+		if (is_fake_project(b)) {
+			r = BUNfirst(b);
+		} else if (BATcount(b) > 1 && !BAThdense(b)) {
+			GDKerror("positional join(x,%s): second param is not a dense bat (or fake project).\n",
+                         	BBP_logical(b->batCacheid));
+			return GDK_FAIL;
+		} else {
+			BUNfndVOID(r,b,id);
+		}
+		if (r == NULL) {
+			GDKerror("posjoin(const,%s): value not found\n", BBP_logical(b->batCacheid));
+			return GDK_FAIL;
+		}
+		val = BUNtail(b,r);
+		tpe = ATOMtype(b->ttype);
+	}
+	return CMDconstCopy(ret, val, tpe);
+}
+
+int
+CMDposjoinConstBAT(ptr ret, oid *id, BAT *b)
+{
+	return CMDposjoinConst(ret, id, b, TYPE_bat);
+}
+
+int
+CMDposjoin(BAT **ret, BAT *left, BAT* right)
+{
+	if (BATcount(right) > 1 && !BAThdense(right)) {
+		GDKerror("positional join(bat,%s): second param is not a dense bat (or fake project).\n",
+                         	BBP_logical(right->batCacheid));
+		return GDK_FAIL;
+	}
+	if (is_fake_project(BATmirror(left))) {
+		if (is_fake_project(right)) {
+			GDKerror("leftfetchjoin: currently can't join two constant bats on their void column\n");
+			return GDK_FAIL; 
+		}
+		/* we join a column of "all possible oids" into a void => full hit */
+		*ret = BATmirror(BATconst(BATmirror(right), ATOMtype(left->htype), BUNtail(left, BUNfirst(left))));
+	} else if (!is_fake_project(right)) {
+		/* note that in case of is_fake_project(l) the result is again fake_project */
+		*ret = BATleftfetchjoin(left, right, oid_nil);
+	} else if (BAThdense(left)) { 
+		BBPfix(right->batCacheid);
+		*ret = right; /* return fake_project */
+	} else { 
+		*ret = BATconst(left, ATOMtype(right->ttype), BUNtail(right, BUNfirst(right)));
+	}
+	return (*ret)?GDK_SUCCEED:GDK_FAIL;
+}
+		
+int
+CMDmaterializeConst(BAT **ret, ptr val, int tpe, BAT *extent) 
+{
+	*ret = BATconst(extent, tpe, val);
+	return *ret?GDK_SUCCEED:GDK_FAIL;
+}
+
+int
+CMDmaterializeFake(BAT **ret, BAT* value, BAT *extent) 
+{
+	if (ATOMtype(value->htype) != TYPE_oid) {
+		GDKerror("materialize: %s (value) head type is %s instead of [v]oid.\n",
+			BBP_logical(value->batCacheid), ATOMname(value->htype));
+		return GDK_FAIL;
+	} else if (is_fake_project(BATmirror(value))) {
+		GDKerror("materialize: don't know how to materialize tail column of %s (value)\n",
+			BBP_logical(value->batCacheid));
+		return GDK_FAIL;
+	} else if (is_fake_project(value)) {
+		return CMDmaterializeConst(ret, BUNtail(value, BUNfirst(value)), ATOMtype(value->ttype), extent);
+	}
+	*ret = value;
+	BBPfix(value->batCacheid);
+	return GDK_SUCCEED;
+}
 @= mark_grp_init
 	BUN w;
 
@@ -3252,7 +3246,7 @@ void pf_support_epilogue() {
 PROC doc_tbl (BAT[void, BAT] ws, BAT[void, str] item) : BAT[void,BAT]
 {
     # consider each document only once
-    var docs := item.tuniqueALT ().mark (0@0).reverse ();
+    var docs := item.tunique().mark (0@0).reverse ();
 
     # throw out documents we already have in the working set
     docs := docs.reverse ()
@@ -3306,18 +3300,16 @@ PROC merge_adjacent_text_nodes (BAT[void,oid] iter,
                                 BAT[void,oid] pfrag,
                                 BAT[void,BAT] ws) : BAT[void,oid]
 {
-    var map := pre.ord_uselect(nil,nil).mark(0@0).reverse();
+    var map := pre.ord_uselect(nil,nil).hmark(0@0);
     iter := map.leftfetchjoin(iter);
     pre := map.leftfetchjoin(pre);
     pfrag := map.leftfetchjoin(pfrag);
 
     var kind := mposjoin (pre, pfrag, ws.fetch(PRE_KIND));
     var text := kind.[=](TEXT);
-    var text_sel := text.select(true).mark(0@0).reverse();
-    var text_pre := text_sel.leftfetchjoin(pre)
-                            .reverse().mark(0@0).reverse();
-    var text_frag := text_sel.leftfetchjoin(pfrag)
-                             .reverse().mark(0@0).reverse();
+    var text_sel := text.select(true).hmark(0@0);
+    var text_pre := text_sel.leftfetchjoin(pre).tmark(0@0);
+    var text_frag := text_sel.leftfetchjoin(pfrag).tmark(0@0);
 
     var text_prop := mposjoin (mposjoin (text_pre, text_frag, ws.fetch(PRE_PROP)),
                                mposjoin (text_pre, text_frag, ws.fetch(PRE_FRAG)),
@@ -3342,7 +3334,7 @@ PROC merge_adjacent_text_nodes (BAT[void,oid] iter,
     pre_enum := nil;
     pre_prop := nil;
     res_size := nil;
-    var res_texts := text_constr (res_strs.reverse().mark(0@0).reverse(), ws);
+    var res_texts := text_constr (res_strs.tmark(0@0), ws);
     ws := res_texts.fetch(0);
     var textnodes := res_texts.fetch(1);
     res_texts := nil;
@@ -3399,7 +3391,7 @@ PROC add_qnames (BAT[void,str] prefix,
     propIDs := prop_str.leftjoin(local.reverse());
 
     # add missing qnames, that are not the ``nil'' string, to the storage
-    var missing := local.select(str(nil),str(nil)).kdiff(propIDs.reverse()).mark(0@0).reverse();
+    var missing := local.select(str(nil),str(nil)).kdiff(propIDs.tmark(0@0));
     var seqb := oid (ws.fetch(QN_LOC).fetch(WS).count() +
                      int (ws.fetch(QN_LOC).fetch(WS).seqbase()));
     var new_names := missing.leftfetchjoin(prefix).[+](str('\1')).[+](
@@ -3408,7 +3400,7 @@ PROC add_qnames (BAT[void,str] prefix,
         # only search unique values
         new_names := new_names.kunique();
         # create new key with references to the original ones
-        new_names := new_names.mark(seqb).reverse().leftfetchjoin(missing);
+        new_names := new_names.hmark(seqb).leftfetchjoin(missing);
 
     var new_prefix := new_names.leftfetchjoin(prefix);
     var new_uri := new_names.leftfetchjoin(uri);
@@ -3427,10 +3419,8 @@ PROC add_qnames (BAT[void,str] prefix,
                  .leftjoin(local.reverse());
     propIDs := ns.intersect(loc);
     # add missing nil values again
-    return local.mirror()
-                .outerjoin(propIDs.reverse())
+    return local.mirror().outerjoin(propIDs.reverse()).tmark(seqbase(local));
                 # the result head is aligned with the heads from the input
-                .reverse().mark(seqbase(local)).reverse();
 }
 ADDHELP("add_qnames", "tsheyar", "Oct 2005",
         "PARAMETERS:\n\
@@ -3487,12 +3477,12 @@ PROC text_constr (BAT[void, str] item, BAT[void, BAT] ws) : BAT[void,BAT]
 {
     # find all strings that are not already in the working set ...
     var ws_prop_text := ws.fetch(PROP_TEXT).fetch(WS);
-    var unq_str := item.tunique().mark(0@0).reverse();
+    var unq_str := item.tunique().hmark(0@0);
     var str_unq := unq_str.reverse().kdiff(ws_prop_text.reverse());
     unq_str := nil;
     # ... and add them to the PROP_TEXT container
     var seqb := oid(int(ws_prop_text.seqbase()) + ws_prop_text.count());
-    unq_str := str_unq.mark(seqb).reverse();
+    unq_str := str_unq.hmark(seqb);
     str_unq := nil;
     ws_prop_text := ws_prop_text.insert(unq_str);
     unq_str := nil;
@@ -3503,7 +3493,7 @@ PROC text_constr (BAT[void, str] item, BAT[void, BAT] ws) : BAT[void,BAT]
     # large BATs than a hashjoin
     var ws_text_prop := ws_prop_text.reverse().sort();
     var X_item := item.mark(0@0);
-    var X_strings := item.reverse().mark(0@0).sort().reverse();
+    var X_strings := item.tmark(0@0).tsort();
     var X_prop := X_strings.leftjoin(ws_text_prop);
     X_strings := nil;
     ws_text_prop := nil;
@@ -3514,7 +3504,7 @@ PROC text_constr (BAT[void, str] item, BAT[void, BAT] ws) : BAT[void,BAT]
     # add new text nodes to the working set
     var seqb := oid(count(ws.fetch(PRE_KIND).fetch(WS)) +
                     int(ws.fetch(PRE_KIND).fetch(WS).seqbase()));
-    var newPre_prop := newProp.reverse().mark(seqb).reverse();
+    var newPre_prop := newProp.tmark(seqb);
     newProp := nil;
     ws.fetch(PRE_PROP).fetch(WS).insert(newPre_prop);
     ws.fetch(PRE_SIZE).fetch(WS).insert(newPre_prop.project(0));
@@ -3523,7 +3513,7 @@ PROC text_constr (BAT[void, str] item, BAT[void, BAT] ws) : BAT[void,BAT]
     ws.fetch(PRE_FRAG).fetch(WS).insert(newPre_prop.project(WS));
 
     { # add index entries for optimized scj
-        var kind_pre_ := newPre_prop.mark(nil).reverse().chk_order();
+        var kind_pre_ := newPre_prop.hmark(nil).chk_order();
         ws.fetch(KIND_PRE + int(TEXT)).fetch(WS).insert(kind_pre_);
     }
     newPre_prop := nil;
@@ -3539,7 +3529,7 @@ PROC text_constr (BAT[void, str] item, BAT[void, BAT] ws) : BAT[void,BAT]
     { # adding new fragments to the WS_FRAG bat
         var seqb := ws.fetch(WS_FRAG).count();
         seqb := oid(seqb);
-        var new_pres := item.reverse().mark(seqb).reverse();
+        var new_pres := item.tmark(seqb);
         seqb := nil;
         ws.fetch(WS_FRAG).insert(new_pres);
         new_pres := nil;
@@ -3565,12 +3555,12 @@ PROC attr_constr (BAT[void, oid] qn, BAT[void, str] item, BAT[void, BAT] ws) : B
 {
     # find all strings that are not already in the working set ...
     var ws_prop_val := ws.fetch(PROP_VAL).fetch(WS);
-    var unq_str := item.tunique().mark(0@0).reverse();
+    var unq_str := item.tunique().hmark(0@0);
     var str_unq := unq_str.reverse().kdiff(ws_prop_val.reverse());
     unq_str := nil;
     # ... and add them to the PROP_VAL container
     var seqb := oid(int(ws_prop_val.seqbase()) + ws_prop_val.count());
-    unq_str := str_unq.mark(seqb).reverse();
+    unq_str := str_unq.hmark(seqb);
     str_unq := nil;
     ws_prop_val := ws_prop_val.insert(unq_str);
     unq_str := nil;
@@ -3581,7 +3571,7 @@ PROC attr_constr (BAT[void, oid] qn, BAT[void, str] item, BAT[void, BAT] ws) : B
     # large BATs than a hashjoin
     var ws_val_prop := ws_prop_val.reverse().sort();
     var X_item := item.mark(0@0);
-    var X_strings := item.reverse().mark(0@0).sort().reverse();
+    var X_strings := item.tmark(0@0).tsort();
     var X_prop := X_strings.leftjoin(ws_val_prop);
     X_strings := nil;
     ws_val_prop := nil;
@@ -3592,11 +3582,11 @@ PROC attr_constr (BAT[void, oid] qn, BAT[void, str] item, BAT[void, BAT] ws) : B
     # add new text nodes to the working set
     var seqb := oid(count(ws.fetch(ATTR_OWN).fetch(WS)) +
                     int(ws.fetch(ATTR_OWN).fetch(WS).seqbase()));
-    var newAttr_prop := newProp.reverse().mark(seqb).reverse();
+    var newAttr_prop := newProp.tmark(seqb);
     newProp := nil;
     ws.fetch(ATTR_PROP).fetch(WS).insert(newAttr_prop);
     ws.fetch(ATTR_OWN).fetch(WS).insert(newAttr_prop.mark(nil));
-    ws.fetch(ATTR_QN).fetch(WS).insert(qn.reverse().mark(seqb).reverse());
+    ws.fetch(ATTR_QN).fetch(WS).insert(qn.tmark(seqb));
     ws.fetch(ATTR_FRAG).fetch(WS).insert(newAttr_prop.project(WS));
 
     newAttr_prop := nil;
@@ -3631,7 +3621,7 @@ PROC elem_constr_empty (BAT[void, oid] qn, BAT[void, BAT] ws) : BAT[void,BAT]
     # add new element nodes to the working set
     var seqb := oid(count(ws.fetch(PRE_KIND).fetch(WS)) +
                     int(ws.fetch(PRE_KIND).fetch(WS).seqbase()));
-    var newPre_prop := qn.reverse().mark(seqb).reverse();
+    var newPre_prop := qn.tmark(seqb);
     ws.fetch(PRE_PROP).fetch(WS).insert(newPre_prop);
     ws.fetch(PRE_SIZE).fetch(WS).insert(newPre_prop.project(0));
     ws.fetch(PRE_LEVEL).fetch(WS).insert(newPre_prop.project(chr(0)));
@@ -3639,7 +3629,7 @@ PROC elem_constr_empty (BAT[void, oid] qn, BAT[void, BAT] ws) : BAT[void,BAT]
     ws.fetch(PRE_FRAG).fetch(WS).insert(newPre_prop.project(WS));
 
     { # add index entries for optimized scj
-        var kind_pre_ := newPre_prop.mark(nil).reverse().chk_order();
+        var kind_pre_ := newPre_prop.hmark(nil).chk_order();
         ws.fetch(KIND_PRE + int(ELEMENT)).fetch(WS).insert(kind_pre_);
     }
     newPre_prop := nil;
@@ -3655,7 +3645,7 @@ PROC elem_constr_empty (BAT[void, oid] qn, BAT[void, BAT] ws) : BAT[void,BAT]
     { # adding new fragments to the WS_FRAG bat
         var seqb := ws.fetch(WS_FRAG).count();
         seqb := oid(seqb);
-        var new_pres := qn.reverse().mark(seqb).reverse();
+        var new_pres := qn.tmark(seqb);
         seqb := nil;
         ws.fetch(WS_FRAG).insert(new_pres);
         new_pres := nil;
@@ -3700,23 +3690,17 @@ PROC elem_constr (BAT[void, oid] qn_iter,
     # throw out nil values and generate iter|item|frag representation
     # for attributes
     var selected := pre.select(nil,nil);
-    var piter := selected.mark(0@0).reverse()
-                         .leftfetchjoin(iter)
-                         # make it void
-                         .reverse().mark(0@0).reverse();
-    pre := selected.reverse().mark(0@0).reverse();
-    pfrag := pfrag.select(nil,nil).reverse().mark(0@0).reverse();
+    var piter := selected.hmark(0@0).leftfetchjoin(iter).tmark(0@0); # make it void
+    pre := selected.tmark(0@0);
+    pfrag := pfrag.select(nil,nil).tmark(0@0);
     selected := nil;
 
     # throw out nil values and generate iter|item|frag representation
     # for attributes
     selected := attr.select(nil,nil);
-    var aiter := selected.mark(0@0).reverse()
-                         .leftfetchjoin(iter)
-                         # make it void
-                         .reverse().mark(0@0).reverse();
-    attr := selected.reverse().mark(0@0).reverse();
-    afrag := afrag.select(nil,nil).reverse().mark(0@0).reverse();
+    var aiter := selected.hmark(0@0).leftfetchjoin(iter).tmark(0@0); # make it void
+    attr := selected.tmark(0@0);
+    afrag := afrag.select(nil,nil).tmark(0@0);
     selected := nil;
 
     if (pre.count() != 0) {
@@ -3753,7 +3737,7 @@ PROC elem_constr (BAT[void, oid] qn_iter,
         #using the faked iteration values
         contentRoot_level := res_iter.leftfetchjoin(contentRoot_level);
         content_level := content_level.[-](contentRoot_level);
-        content_level := content_level.reverse().mark(0@0).reverse();
+        content_level := content_level.tmark(0@0);
         contentRoot_level := nil;
             
         # attr
@@ -3774,18 +3758,17 @@ PROC elem_constr (BAT[void, oid] qn_iter,
             
         root_iter := qn_iter.chk_order();
         # calculate the sizes for the root nodes
-        root_size := {count}(content_iter.reverse(), qn_iter.reverse())
-                             .reverse().mark(seqbase(qn_iter)).reverse();
+        root_size := {count}(content_iter.reverse(), qn_iter.reverse(), FALSE).tmark(seqbase(qn_iter));
         root_prop := qn_item;
-        root_kind := fake_project(ELEMENT);
-        root_frag := fake_project(WS);
-        root_level := fake_project(chr(0));
+        root_kind := constant2bat(ELEMENT);
+        root_frag := constant2bat(WS);
+        root_level := constant2bat(chr(0));
 
         # attr
             # root_pre is a dummy needed for merge union with content_pre 
-            root_pre := fake_project(oid(nil));
+            root_pre := constant2bat(oid(nil));
             # as well as root_frag_pre
-            root_pre_frag := fake_project(oid(nil));
+            root_pre_frag := constant2bat(oid(nil));
 
         # merge union root and nodes
         {
@@ -3887,7 +3870,7 @@ PROC elem_constr (BAT[void, oid] qn_iter,
     var roots := root_level.ord_uselect(chr(0));
     # (note that all operations are order preserving and ``mark''
     # aligns the key with the qn_iter input 
-    roots := roots.mark(0@0).reverse();
+    roots := roots.hmark(0@0);
 
     # resetting the temporary variables
     root_size := nil;
@@ -3901,7 +3884,7 @@ PROC elem_constr (BAT[void, oid] qn_iter,
     # the fragment boundaries
     {
         var seqb := oid(count(ws.fetch(WS_FRAG)));
-        var new_pre_values := roots.reverse().mark(seqb).reverse();
+        var new_pre_values := roots.tmark(seqb);
         seqb := nil;
         ws.fetch(WS_FRAG).insert(new_pre_values);
         new_pre_values := nil;
@@ -3958,7 +3941,7 @@ PROC elem_constr (BAT[void, oid] qn_iter,
         # use iter, qn and frag to find unique combinations
         var attr_qn := mposjoin(attr, afrag, ws.fetch(ATTR_QN));
         var attr_frag := mposjoin(attr, afrag, ws.fetch(ATTR_FRAG));
-        var sorting := aiter.reverse().sort().reverse();
+        var sorting := aiter.tsort();
         sorting := sorting.CTrefine(mposjoin(attr_qn,
                                              attr_frag,
                                              ws.fetch(QN_LOC_URI)));

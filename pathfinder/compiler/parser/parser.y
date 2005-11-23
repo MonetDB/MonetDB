@@ -2388,7 +2388,7 @@ PFparse (char *input, PFpnode_t **r)
 static PFpnode_t *
 parse_module (char *ns, char *uri)
 {
-    char *buf = PFurlcache(uri);
+    char *buf = PFurlcache(uri, 1);
     if (buf == NULL)
         PFoops (OOPS_MODULEIMPORT, "error loading module from %s", uri);
 
