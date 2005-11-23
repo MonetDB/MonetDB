@@ -40,7 +40,7 @@ using the user commentary system included in the website.
 * Conventions and notation::
 @end menu
 
-@node Intended audience, Manual Generation,,About this manual
+@node Intended audience, Features and Limitations,About this manual, TOC
 @section Intended Audience
 The MonetDB reference manual is aimed at programmers and application
 developers with an intermediate level exposure to database technology,

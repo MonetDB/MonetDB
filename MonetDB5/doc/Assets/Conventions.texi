@@ -1,4 +1,4 @@
-@node Manual Generation, Conventions and notation, Intended audience,About this manual
+@node Manual Generation, Conventions and notation, The History of MonetDB, About this manual
 @section Manual Generation
 The MonetDB code base is a large collection of files, scattered
 over the system modules. Each source file is written in a
@@ -26,12 +26,6 @@ Mx  <filename>.mx
 latex <filename>.tex
 @end example
 The result, however, still includes the unexpanded Texinfo macros.
-
-@menu
-* Intended audience::
-* Manual Generation::
-* Conventions and notation::
-@end menu
 
 @node Conventions and notation, Download and Installation, Manual Generation,About this manual
 @section Software Versions

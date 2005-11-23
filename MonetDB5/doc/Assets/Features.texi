@@ -1,4 +1,4 @@
-@node Features and Limitations, When to consider MonetDB, About this manual, TOC
+@node Features and Limitations, When to consider MonetDB, Intended audience, TOC
 @section Features and Limitations
 
 In this section we give a short overview of the key features of MonetDB.

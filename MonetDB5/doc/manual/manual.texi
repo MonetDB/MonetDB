@@ -5,7 +5,7 @@
 
 @c environment
 @set VERSION 5.0
-@set UPDATED Sept 10, 2005
+@set UPDATED Nov 23, 2005
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual
@@ -42,9 +42,8 @@ Last updated: @value{UPDATED}
 @include Assets/General-information.texi
 
 @node TOC, About this manual, Top,(Dir)
-Table of contents
+
 @menu
-* TOC::
 * About this manual::
 @menu
 * Intended audience::
@@ -138,6 +137,7 @@ Table of contents
 * Multiplex Compiler::
 * Garbage Collector::
 * Code Factorization::
+* Multi-Association Tables::
 * Partitioned Database Optimizer::
 * Strength Reduction::
 * Costmodels::
@@ -174,7 +174,7 @@ Table of contents
 
 @end ifnottex
 
-@node About this manual, Features and Limitations, TOC , TOC
+@node About this manual, Intended audience, TOC , TOC
 @include Assets/About-this-manual.texi
 
 @include Assets/Features.texi
@@ -250,6 +250,7 @@ Give a brief introduction to Mapi, JDBC, ODBC,Perl....
 @include mal_multiplex.bdy.texi
 @include mal_garbageCollector.bdy.texi
 @include mal_factorize.bdy.texi
+@include mal_multitable.bdy.texi
 @include mal_partitionedQuery.bdy.texi
 @include mal_strengthReduction.bdy.texi
 @include mal_costmodel.bdy.texi
