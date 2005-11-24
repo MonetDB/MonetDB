@@ -88,6 +88,9 @@ thus the constant module should be loaded first.
 .COMMAND {max} ( any::1 b, BAT[oid,oid] g, BAT[oid,any] e) : any::1 = CMDconstAggr;
 "max(b); where the first parameter is interpreted as a constant column"
 
+.COMMAND tunique (any::1 b) : BAT[any::1,void] = CMDconstUnique;
+"tunique(c); delivers a result bat [c,nil]"
+
 .END constant;
 @mil
 proc kdiff ( BAT[any::1,any::2] b, any::1 c) : BAT[any::1,any::2]
@@ -126,13 +129,9 @@ int
 CMDconstEqual(bit *ret, ptr v1, int tpe, ptr v2)
 {
         int (*cmp)(ptr, ptr) = BATatoms[tpe].atomCmp;
-        ptr nil = ATOMnilptr(tpe);
-
 	if (tpe == TYPE_bat) {
 		GDKerror("const operation on a BAT\n");
         	return GDK_FAIL;
-        } else if ((*cmp)(v1, nil) == 0 || (*cmp)(v2, nil) == 0) {
-                *ret = bit_nil;
         } else {
                 *ret = ((*cmp)( v1, v2) == 0);
         }
@@ -214,4 +213,15 @@ CMDconstAggr(ptr ret, ptr v, int t, BAT *b1, BAT *b2)
 	return CMDconstCopy(ret, v, t);
 }
 
-
+int 
+CMDconstUnique(BAT** ret, ptr v, int t)
+{
+    
+	BAT *bn = *ret = BATnew(t, TYPE_void, 1);
+        if (bn) {
+		oid nil = oid_nil;
+		if (BUNins(bn, v, &nil)) return GDK_SUCCEED;
+		BBPreclaim(bn);
+	}
+	return GDK_FAIL;
+}
