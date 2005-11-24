@@ -10039,7 +10039,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
     {
         char sig[1024], *p = c->sem.fun->qname.loc, *q = c->sem.fun->qname.ns.uri;
         int i = 0, j, first = 0;
-        unsigned int hash = f->module_base;
+        unsigned int hash = 0; /* f->module_base; */
 
 	if (q == NULL) q = "";
         args = L(c);
@@ -10064,22 +10064,28 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
             args = R(args);
         }
 	/* create the full signature that also is a valid MIL identifier */
-	c->sem.fun->sig = PFmalloc(9+2*(strlen(sig)+strlen(p)));
+	c->sem.fun->sig = PFmalloc(12+3*(strlen(sig)+strlen(p)));
 
 	/* hash uri in proc name to make it uniquely identifyable  */
 	for(; *q; q++) 
-		hash = (hash*17) + *(unsigned char*) q;
+		hash = (hash*3) + *(unsigned char*) q;
 
-	j = sprintf(c->sem.fun->sig, "uri%04X_", hash);
-	for(; *p; p++) {
-		c->sem.fun->sig[j++] = *p; 
-		if (*p == '_') c->sem.fun->sig[j++] = '_';
+	for(j=11; *p; p++) {
+		/* escape '_' by '__' and '-' by '_4_' 
+                 * (_4_ cannot be a subsequent type name; those always end in [0-3])
+                 */ 
+		char x = (*p == '-')?'_':*p;
+		c->sem.fun->sig[j++] = x; 
+		hash = (hash*3) + *(unsigned char*) p;
+		if (*p == '-') c->sem.fun->sig[j++] = '4';
+		if (x == '_') c->sem.fun->sig[j++] = '_';
 	}
 
 	while(sig[i++] == ',') {
 		int ch = 0;
 		c->sem.fun->sig[j++] = '_';
 		while (sig[i] && sig[i] != ',') { 
+			hash = (hash*3) + *(unsigned char*) (sig+i);
 			ch = sig[i++];
 			if (ch == '_' || ch == '{' || ch == '}' || ch == '(' || ch == ')')  { 
 				c->sem.fun->sig[j++] = '_';
@@ -10103,13 +10109,19 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
 			c->sem.fun->sig[j++] = '1';
 		}
 	}
+        counter = get_var_usage (f, R(c), PFarray (sizeof (int)), counter);
+        for(i=0; i < (int) PFarray_last(counter); i++) 
+            hash = hash*3 + *(int*) PFarray_at(counter,i);
+
+        /* finish name by printing start (hashed name), connecting and terminating it */
+	sprintf(c->sem.fun->sig, "fn%08X", hash);
+	c->sem.fun->sig[10] = '_';
 	c->sem.fun->sig[j] = 0;
 
 	if (f->module_base || f->num_fun) {
              milprintf(f, "proc_vid.insert(\"%s\", %dLL);\n", c->sem.fun->sig, f->module_base+first);
              f->num_fun--;
 	}
-        counter = get_var_usage (f, R(c), PFarray (sizeof (int)), counter);
     }
     /* apply mapping correctly for user defined functions */    
     else if (c->kind == c_apply && 
@@ -10288,9 +10300,9 @@ const char* PFudfMIL() {
         " ipik := iter;\n"
         "} else {\n"
         "  if (type(item) = bat) {\n"
-        "    ipik := kind;\n"
-        "  } else {\n"
         "    ipik := item;\n"
+        "  } else {\n"
+        "    ipik := kind;\n"
         "  }\n"
         "}\n"
         "}\n";

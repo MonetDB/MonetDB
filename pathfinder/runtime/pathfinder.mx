@@ -1225,7 +1225,7 @@ xquery_sig_init(char *proc)
     xquery_sig* sig;
     int len = 0;
 
-    proc = strchr(proc, '_'); /* skip ns_' */
+    proc = strchr(proc, '_'); /* skip fnXXXXXXXX_' */
     if (proc == NULL) return NULL;
     strcpy(cur, ++proc);
     sig = (xquery_sig*) GDKmalloc(sizeof(xquery_sig)+strlen(proc)); 
@@ -1237,8 +1237,10 @@ xquery_sig_init(char *proc)
     while(cur[0]) {
         if (cur[0] == '_' && cur[1] == '_') {
             cur++; /* unescape '_' */
+        } else if (cur[0] == '_' && cur[1] == '4' && cur[2] == '_') {
+            sig->name[len++] = '-'; cur += 3; continue;
         } else if (cur[0] == '_') {
-            break;
+            break; /* unescaped '_' => end of function name */
         }
         sig->name[len++] = *cur++;
     }
@@ -1996,9 +1998,9 @@ xquery_client_flushall()
 static inline char* 
 xquery_parse_ident(char* p) 
 {
-    while(*p == '_' || (*p >= 'a' && *p <= 'z') ||
-                       (*p >= 'A' && *p <= 'Z') ||
-                       (*p >= '0' && *p <= '9') || *(unsigned char*) p >= 128) p++;
+    while((*p >= 'a' && *p <= 'z') || *p == '_' ||
+          (*p >= 'A' && *p <= 'Z') || *p == '-' ||
+          (*p >= '0' && *p <= '9') || *(unsigned char*) p >= 128) p++;
     return p;
 }
 
