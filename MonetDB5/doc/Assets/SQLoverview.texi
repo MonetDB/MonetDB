@@ -44,7 +44,7 @@ The SQL Implementation compiler can be downloaded from the
 section at SourceForge. It is already included in the Windows installers.
 
 There are bindings for SQL Implementation with for example JDBC, ODBC, PHP and C, 
-(see @ref{MapiClient and Interfaces}) to integrate seamlessly in existing 
+(see @ref{Application Interfaces}) to integrate seamlessly in existing 
 developments environments.
 Client utilities like Aqua Data Studio and iSQL will work flawlessly 
 with SQL Implementation to make your experience with MonetDB/SQL even better! 
@@ -111,7 +111,7 @@ sql>
 
 Once the Mserver is made aware of the SQL extension library, it is
 also possible to connect to the server with one to the client programs
-(See @ref{MapiClient and Interfaces}).
+(See @ref{Application Interfaces}).
 
 @node The VOC Tutorial, SQL Feature Overview, Getting Started with SQL, SQL
 @section The VOC tutorial

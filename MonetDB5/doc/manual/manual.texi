@@ -63,7 +63,7 @@ Last updated: @value{UPDATED}
 * Source Distributions::
 @end menu
 
-* MonetDB overview ::
+* MonetDB Overview ::
 @menu
 * Architecture overview:: 
 * Design considerations:: 
@@ -94,7 +94,7 @@ Last updated: @value{UPDATED}
 
 * XQuery ::
 
-* MapiClient and Interfaces::
+* Application Interfaces::
 * MonetDB Assembler Language::
 @menu
 * MAL instructions::
@@ -185,24 +185,24 @@ Last updated: @value{UPDATED}
 @section Downloads and Installation
 @include Assets/Downloadintro.texi
 
-@node MonetDB overview, Design considerations, Source Distributions, TOC
+@node MonetDB Overview, Design considerations, Source Distributions, TOC
 
 @include mal.bdy.texi
 
-@node Session scenarios , Scenario management , Backward compatibility, MonetDB overview
+@node Session scenarios , Scenario management , Backward compatibility, MonetDB Overview
 @include mal_scenario.bdy.texi
 
 
-@node Client administration, SQL, Scenario management, MonetDB overview
+@node Client administration, SQL, Scenario management, MonetDB Overview
 @include mal_client.bdy.texi
 
 @node SQL, Getting Started with SQL, Client administration, TOC
 @include Assets/SQLoverview.texi
-@node XQuery, MapiClient and Interfaces, SQL Implementation Roadmap, TOC
+@node XQuery, Application Interfaces, SQL Implementation Roadmap, TOC
 @include Assets/XQueryOverview.texi
 
-@node MapiClient and Interfaces, MonetDB Assembler Language, XQuery, TOC
-@chapter MapiClient and Interfaces
+@node Application Interfaces, MonetDB Assembler Language, XQuery, TOC
+@chapter Application Interfaces
 @section Console Interface
 @include mal_readline.bdy.texi
 @section MapiClient
@@ -213,7 +213,7 @@ Give a brief introduction to Mapi, JDBC, ODBC,Perl....
 @subsection ODBC
 @subsection Perl
 
-@node MonetDB Assembler Language, MAL instructions, MapiClient and Interfaces , TOC
+@node MonetDB Assembler Language, MAL instructions, Application Interfaces , TOC
 @include mal_instruction.bdy.texi
 
 @node Function definitions, Function Clones ,Flow of control , MonetDB Assembler Language

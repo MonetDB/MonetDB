@@ -28,6 +28,36 @@ latex <filename>.tex
 The result, however, still includes the unexpanded Texinfo macros.
 
 @node Conventions and notation, Download and Installation, Manual Generation,About this manual
+@section How to Read This Manual
+The reference manual covers a lot of ground which at first reading
+may be slightly confusing. The material is presented  in a top-down fashion,
+starting at the SQL application layer, following the software stack,
+to the low-level data structures and operations.
+Forward references are included frequently to point into the right
+direction for additional information.
+
+First time users of MonetDB should read (@ref{Download 
+and Installation} and @ref{SQL}. It prepares the ground to develop
+applications using the database language intergalactica.
+Advance topics for application builders is given in @ref{Application
+Interfaces} and the novel query language @ref{XQuery}.
+
+If you already know SQL and are interested in technical details
+of the MonetDB system, you should start reading @ref{MonetDB Overview}.
+From there two tracks are possible. The @ref{MonetDB Assembler Language}
+and following sections describe the abstract machine and optimizations
+taken to improve processing speed.
+It is relevant for a better understanding of the query processing 
+behavior and provides an entry point to built new languages on top
+of the database kernel. 
+
+The second track The Inner Core describes the datastructures
+and operations exploited in the abstract machine layer. This part
+is essential for developers to aid in bug fixing and to
+extend the kernel with new functionality.
+For most readers, however, it can be skipped without causing
+problems to develop efficient applications.
+
 @section Software Versions
 At the time of writing MonetDB Version 4.9 is distributed worldwide
 through SourceForge.
@@ -48,25 +78,19 @@ and examples.
 supplied value should be substituted.
 
 Snippets of code are illustrated in verbatim font. 
-The interaction with textual interfaces uses the default 
+The interaction with textual client interfaces uses the default 
 prompt-setting of the underlying operating system. 
 
 Keywords in the MonetDB interface languages are key sensitive;
-SQL keywords are not case insensitive. No distinction is made
-@c SQL keywords are case sensitive (yes or no)??
+SQL keywords are not case sensitive. No distinction is made
 in this manual.
 
 ?BNF conventions
 
 @section Additional Resources
-Although this reference manual aims to be complete, it depends on
-additional resources for a full understanding of the MonetDB product family.
-@c are the additional resources meant to clarify the reference manual,
-@c or the product family?
-The primary source for additional information is the MonetDB website,
-@url{http://monetdb.cwi.nl/,http://monetdb.cwi.nl/}, and the code base
-itself.  Information on the background of its architecture can be found
-in the library of scientific publications.
+Although this reference manual aims to be complete for developing
+applications with MonetDB, it also depends on
+additional resources for a full understanding.
 
 This reference manual relies on documentation of the basics of its
 query languages SQL, XQuery, its application interfaces, PHP, Perl,
@@ -85,3 +109,9 @@ The resource locations identified below may at times proof valuable.
 @item XQuery
 @tab @url{http://wwww.w3c.org/TR/xquery/,http://wwww.w3c.org/TR/xquery/}
 @end multitable
+
+The primary source for additional information is the MonetDB website,
+@url{http://monetdb.cwi.nl/,http://monetdb.cwi.nl/}, and the code base
+itself.  Information on the background of its architecture can be found
+in the library of scientific publications.
+
