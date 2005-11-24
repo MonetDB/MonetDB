@@ -13,16 +13,48 @@ stdout of test 'grant_public.SF-1114580` in directory 'src/test/BugDay_2005-11-0
 printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 
-# 19:58:17 >  
-# 19:58:17 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=46797  < grant_public.SF-1114580.sql
-# 19:58:17 >  
+# 19:03:33 >  
+# 19:03:33 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45537  < grant_public.SF-1114580.sql
+# 19:03:33 >  
 
-! Correct output needs to be approved, once bug is fixed. !
+# 7 # querytype
+# 6 # querytype
+# 7 # querytype
+# 7 # querytype
+# 6 # querytype
+# 6 # querytype
+# 6 # querytype
+# 7 # querytype
+# 7 # querytype
+# 6 # querytype
+# 6 # querytype
+# 6 # querytype
+# 7 # querytype
+# 7 # querytype
+# 6 # querytype
+# 6 # querytype
+# 6 # querytype
+# 7 # querytype
+# 7 # querytype
+# 7 # querytype
+# 7 # querytype
+# 6 # querytype
+# 6 # querytype
+# 6 # querytype
+# 6 # querytype
+# 6 # querytype
+# 7 # querytype
+# 7 # querytype
+# 7 # querytype
+# 7 # querytype
+# 6 # querytype
+# 7 # querytype
 
-# 19:58:17 >  
-# 19:58:17 >  Done.
-# 19:58:17 >  
+# 19:03:33 >  
+# 19:03:33 >  Done.
+# 19:03:33 >  
 
