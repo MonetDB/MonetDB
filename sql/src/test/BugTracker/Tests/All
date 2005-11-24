@@ -1,5 +1,5 @@
 # tests related to bug reports:
-# SF-<bug-report-id>.<descriptive-name>[.<ext>]
+# <descriptive-name>.SF-<bug-report-id>[.<ext>]
 SF-1347183.reply-size_prepare
 SF-1363557.inserting_invalid_timestamp
 SF-1363729.large_prepare

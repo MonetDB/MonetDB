@@ -1,2 +1,2 @@
 # tests related to bug reports:
-# SF-<bug-report-id>.<descriptive-name>[.<ext>]
+# <descriptive-name>.SF-<bug-report-id>[.<ext>]
