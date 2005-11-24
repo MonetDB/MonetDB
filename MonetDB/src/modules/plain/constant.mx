@@ -91,6 +91,9 @@ thus the constant module should be loaded first.
 .COMMAND tunique (any::1 b) : BAT[any::1,void] = CMDconstUnique;
 "tunique(c); delivers a result bat [c,nil]"
 
+.COMMAND access (any::1 b, int mode) : any::1 = CMDconstFirstInt;
+"access(b,mode); where the first parameter is interpreted as a constant column"
+
 .END constant;
 @mil
 proc kdiff ( BAT[any::1,any::2] b, any::1 c) : BAT[any::1,any::2]
