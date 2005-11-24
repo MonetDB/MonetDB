@@ -66,7 +66,7 @@ or vectorized pipe-line execution by a dedicated engine.
 
 A failure encountered in any of the steps terminates the scenario
 cycle. It returns to the user for a new command.
-@node Scenario management, Client administration, Session scenarios, MonetDB overview 
+@node Scenario management, Client administration, Session scenarios, MonetDB Overview 
 @- Scenario management
 Scenarios are captured in modules; they can be dynamically loaded
 and remain active until the system is brought to a halt.

@@ -416,7 +416,7 @@ int getBarrierEnvelop(MalBlkPtr mb){
 	}
 	return newTmpVariable(mb,TYPE_any);
 }
-
+@}
 @- Lifespan analysis
 Optimizers may be interested in the characteristic of the
 barrier blocks for making a decision.
