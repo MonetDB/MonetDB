@@ -10071,13 +10071,14 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
 		hash = (hash*3) + *(unsigned char*) q;
 
 	for(j=11; *p; p++) {
-		/* escape '_' by '__' and '-' by '_4_' 
+		/* escape '_' by '__' and '-' by '_4_' and '.' by '_5_' 
                  * (_4_ cannot be a subsequent type name; those always end in [0-3])
                  */ 
-		char x = (*p == '-')?'_':*p;
+		char x = (*p == '-' || *p == '.')?'_':*p;
 		c->sem.fun->sig[j++] = x; 
 		hash = (hash*3) + *(unsigned char*) p;
 		if (*p == '-') c->sem.fun->sig[j++] = '4';
+		else if (*p == '.') c->sem.fun->sig[j++] = '5';
 		if (x == '_') c->sem.fun->sig[j++] = '_';
 	}
 

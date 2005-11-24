@@ -1237,8 +1237,8 @@ xquery_sig_init(char *proc)
     while(cur[0]) {
         if (cur[0] == '_' && cur[1] == '_') {
             cur++; /* unescape '_' */
-        } else if (cur[0] == '_' && cur[1] == '4' && cur[2] == '_') {
-            sig->name[len++] = '-'; cur += 3; continue;
+        } else if (cur[0] == '_' && (cur[1] == '4' || cur[1] == '5') && cur[2] == '_') {
+            sig->name[len++] = (cur[1] == '4')?'-':'.'; cur += 3; continue;
         } else if (cur[0] == '_') {
             break; /* unescaped '_' => end of function name */
         }
@@ -1998,9 +1998,11 @@ xquery_client_flushall()
 static inline char* 
 xquery_parse_ident(char* p) 
 {
-    while((*p >= 'a' && *p <= 'z') || *p == '_' ||
-          (*p >= 'A' && *p <= 'Z') || *p == '-' ||
-          (*p >= '0' && *p <= '9') || *(unsigned char*) p >= 128) p++;
+    if ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || *(unsigned char*) p >= 128) {
+        p++;
+        while((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || (*(unsigned char*) p >= 128) ||
+              (*p == '_') || (*p == '.') || (*p == '-') || (*p >= '0' && *p <= '9')) p++;
+    }
     return p;
 }
 
