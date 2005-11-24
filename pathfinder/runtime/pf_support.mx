@@ -100,7 +100,7 @@ and the head values from the batlist"
  from b's tail. The third argument (s) gives the base value for the new
  OID sequence of each group."
 
-.COMMAND merged_union( BAT[oid,any::1] left, BAT[oid,any::1] right, ..BAT[oid,any].. )
+.COMMAND merged_union( any left, any right, ..any.. )
 		: BAT[void,BAT] = CMDmerged_union;
 "PARAMETERS:
 Even number of BAT[oid,any] with dense heads and pairs of equal tail type;
@@ -215,16 +215,10 @@ It would have been better to have the full MIL algebra supported transparently
 on constants. Now the developer has to worry about all operations being supported, and 
 if not, use a materialize().  
 
-TODO: leftfetchjoin() sometimes returns a 'fake' BAT representation of a constant instead
-of a constant. In fact, in some places in milprint_summer the 'fake' BAT
-representation is used instead of the MIL constant representation. We should at 
-least make sure that at the end of each operator, all 'fake' BATs have been
-transformed into MIL constants.
-
 Hopefully, in Monet5 we will get better support for representing constant columns 
 in BATs that can do aways with explicit use of fake_project in the generated MIL.
 @m
-.COMMAND is_constant_bat(any) : bit = CMDisFakeProject;
+.COMMAND is_constant(any) : bit = CMDisFakeProject;
 "checks whether the parameter is a BAT[nil,c] constant column"
 
 .COMMAND constant2bat(any col) : bat[any,any] = CMDfakeProject;
@@ -239,7 +233,7 @@ in BATs that can do aways with explicit use of fake_project in the generated MIL
 .COMMAND materialize(bat[any::1,any::2] value, bat[oid,any] extent) : bat[any::1,any::2] = CMDmaterializeFake;
 "make sure the first parameter is a materialized BAT (i.e. if it is BAT[nil,c] substitute nil with the extent head column)."
 
-.COMMAND leftfetchjoin ( BAT[oid,oid] left, any::1 right) : BAT[void,any::1] = CMDposjoinFake;
+.COMMAND leftfetchjoin ( BAT[oid,oid] left, any::1 right) : any = CMDposjoinFake;
 "leftfetchjoin(l,r); where the second parameter is a constant; return a BAT[nil,c]"
 
 .COMMAND leftfetchjoin ( oid left, any::1 right) : any::1 = CMDposjoinConst;
@@ -361,6 +355,16 @@ const empty_str__bat := bat(void,str,0).seqbase(0@0).access(BAT_READ);
 const empty_int__bat := bat(void,lng,0).seqbase(0@0).access(BAT_READ);
 const bool_not := bat(void,oid,2).insert(nil,1@0).insert(nil,0@0).seqbase(0@0).access(BAT_READ);
 
+proc mposjoin( BAT[oid,oid] pre, oid frag, BAT[oid, bat] ws_item ) : BAT[void,any] 
+{
+    return pre.leftfetchjoin(ws_item.find(frag));
+}
+
+proc mvaljoin( BAT[oid,oid] pre, oid frag, BAT[oid, bat] ws_item ) : BAT[oid,oid] 
+{
+    return pre.leftjoin(ws_item.find(frag).reverse());
+}
+
 proc tmark_grp_unique( any iter, BAT[oid,any] ipik) : BAT[oid,oid]
 {
     return ipik.mark(1@0);
@@ -368,7 +372,7 @@ proc tmark_grp_unique( any iter, BAT[oid,any] ipik) : BAT[oid,oid]
 
 proc tmark_grp_unique( BAT[any,any] iter, BAT[oid,any] ipik) : BAT[oid,oid]
 {
-    if (is_constant_bat(iter)) return ipik.mark(1@0);
+    if (is_constant(iter)) return ipik.mark(1@0);
     return iter.mark_grp(iter.tunique(), 1@0);
 }
 
@@ -947,7 +951,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @= nsloc_post
  {
 	var pre_frag := ws.fetch(PRE_FRAG).fetch(theFrag);
-	if (is_constant_bat(pre_frag)) {
+	if (is_constant(pre_frag)) {
 		var frag := pre_frag.fetch(0);
 		pre_frag := nil;
 		var qn_nsloc := ws.fetch(QN_LOC_URI).fetch(frag);
@@ -1003,7 +1007,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @= ns_loc_post
  {
 	var pre_frag := ws.fetch(PRE_FRAG).fetch(theFrag);
-	if (is_constant_bat(pre_frag)) {
+	if (is_constant(pre_frag)) {
 		var frag := pre_frag.fetch(0);
 		pre_frag := nil;
 		var @1_@2 := ws.fetch(@3_@4).fetch(frag);
@@ -1090,7 +1094,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @= nsloc_pre
  {
 	var pre_frag := ws.fetch(PRE_FRAG).fetch(theFrag);
-	if (is_constant_bat(pre_frag)) {
+	if (is_constant(pre_frag)) {
 		var frag := pre_frag.fetch(0);
 		pre_frag := nil;
 		var qn_nsloc := ws.fetch(QN_LOC_URI).fetch(frag);
@@ -1144,7 +1148,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @= ns_loc_pre
  {
 	var pre_frag := ws.fetch(PRE_FRAG).fetch(theFrag);
-	if (is_constant_bat(pre_frag)) {
+	if (is_constant(pre_frag)) {
 		var frag := pre_frag.fetch(0);
 		pre_frag := nil;
 		var @1_@2 := ws.fetch(@3_@4).fetch(frag);
@@ -1357,7 +1361,7 @@ is_fake_project (BAT* b)
 }
 int 
 CMDisFakeProject(bit *r, ptr v, int tpe) {
-	*r = (tpe == TYPE_bat)?is_fake_project((BAT*) v):0;
+	*r = (tpe == TYPE_bat)?is_fake_project((BAT*) v):1;
 	return GDK_SUCCEED;
 }
 
@@ -1370,8 +1374,9 @@ CMDfakeProject(BAT **res, ptr val, int tpe)
 		return GDK_SUCCEED;
 	}
 	*res = BATnew(TYPE_void, tpe, 1);
-	if (*res && BUNins(*res, ATOMnilptr(TYPE_oid), val)) {
-		return GDK_SUCCEED;
+	if (*res) {
+		if (BUNins(*res, ATOMnilptr(TYPE_oid), val)) return GDK_SUCCEED;
+		BBPreclaim(*res);
 	}
 	return GDK_FAIL;
 }
@@ -1396,7 +1401,7 @@ CMDdeFakeProject(ptr ret, int *tpe, ptr val, int t)
 
 
 int
-CMDposjoinFake(BAT** ret, BAT *b, ptr v2, int t2)
+CMDposjoinFake(ptr ret, int *tpe, BAT *b, ptr v2, int t2)
 {
 	/* due to function resolution, we know that v2 must be a simple constant or an illegal bat */
 	if (t2 == TYPE_bat) {
@@ -1406,10 +1411,12 @@ CMDposjoinFake(BAT** ret, BAT *b, ptr v2, int t2)
 	}
 	if (BAThdense(b)) {
 		/* in case of a void column, we should be able to reconstruct it later with an ipik */
-		return CMDfakeProject(ret, v2, t2);
+		*tpe = t2;
+		return CMDconstCopy(ret, v2, t2);
 	}
-	*ret = BATconst(b, t2, v2);
-	return *ret?GDK_SUCCEED:GDK_FAIL;
+	*tpe = TYPE_bat;
+	*(BAT**)ret = BATconst(b, t2, v2);
+	return (*(BAT**)ret == NULL)?GDK_FAIL:GDK_SUCCEED;
 
 }
 
@@ -1686,35 +1693,23 @@ int CMDmark_grp_2( BAT** res, BAT *b, BAT *g, oid *s)
 }
 
 
-int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
+static int 
+merged_union( BAT** res, int nbats, BAT **b) 
 {
-	BAT *b[MAXPARAMS], *bn[MAXPARAMS>>1], *BN;
+	BAT *bn[MAXPARAMS>>1], *BN;
 	BUN cur[MAXPARAMS], dst[MAXPARAMS>>1], DST;
 	int bs[MAXPARAMS], bns[MAXPARAMS>>1], BS;
 	size_t idx[MAXPARAMS], cnt[MAXPARAMS];
-	int nbats = 2, npairs = 1, i, j, k, any, b0 = -1, b1 = -1;
+	int npairs = 1, i, j, k, any, b0 = -1, b1 = -1;
 	bit concat = FALSE;
 	chr *w = NULL;
 	size_t sze = 0, h = 0;
-	va_list ap;
 	
 	*res = NULL;
 
 	/* check arguments */
-
-	BATcheck(L, "merged_union");
-	BATcheck(R, "merged_union");
-	ERRORcheck(BATcount(L)>1 && !(BATtordered(L)&1), "merged_union: tail of first BAT must be sorted.\n");
-	ERRORcheck(BATcount(R)>1 && !(BATtordered(R)&1), "merged_union: tail of second BAT must be sorted.\n");
-
-	b[0] = L;
-	b[1] = R;
-	va_start(ap,R);
-	while((b[nbats] = va_arg(ap, BAT*)) != NULL) {
-		nbats++;
-	}
-	va_end(ap);
-	
+	ERRORcheck(BATcount(b[0])>1 && !(BATtordered(b[0])&1), "merged_union: tail of first BAT must be sorted.\n");
+	ERRORcheck(BATcount(b[1])>1 && !(BATtordered(b[1])&1), "merged_union: tail of second BAT must be sorted.\n");
 	if (nbats&1) {
 		GDKerror("merged_union: uneven number of BATs: %d.\n", nbats);
 		return GDK_FAIL;
@@ -2022,6 +2017,40 @@ cleanup:
 		BBPreclaim(bn[k]);
 	}
 	return GDK_FAIL;
+}
+
+int CMDmerged_union( BAT** res, ptr L, int ltpe, ptr R, int rtpe, ... )
+{
+	int i, tpe, nbats = 0, ret = GDK_SUCCEED;
+	BAT *b[MAXPARAMS];
+	va_list ap;
+        ptr p;
+
+	/* first convert any constant parameters to fake projects */
+	if (CMDfakeProject(b+nbats, L, ltpe) == GDK_SUCCEED) {
+		nbats++;
+		if (CMDfakeProject(b+nbats, R, rtpe) == GDK_SUCCEED) {
+			nbats++;
+			va_start(ap,rtpe);
+			while((p = va_arg(ap, ptr)) != NULL) {
+        		        tpe = va_arg(ap, int);
+				if (CMDfakeProject(b+nbats, p, tpe) == GDK_SUCCEED) {
+					nbats++;
+				} else {
+					ret = GDK_FAIL;
+					break;
+				}
+			}
+			va_end(ap);
+		}
+	}
+	if (ret == GDK_SUCCEED) {
+		ret = merged_union(res, nbats, b);
+	}
+	/* unfix all bats; this destroys any created fake projects */
+	for(i=0; i<nbats; i++) 
+		BBPunfix(b[i]->batCacheid);
+	return ret;
 }
 
 int

@@ -626,13 +626,13 @@ add_empty_strings (opt_t *f, int rc, int cur_level)
             /* test qname and add "" for each empty item */
             "if (ipik.count() != loop%03u.count())\n"
             "{ # add empty strings\n"
-            "var iterations := constant2bat(iter);\n"
+            "var iterations := iter.materialize(ipik);\n"
             "var difference := loop%03u.reverse().kdiff(iterations.reverse());\n"
             "difference := difference.hmark(0@0);\n"
             "var res_mu := merged_union(iterations.chk_order(), difference.chk_order(), "
-                                       "constant2bat(item%s), constant2bat(%s));\n"
+                                       "item%s, %s);\n"
             "difference := nil;\n"
-            "item%s := res_mu.fetch(1);\n"
+            "item%s := res_mu.fetch(1);\n" /* CONST? */
             "res_mu := nil;\n"
             "} # end of add empty strings\n",
             cur_level, cur_level,
@@ -786,9 +786,9 @@ map2NODE_interface (opt_t *f)
 
             "iter_input := nil;\n"
             /* variables for the result of the scj */
-            "var res_iter := res_scj.fetch(0);\n"
-            "var res_item := res_scj.fetch(1);\n"
-            "var res_frag := res_scj.fetch(2);\n"
+            "var res_iter := res_scj.fetch(0);\n" /* CONST? */
+            "var res_item := res_scj.fetch(1);\n" /* CONST? */
+            "var res_frag := res_scj.fetch(2);\n" /* CONST? */
             /* res_ec is the iter|dn table resulting from the scj */
 
             /* create subtree copies for all bats except content_level */
@@ -827,7 +827,7 @@ map2NODE_interface (opt_t *f)
             "var temp_attr := mvaljoin(res_item, res_frag, ws.fetch(ATTR_OWN));\n"
             "var oid_attr := temp_attr.tmark(0@0);\n"
             "var oid_frag;\n"
-            "if (is_constant_bat(res_frag)) {\n"
+            "if (is_constant(res_frag)) {\n"
             "    oid_frag := res_frag;\n"
             "} else {\n"
             "    oid_frag := temp_attr.reverse().leftfetchjoin(res_frag);\n"
@@ -910,12 +910,12 @@ translateSeq_ (opt_t *f, int i, int rcode)
             "{ # translateSeq (counter)\n"
             /* FIXME: tests if input is sorted is needed because of merged union*/
             "var merged_result := merged_union "
-            "(constant2bat(iter%03u).chk_order(), constant2bat(iter).chk_order(), constant2bat(item%s%03u), constant2bat(item%s), constant2bat(kind%03u), constant2bat(kind));\n",
+            "(iter%03u.chk_order(), iter.chk_order(), item%s%03u, item%s, kind%03u, kind);\n",
             i, item_ext, i, item_ext, i);
     milprintf(f,
             "iter := merged_result.fetch(0);\n"
-            "item%s := merged_result.fetch(1);\n"
-            "kind := merged_result.fetch(2);\n"
+            "item%s := merged_result.fetch(1).bat2constant();\n"
+            "kind := merged_result.fetch(2).bat2constant();\n"
             "merged_result := nil;\n"
             "ipik := iter;\n"
             "pos := tmark_grp_unique(iter, ipik);\n"
@@ -970,10 +970,10 @@ translateSeq_node (opt_t *f, int i)
              "_r_attr_qn%03u, _r_attr_qn, "
              "_r_attr_prop%03u, _r_attr_prop, "
              "_r_attr_frag%03u, _r_attr_frag);\n"
-            "_r_attr_iter := merged_result.fetch(0);\n"
-            "_r_attr_qn := merged_result.fetch(1);\n"
-            "_r_attr_prop := merged_result.fetch(2);\n"
-            "_r_attr_frag := merged_result.fetch(3);\n"
+            "_r_attr_iter := merged_result.fetch(0);\n" /* CONST? */
+            "_r_attr_qn := merged_result.fetch(1);\n" /* CONST? */
+            "_r_attr_prop := merged_result.fetch(2);\n" /* CONST? */
+            "_r_attr_frag := merged_result.fetch(3);\n" /* CONST? */
             "merged_result := nil;\n"
             "}} # end of combine attribute roots\n",
             i, i, i, i);
@@ -1010,13 +1010,13 @@ translateSeq_node (opt_t *f, int i)
             "_elem_prop%03u, _elem_prop, "
             "_elem_frag%03u, _elem_frag, "
             "_elem_size%03u.mark(seqb), _elem_size.mirror());\n"
-            "_elem_iter := merged_result.fetch(0);\n"
-            "_elem_size := merged_result.fetch(1);\n"
-            "_elem_level:= merged_result.fetch(2);\n"
-            "_elem_kind := merged_result.fetch(3);\n"
-            "_elem_prop := merged_result.fetch(4);\n"
-            "_elem_frag := merged_result.fetch(5);\n"
-            "var preNew_preOld := merged_result.fetch(6);\n"
+            "_elem_iter := merged_result.fetch(0);\n" /* CONST? */
+            "_elem_size := merged_result.fetch(1);\n" /* CONST? */
+            "_elem_level:= merged_result.fetch(2);\n" /* CONST? */
+            "_elem_kind := merged_result.fetch(3);\n" /* CONST? */
+            "_elem_prop := merged_result.fetch(4);\n" /* CONST? */
+            "_elem_frag := merged_result.fetch(5);\n" /* CONST? */
+            "var preNew_preOld := merged_result.fetch(6);\n" /* CONST? */
             "merged_result := nil;\n"
 
             "_attr_own%03u := _attr_own%03u.[int]().[+](shift_factor).[oid]();\n"
@@ -1026,11 +1026,11 @@ translateSeq_node (opt_t *f, int i)
             "_attr_prop%03u, _attr_prop, "
             "_attr_frag%03u, _attr_frag, "
             "_attr_own%03u, _attr_own);\n"
-            "_attr_iter := merged_result.fetch(0);\n"
-            "_attr_qn   := merged_result.fetch(1);\n"
-            "_attr_prop := merged_result.fetch(2);\n"
-            "_attr_frag := merged_result.fetch(3);\n"
-            "_attr_own  := merged_result.fetch(4);\n"
+            "_attr_iter := merged_result.fetch(0);\n" /* CONST? */
+            "_attr_qn   := merged_result.fetch(1);\n" /* CONST? */
+            "_attr_prop := merged_result.fetch(2);\n" /* CONST? */
+            "_attr_frag := merged_result.fetch(3);\n" /* CONST? */
+            "_attr_own  := merged_result.fetch(4);\n" /* CONST? */
             "_attr_own := _attr_own.leftjoin(preNew_preOld.reverse())"
                                   ".tmark(seqbase(_attr_own));\n"
             /* we need to help MonetDB, since we know that the order
@@ -1839,7 +1839,7 @@ loop_liftedSCJ (opt_t *f,
             "var oid_iter := iter;\n"
             "var oid_item := item;\n"
             "var oid_frag := kind.get_fragment();\n"
-            "var temp1 := mvaljoin (oid_item, constant2bat(oid_frag), ws.fetch(ATTR_OWN));\n"
+            "var temp1 := mvaljoin (oid_item, oid_frag, ws.fetch(ATTR_OWN));\n"
             "oid_item := nil;\n"
             "oid_frag := temp1.hmark(0@0).leftfetchjoin(oid_frag);\n"
             "var oid_attr := temp1.tmark(0@0);\n"
@@ -1884,21 +1884,21 @@ loop_liftedSCJ (opt_t *f,
         /* add '.tmark(0@0)' to be sure that the head of 
            the results is void */
         milprintf(f,
-                "if (is_constant_bat(oid_iter)) {\n"
+                "if (is_constant(oid_iter)) {\n"
                 "    iter := oid_iter;\n"
                 "} else {\n"
                 "    iter := oid_iter.tmark(0@0);\n"
                 "    ipik := iter;\n"
                 "}\n"
                 "oid_iter := nil;\n"
-                "if (is_constant_bat(oid_attr)) {\n"
+                "if (is_constant(oid_attr)) {\n"
                 "    item := oid_attr;\n"
                 "} else {\n"
                 "    item := oid_attr.tmark(0@0);\n"
                 "    ipik := item;\n"
                 "}\n"
                 "oid_attr := nil;\n"
-                "if (is_constant_bat(oid_frag)) {\n"
+                "if (is_constant(oid_frag)) {\n"
                 "    kind := oid_frag;\n"
                 "} else {\n"
                 "    kind := oid_frag.tmark(0@0);\n"
@@ -1924,7 +1924,7 @@ loop_liftedSCJ (opt_t *f,
         if (kind)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin(oid_item, constant2bat(oid_frag), ws.fetch(KIND_PRE + int(%s))).hmark(0@0);\n"
+                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(%s))).hmark(0@0);\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
@@ -1934,7 +1934,7 @@ loop_liftedSCJ (opt_t *f,
         else if (ns && loc)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin(oid_item, constant2bat(oid_frag), ws.fetch(KIND_PRE + int(ELEMENT))).hmark(0@0);\n"
+                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(ELEMENT))).hmark(0@0);\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
@@ -1954,7 +1954,7 @@ loop_liftedSCJ (opt_t *f,
         else if (loc)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin(oid_item, constant2bat(oid_frag), ws.fetch(KIND_PRE + int(ELEMENT))).hmark(0@0);\n"
+                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(ELEMENT))).hmark(0@0);\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
@@ -1974,7 +1974,7 @@ loop_liftedSCJ (opt_t *f,
         else if (ns)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin(oid_item, constant2bat(oid_frag), ws.fetch(KIND_PRE + int(ELEMENT))).hmark(0@0);\n"
+                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(ELEMENT))).hmark(0@0);\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
@@ -2233,13 +2233,11 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
     {
         /* res_scj = iter|item bat */
         milprintf(f,
-                "iter := res_scj.fetch(0);\n"
+                "iter := res_scj.fetch(0).bat2constant();\n"
                 "item := res_scj.fetch(1);\n"
-                "ipik := item;\n"
                 "pos  := tmark_grp_unique(iter,ipik);\n"
-                "iter := bat2constant(iter);\n"
-                "kind := res_scj.fetch(2).set_kind(%s);\n"
-                "kind := bat2constant(kind);\n"
+                "kind := res_scj.fetch(2).bat2constant().set_kind(%s);\n"
+                "ipik := item;\n"
                 ,kind);
     } else {
         milprintf(f, "kind := kind.set_kind(%s);\n", kind);
@@ -2336,7 +2334,7 @@ castQName (opt_t *f, int rc)
                          "qnames.hmark(0@0), "
                          "oid_prop.tmark(0@0), "
                          "qnames.hmark(0@0).leftfetchjoin(item));\n"
-            "    item := res_mu.fetch(1);\n"
+            "    item := res_mu.fetch(1);\n" /* CONST? */
             "    res_mu := nil;\n"
             "}\n"
             "oid_oid := nil;\n"
@@ -2377,11 +2375,8 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "var root_iter  := iter_size.hmark(0@0).chk_order();\n"
                 "var root_size  := iter_size.tmark(0@0);\n"
                 "iter_size := nil;\n"
-                "var root_level := constant2bat(chr(0));\n"
-                "var root_kind  := constant2bat(ELEMENT);\n"
-                "var root_frag  := constant2bat(WS);\n"
                 "var root_prop  := iter%03u.reverse().leftfetchjoin(item%03u);\n"
-                "if (not(is_constant_bat(root_prop))) {\n"
+                "if (not(is_constant(root_prop))) {\n"
                 "    root_prop  := root_prop.tmark(0@0);\n"
                 "}\n",
                 i, i, i);
@@ -2392,25 +2387,22 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "var merged_result := merged_union ("
                 "root_iter,  _elem_iter.chk_order(), "
                 "root_size,  _elem_size, "
-                "root_level, _elem_level.[+](chr(1)), "
-                "root_kind,  _elem_kind, "
+                "chr(0), _elem_level.[+](chr(1)), "
+                "ELEMENT,  _elem_kind, "
                 "root_prop,  _elem_prop, "
-                "root_frag,  _elem_frag, "
+                "WS,  _elem_frag, "
      /* attr */ "root_iter.mark(nil),  _elem_iter.mirror());\n"
     
                 "root_iter  := nil;\n"
                 "root_size  := nil;\n"
-                "root_level := nil;\n"
-                "root_kind  := nil;\n"
                 "root_prop  := nil;\n"
-                "root_frag  := nil;\n"
-                "_elem_iter  := merged_result.fetch(0);\n"
-                "_elem_size  := merged_result.fetch(1);\n"
-                "_elem_level := merged_result.fetch(2);\n"
-                "_elem_kind  := merged_result.fetch(3);\n"
-                "_elem_prop  := merged_result.fetch(4);\n"
-                "_elem_frag  := merged_result.fetch(5);\n"
-     /* attr */ "var preNew_preOld := merged_result.fetch(6);\n"
+                "_elem_iter  := merged_result.fetch(0);\n" /* CONST? */
+                "_elem_size  := merged_result.fetch(1);\n" /* CONST? */
+                "_elem_level := merged_result.fetch(2);\n" /* CONST? */
+                "_elem_kind  := merged_result.fetch(3);\n" /* CONST? */
+                "_elem_prop  := merged_result.fetch(4);\n" /* CONST? */
+                "_elem_frag  := merged_result.fetch(5);\n" /* CONST? */
+     /* attr */ "var preNew_preOld := merged_result.fetch(6);\n" /* CONST? */
                 "merged_result := nil;\n"
      /* attr */ "_attr_own := _attr_own.leftjoin(preNew_preOld.reverse());\n"
                 /* we need to help MonetDB, since we know that the order
@@ -2521,9 +2513,9 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
     
                 "iter_input := nil;\n"
                 /* variables for the result of the scj */
-                "var res_iter := res_scj.fetch(0);\n"
-                "var res_item := res_scj.fetch(1);\n"
-                "var res_frag := res_scj.fetch(2);\n"
+                "var res_iter := res_scj.fetch(0);\n" /* CONST? */
+                "var res_item := res_scj.fetch(1);\n" /* CONST? */
+                "var res_frag := res_scj.fetch(2);\n" /* CONST? */
                 "res_scj := nil;\n"
                 /* res_ec is the iter|dn table resulting from the scj */
                 /* create content_iter as sorting argument for the merged union */
@@ -2601,33 +2593,24 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                i);
     
         milprintf(f,
-                "root_level := constant2bat(chr(0));\n"
+                "root_level := chr(0);\n"
                 "root_size := iter_size;\n"
-                "root_kind := constant2bat(ELEMENT);\n"
+                "root_kind := ELEMENT;\n"
                 "root_prop := iter%03u.materialize(ipik%03u).reverse();\n"
                 "root_prop := root_prop.leftfetchjoin(item%03u).materialize(root_prop);\n"
-                "root_frag := constant2bat(WS);\n",
+                "root_frag := WS;\n",
                 i, i, i);
     
         milprintf(f,
-              /*"root_level := root_level.tmark(0@0);\n"*/
                 "root_size := root_size.tmark(0@0);\n"
-              /*"root_kind := root_kind.tmark(0@0);\n"*/
                 "root_prop := root_prop.tmark(0@0);\n"
-              /*"root_frag := root_frag.tmark(0@0);\n"*/
                 "var root_iter := iter_size.hmark(0@0).chk_order();\n"
                 "iter_size := nil;\n"
     
      /* attr */ /* root_pre is a dummy needed for merge union with content_pre */
-     /* attr */ "var root_pre := constant2bat(oid(nil));\n"
+     /* attr */ "var root_pre := oid(nil);\n"
      /* attr */ /* as well as root_frag_pre */
-     /* attr */ "var root_frag_pre := constant2bat(oid(nil));\n"
-    
-                /* printing output for debugging purposes */
-                /*
-                "print(\"root\");\n"
-                "print(root_iter, root_size, [int](root_level), [int](root_kind), root_prop);\n"
-                */
+     /* attr */ "var root_frag_pre := oid(nil);\n"
     
                 /* merge union root and nodes */
                 "{\n"
@@ -2638,19 +2621,19 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
      /* attr */ "root_pre, content_pre, root_frag_pre, content_frag_pre);\n"
                 "root_iter := nil;\n"
                 "content_iter := nil;\n"
-                "root_size := merged_result.fetch(1);\n"
+                "root_size := merged_result.fetch(1);\n" /* CONST? */
                 "content_size := nil;\n"
-                "root_level := merged_result.fetch(2);\n"
+                "root_level := merged_result.fetch(2);\n" /* CONST? */
                 "content_level := nil;\n"
-                "root_kind := merged_result.fetch(3);\n"
+                "root_kind := merged_result.fetch(3);\n" /* CONST? */
                 "content_kind := nil;\n"
-                "root_prop := merged_result.fetch(4);\n"
+                "root_prop := merged_result.fetch(4);\n" /* CONST? */
                 "content_prop := nil;\n"
-                "root_frag := merged_result.fetch(5);\n"
+                "root_frag := merged_result.fetch(5);\n" /* CONST? */
                 "content_frag := nil;\n"
-                "root_pre := merged_result.fetch(6);\n"
+                "root_pre := merged_result.fetch(6);\n" /* CONST? */
                 "content_pre := nil;\n"
-                "root_frag_pre := merged_result.fetch(7);\n"
+                "root_frag_pre := merged_result.fetch(7);\n" /* CONST? */
                 "content_frag_pre := nil;\n"
                 "merged_result := nil;\n"
                 /* printing output for debugging purposes */
@@ -3033,10 +3016,9 @@ loop_liftedAttrConstr (opt_t *f, int rcode, int rc, int cur_level, int i)
             "{\n"
             "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
             "difference := difference.hmark(0@0);\n"
-            "var res_mu := merged_union(iter, difference, constant2bat(item%s), "
-                                       "constant2bat(%s));\n"
+            "var res_mu := merged_union(iter, difference, item%s, %s);\n"
             "difference := nil;\n"
-            "item%s := res_mu.fetch(1);\n"
+            "item%s := res_mu.fetch(1);\n" /* CONST? */
             "res_mu := nil;\n"
             "}\n",
             i, cur_level, cur_level, cur_level,
@@ -3123,7 +3105,7 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
     if (rc != NORMAL)
     {
         milprintf(f,
-                "var unq_str := constant2bat(item%s).tunique().hmark(0@0);\n",
+                "var unq_str := item%s.tunique().hmark(0@0);\n",
                 item_ext);
     }
     else
@@ -3270,8 +3252,8 @@ evaluateCastBlock (opt_t *f, type_co ori, char *cast, char *target_type)
     milprintf(f,
             "var res_mu := merged_union(_oid, oid_oid, _val, part_val);\n"
             "oid_oid := nil;\n"
-            "_oid := res_mu.fetch(0);\n"
-            "_val := res_mu.fetch(1);\n"
+            "_oid := res_mu.fetch(0).bat2constant();\n"
+            "_val := res_mu.fetch(1).bat2constant();\n"
             "res_mu := nil;\n"
             "}\n");
 }
@@ -3299,13 +3281,13 @@ evaluateCast (opt_t *f,
 
     if (rc != NORMAL)
         milprintf(f,
-                "var cast_val := constant2bat(item%s).%s;\n", kind_str(rc), cast);
+                "var cast_val := item%s.%s;\n", kind_str(rc), cast);
     else if (ori.kind != BOOL)
         milprintf(f,
                 "var cast_val := item.leftfetchjoin(%s).%s;\n",
                 ori.table, cast);
     else
-        milprintf(f, "var cast_val := constant2bat(item).%s;\n", cast);
+        milprintf(f, "var cast_val := item.%s;\n", cast);
 
     milprintf(f,
             "if (cast_val.texist(%s(nil)))\n"
@@ -3313,11 +3295,11 @@ evaluateCast (opt_t *f,
             target.mil_type, ori.name, target.name);
 
     if (target.kind == BOOL)
-        milprintf(f, "item := bat2constant(cast_val.[oid]());\n");
+        milprintf(f, "item := cast_val.[oid]();\n");
     else if (rcode == NORMAL)
         addValues (f, target, "cast_val", "item");
     else
-        milprintf(f, "item%s := bat2constant(cast_val);\n", item_ext);
+        milprintf(f, "item%s := cast_val;\n", item_ext);
 
         milprintf(f,
                 "cast_val := nil;\n"
@@ -3801,7 +3783,7 @@ evaluateOp (opt_t *f, int rcode, int rc1, int rc2,
         milprintf(f, 
                 "if (val_snd.texist(%s)) \n"
                 "    { ERROR (\"err:FOAR0001: division by 0 is forbidden.\"); }\n",  div);
-    milprintf(f, "val_fst := [%s](bat2constant(val_fst),bat2constant(val_snd));\n", operator);
+    milprintf(f, "val_fst := [%s](val_fst,val_snd);\n", operator);
 
     if (rcode == BOOL) {
         milprintf(f, "item := val_fst.[oid]();\n");
@@ -3858,7 +3840,7 @@ evaluateOpOpt (opt_t *f, int rcode, int rc1, int rc2,
         milprintf(f, 
                 "if (val_snd.texist(%s))\n"
                 "    { ERROR (\"err:FOAR0001: division by 0 is forbidden.\"); }\n", div);
-    milprintf(f, "val_fst := [%s](bat2constant(val_fst),bat2constant(val_snd));\n", operator);
+    milprintf(f, "val_fst := [%s](val_fst,val_snd);\n", operator);
     milprintf(f, "iter := iters.tmark(0@0).leftfetchjoin(iter);\n");
     milprintf(f, "ipik := iter;\n");
     milprintf(f, "pos := 1@0;\n");
@@ -4350,9 +4332,9 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                 "loop_lifted_descendant_or_self_step_with_kind_test"
                 "(iter, item, frag, ws, 0, TEXT);\n"
                 /* variables for the result of the scj */
-                "iter := res_scj.fetch(0);\n"
-                "item := res_scj.fetch(1);\n"
-                "frag := res_scj.fetch(2);\n"
+                "iter := res_scj.fetch(0);\n" /* CONST? */
+                "item := res_scj.fetch(1);\n" /* CONST? */
+                "frag := res_scj.fetch(2);\n" /* CONST? */
                 "res_scj := nil;\n"
                 /* get the string values of the text nodes */
                 "item_str := mposjoin(mposjoin(item, frag, ws.fetch(PRE_PROP)), "
@@ -4410,9 +4392,9 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                     "loop_lifted_descendant_or_self_step_with_kind_test"
                     "(iter, item, frag, ws, 0, TEXT);\n"
                     /* variables for the result of the scj */
-                    "iter := res_scj.fetch(0);\n"
-                    "item := res_scj.fetch(1);\n"
-                    "frag := res_scj.fetch(2);\n"
+                    "iter := res_scj.fetch(0);\n" /* CONST? */
+                    "item := res_scj.fetch(1);\n" /* CONST? */
+                    "frag := res_scj.fetch(2);\n" /* CONST? */
                     "res_scj := nil;\n"
                     /* get the string values of the text nodes */
                     "item_str := mposjoin(mposjoin(item, frag, ws.fetch(PRE_PROP)), "
@@ -4426,8 +4408,8 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                     "item_str := iter_item.tmark(0@0);\n"
                     /* merge strings from element and attribute */
                     "var res_mu := merged_union (iter, iter_attr, item_str, item_attr_str);\n"
-                    "iter := res_mu.fetch(0);\n"
-                    "item_str := res_mu.fetch(1);\n"
+                    "iter := res_mu.fetch(0);\n" /* CONST? */
+                    "item_str := res_mu.fetch(1);\n" /* CONST? */
                     "res_mu := nil;\n"
                     "iter_item := iter.reverse().leftfetchjoin(item_str).chk_order();\n"
                     "iter := nil;\n"
@@ -4460,10 +4442,9 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
             "{\n"
             "var difference := input_iter.reverse().kdiff(iter.reverse());\n"
             "difference := difference.hmark(0@0);\n"
-            "var res_mu := merged_union(iter, difference, constant2bat(item%s), "
-                                       "constant2bat(%s));\n"
+            "var res_mu := merged_union(iter, difference, item%s, %s);\n"
             "iter := res_mu.fetch(0);\n"
-            "item%s := res_mu.fetch(1);\n"
+            "item%s := res_mu.fetch(1).bat2constant();\n"
             "res_mu := nil;\n"
             "}\n"
             "input_iter := nil;\n"
@@ -4510,10 +4491,7 @@ fn_data (opt_t *f)
     milprintf(f,
             /* every input row of typed-value gives back exactly
                one output row - therefore a mapping is not necessary */
-            "var res_mu := merged_union (node, atomic, "
-                                        "iter_node, iter_atomic, "
-                                        "item, item_atomic, "
-                                        "constant2bat(kind), kind_atomic);\n"
+            "var res_mu := merged_union (node, atomic, iter_node, iter_atomic, item, item_atomic, kind, kind_atomic);\n"
             "node := nil;\n"
             "atomic := nil;\n"
             "iter_node := nil;\n"
@@ -4523,8 +4501,8 @@ fn_data (opt_t *f)
             "kind := nil;\n"
             "kind_atomic := nil;\n"
             "iter := res_mu.fetch(1);\n"
-            "item := res_mu.fetch(2);\n"
-            "kind := res_mu.fetch(3);\n"
+            "item := res_mu.fetch(2).bat2constant();\n"
+            "kind := res_mu.fetch(3).bat2constant();\n"
             "res_mu := nil;\n"
             "pos := tmark_grp_unique(iter,ipik);\n"
             "ipik := iter;\n"
@@ -4589,7 +4567,6 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
             "var texts_order := texts.hmark(0@0);\n"
             "texts := texts.tmark(0@0);\n"
             /* 1@0 is text node constant for combine_text_string */
-            "var texts_const := constant2bat(1@0);\n"
 
             /* get all other nodes and create empty strings for them */
             "var nodes := kind_node.[!=](TEXT).ord_uselect(true).project(\"\");\n"
@@ -4599,19 +4576,13 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
             "nodes_order := nodes.hmark(0@0);\n"
             "nodes := nodes.tmark(0@0);\n"
             /* 0@0 is node constant for combine_text_string */
-            "var nodes_const := constant2bat(0@0);\n"
-
-            "var res_mu_is2ns := merged_union (nodes_order, texts_order, "
-                                              "nodes, texts, "
-                                              "nodes_const, texts_const);\n"
+            "var res_mu_is2ns := merged_union (nodes_order, texts_order, nodes, texts, 0@0, 1@0);\n"
             "nodes := nil;\n"
-            "nodes_const := nil;\n"
             "texts_order := nil;\n"
             "texts := nil;\n"
-            "texts_const := nil;\n"
-            "var input_order := res_mu_is2ns.fetch(0);\n"
-            "var input_str := res_mu_is2ns.fetch(1);\n"
-            "var input_const := res_mu_is2ns.fetch(2);\n"
+            "var input_order := res_mu_is2ns.fetch(0);\n" /* CONST? */
+            "var input_str := res_mu_is2ns.fetch(1);\n" /* CONST? */
+            "var input_const := res_mu_is2ns.fetch(2);\n" /* CONST? */
             "res_mu_is2ns := nil;\n"
 
             /* get all the atomic values and cast them to string */
@@ -4626,14 +4597,13 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
             counter, counter, counter, counter, counter);
     translateCast2STR (f, STR, NORMAL, input_type);
     milprintf(f,
-            "res_mu_is2ns := merged_union (input_order, atomic, "
-                                          "input_str, constant2bat(item%s), "
+            "res_mu_is2ns := merged_union (input_order, atomic, input_str, item%s, "
                                           /* 2@0 is string constant for combine_text_string */
-                                          "input_const, constant2bat(2@0));\n"
+                                          "input_const, 2@0);\n"
             "atomic := nil;\n"
-            "input_order := res_mu_is2ns.fetch(0);\n"
-            "input_str := res_mu_is2ns.fetch(1);\n"
-            "input_const := res_mu_is2ns.fetch(2);\n"
+            "input_order := res_mu_is2ns.fetch(0);\n" /* CONST? */
+            "input_str := res_mu_is2ns.fetch(1);\n" /* CONST? */
+            "input_const := res_mu_is2ns.fetch(2);\n" /* CONST? */
             "res_mu_is2ns := nil;\n"
             "var input_iter := input_order.leftfetchjoin(iter%03u).chk_order();\n"
             "var result_size := iter%03u.tunique().count() + nodes_order.count() + 1;\n"
@@ -4668,7 +4638,7 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
     milprintf(f,
             "var res_mu_is2ns := merged_union (iter, nodes_order, "
                                               "item, nodes_order.leftfetchjoin(item%03u), "
-                                              "constant2bat(kind), nodes_order.leftfetchjoin(kind%03u));\n"
+                                              "kind, nodes_order.leftfetchjoin(kind%03u));\n"
             "nodes_order := nil;\n"
             "kind%03u := kind%03u.materialize(ipik%03u);\n"
             "var attr := kind%03u.get_type(ATTR).hmark(0@0);\n"
@@ -4680,9 +4650,9 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
             "attr := nil;\n"
             "item_attr := nil;\n"
             "kind_attr := nil;\n"
-            "iter := res_mu_is2ns.fetch(0).leftfetchjoin(iter%03u);\n"
+            "iter := res_mu_is2ns.fetch(0).bat2constant().leftfetchjoin(iter%03u);\n"
             "item := res_mu_is2ns.fetch(1);\n"
-            "kind := res_mu_is2ns.fetch(2);\n"
+            "kind := res_mu_is2ns.fetch(2).bat2constant();\n"
             "pos := tmark_grp_unique(iter,ipik);\n"
             "res_mu_is2ns := nil;\n"
             "ipik := item;\n"
@@ -4731,15 +4701,13 @@ is2ns_node (opt_t *f, int counter)
             "text_prop := nil;\n"
             "text_frag := nil;\n"
 
-            "var res_mu_is2ns := merged_union (elem_nodes, textnodes, "
-                                              "constant2bat(\"\"), text_str, "
-                                              "constant2bat(0@0), constant2bat(1@0));\n"
+            "var res_mu_is2ns := merged_union (elem_nodes, textnodes, \"\", text_str, 0@0, 1@0);\n"
 
             "textnodes := nil;\n"
             "text_str := nil;\n"
-            "var input_order := res_mu_is2ns.fetch(0);\n"
-            "var input_str := res_mu_is2ns.fetch(1);\n"
-            "var input_const := res_mu_is2ns.fetch(2);\n"
+            "var input_order := res_mu_is2ns.fetch(0);\n" /* CONST? */
+            "var input_str := res_mu_is2ns.fetch(1);\n" /* CONST? */
+            "var input_const := res_mu_is2ns.fetch(2);\n" /* CONST? */
             "res_mu_is2ns := nil;\n"
             "var input_iter := input_order.leftfetchjoin(_elem_iter).chk_order();\n"
             "var result_size := _elem_iter.tunique().count() + elem_nodes.count() + 1;\n"
@@ -4787,14 +4755,14 @@ is2ns_node (opt_t *f, int counter)
             "othernodes.leftfetchjoin(_elem_frag%03u), "
                                      "_elem_frag,\n"
             "othernodes.leftfetchjoin(_elem_iter%03u.mirror()), "
-                                     "constant2bat(oid(nil)));\n"
-            "_elem_iter := res_mu_is2ns.fetch(1).chk_order();\n"
-            "_elem_size := res_mu_is2ns.fetch(2);\n"
-            "_elem_level:= res_mu_is2ns.fetch(3);\n"
-            "_elem_kind := res_mu_is2ns.fetch(4);\n"
-            "_elem_prop := res_mu_is2ns.fetch(5);\n"
-            "_elem_frag := res_mu_is2ns.fetch(6);\n"
-            "var preNew_preOld := res_mu_is2ns.fetch(7);\n"
+                                     "oid(nil));\n"
+            "_elem_iter := res_mu_is2ns.fetch(1).chk_order();\n" /* CONST? */
+            "_elem_size := res_mu_is2ns.fetch(2);\n" /* CONST? */
+            "_elem_level:= res_mu_is2ns.fetch(3);\n" /* CONST? */
+            "_elem_kind := res_mu_is2ns.fetch(4);\n" /* CONST? */
+            "_elem_prop := res_mu_is2ns.fetch(5);\n" /* CONST? */
+            "_elem_frag := res_mu_is2ns.fetch(6);\n" /* CONST? */
+            "var preNew_preOld := res_mu_is2ns.fetch(7);\n" /* CONST? */
             /* update pre numbers */
             "_attr_own := _attr_own%03u.leftjoin(preNew_preOld.reverse());\n"
             "res_mu_is2ns := nil;\n"
@@ -5326,8 +5294,7 @@ fn_replace_translate (opt_t *f, int code, int cur_level, int counter,
                 "{\n"
                 "var difference := loop%03u.reverse().kdiff(iter%03u.reverse());\n"
                 "difference := difference.hmark(0@0);\n"
-                "var res_mu := merged_union(constant2bat(iter%03u).chk_order(), difference," 
-                                           "constant2bat(item%s%03u), constant2bat(\"\"));\n"
+                "var res_mu := merged_union(iter%03u.chk_order(), difference, item%s%03u, \"\");\n"
                 "difference := nil;\n"
                 "strings := res_mu.fetch(1);\n"
                 "res_mu := nil;\n"
@@ -5345,8 +5312,7 @@ fn_replace_translate (opt_t *f, int code, int cur_level, int counter,
                 "{\n"
                 "var difference := loop%03u.reverse().kdiff(iter%03u.reverse());\n"
                 "difference := difference.hmark(0@0);\n"
-                "var res_mu := merged_union(constant2bat(iter%03u).chk_order(), difference,"
-                                           "constant2bat(item%s%03u), constant2bat(\"\"));\n"
+                "var res_mu := merged_union(iter%03u.chk_order(), difference, item%s%03u, \"\");\n"
                 "difference := nil;\n"
                 "patterns := res_mu.fetch(1);\n"
                 "res_mu := nil;\n"
@@ -5367,8 +5333,7 @@ fn_replace_translate (opt_t *f, int code, int cur_level, int counter,
                 "{\n"
                 "var difference := loop%03u.reverse().kdiff(iter%03u.reverse());\n"
                 "difference := difference.hmark(0@0);\n"
-                "var res_mu := merged_union(constant2bat(iter%03u).chk_order(), difference,"
-                                           "constant2bat(item%s%03u), constant2bat(\"\"));\n"
+                "var res_mu := merged_union(iter%03u.chk_order(), difference, item%s%03u, \"\");\n"
                 "difference := nil;\n"
                 "replacements := res_mu.fetch(1);\n"
                 "res_mu := nil;\n"
@@ -5388,8 +5353,7 @@ fn_replace_translate (opt_t *f, int code, int cur_level, int counter,
                 "{\n"
                 "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
                 "difference := difference.hmark(0@0);\n"
-                "var res_mu := merged_union(constant2bat(iter), difference, "
-                                           "constant2bat(item%s), constant2bat(\"\"));\n"
+                "var res_mu := merged_union(iter, difference, item%s, \"\");\n"
                 "difference := nil;\n"
                 "flagss := res_mu.fetch(1);\n"
                 "res_mu := nil;\n"
@@ -5554,18 +5518,16 @@ fn_name (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c, char *nam
             /* gets the qname keys */
             "attr := mposjoin(attr, attr_frag, ws.fetch(ATTR_QN));\n"
             /* merges the qname keys of attributes and element nodes */
-            "var res_mu := merged_union(elem_oid, attr_oid, "
-                                       "elem, attr, "
-                                       "elem_frag, attr_frag);\n"
+            "var res_mu := merged_union(elem_oid, attr_oid, elem, attr, elem_frag, attr_frag);\n"
             "elem := nil;\n"
             "elem_frag := nil;\n"
             "elem_oid := nil;\n"
             "attr := nil;\n"
             "attr_frag := nil;\n"
             "attr_oid := nil;\n"
-            "var qname_oid  := res_mu.fetch(0);\n"
-            "var qname      := res_mu.fetch(1);\n"
-            "var qname_frag := res_mu.fetch(2);\n"
+            "var qname_oid  := res_mu.fetch(0);\n" /* CONST? */
+            "var qname      := res_mu.fetch(1);\n" /* CONST? */
+            "var qname_frag := res_mu.fetch(2);\n" /* CONST? */
             "res_mu := nil;\n",
             name);
 
@@ -5584,11 +5546,11 @@ fn_name (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c, char *nam
                 "var false_oid := prefix_bool.ord_uselect(false).hmark(0@0);\n"
                 "prefix_bool := nil;\n"
                 "prefixes := false_oid.leftfetchjoin(prefixes).[+](\":\");\n"
-                "res_mu := merged_union(true_oid, false_oid, constant2bat(\"\"), prefixes);\n"
+                "res_mu := merged_union(true_oid, false_oid, \"\", prefixes);\n"
                 "true_oid := nil;\n"
                 "false_oid := nil;\n"
                 "prefixes := nil;\n"
-                "prefixes := res_mu.fetch(1);\n"
+                "prefixes := res_mu.fetch(1);\n" /* CONST? */
                 "res_mu := nil;\n"
                 "var res := prefixes.[+](mposjoin(qname, qname_frag, ws.fetch(QN_LOC)));\n"
                 "prefixes := nil;\n");
@@ -6488,7 +6450,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "var elem_iter := elem.leftfetchjoin(iter);\n"
                 "elem := nil;\n"
                 "var res_mu := merged_union(elem_iter, attr_iter, elem_iter, attr_pre);\n"
-                "item := res_mu.fetch(1);\n"
+                "item := res_mu.fetch(1);\n" /* CONST? */
                 "res_mu := nil;\n"
                 "}\n"
 
@@ -6515,14 +6477,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "var d_iter := doc_nodes.leftfetchjoin(iter);\n"
                 "var d_kind := doc_nodes.leftfetchjoin(kind);\n"
 
-                "var res_mu := merged_union(d_iter, t_iter, "
-                                           "constant2bat(0@0), t_item, "
-                                           "d_kind, constant2bat(ELEM));\n"
-                "iter := res_mu.fetch(0);\n"
+                "var res_mu := merged_union(d_iter, t_iter, 0@0, t_item, d_kind, ELEM);\n"
+                "iter := res_mu.fetch(0);\n" /* CONST? */
                 "ipik := iter;\n"
                 "pos := 0;\n"
-                "item := res_mu.fetch(1);\n"
-                "kind := res_mu.fetch(2);\n"
+                "item := res_mu.fetch(1).bat2constant();\n"
+                "kind := res_mu.fetch(2).bat2constant();\n"
                 "res_mu := nil;\n"
                 "} }\n"
                 "} # end of fn:root ()\n");
@@ -6532,7 +6492,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     {
         rc = translate2MIL (f, code, cur_level, counter, L(args));
         milprintf(f,
-                "if (constant2bat(iter).tunique().count() != loop%03u.count()) "
+                "if (iter.tunique().count() != loop%03u.count()) "
                 "{ ERROR (\"err:FORG0005: function fn:exactly-one expects "
                 "exactly one value.\"); }\n",
                 cur_level);
@@ -6734,10 +6694,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "{\n"
                 "var difference := loop%03u.reverse().kdiff(iter%03u.reverse());\n"
                 "difference := difference.hmark(0@0);\n"
-                "var res_mu := merged_union(iter%03u.chk_order(), difference, constant2bat(item%s%03u), "
-                                           "constant2bat(\"\"));\n"
+                "var res_mu := merged_union(iter%03u.chk_order(), difference, item%s%03u, \"\");\n"
                 "difference := nil;\n"
-                "strings := res_mu.fetch(1);\n"
+                "strings := res_mu.fetch(1);\n" /* CONST? */
                 "res_mu := nil;\n"
                 "} else {\n"
                 "strings := item%s%03u;\n"
@@ -6752,10 +6711,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "{\n"
                 "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
                 "difference := difference.hmark(0@0);\n"
-                "var res_mu := merged_union(iter, difference, constant2bat(item%s), "
-                                           "constant2bat(\"\"));\n"
+                "var res_mu := merged_union(iter, difference, item%s, \"\");\n"
                 "difference := nil;\n"
-                "search_strs := res_mu.fetch(1);\n"
+                "search_strs := res_mu.fetch(1);\n" /* CONST? */
                 "res_mu := nil;\n"
                 "} else {\n"
                 "search_strs := item%s;\n"
@@ -6982,10 +6940,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "{\n"
                 "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
                 "difference := difference.hmark(0@0);\n"
-                "var res_mu := merged_union(iter, difference, constant2bat(cast_val), "
-                                           "constant2bat(dbl(nil)));\n"
+                "var res_mu := merged_union(iter, difference, cast_val, dbl(nil));\n"
                 "difference := nil;\n"
-                "cast_val := res_mu.fetch(1);\n"
+                "cast_val := res_mu.fetch(1);\n" /* CONST? */
                 "res_mu := nil;\n"
                 "}\n",
                 cur_level,
@@ -6999,7 +6956,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         if (!code)
             addValues (f, dbl_container(), "cast_val", "item");
         else
-            milprintf(f, "item%s := bat2constant(cast_val);\n", item_ext);
+            milprintf(f, "item%s := cast_val;\n", item_ext);
 
         milprintf(f,
                 "cast_val := nil;\n"
@@ -7139,11 +7096,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                     "{ # add 0 for missing zero values in fn:sum\n"
                     "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
                     "difference := difference.hmark(0@0);\n"
-                    "var res_mu := merged_union(iter, difference, "
-                                               "constant2bat(item%s), constant2bat(%s(0)));\n"
+                    "var res_mu := merged_union(iter, difference, item%s, %s(0));\n"
                     "difference := nil;\n"
                     "iter := loop%03u;\n"
-                    "item%s := res_mu.fetch(1);\n"
+                    "item%s := res_mu.fetch(1);\n" /* CONST? */
                     "res_mu := nil;\n"
                     "}\n",
                     cur_level, 
@@ -7169,9 +7125,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "difference := difference.hmark(0@0);\n"
                 "var zeros := difference.leftfetchjoin(iter.reverse())"
                                        ".leftfetchjoin(item%s);\n"
-                "var res_mu := merged_union(iter%03u, difference, "
-                                           "constant2bat(item%s%03u), zeros);\n"
-                "item_result := res_mu.fetch(1);\n"
+                "var res_mu := merged_union(iter%03u, difference, item%s%03u, zeros);\n"
+                "item_result := res_mu.fetch(1);\n" /* CONST? */
                 "} else {\n"
                 "item_result := item%s%03u;\n"
                 "}\n"
@@ -7469,13 +7424,13 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "    pos := ipik.mark(1@0);\n"
                 "} else {\n"
                 "    # evaluate selection tuple by tuple (note: fully constant-resistant code)\n"
-                "    var offset_dbl := bat2constant(item_dbl_%03d).tmark(1@0);\n"
+                "    var offset_dbl := item_dbl_%03d.tmark(1@0);\n"
                 "    var offset_oid := leftfetchjoin(iter, [oid](offset_dbl));\n"
                 "    var sel := [>=](pos, offset_oid);\n",
                         kind_str(code), kind_str(code), counter-1);
         if (fun->arity == 3)
                 milprintf(f,
-                        "    var limit_dbl := bat2constant(item_dbl_%03d).tmark(1@0);\n"
+                        "    var limit_dbl := item_dbl_%03d.tmark(1@0);\n"
 			"    offset_oid := iter.leftfetchjoin([oid]([+](offset_dbl, limit_dbl)));\n"
                         "    sel := [and](sel, [<](pos, offset_oid));\n", counter);
 
@@ -7570,10 +7525,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "{ # add zero values needed for fn:sum\n"
                 "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
                 "difference := difference.hmark(0@0);\n"
-                "var res_mu := merged_union(iter, difference, "
-                                           "constant2bat(item%s), constant2bat(\"err:FOER0000\"));\n"
+                "var res_mu := merged_union(iter, difference, item%s, \"err:FOER0000\");\n"
                 "difference := nil;\n"
-                "item%s := res_mu.fetch(1);\n"
+                "item%s := res_mu.fetch(1);\n" /* CONST? */
                 "res_mu := nil;\n"
                 "}\n",
                 cur_level, 
@@ -10218,23 +10172,21 @@ const char* PFstopMIL() {
 
 const char* PFudfMIL() {
     return  
+        "{\n"
         "var proc_res := %s(loop%03u, outer%03u, order_%03u, inner%03u, fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u); #%s\n" 
-        "iter := proc_res.fetch(0);\n"
-        "item := proc_res.fetch(1);\n"
-        "kind := proc_res.fetch(2);\n"
-        "if (not(is_constant_bat(iter))) {\n"
+        "iter := proc_res.fetch(0).bat2constant();\n"
+        "item := proc_res.fetch(1).bat2constant();\n"
+        "kind := proc_res.fetch(2).bat2constant();\n"
+        "if (type(iter) = bat) {\n"
         " ipik := iter;\n"
         "} else {\n"
-        "  if (is_constant_bat(item)) {\n"
+        "  if (type(item) = bat) {\n"
         "    ipik := kind;\n"
         "  } else {\n"
         "    ipik := item;\n"
         "  }\n"
         "}\n"
-        "proc_res := nil;\n"
-        "iter := bat2constant(iter);\n"
-        "item := bat2constant(item);\n"
-        "kind := bat2constant(kind);\n";
+        "}\n";
 }
 
 /**

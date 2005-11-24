@@ -88,11 +88,11 @@ a0005 := loop_lifted_child_step_with_nsloc_test (a0006, a0008, a0007, ws, 3, "",
 a0009 := a0005.fetch (0);
 a0010 := a0005.fetch (1);
 a0011 := a0005.fetch (2);
-if (a0009.is_constant_bat ()) {
+if (a0009.is_constant ()) {
     a0009 := a0010.project (a0009.fetch (0));
 } else {
 }
-if (a0011.is_constant_bat ()) {
+if (a0011.is_constant ()) {
     a0011 := a0010.project (a0011.fetch (0));
 } else {
 }
@@ -136,11 +136,11 @@ a0005 := loop_lifted_child_step_with_nsloc_test (a0009, a0011, a0010, ws, 0, "",
 a0006 := a0005.fetch (0);
 a0007 := a0005.fetch (1);
 a0008 := a0005.fetch (2);
-if (a0006.is_constant_bat ()) {
+if (a0006.is_constant ()) {
     a0006 := a0007.project (a0006.fetch (0));
 } else {
 }
-if (a0008.is_constant_bat ()) {
+if (a0008.is_constant ()) {
     a0008 := a0007.project (a0008.fetch (0));
 } else {
 }
@@ -170,11 +170,11 @@ a0005 := loop_lifted_child_step_with_nsloc_test (a0009, a0011, a0010, ws, 0, "",
 a0006 := a0005.fetch (0);
 a0007 := a0005.fetch (1);
 a0008 := a0005.fetch (2);
-if (a0006.is_constant_bat ()) {
+if (a0006.is_constant ()) {
     a0006 := a0007.project (a0006.fetch (0));
 } else {
 }
-if (a0008.is_constant_bat ()) {
+if (a0008.is_constant ()) {
     a0008 := a0007.project (a0008.fetch (0));
 } else {
 }
@@ -219,11 +219,11 @@ a0013 := loop_lifted_child_step_with_nsloc_test (a0014, a0016, a0015, ws, 0, "",
 a0017 := a0013.fetch (0);
 a0018 := a0013.fetch (1);
 a0019 := a0013.fetch (2);
-if (a0017.is_constant_bat ()) {
+if (a0017.is_constant ()) {
     a0017 := a0018.project (a0017.fetch (0));
 } else {
 }
-if (a0019.is_constant_bat ()) {
+if (a0019.is_constant ()) {
     a0019 := a0018.project (a0019.fetch (0));
 } else {
 }
@@ -253,11 +253,11 @@ a0013 := loop_lifted_child_step_with_kind_test (a0014, a0016, a0015, ws, 0, TEXT
 a0017 := a0013.fetch (0);
 a0018 := a0013.fetch (1);
 a0019 := a0013.fetch (2);
-if (a0017.is_constant_bat ()) {
+if (a0017.is_constant ()) {
     a0017 := a0018.project (a0017.fetch (0));
 } else {
 }
-if (a0019.is_constant_bat ()) {
+if (a0019.is_constant ()) {
     a0019 := a0018.project (a0019.fetch (0));
 } else {
 }
@@ -400,11 +400,11 @@ a0001 := loop_lifted_child_step_with_nsloc_test (a0002, a0004, a0003, ws, 0, "",
 a0005 := a0001.fetch (0);
 a0012 := a0001.fetch (1);
 a0017 := a0001.fetch (2);
-if (a0005.is_constant_bat ()) {
+if (a0005.is_constant ()) {
     a0005 := a0012.project (a0005.fetch (0));
 } else {
 }
-if (a0017.is_constant_bat ()) {
+if (a0017.is_constant ()) {
     a0017 := a0012.project (a0017.fetch (0));
 } else {
 }
@@ -434,11 +434,11 @@ a0001 := loop_lifted_child_step_with_nsloc_test (a0002, a0004, a0003, ws, 0, "",
 a0005 := a0001.fetch (0);
 a0012 := a0001.fetch (1);
 a0017 := a0001.fetch (2);
-if (a0005.is_constant_bat ()) {
+if (a0005.is_constant ()) {
     a0005 := a0012.project (a0005.fetch (0));
 } else {
 }
-if (a0017.is_constant_bat ()) {
+if (a0017.is_constant ()) {
     a0017 := a0012.project (a0017.fetch (0));
 } else {
 }
@@ -468,11 +468,11 @@ a0001 := loop_lifted_child_step_with_nsloc_test (a0002, a0004, a0003, ws, 0, "",
 a0005 := a0001.fetch (0);
 a0012 := a0001.fetch (1);
 a0017 := a0001.fetch (2);
-if (a0005.is_constant_bat ()) {
+if (a0005.is_constant ()) {
     a0005 := a0012.project (a0005.fetch (0));
 } else {
 }
-if (a0017.is_constant_bat ()) {
+if (a0017.is_constant ()) {
     a0017 := a0012.project (a0017.fetch (0));
 } else {
 }
@@ -502,11 +502,11 @@ a0001 := loop_lifted_child_step_with_nsloc_test (a0002, a0004, a0003, ws, 0, "",
 a0005 := a0001.fetch (0);
 a0012 := a0001.fetch (1);
 a0017 := a0001.fetch (2);
-if (a0005.is_constant_bat ()) {
+if (a0005.is_constant ()) {
     a0005 := a0012.project (a0005.fetch (0));
 } else {
 }
-if (a0017.is_constant_bat ()) {
+if (a0017.is_constant ()) {
     a0017 := a0012.project (a0017.fetch (0));
 } else {
 }
@@ -576,11 +576,11 @@ a0007 := loop_lifted_child_step_with_nsloc_test (a0010, a0012, a0011, ws, 0, "",
 a0017 := a0007.fetch (0);
 a0020 := a0007.fetch (1);
 a0021 := a0007.fetch (2);
-if (a0017.is_constant_bat ()) {
+if (a0017.is_constant ()) {
     a0017 := a0020.project (a0017.fetch (0));
 } else {
 }
-if (a0021.is_constant_bat ()) {
+if (a0021.is_constant ()) {
     a0021 := a0020.project (a0021.fetch (0));
 } else {
 }
@@ -744,11 +744,11 @@ a0024 := loop_lifted_child_step_with_kind_test (a0025, a0032, a0029, ws, 1, TEXT
 a0028 := a0024.fetch (0);
 a0030 := a0024.fetch (1);
 a0031 := a0024.fetch (2);
-if (a0028.is_constant_bat ()) {
+if (a0028.is_constant ()) {
     a0028 := a0030.project (a0028.fetch (0));
 } else {
 }
-if (a0031.is_constant_bat ()) {
+if (a0031.is_constant ()) {
     a0031 := a0030.project (a0031.fetch (0));
 } else {
 }
