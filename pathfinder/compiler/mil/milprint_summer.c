@@ -3555,7 +3555,11 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
     else if (TY_EQ (input_type, PFty_double ()))
         evaluateCast (f, rcode, rc, dbl_container(), cast_container, "[str]()");
     else if (TY_EQ (input_type, PFty_string ()) ||
-             TY_EQ (input_type, PFty_untypedAtomic ()))
+             TY_EQ (input_type, PFty_untypedAtomic ()) ||
+             /* cope with special case introduced by simplifyCoreTree in
+                combination with setting the input type of fn:concat as atomic?
+                (see ``FuncArgList: args (Expr, FuncArgList)'' in fs.brg) */
+             (TY_EQ (input_type, PFty_atomic ()) && rc == U_A))
     {
         if (rcode != NORMAL && rc == NORMAL)
             milprintf(f,
@@ -3841,7 +3845,7 @@ evaluateOpOpt (opt_t *f, int rcode, int rc1, int rc2,
                 "if (val_snd.texist(%s))\n"
                 "    { ERROR (\"err:FOAR0001: division by 0 is forbidden.\"); }\n", div);
     milprintf(f, "val_fst := [%s](val_fst,val_snd);\n", operator);
-    milprintf(f, "iter := iters.tmark(0@0).leftfetchjoin(iter);\n");
+    milprintf(f, "iter := iters.hmark(0@0).leftfetchjoin(iter);\n");
     milprintf(f, "ipik := iter;\n");
     milprintf(f, "pos := 1@0;\n");
     milprintf(f, "kind := %s;\n", kind);
@@ -4291,20 +4295,15 @@ combine_strings (opt_t *f, int code, int rc)
 }
 
 /**
- * typed_value gets the string value(s) of a node or an attribute
- * if the boolean tv is set to true for a node a list of untyped
- * values (internally handled as strings) is the new intermediate
- * result. Otherwise the values are concatenated to one string
- * (string-value function).
+ * string_value gets the string value(s) of a node or an attribute.
+ * The values are concatenated to one string (string-value function).
  *
  * @param f the Stream the MIL code is printed to
  * @param code the number indicating, which result interface is preferred
  * @param kind the string indicating, whether the result should be STR or U_A
- * @param tv the boolean indicating wether typed-value or
- *        string-value is called
  */
 static void
-typed_value (opt_t *f, int code, char *kind, bool tv)
+string_value (opt_t *f, int code, char *kind)
 {
     char *empty_string = (code)?"\"\"":"EMPTY_STRING";
     char *item_ext = (code)?kind_str(STR):"";
@@ -4315,7 +4314,7 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
        - elements and attributes 
        This makes of course the code listed here bigger :) */
     milprintf(f,
-            "{ # typed-value\n"
+            "{ # string-value\n"
             /* save input iters to return empty string for rows
                which had no text content */
             "var input_iter := iter;\n"
@@ -4332,28 +4331,75 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                 "loop_lifted_descendant_or_self_step_with_kind_test"
                 "(iter, item, frag, ws, 0, TEXT);\n"
                 /* variables for the result of the scj */
-                "iter := res_scj.fetch(0);\n" /* CONST? */
-                "item := res_scj.fetch(1);\n" /* CONST? */
-                "frag := res_scj.fetch(2);\n" /* CONST? */
+                "var t_iter := res_scj.fetch(0);\n" /* CONST? */
+                "var t_item := res_scj.fetch(1);\n" /* CONST? */
+                "var t_frag := res_scj.fetch(2);\n" /* CONST? */
                 "res_scj := nil;\n"
                 /* get the string values of the text nodes */
-                "item_str := mposjoin(mposjoin(item, frag, ws.fetch(PRE_PROP)), "
-                                     "mposjoin(item, frag, ws.fetch(PRE_FRAG)), "
+                "item_str := mposjoin(mposjoin(t_item, t_frag, ws.fetch(PRE_PROP)), "
+                                     "mposjoin(t_item, t_frag, ws.fetch(PRE_FRAG)), "
                                      "ws.fetch(PROP_TEXT));\n"
-                "frag := nil;\n"
+                "t_frag := nil;\n"
                 /* for the result of the scj join with the string values */
-                "var iter_item := iter.materialize(item).reverse().leftfetchjoin(item_str).chk_order();\n"
-                "item := nil;\n"
+                "var iter_item := t_iter.materialize(t_item).reverse().leftfetchjoin(item_str).chk_order();\n"
+                "t_item := nil;\n"
                 "item_str := nil;\n");
-    if (!tv)
-        milprintf(f,
+    milprintf(f,
                 " { var item_unq := iter_item.reverse().tunique();\n"
                 "   if (item_unq.count() != iter_item.count())\n"
                 "     iter_item := iter_item.string_join(item_unq.project(\"\"));\n}\n");
 
     milprintf(f,
-                "iter := iter_item.hmark(0@0);\n"
-                "item_str := iter_item.tmark(0@0);\n"
+                "t_iter := iter_item.hmark(0@0);\n"
+                "var t_item_str := iter_item.tmark(0@0);\n"
+                /* get the string value of all comment nodes */
+                "var c_map := mposjoin (item, frag, ws.fetch (PRE_KIND))"
+                                  ".select(COMMENT).hmark(0@0);\n"
+                "if (c_map.count() > 0) { #process comments \n"
+                    "var c_iter := c_map.leftfetchjoin(iter);\n"
+                    "var c_item := c_map.leftfetchjoin(item);\n"
+                    "var c_frag := c_map.leftfetchjoin(frag);\n"
+                    /* get the string values of the comment nodes */
+                    "var c_item_str := mposjoin(mposjoin(c_item, c_frag, ws.fetch(PRE_PROP)), "
+                                               "mposjoin(c_item, c_frag, ws.fetch(PRE_FRAG)), "
+                                               "ws.fetch(PROP_COM));\n"
+                    "c_item := nil;\n"
+                    "c_frag := nil;\n"
+                    /* merge strings from element and attribute */
+                    "var res_mu := merged_union (t_iter, c_iter, t_item_str, c_item_str);\n"
+                    "c_iter := nil;\n"
+                    "c_item_str := nil;\n"
+                    "t_iter := res_mu.fetch(0);\n"
+                    "t_item_str := res_mu.fetch(1);\n"
+                    "res_mu := nil;\n"
+                "} # end of comment processing\n"
+                /* get the string value of all processing-instruction nodes */
+                "var pi_map := mposjoin (item, frag, ws.fetch (PRE_KIND))"
+                                   ".select(PI).hmark(0@0);\n"
+                "if (pi_map.count() > 0) { #process processing-instructions \n"
+                    "var pi_iter := pi_map.leftfetchjoin(iter);\n"
+                    "var pi_item := pi_map.leftfetchjoin(item);\n"
+                    "var pi_frag := pi_map.leftfetchjoin(frag);\n"
+                    /* get the string values of the processing-instruction nodes */
+                    "var pi_item_str := mposjoin(mposjoin(pi_item, pi_frag, ws.fetch(PRE_PROP)), "
+                                                "mposjoin(pi_item, pi_frag, ws.fetch(PRE_FRAG)), "
+                                                "ws.fetch(PROP_INS));\n"
+                    "pi_item := nil;\n"
+                    "pi_frag := nil;\n"
+                    /* merge strings from element and attribute */
+                    "var res_mu := merged_union (t_iter, pi_iter, t_item_str, pi_item_str);\n"
+                    "pi_iter := nil;\n"
+                    "pi_item_str := nil;\n"
+                    "t_iter := res_mu.fetch(0);\n"
+                    "t_item_str := res_mu.fetch(1);\n"
+                    "res_mu := nil;\n"
+                "} # end of processing-instruction processing\n"
+                "iter := t_iter;\n"
+                "item_str := t_item_str;\n"
+                "t_iter := nil;\n"
+                "t_item_str := nil;\n");
+    
+    milprintf(f,
             "} else {\n"
                 "kind := kind.materialize(ipik);\n"
                 "var kind_attr := kind.get_type(ATTR);\n"
@@ -4392,37 +4438,83 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                     "loop_lifted_descendant_or_self_step_with_kind_test"
                     "(iter, item, frag, ws, 0, TEXT);\n"
                     /* variables for the result of the scj */
-                    "iter := res_scj.fetch(0);\n" /* CONST? */
-                    "item := res_scj.fetch(1);\n" /* CONST? */
-                    "frag := res_scj.fetch(2);\n" /* CONST? */
+                    "var t_iter := res_scj.fetch(0);\n" /* CONST? */
+                    "var t_item := res_scj.fetch(1);\n" /* CONST? */
+                    "var t_frag := res_scj.fetch(2);\n" /* CONST? */
                     "res_scj := nil;\n"
                     /* get the string values of the text nodes */
-                    "item_str := mposjoin(mposjoin(item, frag, ws.fetch(PRE_PROP)), "
-                                         "mposjoin(item, frag, ws.fetch(PRE_FRAG)), "
-                                         "ws.fetch(PROP_TEXT));\n"
-                    "frag := nil;\n"
+                    "var t_item_str := mposjoin(mposjoin(t_item, t_frag, ws.fetch(PRE_PROP)), "
+                                               "mposjoin(t_item, t_frag, ws.fetch(PRE_FRAG)), "
+                                               "ws.fetch(PROP_TEXT));\n"
+                    "t_frag := nil;\n"
                     /* for the result of the scj join with the string values */
-                    "var iter_item := iter.materialize(item).reverse().leftfetchjoin(item_str);\n"
-                    "item := nil;\n"
-                    "iter := iter_item.hmark(0@0);\n"
-                    "item_str := iter_item.tmark(0@0);\n"
+                    "var iter_item := t_iter.materialize(t_item).reverse().leftfetchjoin(t_item_str);\n"
+                    "t_item := nil;\n"
+                    "t_iter := iter_item.hmark(0@0);\n"
+                    "t_item_str := iter_item.tmark(0@0);\n"
                     /* merge strings from element and attribute */
-                    "var res_mu := merged_union (iter, iter_attr, item_str, item_attr_str);\n"
-                    "iter := res_mu.fetch(0);\n" /* CONST? */
-                    "item_str := res_mu.fetch(1);\n" /* CONST? */
+                    "var res_mu := merged_union (t_iter, iter_attr, t_item_str, item_attr_str);\n"
+                    "t_iter := res_mu.fetch(0);\n" /* CONST? */
+                    "t_item_str := res_mu.fetch(1);\n" /* CONST? */
                     "res_mu := nil;\n"
-                    "iter_item := iter.reverse().leftfetchjoin(item_str).chk_order();\n"
+                    "iter_item := t_iter.reverse().leftfetchjoin(t_item_str).chk_order();\n"
                     "iter := nil;\n"
                     "item_str := nil;\n");
-    if (!tv)
-        milprintf(f,  
-                " { var item_unq := iter_item.reverse().tunique();\n"
-                "   if (item_unq.count() != iter_item.count())\n"
-                "     iter_item := iter_item.string_join(item_unq.project(\"\"));\n}\n");
+    milprintf(f,  
+                    " { var item_unq := iter_item.reverse().tunique();\n"
+                    "   if (item_unq.count() != iter_item.count())\n"
+                    "     iter_item := iter_item.string_join(item_unq.project(\"\"));\n}\n");
 
     milprintf(f,
-                    "iter := iter_item.hmark(0@0);\n"
-                    "item_str := iter_item.tmark(0@0);\n"
+                    "t_iter := iter_item.hmark(0@0);\n"
+                    "var t_item_str := iter_item.tmark(0@0);\n"
+                    /* get the string value of all comment nodes */
+                    "var c_map := mposjoin (item, frag, ws.fetch (PRE_KIND))"
+                                      ".select(COMMENT).hmark(0@0);\n"
+                    "if (c_map.count() > 0) { #process comments \n"
+                        "var c_iter := c_map.leftfetchjoin(iter);\n"
+                        "var c_item := c_map.leftfetchjoin(item);\n"
+                        "var c_frag := c_map.leftfetchjoin(frag);\n"
+                        /* get the string values of the comment nodes */
+                        "var c_item_str := mposjoin(mposjoin(c_item, c_frag, ws.fetch(PRE_PROP)), "
+                                                   "mposjoin(c_item, c_frag, ws.fetch(PRE_FRAG)), "
+                                                   "ws.fetch(PROP_COM));\n"
+                        "c_item := nil;\n"
+                        "c_frag := nil;\n"
+                        /* merge strings from element and attribute */
+                        "var res_mu := merged_union (t_iter, c_iter, t_item_str, c_item_str);\n"
+                        "c_iter := nil;\n"
+                        "c_item_str := nil;\n"
+                        "t_iter := res_mu.fetch(0);\n"
+                        "t_item_str := res_mu.fetch(1);\n"
+                        "res_mu := nil;\n"
+                    "} # end of comment processing\n"
+                    /* get the string value of all processing-instruction nodes */
+                    "var pi_map := mposjoin (item, frag, ws.fetch (PRE_KIND))"
+                                       ".select(PI).hmark(0@0);\n"
+                    "if (pi_map.count() > 0) { #process processing-instructions \n"
+                        "var pi_iter := pi_map.leftfetchjoin(iter);\n"
+                        "var pi_item := pi_map.leftfetchjoin(item);\n"
+                        "var pi_frag := pi_map.leftfetchjoin(frag);\n"
+                        /* get the string values of the processing-instruction nodes */
+                        "var pi_item_str := mposjoin(mposjoin(pi_item, pi_frag, ws.fetch(PRE_PROP)), "
+                                                    "mposjoin(pi_item, pi_frag, ws.fetch(PRE_FRAG)), "
+                                                    "ws.fetch(PROP_INS));\n"
+                        "pi_item := nil;\n"
+                        "pi_frag := nil;\n"
+                        /* merge strings from element and attribute */
+                        "var res_mu := merged_union (t_iter, pi_iter, t_item_str, pi_item_str);\n"
+                        "pi_iter := nil;\n"
+                        "pi_item_str := nil;\n"
+                        "t_iter := res_mu.fetch(0);\n"
+                        "t_item_str := res_mu.fetch(1);\n"
+                        "res_mu := nil;\n"
+                    "} # end of processing-instruction processing\n"
+                    "iter := t_iter;\n"
+                    "item_str := t_item_str;\n"
+                    "t_iter := nil;\n"
+                    "t_item_str := nil;\n");
+    milprintf(f,
                 "}\n"
             "}\n");
 
@@ -4451,7 +4543,7 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
             "ipik := iter;\n"
             "pos := tmark_grp_unique(iter,ipik);\n"
             "kind := %s;\n"
-            "} # end of typed-value\n",
+            "} # end of string-value\n",
             item_ext, item_ext,
             item_ext,
             empty_string,
@@ -4487,7 +4579,9 @@ fn_data (opt_t *f)
             "pos := node.leftfetchjoin(pos);\n"
             "item := node.leftfetchjoin(item);\n"
             "kind := node.leftfetchjoin(kind);\n");
-    typed_value (f, NORMAL, "U_A", false);
+    /* we are assuming that nothing is validated
+       and we can use string-value */
+    string_value (f, NORMAL, "U_A");
     milprintf(f,
             /* every input row of typed-value gives back exactly
                one output row - therefore a mapping is not necessary */
@@ -4814,7 +4908,7 @@ fn_string(opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
     if (PFty_subtype (PFty_node(),input_type))
     {
         translate2MIL (f, NORMAL, cur_level, counter, c);
-        typed_value (f, code, "STR", false);
+        string_value (f, code, "STR");
         add_empty_strings (f, rcode, cur_level);
         milprintf(f,
                 "iter := loop%03u.tmark(0@0);\n"
@@ -6517,8 +6611,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"typed-value")))
     {
+        /* we are assuming that nothing is validated
+           and we can use string-value */
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        typed_value (f, code, "U_A", true);
+        string_value (f, code, "U_A");
         return (code)?STR:NORMAL;
     }
     else if (!PFqname_eq(fnQname,
@@ -6578,7 +6674,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"string-value")))
     {
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        typed_value (f, code, "STR", false);
+        string_value (f, code, "STR");
         return (code)?STR:NORMAL;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"data")))
@@ -6589,7 +6685,19 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         {
             /* this branch is probably never evaluated
                - optimization already applied in coreopt.brg */
-            typed_value (f, code, "U_A", false);
+            milprintf(f,
+                      "{ # fn:data\n"
+                      "var data_iter := iter;\n"
+                      "iter := iter.mirror();\n");
+            /* we are assuming that nothing is validated
+               and we can use string-value */
+            string_value (f, code, "U_A");
+            milprintf(f,
+                      "iter := iter.leftfetchjoin(data_iter);\n"
+                      "data_iter := nil;\n"
+                      "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
+                      "} # end of fn:data\n");
+    
             rc = (code)?STR:NORMAL;
         }
         else
