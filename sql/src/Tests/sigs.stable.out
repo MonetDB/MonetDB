@@ -22,7 +22,8 @@ module 'sql_server'
 #-------------------------------------------------------------------------#
 # signature								  # name
 # str									  # type
-#-------------------------------------------------------------------------#
+#---------------------------------------------------------------------------------#
+[ "date(str) : date"								  ]
 [ "dbl(int) : dbl"							  ]
 [ "dbl(int, int) : dbl"							  ]
 [ "dbl(int, int, int) : dbl"						  ]
@@ -146,6 +147,7 @@ module 'sql_server'
 [ "sqlconsole( ) "							  ]
 [ "sqllogmanager() : void"						  ]
 [ "str(any, int) : str"							  ]
+[ "timestamp(str) : timestamp"							  ]
 
 quit();
 
