@@ -36,7 +36,7 @@ because parse trees may be kept around for re-use]
 @l
 D	[0-9]
 O	[0-7]
-L	[_a-zA-Z]
+L	[_a-zA-Z\x80-\xff]
 E	[Ee][-+]?{D}+
 S	[\t\n ]*
 P	[-!\$%\^\*~+|?<>/\\]
@@ -1456,8 +1456,12 @@ argument_list_nocheck:
 	{   $$ = $2;							      }
     |	'(' ')'
 	{   $$ = (ptr) yysugar(ll_sugarnode);				      }
-    |	 /* empty */
-	{   $$ = (ptr) yysugar(ll_sugarnode);				      }
+    |	/* empty */ 
+	{   if (ll_sugarnode && !monet_nostalgic) {
+		ll_parserror("new MIL syntax (>=4.4) requires parentheses for all operators.\n");
+		YYERROR;
+	    }
+	    $$ = (ptr) yysugar(ll_sugarnode);                                 }
     ;
 
 expressions:
