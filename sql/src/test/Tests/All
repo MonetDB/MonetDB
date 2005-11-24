@@ -60,3 +60,5 @@ timezone
 
 identifiers
 seq-default
+alter-sequence
+restart-sequence

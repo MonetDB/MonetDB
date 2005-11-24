@@ -301,9 +301,11 @@ scanner_init_keywords()
 	keywords_insert("INDEX", INDEX);
 
 	keywords_insert("SEQUENCE", SEQUENCE);
+	keywords_insert("RESTART", RESTART);
 	keywords_insert("INCREMENT", INCREMENT);
 	keywords_insert("MAXVALUE", MAXVALUE);
 	keywords_insert("MINVALUE", MINVALUE);
+	keywords_insert("CACHE", CACHE);
 	keywords_insert("CYCLE", CYCLE);
 	keywords_insert("NEXT", NEXT);
 	keywords_insert("VALUE", VALUE);

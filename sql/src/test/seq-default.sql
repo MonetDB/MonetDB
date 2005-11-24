@@ -1,5 +1,4 @@
--- this code currently triggers a multitude of bugs...
-
+START TRANSACTION;
 
 create sequence test_seq as integer;
 create table test (ts timestamp, i integer default next value for test_seq);
@@ -19,7 +18,8 @@ create table test (
 	id serial,
 	count int auto_increment,
 	bla int generated always as identity (
-		start with 100 increment by 2 minvalue 1 maxvalue 1000 cycle)
+		start with 100 increment by 2 no minvalue maxvalue 1000
+		cache 2 cycle)
 );
 insert into test(d) values ('2005-10-01');
 insert into test(d) values ('2005-10-01');
@@ -28,3 +28,5 @@ insert into test(d) values ('2005-10-01');
 insert into test(d) values ('2005-10-01');
 insert into test(d) values ('2005-10-01');
 select * from test;
+
+ROLLBACK;

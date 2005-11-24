@@ -406,7 +406,10 @@ int yydebug=1;
 	opt_paramlist
 	opt_ref_action
 	opt_seq_params
+	opt_alt_seq_params
 	serial_opt_params
+	opt_start
+	opt_restart
 
 %type <ival>
 	drop_action
@@ -436,12 +439,11 @@ int yydebug=1;
 	transaction_mode
 	transaction_mode_list
 	_transaction_mode_list
-	opt_start
 	opt_increment
 	opt_min
 	opt_max
+	opt_cache
 	opt_cycle
-	opt_seq_value
 
 %type <bval>
 	opt_brackets
@@ -490,8 +492,8 @@ int yydebug=1;
 %token <operation> EXTRACT
 
 /* sequence operations */
-%token SEQUENCE INCREMENT MAXVALUE MINVALUE CYCLE
-%token NEXT VALUE
+%token SEQUENCE INCREMENT MAXVALUE MINVALUE CYCLE RESTART
+%token NEXT VALUE CACHE
 %token GENERATED ALWAYS IDENTITY
 %token SERIAL AUTO_INCREMENT /* PostgreSQL and MySQL immitators */
 
@@ -916,7 +918,18 @@ opt_column:
 
 create:	role_def | table_def | view_def | module_def | type_def | func_def | index_def | seq_def;
 
+/*=== BEGIN SEQUENCES ===*/
 seq_def:
+/*
+ * CREATE SEQUENCE name AS datatype
+ * 	[ START WITH start ] 
+ * 	[ INCREMENT BY increment ]
+ * 	[ MINVALUE minvalue | NO MINVALUE ]
+ * 	[ MAXVALUE maxvalue | NO MAXVALUE ]
+ * 	[ CACHE cache ]
+ * 	[ [ NO ] CYCLE ]
+ * start may be a value or subquery
+ */
     CREATE SEQUENCE qname
     AS data_type
     opt_seq_params
@@ -927,48 +940,135 @@ seq_def:
 		_dlist_append_list(l, $6);
 		$$ = _symbol_create_list(SQL_CREATE_SEQ, l);
 	}
+/*
+ * DROP SEQUENCE name
+ */
   | DROP SEQUENCE qname
 	{
 		dlist *l = _dlist_create();
 		_dlist_append_list(l, $3);
 		$$ = _symbol_create_list(SQL_DROP_SEQ, l);
 	}
-  | ALTER SEQUENCE qname opt_seq_params opt_seq_value
+/*
+ * ALTER SEQUENCE name
+ * 	[ RESTART [ WITH start ] ] 
+ * 	[ INCREMENT BY increment ]
+ * 	[ MINVALUE minvalue | NO MINVALUE ]
+ * 	[ MAXVALUE maxvalue | NO MAXVALUE ]
+ * 	[ CACHE cache ]
+ * 	[ [ NO ] CYCLE ]
+ * start may be a value or subquery
+ */
+  | ALTER SEQUENCE qname opt_alt_seq_params
 	{
 		dlist *l = _dlist_create();
 		_dlist_append_list(l, $3);
 		_dlist_append_type(l, NULL);
 		_dlist_append_list(l, $4);
-		_dlist_append_int(l, $5);
 		$$ = _symbol_create_list(SQL_ALTER_SEQ, l);
 	}
-		
  ;
-
-opt_seq_value:
-	/* empty */		{ $$ = -1; }
-  |	VALUE nonzero	{ $$ = $2; }
-  ;
 
 opt_seq_params:
 	opt_start
 	opt_increment
 	opt_min
 	opt_max
+	opt_cache
 	opt_cycle
 	{ dlist *l = _dlist_create();
-	  _dlist_append_int(l, $1 );
-	  _dlist_append_int(l, $2 );
-	  _dlist_append_int(l, $3 );
-	  _dlist_append_int(l, $4 );
-	  _dlist_append_int(l, $5 );
+	  _dlist_append_list(l, $1);
+	  _dlist_append_int(l, $2);
+	  _dlist_append_int(l, $3);
+	  _dlist_append_int(l, $4);
+	  _dlist_append_int(l, $5);
+	  _dlist_append_int(l, $6);
 	  $$ = l;
 	}
 ;
 
+opt_alt_seq_params:
+	opt_restart
+	opt_increment
+	opt_min
+	opt_max
+	opt_cache
+	opt_cycle
+	{ dlist *l = _dlist_create();
+	  _dlist_append_list(l, $1);
+	  _dlist_append_int(l, $2);
+	  _dlist_append_int(l, $3);
+	  _dlist_append_int(l, $4);
+	  _dlist_append_int(l, $5);
+	  _dlist_append_int(l, $6);
+	  $$ = l;
+	}
+;
+
+/*
+ * opt_start and opt_restart return a list consisting of:
+ * - int: indicating the type of symbol
+ *   * -1  absent/empty
+ *   *  0  no argument (only for RESTART)
+ *   *  1  argument is a subquery
+ *   *  2  argument is simple int
+ * - symbol: the symbol
+ */
 opt_start:
-	/* empty */				{ $$ = -1; }
-  |	START WITH nonzero		{ $$ = $3; }
+	/* empty */				{
+								dlist *l = _dlist_create();
+								_dlist_append_int(l, -1);
+								$$ = l;
+							}
+  | START WITH				{
+								mvc *m = (mvc*)parm;
+								m->scanner.as = m->scanner.yycur;
+							}
+				select_stmt	{
+								mvc *m = (mvc*)parm;
+								dlist *l = _dlist_create();
+								_dlist_append_int(l, 1);
+								_dlist_append_symbol(l, $4);
+								$$ = l;
+								m->scanner.view_end = m->scanner.yycur;
+							}
+  |	START WITH nonzero		{
+								dlist *l = _dlist_create();
+								_dlist_append_int(l, 2);
+								_dlist_append_int(l, $3);
+								$$ = l;
+							}
+  ;
+
+opt_restart:
+	/* empty */				{
+								dlist *l = _dlist_create();
+								_dlist_append_int(l, -1);
+								$$ = l;
+							}
+  |	RESTART					{
+								dlist *l = _dlist_create();
+								_dlist_append_int(l, 0);
+								$$ = l;
+							}
+  | RESTART WITH			{
+								mvc *m = (mvc*)parm;
+								m->scanner.as = m->scanner.yycur;
+							}
+				select_stmt	{
+								mvc *m = (mvc*)parm;
+								dlist *l = _dlist_create();
+								_dlist_append_int(l, 1);
+								_dlist_append_symbol(l, $4);
+								$$ = l;
+								m->scanner.view_end = m->scanner.yycur;
+							}
+  |	RESTART WITH nonzero	{
+								dlist *l = _dlist_create();
+								_dlist_append_int(l, 2);
+								_dlist_append_int(l, $3);
+								$$ = l;
+							}
   ;
 
 opt_increment:
@@ -978,12 +1078,19 @@ opt_increment:
 
 opt_min:
 	/* empty */ 			{ $$ = -1; }
+  |	NO MINVALUE				{ $$ =  0; }
   |	MINVALUE nonzero		{ $$ = $2; }
   ;
 
 opt_max:
 	/* empty */				{ $$ = -1; }
+  |	NO MAXVALUE				{ $$ =  0; }
   |	MAXVALUE nonzero		{ $$ = $2; }
+  ;
+
+opt_cache:
+	/* empty */				{ $$ = -1; }
+  |	CACHE nonzero			{ $$ = $2; }
   ;
 
 opt_cycle:
@@ -991,6 +1098,8 @@ opt_cycle:
   |	CYCLE					{ $$ = 1; }
   |	NO CYCLE				{ $$ = 0; }
   ;
+/*=== END SEQUENCES ===*/
+
 
 index_def:
     CREATE opt_index_type INDEX ident ON qname '(' column_commalist ')'
@@ -1096,17 +1205,21 @@ column_def:
 			dlist *l = _dlist_create();
 			/* finally all the options */
 			dlist *o = _dlist_create();
-			dlist *p;
+			dlist *p = _dlist_create();
 			/* the name of the sequence */
 			_dlist_append_list(l, _dlist_append_string(_dlist_create(), sn));
 			/* ultra dirty: inline 'integer' type generation */
 			sql_find_subtype(&it, "int", 32, 0);
 			_dlist_append_type(l, &it);
+			/* create list with int 2 int 1 to indicate start from 1 */
+			_dlist_append_int(p, 2);
+			_dlist_append_int(p, 1);
 			/* finally all the options (no defaults here) */
-			_dlist_append_int(o, 1); /* start */
+			_dlist_append_list(o, p); /* start */
 			_dlist_append_int(o, 1); /* increment */
 			_dlist_append_int(o, 1); /* min */
 			_dlist_append_int(o, 0); /* max */
+			_dlist_append_int(o, 1); /* cache */
 			_dlist_append_int(o, 0); /* cycle */
 			_dlist_append_list(l, o);
 
@@ -1220,16 +1333,21 @@ generated_column:
 		dlist *l = _dlist_create();
 		/* finally all the options */
 		dlist *o = _dlist_create();
+		dlist *p = _dlist_create();
 		/* the name of the sequence (not known here) */
 		_dlist_append_list(l, _dlist_append_string(_dlist_create(), sn));
 		/* ultra dirty: inline 'integer' type generation */
 		sql_find_subtype(&it, "int", 32, 0);
 		_dlist_append_type(l, &it);
+		/* create list with int 2 int 1 to indicate start from 1 */
+		_dlist_append_int(p, 2);
+		_dlist_append_int(p, 1);
 		/* finally all the options (no defaults here) */
-		_dlist_append_int(o, 1); /* start */
+		_dlist_append_list(o, p); /* start */
 		_dlist_append_int(o, 1); /* increment */
 		_dlist_append_int(o, 1); /* min */
 		_dlist_append_int(o, 0); /* max */
+		_dlist_append_int(o, 1); /* cache */
 		_dlist_append_int(o, 0); /* cycle */
 		_dlist_append_list(l, o);
 		$$ = _symbol_create_symbol(SQL_DEFAULT, _symbol_create(SQL_NEXT, sn));
@@ -1435,9 +1553,7 @@ func_def:
 			  m->scanner.as = m->scanner.yycur; }
     select_stmt
 			{ dlist *f = _dlist_create();
-
-
-_dlist_append_list(f, $3);
+				_dlist_append_list(f, $3);
 				_dlist_append_list(f, $5);
 				_dlist_append_type(f, &$8);
 				_dlist_append_string(f, NULL);
