@@ -18,6 +18,7 @@
 @:install_load_module(builtin)@
 @:install_load_module(arith)@
 @:install_load_module(str)@
+@:install_load_module(constant)@
 @:install_load_module(bat)@
 @:install_load_module(algebra)@
 @:install_load_module(sys)@
