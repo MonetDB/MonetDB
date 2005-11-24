@@ -68,6 +68,7 @@ static char *a_id[]  = {
     , [la_sum]              = "SUM"
     , [la_count]            = "COUNT"
     , [la_rownum]           = "ROW#"              /* \"#FF0000\" */
+    , [la_number]           = "NUMBER"            /* \"#FF0000\" */
     , [la_type]             = "TYPE"
     , [la_type_assert]      = "type assertion"
     , [la_cast]             = "CAST"
@@ -144,6 +145,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
         , [la_sum]            = "\"#C0C0C0\""
         , [la_count]          = "\"#C0C0C0\""
         , [la_rownum]         = "\"#FF0000\""
+        , [la_number]         = "\"#FF0000\""
         , [la_type]           = "\"#C0C0C0\""
         , [la_type_assert]    = "\"#C0C0C0\""
         , [la_cast]           = "\"#C0C0C0\""
@@ -297,7 +299,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
 	    break;
 
         case la_sum:
-            if (n->sem.sum.part == aat_NULL)
+            if (n->sem.sum.part == att_NULL)
                 PFarray_printf (dot, "%s %s:(%s)", a_id[n->kind],
                                 PFatt_str (n->sem.sum.res),
                                 PFatt_str (n->sem.sum.att));
@@ -309,7 +311,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
             break;
 
         case la_count:
-            if (n->sem.count.part == aat_NULL)
+            if (n->sem.count.part == att_NULL)
                 PFarray_printf (dot, "%s %s", a_id[n->kind],
                                 PFatt_str (n->sem.count.res));
             else
@@ -329,9 +331,19 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
 
             PFarray_printf (dot, ">");
 
-            if (n->sem.rownum.part != aat_NULL)
+            if (n->sem.rownum.part != att_NULL)
                 PFarray_printf (dot, "/%s", 
                                 PFatt_str (n->sem.rownum.part));
+
+            PFarray_printf (dot, ")");
+            break;
+
+        case la_number:
+            PFarray_printf (dot, "%s (%s", a_id[n->kind],
+                            PFatt_str (n->sem.number.attname));
+            if (n->sem.number.part != att_NULL)
+                PFarray_printf (dot, "/%s", 
+                                PFatt_str (n->sem.number.part));
 
             PFarray_printf (dot, ")");
             break;

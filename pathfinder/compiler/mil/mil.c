@@ -1725,9 +1725,9 @@ PFmil_chk_order (const PFmil_t *v)
 }
 
 PFmil_t *
-PFmil_is_fake_project (const PFmil_t *v)
+PFmil_materialize (const PFmil_t *v1, const PFmil_t *v2)
 {
-    return wire1 (m_is_fake_project, v);
+    return wire2 (m_materialize, v1, v2);
 }
 
 PFmil_t *

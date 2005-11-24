@@ -637,7 +637,8 @@ int PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
 }
 
 static char *name[] = {
-      [att_iter]        = "iter"
+      [att_NULL]        = "(NULL)"
+    , [att_iter]        = "iter"
     , [att_item]        = "item" 
     , [att_pos]         = "pos"  
     , [att_res]         = "res"
@@ -654,7 +655,7 @@ static char *name[] = {
     , [att_notsub]      = "notsub"
     , [att_isint]       = "isint"
     , [att_isdec]       = "isdec"
-    , [aat_NULL]        = "(NULL)"
+    , [att_sort]        = "sort"
 };
 /**
  * Print attribute name

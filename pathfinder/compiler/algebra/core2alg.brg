@@ -619,6 +619,7 @@ reduce (PFcnode_t * p, int goalnt)
             PFla_op_t   *opt_var;
             PFla_op_t   *old_loop; 
             PFla_op_t   *map;
+            PFla_op_t   *number;
             PFarray_t    *old_env;
             unsigned int  i;
             PFla_env_t   e;
@@ -627,13 +628,12 @@ reduce (PFcnode_t * p, int goalnt)
             /* initiate translation of e1 */
             reduce (kids[1], nts[1]);
 
+            number = number (A(LR(p)).rel, att_inner, att_NULL);
+
             /* translate $v */
             var = cross (lit_tbl (attlist (att_pos),
                                   tuple (lit_nat (1))),
-                         project (rownum (A(LR(p)).rel,
-                                          att_inner,
-                                          sortby (att_iter, att_pos),
-                                          aat_NULL),
+                         project (number,
                                   proj (att_iter, att_inner),
                                   proj (att_item, att_item)));
 
@@ -652,11 +652,9 @@ reduce (PFcnode_t * p, int goalnt)
             loop = project (var, proj (att_iter, att_iter));
 
             /* create map relation. */
-            map = project (rownum(A(LR(p)).rel,
-                                  att_inner,
-                                  sortby (att_iter, att_pos),
-                                  aat_NULL),
+            map = project (number,
                      proj (att_outer, att_iter),
+                     proj (att_sort, att_pos),
                      proj (att_inner, att_inner));
 
             /*
@@ -672,7 +670,7 @@ reduce (PFcnode_t * p, int goalnt)
                 opt_var = cross (lit_tbl (attlist (att_pos),
                                           tuple (lit_nat (1))),
                                  project (cast (rownum (map, att_item,
-                                                        sortby (att_inner),
+                                                        sortby (att_sort),
                                                         att_outer),
                                                 att_cast, att_item, aat_int),
                                           proj (att_iter, att_inner),
@@ -711,7 +709,7 @@ reduce (PFcnode_t * p, int goalnt)
                      .rel = project (rownum (eqjoin(A(R(p)).rel,
                                                     map, att_iter, att_inner),
                                              att_pos1,
-                                             sortby (att_iter, att_pos),
+                                             sortby (att_sort, att_pos),
                                              att_outer),
                                      proj (att_iter, att_outer),
                                      proj (att_pos, att_pos1),

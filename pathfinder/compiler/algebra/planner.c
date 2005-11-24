@@ -857,6 +857,60 @@ plan_rownum (const PFla_op_t *n)
 
     return ret;
 }
+
+static PFplanlist_t *
+plan_number (const PFla_op_t *n)
+{
+    PFplanlist_t *ret     = new_planlist ();
+    PFplanlist_t *ordered = new_planlist ();
+    plan_t        *cheapest_unordered = NULL;
+    plan_t        *cheapest_ordered   = NULL;
+
+    assert (n); assert (n->kind == la_number);
+    assert (L(n)); assert (L(n)->plans);
+
+
+    /* find the cheapest plan for our argument */
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        if (!cheapest_unordered
+            || costless (*(plan_t **) PFarray_at (L(n)->plans, i),
+                         cheapest_unordered))
+            cheapest_unordered
+                = *(plan_t **) PFarray_at (L(n)->plans, i);
+
+    /* an ordering by `iter' is typically helpful -> sort all plans */
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        add_plans (ordered,
+                   ensure_ordering (
+                       *(plan_t **) PFarray_at (L(n)->plans, i),
+                       PFord_refine (
+                           PFord_refine (
+                               PFordering (), att_iter),
+                           att_pos)));
+
+    for (unsigned int i = 0; i < PFarray_last (ordered); i++)
+        if (!cheapest_ordered
+            || costless (*(plan_t **) PFarray_at (ordered, i),
+                         cheapest_ordered))
+            cheapest_ordered = *(plan_t **) PFarray_at (ordered, i);
+
+    /*
+     * The plan `cheapest_unordered' is always the cheapest possible
+     * plan.  However, an ordered plan could still be benefitial,
+     * even if it is slightly more expensive on its own.  We assume
+     * that the ordering makes up the cost of an unordered plan, if
+     * its cost is at most 2 times the cost of an unordered plan.
+     */
+    if (cheapest_ordered->cost <= cheapest_unordered->cost * 2)
+        add_plan (ret, number (cheapest_ordered,
+                  n->sem.number.attname, n->sem.number.part));
+    else
+        add_plan (ret, number (cheapest_unordered,
+                  n->sem.number.attname, n->sem.number.part));
+
+    return ret;
+}
+
 /**
  * `type' operator in the logical algebra just get a 1:1 mapping
  * into the physical type operator.
@@ -1709,6 +1763,7 @@ plan_subexpression (PFla_op_t *n)
         case la_count:          plans = plan_count (n);       break;
                                                               
         case la_rownum:         plans = plan_rownum (n);      break;
+        case la_number:         plans = plan_number (n);      break;
         case la_type:           plans = plan_type (n);        break;
         case la_type_assert:    plans = plan_type_assert (n); break;
         case la_cast:           plans = plan_cast (n);        break;

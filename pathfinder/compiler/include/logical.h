@@ -72,6 +72,7 @@ enum PFla_op_kind_t {
     , la_sum            = 31 /**< operator for (partitioned) sum of a column */
     , la_count          = 32 /**< (partitioned) row counting operator */
     , la_rownum         = 35 /**< consecutive number generation */
+    , la_number         = 36 /**< consecutive number generation */
     , la_type           = 40 /**< selection of rows where a column is of a
                                   certain type */
     , la_type_assert    = 41 /**< restricts the type of a relation */
@@ -172,6 +173,13 @@ union PFla_op_sem_t {
                                        otherwise NULL */
     } rownum;
 
+    /* semantic content for number operator */
+    struct {
+        PFalg_att_t     attname;  /**< name of generated (integer) attribute */
+        PFalg_att_t     part;     /**< optional partitioning attribute,
+                                       otherwise NULL */
+    } number;
+
     /* semantic content for type test operator */
     struct {
         PFalg_att_t     att;     /**< name of type-tested attribute */
@@ -245,6 +253,8 @@ struct PFla_op_t {
                                         MIL algebra expression trees (for MIL
                                         algebra generation only) */
     short              state_label;/**< Burg puts its state information here. */
+
+    bool               opt;        /**< used in algopt.brg to prune the tree. */
 
     PFplanlist_t      *plans;      /**< Physical algebra plans that implement
                                         this logical algebra subexpression. */
@@ -425,9 +435,12 @@ PFla_op_t * PFla_sum (const PFla_op_t *n, PFalg_att_t res,
 PFla_op_t * PFla_count (const PFla_op_t *n, PFalg_att_t res,
                         PFalg_att_t part);
 
-/** Constructor foo row numbering operator. */
+/** Constructor for row numbering operator. */
 PFla_op_t * PFla_rownum (const PFla_op_t *n, PFalg_att_t a,
                          PFalg_attlist_t s, PFalg_att_t p);
+
+/** Constructor for numbering operator. */
+PFla_op_t * PFla_number (const PFla_op_t *n, PFalg_att_t a, PFalg_att_t p);
 
 /**
  * Constructor for type test of column values. The result is

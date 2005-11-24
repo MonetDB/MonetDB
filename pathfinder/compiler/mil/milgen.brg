@@ -106,6 +106,7 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term hash_count     =  48
 %term merge_rownum   =  50
 %term hash_rownum    =  51
+%term number         =  52
 %term type           =  60
 %term type_assert    =  61
 %term cast           =  62
@@ -179,9 +180,10 @@ Rel:      bool_or (Rel)                                            =  63 (10);
 Rel:      hash_count (Rel)                                         =  64 (10);
 Rel:      merge_rownum (Rel)                                       =  70 (10);
 Rel:      hash_rownum (Rel)                                        =  71 (10);
-Rel:      type (Rel)                                               =  72 (10);
-Rel:      type_assert (Rel)                                        =  73 (10);
-Rel:      cast (Rel)                                               =  74 (10);
+Rel:      number (Rel)                                             =  72 (10);
+Rel:      type (Rel)                                               =  73 (10);
+Rel:      type_assert (Rel)                                        =  74 (10);
+Rel:      cast (Rel)                                               =  75 (10);
 
 Rel:      llscj_anc (FragList, Rel)                                =  80 (10);
 Rel:      llscj_anc_self (FragList, Rel)                           =  81 (10);
@@ -1952,7 +1954,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
         /* Rel:      hash_count (Rel) */
         case 64:
-            if (p->sem.count.part != aat_NULL) {
+            if (p->sem.count.part != att_NULL) {
                 for (unsigned int i = 0; i < L(p)->schema.count; i++)
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
                         if (t & L(p)->schema.items[i].type) {
@@ -2025,7 +2027,7 @@ reduce (PFpa_op_t * p, int goalnt)
             }
 
             /* and add the newly numbered one */
-            if (p->sem.rownum.part != aat_NULL)
+            if (p->sem.rownum.part != att_NULL)
                 execute (
                     assgn (var (v->name),
                            mark_grp (
@@ -2056,8 +2058,50 @@ reduce (PFpa_op_t * p, int goalnt)
                     "hash_rownum not implemented yet.");
             break;
 
-        /* Rel:      type (Rel) */
+        /* Rel:      number (Rel) */
         case 72:
+        {
+            mvar_t *res = new_var (p->refctr);
+
+            assert (env_count (L(p)->env));
+
+            /* copy all the attributes */
+            for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
+                pin (env_at (L(p)->env, i).mvar, p->refctr);
+                env_add (p->env,
+                         env_at (L(p)->env, i).att,
+                         env_at (L(p)->env, i).ty,
+                         env_at (L(p)->env, i).mvar);
+            }
+
+            /* and add the newly numbered one */
+            if (p->sem.number.part != att_NULL)
+                execute (
+                    assgn (var (res->name),
+                           mark_grp (
+                               VAR (p->env,
+                                    p->sem.number.part,
+                                    type_of (p, p->sem.number.part)),
+                               project (
+                                   kunique (
+                                       reverse (
+                                           VAR (p->env,
+                                                p->sem.number.part,
+                                                type_of (p, p->sem.number.part))
+                                           )),
+                                   lit_oid (1)))));
+            else
+                execute (
+                    assgn (var (res->name),
+                           mark (var (env_at (L(p)->env, 0).mvar->name),
+                                 lit_oid (1))));
+
+            /* put the result into p's environment */
+            env_add (p->env, p->sem.number.attname, aat_nat, res);
+        } break;
+
+        /* Rel:      type (Rel) */
+        case 73:
         {
             mvar_t              *res = new_var (p->refctr);
 
@@ -2107,7 +2151,7 @@ reduce (PFpa_op_t * p, int goalnt)
             break;
 
         /* Rel:      type_assert (Rel) */
-        case 73:
+        case 74:
             /* copy all the attributes */
             for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
                 pin (env_at (L(p)->env, i).mvar, p->refctr);
@@ -2119,7 +2163,7 @@ reduce (PFpa_op_t * p, int goalnt)
             break;
 
         /* Rel:      cast (Rel) */
-        case 74:
+        case 75:
             for (unsigned int i = 0; i < L(p)->schema.count; i++)
             {
                 bool att_needed = true;
@@ -3465,41 +3509,28 @@ llscj (enum axis_t axis, const PFpa_op_t *p)
     ret_pre  = new_var (p->refctr);
     ret_frag = new_var (p->refctr);
 
-    execute (
-        assgn (var (tmp->name), scj),
-        assgn (var (ret_iter->name), fetch (var (tmp->name), lit_int (0))),
-        assgn (var (ret_pre->name), fetch (var (tmp->name), lit_int (1))),
-        assgn (var (ret_frag->name), fetch (var (tmp->name), lit_int (2))));
-
     /*
-     * FIXME: fake_project is completely undocumented!
-     *
-     * Should we actually do fake_projecting at runtime? In most cases
+     * Should we actually do materialize at runtime? In most cases
      * we should be able to see at compile time if columns are guaranteed
      * to be constant. We could then avoid carrying around the column at
      * all.
      *
      * Problem is: We do consider a `constant' property in our algebra
      * (not fully, yet, but the ideas are there). This property, however
-     * only looks at ``real'' algebra columns. Here, fake_project operates
+     * only looks at ``real'' algebra columns. Here, materialize operates
      * on only part of a ``real'' column. The ``real'' column `item' is
      * implemented as `pre|kind' for nodes. And while kind may be constant,
      * pre probably won't.
      */
     execute (
-        if_ (
-            is_fake_project (var (ret_iter->name)),
-            assgn (var (ret_iter->name),
-                   project (var (ret_pre->name),
-                            fetch (var (ret_iter->name), lit_int (0)))),
-            nop ()));
-    execute (
-        if_ (
-            is_fake_project (var (ret_frag->name)),
-            assgn (var (ret_frag->name),
-                   project (var (ret_pre->name),
-                            fetch (var (ret_frag->name), lit_int (0)))),
-            nop ()));
+        assgn (var (tmp->name), scj),
+        assgn (var (ret_pre->name), fetch (var (tmp->name), lit_int (1))),
+        assgn (var (ret_iter->name), 
+               materialize (fetch (var (tmp->name), lit_int (0)),
+                            var (ret_pre->name))),
+        assgn (var (ret_frag->name), 
+               materialize (fetch (var (tmp->name), lit_int (2)),
+                            var (ret_pre->name))));
 
     env_add (p->env, att_iter, aat_nat, ret_iter);
     env_add (p->env, att_item, aat_pre, ret_pre);

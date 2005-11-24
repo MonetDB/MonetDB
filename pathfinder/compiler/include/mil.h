@@ -249,7 +249,7 @@ enum PFmil_kind_t {
 
     , m_get_fragment
     , m_set_kind
-    , m_is_fake_project
+    , m_materialize
 
     , m_chk_order    /**< MIL chk_order() function. Fixes order properties
                           in MonetDB BAT headers. We should try to get rid
@@ -1033,7 +1033,7 @@ PFmil_t * PFmil_string_join (const PFmil_t *, const PFmil_t *);
 
 PFmil_t * PFmil_get_fragment (const PFmil_t *);
 PFmil_t * PFmil_set_kind (const PFmil_t *, const PFmil_t *);
-PFmil_t * PFmil_is_fake_project (const PFmil_t *);
+PFmil_t * PFmil_materialize (const PFmil_t *, const PFmil_t *);
 PFmil_t * PFmil_chk_order (const PFmil_t *);
 
 

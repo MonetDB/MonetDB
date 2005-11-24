@@ -1172,7 +1172,7 @@ PFbui_op_union (const PFla_op_t *loop __attribute__((unused)),
                            project (args[1].rel,
                                     proj (att_iter, att_iter),
                                     proj (att_item, att_item)))),
-                   att_pos, sortby (att_item), aat_NULL),
+                   att_pos, sortby (att_item), att_NULL),
         .frag = PFla_set_union (args[0].frag, args[1].frag) };
 }
 
@@ -1202,7 +1202,7 @@ PFbui_op_intersect (const PFla_op_t *loop __attribute__((unused)),
                            project (args[1].rel,
                                     proj (att_iter, att_iter),
                                     proj (att_item, att_item)))),
-                   att_pos, sortby (att_item), aat_NULL),
+                   att_pos, sortby (att_item), att_NULL),
         .frag = PFla_set_union (args[0].frag, args[1].frag) };
 }
 
@@ -1234,7 +1234,7 @@ PFbui_op_except (const PFla_op_t *loop __attribute__((unused)),
                            project (args[1].rel,
                                     proj (att_iter, att_iter),
                                     proj (att_item, att_item)))),
-                   att_pos, sortby (att_item), aat_NULL),
+                   att_pos, sortby (att_item), att_NULL),
         /* result nodes can only originate from first argument */
         .frag = args[0].frag };
 }
@@ -1314,20 +1314,20 @@ struct PFla_pair_t
 PFbui_fn_distinct_values (const PFla_op_t *loop __attribute__((unused)),
 			     struct PFla_pair_t *args)
 {
+    (void) loop; /* pacify picky compilers that do not understand
+                    "__attribute__((unused))" */
+
     PFalg_attlist_t sortby;
     sortby.count = 0;
     sortby.atts  = NULL;
 
-    (void) loop; /* pacify picky compilers that do not understand
-                    "__attribute__((unused))" */
-
     return (struct PFla_pair_t) {
-                  .rel = rownum (
+                  .rel = number (
                              distinct (
                                  project (args[0].rel,
                                       proj (att_iter, att_iter),
                                       proj (att_item, att_item))),
-                             att_pos, sortby, att_iter),
+                             att_pos, att_iter),
                   .frag = args[0].frag };
 }
 
@@ -2000,4 +2000,22 @@ PFbui_pf_merge_adjacent_text_nodes (
                                          PFla_set (fragment (merged))) };
 }
 
+struct PFla_pair_t
+PFbui_fn_unordered (const PFla_op_t *loop __attribute__((unused)),
+			        struct PFla_pair_t *args)
+{
+    (void) loop; /* pacify picky compilers that do not understand
+                    "__attribute__((unused))" */
+
+    /*
+     * project out pos column
+     */
+    return (struct PFla_pair_t) {
+        .rel  = number (
+                    project (args[0].rel,
+                             proj (att_iter, att_iter),
+                             proj (att_item, att_item)),
+                    att_pos, att_NULL),
+        .frag = PFla_empty_set () };
+}
 /* vim:set shiftwidth=4 expandtab: */

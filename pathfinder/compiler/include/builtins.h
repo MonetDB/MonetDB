@@ -234,6 +234,9 @@ struct PFla_pair_t PFbui_pf_item_seq_to_node_seq (const PFla_op_t *loop,
 struct PFla_pair_t PFbui_pf_merge_adjacent_text_nodes (const PFla_op_t *loop,
                                                    struct PFla_pair_t *args);
 
+struct PFla_pair_t PFbui_fn_unordered (const PFla_op_t *loop,
+                                       struct PFla_pair_t *args);
+
 #endif   /* BUITLINS_H */
 
 /* vim:set shiftwidth=4 expandtab: */
