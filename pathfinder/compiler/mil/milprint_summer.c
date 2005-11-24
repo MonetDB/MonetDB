@@ -7825,16 +7825,35 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"delete")) == 0)
     {
-        milprintf(f, "# fn:delete (node) as stmt\n");
+        milprintf(f, "# fn:delete (node) as stmt\n"
+                  "is_update := true; # indicate this is an update\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
-                  "replacements := nodedelete(replacements, ws, item, kind, ipik);\n");
-        milprintf(f,
-                  "ipik := empty_bat;\n"
-                  "iter := empty_bat;\n"
-                  "pos := empty_bat;\n"
-                  "item := empty_bat;\n"
-                  "kind := empty_kind_bat;\n");
+                  "int_values := int_values.seqbase(nil).insert(nil, UPDATE_DELETE).seqbase(0@0);\n"
+                  "var delitemID := int_values.reverse().find(UPDATE_DELETE);\n"
+                  "var item1 := fake_project(delitemID);\n"
+                  "var item2 := fake_project(item);\n"
+                  "var item3 := fake_project(nil);\n"
+                  "var item4 := item3;\n"
+                  "var kind1 := fake_project(INT);\n"
+                  "var kind2 := fake_project(kind);\n"
+                  "var kind3 := fake_project(int(nil));\n"
+                  "var kind4 := kind3;\n"
+                  "var merge1 := merged_union(ipik.mirror(), ipik.mirror(),\n"
+                  "                           item1, item2,\n"
+                  "                           kind1, kind2,\n"
+                  "                           iter, iter);\n"
+                  "var merge2 := merged_union(ipik.mirror(), ipik.mirror(),\n"
+                  "                           item3, item4,\n"
+                  "                           kind3, kind4,\n"
+                  "                           iter, iter);\n"
+                  "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
+                  "                          merge1.fetch(1), merge2.fetch(1),\n"
+                  "                          merge1.fetch(2), merge2.fetch(2),\n"
+                  "                          merge1.fetch(3), merge2.fetch(3));\n"
+                  "item := merge.fetch(1);\n"
+                  "kind := merge.fetch(2);\n"
+                  "iter := merge.fetch(3);\n");
         return NORMAL;
     }        
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"insert-first")) == 0 ||
@@ -7843,26 +7862,79 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
              PFqname_eq(fnQname, PFqname (PFns_fn,"insert-after")) == 0)
     {
         char *func = PFqname_loc(fnQname);
-        milprintf(f, "# fn:%s (node, node) as stmt\n", func);
+        milprintf(f, "# fn:%s (node, node) as stmt\n"
+                  "is_update := true; # indicate this is an update\n", func);
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RL(args));
         milprintf(f,
-                  "replacements := nodeinsert(replacements, ws, \"%s\", item%03u, kind%03u, ipik, item, kind);\n",
-                  func, counter, counter);
+                  "var docitem := item%03u;\n"
+                  "var dockind := kind%03u;\n"
+                  "var docfrag := dockind.get_fragment();\n"
+                  "var doclevel := mposjoin(docitem, docfrag, ws.fetch(PRE_LEVEL));\n"
+                  "var size := mposjoin(docitem, docfrag, ws.fetch(PRE_SIZE));\n"
+                  "if (mposjoin(docitem, docfrag, ws.fetch(PRE_LEVEL)).uselect(chr(nil)).count() > 0) {\n"
+                  "  ERROR(\"item must not refer to hole\");\n"
+                  "}\n"
+                  "if (function = \"insert-first\") {\n"
+                  "  doclevel := [chr]([+](doclevel, 1));\n"
+                  "} else if (function = \"insert-last\") {\n"
+                  "  doclevel := [chr]([+](doclevel, 1));\n"
+                  "  docitem := [oid]([+]([lng](docitem), size));\n"
+                  "} else if (function = \"insert-before\") {\n"
+                  "  docitem := [oid]([-]([lng](docitem), 1));\n"
+                  "} else if (function = \"insert-after\") {\n"
+                  "  docitem := [oid]([+]([lng](docitem), size));\n"
+                  "}\n"
+                  "var nilitem := mposjoin(docitem, docfrag, ws.fetch(PRE_LEVEL)).uselect(chr(nil));\n"
+                  "while (nilitem.count() > 0) {\n"
+                  "  var updateitem := [oid]([-]([lng](join(nilitem.mirror(), docitem)), 1));\n"
+                  "  docitem := docitem.access(BAT_WRITE).replace(updateitem);\n"
+                  "#   nilitem := mposjoin(updateitem, updateitem.mirror().leftjoin(docfrag), ws.fetch(PRE_LEVEL)).uselect(chr(nil));\n"
+                  "  nilitem := mposjoin(docitem, docfrag, ws.fetch(PRE_LEVEL)).uselect(chr(nil));\n"
+                  "}\n"
+                  "\n"
+                  "int_values := int_values.append([lng](doclevel));\n"
+                  "doclevel := [lng](doclevel).leftjoin(int_values.reverse());\n"
+                  "\n"
+                  "int_values := int_values.seqbase(nil).insert(nil, UPDATE_INSERT).seqbase(0@0);\n"
+                  "var insitemID := int_values.reverse().find(UPDATE_INSERT);\n"
+                  "\n"
+                  "var item1 := fake_project(insitemID);\n"
+                  "var item2 := docitem;\n"
+                  "var item3 := doclevel;\n"
+                  "var item4 := item;\n"
+                  "\n"
+                  "var kind1 := fake_project(INT);\n"
+                  "var kind2 := fake_project(dockind);\n"
+                  "var kind3 := fake_project(INT);\n"
+                  "var kind4 := kind;\n"
+                  "\n"
+                  "var merge1 := merged_union(ipik.mirror(), ipik.mirror(),\n"
+                  "                           item1, item2,\n"
+                  "                           kind1, kind2,\n"
+                  "                           iter, iter);\n"
+                  "var merge2 := merged_union(ipik.mirror(), ipik.mirror(),\n"
+                  "                           item3, item4,\n"
+                  "                           kind3, kind4,\n"
+                  "                           iter, iter);\n"
+                  "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
+                  "                          merge1.fetch(1), merge2.fetch(1),\n"
+                  "                          merge1.fetch(2), merge2.fetch(2),\n"
+                  "                          merge1.fetch(3), merge2.fetch(3));\n"
+                  "\n"
+                  "item := merge.fetch(1);\n"
+                  "kind := merge.fetch(2);\n"
+                  "iter := merge.fetch(3);\n",
+                  counter, counter);
         deleteResult (f, counter);
-        milprintf(f,
-                  "ipik := empty_bat;\n"
-                  "iter := empty_bat;\n"
-                  "pos := empty_bat;\n"
-                  "item := empty_bat;\n"
-                  "kind := empty_kind_bat;\n");
         return NORMAL;
     }        
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-attr")) == 0)
     {
-        milprintf(f, "# fn:set-attr (node, str, [str, str,] str) as stmt\n");
+        milprintf(f, "# fn:set-attr (node, str, [str, str,] str) as stmt\n"
+                  "is_update := true; # indicate this is an update\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
@@ -7872,9 +7944,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         translate2MIL (f, NORMAL, cur_level, counter, RRL(args));
         if (fun->arity == 3) {
             counter += 2;
-            milprintf(f,
-                      "var prefix := \"\";\n"
-                      "var uri := \"\";\n");
+            milprintf(f, "var prefix_uri := \"\\001\"; # \"\" + \"\\001\" + \"\"\n");
         } else {
             counter++;
             saveResult (f, counter);
@@ -7882,76 +7952,59 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             counter++;
             saveResult (f, counter);
             translate2MIL (f, NORMAL, cur_level, counter, RRRRL(args));
-        }
-        milprintf(f,
-                  "var frags := kind%03u.get_fragment();\n"
-                  "ipik%03u@batloop() {\n"
-                  "  var frag := frags.fetch($h);\n"
-                  "  var node := item%03u.fetch($h);\n"
-                  "  if (replacementvalue(replacements, ws.fetch(PRE_KIND).fetch(frag), node) != ELEMENT) { ERROR (\"function fn:set-attr expects a element node.\"); }\n"
-                  "  var nid := replacementvalue(replacements, ws.fetch(PRE_NID).fetch(frag), node);\n"
-                  "  var loc := str_values.fetch(item%03u.fetch($h));\n",
-                  counter - 3, counter - 3, counter - 3, counter - 2);
-        if (fun->arity == 5) {
             milprintf(f,
-                      "  var prefix := str_values.fetch(item%03u.fetch($h));\n"
-                      "  if (isnil(prefix)) prefix := \"\";\n"
-                      "  var uri := str_values.fetch(item%03u.fetch($h));\n"
-                      "  if (isnil(uri)) uri := \"\";\n",
+                      "var prefix := item%03u.leftjoin(str_values);\n"
+                      "var uri := item%03u.leftjoin(str_values);\n"
+                      "# prefix_uri := prefix + \"\\001\" + uri;\n"
+                      "var prefix_uri := [+]([+](prefix_uri, \"\\001\"), uri);\n",
                       counter - 1, counter);
         }
         milprintf(f,
-                  "  var ids := add_qn(replacements, ws, frag, nid, loc, prefix, uri);\n"
-                  "  var qnid := ids.fetch(0);\n"
-                  "  var atid := ids.fetch(1);\n"
-                  "  var propID := add_string_unique(replacements, ws, frag, PROP_VAL, value);\n"
-                  "  var attr_prop_bat := ws.fetch(ATTR_PROP).fetch(frag);\n"
-                  "  var new_attr_prop_bat := replacements.replacementsfetch(attr_prop_bat);\n"
-                  "  if (isnil(atid)) {\n"
-                  "    # add attribute to node\n"
-                  "    if (new_attr_prop_bat.count() > 0) {\n"
-                  "      atid := oid(lng(new_attr_prop_bat.reverse().max()) + 1);\n"
-                  "    } else if (attr_prop_bat.count() > 0) {\n"
-                  "      atid := oid(lng(attr_prop_bat.reverse().max()) + 1);\n"
-                  "    } else {\n"
-                  "      atid := 0@0;\n"
-                  "    }\n"
-                  "    new_attr_prop_bat := new_attr_prop_bat.insert(atid, propID);\n"
-                  "    var attr_own_bat := ws.fetch(ATTR_OWN).fetch(frag);\n"
-                  "    var new_attr_own_bat := replacements.replacementsfetch(attr_own_bat);\n"
-                  "    replacements := replacements.replace(attr_own_bat, new_attr_own_bat);\n"
-                  "    new_attr_own_bat := new_attr_own_bat.insert(atid, nid);\n"
-                  "    var attr_qn_bat := ws.fetch(ATTR_QN).fetch(frag);\n"
-                  "    var new_attr_qn_bat := replacements.replacementsfetch(attr_qn_bat);\n"
-                  "    new_attr_qn_bat := new_attr_qn_bat.insert(atid, qnid);\n"
-                  "    replacements := replacements.replace(attr_qn_bat, new_attr_qn_bat);\n"
-                  "  } else {\n"
-                  "    # replace attribute value\n"
-                  "    if (new_attr_prop_bat.exist(atid)) {\n"
-                  "      new_attr_prop_bat := new_attr_prop_bat.replace(atid, propID);\n"
-                  "    } else {\n"
-                  "      new_attr_prop_bat := new_attr_prop_bat.insert(atid, propID);\n"
-                  "    }\n"
-                  "  }\n"
-                  "  replacements := replacements.replace(attr_prop_bat, new_attr_prop_bat);\n"
-                  "}\n");
+                  "var loc := item%03u.leftjoin(str_values);\n"
+                  "# qn := loc + \"\\001\" + prefix + \"\\001\" + uri;\n"
+                  "var qn := [+]([+](loc, \"\\001\"), prefix_uri);\n"
+                  "str_values := str_values.append(qn);\n"
+                  "qn := qn.leftjoin(str_values.reverse());\n"
+                  "int_values := int_values.seqbase(nil).insert(nil, UPDATE_SETATTR).seqbase(0@0);\n"
+                  "var setattrID := int_values.reverse().find(UPDATE_SETATTR);\n"
+                  "var item1 := fake_project(setattrID);\n"
+                  "var item2 := fake_project(item%03u);\n"
+                  "var item3 := qn;\n"
+                  "var item4 := fake_project(item);\n"
+                  "\n"
+                  "var kind1 := fake_project(INT);\n"
+                  "var kind2 := fake_project(kind%03u);\n"
+                  "var kind3 := fake_project(STR);\n"
+                  "var kind4 := fake_project(kind);\n"
+                  "\n"
+                  "var merge1 := merged_union(ipik.mirror(), ipik.mirror(),\n"
+                  "                           item1, item2,\n"
+                  "                           kind1, kind2,\n"
+                  "                           iter, iter);\n"
+                  "var merge2 := merged_union(ipik.mirror(), ipik.mirror(),\n"
+                  "                           item3, item4,\n"
+                  "                           kind3, kind4,\n"
+                  "                           iter, iter);\n"
+                  "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
+                  "                          merge1.fetch(1), merge2.fetch(1),\n"
+                  "                          merge1.fetch(2), merge2.fetch(2),\n"
+                  "                          merge1.fetch(3), merge2.fetch(3));\n"
+                  "\n"
+                  "item := merge.fetch(1);\n"
+                  "kind := merge.fetch(2);\n"
+                  "iter := merge.fetch(3);\n", counter - 2, counter - 3, counter - 3);
         if (fun->arity == 5) {
             deleteResult (f, counter);
             deleteResult (f, counter - 1);
         }
         deleteResult (f, counter - 2);
         deleteResult (f, counter - 3);
-        milprintf(f,
-                  "ipik := empty_bat;\n"
-                  "iter := empty_bat;\n"
-                  "pos := empty_bat;\n"
-                  "item := empty_bat;\n"
-                  "kind := empty_kind_bat;\n");
         return NORMAL;
-    }        
+    }
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"unset-attr")) == 0)
     {
-        milprintf(f, "# fn:unset-attr (node, str [, str, str]) as stmt\n");
+        milprintf(f, "# fn:unset-attr (node, str [, str, str]) as stmt\n"
+                  "is_update := true; # indicate this is an update\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
@@ -7959,169 +8012,143 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         if (fun->arity == 2) {
             counter += 2;
             milprintf(f,
-                      "var prefix := \"\";\n"
-                      "var uri := \"\";\n");
+                      "var loc := item.leftjoin(str_values);\n"
+                      "var prefix_uri := \"\\001\"; # \"\" + \"\\001\" + \"\"\n");
         } else {
             counter++;
-            saveResult(f, counter);
+            saveResult (f, counter);
             translate2MIL (f, NORMAL, cur_level, counter, RRL(args));
             counter++;
-            saveResult(f, counter);
+            saveResult (f, counter);
             translate2MIL (f, NORMAL, cur_level, counter, RRRL(args));
-        }
-        milprintf(f,
-                  "var frags := kind%03u.get_fragment();\n"
-                  "ipik%03u@batloop() {\n"
-                  "  var frag := frags.fetch($h);\n"
-                  "  var node := item%03u.fetch($h);\n"
-                  "  if (replacementvalue(replacements, ws.fetch(PRE_KIND).fetch(frag), node) != ELEMENT) {\n"
-                  "    ERROR(\"function fn:set-attr expects a element node.\");\n"
-                  "  }\n"
-                  "  if (not(is_fake_project(ws.fetch(ATTR_FRAG).fetch(frag)))) {\n"
-                  "    ERROR(\"document operated on must have fake_project ATTR_FRAG table.\");\n"
-                  "  }\n"
-                  "  var nid := replacementvalue(replacements, ws.fetch(PRE_NID).fetch(frag), node);\n",
-                  counter - 2, counter - 2, counter - 2);
-        if (fun->arity == 2) {
             milprintf(f,
-                      "  var loc := str_values.fetch(item.fetch($h));\n");
-        } else {
-            milprintf(f,
-                      "  var loc := str_values.fetch(item%03u.fetch($h));\n"
-                      "  var prefix := str_values.fetch(item%03u.fetch($h));\n"
-                      "  if (isnil(prefix)) prefix := \"\";\n"
-                      "  var uri := str_values.fetch(item.fetch($h));\n"
-                      "  if (isnil(uri)) uri := \"\";\n",
+                      "var loc := item%03u.leftjoin(str_values);\n"
+                      "var prefix := item%03u.leftjoin(str_values);\n"
+                      "var uri := item.leftjoin(str_values);\n"
+                      "# prefix_uri := prefix + \"\\001\" + uri;\n"
+                      "var prefix_uri := [+]([+](prefix_uri, \"\\001\"), uri);\n",
                       counter - 1, counter);
         }
         milprintf(f,
-                  "  var loc_uri := loc + \"\\001\" + uri;\n"
-                  "  # [oid,nil] list of prefixes used by loc_uri\n"
-                  "  var loc_uri_list := qn_loc_uri.ord_uselect(loc_uri);\n"
-                  "  # [oid,nil] list of QN names with correct prefix as well (should be 0 or 1)\n"
-                  "  var qn_list := loc_uri_list.mirror().fetchjoin(qn_prefix).uselect(prefix);\n"
-                  "  if (replacements.exist(qn_loc_uri)) {\n"
-                  "    # combine with values from replacements\n"
-                  "    # there are only ever additional values there, no overwrites\n"
-                  "    var loc_uri_list_update := replacements.find(qn_loc_uri).ord_uselect(loc_uri);\n"
-                  "    var qn_list_update := loc_uri_list_update.mirror().fetchjoin(replacements.find(qn_prefix)).uselect(prefix);\n"
-                  "    loc_uri_list := sunion(loc_uri_list, loc_uri_list_update);\n"
-                  "    qn_list := sunion(qn_list, qn_list_update);\n"
-                  "  }\n"
-                  "  # if qn_list.count() = 0, the qualified name does not occur in the\n"
-                  "  # document, so the attribute certainly does not exist, i.e. we have\n"
-                  "  # nothing more to do\n"
-                  "  if (qn_list.count() > 0) {\n"
-                  "    # find the OID in the ATTR table for the sought after attribute\n"
-                  "    # instance (store in attr_node_list)\n"
-                  "    var attr_own := ws.fetch(ATTR_OWN).fetch(frag);\n"
-                  "    var attr_qn := ws.fetch(ATTR_QN).fetch(frag);\n"
-                  "    # [oid,nil] list of ATTR indexes for current node\n"
-                  "    var attr_list := attr_own.uselect(nid);\n"
-                  "    # [oid,oid] list of ATTR indexes/ATTR QN IDs for current node\n"
-                  "    var attr_qn_list := attr_list.mirror().fetchjoin(attr_qn);\n"
-                  "    if (replacements.exist(attr_own)) {\n"
-                  "      var attr_list_update := replacements.find(attr_own).uselect(nid);\n"
-                  "      var attr_qn_list_update := attr_list_update.mirror().fetchjoin(replacements.replacementsfetch(attr_qn));\n"
-                  "      attr_qn_list := sunion(attr_qn_list, attr_qn_list_update);\n"
-                  "    }\n"
-                  "    # [oid,nil] list of attributes for current node with correct FQ name\n"
-                  "    var attr_node_list := attr_qn_list.join(qn_list);\n"
-                  "    if ((attr_node_list.count() != 0) and (attr_node_list.count() != 1)) {\n"
-                  "      ERROR(\"internal error, element with duplicate attribute.\");\n"
-                  "    }\n"
-                  "    if (attr_node_list.count() = 1) {\n"
-                  "      var deleted_key := attr_node_list.mirror().fetch(0);\n"
-                  "      var attr_prop := ws.fetch(ATTR_PROP).fetch(frag);\n"
-                  "      var new_attr_prop := replacements.replacementsfetch(attr_prop);\n"
-                  "      var new_attr_own := replacements.replacementsfetch(attr_own);\n"
-                  "      var new_attr_qn := replacements.replacementsfetch(attr_qn);\n"
-                  "      if (new_attr_prop.exist(deleted_key)) {\n"
-                  "        new_attr_prop := new_attr_prop.replace(deleted_key, oid(nil));\n"
-                  "        new_attr_own := new_attr_own.replace(deleted_key, oid(nil));\n"
-                  "        new_attr_qn := new_attr_qn.replace(deleted_key, oid(nil));\n"
-                  "      } else {\n"
-                  "        new_attr_prop := new_attr_prop.insert(deleted_key, oid(nil));\n"
-                  "        new_attr_own := new_attr_own.insert(deleted_key, oid(nil));\n"
-                  "        new_attr_qn := new_attr_qn.insert(deleted_key, oid(nil));\n"
-                  "      }\n"
-                  "    }\n"
-                  "  }\n"
-                  "}\n");
+                  "# qn := loc + \"\\001\" + prefix + \"\\001\" + uri;\n"
+                  "var qn := [+]([+](loc, \"\\001\"), prefix_uri);\n"
+                  "str_values := str_values.append(qn);\n"
+                  "qn := qn.leftjoin(str_values.reverse());\n"
+                  "int_values := int_values.seqbase(nil).insert(nil, UPDATE_SETATTR).seqbase(0@0);\n"
+                  "var unsetattrID := int_values.reverse().find(UPDATE_SETATTR);\n"
+                  "var item1 := fake_project(unsetattrID);\n"
+                  "var item2 := fake_project(item%03u);\n"
+                  "var item3 := qn;\n"
+                  "var item4 := fake_project(nil);\n"
+                  "\n"
+                  "var kind1 := fake_project(INT);\n"
+                  "var kind2 := fake_project(kind%03u);\n"
+                  "var kind3 := fake_project(STR);\n"
+                  "var kind4 := fake_project(int(nil));\n"
+                  "\n"
+                  "var merge1 := merged_union(ipik.mirror(), ipik.mirror(),\n"
+                  "                           item1, item2,\n"
+                  "                           kind1, kind2,\n"
+                  "                           iter, iter);\n"
+                  "var merge2 := merged_union(ipik.mirror(), ipik.mirror(),\n"
+                  "                           item3, item4,\n"
+                  "                           kind3, kind4,\n"
+                  "                           iter, iter);\n"
+                  "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
+                  "                          merge1.fetch(1), merge2.fetch(1),\n"
+                  "                          merge1.fetch(2), merge2.fetch(2),\n"
+                  "                          merge1.fetch(3), merge2.fetch(3));\n"
+                  "\n"
+                  "item := merge.fetch(1);\n"
+                  "kind := merge.fetch(2);\n"
+                  "iter := merge.fetch(3);\n", counter - 2, counter - 2);
         if (fun->arity == 4) {
             deleteResult (f, counter);
             deleteResult (f, counter - 1);
         }
         deleteResult (f, counter - 2);
-        milprintf(f,
-                  "ipik := empty_bat;\n"
-                  "iter := empty_bat;\n"
-                  "pos := empty_bat;\n"
-                  "item := empty_bat;\n"
-                  "kind := empty_kind_bat;\n");
         return NORMAL;
-    }        
+    }
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-text")) == 0)
     {
-        milprintf(f, "# fn:set-text (node, str) as stmt\n");
+        milprintf(f, "# fn:set-text (node, str) as stmt\n"
+                  "is_update := true; # indicate this is an update\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RL(args));
         milprintf(f,
-                  "var frags := kind%03u.get_fragment();\n"
-                  "ipik@batloop() {\n"
-                  "  var frag := frags.fetch($h);\n"
-                  "  var node := item%03u.fetch($h);\n"
-                  "  if (replacementvalue(replacements, ws.fetch(PRE_KIND).fetch(frag), node) != TEXT) {\n"
-                  "    ERROR(\"function fn:set-text expects a text node.\");\n"
-                  "  }\n"
-                  "  var text := str_values.fetch(item.fetch($h));\n"
-                  "  var textID := add_string_unique(replacements, ws, frag, PROP_TEXT, text);\n"
-                  "  replacements := replace(replacements, ws.fetch(PRE_PROP).fetch(frag), node, textID);\n"
-                  "}\n",
+                  "int_values := int_values.seqbase(nil).insert(nil, UPDATE_SETTEXT).seqbase(0@0);\n"
+                  "var settextID := int_values.reverse().find(UPDATE_SETTEXT);\n"
+                  "var item1 := fake_project(settextID);\n"
+                  "var item2 := fake_project(item%03u);\n"
+                  "var item3 := fake_project(item);\n"
+                  "var item4 := fake_project(nil);\n"
+                  "var kind1 := fake_project(INT);\n"
+                  "var kind2 := fake_project(kind%03u);\n"
+                  "var kind3 := fake_project(kind);\n"
+                  "var kind4 := fake_project(int(nil));\n"
+                  "var merge1 := merged_union(ipik.mirror(), ipik.mirror(),\n"
+                  "                           item1, item2,\n"
+                  "                           kind1, kind2,\n"
+                  "                           iter, iter);\n"
+                  "var merge2 := merged_union(ipik.mirror(), ipik.mirror(),\n"
+                  "                           item3, item4,\n"
+                  "                           kind3, kind4,\n"
+                  "                           iter, iter);\n"
+                  "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
+                  "                          merge1.fetch(1), merge2.fetch(1),\n"
+                  "                          merge1.fetch(2), merge2.fetch(2),\n"
+                  "                          merge1.fetch(3), merge2.fetch(3));\n"
+                  "item := merge.fetch(1);\n"
+                  "kind := merge.fetch(2);\n"
+                  "iter := merge.fetch(3);\n",
                   counter, counter);
         deleteResult (f, counter);
-        milprintf(f,
-                  "ipik := empty_bat;\n"
-                  "iter := empty_bat;\n"
-                  "pos := empty_bat;\n"
-                  "item := empty_bat;\n"
-                  "kind := empty_kind_bat;\n");
         return NORMAL;
-    }        
+    }
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-comment")) == 0)
     {
-        milprintf(f, "# fn:set-comment (node, str) as stmt\n");
+        milprintf(f, "# fn:set-comment (node, str) as stmt\n"
+                  "is_update := true; # indicate this is an update\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RL(args));
         milprintf(f,
-                  "var frags := kind%03u.get_fragment();\n"
-                  "ipik@batloop() {\n"
-                  "  var frag := frags.fetch($h);\n"
-                  "  var node := item%03u.fetch($h);\n"
-                  "  if (replacementvalue(replacements, ws.fetch(PRE_KIND).fetch(frag), node) != COMMENT) {\n"
-                  "    ERROR(\"function fn:set-comment expects a comment node.\");\n"
-                  "  }\n"
-                  "  var com := str_values.fetch(item.fetch($h));\n"
-                  "  var comID := add_string_unique(replacements, ws, frag, PROP_COM, com);\n"
-                  "  replacements := replace(replacements, ws.fetch(PRE_PROP).fetch(frag), node, comID);\n"
-                  "}\n",
+                  "int_values := int_values.seqbase(nil).insert(nil, UPDATE_SETCOMMENT).seqbase(0@0);\n"
+                  "var setcommentID := int_values.reverse().find(UPDATE_SETCOMMENT);\n"
+                  "var item1 := fake_project(setcommentID);\n"
+                  "var item2 := fake_project(item%03u);\n"
+                  "var item3 := fake_project(item);\n"
+                  "var item4 := fake_project(nil);\n"
+                  "var kind1 := fake_project(INT);\n"
+                  "var kind2 := fake_project(kind%03u);\n"
+                  "var kind3 := fake_project(kind);\n"
+                  "var kind4 := fake_project(int(nil));\n"
+                  "var merge1 := merged_union(ipik.mirror(), ipik.mirror(),\n"
+                  "                           item1, item2,\n"
+                  "                           kind1, kind2,\n"
+                  "                           iter, iter);\n"
+                  "var merge2 := merged_union(ipik.mirror(), ipik.mirror(),\n"
+                  "                           item3, item4,\n"
+                  "                           kind3, kind4,\n"
+                  "                           iter, iter);\n"
+                  "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
+                  "                          merge1.fetch(1), merge2.fetch(1),\n"
+                  "                          merge1.fetch(2), merge2.fetch(2),\n"
+                  "                          merge1.fetch(3), merge2.fetch(3));\n"
+                  "item := merge.fetch(1);\n"
+                  "kind := merge.fetch(2);\n"
+                  "iter := merge.fetch(3);\n",
                   counter, counter);
         deleteResult (f, counter);
-        milprintf(f,
-                  "ipik := empty_bat;\n"
-                  "iter := empty_bat;\n"
-                  "pos := empty_bat;\n"
-                  "item := empty_bat;\n"
-                  "kind := empty_kind_bat;\n");
         return NORMAL;
-    }        
+    }
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-pi")) == 0)
     {
-        milprintf(f, "# fn:set-pi (node, str, str) as stmt\n");
+        milprintf(f, "# fn:set-pi (node, str, str) as stmt\n"
+                  "is_update := true; # indicate this is an update\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
@@ -8130,29 +8157,36 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RRL(args));
         milprintf(f,
-                  "var frags := kind%03u.get_fragment();\n"
-                  "ipik@batloop() {\n"
-                  "  var frag := frags.fetch($h);\n"
-                  "  var node := item%03u.fetch($h);\n"
-                  "  if (replacementvalue(replacements, ws.fetch(PRE_KIND).fetch(frag), node) != PI) {\n"
-                  "    ERROR(\"function fn:set-pi expects a processing instruction node.\");\n"
-                  "  }\n"
-                  "  var ins := str_values.fetch(item%03u.fetch($h));\n"
-                  "  var tgt := str_values.fetch(item.fetch($h));\n"
-                  "  var piID := add_pi(replacements, ws, frag, ins, tgt);\n"
-                  "  replacements := replace(replacements, ws.fetch(PRE_PROP).find(node), node, piID);\n"
-                  "}\n",
-                  counter-1, counter-1, counter);
+                  "int_values := int_values.seqbase(nil).insert(nil, UPDATE_SETPI).seqbase(0@0);\n"
+                  "var setpiID := int_values.reverse().find(UPDATE_SETPI);\n"
+                  "var item1 := fake_project(setpiID);\n"
+                  "var item2 := fake_project(item%03u);\n"
+                  "var item3 := fake_project(item%03u);\n"
+                  "var item4 := fake_project(item);\n"
+                  "var kind1 := fake_project(INT);\n"
+                  "var kind2 := fake_project(kind%03u);\n"
+                  "var kind3 := fake_project(kind%03u);\n"
+                  "var kind4 := fake_project(kind);\n"
+                  "var merge1 := merged_union(ipik.mirror(), ipik.mirror(),\n"
+                  "                           item1, item2,\n"
+                  "                           kind1, kind2,\n"
+                  "                           iter, iter);\n"
+                  "var merge2 := merged_union(ipik.mirror(), ipik.mirror(),\n"
+                  "                           item3, item4,\n"
+                  "                           kind3, kind4,\n"
+                  "                           iter, iter);\n"
+                  "var merge := merged_union(merge1.fetch(0), merge2.fetch(0),\n"
+                  "                          merge1.fetch(1), merge2.fetch(1),\n"
+                  "                          merge1.fetch(2), merge2.fetch(2),\n"
+                  "                          merge1.fetch(3), merge2.fetch(3));\n"
+                  "item := merge.fetch(1);\n"
+                  "kind := merge.fetch(2);\n"
+                  "iter := merge.fetch(3);\n",
+                  counter - 1, counter, counter - 1, counter);
         deleteResult (f, counter);
         deleteResult (f, counter - 1);
-        milprintf(f,
-                  "ipik := empty_bat;\n"
-                  "iter := empty_bat;\n"
-                  "pos := empty_bat;\n"
-                  "item := empty_bat;\n"
-                  "kind := empty_kind_bat;\n");
         return NORMAL;
-    }        
+    }
     else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"error")))
     {
         if (fun->arity == 0)
@@ -10735,7 +10769,7 @@ const char* PFstartMIL() {
         "var err := CATCH({\n"
         "  ws := create_ws();\n"
         "\n"
-        "  var replacements := new(bat, bat);\n"
+        "  var is_update := false;\n"
         "  # get full picture on var_usage (and sort it)\n"
         "  var usage := var_usage.unique().reverse().access(BAT_READ);\n"
         "  vu_fid := usage.mark(1000@0).reverse();\n"
@@ -10762,19 +10796,8 @@ const char* PFstopMIL() {
         "  time_print := time();\n"
         "  time_exec := time_print - time_exec;\n"
         "  \n"
-        "  if (replacements.count() > 0) { # we had an update\n"
-        "    replacements@batloop() {\n"
-        "      var a := $h.access();\n"
-        "      $h.access(BAT_WRITE);\n"
-        "      var hi := $h.reverse().max();\n"
-        "      var hi1 := oid(lng(hi) + 1);\n"
-        "      var repl := $t.reverse().select(nil, hi).reverse();\n"
-        "      var ins := $t.reverse().select(hi1, nil).reverse();\n"
-        "      ins := ins.sort().reverse().mark(hi1).reverse();\n"
-        "      $h.replace(repl, true);\n"
-        "      $h.insert(ins);\n"
-        "      $h.access(a);\n"
-        "    }\n"
+        "  if (is_update) { # we had an update\n"
+        "    play_update_tape(ws, item, kind);\n"
         "  } else {\n"
         "    item := item.de_NO_project(ipik);\n"
         "    if (genType.search(\"none\") = -1)\n"
