@@ -305,8 +305,11 @@ scanner_init_keywords()
 	keywords_insert("INCREMENT", INCREMENT);
 	keywords_insert("MAXVALUE", MAXVALUE);
 	keywords_insert("MINVALUE", MINVALUE);
-	keywords_insert("CACHE", CACHE);
 	keywords_insert("CYCLE", CYCLE);
+	keywords_insert("NOMAXVALUE", NOMAXVALUE);
+	keywords_insert("NOMINVALUE", NOMINVALUE);
+	keywords_insert("NOCYCLE", NOCYCLE);
+	keywords_insert("CACHE", CACHE);
 	keywords_insert("NEXT", NEXT);
 	keywords_insert("VALUE", VALUE);
 	keywords_insert("GENERATED", GENERATED);
@@ -846,8 +849,27 @@ sqllex(YYSTYPE * yylval, void *parm)
 			token = UNIONJOIN;
 		} else {
 			lc->yynext = malloc(sizeof(chain));
-			lc->yynext->yynext = NULL;
 			lc->yynext->yyval = next;
+			lc->yynext->yynext = NULL;
+		}
+	} else if (token == NO) {
+		int next = sqllex(yylval, parm);
+
+		switch (next) {
+			case MAXVALUE:
+				token = NOMAXVALUE;
+			break;
+			case MINVALUE:
+				token = NOMINVALUE;
+			break;
+			case CYCLE:
+				token = NOCYCLE;
+			break;
+			default:
+				lc->yynext = malloc(sizeof(chain));
+				lc->yynext->yyval = next;
+				lc->yynext->yynext = NULL;
+			break;
 		}
 /* example code expansion of SERIAL into "INTEGER GENERATED ALWAYS AS IDENTITY" 
 	} else if (token == SERIAL) {

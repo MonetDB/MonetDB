@@ -492,7 +492,9 @@ int yydebug=1;
 %token <operation> EXTRACT
 
 /* sequence operations */
-%token SEQUENCE INCREMENT MAXVALUE MINVALUE CYCLE RESTART
+%token SEQUENCE INCREMENT RESTART
+%token MAXVALUE MINVALUE CYCLE
+%token NOMAXVALUE NOMINVALUE NOCYCLE
 %token NEXT VALUE CACHE
 %token GENERATED ALWAYS IDENTITY
 %token SERIAL AUTO_INCREMENT /* PostgreSQL and MySQL immitators */
@@ -1078,14 +1080,14 @@ opt_increment:
 
 opt_min:
 	/* empty */ 			{ $$ = -1; }
-  |	NO MINVALUE				{ $$ =  0; }
   |	MINVALUE nonzero		{ $$ = $2; }
+  |	NOMINVALUE				{ $$ =  0; }
   ;
 
 opt_max:
 	/* empty */				{ $$ = -1; }
-  |	NO MAXVALUE				{ $$ =  0; }
   |	MAXVALUE nonzero		{ $$ = $2; }
+  |	NOMAXVALUE				{ $$ =  0; }
   ;
 
 opt_cache:
@@ -1096,7 +1098,7 @@ opt_cache:
 opt_cycle:
 	/* empty */				{ $$ = 0; }
   |	CYCLE					{ $$ = 1; }
-  |	NO CYCLE				{ $$ = 0; }
+  |	NOCYCLE					{ $$ = 0; }
   ;
 /*=== END SEQUENCES ===*/
 
