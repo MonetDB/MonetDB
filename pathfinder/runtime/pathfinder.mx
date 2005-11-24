@@ -809,6 +809,8 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
 #include <mapi.h>
 #include <pathfinder.proto.h>
 
+#define is_fake_project(b) (((b)->htype==TYPE_void) && (BATcount(b)==1) && ((b)->hseqbase==oid_nil))
+
 @:ws(c_decl)@
 @:decl(c)@
 

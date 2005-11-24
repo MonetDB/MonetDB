@@ -199,7 +199,9 @@ join (idem dito).
 Our solution here is to represent constant columns inside a bat of bats as a 'fake' 
 BAT[void,T] with a single entry [nil,c].  The routines constant2bat/bat2constant switch
 between the MIL constant and the 'fake' BAT[nil,c] representation (obviously, non-constant
-bats are unaffected by these calls).
+bats are unaffected by these calls). The switching is done automatically when 
+bats fetched from a bat-of-bats (using an overloaded fetch) and put into them (with
+an overloaded insert).
 
 Representing a column by a single value is not a full representation of the column.
 The missing information is the size of the column and its seqbase. Due to
@@ -226,6 +228,12 @@ in BATs that can do aways with explicit use of fake_project in the generated MIL
 
 .COMMAND bat2constant(any col) : any = CMDdeFakeProject;
 "convert BAT[nil,c] constant column into a simple MIL constant 'c'"
+
+.COMMAND fetch(BAT[any,bat] b, int pos) : any = CMDfetchConvert;
+"fetches a bat from a bat-of-bats, and if it is a fake-bat converts it to a MIL constant"
+
+.COMMAND insert(BAT[any::1,bat] b, any::1 head, any tail) : BAT[any::1,bat] = CMDinsertConvert;
+"insert into a bat-of-bats; if a non-bat tail is inserted, it is inserted as a fake-bat."
 
 .COMMAND materialize(any::1 value, bat[oid,any] extent) : bat[oid,any::1] = CMDmaterializeConst;
 "materialize a MIL constant into a real BAT, using the second extent BAT to blow it up"
@@ -1330,13 +1338,13 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 #define PF_SUPPORT_H
 
 #include <monet.h>
+#include "pf_support.proto.h"
 #include <monet_interpreter.h>
 #include <monettime.h>
-#include <lock.h>
-#include "pf_support.proto.h"
 
 #endif
 @c
+#include "pathfinder.h"
 #include "pf_support.h"
 #include <gdk_scanselect.h> /* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
 #include <algebra.h> /* needed for result size estimation in CMDenumerate */
@@ -1349,16 +1357,6 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 #define oidoid_bunfastins_nocheck_noinc(b,p,h,t) lnglng_bunfastins_nocheck_noinc(b,p,h,t);
 #endif
 @c
-static int 
-is_fake_project (BAT* b)
-{
-	BATcheck(b, "is_fake_project");
-	if ((BATcount(b)==1) && (b->hseqbase==oid_nil)) {
-		return TRUE;
-	} else {
-		return FALSE;
-	}
-}
 int 
 CMDisFakeProject(bit *r, ptr v, int tpe) {
 	*r = (tpe == TYPE_bat)?is_fake_project((BAT*) v):1;
@@ -1503,6 +1501,47 @@ CMDmaterializeFake(BAT **ret, BAT* value, BAT *extent)
 	BBPfix(value->batCacheid);
 	return GDK_SUCCEED;
 }
+
+int
+CMDfetchConvert(ptr res, int *tpe, BAT* b, int* pos) 
+{
+	int ret = GDK_FAIL;
+	if (*pos >= 0 || ((size_t) *pos) < BATcount(b)) {
+		bat bid = *(bat*) BUNtail(b, BUNptr(b, BUNindex(b, BUNfirst(b))+*pos));
+		int fix = BBPfix(bid);
+		BAT *bn = NULL;
+		if (fix == 0 || (bn=BBPdescriptor(bid)) == NULL) {
+			if (fix) BBPunfix(bid);
+			GDKerror("fetch(%s) illegal BAT at position %d.\n", BBP_logical(b->batCacheid), *pos); 
+		} else if (is_fake_project(bn)) {
+			ret = CMDconstCopy(res, BUNfirst(bn), *tpe = ATOMtype(bn->ttype));
+			BBPunfix(bid);
+		} else {
+			ret = GDK_SUCCEED;
+			*(BAT**)res = bn;
+			*tpe = TYPE_bat;
+		}
+	} else {
+		GDKerror("fetch(%s) illegal position %d.\n", BBP_logical(b->batCacheid), *pos); 
+	}
+	return ret;
+}
+
+int
+CMDinsertConvert(BAT** res, BAT *b, ptr h, ptr t, int tpe) 
+{
+	int ret = GDK_FAIL;
+	BAT *bn = NULL;
+	if (CMDfakeProject(&bn, t, tpe) == GDK_SUCCEED) {
+		if (BUNins(*res = b, h, &bn->batCacheid)) {
+			BBPfix(b->batCacheid);
+			ret = GDK_SUCCEED;
+		}
+		BBPunfix(bn->batCacheid);
+	}
+	return ret;
+}
+
 @= mark_grp_init
 	BUN w;
 

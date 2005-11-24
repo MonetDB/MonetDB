@@ -914,8 +914,8 @@ translateSeq_ (opt_t *f, int i, int rcode)
             i, item_ext, i, item_ext, i);
     milprintf(f,
             "iter := merged_result.fetch(0);\n"
-            "item%s := merged_result.fetch(1).bat2constant();\n"
-            "kind := merged_result.fetch(2).bat2constant();\n"
+            "item%s := merged_result.fetch(1);\n"
+            "kind := merged_result.fetch(2);\n"
             "merged_result := nil;\n"
             "ipik := iter;\n"
             "pos := tmark_grp_unique(iter, ipik);\n"
@@ -2233,10 +2233,10 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
     {
         /* res_scj = iter|item bat */
         milprintf(f,
-                "iter := res_scj.fetch(0).bat2constant();\n"
+                "iter := res_scj.fetch(0);\n"
                 "item := res_scj.fetch(1);\n"
                 "pos  := tmark_grp_unique(iter,ipik);\n"
-                "kind := res_scj.fetch(2).bat2constant().set_kind(%s);\n"
+                "kind := res_scj.fetch(2).set_kind(%s);\n"
                 "ipik := item;\n"
                 ,kind);
     } else {
@@ -3252,8 +3252,8 @@ evaluateCastBlock (opt_t *f, type_co ori, char *cast, char *target_type)
     milprintf(f,
             "var res_mu := merged_union(_oid, oid_oid, _val, part_val);\n"
             "oid_oid := nil;\n"
-            "_oid := res_mu.fetch(0).bat2constant();\n"
-            "_val := res_mu.fetch(1).bat2constant();\n"
+            "_oid := res_mu.fetch(0);\n"
+            "_val := res_mu.fetch(1);\n"
             "res_mu := nil;\n"
             "}\n");
 }
@@ -4444,7 +4444,7 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
             "difference := difference.hmark(0@0);\n"
             "var res_mu := merged_union(iter, difference, item%s, %s);\n"
             "iter := res_mu.fetch(0);\n"
-            "item%s := res_mu.fetch(1).bat2constant();\n"
+            "item%s := res_mu.fetch(1);\n"
             "res_mu := nil;\n"
             "}\n"
             "input_iter := nil;\n"
@@ -4501,8 +4501,8 @@ fn_data (opt_t *f)
             "kind := nil;\n"
             "kind_atomic := nil;\n"
             "iter := res_mu.fetch(1);\n"
-            "item := res_mu.fetch(2).bat2constant();\n"
-            "kind := res_mu.fetch(3).bat2constant();\n"
+            "item := res_mu.fetch(2);\n"
+            "kind := res_mu.fetch(3);\n"
             "res_mu := nil;\n"
             "pos := tmark_grp_unique(iter,ipik);\n"
             "ipik := iter;\n"
@@ -4650,9 +4650,9 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
             "attr := nil;\n"
             "item_attr := nil;\n"
             "kind_attr := nil;\n"
-            "iter := res_mu_is2ns.fetch(0).bat2constant().leftfetchjoin(iter%03u);\n"
+            "iter := res_mu_is2ns.fetch(0).leftfetchjoin(iter%03u);\n"
             "item := res_mu_is2ns.fetch(1);\n"
-            "kind := res_mu_is2ns.fetch(2).bat2constant();\n"
+            "kind := res_mu_is2ns.fetch(2);\n"
             "pos := tmark_grp_unique(iter,ipik);\n"
             "res_mu_is2ns := nil;\n"
             "ipik := item;\n"
@@ -6481,8 +6481,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "iter := res_mu.fetch(0);\n" /* CONST? */
                 "ipik := iter;\n"
                 "pos := 0;\n"
-                "item := res_mu.fetch(1).bat2constant();\n"
-                "kind := res_mu.fetch(2).bat2constant();\n"
+                "item := res_mu.fetch(1);\n"
+                "kind := res_mu.fetch(2);\n"
                 "res_mu := nil;\n"
                 "} }\n"
                 "} # end of fn:root ()\n");
@@ -8078,7 +8078,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             /* we could have multiple different calls */
             translate2MIL (f, NORMAL, 0, counter, R(c));
             milprintf(f,
-                    "return bat(void,bat,4).insert(nil,constant2bat(iter)).insert(nil,constant2bat(item)).insert(nil,constant2bat(kind)).access(BAT_READ);\n"
+                    "return bat(void,bat,4).insert(nil,iter).insert(nil,item).insert(nil,kind).access(BAT_READ);\n"
                     "} # end of PROC %s\n",
                     c->sem.fun->sig);
             opt_flush(f, 0);
@@ -10157,9 +10157,8 @@ const char* PFstopMIL() {
         "  time_print := time();\n"
         "  time_exec := time_print - time_exec;\n"
         "  \n"
-        "  item := item.materialize(ipik);\n"
         "  if (genType.search(\"none\") = -1)\n"
-        "    print_result(genType,ws,item,constant2bat(kind),int_values,dbl_values,dec_values,str_values);\n"
+        "    print_result(genType,ws,item.materialize(ipik),constant2bat(kind),int_values,dbl_values,dec_values,str_values);\n"
         "});\n"
         "destroy_ws(ws);\n"
         "if (not(isnil(err))) ERROR(err);\n"
@@ -10174,9 +10173,9 @@ const char* PFudfMIL() {
     return  
         "{\n"
         "var proc_res := %s(loop%03u, outer%03u, order_%03u, inner%03u, fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u); #%s\n" 
-        "iter := proc_res.fetch(0).bat2constant();\n"
-        "item := proc_res.fetch(1).bat2constant();\n"
-        "kind := proc_res.fetch(2).bat2constant();\n"
+        "iter := proc_res.fetch(0);\n"
+        "item := proc_res.fetch(1);\n"
+        "kind := proc_res.fetch(2);\n"
         "if (type(iter) = bat) {\n"
         " ipik := iter;\n"
         "} else {\n"

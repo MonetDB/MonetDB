@@ -36,16 +36,6 @@
 
 #include "pathfinder.h"
 
-static bit is_fake_project (BAT* b)
-{
-    BATcheck(b, "is_fake_project");
-    if ((BATcount(b)==1) && (b->hseqbase==oid_nil)) {
-        return TRUE;
-    } else {
-        return FALSE;
-    }
-}
-
 #define MAXTAGDEPTH        1024
 
 #define WS_BATS     HEIGHT
