@@ -349,6 +349,16 @@ axis step evaluation on the @2 axis from the given context."
 @mil
 module("xtables");
 module("aggrX3");
+
+# in contrast to MIL, xquery defines mod() even on floating point types
+# to support that we fall-back [mod]() proc before module(bat_arith) is loaded 
+proc "[%]" (any left, any right) : any
+{
+    left := [dbl](left); 
+    right := [dbl](right);
+    return [-](left,[*]([dbl]([lng]([/](left,right))),right));
+}
+
 module("bat_arith");
 module("mmath");
 module("pcre");
