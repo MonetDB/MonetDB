@@ -177,7 +177,7 @@ sql_alter_seq(
 	sql_column *col = find_sql_column(seqs, "name");
 	ssize_t rid = column_find_row(sql->trans, col, name, NULL);
 	lng start = -1;
-	int start_type = start_list->h->data.ival, called;
+	int start_type = start_list->h->data.ival, called = 0;
 	char* cur = NULL, *tmp = NULL;
 	(void) tpe;
 
