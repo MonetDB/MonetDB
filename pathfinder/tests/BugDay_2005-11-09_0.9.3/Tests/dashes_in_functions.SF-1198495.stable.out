@@ -17,13 +17,16 @@ quit();
 
 Over..
 
-# 19:46:48 >  
-# 19:46:48 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=58679 dashes_in_functions.SF-1198495.xq
-# 19:46:48 >  
+# 01:56:45 >  
+# 01:56:45 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=58420 dashes_in_functions.SF-1198495.xq
+# 01:56:45 >  
 
-! Approve once the bug is fixed. !
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>
+"should work" 
+</XQueryResult>
 
-# 19:46:48 >  
-# 19:46:48 >  Done.
-# 19:46:48 >  
+# 01:56:45 >  
+# 01:56:45 >  Done.
+# 01:56:45 >  
 
