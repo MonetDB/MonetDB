@@ -44,7 +44,7 @@ Over..
 # 25 # length
 # 1 # tuplecount
 # 0 # id
-[ 1997-07-16 04:00:00.000	]
+[ 1997-07-16 04:00:00.000000	]
 # 3 # querytype
 #  # table_name
 # sql_add_single_value # name
@@ -52,7 +52,7 @@ Over..
 # 14 # length
 # 1 # tuplecount
 # 0 # id
-[ 19:00:32.400	]
+[ 04:00:00.000000	]
 # 3 # querytype
 #  # table_name
 # sql_add_single_value # name
