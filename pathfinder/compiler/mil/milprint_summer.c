@@ -7825,8 +7825,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"delete")) == 0)
     {
-        milprintf(f, "# fn:delete (node) as stmt\n"
-                  "is_update := true; # indicate this is an update\n");
+        milprintf(f, "# fn:delete (node) as stmt\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
                   "int_values := int_values.seqbase(nil).insert(nil, UPDATE_DELETE).seqbase(0@0);\n"
@@ -7862,8 +7861,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
              PFqname_eq(fnQname, PFqname (PFns_fn,"insert-after")) == 0)
     {
         char *func = PFqname_loc(fnQname);
-        milprintf(f, "# fn:%s (node, node) as stmt\n"
-                  "is_update := true; # indicate this is an update\n", func);
+        milprintf(f, "# fn:%s (node, node) as stmt\n", func);
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
@@ -7933,8 +7931,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }        
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-attr")) == 0)
     {
-        milprintf(f, "# fn:set-attr (node, str, [str, str,] str) as stmt\n"
-                  "is_update := true; # indicate this is an update\n");
+        milprintf(f, "# fn:set-attr (node, str, [str, str,] str) as stmt\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
@@ -8003,8 +8000,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"unset-attr")) == 0)
     {
-        milprintf(f, "# fn:unset-attr (node, str [, str, str]) as stmt\n"
-                  "is_update := true; # indicate this is an update\n");
+        milprintf(f, "# fn:unset-attr (node, str [, str, str]) as stmt\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
@@ -8071,8 +8067,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-text")) == 0)
     {
-        milprintf(f, "# fn:set-text (node, str) as stmt\n"
-                  "is_update := true; # indicate this is an update\n");
+        milprintf(f, "# fn:set-text (node, str) as stmt\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
@@ -8109,8 +8104,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-comment")) == 0)
     {
-        milprintf(f, "# fn:set-comment (node, str) as stmt\n"
-                  "is_update := true; # indicate this is an update\n");
+        milprintf(f, "# fn:set-comment (node, str) as stmt\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
@@ -8147,8 +8141,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-pi")) == 0)
     {
-        milprintf(f, "# fn:set-pi (node, str, str) as stmt\n"
-                  "is_update := true; # indicate this is an update\n");
+        milprintf(f, "# fn:set-pi (node, str, str) as stmt\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
@@ -10769,7 +10762,6 @@ const char* PFstartMIL() {
         "var err := CATCH({\n"
         "  ws := create_ws();\n"
         "\n"
-        "  var is_update := false;\n"
         "  # get full picture on var_usage (and sort it)\n"
         "  var usage := var_usage.unique().reverse().access(BAT_READ);\n"
         "  vu_fid := usage.mark(1000@0).reverse();\n"
@@ -10791,26 +10783,30 @@ const char* PFdocbatMIL() {
 "if (genType.search(\"debug\") >= 0) print(item.slice(0,10).col_name(\"tot_items_\"+str(item.count())));\n" 
 */
 
-const char* PFstopMIL() {
-    return   
-        "  time_print := time();\n"
-        "  time_exec := time_print - time_exec;\n"
-        "  \n"
-        "  if (is_update) { # we had an update\n"
-        "    play_update_tape(ws, item, kind);\n"
-        "  } else {\n"
-        "    item := item.de_NO_project(ipik);\n"
-        "    if (genType.search(\"none\") = -1)\n"
-        "      print_result(genType,ws,item,fake_project(kind),int_values,dbl_values,dec_values,str_values);\n"
-        "  }\n"
-        "});\n"
-        "destroy_ws(ws);\n"
-        "if (not(isnil(err))) ERROR(err);\n"
-        "time_print := time() - time_print;\n"
-        "if (genType.search(\"timing\") >= 0)\n"
-        "   printf(\"\\nTrans %% 7d.000 msec\\nShred %% 7d.000 msec\\nQuery %% 7d.000 msec\\nPrint %% 7d.000 msec\\n\","
-        "       time_compile, time_shred, time_exec - time_shred, time_print);\n"
-        "}\n";
+const char* PFstopMIL(bool is_update) {
+    static char buf[1024];
+
+    strcpy(buf,
+           "  time_print := time();\n"
+           "  time_exec := time_print - time_exec;\n"
+           "  \n");
+    if (is_update)
+        strcat(buf, "  play_update_tape(ws, item, kind);\n");
+    else
+        strcat(buf,
+               "  item := item.de_NO_project(ipik);\n"
+               "  if (genType.search(\"none\") = -1)\n"
+               "    print_result(genType,ws,item,fake_project(kind),int_values,dbl_values,dec_values,str_values);\n");
+    strcat(buf,
+           "});\n"
+           "destroy_ws(ws);\n"
+           "if (not(isnil(err))) ERROR(err);\n"
+           "time_print := time() - time_print;\n"
+           "if (genType.search(\"timing\") >= 0)\n"
+           "   printf(\"\\nTrans %% 7d.000 msec\\nShred %% 7d.000 msec\\nQuery %% 7d.000 msec\\nPrint %% 7d.000 msec\\n\","
+           "       time_compile, time_shred, time_exec - time_shred, time_print);\n"
+           "}\n");
+    return buf;
 }
 
 const char* PFudfMIL() {
@@ -10901,7 +10897,7 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, char *
     if (module_base == 0) {
         timing = PFtimer_stop(timing);
         milprintf(f, "time_compile := %d;\n" , (int) (timing/1000));
-        milprintf(f, PFstopMIL());
+        milprintf(f, PFstopMIL(PFty_subtype(TY(R(c)), PFty_star(PFty_stmt()))));
     }
 
     if (opt_close(f, prologue, query, epilogue)) {
