@@ -470,6 +470,10 @@ One day we should introduce the concept of locale, and hook here.
 	"create a date from the old instant format."
 .COMMAND oldduration(str format) : int = oldduration;
 	"parse the old duration format and return an (estimated) number of days."
+# time
+.COMMAND msec() : lng = CMDmsec;
+	"get time of day in msec since 1-1-1970."
+
 
 .PRELUDE = monettime_prelude;
 .EPILOGUE = monettime_epilogue;
@@ -584,6 +588,9 @@ One day we should introduce the concept of locale, and hook here.
 	proc timestamp(int secs) : timestamp{
 		return EPOCH.add(lng(secs) * lng(1000));
 	}
+	proc timestamp(lng msecs) : timestamp{
+		return EPOCH.add(lng(msecs));
+	}
 	proc epoch(timestamp t) : int {
 		return int(diff(t, EPOCH)/lng(1000));
 	}
@@ -601,7 +608,7 @@ One day we should introduce the concept of locale, and hook here.
 	}
 
 	# some utilities for the SQL front-end
-proc current_timestamp() : timestamp { return timestamp(epoch()); }
+proc current_timestamp() : timestamp { return timestamp(msec()); }
 proc current_date() : date { return date(current_timestamp()); }
 proc current_time() : daytime { return daytime(current_timestamp()); }
 
@@ -2397,3 +2404,25 @@ timestamp_comp_GE(bit *retval, timestamp *val1, timestamp *val2)
 		*retval = val1->days > val2->days || (val1->days == val2->days && val1->msecs >= val2->msecs);
 	return GDK_SUCCEED;
 }
+
+int
+CMDmsec(lng *r)
+{
+#ifdef HAVE_GETTIMEOFDAY
+        struct timeval tp;
+
+        gettimeofday(&tp, NULL);
+        *r = ((lng) (tp.tv_sec)) * LL_CONSTANT(1000) + (lng) tp.tv_usec / LL_CONSTANT(1000);
+#else
+#ifdef HAVE_FTIME
+        struct timeb tb;
+
+        ftime(&tb);
+        *r = ((lng) (tb.time)) * LL_CONSTANT(1000) + ((lng) tb.millitm);
+#endif
+#endif
+	return GDK_SUCCEED;
+}
+
+
+
