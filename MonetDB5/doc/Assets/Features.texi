@@ -1,21 +1,25 @@
-@node Features and Limitations, When to consider MonetDB, Intended audience, TOC
 @section Features and Limitations
 
-In this section we give a short overview of the key features of MonetDB.
-Its evolution in the area of data-mining and data-warehousing makes
+In this section we give a short overview of the key features to
+(not) consider the MonetDB product family.
+In a nutshell, its
+birth in the area of data-mining and data-warehousing makes
 it an ideal choice for high volume, complex query dominant applications.
-In this light, MonetDB may be less adequate for secure OLTP settings.
+In this light, MonetDB may be less adequate for high-volume
+secure OLTP settings.
 
-It is important to recognize that MonetDB is primarily aimed at
+It is important to recognize that the MonetDB interfaces are
+primarily aimed at
 experienced system programmers and administrators. End-users are
 advised to use any of the open-source graphical SQL workbenches to
-interact with the system. [see section x]
+interact with the system. (Sec @ref{Application Interfaces}
 
 @menu
 * When to consider MonetDB::
 * When not to consider MonetDB::
 @end menu
-@node When to consider MonetDB, When not to consider MonetDB, Features and Limitations, TOC
+
+@node When to consider MonetDB, When not to consider MonetDB, Features and Limitations, Top
 @subsection When to consider MonetDB ?
 @strong{A high-performance database management system.}
 MonetDB is an easy accessible open-source DBMS for SQL-[XQuery-]based
@@ -76,7 +80,7 @@ for advice. A subscription to the mailing list helps the developer's
 team to justify the on-and-off office hours put into
 MonetDB's development and maintenance.
 
-@node When not to consider MonetDB, The History of MonetDB, When to consider MonetDB, TOC
+@node When not to consider MonetDB, The History of MonetDB, When to consider MonetDB, Top
 @subsection When not to consider MonetDB ?
 There are several areas where MonetDB has not yet built a reputation.
 They are the prime candidates for experimentation, but also areas

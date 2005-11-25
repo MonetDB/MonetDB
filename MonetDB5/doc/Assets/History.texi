@@ -1,4 +1,3 @@
-@node The History of MonetDB, Manual Generation, When not to consider MonetDB, TOC
 @subsection A Brief History of MonetDB
 @strong{The Dark Ages [1979-2002]}
 The development of the MonetDB software family goes back as far as the

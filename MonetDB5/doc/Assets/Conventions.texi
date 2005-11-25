@@ -1,21 +1,19 @@
-@node Manual Generation, Conventions and notation, The History of MonetDB, About this manual
 @section Manual Generation
-The MonetDB code base is a large collection of files, scattered
+The MonetDB code base is large collection of files, scattered
 over the system modules. Each source file is written in a
 literal programming style, which physically binds documentation with 
-the relevant code sections. The utility program Mx, 
-distributed with the source code, processes these
+the relevant code sections. The utility program Mx processes these
 files marked *.mx to extract the code sections for system
 compilation or to prepare for a pretty printed listing.
-The reference manual is based on the *.mx files which have been
-prepared for @emph{Texinfo} processing. 
-Individual components are extracted by
+
+The reference manual is based *.mx files prepared for @emph{Texinfo} processing. 
+The components for the reference manual are extracted by
 @example
 Mx -i -B -H1 <filename>.mx
 @end example
 which generates the file <filename>.bdy.texi.
 These pieces are collected and
-glued together into a manual framework, running @emph{makeinfo} to produce
+glued together in a manual framework, running @emph{makeinfo} to produce
 the desired output format.
 The @emph{Texinfo} information is currently limited
 to the documentation, it should be extended to also process the code.
@@ -25,39 +23,9 @@ A printable version of an *.mx file can be produced using the commands:
 Mx  <filename>.mx
 latex <filename>.tex
 @end example
-The result, however, still includes the unexpanded Texinfo macros.
+The result, however, still includes the unexpanded tex info macros.
 
-@node Conventions and notation, Download and Installation, Manual Generation,About this manual
-@section How to Read This Manual
-The reference manual covers a lot of ground which at first reading
-may be slightly confusing. The material is presented  in a top-down fashion,
-starting at the SQL application layer, following the software stack,
-to the low-level data structures and operations.
-Forward references are included frequently to point into the right
-direction for additional information.
-
-First time users of MonetDB should read (@ref{Download 
-and Installation} and @ref{SQL}. It prepares the ground to develop
-applications using the database language intergalactica.
-Advance topics for application builders is given in @ref{Application
-Interfaces} and the novel query language @ref{XQuery}.
-
-If you already know SQL and are interested in technical details
-of the MonetDB system, you should start reading @ref{MonetDB Overview}.
-From there two tracks are possible. The @ref{MonetDB Assembler Language}
-and following sections describe the abstract machine and optimizations
-taken to improve processing speed.
-It is relevant for a better understanding of the query processing 
-behavior and provides an entry point to built new languages on top
-of the database kernel. 
-
-The second track The Inner Core describes the datastructures
-and operations exploited in the abstract machine layer. This part
-is essential for developers to aid in bug fixing and to
-extend the kernel with new functionality.
-For most readers, however, it can be skipped without causing
-problems to develop efficient applications.
-
+@node Software Versions, Conventions and Notation, Manual Generation, About this manual
 @section Software Versions
 At the time of writing MonetDB Version 4.9 is distributed worldwide
 through SourceForge.
@@ -70,6 +38,7 @@ development efforts shift to Version 5. Until its pre-release, however,
 the new code based is only distributed to a small core group for 
 experimentation, tool migration and feedback.
 
+@node Conventions and Notation, Download and Installation, Software Versions, About this manual
 @section Conventions and Notation
 The  typographical conventions used in this manual are straightforward.
 @code{Monospaced} text is used to designate names in the code base

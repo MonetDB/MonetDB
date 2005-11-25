@@ -37,16 +37,15 @@ Last updated: @value{UPDATED}
 @ifnottex
 
 @page
-@node Top, TOC,  , 
+@node Top, About this manual, ,(Dir)
 @top MonetDB Reference Manual
-@include Assets/General-information.texi
-
-@node TOC, About this manual, Top,(Dir)
+@insertcopying
 
 @menu
 * About this manual::
 @menu
 * Intended audience::
+* How to read this manual::
 * Features and Limitations::
 @menu
 * When to consider MonetDB::
@@ -54,7 +53,8 @@ Last updated: @value{UPDATED}
 @end menu
 * The History of MonetDB::
 * Manual Generation::
-* Conventions and notation::
+* Software Versions::
+* Conventions and Notation::
 @end menu
 
 * Download and Installation::
@@ -82,12 +82,12 @@ Last updated: @value{UPDATED}
 * Getting Started with SQL::
 * The VOC Tutorial::
 * SQL Feature Overview::
-@menu
+@detailmenu
 * SQL Feature List::
 * SET Statement::
 * EXPLAIN Statement::
 * DEBUG Statement::
-@end menu
+@end detailmenu
 * Optimizer Control::
 * SQL Implementation Roadmap::
 @end menu
@@ -174,18 +174,24 @@ Last updated: @value{UPDATED}
 
 @end ifnottex
 
-@node About this manual, Intended audience, TOC , TOC
+@node About this manual, Intended audience, Top , Top
+@include Assets/General-information.texi
 @include Assets/About-this-manual.texi
 
+@node Features and Limitations, When to consider MonetDB, How to read this manual, Top
 @include Assets/Features.texi
+
+@node The History of MonetDB, Manual Generation, When not to consider MonetDB, About this manual
 @include Assets/History.texi
+
+@node Manual Generation, Software Versions, The History of MonetDB, About this manual
 @include Assets/Conventions.texi
 
-@node Download and Installation, Binary Distributions, Conventions and notation, TOC
+@node Download and Installation, Binary Distributions, Conventions and Notation, Top
 @section Downloads and Installation
 @include Assets/Downloadintro.texi
 
-@node MonetDB Overview, Design considerations, Source Distributions, TOC
+@node MonetDB Overview, Design considerations, Source Distributions, Top
 
 @include mal.bdy.texi
 
@@ -196,12 +202,12 @@ Last updated: @value{UPDATED}
 @node Client administration, SQL, Scenario management, MonetDB Overview
 @include mal_client.bdy.texi
 
-@node SQL, Getting Started with SQL, Client administration, TOC
+@node SQL, Getting Started with SQL, Client administration, Top
 @include Assets/SQLoverview.texi
-@node XQuery, Application Interfaces, SQL Implementation Roadmap, TOC
+@node XQuery, Application Interfaces, SQL Implementation Roadmap, Top
 @include Assets/XQueryOverview.texi
 
-@node Application Interfaces, MonetDB Assembler Language, XQuery, TOC
+@node Application Interfaces, MonetDB Assembler Language, XQuery, Top
 @chapter Application Interfaces
 @section Console Interface
 @include mal_readline.bdy.texi
@@ -213,7 +219,7 @@ Give a brief introduction to Mapi, JDBC, ODBC,Perl....
 @subsection ODBC
 @subsection Perl
 
-@node MonetDB Assembler Language, MAL instructions, Application Interfaces , TOC
+@node MonetDB Assembler Language, MAL instructions, Application Interfaces , Top
 @include mal_instruction.bdy.texi
 
 @node Function definitions, Function Clones ,Flow of control , MonetDB Assembler Language
@@ -233,15 +239,15 @@ Give a brief introduction to Mapi, JDBC, ODBC,Perl....
 @node Property management,  Modules, Boxed variables, MonetDB Assembler Language
 @include mal_properties.bdy.texi
 
-@node Modules , MAL interpreter , Property management, TOC
+@node Modules , MAL interpreter , Property management, Top
 @include mal_import.bdy.texi
 
-@node MAL interpreter, Optimizer landscape, Modules, TOC
+@node MAL interpreter, Optimizer landscape, Modules, Top
 @include mal_interpreter.bdy.texi
 @include mal_linker.bdy.texi
 @include mal_stack.bdy.texi
 
-@node Optimizer landscape, What optimizers to consider?, MAL interpreter, TOC
+@node Optimizer landscape, What optimizers to consider?, MAL interpreter, Top
 @include mal_optimizer.bdy.texi
 @include mal_commonExpressions.bdy.texi
 @include mal_emptyset.bdy.texi
@@ -258,18 +264,18 @@ Give a brief introduction to Mapi, JDBC, ODBC,Perl....
 @node Query Execution Plans, Program Debugging, Variable Stack Reduction,  Optimizer toolkit
 @include mal_qep.bdy.texi
 
-@node Program Debugging, The MAL Debugger, Query Execution Plans, TOC
+@node Program Debugging, The MAL Debugger, Query Execution Plans, Top
 @include mal_debugger.bdy.texi
 
-@node Execution Profiling, Event Filtering, Runtime Inspection, TOC
+@node Execution Profiling, Event Filtering, Runtime Inspection, Top
 @include mal_profiler.bdy.texi
 
-@node MonetDB Extension Modules , MonetDB BAT Kernel, Event Caching, TOC
-@node MonetDB BAT Kernel , Advanced Topics, MonetDB Extension Modules , TOC
-@node Advanced Topics , Appendices, MonetDB BAT Kernel , TOC
+@node MonetDB Extension Modules , MonetDB BAT Kernel, Event Caching, Top
+@node MonetDB BAT Kernel , Advanced Topics, MonetDB Extension Modules , Top
+@node Advanced Topics , Appendices, MonetDB BAT Kernel , Top
 This is the place to describe Membedded, distribution stuff...
 
-@node Appendices, MAL Syntax , Advanced Topics, TOC
+@node Appendices, MAL Syntax , Advanced Topics, Top
 @menu
 * MAL Syntax ::
 * Conversion of MIL Programs::

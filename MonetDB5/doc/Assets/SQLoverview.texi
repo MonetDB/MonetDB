@@ -93,20 +93,14 @@ shell> Mserver
 >include sql;
 >sql.start();
 #Continue as SQL session
-[ "version", "5" ]
-[ "language", "sql" ]
-[ "schema", "sys" ]
-sql>
+>
 @end example
 A shortcut for this sequence is to use the command line option
 of the server.
 @example
 shell> Mserver --dbinit="include sql;sql.start();"
 #Continue as SQL session
-[ "version", "5" ]
-[ "language", "sql" ]
-[ "schema", "sys" ]
-sql>
+>
 @end example
 
 Once the Mserver is made aware of the SQL extension library, it is

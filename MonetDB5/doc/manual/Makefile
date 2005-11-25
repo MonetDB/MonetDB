@@ -15,11 +15,23 @@ pdf:
 web:
 	-mkdir -p ${MONET5_PREFIX}/share/MonetDB5
 	mkbdy; cp manual.texi ${MONET5_PREFIX}/share/MonetDB5
+	cp manual.css ${MONET5_PREFIX}/share/MonetDB5
 	cp -r ../Assets ${MONET5_PREFIX}/share/MonetDB5
 	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
-	makeinfo --force --html manual.texi \
+	makeinfo --force --html manual.texi --css-include=manual.css \
 	)
 	cp -r ${MONET5_PREFIX}/share/MonetDB5/MonetDB /ufs/mk/cwi/public_html 
+	echo "Web created"
+
+web2:
+	-mkdir -p ${MONET5_PREFIX}/share/MonetDB5
+	mkbdy; cp manual.texi ${MONET5_PREFIX}/share/MonetDB5
+	cp manual.css ${MONET5_PREFIX}/share/MonetDB5
+	cp -r ../Assets ${MONET5_PREFIX}/share/MonetDB5
+	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
+	texi2html --split=node  --css-include=manual.css manual.texi; \
+	cp -r manual /ufs/mk/cwi/public_html/MonetDB \
+	)
 	echo "Web created"
 
 xml:
