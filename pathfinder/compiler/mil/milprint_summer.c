@@ -4704,7 +4704,7 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
             /* doesn't believe, that iter as well as input_order are ordered on h & t */
             /* apply the rules for the content of element construction */
             "var result_str := combine_text_string "
-                              "(input_iter, input_const, input_str, result_size);\n"
+                              "(input_iter.materialize(input_str), input_const.materialize(input_str), input_str, result_size);\n"
             "input_iter := nil;\n"
             "input_const := nil;\n"
             "input_str := nil;\n"
