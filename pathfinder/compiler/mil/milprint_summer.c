@@ -7339,9 +7339,15 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         int rcode = (code)?INT:NORMAL;
         /* the semantics of idiv are a normal div operation
            followed by a cast to integer */
-        rc = translateOperation (f, VALUES, cur_level, counter, "/", args, true);
-        translateCast2INT (f, rcode, rc, L(args)->type);
-        testCastComplete(f, cur_level, PFty_integer ());
+        if (!PFty_subtype (L(args)->type, PFty_integer ()))
+        {
+            rc = translateOperation (f, VALUES, cur_level, counter, "/", args, true);
+            translateCast2INT (f, rcode, rc, L(args)->type);
+            testCastComplete(f, cur_level, PFty_integer ());
+        }
+        else
+            rcode = translateOperation (f, code, cur_level, counter, "/", args, true);
+            
         return rcode;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_op,"eq")))
