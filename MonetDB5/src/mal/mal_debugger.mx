@@ -30,7 +30,7 @@ assess its behavior.
 * Handling Breakpoints::
 * Runtime Inspection::
 @end menu
-@node The MAL Debugger, Handling Breakpoints, Program Debugging, TOC
+@node The MAL Debugger, Handling Breakpoints, Program Debugging, Top
 @+ The MAL debugger
 To ease debugging and performance monitoring, the MAL interpreter
 comes with a gdb-like debugger.
@@ -175,7 +175,7 @@ can be obtained using the 'info' ('i') command.
 A sample of the BAT content can be printed passing tuple indices, e.g.
 'print b 10 10' prints the second batch of ten tuples.
 
-@node Handling Breakpoints, Runtime Inspection, The MAL Debugger, TOC
+@node Handling Breakpoints, Runtime Inspection, The MAL Debugger, Top
 @+ Handling Breakpoints
 A powerful mechanism for debugging a program is to set breakpoints
 during the debugging session.
@@ -209,7 +209,7 @@ A list of all remaining breakpoints is obtained with @code{breakpoints}.
 
 The interpreter can be instructed to call the debugger as soon as an exception
 is raised. Simply add the instruction @code{mdb.setCatch(true)}.
-@node Runtime Inspection, Execution Profiling, Handling Breakpoints,  TOC
+@node Runtime Inspection, Execution Profiling, Handling Breakpoints,  Top
 @+ Runtime Inspection and Reflection
 Part of the debugger functionality can also be used directly with
 MAL instructions.

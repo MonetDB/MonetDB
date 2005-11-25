@@ -42,7 +42,7 @@ sent over the stream (most likely linked with a file)
 Reflective performance analysis is supported by an event cache,
 emptied explicitly upon need.
  
-@node Event Filtering, Event Caching, Execution Profiling, TOC
+@node Event Filtering, Event Caching, Execution Profiling, Top
 @+ Event Filtering 
 The profiler supports selective retrieval of such information by
 tagging the instructions of interest. This means that a profiler
@@ -100,7 +100,7 @@ of a code block with the pair @code{profiler.setOfflineProfiling()}.
 The default is tuple format, which can be requested
 explicitly using @code{profiler.setOnlineProfiling()}.
 
-@node Event Caching, MonetDB Extension Modules, Event Filtering, TOC
+@node Event Caching, MonetDB Extension Modules, Event Filtering, Top
 @+ Event Caching
 Aside from shipping events to a separate process, the profiler
 can keep the events in a local @code{BAT} group, 
