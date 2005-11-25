@@ -1,6 +1,0 @@
-function test(s:str, b:bat[:any_1,:any_2]...);
-	io.print(s);
-end test;
-b:= bat.new(:int,:int);
-c:= bat.new(:int,:int);
-user.test("hello",b,c);
