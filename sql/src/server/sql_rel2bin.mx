@@ -823,6 +823,7 @@ push_select( stmt *select, stmt *s )
 	if (select->type == st_uselect) 
 		return stmt_uselect( s, stmt_dup(select->op2.stval), select->flag);
 	assert(0);
+	return NULL;
 }
 
 /* push this select through the statement s */
