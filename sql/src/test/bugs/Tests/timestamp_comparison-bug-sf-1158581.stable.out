@@ -31,16 +31,16 @@ Over..
 # timestamp,	timestamp # type
 # 19,	19 # length
 # 1,	 # tuplecount
-# 2,	 # id
-[ 2004-12-27 16:29:57.409,	9999-12-31 00:00:00.000	]
+# 0,	 # id
+[ 2004-12-27 16:29:57.409000,	9999-12-31 00:00:00.000000	]
 # 3 # querytype
 # datetest,	datetest # table_name
 # low,	high # name
 # timestamp,	timestamp # type
 # 19,	19 # length
 # 1,	 # tuplecount
-# 3,	 # id
-[ 2004-12-27 16:29:57.409,	9999-12-31 00:00:00.000	]
+# 1,	 # id
+[ 2004-12-27 16:29:57.409000,	9999-12-31 00:00:00.000000	]
 # 7 # querytype
 
 # 14:39:30 >  
