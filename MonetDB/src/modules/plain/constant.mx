@@ -1,16 +1,16 @@
 @f constant
 @a Peter Boncz 
 @v 0.1 
-@t Constant MIL Algebra
+@t Constant BAT Algebra
 
 Front-ends that represent tables as BAT[void,T] may try to optimize the
-sitation that the tail value is equal vor all tuples (a 'constant column').
+sitation that the tail value is equal for all tuples (a 'constant column').
 
 This may happen in SQL, but is especially prevalent in Xquery. It is hard
 to optimize away constants inside GDK. Also, even if the storage layer could
 prevent the allocation of full column space for a constant, the BAT algebra
 operators that work on top of it, should often perform a different
-(simple) operation that the normal algorithm (think of select, join, etc).
+(simpler) operation than the normal algorithm (think of texist, join, etc).
 Therefore, it seems that the algebra language level would be a good place to 
 handle constant optimizations.
 
@@ -20,10 +20,35 @@ The below MIL constant algebra provides BAT algebra-like functionality on
 MIL columns represented as single constants. It should be loaded *before*
 any of the (bat,algebra,xtables) modules, because it uses the *any* type 
 to indicate constant parameters in the command signatures. The variants 
-where any resolves to BAT, are covered by the (bat,algebra,xtables) modules;
-thus the constant module should be loaded first.
+where 'any' resolves to 'BAT', are covered by the respective modules 
+(bat,algebra,xtables,aggrX3,malalgebra), that may be loaded subsequently.
+
+Representing a column by a single value is not a full representation of the column.
+The missing information is the size of the column and its seqbase. Due to
+this, the full MIL algebra cannot be supported on top of constants, and it becomes
+sometimes necessary to still materialize constants. To make this possible,
+the milprint_summer code introduces a variable ipik (in addition to iter-pos-kind-item),
+that holds a 'true' BAT with a real void-head. 
+
+The general principle is that the front-end should have an 'extent' BAT (in
+case of XQuery, this is the ipik).  This BAT can be used as a second
+parameter to 'materialize(col,extent)' whose result is a 'true' BAT. If a column 
+variable is already a 'true' BAT, it is unaffected by the 'materialize()' command.
+
+It would have been better to have the full MIL algebra supported transparently
+on constants. Now the developer has to worry about all operations being supported, and
+if not, use a materialize().
+
+Hopefully, in Monet5 we will get better support for representing constant columns
+in BATs that can do aways with explicit use of fake_project in the generated MIL.
 @m
 .MODULE constant;
+
+.COMMAND materialize ( any::1 value, BAT[oid,any] extent ) : BAT[oid,any::1] = CMDmaterializeConst;
+"makes sure the first parameter is materialized as a bat (if it was a constant, it is blown up with the extent)"
+
+.COMMAND materialize ( BAT[oid,any::1] value, BAT[oid,any] extent ) : BAT[oid,any::1] = CMDmaterializeFake;
+"makes sure the first parameter is materialized as a bat (if it was a constant, it is blown up with the extent)"
 
 .COMMAND texist (any::1 b, any::1 h) : bit = CMDconstEqual;
 "exist(b,v); where the first parameter is interpreted as a constant column"
@@ -36,9 +61,6 @@ thus the constant module should be loaded first.
 
 .COMMAND fetch (any::1 b, lng h) : any::1 = CMDconstFirstLng;
 "fetch(b,v); where the first parameter is interpreted as a constant column"
-
-.COMMAND sample (any::1 b, int h) : any::1 = CMDconstFirstInt;
-"sample(b,cnt); where the first parameter is interpreted as a constant column"
 
 .COMMAND slice (any::1 b, int lo, int hi) : any::1 = CMDconstSliceInt;
 "slice(b,lo,hi); where the first parameter is interpreted as a constant column"
@@ -82,30 +104,40 @@ thus the constant module should be loaded first.
 .COMMAND avg ( any::1 b ) : any::1 = CMDconstCopy;
 "avg(b); where the first parameter is interpreted as a constant column"
 
-.COMMAND {min} ( any::1 b, BAT[oid,oid] g, BAT[oid,any] e) : any::1 = CMDconstAggr;
-"min(b); where the first parameter is interpreted as a constant column"
-
-.COMMAND {max} ( any::1 b, BAT[oid,oid] g, BAT[oid,any] e) : any::1 = CMDconstAggr;
-"max(b); where the first parameter is interpreted as a constant column"
-
 .COMMAND tunique (any::1 b) : BAT[any::1,void] = CMDconstUnique;
-"tunique(c); delivers a result bat [c,nil]"
+"tunique(c); delivers a result BAT [c,nil]"
 
 .COMMAND access (any::1 b, int mode) : any::1 = CMDconstFirstInt;
 "access(b,mode); where the first parameter is interpreted as a constant column"
 
+.COMMAND tdiff(BAT[any::1,any::2], any::2 b) : BAT[any::1,any::2] = CMDconstDiff;
+"tdiff(l,r); where the second parameter is interpreted as a constant column"
+
+.COMMAND tintersect(BAT[any::1,any::2], any::2 b) : BAT[any::1,any::2] = CMDconstIntersect;
+"tintersect(l,r); where the second parameter is interpreted as a constant column"
+
+@= join
+.COMMAND @1join ( BAT[oid,oid] left, any::1 right ) : BAT[oid,any::1] = CMDconstjoinRightMat;
+"@1join(l,r); where the second parameter is a constant; materialize BAT[oid,r] (assumes join hits)"
+
+.COMMAND @1join ( BAT[void,oid] left, any::1 right ) : any::1 = CMDconstjoinRightCopy;
+"@join(l,r); where the second parameter is a constant; return r (assumes join hits)"
+
+.COMMAND @1join ( oid left, any::1 right ) : any::1 = CMDconstjoinCopy;
+"@join(l,r); where the first parameter is a MIL constant. Return a MIL constant (assumes join hits!)."
+
+.COMMAND @1join ( oid left, BAT[any,any::1] right ) : any::1 = CMDconstjoinLeftCopy;
+"@1join(l,r); where the first parameter is a MIL constant. Return a MIL constant."
+@m
+@:join()@
+@:join(left)@
+@:join(merge)@
+@:join(leftmerge)@
+@:join(fetch)@
+@:join(leftfetch)@
+
 .END constant;
 @mil
-proc kdiff ( BAT[any::1,any::2] b, any::1 c) : BAT[any::1,any::2]
-{
-    return b.fetch([!=](b,c).ord_uselect(true));
-}
-
-proc kintersect ( BAT[any::1,any::2] b, any::1 c) : BAT[any::1,any::2]
-{
-    return b.ord_select(c);
-}
-
 proc CTgroup ( oid b, BAT[oid,any] b) : BAT[oid,oid]
 {
     return CTgroup(b);
@@ -116,18 +148,51 @@ proc CTrefine ( oid b, BAT[oid,any] b) : BAT[oid,oid]
     return tsort(b);
 }
 
-proc {sum} ( any::1 b, BAT[oid,oid] g, BAT[oid,any] e) : any::1 
+proc {min} ( any::1 b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,any::1] 
+{
+    return project(e,b);
+}
+
+proc {max} ( any::1 b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,any::1] 
+{
+    return project(e,b);
+}
+
+proc {sum} ( any::1 b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,any::1] 
 {
     var fcn := monet_atomtbl.reverse().find(b.type());
     return [*fcn]({count}(g.reverse(), e, false)).[*](b);
 }
 
-proc {avg} ( any::1 b, BAT[oid,oid] g, BAT[oid,any] e) : any 
+proc {avg} ( any::1 b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,dbl]
 {
-    return [dbl](b);
+    return project(e,[dbl](b));
 }
 @c
 #include <gdk.h>
+
+int
+CMDmaterializeConst(BAT **ret, ptr val, int tpe, BAT *extent)
+{
+        /* due to function resolution, we know that val must be a simple constant or an illegal bat */
+        if (tpe == TYPE_bat) {
+                GDKerror("materialize(%s,extent): first param should have an oid head.\n",
+                         BBP_logical(((BAT*) val)->batCacheid));
+                return GDK_FAIL;
+        }
+        *ret = BATconst(extent, tpe, val);
+        return *ret?GDK_SUCCEED:GDK_FAIL;
+}
+
+int
+CMDmaterializeFake(BAT **ret, BAT* value, BAT *extent)
+{
+	(void) extent;
+        *ret = value;
+        BBPfix(value->batCacheid);
+        return GDK_SUCCEED;
+}
+
 int
 CMDconstEqual(bit *ret, ptr v1, int tpe, ptr v2)
 {
@@ -227,4 +292,89 @@ CMDconstUnique(BAT** ret, ptr v, int t)
 		BBPreclaim(bn);
 	}
 	return GDK_FAIL;
+}
+
+int
+CMDconstjoinRightMat(ptr ret, BAT *b, ptr val, int tpe)
+{
+        /* due to function resolution, we know that val must be a simple constant or an illegal bat */
+        if (tpe == TYPE_bat) {
+                GDKerror("positional join(bat,%s): second param is not a dense bat.\n",
+                         BBP_logical(((BAT*) val)->batCacheid));
+                return GDK_FAIL;
+        }
+        *(BAT**)ret = BATconst(b, tpe, val);
+        return (*(BAT**)ret == NULL)?GDK_FAIL:GDK_SUCCEED;
+}
+
+int
+CMDconstjoinRightCopy(ptr ret, BAT *b, ptr val, int tpe)
+{
+        /* due to function resolution, we know that val must be a simple constant or an illegal bat */
+	(void) b;
+        if (tpe == TYPE_bat) {
+                GDKerror("positional join(bat,%s): second param is not a dense bat.\n",
+                         BBP_logical(((BAT*) val)->batCacheid));
+                return GDK_FAIL;
+        }
+        return CMDconstCopy(ret, val, tpe);
+}
+
+int
+CMDconstjoinCopy(ptr ret, oid *id, ptr val, int tpe)
+{
+        /* due to function resolution, we know that val must be a simple constant or an illegal bat */
+	(void) id;
+        if (tpe == TYPE_bat) {
+                GDKerror("positional join(const,%s): second param is not a dense bat.\n",
+                         BBP_logical(((BAT*) val)->batCacheid));
+                return GDK_FAIL;
+        }
+        return CMDconstCopy(ret, val, tpe);
+}
+
+int
+CMDconstjoinLeftCopy(ptr ret, oid *val, BAT *b)
+{
+	BUN r;
+	if (!BAThdense(b)) {
+        	GDKerror("positional join(const,%s): second param is not a dense bat.\n",
+                                BBP_logical(b->batCacheid));
+                return GDK_FAIL;
+	}
+	BUNfndVOID(r,b,val);
+	if (r == NULL) {
+                GDKerror("positional join(const,%s): value not found\n", BBP_logical(b->batCacheid));
+                return GDK_FAIL;
+	}
+        return CMDconstCopy(ret, BUNtail(b,r), ATOMtype(b->ttype));
+}
+
+int 
+CMDconstDiff(BAT **res, BAT *l, ptr val) 
+{
+	int xx, (*cmp)(ptr, ptr) = BATatoms[l->ttype].atomCmp;
+	BAT *bn = BATnew(ATOMtype(l->htype), ATOMtype(l->ttype), BATcount(l));
+	BUN p, q;
+	if (bn) {
+		BATloopFast(l, p, q, xx) {
+			ptr v = BUNtail(l,p);
+			if ((*cmp)(v, val)) bunfastins(bn, BUNhead(l,p), v);    
+		}
+		bn->hsorted = l->hsorted;
+		bn->tsorted = l->tsorted;
+		if (l->hkey) BATkey(bn,1);
+		if (l->tkey) BATkey(BATmirror(bn),1);
+		*res = bn;
+		return GDK_SUCCEED;
+bunins_failed:  BBPreclaim(bn);
+	}
+	return GDK_FAIL;
+}
+
+int 
+CMDconstIntersect(BAT **res, BAT *l, ptr val) 
+{
+	*res = BAT_select_(l, val, val, TRUE, TRUE, TRUE, TRUE);
+	return (*res)?GDK_SUCCEED:GDK_FAIL;
 }
