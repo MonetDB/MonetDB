@@ -210,23 +210,6 @@ between the MIL constant and the 'fake' BAT[nil,c] representation (obviously, no
 bats are unaffected by these calls). The switching is done automatically when 
 bats fetched from a bat-of-bats (using an overloaded fetch) and put into them (with
 an overloaded insert).
-
-Representing a column by a single value is not a full representation of the column.
-The missing information is the size of the column and its seqbase. Due to
-this, the full MIL algebra cannot be supported on top of constants, and it becomes
-sometimes necessary to still materialize constants. To make this possible,
-the milprint_summer code introduces a variable ipik (in addition to iter-pos-kind-item),
-that holds a 'true' BAT with a real void-head (ipik is one of iter-pos-kind-item, which
-can never *all be constants -- hence the name). This BAT can be used as a second
-parameter to 'materialize(col,ipik)' whose result is a 'true' BAT. If a column variable 
-is already a 'true' BAT, it is unaffected by the 'materialize()' command. 
-
-It would have been better to have the full MIL algebra supported transparently 
-on constants. Now the developer has to worry about all operations being supported, and 
-if not, use a materialize().  
-
-Hopefully, in Monet5 we will get better support for representing constant columns 
-in BATs that can do aways with explicit use of fake_project in the generated MIL.
 @m
 .COMMAND is_constant(any) : bit = CMDisFakeProject;
 "checks whether the parameter is a BAT[nil,c] constant column"
@@ -242,24 +225,6 @@ in BATs that can do aways with explicit use of fake_project in the generated MIL
 
 .COMMAND insert(BAT[any::1,bat] b, any::1 head, any tail) : BAT[any::1,bat] = CMDinsertConvert;
 "insert into a bat-of-bats; if a non-bat tail is inserted, it is inserted as a fake-bat."
-
-.COMMAND materialize(any::1 value, bat[oid,any] extent) : bat[oid,any::1] = CMDmaterializeConst;
-"materialize a MIL constant into a real BAT, using the second extent BAT to blow it up"
-
-.COMMAND materialize(bat[any::1,any::2] value, bat[oid,any] extent) : bat[any::1,any::2] = CMDmaterializeFake;
-"make sure the first parameter is a materialized BAT (i.e. if it is BAT[nil,c] substitute nil with the extent head column)."
-
-.COMMAND leftfetchjoin ( BAT[oid,oid] left, any::1 right) : any = CMDposjoinFake;
-"leftfetchjoin(l,r); where the second parameter is a constant; return a BAT[nil,c]"
-
-.COMMAND leftfetchjoin ( oid left, any::1 right) : any::1 = CMDposjoinConst;
-"leftfetchjoin(l,r); where the first parameter is a MIL constant. Return a MIL constant (assumes join hits!)."
-
-.COMMAND leftfetchjoin ( oid left, BAT[oid,any::1] right) : any::1 = CMDposjoinConstBAT;
-"leftfetchjoin(l,r); where the first parameter is a MIL constant. Return a MIL constant (assumes join hits!)."
-
-.COMMAND leftfetchjoin ( BAT[any::1,oid] left, BAT[oid,any::2] right) : BAT[any::1,any::2] = CMDposjoin;
-"leftfetchjoin(l,r); with awareness that both params may be BAT[nil,c]. Return a BAT (potentially BAT[nil,c])."
 
 @- Path steps (staircase join) 
 @m
@@ -360,10 +325,28 @@ module("aggrX3");
 
 # in contrast to MIL, xquery defines mod() even on floating point types
 # to support that we fall-back [mod]() proc before module(bat_arith) is loaded 
-proc "[%]" (any left, any right) : any
+proc "%" (lng left, dbl right) : lng
 {
-    left := [dbl](left); 
-    right := [dbl](right);
+    return lng(%(dbl(left),right)); 
+}
+proc "%" (dbl left, lng right) : dbl
+{
+    return [%](left,[dbl](right)); 
+}
+proc "%" (dbl left, dbl right) : dbl
+{
+    return -(left,*(dbl(lng(/(left,right))),right));
+}
+proc "[%]" (bat[void,lng] left, bat[void,dbl] right) : bat[void,lng]
+{
+    return [lng]([%]([dbl](left),right)); 
+}
+proc "[%]" (bat[void,dbl] left, bat[void,lng] right) : bat[void,dbl]
+{
+    return [%](left,[dbl](right)); 
+}
+proc "[%]" (bat[void,dbl] left, bat[void,dbl] right) : bat[void,dbl]
+{
     return [-](left,[*]([dbl]([lng]([/](left,right))),right));
 }
 
@@ -381,9 +364,21 @@ const empty_str__bat := bat(void,str,0).seqbase(0@0).access(BAT_READ);
 const empty_int__bat := bat(void,lng,0).seqbase(0@0).access(BAT_READ);
 const bool_not := bat(void,oid,2).insert(nil,1@0).insert(nil,0@0).seqbase(0@0).access(BAT_READ);
 
+proc addValues(bat[void,any::1] container, any::1 delta) : oid
+{
+    container.insert(oid(container.count()), delta);
+    return container.reverse().find(delta);
+}
+
+proc addValues(bat[void,any::1] container, bat[oid,any::1] delta) : bat[oid,oid]
+{
+    container.seqbase(nil).insert(delta.tmark(nil)).seqbase(0@0);
+    return delta.leftjoin(container.reverse());
+}
+
 proc mposjoin( BAT[oid,oid] pre, oid frag, BAT[oid, bat] ws_item ) : BAT[void,any] 
 {
-    return pre.leftfetchjoin(ws_item.find(frag));
+    return pre.leftfetchjoin(bat2constant(ws_item.find(frag)));
 }
 
 proc mvaljoin( BAT[oid,oid] pre, oid frag, BAT[oid, bat] ws_item ) : BAT[oid,oid] 
@@ -1413,111 +1408,6 @@ CMDdeFakeProject(ptr ret, int *tpe, ptr val, int t)
 		t = ATOMtype(b->ttype);
 	} 
 	return CMDconstCopy(ret, val, *tpe = t);
-}
-
-
-int
-CMDposjoinFake(ptr ret, int *tpe, BAT *b, ptr v2, int t2)
-{
-	/* due to function resolution, we know that v2 must be a simple constant or an illegal bat */
-	if (t2 == TYPE_bat) {
-		GDKerror("positional join(x,%s): second param is not a dense bat (or fake project).\n",
-                         BBP_logical(((BAT*) v2)->batCacheid));
-		return GDK_FAIL;
-	}
-	if (BAThdense(b)) {
-		/* in case of a void column, we should be able to reconstruct it later with an ipik */
-		*tpe = t2;
-		return CMDconstCopy(ret, v2, t2);
-	}
-	*tpe = TYPE_bat;
-	*(BAT**)ret = BATconst(b, t2, v2);
-	return (*(BAT**)ret == NULL)?GDK_FAIL:GDK_SUCCEED;
-
-}
-
-int
-CMDposjoinConst(ptr ret, oid *id, ptr val, int tpe)
-{
-	if (tpe == TYPE_bat) {
-		BAT *b = (BAT*) val;
-		BUN r;
-		if (is_fake_project(b)) {
-			r = BUNfirst(b);
-		} else if (BATcount(b) > 1 && !BAThdense(b)) {
-			GDKerror("positional join(x,%s): second param is not a dense bat (or fake project).\n",
-                         	BBP_logical(b->batCacheid));
-			return GDK_FAIL;
-		} else {
-			BUNfndVOID(r,b,id);
-		}
-		if (r == NULL) {
-			GDKerror("posjoin(const,%s): value not found\n", BBP_logical(b->batCacheid));
-			return GDK_FAIL;
-		}
-		val = BUNtail(b,r);
-		tpe = ATOMtype(b->ttype);
-	}
-	return CMDconstCopy(ret, val, tpe);
-}
-
-int
-CMDposjoinConstBAT(ptr ret, oid *id, BAT *b)
-{
-	return CMDposjoinConst(ret, id, b, TYPE_bat);
-}
-
-int
-CMDposjoin(BAT **ret, BAT *left, BAT* right)
-{
-	if (BATcount(right) > 1 && !BAThdense(right)) {
-		GDKerror("positional join(bat,%s): second param is not a dense bat (or fake project).\n",
-                         	BBP_logical(right->batCacheid));
-		return GDK_FAIL;
-	}
-	if (is_fake_project(BATmirror(left))) {
-		if (is_fake_project(right)) {
-			GDKerror("leftfetchjoin: currently can't join two constant bats on their void column\n");
-			return GDK_FAIL; 
-		}
-		/* we join a column of "all possible oids" into a void => full hit */
-		*ret = BATmirror(BATconst(BATmirror(right), ATOMtype(left->htype), BUNtail(left, BUNfirst(left))));
-	} else if (!is_fake_project(right)) {
-		/* note that in case of is_fake_project(l) the result is again fake_project */
-		*ret = BATleftfetchjoin(left, right, oid_nil);
-	} else if (BAThdense(left)) { 
-		BBPfix(right->batCacheid);
-		*ret = right; /* return fake_project */
-	} else { 
-		*ret = BATconst(left, ATOMtype(right->ttype), BUNtail(right, BUNfirst(right)));
-	}
-	return (*ret)?GDK_SUCCEED:GDK_FAIL;
-}
-		
-int
-CMDmaterializeConst(BAT **ret, ptr val, int tpe, BAT *extent) 
-{
-	*ret = BATconst(extent, tpe, val);
-	return *ret?GDK_SUCCEED:GDK_FAIL;
-}
-
-int
-CMDmaterializeFake(BAT **ret, BAT* value, BAT *extent) 
-{
-	if (ATOMtype(value->htype) != TYPE_oid) {
-		GDKerror("materialize: %s (value) head type is %s instead of [v]oid.\n",
-			BBP_logical(value->batCacheid), ATOMname(value->htype));
-		return GDK_FAIL;
-	} else if (is_fake_project(BATmirror(value))) {
-		GDKerror("materialize: don't know how to materialize tail column of %s (value)\n",
-			BBP_logical(value->batCacheid));
-		return GDK_FAIL;
-	} else if (is_fake_project(value)) {
-		return CMDmaterializeConst(ret, BUNtail(value, BUNfirst(value)), ATOMtype(value->ttype), extent);
-	}
-	*ret = value;
-	BBPfix(value->batCacheid);
-	return GDK_SUCCEED;
 }
 
 int
