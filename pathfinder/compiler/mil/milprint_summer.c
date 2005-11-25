@@ -3335,7 +3335,7 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
             char *item = (char *) PFmalloc (strlen ("item") + strlen (kind_str(rc)) + 1);
             item = strcat (strcpy (item, "item"), kind_str(rc));
 
-            addValues(f, str_container(), item, "item");
+            addValues(f, int_container(), item, "item");
             milprintf(f, "item := item.tmark(0@0);\n");
         }
     }
@@ -3411,7 +3411,7 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
             char *item = (char *) PFmalloc (strlen ("item") + strlen (kind_str(rc)) + 1);
             item = strcat (strcpy (item, "item"), kind_str(rc));
 
-            addValues(f, str_container(), item, "item");
+            addValues(f, dec_container(), item, "item");
             milprintf(f, "item := item.tmark(0@0);\n");
         }
     }
@@ -3488,7 +3488,7 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
             char *item = (char *) PFmalloc (strlen ("item") + strlen (kind_str(rc)) + 1);
             item = strcat (strcpy (item, "item"), kind_str(rc));
 
-            addValues(f, str_container(), item, "item");
+            addValues(f, dbl_container(), item, "item");
             milprintf(f, "item := item.tmark(0@0);\n");
         }
     }
