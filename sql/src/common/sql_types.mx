@@ -1119,11 +1119,11 @@ sqltypeinit()
 	dates = t;
 	MONINT = *t++ = sql_create_type("MONTH_INTERVAL", 32, 0, 2, EC_INTERVAL, "int");
 	SECINT = *t++ = sql_create_type("SEC_INTERVAL", 64, 0, 2, EC_INTERVAL, "lng");
-	TME = *t++ = sql_create_type("TIME", 0, 0, 0, EC_TIME, "daytime");
-	TMETZ = *t++ = sql_create_type("TIMETZ", 0, SCALE_FIX, 0, EC_TIME, "daytime");
+	TME = *t++ = sql_create_type("TIME", 7, 0, 0, EC_TIME, "daytime");
+	TMETZ = *t++ = sql_create_type("TIMETZ", 7, SCALE_FIX, 0, EC_TIME, "daytime");
 	DTE = *t++ = sql_create_type("DATE", 0, 0, 0, EC_DATE, "date");
-	TMESTAMP = *t++ = sql_create_type("TIMESTAMP", 0, 0, 0, EC_TIMESTAMP, "timestamp");
-	TMESTAMPTZ = *t++ = sql_create_type("TIMESTAMPTZ", 0, SCALE_FIX, 0, EC_TIMESTAMP, "timestamp");
+	TMESTAMP = *t++ = sql_create_type("TIMESTAMP", 7, 0, 0, EC_TIMESTAMP, "timestamp");
+	TMESTAMPTZ = *t++ = sql_create_type("TIMESTAMPTZ", 7, SCALE_FIX, 0, EC_TIMESTAMP, "timestamp");
 
 	*t++ = sql_create_type("BLOB", 0, 0, 0, EC_BLOB, "sqlblob");
 	end = t;

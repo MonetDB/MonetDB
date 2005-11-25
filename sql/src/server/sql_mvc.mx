@@ -332,7 +332,7 @@ int
 mvc_commit(mvc *m, int chain, char *name)
 {
 	char *schema = NULL;
-	sql_trans *tr = m->trans;
+	sql_trans *cur, *tr = m->trans;
 	int level = (chain) ? tr->level : ISO_SERIALIZABLE;
 	int ok = SQL_OK;
 
@@ -360,11 +360,16 @@ mvc_commit(mvc *m, int chain, char *name)
 		return 0;
 	}
 
-	/* first commit all the savepoints */
-	while (tr->parent->parent != NULL && ok == SQL_OK) {
-		ok = sql_trans_commit(tr);
-		tr = sql_trans_destroy(tr);
+	/* first release all intermediate savepoints */
+	cur = tr;
+	tr = tr->parent;
+	if (tr->parent) {
+		while (tr->parent->parent != NULL && ok == SQL_OK) {
+			tr = sql_trans_destroy(tr);
+		}
 	}
+	cur -> parent = tr;
+	tr = cur;
 	if (ok != SQL_OK) {
 		GDKerror("COMMIT: transaction is aborted, will ROLLBACK instead");
 		mvc_rollback(m, chain, name);
@@ -497,6 +502,7 @@ mvc_release(mvc *m, char *name)
 	int ok = SQL_OK;
 	int res = Q_TRANS;
 	sql_trans *tr = m->trans;
+	sql_trans *cur = tr;
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_release %s\n", (name) ? name : "");
@@ -509,16 +515,15 @@ mvc_release(mvc *m, char *name)
 		return -1;
 	}
 	tr = m->trans;
+	tr = tr->parent;
 	while (ok == SQL_OK && (!tr->name || strcmp(tr->name, name) != 0)) {
-		ok = sql_trans_commit(tr);
 		tr = sql_trans_destroy(tr);
 	}
 	if (tr->name && strcmp(tr->name, name) == 0) {
-		_DELETE(tr->name);
-		tr->name = NULL;
+		tr = sql_trans_destroy(tr);
 	}
+	cur -> parent = tr;
 
-	m->trans = tr;		/* restart at savepoint */
 	m->type = res;
 	return res;
 }

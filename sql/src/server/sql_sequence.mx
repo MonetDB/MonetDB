@@ -170,6 +170,8 @@ sql_alter_seq(
 		lng cache,
 		int cycle)
 {
+	int ok = 0;
+	void *p;
 	char buf[BUFSIZ];
 	char* name = qname_table(qname);
 	sql_schema *sys = find_sql_schema(sql->trans, "sys");
@@ -193,26 +195,31 @@ sql_alter_seq(
 	}
 
 	/* make sure the in memory sequence structure is flushed */
-	assert(sequence_exit(name));
+	ok = sequence_exit(name);
+	assert(ok);
+	if (!ok)
+		return sql_error(sql, 02, "ALTER SEQUENCE: internal error");
 
 	col = find_sql_column(seqs, "start");
 	assert(col);
 	/* we never change the start value on ALTER thus read the current
 	 * value */
-	start = *(lng*)column_find_value(sql->trans, col, rid);
+	start = *(lng*)(p = column_find_value(sql->trans, col, rid)); _DELETE(p);
 	/* create the restart subquery */
 	if (start_type == -1) {
 		/* retain old cur value */
 		col = find_sql_column(seqs, "cached");
 		assert(col);
 		snprintf(buf, BUFSIZ, "select %lld",
-				*(lng*)column_find_value(sql->trans, col, rid));
+				*(lng*)(p=column_find_value(sql->trans, col, rid)));
+		_DELETE(p);
 		cur = _strdup(buf);
 
 		/* also retain called flag */
 		col = find_sql_column(seqs, "called");
 		assert(col);
-		called = *(bit*)column_find_value(sql->trans, col, rid);
+		called = *(bit*)(p=column_find_value(sql->trans, col, rid));
+		_DELETE(p);
 	} else if (start_type == 0) {
 		/* there is no argument, set cur to start (on next lookup) */
 		snprintf(buf, BUFSIZ, "select %lld", start - 1);
@@ -250,19 +257,39 @@ sql_alter_seq(
 	/* use values already in there if not supplied */
 	col = find_sql_column(seqs, "increment");
 	assert(col);
-	if (inc <= 0) inc = *(lng*)column_find_value(sql->trans, col, rid);
+	if (inc < 0) {
+		p = column_find_value(sql->trans, col, rid);
+		inc = *(lng*)p;
+		_DELETE(p);
+	}
 	col = find_sql_column(seqs, "minvalue");
 	assert(col);
-	if (min < 0) min = *(lng*)column_find_value(sql->trans, col, rid);
+	if (min < 0) {
+		p = column_find_value(sql->trans, col, rid);
+		min = *(lng*)p;
+		_DELETE(p);
+	}
 	col = find_sql_column(seqs, "cycle");
 	assert(col);
-	if (cycle && max < 0) cycle = *(bit*)column_find_value(sql->trans, col, rid);
+	if (cycle && max < 0) {
+		p = column_find_value(sql->trans, col, rid);
+		cycle = *(bit*)p;
+		_DELETE(p);
+	}
 	col = find_sql_column(seqs, "maxvalue");
 	assert(col);
-	if (max < 0) max = *(lng*)column_find_value(sql->trans, col, rid);
+	if (max < 0) { 
+		p = column_find_value(sql->trans, col, rid);
+		max = *(lng*)p;
+		_DELETE(p);
+	}
 	col = find_sql_column(seqs, "cache");
 	assert(col);
-	if (cache <= 0) cache = *(lng*)column_find_value(sql->trans, col, rid);
+	if (cache <= 0) { 
+		p = column_find_value(sql->trans, col, rid);
+		cache = *(lng*)p;
+		_DELETE(p);
+	}
 
 	snprintf(buf, BUFSIZ,
 		"update \"sys\".\"sequences\" set "
@@ -284,6 +311,7 @@ sql_alter_seq(
 static stmt *
 sql_drop_seq(mvc *sql, sql_schema *ss, dlist *qname)
 {
+	int ok = 0;
 	char buf[BUFSIZ];
 	char *name = qname_table(qname);
 
@@ -293,7 +321,10 @@ sql_drop_seq(mvc *sql, sql_schema *ss, dlist *qname)
 		return sql_error(sql, 02, "DROP SEQUENCE: insufficient privileges for '%s' in schema '%s'", sql->user,  ss->base.name);
 	}
 	/* make sure the in memory sequence structure is flushed */
-	assert(sequence_exit(name));
+	ok = sequence_exit(name);
+	assert(ok);
+	if (!ok)
+		return sql_error(sql, 02, "DROP SEQUENCE: internal error");
 	snprintf(buf, BUFSIZ, "delete from \"sys\".\"sequences\" where \"name\" = '%s';", name);
 	return stmt_sql(_strdup(buf));
 }

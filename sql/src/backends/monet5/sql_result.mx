@@ -112,13 +112,19 @@ dec_tostr(void *extra, char **Buf, int *len, int type, ptr a)
 	return 0;
 }
 
+struct time_res {
+	int fraction;
+	int has_tz;
+	lng timezone;
+};
+
 int
-sql_time_tostr(void *M, char **buf, int *len, int type, ptr A)
+sql_time_tostr(void *TS_RES, char **buf, int *len, int type, ptr A)
 {
-	mvc *m = M;
-	int len1, big = 128;
+	struct time_res *ts_res = TS_RES;
+	int i, len1, big = 128;
 	char buf1[128], *s1 = buf1, *s;
-	lng val, timezone = m->timezone * 60 * 1000;
+	lng val = 0, timezone = ts_res->timezone * 60 * 1000;
 	daytime tmp, *a = A;
 	daytime mtime = 24 * 60 * 60 * 1000;
 
@@ -134,7 +140,10 @@ sql_time_tostr(void *M, char **buf, int *len, int type, ptr A)
 		return 4;
 	}
 
-	val = *a + timezone;
+	if (ts_res->has_tz) 
+		val = *a + timezone;
+	else
+		val = *a;
 	if (val < 0)
 		val = mtime + val;
 	if (val > mtime)
@@ -142,6 +151,11 @@ sql_time_tostr(void *M, char **buf, int *len, int type, ptr A)
 	tmp = (daytime) val;
 
 	len1 = daytime_tostr(&s1, &big, &tmp);
+
+	/* fixup the fraction, default is 3 */
+	len1 += (ts_res->fraction-3);
+	if (ts_res->fraction == 0) 
+		len1 --;
 
 	if (*len < len1 + 8) {
 		if (*buf)
@@ -151,21 +165,27 @@ sql_time_tostr(void *M, char **buf, int *len, int type, ptr A)
 	s = *buf;
 	strcpy(s, buf1);
 	s += len1;
+	s[0] = 0;
+	/* extra zero's for usec's */
+	for (i=3; i<ts_res->fraction; i++) 
+		s[-i+2] = '0';
 
-	*s++ = (m->timezone >= 0) ? '+' : '-';
-	sprintf(s, "%02d:%02d", ABS(m->timezone) / 60, ABS(m->timezone) % 60);
-	s += 5;
+	if (ts_res->has_tz) {
+		*s++ = (ts_res->timezone >= 0) ? '+' : '-';
+		sprintf(s, "%02d:%02d", ABS(ts_res->timezone) / 60, ABS(ts_res->timezone) % 60);
+		s += 5;
+	}
 	return (int) (s - *buf);
 }
 
 int
-sql_timestamp_tostr(void *M, char **buf, int *len, int type, ptr A)
+sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, ptr A)
 {
-	mvc *m = M;
-	int len1, len2, big = 128;
+	struct time_res *ts_res = TS_RES;
+	int i, len1, len2, big = 128;
 	char buf1[128], buf2[128], *s, *s1 = buf1, *s2 = buf2;
 	timestamp tmp, *a = A;
-	lng timezone = m->timezone * 60 * 1000;
+	lng timezone = ts_res->timezone * 60 * 1000;
 
 	(void) type;
 	if (*(lng *) a == lng_nil) {
@@ -179,9 +199,19 @@ sql_timestamp_tostr(void *M, char **buf, int *len, int type, ptr A)
 		return 4;
 	}
 
-	MTIMEtimestamp_add(&tmp, a, &timezone);
-	len1 = date_tostr(&s1, &big, &tmp.days);
-	len2 = daytime_tostr(&s2, &big, &tmp.msecs);
+	if (ts_res->has_tz) {
+		MTIMEtimestamp_add(&tmp, a, &timezone);
+		len1 = date_tostr(&s1, &big, &tmp.days);
+		len2 = daytime_tostr(&s2, &big, &tmp.msecs);
+	} else {
+		len1 = date_tostr(&s1, &big, &a->days);
+		len2 = daytime_tostr(&s2, &big, &a->msecs);
+	}
+
+	/* fixup the fraction, default is 3 */
+	len2 += (ts_res->fraction-3);
+	if (ts_res->fraction == 0) 
+		len2 --;
 
 	if (*len < len1 + len2 + 8) {
 		if (*buf)
@@ -194,10 +224,16 @@ sql_timestamp_tostr(void *M, char **buf, int *len, int type, ptr A)
 	*s++ = ' ';
 	strcpy(s, buf2);
 	s += len2;
+	s[0] = 0;
+	/* extra zero's for usec's */
+	for (i=3; i<ts_res->fraction; i++) 
+		s[-i+2] = '0';
 
-	*s++ = (m->timezone >= 0) ? '+' : '-';
-	sprintf(s, "%02d:%02d", ABS(m->timezone) / 60, ABS(m->timezone) % 60);
-	s += 5;
+	if (ts_res->has_tz) {
+		*s++ = (ts_res->timezone >= 0) ? '+' : '-';
+		sprintf(s, "%02d:%02d", ABS(ts_res->timezone) / 60, ABS(ts_res->timezone) % 60);
+		s += 5;
+	}
 	return (int) (s - *buf);
 }
 
@@ -316,15 +352,15 @@ ptr *
 _ASCIIadt_frStr(void *extra, int type, char *s, char *e, char quote)
 {
 	ptr *res = NULL;
-	Column *c = extra;
+	Column *fmt = extra;
 
 	if (!(type == TYPE_str && quote) && strcasecmp(s, "NULL") == 0) {
 		res = (ptr *) ATOMnil(type);
 	} else if (type == TYPE_str) {
-		return TABLETstrFrStr(c, s, e);
+		return TABLETstrFrStr(fmt, s, e);
 	} else {
-		(void) (*BATatoms[type].atomFromStr) (s, &c->len, (ptr) &c->data);
-		res = c->data;
+		(void) (*BATatoms[type].atomFromStr) (s, &fmt->len, (ptr) &fmt->data);
+		res = fmt->data;
 	}
 	return res;
 }
@@ -445,7 +481,7 @@ mvc_export_default(mvc *m, stream *s)
 {
 	int ok = 1;
 
-	assert(m->type > 0 && m->type < 10);
+	assert(m->type > 1 && m->type < 10);
 	if (s) 
 		ok = (stream_write(s, mvcDefaultMsg[m->type-2], mvcDefaultMsg_len, 1) == 1);
 	return (ok) ? 0 : -1;
@@ -474,20 +510,29 @@ mvc_send_@1(stream *s, @1 cnt){
 @:mvc_send(int)@
 
 int
-export_value( mvc *m, stream *s, int eclass, char *sqlname, int sc, ptr p, int mtype, char **buf, int *len)
+export_value( mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p, int mtype, char **buf, int *len)
 {
 	int ok = 0;
+	int l;
 
 	if (eclass == EC_DEC) {
-		int l = dec_tostr((void *) (ptrdiff_t) sc, buf, len,
+		l = dec_tostr((void *) (ptrdiff_t) sc, buf, len,
 				  mtype, p);
 		ok = (stream_write(s, *buf, l, 1) == 1);
-	} else if (eclass == EC_TIME && strcmp(sqlname, "timetz") == 0) {
-		int l = sql_time_tostr( (void *) m, buf, len, mtype, p);
+	} else if (eclass == EC_TIME) {
+		struct time_res *ts_res = alloca(sizeof(struct time_res));
+		ts_res->has_tz = (strcmp(sqlname, "timetz") == 0);
+		ts_res->fraction = d?d-1:0;
+		ts_res->timezone = m->timezone;
+		l = sql_time_tostr( (void *) ts_res, buf, len, mtype, p);
 
 		ok = (stream_write(s, *buf, l, 1) == 1);
-	} else if (eclass == EC_TIMESTAMP && strcmp(sqlname, "timestamptz") == 0) {
-		int l = sql_timestamp_tostr((void *) m, buf, len, mtype, p);
+	} else if (eclass == EC_TIMESTAMP) {
+		struct time_res *ts_res = alloca(sizeof(struct time_res));
+		ts_res->has_tz = (strcmp(sqlname, "timestamptz") == 0);
+		ts_res->fraction = d?d-1:0;
+		ts_res->timezone = m->timezone;
+		l = sql_timestamp_tostr((void *) ts_res, buf, len, mtype, p);
 
 		ok = (stream_write(s, *buf, l, 1) == 1);
 	} else if (!p || ATOMcmp(mtype, ATOMnilptr(mtype), p) == 0) {
@@ -501,14 +546,13 @@ export_value( mvc *m, stream *s, int eclass, char *sqlname, int sc, ptr p, int m
 			ok = mvc_send_int(s, *(int*)p);
 			break;
 		default: {
-			int l = (*BATatoms[mtype].atomToStr) (buf, len, p);
+			l = (*BATatoms[mtype].atomToStr) (buf, len, p);
 			ok = (stream_write(s, *buf, l, 1) == 1);
 		}
 		}
 	}
 	return ok;
 }
-
 
 static int
 mvc_export_row(mvc *m, stream *s, res_table *t)
@@ -517,10 +561,9 @@ mvc_export_row(mvc *m, stream *s, res_table *t)
 	char *rsep = "\t]\n";
 	int seplen= 2;
 	int rseplen= 3;
-
-	int i, ok = 1;
 	char *buf = NULL;
 	int len = 0;
+	int i, ok = 1;
 
 	m->type = Q_RESULT;
 	if (!s)
@@ -535,11 +578,11 @@ mvc_export_row(mvc *m, stream *s, res_table *t)
 			if (!ok)
 				break;
 		}
-		export_value(m, s, c->type.type->eclass, 
-			c->type.type->sqlname, c->type.scale, 
+		ok = export_value(m, s, c->type.type->eclass, 
+			c->type.type->sqlname, c->type.digits, c->type.scale, 
 			c->p, c->mtype, &buf, &len);
 	}
-	if( len)
+	if (len)
 		_DELETE(buf);
 	m->results = res_tables_remove(m->results, t);
 	if (ok)
@@ -623,14 +666,24 @@ mvc_export_table(mvc *m, stream *s, res_table *t, unsigned int offset, unsigned 
 			fmt[i].tostr = &dec_tostr;
 			fmt[i].frstr = &dec_frstr;
 			fmt[i].extra = (void *) (ptrdiff_t) c->type.scale;
-		} else if (c->type.type->eclass == EC_TIMESTAMP && strcmp(c->type.type->sqlname, "timestamptz") == 0) {
+		} else if (c->type.type->eclass == EC_TIMESTAMP) {
+			struct time_res *ts_res = alloca(sizeof(struct time_res));
+			ts_res->has_tz = (strcmp(c->type.type->sqlname, "timestamptz") == 0); 
+			ts_res->fraction = c->type.digits?c->type.digits-1:0;
+			ts_res->timezone = m->timezone;
+
 			fmt[i].tostr = &sql_timestamp_tostr;
 			fmt[i].frstr = NULL;
-			fmt[i].extra = m;
-		} else if (c->type.type->eclass == EC_TIME && strcmp(c->type.type->sqlname, "timetz") == 0) {
+			fmt[i].extra = ts_res;
+		} else if (c->type.type->eclass == EC_TIME) {
+			struct time_res *ts_res = alloca(sizeof(struct time_res));
+			ts_res->has_tz = (strcmp(c->type.type->sqlname, "timetz") == 0); 
+			ts_res->fraction = c->type.digits?c->type.digits-1:0;
+			ts_res->timezone = m->timezone;
+
 			fmt[i].tostr = &sql_time_tostr;
 			fmt[i].frstr = NULL;
-			fmt[i].extra = m;
+			fmt[i].extra = ts_res;
 		}
 	}
 	if (i == t->nr_cols + 1) {
@@ -662,7 +715,8 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, bat bid,
 				count = bat_max_length(b);
 				BBPunfix(b->batCacheid);
 			} else {
-				count = strlen((char *) p);
+				if (p) count = strlen((char *) p);
+				else count = 4;
 			}
 			ok = mvc_send_int(s, count);
 		}
@@ -699,20 +753,21 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, bat bid,
 		if (scale)	/* time zone */
 			count += 6;	/* +03:30 */
 		if (digits)	/* fractional seconds precision */
-			count += 1 + digits;
+			count += digits;
 		ok = mvc_send_int(s, count);
 	} else if (eclass == EC_TIMESTAMP) {
 		count = 10 + 1 + 8;
 		if (scale)	/* time zone */
 			count += 6;		/* +03:30 */
 		if (digits)	/* fractional seconds precision */
-			count += 1 + digits;
+			count += digits;
 		ok = mvc_send_int(s, count);
 	} else {
 		ok = mvc_send_int(s, 0);
 	}
 	return ok;
 }
+
 
 int
 mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d, int sc, int eclass, ptr p, int mtype) 
@@ -733,7 +788,7 @@ mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d,
 	    stream_write(s, " # type\n# ", 10, 1) == 1 &&
 	    export_length(s, mtype, eclass, d, sc, 0, p) &&
 	    stream_write(s, " # length\n# 1 # tuplecount\n# 0 # id\n[ ", 38, 1) == 1 &&
-	    export_value( m, s, eclass, type, sc, p, mtype, &buf, &len)) 
+	    export_value( m, s, eclass, type, d, sc, p, mtype, &buf, &len)) 
 		ok = (stream_write(s, rsep, strlen(rsep), 1) == 1);
 	    
 	if (buf)
@@ -748,12 +803,13 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 	res_table *t = res_tables_find(m->results, res_id);
 	char *buf,*b;
 
-	if (!s)
+	if (!s || !t)
 		return 0;
 	assert(t->query_type > 1 && t->query_type < 10);
 	ok = (stream_write(s, mvcDefaultMsg[t->query_type-2], mvcDefaultMsg_len, 1) == 1);
 
 	/* skip headers for affected row counts */
+	assert(t->query_type != Q_UPDATE); /* handled by optimized code */
 	if (ok && (t->query_type == Q_UPDATE || t->query_type == Q_TRANS))
 		return mvc_export_table(m, s, t, 0, m->reply_size);
 

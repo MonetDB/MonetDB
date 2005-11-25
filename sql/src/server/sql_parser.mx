@@ -2652,17 +2652,15 @@ tz:
  *       the future here.
  */
 time_precision:
-	'(' intval ')' 	{ $$ = $2; }
+	'(' intval ')' 	{ $$ = $2+1; }
 /* a time defaults to a fractional precision of 0 */
- | /* empty */		{ $$ = 0; }
+ | /* empty */		{ $$ = 0+1; }
  ;
 
 timestamp_precision:
-	'(' intval ')' 	{ $$ = $2; }
-/* a timestamp defaults to a fractional precision of 6
- * set it to zero here to avoid problems.  (needs work)
- */
- | /* empty */		{ $$ = 0; }
+	'(' intval ')' 	{ $$ = $2+1; }
+/* a timestamp defaults to a fractional precision of 6 */
+ | /* empty */		{ $$ = 6+1; }
  ;
 
 datetime_type:
@@ -2697,7 +2695,7 @@ datetime_field:
 start_field:
     non_second_datetime_field time_precision
 		{ $$ = _dlist_append_int(
-			 	_dlist_append_int( _dlist_create(), $1), $2);  }
+			 	_dlist_append_int( _dlist_create(), $1), $2-1);  }
  ;
 
 end_field:
@@ -2706,16 +2704,16 @@ end_field:
 			 	_dlist_append_int( _dlist_create(), $1), 0);  }
  |  SECOND time_precision
 		{ $$ = _dlist_append_int(
-			 	_dlist_append_int( _dlist_create(), isec), $2);  }
+			 	_dlist_append_int( _dlist_create(), isec), $2-1);  }
  ;
 
 single_datetime_field:
     non_second_datetime_field time_precision
 		{ $$ = _dlist_append_int(
-			 	_dlist_append_int( _dlist_create(), $1), $2);  }
+			 	_dlist_append_int( _dlist_create(), $1), $2-1);  }
  |  SECOND time_precision
 		{ $$ = _dlist_append_int(
-			 	_dlist_append_int( _dlist_create(), isec), $2);  }
+			 	_dlist_append_int( _dlist_create(), isec), $2-1);  }
  ;
 
 interval_qualifier:
@@ -2839,7 +2837,7 @@ literal:
 		  atom *a;
 		  int r;
 
-	          r = sql_find_subtype(&t, ($2)?"timetz":"time", 0, 0);
+	          r = sql_find_subtype(&t, ($2)?"timetz":"time", 1, 0);
 		  if (!r || (a = atom_general(&t, $3, 0)) == NULL) {
 			char buf[BUFSIZ];
 
@@ -2855,7 +2853,7 @@ literal:
 		  atom *a;
 		  int r;
 
- 		  r = sql_find_subtype(&t, ($2)?"timestamptz":"timestamp", 0,0);
+ 		  r = sql_find_subtype(&t, ($2)?"timestamptz":"timestamp",0,0);
 		  if (!r || (a = atom_general(&t, $3, 0)) == NULL) {
 			char buf[BUFSIZ];
 

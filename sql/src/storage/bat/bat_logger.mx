@@ -90,10 +90,10 @@ extern int logger_exit(struct logger *logger);
 extern int logger_restart(struct logger *logger);
 extern int logger_cleanup(struct logger *logger);
 
-extern int log_bat(struct logger *logger, oid lbid, BAT *b);
-extern int log_bat_clear(struct logger *logger, oid lbid);
-extern int log_bat_persists(struct logger *logger, BAT *b, oid lbid, char *n);
-extern int log_bat_transient(struct logger *logger, oid lbid);
+extern int log_bat(struct logger *logger, BAT *b, char *n);
+extern int log_bat_clear(struct logger *logger, char *n);
+extern int log_bat_persists(struct logger *logger, BAT *b, char *n);
+extern int log_bat_transient(struct logger *logger, char *n);
 extern int log_changes(struct logger *logger);
 
 extern int log_tstart(struct logger *logger);
@@ -152,6 +152,7 @@ typedef struct logger {
 	char *dir;
 	stream *log;
 	struct bm *bm;
+	BAT *sql_log; /* oid, int */
 } logger;
 
 static int
@@ -205,8 +206,8 @@ log_write_string(logger *l, char *n)
 static void
 log_read_clear(logger *logger, char *name)
 {
-	oid lbid = bm_find_bat(logger->bm, name);
-	BAT *b = bm_lbid2bat(logger->bm, lbid);
+	oid bid = bm_find_bat(logger->bm, name);
+	BAT *b = bat_descriptor(bid, "log_read_clear");
 
 	if (logger->debug & 1)
 		fprintf(stderr, "logger found log_read_clear %s\n", name);
@@ -220,8 +221,8 @@ log_read_clear(logger *logger, char *name)
 static void
 log_read_updates(logger *logger, logformat *l, char *name)
 {
-	oid lbid = bm_find_bat(logger->bm, name);
-	BAT *b = bm_lbid2bat(logger->bm, lbid);
+	oid bid = bm_find_bat(logger->bm, name);
+	BAT *b = bat_descriptor(bid,  "log_read_updates");
 
 	if (logger->debug & 1)
 		fprintf(stderr, "logger found log_read_updates %s %s %d\n", name, (l->flag == SQL_LOG_INSERT) ? "insert" : "delete", l->nr);
@@ -254,8 +255,6 @@ log_read_updates(logger *logger, logformat *l, char *name)
 		}
 		_DELETE(hv);
 		_DELETE(tv);
-		bm_new_version(logger->bm, lbid, logger->tid);
-
 		bat_destroy(b);
 	}
 }
@@ -263,12 +262,12 @@ log_read_updates(logger *logger, logformat *l, char *name)
 static void
 log_read_destroy(logger *logger, logformat *l, char *name)
 {
-	oid lbid = bm_find_bat(logger->bm, name);
+	oid bid = bm_find_bat(logger->bm, name);
 
 	(void) l;		/* Stefan: unused!? */
 
-	if (lbid)
-		bm_del_bat(logger->bm, lbid);
+	if (bid)
+		bm_del_bat(logger->bm, bid);
 }
 
 static void
@@ -317,7 +316,7 @@ log_read_create(logger *logger, logformat *l, char *name)
 			GDKerror("logger could not create bat (%s,%s,%s,%d,%d)\n", name, ha, ta, ht, tt);
 			return;
 		}
-		bm_add_bat(logger->bm, b->batCacheid, name, logger->tid);
+		bm_add_bat(logger->bm, b, name);
 		bat_destroy(b);
 	}
 	if (buf)
@@ -325,12 +324,12 @@ log_read_create(logger *logger, logformat *l, char *name)
 }
 
 static void
-logger_commit(logger *logger)
+logger_fakecommit(logger *logger)
 {
 	if (logger->debug & 1)
-		printf("logger_commit\n");
+		printf("logger_fakecommit\n");
 
-	bm_commit(logger->bm, logger->tid);
+	bm_fakecommit(logger->bm);
 }
 
 static void
@@ -339,7 +338,7 @@ logger_abort(logger *logger)
 	if (logger->debug & 1)
 		printf("logger_abort\n");
 
-	bm_abort(logger->bm, logger->tid);
+	bm_abort(logger->bm);
 }
 
 static int
@@ -402,7 +401,7 @@ logger_readlog(logger *logger, char *filename)
 			break;
 		case SQL_LOG_END:
 			if (logger->tid == l.nr) {
-				logger_commit(logger);
+				logger_fakecommit(logger);
 			} else {
 				logger_abort(logger);
 			}
@@ -460,33 +459,30 @@ logger_readlogs(logger *logger, FILE *fp, char *filename)
 
 	while (fgets(id, BUFSIZ, fp) != NULL) {
 		char buf[BUFSIZ];
+		int lid = strtol(id, NULL, 10);
+		
+		if (lid >= logger->id) {
+			logger->id = lid;
+			snprintf(buf, BUFSIZ, "%s.%d", filename, logger->id);
 
-		logger->id = strtol(id, NULL, 10);
-		snprintf(buf, BUFSIZ, "%s.%d", filename, logger->id);
-
-		if ((res = logger_readlog(logger, buf)) != 0) {
-			break;
+			if ((res = logger_readlog(logger, buf)) != 0) {
+				break;
+			}
 		}
 	}
 	return res;
 }
 
 static int
-logger_save(logger *logger, FILE *fp)
+logger_commit(logger *logger)
 {
+	oid id = 0;
 	if (logger->debug & 1)
-		fprintf(stderr, "logger_save\n");
+		fprintf(stderr, "logger_commit\n");
 
-	return bm_save(logger->bm, fp);
-}
-
-static int
-logger_load(logger *logger, FILE *fp)
-{
-	if (logger->debug & 1)
-		fprintf(stderr, "logger_load\n");
-
-	return bm_load(logger->bm, fp);
+	BUNdelHead(logger->sql_log, &id);
+	BUNins(logger->sql_log, &id, &logger->id);
+	return bm_commit(logger->bm);
 }
 
 static int
@@ -508,10 +504,12 @@ check_version(logger *logger, FILE *fp)
 static logger *
 logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 {
+	oid id = 0;
 	logger *logger = NEW(struct logger);
 	FILE *fp;
 	char filename[BUFSIZ];
 	char bak[BUFSIZ];
+	bat sql_log = BBPindex("sql_log");
 
 	logger->debug = debug;
 	logger->changes = 0;
@@ -523,6 +521,16 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 	logger->dir = _strdup(filename);
 	logger->log = NULL;
 	logger->bm = bm;
+	if (sql_log == 0) {
+
+		logger->sql_log = bat_new(TYPE_oid, TYPE_int, 1, "logger_new");
+		BATmode(logger->sql_log, PERSISTENT);
+		BBPrename(logger->sql_log->batCacheid, "sql_log");
+		BUNins(logger->sql_log, &id, &logger->id);
+	} else {
+		logger->sql_log = bat_descriptor(sql_log, "bm_create");
+		logger->id = *(int*)BUNtail(logger->sql_log, BUNfnd(logger->sql_log, &id));
+	}
 
 	snprintf(filename, BUFSIZ, "%s%s", logger->dir, LOGFILE);
 
@@ -533,8 +541,6 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 			 return NULL;
 
 		logger->changes++;
-		if (logger_load(logger, fp) < 0)
-			return NULL;
 		logger_readlogs(logger, fp, filename);
 	} else if ((fp = fopen(bak, "r")) != NULL) {
 		fclose(fp);
@@ -545,8 +551,6 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 				 return NULL;
 
 			logger->changes++;
-			if (logger_load(logger, fp) < 0)
-				return NULL;
 			logger_readlogs(logger, fp, filename);
 		}
 	} else if ((fp = fopen(filename, "w")) == NULL) {
@@ -567,7 +571,7 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 		fprintf(fp, "%d\n", logger->id);
 	}
 	fclose(fp);
-	logger->tid = bm_version(logger->bm);
+	logger->tid = 1;
 	return logger;
 }
 
@@ -618,16 +622,13 @@ logger_exit(logger *logger)
 		char ext[BUFSIZ];
 
 		fprintf(fp, "%06d\n", logger->version);
-		if (logger_save(logger, fp) < 0)
-			return SQL_ERR;
-
-		fprintf(fp, "\n");
 		logger->id ++;
-		fprintf(fp, "%d\n", logger->id);
 
-		fclose(fp);
-		if (TMcommit() != 0)	/* save new bats */
+		if (logger_commit(logger) < 0)
 			return SQL_ERR;
+
+		fprintf(fp, "%d\n", logger->id);
+		fclose(fp);
 
 		/* atomic action, switch to new log, keep old for later 
 		   cleanup actions 
@@ -659,11 +660,6 @@ logger_cleanup(logger *logger)
 	char buf[BUFSIZ];
 	char id[BUFSIZ];
 	FILE *fp = NULL;
-
-	bm_cleanup(logger->bm);
-
-	if (TMcommit() != 0)	/* cleanup old bats */
-		return SQL_ERR;
 
 	snprintf(buf, BUFSIZ, "%s%s.bak-%d", logger->dir, LOGFILE, logger->id);
 	if (logger->debug & 1)
@@ -702,7 +698,7 @@ Actually, we need to save the descriptor file, perhaps we should simply
 introduce a versioning scheme. 
 @c
 int
-log_bat_persists(logger *logger, BAT *b, oid lbid, char *name)
+log_bat_persists(logger *logger, BAT *b, char *name)
 {
 	char *ha, *ta;
 	int len;
@@ -732,14 +728,13 @@ log_bat_persists(logger *logger, BAT *b, oid lbid, char *name)
 
 	if (logger->debug & 1)
 		fprintf(stderr, "Logged new bat [%s,%s] %s\n", ha, ta, name);
-	return log_bat(logger, lbid, b);
+	return log_bat(logger, b, name);
 }
 
 int
-log_bat_transient(logger *logger, oid lbid)
+log_bat_transient(logger *logger, char *name)
 {
 	logformat l;
-	char *name = bm_lbid2name(logger->bm, lbid);
 
 	l.flag = SQL_LOG_DESTROY;
 	l.nr = 0;
@@ -753,17 +748,14 @@ log_bat_transient(logger *logger, oid lbid)
 }
 
 int
-log_bat(logger *logger, oid lbid, BAT *b)
+log_bat(logger *logger, BAT *b, char *name)
 {
 	int ok = GDK_SUCCEED;
-	char *name = bm_lbid2name(logger->bm, lbid);
 	logformat l;
 	BUN p;
 
 	if (logger->debug & 128) {
 		/* logging is switched off */
-		bm_new_version(logger->bm, lbid, logger->tid);
-
 		return SQL_OK;
 	}
 
@@ -814,23 +806,19 @@ log_bat(logger *logger, oid lbid, BAT *b)
 		if (logger->debug)
 			fprintf(stderr, "Logged %s %d deletes\n", name, l.nr);
 	}
-	bm_new_version(logger->bm, lbid, logger->tid);
 	BATcommit(b);
 
 	return (ok == GDK_SUCCEED) ? SQL_OK : SQL_ERR;
 }
 
 int
-log_bat_clear(logger *logger, oid lbid)
+log_bat_clear(logger *logger, char *name)
 {
 	int ok = GDK_SUCCEED;
-	char *name = bm_lbid2name(logger->bm, lbid);
 	logformat l;
 
 	if (logger->debug & 128) {
 		/* logging is switched off */
-		bm_new_version(logger->bm, lbid, logger->tid);
-
 		return SQL_OK;
 	}
 
@@ -841,7 +829,6 @@ log_bat_clear(logger *logger, oid lbid)
 	if (log_write_format(logger, &l) == SQL_ERR || log_write_string(logger, name) == SQL_ERR)
 		return SQL_ERR;
 
-	bm_new_version(logger->bm, lbid, logger->tid);
 	return (ok == GDK_SUCCEED) ? SQL_OK : SQL_ERR;
 }
 

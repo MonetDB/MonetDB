@@ -165,6 +165,7 @@ select_count(stmt *s)
 	case st_group:
 	case st_group_ext:
 	case st_append:
+	case st_diff:
 	case st_union:
 	case st_unop:
 	case st_binop:

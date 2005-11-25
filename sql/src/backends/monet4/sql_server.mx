@@ -158,11 +158,13 @@ stream.
 @:mel_cast(int)@
 @:mel_cast(lng)@
 
-@= mel_fcast
+@= mel_castfromstr
  .COMMAND @1( str v ) : @1 = str_2_@1; "cast to @1"
 @m
-@:mel_fcast(flt)@
-@:mel_fcast(dbl)@
+@:mel_castfromstr(flt)@
+@:mel_castfromstr(dbl)@
+@:mel_castfromstr(timestamp)@
+@:mel_castfromstr(date)@
 
  .COMMAND "str"( any v, int digits ) : str = str_cast; "cast to string and check for overflow"
 
@@ -715,6 +717,8 @@ str_2_@1( @1 *res, str val )
 @:cast(lng)@
 @:cast(flt)@
 @:cast(dbl)@
+@:cast(timestamp)@
+@:cast(date)@
 
 int
 str_cast(str *res, ptr v, int tpe, int *len)
@@ -1143,8 +1147,14 @@ module(mapi); # mapi_listen
 #vm_maxsize(0LL);
 
 proc sql_diff (bat[any::1,any::2] b1, bat[any::1,any::3] b2) : bat[any::1,any::2] {
-	if (count(b2) > 0)
+	if (count(b2) > 0) 
 		return kdiff(b1,b2);
+	return b1;
+}
+
+proc sql_union (bat[any::1,any::2] b1, bat[any::1,any::2] b2) : bat[any::1,any::2] {
+	if (count(b2) > 0)
+		return kunion(b1,b2);
 	return b1;
 }
 

@@ -851,20 +851,80 @@ sql_binop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		return NULL;
 	}
 
-	/* also need to add semantic checks here */
+	/* do we have subquery results ? */
 	if (ls->type == st_list) {
-		stmt *o = ls;
+		stmt *old = ls;
 
-		assert(list_length(ls->op1.lval) == 1);
-		ls = stmt_dup(ls->op1.lval->h->data);
-		stmt_destroy(o);
+		/* with outer references ? */
+		if (list_length(ls->op1.lval) > 1) {
+			node *o = ls->op1.lval->h;
+			stmt *oref = stmt_dup(o->next->data);
+			stmt *sqa = stmt_dup(o->data);
+			stmt *cmp = NULL;
+			stmt *h;
+			
+			/* for now assume single outer ref ! */
+			if (list_length(ls->op1.lval) > 2 || !oref->t) {
+				stmt_destroy(oref);
+				stmt_destroy(sqa);
+				stmt_destroy(ls);
+				stmt_destroy(rs);
+				return sql_error(sql, 02, "too many outer references");
+			}
+			cmp = stmt_join(stmt_reverse(oref), sqa, cmp_equal);
+
+			/* need to fix the cmp head */
+			h = stmt_dup(cmp->h->t);
+			stmt_destroy(cmp->h);
+			cmp->h = h;
+
+			cmp = stmt_join(find_pivot(subset, cmp->h), cmp, cmp_equal);
+			/* it can happen that the subquery reduces the outer
+			   refs, so we need to semijoin here 
+			 */
+			rs = stmt_semijoin(rs, stmt_dup(cmp));
+			ls = cmp;
+		} else {
+			ls = stmt_dup(ls->op1.lval->h->data);
+		}
+		stmt_destroy(old);
 	}
 	if (rs->type == st_list) {
-		stmt *o = rs;
+		stmt *old = rs;
 
-		assert(list_length(rs->op1.lval) == 1);
-		rs = stmt_dup(rs->op1.lval->h->data);
-		stmt_destroy(o);
+		/* with outer references ? */
+		if (list_length(rs->op1.lval) > 1) {
+			node *o = rs->op1.lval->h;
+			stmt *oref = stmt_dup(o->next->data);
+			stmt *sqa = stmt_dup(o->data);
+			stmt *cmp = NULL;
+			stmt *h;
+			
+			/* for now assume single outer ref ! */
+			if (list_length(rs->op1.lval) > 2 || !oref->t) {
+				stmt_destroy(oref);
+				stmt_destroy(sqa);
+				stmt_destroy(ls);
+				stmt_destroy(rs);
+				return sql_error(sql, 02, "too many outer references");
+			}
+			cmp = stmt_join(stmt_reverse(oref), sqa, cmp_equal);
+
+			/* need to fix the cmp head */
+			h = stmt_dup(cmp->h->t);
+			stmt_destroy(cmp->h);
+			cmp->h = h;
+
+			cmp = stmt_join(find_pivot(subset, cmp->h), cmp, cmp_equal);
+			/* it can happen that the subquery reduces the outer
+			   refs, so we need to semijoin here 
+			 */
+			ls = stmt_semijoin(ls, stmt_dup(cmp));
+			rs = cmp;
+		} else {
+			rs = stmt_dup(rs->op1.lval->h->data);
+		}
+		stmt_destroy(old);
 	}
 
 	return sql_binop_(sql, scp, l->data.sval, ls, rs);

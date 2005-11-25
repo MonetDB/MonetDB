@@ -455,14 +455,14 @@ comment "cast to dec(@1) and check for overflow";
 @:mal_cast(int)@
 @:mal_cast(lng)@
 
-@= mal_fcast
+@= mal_castfromstr
 #address CALCstr2@1
 command @1( v:str ) :@1 
 address str_2_@1
 comment "cast to @1";
 @mal
-@:mal_fcast(flt)@
-@:mal_fcast(dbl)@
+@:mal_castfromstr(flt)@
+@:mal_castfromstr(dbl)@
 
 @mal
 command str( v:bit) :str 
@@ -583,6 +583,7 @@ include sql_cache;
 #include <mal_session.h>
 #include <tablet.h>
 #include <streams.h>
+#include <mtime.h>
 #include "sql_privileges.h"
 #include "sql_semantic.h"
 #include "sql_optimize.h"

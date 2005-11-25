@@ -85,6 +85,7 @@ tail_column(stmt *st)
 
 	case st_table_clear:
 	case st_column:
+	case st_ubat:
 	case st_bat:
 		return st;
 
@@ -233,6 +234,7 @@ basecolumn(stmt *st)
 
 	case st_pivot:
 		return basecolumn(st->op1.stval);
+	case st_ubat:
 	case st_bat:
 		return st->op1.cval;
 
@@ -801,6 +803,78 @@ stmt_reljoin_( mvc *sql, list *l1, list *l2 )
 	return res;
 }
 
+/* push this select through the statement s */
+stmt *
+push_select( stmt *select, stmt *s )
+{
+	if (select->type == st_select2) 
+		return stmt_select2( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), select->flag);
+
+	if (select->type == st_uselect2) 
+		return stmt_uselect2( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), select->flag);
+
+	if (select->type == st_select) {
+		if (select->flag == cmp_like || select->flag == cmp_notlike)
+			return stmt_likeselect( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), select->flag);
+		else
+			return stmt_select( s, stmt_dup(select->op2.stval), select->flag);
+	}
+
+	if (select->type == st_uselect) 
+		return stmt_uselect( s, stmt_dup(select->op2.stval), select->flag);
+	assert(0);
+}
+
+/* push this select through the statement s */
+stmt *
+push_semijoin( stmt *select, stmt *s )
+{
+	if (select->type != st_select2 && select->type != st_uselect2 &&
+	    select->type != st_select && select->type != st_uselect) 
+		return stmt_semijoin(s, stmt_dup(select));
+
+	s = stmt_semijoin(stmt_dup(select->op1.stval), s);
+	if (select->type == st_select2) 
+		return stmt_select2( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), select->flag);
+
+	if (select->type == st_uselect2) 
+		return stmt_uselect2( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), select->flag);
+
+	if (select->type == st_select) {
+		if (select->flag == cmp_like || select->flag == cmp_notlike)
+			return stmt_likeselect( s, stmt_dup(select->op2.stval), stmt_dup(select->op3.stval), select->flag);
+		else
+			return stmt_select( s, stmt_dup(select->op2.stval), select->flag);
+	}
+
+	if (select->type == st_uselect) 
+		return stmt_uselect( s, stmt_dup(select->op2.stval), select->flag);
+	assert(0);
+	return NULL;
+}
+
+
+int
+find_unique( stmt *s, void *v)
+{
+	stmt *c = head_column(s);
+
+	(void)v;
+	if (c && c->op1.cval->unique == 1)
+		return 0;
+	return -1;
+}
+
+stmt *
+push_select_stmt( list *l, stmt *sel )
+{
+	node *n;
+
+	for (n = l->h; n; n = n->next) {
+		sel = push_semijoin(n->data, sel);
+	}
+	return sel;
+}
 
 stmt *
 rel2bin(mvc *c, stmt *s)
@@ -861,20 +935,39 @@ rel2bin(mvc *c, stmt *s)
 
 		stmt *res;
 		node *n;
-		list *l = create_stmt_list();
 
-		for (n = s->op1.lval->h; n; n = n->next) {
-			list_append(l, rel2bin(c, n->data));
-		}
+		list *ol, *l = s->op1.lval;
+
+		ol = l;
 		if (list_length(l) == 1) {
-			res = stmt_dup(l->h->data);
+			res = rel2bin(c, l->h->data);
 		} else {
+			l = list_dup(l, (fdup)&stmt_dup);
 			if (!mvc_debug_on(c, 4096)) {
 				l = shrink_select_ranges(c, l);
 			}
-			res = (stmt *) list_reduce(l, (freduce) &stmt_semijoin, (fdup) &stmt_dup);
+			n = list_find(l, (void*)1, (fcmp) &find_unique);
+			if (!n) {
+				list *ll = create_stmt_list();
+				for (n = l->h; n; n = n->next) {
+					list_append(ll, rel2bin(c, n->data));
+				}
+				if (ol != l) 
+					list_destroy(l);
+				l = ll;
+				res = (stmt *) list_reduce(l, (freduce) &stmt_semijoin, (fdup) &stmt_dup);
+			} else {
+				stmt *sel = stmt_dup(n->data); 
+
+				list_remove_node(l, n);
+				sel = push_select_stmt(l, sel);
+				res = rel2bin(c, sel);
+				stmt_destroy(sel);
+			}
 		}
-		list_destroy(l);
+
+		if (ol != l)
+			list_destroy(l);
 		s->optimized = res->optimized = 2;
 		if (res != s) {
 			s->rewritten = stmt_dup(res);
@@ -1067,6 +1160,25 @@ rel2bin(mvc *c, stmt *s)
 	case st_uselect:
 	case st_uselect2: {
 
+		/* push down the select through st_diff */
+		if (s->op1.stval->type == st_diff){
+			stmt *d = s->op1.stval;
+	
+			s = push_select( s, stmt_dup(d->op1.stval)); 
+			s = stmt_diff(s, stmt_dup(d->op2.stval));
+			return rel2bin(c, s);
+		}
+		/* push down the select through st_union */
+		if (s->op1.stval->type == st_union) {
+			stmt *l, *r;
+			stmt *u = s->op1.stval;
+	
+			l = push_select( s, stmt_dup(u->op1.stval)); 
+			r = push_select( s, stmt_dup(u->op2.stval)); 
+			s = stmt_union(l, r);
+			return rel2bin(c, s);
+		}
+
 		if (s->op1.stval) {
 			stmt *os = s->op1.stval;
 			stmt *ns = rel2bin(c, os);
@@ -1082,15 +1194,6 @@ rel2bin(mvc *c, stmt *s)
 			assert(ns != s);
 			stmt_destroy(os);
 			s->op2.stval = ns;
-		}
-		/* remove expensive double kdiffs 
-		 * if join on oids from the same table then 	
-		 * right kdiff is not needed 
-		 */
-		if (s->op1.stval->type == st_diff){
-			stmt *old = s->op1.stval;
-			s->op1.stval = stmt_dup(old->op1.stval);
-			stmt_destroy(old);
 		}
 		s->optimized = 2;
 		return stmt_dup(s);
@@ -1239,15 +1342,9 @@ rel2bin(mvc *c, stmt *s)
 	}
 
 	case st_bat:
-		if (s->flag == RDONLY && s->op1.cval->t->table) {
-			return stmt_diff(stmt_dup(s), stmt_reverse(stmt_tbat(s->op1.cval->t, RDONLY)));
-		}
-		/* fall through */
 	case st_ubat:
 		s->optimized = 2;
 		return stmt_dup(s);
-
-
 
 	case st_pivot:
 	case st_ptable:

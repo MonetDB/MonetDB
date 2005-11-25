@@ -183,8 +183,11 @@ typedef struct sql_subfunc {
 } sql_subfunc;
 
 typedef struct sql_bat {
+	char *name;		/* name of the main bat */
+	char *uname;		/* name of updates bat */
 	oid bid;
 	oid ubid;		/* bat with updates */
+	oid ibid;		/* bat with inserts */
 } sql_bat;
 
 typedef enum key_type {
@@ -274,6 +277,7 @@ typedef struct sql_column {
 	int colnr;
 	bit null;
 	char *def;
+	char unique; 		/* NOT UNIQUE, UNIQUE, SUB_UNIQUE */
 
 	struct sql_table *t;
 	sql_bat bat;
@@ -297,6 +301,7 @@ typedef struct sql_table {
 	sql_ukey *pkey;
 
 	int cleared;		/* cleared in the current transaction */
+	char *dname;		/* name of the persistent deletes bat */
 	oid dbid;		/* bat with deletes */
 
 	struct sql_schema *s;
@@ -348,7 +353,6 @@ typedef struct sql_trans {
 	/* also need a current module, normaly main but during create module
 	 * different */
 	sql_module *module;
-	struct bm *bm;
 	backend_stack stk;
 
 	struct sql_trans *parent;	/* multilevel transaction support */

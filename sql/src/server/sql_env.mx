@@ -160,8 +160,10 @@ sql_get_access(mvc *m, char *name)
 		sql_column *s_access = mvc_bind_column(m, sessions, "access");
 		int *a = (int *) column_find_value(tr, s_access, rid);
 
-		if (a)
+		if (a) {
 			access = *a;
+			_DELETE(a);
+		}
 	}
 	return access;
 }
@@ -171,19 +173,27 @@ sql_get_bit_var(mvc *sql, char *name)
 {
 	char *val = sql_get_var(sql, name);
 
-	if (val && strcmp(val, "true") == 0)
+	if (val && strcmp(val, "true") == 0) {
+		_DELETE(val);
 		return TRUE;
+	}
+	if (val)
+		_DELETE(val);
 	return FALSE;
 }
 
 static int
 sql_get_int_var(mvc *sql, char *name)
 {
+	int r = 0;
 	char *val = sql_get_var(sql, name);
 
-	if (val)
-		return strtol(val, &val, 10);
-	return 0;
+	if (val) {
+		char *v;
+		r = strtol(val, &v, 10);
+		_DELETE(val);
+	}
+	return r;
 }
 
 static char *
@@ -247,16 +257,20 @@ sql_set_var(mvc *sql, symbol *s)
 {
 	if (s->token == SQL_SET) {
 		dlist *dl = s->data.lval;
-		char *name = dl->h->data.sval;
+		char *typename, *name = dl->h->data.sval;
 		symbol *val = dl->h->next->data.sym;
 		int access = sql_get_access(sql, name);
+		stmt *r;
 
 		if (access < 0) {
 			return sql_error(sql, 02, "Unknown session variable %s\n", name);
 		} else if (access == SESSION_RO) {
 			return sql_error(sql, 02, "You have no permissions to change the session variable %s\n", name);
 		}
-		return set_var(sql, name, val, sql_get_type(sql, name));
+		typename = sql_get_type(sql,name);
+		r = set_var(sql, name, val, typename);
+		_DELETE(typename);
+		return r;
 	}
 	return NULL;
 }
@@ -274,8 +288,10 @@ sql_set_var_value(mvc *m, char *name, char *value)
 
 	if (rid >= 0) {
 		sql_column *s_access = mvc_bind_column(m, sessions, "access");
-		int access = *(int *) column_find_value(tr, s_access, rid);
+		void *p = column_find_value(tr, s_access, rid);
+		int access = *(int *)p;
 
+		_DELETE(p);
 		if (access == SESSION_RW) {
 			sql_column *s_value = mvc_bind_column(m, sessions, "value");
 
@@ -302,15 +318,23 @@ sql_update_var(mvc *m, char *name)
 
 		if (!mvc_set_schema(m, schema)) {
 			GDKwarning("Schema (%s) missing\n", schema);
+			if (schema)
+				_DELETE(schema);
 			return GDK_FAIL;
 		}
+		if (schema)
+			_DELETE(schema);
 	} else if (strcmp(name, "current_role") == 0) {
 		char *role = sql_get_str_var(m, "current_role");
 
 		if (!mvc_set_role(m, role)) {
 			GDKwarning("Role (%s) missing\n", role);
+			if (role)
+				_DELETE(role);
 			return GDK_FAIL;
 		}
+		if (role)
+			_DELETE(role);
 	} else if (strcmp(name, "current_timezone") == 0) {
 		m->timezone = sql_get_int_var(m, "current_timezone") / 60;
 	} else if (strcmp(name, "explain") == 0) {
@@ -324,8 +348,12 @@ sql_update_var(mvc *m, char *name)
 			m->explain = m_profile;
 		else {
 			GDKwarning("Session variable explain can only be set to 'plan', 'profile' or to the empty string\n");
+			if (explain)
+				_DELETE(explain);
 			return GDK_FAIL;
 		}
+		if (explain)
+			_DELETE(explain);
 		m->mode = m_explain;
 	} else if (strcmp(name, "cache") == 0) {
 		m->cache = sql_get_bit_var(m, "cache");

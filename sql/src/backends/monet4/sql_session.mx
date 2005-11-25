@@ -215,7 +215,6 @@ sqlcleanup(mvc *c, int err)
 			qc_destroy(c->qc);
 		c->qc = qc_create(c->clientid);
 	}
-
 	return err;
 }
 
@@ -829,6 +828,7 @@ These lines should be eaten away into the prompt is encountered.
 		closeClient(client, 0); 	
 		return GDK_FAIL;
 	}
+	GDKfree(schema);
 
 	ret = sqlclient2(m, stk, rs, out, trace, 0);
 	res_tables_destroy(m->results);
@@ -871,6 +871,7 @@ sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 		mvc_destroy(m);
 		return GDK_FAIL;
 	}
+	GDKfree(schema);
 	stream_flush(out);
 
 	ret = sqlclient2(m, stk, rs, out, 0, 1);
