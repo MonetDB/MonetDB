@@ -50,11 +50,14 @@ Last updated: @value{UPDATED}
 @menu
 * When to consider MonetDB::
 * When not to consider MonetDB::
+* What are the MonetDB key features::
+* Size limitations for MonetDB::
 @end menu
 * The History of MonetDB::
 * Manual Generation::
 * Software Versions::
 * Conventions and Notation::
+* Additional Resources::
 @end menu
 
 * Download and Installation::
@@ -175,19 +178,18 @@ Last updated: @value{UPDATED}
 @end ifnottex
 
 @node About this manual, Intended audience, Top , Top
-@include Assets/General-information.texi
 @include Assets/About-this-manual.texi
 
 @node Features and Limitations, When to consider MonetDB, How to read this manual, Top
 @include Assets/Features.texi
 
-@node The History of MonetDB, Manual Generation, When not to consider MonetDB, About this manual
+@node The History of MonetDB, Manual Generation, Size limitations for MonetDB, About this manual
 @include Assets/History.texi
 
 @node Manual Generation, Software Versions, The History of MonetDB, About this manual
 @include Assets/Conventions.texi
 
-@node Download and Installation, Binary Distributions, Conventions and Notation, Top
+@node Download and Installation, Binary Distributions, Additional Resources, Top
 @section Downloads and Installation
 @include Assets/Downloadintro.texi
 

@@ -41,27 +41,28 @@ using the user commentary system included in the website.
 * Manual Generation::
 * Software Versions::
 * Conventions and Notation::
+* Additional Resources::
 @end menu
 
 @node Intended audience, How to read this manual,About this manual, Top
 @section Intended Audience
-The MonetDB reference manual is aimed at programmers and application
-developers with an intermediate level exposure to database technology,
+The MonetDB reference manual is aimed at application developers and 
+researchers with an intermediate level exposure to database technology,
 its embedding in host environments such as C, Perl, Python, PHP,
 or middleware solutions based on JDBC and ODBC.
 
 The route towards becoming a database application expert is long
-and difficult. It requires building experiences from small toy examples
+and tedious. It requires building experiences from small toy examples
 towards large business critical application.
 The MonetDB reference manual is not designed for this purpose,
-but in combination with the abundance of tutorial articles and
-the examples given here,
-it should be possible to create your first MonetDB/SQL application
-without much difficulty.
+but in combination with the abundance of tutorial articles on SQL-based
+systems and the examples given here,
+it should be possible to quickly create your first 
+working MonetDB/SQL application.
 
 The bulk of the MonetDB reference manual deals with the techniques
-available in the back-end for the expert user. Judicious use
-of the programming interfaces and database kernel modules for
+available in the back-end for the expert user and researcher.
+Judicious use of the programming interfaces and database kernel modules for
 domain specific tasks lead to high-performance solutions. 
 The grand challenge for the MonetDB development team
 is to assemble a sufficient and orthogonal set of partial solutions. 
@@ -69,17 +70,16 @@ Feedback on the current set is highly
 appreciated, especially before you embark on a complex programming
 project. If the envisioned functionality is generally applicable it makes
 sense to contribute it to the community.
-
-The preferred channel to share your comments is through the
-@c share your comments: share your thoughts, post your comments??
+Share your comments, thoughts, and comments through the
 @url{mailto:monetdb-users@@lists.sourceforge.net,MonetDB mailing list}
 held at SourceForge.
 
 @node How to read this manual, Features and Limitations, Intended audience, About this manual
 @section How to Read This Manual
-The reference manual covers a lot of ground which at first reading
-may be slightly confusing. The material is presented  in a top-down fashion,
-starting at the SQL application layer, following the software stack,
+The reference manual covers a lot of ground, which at first reading
+may be slightly confusing. The material is presented in a top-down fashion,
+starting at the SQL application layer, following the software stack
+to discuss MAL at length,
 to the low-level data structures and operations.
 Forward references are included frequently to point into the right
 direction for additional information.
@@ -87,7 +87,7 @@ direction for additional information.
 First time users of MonetDB should read @ref{Download
 and Installation} and @ref{SQL}. It prepares the ground to develop
 applications using the SQL database language inter-galactica.
-Advance topics for application builders is given in @ref{Application
+Advanced topics for application builders are covered in @ref{Application
 Interfaces}.
 
 The query language @ref{XQuery} is intended for users
@@ -98,9 +98,9 @@ available for MonetDB Version 4.
 
 If you are interested in technical details
 of the MonetDB system, you should start reading @ref{MonetDB Overview}.
-Two tracks are possible. The @ref{MonetDB Assembler Language}
-and following sections describe the abstract machine and optimizations
-taken to improve processing speed.
+Two reading  tracks are possible. The @ref{MonetDB Assembler Language}
+and subsequent sections describe the abstract machine and optimizers
+to improve execution speed.
 It is relevant for a better understanding of the query processing
 behavior and provides an entry point to built new languages on top
 of the database kernel. The description of the SQL to MAL compilation
@@ -113,4 +113,3 @@ extend the kernel with new functionality. Its information covers
 also the ground for MonetDB version 4.
 For most readers, however, it can be skipped without causing
 problems to develop efficient applications.
-

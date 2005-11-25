@@ -38,7 +38,7 @@ development efforts shift to Version 5. Until its pre-release, however,
 the new code based is only distributed to a small core group for 
 experimentation, tool migration and feedback.
 
-@node Conventions and Notation, Download and Installation, Software Versions, About this manual
+@node Conventions and Notation, Additional Resources, Software Versions, About this manual
 @section Conventions and Notation
 The  typographical conventions used in this manual are straightforward.
 @code{Monospaced} text is used to designate names in the code base
@@ -56,6 +56,7 @@ in this manual.
 
 ?BNF conventions
 
+@node Additional Resources, Download and Installation, Conventions and Notation, About this manual
 @section Additional Resources
 Although this reference manual aims to be complete for developing
 applications with MonetDB, it also depends on
