@@ -89,7 +89,7 @@ Over..
 [ NULL,	"sys",	"privileges",	"privileges",	"int",	9,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	3,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"privileges",	"grantor",	"int",	9,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	4,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"privileges",	"grantable",	"int",	9,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	5,	NULL,	NULL,	NULL	]
-[ NULL,	"sys",	"profile",	"start",	"timestamp",	0,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	1,	NULL,	NULL,	NULL	]
+[ NULL,	"sys",	"profile",	"start",	"timestamp",	7,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	1,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"profile",	"query",	"varchar",	2048,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	2,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"profile",	"parse",	"int",	9,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	3,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"profile",	"optimize",	"int",	9,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	4,	NULL,	NULL,	NULL	]
