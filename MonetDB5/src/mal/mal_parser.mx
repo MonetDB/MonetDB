@@ -495,7 +495,7 @@ handleInts:
 	if( strncmp(s,"false",5)==0 && !isalnum((int)*(s+5)) &&
 			*(s+5)!= '_'){
 		cst->vtype = TYPE_bit;
-		cst->val.bval = 0;
+		cst->val.cval[0] = 0;
 		cst->len = 1;
 		return 5;
 	}
@@ -504,7 +504,7 @@ handleInts:
 	if( strncmp(s,"true",4)==0 && !isalnum((int)*(s+4)) &&
 			*(s+4)!= '_'){
 		cst->vtype = TYPE_bit;
-		cst->val.bval = 1;
+		cst->val.cval[0] = 1;
 		cst->len = 1;
 		return 4;
 	}
