@@ -44,6 +44,7 @@ module 'pf_support'
 [ "following_sibling(BAT[void,oid], BAT[void,oid], oid, BAT[void,BAT], int) : BAT[void,BAT]"						  ]
 [ "following_void(BAT[void,int], BAT[oid,any], BAT[void,oid], int, int) : BAT[oid,void]"  ]
 [ "insert(BAT[any::1,BAT], any::1, any) : BAT[any::1,BAT]"												  ]
+[ "invalid_qname(BAT[any,str]) : str"															  ]
 [ "is_constant(any) : bit"																  ]
 [ "lastmod_time(str) : timestamp"													  ]
 [ "leftfetchjoin(BAT[any::1,oid], BAT[oid,any::2]) : BAT[any::1,any::2]"										  ]
