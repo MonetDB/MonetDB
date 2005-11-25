@@ -2282,7 +2282,9 @@ castQName (opt_t *f, int rc)
             /* get all the unique strings */
             "strings := oid_item.tunique().hmark(0@0);\n"
             "var oid_str := strings%s;\n"
-            "strings := nil;\n",
+            "strings := invalid_qname(oid_str);\n"
+            "if (not(isnil(strings)))"
+            "{ ERROR (\"err:XPTY0004: illegal qname '%%s'\", strings); }",
             item_ext, (rc)?"":val_join(STR));
 
     milprintf(f,

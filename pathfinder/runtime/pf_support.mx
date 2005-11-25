@@ -182,6 +182,14 @@ the result for this group will be `true' as well. In any other case\n
 (a single `false' BUN, or multiple BUNs for this group), a `false'\n
 tuple will be in the result for this group."
 
+.COMMAND invalid_qname(BAT[any,str]) : str = CMDinvalid_qname;
+"PARAMETERS
+BAT[any, str] 
+DESCRIPTION:
+This is a helper function that tries to find an invalid qname
+string. It returns the first invalid one it sees or str(nil) 
+if all are ok." 
+
 .COMMAND lastmod_time(str filename) : timestamp = CMDlastmod_time;
  "return the last modification time of a file"
 
@@ -3281,6 +3289,29 @@ CMDebv (BAT **result, BAT *b)
 {
     return (*result = BATebv (b)) ? GDK_SUCCEED : GDK_FAIL;
 }
+
+int
+CMDinvalid_qname(str *ret, BAT *b) 
+{
+        str s = ATOMnilptr(TYPE_str);
+	BUN p, q;
+	int xx;
+
+	BATloopFast(b,p,q,xx) {
+            char *r = BUNtail(b,p);
+	    if ((*r >= 'a' && *r <= 'z') || (*r >= 'A' && *r <= 'Z') || *(unsigned char*) r >= 128) {
+                r++;
+                while((*r >= 'a' && *r <= 'z') || (*r >= 'A' && *r <= 'Z') || (*(unsigned char*) r >= 128) ||
+                      (*r == '_') || (*r == '.') || (*r == '-') || (*r >= '0' && *r <= '9')) r++;
+                if (*r == 0) continue; /* ok */
+            }
+	    s = (str) BUNtail(b,p); break;
+	}
+	*ret = GDKstrdup(s);
+        return GDK_SUCCEED;
+
+}
+
 
 MT_Lock pf_runtime_lock;
 
