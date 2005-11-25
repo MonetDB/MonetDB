@@ -1837,7 +1837,7 @@ loop_liftedSCJ (opt_t *f,
             /* get the attribute ids from the pre values */
             "{ # attribute axis\n"
             "var oid_iter := iter;\n"
-            "var oid_item := item;\n"
+            "var oid_item := item.materialize(ipik);\n"
             "var oid_frag := kind.get_fragment();\n"
             "var temp1 := mvaljoin (oid_item, oid_frag, ws.fetch(ATTR_OWN));\n"
             "oid_item := nil;\n"
@@ -1917,7 +1917,7 @@ loop_liftedSCJ (opt_t *f,
         milprintf(f,
             "{ # self axis\n"
             "var oid_iter := iter;\n"
-            "var oid_item := item;\n"
+            "var oid_item := item.materialize(ipik);\n"
             "var oid_frag := kind.get_fragment();\n"
            );
 
