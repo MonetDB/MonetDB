@@ -1,9 +1,9 @@
 stdout of test 'tst380` in directory 'src/mal` itself:
 
 
-# 12:57:36 >  
-# 12:57:36 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=34525 --set sql_port=44689 --set xquery_port=55017 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst380.mal < /dev/null
-# 12:57:36 >  
+# 23:56:04 >  
+# 23:56:04 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=35317 --set sql_port=48831 --set xquery_port=50010 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst380.mal < /dev/null
+# 23:56:04 >  
 
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
@@ -169,7 +169,7 @@ end main;	# 12
 #-----------------------------------------------------------------------------------------------------------------#
 [ 13,	  "simplemind",	  "int",  "int",  0,	  301,	  "dirty",	  "load", "transient",	  0		  ]
 
-# 12:57:36 >  
-# 12:57:36 >  Done.
-# 12:57:36 >  
+# 23:56:04 >  
+# 23:56:04 >  Done.
+# 23:56:04 >  
 
