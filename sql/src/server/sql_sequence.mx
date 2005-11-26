@@ -257,7 +257,7 @@ sql_alter_seq(
 	/* use values already in there if not supplied */
 	col = find_sql_column(seqs, "increment");
 	assert(col);
-	if (inc < 0) {
+	if (inc <= 0) {
 		p = column_find_value(sql->trans, col, rid);
 		inc = *(lng*)p;
 		_DELETE(p);
