@@ -21,7 +21,7 @@ interact with the system. (Sec @ref{Application Interfaces})
 * Size limitations for MonetDB::
 @end menu
 
-@node When to consider MonetDB, When not to consider MonetDB, Features and Limitations, Top
+@node When to consider MonetDB, When not to consider MonetDB, Features and Limitations, Features and Limitations
 @subsection When to consider MonetDB ?
 @strong{A high-performance database management system.}
 MonetDB is an easy accessible open-source DBMS for SQL-[XQuery-]based
@@ -82,7 +82,7 @@ for advice. A subscription to the mailing list helps the developer's
 team to justify the on-and-off office hours put into
 MonetDB's development and maintenance.
 
-@node When not to consider MonetDB, What are the MonetDB key features, When to consider MonetDB, Top
+@node When not to consider MonetDB, What are the MonetDB key features, When to consider MonetDB, Features and Limitations
 @subsection When not to consider MonetDB ?
 There are several areas where MonetDB has not yet built a reputation.
 They are the prime candidates for experimentation, but also areas
@@ -135,8 +135,8 @@ data parallelism to speedup processing and reduce the synchronization cost.
 The underlying platforms were Linux-based cluster computers with
 sizeable main memories.
 
-@node What are the MonetDB key features, Size limitations for MonetDB, When not to consider MonetDB, Top
-@section What are the MonetDB key features
+@node What are the MonetDB key features, Size limitations for MonetDB, When not to consider MonetDB, Features and Limitations
+@subsection What are the MonetDB key features
 The list below provides a glimpse on the technical characteristics and
 features of the MonetDB software packages.
 For the SQL front-end:
@@ -184,8 +184,7 @@ The heart is the MonetDB server, which comes with the following
 innovative features.
 @itemize
 @item
-A fully decomposed storage scheme using memory mapped files to provide
-for the physical storage of the database.
+A fully decomposed storage scheme using memory mapped files.
 @item
 It supports scaleable databases, 32- and 64-bit platforms.
 @item
@@ -200,7 +199,8 @@ The operations are cache- and memory-aware with supreme performance.
 The database backend is multithreaded and guards a single physical database
 instance.
 @end itemize
-@node Size limitations for MonetDB, The History of MonetDB, What are the MonetDB key features, Top
+@node Size limitations for MonetDB, The History of MonetDB, What are the MonetDB key features, Features and Limitations
+@subsection Size limitations for MonetDB
 The maximal database size supported by MonetBD depends on the underlying
 processing platform, i.e. a 32- or 64-bit processor, and storage 
 device, i.e. the file system and disk raids.

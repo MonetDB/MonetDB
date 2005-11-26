@@ -5,7 +5,7 @@
 
 @c environment
 @set VERSION 5.0
-@set UPDATED Nov 23, 2005
+@set UPDATED Nov 26, 2005
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual
@@ -37,15 +37,15 @@ Last updated: @value{UPDATED}
 @ifnottex
 
 @page
-@node Top, About this manual, ,(Dir)
+@node Top, General Introduction, ,(Dir)
 @top MonetDB Reference Manual
 @insertcopying
 
 @menu
-* About this manual::
+* General Introduction::
 @menu
 * Intended audience::
-* How to read this manual::
+* Get Going::
 * Features and Limitations::
 @menu
 * When to consider MonetDB::
@@ -55,13 +55,13 @@ Last updated: @value{UPDATED}
 @end menu
 * The History of MonetDB::
 * Manual Generation::
-* Software Versions::
 * Conventions and Notation::
 * Additional Resources::
 @end menu
 
 * Download and Installation::
 @menu
+* Software Versions::
 * Binary Distributions::
 * Source Distributions::
 @end menu
@@ -177,19 +177,19 @@ Last updated: @value{UPDATED}
 
 @end ifnottex
 
-@node About this manual, Intended audience, Top , Top
+@node General Introduction, Intended audience, Top , Top
 @include Assets/About-this-manual.texi
 
-@node Features and Limitations, When to consider MonetDB, How to read this manual, Top
+@node Features and Limitations, When to consider MonetDB, Get Going, Top
 @include Assets/Features.texi
 
-@node The History of MonetDB, Manual Generation, Size limitations for MonetDB, About this manual
+@node The History of MonetDB, Manual Generation, Size limitations for MonetDB, General Introduction
 @include Assets/History.texi
 
-@node Manual Generation, Software Versions, The History of MonetDB, About this manual
+@node Manual Generation, Conventions and Notation, The History of MonetDB, General Introduction
 @include Assets/Conventions.texi
 
-@node Download and Installation, Binary Distributions, Additional Resources, Top
+@node Download and Installation, Software Versions, Additional Resources, Top
 @section Downloads and Installation
 @include Assets/Downloadintro.texi
 

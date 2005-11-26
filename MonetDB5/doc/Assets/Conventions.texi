@@ -25,20 +25,8 @@ latex <filename>.tex
 @end example
 The result, however, still includes the unexpanded tex info macros.
 
-@node Software Versions, Conventions and Notation, Manual Generation, About this manual
-@section Software Versions
-At the time of writing MonetDB Version 4.9 is distributed worldwide
-through SourceForge.
-This manual, however, is written within the context of preparing the
-launch of MonetDB Version 5, which in many areas is a major
-deviance from the earlier releases.
 
-Part of the code base for Version 4 will become depreciated in 2006 as 
-development efforts shift to Version 5. Until its pre-release, however,
-the new code based is only distributed to a small core group for 
-experimentation, tool migration and feedback.
-
-@node Conventions and Notation, Additional Resources, Software Versions, About this manual
+@node Conventions and Notation, Additional Resources, Manual Generation, General Introduction
 @section Conventions and Notation
 The  typographical conventions used in this manual are straightforward.
 @code{Monospaced} text is used to designate names in the code base
@@ -56,7 +44,7 @@ in this manual.
 
 ?BNF conventions
 
-@node Additional Resources, Download and Installation, Conventions and Notation, About this manual
+@node Additional Resources, Download and Installation, Conventions and Notation, General Introduction
 @section Additional Resources
 Although this reference manual aims to be complete for developing
 applications with MonetDB, it also depends on
