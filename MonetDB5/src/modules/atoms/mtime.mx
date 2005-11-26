@@ -977,6 +977,12 @@ mal_export int rule_fromstr(str buf, int *len, rule **d);
 mal_export int rule_tostr(str *buf, int *len, rule *r);
 mal_export int tzone_fromstr(str buf, int *len, tzone **d);
 
+mal_export int TYPE_date;
+mal_export int TYPE_daytime;
+mal_export int TYPE_timestamp;
+mal_export int TYPE_tzone;
+mal_export int TYPE_rule;
+
 #endif /* _MONETTIME_H_ */
 @+ Defines
 @c
@@ -1020,6 +1026,12 @@ static tzone *tz_nilptr = NULL;
 
 static void date_prelude(void);
 
+int TYPE_date;
+int TYPE_daytime;
+int TYPE_timestamp;
+int TYPE_tzone;
+int TYPE_rule;
+
 bat *
 monettime_prelude(void)
 {
@@ -1029,6 +1041,11 @@ monettime_prelude(void)
 	ts_nilptr = &ts_nil.ts;
 	tz_nilptr = &tz_nil.tz;
 
+	TYPE_date = ATOMindex("date");
+	TYPE_daytime = ATOMindex("daytime");
+	TYPE_timestamp = ATOMindex("timestamp");
+	TYPE_tzone = ATOMindex("tzone");
+	TYPE_rule = ATOMindex("rule");
 	date_prelude();
 	return NULL;
 }
