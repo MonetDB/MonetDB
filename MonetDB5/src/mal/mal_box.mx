@@ -601,9 +601,7 @@ boxFileName(Box box, str backup)
 	stream *f;
 
 	snprintf(boxfile, PATHLENGTH, "%s/%s/box", GDKgetenv("gdk_dbfarm"), GDKgetenv("gdk_dbname"));
-	if( (f= open_wstream(boxfile)) )
-		close_stream(f);
-	else {
+	if (access(boxfile, R_OK) <0) {
 		mkdir(boxfile,0755);
 		if( (f= open_wstream(boxfile)) )
 			close_stream(f);
@@ -615,9 +613,7 @@ boxFileName(Box box, str backup)
 	i = strlen(boxfile);
 	if (backup) {
 		snprintf(boxfile + i, PATHLENGTH - i, "/%s/", backup);
-		if( (f= open_wstream(boxfile)) )
-			close_stream(f);
-		else {
+		if (access(boxfile, R_OK) <0) {
 			mkdir(boxfile,0755);
 			if( (f= open_wstream(boxfile)) )
 				close_stream(f);
@@ -644,7 +640,7 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 		GDKerror("saveBox:can not determine box file\n");
 		return 0;
 	}
-	if (rename(*boxfile, *boxfilebak)) {
+	if (access(*boxfile,R_OK)==0 && rename(*boxfile, *boxfilebak)) {
 #ifdef DEBUG_MAL_BOX
 		stream_printf(GDKout, "saveBox:can not rename %s\n", boxfile);
 #endif
@@ -727,6 +723,7 @@ loadBox(str name)
 	int i = 0;
 
 	snprintf(boxfile, PATHLENGTH, "%s/%s/box/", GDKgetenv("gdk_dbfarm"), GDKgetenv("gdk_dbname"));
+	mkdir(boxfile,0755); /* ignore errors */
 	i = strlen(boxfile);
 	snprintf(boxfile + i, PATHLENGTH - i, "%s.box", name);
 #ifdef DEBUG_MAL_BOX

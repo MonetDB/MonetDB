@@ -619,6 +619,11 @@ possible change in the control flow.
                 stkpc= pci->jump; 
             else stkpc++;
             break;
+        case TYPE_bat:
+            if( v->val.bval > 0 )
+                stkpc= pci->jump; 
+            else stkpc++;
+            break;
         case TYPE_int:
             if( v->val.ival >= 0 && v->val.ival!= int_nil )
                 stkpc= pci->jump; 
