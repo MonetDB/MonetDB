@@ -3236,7 +3236,7 @@ CNTRScounter2str(str *ret, int *idx){
 	c= cntrs+ *idx;
 #if defined(HW_SunOS)
 	diff = c->count0 - c->count1;
-	sprintf(buf,1024,"%10lld us %10lld cy %10lld e%02d %10lld e%02d %10lld eX",
+	snprintf(buf,1024,"%10lld us %10lld cy %10lld e%02d %10lld e%02d %10lld eX",
 			c->usec, c->clocks,
 			c->count0,event[c->event0].native,
 			c->count1,event[c->event1].native, diff);
