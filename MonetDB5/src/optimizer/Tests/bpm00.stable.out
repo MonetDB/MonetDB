@@ -1,0 +1,103 @@
+stdout of test 'bpm00` in directory 'src/optimizer` itself:
+
+
+# 23:39:26 >  
+# 23:39:26 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39509 --set sql_port=40333 --set xquery_port=56914 --set monet_prompt= --trace --dbname=mTests_src_optimizer  bpm00.mal < /dev/null
+# 23:39:26 >  
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_optimizer
+# Visit http://monetdb.cwi.nl/ for further information.
+## initialize the BAT partition box.
+#	bpm.open();
+#    b1:= bat.new(:void,:int);
+#    bat.setName(b1,"Sales200506");
+#    bpm.deposit("Sales2005",b1);
+#    b2:= bat.new(:void,:int);
+#    bat.setName(b2,"Sales200507");
+#    bpm.deposit("Sales2005",b2);
+#    b3:= bat.new(:void,:int);
+#    bat.setName(b3,"Sales200508");
+#    bpm.deposit("Sales2005",b3);
+#
+#    c1:= bat.new(:void,:int);
+#    bat.setName(c1,"Invoice200506");
+#    c2:= bat.new(:void,:int);
+#    bat.setName(c2,"Invoice200507");
+#    bpm.deposit("Invoice2005",c2);
+#    c3:= bat.new(:void,:int);
+#    bat.setName(c3,"Invoice200508");
+#    bpm.deposit("Invoice2005",c3);
+#
+#    n:= bpm.getNames(); # get content of partitition catalogue.
+#    io.print(n);
+#	bpm.dump();
+#
+#barrier (nr,grp,elm):= bpm.newIterator();
+#	io.print(grp,elm);
+#	redo (nr,grp,elm):=bpm.hasMoreElements();
+#exit (nr,grp,elm);
+#	bpm.close();
+#	io.print("done");
+#
+function user.main():void;	# 0  (main:void)
+# initialize the BAT partition box. 	# 1  (_2:str)
+    bpm.open();	# 2 BPMopen (_3:void)
+    b1 := bat.new(:void,:int);	# 3 CMDBATnew (b1:bat[:void,:int])<-(_5:void)(_6:int)
+    bat.setName(b1,"Sales200506");	# 4 BKCsetName (_7:void)<-(b1:bat[:void,:int])(_8:str)
+    bpm.deposit("Sales2005",b1);	# 5 BPMdeposit (_9:void)<-(_10:str)(b1:bat[:void,:int])
+    b2 := bat.new(:void,:int);	# 6 CMDBATnew (b2:bat[:void,:int])<-(_5:void)(_6:int)
+    bat.setName(b2,"Sales200507");	# 7 BKCsetName (_12:void)<-(b2:bat[:void,:int])(_13:str)
+    bpm.deposit("Sales2005",b2);	# 8 BPMdeposit (_14:void)<-(_10:str)(b2:bat[:void,:int])
+    b3 := bat.new(:void,:int);	# 9 CMDBATnew (b3:bat[:void,:int])<-(_5:void)(_6:int)
+    bat.setName(b3,"Sales200508");	# 10 BKCsetName (_16:void)<-(b3:bat[:void,:int])(_17:str)
+    bpm.deposit("Sales2005",b3);	# 11 BPMdeposit (_18:void)<-(_10:str)(b3:bat[:void,:int])
+    c1 := bat.new(:void,:int);	# 12 CMDBATnew (c1:bat[:void,:int])<-(_5:void)(_6:int)
+    bat.setName(c1,"Invoice200506");	# 13 BKCsetName (_20:void)<-(c1:bat[:void,:int])(_21:str)
+    c2 := bat.new(:void,:int);	# 14 CMDBATnew (c2:bat[:void,:int])<-(_5:void)(_6:int)
+    bat.setName(c2,"Invoice200507");	# 15 BKCsetName (_23:void)<-(c2:bat[:void,:int])(_24:str)
+    bpm.deposit("Invoice2005",c2);	# 16 BPMdeposit (_25:void)<-(_26:str)(c2:bat[:void,:int])
+    c3 := bat.new(:void,:int);	# 17 CMDBATnew (c3:bat[:void,:int])<-(_5:void)(_6:int)
+    bat.setName(c3,"Invoice200508");	# 18 BKCsetName (_28:void)<-(c3:bat[:void,:int])(_29:str)
+    bpm.deposit("Invoice2005",c3);	# 19 BPMdeposit (_30:void)<-(_26:str)(c3:bat[:void,:int])
+    n := bpm.getNames();	# 20 BPMgetAllComponents (n:bat[:str,:str])
+# get content of partitition catalogue. 	# 21  (_33:str)
+    io.print(n);	# 22 IOprint_val (_34:int)<-(n:bat[:str,:str])
+    bpm.dump();	# 23 BPMdump (_35:void)
+barrier (nr,grp,elm):= bpm.newIterator();	# 24 BPMnewIteratorBase (nr:int)(grp:str)(elm:str) jump 27
+    io.print(grp,elm);	# 25 IOprint_val (_39:int)<-(grp:str)(elm:str)
+    redo (nr,grp,elm):= bpm.hasMoreElements();	# 26 BPMhasMoreElementsBase (nr:int)(grp:str)(elm:str) jump 25
+exit (nr,grp,elm);	# 27  (nr:int)(grp:str)(elm:str)
+    bpm.close();	# 28 BPMclose (_40:void)
+    io.print("done");	# 29 IOprint_val (_41:int)<-(_42:str)
+end main;	# 30  
+#-----------------------------------------#
+# h		t			  # name
+# str		str			  # type
+#-----------------------------------------#
+[ "Sales2005",	  "Sales200506"		  ]
+[ "Sales2005",	  "Sales200507"		  ]
+[ "Sales2005",	  "Sales200508"		  ]
+[ "Invoice2005",  "Invoice200507"	  ]
+[ "Invoice2005",  "Invoice200508"	  ]
+ptop=5 plimit=1024
+[0] grp=Sales2005 elm=Sales200506 bid=13 f=-2147483648, l=-2147483648 prv=-1 nxt=1
+[1] grp=Sales2005 elm=Sales200507 bid=14 f=-2147483648, l=-2147483648 prv=0 nxt=2
+[2] grp=Sales2005 elm=Sales200508 bid=15 f=-2147483648, l=-2147483648 prv=1 nxt=-1
+[3] grp=Invoice2005 elm=Invoice200507 bid=17 f=-2147483648, l=-2147483648 prv=-1 nxt=4
+[4] grp=Invoice2005 elm=Invoice200508 bid=18 f=-2147483648, l=-2147483648 prv=3 nxt=-1
+[ "Sales2005", "Sales200506"]
+[ "Sales2005", "Sales200507"]
+[ "Sales2005", "Sales200508"]
+[ "Invoice2005", "Invoice200507"]
+[ "Invoice2005", "Invoice200508"]
+[ "done" ]
+
+# 23:39:26 >  
+# 23:39:26 >  Done.
+# 23:39:26 >  
+

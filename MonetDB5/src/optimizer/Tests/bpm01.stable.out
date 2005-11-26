@@ -1,0 +1,41 @@
+stdout of test 'bpm01` in directory 'src/optimizer` itself:
+
+
+# 23:39:26 >  
+# 23:39:26 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39509 --set sql_port=40333 --set xquery_port=56914 --set monet_prompt= --trace --dbname=mTests_src_optimizer  bpm01.mal < /dev/null
+# 23:39:26 >  
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_optimizer
+# Visit http://monetdb.cwi.nl/ for further information.
+## extract the definition by the optimizer
+#	  d:= mat.take("Sales2005");    
+##   _21:= bpt.take("Sales2005","Sales200506");
+##   _22:= bpt.take("Sales2005","Sales200507");
+##   _23:= bpt.take("Sales2005","Sales200508");
+##   d:= mat.new(_21,_22,_23);
+#	mat.optimizer();
+#	md.list();
+#
+!ERROR: 'mat.take' undefined in user.main[2]
+!ERROR: 'mat.optimizer' undefined in user.main[7]
+!ERROR: 'md.list' undefined in user.main[8]
+function user.main():void;	# 0  (main:void)
+# extract the definition by the optimizer 	# 1  (_2:str)
+    d := mat.take("Sales2005");	# 2  unknown (d:any)<-(_4:str)
+#   _21:= bpt.take("Sales2005","Sales200506"); 	# 3  (_6:str)
+#   _22:= bpt.take("Sales2005","Sales200507"); 	# 4  (_8:str)
+#   _23:= bpt.take("Sales2005","Sales200508"); 	# 5  (_10:str)
+#   d:= mat.new(_21,_22,_23); 	# 6  (_12:str)
+    mat.optimizer();	# 7  unknown (_13:any)
+    md.list();	# 8  unknown (_14:any)
+end main;	# 9  
+
+# 23:39:26 >  
+# 23:39:26 >  Done.
+# 23:39:26 >  
+

@@ -1,0 +1,31 @@
+# initialize the BAT partition box.
+	bpm.open();
+    b1:= bat.new(:void,:int);
+    bat.setName(b1,"Sales200506");
+    bpm.deposit("Sales2005",b1);
+    b2:= bat.new(:void,:int);
+    bat.setName(b2,"Sales200507");
+    bpm.deposit("Sales2005",b2);
+    b3:= bat.new(:void,:int);
+    bat.setName(b3,"Sales200508");
+    bpm.deposit("Sales2005",b3);
+
+    c1:= bat.new(:void,:int);
+    bat.setName(c1,"Invoice200506");
+    c2:= bat.new(:void,:int);
+    bat.setName(c2,"Invoice200507");
+    bpm.deposit("Invoice2005",c2);
+    c3:= bat.new(:void,:int);
+    bat.setName(c3,"Invoice200508");
+    bpm.deposit("Invoice2005",c3);
+
+    n:= bpm.getNames(); # get content of partitition catalogue.
+    io.print(n);
+	bpm.dump();
+
+barrier (nr,grp,elm):= bpm.newIterator();
+	io.print(grp,elm);
+	redo (nr,grp,elm):=bpm.hasMoreElements();
+exit (nr,grp,elm);
+	bpm.close();
+	io.print("done");
