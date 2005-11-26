@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 721 ]
+[ 748 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 721 ]
+[ 748 ]
 
 var All:=0;
 
@@ -99,8 +99,6 @@ Module: ""
 [ "hot",	  "PROC:      ",  "hot(BAT[any::1,any::2]) : void",						  "not available"																																																													  ]
 [ "join",	  "PROC:      ",  "join(BAT[any::1,any::2], BAT[any::2,any::3], lng, str, ..any..) : BAT[any::1,any::3]", "not available"																																																													  ]
 [ "join",	  "PROC:      ",  "join(BAT[any::1,any::2], BAT[any::2,any::3], str, ..any..) : BAT[any::1,any::3]", "not available"																																																													  ]
-[ "kdiff",		  "PROC:      ",  "kdiff(BAT[any::1,any::2], any::1) : BAT[any::1,any::2]",					  "not available"																																																																										  ]
-[ "kintersect",		  "PROC:      ",  "kintersect(BAT[any::1,any::2], any::1) : BAT[any::1,any::2]",				  "not available"																																																																										  ]
 [ "load",	  "PROC:      ",  "load(str) : BAT[any,any]",							  "not available"																																																													  ]
 [ "locate",		  "PROC:      ",  "locate(str, str) : int",										  "not available"																																																													  ]
 [ "locate",		  "PROC:      ",  "locate(str, str, int) : int",									  "not available"																																																													  ]
@@ -135,13 +133,15 @@ Module: ""
 [ "vars",		  "PROC:      ",  "vars(str) : void",									  "not available"																																			  ]
 [ "vm_usage",	  "PROC:      ",  "vm_usage() : BAT[str,lng]",							  "not available"																																																													  ]
 [ "vm_usage",	  "PROC:      ",  "vm_usage(int) : BAT[str,lng]",						  "not available"																																																													  ]
-[ "{avg}",		  "PROC:      ",  "{avg}(any::1, BAT[oid,oid], BAT[oid,any]) : any",						  "not available"																																																																										  ]
-[ "{sum}",		  "PROC:      ",  "{sum}(any::1, BAT[oid,oid], BAT[oid,any]) : any::1",						  "not available"																																																																										  ]
+[ "{avg}",		  "PROC:      ",  "{avg}(any::1, BAT[oid,oid], BAT[oid,any]) : BAT[oid,dbl]",				  "not available"																																											  ]
+[ "{max}",		  "PROC:      ",  "{max}(any::1, BAT[oid,oid], BAT[oid,any]) : BAT[oid,any::1]",			  "not available"																																											  ]
+[ "{min}",		  "PROC:      ",  "{min}(any::1, BAT[oid,oid], BAT[oid,any]) : BAT[oid,any::1]",			  "not available"																																											  ]
+[ "{sum}",		  "PROC:      ",  "{sum}(any::1, BAT[oid,oid], BAT[oid,any]) : BAT[oid,any::1]",			  "not available"																																											  ]
 
 Module: "algebra"
 
-[ 122 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 124 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																													  # name
 # str		str		str											str																																													  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -252,8 +252,10 @@ Module: "algebra"
 [ "sum_sht",	  "COMMAND:   ",  "sum_sht(BAT[any,sht]) : sht",							  "Gives the sum of all tail values."																																	  ]
 [ "sunion",			  "COMMAND:   ",  "sunion(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",				  "Returns the union of two BATs; looking at both columns of both BATs.\n Results in all BUNs of 'left' that are not in 'right', plus all BUNs\n of 'right'. *no* double-elimination is done. If you want this, do:\n 'sunion(left.sunique,right.sunique)' or: 'sunion(left,right).sunique'."																																	  ]
 [ "sunique",			  "COMMAND:   ",  "sunique(BAT[any::1,any::2]) : BAT[any::1,any::2]",							  "Select unique tuples from the input BAT. Double elimination is done over\n BUNs as a whole (head and tail). Result is a BAT with real set() semantics."																																																	  ]
+[ "tdiff",			  "COMMAND:   ",  "tdiff(BAT[any::2,any::1], BAT[any,any::1]) : BAT[any::2,any::1]",				  "tdiff(l,r) = reverse(kdiff(reverse(l),reverse(r)))"																																																																						  ]
 [ "texist",			  "COMMAND:   ",  "texist(BAT[any,any::1], any::1) : bit",						  "Returns whether 'h' occurs as a head value in b."																															  ]
 [ "thetajoin",	  "COMMAND:   ",  "thetajoin(BAT[any::1,any::2], BAT[any::2,any::3], int, lng) : BAT[any::1,any::3]",	  "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.\n\nJOIN_EQ is just the same as join(). All other options do merge\nalgorithms; either using the fact that they are ordered()\nalready (left on tail, right on head), or by using/creating\nbinary search trees on the join columns. "		  ]
+[ "tintersect",			  "COMMAND:   ",  "tintersect(BAT[any::2,any::1], BAT[any,any::1]) : BAT[any::2,any::1]",			  "tintersect(l,r) = reverse(kintersect(reverse(l),reverse(r)))"																																																																				  ]
 [ "tmark",			  "COMMAND:   ",  "tmark(BAT[any,any::1]) : BAT[oid,any::1]",						  "Produces a new BAT with fresh unique OIDs in the head."																														  ]
 [ "tmark",			  "COMMAND:   ",  "tmark(BAT[any,any::1], oid) : BAT[oid,any::1]",					  "Produces a new BAT with fresh unique dense sequence of OIDs in the head\n that starts at base (i.e. [base,base+1,..base+b.count()-1] )."																				  ]
 [ "tsort",			  "COMMAND:   ",  "tsort(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Returns copy of a BAT with the BUNs sorted on ascending tail values."																																																						  ]
@@ -707,7 +709,7 @@ Module: "builtin"
 
 Module: "constant"
 
-[ 23 ]
+[ 48 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																				  # name
 # str		str		str											str																																				  # type
@@ -721,20 +723,45 @@ Module: "constant"
 [ "copy",	  "COMMAND:   ",  "copy(any::1) : any::1",								  "copy(b); where the first parameter is interpreted as a constant column"																											  ]
 [ "fetch",	  "COMMAND:   ",  "fetch(any::1, int) : any::1",							  "fetch(b,v); where the first parameter is interpreted as a constant column"																											  ]
 [ "fetch",	  "COMMAND:   ",  "fetch(any::1, lng) : any::1",							  "fetch(b,v); where the first parameter is interpreted as a constant column"																											  ]
+[ "fetchjoin",		  "COMMAND:   ",  "fetchjoin(BAT[oid,oid], any::1) : BAT[oid,any::1]",				  "fetchjoin(l,r); where the second parameter is a constant; materialize BAT[oid,r] (assumes join hits)"																							  ]
+[ "fetchjoin",		  "COMMAND:   ",  "fetchjoin(BAT[void,oid], any::1) : any::1",					  "@join(l,r); where the second parameter is a constant; return r (assumes join hits)"																										  ]
+[ "fetchjoin",		  "COMMAND:   ",  "fetchjoin(oid, BAT[any,any::1]) : any::1",					  "fetchjoin(l,r); where the first parameter is a MIL constant. Return a MIL constant."																										  ]
+[ "fetchjoin",		  "COMMAND:   ",  "fetchjoin(oid, any::1) : any::1",						  "@join(l,r); where the first parameter is a MIL constant. Return a MIL constant (assumes join hits!)."																							  ]
 [ "find",	  "COMMAND:   ",  "find(any::1, oid) : any::1",								  "find(b,v); where the first parameter is interpreted as a constant column"																											  ]
+[ "join",		  "COMMAND:   ",  "join(BAT[oid,oid], any::1) : BAT[oid,any::1]",				  "join(l,r); where the second parameter is a constant; materialize BAT[oid,r] (assumes join hits)"																								  ]
+[ "join",		  "COMMAND:   ",  "join(BAT[void,oid], any::1) : any::1",					  "@join(l,r); where the second parameter is a constant; return r (assumes join hits)"																										  ]
+[ "join",		  "COMMAND:   ",  "join(oid, BAT[any,any::1]) : any::1",					  "join(l,r); where the first parameter is a MIL constant. Return a MIL constant."																										  ]
+[ "join",		  "COMMAND:   ",  "join(oid, any::1) : any::1",							  "@join(l,r); where the first parameter is a MIL constant. Return a MIL constant (assumes join hits!)."																							  ]
+[ "leftfetchjoin",	  "COMMAND:   ",  "leftfetchjoin(BAT[oid,oid], any::1) : BAT[oid,any::1]",			  "leftfetchjoin(l,r); where the second parameter is a constant; materialize BAT[oid,r] (assumes join hits)"																							  ]
+[ "leftfetchjoin",	  "COMMAND:   ",  "leftfetchjoin(BAT[void,oid], any::1) : any::1",				  "@join(l,r); where the second parameter is a constant; return r (assumes join hits)"																										  ]
+[ "leftfetchjoin",	  "COMMAND:   ",  "leftfetchjoin(oid, BAT[any,any::1]) : any::1",				  "leftfetchjoin(l,r); where the first parameter is a MIL constant. Return a MIL constant."																									  ]
+[ "leftfetchjoin",	  "COMMAND:   ",  "leftfetchjoin(oid, any::1) : any::1",					  "@join(l,r); where the first parameter is a MIL constant. Return a MIL constant (assumes join hits!)."																							  ]
+[ "leftjoin",		  "COMMAND:   ",  "leftjoin(BAT[oid,oid], any::1) : BAT[oid,any::1]",				  "leftjoin(l,r); where the second parameter is a constant; materialize BAT[oid,r] (assumes join hits)"																								  ]
+[ "leftjoin",		  "COMMAND:   ",  "leftjoin(BAT[void,oid], any::1) : any::1",					  "@join(l,r); where the second parameter is a constant; return r (assumes join hits)"																										  ]
+[ "leftjoin",		  "COMMAND:   ",  "leftjoin(oid, BAT[any,any::1]) : any::1",					  "leftjoin(l,r); where the first parameter is a MIL constant. Return a MIL constant."																										  ]
+[ "leftjoin",		  "COMMAND:   ",  "leftjoin(oid, any::1) : any::1",						  "@join(l,r); where the first parameter is a MIL constant. Return a MIL constant (assumes join hits!)."																							  ]
+[ "leftmergejoin",	  "COMMAND:   ",  "leftmergejoin(BAT[oid,oid], any::1) : BAT[oid,any::1]",			  "leftmergejoin(l,r); where the second parameter is a constant; materialize BAT[oid,r] (assumes join hits)"																							  ]
+[ "leftmergejoin",	  "COMMAND:   ",  "leftmergejoin(BAT[void,oid], any::1) : any::1",				  "@join(l,r); where the second parameter is a constant; return r (assumes join hits)"																										  ]
+[ "leftmergejoin",	  "COMMAND:   ",  "leftmergejoin(oid, BAT[any,any::1]) : any::1",				  "leftmergejoin(l,r); where the first parameter is a MIL constant. Return a MIL constant."																									  ]
+[ "leftmergejoin",	  "COMMAND:   ",  "leftmergejoin(oid, any::1) : any::1",					  "@join(l,r); where the first parameter is a MIL constant. Return a MIL constant (assumes join hits!)."																							  ]
+[ "materialize",	  "COMMAND:   ",  "materialize(BAT[oid,any::1], BAT[oid,any]) : BAT[oid,any::1]",		  "makes sure the first parameter is materialized as a bat (if it was a constant, it is blown up with the extent)"																						  ]
+[ "materialize",	  "COMMAND:   ",  "materialize(any::1, BAT[oid,any]) : BAT[oid,any::1]",			  "makes sure the first parameter is materialized as a bat (if it was a constant, it is blown up with the extent)"																						  ]
 [ "max",	  "COMMAND:   ",  "max(any::1) : any::1",								  "max(b); where the first parameter is interpreted as a constant column"																											  ]
+[ "mergejoin",		  "COMMAND:   ",  "mergejoin(BAT[oid,oid], any::1) : BAT[oid,any::1]",				  "mergejoin(l,r); where the second parameter is a constant; materialize BAT[oid,r] (assumes join hits)"																							  ]
+[ "mergejoin",		  "COMMAND:   ",  "mergejoin(BAT[void,oid], any::1) : any::1",					  "@join(l,r); where the second parameter is a constant; return r (assumes join hits)"																										  ]
+[ "mergejoin",		  "COMMAND:   ",  "mergejoin(oid, BAT[any,any::1]) : any::1",					  "mergejoin(l,r); where the first parameter is a MIL constant. Return a MIL constant."																										  ]
+[ "mergejoin",		  "COMMAND:   ",  "mergejoin(oid, any::1) : any::1",						  "@join(l,r); where the first parameter is a MIL constant. Return a MIL constant (assumes join hits!)."																							  ]
 [ "min",	  "COMMAND:   ",  "min(any::1) : any::1",								  "min(b); where the first parameter is interpreted as a constant column"																											  ]
 [ "project",	  "COMMAND:   ",  "project(any, any::1) : any::1",							  "project(b,c); where the first parameter is interpreted as a constant column"																											  ]
-[ "sample",	  "COMMAND:   ",  "sample(any::1, int) : any::1",							  "sample(b,cnt); where the first parameter is interpreted as a constant column"																										  ]
 [ "slice",	  "COMMAND:   ",  "slice(any::1, int, int) : any::1",							  "slice(b,lo,hi); where the first parameter is interpreted as a constant column"																										  ]
 [ "slice",	  "COMMAND:   ",  "slice(any::1, lng, lng) : any::1",							  "slice(b,lo,hi); where the first parameter is interpreted as a constant column"																										  ]
+[ "tdiff",		  "COMMAND:   ",  "tdiff(BAT[any::1,any::2], any::2) : BAT[any::1,any::2]",			  "tdiff(l,r); where the second parameter is interpreted as a constant column"																											  ]
 [ "texist",	  "COMMAND:   ",  "texist(any::1, any::1) : bit",							  "exist(b,v); where the first parameter is interpreted as a constant column"																											  ]
+[ "tintersect",		  "COMMAND:   ",  "tintersect(BAT[any::1,any::2], any::2) : BAT[any::1,any::2]",		  "tintersect(l,r); where the second parameter is interpreted as a constant column"																										  ]
 [ "tmark",	  "COMMAND:   ",  "tmark(any::1, oid) : any::1",							  "mark_rev(b,c); where the first parameter is interpreted as a constant column"																										  ]
 [ "tsort",	  "COMMAND:   ",  "tsort(any::1) : any::1",								  "tsort(b); where the first parameter is interpreted as a constant column"																											  ]
 [ "tsort_rev",	  "COMMAND:   ",  "tsort_rev(any::1) : any::1",								  "tsort_rev(b); where the first parameter is interpreted as a constant column"																											  ]
-[ "tunique",	  "COMMAND:   ",  "tunique(any::1) : BAT[any::1,void]",							  "tunique(c); delivers a result bat [c,nil]"																															  ]
-[ "{max}",	  "COMMAND:   ",  "{max}(any::1, BAT[oid,oid], BAT[oid,any]) : any::1",					  "max(b); where the first parameter is interpreted as a constant column"																											  ]
-[ "{min}",	  "COMMAND:   ",  "{min}(any::1, BAT[oid,oid], BAT[oid,any]) : any::1",					  "min(b); where the first parameter is interpreted as a constant column"																											  ]
+[ "tunique",		  "COMMAND:   ",  "tunique(any::1) : BAT[any::1,void]",						  "tunique(c); delivers a result BAT [c,nil]"																															  ]
 
 Module: "str"
 
@@ -866,7 +893,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 721 ]
+[ 748 ]
 
 quit();
 
