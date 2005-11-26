@@ -52,6 +52,7 @@ include mtime;
 
 # the kernel stuff to make it work
 include bat;
+include bpm;	# beware for overloading
 include pcre;
 include algebra;
 include calc;
@@ -87,7 +88,7 @@ include optimizer;
 include chopper;
 #include logger;
 include transaction;
-include partitions;	# beware for overloading
+include partitions;
 @-
 In practice, we have to introduce different startup for each
 client group or database.

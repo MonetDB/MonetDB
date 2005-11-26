@@ -13,7 +13,7 @@ LIBS = {
 		profiler.mx const.mx print.mx \
 		inspect.mx manual.mx crackers.mx \
 		thread.mx clients.mx \
-		factory.mx mdb.mx  \
+		factory.mx mdb.mx  bpm.mx \
 		rsbox.mx urlbox.mx multitable.mx
 		#datacell.mx 
 
@@ -72,7 +72,7 @@ lib__transaction = {
 
 lib__partitions = {
 	DIR = pkglibdir
-	SOURCES = partitions.mx
+	SOURCES = partitions.mx 
 
 	HEADERS = h 
 	#SCRIPTS = mal mil ""
@@ -100,7 +100,7 @@ scripts_mal = {
 		inspect.mx manual.mx crackers.mx print.mal \
 		chopper.mx thread.mx clients.mx \
 		factory.mx mdb.mx pcre.mx  tablet.mx multitable.mx \
-		rsbox.mx urlbox.mx statistics.mx transaction.mx partitions.mx
+		rsbox.mx urlbox.mx statistics.mx transaction.mx partitions.mx bpm.mx
 	#datacell.mx 
 }
 
