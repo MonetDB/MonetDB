@@ -1,14 +1,14 @@
-stderr of test 'string2int_conversion.SF-1356068` in directory 'src/test/BugTracker` itself:
+stderr of test 'update_with_correlated_subselect.SF-1284791` in directory 'src/test/BugTracker` itself:
 
 
-# 01:11:12 >  
-# 01:11:12 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=36129 --set sql_port=41301 --set xquery_port=57891 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 01:11:12 >  
+# 08:57:06 >  
+# 08:57:06 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=39004 --set sql_port=41982 --set xquery_port=56864 --set monet_prompt= --trace "--dbname=mTests_src_test_BugTracker" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 08:57:06 >  
 
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
 # builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
 # builtin opt 	gdk_version = 4.9.3
-# builtin opt 	monet_pid = 5326
+# builtin opt 	monet_pid = 23462
 # builtin opt 	prefix = /ufs/niels/scratch/Linux-x86_64
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -58,25 +58,18 @@ stderr of test 'string2int_conversion.SF-1356068` in directory 'src/test/BugTrac
 # cmdline opt 	monet_mod_path = /ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin
 # cmdline opt 	gdk_dbfarm = /ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm
 # cmdline opt 	sql_logdir = /ufs/niels/scratch/Linux-x86_64/var/MonetDB/log
-# cmdline opt 	mapi_port = 36129
-# cmdline opt 	sql_port = 41301
-# cmdline opt 	xquery_port = 57891
+# cmdline opt 	mapi_port = 39004
+# cmdline opt 	sql_port = 41982
+# cmdline opt 	xquery_port = 56864
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_test_BugTracker
 
-# 01:11:12 >  
-# 01:11:12 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=41301  < string2int_conversion.SF-1356068.sql
-# 01:11:12 >  
-
-MAPI  = monetdb@localhost:41982
-QUERY = insert into test values ('');
-ERROR = !ERROR: str_2_sht: operation failed.
-MAPI  = monetdb@localhost:41982
-QUERY = insert into test values ('');
-ERROR = !ERROR: str_2_sht: operation failed.
+# 08:57:06 >  
+# 08:57:06 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=41982  < update_with_correlated_subselect.SF-1284791.sql
+# 08:57:06 >  
 
 
-# 01:11:12 >  
-# 01:11:12 >  Done.
-# 01:11:12 >  
+# 08:57:06 >  
+# 08:57:06 >  Done.
+# 08:57:06 >  
 

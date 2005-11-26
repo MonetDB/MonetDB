@@ -6,3 +6,4 @@ large_prepare.SF-1363729
 update_with_subselect.SF-1362771
 crash_on_cast.SF-1357271
 string2int_conversion.SF-1356068
+update_with_correlated_subselect.SF-1284791
