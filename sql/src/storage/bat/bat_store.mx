@@ -2006,7 +2006,6 @@ store_manager()
 
 	MT_set_lock(bs_lock, "store_manager");
 	if (transactions || !logger ||log_changes(logger) < 1000) {
-printf("transactions %d\n", transactions);
 		MT_unset_lock(bs_lock, "store_manager");
 		return;
 	}
