@@ -1317,10 +1317,6 @@ PFbui_fn_distinct_values (const PFla_op_t *loop __attribute__((unused)),
     (void) loop; /* pacify picky compilers that do not understand
                     "__attribute__((unused))" */
 
-    PFalg_attlist_t sortby;
-    sortby.count = 0;
-    sortby.atts  = NULL;
-
     return (struct PFla_pair_t) {
                   .rel = number (
                              distinct (

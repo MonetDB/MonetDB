@@ -6777,7 +6777,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 item_ext, counter, 
 		item_ext,
 		item_ext,
-                item_ext, counter);
+                item_ext, counter,
+		item_ext);
                 
         return_str_funs (f, code, cur_level, "fn:substring-after");
         deleteResult_ (f, counter, STR);
@@ -7225,8 +7226,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "item := node_before.[oid]().tmark(0@0);\n"
                 "kind := BOOL;\n"
                 "} # end of translate op:node-before (node, node) as boolean\n",
-                counter, counter, counter,
-                counter, counter, counter, counter, counter);
+                counter, counter, counter, counter);
         deleteResult (f, counter);
         return NORMAL;
     }
