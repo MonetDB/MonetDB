@@ -4,3 +4,4 @@ reply-size_prepare.SF-1347183
 inserting_invalid_timestamp.SF-1363557
 large_prepare.SF-1363729
 update_with_subselect.SF-1362771
+crash_on_cast.SF-1357271
