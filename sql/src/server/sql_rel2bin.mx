@@ -70,9 +70,6 @@ tail_column(stmt *st)
 	case st_replace:
 
 	case st_unique:
-	case st_unop:
-	case st_binop:
-	case st_Nop:
 	case st_aggr:
 	case st_order:
 
@@ -113,6 +110,9 @@ tail_column(stmt *st)
 	case st_basetable:	/* a table is not a column */
 	case st_ptable:
 	case st_temp:
+	case st_unop:
+	case st_binop:
+	case st_Nop:
 		return NULL;
 
 	default:
@@ -223,11 +223,15 @@ head_column(stmt *st)
 	return NULL;
 }
 
+/* basecolum is used by eliminate_semijoins and shrink_ranges to reduce the
+ * number of semijoins and selects.
+ * There we need too know which columns come from the same basecolumn.
+ */
 static sql_column *
 basecolumn(stmt *st)
 {
 	if (!st)
-		return NULL;	/* required for shrink_select_ranges() and eliminate_semijoin() in sql_rel2bin.mx */
+		return NULL;	/* required for shrink_select_ranges() and eliminate_semijoin() */
 	switch (st->type) {
 	case st_reverse:
 		return basecolumn(head_column(st->op1.stval));
