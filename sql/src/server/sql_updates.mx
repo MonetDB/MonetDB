@@ -1099,9 +1099,9 @@ sql_update_table(mvc *sql, sql_schema *schema, char *tname, dlist *assignmentlis
 				return sql_error(sql, 02, "UPDATE: no such column '%s.%s'", tname, assignment->h->data.sval);
 			}
 			a = assignment->h->next->data.sym;
-			if (a)
+			if (a) {
 				v = sql_value_exp(sql, scp, a, NULL, s, sql_sel);
-			else
+			} else
 				v = stmt_atom(atom_general(&c->type, NULL, 0));
 
 			if (!v || (v = check_types(sql, &c->type, v, type_dyncheck)) == NULL) {
@@ -1114,6 +1114,20 @@ sql_update_table(mvc *sql, sql_schema *schema, char *tname, dlist *assignmentlis
 			if (v->nrcols <= 0) {
 				v = stmt_const(stmt_reverse(s ? first_subset(s) : stmt_cbat(c, stmt_dup(tv->s), RDONLY, st_bat)), v);
 			} else {
+				if (v->type == st_list && list_length(v->op1.lval) == 2) { /* sub query with outer refs */
+					node *o = v->op1.lval->h;
+					stmt *oref = stmt_dup(o->next->data);
+					stmt *sqa = stmt_dup(o->data);
+					stmt *cmp, *h;
+
+					cmp = stmt_join(stmt_reverse(oref), sqa, cmp_equal);
+					/* need to fix the cmp head */
+					h = stmt_dup(cmp->h->t);
+					stmt_destroy(cmp->h);
+					cmp->h = h;
+					stmt_destroy(v);
+					v = cmp;
+				}
 				/* s is a table result ie new oid, original oid 
 				 * v is a result based on subset s, new oid, val
 				 * So a join is needed to get original oid, val
