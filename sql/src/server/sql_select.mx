@@ -665,7 +665,8 @@ sql_cast(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 			sql_subtype *st = tail_type(l);
 			sql_subtype *it = sql_bind_localtype("int");
 			sql_subfunc *c = sql_bind_func(sql->trans->module, "truncate", st, it);
-			l = stmt_binop(l, stmt_atom_int(tpe->digits), c);
+			if (c)
+				l = stmt_binop(l, stmt_atom_int(tpe->digits), c);
 		}
 	}
 	if (l)
