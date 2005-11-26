@@ -613,8 +613,6 @@ MALoptimizer(Client c)
 	return optimizeMALBlock(c->curprg->def);
 }
 
-@}
-@{
 int hasSameSignature(InstrPtr p, InstrPtr q){   
     if( q->retc != p->retc || q->argc != p->argc) return FALSE;
     if( functionId(q)==0 && functionId(p)!=0 ) return FALSE;
@@ -824,7 +822,6 @@ isUpdated(MalBlkPtr mb, int pc)
 	return FALSE;
 }
 
-@}
 @-
 In many cases we should be assured that a variable is not used in
 the instruction range identified. For, we may exchange some instructions that
@@ -1031,6 +1028,7 @@ Such limitations on the implementation are indicated where appropriate.
 * Multiplex Compiler::
 * Garbage Collector::
 * Code Factorization::
+* Multi-Association Tables::
 * Partitioned Database Optimizer::
 * Strength Reduction::
 * Costmodels::

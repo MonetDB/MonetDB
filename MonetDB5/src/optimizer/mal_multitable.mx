@@ -17,6 +17,9 @@
 
 @f mal_multitable
 @a M. Kersten
+@-
+@node Multi-Association Tables, Partitioned Database Optimizer,  Code Factorization, Optimizer toolkit
+
 @+ Multi Association Tables
 A Multi Association Table (MAT) is an ordered collection of BATs,
 whose union represents a single (virtual) BAT.
@@ -95,7 +98,18 @@ argument. This leads to
 The drawback of this scheme is the explosion in MAL statements.
 It is choosen as a basis for experimentation. In a fullblown
 system we would also use iterators to avoid it.
+
 @{
+Also consider the MAT as a variable property. This is needed
+to pass a MAT as an argument to functions. If the function does
+not accept a MAT, the argument should be packed, otherwise
+we can simply let it pass.
+
+We have to add routines to deal with duplicate elimination.
+Moreover, the other optimizers should become aware of the MAT
+operations. The operations mat.new() and mat.range() can be
+removed as a last step in the optimizer. It is now handy for
+debugging.
 @h
 #ifndef _MAL_MERGETABLE_
 #define _MAL_MERGETABLE_

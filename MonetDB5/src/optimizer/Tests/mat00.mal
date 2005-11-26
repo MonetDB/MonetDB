@@ -19,5 +19,7 @@
     bat.insert(c,1,6);
     j := algebra.join(b,c);
     io.print(j);
+io.print(b);
+io.print(c);
 
 optimizer.multitable();
