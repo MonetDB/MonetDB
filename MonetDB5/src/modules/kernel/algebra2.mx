@@ -41,18 +41,14 @@ comment "Hook directly into the 'left@1join' implementation of the join.
 prefix 'left' means that left and right input are not swapped during 
 processing, and hence, the order of the left input's head in maintained 
 in the result.";
-
-@-
-not needed anymore :leftjoin()
 @mal
 @:join(fetch)@
 @:join(merge)@
 @:join(hash)@
-@:join(index)@
+@:leftjoin()@
 @:leftjoin(fetch)@
 @:leftjoin(merge)@
 @:leftjoin(hash)@
-@:leftjoin(index)@
 
 command algebra.leftjoin(left:bat[:any_1,:any_2], 
 			right:bat[:any_2,:any_3] ) :bat[:any_1,:any_3] 
@@ -189,8 +185,8 @@ BATmalleftfetchjoin(BAT *l, BAT *r)
 BAT *
 BATmalhashjoin(BAT *l, BAT *r)
 {
-	size_t lsize = l->batBuns->size + (l->hheap.base ? l->hheap.size : 0) + (l->theap.base ? l->theap.size : 0);
-	size_t rsize = r->batBuns->size + (r->hheap.base ? r->hheap.size : 0) + (r->theap.base ? r->theap.size : 0);
+	size_t lsize = l->batBuns->size + (l->hheap ? l->hheap->size : 0) + (l->theap ? l->theap->size : 0);
+	size_t rsize = r->batBuns->size + (r->hheap ? r->hheap->size : 0) + (r->theap ? r->theap->size : 0);
 
 	if (rsize < lsize) {
 		return BATmirror(BAThashjoin(BATmirror(r), BATmirror(l), oid_nil));
@@ -270,8 +266,6 @@ int CMD@1join(BAT **result, BAT *left, BAT* right) {
 @:joincmd(leftmerge)@
 @:joincmd(hash)@
 @:joincmd(lefthash)@
-@:joincmd(index)@
-@:joincmd(leftindex)@
 
 int
 CMDleftthetajoin(BAT **result, BAT *l, BAT *r, int *mode)
@@ -285,7 +279,6 @@ CMDnlthetajoin(BAT **result, BAT *l, BAT *r, int *mode, lng *estimate)
 	return (*result = BATnlthetajoin(l, r, *mode, (size_t) * estimate)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
-@-
 @= selectcmd
 int CMDord_@1select1(BAT **result, BAT* b, ptr value) {
 	return (*result = BAT_select_(b, value, 0, TRUE, TRUE, @2, TRUE))?GDK_SUCCEED:GDK_FAIL;
@@ -307,9 +300,9 @@ int CMDord_@1select_(BAT **result, BAT *b, ptr low, ptr high, bit* l_in, bit* h_
 	return (*result = BAT_select_(b, low, high, *l_in, *h_in, @2, TRUE))?GDK_SUCCEED:GDK_FAIL;
 }
 @c
-@:selectcmd(, TRUE)@
-@:selectcmd(u, FALSE)@
-@-
+@:selectcmd(,TRUE)@
+@:selectcmd(u,FALSE)@
+
 
 @= sumcmd
 int CMDclustered_sum_@1(BAT **ret, BAT *b ) {
@@ -544,12 +537,10 @@ PROC test_malalgebra() : void {
 	@:compresults(hash,oid)@
 	@:compresults(fetch,oid)@
 	@:compresults(merge,oid)@
-	@:compresults(index,oid)@
 	@:compresults(left,oid)@
 	@:compresults(lefthash,oid)@
 	@:compresults(leftfetch,oid)@
 	@:compresults(leftmerge,oid)@
-	@:compresults(leftindex,oid)@
 
 	@:jointest_void()@
 	@:compresults(hash,void)@
