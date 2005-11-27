@@ -447,10 +447,11 @@ CMDbbpbindindex(int *ret, int *bid)
 {
 	BAT *b;
 
-	b = (BAT *) BBPdescriptor(*bid);
+	b = (BAT *) BATdescriptor(*bid);
 	if (b == 0)
 		return throwMessage("bbp.bind", "can not access descriptor");
-	BBPincref(*ret = *bid, TRUE);
+	BBPincref(*ret = b->batCacheid, TRUE);
+	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 

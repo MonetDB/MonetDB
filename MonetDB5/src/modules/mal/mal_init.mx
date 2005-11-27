@@ -52,7 +52,6 @@ include mtime;
 
 # the kernel stuff to make it work
 include bat;
-include bpm;	# beware for overloading
 include pcre;
 include algebra;
 include calc;
@@ -77,6 +76,7 @@ include factory;
 include const; 
 include bbp;
 include box; 
+include pbm;
 include inspect;
 include language;
 
