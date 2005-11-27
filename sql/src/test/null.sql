@@ -10,13 +10,9 @@ insert into t3 values(1,6);
 commit;
 
 insert into t3 values(NULL,5);
-rollback;
 insert into t3 values(NULL,6);
-rollback;
 insert into t3 values(NULL,NULL);
-rollback;
 
 select * from t3 where val is NULL;
 drop table t3;
 
-commit;

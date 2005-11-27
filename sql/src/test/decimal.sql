@@ -46,18 +46,13 @@ commit;
 -- these should fail
 insert into test values (1234);
       -- a '.00' decimal part is assumed for the next value 
-rollback;
 insert into test values (-1234);
       -- a '.00' decimal part is assumed for the next value 
-rollback;
 insert into test values (1234.1);
-rollback;
 insert into test values (-1234.1);
-rollback;
 
 
 select * from test;
 
 drop table test;
 
-COMMIT;

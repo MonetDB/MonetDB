@@ -1,2 +1,3 @@
+START TRANSACTION;
 commit;
 commit;

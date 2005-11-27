@@ -13,5 +13,3 @@ COMMIT;
 select * from example;
 
 select * from example_view;
-
-commit;

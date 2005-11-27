@@ -22,13 +22,9 @@ select * from t3 order by id,val;
 -- this one works, and I think it shouldn't
 --  postgres just sums the first column (result 9)
 select sum(*) from t3;
-rollback;
 
 -- this one, although wrong, results in core-dump of sql_client :)
 --  postgres just sums the first column of the group (result (3,5)(3,6)(3,nil))
 select sum(*),val from t3 group by val ;
-rollback;
 
 drop table t3;
-
-commit;

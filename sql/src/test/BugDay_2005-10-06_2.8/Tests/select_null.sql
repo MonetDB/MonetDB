@@ -1,3 +1,4 @@
+START TRANSACTION;
 select null;
 select null as v;
 create table t (i integer);

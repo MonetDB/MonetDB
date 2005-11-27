@@ -421,6 +421,7 @@ mvc_commit(mvc *m, int chain, char *name)
 		store_unlock();
 	} else {
 		m->trans = NULL;
+		m->auto_commit = 1;
 	}
 	_DELETE(schema);
 	if (ok == SQL_OK)
@@ -487,6 +488,7 @@ mvc_rollback(mvc *m, int chain, char *name)
 		store_unlock();
 	} else {
 		m->trans = NULL;
+		m->auto_commit = 1;
 	}
 	_DELETE(schema);
 	m->type = Q_TRANS;

@@ -10,14 +10,9 @@ commit;
 select id, sum(val) AS valsum from nutki group by id having sum(val)>1;
 select id, sum(val) AS valsum from nutki group by id having val>1;
 -- ERROR:  Attribute nutki.val must be GROUPed or used in an aggregate function
-rollback;
 select id, sum(val) AS valsum from nutki group by id having val>2;
 -- ERROR:  Attribute nutki.val must be GROUPed or used in an aggregate function
-rollback;
 select id, sum(val) AS valsum from nutki group by id having valsum>3;
 -- ERROR:  Attribute 'valsum' not found
-rollback;
 
 drop table nutki;
-
-commit;
