@@ -18,17 +18,15 @@
 @f multitable
 @a Martin Kersten
 @v 1
-@* Multiple Association Tables.
-A persistent Multiple Association Tables (MAT) 
-is an union view over a set of BATs. 
+@* Multiple association tables
 A MAT is a convenient way to deal with scaleability. 
+It combines the definitions of several, type compatible
+BATs under a single name. 
 This view is only materialized when the operations
-can not deal with the components individually.
+can not deal with the components individually,
+or the incremental operation is not supported.
 
 The module is supported by the mal_multitable optimizer.
-
-The persistent MATs are administered in a BOX using
-the standard interface to manage its content.
 
 The primitives below are chosen to accomodate the SQL
 front-end to produce reasonable efficient code.
@@ -46,8 +44,12 @@ comment "Materialize the MAT into a single BAT";
 pattern print(b:bat[:any_1,:any_2]...):void
 address MATprint;
 
-command take(g:str, e:str):bat[:any_1,:any_2]
-address MATtake
+command expand(grp:str):bat[:any_1,:any_2]
+address MATexpand
+comment "Replace the group by its components";
+
+command info(g:str, e:str):bat[:any_1,:any_2]
+address MATinfo
 comment "retrieve the definition from the partition catalogue";
 @-
 @{
@@ -110,7 +112,12 @@ MATprint(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
-MATtake(int *ret, str *grp, str *elm){
+MATexpand(int *ret, str *grp){
+	(void) grp; (void) ret;
+	return MAL_SUCCEED;
+}
+str
+MATinfo(int *ret, str *grp, str *elm){
 	(void) grp; (void) elm; (void) ret;
 	return MAL_SUCCEED;
 }
