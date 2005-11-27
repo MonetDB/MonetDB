@@ -1540,6 +1540,7 @@ int
 defConstant(MalBlkPtr mb, int type, ValPtr cst){
 	int i,k;
 	ValPtr vr;
+	ptr vcst= VALget(cst);
 
 	if( cst->vtype != type)
 		convertConstant(type, cst);
@@ -1549,7 +1550,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst){
     for(i= mb->vtop-1; i>=k;i--){
         VarPtr v= getVar(mb,i);
         if( v->isaconstant && v->type == type && 
-			ATOMcmp(cst->vtype, VALget(&v->value), VALget(cst))== 0)
+			ATOMcmp(cst->vtype, VALget(&v->value), vcst)== 0)
 				return i;
     }
     k=  newTmpVariable(mb,type);
