@@ -1811,8 +1811,8 @@ atom_commalist:
  ;
 
 simple_atom_commalist:
-    simple_atom		{ $$ = _dlist_append_symbol(_dlist_create(), $1); }
- |  simple_atom_commalist ',' simple_atom
+    insert_atom		{ $$ = _dlist_append_symbol(_dlist_create(), $1); }
+ |  simple_atom_commalist ',' insert_atom
 			{ $$ = _dlist_append_symbol($1, $3); }
  ;
 
@@ -1836,8 +1836,8 @@ simple_atom:
 
 insert_atom:
     simple_atom
- |  search_condition
- |  select_no_parens 
+ |  simple_select
+ |  set_select
  ;
 
 opt_distinct:
@@ -1993,7 +1993,7 @@ simple_select:
 
 select_no_parens:
     simple_select
- |  set_select
+ |  set_select 
  ;
 
 complex_select:
@@ -2329,16 +2329,18 @@ test_for_null:
  ;
 
 in_predicate:
-    pred_exp NOT sqlIN select_with_parens
+/*
+    pred_exp NOT sqlIN select_no_parens
 		{ dlist *l = _dlist_create();
 		  _dlist_append_symbol(l, $1);
 		  _dlist_append_symbol(l, $4);
 		  $$ = _symbol_create_list(SQL_NOT_IN, l ); }
- |  pred_exp sqlIN select_with_parens
+ |  pred_exp sqlIN select_no_parens
 		{ dlist *l = _dlist_create();
 		  _dlist_append_symbol(l, $1);
 		  _dlist_append_symbol(l, $3);
 		  $$ = _symbol_create_list(SQL_IN, l ); }
+*/
  |  pred_exp NOT sqlIN '(' simple_atom_commalist ')'
 		{ dlist *l = _dlist_create();
 		  _dlist_append_symbol(l, $1);
@@ -2374,7 +2376,7 @@ existence_test:
  ;
 
 subquery:
-    '(' simple_select ')' 	{ $$ = $2; }
+	select_with_parens
  ;
 
 	/* simple_scalar expressions */

@@ -2753,6 +2753,19 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		return stmt_atom(atom_dup(an->a));
 	}
 		break;
+	case SQL_UNION:
+	case SQL_EXCEPT:
+	case SQL_INTERSECT: {
+		stmt *r, *s = scope_setop(sql, sc);
+		if (s->type != st_list || list_length(s->op1.lval) != 1) {
+			stmt_destroy(s);
+			return sql_error(sql, 02, "Expecting a single column instead of a table");
+		}
+		r = stmt_dup( s->op1.lval->h->data );
+		stmt_destroy(s);
+		return r;
+	} 
+		break;
 	default:
 		return sql_error(sql, 02, "predicate %s %d: time to implement some more", token2string(sc->token), sc->token);
 	}
