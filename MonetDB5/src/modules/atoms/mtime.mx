@@ -386,7 +386,7 @@ address MTIMEdate_add_sec_interval_lng_wrap;
 command timestamp_sub_sec_interval(t:timestamp,s:lng):timestamp 
 address MTIMEtimestamp_sub_sec_interval_lng_wrap;
 command timestamp_add_sec_interval(t:timestamp,s:lng):timestamp 
-address MTIMEtimestamp_sub_sec_interval_lng_wrap;
+address MTIMEtimestamp_add_sec_interval_lng_wrap;
 
 command timestamp_sub_month_interval(t:timestamp,s:int):timestamp 
 address MTIMEtimestamp_sub_month_interval_wrap
