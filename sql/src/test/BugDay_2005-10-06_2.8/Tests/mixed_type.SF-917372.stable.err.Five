@@ -68,12 +68,12 @@ stderr of test 'mixed_type.SF-917372` in directory 'src/test/BugDay_2005-10-06_2
 # 14:38:32 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=40118  < mixed_type.SF-917372.sql
 # 14:38:32 >  
 
-MAPI  = monetdb@localhost:49127
+MAPI  = monetdb@localhost:43548
 QUERY = select 'a'+1;
-ERROR = !ERROR: MALexception:sht:atom nil
-MAPI  = monetdb@localhost:49127
+ERROR = !ERROR: MALexception:sht:conversion of string 'a' failed
+MAPI  = monetdb@localhost:43548
 QUERY = select 1-'a';
-ERROR = !ERROR: MALexception:sht:atom nil
+ERROR = !ERROR: MALexception:sht:conversion of string 'a' failed
 
 # 14:38:32 >  
 # 14:38:32 >  Done.
