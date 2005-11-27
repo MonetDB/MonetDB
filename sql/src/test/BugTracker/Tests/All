@@ -8,3 +8,4 @@ crash_on_cast.SF-1357271
 string2int_conversion.SF-1356068
 update_with_correlated_subselect.SF-1284791
 select_extract.SF-1263796
+intersect_in_subquery.SF-1339411
