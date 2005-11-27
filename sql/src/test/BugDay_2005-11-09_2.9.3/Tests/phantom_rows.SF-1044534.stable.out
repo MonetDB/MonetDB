@@ -21,8 +21,6 @@ Over..
 # 20:17:02 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=46177  < phantom_rows.SF-1044534.sql
 # 20:17:02 >  
 
-# 4 # querytype
-[ 1	]
 # 6 # querytype
 # 4 # querytype
 [ 1	]

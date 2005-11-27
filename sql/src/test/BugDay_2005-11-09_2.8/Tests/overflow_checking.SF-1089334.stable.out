@@ -21,8 +21,6 @@ Over..
 # 13:12:25 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=41056  < overflow_checking.SF-1089334.sql
 # 13:12:25 >  
 
-# 7 # querytype
-[ 1	]
 # 6 # querytype
 # 4 # querytype
 [ 1	]

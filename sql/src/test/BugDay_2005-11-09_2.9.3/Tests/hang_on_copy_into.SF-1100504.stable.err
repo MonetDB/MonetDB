@@ -68,13 +68,13 @@ stderr of test 'hang_on_copy_into.SF-1100504` in directory 'src/test/BugDay_2005
 # 13:11:12 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45907  < hang_on_copy_into.SF-1100504.sql
 # 13:11:12 >  
 
-MAPI  = monetdb@localhost:40626
+MAPI  = monetdb@localhost:41364
 QUERY = COPY 1 RECORDS INTO "news" FROM stdin USING DELIMITERS '\t';
 ERROR = !ERROR: ASCIIload_file: value 1	'dwerg.net word volwassen, er is eindelijk content not inserted
         !ERROR: mvc_import_table_wrap: operation failed.
-MAPI  = monetdb@localhost:40626
+MAPI  = monetdb@localhost:41364
 QUERY = en het voicemail archief begint al aardig vol te lopen.
-ERROR = !current transaction is aborted (please ROLLBACK)
+ERROR = !syntax error, unexpected IDENT in: "en"
 
 
 # 13:11:12 >  

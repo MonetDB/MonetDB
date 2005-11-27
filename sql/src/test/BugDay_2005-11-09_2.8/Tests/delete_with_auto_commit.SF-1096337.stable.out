@@ -21,8 +21,6 @@ Over..
 # 13:19:42 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=40123  < delete_with_auto_commit.SF-1096337.sql
 # 13:19:42 >  
 
-# 7 # querytype
-[ 1	]
 # 6 # querytype
 # 4 # querytype
 [ 1	]
@@ -44,7 +42,6 @@ Over..
 # 0 # tuplecount
 # 5 # id
 # 7 # querytype
-[ 1	]
 # 6 # querytype
 # 7 # querytype
 # 4 # querytype

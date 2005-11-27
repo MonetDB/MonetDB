@@ -1259,6 +1259,8 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		(void)action;
 		if (mvc_bind_column(sql, t, cname) == NULL)
 			return sql_error(sql, 02, "cannot drop unknown column %s\n", cname);
+		if (cs_size(&t->columns) <= 1)
+			return sql_error(sql, 02, "cannot drop column %s (table needs atleast one column)\n", cname);
 		mvc_drop_column(sql, t, cname);
 		res = stmt_none();
 	} break;

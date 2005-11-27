@@ -1,3 +1,4 @@
+START TRANSACTION;
 SET explain='profile';
 
 DELETE FROM profile;

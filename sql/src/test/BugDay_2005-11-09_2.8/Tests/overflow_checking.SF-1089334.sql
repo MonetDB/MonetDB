@@ -1,5 +1,3 @@
-set auto_commit=true;
-
 CREATE TABLE "rawtriples" (
 "id" decimal(10) NOT NULL,
 "subjns" decimal(10) NOT NULL,

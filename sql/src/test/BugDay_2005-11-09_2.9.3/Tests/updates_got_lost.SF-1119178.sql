@@ -1,5 +1,6 @@
 -- appeared in parallel processing experiment
 -- Terminal 1 (Mapiclient)
+START TRANSACTION;
 CREATE TABLE aap (id int);
 INSERT INTO aap VALUES (1);
 INSERT INTO aap VALUES (6);
@@ -14,7 +15,6 @@ SELECT * FROM aap;
 -- Step 3:
 
 UPDATE aap SET id=2 WHERE id=1;
-COMMIT;
 
 -- Step 5:
 
@@ -28,5 +28,4 @@ SELECT * FROM aap;
 
 UPDATE aap SET id=7 WHERE id=8;
 SELECT * FROM aap;
-COMMIT;
 DROP TABLE aap;
