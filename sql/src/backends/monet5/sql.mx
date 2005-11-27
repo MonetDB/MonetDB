@@ -243,16 +243,19 @@ address MTIMEdate_isnil
 command calc.current_date():date
 address MTIMEcurrent_date;
 
-command calc.date_sub_sec_interval(t:date,s:int):date
-address MTIMEdate_sub_sec_interval_wrap;
-command calc.date_sub_sec_interval(t:date,s:lng):date
-address MTIMEdate_sub_sec_interval_lng_wrap;
-command calc.date_add_sec_interval(t:date,s:int):date
-address MTIMEdate_add_sec_interval_wrap;
-command calc.date_add_sec_interval(t:date,s:lng):date
-address MTIMEdate_add_sec_interval_lng_wrap;
-command calc.date_add_month_interval(t:date,s:int):date
-address MTIMEdate_add_month_interval_wrap;
+command calc.timestamp_sub_sec_interval(t:timestamp,s:lng):timestamp address MTIMEtimestamp_sub_sec_interval_lng_wrap;
+command calc.timestamp_add_sec_interval(t:timestamp,s:lng):timestamp address MTIMEtimestamp_add_sec_interval_lng_wrap;
+command calc.timestamp_sub_month_interval(t:timestamp,s:int):timestamp address MTIMEtimestamp_sub_month_interval_wrap;
+command calc.timestamp_add_month_interval(t:timestamp,s:int):timestamp address MTIMEtimestamp_add_month_interval_wrap;
+
+command calc.time_add_sec_interval(t:daytime,s:lng):daytime address MTIMEtime_add_sec_interval_wrap;
+command calc.time_sub_sec_interval(t:daytime,s:lng):daytime address MTIMEtime_sub_sec_interval_wrap;
+command calc.date_sub_sec_interval(t:date,s:int):date address MTIMEdate_sub_sec_interval_wrap;
+command calc.date_sub_sec_interval(t:date,s:lng):date address MTIMEdate_sub_sec_interval_lng_wrap;
+command calc.date_add_sec_interval(t:date,s:int):date address MTIMEdate_add_sec_interval_wrap;
+command calc.date_add_sec_interval(t:date,s:lng):date address MTIMEdate_add_sec_interval_lng_wrap;
+command calc.date_add_month_interval(t:date,s:int):date address MTIMEdate_add_month_interval_wrap;
+
 
 command calc.year(d:date) :int
 address MTIMEdate_extract_year;
@@ -463,6 +466,9 @@ comment "cast to @1";
 @mal
 @:mal_castfromstr(flt)@
 @:mal_castfromstr(dbl)@
+@:mal_castfromstr(timestamp)@
+@:mal_castfromstr(daytime)@
+@:mal_castfromstr(date)@
 
 @mal
 command str( v:bit) :str 
@@ -745,7 +751,19 @@ sqlcleanup(mvc *c, int err)
 	c->sym = NULL;
 	if (c->sa) 
 		c->sa = sa_reset(c->sa);
+	if (err)
+		c->status = err;
 	scanner_query_processed(&(c->scanner));
+
+	/*
+	 * clear query cache after Transaction boundaries (commit/rollback)
+	 * and on schema changes
+	 */
+	if (c->cache && (c->type == Q_SCHEMA || c->qc->id > 1000)) {
+		if (c->qc)
+			qc_destroy(c->qc);
+		c->qc = qc_create(c->clientid);
+	}
 	return err;
 }
 
@@ -1433,9 +1451,11 @@ str_2_@1( @1 *res, str *val )
 	   (ATOMcmp(TYPE_@1, p, ATOMnilptr(TYPE_@1)) == 0 &&
 	    ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0))
 	{
+		char buf[BUFSIZ];
 		if (p)
 			GDKfree(p);
-		return throwMessage("@1", "atom nil");
+                snprintf(buf, BUFSIZ,"conversion of string '%s' failed\n",*val);
+		return throwMessage("@1", buf);
 	}
 	*res = *(@1*)p;
 	if (p)
@@ -1459,6 +1479,9 @@ SQL@1_2_str( str *res, @1 *val )
 @:cast(lng,lngToStr)@
 @:cast(flt,fltToStr)@
 @:cast(dbl,dblToStr)@
+@:cast(timestamp,timestamp_tostr)@
+@:cast(daytime,daytime_tostr)@
+@:cast(date,date_tostr)@
 
 str
 SQLstr_2_str( str *res, str *val )

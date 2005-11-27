@@ -164,6 +164,7 @@ stream.
 @:mel_castfromstr(flt)@
 @:mel_castfromstr(dbl)@
 @:mel_castfromstr(timestamp)@
+@:mel_castfromstr(daytime)@
 @:mel_castfromstr(date)@
 
  .COMMAND "str"( any v, int digits ) : str = str_cast; "cast to string and check for overflow"
@@ -719,6 +720,7 @@ str_2_@1( @1 *res, str val )
 @:cast(flt)@
 @:cast(dbl)@
 @:cast(timestamp)@
+@:cast(daytime)@
 @:cast(date)@
 
 int
