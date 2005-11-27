@@ -1,3 +1,4 @@
+START TRANSACTION;
 create table click_(
 		cl_time time,
 		url_id integer NOT NULL,

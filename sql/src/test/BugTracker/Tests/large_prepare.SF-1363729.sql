@@ -1,3 +1,4 @@
+START TRANSACTION;
 create table foo (clickTime time,long1 bigint,long2 bigint,long3 bigint,long4 bigint,long5 bigint,long6 bigint,long7 bigint,long8 bigint,long9 bigint,long10 bigint,long11 bigint,long12 bigint,long13 bigint,long14 bigint,long15 bigint,long16 bigint,long17 bigint,long18 bigint,long19 bigint,long20 bigint,long21 bigint,long22 bigint,long23 bigint,long24 bigint,long25 bigint,long26 bigint,long27 bigint,long28 bigint,long29 bigint,long30 bigint,long31 bigint,long32 bigint,long33 bigint,long34 bigint);
 
 PREPARE insert into foo values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
