@@ -175,8 +175,7 @@ typedef union {
 
 
 int yylex();
-extern "C" int yyparse();
-
+extern int yyparse();
 extern void mel_yyerror(const char *);
 
 extern void *get_cur_buffer();
