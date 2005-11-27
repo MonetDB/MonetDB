@@ -1,4 +1,5 @@
 
+START TRANSACTION;
 create table example ( val1 integer, val2 varchar(10), val3 float );
 create view example_view as select * from example;
 insert into example values( 1, 'test', 0.1 );

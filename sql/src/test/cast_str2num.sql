@@ -1,3 +1,4 @@
+start transaction;
 create table T ( I int, F float ) ;
 
 insert into T values ( 1, 0.1 );

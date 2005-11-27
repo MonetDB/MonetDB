@@ -1,3 +1,4 @@
+start transaction;
 create table test (val int );
 insert into test values (10);
 insert into test values (20);

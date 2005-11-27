@@ -1,4 +1,4 @@
-
+start transaction;
 create table test ( str varchar (20) );
 insert into test values ( 'test' );
 select * from test;

@@ -1,3 +1,4 @@
+START TRANSACTION;
 CREATE TABLE t1 (
   id INT,
   text1 VARCHAR(32),
@@ -27,4 +28,4 @@ rollback;
 select * from t1;
 
 drop table t1;
-commit;
+COMMIT;

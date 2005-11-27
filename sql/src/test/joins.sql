@@ -1,3 +1,4 @@
+START TRANSACTION;
 create table T_1 ( c_1 int );
 create table T_2 ( c_2 int );
 

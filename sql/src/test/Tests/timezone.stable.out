@@ -52,7 +52,6 @@ Over..
 [ "debug",	"0",	"int",	0	]
 [ "reply_size",	"100",	"int",	0	]
 [ "explain",	"",	"varchar",	0	]
-[ "auto_commit",	"false",	"boolean",	0	]
 [ "current_schema",	"sys",	"varchar",	1	]
 [ "current_user",	"monetdb",	"varchar",	1	]
 [ "current_role",	"monetdb",	"varchar",	0	]

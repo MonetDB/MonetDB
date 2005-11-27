@@ -22,6 +22,7 @@
 -- Results from MySQL are completely wrong with respect to this semantics.
 -- Results from PostgreSQL are correct
 
+start transaction;
 
 create table test ( t1 dec(5,2) );
 
@@ -44,11 +45,11 @@ commit;
 
 -- these should fail
 insert into test values (1234);
-rollback;
       -- a '.00' decimal part is assumed for the next value 
+rollback;
 insert into test values (-1234);
-rollback;
       -- a '.00' decimal part is assumed for the next value 
+rollback;
 insert into test values (1234.1);
 rollback;
 insert into test values (-1234.1);
@@ -58,6 +59,5 @@ rollback;
 select * from test;
 
 drop table test;
-commit;
 
-
+COMMIT;
