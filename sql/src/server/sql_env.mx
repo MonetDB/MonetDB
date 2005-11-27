@@ -36,9 +36,6 @@ trace of the SQL queries for post analysis. It is available in
 the system table called 'profile'. Omission of either qualifier merely
 results in a straight execution of the query.
 
-The 'auto_commit' flag takes a boolean and controls automatic commit
-after a successful SQL execution, or conversely an automatic rollback.
-
 The 'reply_size' limits the number of tuples sent to the front end.
 [It is unclear how the remainder can be obtained within the SQL language
 framework. The reply_size should be replaced by 'limit']
@@ -306,11 +303,6 @@ sql_update_var(mvc *m, char *name)
 {
 	if (strcmp(name, "debug") == 0) {
 		m->debug = sql_get_int_var(m, "debug");
-	} else if (strcmp(name, "auto_commit") == 0) {
-		m->auto_commit = sql_get_bit_var(m, "auto_commit");
-		m->type = Q_TRANS;
-		if (mvc_rollback(m, 0, NULL) < 0)
-			return GDK_FAIL;
 	} else if (strcmp(name, "reply_size") == 0) {
 		m->reply_size = sql_get_int_var(m, "reply_size");
 	} else if (strcmp(name, "current_schema") == 0) {
@@ -414,11 +406,6 @@ sql_session(mvc *m)
 		table_insert(tr, s, "explain", "plan", "varchar", &rw, NULL);
 	else if (m->explain == m_profile)
 		table_insert(tr, s, "explain", "profile", "varchar", &rw, NULL);
-
-	if (m->auto_commit)
-		table_insert(tr, s, "auto_commit", "true", "boolean", &rw, NULL);
-	else
-		table_insert(tr, s, "auto_commit", "false", "boolean", &rw, NULL);
 
 	table_insert(tr, s, "current_schema", m->schema, "varchar", &ro, NULL);
 

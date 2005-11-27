@@ -24,6 +24,7 @@ module 'sql_server'
 # str									  # type
 #---------------------------------------------------------------------------------#
 [ "date(str) : date"								  ]
+[ "daytime(str) : daytime"							  ]
 [ "dbl(int) : dbl"							  ]
 [ "dbl(int, int) : dbl"							  ]
 [ "dbl(int, int, int) : dbl"						  ]
