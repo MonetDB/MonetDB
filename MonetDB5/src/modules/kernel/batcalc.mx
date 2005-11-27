@@ -116,6 +116,10 @@ because it is a contraction of a BATnew and a series of inserts.
     command @1(b:bat[:any_1,:@4], c:bat[:any_1,:@5]) :bat[:any_1,:@2] 
 	address CMDbat@3_@2_@4_@5
     comment "Binary BAT calculator function with new BAT result";
+
+    command @1(b:bat[:void,:@4], c:bat[:oid,:@5]) :bat[:oid,:@2] 
+	address CMDbat@3_@2_@4_@5
+    comment "Binary BAT calculator function with new BAT result";
 @{
 @-
 We need instantiations for the accumulator code,

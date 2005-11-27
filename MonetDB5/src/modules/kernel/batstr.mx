@@ -113,6 +113,9 @@ comment "Concatenate two strings.";
 command +( l:bat[:void,:str], r:str) :bat[:void,:str]
 address STRbatConcatcst
 comment "Concatenate a string to a bat of strings.";
+command +( l:str, r:bat[:void,:str]) :bat[:void,:str]
+address STRcstConcatbat
+comment "Concatenate two strings.";
 
 command string(b:bat[:void,:str],offset:bat[:void,:int]) :bat[:void,:str]
 address STRbatTail
@@ -489,6 +492,35 @@ str STRbat@1cst(int *ret, int *l, @3 *cst)
 
 bunins_failed:
 	BBPunfix(left->batCacheid);
+	BBPunfix(*ret);
+	return throwMessage("batstr"@5, "bunins failed");
+}
+
+mal_export str STRcst@1bat(int *ret, @3 *cst, int *r);
+str STRcst@1bat(int *ret, @3 *cst, int *r)
+{   BAT *bn, *right;
+	BUN p,q;
+	int xx;
+	@2 v, *vp= &v;
+
+	prepareOperand(right,r,@5);
+	prepareResult(bn,right,TYPE_@2,@5);
+
+	p = BUNfirst(right);
+	q = BUNlast(right);
+	xx = BUNsize(right);
+	while(p<q) {
+	    ptr h = BUNhead(right,p);
+	    str tr = (str) BUNtail(right,p);
+		@4(vp, cst, &tr);
+		bunfastins(bn, h, @6);
+		p += xx;
+	}
+	finalizeResult(ret,bn,right);
+	return MAL_SUCCEED;
+
+bunins_failed:
+	BBPunfix(right->batCacheid);
 	BBPunfix(*ret);
 	return throwMessage("batstr"@5, "bunins failed");
 }
