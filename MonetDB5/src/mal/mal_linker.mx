@@ -142,7 +142,7 @@ getAddress(str modnme, str fcnname, int silent)
 @-
 Search module for occurrence of the function
 @c
-	for(idx =0; idx < maxmodules && moduleLoaded[idx]; idx++)
+	for(idx =0; idx < lastmodule && moduleLoaded[idx]; idx++)
 	if( strcmp(modnme, moduleLoaded[idx])==0) {
 		adr = (MALfcn) dlsym(moduleHandle[idx], fcnname);
 		errmsg= dlerror();
@@ -185,7 +185,7 @@ getAddressFromLib(Module m, str fcnname)
 @-
 Try to locate the module
 @c
-	for(idx =0; idx < maxmodules && moduleLoaded[idx]; idx++)
+	for(idx =0; idx < lastmodule && moduleLoaded[idx]; idx++)
 	if( strcmp(m->name, moduleLoaded[idx])==0) {
 		adr = (MALfcn) dlsym(moduleHandle[idx], fcnname);
 		if( adr != NULL) {
@@ -283,7 +283,7 @@ isLoaded(str modulename)
 {
 	int idx;
 
-	for (idx = 0; moduleLoaded[idx] && idx < maxmodules; idx++)
+	for (idx = 0; moduleLoaded[idx] && idx < lastmodule; idx++)
 		if (strcmp(moduleLoaded[idx], modulename) == 0) {
 			return 1;
 		}
