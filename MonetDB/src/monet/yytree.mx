@@ -57,13 +57,9 @@ m_export void    Myyprint(YYSTREE t);
 #include <ctype.h>
 #include "monet_parse.h"
 
-#define YYBUF_TILE	(1<<16)
-#define YYBUF_CACHE	(1<<19)
-#define YYBUF_LIMIT	(1<<26)
+#define YYBUF_TILE 65520
 static char*  yy_buf = NULL;
-static size_t yy_free = 0;
-static size_t yy_size = 0;
-static size_t yy_maxsize = YYBUF_LIMIT;
+static size_t yy_free = YYBUF_TILE;
 
 @- Node Allocation
 
@@ -129,21 +125,14 @@ YYSTREE
 Myylognode(int tok, int tpe)
 {
 	YYSTREE t;
-	if (yy_free + sizeof(yystree) > yy_size) {
-		size_t old_maxsize = yy_maxsize;
-		size_t new_size = yy_size + YYBUF_TILE;
-		if (yy_buf == NULL) {
-			yy_buf = (char*) GDKvmalloc(new_size, &yy_maxsize, 1);
-		} else {
-			if (new_size >= yy_maxsize) yy_maxsize += YYBUF_CACHE; 
-			yy_buf = (char*) GDKvmrealloc(yy_buf, yy_size, new_size, old_maxsize, &yy_maxsize, 1);
-		}
-		if (yy_buf) {
-			yy_size = new_size;
-               		MT_alloc_register(yy_buf, yy_maxsize, 'Y');
-  		} else {
+	if (yy_free + sizeof(yystree) > YYBUF_TILE) {
+		char **buf = (char**) GDKmalloc(YYBUF_TILE);
+		if (buf == NULL) {
 			GDKfatal("yyextend: out of memory.\n");
-        	}
+		}
+		buf[0] = yy_buf; 
+		yy_free = sizeof(char*); /* first bytes are the backpointer */
+		yy_buf = (char*) buf;
 	}
 	t = (YYSTREE) (yy_buf + yy_free);
         YYNODE(t, tok, tpe, 0, sizeof(yystree), YYMAXSONS, 1, 1);
@@ -229,10 +218,10 @@ Myynode(int tok, int tpe)
 YYSTREE
 Myy@1expand(YYSTREE yytree, YYSTREE y)
 {
-	YYSTREE n = yytree;
+	YYSTREE n;
 
 	if (y == NULL) return yytree;
-	while(YYOVERFLOW(n) != NULL) n = YYOVERFLOW(n);
+ 	yy@1getlast(yytree, n);
 
 	assert(n->extendable);
 	if (n->cnt == n->capacity){
@@ -240,6 +229,7 @@ Myy@1expand(YYSTREE yytree, YYSTREE y)
 		n->yysons[n->capacity] = m; 
 		m->cnt = 1;
 		m->yysons[0] = y;
+		yy@1setlast(yytree,m);
 	} else {
 		n->yysons[n->cnt] = y;
 		n->cnt++;
@@ -247,6 +237,12 @@ Myy@1expand(YYSTREE yytree, YYSTREE y)
 	return yytree;
 }
 @c
+#define yyloggetlast(yytree,n) n = yytree->free.delnode?yytree->free.delnode:yytree
+#define yygetlast(yytree,n) for(n=yytree; YYOVERFLOW(n) != NULL; n = YYOVERFLOW(n))
+
+#define yylogsetlast(yytree,n) yytree->free.delnode = n
+#define yysetlast(yytree,n) 
+
 @:Myyexpand()@
 @:Myyexpand(log)@
 
@@ -309,22 +305,17 @@ Myyfree(YYSTREE yytree)
 void
 Myylogclean(void)
 {
+	char** buf;
+
 	/* parsing done; free all node space allocated by the parser */
-	size_t i;
+	if (yy_buf == NULL) return;
+
 	/* clean up all allocated node contents (e.g. MIL syntax error) */
-	for(i=0; i < yy_free; i += sizeof(yystree)) {
-		YYSTREE t = (YYSTREE) (yy_buf + i);
-		YYKILL(t);
+	for(buf = (char**)yy_buf; buf[0]; buf = (char**)yy_buf) {
+		yy_buf = buf[0];
+		GDKfree(buf);
 	}
-	/* then consider the yytree nodes themselves */
-	if (yy_size >= YYBUF_CACHE) {
-		/* if we materialized a lot; flush all */
-		GDKvmfree(yy_buf, yy_size, yy_maxsize);
-		yy_maxsize = YYBUF_LIMIT;
-		yy_size = 0;
-		yy_buf = NULL;
-	}
-	yy_free = 0;
+	yy_free = sizeof(char*);
 }
 
 
