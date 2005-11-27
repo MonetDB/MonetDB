@@ -1650,7 +1650,7 @@ mapi_new(void)
 
 	/* then fill in some details */
 	mid->blocked = blocked;
-	mid->auto_commit = 0;
+	mid->auto_commit = 1;
 	mid->error = MOK;
 	mid->hostname = strdup("localhost");
 	mid->server = NULL;

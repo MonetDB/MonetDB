@@ -50,6 +50,10 @@ main(int argc, char **argv)
 	if (dbh == NULL || mapi_error(dbh))
 		die(dbh, hdl);
 
+	/* switch of autocommit */
+	if (sql && (mapi_setAutocommit(dbh, 0) != MOK || mapi_error(dbh)))
+		die(dbh,NULL);
+
 	for (i = 0; i < 20000; i++) {
 		if (sql)
 			snprintf(buf, 40, "select %d;", i);
