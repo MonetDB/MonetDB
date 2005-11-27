@@ -280,6 +280,7 @@ STATinit()
 static void
 STATexit()
 {
+	if(STAT_id_inuse ==0) return;
 	mal_set_lock(mal_contextLock, "statistics");
 	BBPreclaim(STAT_id_inuse );
 	BBPreclaim(STAT_id_nme );
@@ -301,6 +302,7 @@ the situation.
 static void
 STATcommit()
 {
+	if(STAT_id_inuse ==0) return;
 	mal_set_lock(mal_contextLock, "statistics");
 	BATcommit(STAT_id_nme);
 	BATsave(STAT_id_nme);
@@ -329,6 +331,7 @@ STATdrop(str nme)
 	ptr p;
 	int idx;
 
+	if(STAT_id_inuse ==0) return MAL_SUCCEED;
 	p = BUNfnd(BATmirror(STAT_id_nme), nme);
 	if (p == 0)
 		return throwMessage("statistics.drop", "BAT not enrolled");
@@ -425,6 +428,7 @@ STATforceUpdate(int *ret, str *nme)
 	int idx;
 
 	(void) ret;
+	if(STAT_id_inuse ==0) return MAL_SUCCEED;
 	b = BATdescriptor(idx = BBPindex(*nme));
 	if (b == 0)
 		return throwMessage("statistics.forceUpdate", "Could not find BAT\n");
@@ -488,6 +492,7 @@ STATdump(int *ret)
 	BAT *piv[MAXPARAMS];
 
 	(void) ret;
+	if(STAT_id_inuse ==0) return MAL_SUCCEED;
 	piv[0] = STAT_id_nme;
 	/* STAT_id_expire, */
 	/* STAT_id_stamp, */
@@ -538,7 +543,6 @@ STATprelude(int *ret)
 	box = openBox("statistics");
 	if (box == 0)
 		return throwMessage("statistics.prelude", "failed to open box");
-	STATinit();
 	STATupdate(ret);
 	return MAL_SUCCEED;
 }
