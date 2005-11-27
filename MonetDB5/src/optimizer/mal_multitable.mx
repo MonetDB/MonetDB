@@ -18,21 +18,15 @@
 @f mal_multitable
 @a M. Kersten
 @-
-@node Multi-Association Tables, Partitioned Database Optimizer,  Code Factorization, Optimizer toolkit
+@node Multi-Association Tables Optimizer, Partitioned Database Optimizer,  Code Factorization, Optimizer toolkit
 
-@+ Multi Association Tables
-A Multi Association Table (MAT) is an ordered collection of BATs,
-whose union represents a single (virtual) BAT.
-The MAT are useful in those cases where the a BAT becomes too large
-to keep it in memory for a long time, or where its size may inadvertedly
-move other BATs too disk. 
-It is also beneficial in applications were data is appended only.
-Then differential tables can be maintained, which leads to less
-IO activity and concurrency control overhead.
+@+ Multiple Association Tables 
+A Multi Association Table descriptor (MAT) defines an ordered collection 
+of type compatible BATs, whose union represents a single (virtual) BAT.
+The MAT may relate to a partitioned BAT, but could also be an arbitrary
+collection of temporary BATs within a program fragment.
 
-The MAT definition lives within the scope of a single block,
-which calls upon the front-end to manage their definition
-and persistency status.
+The MAT definition lives within the scope of a single block.
 The MAT optimizer simply expands the plan to
 deal with its components on an individual basis.
 Only when a blocking or aggregate operator is encounted,
@@ -121,6 +115,7 @@ debugging.
 #define _MAL_MERGETABLE_
 #include "mal_optimizer.h"
 #include "mal_builder.h"
+#include "../modules/mal/pbm.h"
 
 opt_export str MToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 /* #define DEBUG_MAL_MERGETABLE     show partial result */
@@ -130,13 +125,16 @@ opt_export str MToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #include "mal_multitable.h"
 
 static str matRef;
+static str bbpRef;
 static str packRef;
 static str newRef;
 static str batRef;
 static str selectRef;
 static str likeselectRef;
 static str uselectRef;
+static str bindRef;
 static str joinRef;
+static str expandRef;
 static str semijoinRef;
 static str aggrRef;
 static str packRef;
@@ -160,6 +158,8 @@ static str minRef;
 static void MTinit(){
 	if(matRef == NULL){
 		matRef = putName("mat",3);
+		bbpRef = putName("bbp",3);
+		bindRef = putName("bind",4);
 		packRef = putName("pack",4);
 		calcRef = putName("calc",4);
 		newRef = putName("new",3);
@@ -172,6 +172,7 @@ static void MTinit(){
 		selectRef = putName("select",6);
 		likeselectRef = putName("likeselect",10);
 		uselectRef = putName("uselect",7);
+		expandRef = putName("expand",6);
 		joinRef = putName("join",4);
 		semijoinRef = putName("semijoin",8);
 		aggrRef = putName("aggr",4);
@@ -252,6 +253,38 @@ MToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			mvar[mtop] = getArg(p,0);
 			mtop++;
 			pushInstruction(mb,p);
+			continue;
+		}
+@-
+A mat.expand() operation looks up the components of the partitioned
+bat and prepares the instruction to expand it.
+@c
+		if( (moduleId(p)== matRef && functionId(p)==expandRef) &&
+			isConstant(mb,getArg(p,1)) && 
+			getVarType(mb,getArg(p,1))== TYPE_str){
+			openBox("pbm");
+			k= PBMfindPBAT(getVarConstant(mb,getArg(p,1)).val.sval);
+			pushInstruction(mb,p);
+			p= copyInstruction(p);
+			p->argc--;
+			for(; k>=0; k= partitions[k].next){
+				r = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(r,bbpRef);
+				setFunctionId(r,bindRef);
+				j= newTmpVariable(mb, partitions[k].type );
+				setVarUsed(mb,j,TRUE);
+				setVarInitialized(mb,j);
+				getArg(r,0)= j;
+				pushStr(mb,r,BBPname(partitions[k].bid));
+				pushInstruction(mb,r);
+				pushArgument(mb,p,j);
+			}
+			functionId(p)=newRef;
+			pushInstruction(mb,p);
+			mat[mtop]= p;
+			mvar[mtop] = getArg(p,0);
+			mtop++;
+			actions++;
 			continue;
 		}
 @-

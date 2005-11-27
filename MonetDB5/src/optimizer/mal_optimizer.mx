@@ -1028,8 +1028,8 @@ Such limitations on the implementation are indicated where appropriate.
 * Multiplex Compiler::
 * Garbage Collector::
 * Code Factorization::
-* Multi-Association Tables::
-* Partitioned Database Optimizer::
+* Multi-Association Tables ::
+* Partitioned Databases::
 * Strength Reduction::
 * Costmodels::
 * Variable Stack Reduction::
