@@ -1,3 +1,4 @@
+start TRANSACTION;
 create table a (b integer);
 insert into a values(1);
 insert into a values(2);

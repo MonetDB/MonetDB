@@ -6,3 +6,5 @@ insert into t2 values (1, 1);
 
 select * from t1;
 select * from t2;
+drop table t2;
+drop table t1;

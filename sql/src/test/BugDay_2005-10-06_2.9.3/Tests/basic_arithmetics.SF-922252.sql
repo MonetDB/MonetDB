@@ -10,3 +10,4 @@ select 1 from my_table where 1<2;
 select 1 from my_table where true;
 select '1' where 1 = 0;
 select * from my_table where 1 = 0;
+drop table my_table;

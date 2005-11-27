@@ -21,8 +21,6 @@ Over..
 # 23:01:40 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=41591  < index_management.SF-927326.sql
 # 23:01:40 >  
 
-# 4 # querytype
-[ 1	]
 # 6 # querytype
 # 6 # querytype
 # 6 # querytype

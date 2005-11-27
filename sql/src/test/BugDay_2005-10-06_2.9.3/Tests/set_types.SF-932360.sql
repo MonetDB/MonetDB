@@ -1,9 +1,5 @@
 set reply_size = 1;
-set auto_commit = false;
 set reply_size = true;
-ROLLBACK;
-set auto_commit = 60;
-ROLLBACK;
+set current_timezone = 60;
 set reply_size = false;
-ROLLBACK;
-set auto_commit = 0;
+set current_timezone = 0;

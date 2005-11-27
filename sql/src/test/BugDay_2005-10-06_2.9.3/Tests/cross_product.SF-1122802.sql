@@ -9,3 +9,5 @@ insert into t2 values (1),(2),(3),(4),(5),(6),(7),(8),(9),(10),(11),
 select count(*) from t1;
 select count(*) from t2;
 select count(*) from t1, t2;
+drop table t1;
+drop table t2;

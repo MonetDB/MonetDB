@@ -1,4 +1,3 @@
-set auto_commit=true;
 CREATE TABLE my_table ( my_column INT );
 CREATE INDEX my_index ON my_table(my_column);
 CREATE INDEX my_index ON my_table(my_column);
@@ -10,3 +9,4 @@ INSERT INTO my_table VALUES (1);
 INSERT INTO my_table VALUES (1);
 INSERT INTO my_table VALUES (2);
 SELECT * FROM my_table;
+drop table my_table;

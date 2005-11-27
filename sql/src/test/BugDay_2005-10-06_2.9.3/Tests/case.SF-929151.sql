@@ -1,4 +1,3 @@
-set auto_commit=true;
 
 create table t(i int);
 insert into t values(0);
@@ -23,3 +22,5 @@ when 3 then 'session temporary table'
 when 4 then 'temporary table'
 end
 from t;
+
+drop table t;
