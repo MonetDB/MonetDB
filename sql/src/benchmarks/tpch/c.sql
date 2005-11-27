@@ -1,3 +1,4 @@
+START TRANSACTION;
 CREATE TABLE region (r_regionkey INT NOT NULL, r_name VARCHAR(25) NOT NULL, r_comment VARCHAR(152) NOT NULL) ;
 CREATE TABLE nation (n_nationkey INT NOT NULL, n_name VARCHAR(25) NOT NULL, n_regionkey INT NOT NULL, n_comment VARCHAR(152) NOT NULL) ;
 CREATE TABLE supplier (s_suppkey INT NOT NULL, s_name VARCHAR(25) NOT NULL, s_address VARCHAR(40) NOT NULL, s_nationkey INT NOT NULL, s_phone VARCHAR(15) NOT NULL, s_acctbal FLOAT NOT NULL, s_comment VARCHAR(101) NOT NULL) ;

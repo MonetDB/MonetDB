@@ -1,4 +1,5 @@
 -- Testing server 'MySQL 3.23.40' at 2001-08-20 14:37:48
+START TRANSACTION;
 
 create table onek (unique1 int NOT NULL,unique2 int NOT NULL,two int,four int,ten int,twenty int,hundred int NOT NULL,thousand int,twothousand int,fivethous int,tenthous int,odd int,even int,stringu1 char(16),stringu2 char(16),string4 char(16),UNIQUE (unique1),UNIQUE (unique2));-- ,INDEX hundred1 (hundred));
 create table tenk1 (unique1 int NOT NULL,unique2 int NOT NULL,two int,four int,ten int,twenty int,hundred int NOT NULL,thousand int,twothousand int,fivethous int,tenthous int,odd int,even int,stringu1 char(16),stringu2 char(16),string4 char(16),UNIQUE (unique1),UNIQUE (unique2));-- ,INDEX hundred2 (hundred));

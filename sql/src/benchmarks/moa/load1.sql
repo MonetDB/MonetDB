@@ -1,3 +1,4 @@
+START TRANSACTION;
 CREATE TABLE Classification ( ClassificationPK decimal(11) DEFAULT '0' NOT NULL, Language varchar(255), CountryCode varchar(255), ParentalGuidanceFK decimal(11), PRIMARY KEY (ClassificationPK));
 INSERT INTO Classification VALUES (259,'us','us',4);
 INSERT INTO Classification VALUES (284,'us','us',3);

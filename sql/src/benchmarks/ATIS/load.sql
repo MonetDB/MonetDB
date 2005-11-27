@@ -1,3 +1,4 @@
+START TRANSACTION;
 create table aircraft (aircraft_code char(3) NOT NULL,aircraft_type char(64) NOT NULL,engines decimal(1) NOT NULL,category char(10) NOT NULL,wide_body char(3) NOT NULL,wing_span float(6,2) NOT NULL,length1 float(6,2) NOT NULL,weight integer NOT NULL,capacity decimal(3) NOT NULL,pay_load integer NOT NULL,cruising_speed decimal(5) NOT NULL,range_miles decimal(5) NOT NULL,pressurized char(3) NOT NULL,PRIMARY KEY (aircraft_code));
 create table airline (airline_code char(2) NOT NULL,airline_name char(64) NOT NULL,notes char(38) NOT NULL,PRIMARY KEY (airline_code));
 create table airport (airport_code char(3) NOT NULL,airport_name char(40) NOT NULL,location char(36) NOT NULL,state_code char(2) NOT NULL,country_name char(25) NOT NULL,time_zone_code char(3) NOT NULL,PRIMARY KEY (airport_code));

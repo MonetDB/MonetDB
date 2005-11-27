@@ -7,4 +7,3 @@ CREATE TABLE adttest (
         blobdata BLOB,
         PRIMARY KEY (id)
         );
-COMMIT;

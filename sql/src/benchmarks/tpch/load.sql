@@ -1,3 +1,4 @@
+START TRANSACTION;
 COPY 5 RECORDS INTO region from 'PWD/region.tbl' USING DELIMITERS '|', '|\n';
 COPY 25 RECORDS INTO nation from 'PWD/nation.tbl' USING DELIMITERS '|', '|\n';
 COPY 100 RECORDS INTO supplier from 'PWD/supplier.tbl' USING DELIMITERS '|', '|\n';
