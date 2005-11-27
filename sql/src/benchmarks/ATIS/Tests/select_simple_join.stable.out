@@ -5,13 +5,19 @@ stdout of test 'select_simple_join` in directory 'src/benchmarks/ATIS` itself:
 # 21:13:03 >  Mtimeout -timeout 180 Mserver --config=/ufs/niels/.monet.conf --debug=0   --set monet_prompt= --dbname=Tests_src_benchmarks_ATIS --set sql_port=54799 /ufs/niels/data/sql/Linux/share/sql/catalog.mil /ufs/niels/data/sql/Linux/share/sql/sqlserver.mil ; echo  ; echo Over..
 # 21:13:03 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# config:/ufs/niels/scratch/Linux-x86_64/build-m5/etc/MonetDB5.conf
+# dbfarm:/ufs/niels/scratch/Linux-x86_64/build-m5/var/MonetDB5/dbfarm
+# dbname:mTests_src_benchmarks_ATIS
+# Visit http://monetdb.cwi.nl/ for further information.
+#Ready to accept connections on koala.ins.cwi.nl:47130
+
 printf("\nReady.\n");
 
 Ready.
-# [ 9 10 ]
+
 quit();
 
 Over..
@@ -333,8 +339,8 @@ Over..
 [ 112037,	"MCDONNELL DOUGLAS (MD-80 SERIES)"	]
 [ 112038,	"BOEING 727 PASSENGER (ALL SERIES)"	]
 [ 112039,	"BOEING 727 PASSENGER (ALL SERIES)"	]
-[ 112041,	"BOEING 727-200 (ALL SERIES)"	]
 [ 112040,	"MCDONNELL DOUGLAS (MD-80 SERIES)"	]
+[ 112041,	"BOEING 727-200 (ALL SERIES)"	]
 [ 112042,	"MCDONNELL DOUGLAS (MD-80 SERIES)"	]
 [ 112043,	"BOEING 727 PASSENGER (ALL SERIES)"	]
 [ 112044,	"MCDONNELL DOUGLAS (MD-80 SERIES)"	]
@@ -362,8 +368,8 @@ Over..
 [ 112514,	"BOEING 737-300"	]
 [ 112515,	"BOEING 727-200 (ALL SERIES)"	]
 [ 112516,	"MCDONNELL DOUGLAS DC8 (ALL 60/70 SERIES)"	]
-[ 112519,	"BOEING 737-300"	]
 [ 112518,	"BOEING 727-200 (ALL SERIES)"	]
+[ 112519,	"BOEING 737-300"	]
 [ 112520,	"BOEING 727 PASSENGER (ALL SERIES)"	]
 [ 112524,	"BOEING 757-200 PASSENGER"	]
 [ 112525,	"BOEING 727-200 (ALL SERIES)"	]
@@ -389,8 +395,8 @@ Over..
 [ 112807,	"MCDONNELL DOUGLAS (MD-80 SERIES)"	]
 [ 112808,	"MCDONNELL DOUGLAS (MD-80 SERIES)"	]
 [ 112864,	"BOEING 767 (ALL SERIES)"	]
-[ 112867,	"BOEING 727-200 (ALL SERIES)"	]
 [ 112866,	"MCDONNELL DOUGLAS (MD-80 SERIES)"	]
+[ 112867,	"BOEING 727-200 (ALL SERIES)"	]
 [ 112869,	"MCDONNELL DOUGLAS DC10 (ALL SERIES)"	]
 [ 112870,	"BOEING 757-200 PASSENGER"	]
 [ 112872,	"BOEING 767 (ALL SERIES)"	]
@@ -425,8 +431,8 @@ Over..
 [ 113009,	"BOEING 727-200 (ALL SERIES)"	]
 [ 113010,	"MCDONNELL DOUGLAS (MD-80 SERIES)"	]
 [ 113011,	"MCDONNELL DOUGLAS (MD-80 SERIES)"	]
-[ 113013,	"BOEING 727-200 (ALL SERIES)"	]
 [ 113012,	"MCDONNELL DOUGLAS (MD-80 SERIES)"	]
+[ 113013,	"BOEING 727-200 (ALL SERIES)"	]
 [ 113498,	"MCDONNELL DOUGLAS (MD-80 SERIES)"	]
 [ 113499,	"BOEING 727 PASSENGER (ALL SERIES)"	]
 [ 113500,	"MCDONNELL DOUGLAS (MD-80 SERIES)"	]
@@ -628,8 +634,8 @@ Over..
 [ 144148,	"MCDONNELL DOUGLAS DC10 (ALL SERIES)"	]
 [ 144149,	"BOEING 737-300"	]
 [ 144150,	"MCDONNELL DOUGLAS DC8 (ALL 60/70 SERIES)"	]
-[ 144152,	"BOEING 737-300"	]
 [ 144151,	"BOEING 727-200 (ALL SERIES)"	]
+[ 144152,	"BOEING 737-300"	]
 [ 144153,	"BOEING 737 PASSENGER (ALL 200/200C SERIES)"	]
 [ 144155,	"BOEING 757-200 PASSENGER"	]
 [ 144156,	"BOEING 767 (ALL SERIES)"	]
