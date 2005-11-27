@@ -60,8 +60,8 @@ exit (go,i);	# 13  (go:bit)(i:int)
     partitions.dump();	# 20 BPTdump (_31:void)
 end main;	# 21  
 ptop=2 plimit=1024
-[0] bid=13 pid=13 f=0, l=10 prv=-1 nxt=1 cap=-1
-[1] bid=13 pid=14 f=10, l=20 prv=0 nxt=-1 cap=-1
+[0] bid=4 pid=4 f=0, l=10 prv=-1 nxt=1 cap=-1
+[1] bid=4 pid=5 f=10, l=20 prv=0 nxt=-1 cap=-1
 !ERROR: MALexception:partitions.deposit:BAT group unknown
 #
 

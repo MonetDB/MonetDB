@@ -1,0 +1,4 @@
+# clean up the BAT partition manager pool
+	pbm.open();
+	pbm.discard();
+	pbm.close();

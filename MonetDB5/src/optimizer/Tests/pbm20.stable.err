@@ -1,15 +1,15 @@
-stderr of test 'bpm01` in directory 'src/optimizer` itself:
+stderr of test 'pbm20` in directory 'src/optimizer` itself:
 
 
-# 23:39:26 >  
-# 23:39:26 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39509 --set sql_port=40333 --set xquery_port=56914 --set monet_prompt= --trace --dbname=mTests_src_optimizer  bpm01.mal < /dev/null
-# 23:39:26 >  
+# 23:24:12 >  
+# 23:24:12 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=35444 --set sql_port=44153 --set xquery_port=51797 --set monet_prompt= --trace --dbname=mTests_src_optimizer  pbm20.mal < /dev/null
+# 23:24:12 >  
 
 #warning: trace option not yet supported
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
 # builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
 # builtin opt 	gdk_version = 4.9.3
-# builtin opt 	monet_pid = 12017
+# builtin opt 	monet_pid = 6399
 # builtin opt 	prefix = /ufs/mk/opensource/MonetDB/Linux
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -60,13 +60,13 @@ stderr of test 'bpm01` in directory 'src/optimizer` itself:
 # cmdline opt 	monet_mod_path = /ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB
 # cmdline opt 	gdk_dbfarm = /ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # cmdline opt 	sql_logdir = /ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log
-# cmdline opt 	mapi_port = 39509
-# cmdline opt 	sql_port = 40333
-# cmdline opt 	xquery_port = 56914
+# cmdline opt 	mapi_port = 35444
+# cmdline opt 	sql_port = 44153
+# cmdline opt 	xquery_port = 51797
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_optimizer
 
-# 23:39:26 >  
-# 23:39:26 >  Done.
-# 23:39:26 >  
+# 23:24:12 >  
+# 23:24:12 >  Done.
+# 23:24:12 >  
 

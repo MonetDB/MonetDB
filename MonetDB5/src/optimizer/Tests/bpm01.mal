@@ -1,8 +1,0 @@
-# extract the definition by the optimizer
-	  d:= bpm.take("Sales2005","Sales200506");    
-#   _21:= bpm.take("Sales2005","Sales200506");
-#   _22:= bpm.take("Sales2005","Sales200507");
-#   _23:= bpm.take("Sales2005","Sales200508");
-#   d:= mat.new(_21,_22,_23);
-	optimizer.multitable();
-	mdb.list();
