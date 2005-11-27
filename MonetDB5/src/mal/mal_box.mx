@@ -711,6 +711,7 @@ saveBox(Box box, int flag)
 
 @-
 Loading a box is equivalent to reading a script.
+Beware to execute it into its own context.
 @c
 #ifndef R_OK
 #define R_OK 4
@@ -730,7 +731,10 @@ loadBox(str name)
 	stream_printf(GDKout, "loadBox:start loading the file %s\n", boxfile);
 #endif
 	if (access(boxfile, R_OK) == 0) {
-		malInclude(getClient(), boxfile, 0, 0);
+		Client child= forkClient(getClient());
+		defaultScenario(child);
+		malInclude(child, boxfile, 0, 0);
+		killClient(child);
 #ifdef DEBUG_MAL_BOX
 		stream_printf(GDKout, "loadBox:loaded the file %s\n", boxfile);
 #endif
