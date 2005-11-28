@@ -100,19 +100,6 @@ comment "Initialize counters module (to be used on initial load, only)";
 
 counters.init();
 @mil
-PROC counter2str(counter c) : str {
-	var b := counter2bat(c);
-	if (b.count() < 8) {
-		return sprintf("%10lld us %10lld cy",
-				b.fetch(2),b.fetch(4));
-	} else {
-		return sprintf("%10lld us %10lld cy %10lld e%02d %10lld e%02d %10lld eX",
-				b.fetch(2),b.fetch(4),
-				b.fetch(5),event_number(b.reverse().fetch(5)),
-				b.fetch(6),event_number(b.reverse().fetch(6)),
-				b.fetch(7));
-	}
-}
 @+ Implementation
 @h
 #include "gdk.h"
