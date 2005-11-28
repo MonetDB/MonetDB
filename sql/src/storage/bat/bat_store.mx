@@ -2546,6 +2546,7 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 					else
 						ok = SQL_ERR;
 				}
+				fb->rtime = fb->wtime = 0;
 			}
 		}
 	}
@@ -2952,6 +2953,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			}
 
 			cur = temp_descriptor(oc->bat.bid);
+			cc->bat.bid = oc->bat.bid;
 			if (ft->cleared && ttr == gtrans) {
 
 				BATclear(cur);
@@ -3016,6 +3018,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					continue;
 	
 				cur = temp_descriptor(oi->bat.bid);
+				ci->bat.bid = oi->bat.bid;
 				if (ft->cleared && ttr == gtrans) {
 
 					BATclear(cur);
@@ -3054,6 +3057,8 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				bat_destroy(cur);
 			}
 		}
+		ft->cleared = 0;
+		ft->base.rtime = ft->base.wtime = 0;
 	}
 	return ok;
 }
@@ -3794,7 +3799,20 @@ sql_trans_clear_table(sql_trans *tr, sql_table *t)
 			BATclear(b);
 			bat_destroy(b);
 		}
-		/* temp's do not have indices */
+		/* temp's do not have indices, but NEW may have idxs */
+		if (t->idxs.set) {
+			for (n = t->idxs.set->h; n; n = n->next) {
+				sql_idx *ci = n->data;
+
+				ci->base.wtime = tr->stime;
+				if (ci->bat.ibid) {
+					b = temp_descriptor(ci->bat.ibid);
+					BATclear(b);
+					BATcommit(b);
+					bat_destroy(b);
+				}
+			}
+		}
 	} else {
 		BAT *b;
 
