@@ -1,8 +1,0 @@
-@appendix Application Interfaces
-To be included
-@menu
-* MAL syntax ::
-* Installation ::
-* The application interfaces::
-@end menu
-

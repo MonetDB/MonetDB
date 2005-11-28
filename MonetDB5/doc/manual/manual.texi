@@ -5,7 +5,7 @@
 
 @c environment
 @set VERSION 5.0
-@set UPDATED Nov 26, 2005
+@set UPDATED Nov 28, 2005
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual
@@ -140,8 +140,8 @@ Last updated: @value{UPDATED}
 * Multiplex Compiler::
 * Garbage Collector::
 * Code Factorization::
-* Multi-Association Tables::
-* Partitioned Database Optimizer::
+* Multi-Association Tables ::
+* Partitioned Databases::
 * Strength Reduction::
 * Costmodels::
 * Variable Stack Reduction::
@@ -214,12 +214,13 @@ Last updated: @value{UPDATED}
 @section Console Interface
 @include mal_readline.bdy.texi
 @section MapiClient
+
 @section Application Programming Interfaces
-Give a brief introduction to Mapi, JDBC, ODBC,Perl....
-@subsection PHP
-@subsection JDBC
-@subsection ODBC
-@subsection Perl
+@include Assets/APIs.texi
+@section Graphical Data Management Tools
+@include Assets/DBA-GUIs.texi
+@include Assets/AquaDataStudio.texi
+@include Assets/iSQL-Viewer.texi
 
 @node MonetDB Assembler Language, MAL instructions, Application Interfaces , Top
 @include mal_instruction.bdy.texi

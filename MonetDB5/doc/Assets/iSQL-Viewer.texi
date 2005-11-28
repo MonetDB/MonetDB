@@ -1,0 +1,25 @@
+@subsection iSQL-Viewer
+Another open-source graphical user interface is the
+@url{http://isql.sourceforge.net/,iSQL-Viewer}.
+It runs on any Java-enabled platform.
+
+Once installed and started you have the option define
+a service (or let the system find one itself).
+[autodetect not necessarily works]
+
+The Tools>Service choice brings up a form to provide
+the detail for the MonetDB connections. Select the option
+to define a local service definition
+Enter the following monetdb user
+@table @code
+@item Connection Name
+MonetDB SQL
+@item JDBC Driver
+@emph{Unfortunately, our driver is not yet part of the list}
+@end table
+In the Tools>Service Manager>Resource pannel enter the
+location of the MonetDB JDBC driver
+C:\Program Files\MonetDB\share\MonetDB\lib\MonetDB_JDBC.jar.
+
+Documentation and tutorial are available on their
+@url{ http://isqlviewer.com,website}.
