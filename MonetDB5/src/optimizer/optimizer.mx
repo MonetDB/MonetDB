@@ -132,6 +132,12 @@ pattern multitable(mod:str, fcn:str):str
 address QOTMToptimizerCALL
 comment "Resolve the multi-table definitions";
 
+pattern generators():str 
+address QOTBGoptimizer;
+pattern generators(mod:str, fcn:str):str 
+address QOTBGoptimizerCALL
+comment "Resolve the multi-table definitions";
+
 pattern setDebug():void 
 address QOTdebugOptimizers;
 pattern clrDebug():void 
@@ -220,6 +226,7 @@ optimizer.prelude();
 #include "mal_macro.h"
 #include "mal_reduce.h"
 #include "mal_multitable.h"
+#include "mal_generators.h"
 
 opt_export str QOTMEoptimizerSymbol(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 opt_export str QOTMEoptimizerModule(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -338,6 +345,7 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 @:QOTC(PH, "peephole")@
 @:QOTC(RM, "costEstimation")@
 @:QOTC(MT, "multitable")@
+@:QOTC(BG, "generators")@
 @:QOTC(MR, "reduce")@
 @:QOTC(CO, "coercions")@
 

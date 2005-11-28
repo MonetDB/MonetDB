@@ -45,7 +45,11 @@ pattern print(b:bat[:any_1,:any_2]...):void
 address MATprint;
 
 command expand(grp:str):bat[:any_1,:any_2]
-address MATexpand
+address MATdummy
+comment "Replace the group by its components";
+
+command iterator(grp:str):bat[:any_1,:any_2]
+address MATdummy
 comment "Replace the group by its components";
 
 command info(g:str, e:str):bat[:any_1,:any_2]
@@ -112,7 +116,7 @@ MATprint(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 str
-MATexpand(int *ret, str *grp){
+MATdummy(int *ret, str *grp){
 	(void) grp; (void) ret;
 	return MAL_SUCCEED;
 }

@@ -135,6 +135,9 @@ command hasMoreElements()(:int,:str,:str)
 address PBMhasMoreElementsBase
 comment "Locate next element in the partition box";
 
+command generator(s:str):bat[:any_1,:any_2]
+address PBMdummy
+comment "Place holder for generator optimizer";
 @-
 In most situations we would like to iterator over
 the components of a single PBAT. 
@@ -817,6 +820,12 @@ PBMcompress(int *ret, str *grp)
 		o = partitions[i].hmax.val.oval += BATcount(b) - 1;
 		BBPunfix(b->batCacheid);
 	}
+	return MAL_SUCCEED;
+}
+
+str
+PBMdummy(int *ret, str *grp){
+	(void)ret; (void) grp;
 	return MAL_SUCCEED;
 }
 @}
