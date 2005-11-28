@@ -2008,6 +2008,17 @@ AM_CONDITIONAL(HAVE_PEAR, test x"$have_pear" != xno)
 
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
+
+have_problem=no
+if test "x$have_pthread" = xno; then
+	AC_MSG_NOTICE("MonetDB requires libpthread (try --with-pthread)")
+	have_problem=yes
+fi
+
+if test "x$have_problem" != xno; then
+	AC_MSG_ERROR("A required package is missing")
+fi
+
 ]) dnl AC_DEFUN AM_MONETDB_LIBS
 
 AC_DEFUN([AM_MONETDB_CLIENT],[
@@ -2046,3 +2057,4 @@ fi
 AC_SUBST(MEL)
 
 ]) dnl AC_DEFUN AM_MONETDB_CLIENT
+
