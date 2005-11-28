@@ -714,8 +714,6 @@ extern int yylex(void);
 
 #undef yyerror
 #define yyerror(X)	ll_parserror(NULL);
-#define yylogkill(t)	((t)->yyval.vtype = TYPE_void)
-#define yylogfree(t)
 
 extern YYSTREE yysugar(YYSTREE node);
 %}
@@ -819,7 +817,6 @@ session:
 			lt = YYOVERFLOW(lt);
 		}
 		$$ = 0;
-		yylogfree($4);
 	}
     ;
 
@@ -1012,48 +1009,41 @@ variable_reference:
     ;
 
 proc_definition:
-	TOK_PROCDEF proc_name proc_header
+	TOK_PROCDEF { Myylogpush(); } proc_name proc_header
 	proc_assign { $$ = NULL; ll_templates = ll_modcmds = 1; } sequential_block
 
 	{
-		YYSTREE sig = (YYSTREE) ($3 ? $3->yyval.val.pval : NULL);
+		YYSTREE sig = (YYSTREE) ($4 ? $4->yyval.val.pval : NULL);
 		YYSTREE ret = (YYSTREE) (sig ? sig->yyval.val.pval : NULL);
-		int params = ($3 && $3->cnt > 0);
+		int params = ($4 && $4->cnt > 0);
 
-		if (params || (($6->token != TOK_SEQ) &&
-			       ($6->token != TOK_SEQBLOCK) &&
-			       ($6->token != TOK_PARBLOCK))) {
+		if (params || (($7->token != TOK_SEQ) &&
+			       ($7->token != TOK_SEQBLOCK) &&
+			       ($7->token != TOK_PARBLOCK))) {
 			$$ = Myylognode(params ? TOK_SEQBLOCK : TOK_SEQ, 0);
 			if (params)
-				Myylogexpand($$, $3);
-			Myylogexpand($$, $6);
+				Myylogexpand($$, $4);
+			Myylogexpand($$, $7);
 		} else {
-			$$ = $6;
+			$$ = $7;
 		}
-		if ($3 && $3->cnt == 0) {
-			yylogfree($3);
-		}
-		$$->yyval = $2->yyval;
-		$2->yyval.vtype = TYPE_void;
+		$$->yyval = $3->yyval;
+		$3->yyval.vtype = TYPE_void;
 
 		/* DIRECT: insert the new proc */
-		$$ = Myylogout($$);
-		TBL_newproc(ll_client, $2->yyval.val.sval, ll_parent_module(), $$, sig, ret);
-		if (sig) {
-			yylogfree(sig);
-		}
-		if (ret) {
-			yylogfree(ret);
-		}
+		$$ = Myylogout($$); 
+		TBL_newproc(ll_client, $3->yyval.val.sval, ll_parent_module(), $$, sig, ret);
 		ll_modcmds = ll_templates = 0;
+		Myylogpop();
 	}
-    |	TOK_PROCDEF proc_name ';'
+    |	TOK_PROCDEF  { Myylogpush();} proc_name ';'
 	{
 		$$ = NULL;
-		$2 = Myylogout($2);
-		TBL_newproc(ll_client, $2->yyval.val.sval, ll_parent_module(), $2, $2, NULL);
-		$2->token = TOK_CONSTANT;
-		$2->yyval.vtype = TYPE_int;
+		$3 = Myylogout($3); 
+		TBL_newproc(ll_client, $3->yyval.val.sval, ll_parent_module(), $3, $3, NULL);
+		$3->token = TOK_CONSTANT;
+		$3->yyval.vtype = TYPE_int;
+		Myylogpop();
 	}
     |	TOK_UNDEF TOK_IDENT ';'
 	{   $$ = NULL; TBL_delproc(ll_client, $2->yyval.val.sval); }
@@ -1174,8 +1164,6 @@ mel_type:
 		}
 		if ($$ == NULL) {
 			Myylogexpand($$ = $1, $2);
-		} else {
-			yylogfree($1);
 		}
 	}
     |	mel_other
@@ -1207,7 +1195,6 @@ mel_other:
 		$$ = $1;
 		if ($2) {
 			$$->yyval = $2->yyval;
-			yylogfree($2);
 		}
 	}
     ;
@@ -1227,7 +1214,6 @@ mel_return:
 	':' mel_type
 	{
 		if ($2->token == TOK_ANY && $2->yyval.val.ival == 0) {
-			yylogfree($2);
 			$2 = NULL;
 		}
 		$$ = $2;
@@ -1340,7 +1326,7 @@ command_or_ident_expression:
 	{
 		$2->token = $1->token;
 		$2->yyval = $1->yyval;
-		yylogkill($1);
+		($1)->yyval.vtype = TYPE_void;
 		$$ = $2;
 	}
     |	command_or_operator_or_ident argument_list
@@ -1348,7 +1334,7 @@ command_or_ident_expression:
 		YYSTREE t1 = $1, t2 = $2;
 		t2->yyval = t1->yyval;
 		t2->token = t1->token == TOK_ASSIGNOP ? TOK_ASSIGNOP : TOK_FUNCTION;
-		yylogkill(t1);
+		t1->yyval.vtype = TYPE_void;
 		$$ = t2;
 	}
     |	TOK_ATOM argument_list_nocheck
@@ -1356,7 +1342,7 @@ command_or_ident_expression:
 		YYSTREE t1 = $1, t2 = $2;
 		t2->yyval = t1->yyval;
 		t2->token = TOK_FUNCTION;
-		yylogkill(t1);
+		t1->yyval.vtype = TYPE_void;
 		$$ = t2;
 	}
     ;
@@ -1366,7 +1352,7 @@ command_expression:
 	{
 		$2->token = $1->token;
 		$2->yyval = $1->yyval;
-		yylogkill($1);
+		($1)->yyval.vtype = TYPE_void;
 		$$ = $2;
 	}
     |	command_or_operator argument_list
@@ -1374,7 +1360,7 @@ command_expression:
 		YYSTREE t1 = $1, t2 = $2;
 		t2->yyval = t1->yyval;
 		t2->token = t1->token == TOK_ASSIGNOP ? TOK_ASSIGNOP : TOK_FUNCTION;
-		yylogkill(t1);
+		t1->yyval.vtype = TYPE_void;
 		$$ = t2;
 	}
     |	TOK_ATOM argument_list_nocheck
@@ -1382,7 +1368,7 @@ command_expression:
 		YYSTREE t1 = $1, t2 = $2;
 		t2->yyval = t1->yyval;
 		t2->token = TOK_FUNCTION;
-		yylogkill(t1);
+		t1->yyval.vtype = TYPE_void;
 		$$ = t2;
 	}
     ;

@@ -33,6 +33,8 @@ within a YACC environment.
 /* temporary tree construction in parser (no locks needed!!) */
 m_export YYSTREE Myylognode(int tok, int tpe);
 m_export YYSTREE Myylogexpand(YYSTREE parent, YYSTREE child);
+m_export void    Myylogpush(void);
+m_export void    Myylogpop(void);
 m_export void    Myylogclean(void);
 
 /* bulk obtaining executable (chunk-compressed) trees */
@@ -57,9 +59,16 @@ m_export void    Myyprint(YYSTREE t);
 #include <ctype.h>
 #include "monet_parse.h"
 
-#define YYBUF_TILE 65520
+#define YYBUF_TILE (1<<18)
 static char*  yy_buf = NULL;
 static size_t yy_free = YYBUF_TILE;
+
+#define yyloggetlast(yytree,n) n = yytree->free.delnode?yytree->free.delnode:yytree
+#define yygetlast(yytree,n) for(n=yytree; YYOVERFLOW(n) != NULL; n = YYOVERFLOW(n))
+
+#define yylogsetlast(yytree,n) yytree->free.delnode = n
+#define yysetlast(yytree,n) 
+
 
 @- Node Allocation
 
@@ -126,7 +135,8 @@ Myylognode(int tok, int tpe)
 {
 	YYSTREE t;
 	if (yy_free + sizeof(yystree) > YYBUF_TILE) {
-		char **buf = (char**) GDKmalloc(YYBUF_TILE);
+		size_t bufsize = YYBUF_TILE;
+		char **buf = (char**) GDKvmalloc(bufsize, &bufsize, 1);
 		if (buf == NULL) {
 			GDKfatal("yyextend: out of memory.\n");
 		}
@@ -135,7 +145,7 @@ Myylognode(int tok, int tpe)
 		yy_buf = (char*) buf;
 	}
 	t = (YYSTREE) (yy_buf + yy_free);
-        YYNODE(t, tok, tpe, 0, sizeof(yystree), YYMAXSONS, 1, 1);
+        YYNODE(t, tok, tpe, 0, sizeof(yystree), YYMAXSONS, 0, 1);
 	yy_free += sizeof(yystree);
 	return t;
 }
@@ -237,12 +247,6 @@ Myy@1expand(YYSTREE yytree, YYSTREE y)
 	return yytree;
 }
 @c
-#define yyloggetlast(yytree,n) n = yytree->free.delnode?yytree->free.delnode:yytree
-#define yygetlast(yytree,n) for(n=yytree; YYOVERFLOW(n) != NULL; n = YYOVERFLOW(n))
-
-#define yylogsetlast(yytree,n) yytree->free.delnode = n
-#define yysetlast(yytree,n) 
-
 @:Myyexpand()@
 @:Myyexpand(log)@
 
@@ -302,22 +306,55 @@ Myyfree(YYSTREE yytree)
 	}
 }
 
-void
-Myylogclean(void)
+char** yy_sync = NULL;
+size_t yy_backup = sizeof(char*);
+
+void 
+Myylogpush(void) 
 {
-	char** buf;
+	/* set an allocation syncpoint; next Myylogclean frees only up to here */
+        if (yy_sync) GDKfatal("Myylogpush called twice without Myylogpop\n");
+	yy_sync = (char**) yy_buf;
+	yy_backup = yy_free; /* remember where we where */
+}
+
+void
+Myylogpop(void)
+{
+	char **cur = (char**) yy_buf;
+	size_t off, lim = yy_free;
 
 	/* parsing done; free all node space allocated by the parser */
 	if (yy_buf == NULL) return;
 
 	/* clean up all allocated node contents (e.g. MIL syntax error) */
-	for(buf = (char**)yy_buf; buf[0]; buf = (char**)yy_buf) {
-		yy_buf = buf[0];
-		GDKfree(buf);
+	while(TRUE) {
+		char *next = cur[0];
+		for(off = (cur==yy_sync)?yy_backup:sizeof(char*); 
+                    off + sizeof(yystree) <= lim; 
+		    off += sizeof(yystree)) 
+		{
+			YYSTREE t = (YYSTREE) (((char*)cur) + off);
+			YYKILL(t);
+		}
+		if (cur == yy_sync || next == NULL) break;
+		GDKvmfree(cur, YYBUF_TILE, YYBUF_TILE);
+		lim = YYBUF_TILE;
+		cur = (char**) next;
 	}
-	yy_free = sizeof(char*);
+	yy_buf = (char*) cur;
+	yy_free = yy_backup;
+	yy_backup = sizeof(char*);
+	yy_sync = NULL;
 }
 
+void 
+Myylogclean() 
+{
+	yy_backup = sizeof(char*);
+	yy_sync = NULL;
+	Myylogpop();
+}
 
 @- Postprocessing The MIL Tree 
 
@@ -343,6 +380,7 @@ yypostprocess(YYSTREE lt)
 				YYSTREE var = Myylognode(0, 0);
 				YYSTREE op = Myylognode(0, 0);
 
+				yylogsetlast(var, NULL);
 				*var = *lt->yysons[0];
 				var->yyval.val.sval = GDKstrdup(var->yyval.val.sval);
 				var->noyyval = 0;
@@ -354,6 +392,7 @@ yypostprocess(YYSTREE lt)
 				lt->token = TOK_ASSIGNMENT;
 				lt->yyval.val.ival = 0;
 				lt->yyval.vtype = TYPE_void;
+				yylogsetlast(lt, NULL);
 				lt->cnt = 2;
 				lt->yysons[0] = var;
 				lt->yysons[1] = op;
@@ -402,6 +441,7 @@ yypostprocess(YYSTREE lt)
 		}
 		lt->cnt = 0;
 		lt->yysons[lt->capacity] = NULL;
+		yylogsetlast(lt, NULL);
 		Myylogexpand(lt, params);
 		Myylogexpand(lt, opcache);
 		if (deref)
