@@ -896,21 +896,23 @@ the function definition in a particular module instead of the current one.
 		fnme= putName( ((char *) CURRENT(cntxt)),l);
 		advance(cntxt,l);
 	} 
-	if (currChar(cntxt) != '(') 
-		return (MalBlkPtr)parseError(cntxt, "function header '(' expected\n");
- 	advance(cntxt,1);
 
 	/* temporary suspend capturing statements in main block */
 	if( cntxt->backup && curBlk && curBlk->errors==0) 
 		GDKfatal("mal_parser: unexpected recursion\n");
 	cntxt->backup = cntxt->curprg;
 	cntxt->curprg = newFunction(fnme, kind);
-
 	curPrg = cntxt->curprg;	
 	curBlk = curPrg->def;
 	curBlk->flowfixed= 0;
 	curBlk->typefixed= 0;
 	curInstr = getInstrPtr(curBlk,0);
+	@:propList(curInstr->argv[0])@
+
+	if (currChar(cntxt) != '(') 
+		return (MalBlkPtr)parseError(cntxt, "function header '(' expected\n");
+ 	advance(cntxt,1);
+
 	if( modnme == 0){
 		setModuleScope(curInstr, cntxt->nspace);
 	} else {

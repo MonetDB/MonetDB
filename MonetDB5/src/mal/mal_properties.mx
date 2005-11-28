@@ -330,7 +330,7 @@ mal_export Property setProperty(PropertySet ps, str nme, str op, int tpe, ptr va
 mal_export ptr getPropertyValue(PropertySet ps, str nme);
 mal_export int getPropertyType(PropertySet ps, str nme);
 mal_export str propertySet2str(PropertySet ps);
-
+mal_export int isPropertyDefined(PropertySet ps, str nme);
 @c
 #include "mal_properties.h"
 #include "mal_type.h"		/* for idcmp() */
@@ -425,6 +425,13 @@ fndPropertyIndexed(PropertySet ps, int first, int last, str nme)
 	return 0;
 }
 
+int
+isPropertyDefined(PropertySet ps, str nme){
+	Property pr;
+	if( ps == NULL) return FALSE;
+	pr = fndProperty(ps,nme);
+	return pr != NULL;
+}
 @-
 A property is assigned to a specific property list.
 @c
