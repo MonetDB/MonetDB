@@ -376,7 +376,7 @@ PROC shred_doc_locked(BAT[str,bat] docBAT, str location, str name, timestamp ts,
     }
 }
 
-PROC construct_docBAT(BAT[oid,bat]resbat, str name, bit doCommit, str opt, timestamp ts, int ws) : BAT[str, bat]
+PROC construct_docBAT(BAT[oid,bat]resbat, str location, str name, bit doCommit, str opt, timestamp ts, int ws) : BAT[str, bat]
 {
     var err, exists := false;
 
@@ -453,7 +453,7 @@ PROC construct_docBAT(BAT[oid,bat]resbat, str name, bit doCommit, str opt, times
 PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts, int ws) : BAT[str,bat]
 {
     var shredRES := shred2bats(location,"",opt);
-    return construct_docBAT(shredRES, name, doCommit, opt, ts, ws);
+    return construct_docBAT(shredRES, location, name, doCommit, opt, ts, ws);
 }
 
 PROC shred_doc_base(str location, str name, bit doCommit, str opt) : BAT[str,bat]
