@@ -18,7 +18,7 @@
 @f mal_multitable
 @a M. Kersten
 @-
-@node Multi-Association Tables Optimizer, Partitioned Database Optimizer,  Code Factorization, Optimizer toolkit
+@node Multi-Association Tables , Partitioned Databases, Code Factorization, Optimizer toolkit
 
 @+ Multiple Association Tables 
 A Multi Association Table descriptor (MAT) defines an ordered collection 
@@ -115,80 +115,15 @@ debugging.
 #define _MAL_MERGETABLE_
 #include "mal_optimizer.h"
 #include "mal_builder.h"
-#include "pbm.h"
 
+#include "pbm.h"
 opt_export str MToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 /* #define DEBUG_MAL_MERGETABLE     show partial result */
 
 #endif
 @c
 #include "mal_multitable.h"
-
-static str matRef;
-static str bbpRef;
-static str packRef;
-static str newRef;
-static str batRef;
-static str selectRef;
-static str likeselectRef;
-static str uselectRef;
-static str bindRef;
-static str joinRef;
-static str expandRef;
-static str semijoinRef;
-static str aggrRef;
-static str packRef;
-static str countRef;
-static str markTRef;
-static str algebraRef;
-static str plusRef;
-static str calcRef;
-static str insertRef;
-static str appendRef;
-static str deleteRef;
-static str setAccessRef;
-static str reverseRef;
-static str mirrorRef;
-static str kdifferenceRef;
-static str calcRef;
-static str sumRef;
-static str maxRef;
-static str minRef;
-
-static void MTinit(){
-	if(matRef == NULL){
-		matRef = putName("mat",3);
-		bbpRef = putName("bbp",3);
-		bindRef = putName("bind",4);
-		packRef = putName("pack",4);
-		calcRef = putName("calc",4);
-		newRef = putName("new",3);
-		batRef = putName("bat",3);
-		minRef = putName("min",3);
-		maxRef = putName("max",3);
-		sumRef = putName("sum",3);
-		reverseRef = putName("reverse",7);
-		mirrorRef = putName("mirror",6);
-		selectRef = putName("select",6);
-		likeselectRef = putName("likeselect",10);
-		uselectRef = putName("uselect",7);
-		expandRef = putName("expand",6);
-		joinRef = putName("join",4);
-		semijoinRef = putName("semijoin",8);
-		aggrRef = putName("aggr",4);
-		countRef = putName("count",5);
-		markTRef = putName("markT",5);
-		packRef = putName("pack",4);
-		calcRef = putName("calc",4);
-		plusRef = putName("+",1);
-		algebraRef = putName("algebra",7);
-		insertRef = putName("insert",6);
-		appendRef = putName("append",6);
-		deleteRef = putName("delete",6);
-		setAccessRef = putName("setAccess",9);
-		kdifferenceRef= putName("kdifference",11);
-	}
-}
+#include "mal_prelude.h"
 
 static int
 isMATalias(int idx, int mvar[], int top){
@@ -231,7 +166,7 @@ MToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	stream_printf(GDKout,"Start MAT optimizer\n");
 	printFunction(GDKout, mb, 0);
 #endif
-	MTinit();
+	optInit();
 
 	if(p)
 		removeInstruction(mb,p);
