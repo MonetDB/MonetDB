@@ -115,7 +115,7 @@ debugging.
 #define _MAL_MERGETABLE_
 #include "mal_optimizer.h"
 #include "mal_builder.h"
-#include "../modules/mal/pbm.h"
+#include "pbm.h"
 
 opt_export str MToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 /* #define DEBUG_MAL_MERGETABLE     show partial result */
