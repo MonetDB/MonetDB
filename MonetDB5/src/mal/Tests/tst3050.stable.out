@@ -17,18 +17,29 @@ stdout of test 'tst3050` in directory 'src/mal` itself:
 #	return dummy;
 #end dummy;
 function user.dummy(a:int{sorted=true,unsafe=true},b:int{sequence=true}):int;	# 0  (dummy:int)<-(a:int)(b:int)
-    return dummy{dense=true};	# 1  (dummy:int)
+    return dummy{dense=true} := 1;	# 1  (dummy:int)<-(_3:int)
 end dummy;	# 2  
+#function myprint{unsafe,optimizer}():void;
+#end myprint;
+function user.myprint():void;	# 0  (myprint:void)
+end myprint;	# 1  
+#
+#a:= 0;
+#b:= 2;
+#t:= user.dummy(a{sorted=true},b{sequence=true});
+#
+#mdb.var("user","myprint");
 #
 #t:= dummy(a{sorted},b{sequence});
 #
-!ERROR: 'user.dummy' undefined in user.main[2]
-!ERROR: 'a' may not be used before being set in main[2]
-!ERROR: 'b' may not be used before being set in main[2]
 function user.main():void;	# 0  (main:void)
 #Parsing properties and keeping them around 	# 1  (_2:str)
-    t := user.dummy(a{sorted=true},b{sequence=true});	# 2  unknown (t:any)<-(a:any)(b:any)
-end main;	# 3  
+    a{sorted=true} := 0;	# 2  (a:int)<-(_4:int)
+    b{sequence=true} := 2;	# 3  (b:int)<-(_6:int)
+    t := user.dummy(a{sorted=true},b{sequence=true});	# 4  (t:int)<-(a:int)(b:int)
+    mdb.var("user","myprint");	# 5 MDBvar3 (_8:void)<-(_9:str)(_10:str)
+end main;	# 6  
+#[0] myprint	= nil:void   {unused}{optimizer,unsafe}
 
 # 08:01:17 >  
 # 08:01:17 >  Done.
