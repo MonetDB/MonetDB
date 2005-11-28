@@ -2012,23 +2012,25 @@ proc mposjoin(oid pre, oid frag, bat[oid, bat] ws_item) : any
 }
 
 # implicit args:
-# bat[void,bat] ws
 # bat[void,lng] int_values
 # bat[void,str] str_values
 # bat[void,dbl] dbl_values
 # bat[void,dbl] dec_values
-proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind) : bat[bat,bat]
+proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind) : void
 {
   var replacements := new(bat, bat);
 
   # extract the commands from the update tape 
-  var update_cmd := [and]([lng](item.mirror()), 3LL).uselect(0LL).mirror().join(item).join(int_values);
+  var update_cmd := [and]([lng](item.mirror()), 3LL).uselect(0LL).mirror().leftfetchjoin(item).leftfetchjoin(int_values);
+
+  # [void,oid] list of all frags of affected documents
+  var affected_frags := [and]([lng](item.mirror()), 3LL).uselect(1LL).mirror().leftfetchjoin(kind).get_fragment().reverse().kunique().mark(0@0).reverse();
 
   var text_update := update_cmd.uselect(UPDATE_SETTEXT);
   if (text_update.count() > 0) {
-    var update_node_item := [oid]([+]([lng](text_update.mirror()), 1)).join(item);
-    var update_node_kind := [oid]([+]([lng](text_update.mirror()), 1)).join(kind);
-    var update_text := [oid]([+]([lng](text_update.mirror()), 2)).join(item).join(str_values);
+    var update_node_item := [oid]([+]([lng](text_update.mirror()), 1)).leftfetchjoin(item);
+    var update_node_kind := [oid]([+]([lng](text_update.mirror()), 1)).leftfetchjoin(kind);
+    var update_text := [oid]([+]([lng](text_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
 
     # now select all the unique nodes (both item and fragment must be
     # the same), and when there are multiple occurences, select the
@@ -2050,10 +2052,10 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
 
   var pi_update := update_cmd.uselect(UPDATE_SETPI);
   if (pi_update.count() > 0) {
-    var update_node_item := [oid]([+]([lng](pi_update.mirror()), 1)).join(item);
-    var update_node_kind := [oid]([+]([lng](pi_update.mirror()), 1)).join(kind);
-    var update_ins := [oid]([+]([lng](pi_update.mirror()), 2)).join(item).join(str_values);
-    var update_tgt := [oid]([+]([lng](pi_update.mirror()), 3)).join(item).join(str_values);
+    var update_node_item := [oid]([+]([lng](pi_update.mirror()), 1)).leftfetchjoin(item);
+    var update_node_kind := [oid]([+]([lng](pi_update.mirror()), 1)).leftfetchjoin(kind);
+    var update_ins := [oid]([+]([lng](pi_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
+    var update_tgt := [oid]([+]([lng](pi_update.mirror()), 3)).leftfetchjoin(item).leftfetchjoin(str_values);
 
     # now select all the unique nodes (both item and fragment must be
     # the same), and when there are multiple occurences, select the
@@ -2077,9 +2079,9 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
 
   var comment_update := update_cmd.uselect(UPDATE_SETCOMMENT);
   if (comment_update.count() > 0) {
-    var update_node_item := [oid]([+]([lng](comment_update.mirror()), 1)).join(item);
-    var update_node_kind := [oid]([+]([lng](comment_update.mirror()), 1)).join(kind);
-    var update_comment := [oid]([+]([lng](comment_update.mirror()), 2)).join(item).join(str_values);
+    var update_node_item := [oid]([+]([lng](comment_update.mirror()), 1)).leftfetchjoin(item);
+    var update_node_kind := [oid]([+]([lng](comment_update.mirror()), 1)).leftfetchjoin(kind);
+    var update_comment := [oid]([+]([lng](comment_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
 
     # now select all the unique nodes (both item and fragment must be
     # the same), and when there are multiple occurences, select the
@@ -2101,10 +2103,10 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
 
   var attr_update := update_cmd.uselect(UPDATE_SETATTR);
   if (attr_update.count() > 0) {
-    var update_node_item := [oid]([+]([lng](pi_update.mirror()), 1)).join(item);
-    var update_node_kind := [oid]([+]([lng](pi_update.mirror()), 1)).join(kind);
-    var update_qn := [oid]([+]([lng](pi_update.mirror()), 2)).join(item).join(str_values);
-    var update_val := [oid]([+]([lng](pi_update.mirror()), 3)).join(item).join(str_values);
+    var update_node_item := [oid]([+]([lng](pi_update.mirror()), 1)).leftfetchjoin(item);
+    var update_node_kind := [oid]([+]([lng](pi_update.mirror()), 1)).leftfetchjoin(kind);
+    var update_qn := [oid]([+]([lng](pi_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
+    var update_val := [oid]([+]([lng](pi_update.mirror()), 3)).leftfetchjoin(item).leftfetchjoin(str_values);
 
     # now select all the unique nodes (item, fragment, and qn must all
     # be the same), and when there are multiple occurences, select the
@@ -2128,11 +2130,11 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
 
   var insert_update := update_cmd.uselect(UPDATE_INSERT);
   if (insert_update.count() > 0) {
-    var update_node_item := [oid]([+]([lng](pi_update.mirror()), 1)).join(item);
-    var update_node_kind := [oid]([+]([lng](pi_update.mirror()), 1)).join(kind);
-    var update_level := [oid]([+]([lng](pi_update.mirror()), 2)).join(item).join(int_values);
-    var update_insert_node_item := [oid]([+]([lng](pi_update.mirror()), 3)).join(item);
-    var update_insert_node_kind := [oid]([+]([lng](pi_update.mirror()), 3)).join(kind);
+    var update_node_item := [oid]([+]([lng](pi_update.mirror()), 1)).leftfetchjoin(item);
+    var update_node_kind := [oid]([+]([lng](pi_update.mirror()), 1)).leftfetchjoin(kind);
+    var update_level := [oid]([+]([lng](pi_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(int_values);
+    var update_insert_node_item := [oid]([+]([lng](pi_update.mirror()), 3)).leftfetchjoin(item);
+    var update_insert_node_kind := [oid]([+]([lng](pi_update.mirror()), 3)).leftfetchjoin(kind);
 
     # unlike the cases above no double elimination here
 
@@ -2149,8 +2151,8 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
 
   var delete_update := update_cmd.uselect(UPDATE_DELETE);
   if (delete_update.count() > 0) {
-    var update_node_item := [oid]([+]([lng](pi_update.mirror()), 1)).join(item);
-    var update_node_kind := [oid]([+]([lng](pi_update.mirror()), 1)).join(kind);
+    var update_node_item := [oid]([+]([lng](delete_update.mirror()), 1)).leftfetchjoin(item);
+    var update_node_kind := [oid]([+]([lng](delete_update.mirror()), 1)).leftfetchjoin(kind);
     
     # now select all the unique nodes (both item and fragment must be
     # the same).
@@ -2158,7 +2160,6 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
     var update_node_unique := update_node_item.access(BAT_WRITE).CTgroup().CTderive(update_node_frag.access(BAT_WRITE)).CTmap();
     update_node_item := update_node_unique.leftjoin(update_node_item);
     update_node_kind := update_node_unique.leftjoin(update_node_kind);
-    update_text := update_node_unique.leftjoin(update_text);
 
     # now make the two BATs void-headed
     update_node_item := update_node_item.reverse().mark(0@0).reverse();
@@ -2180,8 +2181,11 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
       $h.insert(ins);
       $h.access(a);
     }
+    [fix_consecutive_texts](const ws, affected_frags);
+    [build_indices](const ws, affected_frags);
   }
-  return replacements;
+
+  commit();
 }
 
 proc do_update_text(bat[bat,bat] replacements, bat[void,bat] ws, int tableid, bat [void,oid] itembat, bat[void,int] kindbat, bat[void,str] textbat) : bat[bat,bat]
@@ -2457,9 +2461,9 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
         # select those elements that we found in the previous step, and
         # subselect those with level < docinsertlevel
         # these are the elements whose size we have to adjust
-        docendsizebat := docendsizebat.join(doclevelfixbat).uselect(chr(nil), chr(docinsertlevel - 1)).mirror();
+        docendsizebat := docendsizebat.leftfetchjoin(doclevelfixbat).uselect(chr(nil), chr(docinsertlevel - 1)).mirror();
         # caculate new size by adding insertsize
-        docendsizebat := [int]([+](docendsizebat.join(docsizefixbat), insertsize));
+        docendsizebat := [int]([+](docendsizebat.leftfetchjoin(docsizefixbat), insertsize));
         # and update the document
         docsizeupdatebat.myinsert(docendsizebat);
       }
@@ -2604,51 +2608,45 @@ proc do_update_delete(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
   var frags := kind.get_fragment();
 
   # XXX need to do this while the "item" parameter contains PRE values instead of NID values
-  nidbat := mposjoin(item, frags, ws.fetch(PRE_NID));
+  var nidbat := mposjoin(item, frags, ws.fetch(PRE_NID));
 
-  # reverse sort item so that we delete the last node
-  # first, so that holes can be merged
-  nidbat.reverse().sort_rev().reverse()@batloop() {
+  nidbat@batloop() {
     var frag := frags.fetch($h);
     var itemval := replacementvalue(replacements, ws, NID_PRE, frag, $t);
-    var pre_size := ws.fetch(PRE_SIZE).find(frag);
-    var size := replacementvalue(replacements, pre_size, itemval);
-    if (not(isnil(niland(size, int(nil))))) { # result of niland(size, int(nil)) is either 0 or int(nil)
-      # coalesce with potential consecutive hole
-      var nsize := replacementvalue(replacements, pre_size, oid(int(itemval) + size + 1));
-      if (isnil(niland(nsize, int(nil)))) { # result of niland(nsize, int(nil)) is either 0 or int(nil)
-        # there is a following hole
-        nsize := niland(nsize, INT_MAX) + 1;
-      } else {
-        # no following hole
-        nsize := 0;
+    if (not(isnil(itemval))) {
+      var pre_size := ws.fetch(PRE_SIZE).find(frag);
+      var size := replacementvalue(replacements, pre_size, itemval);
+      if (not(isnil(niland(size, int(nil))))) { # result of niland(size, int(nil)) is either 0 or int(nil)
+        # coalesce with potential consecutive hole
+        var nsize := replacementvalue(replacements, pre_size, oid((lng(itemval) + size) + 1));
+        if (isnil(niland(nsize, int(nil)))) { # result of niland(nsize, int(nil)) is either 0 or int(nil)
+          # there is a following hole
+          nsize := niland(nsize, INT_MAX) + 1;
+        } else {
+          # no following hole
+          nsize := 0;
+        }
+        var pre_nid := ws.fetch(PRE_NID).find(frag);
+        var new_size := new(void, int, size).seqbase(itemval).key(true);
+        var nidlist := new(oid, oid, size).key(true);
+        var i := 0;
+        while (i <= size) {
+          new_size := new_size.insert(nil, nilor((size + nsize) - i, int(nil)));
+          var nid := replacementvalue(replacements, pre_nid, oid(lng(itemval) + i));
+          if (not(isnil(nid))) {
+            nidlist := nidlist.insert(nid, nil);
+          }
+          i :+= 1;
+        }
+        replacements := replace(replacements, ws, PRE_SIZE, frag, new_size);
+        replacements := replace(replacements, ws, NID_PRE, frag, nidlist);
+        var oidlist := new_size.mark(nil);
+        replacements := replace(replacements, ws, PRE_PROP, frag, oidlist);
+        replacements := replace(replacements, ws, PRE_NID, frag, oidlist);
+        var chrlist := oidlist.[chr]();
+        replacements := replace(replacements, ws, PRE_KIND, frag, chrlist);
+        replacements := replace(replacements, ws, PRE_LEVEL, frag, chrlist);
       }
-      var start := int(itemval) + int(pre_size.seqbase());
-      var new_size := [-](nilor(size + nsize, int(nil)), pre_size.slice(start, start + size).number());
-      replacements := replace(replacements, ws, PRE_SIZE, frag, new_size);
-      var oidlist := new_size.mark(nil);
-      new_size := nil;
-      var chrlist := oidlist.[chr]();
-      replacements := replace(replacements, ws, PRE_PROP, frag, oidlist);
-#       var start := int(itemval) + int(ws.fetch(PRE_NID).find(frag).seqbase());
-      var nidlist := ws.fetch(PRE_NID).find(frag).slice(start, start + size).reverse().mark(nil);
-      var kndnid0list := ws.fetch(KND_NID_0).find(frag).join(nidlist);
-      replacements := replace(replacements, ws, KND_NID_0, frag, kndnid0list);
-      replacements := replace(replacements, ws, KND_PROP_0, frag, kndnid0list);
-      kndnid0list := nil;
-      replacements := replace(replacements, ws, KND_NID_1, frag, ws.fetch(KND_NID_1).find(frag).join(nidlist));
-      replacements := replace(replacements, ws, KND_NID_2, frag, ws.fetch(KND_NID_2).find(frag).join(nidlist));
-      var kndnid3list := ws.fetch(KND_NID_3).find(frag).join(nidlist);
-      replacements := replace(replacements, ws, KND_NID_3, frag, kndnid3list);
-      replacements := replace(replacements, ws, KND_PROP_3, frag, kndnid3list);
-      kndnid3list := nil;
-      replacements := replace(replacements, ws, NID_PRE, frag, nidlist);
-      nidlist := nil;
-      replacements := replace(replacements, ws, PRE_NID, frag, oidlist);
-      oidlist := nil;
-      replacements := replace(replacements, ws, PRE_KIND, frag, chrlist);
-      replacements := replace(replacements, ws, PRE_LEVEL, frag, chrlist);
-      chrlist := nil;
     }
   }
   return replacements;
@@ -2721,11 +2719,11 @@ proc find_qn(bat[void,bat] ws, oid frag, oid nid, str loc, str prefix, str uri, 
     var attr_qn_list := attr_list.mirror().fetchjoin(attr_qn);
 
     # [oid,nil] list of attributes for current node with correct FQ name
-    attr_node_list := attr_qn_list.join(qn_list);
+    attr_node_list := attr_qn_list.leftfetchjoin(qn_list);
 
     # check that there are not already attributes with the same local name
     # and same namespace but a different prefix on this node
-    if (attr_node_list.count() != attr_qn_list.join(loc_uri_list).count()) {
+    if (attr_node_list.count() != attr_qn_list.leftfetchjoin(loc_uri_list).count()) {
       ERROR("duplicate attribute with differing prefixes.");
     }
   }
@@ -2763,6 +2761,66 @@ proc find_qn(bat[void,bat] ws, oid frag, oid nid, str loc, str prefix, str uri, 
       result := result.insert(nil,attr_node_list.reverse().fetch(0));
   }
   return result;
+}
+
+proc build_indices(bat[void,bat] ws, oid frag) : void
+{
+  var pre_kind_bat := ws.fetch(PRE_KIND).fetch(frag);
+  var pre_nid_bat := ws.fetch(PRE_NID).fetch(frag);
+  var pre_prop_bat := ws.fetch(PRE_PROP).fetch(frag);
+  var i := 0;
+  while (i < 5) {
+    var k := pre_kind_bat.uselect(chr(i)).mirror();
+    var n := k.leftfetchjoin(pre_nid_bat).reverse().mark(0@0).reverse();
+    var b := ws.fetch(KND_NID.find(chr(i))).fetch(frag);
+    b := b.access(BAT_WRITE).delete().insert(n);
+    if ((i = 0) or (i = 3)) {
+      var p := k.leftfetchjoin(pre_prop_bat).reverse().mark(0@0).reverse();
+      var b := ws.fetch(KND_PROP.find(chr(i))).fetch(frag);
+      b := b.access(BAT_WRITE).delete().insert(p);
+    }
+    i :+= 1;
+  }
+}
+
+proc fix_consecutive_texts(bat[void,bat] ws, oid frag) : void
+{
+  # select all non-hole entries for both level and kind tables
+  var l := ws.fetch(PRE_LEVEL).fetch(frag).ord_select(chr(0),chr(nil)); # [PRE,level]
+  var k := l.mirror().leftfetchjoin(ws.fetch(PRE_KIND).fetch(frag)); # [PRE,kind]
+  # combine them into a single table
+  var x := [+]([<<]([sht](l),8),[sht](k)); # [PRE,(level<<8)|kind]
+  # use an undocumented feature of CTrefine: it does not check whether
+  # the lhs is sorted
+  # we now get unique OIDs for each stretch of consecutive elements
+  # with the same value
+  var r := CTrefine(x,x.mark(nil)); # [PRE,GRP] tsorted
+  # s is a list of nodes where there are more than one consecutive
+  # nodes of the same type at the same level, the rhs is the per-group OID
+  var s := r.leftjoin(r.reverse().{count}().ord_uselect(2,int(nil)).mirror()); # [PRE,GRP] tsorted subselection of r
+  # and now select the text elements from there
+  var t := k.ord_uselect(TEXT).mirror().leftjoin(s).chk_order(); # [PRE,GRP] hsorted,tsorted subselection of s
+  # at this point we must do the real merging and deleting of text
+  # nodes, but at least we know where they are
+  if (t.count() = 0) {
+    # the list is empty, i.e. no consecutive text elements: nothing
+    # more to do
+    return;
+  }
+  var c := t.reverse().leftfetchjoin(ws.fetch(PRE_PROP).fetch(frag)).leftfetchjoin(ws.fetch(PROP_TEXT).fetch(frag)); # [GRP,content] hsorted
+  var v := string_join(c, c.kunique().project("")); # [GRP,content] combined content with unique GRP values
+  var i := [add_string_unique_inplace](const ws, frag, PROP_TEXT, v); # [GRP,SID] OID into PROP_TEXT table
+  var p := t.reverse().kunique().reverse(); # [PRE,GRP] one representative from t per group
+  var pre_prop := ws.fetch(PRE_PROP).fetch(frag);
+  pre_prop.replace(p.leftjoin(i), true);
+  var h := kdiff(t, p).mark(nil);
+  pre_prop.replace(h, true);
+  ws.fetch(PRE_SIZE).fetch(frag).replace(h.project(int(nil)), true);
+  ws.fetch(NID_PRE).fetch(frag).replace(h.mirror().leftfetchjoin(ws.fetch(PRE_NID).fetch(frag)).reverse().mark(nil), true);
+  ws.fetch(PRE_NID).fetch(frag).replace(h, true);
+  h := h.project(chr(nil));
+  ws.fetch(PRE_KIND).fetch(frag).replace(h, true);
+  ws.fetch(PRE_LEVEL).fetch(frag).replace(h, true);
 }
 @* Module Implementation
 @h
