@@ -843,6 +843,8 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 				dnode *n = s->data.lval->h;
 				char *rtname = qname_table(n->data.lval);
 				char *rcname = n->next->data.lval->h->data.sval;
+				int ref_actions = n->next->next->next->data.ival; 
+				sql_fkey *fk;
 				list *cols;
 				sql_table *rt = mvc_bind_table(sql, cur_schema(sql), rtname);
 				sql_key *k, *rk;
@@ -864,6 +866,9 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 					return res;
 				}
 				k = mvc_create_key(sql, t, name, fkey, rk);
+				fk = (sql_fkey*)k;
+				fk->on_delete = ref_actions & 255;
+				fk->on_update = (ref_actions>>8) & 255;
 				mvc_create_kc(sql, k, cs);
 				res = SQL_OK;
 			}
@@ -1099,8 +1104,10 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t,
 		return sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
 	} else {
 		sql_key *k, *rk = NULL;
+		sql_fkey *fk;
 		dnode *nms = n->next->data.lval->h;
 		node *fnms;
+		int ref_actions = n->next->next->next->next->data.ival;
 
 		if (name && mvc_bind_key(sql, ss, name)) {
 			return sql_error(sql, 02, "Create Key failed, key %s allready exists", name);
@@ -1123,6 +1130,9 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t,
 			return sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table '%s'\n", ft->base.name);
 		}
 		k = mvc_create_key(sql, t, name, fkey, rk);
+		fk = (sql_fkey*)k;
+		fk->on_delete = ref_actions & 255;
+		fk->on_update = (ref_actions>>8) & 255;
 
 		for (fnms = rk->columns->h; nms && fnms; nms = nms->next, fnms = fnms->next) {
 			char *nm = nms->data.sval;

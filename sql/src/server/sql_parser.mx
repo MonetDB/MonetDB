@@ -328,7 +328,6 @@ int yydebug=1;
 	when_search
 	opt_else
 	table_name
-	ref_on
 	object_name
 	exec
 	exec_ref
@@ -403,7 +402,6 @@ int yydebug=1;
 	string_commalist
 	paramlist
 	opt_paramlist
-	opt_ref_action
 	opt_seq_params
 	opt_alt_seq_params
 	serial_opt_params
@@ -443,6 +441,8 @@ int yydebug=1;
 	opt_max
 	opt_cache
 	opt_cycle
+	opt_ref_action
+	ref_on
 
 %type <bval>
 	opt_brackets
@@ -1402,15 +1402,14 @@ ref_action:
  ;
 
 ref_on:
-   ON UPDATE ref_action		{ $$ = _symbol_create_int(SQL_UPDATE, $3); }
- | ON sqlDELETE ref_action	{ $$ = _symbol_create_int(SQL_DELETE, $3); }
+   ON UPDATE ref_action		{ $$ = ($3 << 8); }
+ | ON sqlDELETE ref_action	{ $$ = $3; }
  ;
 
 opt_ref_action:
-	/* empty */	{ $$ = NULL; }
- | ref_on		{ $$ = _dlist_append_symbol(_dlist_create(), $1); }
- | ref_on ref_on	{ $$ = _dlist_append_symbol(_dlist_create(), $1);
-			  _dlist_append_symbol($$, $2);			}
+   /* empty */		{ $$ = (2 << 8) + 2; /* defaults are RESTRICT */ }
+ | ref_on		{ $$ = $1; }
+ | ref_on ref_on	{ $$ = $1 + $2;	}
  ;
 
 opt_match_type:
@@ -1436,7 +1435,7 @@ column_constraint_type:
 			  _dlist_append_list(l, $2 );
 			  _dlist_append_list(l, $4 );
 			  _dlist_append_int(l, $6 );
-			  _dlist_append_list(l, $7 );
+			  _dlist_append_int(l, $7 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
  | domain_constraint_type
  ;
@@ -1454,7 +1453,7 @@ table_constraint_type:
 			  _dlist_append_list(l, $3 );
 			  _dlist_append_list(l, $6 );
 			  _dlist_append_int(l, $7 );
-			  _dlist_append_list(l, $8 );
+			  _dlist_append_int(l, $8 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
 
  |  domain_constraint_type

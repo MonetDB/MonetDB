@@ -233,6 +233,9 @@ typedef struct sql_ukey {	/* pkey, ukey */
 
 typedef struct sql_fkey {	/* fkey */
 	sql_key k;
+	/* no action, restrict (default), cascade, set null, set default */
+	int on_delete;	
+	int on_update;	
 	struct sql_ukey *rkey;	/* only set for fkey and rkey */
 } sql_fkey;
 
