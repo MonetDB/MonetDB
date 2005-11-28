@@ -1,0 +1,44 @@
+There are plentyfull user-friendly tools to interact with 
+a SQL database server.
+Although many tools are targetted to a single backend server, the
+systems described below have been successfully linked with MonetDB/SQL.
+For all systems considered, make sure you have Mserver installed
+on your system and that you can access the server using the @ref{JDBC client}.
+
+@subsection Aqua Data Studio
+Aqua Data Studio is a graphical user interface to interact with MonetDB/SQL.
+It is available on Windows, Linux, and MacOS platforms from  the
+@url{"www.aquafold.com", distribution} site.
+
+@emph{Windows Installation}
+Download Version 4.5  executable for Windows and install the software.
+Registration of the MonetDB/SQL version is based on
+the Generic- JDBC RDBMS theme and requires the following field
+settings:
+@table
+@item Name: 
+MonetDB SQL
+@item Type:
+Production
+@item Login Name:
+monetdb	@emph{your MonetDB account name}
+@item Password:
+monetdb
+@item Host:
+localhost @emph{or the IP number for the MonetDB server}
+@item Port:
+45123
+@item Driver Locatoin:
+C:\Program Files\MonetDB\share\MonetDB\lib\MonetDB_JDBC.jar
+@emph{ or in your private installation folder}.
+@item Mounted Scripts: Folder:
+@end table
+Consult your system administrator if other
+MonetDB user creditials and locality are required.
+
+@emph{Linux Installation}
+@emph{MacOS Installation}
+
+@subsection iSQL-Viewer
+@subsection Squirrel SQL
+@subsection PKLike
