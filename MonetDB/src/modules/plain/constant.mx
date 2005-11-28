@@ -169,7 +169,7 @@ proc {avg} ( any::1 b, BAT[oid,oid] g, BAT[oid,any] e) : BAT[oid,dbl]
     return project(e,[dbl](b));
 }
 @c
-#include <gdk.h>
+#include "constant.proto.h"
 
 int
 CMDmaterializeConst(BAT **ret, ptr val, int tpe, BAT *extent)
@@ -295,7 +295,7 @@ CMDconstUnique(BAT** ret, ptr v, int t)
 }
 
 int
-CMDconstjoinRightMat(ptr ret, BAT *b, ptr val, int tpe)
+CMDconstjoinRightMat(BAT **ret, BAT *b, ptr val, int tpe)
 {
         /* due to function resolution, we know that val must be a simple constant or an illegal bat */
         if (tpe == TYPE_bat) {
@@ -303,8 +303,8 @@ CMDconstjoinRightMat(ptr ret, BAT *b, ptr val, int tpe)
                          BBP_logical(((BAT*) val)->batCacheid));
                 return GDK_FAIL;
         }
-        *(BAT**)ret = BATconst(b, tpe, val);
-        return (*(BAT**)ret == NULL)?GDK_FAIL:GDK_SUCCEED;
+        *ret = BATconst(b, tpe, val);
+        return (*ret == NULL)?GDK_FAIL:GDK_SUCCEED;
 }
 
 int
