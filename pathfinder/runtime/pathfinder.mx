@@ -812,6 +812,7 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
 #include <monet_interpreter.h>
 #include <streams.h>
 #include <mapi.h>
+#include <sys.h>
 #include <pathfinder.proto.h>
 
 #define is_fake_project(b) (((b)->htype==TYPE_void) && (BATcount(b)==1) && ((b)->hseqbase==oid_nil))
@@ -2344,9 +2345,6 @@ xquery_server_end(xquery_client *ctx,
     xquery_client_end(ctx, !xquery_caching);
     return err?GDK_FAIL:GDK_SUCCEED;
 }
-
-        
-extern int view_client_size(BAT **ret, int*stk);
 
 int
 CMDxquery_server(Cntxt stk, 
