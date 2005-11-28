@@ -1398,7 +1398,6 @@ optimize(mvc *c, stmt *s)
 	}
 
 	case st_bat:
-	case st_ubat:
 
 		s->optimized = 1;
 		return stmt_dup(s);

@@ -108,19 +108,19 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts)
 		/* 1st stage: find out if original contains same values */
 		if (s->key && s->nrcols == 0) {
 			s = stmt_relselect_init();
-			stmt_relselect_fill(s, stmt_uselect(stmt_idxbat(k->idx, 0), stmt_dup(idx_inserts), cmp_equal));
+			stmt_relselect_fill(s, stmt_uselect(stmt_idxbat(k->idx, RDONLY), stmt_dup(idx_inserts), cmp_equal));
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 
-				stmt_relselect_fill(s, stmt_uselect( stmt_cbat(c->c, stmt_dup(ts), RDONLY, st_bat), stmt_dup(inserts[c->c->colnr]->op2.stval), cmp_equal));
+				stmt_relselect_fill(s, stmt_uselect( stmt_bat(c->c, stmt_dup(ts), RDONLY), stmt_dup(inserts[c->c->colnr]->op2.stval), cmp_equal));
 			}
 		} else {
 			s = stmt_reljoin_init();
-			stmt_reljoin_fill(s, stmt_idxbat(k->idx, 0), stmt_dup(idx_inserts));
+			stmt_reljoin_fill(s, stmt_idxbat(k->idx, RDONLY), stmt_dup(idx_inserts));
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 
-				stmt_reljoin_fill(s, stmt_cbat(c->c, stmt_dup(ts), RDONLY, st_bat), stmt_dup(inserts[c->c->colnr]->op2.stval));
+				stmt_reljoin_fill(s, stmt_bat(c->c, stmt_dup(ts), RDONLY), stmt_dup(inserts[c->c->colnr]->op2.stval));
 			}
 		}
 		s = stmt_binop(stmt_aggr(s, NULL, cnt), stmt_atom_int(0), ne);
@@ -155,7 +155,7 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts)
 	} else {		/* single column key */
 		sql_kc *c = k->columns->h->data;
 		stmt *h = stmt_dup(inserts[c->c->colnr]->op2.stval);
-		stmt *s = stmt_cbat(c->c, stmt_dup(ts), RDONLY, st_bat);
+		stmt *s = stmt_bat(c->c, stmt_dup(ts), RDONLY);
 
 		if (k->type == pkey) {
 			snprintf(buf, BUFSIZ, "INSERT INTO: PRIMARY KEY constraint '%s.%s' violated", k->t->base.name, k->base.name);
@@ -274,7 +274,7 @@ join_idx_insert(mvc *sql, sql_idx * i, stmt **inserts)
 			sql_kc *c = m->data;
 			sql_kc *rc = o->data;
 
-			stmt_relselect_fill(s, stmt_uselect(stmt_cbat(rc->c, stmt_dup(rts), RDONLY, st_bat), stmt_dup(inserts[c->c->colnr]->op2.stval), cmp_equal));
+			stmt_relselect_fill(s, stmt_uselect(stmt_bat(rc->c, stmt_dup(rts), RDONLY), stmt_dup(inserts[c->c->colnr]->op2.stval), cmp_equal));
 
 			if (c->c->null) {
 				sql_subfunc *isnil = sql_bind_func(sql->trans->module, "isnull", &c->c->type, NULL);
@@ -313,7 +313,7 @@ join_idx_insert(mvc *sql, sql_idx * i, stmt **inserts)
 			sql_kc *c = m->data;
 			sql_kc *rc = o->data;
 
-			stmt_reljoin_fill(s, stmt_dup(inserts[c->c->colnr]->op2.stval), stmt_cbat(rc->c, stmt_dup(rts), RDONLY, st_bat));
+			stmt_reljoin_fill(s, stmt_dup(inserts[c->c->colnr]->op2.stval), stmt_bat(rc->c, stmt_dup(rts), RDONLY));
 			if (c->c->null)
 				nulls = 1;
 		}
@@ -365,7 +365,7 @@ sql_insert_idx(mvc *sql, stmt **inserts, sql_idx * i, list *l)
 	}
 	/* append to the pre-computed join-index */
 	if (is)
-		list_append(l, stmt_append(stmt_idxbat(i, 1), is));
+		list_append(l, stmt_append(stmt_idxbat(i, INS), is));
 }
 
 static int
@@ -397,7 +397,7 @@ sql_insert_add_idx(mvc *sql, sql_table *t, sql_idx * idx, list *l)
 
 	for (m = t->columns.set->h, i = 0; m; m = m->next, i++) {
 		sql_column *c = m->data;
-		stmt *b = stmt_cbat(c, stmt_dup(ts), INS, st_bat);
+		stmt *b = stmt_bat(c, stmt_dup(ts), INS);
 		sql_subtype *tp = tail_type(b);
 
 		inserts[i] = stmt_append(stmt_temp(tp), b);
@@ -459,7 +459,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 
 		/* 1st stage: find out if original contains same values */
 		s = stmt_reljoin_init();
-		stmt_reljoin_fill(s, stmt_diff(stmt_idxbat(k->idx, 0), stmt_dup(idx_updates)), stmt_dup(idx_updates));
+		stmt_reljoin_fill(s, stmt_diff(stmt_idxbat(k->idx, RDONLY), stmt_dup(idx_updates)), stmt_dup(idx_updates));
 		for (m = k->columns->h; m; m = m->next) {
 			sql_kc *c = m->data;
 			stmt *upd, *l;
@@ -469,7 +469,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 				l = stmt_diff(stmt_dup(updates[c->c->colnr]->op1.stval), stmt_dup(upd));
 			} else {
 				upd = stmt_dup(updates[updcol]->op2.stval);
-				l = stmt_diff(stmt_cbat(c->c, stmt_dup(ts), RDONLY, st_bat), stmt_dup(upd));
+				l = stmt_diff(stmt_bat(c->c, stmt_dup(ts), RDONLY), stmt_dup(upd));
 			}
 			stmt_reljoin_fill(s, l, upd);
 
@@ -492,7 +492,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 					upd = stmt_dup(updates[c->c->colnr]->op2.stval);
 				} else {
 					upd = stmt_dup(updates[updcol]->op2.stval);
-					upd = stmt_semijoin(stmt_cbat(c->c, stmt_dup(ts), RDONLY, st_bat), upd);
+					upd = stmt_semijoin(stmt_bat(c->c, stmt_dup(ts), RDONLY), upd);
 				}
 				g = grp_create(upd, g, NULL);
 			}
@@ -607,7 +607,7 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 			upd = stmt_dup(updates[c->c->colnr]->op2.stval);
 		} else {
 			upd = stmt_dup(updates[updcol]->op2.stval);
-			upd = stmt_semijoin(stmt_cbat(c->c, stmt_dup(ts), RDONLY, st_bat), upd);
+			upd = stmt_semijoin(stmt_bat(c->c, stmt_dup(ts), RDONLY), upd);
 		}
 
 		if (h) {
@@ -642,7 +642,7 @@ join_idx_update(sql_idx * i, stmt **updates, int updcol)
 			upd = stmt_dup(updates[c->c->colnr]->op2.stval);
 		} else {
 			upd = stmt_dup(updates[updcol]->op2.stval);
-			upd = stmt_semijoin(stmt_cbat(c->c, stmt_dup(ts), RDONLY, st_bat), upd);
+			upd = stmt_semijoin(stmt_bat(c->c, stmt_dup(ts), RDONLY), upd);
 		}
 		if (c->c->null) {	/* new nulls (MATCH SIMPLE) */
 			stmt *nn = stmt_dup(upd);
@@ -654,7 +654,7 @@ join_idx_update(sql_idx * i, stmt **updates, int updcol)
 				null = nn;
 			nulls = 1;
 		}
-		stmt_reljoin_fill(s, upd, stmt_dup(stmt_cbat(rc->c, stmt_dup(rts), RDONLY, st_bat)));
+		stmt_reljoin_fill(s, upd, stmt_dup(stmt_bat(rc->c, stmt_dup(rts), RDONLY)));
 
 	}
 	/* add missing nulls */
@@ -832,7 +832,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 						return NULL;
 					}
 					if (!inserts[c->colnr]) {
-						inserts[c->colnr] = stmt_append(stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), ins);
+						inserts[c->colnr] = stmt_append(stmt_bat(c, stmt_dup(tv->s), INS), ins);
 					} else {
 						stmt *t = NULL;
 						if (inserts[c->colnr]->op2.stval->type != st_temp) {
@@ -879,7 +879,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 					cleanup_stmts(inserts, len);
 					return NULL;
 				}
-				inserts[c->colnr] = stmt_append(stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), ins);
+				inserts[c->colnr] = stmt_append(stmt_bat(c, stmt_dup(tv->s), INS), ins);
 				inscol = c->colnr;
 			}
 		}
@@ -924,7 +924,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 					}
 					if (ic && !(ic->key && ic->nrcols == 0))
 						s = stmt_const(stmt_dup(ic), s);
-					inserts[i] = stmt_append(stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), s);
+					inserts[i] = stmt_append(stmt_bat(c, stmt_dup(tv->s), INS), s);
 				}
 			}
 			assert(inserts[i]);
@@ -957,7 +957,7 @@ sql_bulkinsert(mvc *sql, sql_table *t, char *tsep, char *rsep, char *filename, i
 	for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 		sql_column *c = n->data;
 
-		inserts[i] = stmt_append(stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), stmt_find(stmt_dup(bats), stmt_atom_string(_strdup(c->base.name)), c));
+		inserts[i] = stmt_append(stmt_bat(c, stmt_dup(tv->s), INS), stmt_find(stmt_dup(bats), stmt_atom_string(_strdup(c->base.name)), c));
 	}
 	stmt_destroy(bats);
 	res = sql_insert(sql, t, inserts, len, 1);
@@ -1112,7 +1112,7 @@ sql_update_table(mvc *sql, sql_schema *schema, char *tname, dlist *assignmentlis
 			}
 
 			if (v->nrcols <= 0) {
-				v = stmt_const(stmt_reverse(s ? first_subset(s) : stmt_cbat(c, stmt_dup(tv->s), RDONLY, st_bat)), v);
+				v = stmt_const(stmt_reverse(s ? first_subset(s) : stmt_bat(c, stmt_dup(tv->s), RDONLY)), v);
 			} else {
 				if (v->type == st_list && list_length(v->op1.lval) == 2) { /* sub query with outer refs */
 					node *o = v->op1.lval->h;
@@ -1136,9 +1136,9 @@ sql_update_table(mvc *sql, sql_schema *schema, char *tname, dlist *assignmentlis
 			}
 			/* new bats need values replaced */
 			if (c->base.flag == TR_NEW)
-				updates[c->colnr] = stmt_replace(stmt_cbat(c, stmt_dup(tv->s), INS, st_bat), stmt_dup(v));
+				updates[c->colnr] = stmt_replace(stmt_bat(c, stmt_dup(tv->s), INS), stmt_dup(v));
 			else
-				updates[c->colnr] = stmt_insert(stmt_cbat(c, stmt_dup(tv->s), UPD, st_ubat), stmt_dup(v));
+				updates[c->colnr] = stmt_insert(stmt_bat(c, stmt_dup(tv->s), UPD), stmt_dup(v));
 			list_append(l, stmt_dup(updates[c->colnr]));
 		}
 		list_append(l, stmt_affected_rows(stmt_aggr(first_subset(s), NULL, sql_bind_aggr(sql->trans->module, "count", NULL))));

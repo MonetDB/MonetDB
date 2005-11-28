@@ -386,17 +386,15 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_column:
 			s->nr = _dumpstmt(sql, mb, s->op1.stval);
 			break;
-		case st_bat:
-		case st_ubat:{
-			char *type = (s->type == st_bat) ? "" : "_ubat";
-			char buf[256];
+		case st_bat: {
 			int k;
 			int ht = TYPE_void;
 			int tt = s->op1.cval->type.type->localtype;
 
+			if (s->flag == UPD)
+				ht = TYPE_oid;
 			@:SQLprelude@
-			snprintf(buf, 256, "bind%s", type);
-			q = newStmt1(mb, sqlRef, buf);
+			q = newStmt1(mb, sqlRef, "bind");
 			getVar(mb,getArg(q,0))->isudftype= 1;
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			q = pushStr(mb, q, s->op1.cval->t->s->base.name);

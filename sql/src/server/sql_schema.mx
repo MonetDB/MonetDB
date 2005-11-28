@@ -131,15 +131,15 @@ sql_insert_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, i
 	stmt *res, **inserts = NEW_ARRAY(stmt *, 5);
 	stmt *pts = stmt_basetable(pt, pt->base.name);
 
-	inserts[0] = stmt_append(stmt_cbat(n->data, stmt_dup(pts), INS, st_bat), stmt_atom_int(obj_id));
+	inserts[0] = stmt_append(stmt_bat(n->data, stmt_dup(pts), INS), stmt_atom_int(obj_id));
 	n = n->next;
-	inserts[1] = stmt_append(stmt_cbat(n->data, stmt_dup(pts), INS, st_bat), stmt_atom_int(auth_id));
+	inserts[1] = stmt_append(stmt_bat(n->data, stmt_dup(pts), INS), stmt_atom_int(auth_id));
 	n = n->next;
-	inserts[2] = stmt_append(stmt_cbat(n->data, stmt_dup(pts), INS, st_bat), stmt_atom_int(privilege));
+	inserts[2] = stmt_append(stmt_bat(n->data, stmt_dup(pts), INS), stmt_atom_int(privilege));
 	n = n->next;
-	inserts[3] = stmt_append(stmt_cbat(n->data, stmt_dup(pts), INS, st_bat), stmt_atom_int(grantor));
+	inserts[3] = stmt_append(stmt_bat(n->data, stmt_dup(pts), INS), stmt_atom_int(grantor));
 	n = n->next;
-	inserts[4] = stmt_append(stmt_cbat(n->data, stmt_dup(pts), INS, st_bat), stmt_atom_int(grantable));
+	inserts[4] = stmt_append(stmt_bat(n->data, stmt_dup(pts), INS), stmt_atom_int(grantable));
 	stmt_destroy(pts);
 	res = sql_insert(sql, pt, inserts, 5, 0);
 	cleanup_stmts(inserts, 5);
@@ -354,11 +354,11 @@ sql_delete_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, i
 	(void) grantor;
 	(void) grantable;
 
-	stmt_relselect_fill(s, stmt_uselect(stmt_cbat(n->data, stmt_dup(pts), RDONLY, st_bat), stmt_atom_int(auth_id), cmp_equal));
+	stmt_relselect_fill(s, stmt_uselect(stmt_bat(n->data, stmt_dup(pts), RDONLY), stmt_atom_int(auth_id), cmp_equal));
 	n = n->next;
-	stmt_relselect_fill(s, stmt_uselect(stmt_cbat(n->data, stmt_dup(pts), RDONLY, st_bat), stmt_atom_int(privilege), cmp_equal));
+	stmt_relselect_fill(s, stmt_uselect(stmt_bat(n->data, stmt_dup(pts), RDONLY), stmt_atom_int(privilege), cmp_equal));
 	n = n->next;
-	stmt_relselect_fill(s, stmt_uselect(stmt_cbat(n->data, stmt_dup(pts), RDONLY, st_bat), stmt_atom_int(obj_id), cmp_equal));
+	stmt_relselect_fill(s, stmt_uselect(stmt_bat(n->data, stmt_dup(pts), RDONLY), stmt_atom_int(obj_id), cmp_equal));
 
 	s = stmt_mark(stmt_reverse(s), 0);
 	s = sql_delete(sql, ptv, pt, s, 0);
@@ -1076,7 +1076,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			if (!a) {
 				return sql_error(sql, 02, "ALTER TABLE: failed to create default value '%s'\n", cs->def ? cs->def : "NULL");
 			}
-			res = stmt_append(stmt_cbat(cs, stmt_basetable(t, t->base.name), 1, st_bat), stmt_const(stmt_cbat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), 0, st_bat), stmt_atom(a)));
+			res = stmt_append(stmt_bat(cs, stmt_basetable(t, t->base.name), INS), stmt_const(stmt_bat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), RDONLY), stmt_atom(a)));
 		}
 		if (!res)
 			res = stmt_none();

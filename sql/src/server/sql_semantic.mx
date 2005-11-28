@@ -369,7 +369,7 @@ scope_add_table_columns(mvc *sql, scope *scp, sql_table *t, char *tname, int acc
 		tv = scope_add_table(scp, ts = stmt_basetable(t, tname), tname, t);
 		for (n = t->columns.set->h; n; n = n->next) {
 			sql_column *c = n->data;
-			stmt *sc = stmt_cbat(c, stmt_dup(ts), access, st_bat);
+			stmt *sc = stmt_bat(c, stmt_dup(ts), access);
 
 			table_add_column(tv, sc, NULL, c->base.name);
 		}

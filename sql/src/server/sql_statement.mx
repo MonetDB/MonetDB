@@ -39,7 +39,6 @@ typedef enum stmt_type {
 	st_basetable,
 	st_temp,		/* temporal bat */
 	st_bat,
-	st_ubat,
 	st_column,		/* relational column result */
 	st_dbat,
 	st_idxbat,
@@ -169,7 +168,7 @@ extern stmt *stmt_basetable(sql_table *t, char *tname);
 #define ptable_parent(s)		((s)->op2.stval)
 #define ptable_statements(s)	((s)->op3.stval)
 
-extern stmt *stmt_cbat(sql_column *c, stmt *basetable, int access, st_type type);
+extern stmt *stmt_bat(sql_column *c, stmt *basetable, int access );
 extern stmt *stmt_column(stmt *i, stmt *basetable);	/* relational column */
 extern stmt *stmt_tbat(sql_table *t, int access);
 extern stmt *stmt_idxbat(sql_idx * i, int access);
@@ -292,7 +291,6 @@ st_type2string(st_type type)
 		ST(temp);
 		ST(bat);
 
-		ST(ubat);
 		ST(column);
 		ST(dbat);
 		ST(idxbat);
@@ -605,7 +603,6 @@ stmt_destroy(stmt *s)
 			if (s->op2.sval)
 				_DELETE(s->op2.sval);
 		case st_bat:
-		case st_ubat:
 		case st_dbat:
 		case st_idxbat:
 		case st_none:
@@ -821,9 +818,9 @@ stmt_column(stmt *op1, stmt *basetable)
 }
 
 static stmt *
-stmt_cbat_(sql_column *c, stmt *basetable, int access, st_type type)
+stmt_bat_(sql_column *c, stmt *basetable, int access )
 {
-	stmt *s = stmt_create(type);
+	stmt *s = stmt_create(st_bat);
 
 	s->op1.cval = c;
 	s->nrcols = 1;
@@ -833,21 +830,21 @@ stmt_cbat_(sql_column *c, stmt *basetable, int access, st_type type)
 }
 
 stmt *
-stmt_cbat(sql_column *c, stmt *basetable, int access, st_type type)
+stmt_bat(sql_column *c, stmt *basetable, int access )
 {
-	stmt *s = stmt_cbat_(c, basetable, access, type);
+	stmt *s = stmt_bat_(c, basetable, access );
 	
-	if (c->base.flag != TR_NEW && type == st_bat && 
+	if (c->base.flag != TR_NEW && 
 	    access == RDONLY && c->t->persists && !c->t->clear) {
-		stmt *i = stmt_cbat_(c, stmt_dup(basetable), INS, st_bat);
-		stmt *u = stmt_cbat_(c, stmt_dup(basetable), RDONLY, st_ubat);
+		stmt *i = stmt_bat_(c, stmt_dup(basetable), INS );
+		stmt *u = stmt_bat_(c, stmt_dup(basetable), UPD );
 
 		s = stmt_union(s, i);
 		s = stmt_diff(s, u);
 		s = stmt_union(s, stmt_dup(u));
 	} 
 	/* even temp tables have deletes because we like to keep void heads */
-	if (type == st_bat && access == RDONLY) {
+	if (access == RDONLY) {
 		stmt *d = stmt_tbat(c->t, RDONLY);
 		s = stmt_diff(s, stmt_reverse(d));
 	}
@@ -866,15 +863,35 @@ stmt_tbat(sql_table *t, int access)
 }
 
 stmt *
-stmt_idxbat(sql_idx * i, int access)
+stmt_idxbat_(sql_idx * i, int access)
 {
 	stmt *s = stmt_create(st_idxbat);
 
 	s->op1.idxval = i;
 	s->nrcols = 1;
 	s->flag = access;
+	return s;
+}
 
-	/* TODO if readonly diff/union with updates etc */
+stmt *
+stmt_idxbat(sql_idx * idx, int access)
+{
+	stmt *s = stmt_idxbat_(idx, access);
+
+	if (idx->base.flag != TR_NEW && 
+	    access == RDONLY && idx->t->persists && !idx->t->clear) {
+		stmt *i = stmt_idxbat_(idx, INS);
+		stmt *u = stmt_idxbat_(idx, UPD);
+
+		s = stmt_union(s, i);
+		s = stmt_diff(s, u);
+		s = stmt_union(s, stmt_dup(u));
+	} 
+	/* even temp tables have deletes because we like to keep void heads */
+	if (access == RDONLY) {
+		stmt *d = stmt_tbat(idx->t, RDONLY);
+		s = stmt_diff(s, stmt_reverse(d));
+	}
 	return s;
 }
 
@@ -1729,7 +1746,6 @@ tail_type(stmt *st)
 	case st_list:
 		return tail_type(st->op1.lval->h->data);
 
-	case st_ubat:
 	case st_bat:
 		return &st->op1.cval->type;
 	case st_idxbat:
@@ -2137,7 +2153,6 @@ int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 			break;
 			
 		case st_bat:
-		case st_ubat:
 			fprintf(fp,"column_%s[label=\"column '%s'\",shape=ellipse];\n", s->op1.cval->base.name, s->op1.cval->base.name);
 			fprintf(fp, "column_%s -> id%d [headlabel=\"1\"];\n",
 				s->op1.cval->base.name, -(s->optimized));

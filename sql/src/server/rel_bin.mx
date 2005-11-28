@@ -237,7 +237,7 @@ rel2bin_basetable( mvc *sql, sql_rel *rel )
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 
-		stmt *sc = stmt_cbat(c, stmt_dup(ts), RDONLY, st_bat);
+		stmt *sc = stmt_bat(c, stmt_dup(ts), RDONLY);
 		list_append(l, sc);
 	}
 	stmt_destroy(ts);

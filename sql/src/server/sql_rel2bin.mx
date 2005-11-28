@@ -82,7 +82,6 @@ tail_column(stmt *st)
 
 	case st_table_clear:
 	case st_column:
-	case st_ubat:
 	case st_bat:
 		return st;
 
@@ -202,7 +201,6 @@ head_column(stmt *st)
 	case st_none:
 	case st_sql:
 
-	case st_ubat:
 	case st_dbat:
 
 	case st_ordered:
@@ -238,7 +236,6 @@ basecolumn(stmt *st)
 
 	case st_pivot:
 		return basecolumn(st->op1.stval);
-	case st_ubat:
 	case st_bat:
 		return st->op1.cval;
 
@@ -1347,7 +1344,6 @@ rel2bin(mvc *c, stmt *s)
 	}
 
 	case st_bat:
-	case st_ubat:
 		s->optimized = 2;
 		return stmt_dup(s);
 

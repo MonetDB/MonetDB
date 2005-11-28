@@ -85,11 +85,6 @@ command nextValue( sequence:str ):lng
 address mvc_next_value
 comment "return the next value of the sequence";
 
-command bind_ubat(sname:str, tname:str, cname:str, access:int ) :bat[:any_1,:any_2]
-address mvc_bind_ubat_wrap
-comment "Bind bat with the updates to tname.cname 
-	with specific access mode";
-
 command bind_dbat(sname:str, tname:str, access:int):bat[:any_1,:any_2]
 address mvc_bind_dbat_wrap
 comment "Bind the table deletes bat, tname.delete 
@@ -646,7 +641,6 @@ extern int sqlcleanup(mvc *c, int err);
 extern stmt *sql_symbol2stmt(mvc *c);
 
 extern BAT *mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access);
-extern BAT *mvc_bind_ubat(mvc *m, char *sname, char *tname, char *cname, int access);
 extern BAT *mvc_bind_dbat(mvc *m, char *sname, char *tname, int access);
 extern BAT *mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access);
 
@@ -859,23 +853,13 @@ mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 	sql_table *t = mvc_bind_table(m, s, tname);
 	sql_column *c = mvc_bind_column(m, t, cname);
 
-	b = bind_bat(tr, c, access);
+	if (access == UPD)
+		b = bind_ubat(tr, c, access);
+	else
+		b = bind_bat(tr, c, access);
 	return b;
 }
 
-
-BAT *
-mvc_bind_ubat(mvc *m, char *sname, char *tname, char *cname, int access)
-{
-	sql_trans *tr = m->trans;
-	BAT *b = NULL;
-	sql_schema *s = mvc_bind_schema(m, sname);
-	sql_table *t = mvc_bind_table(m, s, tname);
-	sql_column *c = mvc_bind_column(m, t, cname);
-
-	b = bind_ubat(tr, c, access);
-	return b;
-}
 
 BAT *
 mvc_bind_dbat(mvc *m, char *sname, char *tname, int access)
@@ -898,7 +882,10 @@ mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access)
 	sql_idx *i = mvc_bind_idx(m, s, iname);
 
 	(void) tname;
-	b = bind_idx(tr, i, access);
+	if (access == UPD)
+		b = bind_uidx(tr, i, access);
+	else
+		b = bind_idx(tr, i, access);
 	return b;
 }
 
@@ -957,22 +944,6 @@ mvc_bind_single_wrap(int *ret, int *bid, str *name)
 	BBPunfix( *ret = b->batCacheid);
 	BBPunfix( bn->batCacheid);
 	return MAL_SUCCEED;
-}
-
-str
-mvc_bind_ubat_wrap(int *ret, str *sname, str *tname, str *cname, int *access)
-{
-	mvc *m;
-	BAT *b;
-
-	@:getContext(m)@
-	b = mvc_bind_ubat(m, *sname, *tname, *cname, *access);
-	if (b) {
-		BBPincref( *ret = b->batCacheid, TRUE);
-		BBPunfix(*ret);
-		return MAL_SUCCEED;
-	}
-	return throwException(MALEXCEPTION, "mvc_bind_ubat_wrap", "error");
 }
 
 str

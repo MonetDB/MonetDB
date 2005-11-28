@@ -388,11 +388,9 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			s->nr = -backend_dumpstmt_(s->op1.stval, nr, sql);
 			backend_dec_nr2(s->op1.stval);
 			break;
-		case st_bat:
-		case st_ubat:{
-			char *type = (s->type == st_bat) ? "" : "_ubat";
+		case st_bat: {
 			char *hname = NULL;
-			size_t buflen = 128 + strlen(type) + strlen(s->op1.cval->t->s->base.name) + strlen(s->op1.cval->t->base.name) + strlen(s->op1.cval->base.name);
+			size_t buflen = 128 + strlen(s->op1.cval->t->s->base.name) + strlen(s->op1.cval->t->base.name) + strlen(s->op1.cval->base.name);
 
 			if (s->h->type == st_basetable) {
 				hname = s->h->op1.tval->base.name;
@@ -400,7 +398,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			}
 			buf = NEW_ARRAY(char, buflen + 1);
 
-			len = snprintf(buf, buflen, "var s%d := mvc_bind%s(myc, \"%s\", \"%s\", \"%s\", %d)", -s->nr, type, s->op1.cval->t->s->base.name, s->op1.cval->t->base.name, s->op1.cval->base.name, s->flag);
+			len = snprintf(buf, buflen, "var s%d := mvc_bind(myc, \"%s\", \"%s\", \"%s\", %d)", -s->nr, s->op1.cval->t->s->base.name, s->op1.cval->t->base.name, s->op1.cval->base.name, s->flag);
 			assert(len <= buflen);
 
 			len += snprintf(buf + len, buflen - len, "; #%s\n", hname ? hname : "");

@@ -79,15 +79,10 @@ The updates against the relational tables are collected in separate
 BATs until transaction commit. 
 The code produced by the SQL->MIL compiler uses it to propagate
 the updates to the persistent versions.
-??What is the idx table??
 @m
 	.COMMAND mvc_bind( mvc c, str sname, str tname, str cname, int access ) : 
 		BAT[any::1,any::2] = 
 		mvc_bind_wrap; "Bind the bat, tname.cname"
-
-	.COMMAND mvc_bind_ubat( mvc c, str sname, str tname, str cname, int access ) : 
-		BAT[any::1,any::2] = 
-		mvc_bind_ubat_wrap; "Bind bat with the updates to tname.cname"
 
 	.COMMAND mvc_bind_dbat( mvc c, str sname, str tname, int access ) : 
 		BAT[any::1,any::2] = mvc_bind_dbat_wrap; 
@@ -394,21 +389,10 @@ mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 	sql_table *t = mvc_bind_table(m, s, tname);
 	sql_column *c = mvc_bind_column(m, t, cname);
 
-	b = bind_bat(tr, c, access);
-	return b;
-}
-
-
-static BAT *
-mvc_bind_ubat(mvc *m, char *sname, char *tname, char *cname, int access)
-{
-	sql_trans *tr = m->trans;
-	BAT *b = NULL;
-	sql_schema *s = mvc_bind_schema(m, sname);
-	sql_table *t = mvc_bind_table(m, s, tname);
-	sql_column *c = mvc_bind_column(m, t, cname);
-
-	b = bind_ubat(tr, c, access);
+	if (access == UPD)
+		b = bind_ubat(tr, c, access);
+	else
+		b = bind_bat(tr, c, access);
 	return b;
 }
 
@@ -433,7 +417,10 @@ mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access)
 	sql_idx *i = mvc_bind_idx(m, s, iname);
 
 	(void) tname;
-	b = bind_idx(tr, i, access);
+	if (access == UPD)
+		b = bind_uidx(tr, i, access);
+	else
+		b = bind_idx(tr, i, access);
 	return b;
 }
 
@@ -442,16 +429,6 @@ int
 mvc_bind_wrap(BAT **res, mvc *c, str sname, str tname, str cname, int *access)
 {
 	*res = mvc_bind(*(mvc **) c, sname, tname, cname, *access);
-	if (*res) {
-		return GDK_SUCCEED;
-	}
-	return GDK_FAIL;
-}
-
-int
-mvc_bind_ubat_wrap(BAT **res, mvc *c, str sname, str tname, str cname, int *access)
-{
-	*res = mvc_bind_ubat(*(mvc **) c, sname, tname, cname, *access);
 	if (*res) {
 		return GDK_SUCCEED;
 	}
