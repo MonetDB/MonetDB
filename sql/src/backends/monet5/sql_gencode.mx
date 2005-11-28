@@ -1210,8 +1210,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			@:SQLpostlude@
 		} break;
 		case st_exception:{
-			int l = _dumpstmt(sql, mb, s->op1.stval);
-			int r = _dumpstmt(sql, mb, s->op2.stval);
+			int l,r,res = 0;
+
+			if (s->op4.stval)
+				res = _dumpstmt(sql, mb, s->op4.stval);
+			l = _dumpstmt(sql, mb, s->op1.stval);
+			r = _dumpstmt(sql, mb, s->op2.stval);
 
 			@:SQLprelude@
 			/* if(bit(l)) { error(r);}  ==raising an exception */
@@ -1219,6 +1223,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushArgument(mb, q, l);
 			q = pushArgument(mb, q, r);
 			s->nr = getDestVar(q);
+			if (res)
+				s->nr = res;
 			@:SQLpostlude@
 			break;
 		}

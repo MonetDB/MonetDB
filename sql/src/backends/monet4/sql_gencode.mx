@@ -1054,7 +1054,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			break;
 		}
 		case st_exception:{
-			int l,r,res;
+			int l,r,res = 0;
 	
 			if (s->op4.stval)
 				res = backend_dumpstmt_(s->op4.stval, nr, sql);
