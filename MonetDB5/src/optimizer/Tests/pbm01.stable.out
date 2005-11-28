@@ -22,7 +22,7 @@ stdout of test 'pbm01` in directory 'src/optimizer` itself:
 #
 function user.main():void;	# 0  (main:void)
 # extract the definition by the optimizer 	# 1  (_2:str)
-    d:bat[:void,:int]  := mat.expand("Sales2005");	# 2 MATexpand (d:bat[:void,:int])<-(_4:str)
+    d:bat[:void,:int]  := mat.expand("Sales2005");	# 2 MATdummy (d:bat[:void,:int])<-(_4:str)
     _13 := bbp.bind("tmp_4");	# 3 CMDbbpbind (_13:bat[:void,:int])<-(_14:str)
     _15 := bbp.bind("tmp_5");	# 4 CMDbbpbind (_15:bat[:void,:int])<-(_16:str)
     _17 := bbp.bind("tmp_6");	# 5 CMDbbpbind (_17:bat[:void,:int])<-(_18:str)

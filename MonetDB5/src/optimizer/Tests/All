@@ -41,7 +41,11 @@ mat04
 
 pbm00
 pbm01
+pbm03
 pbm20
+
+generator00
+generator01
 
 roberto1
 CXerror1

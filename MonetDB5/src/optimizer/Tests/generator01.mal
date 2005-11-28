@@ -1,0 +1,5 @@
+# the iterator optimizer
+	b:bat[void,:int]:= mat.iterators("Sales2005")
+	i:= algebra.count(b);
+	io.print(i);
+

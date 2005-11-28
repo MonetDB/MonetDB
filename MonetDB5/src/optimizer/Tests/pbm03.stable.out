@@ -1,0 +1,138 @@
+stdout of test 'pbm03` in directory 'src/optimizer` itself:
+
+
+# 18:21:49 >  
+# 18:21:49 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=34781 --set sql_port=41829 --set xquery_port=53534 --set monet_prompt= --trace --dbname=mTests_src_optimizer  pbm03.mal < /dev/null
+# 18:21:49 >  
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_optimizer
+# Visit http://monetdb.cwi.nl/ for further information.
+## use a group to expand
+#    mdb.list();
+#	pbm.open();
+#    b:bat[:void,:int] := mat.expand("Sales2005");
+#    s := algebra.select(b,0,2);
+#    i := aggr.count(s);
+#    io.print(s);
+#    io.print(i);
+#    c0 := bat.new(:int,:int);
+#    bat.insert(c0,0,4);
+#    c1 := bat.new(:int,:int);
+#    bat.insert(c1,1,5);
+#    c := mat.new(c0,c1);
+#    bat.insert(c,1,6);
+#    j := algebra.join(b,c);
+#    io.print(j);
+#io.print(b);
+#io.print(c);
+#
+#optimizer.multitable();
+#
+function user.main():void;	# 0  (main:void)
+# use a group to expand 	# 1  (_2:str)
+    mdb.list();	# 2 MDBlist (_3:void)
+    pbm.open();	# 3 PBMopen (_4:void)
+    b:bat[:void,:int]  := mat.expand("Sales2005");	# 4 MATdummy (b:bat[:void,:int])<-(_6:str)
+    _32 := bbp.bind("tmp_4");	# 5 CMDbbpbind (_32:bat[:void,:int])<-(_33:str)
+    _34 := bbp.bind("tmp_5");	# 6 CMDbbpbind (_34:bat[:void,:int])<-(_35:str)
+    _36 := bbp.bind("tmp_6");	# 7 CMDbbpbind (_36:bat[:void,:int])<-(_37:str)
+    b:bat[:void,:int]  := mat.new(_32,_34,_36);	# 8 MATnew (b:bat[:void,:int])<-(_32:bat[:void,:int])(_34:bat[:void,:int])(_36:bat[:void,:int])
+    _38 := algebra.select(_32,0,2);	# 9 ALGselect (_38:bat[:void,:int])<-(_32:bat[:void,:int])(_8:int)(_9:int)
+    _39 := algebra.select(_34,0,2);	# 10 ALGselect (_39:bat[:void,:int])<-(_34:bat[:void,:int])(_8:int)(_9:int)
+    _40 := algebra.select(_36,0,2);	# 11 ALGselect (_40:bat[:void,:int])<-(_36:bat[:void,:int])(_8:int)(_9:int)
+    s := mat.new(_38,_39,_40);	# 12 MATnew (s:bat[:void,:int])<-(_38:bat[:void,:int])(_39:bat[:void,:int])(_40:bat[:void,:int])
+    i := 0;	# 13  (i:int)<-(_8:int)
+    _41 := aggr.count(_38);	# 14 ALGcount_bat (_41:int)<-(_38:bat[:void,:int])
+    i := calc.+(i,_41);	# 15 CALCbinaryADDintint (i:int)<-(i:int)(_41:int)
+    _42 := aggr.count(_39);	# 16 ALGcount_bat (_42:int)<-(_39:bat[:void,:int])
+    i := calc.+(i,_42);	# 17 CALCbinaryADDintint (i:int)<-(i:int)(_42:int)
+    _43 := aggr.count(_40);	# 18 ALGcount_bat (_43:int)<-(_40:bat[:void,:int])
+    i := calc.+(i,_43);	# 19 CALCbinaryADDintint (i:int)<-(i:int)(_43:int)
+    s := mat.pack(_38,_39,_40);	# 20 MATpack (s:bat[:void,:int])<-(_38:bat[:void,:int])(_39:bat[:void,:int])(_40:bat[:void,:int])
+    io.print(s);	# 21 IOprint_val (_11:int)<-(s:bat[:void,:int])
+    io.print(i);	# 22 IOprint_val (_12:int)<-(i:int)
+    c0 := bat.new(:int,:int);	# 23 CMDBATnew (c0:bat[:int,:int])<-(_14:int)(_15:int)
+    bat.insert(c0,0,4);	# 24 BKCinsert_bun_int_int (_16:void)<-(c0:bat[:int,:int])(_8:int)(_17:int)
+    c1 := bat.new(:int,:int);	# 25 CMDBATnew (c1:bat[:int,:int])<-(_19:int)(_20:int)
+    bat.insert(c1,1,5);	# 26 BKCinsert_bun_int_int (_21:void)<-(c1:bat[:int,:int])(_22:int)(_23:int)
+    c := mat.new(c0,c1);	# 27 MATnew (c:bat[:int,:int])<-(c0:bat[:int,:int])(c1:bat[:int,:int])
+    bat.insert(c1,1,6);	# 28 BKCinsert_bun_int_int (_25:void)<-(c1:bat[:int,:int])(_22:int)(_26:int)
+    b:bat[:void,:int]  := mat.pack(_32,_34,_36);	# 29 MATpack (b:bat[:void,:int])<-(_32:bat[:void,:int])(_34:bat[:void,:int])(_36:bat[:void,:int])
+    _44 := algebra.join(b,c0);	# 30 ALGjoin (_44:bat[:void,:int])<-(b:bat[:void,:int])(c0:bat[:int,:int])
+    _45 := algebra.join(b,c1);	# 31 ALGjoin (_45:bat[:void,:int])<-(b:bat[:void,:int])(c1:bat[:int,:int])
+    j := mat.new(_44,_45);	# 32 MATnew (j:bat[:void,:int])<-(_44:bat[:void,:int])(_45:bat[:void,:int])
+    j := mat.pack(_44,_45);	# 33 MATpack (j:bat[:void,:int])<-(_44:bat[:void,:int])(_45:bat[:void,:int])
+    io.print(j);	# 34 IOprint_val (_28:int)<-(j:bat[:void,:int])
+    io.print(b);	# 35 IOprint_val (_29:int)<-(b:bat[:void,:int])
+    c := mat.pack(c0,c1);	# 36 MATpack (c:bat[:int,:int])<-(c0:bat[:int,:int])(c1:bat[:int,:int])
+    io.print(c);	# 37 IOprint_val (_30:int)<-(c:bat[:int,:int])
+end main;	# 38  
+function user.main():void;
+# use a group to expand 
+    mdb.list();
+    pbm.open();
+    b:bat[:void,:int]  := mat.expand("Sales2005");
+    _32 := bbp.bind("tmp_4");
+    _34 := bbp.bind("tmp_5");
+    _36 := bbp.bind("tmp_6");
+    b:bat[:void,:int]  := mat.new(_32,_34,_36);
+    _38 := algebra.select(_32,0,2);
+    _39 := algebra.select(_34,0,2);
+    _40 := algebra.select(_36,0,2);
+    s := mat.new(_38,_39,_40);
+    i := 0;
+    _41 := aggr.count(_38);
+    i := calc.+(i,_41);
+    _42 := aggr.count(_39);
+    i := calc.+(i,_42);
+    _43 := aggr.count(_40);
+    i := calc.+(i,_43);
+    s := mat.pack(_38,_39,_40);
+    io.print(s);
+    io.print(i);
+    c0 := bat.new(:int,:int);
+    bat.insert(c0,0,4);
+    c1 := bat.new(:int,:int);
+    bat.insert(c1,1,5);
+    c := mat.new(c0,c1);
+    bat.insert(c1,1,6);
+    b:bat[:void,:int]  := mat.pack(_32,_34,_36);
+    _44 := algebra.join(b,c0);
+    _45 := algebra.join(b,c1);
+    j := mat.new(_44,_45);
+    j := mat.pack(_44,_45);
+    io.print(j);
+    io.print(b);
+    c := mat.pack(c0,c1);
+    io.print(c);
+end main;
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0 ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+#-----------------#
+# h	t	  # name
+# int	int	  # type
+#-----------------#
+[ 0,	  4	  ]
+[ 1,	  5	  ]
+[ 1,	  6	  ]
+
+# 18:21:49 >  
+# 18:21:49 >  Done.
+# 18:21:49 >  
+

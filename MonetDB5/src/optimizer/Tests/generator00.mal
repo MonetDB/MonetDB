@@ -1,0 +1,7 @@
+# the iterator optimizer
+	b:bat[:void,:int]:= pbm.generator("Sales2005");
+	s:= algebra.select(b,0,3);
+	io.print("step");
+mdb.list();
+optimizer.generators();
+
