@@ -1,0 +1,441 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBGicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' All Rights Reserved.
+
+@f mal_generators
+@a M. Kersten
+@-
+@node Partitioned Databases, Strength Reduction, Multi-Association Tables, Optimizer toolkit
+@+ Iterator query processing
+Limitations on the addressing space in older PCs and the need
+for distributed storage makes that BATs ideally should be 
+looked upon as a union of smaller BATs which are processed
+within the (memory) resource limitations given.
+
+The operation @code{optimizer.generators} takes mat.new definitions
+and encapsulate them in iterator blocks, thereby minimizing the
+MAL program footprint.
+
+The optimizer is designed incrementally. The focus is
+on supporting the SQL front-end. In particularly, the
+operators considered is a limited subset of MAL. Occurrence
+of an operator outside this set terminates the loop.
+
+The general strategy is to select a portion of the workflow
+related to a variable and encapsulate it with
+an iterator over the BAT partitions. In doing so, we replace
+operators with their incremental counter part, alike the
+MAT optimizer.
+
+A snippet of the partitioning optimizer is shown below. It assumes
+that the MAT @code{a0} consists of the components @code{a1,a2,a3}.
+A subsequent call of the partition optimizer will replace
+the print command with an iterator.
+@verbatim
+
+function qry(a:bat[:void,:any_1]
+	b:bat[void,:int]:= mat.iterator("Sales2005")
+	i:= algebra.count(b);
+    io.print(i);
+end qry;
+optimizer.generators("user","qry");
+@end verbatim
+The query is transformed into the following version.
+@verbatim
+function user.qry(a:bat[:void,:any_1]{mat}):void;
+	b:bat[void,:int]:= mat.iterator("Sales2005")
+	_7:= 0;
+barrier _6:= mat.newIterator("Sales2005");
+	_8:= aggr.count(_t);
+	_7:= _7+ _8;
+    redo _6:= mat.hasMoreElements(a);
+exit _6;
+    io.print(_7);
+end qry;
+@end verbatim
+@{
+@h
+#ifndef _MAL_BATLOOPS_
+#define _MAL_BATLOOPS_
+#include "mal_optimizer.h"
+#include "mal_builder.h"
+#include "pbm.h"
+
+opt_export str BGoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+/* #define DEBUG_MAL_BATLOOPS     show partial result */
+
+#endif
+@c
+#include "mal_generators.h"
+#include "mal_prelude.h"
+
+static int
+isPBMalias(int idx, int mvar[], int top){
+	int i;
+	for(i =0; i<top; i++)
+		if( mvar[i]== idx) return i;
+	return -1;
+}
+@-
+Packing the BATs into a single one is handled here
+@c
+InstrPtr BGexitLoop(MalBlkPtr mb, InstrPtr  r, int m, InstrPtr *mat, int *mvar, int mtop){
+	int l,k;
+	for(l=mat[m]->retc; l< mat[m]->argc; l++){
+		k= isPBMalias( getArg(mat[m],l),mvar,mtop);
+		if( k< 0)
+			r= pushArgument(mb,r, getArg(mat[m],l));
+		else
+			r= BGexitLoop(mb,r, k, mat,mvar,mtop);
+	}
+	return r;
+}
+static void BGcloseLoop(MalBlkPtr mb, int m, InstrPtr *mat ){
+	InstrPtr r;
+	r = newInstruction(mb, ASSIGNsymbol);
+	r->barrier= REDOsymbol;
+	setModuleId(r, moduleId(mat[m]));
+	setFunctionId(r,putName("hasMoreElements",15));
+	getArg(r,0)= getArg(mat[m],0);
+	pushArgument(mb,r,getArg(mat[m],1));
+	pushInstruction(mb,r);
+
+	r = newInstruction(mb, ASSIGNsymbol);
+	r->barrier= EXITsymbol;
+	getArg(r,0)= getArg(mat[m],0);
+	pushInstruction(mb,r);
+
+}
+@-
+We remember all instructions that should be moved outside the loop
+At some point they have to included.
+@c
+static void BGcopyKeep(MalBlkPtr mb, int keep, InstrPtr *old){
+	int i;
+	for(i=0;i<keep; i++)
+	pushInstruction(mb,old[i]);
+}
+
+str
+BGoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	InstrPtr *old=0, q,r, mat[256];
+	int oldtop,keep=0,i,j,k,m=0,mtop=0, mvar[256], mloop[256],tpe;
+	int size,match,actions=0;
+	lng clk = GDKusec();
+#ifdef DEBUG_MAL_BATLOOPS     
+	stream_printf(GDKout,"Start generators optimizer\n");
+	printFunction(GDKout, mb, 0);
+#endif
+	optInit();
+
+	if(p)
+		removeInstruction(mb,p);
+
+	old = mb->stmt;
+	oldtop= mb->stop;
+	size = (mb->stop *1.2 < mb->ssize)? mb->ssize: mb->stop *1.2;
+	mb->stmt = (InstrPtr *) GDKmalloc(size  * sizeof(InstrPtr));
+	memset((char*)mb->stmt, 0, size * sizeof(InstrPtr));
+	mb->ssize = size ;
+	mb->stop = keep;
+
+
+	for( i=0; i<oldtop-1; i++){
+		p= old[i];
+@-
+Deal with iterator requests aimed at partitioned BATs
+@c
+		if( (moduleId(p)== pbmRef && functionId(p)== generatorRef)  &&
+			p->argc== 2 && getVarType(mb,getArg(p,1))== TYPE_str){
+			mat[mtop]= p;
+			mvar[mtop] = getArg(p,0);
+			mloop[mtop] = mb->stop;
+			mtop++;
+			pushInstruction(mb,p);
+			r = newInstruction(mb, ASSIGNsymbol);
+			r->barrier= BARRIERsymbol;
+			setModuleId(r,pbmRef);
+			setFunctionId(r,putName("newIterator",11));
+			getArg(r,0)= getArg(mat[m],0);
+			pushArgument(mb,r,getArg(p,1));
+			pushInstruction(mb,r);
+			continue;
+		}
+@-
+Any side-effect operator should be either postponed or terminates
+the generator.
+It is up to the strength reduction to move instructions safely out of
+the loop.
+Otherwise we have to decide on either packing them or replacement.
+@c
+		match=0;
+		for(j=p->retc; j<p->argc; j++)
+		if(  isPBMalias(getArg(p,j),mvar,mtop) >= 0) {
+			m=i; match++;
+		}
+		if( match== 0 && ! isUnsafeFunction(mb,p) &&
+			!isUnsafeInstruction(p) ){
+			pushInstruction(mb,p);
+			continue;
+		}
+@-
+Pack all but one MAT argument together. Remove their definitions afterwards.
+This should involve selection of which loop to keep open.
+[tobedone]
+@c
+		if( match>1 ){
+			for( k= p->retc; k<p->argc && match>1; k++, match--)
+			if(	(m=isPBMalias(getArg(p,k),mvar,mtop)) >= 0){
+#ifdef DEBUG_MAL_BATLOOPS     
+				stream_printf(GDKout,"Dependency resolution k=%d\n",k);
+				printInstruction(GDKout,mb,p,0);
+#endif
+				r = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(r,matRef);
+				setFunctionId(r,packRef);
+				getArg(r,0)= getArg(mat[m],0);
+				r= BGexitLoop(mb, r, m, mat, mvar, mtop);
+				pushInstruction(mb,r);
+				getArg(p,k)= getArg(r,0);
+				for(j=m; j<mtop-1; j++){
+					mat[j]= mat[j+1];
+					mvar[j]= mvar[j+1];
+				}
+				mtop--; 
+			}
+			if( match== 0)
+				pushInstruction(mb,p);
+		}
+@-
+Left with an instruction with at most one MAT we can replace it.
+Not all instructions can be replaced by the sequence. We have to
+group them and check for them individually.
+At first we look for the first argument. Others are dealt with
+through the default case.
+@c
+		if(( (moduleId(p)== algebraRef && functionId(p)== selectRef) ||
+			(moduleId(p)== algebraRef && functionId(p)==uselectRef) ||
+			(moduleId(p)== algebraRef && functionId(p)==likeselectRef) ||
+			(moduleId(p)== batRef && functionId(p)==reverseRef) ||
+			(moduleId(p)== batRef && functionId(p)==mirrorRef) ||
+			(moduleId(p)== algebraRef && functionId(p)==markTRef) ||
+			(moduleId(p)== algebraRef && functionId(p)==kdifferenceRef) ||
+			(moduleId(p)== algebraRef && functionId(p)== joinRef) ||
+			(moduleId(p)== algebraRef && functionId(p)== semijoinRef) ||
+			(moduleId(p)== batRef && functionId(p)== setAccessRef) ||
+			(moduleId(p)== batRef && functionId(p)== appendRef)  ||
+			(moduleId(p)== batRef && functionId(p)== deleteRef)  ||
+			moduleId(p)== calcRef 
+		)  && (m=isPBMalias(getArg(p,1),mvar,mtop)) >= 0){
+			r = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(r,matRef);
+			setFunctionId(r,newRef);
+			getArg(r,0)= getArg(p,0);
+			tpe= getArgType(mb,p,0);
+
+			for(k=1; k< mat[m]->argc; k++){
+				if( k<mat[m]->argc-1 &&  (
+					functionId(p)== insertRef ||
+					functionId(p)== appendRef ))
+					continue;
+				q= copyInstruction(p);
+				getArg(q,1) = getArg(mat[m],k);
+				getArg(q,0) = newTmpVariable(mb, tpe);
+				pushInstruction(mb,q);
+				setVarInitialized(mb,getArg(q,0));
+				r= pushArgument(mb,r,getArg(q,0));
+				setVarUsed(mb,getArg(q,0),TRUE);
+			}
+			if( functionId(p)== insertRef ||
+				functionId(p)== appendRef ||
+				functionId(p)== deleteRef )
+					match=1;
+			else {
+				match =0;
+				for(j=0;j<mtop; j++)
+					if( mvar[j]== getArg(p,0)) match++;
+				if( match == 0){
+					mvar[mtop] = getArg(p,0);
+					mat[mtop++]= r;
+					pushInstruction(mb,r);
+				}
+			}
+			if( match)
+				freeInstruction(r);
+			actions++;
+			continue;
+		} 
+@-
+The insertions are sent to the last component of the MAT.
+Selection of the proper componetn based on range descriptors will follow.
+@c
+		if(moduleId(p)== batRef && functionId(p)== insertRef &&
+		(m=isPBMalias(getArg(p,1),mvar,mtop)) >= 0){
+			getArg(p,1) = getArg(mat[m],mat[m]->argc-1);
+			pushInstruction(mb,p);
+			continue;
+		} 
+@-
+The MAT argument could also occur as the second one.
+@c
+		if( moduleId(p)==algebraRef && functionId(p)== joinRef &&
+			(m=isPBMalias(getArg(p,2),mvar,mtop)) >= 0){
+			r = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(r,matRef);
+			setFunctionId(r,newRef);
+			getArg(r,0)= getArg(p,0);
+			tpe= getArgType(mb,p,0);
+
+			for(k=1; k< mat[m]->argc; k++){
+				q= copyInstruction(p);
+				getArg(q,2) = getArg(mat[m],k);
+				getArg(q,0) = newTmpVariable(mb, tpe);
+				pushInstruction(mb,q);
+				setVarInitialized(mb,getArg(q,0));
+				r= pushArgument(mb,r,getArg(q,0));
+				setVarUsed(mb,getArg(q,0),TRUE);
+			}
+			match =0;
+			for(j=0;j<mtop; j++)
+			if( mvar[j]== getArg(p,0)) match++;
+			if( match == 0){
+				mvar[mtop] = getArg(p,0);
+				mat[mtop++]= r;
+				pushInstruction(mb,r);
+			}
+			actions++;
+			continue;
+		} 
+@-
+Handle the rewrite v:=aggr.count(b) and sum()
+@c
+		if( ((moduleId(p)==aggrRef && functionId(p)== countRef) || 
+			(moduleId(p)==aggrRef && functionId(p)==sumRef && p->argc==2)) &&
+			(m=isPBMalias(getArg(p,1),mvar,mtop)) >= 0){
+			r = newInstruction(mb,ASSIGNsymbol);
+			getArg(r,0)= getArg(p,0);
+			pushInt(mb,r,0);
+			pushInstruction(mb,r);
+			for(k=1; k< mat[m]->argc; k++){
+				int v= newTmpVariable(mb,TYPE_int);
+				q= newInstruction(mb,ASSIGNsymbol);
+				setModuleId(q,aggrRef);
+				setFunctionId(q,functionId(p));
+				getArg(q,0)= v;
+				setVarUsed(mb,v,TRUE);
+				setVarInitialized(mb,v);
+				q= pushArgument(mb,q,getArg(mat[m],k));
+				pushInstruction(mb,q);
+
+				q= newInstruction(mb,ASSIGNsymbol);
+				setModuleId(q,calcRef);
+				setFunctionId(q,plusRef);
+				getArg(q,0)= getArg(r,0);
+				q= pushArgument(mb,q,getArg(r,0));
+				q= pushArgument(mb,q,v);
+				pushInstruction(mb,q);
+			}
+			continue;
+		} 
+@-
+And the min/max is as easy
+@c
+		if( ((moduleId(p)==aggrRef && functionId(p)== maxRef) || 
+			(moduleId(p)==aggrRef && functionId(p)==minRef )) &&
+			p->argc==3 &&
+			(m=isPBMalias(getArg(p,1),mvar,mtop)) >= 0){
+			r = newInstruction(mb,ASSIGNsymbol);
+			getArg(r,0)= getArg(p,0);
+			pushNil(mb,r,getArgType(mb,p,0));
+			pushInstruction(mb,r);
+			for(k=1; k< mat[m]->argc; k++){
+				int v= newTmpVariable(mb,TYPE_int);
+				q= newInstruction(mb,ASSIGNsymbol);
+				setModuleId(q,aggrRef);
+				setFunctionId(q,functionId(p));
+				getArg(q,0)= v;
+				setVarUsed(mb,v,TRUE);
+				setVarInitialized(mb,v);
+				q= pushArgument(mb,q,getArg(mat[m],k));
+				pushInstruction(mb,q);
+
+				q= newInstruction(mb,ASSIGNsymbol);
+				setModuleId(q,calcRef);
+				setFunctionId(q,plusRef);
+				getArg(q,0)= getArg(r,0);
+				q= pushArgument(mb,q,getArg(r,0));
+				q= pushArgument(mb,q,v);
+				pushInstruction(mb,q);
+			}
+			continue;
+		} 
+@-
+All other instructions should be checked for a MAT dependency.
+It require the MAT to be materialized. We drop the MAT
+afterwards for further consideration.
+@c
+MATdefault:
+		for( k= p->retc; k<p->argc; k++)
+		if(	(m=isPBMalias(getArg(p,k),mvar,mtop)) >= 0){
+#ifdef DEBUG_MAL_BATLOOPS     
+			stream_printf(GDKout,"Dependency resolution k=%d\n",k);
+			printInstruction(GDKout,mb,p,0);
+#endif
+			r = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(r,matRef);
+			setFunctionId(r,packRef);
+			getArg(r,0)= getArg(mat[m],0);
+			r= BGexitLoop(mb, r, m, mat, mvar, mtop);
+			if(	!( moduleId(p) == matRef && functionId(p)== newRef) )
+				pushInstruction(mb,r);
+			else freeInstruction(r);
+
+			for(j=m; j<mtop-1; j++){
+				mat[j]= mat[j+1];
+				mvar[j]= mvar[j+1];
+			}
+			mtop--; 
+			actions++;
+			break;
+		}
+
+		pushInstruction(mb,p);
+	}
+@-
+At this stage we should close any open generators.
+@c
+	for(i=mtop; i>=0; i--)
+	if( mloop[i]>0){
+		BGcloseLoop(mb,i,mat);
+	}
+	BGcopyKeep(mb, keep, old);
+	pushInstruction(mb,old[oldtop-1]);
+	GDKfree(old);
+@-
+As a final optimization, we could remove the mal.new definitions,
+because they are not needed for the execution.
+For the time being, they are no-ops.
+@c
+	(void) stk; 
+	optimizerCheck(mb, "optimizer.generators", actions, GDKusec() - clk);
+#ifdef DEBUG_MAL_BATLOOPS     
+	stream_printf(GDKout,"Result of generators optimizer\n");
+	printFunction(GDKout, mb, 0);
+#endif
+
+	return MAL_SUCCEED;
+}
+@}

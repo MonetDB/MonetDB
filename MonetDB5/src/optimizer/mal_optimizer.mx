@@ -516,6 +516,7 @@ denotes the signature and can not be removed.
 @{
 If one of the optimizers fails, we should not attempt others.
 @c
+#include "mal_prelude.h"
 #include "mal_optimizer.h"
 #include "mal_interpreter.h"
 #include "mal_debugger.h"
@@ -683,18 +684,16 @@ and to inspect the arguments of the signature.
 int
 isUnsafeFunction(MalBlkPtr mb, InstrPtr q)
 {
-	Symbol s = 0;
 	Client c;
+	InstrPtr p;
 
 	(void) mb;
 	if (q->fcn == 0 || functionId(q) == 0)
 		return FALSE;
 	c = getClient();
-	if (c)
-		s = getFunctionSymbol(c->nspace, q);
-	(void) s;		/* simulated some action */
-	/* check arguments for 'unsafe' property */
-	return FALSE;
+	p = getSignature(getFunctionSymbol(c->nspace, q));
+	return isPropertyDefined( getVar(mb,getArg(p,0))->props, unsafeRef);
+	/* check also arguments for 'unsafe' property */
 }
 
 @-
