@@ -376,8 +376,7 @@ PROC shred_doc_locked(BAT[str,bat] docBAT, str location, str name, timestamp ts,
     }
 }
 
-# HACK: overwrite 'height'
-PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts, int ws) : BAT[void,bat]
+PROC construct_docBAT(BAT[oid,bat]resbat, str name, bit doCommit, str opt, timestamp ts, int ws) : BAT[str, bat]
 {
     var err, exists := false;
 
@@ -392,7 +391,6 @@ PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts,
     # shred it unlocked
     var docBAT := new(str,bat,WS_SIZE); # contains all new bats
     var us := usec();
-    var shredRES := shred2bats(location,"",opt);
 
     # insert all bats from resBAT in docBAT
     var ins := ws_tpe.ord_uselect(bat).mirror().ord_select(nil,oid(-(DOC_LOADED,1))).mirror();
@@ -451,7 +449,14 @@ PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts,
     return docBAT;
 }
 
-PROC shred_doc_base(str location, str name, bit doCommit, str opt) : BAT[void,bat]
+# HACK: overwrite 'height'
+PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts, int ws) : BAT[str,bat]
+{
+    var shredRES := shred2bats(location,"",opt);
+    return construct_docBAT(shredRES, name, doCommit, opt, ts, ws);
+}
+
+PROC shred_doc_base(str location, str name, bit doCommit, str opt) : BAT[str,bat]
 {
     var height, us := usec();
     var docBAT := shred_doc_impl(location, name, doCommit, opt, timestamp(nil), int(nil));
