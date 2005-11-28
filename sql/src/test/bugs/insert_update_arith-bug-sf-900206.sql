@@ -15,3 +15,8 @@ insert into _tmp select * from tapestry where a1>=0 and a1 <=1;
 delete from _tmp;
 insert into _tmp select * from tapestry where a1>=0 and a1 <=1;
 delete from _tmp;
+
+drop table _tmp;
+drop table RKA;
+drop table RKB;
+drop table tapestry;

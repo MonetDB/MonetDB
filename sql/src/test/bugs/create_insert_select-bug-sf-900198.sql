@@ -14,3 +14,6 @@ insert into tst2 values(3,3);
 insert into tst2 values(4,4);
 select * from tst2;
 select * from tst2 where b1>=0 and b1 <=3;
+
+drop table tst;
+drop table tst2;

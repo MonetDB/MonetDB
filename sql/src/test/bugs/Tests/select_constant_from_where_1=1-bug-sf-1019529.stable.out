@@ -9,9 +9,11 @@ stdout of test 'select_constant_from_where_1=1-bug-sf-1019529` in directory 'src
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-#Ready to accept connections on koala.ins.cwi.nl:44894
+
+printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 
@@ -37,13 +39,9 @@ Over..
 #  # table_name
 # single_value # name
 # smallint # type
-# 2 # length
-# 27 # tuplecount
-# 3 # id
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
+# 6 # length
+# 25 # tuplecount
+# 2 # id
 [ 1	]
 [ 1	]
 [ 1	]
@@ -80,13 +78,9 @@ Over..
 #  # table_name
 # single_value # name
 # smallint # type
-# 2 # length
-# 27 # tuplecount
-# 5 # id
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
+# 6 # length
+# 25 # tuplecount
+# 4 # id
 [ 1	]
 [ 1	]
 [ 1	]
@@ -133,9 +127,8 @@ Over..
 # smallint,	int # type
 # 2,	11 # length
 # 1,	 # tuplecount
-# 8,	 # id
-[ 1,	29	]
-# 7 # querytype
+# 7,	 # id
+[ 1,	25	]
 # 3 # querytype
 # ,	ptables # table_name
 # single_value,	count_id # name

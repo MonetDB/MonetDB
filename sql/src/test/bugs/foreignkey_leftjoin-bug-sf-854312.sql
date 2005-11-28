@@ -18,12 +18,9 @@ CREATE TABLE b (
         FOREIGN KEY (id) REFERENCES a (var1) ON DELETE CASCADE
 );
 
-COMMIT;
-
 SELECT * FROM a LEFT JOIN b ON a.var1 = b.id WHERE a.var1 = 'aJan';
 
 SELECT * FROM a LEFT JOIN b ON a.var1 = b.id WHERE var1 = 'aJan';
-ROLLBACK;
 
 INSERT INTO b (r_id, id, var1, var2, var3, var4) VALUES ('1', 'aaab', 1877611059, 2136665433, 'Bibliotheek', 'U');
 INSERT INTO b (r_id, id, var1, var2, var3, var4) VALUES ('2', 'aaab', 1181479988, NULL, 'hier', 'verwachten');
@@ -44,13 +41,10 @@ INSERT INTO b (r_id, id, var1, var2, var3, var4) VALUES ('16', 'aaaf', 123869031
 INSERT INTO b (r_id, id, var1, var2, var3, var4) VALUES ('17', 'aaaf', 1598516811, 1682499981, 'opslaan. U', 'op');
 INSERT INTO b (r_id, id, var1, var2, var3, var4) VALUES ('18', 'aaag', 1551706168, 1147370461, 'reide', 'en');
 INSERT INTO b (r_id, id, var1, var2, var3, var4) VALUES ('19', 'aaag', 1178314077, 670110160, '', 'boek');
-COMMIT;
 
 SELECT * FROM a LEFT JOIN b ON a.var1 = b.id WHERE a.var1 = 'aJan';
 
 SELECT * FROM a LEFT JOIN b ON a.var1 = b.id WHERE var1 = 'aJan';
-rollback;
 
 drop table b;
 drop table a;
-commit;

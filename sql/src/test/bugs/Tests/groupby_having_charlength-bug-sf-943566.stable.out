@@ -27,8 +27,8 @@ Over..
 # varchar,	int,	int # type
 # 3,	10,	10 # length
 # 1,	,	 # tuplecount
-# 1,	,	 # id
-[ "sys",	3,	29	]
+# 0,	,	 # id
+[ "sys",	3,	23	]
 
 # 17:11:48 >  
 # 17:11:48 >  Done.

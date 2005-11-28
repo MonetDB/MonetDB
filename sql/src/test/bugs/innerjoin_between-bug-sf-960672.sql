@@ -25,3 +25,6 @@ ON    (d.x BETWEEN h.a AND h.b)
 GROUP BY h.a, h.b
 ORDER BY a, b
 ;
+
+drop table h;
+drop table d;

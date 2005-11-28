@@ -1,6 +1,7 @@
 -- Both these queries should give the same result:
 
 -- View-less version:
+START TRANSACTION;
 
 CREATE TABLE x (i integer);
 INSERT INTO x VALUES (1);
@@ -13,6 +14,7 @@ SELECT * FROM
 
 ROLLBACK;
 
+START TRANSACTION;
 -- Version with view:
 CREATE TABLE x (i integer);
 INSERT INTO x VALUES (1);

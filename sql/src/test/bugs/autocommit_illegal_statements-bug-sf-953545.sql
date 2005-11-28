@@ -1,4 +1,3 @@
-SET auto_commit=true;
 
 -- the following statements should all fail
 ROLLBACK;

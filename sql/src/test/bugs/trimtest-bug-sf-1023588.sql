@@ -1,6 +1,5 @@
---START TRANSACTION;
 -- if we don't use auto-commit here, everything goes well
-SET auto_commit=true;
+--START TRANSACTION;
 
 CREATE TABLE trimtest (
         number  integer,

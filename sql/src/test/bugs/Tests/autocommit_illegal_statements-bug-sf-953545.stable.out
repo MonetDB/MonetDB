@@ -17,20 +17,12 @@ quit();
 
 Over..
 
-# 13:21:13 >  
-# 13:21:13 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=59875  < autocommit_illegal_statements-bug-sf-953545.sql
-# 13:21:13 >  
+# 11:16:41 >  
+# 11:16:41 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=43270  < autocommit_illegal_statements-bug-sf-953545.sql
+# 11:16:41 >  
 
-# 7 # querytype
-# affected # table_name
-# rows # name
-# int # type
-# 10 # length
-# 1 # tuplecount
-# 1 # id
-[ 1	]
 
-# 13:21:13 >  
-# 13:21:13 >  Done.
-# 13:21:13 >  
+# 11:16:41 >  
+# 11:16:41 >  Done.
+# 11:16:41 >  
 

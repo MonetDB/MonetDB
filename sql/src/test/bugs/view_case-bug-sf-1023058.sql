@@ -21,3 +21,6 @@ ELSE 1 END)) AS weightindex
 FROM _metadata;
 
 SELECT * FROM metadata;
+
+drop view metadata;
+drop table _metadata;

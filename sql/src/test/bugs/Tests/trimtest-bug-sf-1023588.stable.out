@@ -17,18 +17,10 @@ quit();
 
 Over..
 
-# 12:14:03 >  
-# 12:14:03 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=52177  < trimtest-bug-sf-1023588.sql
-# 12:14:03 >  
+# 11:32:24 >  
+# 11:32:24 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=47247  < trimtest-bug-sf-1023588.sql
+# 11:32:24 >  
 
-# 7 # querytype
-# affected # table_name
-# rows # name
-# int # type
-# 10 # length
-# 1 # tuplecount
-# 1 # id
-[ 1	]
 # 6 # querytype
 # 4 # querytype
 # affected # table_name

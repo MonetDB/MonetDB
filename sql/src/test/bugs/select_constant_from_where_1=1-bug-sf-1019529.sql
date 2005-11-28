@@ -7,7 +7,5 @@ select 1 where 0=1;
 select 1 where 1=1;
 select 1, count(*) from ptables;
 select name, count(*) from ptables;
-rollback;
 select 1, count(*) from ptables where 0=1;
 select 1, count(*) where 0=1;
-rollback;

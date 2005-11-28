@@ -9,7 +9,7 @@ create table unique_test (
 commit;
 
 -- first check with auto-commit turned off
-set auto_commit = false;
+start transaction;
 
 insert into unique_test values (1);
 -- this one should fail!
@@ -20,7 +20,6 @@ insert into unique_test values (1);
 rollback;
 
 -- go checking in auto-commit mode
-set auto_commit = true;
 
 insert into unique_test values (1);
 -- this one should (again) fail!

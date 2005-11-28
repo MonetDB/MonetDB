@@ -24,14 +24,10 @@ Over..
 # 3 # querytype
 #  # table_name
 # single_value # name
-# decimal # type
-# 0 # length
-# 22 # tuplecount
-# 1 # id
-[ 1	]
-[ 1	]
-[ 1	]
-[ 1	]
+# smallint # type
+# 6 # length
+# 25 # tuplecount
+# 0 # id
 [ 1	]
 [ 1	]
 [ 1	]
