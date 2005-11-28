@@ -221,8 +221,8 @@ extern stmt *stmt_insert(stmt *c, stmt *values);
 extern stmt *stmt_replace(stmt *c, stmt *values);
 extern stmt *stmt_table_clear(sql_table *t);
 
-/* raise exception incase the condition (cond) holds */
-extern stmt *stmt_exception(stmt *cond, char *errstr, int errcode);
+/* raise exception incase the condition (cond) holds, continue with stmt res */
+extern stmt *stmt_exception(stmt *res, stmt *cond, char *errstr, int errcode);
 
 extern stmt *stmt_const(stmt *s, stmt *val);
 extern stmt *stmt_mark(stmt *s, int id);
@@ -558,7 +558,6 @@ stmt_destroy(stmt *s)
 		case st_append:
 		case st_insert:
 		case st_replace:
-		case st_exception:
 		case st_pivot:
 		case st_find:
 		case st_sql:
@@ -571,6 +570,18 @@ stmt_destroy(stmt *s)
 				stmt_destroy(s->op2.stval);
 			if (s->op3.stval)
 				stmt_destroy(s->op3.stval);
+			break;
+
+		case st_exception:
+
+			if (s->op1.stval)
+				stmt_destroy(s->op1.stval);
+			if (s->op2.stval)
+				stmt_destroy(s->op2.stval);
+			if (s->op3.stval)
+				stmt_destroy(s->op3.stval);
+			if (s->op4.stval)
+				stmt_destroy(s->op4.stval);
 			break;
 
 		case st_set:
@@ -1534,7 +1545,7 @@ stmt_table_clear(sql_table *t)
 }
 
 stmt *
-stmt_exception(stmt *cond, char *errstr, int errcode)
+stmt_exception(stmt *res, stmt *cond, char *errstr, int errcode)
 {
 	stmt *s = stmt_create(st_exception);
 
@@ -1542,8 +1553,17 @@ stmt_exception(stmt *cond, char *errstr, int errcode)
 	s->op2.stval = stmt_atom_string(errstr);
 	s->op3.stval = stmt_atom_int(errcode);
 	s->nrcols = 0;
+	if (res) {
+		s->op4.stval = res;
+		s->key = res->key;
+		s->nrcols = res->nrcols;
+		s->aggr = res->aggr;
+		s->h = stmt_dup(res->h);
+		s->t = stmt_dup(res->t);
+	}
 	return s;
 }
+
 
 stmt *
 stmt_convert(stmt *v, sql_subtype *from, sql_subtype *to)
@@ -1720,6 +1740,11 @@ tail_type(stmt *st)
 		/* The tail type of a reljoin is the head of the second list!,
 		   ie should be 'oid' */
 		return head_type(st->op2.lval->h->data);
+
+	case st_exception:
+		if (st->op4.stval)
+			return tail_type(st->op4.stval);
+		return NULL;
 
 	case st_diff:
 	case st_filter:
@@ -2240,7 +2265,6 @@ int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 		case st_pivot:
 	  	case st_find:
 		case st_sql:
-
 
 		/* simple case of statements of only statements */
 

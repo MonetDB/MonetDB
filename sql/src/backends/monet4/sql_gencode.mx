@@ -1054,8 +1054,12 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			break;
 		}
 		case st_exception:{
-			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
-			int r = backend_dumpstmt_(s->op2.stval, nr, sql);
+			int l,r,res;
+	
+			if (s->op4.stval)
+				res = backend_dumpstmt_(s->op4.stval, nr, sql);
+			l = backend_dumpstmt_(s->op1.stval, nr, sql);
+			r = backend_dumpstmt_(s->op2.stval, nr, sql);
 			buf = NEW_ARRAY(char, BUFSIZ + 1);
 
 			len += snprintf(buf, BUFSIZ, "if (bit(s%d)){ ERROR(s%d); }\n", l, r);
@@ -1063,6 +1067,8 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			_DELETE(buf);
 			backend_dump_nil(sql, s->op1.stval);
 			backend_dump_nil(sql, s->op2.stval);
+			if (res)
+				s->nr = -res;
 			break;
 		}
 		case st_alias:

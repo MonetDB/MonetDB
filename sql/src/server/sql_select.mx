@@ -2141,6 +2141,16 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 			stmt *sqa = stmt_dup(o->data);
 
 			stmt_destroy(rs);
+			if (!sqa->key) {
+				char *buf;
+				sql_subtype *it = sql_bind_localtype("int");
+				sql_subtype *bt = sql_bind_localtype("bit");
+				sql_subaggr *cnt = sql_bind_aggr(sql->trans->module, "count", NULL);
+				sql_subfunc *ne = sql_bind_func_result(sql->trans->module, "<>", it, it, bt);
+				stmt *cond = stmt_binop(stmt_aggr(stmt_dup(sqa), NULL, cnt), stmt_atom_int(1), ne);
+				buf = _strdup("subquery returned more than one row");
+				sqa = stmt_exception(sqa, cond, buf, 00001);
+			}
 			return sql_compare(sql, ls, sqa, compare_op, f);
 		} else {
 			/* for now assume single outer ref ! */
@@ -2178,6 +2188,17 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 					stmt *p = scope_find_pivot(scp, ls->h);
 
 					ls = stmt_join(p, ls, cmp_equal);
+
+					if (!cmp->key) {
+						char *buf;
+						sql_subtype *it = sql_bind_localtype("int");
+						sql_subtype *bt = sql_bind_localtype("bit");
+						sql_subaggr *cnt = sql_bind_aggr(sql->trans->module, "count", NULL);
+						sql_subfunc *ne = sql_bind_func_result(sql->trans->module, "<>", it, it, bt);
+						stmt *cond = stmt_binop(stmt_aggr(stmt_dup(cmp), NULL, cnt), stmt_aggr(stmt_semijoin(stmt_dup(ls), stmt_dup(cmp)), NULL, cnt), ne);
+						buf = _strdup("subquery returned more than one row");
+						cmp = stmt_exception(cmp, cond, buf, 00001);
+					}
 				}
 			}
 			/* it can happen that the subquery reduces the outer
