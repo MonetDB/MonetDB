@@ -1026,7 +1026,7 @@ opt_start:
 								mvc *m = (mvc*)parm;
 								m->scanner.as = m->scanner.yycur;
 							}
-				select_stmt	{
+				subquery	{
 								mvc *m = (mvc*)parm;
 								dlist *l = _dlist_create();
 								_dlist_append_int(l, 1);
@@ -1057,7 +1057,7 @@ opt_restart:
 								mvc *m = (mvc*)parm;
 								m->scanner.as = m->scanner.yycur;
 							}
-				select_stmt	{
+				subquery	{
 								mvc *m = (mvc*)parm;
 								dlist *l = _dlist_create();
 								_dlist_append_int(l, 1);
