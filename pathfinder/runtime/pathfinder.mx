@@ -394,7 +394,7 @@ PROC construct_docBAT(BAT[oid,bat]resbat, str name, bit doCommit, str opt, times
 
     # insert all bats from resBAT in docBAT
     var ins := ws_tpe.ord_uselect(bat).mirror().ord_select(nil,oid(-(DOC_LOADED,1))).mirror();
-    [insert](const docBAT, ins.leftfetchjoin(ws_nme), ins.leftfetchjoin(ws_oid).leftjoin(shredRES));
+    [insert](const docBAT, ins.leftfetchjoin(ws_nme), ins.leftfetchjoin(ws_oid).leftjoin(resbat));
 
     # these are simple concatenations (to accelerate combPRINT_WS_SZined lookup)
     docBAT.insert("qn_prefix_uri", docBAT.find("qn_prefix").[+](str('\1')).[+](docBAT.find("qn_uri")));
@@ -432,7 +432,7 @@ PROC construct_docBAT(BAT[oid,bat]resbat, str name, bit doCommit, str opt, times
     }
     docBAT.insert("prop_pre" + "_" + str(chr(48 + PI)), prop_pre_bat);
 
-    height := shredRES.fetch(PRE_LEVEL).max().int() + 1;
+    var height := resbat.fetch(PRE_LEVEL).max().int() + 1;
 
     docBAT := docBAT.access(BAT_READ);
     if (doCommit) {
@@ -694,7 +694,7 @@ PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
     var lifetime := 0LL;
     var idx := -1;
     var doc_oid;
-    var err, height;
+    var err, height := int(nil);
     var t := time();
 
     # always make sure not to cause errors while holding the lock
