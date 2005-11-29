@@ -89,7 +89,7 @@ direction for additional information.
 First time users of MonetDB should read @ref{Download
 and Installation} and @ref{SQL}. It prepares the ground to develop
 applications using the SQL database language inter-galactica.
-Advanced topics for application builders are covered in @ref{Application
+Advanced topics for application builders are covered in @ref{User
 Interfaces}.
 
 The query language @ref{XQuery} is intended for users

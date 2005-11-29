@@ -44,7 +44,7 @@ The SQL Implementation compiler can be downloaded from the
 section at SourceForge. It is already included in the Windows installers.
 
 There are bindings for SQL Implementation with for example JDBC, ODBC, PHP and C, 
-(see @ref{Application Interfaces}) to integrate seamlessly in existing 
+(see @ref{User Interfaces}) to integrate seamlessly in existing 
 developments environments.
 Client utilities like Aqua Data Studio and iSQL will work flawlessly 
 with SQL Implementation to make your experience with MonetDB/SQL even better! 
@@ -105,7 +105,7 @@ shell> Mserver --dbinit="include sql;sql.start();"
 
 Once the Mserver is made aware of the SQL extension library, it is
 also possible to connect to the server with one to the client programs
-(See @ref{Application Interfaces}).
+(See @ref{User Interfaces}).
 
 @node The VOC Tutorial, SQL Feature Overview, Getting Started with SQL, SQL
 @section The VOC tutorial
@@ -147,6 +147,38 @@ the arrival/departure of harbors along the route, personnel accounts,
 and anecdotal information.
 
 @subsection Acquiring and loading the VOC data set
+The VOC data set can be downloaded from
+@url{"http://monetdb.cwi.nl/Assets/",the MonetDB Assets site}
+as a gzipped file with SQL statements.
+After the zipfile has been extracted, the file should be loaded into MonetDB
+via either the Java based @ref{JdbcClient} utility, or the @ref{MapiClient}
+C-program.
+Alternatively, the URL to the VOC data file can be supplied to the
+@ref{JdbcClient} utility, which then directly reads from the URL.
+
+An alternative road is to use the data management tool @ref{Aqua Data Studio}
+or @ref{iSQL-Viewer}, which both permit running a SQL batch.
+
+Before you load the VOC data set, it is advised to first add a different user
+with its own schema to the MonetDB database.
+We illustrate this process using the textual SQL client.
+Make sure the MonetDB server has been started, then start the SQL client.
+Under Linux you will see something like this:
+
+@verbatim
+Welcome to the MonetDB interactive JDBC terminal!
+Database: MonetDB 4.9.3
+Driver: MonetDB Native Driver 1.2 (Blunt-SR1)
+Type \q to quit, \h for a list of available commands
+auto commit mode: on
+monetdb> CREATE USER "voc" WITH PASSWORD 'voc' NAME 'VOC Explorer' SCHEMA "sys";
+Operation successful
+monetdb> CREATE SCHEMA "voc" AUTHORIZATION "voc";
+Operation successful
+monetdb> ALTER USER "voc" SET SCHEMA "voc";
+monetdb>\q
+@end verbatim
+
 @subsection Exploring the VOC data set
 @subsection Background 
 

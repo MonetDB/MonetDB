@@ -97,7 +97,17 @@ Last updated: @value{UPDATED}
 
 * XQuery ::
 
-* Application Interfaces::
+* User Interfaces::
+@menu
+* MapiClient::
+* JdbcClient::
+* Data Management Tools::
+@menu
+* Aqua Data Studio::
+* iSQL-Viewer::
+@end menu
+* Application Programming Interfaces::
+@end menu
 * MonetDB Assembler Language::
 @menu
 * MAL instructions::
@@ -206,23 +216,32 @@ Last updated: @value{UPDATED}
 
 @node SQL, Getting Started with SQL, Client administration, Top
 @include Assets/SQLoverview.texi
-@node XQuery, Application Interfaces, SQL Implementation Roadmap, Top
+@node XQuery, User Interfaces, SQL Implementation Roadmap, Top
 @include Assets/XQueryOverview.texi
 
-@node Application Interfaces, MonetDB Assembler Language, XQuery, Top
-@chapter Application Interfaces
-@section Console Interface
-@include mal_readline.bdy.texi
-@section MapiClient
+@node User Interfaces, MapiClient, XQuery, Top
+@chapter User Interfaces
 
-@section Application Programming Interfaces
-@include Assets/APIs.texi
-@section Graphical Data Management Tools
+@node MapiClient, JdbcClient, User Interfaces , Top
+@node JdbcClient, Data Management Tools, MapiClient, Top
+@section Console and MapiClient 
+@include mal_readline.bdy.texi
+
+@node Data Management Tools, Aqua Data Studio, JdbcClient , Top
 @include Assets/DBA-GUIs.texi
+
+@node Aqua Data Studio, iSQL-Viewer, Data Management Tools, Top
 @include Assets/AquaDataStudio.texi
+
+@node iSQL-Viewer, Application Programming Interfaces, Aqua Data Studio, Top
 @include Assets/iSQL-Viewer.texi
 
-@node MonetDB Assembler Language, MAL instructions, Application Interfaces , Top
+
+@node Application Programming Interfaces, MonetDB Assembler Language, iSQL-Viewer, Top
+@include Assets/APIs.texi
+
+
+@node MonetDB Assembler Language, MAL instructions, Application Programming Interfaces , Top
 @include mal_instruction.bdy.texi
 
 @node Function definitions, Function Clones ,Flow of control , MonetDB Assembler Language
