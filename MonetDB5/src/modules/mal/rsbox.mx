@@ -1376,7 +1376,7 @@ RSwriteBlock(int *retval, int *handle, lng *upper, lng *lower)
 			switch (col->bat->ttype) {
 				case TYPE_bit:
 					@:MX-writeNull(*(unsigned char *) p == bit_nil)@
-					bt = stream_printf(s, "%d", (*(unsigned char *) p ? 1 : 0));
+					bt = stream_printf(s, "%d", (*(bit *) p ? 1 : 0));
 					break;
 				case TYPE_chr:
 					@:MX-writeNull(*(char *) p == chr_nil)@

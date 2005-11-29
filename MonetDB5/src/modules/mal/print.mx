@@ -46,11 +46,11 @@ command stdout():stream
 address io_stdout
 comment "return the output stream for the database client";
 
-pattern print(val:any_1,lst:any...):int 
+pattern print{unsafe}(val:any_1,lst:any...):int 
 address IOprint_val
 comment "Print a MAL value tuple .";
 
-pattern print(b1:bat[:any_1,:any]...):int 
+pattern print{unsafe}(b1:bat[:any_1,:any]...):int 
 address IOtable
 comment "BATs are printed with '#' for legend 
 	lines, and the BUNs on seperate lines 
@@ -60,38 +60,38 @@ comment "BATs are printed with '#' for legend
 	print() performs an implicit natural 
 	join, producing a multi attribute table.";
 
-pattern ftable( filep:stream, b1:bat[:any_1,:any], b:bat[:any_1,:any]... ):int
+pattern ftable{unsafe}( filep:stream, b1:bat[:any_1,:any], b:bat[:any_1,:any]... ):int
 address IOftable 
 comment "Print an n-ary table to a file.";
 
-pattern print(order:int,b:bat[:any_1,:any], b2:bat[:any_1,:any]...):int
+pattern print{unsafe}(order:int,b:bat[:any_1,:any], b2:bat[:any_1,:any]...):int
 address IOotable
 comment "The same as normal table print, but 
 	enforces to use the order of BAT 
 	number [1..argc] to do the printing.";
 
-pattern table(b1:bat[:any_1,:any], b2:bat[:any_1,:any]...):int 
+pattern table{unsafe}(b1:bat[:any_1,:any], b2:bat[:any_1,:any]...):int 
 address IOttable
 comment "Print an n-ary table. Like print, but does not print oid column";
 
-pattern table(order:int, b1:bat[:any_1,:any], b2:bat[:any_1,:any]...):int 
+pattern table{unsafe}(order:int, b1:bat[:any_1,:any], b2:bat[:any_1,:any]...):int 
 address IOtotable
 comment "Print an n-ary table.";
-pattern ftable(fp:stream, order:int, b1:bat[:any_1,:any], b:bat[:any_1,:any]...)
+pattern ftable{unsafe}(fp:stream, order:int, b1:bat[:any_1,:any], b:bat[:any_1,:any]...)
 address IOfotable 
 comment "Print an n-ary table to a file.";
 
-pattern print(val:any_1):int 
+pattern print{unsafe}(val:any_1):int 
 address IOprint_val
 comment "Print a MAL value tuple .";
-pattern print(val:bat[:any_1,:any_2]):int 
+pattern print{unsafe}(val:bat[:any_1,:any_2]):int 
 address IOprint_val
 comment "Print a MAL value tuple .";
 
-pattern prompt(val:any_1):int 
+pattern prompt{unsafe}(val:any_1):int 
 address IOprompt_val
 comment "Print a MAL value without brackets.";
-pattern printft(val:any_1):int 
+pattern printft{unsafe}(val:any_1):int 
 address IOprint_ft
 comment "Select default format ";
 
@@ -99,25 +99,25 @@ comment "Select default format ";
 The routines that inspect the runtime setting are moved out of this area.
                                                                                 
 @mal
-command printf(format:str,val:bit):int
+command printf{unsafe}(format:str,val:bit):int
 address IOprint_formatted_bit;
-command printf(format:str,val:chr):int
+command printf{unsafe}(format:str,val:chr):int
 address IOprint_formatted_chr;
-command printf(format:str,val:int):int
+command printf{unsafe}(format:str,val:int):int
 address IOprint_formatted_int;
-command printf(format:str,val:sht):int
+command printf{unsafe}(format:str,val:sht):int
 address IOprint_formatted_sht;
-command printf(format:str,val:oid):int
+command printf{unsafe}(format:str,val:oid):int
 address IOprint_oid;
-command printf(format:str,val:lng):int
+command printf{unsafe}(format:str,val:lng):int
 address IOprint_formatted_lng;
-command printf(format:str,val:flt):int
+command printf{unsafe}(format:str,val:flt):int
 address IOprint_formatted_flt;
-command printf(format:str,val:dbl):int
+command printf{unsafe}(format:str,val:dbl):int
 address IOprint_formatted_dbl;
-command printf(val:str):int
+command printf{unsafe}(val:str):int
 address IOprint_str;
-command printf(format:str,val:str):int
+command printf{unsafe}(format:str,val:str):int
 address IOprint_formatted_str;
 
 @- ASCII import, export
@@ -126,12 +126,12 @@ functions are efficient but work only for binary tables. For printing
 ASCII n-ary tables you can use the @#print@(bat1,bat2,..) command
 from the system.mx module.
 @mal
-command export(b:bat[:any_1,:any_2], filepath:str):bit  
+command export{unsafe}(b:bat[:any_1,:any_2], filepath:str):bit  
 address IOexport
 comment "Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it
  is put into the .../dbfarm/$DB directory. Success of failure is indicated.";
 
-command import(b:bat[:any_1,:any_2], filepath:str) :bit 
+command import{unsafe}(b:bat[:any_1,:any_2], filepath:str) :bit 
 address IOimport
 comment "Import a BAT from an ASCII dump. The new tuples are *inserted* into the
  parameter BAT. You have to create it! Its signature must match the dump,
