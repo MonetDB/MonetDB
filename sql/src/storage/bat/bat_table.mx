@@ -160,7 +160,7 @@ column_update_value(sql_trans *tr, sql_column *c, oid rid, void *value)
 	BAT *b;
 
 	assert(rid != oid_nil);
-	assert((ssize_t)rid != -1);
+
 	if (c->bat.ubid) {
 		b = temp_descriptor(c->bat.ubid);
 		if (BUNfnd(b, &rid))
@@ -216,7 +216,7 @@ table_delete(sql_trans *tr, sql_table *t, oid rid)
 	BAT *b = bind_dbat(tr, t, INS);
 
 	assert(rid != oid_nil);
-	assert((ssize_t)rid != -1);
+
 	BUNins(b, ATOMnilptr(TYPE_void), (ptr) &rid);
 	bat_destroy(b);
 	t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
