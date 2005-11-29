@@ -53,6 +53,9 @@ typedef unsigned int posint;
 #define NATFMT "u"
 
 /* support oid-s up to the 48 bits boundary => 13 decimal digits */
+#ifdef OIDFMT
+#undef OIDFMT
+#endif
 #define OIDFMT "%13" NATFMT 
 
 static char emptyString[1] = "";
