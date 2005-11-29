@@ -91,9 +91,9 @@ sql_create_seq(
 	char buf[BUFSIZ];
 	char* name = qname_table(qname);
 	char* start = NULL, *tmp;
-	(void) tpe;
 	int start_type = start_list->h->data.ival;
 
+	(void) tpe;
 	if (sql_find_seq(sql, name)) {
 		return sql_error(sql, 02,
 				"CREATE SEQUENCE: "
@@ -181,8 +181,8 @@ sql_alter_seq(
 	lng start = -1;
 	int start_type = start_list->h->data.ival, called = 0;
 	char* cur = NULL, *tmp = NULL;
-	(void) tpe;
 
+	(void) tpe;
 	if (rid < 0) {
 		return sql_error(sql, 02,
 				 "ALTER SEQUENCE: "
