@@ -114,5 +114,5 @@ lib_MonetODBC = {
 	driver.rc \
 	ODBC.def
 	WINLIBS = $(SOCKET_LIBS)
-	LIBS = $(MONETDB_LIBS) -lMapi -lstream -lmutils $(ICONV_LIBS)
+	LIBS = $(MONETDB_LIBS) -lMapi -lstream $(ICONV_LIBS)
 }
