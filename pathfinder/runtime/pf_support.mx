@@ -1695,6 +1695,25 @@ proc myinsert(bat[any::1,any::2] oldbat, any::1 key, any::2 val) : bat[any::1,an
   return oldbat;
 }
 
+# the following four procs basically do [+] on two string bats, but they
+# also work on constant values
+proc strconcat(str a, str b) : str
+{
+  return a + b;
+}
+proc strconcat(str a, bat[void,str] b) : bat[void,str]
+{
+  return [+](a,b);
+}
+proc strconcat(bat[void,str] a, str b) : bat[void,str]
+{
+  return [+](a,b);
+}
+proc strconcat(bat[void,str] a, bat[void,str] b) : bat[void,str]
+{
+  return [+](a,b);
+}
+
 # Move data starting at "from" of length "size" by "delta".  The
 # destination *must* be a hole (XXX check this).
 # Delta can be positive (move data down) or negative (move data up).
@@ -2103,10 +2122,10 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
 
   var attr_update := update_cmd.uselect(UPDATE_SETATTR);
   if (attr_update.count() > 0) {
-    var update_node_item := [oid]([+]([lng](pi_update.mirror()), 1)).leftfetchjoin(item);
-    var update_node_kind := [oid]([+]([lng](pi_update.mirror()), 1)).leftfetchjoin(kind);
-    var update_qn := [oid]([+]([lng](pi_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
-    var update_val := [oid]([+]([lng](pi_update.mirror()), 3)).leftfetchjoin(item).leftfetchjoin(str_values);
+    var update_node_item := [oid]([+]([lng](attr_update.mirror()), 1)).leftfetchjoin(item);
+    var update_node_kind := [oid]([+]([lng](attr_update.mirror()), 1)).leftfetchjoin(kind);
+    var update_qn := [oid]([+]([lng](attr_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
+    var update_val := [oid]([+]([lng](attr_update.mirror()), 3)).leftfetchjoin(item).leftfetchjoin(str_values);
 
     # now select all the unique nodes (item, fragment, and qn must all
     # be the same), and when there are multiple occurences, select the
@@ -2130,11 +2149,11 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
 
   var insert_update := update_cmd.uselect(UPDATE_INSERT);
   if (insert_update.count() > 0) {
-    var update_node_item := [oid]([+]([lng](pi_update.mirror()), 1)).leftfetchjoin(item);
-    var update_node_kind := [oid]([+]([lng](pi_update.mirror()), 1)).leftfetchjoin(kind);
-    var update_level := [oid]([+]([lng](pi_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(int_values);
-    var update_insert_node_item := [oid]([+]([lng](pi_update.mirror()), 3)).leftfetchjoin(item);
-    var update_insert_node_kind := [oid]([+]([lng](pi_update.mirror()), 3)).leftfetchjoin(kind);
+    var update_node_item := [oid]([+]([lng](insert_update.mirror()), 1)).leftfetchjoin(item);
+    var update_node_kind := [oid]([+]([lng](insert_update.mirror()), 1)).leftfetchjoin(kind);
+    var update_level := [oid]([+]([lng](insert_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(int_values);
+    var update_insert_node_item := [oid]([+]([lng](insert_update.mirror()), 3)).leftfetchjoin(item);
+    var update_insert_node_kind := [oid]([+]([lng](insert_update.mirror()), 3)).leftfetchjoin(kind);
 
     # unlike the cases above no double elimination here
 
@@ -2270,7 +2289,7 @@ proc do_update_attr(bat[bat,bat] replacements, bat[void,bat] ws, bat [void,oid] 
       var valid := add_string_unique_inplace(ws, frag, PROP_VAL, val);
       if (isnil(atid)) {
         # add attribute to node
-        atid := ws.fetch(ATTR_PROP).fetch(frag).count() + attr_prop_bat.count();
+        atid := oid(ws.fetch(ATTR_PROP).fetch(frag).count() + attr_prop_bat.count());
         attr_prop_bat.insert(atid, valid);
         attr_own_bat.insert(atid, node);
         attr_qn_bat.insert(atid, qnid);
@@ -2287,14 +2306,14 @@ proc do_update_attr(bat[bat,bat] replacements, bat[void,bat] ws, bat [void,oid] 
   return replacements;
 }
 
-proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid] batdocitem, bat[void,int] batdockind, bat[void,int] batdoclevel, bat[void,oid] item, bat[void,int] kind) : bat[bat,bat]
+proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid] batdocitem, bat[void,int] batdockind, bat[void,lng] batdoclevel, bat[void,oid] item, bat[void,int] kind) : bat[bat,bat]
 {
   # extract fragment ID from kind
   var batdocfrag := batdockind.get_fragment();
   var batfrag := kind.get_fragment();
 
   # XXX need to do this while the "item" parameter contains PRE values instead of NID values
-  batdocnid := mposjoin(batdocitem, batdocfrag, ws.fetch(PRE_NID));
+  var batdocnid := mposjoin(batdocitem, batdocfrag, ws.fetch(PRE_NID));
 
   item@batloop() {
 #     if (debug) printf("\nstart of loop for argument %%d\n", int($h));
@@ -2321,7 +2340,7 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
 
     var docsizebat := ws.fetch(PRE_SIZE).fetch(docfrag);
     var doclevelbat := ws.fetch(PRE_LEVEL).fetch(docfrag);
-    var docsize := doclevelbat.reverse().max(); # size of current document
+    var docsize := doclevelbat.count(); # size of current document
 
     # the start of the page on which the new element is to be inserted
     # use "int" because we pass this value to slice which needs int
@@ -2335,7 +2354,7 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
     # update with values from replacements (if any)
     if (doclevelupdatebat.count() > 0) {
       # replace updated values from replacements BAT
-      var doclevelupdatemax := doclevelupdatebat.reverse().max();
+      var doclevelupdatemax := doclevelupdatebat.count();
       if (doclevelupdatemax > docsize) {
         docsize := doclevelupdatemax;
        }
@@ -2353,10 +2372,19 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
     var holesize;
     {
       var i := lng(docinsertafter) + 1;
-      var s := replacementvalue(replacements, docsizebat, oid(i));
-      while (isnil(niland(s, int(nil)))) {
+      var s;
+      var c := (i < lng(docsize));
+      if (c) {
+	s := replacementvalue(replacements, docsizebat, oid(i));
+	c := isnil(niland(s, int(nil)));
+      }
+      while (c) {
         i :+= niland(s, INT_MAX) + 1;
-        s := replacementvalue(replacements, docsizebat, oid(i));
+	c := (i < docsize);
+	if (c) {
+	  s := replacementvalue(replacements, docsizebat, oid(i));
+	  c := isnil(niland(s, int(nil)));
+	}
       }
       holesize := (i - lng(docinsertafter)) - 1;
     }
@@ -2370,17 +2398,17 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
         # still on same page?
         if (j < (lng(docpage) + PAGESIZE)) {
           # yes
-          if (oid(j) > docsize) {
+          if (j >= lng(docsize)) {
             # big gaping hole after the document
-            var hs := int((lng(docpage) + PAGESIZE) - lng(docsize));
+            var hs := int((lng(docpage) + PAGESIZE) - docsize);
             if (lng(hs) > holeneeded) {
-              hs := holeneeded;
+              hs := int(holeneeded);
             }
-#             if (debug) printf("movedata %%d %%d %%d\n", int(lng(docinsertafter) + holesize + 1), int(i), int(hs));
-            movedata(replacements, ws, docfrag, oid(lng(docinsertafter) + holesize + 1), i, int(hs));
+#             if (debug) printf("movedata %%d %%d %%d\n", int(lng(docinsertafter) + holesize + 1), int(i), hs);
+            movedata(replacements, ws, docfrag, oid(lng(docinsertafter) + holesize + 1), i, hs);
             holeneeded :-= hs;
             holesize :+= hs;
-            docsize := oid(lng(docsize) + hs);
+            docsize :+= hs;
           } else {
             # looking at hole?
             var s := replacementvalue(replacements, docsizebat, oid(j));
@@ -2470,7 +2498,8 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
     }
 
     # copy the new element to the hole and do all the other work
-    # assume that the to-be-inserted document is not being edited
+    # only look at unedited version of to-be-inserted document
+    # (required semantics)
 
     # find NID value for new node (highest existing plus one)
     var docnidbat := ws.fetch(NID_PRE).fetch(docfrag);
@@ -2522,7 +2551,7 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
         var loc := ws.fetch(QN_LOC).fetch(elemfrag).find(insertprop);
         var prefix := ws.fetch(QN_PREFIX).fetch(elemfrag).find(insertprop);
         var uri := ws.fetch(QN_URI).fetch(elemfrag).find(insertprop);
-        insertprop := find_qn(ws, docfrag, oid(nil), loc, prefix, uri, true);
+        insertprop := find_qn(ws, docfrag, oid(nil), loc, prefix, uri, true).fetch(0);
 #         if (debug) printf("find_qn \"%%s\" \"%%s\" \"%%s\" %%d\n", loc, prefix, uri, int(insertprop));
 
         # deal with the attributes
@@ -2718,12 +2747,12 @@ proc find_qn(bat[void,bat] ws, oid frag, oid nid, str loc, str prefix, str uri, 
     # [oid,oid] list of ATTR indexes/ATTR QN IDs for current node
     var attr_qn_list := attr_list.mirror().fetchjoin(attr_qn);
 
-    # [oid,nil] list of attributes for current node with correct FQ name
-    attr_node_list := attr_qn_list.leftfetchjoin(qn_list);
+    # [oid,nil] list of attributes for current node with correct FQ name (0 or 1 matches)
+    attr_node_list := attr_qn_list.join(qn_list);
 
     # check that there are not already attributes with the same local name
     # and same namespace but a different prefix on this node
-    if (attr_node_list.count() != attr_qn_list.leftfetchjoin(loc_uri_list).count()) {
+    if (attr_node_list.count() != attr_qn_list.join(loc_uri_list).count()) {
       ERROR("duplicate attribute with differing prefixes.");
     }
   }
@@ -2743,7 +2772,7 @@ proc find_qn(bat[void,bat] ws, oid frag, oid nid, str loc, str prefix, str uri, 
       qn_prefix.access(BAT_WRITE).insert(qn_id, prefix);
       ws.fetch(QN_URI).fetch(frag).access(BAT_WRITE).insert(qn_id, uri);
       qn_loc_uri.access(BAT_WRITE).insert(qn_id, loc_uri);
-      ws.fetch(QN_PREFIX_URI).fetch(frag).access(BAT_WEITE).insert(qn_id, prefix + "\001" + uri);
+      ws.fetch(QN_PREFIX_URI).fetch(frag).access(BAT_WRITE).insert(qn_id, prefix + "\001" + uri);
     } else {
       qn_id := nil;
     }

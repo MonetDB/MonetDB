@@ -7875,17 +7875,18 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "var size := mposjoin(docitem, docfrag, ws.fetch(PRE_SIZE));\n"
                   "if (mposjoin(docitem, docfrag, ws.fetch(PRE_LEVEL)).uselect(chr(nil)).count() > 0) {\n"
                   "  ERROR(\"item must not refer to hole\");\n"
-                  "}\n"
-                  "if (function = \"insert-first\") {\n"
-                  "  doclevel := [chr]([+](doclevel, 1));\n"
-                  "} else if (function = \"insert-last\") {\n"
-                  "  doclevel := [chr]([+](doclevel, 1));\n"
-                  "  docitem := [oid]([+]([lng](docitem), size));\n"
-                  "} else if (function = \"insert-before\") {\n"
-                  "  docitem := [oid]([-]([lng](docitem), 1));\n"
-                  "} else if (function = \"insert-after\") {\n"
-                  "  docitem := [oid]([+]([lng](docitem), size));\n"
-                  "}\n"
+                  "}\n",
+                  counter, counter);
+        if (strcmp(func, "insert-first") == 0)
+            milprintf(f, "doclevel := [chr]([+](doclevel, 1));\n");
+        else if (strcmp(func, "insert-last") == 0)
+            milprintf(f, "doclevel := [chr]([+](doclevel, 1));\n"
+                         "docitem := [oid]([+]([lng](docitem), size));\n");
+        else if (strcmp(func, "insert-before") == 0)
+            milprintf(f, "docitem := [oid]([-]([lng](docitem), 1));\n");
+        else                    /* insert-after */
+            milprintf(f, "docitem := [oid]([+]([lng](docitem), size));\n");
+        milprintf(f,
                   "var nilitem := mposjoin(docitem, docfrag, ws.fetch(PRE_LEVEL)).uselect(chr(nil));\n"
                   "while (nilitem.count() > 0) {\n"
                   "  var updateitem := [oid]([-]([lng](join(nilitem.mirror(), docitem)), 1));\n"
@@ -7898,13 +7899,13 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "int_values := int_values.seqbase(nil).insert(nil, UPDATE_INSERT).seqbase(0@0);\n"
                   "var insitemID := int_values.reverse().find(UPDATE_INSERT);\n"
                   "var item1 := fake_project(insitemID);\n"
-                  "var item2 := docitem;\n"
+                  "var item2 := fake_project(docitem);\n"
                   "var item3 := doclevel;\n"
-                  "var item4 := item;\n"
+                  "var item4 := fake_project(item);\n"
                   "var kind1 := fake_project(INT);\n"
                   "var kind2 := fake_project(dockind);\n"
                   "var kind3 := fake_project(INT);\n"
-                  "var kind4 := kind;\n"
+                  "var kind4 := fake_project(kind);\n"
                   "var iter := fake_project(iter);\n"
                   "var merge1 := merged_union(ipik.mirror(), ipik.mirror(),\n"
                   "                           item1, item2,\n"
@@ -7920,8 +7921,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "                          merge1.fetch(3), merge2.fetch(3));\n"
                   "item := merge.fetch(1);\n"
                   "kind := merge.fetch(2);\n"
-                  "iter := merge.fetch(3);\n",
-                  counter, counter);
+                  "iter := merge.fetch(3);\n");
         deleteResult (f, counter);
         return NORMAL;
     }        
@@ -7937,7 +7937,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         translate2MIL (f, NORMAL, cur_level, counter, RRL(args));
         if (fun->arity == 3) {
             counter += 2;
-            milprintf(f, "var prefix_uri := \"\\001\"; # \"\" + \"\\001\" + \"\"\n");
+            milprintf(f,
+                      "var prefix := \"\";\n"
+                      "var uri := \"\";\n");
         } else {
             counter++;
             saveResult (f, counter);
@@ -7946,18 +7948,31 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             saveResult (f, counter);
             translate2MIL (f, NORMAL, cur_level, counter, RRRRL(args));
             milprintf(f,
-                      "var prefix := item%03u.leftjoin(str_values);\n"
-                      "var uri := item%03u.leftjoin(str_values);\n"
-                      "# prefix_uri := prefix + \"\\001\" + uri;\n"
-                      "var prefix_uri := [+]([+](prefix_uri, \"\\001\"), uri);\n",
+                      "var prefix := item%03u;\n"
+                      "if (type(prefix) = bat) {\n"
+                      "  prefix := prefix.leftjoin(str_values);\n"
+                      "} else {\n"
+                      "  prefix := str_values.find(prefix);\n"
+                      "}\n"
+                      "var uri := item%03u;\n"
+                      "if (type(uri) = bat) {\n"
+                      "  uri := uri.leftjoin(str_values);\n"
+                      "} else {\n"
+                      "  uri := str_values.find(uri);\n"
+                      "}\n",
                       counter - 1, counter);
         }
         milprintf(f,
-                  "var loc := item%03u.leftjoin(str_values);\n"
-                  "# qn := loc + \"\\001\" + prefix + \"\\001\" + uri;\n"
-                  "var qn := [+]([+](loc, \"\\001\"), prefix_uri);\n"
+                  "var loc := item%03u;\n"
+                  "if (type(loc) = bat) {\n"
+                  "  loc := loc.leftjoin(str_values);\n"
+                  "} else {\n"
+                  "  loc := str_values.find(loc);\n"
+                  "}\n"
+                  "# qn := loc + \"\\001\" + prefix + \"\\001\" + uri + \"\\001\";\n"
+                  "var qn := loc.strconcat(\"\\001\").strconcat(prefix).strconcat(\"\\001\").strconcat(uri).strconcat(\"\\001\");\n"
                   "str_values := str_values.append(qn);\n"
-                  "qn := qn.leftjoin(str_values.reverse());\n"
+                  "qn := fake_project(qn).leftjoin(str_values.reverse());\n"
                   "int_values := int_values.seqbase(nil).insert(nil, UPDATE_SETATTR).seqbase(0@0);\n"
                   "var setattrID := int_values.reverse().find(UPDATE_SETATTR);\n"
                   "var item1 := fake_project(setattrID);\n"
@@ -7983,7 +7998,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "                          merge1.fetch(3), merge2.fetch(3));\n"
                   "item := merge.fetch(1);\n"
                   "kind := merge.fetch(2);\n"
-                  "iter := merge.fetch(3);\n", counter - 2, counter - 3, counter - 3);
+                  "iter := merge.fetch(3);\n",
+                  counter - 2, counter - 3, counter - 3);
         if (fun->arity == 5) {
             deleteResult (f, counter);
             deleteResult (f, counter - 1);
@@ -8002,8 +8018,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         if (fun->arity == 2) {
             counter += 2;
             milprintf(f,
-                      "var loc := item.leftjoin(str_values);\n"
-                      "var prefix_uri := \"\\001\"; # \"\" + \"\\001\" + \"\"\n");
+                      "var loc := item;\n"
+                      "if (type(loc) = bat) {\n"
+                      "  loc := loc.leftjoin(str_values);\n"
+                      "} else {\n"
+                      "  loc := str_values.find(loc);\n"
+                      "}\n");
         } else {
             counter++;
             saveResult (f, counter);
@@ -8012,18 +8032,31 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             saveResult (f, counter);
             translate2MIL (f, NORMAL, cur_level, counter, RRRL(args));
             milprintf(f,
-                      "var loc := item%03u.leftjoin(str_values);\n"
-                      "var prefix := item%03u.leftjoin(str_values);\n"
-                      "var uri := item.leftjoin(str_values);\n"
-                      "# prefix_uri := prefix + \"\\001\" + uri;\n"
-                      "var prefix_uri := [+]([+](prefix_uri, \"\\001\"), uri);\n",
+                      "var loc := item%03u;\n"
+                      "if (type(loc) = bat) {\n"
+                      "  loc := loc.leftjoin(str_values);\n"
+                      "} else {\n"
+                      "  loc := str_values.find(loc);\n"
+                      "}\n"
+                      "var prefix := item%03u;\n"
+                      "if (type(prefix) = bat) {\n"
+                      "  prefix := prefix.leftjoin(str_values);\n"
+                      "} else {\n"
+                      "  prefix := str_values.find(prefix);\n"
+                      "}\n"
+                      "var uri := item;\n"
+                      "if (type(uri) = bat) {\n"
+                      "  uri := uri.leftjoin(str_values);\n"
+                      "} else {\n"
+                      "  uri := str_values.find(uri);\n"
+                      "}\n",
                       counter - 1, counter);
         }
         milprintf(f,
-                  "# qn := loc + \"\\001\" + prefix + \"\\001\" + uri;\n"
-                  "var qn := [+]([+](loc, \"\\001\"), prefix_uri);\n"
+                  "# qn := loc + \"\\001\" + prefix + \"\\001\" + uri + \"\\001\";\n"
+                  "var qn := loc.strconcat(\"\\001\").strconcat(prefix).strconcat(\"\\001\").strconcat(uri).strconcat(\"\\001\");\n"
                   "str_values := str_values.append(qn);\n"
-                  "qn := qn.leftjoin(str_values.reverse());\n"
+                  "qn := fake_project(qn).leftjoin(str_values.reverse());\n"
                   "int_values := int_values.seqbase(nil).insert(nil, UPDATE_SETATTR).seqbase(0@0);\n"
                   "var unsetattrID := int_values.reverse().find(UPDATE_SETATTR);\n"
                   "var item1 := fake_project(unsetattrID);\n"
