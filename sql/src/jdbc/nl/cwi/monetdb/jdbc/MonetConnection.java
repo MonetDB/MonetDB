@@ -118,9 +118,6 @@ public class MonetConnection implements Connection {
 	/** an unknown language */
 	final static int LANG_UNKNOWN = -1;
 
-	/** a simple sequence counter for MonetConnections */
-	private static int sequence = 0;
-
 	/**
 	 * Constructor of a Connection for MonetDB. At this moment the
 	 * current implementation limits itself to storing the given host,
