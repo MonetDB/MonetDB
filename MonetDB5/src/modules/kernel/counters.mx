@@ -3259,9 +3259,9 @@ CNTRSunifiedEvents(int *ret){
 
 str
 CNTRSeventNumber(int *ret, str *nme){
-	*ret = int_nil;
 #if defined(HWCOUNTERS)
 	int i;
+	*ret = int_nil;
 	for (i = 0; i < NumEvents; i++)
 	if(strcmp(*nme, event[i].native)== 0){
 		*ret = i;
@@ -3272,6 +3272,8 @@ CNTRSeventNumber(int *ret, str *nme){
 		*ret = i;
 		return MAL_SUCCEED;
 	}
+#else
+	*ret = int_nil;
 #endif
 	/* lookup */
 	(void) nme;
