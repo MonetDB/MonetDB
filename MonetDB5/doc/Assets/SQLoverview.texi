@@ -8,7 +8,7 @@ in terms of standardization committee viewpoints.  It is, however,
 hardly met by any of the existing (commercial) implementations.
 This is largely due to legacy of old software and backward compatibility
 requirements from their client base.  See for instance
-@url{"http://www.dbazine.com/gulutzan3.shtml",this}
+@url{http://www.dbazine.com/gulutzan3.shtml,this}
 on-line article on SQL standards.
 
 The MonetDB database system was originally developed as a database back end
@@ -40,7 +40,7 @@ SQL statements into MAL. In this process common optimization heuristics,
 specific to relational algebra are performed.
 
 The SQL Implementation compiler can be downloaded from the
-@url{"http://sourceforge.net/project/showfiles.php?group_id=56967",download} 
+@url{http://sourceforge.net/project/showfiles.php?group_id=56967,download} 
 section at SourceForge. It is already included in the Windows installers.
 
 There are bindings for SQL Implementation with for example JDBC, ODBC, PHP and C, 
@@ -129,11 +129,11 @@ the Company's headquarters on Java.
 
 The history of the VOC is an active area of research and
 a focal point for multi-country heritage projects, 
-e.g. @url{"http://www.tanap.net/content/voc/organization/organization_intro.htm", TANAP},
+e.g. @url{http://www.tanap.net/content/voc/organization/organization_intro.htm, TANAP},
 which includes a short historic overview of the VOC written by
 world expert on the topic F. Gaastra.
 The archives of the VOC are spread around the world, but a large
-contingent still resides in the @url{ "http://www.nationaalarchief.nl/",National Archive<},
+contingent still resides in the @url{ http://www.nationaalarchief.nl/,National Archive<},
 The Hague.
 The archives comprise over 25 million historical records.
 Much of which has not (yet) been digitized.
@@ -148,7 +148,7 @@ and anecdotal information.
 
 @subsection Acquiring and loading the VOC data set
 The VOC data set can be downloaded from
-@url{"http://monetdb.cwi.nl/Assets/",the MonetDB Assets site}
+@url{http://monetdb.cwi.nl/Assets/,the MonetDB Assets site}
 as a gzipped file with SQL statements.
 After the zipfile has been extracted, the file should be loaded into MonetDB
 via either the Java based @ref{JdbcClient} utility, or the @ref{MapiClient}
