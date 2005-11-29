@@ -109,6 +109,11 @@ public class Test_PStimezone {
 				c.setTimeZone(TimeZone.getTimeZone("GMT+00:00"));
 				System.out.println(rs.getTime("t", c) + "\t" + rs.getTime("tz", c));
 				System.out.println();
+				SQLWarning w = rs.getWarnings();
+				while (w != null) {
+					System.out.println(w.getMessage());
+					w = w.getNextWarning();
+				}
 			}
 
 			con.rollback();
