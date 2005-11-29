@@ -71,6 +71,12 @@ newODBCStmt(ODBCDbc *dbc)
 
 	stmt->State = INITED;
 	stmt->hdl = mapi_new_handle(dbc->mid);
+	if (stmt->hdl == NULL) {
+		/* Memory allocation error */
+		addDbcError(dbc, "HY001", NULL, 0);
+		free(stmt);
+		return NULL;
+	}
 	assert(stmt->hdl);
 
 	stmt->currentRow = 0;
