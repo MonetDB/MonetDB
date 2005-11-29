@@ -197,7 +197,7 @@ static int convert_matrix[EC_MAX][EC_MAX] = {
 /* EC_FLT */	{ 0, 0, 0, 1, 1, 0, 2, 2, 2, 2, 0, 0, 0 },
 /* EC_TIME */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 2, 0, 0 },
 /* EC_DATE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 2, 0 },
-/* EC_TSTAMP */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 2, 2 }
+/* EC_TSTAMP */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 2, 2, 2 }
 };
 
 int sql_type_convert (int from, int to) 
