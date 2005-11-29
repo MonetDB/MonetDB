@@ -574,8 +574,14 @@ typedef oid hash_t;		/* type used for hash tables */
 typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #if SIZEOF_OID == SIZEOF_INT	/* a type compatible with var_t */
 #define TYPE_var	TYPE_int
+#if SIZEOF_SIZE_T == SIZEOF_INT 
+#define OIDFMT		SZFMT
+#else
+#define OIDFMT		"%u"
+#endif
 #else
 #define TYPE_var	TYPE_lng
+#define OIDFMT		SZFMT
 #endif
 
 @- Checking and Error definitions:
@@ -757,7 +763,6 @@ typedef struct {
           int    batPersistence;   /* persistence mode */
           bit    batCopiedtodisk;  /* BAT is saved on disk? */
           bit    batSet;           /* all tuples in the BAT are unique? */
-          int    batStore;         /* multi-level storage mode */
           sht    batElmshift       /* log2 of width  */
           sht    batElmsize        /* width in byte of the BUNs */
           /* dynamic BAT properties */
@@ -928,7 +933,6 @@ typedef int (*GDKfcn) ();
 #define batPersistence	P->persistence
 #define batCopiedtodisk	P->copiedtodisk
 #define batSet		P->set
-#define batStore	P->store
 #define batDirtyflushed	P->dirtyflushed
 #define batDirty	P->dirty
 #define batConvert	P->convert
