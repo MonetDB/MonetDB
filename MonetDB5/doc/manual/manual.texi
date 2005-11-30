@@ -64,6 +64,7 @@ Last updated: @value{UPDATED}
 * Software Versions::
 * Binary Distributions::
 * Source Distributions::
+* Start and Stop the Server::
 @end menu
 
 * MonetDB Overview ::
@@ -203,7 +204,7 @@ Last updated: @value{UPDATED}
 @section Downloads and Installation
 @include Assets/Downloadintro.texi
 
-@node MonetDB Overview, Design considerations, Source Distributions, Top
+@node MonetDB Overview, Design considerations, Start and Stop the Server, Top
 
 @include mal.bdy.texi
 

@@ -11,7 +11,7 @@ requirements from their client base.  See for instance
 @url{http://www.dbazine.com/gulutzan3.shtml,this}
 on-line article on SQL standards.
 
-The MonetDB database system was originally developed as a database back end
+The MonetDB database system was originally developed as a database back-end
 kernel with its own, low-level algebraic interface and scripting language.
 The development of a SQL front end has been purposely postponed to the point
 where the kernel code base was sufficiently mature and field tested in
@@ -29,29 +29,31 @@ The purpose of this chapter is to give a quick introduction on the SQL
 front end, its limitations, and the way to use it.  Throughout this document
 proficiency in elementary use of SQL is assumed.
 If you are new to this world then pick up any of the
-introductionary books and study it carefully.
+introduction books and study it carefully.
 The SQL Implementation front-end is based on the SQL-99 standard,
 which is covered in many text books e.g.
 @emph{J. Melton and A.R. Simon}, SQL:1999 Understanding
 Relational Language Components, ISBN 1558604561.
 
-The architecture is based on a separate compiler, which translates 
+The architecture is based on a separate compiler module, which translates 
 SQL statements into MAL. In this process common optimization heuristics,
 specific to relational algebra are performed.
 
-The SQL Implementation compiler can be downloaded from the
+The SQL module can be downloaded from the
 @url{http://sourceforge.net/project/showfiles.php?group_id=56967,download} 
 section at SourceForge. It is already included in the Windows installers.
 
-There are bindings for SQL Implementation with for example JDBC, ODBC, PHP and C, 
+There are bindings for SQL with JDBC, ODBC, PHP and C, 
 (see @ref{User Interfaces}) to integrate seamlessly in existing 
 developments environments.
-Client utilities like Aqua Data Studio and iSQL will work flawlessly 
-with SQL Implementation to make your experience with MonetDB/SQL even better! 
+Client utilities like @ref{Aqua Data Studio} and @ref{iSQL-Viewer}
+work flawlessly with the MonetDB SQL implementation and make 
+your experience with even better! 
 
 The remainder of this chapter provides a short tutorial to get
 going with MonetDB/SQL. A synopsis of the language features 
-provides a quick intro on the scope of the current implementation.
+provides a quick intro on the scope of the current implementation
+and the short list for functional enhancements planned.
 The programming support sections illustrate some of the advanced
 features to analyse and your SQL code.
 @menu
@@ -71,41 +73,53 @@ features to analyse and your SQL code.
 
 @node Getting Started with SQL, The VOC Tutorial, SQL, SQL
 @section Getting Started with MonetDB/SQL
-MonetDB is designed to support a wide spectrum of front-ends, including SQL.
-However, you have to acquire the corresponding binaries and load them first.
-See the section @ref{Download and Installation} on where to get the version
+Working with SQL requires installation of the MonetDB server 
+and SQL compiler module. 
+See the section @ref{Download and Installation} to get the version
 for your platform.
 
-Once found, the extension module for the language should be loaded, whereafter
-a language tailored scenario can be started (See @ref{Session scenarios} ).
+The first step is to start the database backend, following
+the steps in @ref{Start and Stop the Server} or illustrated below.
+Once it runs, the easiest is to use a textual SQL client
+to explore its functionality.
 
-The two sample scripts illustrate how SQL is started at the Mserver
-console.
+Under Windows, this client is already configured to directly contact
+the running server. For Linux users we illustrate the actions taken
+behind the scene. Packaging the command line actions in shell scripts is
+straightforward.
+
+The first action on Linux is to start the database server.
+The command shown below includes a server
+initialization string, which loads the SQL
+module and starts to listen to the default MonetDB port for SQL connections.
+It also indicates the server to run in the background.
 @example
-shell> Mserver
+shell> Mserver --set monet-daemon=yes --dbinit="include sql;mapi.listen(45123);"
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
 # config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:demo
 # Visit http://monetdb.cwi.nl/ for further information.
->include sql;
->sql.start();
-#Continue as SQL session
->
-@end example
-A shortcut for this sequence is to use the command line option
-of the server.
-@example
-shell> Mserver --dbinit="include sql;sql.start();"
-#Continue as SQL session
->
+#Ready to accept connections on gio.ins.cwi.nl:45123
+shell>
 @end example
 
-Once the Mserver is made aware of the SQL extension library, it is
-also possible to connect to the server with one to the client programs
-(See @ref{User Interfaces}).
+This reply evidently depends on your installation procedure and
+configuration parameters.
+
+The interaction with the server subsequently takes place through
+either a textual or graphical user interface. (See @ref{User Interfaces}).
+For our explorations of SQL we use the generic MapiClient, which
+is started as follows:
+
+@example
+shell> MapiClient -lsql -p45123
+sql>
+@end example
+The client runs with the default user id @code{monetdb}.
+It is ready for our first experiments.
 
 @node The VOC Tutorial, SQL Feature Overview, Getting Started with SQL, SQL
 @section The VOC tutorial
@@ -155,9 +169,6 @@ via either the Java based @ref{JdbcClient} utility, or the @ref{MapiClient}
 C-program.
 Alternatively, the URL to the VOC data file can be supplied to the
 @ref{JdbcClient} utility, which then directly reads from the URL.
-
-An alternative road is to use the data management tool @ref{Aqua Data Studio}
-or @ref{iSQL-Viewer}, which both permit running a SQL batch.
 
 Before you load the VOC data set, it is advised to first add a different user
 with its own schema to the MonetDB database.

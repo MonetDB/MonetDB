@@ -27,7 +27,7 @@ Go back to tab 'General' and enter the following items:
 @item JDBC URL
 @tab jdbc:monetdb://localhost/database
 @item User name
-@tab moentdb
+@tab monetdb
 @item Password
 @tab monetdb
 @end multitable

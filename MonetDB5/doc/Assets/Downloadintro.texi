@@ -2,7 +2,7 @@ Using MonetDB for experimentation and application development
 requires installation of the back-end server Mserver, a front-end compiler for 
 SQL or XQuery, the APIs, and a (graphical) user interface.
 These components are packaged conveniently for several platforms in
-the @url{"http://sourceforge.net/project/showfiles.php?group_id=56967",download} section at SourceForge.
+the @url{http://sourceforge.net/project/showfiles.php?group_id=56967,download} section at SourceForge.
 
 Most people prefer a version `officially' declared as stable. Stable
 means that special care has been taken to assure that all errors reported
@@ -23,6 +23,7 @@ for common errors and some advice on how to proceed.
 * Software Versions ::
 * Binary Distributions::Intended for end-users.
 * Source Distributions::Intended for system developers.
+* Start and Stop the Server::
 @end menu
 @node Software Versions, Binary Distributions, Download and Installation, General Introduction
 @subsection Software Versions
@@ -39,11 +40,10 @@ experimentation, tool migration and feedback.
 
 @node Binary Distributions, Source Distributions, Software Versions, Download and Installation
 @subsection Binary Distributions
-@subsubsection Linux platforms
-@subsubsection Windows distributions
 
-@node Source Distributions, MonetDB Overview ,Binary Distributions, Download and Installation
+@node Source Distributions, Start and Stop the Server,Binary Distributions, Download and Installation
 @subsection Source Distributions
-@subsubsection Linux platforms
-@subsubsection Windows distributions
 
+@node Start and Stop the Server , MonetDB Overview ,Source Distributions, Download and Installation
+
+@section Start and Stop the Server
