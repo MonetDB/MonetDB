@@ -43,7 +43,7 @@ const char* PFinitMIL();   /* MIL pattern for global variable definitions */
 const char* PFstartMIL();  /* MIL pattern for starting query execution */
 const char* PFdocbatMIL(); /* MIL pattern for adding a shredded document to the ws */
 const char* PFudfMIL();    /* MIL pattern for calling a UDF */
-const char* PFstopMIL(bool is_update);   /* MIL pattern for stopping query execution (and print) */
+const char* PFstopMIL();   /* MIL pattern for stopping query execution (and print) */
 
 #endif
 

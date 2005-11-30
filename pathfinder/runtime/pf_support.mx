@@ -1994,7 +1994,10 @@ proc replacementsfetch(BAT[BAT,BAT] replacements, BAT[any::1,any::2] oldbat): BA
     var htype := oldbat.htype();
     if (htype = void)
       htype := oid;
-    var newbat := bat(htype, oldbat.ttype());
+    var ttype := oldbat.ttype();
+    if (ttype = void)
+      ttype := oid;
+    var newbat := new(htype, ttype);
     newbat.key(true);
     replacements := replacements.insert(oldbat, newbat);
     return newbat;
@@ -2191,13 +2194,7 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
     replacements@batloop() {
       var a := $h.access();
       $h.access(BAT_WRITE);
-      var hi := $h.reverse().max();
-      var hi1 := oid(lng(hi) + 1);
-      var repl := $t.reverse().select(nil, hi).reverse();
-      var ins := $t.reverse().select(hi1, nil).reverse();
-      ins := ins.sort().reverse().mark(hi1).reverse();
-      $h.replace(repl, true);
-      $h.insert(ins);
+      $h.myinsert($t);
       $h.access(a);
     }
     [fix_consecutive_texts](const ws, affected_frags);
@@ -2239,12 +2236,12 @@ proc do_update_pi(bat[bat,bat] replacements, bat[void,bat] ws, bat [void,oid] it
   return replacements;
 }
 
-proc do_update_attr(bat[bat,bat] replacements, bat[void,bat] ws, bat [void,oid] itembat, bat[void,int] kindbat, bat[void,str] qnbat, bat[void,str] valbat) : bat[bat,bat]
+proc do_update_attr(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid] itembat, bat[void,int] kindbat, bat[void,str] qnbat, bat[void,str] valbat) : bat[bat,bat]
 {
   var fragbat := kindbat.get_fragment();
   itembat@batloop() {
     var frag := fragbat.find($h);
-    var node := itembat.find($h);
+    var node := $t;
     var qn := qnbat.find($h);
     var val := valbat.find($h);
     var loc, prefix, uri;

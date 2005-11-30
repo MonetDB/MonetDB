@@ -10811,7 +10811,7 @@ const char* PFdocbatMIL() {
 "if (genType.search(\"debug\") >= 0) print(item.slice(0,10).col_name(\"tot_items_\"+str(item.count())));\n" 
 */
 
-const char* PFstopMIL(bool is_update) {
+static const char* _PFstopMIL(bool is_update) {
     static char buf[1024];
 
     strcpy(buf,
@@ -10835,6 +10835,10 @@ const char* PFstopMIL(bool is_update) {
            "       time_compile, time_shred, time_exec - time_shred, time_print);\n"
            "}\n");
     return buf;
+}
+
+const char* PFstopMIL() {
+    return _PFstopMIL(false);
 }
 
 const char* PFudfMIL() {
@@ -10925,7 +10929,7 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, char *
     if (module_base == 0) {
         timing = PFtimer_stop(timing);
         milprintf(f, "time_compile := %d;\n" , (int) (timing/1000));
-        milprintf(f, PFstopMIL(PFty_subtype(TY(R(c)), PFty_star(PFty_stmt()))));
+        milprintf(f, _PFstopMIL(PFty_subtype(TY(R(c)), PFty_star(PFty_stmt()))));
     }
 
     if (opt_close(f, prologue, query, epilogue)) {

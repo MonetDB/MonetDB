@@ -111,7 +111,7 @@ static bool module_only = false;
  */
 static unsigned int module_base = 0;
 
-/* the amount of functions declared in a query. Used in milprint_summer to
+/* the number of functions declared in a query. Used in milprint_summer to
  * be able to suppress code generation for all functions defined
  * in modules;
  */

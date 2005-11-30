@@ -1435,16 +1435,16 @@ xquery_function_call(xquery_client *ctx, int msec, char *mode, char *ns, char *m
         if (ret > 0) cur += ret;
 
         /* done! execute the script */
-        *cur = 0;
         if (cur >= end) {
             return "xquery_function_call: generated MIL query exceeds buffer size.\n";
         }
+        *cur = 0;
 
         /* small chance of MT memory leak; but only in debug mode; no need to lock here */ 
         if (debug && fun->mil == NULL) fun->mil = GDKstrdup(mil);
     }
     if (prepfun->lt == NULL) {
-        prepfun->lt = xquery_mil2tree(ctx, mil);
+        prepfun->lt = xquery_mil2tree(ctx, fun->mil);
         if (prepfun->lt == NULL) {
             GDKfree(prepfun);
             return "xquery_function_call: error during parsing .\n";
