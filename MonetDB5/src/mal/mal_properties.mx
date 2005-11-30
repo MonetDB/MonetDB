@@ -428,7 +428,7 @@ fndPropertyIndexed(PropertySet ps, int first, int last, str nme)
 int
 isPropertyDefined(PropertySet ps, str nme){
 	Property pr;
-	if( ps == NULL) return FALSE;
+	if( ps == NULL || nme== NULL) return FALSE;
 	pr = fndProperty(ps,nme);
 	return pr != NULL;
 }

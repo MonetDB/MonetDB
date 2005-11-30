@@ -1159,7 +1159,7 @@ initTrace(void)
 	mal_unset_lock(mal_contextLock, "trace");
 }
 
-#define CLEANUP(X)  BBPdecref((X)->batCacheid, TRUE); (X)= NULL;
+#define CLEANUP(X)  BBPdecref((X)->batCacheid, TRUE); (X)->batPersistence= TRANSIENT; (X)= NULL;
 str
 cleanupProfiler(){
 	mal_set_lock(mal_contextLock, "cleanup");
