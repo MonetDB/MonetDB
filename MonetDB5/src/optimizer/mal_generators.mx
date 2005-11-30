@@ -350,7 +350,6 @@ through the default case.
 			setModuleId(r,matRef);
 			setFunctionId(r,newRef);
 			getArg(r,0)= getArg(p,0);
-			tpe= getArgType(mb,p,0);
 			pushArgument(mb,r,getArg(p,0));
 			pushInstruction(mb,p);
 			
@@ -369,13 +368,7 @@ The MAT argument could also occur as the second one.
 			setFunctionId(r,newRef);
 			getArg(r,0)= getArg(p,1);
 			r= pushArgument(mb,r,getArg(p,1));
-			tpe= getArgType(mb,p,1);
-
-			getArg(p,0) = newTmpVariable(mb, tpe);
-			getArg(r,1)=getArg(p,1);
 			pushInstruction(mb,p);
-			setVarInitialized(mb,getArg(p,0));
-			setVarUsed(mb,getArg(p,0),TRUE);
 			
 			mvar[mtop] = getArg(r,0);
 			stmt[mtop++]= r;
@@ -385,6 +378,8 @@ The MAT argument could also occur as the second one.
 		} 
 @-
 Handle the rewrite v:=aggr.count(b) and sum()
+In this case we have to include an initialization statement before the
+generator.
 @c
 		if( ((moduleId(p)==aggrRef && functionId(p)== countRef) || 
 			(moduleId(p)==aggrRef && functionId(p)==sumRef && p->argc==2)) &&
