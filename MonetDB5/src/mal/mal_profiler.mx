@@ -186,6 +186,7 @@ mal_export void setOfflineProfiling(void);
 mal_export int profilerAvailable(void);
 mal_export str startProfiling(void);
 mal_export str stopProfiling(void);
+mal_export str cleanupProfiler();
 
 mal_export int instrFilter(InstrPtr pci, str mod, str fcn);
 mal_export void setFilter(Module cntxt, str mod, str fcn);
@@ -1158,6 +1159,18 @@ initTrace(void)
 	mal_unset_lock(mal_contextLock, "trace");
 }
 
+#define CLEANUP(X)  BBPdecref((X)->batCacheid, TRUE); (X)= NULL;
+str
+cleanupProfiler(){
+	mal_set_lock(mal_contextLock, "cleanup");
+	CLEANUP( TRACE_id_time );
+	CLEANUP( TRACE_id_pc );
+	CLEANUP( TRACE_id_modfcn );
+	CLEANUP( TRACE_id_stmt );
+	TRACE_init = 0;
+	mal_unset_lock(mal_contextLock, "cleanup");
+	return MAL_SUCCEED;
+}
 void
 startTrace(void)
 {
