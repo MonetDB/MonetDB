@@ -160,6 +160,9 @@ command getTrace(e:str):bat[:int,:any_1]
 address CMDgetTrace
 comment "Get the trace details of a specific event";
 
+command cleanup():void
+address CMDcleanup
+comment "Remove the temporary tables for profiling";
 @{
 @-
 @+ Implementation
@@ -407,4 +410,10 @@ CMDsetOfflineProfiling(int *ret)
 	return MAL_SUCCEED;
 }
 
+str
+CMDcleanup(int *ret){
+	(void) ret;
+	cleanupProfiler();
+	return MAL_SUCCEED;
+}
 @}
