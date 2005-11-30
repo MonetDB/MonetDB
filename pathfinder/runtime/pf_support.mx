@@ -2194,7 +2194,10 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
     replacements@batloop() {
       var a := $h.access();
       $h.access(BAT_WRITE);
-      $h.myinsert($t);
+      var newvals := kdiff($t, $h).sort();
+      var replvals := kdiff($t, newvals).sort();
+      $h.replace(replvals, true);
+      $h.append(newvals);
       $h.access(a);
     }
     [fix_consecutive_texts](const ws, affected_frags);
@@ -2372,16 +2375,16 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
       var s;
       var c := (i < lng(docsize));
       if (c) {
-	s := replacementvalue(replacements, docsizebat, oid(i));
-	c := isnil(niland(s, int(nil)));
+        s := replacementvalue(replacements, docsizebat, oid(i));
+        c := isnil(niland(s, int(nil)));
       }
       while (c) {
         i :+= niland(s, INT_MAX) + 1;
-	c := (i < docsize);
-	if (c) {
-	  s := replacementvalue(replacements, docsizebat, oid(i));
-	  c := isnil(niland(s, int(nil)));
-	}
+        c := (i < docsize);
+        if (c) {
+          s := replacementvalue(replacements, docsizebat, oid(i));
+          c := isnil(niland(s, int(nil)));
+        }
       }
       holesize := (i - lng(docinsertafter)) - 1;
     }
@@ -2548,7 +2551,7 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
         var loc := ws.fetch(QN_LOC).fetch(elemfrag).find(insertprop);
         var prefix := ws.fetch(QN_PREFIX).fetch(elemfrag).find(insertprop);
         var uri := ws.fetch(QN_URI).fetch(elemfrag).find(insertprop);
-        insertprop := find_qn(ws, docfrag, oid(nil), loc, prefix, uri, true).fetch(0);
+        insertprop := find_qn(ws, docfrag, loc, prefix, uri, true);
 #         if (debug) printf("find_qn \"%%s\" \"%%s\" \"%%s\" %%d\n", loc, prefix, uri, int(insertprop));
 
         # deal with the attributes
@@ -2571,7 +2574,7 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
           var insertattrqnbat := insertattrbat.leftfetchjoin(ws.fetch(ATTR_QN).fetch(insertfrag));
           var insertattrfragbat := insertattrbat.fake_leftfetchjoin(ws.fetch(ATTR_FRAG).fetch(insertfrag));
           # in one fell swoop, add the qualified names of the attributes to the document
-          var newinsertattrpropbat := [find_qn](const ws, docfrag, oid(nil),
+          var newinsertattrpropbat := [find_qn](const ws, docfrag,
                                                 mposjoin(insertattrqnbat, insertattrfragbat, ws.fetch(QN_LOC)),
                                                 mposjoin(insertattrqnbat, insertattrfragbat, ws.fetch(QN_PREFIX)),
                                                 mposjoin(insertattrqnbat, insertattrfragbat, ws.fetch(QN_URI)),
@@ -2787,6 +2790,11 @@ proc find_qn(bat[void,bat] ws, oid frag, oid nid, str loc, str prefix, str uri, 
       result := result.insert(nil,attr_node_list.reverse().fetch(0));
   }
   return result;
+}
+
+proc find_qn(bat[void,bat] ws, oid frag, str loc, str prefix, str uri, bit add) : oid
+{
+  return find_qn(ws, frag, oid(nil), loc, prefix, uri, add).fetch(0);
 }
 
 proc build_indices(bat[void,bat] ws, oid frag) : void
