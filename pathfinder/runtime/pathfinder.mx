@@ -1434,10 +1434,10 @@ xquery_function_call(xquery_client *ctx,
             if (ret > 0) cur += ret;
 
             /* done! execute the script */
-            *cur = 0;
             if (cur >= end) {
                 return "xquery_function_call: generated MIL query exceeds buffer size.\n";
             }
+            *cur = 0;
             fun->mil = GDKstrdup(mil);
         }
         MT_unset_lock(pf_cache_lock, "xquery_function_call");
