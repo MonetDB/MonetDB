@@ -1137,7 +1137,7 @@ unless auto_commit has been set.
 
 		tot += be->Texec = GDKusec() - T0;
 		qs = be->qry;
-		while(isspace(*qs)) 
+		while(isspace((int)*qs)) 
 			qs++; 
 		m->mode = m_normal;
 		m->explain = m_normal;
