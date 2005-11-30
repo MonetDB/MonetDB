@@ -478,7 +478,7 @@ opt_export str RXalignedBATs(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 opt_export void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname);
 opt_export int isUnsafeInstruction(InstrPtr q);
-opt_export int isUnsafeFunction(MalBlkPtr mb, InstrPtr q);
+opt_export int isUnsafeFunction(InstrPtr q);
 opt_export int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
 opt_export int safetyBarrier(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 opt_export int hasSameSignature(InstrPtr p, InstrPtr q);
@@ -682,17 +682,14 @@ and to inspect the arguments of the signature.
 @{
 @c
 int
-isUnsafeFunction(MalBlkPtr mb, InstrPtr q)
+isUnsafeFunction(InstrPtr q)
 {
-	Client c;
 	InstrPtr p;
 
-	(void) mb;
-	if (q->fcn == 0 || functionId(q) == 0)
+	if (q->fcn == 0 || functionId(q) == 0 || q->blk == NULL)
 		return FALSE;
-	c = getClient();
-	p = getSignature(getFunctionSymbol(c->nspace, q));
-	return isPropertyDefined( getVar(mb,getArg(p,0))->props, unsafeRef);
+	p= getInstrPtr(q->blk,0);
+	return isPropertyDefined( getVar(q->blk,getArg(p,0))->props, unsafeRef);
 	/* check also arguments for 'unsafe' property */
 }
 
@@ -755,6 +752,7 @@ int
 safetyBarrier(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 {
 	int i, j;
+	(void) mb;
 
 	for (j = 0; j < q->retc; j++)
 		for (i = p->retc; i < p->argc; i++)
@@ -769,7 +767,7 @@ safetyBarrier(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 				return TRUE;
 			}
 
-	if (isUnsafeFunction(mb, q)) {
+	if (isUnsafeFunction(q)) {
 		for (i = p->retc; i < p->argc; i++)
 			for (j = q->retc; j < q->argc; j++)
 				if (p->argv[i] == q->argv[j]) {
