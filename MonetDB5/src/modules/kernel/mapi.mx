@@ -98,6 +98,10 @@ command trace(flag:bit):void
 address MAPItrace
 comment "Trace (on/off) receipt of messages for all users";
 
+command malclient(in:stream, out:stream):void
+address MAPIclient
+comment "Start a Mapi client.";
+
 @{
 command prelude()
 address mapi_prelude;
@@ -908,5 +912,62 @@ MAPIresume(int *res, int *skey)
 {
 	(void) res;
 	(void) skey;		/* fool compiler */
+	return MAL_SUCCEED;
+}
+
+str
+MAPIclient(int *res, stream **In, stream **Out) 
+{
+	int i = 0;
+	char *name = (char *) GDKmalloc(BLOCK), *user = name, *s;
+	char *challenge;
+	int blocked = 0;
+	bstream *bs;
+	stream *fdin = *In, *fdout = *Out;
+
+	(void) res;
+	assert(name);
+	memset(name, 0, BLOCK);
+
+	/* write challenge string, the challenge is currently empty (disabled) */
+	challenge = "::mserver_mal:4\n";
+
+	/* temporarily misuse name */
+	snprintf(name, BLOCK, "%2d%s", (unsigned int) strlen(challenge), challenge);
+	stream_write(fdout, name, strlen(name), 1);
+	/* get user name */
+	*user = 0;
+	stream_read(fdin, user, 1, 1);
+	for (i = 0; !stream_errnr(fdin) && i < BLOCK && *user != '\n'; i++) {
+		user++;
+		stream_read(fdin, user, 1, 1);
+	}
+	if (stream_errnr(fdin)) {
+		return throwException(MALEXCEPTION, "MAPIclient",
+			"fdin write problems\n");
+	}
+	*user = 0;
+	/* in embedded mode we allow just one client */
+#ifdef DEBUG_MAPI
+	printf("mapi:Client accepted %s\n", name);
+	fflush(stdout);
+#endif
+	s = strrchr(name, ':');
+	blocked = s && strncmp(s, ":blocked", 8) == 0;
+	if (blocked) {
+		/* printf("mapi:use blocked mode\n");fflush(stdout); */
+		*s = 0;
+		fdin = block_stream(stream_rstream(fdin));
+		fdout = block_stream(stream_wstream(fdout));
+	}
+#ifdef DEBUG_MAPI
+	THRprintf(GDKerr, "MAPIlisten:client accepted %d\n", msgsock);
+	THRprintf(GDKerr, "MAPIlisten:client string %s\n", name);
+#endif
+	bs = bstream_create(fdin, blocked ? 128 * BLOCK : 0);
+
+	if (blocked)
+		bs->eof = 1;
+	scheduleClient(name, bs, fdout);
 	return MAL_SUCCEED;
 }
