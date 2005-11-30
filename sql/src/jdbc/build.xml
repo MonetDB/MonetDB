@@ -98,6 +98,8 @@ All Rights Reserved.
       destdir="${builddir}"
       debug="${debug}"
       optimize="${optimize}"
+      target="${javac_version}"
+      source="${javac_version}"
       >
       <include name="${jdbc-package}/**/*.java" />
     </javac>
@@ -111,6 +113,8 @@ All Rights Reserved.
       destdir="${builddir}"
       debug="${debug}"
       optimize="${optimize}"
+      target="${javac_version}"
+      source="${javac_version}"
       >
       <include name="${xmldb-package}/**/*.java" />
     </javac>
@@ -124,6 +128,8 @@ All Rights Reserved.
       destdir="${builddir}"
       debug="${debug}"
       optimize="${optimize}"
+      target="${javac_version}"
+      source="${javac_version}"
       >
       <include name="${mcl-package}/**/*.java" />
     </javac>
@@ -137,6 +143,8 @@ All Rights Reserved.
       destdir="${builddir}"
       debug="${debug}"
       optimize="${optimize}"
+      target="${javac_version}"
+      source="${javac_version}"
       >
       <include name="${client-package}/**/*.java" />
     </javac>
@@ -167,6 +175,8 @@ All Rights Reserved.
       destdir="${builddir}"
       debug="false"
       optimize="true"
+      target="${javac_version}"
+      source="${javac_version}"
       >
       <include name="${jdbc-package}/**/*.java" />
       <include name="${xmldb-package}/**/*.java" />
@@ -245,9 +255,8 @@ All Rights Reserved.
     <echo message="Configured build for the ${JDBC_MAJOR}.${JDBC_MINOR} (${JDBC_VER_SUFFIX}) edition driver" />
   </target>
 
-  <!-- Prepares the build directory -->
+  <!-- Prepares the build directory and sets some variables -->
   <target name="prepare">
-    <!-- use the enable_debug option from configure -->
     <condition property="debug" value="true">
       <and>
         <equals arg1="${enable_debug}" arg2="true" casesensitive="false" trim="true" />
@@ -258,7 +267,6 @@ All Rights Reserved.
         <equals arg1="${enable_debug}" arg2="true" casesensitive="false" trim="true" />
       </not>
     </condition>
-    <!-- use the enable_optimize option from configure -->
     <condition property="optimize" value="true">
       <and>
         <equals arg1="${enable_optimize}" arg2="true" casesensitive="false" trim="true" />
