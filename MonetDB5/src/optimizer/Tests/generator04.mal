@@ -3,10 +3,12 @@
 mdb.list();
 	io.print("start");
 	b:bat[:void,:int]:= pbm.generator("Sales2005");
-	low:= 0;
-	high:= 3;
-	s:= algebra.select(b,low,high);
-	t:= algebra.select(s,low,high);
+	c:bat[:void,:int]:= pbm.generator("Sales2005");
+	cr:= bat.reverse(c);
+	t:= algebra.select(b,0,3);
+	s:= algebra.join(t,cr);
+	cnt:= aggr.count(s);
+	io.print(cnt);
 	io.print("finished");
 optimizer.generators();
 

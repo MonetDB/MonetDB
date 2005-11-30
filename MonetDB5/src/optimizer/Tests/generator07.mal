@@ -1,10 +1,13 @@
 # the generator optimizer
-# this test shows the basics.
+# The flow graph becomes a little more complex 
 mdb.list();
 	io.print("start");
 	b:bat[:void,:int]:= pbm.generator("Sales2005");
-	s:= algebra.select(b,0,3);
-	t:= algebra.select(s,0,2);
+	low:= 0;
+	high:= 3;
+	s:= algebra.select(b,low,high);
+	high:= high-1;
+	t:= algebra.select(s,low,high);
 	io.print("finished");
 optimizer.generators();
 
