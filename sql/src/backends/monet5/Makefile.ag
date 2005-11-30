@@ -26,8 +26,19 @@ lib__sql = {
 		sql_cache.mx \
 		sql_result.mx \
 		sql_readline.mx
-	WINLIBS = -lbat -lmonet -lstream -l_streams -l_bat -l_kernel 
-	LIBS = ../../server/libsqlserver ../../storage/bat/libbatstore ../../common/libsqlcommon $(MONETDB_LIBS) -lbat -lmal -lstream $(MONET5_LIBS)
+	WINLIBS = -lbat -lstream -l_streams -l_bat -l_kernel 
+	LIBS = ../../server/libsqlserver ../../storage/bat/libbatstore ../../common/libsqlcommon $(MONET5_LIBS) -l_bat -lmal $(MONETDB_LIBS) -lbat -lstream
+}
+
+
+lib_embeddedsql5 = {
+	SOURCES = embeddedclient.mx
+	LIBS = ../../server/libsqlserver ../../storage/bat/libbatstore ../../common/libsqlcommon $(MONET5_LIBS) -l_bat -lmal $(MONETDB_LIBS) -lbat -lMapi -lstream 
+}
+
+bin_Mbeddedsql5 = {
+	SOURCES = prog.c
+	LIBS = libembeddedsql5 ../../server/libsqlserver ../../storage/bat/libbatstore ../../common/libsqlcommon $(MONET5_LIBS) -l_bat -lmal $(MONETDB_LIBS) -lbat -lMapi -lstream 
 }
 
 lib__sql_cache = {
