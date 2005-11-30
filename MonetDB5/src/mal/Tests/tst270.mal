@@ -38,3 +38,4 @@ io.print(b);
 io.print(b,b,b);
 profiler.stop();
 profiler.closeStream();
+profiler.cleanup();

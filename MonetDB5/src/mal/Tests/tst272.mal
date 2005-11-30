@@ -35,3 +35,4 @@ io.printf("#~BeginVariableOutput~#\n");
 #io.print(s);
 #io.print(t,s);
 io.printf("#~EndVariableOutput~#\n");
+profiler.cleanup();

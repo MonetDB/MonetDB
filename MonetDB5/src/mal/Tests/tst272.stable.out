@@ -83,7 +83,8 @@ function user.main():void;	# 0  (main:void)
 #io.print(s); 	# 32  (_56:str)
 #io.print(t,s); 	# 33  (_58:str)
     io.printf("#~EndVariableOutput~#\n");	# 34 IOprint_str (_59:int)<-(_60:str)
-end main;	# 35  
+    profiler.cleanup();	# 35 CMDcleanup (_61:void)
+end main;	# 36  
 #-----------------#
 # h	tmp_13	  # name
 # int	int	  # type

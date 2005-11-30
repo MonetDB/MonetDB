@@ -90,15 +90,16 @@ function user.main():void;	# 0  (main:void)
     io.print(b,b,b);	# 34 IOtable (_59:int)<-(b:bat[:int,:int])(b:bat[:int,:int])(b:bat[:int,:int])
     profiler.stop();	# 35 CMDstopProfiler (_60:void)
     profiler.closeStream();	# 36 CMDcloseProfilerStream (_61:void)
-end main;	# 37  
+    profiler.cleanup();	# 37 CMDcleanup (_62:void)
+end main;	# 38  
 #~BeginVariableOutput~#
 #-------------------------------------------------#
 # h				tmp_5		  # name
 # str				str		  # type
 #-----------------------------------------#
 [ "version",		  "20749"	  ]
-[ "batId",		  "tmp_15"	  ]
-[ "batCacheid",			  "13"		  ]
+[ "batId",		  "tmp_4"	  ]
+[ "batCacheid",		  "4"		  ]
 [ "batParentid",		  "0"		  ]
 [ "batSharecnt",		  "0"		  ]
 [ "head",			  "int"		  ]
@@ -142,7 +143,7 @@ end main;	# 37
 [ "batFirst",		  "0"		  ]
 [ "top",		  "0"		  ]
 [ "batStamp",		  "4"		  ]
-[ "lastUsed",		  "190"		  ]
+[ "lastUsed",		  "154"		  ]
 [ "curStamp",		  "5"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "clean"	  ]
@@ -151,7 +152,7 @@ end main;	# 37
 [ "batBuns.size",	  "400"		  ]
 [ "batBuns.maxsize",	  "400"		  ]
 [ "batBuns.storage",		  "malloced"	  ]
-[ "batBuns.filename",	  "15.buns"	  ]
+[ "batBuns.filename",	  "4.buns"	  ]
 [ "hheapdirty",			  "clean"	  ]
 [ "theapdirty",			  "clean"	  ]
 #~EndVariableOutput~#
