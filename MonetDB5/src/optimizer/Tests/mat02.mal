@@ -1,6 +1,5 @@
 
 # select count(name) from tables
-include sql;
 mdb.list();
 # simulate the SQL behavior
 #   v2:bat[:void,:int]  := sql.bind("sys","ptables","id",0);

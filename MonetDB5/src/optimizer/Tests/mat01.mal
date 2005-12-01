@@ -1,5 +1,4 @@
 # select count(*) from tables
-include sql;
 mdb.list();
 #   v2:bat[:void,:int]  := sql.bind("sys","ptables","id",0,2);
 # bind the two components separately

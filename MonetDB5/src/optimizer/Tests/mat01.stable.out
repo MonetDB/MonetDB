@@ -66,91 +66,92 @@ stdout of test 'mat01` in directory 'src/optimizer` itself:
 #
 #
 function user.main():void;	# 0  (main:void)
-    mdb.list();	# 1 MDBlist (_1:void)
-#   v2:bat[:void,:int]  := sql.bind("sys","ptables","id",0,2); 	# 2  (_3:str)
-# bind the two components separately 	# 3  (_5:str)
-#   v2v0:bat[:void,:int]  := sql.bind("sys","ptables","id",0); 	# 4  (_7:str)
-#   v2v1:bat[:void,:int]  := sql.bind("sys","ptables","id",0); 	# 5  (_9:str)
-#   v2v2:bat[:void,:int]  := sql.bind("sys","ptables","id",0); 	# 6  (_11:str)
-# simulate the SQL behavior 	# 7  (_13:str)
-    v2v0 := bat.new(:void,:int);	# 8 CMDBATnew (v2v0:bat[:void,:int])<-(_15:void)(_16:int)
-    bat.insert(v2v0,nil,0);	# 9 BKCinsert_bun (_17:void)<-(v2v0:bat[:void,:int])(_18:void)(_19:int)
-    v2v1 := bat.new(:void,:int);	# 10 CMDBATnew (v2v1:bat[:void,:int])<-(_15:void)(_16:int)
-    bat.insert(v2v1,nil,1);	# 11 BKCinsert_bun (_21:void)<-(v2v1:bat[:void,:int])(_18:void)(_22:int)
-    v2v2 := bat.new(:void,:int);	# 12 CMDBATnew (v2v2:bat[:void,:int])<-(_15:void)(_16:int)
-    bat.insert(v2v2,nil,2);	# 13 BKCinsert_bun (_24:void)<-(v2v2:bat[:void,:int])(_18:void)(_25:int)
-    v2 := mat.new(v2v0,v2v1,v2v2);	# 14 MATnew (v2:bat[:void,:int])<-(v2v0:bat[:void,:int])(v2v1:bat[:void,:int])(v2v2:bat[:void,:int])
-#   v23:bat[:void,:int]  := sql.bind("sys","ttables","id",0); 	# 15  (_28:str)
-    v23 := bat.new(:void,:int);	# 16 CMDBATnew (v23:bat[:void,:int])<-(_15:void)(_16:int)
-    bat.insert(v23,nil,3);	# 17 BKCinsert_bun (_30:void)<-(v23:bat[:void,:int])(_18:void)(_31:int)
-#   v8:bat[:void,:oid]  := sql.bind_dbat("sys","ptables",0); 	# 18  (_33:str)
-    v8 := bat.new(:void,:oid);	# 19 CMDBATnew (v8:bat[:void,:oid])<-(_15:void)(_35:oid)
-    v10 := bat.reverse(v8);	# 20 BKCreverse (v10:bat[:oid,:void])<-(v8:bat[:void,:oid])
-    _64 := algebra.kdifference(v2v0,v10);	# 21 ALGkdiff (_64:bat[:oid,:int])<-(v2v0:bat[:void,:int])(v10:bat[:oid,:void])
-    _65 := algebra.kdifference(v2v1,v10);	# 22 ALGkdiff (_65:bat[:oid,:int])<-(v2v1:bat[:void,:int])(v10:bat[:oid,:void])
-    _66 := algebra.kdifference(v2v2,v10);	# 23 ALGkdiff (_66:bat[:oid,:int])<-(v2v2:bat[:void,:int])(v10:bat[:oid,:void])
-    v12 := mat.new(_64,_65,_66);	# 24 MATnew (v12:bat[:oid,:int])<-(_64:bat[:oid,:int])(_65:bat[:oid,:int])(_66:bat[:oid,:int])
-    _67 := algebra.markT(_64,0@0);	# 25 ALGtmark (_67:bat[:oid,:void])<-(_64:bat[:oid,:int])(_39:oid)
-    _68 := algebra.markT(_65,0@0);	# 26 ALGtmark (_68:bat[:oid,:void])<-(_65:bat[:oid,:int])(_39:oid)
-    _69 := algebra.markT(_66,0@0);	# 27 ALGtmark (_69:bat[:oid,:void])<-(_66:bat[:oid,:int])(_39:oid)
-    v17 := mat.new(_67,_68,_69);	# 28 MATnew (v17:bat[:oid,:void])<-(_67:bat[:oid,:void])(_68:bat[:oid,:void])(_69:bat[:oid,:void])
-    _70 := bat.reverse(_67);	# 29 BKCreverse (_70:bat[:void,:oid])<-(_67:bat[:oid,:void])
-    _71 := bat.reverse(_68);	# 30 BKCreverse (_71:bat[:void,:oid])<-(_68:bat[:oid,:void])
-    _72 := bat.reverse(_69);	# 31 BKCreverse (_72:bat[:void,:oid])<-(_69:bat[:oid,:void])
-    v19 := mat.new(_70,_71,_72);	# 32 MATnew (v19:bat[:void,:oid])<-(_70:bat[:void,:oid])(_71:bat[:void,:oid])(_72:bat[:void,:oid])
-    v19 := mat.pack(_70,_71,_72);	# 33 MATpack (v19:bat[:void,:oid])<-(_70:bat[:void,:oid])(_71:bat[:void,:oid])(_72:bat[:void,:oid])
-    _73 := algebra.join(v19,v2v0);	# 34 ALGjoin (_73:bat[:void,:int])<-(v19:bat[:void,:oid])(v2v0:bat[:void,:int])
-    _74 := algebra.join(v19,v2v1);	# 35 ALGjoin (_74:bat[:void,:int])<-(v19:bat[:void,:oid])(v2v1:bat[:void,:int])
-    _75 := algebra.join(v19,v2v2);	# 36 ALGjoin (_75:bat[:void,:int])<-(v19:bat[:void,:oid])(v2v2:bat[:void,:int])
-    v21 := mat.new(_73,_74,_75);	# 37 MATnew (v21:bat[:void,:int])<-(_73:bat[:void,:int])(_74:bat[:void,:int])(_75:bat[:void,:int])
-#   v26:bat[:void,:oid]  := sql.bind_dbat("sys","ttables",0); 	# 38  (_43:str)
-    v26 := bat.new(:void,:oid);	# 39 CMDBATnew (v26:bat[:void,:oid])<-(_15:void)(_35:oid)
-    v28 := bat.reverse(v26);	# 40 BKCreverse (v28:bat[:oid,:void])<-(v26:bat[:void,:oid])
-    v30 := algebra.kdifference(v23,v28);	# 41 ALGkdiff (v30:bat[:oid,:int])<-(v23:bat[:void,:int])(v28:bat[:oid,:void])
-    v34 := algebra.markT(v30,0@0);	# 42 ALGtmark (v34:bat[:oid,:void])<-(v30:bat[:oid,:int])(_39:oid)
-    v36 := bat.reverse(v34);	# 43 BKCreverse (v36:bat[:void,:oid])<-(v34:bat[:oid,:void])
-    v38 := algebra.join(v36,v23);	# 44 ALGjoin (v38:bat[:void,:int])<-(v36:bat[:void,:oid])(v23:bat[:void,:int])
-    _76 := bat.setAccess(_73,"w");	# 45 BKCsetAccess (_76:bat[:void,:int])<-(_73:bat[:void,:int])(_51:str)
-    _77 := bat.setAccess(_74,"w");	# 46 BKCsetAccess (_77:bat[:void,:int])<-(_74:bat[:void,:int])(_51:str)
-    _78 := bat.setAccess(_75,"w");	# 47 BKCsetAccess (_78:bat[:void,:int])<-(_75:bat[:void,:int])(_51:str)
-    v40 := mat.new(_76,_77,_78);	# 48 MATnew (v40:bat[:void,:int])<-(_76:bat[:void,:int])(_77:bat[:void,:int])(_78:bat[:void,:int])
-    _79 := bat.append(_78,v38);	# 49 BKCbat_append_void_bat_wrap (_79:void)<-(_78:bat[:void,:int])(v38:bat[:void,:int])
-    _80 := algebra.markT(_76,0@0);	# 50 ALGtmark (_80:bat[:oid,:void])<-(_76:bat[:void,:int])(_39:oid)
-    _81 := algebra.markT(_77,0@0);	# 51 ALGtmark (_81:bat[:oid,:void])<-(_77:bat[:void,:int])(_39:oid)
-    _82 := algebra.markT(_78,0@0);	# 52 ALGtmark (_82:bat[:oid,:void])<-(_78:bat[:void,:int])(_39:oid)
-    v47 := mat.new(_80,_81,_82);	# 53 MATnew (v47:bat[:oid,:void])<-(_80:bat[:oid,:void])(_81:bat[:oid,:void])(_82:bat[:oid,:void])
-    _83 := bat.reverse(_80);	# 54 BKCreverse (_83:bat[:void,:oid])<-(_80:bat[:oid,:void])
-    _84 := bat.reverse(_81);	# 55 BKCreverse (_84:bat[:void,:oid])<-(_81:bat[:oid,:void])
-    _85 := bat.reverse(_82);	# 56 BKCreverse (_85:bat[:void,:oid])<-(_82:bat[:oid,:void])
-    v49 := mat.new(_83,_84,_85);	# 57 MATnew (v49:bat[:void,:oid])<-(_83:bat[:void,:oid])(_84:bat[:void,:oid])(_85:bat[:void,:oid])
-    v49 := mat.pack(_83,_84,_85);	# 58 MATpack (v49:bat[:void,:oid])<-(_83:bat[:void,:oid])(_84:bat[:void,:oid])(_85:bat[:void,:oid])
-    _86 := algebra.join(v49,_76);	# 59 ALGjoin (_86:bat[:void,:int])<-(v49:bat[:void,:oid])(_76:bat[:void,:int])
-    _87 := algebra.join(v49,_77);	# 60 ALGjoin (_87:bat[:void,:int])<-(v49:bat[:void,:oid])(_77:bat[:void,:int])
-    _88 := algebra.join(v49,_78);	# 61 ALGjoin (_88:bat[:void,:int])<-(v49:bat[:void,:oid])(_78:bat[:void,:int])
-    v51 := mat.new(_86,_87,_88);	# 62 MATnew (v51:bat[:void,:int])<-(_86:bat[:void,:int])(_87:bat[:void,:int])(_88:bat[:void,:int])
-    _89 := algebra.markT(_86,0@0);	# 63 ALGtmark (_89:bat[:oid,:void])<-(_86:bat[:void,:int])(_39:oid)
-    _90 := algebra.markT(_87,0@0);	# 64 ALGtmark (_90:bat[:oid,:void])<-(_87:bat[:void,:int])(_39:oid)
-    _91 := algebra.markT(_88,0@0);	# 65 ALGtmark (_91:bat[:oid,:void])<-(_88:bat[:void,:int])(_39:oid)
-    v56 := mat.new(_89,_90,_91);	# 66 MATnew (v56:bat[:oid,:void])<-(_89:bat[:oid,:void])(_90:bat[:oid,:void])(_91:bat[:oid,:void])
-    _92 := bat.reverse(_89);	# 67 BKCreverse (_92:bat[:void,:oid])<-(_89:bat[:oid,:void])
-    _93 := bat.reverse(_90);	# 68 BKCreverse (_93:bat[:void,:oid])<-(_90:bat[:oid,:void])
-    _94 := bat.reverse(_91);	# 69 BKCreverse (_94:bat[:void,:oid])<-(_91:bat[:oid,:void])
-    v58 := mat.new(_92,_93,_94);	# 70 MATnew (v58:bat[:void,:oid])<-(_92:bat[:void,:oid])(_93:bat[:void,:oid])(_94:bat[:void,:oid])
-    v58 := mat.pack(_92,_93,_94);	# 71 MATpack (v58:bat[:void,:oid])<-(_92:bat[:void,:oid])(_93:bat[:void,:oid])(_94:bat[:void,:oid])
-    _95 := algebra.join(v58,_86);	# 72 ALGjoin (_95:bat[:void,:int])<-(v58:bat[:void,:oid])(_86:bat[:void,:int])
-    _96 := algebra.join(v58,_87);	# 73 ALGjoin (_96:bat[:void,:int])<-(v58:bat[:void,:oid])(_87:bat[:void,:int])
-    _97 := algebra.join(v58,_88);	# 74 ALGjoin (_97:bat[:void,:int])<-(v58:bat[:void,:oid])(_88:bat[:void,:int])
-    v60 := mat.new(_95,_96,_97);	# 75 MATnew (v60:bat[:void,:int])<-(_95:bat[:void,:int])(_96:bat[:void,:int])(_97:bat[:void,:int])
-    v62 := 0;	# 76  (v62:int)<-(_98:int)
-    _99 := aggr.count(_95);	# 77 ALGcount_bat (_99:int)<-(_95:bat[:void,:int])
-    v62 := calc.+(v62,_99);	# 78 CALCbinaryADDintint (v62:int)<-(v62:int)(_99:int)
-    _100 := aggr.count(_96);	# 79 ALGcount_bat (_100:int)<-(_96:bat[:void,:int])
-    v62 := calc.+(v62,_100);	# 80 CALCbinaryADDintint (v62:int)<-(v62:int)(_100:int)
-    _101 := aggr.count(_97);	# 81 ALGcount_bat (_101:int)<-(_97:bat[:void,:int])
-    v62 := calc.+(v62,_101);	# 82 CALCbinaryADDintint (v62:int)<-(v62:int)(_101:int)
-#   sql.exportValue(3,"tables","countvid","int",32,0,6,v62); 	# 83  (_61:str)
-    io.print(v62);	# 84 IOprint_val (_62:int)<-(v62:int)
-end main;	# 85  
+# select count(*) from tables 	# 1  (_2:str)
+    mdb.list();	# 2 MDBlist (_3:void)
+#   v2:bat[:void,:int]  := sql.bind("sys","ptables","id",0,2); 	# 3  (_5:str)
+# bind the two components separately 	# 4  (_7:str)
+#   v2v0:bat[:void,:int]  := sql.bind("sys","ptables","id",0); 	# 5  (_9:str)
+#   v2v1:bat[:void,:int]  := sql.bind("sys","ptables","id",0); 	# 6  (_11:str)
+#   v2v2:bat[:void,:int]  := sql.bind("sys","ptables","id",0); 	# 7  (_13:str)
+# simulate the SQL behavior 	# 8  (_15:str)
+    v2v0 := bat.new(:void,:int);	# 9 CMDBATnew (v2v0:bat[:void,:int])<-(_17:void)(_18:int)
+    bat.insert(v2v0,nil,0);	# 10 BKCinsert_bun (_19:void)<-(v2v0:bat[:void,:int])(_20:void)(_21:int)
+    v2v1 := bat.new(:void,:int);	# 11 CMDBATnew (v2v1:bat[:void,:int])<-(_17:void)(_18:int)
+    bat.insert(v2v1,nil,1);	# 12 BKCinsert_bun (_23:void)<-(v2v1:bat[:void,:int])(_20:void)(_24:int)
+    v2v2 := bat.new(:void,:int);	# 13 CMDBATnew (v2v2:bat[:void,:int])<-(_17:void)(_18:int)
+    bat.insert(v2v2,nil,2);	# 14 BKCinsert_bun (_26:void)<-(v2v2:bat[:void,:int])(_20:void)(_27:int)
+    v2 := mat.new(v2v0,v2v1,v2v2);	# 15 MATnew (v2:bat[:void,:int])<-(v2v0:bat[:void,:int])(v2v1:bat[:void,:int])(v2v2:bat[:void,:int])
+#   v23:bat[:void,:int]  := sql.bind("sys","ttables","id",0); 	# 16  (_30:str)
+    v23 := bat.new(:void,:int);	# 17 CMDBATnew (v23:bat[:void,:int])<-(_17:void)(_18:int)
+    bat.insert(v23,nil,3);	# 18 BKCinsert_bun (_32:void)<-(v23:bat[:void,:int])(_20:void)(_33:int)
+#   v8:bat[:void,:oid]  := sql.bind_dbat("sys","ptables",0); 	# 19  (_35:str)
+    v8 := bat.new(:void,:oid);	# 20 CMDBATnew (v8:bat[:void,:oid])<-(_17:void)(_37:oid)
+    v10 := bat.reverse(v8);	# 21 BKCreverse (v10:bat[:oid,:void])<-(v8:bat[:void,:oid])
+    _66 := algebra.kdifference(v2v0,v10);	# 22 ALGkdiff (_66:bat[:oid,:int])<-(v2v0:bat[:void,:int])(v10:bat[:oid,:void])
+    _67 := algebra.kdifference(v2v1,v10);	# 23 ALGkdiff (_67:bat[:oid,:int])<-(v2v1:bat[:void,:int])(v10:bat[:oid,:void])
+    _68 := algebra.kdifference(v2v2,v10);	# 24 ALGkdiff (_68:bat[:oid,:int])<-(v2v2:bat[:void,:int])(v10:bat[:oid,:void])
+    v12 := mat.new(_66,_67,_68);	# 25 MATnew (v12:bat[:oid,:int])<-(_66:bat[:oid,:int])(_67:bat[:oid,:int])(_68:bat[:oid,:int])
+    _69 := algebra.markT(_66,0@0);	# 26 ALGtmark (_69:bat[:oid,:void])<-(_66:bat[:oid,:int])(_41:oid)
+    _70 := algebra.markT(_67,0@0);	# 27 ALGtmark (_70:bat[:oid,:void])<-(_67:bat[:oid,:int])(_41:oid)
+    _71 := algebra.markT(_68,0@0);	# 28 ALGtmark (_71:bat[:oid,:void])<-(_68:bat[:oid,:int])(_41:oid)
+    v17 := mat.new(_69,_70,_71);	# 29 MATnew (v17:bat[:oid,:void])<-(_69:bat[:oid,:void])(_70:bat[:oid,:void])(_71:bat[:oid,:void])
+    _72 := bat.reverse(_69);	# 30 BKCreverse (_72:bat[:void,:oid])<-(_69:bat[:oid,:void])
+    _73 := bat.reverse(_70);	# 31 BKCreverse (_73:bat[:void,:oid])<-(_70:bat[:oid,:void])
+    _74 := bat.reverse(_71);	# 32 BKCreverse (_74:bat[:void,:oid])<-(_71:bat[:oid,:void])
+    v19 := mat.new(_72,_73,_74);	# 33 MATnew (v19:bat[:void,:oid])<-(_72:bat[:void,:oid])(_73:bat[:void,:oid])(_74:bat[:void,:oid])
+    v19 := mat.pack(_72,_73,_74);	# 34 MATpack (v19:bat[:void,:oid])<-(_72:bat[:void,:oid])(_73:bat[:void,:oid])(_74:bat[:void,:oid])
+    _75 := algebra.join(v19,v2v0);	# 35 ALGjoin (_75:bat[:void,:int])<-(v19:bat[:void,:oid])(v2v0:bat[:void,:int])
+    _76 := algebra.join(v19,v2v1);	# 36 ALGjoin (_76:bat[:void,:int])<-(v19:bat[:void,:oid])(v2v1:bat[:void,:int])
+    _77 := algebra.join(v19,v2v2);	# 37 ALGjoin (_77:bat[:void,:int])<-(v19:bat[:void,:oid])(v2v2:bat[:void,:int])
+    v21 := mat.new(_75,_76,_77);	# 38 MATnew (v21:bat[:void,:int])<-(_75:bat[:void,:int])(_76:bat[:void,:int])(_77:bat[:void,:int])
+#   v26:bat[:void,:oid]  := sql.bind_dbat("sys","ttables",0); 	# 39  (_45:str)
+    v26 := bat.new(:void,:oid);	# 40 CMDBATnew (v26:bat[:void,:oid])<-(_17:void)(_37:oid)
+    v28 := bat.reverse(v26);	# 41 BKCreverse (v28:bat[:oid,:void])<-(v26:bat[:void,:oid])
+    v30 := algebra.kdifference(v23,v28);	# 42 ALGkdiff (v30:bat[:oid,:int])<-(v23:bat[:void,:int])(v28:bat[:oid,:void])
+    v34 := algebra.markT(v30,0@0);	# 43 ALGtmark (v34:bat[:oid,:void])<-(v30:bat[:oid,:int])(_41:oid)
+    v36 := bat.reverse(v34);	# 44 BKCreverse (v36:bat[:void,:oid])<-(v34:bat[:oid,:void])
+    v38 := algebra.join(v36,v23);	# 45 ALGjoin (v38:bat[:void,:int])<-(v36:bat[:void,:oid])(v23:bat[:void,:int])
+    _78 := bat.setAccess(_75,"w");	# 46 BKCsetAccess (_78:bat[:void,:int])<-(_75:bat[:void,:int])(_53:str)
+    _79 := bat.setAccess(_76,"w");	# 47 BKCsetAccess (_79:bat[:void,:int])<-(_76:bat[:void,:int])(_53:str)
+    _80 := bat.setAccess(_77,"w");	# 48 BKCsetAccess (_80:bat[:void,:int])<-(_77:bat[:void,:int])(_53:str)
+    v40 := mat.new(_78,_79,_80);	# 49 MATnew (v40:bat[:void,:int])<-(_78:bat[:void,:int])(_79:bat[:void,:int])(_80:bat[:void,:int])
+    _81 := bat.append(_80,v38);	# 50 BKCbat_append_void_bat_wrap (_81:void)<-(_80:bat[:void,:int])(v38:bat[:void,:int])
+    _82 := algebra.markT(_78,0@0);	# 51 ALGtmark (_82:bat[:oid,:void])<-(_78:bat[:void,:int])(_41:oid)
+    _83 := algebra.markT(_79,0@0);	# 52 ALGtmark (_83:bat[:oid,:void])<-(_79:bat[:void,:int])(_41:oid)
+    _84 := algebra.markT(_80,0@0);	# 53 ALGtmark (_84:bat[:oid,:void])<-(_80:bat[:void,:int])(_41:oid)
+    v47 := mat.new(_82,_83,_84);	# 54 MATnew (v47:bat[:oid,:void])<-(_82:bat[:oid,:void])(_83:bat[:oid,:void])(_84:bat[:oid,:void])
+    _85 := bat.reverse(_82);	# 55 BKCreverse (_85:bat[:void,:oid])<-(_82:bat[:oid,:void])
+    _86 := bat.reverse(_83);	# 56 BKCreverse (_86:bat[:void,:oid])<-(_83:bat[:oid,:void])
+    _87 := bat.reverse(_84);	# 57 BKCreverse (_87:bat[:void,:oid])<-(_84:bat[:oid,:void])
+    v49 := mat.new(_85,_86,_87);	# 58 MATnew (v49:bat[:void,:oid])<-(_85:bat[:void,:oid])(_86:bat[:void,:oid])(_87:bat[:void,:oid])
+    v49 := mat.pack(_85,_86,_87);	# 59 MATpack (v49:bat[:void,:oid])<-(_85:bat[:void,:oid])(_86:bat[:void,:oid])(_87:bat[:void,:oid])
+    _88 := algebra.join(v49,_78);	# 60 ALGjoin (_88:bat[:void,:int])<-(v49:bat[:void,:oid])(_78:bat[:void,:int])
+    _89 := algebra.join(v49,_79);	# 61 ALGjoin (_89:bat[:void,:int])<-(v49:bat[:void,:oid])(_79:bat[:void,:int])
+    _90 := algebra.join(v49,_80);	# 62 ALGjoin (_90:bat[:void,:int])<-(v49:bat[:void,:oid])(_80:bat[:void,:int])
+    v51 := mat.new(_88,_89,_90);	# 63 MATnew (v51:bat[:void,:int])<-(_88:bat[:void,:int])(_89:bat[:void,:int])(_90:bat[:void,:int])
+    _91 := algebra.markT(_88,0@0);	# 64 ALGtmark (_91:bat[:oid,:void])<-(_88:bat[:void,:int])(_41:oid)
+    _92 := algebra.markT(_89,0@0);	# 65 ALGtmark (_92:bat[:oid,:void])<-(_89:bat[:void,:int])(_41:oid)
+    _93 := algebra.markT(_90,0@0);	# 66 ALGtmark (_93:bat[:oid,:void])<-(_90:bat[:void,:int])(_41:oid)
+    v56 := mat.new(_91,_92,_93);	# 67 MATnew (v56:bat[:oid,:void])<-(_91:bat[:oid,:void])(_92:bat[:oid,:void])(_93:bat[:oid,:void])
+    _94 := bat.reverse(_91);	# 68 BKCreverse (_94:bat[:void,:oid])<-(_91:bat[:oid,:void])
+    _95 := bat.reverse(_92);	# 69 BKCreverse (_95:bat[:void,:oid])<-(_92:bat[:oid,:void])
+    _96 := bat.reverse(_93);	# 70 BKCreverse (_96:bat[:void,:oid])<-(_93:bat[:oid,:void])
+    v58 := mat.new(_94,_95,_96);	# 71 MATnew (v58:bat[:void,:oid])<-(_94:bat[:void,:oid])(_95:bat[:void,:oid])(_96:bat[:void,:oid])
+    v58 := mat.pack(_94,_95,_96);	# 72 MATpack (v58:bat[:void,:oid])<-(_94:bat[:void,:oid])(_95:bat[:void,:oid])(_96:bat[:void,:oid])
+    _97 := algebra.join(v58,_88);	# 73 ALGjoin (_97:bat[:void,:int])<-(v58:bat[:void,:oid])(_88:bat[:void,:int])
+    _98 := algebra.join(v58,_89);	# 74 ALGjoin (_98:bat[:void,:int])<-(v58:bat[:void,:oid])(_89:bat[:void,:int])
+    _99 := algebra.join(v58,_90);	# 75 ALGjoin (_99:bat[:void,:int])<-(v58:bat[:void,:oid])(_90:bat[:void,:int])
+    v60 := mat.new(_97,_98,_99);	# 76 MATnew (v60:bat[:void,:int])<-(_97:bat[:void,:int])(_98:bat[:void,:int])(_99:bat[:void,:int])
+    v62 := 0;	# 77  (v62:int)<-(_100:int)
+    _101 := aggr.count(_97);	# 78 ALGcount_bat (_101:int)<-(_97:bat[:void,:int])
+    v62 := calc.+(v62,_101);	# 79 CALCbinaryADDintint (v62:int)<-(v62:int)(_101:int)
+    _102 := aggr.count(_98);	# 80 ALGcount_bat (_102:int)<-(_98:bat[:void,:int])
+    v62 := calc.+(v62,_102);	# 81 CALCbinaryADDintint (v62:int)<-(v62:int)(_102:int)
+    _103 := aggr.count(_99);	# 82 ALGcount_bat (_103:int)<-(_99:bat[:void,:int])
+    v62 := calc.+(v62,_103);	# 83 CALCbinaryADDintint (v62:int)<-(v62:int)(_103:int)
+#   sql.exportValue(3,"tables","countvid","int",32,0,6,v62); 	# 84  (_63:str)
+    io.print(v62);	# 85 IOprint_val (_64:int)<-(v62:int)
+end main;	# 86  
 function user.main():void;
     mdb.list();
 #   v2:bat[:void,:int]  := sql.bind("sys","ptables","id",0,2); 
@@ -172,23 +173,23 @@ function user.main():void;
 #   v8:bat[:void,:oid]  := sql.bind_dbat("sys","ptables",0); 
     v8 := bat.new(:void,:oid);
     v10 := bat.reverse(v8);
-    _64 := algebra.kdifference(v2v0,v10);
-    _65 := algebra.kdifference(v2v1,v10);
-    _66 := algebra.kdifference(v2v2,v10);
-    v12 := mat.new(_64,_65,_66);
-    _67 := algebra.markT(_64,0@0);
-    _68 := algebra.markT(_65,0@0);
+    _66 := algebra.kdifference(v2v0,v10);
+    _67 := algebra.kdifference(v2v1,v10);
+    _68 := algebra.kdifference(v2v2,v10);
+    v12 := mat.new(_66,_67,_68);
     _69 := algebra.markT(_66,0@0);
-    v17 := mat.new(_67,_68,_69);
-    _70 := bat.reverse(_67);
-    _71 := bat.reverse(_68);
+    _70 := algebra.markT(_67,0@0);
+    _71 := algebra.markT(_68,0@0);
+    v17 := mat.new(_69,_70,_71);
     _72 := bat.reverse(_69);
-    v19 := mat.new(_70,_71,_72);
-    v19 := mat.pack(_70,_71,_72);
-    _73 := algebra.join(v19,v2v0);
-    _74 := algebra.join(v19,v2v1);
-    _75 := algebra.join(v19,v2v2);
-    v21 := mat.new(_73,_74,_75);
+    _73 := bat.reverse(_70);
+    _74 := bat.reverse(_71);
+    v19 := mat.new(_72,_73,_74);
+    v19 := mat.pack(_72,_73,_74);
+    _75 := algebra.join(v19,v2v0);
+    _76 := algebra.join(v19,v2v1);
+    _77 := algebra.join(v19,v2v2);
+    v21 := mat.new(_75,_76,_77);
 #   v26:bat[:void,:oid]  := sql.bind_dbat("sys","ttables",0); 
     v26 := bat.new(:void,:oid);
     v28 := bat.reverse(v26);
@@ -196,44 +197,44 @@ function user.main():void;
     v34 := algebra.markT(v30,0@0);
     v36 := bat.reverse(v34);
     v38 := algebra.join(v36,v23);
-    _76 := bat.setAccess(_73,"w");
-    _77 := bat.setAccess(_74,"w");
     _78 := bat.setAccess(_75,"w");
-    v40 := mat.new(_76,_77,_78);
-    _79 := bat.append(_78,v38);
-    _80 := algebra.markT(_76,0@0);
-    _81 := algebra.markT(_77,0@0);
+    _79 := bat.setAccess(_76,"w");
+    _80 := bat.setAccess(_77,"w");
+    v40 := mat.new(_78,_79,_80);
+    _81 := bat.append(_80,v38);
     _82 := algebra.markT(_78,0@0);
-    v47 := mat.new(_80,_81,_82);
-    _83 := bat.reverse(_80);
-    _84 := bat.reverse(_81);
+    _83 := algebra.markT(_79,0@0);
+    _84 := algebra.markT(_80,0@0);
+    v47 := mat.new(_82,_83,_84);
     _85 := bat.reverse(_82);
-    v49 := mat.new(_83,_84,_85);
-    v49 := mat.pack(_83,_84,_85);
-    _86 := algebra.join(v49,_76);
-    _87 := algebra.join(v49,_77);
+    _86 := bat.reverse(_83);
+    _87 := bat.reverse(_84);
+    v49 := mat.new(_85,_86,_87);
+    v49 := mat.pack(_85,_86,_87);
     _88 := algebra.join(v49,_78);
-    v51 := mat.new(_86,_87,_88);
-    _89 := algebra.markT(_86,0@0);
-    _90 := algebra.markT(_87,0@0);
+    _89 := algebra.join(v49,_79);
+    _90 := algebra.join(v49,_80);
+    v51 := mat.new(_88,_89,_90);
     _91 := algebra.markT(_88,0@0);
-    v56 := mat.new(_89,_90,_91);
-    _92 := bat.reverse(_89);
-    _93 := bat.reverse(_90);
+    _92 := algebra.markT(_89,0@0);
+    _93 := algebra.markT(_90,0@0);
+    v56 := mat.new(_91,_92,_93);
     _94 := bat.reverse(_91);
-    v58 := mat.new(_92,_93,_94);
-    v58 := mat.pack(_92,_93,_94);
-    _95 := algebra.join(v58,_86);
-    _96 := algebra.join(v58,_87);
+    _95 := bat.reverse(_92);
+    _96 := bat.reverse(_93);
+    v58 := mat.new(_94,_95,_96);
+    v58 := mat.pack(_94,_95,_96);
     _97 := algebra.join(v58,_88);
-    v60 := mat.new(_95,_96,_97);
+    _98 := algebra.join(v58,_89);
+    _99 := algebra.join(v58,_90);
+    v60 := mat.new(_97,_98,_99);
     v62 := 0;
-    _99 := aggr.count(_95);
-    v62 := calc.+(v62,_99);
-    _100 := aggr.count(_96);
-    v62 := calc.+(v62,_100);
     _101 := aggr.count(_97);
     v62 := calc.+(v62,_101);
+    _102 := aggr.count(_98);
+    v62 := calc.+(v62,_102);
+    _103 := aggr.count(_99);
+    v62 := calc.+(v62,_103);
 #   sql.exportValue(3,"tables","countvid","int",32,0,6,v62); 
     io.print(v62);
 end main;

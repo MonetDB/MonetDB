@@ -10,4 +10,3 @@ mdb.list();
 	u:= algebra.select(c,4,6);
 	io.print("finished");
 optimizer.generators();
-
