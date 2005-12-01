@@ -1,0 +1,5 @@
+var a:= bat(int, int);
+a.rename("x-");
+a.print();
+
+bat("x-").print();

@@ -1,0 +1,16 @@
+debugmask(19);
+
+bat(int,int).insert(1,2).rename("b").persists(true);
+commit();
+
+bat(int,int).insert(3,4).rename("a").persists(true);
+subcommit(bat(int,bat).insert(0,bat("a")));
+
+{
+var tmp := bat(int,bat).insert(0,bat("a"));
+bat("a").persists(false);
+subcommit(tmp);
+}
+
+bat("b").persists(false);
+commit();

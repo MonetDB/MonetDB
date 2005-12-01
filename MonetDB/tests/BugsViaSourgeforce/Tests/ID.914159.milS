@@ -1,0 +1,6 @@
+PROC crash() : void
+{
+	print($t);
+}
+
+crash();

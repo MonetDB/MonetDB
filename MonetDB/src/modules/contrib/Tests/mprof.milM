@@ -1,0 +1,3 @@
+module("mprof");
+test_mprof();
+quit();

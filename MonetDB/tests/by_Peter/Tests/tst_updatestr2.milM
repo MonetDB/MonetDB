@@ -1,0 +1,2 @@
+bat("ab").slice(0,2).print();
+quit();

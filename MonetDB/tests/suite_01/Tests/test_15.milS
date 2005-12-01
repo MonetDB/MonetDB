@@ -1,0 +1,8 @@
+setoid(oid(20000000));
+commit(); printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#\n");
+commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
+commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
+commit(); commit(); commit(); commit(); 
+printf("#~BeginVariableOutput~#\n"); io().print(); printf("#~EndVariableOutput~#\n");
+
+quit();
