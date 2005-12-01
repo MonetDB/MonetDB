@@ -127,6 +127,7 @@ tst270
 tst272
 tst277
 tst280
+tst292
 HAVE_PCRE?tst285
 tst300
 tst3000
