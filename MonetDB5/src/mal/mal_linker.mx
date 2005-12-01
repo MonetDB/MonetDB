@@ -134,7 +134,7 @@ getAddress(str modnme, str fcnname, int silent)
 	void *dl = 0;
 	MALfcn adr;
 	int idx;
-	char *errmsg;
+	const char *errmsg;
 
 #ifdef DEBUG_MAL_LINKER2
 	stream_printf(GDKout, "addres of %s.%s ?\n",modnme,fcnname);
@@ -302,7 +302,7 @@ loadModuleLibrary(str modulename)
 	void *handle = NULL;
 	str fullname, s;
 	int idx;
-	char *errmsg;
+	const char *errmsg;
 
 	initM5Loader();
 	for (idx = 0; moduleLoaded[idx] && idx < maxmodules; idx++)
