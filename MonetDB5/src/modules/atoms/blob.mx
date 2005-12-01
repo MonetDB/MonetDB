@@ -655,7 +655,7 @@ Get the binary line length.
 @-
 Pad with blanks.
 @c
-	      decod:for (bp = &buf[c = len]; c < CODEDLN; c++, bp++)
+	  decod:for (bp = &buf[c = len]; c < CODEDLN; c++, bp++)
 			*bp = ' ';
 @-
 Output a group of 3 bytes (4 input characters).  The input chars are pointed

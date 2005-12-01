@@ -123,11 +123,11 @@ command min(b:bat[:void,:any_1],g:bat[:void,:oid],e:bat[:void,:any_2]):bat[:void
 address AX3aggrX3_min3;
 
 command max(b:bat[:void,:any_1], g:bat[:void,:oid], e:bat[:oid,:any_2]) 
-            :bat[:void,:any_1] 
+		:bat[:void,:any_1] 
 address AX3aggrX3_max3
 comment "Grouped tail maximum";
 command max(b:bat[:void,:any_1], g:bat[:void,:oid], e:bat[:void,:any_2]) 
-            :bat[:void,:any_1] 
+		:bat[:void,:any_1] 
 address AX3aggrX3_max3;
 
 command count(b:bat[:void,:any_1], e:bat[:void,:any_2], ignorenils:bit)
@@ -139,14 +139,14 @@ command count(b:bat[:oid,:any_1], e:bat[:oid,:any_2], ignorenils:bit)
 address AX3aggrX3_count;
 
 command count(b:bat[:void,:any_1], g:bat[:void,:oid], e:bat[:void,:any_2], 
-	    nonils:bit) :bat[:void,:int] 
+		nonils:bit) :bat[:void,:int] 
 address AX3aggrX3_count3;
 command count(b:bat[:void,:any_1], g:bat[:void,:oid], e:bat[:oid,:any_2], 
-	    nonils:bit) :bat[:void,:int] 
+		nonils:bit) :bat[:void,:int] 
 address AX3aggrX3_count3
 comment "grouped count";
 command count(b:bat[:void,:any_1], g:bat[:void,:oid], e:bat[:void,:any_2], 
-	    nonils:bit) :bat[:void,:int] 
+		nonils:bit) :bat[:void,:int] 
 address AX3aggrX3_count3;
 
 command size(b:bat[:void,:bit], e:bat[:void,:any_1]) :bat[:void,:int] 
@@ -412,7 +412,7 @@ HASHfnd_oid for void- and hash-lookups, respectively
 	@8:	BUNt@7(bn,r)	BUNt@7(bn,r)	&sums[(*(oid*)h)-min]
 								*dst: sum in-place or in sums-array ?
 
-	@9:	     BUNindex(bn,r)-off		(*(oid*)h)-min	index in cnt array
+	@9:		 BUNindex(bn,r)-off		(*(oid*)h)-min	index in cnt array
 */
 @= aggrX3_avg
 	ALGODEBUG THRprintf(GDKout, "aggrX3_avg(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
@@ -698,7 +698,7 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 	@7:	"loc" for fixsized b/bn-tail-type,		b/bn-tail-access
 		"var" for varsized b/bn-tail-type
 
-	@8:	     BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
+	@8:		 BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
 	@9:		max/min					initial result value
 */
 @= aggrX3_minmax_ptr
@@ -754,7 +754,7 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 	@7:	"loc" for fixsized b/bn-tail-type,		b/bn-tail-access
 		"var" for varsized b/bn-tail-type
 
-	@8:	     BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
+	@8:		 BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
 	@9:		max/min					initial result value
 */
 @= aggrX3_minmax_oid
@@ -1280,7 +1280,7 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 	@8:	BUNt@7(bn,r)	BUNt@7(bn,r)	&sums[(*(oid*)h)-min]
 								*dst: sum in-place or in sums-array ?
 
-	@9:	     BUNindex(bn,r)-off		(*(oid*)h)-min	index in cnt array
+	@9:		 BUNindex(bn,r)-off		(*(oid*)h)-min	index in cnt array
 */
 @= aggrX3_avg3
 	ALGODEBUG THRprintf(GDKout, "aggrX3_avg3(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
@@ -1379,7 +1379,7 @@ aggrX3_sum3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, size_t rang
 	ssize_t offset;
 
 	ALGODEBUG THRprintf(GDKout, "aggrX3_sum3_@1_@2_EarrayBvoidGvoid(bn=%s,b=%s,g=%s,e=%s,range=" SZFMT ",min=" SZFMT ",max=" SZFMT ");\n",
-			    BATgetId(bn),BATgetId(b),BATgetId(g),BATgetId(e),
+				BATgetId(bn),BATgetId(b),BATgetId(g),BATgetId(e),
 				range,(size_t) min,(size_t) max);
 	@:aggrX3_sum3(1,0,CHKrange,loc,&bhsb;bhsb++,@1,&sums[(*(oid*)h)-min],,@2)@
 	return GDK_SUCCEED;
@@ -1478,7 +1478,7 @@ aggrX3_prod3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, size_t ran
 	ssize_t offset;
 
 	ALGODEBUG THRprintf(GDKout, "aggrX3_prod3_@1_@2_EarrayBvoidGvoid(bn=%s,b=%s,g=%s,e=%s,range=" SZFMT ",min=" SZFMT ",max=" SZFMT ");\n",
-				    BATgetId(bn),BATgetId(b),BATgetId(g),BATgetId(e),
+					BATgetId(bn),BATgetId(b),BATgetId(g),BATgetId(e),
 					range,(size_t) min,(size_t) max);
 	@:aggrX3_prod3(1,0,CHKrange,loc,&bhsb;bhsb++,@1,&prods[(*(oid*)h)-min],,@2)@
 
@@ -1677,7 +1677,7 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 	@7:	"loc" for fixsized b/bn-tail-type,		b/bn-tail-access
 		"var" for varsized b/bn-tail-type
 
-	@8:	     BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
+	@8:		 BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
 	@9:		max/min					initial result value
 */
 @= aggrX3_minmax3_ptr
@@ -1739,7 +1739,7 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 	@7:	"loc" for fixsized b/bn-tail-type,		b/bn-tail-access
 		"var" for varsized b/bn-tail-type
 
-	@8:	     BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
+	@8:		 BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
 	@9:		max/min					initial result value
 */
 @= aggrX3_minmax3_oid
@@ -2101,13 +2101,13 @@ str AX3aggrX3_sum_@1_@3(int *retid, int *bid, int *eid){
 	BAT *b, *e;
 	BAT *bn;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("bbp.sum", "Cannot access descriptor");
-    }
-    if( (e= BATdescriptor(*eid)) == NULL ){
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		return throwMessage("bbp.sum", "Cannot access descriptor");
+	}
+	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPunfix(b->batCacheid);
-        return throwMessage("bbp.sum", "Cannot access descriptor");
-    }
+		return throwMessage("bbp.sum", "Cannot access descriptor");
+	}
 	if( CMDaggrX3_sum_@1_@3(&bn,b,e) == GDK_SUCCEED){
 		BBPunfix(b->batCacheid);
 		BBPunfix(e->batCacheid);
@@ -2126,13 +2126,13 @@ mal_export str AX3aggrX3_prod_@1_@3(int *retid, int *bid, int *eid);
 str AX3aggrX3_prod_@1_@3(int *retid, int *bid, int *eid){
 	BAT *b, *e, *bn;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("bbp.prod", "Cannot access descriptor");
-    }
-    if( (e= BATdescriptor(*eid)) == NULL ){
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		return throwMessage("bbp.prod", "Cannot access descriptor");
+	}
+	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPunfix(b->batCacheid);
-        return throwMessage("bbp.prod", "Cannot access descriptor");
-    }
+		return throwMessage("bbp.prod", "Cannot access descriptor");
+	}
 	if( CMDaggrX3_prod_@1_@3(&bn,b,e) == GDK_SUCCEED){
 		BBPunfix(b->batCacheid);
 		BBPunfix(e->batCacheid);
@@ -2168,13 +2168,13 @@ mal_export str AX3aggrX3_avg_@1(int *retid, int *bid, int *eid);
 str AX3aggrX3_avg_@1(int *retid, int *bid, int *eid){
 	BAT *b, *e, *bn;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("bbp.avg", "Cannot access descriptor");
-    }
-    if( (e= BATdescriptor(*eid)) == NULL ){
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		return throwMessage("bbp.avg", "Cannot access descriptor");
+	}
+	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPunfix(b->batCacheid);
-        return throwMessage("bbp.avg", "Cannot access descriptor");
-    }
+		return throwMessage("bbp.avg", "Cannot access descriptor");
+	}
 	if( CMDaggrX3_avg_@1(&bn,b,e) == GDK_SUCCEED){
 		BBPunfix(b->batCacheid);
 		BBPunfix(e->batCacheid);
@@ -2199,13 +2199,13 @@ str AX3aggrX3_avg_@1(int *retid, int *bid, int *eid){
 mal_export str AX3aggrX3_@1(int *ret, int *bid, int *eid);
 str AX3aggrX3_@1(int *ret, int *bid, int *eid){
 	BAT *b, *e, *bn;
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("bbp.avg", "Cannot access descriptor");
-    }
-    if( (e= BATdescriptor(*eid)) == NULL ){
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		return throwMessage("bbp.avg", "Cannot access descriptor");
+	}
+	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPunfix(b->batCacheid);
-        return throwMessage("bbp.avg", "Cannot access descriptor");
-    }
+		return throwMessage("bbp.avg", "Cannot access descriptor");
+	}
 
 	if( CMDaggrX3_@1(&bn,b,e) == GDK_SUCCEED){
 		BBPunfix(b->batCacheid);
@@ -2285,18 +2285,18 @@ str AX3aggrX3_sum3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 	BAT *b,*g, *e;
 	BAT *bn;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("bbp.avg", "Cannot access descriptor");
-    }
-    if( (e= BATdescriptor(*eid)) == NULL ){
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		return throwMessage("bbp.avg", "Cannot access descriptor");
+	}
+	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPunfix(b->batCacheid);
-        return throwMessage("bbp.avg", "Cannot access descriptor");
-    }
-    if( (g= BATdescriptor(*gid)) == NULL ){
+		return throwMessage("bbp.avg", "Cannot access descriptor");
+	}
+	if( (g= BATdescriptor(*gid)) == NULL ){
 		BBPunfix(e->batCacheid);
 		BBPunfix(b->batCacheid);
-        return throwMessage("bbp.avg", "Cannot access descriptor");
-    }
+		return throwMessage("bbp.avg", "Cannot access descriptor");
+	}
 	if( CMDaggrX3_sum3_@1_@2(&bn,b,g,e) == GDK_SUCCEED){
 		BBPunfix(b->batCacheid);
 		BBPunfix(e->batCacheid);
@@ -2317,17 +2317,17 @@ str AX3aggrX3_prod3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 	BAT *b,*g, *e;
 	BAT *bn;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("bbp.avg", "Cannot access descriptor");
-    }
-    if( (e= BATdescriptor(*eid)) == NULL ){
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		return throwMessage("bbp.avg", "Cannot access descriptor");
+	}
+	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPunfix(b->batCacheid);
-        return throwMessage("bbp.avg", "Cannot access descriptor");
-    }
-    if( (g= BATdescriptor(*gid)) == NULL ){
+		return throwMessage("bbp.avg", "Cannot access descriptor");
+	}
+	if( (g= BATdescriptor(*gid)) == NULL ){
 		BBPunfix(e->batCacheid);
 		BBPunfix(b->batCacheid);
-        return throwMessage("bbp.avg", "Cannot access descriptor");
+		return throwMessage("bbp.avg", "Cannot access descriptor");
 	}
 	if( CMDaggrX3_prod3_@1_@2(&bn,b,g,e) == GDK_SUCCEED){
 		BBPunfix(b->batCacheid);
@@ -2365,17 +2365,17 @@ str AX3aggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 	BAT *b,*g,*e;
 	BAT *bn;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("bbp.avg", "Cannot access descriptor");
-    }
-    if( (e= BATdescriptor(*eid)) == NULL ){
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		return throwMessage("bbp.avg", "Cannot access descriptor");
+	}
+	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPunfix(b->batCacheid);
-        return throwMessage("bbp.avg", "Cannot access descriptor");
-    }
-    if( (g= BATdescriptor(*gid)) == NULL ){
+		return throwMessage("bbp.avg", "Cannot access descriptor");
+	}
+	if( (g= BATdescriptor(*gid)) == NULL ){
 		BBPunfix(e->batCacheid);
 		BBPunfix(b->batCacheid);
-        return throwMessage("bbp.avg", "Cannot access descriptor");
+		return throwMessage("bbp.avg", "Cannot access descriptor");
 	}
 	if( CMDaggrX3_avg3_@1(&bn,b,g,e) == GDK_SUCCEED){
 		BBPunfix(b->batCacheid);
@@ -2404,17 +2404,17 @@ mal_export str AX3aggrX3_@13(int *ret,int *bid, int *gid, int *eid);
 str AX3aggrX3_@13(int *ret,int *bid, int *gid, int *eid){
 	BAT *b,*g,*e, *bn;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("bbp.avg", "Cannot access descriptor");
-    }
-    if( (e= BATdescriptor(*eid)) == NULL ){
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		return throwMessage("bbp.avg", "Cannot access descriptor");
+	}
+	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPunfix(b->batCacheid);
-        return throwMessage("bbp.avg", "Cannot access descriptor");
-    }
-    if( (g= BATdescriptor(*gid)) == NULL ){
+		return throwMessage("bbp.avg", "Cannot access descriptor");
+	}
+	if( (g= BATdescriptor(*gid)) == NULL ){
 		BBPunfix(e->batCacheid);
 		BBPunfix(b->batCacheid);
-        return throwMessage("bbp.avg", "Cannot access descriptor");
+		return throwMessage("bbp.avg", "Cannot access descriptor");
 	}
 	if( CMDaggrX3_@13(&bn,b,g,e) == GDK_SUCCEED){
 		BBPunfix(b->batCacheid);

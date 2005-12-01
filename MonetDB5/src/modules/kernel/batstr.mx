@@ -178,13 +178,13 @@ comment "Perform SQL like operation against a string bat";
 
 #define prepareOperand(X,Y,Z) \
 	if( (X= BATdescriptor(*Y)) == NULL ) \
-	    return throwMessage("batstr." Z, "Cannot access descriptor");
+		return throwMessage("batstr." Z, "Cannot access descriptor");
 #define prepareOperand2(X,Y,A,B,Z) \
 	if( (X= BATdescriptor(*Y)) == NULL ) \
-	    return throwMessage("batstr." Z, "Cannot access descriptor"); \
+		return throwMessage("batstr." Z, "Cannot access descriptor"); \
 	if( (A= BATdescriptor(*B)) == NULL ){\
 		BBPunfix(X->batCacheid); \
-	    return throwMessage("batstr."Z, "Cannot access descriptor"); \
+		return throwMessage("batstr."Z, "Cannot access descriptor"); \
 	}
 #define prepareResult(X,Y,T,Z) \
 	X= BATnew(Y->htype,T,BATcount(Y)); \
@@ -192,8 +192,8 @@ comment "Perform SQL like operation against a string bat";
 		BATseqbase(X, Y->hseqbase); \
 	Y->hsorted=X->hsorted; \
 	if( X == NULL){ \
-	    BBPunfix(Y->batCacheid); \
-	    return throwMessage("batstr." Z, "no space available "); \
+		BBPunfix(Y->batCacheid); \
+		return throwMessage("batstr." Z, "no space available "); \
 	}
 #define prepareResult2(X,Y,A,T,Z) \
 	X= BATnew(Y->htype,T,BATcount(Y)); \
@@ -201,9 +201,9 @@ comment "Perform SQL like operation against a string bat";
 		BATseqbase(X, Y->hseqbase); \
 	Y->hsorted=X->hsorted; \
 	if( X == NULL){ \
-	    BBPunfix(Y->batCacheid); \
-	    BBPunfix(A->batCacheid); \
-	    return throwMessage("batstr." Z, "no space available "); \
+		BBPunfix(Y->batCacheid); \
+		BBPunfix(A->batCacheid); \
+		return throwMessage("batstr." Z, "no space available "); \
 	}
 #define finalizeResult(X,Y,Z) \
 	BBPincref(*X = Y->batCacheid,TRUE);\
@@ -222,12 +222,12 @@ str STRbat@1(int *ret, int *l)
 	prepareResult(bn,b,TYPE_int,"@1");
 
 	BATloopFast(b, p, q, xx) {
-	    ptr h = BUNhead(b,p);
-	    x= (@3) BUNtail(b,p);
+		ptr h = BUNhead(b,p);
+		x= (@3) BUNtail(b,p);
 		if(x== 0 || *x == 0 || strcmp(x,@3_nil)== 0)
 			y= int_nil;
 		else @2(yp,x);
-	    bunfastins(bn, h, yp);
+		bunfastins(bn, h, yp);
 	}
 	finalizeResult(ret,bn,b);
 	return MAL_SUCCEED;
@@ -254,12 +254,12 @@ str STRbat@1(int *ret, int *l)
 	prepareResult(bn,b,TYPE_@4,"@1");
 
 	BATloopFast(b, p, q, xx) {
-	    ptr h = BUNhead(b,p);
-	    x= (@3) BUNtail(b,p);
+		ptr h = BUNhead(b,p);
+		x= (@3) BUNtail(b,p);
 		if(x== 0 || *x == 0 || strcmp(x,@3_nil)== 0)
 			y= @4_nil;
 		else @2(yp,x);
-	    bunfastins(bn, h, *yp);
+		bunfastins(bn, h, *yp);
 	}
 	finalizeResult(ret,bn,b);
 	return MAL_SUCCEED;
@@ -303,7 +303,7 @@ STRbat@2Cst(int *ret, int *l, str *cst)
 	bn->tsorted = (BATtordered(b))?@3:0;
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
-      bunins_failed:
+bunins_failed:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	return throwMessage("batstr.@1", "bunins failed");
@@ -355,7 +355,7 @@ STRbat@2(int *ret, int *l, int *r)
 	finalizeResult(ret, bn, left);
 	return MAL_SUCCEED;
 
-      bunins_failed:
+bunins_failed:
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	BBPunfix(*ret);
@@ -383,9 +383,9 @@ str STRbat@1(int *ret, int *l, int *r)
 	xx = BUNsize(left);
 	yy = BUNsize(right);
 	while(p<q) {
-	    ptr h = BUNhead(left,o);
-	    ptr tl = BUNtail(left,o);
-	    ptr tr = BUNtail(right,p);
+		ptr h = BUNhead(left,o);
+		ptr tl = BUNtail(left,o);
+		ptr tr = BUNtail(right,p);
 		@4(vp, tl, tr);
 		bunfastins(bn, h, vp);
 		o += xx;
@@ -416,8 +416,8 @@ str STRbat@1cst(int *ret, int *l, @3 *cst)
 	q = BUNlast(left);
 	xx = BUNsize(left);
 	while(p<q) {
-	    ptr h = BUNhead(left,p);
-	    ptr tl = BUNtail(left,p);
+		ptr h = BUNhead(left,p);
+		ptr tl = BUNtail(left,p);
 		@4(vp, tl, cst);
 		bunfastins(bn, h, vp);
 		p += xx;
@@ -448,9 +448,9 @@ str STRbat@1(int *ret, int *l, int *r)
 	xx = BUNsize(left);
 	yy = BUNsize(right);
 	while(p<q) {
-	    ptr h = BUNhead(left,o);
-	    str tl = (str) BUNtail(left,o);
-	    str tr = (str) BUNtail(right,p);
+		ptr h = BUNhead(left,o);
+		str tl = (str) BUNtail(left,o);
+		str tr = (str) BUNtail(right,p);
 		@4(vp, &tl, &tr);
 		bunfastins(bn, h, @6);
 		o += xx;
@@ -481,8 +481,8 @@ str STRbat@1cst(int *ret, int *l, @3 *cst)
 	q = BUNlast(left);
 	xx = BUNsize(left);
 	while(p<q) {
-	    ptr h = BUNhead(left,p);
-	    str tl = (str) BUNtail(left,p);
+		ptr h = BUNhead(left,p);
+		str tl = (str) BUNtail(left,p);
 		@4(vp, &tl, cst);
 		bunfastins(bn, h, @6);
 		p += xx;
@@ -510,8 +510,8 @@ str STRcst@1bat(int *ret, @3 *cst, int *r)
 	q = BUNlast(right);
 	xx = BUNsize(right);
 	while(p<q) {
-	    ptr h = BUNhead(right,p);
-	    str tr = (str) BUNtail(right,p);
+		ptr h = BUNhead(right,p);
+		str tr = (str) BUNtail(right,p);
 		@4(vp, cst, &tr);
 		bunfastins(bn, h, @6);
 		p += xx;
@@ -567,7 +567,7 @@ STRbatSubStringcst(int *ret, int *l, int *offset, int *length)
 	}
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
-      bunins_failed:
+bunins_failed:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	return throwMessage("batstr.subString", "bunins failed");
@@ -598,7 +598,7 @@ STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep)
 	}
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
-      bunins_failed:
+bunins_failed:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	return throwMessage("batstr.subString", "bunins failed");

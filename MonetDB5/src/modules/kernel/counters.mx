@@ -181,18 +181,18 @@ event_t *X_event = NO_event;
   /* P5 (i586) Pentium */
 
 #if defined(HAVE_LIBPERFCTR)
-    /* sub-fields in the Control and Event Select Register (CESR)
-     *  CC0, CC1: CPL Level to Monitor, possibilities are
-     *  000 = Count Nothing
-     *  001 = Count Event while CPL = 0,1,2
-     *  010 = Count Event while CPL = 3
-     *  011 = Count Event while CPL = 0,1,2,3
-     *  100 = Count Nothing
-     *  101 = Count Clocks while CPL = 0,1,2
-     *  110 = Count Clocks while CPL = 3
-     *  111 = Count Clocks while CPL = 0,1,2,3
-     *  Here we only use 000, 001, 010 and 011.
-     */
+	/* sub-fields in the Control and Event Select Register (CESR)
+	 *  CC0, CC1: CPL Level to Monitor, possibilities are
+	 *  000 = Count Nothing
+	 *  001 = Count Event while CPL = 0,1,2
+	 *  010 = Count Event while CPL = 3
+	 *  011 = Count Event while CPL = 0,1,2,3
+	 *  100 = Count Nothing
+	 *  101 = Count Clocks while CPL = 0,1,2
+	 *  110 = Count Clocks while CPL = 3
+	 *  111 = Count Clocks while CPL = 0,1,2,3
+	 *  Here we only use 000, 001, 010 and 011.
+	 */
 typedef union {
 	unsigned int word;	/* to initialize in one assignment */
 	struct p5_cesr {
@@ -208,9 +208,9 @@ typedef union {
 	} cesr;
 } P5_cesr_t;
 
-    /* defaults:
-     * P5_cesr.cesr.cc0 = P5_cesr.cesr.cc1 = 2; (count in user mode, only)
-     */
+	/* defaults:
+	 * P5_cesr.cesr.cc0 = P5_cesr.cesr.cc1 = 2; (count in user mode, only)
+	 */
 P5_cesr_t P5_cesr = { (2 << 6) | (2 << 22) };
 #endif
 
@@ -279,10 +279,10 @@ typedef union {
 	} cesr;
 } P6_K7_cesr_t;
 
-    /* defaults:
-     * P6_K7_cesr0.cesr.usr = P6_K7_cesr1.cesr.usr = 1; (count in user mode, only)
-     * P6_K7_cesr0.cesr.en  = P6_K7_cesr1.cesr.en  = 1;
-     */
+	/* defaults:
+	 * P6_K7_cesr0.cesr.usr = P6_K7_cesr1.cesr.usr = 1; (count in user mode, only)
+	 * P6_K7_cesr0.cesr.en  = P6_K7_cesr1.cesr.en  = 1;
+	 */
 P6_K7_cesr_t P6_K7_cesr0 = { ((1 << 16) | (1 << 22)) }, P6_K7_cesr1 = {
 ((1 << 16) | (1 << 22))};
 #endif
@@ -588,26 +588,26 @@ static const struct perfctr_event * perfctr_event_set_find( const struct perfctr
 }
 
 enum escr_set {
-    ALF_ESCR_0_1 = 0,	/* CCCR 12/13/14/15/16/17 via ESCR select 0x01 */
-    BPU_ESCR_0_1,	/* CCCR 0/1/2/3 via ESCR select 0x00 */
-    BSU_ESCR_0_1,	/* CCCR 0/1/2/3 via ESCR select 0x07 */
-    BSU_ESCR_0,		/* CCCR 0/1 via ESCR select 0x07 */
-    BSU_ESCR_1,		/* CCCR 2/3 via ESCR select 0x07 */
-    CRU_ESCR_0_1,	/* CCCR 12/13/14/15/16/17 via ESCR select 0x04 */
-    CRU_ESCR_2_3,	/* CCCR 12/13/14/15/16/17 via ESCR select 0x05 */
-    DAC_ESCR_0_1,	/* CCCR 8/9/10/11 via ESCR select 0x05 */
-    FIRM_ESCR_0_1,	/* CCCR 8/9/10/11 via ESCR select 0x01 */
-    FSB_ESCR_0_1,	/* CCCR 0/1/2/3 via ESCR select 0x06 */
-    FSB_ESCR_0,		/* CCCR 0/1 via ESCR select 0x06 */
-    FSB_ESCR_1,		/* CCCR 2/3 via ESCR select 0x06 */
-    ITLB_ESCR_0_1,	/* CCCR 0/1/2/3 via ESCR select 0x03 */
-    MOB_ESCR_0_1,	/* CCCR 0/1/2/3 via ESCR select 0x02 */
-    MS_ESCR_0_1,	/* CCCR 4/5/6/7 via ESCR select 0x00 */
-    PMH_ESCR_0_1,	/* CCCR 0/1/2/3 via ESCR select 0x04 */
-    RAT_ESCR_0_1,	/* CCCR 12/13/14/15/16/17 via ESCR select 0x02 */
-    SAAT_ESCR_0_1,	/* CCCR 8/9/10/11 via ESCR select 0x02 */
-    TBPU_ESCR_0_1,	/* CCCR 4/5/6/7 via ESCR select 0x02 */
-    TC_ESCR_0_1,	/* CCCR 4/5/6/7 via ESCR select 0x01 */
+	ALF_ESCR_0_1 = 0,	/* CCCR 12/13/14/15/16/17 via ESCR select 0x01 */
+	BPU_ESCR_0_1,	/* CCCR 0/1/2/3 via ESCR select 0x00 */
+	BSU_ESCR_0_1,	/* CCCR 0/1/2/3 via ESCR select 0x07 */
+	BSU_ESCR_0,		/* CCCR 0/1 via ESCR select 0x07 */
+	BSU_ESCR_1,		/* CCCR 2/3 via ESCR select 0x07 */
+	CRU_ESCR_0_1,	/* CCCR 12/13/14/15/16/17 via ESCR select 0x04 */
+	CRU_ESCR_2_3,	/* CCCR 12/13/14/15/16/17 via ESCR select 0x05 */
+	DAC_ESCR_0_1,	/* CCCR 8/9/10/11 via ESCR select 0x05 */
+	FIRM_ESCR_0_1,	/* CCCR 8/9/10/11 via ESCR select 0x01 */
+	FSB_ESCR_0_1,	/* CCCR 0/1/2/3 via ESCR select 0x06 */
+	FSB_ESCR_0,		/* CCCR 0/1 via ESCR select 0x06 */
+	FSB_ESCR_1,		/* CCCR 2/3 via ESCR select 0x06 */
+	ITLB_ESCR_0_1,	/* CCCR 0/1/2/3 via ESCR select 0x03 */
+	MOB_ESCR_0_1,	/* CCCR 0/1/2/3 via ESCR select 0x02 */
+	MS_ESCR_0_1,	/* CCCR 4/5/6/7 via ESCR select 0x00 */
+	PMH_ESCR_0_1,	/* CCCR 0/1/2/3 via ESCR select 0x04 */
+	RAT_ESCR_0_1,	/* CCCR 12/13/14/15/16/17 via ESCR select 0x02 */
+	SAAT_ESCR_0_1,	/* CCCR 8/9/10/11 via ESCR select 0x02 */
+	TBPU_ESCR_0_1,	/* CCCR 4/5/6/7 via ESCR select 0x02 */
+	TC_ESCR_0_1,	/* CCCR 4/5/6/7 via ESCR select 0x01 */
 };
 
 int _2ESCR(int cset, int ctr /* 0/1 */) {
@@ -618,21 +618,21 @@ int _2ESCR(int cset, int ctr /* 0/1 */) {
 		case BSU_ESCR_0_1: return 0x07;
 		case BSU_ESCR_0: return 0x07;
 		case BSU_ESCR_1: return 0x07;
-    		case CRU_ESCR_0_1: return 0x04;
-    		case CRU_ESCR_2_3: return 0x05;
-    		case DAC_ESCR_0_1: return 0x05;
-    		case FIRM_ESCR_0_1: return 0x01;
-    		case FSB_ESCR_0_1: return 0x06; 
-    		case FSB_ESCR_0: return 0x06;
-    		case FSB_ESCR_1: return 0x06;
-    		case ITLB_ESCR_0_1: return 0x03;
-    		case MOB_ESCR_0_1: return 0x02;
-    		case MS_ESCR_0_1: return 0x00;
-    		case PMH_ESCR_0_1: return 0x04;
-    		case RAT_ESCR_0_1: return 0x02; 
-    		case SAAT_ESCR_0_1: return 0x02;
-    		case TBPU_ESCR_0_1: return 0x02;
-    		case TC_ESCR_0_1: return 0x01;
+			case CRU_ESCR_0_1: return 0x04;
+			case CRU_ESCR_2_3: return 0x05;
+			case DAC_ESCR_0_1: return 0x05;
+			case FIRM_ESCR_0_1: return 0x01;
+			case FSB_ESCR_0_1: return 0x06; 
+			case FSB_ESCR_0: return 0x06;
+			case FSB_ESCR_1: return 0x06;
+			case ITLB_ESCR_0_1: return 0x03;
+			case MOB_ESCR_0_1: return 0x02;
+			case MS_ESCR_0_1: return 0x00;
+			case PMH_ESCR_0_1: return 0x04;
+			case RAT_ESCR_0_1: return 0x02; 
+			case SAAT_ESCR_0_1: return 0x02;
+			case TBPU_ESCR_0_1: return 0x02;
+			case TC_ESCR_0_1: return 0x01;
 	}
 	return 0;
 }
@@ -644,21 +644,21 @@ int _2PMC(int cset, int ctr /* 0/1 */) {
 		case BSU_ESCR_0_1: return 2 + ctr;
 		case BSU_ESCR_0: return 0 + ctr;
 		case BSU_ESCR_1: return 2 + ctr;
-    		case CRU_ESCR_0_1: return 14 + ctr;
-    		case CRU_ESCR_2_3: return 16 + ctr;
-    		case DAC_ESCR_0_1: return 8 + ctr;
-    		case FIRM_ESCR_0_1: return 10 + ctr;
-    		case FSB_ESCR_0_1: return 0 + ctr; 
-    		case FSB_ESCR_0: return 0 + ctr;
-    		case FSB_ESCR_1: return 2 + ctr;
-    		case ITLB_ESCR_0_1: return 0 + ctr;
-    		case MOB_ESCR_0_1: return 2 + ctr;
-    		case MS_ESCR_0_1: return 4 + ctr;
-    		case PMH_ESCR_0_1: return 0 + ctr;
-    		case RAT_ESCR_0_1: return 12 + ctr; 
-    		case SAAT_ESCR_0_1: return 8 + ctr;
-    		case TBPU_ESCR_0_1: return 6 + ctr;
-    		case TC_ESCR_0_1: return 4 + ctr;
+			case CRU_ESCR_0_1: return 14 + ctr;
+			case CRU_ESCR_2_3: return 16 + ctr;
+			case DAC_ESCR_0_1: return 8 + ctr;
+			case FIRM_ESCR_0_1: return 10 + ctr;
+			case FSB_ESCR_0_1: return 0 + ctr; 
+			case FSB_ESCR_0: return 0 + ctr;
+			case FSB_ESCR_1: return 2 + ctr;
+			case ITLB_ESCR_0_1: return 0 + ctr;
+			case MOB_ESCR_0_1: return 2 + ctr;
+			case MS_ESCR_0_1: return 4 + ctr;
+			case PMH_ESCR_0_1: return 0 + ctr;
+			case RAT_ESCR_0_1: return 12 + ctr; 
+			case SAAT_ESCR_0_1: return 8 + ctr;
+			case TBPU_ESCR_0_1: return 6 + ctr;
+			case TC_ESCR_0_1: return 4 + ctr;
 	}
 	return 0;
 }
@@ -671,18 +671,18 @@ do_event_number
 	 * translate to perfctr code and mask */
 	int code = event[n].code ;
 	int mask = event[n].mask ;
-    const struct perfctr_event_set *s =
+	const struct perfctr_event_set *s =
 		perfctr_cpu_event_set(PERFCTR_X86_INTEL_P4M3);
-    int cnt = perfctr_event_set_count(s);
-    const struct perfctr_event *e = perfctr_event_set_find(s, cnt, code);
+	int cnt = perfctr_event_set_count(s);
+	const struct perfctr_event *e = perfctr_event_set_find(s, cnt, code);
  
 	if( !s || code >= cnt) {
 		fprintf(stderr, "perfex: too many event specifiers\n");
 		exit(1);
 	}
 
-    /* for now just 0 or 1 */
-    cpu_control->evntsel[ctr] = 3 << 16 | 1 << 12 
+	/* for now just 0 or 1 */
+	cpu_control->evntsel[ctr] = 3 << 16 | 1 << 12 
 			      | _2ESCR(e->counters_set, ctr)<<13; 
 	if (mask) {
 		cpu_control->p4.escr[ctr] = 1 << 2 /* count the app not the kernel */ 
@@ -693,11 +693,11 @@ do_event_number
 			| e->unit_mask->default_value << 9
 			| e->evntsel << 25;
 	}
-    cpu_control->pmc_map[ctr] = 1 << 31 | _2PMC(e->counters_set, ctr);
-    cpu_control->nractrs ++;
+	cpu_control->pmc_map[ctr] = 1 << 31 | _2PMC(e->counters_set, ctr);
+	cpu_control->nractrs ++;
 	cpu_control->tsc_on = 1;
 
-    return n;
+	return n;
 }
 #endif
 
@@ -2392,9 +2392,9 @@ init_counters(void)
 				NumEvents = NoEvent = K8_NUMEVENTS;
 				event = K8_event;
 				break;
-    			case PERFCTR_X86_INTEL_P4:
-    			case PERFCTR_X86_INTEL_P4M2:
-    			case PERFCTR_X86_INTEL_P4M3:
+				case PERFCTR_X86_INTEL_P4:
+				case PERFCTR_X86_INTEL_P4M2:
+				case PERFCTR_X86_INTEL_P4M3:
 				NumEvents = NoEvent = P4_NUMEVENTS;
 				event = P4_event;
 				break;
@@ -2561,9 +2561,9 @@ start_count(counter *retval, int *event0, int *event1)
 			control.cpu_control.evntsel[0] = P6_K7_cesr0.word;
 			control.cpu_control.evntsel[1] = P6_K7_cesr1.word;
 			break;
-    		case PERFCTR_X86_INTEL_P4:
-    		case PERFCTR_X86_INTEL_P4M2:
-    		case PERFCTR_X86_INTEL_P4M3:
+			case PERFCTR_X86_INTEL_P4:
+			case PERFCTR_X86_INTEL_P4M2:
+			case PERFCTR_X86_INTEL_P4M3:
 			control.cpu_control.nractrs = 0;
 			if (e0 != NoEvent)
 				do_event_number( event[e0].code, 0, &control.cpu_control);
@@ -3104,8 +3104,8 @@ counter2bat(BAT **ret, counter *c)
 #endif
 #endif
 /*
-    (*ret)->halign = 3928437;
-    BATkey(*ret, TRUE);
+	(*ret)->halign = 3928437;
+	BATkey(*ret, TRUE);
 */
 	BATname(*ret, "counter");
 	return GDK_SUCCEED;

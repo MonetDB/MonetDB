@@ -291,9 +291,9 @@ comment "Redirect the output to a stream.";
 command setPivot(b:bat[:void,:oid]) :void
 address TABsetPivot
 comment "The pivot bat identifies the tuples of interest. The only requirement 
-        is that all keys mentioned in the pivot tail exist in all BAT parameters 
-        of the print comment. The pivot also provides control over the order 
-        in which the tuples are produced.";
+	    is that all keys mentioned in the pivot tail exist in all BAT parameters 
+	    of the print comment. The pivot also provides control over the order 
+	    in which the tuples are produced.";
 command setDelimiter(sep:str):void 
 address TABsetDelimiter
 comment "Set the column separator.";
@@ -525,8 +525,8 @@ static void TABshowPage(Tablet * t);
 static int setTabwidth(Column * c);
 
 #define LINE(s, X)     { int n=(int)(X)-1; stream_write(s, "#", 1, 1); while(--n>0) \
-                                stream_write(s, "-", 1, 1); \
-                                stream_printf(s, "#\n"); }
+	                            stream_write(s, "-", 1, 1); \
+	                            stream_printf(s, "#\n"); }
 #define TABS(s, X)     { int n=(int)(X); while(n-->0) stream_printf(s, "\t");  }
 @+
 The table formatting information is stored in a system wide table.
@@ -998,8 +998,7 @@ TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 	}
 }
 
-static
-    size_t
+static size_t
 create_loadformat(Tablet * as, BAT *names, BAT *seps, BAT *types)
 {
 	size_t p;
@@ -1028,7 +1027,7 @@ create_loadformat(Tablet * as, BAT *names, BAT *seps, BAT *types)
 }
 
 static
-    size_t
+size_t
 create_dumpformat(Tablet * as, BAT *names, BAT *seps, BAT *bats)
 {
 	size_t p;
@@ -1095,7 +1094,7 @@ TABLETassign_BATs(Tablet * as, BAT *bats)
 }
 
 static
-    oid
+oid
 check_BATs(Tablet * as)
 {
 	Column *fmt = as->format;
@@ -1452,7 +1451,7 @@ output_line_lookup(char **buf, int *len, Column * fmt, stream *fd, size_t nr_att
 
 		if (f->bval) {
 			char *p = BUNtail(f->bval, BUNptr(f->bval,
-						       id +BUNindex(f->bval, BUNfirst(f->bval))));
+						   id +BUNindex(f->bval, BUNfirst(f->bval))));
 			int l = f->tostr(f->extra, buf, len, f->adt, p);
 
 			if (stream_write(fd, *buf, 1, l) != l)
@@ -1571,7 +1570,7 @@ TABLETload_file(Tablet * as, bstream *b, stream *out)
 }
 
 static
-    int
+int
 dump_file(Tablet * as, stream *fd)
 {
 	size_t i = 0;
@@ -1932,28 +1931,28 @@ CMDtablet_output(int *ret, int *nameid, int *sepid, int *bids, void **s)
 
 PROC test_tablet() : void := {
 
-    #tablet_debug(1);
+	#tablet_debug(1);
 
-    fp := fopen ( "format", "w+" );
-    fputs( "key,\",\",str\n", fp);
-    fputs( "a_io_test,\"\\n\",dbl\n", fp);
-    fclose( fp );
+	fp := fopen ( "format", "w+" );
+	fputs( "key,\",\",str\n", fp);
+	fputs( "a_io_test,\"\\n\",dbl\n", fp);
+	fclose( fp );
 
-    fp := fopen ( "data", "w+" );
-    fputs( "test, 0.12345\n", fp);
-    fputs( "second line, 9.0\n", fp);
-    fclose( fp );
+	fp := fopen ( "data", "w+" );
+	fputs( "test, 0.12345\n", fp);
+	fputs( "second line, 9.0\n", fp);
+	fclose( fp );
 
-    bats := load_data(load_format("format"),"data",10);
-    bats.print;
-    a := bats.find("key").reverse().join( bats.find("a_io_test") );
-    a.print;
-    dump_data(load_format("format"), bats, "data", -1);
+	bats := load_data(load_format("format"),"data",10);
+	bats.print;
+	a := bats.find("key").reverse().join( bats.find("a_io_test") );
+	a.print;
+	dump_data(load_format("format"), bats, "data", -1);
 
-    fp := fopen ( "data", "r" );
-    s := fgets( fp ); 
-    s.print();
-    fclose( fp );
+	fp := fopen ( "data", "r" );
+	s := fgets( fp ); 
+	s.print();
+	fclose( fp );
 }
 
 @+ Tablet report

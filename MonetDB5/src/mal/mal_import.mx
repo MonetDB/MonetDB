@@ -113,30 +113,30 @@ brackets as indicated by blkmode.
 It should be reset before continuing.
 @-
 @= restoreClient1
-    c->fdin = oldfdin; 
-    c->yycur = oldyycur; 
-    c->listing = oldlisting;
-    c->mode = oldmode;
-    c->blkmode = oldblkmode;
-    c->bak = oldbak;
-    if(c->prompt) GDKfree(c->prompt);
-    c->prompt = oldprompt;
-    c->promptlength= strlen(c->prompt);
+	c->fdin = oldfdin; 
+	c->yycur = oldyycur; 
+	c->listing = oldlisting;
+	c->mode = oldmode;
+	c->blkmode = oldblkmode;
+	c->bak = oldbak;
+	if(c->prompt) GDKfree(c->prompt);
+	c->prompt = oldprompt;
+	c->promptlength= strlen(c->prompt);
 @= restoreClient2
-    c->glb = oldglb;
-    c->nspace = oldnspace;
-    c->curprg = oldprg;
+	c->glb = oldglb;
+	c->nspace = oldnspace;
+	c->curprg = oldprg;
 @= restoreClient
 	@:restoreClient1()@
 	@:restoreClient2()@
 @= runPhase
-    if(msg== MAL_SUCCEED && c->phase[@1] && (msg= (str) (*c->phase[@1])(c)) ){
+	if(msg== MAL_SUCCEED && c->phase[@1] && (msg= (str) (*c->phase[@1])(c)) ){
 		/* error occurred  and ignored */
 		/* stream_printf(GDKout,"%s",msg);*/
 		GDKfree(msg); msg=0;
 		@:@2()@
 		return;
-    }
+	}
 
 @c
 void
@@ -262,26 +262,26 @@ compileString(Symbol *fcn, Client c, str s){
 	pushClientInput(c, bstream_create(buffer_rastream(b, "compileString"), b->len), 0, "");
 	initClientPrg(c, "main");	/* create new context */
 	/* runPhase(READER,restoreClient1) */
-    if(msg== MAL_SUCCEED && c->phase[READER] && 
+	if(msg== MAL_SUCCEED && c->phase[READER] && 
 		(msg= (str) (*c->phase[READER])(c)) ){
 		@:restoreClient1()@
 		return msg;
-    }
+	}
 	/* runPhase(PARSER,restoreClient1) */
-    if(msg== MAL_SUCCEED && c->phase[PARSER] && 
+	if(msg== MAL_SUCCEED && c->phase[PARSER] && 
 		(msg= (str) (*c->phase[PARSER])(c)) ){
 		/* error occurred  and ignored */
 		/* stream_printf(GDKout,"%s",msg);*/
 		@:restoreClient1()@
 		return msg;
-    }
+	}
 	*fcn= c->curprg;
 	/* restore IO channel */
 	@:restoreClient1()@
 	c->listing = oldlisting;
-    c->glb = oldglb;
-    c->nspace = oldnspace;
-    c->curprg = oldprg;
+	c->glb = oldglb;
+	c->nspace = oldnspace;
+	c->curprg = oldprg;
 	GDKfree(qry);
 	return MAL_SUCCEED;
 }

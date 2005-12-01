@@ -147,7 +147,7 @@ typedef struct logger {
 	char *dir;
 	stream *log;
 	BAT    *deltas; /* when reading the logs we keep the changes in
-			    delta bats, which can roll back */
+			delta bats, which can roll back */
 } logger;
 
 static logger *glog = NULL;
@@ -191,7 +191,7 @@ int
 log_delta(bit *success, BAT *b, BAT *delta, oid *tid )
 {
 	if (!glog || *tid != glog->tid ||
-	    log_bat(glog, b->batCacheid, delta) == LOG_ERR) {
+		log_bat(glog, b->batCacheid, delta) == LOG_ERR) {
 		*success = FALSE;
 		return GDK_FAIL;
 	}
@@ -203,7 +203,7 @@ int
 log_insert(bit *success, BAT *b, oid *tid )
 {
 	if (!glog || *tid != glog->tid ||
-	    log_bat(glog, b->batCacheid, b) == LOG_ERR) {
+		log_bat(glog, b->batCacheid, b) == LOG_ERR) {
 		*success = FALSE;
 		return GDK_FAIL;
 	}
@@ -736,8 +736,8 @@ logger_create(int debug, char *logdir, char *dbname, int version)
 		return NULL;
 	}
 	if (logger->changes && 
-	    (logger_restart(logger) != LOG_OK ||
-	    logger_cleanup(logger) != LOG_OK)) {
+		(logger_restart(logger) != LOG_OK ||
+		logger_cleanup(logger) != LOG_OK)) {
 		logger_destroy(logger);
 
 		return NULL;

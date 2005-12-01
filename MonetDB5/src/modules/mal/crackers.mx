@@ -824,8 +824,8 @@ Select an interval with a desirable value to start the gluing process
 @c
 	for (i = 0; i < crackMap[m].freepiece; i++)
 		if (crackMap[m].pieces[i].kind == LEAF &&	/* NOT NEEDED */
-		    ((crackMap[m].pieces[i].rng_min <= *(int *) low && *(int *) low <= crackMap[m].pieces[i].rng_max) || (crackMap[m].pieces[i].rng_min <= *(int *) high && *(int *) high <= crackMap[m].pieces[i].rng_max)
-		    )) {
+			((crackMap[m].pieces[i].rng_min <= *(int *) low && *(int *) low <= crackMap[m].pieces[i].rng_max) || (crackMap[m].pieces[i].rng_min <= *(int *) high && *(int *) high <= crackMap[m].pieces[i].rng_max)
+			)) {
 			CRKsetBounds(b, view, m, i);
 			idxlow = crackMap[m].pieces[i].idx_first;
 			idxhgh = crackMap[m].pieces[i].idx_last;
@@ -841,10 +841,11 @@ Select an interval with a desirable value to start the gluing process
 			leftover = 0;
 			for (i = 0; i < crackMap[m].freepiece; i++)
 				if (crackMap[m].pieces[i].kind == LEAF &&	/* NOT NEEDED */
-				    crackMap[m].pieces[i].rng_min >= *(int *) low && crackMap[m].pieces[i].rng_max <= *(int *) high) {
+					crackMap[m].pieces[i].rng_min >= *(int *) low && 
+					crackMap[m].pieces[i].rng_max <= *(int *) high) {
 /* no little speedup, discarded
 			if( crackMap[m].pieces[i].idx_first < idxlow &&
-			    crackMap[m].pieces[i].idx_last > idxhgh){
+				crackMap[m].pieces[i].idx_last > idxhgh){
 				VIEWbounds(view,
 					idxlow= crackMap[m].pieces[i].idx_first,
 					idxhgh=crackMap[m].pieces[i].idx_last);

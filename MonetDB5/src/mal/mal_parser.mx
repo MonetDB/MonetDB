@@ -150,9 +150,9 @@ initParser()
 	int i;
 
 	for (i = 0; i < 256; i++){
-        idCharacter2[i]= isalpha(i) || isdigit(i);
+		idCharacter2[i]= isalpha(i) || isdigit(i);
 		idCharacter[i] = isalpha(i);
-    }
+	}
 	for (i = 0; i < 256; i++)
 	switch(i){
 	case '-': case '!': case '\\': case '$': case '%':
@@ -203,7 +203,7 @@ typeidLength(Client cntxt)
 }
 str idCopy(Client cntxt, int length){
 	str s= GDKmalloc(length+1);
-    memcpy(s, CURRENT(cntxt),(size_t) length);
+	memcpy(s, CURRENT(cntxt),(size_t) length);
 	s[length]=0;
 	advance(cntxt,length);
 	return s;
@@ -533,15 +533,15 @@ The syntax structure is
 @multitable @columnfractions 0.15 0.8
 @item typeQualifier  
 @tab : typeName propQualifier 
-@item typeName       
+@item typeName
 @tab : scalarType | collectionType | anyType
-@item scalarType     
+@item scalarType
 @tab :  ':' @code{ identifier} 
 @item collectionType 
 @tab :  ':' @code{ bat} ['[' col ',' col ']'] 
-@item anyType        
+@item anyType
 @tab :  ':' @code{ any} [typeAlias] 
-@item col            
+@item col
 @tab :  scalarType | anyType 
 @item propQualifier  
 @tab :  ['@{' property '@}']
@@ -758,7 +758,7 @@ globally known (?) and symbol table should be temporarilly locked
 for updates by concurrent users.
 
 @multitable @columnfractions 0.15 0.8
-@item moduleStmt      
+@item moduleStmt
 @tab :  @code{atom} ident [':'ident]
 @item
 @tab | @code{module} ident
@@ -812,7 +812,7 @@ The administration for this is handled by malInclude.
 No listing is produced, because module sources are assumed to
 be debugged upfront already.
 @multitable @columnfractions 0.15 0.8
-@item includeStmt     
+@item includeStmt
 @tab : @code{include} identifier 
 @item
 @tab | @code{include} string_literal
@@ -853,10 +853,10 @@ initialize a MAL instruction container. We should also check for
 non-terminated definitions.
 
 @multitable @columnfractions 0.15 0.8
-@item program         
+@item program
 @tab : ( definition [helpinfo] | statement ) *
 
-@item definition      
+@item definition
 @tab : moduleStmt | includeStmt 
 @item
 @tab  |  commandStmt | patternStmt 
@@ -915,7 +915,7 @@ the function definition in a particular module instead of the current one.
 
 	if( modnme == 0){
 		setModuleScope(curInstr, cntxt->nspace);
-	} else {
+	} else{
 		setModuleId(curInstr, putName(modnme,strlen(modnme)) );
 	}
 
@@ -926,7 +926,7 @@ the function definition in a particular module instead of the current one.
 		/* the last argument may be variable length */
 		if( MALkeyword(cntxt,"...",3) ){
 			curInstr->varargs++;
-            setPolymorphic(curInstr,TYPE_any,FALSE);
+			setPolymorphic(curInstr,TYPE_any,FALSE);
 			break;
 		}
 		if ((ch = currChar(cntxt)) != ',') {
@@ -998,13 +998,13 @@ during the final phase reshuffle the return values to the beginning (?)
 @-
 The common theme in definitions is to parse the argument list.
 @multitable @columnfractions .15 .8
-@item header          
+@item header
 @tab :  hdrName '(' params ')' result 
-@item result          
+@item result
 @tab :  paramType | '(' params ')'
-@item params          
+@item params
 @tab :  binding [',' binding]* 
-@item binding         
+@item binding
 @tab :  identifier typeName [propQualifier]
 @end multitable
 @
@@ -1015,34 +1015,34 @@ The common theme in definitions is to parse the argument list.
 		if( varid < 0){
 			varid = newVariable(curBlk,idCopy(cntxt,l),TYPE_any);
 			type= typeElm(cntxt,TYPE_any);
-            if( isPolymorphic(type) )
-                setPolymorphic(curInstr,type,TRUE);
-            setVarType(curBlk,varid,type);
-            @:propList(varid)@
+			if( isPolymorphic(type) )
+				setPolymorphic(curInstr,type,TRUE);
+			setVarType(curBlk,varid,type);
+			@:propList(varid)@
 		} else 
-        if( @1){
-            parseError(cntxt,"Argument defined twice\n");
+		if( @1){
+			parseError(cntxt,"Argument defined twice\n");
 			typeElm(cntxt,getVarType(curBlk,varid));
-            @:propList(varid)@
-        } else {
-            advance(cntxt,l);
+			@:propList(varid)@
+		} else {
+			advance(cntxt,l);
 			type= typeElm(cntxt,getVarType(curBlk,varid));
-            if( type != getVarType(curBlk,varid))
-                parseError(cntxt,"Incompatible argument type\n");
-            if( isPolymorphic(type) )
-                setPolymorphic(curInstr,type,TRUE);
-            setVarType(curBlk,varid,type);
-            @:propList(varid)@
-        }
+			if( type != getVarType(curBlk,varid))
+				parseError(cntxt,"Incompatible argument type\n");
+			if( isPolymorphic(type) )
+				setPolymorphic(curInstr,type,TRUE);
+			setVarType(curBlk,varid,type);
+			@:propList(varid)@
+		}
 	} else if( currChar(cntxt)== ':' ){
 		type= typeElm(cntxt,TYPE_any);
-        varid = newTmpVariable(curBlk,type);
-        if( isPolymorphic(type) )
-            setPolymorphic(curInstr,type,TRUE);
-        setVarType(curBlk,varid,type);
-        @:propList(varid)@
+		varid = newTmpVariable(curBlk,type);
+		if( isPolymorphic(type) )
+			setPolymorphic(curInstr,type,TRUE);
+		setVarType(curBlk,varid,type);
+		@:propList(varid)@
 	} else 
-        parseError(cntxt,"argument expected\n");
+		parseError(cntxt,"argument expected\n");
 	curInstr= pushArgument(curBlk,curInstr, varid);
 @-
 @}
@@ -1265,23 +1265,23 @@ int parseEnd(Client cntxt)
 Most instructions are simple assignments, possibly
 modified with a barrier/catch tag.
 @multitable @columnfractions .15 .8
-@item statement       
+@item statement	   
 @tab :  tag varlist [':=' expr ] propQualifier
-@item tag             
+@item tag			 
 @tab :  @code{ return} | @code{ barrier} | @code{ catch}
 @item
 @tab |  @code{ leave} | @code{ redo} | 
-@item expr            
+@item expr			
 @tab :  fcncall 
 @item
 @tab : [factor  operator] factor 
-@item varlist         
+@item varlist		 
 @tab :  variable 
 @item
 @tab |  @verb{'{' variable {',' variable}* ')' } 
-@item variable        
+@item variable		
 @tab :  identifier propQualifier 
-@item factor          
+@item factor		  
 @tab :  constant | var 
 @end multitable
 
@@ -1325,12 +1325,12 @@ parseAssign(Client cntxt, int cntrl)
 				 return;
 			}
 			@:GETvariable@
-            if( currChar(cntxt)==':') {
-                getVar(curBlk,varid)->isudftype = 1;
-                type = typeElm(cntxt,getVarType(curBlk,varid));
-                setPolymorphic(curInstr, type, FALSE); 
-                setVarType(curBlk,varid,type);
-            }
+			if( currChar(cntxt)==':') {
+				getVar(curBlk,varid)->isudftype = 1;
+				type = typeElm(cntxt,getVarType(curBlk,varid));
+				setPolymorphic(curInstr, type, FALSE); 
+				setVarType(curBlk,varid,type);
+			}
 			@:propList(varid)@
 			setVarInitialized(curBlk,varid);
 			curInstr= pushArgument(curBlk,curInstr, varid);
@@ -1369,11 +1369,11 @@ parseAssign(Client cntxt, int cntrl)
 		@:GETvariable@
 		if( !(currChar(cntxt)==':' && CURRENT(cntxt)[1]=='=') ){
 			if( currChar(cntxt)==':') {
-                getVar(curBlk,varid)->isudftype = 1;
-                type = typeElm(cntxt,getVarType(curBlk,varid));
-                setPolymorphic(curInstr, type, FALSE);
-                setVarType(curBlk,varid,type);
-            }
+				getVar(curBlk,varid)->isudftype = 1;
+				type = typeElm(cntxt,getVarType(curBlk,varid));
+				setPolymorphic(curInstr, type, FALSE);
+				setVarType(curBlk,varid,type);
+			}
 		} 
 		@:propList(varid)@
 		setVarInitialized(curBlk,varid);
@@ -1410,34 +1410,34 @@ This code is used in both positions of the expression
 		cstidx = fndConstant(curBlk,&cst);
 		if( cstidx >= 0){
 			advance(cntxt,i);
-            if( currChar(cntxt)==':') {
-                csttpe = typeElm(cntxt,getVarType(curBlk,cstidx));
-                if(csttpe == getVarType(curBlk,cstidx) ){
-                    getVar(curBlk,cstidx)->isudftype = TRUE;
-                } else {
+			if( currChar(cntxt)==':') {
+				csttpe = typeElm(cntxt,getVarType(curBlk,cstidx));
+				if(csttpe == getVarType(curBlk,cstidx) ){
+					getVar(curBlk,cstidx)->isudftype = TRUE;
+				} else {
 					cstidx = defConstant(curBlk,csttpe,&cst);
-                    setPolymorphic(curInstr,csttpe, FALSE);
-                    getVar(curBlk,cstidx)->isudftype = TRUE;
-                }
-            } else
-            if( cst.vtype != getVarType(curBlk,cstidx)){
+					setPolymorphic(curInstr,csttpe, FALSE);
+					getVar(curBlk,cstidx)->isudftype = TRUE;
+				}
+			} else
+			if( cst.vtype != getVarType(curBlk,cstidx)){
 					cstidx = defConstant(curBlk,cst.vtype,&cst);
-                    setPolymorphic(curInstr,cst.vtype, FALSE);
-            } 
-            curInstr = pushArgument(curBlk,curInstr,cstidx);
-            @1;
+					setPolymorphic(curInstr,cst.vtype, FALSE);
+			} 
+			curInstr = pushArgument(curBlk,curInstr,cstidx);
+			@1;
 		} else { 
-            /* add a new constant */
-            int flag;
+			/* add a new constant */
+			int flag;
 			advance(cntxt,i);
-            flag= currChar(cntxt)==':';
-            csttpe = typeElm(cntxt,cst.vtype);
+			flag= currChar(cntxt)==':';
+			csttpe = typeElm(cntxt,cst.vtype);
 			cstidx = defConstant(curBlk,csttpe,&cst);
-            setPolymorphic(curInstr,csttpe, FALSE);
-            getVar(curBlk,cstidx)->isudftype = flag;
-            curInstr = pushArgument(curBlk,curInstr,cstidx);
-            @1;
-        }
+			setPolymorphic(curInstr,csttpe, FALSE);
+			getVar(curBlk,cstidx)->isudftype = flag;
+			curInstr = pushArgument(curBlk,curInstr,cstidx);
+			@1;
+		}
 	} else if( (i= idLength(cntxt))){
 		if( (idx=findVariableLength(curBlk,CURRENT(cntxt),i)) == -1){
 			v= idCopy(cntxt,i);
@@ -1493,16 +1493,16 @@ FCNcallparse:
 		arg= putName(CURRENT(cntxt),l);
 		advance(cntxt,l+1); /* skip '.' too */
 		setModuleId(curInstr,arg);
-        i = idLength(cntxt);
-        if( i==0) i= operatorLength(cntxt);
-        if( i ) {
-             setFunctionId(curInstr, putName(((char*)CURRENT(cntxt)),i));
-            advance(cntxt,i);
-        } else {
-             parseError(cntxt,"<functionname> expected\n");
-             pushInstruction(curBlk,curInstr);
-             return;
-        }
+		i = idLength(cntxt);
+		if( i==0) i= operatorLength(cntxt);
+		if( i ) {
+			 setFunctionId(curInstr, putName(((char*)CURRENT(cntxt)),i));
+			advance(cntxt,i);
+		} else {
+			 parseError(cntxt,"<functionname> expected\n");
+			 pushInstruction(curBlk,curInstr);
+			 return;
+		}
 		skipSpace(cntxt);
 		if (currChar(cntxt) != '(') {
 			parseError(cntxt,"'(' expected\n");
@@ -1537,9 +1537,9 @@ part2:  /* consume <operator><term> part of expression */
 		return;
 	} else  {
 		skipSpace(cntxt);
-        if( currChar(cntxt) == '(')
+		if( currChar(cntxt) == '(')
 			parseError(cntxt,"module name missing\n");
-        else
+		else
 		if( currChar(cntxt) != ';' && currChar(cntxt) != '#')
 			parseError(cntxt,"operator expected\n");
 	}

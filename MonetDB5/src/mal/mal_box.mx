@@ -77,13 +77,13 @@ at a time.
 Example: consider the client function:
 @example
 function myfcn():void;
-    b:bat[:oid,:int] := bbp.take("mytable");
-    c:bat[:int,:str] := sql.take("person","age");
-    d:= intersect(b,c);
-    io.print(d);
-    u:str:= client.take(user);
-    io.print(u);
-    client.release(user);
+	b:bat[:oid,:int] := bbp.take("mytable");
+	c:bat[:int,:str] := sql.take("person","age");
+	d:= intersect(b,c);
+	io.print(d);
+	u:str:= client.take(user);
+	io.print(u);
+	client.release(user);
 end function;
 @end example
 
@@ -156,11 +156,11 @@ saved in persistent store until the next session starts.
 For example:
 @example
 function m():void;
-    box.open("client_name");
-    box.deposit("client_name","pi",3.417:flt);
-    f:flt := box.take("client_name","pi");
-    io.print(t);
-    box.close("client_name");
+	box.open("client_name");
+	box.deposit("client_name","pi",3.417:flt);
+	f:flt := box.take("client_name","pi");
+	io.print(t);
+	box.close("client_name");
 end function;
 @end example
 @-
@@ -251,13 +251,13 @@ The hierarchy of object spaces ends at the root of the tree.
 This is a dummy element and should contain system-wide objects
 only.
 @= newBOX
-    obj= (Box) GDKmalloc(sizeof(BoxRecord));
-    memset((char*) obj, 0, sizeof(BoxRecord));
-    obj->name= GDKstrdup(name);
-    obj->sym=  newMalBlk(MAXVARS,MAXSTMTS);
-    obj->val = newGlobalStack(MAXVARS);
-    if( GDKprotected)
-        obj->lock= MT_create_lock();
+	obj= (Box) GDKmalloc(sizeof(BoxRecord));
+	memset((char*) obj, 0, sizeof(BoxRecord));
+	obj->name= GDKstrdup(name);
+	obj->sym=  newMalBlk(MAXVARS,MAXSTMTS);
+	obj->val = newGlobalStack(MAXVARS);
+	if( GDKprotected)
+		obj->lock= MT_create_lock();
 @-
 @c
 #include "mal_box.h"
@@ -606,8 +606,8 @@ boxFileName(Box box, str backup)
 		if( (f= open_wstream(boxfile)) )
 			close_stream(f);
 		else {
-            GDKerror("boxFileName:can not create box directory\n");
-            return NULL;
+			GDKerror("boxFileName:can not create box directory\n");
+			return NULL;
 		}
 	}
 	i = strlen(boxfile);

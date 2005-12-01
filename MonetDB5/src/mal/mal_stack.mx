@@ -71,7 +71,7 @@ typedef struct MALSTK {
 
 #define stackSize(CNT) (sizeof(ValRecord)*(CNT) + sizeof(MalStack))
 #define newStack(S,CNT) S= (MalStkPtr) alloca(stackSize(CNT));\
-            (S)->stksize=CNT;
+		(S)->stksize=CNT;
 
 
 mal_export MalStkPtr newGlobalStack(int size);
@@ -85,8 +85,8 @@ mal_export void chkStack(MalStkPtr stk, int i);	/* used in src/mal/mal_box.c */
 
 #define getStkRecord(S,P,I) &(S)->stk[(P)->argv[I]]
 #define getStkValue(S,P,I)  ( getStkType(S,P,I)== TYPE_str? \
-                  getStkRecord(S,P,I)->val.sval :\
-                  getStkRecord(S,P,I)->val.pval )
+					getStkRecord(S,P,I)->val.sval :\
+					getStkRecord(S,P,I)->val.pval )
 #define getStkType(S,P,I)   (S)->stk[(P)->argv[I]].vtype
 #define setStkType(S,P,I,T) (S)->stk[(P)->argv[I]].vtype = T
 #endif /* _MAL_STACK_H_ */

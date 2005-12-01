@@ -119,58 +119,58 @@ The code expansion is organized such that
 the least interesting one is pushed onto the symbol table stack first.
 
 @= eq_ops
-        command ==(left:@1, right:@2) :bit 
-        address CALCcompEQ@1@2;
-        command !=(left:@1, right:@2) :bit 
-        address CALCcompNEQ@1@2;
+		command ==(left:@1, right:@2) :bit 
+		address CALCcompEQ@1@2;
+		command !=(left:@1, right:@2) :bit 
+		address CALCcompNEQ@1@2;
 @= cmp_ops
-        @:eq_ops(@1,@2)@
+		@:eq_ops(@1,@2)@
 
-        command <(left:@1, right:@2) :bit 
-        address CALCcompLT@1@2;
-        command <=(left:@1, right:@2) :bit 
-        address CALCcompLE@1@2;
-        command >=(left:@1, right:@2) :bit 
-        address CALCcompGE@1@2;
-        command >(left:@1, right:@2) :bit 
-        address CALCcompGT@1@2;
-        command between(val:@1, low:@1, high:@1) :bit 
-        address CALCcompBetween@1;
+		command <(left:@1, right:@2) :bit 
+		address CALCcompLT@1@2;
+		command <=(left:@1, right:@2) :bit 
+		address CALCcompLE@1@2;
+		command >=(left:@1, right:@2) :bit 
+		address CALCcompGE@1@2;
+		command >(left:@1, right:@2) :bit 
+		address CALCcompGT@1@2;
+		command between(val:@1, low:@1, high:@1) :bit 
+		address CALCcompBetween@1;
 @{
 @mal
 
-        @:cmp_ops(oid,oid)@
-        @:cmp_ops(flt,flt)@
-        @:cmp_ops(flt,dbl)@
-        @:cmp_ops(dbl,dbl)@
+		@:cmp_ops(oid,oid)@
+		@:cmp_ops(flt,flt)@
+		@:cmp_ops(flt,dbl)@
+		@:cmp_ops(dbl,dbl)@
 
-        @:cmp_ops(chr,chr)@
-        @:cmp_ops(chr,sht)@
-        @:cmp_ops(chr,int)@
-        @:cmp_ops(chr,lng)@
+		@:cmp_ops(chr,chr)@
+		@:cmp_ops(chr,sht)@
+		@:cmp_ops(chr,int)@
+		@:cmp_ops(chr,lng)@
 
-        @:eq_ops(bit,bit)@
-        @:eq_ops(bit,chr)@
-        @:eq_ops(bit,sht)@
-        @:eq_ops(bit,int)@
-        @:eq_ops(bit,lng)@
+		@:eq_ops(bit,bit)@
+		@:eq_ops(bit,chr)@
+		@:eq_ops(bit,sht)@
+		@:eq_ops(bit,int)@
+		@:eq_ops(bit,lng)@
 
-        @:cmp_ops(sht,chr)@
-        @:cmp_ops(sht,sht)@
-        @:cmp_ops(sht,int)@
-        @:cmp_ops(sht,lng)@
+		@:cmp_ops(sht,chr)@
+		@:cmp_ops(sht,sht)@
+		@:cmp_ops(sht,int)@
+		@:cmp_ops(sht,lng)@
 
-        @:cmp_ops(int,chr)@
-        @:cmp_ops(int,sht)@
-        @:cmp_ops(int,int)@
-        @:cmp_ops(int,lng)@
+		@:cmp_ops(int,chr)@
+		@:cmp_ops(int,sht)@
+		@:cmp_ops(int,int)@
+		@:cmp_ops(int,lng)@
 
-        @:cmp_ops(lng,chr)@
-        @:cmp_ops(lng,sht)@
-        @:cmp_ops(lng,int)@
-        @:cmp_ops(lng,lng)@
+		@:cmp_ops(lng,chr)@
+		@:cmp_ops(lng,sht)@
+		@:cmp_ops(lng,int)@
+		@:cmp_ops(lng,lng)@
 
-        @:cmp_ops(str,str)@
+		@:cmp_ops(str,str)@
 @}
 @+ Arithmetic computation 
 The operators @{ +, -, *, /, % @} are handled here.
@@ -199,14 +199,14 @@ address CALCstrConcatInt
 comment "Concatenate two strings";
 
 @= mal_calc_ops
-        command +(left:@1, right:@2) :@3 
-        address CALCbinaryADD@1@2; 
-        command -(left:@1, right:@2) :@3 
-        address CALCbinarySUB@1@2;
-        command *(left:@1, right:@2) :@3 
-        address CALCbinaryMUL@1@2;
-        command /(left:@1, right:@2) :@3 
-        address CALCbinarycheckDIV@1@2;
+		command +(left:@1, right:@2) :@3 
+		address CALCbinaryADD@1@2; 
+		command -(left:@1, right:@2) :@3 
+		address CALCbinarySUB@1@2;
+		command *(left:@1, right:@2) :@3 
+		address CALCbinaryMUL@1@2;
+		command /(left:@1, right:@2) :@3 
+		address CALCbinarycheckDIV@1@2;
 @{
 @-
 The coercions described below ensure that there is never any information loss.
@@ -258,10 +258,10 @@ The coercions described below ensure that there is never any information loss.
 @}
 @+ Binary  operations { max, min, }
 @= mal_binary_ops
-        command max(l:@1, r:@1) :@1 
-        address CALCbinaryMAX@2; 
-        command min(l:@1, r:@1) :@1 
-        address CALCbinaryMIN@2;
+		command max(l:@1, r:@1) :@1 
+		address CALCbinaryMAX@2; 
+		command min(l:@1, r:@1) :@1 
+		address CALCbinaryMIN@2;
 @{
 @-
 @mal
@@ -276,15 +276,15 @@ The coercions described below ensure that there is never any information loss.
 @+ Unary operations { abs, inv }
 The unary operators include coercion routines for built-in types
 @= mal_unary_ops
-        command abs(x:@1) :@1 
-        address CALCunary@1ABS 
-        comment "absolute value";
-        command inv(x:@1) :@1 
-        address CALCunarycheck@1INV 	
-        comment "inverse value (1/x)";
-        command -(x:@1) :@1 
-        address CALCunary@1NEG 
-        comment "negative value";
+		command abs(x:@1) :@1 
+		address CALCunary@1ABS 
+		comment "absolute value";
+		command inv(x:@1) :@1 
+		address CALCunarycheck@1INV 	
+		comment "inverse value (1/x)";
+		command -(x:@1) :@1 
+		address CALCunary@1NEG 
+		comment "negative value";
 		command length(x:@1):int
 		address CALClength@1;
 @{
@@ -302,9 +302,9 @@ The unary operators include coercion routines for built-in types
 @-
 Coercion functions are typical used in multiplex calls.
 @= mal_coercion
-        command @1(x:@2):@1 
-        address CALC@22@1 
-        comment "coercion @2 to @1";
+		command @1(x:@2):@1 
+		address CALC@22@1 
+		comment "coercion @2 to @1";
 @{
 @= scalar_coercion
 	@:mal_coercion(@1,oid)@
@@ -376,18 +376,18 @@ address CALCswitchbit;
 Cardinal numerical types (inclusing @emph{chr} can be regarded as a bit
 array. Specific operations work with this interpretation.
 @= mal_bitwise_ops
-        command or(left:@1, right:@1) :@1 
-        address CALCbinaryOR@1@1;
-        command and(left:@1, right:@1) :@1 
-        address CALCbinaryAND@1@1;
-        command xor(left:@1, right:@1) :@1 
-        address CALCbinaryXOR@1@1;
-        command not(left:@1) :@1 
-        address CALCunary@1NOT;
-        command <<(left:@1,right:int) :@1 
-        address CALCbinaryLSH@1int;
-        command >>(left:@1, right:int) :@1 
-        address CALCbinaryRSH@1int;
+		command or(left:@1, right:@1) :@1 
+		address CALCbinaryOR@1@1;
+		command and(left:@1, right:@1) :@1 
+		address CALCbinaryAND@1@1;
+		command xor(left:@1, right:@1) :@1 
+		address CALCbinaryXOR@1@1;
+		command not(left:@1) :@1 
+		address CALCunary@1NOT;
+		command <<(left:@1,right:int) :@1 
+		address CALCbinaryLSH@1int;
+		command >>(left:@1, right:int) :@1 
+		address CALCbinaryRSH@1int;
 @{
 @mal
 	@:mal_bitwise_ops(chr)@
@@ -401,12 +401,12 @@ with useful functions.
 Those accessible at the MAL command level are introduced below.
 
 @= convertCmd
-        command @1(v:str):@1 
-        address CALCstr2@1;
-        command str(v:@1):str 
-        address CALC@12str;
-        command @1(v:void) :@1 
-        address CALCnil2@1;
+		command @1(v:str):@1 
+		address CALCstr2@1;
+		command str(v:@1):str 
+		address CALC@12str;
+		command @1(v:void) :@1 
+		address CALCnil2@1;
 
 @{
 @mal
@@ -471,12 +471,12 @@ address CALCnewoidInclng;
 command newoid(incr:int) :oid 
 address CALCnewoidInc
 comment "Reserves a range of consecutive unique OIDs; returns the lowest 
-        in range.  equivalent to newoid(0,incr)";
+		in range.  equivalent to newoid(0,incr)";
 
 command setoid(base:oid) :oid 
 address CALCsetoidInc
 comment "Sets the oid range of consecutive unique OIDs; returns the 
-        lowest in range.";
+		lowest in range.";
 
 command setoid() :oid 
 address CALCsetoidBase
@@ -949,36 +949,36 @@ str CALCcomp@4@2@3(bit *retval, @2 *v1, @3 *v2){
 	return MAL_SUCCEED;
 }
 @= c_comp_ops
-        @:c_comp_op(@1,oid,oid,@2)@
-        @:c_comp_op(@1,flt,flt,@2)@
-        @:c_comp_op(@1,flt,dbl,@2)@
-        @:c_comp_op(@1,dbl,dbl,@2)@
+		@:c_comp_op(@1,oid,oid,@2)@
+		@:c_comp_op(@1,flt,flt,@2)@
+		@:c_comp_op(@1,flt,dbl,@2)@
+		@:c_comp_op(@1,dbl,dbl,@2)@
 
-        @:c_comp_op(@1,chr,chr,@2)@
-        @:c_comp_op(@1,chr,sht,@2)@
-        @:c_comp_op(@1,chr,int,@2)@
-        @:c_comp_op(@1,chr,lng,@2)@
+		@:c_comp_op(@1,chr,chr,@2)@
+		@:c_comp_op(@1,chr,sht,@2)@
+		@:c_comp_op(@1,chr,int,@2)@
+		@:c_comp_op(@1,chr,lng,@2)@
 
-        @:c_comp_op(@1,bit,bit,@2)@
-        @:c_comp_op(@1,bit,chr,@2)@
-        @:c_comp_op(@1,bit,sht,@2)@
-        @:c_comp_op(@1,bit,int,@2)@
-        @:c_comp_op(@1,bit,lng,@2)@
+		@:c_comp_op(@1,bit,bit,@2)@
+		@:c_comp_op(@1,bit,chr,@2)@
+		@:c_comp_op(@1,bit,sht,@2)@
+		@:c_comp_op(@1,bit,int,@2)@
+		@:c_comp_op(@1,bit,lng,@2)@
 
-        @:c_comp_op(@1,sht,chr,@2)@
-        @:c_comp_op(@1,sht,sht,@2)@
-        @:c_comp_op(@1,sht,int,@2)@
-        @:c_comp_op(@1,sht,lng,@2)@
+		@:c_comp_op(@1,sht,chr,@2)@
+		@:c_comp_op(@1,sht,sht,@2)@
+		@:c_comp_op(@1,sht,int,@2)@
+		@:c_comp_op(@1,sht,lng,@2)@
 
-        @:c_comp_op(@1,int,chr,@2)@
-        @:c_comp_op(@1,int,sht,@2)@
-        @:c_comp_op(@1,int,int,@2)@
-        @:c_comp_op(@1,int,lng,@2)@
+		@:c_comp_op(@1,int,chr,@2)@
+		@:c_comp_op(@1,int,sht,@2)@
+		@:c_comp_op(@1,int,int,@2)@
+		@:c_comp_op(@1,int,lng,@2)@
 
-        @:c_comp_op(@1,lng,chr,@2)@
-        @:c_comp_op(@1,lng,sht,@2)@
-        @:c_comp_op(@1,lng,int,@2)@
-        @:c_comp_op(@1,lng,lng,@2)@
+		@:c_comp_op(@1,lng,chr,@2)@
+		@:c_comp_op(@1,lng,sht,@2)@
+		@:c_comp_op(@1,lng,int,@2)@
+		@:c_comp_op(@1,lng,lng,@2)@
 
 mal_export str CALCcomp@2strstr(bit *retval, str *s1, str *s2);
 str CALCcomp@2strstr(bit *retval, str *s1, str *s2){
@@ -1164,9 +1164,9 @@ str CALCunary@3@1(@3 *res , @3 *a ) {
 	printf( "CALCunary@3@1\n");
 #endif
    if (*a == @3_nil) {
-       *res = @3_nil;
+	   *res = @3_nil;
    } else {   
-       *res = @2 (*a);
+	   *res = @2 (*a);
    }
    return(MAL_SUCCEED);
 }

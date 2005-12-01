@@ -239,7 +239,7 @@ URLBOXinsert(char *tuple){
 	BAT *b;
 	ptr p;
 	int idx= 0,prv=0;
-    char buf[128];
+	char buf[128];
 
 	depth= URLBOXchop(tuple, parts);
 	if( depth == 0) return MAL_SUCCEED;
@@ -578,7 +578,7 @@ URLBOXgetSize(int *r){
 	BAT *b, *bn;
 	int i;
 	lng tot;
-    size_t size;
+	size_t size;
 
 	b= BATnew(TYPE_int,TYPE_lng, urlDepth+1);
 	if( b== NULL)

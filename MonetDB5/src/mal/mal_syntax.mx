@@ -70,7 +70,7 @@ Lexical tokens are illustrated in small capitals.
 @tab : '=' | '<' | '<=' | '>' | '>=' | '!='
 @item stmt	
 @tab : [tag] varlist [':=' expr ] 
-@item tag     	
+@item tag
 @tab |  @code{ RETURN} | @code{ BARRIER} | @code{ CATCH}
 |  @code{ LEAVE} | @code{ REDO} | @code{RAISE} 
 @item varlist		
@@ -78,7 +78,7 @@ Lexical tokens are illustrated in small capitals.
 |  '(' variable [',' variable ] * ')' 
 @item variable	
 @tab : identifier [ props ]
-@item expr    	
+@item expr
 @tab : fcncall | [factor  operator] factor 
 @item factor  	
 @tab :  @code{ literal_constant} | @code{ nil} | var 

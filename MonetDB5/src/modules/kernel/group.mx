@@ -83,11 +83,11 @@ command group.new(attr:bat[@{void,oid@},:any_1]
 module group;
 
 command new(b:bat[:any_1,:any_2], start:int, incr:int, grpsize:int)
-            :bat[:any_1,:int] 
+			:bat[:any_1,:int] 
 address GRPgroup0
 comment "Produces a new BAT with identical head column, and in the tail 
-        column groups of equally valued integers within each group. 
-        Parameters: a start group -value, -number increment, -size.";
+		column groups of equally valued integers within each group. 
+		Parameters: a start group -value, -number increment, -size.";
 
 command new(attr:bat[:any_1,:any_2] )
 	(histo:bat[:any_1,:int], grp:bat[:any_1,:void]) 
@@ -101,23 +101,23 @@ command new(attr:bat[:any_1,:any_2], N:int, rng:int)
 	(histo:bat[:any_1,:int],grp:bat[:any_1,:oid]) 
 address GRPgroup_custom
 comment "Cross tabulation group initialization like GRPgroup, but with 
-        user provided #bits in hashmask and #distinct values in range.";
+		user provided #bits in hashmask and #distinct values in range.";
 
 command derive(ct:bat[:any_1,:any_3], attr:bat[:any_1,:any_2])
 	(histo:bat[:any_1,:oid],grp:bat[:any_1,:oid]) 
 address GRPderive
 comment "Cross tabulation group extension step.  Returned head values are 
-        identical as in 'ct'. Tail values are from the same domain and 
-        indicate further refinement of the groups in 'ct', taking into 
-        account also the tail-values in 'attr'.";
+		identical as in 'ct'. Tail values are from the same domain and 
+		indicate further refinement of the groups in 'ct', taking into 
+		account also the tail-values in 'attr'.";
 
 command refine(b:bat[:any_2,:any_3], a:bat[:any_2,:any_1]) :bat[:any_2,:oid] 
 address GRPrefine
 comment "refine the ordering of a tail-ordered BAT by sub-ordering on the 
-        values of a second bat 'a' (where the heads of a and b match 1-1).
-        The effect of this is similar to (hash-based) GRPderive, with the 
-        distinction that the group ids respect the ordering of the group 
-        values.";
+		values of a second bat 'a' (where the heads of a and b match 1-1).
+		The effect of this is similar to (hash-based) GRPderive, with the 
+		distinction that the group ids respect the ordering of the group 
+		values.";
 
 command refine(b:bat[:oid,:any_3], a:bat[:void,:any_1]) :bat[:oid,:oid] 
 address GRPrefine;
@@ -127,10 +127,10 @@ address GRPrefine;
 command refine_reverse(b:bat[:any_2,:any_3], a:bat[:any_2,:any_1]) :bat[:any_2,:oid] 
 address GRPrefine_rev
 comment "refine the ordering of a tail-ordered BAT by sub-ordering on the 
-        values of a second bat 'a' (where the heads of a and b match 1-1).
-        The effect of this is similar to (hash-based) GRPderive, with the 
-        distinction that the group ids respect the ordering of the group 
-        values.";
+		values of a second bat 'a' (where the heads of a and b match 1-1).
+		The effect of this is similar to (hash-based) GRPderive, with the 
+		distinction that the group ids respect the ordering of the group 
+		values.";
 @-
 @+ Group Aggregate operations
 
@@ -276,12 +276,12 @@ hashing.
 
 /*
    Note:
-     following macros take advantage of clustered property;
-     if b is clustered, then we can stop early traversing collision lists.
+	 following macros take advantage of clustered property;
+	 if b is clustered, then we can stop early traversing collision lists.
 
-     BTW, simply stopping possibly breaks chain construction, so the resulting
-     map is not directly reuseable as a hash table; the current Monet cannot
-     however handle multiple accellerators, so this ain't a real problem for now :)
+	 BTW, simply stopping possibly breaks chain construction, so the resulting
+	 map is not directly reuseable as a hash table; the current Monet cannot
+	 however handle multiple accellerators, so this ain't a real problem for now :)
  */
 
 #define declare_unclustered	/* avoid warning */
@@ -507,10 +507,10 @@ CTgroup(BAT **retval,		/* put pointer to BAT[oid,oid] record here. */
 
 int
 CTgroup_custom(BAT **retval,	/* put pointer to BAT[oid,oid] record here. */
-	       BAT **hbat,	/* put histogram BAT here */
-	       BAT *b,		/* pointer to BAT[oid,oid] record. */
-	       int *N,		/* number of bits for hashmask */
-	       int *rng		/* expected number of entries in map */
+   BAT **hbat,	/* put histogram BAT here */
+   BAT *b,		/* pointer to BAT[oid,oid] record. */
+   int *N,		/* number of bits for hashmask */
+   int *rng		/* expected number of entries in map */
 )
 {
 	@:CTgroupbody(CUSTOM)@
@@ -1273,230 +1273,230 @@ bytes, we stay below 16 KBytes, i.e., within (almost) any L1 cache
 
 @-
 @= large_aggr_sum
-        (void) BATprepareHash(bn);
-        BATloopFast(b, p, q, xx) {
-                oid *h = (oid*) BUNhead(b,p);
-                @1 *t = (@1*) BUN@2(b,p);
+		(void) BATprepareHash(bn);
+		BATloopFast(b, p, q, xx) {
+				oid *h = (oid*) BUNhead(b,p);
+				@1 *t = (@1*) BUN@2(b,p);
 
-                BUNfndOID(r, bn, h);
-                if (r) {
-                        @1 *dst = (@1*) BUN@2(bn, r);
-                        if (*dst != @1_nil) {
-                                if (*t == @1_nil) {
-                                        *dst = @1_nil;
-                                } else {
-                                        *dst += *t;
-                                }
-                        }
-                }
-        }
+				BUNfndOID(r, bn, h);
+				if (r) {
+						@1 *dst = (@1*) BUN@2(bn, r);
+						if (*dst != @1_nil) {
+								if (*t == @1_nil) {
+										*dst = @1_nil;
+								} else {
+										*dst += *t;
+								}
+						}
+				}
+		}
 @-
 @= small_aggr_sum
-        sums = (@1*) GDKmalloc(range*sizeof(@1));
-        for (i = 0; i < range; i++) sums[i] = zero;
-        BATloopFast(b, p, q, xx) {
-                int h = (int)(*(oid*) BUNhead(b,p)) - min;
-                @1 *t = (@1*) BUN@2(b,p);
+		sums = (@1*) GDKmalloc(range*sizeof(@1));
+		for (i = 0; i < range; i++) sums[i] = zero;
+		BATloopFast(b, p, q, xx) {
+				int h = (int)(*(oid*) BUNhead(b,p)) - min;
+				@1 *t = (@1*) BUN@2(b,p);
 
-                if (h >= 0 && h < range) {
-                        @1 *dst = sums + h;
-                        if (*dst != @1_nil) {
-                                if (*t == @1_nil) {
-                                        *dst = @1_nil;
-                                } else {
-                                        *dst += *t;
-                                }
-                        }
-                }
-        }
-        BATloopFast(bn, p, q, xx) {
-                int h = (int)(*(oid*) BUNhead(bn,p)) - min;
-                *(@1*)BUN@2(bn, p) = sums[h];
-        }
-        GDKfree(sums);
+				if (h >= 0 && h < range) {
+						@1 *dst = sums + h;
+						if (*dst != @1_nil) {
+								if (*t == @1_nil) {
+										*dst = @1_nil;
+								} else {
+										*dst += *t;
+								}
+						}
+				}
+		}
+		BATloopFast(bn, p, q, xx) {
+				int h = (int)(*(oid*) BUNhead(bn,p)) - min;
+				*(@1*)BUN@2(bn, p) = sums[h];
+		}
+		GDKfree(sums);
 @-
 @= large_aggr_avg
-        cnt  = (int*) GDKmalloc(BATcount(e)*sizeof(int));
-        memset(cnt, 0, BATcount(e)*sizeof(int));
-        (void) BATprepareHash(bn);
-        BATloopFast(b, p, q, xx) {
-                oid *h = (oid*) BUNhead(b,p);
-                @1 *t = (@1*) BUN@2(b,p);
+		cnt  = (int*) GDKmalloc(BATcount(e)*sizeof(int));
+		memset(cnt, 0, BATcount(e)*sizeof(int));
+		(void) BATprepareHash(bn);
+		BATloopFast(b, p, q, xx) {
+				oid *h = (oid*) BUNhead(b,p);
+				@1 *t = (@1*) BUN@2(b,p);
 
-                BUNfndOID(r,bn,h);
-                if (r) {
-                        @1 *dst = (@1*) BUN@2(bn, r);
-                        if (*dst != @1_nil) {
-                                if (*t == @1_nil) {
-                                        *dst = @1_nil;
-                                } else {
-                                        *dst += *t;
-                                }
-                                cnt[BUNindex(bn,r)-off]++;
-                        }
-                }
-        }
-        /* postprocess by dividing sums by counts */
-        BATloopFast(bn, p, q, xx) {
-                @1 *dst = (@1*) BUN@2(bn, p);
-                if (cnt[yy] == 0) {
-                        *dst = @1_nil;
-                } else if (*dst != @1_nil) {
-                        *dst /= cnt[yy];
-                } yy++;
-        }
-        GDKfree(cnt);
+				BUNfndOID(r,bn,h);
+				if (r) {
+						@1 *dst = (@1*) BUN@2(bn, r);
+						if (*dst != @1_nil) {
+								if (*t == @1_nil) {
+										*dst = @1_nil;
+								} else {
+										*dst += *t;
+								}
+								cnt[BUNindex(bn,r)-off]++;
+						}
+				}
+		}
+		/* postprocess by dividing sums by counts */
+		BATloopFast(bn, p, q, xx) {
+				@1 *dst = (@1*) BUN@2(bn, p);
+				if (cnt[yy] == 0) {
+						*dst = @1_nil;
+				} else if (*dst != @1_nil) {
+						*dst /= cnt[yy];
+				} yy++;
+		}
+		GDKfree(cnt);
 
 @-
 @= small_aggr_avg
-        sums = (@1*) GDKmalloc(range*sizeof(@1));
-        cnt  = (int*) GDKmalloc(range*sizeof(int));
-        for (i = 0; i < range; i++) sums[i] = zero;
-        memset(cnt, 0, range*sizeof(int));
-        BATloopFast(b, p, q, xx) {
-                int h = (int)(*(oid*) BUNhead(b,p)) - min;
-                @1 *t = (@1*) BUN@2(b,p);
+		sums = (@1*) GDKmalloc(range*sizeof(@1));
+		cnt  = (int*) GDKmalloc(range*sizeof(int));
+		for (i = 0; i < range; i++) sums[i] = zero;
+		memset(cnt, 0, range*sizeof(int));
+		BATloopFast(b, p, q, xx) {
+				int h = (int)(*(oid*) BUNhead(b,p)) - min;
+				@1 *t = (@1*) BUN@2(b,p);
 
-                if (h >= 0 && h < range) {
-                        @1 *dst = sums + h;
-                        if (*dst != @1_nil) {
-                                if (*t == @1_nil) {
-                                        *dst = @1_nil;
-                                } else {
-                                        *dst += *t;
-                                }
-                                cnt[h]++;
-                        }
-                }
-        }
-        /* postprocess by dividing sums by counts */
-        BATloopFast(bn, p, q, xx) {
-                int h = (int)(*(oid*) BUNhead(bn,p)) - min;
-                @1 *dst = (@1*) BUN@2(bn, p);
-                if (cnt[h] == 0 || sums[h] == @1_nil) {
-                        *dst = @1_nil;
-                } else {
-                        *dst = sums[h]/cnt[h];
-                }
-        }
-        GDKfree(sums);
-        GDKfree(cnt);
+				if (h >= 0 && h < range) {
+						@1 *dst = sums + h;
+						if (*dst != @1_nil) {
+								if (*t == @1_nil) {
+										*dst = @1_nil;
+								} else {
+										*dst += *t;
+								}
+								cnt[h]++;
+						}
+				}
+		}
+		/* postprocess by dividing sums by counts */
+		BATloopFast(bn, p, q, xx) {
+				int h = (int)(*(oid*) BUNhead(bn,p)) - min;
+				@1 *dst = (@1*) BUN@2(bn, p);
+				if (cnt[h] == 0 || sums[h] == @1_nil) {
+						*dst = @1_nil;
+				} else {
+						*dst = sums[h]/cnt[h];
+				}
+		}
+		GDKfree(sums);
+		GDKfree(cnt);
 
 @= arithpump
 mal_export str GRPsum_@1(int *retval, int *bid,int  *eid, bit *ignore_nils);
 str GRPsum_@1(int *retval, int *bid,int  *eid, bit *ignore_nils){
-        BAT *b = NULL, *e = NULL;
-        BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));
-        @1 zero = (@1) 0, *sums;
-        BUN p, q, r;
-        int xx,i,range,min,max;
+		BAT *b = NULL, *e = NULL;
+		BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));
+		@1 zero = (@1) 0, *sums;
+		BUN p, q, r;
+		int xx,i,range,min,max;
 
-        (void) ignore_nils; /* fool compiler */
+		(void) ignore_nils; /* fool compiler */
 		if( (b= BATdescriptor(*bid)) == NULL ){
 			return throwMessage("group.sum", "Cannot access descriptor");
 		}
 
-        @:chkHeader(b,GRPsum_@1)@
+		@:chkHeader(b,GRPsum_@1)@
 		if( (e= BATdescriptor(*eid)) == NULL ){
 			BBPunfix(b->batCacheid);
 			return throwMessage("group.sum", "Cannot access descriptor");
 		}
-        @:chkHeader(e,GRPsum_@1)@
-        /* init: set all sums to zero */
-        bn->tsorted = bn->hsorted = 0;
-        ALIGNsetH(bn, e);
-        if (BAThordered(e)&1) {
-                min = (int)(*(oid*)BUNhead(e, BUNfirst(e)));
-                BATloopFast(e, p, q, xx) {
-                        BUNfastins(bn, BUNhead(e,p), &zero);
-                }
-                max = (int)(*(oid*)BUNhead(e, BUNlast(e)-BUNsize(e)));
-        } else {
-                min = max = (int)(*(oid*)BUNhead(e, BUNfirst(e)));
-                BATloopFast(e, p, q, xx) {
-                        BUNfastins(bn, BUNhead(e,p), &zero);
-                        i = (int)(*(oid*)BUNhead(e, p));
-                        if (i < min) min = i;
-                        else
-                        if (i > max) max = i;
-                }
-        }
-        range = max - min + 1;
+		@:chkHeader(e,GRPsum_@1)@
+		/* init: set all sums to zero */
+		bn->tsorted = bn->hsorted = 0;
+		ALIGNsetH(bn, e);
+		if (BAThordered(e)&1) {
+				min = (int)(*(oid*)BUNhead(e, BUNfirst(e)));
+				BATloopFast(e, p, q, xx) {
+						BUNfastins(bn, BUNhead(e,p), &zero);
+				}
+				max = (int)(*(oid*)BUNhead(e, BUNlast(e)-BUNsize(e)));
+		} else {
+				min = max = (int)(*(oid*)BUNhead(e, BUNfirst(e)));
+				BATloopFast(e, p, q, xx) {
+						BUNfastins(bn, BUNhead(e,p), &zero);
+						i = (int)(*(oid*)BUNhead(e, p));
+						if (i < min) min = i;
+						else
+						if (i > max) max = i;
+				}
+		}
+		range = max - min + 1;
 
-        /* scan b, and add values to sums in-place */
-        if (range > SMALL_AGGR_MAX) {
-                ALGODEBUG THRprintf(GDKout, "GRPsum_@1: range(=%d) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_sum\n",range,SMALL_AGGR_MAX);
-                @:large_aggr_sum(@1,@2)@
-        } else {
-                ALGODEBUG THRprintf(GDKout, "GRPsum_@1: range(=%d) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_sum\n",range,SMALL_AGGR_MAX);
-                @:small_aggr_sum(@1,@2)@
-        }
+		/* scan b, and add values to sums in-place */
+		if (range > SMALL_AGGR_MAX) {
+				ALGODEBUG THRprintf(GDKout, "GRPsum_@1: range(=%d) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_sum\n",range,SMALL_AGGR_MAX);
+				@:large_aggr_sum(@1,@2)@
+		} else {
+				ALGODEBUG THRprintf(GDKout, "GRPsum_@1: range(=%d) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_sum\n",range,SMALL_AGGR_MAX);
+				@:small_aggr_sum(@1,@2)@
+		}
 		BBPincref(*retval= bn->batCacheid, TRUE);
 		BBPunfix(*retval);
 		BBPunfix(b->batCacheid);
 		BBPunfix(e->batCacheid);
-        return MAL_SUCCEED;
+		return MAL_SUCCEED;
 }
 
 mal_export str GRPavg_@1(int *retval, int *bid,int  *eid);
 str GRPavg_@1(int *retval, int *bid,int  *eid){
-        BAT *b = NULL, *e = NULL;
-        BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));
-        int xx, yy = 0, off = BUNindex(bn,BUNfirst(bn));
-        int *cnt = (int*) GDKmalloc(BATcount(e)*sizeof(int));
-        @1 zero = (@1) 0;
-        BUN p, q, r;
+		BAT *b = NULL, *e = NULL;
+		BAT *bn = BATnew(e->htype, BATttype(b), BATcount(e));
+		int xx, yy = 0, off = BUNindex(bn,BUNfirst(bn));
+		int *cnt = (int*) GDKmalloc(BATcount(e)*sizeof(int));
+		@1 zero = (@1) 0;
+		BUN p, q, r;
 
 		if( (b= BATdescriptor(*bid)) == NULL ){
 			return throwMessage("group.@1", "Cannot access descriptor");
 		}
-        @:chkHeader(b,GRPsum_@1)@
+		@:chkHeader(b,GRPsum_@1)@
 		if( (e= BATdescriptor(*eid)) == NULL ){
 			BBPunfix(b->batCacheid);
 			return throwMessage("group.@1", "Cannot access descriptor");
 		}
-        @:chkHeader(e,GRPsum_@1)@
-        /* init sums and counts to zero */
-        bn->tsorted = bn->hsorted = 0;
-        ALIGNsetH(bn, e);
-        memset(cnt, 0, BATcount(e)*sizeof(int));
-        BATloopFast(e, p, q, xx) {
-                BUNfastins(bn, BUNhead(e,p), &zero);
-        }
-        /* scan b, adding sums, and incrementing counts */
-        (void) BATprepareHash(bn);
-        BATloopFast(b, p, q, xx) {
-                oid *h = (oid*) BUNhead(b,p);
-                @1 *t = (@1*) BUNtail(b,p);
+		@:chkHeader(e,GRPsum_@1)@
+		/* init sums and counts to zero */
+		bn->tsorted = bn->hsorted = 0;
+		ALIGNsetH(bn, e);
+		memset(cnt, 0, BATcount(e)*sizeof(int));
+		BATloopFast(e, p, q, xx) {
+				BUNfastins(bn, BUNhead(e,p), &zero);
+		}
+		/* scan b, adding sums, and incrementing counts */
+		(void) BATprepareHash(bn);
+		BATloopFast(b, p, q, xx) {
+				oid *h = (oid*) BUNhead(b,p);
+				@1 *t = (@1*) BUNtail(b,p);
 
-                BUNfndOID(r,bn,h);
-                if (r) {
-                        @1 *dst = (@1*) BUNtloc(bn, r);
-                        if (*dst != @1_nil) {
-                                if (*t == @1_nil) {
-                                        *dst = @1_nil;
-                                } else {
-                                        *dst += *t;
-                                }
-                                cnt[BUNindex(bn,r)-off]++;
-                        }
-                }
-        }
-        /* postprocess by dividing sums by counts */
-        BATloopFast(bn, p, q, xx) {
-                @1 *dst = (@1*) BUNtail(bn, p);
-                if (cnt[yy] == 0) {
-                        *dst = @1_nil;
-                } else if (*dst != @1_nil) {
-                        *dst /= cnt[yy];
-                } yy++;
-        }
-        GDKfree(cnt);
+				BUNfndOID(r,bn,h);
+				if (r) {
+						@1 *dst = (@1*) BUNtloc(bn, r);
+						if (*dst != @1_nil) {
+								if (*t == @1_nil) {
+										*dst = @1_nil;
+								} else {
+										*dst += *t;
+								}
+								cnt[BUNindex(bn,r)-off]++;
+						}
+				}
+		}
+		/* postprocess by dividing sums by counts */
+		BATloopFast(bn, p, q, xx) {
+				@1 *dst = (@1*) BUNtail(bn, p);
+				if (cnt[yy] == 0) {
+						*dst = @1_nil;
+				} else if (*dst != @1_nil) {
+						*dst /= cnt[yy];
+				} yy++;
+		}
+		GDKfree(cnt);
 		BBPincref(*retval= bn->batCacheid, TRUE);
 		BBPunfix(*retval);
 		BBPunfix(b->batCacheid);
 		BBPunfix(e->batCacheid);
-        return MAL_SUCCEED;
+		return MAL_SUCCEED;
 }
 
 @c
@@ -1509,106 +1509,106 @@ str GRPavg_@1(int *retval, int *bid,int  *eid){
 @= extreme
 mal_export str GRP@1(int *retval, int *bid,int  *eid);
 str GRP@1(int *retval, int *bid,int  *eid){
-        BAT *b = NULL, *e = NULL;
-        BAT *bn;
-        int (*cmp)(ptr,ptr);
-        ptr nil;
-        int xx, yy, off;
-        ptr *extremes;
-        BUN p, q, r;
+		BAT *b = NULL, *e = NULL;
+		BAT *bn;
+		int (*cmp)(ptr,ptr);
+		ptr nil;
+		int xx, yy, off;
+		ptr *extremes;
+		BUN p, q, r;
 
 		if( (b= BATdescriptor(*bid)) == NULL ){
 			return throwMessage("group.@1", "Cannot access descriptor");
 		}
 
-        @:chkHeader(b,GRP@1)@
+		@:chkHeader(b,GRP@1)@
 		if( (e= BATdescriptor(*eid)) == NULL ){
 			BBPunfix(b->batCacheid);
 			return throwMessage("group.@1", "Cannot access descriptor");
 		}
-        @:chkHeader(e,GRP@1)@
+		@:chkHeader(e,GRP@1)@
 
-        bn = BATnew(e->htype, BATttype(b), BATcount(e));
-        cmp = BATatoms[bn->ttype].atomCmp;
-        nil = ATOMnilptr(bn->ttype);
-        yy = 0; off = BUNindex(e,BUNfirst(e));
-        extremes = (ptr*) GDKmalloc(BATcount(e)*sizeof(ptr));
+		bn = BATnew(e->htype, BATttype(b), BATcount(e));
+		cmp = BATatoms[bn->ttype].atomCmp;
+		nil = ATOMnilptr(bn->ttype);
+		yy = 0; off = BUNindex(e,BUNfirst(e));
+		extremes = (ptr*) GDKmalloc(BATcount(e)*sizeof(ptr));
 
-        /* init: set all extremes to the zero pointer */
-        memset(extremes, 0, BATcount(e)*sizeof(ptr));
+		/* init: set all extremes to the zero pointer */
+		memset(extremes, 0, BATcount(e)*sizeof(ptr));
 
-        /* scan b and replace totals by the extreme value (just pointers to vals in b) */
-        (void) BATprepareHash(e);
-        BATloopFast(b, p, q, xx) {
-                oid *h = (oid*) BUNhead(b,p);
-                ptr t =  BUNtail(b,p);
+		/* scan b and replace totals by the extreme value (just pointers to vals in b) */
+		(void) BATprepareHash(e);
+		BATloopFast(b, p, q, xx) {
+				oid *h = (oid*) BUNhead(b,p);
+				ptr t =  BUNtail(b,p);
 
-                BUNfndOID(r,e,h);
-                if (r) {
-                        ptr *val = extremes + (BUNindex(e,r) - off);
-                        if (*val != nil) {
-                                if ((*cmp)(t,nil) == 0) {
-                                        *val = nil;
-                                } else if (*val == NULL || (*cmp)(t,*val) @2 0) {
-                                        *val = t;
-                                }
-                        }
-                }
-        }
-        /* insert the extreme values into the result */
-        BATloopFast(e, p, q, xx) {
-                ptr val = extremes[yy++];
-                BUNfastins(bn, BUNhead(e,p), val?val:nil);
-        }
-        bn->tsorted = bn->hsorted = 0;
-        ALIGNsetH(bn, e);
-        GDKfree(extremes);
+				BUNfndOID(r,e,h);
+				if (r) {
+						ptr *val = extremes + (BUNindex(e,r) - off);
+						if (*val != nil) {
+								if ((*cmp)(t,nil) == 0) {
+										*val = nil;
+								} else if (*val == NULL || (*cmp)(t,*val) @2 0) {
+										*val = t;
+								}
+						}
+				}
+		}
+		/* insert the extreme values into the result */
+		BATloopFast(e, p, q, xx) {
+				ptr val = extremes[yy++];
+				BUNfastins(bn, BUNhead(e,p), val?val:nil);
+		}
+		bn->tsorted = bn->hsorted = 0;
+		ALIGNsetH(bn, e);
+		GDKfree(extremes);
 		BBPincref(*retval= bn->batCacheid, TRUE);
 		BBPunfix(*retval);
 		BBPunfix(b->batCacheid);
 		BBPunfix(e->batCacheid);
-        return MAL_SUCCEED;
+		return MAL_SUCCEED;
 }
 @c
 @:extreme(min,<)@
 @:extreme(max,>)@
 @-
 @= large_aggr_count
-        (void) BATprepareHash(bn);
-        BATloopFast(b, p, q, xx) {
-                oid *h = (oid*) BUNhead(b,p);
+		(void) BATprepareHash(bn);
+		BATloopFast(b, p, q, xx) {
+				oid *h = (oid*) BUNhead(b,p);
 
-                BUNfndOID(r, bn, h);
-                if (r) {
-                         ptr t = BUNtail(b,p);
-                         (void) t ; /* fool compiler */
-                          /*if (ATOMcmp(btt,t,bt_nil)) {*/
-                        @1 {
-                                int *dst = (int*) BUNtloc(bn, r);
-                                (*dst)++;
-                        }
-                }
-        }
+				BUNfndOID(r, bn, h);
+				if (r) {
+						 ptr t = BUNtail(b,p);
+						 (void) t ; /* fool compiler */
+						  /*if (ATOMcmp(btt,t,bt_nil)) {*/
+						@1 {
+								int *dst = (int*) BUNtloc(bn, r);
+								(*dst)++;
+						}
+				}
+		}
 @= small_aggr_count
-        cnt  = (int*) GDKmalloc(range*sizeof(int));
-        memset(cnt, 0, range*sizeof(int));
-        BATloopFast(b, p, q, xx) {
-                int h = (int)(*(oid*) BUNhead(b,p)) - min;
+		cnt  = (int*) GDKmalloc(range*sizeof(int));
+		memset(cnt, 0, range*sizeof(int));
+		BATloopFast(b, p, q, xx) {
+				int h = (int)(*(oid*) BUNhead(b,p)) - min;
 
-                if (h >= 0 && h < range) {
-                         ptr t = BUNtail(b,p);
-                        (void)t; /* fool compiler */
-                        /* if (ATOMcmp(btt,t,bt_nil)) {*/
-                        @1 {
-                                cnt[h]++;
-                        }
-                }
-        }
-        BATloopFast(bn, p, q, xx) {
-                int h = (int)(*(oid*) BUNhead(bn,p)) - min;
-                *(int*)BUNtloc(bn, p) = cnt[h];
-        }
-        GDKfree(cnt);
+				if (h >= 0 && h < range) {
+						 ptr t = BUNtail(b,p);
+						(void)t; /* fool compiler */
+						/* if (ATOMcmp(btt,t,bt_nil)) {*/
+						@1 {
+								cnt[h]++;
+						}
+				}
+		}
+		BATloopFast(bn, p, q, xx) {
+				int h = (int)(*(oid*) BUNhead(bn,p)) - min;
+				*(int*)BUNtloc(bn, p) = cnt[h];
+		}
+		GDKfree(cnt);
 
 @c
 
@@ -1747,11 +1747,11 @@ The window aggregate functions
 @= windowsum
 mal_export str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift);
 str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift){
-        BAT *b, *bn;
+		BAT *b, *bn;
 		@2 sum;
 		oid o= oid_nil;
-        BUN p, q;
-        int xx,i;
+		BUN p, q;
+		int xx,i;
 
 		if( *shift <=0){
 			return throwMessage("group.sum", "Illegal shift value");
@@ -1760,11 +1760,11 @@ str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift){
 		if( (b= BATdescriptor(*bid)) == NULL ){
 			return throwMessage("group.sum", "Cannot access descriptor");
 		}
-        @:chkHeader(b,GRPwindowsum_@1)@
+		@:chkHeader(b,GRPwindowsum_@1)@
 
-        /* init: set all sums to zero */
+		/* init: set all sums to zero */
 		bn= BATnew( TYPE_void, TYPE_@2, BATcount(b)/ *size +1);
-        bn->tsorted = bn->hsorted = 0;
+		bn->tsorted = bn->hsorted = 0;
 		BATseqbase(bn,0);
 
 		i= *size;
@@ -1787,7 +1787,7 @@ str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift){
 		BBPincref(*retval= bn->batCacheid, TRUE);
 		BBPunfix(*retval);
 		BBPunfix(b->batCacheid);
-        return MAL_SUCCEED;
+		return MAL_SUCCEED;
 }
 mal_export str GRPwindowsum_@1(int *retval, int *bid, int  *size);
 str GRPwindowsum_@1(int *retval, int *bid, int  *size){

@@ -256,7 +256,7 @@ mal_export str PBMcompress(int *ret, str *grp);
 #include "pbm.h"
 
 PBAT partitions = NULL;
-int ptop, plimit;
+int ptop=0, plimit=0;
 
 #define INCREMENT 1024
 void

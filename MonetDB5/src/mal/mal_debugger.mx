@@ -98,11 +98,11 @@ and the result of type resolution.
 #end main;
 mdb>l
 function user.main():int;
-    mdb.start();
+	mdb.start();
 end main;
 mdb>L
 function user.main():int;       # 0  (main:int)
-    mdb.start();        # 1 MDBstart (_1:void)
+	mdb.start();        # 1 MDBstart (_1:void)
 end main;       # 2
 @end example
 The user module is the default place for function defined at
@@ -1325,13 +1325,13 @@ asses for memory fragmentation.
 @= heapinfo
 hp= b->@1;
 if(hp && hp->base){
-    stream_printf(GDKout,"\t@1=%d size=%d\n",hp->base, hp->size);}
+	stream_printf(GDKout,"\t@1=%d size=%d\n",hp->base, hp->size);}
 @= hashinfo
 h= b->@1;
 if(h && h->mask){
-        stream_printf(GDKout,"\t@1=%d size=%d\n",h, sizeof(*h));
-        stream_printf(GDKout,"\t@1link=%d size=%d\n",h->link,
-                (h->mask+h->lim+1)*sizeof(int));
+	    stream_printf(GDKout,"\t@1=%d size=%d\n",h, sizeof(*h));
+	    stream_printf(GDKout,"\t@1link=%d size=%d\n",h->link,
+	            (h->mask+h->lim+1)*sizeof(int));
 }
 @-
 The memProfileVector routine produces a character string to represent
@@ -1340,9 +1340,9 @@ as follows:
 .=unused, X=completely used, [0-9]=small elements within the granule
 More then 9 elements makes it full.
 @= setVector
-    start= (((long)@1)-min)/granule;
-    lim= (((long)@1)-min + @2)/granule;
-    stream_printf(GDKout,"start %d lim %d\n",start,lim);
+	start= (((long)@1)-min)/granule;
+	lim= (((long)@1)-min + @2)/granule;
+	stream_printf(GDKout,"start %d lim %d\n",start,lim);
 
 @c
 str

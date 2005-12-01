@@ -22,20 +22,20 @@
 @{
 @= tstBat
 if( bn== NULL) {*ret= 0;
-    return throwMessage("batcalc.@1", "can not create bat");}
+	return throwMessage("batcalc.@1", "can not create bat");}
 
 @+ Scientific routines
 The mmath functions are also overloaded to provide for
 the fast execution of expanded code blocks.
 The common set of math functions is supported.
 @= scienceFcn
-    command @1(x:bat[:any_1,:dbl])  :bat[:any_1,:dbl] 
-    address CMDscience_@1;
-    command @1(x:bat[:void,:dbl])  :bat[:void,:dbl] 
-    address CMDsciencevoid_@1;
+	command @1(x:bat[:any_1,:dbl])  :bat[:any_1,:dbl] 
+	address CMDscience_@1;
+	command @1(x:bat[:void,:dbl])  :bat[:void,:dbl] 
+	address CMDsciencevoid_@1;
 @= scienceFcnBinary
-    command @1(x:bat[:any_1,:dbl],y:@2):bat[:any_1,:dbl] 
-    address CMDscience_@1;
+	command @1(x:bat[:any_1,:dbl],y:@2):bat[:any_1,:dbl] 
+	address CMDscience_@1;
 @-
 @mal
 module batmath;
@@ -79,14 +79,14 @@ module batmath;
 BAT *
 BATMATHresult(BAT *b, int tpe)
 {
-    BAT *bn;
+	BAT *bn;
 
-    if (BAThvoid(b)) {
-        bn = BATnew(TYPE_void, tpe, BATcount(b));
-        BATseqbase(bn, b->hseqbase);
-    } else
-        bn = BATnew(b->htype, tpe, BATcount(b));
-    return bn;
+	if (BAThvoid(b)) {
+		bn = BATnew(TYPE_void, tpe, BATcount(b));
+		BATseqbase(bn, b->hseqbase);
+	} else
+		bn = BATnew(b->htype, tpe, BATcount(b));
+	return bn;
 }
 
 @-
@@ -97,9 +97,9 @@ str CMDscience_@1(int *ret, int *bid){
 	int xx;
 	BUN p,q;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("batcalc.@1", "Cannot access descriptor");
-    }
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		return throwMessage("batcalc.@1", "Cannot access descriptor");
+	}
 
 	bn= BATMATHresult(b, TYPE_dbl);
 	@:tstBat(CMDscience_@1)@
@@ -124,9 +124,9 @@ str CMDsciencevoid_@1(int *ret, int *bid){
 	BUN p,q;
 	oid o;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("batcalc.@1", "Cannot access descriptor");
-    }
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		return throwMessage("batcalc.@1", "Cannot access descriptor");
+	}
 
 	bn= BATnew(TYPE_oid,b->ttype, BATcount(b));
 	@:tstBat(CMDsciencevoid_@1)@
@@ -151,9 +151,9 @@ str CMDscience_@1(int *ret, int *bid, @2 *d){
 	int xx;
 	BUN p,q;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("batcalc.@1", "Cannot access descriptor");
-    }
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		return throwMessage("batcalc.@1", "Cannot access descriptor");
+	}
 
 	bn= BATMATHresult(b, TYPE_dbl);
 	@:tstBat(CMDscience_@1)@

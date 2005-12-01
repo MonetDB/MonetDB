@@ -113,13 +113,13 @@ comment	"Extracts Cb(blue color) component from a color atom";
 
 #define prepareOperand(X,Y,Z) \
 	if( (X= BATdescriptor(*Y)) == NULL ) \
-	    return throwMessage("batstr." Z, "Cannot access descriptor");
+		return throwMessage("batstr." Z, "Cannot access descriptor");
 #define prepareOperand2(X,Y,A,B,Z) \
 	if( (X= BATdescriptor(*Y)) == NULL ) \
-	    return throwMessage("batstr." Z, "Cannot access descriptor"); \
+		return throwMessage("batstr." Z, "Cannot access descriptor"); \
 	if( (A= BATdescriptor(*B)) == NULL ){\
 		BBPunfix(X->batCacheid); \
-	    return throwMessage("batstr."Z, "Cannot access descriptor"); \
+		return throwMessage("batstr."Z, "Cannot access descriptor"); \
 	}
 #define prepareResult(X,Y,T,Z) \
 	X= BATnew(Y->htype,T,BATcount(Y)); \
@@ -127,8 +127,8 @@ comment	"Extracts Cb(blue color) component from a color atom";
 		BATseqbase(X, Y->hseqbase); \
 	Y->hsorted=X->hsorted; \
 	if( X == NULL){ \
-	    BBPunfix(Y->batCacheid); \
-	    return throwMessage("batstr." Z, "no space available "); \
+		BBPunfix(Y->batCacheid); \
+		return throwMessage("batstr." Z, "no space available "); \
 	}
 #define prepareResult2(X,Y,A,T,Z) \
 	X= BATnew(Y->htype,T,BATcount(Y)); \
@@ -136,9 +136,9 @@ comment	"Extracts Cb(blue color) component from a color atom";
 		BATseqbase(X, Y->hseqbase); \
 	Y->hsorted=X->hsorted; \
 	if( X == NULL){ \
-	    BBPunfix(Y->batCacheid); \
-	    BBPunfix(A->batCacheid); \
-	    return throwMessage("batstr." Z, "no space available "); \
+		BBPunfix(Y->batCacheid); \
+		BBPunfix(A->batCacheid); \
+		return throwMessage("batstr." Z, "no space available "); \
 	}
 #define finalizeResult(X,Y,Z) \
 	BBPincref(*X = Y->batCacheid,TRUE);\
@@ -157,12 +157,12 @@ str CLRbat@1(int *ret, int *l)
 	prepareResult(bn,b,getTypeIndex("@4",strlen("@4"),TYPE_int),"@1");
 
 	BATloopFast(b, p, q, xx) {
-	    ptr h = BUNhead(b,p);
-	    x= (@3 *) BUNtail(b,p);
+		ptr h = BUNhead(b,p);
+		x= (@3 *) BUNtail(b,p);
 		if(x== 0 || *x == @3_nil)
 			y= @4_nil;
 		else @2(yp,x);
-	    bunfastins(bn, h, yp);
+		bunfastins(bn, h, yp);
 	}
 	finalizeResult(ret,bn,b);
 	return MAL_SUCCEED;
@@ -216,16 +216,16 @@ str CLRbat@1(int *ret, int *l, int *bid2, int *bid3)
 	p2= BUNfirst(b2);
 	p3= BUNfirst(b3);
 	BATloopFast(b, p, q, xx) {
-	    ptr h = BUNhead(b,p);
-	    x= (@3 *) BUNtail(b,p);
-	    x2= (@3 *) BUNtail(b2,p);
-	    x3= (@3 *) BUNtail(b3,p);
+		ptr h = BUNhead(b,p);
+		x= (@3 *) BUNtail(b,p);
+		x2= (@3 *) BUNtail(b2,p);
+		x3= (@3 *) BUNtail(b3,p);
 		if(x== 0 || *x == @3_nil ||
 		   x2== 0 || *x2 == @3_nil ||
 		   x3== 0 || *x3 == @3_nil)
 			y= @4_nil;
 		else @2(yp,x,x2,x3);
-	    bunfastins(bn, h, yp);
+		bunfastins(bn, h, yp);
 		p2+= BUNsize(b2);
 		p3+= BUNsize(b3);
 	}

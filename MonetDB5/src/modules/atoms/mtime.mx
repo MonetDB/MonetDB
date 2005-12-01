@@ -175,10 +175,10 @@ comment "Equality of two @1s";
 
 command isnil(v:@1):bit 
 address MTIME@1_isnil
-        comment "Nil test for @1 value";
+comment "Nil test for @1 value";
 command calc.isnil(v:@1):bit 
 address MTIME@1_isnil
-        comment "Nil test for @1 value";
+comment "Nil test for @1 value";
 @mal
 
 @+ Date atom
@@ -200,10 +200,10 @@ with:	INT_YEAR = integer between -5867411 and 5867411
 	INT_MONTH = integer between 1 and 12
 	STR_MONTH = 'JANUARI' or 'FEBRUARI' or 'MARCH' or 'APRIL' or 'MAY'
 		    or 'JUNE' or 'JULI' or 'AUGUST' or 'SEPTEMBER' or 'OCTOBER' 
-                    or 'NOVEMBER' or 'DECEMBER' (lowercase characters, and/or 
-                    only the first three characters are also allowed)
-            SEP1 = '-' or '/' or '\' or (' ')+
-            SEP2 = SEP1 or ''
+	                or 'NOVEMBER' or 'DECEMBER' (lowercase characters, and/or 
+	                only the first three characters are also allowed)
+	        SEP1 = '-' or '/' or '\' or (' ')+
+	        SEP2 = SEP1 or ''
 \end{verbatim}
 }
 Printing a date uses the 1999-01-31 format, as this is both language neutral
@@ -234,10 +234,10 @@ parse format: HOUR ':' MIN ':' SEC SEP MSEC
 	  or: HOUR ':' MIN
 
 with: HOUR = integer between 0 and 23
-       MIN = integer between 0 and 59
-       SEC = integer between 0 and 59 (default = 0)
-      MSEC = integer between 0 and 999 (default = 0)
-       SEP = '.' or ':'
+	   MIN = integer between 0 and 59
+	   SEC = integer between 0 and 59 (default = 0)
+	  MSEC = integer between 0 and 999 (default = 0)
+	   SEP = '.' or ':'
 \end{verbatim}
 }
 @mal
@@ -260,8 +260,8 @@ print format: DATE ' ' DAYTIME
 parse format: DATE ' ' DAYTIME  ['GMT' ZONE ]
 
 with:    DATE = a valid parse format of the date atom (as decribed earlier)
-      DAYTIME = a valid parse format of the daytime atom (as decribed earlier)
-         ZONE = ('+'|'-') HOUR ':' MIN [ 'DST' ]
+	  DAYTIME = a valid parse format of the daytime atom (as decribed earlier)
+	     ZONE = ('+'|'-') HOUR ':' MIN [ 'DST' ]
 \end{verbatim}
 }
 Though internally timestamps are stored in GMT, the printing and parsing of
@@ -1291,7 +1291,7 @@ timestamp_inside(timestamp *ret, timestamp *t, tzone *z, lng offset)
 	end_days = compute_rule(&end, year);
 
 	return BEFORE(start_days, start_msecs, end_days, end_msecs) ? (BEFORE(start_days, start_msecs, ret->days, ret->msecs)
-								       && BEFORE(ret->days, ret->msecs, end_days, end_msecs)) : (BEFORE(start_days, start_msecs, ret->days, ret->msecs)
+			   && BEFORE(ret->days, ret->msecs, end_days, end_msecs)) : (BEFORE(start_days, start_msecs, ret->days, ret->msecs)
 																 || BEFORE(ret->days, ret->msecs, end_days, end_msecs));
 }
 
@@ -2668,13 +2668,13 @@ timestamp_comp_GE(bit *retval, timestamp *val1, timestamp *val2)
 @- Wrapper
 The Monet V5 API interface is defined here
 @= TIMEZONES
-        ticks= @2;
-        tzone_create((tzone*) &vr.val.lval, &ticks);
-        tz= BUNins(tz,@1,&vr.val.lval);
+	ticks= @2;
+	tzone_create((tzone*) &vr.val.lval, &ticks);
+	tz= BUNins(tz,@1,&vr.val.lval);
 @= TIMEZONES2
-        ticks =@2;
-        tzone_create_dst((tzone*) &vr.val.lval, &ticks,&@3,&@4);
-        tz= BUNins(tz,@1,&vr.val.lval);
+	ticks =@2;
+	tzone_create_dst((tzone*) &vr.val.lval, &ticks,&@3,&@4);
+	tz= BUNins(tz,@1,&vr.val.lval);
 @-
 Include BAT macros
 @c
@@ -2722,9 +2722,9 @@ MTIMEtimestamp2timestamp(timestamp *ret, timestamp *src)
 The comparison implementations are relatively straightforward.
 @= compareImpl
 str MTIME@3_@1(int *ret, @3 *v, @3 *w){
-        if( *v== @3_nil || *w== @3_nil)
-                *ret= bit_nil;
-        else    *ret = *v @2 *w;
+	    if( *v== @3_nil || *w== @3_nil)
+	            *ret= bit_nil;
+	    else    *ret = *v @2 *w;
 	return MAL_SUCCEED;
 }
 @= compareAll
@@ -2732,12 +2732,12 @@ str MTIME@1_isnil(int *ret, @1 *v){
 	*ret= *v == @1_nil;
 	return MAL_SUCCEED;
 }
-        @:compareImpl(EQ,==,@1)@
-        @:compareImpl(NEQ,!=,@1)@
-        @:compareImpl(LT,<,@1)@
-        @:compareImpl(LE,<=,@1)@
-        @:compareImpl(GT,>,@1)@
-        @:compareImpl(GE,>=,@1)@
+	    @:compareImpl(EQ,==,@1)@
+	    @:compareImpl(NEQ,!=,@1)@
+	    @:compareImpl(LT,<,@1)@
+	    @:compareImpl(LE,<=,@1)@
+	    @:compareImpl(GT,>,@1)@
+	    @:compareImpl(GE,>=,@1)@
 @c
 @:compareAll(date)@
 @:compareAll(daytime)@
@@ -3341,14 +3341,14 @@ str
 MTIMEtimestamp_add_sec_interval_lng_wrap(timestamp *ret, timestamp *t, lng *sec)
 {
 	lng msec= *sec *1000;
-    timestamp_add(ret, t, &msec);
+	timestamp_add(ret, t, &msec);
 	return MAL_SUCCEED;
 }
 str
 MTIMEtimestamp_sub_sec_interval_lng_wrap(timestamp *ret, timestamp *t, lng *sec)
 {
 	lng msec= *sec * -1000;
-    timestamp_add(ret, t, &msec);
+	timestamp_add(ret, t, &msec);
 	return MAL_SUCCEED;
 }
 str
@@ -3359,7 +3359,7 @@ MTIMEtimestamp_add_month_interval_wrap(timestamp *ret, timestamp *v, int *months
 	timestamp_extract_daytime(&t, v, &tzone_local);
 	timestamp_extract_date(&d, v, &tzone_local);
 	date_addmonths(&d, &d, months);
-    timestamp_create(ret, &d, &t, &tzone_local);
+	timestamp_create(ret, &d, &t, &tzone_local);
 	return MAL_SUCCEED;
 }
 str
@@ -3371,7 +3371,7 @@ MTIMEtimestamp_sub_month_interval_wrap(timestamp *ret, timestamp *v, int *months
 	timestamp_extract_daytime(&t, v, &tzone_local);
 	timestamp_extract_date(&d, v, &tzone_local);
 	date_addmonths(&d, &d, &m);
-    timestamp_create(ret, &d, &t, &tzone_local);
+	timestamp_create(ret, &d, &t, &tzone_local);
 	return MAL_SUCCEED;
 }
 
@@ -3588,7 +3588,7 @@ MTIMEtimestamp_year(int *ret, timestamp *t)
 {
 	date d;
 	timestamp_extract_date(&d, t, &tzone_local);
-    date_extract_year(ret, &d);
+	date_extract_year(ret, &d);
 	return MAL_SUCCEED;
 }
 str
@@ -3596,7 +3596,7 @@ MTIMEtimestamp_month(int *ret, timestamp *t)
 {
 	date d;
 	timestamp_extract_date(&d, t, &tzone_local);
-    date_extract_month(ret, &d);
+	date_extract_month(ret, &d);
 	return MAL_SUCCEED;
 }
 str
@@ -3604,7 +3604,7 @@ MTIMEtimestamp_day(int *ret, timestamp *t)
 {
 	date d;
 	timestamp_extract_date(&d, t, &tzone_local);
-    date_extract_day(ret, &d);
+	date_extract_day(ret, &d);
 	return MAL_SUCCEED;
 }
 str
@@ -3612,7 +3612,7 @@ MTIMEtimestamp_hours(int *ret, timestamp *t)
 {
 	daytime d;
 	timestamp_extract_daytime(&d, t, &tzone_local);
-    daytime_extract_hours(ret, &d);
+	daytime_extract_hours(ret, &d);
 	return MAL_SUCCEED;
 }
 str
@@ -3620,7 +3620,7 @@ MTIMEtimestamp_minutes(int *ret, timestamp *t)
 {
 	daytime d;
 	timestamp_extract_daytime(&d, t, &tzone_local);
-    daytime_extract_minutes(ret, &d);
+	daytime_extract_minutes(ret, &d);
 	return MAL_SUCCEED;
 }
 str
@@ -3628,7 +3628,7 @@ MTIMEtimestamp_seconds(int *ret, timestamp *t)
 {
 	daytime d;
 	timestamp_extract_daytime(&d, t, &tzone_local);
-    daytime_extract_seconds(ret, &d);
+	daytime_extract_seconds(ret, &d);
 	return MAL_SUCCEED;
 }
 str
@@ -3636,7 +3636,7 @@ MTIMEtimestamp_milliseconds(int *ret, timestamp *t)
 {
 	daytime d;
 	timestamp_extract_daytime(&d, t, &tzone_local);
-    daytime_extract_milliseconds(ret, &d);
+	daytime_extract_milliseconds(ret, &d);
 	return MAL_SUCCEED;
 }
 

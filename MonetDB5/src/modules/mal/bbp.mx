@@ -1179,8 +1179,8 @@ CMDgetBATlrefcnt(int *res, int *bid)
 @= headtailProperty
 mal_export str CMDbbp@2( int *ret);
 str CMDbbp@2( int *ret){
-	BAT     *b,*bn;
-	int     i;
+	BAT	*b,*bn;
+	int	i;
 
 	b= BATnew(TYPE_int,TYPE_str,BBPsize);
 	if (b == 0) 

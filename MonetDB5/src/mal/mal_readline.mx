@@ -253,13 +253,13 @@ deinit_readline(void)
 void
 showCommands(void)
 {
-    printf("?\t - show this message\n");
-    printf("!\t - show the history\n");
-    printf("<file\t - read input from file\n");
-    printf(">file\t - save response in file\n");
-    printf(">\t - response to terminal\n");
-    printf("cd\t - change directory\n");
-    printf("\\q\t- terminate session\n");
+	printf("?\t - show this message\n");
+	printf("!\t - show the history\n");
+	printf("<file\t - read input from file\n");
+	printf(">file\t - save response in file\n");
+	printf(">\t - response to terminal\n");
+	printf("cd\t - change directory\n");
+	printf("\\q\t- terminate session\n");
 }
 
 static int initReadline;

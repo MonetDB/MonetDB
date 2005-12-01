@@ -263,7 +263,7 @@ getFreeScenario()
 @-
 @= initScen
 if( @1->@2){
-    if( @1->@2Cmd == 0) @1->@2Cmd = (MALfcn)getAddress(@3,@1->@2,1);
+	if( @1->@2Cmd == 0) @1->@2Cmd = (MALfcn)getAddress(@3,@1->@2,1);
 }
 @-
 A scenario is initialized only once per session. 

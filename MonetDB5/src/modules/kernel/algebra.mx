@@ -62,7 +62,7 @@ comment "Returns true when 'h,t' occurs as a bun in b.";
 command find(b:bat[:any_1,:any_2], h:any_1):any_2 
 address ALGfind
 comment "Returns the tail value 't' for which some [h,t] BUN 
-        exists in b.  If no such BUN exists, an error occurs." ;
+	exists in b.  If no such BUN exists, an error occurs." ;
 
 command find(b:bat[:oid,:any_2], h:void):any_2 address ALGfind;
 command find(b:bat[:void,:any_2], h:oid):any_2 address ALGfind;
@@ -70,12 +70,12 @@ command find(b:bat[:void,:any_2], h:oid):any_2 address ALGfind;
 command position(b:bat[:any_1,:any_2], v:any_1):int
 address ALGposition
 comment "Returns BAT position [0.. b.count] of 'v' in the head 
-        column of b. It Return an error if 'v' does not exist.";
+	column of b. It Return an error if 'v' does not exist.";
 
 command position(b:bat[:any_1,:any_2], val:any_1, tval:any_2) :int 
 address ALGpositionBUN
 comment "Returns the position of the value pair It returns an 
-        error if 'val' does not exist.";
+	error if 'val' does not exist.";
 
 command fetch(b:bat[:any_2,:any_1], x:oid) :any_1 
 address ALGfetchoid;
@@ -84,7 +84,7 @@ address ALGfetch;
 command fetch(b:bat[:any_2,:any_1], x:int) :any_1 
 address ALGfetchint
 comment "Returns the tail value of the BUN at x-th position 
-        with 0 <= x < b.count";
+	with 0 <= x < b.count";
 
 @+ BAT Selections
 The operations are grouped by positional and range selections.
@@ -98,23 +98,23 @@ address ALGfetchbat;
 command fetch(b:bat[:any_1,:any_2], s:bat[:oid,:any_3]) :bat[:any_1,:any_2] 
 address ALGfetchbat
 comment "Returns a positional selection of b by the oid 
-        head values of s";
+	head values of s";
 
 @- Range selection
 The range selections are targeted at the tail of the BAT.
 @mal
 command select(b:bat[:any_1,:any_2], low:any_2, high:any_2) 
-            :bat[:any_1,:any_2] 
+		:bat[:any_1,:any_2] 
 address ALGselect
 comment "Select all BUNs that have tail values: {v| low <= v <= high}.
-        NIL boundary values have a special meaning.
-        + low  == nil means: no lower bound
-        + high == nil means: no upper bound.
-        NOTE 1: you should cast the nil to the appropriate type, 
-                e.g. int(nil) in order to cirumvent type clashes.
-        NOTE 2: as the 'nil' element has no clear place in the 
-                ordered domain of values, tuples with 'nil' values 
-                are NEVER returned by the range select.";
+	NIL boundary values have a special meaning.
+		+ low  == nil means: no lower bound
+		+ high == nil means: no upper bound.
+		NOTE 1: you should cast the nil to the appropriate type, 
+				e.g. int(nil) in order to cirumvent type clashes.
+		NOTE 2: as the 'nil' element has no clear place in the 
+				ordered domain of values, tuples with 'nil' values 
+				are NEVER returned by the range select.";
 
 command select(b:bat[:any_1,:any_2], low:any_2, 
 	high:any_2, li:bit, hi:bit) :bat[:any_1,:any_2] 
@@ -136,7 +136,7 @@ comment "Select all BUNs of a BAT with a certain
 The second group uses the head to perform the range selection.
 @mal
 command selectH(b:bat[:any_1,:any_2], low:any_1, high:any_1) 
-            :bat[:any_1,:any_2] 
+			:bat[:any_1,:any_2] 
 address ALGselectHead;
 
 command selectH(b:bat[:any_1,:any_2], low:any_1, 
@@ -168,7 +168,7 @@ address ALGgroupby
 comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
 
 command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2, 
-        li:bit, hi:bit) :bat[:any_1,:any_2] 
+		li:bit, hi:bit) :bat[:any_1,:any_2] 
 address ALGuselectInclusive
 comment "See select() but limited to head values";
 
@@ -258,20 +258,20 @@ address ALGsunique;
 command sunique (b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2] 
 address ALGsunique
 comment "Select unique tuples from the input BAT. Double elimination is 
-        done over BUNs as a whole (head and tail).  Result is a BAT 
+		done over BUNs as a whole (head and tail).  Result is a BAT 
 	with real set() semantics.";
 @- Head-unique elements
 @mal
 command kunique ( b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2] 
 address ALGkunique
 comment "Select unique tuples from the input BAT.  Double elimination is 
-        done only looking at the head column. The result is a BAT with
+		done only looking at the head column. The result is a BAT with
 		property hkeyed() == true.";
 
 command tunique (b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2] 
 address ALGtunique
 comment "Select unique tuples from the input BAT. Double elimination is 
-        done over the BUNs tail. The result is a BAT with property
+		done over the BUNs tail. The result is a BAT with property
 		tkeyd()== true";
 
 @- Bun-intersecting elements
@@ -283,8 +283,8 @@ command sintersect ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
 		:bat[:any_1,:any_2] 
 address ALGsintersect
 comment "Returns the intersection taken over *both* columns of two BATs. 
-        Results in all BUNs of 'left' that are also in 'right'. Does *not* 
-        do double-elimination over the 'left' BUNs, If you want this, use:
+		Results in all BUNs of 'left' that are also in 'right'. Does *not* 
+		do double-elimination over the 'left' BUNs, If you want this, use:
 	 'sintersect(sunique(left),sunique(right))' 
 	or: 'sunique(sintersect(left,right))'.";
 
@@ -294,8 +294,8 @@ command semijoin( left:bat[:any_1,:any_2], right:bat[:any_1,:any] )
 		:bat[:any_1,:any_2] 
 address ALGsemijoin
 comment "Returns the intersection taken over only the *head* columns of 
-        two BATs.  Results in all BUNs of 'left' that are also in 'right'. 
-        Does *not* do double-elimination over the 'left' BUNs. 
+		two BATs.  Results in all BUNs of 'left' that are also in 'right'. 
+		Does *not* do double-elimination over the 'left' BUNs. 
 		If you want this, use: 'kintersect(kunique(left),kunique(right))' 
 	or: 'kunique(kintersect(left,right))'.";
 
@@ -313,7 +313,7 @@ command kintersect( left:bat[:any_1,:any_2], right:bat[:any_1,:any] )
 address ALGsemijoin
 comment "Returns the intersection taken over only the *head* columns of two BATs. 
 	Results in all BUNs of 'left' that are also in 'right'. 
-        Does *not* do double- elimination over the 'left' BUNs.
+		Does *not* do double- elimination over the 'left' BUNs.
 		If you want this, use: 'kintersect(kunique(left),kunique(right))' 
 	or: 'kunique(kintersect(left,right))'.";
 @- Bun-differing elements
@@ -325,10 +325,10 @@ command sdifference( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2] )
 		:bat[:any_1,:any_2] 
 address ALGsdiff
 comment "Returns the difference taken over *both* columns of two BATs. 
-        Results in all BUNs of 'left' that are *not* in 'right'. 
-        Does *not* do double-elimination over the 'left' BUNs. 
-        If you want this, use:
-	     'sdifference(left.sunique,right.sunique)' 
+		Results in all BUNs of 'left' that are *not* in 'right'. 
+		Does *not* do double-elimination over the 'left' BUNs. 
+		If you want this, use:
+		 'sdifference(left.sunique,right.sunique)' 
 	or: 'sdifference(left,right).sunique'.";
 @- Head-differing elements
 @mal
@@ -336,9 +336,9 @@ command kdifference ( left:bat[:any_1,:any_2], right:bat[:any_1,:any] )
 		:bat[:any_1,:any_2] 
 address ALGkdiff
 comment "Returns the difference taken over only the *head* columns of two BATs. 
-        Results in all BUNs of 'left' that are *not* in 'right'. 
-        It does *not* do double-elimination over the 'left' BUNs. 
-        If you want this, use:
+		Results in all BUNs of 'left' that are *not* in 'right'. 
+		It does *not* do double-elimination over the 'left' BUNs. 
+		If you want this, use:
 	 'kdifference(left.kunique,right.kunique)' 
 	or: 'kdifference(left,right).kunique'.";
 
@@ -354,9 +354,9 @@ command sunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
 		:bat[:any_1,:any_2] 
 address ALGsunion
 comment "Returns the union of two BATs; looking at both columns of both BATs.
-        Results in all BUNs of 'left' that are  not in 'right', plus all 
-        BUNs of 'right'.  *no* double-elimination is done. 
-        If you want this, do:
+		Results in all BUNs of 'left' that are  not in 'right', plus all 
+		BUNs of 'right'.  *no* double-elimination is done. 
+		If you want this, do:
 	 'sunion(left.sunique,right.sunique)' 
 	or: 'sunion(left,right).sunique'.";
 @- Union on head
@@ -371,9 +371,9 @@ command kunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
 		:bat[:any_1,:any_2] 
 address ALGkunion
 comment "Returns the union of two BATs; looking at head-columns only. 
-        Results in all BUNs of 'left' that are  not in 'right', plus 
+		Results in all BUNs of 'left' that are  not in 'right', plus 
 	all BUNs of 'right'.  *no* double-elimination is done. 
-        If you want this, do:
+		If you want this, do:
 	'kunion(left.kunique,right.kunique)' 
 	or: 'sunion(left,right).kunique'.";
 @+ Join operations
@@ -395,8 +395,8 @@ command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3])
 		:bat[:any_1,:any_3] 
 address ALGjoin
 comment "Returns all BUNs, consisting of a head-value from 'left' and 
-        a tail-value from 'right' for which there are BUNs in 'left' 
-        and 'right' with equal tail- resp. head-value (i.e. the join
+		a tail-value from 'right' for which there are BUNs in 'left' 
+		and 'right' with equal tail- resp. head-value (i.e. the join
 	columns are projected out).";
 
 command join( left:bat[:void,:any_1], right:bat[:any_1,:void])
@@ -445,20 +445,20 @@ command outerjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3])
 		:bat[:any_1,:any_3] 
 address ALGouterjoin
 comment "Returns all the result of a join, plus the BUNS formed NIL in 
-        the tail and the head-values of 'outer' whose tail-value does 
-        not match an head-value in 'inner'.";
+		the tail and the head-values of 'outer' whose tail-value does 
+		not match an head-value in 'inner'.";
 command outerjoin( outer:bat[:any_1,:oid], inner:bat[:void,:any_3]) 
 		:bat[:any_1,:any_3] 
 address ALGouterjoin
 comment "Returns all the result of a join, plus the BUNS formed NIL in 
-        the tail and the head-values of 'outer' whose tail-value does 
-        not match an head-value in 'inner'.";
+		the tail and the head-values of 'outer' whose tail-value does 
+		not match an head-value in 'inner'.";
 command outerjoin( outer:bat[:any_1,:void], inner:bat[:oid,:any_3]) 
 		:bat[:any_1,:any_3] 
 address ALGouterjoin
 comment "Returns all the result of a join, plus the BUNS formed NIL in 
-        the tail and the head-values of 'outer' whose tail-value does 
-        not match an head-value in 'inner'.";
+		the tail and the head-values of 'outer' whose tail-value does 
+		not match an head-value in 'inner'.";
 
 command outerjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3],
 		estimate:lng) :bat[:any_1,:any_3] 
@@ -470,10 +470,10 @@ command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3],
 		opname:int) :bat[:any_1,:any_3] 
 address ALGthetajoin
 comment "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.  JOIN_EQ is 
-        just the same as join(). All other options do merge algorithms. 
-        Either using the fact that they are ordered() already (left on tail, 
+		just the same as join(). All other options do merge algorithms. 
+		Either using the fact that they are ordered() already (left on tail, 
 	right on head), or by using/creating binary search trees on the 
-        join columns. ";
+		join columns. ";
 
 command thetajoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3],
 		opname:int,estimate:lng) :bat[:any_1,:any_3] 
@@ -484,9 +484,9 @@ command bandjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3],
 		   minus:any_2 , plus:any_2 ) :bat[:any_1,:any_3] 
 address ALGbandjoin
 comment "This is a join() for which the predicate is that two BUNs match 
-        if the left-tail value is within the range [right-head - minus, 
-        right-head + plus]. Works only for the builtin numerical types, 
-        and their derivates.";
+		if the left-tail value is within the range [right-head - minus, 
+		right-head + plus]. Works only for the builtin numerical types, 
+		and their derivates.";
 @+ OID Introducing Commands
 For relational processing, some operators are necessary to produce newly
 initiated OID columns, for representing n-ary (intermediary) relations.
@@ -499,7 +499,7 @@ initiated OID columns, for representing n-ary (intermediary) relations.
 command markT( b:bat[:any_1,:any_2], base:oid ) :bat[:any_1,:void] 
 address ALGtmark
 comment "Produces a BAT with fresh unique dense sequense of OIDs in 
-        the tail that starts at base (i.e. [base,..base+b.count()-1] ).";
+		the tail that starts at base (i.e. [base,..base+b.count()-1] ).";
 command markT( b:bat[:void,:any_2], base:oid ) :bat[:oid,:void] 
 address ALGtmark;
 
@@ -522,14 +522,14 @@ address ALGmarkHead_default;
 command markH( b:bat[:any_1,:any_2], base:oid ) :bat[:void,:any_2] 
 address ALGmarkHead
 comment "Produces a new BAT with fresh unique dense sequense of OIDs in 
-        the head that starts at base (i.e. [base,..base+b.count()-1] ).";
+		the head that starts at base (i.e. [base,..base+b.count()-1] ).";
 command markH( b:bat[:void,:any_2], base:oid ) :bat[:void,:oid] 
 address ALGmarkHead;
 
 command number( b:bat[:any_1,:any] ) :bat[:any_1,:int]  
 address ALGnumber
 comment "Produces a new BAT with identical head column, and consecutively 
-        increasing integers (start at 0) in the tail column.";
+		increasing integers (start at 0) in the tail column.";
 
 command merge(b:bat[:oid,:oid]):bat[:lng,:oid]
 address ALGmerge
@@ -550,8 +550,8 @@ command hashsplit( b:bat[:any_1,:any_2], buckects:int )
 		:bat[:int,:bat] 
 address ALGhashsplit
 comment "Split a BAT on tail column according (hash-value MOD buckets). 
-        Returns a recursive BAT, containing the fragments in the tail, 
-        their bucket number in the head.";
+		Returns a recursive BAT, containing the fragments in the tail, 
+		their bucket number in the head.";
 
 command uhashsplit ( b:bat[:any_1,:any_2], buckets:int ) :bat[:int,:bat] 
 address ALGuhashsplit
@@ -562,12 +562,12 @@ command rangesplit ( b:bat[:any_1,:any_2], ranges:int )
 		:bat[:any_2,bat[:any_1,:any_2]] 
 address ALGrangesplit
 comment "Split a BAT on tail column in 'ranges' equally sized consecutive 
-        ranges. Returns a recursive BAT, containing the fragments in the tail, 
-        the higher-bound of the range in the head. The higher bound of the last 
+		ranges. Returns a recursive BAT, containing the fragments in the tail, 
+		the higher-bound of the range in the head. The higher bound of the last 
 	range is 'nil'.";
 
 command urangesplit( b:bat[:any_1,:any_2], ranges:int ) 
-        :bat[:any_2,bat[:any_1,:void]] 
+		:bat[:any_2,bat[:any_1,:void]] 
 address ALGurangesplit
 comment "Same as rangesplit, but only collect the head values in the fragments" ;
 
@@ -584,7 +584,7 @@ comment "Return the current size (in number of elements) in a BAT.";
 command count ( b:bat[:any_1,:any], ignore_nils:bit ) :int 
 address ALGcount_nil
 comment "Return the number of elements currently in a BAT ignores 
-        BUNs with nil-tail iff ignore_nils==TRUE.";
+		BUNs with nil-tail iff ignore_nils==TRUE.";
 
 command count_no_nil ( b:bat[:any_1,:any_2]) :int
 address ALGcount_no_nil
@@ -716,9 +716,9 @@ using the mirror BAT with the minus operator (ordered(-BAT)).
 	TRUE if a binary index tree search accelerator is present on
 	the head column of the BAT, else FALSE.
 @item[hashtab(BAT) :bit] 
-        presence of hash table on the head column of
-        a BAT. TRUE if a bucket-chained hash table search accelerator is
-        present on the head column of the BAT, else FALSE.
+		presence of hash table on the head column of
+		a BAT. TRUE if a bucket-chained hash table search accelerator is
+		present on the head column of the BAT, else FALSE.
 @item[subcol(BAT, BAT) :bit]
 	TRUE if the bag of all values in the head column of the left BAT is
 	a bag-subset of the bag of all values in the head column of the
@@ -781,30 +781,30 @@ algebra_export int doCMDfetch(ptr ret, BAT *b, size_t i);
 
 @= BATaggr
 ptr BAT@1(BAT *b, ptr aggr) {
-        int t;
-        size_t s;
-        ptr v, x;
+		int t;
+		size_t s;
+		ptr v, x;
 
-        BATcheck(b, "BAT@1");
-        s = BATcount(b);
-        t = b->ttype;
-        if (BATtvoid(b)) {
-            @:aggr@1(chr,loc,simple,chr,void)@
-        } else {
-            switch(ATOMstorage(t)) {
-            case TYPE_chr: @:aggr@1(chr,loc,simple,chr,atom)@ break;
-            case TYPE_sht: @:aggr@1(sht,loc,simple,sht,atom)@ break;
-            case TYPE_int: @:aggr@1(int,loc,simple,int,atom)@ break;
-            case TYPE_flt: @:aggr@1(flt,loc,simple,flt,atom)@ break;
-            case TYPE_dbl: @:aggr@1(dbl,loc,simple,dbl,atom)@ break;
-            case TYPE_lng: @:aggr@1(lng,loc,simple,lng,atom)@ break;
-            default:if (b->tvarsized) {
-                           @:aggr@1(chr,var,atom,t,atom)@ break;
-                     } else {
-                           @:aggr@1(chr,loc,atom,t,atom)@ break;
-            }        }
-        }
-        return x;
+		BATcheck(b, "BAT@1");
+		s = BATcount(b);
+		t = b->ttype;
+		if (BATtvoid(b)) {
+			@:aggr@1(chr,loc,simple,chr,void)@
+		} else {
+			switch(ATOMstorage(t)) {
+			case TYPE_chr: @:aggr@1(chr,loc,simple,chr,atom)@ break;
+			case TYPE_sht: @:aggr@1(sht,loc,simple,sht,atom)@ break;
+			case TYPE_int: @:aggr@1(int,loc,simple,int,atom)@ break;
+			case TYPE_flt: @:aggr@1(flt,loc,simple,flt,atom)@ break;
+			case TYPE_dbl: @:aggr@1(dbl,loc,simple,dbl,atom)@ break;
+			case TYPE_lng: @:aggr@1(lng,loc,simple,lng,atom)@ break;
+			default:if (b->tvarsized) {
+						   @:aggr@1(chr,var,atom,t,atom)@ break;
+					 } else {
+						   @:aggr@1(chr,loc,atom,t,atom)@ break;
+			}		}
+		}
+		return x;
 }
 
 @c
@@ -919,11 +919,11 @@ CMDmax_@1(@1* result, BAT *b)
 		}
 	}
 	if (aggr) {
-       memcpy(aggr, x=v, ATOMsize(t));
+	   memcpy(aggr, x=v, ATOMsize(t));
 	} else {
-       /* alloc new space and copy the atom into it */
-       s = ATOMlen(t, v);
-       memcpy(x = (ptr) GDKmalloc(s), v, s);
+	   /* alloc new space and copy the atom into it */
+	   s = ATOMlen(t, v);
+	   memcpy(x = (ptr) GDKmalloc(s), v, s);
    }
 @= voidaggr
 	if (aggr) {
@@ -1172,23 +1172,23 @@ CMDgen_group(BAT **result, BAT *b )
 
 	if (b->hvarsized) {
 		BATloopFast(b, u, v, xx) {
-		    int i, sz = *(int*)BUNtloc(b, u);
-		    for(i = 0; i < sz; i++) {
+			int i, sz = *(int*)BUNtloc(b, u);
+			for(i = 0; i < sz; i++) {
 			if (BUNfastins(r, BUNhvar(b, u), NULL) == NULL) {
 				BBPreclaim(r);
 				return GDK_FAIL;
 			}
-		    }
+			}
 		}
 	} else {
 		BATloopFast(b, u, v, xx) {
-		    int i, sz = *(int*)BUNtloc(b, u);
-		    for(i = 0; i < sz; i++) {
+			int i, sz = *(int*)BUNtloc(b, u);
+			for(i = 0; i < sz; i++) {
 			if (BUNfastins(r, BUNhloc(b, u), NULL) == NULL) {
 				BBPreclaim(r);
 				return GDK_FAIL;
 			}
-		    }
+			}
 		}
 	}
 	r -> hsorted = BAThordered(b);
@@ -1293,14 +1293,14 @@ CMDlike(BAT **ret, BAT *b, str s)
 
 	if (b->hvarsized) {
 		BATloopFast(b, u, v, xx)
-		    if (like(BUNtvar(b, u), t, yy))
+			if (like(BUNtvar(b, u), t, yy))
 			if (BUNfastins(c, BUNhvar(b, u), BUNtvar(b, u)) == NULL) {
 				BBPreclaim(c);
 				return GDK_FAIL;
 			}
 	} else {
 		BATloopFast(b, u, v, xx)
-		    if (like(BUNtvar(b, u), t, yy))
+			if (like(BUNtvar(b, u), t, yy))
 			if (BUNfastins(c, BUNhloc(b, u), BUNtvar(b, u)) == NULL) {
 				BBPreclaim(c);
 				return GDK_FAIL;
@@ -1665,9 +1665,9 @@ is large enough to prevent overflow.
 mal_export str ALGsum_@1_@2(@2* res, int *bid) ;
 str ALGsum_@1_@2(@2* res, int *bid) {
 	BAT *b;
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("algebra.sum", "Cannot access descriptor");
-    }
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		 return throwMessage("algebra.sum", "Cannot access descriptor");
+	}
 
 	CMDsum_@1_@2(res,b);
 	BBPunfix(b->batCacheid);
@@ -1678,9 +1678,9 @@ str ALGsum_@1_@2(@2* res, int *bid) {
 mal_export str ALGprod_@1_@2(@2* res, int *bid) ;
 str ALGprod_@1_@2(@2* res, int *bid) {
 	BAT *b;
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("algebra.prod", "Cannot access descriptor");
-    }
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		 return throwMessage("algebra.prod", "Cannot access descriptor");
+	}
 	CMDprod_@1_@2(res,b);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -1710,9 +1710,9 @@ str ALGprod_@1_@2(@2* res, int *bid) {
 @= avg_impl
 str ALGavg_@1(dbl *res, int *bid) {
 	BAT *b;
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("algebra.prod", "Cannot access descriptor");
-    }
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		 return throwMessage("algebra.prod", "Cannot access descriptor");
+	}
 	CMDavg_@1(res,b);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -1728,9 +1728,9 @@ str ALGavg_@1(dbl *res, int *bid) {
 mal_export str ALGmin_@1(@1* res, int *bid) ;
 str ALGmin_@1(@1* res, int *bid) {
 	BAT *b;
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("algebra.min", "Cannot access descriptor");
-    }
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		 return throwMessage("algebra.min", "Cannot access descriptor");
+	}
 	if( CMDmin_@1(res,b)) {
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
@@ -1741,9 +1741,9 @@ str ALGmin_@1(@1* res, int *bid) {
 mal_export str ALGmax_@1(@1* res, int *bid) ;
 str ALGmax_@1(@1* res, int *bid) {
 	BAT *b;
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("algebra.min", "Cannot access descriptor");
-    }
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		 return throwMessage("algebra.min", "Cannot access descriptor");
+	}
 	if( CMDmax_@1(res,b)) {
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
@@ -2189,9 +2189,9 @@ Let cut this text down with some Mx macro's
 mal_export str ALG@1(int *result, int *bid);
 str ALG@1(int *result, int *bid) {
 	BAT *b,*bn;
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("algebra.@1", "Cannot access descriptor");
-    }
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		return throwMessage("algebra.@1", "Cannot access descriptor");
+	}
 	CMD@1(&bn,b);
 	BBPunfix(b->batCacheid);
 	if( bn ) {
@@ -2206,9 +2206,9 @@ str ALG@1(int *result, int *bid) {
 mal_export str ALG@1(int *result, int *bid);
 str ALG@1(int *result, int *bid) {
 	BAT *b,*bn= NULL;
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("algebra.@1", "Cannot access descriptor");
-    }
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		return throwMessage("algebra.@1", "Cannot access descriptor");
+	}
 	CMD@1(&bn,b);
 	BBPunfix(b->batCacheid);
 	if( bn ) {
@@ -2223,13 +2223,13 @@ str ALG@1(int *result, int *bid) {
 mal_export str ALG@1(int *result, int *lid, int *rid) ;
 str ALG@1(int *result, int *lid, int *rid) {
 	BAT *left, *right,*bn= NULL;
-    if( (left= BATdescriptor(*lid)) == NULL ){
-        return throwMessage("algebra.@1", "Cannot access descriptor");
-    }
-    if( (right= BATdescriptor(*rid)) == NULL ){
+	if( (left= BATdescriptor(*lid)) == NULL ){
+		return throwMessage("algebra.@1", "Cannot access descriptor");
+	}
+	if( (right= BATdescriptor(*rid)) == NULL ){
 		BBPunfix(left->batCacheid);
-        return throwMessage("algebra.@1", "Cannot access descriptor");
-    }
+		return throwMessage("algebra.@1", "Cannot access descriptor");
+	}
 	CMD@1(&bn,left, right);
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
@@ -2245,9 +2245,9 @@ str ALG@1(int *result, int *lid, int *rid) {
 mal_export str ALG@1(int *result, int* bid, int *param) ;
 str ALG@1(int *result, int* bid, int *param) {
 	BAT *b, *bn= NULL;
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("algebra.@1", "Cannot access descriptor");
-    }
+	if( (b= BATdescriptor(*bid)) == NULL ){
+		return throwMessage("algebra.@1", "Cannot access descriptor");
+	}
 	CMD@1(&bn,b, param);
 	BBPunfix(b->batCacheid);
 	if( bn ) {
@@ -2262,13 +2262,13 @@ str ALG@1(int *result, int* bid, int *param) {
 mal_export str ALG@1estimate(int *result, int *lid, int *rid, lng *estimate);
 str ALG@1estimate(int *result, int *lid, int *rid, lng *estimate) {
 	BAT *left, *right,*bn=NULL;
-    if( (left= BATdescriptor(*lid)) == NULL ){
-        return throwMessage("algebra.@1", "Cannot access descriptor");
-    }
-    if( (right= BATdescriptor(*rid)) == NULL ){
+	if( (left= BATdescriptor(*lid)) == NULL ){
+		return throwMessage("algebra.@1", "Cannot access descriptor");
+	}
+	if( (right= BATdescriptor(*rid)) == NULL ){
 		BBPunfix(left->batCacheid);
-        return throwMessage("algebra.@1", "Cannot access descriptor");
-    }
+		return throwMessage("algebra.@1", "Cannot access descriptor");
+	}
 	if( CMD@1(&bn,left, right, estimate) == GDK_FAIL){
 		BBPunfix(left->batCacheid);
 		BBPunfix(right->batCacheid);
@@ -2751,32 +2751,32 @@ doALGfetch(ptr ret, BAT *b, lng *pos)
 	i += BUNindex(b, BUNfirst(b));
 	@:putTail(BUNptr(b,i))@
 @= putTail
-        if (b->theap) {
-            ptr _src = BUNtvar(b,@1); /*b->theap->base + *(var_t*) BUNtloc(b,@1);*/
-            int _len = ATOMlen(b->ttype, _src);
-            ptr _dst = GDKmalloc(_len);
-            memcpy(_dst, _src, _len);
-            *(ptr*) ret = _dst;
-        } else {
-            int _s = ATOMsize(ATOMtype(b->ttype));
-            if (ATOMvarsized(b->ttype)) {
-                memcpy(*(ptr*) ret=GDKmalloc(_s), BUNtloc(b, @1), _s);
-            } else if (b->ttype == TYPE_bat) {
-                bat bid = *(bat*) BUNtloc(b, @1);
-                *(bat*) ret = bid;
-                BBPincref(bid,TRUE);
-            } else if (_s == 4) {
-                *(int*) ret = *(int*) BUNtail(b, @1);
-            } else if (_s == 1) {
-                *(chr*) ret = *(chr*) BUNtail(b, @1);
-            } else if (_s == 2) {
-                *(sht*) ret = *(sht*) BUNtail(b, @1);
-            } else if (_s == 8) {
-                *(lng*) ret = *(lng*) BUNtail(b, @1);
-            } else {
-                memcpy(ret, BUNtloc(b, @1), _s);
-            }
-        }
+		if (b->theap) {
+			ptr _src = BUNtvar(b,@1); /*b->theap->base + *(var_t*) BUNtloc(b,@1);*/
+			int _len = ATOMlen(b->ttype, _src);
+			ptr _dst = GDKmalloc(_len);
+			memcpy(_dst, _src, _len);
+			*(ptr*) ret = _dst;
+		} else {
+			int _s = ATOMsize(ATOMtype(b->ttype));
+			if (ATOMvarsized(b->ttype)) {
+				memcpy(*(ptr*) ret=GDKmalloc(_s), BUNtloc(b, @1), _s);
+			} else if (b->ttype == TYPE_bat) {
+				bat bid = *(bat*) BUNtloc(b, @1);
+				*(bat*) ret = bid;
+				BBPincref(bid,TRUE);
+			} else if (_s == 4) {
+				*(int*) ret = *(int*) BUNtail(b, @1);
+			} else if (_s == 1) {
+				*(chr*) ret = *(chr*) BUNtail(b, @1);
+			} else if (_s == 2) {
+				*(sht*) ret = *(sht*) BUNtail(b, @1);
+			} else if (_s == 8) {
+				*(lng*) ret = *(lng*) BUNtail(b, @1);
+			} else {
+				memcpy(ret, BUNtloc(b, @1), _s);
+			}
+		}
 @c
 	return MAL_SUCCEED;
 }

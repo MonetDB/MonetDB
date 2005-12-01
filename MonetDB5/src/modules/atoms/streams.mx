@@ -28,75 +28,75 @@ It encapsulates the corresponding library managed in
 @mal
 atom stream:ptr;
 
-command openReadBytes( filename:str ) :stream
+command openReadBytes{unsafe}( filename:str ) :stream
 address stream_open_rstreamwrap
 comment "open a file stream for reading";
-command openWriteBytes( filename:str ) :stream
+command openWriteBytes{unsafe}( filename:str ) :stream
 address stream_open_wstreamwrap
 comment "open a file stream for writing";
 
-command openRead( filename:str ) :stream
+command openRead{unsafe}( filename:str ) :stream
 address stream_open_rastreamwrap
 comment "open ascii file stream for reading";
-command openWrite( filename:str ) :stream
+command openWrite{unsafe}( filename:str ) :stream
 address stream_open_wastreamwrap
 comment "open ascii file stream for writing";
 
-command openRead(s:stream):stream
+command openRead{unsafe}(s:stream):stream
 address stream_stream_rstreamwrap
 comment "convert an ascii stream to binary";
-command openWrite(s:stream):stream
+command openWrite{unsafe}(s:stream):stream
 address stream_stream_wstreamwrap
 comment "convert an ascii stream to binary";
 
-command socketReadBytes(skt:int,name:str):stream
+command socketReadBytes{unsafe}(skt:int,name:str):stream
 address stream_socket_rstreamwrap
 comment "open a socket stream for reading";
-command socketWriteBytes(skt:int,name:str):stream
+command socketWriteBytes{unsafe}(skt:int,name:str):stream
 address stream_socket_wstreamwrap
 comment "open a socket stream for writing";
-command socketRead(skt:int,name:str):stream
+command socketRead{unsafe}(skt:int,name:str):stream
 address stream_socket_rastreamwrap
 comment "open ascii socket stream for reading";
-command socketWrite(skt:int,name:str):stream
+command socketWrite{unsafe}(skt:int,name:str):stream
 address stream_socket_wastreamwrap
 comment "open ascii socket stream for writing";
 
-command blocked( s:stream ) :stream
+command blocked{unsafe}( s:stream ) :stream
 address open_block_streamwrap
 comment "open a block based stream";
 
-command writeStr( s:stream, data:str ):void
+command writeStr{unsafe}( s:stream, data:str ):void
 address stream_write_stringwrap
 comment "write data on the stream";
-command writeInt( s:stream, data:int ):void
+command writeInt{unsafe}( s:stream, data:int ):void
 address stream_writeIntwrap
 comment "write data on the stream";
-command readStr( s:stream):str
+command readStr{unsafe}( s:stream):str
 address stream_read_stringwrap
 comment "read string data from the stream";
-command readInt( s:stream):int
+command readInt{unsafe}( s:stream):int
 address stream_readIntwrap
 comment "read integer data from the stream";
 
-command flush( s:stream )
+command flush{unsafe}( s:stream )
 address stream_flush_streamwrap
 comment "flush the stream";
 
-command close( s:stream )
+command close{unsafe}( s:stream )
 address stream_close_streamwrap
 comment "close and destroy the stream s";
 
 atom bstream:ptr;
-command create(s:stream, bufsize:int):bstream
+command create{unsafe}(s:stream, bufsize:int):bstream
 address bstream_create_wrapwrap
 comment "create a buffered stream";
 
-command destroy(s:bstream)
+command destroy{unsafe}(s:bstream)
 address bstream_destroy_wrapwrap
 comment "destroy bstream";
 
-command read(s:bstream,size:int):int
+command read{unsafe}(s:bstream,size:int):int
 address bstream_read_wrapwrap
 comment "read at least size bytes into the buffer of s";
 
@@ -311,10 +311,9 @@ The remainder is the version 5 wrapper
 @= open_streamwrap
 mal_export str stream_open_@1wrap( Stream *S, str *filename );
 str stream_open_@1wrap( Stream *S, str *filename ){
-    
-    if( stream_open_@1(S, *filename)== GDK_SUCCEED)
-            return MAL_SUCCEED;
-    return throwMessage("stream","Could not open file\n");
+	if( stream_open_@1(S, *filename)== GDK_SUCCEED)
+		return MAL_SUCCEED;
+	return throwMessage("stream","Could not open file\n");
 }
 @}
 @c
@@ -329,8 +328,8 @@ str stream_open_@1wrap( Stream *S, str *filename ){
 @= stream_streamwrap
 mal_export str stream_stream_@1wrap(Stream *sout, Stream *sin);
 str stream_stream_@1wrap(Stream *sout, Stream *sin){
-    *(stream**)sout = stream_@1(*(stream**)sin);
-    return MAL_SUCCEED;
+	*(stream**)sout = stream_@1(*(stream**)sin);
+	return MAL_SUCCEED;
 }
 @c
 @:stream_streamwrap(rstream)@
@@ -339,9 +338,9 @@ str stream_stream_@1wrap(Stream *sout, Stream *sin){
 @= open_socketwrap
 mal_export str stream_socket_@1wrap( Stream *S, int *socket, str *name );
 str stream_socket_@1wrap( Stream *S, int *socket, str *name ){
-    if( stream_socket_@1(S,socket,*name) == GDK_SUCCEED)
-        return MAL_SUCCEED;
-    return throwMessage("stream","Could not open socket\n");
+	if( stream_socket_@1(S,socket,*name) == GDK_SUCCEED)
+		return MAL_SUCCEED;
+	return throwMessage("stream","Could not open socket\n");
 }
 @c
 @:open_socketwrap(rstream)@

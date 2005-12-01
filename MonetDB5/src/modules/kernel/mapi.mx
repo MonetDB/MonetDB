@@ -75,7 +75,7 @@ comment "Start the Mapi listener on <port> for <maxusers> using SSL.
 command stop(id:int):bit
 address MAPIstop
 comment "Terminate a specific client identified
-         by index in the client table.";
+		 by index in the client table.";
 command stop(name:str):bit
 address MAPIstopClient
 comment "Terminate all sessions of by a client";
@@ -83,9 +83,9 @@ comment "Terminate all sessions of by a client";
 command suspend(sessionkey:lng,timeout:lng):void
 address MAPIsuspend
 comment "Suspend a client interactiont using a
-         user-supplied session key.  The session
-         is broken when the timer (in seconds)
-         for the reconnect expires.";
+		 user-supplied session key.  The session
+		 is broken when the timer (in seconds)
+		 for the reconnect expires.";
 
 command resume(sessionkey:lng):void
 address MAPIresume
@@ -319,7 +319,7 @@ MAPIlistenThread(int *Sock)
 			/* in M4 it is possible to execute a command directly */
 		}
 	} while (1);
-      error:
+	  error:
 	return throwMessage("mapi.listen", msg);
 }
 
@@ -747,14 +747,14 @@ Get the new information for the server socket and start listening.
 				bs->eof = 1;
 			scheduleClient(name, bs, fdout);
 		}
-	      end_loop:;
+end_loop:;
 	} while (1);
 	SSL_CTX_free(ctx);
 	close(sock);
 	if (cmd)
 		GDKfree(cmd);
 	return GDK_SUCCEED;
-      fail:;
+	  fail:;
 	if (sock >= 0)
 		close(sock);
 	if (ctx)

@@ -330,39 +330,39 @@ be assured at least once for each platform.
 
 void tstAligned()
 {
-    int allAligned=0;
-    ValRecord v;
-    ptr val, base;
-    base = (ptr) & v.val.ival; 
-    val= (ptr) & v.val.bval; if(val != base){ allAligned = -1; }
-    val= (ptr) & v.val.cval[0]; if(val != base){ allAligned = -1; }
-    val= (ptr) & v.val.shval; if(val != base){ allAligned = -1; }
-    val= (ptr) & v.val.br.id; if(val != base){ allAligned = -1; }
-    val= (ptr) & v.val.ival; if(val != base){ allAligned = -1; }
-    val= (ptr) & v.val.oval; if(val != base){ allAligned = -1; }
-    val= (ptr) & v.val.pval; if(val != base){ allAligned = -1; }
-    val= (ptr) & v.val.fval; if(val != base){ allAligned = -1; }
-    val= (ptr) & v.val.dval; if(val != base){ allAligned = -1; }
-    val= (ptr) & v.val.lval; if(val != base){ allAligned = -1; }
-    val= (ptr) & v.val.sval; if(val != base){ allAligned = -1; }
+	int allAligned=0;
+	ValRecord v;
+	ptr val, base;
+	base = (ptr) & v.val.ival; 
+	val= (ptr) & v.val.bval; if(val != base){ allAligned = -1; }
+	val= (ptr) & v.val.cval[0]; if(val != base){ allAligned = -1; }
+	val= (ptr) & v.val.shval; if(val != base){ allAligned = -1; }
+	val= (ptr) & v.val.br.id; if(val != base){ allAligned = -1; }
+	val= (ptr) & v.val.ival; if(val != base){ allAligned = -1; }
+	val= (ptr) & v.val.oval; if(val != base){ allAligned = -1; }
+	val= (ptr) & v.val.pval; if(val != base){ allAligned = -1; }
+	val= (ptr) & v.val.fval; if(val != base){ allAligned = -1; }
+	val= (ptr) & v.val.dval; if(val != base){ allAligned = -1; }
+	val= (ptr) & v.val.lval; if(val != base){ allAligned = -1; }
+	val= (ptr) & v.val.sval; if(val != base){ allAligned = -1; }
 #ifdef STRUCT_ALIGNED
-    if(allAligned<0)
-        GDKfatal("Recompile with STRUCT_ALIGNED flag disabled\n");
+	if(allAligned<0)
+	    GDKfatal("Recompile with STRUCT_ALIGNED flag disabled\n");
 #else
-    if(allAligned==0)
-        GDKfatal("Recompile with STRUCT_ALIGNED flag enabled\n");
+	if(allAligned==0)
+	    GDKfatal("Recompile with STRUCT_ALIGNED flag enabled\n");
 #endif
 }
 int mal_init(){
-    mal_contextLock= MT_create_lock();
-    tstAligned();
-    initNamespace();
-    initParser();
+	mal_contextLock= MT_create_lock();
+	tstAligned();
+	initNamespace();
+	initParser();
 	if( malBootstrap() == 0) {
 		showErrors();
 		return -1;
 	}
-    return 0;
+	return 0;
 }
 @-
 Upon exit we should attempt to remove all allocated memory explicitly.
@@ -372,19 +372,19 @@ Unfortunately the GDK layer is does not clean-up upon exit.
 @c
 void mal_exit(Client cntxt){
 #ifdef MALprofiler
-    stream *f;
-    profileReport( cntxt->nspace,1, f= open_wastream("/tmp/Monet.prof"));
-    close_stream(f);
+	stream *f;
+	profileReport( cntxt->nspace,1, f= open_wastream("/tmp/Monet.prof"));
+	close_stream(f);
 #endif
-    freeModuleList(cntxt->nspace);
-    freeBoxes();
-    mal_scope = 0;
-    /* we cannot unloadModules as threads may still use the functions in them.
+	freeModuleList(cntxt->nspace);
+	freeBoxes();
+	mal_scope = 0;
+	/* we cannot unloadModules as threads may still use the functions in them.
 	unloadModuleLibraries(); */
-    TMcommit();
-    /* freeMalBlk(cntxt->curprg->def);*/
-    /* finishNamespace();*/
-    /* GDKexit(0); */
-    MT_global_exit(0);
+	TMcommit();
+	/* freeMalBlk(cntxt->curprg->def);*/
+	/* finishNamespace();*/
+	/* GDKexit(0); */
+	MT_global_exit(0);
 }
 @}

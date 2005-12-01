@@ -413,10 +413,10 @@ initLibraries()
 {
 	noDlopen = TRUE;
 /*
-    for(i=0;preloaded[i];i++) {
-        stream_printf(GDKout,"loading %s\n",preloaded[i]);
-        loadModuleLibrary(preloaded[i]);
-    }
+	for(i=0;preloaded[i];i++) {
+	    stream_printf(GDKout,"loading %s\n",preloaded[i]);
+	    loadModuleLibrary(preloaded[i]);
+	}
 */
 }
 

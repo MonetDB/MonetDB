@@ -20,15 +20,15 @@
 @t PCRE - Perl-compatible regular expressions
 @v 0.1
 @T
-       The  PCRE library is a set of functions that implement regular expres-
-       sion pattern matching using the same syntax  and  semantics  as  Perl,
-       with  just  a  few  differences.  The  current  implementation of PCRE
-       (release 4.x) corresponds approximately with Perl 5.8, including  sup-
-       port  for  UTF-8  encoded  strings.   However,  this support has to be
-       explicitly enabled; it is not the default.
+The  PCRE library is a set of functions that implement regular expres-
+sion pattern matching using the same syntax  and  semantics  as  Perl,
+with  just  a  few  differences.  The  current  implementation of PCRE
+(release 4.x) corresponds approximately with Perl 5.8, including  sup-
+port  for  UTF-8  encoded  strings.   However,  this support has to be
+explicitly enabled; it is not the default.
 
 \begin{center}
-       ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
+ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
 \end{center}
 @include prelude.mx
 
@@ -68,17 +68,17 @@ comment "POSIX pattern matching against a string";
 command replace(origin:str,pat:str,repl:str,flags:str):str
 address PCREreplace_wrap
 comment "Replace _all_ matches of \"pattern\" in \"origin_str\" with
-       \"replacement\".\n\
-     Parameter \"flags\" accept these flags: 'i', 'm', 's', and 'x'.\n
-       'e': if present, an empty string is considered to be a valid match
-       'i': if present, the match operates in case-insensitive mode. Otherwise, in\n
-            case-sensitive mode.\n\
-     'm': if present, the match operates in multi-line mode.\n
-       's': if present, the match operates in \"dot-all\"
-       The specifications of the flags can be found in \"man pcreapi\"\n
-       The flag letters may be repeated.\n
-       No other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".\n
-       Returns the replaced string, or if no matches found, the original string.";
+	   \"replacement\".\n\
+	 Parameter \"flags\" accept these flags: 'i', 'm', 's', and 'x'.\n
+	   'e': if present, an empty string is considered to be a valid match
+	   'i': if present, the match operates in case-insensitive mode. Otherwise, in\n
+			case-sensitive mode.\n\
+	 'm': if present, the match operates in multi-line mode.\n
+	   's': if present, the match operates in \"dot-all\"
+	   The specifications of the flags can be found in \"man pcreapi\"\n
+	   The flag letters may be repeated.\n
+	   No other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".\n
+	   Returns the replaced string, or if no matches found, the original string.";
 
 command replace(orig:bat[:any_1,:str],pat:str,repl:str,flag:str):bat[:any_1,:str]
 address PCREreplace_bat_wrap;

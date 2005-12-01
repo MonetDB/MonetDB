@@ -68,10 +68,10 @@ After dealing with it locally, it raises a new exception @code{ FATALerror}
 for the enclosing call.
 
 @example
-    io.write("Welcome");
-    ...
+	io.write("Welcome");
+	...
 catch IOerror;
-    print("input error on reading password");
+	print("input error on reading password");
 raise FATALerror:= "Can't handle it";
 exit IOerror;
 @end example
@@ -160,38 +160,38 @@ mal_export str  stackException(str prev, str fcn, char *format, ...);
 #include "mal_exception.h"
 
 str appendException(MalBlkPtr mb, int pc, str name, str msg,str oldmsg){
-        char buf[4196];
-    int i;
-    str s,fcn;
+	char buf[4196];
+	int i;
+	str s,fcn;
 
-    s = mb? getModName(mb): "";
-    fcn= mb? getFcnName(mb):"";
-    buf[0]=0;
+	s = mb? getModName(mb): "";
+	fcn= mb? getFcnName(mb):"";
+	buf[0]=0;
 	i= 0;
-    if(oldmsg) snprintf(buf+i,4196,"%s",oldmsg);
-    i= strlen(buf);
-    if(name) snprintf(buf+i,4196-i,"%s:", name);
-    i= strlen(buf);
-    if(s) snprintf(buf+i,4196-i,"%s.",s);
-    i= strlen(buf);
-    snprintf(buf+i,4196-i,"%s",fcn);
-    i= strlen(buf);
-    snprintf(buf+i,4196-i,"[%d]",pc);
-    i= strlen(buf);
-    if(msg) snprintf(buf+i,4196-i,":%s",msg);
-    i= strlen(buf);
-    if( buf[i-1]!='\n'){ buf[i]='\n'; buf[i+1]=0;}
+	if(oldmsg) snprintf(buf+i,4196,"%s",oldmsg);
+	i= strlen(buf);
+	if(name) snprintf(buf+i,4196-i,"%s:", name);
+	i= strlen(buf);
+	if(s) snprintf(buf+i,4196-i,"%s.",s);
+	i= strlen(buf);
+	snprintf(buf+i,4196-i,"%s",fcn);
+	i= strlen(buf);
+	snprintf(buf+i,4196-i,"[%d]",pc);
+	i= strlen(buf);
+	if(msg) snprintf(buf+i,4196-i,":%s",msg);
+	i= strlen(buf);
+	if( buf[i-1]!='\n'){ buf[i]='\n'; buf[i+1]=0;}
 	return GDKstrdup(buf);
 }
 str locateException(MalBlkPtr mb, int pc, str oldmsg){
-    str s, msg=0,name=0;
+	str s, msg=0,name=0;
 
-    if( (s= strchr(oldmsg,':'))){
-        *s =0;
-        name= oldmsg;
-        msg= s+1;
-    } else msg=oldmsg;
-    return appendException(mb,pc,name,msg,0);
+	if( (s= strchr(oldmsg,':'))){
+		*s =0;
+		name= oldmsg;
+		msg= s+1;
+	} else msg=oldmsg;
+	return appendException(mb,pc,name,msg,0);
 }
 @-
 The linked libraries should use the throwException to signal
@@ -234,12 +234,12 @@ str stackException(str prev, str fcn, char* format, ...) {
 }
 
 str raiseException(MalBlkPtr mb, int pc, str name, str msg){
-    return appendException(mb,pc,name,msg,"");
+	return appendException(mb,pc,name,msg,"");
 }
 void showException(MalBlkPtr mb, int pc, str name, str msg){
-    str n;
-    n= raiseException(mb,pc,name,msg);
-    GDKerror(n);
-    GDKfree(n);
+	str n;
+	n= raiseException(mb,pc,name,msg);
+	GDKerror(n);
+	GDKfree(n);
 }
 @}

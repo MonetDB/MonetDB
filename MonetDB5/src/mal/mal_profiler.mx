@@ -270,24 +270,15 @@ static struct {
 	str name;		/* which logical counter is needed */
 	int status;		/* trace it or not */
 } profileCounter[] = {
-	/*  0 */  {
-	"time", 0},
-	    /*  1 */  {
-	"ticks", 0},
-	    /*  2 */  {
-	"cpu", 0},
-	    /*  3 */  {
-	"memory", 0},
-	    /*  4 */  {
-	"io", 0},
-	    /*  5 */  {
-	"pc", 0},
-	    /*  6 */  {
-	"event", 0},
-	    /*  7 */  {
-	"statement", 0},
-	    /*  8 */  {
-	0, 0}
+	/*  0 */  { "time", 0},
+	/*  1 */  { "ticks", 0},
+	/*  2 */  { "cpu", 0},
+	/*  3 */  { "memory", 0},
+	/*  4 */  { "io", 0},
+	/*  5 */  { "pc", 0},
+	/*  6 */  { "event", 0},
+	/*  7 */  { "statement", 0},
+	/*  8 */  { 0, 0}
 };
 
 @-
@@ -295,14 +286,14 @@ The counters can be set individually. The XML output uses the order of their
 definition.
 
 @= setCounter
-    int i;
-    for(i=0; profileCounter[i].name;i++)
-    if( strcmp(profileCounter[i].name,name)==0){
-        profileCounter[i].status = @1 ;
-        return 0;
-    }
-    return throwException(MALEXCEPTION, "@2",
-        "profile counter '%s' undefined",name);
+	int i;
+	for(i=0; profileCounter[i].name;i++)
+	if( strcmp(profileCounter[i].name,name)==0){
+	    profileCounter[i].status = @1 ;
+	    return 0;
+	}
+	return throwException(MALEXCEPTION, "@2",
+	    "profile counter '%s' undefined",name);
 @c
 str
 activateCounter(str name)
@@ -318,16 +309,16 @@ deactivateCounter(str name)
 
 @-
 The parameter of getEventStream is the return value of the enclosing function:
-    profilerEvent:  none/void
-    setStartPoint:  a str
-    setEndPoint:    a str
+	profilerEvent:  none/void
+	setStartPoint:  a str
+	setEndPoint:    a str
 @= getEventStream
-    if( profileLock==0) profileLock= MT_create_lock();
-    mal_set_lock(profileLock,"profileLock");
-    if( eventstream == NULL) {
-        mal_unset_lock(profileLock,"profileLock");
-        return @1;
-    }
+	if( profileLock==0) profileLock= MT_create_lock();
+	mal_set_lock(profileLock,"profileLock");
+	if( eventstream == NULL) {
+	    mal_unset_lock(profileLock,"profileLock");
+	    return @1;
+	}
 @- Event dispatching
 The profiler strategy is encapsulated here
 Online- and offline-profiling are disjoint options, because they
@@ -1323,39 +1314,39 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	}
 /* The remainder requires their own BATs
 #ifdef HAVE_TIMES
-    if( profileCounter[PROFcpu].status ){
-        log("%d,\t", newTms.tms_utime - mb->profiler[pc].timer.tms_utime);
-        log("%d,\t", newTms.tms_cutime - mb->profiler[pc].timer.tms_cutime);
-        log("%d,\t", newTms.tms_stime - mb->profiler[pc].timer.tms_stime);
-        log("%d,\t", newTms.tms_cstime - mb->profiler[pc].timer.tms_cstime);
-    }
+	if( profileCounter[PROFcpu].status ){
+	    log("%d,\t", newTms.tms_utime - mb->profiler[pc].timer.tms_utime);
+	    log("%d,\t", newTms.tms_cutime - mb->profiler[pc].timer.tms_cutime);
+	    log("%d,\t", newTms.tms_stime - mb->profiler[pc].timer.tms_stime);
+	    log("%d,\t", newTms.tms_cstime - mb->profiler[pc].timer.tms_cstime);
+	}
 #endif
 
-    if( profileCounter[PROFmemory].status ){
+	if( profileCounter[PROFmemory].status ){
 #ifdef HAVE_SYS_RESOURCE_H
-        log("%d,\t",infoUsage.ru_maxrss);
+	    log("%d,\t",infoUsage.ru_maxrss);
 #endif
-        log("%d,\t", infoMalloc.arena-prevMalloc.arena);
-        log("%d,\t", infoMalloc.ordblks-prevMalloc.ordblks);
-        log("%d,\t", infoMalloc.smblks-prevMalloc.smblks);
-        log("%d,\t", infoMalloc.hblkhd-prevMalloc.hblkhd);
-        log("%d,\t", infoMalloc.hblks-prevMalloc.hblks);
-        log("%d,\t", infoMalloc.fsmblks-prevMalloc.fsmblks);
-        log("%d,\t", infoMalloc.uordblks-prevMalloc.uordblks);
-        prevMalloc = infoMalloc;
-    }
-    if( profileCounter[PROFio].status ){
+	    log("%d,\t", infoMalloc.arena-prevMalloc.arena);
+	    log("%d,\t", infoMalloc.ordblks-prevMalloc.ordblks);
+	    log("%d,\t", infoMalloc.smblks-prevMalloc.smblks);
+	    log("%d,\t", infoMalloc.hblkhd-prevMalloc.hblkhd);
+	    log("%d,\t", infoMalloc.hblks-prevMalloc.hblks);
+	    log("%d,\t", infoMalloc.fsmblks-prevMalloc.fsmblks);
+	    log("%d,\t", infoMalloc.uordblks-prevMalloc.uordblks);
+	    prevMalloc = infoMalloc;
+	}
+	if( profileCounter[PROFio].status ){
 #ifdef HAVE_SYS_RESOURCE_H
-        log("%d,\t", infoUsage.ru_minflt- prevUsage.ru_minflt);
-        log("%d,\t", infoUsage.ru_majflt- prevUsage.ru_majflt);
-        log("%d,\t", infoUsage.ru_nswap- prevUsage.ru_nswap);
-        log("%d,\t", infoUsage.ru_inblock- prevUsage.ru_inblock);
-        log("%d,\t", infoUsage.ru_oublock- prevUsage.ru_oublock);
-        log("%d,\t", infoUsage.ru_nvcsw- prevUsage.ru_nvcsw);
-        log("%d,\t", infoUsage.ru_nivcsw- prevUsage.ru_nivcsw);
-        prevUsage = infoUsage;
+	    log("%d,\t", infoUsage.ru_minflt- prevUsage.ru_minflt);
+	    log("%d,\t", infoUsage.ru_majflt- prevUsage.ru_majflt);
+	    log("%d,\t", infoUsage.ru_nswap- prevUsage.ru_nswap);
+	    log("%d,\t", infoUsage.ru_inblock- prevUsage.ru_inblock);
+	    log("%d,\t", infoUsage.ru_oublock- prevUsage.ru_oublock);
+	    log("%d,\t", infoUsage.ru_nvcsw- prevUsage.ru_nvcsw);
+	    log("%d,\t", infoUsage.ru_nivcsw- prevUsage.ru_nivcsw);
+	    prevUsage = infoUsage;
 #endif
-    }
+	}
 */
 	eventcounter++;
 	mal_unset_lock(profileLock, "profileLock");
