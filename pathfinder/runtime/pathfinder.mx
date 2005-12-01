@@ -1871,7 +1871,7 @@ xquery_client_free(xquery_client *ctx,
     CNTXTclear(ctx->repeat_stk);
     CNTXTfree1(ctx->repeat_stk);
     CNTXTdelete(ctx->repeat_stk);
-    if (closeclient)
+    if (closeclient && ctx->stk)
         closeClient(monet_clients + ctx->stk, 0);
     ctx->inuse = 0;
 }
@@ -1941,13 +1941,13 @@ xquery_client_flushall()
     int i, wait = 100;
     while(wait) {
         MT_set_lock(pf_cache_lock, "xquery_client_flushall");
-        for(i=1; i<=MAXCLIENTS; i++) {
+        for(i=0; i<=MAXCLIENTS; i++) {
             if (xquery_clients[i].inuse) break;
         }
         if (i > MAXCLIENTS) {
             /* ok, no xquery clients are active */
             xquery_module *mod = xquery_compiled_modules;
-            for(i=1; i<=MAXCLIENTS; i++) {
+            for(i=0; i<=MAXCLIENTS; i++) {
                 if (xquery_clients[i].buflen)
                     xquery_client_free(xquery_clients+i, 1);
             }
@@ -2290,9 +2290,8 @@ xquery_prepare(xquery_client *ctx,
         char *sec1 = NULL;
         char *sec2 = NULL;
         char *sec3 = NULL;
-        err = NULL;
         /* compile and execute the query (minus module imports) */
-        if (!xquery_compile_exec(ctx, mode, query, 0, &sec1, &sec2, &sec3)) 
+        if (xquery_compile_exec(ctx, mode, query, 0, &sec1, &sec2, &sec3)) 
                 err = NULL; /* in case of execution err, it stays -1 */
         if (sec1) free(sec1);
         if (sec2) free(sec2);
@@ -2353,7 +2352,7 @@ CMDxquery_server(Cntxt stk,
 {
     stream **In, **Out;
     stream *in = NULL, *out = NULL;
-    size_t curlen = 0;
+    size_t curlen;
     Thread XQthread = THRget(THRgettid());
     xquery_client *ctx = xquery_clients + stk;
     char *xquery,  buf[100], *p=buf, *err = (char*) -1;
@@ -2390,67 +2389,74 @@ CMDxquery_server(Cntxt stk,
         out = block_stream(stream_wstream(out));
     }
     monetSetChannel(XQthread, in, out);
-    /* use the MAPI protocol to read as much xquery buffer as possible */
-    if (stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0)
-        return(xquery_server_end(ctx, XQthread, "could not write prompt"));
-    if (stream_flush(out))
-        return(xquery_server_end(ctx, XQthread, "could not flush prompt"));
-
     err = xquery_client_init(ctx);
     if (err) return (xquery_server_end(ctx, XQthread, err));
-    for (p = ctx->buf; p; ) {
-        ssize_t n = stream_read(in, p + curlen, 1, ctx->buflen - curlen);
-        if (n < 0)
-            return(xquery_server_end(ctx, XQthread, NULL));
-        if (n == 0)
-            break;
 
-        curlen += n;
-        if (curlen == ctx->buflen) {
-            p = GDKrealloc(ctx->buf, ctx->buflen + 1025);
-            if (p) {
-                ctx->buflen += 1024;
-                ctx->buf = p;
-            }
-        }
-    }
-    msec = GDKms();
+    while(1) {
+        /* use the MAPI protocol to read as much xquery buffer as possible */
+        if (stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0)
+            return(xquery_server_end(ctx, XQthread, "could not write prompt"));
+        if (stream_flush(out))
+            return(xquery_server_end(ctx, XQthread, "could not flush prompt"));
 
-    /* execute query */
-    if (p) {
-        p[curlen] = 0;        /* terminate (we know there is space) */
-
-        /* first line of the query is the mode */ 
-        for (xquery = p; *xquery; xquery++) {
-            if (*xquery == '\n') {
-                *xquery++ = 0;
+        for (p = ctx->buf, curlen = 0; p; ) {
+            ssize_t n = stream_read(in, p + curlen, 1, ctx->buflen - curlen);
+            if (n < 0)
+                return(xquery_server_end(ctx, XQthread, NULL));
+            if (n == 0)
                 break;
+
+            curlen += n;
+            if (curlen == ctx->buflen) {
+                p = GDKrealloc(ctx->buf, ctx->buflen + 1025);
+                if (p) {
+                    ctx->buflen += 1024;
+                    ctx->buf = p;
+                }
             }
         }
-        err = xquery_prepare(ctx, msec, p, xquery);
-        if (err && err != (char*) -1) {
-            /* report errors back to client */
-            stream_write(ctx->fderr, err, strlen(err), 1);
+        if (curlen == 0)
+                break;
+        msec = GDKms();
+    
+        /* execute query */
+        if (p) {
+            p[curlen] = 0;        /* terminate (we know there is space) */
+    
+            /* first line of the query is the mode */ 
+            for (xquery = p; *xquery; xquery++) {
+                if (*xquery == '\n') {
+                    *xquery++ = 0;
+                    break;
+                }
+            }
+            err = xquery_prepare(ctx, msec, p, xquery);
+            if (err && err != (char*) -1) {
+                /* report errors back to client */
+                stream_write(ctx->fderr, err, strlen(err), 1);
+            }
         }
-    }
-    if (strstr(p, "debug")) {
-        /* memory debugging */
-        xquery_prepared_function *fun = ctx->prepared_functions;
-        BAT *b = NULL;
-        view_client_size(&b, &stk);
-        if (b) {
-           while(fun) {
-               BUNins(b, fun->def->proc, &fun->def->size);
-               fun = fun->next;
+        if (strstr(p, "debug")) {
+            /* memory debugging */
+            xquery_prepared_function *fun = ctx->prepared_functions;
+            BAT *b = NULL;
+            view_client_size(&b, &stk);
+            if (b) {
+               while(fun) {
+                   BUNins(b, fun->def->proc, &fun->def->size);
+                   fun = fun->next;
+                } 
+                BATprintf(GDKstdout, b);
+                BBPreclaim(b);
             } 
-            BATprintf(GDKstdout, b);
-            BBPreclaim(b);
-        } 
+        }
+        xquery_client_end(ctx, 0);
     }
 
-    /* end of session */
+    /* end of session 
     stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1);
     stream_flush(out);
+     */
     return(xquery_server_end(ctx, XQthread, NULL));
 }
 
