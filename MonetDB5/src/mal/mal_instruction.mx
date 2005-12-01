@@ -1512,6 +1512,27 @@ convertConstant(malType type, ValPtr vr)
 			vr->val.cval[1] = 0;
 			vr->val.cval[2] = 0;
 			vr->val.cval[3] = 0;
+		} else
+		if( vr->vtype == TYPE_int){
+			vr->val.cval[0] = vr->val.ival != 0;
+			vr->val.cval[1] = 0;
+			vr->val.cval[2] = 0;
+			vr->val.cval[3] = 0;
+			vr->vtype= TYPE_bit;
+		} else
+		if( vr->vtype == TYPE_lng){
+			vr->val.cval[0] = vr->val.lval != 0;
+			vr->val.cval[1] = 0;
+			vr->val.cval[2] = 0;
+			vr->val.cval[3] = 0;
+			vr->vtype= TYPE_bit;
+		} else
+		if( vr->vtype == TYPE_sht){
+			vr->val.cval[0] = vr->val.shval != 0;
+			vr->val.cval[1] = 0;
+			vr->val.cval[2] = 0;
+			vr->val.cval[3] = 0;
+			vr->vtype= TYPE_bit;
 		}
 		return vr->vtype != TYPE_bit;
 	case TYPE_chr:
