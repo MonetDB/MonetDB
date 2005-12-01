@@ -460,6 +460,11 @@ PROC get_types (bat[void,int] kind) : bat[void,int]
         return kind.[and](63); # 63 = 2^6 - 1
 }
 
+PROC correct_sizes (oid iter, bat[void,oid] item, bat[void,int] size) : bat[void,int]
+{
+	return correct_sizes (constant2bat(iter), item, size);
+}
+
 
 @- order-preserving xquery join with existential semantics
 
@@ -1897,21 +1902,6 @@ proc replace(bat[bat,bat] replacements, bat[void,bat] ws, int prop, oid frag, ba
 var PAGESHIFT := 16;
 var PAGESIZE := (1 << PAGESHIFT);
 
-proc mposjoin(bat[oid,oid] pre, oid frag, bat[oid, bat] ws_item) : bat[void,any]
-{
-  return fake_leftfetchjoin(pre, ws_item.fetch(frag));
-}
-
-proc mposjoin(oid pre, bat[oid,oid] frag, bat[oid, bat] ws_item) : bat[void,any]
-{
-  return mposjoin(fake_project(pre), frag, ws_item);
-}
-
-proc mposjoin(oid pre, oid frag, bat[oid, bat] ws_item) : any
-{
-  return ws_item.fetch(frag).find(pre);
-}
-
 # implicit args:
 # bat[void,lng] int_values
 # bat[void,str] str_values
@@ -2451,7 +2441,7 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
           insertattrbat.seqbase(attr_id);
           # [void,oid] list of QN table indices for "our" attributes
           var insertattrqnbat := insertattrbat.leftfetchjoin(ws.fetch(ATTR_QN).fetch(insertfrag));
-          var insertattrfragbat := insertattrbat.fake_leftfetchjoin(ws.fetch(ATTR_FRAG).fetch(insertfrag));
+          var insertattrfragbat := insertattrbat.leftfetchjoin(ws.fetch(ATTR_FRAG).fetch(insertfrag));
           # in one fell swoop, add the qualified names of the attributes to the document
           var newinsertattrpropbat := [find_qn](const ws, docfrag,
                                                 mposjoin(insertattrqnbat, insertattrfragbat, ws.fetch(QN_LOC)),
