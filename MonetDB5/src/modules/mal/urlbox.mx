@@ -96,8 +96,8 @@ urlbox.prelude();
 @-
 @+ Implementation
 @h
-#ifndef _ITERATOR_H
-#define _ITERATOR_H
+#ifndef _URL_BOX_H
+#define _URL_BOX_H
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
@@ -117,7 +117,7 @@ mal_export str URLBOXdiscardAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str URLBOXtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str URLBOXnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str URLBOXhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-#endif /* _ITERATOR_H */
+#endif /* _URL_BOX_H */
 
 @- Module initializaton
 The content of this box my only be changed by the Administrator.

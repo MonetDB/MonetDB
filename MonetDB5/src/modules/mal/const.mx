@@ -98,9 +98,8 @@ const.prelude();
 @-
 @+ Implementation
 @h
-/* Fabian: const.mx uses _ITERATOR_H ?!? */
-#ifndef _ITERATOR_H
-#define _ITERATOR_H
+#ifndef _CONST_H
+#define _CONST_H
 #include "clients.h"
 #include "mal.h"
 #include "mal_client.h"
@@ -118,7 +117,7 @@ mal_export str CSTdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CSTtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CSTnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CSThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-#endif /* _ITERATOR_H */
+#endif /* _CONST_H */
 @- Module initializaton
 The content of this box my only be changed by the Administrator.
 @= authorize
