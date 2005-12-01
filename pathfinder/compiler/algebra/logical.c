@@ -97,6 +97,7 @@ la_op_leaf (PFla_op_kind_t kind)
     ret->plans   = NULL;
     ret->prop    = NULL;
     ret->node_id = 0;
+    ret->opt     = false;
 
     return ret;
 }
@@ -1268,6 +1269,45 @@ PFla_rownum (const PFla_op_t *n,
 
 
 /**
+ * The `number' operator, a Pathfinder-specific extension to the
+ * relational algebra.
+ */
+PFla_op_t *
+PFla_number (const PFla_op_t *n,
+             PFalg_att_t a, PFalg_att_t p)
+{
+    PFla_op_t    *ret = la_op_wire1 (la_number, n);
+    unsigned int  i;
+
+    /* copy parameters into semantic content of return node */
+    ret->sem.number.attname = a;
+    ret->sem.number.part    = p;
+
+    /* result schema is input schema plus the new attribute */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+    
+    for (i = 0; i < n->schema.count; i++) {
+
+        /* there must not be an argument attribute named like the new one */
+        if (n->schema.items[i].name == a)
+            PFoops (OOPS_FATAL,
+                    "number operator would result in duplicate attribute `%s'",
+                    PFatt_str (a));
+
+        /* copy this attribute specification */
+        ret->schema.items[i] = n->schema.items[i];
+    }
+    /* append new attribute, named as given in a, with type nat */
+    ret->schema.items[ret->schema.count - 1]
+        = (struct PFalg_schm_item_t) { .name = a, .type = aat_nat };
+
+    return ret;
+}
+
+
+/**
  * Constructor for type test on column values. The result is
  * stored in newly created column @a res.
  */
@@ -1332,7 +1372,7 @@ PFla_op_t * PFla_type_assert (const PFla_op_t *n, PFalg_att_t att,
                               PFalg_simple_type_t ty, bool pos)
 {
     PFla_op_t    *ret;
-    PFalg_simple_type_t assert_ty = aat_NULL;
+    PFalg_simple_type_t assert_ty = att_NULL;
     unsigned int  i;
 
     assert (n);

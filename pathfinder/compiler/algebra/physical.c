@@ -1703,6 +1703,41 @@ PFpa_hash_rownum (const PFpa_op_t *n,
     return ret;
 }
 
+PFpa_op_t *
+PFpa_number (const PFpa_op_t *n,
+             PFalg_att_t new_att, PFalg_att_t part)
+{
+    PFpa_op_t        *ret = wire1 (pa_number, n);
+    PFord_ordering_t  ord = PFordering ();
+
+    ret->sem.number.attname = new_att;
+    ret->sem.number.part    = part;
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    ret->schema.items[ret->schema.count - 1]
+        = (PFalg_schm_item_t) { .name = new_att, .type = aat_nat };
+
+    /* ---- Number: orderings ---- */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+
+    /* of course, the new attribute is also a valid ordering */
+    PFord_set_add (ret->orderings, PFord_refine (ord, new_att));
+
+    /* ---- Number: costs ---- */
+    ret->cost = 1 + n->cost;
+
+    return ret;
+}
+
 /**
  * Constructor for type test on column values. The result is
  * stored in newly created column @a res.

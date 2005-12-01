@@ -80,6 +80,7 @@ static char *a_id[]  = {
     , [pa_hash_count]      = "HashCount"
     , [pa_merge_rownum]    = "MROW#"
     , [pa_hash_rownum]     = "HROW#"
+    , [pa_number]          = "NUMBER"
     , [pa_type]            = "TYPE"
     , [pa_type_assert]     = "type assertion"
     , [pa_cast]            = "Cast"
@@ -185,6 +186,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         , [pa_hash_count]      = "\"#C0C0C0\""
         , [pa_hash_rownum]     = "\"#C0C0C0\""
         , [pa_merge_rownum]    = "\"#C0C0C0\""
+        , [pa_number]          = "\"#C0C0C0\""
         , [pa_type]            = "\"#C0C0C0\""
         , [pa_type_assert]     = "\"#C0C0C0\""
         , [pa_cast]            = "\"#C0C0C0\""
@@ -355,7 +357,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
             break;
 
         case pa_hash_count:
-            if (n->sem.count.part != aat_NULL)
+            if (n->sem.count.part != att_NULL)
                 PFarray_printf (dot, "%s\\n%s:_/%s", a_id[n->kind],
                                 PFatt_str (n->sem.count.res),
                                 PFatt_str (n->sem.count.part));
@@ -366,13 +368,23 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
 
         case pa_hash_rownum:
         case pa_merge_rownum:
-            if (n->sem.count.part != aat_NULL)
+            if (n->sem.count.part != att_NULL)
                 PFarray_printf (dot, "%s\\n%s:_/%s", a_id[n->kind],
                                 PFatt_str (n->sem.rownum.attname),
                                 PFatt_str (n->sem.rownum.part));
             else
                 PFarray_printf (dot, "%s\\n%s", a_id[n->kind],
                                 PFatt_str (n->sem.rownum.attname));
+            break;
+
+        case pa_number:
+            PFarray_printf (dot, "%s (%s", a_id[n->kind],
+                            PFatt_str (n->sem.number.attname));
+            if (n->sem.number.part != att_NULL)
+                PFarray_printf (dot, "/%s", 
+                                PFatt_str (n->sem.number.part));
+
+            PFarray_printf (dot, ")");
             break;
 
         case pa_type:

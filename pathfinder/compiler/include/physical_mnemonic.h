@@ -66,6 +66,8 @@
 #define merge_rownum(a,b,c) PFpa_merge_rownum ((a), (b), (c))
 /** HashRowNumber */
 #define hash_rownum(a,b,c) PFpa_hash_rownum ((a), (b), (c))
+/** Number */
+#define number(a,b,c)     PFpa_number ((a), (b), (c))
 
 #define type(a,b,c,d)     PFpa_type ((a), (b), (c), (d))
 #define type_assert(a,b,c)  PFpa_type_assert ((a), (b), (c))

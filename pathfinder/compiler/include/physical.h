@@ -83,6 +83,7 @@ enum PFpa_op_kind_t {
     , pa_hash_count     =  48 /**< Hash-based count operator */
     , pa_merge_rownum   =  50 /**< MergeRowNumber */
     , pa_hash_rownum    =  51 /**< HashRowNumber */
+    , pa_number         =  52 /**< Number */
     , pa_type           =  60 /**< selection of rows where a column is of a
                                    certain type */
     , pa_type_assert    =  61 /**< restriction of the type of a given column */
@@ -209,6 +210,13 @@ union PFpa_op_sem_t {
         PFalg_att_t     part;     /**< optional partitioning attribute,
                                        otherwise NULL */
     } rownum;
+
+    /* semantic content for number operator */
+    struct {
+        PFalg_att_t     attname;  /**< name of generated (integer) attribute */
+        PFalg_att_t     part;     /**< optional partitioning attribute,
+                                       otherwise NULL */
+    } number;
 
     /* semantic content for type test operator */
     struct {
@@ -547,6 +555,9 @@ PFpa_op_t *PFpa_merge_rownum (const PFpa_op_t *n,
 PFpa_op_t *PFpa_hash_rownum (const PFpa_op_t *n,
                              PFalg_att_t new_att,
                              PFalg_att_t part);
+
+PFpa_op_t *PFpa_number (const PFpa_op_t *n, PFalg_att_t new_att,
+                        PFalg_att_t part);
 
 /**
  * Type operator

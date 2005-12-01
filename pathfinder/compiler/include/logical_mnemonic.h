@@ -84,6 +84,9 @@
 /** rownum operator */
 #define rownum(a,b,c,d)   PFla_rownum ((a),(b),(c),(d))
 
+/** number operator */
+#define number(a,b,c)     PFla_number ((a),(b),(c))
+
 /** type test operator */
 #define type(a,b,c,d)     PFla_type ((a),(b),(c),(d))
 

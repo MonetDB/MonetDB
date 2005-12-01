@@ -262,6 +262,14 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return true;
             break;
 
+        case la_number:
+            if (a->sem.number.attname != b->sem.number.attname ||
+                a->sem.number.part != b->sem.number.part)
+                return false;
+
+            return true;
+            break;
+
         case la_type:
             return (a->sem.type.att == b->sem.type.att
                     && a->sem.type.res == b->sem.type.res

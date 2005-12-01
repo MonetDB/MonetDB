@@ -54,7 +54,7 @@
                  | expression '.CTmap ()'                   <m_ctmap>
                  | expression '.CTextend ()'                <m_ctextend>
                  | expression '.get_fragment ()'            <m_get_fragment>
-                 | expression '.is_fake_project ()'         <m_is_fake_pr..>
+                 | expression '.materialize (' exp ')'      <m_materialize>
                  | expression '.chk_order ()'               <m_chk_order>
                  | expression '.access (' restriction ')'   <m_access>
                  | expression '.key (' bool ')'             <m_key>
@@ -353,7 +353,7 @@ static char *ID[] = {
 
     , [m_get_fragment]    = "get_fragment"
     , [m_set_kind]        = "set_kind"
-    , [m_is_fake_project] = "is_fake_project"
+    , [m_materialize]     = "materialize"
     , [m_chk_order]       = "chk_order"
 
     , [m_sc_desc]  = "sc_desc"
@@ -578,6 +578,8 @@ print_expression (PFmil_t * n)
             milprintf (")");
             break;
 
+        /* expression : expression '.materialize (' expression ')' */
+        case m_materialize:
         /* expression : expression '.seqbase (' expression ')' */
         case m_seqbase:
         /* expression : expression '.select (' expression ')' */
@@ -644,8 +646,6 @@ print_expression (PFmil_t * n)
         case m_ctextend:
         /* expression '.get_fragment ()' */
         case m_get_fragment:
-        /* expression '.is_fake_project ()' */
-        case m_is_fake_project:
         /* expression '.chk_order ()' */
         case m_chk_order:
             print_expression (n->child[0]);

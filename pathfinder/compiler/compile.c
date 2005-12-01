@@ -146,10 +146,11 @@ urlcache_t *urlcache = NULL;
 /**
  * read input file into the url cache
  */
-char *PFurlcache (char *url)
+char *PFurlcache (char *url, int keep)
 {
     int        num_read = -1;
     urlcache_t *cache = urlcache;
+    xmlParserInputBufferPtr  buf;
 
     /*
      * first try the cache
@@ -160,31 +161,35 @@ char *PFurlcache (char *url)
         cache = cache->next;
     }
 
-    cache = (urlcache_t*) malloc(sizeof(urlcache_t)+strlen(url));
-    if (cache == NULL) return NULL;
-    strcpy(cache->url, url);
 
     /*
      * open file via parser from the libxml2 library
      * (capable of loading URIs also via HTTP or FTP)
      */
-    cache->buf = xmlParserInputBufferCreateFilename (url, XML_CHAR_ENCODING_NONE);
-    if (cache->buf) {
+    buf = xmlParserInputBufferCreateFilename (url, XML_CHAR_ENCODING_NONE);
+    if (buf) {
         /*
          * Load in chunks of 2048 chars.  libxml2 does not really
          * stick to these 2048 chars, but we don't care anyway...
          */
-        while ((num_read = xmlParserInputBufferGrow (cache->buf, 2048)))
+        while ((num_read = xmlParserInputBufferGrow (buf, 2048)))
             /* empty */;
     }
     if (num_read < 0) {
-	if (cache->buf) free(cache->buf);
+	if (buf) free(buf);
         return NULL;
     }
-    /* cache the new url */
-    cache->next = urlcache;
-    urlcache = cache;
-    return (char*) cache->buf->buffer->content;
+    if (keep) {
+        /* cache the new url */
+        cache = (urlcache_t*) malloc(sizeof(urlcache_t)+strlen(url));
+        if (cache) {
+            strcpy(cache->url, url);
+            cache->buf = buf;
+            cache->next = urlcache;
+            urlcache = cache;
+        }
+    }
+    return (char*) buf->buffer->content;
 }
 
 /**
@@ -241,7 +246,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     /* compiler chain below 
      */
   
-    xquery = PFurlcache (url);
+    xquery = PFurlcache (url, 1);
 
     if (!xquery)
         PFoops (OOPS_FATAL, "unable to load URL `%s'", url);

@@ -463,7 +463,7 @@
 
 #define get_fragment(a) PFmil_get_fragment (a)
 #define set_kind(a,b)   PFmil_set_kind ((a), (b))
-#define is_fake_project(a) PFmil_is_fake_project (a)
+#define materialize(a,b) PFmil_materialize ((a),(b))
 #define chk_order(a)    PFmil_chk_order (a)
 
 /** variable declaration */

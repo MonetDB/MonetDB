@@ -23,8 +23,8 @@
 #include "mem.h"
 
 struct PFprop_t {
-    PFarray_t   *constants;   /**< List of attributes marked constant,
-                                   along with their corresponding values. */
+    PFarray_t *constants;   /**< List of attributes marked constant,
+                                 along with their corresponding values. */
 };
 
 struct const_t {
@@ -159,6 +159,7 @@ infer_const (PFla_op_t *n)
         case la_bool_or:
         case la_bool_not:
         case la_rownum:
+        case la_number:
         case la_type:
         case la_type_assert:
 
@@ -300,6 +301,7 @@ infer_const (PFla_op_t *n)
         case la_sum:
         case la_count:
         case la_rownum:
+        case la_number:
         case la_type:
         case la_type_assert:
         case la_seqty1:
@@ -345,6 +347,5 @@ PFprop_infer (PFla_op_t *n)
     /* infer information on constant columns first */
     infer_const (n);
 }
-
 
 /* vim:set shiftwidth=4 expandtab: */

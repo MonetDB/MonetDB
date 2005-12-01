@@ -12,12 +12,9 @@ stdout of test 'ID.1267018.swallowed_error_messages-2` in directory 'tests/BugsV
 module(pathfinder);
 
 xquery("xml","doc(\"abcde.xml\")").printf();
-! Please approve the "desired" one of the following 2 error messages !
-!ERROR: I/O warning : failed to load external entity "abcdef.xml"
-!ERROR: shredder.mx:fileSize: cannot stat `abcdef.xml': No such file or directory
+!ERROR: I/O warning : failed to load external entity "abcde.xml"
+!ERROR: shred:mainSHREDDER: xmlCreateURLParserCtxt("abcde.xml") failed
 !ERROR: CMDshred2bats: operation failed.
-!ERROR: CMDxquery: operation failed.
-!ERROR: interpret_params: printf(param 1): evaluation error.
 
 quit();
 

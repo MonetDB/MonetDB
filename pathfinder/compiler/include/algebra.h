@@ -130,7 +130,7 @@ typedef struct PFalg_tuple_t PFalg_tuple_t;
 
 /** An attribute (name) is represented by an enum */
 enum PFalg_att_t {
-      aat_NULL = 0    /**< cope with empty partions */
+      att_NULL = 0    /**< cope with empty partions */
     , att_iter        /**< iter column */
     , att_item        /**< item column */ 
     , att_pos         /**< pos column */  
@@ -148,6 +148,7 @@ enum PFalg_att_t {
     , att_notsub      /**< notsub column */
     , att_isint       /**< isint column */
     , att_isdec       /**< isdec column */
+    , att_sort        /**< sort column */
 };
 /** attribute names */
 typedef enum PFalg_att_t PFalg_att_t;

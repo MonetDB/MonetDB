@@ -127,7 +127,8 @@
 , /* fn:unordered (item *) as item */                                    \
   { .ns = PFns_fn, .loc = "unordered",                                   \
     .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
-    .ret_ty = PFty_opt (PFty_item ()) }                                  \
+    .ret_ty = PFty_opt (PFty_item ()),                                   \
+    .alg = PFbui_fn_unordered }                                          \
                                                                          \
 , /* fn:root () as node */                                               \
   { .ns = PFns_fn, .loc = "root",                                        \
