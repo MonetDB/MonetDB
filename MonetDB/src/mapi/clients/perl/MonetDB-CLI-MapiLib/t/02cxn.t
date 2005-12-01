@@ -49,7 +49,7 @@ is( $querytype, 3,"querytype: $querytype");
 
 for my $k ('id','rows_affected') {
   my $v = eval { $req->$k };
-  ok( $v,"$k: $v");
+  ok( defined $v,"$k: $v");
 }
 for my $k ('name','type','length') {
   for my $i ( 0, 1 ) {

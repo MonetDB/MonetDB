@@ -65,6 +65,7 @@ malalgebra: loading... done.
   decimal: loading... done.
   ddbench: loading... done.
  counters: loading... done.
+ constant: loaded.
     color: loading... done.
   builtin: loaded.
      blob: loading... done.
@@ -102,6 +103,7 @@ table(mmn().reverse().sort().reverse().col_name(sprintf("%i modules",mmn().count
 [ "blob"	  ]
 [ "builtin"	  ]
 [ "color"	  ]
+[ "constant"	  ]
 [ "counters"	  ]
 [ "ddbench"	  ]
 [ "decimal"	  ]

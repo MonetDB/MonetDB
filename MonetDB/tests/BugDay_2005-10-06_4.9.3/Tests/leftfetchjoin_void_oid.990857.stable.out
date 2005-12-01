@@ -13,7 +13,7 @@ stdout of test 'leftfetchjoin_void_oid.990857` in directory 'tests/BugDay_2005-1
 module(malalgebra);
 var a := bat(void,oid);
 a := a.reverse().mark(0@0).reverse();
-var b := a.reverse().mark(0@0).reverse().[int];
+var b := a.reverse().mark(0@0).reverse().[int]();
 a.leftfetchjoin(b).htype().print();
 [ 0 ]
 quit();

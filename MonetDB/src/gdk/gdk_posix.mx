@@ -37,6 +37,10 @@ the WIN32 native platform.
 # include <malloc.h>		/* mallopt, mallinfo, and  malloc, free etc. */
 #endif
 
+#ifdef HAVE_FTIME
+#include <sys/timeb.h>
+#endif
+
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
@@ -129,6 +133,7 @@ gdk_export int MT_alloc_table(void);
 
 /* make sure POSIX_MADV_* and posix_madvise() are defined somehow */
 #ifdef HAVE_SYS_MMAN_H
+#  define __USE_BSD
 # include <sys/mman.h>
 #endif
 #ifndef HAVE_POSIX_MADVISE

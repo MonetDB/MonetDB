@@ -456,7 +456,6 @@ xquery_output=dm
 xquery_cacheMB=100
 \end{verbatim}
 
-
 @+ Usage Scenario 
 @T
 In this scenario, we use the 'gold' example of data mining/@[<acronym title="On-Line Analytical Processing">OLAP</acronym>@ access to a car

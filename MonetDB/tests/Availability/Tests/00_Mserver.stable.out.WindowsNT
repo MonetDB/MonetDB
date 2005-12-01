@@ -28,6 +28,7 @@ stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 [ "blob",	  "plain"	  ]
 [ "builtin",	  "static"	  ]
 [ "color",	  "contrib"	  ]
+[ "constant",	  "static"	  ]
 [ "counters",	  "plain"	  ]
 [ "ddbench",	  "contrib"	  ]
 [ "decimal",	  "plain"	  ]
@@ -70,13 +71,13 @@ ls();
 #---------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "MODULES",	  "str",  "str",  52,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "MODULES",	  "str",  "str",  53,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 
 dir();
 #-----------------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #-----------------------------------------------------------------------------------------------------------------#
-[ "MODULES",		  "str",  "str",  52,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "MODULES",		  "str",  "str",  53,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "adm_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_fcntbl",		  "str",  "oid",  686,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_environment",	  "str",  "str",  33,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
@@ -92,10 +93,10 @@ dir();
 [ "monet_fcn_sig",	  "oid",  "str",  39,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_fcn_tpe",	  "oid",  "int",  686,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_atm",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_cnt",	  "oid",  "int",  15,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_dep",	  "oid",  "str",  7,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_mod_cnt",	  "oid",  "int",  17,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_mod_dep",	  "oid",  "str",  8,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_drop",	  "oid",  "int",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
-[ "monet_mod_hdl",	  "oid",  "ptr",  7,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
+[ "monet_mod_hdl",	  "oid",  "ptr",  8,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_load",	  "oid",  "str",  0,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_nme",	  "oid",  "str",  15,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_mod_proc",	  "str",  "oid",  94,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
@@ -111,6 +112,7 @@ table(mmn().reverse().sort().reverse().col_name("static modules"));
 [ "arith"	  ]
 [ "bat"		  ]
 [ "builtin"	  ]
+[ "constant"	  ]
 [ "main"	  ]
 [ "str"		  ]
 [ "sys"		  ]

@@ -20,6 +20,13 @@ cd MinGW
 make
 make install
 
+Once the PCRE library is installed, you can configure MonetDB to use
+this library.  Follow the instructions in HowToStart-MinGW.txt, but
+replace the configure option --without-pcre with
+	--with-pcre="$HOME/MinGW"
+(the argument should be the same as the argument to the --prefix
+option above).
+
 Here is the patch for Makefile.in.  Apply it using the "patch"
 command.
 
