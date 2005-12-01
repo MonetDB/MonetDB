@@ -200,9 +200,10 @@ static sql_exp * exp_atom_ref(int i, sql_subtype *tpe)
 
 static sql_exp *
 exp_atom_int(int i) {
-	sql_subtype *it = sql_bind_subtype("int", 9, 0);
+	sql_subtype it; 
 
-	return exp_atom(atom_int(it, i ));
+	sql_find_subtype(&it, "int", 9, 0);
+	return exp_atom(atom_int(&it, i ));
 }
 
 static sql_exp * exp_relation( sql_rel *r) 

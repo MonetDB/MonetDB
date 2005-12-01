@@ -178,6 +178,7 @@ SQLinitAdmin(Client c)
 		schema = mvc_login(m, "monetdb", "monetdb");
 		if (!schema) 
 			return throwMessage("SQLparser", "No schema defined\n");
+		_DELETE(schema);
 		c->state[PARSER] = (void *) backend_create(0 /*debug */ , m, c);
 		((backend*)c->state[PARSER])->language = 'S';	/*expect SQL text first */
 		c->state[OPTIMIZE] = m;

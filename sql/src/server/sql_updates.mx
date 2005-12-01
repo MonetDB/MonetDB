@@ -167,12 +167,9 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts)
 			/* s should be empty */
 			s = stmt_aggr(s, NULL, cnt);
 		} else {
-			sql_subaggr *exist;
-			sql_subtype *tp = tail_type(s);
-
-			sql_subaggr_destroy(cnt);
-			exist = sql_bind_aggr(sql->trans->module, "exist", tp);
-			s = stmt_aggr2(stmt_reverse(s), h, exist);
+			s = stmt_uselect(s, h, cmp_equal);
+			/* s should be empty */
+			s = stmt_aggr(s, NULL, cnt);
 		}
 		res = stmt_exception(NULL, s, _strdup(buf), 00001);
 	}
@@ -266,7 +263,6 @@ join_idx_insert(mvc *sql, sql_idx * i, stmt **inserts)
 	if (s->key && s->nrcols == 0) {
 		sql_subtype *bt = sql_bind_localtype("bit");
 		sql_subfunc *or = sql_bind_func_result(sql->trans->module, "or", bt, bt, bt);
-		int nulls = 0;
 		stmt *cond = NULL;
 
 		s = stmt_relselect_init();
@@ -286,15 +282,13 @@ join_idx_insert(mvc *sql, sql_idx * i, stmt **inserts)
 				} else {
 					cond = stmt_binop(cond, ins, sql_dup_func(or));
 				}
-
-				nulls = 1;
 			}
 		}
 		sql_subfunc_destroy(or);
 
 		/* add missing nulls (and NULLs only (SIMPLE MATCH)) */
 		s = stmt_mark(stmt_reverse(s), 0);
-		if (nulls) {
+		if (cond) {
 			stmt *t = stmt_temp(bt);
 			stmt *isnull = stmt_temp(tail_type(s));
 			stmt *notnull = s;
@@ -711,13 +705,15 @@ sql_insert(mvc *sql, sql_table *t, stmt **inserts, int len, int output)
 	int i;
 	list *l = create_stmt_list();
 	node *n;
-	sql_subaggr *cnt = sql_bind_aggr(sql->trans->module, "count", NULL);
+	sql_subaggr *cnt;
 	stmt *s = NULL;
 
 	if (!sql_insert_idxs(sql, t, inserts, l)) {
+		list_destroy(l);
 		return sql_error(sql, 02, "INSERT INTO: failed to update indexes for table '%s'", t->base.name);
 	}
 
+ 	cnt = sql_bind_aggr(sql->trans->module, "count", NULL);
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 
@@ -1170,17 +1166,17 @@ stmt *
 sql_delete(mvc *sql, tvar *tv, sql_table *t, stmt *s, int output)
 {
 	list *l = create_stmt_list();
-	sql_subtype *to;
+	sql_subtype to;
 	stmt *v;
 	stmt *subset;
 
 	(void)t;
-	to = sql_bind_subtype("oid", 0, 0);
+	sql_find_subtype(&to, "oid", 0, 0);
 	if (s->type == st_ptable)
 		subset = first_subset(s);
 	else /* simple select */
 		subset = s;
-	v = stmt_const(stmt_reverse(subset), stmt_atom(atom_general(to, NULL, 0)));
+	v = stmt_const(stmt_reverse(subset), stmt_atom(atom_general(&to, NULL, 0)));
 	list_append(l, stmt_append(stmt_tbat(basetable_table(tv->s), INS), stmt_reverse(v)));
 
 	if (output) {

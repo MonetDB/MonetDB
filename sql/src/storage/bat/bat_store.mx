@@ -136,9 +136,9 @@ bind_bat(sql_trans *tr, sql_column *c, int access)
 
 		assert(access==RDONLY);
 	}
+	b->batDirty |= 2;
 	if (access) {
 		BATsetaccess(b, BAT_WRITE);
-		b->batDirty |= 2;
 		c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->stime;
 	}
 	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
@@ -149,17 +149,26 @@ bind_bat(sql_trans *tr, sql_column *c, int access)
 BAT *
 bind_ubat(sql_trans *tr, sql_column *c, int access)
 {
+	BAT *b;
 	(void)tr;
 	(void)access;
-	return temp_descriptor(c->bat.ubid);
+	b = temp_descriptor(c->bat.ubid);
+	b->batDirty |= 2;
+	assert(b);
+	return b;
 }
 
 BAT *
 bind_dbat(sql_trans *tr, sql_table *t, int access)
 {
+	BAT *b;
 	(void)tr;
 	(void)access;
-	return temp_descriptor(t->dbid);
+
+	b = temp_descriptor(t->dbid);
+	b->batDirty |= 2;
+	assert(b);
+	return b;
 }
 
 BAT *
@@ -177,9 +186,9 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 
 		assert(access==RDONLY);
 	}
+	b->batDirty |= 2;
 	if (access) {
 		BATsetaccess(b, BAT_WRITE);
-		b->batDirty |= 2;
 		i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->stime;
 	}
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
@@ -190,9 +199,14 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 BAT *
 bind_uidx(sql_trans *tr, sql_idx * i, int access)
 {
+	BAT *b;
 	(void)tr;
 	(void)access;
-	return temp_descriptor(i->bat.ubid);
+
+	b = temp_descriptor(i->bat.ubid);
+	b->batDirty |= 2;
+	assert(b);
+	return b;
 }
 
 static size_t

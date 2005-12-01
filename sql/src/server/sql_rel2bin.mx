@@ -946,7 +946,9 @@ rel2bin(mvc *c, stmt *s)
 		} else {
 			l = list_dup(l, (fdup)&stmt_dup);
 			if (!mvc_debug_on(c, 4096)) {
+				list *old = l;
 				l = shrink_select_ranges(c, l);
+				list_destroy(old);
 			}
 			n = list_find(l, (void*)1, (fcmp) &find_unique);
 			if (!n) {
@@ -1161,6 +1163,7 @@ rel2bin(mvc *c, stmt *s)
 	case st_select2:
 	case st_uselect:
 	case st_uselect2: {
+		stmt *res = NULL;
 
 		/* push down the select through st_diff */
 		if (s->op1.stval->type == st_diff){
@@ -1168,7 +1171,9 @@ rel2bin(mvc *c, stmt *s)
 	
 			s = push_select( s, stmt_dup(d->op1.stval)); 
 			s = stmt_diff(s, stmt_dup(d->op2.stval));
-			return rel2bin(c, s);
+			res = rel2bin(c, s);
+			stmt_destroy(s);
+			return res;
 		}
 		/* push down the select through st_union */
 		if (s->op1.stval->type == st_union) {
@@ -1178,7 +1183,9 @@ rel2bin(mvc *c, stmt *s)
 			l = push_select( s, stmt_dup(u->op1.stval)); 
 			r = push_select( s, stmt_dup(u->op2.stval)); 
 			s = stmt_union(l, r);
-			return rel2bin(c, s);
+			res = rel2bin(c, s);
+			stmt_destroy(s);
+			return res;
 		}
 
 		if (s->op1.stval) {

@@ -1017,10 +1017,13 @@ mvc_clear_table(mvc *m, sql_table *t)
 sql_column *
 mvc_create_column_(mvc *m, sql_table *t, char *name, char *type, int digits)
 {
-	sql_subtype *tpe = sql_bind_subtype(type, digits, 0);
+	sql_subtype tpe;
+
+	if (!sql_find_subtype(&tpe, type, digits, 0))
+		return NULL;
 
 	m->type = Q_SCHEMA;
-	return sql_trans_create_column(m->trans, t, name, tpe);
+	return sql_trans_create_column(m->trans, t, name, &tpe);
 }
 
 sql_column *
