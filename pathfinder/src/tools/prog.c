@@ -148,6 +148,8 @@ main(int argc, char **av)
 		}
 	}
 
+	setlen = mo_system_config(&set, setlen);
+
 	mid = embedded_xquery(set, setlen);
 
 	/* now for each file given on the command line (or stdin) 
