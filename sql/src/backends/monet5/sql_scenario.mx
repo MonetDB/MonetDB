@@ -66,6 +66,8 @@ we update its context descriptor to denote an SQL scenario.
 #include "mal_debugger.h"
 #include "bat.h"
 #include <mtime.h>
+/* include mal optimizer */
+#include "optimizer.h"
 
 static void pushCatchDefault(MalBlkPtr mb, str nme, int autocommit);
 
@@ -276,7 +278,6 @@ freeVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 	mb->vtop = start;
 }
 
-
 /* #define _SQL_COMPILE */
 str
 SQLcompileInternal(str *ret, str *expr, int flag)
@@ -371,7 +372,6 @@ We don;t search the cache for a previous incarnation.
 
 		chkTypes(c->nspace, c->curprg->def); /* resolve types */
 
-		extern str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 		/* we know more in this case then
 			chkProgram(c->nspace, c->curprg->def); */
 		if (!c->curprg->def->errors && m->mode != m_prepare &&
@@ -912,8 +912,6 @@ query block.
 	if (err == 0) {
 		pushCatchDefault(c->curprg->def, "sqlerror", m->auto_commit);
 		pushEndInstruction(c->curprg->def);
-
-extern str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 		chkTypes(c->nspace, c->curprg->def); /* resolve types */
 		/* we know more in this case then
