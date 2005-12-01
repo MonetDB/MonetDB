@@ -32,22 +32,22 @@ leading to a ripple effect through the code.
 A non-optimizable instruction leads to
 a construction of a new table with the single instance.
 
-@verbatim
-    b:= bat.new(:int,:int);
-    bat.insert(b,1,2);
-    c{singleton}:= algebra.select(b,0,4);
-    d:= algebra.markH(c);
-    io.print(d);
-    optimizer.singleton();
+	@verbatim
+	b:= bat.new(:int,:int);
+	bat.insert(b,1,2);
+	c{singleton}:= algebra.select(b,0,4);
+	d:= algebra.markH(c);
+	io.print(d);
+	optimizer.singleton();
 @end verbatim
 is translated by into the code block
 @verbatim
-    b := bat.new(:int,:int);
-    bat.insert(b,1,2);
-    c{singleton} := algebra.select(b,0,4);
-    ($15,$16):= bat.unpack(c{singleton});
-    d := bat.pack(nil,$16);
-    io.print(d);
+	b := bat.new(:int,:int);
+	bat.insert(b,1,2);
+	c{singleton} := algebra.select(b,0,4);
+	($15,$16):= bat.unpack(c{singleton});
+	d := bat.pack(nil,$16);
+	io.print(d);
 @end verbatim
 @{
 @h
@@ -300,7 +300,7 @@ variables on the stack.
 				p->token = ASSIGNsymbol;
 				pushLng(mb,p,1);
 			} else {
-			      STrepack:
+			STrepack:
 				/* pack everything you need */
 				for (j = 0; j < p->argc; j++)
 					if ((k = STalias(getArg(p, j), top, tuples)) >= 0 && tuples[k].packed == 0)

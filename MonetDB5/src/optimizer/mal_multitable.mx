@@ -162,7 +162,7 @@ MToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	int oldtop,i,j,k,m,mtop=0, mvar[256],tpe;
 	int size,match,actions=0;
 	lng clk = GDKusec();
-#ifdef DEBUG_MAL_MERGETABLE     
+#ifdef DEBUG_MAL_MERGETABLE
 	stream_printf(GDKout,"Start MAT optimizer\n");
 	printFunction(GDKout, mb, 0);
 #endif
@@ -242,7 +242,7 @@ Remove their definitions afterwards.
 		if( match>1 ){
 			for( k= p->retc; k<p->argc && match>1; k++, match--)
 			if(	(m=isMATalias(getArg(p,k),mvar,mtop)) >= 0){
-#ifdef DEBUG_MAL_MERGETABLE     
+#ifdef DEBUG_MAL_MERGETABLE
 				stream_printf(GDKout,"Dependency resolution k=%d\n",k);
 				printInstruction(GDKout,mb,p,0);
 #endif
@@ -437,7 +437,7 @@ afterwards for further consideration.
 MATdefault:
 		for( k= p->retc; k<p->argc; k++)
 		if(	(m=isMATalias(getArg(p,k),mvar,mtop)) >= 0){
-#ifdef DEBUG_MAL_MERGETABLE     
+#ifdef DEBUG_MAL_MERGETABLE
 			stream_printf(GDKout,"Dependency resolution k=%d\n",k);
 			printInstruction(GDKout,mb,p,0);
 #endif
@@ -469,7 +469,7 @@ For the time being, they are no-ops.
 @c
 	(void) stk; 
 	optimizerCheck(mb, "optimizer.multitable", actions, GDKusec() - clk);
-#ifdef DEBUG_MAL_MERGETABLE     
+#ifdef DEBUG_MAL_MERGETABLE
 	stream_printf(GDKout,"Result of multi table optimizer\n");
 	printFunction(GDKout, mb, 0);
 #endif

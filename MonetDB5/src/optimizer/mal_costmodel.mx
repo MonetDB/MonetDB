@@ -70,6 +70,7 @@ estimators.
 #include "mal_client.h"
 #include "mal_namespace.h"
 #include "mal_optimizer.h"
+#include "mal_prelude.h"
 
 #define getProps(Y) mb->var[Y]->props
 
@@ -131,34 +132,34 @@ RMcalculator(MalBlkPtr mb)
 
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		if (moduleId(p) && idcmp(moduleName(p), "algebra") == 0) {
-			if (functionId(p) && idcmp(functionName(p), "mark") == 0) {
+		if (moduleId(p)==algebraRef) {
+			if (functionId(p) && idcmp(functionName(p), "markRef") == 0) {
 				@:newCost(1, *c1)@
-			} else if (functionId(p) && idcmp(functionName(p), "kdifference") == 0) {
+			} else if (functionId(p)== kdifferenceRef) {
 				@:newCost2(1, 2, *c1 - *c2 < 0 ? 0 : *c1 - *c2)@
-			} else if (functionId(p) && idcmp(functionName(p), "join") == 0) {
+			} else if (functionId(p)==joinRef ) {
 				@:newCost2(1, 2, *c1 < *c2 ? *c1 : *c2)@
-			} else if (functionId(p) && idcmp(functionName(p), "select") == 0) {
+			} else if (functionId(p)== selectRef) {
 				@:newCost(1, *c1 > 100 ? *c1 / 2 : *c1)@
-			} else if (functionId(p) && idcmp(functionName(p), "uselect") == 0) {
+			} else if (functionId(p)==uselectRef) {
 				@:newCost(1, *c1 > 100 ? *c1 / 2 : *c1)@
-			} else if (functionId(p) && idcmp(functionName(p), "cross") == 0) {
+			} else if (functionId(p)== crossRef) {
 				@:newCost2(1, 2, (log((double) *c1) + log((double) *c2) > log(INT_MAX) ? INT_MAX : *c1 * *c2))@
 			} else if (functionId(p) && idcmp(functionName(p), "tunique") == 0) {
 				@:newCost(1, *c1 < 50 ? *c1 : *c1 / 10)@
-			} else if (functionId(p) && (idcmp(functionName(p), "sort") == 0 || idcmp(functionName(p), "sort_reverse") == 0)
-			    ) {
+			} else if (functionId(p)==sortRef || 
+						idcmp(functionName(p), "sort_reverse") == 0) {
 				@:newCost(1, *c1)@
 			}
 
-		} else if (moduleId(p) && idcmp(moduleName(p), "bat") == 0) {
-			if (functionId(p) && idcmp(functionName(p), "reverse") == 0) {
+		} else if (moduleId(p)==batRef) {
+			if (functionId(p) == reverseRef) {
 				@:newCost(1, *c1)@
-			} else if (functionId(p) && idcmp(functionName(p), "mirror") == 0) {
+			} else if (functionId(p)==mirrorRef) {
 				@:newCost(1, *c1)@
 			}
-		} else if (moduleId(p) && idcmp(moduleName(p), "group") == 0) {
-			if (functionId(p) && idcmp(functionName(p), "group") == 0) {
+		} else if (moduleId(p)==groupRef) {
+			if (functionId(p) ==newRef) {
 				@:newCost(1, *c1 / 10)@
 			} else {
 				@:newCost(1, *c1)@
@@ -171,8 +172,11 @@ RMcalculator(MalBlkPtr mb)
 					@:newCost(2, *c1)@
 				}
 			}
-		} else if (moduleId(p) && idcmp(moduleName(p), "aggr") == 0) {
-			if (functionId(p) && (idcmp(functionName(p), "sum") == 0 || idcmp(functionName(p), "min") == 0 || idcmp(functionName(p), "max") == 0 || idcmp(functionName(p), "avg") == 0)) {
+		} else if (moduleId(p)== aggrRef) {
+			if (functionId(p) ==sumRef || 
+				functionId(p) ==minRef || 
+				functionId(p) ==maxRef || 
+				functionId(p) ==avgRef) {
 				@:newCost(2, *c1)@
 			}
 		} else {

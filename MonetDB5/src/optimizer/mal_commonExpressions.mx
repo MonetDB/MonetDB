@@ -108,7 +108,7 @@ CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = getInstrPtr(mb, i);
 		if (p->retc != p->argc)
 			for (j = i - 1; j >= 1; j--) {
-				if (safetyBarrier(mb, p, q = getInstrPtr(mb, j)))
+				if (safetyBarrier(p, q = getInstrPtr(mb, j)))
 					goto nxtCommonSubExpression;
 #ifdef DEBUG_MAL_OPTIMIZER
 				printf("%d, %d  %d %d ", i, j, hasSameSignature(p, q), hasSameArguments(mb, p, q));

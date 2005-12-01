@@ -29,12 +29,12 @@ Furthermore, it may not be used outside the block and the expression
 may not depend on variables assigned a value within the same block.
 
 @verbatim
-    j:= "hello world";
+	j:= "hello world";
 barrier go:=true;
-    i:= 23;
-    j:= "not moved";
-    k:= j; 
-    io.print(i);
+	i:= 23;
+	j:= "not moved";
+	k:= j; 
+	io.print(i);
 	redo go:= false;
 exit go;
 	z:= j;
@@ -42,12 +42,12 @@ optimizer.strengthReduction();
 @end verbatim
 which is translated into the following code:
 @verbatim
-    j := "hello world";
-    i := 23;
+	j := "hello world";
+	i := 23;
 barrier go := true;
-    j := "not moved";
+	j := "not moved";
 	k := j;
-    io.print(i);
+	io.print(i);
 	redo go:= false;
 exit go;
 	z:= j;
@@ -213,7 +213,7 @@ after the loop, because then you may not simple move an expression.
 @c
 		for (k = 0; k < p->retc; k++)
 			if ( getVar(mb, getArg(p, k))->beginLifespan <= blkbegin ||
-			     getVar(mb, getArg(p, k))->endLifespan >= blkexit) {
+				 getVar(mb, getArg(p, k))->endLifespan >= blkexit) {
 				se = TRUE;
 #ifdef DEBUG_MAL_STRENGTHREDUCTION
 				stream_printf(GDKout, "variable may not be used out %d\n", getArg(p, k));

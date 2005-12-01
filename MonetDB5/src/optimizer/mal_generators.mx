@@ -49,7 +49,7 @@ the print command with an iterator.
 function qry(a:bat[:void,:any_1]
 	b:bat[void,:int]:= mat.iterator("Sales2005")
 	i:= algebra.count(b);
-    io.print(i);
+	io.print(i);
 end qry;
 optimizer.generators("user","qry");
 @end verbatim
@@ -61,9 +61,9 @@ function user.qry(a:bat[:void,:any_1]{mat}):void;
 barrier _6:= mat.newIterator("Sales2005");
 	_8:= aggr.count(_t);
 	_7:= _7+ _8;
-    redo _6:= mat.hasMoreElements(a);
+	redo _6:= mat.hasMoreElements(a);
 exit _6;
-    io.print(_7);
+	io.print(_7);
 end qry;
 @end verbatim
 @{
@@ -142,6 +142,10 @@ Reorder the MAL program to minimize the generator scopes
 and to mark the end of the generator.
 An early user supplied pbm.finish() overrules the hardwired
 decisions. A too late finish() should be flagged as an error.
+
+The program is re-ordered to minimize the distance
+between producer/consumer instructions. It avoids operations
+to end up in nested iterator blocks.
 @c
 void BGcloseGenerator(MalBlkPtr mb, InstrPtr p){
 	InstrPtr r;
@@ -151,6 +155,24 @@ void BGcloseGenerator(MalBlkPtr mb, InstrPtr p){
 	pushInstruction(mb,r);
 }
 
+@-
+Placement of instruction should be done carefully, to avoid it
+ends up in a loop covered by other arguments
+It may not pass any unsafe statement.
+@c
+void
+BGplaceInstruction(MalBlkPtr mb, InstrPtr p){
+	int i;
+	if( !isUnsafeFunction(p))
+	for(i= mb->stop-1; i>0; i--)
+	if( getInstrPtr(mb,i)->barrier ||
+		isDependent(p,getInstrPtr(mb,i)) || 
+		isUnsafeInstruction(getInstrPtr(mb,i)) ) {
+		insertInstruction(mb,p, i+1);
+		return;
+	}
+	pushInstruction(mb,p);
+}
 #define CHKbound() if( gtop == 128){ \
 				mb->errors++; \
 				GDKerror("Too many generators"); \
@@ -165,7 +187,7 @@ int BGreorder(MalBlkPtr mb){
 	memset((char*)mb->stmt, 0, mb->ssize * sizeof(InstrPtr));
 	mb->stop=0;
 
-	for(i=0;i<oldtop; i++){
+	for(i=0;i<oldtop-1; i++){
 		p= old[i];
 		if( moduleId(p)== pbmRef && functionId(p)==generatorRef){
 			gopen[gtop]=0;
@@ -185,7 +207,7 @@ it on the stack for proper use. The old iterator
 is marked invalied (gopen[i]= -1)
 @c
 			gopen[k]= -1;
-			pushInstruction(mb, copyInstruction(stmt[k]));
+			BGplaceInstruction(mb, copyInstruction(stmt[k]));
 			gopen[gtop]=1;
 			stmt[gtop]= stmt[k];
 			gvar[gtop++]= gvar[k];
@@ -193,6 +215,8 @@ is marked invalied (gopen[i]= -1)
 		}
 @-
 Closing a generator implicitly closes all opened after it as well
+We should also generate code for the accumulation of information.
+It is easier done here.
 @c
 		if( moduleId(p)== pbmRef && functionId(p)==finishRef){
 			for(k=0;k<gtop;k++)
@@ -213,9 +237,10 @@ Closing a generator implicitly closes all opened after it as well
 				gopen[j]=0;
 			}
 		}
-		pushInstruction(mb,p);
+		BGplaceInstruction(mb,p);
 	}
-#ifdef DEBUG_MAL_BATLOOPS     
+	pushInstruction(mb,old[oldtop-1]);
+#ifdef DEBUG_MAL_BATLOOPS
 	stream_printf(GDKout,"Result of reorder\n");
 	printFunction(GDKout,mb,LIST_MAL_INSTR);
 #endif
@@ -243,7 +268,7 @@ BGoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	int mtop=0, mvar[256], mloop[256];
 	int size,match,actions=0;
 	lng clk = GDKusec();
-#ifdef DEBUG_MAL_BATLOOPS     
+#ifdef DEBUG_MAL_BATLOOPS
 	stream_printf(GDKout,"Start generators optimizer\n");
 	printFunction(GDKout, mb, 0);
 #endif
@@ -253,6 +278,7 @@ BGoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		removeInstruction(mb,p);
 
 	actions= BGreorder(mb);
+	setLifespan(mb); /* to detect future variable use */
 
 	old = mb->stmt;
 	oldtop= mb->stop;
@@ -266,20 +292,23 @@ BGoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	for( i=0; i<oldtop-1; i++){
 		p= old[i];
 @-
-Deal with iterator requests aimed at partitioned BATs
+Deal with iterator requests aimed at partitioned BATs.
+We first walk our way through the block to prepare
+accumulations variables.
 @c
 		if( (moduleId(p)== pbmRef && functionId(p)== generatorRef)  &&
 			p->argc== 2 && getVarType(mb,getArg(p,1))== TYPE_str){
-			stmt[mtop]= p;
-			mvar[mtop] = getArg(p,0);
-			mloop[mtop] = mb->stop;
-			mtop++;
 
 			r = copyInstruction(p);
 			r->barrier= BARRIERsymbol;
 			setFunctionId(r,putName("newIterator",11));
 			setVarInitialized(mb,getArg(p,0));
 			pushInstruction(mb,r);
+
+			stmt[mtop]= p;
+			mvar[mtop] = getArg(p,0);
+			mloop[mtop] = mb->stop-1;
+			mtop++;
 			continue;
 		}
 @-
@@ -320,60 +349,52 @@ Otherwise we have to decide on either packing them or replacement.
 		if(  isPBMalias(getArg(p,j),mvar,mtop) >= 0) {
 			m=i; match++;
 		}
-		if( match== 0 && !isUnsafeFunction(p) &&
-			!isUnsafeInstruction(p) ){
-			pushInstruction(mb,p);
+		if( match== 0 && !isUnsafeFunction(p) && !isUnsafeInstruction(p) ){
+			BGplaceInstruction(mb,p);
 			continue;
 		}
 @-
-Left with an instruction with at most one MAT we can replace it.
 Not all instructions can be replaced by the sequence. We have to
 group them and check for them individually.
 At first we look for the first argument. Others are dealt with
 through the default case.
 @c
-		if(( (moduleId(p)== algebraRef && functionId(p)== selectRef) ||
-			(moduleId(p)== algebraRef && functionId(p)==uselectRef) ||
-			(moduleId(p)== algebraRef && functionId(p)==likeselectRef) ||
-			(moduleId(p)== batRef && functionId(p)==reverseRef) ||
-			(moduleId(p)== batRef && functionId(p)==mirrorRef) ||
-			(moduleId(p)== algebraRef && functionId(p)==markTRef) ||
-			(moduleId(p)== algebraRef && functionId(p)==kdifferenceRef) ||
-			(moduleId(p)== algebraRef && functionId(p)== joinRef) ||
-			(moduleId(p)== algebraRef && functionId(p)== semijoinRef) ||
-			(moduleId(p)== batRef && functionId(p)== setAccessRef) ||
-			(moduleId(p)== batRef && functionId(p)== appendRef)  ||
-			(moduleId(p)== batRef && functionId(p)== deleteRef)  ||
+		if( (moduleId(p)== algebraRef 	&& functionId(p)== selectRef) ||
+			(moduleId(p)== algebraRef 	&& functionId(p)== uselectRef) ||
+			(moduleId(p)== algebraRef 	&& functionId(p)== likeselectRef) ||
+			(moduleId(p)== batRef 		&& functionId(p)== reverseRef) ||
+			(moduleId(p)== batRef 		&& functionId(p)== mirrorRef) ||
+			(moduleId(p)== algebraRef 	&& functionId(p)== markTRef) ||
+			(moduleId(p)== algebraRef	&& functionId(p)== kdifferenceRef) ||
+			(moduleId(p)== algebraRef	&& functionId(p)== joinRef) ||
+			(moduleId(p)== algebraRef	&& functionId(p)== semijoinRef) ||
+			(moduleId(p)== batRef		&& functionId(p)== setAccessRef) ||
+			(moduleId(p)== batRef		&& functionId(p)== appendRef)  ||
+			(moduleId(p)== batRef		&& functionId(p)== deleteRef)  ||
 			moduleId(p)== calcRef 
-		)  && (m=isPBMalias(getArg(p,1),mvar,mtop)) >= 0){
-			r = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(r,matRef);
-			setFunctionId(r,newRef);
-			getArg(r,0)= getArg(p,0);
-			pushArgument(mb,r,getArg(p,0));
-			pushInstruction(mb,p);
-			
-			mvar[mtop] = getArg(r,0);
-			stmt[mtop++]= r;
-			actions++;
-			continue;
-		} 
+			){
+
+			match=0;
+			for(k=0; k<p->argc;k++)
+			if( (m=isPBMalias(getArg(p,k),mvar,mtop)) >= 0) match++;
+
+			if( match){
+				r = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(r,matRef);
+				setFunctionId(r,newRef);
+				getArg(r,0)= getArg(p,0);
+				pushArgument(mb,r,getArg(p,0));
+				mvar[mtop] = getArg(r,0);
+				mloop[mtop]= -1;	
+				stmt[mtop++]= r;
+				actions++;
+			}
 @-
-The MAT argument could also occur as the second one.
+The operation should be pushed onto the stack closest
+to the dependent operands. This will reduce the loop
+strength;
 @c
-		if( moduleId(p)==algebraRef && functionId(p)== joinRef &&
-			(m=isPBMalias(getArg(p,2),mvar,mtop)) >= 0){
-			r = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(r,matRef);
-			setFunctionId(r,newRef);
-			getArg(r,0)= getArg(p,1);
-			r= pushArgument(mb,r,getArg(p,1));
-			pushInstruction(mb,p);
-			
-			mvar[mtop] = getArg(r,0);
-			stmt[mtop++]= r;
-			pushInstruction(mb,r);
-			actions++;
+			BGplaceInstruction(mb,p);
 			continue;
 		} 
 @-
@@ -382,63 +403,35 @@ In this case we have to include an initialization statement before the
 generator.
 @c
 		if( ((moduleId(p)==aggrRef && functionId(p)== countRef) || 
+			(moduleId(p)==aggrRef && functionId(p)== minRef && p->argc==3) ||
+			(moduleId(p)==aggrRef && functionId(p)== maxRef && p->argc==3) ||
 			(moduleId(p)==aggrRef && functionId(p)==sumRef && p->argc==2)) &&
 			(m=isPBMalias(getArg(p,1),mvar,mtop)) >= 0){
 			r = newInstruction(mb,ASSIGNsymbol);
 			getArg(r,0)= getArg(p,0);
 			pushInt(mb,r,0);
-			pushInstruction(mb,r);
-			for(k=1; k< stmt[m]->argc; k++){
-				int v= newTmpVariable(mb,TYPE_int);
-				q= newInstruction(mb,ASSIGNsymbol);
-				setModuleId(q,aggrRef);
-				setFunctionId(q,functionId(p));
-				getArg(q,0)= v;
-				setVarUsed(mb,v,TRUE);
-				setVarInitialized(mb,v);
-				q= pushArgument(mb,q,getArg(stmt[m],k));
-				pushInstruction(mb,q);
 
-				q= newInstruction(mb,ASSIGNsymbol);
-				setModuleId(q,calcRef);
-				setFunctionId(q,plusRef);
-				getArg(q,0)= getArg(r,0);
-				q= pushArgument(mb,q,getArg(r,0));
-				q= pushArgument(mb,q,v);
-				pushInstruction(mb,q);
-			}
-			continue;
-		} 
-@-
-And the min/max is as easy
-@c
-		if( ((moduleId(p)==aggrRef && functionId(p)== maxRef) || 
-			(moduleId(p)==aggrRef && functionId(p)==minRef )) &&
-			p->argc==3 &&
-			(m=isPBMalias(getArg(p,1),mvar,mtop)) >= 0){
-			r = newInstruction(mb,ASSIGNsymbol);
-			getArg(r,0)= getArg(p,0);
-			pushNil(mb,r,getArgType(mb,p,0));
-			pushInstruction(mb,r);
-			for(k=1; k< stmt[m]->argc; k++){
-				int v= newTmpVariable(mb,TYPE_int);
-				q= newInstruction(mb,ASSIGNsymbol);
-				setModuleId(q,aggrRef);
-				setFunctionId(q,functionId(p));
-				getArg(q,0)= v;
-				setVarUsed(mb,v,TRUE);
-				setVarInitialized(mb,v);
-				q= pushArgument(mb,q,getArg(stmt[m],k));
-				pushInstruction(mb,q);
+			/* search enclosing loop */
+			for(k=m; k>=0; k--)
+			if( mloop[k]>=0) m=k;
+			insertInstruction(mb,r,mloop[m]);
 
-				q= newInstruction(mb,ASSIGNsymbol);
-				setModuleId(q,calcRef);
+			q= copyInstruction(p);
+			k= newTmpVariable(mb,TYPE_int);
+			getArg(q,0)= k;
+			setVarInitialized(mb,k);
+			pushInstruction(mb,q);
+
+			q= newInstruction(mb,ASSIGNsymbol);
+			setModuleId(q,calcRef);
+			if( functionId(p)== countRef || functionId(p)== sumRef)
 				setFunctionId(q,plusRef);
-				getArg(q,0)= getArg(r,0);
-				q= pushArgument(mb,q,getArg(r,0));
-				q= pushArgument(mb,q,v);
-				pushInstruction(mb,q);
-			}
+			else
+				setFunctionId(q,functionId(p));
+			getArg(q,0)= getArg(r,0);
+			q= pushArgument(mb,q,getArg(r,0));
+			q= pushArgument(mb,q,k);
+			pushInstruction(mb,q);
 			continue;
 		} 
 @-
@@ -448,18 +441,9 @@ retained inside the loop. All other use is considered once-only
 and the instruction should be moved outside the loop.
 Moreover, it then terminates the block in which it was used.
 @c
-MATdefault:
-		if( moduleId(p)== ioRef && functionId(p)==printRef){
-			pushInstruction(mb,p);
-			continue;
-		}
-@-
-Any unsafe function or instruction should be postponed to
-after the iterator block. It require the PBAT to be materialized. 
-@c
 		for( k= p->retc; k<p->argc; k++)
 		if(	(m=isPBMalias(getArg(p,k),mvar,mtop)) >= 0){
-#ifdef DEBUG_MAL_BATLOOPS     
+#ifdef DEBUG_MAL_BATLOOPS
 			stream_printf(GDKout,"Dependency resolution k=%d\n",k);
 			printInstruction(GDKout,mb,p,0);
 #endif
@@ -500,7 +484,7 @@ For the time being, they are no-ops.
 @c
 	(void) stk; 
 	optimizerCheck(mb, "optimizer.generators", actions, GDKusec() - clk);
-#ifdef DEBUG_MAL_BATLOOPS     
+#ifdef DEBUG_MAL_BATLOOPS
 	stream_printf(GDKout,"Result of generators optimizer\n");
 	printFunction(GDKout, mb, 0);
 #endif

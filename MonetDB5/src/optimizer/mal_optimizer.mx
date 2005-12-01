@@ -480,7 +480,8 @@ opt_export void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname);
 opt_export int isUnsafeInstruction(InstrPtr q);
 opt_export int isUnsafeFunction(InstrPtr q);
 opt_export int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
-opt_export int safetyBarrier(MalBlkPtr mb, InstrPtr p, InstrPtr q);
+opt_export int isDependent(InstrPtr p, InstrPtr q);
+opt_export int safetyBarrier(InstrPtr p, InstrPtr q);
 opt_export int hasSameSignature(InstrPtr p, InstrPtr q);
 opt_export int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 opt_export int isUpdated(MalBlkPtr mb, int pc);
@@ -615,23 +616,23 @@ MALoptimizer(Client c)
 }
 
 int hasSameSignature(InstrPtr p, InstrPtr q){   
-    if( q->retc != p->retc || q->argc != p->argc) return FALSE;
-    if( functionId(q)==0 && functionId(p)!=0 ) return FALSE;
-    if( functionId(q)!=0 && functionId(p)==0 ) return FALSE;
-    if( functionId(q) && functionId(p) && idcmp(functionName(q),functionName(p)) ) 
-        return FALSE;
-    if( moduleId(q)==0 && moduleId(p)!=0 ) return FALSE;
-    if( moduleId(q)!=0 && moduleId(p)==0 ) return FALSE;
-    if( moduleId(q) && moduleId(p) && idcmp(moduleName(q),moduleName(p)))
-        return FALSE;
-    /* actually also check their types */
-    return TRUE;
+	if( q->retc != p->retc || q->argc != p->argc) return FALSE;
+	if( functionId(q)==0 && functionId(p)!=0 ) return FALSE;
+	if( functionId(q)!=0 && functionId(p)==0 ) return FALSE;
+	if( functionId(q) && functionId(p) && idcmp(functionName(q),functionName(p)) ) 
+		return FALSE;
+	if( moduleId(q)==0 && moduleId(p)!=0 ) return FALSE;
+	if( moduleId(q)!=0 && moduleId(p)==0 ) return FALSE;
+	if( moduleId(q) && moduleId(p) && idcmp(moduleName(q),moduleName(p)))
+		return FALSE;
+	/* actually also check their types */
+	return TRUE;
 }
 
 int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 {   int k;
-    for(k=p->retc; k<p->argc;k++)
-    if( q->argv[k]!= p->argv[k] ) {
+	for(k=p->retc; k<p->argc;k++)
+	if( q->argv[k]!= p->argv[k] ) {
 		if( isConstant(mb,p->argv[k]) && isConstant(mb,q->argv[k]) &&
 			getVar(mb,getArg(p,k))->type == getVar(mb,getArg(q,k))->type &&
 			getVar(mb,getArg(p,k))->value.val.lval == getVar(mb,getArg(q,k))->value.val.lval )
@@ -639,7 +640,7 @@ int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 			continue;
 		return FALSE;
 	}
-    return TRUE;
+	return TRUE;
 }
 @-
 If two instructions have elements in common in their target list,
@@ -655,6 +656,18 @@ hasCommonResults(InstrPtr p, InstrPtr q)
 		for (l = 0; l < q->retc; l++)
 			if (p->argv[k] == q->argv[l])
 				return TRUE;
+	return FALSE;
+}
+@-
+Dependency between target variables and arguments can be
+checked with isDependent().
+@c
+int
+isDependent(InstrPtr p, InstrPtr q){
+	int i,j;
+	for(i= 0; i<q->retc; i++)
+	for(j= p->retc; j<p->argc; j++)
+		if( getArg(q,i)== getArg(p,j)) return TRUE;
 	return FALSE;
 }
 @-
@@ -749,24 +762,11 @@ An alias can only be used later on for readonly (and not be used for a function 
 @{
 @c
 int
-safetyBarrier(MalBlkPtr mb, InstrPtr p, InstrPtr q)
+safetyBarrier(InstrPtr p, InstrPtr q)
 {
-	int i, j;
-	(void) mb;
-
-	for (j = 0; j < q->retc; j++)
-		for (i = p->retc; i < p->argc; i++)
-			if (p->argv[i] == q->argv[j]) {
-#ifdef DEBUG_MAL_OPTIMIZER2
-				if (getClient()->debugOptimizer) {
-					stream_printf(GDKout, "Found assignment barrier for \n");
-					printInstruction(GDKout, mb, p, LIST_MAL_ALL);
-					printInstruction(GDKout, mb, q, LIST_MAL_ALL);
-				}
-#endif
-				return TRUE;
-			}
-
+	int i,j;
+	if( isDependent(q,p)) 
+		return TRUE;
 	if (isUnsafeFunction(q)) {
 		for (i = p->retc; i < p->argc; i++)
 			for (j = q->retc; j < q->argc; j++)
@@ -1102,7 +1102,7 @@ ARnxtAssignment(MalBlkPtr mb, int pc, int varid)
 		if (blockCntrl(q))
 			blkcount++;
 	}
-      ARfound:
+	  ARfound:
 	if (blkcount || !used)
 		return pc - 1;
 	return i;
@@ -1241,38 +1241,36 @@ An illustrative example is the following MAL snippet:
 @end verbatim
 The dead code removal trims this program to the following short block:
 @verbatim
-    io.print("done");
+	io.print("done");
 @end verbatim
 
 @{
-The dead code remover should
-not be used for testing, because it will trim most programs to
-an empty list.
+The dead code remover should not be used for testing, 
+because it will trim most programs to an empty list.
+The side effect tests should become part of the signature
+definitions.
 @c
 int
 hasSideEffects(InstrPtr p, int strict)
 {
 	if (blockStart(p) || blockExit(p) || blockCntrl(p))
 		return TRUE;
-	if (functionId(p) && strncmp("print", functionName(p), 5) == 0)
+	if( functionId(p)== NULL) return FALSE;
+	if (functionName(p) == printRef ||
+		functionName(p) == depositRef ||
+		functionName(p) == insertRef ||
+		functionName(p) == appendRef ||
+		functionName(p) == deleteRef)
 		return TRUE;
-	if (functionId(p) && idcmp("deposit", functionName(p)) == 0)
+	if (idcmp("destroy", functionName(p)) == 0)
 		return TRUE;
-	if (functionId(p) && idcmp("insert", functionName(p)) == 0)
+	if (idcmp("prelude", functionName(p)) == 0)
 		return TRUE;
-	if (strict && functionId(p) && idcmp("new", functionName(p)) == 0)
+	if (idcmp("decimal_prelude", functionName(p)) == 0)
 		return TRUE;
-	if (functionId(p) && idcmp("append", functionName(p)) == 0)
+	if (idcmp("keep", functionName(p)) == 0)
 		return TRUE;
-	if (functionId(p) && idcmp("delete", functionName(p)) == 0)
-		return TRUE;
-	if (functionId(p) && idcmp("destroy", functionName(p)) == 0)
-		return TRUE;
-	if (functionId(p) && idcmp("prelude", functionName(p)) == 0)
-		return TRUE;
-	if (functionId(p) && idcmp("decimal_prelude", functionName(p)) == 0)
-		return TRUE;
-	if (functionId(p) && idcmp("keep", functionName(p)) == 0)
+	if (strict && functionId(p) && strcmp(functionName(p),newRef)==0)
 		return TRUE;
 	return FALSE;
 }
@@ -1687,8 +1685,8 @@ z:= selectHead(x,R,l,h)
 During a final pass through the program, we can convert all combinators 
 back into their elementary steps.
 @= fndOperator
-    (( moduleId(@1)==0 || (@2 && idcmp(moduleName(@1),@2)==0) ) &&
-         (functionId(@1)==0 || (@3 && idcmp(functionName(@1),@3)==0) ))
+	(( moduleId(@1)==0 || (@2 && idcmp(moduleName(@1),@2)==0) ) &&
+		 (functionId(@1)==0 || (@3 && idcmp(functionName(@1),@3)==0) ))
 @-
 A more complete implementation should als push the selection through
 multiple operators. In particular, a reverse operator may obscure
@@ -1857,5 +1855,4 @@ AMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		removeInstruction(mb, pci);
 	return MAL_SUCCEED;
 }
-
 @}
