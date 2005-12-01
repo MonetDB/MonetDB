@@ -375,6 +375,7 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 	int i;
 	ValPtr lhs,rhs;
 	MalStkPtr stk;
+	str ret;
 
 	i= findPlant(mb);
 	if( i< 0) {
@@ -415,7 +416,13 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 		lhs = &pl->stk->stk[getArg(psig, i)];
 		VALcopy(lhs, argv[i]);
 	}
-	return  reenterMAL(cntxt, mb, pl->pc, -1, pl->stk, 0, 0);
+	ret=  reenterMAL(cntxt, mb, pl->pc, -1, pl->stk, 0, 0);
+	/* garbage collect the string arguments, these positions
+	   will simply be overwritten the next time. */
+	for (i = psig->retc; i < psig->argc; i++) {
+		garbageElement(&pl->stk->stk[getArg(psig, i)]);
+	}
+	return ret;
 }
 @-
 A new plant is constructed. The properties of the factory
