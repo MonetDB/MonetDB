@@ -1,3 +1,0 @@
-@section Application Programming Interfaces
-Give a short description and startup example of PHP, Perl, Python,...
-
