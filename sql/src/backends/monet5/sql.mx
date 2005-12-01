@@ -766,7 +766,10 @@ The internal administration of the SQL compilation and execution state
 is administered by a state descriptor accessible in each phase.
 Failure to find the state descriptor aborts the session.
 
-@= getContext
+@c
+str 
+getContext(mvc **c, backend **b )
+{
 	Client _client = getClient();
 
 	if (_client == NULL ) {
@@ -789,34 +792,31 @@ Failure to find the state descriptor aborts the session.
 		else
 			_DELETE(schema);
 	}
-	@1= ((mvc *) _client ->state[OPTIMIZE]);
-@= setContext
-{
-	Client _client = getClient();
-	if (_client == NULL || _client ->state[OPTIMIZE]== 0 ) {
-		return throwMessage("mvc","Can not get access to @2 state");
-	} 
-	_client ->state[OPTIMIZE]= @1;
+	*c = ((mvc *) _client ->state[OPTIMIZE]); 
+	if (b)
+		*b = ((backend*) _client->state[PARSER]);
+	return MAL_SUCCEED;
 }
-@= getBackend
-	@1= ((backend*) _client->state[PARSER]);
-@c
 
 str
 SQLcommit_wrap(int *ret){
 	mvc *m;
+	str msg = getContext(&m, NULL);
 
+	if (msg)
+		return msg;
 	(void) ret;
-	@:getContext(m)@
 	mvc_commit(m, 0, NULL); /* keep the changes */
 	return MAL_SUCCEED;
 }
 str
 SQLrollback_wrap(int *ret){
 	mvc *m;
+	str msg = getContext(&m, NULL);
 
+	if (msg)
+		return msg;
 	(void) ret;
-	@:getContext(m)@
 	mvc_rollback(m, 0, NULL); /* keep the changes */
 	return MAL_SUCCEED;
 }
@@ -824,9 +824,11 @@ str
 mvc_update_var_wrap(int *ret, str *varname)
 {
 	mvc *m;
+	str msg = getContext(&m, NULL);
 
+	if (msg)
+		return msg;
 	(void) ret;
-	@:getContext(m)@
 	if (sql_update_var(m, *varname) != GDK_SUCCEED)
 		return throwException(MALEXCEPTION, "sql.setVariable", "error");
 	return MAL_SUCCEED;
@@ -836,8 +838,10 @@ str
 mvc_next_value(lng *res, str *seq)
 {
 	mvc *m;
+	str msg = getContext(&m, NULL);
 
-	@:getContext(m)@
+	if (msg)
+		return msg;
 	if (sql_next_value(m->trans, *seq, res))
 		return MAL_SUCCEED;
 	return throwException(MALEXCEPTION, "sql.nextValue", "error");
@@ -892,11 +896,12 @@ mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access)
 str
 mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access)
 {
-	mvc *m;
 	BAT *b;
+	mvc *m;
+	str msg = getContext(&m, NULL);
 
-	@:getContext(m)@
-
+	if (msg)
+		return msg;
 	b = mvc_bind(m, *sname, *tname, *cname, *access);
 	if (b) {
 		BBPincref( *bid = b->batCacheid, TRUE);
@@ -949,10 +954,12 @@ mvc_bind_single_wrap(int *ret, int *bid, str *name)
 str
 mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access)
 {
-	mvc *m;
 	BAT *b;
+	mvc *m;
+	str msg = getContext(&m, NULL);
 
-	@:getContext(m)@
+	if (msg)
+		return msg;
 	b = mvc_bind_dbat(m, *sname, *tname, *access);
 	if (b) {
 		BBPincref( *ret = b->batCacheid, TRUE);
@@ -965,10 +972,12 @@ mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access)
 str
 mvc_bind_idxbat_wrap(int *ret, str *sname, str *tname, str *iname, int *access)
 {
-	mvc *m;
 	BAT *b;
+	mvc *m;
+	str msg = getContext(&m, NULL);
 
-	@:getContext(m)@
+	if (msg)
+		return msg;
 	b = mvc_bind_idxbat(m, *sname, *tname, *iname, *access);
 	if (b) {
 		BBPincref( *ret = b->batCacheid, TRUE);
@@ -981,11 +990,13 @@ mvc_bind_idxbat_wrap(int *ret, str *sname, str *tname, str *iname, int *access)
 str
 mvc_clear_table_wrap(lng *res, str *sname, str *tname)
 {
-	mvc *m;
 	sql_schema *s;
 	sql_table *t;
+	mvc *m;
+	str msg = getContext(&m, NULL);
 
-	@:getContext(m)@
+	if (msg)
+		return msg;
 	s = mvc_bind_schema(m, *sname);
 	t = mvc_bind_table(m, s, *tname);
 	*res = mvc_clear_table(m, t);
@@ -1002,11 +1013,13 @@ mvc_result_row(mvc *m, int nr_cols, int qtype)
 str
 mvc_result_row_wrap(int *res_id, int *nr_cols, int *qtype, int *o)
 {
-	mvc *c;
+	mvc *m;
+	str msg = getContext(&m, NULL);
 
+	if (msg)
+		return msg;
 	(void)o; /* dummy order */
-	@:getContext(c)@
-	*res_id = mvc_result_row(c, *nr_cols, *qtype); 
+	*res_id = mvc_result_row(m, *nr_cols, *qtype); 
 	if (*res_id < 0)
 		return throwMessage("sql.resultSet", "failed");
 	return MAL_SUCCEED;
@@ -1016,15 +1029,16 @@ str
 mvc_result_table_wrap(int *res_id, int *nr_cols, int *qtype, bat *order_bid)
 {
 	str res = MAL_SUCCEED;
-	mvc *c;
 	BAT *order;
+	mvc *m;
+	str msg = getContext(&m, NULL);
 
-        if( (order = BATdescriptor(*order_bid)) == NULL ){
+	if (msg)
+		return msg;
+        if ((order = BATdescriptor(*order_bid)) == NULL ) {
                 return throwMessage("sql.resultSet", "Cannot access descriptor");
         }
-
-	@:getContext(c)@
-	*res_id = mvc_result_table(c, *nr_cols, *qtype, order);
+	*res_id = mvc_result_table(m, *nr_cols, *qtype, order);
 	if (*res_id < 0)
 		res= throwMessage("sql.resultSet", "failed");
 	BBPunfix(order->batCacheid);
@@ -1035,17 +1049,18 @@ str
 mvc_result_column_wrap(int *ret, int *rs, str *tn, str *name, str *type, int *digits, int *scale, bat *bid)
 {
 	str res = MAL_SUCCEED;
-	mvc *c;
 	BAT *b;
-
-        if( (b = BATdescriptor(*bid)) == NULL ){
-                return throwMessage("sql.rsColumn", "Cannot access descriptor");
-        }
+	mvc *m;
+	str msg = getContext(&m, NULL);
 
 	(void)ret;
 	(void)rs;
-	@:getContext(c)@
-	if (mvc_result_column(c, *tn, *name, *type, *digits, *scale, b)) 
+	if (msg)
+		return msg;
+        if( (b = BATdescriptor(*bid)) == NULL ){
+                return throwMessage("sql.rsColumn", "Cannot access descriptor");
+        }
+	if (mvc_result_column(m, *tn, *name, *type, *digits, *scale, b)) 
 		res = throwMessage("sql.rsColumn", "failed");
 	BBPunfix(b->batCacheid);
 	return res;
@@ -1054,12 +1069,14 @@ mvc_result_column_wrap(int *ret, int *rs, str *tn, str *name, str *type, int *di
 str
 mvc_result_value_@1(int *ret, int *rs, str *tn, str *name, str *type, int *digits, int *scale, @1 *val)
 {
-	mvc *c;
+	mvc *m;
+	str msg = getContext(&m, NULL);
 
 	(void)ret;
 	(void)rs;
-	@:getContext(c)@
-	if (mvc_result_value(c, *tn, *name, *type, *digits, *scale, (ptr) val, TYPE_@1))
+	if (msg)
+		return msg;
+	if (mvc_result_value(m, *tn, *name, *type, *digits, *scale, (ptr) val, TYPE_@1))
 		return throwMessage("sql.rsColumn", "failed");
 	return MAL_SUCCEED;
 }
@@ -1083,14 +1100,16 @@ mvc_result_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *scale = (int *) getArgReference(stk, pci, 6);
 	ptr p =  (ptr) getArgReference(stk, pci, 7);
 	int mtype = getArgType(mb, pci, 7);
-	mvc *c;
+	mvc *m;
+	str msg = getContext(&m, NULL);
 
 	(void)ret;
 	(void)rs;
-	@:getContext(c)@
+	if (msg)
+		return msg;
 	if (ATOMvarsized(mtype)) 
 		p = *(ptr*)p;
-	if (mvc_result_value(c, *tn, *cn, *type, *digits, *scale, p, mtype))
+	if (mvc_result_value(m, *tn, *cn, *type, *digits, *scale, p, mtype))
 		return throwMessage("sql.rsColumn", "failed");
 	return MAL_SUCCEED;
 }
@@ -1098,11 +1117,12 @@ mvc_result_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 mvc_export_default_wrap()
 {
-	mvc *c;
 	backend *b;
+	mvc *c;
+	str msg = getContext(&c, &b);
 
-	@:getContext(c)@
-	@:getBackend(b)@
+	if (msg)
+		return msg;
 	if (mvc_export_default(c, b->out)) {
 		return throwMessage("sql.exportResult", "failed");
 	}
@@ -1112,11 +1132,12 @@ mvc_export_default_wrap()
 str
 mvc_affected_rows_wrap( int *r, lng *nr)
 {
-	mvc *c;
 	backend *b;
+	mvc *c;
+	str msg = getContext(&c, &b);
 
-	@:getContext(c)@
-	@:getBackend(b)@
+	if (msg)
+		return msg;
 	c->type = Q_UPDATE;
 	if (mvc_export_default(c, b->out)) {
 		return throwMessage("sql.affectedRows", "failed");
@@ -1136,11 +1157,12 @@ mvc_affected_rows_int( int *r, int *nr)
 str
 mvc_export_result_wrap(int *ret, int *res_id)
 {
-	mvc *c;
 	backend *b;
+	mvc *c;
+	str msg = getContext(&c, &b);
 
-	@:getContext(c)@
-	@:getBackend(b)@
+	if (msg)
+		return msg;
 	if (mvc_export_result(c, b->out, *res_id)) {
 		return throwMessage("sql.exportResult", "failed");
 	}
@@ -1161,11 +1183,12 @@ mvc_export_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *eclass = (int *) getArgReference(stk, pci, 7);
 	ptr p =  (ptr) getArgReference(stk, pci, 8);
 	int mtype = getArgType(mb, pci, 8);
-	mvc *c;
 	backend *b;
+	mvc *c;
+	str msg = getContext(&c, &b);
 
-	@:getContext(c)@
-	@:getBackend(b)@
+	if (msg)
+		return msg;
 	if (ATOMvarsized(mtype)) 
 		p = *(ptr*)p;
 	if (mvc_export_value(c, b->out, *qtype, *tn, *cn, *type, *digits, *scale, *eclass, p, mtype) != SQL_OK)
@@ -1176,11 +1199,12 @@ mvc_export_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 mvc_import_table_wrap(int *res, bstream **s, str *tname, str *sep, str *rsep, int *sz)
 {
-	mvc *m;
 	BAT *b;
+	mvc *m;
+	str msg = getContext(&m, NULL);
 
-	@:getContext(m)@
-
+	if (msg)
+		return msg;
 	b = mvc_import_table(m, *s, *tname, *sep, *rsep, *sz);
 	if (b == 0)
 		return throwMessage("sql.importTable", "failed");
