@@ -93,13 +93,20 @@ mal_export str CLTclearDebug(int *ret, int *flg);
 mal_export str CLTquit(int *ret);
 mal_export str CLTLogin(int *ret);
 mal_export str CLTInfo(int *ret);
+mal_export str CLTisAuthorized(int* ret, str* name);
+
 #endif /* _CLIENTS_H */
 @- Module initializaton
 The content of this clients table my only be changed by the Administrator
 or the client himself
 @= authorize
-	if( !isAuthorized("Admin"))
-		return throwMessage("const.@1","unauthorized access to 'const' box");
+{
+	int ret = 0;
+	char* adm = "Admin";
+	CLTisAuthorized(&ret, &adm);
+	if (!ret)
+		return throwMessage("clients.@1", "unauthorized access to 'clients' box");
+}
 @-
 @c
 #include "clients.h"
@@ -112,15 +119,17 @@ or the client himself
 #endif
  
 
-int
-isAuthorized(str nme)
-{
+str
+CLTisAuthorized(int* ret, str* nme) {
 	Client c;
 
-	if (nme == 0)
-		return 1;
-	c = getClient();
-	return idcmp(c->user, nme) == 0;
+	if (*nme != 0) {
+		c = getClient();
+		*ret = (idcmp(c->user, *nme) == 0);
+	} else {
+		*ret = 1;
+	}
+	return(MAL_SUCCEED);
 }
 
 str

@@ -98,8 +98,10 @@ const.prelude();
 @-
 @+ Implementation
 @h
+/* Fabian: const.mx uses _ITERATOR_H ?!? */
 #ifndef _ITERATOR_H
 #define _ITERATOR_H
+#include "clients.h"
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
@@ -120,8 +122,17 @@ mal_export str CSThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @- Module initializaton
 The content of this box my only be changed by the Administrator.
 @= authorize
-	if( !isAuthorized("user") && !isAuthorized("Admin"))
-		return throwMessage("const.@1","unauthorized access to 'const' box");
+{
+	int ret = 0;
+	char* usr = "Admin";
+	CLTisAuthorized(&ret, &usr);
+	if (!ret) {
+		usr = "user";
+		CLTisAuthorized(&ret, &usr);
+	}
+	if (!ret)
+		return throwMessage("const.@1", "unauthorized access to 'const' box");
+}
 @-
 @= insertBox
 	msg = @2;
@@ -130,17 +141,6 @@ The content of this box my only be changed by the Administrator.
 @c
 #include "const.h"
 
-
-int
-isAuthorized(str nme)
-{
-	Client c;
-
-	if (nme == 0)
-		return 1;
-	c = getClient();
-	return idcmp(c->user, nme) == 0;
-}
 
 str
 CSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
