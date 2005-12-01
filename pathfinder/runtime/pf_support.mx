@@ -562,7 +562,7 @@ proc htordered_unique_thetajoin( int mode,
 proc log2(lng i) : int 
 {
   var n := 0;
-  while(i > 1LL)  {
+  while(i >= 1LL)  {
      i >>= 1; n :+= 1;
   }
   return n;
