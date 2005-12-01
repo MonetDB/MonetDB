@@ -240,7 +240,7 @@ str
 BGoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	InstrPtr *old=0, q,r, stmt[256];
 	int oldtop,keep=0,i,j,k,m=0;
-	int mtop=0, mvar[256], mloop[256],tpe;
+	int mtop=0, mvar[256], mloop[256];
 	int size,match,actions=0;
 	lng clk = GDKusec();
 #ifdef DEBUG_MAL_BATLOOPS     
