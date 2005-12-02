@@ -64,24 +64,24 @@ stdout of test 'test_15` in directory 'tests/suite_01` itself:
 #	gb_a := clients.quit();
 #
 function user.main():void;	# 0  (main:void)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_32:str)
-#Predefined code segment 	# 2  (_34:str)
-#The compiler can not guarantee an accurate compilation, 	# 3  (_36:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 4  (_38:str)
-#A few guidelines to maximize usefullness. 	# 5  (_40:str)
-#- make the type of variables explicit, in particular 'nil' 	# 6  (_42:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  (_44:str)
-#use the "mil_schema" for additional support routines 	# 8  (_46:str)
-    mil.line("setoid(oid(20000000));");	# 9 MILline (_47:void)<-(_48:str)
-    aa_a := calc.oid(20000000);	# 10 CALCint2oid (aa_a:oid)<-(_50:int)
+# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_31:str)
+#Predefined code segment 	# 2  (_32:str)
+#The compiler can not guarantee an accurate compilation, 	# 3  (_33:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 4  (_34:str)
+#A few guidelines to maximize usefullness. 	# 5  (_35:str)
+#- make the type of variables explicit, in particular 'nil' 	# 6  (_36:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  (_37:str)
+#use the "mil_schema" for additional support routines 	# 8  (_38:str)
+    mil.line("setoid(oid(20000000));");	# 9 MILline (_39:void)<-(_40:str)
+    aa_a := calc.oid(20000000);	# 10 CALCint2oid (aa_a:oid)<-(_42:int)
     ba_a := calc.setoid(aa_a);	# 11 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-    mil.line("commit(); printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");	# 12 MILline (_52:void)<-(_53:str)
+    mil.line("commit(); printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");	# 12 MILline (_44:void)<-(_45:str)
     ca_a := transaction.commit();	# 13 TRNglobal_commit (ca_a:void)
-    da_a := io.printf("#~BeginVariableOutput~#\n");	# 14 IOprint_str (da_a:int)<-(_56:str)
+    da_a := io.printf("#~BeginVariableOutput~#\n");	# 14 IOprint_str (da_a:int)<-(_48:str)
     ea_a := status.ioStatistics();	# 15 SYSioStatistics (ea_a:bat[:str,:int])
     fa_a := io.print(ea_a);	# 16 IOprint_val (fa_a:int)<-(ea_a:bat[:str,:int])
-    ga_a := io.printf("#~EndVariableOutput~#\n");	# 17 IOprint_str (ga_a:int)<-(_60:str)
-    mil.line("commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();");	# 18 MILline (_61:void)<-(_62:str)
+    ga_a := io.printf("#~EndVariableOutput~#\n");	# 17 IOprint_str (ga_a:int)<-(_52:str)
+    mil.line("commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();");	# 18 MILline (_53:void)<-(_54:str)
     ha_a := transaction.commit();	# 19 TRNglobal_commit (ha_a:void)
     ia_a := transaction.commit();	# 20 TRNglobal_commit (ia_a:void)
     ja_a := transaction.commit();	# 21 TRNglobal_commit (ja_a:void)
@@ -90,7 +90,7 @@ function user.main():void;	# 0  (main:void)
     ma_a := transaction.commit();	# 24 TRNglobal_commit (ma_a:void)
     na_a := transaction.commit();	# 25 TRNglobal_commit (na_a:void)
     oa_a := transaction.commit();	# 26 TRNglobal_commit (oa_a:void)
-    mil.line("transaction.commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();");	# 27 MILline (_71:void)<-(_72:str)
+    mil.line("transaction.commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();");	# 27 MILline (_63:void)<-(_64:str)
     pa_a := transaction.commit();	# 28 TRNglobal_commit (pa_a:void)
     qa_a := transaction.commit();	# 29 TRNglobal_commit (qa_a:void)
     ra_a := transaction.commit();	# 30 TRNglobal_commit (ra_a:void)
@@ -99,17 +99,17 @@ function user.main():void;	# 0  (main:void)
     ua_a := transaction.commit();	# 33 TRNglobal_commit (ua_a:void)
     va_a := transaction.commit();	# 34 TRNglobal_commit (va_a:void)
     wa_a := transaction.commit();	# 35 TRNglobal_commit (wa_a:void)
-    mil.line("transaction.commit(); commit(); commit(); commit(); ");	# 36 MILline (_81:void)<-(_82:str)
+    mil.line("transaction.commit(); commit(); commit(); commit(); ");	# 36 MILline (_73:void)<-(_74:str)
     xa_a := transaction.commit();	# 37 TRNglobal_commit (xa_a:void)
     ya_a := transaction.commit();	# 38 TRNglobal_commit (ya_a:void)
     ab_a := transaction.commit();	# 39 TRNglobal_commit (ab_a:void)
     bb_a := transaction.commit();	# 40 TRNglobal_commit (bb_a:void)
-    mil.line("printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");	# 41 MILline (_87:void)<-(_88:str)
-    cb_a := io.printf("#~BeginVariableOutput~#\n");	# 42 IOprint_str (cb_a:int)<-(_56:str)
+    mil.line("printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");	# 41 MILline (_79:void)<-(_80:str)
+    cb_a := io.printf("#~BeginVariableOutput~#\n");	# 42 IOprint_str (cb_a:int)<-(_48:str)
     db_a := status.ioStatistics();	# 43 SYSioStatistics (db_a:bat[:str,:int])
     eb_a := io.print(db_a);	# 44 IOprint_val (eb_a:int)<-(db_a:bat[:str,:int])
-    fb_a := io.printf("#~EndVariableOutput~#\n");	# 45 IOprint_str (fb_a:int)<-(_60:str)
-    mil.line("quit();");	# 46 MILline (_93:void)<-(_94:str)
+    fb_a := io.printf("#~EndVariableOutput~#\n");	# 45 IOprint_str (fb_a:int)<-(_52:str)
+    mil.line("quit();");	# 46 MILline (_85:void)<-(_86:str)
     gb_a := clients.quit();	# 47 CLTquit (gb_a:void)
 end main;	# 48  
 #setoid(oid(20000000));
@@ -120,13 +120,13 @@ end main;	# 48
 # str		int	  # type
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1860	  ]
+[ "minflt",	  1884	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  1	  ]
-[ "ninvcsw",	  8	  ]
+[ "ninvcsw",	  13	  ]
 #~EndVariableOutput~#
 #commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
 #transaction.commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
@@ -138,13 +138,13 @@ end main;	# 48
 # str		int	  # type
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1864	  ]
+[ "minflt",	  1890	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  1	  ]
-[ "ninvcsw",	  9	  ]
+[ "ninvcsw",	  14	  ]
 #~EndVariableOutput~#
 #quit();
 
