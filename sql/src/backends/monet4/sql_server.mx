@@ -1133,7 +1133,7 @@ proc sql_diff (bat[any::1,any::2] b1, bat[any::1,any::3] b2) : bat[any::1,any::2
 }
 
 proc sql_union (bat[any::1,any::2] b1, bat[any::1,any::2] b2) : bat[any::1,any::2] {
-	if (count(b1) == 0)
+	if (count(b1) = 0)
 		return b2;
 	if (count(b2) > 0)
 		return kunion(b1,b2);

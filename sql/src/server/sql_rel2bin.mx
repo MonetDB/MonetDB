@@ -946,9 +946,7 @@ rel2bin(mvc *c, stmt *s)
 		} else {
 			l = list_dup(l, (fdup)&stmt_dup);
 			if (!mvc_debug_on(c, 4096)) {
-				list *old = l;
 				l = shrink_select_ranges(c, l);
-				list_destroy(old);
 			}
 			n = list_find(l, (void*)1, (fcmp) &find_unique);
 			if (!n) {

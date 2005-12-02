@@ -201,5 +201,6 @@ main(int argc, char **av)
 			printf("Timer: %ld (usec)\n", gettime()-t0);
 	}
 	GDKfree(buf);
+	mapi_destroy(mid);
 	return 0;
 }
