@@ -37,12 +37,12 @@ end dummy;	# 5
 #
 !ERROR: 'mdb.showFunction' undefined in user.main[6]
 function user.main():void;	# 0  (main:void)
-#self inspection of the code base 	# 1  (_2:str)
-    user.dummy(1);	# 2  (_3:void)<-(_4:int)
-    io.printf("get function properties\n");	# 3 IOprint_str (_5:int)<-(_6:str)
-    l := inspect.getSignature("user","dummy");	# 4 INSPECTgetSignature (l:bat[:str,:str])<-(_8:str)(_9:str)
-    io.print(l);	# 5 IOprint_val (_10:int)<-(l:bat[:str,:str])
-    mdb.showFunction("user","dummy");	# 6  unknown (_11:any)<-(_8:str)(_9:str)
+#self inspection of the code base 	# 1  (_1:str)
+    user.dummy(1);	# 2  (_2:void)<-(_3:int)
+    io.printf("get function properties\n");	# 3 IOprint_str (_4:int)<-(_5:str)
+    l := inspect.getSignature("user","dummy");	# 4 INSPECTgetSignature (l:bat[:str,:str])<-(_7:str)(_8:str)
+    io.print(l);	# 5 IOprint_val (_9:int)<-(l:bat[:str,:str])
+    mdb.showFunction("user","dummy");	# 6  unknown (_10:any)<-(_7:str)(_8:str)
 end main;	# 7  
 
 # 00:03:56 >  

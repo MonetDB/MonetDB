@@ -35,15 +35,15 @@ function user.tst():void;	# 0  (tst:void)
     io.print(b0);	# 6 IOprint_val (_8:int)<-(b0:bat[:str,:str])
     b1 := mdb.getStackFrame(1);	# 7 MDBStkFrameN (b1:bat[:str,:str])<-(_10:int)
     io.print(b1);	# 8 IOprint_val (_11:int)<-(b1:bat[:str,:str])
-# next one is illegal 	# 9  (_13:str)
-    b1 := mdb.getStackFrame(2);	# 10 MDBStkFrameN (b1:bat[:str,:str])<-(_14:int)
+# next one is illegal 	# 9  (_12:str)
+    b1 := mdb.getStackFrame(2);	# 10 MDBStkFrameN (b1:bat[:str,:str])<-(_13:int)
 end tst;	# 11  
 #
 #user.tst();
 #
 function user.main():void;	# 0  (main:void)
-# test analysis of stack frames 	# 1  (_2:str)
-    user.tst();	# 2  (_3:void)
+# test analysis of stack frames 	# 1  (_1:str)
+    user.tst();	# 2  (_2:void)
 end main;	# 3  
 stack depth 2
 #---------------------------------------------------------#
@@ -68,17 +68,15 @@ stack depth 2
 [ "b1",	  "nil"				  ]
 [ "_10",  "1"				  ]
 [ "_11",  "0"				  ]
-[ "_12",  "0@0"				  ]
-[ "_13",  "nil"				  ]
-[ "_14",  "2"				  ]
+[ "_12",  "nil"				  ]
+[ "_13",  "2"				  ]
 #-----------------#
 # view	stk	  # name
 # str	str	  # type
 #-----------------#
 [ "tst",  "0@0"	  ]
-[ "i",	  "0@0"	  ]
-[ "_2",	  "nil"	  ]
-[ "_3",	  "0@0"	  ]
+[ "i",	  "nil"	  ]
+[ "_2",	  "0@0"	  ]
 !ERROR: MALexception:inspect.stkFrame:illegal depth.
 #
 

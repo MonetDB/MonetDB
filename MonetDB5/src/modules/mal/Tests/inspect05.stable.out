@@ -25,7 +25,7 @@ function user.main():void;	# 0  (main:void)
     m := inspect.getModule();	# 3 INSPECTgetModule (m:bat[:void,:str])
     f := inspect.getFunction();	# 4 INSPECTgetFunction (f:bat[:void,:str])
     s := inspect.getSignature();	# 5 INSPECTgetsignature (s:bat[:void,:str])
-    io.print(k,m,f,s);	# 6 IOtable (_7:int)<-(k:bat[:void,:str])(m:bat[:void,:str])(f:bat[:void,:str])(s:bat[:void,:str])
+    io.print(k,m,f,s);	# 6 IOtable (_6:int)<-(k:bat[:void,:str])(m:bat[:void,:str])(f:bat[:void,:str])(s:bat[:void,:str])
 end main;	# 7  
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # view	symbol		symbol		symbol				 symbol																  # name

@@ -32,15 +32,15 @@ stdout of test 'clients01` in directory 'src/modules/mal` itself:
 function user.main():void;	# 0  (main:void)
 # inspect the clients population 	# 1  (_2:str)
     d := clients.getId();	# 2 CLTgetClientId (d:int)
-    io.print(d);	# 3 IOprint_val (_4:int)<-(d:int)
+    io.print(d);	# 3 IOprint_val (_3:int)<-(d:int)
     s := clients.getScenario();	# 4 CLTgetScenario (s:str)
-    io.print(s);	# 5 IOprint_val (_6:int)<-(s:str)
+    io.print(s);	# 5 IOprint_val (_5:int)<-(s:str)
     i := clients.getInfo();	# 6 CLTInfo (i:bat[:int,:str])
-    io.print(i);	# 7 IOprint_val (_8:int)<-(i:bat[:int,:str])
+    io.print(i);	# 7 IOprint_val (_7:int)<-(i:bat[:int,:str])
     u := clients.getUsers();	# 8 CLTusers (u:bat[:int,:str])
-    io.print(u);	# 9 IOprint_val (_10:int)<-(u:bat[:int,:str])
-#l:= clients.getLogins(); 	# 10  (_12:str)
-#io.print(l); 	# 11  (_14:str)
+    io.print(u);	# 9 IOprint_val (_9:int)<-(u:bat[:int,:str])
+#l:= clients.getLogins(); 	# 10  (_10:str)
+#io.print(l); 	# 11  (_11:str)
 end main;	# 12  
 [ 0 ]
 [ "mal" ]
