@@ -73,6 +73,8 @@ struct MapiStruct {
 
 	int trace;		/* Trace Mapi interaction */
 	int blocked;		/* blocked mode */
+	int auto_commit;
+	char* noexplain;	/* on error, don't explain, only print result */
 	MapiMsg error;		/* Error occurred */
 	char *errorstr;		/* pointer to constant string */
 	const char *action;	/* pointer to constant string */
