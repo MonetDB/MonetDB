@@ -39,7 +39,7 @@ else
 		if [ $? -eq 0 ]; then
 			MONETDB_PREFIX="`monetdb-config --prefix`"
 		else
-			echo "!ERROR: requires MONETDB_PREFIX to be set or monetdb-config in your PATH" > /dev/stderr
+			echo "!ERROR: requires MONETDB_PREFIX to be set or monetdb-config in your PATH"
 			exit 1
 		fi
 	fi
@@ -62,7 +62,7 @@ elif [ -x src/utils/autogen/autogen.py ] ; then
 else
 	AUTOGEN=$MONETDB_PREFIX/lib/autogen/autogen.py
 	if [ ! -x "$AUTOGEN" ]; then
-		echo "!ERROR: requires autogen.py to be available" > /dev/stderr
+		echo "!ERROR: requires autogen.py to be available"
 		exit 1
 	fi
 fi
