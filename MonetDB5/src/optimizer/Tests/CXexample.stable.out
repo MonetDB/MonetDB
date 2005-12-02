@@ -28,17 +28,17 @@ stdout of test 'CXexample` in directory 'src/optimizer` itself:
 #
 #
 function user.main():void;	# 0  (main:void)
-# The 4000 series deals with strategic optimizer constructs 	# 1  (_2:str)
-# common subexpression evaluation 	# 2  (_4:str)
-    b := bat.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_7:int)(_7:int)
-    c := bat.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-(_7:int)(_7:int)
-    d := algebra.select(b,0,100);	# 5 ALGselect (d:bat[:int,:int])<-(b:bat[:int,:int])(_10:int)(_11:int)
+# The 4000 series deals with strategic optimizer constructs 	# 1  (_1:str)
+# common subexpression evaluation 	# 2  (_2:str)
+    b := bat.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_5:int)(_5:int)
+    c := bat.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-(_5:int)(_5:int)
+    d := algebra.select(b,0,100);	# 5 ALGselect (d:bat[:int,:int])<-(b:bat[:int,:int])(_8:int)(_9:int)
     e := d;	# 6 ALGselect (e:bat[:int,:int])<-(d:bat[:int,:int])
-    k1 := 24;	# 7  (k1:int)<-(_14:int)
-    k2 := 27;	# 8  (k2:int)<-(_16:int)
+    k1 := 24;	# 7  (k1:int)<-(_12:int)
+    k2 := 27;	# 8  (k2:int)<-(_14:int)
     l := calc.+(k1,k2);	# 9 CALCbinaryADDintint (l:int)<-(k1:int)(k2:int)
     l3 := calc.+(l,k1);	# 10 CALCbinaryADDintint (l3:int)<-(l:int)(k1:int)
-    mdb.list();	# 11 MDBlist (_20:void)
+    mdb.list();	# 11 MDBlist (_18:void)
 end main;	# 12  
 function user.main():void;
 # The 4000 series deals with strategic optimizer constructs 

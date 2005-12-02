@@ -21,20 +21,20 @@ stdout of test 'pbm01` in directory 'src/optimizer` itself:
 #    mdb.list();
 #
 function user.main():void;	# 0  (main:void)
-# extract the definition by the optimizer 	# 1  (_2:str)
-    d:bat[:void,:int]  := mat.expand("Sales2005");	# 2 MATdummy (d:bat[:void,:int])<-(_4:str)
-    _13 := bbp.bind("tmp_4");	# 3 CMDbbpbind (_13:bat[:void,:int])<-(_14:str)
-    _15 := bbp.bind("tmp_5");	# 4 CMDbbpbind (_15:bat[:void,:int])<-(_16:str)
-    _17 := bbp.bind("tmp_6");	# 5 CMDbbpbind (_17:bat[:void,:int])<-(_18:str)
-    d:bat[:void,:int]  := mat.new(_13,_15,_17);	# 6 MATnew (d:bat[:void,:int])<-(_13:bat[:void,:int])(_15:bat[:void,:int])(_17:bat[:void,:int])
-    _19 := algebra.select(_13,0,300);	# 7 ALGselect (_19:bat[:void,:int])<-(_13:bat[:void,:int])(_6:int)(_7:int)
-    _20 := algebra.select(_15,0,300);	# 8 ALGselect (_20:bat[:void,:int])<-(_15:bat[:void,:int])(_6:int)(_7:int)
-    _21 := algebra.select(_17,0,300);	# 9 ALGselect (_21:bat[:void,:int])<-(_17:bat[:void,:int])(_6:int)(_7:int)
-    s := mat.new(_19,_20,_21);	# 10 MATnew (s:bat[:void,:int])<-(_19:bat[:void,:int])(_20:bat[:void,:int])(_21:bat[:void,:int])
-    s := mat.pack(_19,_20,_21);	# 11 MATpack (s:bat[:void,:int])<-(_19:bat[:void,:int])(_20:bat[:void,:int])(_21:bat[:void,:int])
-    io.print(s);	# 12 IOprint_val (_8:int)<-(s:bat[:void,:int])
-    io.print("done");	# 13 IOprint_val (_10:int)<-(_11:str)
-    mdb.list();	# 14 MDBlist (_12:void)
+# extract the definition by the optimizer 	# 1  (_1:str)
+    d:bat[:void,:int]  := mat.expand("Sales2005");	# 2 MATdummy (d:bat[:void,:int])<-(_3:str)
+    _12 := bbp.bind("tmp_4");	# 3 CMDbbpbind (_12:bat[:void,:int])<-(_13:str)
+    _14 := bbp.bind("tmp_5");	# 4 CMDbbpbind (_14:bat[:void,:int])<-(_15:str)
+    _16 := bbp.bind("tmp_6");	# 5 CMDbbpbind (_16:bat[:void,:int])<-(_17:str)
+    d:bat[:void,:int]  := mat.new(_12,_14,_16);	# 6 MATnew (d:bat[:void,:int])<-(_12:bat[:void,:int])(_14:bat[:void,:int])(_16:bat[:void,:int])
+    _18 := algebra.select(_12,0,300);	# 7 ALGselect (_18:bat[:void,:int])<-(_12:bat[:void,:int])(_5:int)(_6:int)
+    _19 := algebra.select(_14,0,300);	# 8 ALGselect (_19:bat[:void,:int])<-(_14:bat[:void,:int])(_5:int)(_6:int)
+    _20 := algebra.select(_16,0,300);	# 9 ALGselect (_20:bat[:void,:int])<-(_16:bat[:void,:int])(_5:int)(_6:int)
+    s := mat.new(_18,_19,_20);	# 10 MATnew (s:bat[:void,:int])<-(_18:bat[:void,:int])(_19:bat[:void,:int])(_20:bat[:void,:int])
+    s := mat.pack(_18,_19,_20);	# 11 MATpack (s:bat[:void,:int])<-(_18:bat[:void,:int])(_19:bat[:void,:int])(_20:bat[:void,:int])
+    io.print(s);	# 12 IOprint_val (_7:int)<-(s:bat[:void,:int])
+    io.print("done");	# 13 IOprint_val (_9:int)<-(_10:str)
+    mdb.list();	# 14 MDBlist (_11:void)
 end main;	# 15  
 #-----------------#
 # h	t	  # name
@@ -44,15 +44,15 @@ end main;	# 15
 function user.main():void;
 # extract the definition by the optimizer 
     d:bat[:void,:int]  := mat.expand("Sales2005");
-    _13 := bbp.bind("tmp_4");
-    _15 := bbp.bind("tmp_5");
-    _17 := bbp.bind("tmp_6");
-    d:bat[:void,:int]  := mat.new(_13,_15,_17);
-    _19 := algebra.select(_13,0,300);
-    _20 := algebra.select(_15,0,300);
-    _21 := algebra.select(_17,0,300);
-    s := mat.new(_19,_20,_21);
-    s := mat.pack(_19,_20,_21);
+    _12 := bbp.bind("tmp_4");
+    _14 := bbp.bind("tmp_5");
+    _16 := bbp.bind("tmp_6");
+    d:bat[:void,:int]  := mat.new(_12,_14,_16);
+    _18 := algebra.select(_12,0,300);
+    _19 := algebra.select(_14,0,300);
+    _20 := algebra.select(_16,0,300);
+    s := mat.new(_18,_19,_20);
+    s := mat.pack(_18,_19,_20);
     io.print(s);
     io.print("done");
     mdb.list();

@@ -31,8 +31,8 @@ end f3;	# 6
 #	mdb.list("user","f3");
 #
 function user.main():void;	# 0  (main:void)
-#optimizer.expressionAccumulation("user","f3"); 	# 1  (_2:str)
-    mdb.list("user","f3");	# 2 MDBlist3 (_6:void)<-(_4:str)(_5:str)
+#optimizer.expressionAccumulation("user","f3"); 	# 1  (_1:str)
+    mdb.list("user","f3");	# 2 MDBlist3 (_5:void)<-(_3:str)(_4:str)
 end main;	# 3  
 function user.f3():void;
     t28 := array.grid(1:int,500:int,1:int,0);

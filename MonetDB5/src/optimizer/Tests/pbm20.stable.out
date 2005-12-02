@@ -18,10 +18,10 @@ stdout of test 'pbm20` in directory 'src/optimizer` itself:
 #	pbm.close();
 #
 function user.main():void;	# 0  (main:void)
-# clean up the BAT partition manager pool 	# 1  (_2:str)
-    pbm.open();	# 2 PBMopen (_3:void)
-    pbm.discard();	# 3 PBMdiscardAll (_4:void)
-    pbm.close();	# 4 PBMclose (_5:void)
+# clean up the BAT partition manager pool 	# 1  (_1:str)
+    pbm.open();	# 2 PBMopen (_2:void)
+    pbm.discard();	# 3 PBMdiscardAll (_3:void)
+    pbm.close();	# 4 PBMclose (_4:void)
 end main;	# 5  
 
 # 23:24:12 >  

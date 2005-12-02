@@ -29,21 +29,21 @@ stdout of test 'generator08` in directory 'src/optimizer` itself:
 #
 #
 function user.main():void;	# 0  (main:void)
-# the generator optimizer 	# 1  (_2:str)
-# The flow graph becomes a little more complex  	# 2  (_4:str)
-# it requires the result of the select to be accumulated 	# 3  (_6:str)
-# because there is a blocking instruction inbetween 	# 4  (_8:str)
-    mdb.list();	# 5 MDBlist (_9:void)
-    io.print("start");	# 6 IOprint_val (_10:int)<-(_11:str)
-    low := 0;	# 7  (low:int)<-(_15:int)
-    high := 3;	# 8  (high:int)<-(_17:int)
-barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 9 PBMnewIterator (b:bat[:void,:int])<-(_13:str) jump 13
+# the generator optimizer 	# 1  (_1:str)
+# The flow graph becomes a little more complex  	# 2  (_2:str)
+# it requires the result of the select to be accumulated 	# 3  (_3:str)
+# because there is a blocking instruction inbetween 	# 4  (_4:str)
+    mdb.list();	# 5 MDBlist (_5:void)
+    io.print("start");	# 6 IOprint_val (_6:int)<-(_7:str)
+    low := 0;	# 7  (low:int)<-(_11:int)
+    high := 3;	# 8  (high:int)<-(_13:int)
+barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 9 PBMnewIterator (b:bat[:void,:int])<-(_9:str) jump 13
     s := algebra.select(b,low,high);	# 10 ALGselect (s:bat[:void,:int])<-(b:bat[:void,:int])(low:int)(high:int)
     t := algebra.select(s,low,high);	# 11 ALGselect (t:bat[:void,:int])<-(s:bat[:void,:int])(low:int)(high:int)
-    redo b:bat[:void,:int]  := pbm.hasMoreElements("Sales2005");	# 12 PBMhasMoreElements (b:bat[:void,:int])<-(_13:str) jump 10
+    redo b:bat[:void,:int]  := pbm.hasMoreElements("Sales2005");	# 12 PBMhasMoreElements (b:bat[:void,:int])<-(_9:str) jump 10
 exit b;	# 13 PBMdummy (b:bat[:void,:int])
-    io.print("phase 1");	# 14 IOprint_val (_19:int)<-(_20:str)
-    io.print("finished");	# 15 IOprint_val (_22:int)<-(_23:str)
+    io.print("phase 1");	# 14 IOprint_val (_15:int)<-(_16:str)
+    io.print("finished");	# 15 IOprint_val (_18:int)<-(_19:str)
 end main;	# 16  
 function user.main():void;
 # the generator optimizer 

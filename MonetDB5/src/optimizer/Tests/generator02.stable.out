@@ -27,21 +27,21 @@ stdout of test 'generator02` in directory 'src/optimizer` itself:
 #
 #
 function user.main():void;	# 0  (main:void)
-# the generator optimizer 	# 1  (_2:str)
-# The flow graph becomes a little more complex  	# 2  (_4:str)
-    mdb.list();	# 3 MDBlist (_5:void)
-    io.print("start");	# 4 IOprint_val (_6:int)<-(_7:str)
-    low := 0;	# 5  (low:int)<-(_11:int)
-    high := 3;	# 6  (high:int)<-(_13:int)
-    c := 0;	# 7  (c:int)<-(_11:int)
-barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 8 PBMnewIterator (b:bat[:void,:int])<-(_9:str) jump 13
+# the generator optimizer 	# 1  (_1:str)
+# The flow graph becomes a little more complex  	# 2  (_2:str)
+    mdb.list();	# 3 MDBlist (_3:void)
+    io.print("start");	# 4 IOprint_val (_4:int)<-(_5:str)
+    low := 0;	# 5  (low:int)<-(_9:int)
+    high := 3;	# 6  (high:int)<-(_11:int)
+    c := 0;	# 7  (c:int)<-(_9:int)
+barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 8 PBMnewIterator (b:bat[:void,:int])<-(_7:str) jump 13
     s := algebra.select(b,low,high);	# 9 ALGselect (s:bat[:void,:int])<-(b:bat[:void,:int])(low:int)(high:int)
-    _20 := aggr.count(s);	# 10 ALGcount_bat (_20:int)<-(s:bat[:void,:int])
-    c := calc.+(c,_20);	# 11 CALCbinaryADDintint (c:int)<-(c:int)(_20:int)
-    redo b:bat[:void,:int]  := pbm.hasMoreElements("Sales2005");	# 12 PBMhasMoreElements (b:bat[:void,:int])<-(_9:str) jump 9
+    _18 := aggr.count(s);	# 10 ALGcount_bat (_18:int)<-(s:bat[:void,:int])
+    c := calc.+(c,_18);	# 11 CALCbinaryADDintint (c:int)<-(c:int)(_18:int)
+    redo b:bat[:void,:int]  := pbm.hasMoreElements("Sales2005");	# 12 PBMhasMoreElements (b:bat[:void,:int])<-(_7:str) jump 9
 exit b;	# 13 PBMdummy (b:bat[:void,:int])
-    io.print(c);	# 14 IOprint_val (_16:int)<-(c:int)
-    io.print("finished");	# 15 IOprint_val (_17:int)<-(_18:str)
+    io.print(c);	# 14 IOprint_val (_14:int)<-(c:int)
+    io.print("finished");	# 15 IOprint_val (_15:int)<-(_16:str)
 end main;	# 16  
 function user.main():void;
 # the generator optimizer 
@@ -53,8 +53,8 @@ function user.main():void;
     c := 0;
 barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");
     s := algebra.select(b,low,high);
-    _20 := aggr.count(s);
-    c := calc.+(c,_20);
+    _18 := aggr.count(s);
+    c := calc.+(c,_18);
     redo b:bat[:void,:int]  := pbm.hasMoreElements("Sales2005");
 exit b;
     io.print(c);

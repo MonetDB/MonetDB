@@ -31,8 +31,8 @@ end test;	# 6
 #mdb.list("user","test");
 #
 function user.main():void;	# 0  (main:void)
-#Code factorization 	# 1  (_2:str)
-    mdb.list("user","test");	# 2 MDBlist3 (_6:void)<-(_4:str)(_5:str)
+#Code factorization 	# 1  (_1:str)
+    mdb.list("user","test");	# 2 MDBlist3 (_5:void)<-(_3:str)(_4:str)
 end main;	# 3  
 factory user.test(s:str):int;
     b := bat.new(:int,:str);

@@ -37,44 +37,44 @@ stdout of test 'mat00` in directory 'src/optimizer` itself:
 #optimizer.multitable();
 #
 function user.main():void;	# 0  (main:void)
-# the Multi Assocation Tables 	# 1  (_2:str)
-    mdb.list();	# 2 MDBlist (_3:void)
-    m0 := bat.new(:void,:int);	# 3 CMDBATnew (m0:bat[:void,:int])<-(_5:void)(_6:int)
-    bat.insert(m0,nil,0);	# 4 BKCinsert_bun (_7:void)<-(m0:bat[:void,:int])(_8:void)(_9:int)
-    m1 := bat.new(:void,:int);	# 5 CMDBATnew (m1:bat[:void,:int])<-(_5:void)(_6:int)
-    bat.insert(m1,nil,1);	# 6 BKCinsert_bun (_11:void)<-(m1:bat[:void,:int])(_8:void)(_12:int)
-    m2 := bat.new(:void,:int);	# 7 CMDBATnew (m2:bat[:void,:int])<-(_5:void)(_6:int)
-    bat.insert(m2,nil,2);	# 8 BKCinsert_bun (_14:void)<-(m2:bat[:void,:int])(_8:void)(_15:int)
+# the Multi Assocation Tables 	# 1  (_1:str)
+    mdb.list();	# 2 MDBlist (_2:void)
+    m0 := bat.new(:void,:int);	# 3 CMDBATnew (m0:bat[:void,:int])<-(_4:void)(_5:int)
+    bat.insert(m0,nil,0);	# 4 BKCinsert_bun (_6:void)<-(m0:bat[:void,:int])(_7:void)(_8:int)
+    m1 := bat.new(:void,:int);	# 5 CMDBATnew (m1:bat[:void,:int])<-(_4:void)(_5:int)
+    bat.insert(m1,nil,1);	# 6 BKCinsert_bun (_10:void)<-(m1:bat[:void,:int])(_7:void)(_11:int)
+    m2 := bat.new(:void,:int);	# 7 CMDBATnew (m2:bat[:void,:int])<-(_4:void)(_5:int)
+    bat.insert(m2,nil,2);	# 8 BKCinsert_bun (_13:void)<-(m2:bat[:void,:int])(_7:void)(_14:int)
     b := mat.new(m0,m1,m2);	# 9 MATnew (b:bat[:void,:int])<-(m0:bat[:void,:int])(m1:bat[:void,:int])(m2:bat[:void,:int])
-    _35 := algebra.select(m0,0,2);	# 10 ALGselect (_35:bat[:void,:int])<-(m0:bat[:void,:int])(_9:int)(_15:int)
-    _36 := algebra.select(m1,0,2);	# 11 ALGselect (_36:bat[:void,:int])<-(m1:bat[:void,:int])(_9:int)(_15:int)
-    _37 := algebra.select(m2,0,2);	# 12 ALGselect (_37:bat[:void,:int])<-(m2:bat[:void,:int])(_9:int)(_15:int)
-    s := mat.new(_35,_36,_37);	# 13 MATnew (s:bat[:void,:int])<-(_35:bat[:void,:int])(_36:bat[:void,:int])(_37:bat[:void,:int])
-    i := 0;	# 14  (i:int)<-(_9:int)
-    _38 := aggr.count(_35);	# 15 ALGcount_bat (_38:int)<-(_35:bat[:void,:int])
-    i := calc.+(i,_38);	# 16 CALCbinaryADDintint (i:int)<-(i:int)(_38:int)
-    _39 := aggr.count(_36);	# 17 ALGcount_bat (_39:int)<-(_36:bat[:void,:int])
-    i := calc.+(i,_39);	# 18 CALCbinaryADDintint (i:int)<-(i:int)(_39:int)
-    _40 := aggr.count(_37);	# 19 ALGcount_bat (_40:int)<-(_37:bat[:void,:int])
-    i := calc.+(i,_40);	# 20 CALCbinaryADDintint (i:int)<-(i:int)(_40:int)
-    s := mat.pack(_35,_36,_37);	# 21 MATpack (s:bat[:void,:int])<-(_35:bat[:void,:int])(_36:bat[:void,:int])(_37:bat[:void,:int])
-    io.print(s);	# 22 IOprint_val (_19:int)<-(s:bat[:void,:int])
-    io.print(i);	# 23 IOprint_val (_20:int)<-(i:int)
-    c0 := bat.new(:int,:int);	# 24 CMDBATnew (c0:bat[:int,:int])<-(_6:int)(_6:int)
-    bat.insert(c0,0,4);	# 25 BKCinsert_bun_int_int (_22:void)<-(c0:bat[:int,:int])(_9:int)(_23:int)
-    c1 := bat.new(:int,:int);	# 26 CMDBATnew (c1:bat[:int,:int])<-(_6:int)(_6:int)
-    bat.insert(c1,1,5);	# 27 BKCinsert_bun_int_int (_25:void)<-(c1:bat[:int,:int])(_12:int)(_26:int)
+    _34 := algebra.select(m0,0,2);	# 10 ALGselect (_34:bat[:void,:int])<-(m0:bat[:void,:int])(_8:int)(_14:int)
+    _35 := algebra.select(m1,0,2);	# 11 ALGselect (_35:bat[:void,:int])<-(m1:bat[:void,:int])(_8:int)(_14:int)
+    _36 := algebra.select(m2,0,2);	# 12 ALGselect (_36:bat[:void,:int])<-(m2:bat[:void,:int])(_8:int)(_14:int)
+    s := mat.new(_34,_35,_36);	# 13 MATnew (s:bat[:void,:int])<-(_34:bat[:void,:int])(_35:bat[:void,:int])(_36:bat[:void,:int])
+    i := 0;	# 14  (i:int)<-(_8:int)
+    _37 := aggr.count(_34);	# 15 ALGcount_bat (_37:int)<-(_34:bat[:void,:int])
+    i := calc.+(i,_37);	# 16 CALCbinaryADDintint (i:int)<-(i:int)(_37:int)
+    _38 := aggr.count(_35);	# 17 ALGcount_bat (_38:int)<-(_35:bat[:void,:int])
+    i := calc.+(i,_38);	# 18 CALCbinaryADDintint (i:int)<-(i:int)(_38:int)
+    _39 := aggr.count(_36);	# 19 ALGcount_bat (_39:int)<-(_36:bat[:void,:int])
+    i := calc.+(i,_39);	# 20 CALCbinaryADDintint (i:int)<-(i:int)(_39:int)
+    s := mat.pack(_34,_35,_36);	# 21 MATpack (s:bat[:void,:int])<-(_34:bat[:void,:int])(_35:bat[:void,:int])(_36:bat[:void,:int])
+    io.print(s);	# 22 IOprint_val (_18:int)<-(s:bat[:void,:int])
+    io.print(i);	# 23 IOprint_val (_19:int)<-(i:int)
+    c0 := bat.new(:int,:int);	# 24 CMDBATnew (c0:bat[:int,:int])<-(_5:int)(_5:int)
+    bat.insert(c0,0,4);	# 25 BKCinsert_bun_int_int (_21:void)<-(c0:bat[:int,:int])(_8:int)(_22:int)
+    c1 := bat.new(:int,:int);	# 26 CMDBATnew (c1:bat[:int,:int])<-(_5:int)(_5:int)
+    bat.insert(c1,1,5);	# 27 BKCinsert_bun_int_int (_24:void)<-(c1:bat[:int,:int])(_11:int)(_25:int)
     c := mat.new(c0,c1);	# 28 MATnew (c:bat[:int,:int])<-(c0:bat[:int,:int])(c1:bat[:int,:int])
-    bat.insert(c1,1,6);	# 29 BKCinsert_bun_int_int (_28:void)<-(c1:bat[:int,:int])(_12:int)(_29:int)
+    bat.insert(c1,1,6);	# 29 BKCinsert_bun_int_int (_27:void)<-(c1:bat[:int,:int])(_11:int)(_28:int)
     b := mat.pack(m0,m1,m2);	# 30 MATpack (b:bat[:void,:int])<-(m0:bat[:void,:int])(m1:bat[:void,:int])(m2:bat[:void,:int])
-    _41 := algebra.join(b,c0);	# 31 ALGjoin (_41:bat[:void,:int])<-(b:bat[:void,:int])(c0:bat[:int,:int])
-    _42 := algebra.join(b,c1);	# 32 ALGjoin (_42:bat[:void,:int])<-(b:bat[:void,:int])(c1:bat[:int,:int])
-    j := mat.new(_41,_42);	# 33 MATnew (j:bat[:void,:int])<-(_41:bat[:void,:int])(_42:bat[:void,:int])
-    j := mat.pack(_41,_42);	# 34 MATpack (j:bat[:void,:int])<-(_41:bat[:void,:int])(_42:bat[:void,:int])
-    io.print(j);	# 35 IOprint_val (_31:int)<-(j:bat[:void,:int])
-    io.print(b);	# 36 IOprint_val (_32:int)<-(b:bat[:void,:int])
+    _40 := algebra.join(b,c0);	# 31 ALGjoin (_40:bat[:void,:int])<-(b:bat[:void,:int])(c0:bat[:int,:int])
+    _41 := algebra.join(b,c1);	# 32 ALGjoin (_41:bat[:void,:int])<-(b:bat[:void,:int])(c1:bat[:int,:int])
+    j := mat.new(_40,_41);	# 33 MATnew (j:bat[:void,:int])<-(_40:bat[:void,:int])(_41:bat[:void,:int])
+    j := mat.pack(_40,_41);	# 34 MATpack (j:bat[:void,:int])<-(_40:bat[:void,:int])(_41:bat[:void,:int])
+    io.print(j);	# 35 IOprint_val (_30:int)<-(j:bat[:void,:int])
+    io.print(b);	# 36 IOprint_val (_31:int)<-(b:bat[:void,:int])
     c := mat.pack(c0,c1);	# 37 MATpack (c:bat[:int,:int])<-(c0:bat[:int,:int])(c1:bat[:int,:int])
-    io.print(c);	# 38 IOprint_val (_33:int)<-(c:bat[:int,:int])
+    io.print(c);	# 38 IOprint_val (_32:int)<-(c:bat[:int,:int])
 end main;	# 39  
 function user.main():void;
 # the Multi Assocation Tables 
@@ -86,18 +86,18 @@ function user.main():void;
     m2 := bat.new(:void,:int);
     bat.insert(m2,nil,2);
     b := mat.new(m0,m1,m2);
-    _35 := algebra.select(m0,0,2);
-    _36 := algebra.select(m1,0,2);
-    _37 := algebra.select(m2,0,2);
-    s := mat.new(_35,_36,_37);
+    _34 := algebra.select(m0,0,2);
+    _35 := algebra.select(m1,0,2);
+    _36 := algebra.select(m2,0,2);
+    s := mat.new(_34,_35,_36);
     i := 0;
+    _37 := aggr.count(_34);
+    i := calc.+(i,_37);
     _38 := aggr.count(_35);
     i := calc.+(i,_38);
     _39 := aggr.count(_36);
     i := calc.+(i,_39);
-    _40 := aggr.count(_37);
-    i := calc.+(i,_40);
-    s := mat.pack(_35,_36,_37);
+    s := mat.pack(_34,_35,_36);
     io.print(s);
     io.print(i);
     c0 := bat.new(:int,:int);
@@ -107,10 +107,10 @@ function user.main():void;
     c := mat.new(c0,c1);
     bat.insert(c1,1,6);
     b := mat.pack(m0,m1,m2);
-    _41 := algebra.join(b,c0);
-    _42 := algebra.join(b,c1);
-    j := mat.new(_41,_42);
-    j := mat.pack(_41,_42);
+    _40 := algebra.join(b,c0);
+    _41 := algebra.join(b,c1);
+    j := mat.new(_40,_41);
+    j := mat.pack(_40,_41);
     io.print(j);
     io.print(b);
     c := mat.pack(c0,c1);

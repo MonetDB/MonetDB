@@ -185,10 +185,10 @@ end qry1;	# 73
 #mdb.list("user","qry1");
 #
 function user.main():void;	# 0  (main:void)
-#TPCH query 1 	# 1  (_2:str)
-# the basis for further optimizer tests 	# 2  (_4:str)
-#don;t depend on SQL library 	# 3  (_6:str)
-    mdb.list("user","qry1");	# 4 MDBlist3 (_10:void)<-(_8:str)(_9:str)
+#TPCH query 1 	# 1  (_1:str)
+# the basis for further optimizer tests 	# 2  (_2:str)
+#don;t depend on SQL library 	# 3  (_3:str)
+    mdb.list("user","qry1");	# 4 MDBlist3 (_7:void)<-(_5:str)(_6:str)
 end main;	# 5  
 factory user.qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):bit;
     V6:bat[:void,:date]{RMcost=1000,count=1000}  := user.bind("sys","lineitem","l_shipdate",0);
