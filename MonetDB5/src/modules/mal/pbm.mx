@@ -266,6 +266,7 @@ PBMresize(int size)
 
 	if( size <= plimit) return;
 	p = GDKmalloc(size * sizeof(PBATrecord));
+	memset((char*)p, 0, size * sizeof(PBATrecord));
 	if (partitions) {
 		if (ptop > size)
 			GDKfatal("assertion error in PBMresize");
