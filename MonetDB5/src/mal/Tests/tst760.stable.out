@@ -34,10 +34,10 @@ end test;	# 3
 !ERROR: end test;	# 3  
 !ERROR: 'user.test' undefined in user.main[4]
 function user.main():void;	# 0  (main:void)
-# Polymorphic function tests 	# 1  (_2:str)
-# Catching a dynamic error 	# 2  (_4:str)
-    c := bat.new(:int,:str);	# 3 CMDBATnew (c:bat[:int,:str])<-(_6:int)(_7:str)
-    user.test(c,"hello");	# 4  unknown (_8:void)<-(c:bat[:int,:str])(_9:str)
+# Polymorphic function tests 	# 1  (_1:str)
+# Catching a dynamic error 	# 2  (_2:str)
+    c := bat.new(:int,:str);	# 3 CMDBATnew (c:bat[:int,:str])<-(_4:int)(_5:str)
+    user.test(c,"hello");	# 4  unknown (_6:void)<-(c:bat[:int,:str])(_7:str)
 end main;	# 5  
 
 # 08:01:30 >  

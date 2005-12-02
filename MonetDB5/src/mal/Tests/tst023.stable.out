@@ -26,8 +26,8 @@ end help;	# 4
 #transaction.help();
 #
 function user.main():void;	# 0  (main:void)
-#test addition of a function to a known module 	# 1  (_2:str)
-    transaction.help();	# 2  (_3:void)
+#test addition of a function to a known module 	# 1  (_1:str)
+    transaction.help();	# 2  (_2:void)
 end main;	# 3  
 [ "added function to specific module" ]
 #-------------------------------------------------------------------------#

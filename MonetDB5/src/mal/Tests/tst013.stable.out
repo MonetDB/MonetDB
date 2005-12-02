@@ -28,27 +28,25 @@ stdout of test 'tst013` in directory 'src/mal` itself:
 #	redo;
 #exit;
 #
+!ERROR: label '_4' not in guarded block in main[3]
+!ERROR: label 't' not in guarded block in main[14]
 function user.main():void;	# 0  (main:void)
-# incomplete barrier blocks. Resolve them when unambigous 	# 1  (_2:str)
-barrier z := true;	# 2  (z:bit)<-(_4:bit) jump 4
-    leave z;	# 3  (z:bit) jump 4
+# incomplete barrier blocks. Resolve them when unambigous 	# 1  (_1:str)
+barrier z := true;	# 2  (z:bit)<-(_3:bit) jump 4
+    leave ;	# 3  (_4:any)
 exit z;	# 4  (z:bit)
-barrier i := 1;	# 5  (i:int)<-(_8:int) jump 15
-    i := calc.+(i,1);	# 6 CALCbinaryADDintint (i:int)<-(i:int)(_8:int)
-    io.print(i);	# 7 IOprint_val (_9:int)<-(i:int)
-barrier t := calc.>(i,3);	# 8 CALCcompGTintint (t:bit)<-(i:int)(_11:int) jump 13
-# new envelop 	# 9  (_13:str)
-    io.print("leave loop");	# 10 IOprint_val (_14:int)<-(_15:str)
+barrier i := 1;	# 5  (i:int)<-(_6:int) jump 15
+    i := calc.+(i,1);	# 6 CALCbinaryADDintint (i:int)<-(i:int)(_6:int)
+    io.print(i);	# 7 IOprint_val (_7:int)<-(i:int)
+barrier t := calc.>(i,3);	# 8 CALCcompGTintint (t:bit)<-(i:int)(_9:int) jump 13
+# new envelop 	# 9  (_10:str)
+    io.print("leave loop");	# 10 IOprint_val (_11:int)<-(_12:str)
     leave i;	# 11  (i:int) jump 15
 # leave outer envelop 	# 12  ($17:str)
 exit t;	# 13  (t:bit)
-    redo i;	# 14  (i:int) jump 6
+    redo t;	# 14  (t:bit)
 exit i;	# 15  (i:int)
 end main;	# 16  
-[ 2 ]
-[ 3 ]
-[ 4 ]
-[ "leave loop" ]
 
 # 07:58:37 >  
 # 07:58:37 >  Done.

@@ -50,13 +50,13 @@ end doitTwice;	# 5
 #
 !ERROR: 'user.doitTwice' undefined in user.main[7]
 function user.main():void;	# 0  (main:void)
-# the next step is to trace the call of a mal function call 	# 1  (_2:str)
-    a := 1;	# 2  (a:int)<-(_4:int)
+# the next step is to trace the call of a mal function call 	# 1  (_1:str)
+    a := 1;	# 2  (a:int)<-(_3:int)
     b := user.doitOnce();	# 3  (b:int)
-    c := 2;	# 4  (c:int)<-(_7:int)
-    d := user.doitTwice(3);	# 5  (d:int)<-(_9:int)
-    c := 3;	# 6  (c:int)<-(_9:int)
-    d := user.doitTwice("wrong");	# 7  unknown (d:int)<-(_10:str)
+    c := 2;	# 4  (c:int)<-(_6:int)
+    d := user.doitTwice(3);	# 5  (d:int)<-(_8:int)
+    c := 3;	# 6  (c:int)<-(_8:int)
+    d := user.doitTwice("wrong");	# 7  unknown (d:int)<-(_9:str)
 end main;	# 8  
 
 # 07:59:00 >  

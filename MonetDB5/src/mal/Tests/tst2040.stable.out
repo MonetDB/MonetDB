@@ -63,26 +63,26 @@ stdout of test 'tst2040` in directory 'src/mal` itself:
 #	printf("await dead of producer/consumer\n");
 #
 function user.main():void;	# 0  (main:void)
-#The 2000 serie  is focussed on parallelism 	# 1  (_2:str)
-# Example of a simple producer/consumer pair 	# 2  (_4:str)
-    cWait := true;	# 3  (cWait:bit)<-(_6:bit)
-#consumer put to sleep 	# 4  (_8:str)
-    pWait := true;	# 5  (pWait:bit)<-(_6:bit)
-#consumer put to sleep 	# 6  (_8:str)
-    i := 0;	# 7  (i:int)<-(_12:int)
+#The 2000 serie  is focussed on parallelism 	# 1  (_1:str)
+# Example of a simple producer/consumer pair 	# 2  (_2:str)
+    cWait := true;	# 3  (cWait:bit)<-(_4:bit)
+#consumer put to sleep 	# 4  (_5:str)
+    pWait := true;	# 5  (pWait:bit)<-(_4:bit)
+#consumer put to sleep 	# 6  (_5:str)
+    i := 0;	# 7  (i:int)<-(_8:int)
 thread producer;	# 8  (producer:any) jump 26
-#io.printf("Created producer thread\n"); 	# 9  (_15:str)
-barrier pBody := true;	# 10  (pBody:bit)<-(_6:bit) jump 24
+#io.printf("Created producer thread\n"); 	# 9  (_10:str)
+barrier pBody := true;	# 10  (pBody:bit)<-(_4:bit) jump 24
 barrier pWait;	# 11  (pWait:bit) jump 16
-# bussy loop to await for consumer  	# 12  (_18:str)
-#io.printf("producer: sleep\n"); 	# 13  (_20:str)
-    alarm.sleep(1);	# 14 ALARMsleep (_21:void)<-(_22:int)
+# bussy loop to await for consumer  	# 12  (_12:str)
+#io.printf("producer: sleep\n"); 	# 13  (_13:str)
+    alarm.sleep(1);	# 14 ALARMsleep (_14:void)<-(_15:int)
     redo pWait;	# 15  (pWait:bit) jump 12
 exit pWait;	# 16  (pWait:bit)
-#io.printf("produce an element\n"); 	# 17  (_24:str)
-    pWait := true;	# 18  (pWait:bit)<-(_6:bit)
-    cWait := false;	# 19  (cWait:bit)<-(_25:bit)
-barrier b := calc.==(i,0);	# 20 CALCcompEQintint (b:bit)<-(i:int)(_12:int) jump 22
+#io.printf("produce an element\n"); 	# 17  (_16:str)
+    pWait := true;	# 18  (pWait:bit)<-(_4:bit)
+    cWait := false;	# 19  (cWait:bit)<-(_17:bit)
+barrier b := calc.==(i,0);	# 20 CALCcompEQintint (b:bit)<-(i:int)(_8:int) jump 22
     leave producer;	# 21  (producer:any) jump 26
 exit b;	# 22  (b:bit)
     redo pBody;	# 23  (pBody:bit) jump 11
@@ -90,27 +90,27 @@ exit pBody;	# 24  (pBody:bit)
 #io.printf("Finished producer\n"); 	# 25  (_28:str)
 exit producer;	# 26  (producer:any)
 thread consumer;	# 27  (consumer:any) jump 45
-#io.printf("Created consumer thread\n"); 	# 28  (_31:str)
-barrier cBody := true;	# 29  (cBody:bit)<-(_6:bit) jump 43
+#io.printf("Created consumer thread\n"); 	# 28  (_21:str)
+barrier cBody := true;	# 29  (cBody:bit)<-(_4:bit) jump 43
 barrier cWait;	# 30  (cWait:bit) jump 34
-#io.printf("consumer: sleep\n"); 	# 31  (_34:str)
-    alarm.sleep(1);	# 32 ALARMsleep (_35:void)<-(_22:int)
+#io.printf("consumer: sleep\n"); 	# 31  (_23:str)
+    alarm.sleep(1);	# 32 ALARMsleep (_24:void)<-(_15:int)
     redo cWait;	# 33  (cWait:bit) jump 31
 exit cWait;	# 34  (cWait:bit)
-#io.printf("consume element %d\n",i); 	# 35  (_37:str)
-barrier b := calc.==(i,0);	# 36 CALCcompEQintint (b:bit)<-(i:int)(_12:int) jump 38
+#io.printf("consume element %d\n",i); 	# 35  (_25:str)
+barrier b := calc.==(i,0);	# 36 CALCcompEQintint (b:bit)<-(i:int)(_8:int) jump 38
     leave consumer;	# 37  (consumer:any) jump 45
 exit b;	# 38  (b:bit)
-    i := calc.-(i,1);	# 39 CALCbinarySUBintint (i:int)<-(i:int)(_22:int)
-    cWait := true;	# 40  (cWait:bit)<-(_6:bit)
-    pWait := false;	# 41  (pWait:bit)<-(_25:bit)
+    i := calc.-(i,1);	# 39 CALCbinarySUBintint (i:int)<-(i:int)(_15:int)
+    cWait := true;	# 40  (cWait:bit)<-(_4:bit)
+    pWait := false;	# 41  (pWait:bit)<-(_17:bit)
     redo cBody;	# 42  (cBody:bit) jump 30
 exit cBody;	# 43  (cBody:bit)
 #io.printf("Finished consumer\n"); 	# 44  (_39:str)
 exit consumer;	# 45  (consumer:any)
-    i := 2;	# 46  (i:int)<-(_40:int)
-    pWait := false;	# 47  (pWait:bit)<-(_25:bit)
-    io.printf("await dead of producer/consumer\n");	# 48 IOprint_str (_41:int)<-(_42:str)
+    i := 2;	# 46  (i:int)<-(_27:int)
+    pWait := false;	# 47  (pWait:bit)<-(_17:bit)
+    io.printf("await dead of producer/consumer\n");	# 48 IOprint_str (_28:int)<-(_29:str)
 end main;	# 49  
 await dead of producer/consumer
 

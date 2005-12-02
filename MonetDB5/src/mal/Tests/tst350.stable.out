@@ -101,14 +101,14 @@ end dir;	# 6
 #
 #
 function user.main():void;	# 0  (main:void)
-#inspection of the runtime setting 	# 1  (_2:str)
-#it uses the dynamic type analysis scheme 	# 2  (_4:str)
-    io.print("start test");	# 3 IOprint_val (_5:int)<-(_6:str)
-    b := bat.new(:int,:int);	# 4 CMDBATnew (b:bat[:int,:int])<-(_8:int)(_8:int)
-    bat.setName(b,"simplemind");	# 5 BKCsetName (_9:void)<-(b:bat[:int,:int])(_10:str)
+#inspection of the runtime setting 	# 1  (_1:str)
+#it uses the dynamic type analysis scheme 	# 2  (_2:str)
+    io.print("start test");	# 3 IOprint_val (_3:int)<-(_4:str)
+    b := bat.new(:int,:int);	# 4 CMDBATnew (b:bat[:int,:int])<-(_6:int)(_6:int)
+    bat.setName(b,"simplemind");	# 5 BKCsetName (_7:void)<-(b:bat[:int,:int])(_8:str)
     z := bbp.getNames();	# 6 CMDbbpNames (z:bat[:int,:str])
-    user.dir(z);	# 7  (_12:void)<-(z:bat[:int,:str])
-    user.dir("simple");	# 8  (_13:void)<-(_14:str)
+    user.dir(z);	# 7  (_10:void)<-(z:bat[:int,:str])
+    user.dir("simple");	# 8  (_11:void)<-(_12:str)
 end main;	# 9  
 [ "start test" ]
 #---------------------------------------------------------------------------------------------------------------------------------#

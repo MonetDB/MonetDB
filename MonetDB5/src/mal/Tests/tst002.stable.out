@@ -21,12 +21,12 @@ stdout of test 'tst002` in directory 'src/mal` itself:
 #exit barrier;
 #
 function user.main():void;	# 0  (main:void)
-# reserved names may not be used as target variables 	# 1  (_2:str)
-    true := 23;	# 2  (true:int)<-(_4:int)
-    false := 24;	# 3  (false:int)<-(_6:int)
-barrier barrier := true;	# 4  (barrier:bit)<-(_8:bit) jump 7
-    b := true;	# 5  (b:bit)<-(_8:bit)
-    b := false;	# 6  (b:bit)<-(_10:bit)
+# reserved names may not be used as target variables 	# 1  (_1:str)
+    true := 23;	# 2  (true:int)<-(_3:int)
+    false := 24;	# 3  (false:int)<-(_5:int)
+barrier barrier := true;	# 4  (barrier:bit)<-(_7:bit) jump 7
+    b := true;	# 5  (b:bit)<-(_7:bit)
+    b := false;	# 6  (b:bit)<-(_9:bit)
 exit barrier;	# 7  (barrier:bit)
 end main;	# 8  
 

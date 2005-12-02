@@ -46,19 +46,19 @@ end clkticks;	# 8
 #	#printf("child has finished\n");
 #
 function user.main():void;	# 0  (main:void)
-#The 2000 serie  is focussed on parallelism 	# 1  (_2:str)
-#we start with a non-parallel version 	# 2  (_4:str)
-thread hdl := 0;	# 3  (hdl:int)<-(_6:int) jump 7
-# should not be assigned a value to get started 	# 4  (_8:str)
-    io.printf("#START THREAD \n");	# 5 IOprint_str (_9:int)<-(_10:str)
-    io.printf("#About to exit child\n");	# 6 IOprint_str (_11:int)<-(_12:str)
+#The 2000 serie  is focussed on parallelism 	# 1  (_1:str)
+#we start with a non-parallel version 	# 2  (_2:str)
+thread hdl := 0;	# 3  (hdl:int)<-(_4:int) jump 7
+# should not be assigned a value to get started 	# 4  (_5:str)
+    io.printf("#START THREAD \n");	# 5 IOprint_str (_6:int)<-(_7:str)
+    io.printf("#About to exit child\n");	# 6 IOprint_str (_8:int)<-(_9:str)
 exit hdl;	# 7  (hdl:int)
-    alarm.sleep(2);	# 8 ALARMsleep (_13:void)<-(_14:int)
-    io.printf("#Wait for child to exit too\n");	# 9 IOprint_str (_15:int)<-(_16:str)
-    alarm.sleep(5);	# 10 ALARMsleep (_17:void)<-(_18:int)
-    io.printf("#Child should have died\n");	# 11 IOprint_str (_19:int)<-(_20:str)
-#wait hdl; 	# 12  (_22:str)
-#io.printf("child has finished\n"); 	# 13  (_24:str)
+    alarm.sleep(2);	# 8 ALARMsleep (_10:void)<-(_11:int)
+    io.printf("#Wait for child to exit too\n");	# 9 IOprint_str (_12:int)<-(_13:str)
+    alarm.sleep(5);	# 10 ALARMsleep (_14:void)<-(_15:int)
+    io.printf("#Child should have died\n");	# 11 IOprint_str (_16:int)<-(_17:str)
+#wait hdl; 	# 12  (_18:str)
+#io.printf("child has finished\n"); 	# 13  (_19:str)
 end main;	# 14  
 #Wait for child to exit too
 #START THREAD 

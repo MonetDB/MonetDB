@@ -23,8 +23,8 @@ stdout of test 'tst900` in directory 'src/mal` itself:
 !ERROR: a:= b [+] b;
 !            	^operator expected
 function user.main():void;	# 0  unknown (main:void)
-# the multiplex code blocks. Testing syntax errors 	# 1  unknown (_2:str)
-    b := bat.new(:lng,:lng);	# 2  unknown (b:any)<-(_4:lng)(_4:lng)
+# the multiplex code blocks. Testing syntax errors 	# 1  unknown (_1:str)
+    b := bat.new(:lng,:lng);	# 2  unknown (b:any)<-(_3:lng)(_3:lng)
     x := multiplex.+(b,b);	# 3  unknown (x:any)<-(b:any)(b:any)
     d;	# 4  unknown (d:any)
 # parser bug 	# 5  unknown ($9:str)

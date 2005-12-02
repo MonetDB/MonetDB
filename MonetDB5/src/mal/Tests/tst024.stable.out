@@ -20,17 +20,18 @@ stdout of test 'tst024` in directory 'src/mal` itself:
 #$5:=23;
 #print($5);
 #
-!ERROR: '_3' overwrites i
+!ERROR: '_2' overwrites i
+!ERROR: '_5' overwrites _2
 function user.main():void;	# 0  unknown (main:void)
-#detect illegal use of temporary variables 	# 1  unknown (_2:str)
-    i := 12;	# 2  unknown (i:any)<-(_4:int)
-# internal location of i is 3 	# 3  unknown (_6:str)
-    55;	# 4  unknown (_2:str)<-(_7:int)
-# acceptable 	# 5  unknown (_9:str)
-    _3 := 23;	# 6  unknown (_3:any)<-(_11:int)
-# error, overwriting non-temp 	# 7  unknown (_13:str)
-    _5 := 23;	# 8  unknown (_5:any)<-(_11:int)
-    io.print(_5);	# 9  unknown (_14:any)<-(_5:any)
+#detect illegal use of temporary variables 	# 1  unknown (_1:str)
+    i := 12;	# 2  unknown (i:any)<-(_3:int)
+# internal location of i is 3 	# 3  unknown (_4:str)
+    _2 := 55;	# 4  unknown (_2:any)<-(_6:int)
+# acceptable 	# 5  unknown (_7:str)
+    _3 := 23;	# 6  unknown (_3:int)<-(_8:int)
+# error, overwriting non-temp 	# 7  unknown (_9:str)
+    _5 := 23;	# 8  unknown (_5:any)<-(_8:int)
+    io.print(_5);	# 9  unknown (_11:any)<-(_5:any)
 end main;	# 10  unknown 
 
 # 07:58:40 >  

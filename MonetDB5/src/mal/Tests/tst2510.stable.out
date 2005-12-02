@@ -38,9 +38,9 @@ end tryme;	# 9
 #tryme();    # shouldn;t hang when you forget the exception
 #
 function user.main():void;	# 0  (main:void)
-# A exception in a factory should terminate it  	# 1  (_2:str)
-    user.tryme();	# 2  (_3:bit)
-# shouldn;t hang when you forget the exception 	# 3  (_5:str)
+# A exception in a factory should terminate it  	# 1  (_1:str)
+    user.tryme();	# 2  (_2:bit)
+# shouldn;t hang when you forget the exception 	# 3  (_3:str)
 end main;	# 4  
 !ERROR: MALexception:factory.call:Factory contains errors
 #

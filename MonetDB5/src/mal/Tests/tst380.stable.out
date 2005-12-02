@@ -122,17 +122,17 @@ end dir;	# 5
 #
 #
 function user.main():void;	# 0  (main:void)
-#inspection of the runtime setting 	# 1  (_2:str)
-#it uses the dynamic type analysis scheme 	# 2  (_4:str)
-# type error when the type variable numbers are ignored 	# 3  (_6:str)
-# Note the type of the variables will be fixed during the first call 	# 4  (_8:str)
-    b := bat.new(:int,:int);	# 5 CMDBATnew (b:bat[:int,:int])<-(_10:int)(_10:int)
-    bat.setName(b,"simplemind");	# 6 BKCsetName (_11:void)<-(b:bat[:int,:int])(_12:str)
+#inspection of the runtime setting 	# 1  (_1:str)
+#it uses the dynamic type analysis scheme 	# 2  (_2:str)
+# type error when the type variable numbers are ignored 	# 3  (_3:str)
+# Note the type of the variables will be fixed during the first call 	# 4  (_4:str)
+    b := bat.new(:int,:int);	# 5 CMDBATnew (b:bat[:int,:int])<-(_6:int)(_6:int)
+    bat.setName(b,"simplemind");	# 6 BKCsetName (_7:void)<-(b:bat[:int,:int])(_8:str)
     z := bbp.getNames();	# 7 CMDbbpNames (z:bat[:int,:str])
-    io.print("Get first directory");	# 8 IOprint_val (_14:int)<-(_15:str)
-    user.dir(z);	# 9  (_16:void)<-(z:bat[:int,:str])
-    io.print("Get second directory");	# 10 IOprint_val (_17:int)<-(_18:str)
-    user.dir("simple");	# 11  (_19:void)<-(_20:str)
+    io.print("Get first directory");	# 8 IOprint_val (_10:int)<-(_11:str)
+    user.dir(z);	# 9  (_12:void)<-(z:bat[:int,:str])
+    io.print("Get second directory");	# 10 IOprint_val (_13:int)<-(_14:str)
+    user.dir("simple");	# 11  (_15:void)<-(_16:str)
 end main;	# 12  
 [ "Get first directory" ]
 #---------------------------------------------------------------------------------------------------------------------------------#

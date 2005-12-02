@@ -28,19 +28,19 @@ stdout of test 'tst607` in directory 'src/mal` itself:
 #const.release("roomnumber"); # failure? done twice or implicit take?
 #
 function user.main():void;	# 0  (main:void)
-# using spaces 	# 1  (_2:str)
-    u:str  := const.take("user");	# 2 CSTtake (u:str)<-(_4:str)
-    io.printf("User bound to %s\n",u);	# 3 IOprint_formatted_str (_5:int)<-(_6:str)(u:str)
-    roomnumber := 321;	# 4  (roomnumber:int)<-(_8:int)
-    const.deposit("roomnumber",roomnumber);	# 5 CSTdeposit (_9:void)<-(_10:str)(roomnumber:int)
-    v:int  := const.take("roomnumber");	# 6 CSTtake (v:int)<-(_10:str)
-    io.print(v);	# 7 IOprint_val (_12:int)<-(v:int)
-    v:int  := 123;	# 8  (v:int)<-(_13:int)
-    v:int  := calc.+(v,1);	# 9 CALCbinaryADDintint (v:int)<-(v:int)(_14:int)
-    const.release("roomnumber");	# 10 CSTrelease (_15:void)<-(_10:str)
-    io.print("attempt twice to release");	# 11 IOprint_val (_16:int)<-(_17:str)
-    const.release("roomnumber");	# 12 CSTrelease (_18:void)<-(_10:str)
-# failure? done twice or implicit take? 	# 13  (_20:str)
+# using spaces 	# 1  (_1:str)
+    u:str  := const.take("user");	# 2 CSTtake (u:str)<-(_3:str)
+    io.printf("User bound to %s\n",u);	# 3 IOprint_formatted_str (_4:int)<-(_5:str)(u:str)
+    roomnumber := 321;	# 4  (roomnumber:int)<-(_7:int)
+    const.deposit("roomnumber",roomnumber);	# 5 CSTdeposit (_8:void)<-(_9:str)(roomnumber:int)
+    v:int  := const.take("roomnumber");	# 6 CSTtake (v:int)<-(_9:str)
+    io.print(v);	# 7 IOprint_val (_11:int)<-(v:int)
+    v:int  := 123;	# 8  (v:int)<-(_12:int)
+    v:int  := calc.+(v,1);	# 9 CALCbinaryADDintint (v:int)<-(v:int)(_13:int)
+    const.release("roomnumber");	# 10 CSTrelease (_14:void)<-(_9:str)
+    io.print("attempt twice to release");	# 11 IOprint_val (_15:int)<-(_16:str)
+    const.release("roomnumber");	# 12 CSTrelease (_17:void)<-(_9:str)
+# failure? done twice or implicit take? 	# 13  (_18:str)
 end main;	# 14  
 User bound to user
 [ 321 ]

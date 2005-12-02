@@ -21,24 +21,24 @@ stdout of test 'tst905` in directory 'src/mal` itself:
 #exit (v,i);
 #
 function user.main():void;	# 0  (main:void)
-# the multiplex code blocks. 	# 1  (_2:str)
-    b := bat.new(:lng,:lng);	# 2 CMDBATnew (b:bat[:lng,:lng])<-(_4:lng)(_4:lng)
-barrier (v,i):= mal.newRange(0:lng);	# 3 RNGnewRange_lng (v:bit)(i:lng)<-(_7:lng) jump 6
-    bat.insert(b,i,i);	# 4 BKCinsert_bun (_8:void)<-(b:bat[:lng,:lng])(i:lng)(i:lng)
-    redo (v,i):= mal.nextElement(1:lng,10:lng);	# 5 RNGnextElement_lng (v:bit)(i:lng)<-(_9:lng)(_10:lng) jump 4
+# the multiplex code blocks. 	# 1  (_1:str)
+    b := bat.new(:lng,:lng);	# 2 CMDBATnew (b:bat[:lng,:lng])<-(_3:lng)(_3:lng)
+barrier (v,i):= mal.newRange(0:lng);	# 3 RNGnewRange_lng (v:bit)(i:lng)<-(_6:lng) jump 6
+    bat.insert(b,i,i);	# 4 BKCinsert_bun (_7:void)<-(b:bat[:lng,:lng])(i:lng)(i:lng)
+    redo (v,i):= mal.nextElement(1:lng,10:lng);	# 5 RNGnextElement_lng (v:bit)(i:lng)<-(_8:lng)(_9:lng) jump 4
 exit (v,i);	# 6  (v:bit)(i:lng)
     c := algebra.copy(b);	# 7 ALGcopy (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])
-    _15 := bat.new(:lng,:lng);	# 8 CMDBATnew (_15:bat[:lng,:lng])<-(_4:lng)(_4:lng)
-barrier (_17,_18,_19):= chop.newIterator(b);	# 9 CHPbunIterator (_17:lng)(_18:lng)(_19:lng)<-(b:bat[:lng,:lng]) jump 16
-    _21 := algebra.find(c,_18);	# 10 ALGfind (_21:lng)<-(c:bat[:lng,:lng])(_18:lng)
-    _23 := calc.+(_19,_21);	# 11 CALCbinaryADDlnglng (_23:lng)<-(_19:lng)(_21:lng)
-    bat.insert(_15,_18,_23);	# 12 BKCinsert_bun (_24:void)<-(_15:bat[:lng,:lng])(_18:lng)(_23:lng)
+    _14 := bat.new(:lng,:lng);	# 8 CMDBATnew (_14:bat[:lng,:lng])<-(_3:lng)(_3:lng)
+barrier (_16,_17,_18):= chop.newIterator(b);	# 9 CHPbunIterator (_16:lng)(_17:lng)(_18:lng)<-(b:bat[:lng,:lng]) jump 16
+    _20 := algebra.find(c,_17);	# 10 ALGfind (_20:lng)<-(c:bat[:lng,:lng])(_17:lng)
+    _22 := calc.+(_18,_20);	# 11 CALCbinaryADDlnglng (_22:lng)<-(_18:lng)(_20:lng)
+    bat.insert(_14,_17,_22);	# 12 BKCinsert_bun (_23:void)<-(_14:bat[:lng,:lng])(_17:lng)(_22:lng)
 catch MALexception;	# 13  (MALexception:str) jump 14
 exit MALexception;	# 14  (MALexception:str)
-    redo (_17,_18,_19):= chop.hasMoreElements(b);	# 15 CHPbunHasMoreElements (_17:lng)(_18:lng)(_19:lng)<-(b:bat[:lng,:lng]) jump 10
-exit (_17,_18,_19);	# 16  (_17:lng)(_18:lng)(_19:lng)
-    x:bat[:lng,:lng]  := _15;	# 17  (x:bat[:lng,:lng])<-(_15:bat[:lng,:lng])
-    io.print(x);	# 18 IOprint_val (_14:int)<-(x:bat[:lng,:lng])
+    redo (_16,_17,_18):= chop.hasMoreElements(b);	# 15 CHPbunHasMoreElements (_16:lng)(_17:lng)(_18:lng)<-(b:bat[:lng,:lng]) jump 10
+exit (_16,_17,_18);	# 16  (_16:lng)(_17:lng)(_18:lng)
+    x:bat[:lng,:lng]  := _14;	# 17  (x:bat[:lng,:lng])<-(_14:bat[:lng,:lng])
+    io.print(x);	# 18 IOprint_val (_13:int)<-(x:bat[:lng,:lng])
 end main;	# 19  
 #-----------------#
 # h	tmp_6	  # name

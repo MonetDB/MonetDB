@@ -23,15 +23,15 @@ stdout of test 'tst255` in directory 'src/mal` itself:
 #print(o);
 #
 function user.main():void;	# 0  (main:void)
-# testing void to oid coercion 	# 1  (_2:str)
-    z1 := bat.new(:void,:int);	# 2 CMDBATnew (z1:bat[:void,:int])<-(_4:void)(_5:int)
-    bat.setSequenceBase(z1,0@0);	# 3 BKCsetSequenceBase (_6:bat[:void,:int])<-(z1:bat[:void,:int])(_7:oid)
-    bat.insert(z1,nil,0);	# 4 BKCinsert_bun (_8:void)<-(z1:bat[:void,:int])(_9:void)(_10:int)
-    bat.insert(z1,nil,1);	# 5 BKCinsert_bun (_11:void)<-(z1:bat[:void,:int])(_9:void)(_12:int)
-    bat.insert(z1,nil,2);	# 6 BKCinsert_bun (_13:void)<-(z1:bat[:void,:int])(_9:void)(_14:int)
-    io.print(z1);	# 7 IOprint_val (_15:int)<-(z1:bat[:void,:int])
+# testing void to oid coercion 	# 1  (_1:str)
+    z1 := bat.new(:void,:int);	# 2 CMDBATnew (z1:bat[:void,:int])<-(_3:void)(_4:int)
+    bat.setSequenceBase(z1,0@0);	# 3 BKCsetSequenceBase (_5:bat[:void,:int])<-(z1:bat[:void,:int])(_6:oid)
+    bat.insert(z1,nil,0);	# 4 BKCinsert_bun (_7:void)<-(z1:bat[:void,:int])(_8:void)(_9:int)
+    bat.insert(z1,nil,1);	# 5 BKCinsert_bun (_10:void)<-(z1:bat[:void,:int])(_8:void)(_11:int)
+    bat.insert(z1,nil,2);	# 6 BKCinsert_bun (_12:void)<-(z1:bat[:void,:int])(_8:void)(_13:int)
+    io.print(z1);	# 7 IOprint_val (_14:int)<-(z1:bat[:void,:int])
     o := batcalc.oid(z1);	# 8 CMDconvertvoid_int_oid (o:bat[:void,:oid])<-(z1:bat[:void,:int])
-    io.print(o);	# 9 IOprint_val (_17:int)<-(o:bat[:void,:oid])
+    io.print(o);	# 9 IOprint_val (_16:int)<-(o:bat[:void,:oid])
 end main;	# 10  
 #-----------------#
 # h	tmp_4	  # name

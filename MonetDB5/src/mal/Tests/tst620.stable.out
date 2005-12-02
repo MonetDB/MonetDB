@@ -38,18 +38,18 @@ end tst;	# 3
 #io.printf("#size %d\n",l);
 #
 function user.main():void;	# 0  (main:void)
-#check the storage size 	# 1  (_2:str)
-    user.tst();	# 2  (_3:void)
-    f := inspect.getSize("algebra");	# 3 INSPECTgetModuleSize (f:bat[:str,:lng])<-(_5:str)
+#check the storage size 	# 1  (_1:str)
+    user.tst();	# 2  (_2:void)
+    f := inspect.getSize("algebra");	# 3 INSPECTgetModuleSize (f:bat[:str,:lng])<-(_4:str)
     fs := aggr.sum(f);	# 4 ALGsum_lng_lng (fs:lng)<-(f:bat[:str,:lng])
-    fs2 := calc./(fs,2);	# 5 CALCbinarycheckDIVlngint (fs2:lng)<-(fs:lng)(_8:int)
-    io.printf("#algebra size %d\n",fs2);	# 6 IOprint_formatted_lng (_9:int)<-(_10:str)(fs2:lng)
-    z := inspect.getSize("inspect");	# 7 INSPECTgetModuleSize (z:bat[:str,:lng])<-(_12:str)
+    fs2 := calc./(fs,2);	# 5 CALCbinarycheckDIVlngint (fs2:lng)<-(fs:lng)(_7:int)
+    io.printf("#algebra size %d\n",fs2);	# 6 IOprint_formatted_lng (_8:int)<-(_9:str)(fs2:lng)
+    z := inspect.getSize("inspect");	# 7 INSPECTgetModuleSize (z:bat[:str,:lng])<-(_11:str)
     zs := aggr.sum(z);	# 8 ALGsum_lng_lng (zs:lng)<-(z:bat[:str,:lng])
-    zs2 := calc./(zs,2);	# 9 CALCbinarycheckDIVlngint (zs2:lng)<-(zs:lng)(_8:int)
-    io.printf("#inspect size %d\n",zs2);	# 10 IOprint_formatted_lng (_15:int)<-(_16:str)(zs2:lng)
+    zs2 := calc./(zs,2);	# 9 CALCbinarycheckDIVlngint (zs2:lng)<-(zs:lng)(_7:int)
+    io.printf("#inspect size %d\n",zs2);	# 10 IOprint_formatted_lng (_14:int)<-(_15:str)(zs2:lng)
     l := inspect.getSize();	# 11 INSPECTgetSize (l:lng)
-    io.printf("#size %d\n",l);	# 12 IOprint_formatted_lng (_18:int)<-(_19:str)(l:lng)
+    io.printf("#size %d\n",l);	# 12 IOprint_formatted_lng (_17:int)<-(_18:str)(l:lng)
 end main;	# 13  
 #size 580
 #algebra size 30304
