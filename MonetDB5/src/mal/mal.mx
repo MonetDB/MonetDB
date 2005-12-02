@@ -376,15 +376,21 @@ void mal_exit(Client cntxt){
 	profileReport( cntxt->nspace,1, f= open_wastream("/tmp/Monet.prof"));
 	close_stream(f);
 #endif
-	freeModuleList(cntxt->nspace);
 	freeBoxes();
+	freeModuleList(cntxt->nspace);
 	mal_scope = 0;
-	/* we cannot unloadModules as threads may still use the functions in them.
-	unloadModuleLibraries(); */
+	unloadModuleLibraries(); 
+	finishNamespace();
 	TMcommit();
-	/* freeMalBlk(cntxt->curprg->def);*/
-	/* finishNamespace();*/
-	/* GDKexit(0); */
+	if( cntxt->user)
+		GDKfree(cntxt->user);
+	if( cntxt->cwd)
+		GDKfree(cntxt->cwd);
+	if( cntxt->prompt)
+		GDKfree(cntxt->prompt);
+	if( cntxt->errbuf)
+		GDKfree(cntxt->errbuf);
+	GDKexit(0); 
 	MT_global_exit(0);
 }
 @}

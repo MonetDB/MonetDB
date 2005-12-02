@@ -818,6 +818,8 @@ the bind(namespace, batname, mode) operation. [todo]
  			if(!isVarUsed(mb,a) ){
 				garbageElement(&stk->stk[a]);
 			}
+			if( stk->stk[a].val.sval && stk->stk[a].val.sval != str_nil)
+				stk->stk[a].len= strlen(stk->stk[a].val.sval);
 		} 
 	}
 @-

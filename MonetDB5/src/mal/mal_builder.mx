@@ -61,6 +61,7 @@ newAssignment(MalBlkPtr mb)
 {
 	InstrPtr q = newInstruction(mb,ASSIGNsymbol);
 
+	getArg(q,0)= newTmpVariable(mb,TYPE_any);
 	pushInstruction(mb, q);
 	return q;
 }

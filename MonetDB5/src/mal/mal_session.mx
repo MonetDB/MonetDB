@@ -427,7 +427,7 @@ MALparser(Client c)
 		/* catched errors */
 		showErrors();
 		@:restoreState@
-		return throwMessage("MALparser", "syntax errors\n");
+		return throwMessage("MALparser", "Syntax errors detected");
 	}
 	/* check for unfinished blocks */
 	if (c->blkmode)
@@ -439,7 +439,7 @@ MALparser(Client c)
 	p = getInstrPtr(c->curprg->def, 0);
 	if (p->token != FUNCTIONsymbol) {
 		@:restoreState@
-		return throwMessage("MALparser", "function signature missing\n");
+		return throwMessage("MALparser", "Function signature missing");
 	}
 	pushEndInstruction(c->curprg->def);
 	trimMalBlk(c->curprg->def);
@@ -447,7 +447,7 @@ MALparser(Client c)
 	if (c->curprg->def->errors) {
 		showErrors();
 		@:restoreState@
-		return throwMessage("MALparser", "semantic errors\n");
+		return throwMessage("MALparser", "Semantic errors detected");
 	}
 	return 0;
 }
@@ -473,17 +473,14 @@ MALengine(Client c)
 	oldstate.stop = 0;
 	oldstate.vtop = 0;
 
-	/* check for unfinished blocks */
-	if (c->blkmode)
-		return throwMessage("MALengine", "block not finished\n");
 	prg = c->curprg;
 	if (prg == NULL)
-		return throwMessage("MALengine", "main function missing\n");
+		return throwMessage("MALengine", "Main MAL function missing");
 
 	if (prg->def->errors > 0) {
 		showErrors();
 		@:restoreState@
-		return throwMessage("MALengine", "Program contains errors\n");
+		return throwMessage("MALengine", "Program contains errors");
 	}
 	if (prg->def->stop == 1 || MALcommentsOnly(prg->def))
 		return 0;	/* empty block */
@@ -511,9 +508,6 @@ MALengine(Client c)
 		showErrors();
 	}
 	resetMalBlk(prg->def,1);
-/*
-	resetInstructions(prg->def, 1);
-*/
 	resetVariables(prg->def, c->glb, 0);
 	prg->def->errors = 0;
 	return msg;

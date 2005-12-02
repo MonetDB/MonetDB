@@ -353,7 +353,8 @@ Use the search path provided in the configuration file
 
 @-
 For analysis of memory leaks we should cleanup the libraries before
-we exit the server
+we exit the server. This does not involve the libraries themselves,
+because they may still be in use.
 @c
 void
 unloadModuleLibraries()
@@ -363,7 +364,7 @@ unloadModuleLibraries()
 	mal_set_lock(mal_contextLock, "loadModule");
 	for (i = 0; i < lastmodule; i++)
 		if (moduleHandle[i]) {
-			dlclose(moduleHandle[i]);
+			/* dlclose(moduleHandle[i]);*/
 			GDKfree(moduleLoaded[i]);
 			GDKfree(moduleFiles[i]);
 		}

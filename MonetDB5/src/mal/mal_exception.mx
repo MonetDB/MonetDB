@@ -106,9 +106,18 @@ and query language exceptiosn fall in their own class, e.g. 'SQLerror'.
 Exceptions can be cascaded to form a trail of exceptions recognized
 during the exection.
 
-[Modules should define exceptions being raised]
 @{
+@f mal_errors
+@+ Error Handling
+Internationalization and consistent error reporting is helped by a
+central place of all kernel error messages. 
+They are split into @code{fatal}, code{errors} and @code{warnings}.
+The second category is the system component in which it is raised.
+
+The first attempt: grep on src/MAL module.
+
 @-
+@f mal_exception
 @h
 #ifndef _MAL_EXCEPTION_H
 #include "mal_instruction.h"

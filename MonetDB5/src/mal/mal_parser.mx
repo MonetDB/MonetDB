@@ -1350,11 +1350,12 @@ parseAssign(Client cntxt, int cntrl)
 			/* shouldn;t allow for nameless controls todo*/
 			if( cntrl == LEAVEsymbol || cntrl == REDOsymbol ||
 				cntrl == RETURNsymbol || cntrl == EXITsymbol ){	
-				pushInstruction(curBlk,curInstr);
  				curInstr->argv[0]= getBarrierEnvelop(curBlk);
+				pushInstruction(curBlk,curInstr);
 				skipToEnd(cntxt);
 				return;
 				 }
+			getArg(curInstr,0)= newTmpVariable(curBlk,TYPE_any);
 			pushInstruction(curBlk,curInstr);
 			parseError(cntxt,"<identifier> expected\n"); 
 		   		return;
@@ -1591,12 +1592,12 @@ This implies that a deadcode optimizer will remove
 the information.
 @c
 				curInstr= newInstruction(NULL, REMsymbol);
-				pushInstruction(curBlk,curInstr);
 				cst.vtype= TYPE_str;
 				cst.len = strlen(start);
 				cst.val.sval= GDKstrdup(start);
 				getArg(curInstr,0)= defConstant(curBlk, TYPE_str,&cst);
 				setVarUsed(curBlk,getArg(curInstr,0),FALSE);
+				pushInstruction(curBlk,curInstr);
 			}
 			echoInput(cntxt);
 		}
