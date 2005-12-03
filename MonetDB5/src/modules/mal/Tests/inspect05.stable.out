@@ -244,7 +244,7 @@ end main;	# 7
 [ 210@0,  "command",	  "pbm",	  "getLast",			  "(grp:str):bat[:any_1,:any_2] address PBMgetLast;"										  ]
 [ 211@0,  "command",	  "pbm",	  "generator",			  "(s:str):bat[:any_1,:any_2] address PBMdummy;"										  ]
 [ 212@0,  "command",	  "pbm",	  "getComponents",		  "(grp:str):bat[:str,:str] address PBMgetComponents;"										  ]
-[ 213@0,  "command",	  "pbm",	  "getNames",			  "():bat[:str,:str] address PBMgetAllComponents;"										  ]
+[ 213@0,  "command",	  "pbm",	  "getNames",			  "():bat[:str,:str] address PBMgetNames;"									  ]
 [ 214@0,  "command",	  "pbm",	  "hasMoreElements",		  "(grp:str,first:oid,last:oid):bat[:any_1,:any_2] address PBMhasMoreElementsRng;"						  ]
 [ 215@0,  "command",	  "pbm",	  "hasMoreElements",		  "(grp:str):bat[:any_2,:any_1] address PBMhasMoreElements;"									  ]
 [ 216@0,  "command",	  "pbm",	  "hasMoreElements",		  "() (_1:int,_2:str,_3:str) address PBMhasMoreElementsBase;"									  ]
