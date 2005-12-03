@@ -199,6 +199,10 @@ bat and prepares the instruction to expand it.
 			getVarType(mb,getArg(p,1))== TYPE_str){
 			openBox("pbm");
 			k= PBMfindPBAT(getVarConstant(mb,getArg(p,1)).val.sval);
+			if( k< 0){
+				pushInstruction(mb,p);
+				continue;
+			}
 			pushInstruction(mb,p);
 			p= copyInstruction(p);
 			p->argc--;

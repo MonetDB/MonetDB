@@ -459,6 +459,7 @@ Moreover, it then terminates the block in which it was used.
 			for(j=m; j<mtop-1; j++){
 				stmt[j]= stmt[j+1];
 				mvar[j]= mvar[j+1];
+				mloop[j]= mloop[j+1];
 			}
 			mtop--; 
 			actions++;
@@ -470,7 +471,7 @@ Moreover, it then terminates the block in which it was used.
 @-
 At this stage we should close any open generators.
 @c
-	for(i=mtop; i>=0; i--)
+	for(i=mtop-1; i>=0; i--)
 	if( mloop[i]>0){
 		BGcloseLoop(mb,i,stmt);
 	}
