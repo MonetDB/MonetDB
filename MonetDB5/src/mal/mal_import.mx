@@ -137,7 +137,6 @@ It should be reset before continuing.
 		@:@2()@
 		return;
 	}
-
 @c
 void
 malInclude(Client c, str name, str libname, int listing)
@@ -173,12 +172,12 @@ resolving addresses.
 		s = (str) loadModuleLibrary(libname);
 		if (s)
 			stream_printf(c->fdout, "#WARNING: %s\n", s);
-		initClientPrg(c, "main");	/* create new context */
+		initClientPrg(c, "main");	/* re-initialize context */
 		runScenario(c);
 	} else {
 		str msg = MAL_SUCCEED;
 
-		initClientPrg(c, "main");	/* create new context */
+		initClientPrg(c, "main");	/* re-initialize context */
 		@:runPhase(READER,restoreClient1)@
 		@:runPhase(PARSER,restoreClient1)@
 		/* restore IO channel */

@@ -366,9 +366,8 @@ int mal_init(){
 }
 @-
 Upon exit we should attempt to remove all allocated memory explicitly.
-This seemingly superflous action is necessary to simplify memory leakage
-problems later on.
-Unfortunately the GDK layer is does not clean-up upon exit.
+This seemingly superflous action is necessary to simplify analyis of
+memory leakage problems later on.
 @c
 void mal_exit(Client cntxt){
 #ifdef MALprofiler
@@ -390,6 +389,19 @@ void mal_exit(Client cntxt){
 		GDKfree(cntxt->prompt);
 	if( cntxt->errbuf)
 		GDKfree(cntxt->errbuf);
+	if( cntxt->bak)
+		GDKfree(cntxt->bak);
+	if( cntxt->fdin){
+		/* missing protection against closing stdin stream */
+		(void) stream_close(cntxt->fdin->s);
+		(void) stream_destroy(cntxt->fdin->s);
+		(void) bstream_destroy(cntxt->fdin);
+	}
+	if( cntxt->fdout && cntxt->fdout != GDKstdout) {
+		(void) stream_flush(cntxt->fdout);
+		(void) stream_close(cntxt->fdout);
+		(void) stream_destroy(cntxt->fdout);
+	}
 	GDKexit(0); 
 	MT_global_exit(0);
 }

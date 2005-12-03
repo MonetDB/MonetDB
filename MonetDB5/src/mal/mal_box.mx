@@ -302,11 +302,7 @@ newBox(str name)
 }
 
 void
-freeBoxes()
-{
-	int i;
-
-	for (i = 0; i < MAXSPACES; i++)
+freeBox(int i){
 		if (box[i]) {
 			garbageCollectAll(box[i]->sym, box[i]->val);
 			GDKfree(box[i]->name);
@@ -315,6 +311,14 @@ freeBoxes()
 			GDKfree(box[i]);
 			box[i] = 0;
 		}
+}
+void
+freeBoxes()
+{
+	int i;
+
+	for (i = 0; i < MAXSPACES; i++)
+		freeBox(i);
 }
 
 Box
