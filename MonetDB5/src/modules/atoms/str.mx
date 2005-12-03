@@ -2272,7 +2272,7 @@ STRrepeat(str *ret, str *s, int *c){
 	size_t l;
 
 	if( *c < 0 || strcmp(*s,str_nil)==0 )
-		*ret= str_nil;
+		*ret= GDKstrdup(str_nil);
 	else {
 		l= strlen(*s);
 		t= *ret = GDKmalloc( *c * l +1);
