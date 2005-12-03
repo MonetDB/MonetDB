@@ -140,7 +140,7 @@ tst304
 tst305
 tst3050
 tst307
-tst350
+HAVE_PCRE?tst350
 tst380
 tst400
 tst401
