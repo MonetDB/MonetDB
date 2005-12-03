@@ -125,6 +125,7 @@ public class SQLExporter extends Exporter {
 			} else if (ctype == Types.TIMESTAMP ||
 				ctype == Types.TIME
 			) {
+		 		out.print("(" + (size  - 1) + ")");
 				if (digits != 0) out.print(" WITH TIME ZONE");
 			}
 			if (cols.getInt("NULLABLE") == DatabaseMetaData.columnNoNulls)
