@@ -94,7 +94,7 @@ address PBMtakeIndexed
 comment "Retrieve a single component of a PBAT by index";
 
 command getNames():bat[:str,:str]
-address PBMgetAllComponents
+address PBMgetNames
 comment "Retrieve the component names of all PBATs";
 
 command getComponents(grp:str):bat[:str,:str]
@@ -488,7 +488,7 @@ PBMgetComponents(int *ret, str *grp)
 	int i;
 	b= BATnew(TYPE_str,TYPE_str, oid_nil);
 	if( b==NULL)
-		return throwMessage("pbm.take", "Could not create BAT");
+		return throwMessage("pbm.getComponents", "Could not create BAT");
 	for( i= PBMfindPBAT(*grp); i>=0;  i= partitions[i].next)
 		BUNins(b,grp, partitions[i].elm);
 	*ret = b->batCacheid;
@@ -497,13 +497,13 @@ PBMgetComponents(int *ret, str *grp)
 	return MAL_SUCCEED;
 }
 str
-PBMgetAllComponents(int *ret)
+PBMgetNames(int *ret)
 {
 	BAT *b;
 	int i;
 	b= BATnew(TYPE_str,TYPE_str, oid_nil);
 	if( b==NULL)
-		return throwMessage("pbm.take", "Could not create BAT");
+		return throwMessage("pbm.getNames", "Could not create BAT");
 	for( i= 0; i<ptop;  i++)
 	if( partitions[i].grp )
 		BUNins(b,partitions[i].grp, partitions[i].elm);
