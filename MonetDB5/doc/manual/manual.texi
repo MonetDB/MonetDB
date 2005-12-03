@@ -5,7 +5,7 @@
 
 @c environment
 @set VERSION 5.0
-@set UPDATED Nov 28, 2005
+@set UPDATED Dec 4, 2005
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual
@@ -79,6 +79,7 @@ Last updated: @value{UPDATED}
 * Session scenarios::
 * MAL execution:: 
 @end menu
+* Development Roadmap::
 @end menu
 
 * SQL ::
@@ -93,7 +94,6 @@ Last updated: @value{UPDATED}
 * DEBUG Statement::
 @end detailmenu
 * Optimizer Control::
-* SQL Implementation Roadmap::
 @end menu
 
 * XQuery ::
@@ -109,6 +109,7 @@ Last updated: @value{UPDATED}
 @end menu
 * Application Programming Interfaces::
 @end menu
+* Embedded MonetDB::
 * MonetDB Assembler Language::
 @menu
 * MAL instructions::
@@ -212,12 +213,15 @@ Last updated: @value{UPDATED}
 @include mal_scenario.bdy.texi
 
 
-@node Client administration, SQL, Scenario management, MonetDB Overview
+@node Client administration, Development Roadmap, Scenario management, MonetDB Overview
 @include mal_client.bdy.texi
 
-@node SQL, Getting Started with SQL, Client administration, Top
+@node Development Roadmap, SQL, Client administration, Top
+@include Assets/Roadmap.texi
+
+@node SQL, Getting Started with SQL, Development Roadmap, Top
 @include Assets/SQLoverview.texi
-@node XQuery, User Interfaces, SQL Implementation Roadmap, Top
+@node XQuery, User Interfaces, Overlaying the BAT storage, Top
 @include Assets/XQueryOverview.texi
 
 @node User Interfaces, MapiClient, XQuery, Top
@@ -238,11 +242,13 @@ Last updated: @value{UPDATED}
 @include Assets/iSQL-Viewer.texi
 
 
-@node Application Programming Interfaces, MonetDB Assembler Language, iSQL-Viewer, Top
+@node Application Programming Interfaces, Embedded MonetDB, iSQL-Viewer, Top
 @include Assets/APIs.texi
 
+@node Embedded MonetDB, MonetDB Assembler Language,Application Programming Interfaces , Top
+@include Assets/Mbedded.texi
 
-@node MonetDB Assembler Language, MAL instructions, Application Programming Interfaces , Top
+@node MonetDB Assembler Language, MAL instructions, Embedded MonetDB , Top
 @include mal_instruction.bdy.texi
 
 @node Function definitions, Function Clones ,Flow of control , MonetDB Assembler Language
