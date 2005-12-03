@@ -1,0 +1,39 @@
+@subsection SQL Implementation Roadmap
+In this section we summarize the SQL features scheduled for implementation
+and those that won;t be supported in the foreseeable future.
+A precise timeline can not be given. It depends too much on the
+available resources and urgency.
+
+Our current assessment of the features planned for upcoming releases,
+in order of priority, are:
+@itemize
+@item
+Text retrieval support.
+@item 
+Stored SQL procedures.
+@item
+Support for multi-media objects.
+@item
+General column and table constraint enforcement.
+@item
+Internationalization of the character sets.
+@item
+Full outer-join queries.
+@item
+Triggers.
+@end itemize
+
+@subsection Features that won;t make it.
+The database backend architecture prohibits easy implementation of
+several SQL-99 features. Those on the list below are not expected to
+be supported.
+@itemize
+@item
+Cursor based processing, because the execution engine is not based
+on the iterator model deployed in other engines. A simulation of the
+cursor based scheme would be utterly expensive from a performance
+point of view.
+@item
+Multi-level transaction isolation levels. Coarse grain isolation is
+provided using table level locks.
+@end itemize

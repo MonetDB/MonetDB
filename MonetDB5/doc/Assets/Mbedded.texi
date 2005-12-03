@@ -1,0 +1,84 @@
+@section Embedded MonetDB
+@subsection Introduction 
+The Embedded MonetDB version is optimized for running on small board computers
+as a database back-end for a single client.
+It is of particular interest if you need database functionality within 
+a limited application setting.
+Within this context, much of the code to facilitate and protect
+concurrent use of the kernel can be disabled. For example, locking of critical
+resources is not needed anymore, which results in significant
+performance improvements. Moreover, the communication overhead of
+client-server TCP-IP interaction is reduced.
+
+The programming application interface for embedded MonetDB applications is
+the same as for non-embedded applications. 
+It consists of a C-program with calls to the Mapi library.
+It only differs in the way the program is started and exits. 
+You normally have to add a call to
+@code{Mbedded_start_sql()} and finish the program with @code{Mbedded_exit()}
+
+The primary host language is C. Embedded versions for other languages
+are under development.
+
+The embedded version can also be used as a Mserver instance
+with support for a single client only.
+The server should be started as follows:
+@example
+ Mserver --set gdk_embedded=yes --dbinit="<initialization>" &
+@end example
+
+It will start the server in 'daemon' mode and executes the
+initialization code string. This typically involves loading
+a language support module and starting its scenario.
+
+@subsection Example
+The Embedded MonetDB is made available as a library to be linked
+with the application code, a C-program.
+An example of minimalistic embedded application is shown below.
+
+It is compiled using the compiler settings....actually we need a script.
+
+This combination merely glues together the necessary libraries and uses
+a less demanding 
+
+The configuration parameters for the server are read from its default
+location in the file system. In an embedded setting this location may
+not be easily accessible and the configuration setting should be
+set explicitly. The routine @code{Membedded_start()} takes an
+optional argument list. The code snippet illustrate how our example
+is given hardwired knowledge on the desired settings:
+@example
+show how to prepare the 
+@end example
+
+@subsection Limitations
+
+In embedded applications the memory footprint is a factor of concern.
+The raw footprint as delivered by the Unix @code{size} command is often used.
+It is, however, also easily misleading, because the footprint of
+the database depends on the hot-set code segments and database partitions.
+Therefore it makes sense to experiment with a minimal, but functionally
+complete application to decide if the resources limitations are obeyed.
+
+The minimal footprint of MonetDB is about 15 Mb (+ ca 4Mb for SQL).
+After module loading the space quickly grows to about 60Mb.
+@emph{This footprint should be reduced.}
+
+A better frame of reference for embedded applications is our sample
+program, which is a simple, yet complete embedded application inspired by an
+MP3 player. The table below illustrates some basic properties 
+on different embedded SQL platforms.
+
+@multitable @fraction 0.2 0.2 0.2 0.2 0.2
+@item 
+@tab Mbedded
+@tab SQLite
+@tab MySQL
+@tab PostgreSQL
+@item Prepare time
+@item Max memory
+@item CPU time
+@end multitable
+The @code{Prepare time} denotes the compilation and link time on
+a state-of-the-art PC.
+

@@ -68,7 +68,6 @@ features to analyse and your SQL code.
 @end menu
 * Optimizer Control::
 * Overlaying the BAT storage::
-* SQL Implementation Roadmap ::
 @end menu
 
 @node Getting Started with SQL, The VOC Tutorial, SQL, SQL
@@ -208,7 +207,7 @@ customer, to support legacy, and to better tap into the functionality
 offered by their kernel implementations. 
 MonetDB/SQL is bound to follow this path too. The kernel imposes
 limitations on the features that can and cannot be realized.
-The are summarized in @ref{SQL Implementation Roadmap}.
+The are summarized in @ref{Development Roadmap}.
 
 In the context of programming support, we provide a few
 primitives to simplify debugging of SQL programs. They are described
@@ -445,7 +444,7 @@ The final result the optimizer steps become visible using the @code{explain}
 statement modifier. Alternatively, the optimizer script line may include
 a call to @code{optimizer.showPlan();}.
 
-@node Overlaying the BAT storage,SQL Implementation Roadmap, Optimizer Control,  SQL
+@node Overlaying the BAT storage,XQuery, Optimizer Control,  SQL
 @section Overlaying the BAT storage
 The SQL implementation exploits many facilities of the underlying
 MonetDB kernel. Most notably, its efficient column-wise storage
@@ -498,44 +497,3 @@ CREATE VIEW friends ("age","name") AS BATS;
 @end example
 At this point the content of the BATs can be queried
 using ordinary SQL queries. Updates are prohibited.
-
-@node SQL Implementation Roadmap, XQuery, Overlaying the BAT storage,  SQL
-@section SQL Implementation Roadmap
-In this section we summarize the SQL features scheduled for implementation
-and those that won;t be supported in the foreseeable future.
-A precise timeline can not be given. It depends too much on the
-available resources and urgency.
-
-Our current assessment of the features planned for upcoming releases,
-in order of priority, are:
-@itemize
-@item
-Text retrieval support.
-@item 
-Stored SQL procedures.
-@item
-Support for multi-media objects.
-@item
-General column and table constraint enforcement.
-@item
-Internationalization of the character sets.
-@item
-Full outer-join queries.
-@item
-Triggers.
-@end itemize
-
-@subsection Features that won;t make it.
-The database backend architecture prohibits easy implementation of
-several SQL-99 features. Those on the list below are not expected to
-be supported.
-@itemize
-@item
-Cursor based processing, because the execution engine is not based
-on the iterator model deployed in other engines. A simulation of the
-cursor based scheme would be utterly expensive from a performance
-point of view.
-@item
-Multi-level transaction isolation levels. Coarse grain isolation is
-provided using table level locks.
-@end itemize
