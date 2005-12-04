@@ -108,8 +108,26 @@ Last updated: @value{UPDATED}
 * iSQL-Viewer::
 @end menu
 * Application Programming Interfaces::
+@menu
+* The Mapi Library ::
+@menu
+* Caveats::
+* Compilation::
+* Command Summary::
+* Library Synopsis::
+* Mapi Function Reference::
+@end menu
+* The Perl Library::
+* The PHP Library::
+* The Python Library::
+@end menu
 @end menu
 * Embedded MonetDB::
+@menu
+* A Simple Example::
+* Configuration Parameters::
+* Embedded MonetDB Limitations::
+@end menu
 * MonetDB Assembler Language::
 @menu
 * MAL instructions::
@@ -242,13 +260,19 @@ Last updated: @value{UPDATED}
 @include Assets/iSQL-Viewer.texi
 
 
-@node Application Programming Interfaces, Embedded MonetDB, iSQL-Viewer, Top
+@node Application Programming Interfaces, The Mapi Library, iSQL-Viewer, Top
 @include Assets/APIs.texi
+@node The Mapi Library, Caveats, Application Programming Interfaces, Top
+@include Mapi.bdy.texi
 
-@node Embedded MonetDB, MonetDB Assembler Language,Application Programming Interfaces , Top
+@node The Perl Library, The PHP Library, Mapi Function Reference , Top
+@node The PHP Library, The Python Library, The Perl Library , Top
+@node The Python Library, Embedded MonetDB , The PHP Library, Top
+
+@node Embedded MonetDB, A Simple Example, The Python Library , Top
 @include Assets/Mbedded.texi
 
-@node MonetDB Assembler Language, MAL instructions, Embedded MonetDB , Top
+@node MonetDB Assembler Language, MAL instructions, Embedded MonetDB Limitations , Top
 @include mal_instruction.bdy.texi
 
 @node Function definitions, Function Clones ,Flow of control , MonetDB Assembler Language

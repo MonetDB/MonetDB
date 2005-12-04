@@ -22,8 +22,6 @@ Full outer-join queries.
 @item
 Triggers.
 @end itemize
-
-@subsection Features that won;t make it.
 The database backend architecture prohibits easy implementation of
 several SQL-99 features. Those on the list below are not expected to
 be supported.
@@ -37,3 +35,21 @@ point of view.
 Multi-level transaction isolation levels. Coarse grain isolation is
 provided using table level locks.
 @end itemize
+
+@subsection XQuery Roadmap
+
+@subsection Embedded MonetDB Roadmap
+A broader deployment of the embedded
+technology requires both extensions in the distributed MonetDB
+versions. Aside from that, a few items deserve attention
+in the near future:
+@itemize
+@item
+Concurrent embedded application should be allowed database access.
+@item
+An embedded application should be given better control
+over the amount of resources 
+@end itemize
+
+@subsection MonetDB Roadmap
+
