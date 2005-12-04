@@ -10,30 +10,30 @@ the communication overhead of client-server TCP-IP interaction is removed.
 Moreover, locking of critical resources in the kernel is not needed anymore, 
 which results in significant performance improvements. 
 
-The programming application interface for embedded MonetDB applications is
-the same as for non-embedded applications. 
-It consists of a C-program with calls to the Mapi library routines.
-It only differs in the way the program is started and terminates. 
+The approach taken is to wrap a server such that the interaction 
+between client code and server can still follow the Mapi protocol.
+It leads to a C-program with calls to the Mapi library routines,
+which provides some protection against havoq behaviour.
+From a programming view, it differs from a client-server application in
+the startup and (implicit) termination.
 
 You normally only have to change the call @code{mapi_connect()} into
-@code{mapi_embedded()} and the call to @code{mapi_disconnect()} into
-@code{map_embedded_exit()}. In combination with the header file @code{Mbedded.h}
-it provides the basis to compile and link the program against 
-@code{libMbedded.a}
+@code{embedded_sql()} (or @code{embedded_mal()}). It requires an 
+optional argument list to refine the environment variables used by the server.
+In combination with the header file @code{embeddedclient.h}
+it provides the basis to compile and link the program.
 
 @c The primary host language is C. Embedded versions for other languages are under development.
 
-The embedded version can also be used as a Mserver instance
-to limit access to a single client only.
-The server should then be started as follows:
+The behavior of an embedded SQL program can be simulated with
+an Mserver started as follows:
 @example
- Mserver --set gdk_embedded=yes --dbinit="<initialization>" &
+ Mserver --set embedded=yes --dbinit="include sql; mapi.listen(45123);" &
 @end example
 
-It will start the server in 'daemon' mode and executes the
-initialization code string. This typically involves loading
-a language support module and starting its scenario.
-Following, only one client is allowed access to the server at the time.
+As a result, the server starts in 'daemon' mode,
+loads the SQL support library, and waits for a single connection
+at the port.
 
 @menu
 * A Simple Example::
@@ -47,15 +47,15 @@ A minimalistic embedded application is shown below. It creates
 a temporary table in the database, fills it, and retrieves the
 records for some statistics gathering.
 
-The key operation is @code{mapi_embedded()} which takes a user name,
-a password and a language indicator. Upon success of this call, there
-will be a separate thread running in the same user space to handle
+The key operation is @code{_embedded_sql()} which takes an optional 
+environment argument list. Upon success of this call, there
+will be a separate Mserver thread running in the same user space to handle
 the database requests. A short-circuit interaction is established
 between the application and the kernel using in memory buffers.
 
 The body of the program consists of the Mapi calls you have
 already seen (@pxref{The Mapi Library}). It terminates with a call
-to @code{mapi_embedded_exit()} which lets the MonetDB thread
+to @code{mapi_disconnect()} which lets the MonetDB thread
 gracefully die. 
 
 The tight coupling of application and kernel code also carries some
@@ -68,7 +68,7 @@ or unintended side-effects.
 
 @example
 @verbatim
-#include <Mbedded.h>
+#include <embeddedclient.h>
 
 #define die(dbh,hdl) (hdl?mapi_explain_result(hdl,stderr):      \
               dbh?mapi_explain(dbh,stderr):         \
@@ -84,7 +84,7 @@ main()
     MapiHdl hdl = NULL;
     int i;
 
-    dbh= mapi_embedded("monetdb", "monetdb", "sql");
+    dbh= embedded_sql(NULL,0);
     if (dbh == NULL || mapi_error(dbh))
         die(dbh, hdl);
 
@@ -118,18 +118,20 @@ main()
     close_handle(dbh,hdl);
     printf("The footprint is %d Mb \n",i);
 
-    mapi_embedded_exit(dbh);
+    mapi_disconnect(dbh);
     return 0;
 }
 @end verbatim
 @end example
 
-The Embedded MonetDB is made available as the library @code{libMbedded.a}
+The Embedded MonetDB is made available as the library @code{libembedded_sql.a}
+(and @code{libembedded_mal.a})
 to be linked with the application code, a C-program.
 Provided the Mapi programming environment have been set properly, it
 suffices to prepare the embedded application using
 @example
 gcc myprog.c -o myprog -lMbedded -lm -lz
+gcc myprog.c -o myprog `MonetDB_conf --include --libs`
 @end example
 
 You might also write a Makefile to build the program as follows.
