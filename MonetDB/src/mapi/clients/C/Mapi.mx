@@ -32,8 +32,9 @@ chosen to align with common practice, i.e. queries follow a prepare,
 execute, and fetch_row paradigm. The output is considered a regular
 table. An example of a mini application below illustrates the main
 operations.
-@T
-\begin{verbatim}
+
+@example
+@verbatim
 #include <Mapi.h>
 #include <stdio.h>
 
@@ -86,23 +87,24 @@ int main(int argc, char **argv)
 
     return 0;
 }
-\end{verbatim}
+@end verbatim
+@end example
 
-The mapi\_connect() operation establishes a communication channel with
+The @code{mapi_connect()} operation establishes a communication channel with
 a running server on the local machine. The user name is "monetdb" with
 password "monetdb".
 The query language interface is either "sql" of "mil".  Future
 versions are expected to recognize also "xcore" and "xquery", and the
 experimental languages "ram" and "mal".
 
-Errors on the interaction can be captured using mapi\_error(),
+Errors on the interaction can be captured using @code{mapi_error()},
 possibly followed by a request to dump a short error message
 explanation on a standard file location. It has been abstracted away
 in a macro.
 
 Provided we can establish a connection, the interaction proceeds as in
 many similar application development packages. Queries are shipped for
-execution using mapi\_query() and an answer table can be consumed one
+execution using @code{mapi_query()} and an answer table can be consumed one
 row at a time. In many cases these functions suffice.
 
 The tabular data exchange model is primarily meant to support sql
@@ -111,9 +113,9 @@ XPath-like token stream from which the application can build the
 internal representation of the document (e.g. a DOM-tree).
 
 The Mapi interface provides caching of rows at the client side.
-mapi\_query() will load tuples into the cache, after which they can be
-read repeatedly using mapi\_fetch\_row() or directly accessed
-(mapi\_seek\_row()). This facility is particularly handy when small,
+@code{mapi_query()} will load tuples into the cache, after which they can be
+read repeatedly using @code{mapi_fetch_row()} or directly accessed
+(@code{mapi_seek_row()}). This facility is particularly handy when small,
 but stable query results are repeatedly used in the client program.
 
 To ease communication between application code and the cache entries,
@@ -122,20 +124,23 @@ query parameters, and output columns, respectively.  The query
 parameters are indicated by '?' and may appear anywhere in the query
 template.
 
+@node Caveats, Compilation, The Mapi Library, top
 @+ Caveats
 The Mapi library expects complete lines from the server as answers to
 query actions. Incomplete lines leads to Mapi waiting forever on the
 server. Thus formatted printing is discouraged in favor of tabular
-printing as offered by the table.print() commands.
+printing as offered by the @code{table.print()} commands.
 
+@node Compilation, Command Summary, Caveats, top
 @+ Compilation
 The Mapi application uses include files found in the MonetDB
 distribution directory or at a central location on your machine.
 Assuming the location of the distribution is marked in the environment
 variable $MONETDB_PREFIX, the following actions are needed to get a
 working program.
-@T
-\begin{verbatim}
+
+@example
+@verbatim
 cc sample.c -I$MONETDB_PREFIX \
         -I$MONETDB_PREFIX/include/common \
         -I$MONETDB_PREFIX/include/mapi  \
@@ -143,77 +148,79 @@ cc sample.c -I$MONETDB_PREFIX \
         -lMapi -lutils -lstream \
         -Wl,--rpath -Wl,$MONETDB_PREFIX/lib/MonetDB:$MONETDB_PREFIX/lib \
         -o sample
-\end{verbatim}
+@end verbatim
+@end example
 
-The location of the libraries in 4.3 are slightly different.
-
+@-
+@node Command Summary, Library Synopsis, Compilation, top
 @+ Command Summary
 The quick reference guide to the Mapi library is given below.  More
 details on their constraints and defaults are given in the next
 section.
 
 
-@T
-\begin{tabular}{l l}
-mapi\_bind()	&	Bind string C-variable to a field\\
-mapi\_bind\_numeric()	& Bind numeric C-variable to field\\
-mapi\_bind\_var()	&	Bind typed C-variable to a field\\
-mapi\_cache\_freeup()	& Forcefully shuffle fraction for cache refreshment\\
-mapi\_cache\_limit()	& Set the tuple cache limit\\
-mapi\_cache\_shuffle()	& Set shuffle fraction for cache refreshment\\
-mapi\_clear\_bindings()	& Clear all field bindings\\
-mapi\_clear\_params()	& Clear all parameter bindings\\
-mapi\_close\_handle()	&	Close query handle and free resources\\
-mapi\_connect()	&	Connect to a Mserver \\
-mapi\_connect\_ssl()	& Connect to a Mserver using Secure Socket Layer (SSL)\\
-mapi\_destroy()	&	Free handle resources\\
-mapi\_disconnect()	& Disconnect from server\\
-mapi\_error()	&	Test for error occurrence\\
-mapi\_execute()	&	Execute a query\\
-mapi\_execute\_array()	&Execute a query using string arguments\\
-mapi\_explain()	&	Display error message and context on stream\\
-mapi\_explain\_query()	&	Display error message and context on stream\\
-mapi\_fetch\_all\_rows()	&	Fetch all answers from server into cache\\
-mapi\_fetch\_field()	&Fetch a field from the current row\\
-mapi\_fetch\_field\_array()	& Fetch all fields from the current row\\
-mapi\_fetch\_line()	&	Retrieve the next line\\
-mapi\_fetch\_reset()	&	Set the cache reader to the beginning\\
-mapi\_fetch\_row()	&	Fetch row of values\\
-mapi\_finish()	&	Terminate the current query\\
-mapi\_get\_dbname()	&	Database being served\\
-mapi\_get\_field\_count()	& Number of fields in current row\\
-mapi\_get\_host()	&	Host name of server\\
-mapi\_get\_language()	& Query language name\\
-mapi\_get\_mapi\_version()	& Mapi version name\\
-mapi\_get\_monet\_versionId()	& MonetDB version identifier\\
-mapi\_get\_monet\_version()	& MonetDB version name\\
-mapi\_get\_motd()	&	Get server welcome message\\
-mapi\_get\_row\_count()	&	Number of rows in cache or -1\\
-mapi\_get\_trace()	&	Get trace flag\\
-mapi\_get\_user()	&	Current user name\\
-mapi\_next\_result()	&	Go to next result set\\
-mapi\_ping()	&	Test server for accessibility\\
-mapi\_prepare()	&	Prepare a query for execution\\
-mapi\_prepare\_array()	&	Prepare a query for execution using arguments\\
-mapi\_query()	&	Send a query for execution\\
-mapi\_query\_array()	& Send a query for execution with arguments\\
-mapi\_query\_handle()	&	Send a query for execution\\
-mapi\_quick\_query\_array()	& Send a query for execution with arguments\\
-mapi\_quick\_query()	&	Send a query for execution\\
-mapi\_quick\_response()	&	Quick pass response to stream\\
-mapi\_quote()	& Escape characters\\
-mapi\_reconnect()	& Reconnect with a clean session context\\
-mapi\_rows\_affected()	& Obtain number of rows changed\\
-mapi\_seek\_row()	&	Move row reader to specific location in cache\\
-mapi\_setAutocommit()	&	Set auto-commit flag\\
-mapi\_stream\_query()	& Send query and prepare for reading tuple stream\\
-mapi\_table()	&	Get current table name\\
-mapi\_timeout()	&	Set timeout for long-running queries[TODO]\\
-mapi\_trace()	&	Set trace flag\\
-mapi\_trace\_log()	& Keep log of interaction\\
-mapi\_virtual\_result()	& Submit a virtual result set\\
-mapi\_unquote()	&	remove escaped characters\\
-\end{tabular}
+@multitable @columnfractions 0.25 0.75
+@item mapi_bind()	@tab	Bind string C-variable to a field
+@item mapi_bind_numeric()	@tab Bind numeric C-variable to field
+@item mapi_bind_var()	@tab	Bind typed C-variable to a field
+@item mapi_cache_freeup()	@tab Forcefully shuffle fraction for cache refreshment
+@item mapi_cache_limit()	@tab Set the tuple cache limit
+@item mapi_cache_shuffle()	@tab Set shuffle fraction for cache refreshment
+@item mapi_clear_bindings()	@tab Clear all field bindings
+@item mapi_clear_params()	@tab Clear all parameter bindings
+@item mapi_close_handle()	@tab	Close query handle and free resources
+@item mapi_connect()	@tab	Connect to a Mserver 
+@item mapi_connect_ssl()	@tab Connect to a Mserver using Secure Socket Layer (SSL)
+@item mapi_destroy()	@tab	Free handle resources
+@item mapi_disconnect()	@tab Disconnect from server
+@item mapi_error()	@tab	Test for error occurrence
+@item mapi_execute()	@tab	Execute a query
+@item mapi_execute_array()	@tab Execute a query using string arguments
+@item mapi_explain()	@tab	Display error message and context on stream
+@item mapi_explain_query()	@tab	Display error message and context on stream
+@item mapi_fetch_all_rows()	@tab	Fetch all answers from server into cache
+@item mapi_fetch_field()	@tab Fetch a field from the current row
+@item mapi_fetch_field_array()	@tab Fetch all fields from the current row
+@item mapi_fetch_line()	@tab	Retrieve the next line
+@item mapi_fetch_reset()	@tab	Set the cache reader to the beginning
+@item mapi_fetch_row()	@tab	Fetch row of values
+@item mapi_finish()	@tab	Terminate the current query
+@item mapi_get_dbname()	@tab	Database being served
+@item mapi_get_field_count()	@tab Number of fields in current row
+@item mapi_get_host()	@tab	Host name of server
+@item mapi_get_language()	@tab Query language name
+@item mapi_get_mapi_version()	@tab Mapi version name
+@item mapi_get_monet_versionId()	@tab MonetDB version identifier
+@item mapi_get_monet_version()	@tab MonetDB version name
+@item mapi_get_motd()	@tab	Get server welcome message
+@item mapi_get_row_count()	@tab	Number of rows in cache or -1
+@item mapi_get_trace()	@tab	Get trace flag
+@item mapi_get_user()	@tab	Current user name
+@item mapi_next_result()	@tab	Go to next result set
+@item mapi_ping()	@tab	Test server for accessibility
+@item mapi_prepare()	@tab	Prepare a query for execution
+@item mapi_prepare_array()	@tab	Prepare a query for execution using arguments
+@item mapi_query()	@tab	Send a query for execution
+@item mapi_query_array()	@tab Send a query for execution with arguments
+@item mapi_query_handle()	@tab	Send a query for execution
+@item mapi_quick_query_array()	@tab Send a query for execution with arguments
+@item mapi_quick_query()	@tab	Send a query for execution
+@item mapi_quick_response()	@tab	Quick pass response to stream
+@item mapi_quote()	@tab Escape characters
+@item mapi_reconnect()	@tab Reconnect with a clean session context
+@item mapi_rows_affected()	@tab Obtain number of rows changed
+@item mapi_seek_row()	@tab	Move row reader to specific location in cache
+@item mapi_setAutocommit()	@tab	Set auto-commit flag
+@item mapi_stream_query()	@tab Send query and prepare for reading tuple stream
+@item mapi_table()	@tab	Get current table name
+@item mapi_timeout()	@tab	Set timeout for long-running queries[TODO]
+@item mapi_trace()	@tab	Set trace flag
+@item mapi_trace_log()	@tab Keep log of interaction
+@item mapi_virtual_result()	@tab Submit a virtual result set
+@item mapi_unquote()	@tab	remove escaped characters
+@end multitable
+
+@node Library Synopsis, Mapi Function Reference, Command Summary, top
 @+ Mapi Library
 The routines to build a MonetDB application are grouped in the library
 MonetDB Application Programming Interface, or shorthand Mapi.
@@ -229,147 +236,163 @@ The application may be multi-threaded as long as the user respects the
 individual connections represented by the database handlers.
 
 The interface assumes a cautious user, who understands and has
-experience with the MIL programming language model. It should also be
+experience with the query or programming language model. It should also be
 clear that references returned by the API point directly into the
 administrative structures of Mapi.  This means that they are valid
-only for a short period, mostly between successive mapi_fetch_row
+only for a short period, mostly between successive @code{mapi_fetch_row()}
 commands. It also means that it the values are to retained, they have
 to be copied.  A defensive programming style is advised.
 
-Upon an error, the routines mapi_explain and mapi_explain_query
+Upon an error, the routines @code{mapi_explain()} and @code{mapi_explain_query()}
 give information about the context of the failed call, including the
 expression shipped and any response received.  The side-effect is
 clearing the error status.
 @- Error Message
 Almost every call can fail since the connection with the database
 server can fail at any time.  Functions that return a handle (either
-Mapi or MapiHdl) may return NULL on failure, or they may return the
+@code{Mapi} or @code{MapiHdl}) may return NULL on failure, or they may return the
 handle with the error flag set.  If the function returns a non-NULL
 handle, always check for errors with mapi_error.
 
-@T
-Functions that return MapiMsg indicate success and failure with the
-following codes.\\
 
-\begin{tabular}{l l}
-MOK  & No error \\
-MERROR  & Mapi internal error.\\
-MTIMEOUT  & Error communicating with the server.\\
-\end{tabular}
+Functions that return MapiMsg indicate success and failure with the
+following codes.
+
+@multitable @columnfractions 0.15 0.7
+@item MOK  @tab No error 
+@item MERROR  @tab Mapi internal error.
+@item MTIMEOUT  @tab Error communicating with the server.
+@end multitable
 
 When these functions return MERROR or MTIMEOUT, an explanation of the
-error can be had by calling one of the functions mapi\_error\_str(),
-mapi\_explain(), or mapi\_explain\_query().
+error can be had by calling one of the functions @code{mapi_error_str()},
+@code{mapi_explain()}, or @code{mapi_explain_query()}.
 
-To check for error messages from the server, call mapi\_result\_error().
+To check for error messages from the server, call @code{mapi_result_error()}.
 This function returns NULL if there was no error, or the error message
 if there was.  A user-friendly message can be printed using
-map\_explain\_result().  Typical usage is:
-
-\begin{verbatim}
+@code{map_explain_result()}.  Typical usage is:
+@verbatim
 do {
     if ((error = mapi_result_error(hdl)) != NULL)
         mapi_explain_result(hdl, stderr);
     while ((line = mapi_fetch_line(hdl)) != NULL)
         /* use output */;
 } while (mapi_next_result(hdl) == 1);
-\end{verbatim}
-@+ Function Reference
+@end verbatim
+@node Mapi Function Reference, The Perl Library, Library Synopsis, top
+@+ Mapi Function Reference
 @- Connecting and Disconnecting
-@T
-\begin{description}
-\item[Mapi mapi\_connect(const char *host, int port, const char *username, const char *password, const char *lang)]:
-Setup a connection with a Mserver at a {\em host}:{\em port} and login
-with {\em username} and {\em password}. If host == NULL, the local
+@itemize
+@item Mapi mapi_connect(const char *host, int port, const char *username, const char *password, const char *lang)
+
+Setup a connection with a Mserver at a @emph{host}:@emph{port} and login
+with @emph{username} and @emph{password}. If host == NULL, the local
 host is accessed.  If host starts with a '/' and the system supports it,
 host is actually the name of a UNIX domain socket, and port is ignored.
 If port == 0, a default port is used.  If username == NULL,
 the username of the owner of the client application
 containing the Mapi code is used.  If password == NULL, the password
 is omitted.  The preferred query language is any of
-\{sql,mil,mal,xcore,xquery\}\\ On success, the function returns a
+@verb{ { }sql,mil,mal,xcore,xquery @verb{ } } On success, the function returns a
 pointer to a structure with administration about the connection.
 
-\item[Mapi mapi\_connect\_ssl(const char *host, int port, const char *username, const char *password, const char *lang)]:
-Setup a connection with a Mserver at a {\em host}:{\em port} and login
-with {\em username} and {\em password}. The connection is made using
+@item Mapi mapi_connect_ssl(const char *host, int port, const char *username, const char *password, const char *lang)
+
+Setup a connection with a Mserver at a @emph{host}:@emph{port} and login
+with @emph{username} and @emph{password}. The connection is made using
 the Secure Socket Layer (SSL) and hence all data transfers to and from
 the server are encrypted. The parameters are the same as in
-mapi\_connect.
+@code{mapi_connect()}.
 
-\item[MapiMsg mapi\_disconnect(Mapi mid)]:
-Terminate the session described by {\em mid}.  The only possible uses
-of the handle after this call is mapi\_destroy() and mapi\_reconnect().
+@item MapiMsg mapi_disconnect(Mapi mid)
+
+Terminate the session described by @emph{mid}.  The only possible uses
+of the handle after this call is @emph{mapi_destroy()} and 
+@code{mapi_reconnect()}.
 Other uses lead to failure.
 
-\item[MapiMsg mapi\_destroy(Mapi mid)]:
-Terminate the session described by {\em mid} if not already done so,
+@item MapiMsg mapi_destroy(Mapi mid)
+
+Terminate the session described by @emph{ mid} if not already done so,
 and free all resources. The handle cannot be used anymore.
 
-\item[MapiMsg mapi\_reconnect(Mapi mid)]:
+@item MapiMsg mapi_reconnect(Mapi mid)
+
 Close the current channel (if still open) and re-establish a fresh
 connection. This will remove all global session variables.
 
-\item[MapiMsg mapi\_ping(Mapi mid)]:
+@item MapiMsg mapi_ping(Mapi mid)
+
 Test availability of the server. Returns zero upon success.
-\end{description}
+@end itemize
 @- Sending Queries
-@T
-\begin{description}
-\item[MapiHdl mapi\_query(Mapi mid, const char *Command)]:
+@itemize
+@item MapiHdl mapi_query(Mapi mid, const char *Command)
+
 Send the Command to the database server represented by mid.  This
 function returns a query handle with which the results of the query
 can be retrieved.  The handle should be closed with
-mapi\_close\_handle().  The command response is buffered for
+@code{mapi_close_handle()}.  The command response is buffered for
 consumption, c.f. mapi\_fetch\_row().
 
-\item[MapiMsg mapi\_query\_handle(MapiHdl hdl, const char *Command)]:
+@item MapiMsg mapi_query_handle(MapiHdl hdl, const char *Command)
+
 Send the Command to the database server represented by hdl, reusing
 the handle from a previous query.  If Command is zero it takes the
 last query string kept around.  The command response is buffered for
-consumption, e.g. mapi\_fetch\_row().
+consumption, e.g. @code{mapi_fetch_row()}.
 
-\item[MapiHdl mapi\_query\_array(Mapi mid, const char *Command, char **argv)]:
+@item MapiHdl mapi_query_array(Mapi mid, const char *Command, char **argv)
+
 Send the Command to the database server replacing the placeholders (?) 
 by the string arguments presented.
 
-\item[MapiHdl mapi\_quick\_query(Mapi mid, const char *Command, FILE *fd)]:
-Similar to mapi\_query, except that the response of the server is copied
+@item MapiHdl mapi_quick_query(Mapi mid, const char *Command, FILE *fd)
+
+Similar to @code{mapi_query()}, except that the response of the server is copied
 immediately to the file indicated.
 
-\item[MapiHdl mapi\_quick\_query\_array(Mapi mid, const char *Command, char **argv, FILE *fd)]:
-Similar to mapi\_query\_array, except that the response of the server
+@item MapiHdl mapi_quick_query_array(Mapi mid, const char *Command, char **argv, FILE *fd)
+
+Similar to @code{mapi_query_array()}, except that the response of the server
 is not analyzed, but shipped immediately to the file indicated.
 
-\item[MapiHdl mapi\_stream\_query(Mapi mid, const char *Command, int windowsize)]:
+@item MapiHdl mapi_stream_query(Mapi mid, const char *Command, int windowsize)
+
 Send the request for processing and fetch a limited number of tuples
 (determined by the window size) to assess any erroneous situation.
 Thereafter, prepare for continual reading of tuples from the stream,
 until an error occurs. Each time a tuple arrives, the cache is shifted
 one.
 
-\item[MapiHdl mapi\_prepare(Mapi mid, const char *Command)]:
+@item MapiHdl mapi_prepare(Mapi mid, const char *Command)
+
 Move the query to a newly allocated query handle (which is returned).
 Possibly interact with the back-end to prepare the query for
 execution.
 
-\item[MapiMsg mapi\_execute(MapiHdl hdl)]:
+@item MapiMsg mapi_execute(MapiHdl hdl)
+
 Ship a previously prepared command to the backend for execution. A
 single answer is pre-fetched to detect any runtime error. MOK is
 returned upon success.
 
-\item[MapiMsg mapi\_execute\_array(MapiHdl hdl, char **argv)]:
+@item MapiMsg mapi_execute_array(MapiHdl hdl, char **argv)
+
 Similar to mapi\_execute but replacing the placeholders for the string
 values provided.
 
-\item[MapiMsg mapi\_finish(MapiHdl hdl)]:
+@item MapiMsg mapi_finish(MapiHdl hdl)
+
 Terminate a query.  This routine is used in the rare cases that
 consumption of the tuple stream produced should be prematurely
 terminated. It is automatically called when a new query using the same
 query handle is shipped to the database and when the query handle is
-closed with mapi\_close\_handle().
+closed with @code{mapi_close_handle()}.
 
-\item[MapiMsg mapi\_virtual\_result(MapiHdl hdl, int columns, const char **columnnames, const char **columntypes, const int *columnlengths, int tuplecount, const char ***tuples)]:
+@item MapiMsg mapi_virtual_result(MapiHdl hdl, int columns, const char **columnnames, const char **columntypes, const int *columnlengths, int tuplecount, const char ***tuples)
+
 Submit a table of results to the library that can then subsequently be
 accessed as if it came from the server.
 columns is the number of columns of the result set and must be greater
@@ -383,150 +406,176 @@ pointer in the list of tuples pointers.
 tuples is a list of pointers to row values.  Each row value is a list of
 pointers to strings giving the individual results.  If one of these
 pointers is NULL it indicates a NULL/nil value.
-\end{description}
+@end itemize
 @- Getting Results
-@T
-\begin{description}
-\item[int mapi\_num\_fields(Mapi mid)]:
+@itemize
+@item int mapi_num_fields(Mapi mid)
+
 Return the number of fields in the current row.
 
-\item[int mapi\_num\_rows(Mapi mid)]:
+@item int mapi_num_rows(Mapi mid)
+
 If possible, return the number of rows in the last select call.  A -1
 is returned if this information is not available.
 
-\item[int mapi\_rows\_affected(MapiHdl hdl)]:
+@item int mapi_rows_affected(MapiHdl hdl)
+
 Return the number of rows affected by a database update command
 (INSERT/DELETE/REPLACE).
 
-\item[int mapi\_fetch\_row(MapiHdl hdl)]:
+@item int mapi_fetch_row(MapiHdl hdl)
+
 Retrieve a row from the server.  The text retrieved is kept around in
 a buffer linked with the query handle from which selective fields can
 be extracted.  It returns the number of fields recognized.  A zero is
 returned upon encountering end of sequence or error. This can be
-analyzed in using mapi\_error().
+analyzed in using @code{mapi_error()}.
 
-\item[int mapi\_fetch\_all\_rows(MapiHdl hdl)]:
+@item int mapi_fetch_all_rows(MapiHdl hdl)
+
 All rows are cached at the client side first. Subsequent calls to
-mapi\_fetch\_row() will take the row from the cache. The number or
+@code{mapi_fetch_row()} will take the row from the cache. The number or
 rows cached is returned.
 
-\item[int mapi\_quick\_response(MapiHdl hdl, FILE *fd)]:
+@item int mapi_quick_response(MapiHdl hdl, FILE *fd)
+
 Read the answer to a query and pass the results verbatim to a
 stream. The result is not analyzed or cached.
 
-\item[MapiMsg mapi\_seek\_row(MapiHdl hdl, int rownr, int whence)]:
+@item MapiMsg mapi_seek_row(MapiHdl hdl, int rownr, int whence)
+
 Reset the row pointer to the requested row number.  If whence is
-MAPI\_SEEK\_SET (0), rownr is the absolute row number (0 being the
-first row); if whence is MAPI\_SEEK\_CUR (1), rownr is relative to the
+@code{MAPI_SEEK_SET} (0), rownr is the absolute row number (0 being the
+first row); if whence is @code{MAPI_SEEK_CUR} (1), rownr is relative to the
 current row; if whence is MAPI\_SEEK\_END (2), rownr is relative to
 the last row.
 
-\item[MapiMsg mapi\_fetch\_reset(MapiHdl hdl)]:
+@item MapiMsg mapi_fetch_reset(MapiHdl hdl)
+
 Reset the row pointer to the first line in the cache.  This need not
 be a tuple.  This is mostly used in combination with fetching all
 tuples at once.
 
-\item[char **mapi\_fetch\_field\_array(MapiHdl hdl)]:
+@item char **mapi_fetch_field_array(MapiHdl hdl)
+
 Return an array of string pointers to the individual fields.  A zero
 is returned upon encountering end of sequence or error. This can be
 analyzed in using mapi\_error().
 
-\item[char *mapi\_fetch\_field(MapiHdl hdl, int fnr)]:
+@item char *mapi_fetch_field(MapiHdl hdl, int fnr)
+
 Return a pointer a C-string representation of the value returned.  A
 zero is returned upon encountering an error or when the database value
 is NULL; this can be analyzed in using mapi\_error().
 
-\item[MapiMsg mapi\_next\_result(MapiHdl hdl)]:
+@item MapiMsg mapi_next_result(MapiHdl hdl)
+
 Go to the next result set, discarding the rest of the output of the
 current result set.
-\end{description}
+@end itemize
 @- Errors
-@T
-\begin{description}
-\item[MapiMsg mapi\_error(Mapi mid)]:
+@itemize
+@item MapiMsg mapi_error(Mapi mid)
+
 Return the last error code or 0 if there is no error.
 
-\item[char *mapi\_error\_str(Mapi mid)]:
+@item char *mapi_error_str(Mapi mid)
+
 Return a pointer to the last error message.
 
-\item[char *mapi\_result\_error(MapiHdl hdl)]:
+@item char *mapi_result_error(MapiHdl hdl)
+
 Return a pointer to the last error message from the server.
 
-\item[MapiMsg mapi\_explain(Mapi mid, FILE *fd)]:
+@item MapiMsg mapi_explain(Mapi mid, FILE *fd)
+
 Write the error message obtained from Mserver to a file.
 
-\item[MapiMsg mapi\_explain\_query(MapiHdl hdl, FILE *fd)]:
+@item MapiMsg mapi_explain_query(MapiHdl hdl, FILE *fd)
+
 Write the error message obtained from Mserver to a file.
 
-\item[MapiMsg mapi\_explain\_result(MapiHdl hdl, FILE *fd)]:
+@item MapiMsg mapi_explain_result(MapiHdl hdl, FILE *fd)
+
 Write the error message obtained from Mserver to a file.
-\end{description}
+@end itemize
 @- Parameters
-@T
-\begin{description}
-\item[MapiMsg mapi\_bind(MapiHdl hdl, int fldnr, char **val)]:
+
+@itemize
+@item MapiMsg mapi_bind(MapiHdl hdl, int fldnr, char **val)
+
 Bind a string variable with a field in the return table.  Upon a
-successful subsequent mapi\_fetch\_row the indicated field is stored
+successful subsequent @code{mapi_fetch_row()} the indicated field is stored
 in the space pointed to by val.  Returns an error if the field
 identified does not exist.
 
-\item[MapiMsg mapi\_bind\_var(MapiHdl hdl, int fldnr, int type, void *val)]:
+@item MapiMsg mapi_bind_var(MapiHdl hdl, int fldnr, int type, void *val)
+
 Bind a variable to a field in the return table.  Upon a successful
-subsequent mapi\_fetch\_row, the indicated field is converted to the
+subsequent @code{mapi_fetch_row()}, the indicated field is converted to the
 given type and stored in the space pointed to by val.  The types
-recognized are {MAPI\_TINY, MAPI\_UTINY, MAPI\_SHORT, MAPI\_USHORT,
-MAPI\_INT, MAPI\_UINT, MAPI\_LONG, MAPI\_ULONG, MAPI\_LONGLONG,
-MAPI\_ULONGLONG, MAPI\_CHAR, MAPI\_VARCHAR, MAPI\_FLOAT, MAPI\_DOUBLE,
-MAPI\_DATE, MAPI\_TIME, MAPI\_DATETIME}.  The binding operations
-should be performed after the mapi\_execute command.  Subsequently all
+recognized are @verb{ { } @code{MAPI_TINY, MAPI_UTINY, MAPI_SHORT, MAPI_USHORT,
+MAPI_INT, MAPI_UINT, MAPI_LONG, MAPI_ULONG, MAPI_LONGLONG,
+MAPI_ULONGLONG, MAPI_CHAR, MAPI_VARCHAR, MAPI_FLOAT, MAPI_DOUBLE,
+MAPI_DATE, MAPI_TIME, MAPI_DATETIME} @verb{ } }.  The binding operations
+should be performed after the mapi_execute command.  Subsequently all
 rows being fetched also involve delivery of the field values in the
 C-variables using proper conversion. For variable length strings a
 pointer is set into the cache.
 
-\item[MapiMsg mapi\_bind\_numeric(MapiHdl hdl, int fldnr, int scale, int precision, void *val)]:
-Bind to a numeric variable, internally represented by MAPI\_INT
+@item MapiMsg mapi_bind_numeric(MapiHdl hdl, int fldnr, int scale, int precision, void *val)
+
+Bind to a numeric variable, internally represented by MAPI_INT
 Describe the location of a numeric parameter in a query template.
 
-\item[MapiMsg mapi\_clear\_bindings(MapiHdl hdl)]:
+@item MapiMsg mapi_clear_bindings(MapiHdl hdl)
+
 Clear all field bindings.
 
-\item[MapiMsg mapi\_param(MapiHdl hdl, int fldnr, char **val)]:
+@item MapiMsg mapi_param(MapiHdl hdl, int fldnr, char **val)
+
 Bind a string variable with the n-th placeholder in the query
 template.  No conversion takes place.
 
-\item[MapiMsg mapi\_param\_type(MapiHdl hdl, int fldnr, int ctype, int sqltype, void *val)]:
+@item MapiMsg mapi_param_type(MapiHdl hdl, int fldnr, int ctype, int sqltype, void *val)
+
 Bind a variable whose type is described by ctype to a parameter whose
 type is described by sqltype.
 
-\item[MapiMsg mapi\_param\_numeric(MapiHdl hdl, int fldnr, int scale, int precision, void *val)]:
-Bind to a numeric variable, internally represented by MAPI\_INT.
+@item MapiMsg mapi_param_numeric(MapiHdl hdl, int fldnr, int scale, int precision, void *val)
 
-\item[MapiMsg mapi\_param\_string(MapiHdl hdl, int fldnr, int sqltype, char *val, int *sizeptr)]:
-Bind a string variable, internally represented by MAPI\_VARCHAR, to a
+Bind to a numeric variable, internally represented by MAPI_INT.
+
+@item MapiMsg mapi_param_string(MapiHdl hdl, int fldnr, int sqltype, char *val, int *sizeptr)
+
+Bind a string variable, internally represented by MAPI_VARCHAR, to a
 parameter.  The sizeptr parameter points to the length of the string
 pointed to by val.  If sizeptr == NULL or *sizeptr == -1, the string
 is NULL-terminated.
 
-\item[MapiMsg mapi\_clear\_params(MapiHdl hdl)]:
+@item MapiMsg mapi_clear_params(MapiHdl hdl)
+
 Clear all parameter bindings.
-\end{description}
+@end itemize
 @- Miscellaneous
-@T
-\begin{description}
-\item[MapiMsg mapi\_setAutocommit(Mapi mid, int autocommit)]:
+@itemize
+@item MapiMsg mapi_setAutocommit(Mapi mid, int autocommit)
+
 Set the autocommit flag (default is off).  This only has an effect
 when the language is SQL.  In that case, a commit statement is added
 to the end of each query sent to the server.
 
-\item[MapiMsg mapi\_cache\_limit(Mapi mid, int maxrows)]:
-A limited number of tuples are pre-fetched after each execute().  If
+@item MapiMsg mapi_cache_limit(Mapi mid, int maxrows)
+
+A limited number of tuples are pre-fetched after each @code{execute()}.  If
 maxrows is negative, all rows will be fetched before the application
 is permitted to continue. Once the cache is filled, a number of tuples
 are shuffled to make room for new ones, but taking into account
 non-read elements.  Filling the cache quicker than reading leads to an
 error.
 
-\item[MapiMsg mapi\_cache\_shuffle(MapiHdl hdl, int percentage)]:
+@item MapiMsg mapi_cache_shuffle(MapiHdl hdl, int percentage)
+
 Make room in the cache by shuffling percentage tuples out of the
 cache.  It is sometimes handy to do so, for example, when your
 application is stream-based and you process each tuple as it arrives
@@ -535,59 +584,63 @@ between 0 to 100.  Making shuffle= 100% (default) leads to paging
 behavior, while shuffle==1 leads to a sliding window over a tuple
 stream with 1% refreshing.
 
-\item[MapiMsg mapi\_cache\_freeup(MapiHdl hdl, int percentage)]:
+@item MapiMsg mapi_cache_freeup(MapiHdl hdl, int percentage)
+
 Forcefully shuffle the cache making room for new rows.  It ignores the
 read counter, so rows may be lost.
 
-\item[char * mapi\_quote(const char *str, int size)]:
-Escape special characters such as $\backslash$n, $\backslash$t in str with
+@item char * mapi_quote(const char *str, int size)
+
+Escape special characters such as \n, \t in str with
 backslashes.  The returned value is a newly allocated string which
 should be freed by the caller.
 
-\item[char * mapi\_unquote(const char *name)]:
-The reverse action of mapi\_quote(), turning the database
+@item char * mapi_unquote(const char *name)
+
+The reverse action of @code{mapi_quote()}, turning the database
 representation into a C-representation. The storage space is
 dynamically created and should be freed after use.
 
-\item[MapiMsg  mapi\_trace(Mapi mid, int flag)]:
+@item MapiMsg  mapi_trace(Mapi mid, int flag)
+
 Set the trace flag to monitor interaction with the server.
 
-\item[int mapi\_get\_trace(Mapi mid)]:
+@item int mapi_get_trace(Mapi mid)
+
 Return the current value of the trace flag.
 
-\item[MapiMsg  mapi\_trace\_log(Mapi mid, const char *fname)]:
+@item MapiMsg  mapi_trace_log(Mapi mid, const char *fname)
+
 Log the interaction between the client and server for offline
 inspection. Beware that the log file overwrites any previous log. It
 is not intended for recovery.
-\end{description}
+@end itemize
 The remaining operations are wrappers around the data structures
 maintained. Note that column properties are derived from the table
 output returned from the server.
-\begin{description}
-\item[ char *mapi\_get\_name(MapiHdl hdl, int fnr)]:
-\item[ char *mapi\_get\_type(MapiHdl hdl, int fnr)]:
-\item[ char *mapi\_get\_table(MapiHdl hdl, int fnr)]:
-\item[ int mapi\_get\_len(Mapi mid, int fnr)]:
+@itemize
+@item  char *mapi_get_name(MapiHdl hdl, int fnr)
+@item  char *mapi_get_type(MapiHdl hdl, int fnr)
+@item  char *mapi_get_table(MapiHdl hdl, int fnr)
+@item  int mapi_get_len(Mapi mid, int fnr)
 
-\item[ char *mapi\_get\_dbname(Mapi mid)]:
-\item[ char *mapi\_get\_host(Mapi mid)]:
-\item[ char *mapi\_get\_user(Mapi mid)]:
-\item[ char *mapi\_get\_lang(Mapi mid)]:
-\item[ char *mapi\_get\_version(Mapi mid)]:
-\item[ int mapi\_get\_versionId(Mapi mid)]:
-\item[ char *mapi\_get\_motd(Mapi mid)]:
+@item  char *mapi_get_dbname(Mapi mid)
+@item  char *mapi_get_host(Mapi mid)
+@item  char *mapi_get_user(Mapi mid)
+@item  char *mapi_get_lang(Mapi mid)
+@item  char *mapi_get_version(Mapi mid)
+@item  int mapi_get_versionId(Mapi mid)
+@item  char *mapi_get_motd(Mapi mid)
 
-%\item[MapiMsg mapi\_timeout(Mapi mid, int timeout)]:
-%Sets the time out time in milli seconds for all subsequent
-%Mapi commands. Default value is 0, wait indefinitely.
+@item char **mapi_tables(Mapi mid)
 
-\item[char **mapi\_tables(Mapi mid)]:
 Return a list of accessible database tables.
 
-\item[char **mapi\_fields(Mapi mid)]:
+@item char **mapi_fields(Mapi mid)
+
 Return a list of accessible tables fields. This can also be obtained
-by inspecting the field descriptor returned by mapi\_fetch\_field.
-\end{description}
+by inspecting the field descriptor returned by @code{mapi_fetch_field()}.
+@end itemize
 @
 @{
 @+ Implementation
