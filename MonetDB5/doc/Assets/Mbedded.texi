@@ -47,7 +47,7 @@ A minimalistic embedded application is shown below. It creates
 a temporary table in the database, fills it, and retrieves the
 records for some statistics gathering.
 
-The key operation is @code{_embedded_sql()} which takes an optional 
+The key operation is @code{embedded_sql()} which takes an optional 
 environment argument list. Upon success of this call, there
 will be a separate Mserver thread running in the same user space to handle
 the database requests. A short-circuit interaction is established
@@ -163,11 +163,13 @@ is given hardwired knowledge on the desired settings:
 @verbatim
 main(){
 ...
-	mapi_option("welcome","false");
-	mapi_option("gdk_dbfarm","/tmp/dbfarm");
-	mapi_option("sql_prompt","sql>");
+	embedded_option("welcome","false");
+	embedded_option("gdk_dbfarm","/tmp/dbfarm");
+	embedded_option("dbname","demo");
+	embedded_option("user","guest");
+	embedded_option("password","anonymous");
 ...
-	mapi_embedded("monetdb","monetdb","sql");
+	embedded_sql(NULL,0);
 @end verbatim
 @end example
 For an overview of the system configuration parameters see XYZ.
