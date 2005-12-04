@@ -20,14 +20,14 @@
 This program is meant to illustrate an embedded SQL application
 and provides a baseline for footprint comparisons.
 */
-#include <Mbedded.h>
+#include <embeddedclient.h>
 
 #define die(dbh,hdl) (hdl?mapi_explain_result(hdl,stderr):		\
 			  dbh?mapi_explain(dbh,stderr):			\
 			      fprintf(stderr,"command failed\n"),	\
 		      exit(-1))
 
-#define close_handle(X,Y) if (mapi_close_handle(X) != MOK) die(X, Y);
+#define close_handle(X,Y) if (mapi_close_handle(Y) != MOK) die(X, Y);
 
 #define SQL1 "create table emp(name varchar(20),age int)"
 #define SQL2 "insert into emp values('user%d', %d)"
@@ -40,7 +40,7 @@ main()
 	MapiHdl hdl = NULL;
 	int i;
 
-	dbh= mapi_embedded("monetdb", "monetdb", "sql");
+	dbh= embedded_sql(NULL, 0);
 	if (dbh == NULL || mapi_error(dbh))
 		die(dbh, hdl);
 
@@ -73,6 +73,6 @@ main()
 	close_handle(dbh,hdl);
 	printf("The footprint is %d Mb \n",i);
 
-	mapi_embedded_exit(dbh);
+	mapi_disconnect(dbh);
 	return 0;
 }

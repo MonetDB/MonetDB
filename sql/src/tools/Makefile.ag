@@ -68,3 +68,9 @@ bin_Mbeddedsql = {
 	SOURCES = prog.c
 	LIBS = libembeddedsql libinitmodules STATIC_MODS @SHARED_LIBS@ $(MONETDB_LIBS) -lbat $(EXTRA_LIBS) -lmonet -lMapi -lmutils -lstream
 }
+
+bin_embeddedExample = {
+	SOURCES = embeddedExample.c
+	DIR = pkglibdir/Tests
+	LIBS = libembeddedsql libinitmodules STATIC_MODS @SHARED_LIBS@ $(MONETDB_LIBS) -lbat $(EXTRA_LIBS) -lmonet -lMapi -lmutils -lstream
+}
