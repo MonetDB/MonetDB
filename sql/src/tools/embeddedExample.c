@@ -19,7 +19,6 @@
 /*
 This program is meant to illustrate an embedded SQL application
 and provides a baseline for footprint comparisons.
-A defensive programming style.
 */
 #include <Mbedded.h>
 
@@ -41,13 +40,10 @@ main()
 	MapiHdl hdl = NULL;
 	int i;
 
-	mapi_embedded_start();
-
-	dbh = mapi_connect("localhost", 45123, "monetdb", "monetdb", "sql");
+	dbh= mapi_embedded("monetdb", "monetdb", "sql");
 	if (dbh == NULL || mapi_error(dbh))
 		die(dbh, hdl);
 
-	/* mapi_trace(dbh, 1); */
 	/* switch off autocommit */
 	if (mapi_setAutocommit(dbh, 0) != MOK || mapi_error(dbh))
 		die(dbh,NULL);
@@ -77,7 +73,6 @@ main()
 	close_handle(dbh,hdl);
 	printf("The footprint is %d Mb \n",i);
 
-	mapi_disconnect(dbh);
-	mapi_embedded_exit();
+	mapi_embedded_exit(dbh);
 	return 0;
 }
