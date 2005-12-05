@@ -60,6 +60,7 @@
 #include "typecheck.h"    /* type inference and check */
 #include "core2alg.h"     /* Compile Core to Relational Algebra */
 #include "algopt.h"
+#include "algopt_icol.h"
 #include "algebra_cse.h"
 #include "planner.h"
 #include "physdebug.h"
@@ -75,23 +76,25 @@
 
 static char *phases[] = {
     [ 1]  = "right after input parsing",
-    [ 2]  = "after parse/abstract syntax tree has been normalized",
-    [ 3]  = "after namespaces have been checked and resolved",
-    [ 4]  = "after variable scoping has been checked",
-    [ 5]  = "after XQuery built-in functions have been loaded",
-    [ 6]  = "after valid function usage has been checked",
-    [ 7]  = "after XML Schema predefined types have been loaded",
-    [ 8]  = "after XML Schema document has been imported (if any)",
-    [ 9]  = "after the abstract syntax tree has been mapped to Core",
-    [10]  = "after the Core tree has been simplified/normalized",
-    [11]  = "after type inference and checking",
-    [12]  = "after XQuery Core optimization",
-    [13]  = "after the Core tree has been translated to the logical algebra",
-    [14]  = "after the logical algebra tree has been rewritten/optimized",
-    [15]  = "after the CSE on the logical algebra tree",
-    [16]  = "after compiling logical into the physical algebra",
-    [17]  = "after compiling the physical algebra into MIL code",
-    [18]  = "after the MIL program has been serialized"
+    [ 2]  = "after loading XQuery modules",
+    [ 3]  = "after parse/abstract syntax tree has been normalized",
+    [ 4]  = "after namespaces have been checked and resolved",
+    [ 5]  = "after variable scoping has been checked",
+    [ 6]  = "after XQuery built-in functions have been loaded",
+    [ 7]  = "after valid function usage has been checked",
+    [ 8]  = "after XML Schema predefined types have been loaded",
+    [ 9]  = "after XML Schema document has been imported (if any)",
+    [10]  = "after the abstract syntax tree has been mapped to Core",
+    [11]  = "after the Core tree has been simplified/normalized",
+    [12]  = "after type inference and checking",
+    [13]  = "after XQuery Core optimization",
+    [14]  = "after the Core tree has been translated to the logical algebra",
+    [15]  = "after the logical algebra has been annotated with properties",
+    [16]  = "after the logical algebra tree has been rewritten/optimized",
+    [17]  = "after the CSE on the logical algebra tree",
+    [18]  = "after compiling logical into the physical algebra",
+    [19]  = "after compiling the physical algebra into MIL code",
+    [20]  = "after the MIL program has been serialized"
 };
 
 /* pretty ugly to have such a global, could not entirely remove it yet JF */
@@ -232,15 +235,6 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 #if HAVE_SIGNAL_H
     /* setup sementation fault signal handler */
     signal (SIGSEGV, segfault_handler);
-#endif
-
-#if 0
-    /* Parsing of Haskell XQuery to Algebra output */
-    if (status->parse_hsk)
-    {
-        laroot = PFhsk_parse ();
-        goto subexelim;
-    }
 #endif
 
     /* compiler chain below 
@@ -403,25 +397,37 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     STOP_POINT(14);
 
-    /* Rewrite/optimize algebra tree */
+    /*
+     * Infer interesting properties about algebra expressions
+     */
+    tm = PFtimer_start ();
+
+    PFprop_infer (laroot);
+
+    tm = PFtimer_stop (tm);
+    if (status->timing)
+        PFlog ("logical algebra tree property inference:\t %s",
+               PFtimer_str (tm));
+
+    STOP_POINT(15);
+
+    /*
+     * Rewrite/optimize algebra tree
+     */
     tm = PFtimer_start ();
 
     laroot = PFalgopt (laroot);
 
     tm = PFtimer_stop (tm);
-
     if (status->timing)
         PFlog ("logical algebra tree rewrite/optimization:\t %s",
                PFtimer_str (tm));
 
-    STOP_POINT(15);
-
-    tm = PFtimer_start ();
+    STOP_POINT(16);
 
     /* 
      * common subexpression elimination in the algebra tree
      */
-subexelim:
     tm = PFtimer_start ();
 
     laroot = PFla_cse (laroot);
@@ -431,7 +437,7 @@ subexelim:
         PFlog ("common subexpression elimination in logical algebra tree:\t %s",
                PFtimer_str (tm));
 
-    STOP_POINT(16);
+    STOP_POINT(17);
 
     /* Compile algebra into physical algebra */
     tm = PFtimer_start ();
@@ -441,7 +447,7 @@ subexelim:
     if (status->timing)
         PFlog ("compilation to physical algebra:\t %s", PFtimer_str (tm));
 
-    STOP_POINT(17);
+    STOP_POINT(18);
 
     /* Map physical algebra to MIL */
     tm = PFtimer_start ();
@@ -451,14 +457,14 @@ subexelim:
     if (status->timing)
         PFlog ("MIL code generation:\t %s", PFtimer_str (tm));
 
-    STOP_POINT(18);
+    STOP_POINT(19);
 
     /* Render MIL program in Monet MIL syntax 
      */
     if (!(mil_program = PFmil_serialize (mroot)))
         goto failure;
 
-    STOP_POINT(19);
+    STOP_POINT(20);
 
     /* Print MIL program to pfout */
     if (mil_program)

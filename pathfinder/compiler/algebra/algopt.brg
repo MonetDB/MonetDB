@@ -135,6 +135,9 @@ Rel:    project (
                     cross (lit_tbl,                          
                            cross(Rel,                        
                                  lit_tbl)))))     =  11 (40);
+Rel:    project (project (Rel))                   =  13  (1);
+Rel:    project (distinct (Rel))                  =  14 (10);
+Rel:    project (scjoin (Frag, Rel))              =  15 (10);
 Rel:    select_ (Rel)                             =  19 (10);
 Rel:    disjunion (Rel, Rel)                      =  20 (10);
 Rel:    disjunion (EmptyRel, Rel)                 =  21  (5);
@@ -158,12 +161,14 @@ Rel:    sum (Rel)                                 =  41 (10);
 Rel:    count (Rel)                               =  42 (10);
 Rel:    rownum (Rel)                              =  50 (10);
 Rel:    number (Rel)                              =  51 (10);
+Rel:    number (rownum (Rel))                     =  52 (10);
 Rel:    type (Rel)                                =  53 (10);
 Rel:    type_assert (Rel)                         =  54 (10);
 Rel:    cast (Rel)                                =  55 (10);
 Rel:    seqty1 (Rel)                              =  56 (10);
 Rel:    all (Rel)                                 =  57 (10);
 Rel:    scjoin (Frag, Rel)                        =  60 (10);
+Rel:    scjoin (Frag, distinct (Rel))             =  61 (10);
 Rel:    doc_access (Frag, Rel)                    =  62 (10);
 Rel:    element_tag (Rel, Rel)                    =  63 (10);
 Rel:    element_tag (Rel, EmptyRel)               =  64 (5); 
@@ -447,6 +452,88 @@ reduce (PFla_op_t *p, int goalnt)
             }
             break;
 
+        /* Rel:    project (project (Rel)) */
+        case 13:
+        {
+            PFalg_proj_t *atts = PFmalloc (p->schema.count *
+	                                       sizeof (PFalg_proj_t));
+
+            unsigned int i, j;
+            for (i = 0; i < p->schema.count; i++)
+                for (j = 0; j < L(p)->schema.count; j++)
+                    if (p->sem.proj.items[i].old ==
+                        L(p)->sem.proj.items[j].new) {
+                        atts[i] = PFalg_proj (
+                                     p->sem.proj.items[i].new,
+                                     L(p)->sem.proj.items[j].old);
+                        break;
+                    }
+
+            PFla_op_t *project = PFla_project_ (L(L(p)), i, atts);
+
+            /* FIXME: copy properties to avoid exception */
+            project->prop = p->prop;
+
+            *p = *(project);
+            rewritten = true;
+            p->opt = false;
+            relabel (p, kids);
+        }
+            break;
+
+        /* Rel:    project (distinct (Rel)) */
+        case 14:
+        {
+            if (p->schema.count == LL(p)->schema.count)
+            {
+                unsigned int i, j, check = 0;
+                for (i = 0; i < L(p)->schema.count; i++)
+                    for (j = 0; j < p->schema.count; j++)
+                        if (p->sem.proj.items[j].old ==
+                            p->sem.proj.items[j].new &&
+                            p->sem.proj.items[j].old ==
+                            L(p)->schema.items[i].name) {
+                            check++;
+                            break;
+                        }
+
+                if (check == p->schema.count) {
+                    *p = *(L(p));
+                    rewritten = true;
+                    p->opt = false;
+                    break;
+                }
+            }
+            p->opt = true;
+            L(p)->opt = true;
+        }
+            break;
+
+        /* Rel:    project (scjoin (Frag, Rel)) */
+        case 15:
+        {
+            if (p->schema.count == 2)
+            {
+                unsigned int i, check = 0;
+                for (i = 0; i < p->schema.count; i++)
+                    if (p->sem.proj.items[i].old ==
+                        p->sem.proj.items[i].new &&
+                        (p->sem.proj.items[i].old == att_iter ||
+                         p->sem.proj.items[i].old == att_item))
+                        check++;
+
+                if (check == 2) {
+                    *p = *(L(p));
+                    rewritten = true;
+                    p->opt = false;
+                    break;
+                }
+            }
+            p->opt = true;
+            L(p)->opt = true;
+        }
+            break;
+
         /* Rel:    disjunion (EmptyRel, Rel) */
         case 21:
             /* return right child */
@@ -468,6 +555,28 @@ reduce (PFla_op_t *p, int goalnt)
             /* return right child */
             *p = *(R(p));
             rewritten = true;
+            break;
+
+        /* Rel:    number (rownum (Rel)) */
+        case 52:
+        {
+            PFla_op_t *rownum = PFla_rownum (
+                                    PFla_number (
+                                        LL(p),
+                                        p->sem.number.attname,
+                                        p->sem.number.part),
+                                    L(p)->sem.rownum.attname,
+                                    L(p)->sem.rownum.sortby,
+                                    L(p)->sem.rownum.part);
+
+            rownum->prop = L(p)->prop;
+            L(rownum)->prop = p->prop;
+            *p = *rownum;
+            rewritten = true;
+            p->opt = true;
+            L(p)->opt = true;
+            relabel (p, kids);
+        }
             break;
 
         /* Rel:    cast (Rel) */
@@ -494,6 +603,14 @@ reduce (PFla_op_t *p, int goalnt)
                     relabel (p, kids);
                     break;
                 }
+            break;
+
+        /* Rel:    scjoin (Frag, distinct (Rel)) */
+        case 61:
+            R(p) = L(R(p));
+            rewritten = true;
+            p->opt = false;
+            relabel (p, kids);
             break;
 
         /* Rel:    EmptyRel */
@@ -781,9 +898,6 @@ relabel (PFla_op_t *p,  PFla_op_t **kids)
 PFla_op_t *
 PFalgopt (PFla_op_t *root)
 {
-    /* Infer interesting properties about algebra expressions. */
-    PFprop_infer (root);
-
     /* Attach node labels in a tree walk bottom-up */
     PFalgopt_label (root);
 
