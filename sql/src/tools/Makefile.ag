@@ -74,3 +74,9 @@ bin_embeddedExample = {
 	DIR = pkglibdir/Tests
 	LIBS = libembeddedsql libinitmodules STATIC_MODS @SHARED_LIBS@ $(MONETDB_LIBS) -lbat $(EXTRA_LIBS) -lmonet -lMapi -lmutils -lstream
 }
+
+scripts_h = {
+	EXT = h
+	DIR = includedir
+	SOURCES = embeddedclient.mx
+}

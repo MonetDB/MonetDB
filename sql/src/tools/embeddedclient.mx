@@ -35,17 +35,6 @@ between 25-50%.
 #ifndef _EMBEDDEDCLIENT_H_
 #define _EMBEDDEDCLIENT_H_
 
-#include "gdk.h"
-#ifdef HAVE_PTHREAD_H
-/* pthread.h on Windows includes config.h if HAVE_CONFIG_H is set */
-#undef HAVE_CONFIG_H
-#ifdef pid_t
-#undef pid_t
-#endif
-#include <sched.h>
-#include <pthread.h>
-#endif
-
 #include "monet_options.h"
 
 #ifdef _MSC_VER
@@ -58,7 +47,6 @@ between 25-50%.
 #define embeddedclient_export extern
 #endif
 
-#include <streams.h>
 #include <Mapi.h>
 
 embeddedclient_export Mapi embedded_sql(opt *set, int len);
@@ -66,6 +54,18 @@ embeddedclient_export Mapi embedded_sql(opt *set, int len);
 #endif /* _EMBEDDEDCLIENT_H_ */
 @c
 #include "embeddedclient.h"
+
+#include "gdk.h"
+#ifdef HAVE_PTHREAD_H
+/* pthread.h on Windows includes config.h if HAVE_CONFIG_H is set */
+#undef HAVE_CONFIG_H
+#ifdef pid_t
+#undef pid_t
+#endif
+#include <sched.h>
+#include <pthread.h>
+#endif
+
 #include "monet.h"
 #include "monet_options.h"
 #include "initmodules.h"

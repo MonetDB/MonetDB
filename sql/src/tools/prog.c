@@ -34,6 +34,7 @@
 #  include <time.h>
 # endif
 #endif
+#include <string.h>
 
 static long
 gettime(void)
@@ -153,7 +154,7 @@ main(int argc, char **av)
 	/* now for each file given on the command line (or stdin) 
 	   read the query and execute it
 	 */
-	buf = GDKmalloc(maxlen);
+	buf = malloc(maxlen);
 	if (buf == NULL) {
 		fprintf(stderr, "Cannot allocate memory for query buffer\n");
 		return -1;
@@ -169,7 +170,7 @@ main(int argc, char **av)
             		curlen += n;
             		if (curlen+1024 > maxlen) {
                			maxlen += 8*BUFSIZ;
-               			buf = GDKrealloc(buf, maxlen + 1);
+               			buf = realloc(buf, maxlen + 1);
 				if (buf == NULL) {
 					fprintf(stderr, "Cannot allocate memory for query buffer\n");
 					return -1;
@@ -195,6 +196,6 @@ main(int argc, char **av)
 		if (time)
 			printf("Timer: %ld (usec)\n", gettime()-t0);
 	}
-	GDKfree(buf);
+	free(buf);
 	return 0;
 }
