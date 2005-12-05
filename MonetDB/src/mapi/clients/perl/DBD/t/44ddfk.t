@@ -61,6 +61,7 @@ is( ref $ti,'HASH','Type info');
 {
   local ($dbh->{Warn}, $dbh->{PrintError});
   $dbh->{PrintError} = $dbh->{Warn} = 0;
+  $dbh->do("DROP TABLE $tbl2");
   $dbh->do("DROP TABLE $tbl");
 }
 # -----------------------------------------------------------------------------
