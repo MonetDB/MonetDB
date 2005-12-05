@@ -1216,22 +1216,20 @@ static int seqHeadStart(XqueryCtx* ctx, BAT* item) {
         stream_printf(GDKout,"# %d\t# length\n", 60);
         stream_printf(GDKout,"# %d\t# tuplecount\n", BATcount(item));
         stream_printf(GDKout,"# %d\t# id\n", id_sequence_counter++);
-    } else if (!ctx->dmMode) { /* dmMode has no header */
-        if (!ctx->norootMode) {
-            if (ctx->mapiMode) {
-                stream_printf(GDKout,"=<?xml version=\"1.0\" encoding=\"utf-8\"?>\n=");
-            } else if ( !ctx->saxMode ) {
-                stream_printf(GDKout,"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
-            }
-            handle_startElement(ctx, NULL, XQRESTAG);
+    } else if (ctx->dmMode == 0  && ctx->norootMode == 0) { /* dmMode has no header */
+        if (ctx->mapiMode) {
+            stream_printf(GDKout,"=<?xml version=\"1.0\" encoding=\"utf-8\"?>\n=");
+        } else if ( !ctx->saxMode ) {
+            stream_printf(GDKout,"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
         }
+        handle_startElement(ctx, NULL, XQRESTAG);
         ctx->nAttrOnLine = 0;
     }
     return 1;
 }
 
 static int seqHeadEnd(XqueryCtx* ctx) {
-    if ( ! ctx->dmMode ) { /* dmMode has no header */
+    if (ctx->dmMode == 0  && ctx->norootMode == 0) { /* dmMode has no header */
         handle_attributeEnd(ctx, 0);
         if ( !ctx->saxMode )
             stream_printf(GDKout,
