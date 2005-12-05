@@ -376,25 +376,11 @@ PROC shred_doc_locked(BAT[str,bat] docBAT, str location, str name, timestamp ts,
     }
 }
 
-PROC construct_docBAT(BAT[oid,bat]resbat, str location, str name, bit doCommit, str opt, timestamp ts, int ws) : BAT[str, bat]
+PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
 {
-    var err, exists := false;
-
-    # always make sure not to cause errors while holding the lock
-    lock_set(pf_lock);
-    err := CATCH(exists := bat("doc_name").texist(name));
-    lock_unset(pf_lock);
-
-    if (not(isnil(err))) ERROR(err);
-    else if (exists) ERROR("shred_doc(%s): already exists in database!\n", name);
-
-    # shred it unlocked
-    var docBAT := new(str,bat,WS_SIZE); # contains all new bats
-    var us := usec();
-
     # insert all bats from resBAT in docBAT
     var ins := ws_tpe.ord_uselect(bat).mirror().ord_select(nil,oid(-(DOC_LOADED,1))).mirror();
-    [insert](const docBAT, ins.leftfetchjoin(ws_nme), ins.leftfetchjoin(ws_oid).leftjoin(resbat));
+    [insert](const docBAT, ins.leftfetchjoin(ws_nme), ins.leftfetchjoin(ws_oid).leftjoin(shredBAT));
 
     # these are simple concatenations (to accelerate combPRINT_WS_SZined lookup)
     docBAT.insert("qn_prefix_uri", docBAT.find("qn_prefix").[+](str('\1')).[+](docBAT.find("qn_uri")));
@@ -431,10 +417,26 @@ PROC construct_docBAT(BAT[oid,bat]resbat, str location, str name, bit doCommit, 
         prop_pre_bat := prop_pre_bat.chk_order();
     }
     docBAT.insert("prop_pre" + "_" + str(chr(48 + PI)), prop_pre_bat);
-
-    var height := resbat.fetch(PRE_LEVEL).max().int() + 1;
-
     docBAT := docBAT.access(BAT_READ);
+    return shredBAT.fetch(PRE_LEVEL).max().int() + 1;
+}
+
+PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, bit doCommit, str opt, timestamp ts, int ws) : int
+{
+    var shredRES := shred2bats(location,"",opt);
+    var err, exists := false;
+
+    # always make sure not to cause errors while holding the lock
+    lock_set(pf_lock);
+    err := CATCH(exists := bat("doc_name").texist(name));
+    lock_unset(pf_lock);
+
+    if (not(isnil(err))) ERROR(err);
+    else if (exists) ERROR("shred_doc(%s): already exists in database!\n", name);
+
+    # add indices to the shredded doc, and find out maximum doc height
+    var height := index_doc(shredRES, docBAT);
+
     if (doCommit) {
         [mmap](docBAT, [ifthenelse]([<]([count](docBAT), 65536), STORE_MEM, STORE_MMAP));
         [save](docBAT);
@@ -446,31 +448,21 @@ PROC construct_docBAT(BAT[oid,bat]resbat, str location, str name, bit doCommit, 
 
         if (not(isnil(err))) ERROR(err);
     }
-    return docBAT;
+    return height;
 }
 
-# HACK: overwrite 'height'
-PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts, int ws) : BAT[str,bat]
+PROC shred_doc_base(str location, str name, bit doCommit, str opt) : void
 {
-    var shredRES := shred2bats(location,"",opt);
-    return construct_docBAT(shredRES, location, name, doCommit, opt, ts, ws);
-}
-
-PROC shred_doc_base(str location, str name, bit doCommit, str opt) : BAT[str,bat]
-{
-    var height, us := usec();
-    var docBAT := shred_doc_impl(location, name, doCommit, opt, timestamp(nil), int(nil));
-    # save all persistent BATs and print timings
-    us := usec() - us;
-    var ms := us/1000;
+    var us := usec();
+    var docBAT := bat(str,bat,WS_SIZE);
+    shred_doc_impl(docBAT, location, name, doCommit, opt, timestamp(nil), int(nil));
+    var ms := (us := usec() - us) / 1000;
     if ( doCommit ) {
         printf("# Shredded XML doc(\"%s\"), total time after commit=%lld.%03llds\n", name, /(ms,1000),%(ms,1000));
     } else {
         printf("# Shredded XML doc(\"%s\") uncommitted, total time =%lld.%03llds\n", name, /(ms,1000),%(ms,1000));
     }
-    return docBAT;
 }
-
 PROC shred_doc(str location, str name) : void
 {
     shred_doc_base(location, name, true, "");
@@ -591,62 +583,28 @@ PROC pin_doc(oid doc_oid, int ws) : void
     doc_query.insert(doc_oid, int(ws));
 }
 
-# HACK: this proc overwrites variables 'lifetime' and 'ts'
-PROC add_doc_locked(str name, int ws) : oid
+
+# get filename if the URI is a file; else return str(nil)
+PROC doc_filename(str name) : str
 {
-    var doc_oid := nil;
-    var filename := name;
-    var lim := timestamp(nil);
+    var uri_idx := -1;
+    if (startsWith(name, "file://") or startsWith(name, "FILE://")) {
+        name := string(name, 7);
+     } else if (search(name, "://") >= 0) {
+        return str(nil);
+     }
+     return name;
+}
 
-    # check if the document already existed
-    if (bat("doc_name").texist(name)) {
-        doc_oid := bat("doc_name").reverse().find(name);
-    } else if (bat("doc_location").texist(name)) {
-        # existed as cached location (URI): must check timestamp
-        var doc_oid := bat("doc_location").reverse().find(name);
-    }
-
-    # do some first analysis on the URI
-    if (not(isnil(doc_oid))) { 
-        filename := bat("doc_location").find(doc_oid);
-        lim := bat("doc_timestamp").find(doc_oid);
-    }
-
-    if (startsWith(filename, "file://") or startsWith(filename, "FILE://")) {
-        filename := string(filename, 7);
-    } else {
-        idx := search(filename, "://");
-    }
-    if (idx >= 0) {
-        # add uri-dependent lifetime
-        var uri_lifetime := bat("uri_lifetime");
-        var b := [startsWith](filename, mirror(uri_lifetime)).uselect(true);
-        if (b.count() > 0) {
-            var matchlen := [length](mirror(b));
-            lifetime := *(1000LL, uri_lifetime.find(matchlen.reverse().find(matchlen.max())));
-        } else {
-            lifetime := lng(nil); # doc will *not* be cached 
-        }
-    } else {
+# get the actual timestamp of the document cached in the database
+PROC doc_curtime(str filename) : timestamp {
+    var ts := current_timestamp();
+    if (not(isnil(filename))) {
         # a file: get lastmodification time
-        var tts;
-        var err := CATCH(tts := lastmod_time(filename));
-        if (isnil(err)) {
-            ts := tts; # timestamp was read succesfully
-        } else if (not(isnil(lim))) {
-            ts := add(lim, 1LL); # file-error on cached file: force remove
-        }
+        var tts, err := CATCH(tts := lastmod_time(filename));
+        if (isnil(err)) ts := tts;
     }
-
-    if (isnil(doc_oid)) {
-        return nil; # document not in database
-    } else if (and(not(isnil(lim)), >(ts,lim))) { # if so, check if it still valid
-        # remove outdated document from the cache
-        delete_doc_locked(doc_oid); 
-        return nil;
-    }
-    pin_doc(doc_oid, ws); # make sure nobody can delete it
-    return doc_oid;
+    return ts;
 }
 
 PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, str docid, int height) : oid
@@ -685,42 +643,81 @@ PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, str docid, int 
      return frag;
 }
 
-var time_shred := 0; # dummy declarartion to avoid errors when timing is not activated in the script
-
-# HACK: this proc overwrites variable 'time_shred' 
-PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
+PROC add_doc_locked(str name, timestamp ts, int ws) : oid 
 {
-    var ts := current_timestamp();
-    var lifetime := 0LL;
-    var idx := -1;
-    var doc_oid;
-    var err, height := int(nil);
+    var doc_oid := nil;
+    # check if the document already existed
+    if (bat("doc_name").texist(name)) {
+        doc_oid := bat("doc_name").reverse().find(name);
+    } else if (bat("doc_location").texist(name)) {
+        # existed as cached location (URI): must check timestamp
+        doc_oid := bat("doc_location").reverse().find(name);
+    }
+    if (not(isnil(doc_oid))) {
+        var lim := bat("doc_timestamp").find(doc_oid);
+        if (not(isnil(lim))) { # a nil limit means the doc never exprires
+            if  (ts > lim) {
+                delete_doc_locked(doc_oid); # remove outdated document from the cache
+                return nil;
+            }
+        }
+        pin_doc(doc_oid, ws); # GOT IT! make sure nobody can delete it
+     }
+     return doc_oid;
+}
+
+PROC lifetime_doc_locked(str name, str filename, oid doc_oid, timestamp ts) : timestamp
+{
+    if (isnil(doc_oid) and isnil(filename)) {
+        # for not-yet-cached URIs: get lifetime from uri_lifetime BAT
+        var uri_lifetime := bat("uri_lifetime");
+        var b := [startsWith](filename, mirror(uri_lifetime)).uselect(true);
+        var lifetime := lng(nil);
+        if (b.count() > 0) {
+            var matchlen := [length](mirror(b));
+            lifetime :=  *(1000LL, uri_lifetime.find(matchlen.reverse().find(matchlen.max())));
+        }
+        # this may set ts to nil; such URIs are never cached (and thus do not need to be persistent)
+        ts := ts.add(lifetime);
+    }
+    return ts;
+}
+
+PROC add_doc(BAT[void,bat] ws, str name) : int
+{
+    var time_shred := 0; 
+    var filename := doc_filename(name);
     var t := time();
+    var doc_oid := nil;
+    var ts := doc_curtime(filename);
+    var err;
 
     # always make sure not to cause errors while holding the lock
     lock_set(pf_lock);
-    err := CATCH(doc_oid := add_doc_locked(name, int(ws)));
+    err := CATCH(doc_oid := add_doc_locked(name,ts,int(ws)));
+    if (isnil(err)) err := CATCH(ts := lifetime_doc_locked(name,filename,doc_oid,ts));
     lock_unset(pf_lock);
-
     if (not(isnil(err))) ERROR(err);
 
-    var docBAT, docid := "", doCommit := true;
+    var docBAT := new(str,bat,WS_SIZE);
+    var doCommit := true;
+    var docid := "";
+    var height;
 
     if (isnil(doc_oid)) {
-        ts := add(ts, lifetime);
-        if (isnil(ts)) doCommit := false;
-        docBAT := shred_doc_impl(name, name, doCommit, "", ts, int(ws));
-        # overwrites 'height'
-        time_shred :+=  time() - t;
-    } else {
-        docBAT := new(str,bat);
-    }
-    if (doCommit) { 
+        if (isnil(ts)) {
+            doCommit := false;
+        } else {
+            docid := name;
+        }
+        height := shred_doc_impl(docBAT, name, name, doCommit, "", ts, int(ws));
+        time_shred :+= time() - t;
+    } else { 
         docid := str(int(bat("doc_name").reverse().find(name)));
         height := bat("doc_height").find(oid(int(docid)));
     }
     add_docbat(ws, docBAT, name, docid, height);  
-    return ws;
+    return time_shred;
 }
 
 
@@ -831,8 +828,8 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
  * argtpe[]      = xquery type of each parameter (as string, e.g. 'xs:integer')
  * argval[]      = str representation of item (e.g. '42')
  *
- * docBAT   = optional shredded document table, that is added to working set
- *            params of type xs:anyNode are represented as int pre-numbers.
+ * shredBAT   = optional shredded document table, that is added to working set
+ *              params of type xs:anyNode are represented as int pre-numbers.
  *
  * we return an error string, or NULL iff everything went A-OK  
  */
@@ -845,7 +842,7 @@ xquery_method(stream *out,
               int** argcnt, 
               str* argtpe, 
               str* argval, 
-              BAT* docBAT);
+              BAT* shredBAT);
 
 #endif
 @c
@@ -992,7 +989,7 @@ typedef struct {
     BAT *fun_vid000, *fun_iter000, *fun_item000, *fun_kind000, *loop000;
 
     /* pointers into MIL variable records (to set values) */
-    int *docBAT; 
+    int *shredBAT; 
     int *time_compile; 
     char **genType;
 
@@ -1216,7 +1213,7 @@ xquery_compile_exec(xquery_client *ctx,
  *
  * char*
  * xquery_function_call(xquery_client *ctx, int msec, char* mode, char *ns, char *method, 
- *                      int argc, int itercnt, int** argcnt, char** argtpe, char** argval, BAT *docBAT)
+ *                      int argc, int itercnt, int** argcnt, char** argtpe, char** argval, BAT *shredBAT)
  * - call a function ns:method(). try to use the function cache (ie re-use a cached MIL tree).
  *   otherwise generate MIL yourself, interpret it (and cache it). Returns error string (NULL if ok).
  */
@@ -1367,7 +1364,7 @@ xquery_function_call(xquery_client *ctx,
                      int** argcnt, 
                      char** argtpe, 
                      char** argval, 
-                     BAT *docBAT) 
+                     BAT *shredBAT) 
 {
     xquery_prepared_function *prepfun = ctx->prepared_functions;
     xquery_function *fun;
@@ -1417,7 +1414,7 @@ xquery_function_call(xquery_client *ctx,
             src = (char*) PFstartMIL();
             while(*src && cur < end) *cur++ = *src++;
 
-            if (docBAT) {
+            if (shredBAT) {
                 /* add shredded soap message to the working set */
                 src = (char*) PFdocbatMIL();
                 while(*src && cur < end) *cur++ = *src++;
@@ -1487,8 +1484,8 @@ xquery_function_call(xquery_client *ctx,
                     oid item = BATcount(ctx->str_values);
                     @:bunins(str_values, &nil, ctx->val, (str), "\"%s\"")@
                     @:bunins(fun_item000, &nil, &item, (size_t) *(oid*), SZFMT, "@0")@
-                } else if (docBAT == NULL) { 
-                    return "xquery_function_call: node parameter without docBAT.\n";
+                } else if (shredBAT == NULL) { 
+                    return "xquery_function_call: node parameter without shredBAT.\n";
                 } else {
                     @:bunins(fun_item000, &nil, ctx->val, (size_t) *(oid*), SZFMT, "@0")@
                 }
@@ -1509,8 +1506,8 @@ xquery_function_call(xquery_client *ctx,
         stream_write(ctx->fderr, fun->mil, strlen(fun->mil), 1);
     }
 
-    /* set the MIL docBAT and getType variables to the actual values */
-    ctx->docBAT[0] = docBAT?docBAT->batCacheid:0;
+    /* set the MIL shredBAT and getType variables to the actual values */
+    ctx->shredBAT[0] = shredBAT?shredBAT->batCacheid:0;
     if (*(ctx->genType) == NULL || strcmp(*(ctx->genType), mode)) { 
         if (*(ctx->genType)) GDKfree(*(ctx->genType));
         *(ctx->genType) = GDKstrdup(mode);
@@ -1737,6 +1734,7 @@ xquery_client_alloc(stream *fdin,
         monet_clients[i].fdout = fdout;
     }
     MT_unset_lock(pf_cache_lock, "xquery_client_alloc");
+
     return ctx;
 }
 
@@ -1766,10 +1764,10 @@ xquery_client_init(xquery_client *ctx)
         if (!xquery_mil_exec(ctx, (char*) PFvarMIL(), 0))
             return "xquery_client_init: failed to execute variable declarations.\n"; 
 
-        v = VARfind(&ctx->stk, "docBAT");
+        v = VARfind(&ctx->stk, "shredBAT");
         if (v == NULL) 
-            return "xquery_client_init: failed to lookup docBAT variable.\n"; 
-        ctx->docBAT = &v->binding.val.ival; 
+            return "xquery_client_init: failed to lookup shredBAT variable.\n"; 
+        ctx->shredBAT = &v->binding.val.ival; 
 
         v = VARfind(&ctx->stk, "genType");
         if (v == NULL) 
@@ -1844,7 +1842,7 @@ xquery_client_free(xquery_client *ctx,
     }
     ctx->loaded_modules = NULL;
     ctx->prepared_functions = NULL;
-    ctx->docBAT = NULL;
+    ctx->shredBAT = NULL;
 
     /* free the query buffer */
     if (ctx->buf) GDKfree(ctx->buf);
@@ -2353,10 +2351,10 @@ CMDxquery_server(Cntxt stk,
     stream **In, **Out;
     stream *in = NULL, *out = NULL;
     size_t curlen;
-    Thread XQthread = THRget(THRgettid());
     xquery_client *ctx = xquery_clients + stk;
     char *xquery,  buf[100], *p=buf, *err = (char*) -1;
     int i, msec;
+    Thread XQthread = THRget(THRgettid());
 
     if (lt->cnt != 2)
         return handle_argerror(res, lt->cnt, 2);
@@ -2388,9 +2386,9 @@ CMDxquery_server(Cntxt stk,
         in = block_stream(stream_rstream(in));
         out = block_stream(stream_wstream(out));
     }
-    monetSetChannel(XQthread, in, out);
     err = xquery_client_init(ctx);
     if (err) return (xquery_server_end(ctx, XQthread, err));
+    monetSetChannel(XQthread, in, out);
 
     while(1) {
         /* use the MAPI protocol to read as much xquery buffer as possible */
@@ -2584,20 +2582,22 @@ xquery_method(stream *out,
               int** argcnt, 
               str* argtpe, 
               str* argval, 
-              BAT* docBAT)
+              BAT* shredBAT)
 {
     int msec = GDKms();
+    Thread XQthread = THRget(THRgettid());
     xquery_client *ctx = xquery_client_alloc(NULL, out);
-    char *err = NULL, *ns = "fn", * mode = "xml-noroot";
-
+    char *err = NULL, *ns = "fn", *mode = "xml-noroot";
+   
     if (ctx == NULL) 
         return "xquery_method: out of client slots.\n";
 
     err = xquery_client_init(ctx);
+    monetSetChannel(XQthread, NULL, out);
 
     if (argc > 1000) {
         /* hack: pass argc+1000 and you get debug output */
-        stream *s = open_wstream("soap.mil");
+        stream *s = open_wstream("/tmp/soap.mil");
         char *prologue = (char*) PFinitMIL();
         if (s) {
             ctx->fderr = s;
@@ -2608,10 +2608,11 @@ xquery_method(stream *out,
     }
 
     if (err == NULL && module)
-        err = xquery_module_load(ctx, "xml-noroot", ns="soap", module); 
+        err = xquery_module_load(ctx, mode, ns="soap", module); 
+        /* err = xquery_module_load(ctx, "xml-noroot", ns="soap", module);  */
 
     if (err == NULL) { 
-        err = xquery_function_call(ctx, msec, mode, ns, method, argc, itercnt, argcnt, argtpe, argval, docBAT);
+        err = xquery_function_call(ctx, msec, mode, ns, method, argc, itercnt, argcnt, argtpe, argval, shredBAT);
         if (err == (char*) -1) err = "xquery_method: function could not be resolved.\n";
     }
 
