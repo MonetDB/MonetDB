@@ -2609,7 +2609,6 @@ xquery_method(stream *out,
 
     if (err == NULL && module)
         err = xquery_module_load(ctx, mode, ns="soap", module); 
-        /* err = xquery_module_load(ctx, "xml-noroot", ns="soap", module);  */
 
     if (err == NULL) { 
         err = xquery_function_call(ctx, msec, mode, ns, method, argc, itercnt, argcnt, argtpe, argval, shredBAT);
