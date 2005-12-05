@@ -713,10 +713,10 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, bat bid,
 			}
 			ok = mvc_send_int(s, count);
 		}
-		/* the following three could be done once by taking the
-		   max value and calculating the number of digits from that
-		   value, instead of the maximum values taken now, which
-		   include the optional sign */
+	/* the following three could be done once by taking the
+	   max value and calculating the number of digits from that
+	   value, instead of the maximum values taken now, which
+	   include the optional sign */
 	} else if (eclass == EC_NUM) {
 		if (mtype == TYPE_sht) {
 			count = 6;
@@ -727,10 +727,10 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, bat bid,
 		}
 		ok = mvc_send_int(s, count);
 	} else if (eclass == EC_FLT) {
-	/* [sign]+digit+period+[max 6 digits]+E+[sign]+[max 2 digits] */
+		/* [sign]+digit+period+[max 6 digits]+E+[sign]+[max 2 digits] */
 		if (mtype == TYPE_flt) {
 			ok = mvc_send_int(s, 13);
-	/* [sign]+digit+period+[max 14 digits]+E+[sign]+[max 3 digits] */
+		/* [sign]+digit+period+[max 14 digits]+E+[sign]+[max 3 digits] */
 		} else { /* TYPE_dbl */
 			ok = mvc_send_int(s, 22);
 		}
@@ -745,7 +745,7 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, bat bid,
 		count = 8;
 		if (scale)	/* time zone */
 			count += 6;	/* +03:30 */
-		if (digits)	/* fractional seconds precision */
+		if (digits > 1)	/* fractional seconds precision (including dot) */
 			count += digits;
 		ok = mvc_send_int(s, count);
 	} else if (eclass == EC_TIMESTAMP) {
