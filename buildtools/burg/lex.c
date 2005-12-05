@@ -130,9 +130,9 @@ ReadCodeBlock()
 		if (ch == '%') {
 			ch = getchar();
 			if (ch != '}')
-                            fputc ('%', outfile);
-                        else
-                            return;
+				fputc ('%', outfile);
+			else
+				return;
 		}
 		fputc(ch, outfile);
 		if (ch == '\n') {
