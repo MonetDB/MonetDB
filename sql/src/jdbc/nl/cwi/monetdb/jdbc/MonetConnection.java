@@ -71,7 +71,7 @@ public class MonetConnection implements Connection {
 	private boolean closed;
 
 	/** Whether this Connection is in autocommit mode */
-	private boolean autoCommit = false;
+	private boolean autoCommit = true;
 
 	/** The stack of warnings for this Connection object */
 	private SQLWarning warnings = null;
