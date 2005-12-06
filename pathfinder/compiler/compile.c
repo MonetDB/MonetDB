@@ -60,7 +60,6 @@
 #include "typecheck.h"    /* type inference and check */
 #include "core2alg.h"     /* Compile Core to Relational Algebra */
 #include "algopt.h"
-#include "algopt_icol.h"
 #include "algebra_cse.h"
 #include "planner.h"
 #include "physdebug.h"

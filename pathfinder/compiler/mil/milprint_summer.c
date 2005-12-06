@@ -6272,7 +6272,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "docs := nil;\n"
                 "doc_str := reverse(doc_str.tdiff(ws.fetch(DOC_LOADED))).hmark(0@0);\n"
                 "doc_str@batloop () {\n"
-                "    add_doc(ws, $t);\n"
+                "    time_shred :+= add_doc(ws, $t);\n"
                 "}\n"
                 "doc_str := nil;\n"
                 "doc_str := item%s;\n"
@@ -10028,7 +10028,7 @@ const char* PFvarMIL() {
         "var item_str_;\n"
         "\n"
         "# variable that holds bat-id (int) of a shredded document that may be added to the ws\n"
-        "var docBAT;\n"
+        "var shredBAT;\n"
         "\n"
         "# variables for results containing `real' xml subtrees\n"
         "var _elem_iter;  # oid|oid\n"
@@ -10087,8 +10087,9 @@ const char* PFstartMIL() {
 
 const char* PFdocbatMIL() {
     return  
-        " var height := bat(docBAT).fetch(PRE_LEVEL).max().int() + 1;\n"
-        " add_docbat(ws, bat(docBAT), \"soap\", \"soap\", height);\n";
+        " var docBAT := new(str,bat,WS_SIZE);\n"
+        " var height := index_doc(bat(shredBAT), docBAT);\n"
+        " add_docbat(ws, docBAT, \"\", \"\", height);\n";
 }
 
 /* debug statement for PFstopMIL to print result set 
@@ -10101,7 +10102,7 @@ const char* PFstopMIL() {
         "  time_exec := time_print - time_exec;\n"
         "  \n"
         "  if (genType.search(\"none\") = -1)\n"
-        "    print_result(genType,ws,item.materialize(ipik),constant2bat(kind),int_values,dbl_values,dec_values,str_values);\n"
+        "    print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n"
         "});\n"
         "destroy_ws(ws);\n"
         "if (not(isnil(err))) ERROR(err);\n"
@@ -10197,6 +10198,7 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, char *
 
     if (module_base == 0) {
         timing = PFtimer_stop(timing);
+        milprintf(f, "iter := 1@0;\n");
         milprintf(f, "time_compile := %d;\n" , (int) (timing/1000));
         milprintf(f, PFstopMIL());
     }
