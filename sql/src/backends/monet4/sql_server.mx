@@ -682,7 +682,7 @@ str_2_@1( @1 *res, str val )
 	    ATOMcmp(TYPE_str, val, ATOMnilptr(TYPE_str)) != 0) ) {
 		if (p)
 			GDKfree(p);
-		GDKerror("str_2_@1: conversion of string '%s' failed\n", val );
+		GDKerror("@1: conversion of string '%s' failed\n", val );
 		return GDK_FAIL;
 	}
 	*res = *(@1*)p;

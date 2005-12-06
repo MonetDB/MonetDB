@@ -1165,16 +1165,6 @@ Then the SQL profile table is just a view over a few basic bats.
 		m->explain = explain;
 	}
 
-	/*
-	 * clear query cache after Transaction boundaries (commit/rollback)
-	 * and on schema changes
-	if (m->cache && (m->type == Q_SCHEMA || m->qc->id > 1000)) {
-		if (m->qc) 
-			qc_destroy(m->qc);
-		m->qc = qc_create(m->clientid);
-	}
-	 */
-
 	return msg;
 }
 
