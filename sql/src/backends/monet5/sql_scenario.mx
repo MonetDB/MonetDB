@@ -627,7 +627,8 @@ SQLsetDebugger(Client c, mvc *m, int onoff)
 	if (m == 0 || m->mode != m_debug)
 		return;
 	c->itrace='n';
-	q = newInstruction(NULL,ASSIGNsymbol);
+	q = newInstruction(c->curprg->def,ASSIGNsymbol);
+	getArg(q,0)= newTmpVariable(c->curprg->def,TYPE_any);
 	moduleId(q) = putName("mdb",3);
 	if( onoff)
 		functionId(q) = putName("start",5);
@@ -834,7 +835,8 @@ produce code.
 			goto finalize;
 		}
 	} else 
-	if((be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key))){
+	if(m->mode != m_debug && 
+		(be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key))){
 		m->mode = m_inplace;
 	} else {
 		stmt *s;
@@ -873,6 +875,7 @@ produce code.
 			be->q->stk = 0;
 			/* register name in the namespace */
 			be->q->name = putName(be->q->name, strlen(be->q->name));
+			/* if( m->mode != m_normal && m->mode != m_debug && m->mode != m_explain) */
 			if( m->mode == m_normal)
 				m->mode = m_inplace; 
 			m->sa = NULL;
@@ -1150,7 +1153,7 @@ triggers the profile action. A better approach is to directly
 update the profile tables, without SQL intervention.
 Then the SQL profile table is just a view over a few basic bats.
 @c
-		stream_printf(GDKout, "#%s [parse %d]", be->qry, be->Tparse);
+		stream_printf(GDKout, "#%s \n#[parse %d]", be->qry, be->Tparse);
 		stream_printf(GDKout, "[engine %d]", be->Texec);
 		stream_printf(GDKout, "[total %d]\n", tot);
 		if (be->qry)
@@ -1228,14 +1231,15 @@ pushCatchDefault(MalBlkPtr mb, str nme, int autocommit)
 
 /*
 	if (autocommit) {
-		p = newInstruction(NULL,ASSIGNsymbol);
+		p = newInstruction(mb,ASSIGNsymbol);
+		getArg(p,0)= newTmpVariable(mb,TYPE_any);
 		moduleId(p) = putName("sql",3);
 		functionId(p) = putName("commit",6);
 		pushInstruction(mb, p);
 	}
 */
 /* no catch
-	p= newInstruction(NULL,CATCHsymbol);
+	p= newInstruction(mb,CATCHsymbol);
 	i= findVariable(mb,nme);
 	if( i< 0) i= newVariable(mb,GDKstrdup(nme),TYPE_str);
 	getDestVar(p) = i;
@@ -1243,7 +1247,8 @@ pushCatchDefault(MalBlkPtr mb, str nme, int autocommit)
 	p->retc = 1;
 	pushInstruction(mb,p);
 
-	p= newInstruction(NULL,ASSIGNsymbol);
+	p= newInstruction(mb,ASSIGNsymbol);
+	getArg(p,0)= newTmpVariable(mb,TYPE_any);
 	moduleId(p)= putName("io",2);
 	functionId(p)= putName("print",5);
 	pushArgumentId(mb, p, GDKstrdup(nme));
@@ -1252,21 +1257,22 @@ pushCatchDefault(MalBlkPtr mb, str nme, int autocommit)
 
 /*
 	if (autocommit) {
-		p = newInstruction(NULL,ASSIGNsymbol);
+		p = newInstruction(mb,ASSIGNsymbol);
+		getArg(p,0)= newTmpVariable(mb,TYPE_any);
 		moduleId(p) = putName("sql",3);
 		functionId(p) = putName("rollback",8);
 		pushInstruction(mb, p);
 	}
 */
 /*       else {
-		p= newInstruction(NULL,RAISEsymbol);
+		p= newInstruction(mb,RAISEsymbol);
 		p->barrier= RAISEsymbol;
 		p->argv[0] = findVariable(mb,GDKstrdup("sqlerror"));
 		pushStr(mb,p,"Transaction abort");
 		pushInstruction(mb,p);
 	}
 
-	p= newInstruction(NULL,EXITsymbol);
+	p= newInstruction(mb,EXITsymbol);
 	p->argv[0] = findVariable(mb,GDKstrdup(nme));
 	p->barrier= EXITsymbol;
 	pushInstruction(mb,p);

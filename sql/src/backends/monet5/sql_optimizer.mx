@@ -211,8 +211,8 @@ for consider a block that depends on the size of a BAT.
 The prelude code has been generated, now we can inject the remaining
 instructions, producing a syntactic correct MAL program again.
 @c
+	p = newInstruction(mb, ASSIGNsymbol);
 	v = newTmpVariable(mb, TYPE_bit);
-	p = newInstruction(NULL,ASSIGNsymbol);
 	p->barrier = BARRIERsymbol;
 	p->argv[0] = v;
 	pushBit(mb,p,TRUE);
@@ -238,15 +238,15 @@ Skip it if the writeMode relates to a base table
 @-
 Finalize the factory loop
 @c
-	p = newInstruction(NULL,ASSIGNsymbol);
+	p = newInstruction(mb,ASSIGNsymbol);
 	p->barrier = YIELDsymbol;
 	p->argv[0] = v;
 	ns[k++] = p;
-	p = newInstruction(NULL,ASSIGNsymbol);
+	p = newInstruction(mb,ASSIGNsymbol);
 	p->barrier = REDOsymbol;
 	p->argv[0] = v;
 	ns[k++] = p;
-	p = newInstruction(NULL,ASSIGNsymbol);
+	p = newInstruction(mb,ASSIGNsymbol);
 	p->barrier = EXITsymbol;
 	p->argv[0] = v;
 	ns[k++] = p;
@@ -402,7 +402,7 @@ barrier doit:= c>0;
 exit	doit;
 	..rest of code
 @c
-				q= newInstruction(NULL,ASSIGNsymbol);
+				q= newInstruction(mb,ASSIGNsymbol);
 				cnt= newTmpVariable(mb,TYPE_lng);
 				setVarUsed(mb,cnt,TRUE);
 				q->argv[0]=cnt;
@@ -412,7 +412,7 @@ exit	doit;
 				setFunctionId(q,putName("count",5));
 				pushInstruction(mb,q);
 
-				q= newInstruction(NULL,ASSIGNsymbol);
+				q= newInstruction(mb,ASSIGNsymbol);
 				q->barrier= BARRIERsymbol;
 				lab= newTmpVariable(mb,TYPE_bit);
 				setVarUsed(mb,lab,TRUE);
@@ -431,7 +431,7 @@ exit	doit;
 @-
 We have to perform the expensive kdifference anyway
 @c
-				q= newInstruction(NULL,ASSIGNsymbol);
+				q= newInstruction(mb,ASSIGNsymbol);
 				setModuleId(q,putName("algebra",7));
 				setFunctionId(q,putName("kdifference",5));
 				q->argv[0]= p->argv[0];
@@ -453,7 +453,7 @@ We have to perform the expensive kdifference anyway
 				}
 				i--;
 
-				q= newInstruction(NULL,EXITsymbol);
+				q= newInstruction(mb,EXITsymbol);
 				q->barrier= EXITsymbol;
 				q->argv[0]= lab;
 				pushInstruction(mb,q);
@@ -464,7 +464,7 @@ now we have to remap the variables. In this process the
 variable types may change, which means we have to keep
 track of them.
 @c
-				q= newInstruction(NULL,ASSIGNsymbol);
+				q= newInstruction(mb,ASSIGNsymbol);
 				q->barrier= BARRIERsymbol;
 				setModuleId(q,putName("calc",4));
 				setFunctionId(q,putName("==",2)); 
@@ -501,7 +501,7 @@ Now we don;t have to perform the expensive kdifference
 				}
 				i--;
 
-				q= newInstruction(NULL,EXITsymbol);
+				q= newInstruction(mb,EXITsymbol);
 				q->barrier= EXITsymbol;
 				q->argv[0]= lab;
 				pushInstruction(mb,q);
