@@ -83,7 +83,7 @@ final class MonetSocketBlockMode {
 	final static int PROMPT1 = 4;
 	/** a line which matches the pattern of prompt2 is a PROMPT2 */
 	final static int PROMPT2 = 5;
-	/** a line starting with #- indicates the start of a header block */
+	/** a line starting with &amp; indicates the start of a header block */
 	final static int SOHEADER = 6;
 	/** The blocksize (hardcoded in compliance with stream.mx) */
 	final static int BLOCK = 8 * 1024 - 2;
@@ -390,13 +390,11 @@ final class MonetSocketBlockMode {
 			case '!':
 				lineType = ERROR;
 			break;
+			case '&':
+				lineType = SOHEADER;
+			break;
 			case '#':
-				/* MAPI start of header is coded as #- */
-				if (line.length() == 2 && line.charAt(1) == '-') {
-					lineType = SOHEADER;
-				} else {
-					lineType = HEADER;
-				}
+				lineType = HEADER;
 			break;
 			case '[':
 				lineType = RESULT;

@@ -1688,7 +1688,7 @@ public class MonetResultSet implements ResultSet {
 				//break; (not needed because of the else/return)
 			}
 		} catch(java.text.ParseException e) {
-			 addWarning(e.getMessage() +
+			addWarning(e.getMessage() +
 					 " found: '" + monDate[e.getErrorOffset()] + "'" +
 					 " in: \"" + monetDate + "\"" +
 					 " at pos: " + e.getErrorOffset());
@@ -1709,7 +1709,7 @@ public class MonetResultSet implements ResultSet {
 	 * @return the intrinsic value of the char
 	 * @throws java.text.ParseException if c is not a digit
 	 */
-	private int getIntrinsicValue(char c, int pos)
+	static int getIntrinsicValue(char c, int pos)
 		throws java.text.ParseException
 	{
 		// note: don't use Character.isDigit() here, because
@@ -1717,7 +1717,7 @@ public class MonetResultSet implements ResultSet {
 		if (c >= '0' && c <= '9') {
 			return((int)c - (int)'0');
 		} else {
-			throw new java.text.ParseException("'" + c + "' is not a digit", pos);
+			throw new java.text.ParseException("Expected a digit", pos);
 		}
 	}
 

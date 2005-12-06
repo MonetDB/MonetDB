@@ -21,7 +21,7 @@ package nl.cwi.monetdb.jdbc;
 import java.sql.*;
 import java.util.*;
 import java.io.*;
-import java.nio.ByteOrder;
+import java.nio.*;
 import java.text.SimpleDateFormat;
 
 /**
@@ -1063,6 +1063,7 @@ public class MonetConnection implements Connection {
 					// create new header
 					hdr = new Header(
 						this,
+						tmpLine,
 						hdrl.cachesize,
 						hdrl.maxrows,
 						hdrl.rstype,
@@ -1071,6 +1072,8 @@ public class MonetConnection implements Connection {
 					);
 					if (rawr != null) rawr.finish();
 					rawr = null;
+					// hack: start of header is a header, more or less
+					linetype = MonetSocketBlockMode.HEADER;
 				} else if (linetype == MonetSocketBlockMode.HEADER) {
 					if (hdr == null) throw
 						new SQLException("Protocol violation: header sent before start of header was issued!");
@@ -1290,22 +1293,31 @@ public class MonetConnection implements Connection {
 	 * A Header represents a Mapi SQL header which looks like:
 	 *
 	 * <pre>
+	 * &amp;4 1 28 2 10 0 f
 	 * # name,     value # name
 	 * # varchar,  varchar # type
-	 * # 28,    # tuplecount
-	 * # 1,     # id
 	 * </pre>
-	 * .
+	 * (&amp;"qt" "id" "tc" "cc" "rc" "of" "ac").
+	 *
 	 * This class does not check all arguments for null, size, etc. for
 	 * performance's sake!
 	 */
 	class Header {
+		/** The number of columns in this result */
+		private int columncount;
 		/** The names of the columns in this result */
 		private String[] name;
 		/** The types of the columns in this result */
 		private String[] type;
-		/** The number of rows this result has */
+		/** The total number of rows this result set has */
 		private int tuplecount;
+		/** The number of rows that will follow the header */
+		private int rowcount;
+		/** The number of rows from the start of the result set that are
+		 *  left out */
+		private int offset;
+		/** Whether the connection is in auto commit mode or not */
+		private boolean autocommit;
 		/** The table ID of this result */
 		private int id;
 		/** The query type of this `result' */
@@ -1360,11 +1372,13 @@ public class MonetConnection implements Connection {
 		 */
 		Header(
 			MonetConnection parent,
+			String sohline,
 			int cs,
 			int mr,
 			int rst,
 			int rsc,
 			int seq)
+			throws SQLException
 		{
 			isSet = new boolean[7];
 			resultBlocks = new HashMap();
@@ -1382,6 +1396,46 @@ public class MonetConnection implements Connection {
 			seqnr = seq;
 			closed = false;
 			destroyOnClose = false;
+
+			// parse the start of header line
+			CharBuffer soh = CharBuffer.wrap(sohline);
+			soh.get();	// skip the &
+			try {
+				queryType = parseNumber(soh);	isSet[4] = true;
+				id = parseNumber(soh);			isSet[3] = true;
+				tuplecount = parseNumber(soh);	isSet[2] = true;
+				columncount = parseNumber(soh);
+				rowcount = parseNumber(soh);
+
+	/* not in use for now
+				offset = parseNumber(soh);
+
+				// auto commit
+				if (soh.position() == soh.length()) throw
+					new java.text.ParseException("unexpected end of string", soh.position() - 1);
+				autocommit = soh.get() == 't' ? true : false;
+	*/
+			} catch (java.text.ParseException e) {
+				throw new SQLException(e.getMessage() +
+						" found: '" + soh.get(e.getErrorOffset()) + "'" +
+						" in: \"" + sohline + "\"" +
+						" at pos: " + e.getErrorOffset());
+			}
+		}
+
+		private int parseNumber(CharBuffer str)
+			throws java.text.ParseException
+		{
+			if (!str.hasRemaining()) throw
+				new java.text.ParseException("Unexpected end of string", str.position() - 1);
+			int tmp = MonetResultSet.getIntrinsicValue(str.get(), str.position() - 1);
+			char chr;
+			while (str.hasRemaining() && (chr = str.get()) != ' ') {
+				tmp *= 10;
+				tmp += MonetResultSet.getIntrinsicValue(chr, str.position() - 1);
+			}
+
+			return(tmp);
 		}
 
 		/**
