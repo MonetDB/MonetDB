@@ -557,6 +557,8 @@ shutdownFactoryByName(Module m, str nme){
 	plim = plants + lastPlant;
 	for (pl = plants; pl < plim; pl++)
 		if (pl->factory ) {
+			MalStkPtr stk;
+
 			p= getInstrPtr(pl->factory,0);
 			if( strcmp(nme, functionId(p)) != 0) continue;
 			s = findSymbolInModule(m, getName(nme,strlen(nme)) );
@@ -564,9 +566,10 @@ shutdownFactoryByName(Module m, str nme){
 				return throwMessage("sql_cache.remove", 
 					"internal error, sql_cache entry missing\n");
 			}
-			resetVariables(pl->factory, pl->stk, 0);
-			freeStack(pl->stk);
+			stk = pl->stk;
+			resetVariables(pl->factory, stk, 0);
 			shutdownFactory(pl->factory);
+			freeStack(stk);
 			deleteSymbol(m,s);
 			return MAL_SUCCEED;
 		}
