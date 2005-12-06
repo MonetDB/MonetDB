@@ -20,7 +20,6 @@ INCLUDES = ../../../common ../../clients/C $(READLINE_INCS)
 MAPI_LIBS = $(SOCKET_LIBS) 
 
 BINS = {
-	DIR = pkglibdir/Tests
 	SOURCES = sample0.c sample1.c sample2.c sample3.c sample4.c \
 		smack00.c  smack01.c
 	LIBS = $(MAPI_LIBS) ../../clients/C/libMapi ../../../common/libstream

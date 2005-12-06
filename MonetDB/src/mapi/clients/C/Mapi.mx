@@ -2820,14 +2820,38 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 	int i, n;
 	char **anchors;
 
-	if (strcmp(line, "#-") == 0) {
-		/* start of new SQL result */
-		return NULL;
-	}
-
 	if (result == NULL)
 		result = new_result(hdl);
 
+	if (line[0] == '&') {
+		char *n = line;
+		/* handle fields &qt id tc cc rc [ac] */
+		n++;	/* query type */
+		result->querytype = strtol(n, &n, 0);
+		n++;	/* result set id */
+		result->tableid = strtol(n, &n, 0);
+		n++;	/* tuple count */
+		result->row_count = strtol(n, &n, 0);
+		n++;	/* column count */
+		result->fieldcnt = strtol(n, &n, 0);
+		n++;	/* row count, tuples in this result (not used) */
+		(void)strtol(n, &n, 0);
+		
+		if (result->fieldcnt) {
+			REALLOC(result->fields, result->fieldcnt);
+			memset(result->fields, 0, result->fieldcnt * sizeof(*result->fields));
+		}
+
+		if (result->querytype == Q_TRANS) {
+			if (*n == 'f')
+				hdl->mid->auto_commit = 0;
+			else
+				hdl->mid->auto_commit = 1;
+		}
+		
+		/* start of new SQL result */
+		return result;
+	}
 	line = strdup(line);	/* make copy we can play with */
 
 	etag = strrchr(line, '#');
@@ -2882,23 +2906,6 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 					free(result->fields[i].tablename);
 				result->fields[i].tablename = anchors[i];
 				anchors[i] = NULL;
-			}
-		}
-	} else if (strcmp(tag, "tuplecount") == 0) {
-		if (anchors[0])
-			result->row_count = atoi(anchors[0]);
-	} else if (strcmp(tag, "id") == 0) {
-		if (anchors[0])
-			result->tableid = atoi(anchors[0]);
-	} else if (strcmp(tag, "querytype") == 0) {
-		if (anchors[0]) {
-			result->querytype = atoi(anchors[0]);
-			if (result->querytype == Q_UPDATE ||
-			    result->querytype == Q_TRANS) {
-				result->fieldcnt = 1;
-				result->row_count = 1;
-				if (result->querytype == Q_TRANS) 
-					hdl->mid->auto_commit = 0;
 			}
 		}
 	}
@@ -3107,12 +3114,13 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				mid->error = MSERVER;
 			break;
 		case '#':
+		case '&':
 			if (lookahead < 0)
 				lookahead = 1;
 			copy = strdup(line);
 			result = parse_header_line(hdl, line, result);
 			hdl->active = result;
-			if (result)
+			if (result && *copy == '#')
 				add_cache(result, copy);
 			else
 				free(copy);
