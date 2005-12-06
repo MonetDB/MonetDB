@@ -2386,9 +2386,9 @@ CMDxquery_server(Cntxt stk,
         in = block_stream(stream_rstream(in));
         out = block_stream(stream_wstream(out));
     }
+    monetSetChannel(XQthread, in, out);
     err = xquery_client_init(ctx);
     if (err) return (xquery_server_end(ctx, XQthread, err));
-    monetSetChannel(XQthread, in, out);
 
     while(1) {
         /* use the MAPI protocol to read as much xquery buffer as possible */
