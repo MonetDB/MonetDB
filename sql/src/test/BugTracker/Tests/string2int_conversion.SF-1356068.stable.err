@@ -68,13 +68,13 @@ stderr of test 'string2int_conversion.SF-1356068` in directory 'src/test/BugTrac
 # 01:11:12 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=41301  < string2int_conversion.SF-1356068.sql
 # 01:11:12 >  
 
-MAPI  = monetdb@localhost:47974
+MAPI  = monetdb@localhost:46395
 QUERY = insert into test values ('');
-ERROR = !ERROR: str_2_sht: conversion of string '' failed
+ERROR = !ERROR: sht: conversion of string '' failed
         !ERROR: str_2_sht: operation failed.
-MAPI  = monetdb@localhost:47974
+MAPI  = monetdb@localhost:46395
 QUERY = insert into test values ('');
-ERROR = !ERROR: str_2_sht: conversion of string '' failed
+ERROR = !ERROR: sht: conversion of string '' failed
         !ERROR: str_2_sht: operation failed.
 
 
