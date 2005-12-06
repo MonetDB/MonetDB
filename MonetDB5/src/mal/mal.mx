@@ -402,7 +402,7 @@ void mal_exit(Client cntxt){
 		(void) stream_close(cntxt->fdout);
 		(void) stream_destroy(cntxt->fdout);
 	}
-	GDKexit(0); 
+/*	GDKexit(0);  */
 	MT_global_exit(0);
 }
 @}
