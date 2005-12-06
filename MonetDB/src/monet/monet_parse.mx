@@ -820,9 +820,6 @@ session:
 	}
     ;
 
-definition:
-	proc_definition
-    ;
 
 statement_seq:
 	/* empty */
@@ -1009,42 +1006,42 @@ variable_reference:
     ;
 
 proc_definition:
-	TOK_PROCDEF { Myylogpush(); } proc_name proc_header
-	proc_assign { $$ = NULL; ll_templates = ll_modcmds = 1; } sequential_block
-
+	proc_name proc_header proc_assign { ll_templates = ll_modcmds = 1; } sequential_block
 	{
-		YYSTREE sig = (YYSTREE) ($4 ? $4->yyval.val.pval : NULL);
+		YYSTREE sig = (YYSTREE) ($2 ? $2->yyval.val.pval : NULL);
 		YYSTREE ret = (YYSTREE) (sig ? sig->yyval.val.pval : NULL);
-		int params = ($4 && $4->cnt > 0);
+		int params = ($2 && $2->cnt > 0);
 
-		if (params || (($7->token != TOK_SEQ) &&
-			       ($7->token != TOK_SEQBLOCK) &&
-			       ($7->token != TOK_PARBLOCK))) {
+		if (params || (($5->token != TOK_SEQ) &&
+			       ($5->token != TOK_SEQBLOCK) &&
+			       ($5->token != TOK_PARBLOCK))) {
 			$$ = Myylognode(params ? TOK_SEQBLOCK : TOK_SEQ, 0);
 			if (params)
-				Myylogexpand($$, $4);
-			Myylogexpand($$, $7);
+				Myylogexpand($$, $2);
+			Myylogexpand($$, $5);
 		} else {
-			$$ = $7;
+			$$ = $5;
 		}
-		$$->yyval = $3->yyval;
-		$3->yyval.vtype = TYPE_void;
+		$$->yyval = $1->yyval;
+		$1->yyval.vtype = TYPE_void;
 
 		/* DIRECT: insert the new proc */
 		$$ = Myylogout($$); 
-		TBL_newproc(ll_client, $3->yyval.val.sval, ll_parent_module(), $$, sig, ret);
+		TBL_newproc(ll_client, $1->yyval.val.sval, ll_parent_module(), $$, sig, ret);
 		ll_modcmds = ll_templates = 0;
-		Myylogpop();
 	}
-    |	TOK_PROCDEF  { Myylogpush();} proc_name ';'
+    |	proc_name ';'
 	{
-		$$ = NULL;
-		$3 = Myylogout($3); 
-		TBL_newproc(ll_client, $3->yyval.val.sval, ll_parent_module(), $3, $3, NULL);
-		$3->token = TOK_CONSTANT;
-		$3->yyval.vtype = TYPE_int;
-		Myylogpop();
+		$$ = Myylogout($1); 
+		TBL_newproc(ll_client, $$->yyval.val.sval, ll_parent_module(), $$, $$, NULL);
+		$$->token = TOK_CONSTANT;
+		$$->yyval.vtype = TYPE_int;
 	}
+    ;
+
+definition:
+	TOK_PROCDEF { Myylogpush(); } proc_definition 
+        { Myylogpop(); }
     |	TOK_UNDEF TOK_IDENT ';'
 	{   $$ = NULL; TBL_delproc(ll_client, $2->yyval.val.sval); }
     ;
