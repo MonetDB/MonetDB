@@ -25,18 +25,8 @@ Over..
 #  # table_name
 # char_length_single_value # name
 # int # type
-# 11 # length
-# 1 # tuplecount
-# 1 # id
-[ 1	]
-# 6 # querytype
-# 4 # querytype
-# affected # table_name
-# rows # name
-# int # type
 # 10 # length
-# 1 # tuplecount
-# 2 # id
+[ 1	]
 [ 1	]
 
 # 13:21:39 >  
