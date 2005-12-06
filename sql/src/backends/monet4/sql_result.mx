@@ -457,17 +457,17 @@ first part (reply_size) of the result set. It should be produced in Monet format
 enable mapi to work with it.
 @c
 static str mvcDefaultMsg[] = {
-	"#-\n# 2 # querytype\n",
-	"#-\n# 3 # querytype\n",
-	"#-\n# 4 # querytype\n",
-	"#-\n# 5 # querytype\n",
-	"#-\n# 6 # querytype\n",
-	"#-\n# 7 # querytype\n",
-	"#-\n# 8 # querytype\n",
-	"#-\n# 9 # querytype\n"
+	"&2 0 1 1 1\n",
+	"&3 0 1 1 1\n",
+	"&4 0 1 1 1\n",
+	"&5 0 1 1 1\n",
+	"&6 0 1 1 1\n",
+	"&7 0 1 1 1\n",
+	"&8 0 1 1 1\n",
+	"&9 0 1 1 1\n"
 };
 
-static int mvcDefaultMsg_len = 19; /*strlen("#-\n# 9 # querytype\n");*/
+static int mvcDefaultMsg_len = 11; /*strlen("&9 0 1 1 1\n");*/
 
 int
 mvc_export_default(mvc *m, stream *s)
@@ -772,6 +772,8 @@ mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d,
 
 	assert(qtype > 1 && qtype < 10);
 	if (stream_write(s, mvcDefaultMsg[qtype-2], mvcDefaultMsg_len, 1) == 1&&
+	    /* fallback to default tuplecount (1) and id (0) */
+	    /* TODO first header name then values */
 	    stream_write(s, "# ", 2, 1) == 1 &&
 	    stream_write(s, tn, strlen(tn), 1) == 1 &&
 	    stream_write(s, " # table_name\n# ", 16, 1) == 1 &&
@@ -780,7 +782,7 @@ mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d,
 	    stream_write(s, type, strlen(type), 1) == 1 &&
 	    stream_write(s, " # type\n# ", 10, 1) == 1 &&
 	    export_length(s, mtype, eclass, d, sc, 0, p) &&
-	    stream_write(s, " # length\n# 1 # tuplecount\n# 0 # id\n[ ", 38, 1) == 1 &&
+	    stream_write(s, " # length\n[ ", 12, 1) == 1 &&
 	    export_value( m, s, eclass, type, d, sc, p, mtype, &buf, &len)) 
 		ok = (stream_write(s, rsep, strlen(rsep), 1) == 1);
 	    
@@ -789,28 +791,85 @@ mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d,
 	return ok;
 }
 
+static str tableMsg[] = {
+	"&2 ",
+	"&3 ",
+	"&4 ",
+	"&5 ",
+	"&6 ",
+	"&7 ",
+	"&8 ",
+	"&9 "
+};
+static int tableMsgLen = 3; /*strlen("&9 ");*/
+
+static str updateMsg = "&4 0 1 1\n";
+static str transMsg  = "&7 0 0 0 ";
+
 int
 mvc_export_result(mvc *m, stream *s, int res_id)
 {
 	int i, ok = 1;
 	res_table *t = res_tables_find(m->results, res_id);
-	char *buf,*b;
 
 	if (!s || !t)
 		return 0;
 	assert(t->query_type > 1 && t->query_type < 10);
-	ok = (stream_write(s, mvcDefaultMsg[t->query_type-2], mvcDefaultMsg_len, 1) == 1);
 
 	/* skip headers for affected row counts */
 	assert(t->query_type != Q_UPDATE); /* handled by optimized code */
-	if (ok && (t->query_type == Q_UPDATE || t->query_type == Q_TRANS))
+	if (ok && t->query_type == Q_UPDATE) { 
+		ok = (stream_write(s, updateMsg, sizeof(updateMsg), 1) == 1);
+		if (!ok)
+			return ok;
+		/* todo use printf([ %d\t], t->value); */
 		return mvc_export_table(m, s, t, 0, m->reply_size);
+	}
+	if (ok && t->query_type == Q_TRANS) {
+		ok = (stream_write(s, transMsg, sizeof(transMsg), 1) == 1);
+		if (!ok)
+			return ok;
+		if (m->auto_commit)
+			return (stream_write(s, "t\n", 2, 1) == 1);
+		else
+			return (stream_write(s, "f\n", 2, 1) == 1);
+	}
+	ok = (stream_write(s, tableMsg[t->query_type-2], tableMsgLen, 1) == 1);
 
 	if (!ok)
 		return -1;
 	m->type = Q_RESULT;
 
-	ok = (stream_write(s, "# ", 2, 1) == 1);
+	/* id */
+	if (!(ok = mvc_send_int(s, t->id)) ||
+	      !(stream_write(s, " ", 1, 1) >= 0))
+		return -1;
+
+	/* tuple count */
+	{
+		size_t count;
+
+		if (t->order) {
+			BAT *order = BATdescriptor(t->order);
+
+			count = BATcount(order);
+			BBPunfix(order->batCacheid);
+		} else
+			count = 1;
+		if (!(ok = mvc_send_int(s, count)) ||
+	            !(stream_write(s, " ", 1, 1) >= 0))
+			return -1;
+	}
+	/* column count */
+	if (!(ok = mvc_send_int(s, t->nr_cols)) ||
+	    !(stream_write(s, " ", 1, 1) >= 0))
+		return -1;
+
+	/* row count, not jet implemented, use reply_size */
+	if (!(ok = mvc_send_int(s, m->reply_size))) 
+		return -1;
+
+	ok = (stream_write(s, "\n# ", 3, 1) == 1);
 	for (i = 0; i < t->nr_cols && ok; i++) {
 		res_col *c = t->cols + i;
 		int len = strlen(c->tn);
@@ -854,36 +913,6 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 	}
 	if (ok)
 		ok = (stream_write(s, " # length\n", 10, 1) == 1);
-
-	{
-		size_t count;
-
-		if (t->order) {
-			BAT *order = BATdescriptor(t->order);
-
-			count = BATcount(order);
-			BBPunfix(order->batCacheid);
-		} else
-			count = 1;
-		ok = (stream_write(s, "# " , 2,1) >= 0);
-		ok= mvc_send_int(s,count);
-		for (i = 1; i < t->nr_cols && ok; i++)
-			ok = (stream_write(s, ",\t", 2, 1) == 1);
-		if (ok)
-			ok = (stream_write(s, " # tuplecount\n", 14, 1) == 1);
-	}
-	buf = alloca(t->nr_cols*2+100);
-	ok = (stream_write(s, "# " , 2,1) >= 0);
-	mvc_send_int(s,t->id);
-
-
-	for (b=buf, i = 1; i < t->nr_cols && ok; i++)
-	{
-		*b++ =','; *b++ = '\t'; 
-	}
-	*b++ = ' '; *b++= '#'; *b++= ' ';
-	*b++ = 'i'; *b++= 'd'; *b++= '\n'; *b=0;
-	ok = (stream_write(s, buf, b-buf, 1) == 1); 
 
 	if (ok)
 		return mvc_export_table(m, s, t, 0, m->reply_size);
