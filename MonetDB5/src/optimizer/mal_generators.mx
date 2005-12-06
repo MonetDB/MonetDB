@@ -187,6 +187,10 @@ code immediately.
 			stmt[mtop++]= p;
 			continue;
 		}
+		if( p->token== IGNOREsymbol || p->token== REMsymbol){
+			pushInstruction(mb,p);
+			continue;
+		}
 @-
 Not all instructions can be replaced by the sequence. We have to
 group them and check for them individually.
@@ -202,7 +206,8 @@ group them and check for them individually.
 			(moduleId(p)== algebraRef	&& functionId(p)== semijoinRef) ||
 			(moduleId(p)== batRef		&& functionId(p)== setAccessRef) ||
 			(moduleId(p)== batRef		&& functionId(p)== appendRef)  ||
-			(moduleId(p)== batRef		&& functionId(p)== deleteRef) 
+			(moduleId(p)== batRef		&& functionId(p)== deleteRef) ||
+			(moduleId(p)== batRef		&& functionId(p)== setWriteModeRef) 
 			){
 @-
 Locate the arguments that depend on a partitioned BAT.
