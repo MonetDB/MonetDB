@@ -25,9 +25,9 @@ for distributed storage makes that BATs ideally should be
 looked upon as a union of smaller BATs which are processed
 within the (memory) resource limitations given.
 
-The operation @code{optimizer.generators} takes mat.new definitions
+The operation @code{optimizer.generators} takes @code{pbm.generator} definitions
 and encapsulate them in iterator blocks, thereby minimizing the
-MAL program footprint.
+MAL memory footprint.
 
 The optimizer is designed incrementally. The focus is
 on supporting the SQL front-end. In particularly, the
@@ -38,16 +38,16 @@ The general strategy is to select a portion of the workflow
 related to a variable and encapsulate it with
 an iterator over the BAT partitions. In doing so, we replace
 operators with their incremental counter part, alike the
-MAT optimizer.
+multi_table optimizer.
 
 A snippet of the partitioning optimizer is shown below. It assumes
-that the MAT @code{a0} consists of the components @code{a1,a2,a3}.
+that the partitioned BAT @code{a0} consists of the components @code{a1,a2,a3}.
 A subsequent call of the partition optimizer will replace
 the print command with an iterator.
 @verbatim
 
 function qry(a:bat[:void,:any_1]
-	b:bat[void,:int]:= mat.iterator("Sales2005")
+	b:bat[void,:int]:= pdbm.generator("Sales2005")
 	i:= algebra.count(b);
 	io.print(i);
 end qry;
@@ -56,14 +56,13 @@ optimizer.generators("user","qry");
 The query is transformed into the following version.
 @verbatim
 function user.qry(a:bat[:void,:any_1]{mat}):void;
-	b:bat[void,:int]:= mat.iterator("Sales2005")
-	_7:= 0;
-barrier _6:= mat.newIterator("Sales2005");
-	_8:= aggr.count(_t);
-	_7:= _7+ _8;
-	redo _6:= mat.hasMoreElements(a);
-exit _6;
-	io.print(_7);
+	i:= 0;
+barrier b:= mat.newIterator("Sales2005");
+	_8:= aggr.count(b);
+	i:= i+ _8;
+	redo b:= mat.getNextElement(a);
+exit b;
+	io.print(i);
 end qry;
 @end verbatim
 @{
@@ -71,18 +70,17 @@ end qry;
 The implementation is somewhat complicated by the fact that MAL
 programs contains (implicit) flow of control. This calls for
 a two stage machine, where we are copying all instructions into place
-until we encounter a generator. Then we recursively reorganize
+until we encounter a generator. Then we reorganize
 the plan until this generator and its dependencies are exhausted
 or a packing operation is required before proceeding.
 
-The safe line is that at any time we can glue together the
-BAT partitions to form a single BAT, but this may come at a
-rather substancial price.
+The safe line is that at any time we can safe partial results in
+a partition BAT, which is scanned the next time we need it.
+The implementation may even decide to pack components together.
 
-To minimize the impact of the generators, we first move
-them as close as possible to their first use case.
-We also mark the end of the generator scope, based on the
-instructions seen.
+To minimize the impact of the generators, it is adviced to
+first normalize the query plan, moving related instructions close
+together.
 @h
 #ifndef _MAL_BATLOOPS_
 #define _MAL_BATLOOPS_
@@ -105,26 +103,13 @@ isPBMalias(int idx, int mvar[], int top){
 		if( mvar[i]== idx) return i;
 	return -1;
 }
-@-
-Packing the BATs into a single one is handled here
-@c
-InstrPtr BGexitLoop(MalBlkPtr mb, InstrPtr  r, int m, InstrPtr *mat, int *mvar, int mtop){
-	int l,k;
-	for(l=mat[m]->retc; l< mat[m]->argc; l++){
-		k= isPBMalias( getArg(mat[m],l),mvar,mtop);
-		if( k< 0)
-			r= pushArgument(mb,r, getArg(mat[m],l));
-		else
-			r= BGexitLoop(mb,r, k, mat,mvar,mtop);
-	}
-	return r;
-}
+
 static void BGcloseLoop(MalBlkPtr mb, int m, InstrPtr *stmt ){
 	InstrPtr r;
 	r = newInstruction(mb, ASSIGNsymbol);
 	r->barrier= REDOsymbol;
 	setModuleId(r, moduleId(stmt[m]));
-	setFunctionId(r,putName("hasMoreElements",15));
+	setFunctionId(r,putName("getNextElement",14));
 	getArg(r,0)= getArg(stmt[m],0);
 	pushArgument(mb,r,getArg(stmt[m],1));
 	pushInstruction(mb,r);
@@ -137,136 +122,35 @@ static void BGcloseLoop(MalBlkPtr mb, int m, InstrPtr *stmt ){
 	pushInstruction(mb,r);
 
 }
-@-
-Reorder the MAL program to minimize the generator scopes
-and to mark the end of the generator.
-An early user supplied pbm.finish() overrules the hardwired
-decisions. A too late finish() should be flagged as an error.
-
-The program is re-ordered to minimize the distance
-between producer/consumer instructions. It avoids operations
-to end up in nested iterator blocks.
-@c
-void BGcloseGenerator(MalBlkPtr mb, InstrPtr p){
+static void BGkeepPartial(MalBlkPtr mb, int i, InstrPtr p){
 	InstrPtr r;
-	r = copyInstruction(p);
+	char tmpname[128];
+	r = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(r, pbmRef);
-	setFunctionId(r,finishRef);
-	pushInstruction(mb,r);
-}
-
-@-
-Placement of instruction should be done carefully, to avoid it
-ends up in a loop covered by other arguments
-It may not pass any unsafe statement.
-@c
-void
-BGplaceInstruction(MalBlkPtr mb, InstrPtr p){
-	int i;
-	if( !isUnsafeFunction(p))
-	for(i= mb->stop-1; i>0; i--)
-	if( getInstrPtr(mb,i)->barrier ||
-		isDependent(p,getInstrPtr(mb,i)) || 
-		isUnsafeInstruction(getInstrPtr(mb,i)) ) {
-		insertInstruction(mb,p, i+1);
-		return;
-	}
-	pushInstruction(mb,p);
-}
-#define CHKbound() if( gtop == 128){ \
-				mb->errors++; \
-				GDKerror("Too many generators"); \
-				return found; }
-
-int BGreorder(MalBlkPtr mb){
-	int i,j,k, oldtop, found=0, gvar[128], gopen[128],gtop=0;
-	InstrPtr p, *old, stmt[128];
-	old = mb->stmt;
-	oldtop= mb->stop;
-	mb->stmt = (InstrPtr *) GDKmalloc(mb->ssize  * sizeof(InstrPtr));
-	memset((char*)mb->stmt, 0, mb->ssize * sizeof(InstrPtr));
-	mb->stop=0;
-
-	for(i=0;i<oldtop-1; i++){
-		p= old[i];
-		if( moduleId(p)== pbmRef && functionId(p)==generatorRef){
-			gopen[gtop]=0;
-			stmt[gtop]= p;
-			gvar[gtop++]= getArg(p,0);
-			found++;
-			CHKbound();
-			continue;
-		}
-
-		for(j=p->retc; j< p->argc; j++)
-		for(k=0;k<gtop;k++)
-		if( getArg(p,j)== gvar[k] && gopen[k]==0){
-@-
-Re-open the iterator, which means we have to duplicate
-it on the stack for proper use. The old iterator
-is marked invalied (gopen[i]= -1)
-@c
-			gopen[k]= -1;
-			BGplaceInstruction(mb, copyInstruction(stmt[k]));
-			gopen[gtop]=1;
-			stmt[gtop]= stmt[k];
-			gvar[gtop++]= gvar[k];
-			CHKbound();
-		}
-@-
-Closing a generator implicitly closes all opened after it as well
-We should also generate code for the accumulation of information.
-It is easier done here.
-@c
-		if( moduleId(p)== pbmRef && functionId(p)==finishRef){
-			for(k=0;k<gtop;k++)
-			if( getArg(p,1)== gvar[k] ) break;
-			
-			for(j= gtop-1; j>=k; j--)
-			if( gopen[j]== 1) {
-				BGcloseGenerator(mb, stmt[j]);
-				gopen[j]=0;
-			}
-			continue;
-		}
-		if( p->barrier || p->token== ENDsymbol ||
-			isUnsafeFunction(p) || isUnsafeInstruction(p)){
-			for(j=gtop-1; j>=0; j--)
-			if( gopen[j] ==1){
-				BGcloseGenerator(mb,stmt[j]);
-				gopen[j]=0;
-			}
-		}
-		BGplaceInstruction(mb,p);
-	}
-	pushInstruction(mb,old[oldtop-1]);
-#ifdef DEBUG_MAL_BATLOOPS
-	stream_printf(GDKout,"Result of reorder\n");
-	printFunction(GDKout,mb,LIST_MAL_INSTR);
-#endif
-	GDKfree(old);
-	return found;
-}
-@-
-We remember all instructions that should be moved outside the loop
-At some point they have to included.
-@c
-static void BGcopyKeep(MalBlkPtr mb, int keep, InstrPtr *old){
-	int i;
-	for(i=0;i<keep; i++)
-	pushInstruction(mb,old[i]);
+	setFunctionId(r,depositRef);
+	getArg(r,0)= newTmpVariable(mb,TYPE_any);
+	snprintf(tmpname,128,"pbat_%s", getVarName(mb,getArg(p,0)));
+	pushStr(mb,r,tmpname);
+	pushArgument(mb,r,getArg(p,0));
+	insertInstruction(mb,r,i);
 }
 @-
 The key administration is to keep track of the outstanding
 iterator blocks and whether a variable represents a PBAT result.
 The table mloop contains the PC of the corresponding iterator.
 @c
+#define CLOSED 0
+#define OPENED 1
+#define PARTIAL 2
+#define PACKED 4
 str
 BGoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	InstrPtr *old=0, q,r, stmt[256];
-	int oldtop,keep=0,i,j,k,m=0;
-	int mtop=0, mvar[256], mloop[256];
+	int oldtop,oldsize, keep=0,i,j,k,m=0;
+	int iter=0,index[256]; /* active nesting level <=mtop*/
+	int  mtop=0, mvar[256], mstatus[256];
 	int size,match,actions=0;
+	char tmpname[128];
 	lng clk = GDKusec();
 #ifdef DEBUG_MAL_BATLOOPS
 	stream_printf(GDKout,"Start generators optimizer\n");
@@ -277,11 +161,10 @@ BGoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	if(p)
 		removeInstruction(mb,p);
 
-	actions= BGreorder(mb);
 	setLifespan(mb); /* to detect future variable use */
-
 	old = mb->stmt;
 	oldtop= mb->stop;
+	oldsize= mb->ssize;
 	size = (mb->stop *1.2 < mb->ssize)? mb->ssize: mb->stop *1.2;
 	mb->stmt = (InstrPtr *) GDKmalloc(size  * sizeof(InstrPtr));
 	memset((char*)mb->stmt, 0, size * sizeof(InstrPtr));
@@ -293,71 +176,20 @@ BGoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		p= old[i];
 @-
 Deal with iterator requests aimed at partitioned BATs.
-We first walk our way through the block to prepare
-accumulations variables.
+Generators are stacked for inspection. They don't correspond to
+code immediately.
 @c
-		if( (moduleId(p)== pbmRef && functionId(p)== generatorRef)  &&
-			p->argc== 2 && getVarType(mb,getArg(p,1))== TYPE_str){
-
-			r = copyInstruction(p);
-			r->barrier= BARRIERsymbol;
-			setFunctionId(r,putName("newIterator",11));
-			setVarInitialized(mb,getArg(p,0));
-			pushInstruction(mb,r);
-
-			stmt[mtop]= p;
+		if( moduleId(p)== pbmRef && functionId(p)== generatorRef) {
+			functionId(p)= putName("newIterator",11);
+			p->barrier = BARRIERsymbol;
 			mvar[mtop] = getArg(p,0);
-			mloop[mtop] = mb->stop-1;
-			mtop++;
-			continue;
-		}
-@-
-Termination of the generator scope involves gathering all
-remaining pieces for later use.
-@c
-		if( moduleId(p)== pbmRef && functionId(p)== finishRef ){
-			r = copyInstruction(p);
-			r->barrier= REDOsymbol;
-			setFunctionId(r,putName("hasMoreElements",15));
-			pushInstruction(mb,r);
-
-			r = copyInstruction(p);
-			r->barrier= EXITsymbol;
-			moduleId(r)= NULL;
-			functionId(r) = NULL;
-			r->fcn = NULL;
-			r->argc=1;
-			pushInstruction(mb,r);
-			/* invalidate loop */\
-			for(m=0;m<mtop; m++)
-			if( mloop[m]>=0 && mvar[m]== getArg(r,0)){
-				mloop[m]= -1;
-				break;
-			}
-			continue;
-		}
-			
-@-
-Any side-effect operator should be either postponed or terminates
-the generator.
-It is up to the strength reduction to move instructions safely out of
-the loop.
-Otherwise we have to decide on either packing them or replacement.
-@c
-		match=0;
-		for(j=p->retc; j<p->argc; j++)
-		if(  isPBMalias(getArg(p,j),mvar,mtop) >= 0) {
-			m=i; match++;
-		}
-		if( match== 0 && !isUnsafeFunction(p) && !isUnsafeInstruction(p) ){
-			BGplaceInstruction(mb,p);
+			mstatus[mtop] = CLOSED; /* not yet opened */
+			stmt[mtop++]= p;
 			continue;
 		}
 @-
 Not all instructions can be replaced by the sequence. We have to
 group them and check for them individually.
-At first we look for the first argument. Others are dealt with
-through the default case.
 @c
 		if( (moduleId(p)== algebraRef 	&& functionId(p)== selectRef) ||
 			(moduleId(p)== algebraRef 	&& functionId(p)== uselectRef) ||
@@ -370,32 +202,47 @@ through the default case.
 			(moduleId(p)== algebraRef	&& functionId(p)== semijoinRef) ||
 			(moduleId(p)== batRef		&& functionId(p)== setAccessRef) ||
 			(moduleId(p)== batRef		&& functionId(p)== appendRef)  ||
-			(moduleId(p)== batRef		&& functionId(p)== deleteRef)  ||
-			moduleId(p)== calcRef 
+			(moduleId(p)== batRef		&& functionId(p)== deleteRef) 
 			){
-
+@-
+Locate the arguments that depend on a partitioned BAT.
+If their iterator is not opened, the we should do so first.
+Moreover, the result is again a partial result, to be
+added to the loop nesting table, but this time claim it is already openend.
+@c
 			match=0;
-			for(k=0; k<p->argc;k++)
-			if( (m=isPBMalias(getArg(p,k),mvar,mtop)) >= 0) match++;
-
-			if( match){
-				r = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(r,matRef);
-				setFunctionId(r,newRef);
-				getArg(r,0)= getArg(p,0);
-				pushArgument(mb,r,getArg(p,0));
-				mvar[mtop] = getArg(r,0);
-				mloop[mtop]= -1;	
-				stmt[mtop++]= r;
-				actions++;
+			for(k=p->retc; k<p->argc;k++)
+			if( (m=isPBMalias(getArg(p,k),mvar,mtop)) >= 0) {
+				if( mstatus[m]== CLOSED){
+					r= copyInstruction(stmt[m]);
+					pushInstruction(mb,r);
+					mstatus[m]= OPENED;
+					index[iter++]=m;
+				}
+				match++;
 			}
 @-
-The operation should be pushed onto the stack closest
-to the dependent operands. This will reduce the loop
-strength;
+The net effect of the operation is a partial result, which
+may turn into a partition BAT 
 @c
-			BGplaceInstruction(mb,p);
-			continue;
+			if( match){
+				pushInstruction(mb,p);
+				r = newInstruction(mb, ASSIGNsymbol);
+				r->barrier= BARRIERsymbol;
+				setModuleId(r,pbmRef);
+				setFunctionId(r,putName("newIterator",11));
+				getArg(r,0)= getArg(p,0);
+				snprintf(tmpname,128,"pbat_%s", getVarName(mb,getArg(p,0)));
+				pushStr(mb,r,tmpname);
+
+				mvar[mtop] = getArg(r,0);
+				mstatus[mtop]= PARTIAL;
+				stmt[mtop]= r;
+				index[iter++]= mtop;
+				mtop++;
+				actions++;
+				continue;
+			}
 		} 
 @-
 Handle the rewrite v:=aggr.count(b) and sum()
@@ -411,10 +258,23 @@ generator.
 			getArg(r,0)= getArg(p,0);
 			pushInt(mb,r,0);
 
-			/* search enclosing loop */
-			for(k=m; k>=0; k--)
-			if( mloop[k]>=0) m=k;
-			insertInstruction(mb,r,mloop[m]);
+@-
+The initializing variable should be initialized before the loop
+in which the partial result is constructed. This requires analysis
+of the partial dependences and to find the loop structure in which
+the partial result was introduced.
+For the time, we simply move it before the last barrier that
+references a newIterator
+@c
+			
+			m= 0;
+			for(k= mb->stop-1; k>0; k--){
+				q= getInstrPtr(mb,k);
+				if( moduleId(q)== pbmRef && 
+					functionId(q)== putName("newIterator",11))
+					m=k;
+			}
+			insertInstruction(mb,r,m);
 
 			q= copyInstruction(p);
 			k= newTmpVariable(mb,TYPE_int);
@@ -423,7 +283,7 @@ generator.
 			pushInstruction(mb,q);
 
 			q= newInstruction(mb,ASSIGNsymbol);
-			setModuleId(q,calcRef);
+			setModuleId(q,calcRef); 
 			if( functionId(p)== countRef || functionId(p)== sumRef)
 				setFunctionId(q,plusRef);
 			else
@@ -435,12 +295,49 @@ generator.
 			continue;
 		} 
 @-
+Any side-effect operator should be either postponed or terminates
+the generator.
+It is up to the strength reduction to move instructions safely out of
+the loop.
+Otherwise we have to decide on either packing them or replacement.
+@c
+		match=0;
+		for(j=p->retc; j<p->argc; j++)
+		if(  isPBMalias(getArg(p,j),mvar,mtop) >= OPENED) {
+			m=i; match++;
+		}
+@-
+We now have an unsafe operation with potentially a reference to
+a partitioned BAT.
 All other instructions should be checked for dependencies.
-Printing BAT information streams towards the user, to it can be
-retained inside the loop. All other use is considered once-only
+All other use is considered once-only
 and the instruction should be moved outside the loop.
 Moreover, it then terminates the block in which it was used.
 @c
+		for(k=iter-1;k>=0; k--)
+		if(mstatus[index[k]]== OPENED) {
+			BGcloseLoop(mb,index[k],stmt);
+			mstatus[index[k]]= CLOSED;
+		} else
+		if( mstatus[index[k]]== PARTIAL){
+			if( getVar(mb,getArg(stmt[index[k]],0))->endLifespan>= i){
+				BGkeepPartial(mb,mb->stop,stmt[index[k]]);
+				r= newInstruction(mb,ASSIGNsymbol);
+				moduleId(r)=pbmRef;
+				functionId(r)=putName("discard",7);
+				getArg(r,0)= newTmpVariable(mb, TYPE_any);
+				snprintf(tmpname,128,"pbat_%s", 
+						getVarName(mb,getArg(stmt[index[k]],0)));
+				pushStr(mb,r,tmpname);
+				assert(oldtop<oldsize-1);
+				old[oldtop]= old[oldtop-1];
+				old[oldtop-1]=r;
+				oldtop++;
+			}
+			mstatus[index[k]]= CLOSED;
+		} else
+		iter = 0;
+		
 		for( k= p->retc; k<p->argc; k++)
 		if(	(m=isPBMalias(getArg(p,k),mvar,mtop)) >= 0){
 #ifdef DEBUG_MAL_BATLOOPS
@@ -448,41 +345,25 @@ Moreover, it then terminates the block in which it was used.
 			printInstruction(GDKout,mb,p,0);
 #endif
 			r = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(r,matRef);
+			setModuleId(r,pbmRef);
 			setFunctionId(r,packRef);
 			getArg(r,0)= getArg(stmt[m],0);
-			r= BGexitLoop(mb, r, m, stmt, mvar, mtop);
-			if(	!( moduleId(p) == matRef && functionId(p)== newRef) )
-				pushInstruction(mb,r);
-			else freeInstruction(r);
-
-			for(j=m; j<mtop-1; j++){
-				stmt[j]= stmt[j+1];
-				mvar[j]= mvar[j+1];
-				mloop[j]= mloop[j+1];
-			}
-			mtop--; 
+			pushInstruction(mb,r);
+			mstatus[m]= PACKED;
 			actions++;
 			break;
 		}
-
 		pushInstruction(mb,p);
 	}
 @-
 At this stage we should close any open generators.
 @c
-	for(i=mtop-1; i>=0; i--)
-	if( mloop[i]>0){
-		BGcloseLoop(mb,i,stmt);
+	for(i=iter-1; i>=0; i--)
+	if( mstatus[index[i]]== OPENED){
+		BGcloseLoop(mb,index[i],stmt);
 	}
-	BGcopyKeep(mb, keep, old);
 	pushInstruction(mb,old[oldtop-1]);
 	GDKfree(old);
-@-
-As a final optimization, we could remove the mal.new definitions,
-because they are not needed for the execution.
-For the time being, they are no-ops.
-@c
 	(void) stk; 
 	optimizerCheck(mb, "optimizer.generators", actions, GDKusec() - clk);
 #ifdef DEBUG_MAL_BATLOOPS

@@ -38,12 +38,12 @@ barrier c:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 6 PBMnewIterator (
 barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 8 PBMnewIterator (b:bat[:void,:int])<-(_7:str) jump 14
     t := algebra.select(b,0,3);	# 9 ALGselect (t:bat[:void,:int])<-(b:bat[:void,:int])(_11:int)(_12:int)
     s := algebra.join(t,cr);	# 10 ALGjoin (s:bat[:void,:oid])<-(t:bat[:void,:int])(cr:bat[:int,:void])
-    _19 := aggr.count(s);	# 11 ALGcount_bat (_19:int)<-(s:bat[:void,:oid])
-    cnt := calc.+(cnt,_19);	# 12 CALCbinaryADDintint (cnt:int)<-(cnt:int)(_19:int)
-    redo b:bat[:void,:int]  := pbm.hasMoreElements("Sales2005");	# 13 PBMhasMoreElements (b:bat[:void,:int])<-(_7:str) jump 9
-exit b;	# 14 PBMdummy (b:bat[:void,:int])
-    redo c:bat[:void,:int]  := pbm.hasMoreElements("Sales2005");	# 15 PBMhasMoreElements (c:bat[:void,:int])<-(_7:str) jump 7
-exit c;	# 16 PBMdummy (c:bat[:void,:int])
+    _22 := aggr.count(s);	# 11 ALGcount_bat (_22:int)<-(s:bat[:void,:oid])
+    cnt := calc.+(cnt,_22);	# 12 CALCbinaryADDintint (cnt:int)<-(cnt:int)(_22:int)
+    redo b:bat[:void,:int]  := pbm.getNextElement("Sales2005");	# 13 PBMgetNextElement (b:bat[:void,:int])<-(_7:str) jump 9
+exit b;	# 14  (b:bat[:void,:int])
+    redo c:bat[:void,:int]  := pbm.getNextElement("Sales2005");	# 15 PBMgetNextElement (c:bat[:void,:int])<-(_7:str) jump 7
+exit c;	# 16  (c:bat[:void,:int])
     io.print(cnt);	# 17 IOprint_val (_15:int)<-(cnt:int)
     io.print("finished");	# 18 IOprint_val (_16:int)<-(_17:str)
 end main;	# 19  
@@ -58,11 +58,11 @@ barrier c:bat[:void,:int]  := pbm.newIterator("Sales2005");
 barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");
     t := algebra.select(b,0,3);
     s := algebra.join(t,cr);
-    _19 := aggr.count(s);
-    cnt := calc.+(cnt,_19);
-    redo b:bat[:void,:int]  := pbm.hasMoreElements("Sales2005");
+    _22 := aggr.count(s);
+    cnt := calc.+(cnt,_22);
+    redo b:bat[:void,:int]  := pbm.getNextElement("Sales2005");
 exit b;
-    redo c:bat[:void,:int]  := pbm.hasMoreElements("Sales2005");
+    redo c:bat[:void,:int]  := pbm.getNextElement("Sales2005");
 exit c;
     io.print(cnt);
     io.print("finished");

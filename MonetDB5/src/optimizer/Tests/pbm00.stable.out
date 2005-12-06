@@ -74,7 +74,7 @@ function user.main():void;	# 0  (main:void)
     pbm.dump();	# 25 PBMdump (_32:void)
 barrier (nr,grp,elm):= pbm.newIterator();	# 26 PBMnewIteratorBase (nr:int)(grp:str)(elm:str) jump 29
     io.print(grp,elm);	# 27 IOprint_val (_36:int)<-(grp:str)(elm:str)
-    redo (nr,grp,elm):= pbm.hasMoreElements();	# 28 PBMhasMoreElementsBase (nr:int)(grp:str)(elm:str) jump 27
+    redo (nr,grp,elm):= pbm.getNextName();	# 28 PBMgetNextName (nr:int)(grp:str)(elm:str) jump 27
 exit (nr,grp,elm);	# 29  (nr:int)(grp:str)(elm:str)
     pbm.close();	# 30 PBMclose (_37:void)
     io.print("done");	# 31 IOprint_val (_38:int)<-(_39:str)

@@ -33,14 +33,14 @@ function user.main():void;	# 0  (main:void)
     io.print("start");	# 4 IOprint_val (_6:int)<-(_7:str)
 barrier c:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 5 PBMnewIterator (c:bat[:void,:int])<-(_5:str) jump 14
     cr := bat.reverse(c);	# 6 BKCreverse (cr:bat[:int,:void])<-(c:bat[:void,:int])
-    u := algebra.select(c,4,6);	# 7 ALGselect (u:bat[:void,:int])<-(c:bat[:void,:int])(_15:int)(_16:int)
-barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 8 PBMnewIterator (b:bat[:void,:int])<-(_5:str) jump 12
-    s := algebra.join(b,cr);	# 9 ALGjoin (s:bat[:void,:oid])<-(b:bat[:void,:int])(cr:bat[:int,:void])
-    t := algebra.select(b,0,3);	# 10 ALGselect (t:bat[:void,:int])<-(b:bat[:void,:int])(_12:int)(_13:int)
-    redo b:bat[:void,:int]  := pbm.hasMoreElements("Sales2005");	# 11 PBMhasMoreElements (b:bat[:void,:int])<-(_5:str) jump 9
-exit b;	# 12 PBMdummy (b:bat[:void,:int])
-    redo c:bat[:void,:int]  := pbm.hasMoreElements("Sales2005");	# 13 PBMhasMoreElements (c:bat[:void,:int])<-(_5:str) jump 6
-exit c;	# 14 PBMdummy (c:bat[:void,:int])
+barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");	# 7 PBMnewIterator (b:bat[:void,:int])<-(_5:str) jump 12
+    s := algebra.join(b,cr);	# 8 ALGjoin (s:bat[:void,:oid])<-(b:bat[:void,:int])(cr:bat[:int,:void])
+    t := algebra.select(b,0,3);	# 9 ALGselect (t:bat[:void,:int])<-(b:bat[:void,:int])(_12:int)(_13:int)
+    u := algebra.select(c,4,6);	# 10 ALGselect (u:bat[:void,:int])<-(c:bat[:void,:int])(_15:int)(_16:int)
+    redo b:bat[:void,:int]  := pbm.getNextElement("Sales2005");	# 11 PBMgetNextElement (b:bat[:void,:int])<-(_5:str) jump 8
+exit b;	# 12  (b:bat[:void,:int])
+    redo c:bat[:void,:int]  := pbm.getNextElement("Sales2005");	# 13 PBMgetNextElement (c:bat[:void,:int])<-(_5:str) jump 6
+exit c;	# 14  (c:bat[:void,:int])
     io.print("finished");	# 15 IOprint_val (_17:int)<-(_18:str)
 end main;	# 16  
 function user.main():void;
@@ -50,13 +50,13 @@ function user.main():void;
     io.print("start");
 barrier c:bat[:void,:int]  := pbm.newIterator("Sales2005");
     cr := bat.reverse(c);
-    u := algebra.select(c,4,6);
 barrier b:bat[:void,:int]  := pbm.newIterator("Sales2005");
     s := algebra.join(b,cr);
     t := algebra.select(b,0,3);
-    redo b:bat[:void,:int]  := pbm.hasMoreElements("Sales2005");
+    u := algebra.select(c,4,6);
+    redo b:bat[:void,:int]  := pbm.getNextElement("Sales2005");
 exit b;
-    redo c:bat[:void,:int]  := pbm.hasMoreElements("Sales2005");
+    redo c:bat[:void,:int]  := pbm.getNextElement("Sales2005");
 exit c;
     io.print("finished");
 end main;

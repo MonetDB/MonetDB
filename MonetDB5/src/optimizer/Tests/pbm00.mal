@@ -27,7 +27,7 @@
 
 barrier (nr,grp,elm):= pbm.newIterator();
     io.print(grp,elm);
-    redo (nr,grp,elm):=pbm.hasMoreElements();
+    redo (nr,grp,elm):=pbm.getNextName();
 exit (nr,grp,elm);
     pbm.close();
     io.print("done");
