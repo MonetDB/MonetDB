@@ -464,6 +464,9 @@ VAR (PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty)
 
 #define MAX_KIDS 10
 
+#define SEEN(p) ((p)->bit_mil_ctr)
+#define LABEL_SEEN(p) ((p)->bit_mil_label)
+
 enum axis_t {
       ax_anc
     , ax_anc_self
@@ -2987,8 +2990,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
     for (unsigned short c = 0; nts[c]; c++)
         for (unsigned int i = 0; i < PFarray_last (kids[c]->env); i++)
-            unpin (((env_t *) PFarray_at (kids[c]->env, i))->mvar,
-                   p->refctr);
+            unpin (((env_t *) PFarray_at (kids[c]->env, i))->mvar, 1);
 
 #ifndef NDEBUG
     /* Debugging only: assign column names to BATs */
@@ -3723,27 +3725,50 @@ unary_op (PFmil_t * (*op) (const PFmil_t *), PFpa_op_t *p)
 }
 
 static void
-clear_ctr (PFpa_op_t *n)
-{
-    assert (n);
-
-    n->refctr = n->usectr = 0;
-
-    for (unsigned int i = 0; i < PFPA_OP_MAXCHILD && n->child[i]; i++)
-        clear_ctr (n->child[i]);
-}
-
-static void
 inc_refctr (PFpa_op_t *n)
 {
     assert (n);
 
+    /* count number of incoming edges */
     n->refctr++;
 
+    /* only descent once */
+    if (SEEN(n))
+        return;
+    else
+        SEEN(n) = true;
+    
     for (unsigned int i = 0; i < PFPA_OP_MAXCHILD && n->child[i]; i++)
         inc_refctr (n->child[i]);
 }
 
+static void
+label (PFpa_op_t *p)
+{
+    if (!L(p) && !R(p)) {
+        STATE_LABEL(p) = PFmilgen_state (OP_LABEL(p), 0, 0);
+    }
+    else if (L(p) && !R(p)) {
+        if (!LABEL_SEEN(L(p))) label (L(p));
+        STATE_LABEL(p) = PFmilgen_state (OP_LABEL(p),
+                                         STATE_LABEL(L(p)),
+                                         0);
+    }
+    else if (!L(p) && R(p)) {
+        if (!LABEL_SEEN(R(p))) label (R(p));
+        STATE_LABEL(p) = PFmilgen_state (OP_LABEL(p),
+                                         STATE_LABEL(R(p)),
+                                         0);
+    }
+    else {
+        if (!LABEL_SEEN(L(p))) label (L(p));
+        if (!LABEL_SEEN(R(p))) label (R(p));
+        STATE_LABEL(p) = PFmilgen_state (OP_LABEL(p),
+                                         STATE_LABEL(L(p)),
+                                         STATE_LABEL(R(p)));
+    }
+    LABEL_SEEN(p) = true;
+}
 
 /**
  * Translate MIL algebra tree in a MIL program.
@@ -3754,14 +3779,13 @@ PFmilgen (PFpa_op_t *n)
     assert (n);
 
     /* set counters in algebra tree nodes */
-    clear_ctr (n);
     inc_refctr (n);
 
     /* initialize list of variables we use */
     mvars = PFarray (sizeof (mvar_t));
 
     /* enrich algebra tree with state labels for subsequent reduce() call */
-    PFmilgen_label (n);
+    label (n);
 
     /* we start with an empty MIL program */
     milprog = declare (unused ());

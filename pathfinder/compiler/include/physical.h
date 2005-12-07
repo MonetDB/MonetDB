@@ -297,9 +297,14 @@ struct PFpa_op_t {
                                         MIL variable bindings (see milgen.brg)
                                         */
     short              state_label;/**< Burg puts its state information here. */
+
+    unsigned     bit_mil_ctr   :1; /**< used in milgen.brg to allow the
+                                        refctr generation on a DAG */
+    unsigned     bit_mil_label :1; /**< used in milgen.brg to prune the
+                                        DAG labeling. */
+
     struct PFpa_op_t  *child[PFPA_OP_MAXCHILD];
     unsigned int       refctr;
-    unsigned int       usectr;
     int                node_id;    /**< specifies the id of this operator
                                         node; required exclusively to
                                         create dot output. */

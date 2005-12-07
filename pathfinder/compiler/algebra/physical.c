@@ -66,6 +66,10 @@ leaf (enum PFpa_op_kind_t kind)
 
     ret->env = NULL;
 
+    ret->bit_mil_ctr   = false;
+    ret->bit_mil_label = false;
+    ret->refctr        = 0;
+
     for (i = 0; i < PFPA_OP_MAXCHILD; i++)
         ret->child[i] = NULL;
 
