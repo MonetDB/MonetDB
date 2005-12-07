@@ -254,7 +254,10 @@ struct PFla_op_t {
                                         algebra generation only) */
     short              state_label;/**< Burg puts its state information here. */
 
-    bool               opt;        /**< used in algopt.brg to prune the tree. */
+    unsigned     bit_opt_label :1; /**< used in algopt.brg to prune the
+                                        DAG labeling. */
+    unsigned     bit_opt       :1; /**< used in algopt.brg to work on a DAG. */
+    unsigned     bit_cse       :1; /**< used in algebra_cse.c to work on a DAG. */
 
     PFplanlist_t      *plans;      /**< Physical algebra plans that implement
                                         this logical algebra subexpression. */

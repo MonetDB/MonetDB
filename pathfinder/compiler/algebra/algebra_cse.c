@@ -40,7 +40,7 @@
 #include <assert.h>
 
 /* prune already checked nodes */
-#define SEEN(p) ((p)->state_label)
+#define SEEN(p) ((p)->bit_cse)
 
 /**
  * Subexpressions that we already saw.
@@ -349,6 +349,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
     return true;
 }
 
+int counter = 0;
 /**
  * Worker for PFla_cse().
  */
@@ -357,12 +358,12 @@ la_cse (PFla_op_t *n)
 {
     PFarray_t *a;
 
-    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
-        n->child[i] = la_cse (n->child[i]);
-
-    /* fast check to avoid array lookup */
+    /* skip operator if cse has been already applied */
     if (SEEN(n))
         return n;
+
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+        n->child[i] = la_cse (n->child[i]);
 
     /*
      * Fetch the subexpressions for this node kind that we
@@ -390,15 +391,6 @@ la_cse (PFla_op_t *n)
     return n;
 }
 
-static void
-prepare_seen (PFla_op_t *n)
-{
-    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
-        prepare_seen (n->child[i]);
-
-    SEEN(n) = false;
-}
-
 /**
  * Eliminate common subexpressions in logical algebra tree and
  * convert the expression @em tree into a @em DAG.  (Actually,
@@ -414,8 +406,6 @@ PFla_op_t *
 PFla_cse (PFla_op_t *n)
 {
     subexps = PFarray (sizeof (PFarray_t *));
-
-    prepare_seen (n);
 
     return la_cse (n);
 }

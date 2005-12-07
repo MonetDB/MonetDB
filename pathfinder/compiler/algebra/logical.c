@@ -88,16 +88,19 @@ la_op_leaf (PFla_op_kind_t kind)
 
     ret->kind = kind;
 
-    ret->schema.count = 0;
-    ret->schema.items = NULL;
+    ret->schema.count  = 0;
+    ret->schema.items  = NULL;
 
     for (i = 0; i < PFLA_OP_MAXCHILD; i++)
         ret->child[i] = NULL;
 
-    ret->plans   = NULL;
-    ret->prop    = NULL;
-    ret->node_id = 0;
-    ret->opt     = false;
+    ret->plans         = NULL;
+    ret->prop          = NULL;
+    ret->node_id       = 0;
+
+    ret->bit_opt_label = 0;
+    ret->bit_opt       = 0;
+    ret->bit_cse       = 0;
 
     return ret;
 }

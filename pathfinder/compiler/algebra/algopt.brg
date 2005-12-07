@@ -270,6 +270,9 @@ EmptyRel:    string_join (EmptyRel, Rel)          = 201 (10);
 
 #define MAX_KIDS 10
 
+#define LABEL_SEEN(p) ((p)->bit_opt_label)
+#define SEEN(p) ((p)->bit_opt)
+
 /* Relabel node p if it is not contained in kids. */
 static void relabel (PFla_op_t *p,  PFla_op_t **kids);
 
@@ -320,7 +323,7 @@ reduce (PFla_op_t *p, int goalnt)
          * prune already optimized branch of the tree
          * (we try to treat the tree plan as DAG)
          */
-        if (!p->opt)
+        if (!SEEN(p))
             /* recursively translate all leaf expressions */
             for (i = 0; nts[i]; i++)
                 if ((rewritten = reduce (kids[i], nts[i])))
@@ -442,8 +445,8 @@ reduce (PFla_op_t *p, int goalnt)
                                                  tuples));
                 *p = *(ret);
                 rewritten = true;
-                p->opt = false;
-                R(p)->opt = false;
+                SEEN(p) = false;
+                SEEN(R(p)) = false;
                 relabel (p, kids);
             } else {
                 PFoops (OOPS_FATAL,
@@ -476,7 +479,7 @@ reduce (PFla_op_t *p, int goalnt)
 
             *p = *(project);
             rewritten = true;
-            p->opt = false;
+            SEEN(p) = false;
             relabel (p, kids);
         }
             break;
@@ -500,12 +503,12 @@ reduce (PFla_op_t *p, int goalnt)
                 if (check == p->schema.count) {
                     *p = *(L(p));
                     rewritten = true;
-                    p->opt = false;
+                    SEEN(p) = false;
                     break;
                 }
             }
-            p->opt = true;
-            L(p)->opt = true;
+            SEEN(p) = true;
+            SEEN(L(p)) = true;
         }
             break;
 
@@ -525,12 +528,12 @@ reduce (PFla_op_t *p, int goalnt)
                 if (check == 2) {
                     *p = *(L(p));
                     rewritten = true;
-                    p->opt = false;
+                    SEEN(p) = false;
                     break;
                 }
             }
-            p->opt = true;
-            L(p)->opt = true;
+            SEEN(p) = true;
+            SEEN(L(p)) = true;
         }
             break;
 
@@ -573,8 +576,8 @@ reduce (PFla_op_t *p, int goalnt)
             L(rownum)->prop = p->prop;
             *p = *rownum;
             rewritten = true;
-            p->opt = true;
-            L(p)->opt = true;
+            SEEN(p) = true;
+            SEEN(L(p)) = true;
             relabel (p, kids);
         }
             break;
@@ -599,7 +602,7 @@ reduce (PFla_op_t *p, int goalnt)
 
                     *p = *(ret);
                     rewritten = true;
-                    p->opt = false;
+                    SEEN(p) = false;
                     relabel (p, kids);
                     break;
                 }
@@ -609,7 +612,7 @@ reduce (PFla_op_t *p, int goalnt)
         case 61:
             R(p) = L(R(p));
             rewritten = true;
-            p->opt = false;
+            SEEN(p) = false;
             relabel (p, kids);
             break;
 
@@ -629,7 +632,7 @@ reduce (PFla_op_t *p, int goalnt)
 
             *p = *(PFla_lit_tbl_ (PFalg_attlist_ (p->schema.count, atts),
                                 0 /* no of tuples */, NULL /* tuples */));
-            p->opt = false;
+            SEEN(p) = false;
             rewritten = true;
         }
             break;
@@ -807,18 +810,18 @@ reduce (PFla_op_t *p, int goalnt)
         case 170:
         /* EmptyRel:    doc_access (Frag, EmptyRel) */
         case 171:
-            p->opt = true;
+            SEEN(p) = true;
             break;
 
         /* EmptyRel:    roots_ (element (Frag, EmptyRel)) */
         case 180:
-            p->opt = true;
-            L(p)->opt = true;
+            SEEN(p) = true;
+            SEEN(L(p)) = true;
             break;
 
         /* EmptyRel:    element_tag (EmptyRel, Rel) */
         case 181:
-            p->opt = true;
+            SEEN(p) = true;
             break;
 
         /* EmptyRel:    roots_ (attribute (EmptyRel, Rel)) */
@@ -833,8 +836,8 @@ reduce (PFla_op_t *p, int goalnt)
         case 186:
         /* EmptyRel:    roots_ (merge_adjacent (Frag, EmptyRel)) */
         case 187:
-            p->opt = true;
-            L(p)->opt = true;
+            SEEN(p) = true;
+            SEEN(L(p)) = true;
             break;
 
         /* EmptyRel:    cond_err (EmptyRel, Rel) */
@@ -843,7 +846,7 @@ reduce (PFla_op_t *p, int goalnt)
         case 200:
         /* EmptyRel:    string_join (EmptyRel, Rel) */
         case 201:
-            p->opt = true;
+            SEEN(p) = true;
             break;
 
         default:
@@ -891,6 +894,33 @@ relabel (PFla_op_t *p,  PFla_op_t **kids)
     }
 }
 
+static void
+label (PFla_op_t *p)
+{
+    if (!L(p) && !R(p)) {
+        STATE_LABEL(p) = PFalgopt_state (OP_LABEL(p), 0, 0);
+    }
+    else if (L(p) && !R(p)) {
+        if (!LABEL_SEEN(L(p))) label (L(p));
+        STATE_LABEL(p) = PFalgopt_state (OP_LABEL(p),
+                                         STATE_LABEL(L(p)),
+                                         0);
+    }
+    else if (!L(p) && R(p)) {
+        if (!LABEL_SEEN(R(p))) label (R(p));
+        STATE_LABEL(p) = PFalgopt_state (OP_LABEL(p),
+                                         STATE_LABEL(R(p)),
+                                         0);
+    }
+    else {
+        if (!LABEL_SEEN(L(p))) label (L(p));
+        if (!LABEL_SEEN(R(p))) label (R(p));
+        STATE_LABEL(p) = PFalgopt_state (OP_LABEL(p),
+                                         STATE_LABEL(L(p)),
+                                         STATE_LABEL(R(p)));
+    }
+    LABEL_SEEN(p) = true;
+}
 
 /**
  * Invoke algebra optimization.
@@ -899,7 +929,7 @@ PFla_op_t *
 PFalgopt (PFla_op_t *root)
 {
     /* Attach node labels in a tree walk bottom-up */
-    PFalgopt_label (root);
+    label (root);
 
     /* Optimize algebra tree */
     reduce (root, 1);
