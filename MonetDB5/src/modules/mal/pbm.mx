@@ -53,7 +53,7 @@ using an iterator.
 	a:= pbm.take("Sales2005","06");
 barrier c:= pbm.newIterator("Sales2005");
 	io.print(c);
-	redo c:= pbm.hasMoreElements("Sales2005");
+	redo c:= pbm.getNextComponent("Sales2005");
 exit c;
 @end example
 Alternatively, a static PBAT definition can be retrieved for manipulation
@@ -96,6 +96,10 @@ comment "Retrieve a single component of a PBAT by index";
 command getNames():bat[:str,:str]
 address PBMgetNames
 comment "Retrieve the component names of all PBATs";
+command getNextName()(:int,:str,:str)
+address PBMgetNextName
+comment "Locate next element in the partition box";
+
 
 command getComponents(grp:str):bat[:str,:str]
 address PBMgetComponents
@@ -131,9 +135,6 @@ comment "Release a single BAT from a PBAT";
 command newIterator()(:int,:str,:str)
 address PBMnewIteratorBase
 comment "Create an iterator over the partition box";
-command hasMoreElements()(:int,:str,:str)
-address PBMhasMoreElementsBase
-comment "Locate next element in the partition box";
 
 command generator(s:str):bat[:any_1,:any_2]
 address PBMdummy
@@ -153,12 +154,12 @@ command newIterator(grp:str,first:oid,last:oid)
 address PBMnewIteratorRng
 comment "Create an iterator over the BAT partitions.";
 
-command hasMoreElements(grp:str) :bat[:any_2,:any_1]
-address PBMhasMoreElements
+command getNextElement(grp:str) :bat[:any_2,:any_1]
+address PBMgetNextElement
 comment "Localize the next partition for processing.";
 
-command hasMoreElements(grp:str,first:oid,last:oid) :bat[:any_1,:any_2]
-address PBMhasMoreElementsRng
+command getNextElement(grp:str,first:oid,last:oid) :bat[:any_1,:any_2]
+address PBMgetNextElementRng
 comment "Localize the next partition for processing.";
 
 command getLast(grp:str):bat[:any_1,:any_2]
@@ -245,12 +246,12 @@ mal_export str PBMdiscardAll(int *ret);
 mal_export str PBMreleaseAll(int *ret, int *bid);
 mal_export str PBMdiscardComponent(int *ret, str *grp, int *bid);
 mal_export str PBMnewIteratorBase(int *ret, str *grp, str *elm);
-mal_export str PBMhasMoreElementsBase(int *ret, str *nme, str *elm);
 mal_export str PBMnewIterator(int *res, str *grp);
 mal_export str PBMnewIteratorRng(int *res, str *grp, oid *first, oid *last);
-mal_export str PBMhasMoreElements(int *res, str *grp );
-mal_export str PBMhasMoreElementsRng(int *res, str *grp, oid *first, oid *last);
+mal_export str PBMgetNextElement(int *res, str *grp );
+mal_export str PBMgetNextElementRng(int *res, str *grp, oid *first, oid *last);
 mal_export str PBMcompress(int *ret, str *grp);
+mal_export str PBMgetNextName(int *ret, str *nme, str *elm);
 #endif
 @c
 #include "pbm.h"
@@ -723,21 +724,6 @@ PBMnewIteratorBase(int *ret, str *grp, str *elm)
 }
 
 str
-PBMhasMoreElementsBase(int *ret, str *nme, str *elm)
-{
-	do {
-		*ret = *ret + 1;
-		if (*ret >= ptop) {
-			*ret = -1;
-			return MAL_SUCCEED;
-		}
-		*nme= GDKstrdup(partitions[*ret].grp);
-		*elm= GDKstrdup(partitions[*ret].elm);
-	} while (partitions[*ret].bid == -1);
-	return MAL_SUCCEED;
-}
-
-str
 PBMnewIterator(int *res, str *grp)
 {
 	int idx;
@@ -768,7 +754,7 @@ PBMnewIteratorRng(int *res, str *grp, oid *first, oid *last)
 }
 
 str
-PBMhasMoreElements(int *res, str *grp)
+PBMgetNextElement(int *res, str *grp)
 {
 	int i;
 	for(i=0; i<ptop; i++)
@@ -784,7 +770,7 @@ PBMhasMoreElements(int *res, str *grp)
 }
 
 str
-PBMhasMoreElementsRng(int *res, str *grp, oid *first, oid *last)
+PBMgetNextElementRng(int *res, str *grp, oid *first, oid *last)
 {
 	int i;
 	for(i= PBMfindPBAT(*grp); i>=0 ; i = partitions[i].next)
@@ -829,4 +815,20 @@ PBMdummy(int *ret, str *grp){
 	(void)ret; (void) grp;
 	return MAL_SUCCEED;
 }
+
+str
+PBMgetNextName(int *ret, str *nme, str *elm)
+{
+	do {
+		*ret = *ret + 1;
+		if (*ret >= ptop) {
+		  *ret = -1;
+		  return MAL_SUCCEED;
+		}
+		*nme= GDKstrdup(partitions[*ret].grp);
+		*elm= GDKstrdup(partitions[*ret].elm);
+	} while (partitions[*ret].bid == -1);
+	return MAL_SUCCEED;
+}
+
 @}
