@@ -1138,9 +1138,9 @@ public class MonetPreparedStatement
 	}
 
 	/**
-	 * Sets the designated parameter to the given java.sql.Time value. The
-	 * driver converts this to an SQL TIME value when it sends it to the
-	 * database.
+	 * Sets the designated parameter to the given java.sql.Time value.
+	 * The driver converts this to an SQL TIME value when it sends it to
+	 * the database.
 	 *
 	 * @param index the first parameter is 1, the second is 2, ...
 	 * @param x the parameter value
@@ -1154,13 +1154,14 @@ public class MonetPreparedStatement
 	}
 
 	/**
-	 * Sets the designated parameter to the given java.sql.Time value, using
-	 * the given Calendar object. The driver uses the Calendar object to
-	 * construct an SQL TIME value, which the driver then sends to the
-	 * database. With a Calendar object, the driver can calculate the time
-	 * taking into account a custom timezone. If no Calendar object is
-	 * specified, the driver uses the default timezone, which is that of the
-	 * virtual machine running the application.
+	 * Sets the designated parameter to the given java.sql.Time value,
+	 * using the given Calendar object.  The driver uses the Calendar
+	 * object to construct an SQL TIME value, which the driver then
+	 * sends to the database.  With a Calendar object, the driver can
+	 * calculate the time taking into account a custom timezone.  If no
+	 * Calendar object is specified, the driver uses the default
+	 * timezone, which is that of the virtual machine running the
+	 * application.
 	 *
 	 * @param index the first parameter is 1, the second is 2, ...
 	 * @param x the parameter value
@@ -1183,9 +1184,9 @@ public class MonetPreparedStatement
 	}
 
 	/**
-	 * Sets the designated parameter to the given java.sql.Timestamp value. The
-	 * driver converts this to an SQL TIMESTAMP value when it sends it to the
-	 * database.
+	 * Sets the designated parameter to the given java.sql.Timestamp
+	 * value.  The driver converts this to an SQL TIMESTAMP value when
+	 * it sends it to the database.
 	 *
 	 * @param index the first parameter is 1, the second is 2, ...
 	 * @param x the parameter value
@@ -1201,13 +1202,14 @@ public class MonetPreparedStatement
 	}
 
     /**
-	 * Sets the designated parameter to the given java.sql.Timestamp value,
-	 * using the given Calendar object. The driver uses the Calendar object
-	 * to construct an SQL TIMESTAMP value, which the driver then sends to
-	 * the database. With a Calendar object, the driver can calculate the
-	 * timestamp taking into account a custom timezone. If no Calendar object
-	 * is specified, the driver uses the default timezone, which is that of the
-	 * virtual machine running the application.
+	 * Sets the designated parameter to the given java.sql.Timestamp
+	 * value, using the given Calendar object.  The driver uses the
+	 * Calendar object to construct an SQL TIMESTAMP value, which the
+	 * driver then sends to the database.  With a Calendar object, the
+	 * driver can calculate the timestamp taking into account a custom
+	 * timezone.  If no Calendar object is specified, the driver uses the
+	 * default timezone, which is that of the virtual machine running
+	 * the application.
 	 *
 	 * @param index the first parameter is 1, the second is 2, ...
 	 * @param x the parameter value
