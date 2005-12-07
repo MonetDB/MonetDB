@@ -1827,7 +1827,7 @@ str CMDifThenCst_@1(int *ret, int *iid, ptr *eid){
 	BAT *ib, *bn;
 	int xx;
 	BUN p,q;
-	@1 bnil= @1_nil;
+	@1 bnil= (@1)@1_nil;
 
 	if( (ib= BATdescriptor(*iid)) == NULL ){
 		return throwMessage("batcalc.ifThen", "Cannot access descriptor");
@@ -1857,7 +1857,7 @@ str CMDifThenElseCst_@1(int *ret, int *iid, ptr *tid, ptr *eid){
 	BAT *ib, *bn;
 	int xx;
 	BUN p,q;
-	@1 bnil= @1_nil;
+	@1 bnil= (@1)@1_nil;
 
 	if( (ib= BATdescriptor(*iid)) == NULL ){
 		return throwMessage("batcalc.ifThen", "Cannot access descriptor");

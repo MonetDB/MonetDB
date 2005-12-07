@@ -39,7 +39,7 @@ This calls for knowlegde on the underlying BAT typs`s
 @= derefStr
 {int _tpe= ATOMstorage(@1->@2type);
  if( _tpe == TYPE_str || _tpe > TYPE_str )
- { if(@3== 0 || *(str*)@3==0) @3= str_nil;
+ { if(@3== 0 || *(str*)@3==0) @3 = (str)str_nil;
    else @3 = *(str *)@3;
 }}
 
@@ -2155,7 +2155,7 @@ mal_export str ALGthetajoin(int *result, int *lid, int *rid, int *opc);
 str
 ALGthetajoin(int *result, int *lid, int *rid, int *opc)
 {
-	return ALGthetajoinEstimate(result, lid, rid, opc, &lng_nil);
+	return ALGthetajoinEstimate(result, lid, rid, opc, (ptr)&lng_nil);
 }
 
 mal_export str ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus);

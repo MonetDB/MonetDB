@@ -3282,7 +3282,7 @@ CNTRSeventNumber(int *ret, str *nme){
 str
 CNTRSeventName(str *ret, int *nr){
 	(void) nr;
-	*ret= str_nil;
+	*ret = (str)str_nil;
 #if defined(HWCOUNTERS)
 	if( *nr <NumEvents){
 		*ret= GDKstrdup(event[*nr].native);

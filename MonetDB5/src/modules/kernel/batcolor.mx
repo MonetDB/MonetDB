@@ -160,7 +160,7 @@ str CLRbat@1(int *ret, int *l)
 		ptr h = BUNhead(b,p);
 		x= (@3 *) BUNtail(b,p);
 		if(x== 0 || *x == @3_nil)
-			y= @4_nil;
+			y = (@4)@4_nil;
 		else @2(yp,x);
 		bunfastins(bn, h, yp);
 	}

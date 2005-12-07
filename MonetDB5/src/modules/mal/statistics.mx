@@ -461,8 +461,8 @@ STATforceUpdate(int *ret, str *nme)
 		BATmax(b, &cnt);
 		BUNins(STAT_id_max_lng, &idx, &cnt);
 	} else {
-		BUNins(STAT_id_min_lng, &idx, &lng_nil);
-		BUNins(STAT_id_max_lng, &idx, &lng_nil);
+		BUNins(STAT_id_min_lng, &idx, (ptr)&lng_nil);
+		BUNins(STAT_id_max_lng, &idx, (ptr)&lng_nil);
 	}
 	h = BAThistogram(b);
 	if (h == 0)

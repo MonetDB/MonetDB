@@ -39,7 +39,7 @@ This calls for knowledge on the underlying BAT types`s
 @{
 @= derefStr
 { if( @1->@2type >= TYPE_str  && ATOMstorage(@1->@2type) >= TYPE_str)
- { if(@3== 0 || *(str*)@3==0) @3= str_nil;
+ { if(@3== 0 || *(str*)@3==0) @3 = (str)str_nil;
    else @3 = *(str *)@3; 
 }}
 @-
@@ -1146,7 +1146,7 @@ int
 CMDhead(str *res, int *bid)
 {
 	if (BBPcheck((bat) *bid, "CMDhead")) {
-		str ret = str_nil;
+		str ret = (str)str_nil;
 		BAT *b = lock_desc((bat) *bid);
 
 		if (b) {
@@ -1164,7 +1164,7 @@ int
 CMDtail(str *res, int *bid)
 {
 	if (BBPcheck((bat) *bid, "CMDtail")) {
-		str ret = str_nil;
+		str ret = (str)str_nil;
 		BAT *b = lock_desc((bat) *bid);
 
 		if (b) {

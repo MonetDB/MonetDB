@@ -1849,8 +1849,8 @@ tzone_tostr(str *buf, int *len, tzone *z)
 static void
 date_prelude(void)
 {
-	MONTHS[0] = str_nil;
-	DAYS[0] = str_nil;
+	MONTHS[0] = (str)str_nil;
+	DAYS[0] = (str)str_nil;
 	NODAYS[0] = int_nil;
 	DATE_MAX = todate(31, 12, YEAR_MAX);
 	DATE_MIN = todate(1, 1, YEAR_MIN);

@@ -257,7 +257,7 @@ str STRbat@1(int *ret, int *l)
 		ptr h = BUNhead(b,p);
 		x= (@3) BUNtail(b,p);
 		if(x== 0 || *x == 0 || strcmp(x,@3_nil)== 0)
-			y= @4_nil;
+			y = (@4)@4_nil;
 		else @2(yp,x);
 		bunfastins(bn, h, *yp);
 	}
@@ -560,7 +560,7 @@ STRbatSubStringcst(int *ret, int *l, int *offset, int *length)
 
 		x = (str) BUNtail(b, p);
 		if (x == 0 || *x == 0 || strcmp(x, str_nil) == 0)
-			y = str_nil;
+			y = (str)str_nil;
 		else
 			STRSubString(yp, xp, offset, length);
 		bunfastins(bn, h, yp);
@@ -591,7 +591,7 @@ STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep)
 
 		x = (str) BUNtail(b, p);
 		if (x == 0 || *x == 0 || strcmp(x, str_nil) == 0)
-			y = str_nil;
+			y = (str)str_nil;
 		else
 			STRSubstitute(yp, xp, arg2, arg3, rep);
 		bunfastins(bn, h, yp);

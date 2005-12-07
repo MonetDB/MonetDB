@@ -825,7 +825,7 @@ MANUALhelp2(int *ret, str *mod, str *fcn)
 		if (idcmp(s->name, *fcn) == 0) {
 			msg = s->def->help;
 			if (msg == NULL)
-				msg = str_nil;
+				msg = (str)str_nil;
 			BUNins(b, s->name, msg);
 		}
 		s = s->peer;
