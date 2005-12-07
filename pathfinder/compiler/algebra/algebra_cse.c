@@ -349,7 +349,6 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
     return true;
 }
 
-int counter = 0;
 /**
  * Worker for PFla_cse().
  */
