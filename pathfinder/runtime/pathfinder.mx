@@ -1903,7 +1903,7 @@ xquery_client_end(xquery_client *ctx,
     BATclear(ctx->dbl_values);
     BATclear(ctx->int_values);
     BATclear(ctx->str_values);
-    BUNins(ctx->str_values, &nil, str_nil);
+    BUNins(ctx->str_values, &nil, (ptr)str_nil);
 
     /* nil-assign all other variables */
     for(v=monet_cntxt[ctx->stk].var; v != ctx->lastvar; v = v->next) {
