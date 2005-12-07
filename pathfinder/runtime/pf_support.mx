@@ -3726,7 +3726,7 @@ PROC elem_constr (BAT[void, oid] qn_iter,
         # !be aware that res_frag is only a fake_project!
         var res_frag := res_scj.fetch(2);
         # !avoid being res_iter a fake_project!
-        res_iter := de_NO_project (res_iter, res_item);
+        res_iter := materialize (res_iter, res_item);
         res_scj := nil;
             
         # create content_iter as sorting argument for the merged union
