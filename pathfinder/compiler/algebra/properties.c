@@ -815,31 +815,31 @@ prop_infer_icol (PFla_op_t *n, PFarray_t *icol)
                
             /* infer empty list for fragments */
             inf_icol = PFarray (sizeof (PFalg_att_t));
-            prop_infer_icol (LL(n), inf_icol);
+            prop_infer_icol (L(n), inf_icol);
 
             /* do only infer input columns if operator is not required */
             if (!PFprop_contains_att (n->prop->icol, att_item))
             { 
                 /* infer current icol schema for the qnames as replacement */
                 inf_icol = n->prop->icol;
-                prop_infer_icol (LL(n), inf_icol);
+                prop_infer_icol (RL(n), inf_icol);
 
                 /* infer empty list for missing content */
                 inf_icol = PFarray (sizeof (PFalg_att_t));
-                prop_infer_icol (R(n), inf_icol);
+                prop_infer_icol (RR(n), inf_icol);
             } else {
                 /* infer iter|item schema for element name relation */
                 inf_icol = PFarray (sizeof (PFalg_att_t));
                 *(PFalg_att_t *) PFarray_add (inf_icol) = att_iter;
                 *(PFalg_att_t *) PFarray_add (inf_icol) = att_item;
-                prop_infer_icol (LR(n), inf_icol);
+                prop_infer_icol (RL(n), inf_icol);
 
                 /* infer iter|pos|item schema for element content relation */
                 inf_icol = PFarray (sizeof (PFalg_att_t));
                 *(PFalg_att_t *) PFarray_add (inf_icol) = att_iter;
                 *(PFalg_att_t *) PFarray_add (inf_icol) = att_pos;
                 *(PFalg_att_t *) PFarray_add (inf_icol) = att_item;
-                prop_infer_icol (R(n), inf_icol);
+                prop_infer_icol (RR(n), inf_icol);
             }
 
             skip_children = true;
