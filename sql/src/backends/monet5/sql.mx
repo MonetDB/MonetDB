@@ -1482,7 +1482,7 @@ str
 SQLstr_2_str( str *res, str *val )
 {
 	if( *val == str_nil) 
-		*res= str_nil;
+		*res = (str)str_nil;
 	else
 		*res =  GDKstrdup(*val);
 	return MAL_SUCCEED;

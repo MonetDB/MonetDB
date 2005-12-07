@@ -679,13 +679,15 @@ The routine atomnil returns a pointer to the nil value representation.
 #define GDK_dbl_min (-GDK_dbl_max)
 /* GDK_oid_max see below */
 #define GDK_oid_min ((oid) 0)
-/* representation of the nil */ gdk_export chr chr_nil;
-gdk_export short sht_nil;
+
+/* representation of the nil */ 
+gdk_export const chr chr_nil;
+gdk_export const short sht_nil;
 gdk_export int int_nil;
-gdk_export flt flt_nil;
-gdk_export dbl dbl_nil;
-gdk_export lng lng_nil;
-gdk_export char str_nil[2];
+gdk_export const flt flt_nil;
+gdk_export const dbl dbl_nil;
+gdk_export const lng lng_nil;
+gdk_export const char str_nil[2];
 
 /* derived NIL values - OIDDEPEND */
 #define bit_nil	((bit) chr_nil)
@@ -704,13 +706,13 @@ gdk_export char str_nil[2];
 #endif
 #define void_nil	oid_nil
 @c
-chr chr_nil = GDK_chr_min;
-sht sht_nil = GDK_sht_min;
+const chr chr_nil = GDK_chr_min;
+const sht sht_nil = GDK_sht_min;
 int int_nil = GDK_int_min;
-flt flt_nil = GDK_flt_min;
-dbl dbl_nil = GDK_dbl_min;
-lng lng_nil = GDK_lng_min;
-char str_nil[2] = { GDK_chr_min, 0 };
+const flt flt_nil = GDK_flt_min;
+const dbl dbl_nil = GDK_dbl_min;
+const lng lng_nil = GDK_lng_min;
+const char str_nil[2] = { GDK_chr_min, 0 };
 
 ptr
 ATOMnil(int t)

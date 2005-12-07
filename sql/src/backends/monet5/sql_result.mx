@@ -464,26 +464,23 @@ first part (reply_size) of the result set. It should be produced in Monet format
 enable mapi to work with it.
 @c
 static str mvcDefaultMsg[] = {
+	"&1 0 1 1 1\n",
 	"&2 0 1 1 1\n",
 	"&3 0 1 1 1\n",
 	"&4 0 1 1 1\n",
-	"&5 0 1 1 1\n",
-	"&6 0 1 1 1\n",
-	"&7 0 1 1 1\n",
-	"&8 0 1 1 1\n",
-	"&9 0 1 1 1\n"
+	"&5 0 1 1 1\n"
 };
 
-static int mvcDefaultMsg_len = 11; /*strlen("&9 0 1 1 1\n");*/
+static int mvcDefaultMsg_len = 11; /*strlen("&5 0 1 1 1\n");*/
 
 int
 mvc_export_default(mvc *m, stream *s)
 {
 	int ok = 1;
 
-	assert(m->type > 1 && m->type < 10);
+	assert(m->type > 0 && m->type <= 5);
 	if (s) 
-		ok = (stream_write(s, mvcDefaultMsg[m->type-2], mvcDefaultMsg_len, 1) == 1);
+		ok = (stream_write(s, mvcDefaultMsg[m->type-1], mvcDefaultMsg_len, 1) == 1);
 	return (ok) ? 0 : -1;
 }
 
@@ -565,7 +562,6 @@ mvc_export_row(mvc *m, stream *s, res_table *t)
 	int len = 0;
 	int i, ok = 1;
 
-	m->type = Q_RESULT;
 	if (!s)
 		return 0;
 
@@ -611,7 +607,6 @@ mvc_export_table(mvc *m, stream *s, res_table *t, unsigned int offset, unsigned 
 	if (!t->order)
 		return mvc_export_row(m, s, t);
 
-	m->type = Q_RESULT;
 	order = BATdescriptor(t->order);
 	cnt = nr;
 	if (cnt == 0) {
@@ -777,8 +772,8 @@ mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d,
 	int ok = 1;
 	char *rsep = "\t]\n";
 
-	assert(qtype > 1 && qtype < 10);
-	if (stream_write(s, mvcDefaultMsg[qtype-2], mvcDefaultMsg_len, 1) == 1&&
+	assert(qtype > 0 && qtype <= 5);
+	if (stream_write(s, mvcDefaultMsg[qtype-1], mvcDefaultMsg_len, 1) == 1&&
 	    /* fallback to default tuplecount (1) and id (0) */
 	    /* TODO first header name then values */
 	    stream_write(s, "# ", 2, 1) == 1 &&
@@ -799,19 +794,16 @@ mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d,
 }
 
 static str tableMsg[] = {
+	"&1 ",
 	"&2 ",
 	"&3 ",
 	"&4 ",
-	"&5 ",
-	"&6 ",
-	"&7 ",
-	"&8 ",
-	"&9 "
+	"&5 "
 };
-static int tableMsgLen = 3; /*strlen("&9 ");*/
+static int tableMsgLen = 3; /*strlen("&5 ");*/
 
-static str updateMsg = "&4 0 1 1\n";
-static str transMsg  = "&7 0 0 0 ";
+static str updateMsg = "&2 0 1 1\n";
+static str transMsg  = "&4 0 0 0 ";
 
 int
 mvc_export_result(mvc *m, stream *s, int res_id)
@@ -821,7 +813,7 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 
 	if (!s || !t)
 		return 0;
-	assert(t->query_type > 1 && t->query_type < 10);
+	assert(t->query_type > 0 && t->query_type <= 5);
 
 	/* skip headers for affected row counts */
 	assert(t->query_type != Q_UPDATE); /* handled by optimized code */
@@ -841,11 +833,10 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 		else
 			return (stream_write(s, "f\n", 2, 1) == 1);
 	}
-	ok = (stream_write(s, tableMsg[t->query_type-2], tableMsgLen, 1) == 1);
+	ok = (stream_write(s, tableMsg[t->query_type-1], tableMsgLen, 1) == 1);
 
 	if (!ok)
 		return -1;
-	m->type = Q_RESULT;
 
 	/* id */
 	if (!(ok = mvc_send_int(s, t->id)) ||

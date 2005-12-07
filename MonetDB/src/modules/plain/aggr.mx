@@ -609,7 +609,7 @@ CMDaggr_variance_@1(BAT **ret, BAT *b, BAT *e)
 	idx = 0;
 	BATloopFast(e, p, q, xx) {
 		if (cnt[idx] == int_nil) {
-			if (BUNfastins(bn, BUNhead(e,p), &@1_nil) == NULL) {
+			if (BUNfastins(bn, BUNhead(e,p), (ptr)&@1_nil) == NULL) {
 				*ret = NULL;
 				break;
 			}

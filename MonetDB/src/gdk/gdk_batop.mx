@@ -1874,7 +1874,7 @@ BATgetprop_int(BAT *b, int idx)
 	return (p)?p->v.val.ival:int_nil;
 }
 
-str
+const char *
 BATgetprop_str(BAT *b, int idx)
 {
 	PROPrec *p = BATgetprop(b, idx); 

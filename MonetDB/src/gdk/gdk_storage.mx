@@ -328,7 +328,7 @@ GDKload(str nme, str ext, size_t size, size_t chunk, int mode)
 	}
 
 	if (store == STORE_MEM) {
-		if ((fd = GDKfdlocate(nme, "rb+", ext)) >= 0) {
+		if ((fd = GDKfdlocate(nme, "rb", ext)) >= 0) {
 			/* some systems do not give you all at once */
 			char *dst = buf = (char *) GDKmalloc(chunk);
 

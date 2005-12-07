@@ -73,17 +73,12 @@ public class MonetStatement implements Statement {
 	private List batch;
 
 	/** Query types (copied from sql_query.mx) */
-	final static int Q_END = 0;
-	final static int Q_PARSE = 1;
-	final static int Q_RESULT = 2;
-	final static int Q_TABLE = 3;
-	final static int Q_UPDATE = 4;
-	final static int Q_DATA = 5;
-	final static int Q_SCHEMA = 6;
-	final static int Q_TRANS = 7;
-	final static int Q_DEBUG = 8;
-	final static int Q_DEBUGP = 9;
-	final static int Q_PREPARE = 10;
+	final static int Q_PARSE = 0;
+	final static int Q_TABLE = 1;
+	final static int Q_UPDATE = 2;
+	final static int Q_SCHEMA = 3;
+	final static int Q_TRANS = 4;
+	final static int Q_PREPARE = 5;
 
 
 	/**

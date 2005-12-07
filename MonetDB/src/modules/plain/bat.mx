@@ -992,7 +992,7 @@ int
 CMDhead(str *res, int *bid)
 {
 	if (BBPcheck((bat) *bid, "CMDhead")) {
-		str ret = str_nil;
+		str ret = (str)str_nil;
 		BAT *b = lock_desc((bat) *bid);
 
 		if (b) {
@@ -1038,7 +1038,7 @@ int
 CMDtail(str *res, int *bid)
 {
 	if (BBPcheck((bat) *bid, "CMDtail")) {
-		str ret = str_nil;
+		str ret = (str)str_nil;
 		BAT *b = lock_desc((bat) *bid);
 
 		if (b) {

@@ -841,17 +841,12 @@ struct MapiStruct {
 
 /* this definition is a straight copy from sql_query.mx */
 typedef enum sql_query_t {
-	Q_END = 0,
-	Q_PARSE = 1,
-	Q_RESULT = 2,
-	Q_TABLE = 3,
-	Q_UPDATE = 4,
-	Q_DATA = 5,
-	Q_SCHEMA = 6,
-	Q_TRANS = 7,
-	Q_DEBUG = 8,
-	Q_DEBUGP = 9,
-	Q_PREPARE = 10
+	Q_PARSE = 0,
+	Q_TABLE = 1,
+	Q_UPDATE = 2,
+	Q_SCHEMA = 3,
+	Q_TRANS = 4,
+	Q_PREPARE = 5
 } sql_query_t;
 
 struct MapiResultSet {
