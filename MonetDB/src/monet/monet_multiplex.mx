@@ -706,7 +706,7 @@ in this implementation.
 		char buf[32];
 		sprintf(buf, PDFMT, (ptrdiff_t) (@2));
 		bulkerror_handle(&bulkerror, buf);
-		tptr = tnil; /* insert a nil */
+		*(ptr*) tptr = tnil; /* insert a nil */
 	}
 
 @= BUNins_array_special
@@ -899,8 +899,7 @@ interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 	ok = TRUE;
 bunins_failed:
 	bulkerror_finish(&bulkerror, name);
-	if (tptr != tnil)
-		GDKfree(tptr);
+	GDKfree(tptr);
 	if (!ok) {
 		BBPreclaim(retb);
 		return -1;
