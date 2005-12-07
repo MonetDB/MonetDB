@@ -246,11 +246,11 @@ monet_options.mx.in
 			GDK_vm_minsize = GDK_mem_maxsize/2;
 	}
 
-	if (GDKgetenv_isyes("gdk_embedded")) {
+	if (GDKgetenv_isyes("gdk_embedded") || GDKgetenv_isyes("embedded")) {
 		GDKembedded = 1;
 	}
 
-    if (GDKgetenv_isyes("monet_daemon")) {
+    if (GDKgetenv_isyes("monet_daemon") || GDKgetenv_isyes("daemon")) {
         monet_daemon = 1;
 #ifdef HAVE_SETSID
         setsid();
