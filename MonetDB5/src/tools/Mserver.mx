@@ -114,15 +114,24 @@ Mserver_abort()
 void
 usage(char *prog)
 {
-	fprintf(stderr, "usage: %s\n", prog);
-	fprintf(stderr, "[--dbname database_name ]\n");
-	fprintf(stderr, "[--dbfarm database_directory ]\n");
-	fprintf(stderr, "[--dbinit stmt]\n");
-	fprintf(stderr, "[-d or --debug [debug_level] ]\n");
-	fprintf(stderr, "[-? or --help ]\n");
-	fprintf(stderr, "[-c or --config config_file ]\n");
-	fprintf(stderr, "[-s or --set option=value ]\n");
-	fprintf(stderr, "script+\n");
+	fprintf(stderr, "usage: %s [options] [script]\n", prog);
+	fprintf(stderr, "    --dbname=<database_name> \n");
+	fprintf(stderr, "    --dbfarm=<database_directory> \n");
+	fprintf(stderr, "    --help for more options \n");
+	exit(0);
+}
+void
+usage2(char *prog)
+{
+	fprintf(stderr, "usage: %s [options] [script]\n", prog);
+	fprintf(stderr, "    --dbname=<database_name> \n");
+	fprintf(stderr, "    --dbfarm=<directory> \n");
+	fprintf(stderr, "    --dbinit=<stmt>           Server prepare statement\n");
+	fprintf(stderr, "    --config=<config_file> \n");
+	fprintf(stderr, "    --debug=<number>          trace server actions[0]\n");
+	fprintf(stderr, "    --daemon=yes|no           run in background [no]\n");
+	fprintf(stderr, "    --set <option>=<value>    set environment value\n");
+	fprintf(stderr, "    --help                    this list of options \n");
 	exit(0);
 }
 
@@ -271,12 +280,13 @@ main(int argc, char **av)
 	int i, debug = 0, setlen = 0, listing = 0;
 	str dbinit = NULL;
 
-	static struct option long_options[9] = {
+	static struct option long_options[10] = {
 		{"config", 1, 0, 'c'},
 		{"dbname", 1, 0, 0},
 		{"dbfarm", 1, 0, 0},
 		{"dbinit", 1, 0, 0},
 		{"debug", 2, 0, 'd'},
+		{"help", 2, 0, 'h'},
 		{"help", 0, 0, '?'},
 		{"set", 1, 0, 's'},
 		{"trace", 0, 0, 't'},
@@ -392,6 +402,11 @@ faster system start.
 		case 't':	/* trace option, currently ignored */
 			fprintf(stderr, "#warning: trace option not yet supported\n");
 			break;
+		case 'h':
+			if(strcmp(long_options[option_index].name, "help") == 0) {
+				usage2(prog);
+				break;
+			}
 		case '?':
 			usage(prog);
 		default:
