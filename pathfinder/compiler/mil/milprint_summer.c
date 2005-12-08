@@ -4338,9 +4338,9 @@ string_value (opt_t *f, int code, char *kind)
                     "     iter_item := iter_item.string_join(item_unq.project(\"\"));\n}\n");
 
     milprintf(f,
+                    /* get the string value of all comment nodes */
                     "t_iter := iter_item.hmark(0@0);\n"
                     "var t_item_str := iter_item.tmark(0@0);\n"
-                    /* get the string value of all comment nodes */
                     "var c_map := mposjoin (item, frag, ws.fetch (PRE_KIND))"
                                       ".select(COMMENT).hmark(0@0);\n"
                     "if (c_map.count() > 0) { #process comments \n"
@@ -6265,25 +6265,13 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         /* expects strings otherwise something stupid happens */
         milprintf(f,
                 "{ # translate fn:doc (string?) as document?\n"
-                "item%s := item%s.materialize(ipik);\n"
-                "var docs := item%s.tunique().hmark(0@0);\n"
-                "var doc_str := docs%s;\n"
-                "docs := nil;\n"
-                "doc_str := reverse(doc_str.tdiff(ws.fetch(DOC_LOADED))).hmark(0@0);\n"
-                "doc_str@batloop () {\n"
+                "item%s.tunique().hmark(0@0)%s.tdiff(ws.fetch(DOC_LOADED))@batloop () {\n"
                 "    time_shred :+= add_doc(ws, $t);\n"
                 "}\n"
-                "doc_str := nil;\n"
-                "doc_str := item%s;\n"
-                "var frag := doc_str.leftjoin(ws.fetch(DOC_LOADED).reverse());\n"
-                "doc_str := nil;\n"
-                "frag := frag.tmark(0@0);\n"
-                "kind := set_kind(frag, ELEM);\n"
-                "frag := nil;\n"
+                "kind := set_kind(item%s.leftjoin(ws.fetch(DOC_LOADED).reverse()).tmark(0@0), ELEM);\n"
                 "item := 0@0;\n"
                 "} # end of translate fn:doc (string?) as document?\n",
-                item_ext, item_ext,
-                item_ext, 
+                item_ext,
                 (rc)?"":val_join(STR),
                 (rc)?item_ext:val_join(STR));
         return NORMAL;
