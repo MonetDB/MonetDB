@@ -126,7 +126,7 @@ in BATs that can do aways with explicit use of fake_project in the generated MIL
 .COMMAND @1join ( oid left, any::1 right ) : any::1 = CMDconstjoinCopy;
 "@join(l,r); where the first parameter is a MIL constant. Return a MIL constant (assumes join hits!)."
 
-.COMMAND @1join ( oid left, BAT[any,any::1] right ) : any::1 = CMDconstjoinLeftCopy;
+.COMMAND @1join ( any::1 left, BAT[any::1,any::2] right ) : any::2 = CMDconstjoinLeftCopy;
 "@1join(l,r); where the first parameter is a MIL constant. Return a MIL constant."
 @m
 @:join()@
@@ -326,7 +326,7 @@ CMDconstjoinCopy(ptr ret, oid *id, ptr val, int tpe)
         /* due to function resolution, we know that val must be a simple constant or an illegal bat */
 	(void) id;
         if (tpe == TYPE_bat) {
-                GDKerror("positional join(const,%s): second param is not a dense bat.\n",
+                GDKerror("positional join(const,%s): second param does not have an oid-head.\n",
                          BBP_logical(((BAT*) val)->batCacheid));
                 return GDK_FAIL;
         }
@@ -334,20 +334,20 @@ CMDconstjoinCopy(ptr ret, oid *id, ptr val, int tpe)
 }
 
 int
-CMDconstjoinLeftCopy(ptr ret, oid *val, BAT *b)
+CMDconstjoinLeftCopy(ptr ret, ptr val, int res, BAT *b)
 {
-	BUN r;
-	if (!BAThdense(b)) {
-        	GDKerror("positional join(const,%s): second param is not a dense bat.\n",
+	BAT* bn = BATuselect(BATmirror(b), val, val);
+        res = GDK_FAIL;
+        if (bn) {
+		if (BATcount(bn) != 1) {
+        		GDKerror("join(const,%s): const should match exactly once.\n",
                                 BBP_logical(b->batCacheid));
-                return GDK_FAIL;
+		} else {
+        		res = CMDconstCopy(ret, BUNhead(bn,BUNfirst(bn)), ATOMtype(b->ttype));
+		}
+		BBPreclaim(bn);
 	}
-	BUNfndVOID(r,b,val);
-	if (r == NULL) {
-                GDKerror("positional join(const,%s): value not found\n", BBP_logical(b->batCacheid));
-                return GDK_FAIL;
-	}
-        return CMDconstCopy(ret, BUNtail(b,r), ATOMtype(b->ttype));
+	return res;
 }
 
 int 
