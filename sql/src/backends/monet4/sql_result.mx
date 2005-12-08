@@ -862,7 +862,6 @@ static str transMsgt = "&4 t\n";
 static str transMsgf = "&4 f\n";
 static int transMsgLen = 5;
 
-
 int
 mvc_export_result(mvc *m, stream *s, int res_id)
 {
@@ -872,16 +871,17 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 	if (!s || !t)
 		return 0;
 
-	/* skip headers for affected row counts */
-	assert(t->query_type != Q_UPDATE); 
-	if (t->query_type == Q_TRANS) {
+	/* we shouldn't have anything else but Q_TRANS or Q_TABLE here */
+	assert(t->query_type == Q_UPDATE || t->query_type == Q_TABLE);
+
+	if (ok && t->query_type == Q_TRANS) {
 		if (m->auto_commit) {
 			return(stream_write(s, transMsgt, transMsgLen, 1) == 1);
 		} else {
 			return(stream_write(s, transMsgf, transMsgLen, 1) == 1);
 		}
 	}
-	assert(t->query_type == Q_TABLE);
+	/* else, we have a Q_TABLE */
 	ok = (stream_write(s, tableMsg[t->query_type-1], tableMsgLen, 1) == 1);
 
 	if (!ok)
