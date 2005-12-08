@@ -33,6 +33,7 @@ All Rights Reserved.
   <property name="JDBC_jar"  value="../jars/MonetDB_JDBCClient.jar" />
 
   <property file="build.properties"/>
+  <property file="build.local.properties"/>
 
   <!-- Prepares the build directory -->
   <target name="prepare">
