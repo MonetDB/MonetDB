@@ -563,6 +563,8 @@ reduce (PFla_op_t *p, int goalnt)
         /* Rel:    number (rownum (Rel)) */
         case 52:
         {
+            /* the modification of the schema is missing */
+            /*
             PFla_op_t *rownum = PFla_rownum (
                                     PFla_number (
                                         LL(p),
@@ -579,6 +581,10 @@ reduce (PFla_op_t *p, int goalnt)
             SEEN(p) = true;
             SEEN(L(p)) = true;
             relabel (p, kids);
+            */
+            /* replacement */
+            SEEN(p) = true;
+            SEEN(L(p)) = true;
         }
             break;
 
