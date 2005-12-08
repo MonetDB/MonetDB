@@ -173,7 +173,7 @@ struct PFcnode_t {
     PFcnode_t  *child[PFCNODE_MAXCHILD]; /**< child nodes */
     PFty_t      type;                    /**< static type */
     struct PFla_pair_t alg;
-    short       state_label;       /**< for BURG pattern matcher */
+    short       state_label;             /**< for BURG pattern matcher */
 };
 
 
