@@ -2820,30 +2820,42 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 
 	if (line[0] == '&') {
 		char *n = line;
-		/* handle fields &qt id tc cc rc [ac] */
+
+		/* handle fields &qt */
+
 		n++;	/* query type */
 		result->querytype = strtol(n, &n, 0);
-		n++;	/* result set id */
-		result->tableid = strtol(n, &n, 0);
-		n++;	/* tuple count */
-		result->row_count = strtol(n, &n, 0);
-		n++;	/* column count */
-		result->fieldcnt = strtol(n, &n, 0);
-		n++;	/* row count, tuples in this result (not used) */
-		(void)strtol(n, &n, 0);
+
+		n++;	/* skip space */
+		switch (result->querytype) {
+		case Q_TRANS: 
+			if (*n == 'f')
+				hdl->mid->auto_commit = 0;
+			else
+				hdl->mid->auto_commit = 1;
+			break;
+		case Q_UPDATE:
+			result->row_count = strtol(n, &n, 0);
+			break;
+		case Q_SCHEMA:
+		case Q_TABLE:
+			/* result set id */
+			result->tableid = strtol(n, &n, 0);
+			n++;	/* tuple count */
+			result->row_count = strtol(n, &n, 0);
+			n++;	/* column count */
+			result->fieldcnt = strtol(n, &n, 0);
+			n++;	/* row count, tuples in this result (not used) */
+			/* (void)strtol(n, &n, 0); */
+			break;
+		}
+		
 		
 		if (result->fieldcnt) {
 			REALLOC(result->fields, result->fieldcnt);
 			memset(result->fields, 0, result->fieldcnt * sizeof(*result->fields));
 		}
 
-		if (result->querytype == Q_TRANS) {
-			if (*n == 'f')
-				hdl->mid->auto_commit = 0;
-			else
-				hdl->mid->auto_commit = 1;
-		}
-		
 		/* start of new SQL result */
 		return result;
 	}
@@ -4261,15 +4273,6 @@ mapi_rows_affected(MapiHdl hdl)
 	mapi_hdl_check(hdl, "mapi_rows_affected");
 	if ((result = hdl->result) == NULL)
 		return 0;
-	if (result->querytype == Q_UPDATE) {
-		int i;
-
-		for (i = 0; result->cache.rows[i][0] != '[' && result->cache.rows[i][0] != '='; i++)
-			;
-		if (result->cache.fldcnt[i] == 0)
-			mapi_slice_row(result, i);
-		return atoi(result->cache.anchors[i][0]);
-	}
 	return result->row_count;
 }
 
