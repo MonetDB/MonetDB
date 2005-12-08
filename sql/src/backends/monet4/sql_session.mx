@@ -61,7 +61,6 @@ extern int mvc_sql(mvc *c, str query);
 #include <sql_optimize.h>
 #include <sql_privileges.h>
 #include <sql_rel2bin.h>
-#include <sql_scope.h>
 #include <sql_qc.h>
 #include <sql_parser.h>		/* for sqlparse() */
 #include <sql_env.h>		/* explain,debug,reply_size,auto_commit etc */
@@ -218,65 +217,6 @@ sqlcleanup(mvc *c, int err)
 	return err;
 }
 
-static int
-output_prepare(stream *out, mvc *c, cq *q)
-{
-	node *n;
-	int len = 0;
-
-	if (!out)
-		return 0;
-
-	if (c->params && (len = list_length(c->params)) > MAXPARAMS) {
-		sql_error(c, 2, "To many parameters in prepared statement (%d>%d)\n", len, MAXPARAMS);
-		return -1;
-	}
-
-	/* indicate to client that a new SQL command starts here */
-	if (stream_printf(out,
-		"#-\n"
-		"# " SZFMT " # querytype\n"
-		"# prepare,	prepare,	prepare # table_name\n"
-		"# type,	digits,	scale # name\n"
-		"# varchar,	int,	int # type\n"
-		"# 0,	0,	0 # length\n"
-		"# %d # tuplecount\n"
-		"# %d # id\n",
-		Q_PREPARE,
-		c->params ? list_length(c->params) : 0,
-		q->id
-	) < 0) {
-		return -1;
-	}
-
-	if (c->params) {
-		int i;
-
-		q->paramlen = len;
-		q->params = NEW_ARRAY(sql_subtype,len);
-		for (n = c->params->h, i=0; n; n = n->next, i++) {
-			var_ *v = n->data;
-			sql_subtype *t = tail_type(v->s);
-
-			if (t) {
-				if (stream_printf(out,
-					"[ \"%s\",	%d,	%d	]\n",
-					t->type->sqlname,
-					t->digits,
-					t->scale
-				) < 0) {
-					return -1;
-				}
-				/* add to the query cache parameters */
-				q->params[i] = *t;
-			} else {
-				return -1;
-			}
-		}
-	}
-	return 0;
-}
-
 void backend_profile( backend *be, char *query, lng parse, lng optimize, lng exec, lng total )
 {
 	mvc *c = be->mvc;
@@ -375,7 +315,13 @@ sqlexecute(backend *be, stream *out)
 	scanner_query_processed(&(c->scanner));
 
 	if (q && c->mode == m_prepare) {
-		err = output_prepare(out, c, q);
+		int len;
+		if (c->params && (len = list_length(c->params)) > MAXPARAMS) {
+			sql_error(c, 2, "To many parameters in prepared statement (%d>%d)\n", len, MAXPARAMS);
+			err = -1;
+			return sqlcleanup(c, err);
+		}
+		err = mvc_export_prepare(c, out, q);
 	} else if (q && !q->code) {
 		err = backend_call(be, c, q); 
 	} else if (q) {

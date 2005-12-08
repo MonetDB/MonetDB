@@ -545,10 +545,9 @@ mvc_affected_rows_wrap(mvc *M, Stream *S, lng *nr)
 	mvc *m = *(mvc**)M;
 
 	m->type = Q_UPDATE;
-	if (mvc_export_default(m, s))
+	if (mvc_export_affrows(m, s, *nr))
 		return GDK_FAIL;
 
-	stream_printf(s, "[ " LLFMT "\t]\n", *nr);
 	return GDK_SUCCEED;
 }
 
