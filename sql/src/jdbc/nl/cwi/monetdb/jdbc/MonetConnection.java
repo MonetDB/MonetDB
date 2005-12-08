@@ -942,17 +942,17 @@ public class MonetConnection implements Connection {
 	 * @throws IllegalStateException if this thread is not alive
 	 * @see RawResults
 	 */
-	RawResults addBlock(Header hdr, int block) throws IllegalStateException {
+	RawResults addBlock(ResultSetHeader hdr, int block) throws IllegalStateException {
 		RawResults rawr;
 		int cacheSize = hdr.getCacheSize();
 		// get number of results to fetch
-		int size = Math.min(cacheSize, hdr.getTupleCount() - ((block * cacheSize) + hdr.getBlockOffset()));
+		int size = Math.min(cacheSize, hdr.tuplecount - ((block * cacheSize) + hdr.getBlockOffset()));
 
 		if (size == 0) throw
 			new IllegalStateException("Should not fetch empty block!");
 
 		rawr = new RawResults(size,
-				"export " + hdr.getID() + " " +
+				"export " + hdr.id + " " +
 				((block * cacheSize) + hdr.getBlockOffset()) + " " +
 				size, hdr.getRSType() == ResultSet.TYPE_FORWARD_ONLY);
 
@@ -1051,7 +1051,7 @@ public class MonetConnection implements Connection {
 				tmpLine = monet.readLine();
 				linetype = monet.getLineType();
 				if (linetype == MonetSocketBlockMode.ERROR) {
-					// store the error message in the Header object
+					// store the error message in the HeaderList object
 					hdrl.addError(tmpLine.substring(1));
 				} else if (linetype == MonetSocketBlockMode.SOHEADER) {
 					// close previous if set
@@ -1059,21 +1059,69 @@ public class MonetConnection implements Connection {
 						hdr.complete();
 						hdrl.addHeader(hdr);
 					}
-
-					// create new header
-					hdr = new Header(
-						this,
-						tmpLine,
-						hdrl.cachesize,
-						hdrl.maxrows,
-						hdrl.rstype,
-						hdrl.rsconcur,
-						hdrl.seqnr
-					);
 					if (rawr != null) rawr.finish();
+
+					// parse the start of header line
+					CharBuffer soh = CharBuffer.wrap(tmpLine);
+					soh.get();	// skip the &
+					try {
+						switch (parseNumber(soh)) {
+							case MonetStatement.Q_PARSE:
+								throw new java.text.ParseException("Q_PARSE header not allowed here", 1);
+							case MonetStatement.Q_TABLE:
+							case MonetStatement.Q_PREPARE:
+								hdr = new ResultSetHeader(
+										parseNumber(soh),	// id
+										parseNumber(soh),	// tuplecount
+										parseNumber(soh),	// columncount
+										parseNumber(soh),	// rowcount
+										this,
+										hdrl.cachesize,
+										hdrl.maxrows,
+										hdrl.rstype,
+										hdrl.rsconcur,
+										hdrl.seqnr
+									);
+							break;
+							case MonetStatement.Q_UPDATE:
+								hdr = new AffectedRowsHeader(
+										parseNumber(soh)	// count
+									);
+							break;
+							case MonetStatement.Q_SCHEMA:
+								hdr = new AffectedRowsHeader(
+										Statement.SUCCESS_NO_INFO
+									);
+							break;
+							case MonetStatement.Q_TRANS:
+								if (soh.position() == soh.length()) throw
+									new java.text.ParseException("unexpected end of string", soh.position() - 1);
+								boolean ac = soh.get() == 't' ? true : false;
+								if (autoCommit != ac) {
+									autoCommit = ac;
+									addWarning("Server auto commit state " +
+											"differs from local state.  " +
+											"Adjusted auto commit to " +
+											autoCommit);
+								}
+								// note: the use of a special header
+								// here is not really clear.  Maybe
+								// ditch it and use AffectedRowsHeader
+								// (which is a superclass of
+								// AutoCommitHeader anyway).
+								hdr = new AutoCommitHeader(
+										ac
+									);
+							break;
+						}
+					} catch (java.text.ParseException e) {
+						throw new SQLException(e.getMessage() +
+							" found: '" + soh.get(e.getErrorOffset()) + "'" +
+							" in: \"" + tmpLine + "\"" +
+							" at pos: " + e.getErrorOffset());
+					}
+
 					rawr = null;
-					// hack: start of header is a header, more or less
-					linetype = MonetSocketBlockMode.HEADER;
 				} else if (linetype == MonetSocketBlockMode.HEADER) {
 					if (hdr == null) throw
 						new SQLException("Protocol violation: header sent before start of header was issued!");
@@ -1081,9 +1129,11 @@ public class MonetConnection implements Connection {
 				} else if (linetype == MonetSocketBlockMode.RESULT) {
 					// complete the header info and add to list
 					if (lastState == MonetSocketBlockMode.HEADER) {
-						hdr.complete();
-						rawr = new RawResults(size != 0 ? Math.min(size, hdr.getTupleCount()) : hdr.getTupleCount(), null, hdr.getRSType() == ResultSet.TYPE_FORWARD_ONLY);
-						hdr.addRawResults(0, rawr);
+						// we can only have a ResultSetHeader here
+						ResultSetHeader rsh = (ResultSetHeader)hdr;
+						rsh.complete();
+						rawr = new RawResults(size != 0 ? Math.min(size, rsh.tuplecount) : rsh.tuplecount, null, rsh.getRSType() == ResultSet.TYPE_FORWARD_ONLY);
+						rsh.addRawResults(0, rawr);
 						// a RawResults must be in hdr at this point!!!
 						hdrl.addHeader(hdr);
 						hdr = null;
@@ -1124,6 +1174,31 @@ public class MonetConnection implements Connection {
 		}
 		// close the header list, no more headers will follow
 		hdrl.setComplete();
+	}
+
+	/**
+	 * Returns the numeric value in the given CharBuffer.  The value is
+	 * considered to end at the end of the CharBuffer or at a space.  If
+	 * a non-numeric character is encountered a ParseException is
+	 * thrown.
+	 *
+	 * @param str CharBuffer to read from
+	 * @throws java.text.ParseException if no numeric value could be
+	 * read
+	 */
+	private int parseNumber(CharBuffer str)
+		throws java.text.ParseException
+	{
+		if (!str.hasRemaining()) throw
+			new java.text.ParseException("Unexpected end of string", str.position() - 1);
+		int tmp = MonetResultSet.getIntrinsicValue(str.get(), str.position() - 1);
+		char chr;
+		while (str.hasRemaining() && (chr = str.get()) != ' ') {
+			tmp *= 10;
+			tmp += MonetResultSet.getIntrinsicValue(chr, str.position() - 1);
+		}
+
+		return(tmp);
 	}
 
 	/**
@@ -1298,36 +1373,57 @@ public class MonetConnection implements Connection {
 	 * # varchar,  varchar # type
 	 * </pre>
 	 * (&amp;"qt" "id" "tc" "cc" "rc" "of" "ac").
-	 *
-	 * This class does not check all arguments for null, size, etc. for
-	 * performance's sake!
 	 */
-	class Header {
+	interface Header {
+		/**
+		 * Adds a header line to the underlying Header implementation.
+		 * 
+		 * @param line the header line as String
+		 * @throws SQLException if the header line is invalid, or header
+		 *         lines are not allowed.
+		 */
+		public abstract void addHeader(String line) throws SQLException;
+
+		/**
+		 * Indicates that no more header lines will be added to this
+		 * Header implementation.
+		 * 
+		 * @throws SQLException if the contents of the Header is not
+		 *         consistent or sufficient.
+		 */
+		public abstract void complete() throws SQLException;
+
+		/**
+		 * Instructs the Header implementation to close and do the
+		 * necessary clean up procedures.
+		 *
+		 * @throws SQLException
+		 */
+		public abstract void close();
+	}
+
+	class ResultSetHeader implements Header {
 		/** The number of columns in this result */
-		private int columncount;
-		/** The names of the columns in this result */
-		private String[] name;
-		/** The types of the columns in this result */
-		private String[] type;
+		public final int columncount;
 		/** The total number of rows this result set has */
-		private int tuplecount;
+		public final int tuplecount;
 		/** The number of rows that will follow the header */
 		private int rowcount;
 		/** The number of rows from the start of the result set that are
 		 *  left out */
 		private int offset;
-		/** Whether the connection is in auto commit mode or not */
-		private boolean autocommit;
 		/** The table ID of this result */
-		private int id;
-		/** The query type of this `result' */
-		private int queryType;
-		/** The query sequence number */
-		private final int seqnr;
+		public final int id;
+		/** The names of the columns in this result */
+		private String[] name;
+		/** The types of the columns in this result */
+		private String[] type;
 		/** The max string length for each column in this result */
 		private int[] columnLengths;
 		/** The table for each column in this result */
 		private String[] tableNames;
+		/** The query sequence number */
+		private final int seqnr;
 		/** A Map of result blocks (chunks of size fetchSize/cacheSize) */
 		private Map resultBlocks;
 
@@ -1358,10 +1454,20 @@ public class MonetConnection implements Connection {
 		/** the offset to be used on Xexport queries */
 		private int blockOffset = 0;
 
+		private final static int NAMES	= 0;
+		private final static int TYPES	= 1;
+		private final static int TABLES	= 2;
+		private final static int LENS	= 3;
+
 
 		/**
-		 * Sole constructor, which requires a CacheThread parent to be given.
+		 * Sole constructor, which requires a MonetConnection parent to
+		 * be given.
 		 *
+		 * @param id the ID of the result set
+		 * @param tuplecount the total number of tuples in the result set
+		 * @param columncount the number of columns in the result set
+		 * @param rowcount the number of rows in the current block
 		 * @param parent the CacheThread that created this Header and will
 		 *               supply new result blocks
 		 * @param cs the cache size to use
@@ -1370,9 +1476,12 @@ public class MonetConnection implements Connection {
 		 * @param rsc the ResultSet concurrency to use
 		 * @param seq the query sequence number
 		 */
-		Header(
+		ResultSetHeader(
+			int id,
+			int tuplecount,
+			int columncount,
+			int rowcount,
 			MonetConnection parent,
-			String sohline,
 			int cs,
 			int mr,
 			int rst,
@@ -1397,45 +1506,13 @@ public class MonetConnection implements Connection {
 			closed = false;
 			destroyOnClose = false;
 
-			// parse the start of header line
-			CharBuffer soh = CharBuffer.wrap(sohline);
-			soh.get();	// skip the &
-			try {
-				queryType = parseNumber(soh);	isSet[4] = true;
-				id = parseNumber(soh);			isSet[3] = true;
-				tuplecount = parseNumber(soh);	isSet[2] = true;
-				columncount = parseNumber(soh);
-				rowcount = parseNumber(soh);
-
+			this.id = id;
+			this.tuplecount = tuplecount;
+			this.columncount = columncount;
+			this.rowcount = rowcount;
 	/* not in use for now
-				offset = parseNumber(soh);
-
-				// auto commit
-				if (soh.position() == soh.length()) throw
-					new java.text.ParseException("unexpected end of string", soh.position() - 1);
-				autocommit = soh.get() == 't' ? true : false;
+			this.offset = offset;
 	*/
-			} catch (java.text.ParseException e) {
-				throw new SQLException(e.getMessage() +
-						" found: '" + soh.get(e.getErrorOffset()) + "'" +
-						" in: \"" + sohline + "\"" +
-						" at pos: " + e.getErrorOffset());
-			}
-		}
-
-		private int parseNumber(CharBuffer str)
-			throws java.text.ParseException
-		{
-			if (!str.hasRemaining()) throw
-				new java.text.ParseException("Unexpected end of string", str.position() - 1);
-			int tmp = MonetResultSet.getIntrinsicValue(str.get(), str.position() - 1);
-			char chr;
-			while (str.hasRemaining() && (chr = str.get()) != ' ') {
-				tmp *= 10;
-				tmp += MonetResultSet.getIntrinsicValue(chr, str.position() - 1);
-			}
-
-			return(tmp);
 		}
 
 		/**
@@ -1445,7 +1522,7 @@ public class MonetConnection implements Connection {
 		 * @param tmpLine the string that contains the header
 		 * @throws SQLException if the header cannot be parsed or is unknown
 		 */
-		void addHeader(String tmpLine) throws SQLException {
+		public void addHeader(String tmpLine) throws SQLException {
 			int len = tmpLine.length();
 			char[] chrLine = new char[len];
 			tmpLine.getChars(0, len, chrLine, 0);
@@ -1496,31 +1573,11 @@ public class MonetConnection implements Connection {
 								(new String(chrLine, pos, len - pos)));
 					}
 				break;
-				case 'i':
-					if (len - pos == 2 &&
-							chrLine[pos + 1] == 'd')
-					{
-						setID(getValue(chrLine, 2, pos - 3));
-					} else {
-						throw new SQLException("Unknown header: " +
-								(new String(chrLine, pos, len - pos)));
-					}
-				break;
 				case 'l':
 					if (len - pos == 6 &&
 							tmpLine.regionMatches(pos + 1, "length", 1, 5))
 					{
-						setColumnLengths(getValues(chrLine, 2, pos - 3));
-					} else {
-						throw new SQLException("Unknown header: " +
-								(new String(chrLine, pos, len - pos)));
-					}
-				break;
-				case 'q':
-					if (len - pos == 9 &&
-							tmpLine.regionMatches(pos + 1, "querytype", 1, 8))
-					{
-						setQueryType(getValue(chrLine, 2, pos - 3));
+						setColumnLengths(getIntValues(chrLine, 2, pos - 3));
 					} else {
 						throw new SQLException("Unknown header: " +
 								(new String(chrLine, pos, len - pos)));
@@ -1535,10 +1592,6 @@ public class MonetConnection implements Connection {
 							tmpLine.regionMatches(pos + 1, "table_name", 1, 9))
 					{
 						setTableNames(getValues(chrLine, 2, pos - 3));
-					} else if (len - pos == 10 &&
-							tmpLine.regionMatches(pos + 1, "tuplecount", 1, 9))
-					{
-						setTupleCount(getValue(chrLine, 2, pos - 3));
 					} else {
 						throw new SQLException("Unknown header: " +
 								(new String(chrLine, pos, len - pos)));
@@ -1557,41 +1610,62 @@ public class MonetConnection implements Connection {
 		 * @return an array of Strings
 		 */
 		final private String[] getValues(char[] chrLine, int start, int stop) {
-			int elem = 0, capacity = 25;
-			String[] values = new String[capacity];	// first guess
+			int elem = 0;
+			String[] values = new String[columncount];
 			
 			for (int i = start; i < stop; i++) {
 				if (chrLine[i] == '\t' && chrLine[i - 1] == ',') {
-					if (elem == capacity) {
-						// increase the capacity, assume it's now or never
-						capacity *= 10;
-						String[] tmp = new String[capacity];
-						for (int j = 0; j < elem; j++) tmp[j] = values[j];
-						values = tmp;
-					}
 					values[elem++] =
 						new String(chrLine, start, i - 1 - start);
 					start = i + 1;
 				}
 			}
 			// at the left over part
-			if (elem == capacity) {
-				// increase the capacity just with one
-				capacity++;
-				String[] tmp = new String[capacity];
-				for (int j = 0; j < elem; j++) tmp[j] = values[j];
-				values = tmp;
-			}
 			values[elem++] = new String(chrLine, start, stop - start);
 
-			// if the array is already to the ideal size, return it
-			// straight away
-			if (capacity == elem) return(values);
-			
-			// otherwise truncate the array to it's real size
-			String[] ret = new String[elem];
-			for (int i = 0; i < elem; i++) ret[i] = values[i];
-			return(ret);
+			return(values);
+		}
+
+		/**
+		 * Returns an array of ints containing the values between
+		 * ',\t' separators.
+		 *
+		 * @param chrLine a character array holding the input data
+		 * @param start where the relevant data starts
+		 * @param stop where the relevant data stops
+		 * @return an array of ints
+		 */
+		final private int[] getIntValues(
+				char[] chrLine,
+				int start,
+				int stop
+			) throws SQLException
+		{
+			int elem = 0;
+			int tmp = 0;
+			int[] values = new int[columncount];
+
+			try {
+				for (int i = start; i < stop; i++) {
+					if (chrLine[i] == ',' && chrLine[i + 1] == '\t') {
+						values[elem++] = tmp;
+						tmp = 0;
+						start = ++i;
+					} else {
+						tmp *= 10;
+						tmp += MonetResultSet.getIntrinsicValue(chrLine[i], i);
+					}
+				}
+				// at the left over part
+				values[elem++] = tmp;
+			} catch (java.text.ParseException e) {
+				throw new SQLException(e.getMessage() +
+						" found: '" + chrLine[e.getErrorOffset()] + "'" +
+						" in: " + new String(chrLine) +
+						" at pos: " + e.getErrorOffset());
+			}
+
+			return(values);
 		}
 
 		/**
@@ -1619,7 +1693,7 @@ public class MonetConnection implements Connection {
 		 */
 		private void setNames(String[] name) {
 			this.name = name;
-			isSet[0] = true;
+			isSet[NAMES] = true;
 		}
 
 		/**
@@ -1629,72 +1703,9 @@ public class MonetConnection implements Connection {
 		 */
 		private void setTypes(String[] type) {
 			this.type = type;
-			isSet[1] = true;
-		}
-
-		/**
-		 * Sets the tuplecount header and updates the bitmask
-		 *
-		 * @param tuplecount a string representing the tuple count of
-		 *                   this result
-		 * @throws SQLException if the given string is not a parseable
-		 *                      number
-		 */
-		private void setTupleCount(String tuplecount) throws SQLException {
-			try {
-				this.tuplecount = Integer.parseInt(tuplecount);
-			} catch (NumberFormatException e) {
-				throw new SQLException("tuplecount " + tuplecount + " is not a number!");
-			}
-			isSet[2] = true;
-			// The server does not save results that are smaller than the
-			// reply size, so we don't have to attempt to clean it up also.
-			if (maxRows > 0 &&
-				this.tuplecount > curReplySize) destroyOnClose = true;
+			isSet[TYPES] = true;
 		}
 		
-		/**
-		 * Sets the id header and updates the bitmask
-		 *
-		 * @param id a string representing the table id of
-		 *           this result
-		 * @throws SQLException if the given string is not a parseable
-		 *                      number
-		 */
-		void setID(String id) throws SQLException {
-			try {
-				this.id = Integer.parseInt(id);
-			} catch (NumberFormatException e) {
-				throw new SQLException("ID " + id + " is not a number!");
-			}
-			isSet[3] = true;
-		}
-
-		/**
-		 * Sets the querytype header and updates the bitmask
-		 *
-		 * @param queryType a string representing the query type of
-		 *                  this `result'
-		 * @throws SQLException if the given string is not a parseable
-		 *                      number
-		 */
-		void setQueryType(String queryType) throws SQLException {
-			try {
-				this.queryType = Integer.parseInt(queryType);
-			} catch (NumberFormatException e) {
-				throw new SQLException("QueryType " + queryType + " is not a number!");
-			}
-			/* transaction statements invalidate auto_commit state */
-			if (autoCommit == true && this.queryType == MonetStatement.Q_TRANS) {
-				autoCommit = false;
-				addWarning("Encountered transaction statement (COMMIT " +
-						"ROLLBACK, or START TRANSACTION?) during " +
-						"auto_commit mode.  " +
-						"Setting auto_commit to false.");
-			}
-			isSet[4] = true;
-		}
-
 		/**
 		 * Sets the table_name header and updates the bitmask
 		 *
@@ -1702,27 +1713,17 @@ public class MonetConnection implements Connection {
 		 */
 		private void setTableNames(String[] name) {
 			this.tableNames = name;
-			isSet[5] = true;
+			isSet[TABLES] = true;
 		}
 
 		/**
 		 * Sets the length header and updates the bitmask
 		 *
-		 * @param len an array of Strings holding the column lengths
+		 * @param len an array of ints holding the column lengths
 		 */
-		private void setColumnLengths(String[] len) {
-			// convert each string to an int
-			this.columnLengths = new int[len.length];
-			for (int i = 0; i < len.length; i++) {
-				this.columnLengths[i] = 0;
-				try {
-					this.columnLengths[i] = Integer.parseInt(len[i]);
-				} catch (NumberFormatException e) {
-					// too bad
-				}
-			}
-
-			isSet[6] = true;
+		private void setColumnLengths(int[] len) {
+			this.columnLengths = len;
+			isSet[LENS] = true;
 		}
 
 		/**
@@ -1743,58 +1744,28 @@ public class MonetConnection implements Connection {
 		 * @throws SQLException if the data currently in this Header is not
 		 *                      sufficient to be consistant
 		 */
-		void complete() throws SQLException {
-			if (isSet[0] || isSet[1] || isSet[2] || isSet[3] ||
-				isSet[4] || isSet[5] || isSet[6]
-			) {
-				String error = "";
-				if (!isSet[4]) error += "querytype header missing\n";
-				if (
-						queryType == MonetStatement.Q_TABLE ||
-						queryType == MonetStatement.Q_PREPARE
-				) {
-					if (!isSet[0]) error += "name header missing\n";
-					if (!isSet[1]) error += "type header missing\n";
-					if (!isSet[5]) error += "table name header missing\n";
-					if (!isSet[6]) error += "column width header missing\n";
-					if (!isSet[2]) error += "tuplecount header missing\n";
-					if (!isSet[3]) error += "id header missing\n";
-					if (isSet[0] && isSet[1] && isSet[5] && isSet[6]) {
-						int cols = name.length;
-						if (
-								cols != type.length ||
-								cols != tableNames.length ||
-								cols != columnLengths.length
-						) {
-							error += "name (" + cols + "), type (" + type.length + "), table (" + tableNames.length + ") and length (" + columnLengths.length + ") do not have the same number of columns\n";
-						}
-					}
-				} else if (
-					queryType == MonetStatement.Q_UPDATE ||
-					queryType == MonetStatement.Q_TRANS
-				) {
-					// update count has one result: the count
-					tuplecount = 1;
-				}
-				if (error != "") throw new SQLException(error);
+		public void complete() throws SQLException {
+			String error = "";
+			if (!isSet[NAMES]) error += "name header missing\n";
+			if (!isSet[TYPES]) error += "type header missing\n";
+			if (!isSet[TABLES]) error += "table name header missing\n";
+			if (!isSet[LENS]) error += "column width header missing\n";
+			if (error != "") throw new SQLException(error);
 
-				if (maxRows != 0)
-					tuplecount = Math.min(tuplecount, maxRows);
+			/* disabled. TODO: needs attention with rowcount and stuff
+			if (maxRows != 0)
+				tuplecount = Math.min(tuplecount, maxRows);
+			*/
+			addWarning("TODO: maxRows ignored");
 
-				// make sure the cache size is minimal to
-				// reduce overhead and memory usage
-				if (cacheSize == 0) {
-					cacheSize = tuplecount;
-				} else {
-					cacheSize = Math.min(tuplecount, cacheSize);
-				}
+			// make sure the cache size is minimal to
+			// reduce overhead and memory usage
+			if (cacheSize == 0) {
+				cacheSize = tuplecount;
 			} else {
-				// a no header query (sigh, yes that can happen)
-				// make sure there is NO RawResults
-				resultBlocks.clear();
+				cacheSize = Math.min(tuplecount, cacheSize);
 			}
 		}
-
 
 		/**
 		 * Returns the names of the columns
@@ -1812,33 +1783,6 @@ public class MonetConnection implements Connection {
 		 */
 		String[] getTypes() {
 			return(type);
-		}
-
-		/**
-		 * Returns the number of results for this result
-		 *
-		 * @return the number of results for this result
-		 */
-		int getTupleCount() {
-			return(tuplecount);
-		}
-
-		/**
-		 * Returns the table id for this result
-		 *
-		 * @return the table id for this result
-		 */
-		int getID() {
-			return(id);
-		}
-
-		/**
-		 * Returns the query type for this `result'
-		 *
-		 * @return the query type for this `result'
-		 */
-		int getQueryType() {
-			return(queryType);
 		}
 
 		/**
@@ -1975,7 +1919,7 @@ public class MonetConnection implements Connection {
 		 * Closes this Header by sending an Xclose to the server indicating
 		 * that the result can be closed at the server side as well.
 		 */
-		void close() {
+		public void close() {
 			if (closed) return;
 			try {
 				// send command to server indicating we're done with this
@@ -2007,6 +1951,47 @@ public class MonetConnection implements Connection {
 		protected void finalize() throws Throwable {
 			close();
 			super.finalize();
+		}
+	}
+
+	/**
+	 * The AffectedRowsHeader represents an update or schema message.
+	 * It keeps an additional count field that represents the affected
+	 * rows for update statements, and a success flag (negative numbers,
+	 * actually) for schema messages.
+	 */
+	class AffectedRowsHeader implements Header {
+		public final int count;
+		
+		public AffectedRowsHeader(int cnt) {
+			// fill the blank final
+			this.count = cnt;
+		}
+
+		public void addHeader(String line) throws SQLException {
+			throw new SQLException("Header lines are not supported for a AffectedRowsHeader");
+		}
+
+		public void complete() {
+			// we're empty, because we don't need to check anything...
+		}
+
+		public void close() {
+			// nothing to do here...
+		}
+	}
+
+	/**
+	 * The AutoCommitHeader represents a transaction message.  It stores
+	 * (a change in) the server side auto commit mode.
+	 */
+	class AutoCommitHeader extends AffectedRowsHeader {
+		public final boolean autocommit;
+		
+		public AutoCommitHeader(boolean ac) {
+			super(Statement.SUCCESS_NO_INFO);
+			// fill the blank final
+			this.autocommit = ac;
 		}
 	}
 

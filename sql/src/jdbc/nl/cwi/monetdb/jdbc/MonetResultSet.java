@@ -56,7 +56,7 @@ public class MonetResultSet implements ResultSet {
 
 	// a blank final is immutable once assigned in the constructor
 	/** A Header to retrieve lines from */
-	private final MonetConnection.Header header;
+	private final MonetConnection.ResultSetHeader header;
 	/** The names of the columns in this ResultSet */
 	private final String[] columns;
 	/** The MonetDB types of the columns in this ResultSet */
@@ -81,17 +81,13 @@ public class MonetResultSet implements ResultSet {
 	 *
 	 * @param statement the statement which created this ResultSet
 	 * @param header a header containing the query, resultset type, etc.
-	 * @throws IllegalArgumentException if the given arguments are incorrect
 	 * @throws SQLException is a protocol error occurs
 	 */
 	MonetResultSet(
 		Statement statement,
-		MonetConnection.Header header)
-		throws IllegalArgumentException, SQLException
+		MonetConnection.ResultSetHeader header)
+		throws SQLException
 	{
-		if (header == null)
-			throw new IllegalArgumentException("Header is null!");
-
 		this.statement = statement;
 		this.header = header;
 		this.type = header.getRSType();
@@ -103,8 +99,8 @@ public class MonetResultSet implements ResultSet {
 		// if an error occurred for this query
 		columns = header.getNames();
 		types = header.getTypes();
-		tableID = "" + header.getID();
-		tupleCount = header.getTupleCount();
+		tableID = "" + header.id;
+		tupleCount = header.tuplecount;
 
 		// create result array
 		result = new String[columns.length];

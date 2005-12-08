@@ -524,13 +524,9 @@ public class MonetStatement implements Statement {
 		// we default to keep current result, which requires no action
 		header = lastHeaderList.getNextHeader();
 
-		if (header != null &&
-				(header.getQueryType() == Q_TABLE ||
-				 header.getQueryType() == Q_PREPARE))
-		{
+		if (header instanceof MonetConnection.ResultSetHeader) {
 			return(true);
 		} else {
-			// no resultset, or update header
 			return(false);
 		}
 	}
@@ -546,19 +542,16 @@ public class MonetStatement implements Statement {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public ResultSet getResultSet() throws SQLException{
-		if (header == null || !
-				(header.getQueryType() == Q_TABLE ||
-				 header.getQueryType() == Q_PREPARE))
+		if (header instanceof MonetConnection.ResultSetHeader) {
+			return(
+				new MonetResultSet(
+					this,
+					(MonetConnection.ResultSetHeader)header
+				)
+			);
+		} else {
 			return(null);
-
-		try {
-			return(new MonetResultSet(
-						this,
-						header));
-		} catch (IllegalArgumentException e) {
-			throw new SQLException(e.toString());
 		}
-		// don't catch SQLException, it is declared to be thrown
 	}
 
 	/**
@@ -595,23 +588,9 @@ public class MonetStatement implements Statement {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public int getUpdateCount() throws SQLException {
-		if (header == null) return(-1);
-
 		int ret = -1;
-		if (header.getQueryType() == Q_UPDATE) {
-			String tmpLine = header.getLine(0);
-			try {
-				if (tmpLine == null) throw new NumberFormatException("");
-				ret = Integer.parseInt(tmpLine.substring(1, tmpLine.length() - 1).trim());
-			} catch (NumberFormatException e) {
-				throw new SQLException("Server sent unparsable update count: " + tmpLine + " (" + e.getMessage() + ")");
-			}
-			// close the header, we got all it's information by now
-			header.close();
-		} else if (header.getQueryType() == Q_SCHEMA) {
-			// this is an create, drop, alter
-			// send special value for success with no additional info
-			ret = SUCCESS_NO_INFO;
+		if (header instanceof MonetConnection.AffectedRowsHeader) {
+			ret = ((MonetConnection.AffectedRowsHeader)header).count;
 		}
 
 		return(ret);
