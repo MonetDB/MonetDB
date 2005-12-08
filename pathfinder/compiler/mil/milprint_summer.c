@@ -4218,18 +4218,19 @@ string_value (opt_t *f, int code, char *kind)
                 "var t_frag := res_scj.fetch(2);\n" /* CONST? */
                 "res_scj := nil;\n"
                 /* get the string values of the text nodes */
-                "item_str := mposjoin(mposjoin(t_item, t_frag, ws.fetch(PRE_PROP)), "
+                "var t_item_str := mposjoin(mposjoin(t_item, t_frag, ws.fetch(PRE_PROP)), "
                                      "mposjoin(t_item, t_frag, ws.fetch(PRE_FRAG)), "
                                      "ws.fetch(PROP_TEXT));\n"
                 "t_frag := nil;\n"
                 /* for the result of the scj join with the string values */
-                "var iter_item := t_iter.materialize(t_item).reverse().leftfetchjoin(item_str).chk_order();\n"
-                "t_item := nil;\n"
-                "item_str := nil;\n");
-    milprintf(f,
-                " { var item_unq := iter_item.reverse().tunique();\n"
-                "   if (item_unq.count() != iter_item.count())\n"
-                "     iter_item := iter_item.string_join(item_unq.project(\"\"));\n}\n");
+                "var t_iter_unq := t_iter.tunique();\n"
+                "if (t_iter_unq.count() != t_item.count()) {\n"
+                "    var iter_item := t_iter.materialize(t_item).reverse().leftfetchjoin(t_item_str).chk_order();\n"
+                "    iter_item := iter_item.string_join(t_iter_unq.project(\"\"));\n"
+                "    t_iter := iter_item.hmark(0@0);\n"
+                "    t_item_str := iter_item.tmark(0@0);\n"
+                "}\n"
+                "t_iter_unq := nil;\n");
 
     milprintf(f,
                 "t_iter := iter_item.hmark(0@0);\n"
