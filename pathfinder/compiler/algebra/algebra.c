@@ -679,6 +679,7 @@ PFatt_str (PFalg_att_t att) {
             PFoops (OOPS_FATAL,
                     "unknown attribute name");
     }
+    return NULL;
 }
 
 /* vim:set shiftwidth=4 expandtab: */
