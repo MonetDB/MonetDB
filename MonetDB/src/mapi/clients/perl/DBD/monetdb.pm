@@ -167,7 +167,13 @@ sub commit {
         warn 'Commit ineffective while AutoCommit is on' if $dbh->FETCH('Warn');
         return 0;
     }
-    return $dbh->do($dbh->{monetdb_language} ne 'sql' ? 'commit();' : 'commit');
+    if ($dbh->{monetdb_language} eq 'sql') {
+        return $dbh->do('commit')
+            && $dbh->do('start transaction');
+    }
+    else {
+        return $dbh->do('commit();');
+    }
 }
 
 
@@ -178,7 +184,13 @@ sub rollback {
         warn 'Rollback ineffective while AutoCommit is on' if $dbh->FETCH('Warn');
         return 0;
     }
-    return $dbh->do($dbh->{monetdb_language} ne 'sql' ? 'abort();' : 'rollback');
+    if ($dbh->{monetdb_language} eq 'sql') {
+        return $dbh->do('rollback')
+            && $dbh->do('start transaction');
+    }
+    else {
+        return $dbh->do('abort();');
+    }
 }
 
 
@@ -487,11 +499,17 @@ sub STORE {
     my ($dbh, $key, $value) = @_;
 
     if ($key eq 'AutoCommit') {
-        if ($value != ($dbh->{$key} || 0) && $dbh->{monetdb_language} eq 'sql') {
-            $dbh->do('set auto_commit = ' . ( $value ? 'true' : 'false') )
+        return 1 if $dbh->{monetdb_language} ne 'sql';
+        my $old_value = $dbh->{$key};
+        if ($value && defined $old_value && !$old_value) {
+            $dbh->do('commit')
                 or return $dbh->set_err($dbh->err, $dbh->errstr);
-            $dbh->{$key} = $value;
         }
+        elsif (!$value && (!defined $old_value || $old_value)) {
+            $dbh->do('start transaction')
+                or return $dbh->set_err($dbh->err, $dbh->errstr);
+        }
+        $dbh->{$key} = $value;
         return 1;
     }
     elsif ($key =~ /^monetdb_/) {
