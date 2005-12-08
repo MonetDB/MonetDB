@@ -91,7 +91,7 @@ comment "Get a split-up of how much memory
 @-
 Some explanation of what mem_usage() and vm_usage() display:
 @verbatim
-> mem_usage.print;
+> m:= status.mem_usage(); io.print(m);
 #------------------------------#
 # BAT:                 tmp_42  #
 # (str)                (lng)   #
@@ -114,7 +114,7 @@ Some explanation of what mem_usage() and vm_usage() display:
 [ "_tot/mem",          3157314 ] total RAM+swap-file consumption
 
 >
-> vm_usage.print;
+> v:= status.vm_usage(); io.print(v);
 #------------------------------#
 # BAT:               tmp_42    #
 # (str)              (lng)     #

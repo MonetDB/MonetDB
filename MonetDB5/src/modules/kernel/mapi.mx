@@ -806,7 +806,6 @@ stream_read_until(str *res, stream *S, str stop)
 	return GDK_SUCCEED;
 }
 
-@}
 @- Wrappers
 The Monet Version 5 wrappers are collected here
 @c
@@ -971,3 +970,4 @@ MAPIclient(int *res, stream **In, stream **Out)
 	scheduleClient(name, bs, fdout);
 	return MAL_SUCCEED;
 }
+@}
