@@ -254,7 +254,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     STOP_POINT(1);
     
-    tm_first = tm = PFtimer_start ();
+    tm = PFtimer_start ();
     module_base = PFparse_modules (proot);
     tm = PFtimer_stop (tm);
 
@@ -371,7 +371,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     if (status->summer_branch) {
         char *prologue = NULL, *query = NULL, *epilogue = NULL;
         tm = PFtimer_start ();
-        if (PFprintMILtemp (croot, status->optimize, module_base, -1, status->genType, status->timing?(tm_first|1):0, 
+        if (PFprintMILtemp (croot, status->optimize, module_base, -1, status->genType, tm_first, 
                             &prologue, &query, &epilogue))
             goto failure;
         fputs(prologue, pfout);
