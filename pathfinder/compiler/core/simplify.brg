@@ -395,6 +395,20 @@ reduce (PFcnode_t *p, int goalnt)
         PFsimplify_kids (p, rule, kids);
 
         switch (rule) {
+
+            /* Query:              main (FunctionDecls, CoreExpr) */
+            case 1:
+                manual = true;
+
+                /*
+                 * Look at query body first, then at function declarations.
+                 * This way we make sure that the expansion of let statements
+                 * also considers function declarations.
+                 */
+                reduce (kids[1], nts[1]);
+                reduce (kids[0], nts[0]);
+                break;
+
             /* CoreExpr:           for_ (forbind (forvars (var, nil),
                                                   LiteralValue),
                                          CoreExpr) */
@@ -510,6 +524,36 @@ reduce (PFcnode_t *p, int goalnt)
                 *p = *L(p);
                 rewrite_again = true;
                 break;
+
+
+            /* CoreExpr:           apply (arg (Atom,
+                                               arg (Atom,
+                                                    arg (Atom,
+                                                         FunctionArgs)))) */
+            case 47:
+                /*
+                 * There's exactly one function defined with an arbitrary
+                 * number of arguments: fn:concat(). We normalize it here
+                 * to subsequent calls with just two arguments.
+                 */
+                if (! PFqname_eq (p->sem.fun->qname,
+                                  PFqname (PFns_fn, "concat"))) {
+
+                    PFvar_t *v = new_var (NULL);
+                    PFfun_t *fn_concat = function (PFqname (PFns_fn, "concat"));
+
+                    *p = *let (
+                            letbind (
+                                var (v),
+                                apply (fn_concat,
+                                       arg (LL(p), arg (LRL(p), nil ())))),
+                            apply (fn_concat, arg (var (v), LRR(p))));
+                    relabel (p, kids);
+                    rewrite_again = true;
+                }
+                break;
+
+
 
             /* Atom:                var */
             case 57:
