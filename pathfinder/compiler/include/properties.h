@@ -81,15 +81,9 @@ PFalg_att_t PFprop_const_at (PFprop_t *prop, unsigned int i);
 PFalg_atom_t PFprop_const_val_at (PFprop_t *prop, unsigned int i);
 
 /**
- * Return number of icols attributes.
+ * Return icols attributes as an attlist.
  */
-unsigned int PFprop_icols_count (const PFprop_t *prop);
-
-/**
- * Return name of icols attribute number @a i (in container @a prop).
- * (Needed, e.g., to iterate over icols columns.)
- */
-PFalg_att_t PFprop_icols_at (PFprop_t *prop, unsigned int i);
+PFalg_attlist_t PFprop_icols_to_attlist (const PFprop_t *prop);
 
 /**
  * Infer properties of a logical algebra subtree

@@ -130,25 +130,39 @@ typedef struct PFalg_tuple_t PFalg_tuple_t;
 
 /** An attribute (name) is represented by an enum */
 enum PFalg_att_t {
-      att_NULL = 0    /**< cope with empty partions */
-    , att_iter        /**< iter column */
-    , att_item        /**< item column */ 
-    , att_pos         /**< pos column */  
-    , att_res         /**< res column */
-    , att_ord         /**< ord column */
-    , att_inner       /**< inner column */
-    , att_outer       /**< outer column */
-    , att_iter1       /**< iter1 column */
-    , att_pos1        /**< pos1 column */
-    , att_item1       /**< item1 column */
-    , att_res1        /**< res1 column */
-    , att_cast        /**< cast column */
-    , att_subty       /**< subty column */
-    , att_itemty      /**< itemty column */
-    , att_notsub      /**< notsub column */
-    , att_isint       /**< isint column */
-    , att_isdec       /**< isdec column */
-    , att_sort        /**< sort column */
+      att_NULL    = 0x00000000    /**< cope with empty partions */
+    , att_iter    = 0x00000001    /**< iter column */
+    , att_item    = 0x00000002    /**< item column */ 
+    , att_pos     = 0x00000004    /**< pos column */  
+    , att_iter1   = 0x00000008    /**< iter1 column */
+    , att_item1   = 0x00000010    /**< item1 column */
+    , att_pos1    = 0x00000020    /**< pos1 column */
+    , att_inner   = 0x00000040    /**< inner column */
+    , att_outer   = 0x00000080    /**< outer column */
+    , att_sort    = 0x00000100    /**< sort column */
+    , att_sort1   = 0x00000200    /**< sort column 1 */
+    , att_sort2   = 0x00000400    /**< sort column 2 */
+    , att_sort3   = 0x00000800    /**< sort column 3 */
+    , att_sort4   = 0x00001000    /**< sort column 4 */
+    , att_sort5   = 0x00002000    /**< sort column 5 */
+    , att_sort6   = 0x00004000    /**< sort column 6 */
+    , att_sort7   = 0x00008000    /**< sort column 7 */
+    , att_sort8   = 0x00010000    /**< sort column 8 */
+    , att_sort9   = 0x00020000    /**< sort column 9 */
+    , att_sort10  = 0x00040000    /**< sort column 10 */
+    , att_sort11  = 0x00080000    /**< sort column 11 */
+    , att_sort12  = 0x00100000    /**< sort column 12 */
+    , att_sort13  = 0x00200000    /**< sort column 13 */
+    , att_sort14  = 0x00400000    /**< sort column 14 */
+    , att_res     = 0x00800000    /**< res column */
+    , att_ord     = 0x01000000    /**< ord column */
+    , att_res1    = 0x02000000    /**< res1 column */
+    , att_cast    = 0x04000000    /**< cast column */
+    , att_subty   = 0x08000000    /**< subty column */
+    , att_itemty  = 0x10000000    /**< itemty column */
+    , att_notsub  = 0x20000000    /**< notsub column */
+    , att_isint   = 0x40000000    /**< isint column */
+    , att_isdec   = 0x80000000    /**< isdec column */
 };
 /** attribute names */
 typedef enum PFalg_att_t PFalg_att_t;

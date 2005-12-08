@@ -636,33 +636,49 @@ int PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
     return 0; /* pacify picky compilers */
 }
 
-static char *name[] = {
-      [att_NULL]        = "(NULL)"
-    , [att_iter]        = "iter"
-    , [att_item]        = "item" 
-    , [att_pos]         = "pos"  
-    , [att_res]         = "res"
-    , [att_ord]         = "ord"
-    , [att_inner]       = "inner"
-    , [att_outer]       = "outer"
-    , [att_iter1]       = "iter1"
-    , [att_pos1]        = "pos1"
-    , [att_item1]       = "item1"
-    , [att_res1]        = "res1"
-    , [att_cast]        = "cast"
-    , [att_subty]       = "subty"
-    , [att_itemty]      = "itemty"
-    , [att_notsub]      = "notsub"
-    , [att_isint]       = "isint"
-    , [att_isdec]       = "isdec"
-    , [att_sort]        = "sort"
-};
 /**
  * Print attribute name
  */
 char *
 PFatt_str (PFalg_att_t att) {
-    return name[att];
+    switch (att) {
+        case att_NULL:    return "(NULL)";
+        case att_iter:    return "iter";
+        case att_item:    return "item";
+        case att_pos:     return "pos"; 
+        case att_iter1:   return "iter1";
+        case att_item1:   return "item1";
+        case att_pos1:    return "pos1";
+        case att_inner:   return "inner";
+        case att_outer:   return "outer";
+        case att_sort:    return "sort";
+        case att_sort1:   return "sort1";
+        case att_sort2:   return "sort2";
+        case att_sort3:   return "sort3";
+        case att_sort4:   return "sort4";
+        case att_sort5:   return "sort5";
+        case att_sort6:   return "sort6";
+        case att_sort7:   return "sort7";
+        case att_sort8:   return "sort8";
+        case att_sort9:   return "sort9";
+        case att_sort10:  return "sort10";
+        case att_sort11:  return "sort11";
+        case att_sort12:  return "sort12";
+        case att_sort13:  return "sort13";
+        case att_sort14:  return "sort14";
+        case att_res:     return "res";
+        case att_ord:     return "ord";
+        case att_res1:    return "res1";
+        case att_cast:    return "cast";
+        case att_subty:   return "subty";
+        case att_itemty:  return "itemty";
+        case att_notsub:  return "notsub";
+        case att_isint:   return "isint";
+        case att_isdec:   return "isdec";
+        default:
+            PFoops (OOPS_FATAL,
+                    "unknown attribute name");
+    }
 }
 
 /* vim:set shiftwidth=4 expandtab: */

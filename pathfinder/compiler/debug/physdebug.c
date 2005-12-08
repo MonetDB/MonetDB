@@ -506,6 +506,8 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
             {
                 if (n->prop)
                 {
+                    PFalg_attlist_t icols = PFprop_icols_to_attlist (n->prop);
+
                     /* list costs if requested */
                     PFarray_printf (dot, "\\ncost: %lu", n->cost);
 
@@ -516,11 +518,9 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
                                         PFatt_str (
                                             PFprop_const_at (n->prop, i)));
                     /* list icols attributes */
-                    for (unsigned int i = 0;
-                            i < PFprop_icols_count (n->prop); i++)
+                    for (unsigned int i = 0; i < icols.count; i++)
                         PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
-                                        PFatt_str (
-                                            PFprop_icols_at (n->prop, i)));
+                                        PFatt_str (icols.atts[i]));
                     /* list orderings if requested */
                     PFarray_printf (dot, "\\norderings:");
                     for (unsigned int i = 0;
@@ -557,12 +557,14 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
 
                 /* list icols attributes if requested */
                 case 'i':
-                    if (n->prop)
+                    if (n->prop) {
+                        PFalg_attlist_t icols =
+                                        PFprop_icols_to_attlist (n->prop);
                         for (unsigned int i = 0;
-                                i < PFprop_icols_count (n->prop); i++)
+                                i < icols.count; i++)
                             PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
-                                            PFatt_str (
-                                                PFprop_icols_at (n->prop, i)));
+                                            PFatt_str (icols.atts[i]));
+                    }
                     break;
 
                 /* list orderings if requested */
