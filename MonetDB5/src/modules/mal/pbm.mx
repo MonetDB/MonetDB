@@ -173,6 +173,16 @@ comment "Obtain the oid range for a partition";
 command compress(grp:str):void
 address PBMcompress
 comment "Compress the group to remove oid holes";
+@-
+Some of the BAT operations are overloaded here, because their
+implementation in the code makes more sense.
+@mal
+command setWriteMode(nme:str):bat[:any_1,:any_2]
+address PBMdummy
+comment "Perform mode change for all components of the partitioned BAT";
+command setReadMode(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
+address PBMdummy
+comment "Perform mode change for all components of the partitioned BAT";
 
 command dump()
 address PBMdump;
