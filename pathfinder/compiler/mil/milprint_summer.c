@@ -4200,8 +4200,9 @@ string_value (opt_t *f, int code, char *kind)
                 "t_frag := nil;\n"
                 /* for the result of the scj join with the string values */
                 "var t_iter_unq := t_iter.tunique();\n"
+                "t_iter := t_iter.materialize(t_item);\n"
                 "if (t_iter_unq.count() != t_item.count()) {\n"
-                "    var iter_item := t_iter.materialize(t_item).reverse().leftfetchjoin(t_item_str).chk_order();\n"
+                "    var iter_item := t_iter.reverse().leftfetchjoin(t_item_str).chk_order();\n"
                 "    iter_item := iter_item.string_join(t_iter_unq.project(\"\"));\n"
                 "    t_iter := iter_item.hmark(0@0);\n"
                 "    t_item_str := iter_item.tmark(0@0);\n"
