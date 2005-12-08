@@ -1404,7 +1404,7 @@ if ( !createWsContext(ctx,ws,-1,mode) )
     return GDK_FAIL;
 
 /* loop over the iterations (usually only 1) */
-for(yy=0; yy<niters; yy++) {
+for(yy=0; yy<niters; yy++, curcnt += buncnt) {
     oid it = *(oid*) BUNhead(loop, BUNptr(loop, BUNindex(loop, BUNfirst(loop))+yy));
     BUN p, q;
     ptr res;
