@@ -4233,8 +4233,6 @@ string_value (opt_t *f, int code, char *kind)
                 "t_iter_unq := nil;\n");
 
     milprintf(f,
-                "t_iter := iter_item.hmark(0@0);\n"
-                "var t_item_str := iter_item.tmark(0@0);\n"
                 /* get the string value of all comment nodes */
                 "var c_map := mposjoin (item, frag, ws.fetch (PRE_KIND))"
                                   ".select(COMMENT).hmark(0@0);\n"
