@@ -860,6 +860,7 @@ typedef struct {
 
 #define DOCBAT (ELEM | (1<<6))
 #define XQUERY_TYPES 15
+#define XQUERY_ABSTRACT 6
 
 xquery_type xquery_types[XQUERY_TYPES+1] =
 { {  5, TYPE_bit, BOOL,   "xs:bool"  },  
@@ -1464,7 +1465,15 @@ xquery_function_call(xquery_client *ctx,
             }
             for(k=0; k<argcnt[j][i]; k++,l++) {
                 int t = xquery_typenr(argtpe[l]);
-                char c = xquery_types[t].name[3];
+                char c;
+
+                /* 'hack': perform simple atomic casts using Monet's ATOMfromstr */
+                if (fun->sig->tpe[i] < XQUERY_ABSTRACT)
+                    t = fun->sig->tpe[i]; /* just parse the value string as if it was from the desired type */ 
+                /* it is doubtful how well pathfinder supports other
+                 * casts and what we should do here in those cases.
+                 */
+                c = xquery_types[t].name[3];
 
                 if (ATOMfromstr(xquery_types[t].monet_tpe, &ctx->val, &ctx->vallen, argval[l]) <= 0)
                     return "xquery_function_call: illegal parameter value.\n";
@@ -2587,13 +2596,13 @@ xquery_method(stream *out,
     int msec = GDKms();
     Thread XQthread = THRget(THRgettid());
     xquery_client *ctx = xquery_client_alloc(NULL, out);
-    char *err = NULL, *ns = "fn", *mode = "xml-noroot";
+    char *err = NULL, *ns = "fn", *mode = "xml-noheader-root-iter";
    
     if (ctx == NULL) 
         return "xquery_method: out of client slots.\n";
 
     err = xquery_client_init(ctx);
-    monetSetChannel(XQthread, NULL, out);
+    monetSetChannel(XQthread, GDKin, out);
 
     if (argc > 1000) {
         /* hack: pass argc+1000 and you get debug output */
@@ -2601,7 +2610,7 @@ xquery_method(stream *out,
         char *prologue = (char*) PFinitMIL();
         if (s) {
             ctx->fderr = s;
-            mode = "xml-noroot-debug";
+            mode = "xml-debug-noheader-root-iter";
         }
         stream_write(ctx->fderr, prologue, strlen(prologue), 1);
         argc = argc % 1000;
