@@ -555,7 +555,7 @@ addValues (opt_t *f,
            char *result_var)
 {
     /* get the offsets of the values */
-    milprintf(f, "%s := %s.addValues(%s);\n", result_var, t_co.table, varname);
+    milprintf(f, "%s := %s.addValues(%s).tmark(0@0);\n", result_var, t_co.table, varname);
 }
 
 /**
@@ -1155,7 +1155,6 @@ createEnumeration (opt_t *f, int cur_level)
             cur_level, cur_level);
     addValues (f, int_container(), "ints_cE", "item");
     milprintf(f,
-            "item := item.tmark(0@0);\n"
             "iter := inner%03u.tmark(0@0);\n"
             "ipik := iter;\n"
             "pos := 1@0;\n"
@@ -3189,9 +3188,8 @@ evaluateCast (opt_t *f,
 
         milprintf(f,
                 "cast_val := nil;\n"
-                "item%s := item%s.tmark(0@0);\n"
                 "kind := %s;\n",
-                item_ext, item_ext, target.mil_cast);
+                target.mil_cast);
 }
 
 /**
@@ -3222,7 +3220,6 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
             item = strcat (strcpy (item, "item"), kind_str(rc));
 
             addValues(f, int_container(), item, "item");
-            milprintf(f, "item := item.tmark(0@0);\n");
         }
     }
     else if (TY_EQ (input_type, PFty_decimal ()))
@@ -3261,10 +3258,7 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
             milprintf(f, "item%s := _val;\n", item_ext);
         else
             addValues(f, int_container(), "_val", "item");
-        milprintf(f,
-                "item%s := item%s.tmark(0@0);\n"
-                "kind := INT;\n",
-                item_ext, item_ext);
+        milprintf(f, "kind := INT;\n");
     }
 }
 
@@ -3298,7 +3292,6 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
             item = strcat (strcpy (item, "item"), kind_str(rc));
 
             addValues(f, dec_container(), item, "item");
-            milprintf(f, "item := item.tmark(0@0);\n");
         }
     }
     else if (TY_EQ (input_type, PFty_double ()))
@@ -3336,10 +3329,7 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
             milprintf(f, "item%s := _val;\n", item_ext);
         else
             addValues(f, dec_container(), "_val", "item");
-        milprintf(f,
-                "item%s := item%s.tmark(0@0);\n"
-                "kind := DEC;\n",
-                item_ext, item_ext);
+        milprintf(f, "kind := DEC;\n");
     }
 }
 
@@ -3375,7 +3365,6 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
             item = strcat (strcpy (item, "item"), kind_str(rc));
 
             addValues(f, dbl_container(), item, "item");
-            milprintf(f, "item := item.tmark(0@0);\n");
         }
     }
     else if (TY_EQ (input_type, PFty_string ()) || 
@@ -3410,10 +3399,7 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
             milprintf(f, "item%s := _val;\n", item_ext);
         else
             addValues(f, dbl_container(), "_val", "item");
-        milprintf(f,
-                "item%s := item%s.tmark(0@0);\n"
-                "kind := DBL;\n",
-                item_ext, item_ext);
+        milprintf(f, "kind := DBL;\n");
     }
 }
 
@@ -3457,7 +3443,6 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
             item = strcat (strcpy (item, "item"), kind_str(rc));
 
             addValues(f, str_container(), item, "item");
-            milprintf(f, "item := item.tmark(0@0);\n");
         }
 
         if (TY_EQ (input_type, PFty_string ()) && rcode == U_A)
@@ -3495,10 +3480,7 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
         else
             addValues(f, str_container(), "_val", "item");
 
-        milprintf(f,
-                "item%s := item%s.tmark(0@0);\n"
-                "kind := %s;\n",
-                item_ext, item_ext, (rcode == STR)?"STR":"U_A");
+        milprintf(f, "kind := %s;\n", (rcode == STR)?"STR":"U_A");
     }
 }
 
@@ -3682,7 +3664,6 @@ evaluateOp (opt_t *f, int rcode, int rc1, int rc2,
         milprintf(f, "item%s := val_fst;\n", kind_str(rcode)); 
     } else {
         addValues(f, t_co, "val_fst", "item"); 
-        milprintf(f, "item := item.tmark(0@0);\n");
     }
     milprintf(f, "} # end of '%s' calculation\n", operator);
 }
@@ -3742,7 +3723,6 @@ evaluateOpOpt (opt_t *f, int rcode, int rc1, int rc2,
         milprintf(f, "item%s := val_fst;\n", kind_str(rcode)); 
     } else { 
         addValues(f, t_co, "val_fst", "item"); 
-        milprintf(f, "item := item.tmark(0@0);\n");
     }
     milprintf(f, "} # end of '%s' calculation with optional type\n", operator);
 }
@@ -4167,11 +4147,7 @@ combine_strings (opt_t *f, int code, int rc)
         milprintf(f, "item%s := iter_str;\n", item_ext);
     else
         addValues (f, str_container(), "iter_str", "item");
-    milprintf(f,
-            "iter_str := nil;\n"
-            "item%s := item%s.tmark(0@0);\n"
-            "} # end of combine_strings\n",
-            item_ext, item_ext);
+    milprintf(f, "} # end of combine_strings\n");
 }
 
 /**
@@ -4392,7 +4368,6 @@ string_value (opt_t *f, int code, char *kind)
     }
     milprintf(f,
             "item_str := nil;\n"
-            "item%s := item%s.tmark(0@0);\n"
             /* adds empty strings if an element had no string content */
             "if (iter.count() != input_iter.tunique().count())\n"
             "{\n"
@@ -4407,7 +4382,6 @@ string_value (opt_t *f, int code, char *kind)
             "pos := tmark_grp_unique(iter,ipik);\n"
             "kind := %s;\n"
             "} # end of string-value\n",
-            item_ext, item_ext,
             item_ext,
             empty_string,
             item_ext,
@@ -4877,11 +4851,7 @@ fn_abs (opt_t *f, int code, int rc, char *op)
         addValues (f, t_co, "res", "item");
 
     item_ext = (code)?item_ext:"";
-    milprintf(f,
-            "item%s := item%s.tmark(0@0);\n"
-            "} # end of fn:%s\n",
-            item_ext, item_ext,
-            op);
+    milprintf(f, "} # end of fn:%s\n", op);
 
 }
 
@@ -5127,13 +5097,11 @@ return_str_funs (opt_t *f, int code, int cur_level, char *fn_name)
     item_ext = (code)?item_ext:"";
     milprintf(f,
             "res := nil;\n"
-            "item%s := item%s.tmark(0@0);\n"
             "iter := loop%03u;\n"
             "ipik := iter;\n"
             "pos := 1@0;\n"
             "kind := STR;\n"
             "} # end of %s\n",
-            item_ext, item_ext,
             cur_level,
             fn_name);
 }
@@ -5404,12 +5372,10 @@ fn_substring (opt_t *f, int code, int cur_level, int counter,
     milprintf(f,
             "iter := loop%03u;\n"
             "ipik := iter;\n"
-            "item%s := item%s.tmark(0@0);\n"
             "pos := 1@0;\n"
             "kind := STR;\n"
             "} # end of fn:substring\n",
-            cur_level,
-            item_ext, item_ext);
+            cur_level);
 
     deleteResult_ (f, counter, DBL);
     deleteResult_ (f, str_counter, STR);
@@ -5511,10 +5477,7 @@ fn_name (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c, char *nam
         addValues (f, str_container(), "res", "item");
  
     item_ext = (code)?item_ext:"";
-    milprintf(f,
-            "res := nil;\n"
-            "item%s := item%s.tmark(0@0);\n",
-            item_ext, item_ext);
+    milprintf(f, "res := nil;\n");
     add_empty_strings (f, (code)?STR:NORMAL, cur_level);
     milprintf(f,
             "iter := loop%03u;\n"
@@ -6598,12 +6561,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         }
         milprintf(f,
                 "iter_item_str := nil;\n"
-                "item%s := item%s.tmark(0@0);\n"
                 "ipik := iter;\n"
                 "pos := 1@0;\n"
                 "kind := STR;\n"
-                "} # end of string-join (string*, string)\n ",
-                item_ext, item_ext);
+                "} # end of string-join (string*, string)\n ");
         deleteResult_ (f, counter, STR);
         return (code)?STR:NORMAL;
     }
@@ -6702,7 +6663,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         else
         {
             addValues(f, str_container(), "result", "item");
-            milprintf(f,"item := item.tmark(0@0);\n");
         }
         milprintf(f, "} # end of concat (string, string)\n ");
         deleteResult_ (f, counter, STR);
@@ -6842,13 +6802,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 
         item_ext_int = (code)?item_ext_int:"";
         milprintf(f,
-                "item%s := item%s.tmark(0@0);\n"
                 "iter := loop%03u;\n"
                 "ipik := iter;\n"
                 "pos := 1@0;\n"
                 "kind := INT;\n"
                 "} # end of fn:string-length\n",
-                item_ext_int, item_ext_int,
                 cur_level);
 
         return (code)?INT:NORMAL;
@@ -6945,12 +6903,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         }
         milprintf(f,
                 "res := nil;\n"
-                "item%s := item%s.tmark(0@0);\n"
                 "pos := tmark_grp_unique(iter,ipik);\n"
                 "ipik := iter;\n"
                 "kind := INT;\n"
-                "} # end of op:to (integer, integer)\n ",
-                item_ext, item_ext);
+                "} # end of op:to (integer, integer)\n ");
         deleteResult_ (f, counter, INT);
         return (code)?INT:NORMAL;
     }
@@ -6975,13 +6931,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             addValues (f, int_container(), "iter_count", "item");
 
         milprintf(f,
-                "item%s := item%s.tmark(0@0);\n"
                 "iter := loop%03u.tmark(0@0);\n"
                 "ipik := iter;\n"
                 "pos := 1@0;\n"
                 "kind := INT;\n"
                 "} # end of translate fn:count (item*) as integer\n",
-                item_ext, item_ext, cur_level);
+                cur_level);
 
         return (code)?INT:NORMAL;
     }
