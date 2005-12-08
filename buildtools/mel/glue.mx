@@ -889,7 +889,7 @@ unpack_setresult::gen_type_arg(ostream &o, const TypeArg &d)
 		o << "lval = lng_nil;\n";
 		break;
 	case TYPE_STR:
-		o << "sval = str_nil;\n";
+		o << "sval = (str)str_nil;\n";
 		break;
 	}
 	return o;
