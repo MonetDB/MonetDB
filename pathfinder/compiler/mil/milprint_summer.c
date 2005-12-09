@@ -5914,15 +5914,17 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
        from its value containers as well as covers the special cases
        (attribute step and text() test) */
     PFty_t input_type = (fun->par_ty)[0];
-    if (PFty_subtype (PFty_integer (), input_type))
-    {
-        eval_join_helper (f, rc1, 1, fst, cast_fst, fst_res, int_container());
-        eval_join_helper (f, rc2, 2, R(snd), cast_snd, snd_res, int_container());
-    }
-    else if (PFty_subtype (PFty_decimal (), input_type))
+    if (PFty_subtype (PFty_decimal (), input_type))
     {
         eval_join_helper (f, rc1, 1, fst, cast_fst, fst_res, dec_container());
         eval_join_helper (f, rc2, 2, R(snd), cast_snd, snd_res, dec_container());
+    }
+    /* integer is listed after decimal 
+       (as type decimal is otherwise recognized as integer) */
+    else if (PFty_subtype (PFty_integer (), input_type))
+    {
+        eval_join_helper (f, rc1, 1, fst, cast_fst, fst_res, int_container());
+        eval_join_helper (f, rc2, 2, R(snd), cast_snd, snd_res, int_container());
     }
     else if (PFty_subtype (PFty_double (), input_type))
     {
@@ -9345,6 +9347,11 @@ static int test_select(PFcnode_t *c,
 }
 */
 
+/* starting level of user-defined functions */ 
+#define UDF_LEV 1024
+/* starting level of global variables */
+#define GLO_LEV -1
+
 /**
  * recognize_join: helper function for join recognition
  * walks through a Core expression and collects the variables
@@ -9376,11 +9383,11 @@ static void recognize_join(PFcnode_t *c,
                 /* avoid errors for global variables */
                 if (c->sem.var->global)
                 {
-                    /* start from nesting 1 because input arguments don't have
+                    /* start from nesting GLO_LEV because input arguments don't have
                        to be completely independent and therefore shouldn't
                        occur in scope 0 (which would be the default for function 
                        declarations) */
-                    var_struct = create_var_info (c, c->sem.var, 1);
+                    var_struct = create_var_info (c, c->sem.var, GLO_LEV);
                     *(var_info **) PFarray_add (active_vlist) = var_struct;
                 }
                 else
@@ -9474,13 +9481,13 @@ static void recognize_join(PFcnode_t *c,
  
                 /* instead needed here (only variable binding of join patterns are later tested) */
                 *(var_info **) PFarray_add (active_vlist) 
-                    = create_var_info (c, LR(args)->sem.var, 1);
+                    = create_var_info (c, LR(args)->sem.var, UDF_LEV);
  
                 args = R(args);
             }
 
             /* call function body */
-            recognize_join (R(c), active_vlist, active_vdefs, 1);
+            recognize_join (R(c), active_vlist, active_vdefs, UDF_LEV);
 
             args = L(c);
             while (args->kind != c_nil)
@@ -9657,6 +9664,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
 
     if (c->kind == c_var) 
     {
+        /* cope with global variables that are used before their declaration */
         if (!c->sem.var->vid  && c->sem.var->global)
         {
             /* give them a vid and print the whole way
@@ -9684,22 +9692,28 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
     /* only in for and let variables can be bound */
     else if (c->kind == c_for)
     {
+       /* retrieve variable usage in for loop binding */
        if (LR(c))
            counter = get_var_usage (f, LR(c), way, counter);
        
+       /* increase FID as we have a new for loop scope */
        (*(int *) PFarray_at (counter, FID))++;
        fid = *(int *) PFarray_at (counter, FID);
 
+       /* save fid to allow reference in mil code generation */
        c->sem.num = fid;
+       /* add fid also to the active for loop stack */
        *(int *) PFarray_add (way) = fid;
        act_fid = fid;
 
+       /* create new variable id for for loop variable */
        (*(int *) PFarray_at (counter, VID))++;
        vid = *(int *) PFarray_at (counter, VID);
        LLL(c)->sem.var->base = act_fid;
        LLL(c)->sem.var->vid = vid;
        LLL(c)->sem.var->used = 0;
 
+       /* create new variable id for positional for loop variable */
        if (LLR(c)->kind == c_var)
        {
             (*(int *) PFarray_at (counter, VID))++;
@@ -9709,20 +9723,25 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
             LLR(c)->sem.var->used = 0;
        }
 
+       /* ... after all preparations retrieve used 
+          variables in the return clause */
        if (R(c))
            counter = get_var_usage (f, R(c), way, counter);
        
+       /* set back active for loop stack */
        *(int *) PFarray_at (counter, ACT_FID) = *(int *) PFarray_top (way);
        PFarray_del (way);
     }
-
     else if (c->kind == c_let)
     {
-       if (LR(c))
-           counter = get_var_usage (f, LR(c), way, counter);
+        /* retrieve variable usage in let variable binding */
+        if (LR(c))
+            counter = get_var_usage (f, LR(c), way, counter);
 
-
-        if (!LL(c)->sem.var->vid) /* don't start global variables from the beginning */
+        /* create new variable id for let expression */
+        /* exceptions might be global variables that were already
+           initialized by there usage in UDFs */
+        if (!LL(c)->sem.var->vid)
         {
             act_fid = *(int *) PFarray_at (counter, ACT_FID);
             (*(int *) PFarray_at (counter, VID))++;
@@ -9732,8 +9751,9 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
             LL(c)->sem.var->used = 0;
         }
 
-       if (R(c))
-           counter = get_var_usage (f, R(c), way, counter);
+        /* retrieve variable usage in let body */
+        if (R(c))
+            counter = get_var_usage (f, R(c), way, counter);
     }
     /* apply mapping correctly for recognized join */    
     else if (c->kind == c_apply && 
@@ -9754,16 +9774,21 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
         fid_node = L(args);
             args = NULL;
 
-        if (snd_nested) 
-        {
-	/* we don't translate the general join pattern so far 
-            mps_error ("get_var_usage: no solution for join with dependence yet.");
-*/
-        }
-        if (fst_nested) /* otherwise we have a special translation
-                           and don't need mapping (selection) */
+        if (fst_nested == GLO_LEV || snd_nested == GLO_LEV)
+            PFoops (OOPS_FATAL,
+                    "can't cope with global variables as "
+                    "thetajoin input within user-defined function calls.");
+    
+        /* count only real levels (if UDF subtract UDF_LEV) */
+        if (fst_nested & ~UDF_LEV)
         {
             fst_nested = (int) PFarray_last (way);
+        }
+
+        /* count only real levels (if UDF subtract UDF_LEV) */
+        if (snd_nested & ~UDF_LEV)
+        {
+            snd_nested = (int) PFarray_last (way) - 1;
         }
 
         /* save current fid */
@@ -9802,6 +9827,10 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
     }
     else if (c->kind == c_fun_decl)
     {
+        /* ==================================== */
+        /* create a new valid PROC name for mil */
+        /* ==================================== */
+
         char sig[1024], *p = c->sem.fun->qname.loc, *q = c->sem.fun->qname.ns.uri;
         char *r = c->sem.fun->qname.ns.ns;
         int i = 0, j, first = 0;
@@ -9811,10 +9840,14 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
         if (r) for(; *r; r++)
                 hash = (hash*3) + *(unsigned char*) r;
 
-	if (q == NULL) q = "";
-        args = L(c);
+        if (q == NULL) q = "";
+            args = L(c);
 
-	sig[0] = 0; /* we append all parameter types here */
+        sig[0] = 0; /* we append all parameter types here */
+
+        /* ============================= */
+        /* initialize function variables */
+        /* ============================= */
         while (args->kind != c_nil)
         {
             assert (L(args) && L(args)->kind == c_param);
@@ -9828,79 +9861,83 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
             LR(args)->sem.var->used = 0;
 
             if (first == 0) first = vid;
-	    strncat(sig, ",", 1024);
+        strncat(sig, ",", 1024);
             strncat(sig, PFty_str(LR(args)->type), 1024);
 
             args = R(args);
         }
-	/* create the full signature that also is a valid MIL identifier */
-	c->sem.fun->sig = PFmalloc(12+3*(strlen(sig)+strlen(p)));
+        /* create the full signature that also is a valid MIL identifier */
+        c->sem.fun->sig = PFmalloc(12+3*(strlen(sig)+strlen(p)));
 
-	/* hash uri in proc name to make it uniquely identifyable  */
-	for(; *q; q++) 
-		hash = (hash*3) + *(unsigned char*) q;
+        /* hash uri in proc name to make it uniquely identifyable  */
+        for(; *q; q++) 
+            hash = (hash*3) + *(unsigned char*) q;
 
-	for(j=11; *p; p++) {
-		/* escape '_' by '__' and '-' by '_4_' and '.' by '_5_' 
-                 * (_4_ cannot be a subsequent type name; those always end in [0-3])
-                 */ 
-		char x = (*p == '-' || *p == '.')?'_':*p;
-		c->sem.fun->sig[j++] = x; 
-		hash = (hash*3) + *(unsigned char*) p;
-		if (*p == '-') c->sem.fun->sig[j++] = '4';
-		else if (*p == '.') c->sem.fun->sig[j++] = '5';
-		if (x == '_') c->sem.fun->sig[j++] = '_';
-	}
+        for(j=11; *p; p++) {
+            /* escape '_' by '__' and '-' by '_4_' and '.' by '_5_' 
+                     * (_4_ cannot be a subsequent type name; those always end in [0-3])
+                     */ 
+            char x = (*p == '-' || *p == '.')?'_':*p;
+            c->sem.fun->sig[j++] = x; 
+            hash = (hash*3) + *(unsigned char*) p;
+            if (*p == '-') c->sem.fun->sig[j++] = '4';
+            else if (*p == '.') c->sem.fun->sig[j++] = '5';
+            if (x == '_') c->sem.fun->sig[j++] = '_';
+        }
 
-	while(sig[i++] == ',') {
-		int ch = 0;
-		c->sem.fun->sig[j++] = '_';
-		while (sig[i] && sig[i] != ',') { 
-			hash = (hash*3) + *(unsigned char*) (sig+i);
-			ch = sig[i++];
-			if (ch == '_' || ch == '{' || ch == '}' || ch == '(' || ch == ')')  { 
-				c->sem.fun->sig[j++] = '_';
-				c->sem.fun->sig[j++] = '_';
-			} else if (ch == ':') {
-				c->sem.fun->sig[j++] = '_';
-			} else if (ch == '?') {
-				c->sem.fun->sig[j++] = '0';
-			} else if (ch == '*') {
-				c->sem.fun->sig[j++] = '2';
-			} else if (ch == '+') {
-				c->sem.fun->sig[j++] = '3';
-			} else if (ch != ' ') {
-				c->sem.fun->sig[j++] = ch;
-			}
+        while(sig[i++] == ',') {
+            int ch = 0;
+            c->sem.fun->sig[j++] = '_';
+            while (sig[i] && sig[i] != ',') { 
+                hash = (hash*3) + *(unsigned char*) (sig+i);
+                ch = sig[i++];
+                if (ch == '_' || ch == '{' || ch == '}' || ch == '(' || ch == ')')  { 
+                    c->sem.fun->sig[j++] = '_';
+                    c->sem.fun->sig[j++] = '_';
+                } else if (ch == ':') {
+                    c->sem.fun->sig[j++] = '_';
+                } else if (ch == '?') {
+                    c->sem.fun->sig[j++] = '0';
+                } else if (ch == '*') {
+                    c->sem.fun->sig[j++] = '2';
+                } else if (ch == '+') {
+                    c->sem.fun->sig[j++] = '3';
+                } else if (ch != ' ') {
+                    c->sem.fun->sig[j++] = ch;
                 }
-		if (c->sem.fun->sig[j-1] != '0' && 
-		    c->sem.fun->sig[j-1] != '2' && 
-		    c->sem.fun->sig[j-1] != '3') 
-		{
-			c->sem.fun->sig[j++] = '1';
-		}
-	}
+                    }
+            if (c->sem.fun->sig[j-1] != '0' && 
+                c->sem.fun->sig[j-1] != '2' && 
+                c->sem.fun->sig[j-1] != '3') 
+            {
+                c->sem.fun->sig[j++] = '1';
+            }
+        }
+
+        /* ============================================== */
+        /* retrieve variable occurrences in function body */
+        /* ============================================== */
         counter = get_var_usage (f, R(c), PFarray (sizeof (int)), counter);
+
         for(i=0; i < (int) PFarray_last(counter); i++) 
             hash = hash*3 + *(int*) PFarray_at(counter,i);
 
         /* finish name by printing start (hashed name), connecting and terminating it */
-	sprintf(c->sem.fun->sig, "fn%08X", hash);
-	c->sem.fun->sig[10] = '_';
-	c->sem.fun->sig[j] = 0;
+        sprintf(c->sem.fun->sig, "fn%08X", hash);
+        c->sem.fun->sig[10] = '_';
+        c->sem.fun->sig[j] = 0;
 
-	if (f->module_base || f->num_fun) {
-             milprintf(f, "proc_vid.insert(\"%s\", %dLL);\n", c->sem.fun->sig, f->module_base+first);
-             f->num_fun--;
-	}
+        if (f->module_base || f->num_fun) {
+                 milprintf(f, "proc_vid.insert(\"%s\", %dLL);\n", c->sem.fun->sig, f->module_base+first);
+                 f->num_fun--;
+        }
     }
-    /* apply mapping correctly for user defined functions */    
+    /* apply mapping correctly for user defined function calls */    
     else if (c->kind == c_apply && 
              !c->sem.fun->builtin)
     {
         /* get variable occurrences of the input arguments */
         counter = get_var_usage (f, D(c), way, counter);
-
 
         if (!c->sem.fun->fid) /* create fid for UDF on demand */
         {
