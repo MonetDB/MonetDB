@@ -151,7 +151,6 @@ ODBCError *
 getDbcError(ODBCDbc *dbc)
 {
 	assert(isValidDbc(dbc));
-
 	return dbc->Error;
 }
 

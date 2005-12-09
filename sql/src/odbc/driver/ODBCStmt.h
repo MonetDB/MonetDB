@@ -52,13 +52,13 @@
 
 enum StatementState {
 	/* order is important */
-	INITED,
-	PREPARED0,
-	PREPARED1,
-	EXECUTED0,
-	EXECUTED1,
-	FETCHED,
-	EXTENDEDFETCHED
+	INITED,		/* S1: allocated statement */
+	PREPARED0,	/* S2: statement prepared, no result set */
+	PREPARED1,	/* S3: statement prepared, expect result set */
+	EXECUTED0,	/* S4: statement executed, no result set */
+	EXECUTED1,	/* S5: statement executed, with result set */
+	FETCHED,	/* S6: cursor positioned with SQLFetch(Scroll) */
+	EXTENDEDFETCHED	/* S7: cursor positioned with SQLExtendedFetch */
 };
 
 typedef struct tODBCDRIVERSTMT {

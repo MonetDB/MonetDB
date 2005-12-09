@@ -154,12 +154,10 @@ SQLGetConnectAttrW(SQLHDBC hDbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLI
 	case SQL_ATTR_CURRENT_CATALOG:
 		n = BufferLength * 4;
 		ptr = (SQLPOINTER) malloc(n);
-
 		break;
 	default:
 		n = BufferLength;
 		ptr = ValuePtr;
-
 		break;
 	}
 

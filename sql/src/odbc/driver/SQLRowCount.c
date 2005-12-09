@@ -57,7 +57,6 @@ SQLRowCount(SQLHSTMT hStmt, SQLINTEGER *pnRowCount)
 	if (stmt->State < EXECUTED0) {
 		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
@@ -65,7 +64,6 @@ SQLRowCount(SQLHSTMT hStmt, SQLINTEGER *pnRowCount)
 	if (pnRowCount == NULL) {
 		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
-
 		return SQL_ERROR;
 	}
 

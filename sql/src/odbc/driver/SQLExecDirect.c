@@ -31,7 +31,7 @@
  * CLI Compliance: ISO 92
  *
  * Author: Martin van Dinther
- * Date  : 30 aug 2002
+ * Date  : 30 Aug 2002
  *
  **********************************************************************/
 

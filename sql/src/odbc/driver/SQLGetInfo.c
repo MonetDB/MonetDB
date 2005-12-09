@@ -705,12 +705,10 @@ SQLGetInfoW(SQLHDBC hDbc, SQLUSMALLINT nInfoType, SQLPOINTER pInfoValue, SQLSMAL
 	case SQL_XOPEN_CLI_YEAR:
 		n = nInfoValueMax * 4;
 		ptr = (SQLPOINTER) malloc(n);
-
 		break;
 	default:
 		n = nInfoValueMax;
 		ptr = pInfoValue;
-
 		break;
 	}
 

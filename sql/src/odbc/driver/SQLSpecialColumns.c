@@ -69,7 +69,6 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType, SQLCHAR *szCata
 	default:
 		/* Column type out of range */
 		addStmtError(stmt, "HY097", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
@@ -82,7 +81,6 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType, SQLCHAR *szCata
 	default:
 		/* Scope type out of range */
 		addStmtError(stmt, "HY098", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
@@ -94,7 +92,6 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType, SQLCHAR *szCata
 	default:
 		/* Nullable type out of range */
 		addStmtError(stmt, "HY099", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
@@ -102,13 +99,11 @@ SQLSpecialColumns_(ODBCStmt *stmt, SQLUSMALLINT nIdentifierType, SQLCHAR *szCata
 	if (szTableName == NULL) {
 		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
-
 		return SQL_ERROR;
 	}
 	if (nTableNameLength == 0) {
 		/* Invalid string or buffer length */
 		addStmtError(stmt, "HY090", NULL, 0);
-
 		return SQL_ERROR;
 	}
 

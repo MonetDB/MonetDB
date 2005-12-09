@@ -71,7 +71,6 @@ SQLEndTran_(SQLSMALLINT nHandleType, SQLHANDLE nHandle, SQLSMALLINT nCompletionT
 		if (!isValidEnv(env))
 			return SQL_INVALID_HANDLE;
 		clearEnvErrors(env);
-
 		if (env->sql_attr_odbc_version == 0) {
 			/* Function sequence error */
 			addEnvError(env, "HY010", NULL, 0);

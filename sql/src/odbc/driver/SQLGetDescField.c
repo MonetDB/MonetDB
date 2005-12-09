@@ -281,12 +281,10 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle, SQLSMALLINT RecordNumber, SQLSMALLIN
 	case SQL_DESC_TYPE_NAME:
 		n = BufferLength * 4;
 		ptr = (SQLPOINTER) malloc(n);
-
 		break;
 	default:
 		n = BufferLength;
 		ptr = Value;
-
 		break;
 	}
 

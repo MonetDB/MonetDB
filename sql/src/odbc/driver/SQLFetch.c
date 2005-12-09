@@ -349,7 +349,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 	if (col == 0 || col > ird->sql_desc_count) {
 		/* Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
-
 		return SQL_ERROR;
 	}
 	bind_type = ard->sql_desc_bind_type;
@@ -492,7 +491,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 	if (mapi_error(stmt->Dbc->mid)) {
 		/* General error */
 		addStmtError(stmt, "HY000", NULL, 0);
-
 		return SQL_ERROR;
 	}
 	if (nullp)
@@ -503,7 +501,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 		if (nullp == NULL) {
 			/* Indicator variable required but not supplied */
 			addStmtError(stmt, "22002", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		return SQL_SUCCESS;
@@ -528,7 +525,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 			   type, but in reality it wasn't. */
 			/* Invalid character value for cast specification */
 			addStmtError(stmt, "22018", NULL, 0);
-
 			return SQL_ERROR;
 		}
 
@@ -544,7 +540,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 		if (!parsedouble(data, &fval)) {
 			/* Invalid character value for cast specification */
 			addStmtError(stmt, "22018", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		break;
@@ -563,7 +558,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 		} else {
 			/* Invalid character value for cast specification */
 			addStmtError(stmt, "22018", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		while (space(*data))
@@ -571,7 +565,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 		if (*data) {
 			/* Invalid character value for cast specification */
 			addStmtError(stmt, "22018", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		break;
@@ -579,7 +572,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 		if (!parsedate(data, &dval)) {
 			/* Invalid character value for cast specification */
 			addStmtError(stmt, "22018", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		break;
@@ -587,7 +579,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 		if (!parsetime(data, &tval)) {
 			/* Invalid character value for cast specification */
 			addStmtError(stmt, "22018", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		break;
@@ -595,7 +586,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 		if (!parsetimestamp(data, &tsval)) {
 			/* Invalid character value for cast specification */
 			addStmtError(stmt, "22018", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		break;
@@ -616,7 +606,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 		if (buflen < 0) {
 			/* Invalid string or buffer length */
 			addStmtError(stmt, "HY090", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		if (ardrec && row > 0)
@@ -641,7 +630,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 		default:
 		case SQL_CHAR:
 			copyString(data, ptr, buflen, lenp, addStmtError, stmt);
-
 			break;
 		case SQL_DECIMAL:
 		case SQL_TINYINT:
@@ -662,7 +650,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 
 				if (type == SQL_C_WCHAR)
 					free(ptr);
-
 				return SQL_ERROR;
 			}
 			if (lenp)
@@ -698,7 +685,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 
 						if (type == SQL_C_WCHAR)
 							free(ptr);
-
 						return SQL_ERROR;
 					}
 					/* current precision (i) doesn't fit,
@@ -725,7 +711,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 
 				if (type == SQL_C_WCHAR)
 					free(ptr);
-
 				return SQL_ERROR;
 			}
 			data = (char *) ptr;
@@ -746,7 +731,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 
 				if (type == SQL_C_WCHAR)
 					free(ptr);
-
 				return SQL_ERROR;
 			}
 			data = (char *) ptr;
@@ -770,7 +754,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 
 				if (type == SQL_C_WCHAR)
 					free(ptr);
-
 				return SQL_ERROR;
 			}
 			if (lenp)
@@ -804,7 +787,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 
 				if (type == SQL_C_WCHAR)
 					free(ptr);
-
 				return SQL_ERROR;
 			}
 			if (lenp)
@@ -820,7 +802,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 
 				if (type == SQL_C_WCHAR)
 					free(ptr);
-
 				return SQL_ERROR;
 			}
 			if (lenp)
@@ -855,7 +836,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 		if (buflen < 0) {
 			/* Invalid string or buffer length */
 			addStmtError(stmt, "HY090", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		if (ardrec && row > 0)
@@ -879,7 +859,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		break;
@@ -895,7 +874,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			/* fall through */
@@ -904,16 +882,15 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 			if (fval < 0 || fval >= 2) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			*(unsigned char *) ptr = fval >= 1;
 
-			if (fval != 0 && fval != 1)
+			if (fval != 0 && fval != 1) {
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
-
+			}
 			break;
 		case SQL_DECIMAL:
 		case SQL_TINYINT:
@@ -931,21 +908,19 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 			if (nval.val > 1 || (!nval.sign && (nval.val == 1 || truncated))) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			*(unsigned char *) ptr = (unsigned char) nval.val;
 
-			if (truncated)
+			if (truncated) {
 				/* Fractional truncation */
 				addStmtError(stmt, "01S07", NULL, 0);
-
+			}
 			break;
 		}
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		break;
@@ -966,7 +941,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 				*lenp = sizeof(signed char);
 			if (ardrec && row > 0)
 				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(signed char) : bind_type));
-
 			break;
 		case SQL_C_SSHORT:
 		case SQL_C_SHORT:
@@ -975,7 +949,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 				*lenp = sizeof(short);
 			if (ardrec && row > 0)
 				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(short) : bind_type));
-
 			break;
 		case SQL_C_SLONG:
 		case SQL_C_LONG:
@@ -984,7 +957,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 				*lenp = sizeof(long);
 			if (ardrec && row > 0)
 				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(long) : bind_type));
-
 			break;
 		case SQL_C_SBIGINT:
 			maxval <<= 63;
@@ -992,7 +964,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 				*lenp = sizeof(SQLBIGINT);
 			if (ardrec && row > 0)
 				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLBIGINT) : bind_type));
-
 			break;
 		}
 		switch (sql_type) {
@@ -1004,7 +975,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			/* fall through */
@@ -1025,32 +995,28 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 			if (nval.scale < 0 || nval.val > maxval || (nval.val == maxval && nval.sign)) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
-
 				return SQL_ERROR;
 			}
-			if (truncated)
+			if (truncated) {
 				/* Fractional truncation */
 				addStmtError(stmt, "01S07", NULL, 0);
+			}
 
 			switch (type) {
 			case SQL_C_STINYINT:
 			case SQL_C_TINYINT:
 				*(signed char *) ptr = nval.sign ? (signed char) nval.val : -(signed char) nval.val;
-
 				break;
 			case SQL_C_SSHORT:
 			case SQL_C_SHORT:
 				*(short *) ptr = nval.sign ? (short) nval.val : -(short) nval.val;
-
 				break;
 			case SQL_C_SLONG:
 			case SQL_C_LONG:
 				*(long *) ptr = nval.sign ? (long) nval.val : -(long) nval.val;
-
 				break;
 			case SQL_C_SBIGINT:
 				*(SQLBIGINT *) ptr = nval.sign ? (SQLBIGINT) nval.val : -(SQLBIGINT) nval.val;
-
 				break;
 			}
 			break;
@@ -1058,7 +1024,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		break;
@@ -1076,7 +1041,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 				*lenp = sizeof(unsigned char);
 			if (ardrec && row > 0)
 				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned char) : bind_type));
-
 			break;
 		case SQL_C_USHORT:
 			maxval <<= 16;
@@ -1084,7 +1048,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 				*lenp = sizeof(unsigned short);
 			if (ardrec && row > 0)
 				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned short) : bind_type));
-
 			break;
 		case SQL_C_ULONG:
 			maxval <<= 32;
@@ -1092,14 +1055,12 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 				*lenp = sizeof(unsigned long);
 			if (ardrec && row > 0)
 				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned long) : bind_type));
-
 			break;
 		case SQL_C_UBIGINT:
 			if (lenp)
 				*lenp = sizeof(SQLUBIGINT);
 			if (ardrec && row > 0)
 				ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLUBIGINT) : bind_type));
-
 			break;
 		}
 		maxval--;
@@ -1112,7 +1073,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			/* fall through */
@@ -1133,29 +1093,25 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 			if (nval.scale < 0 || !nval.sign || (maxval != 0 && nval.val >= maxval)) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
-
 				return SQL_ERROR;
 			}
-			if (truncated)
+			if (truncated) {
 				/* Fractional truncation */
 				addStmtError(stmt, "01S07", NULL, 0);
+			}
 
 			switch (type) {
 			case SQL_C_UTINYINT:
 				*(unsigned char *) ptr = (unsigned char) nval.val;
-
 				break;
 			case SQL_C_USHORT:
 				*(unsigned short *) ptr = (unsigned short) nval.val;
-
 				break;
 			case SQL_C_ULONG:
 				*(unsigned long *) ptr = (unsigned long) nval.val;
-
 				break;
 			case SQL_C_UBIGINT:
 				*(SQLUBIGINT *) ptr = (SQLUBIGINT) nval.val;
-
 				break;
 			}
 			break;
@@ -1163,7 +1119,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		break;
@@ -1181,12 +1136,12 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
-
 				return SQL_ERROR;
 			}
-			if (i == 2)
+			if (i == 2) {
 				/* Fractional truncation */
 				addStmtError(stmt, "01S07", NULL, 0);
+			}
 
 			/* fall through */
 		case SQL_DECIMAL:
@@ -1220,7 +1175,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		if (lenp)
@@ -1234,7 +1188,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			break;
@@ -1266,7 +1219,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		if (type == SQL_C_FLOAT) {
@@ -1277,7 +1229,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 			if ((double) *(float *) ptr !=fval) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			if (lenp)
@@ -1313,18 +1264,15 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			/* fall through */
 		case SQL_TYPE_DATE:
 			*(DATE_STRUCT *) ptr = dval;
-
 			break;
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		if (lenp)
@@ -1352,18 +1300,15 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			/* fall through */
 		case SQL_TYPE_TIME:
 			*(TIME_STRUCT *) ptr = tval;
-
 			break;
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		if (lenp)
@@ -1413,7 +1358,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 						   value for cast
 						   specification */
 						addStmtError(stmt, "22018", NULL, 0);
-
 						return SQL_ERROR;
 					}
 				}
@@ -1421,12 +1365,10 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 			/* fall through */
 		case SQL_TYPE_TIMESTAMP:	/* note i==1 unless we fell through */
 			*(TIMESTAMP_STRUCT *) ptr = tsval;
-
 			break;
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		if (lenp)
@@ -1448,7 +1390,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			data += n;
@@ -1458,7 +1399,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			if (i < 0) {
@@ -1480,7 +1420,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
-
 			return SQL_ERROR;
 		}
 #define p ((SQL_INTERVAL_STRUCT *) ptr)	/* abbrev. */
@@ -1493,7 +1432,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 			if ((p->intval.year_month.year = ival.intval.year_month.year) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			if (ival.intval.year_month.month) {
@@ -1506,7 +1444,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 			if ((p->intval.year_month.month = ival.intval.year_month.month + 12 * ival.intval.year_month.year) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			break;
@@ -1515,7 +1452,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 			if ((p->intval.year_month.year = ival.intval.year_month.year) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			p->intval.year_month.month = ival.intval.year_month.month;
@@ -1548,7 +1484,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			if (i < 0) {
@@ -1576,7 +1511,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			break;
@@ -1593,7 +1527,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
-
 			return SQL_ERROR;
 		}
 #define p ((SQL_INTERVAL_STRUCT *) ptr)	/* abbrev. */
@@ -1609,7 +1542,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 			if ((p->intval.day_second.day = ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			if (ival.intval.day_second.hour || ival.intval.day_second.minute || ival.intval.day_second.second || ival.intval.day_second.fraction) {
@@ -1622,7 +1554,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 			if ((p->intval.day_second.hour = ival.intval.day_second.hour + 24 * ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			if (ival.intval.day_second.minute || ival.intval.day_second.second || ival.intval.day_second.fraction) {
@@ -1635,7 +1566,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 			if ((p->intval.day_second.minute = ival.intval.day_second.minute + 60 * (ival.intval.day_second.hour + 24 * ival.intval.day_second.day)) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			if (ival.intval.day_second.second || ival.intval.day_second.fraction) {
@@ -1648,7 +1578,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 			if ((p->intval.day_second.second = ival.intval.day_second.second + 60 * (ival.intval.day_second.minute + 60 * (ival.intval.day_second.hour + 24 * ival.intval.day_second.day))) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			p->intval.day_second.fraction = ival.intval.day_second.fraction;
@@ -1658,7 +1587,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 			if ((p->intval.day_second.day = ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			p->intval.day_second.hour = ival.intval.day_second.hour;
@@ -1672,7 +1600,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 			if ((p->intval.day_second.day = ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			p->intval.day_second.hour = ival.intval.day_second.hour;
@@ -1687,7 +1614,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 			if ((p->intval.day_second.day = ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			p->intval.day_second.hour = ival.intval.day_second.hour;
@@ -1700,7 +1626,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 			if ((p->intval.day_second.hour = ival.intval.day_second.hour + 24 * ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			p->intval.day_second.minute = ival.intval.day_second.minute;
@@ -1714,7 +1639,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 			if ((p->intval.day_second.hour = ival.intval.day_second.hour + 24 * ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			p->intval.day_second.minute = ival.intval.day_second.minute;
@@ -1726,7 +1650,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 			if ((p->intval.day_second.minute = ival.intval.day_second.minute + 60 * (ival.intval.day_second.hour + 24 * ival.intval.day_second.day)) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
-
 				return SQL_ERROR;
 			}
 			p->intval.day_second.second = ival.intval.day_second.second;
@@ -1750,7 +1673,6 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 	default:
 		/* Invalid application buffer type */
 		addStmtError(stmt, "HY003", NULL, 0);
-
 		return SQL_ERROR;
 	}
 	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
@@ -1777,7 +1699,6 @@ SQLFetch_(ODBCStmt *stmt)
 	if (mapi_seek_row(stmt->hdl, stmt->startRow, MAPI_SEEK_SET) != MOK) {
 		/* Row value out of range */
 		addStmtError(stmt, "HY107", mapi_error_str(stmt->Dbc->mid), 0);
-
 		return SQL_ERROR;
 	}
 
@@ -1795,7 +1716,6 @@ SQLFetch_(ODBCStmt *stmt)
 
 		if (stmt->rowSetSize <= 0) {
 			stmt->rowSetSize = 0;
-
 			return SQL_NO_DATA;
 		}
 		if (statusp) {
@@ -1821,14 +1741,12 @@ SQLFetch_(ODBCStmt *stmt)
 					*statusp = SQL_ROW_ERROR;
 				/* Communication link failure */
 				addStmtError(stmt, "08S01", mapi_error_str(stmt->Dbc->mid), 0);
-
 				return SQL_ERROR;
 			default:
 				if (statusp)
 					*statusp = SQL_ROW_ERROR;
 				/* General error */
 				addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
-
 				return SQL_ERROR;
 			}
 			break;
@@ -1892,13 +1810,11 @@ SQLFetch(SQLHSTMT hStmt)
 	if (stmt->State < EXECUTED0 || stmt->State == EXTENDEDFETCHED) {
 		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
-
 		return SQL_ERROR;
 	}
 	if (stmt->State == EXECUTED0) {
 		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
-
 		return SQL_ERROR;
 	}
 

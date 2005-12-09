@@ -61,14 +61,12 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber, SQLSMALLINT Inpu
 	if (ParameterNumber <= 0) {
 		/* Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
-
 		return SQL_ERROR;
 	}
 	/* For safety: limit the maximum number of columns to bind */
 	if (ParameterNumber > MONETDB_MAX_BIND_COLS) {
 		/* General error */
 		addStmtError(stmt, "HY000", "Maximum number of bind columns (8192) exceeded", 0);
-
 		return SQL_ERROR;
 	}
 
@@ -79,12 +77,10 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber, SQLSMALLINT Inpu
 	case SQL_PARAM_OUTPUT:
 		/* Optional feature not implemented */
 		addStmtError(stmt, "HYC00", "Output parameters are not supported", 0);
-
 		return SQL_ERROR;
 	default:
 		/* Invalid parameter type */
 		addStmtError(stmt, "HY105", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
@@ -92,14 +88,12 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber, SQLSMALLINT Inpu
 	    /* && InputOutputType != SQL_PARAM_OUTPUT */ ) {
 		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
 	if (BufferLength < 0) {
 		/* Invalid string or buffer length */
 		addStmtError(stmt, "HY090", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
@@ -146,7 +140,6 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber, SQLSMALLINT Inpu
 	default:
 		/* Invalid application buffer type */
 		addStmtError(stmt, "HY003", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
@@ -207,7 +200,6 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber, SQLSMALLINT Inpu
 	default:
 		/* Invalid SQL data type */
 		addStmtError(stmt, "HY004", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
@@ -230,59 +222,45 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber, SQLSMALLINT Inpu
 		   otherwise as long, but on those other systems, long
 		   and int are the same size, so the cast works */
 		ret = mapi_param_string(stmt->hdl, ParameterNumber - 1, ParameterType, (char *) ParameterValuePtr, (int *) StrLen_or_IndPtr);
-
 		break;
 	case SQL_C_SSHORT:
 		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1, MAPI_SHORT, ParameterType, ParameterValuePtr);
-
 		break;
 	case SQL_C_USHORT:
 		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1, MAPI_USHORT, ParameterType, ParameterValuePtr);
-
 		break;
 	case SQL_C_SLONG:
 		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1, MAPI_LONG, ParameterType, ParameterValuePtr);
-
 		break;
 	case SQL_C_ULONG:
 		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1, MAPI_ULONG, ParameterType, ParameterValuePtr);
-
 		break;
 	case SQL_C_STINYINT:
 		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1, MAPI_TINY, ParameterType, ParameterValuePtr);
-
 		break;
 	case SQL_C_UTINYINT:
 		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1, MAPI_UTINY, ParameterType, ParameterValuePtr);
-
 		break;
 	case SQL_C_SBIGINT:
 		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1, MAPI_LONGLONG, ParameterType, ParameterValuePtr);
-
 		break;
 	case SQL_C_UBIGINT:
 		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1, MAPI_ULONGLONG, ParameterType, ParameterValuePtr);
-
 		break;
 	case SQL_C_FLOAT:
 		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1, MAPI_FLOAT, ParameterType, ParameterValuePtr);
-
 		break;
 	case SQL_C_DOUBLE:
 		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1, MAPI_DOUBLE, ParameterType, ParameterValuePtr);
-
 		break;
 	case SQL_C_TYPE_DATE:
 		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1, MAPI_DATE, ParameterType, ParameterValuePtr);
-
 		break;
 	case SQL_C_TYPE_TIME:
 		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1, MAPI_TIME, ParameterType, ParameterValuePtr);
-
 		break;
 	case SQL_C_TYPE_TIMESTAMP:
 		ret = mapi_param_type(stmt->hdl, ParameterNumber - 1, MAPI_DATETIME, ParameterType, ParameterValuePtr);
-
 		break;
 	case SQL_C_DEFAULT:
 		/* these are supported */
@@ -294,12 +272,10 @@ SQLBindParameter_(ODBCStmt *stmt, SQLUSMALLINT ParameterNumber, SQLSMALLINT Inpu
 	case SQL_C_GUID:
 		/* Driver does not support this function */
 		addStmtError(stmt, "IM001", NULL, 0);
-
 		return SQL_ERROR;
 	default:
 		/* Invalid application buffer type */
 		addStmtError(stmt, "HY003", NULL, 0);
-
 		return SQL_ERROR;
 	}
 

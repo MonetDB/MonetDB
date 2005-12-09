@@ -71,7 +71,6 @@ SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType, SQLPOINTE
 	if (stmt->State >= EXECUTED1 && nCol > stmt->ImplRowDescr->sql_desc_count) {
 		/* Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
@@ -79,7 +78,6 @@ SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType, SQLPOINTE
 	if (nCol > MONETDB_MAX_BIND_COLS) {
 		/* General error */
 		addStmtError(stmt, "HY000", "Maximum number of bind columns (8192) exceeded", 0);
-
 		return SQL_ERROR;
 	}
 
@@ -126,14 +124,12 @@ SQLBindCol(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType, SQLPOINTE
 	default:
 		/* Invalid application buffer type */
 		addStmtError(stmt, "HY003", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
 	if (nTargetValueMax < 0) {
 		/* Invalid string or buffer length */
 		addStmtError(stmt, "HY090", NULL, 0);
-
 		return SQL_ERROR;
 	}
 

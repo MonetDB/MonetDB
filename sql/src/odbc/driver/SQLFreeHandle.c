@@ -149,9 +149,7 @@ SQLFreeHandle_(SQLSMALLINT handleType, SQLHANDLE handle)
 		/* check it's validity */
 		if (!isValidEnv(env))
 			return SQL_INVALID_HANDLE;
-
 		clearEnvErrors(env);
-
 		return ODBCFreeEnv_(env);
 	}
 	case SQL_HANDLE_DBC:
@@ -161,9 +159,7 @@ SQLFreeHandle_(SQLSMALLINT handleType, SQLHANDLE handle)
 		/* check it's validity */
 		if (!isValidDbc(dbc))
 			return SQL_INVALID_HANDLE;
-
 		clearDbcErrors(dbc);
-
 		return ODBCFreeDbc_(dbc);
 	}
 	case SQL_HANDLE_STMT:
@@ -173,9 +169,7 @@ SQLFreeHandle_(SQLSMALLINT handleType, SQLHANDLE handle)
 		/* check it's validity */
 		if (!isValidStmt(stmt))
 			 return SQL_INVALID_HANDLE;
-
 		clearStmtErrors(stmt);
-
 		return ODBCFreeStmt_(stmt);
 	}
 	case SQL_HANDLE_DESC:
@@ -185,9 +179,7 @@ SQLFreeHandle_(SQLSMALLINT handleType, SQLHANDLE handle)
 		/* check it's validity */
 		if (!isValidDesc(desc))
 			return SQL_INVALID_HANDLE;
-
 		clearDescErrors(desc);
-
 		return ODBCFreeDesc_(desc);
 	}
 	default:

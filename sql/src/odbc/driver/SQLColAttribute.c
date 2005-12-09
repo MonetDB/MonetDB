@@ -49,26 +49,22 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifie
 	if (stmt->State == INITED) {
 		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
-
 		return SQL_ERROR;
 	}
 	if (stmt->State == EXECUTED0) {
 		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
-
 		return SQL_ERROR;
 	}
 	if (stmt->State == PREPARED0 && nFieldIdentifier != SQL_DESC_COUNT) {
 		/* Prepared statement not a cursor-specification */
 		addStmtError(stmt, "07005", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
 	if (stmt->ImplRowDescr->descRec == NULL) {
 		/* General error */
 		addStmtError(stmt, "HY000", "Cannot return the column info. No result set is available", 0);
-
 		return SQL_ERROR;
 	}
 
@@ -76,7 +72,6 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifie
 	if (nCol < 1 || nCol > stmt->ImplRowDescr->sql_desc_count) {
 		/* Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
@@ -90,11 +85,9 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifie
 		break;
 	case SQL_DESC_BASE_COLUMN_NAME:
 		copyString(rec->sql_desc_base_column_name, pszValue, nValueLengthMax, pnValueLength, addStmtError, stmt);
-
 		break;
 	case SQL_DESC_BASE_TABLE_NAME:
 		copyString(rec->sql_desc_base_table_name, pszValue, nValueLengthMax, pnValueLength, addStmtError, stmt);
-
 		break;
 	case SQL_DESC_CASE_SENSITIVE:	/* SQL_COLUMN_CASE_SENSITIVE */
 		if (pnValue)
@@ -102,7 +95,6 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifie
 		break;
 	case SQL_DESC_CATALOG_NAME:	/* SQL_COLUMN_QUALIFIER_NAME */
 		copyString(rec->sql_desc_catalog_name, pszValue, nValueLengthMax, pnValueLength, addStmtError, stmt);
-
 		break;
 	case SQL_DESC_CONCISE_TYPE:	/* SQL_COLUMN_TYPE */
 		if (pnValue)
@@ -111,7 +103,6 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifie
 	case SQL_DESC_COUNT:
 		if (pnValue)
 			*(int *) pnValue = stmt->ImplRowDescr->sql_desc_count;
-
 		break;
 	case SQL_DESC_DISPLAY_SIZE:	/* SQL_COLUMN_DISPLAY_SIZE */
 		if (pnValue)
@@ -123,7 +114,6 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifie
 		break;
 	case SQL_DESC_LABEL:	/* SQL_COLUMN_LABEL */
 		copyString(rec->sql_desc_label, pszValue, nValueLengthMax, pnValueLength, addStmtError, stmt);
-
 		break;
 	case SQL_COLUMN_LENGTH:
 	case SQL_DESC_LENGTH:
@@ -132,19 +122,15 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifie
 		break;
 	case SQL_DESC_LITERAL_PREFIX:
 		copyString(rec->sql_desc_literal_prefix, pszValue, nValueLengthMax, pnValueLength, addStmtError, stmt);
-
 		break;
 	case SQL_DESC_LITERAL_SUFFIX:
 		copyString(rec->sql_desc_literal_suffix, pszValue, nValueLengthMax, pnValueLength, addStmtError, stmt);
-
 		break;
 	case SQL_DESC_LOCAL_TYPE_NAME:
 		copyString(rec->sql_desc_local_type_name, pszValue, nValueLengthMax, pnValueLength, addStmtError, stmt);
-
 		break;
 	case SQL_DESC_NAME:
 		copyString(rec->sql_desc_name, pszValue, nValueLengthMax, pnValueLength, addStmtError, stmt);
-
 		break;
 	case SQL_DESC_NULLABLE:
 		if (pnValue)
@@ -170,7 +156,6 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifie
 		break;
 	case SQL_DESC_SCHEMA_NAME:	/* SQL_COLUMN_OWNER_NAME */
 		copyString(rec->sql_desc_schema_name, pszValue, nValueLengthMax, pnValueLength, addStmtError, stmt);
-
 		break;
 	case SQL_DESC_SEARCHABLE:	/* SQL_COLUMN_SEARCHABLE */
 		if (pnValue)
@@ -178,7 +163,6 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifie
 		break;
 	case SQL_DESC_TABLE_NAME:	/* SQL_COLUMN_TABLE_NAME */
 		copyString(rec->sql_desc_table_name, pszValue, nValueLengthMax, pnValueLength, addStmtError, stmt);
-
 		break;
 	case SQL_DESC_TYPE:
 		if (pnValue)
@@ -186,7 +170,6 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifie
 		break;
 	case SQL_DESC_TYPE_NAME:	/* SQL_COLUMN_TYPE_NAME */
 		copyString(rec->sql_desc_type_name, pszValue, nValueLengthMax, pnValueLength, addStmtError, stmt);
-
 		break;
 	case SQL_DESC_UNNAMED:
 		if (pnValue)
@@ -203,7 +186,6 @@ SQLColAttribute_(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifie
 	default:
 		/* Invalid descriptor field identifier */
 		addStmtError(stmt, "HY091", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
@@ -264,12 +246,10 @@ SQLColAttributeW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nFieldIdentifie
 	case SQL_DESC_TYPE_NAME:	/* SQL_COLUMN_TYPE_NAME */
 		n = nValueLengthMax * 4;
 		ptr = (SQLPOINTER) malloc(n);
-
 		break;
 	default:
 		n = nValueLengthMax;
 		ptr = pszValue;
-
 		break;
 	}
 

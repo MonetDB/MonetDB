@@ -52,7 +52,6 @@ SQLSetCursorName_(ODBCStmt *stmt, SQLCHAR *szCursor, SQLSMALLINT nCursorLength)
 	if (stmt->State >= EXECUTED0) {
 		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
-
 		return SQL_ERROR;
 	}
 

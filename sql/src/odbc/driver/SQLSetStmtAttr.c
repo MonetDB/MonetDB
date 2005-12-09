@@ -48,13 +48,11 @@ SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEG
 		if (stmt->State >= EXECUTED0) {
 			/* Invalid cursor state */
 			addStmtError(stmt, "24000", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		if (stmt->State > INITED) {
 			/* Attribute cannot be set now */
 			addStmtError(stmt, "HY011", NULL, 0);
-
 			return SQL_ERROR;
 		}
 	}
@@ -64,66 +62,54 @@ SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEG
 	case SQL_ATTR_APP_PARAM_DESC:
 		if (Value == SQL_NULL_HDESC || desc == stmt->AutoApplParamDescr) {
 			stmt->ApplParamDescr = stmt->AutoApplParamDescr;
-
 			return SQL_SUCCESS;
 		}
 		if (!isValidDesc(desc)) {
 			/* Invalid attribute value */
 			addStmtError(stmt, "HY024", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		if (desc->sql_desc_alloc_type == SQL_DESC_ALLOC_AUTO) {
 			/* Invalid use of an automatically allocated
 			   descriptor handle */
 			addStmtError(stmt, "HY017", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		stmt->ApplParamDescr = desc;
-
 		break;
 	case SQL_ATTR_APP_ROW_DESC:
 		if (Value == SQL_NULL_HDESC || desc == stmt->AutoApplRowDescr) {
 			stmt->ApplRowDescr = stmt->AutoApplRowDescr;
-
 			return SQL_SUCCESS;
 		}
 		if (!isValidDesc(desc)) {
 			/* Invalid attribute value */
 			addStmtError(stmt, "HY024", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		if (desc->sql_desc_alloc_type == SQL_DESC_ALLOC_AUTO) {
 			/* Invalid use of an automatically allocated
 			   descriptor handle */
 			addStmtError(stmt, "HY017", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		stmt->ApplRowDescr = desc;
-
 		break;
 #undef desc
 	case SQL_ATTR_CURSOR_SCROLLABLE:
 		switch ((SQLUINTEGER) (size_t) Value) {
 		case SQL_NONSCROLLABLE:
 			stmt->cursorType = SQL_CURSOR_FORWARD_ONLY;
-
 			break;
 		case SQL_SCROLLABLE:
 			stmt->cursorType = SQL_CURSOR_STATIC;
-
 			break;
 		default:
 			/* Invalid attribute value */
 			addStmtError(stmt, "HY024", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		stmt->cursorScrollable = (SQLUINTEGER) (size_t) Value;
-
 		break;
 	case SQL_ATTR_CURSOR_TYPE:
 		switch ((SQLUINTEGER) (size_t) Value) {
@@ -136,17 +122,14 @@ SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEG
 		case SQL_CURSOR_STATIC:
 			stmt->cursorScrollable = SQL_SCROLLABLE;
 			stmt->cursorType = SQL_CURSOR_STATIC;
-
 			break;
 		case SQL_CURSOR_FORWARD_ONLY:
 			stmt->cursorScrollable = SQL_NONSCROLLABLE;
 			stmt->cursorType = SQL_CURSOR_FORWARD_ONLY;
-
 			break;
 		default:
 			/* Invalid attribute value */
 			addStmtError(stmt, "HY024", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		break;
@@ -155,7 +138,6 @@ SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEG
 		/* Invalid use of an automatically allocated
 		   descriptor handle */
 		addStmtError(stmt, "HY017", NULL, 0);
-
 		return SQL_ERROR;
 	case SQL_ATTR_PARAM_BIND_OFFSET_PTR:
 		return SQLSetDescField_(stmt->ApplParamDescr, 0, SQL_DESC_BIND_OFFSET_PTR, Value, StringLength);
@@ -177,11 +159,9 @@ SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEG
 		default:
 			/* Invalid attribute value */
 			addStmtError(stmt, "HY024", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		stmt->retrieveData = (SQLUINTEGER) (size_t) Value;
-
 		break;
 	case SQL_ATTR_ROW_ARRAY_SIZE:
 	case SQL_ROWSET_SIZE:
@@ -214,12 +194,10 @@ SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEG
 	case SQL_ATTR_USE_BOOKMARKS:
 		/* Optional feature not implemented */
 		addStmtError(stmt, "HYC00", NULL, 0);
-
 		return SQL_ERROR;
 	default:
 		/* Invalid attribute/option identifier */
 		addStmtError(stmt, "HY092", NULL, 0);
-
 		return SQL_ERROR;
 	}
 

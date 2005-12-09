@@ -115,7 +115,6 @@ ODBCError *
 getDescError(ODBCDesc *desc)
 {
 	assert(isValidDesc(desc));
-
 	return desc->Error;
 }
 

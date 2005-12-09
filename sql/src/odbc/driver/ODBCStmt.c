@@ -103,7 +103,6 @@ newODBCStmt(ODBCDbc *dbc)
 
 	if (stmt->ApplRowDescr == NULL || stmt->ApplParamDescr == NULL || stmt->ImplRowDescr == NULL || stmt->ImplParamDescr == NULL) {
 		destroyODBCStmt(stmt);
-
 		return NULL;
 	}
 
@@ -176,7 +175,6 @@ ODBCError *
 getStmtError(ODBCStmt *stmt)
 {
 	assert(isValidStmt(stmt));
-
 	return stmt->Error;
 }
 

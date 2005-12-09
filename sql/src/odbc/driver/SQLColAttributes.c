@@ -126,12 +126,10 @@ SQLColAttributesW(SQLHSTMT hStmt, SQLUSMALLINT nCol, SQLUSMALLINT nDescType, SQL
 	case SQL_DESC_TYPE_NAME:	/* SQL_COLUMN_TYPE_NAME */
 		n = nDescMax * 4;
 		ptr = (SQLPOINTER) malloc(n);
-
 		break;
 	default:
 		n = nDescMax;
 		ptr = pszDesc;
-
 		break;
 	}
 

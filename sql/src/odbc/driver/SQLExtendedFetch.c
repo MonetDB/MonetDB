@@ -58,13 +58,11 @@ SQLExtendedFetch(SQLHSTMT hStmt, SQLUSMALLINT nOrientation, SQLLEN nOffset, SQLU
 	if (stmt->State < EXECUTED0 || stmt->State == FETCHED) {
 		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
-
 		return SQL_ERROR;
 	}
 	if (stmt->State == EXECUTED0) {
 		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
-
 		return SQL_ERROR;
 	}
 

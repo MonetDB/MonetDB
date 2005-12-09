@@ -47,11 +47,9 @@ SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEG
 	switch (Attribute) {
 	case SQL_ATTR_APP_PARAM_DESC:
 		*(SQLHANDLE *) Value = stmt->ApplParamDescr;
-
 		return SQL_SUCCESS;
 	case SQL_ATTR_APP_ROW_DESC:
 		*(SQLHANDLE *) Value = stmt->ApplRowDescr;
-
 		return SQL_SUCCESS;
 	case SQL_ATTR_ASYNC_ENABLE:
 		*(SQLUINTEGER *) Value = SQL_ASYNC_ENABLE_OFF;
@@ -61,22 +59,18 @@ SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEG
 		break;
 	case SQL_ATTR_CURSOR_SCROLLABLE:
 		*(SQLUINTEGER *) Value = stmt->cursorScrollable;
-
 		break;
 	case SQL_ATTR_CURSOR_SENSITIVITY:
 		*(SQLUINTEGER *) Value = SQL_INSENSITIVE;
 		break;
 	case SQL_ATTR_CURSOR_TYPE:
 		*(SQLUINTEGER *) Value = stmt->cursorType;
-
 		break;
 	case SQL_ATTR_IMP_PARAM_DESC:
 		*(SQLHANDLE *) Value = stmt->ImplParamDescr;
-
 		return SQL_SUCCESS;
 	case SQL_ATTR_IMP_ROW_DESC:
 		*(SQLHANDLE *) Value = stmt->ImplRowDescr;
-
 		return SQL_SUCCESS;
 	case SQL_ATTR_MAX_LENGTH:
 		*(SQLUINTEGER *) Value = 0;
@@ -98,7 +92,6 @@ SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEG
 		return SQLGetDescField_(stmt->ApplParamDescr, 0, SQL_DESC_ARRAY_SIZE, Value, BufferLength, StringLength);
 	case SQL_ATTR_RETRIEVE_DATA:
 		*(SQLUINTEGER *) Value = stmt->retrieveData;
-
 		break;
 	case SQL_ATTR_ROW_ARRAY_SIZE:
 	case SQL_ROWSET_SIZE:
@@ -111,11 +104,9 @@ SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEG
 		if (stmt->State <= EXECUTED1) {
 			/* Invalid cursor state */
 			addStmtError(stmt, "24000", NULL, 0);
-
 			return SQL_ERROR;
 		}
 		*(SQLUINTEGER *) Value = stmt->currentRow;
-
 		break;
 	case SQL_ATTR_ROW_OPERATION_PTR:
 		return SQLGetDescField_(stmt->ApplRowDescr, 0, SQL_DESC_ARRAY_STATUS_PTR, Value, BufferLength, StringLength);
@@ -135,12 +126,10 @@ SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEG
 	case SQL_ATTR_USE_BOOKMARKS:
 		/* Optional feature not implemented */
 		addStmtError(stmt, "HYC00", NULL, 0);
-
 		return SQL_ERROR;
 	default:
 		/* Invalid attribute/option identifier */
 		addStmtError(stmt, "HY092", NULL, 0);
-
 		return SQL_ERROR;
 	}
 

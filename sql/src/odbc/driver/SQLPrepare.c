@@ -61,7 +61,6 @@ SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 	if (stmt->State >= EXECUTED1 || (stmt->State == EXECUTED0 && mapi_more_results(stmt->hdl))) {
 		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
@@ -69,7 +68,6 @@ SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 	if (szSqlStr == NULL) {
 		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
@@ -95,7 +93,6 @@ SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 	if (ret != MOK) {
 		/* General error */
 		addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
-
 		return SQL_ERROR;
 	}
 

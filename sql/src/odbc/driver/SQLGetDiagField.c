@@ -180,12 +180,10 @@ SQLGetDiagFieldW(SQLSMALLINT HandleType, SQLHANDLE Handle, SQLSMALLINT RecNumber
 	case SQL_DIAG_CLASS_ORIGIN:
 		n = BufferLength * 4;
 		ptr = (SQLPOINTER) malloc(n);
-
 		break;
 	default:
 		n = BufferLength;
 		ptr = DiagInfo;
-
 		break;
 	}
 

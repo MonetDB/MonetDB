@@ -60,7 +60,6 @@ SQLPrimaryKeys_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogName
 	if (szTableName == NULL) {
 		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
-
 		return SQL_ERROR;
 	}
 #ifdef ODBCDEBUG

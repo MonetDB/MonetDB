@@ -59,14 +59,12 @@ SQLDescribeParam(SQLHSTMT hStmt, SQLUSMALLINT nParmNumber, SQLSMALLINT *pnDataTy
 	if (stmt->State == INITED || stmt->State >= EXECUTED0) {
 		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
 	if (nParmNumber < 1 || nParmNumber > stmt->ImplRowDescr->sql_desc_count) {
 		/* Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
-
 		return SQL_ERROR;
 	}
 

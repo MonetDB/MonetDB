@@ -68,7 +68,6 @@ SQLStatistics_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameL
 	default:
 		/* Uniqueness option type out of range */
 		addStmtError(stmt, "HY100", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
@@ -80,7 +79,6 @@ SQLStatistics_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameL
 	default:
 		/* Accuracy option type out of range */
 		addStmtError(stmt, "HY101", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
@@ -89,13 +87,11 @@ SQLStatistics_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameL
 	if (szTableName == NULL) {
 		/* Invalid use of null pointer */
 		addStmtError(stmt, "HY009", NULL, 0);
-
 		return SQL_ERROR;
 	}
 	if (nTableNameLength == 0) {
 		/* Invalid string or buffer length */
 		addStmtError(stmt, "HY090", NULL, 0);
-
 		return SQL_ERROR;
 	}
 

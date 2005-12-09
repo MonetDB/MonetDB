@@ -43,29 +43,27 @@ static struct msql_types {
 	char *name;
 	int concise_type;
 } msql_types[] = {
-	{
-	"bigint", SQL_BIGINT}, {
-	"blob", SQL_BINARY}, {
-	"boolean", SQL_BIT}, {
-	"char", SQL_CHAR}, {
-	"clob", SQL_CHAR}, {
-	"date", SQL_TYPE_DATE}, {
-	"decimal", SQL_DECIMAL}, {
-	"double", SQL_DOUBLE}, {
-	"int", SQL_INTEGER}, {
-	"month_interval", SQL_INTERVAL_MONTH}, {
-	"oid", SQL_GUID}, {
-	"real", SQL_REAL}, {
-	"sec_interval", SQL_INTERVAL_SECOND}, {
-	"smallint", SQL_SMALLINT}, {
-	"table", 0}, {
-	"time", SQL_TYPE_TIME}, {
-	"timestamp", SQL_TYPE_TIMESTAMP},
+	{"bigint", SQL_BIGINT},
+	{"blob", SQL_BINARY},
+	{"boolean", SQL_BIT},
+	{"char", SQL_CHAR},
+	{"clob", SQL_CHAR},
+	{"date", SQL_TYPE_DATE},
+	{"decimal", SQL_DECIMAL},
+	{"double", SQL_DOUBLE},
+	{"int", SQL_INTEGER},
+	{"month_interval", SQL_INTERVAL_MONTH},
+	{"oid", SQL_GUID},
+	{"real", SQL_REAL},
+	{"sec_interval", SQL_INTERVAL_SECOND},
+	{"smallint", SQL_SMALLINT},
+	{"table", 0},
+	{"time", SQL_TYPE_TIME},
+	{"timestamp", SQL_TYPE_TIMESTAMP},
 /* 	{"tinyint", SQL_TINYINT}, */
 /* 	{"ubyte", SQL_TINYINT}, */
-	{
-	"varchar", SQL_VARCHAR}, {
-	0, 0},			/* sentinel */
+	{"varchar", SQL_VARCHAR},
+	{0, 0},		       /* sentinel */
 };
 
 int
@@ -103,7 +101,6 @@ ODBCInitResult(ODBCStmt *stmt)
 		/* XXX more fine-grained control required */
 		/* Syntax error or access violation */
 		addStmtError(stmt, "42000", errstr, 0);
-
 		return SQL_ERROR;
 	}
 	nrCols = mapi_get_field_count(hdl);
@@ -119,14 +116,12 @@ ODBCInitResult(ODBCStmt *stmt)
 		/* result set generating query */
 		assert(nrCols > 0);
 		stmt->State = EXECUTED1;
-
 		break;
 	case 4:		/* Q_UPDATE */
 		/* result count generating query */
 		assert(nrCols == 1);
 		nrCols = 0;
 		stmt->State = EXECUTED0;
-
 		break;
 	default:
 		/* resultless query */
@@ -148,7 +143,6 @@ ODBCInitResult(ODBCStmt *stmt)
 
 		/* Memory allocation error */
 		addStmtError(stmt, "HY001", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
@@ -245,13 +239,11 @@ SQLExecute_(ODBCStmt *stmt)
 	if (stmt->State == INITED || (stmt->State >= EXECUTED0 && stmt->query == NULL)) {
 		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
-
 		return SQL_ERROR;
 	}
 	if (stmt->State >= EXECUTED1 || (stmt->State == EXECUTED0 && mapi_more_results(stmt->hdl))) {
 		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
@@ -272,12 +264,10 @@ SQLExecute_(ODBCStmt *stmt)
 	case MTIMEOUT:
 		/* Communication link failure */
 		addStmtError(stmt, "08S01", mapi_error_str(stmt->Dbc->mid), 0);
-
 		return SQL_ERROR;
 	default:
 		/* General error */
 		addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
-
 		return SQL_ERROR;
 	}
 
