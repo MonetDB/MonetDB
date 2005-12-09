@@ -9803,7 +9803,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
     else if (c->kind == c_fun_decl)
     {
         char sig[1024], *p = c->sem.fun->qname.loc, *q = c->sem.fun->qname.ns.uri;
-        char *r = c->sem.apply.fun->qname.ns.ns;
+        char *r = c->sem.fun->qname.ns.ns;
         int i = 0, j, first = 0;
         unsigned int hash = 0; /* f->module_base; */
 
