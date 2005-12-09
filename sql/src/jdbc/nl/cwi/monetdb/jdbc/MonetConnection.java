@@ -119,12 +119,12 @@ public class MonetConnection implements Connection {
 	final static int LANG_UNKNOWN = -1;
 
 	/** Query types (copied from sql_query.mx) */
-	final static int Q_PARSE = 0;
-	final static int Q_TABLE = 1;
-	final static int Q_UPDATE = 2;
-	final static int Q_SCHEMA = 3;
-	final static int Q_TRANS = 4;
-	final static int Q_PREPARE = 5;
+	final static int Q_PARSE	= '0';
+	final static int Q_TABLE	= '1';
+	final static int Q_UPDATE	= '2';
+	final static int Q_SCHEMA	= '3';
+	final static int Q_TRANS	= '4';
+	final static int Q_PREPARE	= '5';
 
 	/**
 	 * Constructor of a Connection for MonetDB. At this moment the
@@ -1073,11 +1073,14 @@ public class MonetConnection implements Connection {
 					CharBuffer soh = CharBuffer.wrap(tmpLine);
 					soh.get();	// skip the &
 					try {
-						switch (parseNumber(soh)) {
+						switch (soh.get()) {
+							default:
+								throw new java.text.ParseException("Unknown header", 1);
 							case Q_PARSE:
 								throw new java.text.ParseException("Q_PARSE header not allowed here", 1);
 							case Q_TABLE:
 							case Q_PREPARE:
+								soh.get();	// skip space
 								hdr = new ResultSetHeader(
 										parseNumber(soh),	// id
 										parseNumber(soh),	// tuplecount
@@ -1092,6 +1095,7 @@ public class MonetConnection implements Connection {
 									);
 							break;
 							case Q_UPDATE:
+								soh.get();	// skip space
 								hdr = new AffectedRowsHeader(
 										parseNumber(soh)	// count
 									);
@@ -1102,6 +1106,7 @@ public class MonetConnection implements Connection {
 									);
 							break;
 							case Q_TRANS:
+								soh.get();	// skip space
 								if (soh.position() == soh.length()) throw
 									new java.text.ParseException("unexpected end of string", soh.position() - 1);
 								boolean ac = soh.get() == 't' ? true : false;
@@ -1194,7 +1199,7 @@ public class MonetConnection implements Connection {
 	 * @throws java.text.ParseException if no numeric value could be
 	 * read
 	 */
-	private int parseNumber(CharBuffer str)
+	private final int parseNumber(CharBuffer str)
 		throws java.text.ParseException
 	{
 		if (!str.hasRemaining()) throw

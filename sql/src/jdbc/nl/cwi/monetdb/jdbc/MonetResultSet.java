@@ -1705,7 +1705,7 @@ public class MonetResultSet implements ResultSet {
 	 * @return the intrinsic value of the char
 	 * @throws java.text.ParseException if c is not a digit
 	 */
-	static int getIntrinsicValue(char c, int pos)
+	final static int getIntrinsicValue(char c, int pos)
 		throws java.text.ParseException
 	{
 		// note: don't use Character.isDigit() here, because
