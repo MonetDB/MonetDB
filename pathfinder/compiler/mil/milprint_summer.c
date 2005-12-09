@@ -9779,14 +9779,12 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
                     "can't cope with global variables as "
                     "thetajoin input within user-defined function calls.");
     
-        /* count only real levels (if UDF subtract UDF_LEV) */
-        if (fst_nested & ~UDF_LEV)
+        if (fst_nested)
         {
             fst_nested = (int) PFarray_last (way);
         }
 
-        /* count only real levels (if UDF subtract UDF_LEV) */
-        if (snd_nested & ~UDF_LEV)
+        if (snd_nested)
         {
             snd_nested = (int) PFarray_last (way) - 1;
         }
