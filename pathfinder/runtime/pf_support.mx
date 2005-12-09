@@ -589,7 +589,7 @@ proc ll_htordered_unique_thetajoin( int mode,
     var li := 0LL, lp := 0LL, lc := count(int(lo_histo));
     var ri := 0LL, rp := 0LL, rc := count(int(ro_histo));
     var b := new(void,bat,min(lc,rc));
-    var tpe := ttype(lo);
+    var tpe := ttype(l);
 
     if (not(reverse(lo).ordered()) or not(reverse(ro).ordered()))
         ERROR("htordered_unique_thetajoin(): ordered left and right outer columns (iters) expected.\n");
@@ -598,7 +598,7 @@ proc ll_htordered_unique_thetajoin( int mode,
     if ((mode = EQ) and or(or((tpe = int), (tpe = oid)), (tpe = lng)))  {
         var iter_max := 32;
         var combine := true;
-        if ((tpe = lng) or (tpe = lng_oid)) {
+        if ((tpe = lng) or (lng_oid = lng)) {
             iter_max := log2(lng(max(max(lr_histo),max(rr_histo))));
             combine := (iter_max + log2(lng(max(max(l),max(r))))) < 64;
         }
