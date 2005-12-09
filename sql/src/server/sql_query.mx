@@ -22,6 +22,7 @@
 #ifndef QUERY_H
 #define QUERY_H
 
+/* when making changes to this enum, also make the same change in Mapi.mx */
 typedef enum sql_query_t {
 	Q_PARSE = 0,
 	Q_TABLE = 1,
