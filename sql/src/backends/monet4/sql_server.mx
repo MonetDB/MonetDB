@@ -109,11 +109,11 @@ stream.
 	.COMMAND mvc_result_column( mvc m, str tname, str name, str typename, int digits, int scale, any val) = mvc_result_value_wrap; "Add the value to the row query result"
 	.COMMAND mvc_result_column( mvc m, str tname, str name, str typename, int digits, int scale, BAT[oid,any] col) = mvc_result_column_wrap; "Add the colunm to the table query result"
 
+	.COMMAND mvc_schema_operation(mvc m, Stream s) =
+		mvc_export_schema_wrap; "export a schema operation to stream s"
+
 	.COMMAND mvc_export_result(mvc m, Stream s, int result_id) =
 		mvc_export_result_wrap; "export a result to stream s"
-
-	.COMMAND mvc_export_default(mvc m, Stream s) =
-		mvc_export_default_wrap; "export a default result to stream s"
 
 	.COMMAND mvc_affected_rows(mvc m, Stream s, int cnt) =
 		mvc_affected_rows_int; "export the number of affected rows by the current query to stream s"
@@ -530,9 +530,9 @@ mvc_export_result_wrap(mvc *M, Stream *S, int *res_id)
 }
 
 int
-mvc_export_default_wrap(mvc *M, Stream *S)
+mvc_export_schema_wrap(mvc *M, Stream *S)
 {
-	if (mvc_export_default(*(mvc **) M, *(stream **) S))
+	if (mvc_export_schema_operation(*(mvc **) M, *(stream **) S))
 		return GDK_FAIL;
 
 	return GDK_SUCCEED;

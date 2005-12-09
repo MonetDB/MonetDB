@@ -27,8 +27,8 @@
 #include <sql_catalog.h>
 #include <sql_qc.h>
 
-extern int mvc_export_default(mvc *m, stream *s);
 extern int mvc_export_affrows(mvc *m, stream *s, lng val);
+extern int mvc_export_schema_operation(mvc *m, stream *s);
 extern int mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d, int sc, int eclass, ptr p, int mtype);
 extern int mvc_export_result(mvc *c, stream *s, int res_id);
 extern int mvc_export_prepare(mvc *c, stream *s, cq *q);
@@ -461,12 +461,6 @@ mvc_export_result dumps the sql header information and the
 first part (reply_size) of the result set. It should be produced in Monet format to 
 enable mapi to work with it.
 @c
-static str mvcDefaultMsg[] = {
-	"&1 0 1 1 1\n",
-	"&2 0 1 1 1\n",
-	"&3 0 1 1 1\n",
-	"&4 0 1 1 1\n"
-};
 
 int
 mvc_export_prepare(mvc *c, stream *out, cq *q)
@@ -516,19 +510,6 @@ mvc_export_prepare(mvc *c, stream *out, cq *q)
 	return 0;
 }
 
-
-static int mvcDefaultMsg_len = 11; /*strlen("&4 0 1 1 1\n");*/
-
-int
-mvc_export_default(mvc *m, stream *s)
-{
-	int ok = 1;
-
-	assert(m->type > 0 && m->type <= 4);
-	if (s) 
-		ok = (stream_write(s, mvcDefaultMsg[m->type-1], mvcDefaultMsg_len, 1) == 1);
-	return (ok) ? 0 : -1;
-}
 
 @-
 improved formatting of positive integers
@@ -818,8 +799,8 @@ mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d,
 	int ok = 1;
 	char *rsep = "\t]\n";
 
-	assert(qtype > 0 && qtype <= 4);
-	if (stream_write(s, mvcDefaultMsg[qtype-1], mvcDefaultMsg_len, 1) == 1&&
+	assert(qtype == Q_TABLE);
+	if (stream_write(s, "&1 0 1 1 1\n", 11, 1) == 1 &&
 	    /* fallback to default tuplecount (1) and id (0) */
 	    /* TODO first header name then values */
 	    stream_write(s, "# ", 2, 1) == 1 &&
@@ -840,130 +821,129 @@ mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d,
 }
 
 int
+mvc_export_schema_operation(mvc *m, stream *s)
+{
+	assert(m->type == Q_SCHEMA);
+	if (!s || stream_write(s, "&3\n", 3, 1) != 1)
+		return -1;
+	return 0;
+}
+
+int
 mvc_export_affrows(mvc *m, stream *s, lng val) 
 {
 	assert(m->type == Q_UPDATE);
 	if (!s || stream_write(s, "&2 ", 3, 1) != 1 || !mvc_send_lng(s, val) ||
-	    stream_write(s, "\n", 1, 1) != 1)
+			stream_write(s, "\n", 1, 1) != 1)
 		return -1;
-       return 0;
+	return 0;
 }
-
-static str tableMsg[] = {
-	"&1 ",
-	"&2 ",
-	"&3 ",
-	"&4 "
-};
-
-static int tableMsgLen = 3; /*strlen("&4 ");*/
-
-static str transMsgt = "&4 t\n";
-static str transMsgf = "&4 f\n";
-static int transMsgLen = 5;
 
 int
 mvc_export_result(mvc *m, stream *s, int res_id)
 {
-	int i, ok = 1;
+	int i;
+	size_t count;
 	res_table *t = res_tables_find(m->results, res_id);
 
 	if (!s || !t)
 		return 0;
 
-	/* we shouldn't have anything else but Q_TRANS or Q_TABLE here */
-	assert(t->query_type == Q_UPDATE || t->query_type == Q_TABLE);
+	/* we shouldn't have anything else but Q_TABLE here */
+	assert(t->query_type == Q_TABLE);
 
-	if (ok && t->query_type == Q_TRANS) {
+/*
+Request for adoption: who wants to adopt this cute little piece of code?
+	if (t->query_type == Q_TRANS) {
 		if (m->auto_commit) {
-			return(stream_write(s, transMsgt, transMsgLen, 1) == 1);
+			if (stream_write(s, "&4 t\n", 5, 1) != 1)
+				return -1;
 		} else {
-			return(stream_write(s, transMsgf, transMsgLen, 1) == 1);
+			if (stream_write(s, "&4 f\n", 5, 1) != 1)
+				return -1;
 		}
 	}
-	/* else, we have a Q_TABLE */
-	ok = (stream_write(s, tableMsg[t->query_type-1], tableMsgLen, 1) == 1);
+*/
 
-	if (!ok)
+	if (!(stream_write(s, "&1 ", 3, 1) == 1))
 		return -1;
 
 	/* id */
-	if (!(ok = mvc_send_int(s, t->id)) ||
-	      !(stream_write(s, " ", 1, 1) >= 0))
+	if (!mvc_send_int(s, t->id) ||
+			stream_write(s, " ", 1, 1) != 1)
 		return -1;
 
 	/* tuple count */
-	{
-		size_t count;
+	if (t->order) {
+		BAT *order = BATdescriptor(t->order);
 
-		if (t->order) {
-			BAT *order = BATdescriptor(t->order);
+		count = BATcount(order);
+		BBPunfix(order->batCacheid);
+	} else
+		count = 1;
+	if (!mvc_send_int(s, count) ||
+			stream_write(s, " ", 1, 1) != 1)
+		return -1;
 
-			count = BATcount(order);
-			BBPunfix(order->batCacheid);
-		} else
-			count = 1;
-		if (!(ok = mvc_send_int(s, count)) ||
-	            !(stream_write(s, " ", 1, 1) >= 0))
-			return -1;
-	}
 	/* column count */
-	if (!(ok = mvc_send_int(s, t->nr_cols)) ||
-	    !(stream_write(s, " ", 1, 1) >= 0))
+	if (!mvc_send_int(s, t->nr_cols) ||
+			stream_write(s, " ", 1, 1) != 1)
 		return -1;
 
-	/* row count, not jet implemented, use reply_size */
-	if (!(ok = mvc_send_int(s, m->reply_size))) 
+	/* row count, min(count, reply_size) */
+	if (!mvc_send_int(s, m->reply_size < count ? m->reply_size : count)) 
 		return -1;
 
-	ok = (stream_write(s, "\n# ", 3, 1) == 1);
-	for (i = 0; i < t->nr_cols && ok; i++) {
+	if (stream_write(s, "\n# ", 3, 1) != 1)
+		return -1;
+	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 		int len = strlen(c->tn);
 
-		if (len)
-			ok = (stream_write(s, c->tn, len, 1) == 1);
-		if (i + 1 < t->nr_cols && ok)
-			ok = (stream_write(s, ",\t", 2, 1) == 1);
+		if (len && stream_write(s, c->tn, len, 1) != 1)
+			return -1;
+		if (i + 1 < t->nr_cols && stream_write(s, ",\t", 2, 1) != 1)
+			return -1;
 	}
-	if (ok)
-		ok = (stream_write(s, " # table_name\n# ", 16, 1) == 1);
+	if (stream_write(s, " # table_name\n# ", 16, 1) != 1)
+		return -1;
 
-	for (i = 0; i < t->nr_cols && ok; i++) {
+	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 
-		ok = (stream_write(s, c->name, strlen(c->name), 1) == 1);
-		if (i + 1 < t->nr_cols && ok)
-			ok = (stream_write(s, ",\t", 2, 1) == 1);
+		if (stream_write(s, c->name, strlen(c->name), 1) != 1)
+			return -1;
+		if (i + 1 < t->nr_cols && stream_write(s, ",\t", 2, 1) != 1)
+			return -1;
 	}
-	if (ok)
-		ok = (stream_write(s, " # name\n# ", 10, 1) == 1);
+	if (stream_write(s, " # name\n# ", 10, 1) != 1)
+		return -1;
 
-	for (i = 0; i < t->nr_cols && ok; i++) {
+	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 
-		ok = (stream_write(s, c->type.type->sqlname, strlen(c->type.type->sqlname), 1) == 1);
-		if (i + 1 < t->nr_cols && ok)
-			ok = (stream_write(s, ",\t", 2, 1) == 1);
+		if (stream_write(s, c->type.type->sqlname, strlen(c->type.type->sqlname), 1) != 1)
+			return -1;
+		if (i + 1 < t->nr_cols && stream_write(s, ",\t", 2, 1) != 1)
+			return -1;
 	}
-	if (ok)
-		ok = (stream_write(s, " # type\n# ", 10, 1) == 1);
+	if (stream_write(s, " # type\n# ", 10, 1) != 1)
+		return -1;
 
-	for (i = 0; i < t->nr_cols && ok; i++) {
+	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 		int mtype = c->type.type->localtype;
 		int eclass = c->type.type->eclass;
 
-		ok = export_length(s, mtype, eclass, c->type.digits, c->type.scale, c->b, c->p);
-		if (i + 1 < t->nr_cols && ok)
-			ok = (stream_write(s, ",\t", 2, 1) == 1);
+		if (!export_length(s, mtype, eclass, c->type.digits, c->type.scale, c->b, c->p))
+			return -1;
+		if (i + 1 < t->nr_cols && stream_write(s, ",\t", 2, 1) != 1)
+			return -1;
 	}
-	if (ok)
-		ok = (stream_write(s, " # length\n", 10, 1) == 1);
+	if (stream_write(s, " # length\n", 10, 1) != 1)
+		return -1;
 
-	if (ok)
-		return mvc_export_table(m, s, t, 0, m->reply_size);
-	return (ok) ? 0 : -1;
+	return mvc_export_table(m, s, t, 0, m->reply_size);
 }
 
 int
