@@ -118,6 +118,14 @@ public class MonetConnection implements Connection {
 	/** an unknown language */
 	final static int LANG_UNKNOWN = -1;
 
+	/** Query types (copied from sql_query.mx) */
+	final static int Q_PARSE = 0;
+	final static int Q_TABLE = 1;
+	final static int Q_UPDATE = 2;
+	final static int Q_SCHEMA = 3;
+	final static int Q_TRANS = 4;
+	final static int Q_PREPARE = 5;
+
 	/**
 	 * Constructor of a Connection for MonetDB. At this moment the
 	 * current implementation limits itself to storing the given host,
@@ -1066,10 +1074,10 @@ public class MonetConnection implements Connection {
 					soh.get();	// skip the &
 					try {
 						switch (parseNumber(soh)) {
-							case MonetStatement.Q_PARSE:
+							case Q_PARSE:
 								throw new java.text.ParseException("Q_PARSE header not allowed here", 1);
-							case MonetStatement.Q_TABLE:
-							case MonetStatement.Q_PREPARE:
+							case Q_TABLE:
+							case Q_PREPARE:
 								hdr = new ResultSetHeader(
 										parseNumber(soh),	// id
 										parseNumber(soh),	// tuplecount
@@ -1083,17 +1091,17 @@ public class MonetConnection implements Connection {
 										hdrl.seqnr
 									);
 							break;
-							case MonetStatement.Q_UPDATE:
+							case Q_UPDATE:
 								hdr = new AffectedRowsHeader(
 										parseNumber(soh)	// count
 									);
 							break;
-							case MonetStatement.Q_SCHEMA:
+							case Q_SCHEMA:
 								hdr = new AffectedRowsHeader(
 										Statement.SUCCESS_NO_INFO
 									);
 							break;
-							case MonetStatement.Q_TRANS:
+							case Q_TRANS:
 								if (soh.position() == soh.length()) throw
 									new java.text.ParseException("unexpected end of string", soh.position() - 1);
 								boolean ac = soh.get() == 't' ? true : false;

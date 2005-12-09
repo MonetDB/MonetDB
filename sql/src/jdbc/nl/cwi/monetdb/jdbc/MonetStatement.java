@@ -72,14 +72,6 @@ public class MonetStatement implements Statement {
 	/** A List to hold all queries of a batch */
 	private List batch;
 
-	/** Query types (copied from sql_query.mx) */
-	final static int Q_PARSE = 0;
-	final static int Q_TABLE = 1;
-	final static int Q_UPDATE = 2;
-	final static int Q_SCHEMA = 3;
-	final static int Q_TRANS = 4;
-	final static int Q_PREPARE = 5;
-
 
 	/**
 	 * MonetStatement constructor which checks the arguments for validity, tries
