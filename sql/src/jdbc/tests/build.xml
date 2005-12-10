@@ -80,58 +80,45 @@ All Rights Reserved.
     <pathelement path="${builddir}" />
     <pathelement path="${JDBC_jar}" />
   </path>
-  <target
-    name="test"
-	depends="compile,jdbc,Cautocommit,Csavepoints,PStimedate,PStimezone,Rbooleans,Rpositioning,Rtimedate,Sbatching,Rmetadata,Cmanycon"
-  />
-  <target name="Cautocommit">
-    <java classname="Test_Cautocommit" classpathref="test_path" failonerror="true">
-	  <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb${debug}" />
-	</java>
+
+  <target name="test" depends="compile,jdbc">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Cautocommit" />
+    </antcall>
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Csavepoints" />
+    </antcall>
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Cmanycon" />
+    </antcall>
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Sbatching" />
+    </antcall>
+    <antcall target="test_class">
+      <param name="test.class" value="Test_PStimedate" />
+    </antcall>
+    <antcall target="test_class">
+      <param name="test.class" value="Test_PStimezone" />
+    </antcall>
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Rbooleans" />
+    </antcall>
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Rpositioning" />
+    </antcall>
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Rtimedate" />
+    </antcall>
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Rmetadata" />
+    </antcall>
   </target>
-  <target name="Csavepoints">
-    <java classname="Test_Csavepoints" classpathref="test_path" failonerror="true">
-	  <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb${debug}" />
-	</java>
+
+  <target name="test_class">
+    <echo message="Testing class ${test.class}" />
+    <java classname="${test.class}" classpathref="test_path" failonerror="true">
+      <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb${debug}" />
+    </java>
   </target>
-  <target name="PStimedate">
-    <java classname="Test_PStimedate" classpathref="test_path" failonerror="true">
-	  <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb${debug}" />
-	</java>
-  </target>
-  <target name="PStimezone">
-    <java classname="Test_PStimezone" classpathref="test_path" failonerror="true">
-	  <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb${debug}" />
-	</java>
-  </target>
-  <target name="Rbooleans">
-    <java classname="Test_Rbooleans" classpathref="test_path" failonerror="true">
-	  <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb${debug}" />
-	</java>
-  </target>
-  <target name="Rpositioning">
-    <java classname="Test_Rpositioning" classpathref="test_path" failonerror="true">
-	  <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb${debug}" />
-	</java>
-  </target>
-  <target name="Rtimedate">
-    <java classname="Test_Rtimedate" classpathref="test_path" failonerror="true">
-	  <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb${debug}" />
-	</java>
-  </target>
-  <target name="Sbatching">
-    <java classname="Test_Sbatching" classpathref="test_path" failonerror="true">
-	  <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb${debug}" />
-	</java>
-  </target>
-  <target name="Rmetadata">
-    <java classname="Test_Rmetadata" classpathref="test_path" failonerror="true">
-	  <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb${debug}" />
-	</java>
-  </target>
-  <target name="Cmanycon">
-    <java classname="Test_Cmanycon" classpathref="test_path" failonerror="true">
-	  <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb${debug}" />
-	</java>
-  </target>
+  
 </project>
