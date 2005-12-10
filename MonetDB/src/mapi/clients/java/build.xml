@@ -28,11 +28,11 @@ All Rights Reserved.
 
   <!-- full target -->
   <target name="all">
-    <antcall target="jar" />
+    <antcall target="jar_mapi" />
   </target>
 
   <!-- jar targets -->
-  <target name="jar" depends="compile">
+  <target name="jar_mapi" depends="compile_mapi">
     <jar jarfile="${jardir}/mapi.jar">
       <fileset dir="${builddir}">
         <include name="**/*.class" />
@@ -45,7 +45,7 @@ All Rights Reserved.
   </target>
 
   <!-- compile targets -->
-  <target name="compile" depends="prepare">
+  <target name="compile_mapi" depends="prepare">
     <echo message="Compiling Java Mapi" />
     <javac
       classpath="${srcdir}"
