@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0"?><!-- vim:set ts=2 sw=2 expandtab: -->
 
 <!--
 The contents of this file are subject to the MonetDB Public License
@@ -27,10 +27,12 @@ All Rights Reserved.
 
 <project name="JDBCTests" default="compile" basedir=".">
 
+  <property file="../build.properties"/> <!-- included for version -->
   <!-- set global properties for this build -->
   <property name="srcdir"    value="." />
   <property name="builddir"  value="build" />
-  <property name="JDBC_jar"  value="../jars/MonetDB_JDBCClient.jar" />
+  <property name="JDBC_jar"
+	  value="../jars/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-jdbc.jar" />
 
   <property file="build.properties"/>
   <property file="build.local.properties"/>
@@ -51,6 +53,23 @@ All Rights Reserved.
     </javac>
   </target>
 
+  <!-- makes sure the jdbc driver is compiled -->
+  <target name="jdbc" depends="find_driver" unless="have_driver">
+    <ant antfile="build.xml" dir=".." target="jar_jdbc" />
+  </target>
+
+  <target name="find_driver">
+    <condition property="have_driver">
+      <and>
+        <available classname="nl.cwi.monetdb.jdbc.MonetDriver">
+          <classpath>
+            <pathelement path="${JDBC_jar}" />
+          </classpath>
+        </available>
+      </and>
+    </condition>
+  </target>
+
   <!-- This target removes the build directory -->
   <target name="clean">
     <delete quiet="true" dir="${builddir}" />
@@ -63,7 +82,7 @@ All Rights Reserved.
   </path>
   <target
     name="test"
-	depends="compile,Cautocommit,Csavepoints,PStimedate,PStimezone,Rbooleans,Rpositioning,Rtimedate,Sbatching,Rmetadata,Cmanycon"
+	depends="compile,jdbc,Cautocommit,Csavepoints,PStimedate,PStimezone,Rbooleans,Rpositioning,Rtimedate,Sbatching,Rmetadata,Cmanycon"
   />
   <target name="Cautocommit">
     <java classname="Test_Cautocommit" classpathref="test_path" failonerror="true">
