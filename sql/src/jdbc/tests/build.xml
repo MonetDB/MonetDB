@@ -34,8 +34,9 @@ All Rights Reserved.
   <!-- set global properties for this build -->
   <property name="srcdir"    value="." />
   <property name="builddir"  value="build" />
+  <property name="jardir"    value="../jars" />
   <property name="JDBC_jar"
-	  value="../jars/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-jdbc.jar" />
+    value="${jardir}/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-jdbc.jar" />
   <property name="jdbc_url"
     value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb${debug}" />
 
