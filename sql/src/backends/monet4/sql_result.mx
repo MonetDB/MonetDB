@@ -471,9 +471,9 @@ mvc_export_prepare(mvc *c, stream *out, cq *q)
 	if (!out)
 		return 0;
 
-	/* indicate to client that a new SQL command starts here */
+	/* write header, query type: Q_PREPARE */
 	if (stream_printf(out,
-		"&5 %d %d 3 0\n"
+		"&5 %d %d 3 0\n" /* TODO: add type here: r(esult) or u(pdate) */
 		"# prepare,	prepare,	prepare # table_name\n"
 		"# type,	digits,	scale # name\n"
 		"# varchar,	int,	int # type\n"
@@ -832,8 +832,16 @@ mvc_export_schema_operation(mvc *m, stream *s)
 int
 mvc_export_affrows(mvc *m, stream *s, lng val) 
 {
+	/* if we don't have a stream, nothing can go wrong, so we return
+	 * success.  This is especially vital for execution of internal SQL
+	 * commands, since they don't get a stream to suppress their output.
+	 * If we would fail on heaving no stream here, those internal commands
+	 * fail too.
+	 */
+	if (!s) return 0;
+	
 	assert(m->type == Q_UPDATE);
-	if (!s || stream_write(s, "&2 ", 3, 1) != 1 || !mvc_send_lng(s, val) ||
+	if (stream_write(s, "&2 ", 3, 1) != 1 || !mvc_send_lng(s, val) ||
 			stream_write(s, "\n", 1, 1) != 1)
 		return -1;
 	return 0;
@@ -865,6 +873,7 @@ Request for adoption: who wants to adopt this cute little piece of code?
 	}
 */
 
+	/* query type: Q_TABLE */
 	if (!(stream_write(s, "&1 ", 3, 1) == 1))
 		return -1;
 
@@ -950,6 +959,28 @@ int
 mvc_export_chunk(mvc *m, stream *s, int res_id, unsigned int offset, unsigned int nr)
 {
 	res_table *t = res_tables_find(m->results, res_id);
+
+	/* query type: Q_BLOCK */
+	if (!(stream_write(s, "&6 ", 3, 1) == 1))
+		return -1;
+
+	/* column count */
+	if (!mvc_send_int(s, t->nr_cols) ||
+			stream_write(s, " ", 1, 1) != 1)
+		return -1;
+
+	/* row count */
+	if (!mvc_send_int(s, nr) || 
+			stream_write(s, " ", 1, 1) != 1)
+		return -1;
+
+	/* block offset */
+	if (!mvc_send_int(s, offset)) 
+		return -1;
+
+	if (stream_write(s, "\n", 1, 1) != 1)
+		return -1;
+
 	return mvc_export_table(m, s, t, offset, nr);
 }
 
