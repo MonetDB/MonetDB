@@ -42,8 +42,7 @@ function user.main():void;	# 0  (main:void)
     user.tryme();	# 2  (_2:bit)
 # shouldn;t hang when you forget the exception 	# 3  (_3:str)
 end main;	# 4  
-!ERROR: MALexception:factory.call:Factory contains errors
-#
+!ERROR: MALexception:factory.call: Factory contains errors
 
 # 08:01:07 >  
 # 08:01:07 >  Done.
