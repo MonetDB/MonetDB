@@ -687,7 +687,7 @@ if test "x$have_java" != xno; then
     CLASSPATH=""
   fi
   if test x"$ANT" = xno; then
-    have_jave="no"
+    have_java="no"
   fi
 fi
 AC_SUBST(JAVAVERS)
