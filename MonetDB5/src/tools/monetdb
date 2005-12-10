@@ -1,0 +1,163 @@
+#!/bin/bash
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-2005 CWI.
+# All Rights Reserved.
+
+function usage()
+{
+	echo "Usage: monetdb [command] [options] [script]"
+	echo "Primary command:"
+	echo "    --start         Server(s) are started in the dbfarm"
+	echo "    --shutdown      Server(s) are gracefully stopped"
+	echo "    --status        Show the server status"
+	echo "    --checkpoint    Create a database checkpoint"
+	echo ""
+	echo "Secondary options:"
+	echo "    --dbname=<database_name>"
+	echo "    --dbfarm=<directory>"
+	echo "    --dbinit=<stmt>           Server prepare statement"
+	echo "    --config=<config_file>    Configuration file"
+	echo "    --debug=<number>          Trace server actions[0]"
+	echo "    --daemon=yes|no           Run in background [no]"
+	echo "    --set <option>=<value>    Set environment value"
+	echo "    --help                    This list of options"
+}
+
+DBFARM=$MONET5_PREFIX/var/MonetDB5/dbfarm
+ACTION="--start"
+
+case "$1" in
+ "--help" )
+	usage 
+	exit ;;
+ "--start" | "--shutdown" | "--status" | "--checkpoint" ) 
+		ACTION=$1;
+		shift
+		ARGS=$* ;;
+ * ) ;;
+esac
+
+function getPID ()
+{
+	pid=`head -1 $1/.gdk_lock |sed -e "s/.*PID=//"|sed -e "s/ .*//"`
+	active=`ps --no-heading --format pid -p $pid`
+	echo $active
+}
+
+function getTIME ()
+{
+	head -1 $1/.gdk_lock | sed -e "s/.*TIME=//"| sed -e "s/\@.*//"
+}
+
+function start_mserver()
+{
+	pid=`getPID $1`
+	if [ $pid"" = "" ]
+	then
+		# use previous arguments if needed
+		args=$ARGS
+		if [ $ARGS = "--dbname=$1" ]
+		then
+			args=`cat $1/.mserver.args`
+		fi
+		echo "start $1 $args"
+		mserver --set daemon=yes $args &
+		sleep 2
+		pid=`getPID $1`
+		if [ $pid"" = "" ]
+		then
+			echo `date` " FAILED $1 $args" >>monetdb.log
+		else
+			echo `date` " START $1 $args" >>monetdb.log
+		fi
+	else
+		echo "$1 server already running"
+	fi
+}
+function shutdown_mserver()
+{
+	pid=`getPID $1`
+	if [ $pid"" = "" ]
+	then
+		echo "$1 server not running"
+	else
+		echo "shutdown $1 $pid"
+		kill -TERM $pid
+		echo `date` " SHUTDOWN $1" >>monetdb.log
+	fi
+}
+
+function show_status()
+{
+	pid=""
+	if [ -d $1 ]
+	then
+		echo "DATABASE: $1"
+		if [ -f $1/.mserver.args ]
+		then
+			echo "    ARGS:" `cat $1/.mserver.args`
+		fi
+		if [ -f $1/.gdk_lock ]
+		then
+			echo " STARTED:" `getTIME $1`
+			pid=`getPID $1`
+			if  [ $pid"" != "" ]
+			then
+				echo "     PID: $pid" 
+			fi
+			if [ -f $1/.mserver.status ]
+			then
+				echo "  STATUS:" `cat $1/.mserver.status`
+			fi
+		fi
+		echo ""
+	fi
+}
+
+
+# ok, switch to dbfarm
+cd $DBFARM
+DBLIST=`ls`
+
+tmp=`echo $* | sed -e "s/^.*--dbname=//"|sed -e "s/ .*//"`
+if [ "$tmp" != "" ]
+then
+	DBLIST=$tmp
+fi
+#echo "DBLIST $DBLIST"
+
+case "$ACTION" in
+ "--start" )
+	for i in $DBLIST
+	do
+		start_mserver  $i 
+	done
+	;;
+ "--shutdown" )
+	for i in $DBLIST
+	do
+		shutdown_mserver  $i 
+	done
+	;;
+ "--status" )
+	for i in $DBLIST
+	do
+		show_status  $i 
+	done
+	;;
+ "--checkpoint" ) 
+	echo "Not yet implemented" ;;
+ * ) ;;
+esac
