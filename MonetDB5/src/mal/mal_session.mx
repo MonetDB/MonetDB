@@ -473,6 +473,8 @@ MALengine(Client c)
 	oldstate.stop = 0;
 	oldstate.vtop = 0;
 
+	if( c->blkmode)
+		return MAL_SUCCEED;
 	prg = c->curprg;
 	if (prg == NULL)
 		return throwMessage("MALengine", "Main MAL function missing");

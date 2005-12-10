@@ -753,7 +753,7 @@ The expandMalBlk routine takes the number of new-lines as a parameter
 and guesses the size of variable and statement table.
 
 Experience shows that trimming leads to memory fragmentation (140K lost
-after Mserver init) and is therefore turned off.
+after server init) and is therefore turned off.
 @c
 void
 trimexpand(MalBlkPtr mb, int varsize, int stmtsize)
@@ -1781,8 +1781,10 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 	for (i = mb->vtop - 1; i >= k; i--) {
 		VarPtr v = getVar(mb, i);
 
-		if (v->isaconstant && v->type == type && ATOMcmp(cst->vtype, VALget(&v->value), vcst) == 0)
-			return i;
+		if (v && v->isaconstant && 
+			v->type == type && 
+			ATOMcmp(cst->vtype, VALget(&v->value), vcst) == 0)
+				return i;
 	}
 	k = newTmpVariable(mb, type);
 	isConstant(mb, k) = TRUE;
