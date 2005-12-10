@@ -846,7 +846,8 @@ typedef enum sql_query_t {
 	Q_UPDATE = 2,
 	Q_SCHEMA = 3,
 	Q_TRANS = 4,
-	Q_PREPARE = 5
+	Q_PREPARE = 5,
+	Q_BLOCK = 6
 } sql_query_t;
 
 struct MapiResultSet {
@@ -2970,7 +2971,6 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 			snprintf(buf, BUFSIZ, "[ %d\t]", result->row_count);	
 			add_cache(result, strdup(buf));
 		}	break;
-		case Q_SCHEMA:
 		case Q_TABLE:
 			/* result set id */
 			result->tableid = strtol(n, &n, 0);
@@ -2980,6 +2980,11 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 			result->fieldcnt = strtol(n, &n, 0);
 			n++;	/* row count, tuples in this result (not used) */
 			/* (void)strtol(n, &n, 0); */
+			break;
+		case Q_BLOCK:
+			/* Mapi ignores the Q_BLOCK header, so spoof the querytype
+			 * back to a Q_TABLE to let it go unnoticed */
+			result->querytype = Q_TABLE;
 			break;
 		}
 		
