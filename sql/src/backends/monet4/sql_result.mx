@@ -473,12 +473,12 @@ mvc_export_prepare(mvc *c, stream *out, cq *q)
 
 	/* write header, query type: Q_PREPARE */
 	if (stream_printf(out,
-		"&5 %d %d 3 0\n" /* TODO: add type here: r(esult) or u(pdate) */
+		"&5 %d %d 3 %d\n" /* TODO: add type here: r(esult) or u(pdate) */
 		"# prepare,	prepare,	prepare # table_name\n"
 		"# type,	digits,	scale # name\n"
 		"# varchar,	int,	int # type\n"
 		"# 0,	0,	0 # length\n",
-		q->id, len ) < 0) {
+		q->id, len, len) < 0) {
 		return -1;
 	}
 
