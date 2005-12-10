@@ -1,3 +1,5 @@
+@section Downloads and Installation
+
 Using MonetDB for experimentation and application development
 requires installation of the back-end server Mserver, a front-end compiler for 
 SQL or XQuery, the APIs, and a (graphical) user interface.
@@ -16,16 +18,16 @@ scenario geared at querying a historical database with trading trips of the
 world-famous East-Indian Trading Corp (1602-1795).
 
 If you encounter errors during the installation, please have a look at the
-@url{"http://monetdb.cwi.nl/GetGoing/Trouble/FAQ/index.html",FAQ}
+@url{http://monetdb.cwi.nl/GetGoing/Trouble/FAQ/index.html,FAQ}
 for common errors and some advice on how to proceed.
 
 @menu
 * Software Versions ::
-* Binary Distributions::Intended for end-users.
-* Source Distributions::Intended for system developers.
+* Application Development Distribution::
+* Source Development Distribution::
 * Start and Stop the Server::
 @end menu
-@node Software Versions, Binary Distributions, Download and Installation, General Introduction
+@node Software Versions, Application Development Distribution, Download and Installation, General Introduction
 @subsection Software Versions
 The MonetDB product family consists of several related packages.
 At the time of writing MonetDB Version 4.9 is distributed worldwide
@@ -36,12 +38,6 @@ This manual, however, is written in the context of preparing the
 launch of MonetDB Version 5. It works with the SQL version 2.8, but
 there is currently no Pathfinder front-end available.
 
-@node Binary Distributions, Source Distributions, Software Versions, Download and Installation
-@subsection Binary Distributions
+@node Application Development Distribution, Source Development Distribution, Software Versions, Download and Installation
+@subsection Application Development Distribution
 
-@node Source Distributions, Start and Stop the Server,Binary Distributions, Download and Installation
-@subsection Source Distributions
-
-@node Start and Stop the Server , MonetDB Overview ,Source Distributions, Download and Installation
-
-@section Start and Stop the Server

@@ -1,0 +1,58 @@
+@section Start and Stop the Server
+Once downloaded and installed, it is adviceable to check its basic
+functionality with the following actions:
+@example
+> monetdb --help
+@end example
+It should respond with something like
+
+@verbatim
+Usage: monetdb [command] [options] [script]
+Primary command:
+	--start			Server(s) are started in the dbfarm
+	--shutdown		Server(s) are gracefully stopped
+	--status		Show the server status 
+	--checkpoint	Create a database checkpoint
+
+Secondary options:
+    --dbname=<database_name>
+    --dbfarm=<directory>
+    --dbinit=<stmt>           Server prepare statement
+    --config=<config_file>    Configuration file
+    --debug=<number>          Trace server actions[0]
+    --daemon=yes|no           Run in background [no]
+    --set <option>=<value>    Set environment value
+    --help                    This list of options
+
+Further details can be found in the configuration file.
+@end verbatim
+
+An error messages typically indicate a wrongly configured $PATH variable, 
+making the @code{monetdb} program
+invisible to your shell. Retrace your installation steps.
+
+An access mode violation indicates that either the directory path
+to the location of the MonetDB data store does not exists, our the
+user has lack of file system permissions to create new directories/files
+in the location specified.
+
+To start the MonetDB server for the default database simply type.
+@example
+> monetdb --start
+@end example
+The first time you call @code{monetdb} it attempts to install
+the tutorial database. It responds with a message that the server(s)
+has (have)  been started in the background, or an error message explains 
+the problems encountered.
+
+At any time you can inspect the status of the (running) servers
+using the command option @code{--status}.
+@example
+>monetdb --status
+DATABASE: voc
+ STARTED: Sat Dec 10 20:45:00 2005
+     PID: 24127
+@end example
+A particular server kan be put to sleep using the @code{--shutdown}
+option.  
+All actions of monetdb are logged for post analysis.
