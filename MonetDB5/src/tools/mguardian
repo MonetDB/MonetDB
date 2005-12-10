@@ -1,0 +1,143 @@
+#!/bin/bash
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-2005 CWI.
+# All Rights Reserved.
+
+function usage()
+{
+	echo "Usage: mguardian [options] [mserver(s)]"
+	echo "    --start        Start looking after msercer(s)"
+	echo "    --shutdown     Stop mguardian "
+	echo "    --ignore       Stop looking after mserver(s)"
+	echo "    --delay        Set check delay to N seconds [300]"
+	echo "    --help         This list of options"
+	echo "The delay should be set first before mguardian acts on it"
+}
+
+DBFARM=$MONET5_PREFIX/var/MonetDB5/dbfarm
+DELAY=300
+ACTION=start
+
+
+case "$1" in
+ "--start" )
+	ACTION=start
+	shift
+	;;
+ "--shutdown" )
+	killall mguardian
+	;;
+ "--ignore" )
+	ACTION=ignore
+	shift
+	;;
+ "--delay"* )
+	DELAY=`echo $1|sed -e "s/--delay=//"`
+	ACTION=delay
+	shift
+	;;
+ "--help" | * )
+	usage 
+	exit 0 ;;
+esac
+
+cd $DBFARM
+if [ "$*" != "" ]
+then
+	DBLIST=$*
+else
+	DBLIST=`ls`
+fi
+echo $ACTION $DELAY $DBLIST
+
+function getPID ()
+{
+	active=""
+	if [ -f $1/.gdk_lock ]
+	then
+		pid=`head -1 $1/.gdk_lock |sed -e "s/.*PID=//"|sed -e "s/ .*//"`
+		active=`ps --no-heading --format pid -p $pid`
+	fi
+	echo $active
+}
+
+
+function restart_mserver()
+{
+	echo "Restart server $1"
+	monetdb --start --dbname=$1
+	if [  -f $1/.mserver.args  ]
+	then
+		args=`cat $1/.mserver.args`
+		args=`echo $args|sed -e "s/--set daemon//"`
+		echo `date` " RESTART $1 $args" >>monetdb.log
+	else
+		echo `date` " RESTART $1 " >>monetdb.log
+	fi
+}
+
+#for each mserver a separate mguardian process is started
+#it runs in the background until the mguardian control disappears
+function check_mserver()
+{
+	echo "start guarding $1"
+	while [ -f $1/.mguardian ]
+	do
+		pid=`getPID $1`
+		echo "active=$active"
+		if  [ $pid"" = "" ]
+		then
+			restart_mserver $1
+		fi
+		delay=`cat $1/.mguardian`
+		echo "sleep guarding $1"
+		sleep $delay
+	done
+	echo "stop guarding $1"
+}
+
+
+# first terminate other mguardians
+# todo
+
+case $ACTION in
+	"start" )
+		for i in $DBLIST
+		do
+			if [ -f $i/.mguardian ]
+			then
+				 ( check_mserver  $i )  &
+			fi
+		done
+		;;
+	"ignore" )
+		for i in $DBLIST
+		do
+			if [ -f $i/.mguardian ]
+			then
+				 rm $i/.mguardian
+			fi
+		done
+		;;
+	"delay" )
+		for i in $DBLIST
+		do
+			if [ -d $i ]
+			then
+				 echo $DELAY >$i/.mguardian
+			fi
+		done
+		;;
+esac
