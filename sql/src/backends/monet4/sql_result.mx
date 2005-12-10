@@ -791,6 +791,7 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, bat bid,
 	return ok;
 }
 
+
 int
 mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d, int sc, int eclass, ptr p, int mtype) 
 {

@@ -26,7 +26,7 @@ All Rights Reserved.
 
 -->
 
-<project name="MonetDB_Java_Drivers" default="jar_jdbc+client" basedir=".">
+<project name="MonetDB_Java_Drivers" default="jar_jdbcclient" basedir=".">
 
   <!-- set global properties for this build -->
   <property name="srcdir"             value="." /> <!-- todo: make src -->
@@ -58,7 +58,7 @@ All Rights Reserved.
 
   <!-- jar targets -->
   <target name="jar_jdbc" depends="compile_jdbc">
-    <jar jarfile="${jardir}/MonetDB_JDBC.jar" manifest="${srcdir}/manifest">
+    <jar jarfile="${jardir}/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-jdbc.jar">
       <fileset dir="${builddir}">
         <include name="${jdbc-package}/**/*.class" />
       </fileset>
@@ -66,7 +66,7 @@ All Rights Reserved.
   </target>
 
   <target name="jar_xmldb" depends="compile_xmldb">
-    <jar jarfile="${jardir}/MonetDB_XMLDB.jar">
+    <jar jarfile="${jardir}/monetdb-xmldb.jar">
       <fileset dir="${builddir}">
         <include name="${xmldb-package}/**/*.class" />
       </fileset>
@@ -74,7 +74,7 @@ All Rights Reserved.
   </target>
 
   <target name="jar_mcl" depends="compile_mcl">
-    <jar jarfile="${jardir}/MonetDB_MCL.jar">
+    <jar jarfile="${jardir}/monetdb-mcl.jar">
       <fileset dir="${builddir}">
         <include name="${mcl-package}/**/*.class" />
       </fileset>
@@ -82,7 +82,7 @@ All Rights Reserved.
   </target>
 
   <target name="jar_client" depends="compile_client">
-    <jar jarfile="${jardir}/MonetDB_clients.jar">
+    <jar jarfile="${jardir}/monetdb-clients.jar">
       <fileset dir="${builddir}">
         <include name="${client-package}/**/*.class" />
       </fileset>
@@ -151,9 +151,9 @@ All Rights Reserved.
   </target>
 
   <!-- a convenience jar of JDBC plus the JdbcClient utililty -->
-  <target name="jar_jdbc+client" depends="compile_jdbc,compile_client">
+  <target name="jar_jdbcclient" depends="compile_jdbc,compile_client">
     <echo message="Building JDBC + JdbcClient convenience jar" />
-    <jar jarfile="${jardir}/MonetDB_JDBCClient.jar">
+    <jar jarfile="${jardir}/jdbcclient-${JDBC_MAJOR}.${JDBC_MINOR}.jar">
       <fileset dir="${builddir}">
         <include name="${jdbc-package}/**/*.class" />
         <include name="${client-package}/**/*.class" />
@@ -184,7 +184,7 @@ All Rights Reserved.
       <include name="${client-package}/**/*.java" />
     </javac>
 
-    <jar jarfile="${jardir}/MonetDB.jar" manifest="${srcdir}/manifest">
+    <jar jarfile="${jardir}/monetdb.jar" manifest="${srcdir}/manifest">
       <fileset dir="${builddir}">
         <include name="*.class" />
         <include name="${jdbc-package}/**/*.class" />

@@ -1139,10 +1139,9 @@ mvc_affected_rows_wrap( int *r, lng *nr)
 	if (msg)
 		return msg;
 	c->type = Q_UPDATE;
-	if (mvc_export_default(c, b->out)) {
+	if (mvc_export_affrows(c, b->out, *nr)) {
 		return throwMessage("sql.affectedRows", "failed");
 	}
-	stream_printf(b->out, "[ " LLFMT "\t]\n", *nr);
 	(void)r;
 	return NULL;
 }

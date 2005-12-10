@@ -25,19 +25,20 @@
 #include <stream.h>
 #include <sql_mvc.h>
 #include <sql_catalog.h>
+#include <sql_qc.h>
 
 extern int mvc_export_default(mvc *m, stream *s);
+extern int mvc_export_affrows(mvc *m, stream *s, lng val);
 extern int mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d, int sc, int eclass, ptr p, int mtype);
 extern int mvc_export_result(mvc *c, stream *s, int res_id);
+extern int mvc_export_prepare(mvc *c, stream *s, cq *q);
 extern int mvc_export_chunk(mvc *m, stream *s, int res_id, unsigned int offset, unsigned int nr);
+
 extern BAT *mvc_import_table(mvc *c, bstream *s, char *tname, char *sep, char *rsep, int nr);
 extern int mvc_result_table(mvc *m, int nr_cols, int type, BAT *order);
 
 extern int mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b);
 extern int mvc_result_value(mvc *m, char *tn, char *name, char *typename, int digits, int scale, ptr *p, int mtype);
-
-extern int mvc_send_int(stream *s, int cnt);
-extern int mvc_send_sht(stream *s, sht cnt);
 
 #endif /* sql_result_H */
 @c
@@ -45,6 +46,7 @@ extern int mvc_send_sht(stream *s, sht cnt);
 #include "sql_result.h"
 #include <tablet.h>
 #include <mtime.h>
+#include <sql_scope.h>
 #include <bat/res_table.h>
 #include <bat/bat_bm.h>
 
@@ -467,18 +469,68 @@ static str mvcDefaultMsg[] = {
 	"&1 0 1 1 1\n",
 	"&2 0 1 1 1\n",
 	"&3 0 1 1 1\n",
-	"&4 0 1 1 1\n",
-	"&5 0 1 1 1\n"
+	"&4 0 1 1 1\n"
 };
 
-static int mvcDefaultMsg_len = 11; /*strlen("&5 0 1 1 1\n");*/
+static int mvcDefaultMsg_len = 11; /*strlen("&4 0 1 1 1\n");*/
+
+
+int
+mvc_export_prepare(mvc *c, stream *out, cq *q)
+{
+	node *n;
+	int len = c->params ? list_length(c->params) : 0;
+
+	if (!out)
+		return 0;
+
+	/* indicate to client that a new SQL command starts here */
+	if (stream_printf(out,
+		"&5 %d %d 3 0\n"
+		"# prepare,	prepare,	prepare # table_name\n"
+		"# type,	digits,	scale # name\n"
+		"# varchar,	int,	int # type\n"
+		"# 0,	0,	0 # length\n",
+		q->id, len ) < 0) {
+		return -1;
+	}
+
+	if (c->params) {
+		int i;
+
+		q->paramlen = len;
+		q->params = NEW_ARRAY(sql_subtype,len);
+		for (n = c->params->h, i=0; n; n = n->next, i++) {
+			var_ *v = n->data;
+			sql_subtype *t = tail_type(v->s);
+
+			if (t) {
+				if (stream_printf(out,
+					"[ \"%s\",	%d,	%d	]\n",
+					t->type->sqlname,
+					t->digits,
+					t->scale
+				) < 0) {
+					return -1;
+				}
+				/* add to the query cache parameters */
+				q->params[i] = *t;
+			} else {
+				return -1;
+			}
+		}
+	}
+	return 0;
+}
+
+
 
 int
 mvc_export_default(mvc *m, stream *s)
 {
 	int ok = 1;
 
-	assert(m->type > 0 && m->type <= 5);
+	assert(m->type > 0 && m->type <= 4);
 	if (s) 
 		ok = (stream_write(s, mvcDefaultMsg[m->type-1], mvcDefaultMsg_len, 1) == 1);
 	return (ok) ? 0 : -1;
@@ -505,6 +557,7 @@ mvc_send_@1(stream *s, @1 cnt){
 @c
 @:mvc_send(sht)@
 @:mvc_send(int)@
+@:mvc_send(lng)@
 
 int
 export_value( mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p, int mtype, char **buf, int *len)
@@ -772,7 +825,7 @@ mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d,
 	int ok = 1;
 	char *rsep = "\t]\n";
 
-	assert(qtype > 0 && qtype <= 5);
+	assert(qtype > 0 && qtype <= 4);
 	if (stream_write(s, mvcDefaultMsg[qtype-1], mvcDefaultMsg_len, 1) == 1&&
 	    /* fallback to default tuplecount (1) and id (0) */
 	    /* TODO first header name then values */
@@ -793,17 +846,28 @@ mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d,
 	return ok;
 }
 
+int
+mvc_export_affrows(mvc *m, stream *s, lng val) 
+{
+	assert(m->type == Q_UPDATE);
+	if (!s || stream_write(s, "&2 ", 3, 1) != 1 || !mvc_send_lng(s, val) ||
+	    stream_write(s, "\n", 1, 1) != 1)
+		return -1;
+       return 0;
+}
+
 static str tableMsg[] = {
 	"&1 ",
 	"&2 ",
 	"&3 ",
-	"&4 ",
-	"&5 "
+	"&4 "
 };
-static int tableMsgLen = 3; /*strlen("&5 ");*/
 
-static str updateMsg = "&2 0 1 1\n";
-static str transMsg  = "&4 0 0 0 ";
+static int tableMsgLen = 3; /*strlen("&4 ");*/
+
+static str transMsgt = "&4 t\n";
+static str transMsgf = "&4 f\n";
+static int transMsgLen = 5;
 
 int
 mvc_export_result(mvc *m, stream *s, int res_id)
@@ -813,26 +877,18 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 
 	if (!s || !t)
 		return 0;
-	assert(t->query_type > 0 && t->query_type <= 5);
 
-	/* skip headers for affected row counts */
-	assert(t->query_type != Q_UPDATE); /* handled by optimized code */
-	if (ok && t->query_type == Q_UPDATE) { 
-		ok = (stream_write(s, updateMsg, sizeof(updateMsg), 1) == 1);
-		if (!ok)
-			return ok;
-		/* todo use printf([ %d\t], t->value); */
-		return mvc_export_table(m, s, t, 0, m->reply_size);
-	}
+	/* we shouldn't have anything else but Q_TRANS or Q_TABLE here */
+	assert(t->query_type == Q_UPDATE || t->query_type == Q_TABLE);
+
 	if (ok && t->query_type == Q_TRANS) {
-		ok = (stream_write(s, transMsg, sizeof(transMsg), 1) == 1);
-		if (!ok)
-			return ok;
-		if (m->auto_commit)
-			return (stream_write(s, "t\n", 2, 1) == 1);
-		else
-			return (stream_write(s, "f\n", 2, 1) == 1);
+		if (m->auto_commit) {
+			return(stream_write(s, transMsgt, transMsgLen, 1) == 1);
+		} else {
+			return(stream_write(s, transMsgf, transMsgLen, 1) == 1);
+		}
 	}
+	/* else, we have a Q_TABLE */
 	ok = (stream_write(s, tableMsg[t->query_type-1], tableMsgLen, 1) == 1);
 
 	if (!ok)
