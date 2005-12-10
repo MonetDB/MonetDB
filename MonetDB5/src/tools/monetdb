@@ -51,8 +51,12 @@ esac
 
 function getPID ()
 {
-	pid=`head -1 $1/.gdk_lock |sed -e "s/.*PID=//"|sed -e "s/ .*//"`
-	active=`ps --no-heading --format pid -p $pid`
+	active=""
+	if [ -f $1/.gdk_lock ]
+	then
+		pid=`head -1 $1/.gdk_lock |sed -e "s/.*PID=//"|sed -e "s/ .*//"`
+		active=`ps --no-heading --format pid -p $pid`
+	fi
 	echo $active
 }
 
@@ -71,6 +75,7 @@ function start_mserver()
 		if [ $ARGS = "--dbname=$1" ]
 		then
 			args=`cat $1/.mserver.args`
+			args=`echo $args|sed -e "s/--set daemon//"`
 		fi
 		echo "start $1 $args"
 		mserver --set daemon=yes $args &
@@ -102,28 +107,25 @@ function shutdown_mserver()
 function show_status()
 {
 	pid=""
-	if [ -d $1 ]
+	echo "DATABASE: $1"
+	if [ -f $1/.mserver.args ]
 	then
-		echo "DATABASE: $1"
-		if [ -f $1/.mserver.args ]
-		then
-			echo "    ARGS:" `cat $1/.mserver.args`
-		fi
-		if [ -f $1/.gdk_lock ]
+		echo "    ARGS:" `cat $1/.mserver.args`
+	fi
+	if [ -f $1/.gdk_lock ]
+	then
+		pid=`getPID $1`
+		if  [ $pid"" != "" ]
 		then
 			echo " STARTED:" `getTIME $1`
-			pid=`getPID $1`
-			if  [ $pid"" != "" ]
-			then
-				echo "     PID: $pid" 
-			fi
-			if [ -f $1/.mserver.status ]
-			then
-				echo "  STATUS:" `cat $1/.mserver.status`
-			fi
+			echo "     PID: $pid" 
 		fi
-		echo ""
+		if [ -f $1/.mserver.status ]
+		then
+			echo "  STATUS:" `cat $1/.mserver.status`
+		fi
 	fi
+	echo ""
 }
 
 
@@ -136,25 +138,34 @@ if [ "$tmp" != "" ]
 then
 	DBLIST=$tmp
 fi
-#echo "DBLIST $DBLIST"
+echo "DBLIST $DBLIST"
 
 case "$ACTION" in
  "--start" )
 	for i in $DBLIST
 	do
-		start_mserver  $i 
+		if [ -d $i ]
+		then
+			start_mserver  $i 
+		fi
 	done
 	;;
  "--shutdown" )
 	for i in $DBLIST
 	do
-		shutdown_mserver  $i 
+		if [ -d $i ]
+		then
+			shutdown_mserver  $i 
+		fi
 	done
 	;;
  "--status" )
 	for i in $DBLIST
 	do
-		show_status  $i 
+		if [ -d $i ]
+		then
+			show_status  $i 
+		fi
 	done
 	;;
  "--checkpoint" ) 
