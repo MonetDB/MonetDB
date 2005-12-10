@@ -187,7 +187,36 @@ code immediately.
 			stmt[mtop++]= p;
 			continue;
 		}
+@-
+Some instructions are easy to deal with
+@c
 		if( p->token== IGNOREsymbol || p->token== REMsymbol){
+			pushInstruction(mb,p);
+			continue;
+		}
+@-
+In the general case it is more difficult. An incremental operation may exist,
+but also the operation is targeted at the partitioned bat itself, without
+interference with others.
+In that case we can wrape the code in an iterator or rely on such a routine
+to be available in the @code{pbm} module.
+The case below is to used as a starting point for experimentation.
+@c
+		if( functionId(p) == setWriteModeRef && moduleId(p) == batRef){
+			for(k=0;k<mtop;k++)
+			if( mvar[k]== getArg(p,1)){
+				r= copyInstruction(stmt[m]);
+				getArg(r,0)= getArg(p,0);
+				getArg(r,1)= getArg(stmt[k],1);
+				getArg(p,1)= getArg(stmt[k],1);
+				moduleId(p)= pbmRef;
+
+				mvar[mtop] = getArg(r,0);
+				mstatus[mtop]= CLOSED;
+				stmt[mtop]= r;
+				index[iter++]= mtop;
+				mtop++;
+			}
 			pushInstruction(mb,p);
 			continue;
 		}
@@ -202,6 +231,7 @@ group them and check for them individually.
 			(moduleId(p)== batRef 		&& functionId(p)== mirrorRef) ||
 			(moduleId(p)== algebraRef 	&& functionId(p)== markTRef) ||
 			(moduleId(p)== algebraRef	&& functionId(p)== kdifferenceRef) ||
+			(moduleId(p)== algebraRef	&& functionId(p)== kunionRef) ||
 			(moduleId(p)== algebraRef	&& functionId(p)== joinRef) ||
 			(moduleId(p)== algebraRef	&& functionId(p)== semijoinRef) ||
 			(moduleId(p)== batRef		&& functionId(p)== setAccessRef) ||
