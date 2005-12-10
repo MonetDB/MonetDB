@@ -57,10 +57,10 @@ end main;	# 12
 #PROC crash() : void
 #crash();
 #\tprint($t);
-!ERROR: MALexception:mil.take:failed to take 'unknown' from box
-#
 
-# 22:47:53 >  
-# 22:47:53 >  Done.
-# 22:47:53 >  
+!ERROR: MALexception:mil.take: failed to take 'unknown' from box
+
+# 13:48:53 >  
+# 13:48:53 >  Done.
+# 13:48:53 >  
 
