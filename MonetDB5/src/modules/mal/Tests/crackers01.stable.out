@@ -163,7 +163,7 @@ end main;	# 37
 [ 8,	  64	  ]
 [ 10,	  100	  ]
 [ 9,	  81	  ]
-[ "MALexception:user.main[30]:crackers.crack:illegal range\n" ]
+[ "MALexception:user.main[30]:crackers.crack: illegal range\n" ]
 
 # 00:03:53 >  
 # 00:03:53 >  Done.
