@@ -125,6 +125,7 @@ public class MonetConnection implements Connection {
 	final static int Q_SCHEMA	= '3';
 	final static int Q_TRANS	= '4';
 	final static int Q_PREPARE	= '5';
+	final static int Q_BLOCK	= '6';
 
 	/**
 	 * Constructor of a Connection for MonetDB. At this moment the
@@ -1088,7 +1089,6 @@ public class MonetConnection implements Connection {
 										parseNumber(soh),	// rowcount
 										this,
 										hdrl.cachesize,
-										hdrl.maxrows,
 										hdrl.rstype,
 										hdrl.rsconcur,
 										hdrl.seqnr
@@ -1241,14 +1241,20 @@ public class MonetConnection implements Connection {
 				do {
 					tmpLine = monet.readLine();
 					linetype = monet.getLineType();
-					if (linetype == MonetSocketBlockMode.RESULT) {
-						rawr.addRow(tmpLine);
-					} else if (linetype == MonetSocketBlockMode.ERROR) {
-						rawr.addError(tmpLine.substring(1));
-					} else if (linetype == MonetSocketBlockMode.HEADER) {
-						rawr.addError("Unexpected header found");
-					} else if (linetype == MonetSocketBlockMode.UNKNOWN) {
-						addWarning("Protocol violation, unknown line type for line: " + tmpLine);
+					switch (linetype) {
+						case MonetSocketBlockMode.SOHEADER:
+						case MonetSocketBlockMode.PROMPT1:
+							// we don't care actually right now
+						break;
+						case MonetSocketBlockMode.RESULT:
+							rawr.addRow(tmpLine);
+						break;
+						case MonetSocketBlockMode.ERROR:
+							rawr.addError(tmpLine.substring(1));
+						break;
+						default:
+							rawr.addError("Unexpected line found: " + tmpLine);
+						break;
 					}
 				} while (linetype != MonetSocketBlockMode.PROMPT1);
 				// Tell the RawResults object there is nothing going to be
@@ -1452,9 +1458,6 @@ public class MonetConnection implements Connection {
 		private int cacheSize;
 		/** Whether the fetchSize was explitly set by the user */
 		private boolean cacheSizeSetExplicitly = false;
-		/** A local copy of maxRows, so its protected from changes made by
-		 *  the Statement parent */
-		private int maxRows;
 		/** A local copy of resultSetType, so its protected from changes made
 		 *  by the Statement parent */
 		private int rstype;
@@ -1496,7 +1499,6 @@ public class MonetConnection implements Connection {
 			int rowcount,
 			MonetConnection parent,
 			int cs,
-			int mr,
 			int rst,
 			int rsc,
 			int seq)
@@ -1512,7 +1514,6 @@ public class MonetConnection implements Connection {
 				cacheSize = cs;
 				cacheSizeSetExplicitly = true;
 			}
-			maxRows = mr;
 			rstype = rst;
 			rsconcur = rsc;
 			seqnr = seq;
@@ -1523,9 +1524,7 @@ public class MonetConnection implements Connection {
 			this.tuplecount = tuplecount;
 			this.columncount = columncount;
 			this.rowcount = rowcount;
-	/* not in use for now
-			this.offset = offset;
-	*/
+			this.offset = 0;
 		}
 
 		/**
@@ -1765,18 +1764,12 @@ public class MonetConnection implements Connection {
 			if (!isSet[LENS]) error += "column width header missing\n";
 			if (error != "") throw new SQLException(error);
 
-			/* disabled. TODO: needs attention with rowcount and stuff
-			if (maxRows != 0)
-				tuplecount = Math.min(tuplecount, maxRows);
-			*/
-			addWarning("TODO: maxRows ignored");
-
 			// make sure the cache size is minimal to
 			// reduce overhead and memory usage
 			if (cacheSize == 0) {
-				cacheSize = tuplecount;
+				cacheSize = rowcount;
 			} else {
-				cacheSize = Math.min(tuplecount, cacheSize);
+				cacheSize = Math.min(rowcount, cacheSize);
 			}
 		}
 
