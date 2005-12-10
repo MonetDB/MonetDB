@@ -1312,7 +1312,7 @@ backend_dumpstmt(stmt *s, int *nr, backend *sql)
 		stream_write(sql->out, dbg, 1, l);
 	}
 
-	if (c->cache && c->type == Q_SCHEMA) {
+	if (c->cache && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
 		char *msg = "mvc_schema_operation(myc, Output);\n";
 		stream_write(sql->out, msg, strlen(msg), 1);
 	}

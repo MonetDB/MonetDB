@@ -532,7 +532,7 @@ mvc_export_result_wrap(mvc *M, Stream *S, int *res_id)
 int
 mvc_export_schema_wrap(mvc *M, Stream *S)
 {
-	if (mvc_export_schema_operation(*(mvc **) M, *(stream **) S))
+	if (mvc_export_operation(*(mvc **) M, *(stream **) S))
 		return GDK_FAIL;
 
 	return GDK_SUCCEED;
