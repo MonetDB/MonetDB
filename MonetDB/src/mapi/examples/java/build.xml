@@ -35,7 +35,7 @@ All Rights Reserved.
   <target name="compile" depends="prepare">
     <echo message="Compiling Java Mapi" />
     <javac
-      classpath="${srcdir}"
+      classpath="${srcdir},${builddir}"
       srcdir="${srcdir}"
       destdir="${builddir}"
       target="${javac_version}"

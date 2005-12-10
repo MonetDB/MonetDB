@@ -16,11 +16,9 @@
 
 MTSAFE
 
-CLASSPATH = ../../clients/java
-
-ant_compile = {
-	DIR = pkgdatadir/Tests
-	FILES = sample.class
-}
+#ant_compile = {
+#	DIR = pkgdatadir/Tests
+#	FILES = sample.class
+#}
 
 EXTRA_DIST_DIR = Tests
