@@ -3100,7 +3100,7 @@ counter2bat(BAT **ret, counter *c)
 		BUNins(*ret, (str) &chr_nil, &lng_nil);
 	}
 #else
-	BUNins(*ret, (str) &chr_nil, &lng_nil);
+	BUNins(*ret, (str) &chr_nil, (ptr)&lng_nil);
 #endif
 #endif
 /*
