@@ -251,8 +251,8 @@ MAPIlistenThread(int *Sock)
 			char *name = (char *) GDKmalloc(BLOCK), *user = name, *s;
 			char *challenge;
 			int blocked = 0;
-			stream *fdin = socket_rastream(msgsock, "Mserver mapi read");
-			stream *fdout = socket_wastream(msgsock, "Mserver mapi write");
+			stream *fdin = socket_rastream(msgsock, "Server mapi read");
+			stream *fdout = socket_wastream(msgsock, "Server mapi write");
 			bstream *bs;
 
 			assert(name);
@@ -297,9 +297,9 @@ MAPIlistenThread(int *Sock)
 				/* printf("mapi:use blocked mode\n");fflush(stdout); */
 				*s = 0;
 				fdin = block_stream(stream_rstream(fdin));
-				fdout = block_stream(socket_wstream(msgsock, "Mserver mapi write"));
+				fdout = block_stream(socket_wstream(msgsock, "Server mapi write"));
 			} else {
-				fdout = socket_wastream(msgsock, "Mserver mapi write");
+				fdout = socket_wastream(msgsock, "Server mapi write");
 			}
 
 			if (fdout == 0) {
@@ -693,7 +693,7 @@ Get the new information for the server socket and start listening.
 			char *name = (char *) GDKmalloc(BLOCK), *user = name, *s;
 			char *mp;
 			int blocked = 0;
-			stream *fdin = ssl_rastream(ssl, "Mserver mapi read");
+			stream *fdin = ssl_rastream(ssl, "Server mapi read");
 			stream *fdout = NULL;
 			Client c;
 
@@ -728,9 +728,9 @@ Get the new information for the server socket and start listening.
 				/* printf("mapi:use blocked mode\n");fflush(stdout); */
 				*s = 0;
 				fdin = block_stream(stream_rstream(fdin));
-				fdout = block_stream(ssl_wstream(SSL_dup(ssl), "Mserver mapi write"));
+				fdout = block_stream(ssl_wstream(SSL_dup(ssl), "Server mapi write"));
 			} else {
-				fdout = ssl_wastream(SSL_dup(ssl), "Mserver mapi write");
+				fdout = ssl_wastream(SSL_dup(ssl), "Server mapi write");
 			}
 
 			if (fdout == 0) {

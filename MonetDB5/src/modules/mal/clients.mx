@@ -21,7 +21,7 @@
 @* Client management
 
 This module contains the primitives to inspect and adjust
-the client records maintained during a Mserver session.
+the client records maintained during a session.
 A rudimentary authorization scheme should be provided[todo].
 @mal
 module clients;
