@@ -58,13 +58,6 @@ subs = [
     ('@MONETDB_PREFIX@',         os.getenv('MONETDB_PREFIX')),
     ('@SQL_BACKEND@',            r'monet4'),
     ('@SQL_BUILD@',              os.getenv('SQL_BUILD')),
-# values needed for the JDBC driver;
-# keep in sync with src/jdbc/build.properties and configure.ag !
-    ('@JDBC_MAJOR@',        '1'),
-    ('@JDBC_MINOR@',             '1'),
-    ('@JDBC_VER_SUFFIX@',   'Blunt+'),
-    ('@JDBC_DEF_PORT@',          '45123'),
-    ('@JDBC_DEF_BLOCKMODE@',     'true'),
 ]
 
 for key, val in subs[:]:
