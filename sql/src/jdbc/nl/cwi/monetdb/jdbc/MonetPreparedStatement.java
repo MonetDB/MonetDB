@@ -35,7 +35,7 @@ import java.math.*;	// BigDecimal, etc.
  * An example of a server response on a prepare query is:
  * <pre>
  * % prepare select name from tables where id &gt; ? and id &lt; ?;
- * # 10 # querytype
+ * &amp;5 0 2 3 2
  * # prepare,      prepare,        prepare # table_name
  * # type, digits, scale # name
  * # varchar,      int,    int # type
