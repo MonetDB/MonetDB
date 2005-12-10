@@ -754,114 +754,49 @@ def am_libs(fd, var, libsmap, am):
     am_find_ins(am, libsmap)
     am_deps(fd, libsmap['DEPS'], ".lo", am)
 
-def am_jar(fd, var, jar, am):
+def am_ant(fd, var, ant, am):
 
-    name = var[4:]
-
-    jd = "JARDIR"
-    if jar.has_key("DIR"):
-        jd = jar["DIR"][0] # use first name given
-    jd = am_translate_dir(jd, am)
-
-    for src in jar['SOURCES']:
-        am['EXTRA_DIST'].append(src)
-
-    fd.write("\nif HAVE_JAVA\n\n")
-
-    if jar.has_key("MANIFEST") and len(jar['MANIFEST']) == 1:
-        fd.write("%s_manifest_file= %s\n" % (name, am_translate_dir(jar['MANIFEST'][0],am)))
-        manifest_flag='m'
-    else:
-        fd.write("%s_manifest_file= \n" % name)
-        manifest_flag=''
-
-    fd.write("%s_java_files= " % (name))
-    for j in jar['SOURCES']:
-        s,ext = rsplit_filename(j)
-        if ext == 'in':
-            fd.write('%s ' % s)
-        else:
-            fd.write('%s ' % j)
-
-    fd.write("\n%s_class_files= " % (name))
-    for j in jar['TARGETS']:
-        # translate any \ path separators to / -- the generated file
-        # is Unix/Linux/Cygwin only
-        fd.write("%s " % j.replace('\\', '/'))
-
-    fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
-    fd.write("\tfor f in $(subst $$,\\$$,$^); do set $${1+\"$$@\"} \"`$(CYGPATH_W) $$f`\"; done; $(JAVAC) -d . -classpath \"`$(CYGPATH_WP) \"$(CLASSPATH)\"`\" $(JAVACFLAGS) $${1+\"$$@\"}\n")
-    fd.write("%s.jar: $(%s_class_files) $(%s_manifest_file)\n" % (name, name, name))
-    fd.write("\tfor f in $@ $(%s_manifest_file) $(subst $$,\\$$,$(%s_class_files)); do set $${1+\"$$@\"} \"`$(CYGPATH_W) $$f`\"; done; $(JAR) $(JARFLAGS) -cf%s $${1+\"$$@\"}\n" % (name, name, manifest_flag))
-    fd.write("install-exec-local-%s_jar: %s.jar\n" % (name, name))
-    fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)
-    fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s.jar\n" % (jd, name))
-
-    fd.write("uninstall-local-%s_jar:\n" % name)
-    fd.write("\t$(RM) $(DESTDIR)%s/%s.jar\n" % (jd, name))
-
-    fd.write("all-local-%s_jar: %s.jar\n" % (name, name))
-    am['ALL'].append(name+"_jar")
-
-    fd.write("\nelse\n\n")
-
-    fd.write("install-exec-local-%s_jar:\n" % name)
-    fd.write("uninstall-local-%s_jar:\n" % name)
-    fd.write("all-local-%s_jar:\n" % name)
-
-    fd.write("\nendif !HAVE_JAVA\n\n")
-
-    am['INSTALL'].append(name+"_jar")
-    am['UNINSTALL'].append(name+"_jar")
-    am['InstallList'].append("\t"+jd+"/"+name+".jar\n")
-
-    am_find_ins(am, jar)
-
-def am_java(fd, var, java, am):
-
-    name = var[5:]
+    target = var[4:]	# the ant target to call
 
     jd = "JAVADIR"
-    if java.has_key("DIR"):
-        jd = java["DIR"][0] # use first name given
+    if ant.has_key("DIR"):
+        jd = ant["DIR"][0] # use first name given
     jd = am_translate_dir(jd, am)
 
-    for src in java['SOURCES']:
-        am['EXTRA_DIST'].append(src)
+    fd.write("\nif HAVE_JAVA\n\n")  # there is ant if configure set HAVE_JAVA
 
-    fd.write("\nif HAVE_JAVA\n\n")
+    fd.write("\n%s_ant_target:\n\t$(ANT) -f $(srcdir)/build.xml -Dbuilddir=$(PWD) -Djardir=$(PWD) %s\n" % (target, target))
 
-    fd.write("%s_java_files= %s\n" % (name, am_list2string(java['SOURCES'], " ", "")))
-    fd.write("\n%s_class_files= " % (name))
-    for j in java['TARGETS']:
-        fd.write("%s " % j)
+    for file in ant['FILES']:
+        sfile = file.replace(".", "_")
+        fd.write("\n%s: %s_ant_target\n" % (file, target))
 
-    fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
-    fd.write("\tfor f in $(subst $$,\\$$,$^); do set $${1+\"$$@\"} \"`$(CYGPATH_W) $$f`\"; done; $(JAVAC) -d . -classpath \"`$(CYGPATH_WP) \"$(CLASSPATH)\"`\" $(JAVACFLAGS) $${1+\"$$@\"}\n")
+        fd.write("install-exec-local-%s: %s\n" % (sfile, file))
+        fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)
+        fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s\n" % (jd, file))
 
-    fd.write("install-exec-local-%s_class: %s.class\n" % (name, name))
-    fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)
-    fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s.class\n" % (jd, name))
+        fd.write("uninstall-local-%s:\n" % sfile)
+        fd.write("\t$(RM) $(DESTDIR)%s/%s\n" % (jd, file))
 
-    fd.write("uninstall-local-%s_class:\n" % name)
-    fd.write("\t$(RM) $(DESTDIR)%s/%s.class\n" % (jd, name))
+        fd.write("all-local-%s: %s\n" % (sfile, file))
 
-    fd.write("all-local-%s_class: %s.class\n" % (name, name))
-    am['ALL'].append(name+"_class")
+        am['ALL'].append(sfile)
 
     fd.write("\nelse\n\n")
 
-    fd.write("install-exec-local-%s_class:\n" % name)
-    fd.write("uninstall-local-%s_class:\n" % name)
-    fd.write("all-local-%s_class:\n" % name)
+    for file in ant['FILES']:
+        sfile = file.replace(".", "_")
+        fd.write("install-exec-local-%s:\n" % sfile)
+        fd.write("uninstall-local-%s:\n" % sfile)
+        fd.write("all-local-%s:\n" % sfile)
 
     fd.write("\nendif !HAVE_JAVA\n\n")
 
-    am['INSTALL'].append(name+"_class")
-    am['UNINSTALL'].append(name+"_class")
-    am['InstallList'].append("\t"+jd+"/"+name+".class\n")
-
-    am_find_ins(am, java)
+    for file in ant['FILES']:
+        sfile = file.replace(".", "_")
+        am['INSTALL'].append(sfile)
+        am['UNINSTALL'].append(sfile)
+        am['InstallList'].append("\t" + jd + "/" + file + "\n")
 
 def am_add_srcdir(path, am, prefix =""):
     dir = path
@@ -922,8 +857,7 @@ output_funcs = {'SUBDIRS': am_subdirs,
                 'smallTOC_SHARED_MODS': am_mods_to_libs,
                 'largeTOC_SHARED_MODS': am_mods_to_libs,
                 'HEADERS': am_headers,
-                'JAR': am_jar,
-                'JAVA': am_java,
+                'ANT': am_ant,
                 }
 
 def output(tree, cwd, topdir, automake, conditional):
@@ -1079,3 +1013,5 @@ include $(top_builddir)/*.mk
     fd.close()
 
     return am['InstallList'], am['DocList'], am['OutList']
+
+# vim:ts=4 sw=4 expandtab:
