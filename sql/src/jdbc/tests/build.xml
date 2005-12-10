@@ -27,15 +27,17 @@ All Rights Reserved.
 
 <project name="JDBCTests" default="compile" basedir=".">
 
+  <property file="build.local.properties" />
+  <property file="build.properties" />
   <property file="../build.properties"/> <!-- included for version -->
+
   <!-- set global properties for this build -->
   <property name="srcdir"    value="." />
   <property name="builddir"  value="build" />
   <property name="JDBC_jar"
 	  value="../jars/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-jdbc.jar" />
-
-  <property file="build.local.properties" />
-  <property file="build.properties" />
+  <property name="jdbc_url"
+    value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb${debug}" />
 
   <!-- Prepares the build directory -->
   <target name="prepare">
@@ -97,7 +99,7 @@ All Rights Reserved.
   <target name="test_class" depends="compile,jdbc">
     <echo message="Testing class ${test.class}" />
     <java classname="${test.class}" classpathref="test_path" failonerror="true">
-      <arg value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb${debug}" />
+      <arg value="${jdbc_url}" />
     </java>
   </target>
   
