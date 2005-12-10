@@ -603,6 +603,28 @@ AC_SUBST(thread_safe_flag_spec)
 AC_SUBST(THREAD_SAVE_FLAGS)
 AC_SUBST(NO_OPTIMIZE_FILES)
 
+AC_ARG_WITH(ant,
+	AC_HELP_STRING([--with-ant=FILE], [ant is installed as FILE]),
+	ANT="$withval",
+	ANT=ant)
+case "$ANT" in
+yes|auto)
+  ANT=ant;;
+esac
+case "$ANT" in
+no) ;;
+/*) AC_MSG_CHECKING(whether $ANT exists and is executable)
+    if test -x "$ANT"; then
+      AC_MSG_RESULT(yes)
+    else
+      AC_MSG_RESULT(no)
+      ANT=no
+    fi;;
+*)  AC_PATH_PROG(ANT,$ANT,no,$PATH);;
+esac
+AC_SUBST(ANT)
+AM_CONDITIONAL(HAVE_ANT, test x"$ANT" != xno)
+
 JAVA_VERSION=""
 JAVA="java"
 JAVAC="javac"
@@ -663,6 +685,9 @@ if test "x$have_java" != xno; then
     JAR=""
     JAVADOC=""
     CLASSPATH=""
+  fi
+  if test x"$ANT" = xno; then
+    have_jave="no"
   fi
 fi
 AC_SUBST(JAVAVERS)
