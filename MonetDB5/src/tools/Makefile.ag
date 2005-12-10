@@ -25,8 +25,8 @@
 MTSAFE
 INCLUDES = -I../mal -I$(MONETDB_INCLUDEDIR)/C $(MONETDB_INCS) $(PTHREAD_INCS) 
 
-bin_Mserver = {
-	SOURCES = Mserver.mx
+bin_mserver = {
+	SOURCES = mserver.mx
 	LIBS = ../mal/libmal @SHARED_LIBS@ $(MONETDB_LIBS) -lbat -lmutils -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
@@ -50,7 +50,7 @@ bin_Mbeddedmal = {
 scripts_sh = {
 	EXT = ""
 	DIR = bindir
-	SOURCES = monetdb-config.mx.in 
+	SOURCES = monetdb-config.mx.in monetdb mguardian
 }
 
 scripts_bat = {
