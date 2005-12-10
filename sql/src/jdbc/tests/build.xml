@@ -34,8 +34,8 @@ All Rights Reserved.
   <property name="JDBC_jar"
 	  value="../jars/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-jdbc.jar" />
 
-  <property file="build.properties"/>
-  <property file="build.local.properties"/>
+  <property file="build.local.properties" />
+  <property file="build.properties" />
 
   <!-- Prepares the build directory -->
   <target name="prepare">
