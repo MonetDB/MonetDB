@@ -110,6 +110,7 @@ static str aggrRef;
 static str resultSetRef;
 static str exportValueRef;
 static str exportResultRef;
+static str exportOperationRef;
 static str accessRef;
 static str insertRef;
 static str appendRef;
@@ -134,11 +135,13 @@ void initSQLreferences(){
 	exportValueRef = putName("exportValue",11);
 	resultSetRef= putName("resultSet",9);
 	exportResultRef= putName("exportResult",12);
+	exportOperationRef= putName("exportOperation",15);
 	sql_cacheRef= putName("sql_cache",9);
 	if( batcalcRef == NULL || batstrRef== NULL || batRef==NULL || 
 		calcRef==NULL || algebraRef==NULL || sqlRef==NULL || 
 		aggrRef==NULL || resultSetRef==NULL || exportValueRef==NULL ||
-		exportResultRef==NULL || accessRef==NULL || insertRef==NULL || 
+		exportResultRef==NULL || exportOperationRef==NULL || 
+		accessRef==NULL || insertRef==NULL || 
 		joinRef==NULL || reverseRef==NULL || appendRef==NULL || 
 		sql_cacheRef== NULL)
 			GDKfatal("error initSQLreferences");
@@ -1435,8 +1438,8 @@ int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 	int nr = _dumpstmt(be, mb, s);
 	mvc *c = be->mvc;
 
-	if (c->cache && c->type != Q_TABLE && c->type != Q_UPDATE) {
-		InstrPtr q = newStmt2(mb, sqlRef, exportResultRef);
+	if (c->cache && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
+		InstrPtr q = newStmt2(mb, sqlRef, exportOperationRef);
 		return getDestVar(q);
 	}
 	return nr;

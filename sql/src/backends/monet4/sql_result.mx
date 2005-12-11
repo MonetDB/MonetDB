@@ -820,7 +820,6 @@ mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d,
 		_DELETE(buf);
 	return ok;
 }
-
 int
 mvc_export_operation(mvc *m, stream *s)
 {

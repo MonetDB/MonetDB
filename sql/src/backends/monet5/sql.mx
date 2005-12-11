@@ -146,9 +146,9 @@ command exportResult(res_id:int ) :void
 address mvc_export_result_wrap
 comment "Export a result (in order) to stream s"; 
 
-command exportResult() :void
-address mvc_export_default_wrap
-comment "Export result of schema queries"; 
+command exportOperation() :void
+address mvc_export_operation_wrap
+comment "Export result of schema/transaction queries"; 
 
 command affectedRows( nr:int ) :void
 address mvc_affected_rows_int
@@ -644,8 +644,6 @@ extern BAT *mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access);
 extern BAT *mvc_bind_dbat(mvc *m, char *sname, char *tname, int access);
 extern BAT *mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access);
 
-extern int mvc_export_result(mvc *c, stream *s, int res_id);
-
 #endif /* _SQL_H */
 
 @-
@@ -1115,21 +1113,6 @@ mvc_result_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-mvc_export_default_wrap()
-{
-	backend *b;
-	mvc *c;
-	str msg = getContext(&c, &b);
-
-	if (msg)
-		return msg;
-	if (mvc_export_default(c, b->out)) {
-		return throwMessage("sql.exportResult", "failed");
-	}
-	return NULL;
-}
-
-str
 mvc_affected_rows_wrap( int *r, lng *nr)
 {
 	backend *b;
@@ -1168,6 +1151,23 @@ mvc_export_result_wrap(int *ret, int *res_id)
 	(void)ret;
 	return NULL;
 }
+
+str
+mvc_export_operation_wrap(int *ret)
+{
+	backend *b;
+	mvc *c;
+	str msg = getContext(&c, &b);
+
+	if (msg)
+		return msg;
+	if (mvc_export_operation(c, b->out)) {
+		return throwMessage("sql.exportOperation", "failed");
+	}
+	(void)ret;
+	return NULL;
+}
+
 
 str
 /*mvc_export_value_wrap(int *ret, int *qtype, str tn, str name, str type, int *digits, int *scale, int *eclass, ptr p, int mtype)*/
