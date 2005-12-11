@@ -26,6 +26,21 @@ Over..
 # 21:04:30 >  java -classpath /nfs/poseidon/Temp/monet/program/share/sql/Tests:/nfs/poseidon/Temp/monet/program/share/MonetDB/lib/MonetJDBC.jar Test_Cautocommit jdbc:monetdb://poseidon:59882/database?user=monetdb&password=monetdb
 # 21:04:30 >  
 
+Buildfile: /net/koala.ins.cwi.nl/export/scratch1/niels/sql/src/jdbc/tests/Tests/../build.xml
+
+Test_Cautocommit:
+
+prepare:
+
+compile:
+Compiling JDBC tests
+
+find_driver:
+
+jdbc:
+
+test_class:
+Testing class Test_Cautocommit
 0. true	true
 0. true	true
 1. create...passed :)
@@ -38,7 +53,10 @@ Over..
 8. select...passed :)
 9. commit...passed :)
 
-# 21:04:31 >  
-# 21:04:31 >  Done.
-# 21:04:31 >  
+BUILD SUCCESSFUL
+Total time: 1 second
+
+# 09:05:21 >  
+# 09:05:21 >  Done.
+# 09:05:21 >  
 

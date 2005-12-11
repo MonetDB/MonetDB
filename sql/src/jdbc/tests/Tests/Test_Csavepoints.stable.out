@@ -26,8 +26,24 @@ Over..
 # 21:41:21 >  java -classpath /nfs/poseidon/Temp/monet/program/share/sql/Tests:/nfs/poseidon/Temp/monet/program/share/MonetDB/lib/MonetJDBC.jar Test_Csavepoints jdbc:monetdb://poseidon:55966/database?user=monetdb&password=monetdb
 # 21:41:21 >  
 
+Buildfile: /net/koala.ins.cwi.nl/export/scratch1/niels/sql/src/jdbc/tests/Tests/../build.xml
+
+Test_Csavepoints:
+
+prepare:
+
+compile:
+Compiling JDBC tests
+
+find_driver:
+
+jdbc:
+
+test_class:
+Testing class Test_Csavepoints
 0. true	true
-1. savepoint...failed :) transaction savepoint not allowed in auto commit mode
+1. savepoint...failed :) SAVEPOINT: not allowed in auto commit mode
+
 0. false	false
 2. savepoint...passed :)
 3. savepoint...passed :)
@@ -39,7 +55,10 @@ Over..
 9. rollback...passed :)
 10. table 0 items passed :)
 
-# 21:41:22 >  
-# 21:41:22 >  Done.
-# 21:41:22 >  
+BUILD SUCCESSFUL
+Total time: 1 second
+
+# 09:05:25 >  
+# 09:05:25 >  Done.
+# 09:05:25 >  
 

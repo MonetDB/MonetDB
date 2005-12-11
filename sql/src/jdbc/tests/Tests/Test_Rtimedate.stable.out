@@ -26,6 +26,21 @@ Over..
 # 21:26:11 >  java -classpath /nfs/poseidon/Temp/monet/program/share/sql/Tests:/nfs/poseidon/Temp/monet/program/share/MonetDB/lib/MonetJDBC.jar Test_Rtimedate jdbc:monetdb://poseidon:58012/database?user=monetdb&password=monetdb
 # 21:26:11 >  
 
+Buildfile: /net/koala.ins.cwi.nl/export/scratch1/niels/sql/src/jdbc/tests/Tests/../build.xml
+
+Test_Rtimedate:
+
+prepare:
+
+compile:
+Compiling JDBC tests
+
+find_driver:
+
+jdbc:
+
+test_class:
+Testing class Test_Rtimedate
 false	false
 1. 1, 2004-04-24 11:43:53.000000, 2004-04-24 11:43:53.0
 2. 1, 2004-04-24 11:43:53.000000, 11:43:53
@@ -46,7 +61,10 @@ false	false
 8. 6, 2004-04-24, 00:00:00
 9. 6, 2004-04-24, 2004-04-24
 
-# 21:26:12 >  
-# 21:26:12 >  Done.
-# 21:26:12 >  
+BUILD SUCCESSFUL
+Total time: 1 second
+
+# 09:05:23 >  
+# 09:05:23 >  Done.
+# 09:05:23 >  
 

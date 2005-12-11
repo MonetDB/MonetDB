@@ -17,15 +17,30 @@ quit();
 
 Over..
 
-# 17:09:53 >  
-# 17:09:53 >  Mtimeout -timeout 60 ./Test_Sbatching.SQL Test_Sbatching 
-# 17:09:53 >  
+# 09:09:12 >  
+# 09:09:12 >  Mtimeout -timeout 240 ./Test_Sbatching.SQL Test_Sbatching 
+# 09:09:12 >  
 
 
-# 17:09:53 >  
-# 17:09:53 >  java -classpath /nfs/poseidon/Temp/monet/program/share/sql/Tests:/nfs/poseidon/Temp/monet/program/share/MonetDB/lib/MonetJDBC.jar Test_Sbatching jdbc:monetdb://poseidon:54539/database?user=monetdb&password=monetdb
-# 17:09:53 >  
+# 09:09:12 >  
+# 09:09:12 >  ant -e -buildfile /net/koala.ins.cwi.nl/export/scratch1/niels/sql/src/jdbc/tests/Tests/../build.xml -Dbuilddir=/net/koala.ins.cwi.nl/export/scratch0/niels/Linux-x86_64/build-sql/src/jdbc/tests/Tests/../ -Djdbc_url=jdbc:monetdb://localhost:42887/database?user=monetdb&password=monetdb -Djardir=/net/koala.ins.cwi.nl/export/scratch0/niels/Linux-x86_64/build-sql/src/jdbc/tests/Tests/../../ Test_Sbatching
+# 09:09:12 >  
 
+Buildfile: /net/koala.ins.cwi.nl/export/scratch1/niels/sql/src/jdbc/tests/Tests/../build.xml
+
+Test_Sbatching:
+
+prepare:
+
+compile:
+Compiling JDBC tests
+
+find_driver:
+
+jdbc:
+
+test_class:
+Testing class Test_Sbatching
 0. true	true
 1. create...passed :)
 2. executing batch (400 inserts)...passed :)
@@ -332,7 +347,10 @@ Over..
 7. checking table count...30000 passed :)
 8. clean up mess we made...passed :)
 
-# 17:10:42 >  
-# 17:10:42 >  Done.
-# 17:10:42 >  
+BUILD SUCCESSFUL
+Total time: 3 seconds
+
+# 09:09:16 >  
+# 09:09:16 >  Done.
+# 09:09:16 >  
 
