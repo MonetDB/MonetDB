@@ -1,5 +1,19 @@
 #!/bin/sh
 
-URL="jdbc:monetdb://${HOST}:${SQLPORT}/database?user=monetdb&password=monetdb${JDBC_EXTRA_ARGS}"
+JAR="`find ${TSTBLDDIR}/../../ -name 'jdbcclient*.jar'`"
 
-Mlog -x "ant -e -buildfile ${TSTSRCDIR}/../build.xml -Dbuilddir=${TSTBLDDIR}/../ -Djdbc_url=\"${URL}\" -Djardir=${TSTBLDDIR}/../../ ${TST}"
+cat << EOF > .monetdb
+user=monetdb
+password=monetdb
+EOF
+
+LC_CTYPE="en_US.UTF-8"
+export LC_CTYPE
+
+Mlog -x "java -jar \"$JAR\" -h $HOST -p $SQLPORT -f $RELSRCDIR/../JdbcClient_create_tables.sql"
+
+Mlog -x "java -jar \"$JAR\" -h $HOST -p $SQLPORT -f $RELSRCDIR/../JdbcClient_inserts_selects.sql"
+
+Mlog -x "java -jar \"$JAR\" -h $HOST -p $SQLPORT -d"
+
+rm -f .monetdb
