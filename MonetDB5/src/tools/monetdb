@@ -39,13 +39,13 @@ DBFARM=$MONET5_PREFIX/var/MonetDB5/dbfarm
 ACTION="--start"
 
 case "$1" in
- "--help" )
-	usage 
-	exit ;;
  "--start" | "--shutdown" | "--status" | "--checkpoint" ) 
 		ACTION=$1;
 		shift
 		ARGS=$* ;;
+ "--help" )
+	usage 
+	exit ;;
  * ) ;;
 esac
 
@@ -75,11 +75,11 @@ function start_mserver()
 		if [ $ARGS = "--dbname=$1" ]
 		then
 			args=`cat $1/.mserver.args`
-			args=`echo $args|sed -e "s/--set daemon//"`
+			mserver --set daemon=yes $args &
+		else
+			mserver --set daemon=yes $args &
+			echo $args > $1/.mserver.args
 		fi
-		echo "start $1 $args"
-		mserver --set daemon=yes $args &
-		sleep 2
 		pid=`getPID $1`
 		if [ $pid"" = "" ]
 		then
@@ -87,6 +87,8 @@ function start_mserver()
 		else
 			echo `date` " START $1 $args" >>monetdb.log
 		fi
+		# start the guardian for this server as well
+		mguardian --start --dbname=$1
 	else
 		echo "$1 server already running"
 	fi
@@ -98,7 +100,8 @@ function shutdown_mserver()
 	then
 		echo "$1 server not running"
 	else
-		echo "shutdown $1 $pid"
+		# disable the guardian first
+		mguardian --ignore --dbname=$1
 		kill -TERM $pid
 		echo `date` " SHUTDOWN $1" >>monetdb.log
 	fi
@@ -129,16 +132,17 @@ function show_status()
 }
 
 
-# ok, switch to dbfarm
+# switch to dbfarm
 cd $DBFARM
 DBLIST=`ls`
 
+# check for an overruling database name
 tmp=`echo $* | sed -e "s/^.*--dbname=//"|sed -e "s/ .*//"`
 if [ "$tmp" != "" ]
 then
 	DBLIST=$tmp
 fi
-echo "DBLIST $DBLIST"
+#echo "DBLIST $DBLIST"
 
 case "$ACTION" in
  "--start" )

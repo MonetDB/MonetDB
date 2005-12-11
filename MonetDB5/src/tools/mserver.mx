@@ -271,30 +271,6 @@ monet_options.mx.in
 	/* you don;t need the commandline arguments anymore */
 	mo_free_options(set, setlen);
 }
-@-
-The calling arguments are saved in a file '.mserver.args'
-after they have been parsed. It enables the user or deamon
-shell script to quickly restart a failed server with the previously
-known settings.
-@c
-void
-save_arguments(int argc, char **av){
-	FILE *fd;
-	int i;
-	if( (fd= fopen(".mserver.args","w")) ){
-		for(i=1; i<argc; i++)
-/*
-			if( av[i][0]=='-' && av[i][1]=='-' && (s= strchr(av[i],'=')) ){
-				*s= 0;
-				fprintf(fd," %s=\"%s\"",av[i], s+1);
-			} else
-*/
-				fprintf(fd," %s",av[i]);
-		fprintf(fd,"\n");
-		(void) fclose(fd);
-	} else
-		fprintf(stderr,"!ERROR Could not save arguments\n");
-}
 
 int
 main(int argc, char **av)
@@ -468,10 +444,9 @@ faster system start.
 		return 0;
 
 @-
-Time to safe the calling parameters and execute the script files. 
+Time to execute the script files. 
 Start with the init command[todo]
 @c
-	save_arguments(argc,av);
 	initClientPrg(mal_clients, "main");
 	if (dbinit) {
 		str input = GDKstrdup(dbinit);

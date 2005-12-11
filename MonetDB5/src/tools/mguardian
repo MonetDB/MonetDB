@@ -15,15 +15,19 @@
 # Portions created by CWI are Copyright (C) 1997-2005 CWI.
 # All Rights Reserved.
 
+# The mguardian looks after the healthyness of invidual servers
+# A mguardian process is run for each mserver unless you specify
+# otherwise.
+# The mguardian control information is kept in .mguardian and
+# consists of the <delay,pid> pair
+
 function usage()
 {
 	echo "Usage: mguardian [options] [mserver(s)]"
-	echo "    --start        Start looking after msercer(s)"
-	echo "    --shutdown     Stop mguardian "
-	echo "    --ignore       Stop looking after mserver(s)"
+	echo "    --start        Start looking after mserver(s)"
+	echo "    --shutdown     Stop looking after mserver(s) "
 	echo "    --delay        Set check delay to N seconds [300]"
 	echo "    --help         This list of options"
-	echo "The delay should be set first before mguardian acts on it"
 }
 
 DBFARM=$MONET5_PREFIX/var/MonetDB5/dbfarm
@@ -37,14 +41,15 @@ case "$1" in
 	shift
 	;;
  "--shutdown" )
-	killall mguardian
-	;;
- "--ignore" )
-	ACTION=ignore
+	ACTION=shutdown
 	shift
 	;;
  "--delay"* )
-	DELAY=`echo $1|sed -e "s/--delay=//"`
+	delay=`echo $1|sed -e "s/--delay=//"`
+	if [ $delay"" != "" ]
+	then 
+		DELAY=$delay
+	fi
 	ACTION=delay
 	shift
 	;;
@@ -60,7 +65,6 @@ then
 else
 	DBLIST=`ls`
 fi
-echo $ACTION $DELAY $DBLIST
 
 function getPID ()
 {
@@ -73,39 +77,54 @@ function getPID ()
 	echo $active
 }
 
-
-function restart_mserver()
-{
-	echo "Restart server $1"
-	monetdb --start --dbname=$1
-	if [  -f $1/.mserver.args  ]
-	then
-		args=`cat $1/.mserver.args`
-		args=`echo $args|sed -e "s/--set daemon//"`
-		echo `date` " RESTART $1 $args" >>monetdb.log
-	else
-		echo `date` " RESTART $1 " >>monetdb.log
-	fi
-}
-
 #for each mserver a separate mguardian process is started
-#it runs in the background until the mguardian control disappears
+#it runs in the background until the mguardian control file disappears
 function check_mserver()
 {
-	echo "start guarding $1"
+	if [ -f $1/.mguardian ]
+	then
+		delay=`head -1 $1/.mguardian| sed -e "s/,.*//"`
+	else
+		delay=$DELAY
+	fi
+	echo "$delay,$$" >$1/.mguardian
+	echo `date` " GUARDIAN START $1 " >>monetdb.log
+
+	pid=`getPID $1`
+
 	while [ -f $1/.mguardian ]
 	do
-		pid=`getPID $1`
-		echo "active=$active"
-		if  [ $pid"" = "" ]
+		active=`ps --no-heading --format pid -p $pid`
+		if  [ $active"" = "" ]
 		then
-			restart_mserver $1
+            args=`cat $1/.mserver.args`
+            mserver --set daemon=yes $args &
+			echo `date` " RESTARTED $1 $args" >>monetdb.log
+			pid=`getPID $1`
 		fi
-		delay=`cat $1/.mguardian`
-		echo "sleep guarding $1"
+		# we should pick a cheaper way to detect changes to the delay
+		delay=`head -1 $1/.mguardian| sed -e "s/,.*//"`
+		echo "sleep guarding $1 $delay seconds"
 		sleep $delay
 	done
-	echo "stop guarding $1"
+	echo `date` " GUARDIAN STOPPED $1 " >>monetdb.log
+}
+
+#ignore a server also involves killing any running mguardian
+# for it. 
+function stop_guardian()
+{
+	pid=`getPID $1`
+	if [ -f $1/.mguardian ]
+	then
+		pid=`head -1 $1/.mguardian |sed -e "s/.*,//"`
+		echo "shutdown $1 $pid"
+		if [ pid"" != "" ]
+		then
+			kill -TERM $pid
+			echo `date` " GUARDIAN STOPPED $1 " >>monetdb.log
+		fi
+	fi
 }
 
 
@@ -122,12 +141,12 @@ case $ACTION in
 			fi
 		done
 		;;
-	"ignore" )
+	"shutdown" )
 		for i in $DBLIST
 		do
-			if [ -f $i/.mguardian ]
+			if [ -d $i ]
 			then
-				 rm $i/.mguardian
+				stop_guardian $i
 			fi
 		done
 		;;
@@ -136,8 +155,9 @@ case $ACTION in
 		do
 			if [ -d $i ]
 			then
-				 echo $DELAY >$i/.mguardian
+				 echo "$DELAY," >$i/.mguardian
 			fi
 		done
 		;;
 esac
+echo "mguardian process finished"
