@@ -20,9 +20,10 @@ function usage()
 	echo "Usage: monetdb [command] [options] [script]"
 	echo "Primary command:"
 	echo "    --start         Server(s) are started in the dbfarm"
-	echo "    --shutdown      Server(s) are gracefully stopped"
+	echo "    --stop          Server(s) are gracefully stopped"
 	echo "    --status        Show the server status"
 	echo "    --checkpoint    Create a database checkpoint"
+	echo "    --log           Show the server management log"
 	echo ""
 	echo "Secondary options:"
 	echo "    --dbname=<database_name>"
@@ -39,10 +40,15 @@ DBFARM=$MONET5_PREFIX/var/MonetDB5/dbfarm
 ACTION="--start"
 
 case "$1" in
- "--start" | "--shutdown" | "--status" | "--checkpoint" ) 
+ "--start" | "--stop" | "--status" | "--checkpoint" ) 
 		ACTION=$1;
 		shift
 		ARGS=$* ;;
+ "--log" )
+		cd $DBFARM
+		more monetdb.log
+		exit
+		;;
  "--help" )
 	usage 
 	exit ;;
@@ -68,69 +74,73 @@ function getTIME ()
 function start_mserver()
 {
 	pid=`getPID $1`
+	#echo "start server $1 $pid"
 	if [ $pid"" = "" ]
 	then
 		# use previous arguments if needed
 		args=$ARGS
-		if [ $ARGS = "--dbname=$1" ]
+		if [ $ARGS"" = "--dbname=$1" ]
 		then
-			args=`cat $1/.mserver.args`
-			mserver --set daemon=yes $args &
+			if [ -f $1/.mserver.args ]
+			then
+				args=`cat $1/.mserver.args`
+			fi
+			mserver --set daemon=yes --dbname=$1 $args &
 		else
-			mserver --set daemon=yes $args &
-			echo $args > $1/.mserver.args
+			mserver --set daemon=yes --dbname=$1 $args &
 		fi
+		echo $args > $1/.mserver.args
+		sleep 2
 		pid=`getPID $1`
 		if [ $pid"" = "" ]
 		then
-			echo `date` " FAILED $1 $args" >>monetdb.log
+			echo `date +"%F %T"` " FAILED $1 $args" >>monetdb.log
 		else
-			echo `date` " START $1 $args" >>monetdb.log
+			echo `date +"%F %T"` " START $1 $args" >>monetdb.log
 		fi
 		# start the guardian for this server as well
-		mguardian --start --dbname=$1
+		mguardian --delay=300 --dbname=$1
 	else
 		echo "$1 server already running"
 	fi
 }
-function shutdown_mserver()
+function stop_mserver()
 {
 	pid=`getPID $1`
-	if [ $pid"" = "" ]
+	if [ $pid"" != "" ]
 	then
-		echo "$1 server not running"
-	else
 		# disable the guardian first
-		mguardian --ignore --dbname=$1
+		mguardian --stop $1
 		kill -TERM $pid
-		echo `date` " SHUTDOWN $1" >>monetdb.log
+		echo `date +"%F %T"` " STOP  $1" >>monetdb.log
 	fi
 }
 
+function show_status_hdr()
+{
+	echo "DBNAME	PID	GUARD	STARTED				STATUS"
+}
 function show_status()
 {
-	pid=""
-	echo "DATABASE: $1"
-	if [ -f $1/.mserver.args ]
-	then
-		echo "    ARGS:" `cat $1/.mserver.args`
-	fi
 	if [ -f $1/.gdk_lock ]
 	then
-		pid=`getPID $1`
-		if  [ $pid"" != "" ]
+		if [ -f $1/.mguardian ]
 		then
-			echo " STARTED:" `getTIME $1`
-			echo "     PID: $pid" 
+			guard=`cat $1/.mguardian`
 		fi
 		if [ -f $1/.mserver.status ]
 		then
-			echo "  STATUS:" `cat $1/.mserver.status`
+			status=$status`cat $1/.mserver.status`
+		fi
+
+		pid=`getPID $1`
+		if  [ $pid"" != "" ]
+		then
+			start=`getTIME $1`
+			echo "$1	$pid	$guard	$start			$status"
 		fi
 	fi
-	echo ""
 }
-
 
 # switch to dbfarm
 cd $DBFARM
@@ -140,6 +150,11 @@ DBLIST=`ls`
 tmp=`echo $* | sed -e "s/^.*--dbname=//"|sed -e "s/ .*//"`
 if [ "$tmp" != "" ]
 then
+	if [ ! -d $tmp ]
+	then
+		#echo "create the database directory"
+		mkdir $tmp
+	fi
 	DBLIST=$tmp
 fi
 #echo "DBLIST $DBLIST"
@@ -154,16 +169,17 @@ case "$ACTION" in
 		fi
 	done
 	;;
- "--shutdown" )
+ "--stop" )
 	for i in $DBLIST
 	do
 		if [ -d $i ]
 		then
-			shutdown_mserver  $i 
+			stop_mserver  $i 
 		fi
 	done
 	;;
  "--status" )
+	show_status_hdr
 	for i in $DBLIST
 	do
 		if [ -d $i ]

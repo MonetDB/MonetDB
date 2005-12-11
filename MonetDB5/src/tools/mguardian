@@ -25,8 +25,10 @@ function usage()
 {
 	echo "Usage: mguardian [options] [mserver(s)]"
 	echo "    --start        Start looking after mserver(s)"
-	echo "    --shutdown     Stop looking after mserver(s) "
+	echo "    --stop         Stop looking after mserver(s) "
 	echo "    --delay        Set check delay to N seconds [300]"
+	echo "    --status       Status of all servers"
+	echo "    --log          Display the server log"
 	echo "    --help         This list of options"
 }
 
@@ -40,11 +42,11 @@ case "$1" in
 	ACTION=start
 	shift
 	;;
- "--shutdown" )
-	ACTION=shutdown
+ "--stop" )
+	ACTION=stop
 	shift
 	;;
- "--delay"* )
+ "--delay="* )
 	delay=`echo $1|sed -e "s/--delay=//"`
 	if [ $delay"" != "" ]
 	then 
@@ -52,6 +54,14 @@ case "$1" in
 	fi
 	ACTION=delay
 	shift
+	;;
+ "--log" )
+	monetdb --log
+	exit
+	;;
+ "--status" )
+	monetdb --status
+	exit
 	;;
  "--help" | * )
 	usage 
@@ -64,6 +74,12 @@ then
 	DBLIST=$*
 else
 	DBLIST=`ls`
+fi
+
+tmp=`echo $* | sed -e "s/^.*--dbname=//"|sed -e "s/ .*//"`
+if [ "$tmp" != "" ]
+then
+	DBLIST=$tmp
 fi
 
 function getPID ()
@@ -81,14 +97,15 @@ function getPID ()
 #it runs in the background until the mguardian control file disappears
 function check_mserver()
 {
+	mypid=$!
 	if [ -f $1/.mguardian ]
 	then
 		delay=`head -1 $1/.mguardian| sed -e "s/,.*//"`
 	else
 		delay=$DELAY
 	fi
-	echo "$delay,$$" >$1/.mguardian
-	echo `date` " GUARDIAN START $1 " >>monetdb.log
+	echo "$delay,$!" >$1/.mguardian
+	echo `date +"%F %T"` " START GUARDIAN $1 " >>monetdb.log
 
 	pid=`getPID $1`
 
@@ -97,17 +114,24 @@ function check_mserver()
 		active=`ps --no-heading --format pid -p $pid`
 		if  [ $active"" = "" ]
 		then
-            args=`cat $1/.mserver.args`
-            mserver --set daemon=yes $args &
-			echo `date` " RESTARTED $1 $args" >>monetdb.log
+			if [ -f $1/.mserver.args ]
+			then
+				args=`cat $1/.mserver.args`
+			else
+				args=""
+			fi
+            mserver --set daemon=yes --dbname=$1 $args &
+			echo `date +"%F %T"` " RESTART $1 $args" >>monetdb.log
 			pid=`getPID $1`
 		fi
 		# we should pick a cheaper way to detect changes to the delay
+		#echo "sleep guarding $1 $delay seconds"
 		delay=`head -1 $1/.mguardian| sed -e "s/,.*//"`
-		echo "sleep guarding $1 $delay seconds"
+		echo "$delay,$mypid" >$i/.mguardian
 		sleep $delay
 	done
-	echo `date` " GUARDIAN STOPPED $1 " >>monetdb.log
+	echo `date +"%F %T"` " STOP  GUARDIAN $1 " >>monetdb.log
+	exit
 }
 
 #ignore a server also involves killing any running mguardian
@@ -118,11 +142,13 @@ function stop_guardian()
 	if [ -f $1/.mguardian ]
 	then
 		pid=`head -1 $1/.mguardian |sed -e "s/.*,//"`
-		echo "shutdown $1 $pid"
-		if [ pid"" != "" ]
+		delay=`head -1 $1/.mguardian |sed -e "s/,.*//"`
+	
+		if [ $pid"" != "" ]
 		then
 			kill -TERM $pid
-			echo `date` " GUARDIAN STOPPED $1 " >>monetdb.log
+			echo `date +"%F %T"` " STOP  GUARDIAN $1 " >>monetdb.log
+			echo "$delay," >$1/.mguardian
 		fi
 	fi
 }
@@ -141,7 +167,7 @@ case $ACTION in
 			fi
 		done
 		;;
-	"shutdown" )
+	"stop" )
 		for i in $DBLIST
 		do
 			if [ -d $i ]
@@ -155,9 +181,10 @@ case $ACTION in
 		do
 			if [ -d $i ]
 			then
-				 echo "$DELAY," >$i/.mguardian
+				stop_guardian $i
+				echo "$DELAY," >$i/.mguardian
+				( check_mserver  $i )  &
 			fi
 		done
 		;;
 esac
-echo "mguardian process finished"
