@@ -105,7 +105,7 @@ function check_mserver()
 		delay=$DELAY
 	fi
 	echo "$delay,$!" >$1/.mguardian
-	echo `date +"%F %T"` " START GUARDIAN $1 " >>monetdb.log
+	echo `date +"%F %T"` " GUARD $1 " >>monetdb.log
 
 	pid=`getPID $1`
 
@@ -130,7 +130,7 @@ function check_mserver()
 		echo "$delay,$mypid" >$i/.mguardian
 		sleep $delay
 	done
-	echo `date +"%F %T"` " STOP  GUARDIAN $1 " >>monetdb.log
+	echo `date +"%F %T"` " LEAVE $1 " >>monetdb.log
 	exit
 }
 
@@ -147,7 +147,7 @@ function stop_guardian()
 		if [ $pid"" != "" ]
 		then
 			kill -TERM $pid
-			echo `date +"%F %T"` " STOP  GUARDIAN $1 " >>monetdb.log
+			echo `date +"%F %T"` " LEAVE $1 " >>monetdb.log
 			echo "$delay," >$1/.mguardian
 		fi
 	fi

@@ -52,7 +52,8 @@ case "$1" in
  "--help" )
 	usage 
 	exit ;;
- * ) ;;
+ * ) 
+	ARGS=$* ;;
 esac
 
 function getPID ()
