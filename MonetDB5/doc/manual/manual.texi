@@ -5,7 +5,7 @@
 
 @c environment
 @set VERSION 5.0
-@set UPDATED Dec 8, 2005
+@set UPDATED Dec 11, 2005
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual
@@ -62,7 +62,7 @@ Last updated: @value{UPDATED}
 * Download and Installation::
 @menu
 * Software Versions::
-* Application Development Distribution::
+* Standard Distribution::
 * Source Development Distribution::
 * Start and Stop the Server::
 @end menu
@@ -222,7 +222,7 @@ Last updated: @value{UPDATED}
 @node Download and Installation, Software Versions, Additional Resources, Top
 @include Assets/Downloadintro.texi
 
-@node Source Development Distribution, Start and Stop the Server,Application Development Distribution, Download and Installation
+@node Source Development Distribution, Start and Stop the Server,Standard Distribution, Download and Installation
 @include Assets/Setup.texi
 
 @node Start and Stop the Server , MonetDB Overview ,Source Development Distribution, Download and Installation
