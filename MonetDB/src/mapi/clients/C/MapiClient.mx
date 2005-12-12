@@ -805,10 +805,15 @@ doFile(Mapi mid, const char *file, int skipequals)
 
 			if ((reply = mapi_result_error(hdl)) != NULL)
 				mapi_explain_result(hdl, stderr);
-			while ((reply = mapi_fetch_line(hdl)) != NULL) {
-				if (*reply == '=' && skipequals)
-					reply++;
-				fprintf(toConsole, "%s\n", reply);
+			if (mapi_get_querytype(hdl) == Q_UPDATE) {
+				fprintf(toConsole, "[ %d\t]\n",
+					mapi_rows_affected(hdl));
+			} else {
+				while ((reply = mapi_fetch_line(hdl)) != NULL) {
+					if (*reply == '=' && skipequals)
+						reply++;
+					fprintf(toConsole, "%s\n", reply);
+				}
 			}
 		} while ((rc = mapi_next_result(hdl)) == 1);
 		if (rc == MMORE && (length > 0 || mapi_query_done(hdl) != MOK))
@@ -1048,8 +1053,13 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 						return 1;
 					}
 				}
-				while ((reply = mapi_fetch_line(hdl)) != NULL)
-					fprintf(toConsole, "%s\n", reply);
+				if (mapi_get_querytype(hdl) == Q_UPDATE) {
+					fprintf(toConsole, "[ %d\t]\n",
+						mapi_rows_affected(hdl));
+				} else {
+					while ((reply = mapi_fetch_line(hdl)) != NULL)
+						fprintf(toConsole, "%s\n", reply);
+				}
 			} while ((rc = mapi_next_result(hdl)) == 1);
 			if (rc == MMORE && (line != NULL || mapi_query_done(hdl) != MOK))
 				continue;	/* get more data */

@@ -803,6 +803,16 @@ struct BlockCache {
 @h
 typedef struct MapiStruct *Mapi;
 
+typedef enum sql_query_t {
+	Q_PARSE = 0,
+	Q_TABLE = 1,
+	Q_UPDATE = 2,
+	Q_SCHEMA = 3,
+	Q_TRANS = 4,
+	Q_PREPARE = 5,
+	Q_BLOCK = 6
+} sql_query_t;
+
 @c
 struct MapiStruct {
 	char *server;		/* server version */
@@ -838,17 +848,6 @@ struct MapiStruct {
 	stream *tracelog;	/* keep a log for inspection */
 	stream *from, *to;
 };
-
-/* this definition is a straight copy from sql_query.mx */
-typedef enum sql_query_t {
-	Q_PARSE = 0,
-	Q_TABLE = 1,
-	Q_UPDATE = 2,
-	Q_SCHEMA = 3,
-	Q_TRANS = 4,
-	Q_PREPARE = 5,
-	Q_BLOCK = 6
-} sql_query_t;
 
 struct MapiResultSet {
 	struct MapiResultSet *next;
@@ -2965,12 +2964,9 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 			else
 				hdl->mid->auto_commit = 1;
 			break;
-		case Q_UPDATE: {
-			char buf[BUFSIZ];
+		case Q_UPDATE: 
 			result->row_count = strtol(n, &n, 0);
-			snprintf(buf, BUFSIZ, "[ %d\t]", result->row_count);	
-			add_cache(result, strdup(buf));
-		}	break;
+			break;
 		case Q_TABLE:
 			/* result set id */
 			result->tableid = strtol(n, &n, 0);
