@@ -271,16 +271,51 @@ monet_options.mx.in
 	/* you don;t need the commandline arguments anymore */
 	mo_free_options(set, setlen);
 }
+@-
+To enable restart we have to save the arguments and read
+it back again upon need. The restart option can only be
+applied in the target directory, because decisions take
+place before the server is initialized completely.
+@c
+void
+save_arguments(int argc, char **argv)
+{
+	int i;
+	FILE *fd;
+	fd = fopen(".mserver.args","w");
+	if( fd == NULL)
+		return;
+	for( i=0; i < argc; i++)
+	if( strncmp(argv[i],"--restart",9) ) /* protect yourself */
+		fprintf(fd,"%s\n",argv[i]);
+}
+void
+load_arguments(int *argc, char **argv)
+{
+	int i=0;
+	FILE *fd;
+	char buf[BUFSIZ];
+
+	fd = fopen(".mserver.args","r");
+	if( fd == NULL)
+		return;
+	while( fgets(buf,BUFSIZ,fd) != NULL && i<32){
+		buf[strlen(buf)-1]= 0;
+		argv[i]= GDKstrdup(buf);
+		i++;
+	}
+	*argc = i;
+}
 
 int
-main(int argc, char **av)
+main(int argc, char **argv)
 {
-	char *prog = *av;
+	char *prog = *argv, **av= argv, *alternative[32]={0};
 	opt *set = NULL;
-	int i, debug = 0, setlen = 0, listing = 0;
+	int i, ac=argc, debug = 0, setlen = 0, listing = 0;
 	str dbinit = NULL;
 
-	static struct option long_options[11] = {
+	static struct option long_options[12] = {
 		{"config", 1, 0, 'c'},
 		{"dbname", 1, 0, 0},
 		{"dbfarm", 1, 0, 0},
@@ -289,6 +324,7 @@ main(int argc, char **av)
 		{"debug", 2, 0, 'd'},
 		{"help", 2, 0, 'h'},
 		{"help", 0, 0, '?'},
+		{"restart", 0, 0, 'r'},
 		{"set", 1, 0, 's'},
 		{"trace", 0, 0, 't'},
 		{0, 0, 0, 0}
@@ -353,7 +389,7 @@ faster system start.
 	for(;;) {
 		int option_index = 0;
 
-		int c = getopt_long(argc, av, "c:d:t::?s:",
+		int c = getopt_long(ac, av, "c:d:t:r:?s:",
 				    long_options, &option_index);
 
 		if (c == -1)
@@ -392,6 +428,13 @@ faster system start.
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_debug", optarg);
 			}
 			break;
+		case 'r':
+			if (strcmp(long_options[option_index].name, "restart") == 0) {
+				load_arguments(&argc,alternative);
+				ac= argc;
+				av= alternative;
+			}
+			break;
 		case 's':{
 			/* should add option to a list */
 			char *tmp = strchr(optarg, '=');
@@ -423,10 +466,13 @@ faster system start.
 	if (!(setlen = mo_system_config(&set, setlen)))
 		usage(prog);
 
+	if( alternative[0]== NULL)
+		save_arguments(argc,argv);
+
 	i = 0;
-	monet_script = (str *) GDKmalloc(sizeof(str) * (argc + 1));
+	monet_script = (str *) GDKmalloc(sizeof(str) * (ac + 1));
 	monet_script[i] = NULL;
-	while (optind < argc) {
+	while (optind < ac) {
 		monet_script[i] = absolute_path(av[optind]);
 		monet_script[i + 1] = NULL;
 		optind++;
