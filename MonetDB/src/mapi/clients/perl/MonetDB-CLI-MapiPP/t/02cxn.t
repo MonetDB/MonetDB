@@ -45,7 +45,7 @@ my $cnt = eval { $req->columncount };
 is( $cnt, 2,"columncount: $cnt");
 
 my $querytype = eval { $req->querytype };
-is( $querytype, 3,"querytype: $querytype");
+is( $querytype, 1,"querytype: $querytype");
 
 for my $k ('id','rows_affected') {
   my $v = eval { $req->$k };
