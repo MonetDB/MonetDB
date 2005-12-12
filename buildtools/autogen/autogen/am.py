@@ -763,6 +763,9 @@ def am_ant(fd, var, ant, am):
         jd = ant["DIR"][0] # use first name given
     jd = am_translate_dir(jd, am)
 
+    for src in ant['SOURCES']:
+        am['EXTRA_DIST'].append(src)
+
     fd.write("\nif HAVE_JAVA\n\n")  # there is ant if configure set HAVE_JAVA
 
     fd.write("\n%s_ant_target:\n\t$(ANT) -f $(srcdir)/build.xml -Dbuilddir=$(PWD) -Djardir=$(PWD) %s\n" % (target, target))

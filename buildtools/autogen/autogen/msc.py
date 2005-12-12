@@ -38,6 +38,7 @@ RC = rc
 
 JAVAC = javac
 JAR = jar
+ANT = ant
 
 CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES)
 
@@ -928,111 +929,39 @@ def msc_includes(fd, var, values, msc):
                    + msc_add_srcdir(i, msc, " -I")
     fd.write("INCLUDES = " + incs + "\n")
 
-def msc_jar(fd, var, jar, msc):
+def msc_ant(fd, var, ant, msc):
 
-    name = var[4:]
+    target = var[4:]	# the ant target to call
 
     jd = "JAVADIR"
-    if jar.has_key("DIR"):
-        jd = jar["DIR"][0] # use first name given
+    if ant.has_key("DIR"):
+        jd = ant["DIR"][0] # use first name given
     jd = msc_translate_dir(jd, msc)
 
-    for src in jar['SOURCES']:
+    for src in ant['SOURCES']:
         msc['EXTRA_DIST'].append(src)
 
-    fd.write("\n!IFDEF HAVE_JAVA\n\n")
+    fd.write("\n!IFDEF HAVE_JAVA\n\n") # there is ant if configure set HAVE_JAVA
 
-    if jar.has_key("MANIFEST") and len(jar['MANIFEST']) == 1:
-        fd.write("%s_manifest_file= %s\n" % (name.replace('-','_'), msc_translate_dir(jar['MANIFEST'][0],msc)))
-        manifest_flag='m'
-    else:
-        fd.write("%s_manifest_file= \n" % name.replace('-','_'))
-        manifest_flag=''
+    fd.write("\n%s_ant_target:\n\t$(ANT) -f $(srcdir)/build.xml -Dbuilddir=$(PWD) -Djardir=$(PWD) %s\n" % (target, target))
 
-    fd.write("%s_java_files= " % (name.replace('-','_')))
-    infiles = []
-    for j in jar['SOURCES']:
-        s,ext = rsplit_filename(j)
-        if ext == 'in':
-            fd.write('%s ' % msc_basename(msc_translate_dir(s, msc)))
-            infiles.append(msc_translate_dir(s, msc))
-        else:
-            fd.write('$(SRCDIR)\\%s ' % msc_translate_dir(j,msc))
-    fd.write('\n')
-    for infile in infiles:
-        fd.write('%s: "$(SRCDIR)\\%s.in"\n' % (msc_basename(infile), infile))
-        fd.write('\t$(CONFIGURE) "$(SRCDIR)\\%s.in" > "%s"\n' % (infile, msc_basename(infile)))
 
-    fd.write("\n%s_class_files= " % (name.replace('-','_')))
-    for j in jar['TARGETS']:
-        fd.write('"%s" ' % msc_translate_dir(j,msc))
-
-    fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name.replace('-','_'), name.replace('-','_')))
-    fd.write("\t$(JAVAC) -d . -classpath \"$(CLASSPATH)\" $(JAVACFLAGS) $(%s_java_files)\n" % name.replace('-','_'))
-
-    fd.write("%s.jar: $(%s_class_files) $(%s_manifest_file)\n" % (name, name.replace('-','_'), name.replace('-','_')))
-    fd.write("\t$(JAR) $(JARFLAGS) -cf%s $@ $(%s_manifest_file) $(%s_class_files)\n" % (manifest_flag, name.replace('-','_'), name.replace('-','_')))
-
-    fd.write('install_%s: %s.jar\n' % (name, name))
-    fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (jd, jd))
-    fd.write('\t$(INSTALL) %s.jar "%s\\%s.jar"\n' % (name, jd, name))
-
-    fd.write('%s: %s.jar\n' % (name, name))
+    # install is done at the end, here we simply collect to be installed files
+    # INSTALL expects a list of dst,src,ext,install_directory,'lib?'.
+    for file in ant['FILES']:
+        sfile = file.replace(".", "_")
+    	fd.write('%s: %s_ant_target\n' % (sfile, target))
+        am['INSTALL'].append(file,file,None,jd,None)
 
     fd.write("\n!ELSE\n\n")
 
-    fd.write('%s:\n' % name)
-    fd.write('install_%s:\n' % name)
+    fd.write('%s:\n' % target)
+    fd.write('install_%s:\n' % target)
 
     fd.write("\n!ENDIF #HAVE_JAVA\n\n")
 
-    msc['SCRIPTS'].append(name)
-    msc['INSTALL'].append((name, name, '', None, 0))
-
-def msc_java(fd, var, java, msc):
-
-    name = var[5:]
-
-    jd = "JAVADIR"
-    if java.has_key("DIR"):
-        jd = java["DIR"][0] # use first name given
-    jd = msc_translate_dir(jd, msc)
-
-    for src in java['SOURCES']:
-        msc['EXTRA_DIST'].append(src)
-
-    fd.write("\n!IFDEF HAVE_JAVA\n\n")
-
-    fd.write("%s_java_files= " % (name.replace('-','_')))
-    for j in java['SOURCES']:
-        s,ext = rsplit_filename(j)
-        if ext == 'in':
-            fd.write('%s ' % s)
-        else:
-            fd.write('$(SRCDIR)\\%s ' % msc_translate_dir(j,msc))
-
-    fd.write("\n%s_class_files= " % (name.replace('-','_')))
-    for j in java['TARGETS']:
-        fd.write('"%s" ' % msc_translate_dir(j,msc))
-
-    fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name.replace('-','_'), name.replace('-','_')))
-    fd.write("\t$(JAVAC) -d . -classpath \"$(CLASSPATH)\" $(JAVACFLAGS) $(%s_java_files)\n" % name.replace('-','_'))
-
-    fd.write('install_%s: $(%s_class_files)\n' % (name, name.replace('-','_')))
-    fd.write('\tif not exist "%s" $(MKDIR) "%s"\n' % (jd, jd))
-    fd.write('\t$(INSTALL) $(%s_class_files) "%s\\$(%s_class_files)"\n' % (name.replace('-','_'), jd, name.replace('-','_')))
-
-    fd.write('%s: $(%s_class_files)\n' % (name, name.replace('-','_')))
-
-    fd.write("\n!ELSE\n\n")
-
-    fd.write('%s:\n' % name)
-    fd.write('install_%s:\n' % name)
-
-    fd.write("\n!ENDIF #HAVE_JAVA\n\n")
-
-    msc['SCRIPTS'].append(name)
-    msc['INSTALL'].append((name, name, '', None, 0))
+    # make sure the jars and classes get made
+    msc['SCRIPTS'].append(target + '_ant_target')
 
 output_funcs = {'SUBDIRS': msc_subdirs,
                 'EXTRA_DIST': msc_extra_dist,
@@ -1052,8 +981,7 @@ output_funcs = {'SUBDIRS': msc_subdirs,
                 'smallTOC_SHARED_MODS': msc_mods_to_libs,
                 'largeTOC_SHARED_MODS': msc_mods_to_libs,
                 'HEADERS': msc_headers,
-                'JAR': msc_jar,
-                'JAVA': msc_java,
+                'ANT': msc_ant,
                 }
 
 def output(tree, cwd, topdir):
