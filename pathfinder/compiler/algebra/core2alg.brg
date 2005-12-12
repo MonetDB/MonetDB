@@ -1306,12 +1306,12 @@ reduce (PFcnode_t * p, int goalnt)
 
             PFla_op_t *attr = attribute (tagname, 
                                          project (A(R(p)).rel,
-                                                  proj (att_iter1, att_iter),
-                                                  proj (att_pos1, att_pos),
-                                                  proj (att_item1, att_item)),
+                                                  proj (att_iter, att_iter),
+                                                  proj (att_pos, att_pos),
+                                                  proj (att_item, att_item)),
                                          att_res,
                                          att_item,
-                                         att_item1);
+                                         att_item);
 
             A(p) = (struct  PFla_pair_t) {
                      .rel = project(roots (attr),

@@ -702,13 +702,11 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             inf_icols = n->prop->icols;
 
             /* do not infer input columns if operator is not required */
-            /* FIXME: remove the hardcoded name */
-            if (!(n->prop->icols & att_res)) 
+            if (!(n->prop->icols & n->sem.doc_access.res)) 
                 break;
 
-            /* FIXME: remove the hardcoded name */
-            inf_icols = diff (inf_icols, att_res);
-            inf_icols = union_ (inf_icols, n->sem.cast.att);
+            inf_icols = diff (inf_icols, n->sem.doc_access.res);
+            inf_icols = union_ (inf_icols, n->sem.doc_access.att);
             break;
 
         case la_element:

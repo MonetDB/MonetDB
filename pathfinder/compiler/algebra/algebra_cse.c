@@ -301,7 +301,8 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             break;
 
         case la_doc_access:
-            return (a->sem.doc_access.att == b->sem.doc_access.att
+            return (a->sem.doc_access.res == b->sem.doc_access.res
+                    && a->sem.doc_access.att == b->sem.doc_access.att
                     && a->sem.doc_access.doc_col == b->sem.doc_access.doc_col);
             break;
 

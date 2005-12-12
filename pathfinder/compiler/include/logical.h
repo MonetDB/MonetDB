@@ -214,6 +214,7 @@ union PFla_op_sem_t {
 
     /* reference columns for document access */
     struct {
+        PFalg_att_t     res;      /**< result attribute */
         PFalg_att_t     att;      /**< name of the reference attribute */
         PFalg_doc_t     doc_col;  /**< referenced column in the document */
     } doc_access;
@@ -531,6 +532,7 @@ PFla_op_t * PFla_doc_tbl (const PFla_op_t *rel);
 /** Constructor for string access of loaded documents */
 PFla_op_t * PFla_doc_access (const PFla_op_t *doc,
                              const PFla_op_t *n,
+                             PFalg_att_t res,
                              PFalg_att_t col,
                              PFalg_doc_t doc_col);
 

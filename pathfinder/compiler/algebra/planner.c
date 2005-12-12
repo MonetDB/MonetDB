@@ -862,9 +862,7 @@ static PFplanlist_t *
 plan_number (const PFla_op_t *n)
 {
     PFplanlist_t *ret     = new_planlist ();
-    PFplanlist_t *ordered = new_planlist ();
     plan_t        *cheapest_unordered = NULL;
-    plan_t        *cheapest_ordered   = NULL;
 
     assert (n); assert (n->kind == la_number);
     assert (L(n)); assert (L(n)->plans);
@@ -878,35 +876,8 @@ plan_number (const PFla_op_t *n)
             cheapest_unordered
                 = *(plan_t **) PFarray_at (L(n)->plans, i);
 
-    /* an ordering by `iter' is typically helpful -> sort all plans */
-    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-        add_plans (ordered,
-                   ensure_ordering (
-                       *(plan_t **) PFarray_at (L(n)->plans, i),
-                       PFord_refine (
-                           PFord_refine (
-                               PFordering (), att_iter),
-                           att_pos)));
-
-    for (unsigned int i = 0; i < PFarray_last (ordered); i++)
-        if (!cheapest_ordered
-            || costless (*(plan_t **) PFarray_at (ordered, i),
-                         cheapest_ordered))
-            cheapest_ordered = *(plan_t **) PFarray_at (ordered, i);
-
-    /*
-     * The plan `cheapest_unordered' is always the cheapest possible
-     * plan.  However, an ordered plan could still be benefitial,
-     * even if it is slightly more expensive on its own.  We assume
-     * that the ordering makes up the cost of an unordered plan, if
-     * its cost is at most 2 times the cost of an unordered plan.
-     */
-    if (cheapest_ordered->cost <= cheapest_unordered->cost * 2)
-        add_plan (ret, number (cheapest_ordered,
-                  n->sem.number.attname, n->sem.number.part));
-    else
-        add_plan (ret, number (cheapest_unordered,
-                  n->sem.number.attname, n->sem.number.part));
+    add_plan (ret, number (cheapest_unordered,
+              n->sem.number.attname, n->sem.number.part));
 
     return ret;
 }
@@ -1137,6 +1108,7 @@ plan_doc_access (const PFla_op_t *n)
                       doc_access (
                           *(plan_t **) PFarray_at (L(n)->plans, j),
                           *(plan_t **) PFarray_at (R(n)->plans, i),
+                          n->sem.doc_access.res,
                           n->sem.doc_access.att,
                           n->sem.doc_access.doc_col));
 
@@ -1236,7 +1208,7 @@ plan_attribute (const PFla_op_t *n)
         add_plans (ordered_str,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (R(n)->plans, i),
-                       PFord_refine (PFordering (), att_iter1)));
+                       PFord_refine (PFordering (), att_iter)));
 
     for (unsigned int i = 0; i < PFarray_last (ordered_str); i++)
         if (!cheapest_str_plan
@@ -1492,7 +1464,7 @@ plan_string_join (const PFla_op_t *n)
         add_plans (sorted_n2,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (R(n)->plans, i),
-                       PFord_refine (PFordering (), att_iter1)));
+                       PFord_refine (PFordering (), att_iter)));
 
     /* for each remaining plan, generate a string_join operator */
     for (unsigned int i = 0; i < PFarray_last (sorted_n1); i++)

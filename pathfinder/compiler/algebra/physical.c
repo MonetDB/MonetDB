@@ -2535,7 +2535,7 @@ PFpa_doc_tbl (const PFpa_op_t *rel)
  */
 PFpa_op_t *
 PFpa_doc_access (const PFpa_op_t *doc, const PFpa_op_t *alg,
-                 PFalg_att_t att, PFalg_doc_t doc_col)
+                 PFalg_att_t res, PFalg_att_t att, PFalg_doc_t doc_col)
 {
     unsigned int i;
     PFpa_op_t *ret = wire2 (pa_doc_access, doc, alg);
@@ -2552,6 +2552,7 @@ PFpa_doc_access (const PFpa_op_t *doc, const PFpa_op_t *alg,
     ret->schema.items[i] 
         = (struct PFalg_schm_item_t) { .type = aat_str, .name = att_res };
 
+    ret->sem.doc_access.res = res;
     ret->sem.doc_access.att = att;
     ret->sem.doc_access.doc_col = doc_col;
 
@@ -2662,13 +2663,13 @@ PFpa_attribute (const PFpa_op_t *qn_rel, const PFpa_op_t *val_rel,
     found = 0;
 
     for (unsigned int i = 0; i < val_rel->schema.count; i++)
-        if (val_rel->schema.items[i].name == att_iter1
+        if (val_rel->schema.items[i].name == att_iter
             || val_rel->schema.items[i].name == val)
             found++;
 
     if (found != 2)
         PFoops (OOPS_FATAL,
-                "Attribute constructor requires iter1|%s schema for "
+                "Attribute constructor requires iter|%s schema for "
                 "attribute content.", PFatt_str (val));
 #endif
 

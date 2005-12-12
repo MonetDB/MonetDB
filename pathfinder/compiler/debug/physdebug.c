@@ -441,7 +441,8 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
                         "unknown document access in dot output");
             }
 
-            PFarray_printf (dot, " (%s)",
+            PFarray_printf (dot, "\\%s (%s)",
+                            PFatt_str (n->sem.doc_access.res),
                             PFatt_str (n->sem.doc_access.att));
             break;
 

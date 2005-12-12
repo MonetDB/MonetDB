@@ -2689,7 +2689,7 @@ reduce (PFpa_op_t * p, int goalnt)
                             p->sem.doc_access.doc_col);
             }
 
-            env_add (p->env, att_res, aat_str, str);
+            env_add (p->env, p->sem.doc_access.res, aat_str, str);
         }
             break;
 
@@ -2969,8 +2969,8 @@ reduce (PFpa_op_t * p, int goalnt)
                                reverse (VAR(L(p)->env, att_iter, aat_nat)),
                                VAR(L(p)->env, att_item, aat_str)),
                            leftjoin (
-                               reverse (VAR(R(p)->env, att_iter1, aat_nat)),
-                               VAR(R(p)->env, att_item1, aat_str)))),
+                               reverse (VAR(R(p)->env, att_iter, aat_nat)),
+                               VAR(R(p)->env, att_item, aat_str)))),
                 assgn (var (iter->name), 
                        reverse (mark (var (str->name), lit_oid (0)))),
                 assgn (var (item->name), 

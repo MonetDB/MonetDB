@@ -87,7 +87,7 @@
 #define llscj_prec_self(a,b,c,d,e) PFpa_llscj_prec_self ((a),(b), (c), (d), (e))
 
 #define doc_tbl(a)        PFpa_doc_tbl (a)
-#define doc_access(a,b,c,d) PFpa_doc_access ((a), (b), (c), (d))
+#define doc_access(a,b,c,d,e) PFpa_doc_access ((a), (b), (c), (d), (e))
 
 #define element(a,b,c)    PFpa_element ((a),(b),(c))
 #define attribute(a,b,c,d,e) PFpa_attribute ((a),(b),(c),(d),(e))

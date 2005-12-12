@@ -1719,7 +1719,7 @@ PFla_doc_tbl (const PFla_op_t *rel)
  */
 PFla_op_t *
 PFla_doc_access (const PFla_op_t *doc, const PFla_op_t *n, 
-                 PFalg_att_t col, PFalg_doc_t doc_col)
+                 PFalg_att_t res, PFalg_att_t col, PFalg_doc_t doc_col)
 {
     unsigned int i;
     PFla_op_t *ret = la_op_wire2 (la_doc_access, doc, n);
@@ -1735,8 +1735,9 @@ PFla_doc_access (const PFla_op_t *doc, const PFla_op_t *n,
         ret->schema.items[i] = n->schema.items[i];
 
     ret->schema.items[i]
-        = (struct PFalg_schm_item_t) { .type = aat_str, .name = att_res };
+        = (struct PFalg_schm_item_t) { .type = aat_str, .name = res };
 
+    ret->sem.doc_access.res = res;
     ret->sem.doc_access.att = col;
     ret->sem.doc_access.doc_col = doc_col;
 

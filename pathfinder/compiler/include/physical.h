@@ -248,6 +248,7 @@ union PFpa_op_sem_t {
 
     /* reference columns for document access */
     struct {
+        PFalg_att_t     res;      /**< attribute to hold the result */
         PFalg_att_t     att;      /**< name of the reference attribute */
         PFalg_doc_t     doc_col;  /**< referenced column in the document */
     } doc_access;
@@ -661,6 +662,7 @@ PFpa_op_t * PFpa_doc_tbl (const PFpa_op_t *);
  */
 PFpa_op_t * PFpa_doc_access (const PFpa_op_t *doc, 
                              const PFpa_op_t *alg,
+                             PFalg_att_t res,
                              PFalg_att_t att,
                              PFalg_doc_t doc_col);
 
