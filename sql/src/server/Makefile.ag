@@ -53,7 +53,6 @@ lib_sqlserver = {
 		sql_env.mx \    
 		sql_privileges.mx \  
 		sql_sequence.mx \  
-		sql_query.mx \
 		rel_semantic.mx \
 		rel_select.mx \
 		rel_bin.mx \

@@ -16,6 +16,7 @@
 
 INCLUDES = \
 	../include \
+	../../include \
 	$(MONETDB_INCS) 
 
 DEFS = @DEFS@
