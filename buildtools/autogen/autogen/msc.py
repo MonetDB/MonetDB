@@ -952,7 +952,7 @@ def msc_ant(fd, var, ant, msc):
     for file in ant['FILES']:
         sfile = file.replace(".", "_")
     	fd.write('%s: %s_ant_target\n' % (sfile, target))
-        am['INSTALL'].append(file,file,None,jd,None)
+        msc['INSTALL'].append((file,file,None,jd,None))
 
     fd.write("\n!ELSE\n\n")
 
