@@ -38,7 +38,6 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 #include "ODBCUtil.h"
-#include "sql_query.h"
 
 static struct msql_types {
 	char *name;
@@ -120,8 +119,7 @@ ODBCInitResult(ODBCStmt *stmt)
 		break;
 	case Q_UPDATE:		/* Q_UPDATE */
 		/* result count generating query */
-		assert(nrCols == 1);
-		nrCols = 0;
+		assert(nrCols == 0);
 		stmt->State = EXECUTED0;
 		break;
 	default:
