@@ -1926,11 +1926,13 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
     # now select all the unique nodes (both item and fragment must be
     # the same), and when there are multiple occurences, select the
     # *last*.
-    var update_node_frag := update_node_kind.get_fragment();
-    var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_frag.access(BAT_WRITE).revert()).CTmap();
-    update_node_item := update_node_unique.leftjoin(update_node_item);
-    update_node_kind := update_node_unique.leftjoin(update_node_kind);
-    update_text := update_node_unique.leftjoin(update_text);
+    if (update_node_item.count() > 1) {
+      var update_node_frag := update_node_kind.get_fragment();
+      var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_frag.access(BAT_WRITE).revert()).CTmap();
+      update_node_item := update_node_unique.leftjoin(update_node_item);
+      update_node_kind := update_node_unique.leftjoin(update_node_kind);
+      update_text := update_node_unique.leftjoin(update_text);
+    }
 
     # now make the three BATs void-headed
     update_node_item := update_node_item.reverse().mark(0@0).reverse();
@@ -1951,12 +1953,14 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
     # now select all the unique nodes (both item and fragment must be
     # the same), and when there are multiple occurences, select the
     # *last*.
-    var update_node_frag := update_node_kind.get_fragment();
-    var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_frag.access(BAT_WRITE).revert()).CTmap();
-    update_node_item := update_node_unique.leftjoin(update_node_item);
-    update_node_kind := update_node_unique.leftjoin(update_node_kind);
-    update_ins := update_node_unique.leftjoin(update_ins);
-    update_tgt := update_node_unique.leftjoin(update_tgt);
+    if (update_node_item.count() > 1) {
+      var update_node_frag := update_node_kind.get_fragment();
+      var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_frag.access(BAT_WRITE).revert()).CTmap();
+      update_node_item := update_node_unique.leftjoin(update_node_item);
+      update_node_kind := update_node_unique.leftjoin(update_node_kind);
+      update_ins := update_node_unique.leftjoin(update_ins);
+      update_tgt := update_node_unique.leftjoin(update_tgt);
+    }
 
     # now make the four BATs void-headed
     update_node_item := update_node_item.reverse().mark(0@0).reverse();
@@ -1977,11 +1981,13 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
     # now select all the unique nodes (both item and fragment must be
     # the same), and when there are multiple occurences, select the
     # *last*.
-    var update_node_frag := update_node_kind.get_fragment();
-    var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_frag.access(BAT_WRITE).revert()).CTmap();
-    update_node_item := update_node_unique.leftjoin(update_node_item);
-    update_node_kind := update_node_unique.leftjoin(update_node_kind);
-    update_comment := update_node_unique.leftjoin(update_comment);
+    if (update_node_item.count() > 1) {
+      var update_node_frag := update_node_kind.get_fragment();
+      var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_frag.access(BAT_WRITE).revert()).CTmap();
+      update_node_item := update_node_unique.leftjoin(update_node_item);
+      update_node_kind := update_node_unique.leftjoin(update_node_kind);
+      update_comment := update_node_unique.leftjoin(update_comment);
+    }
 
     # now make the three BATs void-headed
     update_node_item := update_node_item.reverse().mark(0@0).reverse();
@@ -2002,12 +2008,14 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
     # now select all the unique nodes (item, fragment, and qn must all
     # be the same), and when there are multiple occurences, select the
     # *last*.
-    var update_node_frag := update_node_kind.get_fragment();
-    var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_frag.access(BAT_WRITE).revert()).CTgroup(update_qn.access(BAT_WRITE).revert()).CTmap();
-    update_node_item := update_node_unique.leftjoin(update_node_item);
-    update_node_kind := update_node_unique.leftjoin(update_node_kind);
-    update_qn := update_node_unique.leftjoin(update_qn);
-    update_val := update_node_unique.leftjoin(update_val);
+    if (update_node_item.count() > 1) {
+      var update_node_frag := update_node_kind.get_fragment();
+      var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_frag.access(BAT_WRITE).revert()).CTgroup(update_qn.access(BAT_WRITE).revert()).CTmap();
+      update_node_item := update_node_unique.leftjoin(update_node_item);
+      update_node_kind := update_node_unique.leftjoin(update_node_kind);
+      update_qn := update_node_unique.leftjoin(update_qn);
+      update_val := update_node_unique.leftjoin(update_val);
+    }
 
     # now make the four BATs void-headed
     update_node_item := update_node_item.reverse().mark(0@0).reverse();
@@ -2047,10 +2055,12 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
     
     # now select all the unique nodes (both item and fragment must be
     # the same).
-    var update_node_frag := update_node_kind.get_fragment();
-    var update_node_unique := update_node_item.access(BAT_WRITE).CTgroup().CTderive(update_node_frag.access(BAT_WRITE)).CTmap();
-    update_node_item := update_node_unique.leftjoin(update_node_item);
-    update_node_kind := update_node_unique.leftjoin(update_node_kind);
+    if (update_node_item.count() > 1) {
+      var update_node_frag := update_node_kind.get_fragment();
+      var update_node_unique := update_node_item.access(BAT_WRITE).CTgroup().CTderive(update_node_frag.access(BAT_WRITE)).CTmap();
+      update_node_item := update_node_unique.leftjoin(update_node_item);
+      update_node_kind := update_node_unique.leftjoin(update_node_kind);
+    }
 
     # now make the two BATs void-headed
     update_node_item := update_node_item.reverse().mark(0@0).reverse();
@@ -2412,8 +2422,8 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
       } else if (insertkind = ELEMENT) {
         var insertfragbat := ws.fetch(PRE_FRAG).fetch(insertfrag);
         var elemfrag;
-        if (is_fake_project(insertfragbat)) {
-          elemfrag := insertfragbat.fetch(0);
+        if (is_constant(insertfragbat)) {
+          elemfrag := bat2constant(insertfragbat);
         } else {
           elemfrag := insertfragbat.find(insertitem);
         }
@@ -2924,7 +2934,7 @@ CMDinsertConvert(BAT** res, BAT *b, ptr h, ptr t, int tpe)
 	int ret = GDK_FAIL;
 	BAT *bn = NULL;
 	if (CMDfakeProject(&bn, t, tpe) == GDK_SUCCEED) {
-		if (BUNins(*res = b, h, &bn->batCacheid)) {
+		if (BUNins(*res = b, BAThtype(b) == TYPE_bat ? (ptr) &((BAT *) h)->batCacheid : h, &bn->batCacheid)) {
 			BBPfix(b->batCacheid);
 			ret = GDK_SUCCEED;
 		}
