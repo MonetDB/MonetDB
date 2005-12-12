@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # necessary for version number
-source ${TSTSRCDIR}/../../build.properties
+source ${TSTSRCBASE}/src/jdbc/build.properties
 
 JAR="${TSTBLDBASE}/src/jdbc/jdbcclient-${JDBC_MAJOR}.${JDBC_MINOR}.jar"
 

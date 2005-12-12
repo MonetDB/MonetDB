@@ -1,16 +1,9 @@
 #!/bin/sh
 
-if [ -f $SQL_BUILD/src/jdbc/MonetDB_JDBC.jar ] ; then
-	JAR="`$CYGPATH_WP "$SQL_BUILD/src/jdbc/MonetDB_JDBC.jar"`"
-  elif [ -f $TSTBLDBASE/src/jdbc/MonetDB_JDBC.jar ] ; then
-	JAR="`$CYGPATH_WP "$TSTBLDBASE/src/jdbc/MonetDB_JDBC.jar"`"
-  elif [ -f $SQL_PREFIX/share/MonetDB/lib/MonetDB_JDBC.jar ] ; then
-	JAR="`$CYGPATH_WP "$SQL_PREFIX/share/MonetDB/lib/MonetDB_JDBC.jar"`"
-  elif [ -f $MONETDB_PREFIX/share/MonetDB/lib/MonetDB_JDBC.jar ] ; then
-	JAR="`$CYGPATH_WP "$MONETDB_PREFIX/share/MonetDB/lib/MonetDB_JDBC.jar"`"
-  else
-	JAR="`$CYGPATH_WP "$TSTTRGBASE/share/MonetDB/lib/MonetDB_JDBC.jar"`"
-fi
+# necessary for version number
+source ${TSTSRCBASE}/src/jdbc/build.properties
+
+JAR="${TSTBLDBASE}/src/jdbc/jdbcclient-${JDBC_MAJOR}.${JDBC_MINOR}.jar"
 
 cat << EOF > .monetdb
 user=monetdb
