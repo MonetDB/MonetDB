@@ -1,19 +1,9 @@
 #!/bin/sh
 
-PATHS=""
-if [ -d $SQL_BUILD/src/jdbc/ ] ; then
-	PATHS="${PATHS} `$CYGPATH_WP "${SQL_BUILD}/src/jdbc/"`"
-elif [ -d ${TSTBLDBASE}/src/jdbc/ ] ; then
-	PATHS="${PATHS} `$CYGPATH_WP "${TSTBLDBASE}/src/jdbc/"`"
-elif [ -f ${SQL_PREFIX}/share/MonetDB/lib/] ; then
-	PATHS="${PATHS} `$CYGPATH_WP ${SQL_PREFIX}/share/MonetDB/lib/"`"
-elif [ -f ${MONETDB_PREFIX}/share/MonetDB/lib/ ] ; then
-	PATHS="${PATHS} `$CYGPATH_WP ${MONETDB_PREFIX}/share/MonetDB/lib/"`"
-else
-	PATHS="${PATHS} `$CYGPATH_WP "${TSTTRGBASE}/share/MonetDB/lib/"`"
-fi
+# necessary for version number
+source ${TSTSRCDIR}/../../build.properties
 
-JAR="`find ${PATHS} -name 'jdbcclient*.jar'`"
+JAR="${TSTBLDBASE}/src/jdbc/jdbcclient-${JDBC_MAJOR}.${JDBC_MINOR}.jar"
 
 cat << EOF > .monetdb
 user=monetdb
