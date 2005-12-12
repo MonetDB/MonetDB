@@ -938,8 +938,9 @@ def msc_ant(fd, var, ant, msc):
         jd = ant["DIR"][0] # use first name given
     jd = msc_translate_dir(jd, msc)
 
-    for src in ant['SOURCES']:
-        msc['EXTRA_DIST'].append(src)
+    if ant.has_key("SOURCES"):
+    	for src in ant['SOURCES']:
+        	msc['EXTRA_DIST'].append(src)
 
     fd.write("\n!IFDEF HAVE_JAVA\n\n") # there is ant if configure set HAVE_JAVA
 
