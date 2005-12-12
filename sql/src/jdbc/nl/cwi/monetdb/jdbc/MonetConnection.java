@@ -1110,13 +1110,13 @@ public class MonetConnection implements Connection {
 								if (soh.position() == soh.length()) throw
 									new java.text.ParseException("unexpected end of string", soh.position() - 1);
 								boolean ac = soh.get() == 't' ? true : false;
-								if (autoCommit != ac) {
-									autoCommit = ac;
-									addWarning("Server auto commit state " +
-											"differs from local state.  " +
-											"Adjusted auto commit to " +
-											autoCommit);
+								if (autoCommit && ac) {
+									addWarning("Server enabled auto commit " +
+											"mode while local state " +
+											"already is auto commit."
+										);
 								}
+								autoCommit = ac;
 								// note: the use of a special header
 								// here is not really clear.  Maybe
 								// ditch it and use AffectedRowsHeader
