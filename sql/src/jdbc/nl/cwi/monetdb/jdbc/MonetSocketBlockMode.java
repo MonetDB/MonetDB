@@ -436,7 +436,7 @@ final class MonetSocketBlockMode {
 	 * @return a string containing error messages, or null if there aren't any
 	 * @throws IOException if an IO exception occurs while talking to the server
 	 */
-	public synchronized String waitForPrompt() throws IOException {
+	final public synchronized String waitForPrompt() throws IOException {
 		String ret = "", tmp;
 		while (lineType != PROMPT1) {
 			if ((tmp = readLine()) == null)
