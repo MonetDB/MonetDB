@@ -11,3 +11,4 @@ select_extract.SF-1263796
 intersect_in_subquery.SF-1339411
 cardinality_violation.SF-1240701
 rows_affected.SF-1377180
+broken_join.SF-1373391

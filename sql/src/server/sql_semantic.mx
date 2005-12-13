@@ -254,6 +254,7 @@ scope_sqlparse(mvc *m, scope *scp, char *query)
 	m->argc = 0;
 	m->sym = NULL;
 	m->errstr[0] = '\0';
+	m->errstr[ERRSIZE-1] = '\0';
 	m->status = 0;
 
 	(void) sqlparse(m);	/* blindly ignore errors */
@@ -310,6 +311,7 @@ sqlparse_intern(mvc *m, char *query)
 	m->argc = 0;
 	m->sym = NULL;
 	m->errstr[0] = '\0';
+	m->errstr[ERRSIZE-1] = '\0';
 	m->status = 0;
 	/* via views we give access to protected objects */
 	m->user_id = USER_MONETDB;

@@ -37,7 +37,7 @@
 #include <sql_keyword.h>
 #include <sql_atom.h>
 
-#define ERRSIZE 1024
+#define ERRSIZE 8192
 
 typedef enum modes_t {
 	m_normal = 0,
@@ -540,6 +540,8 @@ mvc_create(int clientid, backend_stack stk, bstream *rs, stream *ws)
 		fprintf(stderr, "mvc_create\n");
 
 	m->errstr[0] = '\0';
+	/* if an error exceeds the buffer we don't want garbage at the end */
+	m->errstr[ERRSIZE-1] = '\0';
 
 	m->qc = qc_create(clientid);
 	m->sa = sa_create();

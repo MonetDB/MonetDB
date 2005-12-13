@@ -178,21 +178,21 @@ The routine below are added to the calc module to
 ease code generation.
 @mal
 
-pattern calc.hash( v:any_1, sh:int ) :int 
+pattern calc.hash( v:any_1 ) :int 
 address hash_wrap 
-comment "calculate a hash value and shift left";
+comment "calculate a hash value";
 
-command batcalc.hash( b:bat[:void,:any_1], sh:int ) :bat[:void,:int]
+command batcalc.hash( b:bat[:void,:any_1] ) :bat[:void,:int]
 address voidbathash_wrap 
-comment "calculate a hash value and shift left";
+comment "calculate a hash value";
 
-command batcalc.hash( b:bat[:oid,:any_1], sh:int ) :bat[:oid,:int]
+command batcalc.hash( b:bat[:oid,:any_1] ) :bat[:oid,:int]
 address bathash_wrap 
-comment "calculate a hash value and shift left";
+comment "calculate a hash value";
 
-#command batstr.hash( b:bat[:void,:str], sh:int ) :bat[:void,:int]
+#command batstr.hash( b:bat[:void,:str] ) :bat[:void,:int]
 #address bathash_wrap 
-#comment "calculate a hash value and shift left";
+#comment "calculate a hash value";
 
 
 command calc.timestamp(s:str):timestamp
@@ -1214,10 +1214,9 @@ mvc_import_table_wrap(int *res, bstream **s, str *tname, str *sep, str *rsep, in
 }
 
 str
-voidbathash_wrap(int *res, int *bid, int *shift)
+voidbathash_wrap(int *res, int *bid )
 {
 	BAT *b, *dst;
-	int sh = *shift;
 	hash_t (*hash)(ptr v); 
 	int *r, *f;
 
@@ -1241,14 +1240,14 @@ voidbathash_wrap(int *res, int *bid, int *shift)
 
 		BATloopFast(b,p,q,xx){
 			ptr v = BUNtail(b,p);
-			*r++ = (hash(v) << (sh)) & 0xEFFFFFFF;
+			*r++ = (hash(v)) & 0xEFFFFFFF;
 		}
 	} else {
 		char *v = BUNtail(b,BUNfirst(b)), *e = BUNtail(b,BUNlast(b));
 		int sz = BUNsize(b);
 
 		for(; v < e; v+=sz) {
-			*r++ = (hash(v) << (sh)) & 0xEFFFFFFF;
+			*r++ = (hash(v)) & 0xEFFFFFFF;
 		}
 	}
 	dst->batBuns->free = ((r-f)*BUNsize(dst));
@@ -1263,10 +1262,9 @@ voidbathash_wrap(int *res, int *bid, int *shift)
 }
 
 str
-bathash_wrap(int *res, int *bid, int *shift)
+bathash_wrap(int *res, int *bid )
 {
 	BAT *b, *dst;
-	int sh = *shift;
 	hash_t (*hash)(ptr v); 
 
 	if( (b = BATdescriptor(*bid)) == NULL ){
@@ -1286,7 +1284,7 @@ bathash_wrap(int *res, int *bid, int *shift)
 
 		BATloopFast(b,p,q,xx){
 			ptr v = BUNtail(b,p);
-			int h = (hash(v) << (sh)) & 0xEFFFFFFF;
+			int h = (hash(v)) & 0xEFFFFFFF;
 			BUNins(dst, BUNhead(b,p), &h);
 		}
 	} else {
@@ -1295,7 +1293,7 @@ bathash_wrap(int *res, int *bid, int *shift)
 
 		BATloopFast(b,p,q,xx){
 			ptr v = BUNtail(b,p);
-			int h = (hash(v) << (sh)) & 0xEFFFFFFF;
+			int h = (hash(v)) & 0xEFFFFFFF;
 			BUNins(dst, BUNhead(b,p), &h);
 		}
 	}
@@ -1312,24 +1310,17 @@ hash_wrap(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	ptr v;
 	int *res, tpe = getArgType(m,p,1);
-	int sh, shtype = getArgType(m,p,2);
-
-	if (shtype != TYPE_int) {
-		assert(0);
-		return throwMessage("sql.hash", "failed");
-	}
 
 	res= (int *) getArgReference(s,p,0);
 	v = getArgReference(s,p,1);
-	sh = *(int*)getArgReference(s,p,2);
 
 	if (tpe == TYPE_bat)
-		return bathash_wrap(res, (int*)v, &sh); 
+		return bathash_wrap(res, (int*)v); 
 
 	if (ATOMvarsized(tpe)) /* ugh */
-		*res = (ATOMhash(tpe, *(char**)v) << (sh)) & 0xEFFFFFFF;
+		*res = (ATOMhash(tpe, *(char**)v)) & 0xEFFFFFFF;
 	else
-		*res = (ATOMhash(tpe, v) << (sh)) & 0xEFFFFFFF;
+		*res = (ATOMhash(tpe, v)) & 0xEFFFFFFF;
 	return NULL;
 }
 

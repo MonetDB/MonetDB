@@ -3582,8 +3582,8 @@ void *sql_error( mvc * sql, int error_code, char *format, ... )
 	va_list	ap;
 
 	va_start (ap,format);
-	if (sql->errstr[0] == '\0')
-		vsnprintf(sql->errstr, ERRSIZE, _(format), ap);
+	if (sql->errstr[0] == '\0') 
+		vsnprintf(sql->errstr, ERRSIZE-1, _(format), ap);
 	if (!sql->status)
 		sql->status = -error_code;
 	va_end (ap);
