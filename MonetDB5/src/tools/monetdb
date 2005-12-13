@@ -19,7 +19,7 @@ function usage()
 {
 	echo "Usage: monetdb [command] [options] [script]"
 	echo "Primary command:"
-	echo "    --start         Server(s) are started in the dbfarm"
+	echo "    --start         Server(s) are started in the dbfarm [default]"
 	echo "    --stop          Server(s) are gracefully stopped"
 	echo "    --status        Show the server status"
 	echo "    --checkpoint    Create a database checkpoint"
@@ -43,18 +43,40 @@ case "$1" in
  "--start" | "--stop" | "--status" | "--checkpoint" ) 
 		ACTION=$1;
 		shift
-		ARGS=$* ;;
+		;;
  "--log" )
 		cd $DBFARM
 		more monetdb.log
-		exit
-		;;
+		exit ;;
  "--help" )
 	usage 
 	exit ;;
  * ) 
-	ARGS=$* ;;
+	;;
 esac
+
+# massage the argument list to prepare for calling
+ARGS=""
+DBNAME=""
+STARTUP=""
+while [ "$1" != "" ]
+do
+	case $1 in
+	"--dbname="* )
+		DBNAME=`echo $1 |sed -e s/.*=//`
+		;;
+	"--dbinit="* )
+		tail=`echo $1 |sed -e s/.*=//`
+		STARTUP=/tmp/mserver.startup$$
+		echo $tail > $STARTUP
+		;;
+	* )
+		ARGS="$ARGS $1"
+		;;
+	esac
+	shift
+done
+#echo "ARGS $ARGS"
 
 function getPID ()
 {
@@ -78,29 +100,34 @@ function start_mserver()
 	#echo "start server $1 $pid"
 	if [ $pid"" = "" ]
 	then
-		# use previous arguments if needed
-		args=$ARGS
-		if [ $ARGS"" = "--dbname=$1" ]
+		if [ "$STARTUP" != "" ]
+		then
+			cp $STARTUP $1/.mserver.dbinit
+		fi
+		if [ -f $1/.mserver.dbinit ]
+		then
+			STARTUP=$1/.mserver.dbinit
+		fi
+		if [ "$ARGS" = "" ]
 		then
 			if [ -f $1/.mserver.args ]
 			then
-				args=`cat $1/.mserver.args`
+				ARGS=`cat $1/.mserver.args`
 			fi
-			mserver --set daemon=yes --dbname=$1 $args &
-		else
-			mserver --set daemon=yes --dbname=$1 $args &
 		fi
-		echo $args > $1/.mserver.args
-		sleep 2
+
+		# use previous arguments if needed
+		mserver --set daemon=yes --dbname=$1 $ARGS $STARTUP &
+		sleep 1
 		pid=`getPID $1`
 		if [ $pid"" = "" ]
 		then
-			echo `date +"%F %T"` " FAILED $1 $args" >>monetdb.log
+			echo `date +"%F %T"` " FAILED $1 $ARGS" >>monetdb.log
 		else
-			echo `date +"%F %T"` " START $1 $args" >>monetdb.log
+			echo `date +"%F %T"` " START $1 $ARGS" >>monetdb.log
 		fi
 		# start the guardian for this server as well
-		mguardian --delay=300 --dbname=$1
+		mguardian --start --dbname=$1
 	else
 		echo "$1 server already running"
 	fi
@@ -110,6 +137,7 @@ function stop_mserver()
 	pid=`getPID $1`
 	if [ $pid"" != "" ]
 	then
+		echo "Stop $1"
 		# disable the guardian first
 		mguardian --stop $1
 		kill -TERM $pid
@@ -143,20 +171,31 @@ function show_status()
 	fi
 }
 
+# Initialization of the database directory should
+# ideally involve copying a template
+# Avoid creating database as a result from typos
+function create_database ()
+{
+		read -p "Do you want to create database '$1' ? [yes/no]" answer
+		if [ "$answer" = "yes " ]
+		then
+			mkdir $1
+		fi
+}
+
 # switch to dbfarm
 cd $DBFARM
 DBLIST=`ls`
 
 # check for an overruling database name
 tmp=`echo $* | sed -e "s/^.*--dbname=//"|sed -e "s/ .*//"`
-if [ "$tmp" != "" ]
+if [ "$DBNAME" != "" ]
 then
-	if [ ! -d $tmp ]
+	if [ ! -d $DBNAME ]
 	then
-		#echo "create the database directory"
-		mkdir $tmp
+		create_database $DBNAME
 	fi
-	DBLIST=$tmp
+	DBLIST=$DBNAME
 fi
 #echo "DBLIST $DBLIST"
 
@@ -193,3 +232,9 @@ case "$ACTION" in
 	echo "Not yet implemented" ;;
  * ) ;;
 esac
+
+#remove any leftovers
+if [ "$STARTUP" != "" ]
+then
+	rm $STARTUP 
+fi

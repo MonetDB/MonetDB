@@ -24,7 +24,7 @@
 function usage()
 {
 	echo "Usage: mguardian [options] [mserver(s)]"
-	echo "    --start        Start looking after mserver(s)"
+	echo "    --start        Start looking after mserver(s)[default]"
 	echo "    --stop         Stop looking after mserver(s) "
 	echo "    --delay        Set check delay to N seconds [300]"
 	echo "    --status       Status of all servers"
@@ -40,12 +40,10 @@ ACTION=start
 case "$1" in
  "--start" )
 	ACTION=start
-	shift
-	;;
+	shift ;;
  "--stop" )
 	ACTION=stop
-	shift
-	;;
+	shift ;;
  "--delay="* )
 	delay=`echo $1|sed -e "s/--delay=//"`
 	if [ $delay"" != "" ]
@@ -53,16 +51,13 @@ case "$1" in
 		DELAY=$delay
 	fi
 	ACTION=delay
-	shift
-	;;
+	shift ;;
  "--log" )
 	monetdb --log
-	exit
-	;;
+	exit ;;
  "--status" )
 	monetdb --status
-	exit
-	;;
+	exit ;;
  "--help" | * )
 	usage 
 	exit 0 ;;
@@ -97,7 +92,6 @@ function getPID ()
 #it runs in the background until the mguardian control file disappears
 function check_mserver()
 {
-	mypid=$!
 	if [ -f $1/.mguardian ]
 	then
 		delay=`head -1 $1/.mguardian| sed -e "s/,.*//"`
@@ -108,6 +102,10 @@ function check_mserver()
 	echo `date +"%F %T"` " GUARD $1 " >>monetdb.log
 
 	pid=`getPID $1`
+	if [ "$pid" != "" ]
+	then
+		echo "Mserver '$1' is running"
+	fi
 
 	while [ -f $1/.mguardian ]
 	do
@@ -116,17 +114,15 @@ function check_mserver()
 		then
 			if [ -f $1/.mserver.args ]
 			then
-				args=`cat $1/.mserver.args`
-			else
-				args=""
+				(cd $1; $MONET5_PREFIX/bin/mserver --restart )&
+				echo `date +"%F %T"` " RESTART $1 $args" >>monetdb.log
+				pid=`getPID $1`
 			fi
-            mserver --set daemon=yes --dbname=$1 $args &
-			echo `date +"%F %T"` " RESTART $1 $args" >>monetdb.log
-			pid=`getPID $1`
 		fi
 		# we should pick a cheaper way to detect changes to the delay
 		#echo "sleep guarding $1 $delay seconds"
 		delay=`head -1 $1/.mguardian| sed -e "s/,.*//"`
+		mypid=`head -1 $1/.mguardian| sed -e "s/.*,//"`
 		echo "$delay,$mypid" >$i/.mguardian
 		sleep $delay
 	done
@@ -161,10 +157,7 @@ case $ACTION in
 	"start" )
 		for i in $DBLIST
 		do
-			if [ -f $i/.mguardian ]
-			then
-				 ( check_mserver  $i )  &
-			fi
+			 ( check_mserver  $i )  &
 		done
 		;;
 	"stop" )
@@ -181,9 +174,14 @@ case $ACTION in
 		do
 			if [ -d $i ]
 			then
-				stop_guardian $i
-				echo "$DELAY," >$i/.mguardian
-				( check_mserver  $i )  &
+				if [ -f $1/.mguardian ]
+				then
+					pid=`head -1 $1/.mguardian |sed -e "s/.*,//"`
+					echo "$DELAY,$pid" >$i/.mguardian
+					#wakeup the mguardian process
+				else
+					echo "$DELAY," >$i/.mguardian
+				fi
 			fi
 		done
 		;;
