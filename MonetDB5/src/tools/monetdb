@@ -59,14 +59,14 @@ esac
 ARGS=""
 DBNAME=""
 STARTUP=""
-while [ "$1" != "" ]
+while [ $# -gt 0 ]
 do
-	case $1 in
+	case "$1" in
 	"--dbname="* )
-		DBNAME=`echo $1 |sed -e s/.*=//`
+		DBNAME="${1#--dbname=}"
 		;;
 	"--dbinit="* )
-		tail=`echo $1 |sed -e s/.*=//`
+		tail="${1#--dbinit=}"
 		STARTUP=/tmp/mserver.startup$$
 		echo $tail > $STARTUP
 		;;
@@ -83,15 +83,18 @@ function getPID ()
 	active=""
 	if [ -f $1/.gdk_lock ]
 	then
-		pid=`head -1 $1/.gdk_lock |sed -e "s/.*PID=//"|sed -e "s/ .*//"`
-		active=`ps --no-heading --format pid -p $pid`
+		pid=`sed -e "s/.*PID=//" -e "s/ .*//" -e 2q $1/.gdk_lock`
+		if [ "$pid" != "" ]
+		then
+			active=`ps --no-heading --format pid -p $pid`
+		fi
 	fi
 	echo $active
 }
 
 function getTIME ()
 {
-	head -1 $1/.gdk_lock | sed -e "s/.*TIME=//"| sed -e "s/\@.*//"
+	sed -e "s/.*TIME=//" -e "s/\@.*//" -e 2q $1/.gdk_lock
 }
 
 function start_mserver()
@@ -102,7 +105,7 @@ function start_mserver()
 	then
 		if [ "$STARTUP" != "" ]
 		then
-			cp $STARTUP $1/.mserver.dbinit
+			cp "$STARTUP" $1/.mserver.dbinit
 		fi
 		if [ -f $1/.mserver.dbinit ]
 		then
@@ -113,6 +116,8 @@ function start_mserver()
 			if [ -f $1/.mserver.args ]
 			then
 				ARGS=`cat $1/.mserver.args`
+			else
+				echo > $1/.mserver.args
 			fi
 		fi
 
@@ -120,7 +125,7 @@ function start_mserver()
 		mserver --set daemon=yes --dbname=$1 $ARGS $STARTUP &
 		sleep 1
 		pid=`getPID $1`
-		if [ $pid"" = "" ]
+		if [ "$pid" = "" ]
 		then
 			echo `date +"%F %T"` " FAILED $1 $ARGS" >>monetdb.log
 		else
@@ -129,15 +134,15 @@ function start_mserver()
 		# start the guardian for this server as well
 		mguardian --start --dbname=$1
 	else
-		echo "$1 server already running"
+		echo "mserver for '$1' already running"
 	fi
 }
 function stop_mserver()
 {
 	pid=`getPID $1`
-	if [ $pid"" != "" ]
+	if [ "$pid" != "" ]
 	then
-		echo "Stop $1"
+		echo "mserver for '$1' stopped"
 		# disable the guardian first
 		mguardian --stop $1
 		kill -TERM $pid
@@ -180,6 +185,8 @@ function create_database ()
 		if [ "$answer" = "yes " ]
 		then
 			mkdir $1
+		else
+			exit
 		fi
 }
 
@@ -188,7 +195,7 @@ cd $DBFARM
 DBLIST=`ls`
 
 # check for an overruling database name
-tmp=`echo $* | sed -e "s/^.*--dbname=//"|sed -e "s/ .*//"`
+tmp=`echo $* | sed -e "s/^.*--dbname=//" -e "s/ .*//"`
 if [ "$DBNAME" != "" ]
 then
 	if [ ! -d $DBNAME ]
@@ -234,7 +241,7 @@ case "$ACTION" in
 esac
 
 #remove any leftovers
-if [ "$STARTUP" != "" ]
+if [  -f /tmp/.mserver.dbinit ]
 then
-	rm $STARTUP 
+	rm /tmp/.mserver.dbinit
 fi

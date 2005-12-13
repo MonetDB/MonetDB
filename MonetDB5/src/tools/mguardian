@@ -36,6 +36,7 @@ DBFARM=$MONET5_PREFIX/var/MonetDB5/dbfarm
 DELAY=300
 ACTION=start
 
+trap '' 2 3
 
 case "$1" in
  "--start" )
@@ -71,7 +72,7 @@ else
 	DBLIST=`ls`
 fi
 
-tmp=`echo $* | sed -e "s/^.*--dbname=//"|sed -e "s/ .*//"`
+tmp=`echo $* | sed -e "s/^.*--dbname=//" -e "s/ .*//"`
 if [ "$tmp" != "" ]
 then
 	DBLIST=$tmp
@@ -82,49 +83,93 @@ function getPID ()
 	active=""
 	if [ -f $1/.gdk_lock ]
 	then
-		pid=`head -1 $1/.gdk_lock |sed -e "s/.*PID=//"|sed -e "s/ .*//"`
-		active=`ps --no-heading --format pid -p $pid`
+		pid=`sed -e "s/.*PID=//" -e "s/ .*//" -e 2q $1/.gdk_lock`
+		if [ "$pid" != "" ]
+		then
+			active=`ps --no-heading --format pid -p $pid`
+		fi
 	fi
 	echo $active
 }
 
+# before we restart we have to test for a bad system environment,
+# such as a full disk
+restartcount=0
+mailtrigger=1
+restartwindow=60
+started=`date +%s`
+
+function restart_server()
+{
+	full=`df . |sed -e 1d -e "s/%.*//" -e "s/.* //"` 
+
+	if [ "$full" -gt 90 ]
+	then
+		echo "Running out of disk space"
+		echo `date +"%F %T"` "WARNING disk use $full%" >>monetdb.log
+	fi
+
+	now=`date +%s`
+	now=`expr $now - $started `
+	if [[ "$now" < "$restartwindow" ]]
+	then
+		if [[ "$restartcount" < $mailtrigger ]]
+		then
+			now=`date`
+			mail -s "MSERVER RESTARTED" $USER <<!EOF
+Dear database owner,
+
+Your database named '$1" has been restarted.
+
+Please inspect the monetdb log for further details.
+
+regards. MonetDB Guardian
+!EOF
+			mailtrigger=`expr $mailtrigger * 2`
+		fi
+		restartcount=`expr $restartcount + 1 `
+	fi
+	if [ -f $1/.mserver.args ]
+	then
+		started=`date +%s`
+		(cd $1; mserver --set daemon=yes --dbname=$1 --restart )&
+		echo `date +"%F %T"` " RESTART $1 $args" >>monetdb.log
+	fi
+}
 #for each mserver a separate mguardian process is started
 #it runs in the background until the mguardian control file disappears
 function check_mserver()
 {
 	if [ -f $1/.mguardian ]
 	then
-		delay=`head -1 $1/.mguardian| sed -e "s/,.*//"`
+		delay=`sed -e "s/,.*//" -e 2q $1/.mguardian`
 	else
 		delay=$DELAY
 	fi
+	mypid=$!
 	echo "$delay,$!" >$1/.mguardian
 	echo `date +"%F %T"` " GUARD $1 " >>monetdb.log
 
 	pid=`getPID $1`
 	if [ "$pid" != "" ]
 	then
-		echo "Mserver '$1' is running"
+		echo "mserver for '$1' is running"
 	fi
 
 	while [ -f $1/.mguardian ]
 	do
-		active=`ps --no-heading --format pid -p $pid`
-		if  [ $active"" = "" ]
+		active=`getPID $1`
+		if  [ "$active" = "" ]
 		then
-			if [ -f $1/.mserver.args ]
-			then
-				(cd $1; $MONET5_PREFIX/bin/mserver --restart )&
-				echo `date +"%F %T"` " RESTART $1 $args" >>monetdb.log
-				pid=`getPID $1`
-			fi
+			restart_server $1
 		fi
 		# we should pick a cheaper way to detect changes to the delay
 		#echo "sleep guarding $1 $delay seconds"
-		delay=`head -1 $1/.mguardian| sed -e "s/,.*//"`
-		mypid=`head -1 $1/.mguardian| sed -e "s/.*,//"`
+		delay=`sed -e "s/,.*//" -e 2q $1/.mguardian`
 		echo "$delay,$mypid" >$i/.mguardian
+		trap ':' 1
 		sleep $delay
+		trap 1
 	done
 	echo `date +"%F %T"` " LEAVE $1 " >>monetdb.log
 	exit
@@ -176,9 +221,10 @@ case $ACTION in
 			then
 				if [ -f $1/.mguardian ]
 				then
-					pid=`head -1 $1/.mguardian |sed -e "s/.*,//"`
+					pid=`sed -e "s/.*,//" -e 2q $1/.mguardian`
 					echo "$DELAY,$pid" >$i/.mguardian
 					#wakeup the mguardian process
+					kill -s HUP $pid
 				else
 					echo "$DELAY," >$i/.mguardian
 				fi
