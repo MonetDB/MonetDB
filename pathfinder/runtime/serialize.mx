@@ -18,7 +18,6 @@
 @' Portions created by the University of Konstanz are Copyright (C)
 @' 2000-2005 University of Konstanz.  All Rights Reserved.
 @'
-@' $Id$
 
 @f serialize
 @a Jan Flokstra
@@ -195,6 +194,9 @@ typedef struct {
                                MapiClient stream */
     int     norootMode;     /* do not generate <XQueryResult> root node */
     int     noheaderMode;   /* do not generate xml header */
+    int     typedMode;      /* surrant every single value with an extra
+                               tag, with the XQuery type of this value
+                               as the tag name */
     int     printMode;      /* true if printing SQL-ish/MCL-ish output,
                                is used by JDBC/XML:DB at the moment */
     char*   restag;         /* root element name XQueryResult */
@@ -302,7 +304,8 @@ static int switchWsContext(XqueryCtx* ctx, int wsID) {
 static int createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
     int i;
 
-    ctx->dmMode = ctx->mapiMode = ctx->printMode = ctx->norootMode = ctx->noheaderMode = 0;
+    ctx->dmMode = ctx->mapiMode = ctx->printMode = 0;
+    ctx->norootMode = ctx->noheaderMode = ctx->typedMode = 0;
     ctx->saxMode = 1;
     xmlNsInit( &ctx->nsTop );
 
@@ -314,6 +317,9 @@ static int createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
         /* we may omit the synthetic root element */ 
         if (strstr(mode,"noheader")) {
             ctx->noheaderMode = 1;
+        }
+        if (strstr(mode, "typed")) {
+            ctx->typedMode = 1;
         }
         if (strstr(mode,"noroot")) {
             ctx->norootMode = 1;
@@ -649,66 +655,66 @@ static int handle_endDocument(XqueryCtx* ctx) {
  * the usage of an attribute. A sequence of these events will be ended
  * by a handle_attributeEnd() call.
  */
-    static int handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, str value, int top) {
-        if ( !checkNsChange(ctx,uri,prefix,top) )
-            return 0;
-        if (ctx->saxMode ) {
-            if ( SAXOPHONE ) {
-                 if ( loc && *loc) {
-                     if (!emit(" attribute",loc,0) )
-                        return 0;
-                     if ( prefix && *prefix )
-                         if ( !emit(" attribute prefix",prefix,0) )
-                             return 0;
-                 } else if (prefix && *prefix) {
-                     /* default namespace */
-                     if (!emit(" attribute",prefix,0) )
-                         return 0;
-                 }
-                if ( !emit(" attribute value",value,0) )
+static int handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, str value, int top) {
+    if ( !checkNsChange(ctx,uri,prefix,top) )
+        return 0;
+    if (ctx->saxMode ) {
+        if ( SAXOPHONE ) {
+            if ( loc && *loc) {
+                if (!emit(" attribute",loc,0) )
                     return 0;
-            } else {
-                stream_printf(GDKout,"<A %s=\"%s\"\n",loc,value);
+                if ( prefix && *prefix )
+                    if ( !emit(" attribute prefix",prefix,0) )
+                        return 0;
+            } else if (prefix && *prefix) {
+                /* default namespace */
+                if (!emit(" attribute",prefix,0) )
+                    return 0;
             }
-        } else if (ctx->printMode) {
-            if ( prefix && *prefix && loc && *loc ) {
-                stream_printf(GDKout," %s:%s=\\\"%s\\\"",prefix,loc,value);
-             } else if (prefix && *prefix) {
-                 /* default namespace */
-                 stream_printf(GDKout," %s=\\\"%s\\\"",prefix,value);
-            } else {
-                stream_printf(GDKout," %s=\\\"%s\\\"",loc,value);
-            }
-        } else if (ctx->dmMode && top) { /* dmMode */
-             if ( prefix && *prefix ) {
-                 if ( strcmp(prefix,"xmlns")==0 ) {
-                     if (loc && *loc) {
-                         stream_printf(GDKout,"attribute %s:%s { %s }%s",prefix,loc,value,ctx->dmSeparator);
-                     } else {
-                         /* default namespace */
-                         stream_printf(GDKout,"attribute %s { %s }%s",prefix,value,ctx->dmSeparator);
-                     }
-                 } else
-                    stream_printf(GDKout,"attribute %s:%s { %s }",prefix,loc,value);
-            } else {
-                stream_printf(GDKout,"attribute %s { %s }",loc,value);
-            }
-        } else { /* xmlMode */
-            if ( prefix && *prefix && loc && *loc ) {
-                stream_printf(GDKout," %s:%s=",prefix,loc);
-             } else if ( prefix && *prefix ) {
-                 /* default namespace */
-                 stream_printf(GDKout," %s=",prefix);
-            } else {
-                stream_printf(GDKout," %s=",loc);
-            }
-            /* stream_printf(GDKout,"\"%s\"",value); */
-            stream_printf(GDKout,"\"");
-            emit_escaped(value, 1+ctx->mapiMode, 0/*ALL*/);
-            stream_printf(GDKout,"\"");
+            if ( !emit(" attribute value",value,0) )
+                return 0;
+        } else {
+            stream_printf(GDKout,"<A %s=\"%s\"\n",loc,value);
         }
-        return 1;
+    } else if (ctx->printMode) {
+        if ( prefix && *prefix && loc && *loc ) {
+            stream_printf(GDKout," %s:%s=\\\"%s\\\"",prefix,loc,value);
+        } else if (prefix && *prefix) {
+            /* default namespace */
+            stream_printf(GDKout," %s=\\\"%s\\\"",prefix,value);
+        } else {
+            stream_printf(GDKout," %s=\\\"%s\\\"",loc,value);
+        }
+    } else if (ctx->dmMode && top) { /* dmMode */
+        if ( prefix && *prefix ) {
+            if ( strcmp(prefix,"xmlns")==0 ) {
+                if (loc && *loc) {
+                    stream_printf(GDKout,"attribute %s:%s { %s }%s",prefix,loc,value,ctx->dmSeparator);
+                } else {
+                    /* default namespace */
+                    stream_printf(GDKout,"attribute %s { %s }%s",prefix,value,ctx->dmSeparator);
+                }
+            } else
+                stream_printf(GDKout,"attribute %s:%s { %s }",prefix,loc,value);
+        } else {
+            stream_printf(GDKout,"attribute %s { %s }",loc,value);
+        }
+    } else { /* xmlMode */
+        if ( prefix && *prefix && loc && *loc ) {
+            stream_printf(GDKout," %s:%s=",prefix,loc);
+        } else if ( prefix && *prefix ) {
+            /* default namespace */
+            stream_printf(GDKout," %s=",prefix);
+        } else {
+            stream_printf(GDKout," %s=",loc);
+        }
+        /* stream_printf(GDKout,"\"%s\"",value); */
+        stream_printf(GDKout,"\"");
+        emit_escaped(value, 1+ctx->mapiMode, 0/*ALL*/);
+        stream_printf(GDKout,"\"");
     }
+    return 1;
+}
 
 /**
  * Output generation handler. This one of my own invented event indicating
@@ -1137,8 +1143,12 @@ static int xquery_pre_range(XqueryCtx* ctx, BAT* b, oid from, oid to) {
     return 1;
 }
 
-static int MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_frag, int top) {
+static int MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_frag, int top, int lastVal) {
     oid pre = from;
+
+    if ( ctx->typedMode ){
+        stream_printf(GDKout, "<xs:anyNode>\n");
+    }
 
     do {
         if ( !xquery_node_print(ctx, pre,pre_frag,top&&(from==to)) /*cheat*/ )
@@ -1146,6 +1156,12 @@ static int MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_frag, 
         if ( !xquery_endtag_print(ctx,++pre) )
             return 0;
     } while( moreTags(ctx) && (pre<=to) );
+
+    if ( ctx->typedMode ) {
+        stream_printf(GDKout,"\n</xs:anyNode>");
+        if ( !lastVal )
+            stream_printf(GDKout, "\n");
+        }
     return 1;
 }
 
@@ -1280,17 +1296,17 @@ static int  seqEnd(XqueryCtx* ctx) {
 /**
  * Emit a NODE element of an XQUERY/Pathfinder result sequence
  */
-static int seqEmitNode(XqueryCtx* ctx, oid preVal, BAT* pre_frag, int top) {
+static int seqEmitNode(XqueryCtx* ctx, oid preVal, BAT* pre_frag, int top, int lastVal) {
     ptr res;
     /* incomplete, different for dmMode ?? */
     idxTVinWS(res,ctx,PRE_SIZE,preVal);
-    return MY_xquery_pre_range(ctx,preVal,preVal+*(int*) res, pre_frag, top);
+    return MY_xquery_pre_range(ctx,preVal,preVal+*(int*) res, pre_frag, top, lastVal);
 }
 
 /**
  * Emit a Boolean element of an XQUERY/Pathfinder result sequence
  */
-static int  seqEmitBool(XqueryCtx* ctx, int bv) {
+static int  seqEmitBool(XqueryCtx* ctx, int bv, int lastVal) {
     char *bool_str = (char*)(bv ? "true" : "false");
 
     if ( ctx->saxMode ) {
@@ -1299,7 +1315,15 @@ static int  seqEmitBool(XqueryCtx* ctx, int bv) {
         stream_printf(GDKout,"%s ",bool_str);
     } else {
         ctx->nAttrOnLine++;
+        if ( ctx->typedMode ) {
+            stream_printf(GDKout,"<xs:boolean>\n");
+        }
         stream_printf(GDKout,"%s ",bool_str);
+        if ( ctx->typedMode ) {
+            stream_printf(GDKout,"\n</xs:boolean>");
+            if ( !lastVal )
+                stream_printf(GDKout, "\n");
+        }
     }
     return 1;
 }
@@ -1307,7 +1331,7 @@ static int  seqEmitBool(XqueryCtx* ctx, int bv) {
 /**
  * Emit a Integer element of an XQUERY/Pathfinder result sequence
  */
-static int  seqEmitInt(XqueryCtx* ctx, lng iv) {
+static int  seqEmitInt(XqueryCtx* ctx, lng iv, int lastVal) {
     if ( ctx->saxMode ) {
         char buff[32];
 
@@ -1318,7 +1342,15 @@ static int  seqEmitInt(XqueryCtx* ctx, lng iv) {
         stream_printf(GDKout,"%lld",iv);
     } else {
         ctx->nAttrOnLine++;
+        if ( ctx->typedMode ) {
+            stream_printf(GDKout,"<xs:integer>\n");
+        }
         stream_printf(GDKout,"%lld ",iv);
+        if ( ctx->typedMode ) {
+            stream_printf(GDKout,"\n</xs:integer>");
+            if ( !lastVal )
+                stream_printf(GDKout, "\n");
+        }
     }
     return 1;
 }
@@ -1326,7 +1358,7 @@ static int  seqEmitInt(XqueryCtx* ctx, lng iv) {
 /**
  * Emit a Double element of an XQUERY/Pathfinder result sequence
  */
-static int  seqEmitDbl(XqueryCtx* ctx, dbl dv) {
+static int  seqEmitDbl(XqueryCtx* ctx, dbl dv, int lastVal) {
     if ( ctx->saxMode ) {
         char buff[32];
 
@@ -1337,7 +1369,15 @@ static int  seqEmitDbl(XqueryCtx* ctx, dbl dv) {
         stream_printf(GDKout,"%f",dv);
     } else {
         ctx->nAttrOnLine++;
+        if ( ctx->typedMode ) {
+            stream_printf(GDKout,"<xs:double>\n");
+        }
         stream_printf(GDKout,"%f ",dv);
+        if ( ctx->typedMode ) {
+            stream_printf(GDKout,"\n</xs:double>");
+            if ( !lastVal )
+                stream_printf(GDKout, "\n");
+        }
     }
     return 1;
 }
@@ -1345,7 +1385,7 @@ static int  seqEmitDbl(XqueryCtx* ctx, dbl dv) {
 /**
  * Emit a String element of an XQUERY/Pathfinder result sequence
  */
-static int  seqEmitStr(XqueryCtx* ctx, str sv) {
+static int  seqEmitStr(XqueryCtx* ctx, str sv, int lastVal) {
     if ( ctx->saxMode ) {
         return handle_characters(ctx,sv,"text");
     } else if ( ctx->printMode ) { /* SQL-ish/MCL-ish mode */
@@ -1360,9 +1400,17 @@ static int  seqEmitStr(XqueryCtx* ctx, str sv) {
         stream_printf(GDKout,"\"");
     } else {
         ctx->nAttrOnLine++;
+        if ( ctx->typedMode ) {
+            stream_printf(GDKout,"<xs:string>\n");
+        }
         stream_printf(GDKout,"\"");
         emit_escaped( sv, 1+ctx->mapiMode, 0/*ALL*/);
         stream_printf(GDKout,"\" ");
+        if ( ctx->typedMode ) {
+            stream_printf(GDKout,"\n</xs:string>");
+            if ( !lastVal )
+                stream_printf(GDKout, "\n");
+        }
     }
     return 1;
 }
@@ -1398,131 +1446,145 @@ int xquery_print_result(
         BAT* dblVAL,
         BAT* strVAL)
 {
-size_t xx, yy, curcnt = 0, maxcnt = BATcount(item), buncnt;
-XqueryCtx ctx_struct, *ctx = &ctx_struct;
-if ( !createWsContext(ctx,ws,-1,mode) )
-    return GDK_FAIL;
-
-/* loop over the iterations (usually only 1) */
-for(yy=0; yy<niters; yy++, curcnt += buncnt) {
-    oid it = *(oid*) BUNhead(loop, BUNptr(loop, BUNindex(loop, BUNfirst(loop))+yy));
-    BUN p, q;
-    ptr res;
- 
-    buncnt = maxcnt;
-    if (niters > 1) {
-        if (IS_FAKE_PROJECT(iter)) {
-            if (*(oid*) BUNtail(iter, BUNfirst(iter)) != it) buncnt = 0;
-        } else {
-            /* in case of a non-constant iter bat, find out how many items we have in this iteration */
-            BATloop_off(iter,p,q,xx,curcnt,maxcnt) 
-                if (*(oid*) BUNtail(iter,p) != it) break;
-            buncnt = ((p - BUNfirst(iter)) / xx) - curcnt;
-        }
-    } 
-
-    if ( !seqHeadStart(ctx, item) )
+    size_t xx, yy, curcnt = 0, maxcnt = BATcount(item), buncnt;
+    XqueryCtx ctx_struct, *ctx = &ctx_struct;
+    if ( !createWsContext(ctx,ws,-1,mode) )
         return GDK_FAIL;
-    if ( ! ctx->dmMode ) {
-        /* If the mode is not the DM mode do a scan of all attributes here
-         * and generate the appropriate calls to connect them to the
-         * head tag of the result document
-         */
-        BATloop_off(item,p,q,xx,curcnt,buncnt) { 
-            oid pre = *(oid*)BUNhead(item, p);
-            oid valoid = *(oid*)BUNtail(item, p);
-            int cmbn_frag_kind;
-            idxTV(res,ctx,kind,pre);
-            cmbn_frag_kind = *(int*)res;
 
-            if ( XTRACT_KIND(cmbn_frag_kind) == ATTR ) {
-                int frag = XTRACT_FRAG(cmbn_frag_kind);
-                if ( !process_attr(ctx,frag,valoid,1/* top */) )
-                    return GDK_FAIL;
+    /* loop over the iterations (usually only 1) */
+    for(yy=0; yy<niters; yy++, curcnt += buncnt) {
+        oid it = *(oid*) BUNhead(loop, BUNptr(loop, BUNindex(loop, BUNfirst(loop))+yy));
+        BUN p, q;
+        ptr res;
+
+        buncnt = maxcnt;
+        if (niters > 1) {
+            if (IS_FAKE_PROJECT(iter)) {
+                if (*(oid*) BUNtail(iter, BUNfirst(iter)) != it) buncnt = 0;
+            } else {
+                /* in case of a non-constant iter bat, find out how many
+                 * items we have in this iteration */
+                BATloop_off(iter,p,q,xx,curcnt,maxcnt) 
+                    if (*(oid*) BUNtail(iter,p) != it) break;
+                buncnt = ((p - BUNfirst(iter)) / xx) - curcnt;
+            }
+        } 
+
+        if ( !seqHeadStart(ctx, item) )
+            return GDK_FAIL;
+        if ( ! ctx->dmMode ) {
+            /* If the mode is not the DM mode do a scan of all attributes here
+             * and generate the appropriate calls to connect them to the
+             * head tag of the result document
+             */
+            BATloop_off(item,p,q,xx,curcnt,buncnt) { 
+                oid pre = *(oid*)BUNhead(item, p);
+                oid valoid = *(oid*)BUNtail(item, p);
+                int cmbn_frag_kind;
+                idxTV(res,ctx,kind,pre);
+                cmbn_frag_kind = *(int*)res;
+
+                if ( XTRACT_KIND(cmbn_frag_kind) == ATTR ) {
+                    int frag = XTRACT_FRAG(cmbn_frag_kind);
+                    if ( !process_attr(ctx,frag,valoid,1/* top */) )
+                        return GDK_FAIL;
+                }
             }
         }
-    }
-    if ( !seqHeadEnd(ctx) )
-        return GDK_FAIL;
-    /* */
-    int cnt = 0; /* loopcounter, used for checking when to print commas. */
-    BATloop_off(item,p,q,xx,curcnt,buncnt) {
-        oid pre = *(oid*)BUNhead(item, p);
-        oid valoid = *(oid*)BUNtail(item, p);
-        int cmbn_frag_kind;
-        idxTV(res,ctx,kind,pre);
-        cmbn_frag_kind = *(int*)res;
-        if (ctx->printMode) {
-            /* SQL-ish mode: write start of tuple and open string */
-            stream_printf(GDKout, "[ \"");
-        } else if ( cnt++ && ctx->dmMode  ) {
-            /* should print a separator here */
-            stream_printf(GDKout,"%s",ctx->dmSeparator);
-        }
-        switch( XTRACT_KIND(cmbn_frag_kind) ) {
-            case ATTR:
+        if ( !seqHeadEnd(ctx) )
+            return GDK_FAIL;
+        /* */
+        int cnt = 0; /* loopcounter, used for checking when to print commas. */
+        BATloop_off(item,p,q,xx,curcnt,buncnt) {
+            oid pre = *(oid*)BUNhead(item, p);
+            oid valoid = *(oid*)BUNtail(item, p);
+            int cmbn_frag_kind, lastVal = (p + xx < q ) ? 0 : 1;
+            idxTV(res,ctx,kind,pre);
+            cmbn_frag_kind = *(int*)res;
+            if (ctx->printMode) {
+                /* SQL-ish mode: write start of tuple and open string */
+                stream_printf(GDKout, "[ \"");
+            } else if ( cnt && ctx->dmMode  ) {
+                /* should print a separator here */
+                stream_printf(GDKout,"%s",ctx->dmSeparator);
+            }
+            switch( XTRACT_KIND(cmbn_frag_kind) ) {
+                case ATTR:
                     if ( ctx->dmMode ) {
                         int frag = XTRACT_FRAG(cmbn_frag_kind);
                         if ( !process_attr(ctx,frag,valoid,1/* top */) )
                             return GDK_FAIL;
                     }
                     break;
-            case ELEM:
-                {
-                    int frag = XTRACT_FRAG(cmbn_frag_kind);
-                    /* if ( ctx->dmMode ),check for first kind text { "t" }
-                     * check idxTVinWSorFRGN(ctx,frag,PRE_KIND,valoid);
-                     * for TEXT
-                     */
-                    int oldCtx = switchWsContext(ctx,frag);
-                    BAT *b;
-                    wsBAT(b,ctx,PRE_FRAG)
-                    if ( !seqEmitNode(ctx, valoid, b, 1/*top*/) )
-                        return GDK_FAIL;
-                    switchWsContext(ctx,oldCtx);
-                    break;
-                };
-            case NODE:
+                case ELEM:
+                    {
+                        int frag = XTRACT_FRAG(cmbn_frag_kind);
+                        /* if ( ctx->dmMode ),check for first kind text { "t" }
+                         * check idxTVinWSorFRGN(ctx,frag,PRE_KIND,valoid);
+                         * for TEXT
+                         */
+                        /*
+                        if( ctx->typedMode && cnt == 0) {
+                            stream_printf(GDKout,"<xs:anyNode>\n");
+                        }
+                        */
+                        int oldCtx = switchWsContext(ctx,frag);
+                        BAT *b;
+                        wsBAT(b,ctx,PRE_FRAG)
+                            if ( !seqEmitNode(ctx, valoid, b, 1/*top*/, lastVal) )
+                                return GDK_FAIL;
+                        switchWsContext(ctx,oldCtx);
+
+                        /*
+                        if( ctx->typedMode && lastVal) {
+                            stream_printf(GDKout,"\n</xs:anyNode>");
+                        }
+                        */
+
+                        break;
+                    };
+                case NODE:
                     /* INCOMPLETE, suppose just ignore ?*/
                     break;
-            case BOOL:
-                    if ( !seqEmitBool(ctx,valoid) )
+                case BOOL:
+                    if ( !seqEmitBool(ctx,valoid, lastVal) )
                         return GDK_FAIL;
                     break;
-            case DBL:
-            case DEC:
+                case DBL:
+                case DEC:
                     idxTV(res,ctx,dblVAL,valoid);
-                    if (!seqEmitDbl(ctx,*(dbl*)res) )
+                    if (!seqEmitDbl(ctx,*(dbl*)res, lastVal) )
                         return GDK_FAIL; /* INCOMPLETE ?diff between d and e */
                     break;
-            case INT:
+                case INT:
                     idxTV(res,ctx,intVAL,valoid);
-                    if ( !seqEmitInt(ctx,*(lng*)res) )
+                    if ( !seqEmitInt(ctx,*(lng*)res, lastVal) )
                         return GDK_FAIL;
                     break;
-            case STR:
-            case U_A:
+                case STR:
+                case U_A:
                     idxTV(res,ctx,strVAL,valoid);
-                    if ( !seqEmitStr(ctx,(str)res) )
+                    if ( !seqEmitStr(ctx,(str)res, lastVal) )
                         return GDK_FAIL;
                     break;
-            default:
-                GDKerror("serialize.mx:xquery_print_result_main: [kind=%d, frag=%d]\n",
-                         XTRACT_KIND(cmbn_frag_kind),XTRACT_FRAG(cmbn_frag_kind));
-                fatal_err(ctx,"UNKNOW_TYPE(\'%c\'ch(%d))\n",cmbn_frag_kind,cmbn_frag_kind);
-                return GDK_FAIL;
+                default:
+                    GDKerror("serialize.mx:xquery_print_result_main: [kind=%d, frag=%d]\n",
+                            XTRACT_KIND(cmbn_frag_kind),XTRACT_FRAG(cmbn_frag_kind));
+                    fatal_err(ctx,"UNKNOW_TYPE(\'%c\'ch(%d))\n",cmbn_frag_kind,cmbn_frag_kind);
+                    return GDK_FAIL;
+            }
+            if (ctx->printMode) {
+                /* SQL-ish mode: write end of string and end of tuple */
+                stream_printf(GDKout,"\"\t]\n");
+            }
+            cnt++;
         }
-        if (ctx->printMode) {
-            /* SQL-ish mode: write end of string and end of tuple */
-            stream_printf(GDKout,"\"\t]\n");
-        }
-    }
-    /* */
-    if ( !seqEnd(ctx) )
-        return GDK_FAIL;
-} 
-switchWsContext(ctx,-1); /* close all open context BAT's */
-return disposeWsContext(ctx)?GDK_SUCCEED:GDK_FAIL;
+        /* */
+        if ( !seqEnd(ctx) )
+            return GDK_FAIL;
+    } 
+    switchWsContext(ctx,-1); /* close all open context BAT's */
+    return disposeWsContext(ctx)?GDK_SUCCEED:GDK_FAIL;
 }
 
 int xquery_print_result_loop(
