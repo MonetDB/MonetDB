@@ -2596,7 +2596,7 @@ xquery_method(stream *out,
     int msec = GDKms();
     Thread XQthread = THRget(THRgettid());
     xquery_client *ctx = xquery_client_alloc(NULL, out);
-    char *err = NULL, *ns = "fn", *mode = "xml-noheader-root-iter";
+    char *err = NULL, *ns = "fn", *mode = "xml-noheader-typed-root-iter";
    
     if (ctx == NULL) 
         return "xquery_method: out of client slots.\n";
@@ -2610,7 +2610,7 @@ xquery_method(stream *out,
         char *prologue = (char*) PFinitMIL();
         if (s) {
             ctx->fderr = s;
-            mode = "xml-debug-noheader-root-iter";
+            mode = "xml-debug-noheader-typed-root-iter";
         }
         stream_write(ctx->fderr, prologue, strlen(prologue), 1);
         argc = argc % 1000;
