@@ -567,6 +567,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (s->op2.stval->nrcols >= 1) {
 				char *op = "=";
 				int k;
+				int j,hml,tmr,mhj,mtj;
 
 				switch (s->flag) {
 				case cmp_equal:
@@ -592,20 +593,69 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				}
 
 				/* multiplex needs equal heads */
-				q = newStmt1(mb, algebraRef, "sortHead" );
+				/* hml := head_mirror(l);
+				   tmr := tail_mirror(r);
+				   j := lhm.join(rtm);
+				   mhj := markH(j)
+				   mtj := markT(j)
+				   tmj.join(l);
+				   hmj := reverse(hmj);
+				   hmj.join(r);
+				*/
+				q = newStmt1(mb, batRef, "mirror" );
+				q = pushArgument(mb, q, l);
+				hml = getDestVar(q);
+
+				q = newStmt1(mb, batRef, "mirror" );
+				q = pushArgument(mb, q, r);
+				tmr = getDestVar(q);
+
+				q = newStmt2(mb, algebraRef, joinRef);
+				q = pushArgument(mb, q, hml);
+				q = pushArgument(mb, q, tmr);
+				j = getDestVar(q);
+
+				q = newStmt1(mb, algebraRef, "markH");
+				q = pushArgument(mb, q, j);
+				mhj = getDestVar(q);
+
+				q = newStmt1(mb, algebraRef, "markT");
+				q = pushArgument(mb, q, j);
+				mtj = getDestVar(q);
+
+				q = newStmt2(mb, batRef, reverseRef );
+				q = pushArgument(mb, q, mtj);
+				mtj = getDestVar(q);
+
+				q = newStmt2(mb, algebraRef, joinRef);
+				q = pushArgument(mb, q, mtj);
 				q = pushArgument(mb, q, l);
 				l = getDestVar(q);
 
-				q = newStmt1(mb, algebraRef, "sortHead" );
+				q = newStmt2(mb, algebraRef, joinRef);
+				q = pushArgument(mb, q, mhj);
 				q = pushArgument(mb, q, r);
 				r = getDestVar(q);
 
 				q= dump_multiplex(mb,convertOperator(op),l,r,tail_type(s->op2.stval)->type->localtype, TYPE_bit);
-				s->nr = getDestVar(q);
+
 				k = getDestVar(q);
 				q = newStmt1(mb, algebraRef, "uselect");
 				q = pushArgument(mb, q, k);
 				q = pushBit(mb, q, TRUE);
+
+				q = newStmt2(mb, batRef, reverseRef );
+				q = pushArgument(mb, q, k);
+				k = getDestVar(q);
+
+				q = newStmt2(mb, algebraRef, joinRef);
+				q = pushArgument(mb, q, k);
+				q = pushArgument(mb, q, mhj);
+				k = getDestVar(q);
+
+				q = newStmt2(mb, batRef, reverseRef );
+				q = pushArgument(mb, q, k);
+				s->nr = getDestVar(q);
 			} else {
 				switch (s->flag) {
 				case cmp_like:{

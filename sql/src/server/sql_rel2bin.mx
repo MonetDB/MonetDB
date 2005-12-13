@@ -1206,7 +1206,7 @@ rel2bin(mvc *c, stmt *s)
 		stmt *res = NULL;
 
 		/* push down the select through st_diff */
-		if (s->op1.stval->type == st_diff){
+		if (s->op1.stval->type == st_diff && s->flag != cmp_notequal) {
 			stmt *d = s->op1.stval;
 	
 			s = push_select( s, stmt_dup(d->op1.stval)); 
@@ -1216,7 +1216,7 @@ rel2bin(mvc *c, stmt *s)
 			return res;
 		}
 		/* push down the select through st_union */
-		if (s->op1.stval->type == st_union) {
+		if (s->op1.stval->type == st_union && s->flag != cmp_notequal) {
 			stmt *l, *r;
 			stmt *u = s->op1.stval;
 	
