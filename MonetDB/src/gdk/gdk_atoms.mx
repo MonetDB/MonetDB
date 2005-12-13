@@ -683,7 +683,7 @@ The routine atomnil returns a pointer to the nil value representation.
 /* representation of the nil */ 
 gdk_export const chr chr_nil;
 gdk_export const short sht_nil;
-gdk_export int int_nil;
+gdk_export const int int_nil;
 gdk_export const flt flt_nil;
 gdk_export const dbl dbl_nil;
 gdk_export const lng lng_nil;
@@ -698,17 +698,17 @@ gdk_export const char str_nil[2];
 #endif
 #define bat_nil	((bat) int_nil)
 #if SIZEOF_OID == SIZEOF_INT
-#define oid_nil	((oid) int_nil)
+#define oid_nil	((oid) (int) int_nil)
 #define GDK_oid_max ((oid) GDK_int_max)
 #else
-#define oid_nil	((oid) lng_nil)
+#define oid_nil	((oid) (lng) lng_nil)
 #define GDK_oid_max ((oid) GDK_lng_max)
 #endif
 #define void_nil	oid_nil
 @c
 const chr chr_nil = GDK_chr_min;
 const sht sht_nil = GDK_sht_min;
-int int_nil = GDK_int_min;
+const int int_nil = GDK_int_min;
 const flt flt_nil = GDK_flt_min;
 const dbl dbl_nil = GDK_dbl_min;
 const lng lng_nil = GDK_lng_min;
