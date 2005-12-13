@@ -100,6 +100,7 @@ extern sql_subfunc *sql_find_func(sql_module *m, char *name, int nrargs);
 extern sql_subfunc *sql_bind_member(sql_module *m, char *name, sql_subtype *tp, int nrargs);
 extern sql_subfunc *sql_bind_func(sql_module *m, char *name, sql_subtype *tp1, sql_subtype *tp2);
 extern sql_subfunc *sql_bind_func_result(sql_module *m, char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *res);
+extern sql_subfunc *sql_bind_func_result3(sql_module *m, char *name, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_subtype *res);
 
 extern sql_subfunc *sql_bind_func_(sql_module *m, char *name, list *ops);
 extern sql_subfunc *sql_bind_func_result_(sql_module *m, char *name, list *ops, sql_subtype *res);
@@ -711,6 +712,25 @@ sql_bind_func_result(sql_module *m, char *sqlfname, sql_subtype *tp1, sql_subtyp
 }
 
 sql_subfunc *
+sql_bind_func_result3(sql_module *m, char *sqlfname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_subtype *res)
+{
+	list *l = list_create((fdestroy) NULL);
+	sql_subfunc *fres;
+
+	if (tp1)
+		list_append(l, tp1);
+	if (tp2)
+		list_append(l, tp2);
+	if (tp3)
+		list_append(l, tp3);
+
+	fres = sql_bind_func_result_(m, sqlfname, l, res);
+	list_destroy(l);
+	return fres;
+}
+
+
+sql_subfunc *
 sql_bind_func_result_(sql_module *m, char *sqlfname, list *ops, sql_subtype *res)
 {
 	char *name = toLower(sqlfname);
@@ -1130,7 +1150,8 @@ sqltypeinit()
 	*t = NULL;
 
 	for (i = 0; ts[i]; i++) {
-		sql_create_func("hash", "hash", ts[i], INT, INT, SCALE_FIX);
+		sql_create_func("hash", "hash", ts[i], NULL, INT, SCALE_FIX);
+		sql_create_func3("rotate_xor_hash", "rotate_xor_hash", INT, INT, ts[i], INT, SCALE_NONE);
 		sql_create_func("=", "=", ts[i], ts[i], BIT, SCALE_FIX);
 		sql_create_func("<>", "!=", ts[i], ts[i], BIT, SCALE_FIX);
 		sql_create_func("isnull", "isnil", ts[i], NULL, BIT, SCALE_FIX);

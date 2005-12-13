@@ -51,7 +51,6 @@ module 'sql_server'
 [ "flt(sht) : flt"							  ]
 [ "flt(sht, int, int) : flt"						  ]
 [ "flt(str) : flt"							  ]
-[ "hash(any::1, int) : int"						  ]
 [ "int(dbl) : int"							  ]
 [ "int(dbl, int, int) : int"						  ]
 [ "int(flt) : int"							  ]

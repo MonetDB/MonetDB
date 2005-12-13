@@ -129,8 +129,6 @@ stream.
 		BAT[str,BAT] = mvc_import_table_wrap; 
 		"import a table from stream s with the given tuple and record seperators (sep/rsep)"
 
-	.COMMAND hash( any::1 v, int sh ) : int = hash_wrap; "calculate a hash value and shift left"
-
 @= mel_round
 	.COMMAND round( @1 v, @1 r ) : @1 = @1_round_wrap; "round off the value v to nearests multiple of r"
 @m
@@ -298,13 +296,6 @@ monet4_freecode(backend_code code, backend_stack stk, int nr, char *name)
 	}
 }
 
-@-
-The bootstrap method for accessing an SQL database is hardwired.
-An alternative scheme is to collect these statements in an SQL boot file.
-
-??Where and how is the catalog defined??
-?? Why not make the grants part of it??
-@c
 int
 mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 {
@@ -563,14 +554,6 @@ mvc_export_value_wrap(mvc *M, Stream *S, int *qtype, str tn, str name, str type,
 {
 	if (mvc_export_value(*(mvc **) M, *(stream **)S, *qtype, tn, name, type, *digits, *scale, *eclass, p, mtype) != SQL_OK)
 		return GDK_FAIL;
-	return GDK_SUCCEED;
-}
-
-
-int
-hash_wrap(int *res, ptr v, int tpe, int *sh)
-{
-	*res = (ATOMhash(tpe, v) << (*sh)) & 0xEFFFFFFF;
 	return GDK_SUCCEED;
 }
 
@@ -1159,7 +1142,7 @@ proc sql_server_start(bit global) : void {
 		# fork(mapi_listen(int(monet_environment.find("mapi_port")), 5, ""));
 	} else {
 		printf(err);
-		drop(sql_server);
+		drop("sql_server");
 	}
 }
 

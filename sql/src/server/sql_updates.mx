@@ -237,16 +237,21 @@ hash_insert(mvc *sql, sql_idx * i, stmt **inserts)
 		return NULL;
 
 	it = sql_bind_localtype("int");
-	for (m = i->columns->h; m; m = m->next, bits += 8) {
+	for (m = i->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
-		sql_subfunc *hf = sql_bind_func_result(sql->trans->module, "hash", &c->c->type, it, it);
 
 		if (h) {
-			sql_subfunc *xor = sql_bind_func_result(sql->trans->module, "xor", it, it, it);
+			sql_subfunc *xor = sql_bind_func_result3(sql->trans->module, "rotate_xor_hash", it, it, &c->c->type, it);
 
-			h = stmt_binop(h, stmt_binop(stmt_dup(inserts[c->c->colnr]->op2.stval), stmt_atom_int(bits), hf), xor);
+			h = stmt_Nop(stmt_list( list_append( list_append(
+				list_append(create_stmt_list(), h), 
+				stmt_atom_int(bits)), 
+				stmt_dup(inserts[c->c->colnr]->op2.stval))), 
+				xor);
+			bits += 8;
 		} else {
-			h = stmt_binop(stmt_dup(inserts[c->c->colnr]->op2.stval), stmt_atom_int(bits), hf);
+			sql_subfunc *hf = sql_bind_func_result(sql->trans->module, "hash", &c->c->type, NULL, it);
+			h = stmt_unop(stmt_dup(inserts[c->c->colnr]->op2.stval), hf);
 		}
 	}
 	return h;
@@ -592,9 +597,8 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 
 	ts = stmt_basetable(i->t, i->t->base.name);
 	it = sql_bind_localtype("int");
-	for (m = i->columns->h; m; m = m->next, bits += 8) {
+	for (m = i->columns->h; m; m = m->next ) {
 		sql_kc *c = m->data;
-		sql_subfunc *hf = sql_bind_func_result(sql->trans->module, "hash", &c->c->type, it, it);
 		stmt *upd;
 
 		if (updates[c->c->colnr]) {
@@ -605,11 +609,17 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 		}
 
 		if (h) {
-			sql_subfunc *xor = sql_bind_func_result(sql->trans->module, "xor", it, it, it);
+			sql_subfunc *xor = sql_bind_func_result3(sql->trans->module, "rotate_xor_hash", it, it, &c->c->type, it);
 
-			h = stmt_binop(h, stmt_binop(upd, stmt_atom_int(bits), hf), xor);
+			h = stmt_Nop(stmt_list( list_append( list_append(
+				list_append(create_stmt_list(), h), 
+				stmt_atom_int(bits)), 
+				upd)), 
+				xor);
+			bits += 8;
 		} else {
-			h = stmt_binop(upd, stmt_atom_int(bits), hf);
+			sql_subfunc *hf = sql_bind_func_result(sql->trans->module, "hash", &c->c->type, NULL, it);
+			h = stmt_unop(upd, hf);
 		}
 	}
 	stmt_destroy(ts);

@@ -749,16 +749,21 @@ stmt_hash( mvc *sql, list *l )
 	stmt *h = NULL;
 
 	it = sql_bind_localtype("int");
-	for (m = l->h; m; m = m->next, bits += 8) {
+	for (m = l->h; m; m = m->next) {
 		stmt *s = stmt_dup(m->data);
-		sql_subfunc *hf = sql_bind_func_result(sql->trans->module, "hash", tail_type(s), it, it);
 
 		if (h) {
-			sql_subfunc *xor = sql_bind_func_result(sql->trans->module, "xor", it, it, it);
+			sql_subfunc *xor = sql_bind_func_result3(sql->trans->module, "rotate_xor_hash", it, it, tail_type(s), it);
 
-			h = stmt_binop(h, stmt_binop(s, stmt_atom_int(bits), hf), xor);
+			h = stmt_Nop(stmt_list( list_append( list_append(
+				list_append(create_stmt_list(), h), 
+				stmt_atom_int(bits)), 
+				s)), 
+				xor);
+			bits += 8;
 		} else {
-			h = stmt_binop(s, stmt_atom_int(bits), hf);
+			sql_subfunc *hf = sql_bind_func_result(sql->trans->module, "hash", tail_type(s), NULL, it);
+			h = stmt_unop(s, hf);
 		}
 	}
 	return h;
