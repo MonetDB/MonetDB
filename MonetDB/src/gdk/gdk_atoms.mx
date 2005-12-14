@@ -698,12 +698,13 @@ gdk_export const char str_nil[2];
 #endif
 #define bat_nil	((bat) int_nil)
 #if SIZEOF_OID == SIZEOF_INT
-#define oid_nil	((oid) (int) int_nil)
+#define oid_nil ((oid) GDK_int_min)
 #define GDK_oid_max ((oid) GDK_int_max)
 #else
-#define oid_nil	((oid) (lng) lng_nil)
+#define oid_nil ((oid) GDK_lng_min)
 #define GDK_oid_max ((oid) GDK_lng_max)
 #endif
+
 #define void_nil	oid_nil
 @c
 const chr chr_nil = GDK_chr_min;
