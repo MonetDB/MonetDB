@@ -119,7 +119,7 @@ function restart_server()
 			mail -s "MSERVER RESTARTED" $USER <<!EOF
 Dear database owner,
 
-Your database named '$1" has been restarted.
+Your database named '$1' has been restarted.
 
 Please inspect the monetdb log for further details.
 
@@ -140,23 +140,18 @@ regards. MonetDB Guardian
 #it runs in the background until the mguardian control file disappears
 function check_mserver()
 {
-	if [ -f $1/.mguardian ]
+	if [ -f $1/.mguardian.delay ]
 	then
-		delay=`sed -e "s/,.*//" -e 2q $1/.mguardian`
+		delay=`cat $1/.mguardian.delay`
 	else
 		delay=$DELAY
 	fi
 	mypid=$!
-	echo "$delay,$!" >$1/.mguardian
+	echo "$delay" >$1/.mguardian.delay
+	echo "$!" >$1/.mguardian.pid
 	echo `date +"%F %T"` " GUARD $1 " >>monetdb.log
 
-	pid=`getPID $1`
-	if [ "$pid" != "" ]
-	then
-		echo "mserver for '$1' is running"
-	fi
-
-	while [ -f $1/.mguardian ]
+	while [ -f $1/.mguardian.pid ]
 	do
 		active=`getPID $1`
 		if  [ "$active" = "" ]
@@ -165,10 +160,12 @@ function check_mserver()
 		fi
 		# we should pick a cheaper way to detect changes to the delay
 		#echo "sleep guarding $1 $delay seconds"
-		delay=`sed -e "s/,.*//" -e 2q $1/.mguardian`
-		echo "$delay,$mypid" >$i/.mguardian
-		trap ':' 1
-		sleep $delay
+		delay=`cat $1/.mguardian.delay`
+		sleep $delay &
+		sid="$!"
+		echo "$sid" >$1/.mguardian.sleep
+		trap "kill $sid" 1
+		wait
 		trap 1
 	done
 	echo `date +"%F %T"` " LEAVE $1 " >>monetdb.log
@@ -180,17 +177,12 @@ function check_mserver()
 function stop_guardian()
 {
 	pid=`getPID $1`
-	if [ -f $1/.mguardian ]
+	if [ -f $1/.mguardian.pid ]
 	then
-		pid=`head -1 $1/.mguardian |sed -e "s/.*,//"`
-		delay=`head -1 $1/.mguardian |sed -e "s/,.*//"`
-	
-		if [ $pid"" != "" ]
-		then
-			kill -TERM $pid
-			echo `date +"%F %T"` " LEAVE $1 " >>monetdb.log
-			echo "$delay," >$1/.mguardian
-		fi
+		pid=`cat $1/.mguardian.pid`
+		kill -TERM $pid
+		echo `date +"%F %T"` " LEAVE $1 " >>monetdb.log
+		rm $1/.mguardian.pid
 	fi
 }
 
@@ -219,15 +211,13 @@ case $ACTION in
 		do
 			if [ -d $i ]
 			then
-				if [ -f $1/.mguardian ]
+				if [ -f $i/.mguardian.sleep ]
 				then
-					pid=`sed -e "s/.*,//" -e 2q $1/.mguardian`
-					echo "$DELAY,$pid" >$i/.mguardian
 					#wakeup the mguardian process
-					kill -s HUP $pid
-				else
-					echo "$DELAY," >$i/.mguardian
+					pid=`cat $i/.mguardian.sleep`
+					kill -HUP $pid
 				fi
+				echo "$DELAY" >$i/.mguardian.delay
 			fi
 		done
 		;;

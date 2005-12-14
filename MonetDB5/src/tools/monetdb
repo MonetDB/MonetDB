@@ -152,26 +152,25 @@ function stop_mserver()
 
 function show_status_hdr()
 {
-	echo "DBNAME	PID	GUARD	STARTED				STATUS"
+	echo "DBNAME	PID	DELAY	GUARD	STARTED				STATUS"
 }
 function show_status()
 {
 	if [ -f $1/.gdk_lock ]
 	then
-		if [ -f $1/.mguardian ]
+		if [ -f $1/.mguardian.pid ]
 		then
-			guard=`cat $1/.mguardian`
+		guard=`cat $1/.mguardian.pid`
 		fi
-		if [ -f $1/.mserver.status ]
+		if [ -f $1/.mguardian.delay ]
 		then
-			status=$status`cat $1/.mserver.status`
+		delay=`cat $1/.mguardian.delay`
 		fi
-
 		pid=`getPID $1`
 		if  [ $pid"" != "" ]
 		then
 			start=`getTIME $1`
-			echo "$1	$pid	$guard	$start			$status"
+			echo "$1	$pid	$delay	$guard	$start			"
 		fi
 	fi
 }
