@@ -1772,20 +1772,20 @@ Variables with frozen type may lead to type errors
 		GDKerror("interpret_assignment: cannot change type of frozen variable '%s'\n", act->name);
 		return -1;
 	}
-	oldvalue = *value;
-	VALcopy(value, res);
 	if (i >= 0) {
+		oldvalue = *value;
+		VALcopy(value, res);
 		ATOMfix(res->vtype, VALptr(res));
-	} else {
-		res->vtype = TYPE_void;
-        }
 @-
 Cleanup the old value.
 @c
-	ATOMunfix(oldvalue.vtype, VALptr(&oldvalue));
-	if (ATOMextern(oldvalue.vtype)) {
-		GDKfree(oldvalue.val.pval);
-	}
+		ATOMunfix(oldvalue.vtype, VALptr(&oldvalue));
+		if (ATOMextern(oldvalue.vtype)) {
+			GDKfree(oldvalue.val.pval);
+		}
+	} else {
+		res->vtype = TYPE_void;
+        }
 	return i;
 }
 
