@@ -23,6 +23,7 @@ import java.util.*;
 import java.net.URL;
 import java.io.*;
 import java.math.*;	// BigDecimal, etc.
+import java.text.SimpleDateFormat;
 
 /**
  * A PreparedStatement suitable for the MonetDB database.
@@ -40,8 +41,6 @@ import java.math.*;	// BigDecimal, etc.
  * # type, digits, scale # name
  * # varchar,      int,    int # type
  * # 0,    0,      0 # length
- * # 2 # tuplecount
- * # 1 # id
  * [ "int",        9,      0       ]
  * [ "int",        9,      0       ]
  * </pre>
@@ -63,6 +62,17 @@ public class MonetPreparedStatement
 	private final String[] values;
 	private final StringBuffer buf;
 
+	/* only parse the date patterns once, use multiple times */
+	/** Format of a timestamp with RFC822 time zone */
+	final SimpleDateFormat mTimestampZ =
+		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ");
+	/** Format of a time with RFC822 time zone */
+	final SimpleDateFormat mTimeZ =
+		new SimpleDateFormat("HH:mm:ss.SSSZ");
+	/** Format of a date used by Mserver */
+	final SimpleDateFormat mDate =
+		new SimpleDateFormat("yyyy-MM-dd");
+
 	/**
 	 * MonetPreparedStatement constructor which checks the arguments for
 	 * validity.  A MonetPreparedStatement is backed by a
@@ -72,6 +82,7 @@ public class MonetPreparedStatement
 	 * @param connection the connection that created this Statement
 	 * @param resultSetType type of ResultSet to produce
 	 * @param resultSetConcurrency concurrency of ResultSet to produce
+	 * @param prepareQuery the query string to prepare
 	 * @throws SQLException if an error occurs during login
 	 * @throws IllegalArgumentException is one of the arguments is null or empty
 	 */
@@ -114,6 +125,36 @@ public class MonetPreparedStatement
 		rs.close();
 	}
 
+	/**
+	 * Constructs an empty MonetPreparedStatement.  This constructor is
+	 * in particular useful for extensions of this class.
+	 *
+	 * @param connection the connection that created this Statement
+	 * @param resultSetType type of ResultSet to produce
+	 * @param resultSetConcurrency concurrency of ResultSet to produce
+	 * @throws SQLException if an error occurs during login
+	 */
+	MonetPreparedStatement(
+		MonetConnection connection,
+		int resultSetType,
+		int resultSetConcurrency)
+		throws SQLException
+	{
+		super(
+			connection,
+			resultSetType,
+			resultSetConcurrency
+		);
+		// initialise blank finals
+		monetdbType = null;
+		javaType = null;
+		digits = null;
+		scale = null;
+		values = null;
+		buf = null;
+		id = -1;
+		size = -1;
+	}
 
 	//== methods interface PreparedStatement
 
@@ -610,10 +651,8 @@ public class MonetPreparedStatement
 	public void setDate(int parameterIndex, java.sql.Date x, Calendar cal)
 		throws SQLException
 	{
-		synchronized (MonetConnection.mDate) {
-			MonetConnection.mDate.setTimeZone(cal.getTimeZone());
-			setValue(parameterIndex, "date '" + MonetConnection.mDate.format(x) + "'");
-		}
+		mDate.setTimeZone(cal.getTimeZone());
+		setValue(parameterIndex, "date '" + mDate.format(x) + "'");
 	}
 
 	/**
@@ -1174,13 +1213,11 @@ public class MonetPreparedStatement
 		if (index < 1 || index > size)
 			throw new SQLException("No such parameter with index: " + index);
 
-		synchronized (MonetConnection.mTimeZ) {
-			MonetConnection.mTimeZ.setTimeZone(cal.getTimeZone());
+		mTimeZ.setTimeZone(cal.getTimeZone());
 
-			String RFC822 = MonetConnection.mTimeZ.format(x);
-			setValue(index, monetdbType[index - 1] + " '" +
+		String RFC822 = mTimeZ.format(x);
+		setValue(index, monetdbType[index - 1] + " '" +
 				RFC822.substring(0, 15) + ":" + RFC822.substring(15) + "'");
-		}
 	}
 
 	/**
@@ -1224,12 +1261,10 @@ public class MonetPreparedStatement
 			throw new SQLException("No such parameter with index: " + index);
 
 		if (cal == null) cal = Calendar.getInstance();
-		synchronized (MonetConnection.mTimestampZ) {
-			MonetConnection.mTimestampZ.setTimeZone(cal.getTimeZone());
-			String RFC822 = MonetConnection.mTimestampZ.format(x);
-			setValue(index, monetdbType[index - 1] + " '" +
+		mTimestampZ.setTimeZone(cal.getTimeZone());
+		String RFC822 = mTimestampZ.format(x);
+		setValue(index, monetdbType[index - 1] + " '" +
 				RFC822.substring(0, 26) + ":" + RFC822.substring(26) + "'");
-		}
 	}
 
 	/**
@@ -1282,7 +1317,7 @@ public class MonetPreparedStatement
 	 * @param val the exact String representation to set
 	 * @throws SQLException if the given index is out of bounds
 	 */
-	private void setValue(int index, String val) throws SQLException {
+	void setValue(int index, String val) throws SQLException {
 		if (index < 1 || index > size)
 			throw new SQLException("No such parameter with index: " + index);
 

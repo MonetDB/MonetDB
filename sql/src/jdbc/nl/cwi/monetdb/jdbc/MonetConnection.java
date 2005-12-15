@@ -22,7 +22,6 @@ import java.sql.*;
 import java.util.*;
 import java.io.*;
 import java.nio.*;
-import java.text.SimpleDateFormat;
 
 /**
  * A Connection suitable for the MonetDB database.
@@ -91,23 +90,6 @@ public class MonetConnection implements Connection {
 	String[] queryTempl;
 	/** A template to apply to each command (like pre and post fixes) */
 	String[] commandTempl;
-
-	/* only parse the date patterns once, use multiple times */
-	/** Format of a timestamp */
-	final static SimpleDateFormat mTimestamp =
-		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-	/** Format of a timestamp with RFC822 time zone */
-	final static SimpleDateFormat mTimestampZ =
-		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ");
-	/** Format of a time */
-	final static SimpleDateFormat mTime =
-		new SimpleDateFormat("HH:mm:ss.SSS");
-	/** Format of a time with RFC822 time zone */
-	final static SimpleDateFormat mTimeZ =
-		new SimpleDateFormat("HH:mm:ss.SSSZ");
-	/** Format of a date used by Mserver */
-	final static SimpleDateFormat mDate =
-		new SimpleDateFormat("yyyy-MM-dd");
 
 	/** the SQL language */
 	final static int LANG_SQL = 0;
