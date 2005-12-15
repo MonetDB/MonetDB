@@ -68,6 +68,170 @@ stderr of test 'variable_nesting.SF-1027421` in directory 'tests/BugDay_2005-11-
 # 11:23:37 >  Mtimeout -timeout 60 MapiClient -lmil -u monetdb -P monetdb "--config=/home/sjoerd/etc/MonetDB.conf" --host=localhost --port=39280 < variable_nesting.SF-1027421.milC
 # 11:23:37 >  
 
+MAPI  = monetdb@localhost:36615
+QUERY = var x := x + 1;
+ERROR = !ERROR: interpret: no matching MIL operator to '+(void, int)'.
+        !MAYBE YOU MEAN:
+        !	+(str, any) : str
+        !	+(lng, dbl) : dbl
+        !	+(lng, flt) : dbl
+        !	+(lng, lng) : lng
+        !	+(lng, int) : lng
+        !	+(lng, sht) : lng
+        !	+(lng, chr) : lng
+        !	+(dbl, dbl) : dbl
+        !	+(dbl, flt) : dbl
+        !	+(dbl, lng) : dbl
+        !	+(dbl, int) : dbl
+        !	+(dbl, sht) : dbl
+        !	+(dbl, chr) : dbl
+        !	+(flt, dbl) : dbl
+        !	+(flt, flt) : flt
+        !	+(flt, lng) : flt
+        !	+(flt, int) : flt
+        !	+(flt, sht) : flt
+        !	+(flt, chr) : flt
+        !	+(int, dbl) : dbl
+        !	+(int, flt) : flt
+        !	+(int, lng) : lng
+        !	+(int, int) : int
+        !	+(int, sht) : int
+        !	+(int, chr) : int
+        !	+(sht, dbl) : dbl
+        !	+(sht, flt) : flt
+        !	+(sht, lng) : lng
+        !	+(sht, int) : int
+        !	+(sht, sht) : sht
+        !	+(sht, chr) : sht
+        !	+(chr, dbl) : dbl
+        !	+(chr, flt) : flt
+        !	+(chr, lng) : lng
+        !	+(chr, int) : int
+        !	+(chr, sht) : sht
+        !	+(chr, chr) : chr
+MAPI  = monetdb@localhost:36615
+QUERY = var x; x := x + 1;
+ERROR = !ERROR: interpret: no matching MIL operator to '+(void, int)'.
+        !MAYBE YOU MEAN:
+        !	+(str, any) : str
+        !	+(lng, dbl) : dbl
+        !	+(lng, flt) : dbl
+        !	+(lng, lng) : lng
+        !	+(lng, int) : lng
+        !	+(lng, sht) : lng
+        !	+(lng, chr) : lng
+        !	+(dbl, dbl) : dbl
+        !	+(dbl, flt) : dbl
+        !	+(dbl, lng) : dbl
+        !	+(dbl, int) : dbl
+        !	+(dbl, sht) : dbl
+        !	+(dbl, chr) : dbl
+        !	+(flt, dbl) : dbl
+        !	+(flt, flt) : flt
+        !	+(flt, lng) : flt
+        !	+(flt, int) : flt
+        !	+(flt, sht) : flt
+        !	+(flt, chr) : flt
+        !	+(int, dbl) : dbl
+        !	+(int, flt) : flt
+        !	+(int, lng) : lng
+        !	+(int, int) : int
+        !	+(int, sht) : int
+        !	+(int, chr) : int
+        !	+(sht, dbl) : dbl
+        !	+(sht, flt) : flt
+        !	+(sht, lng) : lng
+        !	+(sht, int) : int
+        !	+(sht, sht) : sht
+        !	+(sht, chr) : sht
+        !	+(chr, dbl) : dbl
+        !	+(chr, flt) : flt
+        !	+(chr, lng) : lng
+        !	+(chr, int) : int
+        !	+(chr, sht) : sht
+        !	+(chr, chr) : chr
+MAPI  = monetdb@localhost:36615
+QUERY = { var a := a + 1; print(a); }
+ERROR = !ERROR: interpret: no matching MIL operator to '+(void, int)'.
+        !MAYBE YOU MEAN:
+        !	+(str, any) : str
+        !	+(lng, dbl) : dbl
+        !	+(lng, flt) : dbl
+        !	+(lng, lng) : lng
+        !	+(lng, int) : lng
+        !	+(lng, sht) : lng
+        !	+(lng, chr) : lng
+        !	+(dbl, dbl) : dbl
+        !	+(dbl, flt) : dbl
+        !	+(dbl, lng) : dbl
+        !	+(dbl, int) : dbl
+        !	+(dbl, sht) : dbl
+        !	+(dbl, chr) : dbl
+        !	+(flt, dbl) : dbl
+        !	+(flt, flt) : flt
+        !	+(flt, lng) : flt
+        !	+(flt, int) : flt
+        !	+(flt, sht) : flt
+        !	+(flt, chr) : flt
+        !	+(int, dbl) : dbl
+        !	+(int, flt) : flt
+        !	+(int, lng) : lng
+        !	+(int, int) : int
+        !	+(int, sht) : int
+        !	+(int, chr) : int
+        !	+(sht, dbl) : dbl
+        !	+(sht, flt) : flt
+        !	+(sht, lng) : lng
+        !	+(sht, int) : int
+        !	+(sht, sht) : sht
+        !	+(sht, chr) : sht
+        !	+(chr, dbl) : dbl
+        !	+(chr, flt) : flt
+        !	+(chr, lng) : lng
+        !	+(chr, int) : int
+        !	+(chr, sht) : sht
+        !	+(chr, chr) : chr
+MAPI  = monetdb@localhost:36615
+QUERY = { var a; a := a + 1; print(a); }
+ERROR = !ERROR: interpret: no matching MIL operator to '+(void, int)'.
+        !MAYBE YOU MEAN:
+        !	+(str, any) : str
+        !	+(lng, dbl) : dbl
+        !	+(lng, flt) : dbl
+        !	+(lng, lng) : lng
+        !	+(lng, int) : lng
+        !	+(lng, sht) : lng
+        !	+(lng, chr) : lng
+        !	+(dbl, dbl) : dbl
+        !	+(dbl, flt) : dbl
+        !	+(dbl, lng) : dbl
+        !	+(dbl, int) : dbl
+        !	+(dbl, sht) : dbl
+        !	+(dbl, chr) : dbl
+        !	+(flt, dbl) : dbl
+        !	+(flt, flt) : flt
+        !	+(flt, lng) : flt
+        !	+(flt, int) : flt
+        !	+(flt, sht) : flt
+        !	+(flt, chr) : flt
+        !	+(int, dbl) : dbl
+        !	+(int, flt) : flt
+        !	+(int, lng) : lng
+        !	+(int, int) : int
+        !	+(int, sht) : int
+        !	+(int, chr) : int
+        !	+(sht, dbl) : dbl
+        !	+(sht, flt) : flt
+        !	+(sht, lng) : lng
+        !	+(sht, int) : int
+        !	+(sht, sht) : sht
+        !	+(sht, chr) : sht
+        !	+(chr, dbl) : dbl
+        !	+(chr, flt) : flt
+        !	+(chr, lng) : lng
+        !	+(chr, int) : int
+        !	+(chr, sht) : sht
+        !	+(chr, chr) : chr
 
 # 11:23:37 >  
 # 11:23:37 >  Done.
