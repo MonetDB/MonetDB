@@ -114,6 +114,7 @@ bulkerror_init(bulkerror_t *bulkerror)
 {
 	bulkerror->bak = GDKerrbuf;
 	bulkerror->cnt = 0;
+	bulkerror->buf[0] = 0;
 	GDKsetbuf(bulkerror->buf);
 }
 
@@ -583,6 +584,7 @@ multiplex_@1_@2_@3(exec_t *desc, ValPtr* argv)
 		if (!desc->b) {
 			GDKsetbuf(desc->bulkerror.bak);
 			GDKerror("multiplex: result bat[void,void] impossible.\n");
+			desc->bulkerror.buf[0] = 0;
 			GDKsetbuf(desc->bulkerror.buf);
 			return -1;
 		}
@@ -624,6 +626,7 @@ multiplex_bat_@1_@2_@3(exec_t *desc, ValPtr* argv)
 		if (!desc->b) {
 			GDKsetbuf(desc->bulkerror.bak);
 			GDKerror("multiplex: result bat[void,void] impossible.\n");
+			desc->bulkerror.buf[0] = 0;
 			GDKsetbuf(desc->bulkerror.buf);
 			return -1;
 		}
