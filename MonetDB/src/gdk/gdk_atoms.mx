@@ -690,18 +690,18 @@ gdk_export const lng lng_nil;
 gdk_export const char str_nil[2];
 
 /* derived NIL values - OIDDEPEND */
-#define bit_nil	((const bit) chr_nil)
+#define bit_nil	((bit) chr_nil)
 #if SIZEOF_VOID_P == SIZEOF_INT
-#define ptr_nil	((const ptr) int_nil)
+#define ptr_nil	((ptr) int_nil)
 #else /* SIZEOF_VOID_P == SIZEOF_LNG */
-#define ptr_nil	((const ptr) lng_nil)
+#define ptr_nil	((ptr) lng_nil)
 #endif
-#define bat_nil	((const bat) int_nil)
+#define bat_nil	((bat) int_nil)
 #if SIZEOF_OID == SIZEOF_INT
-#define oid_nil ((const oid) GDK_int_min)
+#define oid_nil ((oid) GDK_int_min)
 #define GDK_oid_max ((oid) GDK_int_max)
 #else
-#define oid_nil ((const oid) GDK_lng_min)
+#define oid_nil ((oid) GDK_lng_min)
 #define GDK_oid_max ((oid) GDK_lng_max)
 #endif
 
