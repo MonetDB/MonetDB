@@ -833,7 +833,7 @@ CMDBBPprojectNil(int *ret, int *bid)
 		return throwMessage("bbp.project", "Cannot access descriptor");
 	}
 
-	bn = BATconst(b, TYPE_void, &int_nil);
+	bn = BATconst(b, TYPE_void, (ptr) &int_nil);
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		BBPincref(*ret = bn->batCacheid, TRUE);

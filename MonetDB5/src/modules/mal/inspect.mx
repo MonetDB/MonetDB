@@ -204,7 +204,7 @@ INSPECTmoduleNames(int *ret)
 	c = getClient();
 
 	for (s = c->nspace; s; s = s->outer, i++)
-		BUNins(b, &int_nil, s->name);
+		BUNins(b, (ptr) &int_nil, s->name);
 
 	@:Pseudo(view,scope,names)@
 

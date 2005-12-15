@@ -968,7 +968,7 @@ labeled statemtent. This might be optimized later.
 	        stkpc= pci->jump;
 	    break;
 	case TYPE_oid:
-	    if( v->val.ival == oid_nil )
+	    if( v->val.oval == oid_nil )
 	        stkpc= pci->jump;
 	    break;
 	case TYPE_sht:

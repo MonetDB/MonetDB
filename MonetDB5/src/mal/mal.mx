@@ -104,6 +104,25 @@ The top layer consists of the query language processors and their
 strategic optimizers. Moreover, each language comes with its language
 oriented catalog, which may, but need not be stored in the MonetDB database.
 
+The @code{monetdb} program relies on two programs @code{mserver}
+and @code{mguardian}. The former actually represents the server
+process and waits for client connections. One @code{mserver} process
+is allowed to be active in each database.
+
+The @code{mguardian} program works along side a single @code{mserver}, keeping
+an eye on its behavior. If the server accidently crashes, it is this program
+that will attempt an automatic restart. The delay between each check for
+liveness can be set at any time e.g. as follows:
+@example
+mguardian --delay=20 --dbname=voc
+@end example
+
+The @code{mguardian} program provides commands to shut down one or all
+guardian processes.
+
+The functionality of the guardian process should be extended to also
+keep an eye on the logs and checkpoints.
+
 @node MAL synopsis, MAL execution, Architecture overview,  MonetDB Overview
 @+ MonetDB Assembler Language (MAL)
 The target language for Version 5 is an assembler-like language,
