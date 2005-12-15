@@ -1005,6 +1005,7 @@ public class MonetConnection implements Connection {
 			monet.waitForPrompt();
 
 			int size;
+			// {{{ set reply size
 			try {
 				/**
 				 * Change the reply size of the server.  If the given
@@ -1029,6 +1030,7 @@ public class MonetConnection implements Connection {
 				hdrl.setComplete();
 				return;
 			}
+			// }}} set reply size
 
 			// If the query is larger than the TCP buffer size, use a
 			// special send thread to avoid deadlock with the server due
@@ -1051,114 +1053,123 @@ public class MonetConnection implements Connection {
 			}
 
 			// go for new results
-			String tmpLine;
+			String tmpLine = monet.readLine();
+			int linetype = monet.getLineType();
 			Header hdr = null;
 			RawResults rawr = null;
-			int lastState = MonetSocketBlockMode.UNKNOWN;
-			int linetype;
-			do {
+			int lastState = linetype;
+			while (linetype != MonetSocketBlockMode.PROMPT1) {
+				switch (linetype) {
+					case MonetSocketBlockMode.ERROR:
+						// store the error message in the HeaderList object
+						hdrl.addError(tmpLine.substring(1));
+					break;
+					case MonetSocketBlockMode.SOHEADER:
+						// close previous if set
+						if (hdr != null) {
+							hdr.complete();
+							hdrl.addHeader(hdr);
+						}
+						if (rawr != null) rawr.finish();
+
+						// {{{ soh line parsing
+						// parse the start of header line
+						CharBuffer soh = CharBuffer.wrap(tmpLine);
+						soh.get();	// skip the &
+						try {
+							switch (soh.get()) {
+								default:
+									throw new java.text.ParseException("Unknown header", 1);
+								case Q_PARSE:
+									throw new java.text.ParseException("Q_PARSE header not allowed here", 1);
+								case Q_TABLE:
+								case Q_PREPARE:
+									soh.get();	// skip space
+									hdr = new ResultSetHeader(
+											parseNumber(soh),	// id
+											parseNumber(soh),	// tuplecount
+											parseNumber(soh),	// columncount
+											parseNumber(soh),	// rowcount
+											this,
+											hdrl.cachesize,
+											hdrl.rstype,
+											hdrl.rsconcur,
+											hdrl.seqnr
+											);
+									break;
+								case Q_UPDATE:
+									soh.get();	// skip space
+									hdr = new AffectedRowsHeader(
+											parseNumber(soh)	// count
+											);
+									break;
+								case Q_SCHEMA:
+									hdr = new AffectedRowsHeader(
+											Statement.SUCCESS_NO_INFO
+											);
+									break;
+								case Q_TRANS:
+									soh.get();	// skip space
+									if (soh.position() == soh.length()) throw
+										new java.text.ParseException("unexpected end of string", soh.position() - 1);
+									boolean ac = soh.get() == 't' ? true : false;
+									if (autoCommit && ac) {
+										addWarning("Server enabled auto commit " +
+												"mode while local state " +
+												"already is auto commit."
+												);
+									}
+									autoCommit = ac;
+									// note: the use of a special header
+									// here is not really clear.  Maybe
+									// ditch it and use AffectedRowsHeader
+									// (which is a superclass of
+									// AutoCommitHeader anyway).
+									hdr = new AutoCommitHeader(
+											ac
+											);
+									break;
+							}
+						} catch (java.text.ParseException e) {
+							throw new SQLException(e.getMessage() +
+									" found: '" + soh.get(e.getErrorOffset()) + "'" +
+									" in: \"" + tmpLine + "\"" +
+									" at pos: " + e.getErrorOffset());
+						}
+						// }}} soh line parsing
+
+						rawr = null;
+					break;
+					case MonetSocketBlockMode.HEADER:
+						if (hdr == null) throw
+							new SQLException("Protocol violation: header sent before start of header was issued!");
+						hdr.addHeader(tmpLine);
+					break;
+					case MonetSocketBlockMode.RESULT:
+						// complete the header info and add to list
+						if (lastState == MonetSocketBlockMode.HEADER) {
+							// we can only have a ResultSetHeader here
+							ResultSetHeader rsh = (ResultSetHeader)hdr;
+							rsh.complete();
+							rawr = new RawResults(size != 0 ? Math.min(size, rsh.tuplecount) : rsh.tuplecount, null, rsh.getRSType() == ResultSet.TYPE_FORWARD_ONLY);
+							rsh.addRawResults(0, rawr);
+							// a RawResults must be in hdr at this point!!!
+							hdrl.addHeader(hdr);
+							hdr = null;
+						}
+						if (rawr == null) throw
+							new SQLException("Protocol violation: result sent before header!");
+						rawr.addRow(tmpLine);
+					break;
+					default:
+						// unknown, will mean a protocol violation
+						addWarning("Protocol violation: unknown linetype.  Ignoring line: " + tmpLine);
+					break;
+				}
+				lastState = linetype;
 				tmpLine = monet.readLine();
 				linetype = monet.getLineType();
-				if (linetype == MonetSocketBlockMode.ERROR) {
-					// store the error message in the HeaderList object
-					hdrl.addError(tmpLine.substring(1));
-				} else if (linetype == MonetSocketBlockMode.SOHEADER) {
-					// close previous if set
-					if (hdr != null) {
-						hdr.complete();
-						hdrl.addHeader(hdr);
-					}
-					if (rawr != null) rawr.finish();
-
-					// parse the start of header line
-					CharBuffer soh = CharBuffer.wrap(tmpLine);
-					soh.get();	// skip the &
-					try {
-						switch (soh.get()) {
-							default:
-								throw new java.text.ParseException("Unknown header", 1);
-							case Q_PARSE:
-								throw new java.text.ParseException("Q_PARSE header not allowed here", 1);
-							case Q_TABLE:
-							case Q_PREPARE:
-								soh.get();	// skip space
-								hdr = new ResultSetHeader(
-										parseNumber(soh),	// id
-										parseNumber(soh),	// tuplecount
-										parseNumber(soh),	// columncount
-										parseNumber(soh),	// rowcount
-										this,
-										hdrl.cachesize,
-										hdrl.rstype,
-										hdrl.rsconcur,
-										hdrl.seqnr
-									);
-							break;
-							case Q_UPDATE:
-								soh.get();	// skip space
-								hdr = new AffectedRowsHeader(
-										parseNumber(soh)	// count
-									);
-							break;
-							case Q_SCHEMA:
-								hdr = new AffectedRowsHeader(
-										Statement.SUCCESS_NO_INFO
-									);
-							break;
-							case Q_TRANS:
-								soh.get();	// skip space
-								if (soh.position() == soh.length()) throw
-									new java.text.ParseException("unexpected end of string", soh.position() - 1);
-								boolean ac = soh.get() == 't' ? true : false;
-								if (autoCommit && ac) {
-									addWarning("Server enabled auto commit " +
-											"mode while local state " +
-											"already is auto commit."
-										);
-								}
-								autoCommit = ac;
-								// note: the use of a special header
-								// here is not really clear.  Maybe
-								// ditch it and use AffectedRowsHeader
-								// (which is a superclass of
-								// AutoCommitHeader anyway).
-								hdr = new AutoCommitHeader(
-										ac
-									);
-							break;
-						}
-					} catch (java.text.ParseException e) {
-						throw new SQLException(e.getMessage() +
-							" found: '" + soh.get(e.getErrorOffset()) + "'" +
-							" in: \"" + tmpLine + "\"" +
-							" at pos: " + e.getErrorOffset());
-					}
-
-					rawr = null;
-				} else if (linetype == MonetSocketBlockMode.HEADER) {
-					if (hdr == null) throw
-						new SQLException("Protocol violation: header sent before start of header was issued!");
-					hdr.addHeader(tmpLine);
-				} else if (linetype == MonetSocketBlockMode.RESULT) {
-					// complete the header info and add to list
-					if (lastState == MonetSocketBlockMode.HEADER) {
-						// we can only have a ResultSetHeader here
-						ResultSetHeader rsh = (ResultSetHeader)hdr;
-						rsh.complete();
-						rawr = new RawResults(size != 0 ? Math.min(size, rsh.tuplecount) : rsh.tuplecount, null, rsh.getRSType() == ResultSet.TYPE_FORWARD_ONLY);
-						rsh.addRawResults(0, rawr);
-						// a RawResults must be in hdr at this point!!!
-						hdrl.addHeader(hdr);
-						hdr = null;
-					}
-					if (rawr == null) throw
-						new SQLException("Protocol violation: result sent before header!");
-					rawr.addRow(tmpLine);
-				} else if (linetype == MonetSocketBlockMode.UNKNOWN) {
-					// unknown, will mean a protocol violation
-					addWarning("Protocol violation: unknown linetype.  Ignoring line: " + tmpLine);
-				}
-			} while ((lastState = linetype) != MonetSocketBlockMode.PROMPT1);
+			}
 			// Tell the RawResults object there is nothing going to be
 			// added right now.  We need to do this because MonetDB
 			// sometimes plays games with us and just doesn't send what
@@ -2317,3 +2328,5 @@ public class MonetConnection implements Connection {
 		}
 	}
 }
+
+// vim: foldmethod=marker:
