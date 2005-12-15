@@ -23,7 +23,7 @@ Over..
 
 
 # 09:09:12 >  
-# 09:09:12 >  ant -e -buildfile /net/koala.ins.cwi.nl/export/scratch1/niels/sql/src/jdbc/tests/Tests/../build.xml -Dbuilddir=/net/koala.ins.cwi.nl/export/scratch0/niels/Linux-x86_64/build-sql/src/jdbc/tests/Tests/../ -Djdbc_url=jdbc:monetdb://localhost:42887/database?user=monetdb&password=monetdb -Djardir=/net/koala.ins.cwi.nl/export/scratch0/niels/Linux-x86_64/build-sql/src/jdbc/tests/Tests/../../ Test_Sbatching
+# 09:09:12 >  ant -emacs -buildfile /net/koala.ins.cwi.nl/export/scratch1/niels/sql/src/jdbc/tests/Tests/../build.xml -Dbuilddir=/net/koala.ins.cwi.nl/export/scratch0/niels/Linux-x86_64/build-sql/src/jdbc/tests/Tests/../ -Djdbc_url=jdbc:monetdb://localhost:42887/database?user=monetdb&password=monetdb -Djardir=/net/koala.ins.cwi.nl/export/scratch0/niels/Linux-x86_64/build-sql/src/jdbc/tests/Tests/../../ Test_Sbatching
 # 09:09:12 >  
 
 Buildfile: /net/koala.ins.cwi.nl/export/scratch1/niels/sql/src/jdbc/tests/Tests/../build.xml
