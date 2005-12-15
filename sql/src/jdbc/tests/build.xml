@@ -35,7 +35,7 @@ All Rights Reserved.
   <property name="srcdir"    value="." />
   <property name="builddir"  value="build" />
   <property name="jardir"    value="../jars" />
-  <property name="JDBC_jar"
+  <property name="jdbc_jar"
     value="${jardir}/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-jdbc.jar" />
   <property name="jdbc_url"
     value="jdbc:monetdb://localhost/d?user=monetdb&amp;password=monetdb${debug}" />
@@ -48,7 +48,12 @@ All Rights Reserved.
   <!-- Compiles the tests -->
   <target name="compile" depends="prepare">
     <echo message="Compiling JDBC tests" />
-    <javac srcdir="${srcdir}" destdir="${builddir}">
+    <javac
+      srcdir="${srcdir}"
+      destdir="${builddir}"
+      target="${javac_version}"
+      source="${javac_version}"
+      >
        <include name="*.java" />
        <classpath>
          <pathelement path="${srcdir}" />
@@ -66,7 +71,7 @@ All Rights Reserved.
       <and>
         <available classname="nl.cwi.monetdb.jdbc.MonetDriver">
           <classpath>
-            <pathelement path="${JDBC_jar}" />
+            <pathelement path="${jdbc_jar}" />
           </classpath>
         </available>
       </and>
@@ -81,7 +86,7 @@ All Rights Reserved.
   <!-- Run tests -->
   <path id="test_path">
     <pathelement path="${builddir}" />
-    <pathelement path="${JDBC_jar}" />
+    <pathelement path="${jdbc_jar}" />
   </path>
 
   <target name="test">

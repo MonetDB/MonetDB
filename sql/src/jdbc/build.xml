@@ -42,6 +42,10 @@ All Rights Reserved.
   <property file="build.local.properties" />
   <property file="build.properties" />
 
+  <property name="jdbc-jar"
+    value="${jardir}/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-jdbc.jar" />
+  <property name="jdbcclient-jar"
+    value="${jardir}/jdbcclient-${JDBC_MAJOR}.${JDBC_MINOR}.jar" />
 
   <!-- full target -->
   <target name="all">
@@ -57,8 +61,9 @@ All Rights Reserved.
   </target>
 
   <!-- jar targets -->
-  <target name="jar_jdbc" depends="compile_jdbc">
-    <jar jarfile="${jardir}/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-jdbc.jar">
+  <target name="jar_jdbc" depends="compile_jdbc"
+    unless="uptodate.jdbc-jar">
+    <jar jarfile="${jdbc-jar}">
       <fileset dir="${builddir}">
         <include name="${jdbc-package}/**/*.class" />
       </fileset>
@@ -86,6 +91,23 @@ All Rights Reserved.
       <fileset dir="${builddir}">
         <include name="${client-package}/**/*.class" />
       </fileset>
+    </jar>
+  </target>
+
+  <!-- a convenience jar of JDBC plus the JdbcClient utililty -->
+  <target name="jar_jdbcclient" depends="jar_jdbc,compile_client"
+    unless="uptodate.jdbcclient-jar">
+    <echo message="Building JDBC + JdbcClient convenience jar" />
+    <unjar src="${jdbc-jar}" dest="${builddir}" />
+    <jar jarfile="${jdbcclient-jar}">
+      <fileset dir="${builddir}">
+        <include name="${jdbc-package}/**/*.class" />
+        <include name="${client-package}/**/*.class" />
+      </fileset>
+      <manifest>
+        <attribute name="Built-By" value="${user.name}" />
+        <attribute name="Main-Class" value="nl.cwi.monetdb.client.JdbcClient" />
+      </manifest>
     </jar>
   </target>
 
@@ -150,21 +172,6 @@ All Rights Reserved.
     </javac>
   </target>
 
-  <!-- a convenience jar of JDBC plus the JdbcClient utililty -->
-  <target name="jar_jdbcclient" depends="compile_jdbc,compile_client">
-    <echo message="Building JDBC + JdbcClient convenience jar" />
-    <jar jarfile="${jardir}/jdbcclient-${JDBC_MAJOR}.${JDBC_MINOR}.jar">
-      <fileset dir="${builddir}">
-        <include name="${jdbc-package}/**/*.class" />
-        <include name="${client-package}/**/*.class" />
-      </fileset>
-      <manifest>
-        <attribute name="Built-By" value="${user.name}" />
-        <attribute name="Main-Class" value="nl.cwi.monetdb.client.JdbcClient" />
-      </manifest>
-    </jar>
-  </target>
-
   <!-- distribution jar file -->
   <target name="dist" depends="clean,prepare,driver">
     <echo message="Building distribution jar (debug=off, optimise=on)" />
@@ -195,33 +202,12 @@ All Rights Reserved.
     </jar>
   </target>
 
-  <!-- checks whether regeneration of files is necessary -->
-  <target name="check_driver">
-    <uptodate targetfile="${jdbc-package}/MonetDriver.java" property="driver.uptodate">
-      <srcfiles dir="${srcdir}">
-        <include name="${jdbc-package}/MonetDriver.java.in"/>
-        <include name="build.properties"/>
-        <include name="build.local.properties" />
-      </srcfiles>
-    </uptodate>
-    <uptodate targetfile="${xmldb-package}/base/MonetDBDatabase.java" property="driver.uptodate">
-      <srcfiles dir="${srcdir}">
-        <include name="${xmldb-package}/base/MonetDBDatabase.java.in"/>
-        <include name="build.properties"/>
-        <include name="build.local.properties" />
-      </srcfiles>
-    </uptodate>
-  </target>
-
   <!--
   This generates MonetDriver.java and MonetDBDatabase.java from their
   ".java.in" equivalents.  It's required for importing the driver
   version properties.
   -->
-  <target name="driver" depends="prepare,check_driver">
-    <!-- always generate the files that change version,
-    i.e no unless="driver.uptodate"> to have the date included always
-    when one calls 'ant' -->
+  <target name="driver" depends="prepare" unless="uptodate.drivers">
     <tstamp>
       <format property="TODAY" pattern="yyyyMMdd" />
     </tstamp>
@@ -256,11 +242,10 @@ All Rights Reserved.
   </target>
 
   <!-- Prepares the build directory and sets some variables -->
+  <!-- checks whether regeneration of files is necessary -->
   <target name="prepare">
     <condition property="debug" value="true">
-      <and>
-        <equals arg1="${enable_debug}" arg2="true" casesensitive="false" trim="true" />
-      </and>
+      <equals arg1="${enable_debug}" arg2="true" casesensitive="false" trim="true" />
     </condition>
     <condition property="debug" value="false">
       <not>
@@ -268,15 +253,51 @@ All Rights Reserved.
       </not>
     </condition>
     <condition property="optimize" value="true">
-      <and>
-        <equals arg1="${enable_optimize}" arg2="true" casesensitive="false" trim="true" />
-      </and>
+      <equals arg1="${enable_optimize}" arg2="true" casesensitive="false" trim="true" />
     </condition>
     <condition property="optimize" value="false">
       <not>
         <equals arg1="${enable_optimize}" arg2="true" casesensitive="false" trim="true" />
       </not>
     </condition>
+
+    <uptodate targetfile="${jdbc-jar}" property="uptodate.jdbc-jar">
+      <srcfiles dir="${srcdir}">
+        <include name="${jdbc-package}/**/*.java" />
+      </srcfiles>
+    </uptodate>
+    <uptodate targetfile="${jdbcclient-jar}"
+      property="uptodate.jdbcclient-jar">
+      <srcfiles dir="${srcdir}">
+        <include name="${client-package}/**/*.java" />
+        <include name="${jdbc-jar}" />
+      </srcfiles>
+    </uptodate>
+    <condition property="uptodate.drivers">
+      <and>
+        <uptodate targetfile="${jdbc-package}/MonetDriver.java">
+          <srcfiles dir="${srcdir}">
+            <include name="build.properties" />
+            <include name="build.local.properties" />
+            <include name="${jdbc-package}/MonetDriver.java.in" />
+          </srcfiles>
+        </uptodate>
+        <uptodate targetfile="${xmldb-package}/base/MonetDBDatabase.java">
+          <srcfiles dir="${srcdir}">
+            <include name="build.properties" />
+            <include name="build.local.properties" />
+            <include name="${xmldb-package}/base/MonetDBDatabase.java.in" />
+          </srcfiles>
+        </uptodate>
+        <not>
+          <istrue value="uptodate.jdbc-jar" />
+        </not>
+        <not>
+          <istrue value="uptodate.jdbcclient-jar" />
+        </not>
+      </and>
+    </condition>
+
     <mkdir dir="${builddir}" />
     <mkdir dir="${builddir}/example" />
     <mkdir dir="${jardir}" />
