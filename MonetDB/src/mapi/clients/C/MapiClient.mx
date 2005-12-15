@@ -1105,13 +1105,6 @@ simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
 		termout = stderr;
 	}
 
-	if (prompt) {
-		if (def)
-			fprintf(termout, "%s(%s):", prompt, def);
-		else
-			fprintf(termout, "%s:", prompt);
-		fflush(termout);
-	}
 #ifdef HAVE_TERMIOS_H
 	if (!echo) {
 		tcgetattr(fileno(termin), &t);
@@ -1120,6 +1113,13 @@ simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
 		tcsetattr(fileno(termin), TCSAFLUSH, &t);
 	}
 #endif
+	if (prompt) {
+		if (def)
+			fprintf(termout, "%s(%s):", prompt, def);
+		else
+			fprintf(termout, "%s:", prompt);
+		fflush(termout);
+	}
 	if (fgets(destination, maxlen, termin) == NULL)
 		destination[0] = '\0';
 
