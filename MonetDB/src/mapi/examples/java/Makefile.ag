@@ -21,4 +21,5 @@ MTSAFE
 #	FILES = sample.class
 #}
 
-EXTRA_DIST_DIR = Tests build.xml
+EXTRA_DIST_DIR = Tests 
+EXTRA_DIST = build.xml
