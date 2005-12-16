@@ -115,7 +115,7 @@ static unsigned int module_base = 0;
  * be able to suppress code generation for all functions defined
  * in modules;
  */
-static void* num_fun = NULL;
+static int num_fun = 0;
 
 /**
  * Module namespace we accept during parsing.
