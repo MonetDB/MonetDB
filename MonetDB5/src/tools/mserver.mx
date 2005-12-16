@@ -299,7 +299,7 @@ load_arguments(int *argc, char **argv)
 	fd = fopen(".mserver.args","r");
 	if( fd == NULL)
 		return;
-	while( fgets(buf,BUFSIZ,fd) != NULL && i<32){
+	while( fgets(buf,BUFSIZ,fd) != NULL && i<32 && strlen(buf) > 1){
 		buf[strlen(buf)-1]= 0;
 		argv[i]= GDKstrdup(buf);
 		i++;
