@@ -2047,12 +2047,12 @@ enum quantifier {
  */
 static enum quantifier
 sum[5][5] = {
-              /*  0     1     ?     +     *   */
-    /*  0  */  { none, one,  opt,  plus, star }
-    /*  1  */ ,{ one,  plus, plus, plus, plus }
-    /*  ?  */ ,{ opt,  plus, star, plus, star }
-    /*  +  */ ,{ plus, plus, plus, plus, plus }
-    /*  *  */ ,{ star, plus, star, plus, star }
+              /*       0           1           ?            +            *    */
+/* 0 */ [none]={ [none]=none, [one]=one,  [opt]=opt,  [plus]=plus, [star]=star }
+/* 1 */,[one] ={ [none]=one,  [one]=plus, [opt]=plus, [plus]=plus, [star]=plus }
+/* ? */,[opt] ={ [none]=opt,  [one]=plus, [opt]=star, [plus]=plus, [star]=star }
+/* + */,[plus]={ [none]=plus, [one]=plus, [opt]=plus, [plus]=plus, [star]=plus }
+/* * */,[star]={ [none]=star, [one]=plus, [opt]=star, [plus]=plus, [star]=star }
 };
   
 /**
@@ -2060,12 +2060,12 @@ sum[5][5] = {
  */
 static enum quantifier
 choice[5][5] = {
-              /*  0     1     ?     +     *   */
-    /*  0  */  { none, opt,  opt,  star, star }
-    /*  1  */ ,{ opt,  one,  opt,  plus, star }
-    /*  ?  */ ,{ opt,  opt,  opt,  star, star }
-    /*  +  */ ,{ star, plus, star, plus, star }
-    /*  *  */ ,{ star, star, star, star, star }
+              /*       0           1           ?            +            *    */
+/* 0 */ [none]={ [none]=none, [one]=opt,  [opt]=opt,  [plus]=star, [star]=star }
+/* 1 */,[one] ={ [none]=opt,  [one]=one,  [opt]=opt,  [plus]=plus, [star]=star }
+/* ? */,[opt] ={ [none]=opt,  [one]=opt,  [opt]=opt,  [plus]=star, [star]=star }
+/* + */,[plus]={ [none]=star, [one]=plus, [opt]=star, [plus]=plus, [star]=star }
+/* * */,[star]={ [none]=star, [one]=star, [opt]=star, [plus]=star, [star]=star }
 };
   
 /**
@@ -2073,12 +2073,12 @@ choice[5][5] = {
  */
 static enum quantifier
 product[5][5] = {
-              /*  0     1     ?     +     *   */
-    /*  0  */  { none, none, none, none, none }
-    /*  1  */ ,{ none, one,  opt,  plus, star }
-    /*  ?  */ ,{ none, opt,  opt,  star, star }
-    /*  +  */ ,{ none, plus, star, plus, star }
-    /*  *  */ ,{ none, star, star, star, star }
+              /*       0           1           ?            +            *    */
+/* 0 */ [none]={ [none]=none, [one]=none, [opt]=none, [plus]=none, [star]=none }
+/* 1 */,[one] ={ [none]=none, [one]=one,  [opt]=opt,  [plus]=plus, [star]=star }
+/* ? */,[opt] ={ [none]=none, [one]=opt,  [opt]=opt,  [plus]=star, [star]=star }
+/* + */,[plus]={ [none]=none, [one]=plus, [opt]=star, [plus]=plus, [star]=star }
+/* * */,[star]={ [none]=none, [one]=star, [opt]=star, [plus]=star, [star]=star }
 };
 
 /** 
@@ -2104,11 +2104,11 @@ fn_one (PFty_t t)
  * Functions implementing the quantifers.
  */
 static PFty_t (*quantifier_fn[5]) (PFty_t) = {
-    fn_none
-    , fn_one
-    , PFty_opt
-    , PFty_plus
-    , PFty_star
+      [none]   = fn_none
+    , [one]    = fn_one
+    , [opt]    = PFty_opt
+    , [plus]   = PFty_plus
+    , [star]   = PFty_star
 };
 
 /**
