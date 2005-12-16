@@ -2917,8 +2917,12 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         exe = {}
         exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-        exe['Mserver']       = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s %s --set mapi_port=%s --set sql_port=%s --set xquery_port=%s --set monet_prompt= --trace' % \
-                                                           (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['MAPIPORT'], env['SQLPORT'], env['XQUERYPORT'])
+        if env['VERSION'] >= 49900:
+            exe['Mserver']       = CheckExec('mserver')      , 'mserver "--config=%s" --debug=%s %s %s %s --set mapi_port=%s --set sql_port=%s --set xquery_port=%s --set monet_prompt= --trace' % \
+                                                               (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['MAPIPORT'], env['SQLPORT'], env['XQUERYPORT'])
+        else:
+            exe['Mserver']       = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s %s --set mapi_port=%s --set sql_port=%s --set xquery_port=%s --set monet_prompt= --trace' % \
+                                                               (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['MAPIPORT'], env['SQLPORT'], env['XQUERYPORT'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec('python')       , 'python'
         exe['Mapi_Client']   = CheckExec(env['MAPICLIENT'].split(None, 1)[0])  , '%s -u monetdb -P monetdb "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
