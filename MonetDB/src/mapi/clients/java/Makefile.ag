@@ -16,7 +16,7 @@
 
 MTSAFE
 
-EXTRA_DIST = mapi/MapiException.java mapi/Mapi.java MapiClient.java
+EXTRA_DIST = mapi/MapiException.java mapi/Mapi.java MapiClient.java build.xml
 
 ant_jar_mapi = {
 	DIR = pkgdatadir/lib

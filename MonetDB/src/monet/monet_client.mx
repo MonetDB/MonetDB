@@ -505,10 +505,10 @@ readClient(Client c)
 	blocked = isa_block_stream(c->fdin);
 	do {
 		if (c == monet_clients) {
-			if (instring != '"' && c->prompt && *c->prompt && stream_write(fd, c->prompt, strlen(c->prompt), 1) != 1)
+			if (!blocked && instring != '"' && c->prompt && *c->prompt && stream_write(fd, c->prompt, strlen(c->prompt), 1) != 1)
 				return 0;
 		} else if (c->top == c->input) {
-			if (stream_write(fd, PROMPT1, sizeof(PROMPT1) - 1, 1) != 1)
+			if (!blocked && stream_write(fd, PROMPT1, sizeof(PROMPT1) - 1, 1) != 1)
 				return 0;
 		} else {
 			if (stream_write(fd, PROMPT2, sizeof(PROMPT2) - 1, 1) != 1)

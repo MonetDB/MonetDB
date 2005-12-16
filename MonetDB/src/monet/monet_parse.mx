@@ -502,7 +502,7 @@ ll_getch(void)
 			if (GDKdebug & 16384 || !ll_stack) {
 				stream *s = ll_client->fdout;
 
-				if (stream_write(s, ll_client->cline, ll_client->cptr - ll_client->cline + 1, 1) < 0 || stream_flush(s))
+				if (stream_write(s, ll_client->cline, ll_client->cptr - ll_client->cline + 1, 1) < 0 /*|| stream_flush(s)*/)
 					GDKdebug &= ~16384;	/* stop logging after error */
 			}
 		}
@@ -552,7 +552,7 @@ ll_getstring(char *buf, int max_size)
 	if (ll_client->listing && (GDKdebug & 16384 || !ll_stack)) {
 		stream *s = ll_client->fdout;
 
-		if (stream_write(s, start, 1, buf - start) < 0 || stream_flush(s))
+		if (stream_write(s, start, 1, buf - start) < 0 /*|| stream_flush(s)*/)
 			GDKdebug &= ~16384;	/* stop logging after error */
 	}
 	return (int) (buf - start);

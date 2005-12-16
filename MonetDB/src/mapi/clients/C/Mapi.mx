@@ -2722,6 +2722,14 @@ read_line(Mapi mid)
 				printf("got next block: length:" SSZFMT "\n", len);
 				printf("text:%s\n", mid->blk.buf + mid->blk.end);
 			}
+			if (!len) { /* add prompt */
+				len = 2;
+				mid->blk.buf[mid->blk.end] = PROMPTBEG;
+				mid->blk.buf[mid->blk.end+1] = '\n';
+				mid->blk.buf[mid->blk.end+2] = 0;
+				if (!nl)
+					nl = mid->blk.buf + mid->blk.end + 1;
+			}
 			mid->blk.end += len;
 		} else {
 			/* fetch one more line */
@@ -3108,6 +3116,10 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				copy++;
 			}
 			if (*copy == '\n' || *copy == 0) {
+				if (mid->blocked) { /* skip end of block */
+					mid->active = hdl;
+					read_line(mid);
+				}
 				hdl->needmore = 1;
 				mid->active = hdl;
 			}
