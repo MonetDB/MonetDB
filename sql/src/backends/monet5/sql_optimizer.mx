@@ -302,7 +302,6 @@ to allow inspection.
 
 		if (c->listing)
 			printFunction(c->fdout, c->curprg->def, c->listing);
-		stream_flush(c->fdout);
 		if ( m->debug )
 			runMALDebugger(c->curprg);
 		return;

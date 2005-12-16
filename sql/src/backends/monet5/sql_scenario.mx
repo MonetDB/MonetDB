@@ -235,7 +235,6 @@ SQLsession(str *ret)
 {
 	str msg = MAL_SUCCEED;
 
-	stream_printf(GDKout, "#Continue as SQL session\n");
 	msg = setScenario(getClient(), "sql");
 	*ret = 0;
 	return msg;
@@ -361,7 +360,7 @@ We don;t search the cache for a previous incarnation.
 		c->curprg = NULL;
 
 		if (!s && (err = mvc_status(m))) {
-			stream_printf(c->fdout, "#%s\n", m->errstr);
+			stream_printf(c->fdout, "%s\n", m->errstr);
 			*m->errstr = 0;
 			sqlcleanup(m, err);
 			msg = throwMessage("SQLparser", "Semantic errors\n");
@@ -457,8 +456,6 @@ error(stream *out, char *str)
 		if (stream_write(out, str, strlen(str), 1) != 1 || stream_write(out, "\n", 1, 1) != 1)
 			 return -1;
 	}
-	if (stream_flush(out))
-		return -1;
 	return 0;
 }
 
@@ -527,10 +524,10 @@ SQLreader(Client c)
 	bstream *in = c->fdin;
 	int language = be->language;	/* 'S' for SQL, 'D' from debugger */
 	mvc *m = be->mvc;
+	int blocked = isa_block_stream(in->s);
 
 #ifdef _SQL_READER_DEBUG
 	stream_printf(GDKout, "#SQLparser: start reading SQL block\n");
-	stream_flush(GDKout);
 #endif
 	if (!be || c->mode <= FINISHING) {
 		c->mode = FINISHING;
@@ -543,7 +540,6 @@ Continue processing any left-over input from the previous round.
 
 #ifdef _SQL_READER_DEBUG
 	stream_printf(GDKout, "#pos %d len %d\n", in->pos, in->len);
-	stream_flush(GDKout);
 #endif
 @-
 Distinguish between console reading and MapiClient connections.
@@ -561,14 +557,14 @@ The former comes with readline functionality.
 			c->fdin->pos += c->yycur;
 			c->yycur = 0;
 		}
-		if (in->eof || !isa_block_stream(in->s)) {
+		if (in->eof || !blocked) {
 			language = (be->console) ? 'S' : 0;
 
 			/* The rules of auto_commit require us to finish 
 			   and start a transaction on the start of a new statement */
 			go = SQLautocommit(c,m);
 
-			if (go && (stream_write(c->fdout, c->prompt, c->promptlength, 1) != 1 || stream_flush(c->fdout))) {
+			if (go && ((!blocked && stream_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || stream_flush(c->fdout))) {
 				go = FALSE;
 				break;
 			}
@@ -577,7 +573,6 @@ The former comes with readline functionality.
 		if (go && (rd = bstream_next(in)) <= 0) {
 #ifdef _SQL_READER_DEBUG
 			stream_printf(GDKout, "#rd %d  language %d eof %d\n", rd, language, in->eof);
-			stream_flush(GDKout);
 #endif
 			if (be->language == 'D' && in->eof == 0) {
 				return 0;
@@ -1101,9 +1096,6 @@ triggers the profile action. A better approach is to directly
 update the profile tables, without SQL intervention.
 Then the SQL profile table is just a view over a few basic bats.
 @c
-		stream_printf(GDKout, "#%s \n#[parse %d]", be->qry, be->Tparse);
-		stream_printf(GDKout, "[engine %d]", be->Texec);
-		stream_printf(GDKout, "[total %d]\n", tot);
 		if (be->qry)
 			GDKfree(be->qry);
 		be->qry = NULL;
