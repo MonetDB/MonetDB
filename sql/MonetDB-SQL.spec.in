@@ -137,7 +137,7 @@ rm -rf $RPM_BUILD_ROOT
 %if %{buildjava}
 %files java
 %defattr(-,monetdb,monetdb)
-%{prefix}/share/MonetDB/lib/MonetDB_JDBC.jar
+%{prefix}/share/MonetDB/lib/*.jar
 %{prefix}/share/sql/Tests/Test_*.class
 %endif
 
@@ -154,9 +154,11 @@ rm -rf $RPM_BUILD_ROOT
 
 %files devel
 %defattr(-,monetdb,monetdb) 
+%{prefix}/include/*.h
 %{prefix}/include/sql/*.h
 %{prefix}/include/sql/include/*.h
 %{prefix}/include/sql/storage/*.h
+%{prefix}/lib/sql/Tests/*
 %{prefix}/lib/pkgconfig/MonetDB-SQL.pc
 
 %if %{builddoc}

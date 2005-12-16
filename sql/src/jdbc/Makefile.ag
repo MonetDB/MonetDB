@@ -18,9 +18,11 @@ MTSAFE
 
 SUBDIRS = tests
 
-EXTRA_DIST = jdbcmanual.tex 
+EXTRA_DIST = jdbcmanual.tex build.xml build.properties
 EXTRA_DIST_DIR = nl/cwi/monetdb/jdbc \
-		 nl/cwi/monetdb/client
+		 nl/cwi/monetdb/client \
+		 nl/cwi/monetdb/mcl \
+		 nl/cwi/monetdb/xmldb
 
 ant_jar_jdbc = {
        DIR = datadir/MonetDB/lib

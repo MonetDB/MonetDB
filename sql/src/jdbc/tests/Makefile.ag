@@ -23,7 +23,8 @@ EXTRA_DIST = \
 		Test_Rtimedate.java \
 		Test_Sbatching.java \
 		Test_Rmetadata.java \
-		Test_Cmanycon.java
+		Test_Cmanycon.java \
+		build.xml build.properties
 
 ant_compile = {
 	DIR = pkgdatadir/Tests
