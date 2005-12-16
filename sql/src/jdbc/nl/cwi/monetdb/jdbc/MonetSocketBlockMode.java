@@ -283,6 +283,7 @@ final class MonetSocketBlockMode {
 	}
 
 	private int readPos = 0;
+	private boolean lastBlock = false;
 	/**
 	 * readLine reads one line terminated by a newline character and returns
 	 * it without the newline character. This operation can be blocking if there
@@ -305,12 +306,26 @@ final class MonetSocketBlockMode {
 			 * higher level MAPI protocol defines a prompt which is used
 			 * for synchronisation.  We simply fetch blocks here as soon
 			 * as they are needed to process them line-based.
+			 *
+			 * The user-flush is a legacy thing now, and we simulate it
+			 * to the levels above, by inserting it at the end of each
+			 * 'lastBlock'.
 			 */
 			int nl;
 			while ((nl = readBuffer.indexOf("\n", readPos)) == -1) {
 				// not found, fetch us some more data
 				// start reading a new block of data if appropriate
 				if (readState == 0) {
+					if (lastBlock) {
+						lastBlock = false;
+						// emit a fake prompt message
+						if (debug) logRd("generating prompt");
+
+						lineType = PROMPT1;
+
+						return("");	// we omit putting the prompt in here
+					}
+
 					// read next two bytes (short)
 					int size = fromMonetRaw.read(blklen);
 					if (size == -1) throw
@@ -319,23 +334,24 @@ final class MonetSocketBlockMode {
 						new AssertionError("Illegal start of block");
 
 					// Get the int-value and store it in the readState.
-					// We don't care about having the last block or not,
-					// the MAPI protocol knows when we should stop
-					// reading
+					// We store having the last block or not, for later
+					// to generate a prompt message.
 					if (bigEndian) {
 						readState = (short)(
 								(blklen[0] & 0xFF) << 7 |
 								(blklen[1] & 0xFF) >> 1
 							);
+						lastBlock = (blklen[1] & 0x1) == 1;
 					} else {
 						readState = (short)(
 								(blklen[0] & 0xFF) >> 1 |
 								(blklen[1] & 0xFF) << 7
 							);
+						lastBlock = (blklen[0] & 0x1) == 1;
 					}
 
 					if (debug) {
-						if ((blklen[bigEndian ? 1 : 0] & 1) == 1) {
+						if (lastBlock) {
 							logRd("final block: " + readState + " bytes");
 						} else {
 							logRd("new block: " + readState + " bytes");

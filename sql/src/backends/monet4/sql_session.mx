@@ -129,8 +129,9 @@ error(stream *out, char *str)
 		if (stream_write(out, str, strlen(str), 1) != 1 || stream_write(out, "\n", 1, 1) != 1)
 			 return -1;
 	}
-	if (stream_flush(out))
+	/*if (stream_flush(out))
 		return -1;
+	*/
 	return 0;
 }
 
@@ -433,7 +434,7 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int console)
 					}
 				}
 
-				if ( (/*!isa_block_stream(in->s) && */ stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) != 1) || stream_flush(out)) {
+				if ( (!isa_block_stream(in->s) && stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) != 1) || stream_flush(out)) {
 					go = FALSE;
 					break;
 				}
@@ -767,7 +768,7 @@ These lines should be eaten away into the prompt is encountered.
 
 	if (!schema) {
 		/* close the connection to the Monet server */
-		if (error(out, "!ERROR: Schema authorization error") == 0 && (/*!blocked && */ stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) >= 0))
+		if (error(out, "!ERROR: Schema authorization error") == 0 && (!blocked && stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) >= 0))
 			stream_flush(out);
 		res_tables_destroy(m->results);
 		mvc_destroy(m);
