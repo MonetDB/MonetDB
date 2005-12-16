@@ -214,8 +214,6 @@ scheduleClient(str command, bstream *fin, stream *fout)
 		return;
 	}
 	initClientPrg(c, "main");
-	if (!isAdministrator(c))
-		stream_printf(c->fdout, "%s\n", GDKgetenv("gdk_version"));
 
 	GDKfree(command);
 	if (MT_create_thread(&p, serveClient, (void *) c) < 0) {

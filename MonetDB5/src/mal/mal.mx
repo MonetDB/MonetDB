@@ -417,7 +417,6 @@ void mal_exit(Client cntxt){
 		(void) bstream_destroy(cntxt->fdin);
 	}
 	if( cntxt->fdout && cntxt->fdout != GDKstdout) {
-		(void) stream_flush(cntxt->fdout);
 		(void) stream_close(cntxt->fdout);
 		(void) stream_destroy(cntxt->fdout);
 	}

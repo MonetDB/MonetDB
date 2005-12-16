@@ -484,7 +484,6 @@ the proper IO descriptors.
 	if ( t==0) {
 		GDKerror("Failed to initialize client\n");
 		resetProfiler(c->fdout);
-		stream_flush(c->fdout);
 		assert(c->bak==NULL);
 		if( c->fdin){
 			/* missing protection against closing stdin stream */
@@ -493,7 +492,6 @@ the proper IO descriptors.
 			(void) bstream_destroy(c->fdin);
 		}
 		if( c->fdout && c->fdout != GDKstdout) {
-			(void) stream_flush(c->fdout); 
 			(void) stream_close(c->fdout);
 			(void) stream_destroy(c->fdout);
 		}
@@ -554,7 +552,6 @@ void freeClient(Client c)
 	if (c->father == NULL) { /* normal client */
 		if( c->fdout && c->fdout != GDKstdout){
 			resetProfiler(c->fdout);
-			(void) stream_flush(c->fdout); 
 			(void) stream_close(c->fdout);
 			(void) stream_destroy(c->fdout);
 		}
@@ -686,7 +683,6 @@ killClient(Client c)
 		GDKwarning("killClient:forcing client to stop ...\n");
 		/* the process may hang upon gaining access to the file descriptors */ 
 		c->mode = FINISHING;
-		(void) stream_flush(c->fdout);
 		resetProfiler(c->fdout);
 		(void) stream_close(c->fdout);
 		(void) stream_destroy(c->fdout);
@@ -822,7 +818,6 @@ to the system console.
 		stream_printf(c->sysmon,"#[%s]",c->user);
 		stream_printf(c->sysmon, @1);
 		stream_printf(c->sysmon,"\n");
-		stream_flush(c->sysmon);
 	}
 @-
 @c
@@ -878,7 +873,8 @@ The next statement block is to be read. Sent a prompt to warn
 the front-end to issue the request.
 @= sentPrompt
 	if(c->promptlength>=0) { 
-		stream_write(c->fdout,c->prompt,c->promptlength,1); 
+		if (!isa_block_stream(c->fdout))
+			stream_write(c->fdout,c->prompt,c->promptlength,1); 
 		stream_flush(c->fdout);
 	}
 @c

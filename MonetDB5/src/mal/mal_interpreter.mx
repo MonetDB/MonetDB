@@ -170,7 +170,6 @@ void showErrors(){
 	    stream_printf(cntxt->fdout,"%s",cntxt->errbuf);
 	    if( cntxt->errbuf[i-1]!='\n') 
 	        stream_printf(cntxt->fdout,"\n");
-	    stream_flush(cntxt->fdout);
 	    *cntxt->errbuf=0;
 	}
 }
@@ -280,7 +279,7 @@ pattern operators to deal with it.
 	}
 #ifdef STACKTRACE
 	stream_printf(GDKout,"Stack before loop\n");
-	printStack(GDKout,mb,stk); fflush(GDKout);
+	printStack(GDKout,mb,stk); 
 #endif
 
 	task.cntxt= cntxt; 
@@ -300,7 +299,7 @@ pattern operators to deal with it.
 	if(stk->cmd  && env && stk->cmd!='f') env->cmd = stk->cmd; 
 #ifdef STACKTRACE
 	stream_printf(GDKout,"Stack after loop\n");
-	printStack(GDKout,mb,stk); fflush(GDKout);
+	printStack(GDKout,mb,stk); 
 #endif
 	if( !stk->keepAlive && garbageControl(getInstrPtr(mb,0)) ){
 		if( env!= stk) 
@@ -342,7 +341,7 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 	if(env && stk->cmd!='f') env->cmd = stk->cmd;
 #ifdef STACKTRACE
 	stream_printf(GDKout,"Stack after loop\n");
-	printStack(GDKout,mb,stk); fflush(GDKout);
+	printStack(GDKout,mb,stk); 
 #endif
 	if( !stk->keepAlive && garbageControl(getInstrPtr(mb,0)) ){
 		if( env!= stk)

@@ -101,7 +101,6 @@ void echoInput(Client cntxt)
 		}
 
 		stream_printf(cntxt->fdout, "\n");
-		stream_flush(cntxt->fdout);
 	}
 }
 
