@@ -2364,6 +2364,7 @@ CMDxquery_server(Cntxt stk,
     char *xquery,  buf[100], *p=buf, *err = (char*) -1;
     int i, msec;
     Thread XQthread = THRget(THRgettid());
+    int blocked = 0;
 
     if (lt->cnt != 2)
         return handle_argerror(res, lt->cnt, 2);
@@ -2394,6 +2395,7 @@ CMDxquery_server(Cntxt stk,
     if (strncmp(buf + i - 8, ":blocked", 8) == 0) {
         in = block_stream(stream_rstream(in));
         out = block_stream(stream_wstream(out));
+        blocked = 1;
     }
     monetSetChannel(XQthread, in, out);
     err = xquery_client_init(ctx);
@@ -2401,7 +2403,7 @@ CMDxquery_server(Cntxt stk,
 
     while(1) {
         /* use the MAPI protocol to read as much xquery buffer as possible */
-        if (stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0)
+        if (!blocked && stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0)
             return(xquery_server_end(ctx, XQthread, "could not write prompt"));
         if (stream_flush(out))
             return(xquery_server_end(ctx, XQthread, "could not flush prompt"));
