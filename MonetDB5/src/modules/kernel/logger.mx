@@ -20,7 +20,7 @@
 @v 1.0
 @T
 @+ Logger
-In the philosophy of Monet, transaction management overhead should only
+In the philosophy of MonetDB, transaction management overhead should only
 be paid when necessary. Transaction management is for this purpose 
 implemented as a separate module and applications are required to
 obey the transaction policy, e.g. obtaining/releasing locks. 
@@ -42,8 +42,8 @@ The key decision to be made by the user is the location of the log file.
 Ideally, it should be stored in fail-safe environment, or at least
 the log and databases should be on separate disk columns.
 
-The current setup assumes that the log directory is a mounted file system. (?)
-This file system may reside on the hardware as the database server
+The current setup assumes that the log directory is a mounted file system. 
+This file system may reside on the same hardware as the database server
 and therefor the writes are done to the same disk, but could also 
 reside on an other system and then the changes are flushed through the network.  
 The logger works under the assumption that it is called to safeguard
@@ -95,12 +95,12 @@ comment "Log the inserts in the WAL (return success)"
 @h
 #ifndef _LOGGER_H_
 #define _LOGGER_H_
+#include "bat.h"
+#include "stream.h"
 
 #define LOG_OK 0
 #define LOG_ERR -1
 
-#include "bat.h"
-#include "stream.h"
 extern struct logger *logger_create(int debug, char *logdir, char *dbname, int version);
 
 extern void logger_destroy(struct logger *logger);
