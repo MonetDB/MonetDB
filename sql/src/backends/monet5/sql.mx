@@ -177,10 +177,17 @@ The alternative is to extend modules with an alias.
 The routine below are added to the calc module to
 ease code generation.
 @mal
+pattern calc.rotate_xor_hash(h:int, nbits:int, v:any_1) :int address MKEYrotate_xor_hash;
+command batcalc.rotate_xor_hash(h:bat[:oid,:int], nbits:int, b:bat[:oid,:any_1]) :bat[:oid,:int] address MKEYbulk_rotate_xor_hash;
 
-pattern calc.hash( v:any_1 ) :int 
-address hash_wrap 
-comment "calculate a hash value";
+pattern calc.hash( v:any ) :int address MKEYhash; 
+command calc.hash( v:chr ) :int address MKEYhash_chr; 
+command calc.hash( v:sht ) :int address MKEYhash_sht; 
+command calc.hash( v:int ) :int address MKEYhash_int; 
+command calc.hash( v:flt ) :int address MKEYhash_flt; 
+command calc.hash( v:dbl ) :int address MKEYhash_dbl; 
+command calc.hash( v:lng ) :int address MKEYhash_lng; 
+command calc.hash( v:str ) :int address MKEYhash_str; 
 
 command batcalc.hash( b:bat[:void,:any_1] ) :bat[:void,:int]
 address voidbathash_wrap 
