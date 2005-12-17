@@ -104,6 +104,7 @@ eval WHAT_PREFIX="\${${what}_PREFIX}"
 
 binpath=""
 libpath=""
+pytpath=""
 modpath=""
 mtest_modpath=""
 conf_opts=""
@@ -129,28 +130,10 @@ if [ ! "${WHAT_PREFIX}" ] ; then
 fi
 
 if [ "${COMP}" != "GNU"  -a  "${COMP}" != "ntv"  -a  "${os}${COMP}" != "LinuxPGI" ] ; then
+	COMP="GNU"
 	echo ''
 	echo 'COMP not set to either "GNU" or "ntv" (native) to select the desired compiler.'
-	echo 'Using COMP="GNU" (default).'
-	COMP="GNU"
-fi
-if [ "${BITS}" != "32"   -a  "${BITS}" != "64"  ] ; then
-	echo ''
-	echo 'BITS not set to either "32" or "64" to select the desired binary type.'
-	echo 'Using BITS="32" (default).'
-	BITS="32"
-fi
-if [ "${OIDS}" != "32"   -a  "${OIDS}" != "64"  ] ; then
-	echo ''
-	echo 'OIDS not set to either "32" or "64" to select the desired binary type.'
-	echo 'Using OIDS="'${BITS}'" (default).'
-	OIDS="${BITS}"
-fi
-if [ "${BITS}${OIDS}" == "3264" ] ; then
-	echo ''
-	echo 'Using 64-bit OIDS with 32-bit compilation is not possible.'
-	echo 'Using OIDS="'${BITS}'", instead.'
-	OIDS="${BITS}"
+	echo 'Using COMP="'${COMP}'" (default).'
 fi
 case "${LINK}" in
 d*)	LINK="d";;
@@ -162,6 +145,26 @@ s*)	LINK="s";;
 	LINK="d"
 	;;
 esac
+
+if [ "${BITS}" != "32"   -a  "${BITS}" != "64"  ] ; then
+	echo ''
+	echo 'BITS not set to either "32" or "64" to select the desired binary type.'
+	case "${os}-${hw}" in
+	Linux-*64|IRIX64-IP27|SunOS-sun4u)
+		BITS="64"
+		DFT="default";;
+	*)
+		case "${OIDS}" in
+		32|64)
+			BITS="${OIDS}"
+			DFT="=OIDS";;
+		*)
+			BITS="32"
+			DFT="default";;
+		esac
+	esac
+	echo 'Using BITS="'${BITS}'" ('${DFT}').'
+fi
 
 # exclude "illegal" combinations
 
@@ -179,6 +182,19 @@ if [ "${os}" = "Linux" ] ; then
 		echo 'Currently, we do not support 32-bit with RedHat/Fedora Linux on '"${hw}"'; hence, using BITS="64".'
 		BITS="64"
 	fi
+fi
+
+if [ "${OIDS}" != "32"   -a  "${OIDS}" != "64"  ] ; then
+	OIDS="${BITS}"
+	echo ''
+	echo 'OIDS not set to either "32" or "64" to select the desired binary type.'
+	echo 'Using OIDS="'${OIDS}'" (=BITS).'
+fi
+if [ "${BITS}${OIDS}" == "3264" ] ; then
+	echo ''
+	echo 'Using 64-bit OIDS with 32-bit compilation is not possible.'
+	echo 'Using OIDS="'${BITS}'", instead.'
+	OIDS="${BITS}"
 fi
 
 # set default compilers, configure options & paths
@@ -467,6 +483,10 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 			libpath="${MONETDB_PREFIX}/lib:${libpath}"
 		fi
 	fi
+  else
+	if [ "`type -p python`" ] ; then
+		pytpath="${WHAT_PREFIX}/`python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"")'`"
+	fi
 fi
 
 # remove trailing ':'
@@ -541,6 +561,22 @@ if [ "${libpath}" ] ; then
 		fi
 		echo " LIBPATH=${LIBPATH}"
 	fi
+fi
+if [ "${pytpath}" ] ; then
+	if [ "${PYTHONPATH}" ] ; then
+		# prepend new pytpath to existing PYTHONPATH, if PYTHONPATH doesn't contain pytpath, yet
+		case ":${PYTHONPATH}:" in
+		*:${pytpath}:*)
+			;;
+		*)
+			PYTHONPATH="${pytpath}:${PYTHONPATH}" ; export PYTHONPATH
+			;;
+		esac
+	  else
+		# set PYTHONPATH as pytpath
+		PYTHONPATH="${pytpath}" ; export PYTHONPATH
+	fi
+	echo " PYTHONPATH=${PYTHONPATH}"
 fi
 if [ "${modpath}" ] ; then
 	if [ "${MONETDB_MOD_PATH}" ] ; then
