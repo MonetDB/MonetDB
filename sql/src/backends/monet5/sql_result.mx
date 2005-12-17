@@ -804,6 +804,9 @@ mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d,
 	int ok = 1;
 	char *rsep = "\t]\n";
 
+#ifdef NDEBUG
+	(void) qtype; /* pacify compiler in case asserts are disabled */
+#endif
 	assert(qtype == Q_TABLE);
 	if (stream_write(s, "&1 0 1 1 1\n", 11, 1) == 1 &&
 	    /* fallback to default tuplecount (1) and id (0) */
@@ -855,6 +858,9 @@ mvc_export_affrows(mvc *m, stream *s, lng val)
 	 */
 	if (!s) return 0;
 	
+#ifdef NDEBUG
+	(void) m; /* pacify compiler in case asserts are disabled */
+#endif
 	assert(m->type == Q_UPDATE);
 	if (stream_write(s, "&2 ", 3, 1) != 1 || !mvc_send_lng(s, val) ||
 			stream_write(s, "\n", 1, 1) != 1)
