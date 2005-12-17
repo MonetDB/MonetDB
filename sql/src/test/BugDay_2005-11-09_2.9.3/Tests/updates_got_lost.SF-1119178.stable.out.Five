@@ -9,9 +9,11 @@ stdout of test 'updates_got_lost.SF-1119178` in directory 'src/test/BugDay_2005-
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-#Ready to accept connections on koala.ins.cwi.nl:48804
+
+printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 
@@ -67,6 +69,7 @@ Over..
 [ 6	]
 [ 10	]
 [ 7	]
+# 6 # querytype
 
 # 15:00:47 >  
 # 15:00:47 >  Done.
