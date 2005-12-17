@@ -146,7 +146,10 @@ The table mloop contains the PC of the corresponding iterator.
 str
 BGoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	InstrPtr *old=0, q,r, stmt[256];
-	int oldtop,oldsize, keep=0,i,j,k,m=0;
+	int oldtop, keep=0,i,j,k,m=0;
+#ifndef NDEBUG
+	int oldsize;
+#endif
 	int iter=0,index[256]; /* active nesting level <=mtop*/
 	int  mtop=0, mvar[256], mstatus[256];
 	int size,match,actions=0;
@@ -164,7 +167,9 @@ BGoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	setLifespan(mb); /* to detect future variable use */
 	old = mb->stmt;
 	oldtop= mb->stop;
+#ifndef NDEBUG
 	oldsize= mb->ssize;
+#endif
 	size = (mb->stop *1.2 < mb->ssize)? mb->ssize: mb->stop *1.2;
 	mb->stmt = (InstrPtr *) GDKmalloc(size  * sizeof(InstrPtr));
 	memset((char*)mb->stmt, 0, size * sizeof(InstrPtr));
