@@ -85,7 +85,7 @@ scripts_mal = {
 	SOURCES = calc.mx bat.mx algebra.mx status.mx unix.mx \
 		mapi.mx mmath.mx lock.mx sema.mx alarm.mx batstr.mx \
 		batcolor.mx batcalc.mx batmath.mx group.mx aggrX3.mx array.mx \
-		counters.mx logger.mx pqueue.mx
+		counters.mx logger.mx pqueue.mx mkey.mx
 }
 
 

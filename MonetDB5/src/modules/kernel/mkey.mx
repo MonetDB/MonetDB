@@ -25,11 +25,9 @@ command rotate(v:int, nbits:int) :int
 address MKEYrotate
 comment "left-rotate an int by nbits";
 
-command hash(v:any):int 
+pattern hash(v:any):int 
 address MKEYhash 
 comment "compute a hash int number from any value";
-command hash(v:bit):int 
-address MKEYhash_chr; 
 command hash(v:chr):int 
 address MKEYhash_chr; 
 command hash(v:sht):int 
@@ -44,6 +42,10 @@ command hash(v:lng):int
 address MKEYhash_lng; 
 command hash(v:str):int 
 address MKEYhash_str; 
+
+pattern bulk_rotate_xor_hash(h:int, nbits:int, v:any) :int 
+address MKEYrotate_xor_hash
+comment "post: [:xor=]([:rotate=](h, nbits), [hash](b))";
 
 command bulk_rotate_xor_hash(h:bat[:oid,:int], nbits:int,b:bat[:oid,:any_1])
 	:bat[:oid,:int] 
@@ -168,7 +170,6 @@ could be replaced by partitioned hash-join with radix-cluster/decluster.
 
 mal_export str  MKEYrotate(int *ret, int *v, int *nbits);
 mal_export str  MKEYhash(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str  MKEYhash_bit(int *ret, chr *v);
 mal_export str  MKEYhash_chr(int *ret, chr *v);
 mal_export str  MKEYhash_sht(int *ret, sht *v);
 mal_export str  MKEYhash_int(int *ret, int *v);
@@ -176,6 +177,7 @@ mal_export str  MKEYhash_flt(int *ret, flt *v);
 mal_export str  MKEYhash_dbl(int *ret, dbl *v);
 mal_export str  MKEYhash_lng(int *ret, lng *v);
 mal_export str  MKEYhash_str(int *ret, str *v);
+mal_export str  MKEYrotate_xor_hash(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str  MKEYbulk_rotate_xor_hash(int *ret, int *hid, int *nbits,int *bid);
 
 #endif /* _MKEY_H */
@@ -274,6 +276,42 @@ CMDhash(int *res, ptr val, int tpe)
 	}
 	*res = code;
 	return GDK_SUCCEED;
+}
+
+str
+MKEYrotate_xor_hash(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int *dst = (int*) getArgReference(stk,p,0);
+	int *h = (int*) getArgReference(stk,p,1);
+	int *rotate = (int*) getArgReference(stk,p,2);
+	int tpe = getArgType(mb,p,3);
+	ptr *pval = (ptr) getArgReference(stk,p,3);
+	int lbit = *rotate;
+	int rbit = 32 - *rotate;
+	int mask = (1 << lbit) - 1;
+
+	if (tpe == TYPE_chr) {
+		chr *cur = (chr*) pval;
+		*dst = GDK_ROTATE(*h, lbit, rbit, mask) ^ *cur;
+	} else if (tpe == TYPE_sht) {
+		sht *cur = (sht*) pval;
+		*dst = GDK_ROTATE(*h, lbit, rbit, mask) ^ *cur;
+	} else if (tpe == TYPE_int || tpe == TYPE_flt) {
+		int *cur = (int*) pval;
+		*dst = GDK_ROTATE(*h, lbit, rbit, mask) ^ *cur;
+	} else if (tpe == TYPE_lng || tpe == TYPE_dbl) {
+		lng *cur = (lng*) pval;
+		int val = cur[0] ^ cur[1];
+		*dst = GDK_ROTATE(*h, lbit, rbit, mask) ^ val;
+	} else if (tpe == TYPE_str) {	/* TYPE_str */
+		str cur = *(str*) pval;
+		hash_t val = strHash(cur);
+		*dst = GDK_ROTATE(*h, lbit, rbit, mask) ^ val;
+	} else {
+		hash_t (*hash) (ptr) = BATatoms[tpe].atomHash;
+		*dst = GDK_ROTATE(*h, lbit, rbit, mask) ^ (*hash) (pval);
+	}
+	return MAL_SUCCEED;
 }
 
 int
@@ -375,7 +413,7 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 The remainder contains the wrapping needed for M5
 @c
 str  
-MKEYhash_bit(int *ret, chr *v)
+MKEYhash_chr(int *ret, chr *v)
 {
 	CMDhash_chr(ret,v);
 	return MAL_SUCCEED;
