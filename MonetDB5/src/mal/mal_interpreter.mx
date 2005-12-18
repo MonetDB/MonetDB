@@ -269,7 +269,7 @@ the variable accepts any type, then we leave it up to the
 pattern operators to deal with it.
 @c
 	for(i= (env && mbcaller)?pci->argc:1; i< mb->vtop; i++)
-	if( isConstant(mb,i) ){
+	if( isConstant(mb,i) > 0 ){
 	    lhs = &stk->stk[i];
 	    rhs = &getVarConstant(mb,i);
 	    VALcopy2(lhs,rhs);
@@ -395,7 +395,7 @@ all arguments and return values.
 			stk->up = 0;
 			/* initialize the stack */
 			for(i= p->argc; i< mb->vtop; i++)
-			if( isConstant(mb,i) ){
+			if( isConstant(mb,i) > 0){
 				lhs = &stk->stk[i];
 				rhs = &getVarConstant(mb,i);
 				VALcopy2(lhs,rhs);

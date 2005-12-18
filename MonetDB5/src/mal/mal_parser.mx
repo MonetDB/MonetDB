@@ -1592,6 +1592,9 @@ the information.
 				cst.len = strlen(start);
 				cst.val.sval= GDKstrdup(start);
 				getArg(curInstr,0)= defConstant(curBlk, TYPE_str,&cst);
+				/* mark the constant for not being copied to the stack */
+				isConstant(curBlk,getArg(curInstr,0)) = 
+						-isConstant(curBlk,getArg(curInstr,0));
 				pushInstruction(curBlk,curInstr);
 			}
 			echoInput(cntxt);

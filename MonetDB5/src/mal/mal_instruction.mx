@@ -1273,7 +1273,7 @@ newVariable(MalBlkPtr mb, str name, malType type)
 	mb->var[n]->props = NULL;
 
 	setVarType(mb, n, type);
-	isConstant(mb, n) = FALSE;
+	isConstant(mb, n) = 0;
 	setVarCleanup(mb, n) = FALSE;
 	getVar(mb, n)->isudftype = 0;
 	getVar(mb, n)->inout = 0;
@@ -1321,7 +1321,7 @@ newTmpVariable(MalBlkPtr mb, malType type)
 /* already captured by memset
     mb->var[n]->name = 0;
     mb->var[n]->props = NULL;
-    isConstant(mb,n) = FALSE;
+    isConstant(mb,n) = 0;
     setVarCleanup(mb,n) = FALSE;
 	getVar(mb,n)->isudftype= 0;
 	getVar(mb,n)->inout= 0;
@@ -1790,7 +1790,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 				return i;
 	}
 	k = newTmpVariable(mb, type);
-	isConstant(mb, k) = TRUE;
+	isConstant(mb, k) = 1;
 	setFixed(mb, k);
 	vr = &getVarConstant(mb, k);
 	memcpy((char *) vr, cst, sizeof(ValRecord));
