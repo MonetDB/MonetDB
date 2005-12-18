@@ -64,7 +64,7 @@ lrefcount =1
 second refcount =1
 lrefcount =1
 after reverse assignment refcount =1
-lrefcount =1
+lrefcount =2
 
 # 08:01:02 >  
 # 08:01:02 >  Done.

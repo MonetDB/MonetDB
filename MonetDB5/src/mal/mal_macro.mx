@@ -219,8 +219,6 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 			nv[n] = cpyConstant(mb,getVar(mc,n));
 		} else
 			nv[n] = newTmpVariable(mb, getVarType(mc, n));
-		isVarUsed(mb, nv[n]) = isVarUsed(mc, n);
-		isVarInitialized(mb, nv[n]) = isVarInitialized(mc, n);
 		k++;
 	}
 	for (n = 1; n < p->argc; n++)
@@ -263,8 +261,6 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 			} else {
 				getArg(ns[k], n) = getArg(mb->stmt[pc], n);
 			}
-			isVarUsed(mb, getArg(ns[k], n)) = 1;
-			isVarInitialized(mb, getArg(ns[k], n)) = 1;
 		}
 #ifdef DEBUG_MAL_MACRO
 		printf("\n");

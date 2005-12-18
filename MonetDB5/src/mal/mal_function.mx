@@ -314,7 +314,6 @@ void chkFlow(MalBlkPtr mb)
 			    } else
 			    if(ps->typechk == TYPE_RESOLVED)
 			    for(i=0;i<p->retc; i++){
-	                setVarUsed(mb,getArg(p,i),TRUE);
 	                if( getArgType(mb,ps,i) != getArgType(mb,p,i) ){
 	                    GDKerror("%s type mismatch at type %d\n",
 	                        (p->barrier==RETURNsymbol?"RETURN":"YIELD"),
@@ -330,10 +329,6 @@ void chkFlow(MalBlkPtr mb)
 			lastInstruction = lastInstruction < mb->stop?i:lastInstruction;
 			break;
 	    case RAISEsymbol:
-	        {   int i;
-			    for(i=0;i<p->retc; i++)
-	                setVarUsed(mb,getArg(p,i),TRUE);
-	        }
 	        break;
 		default:
 			if( isaSignature(p) ){
@@ -384,10 +379,6 @@ and marking all non-temporary variables as being (potentially) used.
 	    for(i=0;i<3; i++){
 			getInstrPtr(mb,i)->gc = 0;
 	    }
-		for(i=0; i<mb->vtop; i++)
-		if( !isTmpVar(mb,i))
-			setVarUsed(mb,i, TRUE);
-
 	}
 	if( mb->errors == 0 )
 		mb->flowfixed = fixed; /* we might not have to come back here */

@@ -223,6 +223,9 @@ In all other cases the type should apply to all remaining arguments.
 @c
 		if( formal == actual)
 			continue;
+		if( isPolyType(formal) && getVar(mb,getArg(p,i))->props){
+			/* printf("perform union type check\n");*/
+		}
 		if( updateTypeMap(formal, actual, polytype)){
 			unmatched= i; 
 		   break;
@@ -694,7 +697,6 @@ using the target type.
 			cst.val.oval= void_nil;
 			
 			p->argv[i]= defConstant(mb, (isaBatType(lhs)?TYPE_bat:lhs), &cst);
-			setVarUsed(mb,p->argv[i],TRUE);
 		} 
 
 		if( !isFixed(mb,getArg(p,k))) {

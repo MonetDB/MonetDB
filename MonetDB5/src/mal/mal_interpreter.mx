@@ -269,7 +269,7 @@ the variable accepts any type, then we leave it up to the
 pattern operators to deal with it.
 @c
 	for(i= (env && mbcaller)?pci->argc:1; i< mb->vtop; i++)
-	if( isConstant(mb,i) && isVarUsed(mb,i) ){
+	if( isConstant(mb,i) ){
 	    lhs = &stk->stk[i];
 	    rhs = &getVarConstant(mb,i);
 	    VALcopy2(lhs,rhs);
@@ -395,7 +395,7 @@ all arguments and return values.
 			stk->up = 0;
 			/* initialize the stack */
 			for(i= p->argc; i< mb->vtop; i++)
-			if( isConstant(mb,i) && isVarUsed(mb,i) ){
+			if( isConstant(mb,i) ){
 				lhs = &stk->stk[i];
 				rhs = &getVarConstant(mb,i);
 				VALcopy2(lhs,rhs);
@@ -803,9 +803,6 @@ the bind(namespace, batname, mode) operation. [todo]
 			if( backup[i] ){
 				BBPdecref(backup[i],TRUE);
 			} 
- 			if(!isVarUsed(mb,getArg(pci,i)) ){
-				garbageElement(&stk->stk[getArg(pci,i)]);
-			}
 		} else 
 		if( stk->stk[getArg(pci,i)].vtype == TYPE_str){
 			int a= getArg(pci,i);
@@ -814,9 +811,6 @@ the bind(namespace, batname, mode) operation. [todo]
 					GDKfree(sbackup[i]);
 				backup[i]=0;
 			} 
- 			if(!isVarUsed(mb,a) ){
-				garbageElement(&stk->stk[a]);
-			}
 			if( stk->stk[a].val.sval )
 				stk->stk[a].len= strlen(stk->stk[a].val.sval);
 			else stk->stk[a].len = 0;

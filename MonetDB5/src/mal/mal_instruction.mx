@@ -325,8 +325,6 @@ typedef struct VARRECORD {
 	int gdktype;		/* for backend */
 	bit isaconstant;	/* value cannot change */
 	bit isatypevar;		/* denotes a type variable */
-	bit issetonce;		/* used once as destination */
-	bit isused;		/* for stack copying scope */
 	bit fixtype;		/* the type has been fixed */
 	bit isudftype;		/* type defined in program */
 	bit cleanup;		/* remove upon function return */
@@ -437,9 +435,6 @@ for separate name space management.
 #define isConstant(M,I) ((M)->var[I]->isaconstant)
 #define isTypeVar(M,I)  ((M)->var[I]->isatypevar)
 #define isTmpVar(M,I)   ((M)->var[I]->tmpindex)
-#define isVarUsed(M,I)      ((M)->var[I]->isused)
-#define setVarUsed(M,I,X)      ((M)->var[I]->isused)=X
-#define isVarInitialized(M,I)   ((M)->var[I]->issetonce)
 #define getVarScope(M,I)   ((M)->var[I]->scope)
 #define getVarProperties(M,I)   ((M)->var[I]->props)
 #define isInOutArgument(M,I)   ((M)->var[I]->inout)
@@ -504,6 +499,7 @@ mal_export int newTmpVariable(MalBlkPtr mb, malType type);
 mal_export int newTmpSink(MalBlkPtr mb, malType type);
 mal_export int newTypeVariable(MalBlkPtr mb, malType type);
 mal_export void delVariable(MalBlkPtr mb, int varid);
+mal_export int isVarUsed(MalBlkPtr mb, int varid);
 mal_export void freeVariable(MalBlkPtr mb, int varid);
 mal_export void clearVariable(MalBlkPtr mb, int varid);
 mal_export int cpyConstant(MalBlkPtr mb, VarPtr vr);
@@ -516,7 +512,6 @@ mal_export InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid);
 mal_export InstrPtr setArgument(MalBlkPtr mb, InstrPtr p, int idx, int varid);
 mal_export InstrPtr pushReturn(MalBlkPtr mb, InstrPtr p, int varid);
 mal_export InstrPtr pushArgumentId(MalBlkPtr mb, InstrPtr p, str name);
-mal_export void setVarInitialized(MalBlkPtr mb, int varid);
 mal_export void delArgument(InstrPtr p, int varid);
 mal_export void setVarType(MalBlkPtr mb, int i, int tpe);
 mal_export void setArgType(MalBlkPtr mb, InstrPtr p, int i, int tpe);
@@ -1280,8 +1275,6 @@ newVariable(MalBlkPtr mb, str name, malType type)
 	setVarType(mb, n, type);
 	isConstant(mb, n) = FALSE;
 	setVarCleanup(mb, n) = FALSE;
-	setVarUsed(mb, n, FALSE);
-	isVarInitialized(mb, n) = FALSE;
 	getVar(mb, n)->isudftype = 0;
 	getVar(mb, n)->inout = 0;
 	mb->vtop++;
@@ -1330,8 +1323,6 @@ newTmpVariable(MalBlkPtr mb, malType type)
     mb->var[n]->props = NULL;
     isConstant(mb,n) = FALSE;
     setVarCleanup(mb,n) = FALSE;
-    setVarUsed(mb,n,FALSE);
-    isVarInitialized(mb,n) = FALSE;
 	getVar(mb,n)->isudftype= 0;
 	getVar(mb,n)->inout= 0;
 */
@@ -1365,6 +1356,22 @@ newTypeVariable(MalBlkPtr mb, malType type)
 	return n;
 }
 
+int
+isVarUsed(MalBlkPtr mb, int varid)
+{
+	int i,j;
+	InstrPtr p;
+
+	for( i=1; i<mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		for( j=p->retc; j<p->argc; j++)
+			if( getArg(p,j) == varid) return TRUE;
+		if( p->barrier )
+			for( j=0; j<p->retc; j++)
+				if( getArg(p,j) == varid) return TRUE;
+	}
+	return FALSE;
+}
 void
 delVariable(MalBlkPtr mb, int varid)
 {
@@ -1392,8 +1399,6 @@ copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v)
 	w->isaconstant = v->isaconstant;
 	w->isatypevar = v->isatypevar;
 	w->tmpindex = v->tmpindex;
-	w->isused = v->isused;
-	w->issetonce = v->issetonce;
 	w->depth = v->depth;
 	w->scope = v->scope;
 
@@ -1451,8 +1456,6 @@ clearVariable(MalBlkPtr mb, int varid)
 	v->isaconstant = 0;
 	v->isatypevar = 0;
 	v->tmpindex = 0;
-	v->isused = 0;
-	v->issetonce = 0;
 	v->depth = 0;
 	v->scope = 0;
 
@@ -1789,8 +1792,6 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 	k = newTmpVariable(mb, type);
 	isConstant(mb, k) = TRUE;
 	setFixed(mb, k);
-	setVarUsed(mb, k, FALSE);
-	isVarInitialized(mb, k) = FALSE;
 	vr = &getVarConstant(mb, k);
 	memcpy((char *) vr, cst, sizeof(ValRecord));
 	return k;
@@ -1820,7 +1821,6 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 		GDKfree(p);
 		p = pn;
 	}
-	setVarUsed(mb, varid, TRUE);
 	return p;
 }
 
@@ -1836,24 +1836,14 @@ setArgument(MalBlkPtr mb, InstrPtr p, int idx, int varid)
 	return p;
 }
 
-void
-setVarInitialized(MalBlkPtr mb, int varid)
-{
-	isVarInitialized(mb, varid) = TRUE;
-}
-
 InstrPtr
 pushReturn(MalBlkPtr mb, InstrPtr p, int varid)
 {
 	if (p->argv[p->retc - 1] == -1) {
 		p->argv[p->retc - 1] = varid;
-		setVarUsed(mb, varid, TRUE);
-		setVarInitialized(mb, varid);
 		return p;
 	}
 	p = pushArgument(mb, p, varid);
-	setVarUsed(mb, varid, TRUE);
-	setVarInitialized(mb, varid);
 	p->retc++;
 	return p;
 }
@@ -2357,7 +2347,13 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 	case ASSIGNsymbol:
 		if (p->argc <= 1 && functionId(p) == NULL) {
 			sprintf(t, "%s%s", nme, pstring);
-		} else if (!getVarTmp(mb, getDestVar(p)) || isVarUsed(mb, getDestVar(p))) {
+		} else {
+			for (i = 0; i < p->retc; i++) 
+				if( !getVarTmp(mb, getArg(p,i)) ||
+					isVarUsed(mb, getArg(p,i)) ) 	break;
+
+			if( i == p->retc) goto nolhs; 
+
 			/* display multi-assignment */
 			if (p->retc > 1)
 				*t++ = '(';
@@ -2390,6 +2386,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 				t += 3;
 			}
 			*t = 0;
+		nolhs:;
 		}
 		break;
 	case ENDsymbol:
@@ -2452,7 +2449,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 			advance(t);
 		} else {
 			if (isTmpVar(mb, getArg(p, i))) {
-				if (isVarInitialized(mb, getArg(p, i)))
+				if( ! isTypeVar(mb,getArg(p,i)) )
 					sprintf(t, "%c%d", TMPMARKER, getVarTmp(mb, getArg(p, i)));
 				advance(t);
 			} else
