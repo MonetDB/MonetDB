@@ -68,7 +68,7 @@ be inspected with @code{monetdb --log}
 
 @node Server Configuration , Checkpoint and Recovery, Start and Stop the Server, Download and Installation
 @subsection Server Configuration
-The MonetDB environment settings are collected in a configuration file,
+The MonetDB environment setting is collected in a configuration file,
 which is used by server-side applications, such as @code{monetb},
 @code{mserver}, and @code{mguardian}.
 A default version is installed in the database store upon its creation.

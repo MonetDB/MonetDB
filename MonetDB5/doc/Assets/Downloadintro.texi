@@ -24,7 +24,7 @@ This chapter provides background on the following topics:
 @menu
 * Linux Installation ::
 * Windows Installation ::
-* Nightly Builds ::
+* Daily Builds ::
 @end menu
 * Start and Stop the Server:: 
 @menu

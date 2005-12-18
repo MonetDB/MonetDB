@@ -43,15 +43,16 @@ and rely on each other.
 
 @node Linux Installation, Windows Installation, Source Distribution, Download and Installation
 @subsection Linux Installation
-Describe how to install and compile the Linux version
 
-@node Windows Installation, Nightly Builds, Linux Installation, Download and Installation
+@include Assets/LinuxInstall.texi
+
+@node Windows Installation, Daily Builds, Linux Installation, Download and Installation
 @subsection Windows Installation
 
-Describe how to install and compile the Windows version
+@include Assets/WindowsInstall.texi
 
-@node Nightly Builds, Start and Stop the Server, Windows Installation, Download and Installation
-@subsection Nightly Builds
+@node Daily Builds, Start and Stop the Server, Windows Installation, Download and Installation
+@subsection Daily Builds
 Next to functionality and performance, stability and portability are first 
 class goals of the MonetDB project. Pursuing these goals requires to 
 constantly monitor stability and portability of the evolving MonetDB code base.
@@ -70,7 +71,7 @@ The @url{http://monetdb.cwi.nl/Development/TestWeb/index.html,TestWeb}
 provides access to the test web-site
 that summarizes the results of the Automated Testing activities on various 
 @url{http://monetdb.cwi.nl/Development/TestWeb/Platforms/index.html,platforms}.
-It is a good starting point before picking up a nightly build version.
+It is a good starting point before picking up a daily build version.
 
 Two versions of MonetDB are tested daily on all available platforms:
 @itemize
@@ -112,7 +113,7 @@ creates a web interface that allows convenient access to the differences
 encountered during testing. Each developer is supposed to run "Mtest" 
 (respectively "make check") on his/her favorite development platform and 
 check the results before checking in her/his changes. 
-During the automatic nightly tests, "make check" and "Mtest" are run on all 
+During the automatic daily tests, "make check" and "Mtest" are run on all 
 testing platforms and the TestWeb is generated to provide convenient 
 access to the results.
 
