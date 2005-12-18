@@ -63,8 +63,16 @@ Last updated: @value{UPDATED}
 @menu
 * Software Versions::
 * Standard Distribution::
-* Source Development Distribution::
+* Source Distribution::
+@menu
+* Linux Installation ::
+* Windows Installation ::
+@end menu
 * Start and Stop the Server::
+@menu
+* Server Configuration ::
+* Checkpoint and Recovery ::
+@end menu
 @end menu
 
 * MonetDB Overview ::
@@ -222,13 +230,13 @@ Last updated: @value{UPDATED}
 @node Download and Installation, Software Versions, Additional Resources, Top
 @include Assets/Downloadintro.texi
 
-@node Source Development Distribution, Start and Stop the Server,Standard Distribution, Download and Installation
+@node Source Distribution, Linux Installation, Standard Distribution, Download and Installation
 @include Assets/Setup.texi
 
-@node Start and Stop the Server , MonetDB Overview ,Source Development Distribution, Download and Installation
+@node Start and Stop the Server, Server Configuration ,Nightly Builds, Download and Installation
 @include Assets/StartStop.texi
 
-@node MonetDB Overview, Design considerations, Start and Stop the Server, Top
+@node MonetDB Overview, Design considerations, Checkpoint and Recovery, Top
 @include mal.bdy.texi
 
 @node Session scenarios , Scenario management , Backward compatibility, MonetDB Overview

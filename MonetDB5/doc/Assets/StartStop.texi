@@ -13,10 +13,10 @@ It should respond with something like
 @verbatim
 Usage: monetdb [command] [options] [script]
 Primary command:
+    --status        Show the server status  [default]
     --start         Server(s) are started in the dbfarm
     --shutdown      Server(s) are gracefully stopped
-    --status        Show the server status 
-    --checkpoint    Create a database checkpoint
+    --databases     Show the known databases
     --log           Show the server management log
 
 Secondary options:
@@ -39,25 +39,90 @@ to the location of the MonetDB data store does not exists, or the
 user has lack of file system permissions to create new directories/files
 in the location specified.
 
-To start the MonetDB server for the default database simply type
+To start a server for a database simpy type
 @example
-> monetdb --dbname=voc
+> monetdb --start --dbname=voc
 @end example
 It responds with a message that this action 
 was successful, or an error message explains the problems encountered.
 The server is run as a daemon process and you need a 
 MonetDB client program to connect to it.
-More details on the server calling and configuration parameters are
+More details on the server configuration parameters are
 given in @ref{Architecture overview}.
 
 At any time you can inspect the status of the (running) servers
-using the command option @code{--status}.
+using the default command option @code{--status}.
 @example
 >monetdb --status
-DBNAME  PID     GUARD   STARTED                         STATUS
-voc     25679   7,25841 Sun Dec 11 13:44:06 2005
+DBNAME  SERVER  GUARD   DELAY   STARTED
+voc     21488   21502   12      Sun Dec 18 09:05:36 2005
 @end example
-A particular server kan be put to sleep using the @code{--stop}
-option.  
-All actions of monetdb are logged for post analysis.
+It tells you when the server was started, the identity of the
+process looking after it, and the delay between successive
+checks.
+A server kan be put to sleep using the command
+@code{monetdb --stop --dbname=<name>}.  
+Ommission of a database name stops all running servers.
+The actions of monetdb are logged for post analysis, which can
+be inspected with @code{monetdb --log}
 
+@node Server Configuration , Checkpoint and Recovery, Start and Stop the Server, Download and Installation
+@subsection Server Configuration
+The MonetDB environment settings are collected in a configuration file,
+which is used by server-side applications, such as @code{monetb},
+@code{mserver}, and @code{mguardian}.
+A default version is installed in the database store upon its creation.
+using the command @code{monetdb}.
+
+Below we illustrate the most important 
+components found in a configuration file.
+@itemize 
+@item prefix=/ufs/myhome/monet5/Linux
+@item exec_prefix=$@verb{ { }prefix@verb{ } }
+@item dbfarm=$@verb{ { }prefix@verb{ } }/var/MonetDB5/dbfarm	
+@item dbname=demo
+@item version=4.99.19
+@item welcome=yes
+@item embedded=no
+@item gdk_debug=0	# to control level of debugging
+@item monet_mod_path=$@verb{ { }exec_prefix@verb{ } }/lib/MonetDB5
+@item delay=11		#waiting between pinging the server 
+@end itemize
+The @code{prefix} and @code{exec_prefix} describe the location where
+MonetDB has been installed.
+Each database is stored as a subdirectory of @code{dbfarm}.
+Use this value to change the default location of all your databases.
+A MonetDB server can only handle one database at a time.  
+You can specify the name of the default database to use.
+Note that you can use a different database using a command line
+option of @code{monetdb}.
+The kernel can be used in embedded situations (See pxref())
+
+The front-ends have their own collection of control parameters.
+@multitable @columnfractions 0.2 0.7
+@item mal_init=$@verb{ { }prefix@verb{ } }/lib/MonetDB5/mal_init.mal
+@item mal_debug = yes     @tab # debugging the MAL component
+@item mal_details = 14    @tab # instruction listing details
+@item mal_listing = 15    @tab # echoing the input
+@item sql_prompt=sql>
+@item sql_port=45123
+@tab # default port to address an Mserver for an SQL session
+@item sql_debug=0
+@tab # The SQL debug level (should be disabled for normal use)
+@item sql_logdir=$@verb{ { }prefix@verb{ } }/var/MonetDB5/dblogs 
+@tab # Place to store SQL transaction logs
+@item xquery_port=45789
+@tab # default port to address an Mserver for an XQuery session
+@item pf_httpd_port=8080
+@tab default port to address the HTTP server for pathfinder
+@item xquery_output=dm
+@tab # output mode "dm" = pretty printed,
+@item @tab            # "xml" = enforce XML with enclosing <XQueryResult> tags
+@item xquery_cacheMB=100
+@tab # limit the document cache on disk to 100MB
+@end multitable
+
+@node Checkpoint and Recovery, MonetDB Overview, Server Configuration, Download and Installation
+
+@subsection Checkpoint and Recovery
+Describe how to easily get a checkpoint

@@ -58,12 +58,12 @@ and tedious. It requires building experiences from small toy examples
 towards large business critical application.
 The MonetDB reference manual is not designed for this purpose,
 but in combination with the abundance of tutorial articles on SQL-based
-systems and the examples given here,
+systems,
 it should be possible to quickly create your first 
 working MonetDB/SQL application.
 
 The bulk of the MonetDB reference manual deals with the techniques
-available in the back-end for the expert user and researcher.
+deployed in the back-end for the expert user and researcher.
 Judicious use of the programming interfaces and database kernel modules for
 domain specific tasks lead to high-performance solutions. 
 The grand challenge for the MonetDB development team
@@ -88,7 +88,7 @@ direction for additional information.
 
 First time users of MonetDB should read @ref{Download
 and Installation} and @ref{SQL}. It prepares the ground to develop
-applications using the SQL database language inter-galactica.
+applications.
 Advanced topics for application builders are covered in @ref{User
 Interfaces}.
 
