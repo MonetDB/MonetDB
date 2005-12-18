@@ -39,6 +39,7 @@ usage: mserver [options] [script]
     --config=<config_file>
     --debug=<number>          trace server actions[0]
     --daemon=yes|no           run in background [no]
+    --delay=<number>          delay between mguardian tests [300]
     --set <option>=<value>    set environment value
     --help                    this list of options
 @end verbatim
@@ -53,10 +54,6 @@ The server options have the following meaning:
         execute the statement first.
 @end itemize
 
-The calling arguments are saved in a file '.mserver.args'
-after they have been parsed. It enables the user or deamon
-shell script to quickly restart a failed server with the previously
-known settings.
 @{
 @+ Implementation
 @h
@@ -128,6 +125,7 @@ usage2(char *prog)
 	fprintf(stderr, "    --dbfarm=<directory> \n");
 	fprintf(stderr, "    --dbinit=<stmt>           Server prepare statement\n");
 	fprintf(stderr, "    --config=<config_file> \n");
+	fprintf(stderr, "    --delay=<number>          cycle delay [300]\n");
 	fprintf(stderr, "    --debug=<number>          trace server actions[0]\n");
 	fprintf(stderr, "    --daemon=yes|no           run in background [no]\n");
 	fprintf(stderr, "    --set <option>=<value>    set environment value\n");
@@ -271,46 +269,11 @@ monet_options.mx.in
 	/* you don;t need the commandline arguments anymore */
 	mo_free_options(set, setlen);
 }
-@-
-To enable restart we have to save the arguments and read
-it back again upon need. The restart option can only be
-applied in the target directory, because decisions take
-place before the server is initialized completely.
-@c
-void
-save_arguments(int argc, char **argv)
-{
-	int i;
-	FILE *fd;
-	fd = fopen(".mserver.args","w");
-	if( fd == NULL)
-		return;
-	for( i=0; i < argc; i++)
-	if( strncmp(argv[i],"--restart",9) ) /* protect yourself */
-		fprintf(fd,"%s\n",argv[i]);
-}
-void
-load_arguments(int *argc, char **argv)
-{
-	int i=0;
-	FILE *fd;
-	char buf[BUFSIZ];
-
-	fd = fopen(".mserver.args","r");
-	if( fd == NULL)
-		return;
-	while( fgets(buf,BUFSIZ,fd) != NULL && i<32 && strlen(buf) > 1){
-		buf[strlen(buf)-1]= 0;
-		argv[i]= GDKstrdup(buf);
-		i++;
-	}
-	*argc = i;
-}
 
 int
 main(int argc, char **argv)
 {
-	char *prog = *argv, **av= argv, *alternative[32]={0};
+	char *prog = *argv, **av= argv;
 	opt *set = NULL;
 	int i, ac=argc, debug = 0, setlen = 0, listing = 0;
 	str dbinit = NULL;
@@ -322,9 +285,9 @@ main(int argc, char **argv)
 		{"dbinit", 1, 0, 0},
 		{"daemon", 1, 0, 0},
 		{"debug", 2, 0, 'd'},
+		{"delay", 1, 0, 0},
 		{"help", 2, 0, 'h'},
 		{"help", 0, 0, '?'},
-		{"restart", 0, 0, 'r'},
 		{"set", 1, 0, 's'},
 		{"trace", 0, 0, 't'},
 		{0, 0, 0, 0}
@@ -401,6 +364,10 @@ faster system start.
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbname", optarg);
 				break;
 			}
+			if (strcmp(long_options[option_index].name, "delay") == 0) {
+				setlen = mo_add_option(&set, setlen, opt_cmdline, "delay", optarg);
+				break;
+			}
 			if (strcmp(long_options[option_index].name, "dbfarm") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbfarm", optarg);
 				break;
@@ -426,13 +393,6 @@ faster system start.
 
 			if (optarg) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_debug", optarg);
-			}
-			break;
-		case 'r':
-			if (strcmp(long_options[option_index].name, "restart") == 0) {
-				load_arguments(&argc,alternative);
-				ac= argc;
-				av= alternative;
 			}
 			break;
 		case 's':{
@@ -466,9 +426,6 @@ faster system start.
 	if (!(setlen = mo_system_config(&set, setlen)))
 		usage(prog);
 
-	if( alternative[0]== NULL)
-		save_arguments(argc,argv);
-
 	i = 0;
 	monet_script = (str *) GDKmalloc(sizeof(str) * (ac + 1));
 	monet_script[i] = NULL;
@@ -488,7 +445,6 @@ faster system start.
 	monet_init(set, setlen);
 	if (mal_init())
 		return 0;
-
 @-
 Time to execute the script files. 
 Start with the init command[todo]

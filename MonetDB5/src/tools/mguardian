@@ -53,12 +53,6 @@ case "$1" in
 	fi
 	ACTION=delay
 	shift ;;
- "--log" )
-	monetdb --log
-	exit ;;
- "--status" )
-	monetdb --status
-	exit ;;
  "--help" | * )
 	usage 
 	exit 0 ;;
@@ -110,6 +104,7 @@ function restart_server()
 	fi
 
 	now=`date +%s`
+echo "now $now"
 	now=`expr $now - $started `
 	if [[ "$now" < "$restartwindow" ]]
 	then
@@ -132,20 +127,34 @@ regards. MonetDB Guardian
 	if [ -f $1/.mserver.args ]
 	then
 		started=`date +%s`
-		(cd $1; mserver --set daemon=yes --dbname=$1 --restart )&
+		if [ -f $1/.mserver.dbinit ]
+        then
+            STARTUP=$DBFARM/$1/.mserver.dbinit
+        fi
+		if [ -f $1/.mserver.args ]
+		then
+			ARGS=`cat $1/.mserver.args`
+		fi
+        CONFIG="--config=$DBFARM/$1/.monetdb.conf"
+		(cd $1; mserver --set daemon=yes --dbname=$1 $CONFIG $ARGS $STARTUP)&
 		echo `date +"%F %T"` " RESTART $1 $args" >>monetdb.log
 	fi
+}
+
+getDelay()
+{
+ 	delay=`grep delay $1/.monetdb.conf| sed -e "s/\t.*//" -e "s/delay=//"`
+	if [ "$delay" = "" ]
+	then
+		delay=11
+	fi
+	echo $delay
 }
 #for each mserver a separate mguardian process is started
 #it runs in the background until the mguardian control file disappears
 function check_mserver()
 {
-	if [ -f $1/.mguardian.delay ]
-	then
-		delay=`cat $1/.mguardian.delay`
-	else
-		delay=$DELAY
-	fi
+	delay=`getDelay $1`
 	mypid=$!
 	echo "$delay" >$1/.mguardian.delay
 	echo "$!" >$1/.mguardian.pid
@@ -159,8 +168,7 @@ function check_mserver()
 			restart_server $1
 		fi
 		# we should pick a cheaper way to detect changes to the delay
-		#echo "sleep guarding $1 $delay seconds"
-		delay=`cat $1/.mguardian.delay`
+		delay=`getDelay $1`
 		sleep $delay &
 		sid="$!"
 		echo "$sid" >$1/.mguardian.sleep
@@ -187,9 +195,7 @@ function stop_guardian()
 }
 
 
-# first terminate other mguardians
-# todo
-
+#echo "mguardian dblist $DBLIST"
 case $ACTION in
 	"start" )
 		for i in $DBLIST

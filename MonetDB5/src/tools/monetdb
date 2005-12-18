@@ -15,14 +15,16 @@
 # Portions created by CWI are Copyright (C) 1997-2005 CWI.
 # All Rights Reserved.
 
+#See the MonetDB Version 5 documentation for details
+
 function usage()
 {
 	echo "Usage: monetdb [command] [options] [script]"
 	echo "Primary command:"
-	echo "    --start         Server(s) are started in the dbfarm [default]"
-	echo "    --stop          Server(s) are gracefully stopped"
-	echo "    --status        Show the server status"
-	echo "    --checkpoint    Create a database checkpoint"
+	echo "    --status        Show the server status [default]"
+	echo "    --start         Server(s) is (are) started"
+	echo "    --stop          Server(s) is (are) stopped"
+	echo "    --databases     Show the known databases "
 	echo "    --log           Show the server management log"
 	echo ""
 	echo "Secondary options:"
@@ -37,13 +39,15 @@ function usage()
 }
 
 DBFARM=$MONET5_PREFIX/var/MonetDB5/dbfarm
-ACTION="--start"
+ACTION="--status"
 
 case "$1" in
- "--start" | "--stop" | "--status" | "--checkpoint" ) 
+ "--start" | "--stop" | "--status" ) 
 		ACTION=$1;
-		shift
-		;;
+		shift ;;
+ "--databases" )
+		ACTION=$1;
+		shift ;;
  "--log" )
 		cd $DBFARM
 		more monetdb.log
@@ -59,11 +63,16 @@ esac
 ARGS=""
 DBNAME=""
 STARTUP=""
+DELAY=""
 while [ $# -gt 0 ]
 do
 	case "$1" in
 	"--dbname="* )
 		DBNAME="${1#--dbname=}"
+		;;
+	"--delay="*)
+		DELAY="${1#--delay=}" 
+		ARGS="$ARGS $1"
 		;;
 	"--dbinit="* )
 		tail="${1#--dbinit=}"
@@ -94,14 +103,24 @@ function getPID ()
 
 function getTIME ()
 {
-	sed -e "s/.*TIME=//" -e "s/\@.*//" -e 2q $1/.gdk_lock
+	if [ "$DELAY" = "" ]
+	then
+		echo `sed -e "s/.*TIME=//" -e "s/\@.*//" -e 2q $1/.gdk_lock`
+	else
+		echo 300
+	fi
 }
 
 function start_mserver()
 {
+	# make sure the configuration file is in place
+	if [ ! -f $1/.monetdb.conf ]
+	then
+			cp $MONET5_PREFIX/etc/MonetDB5.conf $1/.monetdb.conf
+	fi
 	pid=`getPID $1`
 	#echo "start server $1 $pid"
-	if [ $pid"" = "" ]
+	if [ "$pid" = "" ]
 	then
 		if [ "$STARTUP" != "" ]
 		then
@@ -109,7 +128,7 @@ function start_mserver()
 		fi
 		if [ -f $1/.mserver.dbinit ]
 		then
-			STARTUP=$1/.mserver.dbinit
+			STARTUP=$DBFARM/$1/.mserver.dbinit
 		fi
 		if [ "$ARGS" = "" ]
 		then
@@ -122,7 +141,8 @@ function start_mserver()
 		fi
 
 		# use previous arguments if needed
-		mserver --set daemon=yes --dbname=$1 $ARGS $STARTUP &
+		CONFIG="--config=$DBFARM/$1/.monetdb.conf"
+		mserver --set daemon=yes --dbname=$1 $CONFIG $ARGS $STARTUP&
 		sleep 1
 		pid=`getPID $1`
 		if [ "$pid" = "" ]
@@ -132,9 +152,25 @@ function start_mserver()
 			echo `date +"%F %T"` " START $1 $ARGS" >>monetdb.log
 		fi
 		# start the guardian for this server as well
+		if [ "$DELAY" != "" ]
+		then
+			echo $DELAY >$1/.mguardian.delay
+		fi
 		mguardian --start --dbname=$1
 	else
-		echo "mserver for '$1' already running"
+		if [ "$DELAY" != "" ]
+		then
+			echo $DELAY >$1/.mguardian.delay
+			if [ -f $i/.mguardian.sleep ]
+			then
+				#wakeup the mguardian process
+				pid=`cat $i/.mguardian.sleep`
+				kill -HUP $pid
+			fi
+			echo "mguardian delay for '$1' reset"
+		else
+			echo "mserver for '$1' already running"
+		fi
 	fi
 }
 function stop_mserver()
@@ -143,6 +179,7 @@ function stop_mserver()
 	if [ "$pid" != "" ]
 	then
 		echo "mserver for '$1' stopped"
+		stopped=`expr $stopped + 1 `
 		# disable the guardian first
 		mguardian --stop $1
 		kill -TERM $pid
@@ -152,25 +189,28 @@ function stop_mserver()
 
 function show_status_hdr()
 {
-	echo "DBNAME	PID	DELAY	GUARD	STARTED				STATUS"
+	echo "DBNAME	SERVER	GUARD	DELAY	STARTED"
 }
 function show_status()
 {
 	if [ -f $1/.gdk_lock ]
 	then
-		if [ -f $1/.mguardian.pid ]
-		then
-		guard=`cat $1/.mguardian.pid`
-		fi
-		if [ -f $1/.mguardian.delay ]
-		then
-		delay=`cat $1/.mguardian.delay`
-		fi
 		pid=`getPID $1`
-		if  [ $pid"" != "" ]
+		if  [ "$pid" != "" ]
 		then
+			if [[ $header = 0 ]]
+			then
+				show_status_hdr
+				header=1
+			fi
+			guard=`cat $1/.mguardian.pid`
+			delay=`cat $1/.mguardian.delay`
+			if [ "$delay" = "" ]
+			then
+				delay=`grep delay $1/.monetdb.conf |sed -e "s/\t.*//" -e "s/delay=//"`
+			fi
 			start=`getTIME $1`
-			echo "$1	$pid	$delay	$guard	$start			"
+			echo "$1	$pid	$guard	$delay	$start"
 		fi
 	fi
 }
@@ -181,9 +221,11 @@ function show_status()
 function create_database ()
 {
 		read -p "Do you want to create database '$1' ? [yes/no]" answer
-		if [ "$answer" = "yes " ]
+		if [ "$answer" = "yes" ]
 		then
 			mkdir $1
+			cp $MONET5_PREFIX/etc/MonetDB5.conf $1/.monetdb.conf
+			echo "Database $1 initialized"
 		else
 			exit
 		fi
@@ -206,16 +248,28 @@ fi
 #echo "DBLIST $DBLIST"
 
 case "$ACTION" in
+ "--databases" )
+	for i in $DBLIST
+	do
+		echo $i
+	done;;
  "--start" )
+	started=0
 	for i in $DBLIST
 	do
 		if [ -d $i ]
 		then
+			started=`expr $started + 1 `
 			start_mserver  $i 
 		fi
 	done
+	if [ $started = 0 ]
+	then
+		echo "No MonetDB servers started"
+	fi
 	;;
  "--stop" )
+	stopped=0
 	for i in $DBLIST
 	do
 		if [ -d $i ]
@@ -223,9 +277,13 @@ case "$ACTION" in
 			stop_mserver  $i 
 		fi
 	done
+	if [ $stopped = 0 ]
+	then
+		echo "No MonetDB servers running"
+	fi
 	;;
  "--status" )
-	show_status_hdr
+	header=0
 	for i in $DBLIST
 	do
 		if [ -d $i ]
@@ -233,14 +291,13 @@ case "$ACTION" in
 			show_status  $i 
 		fi
 	done
+	if [ $header = 0 ]
+	then
+		echo "No MonetDB server running"
+	fi
 	;;
- "--checkpoint" ) 
-	echo "Not yet implemented" ;;
  * ) ;;
 esac
 
 #remove any leftovers
-if [  -f /tmp/.mserver.dbinit ]
-then
-	rm /tmp/.mserver.dbinit
-fi
+rm -rf /tmp/.mserver.*
