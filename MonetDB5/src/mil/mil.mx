@@ -28,7 +28,7 @@ i.e. without runtime dependent type resolution, can be executed as well.
 
 An old program <prg> can be precompiled to MIL using the 
 command line
-Mserver --dbinit="include mil;mil.compile();" <prg>
+monetdb --dbinit="include mil;mil.compile();" <prg>
 [CHECK]
 @mal
 module mil;

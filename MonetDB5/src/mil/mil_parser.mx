@@ -532,7 +532,6 @@ parseMILvariable(Client cntxt, MalBlkPtr currBlk, str nme)
 		currInstr = newStmt(cntxt->curprg->def, "mil", "take");
 		pushStr(cntxt->curprg->def, currInstr, nme);
 		varid = getArg(currInstr, 0);
-		setVarUsed(currBlk, varid, TRUE);
 		newId(cntxt, nme, varid);
 		return varid;
 	}
@@ -557,7 +556,6 @@ parseMILassignment(Client cntxt, MalBlkPtr currBlk, str nme)
 	}
 	currInstr = newInstruction(currBlk,ASSIGNsymbol);
 	setDestVar(currInstr, varid);
-	setVarInitialized(currBlk, varid);
 	i = parseMILexpr(cntxt, currBlk);
 	pushArgument(currBlk, currInstr, i);
 	pushInstruction(currBlk, currInstr);
@@ -602,7 +600,6 @@ parseMILfunctioncall(Client cntxt, MalBlkPtr currBlk, str nme)
 	}
 
 	varid = getDestVar(currInstr) = newTmpVariable(currBlk, TYPE_any);
-	setVarInitialized(currBlk, varid);
 
 	while (currChar(cntxt) != ')') {
 		skipMILspace(cntxt, currBlk);
@@ -669,8 +666,6 @@ parseMILpathexpr(Client cntxt, MalBlkPtr currBlk, int varid)
 
 		k = currInstr->retc;
 	}
-	setVarUsed(currBlk, varid, TRUE);
-	setVarUsed(currBlk, newvar, TRUE);
 	/* shuffle arguments arround */
 	pushArgument(currBlk, currInstr, varid);
 	for (j = currInstr->argc - 1; j > k; j--)
@@ -760,7 +755,6 @@ with lower priority
 		pushArgument(currBlk,currInstr,stk[i]);
 		stk[i-1]= lhs= newTmpVariable(currBlk,TYPE_any);
 		setDestVar(currInstr,lhs);
-		setVarInitialized(currBlk,lhs);
 		priority[i-1] = priority[i+1];
 		ostk[i-1] = ostk[i+1];
 		pushInstruction(currBlk,currInstr);
@@ -871,7 +865,6 @@ parseMILbatstmt(Client cntxt, MalBlkPtr currBlk)
 	setModuleId(currInstr, putName("bbp", 3));
 	setFunctionId(currInstr, putName("new", 3));
 	setDestVar(currInstr, varid);
-	setVarInitialized(currBlk, getDestVar(currInstr));
 	pushArgument(currBlk, currInstr, arg);
 	pushInstruction(currBlk, currInstr);
 	skipMILspace(cntxt, currBlk);
@@ -912,8 +905,6 @@ parseMILifstmt(Client cntxt, MalBlkPtr currBlk)
 	currInstr = newInstruction(currBlk,ASSIGNsymbol);
 	setDestVar(currInstr, cvar);
 
-	setVarInitialized(currBlk, getDestVar(currInstr));
-	setVarUsed(currBlk, cvar, TRUE);
 
 	pushArgument(currBlk, currInstr, lhs);
 	currInstr->barrier = BARRIERsymbol;
@@ -924,18 +915,15 @@ parseMILifstmt(Client cntxt, MalBlkPtr currBlk)
 	currInstr = newInstruction(currBlk,EXITsymbol);
 	setDestVar(currInstr, cvar);
 
-	setVarInitialized(currBlk, getDestVar(currInstr));
 	currInstr->barrier = EXITsymbol;
 	pushInstruction(currBlk, currInstr);
 
 	skipMILspace(cntxt, currBlk);
 	if (MALkeyword(cntxt, "else", 4)) {
 		cvar = newTmpVariable(currBlk, TYPE_bit);
-		setVarUsed(currBlk, cvar, TRUE);
 
 		currInstr = newInstruction(currBlk,ASSIGNsymbol);
 		setDestVar(currInstr, cvar);
-		setVarInitialized(currBlk, cvar);
 
 		setFunctionId(currInstr, putName("not", 3));
 		pushArgument(currBlk, currInstr, lhs);
@@ -984,15 +972,9 @@ parseMILbatloop(Client cntxt, MalBlkPtr currBlk, int lhs)
 	setModuleId(currInstr, putName("chopper", 7));
 	setFunctionId(currInstr, putName("newIterator", 11));
 	setDestVar(currInstr, cvar);
-	setVarInitialized(currBlk, cvar);
-	setVarUsed(currBlk, cvar, TRUE);
 
 	pushArgument(currBlk, currInstr, hvar);
-	setVarInitialized(currBlk, hvar);
-	setVarUsed(currBlk, hvar, TRUE);
 	pushArgument(currBlk, currInstr, tvar);
-	setVarInitialized(currBlk, tvar);
-	setVarUsed(currBlk, tvar, TRUE);
 
 	currInstr->retc = currInstr->argc;
 	currInstr->barrier = BARRIERsymbol;
@@ -1056,9 +1038,7 @@ parseMILwhilestmt(Client cntxt, MalBlkPtr currBlk)
 
 	currInstr = newInstruction(currBlk,ASSIGNsymbol);
 	setDestVar(currInstr, cvar);
-	setVarUsed(currBlk, cvar, TRUE);
 
-	setVarInitialized(currBlk, getDestVar(currInstr));
 	pushBit(currBlk,currInstr,FALSE);
 	tvar= currInstr->argv[1];
 
@@ -1121,7 +1101,6 @@ parseMILvarstmt(Client cntxt, MalBlkPtr currBlk)
 			lhs = parseMILexpr(cntxt, currBlk);
 			currInstr = newInstruction(currBlk,ASSIGNsymbol);
 			setDestVar(currInstr, varid);
-			setVarInitialized(currBlk, getDestVar(currInstr));
 			pushArgument(currBlk, currInstr, lhs);
 			pushInstruction(currBlk, currInstr);
 		}
@@ -1156,7 +1135,6 @@ parseMILreturnstmt(Client cntxt, MalBlkPtr currBlk)
 	lhs = parseMILexpr(cntxt, currBlk);
 	currInstr = newInstruction(currBlk,ASSIGNsymbol);
 	setDestVar(currInstr, getArg(getInstrPtr(currBlk, 0), 0));
-	setVarInitialized(currBlk, getDestVar(currInstr));
 	pushArgument(currBlk, currInstr, lhs);
 	currInstr->barrier = RETURNsymbol;
 	pushInstruction(currBlk, currInstr);
@@ -1266,7 +1244,6 @@ parseMILprocdef(Client cntxt, MalBlkPtr currBlk)
 	currInstr = getSignature(curPrg);
 	varid = newVariable(currBlk, GDKstrdup(nme), TYPE_any);
 	setDestVar(currInstr, varid);
-	setVarInitialized(currBlk, getDestVar(currInstr));
 
 	enterMILscope(cntxt);
 	while (currChar(cntxt) != ')') {
@@ -1324,7 +1301,6 @@ parseMILbreakstmt(Client cntxt, MalBlkPtr currBlk)
 	currInstr = newInstruction(currBlk,ASSIGNsymbol);
 	currInstr->barrier = LEAVEsymbol;
 	setDestVar(currInstr, getLastBlock(BE(cntxt)));
-	setVarInitialized(currBlk, getDestVar(currInstr));
 	pushBit(currBlk,currInstr,FALSE);
 	pushInstruction(currBlk, currInstr);
 }
