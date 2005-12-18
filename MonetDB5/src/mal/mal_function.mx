@@ -579,7 +579,7 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 
 	/* all signature variables are declared at outer level */
 	p= getInstrPtr(mb,0);
-	for(k=0;k<p->argc; k++){
+	for(k=p->retc;k<p->argc; k++){
 		getVarScope(mb,p->argv[k])= 1;
 	    getVarDepth(mb,p->argv[k])= 0;
 	}
@@ -590,11 +590,9 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 	}
 	nme= functionName(p);
 		
-	getVarScope(mb,getArg(p,0)) = 1;
-	getVarDepth(mb,getArg(p,0)) = 1;
 	/* printFunction(GDKout,mb, LIST_MAL_ALL);*/
 
-	for(pc=0;pc<mb->stop; pc++){
+	for(pc=1;pc<mb->stop; pc++){
 		p= getInstrPtr(mb,pc);
 		if( p->token == IGNOREsymbol) continue;
 		for(k=p->retc;k<p->argc; k++) {
@@ -616,6 +614,12 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 		for(k=0; k<p->retc; k++){
 			l= getArg(p,k);
 			if( getVarScope(mb, l) == 0){
+				if( (p->barrier== RETURNsymbol || p->barrier== YIELDsymbol) &&
+					getVarType(mb,l) != TYPE_void  && p->retc==p->argc){
+			            GDKerror("'%s' returns before being initialized",
+							getVarName(mb,l));
+						mb->errors++;
+				}
 			    getVarScope(mb, l) = blks[top-1];
 			    getVarDepth(mb, l) = top-1;
 			} else {

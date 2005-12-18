@@ -1331,7 +1331,7 @@ parseAssign(Client cntxt, int cntrl)
 				setVarType(curBlk,varid,type);
 			}
 			@:propList(varid)@
-			setVarInitialized(curBlk,varid);
+			/* setVarInitialized(curBlk,varid);*/
 			curInstr= pushArgument(curBlk,curInstr, varid);
 			curInstr->retc++;
 			if( currChar(cntxt) == ')') 
@@ -1376,7 +1376,7 @@ parseAssign(Client cntxt, int cntrl)
 			}
 		} 
 		@:propList(varid)@
-		setVarInitialized(curBlk,varid);
+		/* setVarInitialized(curBlk,varid);*/
 		curInstr->argv[0]= varid;
 	}
 	/* look for assignment operator */
