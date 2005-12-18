@@ -800,7 +800,7 @@ produce code.
 */
 		if( m->mode == m_debug)
 			SQLsetDebugger(c, m, m->mode == m_debug);
-		if (m->mode != m_prepare && !m->cache){
+		if (m->mode != m_prepare && !m->cache && !explainPlan()){
 			backend_callinline(be, c, s );
 		} else {
 			/* generate a factory instantiation */

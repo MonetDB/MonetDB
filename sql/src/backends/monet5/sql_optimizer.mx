@@ -403,7 +403,6 @@ exit	doit;
 @c
 				q= newInstruction(mb,ASSIGNsymbol);
 				cnt= newTmpVariable(mb,TYPE_lng);
-				setVarUsed(mb,cnt,TRUE);
 				q->argv[0]=cnt;
 				q->argv[1]= p->argv[2];
 				q->argc=2;
@@ -414,9 +413,6 @@ exit	doit;
 				q= newInstruction(mb,ASSIGNsymbol);
 				q->barrier= BARRIERsymbol;
 				lab= newTmpVariable(mb,TYPE_bit);
-				setVarUsed(mb,lab,TRUE);
-				setVarUsed(mb,cnt,TRUE);
-				setVarInitialized(mb,cnt);
 				setModuleId(q,putName("calc",4));
 				setFunctionId(q,putName(">",1));
 				q->argv[0]=lab;
@@ -425,7 +421,6 @@ exit	doit;
 				q->argc=2;
 				pushLng(mb,q,0);
 				zero= q->argv[2];
-				setVarUsed(mb,q->argv[2],TRUE);
 				pushInstruction(mb,q);
 @-
 We have to perform the expensive kdifference anyway

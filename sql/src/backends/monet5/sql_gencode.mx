@@ -338,7 +338,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newAssignment(mb);
 			s->nr = getDestVar(q);
 			q = pushInt(mb, q, 1);
-			setVarInitialized(mb, s->nr);
 		}	break;
 		case st_sql:{
 			int o1 = _dumpstmt(sql, mb, s->op1.stval);
@@ -358,7 +357,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				(void) snprintf(buf, 32, "A%d", s->flag);
 				q = pushArgumentId(mb, q, _strdup(buf));
 			}
-			setVarInitialized(mb, s->nr);
 		} break;
 		case st_update_var:{
 			dump_1(sql, mb, s, sqlRef, "setVariable");
@@ -911,14 +909,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			ext = getDestVar(q);
 			snprintf( nme, BUFSIZ, "grp%d", getDestVar(q));
         		q = pushReturn(mb, q, newVariable(mb, _strdup(nme), TYPE_any));
-			setVarInitialized(mb, getArg(q, 1));
 			grp = getArg(q, 1);
 			q = pushArgument(mb, q, o1);
 
 			q = newAssignment(mb);
 			q = pushArgument(mb, q, grp);
 			s->nr = getDestVar(q);
-			setVarInitialized(mb, s->nr);
 			
 			snprintf( nme, BUFSIZ, "ext%d", s->nr);
 			renameVariable(mb, ext, _strdup(nme));
@@ -950,8 +946,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			ext = getDestVar(q);
 			snprintf( nme, BUFSIZ, "grp%d", getDestVar(q));
         		q = pushReturn(mb, q, newVariable(mb, _strdup(nme), TYPE_any));
-			setVarInitialized(mb, getArg(q, 1));
-			setVarInitialized(mb, getArg(q, 0));
 			grp = getArg(q, 1);
 			q = pushArgument(mb, q, g);
 			q = pushArgument(mb, q, l);
@@ -959,7 +953,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newAssignment(mb);
 			q = pushArgument(mb, q, grp);
 			s->nr = getDestVar(q);
-			setVarInitialized(mb, s->nr);
 
 			snprintf( nme, BUFSIZ, "ext%d", s->nr);
 			renameVariable(mb, ext, _strdup(nme));
@@ -978,8 +971,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				e = getDestVar(q);
 				snprintf( nme, BUFSIZ, "grp%d", getDestVar(q));
         			q = pushReturn(mb, q, newVariable(mb, _strdup(nme), TYPE_any));
-				setVarInitialized(mb, getArg(q, 1));
-				setVarInitialized(mb, getArg(q, 0));
 				q = pushArgument(mb, q, g);
 				q = pushArgument(mb, q, l);
 
