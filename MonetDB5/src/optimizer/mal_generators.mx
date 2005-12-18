@@ -113,8 +113,6 @@ static void BGcloseLoop(MalBlkPtr mb, int m, InstrPtr *stmt ){
 	getArg(r,0)= getArg(stmt[m],0);
 	pushArgument(mb,r,getArg(stmt[m],1));
 	pushInstruction(mb,r);
-	setVarInitialized(mb,getArg(r,0));
-	setVarUsed(mb,getArg(r,1),TRUE);
 
 	r = newInstruction(mb, ASSIGNsymbol);
 	r->barrier= EXITsymbol;
@@ -319,7 +317,6 @@ references a newIterator
 			q= copyInstruction(p);
 			k= newTmpVariable(mb,TYPE_int);
 			getArg(q,0)= k;
-			setVarInitialized(mb,k);
 			pushInstruction(mb,q);
 
 			q= newInstruction(mb,ASSIGNsymbol);

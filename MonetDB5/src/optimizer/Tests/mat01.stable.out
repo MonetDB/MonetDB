@@ -115,7 +115,7 @@ function user.main():void;	# 0  (main:void)
     _68 := bat.setAccess(_65,"w");	# 47 BKCsetAccess (_68:bat[:void,:int])<-(_65:bat[:void,:int])(_43:str)
     _69 := bat.setAccess(_66,"w");	# 48 BKCsetAccess (_69:bat[:void,:int])<-(_66:bat[:void,:int])(_43:str)
     v40 := mat.new(_67,_68,_69);	# 49 MATnew (v40:bat[:void,:int])<-(_67:bat[:void,:int])(_68:bat[:void,:int])(_69:bat[:void,:int])
-    _70 := bat.append(_69,v38);	# 50 BKCbat_append_void_bat_wrap (_70:void)<-(_69:bat[:void,:int])(v38:bat[:void,:int])
+    bat.append(_69,v38);	# 50 BKCbat_append_void_bat_wrap (_70:void)<-(_69:bat[:void,:int])(v38:bat[:void,:int])
     _71 := algebra.markT(_67,0@0);	# 51 ALGtmark (_71:bat[:oid,:void])<-(_67:bat[:void,:int])(_32:oid)
     _72 := algebra.markT(_68,0@0);	# 52 ALGtmark (_72:bat[:oid,:void])<-(_68:bat[:void,:int])(_32:oid)
     _73 := algebra.markT(_69,0@0);	# 53 ALGtmark (_73:bat[:oid,:void])<-(_69:bat[:void,:int])(_32:oid)
@@ -201,7 +201,7 @@ function user.main():void;
     _68 := bat.setAccess(_65,"w");
     _69 := bat.setAccess(_66,"w");
     v40 := mat.new(_67,_68,_69);
-    _70 := bat.append(_69,v38);
+    bat.append(_69,v38);
     _71 := algebra.markT(_67,0@0);
     _72 := algebra.markT(_68,0@0);
     _73 := algebra.markT(_69,0@0);

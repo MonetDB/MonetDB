@@ -122,14 +122,10 @@ STnewTuple(MalBlkPtr mb, int vidx, int *top, STtuple * tuples)
 	if( tuples[*top].htpe == TYPE_void)
 		tuples[*top].htpe= TYPE_oid;
 	tuples[*top].hidx = newTmpVariable(mb, tuples[*top].htpe);
-	setVarUsed(mb, tuples[*top].hidx, TRUE);
-	setVarInitialized(mb, tuples[*top].hidx);
 	tuples[*top].ttpe = getTailType(getVarType(mb, vidx));
 	if( tuples[*top].ttpe == TYPE_void)
 		tuples[*top].ttpe= TYPE_oid;
 	tuples[*top].tidx = newTmpVariable(mb, tuples[*top].ttpe);
-	setVarUsed(mb, tuples[*top].tidx, TRUE);
-	setVarInitialized(mb, tuples[*top].tidx);
 	*top = *top + 1;
 	return *top - 1;
 }

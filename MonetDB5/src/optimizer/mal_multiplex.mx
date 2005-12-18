@@ -154,16 +154,12 @@ find the actual arguments at the proper place of the callee.
 		msg = throwMessage("optimizer.multiplex", "Target type is missing");
 	pushArgument(mb, q, newTypeVariable(mb, getHeadType(getArgType(mb, pci, 0))));
 	pushArgument(mb, q, newTypeVariable(mb, getTailType(getArgType(mb, pci, 0))));
-	setVarUsed(mb, resB, TRUE);
-	setVarInitialized(mb, resB);
 	/* set the sequence base if the original had it */
 	if( getHeadType(getArgType(mb, pci, 0)) == TYPE_void){
 		int base;
 		q= newFcnCall(mb,"bat","getSequenceBase");
 		base= getArg(q,0)= newTmpVariable(mb,TYPE_oid);
 		pushArgument(mb,q,iter);
-		setVarUsed(mb, base, TRUE);
-		setVarInitialized(mb, base);
 		q= newFcnCall(mb,"bat","setSequenceBase");
 		pushArgument(mb,q,resB);
 		pushArgument(mb,q,base);
@@ -173,15 +169,9 @@ find the actual arguments at the proper place of the callee.
 	q = newFcnCall(mb, "chop", "newIterator");
 	q->barrier = BARRIERsymbol;
 	getArg(q, 0) = mloop = newTmpVariable(mb, TYPE_lng);
-	setVarUsed(mb, mloop, TRUE);
-	setVarInitialized(mb, mloop);
 	hvar = newTmpVariable(mb, TYPE_any);
-	setVarUsed(mb, hvar, TRUE);
-	setVarInitialized(mb, hvar);
 	pushReturn(mb, q, hvar);
 	tvar = newTmpVariable(mb, TYPE_any);
-	setVarUsed(mb, tvar, TRUE);
-	setVarInitialized(mb, tvar);
 	pushReturn(mb, q, tvar);
 	pushArgument(mb, q, iter);
 
@@ -192,8 +182,6 @@ find the actual arguments at the proper place of the callee.
 		if (isaBatType(getArgType(mb, pci, i))) {
 			q = newFcnCall(mb, "algebra", "find");
 			alias[i] = newTmpVariable(mb, getTailType(getArgType(mb, pci, i)));
-			setVarUsed(mb, alias[i], TRUE);
-			setVarInitialized(mb, alias[i]);
 			getArg(q, 0) = alias[i];
 			pushArgument(mb, q, getArg(pci, i));
 			pushArgument(mb, q, hvar);
@@ -202,8 +190,6 @@ find the actual arguments at the proper place of the callee.
 	/* cr:= mod.CMD($1,...,$n); */
 	q = newFcnCall(mb, mod, fcn);
 	cr = getArg(q, 0) = newTmpVariable(mb, TYPE_any);
-	setVarUsed(mb, cr, TRUE);
-	setVarInitialized(mb, cr);
 
 	for (i = 2; i < pci->argc; i++)
 		if (isaBatType(getArgType(mb, pci, i))) {
@@ -214,8 +200,6 @@ find the actual arguments at the proper place of the callee.
 
 	/* insert(resB,h,cr); */
 	q = newFcnCall(mb, "bat", "insert");
-	setVarUsed(mb, resB, TRUE);
-	setVarInitialized(mb, resB);
 	pushArgument(mb, q, resB);
 	pushArgument(mb, q, hvar);
 	pushArgument(mb, q, cr);
@@ -224,8 +208,6 @@ find the actual arguments at the proper place of the callee.
 	q = newInstruction(mb,CATCHsymbol);
 	k = newVariable(mb, GDKstrdup("MALexception"), TYPE_str);
 	pushReturn(mb, q, k);
-	setVarUsed(mb, k, TRUE);
-	setVarInitialized(mb, k);
 	pushInstruction(mb, q);
 	q= newInstruction(mb,EXITsymbol);
 	pushReturn(mb,q,k);
@@ -247,8 +229,6 @@ find the actual arguments at the proper place of the callee.
 
 	q = newAssignment(mb);
 	getArg(q, 0) = getArg(pci, 0);
-	setVarUsed(mb, getArg(q, 0), TRUE);
-	setVarInitialized(mb, getArg(q, 0));
 	pushArgument(mb, q, resB);
 	return msg;
 }

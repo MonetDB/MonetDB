@@ -211,8 +211,6 @@ bat and prepares the instruction to expand it.
 				setModuleId(r,bbpRef);
 				setFunctionId(r,bindRef);
 				j= newTmpVariable(mb, partitions[k].type );
-				setVarUsed(mb,j,TRUE);
-				setVarInitialized(mb,j);
 				getArg(r,0)= j;
 				pushStr(mb,r,BBPname(partitions[k].bid));
 				pushInstruction(mb,r);
@@ -306,9 +304,7 @@ through the default case.
 				getArg(q,1) = getArg(mat[m],k);
 				getArg(q,0) = newTmpVariable(mb, tpe);
 				pushInstruction(mb,q);
-				setVarInitialized(mb,getArg(q,0));
 				r= pushArgument(mb,r,getArg(q,0));
-				setVarUsed(mb,getArg(q,0),TRUE);
 			}
 			if( functionId(p)== insertRef ||
 				functionId(p)== appendRef ||
@@ -355,9 +351,7 @@ The MAT argument could also occur as the second one.
 				getArg(q,2) = getArg(mat[m],k);
 				getArg(q,0) = newTmpVariable(mb, tpe);
 				pushInstruction(mb,q);
-				setVarInitialized(mb,getArg(q,0));
 				r= pushArgument(mb,r,getArg(q,0));
-				setVarUsed(mb,getArg(q,0),TRUE);
 			}
 			match =0;
 			for(j=0;j<mtop; j++)
@@ -386,8 +380,6 @@ Handle the rewrite v:=aggr.count(b) and sum()
 				setModuleId(q,aggrRef);
 				setFunctionId(q,functionId(p));
 				getArg(q,0)= v;
-				setVarUsed(mb,v,TRUE);
-				setVarInitialized(mb,v);
 				q= pushArgument(mb,q,getArg(mat[m],k));
 				pushInstruction(mb,q);
 
@@ -418,8 +410,6 @@ And the min/max is as easy
 				setModuleId(q,aggrRef);
 				setFunctionId(q,functionId(p));
 				getArg(q,0)= v;
-				setVarUsed(mb,v,TRUE);
-				setVarInitialized(mb,v);
 				q= pushArgument(mb,q,getArg(mat[m],k));
 				pushInstruction(mb,q);
 

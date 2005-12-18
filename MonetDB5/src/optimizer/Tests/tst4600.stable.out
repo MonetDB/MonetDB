@@ -41,7 +41,7 @@ function user.main():void;	# 0  (main:void)
     io.print("test expansion");	# 2 IOprint_val (_5:int)<-(_6:str)
     _12 := 0;	# 3  (_12:int)<-(_13:int)
 barrier _14 := calc.<(_12,2);	# 4 CALCcompLTintint (_14:bit)<-(_12:int)(_8:int) jump 8
-    _15 := io.print("Welcome");	# 5 IOprint_val (_15:int)<-(_16:str)
+    io.print("Welcome");	# 5 IOprint_val (_15:int)<-(_16:str)
     _12 := calc.+(_12,1);	# 6 CALCbinaryADDintint (_12:int)<-(_12:int)(_17:int)
     redo _14 := calc.<(_12,2);	# 7 CALCcompLTintint (_14:bit)<-(_12:int)(_8:int) jump 5
 exit _14;	# 8  (_14:bit)
@@ -55,7 +55,7 @@ function user.main():void;
     io.print("test expansion");
     _12 := 0;
 barrier _14 := calc.<(_12,2);
-    _15 := io.print("Welcome");
+    io.print("Welcome");
     _12 := calc.+(_12,1);
     redo _14 := calc.<(_12,2);
 exit _14;
