@@ -1,0 +1,11 @@
+var a:=new(void,lng).seqbase(0@0);
+a.insert(nil,0LL).insert(nil,1LL).insert(nil,2LL);
+var b:=[oid](a);
+a.print();
+b.print();
+
+var c:=new(void,lng).seqbase(0@0);
+c.insert(nil,0LL).insert(nil,2LL).insert(nil,1LL);
+var d:=[oid](c);
+c.print();
+d.print();
