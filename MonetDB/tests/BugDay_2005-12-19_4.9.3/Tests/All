@@ -3,3 +3,6 @@
 #
 # Please do NOT edit this "All" file during the
 # 3rd MonetDB-Bug-Day on Mon Dec 19 2005!
+
+# do not include these test, as they fail and won't be fixed:
+#type_names_are_not_keywords.SF-1227464
