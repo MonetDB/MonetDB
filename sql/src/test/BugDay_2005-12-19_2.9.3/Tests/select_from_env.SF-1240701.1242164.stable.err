@@ -1,14 +1,14 @@
-stderr of test 'select_from_env.SF-1240701` in directory 'src/test/BugDay_2005-12-19_2.9.3` itself:
+stderr of test 'select_from_env.SF-1240701.1242164` in directory 'src/test/BugDay_2005-12-19_2.9.3` itself:
 
 
-# 13:17:41 >  
-# 13:17:41 >  Mtimeout -timeout 180 Mserver "--config=/ufs/sjoerd/Monet-virgin/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/devel/sql-virgin/Linux/lib/MonetDB:/ufs/sjoerd/Monet-virgin/lib/MonetDB" --set "gdk_dbfarm=/ufs/sjoerd/Monet-virgin/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/sjoerd/Monet-virgin/var/MonetDB/log" --set mapi_port=38948 --set sql_port=47757 --set xquery_port=50403 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-12-19_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 13:17:41 >  
+# 13:22:15 >  
+# 13:22:15 >  Mtimeout -timeout 180 Mserver "--config=/ufs/sjoerd/Monet-virgin/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/devel/sql-virgin/Linux/lib/MonetDB:/ufs/sjoerd/Monet-virgin/lib/MonetDB" --set "gdk_dbfarm=/ufs/sjoerd/Monet-virgin/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/sjoerd/Monet-virgin/var/MonetDB/log" --set mapi_port=30620 --set sql_port=47090 --set xquery_port=50410 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-12-19_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 13:22:15 >  
 
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
 # builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
 # builtin opt 	gdk_version = 4.9.3
-# builtin opt 	monet_pid = 19620
+# builtin opt 	monet_pid = 19742
 # builtin opt 	prefix = /ufs/sjoerd/Monet-virgin
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -58,21 +58,21 @@ stderr of test 'select_from_env.SF-1240701` in directory 'src/test/BugDay_2005-1
 # cmdline opt 	monet_mod_path = /ufs/sjoerd/src/MonetDB/devel/sql-virgin/Linux/lib/MonetDB:/ufs/sjoerd/Monet-virgin/lib/MonetDB
 # cmdline opt 	gdk_dbfarm = /ufs/sjoerd/Monet-virgin/var/MonetDB/dbfarm
 # cmdline opt 	sql_logdir = /ufs/sjoerd/Monet-virgin/var/MonetDB/log
-# cmdline opt 	mapi_port = 38948
-# cmdline opt 	sql_port = 47757
-# cmdline opt 	xquery_port = 50403
+# cmdline opt 	mapi_port = 30620
+# cmdline opt 	sql_port = 47090
+# cmdline opt 	xquery_port = 50410
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_test_BugDay_2005-12-19_2.9.3
 
-# 13:17:41 >  
-# 13:17:41 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=47757  < select_from_env.SF-1240701.sql
-# 13:17:41 >  
+# 13:22:15 >  
+# 13:22:15 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=47090  < select_from_env.SF-1240701.1242164.sql
+# 13:22:15 >  
 
-MAPI  = monetdb@localhost:47757
+MAPI  = monetdb@localhost:47090
 QUERY = select * from env where name = ( select 'prefix' from env );
 ERROR = !ERROR: subquery returned more than one row
 
-# 13:17:41 >  
-# 13:17:41 >  Done.
-# 13:17:41 >  
+# 13:22:15 >  
+# 13:22:15 >  Done.
+# 13:22:15 >  
 
