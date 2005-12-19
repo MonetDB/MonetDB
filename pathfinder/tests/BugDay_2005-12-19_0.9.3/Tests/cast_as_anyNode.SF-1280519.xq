@@ -1,4 +1,4 @@
-let $items := fn:subsequence(fn:doc("dataset.xml")//Asset, 1, 100)
+let $items := fn:subsequence(fn:doc("test1280519.xml")//Asset, 1, 100)
 let $assets := for $item in $items return $item cast as xs:anyNode
 let $albums := $assets/parent::*
 for $album in $albums

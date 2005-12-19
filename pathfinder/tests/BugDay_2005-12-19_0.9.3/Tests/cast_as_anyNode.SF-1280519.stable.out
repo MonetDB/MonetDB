@@ -9,7 +9,7 @@ stdout of test 'cast_as_anyNode.SF-1280519` in directory 'tests/BugDay_2005-12-1
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-# Shredded XML doc("dataset.xml"), total time after commit=0.008s
+# Shredded XML doc("test1280519.xml"), total time after commit=0.008s
 
 printf("\nReady.\n");
 
