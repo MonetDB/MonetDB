@@ -1,0 +1,12 @@
+module(pathfinder);
+var a := bat(void,oid).insert(nil,1@0).insert(nil,1@0).insert(nil,1@0).insert(nil,2@0).insert(nil,3@0).seqbase(0@0);
+var mu := merged_union(a,a,a.project("foo"),a.project("bar"));
+mu.fetch(0).print();
+mu.fetch(1).print();
+a.access(BAT_READ);
+a := a.mirror();
+a.print();
+var mu := merged_union(a,a,a.project("foo"),a.project("bar"));
+mu.fetch(0).print();
+mu.fetch(1).print();
+mu.fetch(0).leftjoin(bat(void,oid).insert(0@0,1@0).seqbase(0@0)).print();
