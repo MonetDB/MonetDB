@@ -83,6 +83,32 @@ a.insert(b).print();
 [ 2@0,	  nil	  ]
 [ 0@0,	  0@0	  ]
 [ 1@0,	  1@0	  ]
+
+# from #1385067 "bug appending to [void,void] bat"
+# (http://sourceforge.net/tracker/index.php?func=detail&aid=1385067&group_id=56967&atid=482468)
+var a := new(void,void).insert(nil,nil).seqbase(1@0).reverse().seqbase(0@0);
+a.print();
+#-----------------#
+# t	h	  # name
+# void	void	  # type
+#-----------------#
+[ 0@0,	  1@0	  ]
+var b := new(oid,oid).insert(1@0,1@0);
+b.print();
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 1@0,	  1@0	  ]
+a := a.append(b);
+a.print();
+#-----------------#
+# h	t	  # name
+# void	oid	  # type
+#-----------------#
+[ 0@0,	  1@0	  ]
+[ 1@0,	  1@0	  ]
+
 quit();
 
 # 11:13:09 >  
