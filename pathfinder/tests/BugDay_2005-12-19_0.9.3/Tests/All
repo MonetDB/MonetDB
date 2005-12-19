@@ -1,9 +1,5 @@
 # tests related to bug reports:
 # <descriptive-name>.SF-<bug-report-id>[.<ext>]
-#
-# Please do NOT edit this "All" file during the
-# 3rd MonetDB-Bug-Day on Mon Dec 19 2005!
-
 where_orderby.SF-1210757
 shred_doc_with_space.SF-1211372
 zero-or-one_merged-union.SF-1221336
