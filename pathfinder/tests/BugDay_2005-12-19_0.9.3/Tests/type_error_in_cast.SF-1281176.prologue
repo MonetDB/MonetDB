@@ -1,0 +1,3 @@
+module(unix,pathfinder);
+var TSTSRCDIR := getenv("TSTSRCDIR");
+shred_doc(TSTSRCDIR + "/test1281176.xml", "dataset.xml");
