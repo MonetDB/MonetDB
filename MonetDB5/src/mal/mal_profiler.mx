@@ -1106,12 +1106,12 @@ They are made persistent to accumate information over
 multiple sessions. This means it has to be explicitly reset
 to avoid disc overflow.
 @c
-static int TRACE_init;
-static BAT *TRACE_id_time;
-static BAT *TRACE_id_ticks;
-static BAT *TRACE_id_pc;
-static BAT *TRACE_id_modfcn;
-static BAT *TRACE_id_stmt;
+static int TRACE_init=0;
+static BAT *TRACE_id_time=0;
+static BAT *TRACE_id_ticks=0;
+static BAT *TRACE_id_pc=0;
+static BAT *TRACE_id_modfcn=0;
+static BAT *TRACE_id_stmt=0;
 
 static BAT *
 TRACEcreate(str hnme, str tnme, int ht, int tt)
@@ -1150,7 +1150,7 @@ initTrace(void)
 	mal_unset_lock(mal_contextLock, "trace");
 }
 
-#define CLEANUP(X)  BBPdecref((X)->batCacheid, TRUE); (X)->batPersistence= TRANSIENT; (X)= NULL;
+#define CLEANUP(X)  if(X) { BBPdecref((X)->batCacheid, TRUE); (X)->batPersistence= TRANSIENT; } (X)= NULL;
 str
 cleanupProfiler(){
 	mal_set_lock(mal_contextLock, "cleanup");
