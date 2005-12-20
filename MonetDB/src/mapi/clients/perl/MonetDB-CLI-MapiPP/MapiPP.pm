@@ -103,8 +103,15 @@ sub query
       my @a = Text::ParseWords::parse_line( qr(\s*,\s*), 0, $_ );
       push @{$self->{rs}}, [ map { MonetDB::CLI::MapiPP->unquote( $_ ) } @a ];
     }
-    elsif (/^# (\d+),?\s+# (querytype|id|tuplecount)$/) {
-      $self->{$2} = $1 if $self->{$2} < 0;
+    elsif (/^&(\d) (\d+) (\d+) (\d+)/) {
+      $self->{querytype}   = $1 if $self->{querytype}   < 0;
+      $self->{id}          = $2 if $self->{id}          < 0;
+      $self->{tuplecount}  = $3 if $self->{tuplecount}  < 0;
+      $self->{columncount} = $4 if $self->{columncount} < 0;
+    }
+    elsif (/^&(\d) (\d+)/) {
+      $self->{querytype}   = $1 if $self->{querytype}   < 0;
+      $self->{tuplecount}  = $2 if $self->{tuplecount}  < 0;
     }
     elsif (/^#\s+\b(.*)\b\s+# (name|type|length)$/) {
       $self->{$2} = [ split $delim, $1 ];
@@ -119,9 +126,8 @@ sub query
       die "Incomplete query: $statement";
     }
   }
-  $self->{columncount}   = @{$self->{name}};
+  $self->{columncount}   = @{$self->{name}} if $self->{columncount} < 0;;
   $self->{columncount} ||= @{$self->{rs}[0]} if $self->{rs}[0];
-  $self->{tuplecount}    = $self->{rs}[0][0] if $self->{querytype} == 4;
   $self->{tuplecount}    = @{$self->{rs}} if $lang ne 'sql';
 
   die join "\n", @err if @err;

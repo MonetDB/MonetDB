@@ -539,7 +539,6 @@ Get the new information for the server socket and start listening.
 				TBL_initclient(c, father);
 			
 				if (STREQ(cmd, "")) { 
-					monet_hello(fdout);
 					(void) monetFork();
 				} else {
 					if (MAPIinitClient(c, cmd, fdin, fdout) < 0) {
@@ -1108,8 +1107,8 @@ client(Cntxt stk, YYSTREE lt, ValPtr res)
                 
                        	assert(rs->pos == rs->len);
 
-                       	if (rs->eof || !isa_block_stream(rs->s)) {
-				if (stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) != 1 || stream_flush(out)) {
+                       	if (rs->eof || !blocked) {
+				if ((!blocked && stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) != 1) || stream_flush(out)) {
                                 	go = FALSE;
                                        	break;
                                	}

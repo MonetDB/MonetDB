@@ -185,9 +185,8 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/lib/libmutils.*
 %{prefix}/lib/libMapi.* 
 %{prefix}/lib/libstream.*
+%{prefix}/lib/MonetDB/Tests/*
 %{prefix}/share/%{name}/lib/*jar
-%{prefix}/lib/%{name}/Tests/*
-%{prefix}/share/%{name}/Tests/*.class
 %{prefix}/share/%{name}/python/* 
 
 %config(noreplace) %{sysconfdir}/MonetDB.conf 

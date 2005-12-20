@@ -76,6 +76,9 @@ test = (
 ##                    r"^\+\-+\+$",
                 # Tokens depend on flex/bison
                     r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]',
+                # ant output we want to ignore 
+                    r'^Buildfile:.*$',
+                    r'^Total time: [0-9]+ seconds?$',
                 # remove wine errors:
 		    r"^fixme:.*$",
 		# ignore big- vs. little-endian byte-orders in test tests/BugDay_2005-10-06_4.8/Tests/print_CTgroup.SF-1315791.*:
@@ -217,13 +220,15 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
                 r'^(!ERROR: .*: [0-9]+ times inserted nil due to errors at tuples )([0-9]+)(\.)',
                 r'^(ERROR = !ERROR: )(SQLerror:assert:|MALexception:)?(.*\n)',
 		r'^(Connection warning:.*\()(mserver_mal|mserver_sql)(\).*\n)',
+                r'^(.*!ERROR: .*)(operation failed.\n)',
            ])+')',  re.MULTILINE)
 norm_out = (
                 None, 'syntax/parse', None, 'unexpected ... on line/in: ', None,
                 None, '(0,0-0,0)', None,
                 None, '?', None,
                 None, '', None,
-		None, 'mserver_sql', None
+		None, 'mserver_sql', None,
+		'# ', None,
            )
 
 

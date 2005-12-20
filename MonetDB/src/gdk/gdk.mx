@@ -2914,7 +2914,7 @@ properties. They can be used to improve query processing at higher levels.
 gdk_export void PROPdestroy(PROPrec *p);
 gdk_export bit BATgetprop_bit(BAT *b, int idx);
 gdk_export int BATgetprop_int(BAT *b, int idx);
-gdk_export str BATgetprop_str(BAT *b, int idx);
+gdk_export const char *BATgetprop_str(BAT *b, int idx);
 gdk_export void BATsetprop_bit(BAT *b, int idx, bit val);
 gdk_export void BATsetprop_int(BAT *b, int idx, int val);
 gdk_export void BATsetprop_str(BAT *b, int idx, str val);

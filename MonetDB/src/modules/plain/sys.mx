@@ -1238,7 +1238,7 @@ view_var_value(int stk,		/* variable context number ("stack"). */
 			if ((*BATatoms[v->binding.vtype].atomToStr) (&buf, &l, p)) {
 				BUNins(b, &v, buf);
 			} else {
-				BUNins(b, &v, str_nil);
+				BUNins(b, &v, (ptr)str_nil);
 			}
 		}
 		if (stk < 0)

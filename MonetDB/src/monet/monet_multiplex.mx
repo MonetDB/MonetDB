@@ -114,6 +114,7 @@ bulkerror_init(bulkerror_t *bulkerror)
 {
 	bulkerror->bak = GDKerrbuf;
 	bulkerror->cnt = 0;
+	bulkerror->buf[0] = 0;
 	GDKsetbuf(bulkerror->buf);
 }
 
@@ -583,6 +584,7 @@ multiplex_@1_@2_@3(exec_t *desc, ValPtr* argv)
 		if (!desc->b) {
 			GDKsetbuf(desc->bulkerror.bak);
 			GDKerror("multiplex: result bat[void,void] impossible.\n");
+			desc->bulkerror.buf[0] = 0;
 			GDKsetbuf(desc->bulkerror.buf);
 			return -1;
 		}
@@ -624,6 +626,7 @@ multiplex_bat_@1_@2_@3(exec_t *desc, ValPtr* argv)
 		if (!desc->b) {
 			GDKsetbuf(desc->bulkerror.bak);
 			GDKerror("multiplex: result bat[void,void] impossible.\n");
+			desc->bulkerror.buf[0] = 0;
 			GDKsetbuf(desc->bulkerror.buf);
 			return -1;
 		}
@@ -706,7 +709,7 @@ in this implementation.
 		char buf[32];
 		sprintf(buf, PDFMT, (ptrdiff_t) (@2));
 		bulkerror_handle(&bulkerror, buf);
-		tptr = tnil; /* insert a nil */
+		*(ptr*) tptr = tnil; /* insert a nil */
 	}
 
 @= BUNins_array_special
@@ -899,8 +902,7 @@ interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 	ok = TRUE;
 bunins_failed:
 	bulkerror_finish(&bulkerror, name);
-	if (tptr != tnil)
-		GDKfree(tptr);
+	GDKfree(tptr);
 	if (!ok) {
 		BBPreclaim(retb);
 		return -1;

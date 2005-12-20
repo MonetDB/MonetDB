@@ -1,0 +1,1 @@
+var a := bat(int,int).insert(0,0).persists(true).bbpname("test1377020b");

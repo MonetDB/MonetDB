@@ -267,7 +267,7 @@ int
 pcl_eventname(str *result, int *event)
 {
 	(void) event;
-	*result = str_nil;
+	*result = (str)str_nil;
 	return GDK_SUCCEED;
 }
 #else

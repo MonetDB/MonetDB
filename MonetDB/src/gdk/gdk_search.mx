@@ -532,7 +532,8 @@ void
 HASHdestroy(BAT *b)
 {
 	HASHremove(b);
-	HASHremove(BATmirror(b));
+	if (BATmirror(b))
+		HASHremove(BATmirror(b));
 }
 
 @}
