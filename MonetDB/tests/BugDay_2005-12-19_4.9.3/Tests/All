@@ -9,3 +9,5 @@ pump_properties.SF-1267155
 void_multiplex.SF-1280802
 merge_properties.SF-1283842
 empty_line.SF-1347331
+print_after_destroy.SF-1377020a
+print_after_destroy.SF-1377020b

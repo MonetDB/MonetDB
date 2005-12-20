@@ -7,6 +7,7 @@ tag_name_validation.SF-1221984
 self_axis_not_supported.SF-1237444
 file_locked_after_shredding.SF-1238352
 nat_oid_conv.SF-1261765
+stable_order_by.SF-1265379
 type_error_in_function_resolution.SF-1274903
 cast_as_anyNode.SF-1280519
 type_error_in_cast.SF-1281176
@@ -18,4 +19,7 @@ merged_union_and_join.SF-1337630
 parent_step_bug.SF-1339844
 text_nodes_with_empty_content_seq.SF-1350418
 attribute_after_non-attribute_content.SF-1351516
+shredding_one_attribute.SF-1376942
+shredding_on_the_fly.SF-1377006
+not_constant.SF-1378750
 multiple_servers.SF-1385152
