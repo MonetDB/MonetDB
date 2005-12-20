@@ -750,6 +750,9 @@ char **getHelp(Module m, str pat)
 	msg= (char **) GDKmalloc( 1000 * sizeof(str));
 	msg[top]=0;
 
+	t= strchr(pat,'\n');
+	if( t) *t=0;
+
 	dot= strchr(pat,'.') != 0;
 	match= strchr(pat,'(')!= 0;
 	t = strchr(pat,')');
@@ -761,10 +764,10 @@ char **getHelp(Module m, str pat)
 		*fcnnme++ = 0;
 	}
 	t = modnme;
-	while((isalpha((int) *t) || *t == '_') && *t) t++;
+	while((isalpha((int) *t) || *t == '_' || *t=='*') && *t) t++;
 	if(t) *t = 0;
 	t = fcnnme;
-	while(t && (isalpha((int) *t) || *t == '_') && *t) t++;
+	while(t && (isalpha((int) *t) || *t == '_' || *t=='*') && *t) t++;
 	if(t) *t = 0;
 
 	if( fcnnme){
@@ -795,22 +798,20 @@ char **getHelp(Module m, str pat)
 	if( m1 ) m = m1;
 	
 #ifdef MAL_SCOPE_DEBUG 
-	printf("showHelp: %s %s [%d] %s %s\n",
-			modnme,fcnnme,len2, (doc?"doc":""), (sig?"sig":""));
+	printf("showHelp: %s %s [%d] %s %s %d\n",
+			modnme,fcnnme,len2, (doc?"doc":""), (sig?"sig":""),match);
 #endif
 	for(i=0; i< MAXSCOPE; i++)
 	for(k=0; k< MAXSCOPE; k++){
 		m= scopeJump[i][k];
 		while( m){
-		if( strncmp(modnme,m->name,len1) ) {
+		if( strncmp(modnme,m->name,len1) && *modnme!='*' ) {
 			m= m->sibling;
 			continue;
 		}
 		for(j=0;j<MAXSCOPE;j++)
-		if( m->subscope[j])
-			for(s= m->subscope[j]; s; s= s->peer){
-			if( (strncmp(fcnnme,s->name,len2)==0 || *fcnnme=='*') &&
-				(match==0 || strlen(s->name)==len2) ){
+		for(s= m->subscope[j]; s; s= s->peer)
+			if( strncmp(fcnnme,s->name,len2)==0 || *fcnnme=='*') {
 				if( doc) {
 					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE);
 					buf[0]=' ';
@@ -845,15 +846,12 @@ char **getHelp(Module m, str pat)
 #ifdef MAL_SCOPE_DEBUG 
 				printf("%s",buf);
 #endif
-				if( (dot && strlen(m->name)==len1) || dot == 0 ){
-					msg[top++] = GDKstrdup(buf);
-					msg[top] = 0;
-				}
+				msg[top++] = GDKstrdup(buf);
+				msg[top] = 0;
 				if( top ==999) return msg;
 			}
-		}
 		m= m->sibling;
-	}
+		}
 	}
 	return msg;
 }
