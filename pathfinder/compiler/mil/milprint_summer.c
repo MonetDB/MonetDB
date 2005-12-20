@@ -556,7 +556,7 @@ addValues (opt_t *f,
            char *result_var)
 {
     /* get the offsets of the values */
-    milprintf(f, "%s := %s.addValues(%s);\n", result_var, t_co.table, varname);
+    milprintf(f, "%s := %s.addValues(%s).tmark(0@0);\n", result_var, t_co.table, varname);
 }
 
 /**
@@ -1157,7 +1157,6 @@ createEnumeration (opt_t *f, int cur_level)
             cur_level, cur_level);
     addValues (f, int_container(), "ints_cE", "item");
     milprintf(f,
-            "item := item.tmark(0@0);\n"
             "iter := inner%03u.tmark(0@0);\n"
             "ipik := iter;\n"
             "pos := 1@0;\n"
@@ -3227,9 +3226,8 @@ evaluateCast (opt_t *f,
 
         milprintf(f,
                 "cast_val := nil;\n"
-                "item%s := item%s.tmark(0@0);\n"
                 "kind := %s;\n",
-                item_ext, item_ext, target.mil_cast);
+                target.mil_cast);
 }
 
 /**
@@ -3260,7 +3258,6 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
             item = strcat (strcpy (item, "item"), kind_str(rc));
 
             addValues(f, int_container(), item, "item");
-            milprintf(f, "item := item.tmark(0@0);\n");
         }
     }
     else if (TY_EQ (input_type, PFty_decimal ()))
@@ -3299,10 +3296,7 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
             milprintf(f, "item%s := _val;\n", item_ext);
         else
             addValues(f, int_container(), "_val", "item");
-        milprintf(f,
-                "item%s := item%s.tmark(0@0);\n"
-                "kind := INT;\n",
-                item_ext, item_ext);
+        milprintf(f, "kind := INT;\n");
     }
 }
 
@@ -3336,7 +3330,6 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
             item = strcat (strcpy (item, "item"), kind_str(rc));
 
             addValues(f, dec_container(), item, "item");
-            milprintf(f, "item := item.tmark(0@0);\n");
         }
     }
     else if (TY_EQ (input_type, PFty_double ()))
@@ -3374,10 +3367,7 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
             milprintf(f, "item%s := _val;\n", item_ext);
         else
             addValues(f, dec_container(), "_val", "item");
-        milprintf(f,
-                "item%s := item%s.tmark(0@0);\n"
-                "kind := DEC;\n",
-                item_ext, item_ext);
+        milprintf(f, "kind := DEC;\n");
     }
 }
 
@@ -3413,7 +3403,6 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
             item = strcat (strcpy (item, "item"), kind_str(rc));
 
             addValues(f, dbl_container(), item, "item");
-            milprintf(f, "item := item.tmark(0@0);\n");
         }
     }
     else if (TY_EQ (input_type, PFty_string ()) || 
@@ -3448,10 +3437,7 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
             milprintf(f, "item%s := _val;\n", item_ext);
         else
             addValues(f, dbl_container(), "_val", "item");
-        milprintf(f,
-                "item%s := item%s.tmark(0@0);\n"
-                "kind := DBL;\n",
-                item_ext, item_ext);
+        milprintf(f, "kind := DBL;\n");
     }
 }
 
@@ -3495,7 +3481,6 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
             item = strcat (strcpy (item, "item"), kind_str(rc));
 
             addValues(f, str_container(), item, "item");
-            milprintf(f, "item := item.tmark(0@0);\n");
         }
 
         if (TY_EQ (input_type, PFty_string ()) && rcode == U_A)
@@ -3533,10 +3518,7 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
         else
             addValues(f, str_container(), "_val", "item");
 
-        milprintf(f,
-                "item%s := item%s.tmark(0@0);\n"
-                "kind := %s;\n",
-                item_ext, item_ext, (rcode == STR)?"STR":"U_A");
+        milprintf(f, "kind := %s;\n", (rcode == STR)?"STR":"U_A");
     }
 }
 
@@ -3720,7 +3702,6 @@ evaluateOp (opt_t *f, int rcode, int rc1, int rc2,
         milprintf(f, "item%s := val_fst;\n", kind_str(rcode)); 
     } else {
         addValues(f, t_co, "val_fst", "item"); 
-        milprintf(f, "item := item.tmark(0@0);\n");
     }
     milprintf(f, "} # end of '%s' calculation\n", operator);
 }
@@ -3780,7 +3761,6 @@ evaluateOpOpt (opt_t *f, int rcode, int rc1, int rc2,
         milprintf(f, "item%s := val_fst;\n", kind_str(rcode)); 
     } else { 
         addValues(f, t_co, "val_fst", "item"); 
-        milprintf(f, "item := item.tmark(0@0);\n");
     }
     milprintf(f, "} # end of '%s' calculation with optional type\n", operator);
 }
@@ -4205,11 +4185,7 @@ combine_strings (opt_t *f, int code, int rc)
         milprintf(f, "item%s := iter_str;\n", item_ext);
     else
         addValues (f, str_container(), "iter_str", "item");
-    milprintf(f,
-            "iter_str := nil;\n"
-            "item%s := item%s.tmark(0@0);\n"
-            "} # end of combine_strings\n",
-            item_ext, item_ext);
+    milprintf(f, "} # end of combine_strings\n");
 }
 
 /**
@@ -4256,22 +4232,22 @@ string_value (opt_t *f, int code, char *kind)
                 "var t_frag := res_scj.fetch(2);\n" /* CONST? */
                 "res_scj := nil;\n"
                 /* get the string values of the text nodes */
-                "item_str := mposjoin(mposjoin(t_item, t_frag, ws.fetch(PRE_PROP)), "
+                "var t_item_str := mposjoin(mposjoin(t_item, t_frag, ws.fetch(PRE_PROP)), "
                                      "mposjoin(t_item, t_frag, ws.fetch(PRE_FRAG)), "
                                      "ws.fetch(PROP_TEXT));\n"
                 "t_frag := nil;\n"
                 /* for the result of the scj join with the string values */
-                "var iter_item := t_iter.materialize(t_item).reverse().leftfetchjoin(item_str).chk_order();\n"
-                "t_item := nil;\n"
-                "item_str := nil;\n");
-    milprintf(f,
-                " { var item_unq := iter_item.reverse().tunique();\n"
-                "   if (item_unq.count() != iter_item.count())\n"
-                "     iter_item := iter_item.string_join(item_unq.project(\"\"));\n}\n");
+                "var t_iter_unq := t_iter.tunique();\n"
+                "t_iter := t_iter.materialize(t_item);\n"
+                "if (t_iter_unq.count() != t_item.count()) {\n"
+                "    var iter_item := t_iter.reverse().leftfetchjoin(t_item_str).chk_order();\n"
+                "    iter_item := iter_item.string_join(t_iter_unq.project(\"\"));\n"
+                "    t_iter := iter_item.hmark(0@0);\n"
+                "    t_item_str := iter_item.tmark(0@0);\n"
+                "}\n"
+                "t_iter_unq := nil;\n");
 
     milprintf(f,
-                "t_iter := iter_item.hmark(0@0);\n"
-                "var t_item_str := iter_item.tmark(0@0);\n"
                 /* get the string value of all comment nodes */
                 "var c_map := mposjoin (item, frag, ws.fetch (PRE_KIND))"
                                   ".select(COMMENT).hmark(0@0);\n"
@@ -4377,9 +4353,9 @@ string_value (opt_t *f, int code, char *kind)
                     "     iter_item := iter_item.string_join(item_unq.project(\"\"));\n}\n");
 
     milprintf(f,
+                    /* get the string value of all comment nodes */
                     "t_iter := iter_item.hmark(0@0);\n"
                     "var t_item_str := iter_item.tmark(0@0);\n"
-                    /* get the string value of all comment nodes */
                     "var c_map := mposjoin (item, frag, ws.fetch (PRE_KIND))"
                                       ".select(COMMENT).hmark(0@0);\n"
                     "if (c_map.count() > 0) { #process comments \n"
@@ -4431,7 +4407,6 @@ string_value (opt_t *f, int code, char *kind)
     }
     milprintf(f,
             "item_str := nil;\n"
-            "item%s := item%s.tmark(0@0);\n"
             /* adds empty strings if an element had no string content */
             "if (iter.count() != input_iter.tunique().count())\n"
             "{\n"
@@ -4446,7 +4421,6 @@ string_value (opt_t *f, int code, char *kind)
             "pos := tmark_grp_unique(iter,ipik);\n"
             "kind := %s;\n"
             "} # end of string-value\n",
-            item_ext, item_ext,
             item_ext,
             empty_string,
             item_ext,
@@ -4916,11 +4890,7 @@ fn_abs (opt_t *f, int code, int rc, char *op)
         addValues (f, t_co, "res", "item");
 
     item_ext = (code)?item_ext:"";
-    milprintf(f,
-            "item%s := item%s.tmark(0@0);\n"
-            "} # end of fn:%s\n",
-            item_ext, item_ext,
-            op);
+    milprintf(f, "} # end of fn:%s\n", op);
 
 }
 
@@ -5167,13 +5137,11 @@ return_str_funs (opt_t *f, int code, int cur_level, char *fn_name)
     item_ext = (code)?item_ext:"";
     milprintf(f,
             "res := nil;\n"
-            "item%s := item%s.tmark(0@0);\n"
             "iter := loop%03u;\n"
             "ipik := iter;\n"
             "pos := 1@0;\n"
             "kind := STR;\n"
             "} # end of %s\n",
-            item_ext, item_ext,
             cur_level,
             fn_name);
 }
@@ -5444,12 +5412,10 @@ fn_substring (opt_t *f, int code, int cur_level, int counter,
     milprintf(f,
             "iter := loop%03u;\n"
             "ipik := iter;\n"
-            "item%s := item%s.tmark(0@0);\n"
             "pos := 1@0;\n"
             "kind := STR;\n"
             "} # end of fn:substring\n",
-            cur_level,
-            item_ext, item_ext);
+            cur_level);
 
     deleteResult_ (f, counter, DBL);
     deleteResult_ (f, str_counter, STR);
@@ -5551,10 +5517,7 @@ fn_name (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c, char *nam
         addValues (f, str_container(), "res", "item");
  
     item_ext = (code)?item_ext:"";
-    milprintf(f,
-            "res := nil;\n"
-            "item%s := item%s.tmark(0@0);\n",
-            item_ext, item_ext);
+    milprintf(f, "res := nil;\n");
     add_empty_strings (f, (code)?STR:NORMAL, cur_level);
     milprintf(f,
             "iter := loop%03u;\n"
@@ -5990,15 +5953,17 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
        from its value containers as well as covers the special cases
        (attribute step and text() test) */
     PFty_t input_type = (fun->par_ty)[0];
-    if (PFty_subtype (PFty_integer (), input_type))
-    {
-        eval_join_helper (f, rc1, 1, fst, cast_fst, fst_res, int_container());
-        eval_join_helper (f, rc2, 2, R(snd), cast_snd, snd_res, int_container());
-    }
-    else if (PFty_subtype (PFty_decimal (), input_type))
+    if (PFty_subtype (PFty_decimal (), input_type))
     {
         eval_join_helper (f, rc1, 1, fst, cast_fst, fst_res, dec_container());
         eval_join_helper (f, rc2, 2, R(snd), cast_snd, snd_res, dec_container());
+    }
+    /* integer is listed after decimal 
+       (as type decimal is otherwise recognized as integer) */
+    else if (PFty_subtype (PFty_integer (), input_type))
+    {
+        eval_join_helper (f, rc1, 1, fst, cast_fst, fst_res, int_container());
+        eval_join_helper (f, rc2, 2, R(snd), cast_snd, snd_res, int_container());
     }
     else if (PFty_subtype (PFty_double (), input_type))
     {
@@ -6305,25 +6270,13 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         /* expects strings otherwise something stupid happens */
         milprintf(f,
                 "{ # translate fn:doc (string?) as document?\n"
-                "item%s := item%s.materialize(ipik);\n"
-                "var docs := item%s.tunique().hmark(0@0);\n"
-                "var doc_str := docs%s;\n"
-                "docs := nil;\n"
-                "doc_str := reverse(doc_str.tdiff(ws.fetch(DOC_LOADED))).hmark(0@0);\n"
-                "doc_str@batloop () {\n"
-                "    add_doc(ws, $t);\n"
+                "item%s.tunique().hmark(0@0)%s.tdiff(ws.fetch(DOC_LOADED))@batloop () {\n"
+                "    time_shred :+= add_doc(ws, $t);\n"
                 "}\n"
-                "doc_str := nil;\n"
-                "doc_str := item%s;\n"
-                "var frag := doc_str.leftjoin(ws.fetch(DOC_LOADED).reverse());\n"
-                "doc_str := nil;\n"
-                "frag := frag.tmark(0@0);\n"
-                "kind := set_kind(frag, ELEM);\n"
-                "frag := nil;\n"
+                "kind := set_kind(item%s.leftjoin(ws.fetch(DOC_LOADED).reverse()).tmark(0@0), ELEM);\n"
                 "item := 0@0;\n"
                 "} # end of translate fn:doc (string?) as document?\n",
-                item_ext, item_ext,
-                item_ext, 
+                item_ext,
                 (rc)?"":val_join(STR),
                 (rc)?item_ext:val_join(STR));
         return NORMAL;
@@ -6650,12 +6603,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         }
         milprintf(f,
                 "iter_item_str := nil;\n"
-                "item%s := item%s.tmark(0@0);\n"
                 "ipik := iter;\n"
                 "pos := 1@0;\n"
                 "kind := STR;\n"
-                "} # end of string-join (string*, string)\n ",
-                item_ext, item_ext);
+                "} # end of string-join (string*, string)\n ");
         deleteResult_ (f, counter, STR);
         return (code)?STR:NORMAL;
     }
@@ -6754,7 +6705,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         else
         {
             addValues(f, str_container(), "result", "item");
-            milprintf(f,"item := item.tmark(0@0);\n");
         }
         milprintf(f, "} # end of concat (string, string)\n ");
         deleteResult_ (f, counter, STR);
@@ -6894,13 +6844,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 
         item_ext_int = (code)?item_ext_int:"";
         milprintf(f,
-                "item%s := item%s.tmark(0@0);\n"
                 "iter := loop%03u;\n"
                 "ipik := iter;\n"
                 "pos := 1@0;\n"
                 "kind := INT;\n"
                 "} # end of fn:string-length\n",
-                item_ext_int, item_ext_int,
                 cur_level);
 
         return (code)?INT:NORMAL;
@@ -6997,12 +6945,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         }
         milprintf(f,
                 "res := nil;\n"
-                "item%s := item%s.tmark(0@0);\n"
                 "pos := tmark_grp_unique(iter,ipik);\n"
                 "ipik := iter;\n"
                 "kind := INT;\n"
-                "} # end of op:to (integer, integer)\n ",
-                item_ext, item_ext);
+                "} # end of op:to (integer, integer)\n ");
         deleteResult_ (f, counter, INT);
         return (code)?INT:NORMAL;
     }
@@ -7027,13 +6973,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             addValues (f, int_container(), "iter_count", "item");
 
         milprintf(f,
-                "item%s := item%s.tmark(0@0);\n"
                 "iter := loop%03u.tmark(0@0);\n"
                 "ipik := iter;\n"
                 "pos := 1@0;\n"
                 "kind := INT;\n"
                 "} # end of translate fn:count (item*) as integer\n",
-                item_ext, item_ext, cur_level);
+                cur_level);
 
         return (code)?INT:NORMAL;
     }
@@ -9826,6 +9771,11 @@ static int test_select(PFcnode_t *c,
 }
 */
 
+/* starting level of user-defined functions */ 
+#define UDF_LEV 1024
+/* starting level of global variables */
+#define GLO_LEV -1
+
 /**
  * recognize_join: helper function for join recognition
  * walks through a Core expression and collects the variables
@@ -9857,11 +9807,11 @@ static void recognize_join(PFcnode_t *c,
                 /* avoid errors for global variables */
                 if (c->sem.var->global)
                 {
-                    /* start from nesting 1 because input arguments don't have
+                    /* start from nesting GLO_LEV because input arguments don't have
                        to be completely independent and therefore shouldn't
                        occur in scope 0 (which would be the default for function 
                        declarations) */
-                    var_struct = create_var_info (c, c->sem.var, 1);
+                    var_struct = create_var_info (c, c->sem.var, GLO_LEV);
                     *(var_info **) PFarray_add (active_vlist) = var_struct;
                 }
                 else
@@ -9955,13 +9905,13 @@ static void recognize_join(PFcnode_t *c,
  
                 /* instead needed here (only variable binding of join patterns are later tested) */
                 *(var_info **) PFarray_add (active_vlist) 
-                    = create_var_info (c, LR(args)->sem.var, 1);
+                    = create_var_info (c, LR(args)->sem.var, UDF_LEV);
  
                 args = R(args);
             }
 
             /* call function body */
-            recognize_join (R(c), active_vlist, active_vdefs, 1);
+            recognize_join (R(c), active_vlist, active_vdefs, UDF_LEV);
 
             args = L(c);
             while (args->kind != c_nil)
@@ -10138,6 +10088,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
 
     if (c->kind == c_var) 
     {
+        /* cope with global variables that are used before their declaration */
         if (!c->sem.var->vid  && c->sem.var->global)
         {
             /* give them a vid and print the whole way
@@ -10165,22 +10116,28 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
     /* only in for and let variables can be bound */
     else if (c->kind == c_for)
     {
+       /* retrieve variable usage in for loop binding */
        if (LR(c))
            counter = get_var_usage (f, LR(c), way, counter);
        
+       /* increase FID as we have a new for loop scope */
        (*(int *) PFarray_at (counter, FID))++;
        fid = *(int *) PFarray_at (counter, FID);
 
+       /* save fid to allow reference in mil code generation */
        c->sem.num = fid;
+       /* add fid also to the active for loop stack */
        *(int *) PFarray_add (way) = fid;
        act_fid = fid;
 
+       /* create new variable id for for loop variable */
        (*(int *) PFarray_at (counter, VID))++;
        vid = *(int *) PFarray_at (counter, VID);
        LLL(c)->sem.var->base = act_fid;
        LLL(c)->sem.var->vid = vid;
        LLL(c)->sem.var->used = 0;
 
+       /* create new variable id for positional for loop variable */
        if (LLR(c)->kind == c_var)
        {
             (*(int *) PFarray_at (counter, VID))++;
@@ -10190,20 +10147,25 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
             LLR(c)->sem.var->used = 0;
        }
 
+       /* ... after all preparations retrieve used 
+          variables in the return clause */
        if (R(c))
            counter = get_var_usage (f, R(c), way, counter);
        
+       /* set back active for loop stack */
        *(int *) PFarray_at (counter, ACT_FID) = *(int *) PFarray_top (way);
        PFarray_del (way);
     }
-
     else if (c->kind == c_let)
     {
-       if (LR(c))
-           counter = get_var_usage (f, LR(c), way, counter);
+        /* retrieve variable usage in let variable binding */
+        if (LR(c))
+            counter = get_var_usage (f, LR(c), way, counter);
 
-
-        if (!LL(c)->sem.var->vid) /* don't start global variables from the beginning */
+        /* create new variable id for let expression */
+        /* exceptions might be global variables that were already
+           initialized by there usage in UDFs */
+        if (!LL(c)->sem.var->vid)
         {
             act_fid = *(int *) PFarray_at (counter, ACT_FID);
             (*(int *) PFarray_at (counter, VID))++;
@@ -10213,8 +10175,9 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
             LL(c)->sem.var->used = 0;
         }
 
-       if (R(c))
-           counter = get_var_usage (f, R(c), way, counter);
+        /* retrieve variable usage in let body */
+        if (R(c))
+            counter = get_var_usage (f, R(c), way, counter);
     }
     /* apply mapping correctly for recognized join */    
     else if (c->kind == c_apply && 
@@ -10235,16 +10198,19 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
         fid_node = L(args);
             args = NULL;
 
-        if (snd_nested) 
-        {
-	/* we don't translate the general join pattern so far 
-            mps_error ("get_var_usage: no solution for join with dependence yet.");
-*/
-        }
-        if (fst_nested) /* otherwise we have a special translation
-                           and don't need mapping (selection) */
+        if (fst_nested == GLO_LEV || snd_nested == GLO_LEV)
+            PFoops (OOPS_FATAL,
+                    "can't cope with global variables as "
+                    "thetajoin input within user-defined function calls.");
+    
+        if (fst_nested)
         {
             fst_nested = (int) PFarray_last (way);
+        }
+
+        if (snd_nested)
+        {
+            snd_nested = (int) PFarray_last (way) - 1;
         }
 
         /* save current fid */
@@ -10283,14 +10249,27 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
     }
     else if (c->kind == c_fun_decl)
     {
+        /* ==================================== */
+        /* create a new valid PROC name for mil */
+        /* ==================================== */
+
         char sig[1024], *p = c->sem.fun->qname.loc, *q = c->sem.fun->qname.ns.uri;
+        char *r = c->sem.fun->qname.ns.ns;
         int i = 0, j, first = 0;
         unsigned int hash = 0; /* f->module_base; */
 
-	if (q == NULL) q = "";
-        args = L(c);
+        /* hash uri in proc name to make it uniquely identifyable  */
+        if (r) for(; *r; r++)
+                hash = (hash*3) + *(unsigned char*) r;
 
-	sig[0] = 0; /* we append all parameter types here */
+        if (q == NULL) q = "";
+            args = L(c);
+
+        sig[0] = 0; /* we append all parameter types here */
+
+        /* ============================= */
+        /* initialize function variables */
+        /* ============================= */
         while (args->kind != c_nil)
         {
             assert (L(args) && L(args)->kind == c_param);
@@ -10304,79 +10283,83 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
             LR(args)->sem.var->used = 0;
 
             if (first == 0) first = vid;
-	    strncat(sig, ",", 1024);
+        strncat(sig, ",", 1024);
             strncat(sig, PFty_str(LR(args)->type), 1024);
 
             args = R(args);
         }
-	/* create the full signature that also is a valid MIL identifier */
-	c->sem.fun->sig = PFmalloc(12+3*(strlen(sig)+strlen(p)));
+        /* create the full signature that also is a valid MIL identifier */
+        c->sem.fun->sig = PFmalloc(12+3*(strlen(sig)+strlen(p)));
 
-	/* hash uri in proc name to make it uniquely identifyable  */
-	for(; *q; q++) 
-		hash = (hash*3) + *(unsigned char*) q;
+        /* hash uri in proc name to make it uniquely identifyable  */
+        for(; *q; q++) 
+            hash = (hash*3) + *(unsigned char*) q;
 
-	for(j=11; *p; p++) {
-		/* escape '_' by '__' and '-' by '_4_' and '.' by '_5_' 
-                 * (_4_ cannot be a subsequent type name; those always end in [0-3])
-                 */ 
-		char x = (*p == '-' || *p == '.')?'_':*p;
-		c->sem.fun->sig[j++] = x; 
-		hash = (hash*3) + *(unsigned char*) p;
-		if (*p == '-') c->sem.fun->sig[j++] = '4';
-		else if (*p == '.') c->sem.fun->sig[j++] = '5';
-		if (x == '_') c->sem.fun->sig[j++] = '_';
-	}
+        for(j=11; *p; p++) {
+            /* escape '_' by '__' and '-' by '_4_' and '.' by '_5_' 
+                     * (_4_ cannot be a subsequent type name; those always end in [0-3])
+                     */ 
+            char x = (*p == '-' || *p == '.')?'_':*p;
+            c->sem.fun->sig[j++] = x; 
+            hash = (hash*3) + *(unsigned char*) p;
+            if (*p == '-') c->sem.fun->sig[j++] = '4';
+            else if (*p == '.') c->sem.fun->sig[j++] = '5';
+            if (x == '_') c->sem.fun->sig[j++] = '_';
+        }
 
-	while(sig[i++] == ',') {
-		int ch = 0;
-		c->sem.fun->sig[j++] = '_';
-		while (sig[i] && sig[i] != ',') { 
-			hash = (hash*3) + *(unsigned char*) (sig+i);
-			ch = sig[i++];
-			if (ch == '_' || ch == '{' || ch == '}' || ch == '(' || ch == ')')  { 
-				c->sem.fun->sig[j++] = '_';
-				c->sem.fun->sig[j++] = '_';
-			} else if (ch == ':') {
-				c->sem.fun->sig[j++] = '_';
-			} else if (ch == '?') {
-				c->sem.fun->sig[j++] = '0';
-			} else if (ch == '*') {
-				c->sem.fun->sig[j++] = '2';
-			} else if (ch == '+') {
-				c->sem.fun->sig[j++] = '3';
-			} else if (ch != ' ') {
-				c->sem.fun->sig[j++] = ch;
-			}
+        while(sig[i++] == ',') {
+            int ch = 0;
+            c->sem.fun->sig[j++] = '_';
+            while (sig[i] && sig[i] != ',') { 
+                hash = (hash*3) + *(unsigned char*) (sig+i);
+                ch = sig[i++];
+                if (ch == '_' || ch == '{' || ch == '}' || ch == '(' || ch == ')')  { 
+                    c->sem.fun->sig[j++] = '_';
+                    c->sem.fun->sig[j++] = '_';
+                } else if (ch == ':') {
+                    c->sem.fun->sig[j++] = '_';
+                } else if (ch == '?') {
+                    c->sem.fun->sig[j++] = '0';
+                } else if (ch == '*') {
+                    c->sem.fun->sig[j++] = '2';
+                } else if (ch == '+') {
+                    c->sem.fun->sig[j++] = '3';
+                } else if (ch != ' ') {
+                    c->sem.fun->sig[j++] = ch;
                 }
-		if (c->sem.fun->sig[j-1] != '0' && 
-		    c->sem.fun->sig[j-1] != '2' && 
-		    c->sem.fun->sig[j-1] != '3') 
-		{
-			c->sem.fun->sig[j++] = '1';
-		}
-	}
+                    }
+            if (c->sem.fun->sig[j-1] != '0' && 
+                c->sem.fun->sig[j-1] != '2' && 
+                c->sem.fun->sig[j-1] != '3') 
+            {
+                c->sem.fun->sig[j++] = '1';
+            }
+        }
+
+        /* ============================================== */
+        /* retrieve variable occurrences in function body */
+        /* ============================================== */
         counter = get_var_usage (f, R(c), PFarray (sizeof (int)), counter);
+
         for(i=0; i < (int) PFarray_last(counter); i++) 
             hash = hash*3 + *(int*) PFarray_at(counter,i);
 
         /* finish name by printing start (hashed name), connecting and terminating it */
-	sprintf(c->sem.fun->sig, "fn%08X", hash);
-	c->sem.fun->sig[10] = '_';
-	c->sem.fun->sig[j] = 0;
+        sprintf(c->sem.fun->sig, "fn%08X", hash);
+        c->sem.fun->sig[10] = '_';
+        c->sem.fun->sig[j] = 0;
 
-	if (f->module_base || f->num_fun) {
-             milprintf(f, "proc_vid.insert(\"%s\", %dLL);\n", c->sem.fun->sig, f->module_base+first);
-             f->num_fun--;
-	}
+        if (f->module_base || f->num_fun) {
+                 milprintf(f, "proc_vid.insert(\"%s\", %dLL);\n", c->sem.fun->sig, f->module_base+first);
+                 f->num_fun--;
+        }
     }
-    /* apply mapping correctly for user defined functions */    
+    /* apply mapping correctly for user defined function calls */    
     else if (c->kind == c_apply && 
              !c->sem.fun->builtin)
     {
         /* get variable occurrences of the input arguments */
         counter = get_var_usage (f, D(c), way, counter);
-
 
         if (!c->sem.fun->fid) /* create fid for UDF on demand */
         {
@@ -10452,7 +10435,7 @@ const char* PFvarMIL() {
         "var item_str_;\n"
         "\n"
         "# variable that holds bat-id (int) of a shredded document that may be added to the ws\n"
-        "var docBAT;\n"
+        "var shredBAT;\n"
         "\n"
         "# variables for results containing `real' xml subtrees\n"
         "var _elem_iter;  # oid|oid\n"
@@ -10511,8 +10494,9 @@ const char* PFstartMIL() {
 
 const char* PFdocbatMIL() {
     return  
-        " var height := bat(docBAT).fetch(PRE_LEVEL).max().int() + 1;\n"
-        " add_docbat(ws, bat(docBAT), \"soap\", \"soap\", height);\n";
+        " var docBAT := new(str,bat,WS_SIZE);\n"
+        " var height := index_doc(bat(shredBAT), docBAT);\n"
+        " add_docbat(ws, docBAT, \"\", \"\", height);\n";
 }
 
 /* debug statement for PFstopMIL to print result set 
@@ -10531,7 +10515,7 @@ static const char* _PFstopMIL(bool is_update) {
     else
         strcat(buf,
                "  if (genType.search(\"none\") = -1)\n"
-               "    print_result(genType,ws,item.materialize(ipik),constant2bat(kind),int_values,dbl_values,dec_values,str_values);\n");
+               "    print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n"
     strcat(buf,
            "});\n"
            "destroy_ws(ws);\n"
@@ -10633,6 +10617,7 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, char *
 
     if (module_base == 0) {
         timing = PFtimer_stop(timing);
+        milprintf(f, "iter := 1@0;\n");
         milprintf(f, "time_compile := %d;\n" , (int) (timing/1000));
         milprintf(f, _PFstopMIL(PFty_subtype(TY(R(c)), PFty_star(PFty_stmt()))));
     }

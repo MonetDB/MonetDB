@@ -46,8 +46,16 @@ C implementation of the document shredder"
 @m
 .COMMAND print_doc(str,BAT[void,bat], str) : void = xquery_print_doc_main;
  "C interface to Workset print routine"
+
+.COMMAND print_result(str mode, BAT[void,bat] ws,
+                      BAT[oid,any] loop, BAT[void,oid] iter,
+                      BAT[void,oid] item, BAT[void,int] kind, 
+                      BAT[void,lng] int_values, BAT[void,dbl] dbl_values, BAT[void,str] str_values) : void = xquery_print_result_loop;
+ "C interface to Workset result print routine, that can print multiple iters"
+
 .COMMAND print_result(str,BAT[void,bat],BAT[void,oid],BAT[void,int],BAT[void,lng],BAT[void,dbl],BAT[void,dbl],BAT[void,str]) : void = xquery_print_result_main;
  "C interface to Workset result print routine"
+
 
 @- Multi Join
 @m
@@ -609,7 +617,7 @@ proc ll_htordered_unique_thetajoin( int mode,
     var li := 0LL, lp := 0LL, lc := count(int(lo_histo));
     var ri := 0LL, rp := 0LL, rc := count(int(ro_histo));
     var b := new(void,bat,min(lc,rc));
-    var tpe := ttype(lo);
+    var tpe := ttype(l);
 
     if (not(reverse(lo).ordered()) or not(reverse(ro).ordered()))
         ERROR("htordered_unique_thetajoin(): ordered left and right outer columns (iters) expected.\n");
@@ -618,7 +626,7 @@ proc ll_htordered_unique_thetajoin( int mode,
     if ((mode = EQ) and or(or((tpe = int), (tpe = oid)), (tpe = lng)))  {
         var iter_max := 32;
         var combine := true;
-        if ((tpe = lng) or (tpe = lng_oid)) {
+        if ((tpe = lng) or (lng_oid = lng)) {
             iter_max := log2(lng(max(max(lr_histo),max(rr_histo))));
             combine := (iter_max + log2(lng(max(max(l),max(r))))) < 64;
         }
@@ -4865,7 +4873,7 @@ PROC doc_tbl (BAT[void, BAT] ws, BAT[void, str] item) : BAT[void,BAT]
 
     # load all remaining documents into the working set
     docs@batloop () {
-        ws := add_doc (ws, $t);
+        add_doc (ws, $t);
     }
 
     # The working set now contains all documents we need.
@@ -5328,7 +5336,7 @@ PROC elem_constr (BAT[void, oid] qn_iter,
         # !be aware that res_frag is only a fake_project!
         var res_frag := res_scj.fetch(2);
         # !avoid being res_iter a fake_project!
-        res_iter := de_NO_project (res_iter, res_item);
+        res_iter := materialize (res_iter, res_item);
         res_scj := nil;
             
         # create content_iter as sorting argument for the merged union

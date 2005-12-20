@@ -528,11 +528,12 @@ static char *phases[] = {
     [12]  = "after type inference and checking",
     [13]  = "after XQuery Core optimization",
     [14]  = "after the Core tree has been translated to the logical algebra",
-    [15]  = "after the logical algebra tree has been rewritten/optimized",
-    [16]  = "after the CSE on the logical algebra tree",
-    [17]  = "after compiling logical into the physical algebra",
-    [18]  = "after compiling the physical algebra into MIL code",
-    [19]  = "after the MIL program has been serialized"
+    [15]  = "after the logical algebra has been annotated with properties",
+    [16]  = "after the logical algebra tree has been rewritten/optimized",
+    [17]  = "after the CSE on the logical algebra tree",
+    [18]  = "after compiling logical into the physical algebra",
+    [19]  = "after compiling the physical algebra into MIL code",
+    [20]  = "after the MIL program has been serialized"
 };
 
 /**
@@ -669,7 +670,11 @@ main (int argc, char *argv[])
                 printf ("         C  print cost value (physical algebra)\n");
                 printf ("         c  print constant attributes "
                                      "(logical/physical algebra)\n");
+                printf ("         i  print icols property (logical/"
+                                     "physical algebra)\n");
                 printf ("         o  print orderings (physical algebra)\n");
+                printf ("         +  print all available properties (logical/"
+                                     "physical algebra)\n");
 
                 printf ("\n");
                 printf ("Enjoy.\n");

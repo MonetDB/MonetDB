@@ -110,7 +110,7 @@
 #define doc_tbl(a)        PFla_doc_tbl((a))
 
 /** document content access */
-#define doc_access(a,b,c,d) PFla_doc_access ((a), (b), (c), (d))
+#define doc_access(a,b,c,d,e) PFla_doc_access ((a), (b), (c), (d), (e))
 
 /* element-constructing operator */
 #define element(a,b,c)    PFla_element ((a),(b),(c))

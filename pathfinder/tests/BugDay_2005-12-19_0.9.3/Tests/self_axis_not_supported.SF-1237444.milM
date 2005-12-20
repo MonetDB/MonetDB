@@ -1,0 +1,9 @@
+module(pathfinder);
+module("unix");
+
+var TSTDOC := getenv("TSTSRCDIR") + "/video.xml";
+
+shred_doc(TSTDOC,"video.xml");
+
+xquery("xml", "doc(\"video.xml\")//*/self::scene").printf();
+

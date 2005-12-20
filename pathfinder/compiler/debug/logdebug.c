@@ -460,7 +460,8 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
                         "unknown document access in dot output");
             }
 
-            PFarray_printf (dot, " (%s)",
+            PFarray_printf (dot, "\\%s (%s)",
+                            PFatt_str (n->sem.doc_access.res),
                             PFatt_str (n->sem.doc_access.att));
             break;
 
@@ -509,8 +510,33 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
     if (PFstate.format) {
 
         char *fmt = PFstate.format;
+        bool all = false;
 
-        while (*fmt) {
+        while (*fmt) { 
+            if (*fmt == '+')
+            {
+                if (n->prop)
+                {
+                    PFalg_attlist_t icols = PFprop_icols_to_attlist (n->prop);
+
+                    /* list attributes marked const */
+                    for (unsigned int i = 0;
+                            i < PFprop_const_count (n->prop); i++)
+                        PFarray_printf (dot, i ? ", %s" : "\\nconst: %s",
+                                        PFatt_str (
+                                            PFprop_const_at (n->prop, i)));
+                    /* list icols attributes */
+                    for (unsigned int i = 0; i < icols.count; i++)
+                        PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
+                                        PFatt_str (icols.atts[i]));
+                }
+                all = true;
+            }
+            fmt++;
+        }
+        fmt = PFstate.format;
+
+        while (!all && *fmt) {
             switch (*fmt) {
                 /* list attributes marked const if requested */
                 case 'c':
@@ -520,6 +546,16 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
                             PFarray_printf (dot, i ? ", %s" : "\\nconst: %s",
                                             PFatt_str (
                                                 PFprop_const_at (n->prop, i)));
+                    break;
+                /* list icols attributes if requested */
+                case 'i':
+                    if (n->prop) {
+                        PFalg_attlist_t icols = 
+                                        PFprop_icols_to_attlist (n->prop);
+                        for (unsigned int i = 0; i < icols.count; i++)
+                            PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
+                                            PFatt_str (icols.atts[i]));
+                    }
                     break;
             }
             fmt++;

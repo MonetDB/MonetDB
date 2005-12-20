@@ -491,8 +491,8 @@ PFbui_fn_string_join (const PFla_op_t *loop __attribute__((unused)),
                             fn_string_join (args[0].rel,
                                             project (
                                                 args[1].rel,
-                                                proj (att_iter1, att_iter),
-                                                proj (att_item1, att_item))),
+                                                proj (att_iter, att_iter),
+                                                proj (att_item, att_item))),
                             lit_tbl (attlist (att_pos), tuple (lit_nat (1)))),
                 .frag = args[0].frag };
 }
@@ -1385,7 +1385,8 @@ PFbui_pf_string_value_attr (const PFla_op_t *loop __attribute__((unused)),
 
     return (struct PFla_pair_t) {
         .rel  = project (doc_access (PFla_set_to_la (args[0].frag),
-                                     args[0].rel, att_item, doc_atext),
+                                     args[0].rel, 
+                                     att_res, att_item, doc_atext),
                          proj (att_iter, att_iter),
                          proj (att_pos,  att_pos),
                          proj (att_item, att_res)),
@@ -1404,7 +1405,8 @@ PFbui_pf_string_value_text (const PFla_op_t *loop __attribute__((unused)),
 
     return (struct PFla_pair_t) {
         .rel  = project (doc_access (PFla_set_to_la (args[0].frag),
-                                     args[0].rel, att_item, doc_text),
+                                     args[0].rel, 
+                                     att_res, att_item, doc_text),
                          proj (att_iter, att_iter),
                          proj (att_pos,  att_pos),
                          proj (att_item, att_res)),
@@ -1423,7 +1425,8 @@ PFbui_pf_string_value_pi (const PFla_op_t *loop __attribute__((unused)),
 
     return (struct PFla_pair_t) {
         .rel  = project (doc_access (PFla_set_to_la (args[0].frag),
-                                     args[0].rel, att_item, doc_pi_text),
+                                     args[0].rel,
+                                     att_res, att_item, doc_pi_text),
                          proj (att_iter, att_iter),
                          proj (att_pos,  att_pos),
                          proj (att_item, att_res)),
@@ -1442,7 +1445,8 @@ PFbui_pf_string_value_comm (const PFla_op_t *loop __attribute__((unused)),
 
     return (struct PFla_pair_t) {
         .rel  = project (doc_access (PFla_set_to_la (args[0].frag),
-                                     args[0].rel, att_item, doc_comm),
+                                     args[0].rel,
+                                     att_res, att_item, doc_comm),
                          proj (att_iter, att_iter),
                          proj (att_pos,  att_pos),
                          proj (att_item, att_res)),
@@ -1474,7 +1478,7 @@ PFbui_pf_string_value_elem (const PFla_op_t *loop __attribute__((unused)),
                     doc_access (
                         PFla_set_to_la (args[0].frag),
                         node_scj,
-                        att_item, doc_text),
+                        att_res, att_item, doc_text),
                     proj (att_iter, att_iter),
                     proj (att_pos,  att_pos),
                     proj (att_item, att_res)),
@@ -1483,8 +1487,8 @@ PFbui_pf_string_value_elem (const PFla_op_t *loop __attribute__((unused)),
                            lit_tbl( attlist (att_pos, att_item),
                                     tuple (lit_nat (1),
                                            lit_str ("")))),
-                    proj (att_iter1, att_iter),
-                    proj (att_item1, att_item)));
+                    proj (att_iter, att_iter),
+                    proj (att_item, att_item)));
 
     /* add empty strings for all empty sequences */
     res = cross (
@@ -1527,7 +1531,7 @@ PFbui_pf_string_value_elem_attr (const PFla_op_t *loop __attribute__((unused)),
                    proj (att_item, att_item));
 
     attributes = project (doc_access (PFla_set_to_la (args[0].frag),
-                          sel_attr, att_item, doc_atext),
+                          sel_attr, att_res, att_item, doc_atext),
                           proj (att_iter, att_iter),
                           proj (att_item, att_res));
 
@@ -1561,7 +1565,7 @@ PFbui_pf_string_value_elem_attr (const PFla_op_t *loop __attribute__((unused)),
                     doc_access (
                         PFla_set_to_la (args[0].frag),
                         node_scj,
-                        att_item, doc_text),
+                        att_res, att_item, doc_text),
                     proj (att_iter, att_iter),
                     proj (att_pos,  att_pos),
                     proj (att_item, att_res)),
@@ -1570,8 +1574,8 @@ PFbui_pf_string_value_elem_attr (const PFla_op_t *loop __attribute__((unused)),
                            lit_tbl( attlist (att_pos, att_item),
                                     tuple (lit_nat (1),
                                            lit_str ("")))),
-                    proj (att_iter1, att_iter),
-                    proj (att_item1, att_item)));
+                    proj (att_iter, att_iter),
+                    proj (att_item, att_item)));
 
     /* add empty strings for all empty sequences */
     res = cross (
@@ -1718,8 +1722,8 @@ pf_item_seq_to_node_seq_worker_atomic (const PFla_op_t *loop,
                                         lit_tbl( attlist (att_pos, att_item),
                                                  tuple (lit_nat (1),
                                                         lit_str (" ")))),
-                                 proj (att_iter1, att_iter),
-                                 proj (att_item1, att_item)));
+                                 proj (att_iter, att_iter),
+                                 proj (att_item, att_item)));
 
     PFla_op_t *t_nodes = textnode (strings, att_res, att_item);
 
