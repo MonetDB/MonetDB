@@ -777,6 +777,7 @@ produce code.
 			sqlcleanup(m, err);
 			goto finalize;
 		}
+		m->mode= m_inplace;
 	} else 
 	if(m->mode != m_debug && 
 		(be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key))){
