@@ -1576,6 +1576,7 @@ def RunTest(env, TST, BusyPorts, COND) :
         ME = ""
         ATJOB1 = ""
         MkillUsers = ""
+        MkillUsersAT = ""
         if TIMEOUT and os.name != "nt" and sys.platform != 'cygwin' and env.get('USE_AT'):
             for f in TST+".KILLED.out", TST+".KILLED.err":
                 if os.path.isfile(f):
@@ -1586,13 +1587,16 @@ def RunTest(env, TST, BusyPorts, COND) :
             for f in ["bat/\\*", '.gdk_lock']:
                 FILES = FILES+" "+os.path.join(env['GDK_DBFARM'],TSTDB,path(f))
             FILES = FILES+" "+os.path.join(env['SQL_LOGDIR'],TSTDB,'log\\*')
-            WHAT = os.path.join(THISPATH,"MkillUsers")+" -l"+ME+" -p"+ME+" "+FILES+r" \>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.out")+r" 2\>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.err")
+            WHAT0 = os.path.join(THISPATH,"MkillUsers")+" -l"+ME
+            WHAT1 = FILES+r" \>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.out")+r" 2\>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.err")
+            WHAT = WHAT0+" -p"+ME+" "+WHAT1
             WHEN = "now + "+WAIT+" minutes"
             cmd  = "echo  "+WHAT+"  2>/dev/null | at "+WHEN+" 2>&1 | awk '/^[Jj]ob/{print $2}'"
             ATJOB1 = StartAt(cmd)
             #TODO:
             #LOG1x at -l >&2
-            MkillUsers = "echo  "+WHAT+"  2>/dev/null | at now + 1 minute 2>&1 | awk '/^[Jj]ob/{print $2}'"
+            MkillUsers = (WHAT0+" "+WHAT1).replace('\\','')
+            MkillUsersAT = "echo  "+WHAT+"  2>/dev/null | at now + 1 minute 2>&1 | awk '/^[Jj]ob/{print $2}'"
 
         #if THISFILE == "Mtest.py":
         TestOutFile = TST+".test.out"
@@ -1608,7 +1612,7 @@ def RunTest(env, TST, BusyPorts, COND) :
         TestErr.close()
 
         t0 = time.time()
-        DoIt (env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME)
+        DoIt (env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME)
         t1 = time.time()
         TX = t1 - t0
         if not quiet:
@@ -1621,6 +1625,9 @@ def RunTest(env, TST, BusyPorts, COND) :
             while os.path.exists(os.path.join(TSTTRGBASE,".KILLED.lck")):
                 time.sleep(1)
 
+        if MkillUsers:
+            os.system(MkillUsers)
+
         killed = 0
         n = TST+".KILLED."
         for (x,txf) in [("out",TestOutFile),("err",TestErrFile)]:
@@ -1631,7 +1638,7 @@ def RunTest(env, TST, BusyPorts, COND) :
                         shutil.copy(t,f)
                         os.remove(t)
                         break
-            if os.path.isfile(f):
+            if os.path.isfile(f) and os.path.getsize(f):
                 p = try_open(txf, 'a')
                 if p is not None:
                     for l in fileinput.input(f):
@@ -2014,7 +2021,7 @@ if os.name == "nt":
 else:
     devnull = '/dev/null'
 
-def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) :
+def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME) :
     quiet = env['QUIET']
     ATJOB2 = ""
     LogLine = os.path.join(env['TSTDIR'],TST+EXT)+' '+PRELUDE+' (<=%d,%d,%d) ...' % (TIMEOUT,CTIMEOUT,STIMEOUT)
@@ -2238,10 +2245,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         except IOError, (IOerrNo, IOerrStr):
             Warn("Closing input pipe in DoIt failed with #%d: '%s'." % (IOerrNo, IOerrStr))
 
-        if MkillUsers:
-            ATJOB2 = StartAt(MkillUsers)
+        if MkillUsersAT:
+            ATJOB2 = StartAt(MkillUsersAT)
         CollectIt(pSrvrOut, pSrvrErr, SrvrOut, SrvrErr)
-        if MkillUsers:
+        if MkillUsersAT:
             StopAt(ATJOB2,ME)
 
         AllOut = [SrvrOut, ClntOutFile]
@@ -2284,7 +2291,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         TestErr.write(Prompt('Done.'))
         TestErr.close()
 
-### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) #
+
+### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME) #
 
 def Check(command, input) :
     pOut,pIn,pErr = popen2.popen3(command+" || echo ! Exit 1")

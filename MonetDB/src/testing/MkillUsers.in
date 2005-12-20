@@ -36,7 +36,7 @@ while [ "${1#-}" != "$1" ] ; do
 done
 LOCKFILE=/tmp/.${0##*/}.$LOCKFILE
 
-files="`ls -d $* 2>/dev/null`"
+files="`ls -d $* 2>/dev/null | egrep -v '\.KILLED\.(out|err)$'`"
 
 if [ ! "$files" ] ; then  exit 0 ; fi
 
