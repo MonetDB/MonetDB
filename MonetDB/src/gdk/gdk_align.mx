@@ -321,7 +321,8 @@ BATmaterialize(BAT *b, size_t size)
 	BATcheck(b, "BATmaterialize: bat required");
 	{
 		int ht = b->htype, tt = b->ttype, vid = 0;
-		size_t cnt = MAX(BATcount(b), size);
+		size_t oldsize = BATcount(b);
+		size_t cnt = MAX(oldsize, size);
 		Heap buns = *b->batBuns, *hh = b->hheap, *th = b->theap;
 		int bunwidth = b->dims.bunwidth, hlc = b->hloc, tlc = b->tloc;
 		int newbw = 0;
@@ -444,10 +445,10 @@ BATmaterialize(BAT *b, size_t size)
 		} else { /* void, void case */
 			oid h = b->hseqbase;
 			oid t = b->tseqbase;
-			int f = 0, c = BATcount(b);
+			size_t f;
 			BUN r = BUNlast(b);
 
-			for (; f < c; f++, h++, t++)
+			for (f = 0; f < oldsize; f++, h++, t++)
 				bunfastins_nocheck(b, r, (ptr) &h, (ptr) &t, newbw);
 		}
 		ret = b;
