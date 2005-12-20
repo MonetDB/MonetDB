@@ -1598,7 +1598,8 @@ int xquery_print_result_loop(
         BAT* dblVAL,
         BAT* strVAL)
 {
-    return xquery_print_result(mode, ws, BATcount(loop), loop, iter, item, kind, intVAL, dblVAL, strVAL);
+    size_t niters = BATcount(loop);
+    return xquery_print_result(mode, ws, niters?niters:1, loop, iter, item, kind, intVAL, dblVAL, strVAL);
 }
 
 int xquery_print_result_main(

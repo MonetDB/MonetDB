@@ -2461,11 +2461,6 @@ CMDxquery_server(Cntxt stk,
         }
         xquery_client_end(ctx, 0);
     }
-
-    /* end of session 
-    stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1);
-    stream_flush(out);
-     */
     return(xquery_server_end(ctx, XQthread, NULL));
 }
 
