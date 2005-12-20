@@ -15,3 +15,4 @@ subquery_syntax.SF-1296390
 delete_cascade.SF-1296395
 weird_reponse_on_limit.SF-1314643
 crash_on_incorrect_SQL.SF-1314904
+interval_milliseconds.SF-1357338
