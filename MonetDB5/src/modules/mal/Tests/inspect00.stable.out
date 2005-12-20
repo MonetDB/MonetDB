@@ -68,14 +68,14 @@ stack depth 2
 [ "b1",	  "nil"				  ]
 [ "_10",  "1"				  ]
 [ "_11",  "0"				  ]
-[ "_12",  "\" next one is illegal\""	  ]
+[ "_12",  "nil"				  ]
 [ "_13",  "2"				  ]
 #-----------------#
 # view	stk	  # name
 # str	str	  # type
 #-----------------#
 [ "tst",  "0@0"	  ]
-[ "i",	  "\" test analysis of stack frames\""	  ]
+[ "i",	  "nil"	  ]
 [ "_2",	  "0@0"	  ]
 !ERROR: MALexception:inspect.stkFrame: illegal depth.
 
