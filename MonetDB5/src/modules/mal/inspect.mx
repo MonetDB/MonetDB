@@ -99,6 +99,9 @@ command getAtomSizes():bat[:int,:int]
 address INSPECTatom_sizes
 comment "Collect a BAT with the atom sizes";
 
+command getEnvironment():bat[:str,:str]
+address INSPECTgetEnvironment
+comment "Collect the environment variables";
 @+ Online help system
 All procedural abstractions may contain a string with commentary text.
 This information is retained in the symbol table for subsequent use.
@@ -172,6 +175,7 @@ mal_export str INSPECTgetSignature(int *ret, str *mod, str *fcn);
 mal_export str INSPECTgetModuleSize(int *ret, str *mod);
 mal_export str INSPECTgetFunctionSize(lng *ret, str *mod, str *fcn);
 mal_export str INSPECTgetSize(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str INSPECTgetEnvironment(int *ret);
 mal_export str INSPECTsymbolType(int *ret, str *mod, str *fcn);
 mal_export str INSPECTatom_names(int *ret);
 mal_export str INSPECTatom_sup_names(int *ret);
@@ -545,6 +549,20 @@ INSPECTatom_names(int *ret)
 		BUNins(b, &i, ATOMname(i));
 
 	@:Pseudo(view,atom,name)@
+
+	return MAL_SUCCEED;
+}
+str
+INSPECTgetEnvironment(int *ret)
+{
+	BAT *b;
+
+	b= BATcopy(GDKenv);
+	if (b == 0)
+		return throwMessage("inspect.getEnvironment", "failed to create BAT");
+
+
+	@:Pseudo(view,env,name)@
 
 	return MAL_SUCCEED;
 }
