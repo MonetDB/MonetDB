@@ -810,10 +810,8 @@ the bind(namespace, batname, mode) operation. [todo]
 				if( backup[i] > 0) 
 					GDKfree(sbackup[i]);
 				backup[i]=0;
+				sbackup[i]=0;
 			} 
-			if( stk->stk[a].val.sval )
-				stk->stk[a].len= strlen(stk->stk[a].val.sval);
-			else stk->stk[a].len = 0;
 		} 
 	}
 @-
