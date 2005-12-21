@@ -2,7 +2,7 @@
 
 DBFARM=$PWD/dbfarm
 DBNAME=test
-MSERVER="Mtimeout -timeout 123 Mserver --dbfarm=$DBFARM --dbname=$DBNAME -c All.conf --set monet_prompt= --trace"
+MSERVER="Mtimeout -timeout 123 mserver --dbfarm=$DBFARM --dbname=$DBNAME -c All.conf --set monet_prompt= --trace"
 
 echo "Initialize database"
 rm -rf $DBFARM/$DBNAME
