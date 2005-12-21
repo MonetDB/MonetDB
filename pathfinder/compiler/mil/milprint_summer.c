@@ -83,6 +83,11 @@
 
 #define RRRL(p) L(R(R(R(p))))
 
+/* starting level of user-defined functions */ 
+#define UDF_LEV 1024
+/* starting level of global variables */
+#define GLO_LEV -1
+
 /**
  * mps_error calls PFoops with more text, since something is wrong
  * in the translation, if this message appears.
@@ -3556,7 +3561,7 @@ translateCast (opt_t *f,
     int rcode; /* the return code */
 
     PFty_t cast_type = PFty_defn (L(c)->sem.type);
-    PFty_t input_type = PFty_defn (R(c)->type);
+    PFty_t input_type = PFty_defn (TY(R(c)));
     int cast_optional = 0;
      
     if (cast_type.type == ty_opt ||
@@ -3570,7 +3575,7 @@ translateCast (opt_t *f,
 
     milprintf(f,
             "{ # cast from %s to %s\n", 
-            PFty_str(PFty_defn (R(c)->type)),
+            PFty_str(PFty_defn (TY(R(c)))),
             PFty_str(PFty_defn (L(c)->sem.type)));
 
     switch (cast_type.type)
@@ -3602,7 +3607,7 @@ translateCast (opt_t *f,
         default:
             PFoops (OOPS_TYPECHECK,
                     "can't cast type '%s' to type '%s'",
-                    PFty_str(R(c)->type),
+                    PFty_str(TY(R(c))),
                     PFty_str(L(c)->sem.type));
             break;
     }
@@ -3612,7 +3617,7 @@ translateCast (opt_t *f,
 
     milprintf(f,
             "} # end of cast from %s to %s\n", 
-            PFty_str(PFty_defn (R(c)->type)),
+            PFty_str(PFty_defn (TY(R(c)))),
             PFty_str(PFty_defn (L(c)->sem.type)));
 
     return rcode;
@@ -3747,7 +3752,7 @@ translateOperation (opt_t *f, int code, int cur_level, int counter,
                     char *operator, PFcnode_t *args, bool div)
 {
     int rcode, rc1, rc2;
-    PFty_t expected = L(args)->type;
+    PFty_t expected = TY(L(args));
 
     /* translate the subtrees */
     rc1 = translate2MIL (f, VALUES, cur_level, counter, L(args));
@@ -3865,7 +3870,7 @@ translateComparison (opt_t *f, int cur_level, int counter,
                      char *comp, PFcnode_t *args)
 {
     int rc1, rc2;
-    PFty_t expected = L(args)->type;
+    PFty_t expected = TY(L(args));
 
     /* translate the subtrees */
     rc1 = translate2MIL (f, VALUES, cur_level, counter, L(args));
@@ -4726,7 +4731,7 @@ static int
 fn_string(opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
 {
     int rcode, rc;
-    PFty_t input_type = *PFty_simplify(PFty_defn(c->type));
+    PFty_t input_type = *PFty_simplify(PFty_defn(TY(c)));
 
     rcode = (code)?STR:NORMAL;
 
@@ -5718,21 +5723,45 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
     if (lev_fst || lev_snd) /* default case */
     {
         rc1 = translate2MIL (f, VALUES, cur_level, counter, fst);
+
+        /* introduce the correct map relation (if lev_snd == UDF_LEV) */
+        if (lev_snd == UDF_LEV)
+        {
+            milprintf(f,
+                    "{\n"
+                    "var mapping := outer%03u.reverse().leftfetchjoin(inner%03u);\n",
+                    0, 0);
+            for (i = 0; i < cur_level; i++)
+            {
+                milprintf(f, 
+                    "mapping := mapping.leftjoin(outer%03u.reverse());\n"
+                    "mapping := mapping.leftfetchjoin(inner%03u);\n",
+                    i+1, i+1);
+            }
+            milprintf(f,
+                    /* tmark ensures void head */
+                    "match_outer%03u := iter.leftjoin(mapping.reverse()).tmark(iter.seqbase());\n"
+                    "}\n",
+                    fst_res);
+        } else {
+            milprintf(f,
+                    "match_outer%03u := iter.leftfetchjoin(inner%03u.reverse())"
+                                           ".leftfetchjoin(outer%03u);\n",
+                    fst_res, cur_level, cur_level);
+        }
+
         milprintf(f,
                 "ipik%03u := ipik;\n"
                 "iter%03u := iter;\n"
                 "pos%03u  := pos ;\n"
                 "item%03u := item%s;\n" /* we need to use `item' because
                                            it was declared before */
-                "kind%03u := kind;\n"
-                "match_outer%03u := iter.leftfetchjoin(inner%03u.reverse())"
-                                       ".leftfetchjoin(outer%03u);\n",
+                "kind%03u := kind;\n",
                 fst_res, 
                 fst_res, 
                 fst_res, 
                 fst_res, kind_str(rc1),
-                fst_res,
-                fst_res, cur_level, cur_level);
+                fst_res);
         milprintf(f,
                 "jouter%03u  := outer%03u ;\n"
                 "jorder_%03u  := order_%03u ;\n"
@@ -5797,8 +5826,19 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
                 fst_res);
     }
 
-    if (!lev_snd) /* default case */
+    if (!(lev_snd & ~UDF_LEV)) /* default case */
+    /* the above line only works because the current scope 0 is the one
+       introduced by the UDF */
     {
+        /* introduce the correct map relation (if lev_snd == UDF_LEV) */
+        if (lev_snd == UDF_LEV)
+        {
+            milprintf(f,
+                    "match_outer%03u := iter.leftfetchjoin(inner%03u.reverse())"
+                                           ".leftfetchjoin(outer%03u);\n",
+                    snd_res, 0, 0);
+        }
+
         milprintf(f,
                 "outer%03u  := outer%03u .copy().access(BAT_WRITE);\n"
                 "order_%03u  := order_%03u .copy().access(BAT_WRITE);\n"
@@ -6420,7 +6460,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     {
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         fn_data (f);
-        translateCast2STR (f, STR, NORMAL, L(args)->type);
+        translateCast2STR (f, STR, NORMAL, TY(L(args)));
         combine_strings (f, code, U_A);
         return (code)?STR:NORMAL;
     }
@@ -6442,7 +6482,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         else
         {
             translate2MIL (f, NORMAL, cur_level, counter, L(args));
-            is2ns (f, counter, L(args)->type);
+            is2ns (f, counter, TY(L(args)));
             return NORMAL;
         }
     }
@@ -7117,10 +7157,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         int rcode = (code)?INT:NORMAL;
         /* the semantics of idiv are a normal div operation
            followed by a cast to integer */
-        if (!PFty_subtype (L(args)->type, PFty_integer ()))
+        if (!PFty_subtype (TY(L(args)), PFty_integer ()))
         {
             rc = translateOperation (f, VALUES, cur_level, counter, "/", args, true);
-            translateCast2INT (f, rcode, rc, L(args)->type);
+            translateCast2INT (f, rcode, rc, TY(L(args)));
             testCastComplete(f, cur_level, PFty_integer ());
         }
         else
@@ -7356,7 +7396,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"boolean")))
     {
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        fn_boolean (f, rc, cur_level, L(args)->type);
+        fn_boolean (f, rc, cur_level, TY(L(args)));
         return NORMAL;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_op,"and")))
@@ -7985,7 +8025,9 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             rc = NORMAL; /* dummy */
             break;
         default: 
-            PFoops (OOPS_WARNING, "not supported feature is translated");
+            PFoops (OOPS_WARNING, 
+                    "not supported feature is translated (kind %i)",
+                    c->kind);
             break;
     }
     return rc;
@@ -8150,7 +8192,7 @@ simplifyCoreTree (PFcnode_t *c)
                 TY_EQ(TY(R(c)), PFty_empty ()))
             {
                 new_node = PFcore_empty ();
-                new_node->type = PFty_empty ();
+                TY(new_node) = PFty_empty ();
                 *c = *new_node;
             }
             else if (TY_EQ(TY(L(c)), PFty_empty ()))
@@ -8250,7 +8292,7 @@ simplifyCoreTree (PFcnode_t *c)
             simplifyCoreTree (LR(c));
             simplifyCoreTree (R(c));
 
-            input_type = PFty_defn(LR(c)->type);
+            input_type = PFty_defn(TY(LR(c)));
 
             if (R(c)->kind == c_var && 
                 R(c)->sem.var == LLL(c)->sem.var)
@@ -8260,7 +8302,7 @@ simplifyCoreTree (PFcnode_t *c)
             else if (TY_EQ (input_type, PFty_empty ()))
             {
                 new_node = PFcore_empty ();
-                new_node->type = PFty_empty ();
+                TY(new_node) = PFty_empty ();
                 *c = *new_node;
             }
             /* removes for expressions, which loop only over one literal */
@@ -8279,10 +8321,10 @@ simplifyCoreTree (PFcnode_t *c)
                 if (LLR(c)->kind == c_var)
                 {
                     new_node = PFcore_num (1);
-                    new_node->type = PFty_integer ();
+                    TY(new_node) = PFty_integer ();
                     replace_var (LLR(c)->sem.var, new_node, R(c));
                     LLR(c) = PFcore_nil ();
-                    LLR(c)->type = PFty_none();
+                    TY(LLR(c)) = PFty_none();
                 }
 
                 if (PFty_subtype (input_type, PFty_opt (PFty_atomic ())))
@@ -8295,9 +8337,9 @@ simplifyCoreTree (PFcnode_t *c)
                     new_node = PFcore_let (PFcore_letbind (LLL(c),
                                                            LR(c)),
                                            R(c));
-                    new_node->type = R(c)->type;
-                    L(new_node)->type =
-                    LL(new_node)->type = LLR(c)->type;
+                    TY(new_node) = TY(R(c));
+                    TY(L(new_node)) =
+                    TY(LL(new_node)) = TY(LLR(c));
                     *c = *new_node;
                 }
             }
@@ -8310,12 +8352,12 @@ simplifyCoreTree (PFcnode_t *c)
             /* debugging information */
             /*
             PFlog("input type: %s",
-                  PFty_str (R(c)->type));
+                  PFty_str (TY(R(c))));
             PFlog("cast type: %s",
                   PFty_str (L(c)->sem.type));
             */
             cast_type = *PFty_simplify(PFty_defn(L(c)->sem.type));
-            input_type = R(c)->type;
+            input_type = TY(R(c));
             opt_cast_type = cast_type;
 
             if (cast_type.type == ty_opt ||
@@ -8328,7 +8370,7 @@ simplifyCoreTree (PFcnode_t *c)
             {
                 assert (RR(c));
                 R(c) = RR(c);
-                input_type = R(c)->type;
+                input_type = TY(R(c));
             }
 
             /* removes casts which are not necessary:
@@ -8376,20 +8418,20 @@ simplifyCoreTree (PFcnode_t *c)
             }
 
             if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"boolean")) && 
-                PFty_subtype(DL(c)->type, fun->ret_ty))
+                PFty_subtype(TY(DL(c)), fun->ret_ty))
             {
                 /* don't use function - omit apply and arg node */
                 *c = *(DL(c));
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"data")) && 
-                     PFty_subtype(DL(c)->type, PFty_star (PFty_atomic ())))
+                     PFty_subtype(TY(DL(c)), PFty_star (PFty_atomic ())))
             {
                 /* don't use function - omit apply and arg node */
                 *c = *(DL(c));
             }
             else if ((!PFqname_eq(fun->qname,PFqname (PFns_fn,"string")) ||
                       !PFqname_eq(fun->qname,PFqname (PFns_fn,"string-join"))) &&
-                     PFty_subtype(DL(c)->type, PFty_string ()))
+                     PFty_subtype(TY(DL(c)), PFty_string ()))
             {
                 /* don't use function - omit apply and arg node */
                 *c = *(DL(c));
@@ -8401,7 +8443,7 @@ simplifyCoreTree (PFcnode_t *c)
                  /* empty result doesn't need to be merged */ 
                 (DL(c)->kind == c_empty ||
                  /* exactly one node per iteration doesn't need to be merged */
-                 (PFty_subtype(DL(c)->type, PFty_node ()) &&
+                 (PFty_subtype(TY(DL(c)), PFty_node ()) &&
                   DL(c)->kind != c_var &&
                   DL(c)->kind != c_seq) ||
                  /* merge is not needed after is2ns anymore */
@@ -8409,7 +8451,7 @@ simplifyCoreTree (PFcnode_t *c)
                   !PFqname_eq(DL(c)->sem.fun->qname,
                               PFqname (PFns_pf,"item-sequence-to-node-sequence"))) ||
                  /* element nodes don't contain text nodes to merge */
-                 (PFty_subtype(DL(c)->type, 
+                 (PFty_subtype(TY(DL(c)), 
                                PFty_star (
                                    PFty_choice (
                                        PFty_choice (
@@ -8422,26 +8464,26 @@ simplifyCoreTree (PFcnode_t *c)
                 *c = *(DL(c));
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"item-sequence-to-node-sequence")) &&
-                PFty_subtype(DL(c)->type, PFty_star (PFty_node ())))
+                PFty_subtype(TY(DL(c)), PFty_star (PFty_node ())))
             {
                 /* don't use function - omit apply and arg node */
                 *c = *(DL(c));
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"item-sequence-to-node-sequence")) &&
-                PFty_subtype(DL(c)->type, PFty_string ()))
+                PFty_subtype(TY(DL(c)), PFty_string ()))
             {
                 new_node = PFcore_wire1(c_text, DL(c));
                 TY(new_node) = PFty_text();
                 *c = *new_node;
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"item-sequence-to-untypedAtomic")) &&
-                     PFty_subtype (DL(c)->type, fun->ret_ty))
+                     PFty_subtype (TY(DL(c)), fun->ret_ty))
             {
                 /* don't use function - omit apply and arg node */
                 *c = *(DL(c));
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"item-sequence-to-untypedAtomic")) &&
-                      PFty_subtype (DL(c)->type, PFty_atomic ()))
+                      PFty_subtype (TY(DL(c)), PFty_atomic ()))
             {
                 new_node = PFcore_seqcast (PFcore_seqtype (PFty_untypedAtomic ()),
                                            DL(c));
@@ -8450,7 +8492,7 @@ simplifyCoreTree (PFcnode_t *c)
                 *c = *new_node;
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"item-sequence-to-untypedAtomic")) &&
-                     PFty_subtype (DL(c)->type, PFty_empty()))
+                     PFty_subtype (TY(DL(c)), PFty_empty()))
             {
                 new_node = PFcore_seqcast (PFcore_seqtype (PFty_untypedAtomic ()),
                                            PFcore_str (""));
@@ -8460,7 +8502,7 @@ simplifyCoreTree (PFcnode_t *c)
                 *c = *new_node;
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"distinct-doc-order")) &&
-                     (PFty_subtype (DL(c)->type, PFty_opt(PFty_node ())) ||
+                     (PFty_subtype (TY(DL(c)), PFty_opt(PFty_node ())) ||
                       DL(c)->kind == c_locsteps))
             {
                 /* don't use function - either because we only have at most
@@ -8514,9 +8556,9 @@ simplifyCoreTree (PFcnode_t *c)
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"empty")) &&
                      DL(c)->kind == c_if &&
-                     PFty_subtype (RL(DL(c))->type,
+                     PFty_subtype (TY(RL(DL(c))),
                                    PFty_atomic ()) &&
-                     PFty_subtype (RR(DL(c))->type,
+                     PFty_subtype (TY(RR(DL(c))),
                                    PFty_empty ()))
             {
                 if (L(DL(c))->kind == c_apply &&
@@ -8529,14 +8571,14 @@ simplifyCoreTree (PFcnode_t *c)
                 {
                     c->sem.fun = PFcore_function (PFqname (PFns_fn, "not"));
                     DL(c) = L(DL(c));
-                    D(c)->type = DL(c)->type;
+                    TY(D(c)) = TY(DL(c));
                 }
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"empty")) &&
                      DL(c)->kind == c_if &&
-                     PFty_subtype (RL(DL(c))->type,
+                     PFty_subtype (TY(RL(DL(c))),
                                    PFty_empty ()) &&
-                     PFty_subtype (RR(DL(c))->type,
+                     PFty_subtype (TY(RR(DL(c))),
                                    PFty_atomic ()))
             {
                 *c = *(L(DL(c)));
@@ -8556,8 +8598,8 @@ simplifyCoreTree (PFcnode_t *c)
                         opt_expected = expected;
  
                     if (PFty_subtype (opt_expected, PFty_atomic ()) &&
-                        !TY_EQ (L(c)->type, expected) &&
-                        !TY_EQ (L(c)->type, opt_expected))
+                        !TY_EQ (TY(L(c)), expected) &&
+                        !TY_EQ (TY(L(c)), opt_expected))
                     {
                         if (TY_EQ (opt_expected, PFty_atomic ()))
                             /* avoid dummy casts */ ;
@@ -8572,9 +8614,9 @@ simplifyCoreTree (PFcnode_t *c)
                         {
                             L(c) = PFcore_seqcast (PFcore_seqtype (expected), L(c));
                             /* type new code, to avoid multiple casts */
-                            c->type     =
-                            L(c)->type  =
-                            LL(c)->type = expected;
+                            TY(c)     =
+                            TY(L(c))  =
+                            TY(LL(c)) = expected;
                         }
                     }
                 }
@@ -8599,7 +8641,7 @@ simplifyCoreTree (PFcnode_t *c)
             simplifyCoreTree (L(c));
             simplifyCoreTree (R(c));
             if (R(c)->kind != c_locsteps &&
-                !PFty_subtype(R(c)->type,PFty_opt (PFty_node ())) &&
+                !PFty_subtype(TY(R(c)),PFty_opt (PFty_node ())) &&
                 !(R(c)->kind == c_apply &&
                   !PFqname_eq(R(c)->sem.fun->qname,PFqname (PFns_pf,"distinct-doc-order"))))
             {
@@ -8611,14 +8653,14 @@ simplifyCoreTree (PFcnode_t *c)
             if (L(c)->kind == c_child &&
                 R(c)->kind == c_locsteps &&
                 RL(c)->kind == c_descendant_or_self &&
-                TY_EQ(RLL(c)->type, PFty_xs_anyNode ()))
+                TY_EQ(TY(RLL(c)), PFty_xs_anyNode ()))
             {
                 L(c)->kind = c_descendant;
                 R(c) = RR(c);
             }
             else if (R(c)->kind == c_locsteps &&
                 RL(c)->kind == c_self &&
-                TY_EQ(RLL(c)->type, PFty_xs_anyNode ()))
+                TY_EQ(TY(RLL(c)), PFty_xs_anyNode ()))
             {
                 R(c) = RR(c);
             }
@@ -8633,7 +8675,7 @@ simplifyCoreTree (PFcnode_t *c)
             simplifyCoreTree (L(c));
             simplifyCoreTree (R(c));
 
-            input_type = PFty_prime(PFty_defn (L(c)->type));
+            input_type = PFty_prime(PFty_defn (TY(L(c))));
             if (input_type.type == ty_star ||
                 input_type.type == ty_plus ||
                 input_type.type == ty_opt)
@@ -8646,9 +8688,9 @@ simplifyCoreTree (PFcnode_t *c)
             {
                 L(c) = PFcore_seqcast (PFcore_seqtype (PFty_string()), L(c));
                 /* type new code, to avoid multiple casts */
-                c->type     =
-                L(c)->type  =
-                LL(c)->type = PFty_string ();
+                TY(c)     =
+                TY(L(c))  =
+                TY(LL(c)) = PFty_string ();
             }
             break;
         default: 
@@ -9045,7 +9087,7 @@ static int test_join_pattern(PFcnode_t *for_node,
             if (LR(fst_inner)->kind == c_for &&
                 LR(LR(fst_inner))->kind == c_locsteps &&
                 (L(LR(LR(fst_inner)))->kind == c_attribute ||
-                 TY_EQ(LL(LR(LR(fst_inner)))->type,
+                 TY_EQ(TY(LL(LR(LR(fst_inner)))),
                          PFty_text ())) &&
                 (R(LR(fst_inner))->kind == c_seqcast
                  || R(LR(fst_inner))->kind == c_cast) &&
@@ -9066,7 +9108,7 @@ static int test_join_pattern(PFcnode_t *for_node,
 
                 if (fst_inner_cast->sem.type.type == ty_opt)
                 {
-                    fst_inner_cast->type = PFty_child(fst_inner_cast->sem.type);
+                    TY(fst_inner_cast) = PFty_child(fst_inner_cast->sem.type);
                     fst_inner_cast->sem.type = PFty_child(fst_inner_cast->sem.type);
                 }
             }
@@ -9086,7 +9128,7 @@ static int test_join_pattern(PFcnode_t *for_node,
             if (LR(snd_inner)->kind == c_for &&
                 LR(LR(snd_inner))->kind == c_locsteps &&
                 (L(LR(LR(snd_inner)))->kind == c_attribute ||
-                 TY_EQ(LL(LR(LR(snd_inner)))->type,
+                 TY_EQ(TY(LL(LR(LR(snd_inner)))),
                          PFty_text ())) &&
                 (R(LR(snd_inner))->kind == c_seqcast
                  || R(LR(snd_inner))->kind == c_cast) &&
@@ -9107,7 +9149,7 @@ static int test_join_pattern(PFcnode_t *for_node,
 
                 if (snd_inner_cast->sem.type.type == ty_opt)
                 {
-                    snd_inner_cast->type = PFty_child(snd_inner_cast->sem.type);
+                    TY(snd_inner_cast) = PFty_child(snd_inner_cast->sem.type);
                     snd_inner_cast->sem.type = PFty_child(snd_inner_cast->sem.type);
                 }
             }
@@ -9346,11 +9388,6 @@ static int test_select(PFcnode_t *c,
    return 0;
 }
 */
-
-/* starting level of user-defined functions */ 
-#define UDF_LEV 1024
-/* starting level of global variables */
-#define GLO_LEV -1
 
 /**
  * recognize_join: helper function for join recognition
@@ -9779,12 +9816,12 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
                     "can't cope with global variables as "
                     "thetajoin input within user-defined function calls.");
     
-        if (fst_nested)
+        if (fst_nested & ~UDF_LEV)
         {
             fst_nested = (int) PFarray_last (way);
         }
 
-        if (snd_nested)
+        if (snd_nested & ~UDF_LEV)
         {
             snd_nested = (int) PFarray_last (way) - 1;
         }
@@ -9860,7 +9897,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
 
             if (first == 0) first = vid;
         strncat(sig, ",", 1024);
-            strncat(sig, PFty_str(LR(args)->type), 1024);
+            strncat(sig, PFty_str(TY(LR(args))), 1024);
 
             args = R(args);
         }
@@ -9986,8 +10023,8 @@ const char* PFinitMIL() {
         "\n"
         "var loop000 := bat(void,oid,1).seqbase(0@0).insert(0@0, 1@0);\n"
         "\n"
-        "var genType := \"xml\";"
-        "var time_compile;\n";
+        "var time_compile := 0;\n"
+        "var genType := \"xml\";";
 }
 
 const char* PFvarMIL() {
