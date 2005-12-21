@@ -1,0 +1,39 @@
+stdout of test 'bug-sf-972833` in directory 'src/test/bugs` itself:
+
+
+# 22:17:20 >  
+# 22:17:20 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=37327 --set sql_port=45293 --set xquery_port=51991 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 22:17:20 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 22:17:20 >  
+# 22:17:20 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45293  < bug-sf-972833.sql
+# 22:17:20 >  
+
+[ 1	]
+[ 1	]
+# test # table_name
+# x # name
+# varchar # type
+# 1 # length
+[ "a"	]
+# test # table_name
+# x # name
+# varchar # type
+# 0 # length
+
+# 22:17:20 >  
+# 22:17:20 >  Done.
+# 22:17:20 >  
+
