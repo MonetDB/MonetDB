@@ -148,11 +148,22 @@ urlcache_t *urlcache = NULL;
 /**
  * read input file into the url cache
  */
-char *PFurlcache (char *url, int keep)
+char *PFurlcache (char *uri, int keep)
 {
-    int        num_read = -1;
+    int         num_read = -1;
     urlcache_t *cache = urlcache;
     xmlParserInputBufferPtr  buf;
+    char url[1024]; 
+    strncpy(url, uri, 1024);
+    if (keep) {
+        int len = strlen(url);
+    	/* 
+    	 * URI that ends in .mil is converted into a .xq
+    	 */
+    	if (url[len-4] == '.' && url[len-3] == 'm' && url[len-2] == 'i' && url[len-1] == 'l') {
+            url[len-3] = 'x'; url[len-2] = 'q'; url[len-1] = 0;
+        }
+    }
 
     /*
      * first try the cache
