@@ -12,12 +12,12 @@ stdout of test 'self_axis_not_supported.SF-1237444` in directory 'tests/BugDay_2
 module(pathfinder);
 module("unix");
 
-var TSTDOC := getenv("TSTSRCDIR") + "/video.xml";
+var TSTDOC := getenv("TSTSRCDIR") + "/test1237444.xml";
 
-shred_doc(TSTDOC,"video.xml");
+shred_doc(TSTDOC,"test1237444.xml");
 # Shredded XML doc("video.xml"), total time after commit=0.010s
 
-xquery("xml", "doc(\"video.xml\")//*/self::scene").printf();
+xquery("xml", "doc(\"test1237444.xml\")//*/self::scene").printf();
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
 <scene id="1"/><scene id="2"/><scene id="3"/>
