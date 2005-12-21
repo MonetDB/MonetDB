@@ -603,6 +603,13 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 		stmt *cond = stmt_dup(n->data);
 		stmt *result = stmt_dup(m->data);
 
+		if (!(result = check_types(sql, restype, result, type_equal))) {
+			list_destroy(conds);
+			list_destroy(results);
+			stmt_destroy(res);
+			return NULL;
+		}
+
 		/* handle single values differently ! */
 		if (f == sql_sel && !subset) {
 			res = sql_Nop_(sql, "ifthenelse", cond, result, res);
@@ -612,12 +619,6 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 			else
 				result = stmt_semijoin(result, cond);
 
-			if (!(result = check_types(sql, restype, result, type_equal))) {
-				list_destroy(conds);
-				list_destroy(results);
-				stmt_destroy(res);
-				return NULL;
-			}
 			res = stmt_replace(res, result);
 		}
 	}
