@@ -113,7 +113,7 @@ factory structures.
 #include "sql_gencode.h"
 #include "optimizer.h"
 
-#define TOSMALL 12
+#define TOSMALL 10
 
 str 
 FXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
