@@ -741,8 +741,7 @@ char **getHelp(Module m, str pat)
 	Symbol s;
 	int len1 = 0,len2 = 0;
 	char *t, **msg, buf[BUFSIZ];
-	int top=0, i,j,k, sig = 0, doc = 0, match=0;
-	int dot;
+	int top=0, i,j,k, sig = 0, doc = 0;
 
 #ifdef MAL_SCOPE_DEBUG 
 	printf("showHelp: %s",pat);
@@ -753,8 +752,6 @@ char **getHelp(Module m, str pat)
 	t= strchr(pat,'\n');
 	if( t) *t=0;
 
-	dot= strchr(pat,'.') != 0;
-	match= strchr(pat,'(')!= 0;
 	t = strchr(pat,')');
 	if( t) { doc++; *t=0; }
 	t= strchr(pat,'(');
@@ -798,8 +795,8 @@ char **getHelp(Module m, str pat)
 	if( m1 ) m = m1;
 	
 #ifdef MAL_SCOPE_DEBUG 
-	printf("showHelp: %s %s [%d] %s %s %d\n",
-			modnme,fcnnme,len2, (doc?"doc":""), (sig?"sig":""),match);
+	printf("showHelp: %s %s [%d] %s %s\n",
+			modnme,fcnnme,len2, (doc?"doc":""), (sig?"sig":""));
 #endif
 	for(i=0; i< MAXSCOPE; i++)
 	for(k=0; k< MAXSCOPE; k++){
