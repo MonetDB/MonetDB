@@ -17,47 +17,70 @@ quit();
 
 Over..
 
-# 13:09:10 >  
-# 13:09:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=48034  < aggregate_functions_with_limit.SF-1367127.sql
-# 13:09:10 >  
+# 11:38:28 >  
+# 11:38:28 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=47618  < aggregate_functions_with_limit.SF-1367127.sql
+# 11:38:28 >  
 
-# tables # table_name
-# name # name
-# varchar # type
-# 10 # length
-[ "modules"	]
-[ "schemas"	]
-[ "ptables"	]
-[ "pcolumns"	]
-[ "keys"	]
-[ "idxs"	]
-[ "keycolumns"	]
-[ "types"	]
-[ "functions"	]
-[ "args"	]
-[ "ttables"	]
-[ "tcolumns"	]
-[ "tables"	]
-[ "columns"	]
-[ "profile"	]
-[ "sessions"	]
-[ "env"	]
-[ "sequences"	]
-[ "db_users"	]
-[ "user_role"	]
-[ "auths"	]
-[ "privileges"	]
-[ "users"	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 #  # table_name
 # count_id # name
 # int # type
 # 10 # length
-[ 23	]
-# ,	pcolumns # table_name
+[ 50	]
+# ,	test_aggre_limit # table_name
 # type,	count_type # name
 # varchar,	int # type
 # 3,	10 # length
-[ "int",	64	]
+[ "int",	29	]
 
 # 13:09:10 >  
 # 13:09:10 >  Done.
