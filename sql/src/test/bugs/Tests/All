@@ -29,6 +29,7 @@ innerjoin_between-bug-sf-960672
 subselect_single_value-bug-sf-962099
 cast_varchar2int-bug-sf-964165
 floor-bug-sf-967066
+bug-sf-972833
 primary_key-bug-sf-975308
 update_where-bug-sf-976963
 insert_into_select-bug-sf-978043
