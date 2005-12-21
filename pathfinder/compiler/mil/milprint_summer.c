@@ -10515,7 +10515,7 @@ static const char* _PFstopMIL(bool is_update) {
     else
         strcat(buf,
                "  if (genType.search(\"none\") = -1)\n"
-               "    print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n"
+               "    print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n");
     strcat(buf,
            "});\n"
            "destroy_ws(ws);\n"
