@@ -7336,7 +7336,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f, 
                 "{ # translate fn:subsequence\n"
                 "if (loop%03u.count() = 1) {\n"
-                "    var lo := item_dbl_%03d.fetch(0);\n", cur_level, counter-1);
+                "    var lo := item_dbl_%03d.fetch(0) - 1.0LL;\n"
+                "    if (lo < 1.0LL) lo := 0.0;\n", cur_level, counter-1);
         if (fun->arity == 3)
                 milprintf(f, "    var hi := int(lo + item_dbl_%03d.fetch(0)) - 1;\n", counter);
         else 
