@@ -784,6 +784,9 @@ doFile(Mapi mid, const char *file, int skipequals)
 			assert(hdl != NULL);
 			mapi_query_part(hdl, buf, length);
 			CHECK_RESULT(mid, hdl, buf, continue);
+
+			/* in case of xquery; do the whole file in one go */
+			if (command) continue;
 		}
 
 		assert(hdl != NULL);
