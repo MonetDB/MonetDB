@@ -378,7 +378,7 @@ PROC shred_doc_locked(BAT[str,bat] docBAT, str location, str name, timestamp ts,
 
 PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
 {
-    # insert all bats from resBAT in docBAT
+    # insert all bats from shredBAT in docBAT
     var ins := ws_tpe.ord_uselect(bat).mirror().ord_select(nil,oid(-(DOC_LOADED,1))).mirror();
     [insert](const docBAT, ins.leftfetchjoin(ws_nme), ins.leftfetchjoin(ws_oid).leftjoin(shredBAT));
 
@@ -635,12 +635,12 @@ PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, str docid, int 
         ws.fetch(FRAG).replace(0@0,frag);
 
         if (isnil(height))
-          height := ws.fetch(PRE_LEVEL).max().int() + 1;
+            height := ws.fetch(PRE_LEVEL).max().int() + 1;
         ws.fetch(HEIGHT).insert(nil,height);
-     } else { 
+    } else { 
         ws.fetch(FRAG).replace(0@0,frag.reverse().fetch(0)); 
-     }
-     return frag;
+    }
+    return frag;
 }
 
 PROC add_doc_locked(str name, timestamp ts, int ws) : oid 
