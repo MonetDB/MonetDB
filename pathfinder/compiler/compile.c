@@ -153,14 +153,14 @@ char *PFurlcache (char *uri, int keep)
     int         num_read = -1;
     urlcache_t *cache = urlcache;
     xmlParserInputBufferPtr  buf;
-    char url[1024]; 
+    char *ret, url[1024];  
     strncpy(url, uri, 1024);
     if (keep) {
         int len = strlen(url);
     	/* 
     	 * URI that ends in .mil is converted into a .xq
     	 */
-    	if (url[len-4] == '.' && url[len-3] == 'm' && url[len-2] == 'i' && url[len-1] == 'l') {
+    	if (len > 4 && url[len-4] == '.' && url[len-3] == 'm' && url[len-2] == 'i' && url[len-1] == 'l') {
             url[len-3] = 'x'; url[len-2] = 'q'; url[len-1] = 0;
         }
     }
@@ -192,6 +192,7 @@ char *PFurlcache (char *uri, int keep)
 	if (buf) free(buf);
         return NULL;
     }
+    ret = (char*) buf->buffer->content;
     if (keep) {
         /* cache the new url */
         cache = (urlcache_t*) malloc(sizeof(urlcache_t)+strlen(url));
@@ -201,8 +202,11 @@ char *PFurlcache (char *uri, int keep)
             cache->next = urlcache;
             urlcache = cache;
         }
+    } else {
+        buf->buffer->content = NULL; /* otherwise it will be deleted */
+    	xmlFreeParserInputBuffer (buf);
     }
-    return (char*) buf->buffer->content;
+    return ret;
 }
 
 /**
