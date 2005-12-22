@@ -2302,9 +2302,13 @@ xquery_prepare(xquery_client *ctx,
             }
         }
     }
+
+    /* some error has already been detected: query has failed already */
+    if (err) return err; 
+
     if (loaded_modules == 0) {
-       err = (char*) -1; /* query not recognized as a function call */
-    } else if (err == NULL) {
+        err = (char*) -1; /* no module loaded: query not recognized as a function call */
+    } else {
         /* detect queries that consist of a single method call only */
         nsend = ns = (char*) &nsbuf; 
         loc = p; 
@@ -2551,11 +2555,6 @@ CMDxquery_server(Cntxt stk,
         }
         xquery_client_end(ctx, 0);
     }
-
-    /* end of session 
-    stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1);
-    stream_flush(out);
-     */
     return(xquery_server_end(ctx, XQthread, NULL));
 }
 
