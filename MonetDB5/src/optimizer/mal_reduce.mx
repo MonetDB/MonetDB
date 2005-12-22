@@ -53,23 +53,27 @@ opt_export str MRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str
 MRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int *vars;
+	int *vars, *used;
 	int cnt = 0, i, j;
-	vars = (int *) alloca(mb->vtop * sizeof(int));
+	InstrPtr q;
 
+	vars = (int *) alloca(mb->vtop * sizeof(int));
+	used= (int *) alloca(mb->vtop * sizeof(int));
+	for( i=0; i< mb->vtop; i++)
+		vars[i]= used[i]=0;
+
+	/* build the use table */
+	for(i=0; i<mb->stop; i++){
+		q= getInstrPtr(mb,i);
+		for(j= 0; j<q->argc; j++)
+			used[getArg(q,j)]= 1;
+	}
 	/* build the alias table */
 	for (i = 0; i < mb->vtop; i++) {
-		if ( !mb->var[i]->isudftype && 
-			!isConstant(mb, i) && 
-			!isTypeVar(mb, i) ){
-			for (j = cnt - 1; j >= 0; j--)
-				if (mb->var[j] && 
-					getVarType(mb, i) == getVarType(mb, j)) {
-					clearVariable(mb, i);
-					vars[i] = j;
-					goto nxtReduce;
-				}
-		}
+		if ( used[i]==0 ){
+				clearVariable(mb, i);
+				goto nxtReduce;
+			}
 		mb->var[cnt]= mb->var[i];
 		vars[i] = cnt;
 		cnt++;
