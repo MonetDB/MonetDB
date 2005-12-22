@@ -1,13 +1,13 @@
 stdout of test '10` in directory 'src/benchmarks/tpch` itself:
 
 
-# 11:36:57 >  
-# 11:36:57 >  Mtimeout -timeout 180 Mserver "--config=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/lib/MonetDB" --set "gdk_dbfarm=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/dbfarm" --set "sql_logdir=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/log" --set mapi_port=48783 --set sql_port=53498 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_tpch" "/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/sql/build/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
-# 11:36:57 >  
+# 12:34:42 >  
+# 12:34:42 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_tpch" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 12:34:42 >  
 
-# Monet Database Server V4.5.0
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
 printf("\nReady.\n");
@@ -17,17 +17,14 @@ quit();
 
 Over..
 
-# 11:36:58 >  
-# 11:36:58 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=53498  < 10.sql
-# 11:36:58 >  
+# 12:34:43 >  
+# 12:34:43 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < 10.sql
+# 12:34:43 >  
 
-# 3 # querytype
 # customer,	customer,	,	customer,	nation,	customer,	customer,	customer # table_name
 # c_custkey,	c_name,	revenue,	c_acctbal,	n_name,	c_address,	c_phone,	c_comment # name
 # int,	varchar,	decimal,	decimal,	varchar,	varchar,	varchar,	varchar # type
-# 11,	18,	21,	17,	14,	40,	15,	116 # length
-# 20,	,	,	,	,	,	,	 # tuplecount
-# 1,	,	,	,	,	,	,	 # id
+# 10,	18,	21,	17,	14,	40,	15,	104 # length
 [ 679,	"Customer#000000679",	378211.3252,	1394.44,	"IRAN",	"IJf1FlZL9I9m,rvofcoKy5pRUOjUQV",	"20-146-696-9508",	"regular ideas promise against the furiously final deposits. f"	]
 [ 1201,	"Customer#000001201",	374331.5340,	5165.39,	"IRAN",	"LfCSVKWozyWOGDW02g9UX,XgH5YU2o5ql1zBrN",	"20-825-400-1187",	"fluffily final grouches doubt. bold dependencies dazzle caref"	]
 [ 422,	"Customer#000000422",	366451.0126,	-272.14,	"INDONESIA",	"AyNzZBvmIDo42JtjP9xzaK3pnvkh Qc0o08ssnvq",	"19-299-247-2444",	"furiously ironic asymptotes are slyly ironic, ironic requests. bold,"	]
@@ -49,7 +46,7 @@ Over..
 [ 1049,	"Customer#000001049",	281134.1117,	8747.99,	"INDONESIA",	"bZ1OcFhHaIZ5gMiH",	"19-499-258-2851",	"ironic, unusual dependencies sleep across the quickly reg"	]
 [ 1094,	"Customer#000001094",	274877.4440,	2544.49,	"BRAZIL",	"OFz0eedTmPmXk2 3XM9v9Mcp13NVC0PK",	"12-234-721-9871",	"regular, regular accounts boost special instructions. bold, final accounts at the regular pa"	]
 
-# 11:36:58 >  
-# 11:36:58 >  Done.
-# 11:36:58 >  
+# 12:34:43 >  
+# 12:34:43 >  Done.
+# 12:34:43 >  
 

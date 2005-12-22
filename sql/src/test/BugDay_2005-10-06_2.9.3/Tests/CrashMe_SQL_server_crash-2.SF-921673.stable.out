@@ -1,13 +1,13 @@
 stdout of test 'CrashMe_SQL_server_crash-2.SF-921673` in directory 'src/test/BugDay_2005-10-06_2.9.3` itself:
 
 
-# 13:44:45 >  
-# 13:44:45 >  Mtimeout -timeout 180 Mserver "--config=/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./lib/MonetDB:/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./lib/bin" --set "gdk_dbfarm=/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./var/MonetDB/log" --set mapi_port=39956 --set sql_port=40437 --set xquery_port=51178 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 13:44:45 >  
+# 12:37:38 >  
+# 12:37:38 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 12:37:38 >  
 
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit with 32bit OIDs; dynamically linked.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
 printf("\nReady.\n");
@@ -17,17 +17,14 @@ quit();
 
 Over..
 
-# 13:44:45 >  
-# 13:44:45 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=40437  < CrashMe_SQL_server_crash-2.SF-921673.sql
-# 13:44:45 >  
+# 12:37:39 >  
+# 12:37:39 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < CrashMe_SQL_server_crash-2.SF-921673.sql
+# 12:37:39 >  
 
-# 3 # querytype
 # ,	schemas,	tables,	columns,	columns,	columns,	columns,	,	,	,	,	columns,	,	,	,	,	,	,	 # table_name
 # table_cat,	table_schem,	table_name,	column_name,	type_name,	column_size,	decimal_digits,	buffer_length,	num_prec_radix,	nullable,	remarks,	column_def,	sql_data_type,	sql_datetime_sub,	char_octet_length,	ordinal_position,	scope_catalog,	scope_schema,	scope_table # name
 # char,	varchar,	varchar,	varchar,	varchar,	int,	int,	smallint,	smallint,	char,	char,	varchar,	smallint,	smallint,	smallint,	int,	char,	char,	char # type
 # 0,	3,	10,	14,	9,	10,	10,	6,	6,	0,	0,	1,	6,	6,	6,	10,	0,	0,	0 # length
-# 127,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	 # tuplecount
-# 1,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	 # id
 [ NULL,	"sys",	"args",	"id",	"int",	9,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	1,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"args",	"func_id",	"int",	9,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	2,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"args",	"name",	"varchar",	256,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	3,	NULL,	NULL,	NULL	]
@@ -158,7 +155,7 @@ Over..
 [ NULL,	"sys",	"users",	"fullname",	"clob",	0,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	2,	NULL,	NULL,	NULL	]
 [ NULL,	"sys",	"users",	"default_schema",	"int",	9,	0,	0,	10,	NULL,	NULL,	NULL,	0,	0,	0,	3,	NULL,	NULL,	NULL	]
 
-# 13:44:45 >  
-# 13:44:45 >  Done.
-# 13:44:45 >  
+# 12:37:39 >  
+# 12:37:39 >  Done.
+# 12:37:39 >  
 

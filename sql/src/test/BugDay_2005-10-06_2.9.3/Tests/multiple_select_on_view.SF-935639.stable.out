@@ -1,9 +1,9 @@
 stdout of test 'multiple_select_on_view.SF-935639` in directory 'src/test/BugDay_2005-10-06_2.9.3` itself:
 
 
-# 17:06:00 >  
-# 17:06:00 >  Mtimeout -timeout 180 Mserver "--config=/ufs/roberto/servers/MonetDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/roberto/servers/MonetDB/lib/MonetDB:/ufs/roberto/servers/MonetDB/lib/bin" --set "gdk_dbfarm=/ufs/roberto/servers/MonetDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/roberto/servers/MonetDB/var/MonetDB/log" --set mapi_port=34713 --set sql_port=45593 --set xquery_port=53969 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 17:06:00 >  
+# 12:40:37 >  
+# 12:40:37 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 12:40:37 >  
 
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2005, CWI. All rights reserved.
@@ -17,34 +17,24 @@ quit();
 
 Over..
 
-# 17:06:00 >  
-# 17:06:00 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45593  < multiple_select_on_view.SF-935639.sql
-# 17:06:00 >  
+# 12:40:41 >  
+# 12:40:41 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < multiple_select_on_view.SF-935639.sql
+# 12:40:41 >  
 
-# 6 # querytype
-# 4 # querytype
 [ 1	]
-# 4 # querytype
 [ 1	]
-# 6 # querytype
-# 3 # querytype
 # c # table_name
 # count_b # name
 # int # type
 # 10 # length
-# 1 # tuplecount
-# 3 # id
 [ 2	]
-# 3 # querytype
 # c # table_name
 # count_b # name
 # int # type
 # 10 # length
-# 1 # tuplecount
-# 4 # id
 [ 2	]
 
-# 17:06:00 >  
-# 17:06:00 >  Done.
-# 17:06:00 >  
+# 12:40:41 >  
+# 12:40:41 >  Done.
+# 12:40:41 >  
 

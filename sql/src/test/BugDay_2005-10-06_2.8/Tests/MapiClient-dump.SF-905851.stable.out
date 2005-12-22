@@ -21,43 +21,24 @@ Over..
 # 15:55:37 >  Mtimeout -timeout 240 ./MapiClient-dump.SF-905851.SQL MapiClient-dump.SF-905851 
 # 15:55:37 >  
 
-# 7 # querytype
-# 7 # querytype
-# 4 # querytype
 [ 1	]
-# 4 # querytype
 [ 1	]
-# 4 # querytype
 [ 1	]
-# 4 # querytype
 [ 1	]
-# 4 # querytype
 [ 1	]
-# 4 # querytype
 [ 1	]
-# 4 # querytype
 [ 1	]
-# 4 # querytype
 [ 1	]
-# 4 # querytype
 [ 1	]
-# 4 # querytype
 [ 1	]
-# 4 # querytype
 [ 1	]
-# 4 # querytype
 [ 1	]
-# 4 # querytype
 [ 1	]
-# 4 # querytype
 [ 1	]
-# 3 # querytype
 # allnewtriples,	allnewtriples,	allnewtriples,	allnewtriples,	allnewtriples # table_name
 # id,	subject,	predicate,	object,	explicit # name
 # int,	int,	int,	int,	boolean # type
 # 10,	10,	10,	10,	0 # length
-# 7,	,	,	,	 # tuplecount
-# 15,	,	,	,	 # id
 [ 1,	1,	1,	1,	false	]
 [ 2,	1,	1,	2,	false	]
 [ 3,	1,	2,	1,	false	]
@@ -65,13 +46,10 @@ Over..
 [ 5,	1,	2,	2,	false	]
 [ 6,	2,	2,	1,	false	]
 [ 7,	2,	2,	2,	false	]
-# 3 # querytype
 # foreign,	foreign,	foreign,	foreign # table_name
 # id,	subject,	predicate,	object # name
 # int,	int,	int,	int # type
 # 10,	10,	10,	10 # length
-# 7,	,	,	 # tuplecount
-# 16,	,	,	 # id
 [ 1,	1,	1,	1	]
 [ 2,	2,	2,	2	]
 [ 3,	1,	2,	2	]

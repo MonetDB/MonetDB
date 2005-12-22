@@ -1,13 +1,13 @@
 stdout of test 'wisconsin-select` in directory 'src/benchmarks/wisconsin` itself:
 
 
-# 11:41:22 >  
-# 11:41:22 >  Mtimeout -timeout 300 Mserver "--config=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/lib/MonetDB" --set "gdk_dbfarm=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/dbfarm" --set "sql_logdir=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/log" --set mapi_port=45274 --set sql_port=57463 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_wisconsin" "/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/sql/build/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
-# 11:41:22 >  
+# 12:35:42 >  
+# 12:35:42 >  Mtimeout -timeout 1020 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_wisconsin" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 12:35:42 >  
 
-# Monet Database Server V4.5.0
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
 printf("\nReady.\n");
@@ -17,17 +17,14 @@ quit();
 
 Over..
 
-# 11:41:23 >  
-# 11:41:23 >  Mtimeout -timeout 120 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=57463  < wisconsin-select.sql
-# 11:41:23 >  
+# 12:35:43 >  
+# 12:35:43 >  Mtimeout -timeout 480 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < wisconsin-select.sql
+# 12:35:43 >  
 
-# 3 # querytype
 # tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1 # table_name
 # unique1,	unique2,	two,	four,	ten,	twenty,	hundred,	thousand,	twothousand,	fivethous,	tenthous,	odd,	even,	stringu1,	stringu2,	string4 # name
 # int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	char,	char,	char # type
-# 11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	6,	6,	6 # length
-# 100,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	 # tuplecount
-# 1,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	 # id
+# 10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	16,	16,	16 # length
 [ 954,	302,	0,	2,	4,	14,	54,	954,	954,	954,	954,	108,	109,	"SKAAAA",	"QLAAAA",	"OOOOxx"	]
 [ 3413,	303,	1,	1,	3,	13,	13,	413,	1413,	3413,	3413,	26,	27,	"HBAAAA",	"RLAAAA",	"VVVVxx"	]
 [ 9081,	304,	1,	1,	1,	1,	81,	81,	1081,	4081,	9081,	162,	163,	"HLAAAA",	"SLAAAA",	"AAAAxx"	]
@@ -128,13 +125,10 @@ Over..
 [ 1139,	399,	1,	3,	9,	19,	39,	139,	1139,	1139,	1139,	78,	79,	"VRAAAA",	"JPAAAA",	"VVVVxx"	]
 [ 2293,	400,	1,	1,	3,	13,	93,	293,	293,	2293,	2293,	186,	187,	"FKAAAA",	"KPAAAA",	"AAAAxx"	]
 [ 6125,	401,	1,	1,	5,	5,	25,	125,	125,	1125,	6125,	50,	51,	"PBAAAA",	"LPAAAA",	"HHHHxx"	]
-# 3 # querytype
 # tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1 # table_name
 # unique1,	unique2,	two,	four,	ten,	twenty,	hundred,	thousand,	twothousand,	fivethous,	tenthous,	odd,	even,	stringu1,	stringu2,	string4 # name
 # int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	char,	char,	char # type
-# 11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	6,	6,	6 # length
-# 1000,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	 # tuplecount
-# 2,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	 # id
+# 10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	16,	16,	16 # length
 [ 1314,	10,	0,	2,	4,	14,	14,	314,	1314,	1314,	1314,	28,	29,	"OYAAAA",	"KAAAAA",	"OOOOxx"	]
 [ 1504,	11,	0,	0,	4,	4,	4,	504,	1504,	1504,	1504,	8,	9,	"WFAAAA",	"LAAAAA",	"VVVVxx"	]
 [ 923,	45,	1,	3,	3,	3,	23,	923,	923,	923,	923,	46,	47,	"NJAAAA",	"TBAAAA",	"HHHHxx"	]
@@ -1135,21 +1129,15 @@ Over..
 [ 1084,	9983,	0,	0,	4,	4,	84,	84,	1084,	1084,	1084,	168,	169,	"SPAAAA",	"ZTOAAA",	"VVVVxx"	]
 [ 1384,	9986,	0,	0,	4,	4,	84,	384,	1384,	1384,	1384,	168,	169,	"GBAAAA",	"CUOAAA",	"OOOOxx"	]
 [ 858,	9988,	0,	2,	8,	18,	58,	858,	858,	858,	858,	116,	117,	"AHAAAA",	"EUOAAA",	"AAAAxx"	]
-# 3 # querytype
 # tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1 # table_name
 # unique1,	unique2,	two,	four,	ten,	twenty,	hundred,	thousand,	twothousand,	fivethous,	tenthous,	odd,	even,	stringu1,	stringu2,	string4 # name
 # int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	char,	char,	char # type
-# 11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	6,	6,	6 # length
-# 1,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	 # tuplecount
-# 3,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	 # id
+# 10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	16,	16,	16 # length
 [ 5513,	2001,	1,	1,	3,	13,	13,	513,	1513,	513,	5513,	26,	27,	"BEAAAA",	"ZYCAAA",	"HHHHxx"	]
-# 3 # querytype
 # tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1 # table_name
 # unique1,	unique2,	two,	four,	ten,	twenty,	hundred,	thousand,	twothousand,	fivethous,	tenthous,	odd,	even,	stringu1,	stringu2,	string4 # name
 # int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	char,	char,	char # type
-# 11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	6,	6,	6 # length
-# 100,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	 # tuplecount
-# 4,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	 # id
+# 10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	16,	16,	16 # length
 [ 954,	302,	0,	2,	4,	14,	54,	954,	954,	954,	954,	108,	109,	"SKAAAA",	"QLAAAA",	"OOOOxx"	]
 [ 3413,	303,	1,	1,	3,	13,	13,	413,	1413,	3413,	3413,	26,	27,	"HBAAAA",	"RLAAAA",	"VVVVxx"	]
 [ 9081,	304,	1,	1,	1,	1,	81,	81,	1081,	4081,	9081,	162,	163,	"HLAAAA",	"SLAAAA",	"AAAAxx"	]
@@ -1250,13 +1238,10 @@ Over..
 [ 1139,	399,	1,	3,	9,	19,	39,	139,	1139,	1139,	1139,	78,	79,	"VRAAAA",	"JPAAAA",	"VVVVxx"	]
 [ 2293,	400,	1,	1,	3,	13,	93,	293,	293,	2293,	2293,	186,	187,	"FKAAAA",	"KPAAAA",	"AAAAxx"	]
 [ 6125,	401,	1,	1,	5,	5,	25,	125,	125,	1125,	6125,	50,	51,	"PBAAAA",	"LPAAAA",	"HHHHxx"	]
-# 3 # querytype
 # t1,	t1,	t1,	t1,	t1,	t1,	t1,	t1,	t1,	t1,	t1,	t1,	t1,	t1,	t1,	t1,	t2,	t2,	t2,	t2,	t2,	t2,	t2,	t2,	t2,	t2,	t2,	t2,	t2,	t2,	t2,	t2 # table_name
 # unique1,	unique2,	two,	four,	ten,	twenty,	hundred,	thousand,	twothousand,	fivethous,	tenthous,	odd,	even,	stringu1,	stringu2,	string4,	t2unique1,	t2unique2,	t2two,	t2four,	t2ten,	t2twenty,	t2hundred,	t2thousand,	t2twothousand,	t2fivethous,	t2tenthous,	t2odd,	t2even,	t2stringu1,	t2stringu2,	t2string4 # name
 # int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	char,	char,	char,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	char,	char,	char # type
-# 11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	6,	6,	6,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	6,	6,	6 # length
-# 1000,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	 # tuplecount
-# 5,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	 # id
+# 10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	16,	16,	16,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	16,	16,	16 # length
 [ 8800,	0,	0,	0,	0,	0,	0,	800,	800,	3800,	8800,	0,	1,	"MAAAAA",	"AAAAAA",	"AAAAxx",	8800,	0,	0,	0,	0,	0,	0,	800,	800,	3800,	8800,	0,	1,	"MAAAAA",	"AAAAAA",	"AAAAxx"	]
 [ 1891,	1,	1,	3,	1,	11,	91,	891,	1891,	1891,	1891,	182,	183,	"TUAAAA",	"BAAAAA",	"HHHHxx",	1891,	1,	1,	3,	1,	11,	91,	891,	1891,	1891,	1891,	182,	183,	"TUAAAA",	"BAAAAA",	"HHHHxx"	]
 [ 3420,	2,	0,	0,	0,	0,	20,	420,	1420,	3420,	3420,	40,	41,	"OBAAAA",	"CAAAAA",	"OOOOxx",	3420,	2,	0,	0,	0,	0,	20,	420,	1420,	3420,	3420,	40,	41,	"OBAAAA",	"CAAAAA",	"OOOOxx"	]
@@ -2257,13 +2242,10 @@ Over..
 [ 1582,	997,	0,	2,	2,	2,	82,	582,	1582,	1582,	1582,	164,	165,	"WIAAAA",	"JMBAAA",	"HHHHxx",	1582,	997,	0,	2,	2,	2,	82,	582,	1582,	1582,	1582,	164,	165,	"WIAAAA",	"JMBAAA",	"HHHHxx"	]
 [ 6643,	998,	1,	3,	3,	3,	43,	643,	643,	1643,	6643,	86,	87,	"NVAAAA",	"KMBAAA",	"OOOOxx",	6643,	998,	1,	3,	3,	3,	43,	643,	643,	1643,	6643,	86,	87,	"NVAAAA",	"KMBAAA",	"OOOOxx"	]
 [ 2238,	999,	0,	2,	8,	18,	38,	238,	238,	2238,	2238,	76,	77,	"CIAAAA",	"LMBAAA",	"VVVVxx",	2238,	999,	0,	2,	8,	18,	38,	238,	238,	2238,	2238,	76,	77,	"CIAAAA",	"LMBAAA",	"VVVVxx"	]
-# 3 # querytype
 # t,	t,	t,	t,	t,	t,	t,	t,	t,	t,	t,	t,	t,	t,	t,	t,	b,	b,	b,	b,	b,	b,	b,	b,	b,	b,	b,	b,	b,	b,	b,	b # table_name
 # unique1,	unique2,	two,	four,	ten,	twenty,	hundred,	thousand,	twothousand,	fivethous,	tenthous,	odd,	even,	stringu1,	stringu2,	string4,	bunique1,	bunique2,	btwo,	bfour,	bten,	btwenty,	bhundred,	bthousand,	btwothousand,	bfivethous,	btenthous,	bodd,	beven,	bstringu1,	bstringu2,	bstring4 # name
 # int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	char,	char,	char,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	char,	char,	char # type
-# 11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	6,	6,	6,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	6,	6,	6 # length
-# 1000,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	 # tuplecount
-# 6,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	 # id
+# 10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	16,	16,	16,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	16,	16,	16 # length
 [ 8800,	0,	0,	0,	0,	0,	0,	800,	800,	3800,	8800,	0,	1,	"MAAAAA",	"AAAAAA",	"AAAAxx",	8800,	0,	0,	0,	0,	0,	0,	800,	800,	3800,	8800,	0,	1,	"MAAAAA",	"AAAAAA",	"AAAAxx"	]
 [ 1891,	1,	1,	3,	1,	11,	91,	891,	1891,	1891,	1891,	182,	183,	"TUAAAA",	"BAAAAA",	"HHHHxx",	1891,	1,	1,	3,	1,	11,	91,	891,	1891,	1891,	1891,	182,	183,	"TUAAAA",	"BAAAAA",	"HHHHxx"	]
 [ 3420,	2,	0,	0,	0,	0,	20,	420,	1420,	3420,	3420,	40,	41,	"OBAAAA",	"CAAAAA",	"OOOOxx",	3420,	2,	0,	0,	0,	0,	20,	420,	1420,	3420,	3420,	40,	41,	"OBAAAA",	"CAAAAA",	"OOOOxx"	]
@@ -3264,13 +3246,10 @@ Over..
 [ 1582,	997,	0,	2,	2,	2,	82,	582,	1582,	1582,	1582,	164,	165,	"WIAAAA",	"JMBAAA",	"HHHHxx",	1582,	997,	0,	2,	2,	2,	82,	582,	1582,	1582,	1582,	164,	165,	"WIAAAA",	"JMBAAA",	"HHHHxx"	]
 [ 6643,	998,	1,	3,	3,	3,	43,	643,	643,	1643,	6643,	86,	87,	"NVAAAA",	"KMBAAA",	"OOOOxx",	6643,	998,	1,	3,	3,	3,	43,	643,	643,	1643,	6643,	86,	87,	"NVAAAA",	"KMBAAA",	"OOOOxx"	]
 [ 2238,	999,	0,	2,	8,	18,	38,	238,	238,	2238,	2238,	76,	77,	"CIAAAA",	"LMBAAA",	"VVVVxx",	2238,	999,	0,	2,	8,	18,	38,	238,	238,	2238,	2238,	76,	77,	"CIAAAA",	"LMBAAA",	"VVVVxx"	]
-# 3 # querytype
 # t1,	t1,	t1,	t1,	t1,	t1,	t1,	t1,	t1,	t1,	t1,	t1,	t1,	t1,	t1,	t1,	o,	o,	o,	o,	o,	o,	o,	o,	o,	o,	o,	o,	o,	o,	o,	o # table_name
 # unique1,	unique2,	two,	four,	ten,	twenty,	hundred,	thousand,	twothousand,	fivethous,	tenthous,	odd,	even,	stringu1,	stringu2,	string4,	ounique1,	ounique2,	otwo,	ofour,	oten,	otwenty,	ohundred,	othousand,	otwothousand,	ofivethous,	otenthous,	oodd,	oeven,	ostringu1,	ostringu2,	ostring4 # name
 # int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	char,	char,	char,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	char,	char,	char # type
-# 11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	6,	6,	6,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	6,	6,	6 # length
-# 1000,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	 # tuplecount
-# 7,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	 # id
+# 10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	16,	16,	16,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	16,	16,	16 # length
 [ 8800,	0,	0,	0,	0,	0,	0,	800,	800,	3800,	8800,	0,	1,	"MAAAAA",	"AAAAAA",	"AAAAxx",	147,	0,	1,	3,	7,	7,	7,	47,	147,	147,	147,	14,	15,	"RFAAAA",	"AAAAAA",	"AAAAxx"	]
 [ 1891,	1,	1,	3,	1,	11,	91,	891,	1891,	1891,	1891,	182,	183,	"TUAAAA",	"BAAAAA",	"HHHHxx",	931,	1,	1,	3,	1,	11,	1,	31,	131,	431,	931,	2,	3,	"VJAAAA",	"BAAAAA",	"HHHHxx"	]
 [ 3420,	2,	0,	0,	0,	0,	20,	420,	1420,	3420,	3420,	40,	41,	"OBAAAA",	"CAAAAA",	"OOOOxx",	714,	2,	0,	2,	4,	14,	4,	14,	114,	214,	714,	8,	9,	"MBAAAA",	"CAAAAA",	"OOOOxx"	]
@@ -4271,13 +4250,10 @@ Over..
 [ 1582,	997,	0,	2,	2,	2,	82,	582,	1582,	1582,	1582,	164,	165,	"WIAAAA",	"JMBAAA",	"HHHHxx",	744,	997,	0,	0,	4,	4,	4,	44,	144,	244,	744,	8,	9,	"QCAAAA",	"JMBAAA",	"HHHHxx"	]
 [ 6643,	998,	1,	3,	3,	3,	43,	643,	643,	1643,	6643,	86,	87,	"NVAAAA",	"KMBAAA",	"OOOOxx",	0,	998,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	"AAAAAA",	"KMBAAA",	"OOOOxx"	]
 [ 2238,	999,	0,	2,	8,	18,	38,	238,	238,	2238,	2238,	76,	77,	"CIAAAA",	"LMBAAA",	"VVVVxx",	278,	999,	0,	2,	8,	18,	8,	78,	78,	278,	278,	16,	17,	"SKAAAA",	"LMBAAA",	"VVVVxx"	]
-# 3 # querytype
 # tenk1,	tenk1,	tenk1,	tenk1,	tenk1,	tenk1 # table_name
 # two,	four,	ten,	twenty,	hundred,	string4 # name
 # int,	int,	int,	int,	int,	char # type
-# 11,	11,	11,	11,	11,	6 # length
-# 10000,	,	,	,	,	 # tuplecount
-# 8,	,	,	,	,	 # id
+# 10,	10,	10,	10,	10,	16 # length
 [ 0,	0,	0,	0,	0,	"AAAAxx"	]
 [ 1,	3,	1,	11,	91,	"HHHHxx"	]
 [ 0,	0,	0,	0,	20,	"OOOOxx"	]
@@ -14278,13 +14254,10 @@ Over..
 [ 0,	0,	2,	12,	92,	"HHHHxx"	]
 [ 0,	0,	0,	0,	0,	"OOOOxx"	]
 [ 0,	0,	8,	8,	68,	"VVVVxx"	]
-# 3 # querytype
 # onek,	onek,	onek,	onek,	onek,	onek,	onek,	onek,	onek,	onek,	onek,	onek,	onek,	onek,	onek,	onek # table_name
 # unique1,	unique2,	two,	four,	ten,	twenty,	hundred,	thousand,	twothousand,	fivethous,	tenthous,	odd,	even,	stringu1,	stringu2,	string4 # name
 # int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	int,	char,	char,	char # type
-# 11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	11,	6,	6,	6 # length
-# 1000,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	 # tuplecount
-# 9,	,	,	,	,	,	,	,	,	,	,	,	,	,	,	 # id
+# 10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	10,	16,	16,	16 # length
 [ 147,	0,	1,	3,	7,	7,	7,	47,	147,	147,	147,	14,	15,	"RFAAAA",	"AAAAAA",	"AAAAxx"	]
 [ 931,	1,	1,	3,	1,	11,	1,	31,	131,	431,	931,	2,	3,	"VJAAAA",	"BAAAAA",	"HHHHxx"	]
 [ 714,	2,	0,	2,	4,	14,	4,	14,	114,	214,	714,	8,	9,	"MBAAAA",	"CAAAAA",	"OOOOxx"	]
@@ -15285,16 +15258,13 @@ Over..
 [ 744,	997,	0,	0,	4,	4,	4,	44,	144,	244,	744,	8,	9,	"QCAAAA",	"JMBAAA",	"HHHHxx"	]
 [ 0,	998,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	1,	"AAAAAA",	"KMBAAA",	"OOOOxx"	]
 [ 278,	999,	0,	2,	8,	18,	8,	78,	78,	278,	278,	16,	17,	"SKAAAA",	"LMBAAA",	"VVVVxx"	]
-# 3 # querytype
 # tenk1 # table_name
 # x # name
 # int # type
-# 11 # length
-# 1 # tuplecount
-# 10 # id
+# 10 # length
 [ 0	]
 
-# 11:42:08 >  
-# 11:42:08 >  Done.
-# 11:42:08 >  
+# 12:36:01 >  
+# 12:36:01 >  Done.
+# 12:36:01 >  
 

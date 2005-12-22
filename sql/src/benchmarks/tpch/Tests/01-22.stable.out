@@ -1,13 +1,13 @@
 stdout of test '01-22` in directory 'src/benchmarks/tpch` itself:
 
 
-# 11:37:28 >  
-# 11:37:28 >  Mtimeout -timeout 1500 Mserver "--config=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/lib/MonetDB" --set "gdk_dbfarm=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/dbfarm" --set "sql_logdir=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/log" --set mapi_port=48783 --set sql_port=53498 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_tpch" "/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/sql/build/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
-# 11:37:28 >  
+# 12:35:07 >  
+# 12:35:07 >  Mtimeout -timeout 1500 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_tpch" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 12:35:07 >  
 
-# Monet Database Server V4.5.0
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
 printf("\nReady.\n");
@@ -17,54 +17,45 @@ quit();
 
 Over..
 
-# 16:23:02 >  
-# 16:23:02 >  Mtimeout -timeout 1380 ./01-22.SQL 01-22 
-# 16:23:02 >  
+# 12:35:08 >  
+# 12:35:08 >  Mtimeout -timeout 1380 ./01-22.SQL 01-22 
+# 12:35:08 >  
 
 
-# 16:23:02 >  
-# 16:23:02 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
-# 16:23:02 >  
+# 12:35:08 >  
+# 12:35:08 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:08 >  
 
-# 3 # querytype
 # lineitem,	lineitem,	lineitem,	lineitem,	,	,	lineitem,	,	,	lineitem # table_name
 # l_returnflag,	l_linestatus,	sum_qty,	sum_base_price,	sum_disc_price,	sum_charge,	avg_qty,	avg_price,	avg_disc,	count_order # name
 # varchar,	varchar,	bigint,	decimal,	decimal,	decimal,	double,	double,	double,	int # type
-# 1,	1,	20,	21,	21,	21,	22,	22,	22,	11 # length
-# 4,	,	,	,	,	,	,	,	,	 # tuplecount
-# 1,	,	,	,	,	,	,	,	,	 # id
+# 1,	1,	20,	21,	21,	21,	22,	22,	22,	10 # length
 [ "A",	"F",	380456,	532348211.65,	505822441.4861,	526165934.000839,	25.575154611454693,	35785.709306937351,	0.050081339069642378,	14876	]
 [ "N",	"F",	8971,	12384801.37,	11798257.2080,	12282485.056933,	25.778735632183906,	35588.509683908051,	0.047758620689655168,	348	]
 [ "N",	"O",	742802,	1041502841.45,	989737518.6346,	1029418531.523350,	25.454987834549879,	35691.129209074395,	0.049931119564099929,	29181	]
 [ "R",	"F",	381449,	534594445.35,	507996454.4067,	528524219.358903,	25.597168165346933,	35874.006532680178,	0.049827539927526504,	14902	]
 
-# 16:23:02 >  
-# 16:23:02 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
-# 16:23:02 >  
+# 12:35:08 >  
+# 12:35:08 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:08 >  
 
-# 3 # querytype
 # supplier,	supplier,	nation,	part,	part,	supplier,	supplier,	supplier # table_name
 # s_acctbal,	s_name,	n_name,	p_partkey,	p_mfgr,	s_address,	s_phone,	s_comment # name
 # decimal,	varchar,	varchar,	int,	varchar,	varchar,	varchar,	varchar # type
-# 17,	18,	7,	11,	14,	39,	15,	93 # length
-# 4,	,	,	,	,	,	,	 # tuplecount
-# 1,	,	,	,	,	,	,	 # id
+# 17,	18,	7,	10,	14,	39,	15,	93 # length
 [ 4186.95,	"Supplier#000000077",	"GERMANY",	249,	"Manufacturer#4",	"wVtcr0uH3CyrSiWMLsqnB09Syo,UuZxPMeBghlY",	"17-281-345-4863",	"blithely pending accounts ru"	]
 [ 1883.37,	"Supplier#000000086",	"ROMANIA",	1015,	"Manufacturer#4",	"J1fgg5QaqnN",	"29-903-665-7065",	"slyly pending requests wake car"	]
 [ 1687.81,	"Supplier#000000017",	"ROMANIA",	1634,	"Manufacturer#2",	"c2d,ESHRSkK3WYnxpgw6aOqN0q",	"29-601-884-9219",	"slyly pending deposits boost quickly."	]
 [ 287.16,	"Supplier#000000052",	"ROMANIA",	323,	"Manufacturer#4",	"WCk XCHYzBA1dvJDSol4ZJQQcQN,",	"29-974-934-4713",	"ironic accounts are slyly above the foxes. regular courts use furiously! slyly pending deposi"	]
 
-# 16:23:02 >  
-# 16:23:02 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
-# 16:23:02 >  
+# 12:35:08 >  
+# 12:35:08 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:08 >  
 
-# 3 # querytype
 # lineitem,	,	orders,	orders # table_name
 # l_orderkey,	revenue,	o_orderdate,	o_shippriority # name
 # int,	decimal,	date,	int # type
-# 11,	21,	10,	11 # length
-# 10,	,	,	 # tuplecount
-# 1,	,	,	 # id
+# 10,	21,	10,	10 # length
 [ 47714,	267010.5894,	1995-03-11,	0	]
 [ 22276,	266351.5562,	1995-01-29,	0	]
 [ 32965,	263768.3414,	1995-02-25,	0	]
@@ -76,94 +67,76 @@ Over..
 [ 47204,	204478.5213,	1995-03-13,	0	]
 [ 9696,	201502.2188,	1995-02-20,	0	]
 
-# 16:23:02 >  
-# 16:23:02 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
-# 16:23:02 >  
+# 12:35:08 >  
+# 12:35:08 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:08 >  
 
-# 3 # querytype
 # orders,	orders # table_name
 # o_orderpriority,	order_count # name
 # varchar,	int # type
-# 15,	11 # length
-# 5,	 # tuplecount
-# 1,	 # id
+# 15,	10 # length
 [ "1-URGENT",	93	]
 [ "2-HIGH",	103	]
 [ "3-MEDIUM",	109	]
 [ "4-NOT SPECIFIED",	102	]
 [ "5-LOW",	128	]
 
-# 16:23:02 >  
-# 16:23:02 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
-# 16:23:02 >  
+# 12:35:08 >  
+# 12:35:08 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:08 >  
 
-# 3 # querytype
 # nation,	 # table_name
 # n_name,	revenue # name
 # varchar,	decimal # type
 # 9,	21 # length
-# 5,	 # tuplecount
-# 1,	 # id
 [ "VIETNAM",	1000926.6999	]
 [ "CHINA",	740210.7570	]
 [ "JAPAN",	660651.2425	]
 [ "INDONESIA",	566379.5276	]
 [ "INDIA",	422874.6844	]
 
-# 16:23:03 >  
-# 16:23:03 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
-# 16:23:03 >  
+# 12:35:09 >  
+# 12:35:09 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:09 >  
 
-# 3 # querytype
 #  # table_name
 # revenue # name
 # decimal # type
 # 21 # length
-# 1 # tuplecount
-# 1 # id
 [ 1193053.2253	]
 
-# 16:23:03 >  
-# 16:23:03 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
-# 16:23:03 >  
+# 12:35:09 >  
+# 12:35:09 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:09 >  
 
-# 3 # querytype
 # shipping,	shipping,	shipping,	shipping # table_name
 # supp_nation,	cust_nation,	l_year,	revenue # name
 # varchar,	varchar,	int,	decimal # type
-# 7,	7,	11,	21 # length
-# 4,	,	,	 # tuplecount
-# 1,	,	,	 # id
+# 7,	7,	10,	21 # length
 [ "FRANCE",	"GERMANY",	1995,	268068.5774	]
 [ "FRANCE",	"GERMANY",	1996,	303862.2980	]
 [ "GERMANY",	"FRANCE",	1995,	621159.4882	]
 [ "GERMANY",	"FRANCE",	1996,	379095.8854	]
 
-# 16:23:03 >  
-# 16:23:03 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
-# 16:23:03 >  
+# 12:35:09 >  
+# 12:35:09 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:09 >  
 
-# 3 # querytype
 # all_nations,	 # table_name
 # o_year,	mkt_share # name
 # int,	decimal # type
-# 11,	21 # length
-# 2,	 # tuplecount
-# 1,	 # id
+# 10,	21 # length
 [ 1995,	0.0000	]
 [ 1996,	0.0000	]
 
-# 16:23:03 >  
-# 16:23:03 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
-# 16:23:03 >  
+# 12:35:09 >  
+# 12:35:09 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:09 >  
 
-# 3 # querytype
 # profit,	profit,	profit # table_name
 # nation,	o_year,	sum_profit # name
 # varchar,	int,	decimal # type
-# 14,	11,	21 # length
-# 174,	,	 # tuplecount
-# 1,	,	 # id
+# 14,	10,	21 # length
 [ "ALGERIA",	1998,	386617.8283	]
 [ "ALGERIA",	1997,	401601.1258	]
 [ "ALGERIA",	1996,	156938.7971	]
@@ -339,17 +312,14 @@ Over..
 [ "VIETNAM",	1993,	461389.0037	]
 [ "VIETNAM",	1992,	820665.7064	]
 
-# 16:23:03 >  
-# 16:23:03 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
-# 16:23:03 >  
+# 12:35:10 >  
+# 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:10 >  
 
-# 3 # querytype
 # customer,	customer,	,	customer,	nation,	customer,	customer,	customer # table_name
 # c_custkey,	c_name,	revenue,	c_acctbal,	n_name,	c_address,	c_phone,	c_comment # name
 # int,	varchar,	decimal,	decimal,	varchar,	varchar,	varchar,	varchar # type
-# 11,	18,	21,	17,	14,	40,	15,	116 # length
-# 20,	,	,	,	,	,	,	 # tuplecount
-# 1,	,	,	,	,	,	,	 # id
+# 10,	18,	21,	17,	14,	40,	15,	104 # length
 [ 679,	"Customer#000000679",	378211.3252,	1394.44,	"IRAN",	"IJf1FlZL9I9m,rvofcoKy5pRUOjUQV",	"20-146-696-9508",	"regular ideas promise against the furiously final deposits. f"	]
 [ 1201,	"Customer#000001201",	374331.5340,	5165.39,	"IRAN",	"LfCSVKWozyWOGDW02g9UX,XgH5YU2o5ql1zBrN",	"20-825-400-1187",	"fluffily final grouches doubt. bold dependencies dazzle caref"	]
 [ 422,	"Customer#000000422",	366451.0126,	-272.14,	"INDONESIA",	"AyNzZBvmIDo42JtjP9xzaK3pnvkh Qc0o08ssnvq",	"19-299-247-2444",	"furiously ironic asymptotes are slyly ironic, ironic requests. bold,"	]
@@ -371,17 +341,14 @@ Over..
 [ 1049,	"Customer#000001049",	281134.1117,	8747.99,	"INDONESIA",	"bZ1OcFhHaIZ5gMiH",	"19-499-258-2851",	"ironic, unusual dependencies sleep across the quickly reg"	]
 [ 1094,	"Customer#000001094",	274877.4440,	2544.49,	"BRAZIL",	"OFz0eedTmPmXk2 3XM9v9Mcp13NVC0PK",	"12-234-721-9871",	"regular, regular accounts boost special instructions. bold, final accounts at the regular pa"	]
 
-# 16:23:03 >  
-# 16:23:03 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
-# 16:23:03 >  
+# 12:35:10 >  
+# 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:10 >  
 
-# 3 # querytype
 # partsupp,	 # table_name
 # ps_partkey,	value # name
 # int,	decimal # type
-# 11,	21 # length
-# 359,	 # tuplecount
-# 1,	 # id
+# 10,	21 # length
 [ 1376,	13271249.89	]
 [ 788,	9498648.06	]
 [ 1071,	9388264.40	]
@@ -742,31 +709,25 @@ Over..
 [ 1596,	110565.00	]
 [ 295,	97604.25	]
 
-# 16:23:03 >  
-# 16:23:03 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
-# 16:23:03 >  
+# 12:35:10 >  
+# 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:10 >  
 
-# 3 # querytype
 # lineitem,	,	 # table_name
 # l_shipmode,	high_line_count,	low_line_count # name
 # varchar,	int,	int # type
-# 4,	11,	11 # length
-# 2,	,	 # tuplecount
-# 1,	,	 # id
+# 4,	10,	10 # length
 [ "MAIL",	64,	86	]
 [ "SHIP",	61,	96	]
 
-# 16:23:04 >  
-# 16:23:04 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
-# 16:23:04 >  
+# 12:35:10 >  
+# 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:10 >  
 
-# 3 # querytype
 # c_orders,	c_orders # table_name
 # c_count,	custdist # name
 # int,	int # type
-# 11,	11 # length
-# 32,	 # tuplecount
-# 1,	 # id
+# 10,	10 # length
 [ 0,	500	]
 [ 11,	70	]
 [ 10,	70	]
@@ -800,45 +761,34 @@ Over..
 [ 2,	2	]
 [ 30,	1	]
 
-# 16:23:04 >  
-# 16:23:04 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
-# 16:23:04 >  
+# 12:35:10 >  
+# 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:10 >  
 
-# 3 # querytype
 #  # table_name
 # promo_revenue # name
 # decimal # type
 # 21 # length
-# 1 # tuplecount
-# 1 # id
 [ 15.4865	]
 
-# 16:23:04 >  
-# 16:23:04 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
-# 16:23:04 >  
+# 12:35:10 >  
+# 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:10 >  
 
-# 6 # querytype
-# 3 # querytype
 # supplier,	supplier,	supplier,	supplier,	revenue0 # table_name
 # s_suppkey,	s_name,	s_address,	s_phone,	total_revenue # name
 # int,	varchar,	varchar,	varchar,	decimal # type
-# 11,	18,	36,	15,	21 # length
-# 1,	,	,	,	 # tuplecount
-# 1,	,	,	,	 # id
+# 10,	18,	36,	15,	21 # length
 [ 21,	"Supplier#000000021",	"81CavellcrJ0PQ3CPBID0Z0JwyJm0ka5igEs",	"12-253-590-5816",	1161099.4636	]
-# 6 # querytype
 
-# 16:23:04 >  
-# 16:23:04 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
-# 16:23:04 >  
+# 12:35:10 >  
+# 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:10 >  
 
-# 3 # querytype
 # part,	part,	part,	partsupp # table_name
 # p_brand,	p_type,	p_size,	supplier_cnt # name
 # varchar,	varchar,	int,	int # type
-# 8,	25,	11,	11 # length
-# 296,	,	,	 # tuplecount
-# 1,	,	,	 # id
+# 8,	25,	10,	10 # length
 [ "Brand#14",	"PROMO BRUSHED STEEL",	9,	8	]
 [ "Brand#35",	"SMALL POLISHED COPPER",	14,	8	]
 [ "Brand#22",	"LARGE BURNISHED TIN",	36,	6	]
@@ -1136,84 +1086,65 @@ Over..
 [ "Brand#55",	"STANDARD BRUSHED COPPER",	3,	4	]
 [ "Brand#55",	"STANDARD BRUSHED STEEL",	19,	4	]
 
-# 16:23:04 >  
-# 16:23:04 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
-# 16:23:04 >  
+# 12:35:10 >  
+# 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:10 >  
 
-# 3 # querytype
 #  # table_name
 # avg_yearly # name
 # decimal # type
 # 21 # length
-# 1 # tuplecount
-# 1 # id
 [ 0.00	]
 
-# 16:23:04 >  
-# 16:23:04 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
-# 16:23:04 >  
+# 12:35:10 >  
+# 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:10 >  
 
-# 3 # querytype
 # customer,	customer,	orders,	orders,	orders,	lineitem # table_name
 # c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	sum_l_quantity # name
 # varchar,	int,	int,	date,	decimal,	bigint # type
-# 18,	11,	11,	10,	17,	20 # length
-# 2,	,	,	,	,	 # tuplecount
-# 1,	,	,	,	,	 # id
+# 18,	10,	10,	10,	17,	20 # length
 [ "Customer#000000667",	667,	29158,	1995-10-21,	439687.23,	305	]
 [ "Customer#000000178",	178,	6882,	1997-04-09,	422359.65,	303	]
 
-# 16:23:04 >  
-# 16:23:04 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
-# 16:23:04 >  
+# 12:35:10 >  
+# 12:35:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:10 >  
 
-# 3 # querytype
 #  # table_name
 # revenue # name
 # decimal # type
 # 21 # length
-# 1 # tuplecount
-# 1 # id
 [ 22923.0280	]
 
-# 11:37:32 >  
-# 11:37:32 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=53498
-# 11:37:32 >  
+# 12:35:11 >  
+# 12:35:11 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:11 >  
 
-# 3 # querytype
 # supplier,	supplier # table_name
 # s_name,	s_address # name
 # varchar,	varchar # type
 # 18,	30 # length
-# 1,	 # tuplecount
-# 1,	 # id
 [ "Supplier#000000013",	"HK71HQyWoqRWOX8GI FpgAifW,2PoH"	]
 
+# 12:35:11 >  
+# 12:35:11 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:11 >  
 
-# 16:23:05 >  
-# 16:23:05 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
-# 16:23:05 >  
-
-# 3 # querytype
 # supplier,	supplier # table_name
 # s_name,	numwait # name
 # varchar,	int # type
-# 18,	11 # length
-# 1,	 # tuplecount
-# 1,	 # id
+# 18,	10 # length
 [ "Supplier#000000074",	9	]
 
-# 16:23:05 >  
-# 16:23:05 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=indus --port=52601
-# 16:23:05 >  
+# 12:35:11 >  
+# 12:35:11 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579
+# 12:35:11 >  
 
-# 3 # querytype
 # custsale,	custsale,	custsale # table_name
 # cntrycode,	numcust,	totacctbal # name
 # varchar,	int,	decimal # type
-# 2,	11,	21 # length
-# 7,	,	 # tuplecount
-# 1,	,	 # id
+# 2,	10,	21 # length
 [ "13",	10,	75359.29	]
 [ "17",	8,	62288.98	]
 [ "18",	14,	111072.45	]
@@ -1222,7 +1153,7 @@ Over..
 [ "30",	17,	122189.33	]
 [ "31",	8,	66313.16	]
 
-# 17:11:39 >  
-# 17:11:39 >  Done.
-# 17:11:39 >  
+# 12:35:11 >  
+# 12:35:11 >  Done.
+# 12:35:11 >  
 

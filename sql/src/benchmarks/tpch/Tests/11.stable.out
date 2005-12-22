@@ -1,13 +1,13 @@
 stdout of test '11` in directory 'src/benchmarks/tpch` itself:
 
 
-# 11:36:59 >  
-# 11:36:59 >  Mtimeout -timeout 180 Mserver "--config=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/lib/MonetDB" --set "gdk_dbfarm=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/dbfarm" --set "sql_logdir=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/log" --set mapi_port=48783 --set sql_port=53498 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_tpch" "/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/sql/build/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
-# 11:36:59 >  
+# 12:34:44 >  
+# 12:34:44 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_tpch" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 12:34:44 >  
 
-# Monet Database Server V4.5.0
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
 printf("\nReady.\n");
@@ -17,17 +17,14 @@ quit();
 
 Over..
 
-# 19:37:04 >  
-# 19:37:04 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=draco --port=53292 --trace < 11.sql
-# 19:37:04 >  
+# 12:34:45 >  
+# 12:34:45 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < 11.sql
+# 12:34:45 >  
 
-# 3 # querytype
 # partsupp,	 # table_name
 # ps_partkey,	value # name
 # int,	decimal # type
-# 11,	21 # length
-# 359,	 # tuplecount
-# 1,	 # id
+# 10,	21 # length
 [ 1376,	13271249.89	]
 [ 788,	9498648.06	]
 [ 1071,	9388264.40	]
@@ -388,7 +385,7 @@ Over..
 [ 1596,	110565.00	]
 [ 295,	97604.25	]
 
-# 11:37:01 >  
-# 11:37:01 >  Done.
-# 11:37:01 >  
+# 12:34:45 >  
+# 12:34:45 >  Done.
+# 12:34:45 >  
 

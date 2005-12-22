@@ -1,13 +1,13 @@
 stdout of test '03` in directory 'src/benchmarks/tpch` itself:
 
 
-# 11:36:41 >  
-# 11:36:41 >  Mtimeout -timeout 180 Mserver "--config=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/lib/MonetDB" --set "gdk_dbfarm=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/dbfarm" --set "sql_logdir=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/log" --set mapi_port=48783 --set sql_port=53498 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_tpch" "/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/sql/build/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
-# 11:36:41 >  
+# 12:34:30 >  
+# 12:34:30 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_tpch" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 12:34:30 >  
 
-# Monet Database Server V4.5.0
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
 printf("\nReady.\n");
@@ -17,17 +17,14 @@ quit();
 
 Over..
 
-# 11:36:42 >  
-# 11:36:42 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=53498  < 03.sql
-# 11:36:42 >  
+# 12:34:31 >  
+# 12:34:31 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < 03.sql
+# 12:34:31 >  
 
-# 3 # querytype
 # lineitem,	,	orders,	orders # table_name
 # l_orderkey,	revenue,	o_orderdate,	o_shippriority # name
 # int,	decimal,	date,	int # type
-# 11,	21,	10,	11 # length
-# 10,	,	,	 # tuplecount
-# 1,	,	,	 # id
+# 10,	21,	10,	10 # length
 [ 47714,	267010.5894,	1995-03-11,	0	]
 [ 22276,	266351.5562,	1995-01-29,	0	]
 [ 32965,	263768.3414,	1995-02-25,	0	]
@@ -39,7 +36,7 @@ Over..
 [ 47204,	204478.5213,	1995-03-13,	0	]
 [ 9696,	201502.2188,	1995-02-20,	0	]
 
-# 11:36:42 >  
-# 11:36:42 >  Done.
-# 11:36:42 >  
+# 12:34:31 >  
+# 12:34:31 >  Done.
+# 12:34:31 >  
 

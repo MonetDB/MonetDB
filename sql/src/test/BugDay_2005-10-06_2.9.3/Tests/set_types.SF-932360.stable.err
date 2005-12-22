@@ -68,10 +68,10 @@ stderr of test 'set_types.SF-932360` in directory 'src/test/BugDay_2005-10-06_2.
 # 14:30:11 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=46462  < set_types.SF-932360.sql
 # 14:30:11 >  
 
-MAPI  = monetdb@localhost:43242
+MAPI  = monetdb@localhost:45579
 QUERY = set current_timezone = 60;
 ERROR = !ERROR: second_interval_sht: operation failed.
-MAPI  = monetdb@localhost:43242
+MAPI  = monetdb@localhost:45579
 QUERY = set current_timezone = 0;
 ERROR = !ERROR: second_interval_sht: operation failed.
 

@@ -68,7 +68,6 @@ stderr of test 'variable_arg_substring.SF_942981` in directory 'src/test/BugDay_
 # 16:52:45 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=49109  < variable_arg_substring.SF_942981.sql
 # 16:52:45 >  
 
-MAPI  = monetdb@localhost:49109
 
 
 # 16:52:45 >  
