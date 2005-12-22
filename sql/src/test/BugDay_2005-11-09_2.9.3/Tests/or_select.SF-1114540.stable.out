@@ -1,13 +1,13 @@
 stdout of test 'or_select.SF-1114540` in directory 'src/test/BugDay_2005-11-09_2.9.3` itself:
 
 
-# 14:21:04 >  
-# 14:21:04 >  Mtimeout -timeout 180 Mserver "--config=/ufs/mk/opensource/MonetDB/Linux/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/mk/opensource/sql/Linux/lib/MonetDB:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB/log" --set mapi_port=35880 --set sql_port=49275 --set xquery_port=50365 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 14:21:04 >  
+# 12:45:52 >  
+# 12:45:52 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 12:45:52 >  
 
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
 printf("\nReady.\n");
@@ -17,81 +17,56 @@ quit();
 
 Over..
 
-# 14:21:04 >  
-# 14:21:04 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=49275  < or_select.SF-1114540.sql
-# 14:21:04 >  
+# 12:45:57 >  
+# 12:45:57 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < or_select.SF-1114540.sql
+# 12:45:57 >  
 
-# 6 # querytype
-# 4 # querytype
 [ 1	]
-# 4 # querytype
 [ 1	]
-# 4 # querytype
 [ 1	]
-# 3 # querytype
 # t1114540 # table_name
 # id # name
 # int # type
 # 10 # length
-# 2 # tuplecount
-# 0 # id
 [ 10	]
 [ 11	]
-# 3 # querytype
 # t1114540 # table_name
 # id # name
 # int # type
 # 10 # length
-# 3 # tuplecount
-# 1 # id
 [ 10	]
 [ 11	]
 [ 12	]
-# 3 # querytype
 # t1114540 # table_name
 # id # name
 # int # type
 # 10 # length
-# 2 # tuplecount
-# 2 # id
 [ 10	]
 [ 12	]
-# 3 # querytype
 # t1114540 # table_name
 # id # name
 # int # type
 # 10 # length
-# 2 # tuplecount
-# 3 # id
 [ 12	]
 [ 10	]
-# 3 # querytype
 # t1114540 # table_name
 # id # name
 # int # type
 # 10 # length
-# 3 # tuplecount
-# 4 # id
 [ 11	]
 [ 12	]
 [ 10	]
-# 3 # querytype
 # t1114540 # table_name
 # id # name
 # int # type
 # 10 # length
-# 0 # tuplecount
-# 5 # id
-# 3 # querytype
 # t1114540 # table_name
 # id # name
 # int # type
 # 10 # length
-# 1 # tuplecount
-# 6 # id
 [ 10	]
 
-# 14:21:04 >  
-# 14:21:04 >  Done.
-# 14:21:04 >  
+# 12:45:57 >  
+# 12:45:57 >  Done.
+# 12:45:57 >  
 

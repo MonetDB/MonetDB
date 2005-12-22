@@ -1,9 +1,9 @@
 stdout of test 'sql_server_crash.SF-1080024` in directory 'src/test/BugDay_2005-11-09_2.9.3` itself:
 
 
-# 13:34:24 >  
-# 13:34:24 >  Mtimeout -timeout 180 Mserver "--config=/ufs/zhang/scratch/monet-stable/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/zhang/scratch/monet-stable/program/MonetDB:/ufs/zhang/scratch/monet-stable/program/lib/MonetDB:/ufs/zhang/scratch/monet-stable/sql/build/lib/MonetDB" --set "gdk_dbfarm=/ufs/zhang/scratch/monet-stable/program/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/zhang/scratch/monet-stable/program/var/MonetDB/log" --set mapi_port=32772 --set sql_port=45745 --set xquery_port=55028 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 13:34:24 >  
+# 12:45:29 >  
+# 12:45:29 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 12:45:29 >  
 
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2005, CWI. All rights reserved.
@@ -17,21 +17,17 @@ quit();
 
 Over..
 
-# 13:34:26 >  
-# 13:34:26 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45745  < sql_server_crash.SF-1080024.sql
-# 13:34:26 >  
+# 12:45:31 >  
+# 12:45:31 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < sql_server_crash.SF-1080024.sql
+# 12:45:31 >  
 
-# 3 # querytype
 #  # table_name
 # ifthenelse_=_single_value # name
 # char # type
 # 0 # length
-# 1 # tuplecount
-# 0 # id
 [ NULL	]
-# 7 # querytype
 
-# 13:34:26 >  
-# 13:34:26 >  Done.
-# 13:34:26 >  
+# 12:45:31 >  
+# 12:45:31 >  Done.
+# 12:45:31 >  
 

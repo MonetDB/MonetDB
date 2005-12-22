@@ -1,9 +1,9 @@
 stdout of test 'innerjoin_multiple-bug-sf-943661` in directory 'src/test/bugs` itself:
 
 
-# 17:28:13 >  
-# 17:28:13 >  Mtimeout -timeout 180 Mserver "--config=/ufs/heman/local-GNU-DBG/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/heman/local-GNU-DBG/lib/MonetDB:/ufs/heman/local-GNU-DBG/lib/bin" --set "gdk_dbfarm=/ufs/heman/local-GNU-DBG/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/heman/local-GNU-DBG/var/MonetDB/log" --set mapi_port=34029 --set sql_port=41118 --set xquery_port=52123 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 17:28:13 >  
+# 12:48:37 >  
+# 12:48:37 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 12:48:37 >  
 
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2005, CWI. All rights reserved.
@@ -17,17 +17,14 @@ quit();
 
 Over..
 
-# 17:28:13 >  
-# 17:28:13 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=41118  < innerjoin_multiple-bug-sf-943661.sql
-# 17:28:13 >  
+# 12:48:38 >  
+# 12:48:38 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < innerjoin_multiple-bug-sf-943661.sql
+# 12:48:38 >  
 
-# 3 # querytype
 # schemas,	tables,	columns # table_name
 # name,	name,	name # name
 # varchar,	varchar,	varchar # type
 # 3,	10,	14 # length
-# 127,	,	 # tuplecount
-# 1,	,	 # id
 [ "sys",	"args",	"func_id"	]
 [ "sys",	"args",	"id"	]
 [ "sys",	"args",	"name"	]
@@ -157,13 +154,10 @@ Over..
 [ "sys",	"users",	"default_schema"	]
 [ "sys",	"users",	"fullname"	]
 [ "sys",	"users",	"name"	]
-# 3 # querytype
 # s,	t,	c # table_name
 # name,	name,	name # name
 # varchar,	varchar,	varchar # type
 # 3,	10,	14 # length
-# 127,	,	 # tuplecount
-# 2,	,	 # id
 [ "sys",	"args",	"func_id"	]
 [ "sys",	"args",	"id"	]
 [ "sys",	"args",	"name"	]
@@ -294,7 +288,7 @@ Over..
 [ "sys",	"users",	"fullname"	]
 [ "sys",	"users",	"name"	]
 
-# 17:28:13 >  
-# 17:28:13 >  Done.
-# 17:28:13 >  
+# 12:48:38 >  
+# 12:48:38 >  Done.
+# 12:48:38 >  
 

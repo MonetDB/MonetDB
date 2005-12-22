@@ -1,13 +1,13 @@
 stdout of test 'case_cast-bug-sf-1019506` in directory 'src/test/bugs` itself:
 
 
-# 14:06:31 >  
-# 14:06:31 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/Linux-i686/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --set "gdk_dbfarm=/ufs/niels/data/Linux-i686/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/data/Linux-i686/var/MonetDB/log" --set mapi_port=48987 --set sql_port=55051 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/net/stem.ins.cwi.nl/export/scratch1/niels/Linux-i686/build-sql/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
-# 14:06:31 >  
+# 12:52:59 >  
+# 12:52:59 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 12:52:59 >  
 
-# Monet Database Server V4.3.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
 printf("\nReady.\n");
@@ -17,19 +17,16 @@ quit();
 
 Over..
 
-# 14:06:33 >  
-# 14:06:33 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=55051  < case_cast-bug-sf-1019506.sql
-# 14:06:33 >  
+# 12:53:04 >  
+# 12:53:04 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < case_cast-bug-sf-1019506.sql
+# 12:53:04 >  
 
-# 3 # querytype
-# ,	s,	t,	,	,	i,	,	,	c,	,	,	,	 # table_name
+# ,	,	,	,	,	,	,	,	,	,	,	,	 # table_name
 # table_cat,	table_schem,	table_name,	non_unique,	index_qualifier,	index_name,	type,	ordinal_position,	column_name,	asc_or_desc,	cardinality,	pages,	filter_condition # name
-# varchar,	varchar,	varchar,	smallint,	varchar,	varchar,	smallint,	smallint,	varchar,	character,	mediumint,	mediumint,	varchar # type
-# 0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0,	0 # length
-# 0,	,	,	,	,	,	,	,	,	,	,	,	 # tuplecount
-# 0,	,	,	,	,	,	,	,	,	,	,	,	 # id
+# clob,	clob,	clob,	smallint,	clob,	clob,	smallint,	smallint,	clob,	char,	int,	int,	clob # type
+# 0,	0,	0,	6,	0,	0,	6,	6,	0,	1,	10,	10,	0 # length
 
-# 14:06:33 >  
-# 14:06:33 >  Done.
-# 14:06:33 >  
+# 12:53:04 >  
+# 12:53:04 >  Done.
+# 12:53:04 >  
 

@@ -1,11 +1,11 @@
 stdout of test 'crash_with_wrong_nesting.SF-1097883` in directory 'src/test/BugDay_2005-11-09_2.8` itself:
 
 
-# 13:25:29 >  
-# 13:25:29 >  Mtimeout -timeout 180 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./lib/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/log" --set mapi_port=39034 --set sql_port=49588 --set xquery_port=50967 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.8" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 13:25:29 >  
+# 12:45:09 >  
+# 12:45:09 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.8" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 12:45:09 >  
 
-# Monet Database Server V4.8.3
+# Monet Database Server V4.9.3
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
@@ -17,15 +17,13 @@ quit();
 
 Over..
 
-# 13:25:30 >  
-# 13:25:30 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=49588  < crash_with_wrong_nesting.SF-1097883.sql
-# 13:25:30 >  
+# 12:45:10 >  
+# 12:45:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < crash_with_wrong_nesting.SF-1097883.sql
+# 12:45:10 >  
 
-# 6 # querytype
-# 4 # querytype
 [ 1	]
 
-# 13:25:30 >  
-# 13:25:30 >  Done.
-# 13:25:30 >  
+# 12:45:10 >  
+# 12:45:10 >  Done.
+# 12:45:10 >  
 
