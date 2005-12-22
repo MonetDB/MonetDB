@@ -129,6 +129,7 @@ gdk_export int BBPrecover(void);
 gdk_export lng BBPdiskscan(void);
 gdk_export int BBPsync(int commit);
 gdk_export int BBPincref(bat b, int logical);
+gdk_export void BBPkeepref(bat i);
 gdk_export int BBPdecref(bat b, int logical);
 gdk_export void BBPshare(bat b);
 gdk_export void BBPunshare(bat b);
@@ -1339,7 +1340,42 @@ BBPdecref(bat i, int logical)
 		gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPdecref");
 	return decref(i, logical, lock);
 }
+@-
+M5 often changes the physical ref into a logical reference.
+This state change consist of the sequence BBPincref(b,TRUE);BBPunfix(b).
+A faster solution is given below, because it does not trigger
+the BBP management actions, such as garbage collecting the bats.
+[first step, initiate code change]
+@c
+void
+BBPkeepref(bat i)
+{
+	int lock = locked_by ? BBP_getpid() != locked_by : 1;
+	int refs = 0;
 
+	if (i == bat_nil) 
+		return ;
+	if (i < 0)
+		i = -i;
+	if (BBPcheck(i, "BBPincref")) {
+		if (lock)
+			gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPincref");
+
+		while (BBP_status(i) & BBPUNLOADING) {
+			if (lock)
+				gdk_unset_lock(GDKswapLock[i & BBPLOCKMASK], "BBPincref spin wait");
+			MT_sleep_ms(1);
+			if (lock)
+				gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPincref spin wait");
+		}
+		/* got the lock */
+		refs = ++BBP_lrefs(i);
+		refs = --BBP_refs(i);
+		if (lock)
+			gdk_unset_lock(GDKswapLock[i & BBPLOCKMASK], "BBPfix");
+		/* decref(i, FALSE, lock);*/
+	}
+}
 
 void
 BBPunshare(bat parent)
