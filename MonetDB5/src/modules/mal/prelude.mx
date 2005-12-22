@@ -12,7 +12,7 @@ access the BAT descriptor.
 	BATroles(b,"@1","@2");
 	BATmode(b,TRANSIENT);
 	BATfakeCommit(b);
-	BBPincref(*ret = b->batCacheid,TRUE);
-	BBPunfix(*ret);
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
 
 

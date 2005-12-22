@@ -120,12 +120,12 @@ CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule)
 	view = VIEWcreate_(b, TRUE);
 	BBPunfix(b->batCacheid);
 
-	BBPincref(*vid = view->batCacheid, TRUE);
 	/*  printf("set bat chunk bound to %d %d - %d\n",
 	 *granule, first, MIN(cnt,(size_t) *granule)); */
 	VIEWbounds(view, (size_t) first, first + MIN(cnt, (size_t) * granule) - 1);
 	BATseqbase(view, first - 1);
-	BBPunfix(view->batCacheid); 
+	*vid = view->batCacheid;
+	BBPkeepref(view->batCacheid); 
 	*res = first;
 	return MAL_SUCCEED;
 }

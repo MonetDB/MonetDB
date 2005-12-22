@@ -1805,8 +1805,8 @@ ALGtopN(int *res, int *bid, lng *top)
 	}
 	/* TOP N works inplace, ie deletes ... */
 	(void) BATtopN(b, (size_t) *top);
-	BBPincref(*res = b->batCacheid, TRUE);
-	BBPunfix(b->batCacheid);
+	*res = b->batCacheid;
+	BBPkeepref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 mal_export str ALGgroupby(int *res, int *bid);
@@ -1824,8 +1824,8 @@ ALGgroupby(int *res, int *bid)
 		return throwMessage("algebra.groupby","unknown error");
 	}
 	if( bn){
-		BBPincref(*res = bn->batCacheid, TRUE);
-		BBPunfix(bn->batCacheid);
+		*res = bn->batCacheid;
+		BBPkeepref(bn->batCacheid);
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -1892,8 +1892,8 @@ ALGselect1(int *result, int *bid, ptr value)
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.select", "GDKerror");
@@ -1915,8 +1915,8 @@ ALGselect1Head(int *result, int *bid, ptr value)
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.select", "GDKerror");
@@ -1936,8 +1936,8 @@ ALGuselect1(int *result, int *bid, ptr value)
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.uselect", "GDKerror");
@@ -1958,8 +1958,8 @@ ALGselect(int *result, int *bid, ptr low, ptr high)
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.select", "GDKerror");
@@ -1982,8 +1982,8 @@ ALGselectHead(int *result, int *bid, ptr low, ptr high)
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.select", "GDKerror");
@@ -2004,8 +2004,8 @@ ALGuselect(int *result, int *bid, ptr low, ptr high)
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.uselect", "GDKerror");
@@ -2026,8 +2026,8 @@ ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin)
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.select", "GDKerror");
@@ -2050,8 +2050,8 @@ ALGselectInclusiveHead(int *result, int *bid, ptr low, ptr high, bit *lin, bit *
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.select", "GDKerror");
@@ -2072,8 +2072,8 @@ ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.uselect", "GDKerror");
@@ -2096,8 +2096,8 @@ ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.fragment", "GDKerror");
@@ -2144,8 +2144,8 @@ ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate)
 	BBPunfix(right->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.thetajoin", "GDKerror");
@@ -2176,8 +2176,8 @@ ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus)
 	BBPunfix(right->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.bandjoin", "GDKerror");
@@ -2196,8 +2196,8 @@ str ALG@1(int *result, int *bid) {
 	BBPunfix(b->batCacheid);
 	if( bn ) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid,TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.@1", "GDKerror");
@@ -2213,8 +2213,8 @@ str ALG@1(int *result, int *bid) {
 	BBPunfix(b->batCacheid);
 	if( bn ) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid,TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return MAL_SUCCEED;
@@ -2235,8 +2235,8 @@ str ALG@1(int *result, int *lid, int *rid) {
 	BBPunfix(right->batCacheid);
 	if( bn ) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid,TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.@1", "GDKerror");
@@ -2252,8 +2252,8 @@ str ALG@1(int *result, int* bid, int *param) {
 	BBPunfix(b->batCacheid);
 	if( bn ) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid,TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.@1", "GDKerror");
@@ -2279,8 +2279,8 @@ str ALG@1estimate(int *result, int *lid, int *rid, lng *estimate) {
 	BBPunfix(right->batCacheid);
 	if( bn ) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid,TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.@1", "GDKerror");
@@ -2326,8 +2326,8 @@ ALGtunique(int *result, int *bid)
 	if (bn) {
 		bn = BATmirror(bn);
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.tunique", "GDKerror");
@@ -2347,8 +2347,8 @@ ALGtsort(int *result, int *bid)
 	if (bn) {
 		bn = BATmirror(bn);
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.tunique", "GDKerror");
@@ -2367,8 +2367,8 @@ ALGhsort(int *result, int *bid)
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.tunique", "GDKerror");
@@ -2403,8 +2403,8 @@ ALGhtsort(int *result, int *lid)
 	BBPunfix(bk->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.htsort", "GDKerror");
@@ -2437,8 +2437,8 @@ ALGthsort(int *result, int *lid)
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.htsort", "GDKerror");
@@ -2456,8 +2456,8 @@ ALGrevert(int *result, int *bid)
 	bn = BATcopy(b);
 	BBPunfix(b->batCacheid);
 	BATrevert(bn);
-	BBPincref(*result= bn->batCacheid,TRUE);
-	BBPunfix(bn->batCacheid);
+	*result= bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2517,8 +2517,8 @@ ALGtmark(int *result, int *bid, oid *base)
 	if (CMDmark(&bn, b, base) == GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	BBPunfix(b->batCacheid);
@@ -2551,8 +2551,8 @@ ALGmarkHead(int *result, int *bid, oid *base)
 		BUNins(bn, &o, BUNtail(b, p));
 	}
 
-	BBPincref(*result = bn->batCacheid, TRUE);
-	BBPunfix(bn->batCacheid);
+	*result = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2579,8 +2579,8 @@ ALGhashsplit(int *result, int *bid, int *nfrag)
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.hashsplit", "GDKerror");
@@ -2599,8 +2599,8 @@ ALGuhashsplit(int *result, int *bid, int *nfrag)
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.uhashsplit", "GDKerror");
@@ -2619,8 +2619,8 @@ ALGrangesplit(int *result, int *bid, int *nfrag)
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.rangesplit", "GDKerror");
@@ -2639,8 +2639,8 @@ ALGurangesplit(int *result, int *bid, int *nfrag)
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.urangesplit", "GDKerror");
@@ -2659,8 +2659,8 @@ ALGhistogram_rev(int *result, int *bid)
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	BBPunfix(b->batCacheid);
@@ -2680,8 +2680,8 @@ ALGlike(int *ret, int *bid, str *k)
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*ret = bn->batCacheid, TRUE);
-		BBPunfix(*ret);
+		*ret = bn->batCacheid;
+		BBPkeepref(*ret);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.like", "GDKerror");
@@ -2700,8 +2700,8 @@ ALGslice(int *ret, bat *bid, int *start, int *end)
 	BBPunfix(b->batCacheid);
 	if (bn != NULL) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*ret = bn->batCacheid, TRUE);
-		BBPunfix(*ret);
+		*ret = bn->batCacheid;
+		BBPkeepref(*ret);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.slice", "GDKerror");
@@ -2834,8 +2834,8 @@ ALGfetchbat(int *ret, int *bid, int *sid)
 	BBPunfix(s->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*ret = bn->batCacheid, TRUE);
-		BBPunfix(*ret);
+		*ret = bn->batCacheid;
+		BBPkeepref(*ret);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.fetchbat", "GDKerror");
@@ -2917,8 +2917,8 @@ ALGfetchjoin(int *result, int *lid, int *rid)
 	BBPunfix(right->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.fetchjoin", "can not perform a fetchjoin");
@@ -2951,8 +2951,8 @@ ALGhashjoin(int *result, int *lid, int *rid)
 	BBPunfix(right->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.hashjoin", "can not perform a hashjoin");
@@ -2981,8 +2981,8 @@ ALGmergejoin(int *result, int *lid, int *rid)
 	BBPunfix(right->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.mergejoin", "can not perform a mergejoin");
@@ -3007,8 +3007,8 @@ ALGindexjoin(int *result, int *lid, int *rid)
 	BBPunfix(right->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(*result);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.indexjoin", "can not perform a indexjoin");

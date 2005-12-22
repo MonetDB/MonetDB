@@ -365,8 +365,8 @@ str AL2@1join(int *ret, int *lid, int *rid ){
 	BBPunfix(right->batCacheid);
 	if( bn == NULL)
 		return throwMessage("@1join","failed");
-	BBPincref( *ret = bn->batCacheid,TRUE);
-	BBPunfix(*ret);
+	*ret = bn->batCacheid;
+	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
 @c
@@ -399,8 +399,8 @@ AL2leftthetajoin(int *ret, int *lid, int *rid, int *mode)
 
 	if (bn == NULL)
 		return throwMessage("algebra2.leftthetajoin", "failed");
-	BBPincref(*ret = bn->batCacheid, TRUE);
-	BBPunfix(*ret);
+	*ret = bn->batCacheid;
+	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
 
@@ -422,8 +422,8 @@ AL2nlthetajoin(int *ret, int *lid, int *rid, int *mode, lng *estimate)
 	BBPunfix(r->batCacheid);
 	if (bn == NULL)
 		return throwMessage("algebra2.thetajoin", "failed");
-	BBPincref(*ret = bn->batCacheid, TRUE);
-	BBPunfix(*ret);
+	*ret = bn->batCacheid;
+	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
 
@@ -439,8 +439,8 @@ str AL2ord_@1select1(int *ret, int * bid, ptr *value) {
 	BBPunfix(b->batCacheid);
 	if( bn == NULL)
 		return throwMessage("ord_@1select","failed");
-	BBPincref( *ret = bn->batCacheid,TRUE);
-	BBPunfix(*ret);
+	*ret = bn->batCacheid;
+	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
 mal_export str AL2ord_@1select(int *ret, int *bid, ptr *low, ptr *high);
@@ -453,8 +453,8 @@ str AL2ord_@1select(int *ret, int *bid, ptr *low, ptr *high) {
 	BBPunfix(b->batCacheid);
 	if( bn == NULL)
 		return throwMessage("ord_@1select","failed");
-	BBPincref( *ret = bn->batCacheid,TRUE);
-	BBPunfix(*ret);
+	*ret = bn->batCacheid;
+	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
 mal_export str AL2ord_@1select_(int *ret, int *bid, ptr *lval, ptr *hval, bit *l_in, bit *h_in);
@@ -479,8 +479,8 @@ str AL2ord_@1select_(int *ret, int *bid, ptr *lval, ptr *hval, bit *l_in, bit *h
 	BBPunfix(b->batCacheid);
 	if( bn == NULL)
 		return throwMessage("ord_@1select","failed");
-	BBPincref( *ret = bn->batCacheid,TRUE);
-	BBPunfix(*ret);
+	*ret = bn->batCacheid;
+	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
 @c

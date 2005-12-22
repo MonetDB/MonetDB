@@ -103,8 +103,8 @@ MATpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	(void) mb;
 	ret= (int*) getArgReference(stk,p,0);
-	BBPincref( (*ret= bn->batCacheid), TRUE);
-	BBPunfix(bn->batCacheid);
+	*ret= bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 

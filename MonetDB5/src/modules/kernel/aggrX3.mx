@@ -2111,8 +2111,8 @@ str AX3aggrX3_sum_@1_@3(int *retid, int *bid, int *eid){
 	if( CMDaggrX3_sum_@1_@3(&bn,b,e) == GDK_SUCCEED){
 		BBPunfix(b->batCacheid);
 		BBPunfix(e->batCacheid);
-		BBPincref(*retid = bn->batCacheid,TRUE);
-		BBPunfix(*retid);
+		*retid = bn->batCacheid;
+		BBPkeepref(*retid);
 		return MAL_SUCCEED;
 	}
 	BBPunfix(b->batCacheid);
@@ -2136,8 +2136,8 @@ str AX3aggrX3_prod_@1_@3(int *retid, int *bid, int *eid){
 	if( CMDaggrX3_prod_@1_@3(&bn,b,e) == GDK_SUCCEED){
 		BBPunfix(b->batCacheid);
 		BBPunfix(e->batCacheid);
-		BBPincref(*retid = bn->batCacheid,TRUE);
-		BBPunfix(*retid);
+		*retid = bn->batCacheid;
+		BBPkeepref(*retid);
 		return MAL_SUCCEED;
 	}
 	BBPunfix(b->batCacheid);
@@ -2178,8 +2178,8 @@ str AX3aggrX3_avg_@1(int *retid, int *bid, int *eid){
 	if( CMDaggrX3_avg_@1(&bn,b,e) == GDK_SUCCEED){
 		BBPunfix(b->batCacheid);
 		BBPunfix(e->batCacheid);
-		BBPincref(*retid = bn->batCacheid,TRUE);
-		BBPunfix(*retid);
+		*retid = bn->batCacheid;
+		BBPkeepref(*retid);
 		return MAL_SUCCEED;
 	}
 	BBPunfix(b->batCacheid);
@@ -2210,8 +2210,8 @@ str AX3aggrX3_@1(int *ret, int *bid, int *eid){
 	if( CMDaggrX3_@1(&bn,b,e) == GDK_SUCCEED){
 		BBPunfix(b->batCacheid);
 		BBPunfix(e->batCacheid);
-		BBPincref(*ret = bn->batCacheid,TRUE);
-		BBPunfix(*ret);
+		*ret = bn->batCacheid;
+		BBPkeepref(*ret);
 		return MAL_SUCCEED;
 	}
 	BBPunfix(b->batCacheid);
@@ -2239,8 +2239,8 @@ AX3aggrX3_count(int *retid, int *bid, int *eid, bit *ignore_nils)
 	}
 
 	if (CMDaggrX3_count(&bn, b, e, ignore_nils) == GDK_SUCCEED) {
-		BBPincref(*retid = bn->batCacheid, TRUE);
-		BBPunfix(*retid);
+		*retid = bn->batCacheid;
+		BBPkeepref(*retid);
 		BBPunfix(b->batCacheid);
 		BBPunfix(e->batCacheid);
 		return MAL_SUCCEED;
@@ -2269,8 +2269,8 @@ AX3aggrX3_size(int *retid, int *bid, int *eid)
 	if (CMDaggrX3_size(&bn, b, e) == GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(e->batCacheid);
-		BBPincref(*retid = bn->batCacheid, TRUE);
-		BBPunfix(*retid);
+		*retid = bn->batCacheid;
+		BBPkeepref(*retid);
 		return MAL_SUCCEED;
 	}
 	BBPunfix(b->batCacheid);
@@ -2301,8 +2301,8 @@ str AX3aggrX3_sum3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 		BBPunfix(b->batCacheid);
 		BBPunfix(e->batCacheid);
 		BBPunfix(g->batCacheid);
-		BBPincref(*retid = bn->batCacheid,TRUE);
-		BBPunfix(*retid);
+		*retid = bn->batCacheid;
+		BBPkeepref(*retid);
 		return MAL_SUCCEED;
 	}
 	BBPunfix(b->batCacheid);
@@ -2333,8 +2333,8 @@ str AX3aggrX3_prod3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 		BBPunfix(b->batCacheid);
 		BBPunfix(e->batCacheid);
 		BBPunfix(g->batCacheid);
-		BBPincref(*retid = bn->batCacheid,TRUE);
-		BBPunfix(*retid);
+		*retid = bn->batCacheid;
+		BBPkeepref(*retid);
 		return MAL_SUCCEED;
 	}
 	BBPunfix(b->batCacheid);
@@ -2381,8 +2381,8 @@ str AX3aggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 		BBPunfix(b->batCacheid);
 		BBPunfix(e->batCacheid);
 		BBPunfix(g->batCacheid);
-		BBPincref(*retid = bn->batCacheid,TRUE);
-		BBPunfix(*retid);
+		*retid = bn->batCacheid;
+		BBPkeepref(*retid);
 		return MAL_SUCCEED;
 	}
 	BBPunfix(b->batCacheid);
@@ -2420,8 +2420,8 @@ str AX3aggrX3_@13(int *ret,int *bid, int *gid, int *eid){
 		BBPunfix(b->batCacheid);
 		BBPunfix(e->batCacheid);
 		BBPunfix(g->batCacheid);
-		BBPincref(*ret = bn->batCacheid,TRUE);
-		BBPunfix(*ret);
+		*ret = bn->batCacheid;
+		BBPkeepref(*ret);
 		return MAL_SUCCEED;
 	}
 	BBPunfix(b->batCacheid);
@@ -2456,8 +2456,8 @@ AX3aggrX3_count3(int *retid, int *bid, int *gid, int *eid, bit *ignore_nils)
 		BBPunfix(b->batCacheid);
 		BBPunfix(e->batCacheid);
 		BBPunfix(g->batCacheid);
-		BBPincref(*retid = bn->batCacheid, TRUE);
-		BBPunfix(*retid);
+		*retid = bn->batCacheid;
+		BBPkeepref(*retid);
 		return MAL_SUCCEED;
 	}
 	BBPunfix(b->batCacheid);

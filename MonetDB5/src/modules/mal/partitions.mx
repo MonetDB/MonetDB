@@ -732,9 +732,8 @@ addPartition(int idx)
 	partitions[idx].next = i;
 
 	BATseqbase(bn, partitions[i].first);
-	BBPincref(bn->batCacheid, TRUE);
+	BBPkeepref(bn->batCacheid);
 	BBPunfix(b->batCacheid);
-	BBPunfix(bn->batCacheid);
 	return i;
 }
 

@@ -426,8 +426,7 @@ PBMtakeComplete(int *ret, str *grp)
 		BBPunfix(b->batCacheid);
 	}
 	*ret = bn->batCacheid;
-	BBPincref(*ret, TRUE);
-	BBPunfix(*ret);
+	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
 str
@@ -446,8 +445,7 @@ PBMtake(int *ret, str *grp, str *elm)
 	if( b== NULL)
 		return throwMessage("pbm.take", "PBAT partition not accessible");
 	*ret = partitions[i].bid;
-	BBPincref(*ret, TRUE);
-	BBPunfix(*ret);
+	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
 str
@@ -466,8 +464,7 @@ PBMtakeIndexed(int *ret, str *grp, int *idx)
 	if( b== NULL)
 		return throwMessage("pbm.take", "PBAT partition not accessible");
 	*ret = partitions[i].bid;
-	BBPincref(*ret, TRUE);
-	BBPunfix(*ret);
+	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
 str
@@ -481,8 +478,7 @@ PBMgetComponents(int *ret, str *grp)
 	for( i= PBMfindPBAT(*grp); i>=0;  i= partitions[i].next)
 		BUNins(b,grp, partitions[i].elm);
 	*ret = b->batCacheid;
-	BBPincref(*ret, TRUE);
-	BBPunfix(*ret);
+	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
 str
@@ -497,8 +493,7 @@ PBMgetAllComponents(int *ret)
 	if( partitions[i].grp )
 		BUNins(b,partitions[i].grp, partitions[i].elm);
 	*ret = b->batCacheid;
-	BBPincref(*ret, TRUE);
-	BBPunfix(*ret);
+	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
 

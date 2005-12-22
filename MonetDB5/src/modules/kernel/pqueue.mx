@@ -586,8 +586,8 @@ PQinit(int *ret, int *bid, int *maxsize){
 	if( (b= BATdescriptor(*bid)) == NULL)
 		return throwMessage("pqueue.init","Could not access BAT");
 	pqueue_init(&bn,b,maxsize);
-	BBPincref(*ret = bn->batCacheid,TRUE);
-	BBPunfix(b->batCacheid);
+	*ret = bn->batCacheid;
+	BBPkeepref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -649,8 +649,8 @@ PQtopn_void@1@2(int *ret, int *bid, int *N){
 	else
 		pqueue_topn_@1@2(&bn,b,N);
 	if( bn){
-		BBPincref(*ret= bn->batCacheid,TRUE);
-		BBPunfix(*ret);
+		*ret= bn->batCacheid;
+		BBPkeepref(*ret);
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
@@ -665,8 +665,8 @@ PQtopn_@1@2(int *ret, int *bid, int *N){
 		return throwMessage("pqueue.topN","Could not access BAT");
 	pqueue_topn_@1@2(&bn,b,N);
 	if( bn){
-		BBPincref(*ret= bn->batCacheid,TRUE);
-		BBPunfix(*ret);
+		*ret= bn->batCacheid;
+		BBPkeepref(*ret);
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}

@@ -488,8 +488,7 @@ MKEYbulk_rotate_xor_hash(int *ret, int *hid, int *nbits, int *bid){
 	BBPunfix(hn->batCacheid);
 	BBPunfix(b->batCacheid);
 	*ret= bn->batCacheid;
-	BBPincref(*ret,TRUE);
-	BBPunfix(bn->batCacheid);
+	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 @}

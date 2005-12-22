@@ -450,8 +450,8 @@ CMDbbpbindindex(int *ret, int *bid)
 	b = (BAT *) BATdescriptor(*bid);
 	if (b == 0)
 		return throwMessage("bbp.bind", "can not access descriptor");
-	BBPincref(*ret = b->batCacheid, TRUE);
-	BBPunfix(*ret);
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
 
@@ -817,8 +817,8 @@ CMDBBPproject(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bn = BATconst(b, tt, p);
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		BBPincref(*result = bn->batCacheid, TRUE);
-		BBPunfix(bn->batCacheid);
+		*result = bn->batCacheid;
+		BBPkeepref(bn->batCacheid);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("mal.project", "GDKerror");
@@ -836,8 +836,8 @@ CMDBBPprojectNil(int *ret, int *bid)
 	bn = BATconst(b, TYPE_void, (ptr) &int_nil);
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		BBPincref(*ret = bn->batCacheid, TRUE);
-		BBPunfix(bn->batCacheid);
+		*ret = bn->batCacheid;
+		BBPkeepref(bn->batCacheid);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("mal.project", "GDKerror");
@@ -858,8 +858,8 @@ it is simply removed first
 	BATroles(b,"@1","@2");
 	BATmode(b,TRANSIENT);
 	BATfakeCommit(b);
-	BBPincref(*ret = b->batCacheid, TRUE);
-	BBPunfix(*ret);
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
 @c
 str
 CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1245,8 +1245,8 @@ CMDbatpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isaBatType(tt))
 		tt = TYPE_bat;
 	b = BATnew(ht, tt, cap);
-	BBPincref(*ret = b->batCacheid, TRUE);
 	BUNins(b, (ptr) getArgValue(stk, pci, 1), getArgValue(stk, pci, 2));
-	BBPunfix(*ret);
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }

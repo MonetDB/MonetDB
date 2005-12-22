@@ -619,8 +619,7 @@ PCREreplace_bat_wrap(int *res, int *bid, str *pat, str *repl, str *flags){
 
 	pcre_replace_bat(&bn,b,*pat,*repl,*flags);
 	*res= bn->batCacheid;
-	BBPincref(*res,TRUE);
-	BBPunfix(*res);
+	BBPkeepref(*res);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -681,8 +680,8 @@ PCREselect(int *res, str *pattern, int *bid)
 		}
 	}
 	my_pcre_free(re);
-	BBPincref(*res = bn->batCacheid, TRUE);
-	BBPunfix(bn->batCacheid);
+	*res = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
 	BBPunfix(strs->batCacheid);
 #endif
 	return MAL_SUCCEED;
@@ -725,8 +724,8 @@ PCREuselect(int *res, str *pattern, int *bid)
 		}
 	}
 	my_pcre_free(re);
-	BBPincref(*res = bn->batCacheid, TRUE);
-	BBPunfix(bn->batCacheid);
+	*res = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
 	BBPunfix(strs->batCacheid);
 	return MAL_SUCCEED;
 #endif

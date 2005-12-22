@@ -110,8 +110,8 @@ str CMDscience_@1(int *ret, int *bid){
 		bunfastins(bn, h, &x);
 	}
 bunins_failed:
-	BBPincref( *ret= bn->batCacheid,TRUE);
-	BBPunfix(*ret);
+	*ret= bn->batCacheid;
+	BBPkeepref(*ret);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -139,8 +139,8 @@ str CMDsciencevoid_@1(int *ret, int *bid){
 		o++;
 	}
 bunins_failed:
-	BBPincref( *ret= bn->batCacheid,TRUE);
-	BBPunfix(*ret);
+	*ret= bn->batCacheid;
+	BBPkeepref(*ret);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -165,8 +165,8 @@ str CMDscience_@1(int *ret, int *bid, @2 *d){
 		bunfastins(bn, h, &x);
 	}
 bunins_failed:
-	BBPincref( *ret= bn->batCacheid,TRUE);
-	BBPunfix(*ret);
+	*ret= bn->batCacheid;
+	BBPkeepref(*ret);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

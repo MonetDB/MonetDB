@@ -141,8 +141,8 @@ comment	"Extracts Cb(blue color) component from a color atom";
 		return throwMessage("batstr." Z, "no space available "); \
 	}
 #define finalizeResult(X,Y,Z) \
-	BBPincref(*X = Y->batCacheid,TRUE);\
-	BBPunfix(*X);\
+	*X = (Y)->batCacheid; \
+	BBPkeepref(*(X));\
 	BBPunfix(Z->batCacheid);
 @= BATwalk
 mal_export str CLRbat@1(int *ret, int *l);

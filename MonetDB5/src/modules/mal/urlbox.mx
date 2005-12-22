@@ -527,8 +527,7 @@ URLBOXgetNames(int *r){
 		BUNins(b,&i, BBPname(urlBAT[i]->batCacheid));
 	}
 	*r = b->batCacheid;
-	BBPincref(*r,TRUE);
-	BBPunfix(*r);
+	BBPkeepref(*r);
 	return MAL_SUCCEED;
 }
 str
@@ -545,8 +544,7 @@ URLBOXgetCount(int *r){
 		BUNins(b,&i, &cnt);
 	}
 	*r = b->batCacheid;
-	BBPincref(*r,TRUE);
-	BBPunfix(*r);
+	BBPkeepref(*r);
 	return MAL_SUCCEED;
 }
 str
@@ -565,8 +563,7 @@ URLBOXgetCardinality(int *r){
 		BUNins(b,&i, &cnt);
 	}
 	*r = b->batCacheid;
-	BBPincref(*r,TRUE);
-	BBPunfix(*r);
+	BBPkeepref(*r);
 	return MAL_SUCCEED;
 }
 
@@ -604,8 +601,7 @@ URLBOXgetSize(int *r){
 		BUNins(b,&i, &tot);
 	}
 	*r = b->batCacheid;
-	BBPincref(*r,TRUE);
-	BBPunfix(*r);
+	BBPkeepref(*r);
 	return MAL_SUCCEED;
 }
 @}

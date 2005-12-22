@@ -3202,8 +3202,8 @@ CNTRScounter2bat(int *bid, int *idx){
 	counter2bat(&bn, cntrs + *idx);
 	if( bn == NULL)
 		return throwMessage("counters.bat","Could not create object");
-	BBPincref(*bid= bn->batCacheid,TRUE);
-	BBPunfix(*bid);
+	*bid= bn->batCacheid;
+	BBPkeepref(*bid);
 	return MAL_SUCCEED;
 }
 
@@ -3241,8 +3241,8 @@ CNTRSnativeEvents(int *ret){
 	show_native_events(&bn);
 	if( bn == NULL)
 		return throwMessage("counters.nativeEvents","Could not create object");
-	BBPincref(*ret= bn->batCacheid,TRUE);
-	BBPunfix(*ret);
+	*ret= bn->batCacheid;
+	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
 
@@ -3252,8 +3252,8 @@ CNTRSunifiedEvents(int *ret){
 	show_unified_events(&bn);
 	if( bn == NULL)
 		return throwMessage("counters.unifiedEvents","Could not create object");
-	BBPincref(*ret= bn->batCacheid,TRUE);
-	BBPunfix(*ret);
+	*ret= bn->batCacheid;
+	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
 
