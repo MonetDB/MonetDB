@@ -1,18 +1,14 @@
 stdout of test 'select_simple_join` in directory 'src/benchmarks/ATIS` itself:
 
 
-# 21:13:03 >  
-# 21:13:03 >  Mtimeout -timeout 180 Mserver --config=/ufs/niels/.monet.conf --debug=0   --set monet_prompt= --dbname=Tests_src_benchmarks_ATIS --set sql_port=54799 /ufs/niels/data/sql/Linux/share/sql/catalog.mil /ufs/niels/data/sql/Linux/share/sql/sqlserver.mil ; echo  ; echo Over..
-# 21:13:03 >  
+# 12:30:36 >  
+# 12:30:36 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_ATIS" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 12:30:36 >  
 
-# Monet Database Server V4.99.19
+# Monet Database Server V4.9.3
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# config:/ufs/niels/scratch/Linux-x86_64/build-m5/etc/MonetDB5.conf
-# dbfarm:/ufs/niels/scratch/Linux-x86_64/build-m5/var/MonetDB5/dbfarm
-# dbname:mTests_src_benchmarks_ATIS
 # Visit http://monetdb.cwi.nl/ for further information.
-#Ready to accept connections on koala.ins.cwi.nl:47130
 
 printf("\nReady.\n");
 
@@ -22,25 +18,19 @@ quit();
 
 Over..
 
-# 21:13:04 >  
-# 21:13:04 >  Mtimeout -timeout 60 sql_client --port=54799 < select_simple_join.sql
-# 21:13:04 >  
+# 12:30:37 >  
+# 12:30:37 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < select_simple_join.sql
+# 12:30:37 >  
 
-# 3 # querytype
 # city,	state,	city # table_name
 # city_name,	state_name,	city_code # name
 # char,	char,	char # type
-# 7,	7,	4 # length
-# 1,	,	 # tuplecount
-# 1,	,	 # id
+# 25,	25,	4 # length
 [ "ATLANTA",	"GEORGIA",	"MATL"	]
-# 3 # querytype
 # city,	state,	city # table_name
 # city_name,	state_name,	city_code # name
 # char,	char,	char # type
-# 13,	20,	4 # length
-# 11,	,	 # tuplecount
-# 2,	,	 # id
+# 25,	25,	4 # length
 [ "ATLANTA",	"GEORGIA",	"MATL"	]
 [ "BOSTON",	"MASSACHUSETTS",	"BBOS"	]
 [ "DALLAS",	"TEXAS",	"DDFW"	]
@@ -52,13 +42,10 @@ Over..
 [ "OAKLAND",	"CALIFORNIA",	"OOAK"	]
 [ "WASHINGTON",	"DISTRICT OF COLUMBIA",	"WWAS"	]
 [ "BALTIMORE",	"MARYLAND",	"BBWI"	]
-# 3 # querytype
 # month_name,	day_name # table_name
 # month_name,	day_name # name
 # char,	char # type
-# 8,	9 # length
-# 7,	 # tuplecount
-# 3,	 # id
+# 9,	9 # length
 [ "JANUARY",	"MONDAY"	]
 [ "FEBRUARY",	"TUESDAY"	]
 [ "MARCH",	"WEDNESDAY"	]
@@ -66,24 +53,18 @@ Over..
 [ "MAY",	"FRIDAY"	]
 [ "JUNE",	"SATURDAY"	]
 [ "JULY",	"SUNDAY"	]
-# 3 # querytype
 # month_name,	day_name # table_name
 # month_name,	day_name # name
 # char,	char # type
-# 5,	8 # length
-# 4,	 # tuplecount
-# 4,	 # id
+# 9,	9 # length
 [ "APRIL",	"THURSDAY"	]
 [ "MAY",	"FRIDAY"	]
 [ "JUNE",	"SATURDAY"	]
 [ "JULY",	"SUNDAY"	]
-# 3 # querytype
 # flight,	aircraft # table_name
 # flight_code,	aircraft_type # name
 # int,	char # type
-# 0,	48 # length
-# 579,	 # tuplecount
-# 4,	 # id
+# 10,	64 # length
 [ 101908,	"BOEING 727-200 (ALL SERIES)"	]
 [ 101909,	"BOEING 727-200 (ALL SERIES)"	]
 [ 101910,	"MCDONNELL DOUGLAS DC9 (ALL 30/40/50 & 80 SERIES)"	]
@@ -664,7 +645,7 @@ Over..
 [ 144575,	"BOEING 727-200 (ALL SERIES)"	]
 [ 144576,	"BOEING 737-300"	]
 
-# 21:13:04 >  
-# 21:13:04 >  Done.
-# 21:13:04 >  
+# 12:30:37 >  
+# 12:30:37 >  Done.
+# 12:30:37 >  
 

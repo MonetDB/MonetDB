@@ -1,16 +1,13 @@
 stdout of test 'select_distinct` in directory 'src/benchmarks/ATIS` itself:
 
 
-# 13:49:02 >  
-# 13:49:02 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/data/monet/Linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/monet/Linux/lib/MonetDB:/ufs/niels/data/sql/Linux/lib/sql" --dbfarm "/ufs/niels/data/monet/Linux/var/dbfarm" --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_ATIS" --set sql_port=59463 "/ufs/niels/data/sql/Linux/share/sql/sqlserver.mil" ; echo ; echo Over..
-# 13:49:02 >  
+# 12:30:41 >  
+# 12:30:41 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_benchmarks_ATIS" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 12:30:41 >  
 
-# Monet Database Server V4.99.19
+# Monet Database Server V4.9.3
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# config:/ufs/niels/scratch/Linux-x86_64/build-m5/etc/MonetDB5.conf
-# dbfarm:/ufs/niels/scratch/Linux-x86_64/build-m5/var/MonetDB5/dbfarm
-# dbname:mTests_src_benchmarks_ATIS
 # Visit http://monetdb.cwi.nl/ for further information.
 
 printf("\nReady.\n");
@@ -20,30 +17,24 @@ quit();
 
 Over..
 
-# 13:49:03 >  
-# 13:49:03 >  Mtimeout -timeout 60 sql_client -u monetdb -P monetdb --host=stem --port=59463 < select_distinct.sql
-# 13:49:03 >  
+# 12:30:42 >  
+# 12:30:42 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < select_distinct.sql
+# 12:30:42 >  
 
-# 3 # querytype
 # aircraft # table_name
 # category # name
 # char # type
 # 10 # length
-# 6 # tuplecount
-# 1 # id
 [ ""	]
 [ "AMPHIBIAN"	]
 [ "HELICOPTER"	]
 [ "JET"	]
 [ "PROPELLER"	]
 [ "TURBOPROP"	]
-# 3 # querytype
 # flight # table_name
 # from_airport # name
 # char # type
 # 3 # length
-# 9 # tuplecount
-# 2 # id
 [ "ATL"	]
 [ "BOS"	]
 [ "BWI"	]
@@ -53,13 +44,10 @@ Over..
 [ "PHL"	]
 [ "PIT"	]
 [ "SFO"	]
-# 3 # querytype
 # flight # table_name
 # aircraft_code # name
 # char # type
 # 3 # length
-# 22 # tuplecount
-# 3 # id
 [ "100"	]
 [ "727"	]
 [ "72S"	]
@@ -82,13 +70,10 @@ Over..
 [ "SH3"	]
 [ "SH6"	]
 [ "SWM"	]
-# 3 # querytype
 # fare,	fare,	fare,	fare,	fare,	fare,	fare,	fare # table_name
 # fare_code,	from_airport,	to_airport,	fare_class,	fare_airline,	restrict_code,	one_way_cost,	rnd_trip_cost # name
-# char,	char,	char,	char,	char,	char,	float,	float # type
-# 7,	3,	3,	2,	2,	5,	0,	0 # length
-# 534,	,	,	,	,	,	,	 # tuplecount
-# 4,	,	,	,	,	,	,	 # id
+# char,	char,	char,	char,	char,	char,	real,	real # type
+# 8,	3,	3,	3,	2,	5,	13,	13 # length
 [ "7100001",	"ATL",	"BOS",	"F",	"",	"",	497,	994	]
 [ "7100002",	"ATL",	"BOS",	"FN",	"",	"",	348,	696	]
 [ "7100003",	"ATL",	"BOS",	"Y",	"",	"",	331,	662	]
@@ -623,13 +608,10 @@ Over..
 [ "7100532",	"SFO",	"PIT",	"F",	"US",	"",	819,	1638	]
 [ "7100533",	"SFO",	"PIT",	"Y",	"",	"",	546,	1092	]
 [ "7100534",	"SFO",	"PIT",	"Y",	"",	"VU/1",	379,	0	]
-# 3 # querytype
 # flight_fare # table_name
 # flight_code # name
 # int # type
-# 0 # length
-# 579 # tuplecount
-# 5 # id
+# 10 # length
 [ 101908	]
 [ 101909	]
 [ 101910	]
@@ -1209,13 +1191,10 @@ Over..
 [ 144574	]
 [ 144575	]
 [ 144576	]
-# 3 # querytype
 # flight,	aircraft # table_name
 # flight_code,	aircraft_type # name
 # int,	char # type
-# 0,	48 # length
-# 579,	 # tuplecount
-# 5,	 # id
+# 10,	64 # length
 [ 101908,	"BOEING 727-200 (ALL SERIES)"	]
 [ 101909,	"BOEING 727-200 (ALL SERIES)"	]
 [ 101910,	"MCDONNELL DOUGLAS DC9 (ALL 30/40/50 & 80 SERIES)"	]
@@ -1795,13 +1774,10 @@ Over..
 [ 144574,	"BOEING 737-300"	]
 [ 144575,	"BOEING 727-200 (ALL SERIES)"	]
 [ 144576,	"BOEING 737-300"	]
-# 3 # querytype
 # airline,	aircraft # table_name
 # airline_name,	aircraft_type # name
 # char,	char # type
-# 25,	48 # length
-# 44,	 # tuplecount
-# 6,	 # id
+# 64,	64 # length
 [ "AMERICAN AIRLINES",	"BOEING 727-200 (ALL SERIES)"	]
 [ "AMERICAN AIRLINES",	"BOEING 767 (ALL SERIES)"	]
 [ "AMERICAN AIRLINES",	"FAIRCHILD (SWEARINGEN) METRO/MERLIN"	]
@@ -1847,7 +1823,7 @@ Over..
 [ "USAIR",	"SHORTS 330 PASSENGER"	]
 [ "USAIR",	"SHORTS 360"	]
 
-# 13:49:03 >  
-# 13:49:03 >  Done.
-# 13:49:03 >  
+# 12:30:42 >  
+# 12:30:42 >  Done.
+# 12:30:42 >  
 
