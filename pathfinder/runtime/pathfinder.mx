@@ -2636,6 +2636,7 @@ xquery_method(stream *out,
 /*
  * module initialization
  */
+extern void xmlInitThreads();
 bat *
 xquery_prelude()
 {
@@ -2644,6 +2645,7 @@ xquery_prelude()
     pf_module_lock = MT_create_lock();
     pf_cache_lock = MT_create_lock();
 
+    xmlInitThreads();
     memset(xquery_clients, 0, sizeof(xquery_client)*(MAXCLIENTS+1));
     for(i=1; i<=MAXCLIENTS; i++)        
         xquery_clients[i].stk = i;
