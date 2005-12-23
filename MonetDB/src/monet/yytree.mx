@@ -95,7 +95,7 @@ t->yyval field is not there and it actually contains the end part of
 the previous node in the chunk (the first node from a chunk always 
 allocates a t->yyval to avoid some memory debugging tools detecting 
 use of illegal pointers).
-Also, the amount of children in t->yysons (t->capacity) is trimmed to the 
+Also, the number of children in t->yysons (t->capacity) is trimmed to the 
 *actual* number of children (t->cnt), and may even be 0. The overflow
 field is a sentinel pointer after t->yysons; thus t->yysons[t->capacity].
 It may also be omitted iff (t->extendable == 0).
@@ -106,7 +106,7 @@ the t->yyval record re-uses space from some location that is known
 to be stable during the lifetime of this tree. A typical example 
 are MIL function names. The default behavior is to make GDKmalloc() 
 copy of such pointers. For MIL procs, we always make a copy from
-teh base template, and the copies may refer to the pointers contained
+the base template, and the copies may refer to the pointers contained
 in this base template.
 
 All in all, the minimum node size is just *12* bytes: the bitfield
