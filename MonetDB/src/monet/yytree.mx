@@ -39,6 +39,7 @@ m_export void    Myylogclean(void);
 
 /* bulk obtaining executable (chunk-compressed) trees */
 m_export YYSTREE Myylogout(YYSTREE t);
+m_export YYSTREE Myycopy(YYSTREE t);
 m_export YYSTREE Myysubstitute_proc(YYSTREE t, int argc, ValPtr argv);
 m_export YYSTREE Myysubstitute_iter(YYSTREE t, int argc, ValPtr argv);
 
@@ -474,6 +475,15 @@ Myylogout(YYSTREE t)
 	char *t_next = NULL, *t_size = NULL;
 	t->noyyval = 0;
 	if (yypostprocess(t) < 0) return NULL;
+	return yycopy(t, 1, 0, &t_next, &t_size);
+}
+
+YYSTREE
+Myycopy(YYSTREE t)
+{
+	/* make a memory-tight copy of the tree constructed by the parser, and steal the pointers */ 
+	char *t_next = NULL, *t_size = NULL;
+
 	return yycopy(t, 1, 0, &t_next, &t_size);
 }
 

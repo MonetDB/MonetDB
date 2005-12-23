@@ -697,9 +697,8 @@ to different clients.  Schedule the background request.
 	}
 	res->vtype = TYPE_int;
 	res->val.ival = c->stk;
-	c->tree = lt->yysons[0];
+	c->tree = Myycopy(lt->yysons[0]);
 	QMwakeup(QMenqueue(c->stk, c->tree, 0, (int) (c - monet_clients)));
-	lt->yysons[0] = NULL;
 
 	return 1;
 }
