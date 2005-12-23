@@ -30,24 +30,20 @@
 
 typedef enum { LINE_1, LINE_N, BLOCKED } prot;
 
-typedef struct _chain {
-	struct _chain* yynext;	/* next link in the chain */
-	int yyval;				/* the token */
-} chain;
-
 struct scanner {
 	bstream *rs;
 	stream *ws;
 
-	chain* yynext;	/* next tokens, lr(1) isn't powerfull enough for sql */
+	int yynext;		/* next token, lr(1) isn't powerful enough for sql */
+	int yylast;		/* previous token, to detect superfluous semi-colons */
 	int yysval;		/* start of current token */
 	int yyval;		/* current token */
 	int yycur;		/* next char in the queue */
 	char yybak;		/* sometimes its needed to write an EOS marker */
 	int as;			/* start of query part of view's etc */
-	int view_end;		/* end of query part of view */
-	int key;
-	int started;		/* found at least one token */
+	int view_end;	/* end of query part of view */
+	int key;		/* query hash */
+	int started;	/* found at least one token */
 	prot mode;		/* which mode (line (1,N), blocked) */
 };
 
@@ -317,6 +313,8 @@ scanner_init_keywords()
 	keywords_insert("IDENTITY", IDENTITY);
 	keywords_insert("SERIAL", SERIAL);
 	keywords_insert("AUTO_INCREMENT", AUTO_INCREMENT);
+
+	keywords_insert(";", SCOLON);
 }
 
 #define find_keyword_bs(lc, s) find_keyword(lc->rs->buf+lc->rs->pos+s)
@@ -327,7 +325,8 @@ scanner_init(struct scanner *s, bstream *rs, stream *ws)
 	s->rs = rs;
 	s->ws = ws;
 
-	s->yynext = NULL;
+	s->yynext = 0;
+	s->yylast = 0;
 	s->yyval = 0;
 	s->yybak = 0;		/* keep backup of char replaced by EOS */
 	s->yycur = 0;
@@ -371,7 +370,7 @@ scanner_error(mvc *lc, int cur)
 		(void) sql_error(lc, 1, "unexpected end of input");
 		return -1;	/* EOF needs -1 result */
 	default:
-		(void) sql_error(lc, 1, "unexpected control character");
+		(void) sql_error(lc, 1, "unexpected control character (%d)", cur);
 	}
 	return LEX_ERROR;
 }
@@ -491,7 +490,7 @@ scanner_getc(struct scanner *lc)
 	}
 	return c;
 
-      error:
+error:
 	if (b->pos + lc->yycur < b->len)	/* skip bogus char */
 		lc->yycur++;
 	return EOF;
@@ -694,10 +693,12 @@ int scanner_symbol(mvc * c, int cur)
 	case ')':
 	case ',':
 	case '.':
-	case ';':
 	case '=':
 		lc->started = 1;
 		return scanner_token(lc, cur);
+	case ';':
+		lc->started = 0;
+		return scanner_token(lc, SCOLON);
 	case '<':
 		lc->started = 1;
 		cur = scanner_getc(lc);
@@ -786,20 +787,16 @@ valid_ident(char *s, char *dst)
 	return 1;
 }
 
-int
-sqllex(YYSTYPE * yylval, void *parm)
-{
-	int token;
-	mvc *c = (mvc *) parm;
+static int
+sql_get_next_token(YYSTYPE *yylval, void *parm) {
+	mvc *c = (mvc*)parm;
 	struct scanner *lc = &c->scanner;
-	int pos;
+	int token = 0;
 
 	if (lc->yynext) {
-		chain *yynext = lc->yynext;
-		int next = lc->yynext->yyval;
+		int next = lc->yynext;
 
-		lc->yynext = lc->yynext->yynext;
-		free(yynext);
+		lc->yynext = 0;
 		return(next);
 	}
 
@@ -807,9 +804,9 @@ sqllex(YYSTYPE * yylval, void *parm)
 		lc->rs->buf[lc->rs->pos + lc->yycur] = lc->yybak;
 		lc->yybak = 0;
 	}
-	pos = lc->rs->pos + lc->yycur;
-
+	
 	lc->yysval = lc->yycur;
+	lc->yylast = lc->yyval;
 	token = tokenize(c, scanner_getc(lc));
 
 	yylval->sval = (lc->rs->buf + lc->rs->pos + lc->yysval);
@@ -839,18 +836,31 @@ sqllex(YYSTYPE * yylval, void *parm)
 
 		/* reset original */
 		lc->rs->buf[lc->rs->pos+lc->yycur- 1] = quote; 
-
 	}
 
+	return(token);
+}
+
+int
+sqllex(YYSTYPE * yylval, void *parm)
+{
+	int token;
+	mvc *c = (mvc *) parm;
+	struct scanner *lc = &c->scanner;
+	int pos;
+
+	/* store position for when view's query ends */
+	pos = lc->rs->pos + lc->yycur;
+
+	token = sql_get_next_token(yylval, parm);
+	
 	if (token == UNION) {
 		int next = sqllex(yylval, parm);
 
 		if (token == JOIN) {
 			token = UNIONJOIN;
 		} else {
-			lc->yynext = malloc(sizeof(chain));
-			lc->yynext->yyval = next;
-			lc->yynext->yynext = NULL;
+			lc->yynext = next;
 		}
 	} else if (token == NO) {
 		int next = sqllex(yylval, parm);
@@ -866,31 +876,28 @@ sqllex(YYSTYPE * yylval, void *parm)
 				token = NOCYCLE;
 			break;
 			default:
-				lc->yynext = malloc(sizeof(chain));
-				lc->yynext->yyval = next;
-				lc->yynext->yynext = NULL;
+				lc->yynext = next;
 			break;
 		}
-/* example code expansion of SERIAL into "INTEGER GENERATED ALWAYS AS IDENTITY" 
-	} else if (token == SERIAL) {
-		token = sqlINTEGER;
-		chain* c = lc->yynext = malloc(sizeof(chain));
-		c->yyval = GENERATED;
-		c = c->yynext = malloc(sizeof(chain));
-		c->yyval = ALWAYS;
-		c = c->yynext = malloc(sizeof(chain));
-		c->yyval = AS;
-		c = c->yynext = malloc(sizeof(chain));
-		c->yyval = IDENTITY;
-		c->yynext = NULL;
-*/
-	}
-	if (token == WITH) 
+	} else if (token == SCOLON) {
+		/* ignore semi-colon(s) following a semi-colon */
+		if (lc->yylast == SCOLON) {
+			int prev = lc->yycur;
+			while ((token = sql_get_next_token(yylval, parm)) == SCOLON)
+				prev = lc->yycur;
+
+			/* skip the skipped stuff also in the buffer */
+			lc->rs->pos += prev;
+			lc->yycur -= prev;
+			assert(lc->yycur >= 0);
+		}
+	} else if (token == WITH) {
 		lc->view_end = pos;
+	}
 
 	/* Don't include literals in the calculation of the key */
 	if (token != STRING && token != sqlINT && token != INTNUM && token != APPROXNUM && token != NULLX)
 		lc->key ^= token;
-	lc -> started += (token != EOF);
+	lc->started += (token != EOF);
 	return token;
 }

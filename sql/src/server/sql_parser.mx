@@ -498,7 +498,10 @@ int yydebug=1;
 %token GENERATED ALWAYS IDENTITY
 %token SERIAL AUTO_INCREMENT /* PostgreSQL and MySQL immitators */
 
-	/* operators */
+/* SQL's terminator, the semi-colon */
+%token SCOLON
+
+/* operators */
 %left UNION EXCEPT INTERSECT CORRESPONDING UNIONJOIN
 %left JOIN CROSS LEFT FULL RIGHT INNER NATURAL
 %left LIKE BETWEEN sqlIN WITH
@@ -543,7 +546,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %%
 
 sqlstmt:
-   sql ';'
+   sql SCOLON
 	{
 		mvc *m = (mvc*)parm;
 		if (m->sym) {
@@ -557,31 +560,31 @@ sqlstmt:
 | PREPARE 		{ mvc *m = (mvc*)parm;
 		  	  m->mode = m_prepare; 
 			  m->scanner.as = m->scanner.yycur; }
-   sql ';' 		{ mvc *m = (mvc*)parm;
+   sql SCOLON 		{ mvc *m = (mvc*)parm;
 		  	  m->sym = $$ = $3; YYACCEPT; }
  | SQL_EXPLAIN 		
-	sql ';' 	{ mvc *m = (mvc*)parm;
+	sql SCOLON 	{ mvc *m = (mvc*)parm;
 		  	  m->mode = m_explain;
 			  m->scanner.as = m->scanner.yycur; 
 		  	  m->sym = $$ = $2; YYACCEPT; }
  | SQL_PROFILE 		{ mvc *m = (mvc*)parm;
 			  m->scanner.as = m->scanner.yycur; }
-	sql ';' 	{ mvc *m = (mvc*)parm;
+	sql SCOLON 	{ mvc *m = (mvc*)parm;
 		  	  m->mode = m_profile;
 		  	  m->sym = $$ = $3; YYACCEPT; }
- | SQL_DEBUG sql ';' 	{ mvc *m = (mvc*)parm;
+ | SQL_DEBUG sql SCOLON 	{ mvc *m = (mvc*)parm;
 		  	  m->mode = m_debug;
 		  	  m->sym = $$ = $2; YYACCEPT; }
- | SQL_TRACE sql ';' 	{ mvc *m = (mvc*)parm;
+ | SQL_TRACE sql SCOLON 	{ mvc *m = (mvc*)parm;
 		  	  m->mode = m_trace;
 		  	  m->sym = $$ = $2; YYACCEPT; }
- | exec ';'		{ mvc *m = (mvc*)parm;
+ | exec SCOLON		{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = $1; YYACCEPT; }
  | /*empty*/		{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = NULL; YYACCEPT; }
- | ';'			{ mvc *m = (mvc*)parm;
+ | SCOLON			{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = NULL; YYACCEPT; }
- | error ';'		{ mvc *m = (mvc*)parm;
+ | error SCOLON		{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = NULL; YYACCEPT; }
  | LEX_ERROR		{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = NULL; YYACCEPT; }
