@@ -29,15 +29,13 @@ Over..
 # 20:55:30 >  
 
 [ 1	]
-#~BeginVariableOutput~#
-# t,	t,	t # table_name
-# t1,	t2,	t3 # name
-# timestamp,	timestamp,	timestamp # type
-# 26,	20,	23 # length
-[ 2005-12-20 19:55:30.546000,	2005-12-20 19:55:30,	2005-12-20 19:55:30.546	]
-#~EndVariableOutput~#
+# ,	,	 # table_name
+# length_t1,	length_t2,	length_t3 # name
+# int,	int,	int # type
+# 10,	10,	10 # length
+[ 26,	19,	23	]
 
-# 20:55:30 >  
-# 20:55:30 >  Done.
-# 20:55:30 >  
+# 23:30:14 >  
+# 23:30:14 >  Done.
+# 23:30:14 >  
 

@@ -1,15 +1,15 @@
 stderr of test 'subquery_syntax.SF-1296390` in directory 'src/test/BugDay_2005-12-19_2.9.3` itself:
 
 
-# 16:48:23 >  
-# 16:48:23 >  Mtimeout -timeout 180 Mserver "--config=/ufs/sjoerd/Monet-virgin/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/devel/sql-virgin/Linux/lib/MonetDB:/ufs/sjoerd/Monet-virgin/lib/MonetDB" --set "gdk_dbfarm=/ufs/sjoerd/Monet-virgin/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/sjoerd/Monet-virgin/var/MonetDB/log" --set mapi_port=30560 --set sql_port=49501 --set xquery_port=53840 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-12-19_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 16:48:23 >  
+# 15:30:45 >  
+# 15:30:45 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=32372 --set sql_port=45310 --set xquery_port=55061 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-12-19_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 15:30:45 >  
 
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
 # builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
 # builtin opt 	gdk_version = 4.9.3
-# builtin opt 	monet_pid = 26433
-# builtin opt 	prefix = /ufs/sjoerd/Monet-virgin
+# builtin opt 	monet_pid = 21416
+# builtin opt 	prefix = /ufs/fabian/scratch/monetdb/current/program-x86_64
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
@@ -32,7 +32,7 @@ stderr of test 'subquery_syntax.SF-1296390` in directory 'src/test/BugDay_2005-1
 # builtin opt 	sql_user = monetdb
 # builtin opt 	sql_schema = sys
 # builtin opt 	sql_logdir = ${prefix}/var/MonetDB/log
-# config opt 	prefix = /ufs/sjoerd/Monet-virgin
+# config opt 	prefix = /ufs/fabian/scratch/monetdb/current/program-x86_64
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
 # config opt 	gdk_dbname = demo
@@ -53,23 +53,23 @@ stderr of test 'subquery_syntax.SF-1296390` in directory 'src/test/BugDay_2005-1
 # config opt 	pf_httpd_port = 8080
 # config opt 	xquery_output = dm
 # config opt 	xquery_cacheMB = 100
-# cmdline opt 	config = /ufs/sjoerd/Monet-virgin/etc/MonetDB.conf
+# cmdline opt 	config = /ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf
 # cmdline opt 	gdk_debug = 10
-# cmdline opt 	monet_mod_path = /ufs/sjoerd/src/MonetDB/devel/sql-virgin/Linux/lib/MonetDB:/ufs/sjoerd/Monet-virgin/lib/MonetDB
-# cmdline opt 	gdk_dbfarm = /ufs/sjoerd/Monet-virgin/var/MonetDB/dbfarm
-# cmdline opt 	sql_logdir = /ufs/sjoerd/Monet-virgin/var/MonetDB/log
-# cmdline opt 	mapi_port = 30560
-# cmdline opt 	sql_port = 49501
-# cmdline opt 	xquery_port = 53840
+# cmdline opt 	monet_mod_path = /ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin
+# cmdline opt 	gdk_dbfarm = /ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm
+# cmdline opt 	sql_logdir = /ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log
+# cmdline opt 	mapi_port = 32372
+# cmdline opt 	sql_port = 45310
+# cmdline opt 	xquery_port = 55061
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_test_BugDay_2005-12-19_2.9.3
 
-# 16:48:23 >  
-# 16:48:23 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=49501  < subquery_syntax.SF-1296390.sql
-# 16:48:23 >  
+# 15:30:48 >  
+# 15:30:48 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45310  < subquery_syntax.SF-1296390.sql
+# 15:30:48 >  
 
 
-# 16:48:23 >  
-# 16:48:23 >  Done.
-# 16:48:23 >  
+# 15:30:48 >  
+# 15:30:48 >  Done.
+# 15:30:48 >  
 
