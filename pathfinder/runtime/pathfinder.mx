@@ -2547,7 +2547,7 @@ CMDxquery(Cntxt stk,
                 stream *bak = GDKout;
                 THRsetdata(0,s);
                 err = xquery_prepare(ctx, msec, mode, xquery);
-                if (err == NULL) {
+                if (err == NULL || err == (char*) -1) {
                     res->val.sval = GDKmalloc(b->pos+1);
                     if (res->val.sval) {
                         memcpy(res->val.sval, b->buf, b->pos);
@@ -2572,8 +2572,8 @@ CMDxquery(Cntxt stk,
     xquery_client_free(ctx, 0);
     MT_unset_lock(pf_cache_lock, "CMDxquery");
     if (err) {
-        res->vtype = TYPE_void;
-        if (err != (char*) -1) GDKerror(err);
+	GDKerror((err==(char*)-1)?res->val.sval:err);
+	VALclear(res);
         return GDK_FAIL;
     } 
     return GDK_SUCCEED;
