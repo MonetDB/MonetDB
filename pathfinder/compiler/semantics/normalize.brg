@@ -133,54 +133,53 @@ typedef struct PFpnode_t *NODEPTR_TYPE;
 %term    named_ty       =  64
 %term    ne             =  65
 %term    nil            =  66
-%term    nis            =  67
-%term    node_ty        =  68
-%term    ns_decl        =  69
-%term    or             =  70
-%term    ord_ret        =  71
-%term    orderby        =  72
-%term    ordered        =  73
-%term    ordering_mode  =  74
-%term    orderspecs     =  75
-%term    param          =  76
-%term    params         =  77
-%term    pi             =  78
-%term    plus           =  79
-%term    pred           =  80
-%term    range          =  81
-%term    req_name       =  82
-%term    req_ty         =  83
-%term    root_          =  84
-%term    schm_ats       =  85
-%term    schm_attr      =  86
-%term    schm_elem      =  87
-%term    schm_imp       =  88
-%term    seq_ty         =  89
-%term    some           =  90
-%term    step           =  91
-%term    tag            =  92
-%term    text           =  93
-%term    then_else      =  94
-%term    treat          =  95
-%term    typeswitch     =  96
-%term    uminus         =  97
-%term    union_         =  98
-%term    unordered      =  99
-%term    uplus          = 100
-%term    val_eq         = 101
-%term    val_ge         = 102
-%term    val_gt         = 103
-%term    val_le         = 104
-%term    val_lt         = 105
-%term    val_ne         = 106
-%term    validate       = 107
-/* %term var            = 108  introduced after var scoping */
-%term    var_decl       = 109
-%term    var_type       = 110
-%term    varref         = 111
-%term    vars           = 112
-%term    where          = 113
-%term    xmls_decl      = 114
+%term    node_ty        =  67
+%term    ns_decl        =  68
+%term    or             =  69
+%term    ord_ret        =  70
+%term    orderby        =  71
+%term    ordered        =  72
+%term    ordering_mode  =  73
+%term    orderspecs     =  74
+%term    param          =  75
+%term    params         =  76
+%term    pi             =  77
+%term    plus           =  78
+%term    pred           =  79
+%term    range          =  80
+%term    req_name       =  81
+%term    req_ty         =  82
+%term    root_          =  83
+%term    schm_ats       =  84
+%term    schm_attr      =  85
+%term    schm_elem      =  86
+%term    schm_imp       =  87
+%term    seq_ty         =  88
+%term    some           =  89
+%term    step           =  90
+%term    tag            =  91
+%term    text           =  92
+%term    then_else      =  93
+%term    treat          =  94
+%term    typeswitch     =  95
+%term    uminus         =  96
+%term    union_         =  97
+%term    unordered      =  98
+%term    uplus          =  99
+%term    val_eq         = 100
+%term    val_ge         = 101
+%term    val_gt         = 102
+%term    val_le         = 103
+%term    val_lt         = 104
+%term    val_ne         = 105
+%term    validate       = 106
+/* %term var            = 107  introduced after var scoping */
+%term    var_decl       = 108
+%term    var_type       = 109
+%term    varref         = 110
+%term    vars           = 111
+%term    where          = 112
+%term    xmls_decl      = 113
 
 %%
 
@@ -401,7 +400,6 @@ ComparisonExpr:         val_le (RangeExpr, RangeExpr)               = 128 (10);
 ComparisonExpr:         val_gt (RangeExpr, RangeExpr)               = 129 (10);
 ComparisonExpr:         val_ge (RangeExpr, RangeExpr)               = 130 (10);
 ComparisonExpr:         is (RangeExpr, RangeExpr)                   = 131 (10);
-ComparisonExpr:         nis (RangeExpr, RangeExpr)                  = 132 (10);
 ComparisonExpr:         ltlt (RangeExpr, RangeExpr)                 = 133 (10);
 ComparisonExpr:         gtgt (RangeExpr, RangeExpr)                 = 134 (10);
 
@@ -652,74 +650,6 @@ reduce (PFpnode_t * p, int goalnt, unsigned int *varcount)
             c = wire2 (p_exprseq, p->loc,
                        LL(p),
                        wire2 (p_exprseq, p->loc, LR(p), R(p)));
-            *p = *c;
-            relabel (p, kids);
-            rewritten = true;
-            break;
-
-        /* FLWORExpr: flwr (binds (VarBinding, VarBindings),
-                            where (OptWhereClause_,
-                                   ord_ret (OptOrderByClause_,
-                                            OptExpr))) */
-        case 62:
-            /* Current parse tree situation: multi-bind FLWOR
-             * (may bind any number n >= 2 variables):
-             *
-             * for $a as t1 at $b in e1, $c as t2 at $d in e2
-             *   where p
-             *   order by o
-             *   return e0
-             *
-             *                           flwr
-             *                         /      \
-             *                   binds          where
-             *                  /    \          /    \
-             *              bind    binds      p     ord_ret
-             *            /    \    /   \            /     \
-             *          vars   e1  bind  ...        o       e0
-             *         /   \       /  \
-             *  var_type   $b    vars  e2
-             *  /     \         /    \
-             * $a     t1    var_type  $d
-             *              /     \
-             *             $c     t2
-             *
-             * Rewrite this into n nested single-bind FLWORs:
-             *
-             * for $a as t1 at $b in e1 return
-             *   for $c as t2 at $d in e2
-             *     where p
-             *     order by o
-             *     return e0
-             *
-             *                   flwr
-             *                 /      \
-             *             binds     where
-             *             /   \     /    \
-             *           bind  nil nil    ord_ret         
-             *           /   \           /       \
-             *         vars  e1         nil      flwr
-             *        /    \                   /      \ 
-             *    var_type  $b             binds     where
-             *     /     \                 /   \     /   \
-             *    $a     t1              bind  ...  p   ord_ret
-             *                           /   \           /   \
-             *                         vars  e2         o    e0
-             *                        /    \
-             *                    var_type  $d
-             *                     /     \
-             *                    $c     t2
-             */
-            c = wire2 (p_flwr, p->loc,
-                       L(p),
-                       wire2 (p_where, p->loc,
-                              nil (p->loc),
-                              wire2 (p_ord_ret, p->loc,
-                                     nil (p->loc),
-                                     wire2 (p_flwr, p->loc,
-                                            LR(p),
-                                            R(p)))));
-            LR (c) = nil (L(c)->loc);
             *p = *c;
             relabel (p, kids);
             rewritten = true;

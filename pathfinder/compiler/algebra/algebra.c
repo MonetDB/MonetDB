@@ -431,49 +431,56 @@
 PFalg_atom_t
 PFalg_lit_nat (nat value)
 {
-    return (PFalg_atom_t) { .type = aat_nat, .val = { .nat = value } };
+    return (PFalg_atom_t) { .type = aat_nat, .val = { .nat = value },
+                            .special = amm_normal };
 }
 
 /** construct literal integer (atom) */
 PFalg_atom_t
 PFalg_lit_int (long long int value)
 {
-    return (PFalg_atom_t) { .type = aat_int, .val = { .int_ = value } };
+    return (PFalg_atom_t) { .type = aat_int, .val = { .int_ = value },
+                            .special = amm_normal };
 }
 
 /** construct literal string (atom) */
 PFalg_atom_t
 PFalg_lit_str (char *value)
 {
-    return (PFalg_atom_t) { .type = aat_str, .val = { .str = value } };
+    return (PFalg_atom_t) { .type = aat_str, .val = { .str = value },
+                            .special = amm_normal };
 }
 
 /** construct literal decimal (atom) */
 PFalg_atom_t
 PFalg_lit_dec (float value)
 {
-    return (PFalg_atom_t) { .type = aat_dec, .val = { .dec = value } };
+    return (PFalg_atom_t) { .type = aat_dec, .val = { .dec = value },
+                            .special = amm_normal };
 }
 
 /** construct literal double (atom) */
 PFalg_atom_t
 PFalg_lit_dbl (double value)
 {
-    return (PFalg_atom_t) { .type = aat_dbl, .val = { .dbl = value } };
+    return (PFalg_atom_t) { .type = aat_dbl, .val = { .dbl = value },
+                            .special = amm_normal };
 }
 
 /** construct literal boolean (atom) */
 PFalg_atom_t
 PFalg_lit_bln (bool value)
 {
-    return (PFalg_atom_t) { .type = aat_bln, .val = { .bln = value } };
+    return (PFalg_atom_t) { .type = aat_bln, .val = { .bln = value },
+                            .special = amm_normal };
 }
 
 /** construct literal QName (atom) */
 PFalg_atom_t
 PFalg_lit_qname (PFqname_t value)
 {
-    return (PFalg_atom_t) { .type = aat_qname, .val = { .qname = value } };
+    return (PFalg_atom_t) { .type = aat_qname, .val = { .qname = value }, 
+                            .special = amm_normal };
 }
 
 
@@ -610,6 +617,9 @@ PFalg_atom_comparable (PFalg_atom_t a, PFalg_atom_t b)
 int PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
 {
     assert (PFalg_atom_comparable (a, b));
+
+    if (a.special != b.special)
+        return a.special - b.special;
 
     switch (a.type) {
         case aat_nat:   return (a.val.nat == b.val.nat ? 0

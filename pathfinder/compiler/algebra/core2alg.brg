@@ -38,7 +38,7 @@
 #include "core.h"
 #include "subtyping.h"
 #include "qname.h"
-/* #include "mem.h" */
+#include "mem.h"
 
 /* PFvar_t */
 #include "variable.h"
@@ -83,13 +83,13 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 %term ordered            =  8
 %term unordered          =  9
 
-%term let                = 10 /**< let expression */
-%term letbind            = 11 /**< binding part of a let expression */
-%term for_               = 12 /**< for expression */
-%term forbind            = 13 /**< binding part of a for expression */
-%term forvars            = 14 /**< variable pair (var + pos. var) of a for */
+%term flwr               = 10 /**< flwr expression */
+%term let                = 11 /**< let expression */
+%term letbind            = 12 /**< binding part of a let expression */
+%term for_               = 13 /**< for expression */
+%term forbind            = 14 /**< binding part of a for expression */
+%term forvars            = 15 /**< variable pair (var + pos. var) of a for */
 
-%term orderscope         = 15 /**< start of the orderby scope */
 %term orderby            = 16 /**< orderby clause */
 %term orderspecs         = 17 /**< list of order specs */
 
@@ -165,20 +165,22 @@ LiteralValue:       true_                                       = 106 (10);
 LiteralValue:       false_                                      = 107 (10);
 LiteralValue:       empty                                       = 108 (10);
                                                                      
-CoreExpr:           for_ (forbind (forvars (var, OptVar),            
+CoreExpr:           flwr (OptBindExpr, CoreExpr)                =   4 (10);
+
+OptBindExpr:        for_ (forbind (forvars (var, OptVar),            
                                    Atom),                            
-                          CoreExpr)                             =   4 (10);
+                          OptBindExpr)                          =   5 (10);
                                                                      
 OptVar:             var                                         = 200 (10);
 OptVar:             nil                                         = 201 (10);
                                                                      
-CoreExpr:           let (letbind (var, CoreExpr), CoreExpr)     =   5 (10);
+OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr)  =   6 (10);
+OptBindExpr:        nil                                         =   7 (10);
                                                                      
-CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr))  =   6 (10);
+CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr))  =   8 (10);
                                                                      
-CoreExpr:           seq (Atom, Atom)                            =   7 (10);
+CoreExpr:           seq (Atom, Atom)                            =   9 (10);
                                                                      
-CoreExpr:           orderscope (CoreExpr)                       =  10 (10);
 CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  11 (10);
                                                                      
 OrderSpecs:         orderspecs (CoreExpr, nil)                  = 300 (10);
@@ -296,9 +298,18 @@ static PFarray_t  *env = NULL;
 static PFla_op_t *loop = NULL;
 
 /**
- * Current orderscope relation
+ * Current map relation
  */
-static PFla_op_t *orderscope = NULL;
+static PFla_op_t *map = NULL;
+/**
+ * Attribute counter of current map relation
+ */
+unsigned int map_count = 0;
+
+/**
+ * ordering mode indicator
+ */
+bool ordering = 0;
 
 /* Constructor for staircase join */
 static struct PFla_pair_t locstep (PFalg_axis_t axis, PFty_t seqty, 
@@ -329,8 +340,12 @@ reduce (PFcnode_t * p, int goalnt)
     PFcnode_t    *kids[MAX_KIDS]; /* leaf nodes of this rule */
     bool          topdown;        /* is this a top-down rule? */
 
+    assert(p);
+
     /* determine rule that matches for this non-terminal */
     rule = PFcore2alg_rule (STATE_LABEL (p), goalnt);
+
+    assert(rule);
 
     /* initialize the kids[] vector */
     for (unsigned short i = 0; i < MAX_KIDS; i++)
@@ -352,19 +367,34 @@ reduce (PFcnode_t * p, int goalnt)
         /* Query:              main (FunctionDecls, CoreExpr) */
         case 1:
 
+        /* CoreExpr:           flwr (OptBindExpr, CoreExpr) */
+        case 4:
+
         /* CoreExpr:           for_ (forbind (forvars (var, nil),
                                               Atom),
                                      CoreExpr) */
-        case 4:
-
-        /* CoreExpr:           let (letbind (var, CoreExpr), CoreExpr) */
         case 5:
 
-        /* CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr)) */
+        /* CoreExpr:           let (letbind (var, CoreExpr), CoreExpr) */
         case 6:
 
-        /* CoreExpr:           orderscope (CoreExpr) */
-        case 10:
+        /* CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr)) */
+        case 8:
+
+        /* CoreExpr:           orderby (OrderSpecs, CoreExpr) */
+        case 11:
+
+        /* OrderSpecs:         orderspecs (CoreExpr, nil) */
+        case 300:
+
+        /* OrderSpecs:         orderspecs (CoreExpr, OrderSpecs) */
+        case 301:
+
+        /* CoreExpr:           ordered (CoreExpr) */
+        case 12:
+
+        /* CoreExpr:           unordered (CoreExpr) */
+        case 13:
 
         /* CoreExpr:           typesw (Atom,
                                        cases (case_ (seqtype,
@@ -577,10 +607,165 @@ reduce (PFcnode_t * p, int goalnt)
                      .frag = PFla_empty_set () };
         } break;
 
-        /* CoreExpr:           for_ (forbind (forvars (var, nil),
-                                              Atom),
-                                     CoreExpr) */
+        /* CoreExpr:           flwr (OptBindExpr, CoreExpr) */
         case 4:
+        {   /* TOPDOWN */
+            /**
+             * The flwr expression maps back the result of
+             * one or more nested for-loops at once. It therefore
+             * distincts between the ordering mode ordered and 
+             * unordered.
+             *
+             * unordered:
+             *
+             *        pi_(iter, pos:pos1, item)
+             *        |
+             *       row_(pos1:<iter, pos>/outer)
+             *        |
+             *       |X|_(iter, inner)
+             *      /  \
+             *    /      \
+             * result    map
+             *
+             * ordered:
+             *
+             *        pi_(iter, pos:pos1, item)
+             *        |
+             *       row_(pos1:<sort_0, sort_1, ..., sort_n, pos>/outer)
+             *        |
+             *       |X|_(iter, inner)
+             *      /  \
+             *    /      \
+             * result    map
+             *
+             * In the ordered case each for-loop adds one sort criterion 
+             * to the map relation (sort_0, sort_1, ..., sort_n) 
+             *      or if an order by is present it removes all sort
+             * criteria introduced by the for-loop and adds for each
+             * order specification a sort attribute (sort_0, sort_1, 
+             * ..., sort_n)
+             */
+
+            /* store current state information */
+            PFla_op_t   *old_loop      = loop;
+            PFla_op_t   *old_map       = map;
+            unsigned int old_map_count = map_count;
+            PFarray_t    *old_env      = env;
+        
+
+            PFla_op_t *init_map = project (loop,
+                                           proj (att_outer, att_iter),
+                                           proj (att_inner, att_iter));
+
+            map = init_map;
+            /* first two attributes in map are inner and outer */
+            map_count = 2;
+
+            /* initiate translation of bindings */
+            reduce (kids[0], nts[0]);
+
+            /* as side effect from the bindings a possibly
+               new loop relation is input to the return expression */
+
+            /* initiate translation of return expression */
+            reduce (kids[1], nts[1]);
+
+            /* the map relation has been changed by a for loop
+               (and an order by) and therefore backmapping is
+               required */
+            if (init_map != map) {
+                /* Note that ordering mode has no effect on a FLWOR 
+                   expression if an order by clause is present, 
+                   since order by takes precedence over ordering mode. */
+                if (!ordering && R(p)->kind != c_orderby)
+                    /* in unordered context the new numbering only
+                       needs to respect the sequence order 
+                       (in- and outside the flwor block). */
+                    A(p) = (struct PFla_pair_t) {
+                            .rel = project (rownum (eqjoin (A(R(p)).rel,
+                                                            map,
+                                                            att_iter,
+                                                            att_inner),
+                                                    att_pos1,
+                                                    sortby (att_iter, att_pos),
+                                                    att_outer),
+                                            proj (att_iter, att_outer),
+                                            proj (att_pos, att_pos1),
+                                            proj (att_item, att_item)),
+                            .frag = PFla_empty_set () };
+                else {
+                    /**
+                     * If an order by clause is present we need 
+                     * the iter column as a row number criterion
+                     * (sort_0, sort_1, ..., sort_n, iter, pos).
+                     *
+                     * Without an order by the combination of sort
+                     * columns and partitioning column outer already
+                     * contain the information of column iter. Thus
+                     * the row numbering needs to sort on:
+                     * (sort_0, sort_1, ..., sort_n, pos).
+                     */
+                    /* create sortby attribute list: */
+                    PFalg_attlist_t sortby;
+                    if (R(p)->kind == c_orderby)
+                    {
+                        /* don't include columns inner and outer */
+                        sortby.count = map_count - 2 + 2;
+                        sortby.atts = PFmalloc (sortby.count *
+                                                sizeof (PFalg_attlist_t));
+
+                        /* starting from attribute sort add consecutive
+                           attributes ... */
+                        for (unsigned int i = 0; i < sortby.count - 2; i++)
+                            sortby.atts[i] = att_sort << i;
+                        /* ... and complete sortby list with attributes
+                           iter and  pos */
+                        sortby.atts[sortby.count - 2] = att_iter;
+                        sortby.atts[sortby.count - 1] = att_pos;
+                    } else {
+                        /* don't include columns inner and outer */
+                        sortby.count = map_count - 2 + 1;
+                        sortby.atts = PFmalloc (sortby.count *
+                                                sizeof (PFalg_attlist_t));
+
+                        /* starting from attribute sort add consecutive
+                           attributes ... */
+                        for (unsigned int i = 0; i < sortby.count - 1; i++)
+                            sortby.atts[i] = att_sort << i;
+                        /* ... and complete sortby list with attribute pos */
+                        sortby.atts[sortby.count - 1] = att_pos;
+                    }
+
+                    A(p) = (struct PFla_pair_t) {
+                            .rel = project (rownum (eqjoin (A(R(p)).rel,
+                                                            map,
+                                                            att_iter,
+                                                            att_inner),
+                                                    att_pos1,
+                                                    sortby,
+                                                    att_outer),
+                                            proj (att_iter, att_outer),
+                                            proj (att_pos, att_pos1),
+                                            proj (att_item, att_item)),
+                            .frag = PFla_empty_set () };
+                }
+            } else
+                A(p) = A(R(p));
+            
+            /* restore loop relation */
+            loop = old_loop;
+            /* restore map relation and its attribute counter */
+            map = old_map;
+            map_count = old_map_count;
+            /* restore old environment */
+            env = old_env;
+
+        }   break;
+
+        /* OptBindExpr:        for_ (forbind (forvars (var, nil),
+                                              Atom),
+                                     OptBindExpr) */
+        case 5:
         {   /* TOPDOWN */
 
             /*
@@ -593,7 +778,7 @@ reduce (PFcnode_t * p, int goalnt)
              * - declare variable $v by loop lifting the result of q1,
              *(- declare variable $p if present)
              * - create a new loop relation and
-             * - a new map relation,
+             * - a new var_map relation,
              * - as the for expression opens up a scope, update all existing
              *   bindings to the new scope and add the binding of $v
              * Given the updated environment and the new loop relation
@@ -607,23 +792,24 @@ reduce (PFcnode_t * p, int goalnt)
              *
              * loop(v) = proj_iter(q(v))
              *
-             * map = proj_outer:iter,inner(row_inner:<iter,pos> q1)
+             * var_map = proj_outer:iter,inner(row_inner:<iter,pos> q1)
              *
              * updated_env,(v->q(v)) e updated_env,loop(v): e2 => (q2,delta2)
              * -----------------------------------------------------------------
              * env,loop: for &v in e1 return e2 =>
              * (proj_iter:outer, pos:pos1,item
-             *   (row_pos1:<iter,pos>/outer (q2 |X| (iter = inner)map)), delta2)
+             *   (row_pos1:<iter,pos>/outer (q2 |X| (iter = inner) var_map)),
+             *  delta2)
              */
             PFla_op_t   *var;
             PFla_op_t   *opt_var;
-            PFla_op_t   *old_loop; 
-            PFla_op_t   *map;
+            PFla_op_t   *var_map;
             PFla_op_t   *number;
-            PFarray_t    *old_env;
             unsigned int  i;
             PFla_env_t   e;
             PFla_op_t   *new_bind;
+            /* save old environment */
+            PFarray_t  *old_env = env;
 
             /* initiate translation of e1 */
             reduce (kids[1], nts[1]);
@@ -637,25 +823,21 @@ reduce (PFcnode_t * p, int goalnt)
                                   proj (att_iter, att_inner),
                                   proj (att_item, att_item)));
 
-            /* save old environment */
-            old_env = env;
+            /* create new environment */
             env = PFarray (sizeof (PFla_env_t));
 
             /* insert $v and "its document" into NEW environment */
             *((PFla_env_t *) PFarray_add (env))
                 = enventry (LLL(p)->sem.var, var, A(LR(p)).frag);
 
-            /* save old loop operator */
-            old_loop = loop;
-
             /* create new loop operator */
             loop = project (var, proj (att_iter, att_iter));
 
-            /* create map relation. */
-            map = project (number,
-                     proj (att_outer, att_iter),
-                     proj (att_sort, att_pos),
-                     proj (att_inner, att_inner));
+            /* create var_map relation. */
+            var_map = project (number,
+                               proj (att_outer, att_iter),
+                               proj (att_sort, att_pos),
+                               proj (att_inner, att_inner));
 
             /*
              * handle optional variable ($p); we need map operator
@@ -669,7 +851,7 @@ reduce (PFcnode_t * p, int goalnt)
                 assert (LLR(p)->sem.var);
                 opt_var = cross (lit_tbl (attlist (att_pos),
                                           tuple (lit_nat (1))),
-                                 project (cast (rownum (map, att_item,
+                                 project (cast (rownum (var_map, att_item,
                                                         sortby (att_sort),
                                                         att_outer),
                                                 att_cast, att_item, aat_int),
@@ -685,7 +867,8 @@ reduce (PFcnode_t * p, int goalnt)
              * them into new environment */
             for (i = 0; i < PFarray_last (old_env); i++) {
                 e = *((PFla_env_t *) PFarray_at (old_env, i));
-                new_bind = project (eqjoin (e.rel, map, att_iter, att_outer),
+                new_bind = project (eqjoin (e.rel, var_map, 
+                                            att_iter, att_outer),
                                     proj (att_iter, att_inner),
                                     proj (att_pos, att_pos),
                                     proj (att_item, att_item));
@@ -693,21 +876,49 @@ reduce (PFcnode_t * p, int goalnt)
                     enventry (e.var, new_bind, e.frag);
             }
 
+            /* extend the backmapping relation map with
+             * (a) position information of the for-loop input sequence and
+             * (b) the current iteration values */
+            map_count++;
+            PFalg_proj_t *atts = PFmalloc (map_count *
+                                           sizeof (PFalg_proj_t));
+            /* column outer remains the same */
+            atts[0].new = att_outer;
+            atts[0].old = att_outer;
+            /* column iter1 becomes the new inner column */
+            atts[1].new = att_inner;
+            atts[1].old = att_iter1;
+            /* copy all old sort columns */
+            for (unsigned i = 2; i < map_count - 1; i++)
+                atts[i].new = 
+                atts[i].old = att_sort << (i - 2);
+            /* we now have on additional sort column generated 
+               from column pos */
+            /* the first sort criterion is column sort itself */
+            atts[map_count -1].new = att_sort << (map_count - 3);
+            atts[map_count -1].old = att_pos;
+
+            map = PFla_project_ (eqjoin (map, 
+                                         project (number,
+                                                  proj (att_iter1, att_inner),
+                                                  proj (att_iter, att_iter),
+                                                  proj (att_pos, att_pos)),
+                                         att_inner,
+                                         att_iter),
+                                 map_count, atts);
+            
             /* translate e2 under the specified conditions (updated
              * environment, loop(v))
              */
             reduce (kids[2], nts[2]);
 
-            /* restore old loop */
-            loop = old_loop;
-
-            /* restore old environment */
-            env = old_env;
-
             /* compute result using old env and old loop. */
+            /* backmapping is now done in flwr
             A(p) = (struct PFla_pair_t) {
                      .rel = project (rownum (eqjoin(A(R(p)).rel,
-                                                    map, att_iter, att_inner),
+                                                    var_map, 
+                                                    att_iter,
+                                                    att_inner),
                                              att_pos1,
                                              sortby (att_sort, att_pos),
                                              att_outer),
@@ -715,6 +926,7 @@ reduce (PFcnode_t * p, int goalnt)
                                      proj (att_pos, att_pos1),
                                      proj (att_item, att_item)),
                      .frag = A(R(p)).frag };
+            */
         } break;
 
         /* OptVar:             var */
@@ -727,8 +939,8 @@ reduce (PFcnode_t * p, int goalnt)
             /* (will never be called anyway, Rule 4 is top-down) */
             break;
 
-        /* CoreExpr:           let (letbind (var, CoreExpr), CoreExpr) */
-        case 5:
+        /* OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr) */
+        case 6:
         {   /* TOPDOWN */
 
             /*
@@ -761,16 +973,22 @@ reduce (PFcnode_t * p, int goalnt)
             *((PFla_env_t *) PFarray_add (env))
                 = enventry (LL(p)->sem.var, A(LR(p)).rel, A(LR(p)).frag);
 
-            /* now translate e2 in the new context */
+            /* now translate remaining bindings in the new context */
             reduce (kids[1], nts[1]);
 
-            /* FIXME: Restore old variable environment? */
-
+            /* let is embedded in a flwr expression - a
+               return expression therefore is not needed 
             A(p) = A(R(p));
+            */
         } break;
 
+        /* OptBindExpr:        nil */
+        case 7:
+            /* we don't need a translation -- it would be ignored anyway */
+            break;
+
         /* CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr)) */
-        case 6:
+        case 8:
         {   /* TOPDOWN */
 
             /*
@@ -871,7 +1089,7 @@ reduce (PFcnode_t * p, int goalnt)
         } break;
 
         /* CoreExpr:           seq (Atom, Atom) */
-        case 7:
+        case 9:
         {
             /*
              *     env,loop: e1 => q1,delta1      env,loop: e2 => q2,delta2
@@ -905,61 +1123,162 @@ reduce (PFcnode_t * p, int goalnt)
                      .frag = PFla_set_union (A(L(p)).frag, A(R(p)).frag) };
         } break;
 
-        /* CoreExpr:           orderscope (CoreExpr) */
-        case 10:
-        {   /* TOPDOWN */
-
-            /* FIXME: to do */
-            /* changes for mapping is required */
-            PFoops (OOPS_FATAL, "orderscope not implemented");
-
-            PFla_op_t *old_orderscope;
-
-            /* backup orderscope */
-            old_orderscope = orderscope; 
-
-            /* create new orderscope */
-            orderscope = project (loop,
-                                  proj (att_iter, att_iter),
-                                  proj (att_item, att_iter));
-
-            /* initiate translation of CoreExpr */
-            reduce (kids[0], nts[0]);
-
-            /* reset orderscope relation */
-            orderscope = old_orderscope;
-
-        }   break;
-
         /* CoreExpr:           orderby (OrderSpecs, CoreExpr) */
         case 11:
-            /* FIXME: to do */
-            PFoops (OOPS_FATAL, "orderby not implemented");
-            break;
+        {   /* TOPDOWN */
+
+            /* throw away all sort criteria -- each orderspec
+               adds a new one instead */
+            map = project (map,
+                           proj (att_outer, att_outer),
+                           proj (att_inner, att_inner));
+            map_count = 2;
+
+            /* translate OrderSpecs */
+            reduce (kids[0], nts[0]);
+
+            /* translate return expression */
+            reduce (kids[1], nts[1]);
+
+            A(p) = A(R(p));
+        } break;
 
         /* OrderSpecs:         orderspecs (CoreExpr, nil) */
         case 300:
-            /* FIXME: to do */
-            PFoops (OOPS_FATAL, "orderby not implemented");
-            break;
+        /* OrderSpecs:         orderspecs (CoreExpr, OrderSpecs) */
+        case 301: /* NOTE: some code specific to rule 301 stands
+                     at the end of this block */
+        {   /* TOPDOWN */
+            PFla_op_t          *sort_attr;
+            PFalg_proj_t       *atts;
+            PFty_t              t;
+            PFalg_simple_type_t algty;
+            PFalg_atom_t        atom;
+
+            /* translate order expression */
+            reduce (kids[0], nts[0]);
+
+            /*
+             * If we we know (from static typing) that all
+             * iterations allways have a sequence length of 1
+             * we do not need to add min/max values.
+             */
+            if (PFty_subtype (L(p)->type, PFty_xs_anyItem ()))
+                sort_attr = project (A(L(p)).rel,
+                                     proj (att_iter, att_iter),
+                                     proj (att_item, att_item));
+
+            else {
+                t = PFty_prime (PFty_defn (L(p)->type));
+                /*
+                 * Unfortunately, we only know how to cast atomic types
+                 * into (exactly) one of our builtin atomic types. We
+                 * cannot sensibly cast, e.g., into subtypes thereof.
+                 */
+                if (PFty_equality (t, PFty_xs_string ()))
+                    algty = atom.type = aat_str;
+                else if (PFty_equality (t, PFty_xs_integer ()))
+                    algty = atom.type = aat_int;
+                else if (PFty_equality (t, PFty_xs_decimal ()))
+                    algty = atom.type = aat_dec;
+                else if (PFty_subtype (t, PFty_xs_decimal ()))
+                    algty = atom.type = aat_dec;
+                else if (PFty_equality (t, PFty_xs_double ()))
+                    algty = atom.type = aat_dbl;
+                else if (PFty_equality (t, PFty_xs_boolean ()))
+                    algty = atom.type = aat_bln;
+                else
+                    PFoops (OOPS_FATAL,
+                            "don't know the algebra equivalent of type %s",
+                            PFty_str (L(p)->type));
+
+                if (p->sem.mode.empty == p_least)
+                    atom.special = amm_min;
+                else
+                    atom.special = amm_max;
+
+                if (p->sem.mode.dir == p_desc)
+                    PFoops (OOPS_FATAL,
+                            "algebra translation does not "
+                            "support reverse sorting");
+
+                sort_attr = disjunion (
+                                project (cast (A(L(p)).rel, 
+                                               att_cast, att_item, algty),
+                                         proj (att_iter, att_iter),
+                                         proj (att_item, att_cast)),
+                                cross (
+                                    difference (
+                                        loop,
+                                        project (A(L(p)).rel, 
+                                                 proj (att_iter, att_iter))),
+                                    lit_tbl (attlist (att_item),
+                                             tuple (atom))));
+            }
+
+            /* extend the backmapping relation map with
+             * (a) position information of the for-loop input sequence and
+             * (b) the current iteration values */
+            map_count++;
+            atts = PFmalloc (map_count * sizeof (PFalg_proj_t));
+            /* columns outer and inner remain the same */
+            atts[0].new = att_outer;
+            atts[0].old = att_outer;
+            atts[1].new = att_inner;
+            atts[1].old = att_inner;
+            /* copy all old sort columns */
+            for (unsigned i = 2; i < map_count - 1; i++)
+                atts[i].new = 
+                atts[i].old = att_sort << (i - 2);
+            /* we now have on additional sort column generated 
+               from column pos */
+            /* the first sort criterion is column sort itself */
+            atts[map_count -1].new = att_sort << (map_count - 3);
+            atts[map_count -1].old = att_item;
+
+            map = PFla_project_ (eqjoin (map, sort_attr, att_inner, att_iter),
+                                 map_count, atts);
 
         /* OrderSpecs:         orderspecs (CoreExpr, OrderSpecs) */
-        case 301:
-            /* FIXME: to do */
-            PFoops (OOPS_FATAL, "orderby not implemented");
-            break;
+        /* case 301: */
+            /* complete rule 301 */
+            if (rule == 301)
+                /* translate remaining OrderSpecs */
+                reduce (kids[1], nts[1]);
+            
+        } break;
 
         /* CoreExpr:           ordered (CoreExpr) */
         case 12:
-            /* FIXME: Actually use `ordered' information */
+        {   /* TOPDOWN */
+ 
+            /* use `ordered' information */
+            bool old_ordering = ordering;
+            ordering = true;
+
+            reduce (kids[0], nts[0]);
+
             A(p) = A(L(p));
-            break;
+
+            /* reset ordering mode */
+            ordering = old_ordering;
+        } break;
 
         /* CoreExpr:           unordered (CoreExpr) */
         case 13:
-            /* FIXME: Actually use `ordered' information */
+        {   /* TOPDOWN */
+ 
+            /* use `ordered' information */
+            bool old_ordering = ordering;
+            ordering = false;
+
+            reduce (kids[0], nts[0]);
+
             A(p) = A(L(p));
-            break;
+
+            /* reset ordering mode */
+            ordering = old_ordering;
+        } break;
 
         /* CoreExpr:           typesw (Atom,
                                        cases (case_ (seqtype,
@@ -1453,7 +1772,7 @@ reduce (PFcnode_t * p, int goalnt)
                             "Algebra implementation for function `%s' unknown.",
                             PFqname_str (p->sem.fun->qname));
 
-                A(p) = p->sem.fun->alg (loop, fun_args->base);
+                A(p) = p->sem.fun->alg (loop, ordering, fun_args->base);
 
             }
             else {
@@ -1516,7 +1835,10 @@ reduce (PFcnode_t * p, int goalnt)
     /* check consistency of our iter|pos|item interface */
     switch (p->kind) {
         case c_main:
+        case c_for:
+        case c_let:
         case c_nil:
+        case c_orderspecs:
         case c_arg:
             break;
         default:
@@ -1551,16 +1873,21 @@ locstep (PFalg_axis_t axis, PFty_t seqty, struct PFla_pair_t p)
      * A(L(p)).rel contains a axis node with information on the
      * location step. Will be read out in PFla_scjoin().
      */
-    return (struct  PFla_pair_t) {
-               .rel = rownum (
-                          scjoin (PFla_set_to_la (p.frag),
-                                  project (p.rel,
-                                           proj (att_iter, att_iter),
-                                           proj (att_item, att_item)),
-                                  axis,
-                                  seqty),
-                          att_pos, sortby (att_item), att_iter),
-               .frag = p.frag };
+    PFla_op_t *scjoin = scjoin (PFla_set_to_la (p.frag),
+                                project (p.rel,
+                                         proj (att_iter, att_iter),
+                                         proj (att_item, att_item)),
+                                axis,
+                                seqty);
+
+    if (ordering)
+        return (struct  PFla_pair_t) {
+                   .rel = rownum (scjoin, att_pos, sortby (att_item), att_iter),
+                   .frag = p.frag };
+    else
+        return (struct  PFla_pair_t) {
+                   .rel = number (scjoin, att_pos, att_iter),
+                   .frag = p.frag };
 }
 
 /**
@@ -1804,6 +2131,9 @@ PFcore2alg (PFcnode_t *r)
 
     /* loop is initially a table with just one tuple */
     loop = lit_tbl (attlist (att_iter), tuple (lit_nat (1)));
+
+    /* set ordering mode */
+    ordering = PFquery.ordering;
 
     /* Pointer to array of function parameter values */
     fun_args = NULL;

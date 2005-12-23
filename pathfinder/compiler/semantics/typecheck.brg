@@ -85,11 +85,12 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 %term ordered            =  8
 %term unordered          =  9
 
-%term let                = 10 /**< let expression */
-%term letbind            = 11 /**< binding part of a let expression */
-%term for_               = 12 /**< for expression */
-%term forbind            = 13 /**< binding part of a for expression */
-%term forvars            = 14 /**< variable pair (var + pos. var) of a for */
+%term flwr               = 10 /**< flwr expression */
+%term let                = 11 /**< let expression */
+%term letbind            = 12 /**< binding part of a let expression */
+%term for_               = 13 /**< for expression */
+%term forbind            = 14 /**< binding part of a for expression */
+%term forvars            = 15 /**< variable pair (var + pos. var) of a for */
 
 %term orderby            = 16 /**< orderby clause */
 %term orderspecs         = 17 /**< list of order specs */
@@ -156,105 +157,109 @@ Query:              CoreExpr                                    =   2 (10);
 CoreExpr:           Atom                                        =   3 (10);
 CoreExpr:           SequenceTypeCast                            =   4 (10);
 
-CoreExpr:           for_ (forbind (forvars (var, nil),
+CoreExpr:           flwr (OptBindExpr, CoreExpr)                =   5 (10);
+                                                                     
+OptBindExpr:        for_ (forbind (forvars (var, nil),
                                    Atom),
-                          CoreExpr)                             =   5 (10);
-CoreExpr:           for_ (forbind (forvars (var, var),
+                          OptBindExpr)                          =   6 (10);
+OptBindExpr:        for_ (forbind (forvars (var, var),
                                    Atom),
-                          CoreExpr)                             =   6 (10);
+                          OptBindExpr)                          =   7 (10);
 
-CoreExpr:           let (letbind (var, CoreExpr), CoreExpr)     =   7 (10);
+OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr)  =   8 (10);
 
-CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr))  =   8 (10);
+OptBindExpr:        nil                                         =   9 (10);
+                                                                     
+CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr))  =  10 (10);
 
-CoreExpr:           seq (Atom, Atom)                            =   9 (10);
+CoreExpr:           seq (Atom, Atom)                            =  11 (10);
 
 CoreExpr:           typesw (Atom,
                             cases (case_ (SequenceType,
                                           CoreExpr),
-                                   default_ (CoreExpr)))        =  10 (10);
+                                   default_ (CoreExpr)))        =  12 (10);
 
-SequenceTypeCast:   seqcast (SequenceType, CoreExpr)            =  11 (10);
+SequenceTypeCast:   seqcast (SequenceType, CoreExpr)            =  13 (10);
 
 CoreExpr:           proof (subty (CoreExpr, SequenceType),
-                           CoreExpr)                            =  12 (10);
+                           CoreExpr)                            =  14 (10);
 
-SequenceType:       seqtype                                     =  14 (10);
-SequenceType:       stattype (Atom)                             =  15 (10);
+SequenceType:       seqtype                                     =  16 (10);
+SequenceType:       stattype (Atom)                             =  17 (10);
 
-CoreExpr:           LocationSteps                               =  16 (10);
+CoreExpr:           LocationSteps                               =  18 (10);
 
-LocationStep:       ancestor (SequenceType)                     =  17 (10);
-LocationStep:       ancestor_or_self (SequenceType)             =  18 (10);
-LocationStep:       attribute (SequenceType)                    =  19 (10);
-LocationStep:       child (SequenceType)                        =  20 (10);
-LocationStep:       descendant (SequenceType)                   =  21 (10);
-LocationStep:       descendant_or_self (SequenceType)           =  22 (10);
-LocationStep:       following (SequenceType)                    =  23 (10);
-LocationStep:       following_sibling (SequenceType)            =  24 (10);
-LocationStep:       parent (SequenceType)                       =  25 (10);
-LocationStep:       preceding (SequenceType)                    =  26 (10);
-LocationStep:       preceding_sibling (SequenceType)            =  27 (10);
-LocationStep:       self (SequenceType)                         =  28 (10);
+LocationStep:       ancestor (SequenceType)                     =  19 (10);
+LocationStep:       ancestor_or_self (SequenceType)             =  20 (10);
+LocationStep:       attribute (SequenceType)                    =  21 (10);
+LocationStep:       child (SequenceType)                        =  22 (10);
+LocationStep:       descendant (SequenceType)                   =  23 (10);
+LocationStep:       descendant_or_self (SequenceType)           =  24 (10);
+LocationStep:       following (SequenceType)                    =  25 (10);
+LocationStep:       following_sibling (SequenceType)            =  26 (10);
+LocationStep:       parent (SequenceType)                       =  27 (10);
+LocationStep:       preceding (SequenceType)                    =  28 (10);
+LocationStep:       preceding_sibling (SequenceType)            =  29 (10);
+LocationStep:       self (SequenceType)                         =  30 (10);
 
-LocationSteps:      locsteps (LocationStep, LocationSteps)      =  29 (10);
-LocationSteps:      locsteps (LocationStep, Atom)               =  30 (10);
+LocationSteps:      locsteps (LocationStep, LocationSteps)      =  31 (10);
+LocationSteps:      locsteps (LocationStep, Atom)               =  32 (10);
 
-CoreExpr:           apply (FunctionArgs)                        =  31 (10);
+CoreExpr:           apply (FunctionArgs)                        =  33 (10);
 
-FunctionArgs:       nil                                         =  32 (10);
-FunctionArgs:       arg (FunctionArg, FunctionArgs)             =  33 (10);
+FunctionArgs:       nil                                         =  34 (10);
+FunctionArgs:       arg (FunctionArg, FunctionArgs)             =  35 (10);
 
-FunctionArg:        Atom                                        =  34 (10);
+FunctionArg:        Atom                                        =  36 (10);
 /*
  * FIXME: Should we also need this one here?
 FunctionArg:        SequenceTypeCast;
  */
 
-CoreExpr:           elem (tag, CoreExpr)                        =  35 (10);
-CoreExpr:           elem (CoreExpr, CoreExpr)                   =  36 (10);
+CoreExpr:           elem (tag, CoreExpr)                        =  37 (10);
+CoreExpr:           elem (CoreExpr, CoreExpr)                   =  38 (10);
 
-CoreExpr:           attr (tag, CoreExpr)                        =  37 (10);
-CoreExpr:           attr (CoreExpr, CoreExpr)                   =  38 (10);
+CoreExpr:           attr (tag, CoreExpr)                        =  39 (10);
+CoreExpr:           attr (CoreExpr, CoreExpr)                   =  40 (10);
 
-CoreExpr:           text (CoreExpr)                             =  39 (10);
-CoreExpr:           doc (CoreExpr)                              =  40 (10);
-CoreExpr:           comment (CoreExpr)                          =  41 (10);
-CoreExpr:           pi (Atom, Atom)                             =  42 (10);
-CoreExpr:           pi (lit_str, Atom)                          =  43 (10);
+CoreExpr:           text (CoreExpr)                             =  41 (10);
+CoreExpr:           doc (CoreExpr)                              =  42 (10);
+CoreExpr:           comment (CoreExpr)                          =  43 (10);
+CoreExpr:           pi (Atom, Atom)                             =  44 (10);
+CoreExpr:           pi (lit_str, Atom)                          =  45 (10);
 
-CoreExpr:           ordered (CoreExpr)                          =  44 (10);
-CoreExpr:           unordered (CoreExpr)                        =  45 (10);
+CoreExpr:           ordered (CoreExpr)                          =  46 (10);
+CoreExpr:           unordered (CoreExpr)                        =  47 (10);
 
-CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  46 (10);
+CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  48 (10);
 
-OrderSpecs:         orderspecs (CoreExpr, nil)                  =  47 (10);
-OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  48 (10);
+OrderSpecs:         orderspecs (CoreExpr, nil)                  =  49 (10);
+OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  50 (10);
 
-CoreExpr:           cast (SequenceType, CoreExpr)               =  49 (10);
+CoreExpr:           cast (SequenceType, CoreExpr)               =  51 (10);
 
-Atom:               var                                         =  50 (10);
-Atom:               LiteralValue                                =  51 (10);
+Atom:               var                                         =  52 (10);
+Atom:               LiteralValue                                =  53 (10);
 
-LiteralValue:       lit_str                                     =  52 (10);
-LiteralValue:       lit_int                                     =  53 (10);
-LiteralValue:       lit_dec                                     =  54 (10);
-LiteralValue:       lit_dbl                                     =  55 (10);
-LiteralValue:       true_                                       =  56 (10);
-LiteralValue:       false_                                      =  57 (10);
-LiteralValue:       empty                                       =  58 (10);
+LiteralValue:       lit_str                                     =  54 (10);
+LiteralValue:       lit_int                                     =  55 (10);
+LiteralValue:       lit_dec                                     =  56 (10);
+LiteralValue:       lit_dbl                                     =  57 (10);
+LiteralValue:       true_                                       =  58 (10);
+LiteralValue:       false_                                      =  59 (10);
+LiteralValue:       empty                                       =  60 (10);
 
-FunctionDecls:      nil                                         =  65 (10);
-FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  66 (10);
+FunctionDecls:      nil                                         =  67 (10);
+FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  68 (10);
 
-FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  67 (10);
+FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  69 (10);
 
-ParamList:          nil                                         =  68 (10);
-ParamList:          params (FunParam, ParamList)                =  69 (10);
+ParamList:          nil                                         =  70 (10);
+ParamList:          params (FunParam, ParamList)                =  71 (10);
 
-FunctionBody:       CoreExpr                                    =  70 (10);
+FunctionBody:       CoreExpr                                    =  72 (10);
 
-FunParam:           param (SequenceType, var)                   =  71 (10);
+FunParam:           param (SequenceType, var)                   =  73 (10);
 
 %%
 
@@ -316,10 +321,10 @@ reduce (PFcnode_t * p, int goalnt)
     short        *nts;            /* target non-terminals for the leaf nodes of
                                      the current rule */
     PFcnode_t    *kids[MAX_KIDS]; /* leaf nodes of this rule */
-    bool          topdown;        /* is this a top-down rule? */
 
     /* determine rule that matches for this non-terminal */
     rule = PFtypecheck_rule (STATE_LABEL (p), goalnt);
+    assert (rule);
 
     /* PFinfo (OOPS_NOTICE, "match for rule %i", rule); */
 
@@ -336,35 +341,33 @@ reduce (PFcnode_t * p, int goalnt)
 
     /* PFinfo (OOPS_NOTICE, "in rule %u", rule); */
 
+    /* evaluate top-down in a number of cases */
     switch (rule) {
         /* Query:              main (FunctionDecls, CoreExpr) */
         case 1:
-        /* CoreExpr:           for_ (forbind (forvars (var, nil),
+        /* OptBindExpr:        for_ (forbind (forvars (var, nil),
                                               Atom),
-                                     CoreExpr) */
-        case 5:
-
-        /* CoreExpr:           for_ (forbind (forvars (var, var),
-                                              Atom),
-                                     CoreExpr) */
+                                     OptBindExpr) */
         case 6:
 
-        /* CoreExpr:           let (letbind (var, CoreExpr), CoreExpr) */
+        /* OptBindExpr:        for_ (forbind (forvars (var, var),
+                                              Atom),
+                                     OptBindExpr) */
         case 7:
 
-            topdown = true;
+        /* OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr) */
+        case 8:
+
             break;
 
         default:
-            topdown = false;
+            /*
+             * Recursively invoke compilation.
+             * This means bottom-up compilation.
+             */
+            for (unsigned short i = 0; nts[i]; i++)
+                reduce (kids[i], nts[i]);
     }
-
-    /*
-     * Recursively invoke compilation.  This means bottom-up compilation.
-     */
-    if (!topdown)
-        for (unsigned short i = 0; nts[i]; i++)
-            reduce (kids[i], nts[i]);
 
     switch (rule) {
 
@@ -385,7 +388,7 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* Query:              CoreExpr */
         case 2:
-	    break;
+            break;
 
         /* CoreExpr:           Atom */
         case 3:
@@ -395,10 +398,15 @@ reduce (PFcnode_t * p, int goalnt)
         case 4:
             break;
 
-        /* CoreExpr:           for_ (forbind (forvars (var, nil),
-                                              Atom),
-                                     CoreExpr) */
+        /* CoreExpr:           flwr (OptBindExpr, CoreExpr) */
         case 5:
+            TY(p) = *PFty_simplify (L(p)->sem.flwr.quantifier (TY(R(p))));
+            break;
+
+        /* OptBindExpr:        for_ (forbind (forvars (var, nil),
+                                              Atom),
+                                     OptBindExpr) */
+        case 6:
         {   /* TOPDOWN */
 
             /* W3C XQuery, 5.8.2
@@ -407,7 +415,7 @@ reduce (PFcnode_t * p, int goalnt)
              * -------------------------------------------------------
              *  for_ (Var, nil, Atom, CoreExpr) : t2 . quantifier (t1)
              */
-            PFty_t t1, t2;
+            PFty_t t1;
 
             /* nil : none */
             TY(LLR(p)) = PFty_none ();
@@ -423,16 +431,17 @@ reduce (PFcnode_t * p, int goalnt)
             assert (LLL(p)->sem.var);
             TY( LLL(p)->sem.var ) = TY(LLL(p));
             reduce (kids[1], nts[1]);
-            t2 = TY(R(p));
 
-            TY(p) = *PFty_simplify ((PFty_quantifier (PFty_defn (t1))) (t2));
+            p->sem.flwr.quantifier = PFty_quantifier 
+                                     (R(p)->sem.flwr.quantifier (
+                                          PFty_defn (t1)));
 
         } break;
 
-        /* CoreExpr:           for_ (forbind (forvars (var, var),
+        /* OptBindExpr:        for_ (forbind (forvars (var, var),
                                               Atom),
-                                     CoreExpr) */
-        case 6:
+                                     OptBindExpr) */
+        case 7:
         {   /* TOPDOWN */
 
             /* W3C XQuery, 5.8.2
@@ -442,7 +451,7 @@ reduce (PFcnode_t * p, int goalnt)
              * -------------------------------------------------------
              *  for_ (Var1, Var2, Atom, CoreExpr) : t2 . quantifier (t1)
              */
-            PFty_t t1, t2;
+            PFty_t t1;
 
             /* E |- Atom : t1 */
             reduce (kids[0], nts[0]);
@@ -460,14 +469,14 @@ reduce (PFcnode_t * p, int goalnt)
             assert (LLL(p)->sem.var);
             TY( LLL(p)->sem.var ) = TY(LLL(p));
             reduce (kids[1], nts[1]);
-            t2 = TY(R(p));
 
-            TY(p) = *PFty_simplify ((PFty_quantifier (PFty_defn (t1))) (t2));
+            p->sem.flwr.quantifier = PFty_quantifier 
+                               (R(p)->sem.flwr.quantifier (PFty_defn (t1)));
 
         } break;
 
-        /* CoreExpr:           let (letbind (var, CoreExpr), CoreExpr) */
-        case 7:
+        /* OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr) */
+        case 8:
         {   /* TOPDOWN */
             
             /* W3C XQuery, 5.8.3
@@ -488,11 +497,16 @@ reduce (PFcnode_t * p, int goalnt)
             TY( LL(p)->sem.var ) = t1;
             reduce (kids[1], nts[1]);
 
-            TY(p) = TY(R(p));
+            p->sem.flwr.quantifier = R(p)->sem.flwr.quantifier;
         } break;
 
+        /* OptBindExpr:        nil */
+        case 9:
+            p->sem.flwr.quantifier = PFty_one;
+            break;
+
         /* CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr)) */
-        case 8:
+        case 10:
             /* W3C XQuery, 5.10
              *
              * E |- Atom:boolean  E |- CoreExpr1:t1  E |- CoreExpr2:t2
@@ -509,7 +523,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* CoreExpr:           seq (Atom, Atom) */
-        case 9:
+        case 11:
             /* W3C XQuery, 5.3.1
              * 
              * E |- Atom1 : t1    E |- Atom2 : t2
@@ -523,7 +537,7 @@ reduce (PFcnode_t * p, int goalnt)
                                        cases (case_ (SequenceType,
                                                      CoreExpr),
                                               default_ (CoreExpr))) */
-        case 10:
+        case 12:
         {   /* W3C XQuery, 5.12.2
              *
              *                   E |- Atom:t1  E |- SequenceType:t2  
@@ -558,13 +572,13 @@ reduce (PFcnode_t * p, int goalnt)
         } break;
 
         /* SequenceTypeCast:   seqcast (SequenceType, CoreExpr) */
-        case 11:
+        case 13:
             TY(p) = TY(L(p));
             break;
 
         /* CoreExpr:           proof (subty (CoreExpr, SequenceType),
                                       CoreExpr) */
-        case 12:
+        case 14:
             /*
              *    E |- CoreExpr1 : t1   E |- SequenceType : t2
              *                      t1 <: t2
@@ -587,12 +601,12 @@ reduce (PFcnode_t * p, int goalnt)
             break;
             
         /* SequenceType:       seqtype */
-        case 14:
+        case 16:
             TY(p) = p->sem.type;
             break;
 
         /* SequenceType:       stattype (Atom) */
-        case 15:
+        case 17:
         {   /*
              * We now know the static type of the argument expression.
              * We can thus replace the stattype node by a seqtype node
@@ -610,81 +624,81 @@ reduce (PFcnode_t * p, int goalnt)
         }
 
         /* CoreExpr:           LocationSteps */
-        case 16:
+        case 18:
             break;
 
         /* LocationStep:       ancestor (SequenceType) */
-        case 17:
-            TY(p) = PFty_star (TY(L(p)));
-            break;
-
-        /* LocationStep:       ancestor_or_self (SequenceType) */
-        case 18:
-            TY(p) = PFty_star (TY(L(p)));
-            break;
-
-        /* LocationStep:       attribute (SequenceType) */
         case 19:
             TY(p) = PFty_star (TY(L(p)));
             break;
 
-        /* LocationStep:       child (SequenceType) */
+        /* LocationStep:       ancestor_or_self (SequenceType) */
         case 20:
             TY(p) = PFty_star (TY(L(p)));
             break;
 
-        /* LocationStep:       descendant (SequenceType) */
+        /* LocationStep:       attribute (SequenceType) */
         case 21:
             TY(p) = PFty_star (TY(L(p)));
             break;
 
-        /* LocationStep:       descendant_or_self (SequenceType) */
+        /* LocationStep:       child (SequenceType) */
         case 22:
             TY(p) = PFty_star (TY(L(p)));
             break;
 
-        /* LocationStep:       following (SequenceType) */
+        /* LocationStep:       descendant (SequenceType) */
         case 23:
             TY(p) = PFty_star (TY(L(p)));
             break;
 
-        /* LocationStep:       following_sibling (SequenceType) */
+        /* LocationStep:       descendant_or_self (SequenceType) */
         case 24:
             TY(p) = PFty_star (TY(L(p)));
             break;
 
-        /* LocationStep:       parent (SequenceType) */
+        /* LocationStep:       following (SequenceType) */
         case 25:
-            TY(p) = PFty_opt (TY(L(p)));
+            TY(p) = PFty_star (TY(L(p)));
             break;
 
-        /* LocationStep:       preceding (SequenceType) */
+        /* LocationStep:       following_sibling (SequenceType) */
         case 26:
             TY(p) = PFty_star (TY(L(p)));
             break;
 
-        /* LocationStep:       preceding_sibling (SequenceType) */
+        /* LocationStep:       parent (SequenceType) */
         case 27:
+            TY(p) = PFty_opt (TY(L(p)));
+            break;
+
+        /* LocationStep:       preceding (SequenceType) */
+        case 28:
+            TY(p) = PFty_star (TY(L(p)));
+            break;
+
+        /* LocationStep:       preceding_sibling (SequenceType) */
+        case 29:
             TY(p) = PFty_star (TY(L(p)));
             break;
 
         /* LocationStep:       self (SequenceType) */
-        case 28:
+        case 30:
             TY(p) = TY(L(p));
             break;
 
         /* LocationSteps:      locsteps (LocationStep, LocationSteps) */
-        case 29:
+        case 31:
             TY(p) = *PFty_simplify (PFty_quantifier (TY(R(p))) (TY(L(p))));
             break;
 
         /* LocationSteps:      locsteps (LocationStep, Atom) */
-        case 30:
+        case 32:
             TY(p) = *PFty_simplify (PFty_quantifier (TY(R(p))) (TY(L(p))));
             break;
 
         /* CoreExpr:           apply (FunctionArgs) */
-        case 31:
+        case 33:
             /* resolve overloading,
              * any type errors will be detected during resolution
              */
@@ -698,26 +712,26 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* FunctionArgs:       nil */
-        case 32:
+        case 34:
             break;
 
         /* FunctionArgs:       arg (FunctionArg, FunctionArgs) */
-        case 33:
+        case 35:
             TY(p) = TY(L(p));
             break;
 
         /* FunctionArg:        Atom */
-        case 34:
+        case 36:
             break;
 
 
         /* CoreExpr:           elem (tag, CoreExpr) */
-        case 35:
+        case 37:
             TY(p) = *PFty_simplify (PFty_elem (L(p)->sem.qname, TY(R(p))));
             break;
 
         /* CoreExpr:           elem (CoreExpr, CoreExpr) */
-        case 36:
+        case 38:
         {   
             PFty_t t1 = TY(R(p));
             PFqname_t wild = { .ns = PFns_wild, .loc = NULL };
@@ -732,13 +746,13 @@ reduce (PFcnode_t * p, int goalnt)
         } break;
 
         /* CoreExpr:           attr (tag, CoreExpr) */
-        case 37:
+        case 39:
             TY(p) = *PFty_simplify (PFty_attr (L(p)->sem.qname,
                                                PFty_untypedAtomic ()));
             break;
             
         /* CoreExpr:           attr (CoreExpr, CoreExpr) */
-        case 38:
+        case 40:
         {
             PFqname_t wild = { .ns = PFns_wild, .loc = NULL };
 
@@ -752,7 +766,7 @@ reduce (PFcnode_t * p, int goalnt)
         } break;
 
         /* CoreExpr:           text (CoreExpr) */
-        case 39:
+        case 41:
             /*
              * XQuery Draft, 3.7.3.4 (Sep 15, 2005 version):
              *
@@ -766,17 +780,17 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* CoreExpr:           doc (CoreExpr) */
-        case 40:
+        case 42:
             TY(p) = *PFty_simplify (PFty_doc (TY(L(p))));
             break;
 
         /* CoreExpr:           comment (CoreExpr) */
-        case 41:
+        case 43:
             TY(p) = PFty_comm ();
             break;
 
         /* CoreExpr:           pi (Atom, Atom) */
-        case 42:
+        case 44:
             if (!PFty_promotable (TY(L(p)), PFty_string ()))
                 PFoops (OOPS_TYPECHECK,
                         "target name in processing-instruction constructor"
@@ -786,38 +800,47 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* CoreExpr:           pi (lit_str, Atom) */
-        case 43:
+        case 45:
             TY(L(p)) = PFty_string ();
             TY(p) = PFty_pi (L(p)->sem.str);
             break;
 
         /* CoreExpr:           ordered (CoreExpr) */
-        case 44:
+        case 46:
             TY(p) = TY(L(p));
             break;
 
         /* CoreExpr:           unordered (CoreExpr) */
-        case 45:
+        case 47:
             TY(p) = TY(L(p));
             break;
 
         /* CoreExpr:           orderby (OrderSpecs, CoreExpr) */
-        case 46:
+        case 48:
             TY(p) = TY(R(p));
             break;
 
         /* OrderSpecs:         orderspecs (CoreExpr, nil) */
-        case 47:
-            /* FIXME: Are there any type constraints on the order expression? */
-            break;
-
+        case 49:
         /* OrderSpecs:         orderspecs (CoreExpr, OrderSpecs) */
-        case 48:
-            /* FIXME: Are there any type constraints on the order expression? */
+        case 50:
+            if (!PFty_subtype (TY(L(p)), PFty_opt (PFty_atomic ())))
+                PFoops (OOPS_TYPECHECK,
+                        "[err:XPTY0004]"
+                        " Orderspec requires at most one atomic item "
+                        "(given: %s).", PFty_str (TY(L(p))));
+
+            if (!PFty_subtype (TY(L(p)), PFty_opt (PFty_string ())) &&
+                !PFty_subtype (TY(L(p)), PFty_opt (PFty_decimal ())) &&
+                !PFty_subtype (TY(L(p)), PFty_opt (PFty_double ())))
+                PFoops (OOPS_TYPECHECK,
+                        "[err:XPTY0004]"
+                        " Orderspec requires an type whose order can be "
+                        "decided using 'gt' (given: %s).", PFty_str (TY(L(p))));
             break;
 
         /* CoreExpr:           cast (SequenceType, CoreExpr) */
-        case 49:
+        case 51:
             if (!PFty_subtype (TY(L(p)), PFty_opt (PFty_atomic ())))
                 PFoops (OOPS_TYPECHECK,
                         "casting is only allowed to an atomic type");
@@ -826,7 +849,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* Atom:               var */
-        case 50:
+        case 52:
             /* W3C XQuery, 5.1.2
              *
              * E.varType(Var) = t
@@ -838,11 +861,11 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* Atom:               LiteralValue */
-        case 51:
+        case 53:
             break;
 
         /* LiteralValue:       lit_str */
-        case 52:
+        case 54:
             /* W3C XQuery, 5.1.1
              *
              * --------------------------
@@ -852,7 +875,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
      
         /* LiteralValue:       lit_int */
-        case 53:
+        case 55:
             /* W3C XQuery, 5.1.1
              *
              * ---------------------------
@@ -862,7 +885,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* LiteralValue:       lit_dec */
-        case 54:
+        case 56:
             /* W3C XQuery, 5.1.1
              *
              * ---------------------------
@@ -872,7 +895,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* LiteralValue:       lit_dbl */
-        case 55:
+        case 57:
             /* W3C XQuery, 5.1.1
              *
              * --------------------------
@@ -882,7 +905,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* LiteralValue:       true_ */
-        case 56:
+        case 58:
             /* 
              * -------------------------
              * Env |- true_ : xs:boolean
@@ -891,7 +914,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* LiteralValue:       false_ */
-        case 57:
+        case 59:
             /* 
              * --------------------------
              * Env |- false_ : xs:boolean
@@ -900,7 +923,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* LiteralValue:       empty */
-        case 58:
+        case 60:
             /*
              * ------------------
              * Env |- empty_ : ()
@@ -909,15 +932,15 @@ reduce (PFcnode_t * p, int goalnt)
             break;
      
         /* FunctionDecls:      nil */
-        case 65:
+        case 67:
             break;
 
         /* FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls) */
-        case 66:
+        case 68:
             break;
 
         /* FunctionDecl:       fun_decl (ParamList, FunctionBody) */
-        case 67:
+        case 69:
             /*
              * See if function body matches function return type.
              */
@@ -930,19 +953,19 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* ParamList:          nil */
-        case 68:
-            break;
-
-        /* ParamList:          param (FunParam, ParamList) */
-        case 69:
-            break;
-
-        /* FunctionBody:       CoreExpr */
         case 70:
             break;
 
-        /* FunParam:           param (SequenceType, var) */
+        /* ParamList:          param (FunParam, ParamList) */
         case 71:
+            break;
+
+        /* FunctionBody:       CoreExpr */
+        case 72:
+            break;
+
+        /* FunParam:           param (SequenceType, var) */
+        case 73:
             /*
              * Bind parameter variable to the given type. We need this
              * to type-check the function body.

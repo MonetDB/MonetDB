@@ -30,6 +30,12 @@
  * $Id$
  */
 
+/** literal minimum */
+#define lit_min(t) PFmil_lit_min (t)
+
+/** literal maximum */
+#define lit_max(t) PFmil_lit_max (t)
+
 /** literal integers */
 #define lit_int(i) PFmil_lit_int (i)
 

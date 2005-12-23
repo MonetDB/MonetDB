@@ -3025,26 +3025,47 @@ type_of (PFpa_op_t *n, PFalg_att_t att)
 static PFmil_t *
 literal (PFalg_atom_t atom)
 {
-    switch (atom.type) {
+    if (atom.special == amm_min)
+        switch (atom.type) {
+            case aat_int:  return lit_min (m_lng);
+            case aat_str:  return lit_min (m_str);
+            case aat_dec:  return lit_min (m_dbl);
+            case aat_dbl:  return lit_min (m_dbl);
+            case aat_bln:  return lit_min (m_bit);
+            default:
+                break;
+        }
+    else if (atom.special == amm_max)
+        switch (atom.type) {
+            case aat_int:  return lit_max (m_lng);
+            case aat_str:  return lit_max (m_str);
+            case aat_dec:  return lit_max (m_dbl);
+            case aat_dbl:  return lit_max (m_dbl);
+            case aat_bln:  return lit_max (m_bit);
+            default:
+                break;
+        }
+    else
+        switch (atom.type) {
 
-        case aat_nat:  return lit_oid (atom.val.nat);
-        case aat_int:  return lit_lng (atom.val.int_);
-        case aat_str:  return lit_str (atom.val.str);
-        case aat_dec:  return lit_dbl (atom.val.dec);
-        case aat_dbl:  return lit_dbl (atom.val.dbl);
-        case aat_bln:  return lit_bit (atom.val.bln);
-        case aat_qname:  
-            return add_qname (lit_str (PFqname_ns (atom.val.qname)),
-                              lit_str (PFqname_uri (atom.val.qname)),
-                              lit_str (PFqname_loc (atom.val.qname)),
-                              var ("ws"));
+            case aat_nat:  return lit_oid (atom.val.nat);
+            case aat_int:  return lit_lng (atom.val.int_);
+            case aat_str:  return lit_str (atom.val.str);
+            case aat_dec:  return lit_dbl (atom.val.dec);
+            case aat_dbl:  return lit_dbl (atom.val.dbl);
+            case aat_bln:  return lit_bit (atom.val.bln);
+            case aat_qname:  
+                return add_qname (lit_str (PFqname_ns (atom.val.qname)),
+                                  lit_str (PFqname_uri (atom.val.qname)),
+                                  lit_str (PFqname_loc (atom.val.qname)),
+                                  var ("ws"));
+            default:
+                break;
+        }
 
-        default:
-                       PFoops (OOPS_FATAL,
-                               "A relational algebra type (%u) has not yet "
-                               "been implemented.", atom.type);
-                       break;
-    }
+    PFoops (OOPS_FATAL,
+            "A relational algebra type (%u) has not yet "
+            "been implemented.", atom.type);
 
     assert (0); /* never reached due to "exit" in "PFoops" */
     return NULL; /* pacify picky compilers */

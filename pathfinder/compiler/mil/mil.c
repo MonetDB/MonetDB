@@ -170,6 +170,36 @@ wire8 (PFmil_kind_t k, const PFmil_t *n1, const PFmil_t *n2, const PFmil_t *n3,
 }
 
 /**
+ * Create a MIL tree node representing a literal minimum.
+ * (The result will be a MIL leaf node, with kind @a i and
+ * semantic value min.)
+ *
+ * @param t The type of the minimum to represent in MIL
+ */
+PFmil_t *
+PFmil_lit_min (PFmil_type_t t)
+{
+    PFmil_t *ret = leaf (m_lit_min);
+    ret->sem.t = t;
+    return ret;
+}
+
+/**
+ * Create a MIL tree node representing a literal maximum.
+ * (The result will be a MIL leaf node, with kind @a i and
+ * semantic value max.)
+ *
+ * @param t The type of the maximum to represent in MIL
+ */
+PFmil_t *
+PFmil_lit_max (PFmil_type_t t)
+{
+    PFmil_t *ret = leaf (m_lit_max);
+    ret->sem.t = t;
+    return ret;
+}
+
+/**
  * Create a MIL tree node representing a literal integer.
  * (The result will be a MIL leaf node, with kind #m_lit_int and
  * semantic value @a i.)

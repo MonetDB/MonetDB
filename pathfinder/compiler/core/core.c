@@ -554,6 +554,22 @@ PFcore_then_else (const PFcnode_t *t, const PFcnode_t *e)
 
 
 /**
+ * Create a core tree node representing a flwor expression
+ *
+ * @param bind  list of for loops and let bindings
+ * @param ret   where - order by - return clause of the bindings
+ * @return core representation of flwor expression
+ */
+PFcnode_t *
+PFcore_flwr (const PFcnode_t *bind, const PFcnode_t *ret)
+{
+    assert (bind); assert (ret);
+
+    return PFcore_wire2 (c_flwr, bind, ret);
+}
+
+
+/**
  * Create a core tree node representing a for binding:
  *
  *     for $v at $p in e1 return e2
@@ -1314,9 +1330,11 @@ PFcore_apply_ (PFfun_t *fn, ...)
     while (i--) {
         v = PFcore_new_var (0);
 
-        core = PFcore_let (
-                   PFcore_letbind (PFcore_var (v),
-                                   *((PFcnode_t **) PFarray_at (args, i))),
+        core = PFcore_flwr (
+                   PFcore_let (
+                       PFcore_letbind (PFcore_var (v),
+                                       *((PFcnode_t **) PFarray_at (args, i))),
+                       PFcore_nil ()),
                    core);
         fnargs = PFcore_arg (PFcore_var (v), fnargs);
     }
@@ -1373,21 +1391,21 @@ PFcore_fs_convert_op_by_type (const PFcnode_t *e, PFty_t t)
      * where <target type> has been determined above to xs:string
      * if t is xdt:untypedAtomic or to t otherwise.
      */
-    return PFcore_let 
-              (PFcore_letbind (PFcore_var (v1), e),
-               PFcore_for
-                   (PFcore_forbind (PFcore_forvars (PFcore_var (v2),
-                                                    PFcore_nil ()),
-                                    PFcore_var (v1)),
-                    PFcore_typeswitch 
-                       (PFcore_var (v2),
-                        PFcore_cases 
-                            (PFcore_case 
-                                 (PFcore_seqtype (PFty_xdt_untypedAtomic ()),
-                       /*return*/ PFcore_cast (PFcore_seqtype (target),
-                                               PFcore_var (v2))
-                                  ),
-                             PFcore_default (PFcore_var (v2))))
+    return PFcore_flwr (
+               PFcore_let (PFcore_letbind (PFcore_var (v1), e), PFcore_nil ()),
+               PFcore_flwr (
+                   PFcore_for (PFcore_forbind (PFcore_forvars (PFcore_var (v2),
+                                                               PFcore_nil ()),
+                                               PFcore_var (v1)), 
+                               PFcore_nil ()),
+                   PFcore_typeswitch (
+                       PFcore_var (v2),
+                       PFcore_cases (
+                           PFcore_case (
+                               PFcore_seqtype (PFty_xdt_untypedAtomic ()),
+                    /*return*/ PFcore_cast (PFcore_seqtype (target),
+                                            PFcore_var (v2))),
+                           PFcore_default (PFcore_var (v2))))
                    )
                );
 }
@@ -1434,14 +1452,18 @@ PFcore_fs_convert_op_by_expr (const PFcnode_t *e1, const PFcnode_t *e2)
      * replaced by seqtype nodes (actual types) as soon as the
      * type information is available during type checking.
      */
-    return PFcore_let 
-              (PFcore_letbind (PFcore_var (v1), e1),
-               PFcore_let
-                  (PFcore_letbind (PFcore_var (v2), e2),
-                   PFcore_for
-                      (PFcore_forbind (PFcore_forvars (PFcore_var (v3),
-                                                       PFcore_nil ()),
-                                       PFcore_var (v1)),
+    return PFcore_flwr (
+               PFcore_let (PFcore_letbind (PFcore_var (v1), e1),
+                           PFcore_nil ()),
+               PFcore_flwr (
+                   PFcore_let (PFcore_letbind (PFcore_var (v2), e2),
+                               PFcore_nil ()),
+                   PFcore_flwr (
+                       PFcore_for (
+                           PFcore_forbind (PFcore_forvars (PFcore_var (v3),
+                                                           PFcore_nil ()),
+                                           PFcore_var (v1)),
+                           PFcore_nil ()),
                        PFcore_typeswitch
                           (PFcore_var (v3),
                            PFcore_cases
@@ -1477,9 +1499,9 @@ PFcore_fn_data (const PFcnode_t *n)
     PFvar_t *v = PFcore_new_var (NULL);
     PFfun_t *fn_data = PFcore_function (PFqname (PFns_fn, "data"));
 
-    return PFcore_let (
-            PFcore_letbind (PFcore_var (v), n),
-            APPLY (fn_data, PFcore_var (v)));
+    return PFcore_flwr (
+               PFcore_let (PFcore_letbind (PFcore_var (v), n), PFcore_nil ()),
+               APPLY (fn_data, PFcore_var (v)));
 
 #if 0
     PFvar_t *v1 = PFcore_new_var (NULL);
@@ -1556,29 +1578,42 @@ PFcore_some (const PFcnode_t *v, const PFcnode_t *expr, const PFcnode_t *qExpr)
     PFfun_t *fn_not   = PFcore_function (PFqname (PFns_fn, "not"));
     PFfun_t *fn_empty = PFcore_function (PFqname (PFns_fn, "empty"));
                                                                                                                                                           
-    return PFcore_let 
-              (PFcore_letbind (PFcore_var (v1), expr),
-               PFcore_let 
-                  (PFcore_letbind (PFcore_var (v2),
-                                   PFcore_for (
-                                       PFcore_forbind (
-                                           PFcore_forvars (v,
-                                                           PFcore_nil ()),
-                                           PFcore_var (v1)),
-                                       PFcore_let (
-                                           PFcore_letbind (PFcore_var (v3),
-                                                           PFcore_ebv (qExpr)),
-                                           PFcore_if 
-                                              (PFcore_var (v3),
-                                               PFcore_then_else (
-                                                   PFcore_num (1),
-                                                   PFcore_empty ()))))),
-                   PFcore_let 
-                      (PFcore_letbind (PFcore_var (v4),
-                                       APPLY (fn_empty, PFcore_var (v2))),
-                       PFcore_let 
-                          (PFcore_letbind (PFcore_var (v5),
-                                           APPLY (fn_not, PFcore_var (v4))),
+    return PFcore_flwr (
+               PFcore_let (PFcore_letbind (PFcore_var (v1), expr), 
+                           PFcore_nil ()),
+               PFcore_flwr (
+                   PFcore_let (
+                       PFcore_letbind (PFcore_var (v2),
+                                       PFcore_flwr (
+                                           PFcore_for (
+                                               PFcore_forbind (
+                                                   PFcore_forvars (
+                                                       v,
+                                                       PFcore_nil ()),
+                                                   PFcore_var (v1)),
+                                               PFcore_nil ()),
+                                           PFcore_flwr (
+                                               PFcore_let (
+                                                   PFcore_letbind (
+                                                       PFcore_var (v3),
+                                                       PFcore_ebv (qExpr)),
+                                                   PFcore_nil ()),
+                                               PFcore_if 
+                                                  (PFcore_var (v3),
+                                                   PFcore_then_else (
+                                                       PFcore_num (1),
+                                                       PFcore_empty ()))))),
+                       PFcore_nil ()),
+                   PFcore_flwr (
+                       PFcore_let (
+                           PFcore_letbind (PFcore_var (v4),
+                                           APPLY (fn_empty, PFcore_var (v2))),
+                           PFcore_nil ()),
+                       PFcore_flwr (
+                           PFcore_let (
+                               PFcore_letbind (PFcore_var (v5),
+                                               APPLY (fn_not, PFcore_var (v4))),
+                               PFcore_nil ()),
                            PFcore_var (v5)))));
 }
 
@@ -1631,8 +1666,9 @@ PFcore_ebv (const PFcnode_t *n)
          */
         v = PFcore_new_var (0);
         
-        return PFcore_let (PFcore_letbind (PFcore_var (v), n), 
-			   PFcore_ebv (PFcore_var (v)));
+        return PFcore_flwr (PFcore_let (PFcore_letbind (PFcore_var (v), n), 
+                                        PFcore_nil ()),
+                            PFcore_ebv (PFcore_var (v)));
     }
 }
 

@@ -69,7 +69,8 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
         return false;
 
     for (i = 0; i < a.count; i++) {
-        if (a.atoms[i].type != b.atoms[i].type)
+        if (a.atoms[i].type != b.atoms[i].type ||
+            a.atoms[i].special != b.atoms[i].special)
             break;
 
         switch (a.atoms[i].type) {

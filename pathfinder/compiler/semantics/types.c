@@ -376,6 +376,15 @@ PFty_named_attrgroup (PFqname_t qn)
  * Type constructors.
  */
 
+/**
+ * Implements the 1 quantifier: t . 1 = t 
+ */
+PFty_t
+PFty_one (PFty_t t)
+{
+    return t;
+}
+
 /** ty? */
 PFty_t
 PFty_opt (PFty_t t)

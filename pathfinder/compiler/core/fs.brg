@@ -144,54 +144,53 @@ typedef struct PFpnode_t *NODEPTR_TYPE;
 %term    named_ty       =  64
 %term    ne             =  65
 %term    nil            =  66
-%term    nis            =  67
-%term    node_ty        =  68
-%term    ns_decl        =  69
-%term    or             =  70
-%term    ord_ret        =  71
-%term    orderby        =  72
-%term    ordered        =  73
-%term    ordering_mode  =  74
-%term    orderspecs     =  75
-%term    param          =  76
-%term    params         =  77
-%term    pi             =  78
-%term    plus           =  79
-%term    pred           =  80
-%term    range          =  81
-%term    req_name       =  82
-%term    req_ty         =  83
-%term    root_          =  84
-%term    schm_ats       =  85
-%term    schm_attr      =  86
-%term    schm_elem      =  87
-%term    schm_imp       =  88
-%term    seq_ty         =  89
-%term    some           =  90
-%term    step           =  91
-%term    tag            =  92
-%term    text           =  93
-%term    then_else      =  94
-%term    treat          =  95
-%term    typeswitch     =  96
-%term    uminus         =  97
-%term    union_         =  98
-%term    unordered      =  99
-%term    uplus          = 100
-%term    val_eq         = 101
-%term    val_ge         = 102
-%term    val_gt         = 103
-%term    val_le         = 104
-%term    val_lt         = 105
-%term    val_ne         = 106
-%term    validate       = 107
-%term    var            = 108
-%term    var_decl       = 109
-%term    var_type       = 110
-/* %term varref         = 111  eliminated by function checking */
-%term    vars           = 112
-%term    where          = 113
-%term    xmls_decl      = 114
+%term    node_ty        =  67
+%term    ns_decl        =  68
+%term    or             =  69
+%term    ord_ret        =  70
+%term    orderby        =  71
+%term    ordered        =  72
+%term    ordering_mode  =  73
+%term    orderspecs     =  74
+%term    param          =  75
+%term    params         =  76
+%term    pi             =  77
+%term    plus           =  78
+%term    pred           =  79
+%term    range          =  80
+%term    req_name       =  81
+%term    req_ty         =  82
+%term    root_          =  83
+%term    schm_ats       =  84
+%term    schm_attr      =  85
+%term    schm_elem      =  86
+%term    schm_imp       =  87
+%term    seq_ty         =  88
+%term    some           =  89
+%term    step           =  90
+%term    tag            =  91
+%term    text           =  92
+%term    then_else      =  93
+%term    treat          =  94
+%term    typeswitch     =  95
+%term    uminus         =  96
+%term    union_         =  97
+%term    unordered      =  98
+%term    uplus          =  99
+%term    val_eq         = 100
+%term    val_ge         = 101
+%term    val_gt         = 102
+%term    val_le         = 103
+%term    val_lt         = 104
+%term    val_ne         = 105
+%term    validate       = 106
+%term    var            = 107
+%term    var_decl       = 108
+%term    var_type       = 109
+/* %term varref         = 110  eliminated by function checking */
+%term    vars           = 111
+%term    where          = 112
+%term    xmls_decl      = 113
 
 %%
 
@@ -295,76 +294,72 @@ ExprSingle:             TypeswitchExpr                              =  55 (10);
 ExprSingle:             IfExpr                                      =  56 (10);
 ExprSingle:             OrExpr                                      =  57 (10);
 
-FLWORExpr:              flwr (binds (let (var_type (Var,
-                                                    nil),
-                                          OptExpr),
-                                     nil),
+FLWORExpr:              flwr (OptBindExpr,
                               where (OptWhereClause_,
-                                     OrderByReturn))                =  58 (10);
+                                     ord_ret (nil, OptExpr)))       =  58 (10);
 
-FLWORExpr:              flwr (binds (let (var_type (Var,
-                                                    TypeDeclaration),
-                                          OptExpr),
-                                     nil),
+FLWORExpr:              flwr (OptBindExpr,
                               where (OptWhereClause_,
-                                     OrderByReturn))                =  59 (10);
+                                     ord_ret (OrderByClause,
+                                              OptExpr)))            =  59 (10);
 
-FLWORExpr:              flwr (binds (bind (vars (var_type (Var,
-                                                           nil),
-                                                 OptPosVar),
-                                           OptExpr),
-                                     nil),
-                              where (OptWhereClause_,
-                                     OrderByReturn))                =  60 (10);
+OptBindExpr:            nil                                         =  60 (10);
+OptBindExpr:            binds (let (var_type (Var,
+                                              nil),
+                                    OptExpr),
+                               OptBindExpr)                         =  61 (10);
+OptBindExpr:            binds (let (var_type (Var,
+                                              TypeDeclaration),
+                                    OptExpr),
+                               OptBindExpr)                         =  62 (10);
+OptBindExpr:            binds (bind (vars (var_type (Var,
+                                                     nil),
+                                           OptPosVar),
+                                     OptExpr),
+                               OptBindExpr)                         =  63 (10);
+OptBindExpr:            binds (bind (vars (var_type (Var,
+                                                     TypeDeclaration),
+                                           OptPosVar),
+                                     OptExpr),
+                               OptBindExpr)                         =  64 (10);
 
-FLWORExpr:              flwr (binds (bind (vars (var_type (Var,
-                                                           TypeDeclaration),
-                                                 OptPosVar),
-                                           OptExpr),
-                                     nil),
-                              where (OptWhereClause_,
-                                     OrderByReturn))                =  61 (10);
+OptPosVar:              nil                                         =  66 (10);
+OptPosVar:              Var                                         =  67 (10);
 
-OrderByReturn:          ord_ret (nil, OptExpr)                      =  62 (10);
-OrderByReturn:          ord_ret (OrderByClause, OptExpr)            =  63 (10);
+TypeDeclaration:        SequenceType                                =  68 (10);
 
-OptPosVar:              nil                                         =  64 (10);
-OptPosVar:              Var                                         =  65 (10);
+OptWhereClause_:        nil                                         =  69 (10);
+OptWhereClause_:        OptExpr                                     =  70 (10);
 
-TypeDeclaration:        SequenceType                                =  66 (10);
+OrderByClause:          orderby (OrderSpecList)                     =  71 (10);
 
-OptWhereClause_:        nil                                         =  67 (10);
-OptWhereClause_:        OptExpr                                     =  68 (10);
-
-OrderByClause:          orderby (OrderSpecList)                     =  69 (10);
-
-OrderSpecList:          nil                                         =  70 (10);
-OrderSpecList:          orderspecs (OptExpr, OrderSpecList)         =  71 (10);
+OrderSpecList:          nil                                         =  72 (10);
+OrderSpecList:          orderspecs (OptExpr, OrderSpecList)         =  73 (10);
 
 QuantifiedExpr:         some (binds (bind (vars (var_type (Var,
                                                            nil),
                                                  nil),
                                            OptExpr),
                                      nil),
-                              OptExpr)                              =  72 (10);
+                              OptExpr)                              =  74 (10);
 QuantifiedExpr:         some (binds (bind (vars (var_type (Var,
                                                            TypeDeclaration),
                                                  nil),
                                            OptExpr),
                                      nil),
-                              OptExpr)                              =  73 (10);
+                              OptExpr)                              =  75 (10);
 QuantifiedExpr:         every (binds (bind (vars (var_type (Var,
                                                             nil),
                                                   nil),
                                             OptExpr),
                                       nil),
-                               OptExpr)                             =  74 (10);
+                               OptExpr)                             =  76 (10);
 QuantifiedExpr:         every (binds (bind (vars (var_type (Var,
                                                             TypeDeclaration),
                                                   nil),
                                             OptExpr),
                                       nil),
-                               OptExpr)                             =  75 (10);
+                               OptExpr)                             =  77 (10);
 
 TypeswitchExpr:         typeswitch (
                             OptExpr,
@@ -373,198 +368,197 @@ TypeswitchExpr:         typeswitch (
                                           OptExpr),
                                    cases (default_ (OptCaseVar,
                                                     OptExpr),
-                                          nil)))                    =  76 (10);
+                                          nil)))                    =  78 (10);
 
-OptCaseVar:             nil                                         =  77 (10);
-OptCaseVar:             Var                                         =  78 (10);
+OptCaseVar:             nil                                         =  79 (10);
+OptCaseVar:             Var                                         =  80 (10);
 
-SequenceType:           seq_ty (ItemType)                           =  79 (10);
+SequenceType:           seq_ty (ItemType)                           =  81 (10);
 
-SingleType:             seq_ty (AtomType)                           =  80 (10);
+SingleType:             seq_ty (AtomType)                           =  82 (10);
 
-ItemType:               empty_ty                                    =  81 (10);
-ItemType:               NodeTest                                    =  82 (10);
-ItemType:               item_ty (nil)                               =  83 (10);
-ItemType:               atom_ty (nil)                               =  84 (10);
-ItemType:               schm_elem                                   =  85 (10);
-ItemType:               schm_attr                                   =  86 (10);
+ItemType:               empty_ty                                    =  83 (10);
+ItemType:               NodeTest                                    =  84 (10);
+ItemType:               item_ty (nil)                               =  85 (10);
+ItemType:               atom_ty (nil)                               =  86 (10);
+ItemType:               schm_elem                                   =  87 (10);
+ItemType:               schm_attr                                   =  88 (10);
 
-AtomType:               atom_ty (nil)                               =  87 (10);
+AtomType:               atom_ty (nil)                               =  89 (10);
 
-NodeTest:               node_ty (nil)                               =  88 (10);
-NodeTest:               node_ty (ElemOrAttrType)                    =  89 (10);
-NodeTest:               node_ty (node_ty (nil))                     =  90 (10);
-NodeTest:               node_ty (node_ty (ElemOrAttrType))          =  91 (10);
-NodeTest:               node_ty (lit_str)                           =  92 (10);
+NodeTest:               node_ty (nil)                               =  90 (10);
+NodeTest:               node_ty (ElemOrAttrType)                    =  91 (10);
+NodeTest:               node_ty (node_ty (nil))                     =  92 (10);
+NodeTest:               node_ty (node_ty (ElemOrAttrType))          =  93 (10);
+NodeTest:               node_ty (lit_str)                           =  94 (10);
 
-ElemOrAttrType:         req_ty (nil, nil)                           =  93 (10);
-ElemOrAttrType:         req_ty (nil, SchemaType)                    =  94 (10);
-ElemOrAttrType:         req_ty (req_name, nil)                      =  95 (10);
-ElemOrAttrType:         req_ty (req_name, SchemaType)               =  96 (10);
+ElemOrAttrType:         req_ty (nil, nil)                           =  95 (10);
+ElemOrAttrType:         req_ty (nil, SchemaType)                    =  96 (10);
+ElemOrAttrType:         req_ty (req_name, nil)                      =  97 (10);
+ElemOrAttrType:         req_ty (req_name, SchemaType)               =  98 (10);
 
-SchemaType:             named_ty                                    =  97 (10);
+SchemaType:             named_ty                                    =  99 (10);
 
 IfExpr:                 if_ (OptExpr,
-                             then_else (OptExpr, OptExpr))          =  98 (10);
+                             then_else (OptExpr, OptExpr))          = 100 (10);
 
-OrExpr:                 AndExpr                                     =  99 (10);
-OrExpr:                 or (AndExpr, OrExpr)                        = 100 (10);
+OrExpr:                 AndExpr                                     = 101 (10);
+OrExpr:                 or (AndExpr, OrExpr)                        = 102 (10);
 
-AndExpr:                ComparisonExpr                              = 101 (10);
-AndExpr:                and (ComparisonExpr, AndExpr)               = 102 (10);
+AndExpr:                ComparisonExpr                              = 103 (10);
+AndExpr:                and (ComparisonExpr, AndExpr)               = 104 (10);
 
-ComparisonExpr:         RangeExpr                                   = 103 (10);
-ComparisonExpr:         eq (RangeExpr, RangeExpr)                   = 104 (10);
-ComparisonExpr:         ne (RangeExpr, RangeExpr)                   = 105 (10);
-ComparisonExpr:         lt (RangeExpr, RangeExpr)                   = 106 (10);
-ComparisonExpr:         le (RangeExpr, RangeExpr)                   = 107 (10);
-ComparisonExpr:         gt (RangeExpr, RangeExpr)                   = 108 (10);
-ComparisonExpr:         ge (RangeExpr, RangeExpr)                   = 109 (10);
-ComparisonExpr:         val_eq (RangeExpr, RangeExpr)               = 110 (10);
-ComparisonExpr:         val_ne (RangeExpr, RangeExpr)               = 111 (10);
-ComparisonExpr:         val_lt (RangeExpr, RangeExpr)               = 112 (10);
-ComparisonExpr:         val_le (RangeExpr, RangeExpr)               = 113 (10);
-ComparisonExpr:         val_gt (RangeExpr, RangeExpr)               = 114 (10);
-ComparisonExpr:         val_ge (RangeExpr, RangeExpr)               = 115 (10);
-ComparisonExpr:         is (RangeExpr, RangeExpr)                   = 116 (10);
-ComparisonExpr:         nis (RangeExpr, RangeExpr)                  = 117 (10);
-ComparisonExpr:         ltlt (RangeExpr, RangeExpr)                 = 118 (10);
-ComparisonExpr:         gtgt (RangeExpr, RangeExpr)                 = 119 (10);
+ComparisonExpr:         RangeExpr                                   = 105 (10);
+ComparisonExpr:         eq (RangeExpr, RangeExpr)                   = 106 (10);
+ComparisonExpr:         ne (RangeExpr, RangeExpr)                   = 107 (10);
+ComparisonExpr:         lt (RangeExpr, RangeExpr)                   = 108 (10);
+ComparisonExpr:         le (RangeExpr, RangeExpr)                   = 109 (10);
+ComparisonExpr:         gt (RangeExpr, RangeExpr)                   = 110 (10);
+ComparisonExpr:         ge (RangeExpr, RangeExpr)                   = 111 (10);
+ComparisonExpr:         val_eq (RangeExpr, RangeExpr)               = 112 (10);
+ComparisonExpr:         val_ne (RangeExpr, RangeExpr)               = 113 (10);
+ComparisonExpr:         val_lt (RangeExpr, RangeExpr)               = 114 (10);
+ComparisonExpr:         val_le (RangeExpr, RangeExpr)               = 115 (10);
+ComparisonExpr:         val_gt (RangeExpr, RangeExpr)               = 116 (10);
+ComparisonExpr:         val_ge (RangeExpr, RangeExpr)               = 117 (10);
+ComparisonExpr:         is (RangeExpr, RangeExpr)                   = 118 (10);
+ComparisonExpr:         ltlt (RangeExpr, RangeExpr)                 = 120 (10);
+ComparisonExpr:         gtgt (RangeExpr, RangeExpr)                 = 121 (10);
 
-RangeExpr:              AdditiveExpr                                = 120 (10);
-RangeExpr:              range (RangeExpr, RangeExpr)                = 121 (10);
+RangeExpr:              AdditiveExpr                                = 122 (10);
+RangeExpr:              range (RangeExpr, RangeExpr)                = 123 (10);
 
-AdditiveExpr:           MultiplicativeExpr                          = 122 (10);
-AdditiveExpr:           plus (AdditiveExpr, MultiplicativeExpr)     = 123 (10);
-AdditiveExpr:           minus (AdditiveExpr, MultiplicativeExpr)    = 124 (10);
+AdditiveExpr:           MultiplicativeExpr                          = 124 (10);
+AdditiveExpr:           plus (AdditiveExpr, MultiplicativeExpr)     = 125 (10);
+AdditiveExpr:           minus (AdditiveExpr, MultiplicativeExpr)    = 126 (10);
 
-MultiplicativeExpr:     UnionExpr                                   = 125 (10);
-MultiplicativeExpr:     mult (UnionExpr, MultiplicativeExpr)        = 126 (10);
-MultiplicativeExpr:     div (UnionExpr, MultiplicativeExpr)         = 127 (10);
-MultiplicativeExpr:     idiv (UnionExpr, MultiplicativeExpr)        = 128 (10);
-MultiplicativeExpr:     mod (UnionExpr, MultiplicativeExpr)         = 129 (10);
+MultiplicativeExpr:     UnionExpr                                   = 127 (10);
+MultiplicativeExpr:     mult (UnionExpr, MultiplicativeExpr)        = 128 (10);
+MultiplicativeExpr:     div (UnionExpr, MultiplicativeExpr)         = 129 (10);
+MultiplicativeExpr:     idiv (UnionExpr, MultiplicativeExpr)        = 130 (10);
+MultiplicativeExpr:     mod (UnionExpr, MultiplicativeExpr)         = 131 (10);
 
-UnionExpr:              IntersectExceptExpr                         = 130 (10);
-UnionExpr:              union_ (IntersectExceptExpr, UnionExpr)     = 131 (10);
+UnionExpr:              IntersectExceptExpr                         = 132 (10);
+UnionExpr:              union_ (IntersectExceptExpr, UnionExpr)     = 133 (10);
 
-IntersectExceptExpr:    InstanceofExpr                              = 132 (10);
+IntersectExceptExpr:    InstanceofExpr                              = 134 (10);
 IntersectExceptExpr:    intersect (InstanceofExpr,
-                                   IntersectExceptExpr)             = 133 (10);
+                                   IntersectExceptExpr)             = 135 (10);
 IntersectExceptExpr:    except (InstanceofExpr,
-                                IntersectExceptExpr)                = 134 (10);
+                                IntersectExceptExpr)                = 136 (10);
 
-InstanceofExpr:         TreatExpr                                   = 135 (10);
-InstanceofExpr:         instof (TreatExpr, SequenceType)            = 136 (10);
+InstanceofExpr:         TreatExpr                                   = 137 (10);
+InstanceofExpr:         instof (TreatExpr, SequenceType)            = 138 (10);
 
-TreatExpr:              CastableExpr                                = 137 (10);
-TreatExpr:              treat (CastableExpr, SequenceType)          = 138 (10);
+TreatExpr:              CastableExpr                                = 139 (10);
+TreatExpr:              treat (CastableExpr, SequenceType)          = 140 (10);
 
-CastableExpr:           CastExpr                                    = 139 (10);
-CastableExpr:           castable (CastExpr, SingleType)             = 140 (10);
+CastableExpr:           CastExpr                                    = 141 (10);
+CastableExpr:           castable (CastExpr, SingleType)             = 142 (10);
 
-CastExpr:               UnaryExpr                                   = 141 (10);
-CastExpr:               cast (UnaryExpr, SingleType)                = 142 (10);
+CastExpr:               UnaryExpr                                   = 143 (10);
+CastExpr:               cast (UnaryExpr, SingleType)                = 144 (10);
 
-UnaryExpr:              ValueExpr                                   = 143 (10);
-UnaryExpr:              uminus (ValueExpr)                          = 144 (10);
-UnaryExpr:              uplus (ValueExpr)                           = 145 (10);
+UnaryExpr:              ValueExpr                                   = 145 (10);
+UnaryExpr:              uminus (ValueExpr)                          = 146 (10);
+UnaryExpr:              uplus (ValueExpr)                           = 147 (10);
 
-ValueExpr:              ValidateExpr                                = 146 (10);
-ValueExpr:              PathExpr                                    = 147 (10);
+ValueExpr:              ValidateExpr                                = 148 (10);
+ValueExpr:              PathExpr                                    = 149 (10);
 
-ValidateExpr:           validate (OptExpr)                          = 148 (10);
+ValidateExpr:           validate (OptExpr)                          = 150 (10);
 
-PathExpr:               StepExpr                                    = 149 (10);
-PathExpr:               LocationPath                                = 150 (10);
+PathExpr:               StepExpr                                    = 151 (10);
+PathExpr:               LocationPath                                = 152 (10);
 
-LocationPath:           root_                                       = 151 (10);
-LocationPath:           locpath (StepExpr, StepExpr)                = 152 (10);
-LocationPath:           locpath (LocationStep, StepExpr)            = 153 (10);
+LocationPath:           root_                                       = 153 (10);
+LocationPath:           locpath (StepExpr, StepExpr)                = 154 (10);
+LocationPath:           locpath (LocationStep, StepExpr)            = 155 (10);
 
 /*
  * NOTE: Did not exaclty use the normalize.brg rules here.
  *
-PathExpr:               root_                                       = 149 (10);
-PathExpr:               RelativePathExpr                            = 150 (10);
+PathExpr:               root_                                       = 151 (10);
+PathExpr:               RelativePathExpr                            = 152 (10);
 
-RelativePathExpr:       StepExpr                                    = 151 (10);
-RelativePathExpr:       locpath (RelativePathExpr, StepExpr)        = 152 (10);
+RelativePathExpr:       StepExpr                                    = 153 (10);
+RelativePathExpr:       locpath (RelativePathExpr, StepExpr)        = 154 (10);
  */
 
-StepExpr:               LocationStep                                = 154 (10);
-StepExpr:               FilterExpr                                  = 155 (10);
+StepExpr:               LocationStep                                = 156 (10);
+StepExpr:               FilterExpr                                  = 157 (10);
 
-FilterExpr:             PrimaryExpr                                 = 156 (10);
-FilterExpr:             pred (StepExpr, OptExpr)                    = 157 (10);
+FilterExpr:             PrimaryExpr                                 = 158 (10);
+FilterExpr:             pred (StepExpr, OptExpr)                    = 159 (10);
 
-LocationStep:           step (NodeTest)                             = 158 (10);
+LocationStep:           step (NodeTest)                             = 160 (10);
 
-PrimaryExpr:            Literal                                     = 159 (10);
-PrimaryExpr:            Var                                         = 160 (10);
-PrimaryExpr:            ParenthesizedExpr                           = 161 (10);
-PrimaryExpr:            ContextItemExpr                             = 162 (10);
-PrimaryExpr:            FunctionCall                                = 163 (10);
-PrimaryExpr:            Constructor                                 = 164 (10);
-PrimaryExpr:            OrderedExpr                                 = 165 (10);
-PrimaryExpr:            UnorderedExpr                               = 166 (10);
+PrimaryExpr:            Literal                                     = 161 (10);
+PrimaryExpr:            Var                                         = 162 (10);
+PrimaryExpr:            ParenthesizedExpr                           = 163 (10);
+PrimaryExpr:            ContextItemExpr                             = 164 (10);
+PrimaryExpr:            FunctionCall                                = 165 (10);
+PrimaryExpr:            Constructor                                 = 166 (10);
+PrimaryExpr:            OrderedExpr                                 = 167 (10);
+PrimaryExpr:            UnorderedExpr                               = 168 (10);
 
-Literal:                NumericLiteral                              = 167 (10);
-Literal:                StringLiteral                               = 168 (10);
+Literal:                NumericLiteral                              = 169 (10);
+Literal:                StringLiteral                               = 170 (10);
 
-NumericLiteral:         IntegerLiteral                              = 169 (10);
-NumericLiteral:         DecimalLiteral                              = 170 (10);
-NumericLiteral:         DoubleLiteral                               = 171 (10);
+NumericLiteral:         IntegerLiteral                              = 171 (10);
+NumericLiteral:         DecimalLiteral                              = 172 (10);
+NumericLiteral:         DoubleLiteral                               = 173 (10);
 
-IntegerLiteral:         lit_int                                     = 172 (10);
-DecimalLiteral:         lit_dec                                     = 173 (10);
-DoubleLiteral:          lit_dbl                                     = 174 (10);
+IntegerLiteral:         lit_int                                     = 174 (10);
+DecimalLiteral:         lit_dec                                     = 175 (10);
+DoubleLiteral:          lit_dbl                                     = 176 (10);
 
-StringLiteral:          lit_str                                     = 175 (10);
+StringLiteral:          lit_str                                     = 177 (10);
 
-Var:                    var                                         = 176 (10);
+Var:                    var                                         = 178 (10);
 
-ParenthesizedExpr:      OptExpr                                     = 177 (10);
+ParenthesizedExpr:      OptExpr                                     = 179 (10);
 
-ContextItemExpr:        dot                                         = 178 (10);
+ContextItemExpr:        dot                                         = 180 (10);
 
-FunctionCall:           apply (nil)                                 = 179 (10);
-FunctionCall:           apply (FuncArgList)                         = 180 (10);
+FunctionCall:           apply (nil)                                 = 181 (10);
+FunctionCall:           apply (FuncArgList)                         = 182 (10);
 
-FuncArgList:            nil                                         = 181 (10);
-FuncArgList:            args (OptExpr, FuncArgList)                 = 182 (10);
+FuncArgList:            nil                                         = 183 (10);
+FuncArgList:            args (OptExpr, FuncArgList)                 = 184 (10);
 
-OrderedExpr:            ordered (OptExpr)                           = 183 (10);
-UnorderedExpr:          unordered (OptExpr)                         = 184 (10);
+OrderedExpr:            ordered (OptExpr)                           = 185 (10);
+UnorderedExpr:          unordered (OptExpr)                         = 186 (10);
 
-Constructor:            ElementConstructor                          = 185 (10);
-Constructor:            AttributeConstructor                        = 186 (10);
-Constructor:            TextConstructor                             = 187 (10);
-Constructor:            CommentConstructor                          = 188 (10);
-Constructor:            PIConstructor                               = 189 (10);
-Constructor:            DocumentConstructor                         = 190 (10);
+Constructor:            ElementConstructor                          = 187 (10);
+Constructor:            AttributeConstructor                        = 188 (10);
+Constructor:            TextConstructor                             = 189 (10);
+Constructor:            CommentConstructor                          = 190 (10);
+Constructor:            PIConstructor                               = 191 (10);
+Constructor:            DocumentConstructor                         = 192 (10);
 
-ElementConstructor:     elem (TagName, OptContentExpr)              = 191 (10);
+ElementConstructor:     elem (TagName, OptContentExpr)              = 193 (10);
 
-AttributeConstructor:   attr (TagName, AttributeValue)              = 192 (10);
+AttributeConstructor:   attr (TagName, AttributeValue)              = 194 (10);
 
-TextConstructor:        text (OptExpr)                              = 193 (10);
+TextConstructor:        text (OptExpr)                              = 195 (10);
 
-CommentConstructor:     comment (OptExpr)                           = 194 (10);
+CommentConstructor:     comment (OptExpr)                           = 196 (10);
 
-PIConstructor:          pi (OptExpr, OptContentExpr)                = 195 (10);
+PIConstructor:          pi (OptExpr, OptContentExpr)                = 197 (10);
 
-DocumentConstructor:    doc (OptExpr)                               = 196 (10);
+DocumentConstructor:    doc (OptExpr)                               = 198 (10);
 
-TagName:                tag                                         = 197 (10);
-TagName:                OptExpr                                     = 198 (10);
+TagName:                tag                                         = 199 (10);
+TagName:                OptExpr                                     = 200 (10);
 
-OptContentExpr:         Expr                                        = 199 (10);
-OptContentExpr:         empty_seq                                   = 200 (10);
-OptContentExpr:         contseq (OptContentExpr, OptContentExpr)    = 201 (10);
+OptContentExpr:         Expr                                        = 201 (10);
+OptContentExpr:         empty_seq                                   = 202 (10);
+OptContentExpr:         contseq (OptContentExpr, OptContentExpr)    = 203 (10);
 
-AttributeValue:         Expr                                        = 202 (10);
-AttributeValue:         empty_seq                                   = 203 (10);
-AttributeValue:         contseq (AttributeValue, AttributeValue)    = 204 (10);
+AttributeValue:         Expr                                        = 204 (10);
+AttributeValue:         empty_seq                                   = 205 (10);
+AttributeValue:         contseq (AttributeValue, AttributeValue)    = 206 (10);
 
 
 %%
@@ -660,6 +654,10 @@ static PFty_t any;
 static PFty_t *parameter_types (PFpnode_t *paramlist);
 
 static PFcnode_t *function_conversion (const PFcnode_t *e, PFty_t expected);
+static void comparison_worker (PFpnode_t *p, PFfun_t *fun);
+static void val_comparison_worker (PFpnode_t *p, PFfun_t *fun);
+static void calculation_worker (PFpnode_t *p, PFfun_t *fun);
+static void two_arg_fun_worker (PFpnode_t *p, PFfun_t *fun);
 
 static void reduce (PFpnode_t * p, int goalnt);
 
@@ -839,19 +837,19 @@ reduce (PFpnode_t * p, int goalnt)
                                                DeclsImports) */
         case 10:
         /* NodeTest:               node_ty (ElemOrAttrType) */
-        case 89:
-        /* NodeTest:               node_ty (node_ty (ElemOrAttrType)) */
         case 91:
+        /* NodeTest:               node_ty (node_ty (ElemOrAttrType)) */
+        case 93:
         /* LocationPath:           locpath (StepExpr, StepExpr) */
-        case 152:
+        case 154:
         /* FilterExpr:             pred (StepExpr, Expr) */
-        case 157:
+        case 159:
         /* FunctionCall:           apply (nil) */
-        case 179:
-        /* FunctionCall:           apply (OptFuncArgList_) */
-        case 180:
-        /* FuncArgList:            args (Expr, FuncArgList) */
+        case 181:
+        /* FunctionCall:           apply (FuncArgList) */
         case 182:
+        /* FuncArgList:            args (Expr, FuncArgList) */
+        case 184:
             topdown = true;
             break;
 
@@ -888,8 +886,8 @@ reduce (PFpnode_t * p, int goalnt)
              * prolog. Put them on top of the query.
              */
             if (var_decls.root) {
-                var_decls.hole->child[1] = empty ();
-                c = var_decls.root;
+                var_decls.hole->child[1] = nil ();
+                c = flwr (var_decls.root, empty ());
             }
             else
                 c = empty ();
@@ -910,8 +908,8 @@ reduce (PFpnode_t * p, int goalnt)
              * prolog. Put them on top of the query.
              */
             if (var_decls.root) {
-                var_decls.hole->child[1] = C(R(p));
-                c = var_decls.root;
+                var_decls.hole->child[1] = nil ();
+                c = flwr (var_decls.root, C(R(p)));
             }
             else
                 c = C(R(p));
@@ -1003,8 +1001,9 @@ reduce (PFpnode_t * p, int goalnt)
              * (see W3C XQuery 3.1.5 or function_conversion()
              */
 
-            C(LR(p)) = let (letbind (var (v), C(LR(p))),
-                            function_conversion (var (v), C(LLR(p))->sem.type));
+            C(LR(p)) = flwr (let (letbind (var (v), C(LR(p))), nil ()),
+                             function_conversion (var (v), 
+                                                  C(LLR(p))->sem.type));
             L(p)->sem.fun->core = C(LR(p));
 
             fun_sigs = fun_decls (fun_decl (L(p)->sem.fun, C(LLL(p)), C(LR(p))),
@@ -1299,9 +1298,9 @@ reduce (PFpnode_t * p, int goalnt)
             PFvar_t *v1 = new_var (NULL);
             PFvar_t *v2 = new_var (NULL);
         
-            C(p) = let (letbind (var (v1), C(L(p))),
-                        let (letbind (var (v2), C(R(p))),
-                             seq (var (v1), var (v2))));
+            C(p) = flwr (let (letbind (var (v1), C(L(p))), nil ()),
+                         flwr (let (letbind (var (v2), C(R(p))), nil ()),
+                               seq (var (v1), var (v2))));
         } break;
 
         /* Expr:                   ExprSingle */
@@ -1329,136 +1328,145 @@ reduce (PFpnode_t * p, int goalnt)
         case 57:
             break;
 
-        /* FLWORExpr:              flwr (binds (let (var_type (Var,
-                                                               nil),
-                                                     OptExpr),
-                                                nil),
+        /* FLWORExpr:              flwr (OptBindExpr,
                                          where (OptWhereClause_,
-                                                OrderByReturn)) */
+                                                ord_ret (nil, OptExpr))) */
         case 58:
         {
             PFvar_t *v = new_var (NULL);
 
-            C(p) = let (letbind (C(LLLL(p)), C(LLR(p))),
-                        let (letbind (var (v), C(RL(p))),
-                             if_ (var (v),
-                                  then_else (C(RR(p)), empty ()))));
+            C(p) = flwr (C(L(p)),
+                         flwr (let (letbind (var (v), C(RL(p))), nil ()),
+                               if_ (var (v),
+                                    then_else (C(RRR(p)), empty ()))));
+        } break;
+
+        /* FLWORExpr:              flwr (OptBindExpr,
+                                         where (OptWhereClause_,
+                                                ord_ret (OrderByClause,
+                                                         OptExpr))) */
+        case 59:
+        {
+            PFvar_t *v = new_var (NULL);
+
+            C(p) = flwr (C(L(p)),
+                         orderby (C(RRL(p)),
+                                  flwr (let (letbind (var (v),
+                                                      C(RL(p))),
+                                             nil ()),
+                                        if_ (var (v),
+                                             then_else (C(RRR(p)), 
+                                                        empty ())))));
+        } break;
+
+        /* OptBindExpr:            nil */
+        case 60:
+            C(p) = nil ();
+            break;
+
+        /* OptBindExpr:            binds (let (var_type (Var,
+                                                         nil),
+                                               OptExpr),
+                                          OptBindExpr) */
+        case 61:
+        {
+            C(p) = let (letbind (C(LLL(p)), C(LR(p))), C(R(p)));
 
         } break;
 
-        /* FLWORExpr:              flwr (binds (let (var_type (Var,
-                                                               TypeDeclaration),
-                                                     OptExpr),
-                                                nil),
-                                         where (OptWhereClause_,
-                                                OrderByReturn)) */
-        case 59:
+        /* OptBindExpr:            binds (let (var_type (Var,
+                                                         TypeDeclaration),
+                                               OptExpr),
+                                          OptBindExpr) */
+        case 62:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
+            PFvar_t *v = new_var (NULL);
 
-            C(p) = let (letbind (var (v1), C(LLR(p))),
-                        let (letbind (C(LLLL(p)),
-                                      proof (subty (var (v1), C(LLLR(p))),
-                                             seqcast (C(LLLR(p)), var (v1)))),
-                             let (letbind (var (v2), C(RL(p))),
-                                  if_ (var (v2),
-                                       then_else (C(RR(p)), empty ())))));
+            C(p) = let (letbind (var (v), C(LR(p))),
+                        let (letbind (C(LLL(p)),
+                                      proof (subty (var (v), C(LLR(p))),
+                                             seqcast (C(LLR(p)), 
+                                                      var (v)))),
+                             C(R(p))));
                         
         } break;
 
-        /* FLWORExpr:              flwr (binds (bind (vars (var_type (Var,
-                                                                      nil),
-                                                            OptPosVar),
-                                                      OptExpr),
-                                                nil),
-                                         where (OptWhereClause_,
-                                                OrderByReturn)) */
-        case 60:
-        {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
-
-            C(p) = let (letbind (var (v1), C(LLR(p))),
-                        for_ (forbind (forvars (C(LLLLL(p)), C(LLLR(p))),
-                                       var (v1)),
-                              let (letbind (var (v2), C(RL(p))),
-                                   if_ (var (v2),
-                                        then_else (C(RR(p)), empty ())))));
-        } break;
-
-        /* FLWORExpr:              flwr (binds (bind (vars (var_type (Var,
-                                                                      TypeDecl),
-                                                            OptPosVar),
-                                                      OptExpr),
-                                                nil),
-                                         where (OptWhereClause_,
-                                                OrderByReturn)) */
-        case 61:
-        {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
-            PFvar_t *v3 = new_var (NULL);
-
-            C(p) = let (letbind (var (v1), C(LLR(p))),
-                        for_ (forbind (forvars (var (v2), C(LLLR(p))),
-                                       var (v1)),
-                              let (letbind (C(LLLLL(p)),
-                                            proof (subty (var (v2),
-                                                          C(LLLLR(p))),
-                                                   seqcast (C(LLLLR(p)),
-                                                            var (v2)))),
-                                   let (letbind (var (v3), C(RL(p))),
-                                        if_ (var (v3),
-                                             then_else (C(RR(p)), empty()))))));
-        } break;
-
-        /* OrderByReturn:          ord_ret (nil, OptExpr) */
-        case 62:
-            C(p) = C(R(p));
-            break;
-
-        /* OrderByReturn:          ord_ret (OrderByClause, OptExpr) */
+        /* OptBindExpr:            binds (bind (vars (var_type (Var,
+                                                                nil),
+                                                      OptPosVar),
+                                                OptExpr),
+                                          OptBindExpr) */
         case 63:
-            C(p) = orderby (C(L(p)), C(R(p)));
-            break;
+        {
+            PFvar_t *v = new_var (NULL);
+
+            C(p) = let (letbind (var (v), C(LR(p))),
+                        for_ (forbind (forvars (C(LLLL(p)), C(LLR(p))),
+                                              var (v)),
+                              C(R(p))));
+        } break;
+
+        /* OptBindExpr:            binds (bind (vars (var_type (
+                                                          Var,
+                                                          TypeDeclaration),
+                                                      OptPosVar),
+                                                OptExpr),
+                                          OptBindExpr) */
+        case 64:
+        {
+            PFvar_t *v1 = new_var (NULL);
+            PFvar_t *v2 = new_var (NULL);
+
+            C(p) = let (letbind (var (v1), C(LR(p))),
+                        for_ (forbind (forvars (var (v2), C(LLR(p))),
+                                              var (v1)),
+                              let (letbind (C(LLLL(p)),
+                                            proof (subty (var (v2),
+                                                          C(LLLR(p))),
+                                                   seqcast (C(LLLR(p)),
+                                                            var (v2)))),
+                                   C(R(p)))));
+        } break;
 
         /* OptPosVar:              nil */
-        case 64:
+        case 66:
             C(p) = nil ();
             break;
 
         /* OptPosVar:              Var */
-        case 65:
+        case 67:
             break;
 
         /* TypeDeclaration:        SequenceType */
-        case 66:
+        case 68:
             break;
 
         /* OptWhereClause_:        nil */
-        case 67:
+        case 69:
             C(p) = true_ ();
             break;
 
         /* OptWhereClause_:        OptExpr */
-        case 68:
+        case 70:
             C(p) = ebv (C(p));
             break;
 
         /* OrderByClause:          orderby (OrderSpecList) */
-        case 69:
+        case 71:
             C(p) = C(L(p));
             break;
 
         /* OrderSpecList:          nil */
-        case 70:
+        case 72:
             C(p) = nil ();
             break;
 
         /* OrderSpecList:          orderspecs (OptExpr, OrderSpecList) */
-        case 71:
-            C(p) = orderspecs (p->sem.mode, fn_data (C(L(p))), C(R(p)));
+        case 73:
+            C(p) = orderspecs (p->sem.mode, 
+                               fs_convert_op_by_type (fn_data (C(L(p))), 
+                                                      PFty_string ()),
+                               C(R(p)));
             break;
 
         /* QuantifiedExpr:         some (binds (bind (vars (var_type (Var,
@@ -1467,7 +1475,7 @@ reduce (PFpnode_t * p, int goalnt)
                                                       OptExpr),
                                                 nil),
                                          OptExpr) */
-        case 72:
+        case 74:
             C(p) = some (C(LLLLL(p)), C(LLR(p)), C(R(p)));
             break;
 
@@ -1477,17 +1485,18 @@ reduce (PFpnode_t * p, int goalnt)
                                                       OptExpr),
                                                 nil),
                                          OptExpr) */
-        case 73:
+        case 75:
         {
             PFvar_t *v1 = new_var (NULL);
 
             C(p) = some (var (v1), C(LLR(p)),
-                         let (
-                             letbind (
-                                 C(LLLLL(p)),
-                                 proof (subty (var (v1), C(LLLLR(p))),
-                                        seqcast (C(LLLLR(p)), var (v1)))),
-                             C(R(p))));
+                         flwr (let (letbind (C(LLLLL(p)),
+                                             proof (subty (var (v1),
+                                                           C(LLLLR(p))),
+                                                    seqcast (C(LLLLR(p)), 
+                                                             var (v1)))),
+                                    nil ()),
+                               C(R(p))));
 
         } break;
 
@@ -1498,7 +1507,7 @@ reduce (PFpnode_t * p, int goalnt)
                                                        OptExpr),
                                                  nil),
                                           OptExpr) */
-        case 74:
+        case 76:
         {
             /* every $a in e1 satisfies e2
              *  ==
@@ -1512,15 +1521,18 @@ reduce (PFpnode_t * p, int goalnt)
             PFvar_t *v2     = new_var (NULL);
             PFfun_t *fn_not = function (PFqname (PFns_fn, "not"));
 
-            C(p) = let (
-                    letbind (
-                        var (v1), 
-                        some (
-                            C(LLLLL(p)),
-                            C(LLR(p)),
-                            let (letbind (var (v2), C(R(p))),
-                                 APPLY (fn_not, (var (v2)))))),
-                    APPLY (fn_not, (var (v1))));
+            C(p) = flwr (let (
+                             letbind (var (v1), 
+                                      some (
+                                          C(LLLLL(p)),
+                                          C(LLR(p)),
+                                          flwr (let (letbind (var (v2),
+                                                              C(R(p))),
+                                                     nil ()),
+                                                APPLY (fn_not, 
+                                                       (var (v2)))))),
+                             nil ()),
+                         APPLY (fn_not, (var (v1))));
 
         } break;
 
@@ -1530,7 +1542,7 @@ reduce (PFpnode_t * p, int goalnt)
                                                        OptExpr),
                                                  nil),
                                           OptExpr) */
-        case 75:
+        case 77:
         {
             /* every $a as t in e1 satisfies e2
              *  ==
@@ -1551,20 +1563,25 @@ reduce (PFpnode_t * p, int goalnt)
             PFvar_t *v3 = new_var (NULL);
             PFfun_t *fn_not   = function (PFqname (PFns_fn, "not"));
 
-            C(p) = let (
-                    letbind (
-                        var (v1), 
-                        some (
-                            var (v3),
-                            C(LLR(p)),
-                            let (
-                                letbind (
-                                    C(LLLLL(p)),
-                                    proof (subty (var (v3), C(LLLLR(p))),
-                                           seqcast (C(LLLLR(p)), var (v3)))),
-                                let (letbind (var (v2), C(R(p))),
-                                     APPLY (fn_not, var (v2)))))),
-                    APPLY (fn_not, (var (v1))));
+            C(p) = flwr (let (letbind (
+                                  var (v1), 
+                                  some (
+                                      var (v3),
+                                      C(LLR(p)),
+                                      flwr (let (
+                                                letbind (
+                                                    C(LLLLL(p)),
+                                                    proof (subty (var (v3),
+                                                                  C(LLLLR(p))),
+                                                           seqcast (C(LLLLR(p)),
+                                                                    var (v3)))),
+                                                nil ()),
+                                            flwr (let (letbind (var (v2), 
+                                                                C(R(p))),
+                                                       nil ()),
+                                                  APPLY (fn_not, var (v2)))))),
+                              nil ()),
+                          APPLY (fn_not, (var (v1))));
 
         } break;
 
@@ -1576,25 +1593,28 @@ reduce (PFpnode_t * p, int goalnt)
                                               cases (default_ (OptCaseVar,
                                                                OptExpr),
                                                      nil))) */
-        case 76:
+        case 78:
         {
             PFvar_t *v = new_var (NULL);
 
-            C(p) = let (letbind (var (v), C(L(p))),
-                        typeswitch (
-                            var (v),
-                            cases (
-                                case_ (
-                                    C(RLLR(p)),
-                                    let (letbind (C(RLLL(p)), var (v)),
-                                         C(RLR(p)))),
-                                default_ (
-                                    let (letbind (C(RRLL(p)), var (v)),
-                                         C(RRLR(p)))))));
+            C(p) = flwr (let (letbind (var (v), C(L(p))),
+                              nil ()),
+                         typeswitch (
+                             var (v),
+                             cases (
+                                 case_ (
+                                     C(RLLR(p)),
+                                     flwr (let (letbind (C(RLLL(p)), var (v)),
+                                                nil ()),
+                                           C(RLR(p)))),
+                                 default_ (
+                                     flwr (let (letbind (C(RRLL(p)), var (v)),
+                                                nil ()),
+                                           C(RRLR(p)))))));
         } break;
 
         /* OptCaseVar:             nil */
-        case 77:
+        case 79:
             /*
              * Generate new variable in case no variable has been
              * specified for case/default branch of typeswitch.
@@ -1603,16 +1623,16 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* OptCaseVar:             Var */
-        case 78:
+        case 80:
             assert (C(p));
             break;
 
         /* SequenceType:           seq_ty (ItemType) */
-        case 79:
+        case 81:
             /* fall through */
 
         /* SingleType:             seq_ty (AtomType) */
-        case 80:
+        case 82:
             switch (p->sem.oci) {
                 case p_one:
                     C(p) = C(L(p));
@@ -1634,22 +1654,22 @@ reduce (PFpnode_t * p, int goalnt)
             } break;
             
         /* ItemType:               empty_ty */
-        case 81:
+        case 83:
             C(p) = seqtype (PFty_empty ());
             break;
 
         /* ItemType:               NodeTest */
-        case 82:
+        case 84:
             assert (C(p));
             break;
 
         /* ItemType:               item_ty (nil) */
-        case 83:
+        case 85:
             C(p) = seqtype (PFty_xs_anyItem ());
             break;
 
         /* ItemType:               atom_ty (nil) */
-        case 84:
+        case 86:
             /* is the referenced type a known schema type? */
             if (! PFty_schema (PFty_named (p->sem.qname)))
                 PFoops_loc (OOPS_TYPENOTDEF, p->loc,
@@ -1660,21 +1680,21 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* ItemType:               schm_elem */
-        case 85:
+        case 87:
             /* FIXME: This probably requires work in the type system */
             PFoops_loc (OOPS_NOTSUPPORTED, p->loc,
                         "schema-element types are not supported");
             break;
 
         /* ItemType:               schm_attr */
-        case 86:
+        case 88:
             /* FIXME: This probably requires work in the type system */
             PFoops_loc (OOPS_NOTSUPPORTED, p->loc,
                         "schema-attribute types are not supported");
             break;
 
         /* AtomType:               atom_ty (nil) */
-        case 87:
+        case 89:
             /* is the referenced type a known schema type? */
             if (! PFty_schema (PFty_named (p->sem.qname)))
                 PFoops_loc (OOPS_TYPENOTDEF, p->loc,
@@ -1685,7 +1705,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* NodeTest:               node_ty (nil) */
-        case 88:
+        case 90:
             switch (p->sem.kind) {
                 case p_kind_node:
                     /* node */
@@ -1724,7 +1744,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* NodeTest:               node_ty (ElemOrAttrType) */
-        case 89:
+        case 91:
             /* TOPDOWN */
 
             switch (p->sem.kind) {
@@ -1747,7 +1767,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* NodeTest:               node_ty (node_ty (nil)) */
-        case 90:
+        case 92:
             assert (p->sem.kind == p_kind_doc);
             assert (L(p)->sem.kind == p_kind_elem);
 
@@ -1755,7 +1775,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* NodeTest:               node_ty (node_ty (ElemOrAttrType)) */
-        case 91:
+        case 93:
             /* TOPDOWN */
 
             assert (p->sem.kind == p_kind_doc);
@@ -1770,7 +1790,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* NodeTest:               node_ty (lit_str) */
-        case 92:
+        case 94:
             /*
              * processing-instruction tests may have a string
              * argument (restricting the pi target)
@@ -1780,33 +1800,33 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* ElemOrAttrType:         req_ty (nil, nil) */
-        case 93:
+        case 95:
             /* element/attribute: any name, any type */
             C(p) = seqtype (elem_attr (PFqname (PFns_wild, NULL), any));
             break;
      
         /* ElemOrAttrType:         req_ty (nil, SchemaType) */
-        case 94:
+        case 96:
             /* element/attribute: any name, given type */
             C(p) = seqtype (elem_attr (PFqname (PFns_wild, NULL),
                                        C(R(p))->sem.type));
             break;
 
         /* ElemOrAttrType:         req_ty (req_name, nil) */
-        case 95:
+        case 97:
             /* element/attribute: given name, any type */
             C(p) = seqtype (elem_attr (L(p)->sem.qname, any));
             break;
 
 
         /* ElemOrAttrType:         req_ty (req_name, SchemaType) */
-        case 96:
+        case 98:
             /* element/attribute: given name, given type */
             C(p) = seqtype (elem_attr (L(p)->sem.qname, C(R(p))->sem.type));
             break;
 
         /* SchemaType:             named_ty */
-        case 97:
+        case 99:
             /* is the referenced type a known schema type definition? */
             if (! PFty_schema (PFty_named (p->sem.qname)))
                 PFoops_loc (OOPS_TYPENOTDEF, p->loc,
@@ -1818,701 +1838,391 @@ reduce (PFpnode_t * p, int goalnt)
 
         /* IfExpr:                 if_ (Expr,
                                         then_else (OptExpr, OptExpr)) */
-        case 98:
+        case 100:
         {
             PFvar_t *v = new_var (NULL);
 
-            C(p) = let (letbind (var (v), ebv (C(L(p)))),
-                        if_ (var (v),
-                             then_else (C(RL(p)), C(RR(p)))));
+            C(p) = flwr (let (letbind (var (v), ebv (C(L(p)))), nil ()),
+                         if_ (var (v),
+                              then_else (C(RL(p)), C(RR(p)))));
         } break;
 
         /* OrExpr:                 AndExpr */
-        case 99:
+        case 101:
             break;
 
         /* OrExpr:                 or (AndExpr, OrExpr) */
-        case 100:
+        case 102:
         {
             PFvar_t *v1 = new_var (NULL);
             PFvar_t *v2 = new_var (NULL);
             PFfun_t *op_or = function (PFqname (PFns_op, "or"));
 
-            C(p) = let (letbind (var (v1), ebv (C(L(p)))),
-                    let (letbind (var (v2), ebv (C(R(p)))),
-                        APPLY (op_or, var (v1), var (v2))));
+            C(p) = flwr (let (letbind (var (v1), ebv (C(L(p)))), nil ()),
+                         flwr (let (letbind (var (v2), ebv (C(R(p)))), nil ()),
+                               APPLY (op_or, var (v1), var (v2))));
         } break;
 
         /* AndExpr:                ComparisonExpr */
-        case 101:
+        case 103:
             break;
 
         /* AndExpr:                and (ComparisonExpr, AndExpr) */
-        case 102:
+        case 104:
         {
             PFvar_t *v1 = new_var (NULL);
             PFvar_t *v2 = new_var (NULL);
             PFfun_t *op_and = function (PFqname (PFns_op, "and"));
 
-            C(p) = let (letbind (var (v1), ebv (C(L(p)))),
-                    let (letbind (var (v2), ebv (C(R(p)))),
-                        APPLY (op_and, var (v1), var (v2))));
+            C(p) = flwr (let (letbind (var (v1), ebv (C(L(p)))), nil ()),
+                         flwr (let (letbind (var (v2), ebv (C(R(p)))), nil ()),
+                               APPLY (op_and, var (v1), var (v2))));
         } break;
 
         /* ComparisonExpr:         RangeExpr */
-        case 103:
+        case 105:
             break;
 
         /* ComparisonExpr:         eq (RangeExpr, RangeExpr) */
-        case 104:
+        case 106:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
-            PFvar_t *u1 = new_var (NULL);
-            PFvar_t *u2 = new_var (NULL);
             PFfun_t *op_eq = function (PFqname (PFns_op, "eq"));
-
-            C(p) = some (var (v1), fn_data (C(L(p))),
-                    some (
-                        var (v2), fn_data (C(R(p))),
-                        let (
-                            letbind (
-                                var (u1),
-                                fs_convert_op_by_type (
-                                    fs_convert_op_by_expr (var (v1), var (v2)),
-                                    PFty_xs_string ())),
-                            let (
-                                letbind (
-                                    var (u2),
-                                    fs_convert_op_by_type (
-                                        fs_convert_op_by_expr (var (v2),
-                                                               var (v1)),
-                                        PFty_xs_string ())),
-                                APPLY (op_eq, var (u1), var (u2))))));
+            comparison_worker (p, op_eq);
+            
         } break;
 
         /* ComparisonExpr:         ne (RangeExpr, RangeExpr) */
-        case 105:
+        case 107:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
-            PFvar_t *u1 = new_var (NULL);
-            PFvar_t *u2 = new_var (NULL);
             PFfun_t *op_ne = function (PFqname (PFns_op, "ne"));
+            comparison_worker (p, op_ne);
 
-            C(p) = some (var (v1), fn_data (C(L(p))),
-                    some (
-                        var (v2), fn_data (C(R(p))),
-                        let (
-                            letbind (
-                                var (u1),
-                                fs_convert_op_by_type (
-                                    fs_convert_op_by_expr (var (v1), var (v2)),
-                                    PFty_xs_string ())),
-                            let (
-                                letbind (
-                                    var (u2),
-                                    fs_convert_op_by_type (
-                                        fs_convert_op_by_expr (var (v2),
-                                                               var (v1)),
-                                        PFty_xs_string ())),
-                                APPLY (op_ne, var (u1), var (u2))))));
         } break;
 
         /* ComparisonExpr:         lt (RangeExpr, RangeExpr) */
-        case 106:
+        case 108:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
-            PFvar_t *u1 = new_var (NULL);
-            PFvar_t *u2 = new_var (NULL);
             PFfun_t *op_lt = function (PFqname (PFns_op, "lt"));
+            comparison_worker (p, op_lt);
 
-            C(p) = some (var (v1), fn_data (C(L(p))),
-                    some (
-                        var (v2), fn_data (C(R(p))),
-                        let (
-                            letbind (
-                                var (u1),
-                                fs_convert_op_by_type (
-                                    fs_convert_op_by_expr (var (v1), var (v2)),
-                                    PFty_xs_string ())),
-                            let (
-                                letbind (
-                                    var (u2),
-                                    fs_convert_op_by_type (
-                                        fs_convert_op_by_expr (var (v2),
-                                                               var (v1)),
-                                        PFty_xs_string ())),
-                                APPLY (op_lt, var (u1), var (u2))))));
         } break;
 
         /* ComparisonExpr:         le (RangeExpr, RangeExpr) */
-        case 107:
+        case 109:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
-            PFvar_t *u1 = new_var (NULL);
-            PFvar_t *u2 = new_var (NULL);
             PFfun_t *op_le = function (PFqname (PFns_op, "le"));
+            comparison_worker (p, op_le);
 
-            C(p) = some (var (v1), fn_data (C(L(p))),
-                    some (
-                        var (v2), fn_data (C(R(p))),
-                        let (
-                            letbind (
-                                var (u1),
-                                fs_convert_op_by_type (
-                                    fs_convert_op_by_expr (var (v1), var (v2)),
-                                    PFty_xs_string ())),
-                            let (
-                                letbind (
-                                    var (u2),
-                                    fs_convert_op_by_type (
-                                        fs_convert_op_by_expr (var (v2),
-                                                               var (v1)),
-                                        PFty_xs_string ())),
-                                APPLY (op_le, var (u1), var (u2))))));
         } break;
 
         /* ComparisonExpr:         gt (RangeExpr, RangeExpr) */
-        case 108:
+        case 110:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
-            PFvar_t *u1 = new_var (NULL);
-            PFvar_t *u2 = new_var (NULL);
             PFfun_t *op_gt = function (PFqname (PFns_op, "gt"));
+            comparison_worker (p, op_gt);
 
-            C(p) = some (var (v1), fn_data (C(L(p))),
-                    some (
-                        var (v2), fn_data (C(R(p))),
-                        let (
-                            letbind (
-                                var (u1),
-                                fs_convert_op_by_type (
-                                    fs_convert_op_by_expr (var (v1), var (v2)),
-                                    PFty_xs_string ())),
-                            let (
-                                letbind (
-                                    var (u2),
-                                    fs_convert_op_by_type (
-                                        fs_convert_op_by_expr (var (v2),
-                                                               var (v1)),
-                                        PFty_xs_string ())),
-                                APPLY (op_gt, var (u1), var (u2))))));
         } break;
 
         /* ComparisonExpr:         ge (RangeExpr, RangeExpr) */
-        case 109:
+        case 111:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
-            PFvar_t *u1 = new_var (NULL);
-            PFvar_t *u2 = new_var (NULL);
             PFfun_t *op_ge = function (PFqname (PFns_op, "ge"));
+            comparison_worker (p, op_ge);
 
-            C(p) = some (var (v1), fn_data (C(L(p))),
-                    some (
-                        var (v2), fn_data (C(R(p))),
-                        let (
-                            letbind (
-                                var (u1),
-                                fs_convert_op_by_type (
-                                    fs_convert_op_by_expr (var (v1), var (v2)),
-                                    PFty_xs_string ())),
-                            let (
-                                letbind (
-                                    var (u2),
-                                    fs_convert_op_by_type (
-                                        fs_convert_op_by_expr (var (v2),
-                                                               var (v1)),
-                                        PFty_xs_string ())),
-                                APPLY (op_ge, var (u1), var (u2))))));
         } break;
 
         /* ComparisonExpr:         val_eq (RangeExpr, RangeExpr) */
-        case 110:
+        case 112:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
             PFfun_t *op_eq = function (PFqname (PFns_op, "eq"));
+            val_comparison_worker (p, op_eq);
 
-            C(p) = let (
-                     letbind (
-                         var (v1),
-                         fs_convert_op_by_type (fn_data (C(L(p))),
-                                                PFty_xs_string ())),
-                     let (
-                         letbind (
-                             var (v2),
-                             fs_convert_op_by_type (fn_data (C(R(p))),
-                                                    PFty_xs_string ())),
-                         APPLY (op_eq, var (v1), var (v2))));
         } break;
 
         /* ComparisonExpr:         val_ne (RangeExpr, RangeExpr) */
-        case 111:
+        case 113:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
             PFfun_t *op_ne = function (PFqname (PFns_op, "ne"));
+            val_comparison_worker (p, op_ne);
 
-            C(p) = let (
-                     letbind (
-                         var (v1),
-                         fs_convert_op_by_type (fn_data (C(L(p))),
-                                                PFty_xs_string ())),
-                     let (
-                         letbind (
-                             var (v2),
-                             fs_convert_op_by_type (fn_data (C(R(p))),
-                                                    PFty_xs_string ())),
-                         APPLY (op_ne, var (v1), var (v2))));
         } break;
 
         /* ComparisonExpr:         val_lt (RangeExpr, RangeExpr) */
-        case 112:
+        case 114:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
             PFfun_t *op_lt = function (PFqname (PFns_op, "lt"));
+            val_comparison_worker (p, op_lt);
 
-            C(p) = let (
-                     letbind (
-                         var (v1),
-                         fs_convert_op_by_type (fn_data (C(L(p))),
-                                                PFty_xs_string ())),
-                     let (
-                         letbind (
-                             var (v2),
-                             fs_convert_op_by_type (fn_data (C(R(p))),
-                                                    PFty_xs_string ())),
-                         APPLY (op_lt, var (v1), var (v2))));
         } break;
 
         /* ComparisonExpr:         val_le (RangeExpr, RangeExpr) */
-        case 113:
+        case 115:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
             PFfun_t *op_le = function (PFqname (PFns_op, "le"));
+            val_comparison_worker (p, op_le);
 
-            C(p) = let (
-                     letbind (
-                         var (v1),
-                         fs_convert_op_by_type (fn_data (C(L(p))),
-                                                PFty_xs_string ())),
-                     let (
-                         letbind (
-                             var (v2),
-                             fs_convert_op_by_type (fn_data (C(R(p))),
-                                                    PFty_xs_string ())),
-                         APPLY (op_le, var (v1), var (v2))));
         } break;
 
         /* ComparisonExpr:         val_gt (RangeExpr, RangeExpr) */
-        case 114:
+        case 116:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
             PFfun_t *op_gt = function (PFqname (PFns_op, "gt"));
+            val_comparison_worker (p, op_gt);
 
-            C(p) = let (
-                     letbind (
-                         var (v1),
-                         fs_convert_op_by_type (fn_data (C(L(p))),
-                                                PFty_xs_string ())),
-                     let (
-                         letbind (
-                             var (v2),
-                             fs_convert_op_by_type (fn_data (C(R(p))),
-                                                    PFty_xs_string ())),
-                         APPLY (op_gt, var (v1), var (v2))));
         } break;
 
         /* ComparisonExpr:         val_ge (RangeExpr, RangeExpr) */
-        case 115:
+        case 117:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
             PFfun_t *op_ge = function (PFqname (PFns_op, "ge"));
+            val_comparison_worker (p, op_ge);
 
-            C(p) = let (
-                     letbind (
-                         var (v1),
-                         fs_convert_op_by_type (fn_data (C(L(p))),
-                                                PFty_xs_string ())),
-                     let (
-                         letbind (
-                             var (v2),
-                             fs_convert_op_by_type (fn_data (C(R(p))),
-                                                    PFty_xs_string ())),
-                         APPLY (op_ge, var (v1), var (v2))));
         } break;
 
         /* ComparisonExpr:         is (RangeExpr, RangeExpr) */
-        case 116:
+        case 118:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
             PFfun_t *op_is = function (PFqname (PFns_op, "is-same-node"));
+            two_arg_fun_worker (p, op_is);
 
-            C(p) = let (letbind (var (v1), C(L(p))),
-                    let (letbind (var (v2), C(R(p))),
-                        APPLY (op_is, var (v1), var (v2))));
-        } break;
-
-        /* ComparisonExpr:         nis (RangeExpr, RangeExpr) */
-        case 117:
-        {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
-            PFvar_t *v3 = new_var (NULL);
-            PFvar_t *v4 = new_var (NULL);
-            PFvar_t *v5 = new_var (NULL);
-            PFfun_t *op_is = function (PFqname (PFns_op, "is-same-node"));
-            PFfun_t *fn_not = function (PFqname (PFns_fn, "not"));
-
-            C(p) = let (letbind (var (v1), C(L(p))),
-                    let (letbind (var (v2), C(R(p))),
-                        let (letbind (var (v3),
-                                      APPLY (op_is, var (v1), var (v2))),
-                             let (letbind (var (v4),
-                                           APPLY (fn_not, PFcore_var (v3))),
-                                  PFcore_var (v5)))));
         } break;
 
         /* ComparisonExpr:         ltlt (RangeExpr, RangeExpr) */
-        case 118:
+        case 120:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
             PFfun_t *op_ltlt = function (PFqname (PFns_op, "node-before"));
+            two_arg_fun_worker (p, op_ltlt);
 
-            C(p) = let (letbind (var (v1), C(L(p))),
-                    let (letbind (var (v2), C(R(p))),
-                        APPLY (op_ltlt, var (v1), var (v2))));
         } break;
 
         /* ComparisonExpr:         gtgt (RangeExpr, RangeExpr) */
-        case 119:
+        case 121:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
             PFfun_t *op_gtgt = function (PFqname (PFns_op, "node-after"));
+            two_arg_fun_worker (p, op_gtgt);
 
-            C(p) = let (letbind (var (v1), C(L(p))),
-                    let (letbind (var (v2), C(R(p))),
-                        APPLY (op_gtgt, var (v1), var (v2))));
         } break;
 
         /* RangeExpr:              AdditiveExpr */
-        case 120:
-            break;
-
-        /* RangeExpr:              range (RangeExpr, RangeExpr) */
-        case 121:
-        {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
-            PFfun_t *op_to = function (PFqname (PFns_op, "to"));
-
-            C(p) = let (letbind (var (v1), C(L(p))),
-                    let (letbind (var (v2), C(R(p))),
-                        APPLY (op_to, var (v1), var (v2))));
-        } break;
-
-        /* AdditiveExpr:           MultiplicativeExpr */
         case 122:
             break;
 
-        /* AdditiveExpr:           plus (AdditiveExpr, MultiplicativeExpr) */
+        /* RangeExpr:              range (RangeExpr, RangeExpr) */
         case 123:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
-            PFfun_t *op_plus = function (PFqname (PFns_op, "plus"));
+            PFfun_t *op_to = function (PFqname (PFns_op, "to"));
+            two_arg_fun_worker (p, op_to);
 
-            C(p) = let (
-                    letbind (
-                        var (v1),
-                        fs_convert_op_by_type (fn_data (C(L(p))),
-                                               PFty_xs_double ())),
-                    let (
-                        letbind (
-                            var (v2),
-                            fs_convert_op_by_type (fn_data (C(R(p))),
-                                                   PFty_xs_double ())),
-                        APPLY (op_plus, var (v1), var (v2))));
+        } break;
+
+        /* AdditiveExpr:           MultiplicativeExpr */
+        case 124:
+            break;
+
+        /* AdditiveExpr:           plus (AdditiveExpr, MultiplicativeExpr) */
+        case 125:
+        {
+            PFfun_t *op_plus = function (PFqname (PFns_op, "plus"));
+            calculation_worker (p, op_plus);
+
         } break;
 
         /* AdditiveExpr:           minus (AdditiveExpr, MultiplicativeExpr) */
-        case 124:
+        case 126:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
             PFfun_t *op_minus = function (PFqname (PFns_op, "minus"));
+            calculation_worker (p, op_minus);
 
-            C(p) = let (
-                    letbind (
-                        var (v1),
-                        fs_convert_op_by_type (fn_data (C(L(p))),
-                                               PFty_xs_double ())),
-                    let (
-                        letbind (
-                            var (v2),
-                            fs_convert_op_by_type (fn_data (C(R(p))),
-                                                   PFty_xs_double ())),
-                        APPLY (op_minus, var (v1), var (v2))));
         } break;
 
         /* MultiplicativeExpr:     UnionExpr */
-        case 125:
+        case 127:
             break;
 
         /* MultiplicativeExpr:     mult (UnionExpr, MultiplicativeExpr) */
-        case 126:
+        case 128:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
             PFfun_t *op_times = function (PFqname (PFns_op, "times"));
+            calculation_worker (p, op_times);
 
-            C(p) = let (
-                    letbind (
-                        var (v1),
-                        fs_convert_op_by_type (fn_data (C(L(p))),
-                                               PFty_xs_double ())),
-                    let (
-                        letbind (
-                            var (v2),
-                            fs_convert_op_by_type (fn_data (C(R(p))),
-                                                   PFty_xs_double ())),
-                        APPLY (op_times, var (v1), var (v2))));
         } break;
 
         /* MultiplicativeExpr:     div (UnionExpr, MultiplicativeExpr) */
-        case 127:
+        case 129:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
             PFfun_t *op_div = function (PFqname (PFns_op, "div"));
+            calculation_worker (p, op_div);
 
-            C(p) = let (
-                    letbind (
-                        var (v1),
-                        fs_convert_op_by_type (fn_data (C(L(p))),
-                                               PFty_xs_double ())),
-                    let (
-                        letbind (
-                            var (v2),
-                            fs_convert_op_by_type (fn_data (C(R(p))),
-                                                   PFty_xs_double ())),
-                        APPLY (op_div, var (v1), var (v2))));
         } break;
 
         /* MultiplicativeExpr:     idiv (UnionExpr, MultiplicativeExpr) */
-        case 128:
+        case 130:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
             PFfun_t *op_idiv = function (PFqname (PFns_op, "idiv"));
+            calculation_worker (p, op_idiv);
 
-            C(p) = let (
-                    letbind (
-                        var (v1),
-                        fs_convert_op_by_type (fn_data (C(L(p))),
-                                               PFty_xs_double ())),
-                    let (
-                        letbind (
-                            var (v2),
-                            fs_convert_op_by_type (fn_data (C(R(p))),
-                                                   PFty_xs_double ())),
-                        APPLY (op_idiv, var (v1), var (v2))));
         } break;
 
         /* MultiplicativeExpr:     mod (UnionExpr, MultiplicativeExpr) */
-        case 129:
+        case 131:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
             PFfun_t *op_mod = function (PFqname (PFns_op, "mod"));
+            calculation_worker (p, op_mod);
 
-            C(p) = let (
-                    letbind (
-                        var (v1),
-                        fs_convert_op_by_type (fn_data (C(L(p))),
-                                               PFty_xs_double ())),
-                    let (
-                        letbind (
-                            var (v2),
-                            fs_convert_op_by_type (fn_data (C(R(p))),
-                                                   PFty_xs_double ())),
-                        APPLY (op_mod, var (v1), var (v2))));
         } break;
 
         /* UnionExpr:              IntersectExceptExpr */
-        case 130:
+        case 132:
             break;
 
         /* UnionExpr:              union_ (IntersectExceptExpr, UnionExpr) */
-        case 131:
+        case 133:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
             PFfun_t *op_union = function (PFqname (PFns_op, "union"));
+            two_arg_fun_worker (p, op_union);
 
-            C(p) = let (letbind (var (v1), C(L(p))),
-                    let (letbind (var (v2), C(R(p))),
-                        APPLY (op_union, var (v1), var (v2))));
         } break;
 
         /* IntersectExceptExpr:    InstanceofExpr */
-        case 132:
+        case 134:
             break;
 
         /* IntersectExceptExpr:    intersect (InstanceofExpr,
                                               IntersectExceptExpr) */
-        case 133:
+        case 135:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
             PFfun_t *op_intersect = function (PFqname (PFns_op, "intersect"));
+            two_arg_fun_worker (p, op_intersect);
 
-            C(p) = let (letbind (var (v1), C(L(p))),
-                    let (letbind (var (v2), C(R(p))),
-                        APPLY (op_intersect, var (v1), var (v2))));
         } break;
 
         /* IntersectExceptExpr:    except (InstanceofExpr,
                                            IntersectExceptExpr) */
-        case 134:
+        case 136:
         {
-            PFvar_t *v1 = new_var (NULL);
-            PFvar_t *v2 = new_var (NULL);
             PFfun_t *op_except = function (PFqname (PFns_op, "except"));
+            two_arg_fun_worker (p, op_except);
 
-            C(p) = let (letbind (var (v1), C(L(p))),
-                    let (letbind (var (v2), C(R(p))),
-                        APPLY (op_except, var (v1), var (v2))));
         } break;
 
         /* InstanceofExpr:         TreatExpr */
-        case 135:
-            break;
-
-        /* InstanceofExpr:         instof (TreatExpr, SequenceType) */
-        case 136:
-        {
-            PFvar_t *v = new_var (NULL);
-
-            C(p) = let (letbind (var (v), C(L(p))),
-                        typeswitch (
-                            var (v),
-                            cases (
-                                case_ (C(R(p)), true_ ()),
-                                default_ (false_ ()))));
-        } break;
-
-        /* TreatExpr:              CastableExpr */
         case 137:
             break;
 
-        /* TreatExpr:              treat (CastableExpr, SequenceType) */
+        /* InstanceofExpr:         instof (TreatExpr, SequenceType) */
         case 138:
+        {
+            PFvar_t *v = new_var (NULL);
+
+            C(p) = flwr (let (letbind (var (v), C(L(p))), nil ()),
+                         typeswitch (
+                             var (v),
+                             cases (
+                                 case_ (C(R(p)), true_ ()),
+                                 default_ (false_ ()))));
+        } break;
+
+        /* TreatExpr:              CastableExpr */
+        case 139:
+            break;
+
+        /* TreatExpr:              treat (CastableExpr, SequenceType) */
+        case 140:
         {
             PFvar_t *v1 = new_var (NULL);
             PFfun_t *fn_error = function (PFqname (PFns_fn, "error"));
 
-            C(p) = let (letbind (var (v1), C(L(p))),
-                        typeswitch (
-                            var (v1),
-                            cases (case_ (C(R(p)), var (v1)),
-                                   default_ (APPLY (fn_error, str("err:XP0050"))))));
+            C(p) = flwr (let (letbind (var (v1), C(L(p))), nil ()),
+                         typeswitch (
+                             var (v1),
+                             cases (case_ (C(R(p)), var (v1)),
+                                    default_ (APPLY (fn_error,
+                                                     str("err:XP0050"))))));
         } break;
 
         /* CastableExpr:           CastExpr */
-        case 139:
+        case 141:
             break;
 
         /* CastableExpr:           castable (CastExpr, SingleType) */
-        case 140:
+        case 142:
             PFoops_loc (OOPS_NOTSUPPORTED, p->loc,
                         "`castable' keyword is not supported");
             break;
 
         /* CastExpr:               UnaryExpr */
-        case 141:
+        case 143:
             break;
 
         /* CastExpr:               cast (UnaryExpr, SingleType) */
-        case 142:
+        case 144:
         {
             PFvar_t *v1 = new_var (NULL);
             PFvar_t *v2 = new_var (NULL);
 
-            C(p) = let (letbind (var (v1), C(L(p))),
-                        let (letbind (var (v2), fn_data (var (v1))),
-                             cast (C(R(p)), var (v2))));
+            C(p) = flwr (let (letbind (var (v1), C(L(p))), nil ()),
+                         flwr (let (letbind (var (v2), fn_data (var (v1))),
+                                    nil ()),
+                               cast (C(R(p)), var (v2))));
         } break;
 
         /* UnaryExpr:              ValueExpr */
-        case 143:
+        case 145:
             break;
 
         /* UnaryExpr:              uminus (ValueExpr) */
-        case 144:
+        case 146:
         {
             PFvar_t *v = new_var (NULL);
             PFfun_t *op_minus = function (PFqname (PFns_op, "minus"));
 
-            C(p) = let (
-                    letbind (
-                        var (v),
-                        fs_convert_op_by_type (fn_data (C(L(p))),
-                                               PFty_xs_double ())),
-                    APPLY (op_minus, num (0), var (v)));
+            C(p) = flwr (let (letbind (var (v),
+                                       fs_convert_op_by_type (
+                                           fn_data (C(L(p))),
+                                           PFty_xs_double ())),
+                              nil ()),
+                         APPLY (op_minus, num (0), var (v)));
         } break;
 
         /* UnaryExpr:              uplus (ValueExpr) */
-        case 145:
+        case 147:
         {
             PFvar_t *v = new_var (NULL);
             PFfun_t *op_plus = function (PFqname (PFns_op, "plus"));
 
-            C(p) = let (
-                    letbind (
-                        var (v),
-                        fs_convert_op_by_type (fn_data (C(L(p))),
-                                               PFty_xs_double ())),
+            C(p) = flwr (let (letbind (var (v),
+                                       fs_convert_op_by_type (
+                                           fn_data (C(L(p))),
+                                           PFty_xs_double ())),
+                              nil ()),
                     APPLY (op_plus, num (0), var (v)));
         } break;
 
         /* ValueExpr:              ValidateExpr */
-        case 146:
+        case 148:
             break;
 
         /* ValueExpr:              PathExpr */
-        case 147:
+        case 149:
             break;
 
         /* ValidateExpr:           validate (Expr) */
-        case 148:
+        case 150:
             PFoops_loc (OOPS_NOTSUPPORTED, p->loc, "validation not supported");
             break;
 
         /* PathExpr:               StepExpr */
-        case 149:
+        case 151:
             assert (C(p));
             break;
 
         /* PathExpr:               LocationPath */
-        case 150:
+        case 152:
             assert (C(p));
             break;
 
         /* LocationPath:           root_ */
-        case 151:
+        case 153:
         {
             PFfun_t *_root = function (PFqname (PFns_fn, "root"));
 
@@ -2540,23 +2250,26 @@ reduce (PFpnode_t * p, int goalnt)
             PFfun_t *fn_error = function (PFqname (PFns_fn, "error"));
 
             if (fs_dot)
-                C(p) = let (letbind (var (v1), APPLY (_root, var (fs_dot))),
-                            typeswitch (
-                                var (v1),
-                                cases (
-                                    case_ (
-                                        seqtype (PFty_doc (
-                                            PFty_plus (PFty_xs_anyNode ()))),
-                                        var (v1)),
-                                    default_ (
-                                        APPLY (fn_error, str("err:XP0050"))))));
+                C(p) = flwr (let (letbind (var (v1), APPLY (_root, 
+                                                            var (fs_dot))),
+                                  nil ()),
+                             typeswitch (
+                                 var (v1),
+                                 cases (
+                                     case_ (
+                                         seqtype (PFty_doc (
+                                             PFty_plus (PFty_xs_anyNode ()))),
+                                         var (v1)),
+                                     default_ (
+                                         APPLY (fn_error,
+                                                str("err:XP0050"))))));
             else
                 PFoops_loc (OOPS_NOCONTEXT, p->loc, "``.'' is unbound");
 #endif
         } break;
 
         /* LocationPath:           locpath (StepExpr, StepExpr) */
-        case 152:
+        case 154:
         {
             /* TOPDOWN */
 
@@ -2632,36 +2345,42 @@ reduce (PFpnode_t * p, int goalnt)
             reduce (kids[0], nts[0]);
 
             C(p) =
-                let (
-                  letbind (var (v1), C(R(p))),
+                flwr (let (letbind (var (v1), C(R(p))), nil ()),
                   typeswitch (
                     var (v1),
                     cases (
                       case_ (
                         seqtype (PFty_star (PFty_xs_anyNode ())),
-                        let (
-                          letbind (
-                            var (v2),
-                            let (
-                              letbind (var (fs_last), APPLY (count, var (v1))),
-                              for_ (
-                                forbind (forvars (var (fs_dot),
-                                                  var (fs_position)),
-                                         var (v1)),
+                        flwr (
+                          let (
+                            letbind (
+                              var (v2),
+                              flwr (
+                                let (
+                                  letbind (var (fs_last), 
+                                           APPLY (count, var (v1))),
+                                  nil ()),
+                                flwr (for_ (
+                                    forbind (forvars (var (fs_dot),
+                                                      var (fs_position)),
+                                             var (v1)),
+                                    nil ()),
                                 C(L(p))))),
+                            nil ()),
                           typeswitch (
                             var (v2),
                             cases (
                               case_ (
                                 seqtype (PFty_star (PFty_xs_anyNode ())),
-                                let (
-                                    letbind (
-                                        var (v3),
-                                        seqcast (seqtype (
-                                                   PFty_star (
-                                                     PFty_xs_anyNode ())),
-                                                 var (v2))),
-                                     APPLY (ddo, var (v3)))),
+                                flwr (let (
+                                          letbind (
+                                              var (v3),
+                                              seqcast (seqtype (
+                                                         PFty_star (
+                                                           PFty_xs_anyNode ())),
+                                                       var (v2))),
+                                          nil ()),
+                                      APPLY (ddo, var (v3)))),
                               default_ (
                                 typeswitch (
                                   var (v2),
@@ -2686,7 +2405,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* LocationPath:           locpath (LocationStep, StepExpr) */
-        case 153:
+        case 155:
         {   /*
              * For regular location steps, we don't actually need the
              * complicated stuff in the above rule.
@@ -2703,34 +2422,37 @@ reduce (PFpnode_t * p, int goalnt)
             PFfun_t *ddo = function (PFqname (PFns_pf, "distinct-doc-order"));
             PFfun_t *fn_error = function (PFqname (PFns_fn, "error"));
 
-            C(p) = let (letbind (var (v1), C(R(p))),
-                        typeswitch (
-                          var (v1),
-                          cases (
-                            case_ (seqtype (PFty_star (PFty_xs_anyNode ())),
-                              let (letbind (var (v2), locsteps (C(L(p)),
-                                                                var (v1))),
-                                   APPLY (ddo, var (v2)))),
-                            default_ (
-                              APPLY (fn_error,
-                                     str ("err:XP0019: Argument to location "
-                                          "step must be a node sequence."))))));
+            C(p) = flwr (let (letbind (var (v1), C(R(p))),
+                              nil ()),
+                         typeswitch (
+                           var (v1),
+                           cases (
+                             case_ (seqtype (PFty_star (PFty_xs_anyNode ())),
+                               flwr (let (letbind (var (v2), 
+                                                   locsteps (C(L(p)),
+                                                             var (v1))),
+                                          nil ()),
+                                     APPLY (ddo, var (v2)))),
+                             default_ (
+                               APPLY (fn_error,
+                                      str ("err:XP0019: Argument to location "
+                                           "step must be a node sequence."))))));
         } break;
 
         /* StepExpr:               LocationStep */
-        case 154:
-            break;
-
-        /* StepExpr:               FilterExpr */
-        case 155:
-            break;
-
-        /* FilterExpr:             PrimaryExpr */
         case 156:
             break;
 
-        /* FilterExpr:             pred (StepExpr, Expr) */
+        /* StepExpr:               FilterExpr */
         case 157:
+            break;
+
+        /* FilterExpr:             PrimaryExpr */
+        case 158:
+            break;
+
+        /* FilterExpr:             pred (StepExpr, Expr) */
+        case 159:
         {   /* TOPDOWN */
 
             /*
@@ -2797,17 +2519,14 @@ reduce (PFpnode_t * p, int goalnt)
             /* compile predicate expression in this new context */
             reduce (kids[1], nts[1]);
 
-            C(p) = let (
-                    letbind (var (v1), C(L(p))),
-                    let (
-                      letbind (var (fs_last), APPLY (count, var (v1))),
-                      for_ (
-                        forbind (
-                          forvars (var (fs_dot), var (fs_position)),
-                          var (v1)),
-                        let (
-                          letbind (var (v2), C(R(p))),
-                          let (
+            C(p) = flwr (let (letbind (var (v1), C(L(p))), nil ()),
+                    flwr (let (letbind (var (fs_last), 
+                                       APPLY (count, var (v1))), nil ()),
+                      flwr (for_ (forbind (forvars (var (fs_dot),
+                                                    var (fs_position)),
+                                           var (v1)), nil ()),
+                        flwr (let (letbind (var (v2), C(R(p))), nil ()),
+                          flwr (let (
                             letbind (
                               var (v3),
                               typeswitch (
@@ -2820,12 +2539,12 @@ reduce (PFpnode_t * p, int goalnt)
                                       cases (
                                         case_ (
                                           seqtype (PFty_xs_integer ()),
-                                          let (
+                                          flwr (let (
                                             letbind (var (v4),
                                                      seqcast (
                                                        seqtype (
                                                            PFty_xs_integer()),
-                                                       var (v2))),
+                                                       var (v2))), nil ()),
                                             APPLY (op_eq, var (v4),
                                                    var (fs_position)))),
                                         default_ (
@@ -2834,13 +2553,13 @@ reduce (PFpnode_t * p, int goalnt)
                                             cases (
                                               case_ (
                                                 seqtype (PFty_xs_decimal ()),
-                                                let (
+                                                flwr (let (
                                                   letbind (
                                                     var (v5),
                                                     seqcast (
                                                       seqtype (
                                                             PFty_xs_decimal ()),
-                                                      var (v2))),
+                                                      var (v2))), nil ()),
                                                   APPLY (op_eq, var (v5),
                                                          var (fs_position)))),
                                               default_ (
@@ -2850,29 +2569,29 @@ reduce (PFpnode_t * p, int goalnt)
                                                     case_ (
                                                       seqtype (
                                                         PFty_xs_double ()),
-                                                      let (
+                                                      flwr (let (
                                                         letbind (
                                                           var (v6),
                                                           seqcast (
                                                             seqtype (
                                                               PFty_xs_double()),
-                                                            var (v2))),
+                                                            var (v2))), nil ()),
                                                         APPLY (op_eq, var (v6),
                                                                var (fs_position)
                                                                ))),
                                                     default_ (
-                                                      let (
+                                                      flwr (let (
                                                         letbind (
                                                           var (v7),
                                                           cast (
                                                             seqtype (
                                                               PFty_xs_double()),
-                                                            var (v2))),
+                                                            var (v2))), nil ()),
                                                         APPLY (op_eq,
                                                                var (v7),
                                                                var (fs_position)
                                                             )))))))))))),
-                                  default_ (ebv (var (v2)))))),
+                                  default_ (ebv (var (v2)))))), nil ()),
                             if_ (
                               var (v3),
                               then_else (var (fs_dot), empty ())))))));
@@ -2884,95 +2603,95 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* LocationStep:           step (NodeTest) */
-        case 158:
+        case 160:
             assert (C(L(p)));
             C(p) = step (p->sem.axis, C(L(p)));
             break;
 
         /* PrimaryExpr:            Literal */
-        case 159:
-            break;
-
-        /* PrimaryExpr:            Var */
-        case 160:
-            break;
-
-        /* PrimaryExpr:            ParenthesizedExpr */
         case 161:
             break;
 
-        /* PrimaryExpr:            ContextItemExpr */
+        /* PrimaryExpr:            Var */
         case 162:
             break;
 
-        /* PrimaryExpr:            FunctionCall */
+        /* PrimaryExpr:            ParenthesizedExpr */
         case 163:
             break;
 
-        /* PrimaryExpr:            Constructor */
+        /* PrimaryExpr:            ContextItemExpr */
         case 164:
             break;
 
-        /* PrimaryExpr:            OrderedExpr */
+        /* PrimaryExpr:            FunctionCall */
         case 165:
             break;
 
-        /* PrimaryExpr:            UnorderedExpr */
+        /* PrimaryExpr:            Constructor */
         case 166:
             break;
-            
-        /* Literal:                NumericLiteral */
+
+        /* PrimaryExpr:            OrderedExpr */
         case 167:
             break;
 
-        /* Literal:                StringLiteral */
+        /* PrimaryExpr:            UnorderedExpr */
         case 168:
             break;
-
-        /* NumericLiteral:         IntegerLiteral */
+            
+        /* Literal:                NumericLiteral */
         case 169:
             break;
 
-        /* NumericLiteral:         DecimalLiteral */
+        /* Literal:                StringLiteral */
         case 170:
             break;
 
-        /* NumericLiteral:         DoubleLiteral */
+        /* NumericLiteral:         IntegerLiteral */
         case 171:
             break;
 
-        /* IntegerLiteral:         lit_int */
+        /* NumericLiteral:         DecimalLiteral */
         case 172:
+            break;
+
+        /* NumericLiteral:         DoubleLiteral */
+        case 173:
+            break;
+
+        /* IntegerLiteral:         lit_int */
+        case 174:
             C(p) = num (p->sem.num);
             break;
 
         /* DecimalLiteral:         lit_dec */
-        case 173:
+        case 175:
             C(p) = dec (p->sem.dec);
             break;
 
         /* DoubleLiteral:          lit_dbl */
-        case 174:
+        case 176:
             C(p) = dbl (p->sem.dbl);
             break;
 
         /* StringLiteral:          lit_str */
-        case 175:
+        case 177:
             C(p) = str (p->sem.str);
             break;
 
         /* Var:                    var */
-        case 176:
+        case 178:
             C(p) = var (p->sem.var);
             break;
 
         /* ParenthesizedExpr:      Expr */
-        case 177:
+        case 179:
             assert (C(p));
             break;
 
         /* ContextItemExpr:        dot */
-        case 178:
+        case 180:
             if (fs_dot)
                 C(p) = var (fs_dot);
             else
@@ -2980,7 +2699,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* FunctionCall:           apply (nil) */
-        case 179:
+        case 181:
             /*
              * There are some built-in functions with special
              * implicit semantics.
@@ -3024,12 +2743,13 @@ reduce (PFpnode_t * p, int goalnt)
                ) {
                 if (fs_dot) {
                     PFvar_t *v = new_var (NULL);
-                    C(p) = let (
-                            letbind (
-                                var (v),
-                                APPLY (function (PFqname (PFns_fn, "string")),
-                                       var (fs_dot))),
-                            APPLY (p->sem.fun, var (v)));
+                    C(p) = flwr (let (letbind (var (v),
+                                              APPLY (
+                                                  function (
+                                                      PFqname (PFns_fn,
+                                                               "string")),
+                                       var (fs_dot))), nil ()),
+                                 APPLY (p->sem.fun, var (v)));
                 }
                 else
                     PFoops_loc (OOPS_NOCONTEXT, p->loc, "``.'' is unbound");
@@ -3068,7 +2788,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* FunctionCall:           apply (FuncArgList) */
-        case 180:
+        case 182:
             /* TOPDOWN */
 
             assert (PFqname_eq (p->sem.fun->qname,
@@ -3108,7 +2828,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* FuncArgList:            nil */
-        case 181:
+        case 183:
         {
             PFfun_t *fun = *(PFfun_t **) PFarray_top (funs);
 
@@ -3117,7 +2837,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* FuncArgList:            args (Expr, FuncArgList) */
-        case 182:
+        case 184:
         {   /* TOPDOWN */
             
             /*
@@ -3175,23 +2895,28 @@ reduce (PFpnode_t * p, int goalnt)
             if (implicit) {
                 PFvar_t *v1 = new_var (NULL);
 
-                C(p) = let (letbind (var (v1),
-                                     function_conversion (C(L(p)), expected)),
-                            let (letbind (var (v),
-                                          APPLY (implicit, var (v1))),
-                                 C(R(p))));
+                C(p) = flwr (let (letbind (var (v1),
+                                           function_conversion (C(L(p)),
+                                                                expected)),
+                                  nil ()),
+                             flwr (let (letbind (var (v),
+                                                 APPLY (implicit, var (v1))),
+                                        nil ()),
+                                   C(R(p))));
             }
             else {
                 /* construct return value */
-                C(p) = let (letbind (var (v),
-                                     function_conversion (C(L(p)), expected)),
-                            C(R(p)));
+                C(p) = flwr (let (letbind (var (v),
+                                           function_conversion (C(L(p)),
+                                                                expected)),
+                                  nil ()),
+                             C(R(p)));
             }
 
         } break;
 
         /* OrderedExpr:            ordered (Expr) */
-        case 183:
+        case 185:
             /* FIXME: Better treatment of `ordered' information?
              *         - Make this rule TOPDOWN
              *         - Keep a state variable during compilation
@@ -3200,36 +2925,36 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* UnorderedExpr:          unordered (Expr) */
-        case 184:
+        case 186:
             C(p) = unordered (C(L(p)));
             break;
 
         /* Constructor:            ElementConstructor */
-        case 185:
-            break;
-
-        /* Constructor:            AttributeConstructor */
-        case 186:
-            break;
-
-        /* Constructor:            TextConstructor */
         case 187:
             break;
 
-        /* Constructor:            CommentConstructor */
+        /* Constructor:            AttributeConstructor */
         case 188:
             break;
 
-        /* Constructor:            PIConstructor */
+        /* Constructor:            TextConstructor */
         case 189:
             break;
 
-        /* Constructor:            DocumentConstructor */
+        /* Constructor:            CommentConstructor */
         case 190:
             break;
 
-        /* ElementConstructor:     elem (TagName, OptContentExpr) */
+        /* Constructor:            PIConstructor */
         case 191:
+            break;
+
+        /* Constructor:            DocumentConstructor */
+        case 192:
+            break;
+
+        /* ElementConstructor:     elem (TagName, OptContentExpr) */
+        case 193:
         {
             PFfun_t *pf_matn
                 = function (PFqname (PFns_pf, "merge-adjacent-text-nodes"));
@@ -3239,7 +2964,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* AttributeConstructor:   attr (TagName, AttributeValue) */
-        case 192:
+        case 194:
             /*
              * The translation rules rooted at AttributeValue compile
              * the attribute value into a single string.
@@ -3248,7 +2973,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* TextConstructor:        text (Expr) */
-        case 193:
+        case 195:
         {
             /*
              * FIXME:
@@ -3266,7 +2991,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* CommentConstructor:     comment (Expr) */
-        case 194:
+        case 196:
         {
             PFfun_t *is2uA =
                 function (PFqname (PFns_pf, "item-sequence-to-untypedAtomic"));
@@ -3276,7 +3001,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* PIConstructor:          pi (OptExpr, OptContentExpr) */
-        case 195:
+        case 197:
         {
             PFvar_t *target  = new_var (NULL);
             PFvar_t *content = new_var (NULL);
@@ -3285,16 +3010,17 @@ reduce (PFpnode_t * p, int goalnt)
             PFfun_t *is2uA =
                 function (PFqname (PFns_pf, "item-sequence-to-untypedAtomic"));
 
-            C(p) = let (
-                    letbind (var (target), C(L(p))),
-                    let (
-                        letbind (var (v), C(R(p))),
-                        let (letbind (var (content), APPLY (is2uA, var (v))),
-                             constr_pi (var (target), var (content)))));
+            C(p) = flwr (let (letbind (var (target), C(L(p))), nil ()),
+                         flwr (let (letbind (var (v), C(R(p))), nil ()),
+                               flwr (let (letbind (var (content), 
+                                                   APPLY (is2uA, var (v))),
+                                          nil ()),
+                                     constr_pi (var (target), 
+                                                var (content)))));
         } break;
 
         /* DocumentConstructor:    doc (Expr) */
-        case 196:
+        case 198:
         {
             PFfun_t *is2ns =
                 function (PFqname (PFns_pf, "item-sequence-to-node-sequence"));
@@ -3303,12 +3029,12 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* TagName:                tag */
-        case 197:
+        case 199:
             C(p) = constr_tag (p->sem.qname);
             break;
 
         /* TagName:                Expr */
-        case 198:
+        case 200:
             /* in theory this should be translated into
                'fn:resolve-QName' but we don't know the
                element argument - therefore internally
@@ -3317,35 +3043,36 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* OptContentExpr:         OptExpr */
-        case 199:
+        case 201:
         {
             PFvar_t *v = new_var (NULL);
             PFfun_t *is2ns =
                 function (PFqname (PFns_pf, "item-sequence-to-node-sequence"));
 
-            C(p) = let (letbind (var (v), C(p)), APPLY (is2ns, var (v)));
+            C(p) = flwr (let (letbind (var (v), C(p)), nil ()),
+                         APPLY (is2ns, var (v)));
 
         } break;
 
         /* OptContentExpr:         empty_seq */
-        case 200:
+        case 202:
             C(p) = empty ();
             break;
 
         /* OptContentExpr:         contseq (OptContentExpr, OptContentExpr) */
-        case 201:
+        case 203:
         {
             PFvar_t *v1 = new_var (NULL);
             PFvar_t *v2 = new_var (NULL);
 
-            C(p) = let (letbind (var (v1), C(L(p))),
-                        let (letbind (var (v2), C(R(p))),
-                             seq (var (v1), var (v2))));
+            C(p) = flwr (let (letbind (var (v1), C(L(p))), nil ()),
+                         flwr (let (letbind (var (v2), C(R(p))), nil ()),
+                               seq (var (v1), var (v2))));
 
         } break;
 
         /* AttributeValue:         Expr */
-        case 202:
+        case 204:
         {
             /*
              * Convert enclosed expression in attribute values as described in
@@ -3368,18 +3095,19 @@ reduce (PFpnode_t * p, int goalnt)
             PFfun_t *string_join = function (PFqname (PFns_fn, "string-join"));
 
             C(p) =
-                let (letbind (var (v1), C(p)),
-                     let (
-                         letbind (
-                             var (v2),
-                             for_ (forbind (forvars (var (v3), nil ()),
-                                            var (v1)),
-                                   APPLY (string, var (v3)))),
-                         APPLY (string_join, var (v2), str (" "))));
+                flwr (let (letbind (var (v1), C(p)), nil ()),
+                      flwr (let (letbind (
+                                     var (v2),
+                                     flwr (for_ (forbind (forvars (var (v3),
+                                                                   nil ()),
+                                                 var (v1)), nil ()),
+                                           APPLY (string, var (v3)))),
+                                 nil ()),
+                            APPLY (string_join, var (v2), str (" "))));
         } break;
 
         /* AttributeValue:         empty_seq */
-        case 203:
+        case 205:
             /*
              * An empty attribute value shall result in an empty string.
              */
@@ -3387,7 +3115,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* AttributeValue:         contseq (AttributeValue, AttributeValue) */
-        case 204:
+        case 206:
         {
             /*
              * Both arguments have type xs:string after they had been
@@ -3402,9 +3130,9 @@ reduce (PFpnode_t * p, int goalnt)
             PFvar_t *v2 = new_var (NULL);
             PFfun_t *concat = function (PFqname (PFns_fn, "concat"));
 
-            C(p) = let (letbind (var (v1), C(L(p))),
-                        let (letbind (var (v2), C(R(p))),
-                             APPLY (concat, var (v1), var (v2))));
+            C(p) = flwr (let (letbind (var (v1), C(L(p))), nil ()),
+                         flwr (let (letbind (var (v2), C(R(p))), nil ()),
+                               APPLY (concat, var (v1), var (v2))));
 
         } break;
 
@@ -3413,6 +3141,77 @@ reduce (PFpnode_t * p, int goalnt)
             PFoops_loc (OOPS_FATAL, p->loc, "untranslated expression");
             break;
     }
+}
+
+static void
+comparison_worker (PFpnode_t *p, PFfun_t *fun)
+{
+    PFvar_t *v1 = new_var (NULL);
+    PFvar_t *v2 = new_var (NULL);
+    PFvar_t *u1 = new_var (NULL);
+    PFvar_t *u2 = new_var (NULL);
+
+    C(p) = some (var (v1), fn_data (C(L(p))),
+            some (
+                var (v2), fn_data (C(R(p))),
+                flwr (let (letbind (var (u1),
+                                    fs_convert_op_by_type (
+                                        fs_convert_op_by_expr (var (v1),
+                                                               var (v2)),
+                                        PFty_xs_string ())), nil ()),
+                      flwr (let (letbind (var (u2),
+                                          fs_convert_op_by_type (
+                                              fs_convert_op_by_expr (var (v2),
+                                                                     var (v1)),
+                                              PFty_xs_string ())), nil ()),
+                            APPLY (fun, var (u1), var (u2))))));
+}
+
+static void
+val_comparison_worker (PFpnode_t *p, PFfun_t *fun)
+{
+    PFvar_t *v1 = new_var (NULL);
+    PFvar_t *v2 = new_var (NULL);
+
+    C(p) = flwr (let (letbind (
+                          var (v1),
+                          fs_convert_op_by_type (fn_data (C(L(p))),
+                                                 PFty_xs_string ())), nil ()),
+                 flwr (let (letbind (
+                                var (v2),
+                                fs_convert_op_by_type (fn_data (C(R(p))),
+                                                       PFty_xs_string ())),
+                            nil ()),
+                       APPLY (fun, var (v1), var (v2))));
+}
+
+static void
+calculation_worker (PFpnode_t *p, PFfun_t *fun)
+{
+    PFvar_t *v1 = new_var (NULL);
+    PFvar_t *v2 = new_var (NULL);
+
+    C(p) = flwr (let (letbind (
+                          var (v1),
+                          fs_convert_op_by_type (fn_data (C(L(p))),
+                                                 PFty_xs_double ())), nil ()),
+                 flwr (let (letbind (
+                                var (v2),
+                                fs_convert_op_by_type (fn_data (C(R(p))),
+                                                       PFty_xs_double ())),
+                            nil ()),
+                       APPLY (fun, var (v1), var (v2))));
+}
+
+static void
+two_arg_fun_worker (PFpnode_t *p, PFfun_t *fun)
+{
+    PFvar_t *v1 = new_var (NULL);
+    PFvar_t *v2 = new_var (NULL);
+
+    C(p) = flwr (let (letbind (var (v1), C(L(p))), nil ()),
+                 flwr (let (letbind (var (v2), C(R(p))), nil ()),
+                       APPLY (fun, var (v1), var (v2))));
 }
 
 /**
@@ -3505,20 +3304,27 @@ function_conversion (const PFcnode_t *e, PFty_t expected)
         if (PFty_eq (exp_prime, PFty_numeric ()))
             exp_prime = PFty_double ();
 
-        /* Steps 1 and 2:
-         *
-         * let $v1 := e return
-         *   let $v2 := fn:data ($v1) return
-         *     for $v3 in $v2 return
-         *       convert-op ($v3, exp_prime)
-         */
-        ret = let (
-                letbind (var (v1), e),
-                let (
-		  letbind (var (v2), fn_data (var (v1))),
-                  for_ (
-                    forbind (forvars (var (v3), nil ()), var (v2)),
-                      fs_convert_op_by_type (var (v3), exp_prime))));
+        /* if type exp_prime is atomic untypedAtomic 
+           does not need to be casted to atomic 
+           -- we therefore can skip the convert-op */
+        if (PFty_eq (exp_prime, PFty_atomic ()))
+            ret = flwr (let (letbind (var (v1), e), nil ()),
+                        fn_data (var (v1)));
+        else 
+            /* Steps 1 and 2:
+             *
+             * let $v1 := e return
+             *   let $v2 := fn:data ($v1) return
+             *     for $v3 in $v2 return
+             *       convert-op ($v3, exp_prime)
+             */
+            ret = flwr (let (letbind (var (v1), e), nil ()),
+                        flwr (let (letbind (var (v2), fn_data (var (v1))), 
+                                   nil ()),
+                              flwr (for_ (forbind (forvars (var (v3), nil ()),
+                                                   var (v2)), nil ()),
+                                    fs_convert_op_by_type (var (v3),
+                                                           exp_prime))));
 
     }
     else

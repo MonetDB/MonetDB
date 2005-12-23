@@ -612,6 +612,11 @@ literal (PFalg_atom_t a)
 {
     PFarray_t *s = PFarray (sizeof (char));
 
+    if (a.special == amm_min)
+        return "MIN";
+    else if (a.special == amm_max)
+        return "MAX";
+
     switch (a.type) {
 
         case aat_nat:

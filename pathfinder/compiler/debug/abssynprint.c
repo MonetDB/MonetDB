@@ -98,7 +98,6 @@ char *p_id[]  = {
     , [p_lit_dbl]           = "lit_dbl"
     , [p_lit_str]           = "lit_str"
     , [p_is]                = "is"                                         
-    , [p_nis]               = "nis"                                        
     , [p_step]              = "step"
     , [p_varref]            = "varref" 
     , [p_var]               = "var"

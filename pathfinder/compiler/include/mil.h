@@ -42,7 +42,9 @@ typedef char * PFmil_ident_t;
 
 /** Node kinds for MIL tree representation */
 enum PFmil_kind_t {
-      m_lit_int      /**< literal integer */
+      m_lit_min      /**< literal minimum */
+    , m_lit_max      /**< literal maximum */
+    , m_lit_int      /**< literal integer */
     , m_lit_lng      /**< literal long integer */
     , m_lit_oid      /**< literal oid */
     , m_lit_str      /**< literal string */
@@ -346,6 +348,12 @@ struct PFmil_t {
     struct PFmil_t  *child[MIL_MAXCHILD];
 };
 typedef struct PFmil_t PFmil_t;
+
+/** a minimum value */
+PFmil_t * PFmil_lit_min (PFmil_type_t t);
+
+/** a maximum value */
+PFmil_t * PFmil_lit_max (PFmil_type_t t);
 
 /** a literal integer */
 PFmil_t * PFmil_lit_int (int i);

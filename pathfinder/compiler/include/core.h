@@ -60,8 +60,12 @@ extern unsigned int core_vars;
  *   (primarily in switch() statements or array initializers).
  *   If you make modifications to this enum, make sure you also
  *   adapt
- *    - #c_id in debug/coreprint.c
- *    - #core2mil() in mil/core2mil.c
+ *    - core/simplify.brg
+ *    - semantics/typecheck.brg
+ *    - core/coreopt.brg
+ *    - debug/coreprint.c
+ *    - algebra/core2alg.brg
+ *    - mil/milprint_summer.c
  */
 enum PFctype_t {
     c_var                =  1 /**< variable */
@@ -75,13 +79,13 @@ enum PFctype_t {
   , c_ordered            =  8
   , c_unordered          =  9
 
-  , c_let                = 10 /**< let expression */
-  , c_letbind            = 11 /**< binding part of a let expression */
-  , c_for                = 12 /**< for expression */
-  , c_forbind            = 13 /**< binding part of a for expression */
-  , c_forvars            = 14 /**< variable pair (var + pos. var) of a for */
+  , c_flwr               = 10 /**< flwr expression */
+  , c_let                = 11 /**< let expression */
+  , c_letbind            = 12 /**< binding part of a let expression */
+  , c_for                = 13 /**< for expression */
+  , c_forbind            = 14 /**< binding part of a for expression */
+  , c_forvars            = 15 /**< variable pair (var + pos. var) of a for */
 
-  , c_orderscope         = 15 /**< start of the orderby scope */
   , c_orderby            = 16 /**< orderby clause */
   , c_orderspecs         = 17 /**< list of order specs */
 
@@ -161,6 +165,12 @@ union PFcsem_t {
   PFty_t     type;       /**< used with c_type */
   PFsort_t   mode;       /**< sort modifier */
   struct PFfun_t *fun;   /**< function reference */
+  /* semantic content for flwr subexpressions (let/for) */
+  struct {
+      PFty_t (*quantifier) (PFty_t); 
+                         /**< quantifier for flwor return expression */
+      int    fid;        /**< for loop id (used in milprint_summer.c) */
+  } flwr;
 };
 
 /** Semantic node content of core tree node */
@@ -231,6 +241,8 @@ PFcnode_t *PFcore_default (const PFcnode_t *);
 
 PFcnode_t *PFcore_if (const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_then_else (const PFcnode_t *, const PFcnode_t *);
+
+PFcnode_t *PFcore_flwr (const PFcnode_t *, const PFcnode_t *);
 
 PFcnode_t *PFcore_for (const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_forbind (const PFcnode_t *, const PFcnode_t *);

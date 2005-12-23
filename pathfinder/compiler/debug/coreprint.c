@@ -60,6 +60,7 @@ char *c_id[]  = {
   , [c_ordered]            = "ordered"
   , [c_unordered]          = "unordered"
 
+  , [c_flwr]               = "flwr"
   , [c_let]                = "let"
   , [c_letbind]            = "letbind"
   , [c_for]                = "for"

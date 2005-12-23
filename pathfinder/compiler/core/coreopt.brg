@@ -60,6 +60,47 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 /* If something goes wrong, call PFoops */
 #define PANIC(...) PFoops (OOPS_BURG, __VA_ARGS__)
 
+/** We hash variable replacement bindings into 8 buckets */
+#define HASH_BUCKETS 8
+/** hash function for the variable replacement environment */
+#define hash(v) ((unsigned int) ((v) - (PFvar_t *) NULL) % HASH_BUCKETS)
+
+/** a binding in the variable replacement environment */
+typedef struct {
+    PFvar_t    *var;
+    PFcnode_t  *atom;
+} bind_t;
+
+/**
+ * Variable replacement environment.
+ *
+ * In order to unfold let-bound variables which are bound to some
+ * other atom, we proceed as follows:
+ *
+ * First, we process the binding sequence (the atom).  If it is
+ * a variable itself, there may be a replacement for it, so we do
+ * that first.  Then, add an entry to the environment var_env
+ * (a hash table with HASH_BUCKETS buckets) and process the return
+ * part (which will replace every occurrence of the variable).
+ * When we're back, we replace the let clause by its return part.
+ *
+ * Whenever we process the usage of a variable, look into the
+ * environment if there is a replacement for it.  In that case,
+ * do the replacement.
+ *
+ * Note that we do *not* remove the binding from the environment
+ * when we're back from the return part.  The Core expression
+ * tree may contain "global" variables (i.e., ones that were
+ * bound in the query prolog).  Such variables may be used in
+ * functions as well.  Therefore, we process the query first
+ * (the start rule for our grammar is top-down) in order to have
+ * globals be added to the environment.  As we leave all the
+ * variables in the environment, they will be available when we
+ * process the function bodies.  Hence, they will be replaced
+ * there as well.
+ */
+PFarray_t *var_env[HASH_BUCKETS];
+
 %}
 
 /* start non-terminal */
@@ -80,11 +121,12 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 %term ordered            =  8
 %term unordered          =  9
 
-%term let                = 10 /**< let expression */
-%term letbind            = 11 /**< binding part of a let expression */
-%term for_               = 12 /**< for expression */
-%term forbind            = 13 /**< binding part of a for expression */
-%term forvars            = 14 /**< variable pair (var + pos. var) of a for */
+%term flwr               = 10 /**< flwr expression */
+%term let                = 11 /**< let expression */
+%term letbind            = 12 /**< binding part of a let expression */
+%term for_               = 13 /**< for expression */
+%term forbind            = 14 /**< binding part of a for expression */
+%term forvars            = 15 /**< variable pair (var + pos. var) of a for */
 
 %term orderby            = 16 /**< orderby clause */
 %term orderspecs         = 17 /**< list of order specs */
@@ -146,114 +188,124 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 %%
 
 Query:              main (FunctionDecls, CoreExpr)              =   1 (10);
-
+                                                                     
 CoreExpr:           Atom                                        =   2 (10);
 CoreExpr:           SequenceTypeCast                            =   3 (10);
-
-CoreExpr:           for_ (forbind (forvars (var, OptVar),
-                                   Atom),
-                          CoreExpr)                             =   4 (10);
-
-OptVar:             nil                                         =   5 (10);
-OptVar:             var                                         =   6 (10);
-
-CoreExpr:           let (letbind (var, Atom), CoreExpr)         =   7 (10);
-CoreExpr:           let (letbind (var, CoreExpr), CoreExpr)     =   8 (10);
-CoreExpr:           let (letbind (var,
-                                  let (letbind (var, CoreExpr),
-                                       CoreExpr)),
-                         CoreExpr)                              =   9 (10);
-
-CoreExpr:           typesw (Atom,
-                            cases (case_ (SequenceType,
-                                          CoreExpr),
-                                   default_ (CoreExpr)))        =  10 (10);
-
-SequenceType:       seqtype                                     =  11 (10);
-SequenceType:       stattype (CoreExpr)                         =  12 (10);
-
-SequenceTypeCast:   seqcast (SequenceType, CoreExpr)            =  13 (10);
-
-CoreExpr:           proof (subty (CoreExpr, SequenceType),
-                           CoreExpr)                            =  14 (10);
-
-CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr))  =  15 (10);
-
-Var:                var                                         =  18 (10);
-
-CoreExpr:           seq (Atom, Atom)                            =  19 (10);
-CoreExpr:           seq (empty, Atom)                           =  20 (10);
-CoreExpr:           seq (Atom, empty)                           =  21 (10);
-
-CoreExpr:           LocationSteps                               =  22 (10);
-CoreExpr:           LocationStep                                =  23 (10);
-
-LocationStep:       ancestor (SequenceType)                     =  24 (10);
-LocationStep:       ancestor_or_self (SequenceType)             =  25 (10);
-LocationStep:       attribute (SequenceType)                    =  26 (10);
-LocationStep:       child (SequenceType)                        =  27 (10);
-LocationStep:       descendant (SequenceType)                   =  28 (10);
-LocationStep:       descendant_or_self (SequenceType)           =  29 (10);
-LocationStep:       following (SequenceType)                    =  30 (10);
-LocationStep:       following_sibling (SequenceType)            =  31 (10);
-LocationStep:       parent (SequenceType)                       =  32 (10);
-LocationStep:       preceding (SequenceType)                    =  33 (10);
-LocationStep:       preceding_sibling (SequenceType)            =  34 (10);
-LocationStep:       self (SequenceType)                         =  35 (10);
-
-LocationSteps:      locsteps (LocationStep, LocationSteps)      =  36 (10);
-LocationSteps:      locsteps (LocationStep, Atom)               =  37 (10);
-
-CoreExpr:           elem (TagName, CoreExpr)                    =  38 (10);
-CoreExpr:           attr (TagName, CoreExpr)                    =  39 (10);
-CoreExpr:           text (CoreExpr)                             =  40 (10);
-CoreExpr:           doc (CoreExpr)                              =  41 (10);
-CoreExpr:           comment (CoreExpr)                          =  42 (10);
-CoreExpr:           pi (CoreExpr)                               =  43 (10);
-
-TagName:            tag                                         =  44 (10);
-TagName:            CoreExpr                                    =  45 (10);
-
-CoreExpr:           apply (FunctionArgs)                        =  46 (10);
-CoreExpr:           apply (arg (Atom, nil))                     =  47 (10);
-CoreExpr:           apply (arg (Atom, arg (Atom, nil)))         =  48 (10);
-
-FunctionArgs:       arg (Atom, FunctionArgs)                    =  49 (10);
-FunctionArgs:       arg (SequenceTypeCast, FunctionArgs)        =  50 (10);
-FunctionArgs:       nil                                         =  51 (10);
-
-CoreExpr:           ordered (CoreExpr)                          =  52 (10);
-CoreExpr:           unordered (CoreExpr)                        =  53 (10);
-
-CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  54 (10);
-
-OrderSpecs:         orderspecs (CoreExpr, nil)                  =  55 (10);
-OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  56 (10);
-
-CoreExpr:           cast (SequenceType, CoreExpr)               =  57 (10);
-
-Atom:               var                                         =  58 (10);
-Atom:               empty                                       =  59 (10);
-Atom:               LiteralValue                                =  60 (10);
-
-LiteralValue:       lit_str                                     =  61 (10);
-LiteralValue:       lit_int                                     =  62 (10);
-LiteralValue:       lit_dec                                     =  63 (10);
-LiteralValue:       lit_dbl                                     =  64 (10);
-LiteralValue:       true_                                       =  65 (10);
-LiteralValue:       false_                                      =  66 (10);
-
-FunctionDecls:      nil                                         =  67 (10);
-FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  68 (10);
-
-FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  69 (10);
-
-ParamList:          nil                                         =  70 (10);
-ParamList:          params (FunParam, ParamList)                =  71 (10);
-
-FunctionBody:       CoreExpr                                    =  72 (10);
-
-FunParam:           param (SequenceType, var)                   =  73 (10);
+                                                                     
+CoreExpr:           flwr (OptBindExpr, CoreExpr)                =   4 (10);
+OptBindExpr:        for_ (forbind (forvars (var, OptVar),            
+                                   Atom),                            
+                          OptBindExpr)                          =   5 (10);
+                                                                     
+OptVar:             nil                                         =   6 (10);
+OptVar:             var                                         =   7 (10);
+                                                                     
+OptBindExpr:        let (letbind (var, Atom), OptBindExpr)      =   8 (10);
+OptBindExpr:        let (letbind (var,                               
+                                  flwr (let (letbind (var,           
+                                                      CoreExpr),     
+                                             nil),                   
+                                        CoreExpr)),                  
+                         OptBindExpr)                           =   9 (10);
+OptBindExpr:        let (letbind (var,                               
+                                  flwr (let (letbind (var,           
+                                                      CoreExpr),     
+                                             OptBindExpr),           
+                                        CoreExpr)),                  
+                         OptBindExpr)                           =  10 (10);
+OptBindExpr:        let (letbind (var, CoreExpr), OptBindExpr)  =  11 (10);
+OptBindExpr:        nil                                         =  12 (10);
+                                                                     
+CoreExpr:           typesw (Atom,                                    
+                            cases (case_ (SequenceType,              
+                                          CoreExpr),                 
+                                   default_ (CoreExpr)))        =  13 (10);
+                                                                     
+SequenceType:       seqtype                                     =  14 (10);
+SequenceType:       stattype (CoreExpr)                         =  15 (10);
+                                                                     
+SequenceTypeCast:   seqcast (SequenceType, CoreExpr)            =  16 (10);
+                                                                     
+CoreExpr:           proof (subty (CoreExpr, SequenceType),           
+                           CoreExpr)                            =  17 (10);
+                                                                     
+CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr))  =  18 (10);
+                                                                     
+Var:                var                                         =  19 (10);
+                                                                     
+CoreExpr:           seq (Atom, Atom)                            =  20 (10);
+CoreExpr:           seq (empty, Atom)                           =  21 (10);
+CoreExpr:           seq (Atom, empty)                           =  22 (10);
+                                                                     
+CoreExpr:           LocationSteps                               =  23 (10);
+CoreExpr:           LocationStep                                =  24 (10);
+                                                                     
+LocationStep:       ancestor (SequenceType)                     =  25 (10);
+LocationStep:       ancestor_or_self (SequenceType)             =  26 (10);
+LocationStep:       attribute (SequenceType)                    =  27 (10);
+LocationStep:       child (SequenceType)                        =  28 (10);
+LocationStep:       descendant (SequenceType)                   =  29 (10);
+LocationStep:       descendant_or_self (SequenceType)           =  30 (10);
+LocationStep:       following (SequenceType)                    =  31 (10);
+LocationStep:       following_sibling (SequenceType)            =  32 (10);
+LocationStep:       parent (SequenceType)                       =  33 (10);
+LocationStep:       preceding (SequenceType)                    =  34 (10);
+LocationStep:       preceding_sibling (SequenceType)            =  35 (10);
+LocationStep:       self (SequenceType)                         =  36 (10);
+                                                                     
+LocationSteps:      locsteps (LocationStep, LocationSteps)      =  37 (10);
+LocationSteps:      locsteps (LocationStep, Atom)               =  38 (10);
+                                                                     
+CoreExpr:           elem (TagName, CoreExpr)                    =  39 (10);
+CoreExpr:           attr (TagName, CoreExpr)                    =  40 (10);
+CoreExpr:           text (CoreExpr)                             =  41 (10);
+CoreExpr:           doc (CoreExpr)                              =  42 (10);
+CoreExpr:           comment (CoreExpr)                          =  43 (10);
+CoreExpr:           pi (CoreExpr)                               =  44 (10);
+                                                                     
+TagName:            tag                                         =  45 (10);
+TagName:            CoreExpr                                    =  46 (10);
+                                                                     
+CoreExpr:           apply (FunctionArgs)                        =  47 (10);
+CoreExpr:           apply (arg (Atom, nil))                     =  48 (10);
+CoreExpr:           apply (arg (Atom, arg (Atom, nil)))         =  49 (10);
+                                                                     
+FunctionArgs:       arg (Atom, FunctionArgs)                    =  50 (10);
+FunctionArgs:       arg (SequenceTypeCast, FunctionArgs)        =  51 (10);
+FunctionArgs:       nil                                         =  52 (10);
+                                                                     
+CoreExpr:           ordered (CoreExpr)                          =  53 (10);
+CoreExpr:           unordered (CoreExpr)                        =  54 (10);
+                                                                     
+CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  55 (10);
+                                                                     
+OrderSpecs:         orderspecs (CoreExpr, nil)                  =  56 (10);
+OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  57 (10);
+                                                                     
+CoreExpr:           cast (SequenceType, CoreExpr)               =  58 (10);
+                                                                     
+Atom:               var                                         =  59 (10);
+Atom:               empty                                       =  60 (10);
+Atom:               LiteralValue                                =  61 (10);
+                                                                     
+LiteralValue:       lit_str                                     =  62 (10);
+LiteralValue:       lit_int                                     =  63 (10);
+LiteralValue:       lit_dec                                     =  64 (10);
+LiteralValue:       lit_dbl                                     =  65 (10);
+LiteralValue:       true_                                       =  66 (10);
+LiteralValue:       false_                                      =  67 (10);
+                                                                     
+FunctionDecls:      nil                                         =  68 (10);
+FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  69 (10);
+                                                                     
+FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  70 (10);
+                                                                     
+ParamList:          nil                                         =  71 (10);
+ParamList:          params (FunParam, ParamList)                =  72 (10);
+                                                                     
+FunctionBody:       CoreExpr                                    =  73 (10);
+                                                                     
+FunParam:           param (SequenceType, var)                   =  74 (10);
 
 %%
 
@@ -294,22 +346,6 @@ FunParam:           param (SequenceType, var)                   =  73 (10);
 #define MAX_KIDS 10
 
 static void relabel (PFcnode_t *p,  PFcnode_t **kids);
-static bool replace_var (PFvar_t *v, PFcnode_t *a, PFcnode_t *e);
-
-/**
- * Global XQuery `declare variable' statements have been translated
- * into `let' clauses during Core compilation.  Rewriting such `let'
- * clauses (i.e., replacing their variable), may affect user-defined
- * functions.
- *
- * When rewriting `let's, we thus also do the variable replacement
- * in the function declarations, which are available through this
- * pointer.  If we rewrote anything in the function declarations
- * part, we set fun_decls_modified, to trigger another run of the
- * optimizer.
- */
-static PFcnode_t *fun_decls = NULL;
-static bool fun_decls_modified = false;
 
 #include "core_mnemonic.h"
 
@@ -346,14 +382,113 @@ reduce (PFcnode_t * p, int goalnt)
         nts = PFcoreopt_nts[rule];
         PFcoreopt_kids (p, rule, kids);
 
-        /*
-         * Recursively invoke compilation.  This means bottom-up compilation.
-         */
-        unsigned short i;
         rewritten = false;
-        for (i = 0; nts[i]; i++)
-            if ((rewritten = reduce (kids[i], nts[i])))
-                break;  /* abort if a subtree was rewritten */
+        /* evaluate top-down in a number of cases */
+        switch (rule) {
+            /* Query:              main (FunctionDecls, CoreExpr) */
+            case 1:
+                /*
+                 * Look at query body first, then at function declarations.
+                 * This way we make sure that the expansion of let statements
+                 * also considers function declarations.
+                 */
+                rewritten |= reduce (kids[1], nts[1]);
+                rewritten |= reduce (kids[0], nts[0]);
+
+                /*
+                 * If we know (from static typing) that we are iterating
+                 * over the empty sequence, replace the whole thing by
+                 * the empty sequence.
+                 */
+                if (PFty_subtype (TY(p), PFty_empty ())) {
+                    *p = *empty ();
+
+                    /* assign new node a state label */
+                    relabel (p, kids);
+                    rewritten = true;
+                    break;
+                }
+
+                break;
+
+            /* CoreExpr:           flwr (OptBindExpr,
+                                         CoreExpr) */
+            case 4:
+                /* Make sure to collect all variables first ... */
+                rewritten |= reduce (kids[0], nts[0]);
+                /* ... and then fill in the replacements. */
+                rewritten |= reduce (kids[1], nts[1]);
+
+                /* remove uncessary flwr expressions */
+                if (L(p)->kind == c_nil)
+                {
+                    /* also remove orderby node if present
+                       (static typing ensures that we don't
+                        prune erroneous order arguments) */
+                    if (R(p)->kind == c_orderby)
+                        *p = *(RR(p));
+                    else
+                        *p = *(R(p));
+
+                    rewritten = true;
+                }
+                break;
+
+            /* OptBindExpr:        let (letbind (var, Atom), OptBindExpr) */
+            case 8:
+                /*
+                 * Unfold atoms (a is an atom)
+                 *
+                 *     let $v := a return e
+                 *  -->
+                 *     e[a/$v]
+                 *
+                 * See the comment in the declaration of var_env to
+                 * understand what's going on here.
+                 */
+
+                /*
+                 * Handle Atom first.  In case it is a variable, this
+                 * will make sure that we do transitive cases of variable
+                 * replacement correctly.
+                 */
+                reduce (kids[0], nts[0]);
+
+                /* add mapping for this variable to the environment */
+                *((bind_t *) PFarray_add (var_env[hash(LL(p)->sem.var)]))
+                    = (bind_t) { .var = LL(p)->sem.var, .atom = LR(p) };
+
+                if (LL(p)->sem.var->global && LR(p)->kind == c_var)
+                    LR(p)->sem.var->global = true;
+
+                /*
+                 * Reduce the return part.
+                 */
+                reduce (kids[1], nts[1]);
+
+                /*
+                 * Do NOT remove the variable from the environment.
+                 */
+
+                /*
+                 * We have now replaced every occurrence of the variable
+                 * in the return part with its binding atom.  The return
+                 * part now becomes the expression itself.
+                 */
+                *p = *R(p);
+
+                rewritten = true;
+                break;
+
+            default:
+                /*
+                 * Recursively invoke compilation.
+                 * This means bottom-up compilation.
+                 */
+                for (unsigned short i = 0; nts[i]; i++)
+                    if ((rewritten = reduce (kids[i], nts[i])))
+                        break;  /* abort if a subtree was rewritten */
+        }
 
         if (rewritten) {
             /*
@@ -381,21 +516,10 @@ reduce (PFcnode_t * p, int goalnt)
     rewritten = false;
 
     switch (rule) {
-
-        /* CoreExpr:           for_ (forbind (forvars (var, OptVar),
+        /* OptBindExpr:        for_ (forbind (forvars (var, OptVar),
                                               Atom),
-                                     CoreExpr) */
-        case 4:
-            /*
-             * for $v [ at $p ] in e return $v   -->   e
-             */
-            if (R(p)->kind == c_var
-                && R(p)->sem.var == LLL(p)->sem.var) {
-                *p = *LR(p);
-                rewritten = true;
-                break;
-            }
-
+                                     OptBindExpr) */
+        case 5:
             /*
              * If we iterate over a sequence that we know (from static
              * typing) to always have length 1, replace the `for' by
@@ -409,82 +533,28 @@ reduce (PFcnode_t * p, int goalnt)
                     c = let (letbind (LLR(p), num (1)), c);
 
                     /* fix types */
-                    TY(c) = TY(R(p));
                     TY(LR(c)) = PFty_xs_integer ();
+                    c->sem.flwr.quantifier = PFty_one;
                 }
 
                 *p = *let (letbind (LLL(p), LR(p)), c);
-
-                TY(p) = TY(c);
+                /* type let binding */
+                p->sem.flwr.quantifier = PFty_one;
 
                 relabel (p, kids);
                 rewritten = true;
 
-                /*
-                 * Re-label entire subtree. Type-checking may have
-                 * modified all the state labels in the subtree, so
-                 * we have to restore them.
-                 */
-                PFcoreopt_label (p);
-                break;
-            }
-
-            /*
-             * If we know (from static typing) that we are iterating
-             * over the empty sequence, replace the whole thing by
-             * the empty sequence.
-             */
-            if (PFty_subtype (TY(LR(p)), PFty_empty ())) {
-                *p = *empty ();
-                relabel (p, kids);
-                rewritten = true;
                 break;
             }
 
             break;
 
-        /* CoreExpr:           let (letbind (var, Atom), CoreExpr) */
-        case 7:
-            /*
-             * Unfold atoms (a is an atom)
-             *
-             *     let $v := a return e
-             *  -->
-             *     e[a/$v]
-             */
-            replace_var (LL(p)->sem.var, LR(p), R(p));
-
-            /*
-             * Also replace variables in the function declarations
-             * prolog. If anything has been replaced, set a flag to
-             * trigger another run of the optimizer (to optimize
-             * function bodies).
-             */
-            fun_decls_modified
-                |= replace_var (LL(p)->sem.var, LR(p), fun_decls);
-
-            /*
-             * If we replaced a global variable by another variable,
-             * mark this new variable as global.
-             */
-            if (fun_decls_modified && 
-                LR(p)->kind == c_var &&
-                LL(p)->sem.var->global)
-                LR(p)->sem.var->global = true;
-
-            *p = *R(p);
-            /* Variable replacement can have effects on patterns deep
-             * down below the current pattern. We thus re-label the
-             * entire subtree.
-             */
-            PFcoreopt_label (p);
-            rewritten = true;
-            break;
-
-        /* CoreExpr:           let (letbind (var,
-                                             let (letbind (var, CoreExpr),
-                                                  CoreExpr)),
-                                    CoreExpr) */
+        /* OptBindExpr:        let (letbind (var,
+                                             flwr (let (letbind (var, 
+                                                                 CoreExpr),
+                                                        nil),
+                                                   CoreExpr)),
+                                    OptBindExpr) */
         case 9:
             /*
              * Remove a nested let block:
@@ -495,9 +565,50 @@ reduce (PFcnode_t * p, int goalnt)
              *       let $v1 := e' return
              *         e''
              */
-            *p = *let (letbind (LRLL(p), LRLR(p)),  /* let $v2 := e return    */
-                     let (letbind (LL(p), LRR(p)),  /*   let $v1 := e' return */
-                         R(p)));                    /*     e''                */
+            *p = *let (letbind (LL(LRL(p)), LR(LRL(p))), /* let $v2 := e ret */
+                       let (letbind (LL(p), LRR(p)),     /*   let $v1 := e'  */
+                            R(p)));                      /*     ret e''      */
+
+            /* remove unncessary order by expression 
+               bound to flwr expression (here e') */
+            if (RLR(p)->kind == c_orderby)
+                RLR(p) = R(RLR(p));
+    
+            /* type let binding */
+            p->sem.flwr.quantifier    = 
+            R(p)->sem.flwr.quantifier = RR(p)->sem.flwr.quantifier;
+
+            relabel (p, kids);
+            rewritten = true;
+            break;
+
+
+        /* OptBindExpr:        let (letbind (var,
+                                             flwr (let (letbind (var, 
+                                                                 CoreExpr),
+                                                        OptBindExpr)),
+                                                   CoreExpr),
+                                    OptBindExpr) */
+        case 10:
+            /*
+             * Remove a nested let block:
+             * 
+             *     let $v1 := let $v2 := e return e' return e''
+             *  -->
+             *     let $v2 := e return
+             *       let $v1 := e' return
+             *         e''
+             */
+            *p = *let (letbind (LL(LRL(p)), LR(LRL(p))), /* let $v2 := e ret */
+                     let (letbind (LL(p),                /*   let $v1 := e'  */
+                                   flwr (R(LRL(p)),
+                                         LRR(p))),
+                          R(p)));                        /*     ret e''      */
+
+            /* type let binding */
+            p->sem.flwr.quantifier    = 
+            R(p)->sem.flwr.quantifier = RR(p)->sem.flwr.quantifier;
+
             relabel (p, kids);
             rewritten = true;
             break;
@@ -506,7 +617,7 @@ reduce (PFcnode_t * p, int goalnt)
                                        cases (case_ (SequenceType,
                                                      CoreExpr),
                                               default_ (CoreExpr))) */
-        case 10:
+        case 13:
             /*
              * If we statically know that the type of an expression matches
              * a typeswitch case, we can remove the typeswitch.
@@ -528,19 +639,19 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* CoreExpr:           seq (empty, Atom) */
-        case 20:
+        case 21:
             *p = *R(p);
             rewritten = true;
             break;
 
         /* CoreExpr:           seq (Atom, empty) */
-        case 21:
+        case 22:
             *p = *L(p);
             rewritten = true;
             break;
 
         /* CoreExpr:           apply (arg (Atom, nil)) */
-        case 47:
+        case 48:
             if (! PFqname_eq (p->sem.fun->qname, PFqname (PFns_fn, "data"))) {
                 /*
                  * If the argument is a subtype of atomic*, fn:data()
@@ -568,7 +679,8 @@ reduce (PFcnode_t * p, int goalnt)
                     PFfun_t *fn_tv
                         = function (PFqname (PFns_pf, "typed-value"));
 
-                    *p = *for_ (forbind (forvars (var (v), nil ()), LL(p)),
+                    *p = *flwr (for_ (forbind (forvars (var (v), nil ()), 
+                                               LL(p)), nil ()),
                                 apply (fn_tv, arg (var (v), nil ())));
 
                     /* type-check what we just created */
@@ -620,8 +732,9 @@ reduce (PFcnode_t * p, int goalnt)
                 *c = *p;
                 c->sem.fun = function (PFqname (PFns_pf, "string-value"));
 
-                *p = *let (letbind (var (v), c),
-                           seqcast (seqtype (PFty_untypedAtomic ()), var (v)));
+                *p = *flwr (let (letbind (var (v), c), nil ()),
+                            seqcast (seqtype (PFty_untypedAtomic ()), 
+                                     var (v)));
 
                 /* type-check what we just created */
                 PFty_check (p);
@@ -659,8 +772,8 @@ reduce (PFcnode_t * p, int goalnt)
                               PFqname (PFns_fn, "exactly-one"))) {
                 if (PFty_subtype (TY(LL(p)), PFty_empty ()))
                     PFoops (OOPS_FATAL,
-                            "err:FORG0005, fn:exactly-one called with "
-                            "a sequence containing zero or more than one item.");
+                            "err:FORG0005, fn:exactly-one called with a"
+                            "sequence containing zero or more than one item.");
                 break;
             }
             
@@ -696,8 +809,8 @@ reduce (PFcnode_t * p, int goalnt)
                     PFcnode_t *c = PFmalloc (sizeof (PFcnode_t));
                     PFvar_t   *v = new_var (NULL);
                     
-                    c = let (letbind (var (v), LL(p)),
-                             cast (seqtype (PFty_string ()), var (v)));
+                    c = flwr (let (letbind (var (v), LL(p)), nil ()),
+                              cast (seqtype (PFty_string ()), var (v)));
 
                     *p = *c;
                     
@@ -751,10 +864,14 @@ reduce (PFcnode_t * p, int goalnt)
                 PFfun_t   *fn_string_join
                     = function (PFqname (PFns_fn, "string-join"));
 
-                *p = *let (letbind (var (v1),
-                                    for_ (forbind (forvars (var (v2), nil ()),
-                                                   LL(p)),
-                                          apply (fn_string, arg (var (v2), nil ())))),
+                *p = *flwr (let (letbind (
+                                     var (v1),
+                                     flwr (for_ (forbind (forvars (var (v2),
+                                                                   nil ()),
+                                                          LL(p)), nil ()),
+                                           apply (fn_string, 
+                                                  arg (var (v2), nil ())))), 
+                                 nil ()),
                             apply (fn_string_join, 
                                    arg (var (v1),
                                         arg (str (" "),
@@ -824,7 +941,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* CoreExpr:           apply (arg (Atom, arg (Atom, nil))) */
-        case 48:
+        case 49:
             /*
              * fn:concat does not need to append an empty string
              */
@@ -846,16 +963,11 @@ reduce (PFcnode_t * p, int goalnt)
                               PFqname (PFns_fn, "string-join"))) {
                 if (PFty_subtype (TY(LL(p)), PFty_empty ())) {
                     *p = *str ("");
-                    PFty_check (p);
+                    TY(p) = PFty_string ();
 
+                    /* assign new node a state label */
+                    relabel (p, kids);
                     rewritten = true;
-
-                    /*
-                     * Re-label entire subtree. Type-checking may have
-                     * modified all the state labels in the subtree, so
-                     * we have to restore them.
-                     */
-                    PFcoreopt_label (p);
                     break;
                 }
                 else if (PFty_subtype (TY(LL(p)), PFty_string ())) {
@@ -863,6 +975,30 @@ reduce (PFcnode_t * p, int goalnt)
                     rewritten = true;
                     break;
                 }
+            }
+            break;
+
+        /* Atom:                var */
+        case 59:
+            {
+                /*
+                 * See the comment in the declaration of var_env and
+                 * the rule that processes let-bindings to understand
+                 * what's going on here.
+                 */
+                unsigned short h = hash (p->sem.var);
+
+                /*
+                 * Look up this variable in the variable replacement
+                 * environment.  If we find it there, do the replacement.
+                 */
+                for (unsigned int i = 0; i < PFarray_last (var_env[h]); i++)
+                    if (((bind_t *) PFarray_at (var_env[h], i))->var
+                            == p->sem.var) {
+                        *p = *((bind_t *) PFarray_at (var_env[h], i))->atom;
+                        rewritten = true;
+                        break;
+                    }
             }
             break;
 
@@ -916,35 +1052,6 @@ relabel (PFcnode_t *p,  PFcnode_t **kids)
 }
 
 /**
- * Walk core tree @a e and replace occurrences of variable @a v
- * by core tree @a a (i.e., compute e[a/v]).
- *  
- * @param v variable to replace
- * @param a core tree to insert for @a v
- * @param e core tree to walk over
- * @return modified core tree
- */
-static bool
-replace_var (PFvar_t *v, PFcnode_t *a, PFcnode_t *e)
-{
-  unsigned short int  i;
-  bool                did_replace = false;
-
-  assert (v && a && e);
-    
-  if (e->kind == c_var && e->sem.var == v) {
-      *e = *a;
-      did_replace = true;
-  }
-  else                            
-      for (i = 0; (i < PFCNODE_MAXCHILD) && e->child[i]; i++)
-          did_replace |= replace_var (v, a, e->child[i]);
-
-  return did_replace;
-}
-
-
-/**
  * Optimize Core tree, with static type information available.
  *
  * @param r root of the XQuery Core tree
@@ -955,20 +1062,16 @@ PFcoreopt (PFcnode_t *r)
 {
     assert (r);
 
-    /* make function declaration prolog accessible to (body) rewrite rules */
-    fun_decls = L(r);
+    /* set up variable replacement environment */
+    for (unsigned short i = 0; i < HASH_BUCKETS; i++)
+        var_env[i] = PFarray (sizeof (bind_t));
 
-    do {
-        fun_decls_modified = false;
+    /* label the Core tree bottom up */
+    PFcoreopt_label (r);
 
-        /* label the Core tree bottom up */
-        PFcoreopt_label (r);
-
-        /* invoke rewriting */
-        while (reduce (r, 1))
-            /* rewrite as long as there is something to do. */;
-
-    } while (fun_decls_modified);
+    /* invoke rewriting */
+    while (reduce (r, 1))
+        /* rewrite as long as there is something to do. */;
 
     return r;
 }

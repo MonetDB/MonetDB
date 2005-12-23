@@ -107,6 +107,8 @@
                  | LongIntegerLiteral                       <m_lit_lng>
                  | StringLiteral                            <m_lit_str>
                  | OidLiteral                               <m_lit_oid>
+                 | MinLiteral                               <m_lit_min>
+                 | MaxLiteral                               <m_lit_max>
                  | 'nil'                                    <m_nil>
 @endverbatim
  *
@@ -379,6 +381,8 @@ static void print_statements (PFmil_t *);
 static void print_statement (PFmil_t *);
 static void print_variable (PFmil_t *);
 static void print_expression (PFmil_t *);
+static void print_min (PFmil_t *);
+static void print_max (PFmil_t *);
 static void print_literal (PFmil_t *);
 static void print_type (PFmil_t *);
 static void print_args (PFmil_t *);
@@ -840,6 +844,14 @@ print_expression (PFmil_t * n)
             milprintf (")");
             break;
 
+        case m_lit_min:
+            print_min (n);
+            break;
+
+        case m_lit_max:
+            print_max (n);
+            break;
+
         /* expression : literal */
         case m_lit_int:
         case m_lit_lng:
@@ -1101,6 +1113,61 @@ print_variable (PFmil_t * n)
     assert (n->kind == m_var);
 
     milprintf ("%s", n->sem.ident);
+}
+
+/**
+ * Implementation of the grammar rules for minimal `literal'.
+ *
+ * @param n MIL tree node
+ */
+static void
+print_min (PFmil_t * n)
+{
+    char *min[] = {
+          [m_lng]   = "LNG_MIN"
+        , [m_dbl]   = "dbl(nil)"
+        , [m_str]   = "str(nil)"
+        , [m_bit]   = "bit(nil)"
+    };
+
+    if (n->kind != m_lit_min) {
+        debug_output;     /* Print MIL code so far when in debug mode. */
+#ifndef NDEBUG
+        PFinfo (OOPS_NOTICE, "node: %s", ID[n->kind]);
+#endif
+        PFoops (OOPS_FATAL, "Illegal MIL tree, type expected. "
+                            "MIL printer screwed up.");
+    }
+
+    milprintf (min[n->sem.t]);
+}
+
+/**
+ * Implementation of the grammar rules for maximal `literal'.
+ *
+ * @param n MIL tree node
+ */
+static void
+print_max (PFmil_t * n)
+{
+    char *max[] = {
+          [m_lng]   = "LNG_MAX"
+        /* FIXME: this is the minimum value */
+        , [m_dbl]   = "dbl(nil)"
+        , [m_str]   = "str(nil)"
+        , [m_bit]   = "bit(nil)"
+    };
+
+    if (n->kind != m_lit_max) {
+        debug_output;     /* Print MIL code so far when in debug mode. */
+#ifndef NDEBUG
+        PFinfo (OOPS_NOTICE, "node: %s", ID[n->kind]);
+#endif
+        PFoops (OOPS_FATAL, "Illegal MIL tree, type expected. "
+                            "MIL printer screwed up.");
+    }
+
+    milprintf (max[n->sem.t]);
 }
 
 /**

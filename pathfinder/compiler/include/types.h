@@ -216,6 +216,7 @@ PFty_t PFty_double (void);
 /** 
  * Type constructors (internal).
  */
+PFty_t PFty_one (PFty_t t);
 PFty_t PFty_opt (PFty_t t);
 PFty_t PFty_plus (PFty_t t);
 PFty_t PFty_star (PFty_t t);

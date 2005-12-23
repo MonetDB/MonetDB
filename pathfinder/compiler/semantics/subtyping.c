@@ -2092,20 +2092,11 @@ fn_none (PFty_t unused)
 }
 
 /**
- * Implements the 1 quantifier: t . 1 = t 
- */
-static PFty_t
-fn_one (PFty_t t)
-{
-    return t;
-}
-
-/**
  * Functions implementing the quantifers.
  */
 static PFty_t (*quantifier_fn[5]) (PFty_t) = {
       [none]   = fn_none
-    , [one]    = fn_one
+    , [one]    = PFty_one
     , [opt]    = PFty_opt
     , [plus]   = PFty_plus
     , [star]   = PFty_star

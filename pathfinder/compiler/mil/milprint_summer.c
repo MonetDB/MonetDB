@@ -5890,7 +5890,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
             snd_var, snd_var, snd_var, snd_var, snd_var);
 
     milprintf(f, "var expOid;\n");
-    getExpanded (f, cur_level, snd->sem.num);
+    getExpanded (f, cur_level, snd->sem.flwr.fid);
     milprintf(f,
             "if (expOid.count() != 0) {\n"
             "var oidNew_expOid;\n");
@@ -7701,7 +7701,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             project (f, cur_level);
 
             milprintf(f, "var expOid;\n");
-            getExpanded (f, cur_level, c->sem.num);
+            getExpanded (f, cur_level, c->sem.flwr.fid);
             milprintf(f,
                     "if (expOid.count() != 0) {\n"
                     "var oidNew_expOid;\n");
@@ -9636,7 +9636,7 @@ walk_through_UDF (opt_t *f,
         counter = walk_through_UDF (f, LR(c), way, counter, active_funs);
         
         /* add all the fids, which have to be passed on the way */
-        *(int *) PFarray_add (way) = c->sem.num;
+        *(int *) PFarray_add (way) = c->sem.flwr.fid;
         counter = walk_through_UDF (f, R(c), way, counter, active_funs);
         PFarray_del (way);
     }
@@ -9739,7 +9739,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
        fid = *(int *) PFarray_at (counter, FID);
 
        /* save fid to allow reference in mil code generation */
-       c->sem.num = fid;
+       c->sem.flwr.fid = fid;
        /* add fid also to the active for loop stack */
        *(int *) PFarray_add (way) = fid;
        act_fid = fid;
@@ -10154,6 +10154,53 @@ const char* PFudfMIL() {
 }
 
 /**
+ * expand_flwr starts from the root and removes all appearances
+ * of c_flwr. Every end of a flwr list (c_nil) is replaced by
+ * the resulting expression of the flwr (R(c)).
+ */
+static void 
+expand_flwr (PFcnode_t *c, PFcnode_t *ret)
+{
+    assert (c);
+
+    switch (c->kind) {
+        case c_flwr:
+            /* expand flwrs in return expression */
+            expand_flwr (R(c), NULL);
+
+            if (L(c)->kind == c_nil) {
+                *c = *(R(c));
+            } else {
+                /* expand current flwr in bindings */
+                expand_flwr (L(c), R(c));
+                *c = *(L(c));
+            }
+            break;
+
+        case c_let:
+        case c_for:
+            /* expand bindings */
+            expand_flwr (L(c), NULL);
+
+            assert (c->sem.flwr.quantifier);
+            /* type for and let expressions */
+            TY(c) = *PFty_simplify (c->sem.flwr.quantifier (
+                                        PFty_defn (TY(ret))));
+    
+            if (R(c)->kind == c_nil)
+                R(c) = ret;
+            else 
+                expand_flwr (R(c), ret);
+            break;
+
+        default:
+            for (unsigned int i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++)
+                expand_flwr (c->child[i], ret);
+
+    }
+}
+
+/**
  * first MIL generation from Pathfinder Core
  *
  * first to each `for' and `var' node additional
@@ -10179,6 +10226,9 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, char *
     *(int *) PFarray_add (counter) = 0;  
     *(int *) PFarray_add (counter) = 0; 
     *(int *) PFarray_add (counter) = 0;
+
+    /* remove all flwr expressions */
+    expand_flwr (c, NULL);
 
     /* resolves nodes, which are not supported and prunes
        code which is not needed (e.g. casts, let-bindings) */

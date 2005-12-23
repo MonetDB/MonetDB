@@ -1246,6 +1246,7 @@ PFfun_xquery_fo ()
         PFty_t par_ty[XQUERY_FO_MAX_ARITY]; 
         PFty_t ret_ty;
         struct PFla_pair_t (*alg) (const struct PFla_op_t *,
+                                   bool,
                                    struct PFla_pair_t *);
     } xquery_fo[] = XQUERY_FO;
 

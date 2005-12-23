@@ -199,14 +199,19 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
                     if (c != 0)
                         PFarray_printf (dot, ",");
 
-                    if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_nat)
-                        PFarray_printf (dot, "%i",
+                    if (n->sem.lit_tbl.tuples[i].atoms[c].special == amm_min)
+                        PFarray_printf (dot, "MIN");
+                    else if (n->sem.lit_tbl.tuples[i].atoms[c].special ==
+                             amm_max)
+                        PFarray_printf (dot, "MAX");
+                    else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_nat)
+                        PFarray_printf (dot, "#%u",
                                 n->sem.lit_tbl.tuples[i].atoms[c].val.nat);
                     else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_int)
                         PFarray_printf (dot, "%i",
                                 n->sem.lit_tbl.tuples[i].atoms[c].val.int_);
                     else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_str)
-                        PFarray_printf (dot, "%s",
+                        PFarray_printf (dot, "\\\"%s\\\"",
                                 n->sem.lit_tbl.tuples[i].atoms[c].val.str);
                     else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_dec)
                         PFarray_printf (dot, "%g",
@@ -217,7 +222,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
                     else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_bln)
                         PFarray_printf (dot, "%s",
                                 n->sem.lit_tbl.tuples[i].atoms[c].val.bln ?
-                                        "t" : "f");
+                                        "true" : "false");
                     else if (n->sem.lit_tbl.tuples[i].atoms[c].type 
                              == aat_qname)
                         PFarray_printf (dot, "%s",
