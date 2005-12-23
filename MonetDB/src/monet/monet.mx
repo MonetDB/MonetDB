@@ -171,7 +171,7 @@ typedef struct YYS {
 		batrec batref;    /* garbage collectioon: must BBPunfix a bat */
 		struct YYS *delnode;  /* union space re-used only at final stage of Myyfree */
 	} free; 
-	struct YYS *yysons[YYMAXSONS+1]; /* tree sons. BEWARE: there may be less than YYMAXSONS space!! */
+	struct YYS *yysons[YYMAXSONS+1]; /* tree sons. BEWARE: there may be fewer than YYMAXSONS space!! */
 } yystree, *YYSTREE;
 
 #define YYDEALLOC_BAT	1
