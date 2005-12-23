@@ -27,8 +27,6 @@ xquery("xml-seq-mapi", "<a>aap</a>/text()").printf();
 # xml	# name
 # varchar	# type
 # 60	# length
-# 1	# tuplecount
-# 0	# id
 [ "text {\"aap\"}"	]
 xquery("xml-seq-mapi", "<a>2</a>/text()").printf();
 &1 1 1 1 1
@@ -36,8 +34,6 @@ xquery("xml-seq-mapi", "<a>2</a>/text()").printf();
 # xml	# name
 # varchar	# type
 # 60	# length
-# 1	# tuplecount
-# 1	# id
 [ "text {\"2\"}"	]
 
 xquery("xml-mapi", "<a>aap</a>/text()").printf();
