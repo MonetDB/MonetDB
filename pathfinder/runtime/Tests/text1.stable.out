@@ -22,8 +22,7 @@ xquery("dm-mapi", "<a>2</a>/text()").printf();
 text {"2"}
 
 xquery("xml-seq-mapi", "<a>aap</a>/text()").printf();
-#-
-# 3	# querytype
+&1 0 1 1 1
 # xquery_result	# table_name
 # xml	# name
 # varchar	# type
@@ -32,8 +31,7 @@ xquery("xml-seq-mapi", "<a>aap</a>/text()").printf();
 # 0	# id
 [ "text {\"aap\"}"	]
 xquery("xml-seq-mapi", "<a>2</a>/text()").printf();
-#-
-# 3	# querytype
+&1 1 1 1 1
 # xquery_result	# table_name
 # xml	# name
 # varchar	# type
