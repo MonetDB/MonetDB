@@ -3,7 +3,7 @@
   where not($t//destination/arrival)
           and (contains($p,"wrecked")
           or contains($p,"sunk"))
-  order by $t/leftpage/boatname/text()
+  order by zero-or-one($t/leftpage/boatname/text())
   return 
     element { "boat" } { 
       element { "name" } { $t/leftpage/boatname/text() }, 

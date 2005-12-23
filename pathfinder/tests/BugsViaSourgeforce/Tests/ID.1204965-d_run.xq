@@ -9,7 +9,7 @@ let $bib := doc("bib.xml")/bib return
         <books>
           {
             for $b in $bib/book[author = $a]
-            order by $b/title
+            order by zero-or-one($b/title)
             return $b/title 
           }
         </books>
