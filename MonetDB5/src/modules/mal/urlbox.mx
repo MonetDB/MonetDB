@@ -39,7 +39,7 @@ comment "Destroy the URL box";
 pattern take(u:str):oid
 address URLBOXtake
 comment "Get a handle for the URL";
-pattern deposit(u:str) :void 		
+pattern deposit(u:str):void 		
 address URLBOXdeposit
 comment "Enter a new url into the box";
 command depositFile(fnme:str):void
@@ -48,10 +48,10 @@ address URLBOXdepositFile;
 pattern releaseAll():void 
 address URLBOXreleaseAll
 comment "Release all elements from the box";
-pattern release(u:str) :void 		
+pattern release(u:str):void 		
 address URLBOXrelease
 comment "Release a single URL value";
-pattern release(u:int) :void 		
+pattern release(u:int):void 		
 address URLBOXreleaseOid
 comment "Release a single URL value";
 
@@ -59,13 +59,13 @@ pattern toString(u:int):str
 address URLBOXtoString
 comment "Get the string representation of an element in the box";
 
-pattern discard(name:str) :void 		
+pattern discard(name:str):void 		
 address URLBOXdiscard
 comment "Remove the URL from the box";
-pattern discard(name:int) :void 		
+pattern discard(name:int):void 		
 address URLBOXdiscardOid
 comment "Remove the URL from the box";
-pattern discard() :void 		
+pattern discard():void 		
 address URLBOXdiscardAll
 comment "Remove all URLs from the box";
 
