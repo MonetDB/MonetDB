@@ -103,6 +103,7 @@ The current heuristic is geared at avoiding trivial
 factory structures.
 @c
 #include "mal_macro.h"
+#include "mal_prelude.h"
 #include "mal_optimizer.h"
 #include "mal_peephole.h"
 #include "mal_debugger.h"
@@ -121,12 +122,8 @@ FXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr *ns, p;
 	int v;
 	int i, j, k, klim,newssize;/*, argseen=0;*/
-	MALfcn setWriteMode = 0;
-	Symbol s;
 	lng clk = GDKusec();
-	str bindRef= putName("bind",4);
 	str sqlRef= putName("sql",3);
-	str modeRef= putName("setWriteMode",12);
 
 #ifdef _SQL_OPTIMIZER_DEBUG
 	stream_printf(GDKout, "First call to FXoptimizer\n");
@@ -143,8 +140,8 @@ FXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 
 @-
-The factor code is generated as soon as you have encountered a bind
-operation.
+The factory code is also used for small blocks when there
+is a bind operation.
 @c
 	if (mb->stop <= TOSMALL){
 		for(i=0; i< mb->stop; i++){
@@ -155,14 +152,10 @@ operation.
 		if(i == mb->stop)
 			return MAL_SUCCEED;
 	}
-
-	s = findMALSymbol(getName("bat",3), modeRef);
-	if (s)
-		setWriteMode = getSignature(s)->fcn;
-
 @-
 The first step is to collect all the sql bind operations and
 to extract some compiler relevant properties from the catalogue.
+Double bind operations should also be eliminated.
 @c
 	newssize = mb->ssize * 2;
 	ns = (InstrPtr *) GDKmalloc(sizeof(InstrPtr) * newssize);
@@ -172,7 +165,7 @@ to extract some compiler relevant properties from the catalogue.
  	setVarType(mb, getArg(ns[0],0), TYPE_bit);
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		if (functionName(p)== bindRef && 
+		if ( (functionName(p)== bindRef || functionName(p)==binddbatRef) && 
 			moduleName(p)== sqlRef) {
 			ns[k++] = p;
 		}
@@ -181,30 +174,16 @@ Check if the relation is already made write-enabled in the plan.
 It uses the knowledge that at this stage the plan is still a linear
 sequence of instructions.
 @c
-		if (setWriteMode && p->fcn == setWriteMode) {
+		if (functionName(p)== setWriteModeRef ) {
 			for (j = 0; j < k; j++)
-				if (ns[j]->fcn == setWriteMode && ns[j]->argv[1] == p->argv[1])
-					break;
+				if ( functionName(ns[j]) == setWriteModeRef && 
+						ns[j]->argv[1] == p->argv[1])
+							break;
 				else if (ns[j]->argv[0] == p->argv[1]) {
 					ns[k++] = p;
 					break;
 				}
 		}
-@-
-Finally, move all instructions out of the loop until you find a
-reference an argument. This pre-supposes that the instructions
-are invariant to multiple calls. In general this is not the case,
-for consider a block that depends on the size of a BAT.
-		if( argseen == 0){
-			for(j=p->retc; j<p->argc; j++){
-				for( k=0; k<sig->retc; k++)
-				if( getArg(p,k)== getArg(sig,k)
-					argseen=1;
-			}
-			if( argseen==0)
-				ns[k++]= p;
-		}
-@c
 	}
 	klim = k;		/* remember the head */
 @-
@@ -222,16 +201,15 @@ instructions, producing a syntactic correct MAL program again.
 		int doit = 0;
 
 		p = getInstrPtr(mb, i);
-		if (!( functionName(p)== bindRef && 
+		if (!( (functionName(p)== bindRef || functionName(p)==binddbatRef) && 
 			  moduleName(p)== sqlRef))
 			doit = 1;
 @-
 Skip it if the writeMode relates to a base table
 @c
-		if (setWriteMode)
-			for (j = 0; j < klim; j++)
-				if (ns[j] == p)
-					doit = 0;
+		for (j = 0; j < klim; j++)
+			if (ns[j] == p)
+				doit = 0;
 		if (doit)
 			ns[k++] = p;
 	}
@@ -318,6 +296,7 @@ to allow inspection.
 			optimizerCheck(c->curprg->def,"sql.baseline",-1,0);
 		COoptimizer(c->curprg->def,0,0);
 		ARoptimizer(c->curprg->def, 0, 0);
+		/* CXoptimizer(c->curprg->def,0,0);*/
 		FXoptimizer(c->curprg->def, 0, 0);
 		OPTmultiplex(c->curprg->def, 0, 0);
 		MRoptimizer(c->curprg->def,0,0);
