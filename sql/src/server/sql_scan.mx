@@ -787,7 +787,7 @@ valid_ident(char *s, char *dst)
 	return 1;
 }
 
-static int
+static INLINE int
 sql_get_next_token(YYSTYPE *yylval, void *parm) {
 	mvc *c = (mvc*)parm;
 	struct scanner *lc = &c->scanner;
