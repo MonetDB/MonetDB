@@ -75,6 +75,10 @@ Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
+20051125 started development of the multitable and generator modules.
+20051100 the storage requirements for the MAL blocks has been 
+reduced. e.g. by moving statistics gathering to its own
+storage space upon need.
 20051008 major overhaul to reduce maintenance of small structures.
 	the MAL program can now not be recovered literally anymore
 	due to limitations in the GDK
