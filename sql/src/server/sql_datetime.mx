@@ -140,7 +140,7 @@ parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, lng *i)
 		break;
 	case ihour:
 		if (val >= 24) {
-			snprintf(sql->errstr, ERRSIZE, _("Overflow detected in houres (" LLFMT ")\n"), val);
+			snprintf(sql->errstr, ERRSIZE, _("Overflow detected in hours (" LLFMT ")\n"), val);
 			return -1;
 		}
 		break;
