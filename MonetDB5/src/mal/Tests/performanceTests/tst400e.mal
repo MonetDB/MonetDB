@@ -2,7 +2,7 @@
 # performance evaluation, how expensive are 100k calls?
 
 function simple(z:lng):lng;
-	z:= z+1:lng;  #type cast is error
+	z:= z+1:lng;
 	return z;
 end simple;
 

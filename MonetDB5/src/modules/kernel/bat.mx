@@ -2627,6 +2627,7 @@ BKCsetAccess(int *res, int *bid, str *param)
 {
 	BAT *b, *bn = NULL;
 	int m;
+	int oldid;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.setAccess", "Cannot access descriptor");
@@ -2645,10 +2646,18 @@ BKCsetAccess(int *res, int *bid, str *param)
 		*res = 0;
 		return throwMessage("bat.setAccess", " illegal access mode");
 	}
-	CMDsetaccess(&bn, b, &m);
+	/* CMDsetaccess(&bn, b, &m);*/
+
+	oldid= b->batCacheid;
+	bn = BATsetaccess(b, m);
+	if ((bn)->batCacheid == b->batCacheid) {
+		BBPkeepref(bn->batCacheid);
+	} else {
+		BBPunfix(oldid);
+		BBPfix(bn->batCacheid);
+		BBPkeepref(bn->batCacheid);
+	}
 	*res = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 

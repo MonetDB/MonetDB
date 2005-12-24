@@ -23,27 +23,28 @@ displayes the complete signature for each match.
 The @code{address} and @code{address} attributes
 are also shown by appending ')'.
 @example
->?bbp.ne<TAB>
-bbp.newoid
-bbp.nextElement
-bbp.newRange
-bbp.newIterator
-bbp.nextPage
->?bbp.newoid(
-#command calc.newoid(incr:int)
-#command calc.newoid(incr:lng)
-#command calc.newoid()
->?bbp.newoid()
-#command calc.newoid(incr:int):oid address CALCnewoidInc;
-#Reserves a range of consecutive unique OIDs; returns the lowest
-#in range.  equivalent to newoid(0,incr)
-#command calc.newoid(incr:lng):oid address CALCnewoidInclng;
-#command calc.newoid():oid address CALCnewoidBase;
-#Generate a new oid. Equivalent to newoid(0,1)
+>?bat.is
+bat.isSynced
+bat.isCached
+bat.isPersistent
+bat.isTransient
+bat.isSortedReverse
+bat.isSorted
+bat.isaSet
+bat.isaKey
+>?bat.isSorted(
+command bat.isSortedReverse(b:bat[:any_1,:any_2]):bit
+command bat.isSorted(b:bat[:any_1,:any_2]):bit
+>?bat.isSorted()
+command bat.isSortedReverse(b:bat[:any_1,:any_2]):bit address BKCisSortedReverse;
+Returns whether a BAT is ordered on head or not.
+
+command bat.isSorted(b:bat[:any_1,:any_2]):bit address BKCisSorted;
+Returns whether a BAT is ordered on head or not.
 @end example
 
 The module and function names can be replaced by the 
-wildcard charector '*'.
+wildcard charector '*'. [Todo, general pattern match]
 
 If your platform supports the @code{readline} library, then
 this functionality is also partly available through

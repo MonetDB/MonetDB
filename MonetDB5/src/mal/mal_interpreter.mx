@@ -801,7 +801,12 @@ the bind(namespace, batname, mode) operation. [todo]
 		for(i=0; i<pci->retc; i++)
 		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 			if( backup[i] ){
-				BBPdecref(backup[i],TRUE);
+				if( backup[i]== stk->stk[getArg(pci,i)].val.br.id){
+				/* target and source are identical, which means its
+				   logical reference count is one too high . */
+					BBPreleaseref(backup[i]);
+				} else /* possible garbage collect the variable */
+					BBPdecref(backup[i],TRUE);
 			} 
 		} else 
 		if( stk->stk[getArg(pci,i)].vtype == TYPE_str){

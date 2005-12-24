@@ -635,16 +635,15 @@ int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 	if( p== NULL || q== NULL || p->retc != q->retc || p->argc != q->argc)
 		return FALSE;
 	for(k=p->retc; k<p->argc;k++)
-		if( q->argv[k]!= p->argv[k] ) {
-		/*
-			if( isConstant(mb,p->argv[k]) && isConstant(mb,q->argv[k]) &&
-				getVar(mb,getArg(p,k))->type == getVar(mb,getArg(q,k))->type ){
-					int (*cmp) (ptr, ptr) = BATatoms[getVarGDKType(mb,getArg(p,k))].atomCmp;
-					if( (*cmp)((ptr) &getVar(mb,getArg(p,k))->value.val,
-						(ptr) getVar(mb,getArg(q,k))->value.val.lval ) ==0)
-				continue;
+		if( q->argv[k]!= p->argv[k]){
+			if( isConstant(mb,getArg(p,k)) && isConstant(mb,getArg(q,k)) ) {
+					ValPtr w,u;
+					w= &getVarConstant(mb,getArg(p,k));
+					u= &getVarConstant(mb,getArg(q,k));
+
+					if( ATOMcmp(w->vtype, VALptr(w), VALptr(u)) == 0)
+						continue;
 			}
-		*/
 			return FALSE;
 		}
 	return TRUE;

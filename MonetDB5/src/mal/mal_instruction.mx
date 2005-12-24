@@ -2331,7 +2331,11 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 	if (p->token == REMsymbol) {
 		/* do nothing */
 	} else if (p->barrier) {
-		if (p->barrier == LEAVEsymbol || p->barrier == REDOsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol || p->barrier == RAISEsymbol) {
+		if (p->barrier == LEAVEsymbol || 
+			p->barrier == REDOsymbol || 
+			p->barrier == RETURNsymbol || 
+			p->barrier == YIELDsymbol || 
+			p->barrier == RAISEsymbol) {
 			@:tabulate@
 		}
 		sprintf(t, "%s ", operatorName(p->barrier));
@@ -2406,7 +2410,8 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 	default:
 		sprintf(t, " ?%d? ", p->token);
 	}
-	GDKfree(pstring);
+	if( pstring)
+		GDKfree(pstring);
 	pstring = 0;
 	advance(t);
 	low = p->retc;

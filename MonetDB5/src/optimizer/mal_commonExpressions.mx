@@ -31,6 +31,7 @@ opt_export str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 #include "mal_commonExpressions.h"
 #include "mal_interpreter.h"	/* for showErrors() */
+#include "mal_prelude.h"
 @}
 @-
 @node Common Sub-Expression Removal,Empty Set Reduction, Heuristic Rewrite Rules,   Optimizer toolkit
@@ -103,6 +104,7 @@ CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			removeInstruction(mb, pci);
 		return MAL_SUCCEED;
 	}
+	optInit();
 	setLifespan(mb);
 	for (i = 1; i < mb->stop - 1; i++) {
 		p = getInstrPtr(mb, i);
