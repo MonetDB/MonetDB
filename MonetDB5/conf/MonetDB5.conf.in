@@ -1,10 +1,12 @@
 # Configuration file for MonetDB version 5
 
 # This startup file is read by the GDK kernel, to set
-# system wide parameters.  It can reside in either the local directory
-# where Mserver is called, or the home directory of the MonetDB user.
+# system wide parameters. It is stored in the
+# database directory by the monetdb script upon database creation.
+# It can also reside in the local directory
+# where mserver is called, or the home directory of the MonetDB user.
 
-# Where MonetDB is installed
+# Absolute path where MonetDB is installed
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 
@@ -21,22 +23,24 @@ gdk_dbfarm=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@dbfarm
 # and restart MonetDB.
 gdk_dbname=demo			# default database to open
 
+gdk_version=@VERSION@
+monet_welcome=yes		#Version and copyright information
 
 # The options below deal with various aspects of memory usage behaviour.
 # If you don't know what these values mean, you should leave them alone.
 
 # gdk_mem_bigsize & gdk_vm_minsize will be set/limited to
 # 1/2 of the physically available amount of main-memory
-# during start-up in src/tools/Mserver.mx
+# during start-up in src/tools/mserver.mx
 # memory chunks of size >= gdk_mem_bigsize (in bytes) will be mmaped anonymously
 #gdk_mem_bigsize=33554432
 # memory chunks of size >= gdk_vm_minsize (in bytes) will be mmaped;
 #gdk_vm_minsize=134217728
 
 # for 32 bit systems try claim 3G of (virtual) memory
-# set to "no" to run Mserver with valgrind;
+# set to "no" to run mserver with valgrind;
 # also, you need to tell valgrind to use 8-byte alignment, hence:
-# "valgrind --alignment=8 Mserver --set gdk_alloc_map=no ..."
+# "valgrind --alignment=8 mserver --set gdk_alloc_map=no ..."
 gdk_alloc_map=no
 
 # You can enable debug for specific parts.  By default debug is
@@ -71,17 +75,19 @@ gdk_debug=0
 # the kernel can be used in embedded situations (don't set this yourself)
 gdk_embedded=no
 
-gdk_version=@VERSION@
 
 # Monet Section
 #==============
 monet_admin=adm			#administrator user name 
 #monet_prompt=>
-monet_welcome=yes		#Version and copyright information
 # Where do the MonetDB modules reside? The second path is for windows dlls.
 monet_mod_path=@libdir@@DIRSEP@@PACKAGE@
-# Start Mserver in daemon mode, or start with MAL interactive interface?
+# Start mserver in daemon mode, or start with MAL interactive interface?
 monet_daemon=no	
+
+#Mguardian section
+#====================================
+delay=300		#waiting between pinging the server 
 
 # MAL section
 # Monet Virtual Machine
@@ -97,24 +103,26 @@ mal_listing = 15                # echoing the input
 
 # Monet Application Interface Section
 #====================================
-#mapi_port=50000			#default port to address a Mserver
+#mapi_port=50000			#default port to address a mserver
 #mapi_noheaders=no			#show all the mil output
 #mapi_debug=0				#The mapi debug level		
 
 # SQL Interface Section
 #====================================
 sql_prompt=sql>
-# default port to address an Mserver for an SQL session
+# default port to address an mserver for an SQL session
 sql_port=45123
 # The SQL debug level (should be disabled for normal use)
 sql_debug=0
 # Place to store SQL transaction logs
-sql_logdir=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@log 
+# The logs are typically stored on a different storage medium
+# to protect the database against accidental hardware loss.
+sql_logdir=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@dblogs 
 
 # XQuery Interface Section
 #=========================
 
-# default port to address an Mserver for an XQuery session
+# default port to address an mserver for an XQuery session
 xquery_port=45789
 
 # default port to address the HTTP server for pathfinder
@@ -130,7 +138,7 @@ xquery_cacheMB=100
 # Profile Interface Section
 #====================================
 # for 32 bit systems try to claim 3G of (virtual) memory;
-# set to "no" to run Mserver with valgrind.
-# valgrind --tool=callgrind Mserver --set gdk_alloc_map=no ..."
+# set to "no" to run mserver with valgrind.
+# valgrind --tool=callgrind mserver --set gdk_alloc_map=no ..."
 #gdk_alloc_map=yes
 
