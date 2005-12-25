@@ -269,6 +269,7 @@ All Rights Reserved.
     <uptodate targetfile="${jdbcclient-jar}"
       property="uptodate.jdbcclient-jar">
       <srcfiles dir="${srcdir}">
+        <include name="${jdbc-package}/**/*.java" />
         <include name="${client-package}/**/*.java" />
         <include name="${jdbc-jar}" />
       </srcfiles>
