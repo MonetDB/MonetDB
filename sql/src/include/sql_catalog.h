@@ -41,7 +41,7 @@
 
 #define SCALE_NONE	0
 #define SCALE_FIX	1	/* many numerical functions require equal
-				   scales/precision for all there inputs */
+                           scales/precision for all their inputs */
 #define SCALE_NOFIX	2
 #define SCALE_ADD	3	/* multiplication gives the sum of scales */
 #define SCALE_SUB	4	/* on the other hand reduces the scales */ 
@@ -138,13 +138,9 @@ typedef struct sql_subaggr {
 	sql_subtype res;
 } sql_subaggr;
 
-/* sql_func need type transform rules
- * types are equal if underlying types are equal +
-	scale is equal
- * if types do not mach we try type conversions
- * 	which means for simple 1 arg functions
- *
- *
+/* sql_func need type transform rules types are equal if underlying
+ * types are equal + scale is equal if types do not mach we try type
+ * conversions which means for simple 1 arg functions
  */
 
 typedef struct sql_arg {
