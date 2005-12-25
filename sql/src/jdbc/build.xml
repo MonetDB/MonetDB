@@ -280,6 +280,8 @@ All Rights Reserved.
             <include name="build.properties" />
             <include name="build.local.properties" />
             <include name="${jdbc-package}/MonetDriver.java.in" />
+            <include name="${jdbc-package}/**/*.java" />
+            <include name="${client-package}/**/*.java" />
           </srcfiles>
         </uptodate>
         <uptodate targetfile="${xmldb-package}/base/MonetDBDatabase.java">
@@ -289,12 +291,6 @@ All Rights Reserved.
             <include name="${xmldb-package}/base/MonetDBDatabase.java.in" />
           </srcfiles>
         </uptodate>
-        <not>
-          <istrue value="uptodate.jdbc-jar" />
-        </not>
-        <not>
-          <istrue value="uptodate.jdbcclient-jar" />
-        </not>
       </and>
     </condition>
 
