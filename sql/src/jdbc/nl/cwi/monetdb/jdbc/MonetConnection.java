@@ -1528,9 +1528,8 @@ public class MonetConnection implements Connection {
 		 * @throws SQLException if the header cannot be parsed or is unknown
 		 */
 		public void addHeader(String tmpLine) throws SQLException {
-			int len = tmpLine.length();
-			char[] chrLine = new char[len];
-			tmpLine.getChars(0, len, chrLine, 0);
+			char[] chrLine = tmpLine.toCharArray();
+			int len = chrLine.length;
 
 			int pos = 0;
 			boolean foundChar = false;
