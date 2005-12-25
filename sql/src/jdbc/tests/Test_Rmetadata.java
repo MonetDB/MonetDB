@@ -51,15 +51,15 @@ public class Test_Rmetadata {
 				System.out.println("\t" + rsmd.getColumnName(col));
 				System.out.println("\t" + rsmd.getColumnType(col));
 				System.out.println("\t" + rsmd.getColumnTypeName(col));
-		//		System.out.println("\t" + rsmd.getPrecision(col));	: not yet impl.
-		//		System.out.println("\t" + rsmd.getScale(col));	: not yet impl.
-		//		System.out.println("\t" + rsmd.getSchemaName(col));	: not yet impl.
+				System.out.println("\t" + rsmd.getPrecision(col));
+				System.out.println("\t" + rsmd.getScale(col));
+				System.out.println("\t" + rsmd.getSchemaName(col));
 				System.out.println("\t" + rsmd.getTableName(col));
 				System.out.println("\t" + rsmd.isAutoIncrement(col));
 				System.out.println("\t" + rsmd.isCaseSensitive(col));
 				System.out.println("\t" + rsmd.isCurrency(col));
 				System.out.println("\t" + rsmd.isDefinitelyWritable(col));
-		//		System.out.println("\t" + rsmd.isNullable(col)); : not yet impl.
+				System.out.println("\t" + rsmd.isNullable(col));
 				System.out.println("\t" + rsmd.isReadOnly(col));
 				System.out.println("\t" + rsmd.isSearchable(col));
 				System.out.println("\t" + rsmd.isSigned(col));
