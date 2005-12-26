@@ -45,7 +45,7 @@ Testing class Test_Rmetadata
 0. 4 columns:	5
 1.	mTests_src_jdbc_tests
 	classname     java.lang.Integer
-	displaysize   10
+	displaysize   1
 	label         myint
 	name          myint
 	type          4
