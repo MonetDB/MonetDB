@@ -169,11 +169,15 @@ dump_header(MalBlkPtr mb, stmt *s, list *l)
 		stmt *c = n->data;
 		sql_subtype *t = tail_type(c);
 		char *tname = table_name(c);
-		char *_tn = "";
-		char *tn = (tname) ? tname : _tn;
+		char *sname = schema_name(c);
+		char *_empty = "";
+		char *tn = (tname) ? tname : _empty;
+		char *sn = (sname) ? sname : _empty;
 		char *cn = column_name(c);
-		char *ntn = sql_escape_ident(tn);
+		char *fqtn = char[strlen(sn) + 1 + strlen(tn) + 1];
+		sprintf(fqtn, "%s.%s", sn, tn);
 		char *ncn = sql_escape_ident(cn);
+		char *ntn = sql_escape_ident(fqtn);
 
 		q = newStmt1(mb, sqlRef, "rsColumn");
 		q = pushArgument(mb, q, s->nr);
@@ -182,8 +186,10 @@ dump_header(MalBlkPtr mb, stmt *s, list *l)
 		q = pushStr(mb, q, t->type->sqlname);
 		q = pushInt(mb, q, t->digits);
 		q = pushInt(mb, q, t->scale);
-		if (tn != _tn)
+		if (tn != _empty)
 			_DELETE(tn);
+		if (sn != _empty)
+			_DELETE(sn);
 		_DELETE(cn);
 		_DELETE(ntn);
 		_DELETE(ncn);
@@ -1025,7 +1031,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushInt(mb, q, s->op4.typeval.digits);
 				q = pushInt(mb, q, s->op4.typeval.scale);
 			}
-			/* convert to string, give error on to large strings */
+			/* convert to string, give error on too large strings */
 			if (s->op4.typeval.type->eclass == EC_STRING &&
 			    s->op4.typeval.digits > 0) 
 				q = pushInt(mb, q, s->op4.typeval.digits);
@@ -1389,10 +1395,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					stmt *c = n->data;
 					sql_subtype *t = tail_type(c);
 					char *tname = table_name(c);
-					char *_tn = "";
-					char *tn = (tname) ? tname : _tn;
+					char *sname = schema_name(c);
+					char *_empty = "";
+					char *tn = (tname) ? tname : _empty;
+					char *sn = (sname) ? sname : _empty;
 					char *cn = column_name(c);
 					char *ntn = sql_escape_ident(tn);
+					char *nsn = sql_escape_ident(sn);
 					char *ncn = sql_escape_ident(cn);
 
 					q = newStmt2(mb, sqlRef, exportValueRef);

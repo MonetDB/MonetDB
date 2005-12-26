@@ -275,8 +275,7 @@ table_add_column(tvar *t, stmt *s, char *tname, char *cname)
 	return v;
 }
 
-static
-    void
+static void
 scope_append_table(scope *scp, sql_table *t)
 {
 	if (scp->p) {

@@ -1183,24 +1183,30 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 					stmt *c = n->data;
 					sql_subtype *t = tail_type(c);
 					char *tname = table_name(c);
-					char *_tn = "";
-					char *tn = (tname) ? tname : _tn;
+					char *sname = schema_name(c);
+					char *_empty = "";
+					char *tn = (tname) ? tname : _empty;
+					char *sn = (sname) ? sname : _empty;
 					char *cn = column_name(c);
 					char *ntn = sql_escape_ident(tn);
+					char *nsn = sql_escape_ident(sn);
 					char *ncn = sql_escape_ident(cn);
 
 					len = snprintf(buf, buflen, "var s%d := mvc_export_value(myc, Output, %d, ", -s->nr, sql->mvc->type );
 	
-					len += snprintf(buf+len, buflen-len, "\"%s\", \"%s\", \"%s\", %d, %d, %d, s%d);\n", ntn, ncn, t->type->sqlname, t->digits, t->scale, t->type->eclass, c->nr);
+					len += snprintf(buf+len, buflen-len, "\"%s.%s\", \"%s\", \"%s\", %d, %d, %d, s%d);\n", nsn, ntn, ncn, t->type->sqlname, t->digits, t->scale, t->type->eclass, c->nr);
 					write_command(sql, buf);
 					write_part(sql, buf, len);
 					len = 0;
 					write_tail(sql, -s->nr);
 					_DELETE(buf);
-					if (tn != _tn)
+					if (tn != _empty)
 						_DELETE(tn);
+					if (sn != _empty)
+						_DELETE(sn);
 					_DELETE(cn);
 					_DELETE(ntn);
+					_DELETE(nsn);
 					_DELETE(ncn);
 					backend_dec_nr2(s->op1.stval);
 					break;
@@ -1223,10 +1229,13 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 					size_t sl;
 					stmt *c = n->data;
 					char *tname = table_name(c);
-					char *_tn = "";
-					char *tn = (tname) ? tname : _tn;
+					char *sname = schema_name(c);
+					char *_empty = "";
+					char *tn = (tname) ? tname : _empty;
+					char *sn = (sname) ? sname : _empty;
 					char *cn = column_name(c);
 					char *ntn = sql_escape_ident(tn);
+					char *nsn = sql_escape_ident(sn);
 					char *ncn = sql_escape_ident(cn);
 
 					sl = strlen(tn) + strlen(cn) + strlen(tail_type(c)->type->sqlname);
@@ -1234,13 +1243,15 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 						buflen += BUFSIZ + sl;
 						buf = RENEW_ARRAY(char, buf, buflen);
 					}
-					len = snprintf(buf, buflen, "mvc_result_column(myc, \"%s\", \"%s\", \"%s\", %d, %d, s%d);\n", ntn, ncn, tail_type(c)->type->sqlname, tail_type(c)->digits, tail_type(c)->scale, c->nr);
+					len = snprintf(buf, buflen, "mvc_result_column(myc, \"%s.%s\", \"%s\", \"%s\", %d, %d, s%d);\n", nsn, ntn, ncn, tail_type(c)->type->sqlname, tail_type(c)->digits, tail_type(c)->scale, c->nr);
 					assert(len <= buflen);
 					_DELETE(cn);
 					_DELETE(ntn);
 					_DELETE(ncn);
 					if (tname)
 						_DELETE(tname);
+					if (sname)
+						_DELETE(sname);
 					write_command(sql, buf);
 					write_part(sql, buf, len);
 					len = 0;
@@ -1571,7 +1582,7 @@ backend_explain(backend *be, stmt *s, stream *out)
 	free(cmd);
 	BATseqbase(b, 0);
 	t_id = mvc_result_table(c, 1, c->type, b);
-	mvc_result_column(c, "", "statement", "varchar", -1, -1, b);
+	mvc_result_column(c, ".", "statement", "varchar", -1, -1, b);
 	BBPunfix(b->batCacheid);
 	return(mvc_export_result(c, out, t_id));
 }
