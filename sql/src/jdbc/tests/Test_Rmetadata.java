@@ -45,25 +45,25 @@ public class Test_Rmetadata {
 			System.out.println("0. 4 columns:\t" + rsmd.getColumnCount());
 			for (int col = 1; col <= rsmd.getColumnCount(); col++) {
 				System.out.println("" + col + ".\t" + rsmd.getCatalogName(col));
-				System.out.println("\t" + rsmd.getColumnClassName(col));
-				System.out.println("\t" + rsmd.getColumnDisplaySize(col));
-				System.out.println("\t" + rsmd.getColumnLabel(col));
-				System.out.println("\t" + rsmd.getColumnName(col));
-				System.out.println("\t" + rsmd.getColumnType(col));
-				System.out.println("\t" + rsmd.getColumnTypeName(col));
-				System.out.println("\t" + rsmd.getPrecision(col));
-				System.out.println("\t" + rsmd.getScale(col));
-				System.out.println("\t" + rsmd.getSchemaName(col));
-				System.out.println("\t" + rsmd.getTableName(col));
-				System.out.println("\t" + rsmd.isAutoIncrement(col));
-				System.out.println("\t" + rsmd.isCaseSensitive(col));
-				System.out.println("\t" + rsmd.isCurrency(col));
-				System.out.println("\t" + rsmd.isDefinitelyWritable(col));
-				System.out.println("\t" + rsmd.isNullable(col));
-				System.out.println("\t" + rsmd.isReadOnly(col));
-				System.out.println("\t" + rsmd.isSearchable(col));
-				System.out.println("\t" + rsmd.isSigned(col));
-				System.out.println("\t" + rsmd.isWritable(col));
+				System.out.println("\tclassname     " + rsmd.getColumnClassName(col));
+				System.out.println("\tdisplaysize   " + rsmd.getColumnDisplaySize(col));
+				System.out.println("\tlabel         " + rsmd.getColumnLabel(col));
+				System.out.println("\tname          " + rsmd.getColumnName(col));
+				System.out.println("\ttype          " + rsmd.getColumnType(col));
+				System.out.println("\ttypename      " + rsmd.getColumnTypeName(col));
+				System.out.println("\tprecision     " + rsmd.getPrecision(col));
+				System.out.println("\tscale         " + rsmd.getScale(col));
+				System.out.println("\tschemaname    " + rsmd.getSchemaName(col));
+				System.out.println("\ttablename     " + rsmd.getTableName(col));
+				System.out.println("\tautoincrement " + rsmd.isAutoIncrement(col));
+				System.out.println("\tcasesensitive " + rsmd.isCaseSensitive(col));
+				System.out.println("\tcurrency      " + rsmd.isCurrency(col));
+				System.out.println("\tdefwritable   " + rsmd.isDefinitelyWritable(col));
+				System.out.println("\tnullable      " + rsmd.isNullable(col));
+				System.out.println("\treadonly      " + rsmd.isReadOnly(col));
+				System.out.println("\tsearchable    " + rsmd.isSearchable(col));
+				System.out.println("\tsigned        " + rsmd.isSigned(col));
+				System.out.println("\twritable      " + rsmd.isWritable(col));
 			}
 
 			for (int i = 5; rs.next(); i++) {

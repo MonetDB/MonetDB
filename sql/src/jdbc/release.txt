@@ -38,7 +38,7 @@ Currently implemented:
 
     NOTE: be sure to check for warnings after setting concurrencies or
           isolation levels; MonetDB currently does not support anything
-          else but completely serializable transactions.
+          else but fully serializable transactions.
   * java.sql.Statement interface
     The next features are not implemented:
     - cancel/getQueryTimeout/setQueryTimeout (query execution cannot be
@@ -79,11 +79,6 @@ Currently implemented:
     - getRef, getURL
     - all methods related to updatable result sets
     * java.sql.ResultSetMetaData interface
-      The next features are not implemented:
-      - isNullable (always returns "unknown")
-      - getSchemaName
-      - getPrecision
-      - getScale
   * java.sql.DatabaseMetaData interface
   * java.sql.SavePoint interface
 

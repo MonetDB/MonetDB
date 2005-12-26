@@ -870,10 +870,11 @@ public class MonetResultSet implements ResultSet {
 	public ResultSetMetaData getMetaData() {
 		// return inner class which implements the ResultSetMetaData interface
 		return(new ResultSetMetaData() {
-			// some variables which provide a simple cache
-			private String schema = null;
-			private int precision = -1;
-			private int scale = -1;
+			// for the more expensive methods, we provide a simple cache
+			// for the most expensive part; getting the ResultSet which
+			// contains the data
+			private DatabaseMetaData dbmd = null;
+			private ResultSet[] colrs = new ResultSet[columns.length];
 
 			/**
 			 * Returns the number of columns in this ResultSet object.
@@ -887,7 +888,7 @@ public class MonetResultSet implements ResultSet {
 			/**
 			 * Indicates whether the designated column is automatically
 			 * numbered, thus read-only.
-			 *
+			 * 
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return true if so; false otherwise
 			 * @throws SQLException if a database access error occurs
@@ -906,7 +907,7 @@ public class MonetResultSet implements ResultSet {
 			/**
 			 * Indicates whether a column's case matters. This holds for all
 			 * columns in MonetDB resultsets since the mapping is done case
-			 * insensitive. Therefore this method will always return false.
+			 * insensitive, therefore this method will always return false.
 			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @returns false
@@ -921,6 +922,8 @@ public class MonetResultSet implements ResultSet {
 			 * It is unknown to me what kind ot columns they regard to,
 			 * as I think all columns are useable in a where clause.
 			 * Returning true for all here, for the time being.
+			 * Possible thought; maybe they want to know here if it's a
+			 * real column existing in a table or not...
 			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @returns true
@@ -943,8 +946,6 @@ public class MonetResultSet implements ResultSet {
 				return(false);
 			}
 			
-			public int isNullable(int column) {return(columnNullableUnknown);}
-
 			/**
 			 * Indicates whether values in the designated column are signed
 			 * numbers.
@@ -993,136 +994,34 @@ public class MonetResultSet implements ResultSet {
 					throw new SQLException("No such column " + column);
 				}
 				
-				// if the display size is zero, try to guess a better size
-				if (ret == 0) {
-					switch (getColumnType(column)) {
-						case Types.NUMERIC:
-						case Types.DECIMAL:
-							ret = 10;
-						break;
-						case Types.BIT: // we don't use type BIT, it's here for completeness
-						case Types.BOOLEAN:
-							ret = 5;	// "false".length();
-						break;
-						case Types.TINYINT:
-						case Types.SMALLINT:
-						case Types.INTEGER:
-							ret = 8;
-						break;
-						case Types.BIGINT:
-							ret = 12;
-						break;
-						case Types.REAL:
-							ret = 10;
-						break;
-						case Types.FLOAT:
-						case Types.DOUBLE:
-							ret = 12;
-						break;
-						case Types.DATE:
-							ret = 10;	// "year-mm-dd".length();
-						break;
-						case Types.TIME:
-							ret = 12;	// "hh:mm:ss.SSS".length();
-						break;
-						case Types.TIMESTAMP:
-							ret = 23;	// date + space + time
-						break;
-					}
-				}
-				
 				return(ret);
 			}
 
 			/**
-			 * Get the designated column's table's schema.  This method
-			 * is currently very expensive as it needs to retrieve the
-			 * information from the database using an SQL query.  Due to
-			 * a protocol limitation, this method might not always
-			 * return the schema name even when the column does have
-			 * one.
+			 * Get the designated column's table's schema.
 			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return schema name or "" if not applicable
 			 * @throws SQLException if a database access error occurs
 			 */
 			public String getSchemaName(int column) throws SQLException {
-				// use cache if there
-				if (schema != null) return(schema);
+				String schema = "";
+				
 				// figure the name out
-				if (getTableName(column) != "") {
-					// we have to get a new Statement here in order not
-					// to close the ResultSet that is being in use to
-					// call this method
-					Statement stmt = getStatement().getConnection().createStatement();
-					// note, we cannot even see if we have the right
-					// one, so this is extremely fuzzy...
-					ResultSet rs = stmt.executeQuery(
-							"select schemas.name from tables, schemas where schemas.id = tables.schema_id and tables.name like '" + getTableName(column) + "'");
-					// if there are no results, this is the default
-					for (int i = 0; rs.next(); i++) {
-						if (i == 0) {
-							schema = rs.getString(1);
-						} else {
-							// in case of multiple matches we pretent as
-							// if the schema name is not applicable
-							schema = "";
-						}
-					}
-					rs.close();
-					stmt.close();
-				} else {
-					schema = "";
+				try {
+					schema = header.getTableNames()[column - 1];
+				} catch (IndexOutOfBoundsException e) {
+					throw new SQLException("No such column " + column);
 				}
 
-				return(schema);
+				if (schema == null) throw
+					new AssertionError("table_name header is empty!");
+				int dot = schema.indexOf(".");
+				if (dot == -1) throw
+					new AssertionError("table_name is not fully qualified! (" + schema + ")");
+
+				return(schema.substring(0, dot));
 			}
-
-			/**
-			 * Get the designated column's number of decimal digits.
-			 * This method is currently very expensive as it needs to
-			 * retrieve the information from the database using an SQL
-			 * query.  Due to a protocol limitation, this method might
-			 * not always return the precision even when the column does
-			 * have one.
-			 *
-			 * @param column the first column is 1, the second is 2, ...
-			 * @return precision
-			 * @throws SQLException if a database access error occurs
-			 */
-			public int getPrecision(int column) throws SQLException {
-				// use cache if there
-				if (precision != -1) return(precision);
-				// figure the name out
-				if (getTableName(column) != "") {
-					// we have to get a new Statement here in order not
-					// to close the ResultSet that is being in use to
-					// call this method
-					Statement stmt = getStatement().getConnection().createStatement();
-					// note, we cannot even see if we have the right
-					// one, so this is extremely fuzzy...
-					ResultSet rs = stmt.executeQuery(
-							"select columns.digits from tables, columns where columns.table_id = tables.id and tables.name like '" + getTableName(column) + "'");
-					// if there are no results, this is the default
-					for (int i = 0; rs.next(); i++) {
-						if (i == 0) {
-							precision = rs.getInt(1);
-						} else {
-							// in case of multiple matches we pretent as
-							// if the schema name is not applicable
-							precision = 0;
-						}
-					}
-					rs.close();
-					stmt.close();
-				} else {
-					precision = 0;
-				}
-
-				return(precision);
-			}
-
-			public int getScale(int column) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
 
 			/**
 			 * Gets the designated column's table name.
@@ -1130,8 +1029,86 @@ public class MonetResultSet implements ResultSet {
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return table name or "" if not applicable
 			 */
-			public String getTableName(int column) {
-				return(header.getTableNames()[column - 1]);
+			public String getTableName(int column) throws SQLException {
+				String table = "";
+				
+				// figure the name out
+				try {
+					table = header.getTableNames()[column - 1];
+				} catch (IndexOutOfBoundsException e) {
+					throw new SQLException("No such column " + column);
+				}
+
+				if (table == null) throw
+					new AssertionError("table_name header is empty!");
+				int dot = table.indexOf(".");
+				if (dot == -1) throw
+					new AssertionError("table_name is not fully qualified! (" + table + ")");
+
+				return(table.substring(dot + 1));
+			}
+
+			/**
+			 * Get the designated column's number of decimal digits.
+			 * This method is currently very expensive as it needs to
+			 * retrieve the information from the database using an SQL
+			 * query.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return precision
+			 * @throws SQLException if a database access error occurs
+			 */
+			public int getPrecision(int column) throws SQLException {
+				int precision = 0;
+				ResultSet col = getColumnResultSet(column);
+
+				// the result has either zero or one results, as the
+				// schema, table and column should be unique...
+				if (col.next()) precision = col.getInt("COLUMN_SIZE");
+
+				return(precision);
+			}
+
+			/**
+			 * Gets the designated column's number of digits to right of
+			 * the decimal point.  This method is currently very
+			 * expensive as it needs to retrieve the information from
+			 * the database using an SQL query.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return scale
+			 * @throws SQLException if a database access error occurs
+			 */
+			public int getScale(int column) throws SQLException {
+				int scale = 0;
+				ResultSet col = getColumnResultSet(column);
+
+				// the result has either zero or one results, as the
+				// schema, table and column should be unique...
+				if (col.next()) scale = col.getInt("DECIMAL_DIGITS");
+
+				return(scale);
+			}
+
+			/**
+			 * Indicates the nullability of values in the designated
+			 * column.  This method is currently very expensive as it
+			 * needs to retrieve the information from the database using
+			 * an SQL query.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return scale
+			 * @throws SQLException if a database access error occurs
+			 */
+			public int isNullable(int column) throws SQLException {
+				int ret = columnNullableUnknown;
+				ResultSet col = getColumnResultSet(column);
+
+				// the result has either zero or one results, as the
+				// schema, table and column should be unique...
+				if (col.next()) ret = col.getInt("NULLABLE");
+
+				return(ret);
 			}
 
 			/**
@@ -1164,8 +1141,8 @@ public class MonetResultSet implements ResultSet {
 			}
 
 			/**
-			 * Indicates whether it is possible for a write on the designated
-			 * column to succeed.
+			 * Indicates whether it is possible for a write on the
+			 * designated column to succeed.
 			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return true if so; false otherwise
@@ -1187,10 +1164,10 @@ public class MonetResultSet implements ResultSet {
 
 			/**
 			 * Returns the fully-qualified name of the Java class whose
-			 * instances are manufactured if the method ResultSet.getObject
-			 * is called to retrieve a value from the column.
-			 * ResultSet.getObject may return a subclass of the class returned
-			 * by this method.
+			 * instances are manufactured if the method
+			 * ResultSet.getObject is called to retrieve a value from
+			 * the column.  ResultSet.getObject may return a subclass of
+			 * the class returned by this method.
 			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return the fully-qualified name of the class in the Java
@@ -1213,8 +1190,9 @@ public class MonetResultSet implements ResultSet {
 			}
 
 			/**
-			 * Gets the designated column's suggested title for use in printouts
-			 * and displays. This is currently equal to getColumnName().
+			 * Gets the designated column's suggested title for use in
+			 * printouts and displays. This is currently equal to
+			 * getColumnName().
 			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return the suggested column title
@@ -1266,6 +1244,49 @@ public class MonetResultSet implements ResultSet {
 					return(types[column - 1]);
 				} catch (IndexOutOfBoundsException e) {
 					throw new SQLException("No such column " + column);
+				}
+			}
+
+			/**
+			 * Returns the Metadata ResultSet for the given column
+			 * number of this ResultSet.  If the column was previously
+			 * requested, a cached ResultSet is returned, otherwise it
+			 * is fetched using the DatabaseMetaData class.
+			 *
+			 * @param column the column index number starting from 1
+			 * @return Metadata ResultSet
+			 * @throws SQLException if a database error occurs
+			 */
+			private ResultSet getColumnResultSet(int column)
+				throws SQLException
+			{
+				if (column > columns.length || column <= 0) throw
+					new SQLException("No such column " + column);
+
+				if (colrs[column - 1] == null) {
+					if (dbmd == null)
+						dbmd = getStatement().getConnection().getMetaData();
+					ResultSet col = 
+						dbmd.getColumns(
+								null, /* this doesn't matter here... */
+								getSchemaName(column),
+								getTableName(column),
+								getColumnName(column)
+							);
+					colrs[column - 1] = col;
+				}
+
+				colrs[column - 1].beforeFirst();
+				return(colrs[column - 1]);
+			}
+
+			protected void finalize() {
+				for (int i = 0; i < columns.length; i++) {
+					try {
+						if (colrs[i] != null) colrs[i].close();
+					} catch (SQLException e) {
+						// ignore... perhaps already closed by GC
+					}
 				}
 			}
 		});
