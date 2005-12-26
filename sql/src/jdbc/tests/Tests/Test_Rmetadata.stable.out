@@ -26,7 +26,7 @@ Over..
 # 22:17:15 >  java Test_Rmetadata jdbc:monetdb://pictor:59613/database?user=monetdb&password=monetdb
 # 22:17:15 >  
 
-Buildfile: /net/koala.ins.cwi.nl/export/scratch1/niels/sql/src/jdbc/tests/Tests/../build.xml
+Buildfile: /net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/sql/src/jdbc/tests/Tests/../build.xml
 
 Test_Rmetadata:
 
@@ -44,85 +44,105 @@ Testing class Test_Rmetadata
 0. false	false
 0. 4 columns:	5
 1.	mTests_src_jdbc_tests
-	java.lang.Integer
-	10
-	myint
-	myint
-	4
-	int
-	table_test_rmetadata
-	false
-	false
-	false
-	false
-	true
-	true
-	true
-	false
+	classname     java.lang.Integer
+	displaysize   10
+	label         myint
+	name          myint
+	type          4
+	typename      int
+	precision     32
+	scale         0
+	schemaname    sys
+	tablename     table_test_rmetadata
+	autoincrement false
+	casesensitive false
+	currency      false
+	defwritable   false
+	nullable      1
+	readonly      true
+	searchable    true
+	signed        true
+	writable      false
 2.	mTests_src_jdbc_tests
-	java.lang.Double
-	22
-	mydouble
-	mydouble
-	8
-	double
-	table_test_rmetadata
-	false
-	false
-	false
-	false
-	true
-	true
-	true
-	false
+	classname     java.lang.Double
+	displaysize   22
+	label         mydouble
+	name          mydouble
+	type          8
+	typename      double
+	precision     53
+	scale         0
+	schemaname    sys
+	tablename     table_test_rmetadata
+	autoincrement false
+	casesensitive false
+	currency      false
+	defwritable   false
+	nullable      1
+	readonly      true
+	searchable    true
+	signed        true
+	writable      false
 3.	mTests_src_jdbc_tests
-	java.lang.Boolean
-	5
-	mybool
-	mybool
-	16
-	boolean
-	table_test_rmetadata
-	false
-	false
-	false
-	false
-	true
-	true
-	false
-	false
+	classname     java.lang.Boolean
+	displaysize   5
+	label         mybool
+	name          mybool
+	type          16
+	typename      boolean
+	precision     1
+	scale         0
+	schemaname    sys
+	tablename     table_test_rmetadata
+	autoincrement false
+	casesensitive false
+	currency      false
+	defwritable   false
+	nullable      1
+	readonly      true
+	searchable    true
+	signed        false
+	writable      false
 4.	mTests_src_jdbc_tests
-	java.lang.String
-	8
-	myvarchar
-	myvarchar
-	12
-	varchar
-	table_test_rmetadata
-	false
-	false
-	false
-	false
-	true
-	true
-	false
-	false
+	classname     java.lang.String
+	displaysize   8
+	label         myvarchar
+	name          myvarchar
+	type          12
+	typename      varchar
+	precision     15
+	scale         0
+	schemaname    sys
+	tablename     table_test_rmetadata
+	autoincrement false
+	casesensitive false
+	currency      false
+	defwritable   false
+	nullable      1
+	readonly      true
+	searchable    true
+	signed        false
+	writable      false
 5.	mTests_src_jdbc_tests
-	java.lang.String
-	11
-	myclob
-	myclob
-	2005
-	clob
-	table_test_rmetadata
-	false
-	false
-	false
-	false
-	true
-	true
-	false
-	false
+	classname     java.lang.String
+	displaysize   11
+	label         myclob
+	name          myclob
+	type          2005
+	typename      clob
+	precision     0
+	scale         0
+	schemaname    sys
+	tablename     table_test_rmetadata
+	autoincrement false
+	casesensitive false
+	currency      false
+	defwritable   false
+	nullable      1
+	readonly      true
+	searchable    true
+	signed        false
+	writable      false
 5.	(null)
 5.	(null)
 5.	(null)
@@ -135,7 +155,7 @@ Testing class Test_Rmetadata
 6.	java.lang.String is an instance of java.lang.String
 
 BUILD SUCCESSFUL
-Total time: 1 second
+Total time: 2 seconds
 
 # 09:09:21 >  
 # 09:09:21 >  Done.

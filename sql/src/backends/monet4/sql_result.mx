@@ -785,6 +785,8 @@ export_length( stream *s, int mtype, int eclass, int digits, int scale, bat bid,
 		if (digits)	/* fractional seconds precision */
 			count += digits;
 		ok = mvc_send_int(s, count);
+	} else if (eclass == EC_BIT) {
+		ok = mvc_send_int(s, 5);	/* max(strlen("true"), strlen("false")) */
 	} else {
 		ok = mvc_send_int(s, 0);
 	}
