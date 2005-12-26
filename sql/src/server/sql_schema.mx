@@ -1398,7 +1398,7 @@ alter_table(mvc *sql, sql_schema *ss, dlist *qname, symbol *te)
 }
 
 static char *
-schema_name(dlist *name_auth)
+get_schema_name(dlist *name_auth)
 {
 	assert(name_auth && name_auth->h);
 
@@ -1416,7 +1416,7 @@ schema_auth(dlist *name_auth)
 static stmt *
 create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 {
-	char *name = schema_name(auth_name);
+	char *name = get_schema_name(auth_name);
 	char *auth = schema_auth(auth_name);
 	int auth_id = sql->role_id;
 
@@ -1460,7 +1460,7 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 static stmt *
 drop_schema(mvc *sql, dlist *qname, int dropaction)
 {
-	char *name = schema_name(qname);
+	char *name = get_schema_name(qname);
 	sql_schema *s = mvc_bind_schema(sql, name);
 
 	(void) dropaction;
