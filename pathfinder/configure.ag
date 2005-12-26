@@ -200,9 +200,12 @@ if test "x$have_libxml2" != xno; then
 	fi
     fi
 
-    AC_PATH_PROG(XML2_CONFIG,xml2-${bits}-config,,$XPATH)
+    AC_PATH_PROG(XML2_CONFIG,xml2-config.${bits},,$XPATH)
     if test "x$XML2_CONFIG" = x; then
-        AC_PATH_PROG(XML2_CONFIG,xml2-config,,$XPATH)
+        AC_PATH_PROG(XML2_CONFIG,xml2-${bits}-config,,$XPATH)
+        if test "x$XML2_CONFIG" = x; then
+            AC_PATH_PROG(XML2_CONFIG,xml2-config,,$XPATH)
+        fi
     fi
 
     if test "x$XML2_CONFIG" != x; then
