@@ -447,9 +447,12 @@ faster system start.
 		return 0;
 @-
 Time to execute the script files. 
-Start with the init command[todo]
+Start with the init command[todo], which may be defined in
+the configuration file.
 @c
 	initClientPrg(mal_clients, "main");
+	if ( dbinit== NULL)
+		dbinit= GDKgetenv("dbinit");
 	if (dbinit) {
 		str input = GDKstrdup(dbinit);
 

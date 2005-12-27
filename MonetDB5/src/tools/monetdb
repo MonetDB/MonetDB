@@ -39,6 +39,23 @@ function usage()
 }
 
 DBFARM=$MONET5_PREFIX/var/MonetDB5/dbfarm
+# First perform some sanity checks
+if [ "$MONET5_PREFIX"  = "" ]
+then
+	echo "The MONET5_PREFIX environment variable has not been set"
+	echo "It should point to where you have installed the build directory"
+	exit
+fi
+if [ ! -d $DBFARM ]
+then
+	echo "Creation of missing database storage area '$DBFARM'"
+	mkdir -p $DBFARM
+fi
+if [ ! -d $DBFARM ]
+then
+	echo "Database storage area '$DBFARM' is in accessible"
+fi
+
 ACTION="--status"
 
 case "$1" in
@@ -203,14 +220,28 @@ function show_status()
 				show_status_hdr
 				header=1
 			fi
-			guard=`cat $1/.mguardian.pid`
-			delay=`cat $1/.mguardian.delay`
+			if [ -f $1/.mguardian.pid ]
+			then
+				guard=`cat $1/.mguardian.pid`
+			else
+				guard=missing
+			fi
+			if [ -f $1/.mserver.dbinit ]
+			then
+				dbinit=`cat $1/.mserver.dbinit`
+			fi
+			if [ -f $1/.mguardian.delay ]
+			then
+				delay=`cat $1/.mguardian.delay`
+			else
+				delay=unknown
+			fi
 			if [ "$delay" = "" ]
 			then
 				delay=`grep delay $1/.monetdb.conf |sed -e "s/\t.*//" -e "s/delay=//"`
 			fi
 			start=`getTIME $1`
-			echo "$1	$pid	$guard	$delay	$start"
+			echo "$1	$pid	$guard	$delay	$start $dbinit"
 		fi
 	fi
 }
@@ -228,6 +259,16 @@ function create_database ()
 			echo "Database $1 initialized"
 		else
 			exit
+		fi
+		read -p "Should the MAL listener be activated? [yes/no]" answer
+		if [ "$answer" = "yes" ]
+		then
+			echo "mapi.listen();" >$1/.mserver.dbinit
+		fi
+		read -p "Should the SQL listener be activated ? [yes/no]" answer
+		if [ "$answer" = "yes" ]
+		then
+			echo "include sql; sql.listen();" >>$1/.mserver.dbinit
 		fi
 }
 
@@ -265,7 +306,7 @@ case "$ACTION" in
 	done
 	if [ $started = 0 ]
 	then
-		echo "No MonetDB servers started"
+		echo "No server started for $DBLIST"
 	fi
 	;;
  "--stop" )
@@ -279,7 +320,7 @@ case "$ACTION" in
 	done
 	if [ $stopped = 0 ]
 	then
-		echo "No MonetDB servers running"
+		echo "No server running for $DBLIST"
 	fi
 	;;
  "--status" )
@@ -293,7 +334,7 @@ case "$ACTION" in
 	done
 	if [ $header = 0 ]
 	then
-		echo "No MonetDB server running"
+		echo "No server running for $DBLIST"
 	fi
 	;;
  * ) ;;
