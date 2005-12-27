@@ -765,7 +765,7 @@ int @2_2_@1( @1 *res, @2 *v )
 		*res = (@1)val;
 		return GDK_SUCCEED;
 	} else {
-		GDKerror("convert: value (%d) exceeds limits of type @1\n",val);
+		GDKerror("convert: value (" LLFMT ") exceeds limits of type @1\n",val);
 		return GDK_FAIL;
 	}
 }
@@ -978,7 +978,7 @@ int @2_dec2_@1( @1 *res, int *s1, @2 *v )
 		*res = (@1)val;
 		return GDK_SUCCEED;
 	} else {
-		GDKerror("convert: value (%d) exceeds limits of type @1\n",val);
+		GDKerror("convert: value (" LLFMT ") exceeds limits of type @1\n",val);
 		return GDK_FAIL;
 	}
 }
@@ -1021,7 +1021,7 @@ int @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 		*res = (@1)val;
 		return GDK_SUCCEED;
 	} else {
-		GDKerror("convert: value (%d) exceeds limits of type @1\n",val);
+		GDKerror("convert: value (" LLFMT ") exceeds limits of type @1\n",val);
 		return GDK_FAIL;
 	}
 }
