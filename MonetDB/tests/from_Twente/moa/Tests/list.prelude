@@ -57,7 +57,11 @@ PROC str_concat( BAT[oid, str] s ):str {
 PROC sunion(bat[any::1,any::2] bat1, bat[any::1,any::2] bat2):
   bat[any::1,any::2]
 {
-    VAR result := new(htype(bat1), ttype(bat1));
+    var ht := htype(bat1);
+    var tt := ttype(bat1);
+    if (ht = void) { ht := oid; }
+    if (tt = void) { tt := oid; }
+    VAR result := new(ht, tt, count(bat1)+count(bat2));
     result.insert(bat1);
     result.insert(bat2);
     RETURN result;
@@ -73,7 +77,7 @@ PROC mergecast( BAT[any::1,any] bat1, BAT[any,any::2] bat2, any::2 val)
 PROC concat( BAT[any::1,any::2] bat1, BAT[any::1,any::2] bat2)
   :BAT[any::1,any::2]
 {
-    VAR result := new(htype(bat1), ttype(bat1));
+    VAR result := new(htype(bat1), ttype(bat1), count(bat1)+count(bat2));
     result.insert(bat1);
     result.insert(bat2);
     RETURN result;
