@@ -1574,7 +1574,7 @@ str @2_2_@1( @1 *res, @2 *v )
 		return(MAL_SUCCEED);
 	} else {
 		return throwException(MALEXCEPTION,"convert",
-			"value (%d) exceeds limits of type @1\n", val);
+			"value (" LLFMT ") exceeds limits of type @1\n", val);
 	}
 }
 @c
@@ -1793,7 +1793,7 @@ str @2_dec2_@1( @1 *res, int *s1, @2 *v )
 		return MAL_SUCCEED;
 	} else {
 		return throwException(MALEXCEPTION,"convert",
-			"value (%d) exceeds limits of type @1\n", val);
+			"value (" LLFMT ") exceeds limits of type @1\n", val);
 	}
 }
 
@@ -1830,7 +1830,7 @@ str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 		return MAL_SUCCEED;
 	} else {
 		return throwException(MALEXCEPTION,"convert",
-			"value (%d) exceeds limits of type @1\n", val);
+			"value (" LLFMT ") exceeds limits of type @1\n", val);
 	}
 }
 
