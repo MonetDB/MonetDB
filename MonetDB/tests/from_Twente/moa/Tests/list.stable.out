@@ -966,7 +966,64 @@ var _MMreverse_89 := reverse(_MMcastnil_11);
 var _MMjoin_90 := join(_MMreverse_89,_MMjoin_10);
 var _MMreverse_91 := reverse(_MMcastnil_23);
 var _MMjoin_92 := join(_MMreverse_91,_MMjoin_22);
+_MMjoin_90.print();
+#-----------------#
+# h	t	  # name
+# void	void	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 1@0,	  1@0	  ]
+[ 2@0,	  2@0	  ]
+_MMjoin_90.info().reverse().like("sort").reverse().print();
+#---------------------------------#
+# t			h	  # name
+# str			str	  # type
+#---------------------------------#
+[ "hsorted",		  "65"	  ]
+[ "hnosorted",		  "0"	  ]
+[ "hnosorted_rev",	  "0"	  ]
+[ "tsorted",		  "65"	  ]
+[ "tnosorted",		  "0"	  ]
+[ "tnosorted_rev",	  "0"	  ]
+_MMjoin_92.print();
+#-----------------#
+# t	h	  # name
+# void	void	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 1@0,	  1@0	  ]
+[ 2@0,	  2@0	  ]
+_MMjoin_92.info().reverse().like("sort").reverse().print();
+#---------------------------------#
+# t			h	  # name
+# str			str	  # type
+#---------------------------------#
+[ "hsorted",		  "65"	  ]
+[ "hnosorted",		  "0"	  ]
+[ "hnosorted_rev",	  "0"	  ]
+[ "tsorted",		  "65"	  ]
+[ "tnosorted",		  "0"	  ]
+[ "tnosorted_rev",	  "0"	  ]
 var _MMsunion_93 := sunion(_MMjoin_90,_MMjoin_92);
+_MMsunion_93.print();
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 1@0,	  1@0	  ]
+[ 2@0,	  2@0	  ]
+_MMsunion_93.info().reverse().like("sort").reverse().print();
+#---------------------------------#
+# t			h	  # name
+# str			str	  # type
+#---------------------------------#
+[ "hsorted",		  "65"	  ]
+[ "hnosorted",		  "1"	  ]
+[ "hnosorted_rev",	  "0"	  ]
+[ "tsorted",		  "65"	  ]
+[ "tnosorted",		  "1"	  ]
+[ "tnosorted_rev",	  "0"	  ]
 _MMnilcast_8.print();
 #-----------------#
 # t	tmp_51	  # name
