@@ -1013,16 +1013,19 @@ _MMsunion_93.print();
 [ 0@0,	  0@0	  ]
 [ 1@0,	  1@0	  ]
 [ 2@0,	  2@0	  ]
+[ 0@0,	  0@0	  ]
+[ 1@0,	  1@0	  ]
+[ 2@0,	  2@0	  ]
 _MMsunion_93.info().reverse().like("sort").reverse().print();
 #---------------------------------#
 # t			h	  # name
 # str			str	  # type
 #---------------------------------#
-[ "hsorted",		  "65"	  ]
-[ "hnosorted",		  "1"	  ]
+[ "hsorted",		  "0"	  ]
+[ "hnosorted",		  "3"	  ]
 [ "hnosorted_rev",	  "0"	  ]
-[ "tsorted",		  "65"	  ]
-[ "tnosorted",		  "1"	  ]
+[ "tsorted",		  "0"	  ]
+[ "tnosorted",		  "3"	  ]
 [ "tnosorted_rev",	  "0"	  ]
 _MMnilcast_8.print();
 #-----------------#
@@ -1776,11 +1779,11 @@ indexSet1.print();
 [ 1@0,	  11@0	  ]
 [ 2@0,	  12@0	  ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexList2)))),10@0))))).print();
-#-------------------------#
-# BAT:	  tmp_183	  #
-# (oid)	  (oid)		  #
-#-------------------------#
-[ 10@0,	  100@0		  ]
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 10@0,	  100@0	  ]
 valuesList1.find(100@0).print();
 [ 10 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexList2)))),11@0))))).print();
