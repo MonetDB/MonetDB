@@ -15,7 +15,7 @@ Usage: monetdb [command] [options] [script]
 Primary command:
     --status        Show the server status  [default]
     --start         Server(s) are started in the dbfarm
-    --shutdown      Server(s) are gracefully stopped
+    --stop          Server(s) are gracefully stopped
     --databases     Show the known databases
     --log           Show the server management log
 
@@ -43,6 +43,10 @@ To start a server for a database simpy type
 @example
 > monetdb --start --dbname=voc
 @end example
+The first time this command is given, it asks you if you
+want to create the @code{voc} database and what listeners
+to be activated upon restart. Answers those questions with "yes".
+
 It responds with a message that this action 
 was successful, or an error message explains the problems encountered.
 The server is run as a daemon process and you need a 
@@ -60,7 +64,7 @@ voc     21488   21502   12      Sun Dec 18 09:05:36 2005
 It tells you when the server was started, the identity of the
 process looking after it, and the delay between successive
 checks.
-A server kan be put to sleep using the command
+A server can be put to sleep using the command
 @code{monetdb --stop --dbname=<name>}.  
 Ommission of a database name stops all running servers.
 The actions of monetdb are logged for post analysis, which can

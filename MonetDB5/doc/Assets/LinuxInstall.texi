@@ -1,7 +1,5 @@
 This section helps you to install the MonetDB source and compile it
-on a Unix platform (e.g., Linux, IRIX, Solaris, AIX, MacOS X/Darwin, or CYGWIN).
-For compilation and installation on a native Windows system (NT, 2000, XP)
-see @ref{Windows Installation}
+on a Unix platform (e.g., Linux, MacOS X/Darwin, or CYGWIN).
 
 @subsubsection Prerequisites
 @itemize
@@ -45,32 +43,15 @@ compilation adds another 70 MB.  Testing takes about 45 MB, and
 the installation about 20 MB (not including any databases).
 @end itemize
 
-@subsubsection Getting the Software
-This command should be done once.  It records a password on the local
-machine to be used for all subsequent CVS accesses with this server.
-@example
-cvs -d:pserver:anonymous@@cvs.sourceforge.net:/cvsroot/monetdb login
-@end example
-
-Just type RETURN when asked for the password.
-
-Then get the software by using the command:
-@example
-cvs -d:pserver:anonymous@@cvs.sourceforge.net:/cvsroot/monetdb checkout MonetDB
-@end example
-This will create a directory MonetDB in your current working directory.
-
-Also see @url{http://sourceforge.net/cvs/?group_id=56967,SourceForge documentation} for more information.
-
 @subsubsection Configure and Make
 Before executing the following steps, make sure that your
 shell-environment (especially variables like "PATH" and
 "LD_LIBRARY_PATH") is setup, thus that the tools listed above can be
 found. 
-("Bash"-users at CWI and DD are welcome to simply "source conf/conf.bash".
-This sets the proper environment and even provides aliases
-"configure_MonetDB" &amp; "Mtest_MonetDB" for convenience.
-See conf/conf.bash itself for more details.)
+@c ("Bash"-users are welcome to simply "source conf/conf.bash".
+@c This sets the proper environment and even provides aliases
+@c "configure_MonetDB" &amp; "Mtest_MonetDB" for convenience.
+@c See conf/conf.bash itself for more details.)
 
 In the top-level directory of MonetDB type the command:
 @example
@@ -139,7 +120,7 @@ is a reference to an HTML file which is created by the test process and
 shows the test results.  
 
 
-Testing takes about 46 MB of disk space in the build directory.<br />
+Testing takes about 46 MB of disk space in the build directory.
 Running the tests takes about 13 minutes on the previously mentioned system.
 
 @subsubsection Installing
@@ -165,22 +146,19 @@ This should produce much the same output as make check above, but uses
 the installed version of MonetDB.
 
 You need write permissions on part of the installation directory for
-this command: it will create subdirectories <tt>var/dbfarm</tt> and Tests.
+this command: it will create subdirectories @code{var/MonetDB5/dbfarm}
+and Tests.
 
 @subsubsection Documentation
-The documentation starts in <prefixdir>/doc/MonetDB.html
-
-NOTE: the current 'make install' does not yet generate this
-      documentation to do this manually, execute *after* successful
-      'make install'.  In the top-level directory of the MonetDB build
-      tree, call
-@example
-make html
-@end example
+The documentation recides in @code{share/MonetDB5/}.
+It consists of the pdf files of the current document and
+its web pages.
+The most recent version is best access from 
+the @url{http://monetdb.cwi.nl,MonetDB home page}.
 
 @subsubsection Troubleshooting
 Bootstrap fails if any of the requisite programs can not be found or
-is an incompatible version.<br />
+is an incompatible version.
 Bootstrap adds files to the source directory, so it must have write
 permissions.
 
@@ -233,28 +211,3 @@ reported using the respective bug-tracking system at
 SourceForge} (preferred) or emailed
 to @url{mailto:monet@@cwi.nl,monet@@cwi.nl}.  
 
-@subsubsection Running MonetDB with valgrind on Linux<
-In case you intend (or need) to run MonetDB with the memory debugging and
-profiling tool "valgrind", you need to take care of the following steps:
-@enumerate
-@item
- set option "gdk_alloc_map" to "no" (in MonetDB.conf: "gdk_alloc_map=no",
-   resp. on the Mserver's commandline: "--set gdk_alloc_map=no")
-@item tell valgrind to use 8-byte alignment ("valgrind --alignment=8"), hence:
-   "valgrind --alignment=8 Mserver --set gdk_alloc_map=no ..."
-@item
-patch src/gdk/gdk_system.mx as follows and recompile MonetDB 
-@example
---- src/gdk/gdk_system.mx       28 Jan 2004 20:42:41 -0000      1.56
-+++ src/gdk/gdk_system.mx       2 Mar 2004 17:42:22 -0000
-@@ -359,8 +359,8 @@
-           process (i.e. with all its threads) is replaced by the new
-           program.  If this new program does nothing, other than
-           exit, we effectively exit the server.
--        */
-        execl(s ? "/bin/false" : "/bin/true", s ? "false" : "true", (char *) 0);
-+        */
- #endif
-        exit(s);
-@end example
-@end enumerate

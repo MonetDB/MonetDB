@@ -1,0 +1,39 @@
+@section MapiClient Calling Arguments
+@example
+MapiClient [ options ]
+@end example
+Options are:
+@table @code
+@item  -b t/f      
+@item  --blocked=true/false 
+	Run the interaction in blocked transfer mode
+
+@item -D          @item --dump           
+dump sql database 
+@item -e          @item --error          
+exit on error 
+@item -H          @item --history        
+load/save cmdline history (default off) 
+@item -h hostname @item --host=hostname  
+host to connect to 
+@item -i          @item --interactive    
+read stdin after command line args 
+@item  -l language @item --language=lang  
+@verb{ { }mal,sql,mil,xquery @verb{ } } 
+@item  -P passwd   @item --passwd=passwd  
+password 
+@item  -p portnr   @item --port=portnr    
+port to connect to 
+@item  -q          @item --quiet          
+don't print welcome message 
+@item  -s stmt     @item --statement=stmt 
+run single statement 
+@item  -T          @item --time           
+time commands 
+@item  -t          @item --trace          
+trace Monet interaction 
+@item  -u user     @item --user=user      
+user id 
+@item  -?          @item --help           
+show this usage message 
+@end table

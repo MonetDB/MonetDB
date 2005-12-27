@@ -4,10 +4,15 @@ The source distribution is needed if you intend to inspect or extend
 the code base. The source distribution comes
 with the complete test-bench to assure that changes do not affect
 (in as far as they get tested) its stability.
-
 A single stable release is maintained for external users while 
 we concurrently work on the next release.
 Older versions are not actively maintained by the development team.
+
+Set up of a fully functional system requires downloading
+a MonetDB server package and either/both the SQL and XQuery packages.
+The steps to be taken are described for installing the server
+only, because installing the other packages largely follow
+the same steps. The deviances are explained at the end of this section.
 
 The development version can be obtained from the CVS repository at SourceForge.
 You have to login to the CVS server first:
@@ -15,31 +20,14 @@ You have to login to the CVS server first:
 cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb login
 @end verbatim
 Just type RETURN when asked for the password.
-Then get the MonetDB and sql module sources by using the command:
+Then get the MonetDB and SQL module sources by using the command:
 @verbatim
-cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb checkout MonetDB sql
+cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb checkout MonetDB5 sql
 @end verbatim
 
-This will create the directories MonetDB and sql in your current working directory, which hold the sources.
-Read the MonetDB installation instructions for 
-@url{http://monetdb.cwi.nl/xyz,Unix} or
-@url{http://monetdb.cwi.nl/xyz,Windows}
-to successfully compile and install these sources.  
-For SQL installation, see the corresponding documentation in
-@url{http://monetdb.cwi.nl/xyz,Linux}
-or
-@url{http://monetdb.cwi.nl/xyz,Windows}
-Furthermore, take special care by also reading the 
-test web guidelines (pxref(The Test Web)).
-
-
-The code base can also be studied online.  See the
-@url{http://cvs.sourceforge.net/viewcvs.py/monetdb/, 
-MonetDB CVS tree}.
-
-@emph{WARNING:} To use the SQL and MonetDB development versions, you
-should check out the latest version of @emph{both}.  They are kept in sync
-and rely on each other.
+This will create the directories MonetDB5 and SQL in your current working 
+directory, which hold the sources. 
+Also see @url{http://sourceforge.net/cvs/?group_id=56967,SourceForge documentation} for more information on using cvs.
 
 @node Linux Installation, Windows Installation, Source Distribution, Download and Installation
 @subsection Linux Installation

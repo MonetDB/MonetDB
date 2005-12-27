@@ -67,24 +67,6 @@ This section helps you to install MonetDB on a native Windows system (NT, 2000, 
 	the installation about 20 MB (not including any databases).
 @end enumerate
 
-@subsubsection Getting the Software
-This command should be done once.  It records a password on the local
-machine to be used for all subsequent CVS accesses with this server.
-@verbatim
-cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb login
-@end verbatim
-
-Just type RETURN when asked for the password. The actual steps depend on
-your CVS tool, e.g. in WinCVS you have to set the Admin preferences.
-Then get the software by using the command:
-
-@verbatim
-cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb checkout MonetDB</
-@end verbatim
-This will create a directory MonetDB in your current working directory.
-
-Also see @url{http://sourceforge.net/cvs/?group_id=56967,SourceForge documentation} for more information.
-
 @subsubsection Compiling
 Open a Windows command shell or a UnxUtils shell and go to the
 top-level directory of MonetDB.

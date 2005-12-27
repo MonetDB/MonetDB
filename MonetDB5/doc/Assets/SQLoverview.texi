@@ -38,11 +38,6 @@ Relational Language Components, ISBN 1558604561.
 The architecture is based on a separate compiler module, which translates 
 SQL statements into MAL. In this process common optimization heuristics,
 specific to relational algebra are performed.
-
-The SQL module can be downloaded from the
-@url{http://sourceforge.net/project/showfiles.php?group_id=56967,download} 
-section at SourceForge. It is already included in the Windows installers.
-
 There are bindings for SQL with JDBC, ODBC, PHP and C, 
 (see @ref{User Interfaces}) to integrate seamlessly in existing 
 developments environments.
@@ -73,27 +68,24 @@ features to analyse and your SQL code.
 @node Getting Started with SQL, The VOC Tutorial, SQL, SQL
 @section Getting Started with MonetDB/SQL
 Working with SQL requires installation of the MonetDB server 
-and SQL compiler module. 
-See the section @ref{Download and Installation} to get the version
-for your platform.
+and SQL compiler module.  It can be downloaded from the
+@url{http://sourceforge.net/project/showfiles.php?group_id=56967,download} 
+section at SourceForge. It is already included in the Windows installers.
 
-The first step is to start the database backend, following
+The first step is to start the database backend following
 the steps in @ref{Start and Stop the Server} or illustrated below.
-Once it runs, the easiest is to use a textual SQL client
-to explore its functionality.
-
+Once it runs, you can choose between a textual interface or
+one of the graphical user interfaces (See @ref{User Interfaces}).
+The easiest to start with is a textual SQL client.
 Under Windows, this client is already configured to directly contact
 the running server. For Linux users we illustrate the actions taken
-behind the scene. Packaging the command line actions in shell scripts is
-straightforward.
+behind the scene. 
 
-The first action on Linux is to start the database server.
-The command shown below includes a server
-initialization string, which loads the SQL
-module and starts to listen to the default MonetDB port for SQL connections.
-It also indicates the server to run in the background.
+The first action on Linux is to start the database server as described
+in @ref{Start and Stop the Server}.
+
 @example
-shell> Mserver --set monet-daemon=yes --dbinit="include sql;mapi.listen(45123);"
+shell> monetdb --start --dbname=voc 
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
@@ -108,17 +100,64 @@ shell>
 This reply evidently depends on your installation procedure and
 configuration parameters.
 
-The interaction with the server subsequently takes place through
-either a textual or graphical user interface. (See @ref{User Interfaces}).
-For our explorations of SQL we use the generic MapiClient, which
-is started as follows:
+The next step is to connect to the server with a textual client.
+Two such clients are included in the distribution: MapiClient and
+JdbcClient.
 
+The former is the native, C-implementation of the MonetDB client interface.
+It is a no-frills and fast interface geared at developers. 
+The @code{jdbcclient} uses a standardized database interaction protocol.
+If you are familiar with JDBC-based applications, or intend to 
+build those, this interface may be your prime choice.
+The @code{jdbcclient} utility is illustrated:
 @example
-shell> MapiClient -lsql -p45123
+% java -jar share/MonetDB/lib/jdbcclient-1.2.jar -umonetdb
+password: &lt;monetdb&gt;
+
+Welcome to the MonetDB interactive JDBC terminal!
+Database: MonetDB 4.99.19
+Driver: MonetDB Native Driver 1.2 (Blunt+ 20051226)
+Type \q to quit, \h for a list of available commands
+auto commit mode: on
+monetdb->
+@end example
+The location of the jar file is taken from the MonetDB 
+installation directory. Its location can be added to your
+CLASSPATH environment variable for ease of localization.
+
+The world of SQL is now available to the user:
+@example
+monetdb-> SELECT 'Hello SQL, here I come' AS "message";
++------------------------+
+| message                |
++========================+
+| Hello SQL, here I come |
++------------------------+
+1 row
+
+monetdb->
+@end example
+
+The alternative interface is MapiClient with its Spartan rendering scheme:
+@example
+shell> MapiClient -lsql 
+sql>SELECT 'Hello SQL, here I come' AS "message";
+#  # table_name
+# message # name
+# char # type
+# 22 # length
+[ "Hello SQL, here I come"      ]
 sql>
 @end example
-The client runs with the default user id @code{monetdb}.
-It is ready for our first experiments.
+
+In a clean setup, either client program should run without problems.
+If you haven't managed to contact the database server either way,
+backtrack your steps. Is the server running? (use @code{monetdb --status})
+More arguments may be needed if the server lives on
+a different machine or the client does not have access to the
+MonetDB configuration file to access the defaults. See @ref{JdbcClient}
+or @ref{MapiClient} for details.
+
 
 @node The VOC Tutorial, SQL Feature Overview, Getting Started with SQL, SQL
 @section The VOC tutorial
@@ -175,10 +214,10 @@ We illustrate this process using the textual SQL client.
 Make sure the MonetDB server has been started, then start the SQL client.
 Under Linux you will see something like this:
 
-@verbatim
+@example
 Welcome to the MonetDB interactive JDBC terminal!
-Database: MonetDB 4.9.3
-Driver: MonetDB Native Driver 1.2 (Blunt-SR1)
+Database: MonetDB 4.99.19
+Driver: MonetDB Native Driver 1.2 (Blunt+ 20051226)
 Type \q to quit, \h for a list of available commands
 auto commit mode: on
 monetdb> CREATE USER "voc" WITH PASSWORD 'voc' NAME 'VOC Explorer' SCHEMA "sys";
@@ -187,10 +226,10 @@ monetdb> CREATE SCHEMA "voc" AUTHORIZATION "voc";
 Operation successful
 monetdb> ALTER USER "voc" SET SCHEMA "voc";
 monetdb>\q
-@end verbatim
+@end example
 
 @subsection Exploring the VOC data set
-@subsection Background 
+@subsection Historical Background 
 
 @node SQL Feature Overview, SQL Feature List, The VOC Tutorial, SQL
 @section SQL Features 

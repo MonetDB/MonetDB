@@ -1,7 +1,7 @@
 @section Downloads and Installation
 
 Using MonetDB for experimentation and application development
-requires installation of the back-end server Mserver, a front-end compiler for 
+requires installation of the back-end server, a front-end compiler for 
 SQL or XQuery, the APIs, and a (graphical) user interface.
 These components are packaged conveniently for several platforms in
 the @url{http://sourceforge.net/project/showfiles.php?group_id=56967,download} section at SourceForge.
@@ -35,7 +35,7 @@ This chapter provides background on the following topics:
 @node Software Versions, Standard Distribution, Download and Installation, General Introduction
 @subsection Software Versions
 The MonetDB product family consists of several related packages.
-At the time of writing MonetDB Version 4.9 is distributed worldwide
+At the time of writing Version 4.9 is distributed worldwide
 through @url{http://sourceforge.net/projects/monetdb,SourceForge}.
 It comes with the SQL version 2.8 and PathFinder 1.0 front-ends.
 
