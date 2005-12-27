@@ -306,7 +306,7 @@ case "$ACTION" in
 	done
 	if [ $started = 0 ]
 	then
-		echo "No server started for $DBLIST"
+		echo "No server started "
 	fi
 	;;
  "--stop" )
@@ -320,7 +320,7 @@ case "$ACTION" in
 	done
 	if [ $stopped = 0 ]
 	then
-		echo "No server running for $DBLIST"
+		echo "No server stopped "
 	fi
 	;;
  "--status" )
@@ -334,7 +334,7 @@ case "$ACTION" in
 	done
 	if [ $header = 0 ]
 	then
-		echo "No server running for $DBLIST"
+		echo "No server running "
 	fi
 	;;
  * ) ;;
