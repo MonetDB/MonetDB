@@ -3,7 +3,7 @@
 for i in `ls $RELSRCDIR/../../tests/XMark/Tests/*.xq` ; do
 	j=${i##*/}
 	test -L $j || ln -s $i $j
-	echo "\"pf -M $j >/dev/null\""
-	echo "\"pf -M $j >/dev/null\"" >&2
-	      pf -M $j >/dev/null
+	echo "\"pf -A $j >/dev/null\""
+	echo "\"pf -A $j >/dev/null\"" >&2
+	      pf -A $j >/dev/null
 done
