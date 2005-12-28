@@ -204,13 +204,13 @@ scheduleClient(str command, bstream *fin, stream *fout)
 
 	if (!lang) {
 		if ((s = defaultScenario(c))) {
-			stream_printf(c->fdout, "!%s\n", s);
-			stream_flush(c->fdout);
-			return;
+			stream_printf(fout, "!ERROR %s\n", s);
 		}
 	} else if ((s = setScenario(c, lang)) != NULL) {
-		stream_printf(c->fdout, "!%s\n", s);
-		stream_flush(c->fdout);
+		stream_printf(fout, "!ERROR %s\n", s);
+	}
+	if( c->scenario == 0 && !isAdministrator(c)  ){
+		killClient(c);
 		return;
 	}
 	initClientPrg(c, "main");
@@ -308,7 +308,6 @@ serveClient(void *dummy)
 {
 	MalBlkPtr mb;
 	Client c = (Client) dummy;
-	str msg = 0;
 
 	if (!isAdministrator(c))
 		initClientThread(c);
@@ -321,10 +320,9 @@ The scenarios are run until we finally close the last one.
 	c->glb->stktop = mb->vtop;
 	c->glb->blk = mb;
 
-	if (c->scenario == 0)
-		msg = defaultScenario(c);
-	if (msg) {
-		GDKerror("could not initialize default scenario\n");
+	if (c->scenario == 0) {
+		stream_printf(c->fdout,"Language scenario not initialized\n");
+		stream_flush(c->fdout);
 		c->mode = FINISHING + 1;
 	} else
 		do {

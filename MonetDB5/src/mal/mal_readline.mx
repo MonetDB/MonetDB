@@ -17,11 +17,11 @@
 @- Online Help
 Online help on the modules and functions can be obtained 
 using the command '?'. It is followed by a partially
-completed function call and looks up matching definitions
+function call and looks up matching definitions
 in the symbol table. If the pattern includes a '(' it also
-displayes the complete signature for each match.
+displays the complete signature for each match.
 The @code{address} and @code{address} attributes
-are also shown by appending ')'.
+are also shown if the call ends with '()'.
 @example
 >?bat.is
 bat.isSynced
@@ -44,15 +44,11 @@ Returns whether a BAT is ordered on head or not.
 @end example
 
 The module and function names can be replaced by the 
-wildcard charector '*'. [Todo, general pattern match]
+wildcard character '*'. [Todo, general pattern match]
 
-If your platform supports the @code{readline} library, then
-this functionality is also partly available through
-name completion. It displays the possible modules
-and their functions, but doesn't show the signature and
-help. It can be retrieved by inserting '?' in front
-of the resoleved 'mod.fcn' string. [someone interested should improve it]
 @{
+For console input the @code{readline} library linked with
+the system provides a history mechanism and also name completion.
 Add readline functionality to the MAL console.
 This means that the user has history access and some other
 features to assemble a command before it is being interpreted.

@@ -283,9 +283,13 @@ initScenario(Client c, Scenario s)
 		/* prepare for conclicts */
 		mal_set_lock(mal_contextLock, "Scenario");
 		if( s->initSystemCmd == 0)
-			s->initSystemCmd = (MALfcn) getAddress(s->language, s->initSystem, 0);
-		if (s->initSystemCmd) {
+			s->initSystemCmd = (MALfcn) getAddress(s->language, s->initSystem, 1);
+		if (s->initSystemCmd) 
 			msg = (*s->initSystemCmd) (c);
+		else {
+			char buf[BUFSIZ];
+			snprintf(buf,BUFSIZ,"Language not supported: %s",s->language);
+			msg= GDKstrdup(buf);
 		}
 		mal_unset_lock(mal_contextLock, "Scenario");
 	}
@@ -597,8 +601,10 @@ runScenarioBody(Client c)
 {
 	str msg;
 
-	assert(c && c->phase[READER] != 0);
-
+	if( c->scenario == 0) {
+		stream_printf(c->fdout, "Language scenario not initialized");
+		c->mode = FINISHING;
+	}
 	while (c->mode > FINISHING) {
 		msg = MAL_SUCCEED;
 		@:runPhase(READER)@
@@ -613,8 +619,6 @@ runScenario(Client c)
 {
 	int cnt = 0;
 	Client c1;
-
-	assert(c && c->phase[READER] != 0);
 
 	runScenarioBody(c);
 #ifdef MAL_SCENARIO_DEBUG
