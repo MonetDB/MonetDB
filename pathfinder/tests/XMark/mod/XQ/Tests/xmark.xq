@@ -192,7 +192,7 @@ declare function xmark:q19($doc as xs:string) as xs:anyNode*
   let $auction := doc($doc)
   for $b in $auction/site/regions//item
   let $k := $b/name/text()
-  order by $b/location
+  order by zero-or-one($b/location)
   return <item name="{ $k }"> { $b/location/text() } </item>
 };
 

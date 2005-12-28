@@ -58,6 +58,6 @@ declare function music:AssetSort($db    as xs:string,
                                  $limit as xs:integer) as xs:anyNode*
 {
   subsequence(for $asset in doc($db)/descendant::Asset
-              order by $asset/child::TrackNr/text()
+              order by zero-or-one($asset/child::TrackNr/text())
               return $asset, 1E0, $limit)
 };

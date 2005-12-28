@@ -176,7 +176,7 @@ declare function xmark:q19($doc as xs:string) as xs:anyNode*
 {
   for $b in doc($doc)/descendant::item
   let $k := $b/name/text()
-  order by $b/location
+  order by zero-or-one($b/location)
   return <item name="{ $k }"> { $b/location/text() } </item>
 };
 
