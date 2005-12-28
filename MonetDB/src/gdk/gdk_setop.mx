@@ -659,62 +659,22 @@ double elimination.
 BAT *
 BATmaterialize_(BAT *b, size_t size)
 {
-	BAT *bn = NULL;
+	BAT *bn = BATnew(TYPE_oid, ATOMtype(b->ttype), size);
 	BUN p, q;
 	int xx;
-	oid hbase, tbase;
+	oid base;
 
-	if (b->htype != TYPE_void && b->ttype != TYPE_void)
-		return BATcopy(b);
-	
-	bn = BATnew(ATOMtype(b->htype), ATOMtype(b->ttype), size);
 	if (bn == NULL)
 		return NULL;
-	hbase = b->hseqbase;
-	tbase = b->tseqbase;
-	if (b->htype == TYPE_void && b->ttype == TYPE_void) {
-		if (hbase == oid_nil && tbase == oid_nil ) {
-			BATloopFast(b, p, q, xx) {
-				bunfastins(bn, &hbase, &tbase);
-			}
-		} else if (hbase == oid_nil) {
-			BATloopFast(b, p, q, xx) {
-				bunfastins(bn, &hbase, &tbase);
-			}
-			tbase++;			
-		} else if (tbase == oid_nil) {
-			BATloopFast(b, p, q, xx) {
-				bunfastins(bn, &hbase, &tbase);
-			}
-			hbase++;			
-		} else {
-			BATloopFast(b, p, q, xx) {
-				bunfastins(bn, &hbase, &tbase);
-			}
-			hbase++;
-			tbase++;			
+	base = b->hseqbase;
+	if (base == oid_nil) {
+		BATloopFast(b, p, q, xx) {
+			bunfastins(bn, &base, BUNtail(b, p));
 		}
-	} else if (b->htype == TYPE_void) {
-		if (hbase == oid_nil) {
-			BATloopFast(b, p, q, xx) {
-				bunfastins(bn, &hbase, BUNtail(b, p));
-			}
-		} else {
-			BATloopFast(b, p, q, xx) {
-				bunfastins(bn, &hbase, BUNtail(b, p));
-			}
-			hbase++;			
-		}
-	} else { /* (b->ttype == TYPE_void) */
-		if (tbase == oid_nil) {
-			BATloopFast(b, p, q, xx) {
-				bunfastins(bn, BUNhead(b, p), &tbase);
-			}
-		} else {
-			BATloopFast(b, p, q, xx) {
-				bunfastins(bn, BUNhead(b, p), &tbase);
-			}
-			tbase++;			
+	} else {
+		BATloopFast(b, p, q, xx) {
+			bunfastins(bn, &base, BUNtail(b, p));
+			base++;
 		}
 	}
 	ALIGNsetH(bn, b);
@@ -751,6 +711,16 @@ BAT@1union(BAT *l, BAT *r)
 	if (BATcount(r) == 0) {
 		return BATrcopy(l);
 	}
+	if (l->htype == TYPE_void) {
+		bn = BATmaterialize_(l, BATcount(l)+BATcount(r));
+	} else if (l->ttype == TYPE_void) {
+		bn = BATmirror(BATmaterialize_(BATmirror(l),
+					       BATcount(l)+BATcount(r)));
+	} else {
+		bn = BATcopy(l);
+	}
+	if( bn == NULL)
+		return NULL;
 
 	hdisjunct = (BAThordered(r)&BAThordered(l)&1) && (ATOMcmp(l->htype,
 	      BUNhead(l,BUNlast(l)-BUNsize(l)), BUNhead(r,BUNfirst(r))) < 0);
@@ -759,15 +729,13 @@ BAT@1union(BAT *l, BAT *r)
 
 	/* for now, only oid can be dense;
 	   later, sht, int, lng might become dense, too */
-	switch (l->htype) {
-	case TYPE_void:
+	switch (bn->htype) {
 	case TYPE_oid:
 		@:bndense(h,head,oid)@
 	default:
 	        bnhdense = (BAThdense(r)&BAThdense(l)&1) & !hdisjunct;
 	}
-	switch (l->ttype) {
-	case TYPE_void:
+	switch (bn->ttype) {
 	case TYPE_oid:
 		@:bndense(t,tail,oid)@
 	default:
@@ -775,23 +743,12 @@ BAT@1union(BAT *l, BAT *r)
 	}
 
 	if (!hdisjunct) {
-		b = r = BAT@1diff(r, l);
+		b = r = BAT@1diff(r, bn);
 		if (b == NULL) {
+			BBPreclaim(bn);
 			return NULL;
 		}
-		if (BATcount(r) == 0) {
-			BBPreclaim(b);
-			return BATrcopy(l);
-		}
 	}
-
-	bn = BATmaterialize_(l, BATcount(l)+BATcount(r));
-	if( bn == NULL) {
-		if (b)
-			BBPreclaim(b);
-		return NULL;
-	}
-
 	BATloopFast(r,p,q,xx) {
 		bunfastins(bn, BUNhead(r,p), BUNtail(r,p));
 	}
