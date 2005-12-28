@@ -812,10 +812,15 @@ The Monet Version 5 wrappers are collected here
 str
 MAPIlisten_default(int *ret)
 {
-	int port = MAPIPORT;
+	int port ;
+	str p;
 	int maxusers = MAPIMAXUSERS;
 
 	(void) ret;
+	p = GDKgetenv("mapi_port");
+	if( p )
+		port = (int) strtol(p,NULL,10);
+	else port = MAPIPORT;
 	return MAPIlisten(&port, 0, &maxusers, 0);
 }
 
