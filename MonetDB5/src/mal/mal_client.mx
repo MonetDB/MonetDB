@@ -671,15 +671,16 @@ work by closing them.
 void
 killClient(Client c)
 {
-	if (c && c->user ) {
+	if (c && c->user && c->mythread) {
 
 #ifdef MAL_DEBUG_CLIENT
 		printf("killClient %d\n", c - mal_clients);
 
 #endif	/*  */
-		Thread victim = c->mythread?c->mythread:0;
+		Thread victim = c->mythread;
+		MT_Id pid = victim->pid;
 
-		/* GDKwarning("killClient:forcing client to stop ...\n");*/
+		GDKwarning("killClient:forcing client to stop ...\n");
 		/* the process may hang upon gaining access to the file descriptors */ 
 		c->mode = FINISHING;
 		resetProfiler(c->fdout);
@@ -691,13 +692,11 @@ killClient(Client c)
 		(void) bstream_destroy(c->fdin);
 		c->fdin = NULL;
 		assert(c->bak == NULL);
-		if( victim){
-			/* GDKwarning("killClient:about to kill process ...\n");*/
-			MT_sleep_ms(1000 * PROCESSTIMEOUT);
-			MT_kill_thread(victim->pid);
-			MT_sleep_ms(1000 * PROCESSTIMEOUT);
-			/* GDKwarning("killClient:process killed\n");*/
-		}
+		GDKwarning("killClient:about to kill process ...\n");
+		MT_sleep_ms(1000 * PROCESSTIMEOUT);
+		MT_kill_thread(pid);
+		MT_sleep_ms(1000 * PROCESSTIMEOUT);
+		GDKwarning("killClient:process killed\n");
 	}
 } 
 
