@@ -511,21 +511,11 @@ The content of this box my only be changed by the Administrator.
 @c
 #include "mal_client.h"
 #include "mal_interpreter.h"
+#include "mal_authorize.h"
 
 #define authorize(X)\
-				/* if( !isAuthorized("Admin"))\
-				   return throwMessage("const." X ,"unauthorized access to 'const' box"); */
-
-int
-isAuthorized(str nme)
-{
-	Client c;
-
-	if (nme == 0)
-		return 1;
-	c = getClient();
-	return idcmp(c->user, nme) == 0;
-}
+if( !isServerOwner(getClient()))\
+   return throwMessage("statistics." X ,"unauthorized access to box"); 
 
 @- Operator implementation
 @c

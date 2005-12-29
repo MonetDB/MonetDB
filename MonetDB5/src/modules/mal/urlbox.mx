@@ -122,26 +122,16 @@ mal_export str URLBOXhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @- Module initializaton
 The content of this box my only be changed by the Administrator.
 @= authorize
-	if( !isAuthorized("user") && !isAuthorized("Admin"))
+	if( !isServerOwner(getClient()) )
 		return throwMessage("urlBox.@1","unauthorized access to 'urlBox' box");
 @c
 #include "urlbox.h"
 #include "mal_linker.h"
+#include "mal_authorize.h"
 
 #define MAXURLDEPTH 50
 static int urlDepth = 0;
 static BAT *urlBAT[MAXURLDEPTH];
-
-int
-isAuthorized(str nme)
-{
-	Client c;
-
-	if (nme == 0)
-		return 1;
-	c = getClient();
-	return idcmp(c->user, nme) == 0;
-}
 
 str
 URLBOXprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

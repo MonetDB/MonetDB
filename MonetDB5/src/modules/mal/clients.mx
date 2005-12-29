@@ -68,7 +68,37 @@ comment "Switch to other scenario handler, return previous one";
 
 command quit():void
 address CLTquit
-comment "Terminate the session for this client"'
+comment "Terminate the session for this client"';
+
+@+ User administration
+These commands (except newPassword) can only be executed by the server owner.
+@mal
+command addUser(nme:str, pw:str, sc:str):void
+address CLTaddUser
+comment "Give a user permission to access a scenario";
+command delUser(nme:str):void
+address CLTdelUserAll
+comment "Retract a user any permission ";
+command delUser(nme:str,sc:str):void
+address CLTdelUser
+comment "Retract a user permission to access a scenario";
+
+command newPassword(old:str,new:str)
+address CLTnewPassword
+comment "Change the password for the current user";
+command newPassword(usr:str, old:str,new:str)
+address CLTnewPasswordRoot
+comment "Change the password for a user";
+
+command checkPermission(usr:str,pw:str,sc:str):bit
+address CLTcheckAuthorization
+comment "Check permission for a user";
+command getPasswords():bat[:str,:str]
+address CLTgetPasswords
+comment "Retrieve the complete password table";
+command getPermissions():bat[:str,:str]
+address CLTgetPermissions
+comment "Return the table with external users";
 
 @-
 @{
@@ -93,44 +123,36 @@ mal_export str CLTclearDebug(int *ret, int *flg);
 mal_export str CLTquit(int *ret);
 mal_export str CLTLogin(int *ret);
 mal_export str CLTInfo(int *ret);
-mal_export str CLTisAuthorized(int* ret, str* name);
+
+mal_export str CLTaddUser(int *ret, str *usr, str *pw, str *sc);
+mal_export str CLTdelUserAll(int *ret, str *usr);
+mal_export str CLTdelUser(int *ret, str *usr, str *sc);
+mal_export str CLTnewPassword(int *ret, str *old, str *new);
+mal_export str CLTnewPasswordRoot(int *ret, str *usr, str *old, str *new);
+mal_export str CLTgetPermissions(int *ret);
+mal_export str CLTgetPasswords(int *ret);
+mal_export str CLTgetAuthorization(int *ret, str *usr);
+mal_export str CLTcheckAuthorization(bit *ret,str *usr, str *pw, str *sc);
 
 #endif /* _CLIENTS_H */
 @- Module initializaton
 The content of this clients table my only be changed by the Administrator
 or the client himself
 @= authorize
-{
-	int ret = 0;
-	char* adm = "Admin";
-	CLTisAuthorized(&ret, &adm);
-	if (!ret)
+	if (!isServerOwner(getClient())
 		return throwMessage("clients.@1", "unauthorized access to 'clients' box");
-}
 @-
 @c
 #include "clients.h"
 #include "mal_scenario.h"
+#include "mal_instruction.h"
 #include "mal_client.h"
+#include "mal_authorize.h"
 
 #ifdef HAVE_LIBREADLINE
 #include <readline/readline.h>
 #include <readline/history.h>
 #endif
- 
-
-str
-CLTisAuthorized(int* ret, str* nme) {
-	Client c;
-
-	if (*nme != 0) {
-		c = getClient();
-		*ret = (idcmp(c->user, *nme) == 0);
-	} else {
-		*ret = 1;
-	}
-	return(MAL_SUCCEED);
-}
 
 str
 CLTsetListing(int *ret, int *flag)
@@ -317,6 +339,59 @@ CLTquit(int *ret)
 	(void) ret;		/* fool compiler */
 	c->mode = FINISHING;
 	return MAL_SUCCEED;
+}
+
+
+str CLTaddUser(int *ret, str *usr, str *pw, str *sc){
+	(void) ret;
+	return introduceUser(*usr,*pw,*sc);
+}
+str CLTdelUserAll(int *ret, str *usr){
+	(void) ret;
+	return dropAllFromUser(*usr);
+}
+str CLTdelUser(int *ret, str *usr, str *sc){
+	(void) ret;
+	return dropUser(*usr,*sc);
+}
+str CLTnewPassword(int *ret, str *old, str *new){
+	Client c = getClient();
+	(void) ret;
+	return setNewPassword(c->user, *old, *new);
+}
+str CLTnewPasswordRoot(int *ret, str *usr, str *old, str *new){
+	Client c = getClient();
+	(void) ret;
+	if( strcmp(c->user, cuserid(NULL))== 0)
+		return setNewPassword(*usr, *old, *new);
+	return throwMessage("clients.newpassword","Not allowed");
+}
+str CLTgetPermissions(int *ret){
+	Client c = getClient();
+	if( strcmp(c->user, cuserid(NULL))== 0){
+		*ret = getAllPermissions();
+		return MAL_SUCCEED;
+	}
+	printf("user %s owner %s\n",c->user, cuserid(NULL));
+	return throwMessage("clients.getAuthorizations","Not allowed");
+}
+str CLTgetPasswords(int *ret){
+	Client c = getClient();
+	if( strcmp(c->user, cuserid(NULL))== 0){
+		*ret = getAllPasswords();
+		return MAL_SUCCEED;
+	}
+	printf("user %s owner %s\n",c->user, cuserid(NULL));
+	return throwMessage("clients.getAuthorizations","Not allowed");
+}
+
+str CLTcheckAuthorization(bit *ret,str *usr, str *pw, str *sc){
+	Client c = getClient();
+	if( strcmp(c->user, cuserid(NULL))== 0){
+		*ret = checkAuthorization(*usr, *pw ,*sc);
+		return MAL_SUCCEED;
+	}
+	return throwMessage("clients.checkAuthorizations","Not allowed");
 }
 
 @}

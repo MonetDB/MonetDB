@@ -104,6 +104,7 @@ const.prelude();
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
+#include "mal_authorize.h"
 
 mal_export str CSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CSTopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -121,17 +122,8 @@ mal_export str CSThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @- Module initializaton
 The content of this box my only be changed by the Administrator.
 @= authorize
-{
-	int ret = 0;
-	char* usr = "Admin";
-	CLTisAuthorized(&ret, &usr);
-	if (!ret) {
-		usr = "user";
-		CLTisAuthorized(&ret, &usr);
-	}
-	if (!ret)
+	if( ! isServerOwner(getClient()) )
 		return throwMessage("const.@1", "unauthorized access to 'const' box");
-}
 @-
 @= insertBox
 	msg = @2;
