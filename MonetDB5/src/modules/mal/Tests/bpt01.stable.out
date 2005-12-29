@@ -61,9 +61,9 @@ exit (go,i);	# 13  (go:bit)(i:int)
     partitions.deposit(a1,a1);	# 20 BPTdeposit2 (_28:void)<-(a1:bat[:void,:int])(a1:bat[:void,:int])
 end main;	# 21  
 ptop=3 plimit=1024
-[0] bid=4 pid=4 f=0, l=10 prv=-1 nxt=1 cap=-1
-[1] bid=4 pid=5 f=10, l=20 prv=0 nxt=2 cap=-1
-[2] bid=4 pid=6 f=20, l=30 prv=1 nxt=-1 cap=-1
+[0] bid=6 pid=6 f=0, l=10 prv=-1 nxt=1 cap=-1
+[1] bid=6 pid=7 f=10, l=20 prv=0 nxt=2 cap=-1
+[2] bid=6 pid=8 f=20, l=30 prv=1 nxt=-1 cap=-1
 !ERROR: MALexception:partitions.deposit: Partition already known
 
 # 00:03:57 >  
