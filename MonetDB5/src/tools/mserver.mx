@@ -36,6 +36,8 @@ usage: mserver [options] [script]
     --dbname=<database_name>
     --dbfarm=<directory>
     --dbinit=<stmt>           Server prepare statement
+	--user=<dbaname>
+	--password=<passwrd>
     --config=<config_file>
     --debug=<number>          trace server actions[0]
     --daemon=yes|no           run in background [no]
@@ -72,6 +74,7 @@ The server options have the following meaning:
 @c
 #include "mserver.h"
 #include "mal.h"
+#include "mal_authorize.h"
 
 #ifdef _CRTDBG_MAP_ALLOC
 /* Windows only:
@@ -124,6 +127,8 @@ usage2(char *prog)
 	fprintf(stderr, "    --dbname=<database_name> \n");
 	fprintf(stderr, "    --dbfarm=<directory> \n");
 	fprintf(stderr, "    --dbinit=<stmt>           Server prepare statement\n");
+	fprintf(stderr, "    --user=<str>              Defaults to [monetdb]\n");
+	fprintf(stderr, "    --password=<str>          Defaults to [monetdb]\n");
 	fprintf(stderr, "    --config=<config_file> \n");
 	fprintf(stderr, "    --delay=<number>          cycle delay [300]\n");
 	fprintf(stderr, "    --debug=<number>          trace server actions[0]\n");
@@ -277,6 +282,7 @@ main(int argc, char **argv)
 	opt *set = NULL;
 	int i, ac=argc, debug = 0, setlen = 0, listing = 0;
 	str dbinit = NULL;
+	str user=NULL, password=NULL;
 
 	static struct option long_options[12] = {
 		{"config", 1, 0, 'c'},
@@ -442,9 +448,11 @@ faster system start.
 	else
 		mo_print_options(set, setlen);
 #endif
+	setServerOwner(user,password);
 	monet_init(set, setlen);
 	if (mal_init())
 		return 0;
+	loadPermissions();
 @-
 Time to execute the script files. 
 Start with the init command[todo], which may be defined in
