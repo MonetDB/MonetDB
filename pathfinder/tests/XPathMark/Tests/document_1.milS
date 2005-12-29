@@ -1,8 +1,8 @@
 module("pathfinder");
 module("unix");
 
-var TSTSRCDIR := getenv("TSTSRCDIR");
+var TSTTRGDIR := getenv("TSTTRGDIR");
 
-shred_doc(TSTSRCDIR + "/" + "document_1.xml", "document_1.xml");
+shred_doc(TSTTRGDIR + "/" + "document_1.xml", "document_1.xml");
 
 commit();
