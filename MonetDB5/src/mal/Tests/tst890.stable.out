@@ -60,13 +60,15 @@ end main;	# 17
 [ 1,	  "monet_environment",	  1,	  0		  ]
 [ 2,	  "monet_unicode_case",	  1,	  0		  ]
 [ 3,	  "timezones",		  1,	  0		  ]
-[ 4,	  "b",			  0,	  1		  ]
-[ 5,	  "trace_id_time",	  0,	  1		  ]
-[ 6,	  "trace_id_ticks",	  0,	  1		  ]
-[ 7,	  "trace_id_pc",	  0,	  1		  ]
-[ 8,	  "trace_id_modfcn",	  0,	  1		  ]
-[ 9,	  "trace_id_statement",	  0,	  1		  ]
-[ 10,	  "tmp_12",		  0,	  1		  ]
+[ 4,	  "users",		  1,	  1		  ]
+[ 5,	  "password",		  1,	  1		  ]
+[ 6,	  "b",			  0,	  1		  ]
+[ 7,	  "trace_id_time",	  0,	  1		  ]
+[ 8,	  "trace_id_ticks",	  0,	  1		  ]
+[ 9,	  "trace_id_pc",	  0,	  1		  ]
+[ 10,	  "trace_id_modfcn",	  0,	  1		  ]
+[ 11,	  "trace_id_statement",	  0,	  1		  ]
+[ 12,	  "tmp_14",		  0,	  1		  ]
 
 # 08:01:32 >  
 # 08:01:32 >  Done.

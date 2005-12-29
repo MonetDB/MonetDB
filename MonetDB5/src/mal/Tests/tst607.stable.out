@@ -42,7 +42,7 @@ function user.main():void;	# 0  (main:void)
     const.release("roomnumber");	# 12 CSTrelease (_17:void)<-(_9:str)
 # failure? done twice or implicit take? 	# 13  (_18:str)
 end main;	# 14  
-User bound to user
+User bound to mk
 [ 321 ]
 [ "attempt twice to release" ]
 
