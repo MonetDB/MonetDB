@@ -922,15 +922,32 @@ static int wsBATerror(XqueryCtx* ctx, int batId, int fragId)
     } else if (b->batCount) {                                   \
         BUN _bun = NULL;                                        \
         BUNfndVOID(_bun, b, &oid_index);                        \
-        if (_bun == NULL) return 0;                             \
+        if (_bun == NULL)                                       \
+            return idxTVerror1(ctx,b,oid_index);                \
         res = BUNtail(b,_bun);                                  \
-    } else res = NULL;                                          \
-    if (res == NULL) return idxTVerror(ctx,b,oid_index);        \
+    } else                                                      \
+        return idxTVerror2(ctx,b);                              \
+    if (res == NULL)                                            \
+        return idxTVerror3(ctx,b,oid_index);                    \
 }
 
-static int idxTVerror(XqueryCtx* ctx, BAT *b, oid oid_index)
+static int idxTVerror1(XqueryCtx* ctx, BAT *b, oid oid_index)
 { 
     fatal_err(ctx, "%s BAT does not have a " OIDFMT " head.\n",
+                    b?BBP_logical(b->batCacheid):"NULL", oid_index);
+    return 0;
+}
+
+static int idxTVerror2(XqueryCtx* ctx, BAT *b)
+{ 
+    fatal_err(ctx, "%s BAT is empty.\n",
+                    b?BBP_logical(b->batCacheid):"NULL");
+    return 0;
+}
+
+static int idxTVerror3(XqueryCtx* ctx, BAT *b, oid oid_index)
+{ 
+    fatal_err(ctx, "%s BAT has a " OIDFMT " head, but tail is NULL.\n",
                     b?BBP_logical(b->batCacheid):"NULL", oid_index);
     return 0;
 }
