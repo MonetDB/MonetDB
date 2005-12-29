@@ -1,8 +1,13 @@
-# Configuration file for MonetDB version 5
+# Configuration file for MonetDB Version 5 server
 
-# This startup file is read by the GDK kernel, to set
-# system wide parameters. It is stored in the
-# database directory by the monetdb script upon database creation.
+# The configuration file is an integral part of a database store
+# and aimed to initialize the server and service components.
+# This startup file is read by the GDK kernel to set system wide parameters. 
+
+# It may be inspected by application/scripts for specific settings,
+# but such client side configurations are better packed in their
+# own structure.
+
 # It can also reside in the local directory
 # where mserver is called, or the home directory of the MonetDB user.
 
@@ -103,7 +108,7 @@ mal_listing = 15                # echoing the input
 
 # Monet Application Interface Section
 #====================================
-#mapi_port=50000			#default port to address a mserver
+mapi_port=50000			#default port to address a mserver
 #mapi_noheaders=no			#show all the mil output
 #mapi_debug=0				#The mapi debug level		
 
