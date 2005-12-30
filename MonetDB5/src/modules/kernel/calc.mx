@@ -1497,7 +1497,7 @@ CALCbat2batid(int *ret, int *bid)
 	if (b == 0)
 		throwMessage("calc.:bat", "Bat does not exist");
 	*ret = b->batCacheid;
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 

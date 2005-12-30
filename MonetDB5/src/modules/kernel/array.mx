@@ -274,7 +274,7 @@ ARRAYmultiply_@1_@2(int *ret, int *bid, int *rid){
 		 return throwMessage("array.*", "Cannot access descriptor");
 	}
 	if( (r= BATdescriptor(*rid)) == NULL ){
-		BBPunfix(b->batCacheid);
+		BBPreleaseref(b->batCacheid);
 		 return throwMessage("array.*", "Cannot access descriptor");
 	}
 	bn= BATnew(TYPE_void, TYPE_@2, BATcount(b)*BATcount(r));
@@ -288,8 +288,8 @@ ARRAYmultiply_@1_@2(int *ret, int *bid, int *rid){
 	}
 	*ret= bn->batCacheid;
 	BBPkeepref(*ret);
-	BBPunfix(b->batCacheid);
-	BBPunfix(r->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(r->batCacheid);
 	return MAL_SUCCEED;
 }
 @c
@@ -310,12 +310,12 @@ ARRAYproduct(int *ret, int *bid, int *rid)
 		return throwMessage("array.product", "Cannot access descriptor");
 	}
 	if ((r = BATdescriptor(*rid)) == NULL) {
-		BBPunfix(b->batCacheid);
+		BBPreleaseref(b->batCacheid);
 		return throwMessage("array.product", "Cannot access descriptor");
 	}
 	if (BATcount(b) > BATcount(r) || (BATcount(b) % BATcount(r)) != BATcount(b)) {
-		BBPunfix(b->batCacheid);
-		BBPunfix(r->batCacheid);
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(r->batCacheid);
 		return throwMessage("array.product", "Illegal argument bounds");
 	}
 	bn = BATnew(b->ttype, r->ttype, BATcount(r));
@@ -329,8 +329,8 @@ ARRAYproduct(int *ret, int *bid, int *rid)
 	}
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
-	BBPunfix(b->batCacheid);
-	BBPunfix(r->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(r->batCacheid);
 	return MAL_SUCCEED;
 }
 

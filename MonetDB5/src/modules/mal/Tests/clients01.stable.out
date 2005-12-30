@@ -37,8 +37,8 @@ function user.main():void;	# 0  (main:void)
     io.print(s);	# 5 IOprint_val (_5:int)<-(s:str)
     i := clients.getInfo();	# 6 CLTInfo (i:bat[:int,:str])
     io.print(i);	# 7 IOprint_val (_7:int)<-(i:bat[:int,:str])
-    u := clients.getUsers();	# 8 CLTusers (u:bat[:int,:str])
-    io.print(u);	# 9 IOprint_val (_9:int)<-(u:bat[:int,:str])
+#u:= clients.getUsers(); 	# 8  (_8:str)
+#io.print(u); 	# 9  (_9:str)
 #l:= clients.getLogins(); 	# 10  (_10:str)
 #io.print(l); 	# 11  (_11:str)
 end main;	# 12  
@@ -54,11 +54,6 @@ end main;	# 12
 [ "scenario",	  "mal"	  ]
 [ "timer",	  "0"	  ]
 [ "trace",	  "0"	  ]
-#-----------------#
-# client	users	  # name
-# int	str	  # type
-#-----------------#
-[ 0,	  "mk"	  ]
 
 # 00:03:53 >  
 # 00:03:53 >  Done.

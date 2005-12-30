@@ -588,7 +588,7 @@ PQinit(int *ret, int *bid, int *maxsize){
 	pqueue_init(&bn,b,maxsize);
 	*ret = bn->batCacheid;
 	BBPkeepref(b->batCacheid);
-	BBPunfix(bn->batCacheid);
+	BBPreleaseref(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 @-
@@ -651,10 +651,10 @@ PQtopn_void@1@2(int *ret, int *bid, int *N){
 	if( bn){
 		*ret= bn->batCacheid;
 		BBPkeepref(*ret);
-		BBPunfix(b->batCacheid);
+		BBPreleaseref(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return throwMessage("pqueue.topN","Failed to create BAT");
 }
 mal_export str PQtopn_@1@2(int *ret, int *bid, int *N);
@@ -667,10 +667,10 @@ PQtopn_@1@2(int *ret, int *bid, int *N){
 	if( bn){
 		*ret= bn->batCacheid;
 		BBPkeepref(*ret);
-		BBPunfix(b->batCacheid);
+		BBPreleaseref(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return throwMessage("pqueue.topN","Failed to create BAT");
 }
 @= PQminmax

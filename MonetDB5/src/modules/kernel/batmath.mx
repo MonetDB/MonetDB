@@ -112,7 +112,7 @@ str CMDscience_@1(int *ret, int *bid){
 bunins_failed:
 	*ret= bn->batCacheid;
 	BBPkeepref(*ret);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 /* You don;t have to materialize the oids.
@@ -141,7 +141,7 @@ str CMDsciencevoid_@1(int *ret, int *bid){
 bunins_failed:
 	*ret= bn->batCacheid;
 	BBPkeepref(*ret);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 @= scienceBinaryImpl
@@ -167,7 +167,7 @@ str CMDscience_@1(int *ret, int *bid, @2 *d){
 bunins_failed:
 	*ret= bn->batCacheid;
 	BBPkeepref(*ret);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 @c

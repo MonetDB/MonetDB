@@ -357,12 +357,12 @@ str AL2@1join(int *ret, int *lid, int *rid ){
 	}
 
 	if( (right= BATdescriptor(*rid)) == NULL ){
-		BBPunfix(left->batCacheid);
+		BBPreleaseref(left->batCacheid);
 		return throwMessage("algebra.@1join", "Cannot access descriptor");
 	}
   	bn = (BAT*) BATmal@1join(left, right);
-	BBPunfix(left->batCacheid);
-	BBPunfix(right->batCacheid);
+	BBPreleaseref(left->batCacheid);
+	BBPreleaseref(right->batCacheid);
 	if( bn == NULL)
 		return throwMessage("@1join","failed");
 	*ret = bn->batCacheid;
@@ -390,12 +390,12 @@ AL2leftthetajoin(int *ret, int *lid, int *rid, int *mode)
 		return throwMessage("algebra.@1join", "Cannot access descriptor");
 	}
 	if ((r = BATdescriptor(*rid)) == NULL) {
-		BBPunfix(l->batCacheid);
+		BBPreleaseref(l->batCacheid);
 		return throwMessage("algebra.@1join", "Cannot access descriptor");
 	}
 	bn = BATleftthetajoin(l, r, *mode, MIN(BATcount(l), BATcount(r)));
-	BBPunfix(l->batCacheid);
-	BBPunfix(r->batCacheid);
+	BBPreleaseref(l->batCacheid);
+	BBPreleaseref(r->batCacheid);
 
 	if (bn == NULL)
 		return throwMessage("algebra2.leftthetajoin", "failed");
@@ -414,12 +414,12 @@ AL2nlthetajoin(int *ret, int *lid, int *rid, int *mode, lng *estimate)
 		return throwMessage("algebra.@1join", "Cannot access descriptor");
 	}
 	if ((r = BATdescriptor(*rid)) == NULL) {
-		BBPunfix(l->batCacheid);
+		BBPreleaseref(l->batCacheid);
 		return throwMessage("algebra.@1join", "Cannot access descriptor");
 	}
 	bn = BATnlthetajoin(l, r, *mode, (size_t) * estimate);
-	BBPunfix(l->batCacheid);
-	BBPunfix(r->batCacheid);
+	BBPreleaseref(l->batCacheid);
+	BBPreleaseref(r->batCacheid);
 	if (bn == NULL)
 		return throwMessage("algebra2.thetajoin", "failed");
 	*ret = bn->batCacheid;
@@ -436,7 +436,7 @@ str AL2ord_@1select1(int *ret, int * bid, ptr *value) {
 	}
 
 	bn = BAT_select_(b, *value, 0, TRUE, TRUE, @2, TRUE);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if( bn == NULL)
 		return throwMessage("ord_@1select","failed");
 	*ret = bn->batCacheid;
@@ -450,7 +450,7 @@ str AL2ord_@1select(int *ret, int *bid, ptr *low, ptr *high) {
 		 return throwMessage("algebra2.@1select", "Cannot access descriptor");
 	}
 	bn = BAT_select_(b, *low, *high, TRUE, TRUE, @2, TRUE);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if( bn == NULL)
 		return throwMessage("ord_@1select","failed");
 	*ret = bn->batCacheid;
@@ -476,7 +476,7 @@ str AL2ord_@1select_(int *ret, int *bid, ptr *lval, ptr *hval, bit *l_in, bit *h
 		return throwMessage("AL2ord_@1select",
 			"flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
 	bn = BAT_select_(b, low, high, *l_in, *h_in, @2, TRUE);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if( bn == NULL)
 		return throwMessage("ord_@1select","failed");
 	*ret = bn->batCacheid;

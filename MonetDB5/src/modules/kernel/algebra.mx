@@ -1670,7 +1670,7 @@ str ALGsum_@1_@2(@2* res, int *bid) {
 	}
 
 	CMDsum_@1_@2(res,b);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1682,7 +1682,7 @@ str ALGprod_@1_@2(@2* res, int *bid) {
 		 return throwMessage("algebra.prod", "Cannot access descriptor");
 	}
 	CMDprod_@1_@2(res,b);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 @c
@@ -1714,7 +1714,7 @@ str ALGavg_@1(dbl *res, int *bid) {
 		 return throwMessage("algebra.prod", "Cannot access descriptor");
 	}
 	CMDavg_@1(res,b);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 @c
@@ -1732,10 +1732,10 @@ str ALGmin_@1(@1* res, int *bid) {
 		 return throwMessage("algebra.min", "Cannot access descriptor");
 	}
 	if( CMDmin_@1(res,b)) {
-		BBPunfix(b->batCacheid);
+		BBPreleaseref(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return throwMessage("algebra.min", "GDKerror");
 }
 mal_export str ALGmax_@1(@1* res, int *bid) ;
@@ -1745,10 +1745,10 @@ str ALGmax_@1(@1* res, int *bid) {
 		 return throwMessage("algebra.min", "Cannot access descriptor");
 	}
 	if( CMDmax_@1(res,b)) {
-		BBPunfix(b->batCacheid);
+		BBPreleaseref(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return throwMessage("algebra.max", "GDKerror");
 }
 @c
@@ -1768,10 +1768,10 @@ ALGminany(ptr result, int *bid)
 		return throwMessage("algebra.min", "Cannot access descriptor");
 	}
 	if (CMDminany(result, b) == GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
+		BBPreleaseref(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return throwMessage("algebra.min", "GDKerror");
 }
 
@@ -1785,10 +1785,10 @@ ALGmaxany(ptr result, int *bid)
 		return throwMessage("algebra.min", "Cannot access descriptor");
 	}
 	if (CMDmaxany(result, b) == GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
+		BBPreleaseref(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return throwMessage("algebra.max", "GDKerror");
 }
 
@@ -1820,14 +1820,14 @@ ALGgroupby(int *res, int *bid)
 		return throwMessage("algebra.groupby", "Cannot access descriptor");
 	}
 	if( CMDgen_group(&bn,b) == GDK_FAIL){
-		BBPunfix(b->batCacheid);
+		BBPreleaseref(b->batCacheid);
 		return throwMessage("algebra.groupby","unknown error");
 	}
 	if( bn){
 		*res = bn->batCacheid;
 		BBPkeepref(bn->batCacheid);
 	}
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1846,7 +1846,7 @@ ALGcard(lng *result, int *bid)
 	}
 	*result = BATcount(bn);
 	BBPunfix(bn->batCacheid);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1860,7 +1860,7 @@ ALGBATminimum(ptr *result, int *bid)
 		return throwMessage("algebra.min", "Cannot access descriptor");
 	}
 	BATmin(b, result);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1874,7 +1874,7 @@ ALGBATmaximum(ptr *result, int *bid)
 		return throwMessage("algebra.max", "Cannot access descriptor");
 	}
 	BATmax(b, result);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1889,7 +1889,7 @@ ALGselect1(int *result, int *bid, ptr value)
 	}
 	@:derefStr(b,t,value)@
 	CMDselect1(&bn, b, value);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -1912,7 +1912,7 @@ ALGselect1Head(int *result, int *bid, ptr value)
 	@:derefStr(b,t,value)@
 	CMDselect1(&bn, b, value);
 	bn = BATmirror(bn);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -1933,7 +1933,7 @@ ALGuselect1(int *result, int *bid, ptr value)
 	}
 	@:derefStr(b,t,value)@
 	CMDuselect1(&bn, b, value);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -1955,7 +1955,7 @@ ALGselect(int *result, int *bid, ptr low, ptr high)
 	@:derefStr(b,t,low)@
 	@:derefStr(b,t,high)@
 	CMDselect(&bn, b, low, high);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -1979,7 +1979,7 @@ ALGselectHead(int *result, int *bid, ptr low, ptr high)
 	@:derefStr(b,t,high)@
 	CMDselect(&bn, b, low, high);
 	bn = BATmirror(bn);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2001,7 +2001,7 @@ ALGuselect(int *result, int *bid, ptr low, ptr high)
 	@:derefStr(b,t,low);@
 	@:derefStr(b,t,high);@
 	CMDuselect(&bn, b, low, high);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2023,7 +2023,7 @@ ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin)
 	@:derefStr(b,t,low)@
 	@:derefStr(b,t,high)@
 	CMDselect_(&bn, b, low, high, lin, rin);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2047,7 +2047,7 @@ ALGselectInclusiveHead(int *result, int *bid, ptr low, ptr high, bit *lin, bit *
 	@:derefStr(b,t,high)@
 	CMDselect_(&bn, b, low, high, lin, rin);
 	bn = BATmirror(bn);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2069,7 +2069,7 @@ ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin
 	@:derefStr(b,t,low);@
 	@:derefStr(b,t,high);@
 	CMDuselect_(&bn, b, low, high, lin, rin);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2093,7 +2093,7 @@ ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
 	@:derefStr(b,t,tlow);@
 	@:derefStr(b,t,thigh);@
 	CMDfragment(&bn, b, hlow, hhigh, tlow, thigh);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2130,18 +2130,18 @@ ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate)
 		return throwMessage("algebra.thetajoin", "Cannot access descriptor");
 	}
 	if ((right = BATdescriptor(*rid)) == NULL) {
-		BBPunfix(left->batCacheid);
+		BBPreleaseref(left->batCacheid);
 		return throwMessage("algebra.thetajoin", "Cannot access descriptor");
 	}
 	if( *opc == -3 ){
 		/* The NE case is not supported in the kernel */
-		BBPunfix(left->batCacheid);
-		BBPunfix(right->batCacheid);
+		BBPreleaseref(left->batCacheid);
+		BBPreleaseref(right->batCacheid);
 		return throwMessage("algebra.thetajoin", "theta <> not yet supported");
 	} 
 	CMDthetajoin(&bn, left, right, opc, estimate);
-	BBPunfix(left->batCacheid);
-	BBPunfix(right->batCacheid);
+	BBPreleaseref(left->batCacheid);
+	BBPreleaseref(right->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2168,12 +2168,12 @@ ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus)
 		return throwMessage("algebra.bandjoin", "Cannot access descriptor");
 	}
 	if ((right = BATdescriptor(*rid)) == NULL) {
-		BBPunfix(left->batCacheid);
+		BBPreleaseref(left->batCacheid);
 		return throwMessage("algebra.bandjoin", "Cannot access descriptor");
 	}
 	CMDbandjoin(&bn, left, right, minus, plus);
-	BBPunfix(left->batCacheid);
-	BBPunfix(right->batCacheid);
+	BBPreleaseref(left->batCacheid);
+	BBPreleaseref(right->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2193,7 +2193,7 @@ str ALG@1(int *result, int *bid) {
 		return throwMessage("algebra.@1", "Cannot access descriptor");
 	}
 	CMD@1(&bn,b);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if( bn ) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2210,7 +2210,7 @@ str ALG@1(int *result, int *bid) {
 		return throwMessage("algebra.@1", "Cannot access descriptor");
 	}
 	CMD@1(&bn,b);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if( bn ) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2227,12 +2227,12 @@ str ALG@1(int *result, int *lid, int *rid) {
 		return throwMessage("algebra.@1", "Cannot access descriptor");
 	}
 	if( (right= BATdescriptor(*rid)) == NULL ){
-		BBPunfix(left->batCacheid);
+		BBPreleaseref(left->batCacheid);
 		return throwMessage("algebra.@1", "Cannot access descriptor");
 	}
 	CMD@1(&bn,left, right);
-	BBPunfix(left->batCacheid);
-	BBPunfix(right->batCacheid);
+	BBPreleaseref(left->batCacheid);
+	BBPreleaseref(right->batCacheid);
 	if( bn ) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2249,7 +2249,7 @@ str ALG@1(int *result, int* bid, int *param) {
 		return throwMessage("algebra.@1", "Cannot access descriptor");
 	}
 	CMD@1(&bn,b, param);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if( bn ) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2266,17 +2266,17 @@ str ALG@1estimate(int *result, int *lid, int *rid, lng *estimate) {
 		return throwMessage("algebra.@1", "Cannot access descriptor");
 	}
 	if( (right= BATdescriptor(*rid)) == NULL ){
-		BBPunfix(left->batCacheid);
+		BBPreleaseref(left->batCacheid);
 		return throwMessage("algebra.@1", "Cannot access descriptor");
 	}
 	if( CMD@1(&bn,left, right, estimate) == GDK_FAIL){
-		BBPunfix(left->batCacheid);
-		BBPunfix(right->batCacheid);
+		BBPreleaseref(left->batCacheid);
+		BBPreleaseref(right->batCacheid);
 		if( bn) BBPunfix(bn->batCacheid);
 		return throwMessage("algebra.@1", "GDKerror");
 	}
-	BBPunfix(left->batCacheid);
-	BBPunfix(right->batCacheid);
+	BBPreleaseref(left->batCacheid);
+	BBPreleaseref(right->batCacheid);
 	if( bn ) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2322,7 +2322,7 @@ ALGtunique(int *result, int *bid)
 		return throwMessage("algebra.tunique", "Cannot access descriptor");
 	}
 	CMDkunique(&bn, BATmirror(b));
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		bn = BATmirror(bn);
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
@@ -2343,7 +2343,7 @@ ALGtsort(int *result, int *bid)
 		return throwMessage("algebra.tsort", "Cannot access descriptor");
 	}
 	CMDsort(&bn, BATmirror(b));
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		bn = BATmirror(bn);
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
@@ -2364,7 +2364,7 @@ ALGhsort(int *result, int *bid)
 		return throwMessage("algebra.hsort", "Cannot access descriptor");
 	}
 	CMDsort(&bn, b);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2399,7 +2399,7 @@ ALGhtsort(int *result, int *lid)
 		BATins(bn, bc);
 		BBPunfix(bc->batCacheid);
 	}
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	BBPunfix(bk->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
@@ -2434,7 +2434,7 @@ ALGthsort(int *result, int *lid)
 		BATins(bn, bc);
 	}
 	BBPunfix(bk->batCacheid);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2454,7 +2454,7 @@ ALGrevert(int *result, int *bid)
 		return throwMessage("algebra.tsort", "Cannot access descriptor");
 	}
 	bn = BATcopy(b);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	BATrevert(bn);
 	*result= bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
@@ -2473,7 +2473,7 @@ ALGcount_bat(int *result, int *bid)
 	}
 	cnt = (int)  BATcount(b);
 	*result = cnt;
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2492,7 +2492,7 @@ ALGcount_nil(int *result, int *bid, bit *ignore_nils)
 	else
 		cnt = BATcount(b);
 	*result = (int) cnt;
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2515,13 +2515,13 @@ ALGtmark(int *result, int *bid, oid *base)
 		return throwMessage("algebra.tmark", "Cannot access descriptor");
 	}
 	if (CMDmark(&bn, b, base) == GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
+		BBPreleaseref(b->batCacheid);
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return throwMessage("algebra.mark", "marking group failed");
 }
 
@@ -2553,7 +2553,7 @@ ALGmarkHead(int *result, int *bid, oid *base)
 
 	*result = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2576,7 +2576,7 @@ ALGhashsplit(int *result, int *bid, int *nfrag)
 		return throwMessage("algebra.hashsplit", "Cannot access descriptor");
 	}
 	CMDhashsplit(&bn, b, nfrag);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2596,7 +2596,7 @@ ALGuhashsplit(int *result, int *bid, int *nfrag)
 		return throwMessage("algebra.uhashsplit", "Cannot access descriptor");
 	}
 	CMDuhashsplit(&bn, b, nfrag);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2616,7 +2616,7 @@ ALGrangesplit(int *result, int *bid, int *nfrag)
 		return throwMessage("algebra.rangesplit", "Cannot access descriptor");
 	}
 	CMDrangesplit(&bn, b, nfrag);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2636,7 +2636,7 @@ ALGurangesplit(int *result, int *bid, int *nfrag)
 		return throwMessage("algebra.urangesplit", "Cannot access descriptor");
 	}
 	CMDurangesplit(&bn, b, nfrag);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2656,14 +2656,14 @@ ALGhistogram_rev(int *result, int *bid)
 		return throwMessage("algebra.histogram", "Cannot access descriptor");
 	}
 	CMDhistogram(&bn, b);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
 	}
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return throwMessage("algebra.histogram", "GDKerror");
 }
 
@@ -2677,7 +2677,7 @@ ALGlike(int *ret, int *bid, str *k)
 		return throwMessage("algebra.like", "Cannot access descriptor");
 	}
 	CMDlike(&bn, b, *k);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*ret = bn->batCacheid;
@@ -2697,7 +2697,7 @@ ALGslice(int *ret, bat *bid, int *start, int *end)
 		return throwMessage("algebra.slice", "Cannot access descriptor");
 	}
 	CMDslice(&bn, b, start, end);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	if (bn != NULL) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*ret = bn->batCacheid;
@@ -2720,7 +2720,7 @@ ALGposition(int *retval, int *bid, ptr val)
 	}
 	@:derefStr(b,h,val)@
 	CMDposition(retval, b, val);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2736,7 +2736,7 @@ ALGpositionBUN(int *retval, int *bid, ptr val, ptr tval)
 	@:derefStr(b,h,val)@
 	@:derefStr(b,t,tval)@
 	CMDpositionBUN(retval, b, val, tval);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2792,7 +2792,7 @@ ALGfetch(ptr ret, int *bid, lng *pos)
 		return throwMessage("algebra.fetch", "Cannot access descriptor");
 	}
 	msg = doALGfetch(ret, b, pos);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return msg;
 }
 
@@ -2825,13 +2825,13 @@ ALGfetchbat(int *ret, int *bid, int *sid)
 		return throwMessage("algebra.fetch", "Cannot access descriptor");
 	}
 	if ((s = BATdescriptor(*sid)) == NULL) {
-		BBPunfix(b->batCacheid);
+		BBPreleaseref(b->batCacheid);
 		return throwMessage("algebra.fetch", "Cannot access descriptor");
 	}
 
 	bn = BATfetch(b, s);
-	BBPunfix(b->batCacheid);
-	BBPunfix(s->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(s->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*ret = bn->batCacheid;
@@ -2853,7 +2853,7 @@ ALGexist(bit *ret, int *bid, ptr val)
 	}
 	@:derefStr(b,h,val)@
 	CMDexist(ret, b, val);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2869,7 +2869,7 @@ ALGexistBUN(bit *ret, int *bid, ptr val, ptr tval)
 	@:derefStr(b,h,val)@
 	@:derefStr(b,t,tval)@
 	CMDexistBUN(ret, b, val, tval);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2884,10 +2884,10 @@ ALGfind(ptr ret, int *bid, ptr val)
 	}
 	@:derefStr(b,h,val)@
 	if (CMDfind(ret, b, val) == GDK_FAIL) {
-		BBPunfix(b->batCacheid);
+		BBPreleaseref(b->batCacheid);
 		return throwMessage("algebra.find", "can not find element");
 	}
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2902,7 +2902,7 @@ ALGfetchjoin(int *result, int *lid, int *rid)
 		return throwMessage("algebra.fetchjoin", "Cannot access descriptor");
 	}
 	if ((right = BATdescriptor(*rid)) == NULL) {
-		BBPunfix(left->batCacheid);
+		BBPreleaseref(left->batCacheid);
 		return throwMessage("algebra.fetchjoin", "Cannot access descriptor");
 	}
 
@@ -2913,8 +2913,8 @@ ALGfetchjoin(int *result, int *lid, int *rid)
 	} else if (rfetch)
 		bn = BATmirror(BATfetchjoin(BATmirror(right), BATmirror(left), oid_nil));
 
-	BBPunfix(left->batCacheid);
-	BBPunfix(right->batCacheid);
+	BBPreleaseref(left->batCacheid);
+	BBPreleaseref(right->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2935,7 +2935,7 @@ ALGhashjoin(int *result, int *lid, int *rid)
 		return throwMessage("algebra.hashjoin", "Cannot access descriptor");
 	}
 	if ((right = BATdescriptor(*rid)) == NULL) {
-		BBPunfix(left->batCacheid);
+		BBPreleaseref(left->batCacheid);
 		return throwMessage("algebra.hashjoin", "Cannot access descriptor");
 	}
 
@@ -2947,8 +2947,8 @@ ALGhashjoin(int *result, int *lid, int *rid)
 	else
 		bn = BAThashjoin(left, right, oid_nil);
 
-	BBPunfix(left->batCacheid);
-	BBPunfix(right->batCacheid);
+	BBPreleaseref(left->batCacheid);
+	BBPreleaseref(right->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2968,7 +2968,7 @@ ALGmergejoin(int *result, int *lid, int *rid)
 		return throwMessage("algebra.mergejoin", "Cannot access descriptor");
 	}
 	if ((right = BATdescriptor(*rid)) == NULL) {
-		BBPunfix(left->batCacheid);
+		BBPreleaseref(left->batCacheid);
 		return throwMessage("algebra.mergejoin", "Cannot access descriptor");
 	}
 	if (!((BATtordered(left) & 1) || (BAThordered(right) & 1)))
@@ -2977,8 +2977,8 @@ ALGmergejoin(int *result, int *lid, int *rid)
 	if ((left->ttype == TYPE_void) || (right->htype == TYPE_void))
 		return throwMessage("algebra.mergejoin", "Cannot perform mergejoin on void fields.\n");
 	bn = BATmergejoin(left, right, oid_nil);
-	BBPunfix(left->batCacheid);
-	BBPunfix(right->batCacheid);
+	BBPreleaseref(left->batCacheid);
+	BBPreleaseref(right->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;
@@ -2998,13 +2998,13 @@ ALGindexjoin(int *result, int *lid, int *rid)
 		return throwMessage("algebra.indexjoin", "Cannot access descriptor");
 	}
 	if ((right = BATdescriptor(*rid)) == NULL) {
-		BBPunfix(left->batCacheid);
+		BBPreleaseref(left->batCacheid);
 		return throwMessage("algebra.indexjoin", "Cannot access descriptor");
 	}
 
 	bn = BATthetajoin(left, right, JOIN_EQ, oid_nil);
-	BBPunfix(left->batCacheid);
-	BBPunfix(right->batCacheid);
+	BBPreleaseref(left->batCacheid);
+	BBPreleaseref(right->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		*result = bn->batCacheid;

@@ -479,14 +479,14 @@ MKEYbulk_rotate_xor_hash(int *ret, int *hid, int *nbits, int *bid){
 		"Cannot access descriptor");
     }
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		BBPunfix(hn->batCacheid);
+		BBPreleaseref(hn->batCacheid);
         return throwMessage("mkey.bulk_rotate_xor_hash", 
 		"Cannot access descriptor");
     }
 
 	CMDbulk_rotate_xor_hash(&bn,hn,nbits,b);
-	BBPunfix(hn->batCacheid);
-	BBPunfix(b->batCacheid);
+	BBPreleaseref(hn->batCacheid);
+	BBPreleaseref(b->batCacheid);
 	*ret= bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
