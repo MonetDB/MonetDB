@@ -804,7 +804,7 @@ the bind(namespace, batname, mode) operation. [todo]
 				if( backup[i]== stk->stk[getArg(pci,i)].val.br.id){
 				/* target and source are identical, which means its
 				   logical reference count is one too high . */
-					BBPreleaseref(backup[i]);
+					BBPreleaselref(backup[i]);
 				} else /* possible garbage collect the variable */
 					BBPdecref(backup[i],TRUE);
 			} 

@@ -401,7 +401,7 @@ typedef struct MALBLK {
 	int ssize;		/* byte size of arena */
 	InstrPtr *stmt;		/* Instruction location */
 	int errors;		/* left over errors */
-	int typefixed;		/* no undtermined instruction */
+	int typefixed;		/* no undetermined instruction */
 	int flowfixed;		/* all flow instructions are fixed */
 	ProfPtr profiler;
 } *MalBlkPtr, MalBlkRecord;

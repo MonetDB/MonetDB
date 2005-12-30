@@ -181,6 +181,7 @@ mal_export void updateScenario(str nme, MALfcn fcn);
 #include "mal_scenario.h"
 #include "mal_linker.h"		/* for getAddress() */
 #include "mal_client.h"
+#include "mal_authorize.h"
 
 struct SCENARIO scenarioRec[MAXSCEN] = {
 	{"mal", "mal",
@@ -592,14 +593,20 @@ between speed and ability to analysis its behavior.
 	}
         continue;
     }
+@-
+Access control enforcement. Except for the server owner
+running a scenario should be explicitly permitted.
 @c
 void
 runScenarioBody(Client c)
 {
 	str msg;
 
-	assert(c && c->phase[READER] != 0);
-
+/* postponed
+	if( !isServerOwner(c) ){
+		c->mode = FINISHING;
+	}
+*/
 	while (c->mode > FINISHING) {
 		msg = MAL_SUCCEED;
 		@:runPhase(READER)@

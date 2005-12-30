@@ -18,12 +18,12 @@
 @f mal_authorize
 @a M. Kersten
 @+ User authorization
-The inner core of the system provides a basic authorization 
-scheme. Authorization is coupled with running a scenario
+The inner core of the system provides a basic authorization scheme. 
+Authorization is coupled with running a scenario
 or accessing the content of variable boxes.
-A user may only run a scenario if this is explicitly permitted.
+A user may only use those resources if it is explicitly permitted.
 
-It can be used by routines as a first
+The authorization scheme can be used by routines as a first
 line of defense against unauthorized access. They could 
 augment it with their own persistent information for further
 control.
@@ -31,23 +31,25 @@ control.
 The owner of the server and database is he who was able to
 start the server in the first place. It puts him in a special
 position. He may change the authorization information and view
-the permission tables.
+the permission tables. He is also the owner of system provided
+boxes, e.g. @code{const} and @code{statistics}.
 All other users are only allowed to change their password.
 
 The implementation is straight forward.
 It keeps a persistent BAT @code{user} around, which associates a
 user id with a corresponding (encoded) password to their 
-permissible scenarios.
+permissible scenarios. These tables can be inspected by the
+system owner and any linked in code to refine the scheme.
 
 @{
 
-The implementation is straightforward. A memory mapped
+The implementation is straightforward. A persistent memory mapped
 BAT keeps the information for fast access. 
 The guest accounts 'user' without password 
 and monetdb/monetdb are  being added upon creation of this BAT.
 This allows all known functionality to work.
 
-The identity of the owner is not copied into this table purposely.
+The identity of the server owner is not copied into this table purposely.
 
 @h
 #ifndef _MAL_AUTHORIZE_H
@@ -157,6 +159,8 @@ introduceUser(str nme, str passwd, str scen )
 	loadPermissions();
 	BUNins(pass, nme, passwd);
 	BUNins(auth, nme, scen);
+	BATcommit(pass);
+	BATcommit(auth);
 	return MAL_SUCCEED;
 }
 
@@ -174,6 +178,7 @@ dropUser(str nme, str scen )
 	if( BATcount(b) == 0){
 		b= BATselect(passrev,nme,nme);
 		BATdel(passrev,b);
+		BATcommit(pass);
 	}
 	return MAL_SUCCEED;
 }
@@ -189,6 +194,8 @@ dropAllFromUser(str nme)
 	BATdel(authrev,b);
 	b= BATselect(passrev,nme,nme);
 	BATdel(passrev,b);
+	BATcommit(pass);
+	BATcommit(auth);
 	return MAL_SUCCEED;
 }
 
@@ -211,6 +218,9 @@ checkAuthorization(str nme, str passwd, str scen )
 
 int
 isServerOwner(Client c){
+#ifdef _DEBUG_AUTH_
+	printf("isServerOwner? %s/%s %s\n",c->user,c->password, cuserid(NULL));
+#endif
 	return strcmp(c->user, cuserid(NULL)) == 0;
 }
 
@@ -228,6 +238,7 @@ setNewPassword(str nme, str passwd, str newpasswd)
 
 	BATdel(passrev,b);
 	BUNins(pass,nme,newpasswd);
+	BATcommit(pass);
 	return MAL_SUCCEED;
 }
 
