@@ -131,6 +131,7 @@ gdk_export int BBPsync(int commit);
 gdk_export int BBPincref(bat b, int logical);
 gdk_export void BBPkeepref(bat i);
 gdk_export void BBPreleaseref(bat i);
+gdk_export void BBPreleaselref(bat i);
 gdk_export int BBPdecref(bat b, int logical);
 gdk_export void BBPshare(bat b);
 gdk_export void BBPunshare(bat b);
@@ -1377,7 +1378,7 @@ BBPkeepref(bat i)
 	}
 }
 void
-BBPreleaseref(bat i)
+BBPreleaselref(bat i)
 {
 	int lock = locked_by ? BBP_getpid() != locked_by : 1;
 
@@ -1398,6 +1399,32 @@ BBPreleaseref(bat i)
 		}
 		/* got the lock */
 		--BBP_lrefs(i);
+		if (lock)
+			gdk_unset_lock(GDKswapLock[i & BBPLOCKMASK], "BBPfix"); 
+	}
+}
+void
+BBPreleaseref(bat i)
+{
+	int lock = locked_by ? BBP_getpid() != locked_by : 1;
+
+	if (i == bat_nil || BBP_lrefs(i)<= 0) 
+		return ;
+	if (i < 0)
+		i = -i;
+	if (BBPcheck(i, "BBPreleaseref")) {
+		if (lock)
+			gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPreleaseref");
+
+		while (BBP_status(i) & BBPUNLOADING) {
+			if (lock)
+				gdk_unset_lock(GDKswapLock[i & BBPLOCKMASK], "BBPincref spin wait");
+			MT_sleep_ms(1);
+			if (lock)
+				gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPincref spin wait");
+		}
+		/* got the lock */
+		--BBP_refs(i);
 		if (lock)
 			gdk_unset_lock(GDKswapLock[i & BBPLOCKMASK], "BBPfix"); 
 	}
