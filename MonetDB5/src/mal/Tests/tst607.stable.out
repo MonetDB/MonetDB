@@ -30,7 +30,7 @@ stdout of test 'tst607` in directory 'src/mal` itself:
 function user.main():void;	# 0  (main:void)
 # using spaces 	# 1  (_1:str)
     u:str  := const.take("user");	# 2 CSTtake (u:str)<-(_3:str)
-    io.printf("User bound to %s\n",u);	# 3 IOprint_formatted_str (_4:int)<-(_5:str)(u:str)
+    io.printf("#User bound to %s\n",u);	# 3 IOprint_formatted_str (_4:int)<-(_5:str)(u:str)
     roomnumber := 321;	# 4  (roomnumber:int)<-(_7:int)
     const.deposit("roomnumber",roomnumber);	# 5 CSTdeposit (_8:void)<-(_9:str)(roomnumber:int)
     v:int  := const.take("roomnumber");	# 6 CSTtake (v:int)<-(_9:str)
@@ -42,7 +42,7 @@ function user.main():void;	# 0  (main:void)
     const.release("roomnumber");	# 12 CSTrelease (_17:void)<-(_9:str)
 # failure? done twice or implicit take? 	# 13  (_18:str)
 end main;	# 14  
-User bound to mk
+#User bound to mk
 [ 321 ]
 [ "attempt twice to release" ]
 
