@@ -419,8 +419,6 @@ public class JdbcClient {
 						dbmd.getDriverVersion());
 				}
 				out.println("Type \\q to quit, \\h for a list of available commands");
-				out.println("auto commit mode: on");
-
 				out.flush();
 				processInteractive(false, doEcho, user);
 			}
@@ -470,8 +468,10 @@ public class JdbcClient {
 		QueryPart qp = null;
 
 		String query = "", curLine;
-		boolean wasComplete = true, doProcess;
+		boolean wasComplete = true, doProcess, lastac = false;
 		if (!hasFile) {
+			lastac = con.getAutoCommit();
+			out.println("auto commit mode: " + (lastac ? "on" : "off"));
 			out.print(getPrompt(user, stack, true));
 			out.flush();
 		}
@@ -535,33 +535,6 @@ public class JdbcClient {
 							}
 							tbl.close();
 						}
-					} else if (qp.getQuery().toLowerCase().startsWith("start transaction") ||
-						qp.getQuery().toLowerCase().startsWith("begin transaction")) {
-						try {
-							// disable JDBC auto commit
-							con.setAutoCommit(false);
-							if (!hasFile) System.out.println("auto commit mode: off");
-						} catch (SQLException e) {
-							System.err.println("Error: " + e.getMessage());
-						}
-					} else if (qp.getQuery().toLowerCase().startsWith("commit")) {
-						try {
-							con.commit();
-							// enable JDBC auto commit
-							con.setAutoCommit(true);
-							if (!hasFile) System.out.println("auto commit mode: on");
-						} catch (SQLException e) {
-							System.err.println("Error: " + e.getMessage());
-						}
-					} else if (qp.getQuery().toLowerCase().startsWith("rollback")) {
-						try {
-							con.rollback();
-							// enable JDBC auto commit
-							con.setAutoCommit(true);
-						if (!hasFile) System.out.println("auto commit mode: on");
-						} catch (SQLException e) {
-							System.err.println("Error: " + e.getMessage());
-						}
 					} else {
 						doProcess = true;
 					}
@@ -587,7 +560,14 @@ public class JdbcClient {
 					wasComplete = qp.isComplete();
 				}
 			}
-			if (!hasFile) out.print(getPrompt(user, stack, wasComplete));
+			if (!hasFile) {
+				boolean ac = con.getAutoCommit();
+				if (ac != lastac) {
+					out.println("auto commit mode: " + (ac ? "on" : "off"));
+					lastac = ac;
+				}
+				out.print(getPrompt(user, stack, wasComplete));
+			}
 			out.flush();
 		}
 		if (qp != null) {

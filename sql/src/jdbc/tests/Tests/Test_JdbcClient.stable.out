@@ -22,9 +22,9 @@ Over..
 # 20:01:23 >  
 
 
-# 20:01:23 >  
-# 20:01:23 >  java -jar /net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/build-pegasus.ins.cwi.nl/sql/src/jdbc/jdbcclient-1.2.jar -h localhost -p 47764 -f ../../../../..//current/sql/src/jdbc/tests/Tests/../JdbcClient_create_tables.sql
-# 20:01:23 >  
+# 12:08:05 >  
+# 12:08:05 >  java -jar /net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/build-pegasus.ins.cwi.nl/sql/src/jdbc/jdbcclient-1.2.jar -h localhost -p 42784 -f ../../../../..//current/sql/src/jdbc/tests/Tests/../JdbcClient_create_tables.sql
+# 12:08:05 >  
 
 Operation successful
 
@@ -50,10 +50,16 @@ Operation successful
 
 Operation successful
 
+Operation successful
 
-# 20:01:23 >  
-# 20:01:23 >  java -jar /net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/build-pegasus.ins.cwi.nl/sql/src/jdbc/jdbcclient-1.2.jar -h localhost -p 47764 -f ../../../../..//current/sql/src/jdbc/tests/Tests/../JdbcClient_inserts_selects.sql
-# 20:01:23 >  
+Operation successful
+
+
+# 12:08:05 >  
+# 12:08:05 >  java -jar /net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/build-pegasus.ins.cwi.nl/sql/src/jdbc/jdbcclient-1.2.jar -h localhost -p 42784 -f ../../../../..//current/sql/src/jdbc/tests/Tests/../JdbcClient_inserts_selects.sql
+# 12:08:05 >  
+
+Operation successful
 
 1 affected row
 
@@ -108,6 +114,8 @@ Operation successful
 |  7 |       1 |         1 |      2 |
 +----+---------+-----------+--------+
 7 rows
+
+Operation successful
 
 
 # 20:01:24 >  
