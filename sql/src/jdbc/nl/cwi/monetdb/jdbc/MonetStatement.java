@@ -154,6 +154,7 @@ public class MonetStatement implements Statement {
 	 * <li>A value of SUCCESS_NO_INFO -- indicates that the command was
 	 * processed successfully but that the number of rows affected is
 	 * unknown</li>
+	 * </ol>
 	 * If one of the commands in a batch update fails to execute
 	 * properly, this method throws a BatchUpdateException, and a JDBC
 	 * driver may or may not continue to process the remaining commands
@@ -161,13 +162,11 @@ public class MonetStatement implements Statement {
 	 * with a particular DBMS, either always continuing to process
 	 * commands or never continuing to process commands.
 	 * <br /><br />
-	 * MonetDB does not continue after an error has occurred in the
-	 * batch. If one of the commands attempts to return a result set, a
-	 * warning will be added to the Statements warnings list.  This
-	 * behaviour is chosen because the batch will not be cancelled if it
-	 * doesn't contain errors.<br />
-	 * <b>NOTE: this behaviour does not comply with the interface, where
-	 * an BatchUpdateException should have been thrown.</b>
+	 * MonetDB does continues after an error has occurred in the batch.
+	 * If one of the commands attempts to return a result set, an
+	 * SQLException is added to the SQLException list and thrown
+	 * afterwards execution.  Failing queries result in SQLExceptions
+	 * too and may cause subparts of the batch to fail as well.<br />
 	 *
 	 * @return an array of update counts containing one element for each
 	 *         command in the batch.  The elements of the array are ordered
