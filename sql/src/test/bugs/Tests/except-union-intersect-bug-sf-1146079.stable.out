@@ -27,6 +27,8 @@ Over..
 # 20:14:43 >  
 
 START TRANSACTION;
+Operation successful
+
 
 CREATE TABLE "a" (
 	"property" int	NOT NULL,
@@ -143,9 +145,13 @@ INSERT INTO "b" VALUES (14, 15);
 
 -- make it permanent
 COMMIT;
+Operation successful
+
 
 -- simple check whether everything is there
 START TRANSACTION;
+Operation successful
+
 SELECT * FROM a;
 +----------+-------+
 | property | class |
@@ -192,9 +198,13 @@ SELECT * FROM b;
 15 rows
 
 ROLLBACK;
+Operation successful
+
 
 -- require an upcast from sht to int
 START TRANSACTION;
+Operation successful
+
 SELECT class FROM a EXCEPT SELECT 16; -- all but 16
 +-------+
 | class |
@@ -227,9 +237,13 @@ SELECT class FROM a INTERSECT SELECT 16; -- just 16
 1 row
 
 ROLLBACK;
+Operation successful
+
 
 -- do the same with a real table
 START TRANSACTION;
+Operation successful
+
 SELECT * FROM a EXCEPT SELECT * FROM b; -- should be last 50% of a
 +----------+-------+
 | property | class |
@@ -291,10 +305,14 @@ SELECT * FROM a INTERSECT SELECT * FROM b; -- should be first 50% of a
 8 rows
 
 ROLLBACK;
+Operation successful
+
 
 -- now check the non-duplicate removing versions
 -- (they are very tricky, so be on your marks!)
 START TRANSACTION;
+Operation successful
+
 SELECT class FROM a EXCEPT ALL SELECT 16; -- all but one 16 (will have 16 in output!)
 +-------+
 | class |
@@ -350,11 +368,15 @@ SELECT class FROM a INTERSECT ALL SELECT 16; -- just one 16 (!)
 1 row
 
 ROLLBACK;
+Operation successful
+
 
 -- do the same with a real table (because our tables have a key on both
 -- columns we also use only the first column here, as otherwise the ALL
 -- would never be tested for tables)
 START TRANSACTION;
+Operation successful
+
 SELECT * FROM a EXCEPT ALL SELECT * FROM b; -- last 50% of a
 +----------+-------+
 | property | class |
@@ -454,9 +476,13 @@ SELECT class FROM a INTERSECT ALL SELECT class FROM b; -- only those that are bo
 8 rows
 
 ROLLBACK;
+Operation successful
+
 
 -- cleanup! (also should cascade into dropping the index)
 START TRANSACTION;
+Operation successful
+
 DROP TABLE "a";
 Operation successful
 
@@ -464,6 +490,8 @@ DROP TABLE "b";
 Operation successful
 
 COMMIT;
+Operation successful
+
 
 # 20:14:43 >  
 # 20:14:43 >  Done.

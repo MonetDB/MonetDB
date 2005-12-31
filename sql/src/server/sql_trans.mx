@@ -81,8 +81,10 @@ transactions(mvc *sql, symbol *s)
 			return sql_error(sql, 01, "ROLLBACK TO SAVEPOINT: (%s) failed", l->h->next->data.sval);
 	}
 		break;
-	case TR_START:{
-	case TR_MODE:
+	case TR_START:
+	case TR_MODE:{
+		if (sql->auto_commit == 0) 
+			return sql_error(sql, 01, "START TRANSACTION: cannot start a transaction within a transaction");
 		if (sql->trans)
 			mvc_rollback(sql, 0, NULL);
 		if (sql->auto_commit == 1)
