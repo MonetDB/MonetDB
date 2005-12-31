@@ -89,7 +89,7 @@ setServerOwner(str o, str p){
 	if( o == NULL) {
 		u= cuserid(NULL);
 		if( u) owner= GDKstrdup(u);
-	} else owner = 0;
+	} 
 	passw = p?p:"";
 #ifdef _DEBUG_AUTH_
 	printf("serverOwner=%s\n",owner);
@@ -144,8 +144,10 @@ MALinitClient(Client c){
 #ifdef _DEBUG_AUTH_
 	printf("authorize %s:%s %s\n", c->user, c->password, c->scenario);
 #endif
+	if( owner == NULL || c->user==NULL )
+		return MAL_SUCCEED; /* avoid missing info */
 	if( strcmp(c->user,owner) == 0 &&
-		strcmp( (c->password?c->password:""),passw) == 0 )
+		(passw==NULL|| strcmp( (c->password?c->password:""),passw) == 0 ))
 		return MAL_SUCCEED;
 	return throwMessage("mal.authorize","Access not allowed");
 }
