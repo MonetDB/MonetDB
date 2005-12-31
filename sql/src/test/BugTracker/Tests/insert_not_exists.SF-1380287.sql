@@ -86,7 +86,7 @@ START TRANSACTION;
 SELECT 'expect 20', COUNT(*) FROM s4_keywords;
 -- OUTCOME is 0, 20 was expected
 SELECT 'expect 20', COUNT(*) FROM s4_kwm;
-
+COMMIT;
 
 START TRANSACTION;
 SELECT 'dropping s4_kwm and s4_keywords';
