@@ -1,3 +1,3 @@
 START TRANSACTION;
-commit;
-commit;
+COMMIT;
+COMMIT;

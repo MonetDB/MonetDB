@@ -333,10 +333,12 @@ mvc_commit(mvc *m, int chain, char *name)
 {
 	char *schema = NULL;
 	sql_trans *cur, *tr = m->trans;
-	int level = (chain) ? tr->level : ISO_SERIALIZABLE;
+	int level = -1;
 	int ok = SQL_OK;
 
 	assert(tr);
+	level = (chain) ? tr->level : ISO_SERIALIZABLE;
+	
 	if (mvc_debug)
 		fprintf(stderr, "mvc_commit %s\n", (name) ? name : "");
 
@@ -385,6 +387,7 @@ mvc_commit(mvc *m, int chain, char *name)
 		} else {
 			sql_trans_destroy(tr);
 			m->trans = NULL;
+			m->auto_commit = 1;
 		}
 		m->type = Q_TRANS;
 		_DELETE(schema);
