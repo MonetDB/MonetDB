@@ -116,6 +116,11 @@ Fill in basic column info
 	bn->tseqbase = (tt == TYPE_void) ? oid_nil : 0;
 	bn->batPersistence = TRANSIENT;
 	bn->H->props = bn->T->props = NULL;
+
+	bn->void_tid = -1;
+	bn->void_cnt = 0;
+	bn->void_seq1 = oid_nil;
+	bn->void_seq2 = oid_nil;
 @-
 add to BBP
 @c
