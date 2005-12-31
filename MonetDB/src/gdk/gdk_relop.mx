@@ -789,18 +789,18 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 		}
 		if (bn->ttype == TYPE_void || bn->ttype == TYPE_oid) {
 			bn->tdense = TRUE;
-			BATseqbase(BATmirror(bn), l->tseqbase);
+			BATseqbase(BATmirror(bn), r->tseqbase);
 		}
 		return bn;
 	} else if (BATtordered(l) & 1) {
 		/* optimization to be able to carry over more void head columns */
 		/* (only needed if neither operand is empty) */
-		ssize_t r_lo = *(ssize_t *) BUNhead(r, BUNfirst(r));
-		ssize_t r_hi = *(ssize_t *) BUNhead(r, BUNlast(r) - BUNsize(r));
-		ssize_t l_lo = *(ssize_t *) BUNtail(l, BUNfirst(l));
-		ssize_t l_hi = *(ssize_t *) BUNtail(l, BUNlast(l) - BUNsize(l));
+		oid r_lo = *(oid *) BUNhead(r, BUNfirst(r));
+		oid r_hi = *(oid *) BUNhead(r, BUNlast(r) - BUNsize(r));
+		oid l_lo = *(oid *) BUNtail(l, BUNfirst(l));
+		oid l_hi = *(oid *) BUNtail(l, BUNlast(l) - BUNsize(l));
 		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BATtordered(l)&1\n");
-		ALGODEBUG THRprintf(GDKout, "r_lo=" SSZFMT ", r_hi=" SSZFMT ", l_lo=" SSZFMT ", l_hi=" SSZFMT ".\n", r_lo, r_hi, l_lo, l_hi);
+		ALGODEBUG THRprintf(GDKout, "r_lo=" OIDFMT ", r_hi=" OIDFMT ", l_lo=" OIDFMT ", l_hi=" OIDFMT ".\n", r_lo, r_hi, l_lo, l_hi);
 
 		if (r_lo > l_lo || r_hi < l_hi) {
 			ALGODEBUG THRprintf(GDKout, "shrinking!\n");
