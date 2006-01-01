@@ -204,9 +204,10 @@ BAT *
 BATnewstorage(int ht, int tt, size_t cap)
 {
 	BAT *bn ;
-/* experimental code */
+/* experimental code 
 	bn= BBPrecycle(ht,tt,cap);
 	if( bn) return bn;
+*/
 
 	bn= BATcreatedesc(ht, tt, TRUE);
 
