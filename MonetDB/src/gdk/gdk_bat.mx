@@ -203,7 +203,12 @@ it. To make this possible, we must provide it with filenames.
 BAT *
 BATnewstorage(int ht, int tt, size_t cap)
 {
-	BAT *bn = BATcreatedesc(ht, tt, TRUE);
+	BAT *bn ;
+/* experimental code */
+	bn= BBPrecycle(ht,tt,cap);
+	if( bn) return bn;
+
+	bn= BATcreatedesc(ht, tt, TRUE);
 
 	BATsetdims(bn);
 

@@ -119,6 +119,7 @@ gdk_export void BBPuncacheit(bat bid);
 gdk_export int BBPreclaim(BAT *b);
 gdk_export int BBPsave(BAT *b);
 gdk_export int BBPrename(bat bid, str nme);
+gdk_export BAT * BBPrecycle(int ht, int tt, size_t cap);
 
 /* query interface */
 gdk_export bat BBPindex(str nme);
@@ -974,11 +975,14 @@ BBPinsert(BAT *b)
 	BBP_logical(-i) = NULL;
 	BBP_logical(i) = GDKstrdup(s);
 
-	BBPgetsubdir(dirname, i);
-	BBP_physical(i) = (str) GDKmalloc(strlen(dirname) + strLen(BATgetId(b)) - 4);
-	GDKfilepath(BBP_physical(i), dirname, BATgetId(b) + 4, NULL);
+	/* Keep the physical location around forever */
+	if( BBP_physical(i) == NULL){
+		BBPgetsubdir(dirname, i);
+		BBP_physical(i) = (str) GDKmalloc(strlen(dirname) + strLen(BATgetId(b)) - 4);
+		GDKfilepath(BBP_physical(i), dirname, BATgetId(b) + 4, NULL);
 
 	BATDEBUG THRprintf(GDKerr, "%d = new %s(%s,%s)\n", (int) i, BATgetId(b), ATOMname(b->htype), ATOMname(b->ttype));
+	}
 
 	return i;
 }
@@ -1094,8 +1098,10 @@ BBPclear(bat i)
 		}
 		GDKfree(BBP_logical(i));
 		BBP_logical(i) = NULL;
+		/* keep the physical location around forever
 		GDKfree(BBP_physical(i));
 		BBP_physical(i) = NULL;
+		*/
 		BBP_status_set(i, 0, "BBPclear");
 		BBP_refs(i) = 0;
 		BBP_lrefs(i) = 0;
@@ -1187,6 +1193,98 @@ BBPrename(bat bid, str nme)
 
 @}
 
+@-
+A key performance drain is the management of small temporary BATs for
+a very short time. It would be interesting to see if a re-use scheme
+would make a big difference in SQL settings. 
+
+A potential danger of delaying destruction of temporary BATs lies in
+their blocking of scarce resources. We would not like to spent all
+memory to garbage. In an ideal world we would quickly learn what
+BATs are wordt to be recycled. 
+
+The policy to start with consists of only considering BATs
+without string heaps, because they require more complex re-initialization,
+and BATs that are too 'large'. A refinement and merge with BBPtrim
+is for the future to explore.
+
+The storage structure is based on a circular buffer. Picking
+the BATs for recycling is also not intelligent yet.
+@{
+@c
+#define MAXRING 5
+static BAT *batbin[MAXRING];
+static int bintop=0;
+
+static void BBPaddtobin(BAT *b){
+	BAT *bn;
+	bat parent;
+#ifdef BBPBINTST
+	printf("add to bin %d\n",b->batCacheid);
+#endif
+	/* this routine still runs with a lock enabled */
+	gdk_set_lock(GDKcacheLock, "BBPaddtobin");
+	/* remove any views */
+	if(  (parent= VIEWparent(b) ) ){
+		VIEWdestroy(b);
+		BBPunshare(parent);
+	}
+	b->batSharecnt = 0;
+	/* pre-filter the BATs */
+	if( BAThtype(b)>= TYPE_str || BATttype(b)>= TYPE_str ||
+		BATcount(b)> 16*1024){
+		BBPdestroy(b);
+		gdk_unset_lock(GDKcacheLock, "BBPaddtobin");
+		return;
+	}
+	if( (bn= batbin[bintop])){
+		BBP_status_on(bn->batCacheid, BBPUNLOADING, "BBPaddtobin");
+		BBPdestroy(bn);
+	}
+	/* push element onto the bin */
+	batbin[bintop]=b;
+	BBP_status_off(b->batCacheid, BBPUNLOADING, "BBPaddtobin");
+	bintop = (bintop+1) % MAXRING;
+	gdk_unset_lock(GDKcacheLock, "BBPaddtobin");
+}
+
+BAT *
+BBPrecycle(int ht, int tt, size_t cap){
+	int i;
+	BAT *b;
+#ifdef BBPBINTST
+	printf("get from bin %d, %d\n",ht,tt);
+#endif
+	gdk_set_lock(GDKcacheLock, "BBPrecycle");
+	for(i=0; i<MAXRING; i++)
+		if( (b= batbin[i]) && BAThtype(b)==ht && 
+			BATttype(b)==tt &&	BATcount(b)>= cap){
+			batbin[i]=0;
+			++BBP_refs(b->batCacheid);
+			/* experimental code to reset the BAT */
+			b->halign = OIDnew(2);
+			b->talign = b->halign + 1;
+			b->H->props = b->T->props = NULL;
+			b->H->sorted = b->T->sorted = 0;
+			b->H->align = b->T->align = 0;
+			b->H->nosorted = b->T->nosorted = 0;
+			b->H->nosorted_rev = b->T->nosorted_rev = 0;
+			b->H->nokey[0] = b->T->nokey[0] = 0;
+			b->H->nokey[1] = b->T->nokey[1] = 0;
+			b->batPersistence = TRANSIENT;
+			b->void_tid= 0;
+			b->void_cnt=0;
+			b->void_seq1= b->void_seq2= 0;
+			HASHdestroy(b);
+			DELTAinit(b);
+			b->batDirty= FALSE;
+			gdk_unset_lock(GDKcacheLock, "BBPrecycle");
+			return b;
+		}
+	gdk_unset_lock(GDKcacheLock, "BBPrecycle");
+	return NULL;
+}
+@}
 @+ BBP swapping Policy
 The BAT can be moved back to disk using the routine @%BBPfree@.
 It frees the storage for other BATs. After this call BAT* references
@@ -1319,7 +1417,8 @@ decref(bat i, int logical, int lock)
 		int destroy = BBP_lrefs(i) == 0 && (BBP_status(i) & BBPDELETED) == 0;
 		b = BBPquickdesc(i, TRUE);
 		if (destroy) {
-			BBPdestroy(b);	/* free memory of transient */
+			 BBPdestroy(b);	 /* free memory of transient */
+			 /* BBPaddtobin(b);	 plan for re-use */
 		} else if (b) {
 			BBP_unload_cnt(i, "BBPdecref");
 			BBPfree(b, "BBPdecref" );	/* free memory (if loaded) and delete from disk (if transient but saved) */
@@ -1800,7 +1899,6 @@ BBPfree(BAT *b, str calledFrom )
 		BBPunshare(parent);
 	return 0;
 }
-
 @}
 @- Storage trimming
 BBPtrim unloads the least recently used BATs to free memory resources.
