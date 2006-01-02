@@ -86,10 +86,7 @@ setServerOwner(str o, str p){
 	str u;
 	if( owner || passw)
 		GDKfatal("Attempt to reset server owner identity\n");
-	if( o == NULL) {
-		u= cuserid(NULL);
-		if( u) owner= GDKstrdup(u);
-	} 
+	owner= o ?o: "user";
 	passw = p?p:"";
 #ifdef _DEBUG_AUTH_
 	printf("serverOwner=%s\n",owner);
@@ -221,9 +218,9 @@ checkAuthorization(str nme, str passwd, str scen )
 int
 isServerOwner(Client c){
 #ifdef _DEBUG_AUTH_
-	printf("isServerOwner? %s/%s %s\n",c->user,c->password, cuserid(NULL));
+	printf("isServerOwner? %s/%s\n",c->user,c->password));
 #endif
-	return strcmp(c->user, cuserid(NULL)) == 0;
+	return strcmp(c->user, "user") == 0;
 }
 
 str

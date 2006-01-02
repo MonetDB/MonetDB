@@ -65,10 +65,8 @@ malBootstrap()
 {
 	Client c;
 	str bootfile = "mal_init", bf;
-	str nme= cuserid(NULL);
 
-	if( nme == 0 ) nme= "user";
-	c = initClient(GDKstrdup(nme), NULL, 0, 0);
+	c = initClient(GDKstrdup("user"), NULL, 0, 0);
 	c->nspace = newModule(NULL, putName("user", 4));
 	initLibraries();
 	if (defaultScenario(c))
