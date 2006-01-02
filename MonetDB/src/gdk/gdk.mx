@@ -1706,6 +1706,7 @@ The status and BAT persistency information is encoded in the status field.
 typedef struct {
 	BAT *b[2];		/* if loaded: BAT* handle + reverse */
 	str nme[2];		/* logical name + reverse */
+	str bak[2];		/* logical name + reverse backups */
 	bat next[2];		/* next BBP slot in link list */
 	BATstore *cache;	/* cached header info */
 	str path;		/* dir + basename for storage */

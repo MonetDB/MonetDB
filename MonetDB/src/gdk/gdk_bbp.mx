@@ -483,7 +483,7 @@ int recover_dir(int direxists)
 {
 	if (direxists) {
 		/* just try; don't care about these nonvital files */
-	GDKunlink(BATDIR, "BBP", "bak");
+		GDKunlink(BATDIR, "BBP", "bak");
 		GDKmove(BATDIR, "BBP", "dir", BATDIR, "BBP", "bak");
 	}
  	return GDKmove(BAKDIR, "BBP", "dir", BATDIR, "BBP", "dir");
@@ -636,12 +636,15 @@ BBPinit(void)
 		}
 		/* the backup of the logical name is set too */
 		BBP_logical(i) = GDKstrdup(s);
+		BBP[ABS(i)].bak[(i)<0]= BBP_logical(i);
 		i = -i;
 		if (c && c[1]) {
 			BBP_logical(i) = GDKstrdup(c + 1);
+			BBP[ABS(i)].bak[(i)<0]= BBP_logical(i);
 			j++;
 		} else {
 			BBP_logical(i) = NULL;
+			BBP[ABS(i)].bak[(i)<0]= NULL;
 		}
 	}
 	fclose(fp);
@@ -706,6 +709,7 @@ BBPexit(void)
 			BBPuncacheit_(i, TRUE);
 			GDKfree(BBP_logical(i));
 			BBP_logical(i) = NULL;
+			BBP[ABS(i)].bak[(i)<0]= NULL;
 		}
 		if (BBP_physical(i)) {
 			GDKfree(BBP_physical(i));
@@ -972,9 +976,19 @@ BBPinsert(BAT *b)
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
 	BBP_lrefs(i) = 0;	/* ie. no logical refs */
 
-	s = BBPtmpname(dirname, 64, i);
-	BBP_logical(i) = GDKstrdup(s);
+	if( i == BBPsize-1){ /* new entry */
+		BBP[ABS(i)].bak[(i)<0] = NULL;
+		BBP[ABS(i)].bak[(-i)<0] = NULL;
+	}
+
+	if( BBP[ABS(i)].bak[(i)<0] == NULL ){
+		s = BBPtmpname(dirname, 64, i);
+		BBP_logical(i) = GDKstrdup(s);
+		BBP[ABS(i)].bak[(i)<0] = BBP_logical(i);
+	} else 
+		BBP_logical(i)=  BBP[ABS(i)].bak[(i)<0];
 	BBP_logical(-i) = NULL;
+	BBP[ABS(i)].bak[(-i)<0]= NULL;
 
 	/* Keep the physical location around forever */
 	if( BBP_physical(i) == NULL){
@@ -1094,10 +1108,12 @@ BBPclear(bat i)
 		}
 		if (BBP_logical(-i)) {
 			BBP_delete(-i);
-			GDKfree(BBP_logical(-i));
+			if( BBP_logical(-i) != BBP[ABS(i)].bak[(-i)<0])
+				GDKfree(BBP_logical(-i));
 			BBP_logical(-i) = NULL;
 		}
-		GDKfree(BBP_logical(i));
+		if( BBP_logical(i) != BBP[ABS(i)].bak[(i)<0])
+			GDKfree(BBP_logical(i));
 		BBP_logical(i) = NULL;
 		/* keep the physical location around forever
 		GDKfree(BBP_physical(i));
@@ -1170,7 +1186,8 @@ BBPrename(bat bid, str nme)
 	if (BBP_logical(bid) && BBPnamecheck(BBP_logical(bid)) == 0) {
 		BBP_delete(bid);
 	}
-	GDKfree(BBP_logical(bid));
+	if( BBP_logical(bid) != BBP[ABS(bid)].bak[(bid)<0])
+		GDKfree(BBP_logical(bid));
 	BBP_logical(bid) = GDKstrdup(nme);
 	if (tmpid == 0) {
 		BBP_insert(bid);
@@ -1213,58 +1230,78 @@ The storage structure is based on a circular buffer. Picking
 the BATs for recycling is also not intelligent yet.
 @{
 @c
-#define MAXRING 5
-static BAT *batbin[MAXRING];
+#define MAXBIN 5
+static BAT *batbin[MAXBIN];
 static int bintop=0;
 
+/* #define BBPBINTST*/
 static void BBPaddtobin(BAT *b){
 	BAT *bn;
-	bat parent;
-#ifdef BBPBINTST
-	printf("add to bin %d\n",b->batCacheid);
-#endif
 	/* this routine still runs with a lock enabled */
-	gdk_set_lock(GDKcacheLock, "BBPaddtobin");
-	/* remove any views */
-	if(  (parent= VIEWparent(b) ) ){
-		VIEWdestroy(b);
-		BBPunshare(parent);
+	/* remove any view dependencies */
+	if(  VIEWparent(b) ){
+		BBPdestroy(b);
+		return;
 	}
-	b->batSharecnt = 0;
 	/* pre-filter the BATs */
 	if( BAThtype(b)>= TYPE_str || BATttype(b)>= TYPE_str ||
-		BATcount(b)> 16*1024){
+		BATcount(b)> 16*1024 ||
+		BBP_logical(b->batCacheid) != BBP[ABS(b->batCacheid)].bak[(b->batCacheid)<0]){
 		BBPdestroy(b);
-		gdk_unset_lock(GDKcacheLock, "BBPaddtobin");
 		return;
 	}
 	if( (bn= batbin[bintop])){
+		gdk_set_lock(GDKcacheLock, "BBPaddtobin");
+		batbin[bintop]= 0;
+		gdk_unset_lock(GDKcacheLock, "BBPaddtobin");
 		BBP_status_on(bn->batCacheid, BBPUNLOADING, "BBPaddtobin");
+#ifdef BBPBINTST
+		printf("delete from bin %d\n",bn->batCacheid);
+#endif
 		BBPdestroy(bn);
 	}
 	/* push element onto the bin */
+#ifdef BBPBINTST
+	printf("add to bin %d %d\n",b->batCacheid, (int)BATcapacity(b));
+#endif
+	gdk_set_lock(GDKcacheLock, "BBPaddtobin");
 	batbin[bintop]=b;
 	BBP_status_off(b->batCacheid, BBPUNLOADING, "BBPaddtobin");
-	bintop = (bintop+1) % MAXRING;
+	bintop = (bintop+1) % MAXBIN;
 	gdk_unset_lock(GDKcacheLock, "BBPaddtobin");
 }
 
 BAT *
 BBPrecycle(int ht, int tt, size_t cap){
 	int i;
-	BAT *b;
-#ifdef BBPBINTST
-	printf("get from bin %d, %d\n",ht,tt);
-#endif
+	BAT *b, *bm;
+
 	gdk_set_lock(GDKcacheLock, "BBPrecycle");
-	for(i=0; i<MAXRING; i++)
+	for(i=0; i<MAXBIN; i++)
 		if( (b= batbin[i]) && BAThtype(b)==ht && 
-			BATttype(b)==tt &&	BATcount(b)>= cap){
+			BATttype(b)==tt &&	BATcapacity(b)>= cap){
+#ifdef BBPBINTST
+	printf("try from bin %d \n",b->batCacheid);
+#endif
+			bm= BATmirror(b);
+			if( bm == NULL)
+				continue;
+#ifdef BBPBINTST
+	printf("get from bin %d %d %d \n",b->batCacheid,(int) cap, (int) BATcapacity(b));
+#endif
+
 			batbin[i]=0;
-			++BBP_refs(b->batCacheid);
+			BBP_refs(b->batCacheid)=1;
+			BBP_lrefs(b->batCacheid)=0;
+			
 			/* experimental code to reset the BAT */
+			b->batRestricted = 0;
+			b->hkey= b->tkey = FALSE;
+			bm->dims.tailkey= b->dims.headkey;
 			b->halign = OIDnew(2);
 			b->talign = b->halign + 1;
+			b->hseqbase = (ht == TYPE_void) ? oid_nil : 0;
+			b->tseqbase = (tt == TYPE_void) ? oid_nil : 0;
 			b->H->props = b->T->props = NULL;
 			b->H->sorted = b->T->sorted = 0;
 			b->H->align = b->T->align = 0;
@@ -1273,13 +1310,16 @@ BBPrecycle(int ht, int tt, size_t cap){
 			b->H->nokey[0] = b->T->nokey[0] = 0;
 			b->H->nokey[1] = b->T->nokey[1] = 0;
 			b->batPersistence = TRANSIENT;
-			b->void_tid= 0;
+			b->void_tid= -1;
 			b->void_cnt=0;
-			b->void_seq1= b->void_seq2= 0;
+			b->void_seq1= b->void_seq2= oid_nil;
 			HASHdestroy(b);
 			DELTAinit(b);
-			b->batDirty= FALSE;
+			b->batDirty= TRUE;
 			gdk_unset_lock(GDKcacheLock, "BBPrecycle");
+			if( BBP_cache(-b->batCacheid) == 0){
+				BBPcacheit(b);
+			}
 			return b;
 		}
 	gdk_unset_lock(GDKcacheLock, "BBPrecycle");
@@ -1419,7 +1459,7 @@ decref(bat i, int logical, int lock)
 		b = BBPquickdesc(i, TRUE);
 		if (destroy) {
 			 BBPdestroy(b);	 /* free memory of transient */
-			 /* BBPaddtobin(b);	 plan for re-use */
+			 /* BBPaddtobin(b);	  plan for re-use */
 		} else if (b) {
 			BBP_unload_cnt(i, "BBPdecref");
 			BBPfree(b, "BBPdecref" );	/* free memory (if loaded) and delete from disk (if transient but saved) */
