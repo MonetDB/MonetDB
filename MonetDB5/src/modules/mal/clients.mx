@@ -362,32 +362,32 @@ str CLTnewPassword(int *ret, str *old, str *new){
 str CLTnewPasswordRoot(int *ret, str *usr, str *old, str *new){
 	Client c = getClient();
 	(void) ret;
-	if( strcmp(c->user, cuserid(NULL))== 0)
+	if( strcmp(c->user, "user")== 0)
 		return setNewPassword(*usr, *old, *new);
 	return throwMessage("clients.newpassword","Not allowed");
 }
 str CLTgetPermissions(int *ret){
 	Client c = getClient();
-	if( strcmp(c->user, cuserid(NULL))== 0){
+	if( strcmp(c->user, "user")== 0){
 		*ret = getAllPermissions();
 		return MAL_SUCCEED;
 	}
-	printf("user %s owner %s\n",c->user, cuserid(NULL));
+	printf("user %s owner %s\n",c->user, "user");
 	return throwMessage("clients.getAuthorizations","Not allowed");
 }
 str CLTgetPasswords(int *ret){
 	Client c = getClient();
-	if( strcmp(c->user, cuserid(NULL))== 0){
+	if( strcmp(c->user, "user")== 0){
 		*ret = getAllPasswords();
 		return MAL_SUCCEED;
 	}
-	printf("user %s owner %s\n",c->user, cuserid(NULL));
+	printf("user %s owner %s\n",c->user, "user");
 	return throwMessage("clients.getAuthorizations","Not allowed");
 }
 
 str CLTcheckAuthorization(bit *ret,str *usr, str *pw, str *sc){
 	Client c = getClient();
-	if( strcmp(c->user, cuserid(NULL))== 0){
+	if( strcmp(c->user, "user")== 0){
 		*ret = checkAuthorization(*usr, *pw ,*sc);
 		return MAL_SUCCEED;
 	}

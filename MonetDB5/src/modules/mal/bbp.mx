@@ -69,10 +69,10 @@ pattern deposit(name:str,v:bat[:any_1,:any_2]) :void
 address CMDbbpdeposit
 comment "Enter a new bat into the bbp box.";
 pattern commit():void 	
-address CMDbbpReleasA
+address CMDbbpReleaseAll
 comment "Commit updates for this client";
 pattern releaseAll():void 	
-address CMDbbpReleasA
+address CMDbbpReleaseAll
 comment "Commit updates for this client";
 pattern release(name:str,val:bat[:any_1,:any_2]) :void 			
 address CMDbbprelease
@@ -263,7 +263,7 @@ mal_export str CMDbbpreleaseBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CMDbbpgarbage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CMDbbpdestroyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CMDbbpdestroyBAT1(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDbbpReleasA(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbbpReleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CMDbbpdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CMDbbptoStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CMDbbpiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -434,6 +434,12 @@ CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == 0)
 		/* Simple ignore the binding if you can;t find the bat */
 		return throwMessage("bbp.bind", "failed to find object in box");
+	/* make sure we are not dealing with an about to be deleted bat */
+	if( BBP_refs(b->batCacheid) == 1 &&
+		BBP_lrefs(b->batCacheid) == 0){
+		BBPunfix(i);
+		return throwMessage("bbp.bind", "failed to find object in box");
+	}
 
 	BBPincref(b->batCacheid, TRUE);
 	BBPunfix(i);
@@ -608,7 +614,7 @@ CMDbbpdestroyBAT1(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CMDbbpReleasA(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbbpReleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 
@@ -898,9 +904,9 @@ CMDbbpNames(int *ret)
 	BBPlock("CMDbbpNames");
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid) {
-			if (BBP_logical(i)) {
+			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)) ) {
 				BUNins(b, &i, BBP_logical(i));
-				if (BBP_logical(-i)) {
+				if (BBP_logical(-i) && (BBP_refs(-i) || BBP_lrefs(-i))) {
 					int j = -i;
 
 					BUNins(b, &j, BBP_logical(j));
@@ -931,7 +937,7 @@ CMDbbpRNames(int *ret)
 
 	BBPlock("CMDbbpRNames");
 	for (i = 1; i < BBPsize; i++)
-		if (i != b->batCacheid && BBP_logical(i)) {
+		if (i != b->batCacheid && BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 			if (BBP_logical(-i)) {
 				BUNins(b, &i, BBP_logical(-i));
 			} else
@@ -955,7 +961,7 @@ CMDbbpCount(int *ret)
 
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid) {
-			if (BBP_logical(i)) {
+			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				bn = BATdescriptor(i);
 				if (bn) {
 					l = BATcount(bn);
@@ -984,7 +990,7 @@ CMDbbpLocation(int *ret)
 	BBPlock("CMDbbpLocation");
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid) {
-			if (BBP_logical(i))
+			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)))
 				BUNins(b, &i, BBP_physical(i));
 		}
 	BBPunlock("CMDbbpLocation");
@@ -1013,7 +1019,7 @@ CMDbbpHeat(int *ret)
 				int heat = BBP_lastused(i);
 
 				BUNins(b, &i, &heat);
-			} else if (BBP_logical(i)) {
+			} else if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				int zero = 0;
 
 				BUNins(b, &i, &zero);
@@ -1040,7 +1046,7 @@ CMDbbpDirty(int *ret)
 	BBPlock("CMDbbpDirty");
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid)
-			if (BBP_logical(i)) {
+			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				BAT *bn = BBP_cache(i);
 
 				BUNins(b, &i, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean");
@@ -1066,7 +1072,7 @@ CMDbbpStatus(int *ret)
 	BBPlock("CMDbbpStatus");
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid)
-			if (BBP_logical(i)) {
+			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				char *loc = BBP_cache(i) ? "load" : "disk";
 
 				BUNins(b, &i, loc);
@@ -1089,7 +1095,7 @@ CMDbbpKind(int *ret)
 	BBPlock("CMDbbpKind");
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid)
-			if (BBP_logical(i)) {
+			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				char *mode = NULL;
 
 				if ((BBP_status(i) & BBPDELETED) || !(BBP_status(i) & BBPPERSISTENT))
@@ -1116,7 +1122,7 @@ CMDbbpRefCount(int *ret)
 
 	BBPlock("CMDbbpRefCount");
 	for (i = 1; i < BBPsize; i++)
-		if (i != b->batCacheid && BBP_logical(i)) {
+		if (i != b->batCacheid && BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 			int refs = BBP_refs(i);
 
 			BUNins(b, &i, &refs);
@@ -1138,7 +1144,7 @@ CMDbbpLRefCount(int *ret)
 
 	BBPlock("CMDbbpLRefCount");
 	for (i = 1; i < BBPsize; i++)
-		if (i != b->batCacheid && BBP_logical(i)) {
+		if (i != b->batCacheid && BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 			int refs = BBP_lrefs(i);
 
 			BUNins(b, &i, &refs);
@@ -1187,7 +1193,7 @@ str CMDbbp@2( int *ret){
 		return throwMessage("catalog.bbp@2", "failed to create BAT");
 
 	for(i=1; i < BBPsize; i++) if (i != b->batCacheid) 
-	if (BBP_logical(i)) {
+	if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 		bn= BATdescriptor(i);
 		if(bn) BUNins(b, &i, BATatoms[BAT@1(bn)].name);
 		BBPunfix(bn->batCacheid);
