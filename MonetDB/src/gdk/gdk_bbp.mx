@@ -483,7 +483,7 @@ int recover_dir(int direxists)
 {
 	if (direxists) {
 		/* just try; don't care about these nonvital files */
-		GDKunlink(BATDIR, "BBP", "bak");
+	GDKunlink(BATDIR, "BBP", "bak");
 		GDKmove(BATDIR, "BBP", "dir", BATDIR, "BBP", "bak");
 	}
  	return GDKmove(BAKDIR, "BBP", "dir", BATDIR, "BBP", "dir");
@@ -636,15 +636,12 @@ BBPinit(void)
 		}
 		/* the backup of the logical name is set too */
 		BBP_logical(i) = GDKstrdup(s);
-		BBP[ABS(i)].bak[(i)<0]= BBP_logical(i);
 		i = -i;
 		if (c && c[1]) {
 			BBP_logical(i) = GDKstrdup(c + 1);
-			BBP[ABS(i)].bak[(i)<0]= BBP_logical(i);
 			j++;
 		} else {
 			BBP_logical(i) = NULL;
-			BBP[ABS(i)].bak[(i)<0]= NULL;
 		}
 	}
 	fclose(fp);
@@ -709,7 +706,6 @@ BBPexit(void)
 			BBPuncacheit_(i, TRUE);
 			GDKfree(BBP_logical(i));
 			BBP_logical(i) = NULL;
-			BBP[ABS(i)].bak[(i)<0]= NULL;
 		}
 		if (BBP_physical(i)) {
 			GDKfree(BBP_physical(i));
@@ -976,15 +972,9 @@ BBPinsert(BAT *b)
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
 	BBP_lrefs(i) = 0;	/* ie. no logical refs */
 
-	if( BBP[ABS(i)].bak[(i)<0] == NULL){
-		s = BBPtmpname(dirname, 64, i);
-		BBP_logical(i) = GDKstrdup(s);
-	} else
-		BBP_logical(i)=  BBP[ABS(i)].bak[(i)<0];
+	s = BBPtmpname(dirname, 64, i);
+	BBP_logical(i) = GDKstrdup(s);
 	BBP_logical(-i) = NULL;
-	if( BBP[ABS(i)].bak[(-i)<0])
-		GDKfree( BBP[ABS(i)].bak[(-i)<0]);
-	BBP[ABS(i)].bak[(-i)<0]= NULL;
 
 	/* Keep the physical location around forever */
 	if( BBP_physical(i) == NULL){
@@ -1104,12 +1094,10 @@ BBPclear(bat i)
 		}
 		if (BBP_logical(-i)) {
 			BBP_delete(-i);
-			if( BBP_logical(-i) != BBP[ABS(i)].bak[(-i)<0])
-				GDKfree(BBP_logical(-i));
+			GDKfree(BBP_logical(-i));
 			BBP_logical(-i) = NULL;
 		}
-		if( BBP_logical(i) != BBP[ABS(i)].bak[(i)<0])
-			GDKfree(BBP_logical(i));
+		GDKfree(BBP_logical(i));
 		BBP_logical(i) = NULL;
 		/* keep the physical location around forever
 		GDKfree(BBP_physical(i));
@@ -1182,8 +1170,7 @@ BBPrename(bat bid, str nme)
 	if (BBP_logical(bid) && BBPnamecheck(BBP_logical(bid)) == 0) {
 		BBP_delete(bid);
 	}
-	if( BBP_logical(bid) != BBP[ABS(bid)].bak[(bid)<0])
-		GDKfree(BBP_logical(bid));
+	GDKfree(BBP_logical(bid));
 	BBP_logical(bid) = GDKstrdup(nme);
 	if (tmpid == 0) {
 		BBP_insert(bid);
