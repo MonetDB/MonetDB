@@ -230,7 +230,8 @@ GDKlog(const char *format, ...)
 #ifndef HAVE_GETUID
 #define getuid() 0
 #endif
-	fprintf(GDKlockFile, "%s \@ USR=%d PID=%d THR=" SZFMT " TIME=%s", buf, (int) getuid(), (int) getpid(), (size_t) MT_getpid(), ctime(&tm));
+	fprintf(GDKlockFile, "USR=%d PID=%d TIME=%s \@ %s", 
+		(int) getuid(), (int) getpid(), ctime(&tm),buf);
 	fflush(GDKlockFile);
 
 	if (mustopen)
