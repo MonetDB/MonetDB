@@ -94,7 +94,7 @@ each bug report to monitor whether/when the bug is fixed, and to prevent
 The collection consists for of hundreds of test scripts.
 
 To run all the tests and compare their current output to their stable output, 
-a simple tool called Mtest is included in the MonetDB code base. 
+a tool called Mtest is included in the MonetDB code base. 
 Mtest recursively walks through the source tree, runs tests, and checks for 
 difference between the stable and the current output. As a result, Mtest 
 creates a web interface that allows convenient access to the differences 

@@ -1,15 +1,19 @@
 @section Start and Stop the Server
 Starting and stopping the server under Windows doesn't need an
-extensive description. Just close the window of the server and
-it ceases to exist.
+extensive description. Just locate the server in the
+program list and start it. 
+After the server has been started, you can activate a textual client interface.
+Close the window of the server and/or client and it ceases to exist. 
 
 Once downloaded and installed MonetDB on your Linux system,
 it is adviceable to check its functionality with the following actions:
 @example
 > monetdb --help
 @end example
-It should respond with something like
-
+The @code{monetdb} script is a wrapper around the MonetDB
+server program @code{mserver} and its protection program @code{mguardian}.
+The call triggers @code{mserver --help} and responds
+with something like:
 @verbatim
 Usage: monetdb [command] [options] [script]
 Primary command:
@@ -70,40 +74,35 @@ Ommission of a database name stops all running servers.
 The actions of monetdb are logged for post analysis, which can
 be inspected with @code{monetdb --log}
 
-@node Server Configuration , Checkpoint and Recovery, Start and Stop the Server, Download and Installation
-@subsection Server Configuration
-The MonetDB environment setting is collected in a configuration file,
+@node Database Configuration , Checkpoint and Recovery, Start and Stop the Server, Download and Installation
+@subsection Database Configuration
+The database environment is collected in a configuration file,
 which is used by server-side applications, such as @code{monetb},
 @code{mserver}, and @code{mguardian}.
-A default version is installed in the database store upon its creation.
+A default version is installed in the database store upon its creation
 using the command @code{monetdb}.
-
-Below we illustrate the most important 
-components found in a configuration file.
+Below we illustrate its most important components.
 @itemize 
 @item prefix=/ufs/myhome/monet5/Linux
 @item exec_prefix=$@verb{ { }prefix@verb{ } }
 @item dbfarm=$@verb{ { }prefix@verb{ } }/var/MonetDB5/dbfarm	
+@item monet_mod_path=$@verb{ { }exec_prefix@verb{ } }/lib/MonetDB5
 @item dbname=demo
 @item version=4.99.19
 @item welcome=yes
 @item embedded=no
 @item gdk_debug=0	# to control level of debugging
-@item monet_mod_path=$@verb{ { }exec_prefix@verb{ } }/lib/MonetDB5
-@item delay=11		#waiting between pinging the server 
 @end itemize
-The @code{prefix} and @code{exec_prefix} describe the location where
-MonetDB has been installed.
-Each database is stored as a subdirectory of @code{dbfarm}.
-Use this value to change the default location of all your databases.
-A MonetDB server can only handle one database at a time.  
-You can specify the name of the default database to use.
-Note that you can use a different database using a command line
-option of @code{monetdb}.
-The kernel can be used in embedded situations (See pxref())
 
-The front-ends have their own collection of control parameters.
+The header consist of system wide information.
+The @code{prefix} and @code{exec_prefix} describe the location where
+MonetDB has been installed. @code{monet_mod_path} tells where to find
+the libraries. These arguments are critical for a proper working server.
+
+The remainder consists of arguments used by functional modules, or
+related tools. Consult the documentation before changing them.
 @multitable @columnfractions 0.2 0.7
+@item delay=11		#waiting between pinging the server 
 @item mal_init=$@verb{ { }prefix@verb{ } }/lib/MonetDB5/mal_init.mal
 @item mal_debug = yes     @tab # debugging the MAL component
 @item mal_details = 14    @tab # instruction listing details
@@ -126,7 +125,3 @@ The front-ends have their own collection of control parameters.
 @tab # limit the document cache on disk to 100MB
 @end multitable
 
-@node Checkpoint and Recovery, MonetDB Overview, Server Configuration, Download and Installation
-
-@subsection Checkpoint and Recovery
-Describe how to easily get a checkpoint

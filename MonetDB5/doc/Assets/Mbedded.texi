@@ -26,9 +26,9 @@ it provides the basis to compile and link the program.
 @c The primary host language is C. Embedded versions for other languages are under development.
 
 The behavior of an embedded SQL program can be simulated with
-an Mserver started as follows:
+a server started as follows:
 @example
- Mserver --set embedded=yes --dbinit="include sql; mapi.listen(45123);" &
+mserver --set embedded=yes --dbinit="include sql; mapi.listen(45123);" &
 @end example
 
 As a result, the server starts in 'daemon' mode,
@@ -49,7 +49,7 @@ records for some statistics gathering.
 
 The key operation is @code{embedded_sql()} which takes an optional 
 environment argument list. Upon success of this call, there
-will be a separate Mserver thread running in the same user space to handle
+will be a separate server thread running in the same user space to handle
 the database requests. A short-circuit interaction is established
 between the application and the kernel using in memory buffers.
 

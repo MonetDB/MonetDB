@@ -2,11 +2,13 @@
 The MonetDB code base is large collection of files, scattered
 over the system modules. Each source file is written in a
 literal programming style, which physically binds documentation with 
-the relevant code sections. The utility program Mx processes these
+the relevant code sections. The utility program Mx processes the
 files marked *.mx to extract the code sections for system
 compilation or to prepare for a pretty printed listing.
 
-The reference manual is based *.mx files prepared for @emph{Texinfo} processing. 
+The reference manual is based on @emph{Texinfo} formatted
+documentation to simplify generation for different rendering
+platforms.
 The components for the reference manual are extracted by
 @example
 Mx -i -B -H1 <filename>.mx
@@ -16,15 +18,14 @@ These pieces are collected and
 glued together in a manual framework, running @emph{makeinfo} to produce
 the desired output format.
 The @emph{Texinfo} information is currently limited
-to the documentation, it should be extended to also process the code.
+to the documentation, it could also be extended to also process the code.
 
 A printable version of an *.mx file can be produced using the commands:
 @example
 Mx  <filename>.mx
-latex <filename>.tex
+pdflatex <filename>.tex
 @end example
 The result, however, still includes the unexpanded tex info macros.
-
 
 @node Conventions and Notation, Additional Resources, Manual Generation, General Introduction
 @section Conventions and Notation
@@ -42,17 +43,15 @@ Keywords in the MonetDB interface languages are key sensitive;
 SQL keywords are not case sensitive. No distinction is made
 in this manual.
 
-?BNF conventions
-
 @node Additional Resources, Download and Installation, Conventions and Notation, General Introduction
 @section Additional Resources
 Although this reference manual aims to be complete for developing
 applications with MonetDB, it also depends on
 additional resources for a full understanding.
 
-This reference manual relies on documentation of the basics of its
+This reference manual relies on external documentation for the basics of its
 query languages SQL, XQuery, its application interfaces, PHP, Perl,
-Pyhton, and its middleware support, JDBC and ODBC, given elsewhere.
+Pyhton, and its middleware support, JDBC and ODBC.
 Examples are used to illustrate their behaviour in the context of
 MonetDB only.
 The resource locations identified below may at times proof valuable.
