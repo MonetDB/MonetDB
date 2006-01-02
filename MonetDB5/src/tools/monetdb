@@ -374,7 +374,7 @@ case "$ACTION" in
 				mrecover --dbname=$i 
 				start_mserver $i
 			else
-				mchkpnt --dbname=$i 
+				mrecover --dbname=$i 
 			fi
 		fi
 	done
