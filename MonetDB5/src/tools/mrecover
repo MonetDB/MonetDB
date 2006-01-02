@@ -19,7 +19,7 @@
 
 function usage()
 {
-	echo "Usage: mchkpnt [options] "
+	echo "Usage: mrecover [options] "
 	echo "    --dbname=<database_name>"
 	echo "    --chkpnt=<directory>"
 	echo "    --help"
@@ -28,7 +28,7 @@ function usage()
 DBFARM=$MONET5_PREFIX/var/MonetDB5/dbfarm
 DBLOGS=$MONET5_PREFIX/var/MonetDB5/dblogs
 CHKPNTDIR=$MONET5_PREFIX/var/MonetDB5/chkpnt
-TAG=`date +%F-%H%M%S`
+TAG=""
 
 # First perform some sanity checks
 if [ "$MONET5_PREFIX"  = "" ]
@@ -75,16 +75,6 @@ then
 	exit
 fi
 
-if [ ! -d "$DBFARM/$DBNAME" ]
-then
-	echo "Database '$DBNAME' missing";
-	exit
-fi
-
-if [ ! -d $CHKPNTDIR ]
-then
-	mkdir -p $CHKPNTDIR
-fi
 if [ ! -d $CHKPNTDIR ]
 then
 	echo "Checkpoint directory '$CHKPNTDIR' not available"
@@ -93,44 +83,75 @@ fi
 
 if [ ! -d "$CHKPNTDIR/$DBNAME" ]
 then
-	mkdir -p "$CHKPNTDIR/$DBNAME"
-fi
-if [ ! -d "$CHKPNTDIR/$DBNAME" ]
-then
 	echo "Database checkpoint directory '$CHKPNTDIR/$DBNAME' is not accessible"
 	exit
 fi
 
-CHKPFILE="$CHKPNTDIR/$DBNAME/$TAG.tar"
-LOGFILE="$CHKPNTDIR/$DBNAME/$TAG-logs.tar"
-
-if [ -f $CHKPFILE ]
+if [ -z "$TAG" ]
 then
-	echo "Checkpoint file '$CHKPFILE' already exist"
+	cd $CHKPNTDIR/$DBNAME
+	echo "Checkpoint tags defined for '$DBNAME'"
+	ls *tar.gz >/tmp/mrecover
+	sed -e "s/.tar.gz//" -e "s/-logs//" </tmp/mrecover >/tmp/mrecover2
+	sort -ru /tmp/mrecover2
+	read -p "Specify the checkpoint tag for '$DBNAME' ? " TAG
+	z=`grep $TAG /tmp/mrecover2`
+	rm /tmp/mrecover /tmp/mrecover2
+	if [ -z "$z" ]
+	then
+		echo "Invalid checkpoint tag"
+		exit
+	fi
+fi
+
+CHKPFILE="$CHKPNTDIR/$DBNAME/$TAG"
+LOGFILE="$CHKPNTDIR/$DBNAME/$TAG-logs"
+
+if [ ! -f "$CHKPFILE.tar.gz" ]
+then
+	echo "Checkpoint file '$CHKPFILE' not available"
 	exit
 fi
 
-if [ -f $LOGFILE ]
+if [ ! -f "$LOGFILE.tar.gz" ]
 then
-	echo "Checkpoint log file '$LOGFILE' already exist"
+	echo "Checkpoint log file '$LOGFILE' not available"
 	exit
 fi
 
 # Ready for preparing the checkpoint
 cd $DBFARM
-
-echo "Checkpoint store $CHKPNTDIR"
-echo "Preparing checkpoint file '$DBNAME/$TAG.tar'"
-tar cjf $CHKPFILE $DBNAME
-gzip $CHKPFILE
-
-cd $DBLOGS
-echo "Preparing checkpoint log file '$DBNAME/$TAG-logs.tar'"
 if [ ! -d "$DBNAME" ]
 then
-	echo "No log directory available for '$DBNAME'"
-	exit;
+	mkdir -p $DBNAME
+else
+	z=`date +%F-%H%M%S`
+	echo "Move existing database out of the way '$DBNAME$z'"
+	mv $DBNAME $DBNAME$z
+	mkdir -p $DBNAME
 fi
-tar cjf $LOGFILE $DBNAME
-gzip $LOGFILE
+cd $DBLOGS
+if [ ! -d "$DBNAME" ]
+then
+	mkdir -p $DBNAME
+else
+	z=`date +%F-%H%M%S`
+	echo "Move existing database logs out of the way '$DBNAME$z'"
+	mv $DBNAME $DBNAME$z
+	mkdir -p $DBNAME
+fi
 
+cd $DBFARM
+echo "Restore from store $CHKPNTDIR"
+echo "Reload checkpoint file '$DBNAME/$TAG.tar'"
+gunzip $CHKPFILE.tar.gz
+tar xjf $CHKPFILE.tar $DBNAME
+gzip $CHKPFILE.tar
+
+cd $DBLOGS
+echo "Reload checkpoint log file '$DBNAME/$TAG-logs.tar'"
+gunzip $LOGFILE.tar.gz
+tar xjf $LOGFILE.tar $DBNAME
+gzip $LOGFILE.tar
+
+echo "Database recovery finished"

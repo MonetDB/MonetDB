@@ -25,6 +25,8 @@ function usage()
 	echo "    --start         Server(s) is (are) started"
 	echo "    --stop          Server(s) is (are) stopped"
 	echo "    --databases     Show the known databases "
+	echo "    --checkpoint    Create the checkpoint for a database "
+	echo "    --recover       Restore a database to an earlier date"
 	echo "    --log           Show the server management log"
 	echo ""
 	echo "Secondary options:"
@@ -63,6 +65,12 @@ case "$1" in
 		ACTION=$1;
 		shift ;;
  "--databases" )
+		ACTION=$1;
+		shift ;;
+ "--checkpoint" )
+		ACTION=$1;
+		shift ;;
+ "--recover" )
 		ACTION=$1;
 		shift ;;
  "--log" )
@@ -120,7 +128,7 @@ function getPID ()
 
 function getTIME ()
 {
-	if [ "$DELAY" = "" ]
+	if [ -z "$DELAY"  ]
 	then
 		echo `sed -e "s/.*TIME=//" -e "s/\@.*//" -e 2q $1/.gdk_lock`
 	else
@@ -162,20 +170,20 @@ function start_mserver()
 		mserver --set daemon=yes --dbname=$1 $CONFIG $ARGS $STARTUP&
 		sleep 1
 		pid=`getPID $1`
-		if [ "$pid" = "" ]
+		if [ -z "$pid" ]
 		then
 			echo `date +"%F %T"` " FAILED $1 $ARGS" >>monetdb.log
 		else
 			echo `date +"%F %T"` " START $1 $ARGS" >>monetdb.log
 		fi
 		# start the guardian for this server as well
-		if [ "$DELAY" != "" ]
+		if [ -n "$DELAY" ]
 		then
 			echo $DELAY >$1/.mguardian.delay
 		fi
 		mguardian --start --dbname=$1
 	else
-		if [ "$DELAY" != "" ]
+		if [ -n "$DELAY" ]
 		then
 			echo $DELAY >$1/.mguardian.delay
 			if [ -f $i/.mguardian.sleep ]
@@ -193,7 +201,7 @@ function start_mserver()
 function stop_mserver()
 {
 	pid=`getPID $1`
-	if [ "$pid" != "" ]
+	if [ -n "$pid" ]
 	then
 		echo "mserver for '$1' stopped"
 		stopped=`expr $stopped + 1 `
@@ -213,7 +221,7 @@ function show_status()
 	if [ -f $1/.gdk_lock ]
 	then
 		pid=`getPID $1`
-		if  [ "$pid" != "" ]
+		if  [ -n "$pid" ]
 		then
 			if [[ $header = 0 ]]
 			then
@@ -236,7 +244,7 @@ function show_status()
 			else
 				delay=unknown
 			fi
-			if [ "$delay" = "" ]
+			if [ -z "$delay" ]
 			then
 				delay=`grep delay $1/.monetdb.conf |sed -e "s/\t.*//" -e "s/delay=//"`
 			fi
@@ -336,6 +344,40 @@ case "$ACTION" in
 	then
 		echo "No server running "
 	fi
+	;;
+ "--checkpoint" )
+	for i in $DBLIST
+	do
+		if [ -d $i ]
+		then
+			pid=`getPID $i`
+			if  [ -n "$pid" ]
+			then
+				stop_mserver $i
+				mchkpnt --dbname=$i 
+				start_mserver $i
+			else
+				mchkpnt --dbname=$i 
+			fi
+		fi
+	done
+	;;
+ "--recover" )
+	for i in $DBLIST
+	do
+		if [ -d $i ]
+		then
+			pid=`getPID $i`
+			if  [ -n "$pid" ]
+			then
+				stop_mserver $i
+				mrecover --dbname=$i 
+				start_mserver $i
+			else
+				mchkpnt --dbname=$i 
+			fi
+		fi
+	done
 	;;
  * ) ;;
 esac
