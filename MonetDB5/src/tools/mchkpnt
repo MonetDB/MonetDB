@@ -101,8 +101,8 @@ then
 	exit
 fi
 
-CHKPFILE="$CHKPNTDIR/$DBNAME/$TAG.tar"
-LOGFILE="$CHKPNTDIR/$DBNAME/$TAG-logs.tar"
+CHKPFILE="$CHKPNTDIR/$DBNAME/$TAG"
+LOGFILE="$CHKPNTDIR/$DBNAME/$TAG-logs"
 
 if [ -f $CHKPFILE ]
 then
@@ -120,17 +120,17 @@ fi
 cd $DBFARM
 
 echo "Checkpoint store $CHKPNTDIR"
-echo "Preparing checkpoint file '$DBNAME/$TAG.tar'"
-tar cjf $CHKPFILE $DBNAME
-gzip $CHKPFILE
+echo "Preparing checkpoint file '$DBNAME/$TAG'"
+tar -cf $CHKPFILE.tar $DBNAME || die "Creation of checkpoint file failed"
+gzip $CHKPFILE.tar || die "Compression of checkpoint file failed"
 
 cd $DBLOGS
-echo "Preparing checkpoint log file '$DBNAME/$TAG-logs.tar'"
+echo "Preparing checkpoint log file '$DBNAME/$TAG-logs'"
 if [ ! -d "$DBNAME" ]
 then
 	echo "No log directory available for '$DBNAME'"
 	exit;
 fi
-tar cjf $LOGFILE $DBNAME
-gzip $LOGFILE
+tar -cf $LOGFILE.tar $DBNAME || die "Creation of checkpoint log file failed"
+gzip $LOGFILE.tar || die "Compression of checkpoint log file failed"
 

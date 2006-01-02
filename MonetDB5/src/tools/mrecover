@@ -144,14 +144,14 @@ fi
 cd $DBFARM
 echo "Restore from store $CHKPNTDIR"
 echo "Reload checkpoint file '$DBNAME/$TAG.tar'"
-gunzip $CHKPFILE.tar.gz
-tar xjf $CHKPFILE.tar $DBNAME
-gzip $CHKPFILE.tar
+gunzip $CHKPFILE.tar.gz || die "Decompression of checkpoint file failed"
+tar -xf $CHKPFILE.tar $DBNAME || die "Extraction of checkpoint file failed"
+gzip $CHKPFILE.tar || die "Compression of checkpoint file failed"
 
 cd $DBLOGS
 echo "Reload checkpoint log file '$DBNAME/$TAG-logs.tar'"
-gunzip $LOGFILE.tar.gz
-tar xjf $LOGFILE.tar $DBNAME
-gzip $LOGFILE.tar
+gunzip $LOGFILE.tar.gz || die "Decompression of checkpoint log failed"
+tar -xf $LOGFILE.tar $DBNAME || die "Extraction of checkpoint log file failed"
+gzip $LOGFILE.tar || die "Compression of checkpoint log failed"
 
 echo "Database recovery finished"
