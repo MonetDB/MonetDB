@@ -83,7 +83,6 @@ static str passw=0;
 
 void
 setServerOwner(str o, str p){
-	str u;
 	if( owner || passw)
 		GDKfatal("Attempt to reset server owner identity\n");
 	owner= o ?o: "user";
