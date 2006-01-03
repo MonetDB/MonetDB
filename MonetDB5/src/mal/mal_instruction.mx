@@ -2167,7 +2167,7 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg)
 	else
 		sprintf(t, ";");
 #ifdef DEBUG_MAL_INSTR
-	if (flg & (LIST_MAL_BIND | LIST_MAL_TYPE)) {
+	if (flg & LIST_MAL_TYPE) {
 		advance(t);
 		hiddenInstructionArgs(mb, p, t);
 /*
@@ -2507,7 +2507,7 @@ Dump the type and value information.
 	advance(t);
 	if (p->token != REMsymbol)
 		sprintf(t, ";");
-	if (flg & (LIST_MAL_TYPE | LIST_MAL_BIND)) {
+	if (flg & LIST_MAL_TYPE) {
 		advance(t);
 		t = hiddenInstructionArgs(mb, p, t);
 	}

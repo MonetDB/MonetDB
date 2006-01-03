@@ -296,7 +296,6 @@ the BAT algebra.
 @{
 @h
 
-mal_export int             mal_debug;
 mal_export MT_Lock  mal_contextLock;
 
 mal_export int mal_init();
@@ -316,8 +315,7 @@ mal_export void mal_exit();
 #define LIST_INPUT      1       /* echo original input */
 #define LIST_MAL_INSTR  2       /* show mal instruction */
 #define LIST_MAL_TYPE   4       /* show type resolutoin */
-#define LIST_MAL_BIND   8       /* show binding information*/
-#define LIST_MAL_ALL    (LIST_MAL_INSTR | LIST_MAL_TYPE | LIST_MAL_BIND)
+#define LIST_MAL_ALL    (LIST_MAL_INSTR | LIST_MAL_TYPE )
 
 #define MAL_SUCCEED ((str) 0) /* apparently no error */
 #define MALexception    "MALexception"
@@ -337,7 +335,6 @@ mal_export void mal_exit();
 #include "mal_interpreter.h"
 #include "mal_namespace.h"  /* for initNamespace() */
 
-int             mal_debug= 0;
 MT_Lock     mal_contextLock=0;
 @-
 Initialization of the MAL context
