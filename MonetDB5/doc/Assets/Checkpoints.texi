@@ -17,8 +17,8 @@ Taking a checkpoint and its recovery is as simple as:
 @example
 shell>monetdb --checkpoint --dbname=demo
 Checkpoint store .../var/MonetDB5/chkpnt
-Preparing checkpoint file 'demo/2006-01-02-223704.tar'
-Preparing checkpoint log file 'demo/2006-01-02-223704-logs.tar'
+Preparing checkpoint file 'demo/2006-01-02-223704'
+Preparing checkpoint log file 'demo/2006-01-02-223704-logs'
 
 shell>monetdb --recover --dbname=demo
 Checkpoint tags defined for 'demo'
@@ -29,10 +29,59 @@ Specify the checkpoint tag for 'demo' ? 2006-01-02-224335
 Move existing database out of the way 'demo2006-01-02-224416'
 Move existing database logs out of the way 'demo2006-01-02-224416'
 Restore from store .../var/MonetDB5/chkpnt
-Reload checkpoint file 'demo/2006-01-02-224335.tar'
-Reload checkpoint log file 'demo/2006-01-02-224335-logs.tar'
+Reload checkpoint file 'demo/2006-01-02-224335'
+Reload checkpoint log file 'demo/2006-01-02-224335-logs'
 Database recovery finished
 @end example
 The checkpoint files are stored away in a path available in the
 database configuration file. It can be overruled at the command line
 with the option @code{--dir}. 
+
+@subsection Database Dumps
+An alternative scheme to safeguard and transport a SQL database is to produce
+an @code{ascii}-based database dump. 
+This option is standard available through the MapiClient and JdbcClient. 
+However, be prepared that not all SQL schema features may be retained 
+in the process. It also takes much more time to produce the dump file.
+
+Consider you have alread installed the SQL tutorial database @code{voc}
+and wish to transport it to another machine. The following steps are
+required, after you have started the database server.
+@example
+shell> MapiClient -lsql --dump -umonetdb  >/tmp/voc.sql
+password: *******
+@end example
+You can inspect the file @code{/tmp/voc.sql} to confirm that indeed
+a compact database dump is available. Move this file over to the new
+machine. The @code{monetdb} script can be used to create the database
+and start the server. Once done, it suffices to feed the dump file
+to either client program to populate the database.
+@example
+shell> monetdb --start --dbname=voc
+Do you want to create database 'voc' ? [yes/no]yes
+Database voc initialized
+Should the MAL listener be activated? [yes/no]yes
+Should the SQL listener be activated ? [yes/no]yes
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm/voc/.monetdb.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:voc
+# Visit http://monetdb.cwi.nl/ for further information.
+#mapi.listen();
+#include sql; sql.listen();
+#
+function user.main():void;      # 0  (main:void)
+    sql.listen();       # 1 SQLlisten_wrap (_1:void)
+end main;       # 2
+
+shell> MapiClient -lsql -umonetdb /tmp/voc.sql
+password: *******
+@end example
+
+The dump facility is also avaible as an option to the @code{monetdb},
+@code{mchkpnt}, and @code{mrecover} scripts.
+It tags the dump and stores it away in the checkpoint directory.
