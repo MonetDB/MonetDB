@@ -66,6 +66,14 @@ command setScenario(msg:str):str
 address CLTsetScenario
 comment "Switch to other scenario handler, return previous one";
 
+
+command trace(nme:str, flag:bit):void
+address CLTtrace2
+comment "Trace (on/off) receipt of all messages from a specific user";
+command trace(flag:bit):void
+address CLTtrace
+comment "Trace (on/off) receipt of messages for all users";
+
 command quit():void
 address CLTquit
 comment "Terminate the session for this client"';
@@ -123,6 +131,12 @@ mal_export str CLTclearDebug(int *ret, int *flg);
 mal_export str CLTquit(int *ret);
 mal_export str CLTLogin(int *ret);
 mal_export str CLTInfo(int *ret);
+
+mal_export str CLTtrace2(int *ret, str *nme, int *flg);
+mal_export str CLTtrace(int *res, int *flg);
+mal_export str CLTstop(int *ret, str *nme);
+mal_export str CLTsuspend(int *ret, int *skey, int *timeout);
+mal_export str CLTresume(int *ret, int *skey);
 
 mal_export str CLTaddUser(int *ret, str *usr, str *pw, str *sc);
 mal_export str CLTdelUserAll(int *ret, str *usr);
@@ -340,6 +354,44 @@ CLTquit(int *ret)
 	c->mode = FINISHING;
 	return MAL_SUCCEED;
 }
+
+str
+CLTtrace2(int *ret, str *nme, int *flg)
+{
+    (void) ret;     /* fool compiler */
+    (void) traceClient(*nme, *flg);
+    return MAL_SUCCEED;
+}
+
+str
+CLTtrace(int *res, int *flg)
+{
+    (void) res;     /* fool compiler */
+    (void) traceAllClients(*flg);
+    return MAL_SUCCEED;
+}
+
+str
+CLTstop(int *ret, str *nme)
+{
+    (void) ret;     /* fool compiler */
+    return stopClient(getClient(), *nme);
+}
+
+str
+CLTsuspend(int *ret, int *skey, int *timeout)
+{
+    (void) ret;     /* fool compiler */
+    return suspendClient(getClient(), *skey, *timeout);
+}
+
+str
+CLTresume(int *ret, int *skey)
+{
+    (void) ret;     /* fool compiler */
+    return resumeClient(getClient(), *skey);
+}
+
 
 
 str CLTaddUser(int *ret, str *usr, str *pw, str *sc){

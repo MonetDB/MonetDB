@@ -48,7 +48,7 @@ end main;	# 12
 # client		info	  # name
 # str		str	  # type
 #-------------------------#
-[ "user",	  "mk"	  ]
+[ "user",	  "user"  ]
 [ "password",	  ""	  ]
 [ "permission",	  "0"	  ]
 [ "scenario",	  "mal"	  ]

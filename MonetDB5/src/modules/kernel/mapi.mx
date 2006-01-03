@@ -72,35 +72,22 @@ comment "Start the Mapi listener on <port> for <maxusers> using SSL.
 	MAL procedure <cmd>(Stream s_in, Stream s_out) is called.
 	If no <cmd> is specified a new client thread is forked.";
 
-command stop(id:int):bit
+command stop():void
 address MAPIstop
-comment "Terminate a specific client identified
-		 by index in the client table.";
-command stop(name:str):bit
-address MAPIstopClient
-comment "Terminate all sessions of by a client";
+comment "Terminate connection listeners"; 
 
-command suspend(sessionkey:lng,timeout:lng):void
+command suspend():void
 address MAPIsuspend
-comment "Suspend a client interactiont using a
-		 user-supplied session key.  The session
-		 is broken when the timer (in seconds)
-		 for the reconnect expires.";
+comment "Suspend accepting connections";
 
-command resume(sessionkey:lng):void
+command resume():void
 address MAPIresume
-comment "Resume the interaction with a specific client thread";
-
-command trace(nme:str, flag:bit):void
-address MAPItrace2
-comment "Trace (on/off) receipt of all messages from a specific user";
-command trace(flag:bit):void
-address MAPItrace
-comment "Trace (on/off) receipt of messages for all users";
+comment "Resume connection listeners";
 
 command malclient(in:stream, out:stream):void
 address MAPIclient
 comment "Start a Mapi client.";
+
 
 @{
 command prelude()
@@ -133,14 +120,11 @@ mal_export str MAPIlisten_default(int *ret);
 mal_export str MAPIlisten2(int *ret, int *port, int *maxusers);
 mal_export str MAPIlisten3(int *ret, int *port, int *maxusers, str *cmd);
 mal_export str MAPIlisten_port(int *ret, int *pid);
-mal_export str MAPIstop(int *ret, int *id);
-mal_export str MAPIstopClient(int *ret, str *nme);
-mal_export str MAPIsuspendClient(int *ret, int *skey, int *timeout);
-mal_export str MAPIresumeClient(int *ret, int *skey);
-mal_export str MAPItrace2(int *ret, str *nme, int *flg);
-mal_export str MAPItrace(int *res, int *flg);
-mal_export str MAPIsuspend(int *res, int *skey, int *timeout);
-mal_export str MAPIresume(int *res, int *skey);
+mal_export str MAPIstop(int *ret);
+mal_export str MAPIsuspend(int *ret);
+mal_export str MAPIresume(int *ret);
+mal_export str MAPIshutdown(int *ret, bit *force);
+
 
 #endif /* MAPI_H */
 @c
@@ -178,6 +162,8 @@ mal_export str MAPIresume(int *res, int *skey);
 
 static char *threadcommand;
 static int usock = -1;
+static MT_Id listener[8]; 
+static int lastlistener=0;
 
 str
 MAPIlistenThread(int *Sock)
@@ -185,6 +171,8 @@ MAPIlistenThread(int *Sock)
 	char *msg = 0;
 	char *cmd = threadcommand;
 
+	if( lastlistener < 8 )
+		listener[lastlistener++] = MT_getpid();
 	(void)usock;
 	do {
 		int retval;
@@ -849,73 +837,36 @@ MAPIlisten_port(int *ret, int *pid)
 }
 
 @-
-An internet connection may be terminated from the server console.
-And killing the administrator this way is prohibited.
-@c
-str
-MAPIstop(int *ret, int *id)
-{
-	(void) ret;		/* fool compiler */
-	return stopClientIndex(getClient(), *id);
-}
-
-str
-MAPIstopClient(int *ret, str *nme)
-{
-	(void) ret;		/* fool compiler */
-	return stopClient(getClient(), *nme);
-}
-
-str
-MAPIsuspendClient(int *ret, int *skey, int *timeout)
-{
-	(void) ret;		/* fool compiler */
-	return suspendClient(getClient(), *skey, *timeout);
-}
-
-str
-MAPIresumeClient(int *ret, int *skey)
-{
-	(void) ret;		/* fool compiler */
-	return resumeClient(getClient(), *skey);
-}
-
-@-
+The internet connection listener may be terminated from the server console,
+or temporarily suspended to enable system maintenance.
 It is advisable to trace the interactions of clients on the server
 side. At least as far as it concerns requests received.
 The kernel supports this 'spying' behavior with a file descriptor
 field in the client record.
 @c
+
 str
-MAPItrace2(int *ret, str *nme, int *flg)
+MAPIstop(int *ret)
 {
+	int i;
+	for( i=0; i< lastlistener; i++)
+		;
 	(void) ret;		/* fool compiler */
-	(void) traceClient(*nme, *flg);
 	return MAL_SUCCEED;
 }
 
-str
-MAPItrace(int *res, int *flg)
-{
-	(void) res;		/* fool compiler */
-	(void) traceAllClients(*flg);
-	return MAL_SUCCEED;
-}
 
 str
-MAPIsuspend(int *res, int *skey, int *timeout)
+MAPIsuspend(int *res)
 {
 	(void) res;
-	(void) timeout;
-	(void) skey;		/* fool compiler */
 	return MAL_SUCCEED;
 }
 
 str
-MAPIresume(int *res, int *skey)
+MAPIresume(int *res)
 {
 	(void) res;
-	(void) skey;		/* fool compiler */
 	return MAL_SUCCEED;
 }
 
@@ -975,4 +926,5 @@ MAPIclient(int *res, stream **In, stream **Out)
 	scheduleClient(name, bs, fdout);
 	return MAL_SUCCEED;
 }
+
 @}
