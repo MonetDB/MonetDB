@@ -54,16 +54,16 @@ All Rights Reserved.
       target="${javac_version}"
       source="${javac_version}"
       >
-       <include name="*.java" />
-       <classpath>
-         <pathelement path="${srcdir}" />
-       </classpath>
+      <include name="**/*.java" />
+      <classpath>
+        <pathelement path="${srcdir}" />
+      </classpath>
     </javac>
   </target>
 
   <!-- makes sure the jdbc driver is compiled -->
   <target name="jdbc" depends="find_driver" unless="have_driver">
-    <ant antfile="build.xml" dir=".." target="jar_jdbc" />
+    <ant antfile="build.xml" dir=".." inheritAll="false" target="jar_jdbc" />
   </target>
 
   <target name="find_driver">
@@ -84,11 +84,6 @@ All Rights Reserved.
   </target>
 
   <!-- Run tests -->
-  <path id="test_path">
-    <pathelement path="${builddir}" />
-    <pathelement path="${jdbc_jar}" />
-  </path>
-
   <target name="test">
     <antcall target="Test_Cautocommit" />
     <antcall target="Test_Csavepoints" />
@@ -104,7 +99,11 @@ All Rights Reserved.
 
   <target name="test_class" depends="compile,jdbc">
     <echo message="Testing class ${test.class}" />
-    <java classname="${test.class}" classpathref="test_path" failonerror="true">
+    <java classname="${test.class}" failonerror="true">
+      <classpath>
+        <pathelement path="${builddir}" />
+        <pathelement path="${jdbc_jar}" />
+      </classpath>
       <arg value="${jdbc_url}" />
     </java>
   </target>
