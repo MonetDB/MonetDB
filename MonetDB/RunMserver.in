@@ -38,9 +38,10 @@ fi
 PATH="${builddir}/src/testing:${builddir}/src/tools:${builddir}/src/mapi/clients/C:${builddir}/src/mapi/clients/python:$PATH"
 if [ "${uname}" = "IRIX64" ] ; then
 	# on IRIX64 (at least when compiled with the MIPS compiler),
-	# running Mserver via the wrapper-script ${builddir}/src/tools/Mserver
-	# result in a bus error;
-	# hence, we directly run the binary ${builddir}/src/tools/.libs/Mserver
+	# running Mserver via the wrapper-script
+	# ${builddir}/src/tools/Mserver results in a bus error; hence
+	# we run the binary ${builddir}/src/tools/.libs/Mserver
+	# directly
 	PATH="${builddir}/src/tools/.libs:$PATH"
 fi
 libpath="${MOD_PATH}:${builddir}/src/common/.libs:${builddir}/src/gdk/.libs:${builddir}/src/mapi/clients/C/.libs:${builddir}/src/modules/plain/stream/.libs:${builddir}/src/monet/.libs"
@@ -55,10 +56,4 @@ if [ "${uname}" = "AIX" ] ; then
 fi
 export LD_LIBRARY_PATH
 
-# execute the script
-# if no arguments, do a recursive test (Mtest.py -r), else pass on the
-# arguments.
-# if the environment variable MTEST_AT is set (value does not matter),
-# pass the --at flag to Mtest.py so that it uses the at command as a
-# watchdog.
 exec Mserver --set monet_mod_path="${MOD_PATH}" --config="${builddir}/conf/MonetDB.conf" --dbfarm="${builddir}/dbfarm" ${1+"$@"}
