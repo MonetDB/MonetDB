@@ -37,9 +37,11 @@ function usage()
 	echo "    --debug=<number>          Trace server actions[0]"
 	echo "    --daemon=yes|no           Run in background [no]"
 	echo "    --set <option>=<value>    Set environment value"
+	echo "    --ascii                   Use ascii dump for the database [default=no]"
 	echo "    --help                    This list of options"
 }
 
+ASCII=""
 DBFARM=$MONET5_PREFIX/var/MonetDB5/dbfarm
 # First perform some sanity checks
 if [ "$MONET5_PREFIX"  = "" ]
@@ -92,6 +94,9 @@ DELAY=""
 while [ $# -gt 0 ]
 do
 	case "$1" in
+	"--ascii="* )
+		ASCII="$1"
+		;;
 	"--dbname="* )
 		DBNAME="${1#--dbname=}"
 		;;
@@ -354,10 +359,10 @@ case "$ACTION" in
 			if  [ -n "$pid" ]
 			then
 				stop_mserver $i
-				mchkpnt --dbname=$i 
+				mchkpnt $ASCII --dbname=$i 
 				start_mserver $i
 			else
-				mchkpnt --dbname=$i 
+				mchkpnt $ASCII --dbname=$i 
 			fi
 		fi
 	done
@@ -371,10 +376,10 @@ case "$ACTION" in
 			if  [ -n "$pid" ]
 			then
 				stop_mserver $i
-				mrecover --dbname=$i 
+				mrecover $ASCII --dbname=$i 
 				start_mserver $i
 			else
-				mrecover --dbname=$i 
+				mrecover $ASCII --dbname=$i 
 			fi
 		fi
 	done

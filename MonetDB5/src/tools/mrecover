@@ -21,6 +21,7 @@ function usage()
 {
 	echo "Usage: mrecover [options] "
 	echo "    --dbname=<database_name>"
+	echo "    --ascii=<yes/no> default no"
 	echo "    --chkpnt=<directory>"
 	echo "    --help"
 }
@@ -46,12 +47,16 @@ fi
 
 # massage the argument list to prepare for calling
 DBNAME=""
+ASCII="no"
 while [ $# -gt 0 ]
 do
 	case "$1" in
 	 "--help" )
 		usage 
 		exit ;;
+	"--ascii="* )
+		ASCII="${1#--ascii=}"
+		;;
 	"--dbname="* )
 		DBNAME="${1#--dbname=}"
 		;;
@@ -144,9 +149,17 @@ fi
 cd $DBFARM
 echo "Restore from store $CHKPNTDIR"
 echo "Reload checkpoint file '$DBNAME/$TAG.tar'"
-gunzip $CHKPFILE.tar.gz || die "Decompression of checkpoint file failed"
-tar -xf $CHKPFILE.tar $DBNAME || die "Extraction of checkpoint file failed"
-gzip $CHKPFILE.tar || die "Compression of checkpoint file failed"
+if [ $ASCII = "yes" ]
+then
+	monetdb --start --dbname=$DBNAME
+	gunzip $CHKPFILE.sql.gz || die "Decompression of dump file failed"
+	MapiClient -lsql $CHKPFILE.sql || dies "Could not reload dump file"
+	gzip $CHKPFILE.sql || die "Compression of dump file failed"
+else
+	gunzip $CHKPFILE.tar.gz || die "Decompression of checkpoint file failed"
+	tar -xf $CHKPFILE.tar $DBNAME || die "Extraction of checkpoint file failed"
+	gzip $CHKPFILE.tar || die "Compression of checkpoint file failed"
+fi
 
 cd $DBLOGS
 echo "Reload checkpoint log file '$DBNAME/$TAG-logs.tar'"
