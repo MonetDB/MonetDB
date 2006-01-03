@@ -2128,7 +2128,10 @@ mapi_start_talking(Mapi mid)
 	mid->active = hdl;
 	read_into_cache(hdl, 0);
 	if (mapi_error(mid)) {
-		mapi_explain(mid, stdout);
+		if (hdl)
+			mapi_explain_result(hdl, stdout);
+		else
+			mapi_explain(mid, stdout);
 		return mid->error;
 	}
 	if (hdl->result && hdl->result->cache.line) {
