@@ -100,7 +100,7 @@ AC_ARG_WITH(monet5,
 	have_monet5="$withval")
 if test "x$have_monet5" != xno; then
   MPATH="$withval/bin:$PATH"
-  AC_PATH_PROG(MONET5_CONFIG,monetdb-config,,$MPATH)
+  AC_PATH_PROG(MONET5_CONFIG,monetdb5-config,,$MPATH)
 
   if test "x$MONET5_CONFIG" != x; then
     AC_MSG_CHECKING(whether MonetDB version $MONET5_REQUIRED_VERSION or newer is installed) 
