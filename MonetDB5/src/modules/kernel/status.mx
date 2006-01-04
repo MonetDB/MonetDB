@@ -80,18 +80,16 @@ which goes undetected.  If you want to see all your memory in the map,
 lower the gdk_mmap threshold in MonetDB5.conf to a low value (say 64KB).
 @-
 @mal
-command vmUsage(minsize:lng) :bat[:str,:lng] 
+command vmStatistics(minsize:lng) :bat[:str,:lng] 
 address SYSvm_usage
-comment "Get a split-up of how much virtual 
-	 memory blocks are in use.";
+comment "Get a split-up of how much virtual memory blocks are in use.";
 command memUsage(minsize:lng) :bat[:str,:lng] 
 address SYSmem_usage
-comment "Get a split-up of how much memory 
-	 blocks are in use.";
+comment "Get a split-up of how much memory blocks are in use.";
 @-
 Some explanation of what mem_usage() and vm_usage() display:
 @verbatim
-> m:= status.mem_usage(); io.print(m);
+> m:= status.memUsage(1024:lng); io.print(m);
 #------------------------------#
 # BAT:                 tmp_42  #
 # (str)                (lng)   #
@@ -114,7 +112,7 @@ Some explanation of what mem_usage() and vm_usage() display:
 [ "_tot/mem",          3157314 ] total RAM+swap-file consumption
 
 >
-> v:= status.vm_usage(); io.print(v);
+> v:= status.vmStatistics(1024:lng); io.print(v);
 #------------------------------#
 # BAT:               tmp_42    #
 # (str)              (lng)     #
@@ -127,12 +125,12 @@ Some explanation of what mem_usage() and vm_usage() display:
 @end verbatim
 @+ MAL runtime status 
 @mal
-command gdkEnv( ):bat[:str,:str] 
+command batStatistics( ):bat[:str,:str] 
 address SYSgdkEnv
-comment "Pseudo bat to map thread to name";
-command gdkThread( ):bat[:int,:str] 
+comment "Show distribution of bats by kind";
+command getThreads( ):bat[:int,:str] 
 address SYSgdkThread
-comment "Pseudo bat to map thread to name";
+comment "Produce overview of active threads";
 
 command mem_cursize() :lng 
 address SYSgetmem_cursize
@@ -157,6 +155,10 @@ comment "the maximum usable amount of logical VM space in KB (target only)";
 command vm_maxsize(v:lng) :void 
 address SYSsetvm_maxsize
 comment "set the maximum usable amount of physical swapspace in KB";
+
+command getDatabases():bat[:str,:str]
+address SYSgetDatabases
+comment "Produce a list of known databases in the current dbfarm";
 @{
 @* Implementation Code
 @h
@@ -754,6 +756,38 @@ SYSgdkThread(int *ret)
 			BUNins(b, &GDKthreads[i].tid, GDKthreads[i].name);
 		}
 	@:Pseudo(gdk,thread)@
+	return MAL_SUCCEED;
+}
+@-
+Collect the database and their access permissions for inspection
+@c
+#include <dirent.h>
+mal_export str SYSgetDatabases(int *ret);
+str SYSgetDatabases(int *ret)
+{
+	BAT *b;
+	DIR *d, *db;
+	struct dirent *e;
+	char buf[PATHLENGTH];
+	FILE *f;
+	
+	b = BATnew(TYPE_str, TYPE_str, 50);
+	/* scan the parent for directories */
+	d= opendir("..");
+	while ( (e=readdir(d)) != NULL){
+		if( *e->d_name == '.') continue;
+		snprintf(buf,PATHLENGTH,"../%s",e->d_name);
+		db= opendir(buf);
+		if( db != NULL) {
+			snprintf(buf,PATHLENGTH,"../%s/.mguardian.pid",e->d_name);
+			f= fopen(buf,"r");
+			BUNins(b,e->d_name,(f==NULL?"sleeping":"running"));
+			if( f ) fclose(f);
+			closedir(db);
+		} 
+	}
+	(void) closedir(d);
+	@:Pseudo(databases,mode)@
 	return MAL_SUCCEED;
 }
 
