@@ -122,6 +122,7 @@ mal_export str MAPIlisten_port(int *ret, int *pid);
 mal_export str MAPIstop(int *ret);
 mal_export str MAPIsuspend(int *ret);
 mal_export str MAPIresume(int *ret);
+mal_export void MAPIexit();
 
 #endif /* MAPI_H */
 @c
@@ -794,7 +795,20 @@ stream_read_until(str *res, stream *S, str stop)
 
 @- Wrappers
 The Monet Version 5 wrappers are collected here
+The latest port known to gain access is stored
+in the datase, so that others can more easily
+be notified.
 @c
+void MAPIannounce(str lang, int port){
+	FILE *f;
+	char buf[128];
+	snprintf(buf,128,".%s.port",lang);
+	f= fopen(buf,"w");
+	if( f) {
+		fprintf(f,"%d",port);
+		(void)fclose(f);	
+	}
+}
 str
 MAPIlisten_default(int *ret)
 {
@@ -807,6 +821,7 @@ MAPIlisten_default(int *ret)
 	if( p )
 		port = (int) strtol(p,NULL,10);
 	else port = MAPIPORT;
+	MAPIannounce("mal",port);
 	return MAPIlisten(&port, 0, &maxusers, 0);
 }
 
@@ -814,6 +829,7 @@ str
 MAPIlisten2(int *ret, int *port, int *maxusers)
 {
 	(void) ret;
+	MAPIannounce("mal",*port);
 	return MAPIlisten(port, 0, maxusers, 0);
 }
 
@@ -821,6 +837,7 @@ str
 MAPIlisten3(int *ret, int *port, int *maxusers, str *cmd)
 {
 	(void) ret;
+	MAPIannounce("mal",*port);
 	return MAPIlisten(port, 0, maxusers, cmd);
 }
 
@@ -831,6 +848,7 @@ MAPIlisten_port(int *ret, int *pid)
 	int maxusers = MAPIMAXUSERS;
 
 	(void) ret;
+	MAPIannounce("mal",port);
 	return MAPIlisten(&port, 0, &maxusers, 0);
 }
 
@@ -928,4 +946,11 @@ MAPIclient(int *res, stream **In, stream **Out)
 	return MAL_SUCCEED;
 }
 
+void
+MAPIexit(){
+	int ret;
+	MAPIstop(&ret);
+	/* remove any port identity file */
+	system("rm -rf .*_port");
+}
 @}
