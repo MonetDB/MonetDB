@@ -2490,18 +2490,18 @@ def FindCmdLst(env) :
     return ""
 ### FindCmdLst(env) #
 
-def MonetDBVersion():
+def MonetDBVersion(monetdb_config):
     try:
-        cmd = CheckExec("monetdb-config")
+        cmd = CheckExec(monetdb_config)
         pOut,pIn = popen2.popen2(cmd+' --version')
         pIn.close()
         res = pOut.readlines()[0]
         res = res.strip();
         pOut.close()
         (x,y,z) = res.split('.',2)
-        return ((int(x)*100) + int(y)) * 100 + int(z);
+        return ((int(x)*100) + int(y)) * 100 + int(z)
     except:
-        pass
+        ErrXit('Could not find "%s" in your $PATH:\n%s' % (monetdb_config,os.environ['PATH']))
     return 0
 
 _MonetConfigDict = {
@@ -2542,22 +2542,6 @@ def main(argv) :
         vars = vars + ['CMDLST']
 
     env = {}
-    env['VERSION'] = MonetDBVersion()
-
-    # unknown at compile time, as Mtest.py is compiled with MonetDB(4);
-    # hence, we set then at runtime.
-    # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
-    # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
-    if env['VERSION'] >= 49900:
-        CONDITIONALS['HAVE_MONET5'] = '#'
-        CONDITIONALS['HAVE_MONET'] = ''
-        CONDITIONALS['MONET4'] = ''
-        CONDITIONALS['MONET5'] = '#'
-    else:
-        CONDITIONALS['HAVE_MONET5'] = ''
-        CONDITIONALS['HAVE_MONET'] = '#'
-        CONDITIONALS['MONET4'] = '#'
-        CONDITIONALS['MONET5'] = ''
 
     # most intuitive (?) default settings
     dft['MONETDB_SOURCE']   = "GetMonetConfig('--source')"
@@ -2594,7 +2578,11 @@ def main(argv) :
     # commandline options overrule environment
     cmd_options = [
         # long name, short name, GDK option, argument, comment
-        (None, 'r', 'recursive', None,
+        ('MonetDB4', '4', 'MonetDB4', None,
+         "use Mserver of MonetDB Version 4.* (default)"),
+        ('MonetDB5', '5', 'MonetDB5', None,
+         "use mserver of MonetDB Version 5"),
+        ('recursive', 'r', 'recursive', None,
          "recurse into subdirectories (implies 'All')"),
         ('MONETDB_SOURCE', None, 'MONETDB_SOURCE', '<path>',
          'default: "%s"' % GetMonetConfig('--source')),
@@ -2682,6 +2670,10 @@ def main(argv) :
         opts, args = monet_options.parse_options(argv[1:], options, Usage)
     except monet_options.Error:
         sys.exit(1)
+    par['M4'] = opts.get('MonetDB4', 0)
+    par['M5'] = opts.get('MonetDB5', 0)
+    if par['M4'] and par['M5']:
+        ErrXit('Specifying both "-4/--MonetDB4" and "-5/MonetDB5" is not allowed!')
     par['RECURSIVE'] = opts.get('recursive', 0)
     par['QUIET'] = opts.get('quiet', 0)
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
@@ -2739,6 +2731,27 @@ def main(argv) :
             print"%s = %s" % (v, str(par[v]))
     STDOUT.flush()
     #env['par'] = par
+
+    
+    if par['M5']:
+        env['VERSION'] = MonetDBVersion("monetdb5-config")
+    else:
+        env['VERSION'] = MonetDBVersion("monetdb-config")
+
+    # unknown at compile time, as Mtest.py is compiled with MonetDB(4);
+    # hence, we set then at runtime.
+    # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
+    # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
+    if env['VERSION'] >= 49900:
+        CONDITIONALS['HAVE_MONET5'] = '#'
+        CONDITIONALS['HAVE_MONET'] = ''
+        CONDITIONALS['MONET4'] = ''
+        CONDITIONALS['MONET5'] = '#'
+    else:
+        CONDITIONALS['HAVE_MONET5'] = ''
+        CONDITIONALS['HAVE_MONET'] = '#'
+        CONDITIONALS['MONET4'] = '#'
+        CONDITIONALS['MONET5'] = ''
 
     #if env.has_key('MONETDB_PREFIX'):
         #bp = os.path.join(env['MONETDB_PREFIX'],"bin")
