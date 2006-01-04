@@ -26,6 +26,17 @@ function usage()
 	echo "    --help"
 }
 
+function diefunc() {
+	local linenr="$2" exitnr="$3"
+	shift 2
+	echo >&2
+	echo "A fatal error occurred at line ${linenr}!" >&2
+	echo "${*:-(no error message given)}" >&2
+	echo "Please check your configuration and try again" >&2
+	exit 1
+}
+alias die='diefunc "$LINENO" "$?"'
+
 DBFARM=$MONET5_PREFIX/var/MonetDB5/dbfarm
 DBLOGS=$MONET5_PREFIX/var/MonetDB5/dblogs
 CHKPNTDIR=$MONET5_PREFIX/var/MonetDB5/chkpnt
@@ -130,7 +141,7 @@ if [ "$ASCII" = "yes" ]
 then
 	monetdb --start --dbname=$DBNAME
 	sleep 2
-	MapiClient -lsql --dump >$CHKPFILE.sql || dies "Creation of dump failed"
+	MapiClient -lsql --dump >$CHKPFILE.sql || die "Creation of dump failed"
 	gzip $CHKPFILE.sql || die "Compression of dump file failed"
 else
 	tar -cf $CHKPFILE.tar $DBNAME || die "Creation of checkpoint file failed"
