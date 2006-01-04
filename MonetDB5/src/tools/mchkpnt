@@ -25,6 +25,7 @@ function usage()
 	echo "    --tool=<mapi/jdbc> default mapi"
 	echo "    --chkpnt=<directory>"
 	echo "    --help"
+	exit 0
 }
 
 function diefunc() {
@@ -47,9 +48,9 @@ CHKPNTDIR=$MONET5_PREFIX/var/MonetDB5/chkpnt
 TAG=`date +%F-%H%M%S`
 
 # First perform some sanity checks
-[[ -z "$MONET5_PREFIX" ]] && die "The MONET5_PREFIX environment \
-variable has not been set.\nIt should point to where you have \
-installed the build directory"
+[[ -z "$MONET5_PREFIX" ]] && die \
+"The MONET5_PREFIX environment variable has not been set.\n\
+It should point to where you have installed the build directory"
 
 # start the checkpoint process.
 [[ -d $DBFARM ]] || die "Database storage area '$DBFARM' is not accessible"
@@ -63,7 +64,6 @@ do
 	case "$1" in
 		--help)
 		usage 
-		exit 0
 		;;
 		--ascii=*)
 		ASCII="${1#--ascii=}"
@@ -104,7 +104,6 @@ do
 		;;
 		*)
 		usage
-		exit 0
 		;;
 	esac
 	shift
@@ -154,3 +153,5 @@ echo "Preparing checkpoint log file '$DBNAME/$TAG-logs'"
 [[ -d "$DBNAME" ]] || die "No log directory available for '$DBNAME'"
 tar -cf ${LOGFILE}.tar $DBNAME || die "Creation of checkpoint log file failed"
 gzip ${LOGFILE}.tar || die "Compression of checkpoint log file failed"
+
+echo "Database checkpoint finished"

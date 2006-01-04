@@ -22,19 +22,24 @@ function usage()
 	echo "Usage: mrecover [options] "
 	echo "    --dbname=<database_name>"
 	echo "    --ascii=<yes/no> default no"
+	echo "    --tool=<mapi/jdbc> default mapi"
 	echo "    --chkpnt=<directory>"
 	echo "    --help"
+	exit 0
 }
 
 function diefunc() {
-	local linenr="$2" exitnr="$3"
+	local linenr="$1" exitnr="$2"
 	shift 2
 	echo >&2
 	echo "A fatal error occurred at line ${linenr}!" >&2
-	echo "${*:-(no error message given)}, exit state: ${exitnr}" >&
+	echo -e "${*:-(no error message given)}" >&2
+	echo "Exit state: ${exitnr}" >&2
 	echo "Please check your configuration and try again" >&2
 	exit 1
 }
+# must set this option, else script will not expand aliases
+shopt -s expand_aliases
 alias die='diefunc "$LINENO" "$?"'
 
 DBFARM=$MONET5_PREFIX/var/MonetDB5/dbfarm
@@ -43,116 +48,113 @@ CHKPNTDIR=$MONET5_PREFIX/var/MonetDB5/chkpnt
 TAG=""
 
 # First perform some sanity checks
-if [ "$MONET5_PREFIX"  = "" ]
-then
-	echo "The MONET5_PREFIX environment variable has not been set"
-	echo "It should point to where you have installed the build directory"
-	exit
-fi
+[[ -z "$MONET5_PREFIX" ]] && die \
+"The MONET5_PREFIX environment variable has not been set.\n\
+It should point to where you have installed the build directory"
+
 # start the checkpoint process.
-if [ ! -d $DBFARM ]
-then
-	echo "Database storage area '$DBFARM' is not accessible"
-	exit
-fi
+[[ -d $DBFARM ]] || die "Database storage area '$DBFARM' is not accessible"
 
 # massage the argument list to prepare for calling
 DBNAME=""
 ASCII="no"
-while [ $# -gt 0 ]
+TOOL="MapiClient -lsql"
+while [ $# -gt 0 ];
 do
 	case "$1" in
-	 "--help" )
+		--help)
 		usage 
-		exit ;;
-	"--ascii="* )
-		ASCII="${1#--ascii=}"
 		;;
-	"--dbname="* )
+		--ascii=*)
+		ASCII="${1#--ascii=}"
+		case "$ASCII" in
+			[Yy][Ee][Ss]|[Yy])
+			ASCII="yes"
+			;;
+			[Nn][Oo]|[Nn])
+			ASCII="no"
+			;;
+			*)
+			die "--ascii: '$ASCII' not understood, use 'yes' or 'no'"
+			;;
+		esac
+		;;
+		--tool=*)
+			TOOL=${1%Client}
+			TOOL=${TOOL#--tool=}
+			case "$TOOL" in
+				[Mm]api)
+				TOOL="MapiClient -lsql"
+				;;
+				[Jj][Dd][Bb][Cc])
+				TOOL="JdbcClient"
+				;;
+				*)
+				die "--tool: '${1#--tool=}' not understood, use 'mapi' or 'jdbc'"
+			esac
+		;;
+		--dbname=*)
 		DBNAME="${1#--dbname=}"
 		;;
-	"--chkpnt="* )
+		--chkpnt=*)
 		CHKPNTDIR="${1#--chkpnt=}"
 		;;
-	"--tag="* )
+		--tag=*)
 		TAG="${1#--tag=}"
 		;;
-	* )
+		*)
 		usage
 		;;
 	esac
 	shift
 done
 
-if [ -z "$DBNAME" ]
-then
-	echo "Database name missing";
-	usage
-	exit
-fi
+[[ -z "$DBNAME" ]] && die "Database name missing"
 
-if [ ! -d $CHKPNTDIR ]
-then
-	echo "Checkpoint directory '$CHKPNTDIR' not available"
-	exit
-fi
+[[ -d "$DBFARM/$DBNAME" ]] || die "Database '$DBNAME' missing"
 
-if [ ! -d "$CHKPNTDIR/$DBNAME" ]
-then
-	echo "Database checkpoint directory '$CHKPNTDIR/$DBNAME' is not accessible"
-	exit
-fi
+[[ -d $CHKPNTDIR ]] || die "Checkpoint directory '$CHKPNTDIR' not available"
 
-if [ -z "$TAG" ]
+[[ -d "$CHKPNTDIR/$DBNAME" ]] || die "Database checkpoint directory '$CHKPNTDIR/$DBNAME' is not accessible"
+
+if [ -z "$TAG" ];
 then
 	cd $CHKPNTDIR/$DBNAME
 	echo "Checkpoint tags defined for '$DBNAME'"
 	ls *tar.gz >/tmp/mrecover
-	sed -e "s/.tar.gz//" -e "s/-logs//" </tmp/mrecover >/tmp/mrecover2
-	sort -ru /tmp/mrecover2
+	sed -i -e "s/.tar.gz//" -e "s/-logs//" /tmp/mrecover
+	sort -ru /tmp/mrecover
 	read -p "Specify the checkpoint tag for '$DBNAME' ? " TAG
-	z=`grep $TAG /tmp/mrecover2`
-	rm /tmp/mrecover /tmp/mrecover2
-	if [ -z "$z" ]
-	then
-		echo "Invalid checkpoint tag"
-		exit
-	fi
+	z=`grep $TAG /tmp/mrecover`
+	rm /tmp/mrecover
+	[[ -z "$z" ]] && die "Invalid checkpoint tag"
 fi
 
 CHKPFILE="$CHKPNTDIR/$DBNAME/$TAG"
 LOGFILE="$CHKPNTDIR/$DBNAME/$TAG-logs"
 
-if [ ! -f "$CHKPFILE.tar.gz" ]
-then
-	echo "Checkpoint file '$CHKPFILE' not available"
-	exit
-fi
+[[ -f "$CHKPFILE.tar.gz" ]] || die "Checkpoint file '$CHKPFILE' not available"
 
-if [ ! -f "$LOGFILE.tar.gz" ]
-then
-	echo "Checkpoint log file '$LOGFILE' not available"
-	exit
-fi
+[[ -f "$LOGFILE.tar.gz" ]] || die "Checkpoint log file '$LOGFILE' not available"
 
 # Ready for preparing the checkpoint
 cd $DBFARM
-if [ ! -d "$DBNAME" ]
+if [ ! -d "$DBNAME" ];
 then
 	mkdir -p $DBNAME
 else
 	z=`date +%F-%H%M%S`
-	echo "Move existing database out of the way '$DBNAME$z'"
+	echo "Moving existing database out of the way '$DBNAME$z'"
 	mv $DBNAME $DBNAME$z
 	mkdir -p $DBNAME
 fi
 cd $DBLOGS
-if [ ! -d "$DBNAME" ]
+if [ ! -d "$DBNAME" ];
 then
 	mkdir -p $DBNAME
 else
 	z=`date +%F-%H%M%S`
-	echo "Move existing database logs out of the way '$DBNAME$z'"
+	echo "Moving existing database logs out of the way '$DBNAME$z'"
 	mv $DBNAME $DBNAME$z
 	mkdir -p $DBNAME
 fi
@@ -160,22 +162,19 @@ fi
 cd $DBFARM
 echo "Restore from store $CHKPNTDIR"
 echo "Reload checkpoint file '$DBNAME/$TAG.tar'"
-if [ $ASCII = "yes" ]
+if [ "$ASCII" == "yes" ];
 then
 	monetdb --start --dbname=$DBNAME
-	gunzip $CHKPFILE.sql.gz || die "Decompression of dump file failed"
-	MapiClient -lsql $CHKPFILE.sql || dies "Could not reload dump file"
-	gzip $CHKPFILE.sql || die "Compression of dump file failed"
+	sleep 2
+	gzip -dc $CHKPFILE.sql.gz | $TOOL || die "Restoring dump file failed"
 else
-	gunzip $CHKPFILE.tar.gz || die "Decompression of checkpoint file failed"
+	gzip -dc $CHKPFILE.tar.gz > $CHKPFILE.tar || die "Decompression of checkpoint file failed"
 	tar -xf $CHKPFILE.tar $DBNAME || die "Extraction of checkpoint file failed"
-	gzip $CHKPFILE.tar || die "Compression of checkpoint file failed"
 fi
 
 cd $DBLOGS
 echo "Reload checkpoint log file '$DBNAME/$TAG-logs.tar'"
-gunzip $LOGFILE.tar.gz || die "Decompression of checkpoint log failed"
+gzip -dc $LOGFILE.tar.gz > $LOGFILE.tar || die "Decompression of checkpoint log failed"
 tar -xf $LOGFILE.tar $DBNAME || die "Extraction of checkpoint log file failed"
-gzip $LOGFILE.tar || die "Compression of checkpoint log failed"
 
 echo "Database recovery finished"
