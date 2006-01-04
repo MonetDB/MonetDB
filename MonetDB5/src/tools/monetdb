@@ -280,15 +280,15 @@ function create_database ()
 		else
 			exit
 		fi
-		read -p "Should the MAL listener be activated? [yes/no]" answer
-		if [ "$answer" = "yes" ]
-		then
-			echo "mapi.listen();" >$1/.mserver.dbinit
-		fi
 		read -p "Should the SQL listener be activated ? [yes/no]" answer
 		if [ "$answer" = "yes" ]
 		then
 			echo "include sql; sql.listen();" >>$1/.mserver.dbinit
+		fi
+		read -p "Should the MAL listener be activated? [yes/no]" answer
+		if [ "$answer" = "yes" ]
+		then
+			echo "mapi.listen();" >$1/.mserver.dbinit
 		fi
 }
 
