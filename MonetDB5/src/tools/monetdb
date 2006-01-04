@@ -100,6 +100,7 @@ do
 	case "$1" in
 	"--dump" )
 		ASCII="--ascii=yes"
+		;;
 	"--ascii="* )
 		ASCII="$1"
 		;;
