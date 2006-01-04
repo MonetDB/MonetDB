@@ -314,7 +314,21 @@ case "$ACTION" in
 	do
 		if [ -d "$i" ]
 		then
-			echo $i
+			sqlport=`grep sql_port $i/.monetdb.conf|sed -e "s/.*=//" -e "s/ .*//"`
+			malport=`grep mal_port $i/.monetdb.conf|sed -e "s/.*=//" -e "s/ .*//"`
+			if [ -n "$sqlport" ]
+			then
+				sqlport="sql port $sqlport"
+			else
+				sqlport="sql port 45123"
+			fi
+			if [  -n "$malport" ]
+			then
+				malport="mal port $malport"
+			else 
+				malport="mal port 50000"
+			fi
+			echo "database $i	$sqlport	$malport"
 		fi
 	done;;
  "--start" )
