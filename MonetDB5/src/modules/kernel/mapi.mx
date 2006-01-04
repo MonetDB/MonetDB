@@ -22,8 +22,7 @@
 This module contains a simple interface for setting up
 internet connections and to initialize a client session.
 Without loading this interface, Monet runs in administrator
-mode. The information about activitated listeners can be
-obtained with the 'inspect' module.
+mode. 
 
 Clients may initialize a private listener to implement
 specific services. For example, in an OLTP environment

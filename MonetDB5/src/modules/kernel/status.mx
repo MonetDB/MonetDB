@@ -759,7 +759,8 @@ SYSgdkThread(int *ret)
 	return MAL_SUCCEED;
 }
 @-
-Collect the database and their access permissions for inspection
+Collect the database and their access permissions for inspection.
+Note, this code base should be changed for the Windows setting.
 @c
 #include <dirent.h>
 mal_export str SYSgetDatabases(int *ret);
@@ -770,6 +771,7 @@ str SYSgetDatabases(int *ret)
 	struct dirent *e;
 	char buf[PATHLENGTH];
 	FILE *f;
+	int uid,pid;
 	
 	b = BATnew(TYPE_str, TYPE_str, 50);
 	/* scan the parent for directories */
@@ -779,10 +781,15 @@ str SYSgetDatabases(int *ret)
 		snprintf(buf,PATHLENGTH,"../%s",e->d_name);
 		db= opendir(buf);
 		if( db != NULL) {
-			snprintf(buf,PATHLENGTH,"../%s/.mguardian.pid",e->d_name);
+			snprintf(buf,PATHLENGTH,"../%s/.gdk_lock",e->d_name);
 			f= fopen(buf,"r");
-			BUNins(b,e->d_name,(f==NULL?"sleeping":"running"));
-			if( f ) fclose(f);
+			if( f  && fgets(buf,PATHLENGTH,f) != NULL){
+				sscanf(buf,"USR=%d PID=%d %s", &uid,&pid,buf);
+				snprintf(buf,PATHLENGTH,"/proc/%d",pid);
+				fclose(f);
+			} else
+				snprintf(buf,PATHLENGTH,"../%s/.mguardian.pid",e->d_name);
+			BUNins(b,e->d_name,(access(buf,F_OK)?"sleeping":"running"));
 			closedir(db);
 		} 
 	}
