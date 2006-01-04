@@ -32,6 +32,17 @@ function usage()
 	echo "    --help         This list of options"
 }
 
+function get() {
+	needle=$1
+	shift
+	while $#;
+	do
+		arg=${1#${needle}=}
+		[[ ${#$arg} -lt ${#$1} ]] && return $arg
+		shift
+	done
+}
+
 DBFARM=$MONET5_PREFIX/var/MonetDB5/dbfarm
 DELAY=300
 ACTION=start
@@ -41,35 +52,39 @@ trap '' 2 3
 case "$1" in
  "--start" )
 	ACTION=start
-	shift ;;
+	shift
+	;;
  "--stop" )
 	ACTION=stop
-	shift ;;
+	shift
+	;;
  "--delay="* )
-	delay=`echo $1|sed -e "s/--delay=//"`
-	if [ $delay"" != "" ]
+	delay="${1#--delay=}"
+	if [ "$delay" != "" ];
 	then 
 		DELAY=$delay
 	fi
 	ACTION=delay
-	shift ;;
+	shift
+	;;
  "--help" | * )
 	usage 
-	exit 0 ;;
+	exit 0
+	;;
 esac
 
 cd $DBFARM
 if [ "$*" != "" ]
 then
-	DBLIST=$*
+	DBLIST="$*"
 else
-	DBLIST=`ls`
+	DBLIST="`ls`"
 fi
 
-tmp=`echo $* | sed -e "s/^.*--dbname=//" -e "s/ .*//"`
-if [ "$tmp" != "" ]
+tmp=$(get "--dbname" $*)
+if [ -z "$tmp" ]
 then
-	DBLIST=$tmp
+	DBLIST="$tmp"
 fi
 
 function getPID ()
@@ -108,18 +123,19 @@ echo "now $now"
 	now=`expr $now - $started `
 	if [[ "$now" < "$restartwindow" ]]
 	then
-		if [[ "$restartcount" < $mailtrigger ]]
+		if [[ "$restartcount" > $mailtrigger ]]
 		then
 			now=`date`
-			mail -s "MSERVER RESTARTED" $USER <<!EOF
-Dear database owner,
-
-Your database named '$1' has been restarted.
-
+			mail -s "Notification: mserver restarted" $USER <<!EOF
+The mguardian process $$ running on node `uname -n` has restarted
+database '$1' because it appeared not to be running any more.
 Please inspect the monetdb log for further details.
-
-regards. MonetDB Guardian
 !EOF
+			# todo: add some information on the how manieth message this
+			# is, and implement a gag, in order to stop sending mail
+			# (the *2 each time is not enough, imho, it should stop
+			# trying and send a message that the database is down and
+			# stays down)
 			mailtrigger=`expr $mailtrigger * 2`
 		fi
 		restartcount=`expr $restartcount + 1 `
