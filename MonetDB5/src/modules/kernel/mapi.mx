@@ -123,8 +123,6 @@ mal_export str MAPIlisten_port(int *ret, int *pid);
 mal_export str MAPIstop(int *ret);
 mal_export str MAPIsuspend(int *ret);
 mal_export str MAPIresume(int *ret);
-mal_export str MAPIshutdown(int *ret, bit *force);
-
 
 #endif /* MAPI_H */
 @c
@@ -164,6 +162,7 @@ static char *threadcommand;
 static int usock = -1;
 static MT_Id listener[8]; 
 static int lastlistener=0;
+static int mapiactive=TRUE;
 
 str
 MAPIlistenThread(int *Sock)
@@ -212,7 +211,7 @@ MAPIlistenThread(int *Sock)
 		}
 		if (sock >= 0 && FD_ISSET(sock, &fds)) {
 			if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
-				if (MT_geterrno() != EINTR) {
+				if (MT_geterrno() != EINTR || mapiactive==FALSE) {
 					msg = "accept failed\n";
 					goto error;
 				}
@@ -850,7 +849,8 @@ MAPIstop(int *ret)
 {
 	int i;
 	for( i=0; i< lastlistener; i++)
-		;
+		MT_kill_thread(listener[i]);
+	lastlistener = 0;
 	(void) ret;		/* fool compiler */
 	return MAL_SUCCEED;
 }
@@ -860,12 +860,14 @@ str
 MAPIsuspend(int *res)
 {
 	(void) res;
+	mapiactive= FALSE;
 	return MAL_SUCCEED;
 }
 
 str
 MAPIresume(int *res)
 {
+	mapiactive= TRUE;
 	(void) res;
 	return MAL_SUCCEED;
 }
