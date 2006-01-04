@@ -64,13 +64,17 @@ ACTION="--status"
 
 case "$1" in
  "--start" | "--stop" | "--status" ) 
-		ACTION=$1;
+		ACTION=$1
 		shift ;;
  "--databases" )
-		ACTION=$1;
+		ACTION=$1
+		shift ;;
+ "--dump" )
+		ACTION=checkpoint
+		ASCII="--ascii=yes"
 		shift ;;
  "--checkpoint" )
-		ACTION=$1;
+		ACTION=$1
 		shift ;;
  "--recover" )
 		ACTION=$1;
@@ -94,6 +98,8 @@ DELAY=""
 while [ $# -gt 0 ]
 do
 	case "$1" in
+	"--dump" )
+		ASCII="--ascii=yes"
 	"--ascii="* )
 		ASCII="$1"
 		;;
