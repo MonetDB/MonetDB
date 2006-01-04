@@ -22,19 +22,23 @@ function usage()
 	echo "Usage: mchkpnt [options] "
 	echo "    --dbname=<database_name>"
 	echo "    --ascii=<yes/no> default no"
+	echo "    --tool=<mapi/jdbc> default mapi"
 	echo "    --chkpnt=<directory>"
 	echo "    --help"
 }
 
 function diefunc() {
-	local linenr="$2" exitnr="$3"
+	local linenr="$1" exitnr="$2"
 	shift 2
 	echo >&2
 	echo "A fatal error occurred at line ${linenr}!" >&2
-	echo "${*:-(no error message given)}, exit state: ${exitnr}" >&
+	echo -e "${*:-(no error message given)}" >&2
+	echo "Exit state: ${exitnr}" >&2
 	echo "Please check your configuration and try again" >&2
 	exit 1
 }
+# must set this option, else script will not expand aliases
+shopt -s expand_aliases
 alias die='diefunc "$LINENO" "$?"'
 
 DBFARM=$MONET5_PREFIX/var/MonetDB5/dbfarm
@@ -43,117 +47,110 @@ CHKPNTDIR=$MONET5_PREFIX/var/MonetDB5/chkpnt
 TAG=`date +%F-%H%M%S`
 
 # First perform some sanity checks
-if [ "$MONET5_PREFIX"  = "" ]
-then
-	echo "The MONET5_PREFIX environment variable has not been set"
-	echo "It should point to where you have installed the build directory"
-	exit
-fi
+[[ -z "$MONET5_PREFIX" ]] && die "The MONET5_PREFIX environment \
+variable has not been set.\nIt should point to where you have \
+installed the build directory"
+
 # start the checkpoint process.
-if [ ! -d $DBFARM ]
-then
-	echo "Database storage area '$DBFARM' is not accessible"
-	exit
-fi
+[[ -d $DBFARM ]] || die "Database storage area '$DBFARM' is not accessible"
 
 # massage the argument list to prepare for calling
 DBNAME=""
 ASCII="no"
-while [ $# -gt 0 ]
+TOOL="MapiClient -lsql"
+while [ $# -gt 0 ];
 do
 	case "$1" in
-	 "--help" )
+		--help)
 		usage 
-		exit ;;
-	"--ascii="* )
-		ASCII="${1#--ascii=}"
+		exit 0
 		;;
-	"--dbname="* )
+		--ascii=*)
+		ASCII="${1#--ascii=}"
+		case "$ASCII" in
+			[Yy][Ee][Ss]|[Yy])
+			ASCII="yes"
+			;;
+			[Nn][Oo]|[Nn])
+			ASCII="no"
+			;;
+			*)
+			die "--ascii: '$ASCII' not understood, use 'yes' or 'no'"
+			;;
+		esac
+		;;
+		--tool=*)
+			TOOL=${1%Client}
+			TOOL=${TOOL#--tool=}
+			case "$TOOL" in
+				[Mm]api)
+				TOOL="MapiClient -lsql"
+				;;
+				[Jj][Dd][Bb][Cc])
+				TOOL="JdbcClient"
+				;;
+				*)
+				die "--tool: '${1#--tool=}' not understood, use 'mapi' or 'jdbc'"
+			esac
+		;;
+		--dbname=*)
 		DBNAME="${1#--dbname=}"
 		;;
-	"--chkpnt="* )
+		--chkpnt=*)
 		CHKPNTDIR="${1#--chkpnt=}"
 		;;
-	"--tag="* )
+		--tag=*)
 		TAG="${1#--tag=}"
 		;;
-	* )
+		*)
 		usage
+		exit 0
 		;;
 	esac
 	shift
 done
 
-if [ -z "$DBNAME" ]
-then
-	echo "Database name missing";
-	usage
-	exit
-fi
+[[ -z "$DBNAME" ]] && die "Database name missing"
 
-if [ ! -d "$DBFARM/$DBNAME" ]
-then
-	echo "Database '$DBNAME' missing";
-	exit
-fi
+[[ -d "$DBFARM/$DBNAME" ]] || die "Database '$DBNAME' missing"
 
 if [ ! -d $CHKPNTDIR ]
 then
 	mkdir -p $CHKPNTDIR
 fi
-if [ ! -d $CHKPNTDIR ]
-then
-	echo "Checkpoint directory '$CHKPNTDIR' not available"
-	exit
-fi
+[[ -d $CHKPNTDIR ]] || die "Checkpoint directory '$CHKPNTDIR' not available"
 
 if [ ! -d "$CHKPNTDIR/$DBNAME" ]
 then
 	mkdir -p "$CHKPNTDIR/$DBNAME"
 fi
-if [ ! -d "$CHKPNTDIR/$DBNAME" ]
-then
-	echo "Database checkpoint directory '$CHKPNTDIR/$DBNAME' is not accessible"
-	exit
-fi
+[[ -d "$CHKPNTDIR/$DBNAME" ]] || die "Database checkpoint directory '$CHKPNTDIR/$DBNAME' is not accessible"
 
 CHKPFILE="$CHKPNTDIR/$DBNAME/$TAG"
 LOGFILE="$CHKPNTDIR/$DBNAME/$TAG-logs"
 
-if [ -f $CHKPFILE ]
-then
-	echo "Checkpoint file '$CHKPFILE' already exist"
-	exit
-fi
+[[ -f $CHKPFILE ]] && die "Checkpoint file '$CHKPFILE' already exist"
 
-if [ -f $LOGFILE ]
-then
-	echo "Checkpoint log file '$LOGFILE' already exist"
-	exit
-fi
+[[ -f $LOGFILE ]] && die "Checkpoint log file '$LOGFILE' already exist"
 
 # Ready for preparing the checkpoint
 cd $DBFARM
 
 echo "Checkpoint store $CHKPNTDIR"
 echo "Preparing checkpoint file '$DBNAME/$TAG'"
-if [ "$ASCII" = "yes" ]
+if [ "$ASCII" == "yes" ];
 then
-	monetdb --start --dbname=$DBNAME
+	monetdb --start --dbname=$DBNAME || die "failed to start Mserver"
 	sleep 2
-	MapiClient -lsql --dump >$CHKPFILE.sql || die "Creation of dump failed"
-	gzip $CHKPFILE.sql || die "Compression of dump file failed"
+	$TOOL --dump > ${CHKPFILE}.sql || die "Creation of dump failed"
+	gzip ${CHKPFILE}.sql || die "Compression of dump file failed"
 else
-	tar -cf $CHKPFILE.tar $DBNAME || die "Creation of checkpoint file failed"
-	gzip $CHKPFILE.tar || die "Compression of checkpoint file failed"
+	tar -cf ${CHKPFILE}.tar $DBNAME || die "Creation of checkpoint file failed"
+	gzip ${CHKPFILE}.tar || die "Compression of checkpoint file failed"
 fi
 
 cd $DBLOGS
 echo "Preparing checkpoint log file '$DBNAME/$TAG-logs'"
-if [ ! -d "$DBNAME" ]
-then
-	echo "No log directory available for '$DBNAME'"
-	exit;
-fi
-tar -cf $LOGFILE.tar $DBNAME || die "Creation of checkpoint log file failed"
-gzip $LOGFILE.tar || die "Compression of checkpoint log file failed"
+[[ -d "$DBNAME" ]] || die "No log directory available for '$DBNAME'"
+tar -cf ${LOGFILE}.tar $DBNAME || die "Creation of checkpoint log file failed"
+gzip ${LOGFILE}.tar || die "Compression of checkpoint log file failed"
