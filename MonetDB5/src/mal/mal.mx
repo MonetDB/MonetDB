@@ -222,6 +222,7 @@ mal_export int 				monet_daemon;
 #define mal_down_sema(X,Y) if(GDKprotected) MT_down_sema(X,Y)
 @c 
 #include <mal.h>
+
 char monet_cwd[PATHLENGTH] = { 0 };
 int monet_welcome = 1;
 str *monet_script;
@@ -417,6 +418,7 @@ void mal_exit(Client cntxt){
 		(void) stream_close(cntxt->fdout);
 		(void) stream_destroy(cntxt->fdout);
 	}
+	system("rm -f .*.port");
 /*	GDKexit(0);  */
 	MT_global_exit(0);
 }
