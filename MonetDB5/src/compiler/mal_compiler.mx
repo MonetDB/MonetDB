@@ -122,7 +122,7 @@ mal_export str MCdynamicCompiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 static char *mccPrelude[] = {
 	"/* MAL to C compiler\n",
-	"   Copyright (c) 2001-2004, CWI.\n",
+	"   Copyright (c) 2001-2006, CWI.\n",
 	"   All rights reserved.\n",
 	" \n",
 	"   The current version does not yet\n",

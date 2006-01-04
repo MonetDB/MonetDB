@@ -33,7 +33,7 @@ The output of the SQL front-end to Monet V5 becomes:
 @T
 \begin{verbatim}
 # Monet Mil to Mal compiler
-# Copyright (c) 2001-2002, CWI. All rights reserved.
+# Copyright (c) 2001-2006, CWI. All rights reserved.
 
 # Predefined code segment
 #The compiler can not guarantee an accurate compilation,

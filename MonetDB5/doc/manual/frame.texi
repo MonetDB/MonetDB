@@ -7,7 +7,7 @@
 @ifinfo
      This file documents the MonetDB Version @value{VERSION} Reference Manual
      
-     Copyright (C) 2000-2004 CWI
+     Copyright (C) 2000-2006 CWI
      
      Permission is granted to make and distribute verbatim
      copies of this manual provided the copyright notice and
