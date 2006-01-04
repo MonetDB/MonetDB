@@ -21,22 +21,44 @@
 # to direct the interaction to the proper ports.
 
 
-DBFARM=$MONET5_PREFIX/var/MonetDB5/dbfarm
-DBSHARE=$MONET5_PREFIX/share/MonetDB/lib
-
 # First perform a sanity checks
-if [ -z "$MONET5_PREFIX"   ]
+if [ -z "$MONET5_PREFIX" ];
 then
-    echo "The MONET5_PREFIX environment variable has not been set"
-    echo "It should point to where you have installed the build directory"
-    exit
+	# Ok, life is not simple.  Let's try do do some voodoo and see if
+	# we can figure the prefix out ourself...  First, we assume that the
+	# installation we're in is sane; nothing has been moved after the
+	# install.  Second, if the first is true, we're in a directory
+	# called "bin", which is right after the PREFIX...
+	if [ "`dirname $0`" == "." ];
+	then
+		dir="${PWD}"
+	else
+		dir="`dirname ${PWD}/$0`"
+	fi
+	if [ "`basename ${dir}`" == "bin" ];
+	then
+		# let's see if we have a share/MonetDB/lib...
+		if [ -d "${dir}/../share/MonetDB/lib" ];
+		then
+			MONET5_PREFIX="${dir}/.."
+		else 
+			echo "The MONET5_PREFIX environment variable has not been set" >&2
+			echo "It should point to where you have installed the build directory" >&2
+			exit 1
+		fi
+	fi
 fi
 
-CLIENT=`ls $DBSHARE/jdbcclient*.jar`
+
+DBSHARE="$MONET5_PREFIX/share/MonetDB/lib"
+
+# Find client jar, if more than one, take the most recent one
+CLIENT=`ls $DBSHARE/jdbcclient*.jar | sort -r | head -n1`
 if [ ! -f "$CLIENT" ]
 then
-	echo "The JDBC client jar file is not accessible in the default location $DBSHARE"
-	echo "Check your environment variable settings and installation"
+	echo "The JDBC client jar file is not accessible in the default" >&2
+	echo "location ($DBSHARE)" >&2
+	echo "Check your environment variable settings and installation" >&2
 	exit
 fi
 
