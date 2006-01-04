@@ -35,10 +35,10 @@ function usage()
 function get() {
 	needle=$1
 	shift
-	while $#;
+	while [ $# -gt 0 ];
 	do
 		arg=${1#${needle}=}
-		[[ ${#$arg} -lt ${#$1} ]] && return $arg
+		[[ ${#arg} -lt ${#1} ]] && echo $arg
 		shift
 	done
 }
@@ -74,15 +74,15 @@ case "$1" in
 esac
 
 cd $DBFARM
-if [ "$*" != "" ]
+if [ ! -z "$*" ]
 then
 	DBLIST="$*"
 else
 	DBLIST="`ls`"
 fi
 
-tmp=$(get "--dbname" $*)
-if [ -z "$tmp" ]
+tmp="$(get "--dbname" $*)"
+if [ ! -z "$tmp" ]
 then
 	DBLIST="$tmp"
 fi
@@ -119,7 +119,6 @@ function restart_server()
 	fi
 
 	now=`date +%s`
-echo "now $now"
 	now=`expr $now - $started `
 	if [[ "$now" < "$restartwindow" ]]
 	then
@@ -157,7 +156,7 @@ Please inspect the monetdb log for further details.
 	fi
 }
 
-getDelay()
+function getDelay()
 {
  	delay=`grep delay $1/.monetdb.conf| sed -e "s/\t.*//" -e "s/delay=//"`
 	if [ "$delay" = "" ]
@@ -216,7 +215,7 @@ case $ACTION in
 	"start" )
 		for i in $DBLIST
 		do
-			 ( check_mserver  $i )  &
+			( check_mserver  $i )  &
 		done
 		;;
 	"stop" )
