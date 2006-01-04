@@ -32,6 +32,9 @@ then
 	if [ "`dirname $0`" == "." ];
 	then
 		dir="${PWD}"
+	elif [ "${0:0:1}" == "/" ];
+	then
+		dir="`dirname $0`"
 	else
 		dir="`dirname ${PWD}/$0`"
 	fi
