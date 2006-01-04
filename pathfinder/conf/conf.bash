@@ -11,7 +11,7 @@
 # The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2005 CWI.
+# Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
 #
@@ -596,16 +596,18 @@ if [ "${modpath}" ] ; then
 fi
 
 if [ "${MONET5_PREFIX}" ] ; then
-	monet5_config="--config=${MONET5_PREFIX}/etc/MonetDB5.conf"
+	monet5_config="-5 --config=${MONET5_PREFIX}/etc/MonetDB5.conf"
   else
-	monet5_config=""
+	monet5_config="-4"
 fi
 
 if [ "${what}" != "BUILDTOOLS" ] ; then
 	if [ "${what}" = "MONET5" ] ; then
 		mtest_config="${monet5_config}"
+	  elif [ "${MONET5_PREFIX}" ] ; then
+		mtest_config="-5"
 	  else
-		mtest_config=""
+		mtest_config="-4"
 	fi
 fi
 
