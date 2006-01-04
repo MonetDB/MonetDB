@@ -31,7 +31,7 @@ function diefunc() {
 	shift 2
 	echo >&2
 	echo "A fatal error occurred at line ${linenr}!" >&2
-	echo "${*:-(no error message given)}" >&2
+	echo "${*:-(no error message given)}, exit state: ${exitnr}" >&
 	echo "Please check your configuration and try again" >&2
 	exit 1
 }
