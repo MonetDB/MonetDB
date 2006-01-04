@@ -154,7 +154,7 @@ monet_hello(opt *set, int setlen)
 
 	if (msg && strcmp(msg, "yes") == 0) {
 		printf("# Monet Database Server V%s\n", GDKgetenv("gdk_version"));
-		printf("# Copyright (c) 1993-2005, CWI. ");
+		printf("# Copyright (c) 1993-2006, CWI. ");
 		printf("All rights reserved.\n");
 		printf("# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs; %s linked.\n", HOST, (size_t) (sizeof(ptr) * 8), (size_t) (sizeof(oid) * 8), linkinfo);
 		printf("# config:%s\n", GDKgetenv("config"));

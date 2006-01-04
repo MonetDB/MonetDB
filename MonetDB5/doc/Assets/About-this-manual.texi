@@ -19,7 +19,7 @@ using @emph{ps2pdf}.
 Alternative formats, e.g. XML and DocBook format, can be
 readily obtained from the Texinfo file.
 
-The copyright(2005) on the MonetDB software, documentation,
+The copyright(2006) on the MonetDB software, documentation,
 and logo is owned by CWI.
 Other trademarks and copyrights referred to in this manual are
 the property of their respective owners.

@@ -5,14 +5,14 @@
 
 @c environment
 @set VERSION 5.0
-@set UPDATED Dec 30, 2005
+@set UPDATED Jan 4, 2006
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual
      
 Last updated: @value{UPDATED}
 
-     Copyright (C) 2000-2005 CWI
+     Copyright (C) 2000-2006 CWI
      
      Permission is granted to make and distribute verbatim
      copies of this manual provided the copyright notice and
@@ -72,6 +72,7 @@ Last updated: @value{UPDATED}
 @menu
 * Database Configuration ::
 * Checkpoint and Recovery ::
+* Database Dumps ::
 @end menu
 @end menu
 
@@ -233,13 +234,16 @@ Last updated: @value{UPDATED}
 @node Source Distribution, Linux Installation, Standard Distribution, Download and Installation
 @include Assets/Setup.texi
 
-@node Checkpoint and Recovery, MonetDB Overview, Database Configuration, Download and Installation
+@node Checkpoint and Recovery, Database Dumps, Database Configuration, Download and Installation
 @include Assets/Checkpoints.texi
+
+@node Database Dumps, MonetDB Overview, Checkpoint and Recovery, Download and Installation
+@include Assets/Databasedump.texi
 
 @node Start and Stop the Server, Database Configuration ,Daily Builds, Download and Installation
 @include Assets/StartStop.texi
 
-@node MonetDB Overview, Design considerations, Checkpoint and Recovery, Top
+@node MonetDB Overview, Design considerations, Database Dumps, Top
 @include mal.bdy.texi
 
 @node Session scenarios , Scenario management , Backward compatibility, MonetDB Overview

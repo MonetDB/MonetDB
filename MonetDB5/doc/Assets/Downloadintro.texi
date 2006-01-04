@@ -30,6 +30,7 @@ This section provides background on the following topics:
 @menu
 * Database Configuration ::
 * Checkpoint and Recovery ::
+* Database Dumps ::
 @end menu
 @end menu
 @node Software Versions, Standard Distribution, Download and Installation, General Introduction

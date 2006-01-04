@@ -87,7 +87,7 @@ in @ref{Start and Stop the Server}.
 @example
 shell> monetdb --start --dbname=voc 
 # Monet Database Server V4.99.19
-# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
 # config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
