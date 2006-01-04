@@ -19,4 +19,4 @@ python -V
 # execute the script
 # if no arguments, do a recursive approve (Mapprove.py -r), else pass
 # on the arguments
-exec python "${builddir}/src/testing/Mapprove.py" --config="${builddir}/conf/MonetDB5.conf" --TSTTRGBASE="${builddir}" "${@--r}"
+exec python "${builddir}/src/testing/Mapprove.py" -5 --config="${builddir}/conf/MonetDB5.conf" --TSTTRGBASE="${builddir}" "${@--r}"

@@ -41,7 +41,7 @@ if test "$GCC" = "yes"; then
 	X_CXXFLAGS="$X_CXXFLAGS -Wno-sign-compare"
 fi
 
-# MONETDB_BUILD and MONETDB_SOURCE are *only* used for monetdb-config
+# MONETDB_BUILD and MONETDB_SOURCE are *only* used for monetdb5-config
 # MONETDB_SOURCE is the absolute path name of the source directory
 # (srcdir can be relative)
 
