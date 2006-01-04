@@ -312,7 +312,10 @@ case "$ACTION" in
  "--databases" )
 	for i in $DBLIST
 	do
-		echo $i
+		if [ -d "$i" ]
+		then
+			echo $i
+		fi
 	done;;
  "--start" )
 	started=0
