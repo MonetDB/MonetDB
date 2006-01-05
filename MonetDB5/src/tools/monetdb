@@ -178,15 +178,18 @@ function start_mserver()
 		fi
 
 		# use previous arguments if needed
+		echo -n "Starting database '$1'... "
 		CONFIG="--config=$DBFARM/$1/.monetdb.conf"
-		$MONET5_PREFIX/bin/mserver --set daemon=yes --dbname=$1 $CONFIG $ARGS $STARTUP&
-		sleep 1
+		$MONET5_PREFIX/bin/mserver --set daemon=yes --dbname=$1 $CONFIG $ARGS $STARTUP > /dev/null &
+		sleep 2
 		pid=`getPID $1`
 		if [ -z "$pid" ]
 		then
 			echo `date +"%F %T"` " FAILED $1 $ARGS" >>monetdb.log
+			echo "FAILED"
 		else
 			echo `date +"%F %T"` " START $1 $ARGS" >>monetdb.log
+			echo "ok"
 		fi
 		# start the guardian for this server as well
 		if [ -n "$DELAY" ]
@@ -215,12 +218,20 @@ function stop_mserver()
 	pid=`getPID $1`
 	if [ -n "$pid" ]
 	then
-		echo "mserver for '$1' stopped"
+		echo -n "Stopping database '$1'... "
 		stopped=`expr $stopped + 1 `
 		# disable the guardian first
 		$MONET5_PREFIX/bin/mguardian --stop $1
 		kill -TERM $pid
 		echo `date +"%F %T"` " STOP  $1" >>monetdb.log
+		if [ "`ps -p $pid -o comm=`" == "mserver" ];
+		then
+			echo "FAILED"
+		else
+			echo "ok"
+		fi
+	else
+		echo "Database '$1' is not running"
 	fi
 }
 
@@ -327,13 +338,13 @@ case "$ACTION" in
 	do
 		if [ -d $i ]
 		then
-			started=`expr $started + 1 `
-			start_mserver  $i 
+			started=`expr $started + 1`
+			start_mserver $i 
 		fi
 	done
 	if [ $started = 0 ]
 	then
-		echo "No server started "
+		echo "No server started"
 	fi
 	;;
  "--stop" )
@@ -347,10 +358,13 @@ case "$ACTION" in
 	done
 	if [ $stopped = 0 ]
 	then
-		echo "No server stopped "
 		# make sure there are no leftover processes
-		killall mguardian
-		killall mserver 
+		killall mguardian >& /dev/null
+		didkillg=$!
+		killall mserver >& /dev/null
+		didkillm=$!
+		
+		[[ $didkillg < 0 || $didkillm < 0 ]] && echo "No server stopped"
 	fi
 	;;
  "--status" )
