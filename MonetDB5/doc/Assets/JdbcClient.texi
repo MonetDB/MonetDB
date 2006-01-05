@@ -1,9 +1,10 @@
 @section JdbcClient Calling Arguments
-The JDBC textual client comes with several options to fine-tune the
+The textual client using the JDBC protocol
+comes with several options to fine-tune the
 interaction with the database server. A synopsis of the calling
 arguments is given below
 @example
-java -jar jdbcclient-1.2.jar [-h host[:port]] [-p port] \
+JdbcClient [-h host[:port]] [-p port] \
 		[-f file] [-u user] [-l language] [-b [database]] \
 		[-d [table]] [-e] [-X<opt>]
 @end example

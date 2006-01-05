@@ -89,6 +89,12 @@ Last updated: @value{UPDATED}
 * MAL execution:: 
 @end menu
 * Development Roadmap::
+@menu
+* SQL Roadmap ::
+* XQuery Roadmap ::
+* Embedded Server Roadmap ::
+* Server Roadmap ::
+@end menu
 @end menu
 
 * SQL ::
@@ -253,10 +259,10 @@ Last updated: @value{UPDATED}
 @node Client administration, Development Roadmap, Scenario management, MonetDB Overview
 @include mal_client.bdy.texi
 
-@node Development Roadmap, SQL, Client administration, Top
+@node Development Roadmap, SQL Roadmap, Client administration, Top
 @include Assets/Roadmap.texi
 
-@node SQL, Getting Started with SQL, Development Roadmap, Top
+@node SQL, Getting Started with SQL, Server Roadmap, Top
 @include Assets/SQLoverview.texi
 @node XQuery, User Interfaces, Overlaying the BAT storage, Top
 @include Assets/XQueryOverview.texi

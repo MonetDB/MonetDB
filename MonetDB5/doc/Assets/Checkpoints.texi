@@ -33,6 +33,7 @@ Reload checkpoint file 'demo/2006-01-02-224335'
 Reload checkpoint log file 'demo/2006-01-02-224335-logs'
 Database recovery finished
 @end example
+Before the checkpoint operation starts the database server is brought down
+and restarted afterwards.
 The checkpoint files are stored away in a path available in the
-database configuration file. It can be overruled at the command line
-with the option @code{--dir}. 
+database configuration file. 

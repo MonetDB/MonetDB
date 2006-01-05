@@ -5,9 +5,9 @@ This option is standard available through the MapiClient and JdbcClient.
 However, be prepared that not all SQL schema features may be retained 
 in the process. It also takes much more time to produce the dump file.
 
-Consider you have alread installed the SQL tutorial database @code{voc}
+Consider you have already installed the SQL tutorial database @code{VOC}
 and wish to transport it to another machine. The following steps are
-required, after you have started the database server.
+required. After you have started the database server.
 @example
 shell> MapiClient -lsql --dump -umonetdb  >/tmp/voc.sql
 password: *******
