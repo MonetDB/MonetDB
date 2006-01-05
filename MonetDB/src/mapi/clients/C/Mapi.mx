@@ -805,7 +805,7 @@ struct BlockCache {
 @h
 typedef struct MapiStruct *Mapi;
 
-/* this definition is a straight copy from sql_query.mx */
+/* this definition is a straight copy from sql/include/sql_query.h */
 typedef enum sql_query_t {
 	Q_PARSE = 0,
 	Q_TABLE = 1,
@@ -2975,7 +2975,8 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 		case Q_UPDATE:
 			result->row_count = strtol(n, &n, 0);
 			break;
-		case Q_TABLE:{
+		case Q_TABLE:
+		case Q_PREPARE: {
 			int ntuples;	/* not used */
 
 			sscanf(n, "%d %d %d %d", &result->tableid, &result->row_count, &result->fieldcnt, &ntuples);
