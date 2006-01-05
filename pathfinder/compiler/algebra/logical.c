@@ -446,7 +446,6 @@ PFla_project_ (const PFla_op_t *n, unsigned int count, PFalg_proj_t *proj)
             }
 
         /* did we find the attribute? */
-assert(j<n->schema.count);
         if (j >= n->schema.count)
             PFoops (OOPS_FATAL,
                     "attribute `%s' referenced in projection not found",
@@ -1375,7 +1374,7 @@ PFla_op_t * PFla_type_assert (const PFla_op_t *n, PFalg_att_t att,
                               PFalg_simple_type_t ty, bool pos)
 {
     PFla_op_t    *ret;
-    PFalg_simple_type_t assert_ty = att_NULL;
+    PFalg_simple_type_t assert_ty = 0;
     unsigned int  i;
 
     assert (n);
@@ -1409,9 +1408,6 @@ PFla_op_t * PFla_type_assert (const PFla_op_t *n, PFalg_att_t att,
     ret->sem.type_a.att = att;
     ret->sem.type_a.ty  = assert_ty;
 
-    /* allocate memory for the result schema (= schema(n) + 1 for the
-     * 'res' attribute which is to hold the result of the type test) 
-     */
     ret->schema.count = n->schema.count;
 
     ret->schema.items

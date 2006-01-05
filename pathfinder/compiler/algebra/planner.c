@@ -170,8 +170,7 @@ plan_serialize (const PFla_op_t *n)
         add_plans (sorted,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (R(n)->plans, i),
-                       PFord_refine (PFord_refine (PFordering (), att_iter),
-                                     att_pos)));
+                       PFord_refine (PFordering (), att_pos)));
 
     /* throw out those plans that are too expensive */
     sorted = prune_plans (sorted);

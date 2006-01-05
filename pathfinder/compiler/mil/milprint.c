@@ -519,6 +519,10 @@ print_statement (PFmil_t * n)
             break;
 
         case m_col_name:
+            /* as col_name is used for debugging only 
+               and triggers a bug in MonetDB itself
+               it is discarded here */
+            break;
             print_expression (n->child[0]);
             milprintf (".%s (", ID[n->kind]);
             print_expression (n->child[1]);

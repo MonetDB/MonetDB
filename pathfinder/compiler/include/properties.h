@@ -44,24 +44,24 @@ typedef struct PFprop_t PFprop_t;
 /**
  * Create new property container.
  */
-PFprop_t *PFprop (void);
+/* PFprop_t *PFprop (void); */
 
 /**
  * Test if @a attr is marked constant in container @a prop.
  */
-bool PFprop_const (const PFprop_t *prop, const PFalg_att_t attr);
+bool PFprop_const (const PFprop_t *prop, PFalg_att_t attr);
 
 /**
  * Mark @a attr as constant with value @a value in container @a prop.
  */
 void PFprop_mark_const (PFprop_t *prop,
-                        const PFalg_att_t attr, PFalg_atom_t value);
+                        PFalg_att_t attr, PFalg_atom_t value);
 
 /**
  * Lookup value of @a attr in property container @a prop.  Attribute
  * @a attr must be marked constant, otherwise the function will fail.
  */
-PFalg_atom_t PFprop_const_val (const PFprop_t *prop, const PFalg_att_t attr);
+PFalg_atom_t PFprop_const_val (const PFprop_t *prop, PFalg_att_t attr);
 
 /**
  * Return number of attributes marked const.
@@ -81,6 +81,16 @@ PFalg_att_t PFprop_const_at (PFprop_t *prop, unsigned int i);
 PFalg_atom_t PFprop_const_val_at (PFprop_t *prop, unsigned int i);
 
 /**
+ * Test if @a attr is in the list of icol columns in container @a prop
+ */
+bool PFprop_icol (const PFprop_t *prop, PFalg_att_t attr); 
+
+/* 
+ * count number of icols attributes
+ */
+unsigned int PFprop_icols_count (const PFprop_t *prop);
+
+/**
  * Return icols attributes as an attlist.
  */
 PFalg_attlist_t PFprop_icols_to_attlist (const PFprop_t *prop);
@@ -89,6 +99,12 @@ PFalg_attlist_t PFprop_icols_to_attlist (const PFprop_t *prop);
  * Infer properties of a logical algebra subtree
  */
 void PFprop_infer (PFla_op_t *n);
+
+/**
+ * Update properties of a single algebra node
+ * using the properties of its children
+ */
+void PFprop_update (PFla_op_t *n);
 
 #endif  /* PROPERTIES_H */
 

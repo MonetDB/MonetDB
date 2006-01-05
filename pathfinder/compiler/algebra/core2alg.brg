@@ -1534,35 +1534,8 @@ reduce (PFcnode_t * p, int goalnt)
              * frag:       proj_pre,size,level,kind,prop,frag (n)
              */
 
-            unsigned int i; 
-            PFla_op_t *tagname = NULL;
-
-            for (i = 0; i < A(L(p)).rel->schema.count; i++)
-            {
-                if (A(L(p)).rel->schema.items[i].name == att_item &&
-                    A(L(p)).rel->schema.items[i].type == aat_str)
-                {
-                    tagname = project (cast (A(L(p)).rel,
-                                             att_cast, att_item, aat_qname),
-                                       proj (att_iter, att_iter),
-                                       proj (att_pos, att_pos),
-                                       proj (att_item, att_cast));
-                    break;
-                }
-                else if (A(L(p)).rel->schema.items[i].name == att_item &&
-                         A(L(p)).rel->schema.items[i].type == aat_qname)
-                {
-                    tagname = A(L(p)).rel;
-                    break;
-                }
-            }
-            if (i == A(L(p)).rel->schema.count)
-                PFoops (OOPS_FATAL, 
-                        "attribute 'item' with type 'string' or type "
-                        "'QName' in tagname of element construction expected.");
-
             PFla_op_t *elem = element (PFla_set_to_la (A(R(p)).frag),
-                                       tagname, A(R(p)).rel);
+                                       A(L(p)).rel, A(R(p)).rel);
 
             A(p) = (struct  PFla_pair_t) {
                      .rel = cross (lit_tbl (attlist (att_pos), 
@@ -1595,42 +1568,8 @@ reduce (PFcnode_t * p, int goalnt)
              * frag:       proj_pre,size,level,kind,prop,frag (n)
              */
 
-            unsigned int i; 
-            PFla_op_t *tagname = NULL;
-
-            for (i = 0; i < A(L(p)).rel->schema.count; i++)
-            {
-                if (A(L(p)).rel->schema.items[i].name == att_item &&
-                    A(L(p)).rel->schema.items[i].type == aat_str)
-                {
-                    tagname = project (cast (A(L(p)).rel,
-                                             att_cast, att_item, aat_qname),
-                                       proj (att_iter, att_iter),
-                                       proj (att_pos, att_pos),
-                                       proj (att_item, att_cast));
-                    break;
-                }
-                else if (A(L(p)).rel->schema.items[i].name == att_item &&
-                         A(L(p)).rel->schema.items[i].type == aat_qname)
-                {
-                    tagname = A(L(p)).rel;
-                    break;
-                }
-            }
-            if (i == A(L(p)).rel->schema.count)
-                PFoops (OOPS_FATAL, 
-                        "attribute 'item' with type 'string' or type "
-                        "'QName' in tagname of attribute "
-                        "construction expected.");
-
-            PFla_op_t *attr = attribute (tagname, 
-                                         project (A(R(p)).rel,
-                                                  proj (att_iter, att_iter),
-                                                  proj (att_pos, att_pos),
-                                                  proj (att_item, att_item)),
-                                         att_res,
-                                         att_item,
-                                         att_item);
+            PFla_op_t *attr = attribute (A(L(p)).rel, A(R(p)).rel,
+                                         att_res, att_item, att_item);
 
             A(p) = (struct  PFla_pair_t) {
                      .rel = project(roots (attr),
@@ -1652,6 +1591,13 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* TagName:            CoreExpr */
         case 401:
+            A(p) = (struct  PFla_pair_t) {
+                .rel = project (cast (A(L(p)).rel, att_cast,
+                                      att_item, aat_qname),
+                                proj (att_iter, att_iter),
+                                proj (att_pos, att_pos),
+                                proj (att_item, att_cast)),
+                .frag = PFla_empty_set () };
             break;
 
         /* CoreExpr:           text (CoreExpr) */
