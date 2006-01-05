@@ -136,26 +136,58 @@ main(int argc, char **argv)
 			    ")", SQL_NTS);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect 1");
 
+	/* figure out the type of the columns and bind parameters */
+	{
+		SQLSMALLINT coltype;
+		SQLSMALLINT colno;
+
+		ret = SQLColumns(stmt, NULL, 0, NULL, 0, (SQLCHAR *) "test", SQL_NTS, NULL, 0);
+		check(ret, SQL_HANDLE_STMT, stmt, "SQLColumns");
+		ret = SQLBindCol(stmt, 5, SQL_C_SSHORT, &coltype, 0, NULL);
+		check(ret, SQL_HANDLE_STMT, stmt, "SQLBindCol 1");
+		ret = SQLBindCol(stmt, 17, SQL_C_SSHORT, &colno, 0, NULL);
+		check(ret, SQL_HANDLE_STMT, stmt, "SQLBindCol 2");
+
+		for (;;) {
+			ret = SQLFetch(stmt);
+			if (ret == SQL_NO_DATA)
+				break;
+			check(ret, SQL_HANDLE_STMT, stmt, "SQLFetch");
+			switch (colno) {
+			case 1:
+				SQLBindParameter(stmt, 1, SQL_PARAM_INPUT, SQL_C_SSHORT, coltype, 0, 0, &f1, sizeof(f1), NULL);
+				check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter 1");
+				break;
+			case 2:
+				ret = SQLBindParameter(stmt, 2, SQL_PARAM_INPUT, SQL_C_CHAR, coltype, 0, 0, &f2, sizeof(f2), NULL);
+				check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter 2");
+				break;
+			case 3:
+				ret = SQLBindParameter(stmt, 3, SQL_PARAM_INPUT, SQL_C_DOUBLE, coltype, 0, 0, &f3, sizeof(f3), NULL);
+				check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter 3");
+				break;
+			case 4:
+				ret = SQLBindParameter(stmt, 4, SQL_PARAM_INPUT, SQL_C_TYPE_DATE, coltype, 0, 0, &f4, sizeof(f4), NULL);
+				check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter 4");
+				break;
+			case 5:
+				ret = SQLBindParameter(stmt, 5, SQL_PARAM_INPUT, SQL_C_TYPE_TIME, coltype, 0, 0, &f5, sizeof(f5), NULL);
+				check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter 5");
+				break;
+			}
+		}
+		ret = SQLFreeStmt(stmt, SQL_UNBIND);
+		check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeStmt");
+		ret = SQLCloseCursor(stmt);
+		check(ret, SQL_HANDLE_STMT, stmt, "SQLCloseCursor");
+	}
+
 	/* prepare for filling the test table */
 	/* we use a single statement with parameters whose values vary */
-
-	/* bind a bunch of parameters before preparing the statement */
-	ret = SQLBindParameter(stmt, 1, SQL_PARAM_INPUT, SQL_C_SSHORT, SQL_INTEGER, 0, 0, &f1, sizeof(f1), NULL);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter 1");
-	ret = SQLBindParameter(stmt, 2, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_VARCHAR, 0, 0, &f2, sizeof(f2), NULL);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter 2");
-	ret = SQLBindParameter(stmt, 3, SQL_PARAM_INPUT, SQL_C_DOUBLE, SQL_FLOAT, 0, 0, &f3, sizeof(f3), NULL);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter 3");
 
 	ret = SQLPrepare(stmt, (SQLCHAR *)
 			 "INSERT INTO test VALUES (?, ?, ?, ?, ?)", SQL_NTS);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLPrepare 1");
-
-	/* bind the rest of the parameters after preparing the statement */
-	ret = SQLBindParameter(stmt, 4, SQL_PARAM_INPUT, SQL_C_TYPE_DATE, SQL_TYPE_DATE, 0, 0, &f4, sizeof(f4), NULL);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter 4");
-	ret = SQLBindParameter(stmt, 5, SQL_PARAM_INPUT, SQL_C_TYPE_TIME, SQL_TYPE_TIME, 0, 0, &f5, sizeof(f5), NULL);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindParameter 5");
 
 	/* do the actual filling of the test table */
 	f4.year = 2003;

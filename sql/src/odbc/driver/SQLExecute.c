@@ -63,7 +63,7 @@ static struct msql_types {
 /* 	{"tinyint", SQL_TINYINT}, */
 /* 	{"ubyte", SQL_TINYINT}, */
 	{"varchar", SQL_VARCHAR},
-	{0, 0},		       /* sentinel */
+	{0, 0},			/* sentinel */
 };
 
 int
@@ -128,7 +128,6 @@ ODBCInitResult(ODBCStmt *stmt)
 			goto repeat;
 		stmt->State = EXECUTED0;
 		stmt->rowcount = 0;
-
 		nrCols = 0;
 		break;
 	}
@@ -138,7 +137,7 @@ ODBCInitResult(ODBCStmt *stmt)
 	if (nrCols == 0)
 		return SQL_SUCCESS;
 	if (stmt->ImplRowDescr->descRec == NULL) {
-		stmt->State = stmt->query ? (stmt->State == EXECUTED0 ? PREPARED0 : PREPARED1) : INITED;
+		stmt->State = stmt->queryid >= 0 ? (stmt->State == EXECUTED0 ? PREPARED0 : PREPARED1) : INITED;
 
 		/* Memory allocation error */
 		addStmtError(stmt, "HY001", NULL, 0);
@@ -233,9 +232,14 @@ SQLExecute_(ODBCStmt *stmt)
 {
 	MapiHdl hdl;
 	MapiMsg msg;
+	char *query;
+	char *sep;
+	size_t querylen;
+	size_t querypos;
+	int i;
 
 	/* check statement cursor state, query should be prepared */
-	if (stmt->State == INITED || (stmt->State >= EXECUTED0 && stmt->query == NULL)) {
+	if (stmt->State == INITED || (stmt->State >= EXECUTED0 && stmt->queryid < 0)) {
 		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
 		return SQL_ERROR;
@@ -255,8 +259,34 @@ SQLExecute_(ODBCStmt *stmt)
 
 	assert(hdl);
 
+	querylen = 1024;
+	query = malloc(querylen); /* XXX allocate space for parameters */
+	snprintf(query, querylen, "execute %d (", stmt->queryid);
+	querypos = strlen(query);
+	/* XXX fill in parameter values */
+	sep = "";
+	for (i = 1; i <= stmt->nparams; i++) {
+		if (ODBCStore(stmt, i, &query, &querypos, &querylen, sep) == SQL_ERROR)
+			return SQL_ERROR;
+		sep = ",";
+	}
+	if (querypos >= querylen) {
+		query = realloc(query, querylen += 10);
+		if (query == NULL) {
+			addStmtError(stmt, "HY001", NULL, 0);
+			return SQL_ERROR;
+		}
+	}
+	query[querypos++] = ')';
+	query[querypos] = 0;
+
+#ifdef ODBCDEBUG
+	ODBCLOG("SQLExecute " PTRFMT " %s\n", PTRFMTCAST stmt, query);
+#endif
+
 	/* Have the server execute the query */
-	msg = mapi_execute(hdl);
+	msg = mapi_query_handle(hdl, query);
+	free(query);
 	switch (msg) {
 	case MOK:
 		break;

@@ -99,7 +99,7 @@ static int utf8chkmsk[] = {
    ODBC fashion.
 */
 SQLCHAR *
-ODBCwchar2utf8(const SQLWCHAR * s, SQLINTEGER length, char **errmsg)
+ODBCwchar2utf8(const SQLWCHAR *s, SQLINTEGER length, char **errmsg)
 {
 	const SQLWCHAR *s1;
 	unsigned long c;
@@ -243,9 +243,10 @@ ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR * buf, SQLINTEGER b
  * Postcondition: returns a newly allocated null terminated strings.
  */
 char *
-ODBCTranslateSQL(const SQLCHAR *query, size_t length)
+ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER noscan)
 {
 	/* for now, just call dupODBCstring */
+	(void) noscan;
 	return dupODBCstring(query, length);
 }
 

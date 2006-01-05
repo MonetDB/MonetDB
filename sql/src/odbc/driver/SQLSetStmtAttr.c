@@ -44,7 +44,11 @@ SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEG
 {
 	/* TODO: check parameters: Value and StringLength */
 
-	if (Attribute == SQL_ATTR_CONCURRENCY || Attribute == SQL_ATTR_CURSOR_SCROLLABLE || Attribute == SQL_ATTR_CURSOR_SENSITIVITY || Attribute == SQL_ATTR_CURSOR_TYPE || Attribute == SQL_ATTR_USE_BOOKMARKS) {
+	if (Attribute == SQL_ATTR_CONCURRENCY ||
+	    Attribute == SQL_ATTR_CURSOR_SCROLLABLE ||
+	    Attribute == SQL_ATTR_CURSOR_SENSITIVITY ||
+	    Attribute == SQL_ATTR_CURSOR_TYPE ||
+	    Attribute == SQL_ATTR_USE_BOOKMARKS) {
 		if (stmt->State >= EXECUTED0) {
 			/* Invalid cursor state */
 			addStmtError(stmt, "24000", NULL, 0);
@@ -60,7 +64,8 @@ SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEG
 	switch (Attribute) {
 #define desc ((ODBCDesc *) Value)	/* abbrev. */
 	case SQL_ATTR_APP_PARAM_DESC:
-		if (Value == SQL_NULL_HDESC || desc == stmt->AutoApplParamDescr) {
+		if (Value == SQL_NULL_HDESC ||
+		    desc == stmt->AutoApplParamDescr) {
 			stmt->ApplParamDescr = stmt->AutoApplParamDescr;
 			return SQL_SUCCESS;
 		}
@@ -78,7 +83,8 @@ SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEG
 		stmt->ApplParamDescr = desc;
 		break;
 	case SQL_ATTR_APP_ROW_DESC:
-		if (Value == SQL_NULL_HDESC || desc == stmt->AutoApplRowDescr) {
+		if (Value == SQL_NULL_HDESC ||
+		    desc == stmt->AutoApplRowDescr) {
 			stmt->ApplRowDescr = stmt->AutoApplRowDescr;
 			return SQL_SUCCESS;
 		}
@@ -139,6 +145,18 @@ SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEG
 		   descriptor handle */
 		addStmtError(stmt, "HY017", NULL, 0);
 		return SQL_ERROR;
+	case SQL_ATTR_NOSCAN:
+		switch ((SQLUINTEGER) (size_t) Value) {
+		case SQL_NOSCAN_ON:
+		case SQL_NOSCAN_OFF:
+			break;
+		default:
+			/* Invalid attribute value */
+			addStmtError(stmt, "HY024", NULL, 0);
+			return SQL_ERROR;
+		}
+		stmt->noScan = (SQLUINTEGER) (size_t) Value;
+		break;
 	case SQL_ATTR_PARAM_BIND_OFFSET_PTR:
 		return SQLSetDescField_(stmt->ApplParamDescr, 0, SQL_DESC_BIND_OFFSET_PTR, Value, StringLength);
 	case SQL_ATTR_PARAM_BIND_TYPE:
@@ -187,7 +205,6 @@ SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEG
 	case SQL_ATTR_MAX_LENGTH:
 	case SQL_ATTR_MAX_ROWS:
 	case SQL_ATTR_METADATA_ID:
-	case SQL_ATTR_NOSCAN:
 	case SQL_ATTR_QUERY_TIMEOUT:
 	case SQL_ATTR_ROW_NUMBER:
 	case SQL_ATTR_SIMULATE_CURSOR:

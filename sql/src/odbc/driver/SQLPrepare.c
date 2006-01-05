@@ -46,19 +46,24 @@ ODBCResetStmt(ODBCStmt *stmt)
 	SQLFreeStmt_(stmt, SQL_CLOSE);
 	setODBCDescRecCount(stmt->ImplParamDescr, 0);
 
-	if (stmt->query)
-		free(stmt->query);
-	stmt->query = NULL;
+	stmt->queryid = -1;
+	stmt->nparams = 0;
 	stmt->State = INITED;
 }
 
 SQLRETURN
 SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 {
-	char *query;
+	char *query, *s;
 	MapiMsg ret;
+	MapiHdl hdl;
+	int nrParams;
+	ODBCDescRec *rec;
+	int i;
 
-	if (stmt->State >= EXECUTED1 || (stmt->State == EXECUTED0 && mapi_more_results(stmt->hdl))) {
+	hdl = stmt->hdl;
+
+	if (stmt->State >= EXECUTED1 || (stmt->State == EXECUTED0 && mapi_more_results(hdl))) {
 		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
@@ -75,29 +80,94 @@ SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 	/* TODO: convert ODBC escape sequences ( {d 'value'} or {t 'value'} or
 	   {ts 'value'} or {escape 'e-char'} or {oj outer-join} or
 	   {fn scalar-function} etc. ) to MonetDB SQL syntax */
-	query = ODBCTranslateSQL(szSqlStr, (size_t) nSqlStrLength);
-
-	ODBCResetStmt(stmt);
-
-	/* TODO: check (parse) the Query on correctness */
-	/* count the number of parameter markers (question mark: ?) */
-
-	/* TODO: count the number of output columns and their description */
-
+	query = ODBCTranslateSQL(szSqlStr, (size_t) nSqlStrLength, stmt->noScan);
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLPrepare: \"%s\"\n", query);
 #endif
+	s = malloc(strlen(query) + 9);
+	strcat(strcpy(s, "prepare "), query);
+	free(query);
 
-	ret = mapi_prepare_handle(stmt->hdl, query);
+	ODBCResetStmt(stmt);
 
-	if (ret != MOK) {
-		/* General error */
-		addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
+	ret = mapi_query_handle(hdl, s);
+	free(s);
+	s = mapi_result_error(hdl);
+	if (s) {
+		/* XXX more fine-grained control required */
+		/* Syntax error or access violation */
+		addStmtError(stmt, "42000", s, 0);
 		return SQL_ERROR;
+	}
+	nrParams = mapi_rows_affected(hdl);
+	setODBCDescRecCount(stmt->ImplParamDescr, nrParams);
+	rec = stmt->ImplParamDescr->descRec + 1;
+	for (i = 0; i < nrParams; i++, rec++) {
+		struct sql_types *tp;
+		int concise_type;
+
+		mapi_fetch_row(hdl);
+		s = mapi_fetch_field(hdl, 0); /* type */
+		rec->sql_desc_type_name = (SQLCHAR *) strdup(s);
+		concise_type = ODBCConciseType(s);
+		for (tp = ODBC_sql_types; tp->concise_type; tp++)
+			if (concise_type == tp->concise_type)
+				break;
+		rec->sql_desc_concise_type = tp->concise_type;
+		rec->sql_desc_type = tp->type;
+		rec->sql_desc_datetime_interval_code = tp->code;
+		if (tp->precision != UNAFFECTED)
+			rec->sql_desc_precision = tp->precision;
+		if (tp->datetime_interval_precision != UNAFFECTED)
+			rec->sql_desc_datetime_interval_precision = tp->datetime_interval_precision;
+		rec->sql_desc_fixed_prec_scale = tp->fixed;
+		rec->sql_desc_num_prec_radix = tp->radix;
+		rec->sql_desc_unsigned = tp->radix == 0 ? SQL_TRUE : SQL_FALSE;
+
+		if (rec->sql_desc_concise_type == SQL_CHAR || rec->sql_desc_concise_type == SQL_VARCHAR)
+			rec->sql_desc_case_sensitive = SQL_TRUE;
+		else
+			rec->sql_desc_case_sensitive = SQL_FALSE;
+
+		s = mapi_fetch_field(hdl, 1); /* digits */
+		rec->sql_desc_length = atoi(s);
+
+		s = mapi_fetch_field(hdl, 2); /* scale */
+		rec->sql_desc_scale = atoi(s);
+
+		rec->sql_desc_local_type_name = (SQLCHAR *) strdup("");
+		rec->sql_desc_nullable = SQL_NULLABLE;
+		rec->sql_desc_parameter_type = SQL_PARAM_INPUT;
+		rec->sql_desc_rowver = SQL_FALSE;
+		rec->sql_desc_unnamed = SQL_UNNAMED;
+
+		/* unused fields */
+		rec->sql_desc_auto_unique_value = 0;
+		rec->sql_desc_base_column_name = NULL;
+		rec->sql_desc_base_table_name = NULL;
+		rec->sql_desc_catalog_name = NULL;
+		rec->sql_desc_data_ptr = NULL;
+		rec->sql_desc_display_size = 0;
+		rec->sql_desc_indicator_ptr = NULL;
+		rec->sql_desc_label = NULL;
+		rec->sql_desc_literal_prefix = NULL;
+		rec->sql_desc_literal_suffix = NULL;
+		rec->sql_desc_octet_length_ptr = NULL;
+		rec->sql_desc_schema_name = NULL;
+		rec->sql_desc_searchable = 0;
+		rec->sql_desc_table_name = NULL;
+		rec->sql_desc_updatable = 0;
+
+		/* this must come after other fields have been
+		 * initialized */
+		rec->sql_desc_length = ODBCDisplaySize(rec);
+		rec->sql_desc_display_size = rec->sql_desc_length;
+		rec->sql_desc_octet_length = rec->sql_desc_length;
 	}
 
 	/* update the internal state */
-	stmt->query = query;
+	stmt->queryid = mapi_get_tableid(hdl);
+	stmt->nparams = nrParams;
 	stmt->State = PREPARED1;	/* XXX or PREPARED0, depending on query */
 
 	return SQL_SUCCESS;

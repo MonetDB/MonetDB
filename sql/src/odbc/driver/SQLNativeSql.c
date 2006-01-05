@@ -39,6 +39,19 @@
 #include "ODBCStmt.h"
 #include "ODBCUtil.h"
 
+/*
+  Escape sequences:
+  {d 'yyyy-mm-dd'}
+  {t 'hh:mm:ss'}
+  {ts 'yyyy-mm-dd hh:mm:ss[.f...]'}
+  {fn scalar-function}
+  {escape 'escape-character'}
+  {oj outer-join}
+  where outer-join is:
+	table-reference {LEFT|RIGHT|FULL} OUTER JOIN
+	{table-reference | outer-join} ON search condition
+  {[?=]call procedure-name[([parameter][,[parameter]]...)]}
+ */
 
 static SQLRETURN
 SQLNativeSql_(ODBCStmt *stmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn, SQLCHAR *szSqlStr, SQLINTEGER cbSqlStrMax, SQLINTEGER *pcbSqlStr)
@@ -56,7 +69,7 @@ SQLNativeSql_(ODBCStmt *stmt, SQLCHAR *szSqlStrIn, SQLINTEGER cbSqlStrIn, SQLCHA
 	ODBCLOG("\"%.*s\"\n", cbSqlStrIn, szSqlStrIn);
 #endif
 
-	query = ODBCTranslateSQL(szSqlStrIn, (size_t) cbSqlStrIn);
+	query = ODBCTranslateSQL(szSqlStrIn, (size_t) cbSqlStrIn, stmt->noScan);
 	copyString(query, szSqlStr, cbSqlStrMax, pcbSqlStr, addStmtError, stmt);
 	free(query);
 

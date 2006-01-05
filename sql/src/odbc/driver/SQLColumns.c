@@ -135,7 +135,7 @@ SQLColumns_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLeng
 		"s.\"name\" as table_schem, "
 		"t.\"name\" as table_name, "
 		"c.\"name\" as column_name, "
-		"cast(0 as smallint) as data_type, "
+		"cast(0 as smallint) as data_type, " /* filled in later */
 		"c.\"type\" as type_name, "
 		"cast(c.\"type_digits\" as integer) as column_size, "
 		"cast(c.\"type_digits\" as integer) as buffer_length, "
@@ -147,8 +147,8 @@ SQLColumns_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLeng
 		"when false then cast(%d as smallint) end as nullable, "
 		"cast('' as varchar(1)) as remarks, "
 		"c.\"default\" as column_def, "
-		"cast(0 as smallint) as sql_data_type, "
-		"cast(0 as smallint) as sql_datetime_sub, "
+		"cast(0 as smallint) as sql_data_type, " /* filled in later */
+		"cast(0 as smallint) as sql_datetime_sub, " /* filled in later */
 		"case c.\"type\" when 'varchar' then cast(c.\"type_digits\" as integer) else cast(NULL as integer) end as char_octet_length, "
 		"cast(c.\"number\" + 1 as integer) as ordinal_position, "
 		"case c.\"null\" when true then cast('yes' as varchar(3)) "

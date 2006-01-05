@@ -55,10 +55,9 @@ SQLFreeStmt_(ODBCStmt *stmt, SQLUSMALLINT option)
 		stmt->rowSetSize = 0;
 
 		if (stmt->State == EXECUTED0)
-			stmt->State = stmt->query ? PREPARED0 : INITED;
-
+			stmt->State = stmt->queryid >= 0 ? PREPARED0 : INITED;
 		else if (stmt->State >= EXECUTED1)
-			stmt->State = stmt->query ? PREPARED1 : INITED;
+			stmt->State = stmt->queryid >= 0 ? PREPARED1 : INITED;
 
 		/* Important: do not destroy the bind parameters and columns! */
 		return SQL_SUCCESS;

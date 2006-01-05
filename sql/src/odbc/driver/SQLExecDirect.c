@@ -39,45 +39,78 @@
 #include "ODBCStmt.h"
 #include "ODBCUtil.h"
 
-SQLRETURN
-SQLExecDirect_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
-{
-	MapiMsg ret;
-	char *query;
 
-	if (stmt->State >= EXECUTED1 || (stmt->State == EXECUTED0 && mapi_more_results(stmt->hdl))) {
+static SQLRETURN
+ODBCExecDirect(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
+{
+	char *query;
+	MapiMsg ret;
+	MapiHdl hdl;
+
+	hdl = stmt->hdl;
+
+	if (stmt->State >= EXECUTED1 || (stmt->State == EXECUTED0 && mapi_more_results(hdl))) {
 		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
-
 		return SQL_ERROR;
 	}
 
-	/* check input parameter */
-	if (szSqlStr == NULL) {
-		/* Invalid use of null pointer */
-		addStmtError(stmt, "HY009", NULL, 0);
-
-		return SQL_ERROR;
-	}
-
-	fixODBCstring(szSqlStr, nSqlStr, addStmtError, stmt);
-	query = ODBCTranslateSQL(szSqlStr, (size_t) nSqlStr);
+	/* TODO: convert ODBC escape sequences ( {d 'value'} or {t 'value'} or
+	   {ts 'value'} or {escape 'e-char'} or {oj outer-join} or
+	   {fn scalar-function} etc. ) to MonetDB SQL syntax */
+	query = ODBCTranslateSQL(szSqlStr, (size_t) nSqlStr, stmt->noScan);
 
 	ODBCResetStmt(stmt);
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLExecDirect: \"%s\"\n", query);
 #endif
-	ret = mapi_query_handle(stmt->hdl, query);
 
+	ret = mapi_query_handle(hdl, query);
 	free(query);
-	if (ret != MOK) {
+	switch (ret) {
+	case MOK:
+		break;
+	case MTIMEOUT:
+		/* Communication link failure */
+		addStmtError(stmt, "08S01", mapi_error_str(stmt->Dbc->mid), 0);
+		return SQL_ERROR;
+	default:
 		/* General error */
 		addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
-
 		return SQL_ERROR;
 	}
+
+	/* now get the result data and store it to our internal data structure */
+
 	return ODBCInitResult(stmt);
+}
+
+SQLRETURN
+SQLExecDirect_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStr)
+{
+	SQLRETURN ret;
+	SQLINTEGER i;
+
+	/* check input parameter */
+	if (szSqlStr == NULL) {
+		/* Invalid use of null pointer */
+		addStmtError(stmt, "HY009", NULL, 0);
+		return SQL_ERROR;
+	}
+
+	fixODBCstring(szSqlStr, nSqlStr, addStmtError, stmt);
+	for (i = 0; i < nSqlStr; i++)
+		if (szSqlStr[i] == '?') {
+			/* query may have parameters, take the long route */
+			ret = SQLPrepare_(stmt, szSqlStr, nSqlStr);
+			if (ret == SQL_SUCCESS)
+				ret = SQLExecute_(stmt);
+			return ret;
+		}
+
+	/* no parameters, take the direct route */
+	return ODBCExecDirect(stmt, szSqlStr, nSqlStr);
 }
 
 SQLRETURN SQL_API

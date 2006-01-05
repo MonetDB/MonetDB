@@ -264,7 +264,7 @@ extern "C" {
 	typedef void *HSTMT;
 #endif
 
-	typedef unsigned char SQLSCHAR;
+	typedef signed char SQLSCHAR;
 	typedef unsigned short int UWORD;
 
 	typedef signed short RETCODE;

@@ -82,7 +82,8 @@ newODBCStmt(ODBCDbc *dbc)
 	stmt->currentRow = 0;
 	stmt->startRow = 0;
 	stmt->rowSetSize = 0;
-	stmt->query = NULL;
+	stmt->queryid = -1;
+	stmt->nparams = 0;
 	stmt->querytype = -1;
 	stmt->rowcount = 0;
 
@@ -93,6 +94,7 @@ newODBCStmt(ODBCDbc *dbc)
 	stmt->cursorType = SQL_CURSOR_FORWARD_ONLY;
 	stmt->cursorScrollable = SQL_NONSCROLLABLE;
 	stmt->retrieveData = SQL_RD_ON;
+	stmt->noScan = SQL_NOSCAN_OFF;
 
 	stmt->ApplRowDescr = newODBCDesc(dbc);
 	stmt->ApplParamDescr = newODBCDesc(dbc);
@@ -213,8 +215,6 @@ destroyODBCStmt(ODBCStmt *stmt)
 	*stmtp = stmt->next;
 
 	/* cleanup own managed data */
-	if (stmt->query)
-		free(stmt->query);
 	deleteODBCErrorList(&stmt->Error);
 
 	destroyODBCDesc(stmt->ImplParamDescr);

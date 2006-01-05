@@ -23,6 +23,7 @@ DEFS = @DEFS@
 
 lib_MonetODBC = {
 	SOURCES = \
+	ODBCConvert.c \
 	ODBCDbc.c \
 	ODBCDbc.h \
 	ODBCDesc.c \

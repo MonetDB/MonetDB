@@ -82,7 +82,7 @@ extern char *dupODBCstring(const SQLCHAR *inStr, size_t length);
   The return value is a freshly allocated null-terminated string.
   For now this function just calls dupODBCstring.
 */
-extern char *ODBCTranslateSQL(const SQLCHAR *query, size_t length);
+extern char *ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER noscan);
 
 /* Utility macro to copy a string to an output argument.  In the ODBC
    API there are generally three arguments involved: the pointer to a

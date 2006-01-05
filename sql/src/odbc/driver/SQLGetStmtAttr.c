@@ -78,6 +78,9 @@ SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEG
 	case SQL_ATTR_MAX_ROWS:
 		*(SQLUINTEGER *) Value = 0;
 		break;
+	case SQL_ATTR_NOSCAN:
+		*(SQLUINTEGER *) Value = stmt->noScan;
+		break;
 	case SQL_ATTR_PARAM_BIND_OFFSET_PTR:
 		return SQLGetDescField_(stmt->ApplParamDescr, 0, SQL_DESC_BIND_OFFSET_PTR, Value, BufferLength, StringLength);
 	case SQL_ATTR_PARAM_BIND_TYPE:
@@ -120,7 +123,6 @@ SQLGetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEG
 	case SQL_ATTR_FETCH_BOOKMARK_PTR:
 	case SQL_ATTR_KEYSET_SIZE:
 	case SQL_ATTR_METADATA_ID:
-	case SQL_ATTR_NOSCAN:
 	case SQL_ATTR_QUERY_TIMEOUT:
 	case SQL_ATTR_SIMULATE_CURSOR:
 	case SQL_ATTR_USE_BOOKMARKS:
