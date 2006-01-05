@@ -23,7 +23,7 @@
  * The Initial Developer of the Original Code is the Database &
  * Information Systems Group at the University of Konstanz, Germany.
  * Portions created by the University of Konstanz are Copyright (C)
- * 2000-2006 University of Konstanz.  All Rights Reserved.
+ * 2000-2005 University of Konstanz.  All Rights Reserved.
  *
  *
  * $Id$
@@ -351,6 +351,7 @@ reduce (PFla_op_t *p, int goalnt)
              * (at most down to the pattern leaves, as they should already be
              * correctly labeled by the above reduce() call)
              */
+            relabel (p, kids);
 
             /* If our own state_label has changed, notify our caller. */
             if (old_state_label != STATE_LABEL(p))
@@ -674,10 +675,10 @@ reduce (PFla_op_t *p, int goalnt)
             /* ensure that both inputs are aligned - thus project away
                all unnecessary columns (icols = projection list) */
             for (unsigned int i = 0; i < L(p)->schema.count; i++)
-                if (!PFprop_icol (L(p)->prop, L(p)->schema.items[i].name)) {
+                if (!PFprop_icol (p->prop, L(p)->schema.items[i].name)) {
                     PFla_op_t *ret;
                     PFalg_attlist_t icols = 
-                                    PFprop_icols_to_attlist (L(p)->prop);
+                                    PFprop_icols_to_attlist (p->prop);
                     PFalg_proj_t *atts = PFmalloc (icols.count *
                                                    sizeof (PFalg_proj_t));
 
@@ -696,10 +697,10 @@ reduce (PFla_op_t *p, int goalnt)
                 }
 
             for (unsigned int i = 0; i < R(p)->schema.count; i++)
-                if (!PFprop_icol (R(p)->prop, R(p)->schema.items[i].name)) {
+                if (!PFprop_icol (p->prop, R(p)->schema.items[i].name)) {
                     PFla_op_t *ret;
                     PFalg_attlist_t icols = 
-                                    PFprop_icols_to_attlist (R(p)->prop);
+                                    PFprop_icols_to_attlist (p->prop);
                     PFalg_proj_t *atts = PFmalloc (icols.count *
                                                    sizeof (PFalg_proj_t));
 
@@ -714,7 +715,6 @@ reduce (PFla_op_t *p, int goalnt)
 
 
                     SEEN(R(p)) = false;
-                    relabel (p, kids);
                     break;
                 }
             
@@ -956,6 +956,7 @@ reduce (PFla_op_t *p, int goalnt)
             R(p) = L(R(p));
             SEEN(p) = false;
             update_properties (p, kids);
+            relabel (p, kids);
             break;
 
         /* Rel:    doc_access (Frag, Rel) */
