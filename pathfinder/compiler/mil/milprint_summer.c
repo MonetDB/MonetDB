@@ -10049,7 +10049,7 @@ const char* PFvarMIL() {
         "var item_str_;\n"
         "\n"
         "# variable that holds bat-id (int) of a shredded document that may be added to the ws\n"
-        "var shredBAT;\n"
+        "var shredBAT := int(nil); # make sure that shredBAT is of type int; non-initialized MIL variables are void(nil)!\n"
         "\n"
         "# variables for results containing `real' xml subtrees\n"
         "var _elem_iter;  # oid|oid\n"
