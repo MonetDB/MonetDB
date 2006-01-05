@@ -314,21 +314,11 @@ case "$ACTION" in
 	do
 		if [ -d "$i" ]
 		then
-			sqlport=`grep sql_port $i/.monetdb.conf|sed -e "s/.*=//" -e "s/ .*//"`
-			malport=`grep mal_port $i/.monetdb.conf|sed -e "s/.*=//" -e "s/ .*//"`
-			if [ -n "$sqlport" ]
+			if [ -f $i/.mal.port ]
 			then
-				sqlport="sql port $sqlport"
-			else
-				sqlport="sql port 45123"
+				malport=`cat $i/.mal.port`
 			fi
-			if [  -n "$malport" ]
-			then
-				malport="mal port $malport"
-			else 
-				malport="mal port 50000"
-			fi
-			echo "database $i	$sqlport	$malport"
+			echo "database $i	$malport"
 		fi
 	done;;
  "--start" )
@@ -358,6 +348,9 @@ case "$ACTION" in
 	if [ $stopped = 0 ]
 	then
 		echo "No server stopped "
+		# make sure there are no leftover processes
+		killall mguardian
+		killall mserver 
 	fi
 	;;
  "--status" )

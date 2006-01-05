@@ -129,6 +129,11 @@ function restart_server()
 The mguardian process $$ running on node `uname -n` has restarted
 database '$1' because it appeared not to be running any more.
 Please inspect the monetdb log for further details.
+
+The mguardian process is removed when the server is properly
+terminated with e.g. 'monetdb --stop --dbname=$1'.
+Alternatively, you can safely kill process $$, but then the
+server is left unattended.
 !EOF
 			# todo: add some information on the how manieth message this
 			# is, and implement a gag, in order to stop sending mail
