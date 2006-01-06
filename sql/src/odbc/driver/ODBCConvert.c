@@ -1680,7 +1680,7 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 	SQLCHAR *sval = NULL;
 	SQLINTEGER slen = 0;
 	bignum_t nval;
-	double fval;
+	double fval = 0.0;
 	DATE_STRUCT dval;
 	TIME_STRUCT tval;
 	TIMESTAMP_STRUCT tsval;
