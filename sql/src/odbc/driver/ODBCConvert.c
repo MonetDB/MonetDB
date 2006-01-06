@@ -1677,8 +1677,8 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 {
 	ODBCDescRec *ipdrec, *apdrec;
 	SQLSMALLINT ctype, sqltype;
-	SQLCHAR *sval;
-	SQLINTEGER slen;
+	SQLCHAR *sval = NULL;
+	SQLINTEGER slen = 0;
 	bignum_t nval;
 	double fval;
 	DATE_STRUCT dval;
