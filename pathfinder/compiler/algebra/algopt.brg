@@ -825,6 +825,7 @@ reduce (PFla_op_t *p, int goalnt)
 
         /* Rel:    rownum (Rel) */
         case 50:
+        {
             /* prune rownum if result column is not required */
             if (!PFprop_icol (p->prop, p->sem.rownum.attname)) {
                 *p = *(L(p));
@@ -849,7 +850,7 @@ reduce (PFla_op_t *p, int goalnt)
                 p->sem.rownum.part = att_NULL;
 
             update_properties (p, kids);
-            break;
+        }   break;
 
         /* Rel:    number (Rel) */
         case 51:
