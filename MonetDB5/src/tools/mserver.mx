@@ -72,8 +72,8 @@ The server options have the following meaning:
 /* #define MONET_GLOBAL_DEBUG */
 #endif /* _MONET_GLOBAL_H_ */
 @c
-#include "mserver.h"
 #include "mal.h"
+#include "mserver.h"
 #include "mal_authorize.h"
 
 #ifdef _CRTDBG_MAP_ALLOC
@@ -282,6 +282,7 @@ main(int argc, char **argv)
 	opt *set = NULL;
 	int i, ac=argc, debug = 0, setlen = 0, listing = 0;
 	str dbinit = NULL;
+	str mapi_port;
 	str user=NULL, password=NULL;
 
 	static struct option long_options[12] = {
@@ -475,6 +476,16 @@ the configuration file.
 		GDKfree(monet_script[i]);
 		monet_script[i] = 0;
 	}
+@-
+After all initialization scripts have been handled, we should
+activate the MAPI thread for handling incoming request.
+@c
+	mapi_port= GDKgetenv("mapi_port");
+/* loader does not yet find it
+	if( mapi_port && monet_daemon )
+		MAPIlisten_default(&i);
+*/
+	(void) mapi_port;
 
 	GDKfree(monet_script);
 	if( monet_daemon){
