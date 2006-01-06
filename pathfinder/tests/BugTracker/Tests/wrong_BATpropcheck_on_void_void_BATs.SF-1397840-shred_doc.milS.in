@@ -1,3 +1,0 @@
-module(pathfinder);
-shred_doc("$TSTSRCBASE/tests/XMark/Tests/auctionG.xml","auctionG.xml");
-quit();

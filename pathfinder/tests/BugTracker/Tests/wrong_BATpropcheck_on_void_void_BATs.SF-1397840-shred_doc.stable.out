@@ -9,8 +9,10 @@ stdout of test 'wrong_BATpropcheck_on_void_void_BATs.SF-1397840-shred_doc` in di
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
+module(unix);
 module(pathfinder);
-shred_doc("/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder/tests/XMark/Tests/auctionG.xml","auctionG.xml");
+var TSTSRCBASE := getenv("TSTSRCBASE");
+shred_doc(TSTSRCBASE+"/tests/XMark/Tests/auctionG.xml","auctionG.xml");
 # Shredded XML doc("auctionG.xml"), total time after commit=0.090s
 quit();
 
