@@ -746,41 +746,45 @@ the global structure is easy to explain.
 
 @verbatim
 >select count(*) from tables;
-[ 23 ]
+[ 27 ]
 >explain select count(*) from tables;
-#function user.main():int;
-#    sql_cache.sql1();
-#end main;
-#factory sql_cache.sql1():any;
-#    _1{count=0} := sql.bind("sys","ptables","id",0);
-#    _6{count=0} := sql.bind_dbat("sys","ptables",0);
-#    _14{count=0} := sql.bind("sys","ttables","id",0);
-#    _16{count=0} := sql.bind_dbat("sys","ttables",0);
-#barrier always := true;
-#    _7 := bat.reverse(_6{count=0});
-#    _8 := algebra.kdiff(_1{count=0},_7);
-#    _11 := algebra.markT(_8,0@0);
-#    _12 := bat.reverse(_11);
-#    _13 := algebra.join(_12,_1{count=0});
-#    _17 := bat.reverse(_16{count=0});
-#    _18 := algebra.kdiff(_14{count=0},_17);
-#    _20 := algebra.markT(_18,0@0);
-#    _21 := bat.reverse(_20);
-#    _22 := algebra.join(_21,_14{count=0});
-#    _23 := bat.append(_13,_22);
-#    _25 := algebra.markT(_23,0@0);
-#    _26 := bat.reverse(_25);
-#    _27 := algebra.join(_26,_23);
-#    _29 := algebra.markT(_27,0@0);
-#    _30 := bat.reverse(_29);
-#    _31 := algebra.join(_30,_27);
-#    _32 := aggr.count(_31);
-#    sql.column(_32,"count_id","int",32,0);
-#    sql.output(0,_32);
-#    yield always;
-#    redo always;
-#exit always;
-#end sql1;
+#factory sql_cache.s1_0():bit;
+#    _2:bat[:void,:int]  := sql.bind("sys","ptables","id",0);
+#    _8:bat[:void,:int]  := sql.bind("sys","ptables","id",1);
+#    _11 := bat.setWriteMode(_8);
+#    _15:bat[:oid,:int]  := sql.bind("sys","ptables","id",3);
+#    _18 := bat.setWriteMode(_15);
+#    _24:bat[:void,:oid]  := sql.bind_dbat("sys","ptables",0);
+#    _39:bat[:void,:int]  := sql.bind("sys","ttables","id",0);
+#    _45:bat[:void,:oid]  := sql.bind_dbat("sys","ttables",0);
+#barrier _90 := true;
+#    _13 := algebra.kunion(_2,_11);
+#    _20 := algebra.kdifference(_13,_18);
+#    _22 := algebra.kunion(_20,_18);
+#    _26 := bat.reverse(_24);
+#    _28 := algebra.kdifference(_22,_26);
+#    _33 := algebra.markT(_28,0@0);
+#    _35 := bat.reverse(_33);
+#    _37 := algebra.join(_35,_22);
+#    _47 := bat.reverse(_45);
+#    _49 := algebra.kdifference(_39,_47);
+#    _53 := algebra.markT(_49,0@0);
+#    _55 := bat.reverse(_53);
+#    _57 := algebra.join(_55,_39);
+#    _59 := bat.setWriteMode(_37);
+#    bat.append(_59,_57);
+#    _65 := algebra.markT(_59,0@0);
+#    _67 := bat.reverse(_65);
+#    _69 := algebra.join(_67,_59);
+#    _74 := algebra.markT(_69,0@0);
+#    _76 := bat.reverse(_74);
+#    _78 := algebra.join(_76,_69);
+#    _80 := aggr.count(_78);
+#    sql.exportValue(1,".tables","count_id","int",32,0,6,_80);
+#    yield _90;
+#    redo _90;
+#exit _90;
+#end s1_0;
 @end verbatim
 
 The SQL compiler keeps a limited cache of queries.

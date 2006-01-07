@@ -25,8 +25,8 @@ IR capabilities, e.g. see @url{spiegle,spiegle}.
 @item @emph{Stored SQL procedures}
 Stored procedures are a powerful scheme to offload operational
 abstractions to the server. The MonetDB server comes with its own programming
-language MAL (and MIL), which provides a complete programming language
-to encode critical functions. Linking with the SQL compiler is readily
+language MAL to encode critical functions. 
+Linking with the SQL compiler is readily
 available, leaving a MonetDB specific implementation of stored SQL
 procedures less important.
 @item @emph{Support for multi-media objects}

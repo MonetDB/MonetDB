@@ -162,13 +162,13 @@ is given hardwired knowledge on the desired settings:
 @verbatim
 main(){
 ...
-	embedded_option("welcome","false");
-	embedded_option("gdk_dbfarm","/tmp/dbfarm");
-	embedded_option("dbname","demo");
-	embedded_option("user","guest");
-	embedded_option("password","anonymous");
+	Mbedded_option("welcome","false");
+	Mbedded_option("gdk_dbfarm","/tmp/dbfarm");
+	Mbedded_option("dbname","demo");
+	Mbedded_option("user","guest");
+	Mbedded_option("password","anonymous");
 ...
-	embedded_sql(NULL,0);
+	Mbedded_sql(NULL,0);
 @end verbatim
 @end example
 For an overview of the system configuration parameters see XYZ.
