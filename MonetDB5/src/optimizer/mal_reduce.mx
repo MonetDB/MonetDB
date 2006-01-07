@@ -85,9 +85,9 @@ nxtReduce:;
 
 	/* remap all variable references to their new position. */
 	for (i = 1; i < mb->stop; i++) {
-		p = getInstrPtr(mb, i);
-		for (j = 0; j < p->argc; j++)
-			getArg(p, j) = vars[getArg(p, j)];
+		q = getInstrPtr(mb, i);
+		for (j = 0; j < q->argc; j++)
+			getArg(q, j) = vars[getArg(q, j)];
 	}
 	mb->vtop = cnt;
 	(void)stk;
