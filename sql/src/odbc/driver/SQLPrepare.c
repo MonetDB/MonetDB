@@ -92,8 +92,8 @@ SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 
 	ret = mapi_query_handle(hdl, s);
 	free(s);
-	s = mapi_result_error(hdl);
-	if (s) {
+	s = NULL;
+	if (ret != MOK || (s = mapi_result_error(hdl)) != NULL) {
 		/* XXX more fine-grained control required */
 		/* Syntax error or access violation */
 		addStmtError(stmt, "42000", s, 0);
