@@ -657,12 +657,13 @@ SQLparser(Client c)
 	bstream *in = c->fdin;
 	stream *out = c->fdout;
 	str msg = 0;
-	int err = 0;
+	char language=0;
 	backend *be;
 	mvc *m;
 	int oldvtop,oldstop;
 	lng T0 = 0;
 	int pstatus = 0;
+	int err = 0;
 	prot oldmode;
 
 	be = ((backend *) c->state[PARSER]);
@@ -678,9 +679,6 @@ SQLparser(Client c)
 	printf("debugger? %d %d\n", debugPlan(), be->mvc->mode);
 #endif
 	m = be->mvc;
-
-	assert(m);
-
 	m->type = Q_PARSE;
 	if (!m->trans) 
 		mvc_trans(m);
@@ -693,14 +691,12 @@ SQLparser(Client c)
 
 	m->mode = m->explain;
 	oldmode = m->scanner.mode;
-	if (be->language == 's') {
-		be->language = 'S';
+	language = be->language;
+	if (language == 's') {
+		language= (be->language = 'S');
 		m->scanner.mode = LINE_1;
 	}
-	if (be->language != 'S' && be->language != 'X') {
-		return throwMessage("SQLparser", "Unrecognized language prefix\n");
-	}
-	if (be->language == 'X') {
+	if (language == 'X') {
 		int n = 0, id, off, len;
 
 		if( strncmp(in->buf + in->pos,"export ",7)==0 )
@@ -734,6 +730,9 @@ SQLparser(Client c)
 			return NULL;
 		}
 		return throwMessage("SQLparser", "Unrecognized X command\n");
+	} 
+	if (language != 'S' ) {
+		return throwMessage("SQLparser", "Unrecognized language prefix\n");
 	}
 
 	if( explainPerformance())
@@ -779,7 +778,7 @@ produce code.
 		}
 		m->mode= m_inplace;
 	} else 
-	if(m->mode != m_debug && 
+	if(m->mode != m_debug &&  m->mode != m_explain &&
 		(be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key))){
 		m->mode = m_inplace;
 	} else {
@@ -819,7 +818,6 @@ produce code.
 			be->q->stk = 0;
 			/* register name in the namespace */
 			be->q->name = putName(be->q->name, strlen(be->q->name));
-			/* if( m->mode != m_normal && m->mode != m_debug && m->mode != m_explain) */
 			if( m->mode == m_normal)
 				m->mode = m_inplace; 
 			m->sa = NULL;
@@ -831,12 +829,15 @@ produce code.
 	else
 		stream_printf(GDKout, "#parse result %d\n", err);
 #endif
-	if (be->q && m->mode == m_prepare) {
-		err = mvc_export_prepare(m, c->fdout, be->q);
-	} else if (m->mode == m_inplace && be->q){
-		/* everything ready for a fast call */
-	} else if (be->q) { /* call procedure generation (only in cache mode) */
-		backend_call(be, c, be->q);
+	if( be->q ){
+		if (m->mode == m_explain)
+			printFunction(c->fdout, ((Symbol) be->q->code)->def, c->listing);
+		else if (m->mode == m_prepare)
+			err = mvc_export_prepare(m, c->fdout, be->q);
+		else if (m->mode == m_inplace ){
+			/* everything ready for a fast call */
+		} else /* call procedure generation (only in cache mode) */
+			backend_call(be, c, be->q);
 	}
 
 @-
@@ -881,7 +882,7 @@ query block.
 			}
 			showErrors();
 			/* restore the state */
-			if (c->listing || explainPlan())
+			if (c->listing )
 				printFunction(c->fdout, c->curprg->def, c->listing);
 			resetMalBlk(c->curprg->def, oldstop);
 			freeVariables(c->curprg->def, c->glb, oldvtop);
@@ -891,7 +892,7 @@ query block.
 	}
 finalize:
 	m->scanner.mode = oldmode;
-	if (explainPlan() && m->mode != m_execute) {
+	if (m->mode != m_explain && m->mode != m_execute && m->mode != m_inplace) {
 		printFunction(c->fdout, c->curprg->def, c->listing);
 	}
 #ifdef _SQL_PARSER_DEBUG
@@ -997,14 +998,14 @@ SQLengine(Client c)
 	mvc *m = be->mvc;
 	lng T0=0;
 
-	if (be->language == 'X'){ 	/* return directly from X-commands */
+	if ( oldlang == 'X'){ 	/* return directly from X-commands */
 		sqlcleanup(be->mvc, 0);
 		return MAL_SUCCEED;
 	}
 
 	if (m->mode == m_explain) {
 		sqlcleanup(be->mvc, 0);
-		return MAL_SUCCEED;
+		goto cleanup_engine;
 	}
 	if (c->curprg->def->errors){
 		sqlcleanup(be->mvc, 0);
@@ -1027,7 +1028,7 @@ SQLengine(Client c)
 	if( m->mode == m_prepare){
 		goto cleanup_engine;
 	} else if(explainPlan()){
-		printFunction(c->fdout, c->curprg->def, c->listing);
+		printf("explain in engine\n");
 @-
 If you want to see the detailed code, we have to pick it up from
 the cache as well. This calls for finding the call to the
