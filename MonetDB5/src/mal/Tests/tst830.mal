@@ -1,0 +1,36 @@
+# a simple functional test for the access control table
+
+u:= clients.getPermissions();
+io.print(u);
+
+clients.addUser("monetdb","Pmonetdb","sql");
+clients.addUser("monetdb","Pmonetdb","mal");
+clients.addUser("checkpoint","Pcheckpoint","mal");
+clients.addUser("legacy","Plegacy","mil");
+
+u:= clients.getPermissions();
+p:= clients.getPasswords();
+io.print(u,p);
+
+clients.delUser("checkpoint");
+clients.delUser("monetdb","mal");
+u:= clients.getPermissions();
+io.print(u);
+
+t:= clients.checkPermission("monetdb","Pmonetdb","sql");
+io.print(t);
+
+t:= clients.checkPermission("monetdb","x","sql");
+io.print(t);
+
+t:= clients.checkPermission("monetdb","Pmonetdb","x");
+io.print(t);
+
+t:= clients.checkPermission("x","Pmonetdb","sql");
+io.print(t);
+
+clients.newPassword("legacy","Plegacy","modern");
+
+u:= clients.getPermissions();
+p:= clients.getPasswords();
+io.print(u,p);
