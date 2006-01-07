@@ -288,7 +288,7 @@ initScenario(Client c, Scenario s)
 		if (s->initSystemCmd) {
 			msg = (*s->initSystemCmd) (c);
 		} else
-			msg = throwMessage("mal","Scenario not initialized"); 
+			msg = throwMessage(s->language,"Scenario not initialized"); 
 		mal_unset_lock(mal_contextLock, "Scenario");
 	}
 	if (msg)
