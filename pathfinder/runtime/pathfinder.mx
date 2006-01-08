@@ -231,12 +231,15 @@ EXCEPT when (child-T == void)
 @:@1_ws(KIND_PRE_4,    29, bat, void,  oid, nil)@
 @:@1_ws(PROP_PRE_0,    30, bat,  oid,  oid, nil)@
 @:@1_ws(PROP_PRE_3,    31, bat,  oid,  oid, nil)@
+@:@1_ws(REGION_PRE,    32, bat, void,  oid, nil)@
+@:@1_ws(REGION_START,  33, bat, void,  lng, nil)@
+@:@1_ws(REGION_END,    34, bat, void,  lng, nil)@
 
 @-
 BEWARE: WS_SIZE (below) should *always* be the size of ws (above)
 
 @= decl
-@:@1_decl_ws(WS_SIZE, 32)@
+@:@1_decl_ws(WS_SIZE, 35)@
 @:@1_decl_ws(QNAME,    2)@
 @:@1_decl_ws(BOOL,     3)@
 @:@1_decl_ws(INT,      4)@
@@ -252,6 +255,7 @@ BEWARE: WS_SIZE (below) should *always* be the size of ws (above)
 @= mil_decl_ws
 const @1 := @2;
 @mil
+
 @:ws(mil_decl)@
 @:decl(mil)@
 
@@ -436,6 +440,22 @@ PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, bit doCommit, s
 
     # add indices to the shredded doc, and find out maximum doc height
     var height := index_doc(shredRES, docBAT);
+
+#[BURKOWSKI]
+    var burkowski := false;
+    CATCH( { burkowski := =(monet_environment.find("burkowski"),"enabled"); } );
+    if (burkowski) {
+        print("# extracting regions...\n");
+        docBAT := region_extract(docBAT, "lng");
+    } else {
+       var r_pre := bat(void, oid).seqbase(0@0).bbpname("region_pre");
+       var r_start := bat(void, lng).seqbase(0@0).bbpname("region_start");
+       var r_end := bat(void, lng).seqbase(0@0).bbpname("region_end");
+       docBAT.access(BAT_WRITE).insert("region_pre",r_pre); 
+       docBAT.access(BAT_WRITE).insert("region_start",r_start); 
+       docBAT.access(BAT_WRITE).insert("region_end",r_end); 
+    }
+#[/BURKOWSKI]
 
     if (doCommit) {
         [mmap](docBAT, [ifthenelse]([<]([count](docBAT), 65536), STORE_MEM, STORE_MMAP));
