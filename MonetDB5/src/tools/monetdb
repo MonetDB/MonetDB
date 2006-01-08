@@ -80,9 +80,8 @@ case "$1" in
 		ACTION=$1;
 		shift ;;
  "--log" )
-		cd $DBFARM
-		more monetdb.log
-		exit ;;
+		ACTION=$1
+		shift ;;
  "--help" )
 	usage 
 	exit ;;
@@ -180,9 +179,10 @@ function start_mserver()
 		# use previous arguments if needed
 		echo -n "Starting database server '$1'... "
 		CONFIG="--config=$DBFARM/$1/.monetdb.conf"
-		$MONET5_PREFIX/bin/mserver --set daemon=yes --dbname=$1 $CONFIG $ARGS $STARTUP >> $DBFARM/$DBNAME/mserver.log &
-		sleep 2
-		pid=`getPID $1`
+		# make sure you can find strange errors
+		echo "START" `date +"%F %T"` >>$DBFARM/$DBNAME/mserver.log
+		$MONET5_PREFIX/bin/mserver --set daemon=yes --set monet_welcome=no --dbname=$1 $CONFIG $ARGS $STARTUP >> $DBFARM/$DBNAME/mserver.log &
+		pid="$!"
 		if [ -z "$pid" ]
 		then
 			echo `date +"%F %T"` " FAILED $1 $ARGS" >>monetdb.log
@@ -221,6 +221,7 @@ function stop_mserver()
 		echo -n "Stopping database server '$1'... "
 		stopped=`expr $stopped + 1 `
 		# disable the guardian first
+		echo "STOP " `date +"%F %T"` >>$DBFARM/$DBNAME/mserver.log
 		$MONET5_PREFIX/bin/mguardian --stop $1
 		kill -TERM $pid
 		echo `date +"%F %T"` " STOP  $1" >>monetdb.log
@@ -298,8 +299,7 @@ cd $DBFARM
 DBLIST=`ls`
 
 # check for an overruling database name
-tmp=`echo $* | sed -e "s/^.*--dbname=//" -e "s/ .*//"`
-if [ "$DBNAME" != "" ]
+if [ -n "$DBNAME" ]
 then
 	if [ ! -d $DBNAME ]
 	then
@@ -404,6 +404,14 @@ case "$ACTION" in
 			fi
 		fi
 	done
+	;;
+ "--log" )
+		if [ -n "$DBNAME" ]
+		then
+			more $DBFARM/$DBNAME/mserver.log
+		else
+			more $DBFARM/monetdb.log
+		fi
 	;;
  * ) ;;
 esac
