@@ -596,16 +596,18 @@ if [ "${modpath}" ] ; then
 fi
 
 if [ "${MONET5_PREFIX}" ] ; then
-	monet5_config="--config=${MONET5_PREFIX}/etc/MonetDB5.conf"
+	monet5_config="-5 --config=${MONET5_PREFIX}/etc/MonetDB5.conf"
   else
-	monet5_config=""
+	monet5_config="-4"
 fi
 
 if [ "${what}" != "BUILDTOOLS" ] ; then
 	if [ "${what}" = "MONET5" ] ; then
 		mtest_config="${monet5_config}"
+	  elif [ "${MONET5_PREFIX}" ] ; then
+		mtest_config="-5"
 	  else
-		mtest_config=""
+		mtest_config="-4"
 	fi
 fi
 
@@ -615,27 +617,23 @@ echo " ${what}_CONFIGURE=${WHAT_CONFIGURE}"
 eval "alias configure_${wh_t}='${WHAT_CONFIGURE}'"
 eval "alias configure_${wh_t}"
 if [ "${what}" != "BUILDTOOLS" ] ; then
-	if [ "${what}" = MONET5 ]
-	  then	M45="-5"
-	  else	M45="-4"
-	fi
-	MTEST_WHAT="Mtest.py ${M45} ${MTEST_WHAT} ${mtest_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} ${mtest_modpath}"
+	MTEST_WHAT="Mtest.py ${mtest_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} ${mtest_modpath}"
 	echo " MTEST_${what}=${MTEST_WHAT}"
 	eval "MTEST_${what}='${MTEST_WHAT}'; export MTEST_${what}"
 	eval "alias Mtest_${wh_t}='${MTEST_WHAT}'"
 	eval "alias Mtest_${wh_t}"
 	if [ "${what}" = "SQL"  -a  "${MONET5_PREFIX}" ] ; then
-		MTEST_WHAT="Mtest.py -5 ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} --monet_mod_path=${WHAT_PREFIX}/lib/${pkgdir}5:`${MONET5_PREFIX}/bin/monetdb5-config --modpath`"
+		MTEST_WHAT="Mtest.py ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} --monet_mod_path=${WHAT_PREFIX}/lib/${pkgdir}5:`${MONET5_PREFIX}/bin/monetdb5-config --modpath`"
 		echo " MTEST_${what}5=${MTEST_WHAT}"
 		eval "MTEST_${what}5='${MTEST_WHAT}'; export MTEST_${what}5"
 		eval "alias Mtest_${wh_t}5='${MTEST_WHAT}'"
 		eval "alias Mtest_${wh_t}5"
 	fi
 	MTEST_WHAT='' ; unset MTEST_WHAT
-	eval "alias Mapprove_${wh_t}='Mapprove.py ${M45} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX}'"
+	eval "alias Mapprove_${wh_t}='Mapprove.py ${mtest_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX}'"
 	eval "alias Mapprove_${wh_t}"
 	if [ "${what}" = "SQL"  -a  "${MONET5_PREFIX}" ] ; then
-		eval "alias Mapprove_${wh_t}5='Mapprove.py -5 --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX}'"
+		eval "alias Mapprove_${wh_t}5='Mapprove.py ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX}'"
 		eval "alias Mapprove_${wh_t}5"
 	fi
 fi
