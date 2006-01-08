@@ -408,8 +408,11 @@ Get the new information for the server socket and start listening.
 		unlink(usockfile);
 #endif
 	gethostname(host, (int) 512);
+	(void) msg;
+#ifdef DEBUG_MAPI
 	snprintf(msg, (int) 512, "#Ready to accept connections on %s:%d\n", host, port);
 	stream_printf(GDKout, "%s", msg);
+#endif
 	return MAL_SUCCEED;
 }
 
@@ -812,7 +815,7 @@ void MAPIannounce(str lang, int port){
 str
 MAPIlisten_default(int *ret)
 {
-	int port ;
+	int port = MAPIPORT;
 	str p;
 	int maxusers = MAPIMAXUSERS;
 
@@ -820,7 +823,8 @@ MAPIlisten_default(int *ret)
 	p = GDKgetenv("mapi_port");
 	if( p )
 		port = (int) strtol(p,NULL,10);
-	else port = MAPIPORT;
+	if( port == 0)
+		return throwMessage("mapi.listen","Illegal port");
 	MAPIannounce("mal",port);
 	return MAPIlisten(&port, 0, &maxusers, 0);
 }
@@ -851,7 +855,6 @@ MAPIlisten_port(int *ret, int *pid)
 	MAPIannounce("mal",port);
 	return MAPIlisten(&port, 0, &maxusers, 0);
 }
-
 @-
 The internet connection listener may be terminated from the server console,
 or temporarily suspended to enable system maintenance.
