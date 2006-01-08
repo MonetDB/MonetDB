@@ -87,7 +87,7 @@ command malclient(in:stream, out:stream):void
 address MAPIclient
 comment "Start a Mapi client.";
 
-
+mapi.listen();
 @{
 command prelude()
 address mapi_prelude;
@@ -801,8 +801,8 @@ be notified.
 @c
 void MAPIannounce(str lang, int port){
 	FILE *f;
-	char buf[128];
-	snprintf(buf,128,".%s.port",lang);
+	char buf[PATHLENGTH];
+	snprintf(buf,PATHLENGTH,".%s.port",lang);
 	f= fopen(buf,"w");
 	if( f) {
 		fprintf(f,"%d",port);
