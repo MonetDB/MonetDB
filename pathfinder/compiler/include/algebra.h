@@ -23,7 +23,7 @@
  * The Initial Developer of the Original Code is the Database &
  * Information Systems Group at the University of Konstanz, Germany.
  * Portions created by the University of Konstanz are Copyright (C)
- * 2000-2005 University of Konstanz.  All Rights Reserved.
+ * 2000-2006 University of Konstanz.  All Rights Reserved.
  *
  * $Id$
  */
@@ -106,10 +106,19 @@ union PFalg_atom_val_t {
 /** algebra values */
 typedef union PFalg_atom_val_t PFalg_atom_val_t;
 
+/** value indicator of PFalg_atom_t */
+enum PFalg_minmax_t {
+    amm_min    = 0 /**< minimal domain value */
+  , amm_normal = 1 /**< standard value */
+  , amm_max    = 2 /**< maximal domain value */
+};
+typedef enum PFalg_minmax_t PFalg_minmax_t;
+
 /** typed atomic value representation in our algebra */
 struct PFalg_atom_t {
-    PFalg_simple_type_t type;  /**< type of this atom */
-    PFalg_atom_val_t    val;   /**< value */
+    PFalg_simple_type_t type;    /**< type of this atom */
+    PFalg_atom_val_t    val;     /**< value */
+    PFalg_minmax_t      special; /**< min/max domain value indicator */
 };
 /** typed atomic value representation in our algebra */
 typedef struct PFalg_atom_t PFalg_atom_t;

@@ -42,7 +42,7 @@ return \n\
         <books>\n\
           {\n\
             for $b in $bib/book[author = $a]\n\
-            order by $b/title\n\
+            order by fn:zero-or-one($b/title)\n\
             return $b/title \n\
           }\n\
         </books>\n\

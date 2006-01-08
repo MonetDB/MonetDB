@@ -34,7 +34,7 @@
  * The Initial Developer of the Original Code is the Database &
  * Information Systems Group at the University of Konstanz, Germany.
  * Portions created by the University of Konstanz are Copyright (C)
- * 2000-2005 University of Konstanz.  All Rights Reserved.
+ * 2000-2006 University of Konstanz.  All Rights Reserved.
  *
  * $Id$
  */
@@ -387,6 +387,15 @@ PFty_named_attrgroup (PFqname_t qn)
 /**
  * Type constructors.
  */
+
+/**
+ * Implements the 1 quantifier: t . 1 = t 
+ */
+PFty_t
+PFty_one (PFty_t t)
+{
+    return t;
+}
 
 /** ty? */
 PFty_t

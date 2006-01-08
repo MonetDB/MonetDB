@@ -27,7 +27,7 @@
  * The Initial Developer of the Original Code is the Database &
  * Information Systems Group at the University of Konstanz, Germany.
  * Portions created by the University of Konstanz are Copyright (C)
- * 2000-2005 University of Konstanz.  All Rights Reserved.
+ * 2000-2006 University of Konstanz.  All Rights Reserved.
  *
  * $Id$
  */
@@ -53,6 +53,7 @@
 #undef case_      
 #undef cases      
 #undef ifthenelse 
+#undef flwr       
 #undef for_       
 #undef let        
 #undef letbind
@@ -98,6 +99,7 @@
 #define default_(e1)          PFcore_default (e1)
 #define if_(cond,ret)         PFcore_if ((cond), (ret))
 #define then_else(t,e)        PFcore_then_else ((t), (e))
+#define flwr(bind,expr)       PFcore_flwr ((bind), (expr))
 #define for_(bind,expr)       PFcore_for ((bind), (expr))
 #define forbind(vars,expr)    PFcore_forbind ((vars), (expr))
 #define forvars(var,pos)      PFcore_forvars ((var), (pos))

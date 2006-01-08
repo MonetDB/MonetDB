@@ -1,0 +1,2 @@
+import module namespace xmark = "$TSTSRCDIR" at "$TSTSRCDIR/xmark.xq";
+xmark:q11("auctionG.xml", 5000)

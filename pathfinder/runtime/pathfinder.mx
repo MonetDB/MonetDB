@@ -20,7 +20,7 @@
 @' The Initial Developer of the Original Code is the Database &
 @' Information Systems Group at the University of Konstanz, Germany.
 @' Portions created by the University of Konstanz are Copyright (C)
-@' 2000-2005 University of Konstanz.  All Rights Reserved.
+@' 2000-2006 University of Konstanz.  All Rights Reserved.
 @'
 @' $Id$
 @'
@@ -395,7 +395,7 @@ PROC shred_doc_locked(BAT[str,bat] docBAT, str location, str name, timestamp ts,
 
 PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
 {
-    # insert all bats from resBAT in docBAT
+    # insert all bats from shredBAT in docBAT
     var ins := ws_tpe.ord_uselect(bat).mirror().ord_select(nil,oid(-(DOC_LOADED,1))).mirror();
     [insert](const docBAT, ins.leftfetchjoin(ws_nme), ins.leftfetchjoin(ws_oid).leftjoin(shredBAT));
 
@@ -725,12 +725,12 @@ PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, str docid, int 
         ws.fetch(FRAG).replace(0@0,frag);
 
         if (isnil(height))
-          height := ws.fetch(PRE_LEVEL).max().int() + 1;
+            height := ws.fetch(PRE_LEVEL).max().int() + 1;
         ws.fetch(HEIGHT).insert(nil,height);
-     } else { 
+    } else { 
         ws.fetch(FRAG).replace(0@0,frag.reverse().fetch(0)); 
-     }
-     return frag;
+    }
+    return frag;
 }
 
 PROC add_doc_locked(str name, timestamp ts, int ws) : oid 
@@ -2637,7 +2637,7 @@ CMDxquery(Cntxt stk,
                 stream *bak = GDKout;
                 THRsetdata(0,s);
                 err = xquery_prepare(ctx, msec, mode, xquery);
-                if (err == NULL) {
+                if (err == NULL || err == (char*) -1) {
                     res->val.sval = GDKmalloc(b->pos+1);
                     if (res->val.sval) {
                         memcpy(res->val.sval, b->buf, b->pos);
@@ -2662,8 +2662,8 @@ CMDxquery(Cntxt stk,
     xquery_client_free(ctx, 0);
     MT_unset_lock(pf_cache_lock, "CMDxquery");
     if (err) {
-        res->vtype = TYPE_void;
-        if (err != (char*) -1) GDKerror(err);
+	GDKerror((err==(char*)-1)?res->val.sval:err);
+	VALclear(res);
         return GDK_FAIL;
     } 
     return GDK_SUCCEED;
@@ -2726,6 +2726,7 @@ xquery_method(stream *out,
 /*
  * module initialization
  */
+extern void xmlInitThreads();
 bat *
 xquery_prelude()
 {
@@ -2734,6 +2735,7 @@ xquery_prelude()
     pf_module_lock = MT_create_lock();
     pf_cache_lock = MT_create_lock();
 
+    xmlInitThreads();
     memset(xquery_clients, 0, sizeof(xquery_client)*(MAXCLIENTS+1));
     for(i=1; i<=MAXCLIENTS; i++)        
         xquery_clients[i].stk = i;

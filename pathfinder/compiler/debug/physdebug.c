@@ -21,7 +21,7 @@
  *  The Original Code is the ``Pathfinder'' system. The Initial
  *  Developer of the Original Code is the Database & Information
  *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2005 University
+ *  created by U Konstanz are Copyright (C) 2000-2006 University
  *  of Konstanz. All Rights Reserved.
  *
  * $Id$
@@ -611,6 +611,11 @@ static char *
 literal (PFalg_atom_t a)
 {
     PFarray_t *s = PFarray (sizeof (char));
+
+    if (a.special == amm_min)
+        return "MIN";
+    else if (a.special == amm_max)
+        return "MAX";
 
     switch (a.type) {
 

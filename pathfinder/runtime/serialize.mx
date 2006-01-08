@@ -16,7 +16,7 @@
 @' The Initial Developer of the Original Code is the Database &
 @' Information Systems Group at the University of Konstanz, Germany.
 @' Portions created by the University of Konstanz are Copyright (C)
-@' 2000-2005 University of Konstanz.  All Rights Reserved.
+@' 2000-2006 University of Konstanz.  All Rights Reserved.
 @'
 @' $Id$
 
@@ -923,15 +923,32 @@ static int wsBATerror(XqueryCtx* ctx, int batId, int fragId)
     } else if (b->batCount) {                                   \
         BUN _bun = NULL;                                        \
         BUNfndVOID(_bun, b, &oid_index);                        \
-        if (_bun == NULL) return 0;                             \
+        if (_bun == NULL)                                       \
+            return idxTVerror1(ctx,b,oid_index);                \
         res = BUNtail(b,_bun);                                  \
-    } else res = NULL;                                          \
-    if (res == NULL) return idxTVerror(ctx,b,oid_index);        \
+    } else                                                      \
+        return idxTVerror2(ctx,b);                              \
+    if (res == NULL)                                            \
+        return idxTVerror3(ctx,b,oid_index);                    \
 }
 
-static int idxTVerror(XqueryCtx* ctx, BAT *b, oid oid_index)
+static int idxTVerror1(XqueryCtx* ctx, BAT *b, oid oid_index)
 { 
     fatal_err(ctx, "%s BAT does not have a " OIDFMT " head.\n",
+                    b?BBP_logical(b->batCacheid):"NULL", oid_index);
+    return 0;
+}
+
+static int idxTVerror2(XqueryCtx* ctx, BAT *b)
+{ 
+    fatal_err(ctx, "%s BAT is empty.\n",
+                    b?BBP_logical(b->batCacheid):"NULL");
+    return 0;
+}
+
+static int idxTVerror3(XqueryCtx* ctx, BAT *b, oid oid_index)
+{ 
+    fatal_err(ctx, "%s BAT has a " OIDFMT " head, but tail is NULL.\n",
                     b?BBP_logical(b->batCacheid):"NULL", oid_index);
     return 0;
 }
@@ -1253,14 +1270,12 @@ static int id_sequence_counter = 0;
 static int seqHeadStart(XqueryCtx* ctx, BAT* item) {
     if (ctx->printMode) {
         /* write SQL-ish header */
-        stream_printf(GDKout,"#-\n");
-        stream_printf(GDKout,"# 3\t# querytype\n");
+        stream_printf(GDKout,"&1 %d %d 1 %d\n",
+            id_sequence_counter++, BATcount(item), BATcount(item));
         stream_printf(GDKout,"# xquery_result\t# table_name\n");
         stream_printf(GDKout,"# xml\t# name\n");
         stream_printf(GDKout,"# varchar\t# type\n");
         stream_printf(GDKout,"# %d\t# length\n", 60);
-        stream_printf(GDKout,"# %d\t# tuplecount\n", BATcount(item));
-        stream_printf(GDKout,"# %d\t# id\n", id_sequence_counter++);
     } else if (ctx->dmMode == 0  && ctx->norootMode == 0) { /* dmMode has no header */
         if (ctx->noheaderMode == 0) {
             if (ctx->mapiMode) {

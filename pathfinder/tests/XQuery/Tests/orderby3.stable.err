@@ -59,7 +59,13 @@ stderr of test 'orderby3` in directory 'tests/XQuery` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_XQuery
 
-# 22:24:00 >  
-# 22:24:00 >  Done.
-# 22:24:00 >  
+# 15:35:29 >  
+# 15:35:29 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=53332 orderby3.xq
+# 15:35:29 >  
+
+type error: [err:XPTY0004] Orderspec requires an type whose order can be decided using 'gt' (given: string | untypedAtomic | decimal | integer).
+
+# 15:35:29 >  
+# 15:35:29 >  Done.
+# 15:35:29 >  
 

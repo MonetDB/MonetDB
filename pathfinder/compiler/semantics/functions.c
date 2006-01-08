@@ -26,7 +26,7 @@
  * The Initial Developer of the Original Code is the Database &
  * Information Systems Group at the University of Konstanz, Germany.
  * Portions created by the University of Konstanz are Copyright (C)
- * 2000-2005 University of Konstanz.  All Rights Reserved.
+ * 2000-2006 University of Konstanz.  All Rights Reserved.
  *
  * $Id$
  */
@@ -469,6 +469,7 @@ PFfun_new (PFqname_t      qn,
            PFty_t        *par_tys,
            PFty_t        *ret_ty,
            struct PFla_pair_t (*alg) (const struct PFla_op_t *,
+                                      bool,
                                       struct PFla_pair_t *),
            PFvar_t      **params)
 {

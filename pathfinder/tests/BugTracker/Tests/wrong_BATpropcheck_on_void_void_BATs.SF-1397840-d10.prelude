@@ -1,0 +1,3 @@
+var dbgmsk := debugmask();
+debugmask(or(dbgmsk,10));
+print(debugmask());

@@ -25,10 +25,16 @@
  * The Initial Developer of the Original Code is the Database &
  * Information Systems Group at the University of Konstanz, Germany.
  * Portions created by the University of Konstanz are Copyright (C)
- * 2000-2005 University of Konstanz.  All Rights Reserved.
+ * 2000-2006 University of Konstanz.  All Rights Reserved.
  *
  * $Id$
  */
+
+/** literal minimum */
+#define lit_min(t) PFmil_lit_min (t)
+
+/** literal maximum */
+#define lit_max(t) PFmil_lit_max (t)
 
 /** literal integers */
 #define lit_int(i) PFmil_lit_int (i)

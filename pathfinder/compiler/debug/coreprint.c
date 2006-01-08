@@ -24,7 +24,7 @@
  * The Initial Developer of the Original Code is the Database &
  * Information Systems Group at the University of Konstanz, Germany.
  * Portions created by the University of Konstanz are Copyright (C)
- * 2000-2005 University of Konstanz.  All Rights Reserved.
+ * 2000-2006 University of Konstanz.  All Rights Reserved.
  *
  * $Id$
  */
@@ -60,6 +60,7 @@ char *c_id[]  = {
   , [c_ordered]            = "ordered"
   , [c_unordered]          = "unordered"
 
+  , [c_flwr]               = "flwr"
   , [c_let]                = "let"
   , [c_letbind]            = "letbind"
   , [c_for]                = "for"

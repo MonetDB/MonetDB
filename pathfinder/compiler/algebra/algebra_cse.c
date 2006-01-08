@@ -22,7 +22,7 @@
  * The Initial Developer of the Original Code is the Database &
  * Information Systems Group at the University of Konstanz, Germany.
  * Portions created by the University of Konstanz are Copyright (C)
- * 2000-2005 University of Konstanz.  All Rights Reserved.
+ * 2000-2006 University of Konstanz.  All Rights Reserved.
  *
  * $Id$
  */
@@ -69,7 +69,8 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
         return false;
 
     for (i = 0; i < a.count; i++) {
-        if (a.atoms[i].type != b.atoms[i].type)
+        if (a.atoms[i].type != b.atoms[i].type ||
+            a.atoms[i].special != b.atoms[i].special)
             break;
 
         switch (a.atoms[i].type) {

@@ -1,0 +1,3 @@
+var dbgmsk := debugmask();
+debugmask(and(dbgmsk,xor(INT_MAX,10)));
+print(debugmask());
