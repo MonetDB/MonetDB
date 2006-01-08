@@ -1,9 +1,0 @@
-function test(i:int):str;
-	io.print(i);
-	i:= i*2;
-	b:= bbp.new(:int,:int);
-	bat.insert(b,1,i);
-	io.print(b);
-	return test:= "ok";
-end test;
-
