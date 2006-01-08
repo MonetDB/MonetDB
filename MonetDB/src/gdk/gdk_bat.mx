@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f gdk_bat
@@ -116,6 +116,11 @@ Fill in basic column info
 	bn->tseqbase = (tt == TYPE_void) ? oid_nil : 0;
 	bn->batPersistence = TRANSIENT;
 	bn->H->props = bn->T->props = NULL;
+
+	bn->void_tid = -1;
+	bn->void_cnt = 0;
+	bn->void_seq1 = oid_nil;
+	bn->void_seq2 = oid_nil;
 @-
 add to BBP
 @c
@@ -198,7 +203,17 @@ it. To make this possible, we must provide it with filenames.
 BAT *
 BATnewstorage(int ht, int tt, size_t cap)
 {
-	BAT *bn = BATcreatedesc(ht, tt, TRUE);
+	BAT *bn ;
+/* experimental code  
+	bn= BBPrecycle(ht,tt,cap);
+	if( bn) {
+		bn->hident = (char*)string_h;
+		bn->tident = (char*)string_t;
+		return bn;
+	}
+*/
+
+	bn= BATcreatedesc(ht, tt, TRUE);
 
 	BATsetdims(bn);
 

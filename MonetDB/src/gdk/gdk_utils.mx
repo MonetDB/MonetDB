@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f gdk_utils
@@ -230,7 +230,8 @@ GDKlog(const char *format, ...)
 #ifndef HAVE_GETUID
 #define getuid() 0
 #endif
-	fprintf(GDKlockFile, "%s \@ USR=%d PID=%d THR=" SZFMT " TIME=%s", buf, (int) getuid(), (int) getpid(), (size_t) MT_getpid(), ctime(&tm));
+	fprintf(GDKlockFile, "USR=%d PID=%d TIME=%s \@ %s", 
+		(int) getuid(), (int) getpid(), ctime(&tm),buf);
 	fflush(GDKlockFile);
 
 	if (mustopen)

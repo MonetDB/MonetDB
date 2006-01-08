@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f ascii_io
@@ -692,7 +692,7 @@ insert_line(ascii *as, char *line)
 				e = line;
 				break;
 			} else if (first && (*line == '\"' || *line == '\'')
-				   && *(line - 1) != '\\') {
+				   && (line == s || *(line - 1) != '\\')) {
 				quote = *line;
 				line++;
 				line = skip_string(line, quote);

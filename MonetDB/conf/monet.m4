@@ -11,7 +11,7 @@ dnl
 dnl The Original Code is the MonetDB Database System.
 dnl
 dnl The Initial Developer of the Original Code is CWI.
-dnl Portions created by CWI are Copyright (C) 1997-2005 CWI.
+dnl Portions created by CWI are Copyright (C) 1997-2006 CWI.
 dnl All Rights Reserved.
 
 dnl VERSION_TO_NUMBER macro (copied from libxslt)
@@ -100,7 +100,7 @@ AC_ARG_WITH(monet5,
 	have_monet5="$withval")
 if test "x$have_monet5" != xno; then
   MPATH="$withval/bin:$PATH"
-  AC_PATH_PROG(MONET5_CONFIG,monetdb-config,,$MPATH)
+  AC_PATH_PROG(MONET5_CONFIG,monetdb5-config,,$MPATH)
 
   if test "x$MONET5_CONFIG" != x; then
     AC_MSG_CHECKING(whether MonetDB version $MONET5_REQUIRED_VERSION or newer is installed) 

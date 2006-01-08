@@ -35,13 +35,13 @@ have changed since my proposal.
        on Windows, executables must be ".(exe|com)"         (TST.(exe|com)) (~,^)
                    and scripts must be ".(bat|cmd)"         (TST.(bat|cmd)) (~,^)
     * a Python script                                       (TST.py)        (~,^)
-    * a MIL script to be executed by Mserver                (TST.milM) (',^)
-    * a MIL script to be executed by Mserver -single        (TST.milS) (',^)
+    * a MIL script to be executed by Mserver                (TST.milM) (',^,`)
+    * a MIL script to be executed by Mserver -single        (TST.milS) (',^,`)
        (-single has been removed, so .milM & .milS are
         treated equally, now)
-    * a MIL script to be executed by MapiClient -lmil       (TST.milC) (",^)
-    * a SQL script to be executed by MapiClient -lsql       (TST.sql)  (",^)
-    * a XQUERY script to be executed by MapiClient -lxquery (TST.xq)   (",^)
+    * a MIL script to be executed by MapiClient -lmil       (TST.milC) (",^,`)
+    * a SQL script to be executed by MapiClient -lsql       (TST.sql)  (",^,`)
+    * a XQUERY script to be executed by MapiClient -lxquery (TST.xq)   (",^,`)
    (~) In case the name of an arbitrary executable or Python script is
         suffixed with ".MAPI" (i.e., TST.MAPI[.(exe|com|bat|cmd|py)]),
         Mtest.py starts an Mserver with a MAPI-listerner on MAPIPORT
@@ -70,24 +70,29 @@ have changed since my proposal.
 		$TSTBLDBASE/$TSTDIR/arith.mil
 	in order to use the MIL script extracted from
 	src/modules/plain/arith.mx  as test script.
+   (`) For each test file TST.* involved,
+        if a file called
+	TST.*.in  exists instead of  TST.*,  all environment variables in
+	TST.*.in  are replaced by their current value
+	when copying  $TSTSRCDIR/TST.*.in  to  $TSTTRGDIR/TST.* .
   + a MIL script to be used as prelude for Mserver
-     (optional)                                             (TST.prelude)  (^)
+     (optional)                                             (TST.prelude)  (^,`)
   + for MapiClient tests, a MIL script to be used as
      prologue for Mserver, i.e., a script that is executed by Mserver after
      mapi_start()/sql_server_start()/pfstart() is called, but before (the first)
      MapiClient connects to Mserver
-     (optional)                                             (TST.prologue) (^)
+     (optional)                                             (TST.prologue) (^,`)
   + for MapiClient tests, a MIL script to be used as
      epilogue for Mserver, i.e., a script that is executed by Mserver after
      (all) MapiClient(s) have finished
-     (optional)                                             (TST.epilogue) (^)
+     (optional)                                             (TST.epilogue) (^,`)
   + a file that contains a list of modules (one per line)
-     required by the test  (optional)                       (TST.modules)  (^)
+     required by the test  (optional)                       (TST.modules)  (^,`)
   + a file that contains a list of BATs (one per line)
      (created by previous tests within the same directory)
-     required by the test  (optional)                       (TST.BATs)     (^)
+     required by the test  (optional)                       (TST.BATs)     (^,`)
   + a set of files used by the arbitrary executable
-     (optinal)                                              (TST.*)        (^)
+     (optinal)                                              (TST.*)        (^,`)
   + stable (i.e. correct) versions of stdout and stderr
      of the test                                            (TST.stable.{out,err})
     operating system (OS) specific stable output can be 
