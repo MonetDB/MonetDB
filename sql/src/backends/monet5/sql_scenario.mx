@@ -778,9 +778,9 @@ produce code.
 		}
 		m->mode= m_inplace;
 	} else 
-	if(m->mode != m_debug &&  m->mode != m_explain &&
-		(be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key))){
-		m->mode = m_inplace;
+	if( (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key))){
+		if( m->mode != m_debug  && m->mode!= m_explain)
+			m->mode = m_inplace;
 	} else {
 		stmt *s;
 
@@ -799,7 +799,7 @@ produce code.
 		   (msg = sql_get_var(m,"optimizer")) == NULL) {
 */
 		if( m->mode == m_debug)
-			SQLsetDebugger(c, m, m->mode == m_debug);
+			SQLsetDebugger(c, m, m->mode == m_debug); 
 		if (m->mode != m_prepare && !m->cache && !explainPlan()){
 			backend_callinline(be, c, s );
 		} else {

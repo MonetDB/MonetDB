@@ -1395,7 +1395,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					stmt *c = n->data;
 					sql_subtype *t = tail_type(c);
 					char *tname = table_name(c);
-					char *sname =NULL ;/* schema_name(c);*/
+					char *sname =schema_name(c);
 					char *_empty = "";
 					char *tn = (tname) ? tname : _empty;
 					char *sn = (sname) ? sname : _empty;
