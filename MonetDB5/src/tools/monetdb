@@ -178,9 +178,9 @@ function start_mserver()
 		fi
 
 		# use previous arguments if needed
-		echo -n "Starting database '$1'... "
+		echo -n "Starting database server '$1'... "
 		CONFIG="--config=$DBFARM/$1/.monetdb.conf"
-		$MONET5_PREFIX/bin/mserver --set daemon=yes --dbname=$1 $CONFIG $ARGS $STARTUP > /dev/null &
+		$MONET5_PREFIX/bin/mserver --set daemon=yes --dbname=$1 $CONFIG $ARGS $STARTUP >> $DBFARM/$DBNAME/mserver.log &
 		sleep 2
 		pid=`getPID $1`
 		if [ -z "$pid" ]
@@ -218,7 +218,7 @@ function stop_mserver()
 	pid=`getPID $1`
 	if [ -n "$pid" ]
 	then
-		echo -n "Stopping database '$1'... "
+		echo -n "Stopping database server '$1'... "
 		stopped=`expr $stopped + 1 `
 		# disable the guardian first
 		$MONET5_PREFIX/bin/mguardian --stop $1
