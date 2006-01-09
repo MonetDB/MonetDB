@@ -231,6 +231,10 @@ and MonetDB/SQL, call
 
  Mserver --set monet_mod_path=<monetdb-prefix>/lib/MonetDB:<sql-prefix>/lib/MonetDB --dbinit="module(sql_server); sql_server_start();"
 
+To change the location of the log-files, add the following option to Mserver:
+ 
+ --set sql_logdir=<logdir>
+
 Then, in a second shell, set up the same environment and start the
 MonetDB SQL front end by calling
 
