@@ -88,7 +88,7 @@ LIBS = {
 		mkey.mx profiler.mx constant.mx \
 		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
 		decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
-		radix.mx stats.mx tcpip.mx unix.mx url.mx pqueue.mx upgrade.mx
+		radix.mx remap.mx stats.mx tcpip.mx unix.mx url.mx pqueue.mx upgrade.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
 	LIBS = ../../common/libstream ../../gdk/libbat \
@@ -102,10 +102,10 @@ LIBS = {
 #	DIR = pkgdatadir/docs/plain/
 #	SOURCES = \
 #		algebra.mx arith.mx bat.mx builtin.mx sys.mx trans.mx \
-#		mkey.mx profiler.mx \
+#		mkey.mx profiler.mx constant.mx \
 #		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
 #		decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
-#		radix.mx stats.mx tcpip.mx unix.mx url.mx
+#		radix.mx remap.mx stats.mx tcpip.mx unix.mx url.mx
 #}
 
 lib__counters = {
@@ -163,7 +163,7 @@ scripts_mil = {
                 mkey.mx profiler.mx \
                 aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx \
 		blob.mx decimal.mx enum.mx lock.mx mmath.mx \
-		monettime.mx radix.mx stats.mx tcpip.mx \
+		monettime.mx radix.mx remap.mx stats.mx tcpip.mx \
 		unix.mx url.mx counters.mx pcl.mx pcre.mx pqueue.mx upgrade.mx \
 		logger.mx
 }
