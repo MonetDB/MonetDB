@@ -1937,7 +1937,11 @@ xquery_client_end(xquery_client *ctx,
     /* nil-assign all other variables */
     for(v=monet_cntxt[ctx->stk].var; v != ctx->lastvar; v = v->next) {
         ATOMunfix(v->binding.vtype, VALptr(&v->binding));
-        VALclear(&v->binding);
+        if (&v->binding.val.ival == ctx->shredBAT)
+           /* make sure that MIL variable "shredBAT" stays type INT instead of becoming void(nil) */
+            VALset(&v->binding, TYPE_int, (ptr)&int_nil);
+        else
+            VALclear(&v->binding);
     }
     monet_clients[ctx->stk].fdin = NULL; 
     monet_clients[ctx->stk].fdout = NULL; 
