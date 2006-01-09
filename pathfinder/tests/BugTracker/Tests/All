@@ -1,6 +1,11 @@
 # tests related to bug reports:
 # <descriptive-name>.SF-<bug-report-id>[.<ext>]
+
+# first test loads default XMark document from tests/XMark/Tests/auctionG.xml
+# used by other tests in this directory
+auctionG_xml
+
 serialization_of_decimal.SF-1388225
-wrong_BATpropcheck_on_void_void_BATs.SF-1397840-shred_doc
 wrong_BATpropcheck_on_void_void_BATs.SF-1397840-d0
 wrong_BATpropcheck_on_void_void_BATs.SF-1397840-d10
+SCJ_with_void_void_BATs.SF-1400473

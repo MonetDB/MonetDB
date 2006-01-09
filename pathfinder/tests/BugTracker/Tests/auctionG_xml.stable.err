@@ -1,8 +1,8 @@
-stderr of test 'wrong_BATpropcheck_on_void_void_BATs.SF-1397840-shred_doc` in directory 'tests/BugTracker` itself:
+stderr of test 'auctionG_xml` in directory 'tests/BugTracker` itself:
 
 
 # 21:20:56 >  
-# 21:20:56 >  Mtimeout -timeout 60 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./PATHFINDER/lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/lib/MonetDB" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/var/MonetDB/log" --set mapi_port=35296 --set sql_port=41341 --set xquery_port=51228 --set monet_prompt= --trace --dbname=mTests_tests_BugTracker  < wrong_BATpropcheck_on_void_void_BATs.SF-1397840-shred_doc.milS
+# 21:20:56 >  Mtimeout -timeout 60 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./PATHFINDER/lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/lib/MonetDB" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./MONETDB/var/MonetDB/log" --set mapi_port=35296 --set sql_port=41341 --set xquery_port=51228 --set monet_prompt= --trace --dbname=mTests_tests_BugTracker  < auctionG_xml.milS
 # 21:20:56 >  
 
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
