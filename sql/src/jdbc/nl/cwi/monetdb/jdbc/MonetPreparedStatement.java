@@ -103,8 +103,8 @@ public class MonetPreparedStatement
 			throw new SQLException("Unexpected server response");
 
 		// cheat a bit to get the ID and the number of columns
-		id = ((MonetConnection.ResultSetHeader)header).id;
-		size = ((MonetConnection.ResultSetHeader)header).tuplecount;
+		id = ((MonetConnection.ResultSetResponse)header).id;
+		size = ((MonetConnection.ResultSetResponse)header).tuplecount;
 
 		// initialise blank finals
 		monetdbType = new String[size];

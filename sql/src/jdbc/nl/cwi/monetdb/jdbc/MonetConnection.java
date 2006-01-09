@@ -45,7 +45,7 @@ import java.nio.*;
  * whole Connection interface.<br />
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.9.2
+ * @version 1.0
  */
 public class MonetConnection implements Connection {
 	/** The hostname to connect to */
@@ -60,9 +60,6 @@ public class MonetConnection implements Connection {
 	private final String password;
 	/** The language which is used */
 	private final int lang;
-	/** Whether to use server-side (native) or Java emulated
-	 * PreparedStatements */
-	private final boolean nativePreparedStatements;
 	/** A connection to Mserver using a TCP socket */
 	private final MonetSocketBlockMode monet;
 
@@ -136,16 +133,8 @@ public class MonetConnection implements Connection {
 		this.database = props.getProperty("database");
 		this.username = props.getProperty("user");
 		this.password = props.getProperty("password");
-		boolean natPrepStIsSet =
-			props.getProperty("native_prepared_statements") == null;
-		if (!natPrepStIsSet) {
-			this.nativePreparedStatements = Boolean.valueOf(props.getProperty("native_prepared_statements")).booleanValue();
-		} else {
-			this.nativePreparedStatements = true;
-		}
 
 		String language = props.getProperty("language");
-		boolean blockMode = Boolean.valueOf(props.getProperty("blockmode")).booleanValue();
 		boolean debug = Boolean.valueOf(props.getProperty("debug")).booleanValue();
 
 		// check input arguments
@@ -517,7 +506,20 @@ public class MonetConnection implements Connection {
 		}
 	}
 	
-	public int getHoldability() {return(-1);}
+	/**
+	 * Retrieves the current holdability of ResultSet objects created
+	 * using this Connection object.
+	 *
+	 * @return the holdability, one of
+	 *         ResultSet.HOLD_CURSORS_OVER_COMMIT or
+	 *         ResultSet.CLOSE_CURSORS_AT_COMMIT
+	 * @throws SQLException is a database access error occors
+	 */
+	public int getHoldability() {
+		// TODO: perhaps it is better to have the server implement
+		//       CLOSE_CURSORS_AT_COMMIT
+		return(ResultSet.HOLD_CURSORS_OVER_COMMIT);
+	}
 
 	/**
 	 * Retrieves a DatabaseMetaData object that contains metadata about
@@ -682,17 +684,10 @@ public class MonetConnection implements Connection {
 	{
 		try {
 			PreparedStatement ret;
-			if (nativePreparedStatements) {
-				// use a server-side PreparedStatement
-				ret = new MonetPreparedStatement(
+			// use a server-side PreparedStatement
+			ret = new MonetPreparedStatement(
 					this, resultSetType, resultSetConcurrency, sql
-				);
-			} else {
-				// use a Java implementation of a PreparedStatement
-				ret = new MonetPreparedStatementJavaImpl(
-					this, resultSetType, resultSetConcurrency, sql
-				);
-			}
+			);
 			// store it in the map for when we close...
 			statements.put(ret, null);
 			return(ret);
@@ -791,19 +786,38 @@ public class MonetConnection implements Connection {
 	 */
 	public void setAutoCommit(boolean autoCommit) throws SQLException {
 		if (this.autoCommit != autoCommit) {
-			fetchBlock(new RawResults(
-					0,
-					"auto_commit " + (autoCommit ? "1" : "0"),
-					true
-				)
-			);
+			sendControlCommand("auto_commit " + (autoCommit ? "1" : "0"));
 			this.autoCommit = autoCommit;
 		}
 	}
 
-	public void setCatalog(String catalog) {}
+	/**
+	 * Sets the given catalog name in order to select a subspace of this
+	 * Connection object's database in which to work.  If the driver
+	 * does not support catalogs, it will silently ignore this request. 
+	 */
+	public void setCatalog(String catalog) throws SQLException {
+		// silently ignore this request
+	}
+
 	public void setHoldability(int holdability) {}
-	public void setReadOnly(boolean readOnly) {}
+
+	/**
+	 * Puts this connection in read-only mode as a hint to the driver to
+	 * enable database optimizations.  MonetDB doesn't support writable
+	 * ResultSets, hence an SQLException is thrown if attempted to set
+	 * to false here.
+	 *
+	 * @param readOnly true enables read-only mode; false disables it
+	 * @throws SQLException if a database access error occurs or this
+	 *         method is called during a transaction or set to false.
+	 */
+	public void setReadOnly(boolean readOnly) throws SQLException {
+		if (autoCommit == false) throw
+			new SQLException("changing read-only setting not allowed during transactions");
+		if (readOnly == false) throw
+			new SQLException("writable mode not supported");
+	}
 
 	/**
 	 * Creates an unnamed savepoint in the current transaction and
@@ -848,7 +862,7 @@ public class MonetConnection implements Connection {
 
 	/**
 	 * Attempts to change the transaction isolation level for this
-	 * Connection object to the one given. The constants defined in the
+	 * Connection object to the one given.  The constants defined in the
 	 * interface Connection are the possible transaction isolation
 	 * levels.
 	 *
@@ -889,11 +903,28 @@ public class MonetConnection implements Connection {
 	 * @throws SQLException if an IO exception or a database error occurs
 	 */
 	void sendIndependantCommand(String command) throws SQLException {
-		HeaderList hdrl =
-			new HeaderList(command, 0, 0, 0, 0);
-		processQuery(hdrl);
+		synchronized (monet) {
+			try {
+				monet.writeLine(queryTempl, command);
+				String error = monet.waitForPrompt();
+				if (error != null) throw new SQLException(error);
+			} catch (IOException e) {
+				throw new SQLException(e.getMessage());
+			}
+		}
+	}
 
-		while (hdrl.getNextHeader() != null);
+	void sendControlCommand(String command) throws SQLException {
+		// send X command
+		synchronized (monet) {
+			try {
+				monet.writeLine(commandTempl, command);
+				String error = monet.waitForPrompt();
+				if (error != null) throw new SQLException(error);
+			} catch (IOException e) {
+				throw new SQLException(e.getMessage());
+			}
+		}
 	}
 
 	/**
@@ -912,7 +943,6 @@ public class MonetConnection implements Connection {
 		}
 	}
 
-
 	/** the default number of rows that are (attempted to) read at once */
 	private final static int DEF_FETCHSIZE = 250;
 	/** The sequence counter */
@@ -920,267 +950,6 @@ public class MonetConnection implements Connection {
 
 	/** An optional thread that is used for sending large queries */
 	private SendThread sendThread = null;
-
-	/**
-	 * Adds a new query result block request to the queue of queries that
-	 * can and should be executed.  A RawResults object is returned which
-	 * will be filled as soon as the query request is processed.
-	 *
-	 * @param hdr the Header this query block is part of
-	 * @param block the block number to fetch, index starts at 0
-	 * @return a RawResults object which will get filled as soon as the
-	 *         query is processed
-	 * @throws IllegalStateException if this thread is not alive
-	 * @see RawResults
-	 */
-	RawResults addBlock(ResultSetHeader hdr, int block) throws IllegalStateException {
-		RawResults rawr;
-		int cacheSize = hdr.getCacheSize();
-		// get number of results to fetch
-		int size = Math.min(cacheSize, hdr.tuplecount - ((block * cacheSize) + hdr.getBlockOffset()));
-
-		if (size == 0) throw
-			new IllegalStateException("Should not fetch empty block!");
-
-		rawr = new RawResults(size,
-				"export " + hdr.id + " " +
-				((block * cacheSize) + hdr.getBlockOffset()) + " " +
-				size, hdr.getRSType() == ResultSet.TYPE_FORWARD_ONLY);
-
-		fetchBlock(rawr);
-
-		return(rawr);
-	}
-
-	/**
-	 * Adds a result set close command to the head of the queue of queries
-	 * that can and should be executed.  Close requests are given maximum
-	 * priority because it are small quick terminating queries and release
-	 * resources on the server backend.
-	 *
-	 * @param id the table id of the result set to close
-	 * @throws IllegalStateException if this thread is not alive
-	 */
-	void closeResult(int id) throws IllegalStateException {
-		fetchBlock(new RawResults(0, "close " + id, true));
-	}
-
-	/**
-	 * Executes the query contained in the given HeaderList, and stores the
-	 * Headers resulting from this query in the HeaderList.
-	 * There is no need for an exclusive lock on the monet object here.
-	 * Since there is a queue system, queries are executed only by on
-	 * specialised thread.  The monet object is not accessible for any
-	 * other object (ok, not entirely true) so this specialised thread
-	 * is the only one accessing it.
-	 *
-	 * @param hdrl a HeaderList which contains the query to execute
-	 */
-	void processQuery(HeaderList hdrl) {
-		boolean sendThreadInUse = false;
-		
-		try {
-			// make sure we're ready to send query; read data till we
-			// have the prompt it is possible (and most likely) that we
-			// already have the prompt and do not have to skip any
-			// lines.  Ignore errors from previous result sets.
-			monet.waitForPrompt();
-
-			int size;
-			// {{{ set reply size
-			try {
-				/**
-				 * Change the reply size of the server.  If the given
-				 * value is the same as the current value known to use,
-				 * then ignore this call.  If it is set to 0 we get a
-				 * prompt after the server sent it's header.
-				 */
-				size = hdrl.cachesize == 0 ? DEF_FETCHSIZE : hdrl.cachesize;
-				size = hdrl.maxrows != 0 ? Math.min(hdrl.maxrows, size) : size;
-				// don't do work if it's not needed
-				if (lang == LANG_SQL && size != 0 && size != curReplySize) {
-					monet.writeLine(queryTempl, "SET reply_size = " + size);
-
-					String error = monet.waitForPrompt();
-					if (error != null) throw new SQLException(error);
-					
-					// store the reply size after a successful change
-					curReplySize = size;
-				}
-			} catch (SQLException e) {
-				hdrl.addError(e.getMessage());
-				hdrl.setComplete();
-				return;
-			}
-			// }}} set reply size
-
-			// If the query is larger than the TCP buffer size, use a
-			// special send thread to avoid deadlock with the server due
-			// to blocking behaviour when the buffer is full.  Because
-			// the server will be writing back results to us, it will
-			// eventually block as well when its TCP buffer gets full,
-			// as we are blocking an not consuming from it.  The result
-			// is a state where both client and server want to write,
-			// but block.
-			if (hdrl.query().length() > MonetSocketBlockMode.BLOCK) {
-				// get a reference to the send thread
-				if (sendThread == null) sendThread = new SendThread(monet);
-				// tell it to do some work!
-				sendThread.runQuery(hdrl);
-				sendThreadInUse = true;
-			} else {
-				// this is a simple call, which is a lot cheaper and will
-				// always succeed for small queries.
-				monet.writeLine(queryTempl, hdrl.query());
-			}
-
-			// go for new results
-			String tmpLine = monet.readLine();
-			int linetype = monet.getLineType();
-			Header hdr = null;
-			RawResults rawr = null;
-			int lastState = linetype;
-			while (linetype != MonetSocketBlockMode.PROMPT1) {
-				switch (linetype) {
-					case MonetSocketBlockMode.ERROR:
-						// store the error message in the HeaderList object
-						hdrl.addError(tmpLine.substring(1));
-					break;
-					case MonetSocketBlockMode.SOHEADER:
-						// close previous if set
-						if (hdr != null) {
-							hdr.complete();
-							hdrl.addHeader(hdr);
-						}
-						if (rawr != null) rawr.finish();
-
-						// {{{ soh line parsing
-						// parse the start of header line
-						CharBuffer soh = CharBuffer.wrap(tmpLine);
-						soh.get();	// skip the &
-						try {
-							switch (soh.get()) {
-								default:
-									throw new java.text.ParseException("Unknown header", 1);
-								case Q_PARSE:
-									throw new java.text.ParseException("Q_PARSE header not allowed here", 1);
-								case Q_TABLE:
-								case Q_PREPARE:
-									soh.get();	// skip space
-									hdr = new ResultSetHeader(
-											parseNumber(soh),	// id
-											parseNumber(soh),	// tuplecount
-											parseNumber(soh),	// columncount
-											parseNumber(soh),	// rowcount
-											this,
-											hdrl.cachesize,
-											hdrl.rstype,
-											hdrl.rsconcur,
-											hdrl.seqnr
-											);
-									break;
-								case Q_UPDATE:
-									soh.get();	// skip space
-									hdr = new AffectedRowsHeader(
-											parseNumber(soh)	// count
-											);
-									break;
-								case Q_SCHEMA:
-									hdr = new AffectedRowsHeader(
-											Statement.SUCCESS_NO_INFO
-											);
-									break;
-								case Q_TRANS:
-									soh.get();	// skip space
-									if (soh.position() == soh.length()) throw
-										new java.text.ParseException("unexpected end of string", soh.position() - 1);
-									boolean ac = soh.get() == 't' ? true : false;
-									if (autoCommit && ac) {
-										addWarning("Server enabled auto commit " +
-												"mode while local state " +
-												"already is auto commit."
-												);
-									}
-									autoCommit = ac;
-									// note: the use of a special header
-									// here is not really clear.  Maybe
-									// ditch it and use AffectedRowsHeader
-									// (which is a superclass of
-									// AutoCommitHeader anyway).
-									hdr = new AutoCommitHeader(
-											ac
-											);
-									break;
-							}
-						} catch (java.text.ParseException e) {
-							throw new SQLException(e.getMessage() +
-									" found: '" + soh.get(e.getErrorOffset()) + "'" +
-									" in: \"" + tmpLine + "\"" +
-									" at pos: " + e.getErrorOffset());
-						}
-						// }}} soh line parsing
-
-						rawr = null;
-					break;
-					case MonetSocketBlockMode.HEADER:
-						if (hdr == null) throw
-							new SQLException("Protocol violation: header sent before start of header was issued!");
-						hdr.addHeader(tmpLine);
-					break;
-					case MonetSocketBlockMode.RESULT:
-						// complete the header info and add to list
-						if (lastState == MonetSocketBlockMode.HEADER) {
-							// we can only have a ResultSetHeader here
-							ResultSetHeader rsh = (ResultSetHeader)hdr;
-							rsh.complete();
-							rawr = new RawResults(size != 0 ? Math.min(size, rsh.tuplecount) : rsh.tuplecount, null, rsh.getRSType() == ResultSet.TYPE_FORWARD_ONLY);
-							rsh.addRawResults(0, rawr);
-							// a RawResults must be in hdr at this point!!!
-							hdrl.addHeader(hdr);
-							hdr = null;
-						}
-						if (rawr == null) throw
-							new SQLException("Protocol violation: result sent before header!");
-						rawr.addRow(tmpLine);
-					break;
-					default:
-						// unknown, will mean a protocol violation
-						addWarning("Protocol violation: unknown linetype.  Ignoring line: " + tmpLine);
-					break;
-				}
-				lastState = linetype;
-				tmpLine = monet.readLine();
-				linetype = monet.getLineType();
-			}
-			// Tell the RawResults object there is nothing going to be
-			// added right now.  We need to do this because MonetDB
-			// sometimes plays games with us and just doesn't send what
-			// it promises.
-			if (rawr != null) rawr.finish();
-			// catch resultless headers
-			if (hdr != null) {
-				hdr.complete();
-				hdrl.addHeader(hdr);
-			}
-			// if we used the sendThread, make sure it has finished
-			if (sendThreadInUse) sendThread.throwErrors();
-		} catch (SQLException e) {
-			hdrl.addError(e.getMessage());
-			// if MonetDB sent us an incomplete or malformed header, we have
-			// big problems, thus discard the whole bunch and quit processing
-			// this one
-			try {
-				monet.waitForPrompt();
-			} catch (IOException ioe) {
-				hdrl.addError(e.toString());
-			}
-		} catch (IOException e) {
-			closed = true;
-			hdrl.addError(e.getMessage() + " (Mserver still alive?)");
-		}
-		// close the header list, no more headers will follow
-		hdrl.setComplete();
-	}
 
 	/**
 	 * Returns the numeric value in the given CharBuffer.  The value is
@@ -1208,222 +977,68 @@ public class MonetConnection implements Connection {
 	}
 
 	/**
-	 * Retrieves a continuation block of a previously (partly) fetched
-	 * result.  The data is stored in the given RawResults which also
-	 * holds the Xeport query to issue on the server.
-	 *
-	 * @param rawr a RawResults containing the Xexport to execute
+	 * A Response is a message sent by the server to indicate some
+	 * action has taken place, and possible results of that action.
 	 */
-	private void fetchBlock(RawResults rawr) {
-		synchronized (monet) {
-			try {
-				// make sure we're ready to send query; read data till
-				// we have the prompt it is possible (and most likely)
-				// that we already have the prompt and do not have to
-				// skip any lines. Ignore errors from previous result
-				// sets.
-				monet.waitForPrompt();
-
-				// send the query
-				monet.writeLine(commandTempl, rawr.getXexport());
-
-				// go for new results, everything should be result (or
-				// error :( )
-				String tmpLine;
-				int linetype;
-				do {
-					tmpLine = monet.readLine();
-					linetype = monet.getLineType();
-					switch (linetype) {
-						case MonetSocketBlockMode.SOHEADER:
-						case MonetSocketBlockMode.PROMPT1:
-							// we don't care actually right now
-						break;
-						case MonetSocketBlockMode.RESULT:
-							rawr.addRow(tmpLine);
-						break;
-						case MonetSocketBlockMode.ERROR:
-							rawr.addError(tmpLine.substring(1));
-						break;
-						default:
-							rawr.addError("Unexpected line found: " + tmpLine);
-						break;
-					}
-				} while (linetype != MonetSocketBlockMode.PROMPT1);
-				// Tell the RawResults object there is nothing going to be
-				// added right now.  We need to do this because MonetDB
-				// sometimes plays games with us and just doesn't send what
-				// it promises.
-				rawr.finish();
-			} catch (IOException e) {
-				closed = true;
-				rawr.addError("Unexpected end of stream, Mserver still alive? " + e.toString());
-			}
-		}
-	}
-
-
-	/**
-	 * Inner class which holds the raw data as read from the server, and
-	 * the associated header information, in a parsed manor, ready for easy
-	 * retrieval.
-	 * <br /><br />
-	 * This object is not intended to be queried by multiple threads
-	 * synchronously. It is designed to work for one thread retrieving rows
-	 * from it. When multiple threads will retrieve rows from this object, it
-	 * is likely for some threads to get locked forever.
-	 */
-	class RawResults {
-		/** The String array to keep the data in */
-		private String[] data;
-		/** The Xexport query that results in this block */
-		private String export;
-
-		/** The counter which keeps the current position in the data array */
-		private int pos;
-		/** The line to watch for and notify upon when added */
-		private int watch;
-		/** The errors generated for this ResultBlock */
-		private String error;
-		/** Whether we can discard lines as soon as we have read them */
-		private boolean forwardOnly;
-
+	// {{{ interface Response
+	interface Response {
 		/**
-		 * Constructs a RawResults object
-		 * @param size the size of the data array to create
-		 * @param export the Xexport query
-		 * @param forward whether this is a forward only result
-		 */
-		RawResults(int size, String export, boolean forward) {
-			pos = -1;
-			data = new String[size];
-			// a newly set watch will always be smaller than size
-			watch = data.length;
-			this.export = export;
-			this.forwardOnly = forward;
-			error = "";
-		}
-
-
-		/**
-		 * addRow adds a String of data to this object's data array.
-		 * Note that an IndexOutOfBoundsException can be thrown when an
-		 * attempt is made to add more than the original construction size
-		 * specified.
-		 *
-		 * @param line the String of data to add
-		 */
-		synchronized void addRow(String line) {
-			data[++pos] = line;
-		}
-
-		/**
-		 * finish marks this RawResult as complete.  In most cases this
-		 * is a redundant operation because the data array is full.
-		 * However... it can happen that this is NOT the case!
-		 */
-		void finish() {
-			if ((pos + 1) != data.length) {
-				addError("Inconsistent state detected!  Current block capacity: " + data.length + ", block usage: " + (pos + 1) + ".  Did MonetDB send what it promised to?");
-			}
-		}
-
-		/**
-		 * Retrieves the required row. If the row is not present, this method
-		 * blocks until the row is available. <br />
-		 *
-		 * @param line the row to retrieve
-		 * @return the requested row as String
-		 * @throws IllegalArgumentException if the row to watch for is not
-		 *         within the possible range of values (0 - (size - 1))
-		 */
-		synchronized String getRow(int line)
-			throws IllegalArgumentException, SQLException
-		{
-			if (error != "") throw new SQLException(error);
-
-			if (line >= data.length || line < 0)
-				throw new IllegalArgumentException("Row index out of bounds: " + line);
-
-			if (forwardOnly) {
-				String ret = data[line];
-				data[line] = null;
-				return(ret);
-			} else {
-				return(data[line]);
-			}
-		}
-
-		/**
-		 * Returns the Xexport query associated with this RawResults block.
-		 *
-		 * @return the Xexport query
-		 */
-		String getXexport() {
-			return(export);
-		}
-
-		/**
-		 * Adds an error to this object's error queue
-		 *
-		 * @param error the error string to add
-		 */
-		synchronized void addError(String error) {
-			this.error += error + "\n";
-			// notify listener for our lock object; maybe this is bad news
-			// that must be heard...
-			this.notify();
-		}
-	}
-
-	/**
-	 * A Header represents a Mapi SQL header which looks like:
-	 *
-	 * <pre>
-	 * &amp;4 1 28 2 10 0 f
-	 * # name,     value # name
-	 * # varchar,  varchar # type
-	 * </pre>
-	 * (&amp;"qt" "id" "tc" "cc" "rc" "of" "ac").
-	 */
-	interface Header {
-		/**
-		 * Adds a header line to the underlying Header implementation.
+		 * Adds a line to the underlying Response implementation.
 		 * 
 		 * @param line the header line as String
-		 * @throws SQLException if the header line is invalid, or header
-		 *         lines are not allowed.
+		 * @param linetype the line type according to the MAPI protocol
+		 * @return a non-null String if the line is invalid,
+		 *         or additional lines are not allowed.
 		 */
-		public abstract void addHeader(String line) throws SQLException;
+		public abstract String addLine(String line, int linetype);
+
+		/**
+		 * Returns whether this Reponse expects more lines to be added
+		 * to it.
+		 *
+		 * @return true if a next line should be added, false otherwise
+		 */
+		public abstract boolean wantsMore();
 
 		/**
 		 * Indicates that no more header lines will be added to this
-		 * Header implementation.
+		 * Response implementation.
 		 * 
-		 * @throws SQLException if the contents of the Header is not
+		 * @throws SQLException if the contents of the Response is not
 		 *         consistent or sufficient.
 		 */
 		public abstract void complete() throws SQLException;
 
 		/**
-		 * Instructs the Header implementation to close and do the
+		 * Instructs the Response implementation to close and do the
 		 * necessary clean up procedures.
 		 *
 		 * @throws SQLException
 		 */
 		public abstract void close();
 	}
+	// }}}
 
-	class ResultSetHeader implements Header {
+	/**
+	 * The ResultSetResponse represents a tabular result sent by the
+	 * server.  This is typically an SQL table.  The MAPI headers of the
+	 * Response look like:
+	 * <pre>
+	 * &amp;1 1 28 2 10
+	 * # name,     value # name
+	 * # varchar,  varchar # type
+	 * </pre>
+	 * there the first line consists out of<br />
+	 * <tt>&amp;"qt" "id" "tc" "cc" "rc"</tt>.
+	 */
+	// {{{ ResultSetResponse class implementation
+	class ResultSetResponse implements Response {
 		/** The number of columns in this result */
 		public final int columncount;
 		/** The total number of rows this result set has */
 		public final int tuplecount;
-		/** The number of rows that will follow the header */
-		private int rowcount;
-		/** The number of rows from the start of the result set that are
-		 *  left out */
-		private int offset;
+		/** The numbers of rows to retrieve per DataBlockResponse */
+		private int cacheSize;
 		/** The table ID of this result */
 		public final int id;
 		/** The names of the columns in this result */
@@ -1436,29 +1051,23 @@ public class MonetConnection implements Connection {
 		private String[] tableNames;
 		/** The query sequence number */
 		private final int seqnr;
-		/** A Map of result blocks (chunks of size fetchSize/cacheSize) */
-		private Map resultBlocks;
+		/** A List of result blocks (chunks of size fetchSize/cacheSize) */
+		private List resultBlocks;
+		/** The first entry of the resultBlocks, separate to avoid
+		 * dynamic casts and List method invocations all the time */
+		private MonetConnection.DataBlockResponse firstBlock;
 
 		/** A bitmap telling whether the headers are set or not */
 		private boolean[] isSet;
-		/** Whether this Header is closed */
+		/** Whether this Response is closed */
 		private boolean closed;
 
 		/** The Connection that we should use when requesting a new block */
-		private MonetConnection connection;
-		/** A local copy of fetchSize, so its protected from changes made by
-		 *  the Statement parent */
-		private int cacheSize;
+		private MonetConnection.ResponseList parent;
 		/** Whether the fetchSize was explitly set by the user */
 		private boolean cacheSizeSetExplicitly = false;
-		/** A local copy of resultSetType, so its protected from changes made
-		 *  by the Statement parent */
-		private int rstype;
-		/** A local copy of resultSetConcurrency, so its protected from changes
-		 *  made by the Statement parent */
-		private int rsconcur;
 		/** Whether we should send an Xclose command to the server
-		 *  if we close this Header */
+		 *  if we close this Response */
 		private boolean destroyOnClose;
 		/** the offset to be used on Xexport queries */
 		private int blockOffset = 0;
@@ -1477,38 +1086,28 @@ public class MonetConnection implements Connection {
 		 * @param tuplecount the total number of tuples in the result set
 		 * @param columncount the number of columns in the result set
 		 * @param rowcount the number of rows in the current block
-		 * @param parent the CacheThread that created this Header and will
-		 *               supply new result blocks
-		 * @param cs the cache size to use
-		 * @param mr the maximum number of results to return
-		 * @param rst the ResultSet type to use
-		 * @param rsc the ResultSet concurrency to use
+		 * @param parent the parent that created this Response and will
+		 *               supply new result blocks when necessary
 		 * @param seq the query sequence number
 		 */
-		ResultSetHeader(
+		ResultSetResponse(
 			int id,
 			int tuplecount,
 			int columncount,
 			int rowcount,
-			MonetConnection parent,
-			int cs,
-			int rst,
-			int rsc,
+			MonetConnection.ResponseList parent,
 			int seq)
 			throws SQLException
 		{
 			isSet = new boolean[7];
-			resultBlocks = new HashMap();
-			connection = parent;
-			if (cs == 0) {
+			this.parent = parent;
+			if (parent.cachesize == 0) {
 				cacheSize = MonetConnection.DEF_FETCHSIZE;
 				cacheSizeSetExplicitly = false;
 			} else {
-				cacheSize = cs;
+				cacheSize = parent.cachesize;
 				cacheSizeSetExplicitly = true;
 			}
-			rstype = rst;
-			rsconcur = rsc;
 			seqnr = seq;
 			closed = false;
 			destroyOnClose = false;
@@ -1516,18 +1115,33 @@ public class MonetConnection implements Connection {
 			this.id = id;
 			this.tuplecount = tuplecount;
 			this.columncount = columncount;
-			this.rowcount = rowcount;
-			this.offset = 0;
+
+			firstBlock = new DataBlockResponse(
+				rowcount,
+				parent.rstype == ResultSet.TYPE_FORWARD_ONLY
+			);
 		}
 
 		/**
 		 * Parses the given string and changes the value of the matching
-		 * header appropriately.
+		 * header appropriately, or passes it on to the underlying
+		 * DataResponse.
 		 *
 		 * @param tmpLine the string that contains the header
-		 * @throws SQLException if the header cannot be parsed or is unknown
+		 * @return a non-null String if the header cannot be parsed or
+		 *         is unknown
 		 */
-		public void addHeader(String tmpLine) throws SQLException {
+		// {{{ addLine
+		public String addLine(String tmpLine, int linetype) {
+			if (isSet[LENS] && isSet[TYPES] &&
+					isSet[TABLES] && isSet[NAMES])
+			{
+				return(firstBlock.addLine(tmpLine, linetype));
+			}
+
+			if (linetype != MonetSocketBlockMode.HEADER)
+				return("header expected, got: " + tmpLine);
+
 			char[] chrLine = tmpLine.toCharArray();
 			int len = chrLine.length;
 
@@ -1560,20 +1174,21 @@ public class MonetConnection implements Connection {
 				}
 			}
 			if (!nameFound)
-				throw new SQLException("Illegal header: " + tmpLine);
+				return("illegal header: " + tmpLine);
 
 			// depending on the name of the header, we continue
 			switch (chrLine[pos]) {
 				default:
-					throw new SQLException("Unknown header: " +
+					return("protocol violation: unknown header: " +
 							(new String(chrLine, pos, len - pos)));
 				case 'n':
 					if (len - pos == 4 &&
 							tmpLine.regionMatches(pos + 1, "name", 1, 3))
 					{
-						setNames(getValues(chrLine, 2, pos - 3));
+						name = getValues(chrLine, 2, pos - 3);
+						isSet[NAMES] = true;
 					} else {
-						throw new SQLException("Unknown header: " +
+						return("protocol violation: unknown header: " +
 								(new String(chrLine, pos, len - pos)));
 					}
 				break;
@@ -1581,9 +1196,14 @@ public class MonetConnection implements Connection {
 					if (len - pos == 6 &&
 							tmpLine.regionMatches(pos + 1, "length", 1, 5))
 					{
-						setColumnLengths(getIntValues(chrLine, 2, pos - 3));
+						try {
+							columnLengths = getIntValues(chrLine, 2, pos - 3);
+							isSet[LENS] = true;
+						} catch (SQLException e) {
+							return(e.getMessage());
+						}
 					} else {
-						throw new SQLException("Unknown header: " +
+						return("protocol violation: unknown header: " +
 								(new String(chrLine, pos, len - pos)));
 					}
 				break;
@@ -1591,16 +1211,37 @@ public class MonetConnection implements Connection {
 					if (len - pos == 4 &&
 							tmpLine.regionMatches(pos + 1, "type", 1, 3))
 					{
-						setTypes(getValues(chrLine, 2, pos - 3));
+						type = getValues(chrLine, 2, pos - 3);
+						isSet[TYPES] = true;
 					} else if (len - pos == 10 &&
 							tmpLine.regionMatches(pos + 1, "table_name", 1, 9))
 					{
-						setTableNames(getValues(chrLine, 2, pos - 3));
+						tableNames = getValues(chrLine, 2, pos - 3);
+						isSet[TABLES] = true;
 					} else {
-						throw new SQLException("Unknown header: " +
+						return("protocol violation: unknown header: " +
 								(new String(chrLine, pos, len - pos)));
 					}
 				break;
+			}
+
+			// all is well
+			return(null);
+		}
+		// }}}
+
+		/**
+		 * Returns whether this ResultSetResponse needs more lines.
+		 * This method returns true if not all headers are set, or the
+		 * first DataBlockResponse reports to want more.
+		 */
+		public boolean wantsMore() {
+			if (isSet[LENS] && isSet[TYPES] &&
+					isSet[TABLES] && isSet[NAMES])
+			{
+				return(firstBlock.wantsMore());
+			} else {
+				return(true);
 			}
 		}
 
@@ -1691,61 +1332,22 @@ public class MonetConnection implements Connection {
 		}
 
 		/**
-		 * Sets the name header and updates the bitmask
+		 * Adds the given DataBlockResponse to this ResultSetResponse at
+		 * the given block position.
 		 *
-		 * @param name an array of Strings holding the column names
+		 * @param block the result block the DataBlockResponse object represents
+		 * @param rr the DataBlockResponse to add
 		 */
-		private void setNames(String[] name) {
-			this.name = name;
-			isSet[NAMES] = true;
+		void addDataBlockResponse(int block, DataBlockResponse rr) {
+			if (resultBlocks == null) resultBlocks = new ArrayList();
+			resultBlocks.add(block, rr);
 		}
 
 		/**
-		 * Sets the type header and updates the bitmask
+		 * Marks this Response as being completed.  A complete Response
+		 * needs to be consistent with regard to its internal data.
 		 *
-		 * @param type an array of Strings holding the column types
-		 */
-		private void setTypes(String[] type) {
-			this.type = type;
-			isSet[TYPES] = true;
-		}
-		
-		/**
-		 * Sets the table_name header and updates the bitmask
-		 *
-		 * @param name an array of Strings holding the column's table names
-		 */
-		private void setTableNames(String[] name) {
-			this.tableNames = name;
-			isSet[TABLES] = true;
-		}
-
-		/**
-		 * Sets the length header and updates the bitmask
-		 *
-		 * @param len an array of ints holding the column lengths
-		 */
-		private void setColumnLengths(int[] len) {
-			this.columnLengths = len;
-			isSet[LENS] = true;
-		}
-
-		/**
-		 * Adds the given RawResults to this Header at the given block
-		 * position.
-		 *
-		 * @param block the result block the RawResults object represents
-		 * @param rr the RawResults to add
-		 */
-		void addRawResults(int block, RawResults rr) {
-			resultBlocks.put("" + block, rr);
-		}
-
-		/**
-		 * Marks this Header as being completed.  A complete Header needs
-		 * to be consistent with regard to its internal data.
-		 *
-		 * @throws SQLException if the data currently in this Header is not
+		 * @throws SQLException if the data currently in this Response is not
 		 *                      sufficient to be consistant
 		 */
 		public void complete() throws SQLException {
@@ -1755,14 +1357,6 @@ public class MonetConnection implements Connection {
 			if (!isSet[TABLES]) error += "table name header missing\n";
 			if (!isSet[LENS]) error += "column width header missing\n";
 			if (error != "") throw new SQLException(error);
-
-			// make sure the cache size is minimal to
-			// reduce overhead and memory usage
-			if (cacheSize == 0) {
-				cacheSize = rowcount;
-			} else {
-				cacheSize = Math.min(rowcount, cacheSize);
-			}
 		}
 
 		/**
@@ -1802,30 +1396,12 @@ public class MonetConnection implements Connection {
 		}
 
 		/**
-		 * Returns the cache size used within this Header
+		 * Returns the cache size used within this Response
 		 *
 		 * @return the cache size
 		 */
 		int getCacheSize() {
 			return(cacheSize);
-		}
-
-		/**
-		 * Returns the result set type used within this Header
-		 *
-		 * @return the result set type
-		 */
-		int getRSType() {
-			return(rstype);
-		}
-
-		/**
-		 * Returns the result set concurrency used within this Header
-		 *
-		 * @return the result set concurrency
-		 */
-		int getRSConcur() {
-			return(rsconcur);
 		}
 
 		/**
@@ -1837,6 +1413,23 @@ public class MonetConnection implements Connection {
 			return(blockOffset);
 		}
 
+		/**
+		 * Returns the ResultSet type, FORWARD_ONLY or not.
+		 *
+		 * @return the ResultSet type
+		 */
+		int getRSType() {
+			return(parent.rstype);
+		}
+
+		/**
+		 * Returns the concurrency of the ResultSet.
+		 *
+		 * @return the ResultSet concurrency
+		 */
+		int getRSConcur() {
+			return(parent.rsconcur);
+		}
 
 		/**
 		 * Returns a line from the cache. If the line is already present in the
@@ -1856,10 +1449,12 @@ public class MonetConnection implements Connection {
 			int blockLine = (row - blockOffset) % cacheSize;
 
 			// do we have the right block loaded? (optimistic try)
-			RawResults rawr = (RawResults)(resultBlocks.get("" + block));
-			// if not, try again and load if appropriate
-			if (rawr == null) synchronized(resultBlocks) {
-				rawr = (RawResults)(resultBlocks.get("" + block));
+			DataBlockResponse rawr;
+			if (block == 0) {
+				rawr = firstBlock;
+			} else {
+				rawr = (DataBlockResponse)(resultBlocks.get(block));
+				// if not, try again and load if appropriate
 				if (rawr == null) {
 					/// TODO: ponder about a maximum number of blocks to keep
 					///       in memory when dealing with random access to
@@ -1867,7 +1462,7 @@ public class MonetConnection implements Connection {
 
 					// if we're running forward only, we can discard the old
 					// block loaded
-					if (rstype == ResultSet.TYPE_FORWARD_ONLY) {
+					if (parent.rstype == ResultSet.TYPE_FORWARD_ONLY) {
 						resultBlocks.clear();
 
 						if (MonetConnection.seqCounter - 1 == seqnr) {
@@ -1882,10 +1477,10 @@ public class MonetConnection implements Connection {
 								// store the previous position in the
 								// blockOffset variable
 								blockOffset += cacheSize;
-								
+
 								// increase the cache size (a lot)
 								cacheSize *= 10;
-								
+
 								// by changing the cacheSize, we also
 								// change the block measures.  Luckily
 								// we don't care about previous blocks
@@ -1899,47 +1494,55 @@ public class MonetConnection implements Connection {
 							}
 						}
 					}
-					
-					// ok, need to fetch cache block first
-					rawr = connection.addBlock(this, block);
-					resultBlocks.put("" + block, rawr);
 				}
+
+				// ok, need to fetch cache block first
+				parent.executeQuery(
+						commandTempl, 
+						"export " + id + " " + ((block * cacheSize) + blockOffset) + " " + cacheSize 
+				);
+				rawr = (DataBlockResponse)(resultBlocks.get(block));
+				if (rawr == null) throw
+					new AssertionError("block " + block + " should have been fetched by now :(");
 			}
 
-			try {
-				return(rawr.getRow(blockLine));
-			} catch (IllegalArgumentException e) {
-				throw new SQLException(e.getMessage());
-			}
+			return(rawr.getRow(blockLine));
 		}
 
 		/**
-		 * Closes this Header by sending an Xclose to the server indicating
+		 * Closes this Response by sending an Xclose to the server indicating
 		 * that the result can be closed at the server side as well.
 		 */
 		public void close() {
 			if (closed) return;
+			// send command to server indicating we're done with this
+			// result only if we had an ID in the header and this result
+			// was larger than the reply size
 			try {
-				// send command to server indicating we're done with this
-				// result only if we had an ID in the header and this result
-				// was larger than the reply size
-				if (destroyOnClose) {
-					// since it is not really critical `when' this command is
-					// executed, we put it on the CacheThread's queue. If we
-					// would want to do it ourselves here, a deadlock situation
-					// may occur if the HeaderList calls us.
-					connection.closeResult(id);
-				}
-			} catch (IllegalStateException e) {
-				// too late, cache thread is gone or shutting down
+				if (destroyOnClose) sendControlCommand("close " + id);
+			} catch (SQLException e) {
+				// probably a connection error...
 			}
+
+			// close the data block associated with us
+			firstBlock.close();
+			firstBlock = null;
+			if (resultBlocks != null) {
+				for (int i = 1; i < resultBlocks.size(); i++) {
+					DataBlockResponse r =
+						(DataBlockResponse)(resultBlocks.get(i));
+					if (r != null) r.close();
+				}
+				resultBlocks.clear();
+			}
+
 			closed = true;
 		}
 
 		/**
-		 * Returns whether this Header is closed
+		 * Returns whether this Response is closed
 		 *
-		 * @return whether this Header is closed
+		 * @return whether this Response is closed
 		 */
 		boolean isClosed() {
 			return(closed);
@@ -1951,23 +1554,144 @@ public class MonetConnection implements Connection {
 			super.finalize();
 		}
 	}
+	// }}}
+	
+	/**
+	 * The DataBlockResponse is tabular data belonging to a
+	 * ResultSetResponse.  Tabular data from the server typically looks
+	 * like:
+	 * <pre>
+	 * [ "value",	56	]
+	 * </pre>
+	 * where each column is separated by ",\t" and each tuple surrounded
+	 * by brackets ("[" and "]").  A DataBlockResponse object holds the
+	 * raw data as read from the server, in a parsed manner, ready for
+	 * easy retrieval.
+	 * <br /><br />
+	 * This object is not intended to be queried by multiple threads
+	 * synchronously. It is designed to work for one thread retrieving
+	 * rows from it.  When multiple threads will retrieve rows from this
+	 * object, it is possible for threads to get the same data.
+	 */
+	// {{{ DataBlockResponse class implementation
+	class DataBlockResponse implements Response {
+		/** The String array to keep the data in */
+		private String[] data;
+
+		/** The counter which keeps the current position in the data array */
+		private int pos;
+		/** Whether we can discard lines as soon as we have read them */
+		private boolean forwardOnly;
+
+		/**
+		 * Constructs a DataBlockResponse object
+		 * @param size the size of the data array to create
+		 * @param forward whether this is a forward only result
+		 */
+		DataBlockResponse(int size, boolean forward) {
+			pos = -1;
+			data = new String[size];
+			forwardOnly = forward;
+		}
+
+		/**
+		 * addLine adds a String of data to this object's data array.
+		 * Note that an IndexOutOfBoundsException can be thrown when an
+		 * attempt is made to add more than the original construction size
+		 * specified.
+		 * 
+		 * @param line the header line as String
+		 * @param linetype the line type according to the MAPI protocol
+		 * @return a non-null String if the line is invalid,
+		 *         or additional lines are not allowed.
+		 */
+		public String addLine(String line, int linetype) {
+			if (linetype != MonetSocketBlockMode.RESULT)
+				return("protocol violation: unexpected line in data block: " + line);
+			// add to the backing array
+			data[++pos] = line;
+
+			// all is well
+			return(null);
+		}
+
+		/**
+		 * Returns whether this Reponse expects more lines to be added
+		 * to it.
+		 *
+		 * @return true if a next line should be added, false otherwise
+		 */
+		public boolean wantsMore() {
+			// remember: pos is the value already stored
+			return(pos + 1 < data.length);
+		}
+
+		/**
+		 * Indicates that no more header lines will be added to this
+		 * Response implementation.  In most cases this is a redundant
+		 * operation because the data array is full.  However... it can
+		 * happen that this is NOT the case!
+		 *
+		 * @throws SQLException if not all rows are filled
+		 */
+		public void complete() throws SQLException {
+			if ((pos + 1) != data.length) throw
+				new SQLException("Inconsistent state detected!  Current block capacity: " + data.length + ", block usage: " + (pos + 1) + ".  Did MonetDB send what it promised to?");
+		}
+
+		/**
+		 * Instructs the Response implementation to close and do the
+		 * necessary clean up procedures.
+		 *
+		 * @throws SQLException
+		 */
+		public void close() {
+			// feed all rows to the garbage collector
+			for (int i = 0; i < data.length; i++) data[i] = null;
+		}
+
+		/**
+		 * Retrieves the required row.  Warning: if the requested rows
+		 * is out of bounds, an IndexOutOfBoundsException will be
+		 * thrown.
+		 *
+		 * @param line the row to retrieve
+		 * @return the requested row as String
+		 */
+		String getRow(int line) {
+			if (forwardOnly) {
+				String ret = data[line];
+				data[line] = null;
+				return(ret);
+			} else {
+				return(data[line]);
+			}
+		}
+	}
+	// }}}
 
 	/**
-	 * The AffectedRowsHeader represents an update or schema message.
+	 * The AffectedRowsResponse represents an update or schema message.
 	 * It keeps an additional count field that represents the affected
 	 * rows for update statements, and a success flag (negative numbers,
-	 * actually) for schema messages.
+	 * actually) for schema messages.<br />
+	 * <tt>&amp;2 af</tt>
 	 */
-	class AffectedRowsHeader implements Header {
+	// {{{ AffectedRowsResponse class implementation
+	class AffectedRowsResponse implements Response {
 		public final int count;
 		
-		public AffectedRowsHeader(int cnt) {
+		public AffectedRowsResponse(int cnt) {
 			// fill the blank final
 			this.count = cnt;
 		}
 
-		public void addHeader(String line) throws SQLException {
-			throw new SQLException("Header lines are not supported for a AffectedRowsHeader");
+		public String addLine(String line, int linetype) {
+			return("Header lines are not supported for an AffectedRowsResponse");
+		}
+
+		public boolean wantsMore() {
+			return(false);
 		}
 
 		public void complete() {
@@ -1978,32 +1702,33 @@ public class MonetConnection implements Connection {
 			// nothing to do here...
 		}
 	}
+	// }}}
 
 	/**
-	 * The AutoCommitHeader represents a transaction message.  It stores
-	 * (a change in) the server side auto commit mode.
+	 * The AutoCommitResponse represents a transaction message.  It
+	 * stores (a change in) the server side auto commit mode.<br />
+	 * <tt>&amp;3 (t|f)</tt>
 	 */
-	class AutoCommitHeader extends AffectedRowsHeader {
+	// {{{ AutoCommitResponse class implementation
+	class AutoCommitResponse extends AffectedRowsResponse {
 		public final boolean autocommit;
 		
-		public AutoCommitHeader(boolean ac) {
+		public AutoCommitResponse(boolean ac) {
 			super(Statement.SUCCESS_NO_INFO);
 			// fill the blank final
 			this.autocommit = ac;
 		}
 	}
+	// }}}
 
 	/**
-	 * A list of Header objects.  Headers are added to this list till the
-	 * setComplete() method is called.  This allows users of this HeaderList
-	 * to determine whether more Headers can be added or not.  Upon add or
-	 * completion, the object itself is notified, so a user can use this object
-	 * to wait on when figuring out whether a new Header is available.
+	 * A list of Response objects.  Responses are added to this list.
+	 * Methods of this class are not synchronized.  This is left as
+	 * responsibility to the caller to prevent concurrent access.
 	 */
-	class HeaderList {
-		/** The query or query list that resulted in this HeaderList */
-		final String query;
-		/** The cache size (number of rows in a RawResults object) */
+	// {{{ ResponseList class implementation
+	class ResponseList {
+		/** The cache size (number of rows in a DataBlockResponse object) */
 		final int cachesize;
 		/** The maximum number of results for this query */
 		final int maxrows;
@@ -2011,16 +1736,17 @@ public class MonetConnection implements Connection {
 		final int rstype;
 		/** The ResultSet concurrency to produce */
 		final int rsconcur;
-		/** The sequence number of this HeaderList */
+		/** The sequence number of this ResponseList */
 		final int seqnr;
-		/** Whether there are more Headers to come or not */
-		private boolean complete;
-		/** A list of the Headers associated with the query,
+		/** A list of the Responses associated with the query,
 		 *  in the right order */
-		private List headers;
+		private List responses;
+		/** A map of ResultSetResponses, used for additional
+		 *  DataBlockResponse mapping */
+		private Map rsresponses;
 
-		/** The current header returned by getNextHeader() */
-		private int curHeader;
+		/** The current header returned by getNextResponse() */
+		private int curResponse;
 		/** The errors produced by the query */
 		private String error;
 
@@ -2029,157 +1755,317 @@ public class MonetConnection implements Connection {
 		 * or List.  An SQLException is thrown if another object
 		 * instance is supplied.
 		 *
-		 * @param query the query that is the 'cause' of this HeaderList
 		 * @param cachesize overall cachesize to use
 		 * @param maxrows maximum number of rows to allow in the set
 		 * @param rstype the type of result sets to produce
 		 * @param rsconcur the concurrency of result sets to produce
 		 */
-		HeaderList(
-				String query,
+		ResponseList(
 				int cachesize,
 				int maxrows,
 				int rstype,
-				int rsconcur)
-			throws SQLException
-		{
-			this.query = query;
+				int rsconcur
+		) throws SQLException {
 			this.cachesize = cachesize;
 			this.maxrows = maxrows;
 			this.rstype = rstype;
 			this.rsconcur = rsconcur;
-			complete = false;
-			headers = new ArrayList();
-			curHeader = -1;
+			responses = new ArrayList();
+			curResponse = -1;
 			error = "";
 			seqnr = MonetConnection.seqCounter++;
 		}
 
-
-		/** Sets the complete flag to true and notifies this object. */
-		synchronized void setComplete() {
-			complete = true;
-			this.notify();
-		}
-
-		/** Adds a Header to this object and notifies this object. */
-		synchronized void addHeader(Header header) {
-			headers.add(header);
-			this.notify();
-		}
-
 		/**
-		 * Retrieves the number of Headers currently in this list.
+		 * Retrieves the next available response, or null if there are
+		 * no more responses.
 		 *
-		 * @return the number of Header objects in this list
+		 * @return the next Response available or null
 		 */
-		synchronized int getSize() {
-			return(headers.size());
-		}
-
-		/**
-		 * Returns whether this HeaderList is completed.
-		 *
-		 * @return whether this HeaderList is completed
-		 */
-		synchronized boolean isCompleted() {
-			return(complete);
-		}
-
-		/**
-		 * Returns the query.
-		 * 
-		 * @return the query
-		 */
-		String query() {
-			return(query);
-		}
-
-		/**
-		 * Retrieves the requested Header.
-		 *
-		 * @return the Header in this list at position i
-		 */
-		private synchronized Header getHeader(int i) {
-			return((Header)(headers.get(i)));
-		}
-
-		/**
-		 * Retrieves the next available header, or null if there are no next
-		 * headers to come.
-		 *
-		 * @return the next Header available or null
-		 */
-		synchronized Header getNextHeader() throws SQLException {
-
-			curHeader++;
-			while(curHeader >= getSize() && !isCompleted()) {
-				try {
-					this.wait();
-				} catch (InterruptedException e) {
-					// hmmm... recheck to see why we were woken up
-				}
-			}
-
-			if (error != "") throw new SQLException(error);
-
-			if (curHeader >= getSize()) {
-				// header is obviously completed so, there are no more headers
+		Response getNextResponse() throws SQLException {
+			curResponse++;
+			if (curResponse >= responses.size()) {
+				// ResponseList is obviously completed so, there are no
+				// more responses
 				return(null);
 			} else {
-				// return this header
-				return(getHeader(curHeader));
+				// return this response
+				return((Response)(responses.get(curResponse)));
 			}
 		}
 
-		/** Adds an error to the pile of errors for this object */
-		synchronized void addError(String error) {
-			this.error += error + "\n";
-		}
-
 		/**
-		 * Closes the Header at index i, if not null
+		 * Closes the Reponse at index i, if not null.
 		 *
 		 * @param i the index position of the header to close
 		 */
-		private synchronized void closeHeader(int i) {
-			if (i < 0 || i >= getSize()) return;
-			Header tmp = getHeader(i);
+		void closeResponse(int i) {
+			if (i < 0 || i >= responses.size()) return;
+			Response tmp = (Response)(responses.get(i));
 			if (tmp != null) tmp.close();
 		}
 
 		/**
-		 * Closes the current header
+		 * Closes the current response.
 		 */
-		synchronized void closeCurrentHeader() {
-			closeHeader(curHeader);
+		void closeCurrentResponse() {
+			closeResponse(curResponse);
 		}
 
 		/**
-		 * Closes the current and previous headers
+		 * Closes the current and previous responses.
 		 */
-		synchronized void closeCurOldHeaders() {
-			for (int i = curHeader; i >= 0; i--) {
-				closeHeader(i);
+		void closeCurOldResponses() {
+			for (int i = curResponse; i >= 0; i--) {
+				closeResponse(i);
 			}
 		}
 
 		/**
-		 * Closes this HeaderList by closing all the Headers in this
-		 * HeaderList.
+		 * Closes this ResponseList by closing all the Responses in this
+		 * ResponseList.
 		 */
-		synchronized void close() {
-			for (int i = 0; i < headers.size(); i++) {
-				getHeader(i).close();
+		void close() {
+			for (int i = 0; i < responses.size(); i++) {
+				closeResponse(i);
 			}
 		}
-
 
 		protected void finalize() throws Throwable {
 			close();
 			super.finalize();
 		}
+
+		/**
+		 * Executes the query contained in this ResponseList, and
+		 * stores the Responses resulting from this query in this
+		 * ResponseList.
+		 *
+		 * @throws SQLException if a database error occurs
+		 */
+		void processQuery(String query) throws SQLException {
+			executeQuery(queryTempl, query);
+		}
+
+		/**
+		 * Internal executor of queries.
+		 *
+		 * @param templ the template to fill in
+		 * @param the query to execute
+		 * @throws SQLException if a database error occurs
+		 */
+		private void executeQuery(String[] templ, String query)
+			throws SQLException
+		{
+			boolean sendThreadInUse = false;
+
+			try {
+				// make sure we're ready to send query; read data till we
+				// have the prompt it is possible (and most likely) that we
+				// already have the prompt and do not have to skip any
+				// lines.  Ignore errors from previous result sets.
+				monet.waitForPrompt();
+
+				int size;
+				// {{{ set reply size
+				/**
+				 * Change the reply size of the server.  If the given
+				 * value is the same as the current value known to use,
+				 * then ignore this call.  If it is set to 0 we get a
+				 * prompt after the server sent it's header.
+				 */
+				size = cachesize == 0 ? DEF_FETCHSIZE : cachesize;
+				size = maxrows != 0 ? Math.min(maxrows, size) : size;
+				// don't do work if it's not needed
+				if (lang == LANG_SQL && size != curReplySize && templ != commandTempl) {
+					sendIndependantCommand("SET reply_size = " + size);
+
+					// store the reply size after a successful change
+					curReplySize = size;
+				}
+				// }}} set reply size
+
+				// If the query is larger than the TCP buffer size, use a
+				// special send thread to avoid deadlock with the server due
+				// to blocking behaviour when the buffer is full.  Because
+				// the server will be writing back results to us, it will
+				// eventually block as well when its TCP buffer gets full,
+				// as we are blocking an not consuming from it.  The result
+				// is a state where both client and server want to write,
+				// but block.
+				if (query.length() > MonetSocketBlockMode.BLOCK) {
+					// get a reference to the send thread
+					if (sendThread == null) sendThread = new SendThread(monet);
+					// tell it to do some work!
+					sendThread.runQuery(templ, query);
+					sendThreadInUse = true;
+				} else {
+					// this is a simple call, which is a lot cheaper and will
+					// always succeed for small queries.
+					monet.writeLine(templ, query);
+				}
+
+				// go for new results
+				String tmpLine = monet.readLine();
+				int linetype = monet.getLineType();
+				Response res = null;
+				int lastState = linetype;
+				while (linetype != MonetSocketBlockMode.PROMPT1) {
+					// each response should start with a start of header
+					// (or error)
+					switch (linetype) {
+						case MonetSocketBlockMode.SOHEADER:
+							// make the response object, and fill it
+							// {{{ soh line parsing
+							// parse the start of header line
+							CharBuffer soh = CharBuffer.wrap(tmpLine);
+							soh.get();	// skip the &
+							try {
+								switch (soh.get()) {
+									default:
+										throw new java.text.ParseException("protocol violation: unknown header", 1);
+									case Q_PARSE:
+										throw new java.text.ParseException("Q_PARSE header not allowed here", 1);
+									case Q_TABLE:
+									case Q_PREPARE: {
+										soh.get();	// skip space
+										int id = parseNumber(soh);
+										int tuplecount = parseNumber(soh);
+										int columncount = parseNumber(soh);
+										int rowcount = parseNumber(soh);
+										res = new ResultSetResponse(
+												id,
+												tuplecount,
+												columncount,
+												rowcount,
+												this,
+												seqnr
+												);
+										// only add this resultset to
+										// the hashmap if can possibly
+										// have an additional datablock
+										if (rowcount < tuplecount) {
+											if (rsresponses == null)
+												rsresponses = new HashMap();
+											rsresponses.put(
+													new Integer(id),
+													res
+											);
+										}
+									} break;
+									case Q_UPDATE:
+										soh.get();	// skip space
+										res = new AffectedRowsResponse(
+												parseNumber(soh)	// count
+												);
+										break;
+									case Q_SCHEMA:
+										res = new AffectedRowsResponse(
+												Statement.SUCCESS_NO_INFO
+												);
+										break;
+									case Q_TRANS:
+										soh.get();	// skip space
+										if (soh.position() == soh.length()) throw
+											new java.text.ParseException("unexpected end of string", soh.position() - 1);
+										boolean ac = soh.get() == 't' ? true : false;
+										if (autoCommit && ac) {
+											addWarning("Server enabled auto commit " +
+													"mode while local state " +
+													"already was auto commit."
+													);
+										}
+										autoCommit = ac;
+										// note: the use of a special header
+										// here is not really clear.  Maybe
+										// ditch it and use
+										// AffectedRowsResponse (which
+										// is a superclass of
+										// AutoCommitResponse anyway).
+										res = new AutoCommitResponse(
+												ac
+												);
+									break;
+									case Q_BLOCK:
+										// a new block of results for a
+										// response...
+									break;
+								}
+							} catch (java.text.ParseException e) {
+								error = "error while parsing start of header:\n" +
+									e.getMessage() +
+									" found: '" + soh.get(e.getErrorOffset()) + "'" +
+									" in: \"" + tmpLine + "\"" +
+									" at pos: " + e.getErrorOffset();
+								// flush all the rest
+								monet.waitForPrompt();
+								break;
+							}
+							// }}} soh line parsing
+
+							// here we have a res object, which
+							// we can start filling
+							while (res.wantsMore()) {
+								error = res.addLine(
+										monet.readLine(),
+										monet.getLineType()
+								);
+								if (error != null) {
+									// right, some protocol violation,
+									// skip the rest of the result
+									monet.waitForPrompt();
+									linetype = monet.getLineType();
+									break;
+								}
+							}
+							if (error != null) break;
+							responses.add(res);
+
+							// read the next line (can be prompt, new
+							// result, error, etc.) before we start the
+							// loop over
+							tmpLine = monet.readLine();
+							linetype = monet.getLineType();
+						break;
+						default:	// Yeah... in Java this is correct!
+							// we have something we don't
+							// expect/understand, let's make it an error
+							// message
+							tmpLine = "!protocol violation, unexpected line: " + tmpLine;
+						case MonetSocketBlockMode.ERROR:
+							// read everything till the prompt (should be
+							// error) we don't know if we ignore some
+							// garbage here... but the log should reveal
+							// that
+							error = monet.waitForPrompt();
+							if (error != null) {
+								error = tmpLine.substring(1) + "\n" + error;
+							} else {
+								error = tmpLine.substring(1);
+							}
+						break;
+					}
+				}
+
+				// if we used the sendThread, make sure it has finished
+				if (sendThreadInUse) {
+					String tmp = sendThread.getErrors();
+					if (tmp != null) {
+						if (error == null) {
+							error = tmp;
+						} else {
+							error += tmp;
+						}
+					}
+				}
+				if (error != null) throw new SQLException(error.trim());
+			} catch (IOException e) {
+				closed = true;
+				throw new SQLException(e.getMessage() + " (Mserver still alive?)");
+			}
+		}
 	}
+	// }}}
 
 	/**
 	 * A thread to send a query to the server.  When sending large
@@ -2197,6 +2083,7 @@ public class MonetConnection implements Connection {
 	 * CacheThread) will use this thread, so costly locking mechanisms
 	 * can be avoided.
 	 */
+	// {{{ SendThread class implementation
 	class SendThread extends Thread {
 		/** The state WAIT represents this thread to be waiting for
 		 *  something to do */
@@ -2204,14 +2091,15 @@ public class MonetConnection implements Connection {
 		/** The state QUERY represents this thread to be executing a query */
 		private final static int QUERY = 1;
 
-		private HeaderList hdrl;
+		private String[] templ;
+		private String query;
 		private MonetSocketBlockMode conn;
 		private String error;
 		private int state = WAIT;
 
 		/**
-		 * Constructor which immediately starts this thread and sets it into
-		 * daemon mode.
+		 * Constructor which immediately starts this thread and sets it
+		 * into daemon mode.
 		 *
 		 * @param monet the socket to write to
 		 */
@@ -2239,7 +2127,7 @@ public class MonetConnection implements Connection {
 					// we issue notify here, so incase we get blocked on IO
 					// the thread that waits on us in runQuery can continue
 					this.notify();
-					conn.writeLine(queryTempl, hdrl.query());
+					conn.writeLine(templ, query);
 				} catch (IOException e) {
 					error = e.getMessage();
 				}
@@ -2253,19 +2141,21 @@ public class MonetConnection implements Connection {
 
 		/**
 		 * Starts sending the given query over the given socket.  Beware
-		 * that the thread should be finished (assured by calling
+		 * that the thread should be finished (can be assured by calling
 		 * throwErrors()) before this method is called!
 		 *
-		 * @param hdrl a HeaderList containing the query to send
+		 * @param templ the query template
+		 * @param query the query itself
 		 * @throws SQLException if this SendThread is already in use
 		 */
-		public synchronized void runQuery(HeaderList hdrl) 
+		public synchronized void runQuery(String[] templ, String query) 
 			throws SQLException
 		{
 			if (state != WAIT) throw
 				new SQLException("SendThread already in use!");
 
-			this.hdrl = hdrl;
+			this.templ = templ;
+			this.query = query;
 
 			// let the thread know there is some work to do
 			state = QUERY;
@@ -2285,18 +2175,11 @@ public class MonetConnection implements Connection {
 		}
 
 		/**
-		 * Throws errors encountered during the sending process or about
-		 * the current state of the thread.
+		 * Returns errors encountered during the sending process.
 		 *
-		 * @throws AssertionError (note: Error) if this thread is not
-		 *         finished at the time of calling this method (should
-		 *         theoretically never happen, since this method should
-		 *         never be called before a prompt is seen (and hence
-		 *         the full query was sent))
-		 * @throws SQLException in case an (IO) error occurred while
-		 *         sending the query to the server.
+		 * @return the errors or null if none
 		 */
-		public synchronized void throwErrors() throws SQLException {
+		public synchronized String getErrors() {
 			// make sure the thread is in WAIT state, not QUERY
 			while (state != WAIT) {
 				try {
@@ -2305,9 +2188,10 @@ public class MonetConnection implements Connection {
 					// just try again
 				}
 			}
-			if (error != null) throw new SQLException(error);
+			return (error);
 		}
 	}
+	// }}}
 }
 
 // vim: foldmethod=marker:

@@ -60,9 +60,6 @@ final public class MonetDriver implements Driver {
 	/** MonetDB default port to connect to */
 	private static final String PORT = "@JDBC_DEF_PORT@";
 
-	/** Do we connect with blockmode by default or not */
-	private static final String BLOCKMODE = "@JDBC_DEF_BLOCKMODE@";
-
 
 	// initialize this class: register it at the DriverManager
 	// Chapter 9.2 from Sun JDBC 3.0 specification
@@ -116,7 +113,6 @@ final public class MonetDriver implements Driver {
 		Properties props = new Properties();
 		// set the optional properties and their defaults here
 		props.put("port", PORT);
-		props.put("blockmode", BLOCKMODE);
 		props.put("debug", "false");
 		props.put("language", "sql");	// mil, mal, sql, xquery, whatever
 
@@ -225,11 +221,6 @@ final public class MonetDriver implements Driver {
 		prop = new DriverPropertyInfo("language", "sql");
 		prop.required = false;
 		prop.description = "What language to use for MonetDB conversations (sql/xquery)";
-		props.add(prop);
-
-		prop = new DriverPropertyInfo("native_prepared_statements", "true");
-		prop.required = false;
-		prop.description = "Whether server side prepared statements (true) or a Java implementation (false) should be used";
 		props.add(prop);
 
 		DriverPropertyInfo[] dpi = new DriverPropertyInfo[props.size()];

@@ -1,8 +1,8 @@
 RELEASE NOTES
-MonetDB JDBC driver version 1.2 (Blunt+)
+MonetDB JDBC driver version 1.3 (Spur_pre1)
 Fabian Groffen <Fabian.Groffen@cwi.nl>
 
-Release date: 2005-05-24
+Release date: 2006-01-09
 
 This JDBC driver is designed for use with MonetDB, a main-memory
 database.  For more information see http://monetdb.cwi.nl/.

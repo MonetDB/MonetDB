@@ -56,7 +56,7 @@ public class MonetResultSet implements ResultSet {
 
 	// a blank final is immutable once assigned in the constructor
 	/** A Header to retrieve lines from */
-	private final MonetConnection.ResultSetHeader header;
+	private final MonetConnection.ResultSetResponse header;
 	/** The names of the columns in this ResultSet */
 	private final String[] columns;
 	/** The MonetDB types of the columns in this ResultSet */
@@ -85,7 +85,7 @@ public class MonetResultSet implements ResultSet {
 	 */
 	MonetResultSet(
 		Statement statement,
-		MonetConnection.ResultSetHeader header)
+		MonetConnection.ResultSetResponse header)
 		throws SQLException
 	{
 		this.statement = statement;
