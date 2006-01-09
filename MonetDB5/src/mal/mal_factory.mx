@@ -189,7 +189,7 @@ barrier outer:= j<cnt;
     yield chunk;
     redo loop:= j<cnt;
 exit outer;
-    # sent last portion
+    # send last portion
     chunk:= slice(L,i,cnt);
     yielD chunk;
     return nil;
