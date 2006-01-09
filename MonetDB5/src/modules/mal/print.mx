@@ -290,7 +290,6 @@ IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, str hd, str tl,
 
 	if (tl)
 		stream_printf(fp, "%s", tl);
-	stream_flush(fp);
 	return MAL_SUCCEED;
 }
 
@@ -338,7 +337,6 @@ IOprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ATOMprint(TYPE_str, *(str *) val, GDKout);
 	else
 		ATOMprint(tpe, val, GDKout);
-	stream_flush(GDKout);
 	return MAL_SUCCEED;
 }
 
@@ -369,7 +367,6 @@ IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int orde
 	}
 	/*if(printhead) */ nbats++;
 	BATmultiprintf(f, nbats, piv, printhead, order, printorder);
-	stream_flush(f);
 	for (k = 0; k < nbats - 1; k++)
 		BBPunfix(piv[k]->batCacheid);
 	return MAL_SUCCEED;
@@ -524,7 +521,6 @@ str IOprint_formatted_@1(int *ret, ptr fmt, @1 *s){
 	if( *s == @1_nil) 
 		return IOprint_formatted_nil(fd,* (str*) fmt, '@2');
 	@:formatConversion(@2,*s)@
-	stream_flush(fd);
 	return MAL_SUCCEED;
 }
 @c
@@ -607,7 +603,6 @@ IOprint_formatted_lng(int *ret, str *format, lng *val)
 		} else
 			stream_printf(fd, "%c", *c);
 	}
-	stream_flush(fd);
 	return MAL_SUCCEED;
 }
 

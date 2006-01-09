@@ -465,7 +465,6 @@ MILline(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mal_unquote(nme);
 	len = strlen(nme);
 	stream_printf(GDKout, "#%s%s", nme, (nme[len - 1] == '\n' ? "" : "\n"));
-	stream_flush(GDKout);
 	return MAL_SUCCEED;
 }
 

@@ -869,9 +869,9 @@ The default action is to read information from an ascii-stream
 one line at a time. This is the preferred mode for reading
 from terminal.
 @-
-The next statement block is to be read. Sent a prompt to warn
+The next statement block is to be read. Send a prompt to warn
 the front-end to issue the request.
-@= sentPrompt
+@= sendPrompt
 	if(c->promptlength>=0) { 
 		if (!isa_block_stream(c->fdout))
 			stream_write(c->fdout,c->prompt,c->promptlength,1); 
@@ -896,8 +896,8 @@ int readClient(Client c){
 		assert(in->pos == in->len);
 
 		if (in->eof || !isa_block_stream(in->s)) {
-			@:sentPrompt@
-				in->eof = 0;
+			@:sendPrompt@
+			in->eof = 0;
 		}
 		while ((rd = bstream_next(in)) > 0 && !in->eof) {
 			if (!in->mode)/* read one line at a time in line mode */

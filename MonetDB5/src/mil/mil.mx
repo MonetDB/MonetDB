@@ -303,7 +303,6 @@ to check the MAL program.
 	else
 		printFunction(c->fdout, c->curprg->def, LIST_MAL_ALL);
 #endif
-	stream_flush(c->fdout);
 	be->parsetime = (long) (GDKusec() - T0);
 	return msg;
 }

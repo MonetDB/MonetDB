@@ -394,17 +394,16 @@ DCstartDelivery(DCpump p, stream *bs)
 	do {
 		if ((cnt = BATcount(p->private[0]))) {
 #ifdef DEBUG_DC_EMITTER
-			stream_printf(GDKout, "sent tuples %d\n", cnt);
+			stream_printf(GDKout, "send tuples %d\n", cnt);
 #endif
 			BATmultiprintf(bs, p->cols + 1, p->private, 0, 0, 0);
-			stream_flush(bs);
 			if (stream_errnr(bs))
 				 break;
 
 			p->received += cnt;
 			p->calls++;
 			if (p->drain) {
-				/* safe the information sent out */
+				/* save the information sent out */
 			}
 			for (i = 0; i < p->cols; i++)
 				BATclear(p->private[i]);
