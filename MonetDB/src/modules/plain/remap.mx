@@ -14,7 +14,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f lock
+@f remap
 @t BAT Page-Wise Remapping 
 @v 1.0
 @a Peter Boncz
@@ -52,12 +52,21 @@ proc swizzle(oid o, BAT[void,oid] map) : oid {
 
 #define REMAP_PAGE_BITS 16
 #define REMAP_PAGE_SIZE (1<<REMAP_PAGE_BITS)
-#define REMAP_PAGE_MASK (REMAP_PAGE_MASK-1)
+#define REMAP_PAGE_MASK (REMAP_PAGE_SIZE-1)
+
+#ifdef HAVE_RESTRICT
+#define __r	restrict
+#else
+#ifdef HAVE___RESTRICT__
+#define __r	__restrict__
+#else
+#define __r
+#endif
+#endif
 
 int remap_bat(BAT **res, BAT *b, BAT *map) {
 	size_t pgsz = REMAP_PAGE_SIZE*BUNsize(b), zz = 0, yy = 0, xx, cnt = BATcount(map);
-	char *src = BUNfirst(b);
-	oid prev = OID_MAX;
+	oid prev = GDK_oid_max;
 	BUN p, q;
 	BAT *bn;
 
@@ -65,9 +74,9 @@ int remap_bat(BAT **res, BAT *b, BAT *map) {
 		GDKerror("BATremap: %s must have a real void head column.\n", BBP_logical(b->batCacheid));
 		return GDK_FAIL;
 	}
-	if (BATcount(b) & REMAP_PAGE_MASK)) {
+	if (BATcount(b) & REMAP_PAGE_MASK) {
 		GDKerror("BATremap: BATcount(%s) = %lld (not a multiple of %d).\n",
-				BBP_logical(b->batCacheid, (lng) BATcount(b), REMAP_PAGE_SIZE);
+				BBP_logical(b->batCacheid), (lng) BATcount(b), REMAP_PAGE_SIZE);
 		return GDK_FAIL;
 	}
 	*res = bn = BATcreatedesc(b->htype, b->ttype, TRUE); 
@@ -82,9 +91,9 @@ int remap_bat(BAT **res, BAT *b, BAT *map) {
 			BBPclear(bn->batCacheid);
 			return GDK_FAIL;
 		}
-		if (ATOMvarsize(bn->ttype)) {
-			bn->theap = GDKmalloc(sizeof(Heap)) 
-			if (bn->theap == NULL || HEAPalloc(bn->theap, bn->theap.free*BATMARGIN, 1) < 0) {
+		if (ATOMvarsized(bn->ttype)) {
+			bn->theap = GDKmalloc(sizeof(Heap));
+			if (bn->theap == NULL || HEAPalloc(bn->theap, bn->theap->free*BATMARGIN, 1) < 0) {
 				if (bn->theap) HEAPfree(bn->theap);
 				else GDKfree(bn->theap);
 				HEAPfree(bn->batBuns);
@@ -114,13 +123,14 @@ int remap_bat(BAT **res, BAT *b, BAT *map) {
 
 @= swizzle
 	for(i=0; i<n; i+=@1) {
-		size_t idx = src[i] >> @2;
+		size_t idx = src[i] >> (@2);
 		if (idx >= m) return 0;
 		dst[i] = (map[idx] << REMAP_PAGE_BITS) | (idx & REMAP_PAGE_MASK);
 	}
 @c
 static int swizzle(oid*__r dst, oid*__r src, oid*__r map, size_t lo, size_t n, size_t m, size_t delta, size_t shift) {
-	ssize_t p, i, j, k;
+	/* FIXME: since "lo" is not used at all, could we remove it completely ?? */
+	size_t p, i, j, k;
 	if (delta == 0 && n) {
 		if ((p = (n-1) >> REMAP_PAGE_BITS) >= m) return 0;
 		if ((shift = REMAP_PAGE_BITS-shift) == 0) {
@@ -150,7 +160,7 @@ static int swizzle(oid*__r dst, oid*__r src, oid*__r map, size_t lo, size_t n, s
 
 int swizzle_bat(BAT **res, BAT *b, BAT *map) {
 	BAT *bn = b;
-	if (map->hseqbase)) {
+	if (map->hseqbase) {
 		GDKerror("swizzle_bat: map %s should be a void column starting at 0@0.\n", 
 			BBP_logical(map->batCacheid)); 
 		return GDK_FAIL;
@@ -173,7 +183,7 @@ int swizzle_bat(BAT **res, BAT *b, BAT *map) {
 			b->hseqbase,
 			BATcount(b),
 			BATcount(map),
-			BATdense(b)?0:BUNsize(b)/sizeof(oid),
+			/* FIXME: should this be BAThdense or BATtdense !?? */ BATdense(b)?0:BUNsize(b)/sizeof(oid),
 			17 - BUNsize(map)/sizeof(oid)))
 		{
 			bn->batBuns->free = sizeof(oid) * BATcount(b);
@@ -208,7 +218,7 @@ int remap_summary(BAT **res, BAT *delta, BAT *map, BAT *master) {
 	n = 0;
 	BATloopFast(delta,p,q,xx) {
 		oid o = *(oid*) BUNtail(delta,p);
-		oid p = o >> REMAP_PAGE_SHIFT];
+		oid p = o >> REMAP_PAGE_SHIFT; /* FIXME: shouldn't this be REMAP_PAGE_BITS !?? */
 		if (oidmap[p] != oid_nil) {  
 			oidmap[p] = o;
 			n++;
@@ -226,7 +236,7 @@ int remap_summary(BAT **res, BAT *delta, BAT *map, BAT *master) {
 	for(i=0; n && i<m; i++) {
 		if (oidmap[i] != oid_nil) {
 			/* get page id */
-			oid p = oidmap[i] >> REMAP_PAGE_MASK; 
+			oid p = oidmap[i] >> REMAP_PAGE_MASK; /* FIXME: shouldn't this be REMAP_PAGE_BITS !?? */
 			BUNfndVOID(r,map,&p); 
 			if (r == NULL) {
 				GDKerror("remap_summary: %s contains illegal offset %lld.\n", 
@@ -235,7 +245,7 @@ int remap_summary(BAT **res, BAT *delta, BAT *map, BAT *master) {
 			}
 			/* translate oid back to that in master */
 			xx = *(oid*) BUNtail(map,r);
-			xx = (xx << REMAP_PAGE_BITS) & (o * REMAP_PAGE_MASK);
+			xx = (xx << REMAP_PAGE_BITS) & (o /* FIXME: should this be p or oidmap[i] ?? */ * REMAP_PAGE_MASK);
 
 			/* look up the BUN in the master */
 			BUNfndVOID(r,master,&xx);
