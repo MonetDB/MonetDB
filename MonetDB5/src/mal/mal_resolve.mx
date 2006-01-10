@@ -777,7 +777,7 @@ int fcnBinder(Module scope, MalBlkPtr mb, InstrPtr p){
 @-
 After the parser finishes, we have to look for semantic errors,
 such as flow of control problems and possible typeing conflicts.
-The nesting of BARRIER, THREAD and CATCH statements with their associated
+The nesting of BARRIER and CATCH statements with their associated
 flow of control primitives LEAVE and RETRY should form a valid
 hierarchy. Failure to comply is considered a structural error
 and leads to flagging the function as erroneous.

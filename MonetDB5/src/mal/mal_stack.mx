@@ -50,7 +50,7 @@ ensure we are still within safe bounds.
 
 #define STACKINCR   128
 #define MAXGLOBALS  4 * STACKINCR
-#define MAXSHARES   16
+#define MAXSHARES   2
 
 typedef struct MALSTK {
 	int stksize;
@@ -59,8 +59,8 @@ typedef struct MALSTK {
 	short keepAlive;	/* do not garbage collect when set */
 	short garbageCollect; /* stack needs garbage collection */
 	MT_Lock stklock;	/* used for parallel processing */
-	int shares;		/* number of processes on this stack */
-	int childs[MAXSHARES];
+	int shares;			/* number of processes locked onto this stack */
+	int childs[MAXSHARES]; /* not used */
 	char cmd;		/* debugger communication */
 	int pcup;		/* saved pc upon a recursive all */
 	struct MALSTK *up;	/* stack trace list */

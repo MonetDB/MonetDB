@@ -218,7 +218,6 @@ void chkFlow(MalBlkPtr mb)
 		switch( p->barrier){
 		case BARRIERsymbol:
 		case CATCHsymbol:
-		case THREADsymbol:
 			if(btop== DEPTH){
 			    GDKerror("Too many nested MAL blocks\n");
 			    mb->errors++;
@@ -273,7 +272,6 @@ void chkFlow(MalBlkPtr mb)
 			if(j>=0) btop= j; else btop--;
 
 			/* retrofit LEAVE/REDO instructions */
-			/* and check their illegal use in THREAD block*/
 			stmt[btop]->jump= i;
 			for(k=pc[btop]; k<i; k++){
 			    InstrPtr p1= getInstrPtr(mb,k);

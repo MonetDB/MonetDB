@@ -67,7 +67,6 @@ mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc,
 mal_export str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb, ValPtr argv[], char debug);
 mal_export str runMALsequence( malTask *task);
 mal_export void runMALtask(malTask *task);
-mal_export void waitForChildren(MalStkPtr stk);
 mal_export void garbageElement(ValPtr v);
 mal_export void garbageCollector(MalBlkPtr mb, MalStkPtr stk);
 mal_export void garbageCollectAll(MalBlkPtr mb, MalStkPtr stk);
@@ -294,7 +293,6 @@ pattern operators to deal with it.
 	if(stk->cmd  && env && stk->cmd!='f') stk->cmd = env->cmd ;
 	ret= runMALsequence(&task);
 
-	@:waitForChildren@
 	/* pass the debug mode */
 	if(stk->cmd  && env && stk->cmd!='f') env->cmd = stk->cmd; 
 #ifdef STACKTRACE
@@ -336,7 +334,6 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 
 	ret= runMALsequence(&task);
 
-	@:waitForChildren@
 	/* pass the debug mode */
 	if(env && stk->cmd!='f') env->cmd = stk->cmd;
 #ifdef STACKTRACE
@@ -426,7 +423,6 @@ all arguments and return values.
 #endif
 		ret= runMALsequence(&task);
 
-		@:waitForChildren@
 #ifdef STACKTRACE
 		stream_printf(GDKout,"Stack after loop\n");
 		printStack(GDKout,mb,stk,0); 
@@ -447,7 +443,6 @@ all arguments and return values.
 The core of the interpreter is presented next. It takes the context information
 and starts the interpretation at the designated instruction.
 Note that the stack frame is aligned and initialized in the enclosing routine.
-This way we prepare the route for running parallel threads.
 @c
 str runMALsequence( malTask *task)
 {   
@@ -456,7 +451,6 @@ str runMALsequence( malTask *task)
 	MalStkPtr stk= task->stk;
 	MalStkPtr env= task->env;
 	InstrPtr pcicaller= task->pcicaller;
-	int childProcess= task->pci?getDestVar(task->pci):0;
 
 	ValPtr lhs,rhs,v;
 	int stkpc,i,k; 
@@ -484,7 +478,6 @@ MALrestart:
 	    @:MALinterpret@
 	}
 MALevalExit:
-	@:finishChild@
 	if( stkexception >= 0) {
 		if( ret )
 			ret= appendException(mb,mb->stop-1,
@@ -598,7 +591,6 @@ possible change in the control flow.
 	    @:barrierControl@ stkpc++;
 	    break;
 	case LEAVEsymbol:
-	    @:finishChild@
 	case REDOsymbol:
 	    v= &stk->stk[getDestVar(pci)];
 	    /* skip to end of barrier, depending on the type */
@@ -647,7 +639,6 @@ possible change in the control flow.
 	    stkpc++; 
 	    break;
 	case EXITsymbol:
-	    @:finishChild@
 	    if( getDestVar(pci) == stkexception) 
 	        stkexception = -1; 
 	    stkpc++; 
@@ -663,10 +654,6 @@ possible change in the control flow.
 	            getVarName(mb, getDestVar(pci)), 
 	            "Exception raised\n");
 	    @:skipToCatch(stkexception)@
-	    break;
-	case THREADsymbol:
-	    @:createChild@
-	    stkpc++;
 	    break;
 	case YIELDsymbol: /* to be defined */
 	    return yieldFactory( mb, pci, stkpc);
@@ -759,10 +746,6 @@ Failure leads to raise-ing an exception in the interpreter loop,
 by either looking up the relevant exception message in the module
 administration or construction of a standard string.
 Upon successfull return, we update the ValRecord with length indications.
-
-The THRDcall initiates a separate thread of control, which 
-receives requests for execution through a event-pool.
-[details later]
 
 The PATcall initiates a call which contains the MAL context.
 i.e. f(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1027,155 +1010,6 @@ may change the order/block structure. Therefore, we simple have to search
 the beginning or ensure that during chkProgram the barrier/redo/leave/catch
 jumps are re-established.
 
-@-
-@= redoControl
-	stkpc = pci->jump;
-	@:endProfile@
-	pci= getInstrPtr(mb,stkpc);
-	if( pci->barrier == THREADsymbol){
-	    /* restart thread body */
-	    stkpc++;
-	} else
-	/* semantic validity of redo stmt has been checked already */
-	/* continue re-execution of the barrier statement */
-	continue;
-@-
-@}
-@+ Parallel processing
-The MAL interpreter can be cloned to obtain parallel running threads.
-Such threads share the stackframe of the caller for data exchange.
-The consequence is that a thread may only terminate when it is
-not the parent of one or more children
-administered on a stack-frame variable.
-
-A thread block encountered in a MAL program leads to at most
-one thread instance. This is detected by setting the thread
-variable to the process id. The thread block is skipped when it
-has already been set. 
-
-A thread can be separated from its parent using the command
-thread.exec(arguments). The thread identity is being returned.
-
-Wait for all children to end. Using a timer to control malicious
-children does not work in general, because you don;t know
-what default will work. Instead, the list of children 
-threads should be accessible.
-
-Factories that encountered an exception should decrease
-the share count as well. This will terminate its
-existence.
-@{
-@-
-@= waitForChildren
-if(stk->shares) {
-	if( ret && getInstrPtr(mb,0)->token == FACTORYsymbol){
-	    printf("release stack for factory\n");
-	    shutdownFactory(mb);
-	} else
-	waitForChildren(stk);
-}
-@c
-void waitForChildren(MalStkPtr stk){
-	int i= stk->shares;
-	while(i>0 ) { 
-	    mal_set_lock(stk->stklock,"finishChild");
-	    i= stk->shares;
-	    mal_unset_lock(stk->stklock,"finishChild");
-#ifdef DEBUG_MAL_PARALLEL
-	    stream_printf(GDKout,"%d awaiting childs\n",
-	        MT_getpid());
-#endif
-	    MT_sleep_ms(1000); 
-	}
-	if( stk->stklock) 
-		MT_destroy_lock(stk->stklock);
-}
-@-
-Joining a process thread is controlled with a lock part of the stack frame
-
-@-
-@= createChild
-{   MT_Id pid;
-	malTask *task= (malTask*) GDKmalloc(sizeof(malTask));
-	ValPtr vp= &stk->stk[getDestVar(pci)];
-
-	if( vp->val.ival){
-	    /* thread already running */
-	    stkpc= pci->jump;
-	    break;
-	}
-	GDKprotect();
-	if(stk->stklock== 0 && GDKprotected) stk->stklock= MT_create_lock();
-	mal_set_lock(stk->stklock,"createChild");
-	if( stk->shares == MAXSHARES){
-	    ret= raiseException(mb,stkpc,MALexception,
-	                "too many threads\n");
-	    stkexception= findVariable(mb,"MALexception");
-	    @:exceptionHndlr@
-	    break; /* out of instruction switch */
-	} 
-	vp->val.ival = 1; /* already created, temporary identity */
-	stk->childs[stk->shares]= getDestVar(pci);
-	stk->shares++;
-	mal_unset_lock(stk->stklock,"createChild");
-	task->cntxt= cntxt; 
-	task->mb= mb; 
-	task->stk=stk; 
-	task->startpc=stkpc+1; 
-	task->stoppc = 0;
-	task->env=env;
-	task->pcicaller=pcicaller;
-	task->pci= pci;
-
-#ifdef DEBUG_MAL_PARALLEL
-	stream_printf(GDKout,"started parallel thread,");
-	stream_printf(GDKout," task->cntxt = %d\n",task->cntxt);
-	stream_printf(GDKout," task->mb = %d\n",task->mb);
-	stream_printf(GDKout," task->stk = %d\n",task->stk);
-	stream_printf(GDKout," task->startpc = %d\n", task->startpc);
-	stream_printf(GDKout," task->stoppc = %d\n", task->stoppc);
-	stream_printf(GDKout," task->env = %d\n",task->env);
-	stream_printf(GDKout," task->pcicaller = %d\n",
-	            task->pcicaller);
-	stream_printf(GDKout," task->pci = %d\n",task->pci);
-	printInstruction(GDKout, mb, pci,LIST_MAL_ALL);
-#endif
-	MT_create_thread(&pid, (void (*) (void *))runMALtask, (void*) task);
-	stkpc= pci->jump; /* search end of parallel block */
-}
-@= finishChild
-	if( childProcess && childProcess== getDestVar(pci)){
-	    int j,k,lim;
-	    mal_set_lock(stk->stklock,"finishChild");
-#ifdef DEBUG_MAL_PARALLEL
-	stream_printf(GDKout,"finish the child "
-	    "%d %s\n",childProcess, 
-	        getVarName(mb,childProcess));
-#endif
-	    lim= stk->shares;
-	    for(k=j=0;j<lim;j++)
-	    if( stk->childs[j]!= childProcess)
-	        stk->childs[k++]= stk->childs[j];
-	    else    stk->shares--;
-	    childProcess=0;
-	    mal_unset_lock(stk->stklock,"finishChild");
-#ifdef DEBUG_MAL_PARALLEL
-	stream_printf(GDKout,"finished childs in stk "
-	    "%d %d\n",stk->shares, &stk->shares);
-#endif
-	    if(stkexception != -1){
-	        /* pass exception as GDK error */
-	        GDKerror("non-catched thread exception\n");
-	    }
-	    goto MALevalExit;
-	}
-#ifdef DEBUG_MAL_PARALLEL
-	else
-	stream_printf(GDKout,"finish the child  ignored "
-	    "%d %s\n",childProcess, 
-	        getVarName(mb,childProcess));
-#endif
-@-
 @}
 @+ Exception handling
 Calling a built-in or user-defined routine may lead to an error, a

@@ -1677,11 +1677,6 @@ the information.
 				 cntrl= RETURNsymbol;
 			  }
 			  goto allLeft;
-		case 'T': case 't':
-			  if( MALkeyword(cntxt,"thread",6)){
-				 cntrl= THREADsymbol;
-			  }
-			  goto allLeft;
 		case 'Y': case 'y':
 			if( MALkeyword(cntxt,"yield",5)){
 				 cntrl= YIELDsymbol;

@@ -76,7 +76,6 @@ derived from the parser to avoid a loop in the define-structure.
 #define REDOsymbol      25
 #define LEAVEsymbol     26
 #define YIELDsymbol     27
-#define THREADsymbol    28
 #define EXITsymbol      29
 #define MAPsymbol       30
 

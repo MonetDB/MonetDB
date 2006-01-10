@@ -129,7 +129,6 @@ end main;	# 15
 [ 2606@0, "unix"	  ]
 [ 2608@0, "mdb"		  ]
 [ 2628@0, "crackers"	  ]
-[ 2641@0, "thread"	  ]
 #-------------------------#
 # help	Comment		  # name
 # str	str		  # type

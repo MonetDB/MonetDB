@@ -232,37 +232,6 @@ Where idx is an integer to denote the row in the BAT,
 hd and tl denote values of the current element.
 This scheme is more efficient 
 @{
-@+ Parallel processing
-[rethink as factory]
-The MAL interpreter supports spawning parallel workers,
-who share a common stack frame. They are considered
-cooperative and no low level transaction support
-is included to align their work.
-
-[Locking primitives should be provided]
-
-The thread code starts with a flow of control modifier @code{ thread}
-and ends with the corresponding @code{ exit}.
-The assignment of the @code{ thread} should produce an integer
-value initialized to 0, otherwise the thread is already considered
-running and its handle contains a process id.
-
-Example, the fragment below creates a parallel thread which
-dies after a few seconds. The parent threads awaits for this 
-event to happen. (See mal/Tests/tst2010.mal)
-@example
-thread  hdl;    # should be zero to start
-        printf("#Start thread with id %d\n",hdl);
-        clkticks(2);
-        printf("About to exit child\n");
-exit    hdl;
-
-        printf("Wait for child to exit too\n");
-@end example
-
-[show thread inspection routines]
-
-@-
 @+ The MAL instruction records
 The data structure to represent a MAL block is kept simple.
 It carries a sequence of MAL statements and a variable table.
@@ -352,8 +321,7 @@ typedef str (*MALfcn) ();
 typedef struct {
 	bit token;		/* instruction type */
 	bit barrier;		/* flow of control modifier takes:
-				   BARRIER, LEAVE, REDO, EXIT
-				   CATCH, RAISE, THREAD */
+				   BARRIER, LEAVE, REDO, EXIT, CATCH, RAISE*/
 	bit typechk;		/* type check status */
 	bit gc;			/* garbage control flags */
 	bit polymorphic;	/* complex type analysis */
@@ -535,8 +503,7 @@ mal_export void pushEndInstruction(MalBlkPtr mb);	/* used in src/mal/mal_parser.
 #define functionExit(X)  ((X)->token == ENDsymbol)
 
 #define blockStart(X)   ((X)->barrier && (((X)->barrier == BARRIERsymbol || \
-             (X)->barrier == CATCHsymbol || \
-             (X)->barrier == THREADsymbol)))
+             (X)->barrier == CATCHsymbol )))
 #define blockExit(X) (X)->barrier == EXITsymbol
 #define blockCntrl(X) ( (X)->barrier== LEAVEsymbol ||  \
              (X)->barrier== REDOsymbol  )
@@ -870,7 +837,6 @@ with modifier
 	case YIELDsymbol:
 	case CATCHsymbol:
 	case RAISEsymbol:
-	case THREADsymbol:
 		p->token = ASSIGNsymbol;
 		p->barrier = kind;
 		break;
@@ -2226,8 +2192,6 @@ operatorName(int i)
 		return "command";
 	case PATTERNsymbol:
 		return "pattern";
-	case THREADsymbol:
-		return "thread";
 	}
 	return "Undefined";
 }

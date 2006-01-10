@@ -92,8 +92,8 @@ end random;
 
 @- Client support
 The factory produces elements for multiple clients.
-Sharing the factory state, parallel processing,
-or even remote processing is up to the factory owner.
+Sharing the factory state or even remote processing is 
+up to the factory owner.
 They are set through properties for the factory plant.
 
 The default policy is to instantiate one shared
