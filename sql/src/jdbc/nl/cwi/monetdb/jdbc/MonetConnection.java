@@ -2038,6 +2038,7 @@ public class MonetConnection implements Connection {
 							// garbage here... but the log should reveal
 							// that
 							error = monet.waitForPrompt();
+							linetype = monet.getLineType();
 							if (error != null) {
 								error = tmpLine.substring(1) + "\n" + error;
 							} else {
