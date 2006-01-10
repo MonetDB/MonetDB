@@ -559,25 +559,44 @@ sqlstmt:
 	}
 | PREPARE 		{ mvc *m = (mvc*)parm;
 		  	  m->mode = m_prepare; 
-			  m->scanner.as = m->scanner.yycur; }
+			  m->scanner.as = m->scanner.yycur; 
+			  m->scanner.key = 0;
+			}
    sql SCOLON 		{ mvc *m = (mvc*)parm;
-		  	  m->sym = $$ = $3; YYACCEPT; }
- | SQL_EXPLAIN 		
-	sql SCOLON 	{ mvc *m = (mvc*)parm;
+		  	  m->sym = $$ = $3; YYACCEPT; 
+			}
+ | SQL_EXPLAIN 		{ mvc *m = (mvc*)parm;
 		  	  m->mode = m_explain;
 			  m->scanner.as = m->scanner.yycur; 
-		  	  m->sym = $$ = $2; YYACCEPT; }
- | SQL_PROFILE 		{ mvc *m = (mvc*)parm;
-			  m->scanner.as = m->scanner.yycur; }
+			  m->scanner.key = 0;
+			}
 	sql SCOLON 	{ mvc *m = (mvc*)parm;
+		  	  m->sym = $$ = $3; YYACCEPT; 
+			}
+ | SQL_PROFILE 		{ mvc *m = (mvc*)parm;
 		  	  m->mode = m_profile;
-		  	  m->sym = $$ = $3; YYACCEPT; }
- | SQL_DEBUG sql SCOLON 	{ mvc *m = (mvc*)parm;
+			  m->scanner.as = m->scanner.yycur; 
+			  m->scanner.key = 0;
+			}
+	sql SCOLON 	{ mvc *m = (mvc*)parm;
+		  	  m->sym = $$ = $3; YYACCEPT; 
+			}
+ | SQL_DEBUG 		{ mvc *m = (mvc*)parm;
 		  	  m->mode = m_debug;
-		  	  m->sym = $$ = $2; YYACCEPT; }
- | SQL_TRACE sql SCOLON 	{ mvc *m = (mvc*)parm;
+			  m->scanner.as = m->scanner.yycur; 
+			  m->scanner.key = 0;
+			}
+	sql SCOLON 	{ mvc *m = (mvc*)parm;
+		  	  m->sym = $$ = $3; YYACCEPT; 
+			}
+ | SQL_TRACE 		{ mvc *m = (mvc*)parm;
 		  	  m->mode = m_trace;
-		  	  m->sym = $$ = $2; YYACCEPT; }
+			  m->scanner.as = m->scanner.yycur; 
+			  m->scanner.key = 0;
+			}
+	sql SCOLON 	{ mvc *m = (mvc*)parm;
+		  	  m->sym = $$ = $3; YYACCEPT; 
+			}
  | exec SCOLON		{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = $1; YYACCEPT; }
  | /*empty*/		{ mvc *m = (mvc*)parm;
