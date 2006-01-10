@@ -399,6 +399,13 @@ infer_ocol (PFla_op_t *n)
             ocols_count (n)++;
             break;
 
+        case la_contains:
+            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)) + 1);
+            ocol_at (n, ocols_count (n)).name = n->sem.binary.res;
+            ocol_at (n, ocols_count (n)).type = aat_bln;
+            ocols_count (n)++;
+            break;
+
         /* operators without schema */
         case la_fragment:
         case la_frag_union:
@@ -714,6 +721,7 @@ infer_const (PFla_op_t *n)
         case la_empty_frag:
         case la_cond_err:
         case la_concat:
+        case la_contains:
         case la_string_join:
             break;
     }
@@ -919,6 +927,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
         case la_bool_and:
         case la_bool_or:
         case la_concat:
+        case la_contains:
             inf_icols = n->prop->icols;
 
             /* do not infer input columns if operator is not required */

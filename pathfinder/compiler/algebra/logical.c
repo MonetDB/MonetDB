@@ -2218,6 +2218,68 @@ PFla_fn_concat (const PFla_op_t *n,
     return ret;
 }
 
+/**
+ * Constructor for builtin function fn:contains
+ * (translation is similar to arithmetic operators)
+ */
+PFla_op_t *
+PFla_fn_contains (const PFla_op_t *n,
+                  PFalg_att_t res, PFalg_att_t att1, PFalg_att_t att2)
+{
+    PFla_op_t *ret;
+    unsigned int  i;
+    int           ix1 = -1;
+    int           ix2 = -1;
+    
+    assert (n);
+
+    /* verify that 'att1' and 'att2' are attributes of n ... */
+    for (i = 0; i < n->schema.count; i++) {
+        if (att1 == n->schema.items[i].name)
+            ix1 = i;                /* remember array index of att1 */
+        else if (att2 == n->schema.items[i].name)
+            ix2 = i;                /* remember array index of att2 */
+    }
+
+    /* did we find attribute 'att1' and 'att2'? */
+    if (ix1 < 0)
+        PFoops (OOPS_FATAL,
+                "attribute `%s' referenced in fn:contains "
+                "not found", PFatt_str (att1));
+    else if (ix2 < 0)
+        PFoops (OOPS_FATAL,
+                "attribute `%s' referenced in fn:contains "
+                "not found", PFatt_str (att2));
+
+    /* make sure both attributes are of type string */
+    assert (n->schema.items[ix1].type == aat_str);
+    assert (n->schema.items[ix2].type == aat_str);
+
+    /* create new binary operator node */
+    ret = la_op_wire1 (la_contains, n);
+
+    /* insert semantic value (operand attributes and result attribute)
+     * into the result
+     */
+    ret->sem.binary.att1 = att1;
+    ret->sem.binary.att2 = att2;
+    ret->sem.binary.res = res;
+
+    /* allocate memory for the result schema (schema(n) + 'res') */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from 'n' argument */
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    /* add the information on the 'res' attribute; it has the type boolean */
+    ret->schema.items[ret->schema.count - 1].type = aat_bln;
+    ret->schema.items[ret->schema.count - 1].name = res;
+
+    return ret;
+}
 
 /**
  * Constructor for builtin function fn:string-join

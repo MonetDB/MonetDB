@@ -91,6 +91,7 @@ static char *a_id[]  = {
     , [la_empty_frag]       = "EMPTY_FRAG"
     , [la_cond_err]         = "!ERROR"
     , [la_concat]           = "fn:concat"
+    , [la_contains]         = "fn:contains"
     , [la_string_join]      = "fn:string_join"
 };
 
@@ -168,6 +169,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
         , [la_empty_frag]     = "\"#E0E0E0\""
         , [la_cond_err]       = "\"#C0C0C0\""
         , [la_concat]         = "\"#C0C0C0\""
+        , [la_contains]       = "\"#C0C0C0\""
         , [la_string_join]    = "\"#C0C0C0\""
     };
 
@@ -290,6 +292,8 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
+        case la_concat:
+        case la_contains:
             PFarray_printf (dot, "%s %s:(%s, %s)", a_id[n->kind],
                             PFatt_str (n->sem.binary.res),
                             PFatt_str (n->sem.binary.att1),
@@ -506,7 +510,6 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
         case la_fragment:
         case la_frag_union:
         case la_empty_frag:
-        case la_concat:
         case la_string_join:
             PFarray_printf (dot, "%s", a_id[n->kind]);
             break;

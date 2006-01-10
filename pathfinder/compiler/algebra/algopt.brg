@@ -116,7 +116,8 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  empty_frag     =  73
 %term  cond_err       =  80
 %term  concat         = 100
-%term  string_join    = 101
+%term  contains       = 101
+%term  string_join    = 102
 
 %%
 
@@ -180,7 +181,8 @@ Rel:    roots_ (merge_adjacent (Frag, Rel))       =  77 (10);
 
 Rel:    cond_err (Rel, Rel)                       =  80 (10);
 Rel:    concat (Rel)                              =  81 (10);
-Rel:    string_join (Rel, Rel)                    =  82 (10);
+Rel:    contains (Rel)                            =  82 (10);
+Rel:    string_join (Rel, Rel)                    =  83 (10);
 
 Rel:    EmptyRel                                  =  90  (0);
 
@@ -744,8 +746,8 @@ reduce (PFla_op_t *p, int goalnt)
 
         /* Rel:    difference (Rel, EmptyRel) */
         case 25:
-            /* return right child */
-            *p = *(R(p));
+            /* return left child */
+            *p = *(L(p));
             break;
 
         /* Rel:    distinct (Rel) */
@@ -773,6 +775,8 @@ reduce (PFla_op_t *p, int goalnt)
         case 39:
         /* Rel:    concat (Rel) */
         case 81:
+        /* Rel:    contains (Rel) */
+        case 82:
             /* prune binary operation if result column is not required */
             if (!PFprop_icol (p->prop, p->sem.binary.res)) {
                 *p = *(L(p));
@@ -1016,7 +1020,7 @@ reduce (PFla_op_t *p, int goalnt)
         /* Rel:    cond_err (Rel, Rel)) */
         case 80:
         /* Rel:    string_join (Rel, Rel)) */
-        case 82:
+        case 83:
         /* Frag:    fragment (doc_tbl (Rel))) */
         case 100:
         /* Frag:    fragment (element (Frag, element_tag (Rel, Rel)))) */

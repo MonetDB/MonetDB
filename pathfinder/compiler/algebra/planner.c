@@ -655,6 +655,8 @@ plan_binop (const PFla_op_t *n)
             , [la_num_divide]   = PFpa_num_div_atom
             , [la_num_modulo]   = PFpa_num_mod_atom
             , [la_num_gt]       = PFpa_gt_atom
+            , [la_bool_and]     = PFpa_and_atom
+            , [la_bool_or]      = PFpa_or_atom
         };
 
     static PFpa_op_t * (*op[]) (const PFpa_op_t *, const PFalg_att_t,
@@ -667,6 +669,8 @@ plan_binop (const PFla_op_t *n)
             , [la_num_divide]   = PFpa_num_div
             , [la_num_modulo]   = PFpa_num_mod
             , [la_num_gt]       = PFpa_gt
+            , [la_bool_and]     = PFpa_and
+            , [la_bool_or]      = PFpa_or
         };
 
 
@@ -1432,6 +1436,25 @@ plan_concat (const PFla_op_t *n)
 }
 
 /**
+ * `contains' operator in the logical algebra just get a 1:1 mapping
+ * into the physical contains operator.
+ */
+static PFplanlist_t *
+plan_contains (const PFla_op_t *n)
+{
+    PFplanlist_t *ret = new_planlist ();
+
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        add_plan (ret,
+                  fn_contains (*(plan_t **) PFarray_at (L(n)->plans, i),
+                               n->sem.binary.res,
+                               n->sem.binary.att1,
+                               n->sem.binary.att2));
+
+    return ret;
+}
+
+/**
  * Create physical equivalent for the string_join operator
  * (concatenates sets of strings using a seperator for each set)
  *
@@ -1723,13 +1746,13 @@ plan_subexpression (PFla_op_t *n)
         case la_num_modulo:                                   
         case la_num_eq:                                       
         case la_num_gt:                                       
+        case la_bool_and:
+        case la_bool_or:
                                 plans = plan_binop (n);       break;
                                                               
         case la_num_neg:                                      
         case la_bool_not:                                     
                                 plans = plan_unary (n);       break;
-     /* case la_bool_and:       */
-     /* case la_bool_or:        */
      /* case la_sum:            */
         case la_count:          plans = plan_count (n);       break;
                                                               
@@ -1767,6 +1790,7 @@ plan_subexpression (PFla_op_t *n)
         case la_cond_err:       plans = plan_cond_err (n);    break;
                                 
         case la_concat:         plans = plan_concat (n);      break;
+        case la_contains:       plans = plan_contains (n);    break;
         case la_string_join:    plans = plan_string_join (n); break;
                                                               
         default:

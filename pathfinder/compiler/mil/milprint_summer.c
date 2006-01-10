@@ -7206,12 +7206,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "var frag_before := kind%03u.[<](kind);\n"
                 "var frag_equal := kind%03u.[=](kind);\n"
                 "var pre_before := item%03u.[<](item);\n"
-                "var pre_before := item%03u.[<](item);\n"
                 "var node_before := frag_before.[or](frag_equal.[and](pre_before));\n"
                 "item := node_before.[oid]().tmark(0@0);\n"
                 "kind := BOOL;\n"
                 "} # end of translate op:node-before (node, node) as boolean\n",
-                counter, counter, counter, counter);
+                counter, counter, counter);
         deleteResult (f, counter);
         return NORMAL;
     }

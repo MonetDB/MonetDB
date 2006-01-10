@@ -229,6 +229,15 @@ struct PFla_pair_t PFbui_fn_boolean_bln (const PFla_op_t *loop,
                                          bool ordering,
                                          struct PFla_pair_t *args);
 
+struct PFla_pair_t PFbui_fn_contains (const PFla_op_t *loop,
+                                      bool ordering,
+                                      struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_contains_opt (const PFla_op_t *loop,
+                                          bool ordering,
+                                          struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_contains_opt_opt (const PFla_op_t *loop,
+                                              bool ordering,
+                                              struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_fn_empty (const PFla_op_t *loop,
                                    bool ordering,
                                    struct PFla_pair_t *args);

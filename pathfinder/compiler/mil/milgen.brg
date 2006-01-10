@@ -22,7 +22,7 @@
  * The Initial Developer of the Original Code is the Database &
  * Information Systems Group at the University of Konstanz, Germany.
  * Portions created by the University of Konstanz are Copyright (C)
- * 2000-2006 University of Konstanz.  All Rights Reserved.
+ * 2000-2005 University of Konstanz.  All Rights Reserved.
  *
  *
  * $Id$
@@ -103,10 +103,12 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term bool_not       =  45
 %term bool_and       =  46
 %term bool_or        =  47
-%term hash_count     =  48
-%term merge_rownum   =  50
-%term hash_rownum    =  51
-%term number         =  52
+%term bool_and_atom  =  48
+%term bool_or_atom   =  49
+%term hash_count     =  55
+%term merge_rownum   =  56
+%term hash_rownum    =  57
+%term number         =  58
 %term type           =  60
 %term type_assert    =  61
 %term cast           =  62
@@ -137,7 +139,8 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term empty_frag     = 133
 %term cond_err       = 140
 %term concat         = 150
-%term string_join    = 151
+%term contains       = 151
+%term string_join    = 152
 
 %%
 
@@ -177,7 +180,9 @@ Rel:      num_neg (Rel)                                            =  60 (10);
 Rel:      bool_not (Rel)                                           =  61 (10);
 Rel:      bool_and (Rel)                                           =  62 (10);
 Rel:      bool_or (Rel)                                            =  63 (10);
-Rel:      hash_count (Rel)                                         =  64 (10);
+Rel:      bool_and_atom (Rel)                                      =  64 (10);
+Rel:      bool_or_atom (Rel)                                       =  65 (10);
+Rel:      hash_count (Rel)                                         =  66 (10);
 Rel:      merge_rownum (Rel)                                       =  70 (10);
 Rel:      hash_rownum (Rel)                                        =  71 (10);
 Rel:      number (Rel)                                             =  72 (10);
@@ -215,7 +220,8 @@ FragList: empty_frag                                               = 123 (10);
 
 Rel:      cond_err (Rel, Rel)                                      = 130 (10);
 Rel:      concat (Rel)                                             = 140 (10);
-Rel:      string_join (Rel, Rel)                                   = 141 (10);
+Rel:      contains (Rel)                                           = 141 (10);
+Rel:      string_join (Rel, Rel)                                   = 142 (10);
 
 %%
 
@@ -499,6 +505,8 @@ static void bin_comp_atom (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
 /* translate binary Boolean operator (and/or) */
 static void bin_bool (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
                       PFpa_op_t *p);
+static void bin_bool_atom (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
+                           PFpa_op_t *p);
 /* translate unary operators (numeric negation, Boolean not) */
 static void unary_op (PFmil_t * (*op) (const PFmil_t *), PFpa_op_t *p);
 
@@ -1915,22 +1923,22 @@ reduce (PFpa_op_t * p, int goalnt)
             bin_arith_atom (PFmil_mmod, p);
             break;
 
-        /* Rel:      eq (Rel, Rel) */
+        /* Rel:      eq (Rel) */
         case 50:
             bin_comp (PFmil_meq, p);
             break;
 
-        /* Rel:      eq_atom (Rel, Rel) */
+        /* Rel:      eq_atom (Rel) */
         case 51:
             bin_comp_atom (PFmil_meq, p);
             break;
 
-        /* Rel:      gt (Rel, Rel) */
+        /* Rel:      gt (Rel) */
         case 52:
             bin_comp (PFmil_mgt, p);
             break;
 
-        /* Rel:      gt_atom (Rel, Rel) */
+        /* Rel:      gt_atom (Rel) */
         case 53:
             bin_comp_atom (PFmil_mgt, p);
             break;
@@ -1945,18 +1953,28 @@ reduce (PFpa_op_t * p, int goalnt)
             return unary_op (PFmil_mnot, p);
             break;
 
-        /* Rel:      bool_and (Rel, Rel) */
+        /* Rel:      bool_and (Rel) */
         case 62:
             bin_bool (PFmil_mand, p);
             break;
 
-        /* Rel:      bool_or (Rel, Rel) */
+        /* Rel:      bool_or (Rel) */
         case 63:
             bin_bool (PFmil_mor, p);
             break;
 
-        /* Rel:      hash_count (Rel) */
+        /* Rel:      bool_and_atom (Rel) */
         case 64:
+            bin_bool_atom (PFmil_mand, p);
+            break;
+
+        /* Rel:      bool_or_atom (Rel) */
+        case 65:
+            bin_bool_atom (PFmil_mor, p);
+            break;
+
+        /* Rel:      hash_count (Rel) */
+        case 66:
             if (p->sem.count.part != att_NULL) {
                 for (unsigned int i = 0; i < L(p)->schema.count; i++)
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
@@ -2955,8 +2973,40 @@ reduce (PFpa_op_t * p, int goalnt)
             bin_arith (PFmil_madd, p);
             break;
 
-        /* Rel:      string_join (Rel, Rel) */
+        /* Rel:      contains (Rel) */
         case 141:
+        {
+            mvar_t              *res = new_var (p->refctr);
+
+            /* do the containment checks:
+               [search](strings,search_strs).[!=](-1).[oid]() */
+            execute (
+                assgn (var (res->name),
+                              mnot (meq (msearch (
+                                             VAR (L(p)->env,
+                                                  p->sem.binary.att1,
+                                                  aat_str),
+                                             VAR (L(p)->env,
+                                                  p->sem.binary.att2,
+                                                  aat_str)),
+                                         lit_int (-1)))));
+
+            /* and put the result into p's environment */
+            env_add (p->env, p->sem.binary.res, aat_bln, res);
+
+            /* everything from p's child */
+            for (unsigned int i = 0; i < PFarray_last (L(p)->env); i++) {
+
+                env_t entry = env_at (L(p)->env, i);
+
+                env_add (p->env, entry.att, entry.ty, entry.mvar);
+
+                pin (entry.mvar, p->refctr);
+            }
+        } break;
+
+        /* Rel:      string_join (Rel, Rel) */
+        case 142:
         {
             mvar_t *str  = new_var (1);
             mvar_t *iter = new_var (p->refctr);
@@ -3618,6 +3668,64 @@ bin_arith (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *), PFpa_op_t *p)
 }
 
 /**
+ * node comparison operator, where both operands are a BAT
+ * (in contrast to when one operand is known to be constant
+ * and thus needs not be materialized as a BAT).
+ *
+ * @param op A MIL multiplex operation that implements the binary
+ *           operation of interest (as a function pointer to the
+ *           constructor function).
+ * @param p  The physical algebra tree node that we are to translate.
+ *           This function will actually fill @a p's environment
+ *           <code>p->env</code>.
+ */
+static void
+node_comp (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *), PFpa_op_t *p)
+{
+    mvar_t              *res = new_var (p->refctr);
+
+    if (op == PFmil_mgt) {
+        /* do the comparison: 
+           frag1 > frag2 || (frag1 = frag2 && pre1 > pre2) */
+        execute (
+            assgn (
+                var (res->name),
+                PFmil_mor (
+                    op (VAR (L(p)->env, p->sem.binary.att1, aat_pfrag),
+                        VAR (L(p)->env, p->sem.binary.att2, aat_pfrag)),
+                    PFmil_mand (
+                        PFmil_meq (
+                            VAR (L(p)->env, p->sem.binary.att1, aat_pfrag),
+                            VAR (L(p)->env, p->sem.binary.att2, aat_pfrag)),
+                        op (VAR (L(p)->env, p->sem.binary.att1, aat_pre),
+                            VAR (L(p)->env, p->sem.binary.att2, aat_pre))))));
+    } else if (op == PFmil_meq) {
+        /* do the comparison: 
+           frag1 = frag2 && pre1 = pre2 */
+        execute (
+            assgn (var (res->name),
+                   PFmil_mand (
+                       op (VAR (L(p)->env, p->sem.binary.att1, aat_pfrag),
+                           VAR (L(p)->env, p->sem.binary.att2, aat_pfrag)),
+                       op (VAR (L(p)->env, p->sem.binary.att1, aat_pre),
+                           VAR (L(p)->env, p->sem.binary.att2, aat_pre)))));
+    } else PFoops (OOPS_FATAL, "Unknown comparison for nodes.");
+
+    /* and put the result into p's environment */
+    env_add (p->env, p->sem.binary.res, aat_bln, res);
+
+    /* everything from p's child */
+    for (unsigned int i = 0; i < PFarray_last (L(p)->env); i++) {
+
+        env_t entry = env_at (L(p)->env, i);
+
+        env_add (p->env, entry.att, entry.ty, entry.mvar);
+
+        pin (entry.mvar, p->refctr);
+    }
+}
+
+/**
  * Generic binary comparison operator. In addition to bin_op() does
  * additional type checks.
  */
@@ -3627,9 +3735,16 @@ bin_comp (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *), PFpa_op_t *p)
     PFalg_simple_type_t  ty = type_of (L(p), p->sem.binary.att1);
 
     assert (ty == type_of (L(p), p->sem.binary.att2));
-    assert (ty == aat_int || ty == aat_dec || ty == aat_dbl || ty == aat_str);
 
-    return bin_op (op, p, ty, aat_bln);
+    if (ty & ~aat_node) {
+        assert (ty == aat_int || ty == aat_dec || ty == aat_dbl || ty == aat_str);
+        return bin_op (op, p, ty, aat_bln);
+    } else if (ty == aat_pnode) {
+        return node_comp (op, p);
+    } else
+        PFoops (OOPS_FATAL,
+                "Mil implementation of binary comparison for type %i unknown",
+                ty);
 }
 
 /**
@@ -3705,6 +3820,18 @@ bin_comp_atom (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
     PFalg_simple_type_t  ty = type_of (L(p), p->sem.bin_atom.att1);
 
     assert (ty == aat_int || ty == aat_dec || ty == aat_dbl || ty == aat_str);
+    assert (ty == p->sem.bin_atom.att2.type);
+
+    return bin_op_atom (op, p, ty, aat_bln);
+}
+
+static void
+bin_bool_atom (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
+                PFpa_op_t *p)
+{
+    PFalg_simple_type_t  ty = type_of (L(p), p->sem.bin_atom.att1);
+
+    assert (ty == aat_bln);
     assert (ty == p->sem.bin_atom.att2.type);
 
     return bin_op_atom (op, p, ty, aat_bln);

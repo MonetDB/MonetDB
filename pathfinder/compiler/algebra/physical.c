@@ -1332,7 +1332,6 @@ bin_comp (PFpa_op_kind_t op, const PFpa_op_t *n, PFalg_att_t res,
         = (PFalg_schm_item_t) { .name = res, .type = aat_bln };
 
     /* store information about attributes for arithmetics */
-    /* FIXME: Copy strings here? */
     ret->sem.binary.res = res;
     ret->sem.binary.att1 = att1;
     ret->sem.binary.att2 = att2;
@@ -1398,7 +1397,6 @@ bin_comp_atom (PFpa_op_kind_t op, const PFpa_op_t *n, PFalg_att_t res,
         = (PFalg_schm_item_t) { .name = res, .type = aat_bln };
 
     /* store information about attributes for arithmetics */
-    /* FIXME: Copy strings here? */
     ret->sem.bin_atom.res = res;
     ret->sem.bin_atom.att1 = att1;
     ret->sem.bin_atom.att2 = att2;
@@ -1515,6 +1513,34 @@ PFpa_gt_atom (const PFpa_op_t *n, PFalg_att_t res,
               PFalg_att_t att1, const PFalg_atom_t att2)
 {
     return bin_comp_atom (pa_gt_atom, n, res, att1, att2);
+}
+
+PFpa_op_t *
+PFpa_and (const PFpa_op_t *n, PFalg_att_t res,
+          PFalg_att_t att1, PFalg_att_t att2)
+{
+    return bin_comp (pa_bool_and, n, res, att1, att2);
+}
+
+PFpa_op_t *
+PFpa_or (const PFpa_op_t *n, PFalg_att_t res,
+         PFalg_att_t att1, PFalg_att_t att2)
+{
+    return bin_comp (pa_bool_or, n, res, att1, att2);
+}
+
+PFpa_op_t *
+PFpa_and_atom (const PFpa_op_t *n, PFalg_att_t res,
+               PFalg_att_t att1, const PFalg_atom_t att2)
+{
+    return bin_comp_atom (pa_bool_and_atom, n, res, att1, att2);
+}
+
+PFpa_op_t *
+PFpa_or_atom (const PFpa_op_t *n, PFalg_att_t res,
+              PFalg_att_t att1, const PFalg_atom_t att2)
+{
+    return bin_comp_atom (pa_bool_or_atom, n, res, att1, att2);
 }
 
 
@@ -2927,6 +2953,46 @@ PFpa_fn_concat (const PFpa_op_t *n, PFalg_att_t res,
 
     ret->schema.items[i] 
         = (struct PFalg_schm_item_t) { .type = aat_str, .name = res };
+
+    /* insert semantic value (operand attributes and result attribute)
+     * into the result
+     */
+    ret->sem.binary.att1 = att1;
+    ret->sem.binary.att2 = att2;
+    ret->sem.binary.res = res;
+
+    /* ordering stays the same */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+
+    /* costs */
+    ret->cost = n->cost + 1;
+
+    return ret;
+}
+
+/**
+  * Constructor for builtin function fn:contains
+  * (translation is similar to arithmetic operators)
+  */
+PFpa_op_t *
+PFpa_fn_contains (const PFpa_op_t *n, PFalg_att_t res,
+                  PFalg_att_t att1, PFalg_att_t att2)
+{
+    unsigned int i;
+    PFpa_op_t *ret = wire1 (pa_contains, n);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n and change type of column  */
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    ret->schema.items[i] 
+        = (struct PFalg_schm_item_t) { .type = aat_bln, .name = res };
 
     /* insert semantic value (operand attributes and result attribute)
      * into the result

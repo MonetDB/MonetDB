@@ -81,7 +81,8 @@ typedef enum PFalg_simple_type_t PFalg_simple_type_t;
                         || (a) == aat_qname || (a) == aat_anode \
                         || (a) == aat_pnode \
                         || ((a) == aat_pre || (a) == aat_pfrag) \
-                        || ((a) == aat_attr || (a) == aat_afrag))
+                        || ((a) == aat_attr || (a) == aat_afrag) \
+                        || ((a) == 0))
 
 typedef unsigned int nat;
 

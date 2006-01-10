@@ -108,7 +108,8 @@ enum PFla_op_kind_t {
                             
     /* builtin support for XQuery functions */
     , la_concat         =100 /**< fn:concat */
-    , la_string_join    =101 /**< fn:string-join */
+    , la_contains       =101 /**< fn:contains */
+    , la_string_join    =102 /**< fn:string-join */
 };
 /** algebra operator kinds */
 typedef enum PFla_op_kind_t PFla_op_kind_t;
@@ -649,6 +650,12 @@ PFla_op_t * PFla_cond_err (const PFla_op_t *n, const PFla_op_t *err,
  */
 PFla_op_t * PFla_fn_concat (const PFla_op_t *n, PFalg_att_t res,
                             PFalg_att_t att1, PFalg_att_t att2);
+
+/**
+ * Constructor for builtin function fn:contains
+ */
+PFla_op_t * PFla_fn_contains (const PFla_op_t *n, PFalg_att_t res,
+                              PFalg_att_t att1, PFalg_att_t att2);
 
 /**
  * Constructor for builtin function fn:string-join

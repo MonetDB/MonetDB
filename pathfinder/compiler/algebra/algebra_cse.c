@@ -210,6 +210,8 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
+        case la_concat:
+        case la_contains:
             return (a->sem.binary.att1 == b->sem.binary.att1
                     && a->sem.binary.att2 == b->sem.binary.att2
                     && a->sem.binary.res == b->sem.binary.res);
@@ -325,7 +327,6 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         case la_fragment:
         case la_frag_union:
         case la_empty_frag:
-        case la_concat:
         case la_string_join:
             return true;
             break;

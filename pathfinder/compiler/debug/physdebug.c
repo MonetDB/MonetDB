@@ -77,6 +77,8 @@ static char *a_id[]  = {
     , [pa_bool_not]        = "BoolNeg"
     , [pa_bool_and]        = "And"
     , [pa_bool_or]         = "Or"
+    , [pa_bool_and_atom]   = "AndAtom"
+    , [pa_bool_or_atom]    = "OrAtom"
     , [pa_hash_count]      = "HashCount"
     , [pa_merge_rownum]    = "MROW#"
     , [pa_hash_rownum]     = "HROW#"
@@ -111,6 +113,7 @@ static char *a_id[]  = {
     , [pa_empty_frag]      = "empty_frag"
     , [pa_cond_err]        = "!ERROR"
     , [pa_concat]          = "fn:concat"
+    , [pa_contains]        = "fn:contains"
     , [pa_string_join]     = "fn:string-join"
 };
 
@@ -183,6 +186,8 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         , [pa_bool_not]        = "\"#E0E000\""
         , [pa_bool_and]        = "\"#E0E000\""
         , [pa_bool_or]         = "\"#E0E000\""
+        , [pa_bool_and_atom]   = "\"#FFFF00\""
+        , [pa_bool_or_atom]    = "\"#FFFF00\""
         , [pa_hash_count]      = "\"#C0C0C0\""
         , [pa_hash_rownum]     = "\"#C0C0C0\""
         , [pa_merge_rownum]    = "\"#C0C0C0\""
@@ -217,6 +222,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         , [pa_empty_frag]      = "\"#E0E0E0\""
         , [pa_cond_err]        = "brown"
         , [pa_concat]          = "\"#E0E000\""
+        , [pa_contains]        = "\"#E0E000\""
         , [pa_string_join]     = "\"#C0C0C0\""
     };
 
@@ -327,7 +333,10 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         case pa_num_mod:
         case pa_eq:
         case pa_gt:
+        case pa_bool_and:
+        case pa_bool_or:
         case pa_concat:
+        case pa_contains:
             PFarray_printf (dot, "%s\\n%s:(%s,%s)", a_id[n->kind],
                             PFatt_str (n->sem.binary.res),
                             PFatt_str (n->sem.binary.att1),
@@ -341,8 +350,8 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         case pa_num_mod_atom:
         case pa_eq_atom:
         case pa_gt_atom:
-        case pa_bool_and:
-        case pa_bool_or:
+        case pa_bool_and_atom:
+        case pa_bool_or_atom:
             PFarray_printf (dot, "%s\\n%s:(%s,%s)", a_id[n->kind],
                             PFatt_str (n->sem.bin_atom.res),
                             PFatt_str (n->sem.bin_atom.att1),

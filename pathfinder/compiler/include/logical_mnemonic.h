@@ -150,6 +150,7 @@
 
 /* constructors for built-in functions */
 #define fn_concat(a,b,c,d)  PFla_fn_concat ((a), (b), (c), (d))
+#define fn_contains(a,b,c,d)  PFla_fn_contains ((a), (b), (c), (d))
 #define fn_string_join(a,b) PFla_fn_string_join ((a), (b))
 
 /* vim:set shiftwidth=4 expandtab: */
