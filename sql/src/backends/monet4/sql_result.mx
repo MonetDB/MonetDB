@@ -40,6 +40,8 @@ extern int mvc_result_table(mvc *m, int nr_cols, int type, BAT *order);
 extern int mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b);
 extern int mvc_result_value(mvc *m, char *tn, char *name, char *typename, int digits, int scale, ptr *p, int mtype);
 
+extern int convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, int len);
+
 #endif /* sql_result_H */
 @c
 
@@ -561,6 +563,40 @@ mvc_send_@1(stream *s, @1 cnt){
 @:mvc_send(sht)@
 @:mvc_send(int)@
 @:mvc_send(lng)@
+
+int
+convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, int len)
+{
+	int l;
+
+	if (eclass == EC_DEC) {
+		l = dec_tostr((void *) (ptrdiff_t) sc, buf, &len, mtype, p);
+	} else if (eclass == EC_TIME) {
+		struct time_res *ts_res = alloca(sizeof(struct time_res));
+		ts_res->has_tz = has_tz;
+		ts_res->fraction = d?d-1:0;
+		ts_res->timezone = m->timezone;
+		l = sql_time_tostr( (void *) ts_res, buf, &len, mtype, p);
+
+	} else if (eclass == EC_TIMESTAMP) {
+		struct time_res *ts_res = alloca(sizeof(struct time_res));
+		ts_res->has_tz = has_tz;
+		ts_res->fraction = d?d-1:0;
+		ts_res->timezone = m->timezone;
+		l = sql_timestamp_tostr((void *) ts_res, buf, &len, mtype, p);
+
+	} else if (!p || ATOMcmp(mtype, ATOMnilptr(mtype), p) == 0) {
+		if (len < sizeof("NULL")) {
+			GDKfree(*buf);
+			*buf = GDKstrdup("NULL");
+		} else {
+			strncpy(*buf, "NULL", sizeof("NULL"));
+		}
+	} else {
+		l = (*BATatoms[mtype].atomToStr) (buf, &len, p);
+	}
+	return l;
+}
 
 int
 export_value( mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p, int mtype, char **buf, int *len)
