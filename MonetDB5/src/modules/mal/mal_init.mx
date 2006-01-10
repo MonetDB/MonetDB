@@ -31,7 +31,6 @@ the function resolution scheme.
 
 @mal
 # less important stuff
-include thread;
 include crackers;
 
 #include pcl;

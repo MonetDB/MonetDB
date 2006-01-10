@@ -12,8 +12,7 @@ LIBS = {
 		chopper.mx language.mx box.mx \
 		profiler.mx const.mx print.mx \
 		inspect.mx manual.mx crackers.mx \
-		thread.mx clients.mx \
-		factory.mx mdb.mx  pbm.mx \
+		clients.mx factory.mx mdb.mx  pbm.mx \
 		rsbox.mx urlbox.mx multitable.mx
 		#datacell.mx 
 
@@ -98,7 +97,7 @@ scripts_mal = {
 	SOURCES = language.mx mal_init.mx box.mx bbp.mx \
 		profiler.mx const.mx \
 		inspect.mx manual.mx crackers.mx print.mal \
-		chopper.mx thread.mx clients.mx \
+		chopper.mx clients.mx \
 		factory.mx mdb.mx pcre.mx  tablet.mx multitable.mx \
 		rsbox.mx urlbox.mx statistics.mx transaction.mx partitions.mx pbm.mx
 	#datacell.mx 
