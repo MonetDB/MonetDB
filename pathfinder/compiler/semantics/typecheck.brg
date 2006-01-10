@@ -128,6 +128,16 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 %term preceding          = 41 /**< nodes before context node (document order) */
 %term preceding_sibling  = 42 /**< all preceding nodes with same parent */
 %term self               = 43 /**< the context node itself */
+/* [BURKOWSKI] */
+%term select_narrow      = 844 /**< give me some bastards (Burkowski stand-off 
+                                   matching) */
+%term select_wide        = 845 /**< give me all bastards (Burkowski stand-off 
+                                   matching) */
+%term reject_narrow      = 846 /**< give me all but some bastards (Burkowski 
+                                   stand-off matching) */
+%term reject_wide        = 847 /**< give me all but the bastards (Burkowski 
+                                   stand-off matching) */
+/* [/BURKOWSKI] */
 
 %term elem               = 44 /**< the element constructor */
 %term attr               = 45 /**< the attribute constructor */
@@ -201,6 +211,12 @@ LocationStep:       parent (SequenceType)                       =  27 (10);
 LocationStep:       preceding (SequenceType)                    =  28 (10);
 LocationStep:       preceding_sibling (SequenceType)            =  29 (10);
 LocationStep:       self (SequenceType)                         =  30 (10);
+/* [BURKOWSKI] */
+LocationStep:       select_narrow (SequenceType)                =  829 (10);
+LocationStep:       select_wide (SequenceType)                  =  830 (10);
+LocationStep:       reject_narrow (SequenceType)                =  831 (10);
+LocationStep:       reject_wide (SequenceType)                  =  832 (10);
+/* [/BURKOWSKI] */
 
 LocationSteps:      locsteps (LocationStep, LocationSteps)      =  31 (10);
 LocationSteps:      locsteps (LocationStep, Atom)               =  32 (10);
@@ -686,6 +702,27 @@ reduce (PFcnode_t * p, int goalnt)
         case 30:
             TY(p) = TY(L(p));
             break;
+/* [BURKOWSKI] */
+        case 829:
+        /* LocationStep:       select_narrow (SequenceType) */
+            TY(p) = PFty_star (TY(L(p)));
+            break;
+
+        /* LocationStep:       select_wide (SequenceType) */
+        case 830:
+            TY(p) = PFty_star (TY(L(p)));
+            break;
+
+        /* LocationStep:       reject_narrow (SequenceType) */
+        case 831:
+            TY(p) = PFty_star (TY(L(p)));
+            break;
+
+        /* LocationStep:       reject_wide (SequenceType) */
+        case 832:
+            TY(p) = PFty_star (TY(L(p)));
+            break;
+/* [/BURKOWSKI] */
 
         /* LocationSteps:      locsteps (LocationStep, LocationSteps) */
         case 31:

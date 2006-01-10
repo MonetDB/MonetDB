@@ -126,6 +126,16 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 %term preceding          = 41 /**< nodes before context node (document order) */
 %term preceding_sibling  = 42 /**< all preceding nodes with same parent */
 %term self               = 43 /**< the context node itself */
+/* [BURKOWSKI] */
+%term select_narrow      = 844 /**< give me some bastards (Burkowski stand-off 
+                                   matching) */
+%term select_wide        = 845 /**< give me all bastards (Burkowski stand-off 
+                                   matching) */
+%term reject_narrow      = 846 /**< give me all but some bastards (Burkowski 
+                                   stand-off matching) */
+%term reject_wide        = 847 /**< give me all but the bastards (Burkowski 
+                                   stand-off matching) */
+/* [/BURKOWSKI] */
 
 %term elem               = 44 /**< the element constructor */
 %term attr               = 45 /**< the attribute constructor */
@@ -209,6 +219,13 @@ CoreExpr:     locsteps (parent (seqtype), CoreExpr)             =  38 (10);
 CoreExpr:     locsteps (preceding (seqtype), CoreExpr)          =  39 (10);
 CoreExpr:     locsteps (preceding_sibling (seqtype), CoreExpr)  =  40 (10);
 CoreExpr:     locsteps (self (seqtype), CoreExpr)               =  41 (10);
+
+/* [BURKOWSKI] */
+CoreExpr:     locsteps (select_narrow (seqtype), CoreExpr)      =  42 (10);
+CoreExpr:     locsteps (select_wide (seqtype), CoreExpr)        =  43 (10);
+CoreExpr:     locsteps (reject_narrow (seqtype), CoreExpr)      =  44 (10);
+CoreExpr:     locsteps (reject_wide (seqtype), CoreExpr)        =  45 (10);
+/* [/BURKOWSKI] */
 
 CoreExpr:           elem (TagName, CoreExpr)                    =  50 (10);
 CoreExpr:           attr (TagName, CoreExpr)                    =  51 (10);
@@ -1509,6 +1526,27 @@ reduce (PFcnode_t * p, int goalnt)
         case 41:
             A(p) = locstep (alg_self, LL(p)->sem.type, A(R(p)));
             break;
+#ifdef BURKOWSKI
+        /* LocationStep:       select-narrow (seqtype) */
+        case 42:
+            A(p) = locstep (alg_sn, LL(p)->sem.type, A(R(p)));
+            break;
+
+        /* LocationStep:       select-wide (seqtype) */
+        case 43:
+            A(p) = locstep (alg_sw, LL(p)->sem.type, A(R(p)));
+            break;
+
+        /* LocationStep:       reject-narrow (seqtype) */
+        case 44:
+            A(p) = locstep (alg_rn, LL(p)->sem.type, A(R(p)));
+            break;
+
+        /* LocationStep:       reject-wide (seqtype) */
+        case 45:
+            A(p) = locstep (alg_rw, LL(p)->sem.type, A(R(p)));
+            break;
+#endif
 
         /* CoreExpr:           elem (TagName, CoreExpr) */
         case 50:
