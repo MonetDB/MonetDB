@@ -1747,8 +1747,6 @@ public class MonetConnection implements Connection {
 
 		/** The current header returned by getNextResponse() */
 		private int curResponse;
-		/** The errors produced by the query */
-		private String error;
 
 		/**
 		 * Main constructor.  The query argument can either be a String
@@ -1772,7 +1770,6 @@ public class MonetConnection implements Connection {
 			this.rsconcur = rsconcur;
 			responses = new ArrayList();
 			curResponse = -1;
-			error = "";
 			seqnr = MonetConnection.seqCounter++;
 		}
 
@@ -1858,6 +1855,7 @@ public class MonetConnection implements Connection {
 			throws SQLException
 		{
 			boolean sendThreadInUse = false;
+			String error = null;
 
 			try {
 				// make sure we're ready to send query; read data till we
@@ -1999,6 +1997,7 @@ public class MonetConnection implements Connection {
 									" at pos: " + e.getErrorOffset();
 								// flush all the rest
 								monet.waitForPrompt();
+								linetype = monet.getLineType();
 								break;
 							}
 							// }}} soh line parsing
