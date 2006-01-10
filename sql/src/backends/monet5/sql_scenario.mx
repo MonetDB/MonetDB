@@ -882,8 +882,6 @@ query block.
 			}
 			showErrors();
 			/* restore the state */
-			if (c->listing )
-				printFunction(c->fdout, c->curprg->def, c->listing);
 			resetMalBlk(c->curprg->def, oldstop);
 			freeVariables(c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
@@ -892,15 +890,6 @@ query block.
 	}
 finalize:
 	m->scanner.mode = oldmode;
-	if (m->mode != m_explain && m->mode != m_execute && m->mode != m_inplace) {
-		printFunction(c->fdout, c->curprg->def, c->listing);
-	}
-#ifdef _SQL_PARSER_DEBUG
-	else {
-		stream_printf(GDKout, "#SQL finished:%s\n", msg);
-		printFunction(c->fdout, c->curprg->def, c->listing);
-	}
-#endif
 @-
 Gather the statistics for post analysis. It should preferably
 be stored in an SQL table
@@ -1028,7 +1017,6 @@ SQLengine(Client c)
 	if( m->mode == m_prepare){
 		goto cleanup_engine;
 	} else if(explainPlan()){
-		printf("explain in engine\n");
 @-
 If you want to see the detailed code, we have to pick it up from
 the cache as well. This calls for finding the call to the
@@ -1059,8 +1047,6 @@ environment.
 cleanup_engine:
     if (msg) {
         GDKerror(msg);
-        if (!c->listing)
-            printFunction(c->fdout, c->curprg->def, c->listing);
         showErrors();
 		m->status = -10;
     }
