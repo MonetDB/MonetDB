@@ -811,7 +811,13 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				len = snprintf(buf, buflen, "var s%d := %s(", -s->nr, convert);
 			}
 
-			if (s->op3.typeval.type->eclass == EC_DEC) 
+			/* convert to string is complex, we need full type info
+			   and mvc for the timezone */
+			if (s->op4.typeval.type->eclass == EC_STRING && 
+			    !(s->op3.typeval.type->eclass == EC_STRING &&
+			    s->op4.typeval.digits == 0) ) 
+				len += snprintf(buf+len, buflen-len, "myc, %d, %d, %d, %d, ", s->op3.typeval.type->eclass, s->op3.typeval.digits, s->op3.typeval.scale, type_has_tz(&s->op3.typeval));
+			else if (s->op3.typeval.type->eclass == EC_DEC) 
 				len += snprintf(buf+len, buflen-len, "%d, ", s->op3.typeval.scale);
 	
 			len += snprintf(buf+len, buflen-len, "s%d", l);
@@ -820,8 +826,9 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			    s->op4.typeval.type->eclass == EC_INTERVAL)
 				len += snprintf(buf+len, buflen-len, ", %d, %d", s->op4.typeval.digits, s->op4.typeval.scale);
 			/* convert to string, give error on to large strings */
-			if (s->op4.typeval.type->eclass == EC_STRING &&
-			    s->op4.typeval.digits > 0) 
+			if (s->op4.typeval.type->eclass == EC_STRING && 
+			    !(s->op3.typeval.type->eclass == EC_STRING &&
+			    s->op4.typeval.digits == 0) )
 				len += snprintf(buf+len, buflen-len, ", %d", s->op4.typeval.digits);
 			len += snprintf(buf+len, buflen-len, ");\n");
 			assert(len <= buflen);
@@ -1071,10 +1078,15 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				s->nr = -res;
 			break;
 		}
-		case st_alias:
-			s->nr = -backend_dumpstmt_(s->op1.stval, nr, sql);
+		case st_alias: {
+			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
+			int buflen = 32;
+			buf = NEW_ARRAY(char, buflen + 1);
+			len = snprintf(buf, buflen, "var s%d := s%d;\n", -s->nr, l);
+			dump(sql, buf, len, -s->nr);
+			_DELETE(buf);
 			backend_dec_nr2(s->op1.stval);
-			break;
+		} 	break;
 		case st_set:
 		case st_list:{
 			for (n = s->op1.lval->h; n; n = n->next) {
