@@ -1156,7 +1156,10 @@ Comes down to 3 cases: normal, proc, or {X}/[X] execution
 			CATCHRET(stk, opcache, res, i);
 			CATCHERR(stk, opcache, res, i, proc);
 			if (i >= 0 && !TBL_procreturn(argc, argv, res, proc)) {
-				GDKerror("interpret: %s returned unexpected type.\n", proc->yyval.val.sval);
+				if (proc->noyyval)
+					GDKerror("interpret: proc returned unexpected type.\n");
+				else
+					GDKerror("interpret: %s returned unexpected type.\n", proc->yyval.val.sval);
 				i = -1;
 			}
 			@:profileEvent(proc)@
