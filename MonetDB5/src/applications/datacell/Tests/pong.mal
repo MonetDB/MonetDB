@@ -1,6 +1,7 @@
 #The simpliest throughput experiment consists of pingpong
 #This part tests the pong side, where events should be delivered
 
+include sql;
 include datacell;
 
 datacell.open();
