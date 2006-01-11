@@ -112,7 +112,7 @@ do
 		;;
 	"--dbinit="* )
 		tail="${1#--dbinit=}"
-		STARTUP=/tmp/mserver.startup$$
+		STARTUP=/tmp/mserver5.startup$$
 		echo $tail > $STARTUP
 		;;
 	* )
@@ -160,19 +160,19 @@ function start_mserver()
 	then
 		if [ "$STARTUP" != "" ]
 		then
-			cp "$STARTUP" $1/.mserver.dbinit
+			cp "$STARTUP" $1/.mserver5.dbinit
 		fi
-		if [ -f $1/.mserver.dbinit ]
+		if [ -f $1/.mserver5.dbinit ]
 		then
-			STARTUP=$DBFARM/$1/.mserver.dbinit
+			STARTUP=$DBFARM/$1/.mserver5.dbinit
 		fi
 		if [ "$ARGS" = "" ]
 		then
-			if [ -f $1/.mserver.args ]
+			if [ -f $1/.mserver5.args ]
 			then
-				ARGS=`cat $1/.mserver.args`
+				ARGS=`cat $1/.mserver5.args`
 			else
-				echo > $1/.mserver.args
+				echo > $1/.mserver5.args
 			fi
 		fi
 
@@ -180,8 +180,8 @@ function start_mserver()
 		echo -n "Starting database server '$1'... "
 		CONFIG="--config=$DBFARM/$1/.monetdb.conf"
 		# make sure you can find strange errors
-		echo "START" `date +"%F %T"` >>$DBFARM/$DBNAME/mserver.log
-		$MONET5_PREFIX/bin/mserver --set daemon=yes --set monet_welcome=no --dbname=$1 $CONFIG $ARGS $STARTUP >> $DBFARM/$DBNAME/mserver.log &
+		echo "START" `date +"%F %T"` >>$DBFARM/$DBNAME/mserver5.log
+		$MONET5_PREFIX/bin/mserver5 --set daemon=yes --set monet_welcome=no --dbname=$1 $CONFIG $ARGS $STARTUP >> $DBFARM/$DBNAME/mserver5.log &
 		pid="$!"
 		if [ -z "$pid" ]
 		then
@@ -209,7 +209,7 @@ function start_mserver()
 			fi
 			echo "mguardian delay for '$1' reset"
 		else
-			echo "mserver for '$1' already running"
+			echo "mserver5 for '$1' already running"
 		fi
 	fi
 }
@@ -221,11 +221,12 @@ function stop_mserver()
 		echo -n "Stopping database server '$1'... "
 		stopped=`expr $stopped + 1 `
 		# disable the guardian first
-		echo "STOP " `date +"%F %T"` >>$DBFARM/$DBNAME/mserver.log
+		echo "STOP " `date +"%F %T"` >>$DBFARM/$DBNAME/mserver5.log
 		$MONET5_PREFIX/bin/mguardian --stop $1
+		wait $!
 		kill -TERM $pid
 		echo `date +"%F %T"` " STOP  $1" >>monetdb.log
-		if [ "`ps -p $pid -o comm=`" == "mserver" ];
+		if [ "`ps -p $pid -o comm=`" == "mserver5" ];
 		then
 			echo "FAILED"
 		else
@@ -258,9 +259,9 @@ function show_status()
 			else
 				guard=missing
 			fi
-			if [ -f $1/.mserver.dbinit ]
+			if [ -f $1/.mserver5.dbinit ]
 			then
-				dbinit=`cat $1/.mserver.dbinit`
+				dbinit=`cat $1/.mserver5.dbinit`
 			fi
 			if [ -f $1/.mguardian.delay ]
 			then
@@ -351,7 +352,7 @@ case "$ACTION" in
 		# make sure there are no leftover processes
 		killall mguardian >& /dev/null
 		didkillg=$!
-		killall mserver >& /dev/null
+		killall mserver5 >& /dev/null
 		didkillm=$!
 		
 		[[ $didkillg < 0 || $didkillm < 0 ]] && echo "No server stopped"
@@ -408,7 +409,7 @@ case "$ACTION" in
  "--log" )
 		if [ -n "$DBNAME" ]
 		then
-			more $DBFARM/$DBNAME/mserver.log
+			more $DBFARM/$DBNAME/mserver5.log
 		else
 			more $DBFARM/monetdb.log
 		fi
@@ -417,4 +418,4 @@ case "$ACTION" in
 esac
 
 #remove any leftovers
-rm -rf /tmp/.mserver.*
+rm -rf /tmp/.mserver5.*

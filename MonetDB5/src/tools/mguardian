@@ -125,7 +125,7 @@ function restart_server()
 		if [[ "$restartcount" > $mailtrigger ]]
 		then
 			now=`date`
-			mail -s "Notification: mserver restarted" $USER <<!EOF
+			mail -s "Notification: mserver5 restarted" $USER <<!EOF
 The mguardian process $$ running on node `uname -n` has restarted
 database '$1' because it appeared not to be running any more.
 Please inspect the monetdb log for further details.
@@ -144,19 +144,19 @@ server is left unattended.
 		fi
 		restartcount=`expr $restartcount + 1 `
 	fi
-	if [ -f $1/.mserver.args ]
+	if [ -f $1/.mserver5.args ]
 	then
 		started=`date +%s`
-		if [ -f $1/.mserver.dbinit ]
+		if [ -f $1/.mserver5.dbinit ]
         then
-            STARTUP=$DBFARM/$1/.mserver.dbinit
+            STARTUP=$DBFARM/$1/.mserver5.dbinit
         fi
-		if [ -f $1/.mserver.args ]
+		if [ -f $1/.mserver5.args ]
 		then
-			ARGS=`cat $1/.mserver.args`
+			ARGS=`cat $1/.mserver5.args`
 		fi
         CONFIG="--config=$DBFARM/$1/.monetdb.conf"
-		(cd $1; mserver --set daemon=yes --dbname=$1 $CONFIG $ARGS $STARTUP)&
+		(cd $1; mserver5 --set daemon=yes --dbname=$1 $CONFIG $ARGS $STARTUP)&
 		echo `date +"%F %T"` " RESTART $1 $args" >>monetdb.log
 	fi
 }
@@ -170,7 +170,7 @@ function getDelay()
 	fi
 	echo $delay
 }
-#for each mserver a separate mguardian process is started
+#for each mserver5 a separate mguardian process is started
 #it runs in the background until the mguardian control file disappears
 function check_mserver()
 {

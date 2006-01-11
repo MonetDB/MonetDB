@@ -285,6 +285,19 @@ initScenario(Client c, Scenario s)
 		mal_set_lock(mal_contextLock, "Scenario");
 		if( s->initSystemCmd == 0)
 			s->initSystemCmd = (MALfcn) getAddress(s->language, s->initSystem, 1);
+@-
+Check if we have loaded already the language library.
+The naming convention is to use the language name as an
+alias for the include file
+@c
+/* postponed
+		if (s->initSystemCmd == 0) {
+			mal_unset_lock(mal_contextLock, "Scenario");
+			malInclude(c,s->language,0,0);
+			mal_set_lock(mal_contextLock, "Scenario");
+			s->initSystemCmd = (MALfcn) getAddress(s->language, s->initSystem, 1);
+		}
+*/
 		if (s->initSystemCmd) {
 			msg = (*s->initSystemCmd) (c);
 		} else

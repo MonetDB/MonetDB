@@ -2672,13 +2672,6 @@ end main;	# 7
 [ 2638@0, "command",	  "crackers",	  "new",			  "(b:bat[:int,:int]):void address CRKnew;"										  ]
 [ 2639@0, "command",	  "crackers",	  "select",			  "(b:bat[:int,:int],l:int,h:int,li:bit,hi:bit):bat[:int,:int] address CRKselect;"					  ]
 [ 2640@0, "command",	  "crackers",	  "selectPieces",		  "(b:bat[:int,:int],low:int,hgh:int):bat[:void,:int] address CRKselectPieces;"						  ]
-[ 2641@0, "pattern",	  "thread",	  "exec",			  "(arg:any...):int address CMDthreadExec;"										  ]
-[ 2642@0, "pattern",	  "thread",	  "isDead",			  "(pid:int):bit address CMDthreadIsDead;"										  ]
-[ 2643@0, "pattern",	  "thread",	  "kill",			  "(pid:int):void address CMDthreadKill;"										  ]
-[ 2644@0, "pattern",	  "thread",	  "suspend",			  "(pid:int):void address CMDthreadSuspend;"										  ]
-[ 2645@0, "pattern",	  "thread",	  "terminate",			  "(pid:int):void address CMDthreadTerminate;"										  ]
-[ 2646@0, "pattern",	  "thread",	  "wait",			  "(pid:int...):void address CMDthreadWaitList;"									  ]
-[ 2647@0, "pattern",	  "thread",	  "wait",			  "():void address CMDthreadWait;"											  ]
 
 # 00:03:55 >  
 # 00:03:55 >  Done.

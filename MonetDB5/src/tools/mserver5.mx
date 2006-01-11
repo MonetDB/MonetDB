@@ -15,11 +15,11 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mserver
+@f mserver5
 @a M.L. Kersten, P. Boncz, Niels Nes, Stefan Manegold, Sjoerd Mullender
 @v 5.0
 @* The Monet Server
-The program @code{ mserver} is the MonetDB server. It is started by the database
+The program @code{ mserver5} is the MonetDB server. It is started by the database
 administrator.  The console is primarilly meant to further initialize
 the server, such as starting internet listeners.
 
@@ -32,7 +32,7 @@ on the port number specified in the parameter file.
 
 @- Usage
 @verbatim
-usage: mserver [options] [script]
+usage: mserver5 [options] [script]
     --dbname=<database_name>
     --dbfarm=<directory>
     --dbinit=<stmt>           Server prepare statement
@@ -73,7 +73,7 @@ The server options have the following meaning:
 #endif /* _MONET_GLOBAL_H_ */
 @c
 #include "mal.h"
-#include "mserver.h"
+#include "mserver5.h"
 #include "mal_authorize.h"
 
 #ifdef _CRTDBG_MAP_ALLOC
