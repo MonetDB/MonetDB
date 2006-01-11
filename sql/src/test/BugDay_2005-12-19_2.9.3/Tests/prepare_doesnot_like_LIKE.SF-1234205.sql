@@ -1,4 +1,4 @@
 prepare select name from tables where name like ?;
-execute 1 ('%');
+execute 0 ('%');
 prepare select name from tables where name like 's%';
-execute 2 ();
+execute 1 ();
