@@ -3514,16 +3514,17 @@ mapi_cache_limit(Mapi mid, int limit)
 /* 		} */
 /* 	} */
 	if (mid->languageId == LANG_SQL) {
-		MapiHdl hdl = mapi_new_handle(mid);
+		MapiHdl hdl;
 
-		if (mid->active && read_into_cache(mid->active, 0) != MOK)
-			return MERROR;
-		if (mid->active)
-			return MOK;
 		if (stream_printf(mid->to, "X" "reply_size %d\n", limit) < 0 ||
-		    stream_flush(mid->to))
-			check_stream(mid, mid->to, stream_error(mid->to), "mapi_cache_limit", mid->error);
+		    stream_flush(mid->to)) {
+			close_connection(mid);
+			mapi_setError(mid, stream_error(mid->to), "mapi_cache_limit", MTIMEOUT);
+			return MERROR;
+	}
+		hdl = prepareQuery(mapi_new_handle(mid), "reply_size");
 		mid->active = hdl;
+		read_into_cache(hdl, 0);
 		mapi_close_handle(hdl);	/* reads away any output */
 	}
 	return MOK;
