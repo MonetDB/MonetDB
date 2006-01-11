@@ -105,11 +105,97 @@ SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 	for (i = 0; i < nrParams; i++, rec++) {
 		struct sql_types *tp;
 		int concise_type;
+		int length, scale;
 
 		mapi_fetch_row(hdl);
 		s = mapi_fetch_field(hdl, 0); /* type */
 		rec->sql_desc_type_name = (SQLCHAR *) strdup(s);
 		concise_type = ODBCConciseType(s);
+
+		s = mapi_fetch_field(hdl, 1); /* digits */
+		length = atoi(s);
+
+		s = mapi_fetch_field(hdl, 2); /* scale */
+		scale = atoi(s);
+
+		/* for interval types, length and scale are used
+		   differently */
+		if (concise_type == SQL_INTERVAL_MONTH) {
+			switch (length) {
+			case 1:
+				assert(scale == 1);
+				concise_type = SQL_INTERVAL_YEAR;
+				break;
+			case 2:
+				if (scale == 1)
+					concise_type = SQL_INTERVAL_YEAR_TO_MONTH;
+				else {
+					assert(scale == 2);
+					concise_type = SQL_INTERVAL_MONTH;
+				}
+				break;
+			}
+			rec->sql_desc_scale = 0;
+			rec->sql_desc_length = 0;
+		} else if (concise_type == SQL_INTERVAL_SECOND) {
+			switch (length) {
+			case 3:
+				assert(scale == 3);
+				concise_type = SQL_INTERVAL_DAY;
+				break;
+			case 4:
+				switch (scale) {
+				case 3:
+					concise_type = SQL_INTERVAL_DAY_TO_HOUR;
+					break;
+				case 4:
+					concise_type = SQL_INTERVAL_HOUR;
+					break;
+				default:
+					assert(0);
+				}
+				break;
+			case 5:
+				switch (scale) {
+				case 3:
+					concise_type = SQL_INTERVAL_DAY_TO_MINUTE;
+					break;
+				case 4:
+					concise_type = SQL_INTERVAL_HOUR_TO_MINUTE;
+					break;
+				case 5:
+					concise_type = SQL_INTERVAL_MINUTE;
+					break;
+				default:
+					assert(0);
+				}
+				break;
+			case 6:
+				switch (scale) {
+				case 3:
+					concise_type = SQL_INTERVAL_DAY_TO_SECOND;
+					break;
+				case 4:
+					concise_type = SQL_INTERVAL_HOUR_TO_SECOND;
+					break;
+				case 5:
+					concise_type = SQL_INTERVAL_MINUTE_TO_SECOND;
+					break;
+				case 6:
+					concise_type = SQL_INTERVAL_SECOND;
+					break;
+				default:
+					assert(0);
+				}
+				break;
+			}
+			rec->sql_desc_scale = 0;
+			rec->sql_desc_length = 0;
+		} else {
+			rec->sql_desc_scale = scale;
+			rec->sql_desc_length = length;
+		}
+
 		for (tp = ODBC_sql_types; tp->concise_type; tp++)
 			if (concise_type == tp->concise_type)
 				break;
@@ -128,12 +214,6 @@ SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr, SQLINTEGER nSqlStrLength)
 			rec->sql_desc_case_sensitive = SQL_TRUE;
 		else
 			rec->sql_desc_case_sensitive = SQL_FALSE;
-
-		s = mapi_fetch_field(hdl, 1); /* digits */
-		rec->sql_desc_length = atoi(s);
-
-		s = mapi_fetch_field(hdl, 2); /* scale */
-		rec->sql_desc_scale = atoi(s);
 
 		rec->sql_desc_local_type_name = (SQLCHAR *) strdup("");
 		rec->sql_desc_nullable = SQL_NULLABLE;

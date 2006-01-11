@@ -268,29 +268,44 @@ ODBCDisplaySize(ODBCDescRec *rec)
 	case SQL_TYPE_TIMESTAMP:
 		return 23;	/* strlen("yyyy-mm-dd hh:mm:ss.fff") */
 	case SQL_INTERVAL_SECOND:
-		/* strlen("sss[.fff]") */
-		return rec->sql_desc_datetime_interval_precision + (rec->sql_desc_precision > 0 ? rec->sql_desc_precision + 1 : 0);
+		/* strlen("INTERVAL -'sss[.fff]' SECOND(p,q)") */
+		return 11 + 13 + (rec->sql_desc_datetime_interval_precision > 10) + (rec->sql_desc_precision > 10) + rec->sql_desc_datetime_interval_precision + (rec->sql_desc_precision > 0 ? rec->sql_desc_precision + 1 : 0);
 	case SQL_INTERVAL_DAY_TO_SECOND:
-		/* strlen("ddd hh:mm:ss[.fff]") */
-		return rec->sql_desc_datetime_interval_precision + 9 + (rec->sql_desc_precision > 0 ? rec->sql_desc_precision + 1 : 0);
+		/* strlen("INTERVAL -'ddd hh:mm:ss[.fff]' DAY(p) TO SECOND(q)") */
+		return 11 + 21 + (rec->sql_desc_datetime_interval_precision > 10) + (rec->sql_desc_precision > 10) + rec->sql_desc_datetime_interval_precision + 9 + (rec->sql_desc_precision > 0 ? rec->sql_desc_precision + 1 : 0);
 	case SQL_INTERVAL_HOUR_TO_SECOND:
-		/* strlen("hhh:mm:ss[.fff]") */
-		return rec->sql_desc_datetime_interval_precision + 6 + (rec->sql_desc_precision > 0 ? rec->sql_desc_precision + 1 : 0);
+		/* strlen("INTERVAL -'hhh:mm:ss[.fff]' HOUR(p) TO SECOND(q)") */
+		return 11 + 22 + (rec->sql_desc_datetime_interval_precision > 10) + (rec->sql_desc_precision > 10) + rec->sql_desc_datetime_interval_precision + 6 + (rec->sql_desc_precision > 0 ? rec->sql_desc_precision + 1 : 0);
 	case SQL_INTERVAL_MINUTE_TO_SECOND:
-		/* strlen("mmm:ss[.fff]") */
-		return rec->sql_desc_datetime_interval_precision + 3 + (rec->sql_desc_precision > 0 ? rec->sql_desc_precision + 1 : 0);
+		/* strlen("INTERVAL -'mmm:ss[.fff]' MINUTE(p) TO SECOND(q)") */
+		return 11 + 24 + (rec->sql_desc_datetime_interval_precision > 10) + (rec->sql_desc_precision > 10) + rec->sql_desc_datetime_interval_precision + 3 + (rec->sql_desc_precision > 0 ? rec->sql_desc_precision + 1 : 0);
 	case SQL_INTERVAL_YEAR:
+		/* strlen("INTERVAL -'yyy' YEAR(p)") */
+		return 11 + 9 + (rec->sql_desc_datetime_interval_precision > 10) + rec->sql_desc_datetime_interval_precision;
 	case SQL_INTERVAL_MONTH:
+		/* strlen("INTERVAL -'yyy' MONTH(p)") */
+		return 11 + 10 + (rec->sql_desc_datetime_interval_precision > 10) + rec->sql_desc_datetime_interval_precision;
 	case SQL_INTERVAL_DAY:
+		/* strlen("INTERVAL -'yyy' DAY(p)") */
+		return 11 + 8 + (rec->sql_desc_datetime_interval_precision > 10) + rec->sql_desc_datetime_interval_precision;
 	case SQL_INTERVAL_HOUR:
+		/* strlen("INTERVAL -'yyy' HOUR(p)") */
+		return 11 + 9 + (rec->sql_desc_datetime_interval_precision > 10) + rec->sql_desc_datetime_interval_precision;
 	case SQL_INTERVAL_MINUTE:
-		return rec->sql_desc_datetime_interval_precision;
+		/* strlen("INTERVAL -'yyy' MINUTE(p)") */
+		return 11 + 11 + (rec->sql_desc_datetime_interval_precision > 10) + rec->sql_desc_datetime_interval_precision;
 	case SQL_INTERVAL_YEAR_TO_MONTH:
+		/* strlen("INTERVAL -'yyy' YEAR(p) TO MONTH") */
+		return 11 + 18 + (rec->sql_desc_datetime_interval_precision > 10) + rec->sql_desc_datetime_interval_precision + 3;
 	case SQL_INTERVAL_DAY_TO_HOUR:
+		/* strlen("INTERVAL -'yyy' DAY(p) TO HOUR") */
+		return 11 + 16 + (rec->sql_desc_datetime_interval_precision > 10) + rec->sql_desc_datetime_interval_precision + 3;
 	case SQL_INTERVAL_HOUR_TO_MINUTE:
-		return rec->sql_desc_datetime_interval_precision + 3;
+		/* strlen("INTERVAL -'yyy' HOUR(p) TO MINUTE") */
+		return 11 + 19 + (rec->sql_desc_datetime_interval_precision > 10) + rec->sql_desc_datetime_interval_precision + 3;
 	case SQL_INTERVAL_DAY_TO_MINUTE:
-		return rec->sql_desc_datetime_interval_precision + 6;
+		/* strlen("INTERVAL -'yyy' DAY(p) TO MINUTE") */
+		return 11 + 18 + (rec->sql_desc_datetime_interval_precision > 10) + rec->sql_desc_datetime_interval_precision + 6;
 	case SQL_GUID:
 		/* strlen("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee") */
 		return 36;

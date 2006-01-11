@@ -830,9 +830,12 @@ ODBCGetTypeInfo(int concise_type, int *data_type, int *sql_data_type, int *sql_d
 
 	for (t = types; t < &types[sizeof(types) / sizeof(types[0])]; t++) {
 		if (t->data_type == concise_type) {
-			*data_type = t->data_type;
-			*sql_data_type = t->sql_data_type;
-			*sql_datetime_sub = t->sql_datetime_sub;
+			if (data_type)
+				*data_type = t->data_type;
+			if (sql_data_type)
+				*sql_data_type = t->sql_data_type;
+			if (sql_datetime_sub)
+				*sql_datetime_sub = t->sql_datetime_sub;
 			return t->type_name;
 		}
 	}

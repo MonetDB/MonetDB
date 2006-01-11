@@ -2,7 +2,7 @@
  * The contents of this file are subject to the MonetDB Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.HTML
  *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -226,6 +226,138 @@ SQLColumns_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLeng
 			}
 			concise_type = ODBCConciseType(tuples[i][5]);
 			free((void *) tuples[i][5]);
+			switch (concise_type) {
+			case SQL_INTERVAL_SECOND: {
+				int q2 = atoi(tuples[i][7]);
+				int q1 = atoi(tuples[i][8]);
+
+				/* we assume a leading precision of 6
+				   and a second precision of 0 */
+				free((void *) tuples[i][6]);
+				tuples[i][6] = NULL;
+				free((void *) tuples[i][7]);
+				tuples[i][7] = NULL;
+				free((void *) tuples[i][8]);
+				tuples[i][8] = NULL;
+				if (q1 == 3 && q2 == 3) {
+					concise_type = SQL_INTERVAL_DAY;
+					tuples[i][6] = strdup("25");
+					tuples[i][7] = strdup("25");
+					tuples[i][8] = strdup("0");
+				} else if (q1 == 3 && q2 == 4) {
+					concise_type = SQL_INTERVAL_DAY_TO_HOUR;
+					tuples[i][6] = strdup("36");
+					tuples[i][7] = strdup("36");
+					tuples[i][8] = strdup("0");
+				} else if (q1 == 3 && q2 == 5) {
+					concise_type = SQL_INTERVAL_DAY_TO_MINUTE;
+					tuples[i][6] = strdup("41");
+					tuples[i][7] = strdup("41");
+					tuples[i][8] = strdup("0");
+				} else if (q1 == 3 && q2 == 6) {
+					concise_type = SQL_INTERVAL_DAY_TO_SECOND;
+					tuples[i][6] = strdup("47");
+					tuples[i][7] = strdup("47");
+					tuples[i][8] = strdup("0");
+				} else if (q1 == 4 && q2 == 4) {
+					concise_type = SQL_INTERVAL_HOUR;
+					tuples[i][6] = strdup("26");
+					tuples[i][7] = strdup("26");
+					tuples[i][8] = strdup("0");
+				} else if (q1 == 4 && q2 == 5) {
+					concise_type = SQL_INTERVAL_HOUR_TO_MINUTE;
+					tuples[i][6] = strdup("39");
+					tuples[i][7] = strdup("39");
+					tuples[i][8] = strdup("0");
+				} else if (q1 == 4 && q2 == 6) {
+					concise_type = SQL_INTERVAL_HOUR_TO_SECOND;
+					tuples[i][6] = strdup("45");
+					tuples[i][7] = strdup("45");
+					tuples[i][8] = strdup("0");
+				} else if (q1 == 5 && q2 == 5) {
+					concise_type = SQL_INTERVAL_MINUTE;
+					tuples[i][6] = strdup("28");
+					tuples[i][7] = strdup("28");
+					tuples[i][8] = strdup("0");
+				} else if (q1 == 5 && q2 == 6) {
+					concise_type = SQL_INTERVAL_MINUTE_TO_SECOND;
+					tuples[i][6] = strdup("44");
+					tuples[i][7] = strdup("44");
+					tuples[i][8] = strdup("0");
+				} else if (q1 == 6 && q2 == 6) {
+					concise_type = SQL_INTERVAL_SECOND;
+					tuples[i][6] = strdup("30");
+					tuples[i][7] = strdup("30");
+					tuples[i][8] = strdup("0");
+				} else
+					assert(0);
+				break;
+			}
+			case SQL_INTERVAL_MONTH: {
+				int q2 = atoi(tuples[i][7]);
+				int q1 = atoi(tuples[i][8]);
+
+				/* we assume a leading precision of 6 */
+				free((void *) tuples[i][6]);
+				tuples[i][6] = NULL;
+				free((void *) tuples[i][7]);
+				tuples[i][7] = NULL;
+				free((void *) tuples[i][8]);
+				tuples[i][8] = NULL;
+				if (q1 == 1 && q2 == 1) {
+					concise_type = SQL_INTERVAL_YEAR;
+					tuples[i][6] = strdup("26");
+					tuples[i][7] = strdup("26");
+					tuples[i][8] = strdup("0");
+				} else if (q1 == 1 && q2 == 2) {
+					concise_type = SQL_INTERVAL_YEAR_TO_MONTH;
+					tuples[i][6] = strdup("38");
+					tuples[i][7] = strdup("38");
+					tuples[i][8] = strdup("0");
+				} else if (q1 == 2 && q2 == 2) {
+					concise_type = SQL_INTERVAL_MONTH;
+					tuples[i][6] = strdup("27");
+					tuples[i][7] = strdup("27");
+					tuples[i][8] = strdup("0");
+				} else
+					assert(0);
+				break;
+			}
+			case SQL_DOUBLE:
+			case SQL_REAL:
+				free((void *) tuples[i][9]);
+				tuples[i][9] = strdup("2");
+				break;
+			case SQL_BIGINT:
+				free((void *) tuples[i][6]);
+				tuples[i][6] = strdup("19");
+				free((void *) tuples[i][7]);
+				tuples[i][7] = strdup("19");
+				free((void *) tuples[i][9]);
+				tuples[i][9] = strdup("10");
+				break;
+			case SQL_DECIMAL:
+				free((void *) tuples[i][9]);
+				tuples[i][9] = strdup("10");
+				break;
+			case SQL_INTEGER:
+				free((void *) tuples[i][6]);
+				tuples[i][6] = strdup("10");
+				free((void *) tuples[i][7]);
+				tuples[i][7] = strdup("10");
+				free((void *) tuples[i][9]);
+				tuples[i][9] = strdup("10");
+				break;
+			case SQL_SMALLINT:
+				free((void *) tuples[i][6]);
+				tuples[i][6] = strdup("5");
+				free((void *) tuples[i][7]);
+				tuples[i][7] = strdup("5");
+				free((void *) tuples[i][9]);
+				tuples[i][9] = strdup("10");
+				break;
+			}
+
 			tuples[i][5] = ODBCGetTypeInfo(concise_type, &data_type, &sql_data_type, &sql_datetime_sub);
 			if (tuples[i][5] != NULL) {
 				tuples[i][5] = strdup(tuples[i][5]);

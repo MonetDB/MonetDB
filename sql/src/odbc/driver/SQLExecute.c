@@ -224,7 +224,7 @@ ODBCInitResult(ODBCStmt *stmt)
 		rec++;
 	}
 
-	return SQL_SUCCESS;
+	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }
 
 SQLRETURN
@@ -258,6 +258,13 @@ SQLExecute_(ODBCStmt *stmt)
 	hdl = stmt->hdl;
 
 	assert(hdl);
+
+	if (stmt->ApplParamDescr->sql_desc_count < stmt->nparams ||
+	    stmt->ImplParamDescr->sql_desc_count < stmt->nparams) {
+		/* COUNT field incorrect */
+		addStmtError(stmt, "07002", NULL, 0);
+		return SQL_ERROR;
+	}
 
 	querylen = 1024;
 	query = malloc(querylen); /* XXX allocate space for parameters */

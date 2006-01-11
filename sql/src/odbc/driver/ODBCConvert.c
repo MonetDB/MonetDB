@@ -26,16 +26,16 @@
 
 #if SIZEOF_INT==8
 # define ULL_CONSTANT(val)	(val)
-# define O_ULLFMT			"u"
+# define O_ULLFMT		"u"
 #elif SIZEOF_LONG==8
 # define ULL_CONSTANT(val)	(val##UL)
-# define O_ULLFMT			"lu"
+# define O_ULLFMT		"lu"
 #elif defined(HAVE_LONG_LONG)
 # define ULL_CONSTANT(val)	(val##ULL)
-# define O_ULLFMT			"llu"
+# define O_ULLFMT		"llu"
 #elif defined(HAVE___INT64)
 # define ULL_CONSTANT(val)	(val##ui64)
-# define O_ULLFMT			"I64u"
+# define O_ULLFMT		"I64u"
 #endif
 
 #define MAXBIGNUM10	ULL_CONSTANT(1844674407370955161)	/* (2**64-1)/10 */
@@ -152,11 +152,30 @@ parseint(const char *data, bignum_t *nval)
 }
 
 static int
-parsesecondinterval(bignum_t *nval, SQL_INTERVAL_STRUCT *ival)
+parsesecondinterval(bignum_t *nval, SQL_INTERVAL_STRUCT *ival, int type)
 {
 	unsigned int f = 1;
 	int ivalscale = 0;
 
+	/* convert value to second */
+	switch (type) {
+	case SQL_INTERVAL_DAY:	/* SQL_C_INTERVAL_DAY */
+		nval->val *= 24;
+	case SQL_INTERVAL_HOUR: /* SQL_C_INTERVAL_HOUR */
+	case SQL_INTERVAL_DAY_TO_HOUR: /* SQL_C_INTERVAL_DAY_TO_HOUR */
+		nval->val *= 60;
+	case SQL_INTERVAL_MINUTE: /* SQL_C_INTERVAL_MINUTE */
+	case SQL_INTERVAL_HOUR_TO_MINUTE: /* SQL_C_INTERVAL_HOUR_TO_MINUTE */
+	case SQL_INTERVAL_DAY_TO_MINUTE: /* SQL_C_INTERVAL_DAY_TO_MINUTE */
+		nval->val *= 60;
+	case SQL_INTERVAL_SECOND: /* SQL_C_INTERVAL_SECOND */
+	case SQL_INTERVAL_MINUTE_TO_SECOND: /* SQL_C_INTERVAL_MINUTE_TO_SECOND */
+	case SQL_INTERVAL_HOUR_TO_SECOND: /* SQL_C_INTERVAL_HOUR_TO_SECOND */
+	case SQL_INTERVAL_DAY_TO_SECOND: /* SQL_C_INTERVAL_DAY_TO_SECOND */
+		break;
+	default:
+		assert(0);
+	}
 	ival->intval.day_second.fraction = 0;
 	while (nval->scale > 0) {
 		if (f < 1000000000) {
@@ -173,7 +192,7 @@ parsesecondinterval(bignum_t *nval, SQL_INTERVAL_STRUCT *ival)
 		ival->intval.day_second.fraction /= 10;
 	}
 	ival->interval_type = SQL_IS_DAY_TO_SECOND;
-	ival->interval_sign = nval->sign ? SQL_FALSE : SQL_TRUE;
+	ival->interval_sign = !nval->sign;
 	ival->intval.day_second.second = (SQLUINTEGER) (nval->val % 60);
 	nval->val /= 60;
 	ival->intval.day_second.minute = (SQLUINTEGER) (nval->val % 60);
@@ -185,15 +204,25 @@ parsesecondinterval(bignum_t *nval, SQL_INTERVAL_STRUCT *ival)
 }
 
 static void
-parsemonthinterval(bignum_t *nval, SQL_INTERVAL_STRUCT *ival)
+parsemonthinterval(bignum_t *nval, SQL_INTERVAL_STRUCT *ival, int type)
 {
+	/* convert value to months */
+	switch (type) {
+	case SQL_INTERVAL_YEAR: /* SQL_C_INTERVAL_YEAR */
+		nval->val *= 12;
+	case SQL_INTERVAL_YEAR_TO_MONTH: /* SQL_C_INTERVAL_YEAR_TO_MONTH */
+	case SQL_INTERVAL_MONTH: /* SQL_C_INTERVAL_MONTH */
+		break;
+	default:
+		assert(0);
+	}
+	/* ignore fraction */
 	while (nval->scale > 0) {
-		/* ignore fraction */
 		nval->scale--;
 		nval->val /= 10;
 	}
 	ival->interval_type = SQL_IS_YEAR_TO_MONTH;
-	ival->interval_sign = nval->sign ? SQL_FALSE : SQL_TRUE;
+	ival->interval_sign = !nval->sign;
 	ival->intval.year_month.year = (SQLUINTEGER) (nval->val / 12);
 	ival->intval.year_month.month = (SQLUINTEGER) (nval->val % 12);
 }
@@ -379,6 +408,515 @@ ODBCDefaultType(ODBCDescRec *rec)
 	return 0;
 }
 
+static SQLRETURN
+parseoptionalbracketednumber(char **svalp, SQLINTEGER *slenp, int *val1p, int *val2p)
+{
+	char *sval = *svalp;
+	int slen = *slenp;
+	char *eptr;
+	long val;
+
+	while (slen > 0 && isspace(*sval)) {
+		slen--;
+		sval++;
+	}
+	if (slen == 0 || *sval != '(') {
+		/* don't touch *valp, it contains the default */
+		return SQL_SUCCESS;
+	}
+	slen--;
+	sval++;
+	while (slen > 0 && isspace(*sval)) {
+		slen--;
+		sval++;
+	}
+	/* make sure there is a closing parenthesis in the string:
+	   this makes the calls to strtol safe */
+	{
+		int i;
+
+		for (eptr = sval, i = slen; i > 0 && *eptr != ')'; i--, eptr++)
+			;
+		if (i == 0)
+			return SQL_ERROR;
+	}
+	if (slen > 0 && (*sval == '+' || *sval == '-'))
+		return SQL_ERROR;
+	val = strtol(sval, &eptr, 10);
+	if (eptr == sval)
+		return SQL_ERROR;
+	slen -= eptr - sval;
+	sval = eptr;
+	*val1p = (int) val;
+	while (slen > 0 && isspace(*sval)) {
+		slen--;
+		sval++;
+	}
+	if (val2p != NULL && slen > 0 && *sval == ',') {
+		slen--;
+		sval++;
+		while (slen > 0 && isspace(*sval)) {
+			slen--;
+			sval++;
+		}
+		if (slen > 0 && (*sval == '+' || *sval == '-'))
+			return SQL_ERROR;
+		val = strtol(sval, &eptr, 10);
+		if (eptr == sval)
+			return SQL_ERROR;
+		slen -= eptr - sval;
+		sval = eptr;
+		*val2p = val;
+	}
+		
+	if (slen == 0 || *sval != ')')
+		return SQL_ERROR;
+	slen--;
+	sval++;
+	*svalp = sval;
+	*slenp = slen;
+	return SQL_SUCCESS;
+}
+	
+static SQLRETURN
+parsemonthintervalstring(SQLCHAR **svalp, SQLINTEGER *slenp, SQL_INTERVAL_STRUCT *ival)
+{
+	char *sval = (char *) *svalp;
+	int slen = slenp ? *slenp : strlen(sval);
+	char *eptr;
+	long val1 = -1, val2 = -1;
+	int leadingprecision;
+
+	if (slen < 8 || strncasecmp((char *) sval, "interval", 8) != 0)
+		return SQL_ERROR;
+	sval += 8;
+	slen -= 8;
+	if (slen == 0 || !isspace(*sval))
+		return SQL_ERROR;
+	while (slen > 0 && isspace(*sval)) {
+		slen--;
+		sval++;
+	}
+	if (slen > 0 && *sval == '-') {
+		slen--;
+		sval++;
+		ival->interval_sign = SQL_TRUE;
+	} else
+		ival->interval_sign = SQL_FALSE;
+	if (slen == 0 || *sval != '\'')
+		return SQL_ERROR;
+	slen--;
+	sval++;
+	/* make sure there is another quote in the string: this makes
+	   the calls to strtol safe */
+	for (eptr = sval, leadingprecision = slen;
+	     leadingprecision > 0 && *eptr != '\'';
+	     leadingprecision--, eptr++)
+		;
+	if (leadingprecision == 0)
+		return SQL_ERROR;
+	if (*sval == '+' || *sval == '-')
+		return SQL_ERROR;
+	val1 = strtol(sval, &eptr, 10);
+	if (eptr == sval)
+		return SQL_ERROR;
+	leadingprecision = eptr - sval;
+	slen -= leadingprecision;
+	sval = eptr;
+	while (isspace(*sval)) {
+		slen--;
+		sval++;
+	}
+	if (*sval == '-') {
+		slen--;
+		sval++;
+		while (isspace(*sval)) {
+			slen--;
+			sval++;
+		}
+		if (*sval == '+' || *sval == '-')
+			return SQL_ERROR;
+		val2 = strtol(sval, &eptr, 10);
+		if (eptr == sval)
+			return SQL_ERROR;
+		if (eptr - sval > 2)
+			return SQL_ERROR;
+		slen -= eptr - sval;
+		sval = eptr;
+		while (isspace(*sval)) {
+			slen--;
+			sval++;
+		}
+		ival->interval_type = SQL_IS_YEAR_TO_MONTH;
+		ival->intval.year_month.year = val1;
+		ival->intval.year_month.month = val2;
+		if (val2 >= 12)
+			return SQL_ERROR;
+	}
+	if (*sval != '\'')
+		return SQL_ERROR;
+	slen--;
+	sval++;
+	if (slen == 0 || !isspace(*sval))
+		return SQL_ERROR;
+	while (slen > 0 && isspace(*sval)) {
+		slen--;
+		sval++;
+	}
+	if (slen >= 4 && strncasecmp((char *) sval, "year", 4) == 0) {
+		int p = 2;
+
+		slen -= 4;
+		sval += 4;
+		if (parseoptionalbracketednumber(&sval, &slen, &p, NULL) == SQL_ERROR)
+			return SQL_ERROR;
+		if (leadingprecision > p)
+			return SQL_ERROR;
+		if (val2 == -1) {
+			ival->interval_type = SQL_IS_YEAR;
+			ival->intval.year_month.year = val1;
+			ival->intval.year_month.month = 0;
+		}
+		if (slen > 0 && isspace(*sval)) {
+			while (slen > 0 && isspace(*sval)) {
+				slen--;
+				sval++;
+			}
+			if (slen > 2 && strncasecmp(sval, "to", 2) == 0) {
+				slen -= 2;
+				sval += 2;
+				if (val2 == -1)
+					return SQL_ERROR;
+				if (slen == 0 || !isspace(*sval))
+					return SQL_ERROR;
+				while (slen > 0 && isspace(*sval)) {
+					slen--;
+					sval++;
+				}
+				if (slen >= 5 && strncasecmp(sval, "month", 5) == 0) {
+					slen -= 5;
+					sval += 5;
+					while (slen > 0 && isspace(*sval)) {
+						slen--;
+						sval++;
+					}
+				} else
+					return SQL_ERROR;
+			}
+		}
+		if (slen > 0)
+			return SQL_ERROR;
+	} else if (slen >= 5 && strncasecmp(sval, "month", 5) == 0) {
+		int p = 2;
+
+		slen -= 5;
+		sval += 5;
+		if (parseoptionalbracketednumber(&sval, &slen, &p, NULL) == SQL_ERROR)
+			return SQL_ERROR;
+		if (leadingprecision > p)
+			return SQL_ERROR;
+		while (slen > 0 && isspace(*sval)) {
+			slen--;
+			sval++;
+		}
+		if (slen != 0)
+			return SQL_ERROR;
+		ival->interval_type = SQL_IS_MONTH;
+		ival->intval.year_month.year = val1 / 12;
+		ival->intval.year_month.month = val1 % 12;
+	} else
+		return SQL_ERROR;
+
+	return SQL_SUCCESS;
+}
+
+static SQLRETURN
+parsesecondintervalstring(SQLCHAR **svalp, SQLINTEGER *slenp, SQL_INTERVAL_STRUCT *ival, int *secprecp)
+{
+	char *sval = (char *) *svalp;
+	int slen = slenp ? *slenp : strlen(sval);
+	char *eptr;
+	int leadingprecision;
+	int secondprecision = 0;
+	unsigned v1, v2, v3, v4;
+	int n;
+
+	if (slen < 8 || strncasecmp((char *) sval, "interval", 8) != 0)
+		return SQL_ERROR;
+	sval += 8;
+	slen -= 8;
+	if (slen == 0 || !isspace(*sval))
+		return SQL_ERROR;
+	while (slen > 0 && isspace(*sval)) {
+		slen--;
+		sval++;
+	}
+	if (slen > 0 && *sval == '-') {
+		slen--;
+		sval++;
+		ival->interval_sign = SQL_TRUE;
+	} else
+		ival->interval_sign = SQL_FALSE;
+	if (slen == 0 || *sval != '\'')
+		return SQL_ERROR;
+	slen--;
+	sval++;
+	/* make sure there is another quote in the string: this makes
+	   the calls to sscanf safe */
+	for (eptr = sval, leadingprecision = slen;
+	     leadingprecision > 0 && *eptr != '\'';
+	     leadingprecision--, eptr++)
+		;
+	if (leadingprecision == 0)
+		return SQL_ERROR;
+	if (*sval == '+' || *sval == '-')
+		return SQL_ERROR;
+	(void) strtol(sval, &eptr, 10);	/* we parse the actual value again later */
+	if (eptr == sval)
+		return SQL_ERROR;
+	leadingprecision = eptr - sval;
+
+	ival->interval_type = 0; /* unknown as yet */
+	ival->intval.day_second.day = 0;
+	ival->intval.day_second.hour = 0;
+	ival->intval.day_second.minute = 0;
+	ival->intval.day_second.second = 0;
+	ival->intval.day_second.fraction = 0;
+	if (sscanf(sval, "%u %2u:%2u:%2u%n", &v1, &v2, &v3, &v4, &n) >= 4) {
+		ival->interval_type = SQL_IS_DAY_TO_SECOND;
+		if (v2 >= 24 || v3 >= 60 || v4 >= 60)
+			return SQL_ERROR;
+		ival->intval.day_second.day = v1;
+		ival->intval.day_second.hour = v2;
+		ival->intval.day_second.minute = v3;
+		ival->intval.day_second.second = v4;
+		sval += n;
+		slen -= n;
+	} else if (sscanf(sval, "%u %2u:%2u%n", &v1, &v2, &v3, &n) >= 3) {
+		ival->interval_type = SQL_IS_DAY_TO_MINUTE;
+		if (v2 >= 24 || v3 >= 60)
+			return SQL_ERROR;
+		ival->intval.day_second.day = v1;
+		ival->intval.day_second.hour = v2;
+		ival->intval.day_second.minute = v3;
+		sval += n;
+		slen -= n;
+	} else if (sscanf(sval, "%u %2u%n", &v1, &v2, &n) >= 2) {
+		ival->interval_type = SQL_IS_DAY_TO_HOUR;
+		if (v2 >= 60)
+			return SQL_ERROR;
+		ival->intval.day_second.day = v1;
+		ival->intval.day_second.hour = v2;
+		sval += n;
+		slen -= n;
+	} else if (sscanf(sval, "%u:%2u:%2u%n", &v1, &v2, &v3, &n) >= 3) {
+		ival->interval_type = SQL_IS_HOUR_TO_SECOND;
+		if (v2 >= 60 || v3 >= 60)
+			return SQL_ERROR;
+		ival->intval.day_second.day = v1 / 24;
+		ival->intval.day_second.hour = v1 % 24;
+		ival->intval.day_second.minute = v2;
+		ival->intval.day_second.second = v3;
+		sval += n;
+		slen -= n;
+	} else if (sscanf(sval, "%u:%2u%n", &v1, &v2, &n) >= 2) {
+		sval += n;
+		slen -= n;
+		if (*sval == '.') {
+			ival->interval_type = SQL_IS_MINUTE_TO_SECOND;
+			if (v2 >= 60)
+				return SQL_ERROR;
+			ival->intval.day_second.day = v1 / (24 * 60);
+			ival->intval.day_second.hour = (v1 / 60) % 24;
+			ival->intval.day_second.minute = v1 % 60;
+			ival->intval.day_second.second = v2;
+		}
+		n = 2;	/* two valid values */
+	} else if (sscanf(sval, "%u%n", &v1, &n) >= 1) {
+		sval += n;
+		slen -= n;
+		if (*sval == '.') {
+			ival->interval_type = SQL_IS_SECOND;
+			ival->intval.day_second.day = v1 / (24 * 60 * 60);
+			ival->intval.day_second.hour = (v1 / (60 * 60)) % 24;
+			ival->intval.day_second.minute = (v1 / 60) % 60;
+			ival->intval.day_second.second = v1 % 60;
+		}
+		n = 1;	/* one valid value */
+	}
+	if (*sval == '.') {
+		if (ival->interval_type != SQL_IS_SECOND &&
+		    ival->interval_type != SQL_IS_MINUTE_TO_SECOND &&
+		    ival->interval_type != SQL_IS_HOUR_TO_SECOND &&
+		    ival->interval_type != SQL_IS_DAY_TO_SECOND)
+			return SQL_ERROR;
+		sval++;
+		slen--;
+		secondprecision = 0;
+		while ('0' <= *sval && *sval <= '9') {
+			if (secondprecision < 9) {
+				secondprecision++;
+				ival->intval.day_second.fraction *= 10;
+				ival->intval.day_second.fraction += *sval - '0';
+			}
+			sval++;
+			slen--;
+		}
+	}
+	while (slen > 0 && isspace(*sval)) {
+		slen--;
+		sval++;
+	}
+	if (*sval != '\'')
+		return SQL_ERROR;
+	slen--;
+	sval++;
+	if (slen == 0 || !isspace(*sval))
+		return SQL_ERROR;
+	while (slen > 0 && isspace(*sval)) {
+		slen--;
+		sval++;
+	}
+
+	if (slen >= 3 && strncasecmp(sval, "day", 3) == 0) {
+		sval += 3;
+		slen -= 3;
+		if (ival->interval_type == 0 && n == 1) {
+			ival->interval_type = SQL_IS_DAY;
+			ival->intval.day_second.day = v1;
+		}
+		if (ival->interval_type != SQL_IS_DAY &&
+		    ival->interval_type != SQL_IS_DAY_TO_HOUR &&
+		    ival->interval_type != SQL_IS_DAY_TO_MINUTE &&
+		    ival->interval_type != SQL_IS_DAY_TO_SECOND)
+			return SQL_ERROR;
+	} else if (slen >= 4 && strncasecmp(sval, "hour", 4) == 0) {
+		slen -= 4;
+		sval += 4;
+		if (ival->interval_type == 0) {
+			if (n == 1) {
+				ival->interval_type = SQL_IS_HOUR;
+				ival->intval.day_second.day = v1 / 24;
+				ival->intval.day_second.hour = v1 % 24;
+			} else {
+				assert(n == 2);
+				ival->interval_type = SQL_IS_HOUR_TO_MINUTE;
+				if (v2 >= 60)
+					return SQL_ERROR;
+				ival->intval.day_second.day = v1 / 24;
+				ival->intval.day_second.hour = v1 % 24;
+				ival->intval.day_second.minute = v2;
+			}
+		}
+		if (ival->interval_type != SQL_IS_HOUR &&
+		    ival->interval_type != SQL_IS_HOUR_TO_MINUTE &&
+		    ival->interval_type != SQL_IS_HOUR_TO_SECOND)
+			return SQL_ERROR;
+	} else if (slen >= 6 && strncasecmp(sval, "minute", 6) == 0) {
+		slen -= 6;
+		sval += 6;
+		if (ival->interval_type == 0) {
+			if (n == 1) {
+				ival->interval_type = SQL_IS_MINUTE;
+				ival->intval.day_second.day = v1 / (24 * 60);
+				ival->intval.day_second.hour = (v1 / 60) % 24;
+				ival->intval.day_second.minute = v1 % 60;
+			} else {
+				assert(n == 2);
+				ival->interval_type = SQL_IS_MINUTE_TO_SECOND;
+				if (v2 >= 60)
+					return SQL_ERROR;
+				ival->intval.day_second.day = v1 / (24 * 60);
+				ival->intval.day_second.hour = (v1 / 60) % 24;
+				ival->intval.day_second.minute = v1 % 60;
+				ival->intval.day_second.second = v2;
+			}
+		}
+		if (ival->interval_type != SQL_IS_MINUTE &&
+		    ival->interval_type != SQL_IS_MINUTE_TO_SECOND)
+			return SQL_ERROR;
+	} else if (slen >= 6 && strncasecmp(sval, "second", 6) == 0) {
+		slen -= 6;
+		sval += 6;
+		if (ival->interval_type == 0) {
+			if (n == 1) {
+				ival->interval_type = SQL_IS_SECOND;
+				ival->intval.day_second.day = v1 / (24 * 60 * 60);
+				ival->intval.day_second.hour = (v1 / (60 * 60)) % 24;
+				ival->intval.day_second.minute = (v1 / 60) % 60;
+				ival->intval.day_second.second = v1 % 60;
+			}
+		}
+		if (ival->interval_type != SQL_IS_SECOND)
+			return SQL_ERROR;
+	}
+	{
+		int p = 2;
+		int q = 6;
+
+		if (parseoptionalbracketednumber(&sval, &slen, &p, ival->interval_type == SQL_IS_SECOND ? &q : NULL) == SQL_ERROR)
+			return SQL_ERROR;
+		if (leadingprecision > p)
+			return SQL_ERROR;
+		if (ival->interval_type == SQL_IS_SECOND && secondprecision > q)
+			return SQL_ERROR;
+	}
+	if (slen > 0 && isspace(*sval)) {
+		while (slen > 0 && isspace(*sval)) {
+			slen--;
+			sval++;
+		}
+		if (slen > 2 && strncasecmp(sval, "to", 2) == 0) {
+			slen -= 2;
+			sval += 2;
+			if (slen == 0 || !isspace(*sval))
+				return SQL_ERROR;
+			while (slen > 0 && isspace(*sval)) {
+				slen--;
+				sval++;
+			}
+			if (slen >= 4 && strncasecmp(sval, "hour", 4) == 0) {
+				slen -= 4;
+				sval += 4;
+				if (ival->interval_type != SQL_IS_DAY_TO_HOUR)
+					return SQL_ERROR;
+			} else if (slen >= 6 && strncasecmp(sval, "minute", 6) == 0) {
+				slen -= 6;
+				sval += 6;
+				if (ival->interval_type != SQL_IS_DAY_TO_MINUTE &&
+				    ival->interval_type != SQL_IS_HOUR_TO_MINUTE)
+					return SQL_ERROR;
+			} else if (slen >= 6 && strncasecmp(sval, "second", 6) == 0) {
+				int p = 6;
+
+				slen -= 6;
+				sval += 6;
+				if (ival->interval_type != SQL_IS_DAY_TO_SECOND &&
+				    ival->interval_type != SQL_IS_HOUR_TO_SECOND &&
+				    ival->interval_type != SQL_IS_MINUTE_TO_SECOND)
+					return SQL_ERROR;
+				while (slen > 0 && isspace(*sval)) {
+					slen--;
+					sval++;
+				}
+				if (parseoptionalbracketednumber(&sval, &slen, &p, NULL) == SQL_ERROR)
+					return SQL_ERROR;
+				if (p < secondprecision)
+					return SQL_ERROR;
+			} else
+				return SQL_ERROR;
+			while (slen > 0 && isspace(*sval)) {
+				slen--;
+				sval++;
+			}
+		}
+	}
+	if (slen > 0)
+		return SQL_ERROR;
+	*secprecp = secondprecision;
+	return SQL_SUCCESS;
+}
+
 SQLRETURN
 ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 	  SQLINTEGER buflen, SQLINTEGER *lenp, SQLINTEGER *nullp,
@@ -395,7 +933,8 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 	/* various interpretations of the input data */
 	bignum_t nval;
 	SQL_INTERVAL_STRUCT ival;
-	int i = 0;		/* scale of ival fraction, or counter */
+	int ivalprec = 0;	/* interval second precision */
+	int i;
 	DATE_STRUCT dval;
 	TIME_STRUCT tval;
 	TIMESTAMP_STRUCT tsval;
@@ -414,7 +953,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 	ardrec = col <= ard->sql_desc_count ? &ard->descRec[col] : NULL;
 	sql_type = irdrec->sql_desc_concise_type;
 
-	if (ptr &&offset)
+	if (ptr && offset)
 		ptr = (SQLPOINTER) ((char *) ptr +offset);
 
 	if (lenp && offset)
@@ -497,9 +1036,9 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 		/* interval types are transferred as ints but need to
 		   be converted to the internal interval formats */
 		if (sql_type == SQL_INTERVAL_SECOND)
-			i = parsesecondinterval(&nval, &ival);
+			ivalprec = parsesecondinterval(&nval, &ival, sql_type);
 		else if (sql_type == SQL_INTERVAL_MONTH)
-			parsemonthinterval(&nval, &ival);
+			parsemonthinterval(&nval, &ival, sql_type);
 		break;
 	case SQL_DOUBLE:
 	case SQL_REAL:
@@ -744,8 +1283,17 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 				}
 			}
 			break;
-		case SQL_INTERVAL_MONTH:
-			sz = snprintf((char *) ptr, buflen, "%s%04u-%02u", ival.interval_sign ? "-" : "", ival.intval.year_month.year, ival.intval.year_month.month);
+		case SQL_INTERVAL_MONTH: {
+			int f;
+
+			for (i = 1, f = 10; ival.intval.year_month.year >= f; f *= 10, i++)
+				;
+			sz = snprintf((char *) ptr, buflen,
+				      "INTERVAL %s'%u-%02u' YEAR(%d) TO MONTH",
+				      ival.interval_sign ? "-" : "",
+				      ival.intval.year_month.year,
+				      ival.intval.year_month.month,
+				      i);
 
 			if (sz < 0 || sz >= buflen) {
 				/* Numeric value out of range */
@@ -758,11 +1306,30 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 			if (lenp)
 				*lenp = sz;
 			break;
-		case SQL_INTERVAL_SECOND:
+		}
+		case SQL_INTERVAL_SECOND: {
+			int f;
+
 			data = (char *) ptr;
 
-			sz = snprintf(data, buflen, "%s%u %02u:%02u:%02u", ival.interval_sign ? "-" : "", ival.intval.day_second.day, ival.intval.day_second.hour, ival.intval.day_second.minute, ival.intval.day_second.second);
-			if (sz < 0 || sz >= buflen) {
+			for (i = 1, f = 10; ival.intval.day_second.day >= f; f *= 10, i++)
+				;
+			if (i < 10)
+				f = 17;	/* space needed for "'DAY(n) TO SECOND" */
+			else
+				f = 18;	/* space needed for "'DAY(nn) TO SECOND" */
+			if (ivalprec < 10)
+				f += 3;	/* space for additional (n) */
+			else
+				f += 4;	/* space for additional (nn) */
+
+			sz = snprintf(data, buflen, "INTERVAL %s'%u %02u:%02u:%02u",
+				      ival.interval_sign ? "-" : "",
+				      ival.intval.day_second.day,
+				      ival.intval.day_second.hour,
+				      ival.intval.day_second.minute,
+				      ival.intval.day_second.second);
+			if (sz < 0 || sz + f >= buflen) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
 
@@ -770,22 +1337,30 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 					free(ptr);
 				return SQL_ERROR;
 			}
+			data += sz;
+			buflen -= sz;
+			
 			if (lenp)
 				*lenp = sz;
 			if (ival.intval.day_second.fraction) {
-				data += sz;
-				buflen -= sz;
 				if (lenp)
-					*lenp += i + 1;
-				if (buflen > 2)
-					sz = snprintf(data, buflen, ".%0*u", i, ival.intval.day_second.fraction);
-				if (buflen <= 2 || sz < 0 || sz >= buflen) {
-					data[buflen - 1] = 0;
+					*lenp += ivalprec + 1;
+				if (buflen > f + 2)
+					sz = snprintf(data, buflen, ".%0*u", ivalprec, ival.intval.day_second.fraction);
+				if (buflen <= f + 2 || sz < 0 || sz + f >= buflen) {
+					sz = buflen - f - 1;
 					/* String data, right-truncated */
 					addStmtError(stmt, "01004", NULL, 0);
 				}
+				data += sz;
+				buflen -= sz;
 			}
+			/* this should now fit */
+			sz = snprintf(data, buflen, "' DAY(%d) TO SECOND(%d)", i, ivalprec);
+			if (lenp && sz > 0)
+				*lenp += sz;
 			break;
+		}
 		}
 		if (type == SQL_C_WCHAR) {
 			SQLSMALLINT n;
@@ -853,9 +1428,8 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 			*(unsigned char *) ptr = fval >= 1;
 
 			if (fval != 0 && fval != 1) {
-				/* Invalid character value for cast
-				   specification */
-				addStmtError(stmt, "22018", NULL, 0);
+				/* Fractional truncation */
+				addStmtError(stmt, "01S07", NULL, 0);
 			}
 			break;
 		case SQL_DECIMAL:
@@ -1347,39 +1921,20 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 			ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQL_INTERVAL_STRUCT) : bind_type));
 
 		switch (sql_type) {
-		case SQL_CHAR: {
-			int n;
-
-			ival.interval_type = SQL_IS_YEAR_TO_MONTH;
-			ival.interval_sign = SQL_TRUE;
-			if (sscanf(data, "%d-%u%n", &i, &ival.intval.year_month.month, &n) < 2) {
+		case SQL_CHAR:
+			if (parsemonthintervalstring((SQLCHAR **) &data, NULL, &ival) == SQL_ERROR) {
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
 				return SQL_ERROR;
 			}
-			data += n;
-			while (space(*data))
-				data++;
-			if (*data) {
-				/* Invalid character value for cast
-				   specification */
-				addStmtError(stmt, "22018", NULL, 0);
-				return SQL_ERROR;
-			}
-			if (i < 0) {
-				ival.interval_sign = SQL_FALSE;
-				i = -i;
-			}
-			ival.intval.year_month.year = i;
 			break;
-		}
 		case SQL_DECIMAL:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
-			parsemonthinterval(&nval, &ival);
+			parsemonthinterval(&nval, &ival, type);
 			break;
 		case SQL_INTERVAL_MONTH:
 			break;
@@ -1441,52 +1996,20 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 			ptr = (SQLPOINTER) ((char *) ptr +row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQL_INTERVAL_STRUCT) : bind_type));
 
 		switch (sql_type) {
-		case SQL_CHAR: {
-			int n;
-
-			ival.interval_type = SQL_IS_DAY_TO_SECOND;
-			ival.interval_sign = SQL_TRUE;
-			if (sscanf(data, "%d %u:%u:%u%n", &i, &ival.intval.day_second.hour, &ival.intval.day_second.minute, &ival.intval.day_second.second, &n) < 4) {
-				/* Invalid character value for cast
-				   specification */
-				addStmtError(stmt, "22018", NULL, 0);
-				return SQL_ERROR;
-			}
-			if (i < 0) {
-				ival.interval_sign = SQL_FALSE;
-				i = -i;
-			}
-			ival.intval.day_second.day = i;
-			ival.intval.day_second.fraction = 0;
-			data += n;
-			i = 0;
-			if (*data == '.') {
-				n = 1;
-				while (*++data && '0' <= *data && *data <= '9') {
-					if (n < 1000000000) {
-						i++;
-						n *= 10;
-						ival.intval.day_second.fraction *= 10;
-						ival.intval.day_second.fraction += *data - '0';
-					}
-				}
-			}
-			while (space(*data))
-				data++;
-			if (*data) {
+		case SQL_CHAR:
+			if (parsesecondintervalstring((SQLCHAR **) &data, NULL, &ival, &ivalprec) == SQL_ERROR) {
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
 				return SQL_ERROR;
 			}
 			break;
-		}
 		case SQL_DECIMAL:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
-			i = parsesecondinterval(&nval, &ival);
+			ivalprec = parsesecondinterval(&nval, &ival, type);
 			break;
 		case SQL_INTERVAL_SECOND:
 			break;
@@ -1549,7 +2072,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 			p->intval.day_second.fraction = ival.intval.day_second.fraction;
 			break;
 		case SQL_C_INTERVAL_DAY_TO_HOUR:
-			p->interval_type = SQL_IS_HOUR;
+			p->interval_type = SQL_IS_DAY_TO_HOUR;
 			if ((p->intval.day_second.day = ival.intval.day_second.day) >= maxdatetimeval) {
 				/* Interval field overflow */
 				addStmtError(stmt, "22015", NULL, 0);
@@ -1623,12 +2146,17 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 			break;
 		}
 		if (p->intval.day_second.fraction) {
-			while (i < precision) {
-				i++;
+			while (ivalprec < precision) {
+				ivalprec++;
 				p->intval.day_second.fraction *= 10;
 			}
-			while (i > precision) {
-				i--;
+			while (ivalprec > precision) {
+				ivalprec--;
+				if (stmt->Error == NULL &&
+				    p->intval.day_second.fraction % 10 != 0) {
+					/* Fractional truncation */
+					addStmtError(stmt, "01S07", NULL, 0);
+				}
 				p->intval.day_second.fraction /= 10;
 			}
 		}
@@ -1684,6 +2212,7 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 	DATE_STRUCT dval;
 	TIME_STRUCT tval;
 	TIMESTAMP_STRUCT tsval;
+	int ivalprec = 0;	/* interval second precision */
 	SQL_INTERVAL_STRUCT ival;
 	char *buf = *bufp;
 	size_t bufpos = *bufposp;
@@ -1691,8 +2220,18 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 	char data[256];
 	int i;
 
+	assert(param <= stmt->ImplParamDescr->sql_desc_count);
+	assert(param <= stmt->ApplParamDescr->sql_desc_count);
 	ipdrec = stmt->ImplParamDescr->descRec + param;
 	apdrec = stmt->ApplParamDescr->descRec + param;
+
+	if (apdrec->sql_desc_data_ptr == NULL &&
+	    (apdrec->sql_desc_indicator_ptr == NULL ||
+	     *apdrec->sql_desc_indicator_ptr != SQL_NULL_DATA)) {
+		/* COUNT field incorrect */
+		addStmtError(stmt, "07002", NULL, 0);
+		return SQL_ERROR;
+	}
 
 	ctype = apdrec->sql_desc_concise_type;
 	sqltype = ipdrec->sql_desc_concise_type;
@@ -1712,6 +2251,16 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 	default:
 		break;
 	}
+
+	if (apdrec->sql_desc_indicator_ptr != NULL &&
+	    *apdrec->sql_desc_indicator_ptr == SQL_NULL_DATA) {
+		assigns(buf, bufpos, buflen, "NULL", stmt);
+		*bufp = buf;
+		*bufposp = bufpos;
+		*buflenp = buflen;
+		return SQL_SUCCESS;
+	}
+
 	switch (ctype) {
 	case SQL_C_CHAR:
 	case SQL_C_BINARY:
@@ -1874,6 +2423,7 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 		ival.intval.day_second.minute = 0;
 		ival.intval.day_second.second = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.second;
 		ival.intval.day_second.fraction = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.fraction;
+		ivalprec = apdrec->sql_desc_precision;
 		break;
 	case SQL_C_INTERVAL_DAY_TO_HOUR:
 		ival.interval_type = SQL_IS_DAY_TO_HOUR;
@@ -1901,6 +2451,7 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 		ival.intval.day_second.minute = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.minute;
 		ival.intval.day_second.second = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.second;
 		ival.intval.day_second.fraction = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.fraction;
+		ivalprec = apdrec->sql_desc_precision;
 		break;
 	case SQL_C_INTERVAL_HOUR_TO_MINUTE:
 		ival.interval_type = SQL_IS_HOUR_TO_MINUTE;
@@ -1919,6 +2470,7 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 		ival.intval.day_second.minute = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.minute;
 		ival.intval.day_second.second = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.second;
 		ival.intval.day_second.fraction = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.fraction;
+		ivalprec = apdrec->sql_desc_precision;
 		break;
 	case SQL_C_INTERVAL_MINUTE_TO_SECOND:
 		ival.interval_type = SQL_IS_MINUTE_TO_SECOND;
@@ -1928,6 +2480,7 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 		ival.intval.day_second.minute = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.minute;
 		ival.intval.day_second.second = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.second;
 		ival.intval.day_second.fraction = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.fraction;
+		ivalprec = apdrec->sql_desc_precision;
 		break;
 	case SQL_C_GUID:
 		break;
@@ -2045,8 +2598,8 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 		case SQL_C_INTERVAL_SECOND:
 			snprintf(data, sizeof(data), "%s%0*d", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.second);
 			assigns(buf, bufpos, buflen, data, stmt);
-			if (ival.intval.day_second.fraction && apdrec->sql_desc_precision > 0) {
-				snprintf(data, sizeof(data), ".%0*u", (int) apdrec->sql_desc_precision, ival.intval.day_second.fraction);
+			if (ival.intval.day_second.fraction && ivalprec > 0) {
+				snprintf(data, sizeof(data), ".%0*u", ivalprec, ival.intval.day_second.fraction);
 				assigns(buf, bufpos, buflen, data, stmt);
 			}
 			break;
@@ -2061,8 +2614,8 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 		case SQL_C_INTERVAL_DAY_TO_SECOND:
 			snprintf(data, sizeof(data), "%s%0*u %02u:%02u:%02u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.day, ival.intval.day_second.hour, ival.intval.day_second.minute, ival.intval.day_second.second);
 			assigns(buf, bufpos, buflen, data, stmt);
-			if (ival.intval.day_second.fraction && apdrec->sql_desc_precision > 0) {
-				snprintf(data, sizeof(data), ".%0*u", (int) apdrec->sql_desc_precision, ival.intval.day_second.fraction);
+			if (ival.intval.day_second.fraction && ivalprec > 0) {
+				snprintf(data, sizeof(data), ".%0*u", ivalprec, ival.intval.day_second.fraction);
 				assigns(buf, bufpos, buflen, data, stmt);
 			}
 			break;
@@ -2073,16 +2626,16 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 		case SQL_C_INTERVAL_HOUR_TO_SECOND:
 			snprintf(data, sizeof(data), "%s%0*u:%02u:%02u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.hour, ival.intval.day_second.minute, ival.intval.day_second.second);
 			assigns(buf, bufpos, buflen, data, stmt);
-			if (ival.intval.day_second.fraction && apdrec->sql_desc_precision > 0) {
-				snprintf(data, sizeof(data), ".%0*u", (int) apdrec->sql_desc_precision, ival.intval.day_second.fraction);
+			if (ival.intval.day_second.fraction && ivalprec > 0) {
+				snprintf(data, sizeof(data), ".%0*u", ivalprec, ival.intval.day_second.fraction);
 				assigns(buf, bufpos, buflen, data, stmt);
 			}
 			break;
 		case SQL_C_INTERVAL_MINUTE_TO_SECOND:
 			snprintf(data, sizeof(data), "%s%0*u:%02u", ival.interval_sign ? "-" : "", (int) apdrec->sql_desc_datetime_interval_precision, ival.intval.day_second.minute, ival.intval.day_second.second);
 			assigns(buf, bufpos, buflen, data, stmt);
-			if (ival.intval.day_second.fraction && apdrec->sql_desc_precision > 0) {
-				snprintf(data, sizeof(data), ".%0*u", (int) apdrec->sql_desc_precision, ival.intval.day_second.fraction);
+			if (ival.intval.day_second.fraction && ivalprec > 0) {
+				snprintf(data, sizeof(data), ".%0*u", ivalprec, ival.intval.day_second.fraction);
 				assigns(buf, bufpos, buflen, data, stmt);
 			}
 			break;
@@ -2222,45 +2775,17 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 		}
 		break;
 	case SQL_INTERVAL_MONTH:
+	case SQL_INTERVAL_YEAR:
+	case SQL_INTERVAL_YEAR_TO_MONTH:
 		switch (ctype) {
 		case SQL_C_CHAR:
 		case SQL_C_WCHAR:
-		case SQL_C_BINARY: {
-			int n;
-
-			ival.interval_sign = SQL_TRUE;
-			if (sscanf((char *) sval, "%d-%u%n", &i, &ival.intval.year_month.month, &n) < 2) {
-				if (sscanf((char *) sval, "%d%n", &i, &n) < 1) {
-					/* Invalid character value for
-					   cast specification */
-					addStmtError(stmt, "22018", NULL, 0);
-					return SQL_ERROR;
-				}
-				ival.interval_type = SQL_IS_MONTH;
-				if (i < 0) {
-					ival.interval_sign = SQL_FALSE;
-					i = -i;
-				}
-				ival.intval.year_month.month = i;
-			} else {
-				sval += n;
-				while (space(*sval))
-					sval++;
-				if (*sval) {
-					/* Invalid character value for cast
-					   specification */
-					addStmtError(stmt, "22018", NULL, 0);
-					return SQL_ERROR;
-				}
-				ival.interval_type = SQL_IS_YEAR_TO_MONTH;
-				if (i < 0) {
-					ival.interval_sign = SQL_FALSE;
-					i = -i;
-				}
-				ival.intval.year_month.year = i;
+		case SQL_C_BINARY:
+			if (parsemonthintervalstring(&sval, &slen, &ival) == SQL_ERROR) {
+				addStmtError(stmt, "22018", NULL, 0);
+				return SQL_ERROR;
 			}
 			break;
-		}
 		case SQL_C_BIT:
 		case SQL_C_STINYINT:
 		case SQL_C_UTINYINT:
@@ -2274,7 +2799,7 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 		case SQL_C_SBIGINT:
 		case SQL_C_UBIGINT:
 		case SQL_C_NUMERIC:
-			parsemonthinterval(&nval, &ival);
+			parsemonthinterval(&nval, &ival, sqltype);
 			break;
 		case SQL_C_INTERVAL_YEAR:
 		case SQL_C_INTERVAL_MONTH:
@@ -2300,11 +2825,25 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 		}
 		assigns(buf, bufpos, buflen, data, stmt);
 		break;
+	case SQL_INTERVAL_DAY:
+	case SQL_INTERVAL_HOUR:
+	case SQL_INTERVAL_MINUTE:
 	case SQL_INTERVAL_SECOND:
+	case SQL_INTERVAL_DAY_TO_HOUR:
+	case SQL_INTERVAL_DAY_TO_MINUTE:
+	case SQL_INTERVAL_DAY_TO_SECOND:
+	case SQL_INTERVAL_HOUR_TO_MINUTE:
+	case SQL_INTERVAL_HOUR_TO_SECOND:
+	case SQL_INTERVAL_MINUTE_TO_SECOND:
 		switch (ctype) {
 		case SQL_C_CHAR:
 		case SQL_C_WCHAR:
 		case SQL_C_BINARY:
+			if (parsesecondintervalstring(&sval, &slen, &ival, &ivalprec) == SQL_ERROR) {
+				addStmtError(stmt, "22018", NULL, 0);
+				return SQL_ERROR;
+			}
+			break;
 		case SQL_C_BIT:
 		case SQL_C_STINYINT:
 		case SQL_C_UTINYINT:
@@ -2318,14 +2857,8 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 		case SQL_C_SBIGINT:
 		case SQL_C_UBIGINT:
 		case SQL_C_NUMERIC:
-		case SQL_C_FLOAT:
-		case SQL_C_DOUBLE:
-		case SQL_C_TYPE_DATE:
-		case SQL_C_TYPE_TIME:
-		case SQL_C_TYPE_TIMESTAMP:
-		case SQL_C_INTERVAL_YEAR:
-		case SQL_C_INTERVAL_MONTH:
-		case SQL_C_INTERVAL_YEAR_TO_MONTH:
+			parsesecondinterval(&nval, &ival, sqltype);
+			break;
 		case SQL_C_INTERVAL_DAY:
 		case SQL_C_INTERVAL_HOUR:
 		case SQL_C_INTERVAL_MINUTE:
@@ -2336,12 +2869,15 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 		case SQL_C_INTERVAL_HOUR_TO_MINUTE:
 		case SQL_C_INTERVAL_HOUR_TO_SECOND:
 		case SQL_C_INTERVAL_MINUTE_TO_SECOND:
-		case SQL_C_GUID:
+			break;
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
 			return SQL_ERROR;
 		}
+		snprintf(data, sizeof(data), "INTERVAL %s'%u %u:%u:%u", ival.interval_sign ? "" : "- ", ival.intval.day_second.day, ival.intval.day_second.hour, ival.intval.day_second.minute, ival.intval.day_second.second);
+		assigns(buf, bufpos, buflen, data, stmt);
+		assigns(buf, bufpos, buflen, "' DAY TO SECOND", stmt);
 		break;
 	case SQL_DECIMAL:
 	case SQL_SMALLINT:
@@ -2420,8 +2956,8 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 			nval.scale = 0;
 			nval.sign = !ival.interval_sign;
 			nval.val = 60 * (60 * (24 * ival.intval.day_second.day + ival.intval.day_second.hour) + ival.intval.day_second.minute) + ival.intval.day_second.second;
-			if (ival.intval.day_second.fraction && apdrec->sql_desc_precision > 0) {
-				for (i = 0; i < apdrec->sql_desc_precision; i++) {
+			if (ival.intval.day_second.fraction && ivalprec > 0) {
+				for (i = 0; i < ivalprec; i++) {
 					nval.val *= 10;
 					nval.scale++;
 				}
@@ -2545,10 +3081,10 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 			break;
 		case SQL_C_INTERVAL_SECOND:
 			fval = (double) (60 * (60 * (24 * ival.intval.day_second.day + ival.intval.day_second.hour) + ival.intval.day_second.minute) + ival.intval.day_second.second);
-			if (ival.intval.day_second.fraction && apdrec->sql_desc_precision > 0) {
+			if (ival.intval.day_second.fraction && ivalprec > 0) {
 				int f = 1;
 				
-				for (i = 0; i < apdrec->sql_desc_precision; i++)
+				for (i = 0; i < ivalprec; i++)
 					f *= 10;
 				fval += ival.intval.day_second.fraction / (double) f;
 			}
@@ -2571,5 +3107,5 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 	*bufp = buf;
 	*bufposp = bufpos;
 	*buflenp = buflen;
-	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
+	return SQL_SUCCESS;
 }
