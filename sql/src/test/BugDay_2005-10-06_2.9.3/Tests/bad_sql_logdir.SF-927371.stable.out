@@ -42,8 +42,8 @@ stdout of test 'bad_sql_logdir.SF-927371` in directory 'src/test/BugDay_2005-10-
 [ "trans",	  1		  ]
 [ "txtsim",	  1		  ]
 [ "xtables",	  1		  ]
-
-
+!ERROR: logger could not create log directory /xyz/demo/
+!ERROR: interpret: proc returned unexpected type.
 #---------------------------------#
 # module		usage_count	  # name
 # str		int		  # type
