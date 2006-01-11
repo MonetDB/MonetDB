@@ -567,7 +567,7 @@ mvc_send_@1(stream *s, @1 cnt){
 int
 convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, int len)
 {
-	int l;
+	int l = 0;
 
 	if (eclass == EC_DEC) {
 		l = dec_tostr((void *) (ptrdiff_t) sc, buf, &len, mtype, p);
@@ -602,7 +602,7 @@ int
 export_value( mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p, int mtype, char **buf, int *len)
 {
 	int ok = 0;
-	int l;
+	int l = 0;
 
 	if (eclass == EC_DEC) {
 		l = dec_tostr((void *) (ptrdiff_t) sc, buf, len,
