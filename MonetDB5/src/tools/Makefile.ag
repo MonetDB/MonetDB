@@ -50,7 +50,7 @@ bin_Mbeddedmal = {
 scripts_sh = {
 	EXT = ""
 	DIR = bindir
-	SOURCES = monetdb5-config.mx.in monetdb mguardian mchkpnt mrecover JdbcClient
+	SOURCES = monetdb5-config.mx.in monetdb mguardian mchkpnt mrecover mjclient
 }
 
 scripts_bat = {
