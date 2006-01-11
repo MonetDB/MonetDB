@@ -564,7 +564,7 @@ mvc_create(int clientid, backend_stack stk, bstream *rs, stream *ws)
 	m->mode = m_normal;
 	m->explain = m_normal;
 	m->auto_commit = 1;
-	m->reply_size = 1000;
+	m->reply_size = 100;
 	m->debug = 0;
 	m->depth = 0;
 
