@@ -57,6 +57,10 @@ easy to find something akin you intend to enter.
 #define EC_FIXED(e)	(e==EC_BIT||e==EC_CHAR||\
 			 e==EC_NUM||e==EC_INTERVAL||e==EC_DEC||EC_TEMP(e))
 
+#define type_has_tz(t)	(EC_TEMP((t)->type->eclass) && \
+			(((t)->type->eclass == EC_TIME && strcmp((t)->type->sqlname, "timetz") == 0) || \
+			 ((t)->type->eclass == EC_TIMESTAMP && strcmp((t)->type->sqlname, "timestamptz") == 0)) )
+
 extern list *aliases;
 extern list *types;
 extern list *aggrs;
