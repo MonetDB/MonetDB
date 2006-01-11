@@ -604,8 +604,6 @@ fi
 if [ "${what}" != "BUILDTOOLS" ] ; then
 	if [ "${what}" = "MONET5" ] ; then
 		mtest_config="${monet5_config}"
-	  elif [ "${MONET5_PREFIX}" ] ; then
-		mtest_config="-5"
 	  else
 		mtest_config="-4"
 	fi
