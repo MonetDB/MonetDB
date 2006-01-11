@@ -149,6 +149,12 @@ sql_symbol2stmt(mvc *c)
 			s = semantic(c, c->sym);
 		} else 
 			s = rel_bin(c, r);
+		if (s){
+			stmt *opt = rel2bin(c, s);
+
+			stmt_destroy(s);
+			return opt;
+		}
 	}  else {
 		/*printf("# semantic binary algebra\n");*/
 		s = semantic(c, c->sym);
@@ -503,6 +509,11 @@ query string with "M".
 				m->auto_commit = (id)?1:0;
 				if (mvc_rollback(m, 0, NULL) < 0)
 					break;
+				in->pos = in->len;	/* HACK: should use parsed lenght */
+				continue;
+			}
+			if (sscanf(in->buf + in->pos, "reply_size %d", &id) == 1) {
+				m->reply_size = id;
 				in->pos = in->len;	/* HACK: should use parsed lenght */
 				continue;
 			}
