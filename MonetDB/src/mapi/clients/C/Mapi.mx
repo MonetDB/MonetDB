@@ -3659,9 +3659,10 @@ mapi_fetch_line(MapiHdl hdl)
 	    (result = hdl->result) != NULL &&
 	    hdl->mid->languageId == LANG_SQL &&
 	    result->querytype == Q_TABLE &&
-	    hdl->mid->active == NULL &&
 	    result->row_count > 0 &&
 	    result->cache.first + result->cache.tuplecount < result->row_count) {
+		if (hdl->mid->active != NULL)
+			read_into_cache(hdl->mid->active, 0);
 		hdl->mid->active = hdl;
 		hdl->active = result;
 		if (stream_printf(hdl->mid->to, "X" "export %d %d\n", result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
