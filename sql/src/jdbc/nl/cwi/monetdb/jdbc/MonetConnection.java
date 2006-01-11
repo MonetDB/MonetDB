@@ -410,8 +410,22 @@ public class MonetConnection implements Connection {
 	 * @see #setAutoCommit(boolean)
 	 */
 	public void commit() throws SQLException {
+		// note: can't use sendIndependentCommand here because we need
+		// to process the auto_commit state the server gives
+
+		// create a container for the result
+		ResponseList l = new ResponseList(
+			0,
+			0,
+			ResultSet.FETCH_FORWARD,
+			ResultSet.CONCUR_READ_ONLY
+		);
 		// send commit to the server
-		sendIndependantCommand("COMMIT");
+		try {
+			l.processQuery("COMMIT");
+		} finally {
+			l.close();
+		}
 	}
 
 	/**
@@ -719,8 +733,22 @@ public class MonetConnection implements Connection {
 
 		MonetSavepoint sp = (MonetSavepoint)savepoint;
 
+		// note: can't use sendIndependentCommand here because we need
+		// to process the auto_commit state the server gives
+
+		// create a container for the result
+		ResponseList l = new ResponseList(
+			0,
+			0,
+			ResultSet.FETCH_FORWARD,
+			ResultSet.CONCUR_READ_ONLY
+		);
 		// send the appropriate query string to the database
-		sendIndependantCommand("RELEASE SAVEPOINT " + sp.getName());
+		try {
+			l.processQuery("RELEASE SAVEPOINT " + sp.getName());
+		} finally {
+			l.close();
+		}
 	}
 
 	/**
@@ -734,8 +762,22 @@ public class MonetConnection implements Connection {
 	 * @see #setAutoCommit(boolean)
 	 */
 	public void rollback() throws SQLException {
+		// note: can't use sendIndependentCommand here because we need
+		// to process the auto_commit state the server gives
+
+		// create a container for the result
+		ResponseList l = new ResponseList(
+			0,
+			0,
+			ResultSet.FETCH_FORWARD,
+			ResultSet.CONCUR_READ_ONLY
+		);
 		// send rollback to the server
-		sendIndependantCommand("ROLLBACK");
+		try {
+			l.processQuery("ROLLBACK");
+		} finally {
+			l.close();
+		}
 	}
 
 	/**
@@ -755,8 +797,22 @@ public class MonetConnection implements Connection {
 
 		MonetSavepoint sp = (MonetSavepoint)savepoint;
 
+		// note: can't use sendIndependentCommand here because we need
+		// to process the auto_commit state the server gives
+
+		// create a container for the result
+		ResponseList l = new ResponseList(
+			0,
+			0,
+			ResultSet.FETCH_FORWARD,
+			ResultSet.CONCUR_READ_ONLY
+		);
 		// send the appropriate query string to the database
-		sendIndependantCommand("ROLLBACK TO SAVEPOINT " + sp.getName());
+		try {
+			l.processQuery("ROLLBACK TO SAVEPOINT " + sp.getName());
+		} finally {
+			l.close();
+		}
 	}
 
 	/**
@@ -830,8 +886,23 @@ public class MonetConnection implements Connection {
 	public Savepoint setSavepoint() throws SQLException {
 		// create a new Savepoint object
 		MonetSavepoint sp = new MonetSavepoint();
+
+		// note: can't use sendIndependentCommand here because we need
+		// to process the auto_commit state the server gives
+
+		// create a container for the result
+		ResponseList l = new ResponseList(
+			0,
+			0,
+			ResultSet.FETCH_FORWARD,
+			ResultSet.CONCUR_READ_ONLY
+		);
 		// send the appropriate query string to the database
-		sendIndependantCommand("SAVEPOINT " + sp.getName());
+		try {
+			l.processQuery("SAVEPOINT " + sp.getName());
+		} finally {
+			l.close();
+		}
 
 		return(sp);
 	}
@@ -854,8 +925,23 @@ public class MonetConnection implements Connection {
 		} catch (IllegalArgumentException e) {
 			throw new SQLException(e.getMessage());
 		}
+
+		// note: can't use sendIndependentCommand here because we need
+		// to process the auto_commit state the server gives
+
+		// create a container for the result
+		ResponseList l = new ResponseList(
+			0,
+			0,
+			ResultSet.FETCH_FORWARD,
+			ResultSet.CONCUR_READ_ONLY
+		);
 		// send the appropriate query string to the database
-		sendIndependantCommand("SAVEPOINT " + sp.getName());
+		try {
+			l.processQuery("SAVEPOINT " + sp.getName());
+		} finally {
+			l.close();
+		}
 
 		return(sp);
 	}
