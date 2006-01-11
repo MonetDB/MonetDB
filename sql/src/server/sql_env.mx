@@ -36,13 +36,6 @@ trace of the SQL queries for post analysis. It is available in
 the system table called 'profile'. Omission of either qualifier merely
 results in a straight execution of the query.
 
-The 'reply_size' limits the number of tuples sent to the front end.
-[It is unclear how the remainder can be obtained within the SQL language
-framework. The reply_size should be replaced by 'limit']
-The 'explain' variable is a string which can be set to 'plan' or 'profile' and
-captures execution information of any SQL query in a table 'profile' for 
-post-analysis.
-
 By default all remaining variables are stored as strings and 
 any type analysis is up to the user. The can be freely used by the
 SQL programmer for inclusion in his queries. [TODO]
@@ -305,8 +298,6 @@ sql_update_var(mvc *m, char *name)
 {
 	if (strcmp(name, "debug") == 0) {
 		m->debug = sql_get_int_var(m, "debug");
-	} else if (strcmp(name, "reply_size") == 0) {
-		m->reply_size = sql_get_int_var(m, "reply_size");
 	} else if (strcmp(name, "current_schema") == 0) {
 		char *schema = sql_get_str_var(m, "current_schema");
 
@@ -397,9 +388,6 @@ sql_session(mvc *m)
 
 	snprintf(buf, BUFSIZ, "%d", m->debug);
 	table_insert(tr, s, "debug", buf, "int", &rw, NULL);
-
-	snprintf(buf, BUFSIZ, "%d", m->reply_size);
-	table_insert(tr, s, "reply_size", buf, "int", &rw, NULL);
 
 	buf[0] = 0;
 	if (m->explain == m_normal)
