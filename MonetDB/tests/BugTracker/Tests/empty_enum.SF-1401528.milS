@@ -1,0 +1,26 @@
+module(unix);
+module(ascii_io);
+module(enum);
+
+var TSTSRCDIR := getenv("TSTSRCDIR");
+
+var entities := new(void,str).import(TSTSRCDIR+"/empty_enum.SF-1401528.txt").seqbase(0@0);
+
+var enum_entities:=enum_create("enum_entities",entities);
+
+encode(enum_entities,"p").print();
+# This produces, the expected: [ p ]
+
+encode(enum_entities,"p0").print();
+# This produces, an empty representation,
+# as expected (p0 is not in the table): [ ]
+
+encode(enum_entities,"p1").print();
+# But, this also produces an empty representation,
+# while "p1" is in the table: [ ]
+
+var codes := new(void,enum_entities,count(entities)).seqbase(0@0);
+entities@batloop() {
+	codes.append(encode(enum_entities,$t));
+}
+print(entities,codes);
