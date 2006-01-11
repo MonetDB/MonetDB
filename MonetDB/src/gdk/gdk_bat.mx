@@ -700,7 +700,7 @@ This code assumes that new elements are appended to the BUN list.
 			b->@1seqbase = *(oid*) @1;
 			bm->@2seqbase = *(oid*) @1;
 		} else if (*(oid*) @1 != (b->@1seqbase + BUNgetpos(b, BUNlast(b)))) {
-		 	b = BATmaterialize(b, (size_t) ((double)BATcount(b)*1.2));
+		 	b = BATmaterialize@1(b, (size_t) ((double)BATcount(b)*1.2));
 			if (b == NULL)
 				return b;
 		}

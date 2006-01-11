@@ -474,6 +474,141 @@ BATmaterialize(BAT *b, size_t size)
 	return ret;
 }
 
+/* only materialize the head */
+BAT *
+BATmaterializeh(BAT *b, size_t size)
+{
+	BAT *bm, *ret = NULL;
+	int ht = b->htype, tt = b->ttype;
+	size_t oldsize = BATcount(b);
+	size_t cnt = MAX(oldsize, size);
+	Heap buns = *b->batBuns, *hh = b->hheap, *th = b->theap;
+	int bunwidth = b->dims.bunwidth, tlc = b->tloc;
+	int newbw = 0;
+	BUN p = BUNfirst(b), q = BUNlast(b);
+	char *nme = BBP_physical(b->batCacheid);
+	int committed = BBP_status(b->batCacheid) & BBPEXISTING;
+	oid h;
+	BUN r;
+
+	BATcheck(b, "BATmaterialize: bat required");
+	ALGODEBUG THRprintf(GDKout, "BATmaterialize(%d," SZFMT ");\n", (int) b->batCacheid, size);
+
+	if (!BAThdense(b) || ht != TYPE_void) {
+		/* no voids */
+		return b;
+	}
+	ht = TYPE_oid;
+
+	/* cleanup possible ACC's */
+	HASHdestroy(b);
+
+	/* guess new bunwidth before setting the new dimensions, +3 to allow chr-on-int alignment */
+	b->batBuns->filename = NULL;
+	if (HEAPalloc(b->batBuns, cnt + 3, 2 * MAX(sizeof(oid), b->dims.bunwidth)) < 0) {
+		*b->batBuns = buns;
+		return NULL;
+	}
+	if (hh) {
+		b->hheap = (Heap*)GDKmalloc(sizeof(Heap));
+		*b->hheap = *hh;
+		b->hheap->filename = NULL;
+		if (ATOMheap(ht, b->hheap, cnt) < 0) {
+			HEAPfree(b->batBuns);
+			*b->batBuns = buns;
+			b->hheap = hh;
+			return NULL;
+		}
+	}
+	if (th) {
+		b->theap = (Heap*)GDKmalloc(sizeof(Heap));
+		*b->theap = *th;
+		b->theap->filename = NULL;
+		if (ATOMheap(tt, b->theap, cnt) < 0) {
+			HEAPfree(b->batBuns);
+			HEAPfree(b->hheap);
+			GDKfree(b->hheap);
+			*b->batBuns = buns;
+			b->hheap = hh;
+			b->theap = th;
+			return NULL;
+		}
+	}
+
+	/* point of no return */
+	b->htype = ht;
+	b->ttype = tt;
+	BATsetdims(b);
+	DELTAinit(b);
+	newbw = BUNsize(b);
+	b->batDirty = TRUE;
+	b->batDirtydesc = TRUE;
+	b->batDirtybuns = TRUE;
+
+	bm = BATmirror(b);
+	bm->dims.headtype = b->dims.tailtype;
+	bm->dims.tailtype = b->dims.headtype;
+	bm->dims.headloc = b->dims.tailloc;
+	bm->dims.tailloc = b->dims.headloc;
+	bm->dims.headkey = b->dims.tailkey;
+	bm->dims.tailkey = b->dims.headkey;
+	bm->dims.headvarsized = b->dims.tailvarsized;
+	bm->dims.tailvarsized = b->dims.headvarsized;
+	bm->dims.bunwidth = b->dims.bunwidth;
+	bm->dims.bunshift = b->dims.bunshift;
+	bm->dims.hseq = b->dims.tseq;
+	bm->dims.tseq = b->dims.hseq;
+	bm->hhash = b->thash;
+	bm->thash = b->hhash;
+
+	/* set the correct dense info */
+	b->hdense = TRUE;
+
+	h = b->hseqbase;
+	r = BUNlast(b);
+
+	if (!b->tvarsized) {
+		for (; p < q; p += bunwidth, h++, r += newbw)
+			bunfastins_nocheck(b, r, (ptr) &h, p + tlc, newbw);
+	} else if (tt == TYPE_void) {
+		for (; p < q; p += bunwidth, h++, r += newbw)
+			bunfastins_nocheck(b, r, (ptr) &h, NULL, newbw);
+	} else {
+		char *tbase = th->base;
+
+		for (; p < q; p += bunwidth, h++, r += newbw)
+			bunfastins_nocheck(b, r, (ptr) &h, tbase + (*(var_t *) (p + tlc)), newbw);
+	}
+	ret = b;
+
+      bunins_failed:
+	/* cleanup the old heaps */
+	/* if X.priv exists and X not, move it to X (X must be the stable image) */
+	HEAPfree(&buns);
+	if (committed && buns.storage != STORE_MEM)
+		GDKmove(BATDIR, nme, "buns.priv", BATDIR, nme, "buns"); 
+	if (hh) {
+		HEAPfree(hh);
+		if (committed && hh->storage != STORE_MEM)
+			GDKmove(BATDIR, nme, "hheap.priv", BATDIR, nme, "hheap"); 
+		GDKfree(hh);
+	}
+	if (th) {
+		HEAPfree(th);
+		if (committed && th->storage != STORE_MEM)
+			GDKmove(BATDIR, nme, "theap.priv", BATDIR, nme, "theap"); 
+		GDKfree(th);
+	}
+	return ret;
+}
+
+/* only materialize the tail */
+BAT *
+BATmaterializet(BAT *b, size_t size)
+{
+	return BATmirror(BATmaterializeh(BATmirror(b), size));
+}
+
 @-
 The @#VIEWunlink@ routine cuts a reference to the parent. Part of the view
 destroy sequence.
