@@ -38,7 +38,6 @@ Over..
 # varchar,	varchar,	varchar,	int # type
 # 16,	7,	12,	10 # length
 [ "debug",	"0",	"int",	0	]
-[ "reply_size",	"100",	"int",	0	]
 [ "explain",	"",	"varchar",	0	]
 [ "current_schema",	"sys",	"varchar",	1	]
 [ "current_user",	"monetdb",	"varchar",	1	]
