@@ -657,7 +657,6 @@ SQLparser(Client c)
 	bstream *in = c->fdin;
 	stream *out = c->fdout;
 	str msg = 0;
-	char language=0;
 	backend *be;
 	mvc *m;
 	int oldvtop,oldstop;
@@ -691,12 +690,11 @@ SQLparser(Client c)
 
 	m->mode = m->explain;
 	oldmode = m->scanner.mode;
-	language = be->language;
-	if (language == 's') {
-		language= (be->language = 'S');
+	if (be->language == 's') {
+		be->language = 'S';
 		m->scanner.mode = LINE_1;
 	}
-	if (language == 'X') {
+	if (be->language == 'X') {
 		int n = 0, id, off, len;
 
 		if( strncmp(in->buf + in->pos,"export ",7)==0 )
@@ -725,13 +723,19 @@ SQLparser(Client c)
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
 		}
+		if( strncmp(in->buf+in->pos,"reply_size ", 11)==0 ){
+			id= (int) strtol(in->buf+in->pos+11,NULL,10);
+			m->reply_size = id;
+			in->pos = in->len;	/* HACK: should use parsed lenght */
+			return NULL;
+		}
 		if( strncmp(in->buf + in->pos,"quit",4)==0 ) {
 			c->mode = FINISHING;
 			return NULL;
 		}
 		return throwMessage("SQLparser", "Unrecognized X command\n");
 	} 
-	if (language != 'S' ) {
+	if (be->language != 'S' ) {
 		return throwMessage("SQLparser", "Unrecognized language prefix\n");
 	}
 
@@ -769,14 +773,10 @@ produce code.
 		if (!be->q) {
 			err = -1;
 			sql_error(m, 2, "no prepared statement with the given id\n");
-		} else {
-			err = backend_exec_prepared_stmt( be, be->q );
-		}
-		if (err) {
 			sqlcleanup(m, err);
 			goto finalize;
 		}
-		m->mode= m_inplace;
+		m->mode = m_inplace;
 	} else 
 	if( (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key))){
 		if( m->mode != m_debug  && m->mode!= m_explain)
@@ -844,7 +844,7 @@ produce code.
 In the final phase we add any debugging control
 @c
 	/* turn off debugger */
-	if( debugPlan() && (m->mode != m_execute && m->mode != m_inplace))
+	if( debugPlan() && m->mode != m_inplace)
 		SQLsetDebugger(c, m, FALSE);
 
 	if (explainPerformance()) {
