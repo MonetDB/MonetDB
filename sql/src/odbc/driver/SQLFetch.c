@@ -93,6 +93,10 @@ SQLFetch_(ODBCStmt *stmt)
 		return SQL_SUCCESS;
 	}
 
+	if (desc->sql_desc_bind_offset_ptr)
+		offset = *desc->sql_desc_bind_offset_ptr;
+	else
+		offset = 0;
 	for (row = 0; row < desc->sql_desc_array_size; row++) {
 		if (mapi_fetch_row(stmt->hdl) == 0) {
 			if (desc->sql_desc_rows_processed_ptr)
@@ -122,10 +126,6 @@ SQLFetch_(ODBCStmt *stmt)
 
 		stmt->rowSetSize++;
 
-		if (desc->sql_desc_bind_offset_ptr)
-			offset = *desc->sql_desc_bind_offset_ptr;
-		else
-			offset = 0;
 		for (i = 1; i <= desc->sql_desc_count; i++) {
 			rec = &desc->descRec[i];
 			if (rec->sql_desc_data_ptr == NULL)

@@ -954,7 +954,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 	sql_type = irdrec->sql_desc_concise_type;
 
 	if (ptr && offset)
-		ptr = (SQLPOINTER) ((char *) ptr +offset);
+		ptr = (SQLPOINTER) ((char *) ptr + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLPOINTER) : bind_type));
 
 	if (lenp && offset)
 		lenp = (SQLINTEGER *) ((char *) lenp + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLINTEGER) : bind_type));
@@ -2201,9 +2201,12 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 		} while (0)
 
 SQLRETURN
-ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size_t *buflenp, char *sep)
+ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char **bufp, size_t *bufposp, size_t *buflenp, char *sep)
 {
 	ODBCDescRec *ipdrec, *apdrec;
+	SQLPOINTER ptr;
+	SQLINTEGER *indicator_ptr;
+	SQLUINTEGER bind_type;
 	SQLSMALLINT ctype, sqltype;
 	SQLCHAR *sval = NULL;
 	SQLINTEGER slen = 0;
@@ -2225,9 +2228,15 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 	ipdrec = stmt->ImplParamDescr->descRec + param;
 	apdrec = stmt->ApplParamDescr->descRec + param;
 
-	if (apdrec->sql_desc_data_ptr == NULL &&
-	    (apdrec->sql_desc_indicator_ptr == NULL ||
-	     *apdrec->sql_desc_indicator_ptr != SQL_NULL_DATA)) {
+	bind_type = stmt->ApplParamDescr->sql_desc_bind_type;
+	ptr = apdrec->sql_desc_data_ptr;
+	if (ptr && offset)
+		ptr = (SQLPOINTER) ((char *) ptr + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLPOINTER) : bind_type));
+	indicator_ptr = apdrec->sql_desc_indicator_ptr;
+	if (indicator_ptr && offset)
+		indicator_ptr = (SQLINTEGER *) ((char *) indicator_ptr + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLINTEGER) : bind_type));
+	if (ptr == NULL &&
+	    (indicator_ptr == NULL || *indicator_ptr != SQL_NULL_DATA)) {
 		/* COUNT field incorrect */
 		addStmtError(stmt, "07002", NULL, 0);
 		return SQL_ERROR;
@@ -2252,8 +2261,7 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 		break;
 	}
 
-	if (apdrec->sql_desc_indicator_ptr != NULL &&
-	    *apdrec->sql_desc_indicator_ptr == SQL_NULL_DATA) {
+	if (indicator_ptr != NULL && *indicator_ptr == SQL_NULL_DATA) {
 		assigns(buf, bufpos, buflen, "NULL", stmt);
 		*bufp = buf;
 		*bufposp = bufpos;
@@ -2265,133 +2273,133 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 	case SQL_C_CHAR:
 	case SQL_C_BINARY:
 		slen = apdrec->sql_desc_octet_length_ptr ? *apdrec->sql_desc_octet_length_ptr : SQL_NTS;
-		sval = (SQLCHAR *) apdrec->sql_desc_data_ptr;
+		sval = (SQLCHAR *) ptr;
 		fixODBCstring(sval, slen, addStmtError, stmt);
 		break;
 	case SQL_C_WCHAR:
 		slen = apdrec->sql_desc_octet_length_ptr ? *apdrec->sql_desc_octet_length_ptr : SQL_NTS;
-		sval = (SQLCHAR *) apdrec->sql_desc_data_ptr;
-		fixWcharIn((SQLWCHAR *) apdrec->sql_desc_data_ptr, slen, sval, addStmtError, stmt, return SQL_ERROR);
+		sval = (SQLCHAR *) ptr;
+		fixWcharIn((SQLWCHAR *) ptr, slen, sval, addStmtError, stmt, return SQL_ERROR);
 		break;
 	case SQL_C_BIT:
 		nval.precision = 1;
 		nval.scale = 0;
 		nval.sign = 1;
-		nval.val = * (SQLCHAR *) apdrec->sql_desc_data_ptr != 0;
+		nval.val = * (SQLCHAR *) ptr != 0;
 		break;
 	case SQL_C_STINYINT:
 		nval.precision = 1;
 		nval.scale = 0;
-		if (* (SQLSCHAR *) apdrec->sql_desc_data_ptr < 0) {
+		if (* (SQLSCHAR *) ptr < 0) {
 			nval.sign = 0;
-			nval.val = - * (SQLSCHAR *) apdrec->sql_desc_data_ptr;
+			nval.val = - * (SQLSCHAR *) ptr;
 		} else {
 			nval.sign = 1;
-			nval.val = * (SQLSCHAR *) apdrec->sql_desc_data_ptr;
+			nval.val = * (SQLSCHAR *) ptr;
 		}
 		break;
 	case SQL_C_UTINYINT:
 		nval.precision = 1;
 		nval.scale = 0;
 		nval.sign = 1;
-		nval.val = * (SQLCHAR *) apdrec->sql_desc_data_ptr;
+		nval.val = * (SQLCHAR *) ptr;
 		break;
 	case SQL_C_SSHORT:
 		nval.precision = 1;
 		nval.scale = 0;
-		if (* (SQLSMALLINT *) apdrec->sql_desc_data_ptr < 0) {
+		if (* (SQLSMALLINT *) ptr < 0) {
 			nval.sign = 0;
-			nval.val = - * (SQLSMALLINT *) apdrec->sql_desc_data_ptr;
+			nval.val = - * (SQLSMALLINT *) ptr;
 		} else {
 			nval.sign = 1;
-			nval.val = * (SQLSMALLINT *) apdrec->sql_desc_data_ptr;
+			nval.val = * (SQLSMALLINT *) ptr;
 		}
 		break;
 	case SQL_C_USHORT:
 		nval.precision = 1;
 		nval.scale = 0;
 		nval.sign = 1;
-		nval.val = * (SQLUSMALLINT *) apdrec->sql_desc_data_ptr;
+		nval.val = * (SQLUSMALLINT *) ptr;
 		break;
 	case SQL_C_SLONG:
 		nval.precision = 1;
 		nval.scale = 0;
-		if (* (SQLINTEGER *) apdrec->sql_desc_data_ptr < 0) {
+		if (* (SQLINTEGER *) ptr < 0) {
 			nval.sign = 0;
-			nval.val = - * (SQLINTEGER *) apdrec->sql_desc_data_ptr;
+			nval.val = - * (SQLINTEGER *) ptr;
 		} else {
 			nval.sign = 1;
-			nval.val = * (SQLINTEGER *) apdrec->sql_desc_data_ptr;
+			nval.val = * (SQLINTEGER *) ptr;
 		}
 		break;
 	case SQL_C_ULONG:
 		nval.precision = 1;
 		nval.scale = 0;
 		nval.sign = 1;
-		nval.val = * (SQLUINTEGER *) apdrec->sql_desc_data_ptr;
+		nval.val = * (SQLUINTEGER *) ptr;
 		break;
 	case SQL_C_SBIGINT:
 		nval.precision = 1;
 		nval.scale = 0;
-		if (* (SQLBIGINT *) apdrec->sql_desc_data_ptr < 0) {
+		if (* (SQLBIGINT *) ptr < 0) {
 			nval.sign = 0;
-			nval.val = - * (SQLBIGINT *) apdrec->sql_desc_data_ptr;
+			nval.val = - * (SQLBIGINT *) ptr;
 		} else {
 			nval.sign = 1;
-			nval.val = * (SQLBIGINT *) apdrec->sql_desc_data_ptr;
+			nval.val = * (SQLBIGINT *) ptr;
 		}
 		break;
 	case SQL_C_UBIGINT:
 		nval.precision = 1;
 		nval.scale = 0;
 		nval.sign = 1;
-		nval.val = * (SQLUBIGINT *) apdrec->sql_desc_data_ptr;
+		nval.val = * (SQLUBIGINT *) ptr;
 		break;
 	case SQL_C_NUMERIC:
 		nval.precision = apdrec->sql_desc_precision;
 		nval.scale = apdrec->sql_desc_scale;
-		nval.sign = ((SQL_NUMERIC_STRUCT *) apdrec->sql_desc_data_ptr)->sign;
+		nval.sign = ((SQL_NUMERIC_STRUCT *) ptr)->sign;
 		nval.val = 0;
 		for (i = 0; i < SQL_MAX_NUMERIC_LEN; i++)
-			nval.val |= ((SQL_NUMERIC_STRUCT *) apdrec->sql_desc_data_ptr)->val[i] << (i * 8);
+			nval.val |= ((SQL_NUMERIC_STRUCT *) ptr)->val[i] << (i * 8);
 		break;
 	case SQL_C_FLOAT:
-		fval = * (SQLREAL *) apdrec->sql_desc_data_ptr;
+		fval = * (SQLREAL *) ptr;
 		break;
 	case SQL_C_DOUBLE:
-		fval = * (SQLDOUBLE *) apdrec->sql_desc_data_ptr;
+		fval = * (SQLDOUBLE *) ptr;
 		break;
 	case SQL_C_TYPE_DATE:
-		dval = * (SQL_DATE_STRUCT *) apdrec->sql_desc_data_ptr;
+		dval = * (SQL_DATE_STRUCT *) ptr;
 		break;
 	case SQL_C_TYPE_TIME:
-		tval = * (SQL_TIME_STRUCT *) apdrec->sql_desc_data_ptr;
+		tval = * (SQL_TIME_STRUCT *) ptr;
 		break;
 	case SQL_C_TYPE_TIMESTAMP:
-		tsval = * (SQL_TIMESTAMP_STRUCT *) apdrec->sql_desc_data_ptr;
+		tsval = * (SQL_TIMESTAMP_STRUCT *) ptr;
 		break;
 	case SQL_C_INTERVAL_YEAR:
 		ival.interval_type = SQL_IS_YEAR;
-		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->interval_sign;
-		ival.intval.year_month.year = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.year_month.year;
+		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) ptr)->interval_sign;
+		ival.intval.year_month.year = ((SQL_INTERVAL_STRUCT *) ptr)->intval.year_month.year;
 		ival.intval.year_month.month = 0;
 		break;
 	case SQL_C_INTERVAL_MONTH:
 		ival.interval_type = SQL_IS_MONTH;
-		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->interval_sign;
+		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) ptr)->interval_sign;
 		ival.intval.year_month.year = 0;
-		ival.intval.year_month.month = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.year_month.month;
+		ival.intval.year_month.month = ((SQL_INTERVAL_STRUCT *) ptr)->intval.year_month.month;
 		break;
 	case SQL_C_INTERVAL_YEAR_TO_MONTH:
 		ival.interval_type = SQL_IS_YEAR_TO_MONTH;
-		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->interval_sign;
-		ival.intval.year_month.year = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.year_month.year;
-		ival.intval.year_month.month = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.year_month.month;
+		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) ptr)->interval_sign;
+		ival.intval.year_month.year = ((SQL_INTERVAL_STRUCT *) ptr)->intval.year_month.year;
+		ival.intval.year_month.month = ((SQL_INTERVAL_STRUCT *) ptr)->intval.year_month.month;
 		break;
 	case SQL_C_INTERVAL_DAY:
 		ival.interval_type = SQL_IS_DAY;
-		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->interval_sign;
-		ival.intval.day_second.day = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.day;
+		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) ptr)->interval_sign;
+		ival.intval.day_second.day = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.day;
 		ival.intval.day_second.hour = 0;
 		ival.intval.day_second.minute = 0;
 		ival.intval.day_second.second = 0;
@@ -2399,87 +2407,87 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp, size_t *bufposp, size
 		break;
 	case SQL_C_INTERVAL_HOUR:
 		ival.interval_type = SQL_IS_HOUR;
-		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->interval_sign;
+		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) ptr)->interval_sign;
 		ival.intval.day_second.day = 0;
-		ival.intval.day_second.hour = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.hour;
+		ival.intval.day_second.hour = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.hour;
 		ival.intval.day_second.minute = 0;
 		ival.intval.day_second.second = 0;
 		ival.intval.day_second.fraction = 0;
 		break;
 	case SQL_C_INTERVAL_MINUTE:
 		ival.interval_type = SQL_IS_MINUTE;
-		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->interval_sign;
+		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) ptr)->interval_sign;
 		ival.intval.day_second.day = 0;
 		ival.intval.day_second.hour = 0;
-		ival.intval.day_second.minute = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.minute;
+		ival.intval.day_second.minute = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.minute;
 		ival.intval.day_second.second = 0;
 		ival.intval.day_second.fraction = 0;
 		break;
 	case SQL_C_INTERVAL_SECOND:
 		ival.interval_type = SQL_IS_SECOND;
-		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->interval_sign;
+		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) ptr)->interval_sign;
 		ival.intval.day_second.day = 0;
 		ival.intval.day_second.hour = 0;
 		ival.intval.day_second.minute = 0;
-		ival.intval.day_second.second = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.second;
-		ival.intval.day_second.fraction = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.fraction;
+		ival.intval.day_second.second = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.second;
+		ival.intval.day_second.fraction = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.fraction;
 		ivalprec = apdrec->sql_desc_precision;
 		break;
 	case SQL_C_INTERVAL_DAY_TO_HOUR:
 		ival.interval_type = SQL_IS_DAY_TO_HOUR;
-		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->interval_sign;
-		ival.intval.day_second.day = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.day;
-		ival.intval.day_second.hour = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.hour;
+		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) ptr)->interval_sign;
+		ival.intval.day_second.day = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.day;
+		ival.intval.day_second.hour = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.hour;
 		ival.intval.day_second.minute = 0;
 		ival.intval.day_second.second = 0;
 		ival.intval.day_second.fraction = 0;
 		break;
 	case SQL_C_INTERVAL_DAY_TO_MINUTE:
 		ival.interval_type = SQL_IS_DAY_TO_MINUTE;
-		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->interval_sign;
-		ival.intval.day_second.day = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.day;
-		ival.intval.day_second.hour = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.hour;
-		ival.intval.day_second.minute = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.minute;
+		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) ptr)->interval_sign;
+		ival.intval.day_second.day = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.day;
+		ival.intval.day_second.hour = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.hour;
+		ival.intval.day_second.minute = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.minute;
 		ival.intval.day_second.second = 0;
 		ival.intval.day_second.fraction = 0;
 		break;
 	case SQL_C_INTERVAL_DAY_TO_SECOND:
 		ival.interval_type = SQL_IS_DAY_TO_SECOND;
-		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->interval_sign;
-		ival.intval.day_second.day = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.day;
-		ival.intval.day_second.hour = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.hour;
-		ival.intval.day_second.minute = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.minute;
-		ival.intval.day_second.second = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.second;
-		ival.intval.day_second.fraction = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.fraction;
+		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) ptr)->interval_sign;
+		ival.intval.day_second.day = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.day;
+		ival.intval.day_second.hour = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.hour;
+		ival.intval.day_second.minute = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.minute;
+		ival.intval.day_second.second = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.second;
+		ival.intval.day_second.fraction = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.fraction;
 		ivalprec = apdrec->sql_desc_precision;
 		break;
 	case SQL_C_INTERVAL_HOUR_TO_MINUTE:
 		ival.interval_type = SQL_IS_HOUR_TO_MINUTE;
-		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->interval_sign;
+		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) ptr)->interval_sign;
 		ival.intval.day_second.day = 0;
-		ival.intval.day_second.hour = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.hour;
-		ival.intval.day_second.minute = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.minute;
+		ival.intval.day_second.hour = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.hour;
+		ival.intval.day_second.minute = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.minute;
 		ival.intval.day_second.second = 0;
 		ival.intval.day_second.fraction = 0;
 		break;
 	case SQL_C_INTERVAL_HOUR_TO_SECOND:
 		ival.interval_type = SQL_IS_HOUR_TO_SECOND;
-		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->interval_sign;
+		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) ptr)->interval_sign;
 		ival.intval.day_second.day = 0;
-		ival.intval.day_second.hour = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.hour;
-		ival.intval.day_second.minute = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.minute;
-		ival.intval.day_second.second = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.second;
-		ival.intval.day_second.fraction = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.fraction;
+		ival.intval.day_second.hour = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.hour;
+		ival.intval.day_second.minute = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.minute;
+		ival.intval.day_second.second = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.second;
+		ival.intval.day_second.fraction = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.fraction;
 		ivalprec = apdrec->sql_desc_precision;
 		break;
 	case SQL_C_INTERVAL_MINUTE_TO_SECOND:
 		ival.interval_type = SQL_IS_MINUTE_TO_SECOND;
-		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->interval_sign;
+		ival.interval_sign = ((SQL_INTERVAL_STRUCT *) ptr)->interval_sign;
 		ival.intval.day_second.day = 0;
 		ival.intval.day_second.hour = 0;
-		ival.intval.day_second.minute = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.minute;
-		ival.intval.day_second.second = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.second;
-		ival.intval.day_second.fraction = ((SQL_INTERVAL_STRUCT *) apdrec->sql_desc_data_ptr)->intval.day_second.fraction;
+		ival.intval.day_second.minute = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.minute;
+		ival.intval.day_second.second = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.second;
+		ival.intval.day_second.fraction = ((SQL_INTERVAL_STRUCT *) ptr)->intval.day_second.fraction;
 		ivalprec = apdrec->sql_desc_precision;
 		break;
 	case SQL_C_GUID:

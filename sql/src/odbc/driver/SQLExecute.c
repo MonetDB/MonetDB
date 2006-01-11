@@ -237,6 +237,8 @@ SQLExecute_(ODBCStmt *stmt)
 	size_t querylen;
 	size_t querypos;
 	int i;
+	ODBCDesc *desc;
+	SQLINTEGER offset;
 
 	/* check statement cursor state, query should be prepared */
 	if (stmt->State == INITED || (stmt->State >= EXECUTED0 && stmt->queryid < 0)) {
@@ -259,7 +261,9 @@ SQLExecute_(ODBCStmt *stmt)
 
 	assert(hdl);
 
-	if (stmt->ApplParamDescr->sql_desc_count < stmt->nparams ||
+	desc = stmt->ApplParamDescr;
+
+	if (desc->sql_desc_count < stmt->nparams ||
 	    stmt->ImplParamDescr->sql_desc_count < stmt->nparams) {
 		/* COUNT field incorrect */
 		addStmtError(stmt, "07002", NULL, 0);
@@ -271,9 +275,13 @@ SQLExecute_(ODBCStmt *stmt)
 	snprintf(query, querylen, "execute %d (", stmt->queryid);
 	querypos = strlen(query);
 	/* XXX fill in parameter values */
+	if (desc->sql_desc_bind_offset_ptr)
+		offset = *desc->sql_desc_bind_offset_ptr;
+	else
+		offset = 0;
 	sep = "";
 	for (i = 1; i <= stmt->nparams; i++) {
-		if (ODBCStore(stmt, i, &query, &querypos, &querylen, sep) == SQL_ERROR)
+		if (ODBCStore(stmt, i, offset, 0, &query, &querypos, &querylen, sep) == SQL_ERROR)
 			return SQL_ERROR;
 		sep = ",";
 	}

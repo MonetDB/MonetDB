@@ -187,8 +187,9 @@ SQLRETURN ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT nCol, SQLSMALLINT nTargetType,
 		    SQLSMALLINT precision, SQLSMALLINT scale,
 		    SQLINTEGER datetime_interval_precision, SQLINTEGER offset,
 		    int row);
-SQLRETURN ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, char **bufp,
-		    size_t *bufposp, size_t *buflenp, char *sep);
+SQLRETURN ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset,
+		    int row, char **bufp, size_t *bufposp, size_t *buflenp,
+		    char *sep);
 SQLRETURN ODBCFreeStmt_(ODBCStmt *stmt);
 SQLRETURN ODBCInitResult(ODBCStmt *stmt);
 const char *ODBCGetTypeInfo(int concise_type, int *data_type,

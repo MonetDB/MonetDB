@@ -75,14 +75,8 @@ SQLSetDescField_(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIden
 			desc->sql_desc_bind_offset_ptr = (SQLINTEGER *) Value;
 		return SQL_SUCCESS;
 	case SQL_DESC_BIND_TYPE:
-		if (isAD(desc)) {
-			if ((SQLUINTEGER) (size_t) Value != SQL_BIND_BY_COLUMN) {
-				/* Driver does not support this function */
-				addDescError(desc, "IM001", NULL, 0);
-				return SQL_ERROR;
-			}
+		if (isAD(desc))
 			desc->sql_desc_bind_type = (SQLUINTEGER) (size_t) Value;
-		}
 		return SQL_SUCCESS;
 	case SQL_DESC_COUNT:
 		if (isIRD(desc)) {
