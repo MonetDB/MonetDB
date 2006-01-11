@@ -1962,7 +1962,7 @@ public class MonetConnection implements Connection {
 				size = maxrows != 0 ? Math.min(maxrows, size) : size;
 				// don't do work if it's not needed
 				if (lang == LANG_SQL && size != curReplySize && templ != commandTempl) {
-					sendIndependantCommand("SET reply_size = " + size);
+					sendControlCommand("reply_size " + size);
 
 					// store the reply size after a successful change
 					curReplySize = size;
