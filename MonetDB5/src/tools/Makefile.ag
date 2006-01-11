@@ -25,7 +25,7 @@
 MTSAFE
 INCLUDES = -I../mal -I$(MONETDB_INCLUDEDIR)/C $(MONETDB_INCS) $(PTHREAD_INCS) 
 
-bin_mserver = {
+bin_mserver5 = {
 	SOURCES = mserver.mx
 	LIBS = ../mal/libmal @SHARED_LIBS@ $(MONETDB_LIBS) -lbat -lmutils -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
