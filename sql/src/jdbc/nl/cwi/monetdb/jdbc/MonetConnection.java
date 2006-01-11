@@ -1138,10 +1138,7 @@ public class MonetConnection implements Connection {
 		/** The query sequence number */
 		private final int seqnr;
 		/** A List of result blocks (chunks of size fetchSize/cacheSize) */
-		private List resultBlocks;
-		/** The first entry of the resultBlocks, separate to avoid
-		 * dynamic casts and List method invocations all the time */
-		private MonetConnection.DataBlockResponse firstBlock;
+		private DataBlockResponse[] resultBlocks;
 
 		/** A bitmap telling whether the headers are set or not */
 		private boolean[] isSet;
@@ -1201,8 +1198,10 @@ public class MonetConnection implements Connection {
 			this.id = id;
 			this.tuplecount = tuplecount;
 			this.columncount = columncount;
+			this.resultBlocks =
+				new DataBlockResponse[(tuplecount / cacheSize) + 1];
 
-			firstBlock = new DataBlockResponse(
+			resultBlocks[0] = new DataBlockResponse(
 				rowcount,
 				parent.rstype == ResultSet.TYPE_FORWARD_ONLY
 			);
@@ -1222,7 +1221,7 @@ public class MonetConnection implements Connection {
 			if (isSet[LENS] && isSet[TYPES] &&
 					isSet[TABLES] && isSet[NAMES])
 			{
-				return(firstBlock.addLine(tmpLine, linetype));
+				return(resultBlocks[0].addLine(tmpLine, linetype));
 			}
 
 			if (linetype != MonetSocketBlockMode.HEADER)
@@ -1325,7 +1324,7 @@ public class MonetConnection implements Connection {
 			if (isSet[LENS] && isSet[TYPES] &&
 					isSet[TABLES] && isSet[NAMES])
 			{
-				return(firstBlock.wantsMore());
+				return(resultBlocks[0].wantsMore());
 			} else {
 				return(true);
 			}
@@ -1421,12 +1420,12 @@ public class MonetConnection implements Connection {
 		 * Adds the given DataBlockResponse to this ResultSetResponse at
 		 * the given block position.
 		 *
-		 * @param block the result block the DataBlockResponse object represents
+		 * @param offset the offset number of rows for this block
 		 * @param rr the DataBlockResponse to add
 		 */
-		void addDataBlockResponse(int block, DataBlockResponse rr) {
-			if (resultBlocks == null) resultBlocks = new ArrayList();
-			resultBlocks.add(block, rr);
+		void addDataBlockResponse(int offset, DataBlockResponse rr) {
+			int block = (offset - blockOffset) / cacheSize;
+			resultBlocks[block] = rr;
 		}
 
 		/**
@@ -1536,48 +1535,44 @@ public class MonetConnection implements Connection {
 
 			// do we have the right block loaded? (optimistic try)
 			DataBlockResponse rawr;
-			if (block == 0) {
-				rawr = firstBlock;
-			} else {
-				rawr = (DataBlockResponse)(resultBlocks.get(block));
-				// if not, try again and load if appropriate
-				if (rawr == null) {
-					/// TODO: ponder about a maximum number of blocks to keep
-					///       in memory when dealing with random access to
-					///       reduce memory blow-up
+			// load block if appropriate
+			if ((rawr = resultBlocks[block]) == null) {
+				/// TODO: ponder about a maximum number of blocks to keep
+				///       in memory when dealing with random access to
+				///       reduce memory blow-up
 
-					// if we're running forward only, we can discard the old
-					// block loaded
-					if (parent.rstype == ResultSet.TYPE_FORWARD_ONLY) {
-						resultBlocks.clear();
+				// if we're running forward only, we can discard the old
+				// block loaded
+				if (parent.rstype == ResultSet.TYPE_FORWARD_ONLY) {
+					for (int i = 0; i < block; i++)
+						resultBlocks[i] = null;
 
-						if (MonetConnection.seqCounter - 1 == seqnr) {
-							// there has no query been issued after this
-							// one, so we can consider this a uninterrupted
-							// continuation request.  Let's increase the
-							// blocksize if it was not explicitly set,
-							// as the chances are high that we won't bother
-							// anyone else by doing so, and just gaining
-							// some performance.
-							if (!cacheSizeSetExplicitly) {
-								// store the previous position in the
-								// blockOffset variable
-								blockOffset += cacheSize;
+					if (MonetConnection.seqCounter - 1 == seqnr) {
+						// there has no query been issued after this
+						// one, so we can consider this a uninterrupted
+						// continuation request.  Let's increase the
+						// blocksize if it was not explicitly set,
+						// as the chances are high that we won't bother
+						// anyone else by doing so, and just gaining
+						// some performance.
+						if (!cacheSizeSetExplicitly) {
+							// store the previous position in the
+							// blockOffset variable
+							blockOffset += cacheSize;
 
-								// increase the cache size (a lot)
-								cacheSize *= 10;
+							// increase the cache size (a lot)
+							cacheSize *= 10;
 
-								// by changing the cacheSize, we also
-								// change the block measures.  Luckily
-								// we don't care about previous blocks
-								// because we have a forward running
-								// pointer only.  However, we do have
-								// to recalculate the block number, to
-								// ensure the next call to find this
-								// new block.
-								block = (row - blockOffset) / cacheSize;
-								blockLine = (row - blockOffset) % cacheSize;
-							}
+							// by changing the cacheSize, we also
+							// change the block measures.  Luckily
+							// we don't care about previous blocks
+							// because we have a forward running
+							// pointer only.  However, we do have
+							// to recalculate the block number, to
+							// ensure the next call to find this
+							// new block.
+							block = (row - blockOffset) / cacheSize;
+							blockLine = (row - blockOffset) % cacheSize;
 						}
 					}
 				}
@@ -1587,7 +1582,7 @@ public class MonetConnection implements Connection {
 						commandTempl, 
 						"export " + id + " " + ((block * cacheSize) + blockOffset) + " " + cacheSize 
 				);
-				rawr = (DataBlockResponse)(resultBlocks.get(block));
+				rawr = resultBlocks[block];
 				if (rawr == null) throw
 					new AssertionError("block " + block + " should have been fetched by now :(");
 			}
@@ -1611,15 +1606,9 @@ public class MonetConnection implements Connection {
 			}
 
 			// close the data block associated with us
-			firstBlock.close();
-			firstBlock = null;
-			if (resultBlocks != null) {
-				for (int i = 1; i < resultBlocks.size(); i++) {
-					DataBlockResponse r =
-						(DataBlockResponse)(resultBlocks.get(i));
-					if (r != null) r.close();
-				}
-				resultBlocks.clear();
+			for (int i = 1; i < resultBlocks.length; i++) {
+				DataBlockResponse r = resultBlocks[i];
+				if (r != null) r.close();
 			}
 
 			closed = true;
@@ -2017,6 +2006,9 @@ public class MonetConnection implements Connection {
 										int tuplecount = parseNumber(soh);
 										int columncount = parseNumber(soh);
 										int rowcount = parseNumber(soh);
+										// enforce the maxrows setting
+										if (maxrows != 0 && tuplecount > maxrows)
+											tuplecount = maxrows;
 										res = new ResultSetResponse(
 												id,
 												tuplecount,
@@ -2024,7 +2016,7 @@ public class MonetConnection implements Connection {
 												rowcount,
 												this,
 												seqnr
-												);
+										);
 										// only add this resultset to
 										// the hashmap if can possibly
 										// have an additional datablock
@@ -2068,12 +2060,32 @@ public class MonetConnection implements Connection {
 										// AutoCommitResponse anyway).
 										res = new AutoCommitResponse(
 												ac
-												);
+										);
 									break;
-									case Q_BLOCK:
+									case Q_BLOCK: {
 										// a new block of results for a
 										// response...
-									break;
+										soh.get();	// skip space
+										int id = parseNumber(soh); 
+										int columncount = parseNumber(soh);
+										int rowcount = parseNumber(soh);
+										int offset = parseNumber(soh);
+										ResultSetResponse t =
+											(ResultSetResponse)rsresponses.get(new Integer(id));
+										if (t == null) {
+											error = "No ResultSetResponse with id " + id + " found";
+											break;
+										}
+
+										DataBlockResponse r =
+											new DataBlockResponse(
+												rowcount,	// rowcount
+												t.getRSType() == ResultSet.TYPE_FORWARD_ONLY
+											);
+
+										t.addDataBlockResponse(offset, r);
+										res = r;
+									} break;
 								}
 							} catch (java.text.ParseException e) {
 								error = "error while parsing start of header:\n" +
@@ -2087,6 +2099,14 @@ public class MonetConnection implements Connection {
 								break;
 							}
 							// }}} soh line parsing
+
+							// immediately handle errors after parsing
+							// the header (res may be null)
+							if (error != null) {
+								monet.waitForPrompt();
+								linetype = monet.getLineType();
+								break;
+							}
 
 							// here we have a res object, which
 							// we can start filling
