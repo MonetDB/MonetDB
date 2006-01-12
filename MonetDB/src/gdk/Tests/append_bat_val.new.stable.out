@@ -131,16 +131,25 @@ xprint(int_int);
 
 
 help("append");
-COMMAND:   append(BAT[void,any::1], BAT[any,any::1]) : BAT[void,any::1]
+COMMAND:   append(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]
 MODULE:    bat
-COMPILED:  by adm on Sun Jan  8 22:50:00 2006
+COMPILED:  by adm on Thu Jan 12 16:11:31 2006
 append the content of u to i
 
-COMMAND:   append(BAT[void,any::1], any::1) : BAT[void,any::1]
+COMMAND:   append(BAT[void,any::1], BAT[void,any::1]) : BAT[void,any::1]
 MODULE:    bat
-COMPILED:  by adm on Sun Jan  8 22:50:00 2006
-append the value u to i
+COMPILED:  by adm on Thu Jan 12 16:11:31 2006
+append the content of u to i
 
+COMMAND:   append(BAT[oid,any::1], BAT[oid,any::1]) : BAT[oid,any::1]
+MODULE:    bat
+COMPILED:  by adm on Thu Jan 12 16:11:31 2006
+append the content of u to i (renumbers u-oids' to unique numbers, starting at i.max()+1)
+
+COMMAND:   append(BAT[oid,any::1], any::1) : BAT[oid,any::1]
+MODULE:    bat
+COMPILED:  by adm on Thu Jan 12 16:11:31 2006
+append the value u to i
 
 
 int_int.append(int(201)); xprint(int_int);
@@ -166,25 +175,33 @@ int_nil.append(    nil ); xprint(int_nil);
 
 
 oid_int.append(int(201)); xprint(oid_int);
-!ERROR: interpret: no matching MIL operator to 'append(BAT[oid,int], int)'.
-!MAYBE YOU MEAN:
-!	append(BAT[void,any::1], BAT[any,any::1]) : BAT[void,any::1]
-!	append(BAT[void,any::1], any::1) : BAT[void,any::1]
+#-----------------#
+# h	t	  # name
+# oid	int	  # type
+#-----------------#
+[ 0@0,	  201	  ]
+[ oid,	  int,	  1  ]
 oid_oid.append(oid(201)); xprint(oid_oid);
-!ERROR: interpret: no matching MIL operator to 'append(BAT[oid,oid], oid)'.
-!MAYBE YOU MEAN:
-!	append(BAT[void,any::1], BAT[any,any::1]) : BAT[void,any::1]
-!	append(BAT[void,any::1], any::1) : BAT[void,any::1]
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 0@0,	  201@0	  ]
+[ oid,	  oid,	  1  ]
 oid_vid.append(oid(201)); xprint(oid_vid);
-!ERROR: interpret: no matching MIL operator to 'append(BAT[oid,void], oid)'.
-!MAYBE YOU MEAN:
-!	append(BAT[void,any::1], BAT[any,any::1]) : BAT[void,any::1]
-!	append(BAT[void,any::1], any::1) : BAT[void,any::1]
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  201@0	  ]
+[ oid,	  void,	  1  ]
 oid_nil.append(    nil ); xprint(oid_nil);
-!ERROR: interpret: no matching MIL operator to 'append(BAT[oid,void], void)'.
-!MAYBE YOU MEAN:
-!	append(BAT[void,any::1], BAT[any,any::1]) : BAT[void,any::1]
-!	append(BAT[void,any::1], any::1) : BAT[void,any::1]
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ oid,	  void,	  1  ]
 
 
 vid_int.append(int(201)); xprint(vid_int);
@@ -245,6 +262,211 @@ nil_nil.append(    nil ); xprint(nil_nil);
 #-----------------#
 [ nil,	  nil	  ]
 [ void,	  void,	  1  ]
+
+
+oid_int.append(         int(202)); xprint(oid_int);
+#-----------------#
+# h	t	  # name
+# oid	int	  # type
+#-----------------#
+[ 0@0,	  201	  ]
+[ 1@0,	  202	  ]
+[ oid,	  int,	  2  ]
+oid_int.insert(oid(103),int(203)); xprint(oid_int);
+#-----------------#
+# h	t	  # name
+# oid	int	  # type
+#-----------------#
+[ 0@0,	  201	  ]
+[ 1@0,	  202	  ]
+[ 103@0,  203	  ]
+[ oid,	  int,	  3  ]
+oid_int.append(         int(204)); xprint(oid_int);
+#-----------------#
+# h	t	  # name
+# oid	int	  # type
+#-----------------#
+[ 0@0,	  201	  ]
+[ 1@0,	  202	  ]
+[ 103@0,  203	  ]
+[ 104@0,  204	  ]
+[ oid,	  int,	  4  ]
+oid_int.append(         int(nil)); xprint(oid_int);
+#-----------------#
+# h	t	  # name
+# oid	int	  # type
+#-----------------#
+[ 0@0,	  201	  ]
+[ 1@0,	  202	  ]
+[ 103@0,  203	  ]
+[ 104@0,  204	  ]
+[ 105@0,  nil	  ]
+[ oid,	  int,	  5  ]
+oid_int.append(         int(255)); xprint(oid_int);
+#-----------------#
+# h	t	  # name
+# oid	int	  # type
+#-----------------#
+[ 0@0,	  201	  ]
+[ 1@0,	  202	  ]
+[ 103@0,  203	  ]
+[ 104@0,  204	  ]
+[ 105@0,  nil	  ]
+[ 106@0,  255	  ]
+[ oid,	  int,	  6  ]
+
+oid_oid.append(         oid(202)); xprint(oid_oid);
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 0@0,	  201@0	  ]
+[ 1@0,	  202@0	  ]
+[ oid,	  oid,	  2  ]
+oid_oid.insert(oid(103),oid(203)); xprint(oid_oid);
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 0@0,	  201@0	  ]
+[ 1@0,	  202@0	  ]
+[ 103@0,  203@0	  ]
+[ oid,	  oid,	  3  ]
+oid_oid.append(         oid(204)); xprint(oid_oid);
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 0@0,	  201@0	  ]
+[ 1@0,	  202@0	  ]
+[ 103@0,  203@0	  ]
+[ 104@0,  204@0	  ]
+[ oid,	  oid,	  4  ]
+oid_oid.append(         oid(nil)); xprint(oid_oid);
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 0@0,	  201@0	  ]
+[ 1@0,	  202@0	  ]
+[ 103@0,  203@0	  ]
+[ 104@0,  204@0	  ]
+[ 105@0,  nil	  ]
+[ oid,	  oid,	  5  ]
+oid_oid.append(         oid(255)); xprint(oid_oid);
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 0@0,	  201@0	  ]
+[ 1@0,	  202@0	  ]
+[ 103@0,  203@0	  ]
+[ 104@0,  204@0	  ]
+[ 105@0,  nil	  ]
+[ 106@0,  255@0	  ]
+[ oid,	  oid,	  6  ]
+
+oid_vid.append(         oid(202)); xprint(oid_vid);
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  201@0	  ]
+[ 1@0,	  202@0	  ]
+[ oid,	  void,	  2  ]
+oid_vid.insert(oid(103),oid(203)); xprint(oid_vid);
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  201@0	  ]
+[ 1@0,	  202@0	  ]
+[ 103@0,  203@0	  ]
+[ oid,	  void,	  3  ]
+oid_vid.append(         oid(204)); xprint(oid_vid);
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  201@0	  ]
+[ 1@0,	  202@0	  ]
+[ 103@0,  203@0	  ]
+[ 104@0,  204@0	  ]
+[ oid,	  void,	  4  ]
+oid_vid.append(         oid(nil)); xprint(oid_vid);
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 0@0,	  201@0	  ]
+[ 1@0,	  202@0	  ]
+[ 103@0,  203@0	  ]
+[ 104@0,  204@0	  ]
+[ 105@0,  nil	  ]
+[ oid,	  oid,	  5  ]
+oid_vid.append(         oid(255)); xprint(oid_vid);
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 0@0,	  201@0	  ]
+[ 1@0,	  202@0	  ]
+[ 103@0,  203@0	  ]
+[ 104@0,  204@0	  ]
+[ 105@0,  nil	  ]
+[ 106@0,  255@0	  ]
+[ oid,	  oid,	  6  ]
+
+oid_nil.append(             nil ); xprint(oid_nil);
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 1@0,	  nil	  ]
+[ oid,	  void,	  2  ]
+oid_nil.insert(oid(103),    nil ); xprint(oid_nil);
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 1@0,	  nil	  ]
+[ 103@0,  nil	  ]
+[ oid,	  void,	  3  ]
+oid_nil.append(             nil ); xprint(oid_nil);
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 1@0,	  nil	  ]
+[ 103@0,  nil	  ]
+[ 104@0,  nil	  ]
+[ oid,	  void,	  4  ]
+oid_nil.append(             nil ); xprint(oid_nil);
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 1@0,	  nil	  ]
+[ 103@0,  nil	  ]
+[ 104@0,  nil	  ]
+[ 105@0,  nil	  ]
+[ oid,	  void,	  5  ]
+oid_nil.append(             nil ); xprint(oid_nil);
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ 1@0,	  nil	  ]
+[ 103@0,  nil	  ]
+[ 104@0,  nil	  ]
+[ 105@0,  nil	  ]
+[ 106@0,  nil	  ]
+[ oid,	  void,	  6  ]
 
 
 vid_int.append(         int(202)); xprint(vid_int);

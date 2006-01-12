@@ -65,6 +65,31 @@ nil_vid.append(oid(201)); xprint(nil_vid);
 nil_nil.append(    nil ); xprint(nil_nil);
 
 
+oid_int.append(         int(202)); xprint(oid_int);
+oid_int.insert(oid(103),int(203)); xprint(oid_int);
+oid_int.append(         int(204)); xprint(oid_int);
+oid_int.append(         int(nil)); xprint(oid_int);
+oid_int.append(         int(255)); xprint(oid_int);
+
+oid_oid.append(         oid(202)); xprint(oid_oid);
+oid_oid.insert(oid(103),oid(203)); xprint(oid_oid);
+oid_oid.append(         oid(204)); xprint(oid_oid);
+oid_oid.append(         oid(nil)); xprint(oid_oid);
+oid_oid.append(         oid(255)); xprint(oid_oid);
+
+oid_vid.append(         oid(202)); xprint(oid_vid);
+oid_vid.insert(oid(103),oid(203)); xprint(oid_vid);
+oid_vid.append(         oid(204)); xprint(oid_vid);
+oid_vid.append(         oid(nil)); xprint(oid_vid);
+oid_vid.append(         oid(255)); xprint(oid_vid);
+
+oid_nil.append(             nil ); xprint(oid_nil);
+oid_nil.insert(oid(103),    nil ); xprint(oid_nil);
+oid_nil.append(             nil ); xprint(oid_nil);
+oid_nil.append(             nil ); xprint(oid_nil);
+oid_nil.append(             nil ); xprint(oid_nil);
+
+
 vid_int.append(         int(202)); xprint(vid_int);
 vid_int.insert(oid(103),int(203)); xprint(vid_int);
 vid_int.append(         int(204)); xprint(vid_int);
