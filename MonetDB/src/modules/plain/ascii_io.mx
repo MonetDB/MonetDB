@@ -76,9 +76,9 @@ proc load_format( str fmt ) : BAT[str,BAT] {
 	var names := new(void,str); names.seqbase(oid(0));
 	var seps := new(void,str); seps.seqbase(oid(0));
 	var types := new(void,str); types.seqbase(oid(0));
-	names.insert(nil,"names");seps.insert(nil,",");types.insert(nil,"str");
-	names.insert(nil,"seps");seps.insert(nil,",");types.insert(nil,"str");
-	names.insert(nil,"types");seps.insert(nil,"\n");types.insert(nil,"str");
+	names.append("names");seps.append(",");types.append("str");
+	names.append("seps");seps.append(",");types.append("str");
+	names.append("types");seps.append("\n");types.append("str");
 	return load(names, seps, types, fmt, 1000);
 }
 ADDHELP("load_format", "niels", "Jan 2005",
@@ -149,9 +149,9 @@ proc dump_seps( BAT[void,BAT] bats ) : BAT[void,str] {
 	var cnt := bats.count() - 1;
 	bats@batloop(){
 		if (id != cnt) {
-			seps.insert(nil,",");
+			seps.append(",");
 		} else {
-			seps.insert(nil,"\n");
+			seps.append("\n");
 		}
 		id :+= 1;
 	}
@@ -168,18 +168,18 @@ proc dump_format( BAT[void,BAT] bats, str fmt ) : BAT[str,BAT] {
 	var seps  := dump_seps(bats);
 	var types := [bat_ttype](bats);
 	var fmtbats:= new(void,bat); fmtbats.seqbase(oid(0));
-	fmtbats.insert(nil,names);
-	fmtbats.insert(nil,seps);
-	fmtbats.insert(nil,types);
+	fmtbats.append(names);
+	fmtbats.append(seps);
+	fmtbats.append(types);
 
 	names := new(void,str); names.seqbase(oid(0));
 	seps := new(void,str); seps.seqbase(oid(0));
-	names.insert(nil,"names");seps.insert(nil,",");
-	names.insert(nil,"seps");seps.insert(nil,",");
-	names.insert(nil,"types");seps.insert(nil,"\n");
+	names.append("names");seps.append(",");
+	names.append("seps");seps.append(",");
+	names.append("types");seps.append("\n");
 	dump(names, seps, fmtbats, fmt, 1000);
-	names.insert(nil,"bats");
-	fmtbats.insert(nil,bats);
+	names.append("bats");
+	fmtbats.append(bats);
 	return names.reverse().join(fmtbats);
 }
 

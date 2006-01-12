@@ -12,7 +12,7 @@ PROC grp_dump(b) : str {
 		var r := [first~].reverse.copy;
 		r.rename("key");
 		bats.access(BAT_APPEND);
-		bats.insert(nil, r);
+		bats.append(r);
 	}
 	var name := bbpname(first);
 	var file := backup_dir + name;
