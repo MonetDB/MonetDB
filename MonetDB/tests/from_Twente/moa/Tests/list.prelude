@@ -98,7 +98,7 @@ PROC copy_order( BAT[oid,any] xs, BAT[oid,any::1] y ): BAT[oid,any::1] {
 PROC cast_copy_order( BAT[oid,any] xs, BAT[oid,any::1] y ): BAT[void,any::1] {
   # xs is ordered; orders y on oid following x's order
   VAR z;
-  z  := xs.mark(nil).reverse();
+  z  := xs.project(nil).reverse();
   RETURN z.join(y).reverse().mark(0@0).reverse();
 }
 

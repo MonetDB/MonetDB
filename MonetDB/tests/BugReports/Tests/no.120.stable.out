@@ -23,7 +23,7 @@ a.seqbase(newoid(a.count()));
 !	seqbase(BAT[void,any::1], oid) : BAT[void,any::1]
 !	seqbase(BAT[void,any::1]) : oid
 !	seqbase(BAT[oid,any::1]) : oid
-[oid](a.mark(nil)).print();
+[oid](a.project(nil)).print();
 #-----------------#
 # BAT:	  tmp_29  #
 # (int)	  (oid)	  #

@@ -1163,9 +1163,9 @@ Module: "salgebra"
 [ "rename",		  "COMMAND:   ",  "rename(clusterhash, str) : void",				  "Try to name ch; fail upon error."					  ]
 [ "select",		  "PROC:      ",  "select(clusterhash, any::1) : BAT[oid,any::1]",		  "Select using a clusterhash uselect plus a cast."			  ]
 [ "test_salgebra",	  "PROC:      ",  "test_salgebra() : void",					  "not available"							  ]
-[ "ujoin",		  "COMMAND:   ",  "ujoin(clusterhash, BAT[any,any]) : BAT[oid,void]",		  "Return join(ch, b).mark(nil) with propagated clustering."		  ]
-[ "uselect",		  "COMMAND:   ",  "uselect(clusterhash, any) : BAT[oid,void]",			  "Return select(ch, v).mark(nil) with propagated clustering."		  ]
-[ "usortedjoin",	  "COMMAND:   ",  "usortedjoin(clusterhash, BAT[any,any]) : BAT[oid,void]",	  "Return join(ch, b).mark(nil).sort with propagated clustering."	  ]
+[ "ujoin",		  "COMMAND:   ",  "ujoin(clusterhash, BAT[any,any]) : BAT[oid,void]",		  "Return join(ch, b).project(nil) with propagated clustering."		  ]
+[ "uselect",		  "COMMAND:   ",  "uselect(clusterhash, any) : BAT[oid,void]",			  "Return select(ch, v).project(nil) with propagated clustering."		  ]
+[ "usortedjoin",	  "COMMAND:   ",  "usortedjoin(clusterhash, BAT[any,any]) : BAT[oid,void]",	  "Return join(ch, b).project(nil).sort with propagated clustering."	  ]
 
 Module: "stats"
 

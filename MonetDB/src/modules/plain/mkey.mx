@@ -248,7 +248,7 @@ proc ds_link(BAT[bat,bat] keys) : BAT[oid, oid]
       keys@batloop() if (str($h) != str(h)) {
         [:and=](p_sel, ds_eq(p_l, $h, p_r, $t));
       }
-      sel.insert(p_sel.reverse().mark(nil).reverse());
+      sel.insert(p_sel.reverse().project(nil).reverse());
       lo := hi; hi :+= JOIN_BULK_SIZE;
     }
 

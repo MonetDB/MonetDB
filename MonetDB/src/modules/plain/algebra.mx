@@ -909,7 +909,7 @@ that for the moment are defined as procs.
 			}
 		}
 
-	return(b.mark(nil));
+	return(b.project(nil));
     }
     ADDHELP("like_uselect", "groffen", "Sep 26 2004",
     "does SQL LIKE select which supports % and _ (also understands escapes)", "algebra");

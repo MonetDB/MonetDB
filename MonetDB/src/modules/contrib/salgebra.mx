@@ -68,7 +68,7 @@ De clusterhash vervult zijn rol als we selecteren op 1 (wellicht m<n?) bats
 uit deze mapping.
 
 Om de clusterhash te gebruiken in een join tussen am en b, doe je in feite een
-  join( am, b ).mark( nil )
+  join( am, b ).project( nil )
 
 [ de mark is niet strickt noodzakelijk geeft alleen sneller resources vrij. 
 De properties van join(am,b) zijn belangrijk
@@ -83,11 +83,11 @@ extra efficient; want het worden allemaal void-joins.
 
 Vraagje: 
 wat vind je van het definieren van operator 
-  ujoin( am, b ) <=> join( am, b ).mark(nil)
+  ujoin( am, b ) <=> join( am, b ).project(nil)
 analoog aan uselect lijkt me dat de meest logische naam toch?
 
 misschien moet die ujoin gekozen worden op basis van
-een join.mark(nil) sequentie, of misschien zelfs een join.semijoin sequentie.
+een join.project(nil) sequentie, of misschien zelfs een join.semijoin sequentie.
 
 Je krijgt dan mil-pattern:
   pos := am.ujoin( b );
@@ -215,12 +215,12 @@ build the cluster hash from the enum.
   "Destroy the clusterhash with name chname (if possible)."
 
 .COMMAND uselect( clusterhash ch, any v ): BAT[oid,void] = salgebra_CMDuselect;
-  "Return select(ch, v).mark(nil) with propagated clustering."
+  "Return select(ch, v).project(nil) with propagated clustering."
 .COMMAND ujoin( clusterhash ch, BAT[any,any] b ): BAT[oid,void] = salgebra_CMDujoin;
-  "Return join(ch, b).mark(nil) with propagated clustering."
+  "Return join(ch, b).project(nil) with propagated clustering."
 .COMMAND usortedjoin( clusterhash ch, BAT[any,any] b ): BAT[oid,void] = 
   salgebra_CMDusortedjoin;
-  "Return join(ch, b).mark(nil).sort with propagated clustering."
+  "Return join(ch, b).project(nil).sort with propagated clustering."
 
 .COMMAND CHbat( clusterhash ch ): BAT[void,any] = salgebra_CMDgetBAT;
   "Provides access to the original bat."
@@ -1158,7 +1158,7 @@ PROC test_salgebra() : void {
 	tj.insert( 2@0, "two" );
 	tj.insert( 3@0, "three" );
 
-	#ch2 := clusterhash( tj.mark(nil).reverse() );
+	#ch2 := clusterhash( tj.project(nil).reverse() );
 	#ch2.rename("tjrev");
 
 	ch.info().print();
