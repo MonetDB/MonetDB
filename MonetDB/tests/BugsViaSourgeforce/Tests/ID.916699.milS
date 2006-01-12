@@ -1,7 +1,7 @@
 ## integers from -25 to 24
 var a := bat(void, int,50).seqbase(0@0);
 var i := -25;
-while(i < 25) a.insert(nil, (i :+= 1));
+while(i < 25) a.append((i :+= 1));
 
 ## reverse() sort() and split into 2 chunks
 a := a.sort_rev().reverse().mark(0@0).reverse();

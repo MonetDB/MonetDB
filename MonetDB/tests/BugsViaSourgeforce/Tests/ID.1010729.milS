@@ -1,5 +1,5 @@
 var b := new(void, int).seqbase(0@0);
-b.insert(nil,1).insert(nil, 2).insert(nil, 3);
+b.append(1).append(2).append(3);
 
 # 11 is the type_identifier of 'str'
 [cast](b, 11).print();
