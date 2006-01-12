@@ -50,8 +50,6 @@ SQLNumParams(SQLHSTMT hStmt, SQLSMALLINT *pnParamCount)
 	ODBCLOG("SQLNumParams " PTRFMT "\n", PTRFMTCAST hStmt);
 #endif
 
-	(void) pnParamCount;	/* Stefan: unused!? */
-
 	if (!isValidStmt(stmt))
 		 return SQL_INVALID_HANDLE;
 
@@ -64,11 +62,6 @@ SQLNumParams(SQLHSTMT hStmt, SQLSMALLINT *pnParamCount)
 		return SQL_ERROR;
 	}
 
-
-	/* TODO: retrieve the parameter information */
-
-	/* for now return error */
-	/* Driver does not support this function */
-	addStmtError(stmt, "IM001", NULL, 0);
-	return SQL_ERROR;
+	*pnParamCount = stmt->ImplParamDescr->sql_desc_count;
+	return SQL_SUCCESS;
 }

@@ -242,12 +242,116 @@ ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR * buf, SQLINTEGER b
  * Precondition: query != NULL
  * Postcondition: returns a newly allocated null terminated strings.
  */
+/*
+  Escape sequences:
+  {d 'yyyy-mm-dd'}
+  {t 'hh:mm:ss'}
+  {ts 'yyyy-mm-dd hh:mm:ss[.f...]'}
+  {fn scalar-function}
+  {escape 'escape-character'}
+  {oj outer-join}
+  where outer-join is:
+	table-reference {LEFT|RIGHT|FULL} OUTER JOIN
+	{table-reference | outer-join} ON search condition
+  {[?=]call procedure-name[([parameter][,[parameter]]...)]}
+ */
+
 char *
 ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER noscan)
 {
-	/* for now, just call dupODBCstring */
-	(void) noscan;
-	return dupODBCstring(query, length);
+	char *nquery;
+	char *p;
+	char buf[512];
+
+	nquery = dupODBCstring(query, length);
+	if (noscan)
+		return nquery;
+	p = nquery;
+	while ((p = strchr(p, '{')) != NULL) {
+		char *q = p;
+		unsigned yr, mt, dy, hr, mn, sc;
+		unsigned long fr;
+		int n, pr;
+
+		if (sscanf(p, "{ts '%u-%u-%u %u:%u:%u%n", &yr, &mt, &dy, &hr, &mn, &sc, &n) >= 6) {
+			p += n;
+			pr = 0;
+			if (*p == '.') {
+				char *e;
+
+				p++;
+				fr = strtoul(p, &e, 10);
+				if (e > p) {
+					pr = e - p;
+					p = e;
+				} else
+					goto skip;
+			}
+			if (*p++ != '\'' || *p++ != '}') {
+				p--;
+				goto skip;
+			}
+			if (pr > 0)
+				snprintf(buf, sizeof(buf), "TIMESTAMP '%u-%u-%u %u:%u:%u.%0*lu'",
+					 yr, mt, dy, hr, mn, sc, pr, fr);
+			else
+				snprintf(buf, sizeof(buf), "TIMESTAMP '%u-%u-%u %u:%u:%u'",
+					 yr, mt, dy, hr, mn, sc);
+			n = q - nquery;
+			pr = p - q;
+			q = malloc(length - pr + strlen(buf) + 1);
+			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
+			free(nquery);
+			nquery = q;
+			p = q + n;
+		} else if (sscanf(p, "{t '%u:%u:%u%n", &hr, &mn, &sc, &n) >= 3) {
+			p += n;
+			pr = 0;
+			if (*p == '.') {
+				char *e;
+
+				p++;
+				fr = strtoul(p, &e, 10);
+				if (e > p) {
+					pr = e - p;
+					p = e;
+				} else
+					goto skip;
+			}
+			if (*p++ != '\'' || *p++ != '}') {
+				p--;
+				goto skip;
+			}
+			if (pr > 0)
+				snprintf(buf, sizeof(buf), "TIME '%u:%u:%u.%0*lu'",
+					 hr, mn, sc, pr, fr);
+			else
+				snprintf(buf, sizeof(buf), "TIME '%u:%u:%u'",
+					 hr, mn, sc);
+			n = q - nquery;
+			pr = p - q;
+			q = malloc(length - pr + strlen(buf) + 1);
+			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
+			free(nquery);
+			nquery = q;
+			p = q + n;
+		} else if (sscanf(p, "{d '%u-%u-%u'}%n", &yr, &mt, &dy, &n) >= 3) {
+			p += n;
+			pr = 0;
+			snprintf(buf, sizeof(buf), "DATE '%u-%u-%u'",
+					 yr, mt, dy);
+			n = q - nquery;
+			pr = p - q;
+			q = malloc(length - pr + strlen(buf) + 1);
+			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
+			free(nquery);
+			nquery = q;
+			p = q + n;
+		}
+	  skip:
+		p++;
+	}
+	return nquery;
 }
 
 struct sql_types ODBC_sql_types[] = {

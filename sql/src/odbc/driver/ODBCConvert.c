@@ -252,7 +252,8 @@ parsedate(const char *data, DATE_STRUCT *dval)
 
 	while (space(*data))
 		data++;
-	if (sscanf(data, "%hd-%hu-%hu%n", &dval->year, &dval->month, &dval->day, &n) < 3)
+	if (sscanf(data, "{d '%hd-%hu-%hu'}%n", &dval->year, &dval->month, &dval->day, &n) < 3 &&
+	    sscanf(data, "%hd-%hu-%hu%n", &dval->year, &dval->month, &dval->day, &n) < 3)
 		return 0;
 	if (dval->month == 0 || dval->month > 12 || dval->day == 0 || dval->day > monthlengths[dval->month] || (dval->month == 2 && !isLeap(dval->year) && dval->day == 29))
 		return 0;
@@ -268,14 +269,17 @@ static int
 parsetime(const char *data, TIME_STRUCT *tval)
 {
 	int n;
+	int braces;
 
 	while (space(*data))
 		data++;
-	if (sscanf(data, "%hu:%hu:%hu%n", &tval->hour, &tval->minute, &tval->second, &n) < 3)
+	if (sscanf(data, "{t '%hu:%hu:%hu%n", &tval->hour, &tval->minute, &tval->second, &n) < 3 &&
+	    sscanf(data, "%hu:%hu:%hu%n", &tval->hour, &tval->minute, &tval->second, &n) < 3)
 		return 0;
 	/* seconds can go up to 61(!) because of leap seconds */
 	if (tval->hour > 23 || tval->minute > 59 || tval->second > 61)
 		return 0;
+	braces = *data == '{';
 	data += n;
 	n = 1;			/* tentative return value */
 	if (*data == '.') {
@@ -283,6 +287,8 @@ parsetime(const char *data, TIME_STRUCT *tval)
 			;
 		n = 2;		/* indicate loss of precision */
 	}
+	if (braces && *data++ != '\'' && *data++ != '}')
+		return 0;
 	while (space(*data))
 		data++;
 	if (*data)
@@ -294,13 +300,16 @@ static int
 parsetimestamp(const char *data, TIMESTAMP_STRUCT *tsval)
 {
 	int n;
+	int braces;
 
 	while (space(*data))
 		data++;
-	if (sscanf(data, "%hd-%hu-%hu %hu:%hu:%hu%n", &tsval->year, &tsval->month, &tsval->day, &tsval->hour, &tsval->minute, &tsval->second, &n) < 6)
+	if (sscanf(data, "{TS '%hd-%hu-%hu %hu:%hu:%hu%n", &tsval->year, &tsval->month, &tsval->day, &tsval->hour, &tsval->minute, &tsval->second, &n) < 6 &&
+	    sscanf(data, "%hd-%hu-%hu %hu:%hu:%hu%n", &tsval->year, &tsval->month, &tsval->day, &tsval->hour, &tsval->minute, &tsval->second, &n) < 6)
 		return 0;
 	if (tsval->month == 0 || tsval->month > 12 || tsval->day == 0 || tsval->day > monthlengths[tsval->month] || (tsval->month == 2 && !isLeap(tsval->year) && tsval->day == 29) || tsval->hour > 23 || tsval->minute > 59 || tsval->second > 61)
 		return 0;
+	braces = *data == '{';
 	tsval->fraction = 0;
 	data += n;
 	n = 1000000000;
@@ -310,6 +319,8 @@ parsetimestamp(const char *data, TIMESTAMP_STRUCT *tsval)
 			tsval->fraction += (*data - '0') * n;
 		}
 	}
+	if (braces && *data++ != '\'' && *data++ != '}')
+		return 0;
 	while (space(*data))
 		data++;
 	if (*data)
@@ -347,10 +358,12 @@ ODBCDefaultType(ODBCDescRec *rec)
 	case SQL_DECIMAL:
 	case SQL_NUMERIC:
 		return SQL_C_CHAR;
+#ifdef WITH_WCHAR
 	case SQL_WCHAR:
 	case SQL_WVARCHAR:
 	case SQL_WLONGVARCHAR:
 		return SQL_C_WCHAR;
+#endif
 	case SQL_BIT:
 		return SQL_C_BIT;
 	case SQL_TINYINT:
@@ -1103,7 +1116,10 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 
 	switch (type) {
 	case SQL_C_CHAR:
-	case SQL_C_WCHAR: {
+#ifdef WITH_WCHAR
+	case SQL_C_WCHAR:
+#endif
+	{
 		SQLPOINTER origptr;
 		SQLINTEGER origbuflen;
 		SQLINTEGER *origlenp;
@@ -1122,6 +1138,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 
 		origbuflen = buflen;
 		origlenp = lenp;
+#ifdef WITH_WCHAR
 		if (type == SQL_C_WCHAR) {
 			/* allocate temporary space */
 			buflen *= 4;
@@ -1129,6 +1146,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 
 			lenp = NULL;
 		}
+#endif
 		switch (sql_type) {
 			int sz;
 
@@ -1153,8 +1171,10 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
 
+#ifdef WITH_WCHAR
 				if (type == SQL_C_WCHAR)
 					free(ptr);
+#endif
 				return SQL_ERROR;
 			}
 			if (lenp)
@@ -1188,8 +1208,10 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 						   of range */
 						addStmtError(stmt, "22003", NULL, 0);
 
+#ifdef WITH_WCHAR
 						if (type == SQL_C_WCHAR)
 							free(ptr);
+#endif
 						return SQL_ERROR;
 					}
 					/* current precision (i) doesn't fit,
@@ -1214,8 +1236,10 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
 
+#ifdef WITH_WCHAR
 				if (type == SQL_C_WCHAR)
 					free(ptr);
+#endif
 				return SQL_ERROR;
 			}
 			data = (char *) ptr;
@@ -1234,8 +1258,10 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
 
+#ifdef WITH_WCHAR
 				if (type == SQL_C_WCHAR)
 					free(ptr);
+#endif
 				return SQL_ERROR;
 			}
 			data = (char *) ptr;
@@ -1257,8 +1283,10 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
 
+#ifdef WITH_WCHAR
 				if (type == SQL_C_WCHAR)
 					free(ptr);
+#endif
 				return SQL_ERROR;
 			}
 			if (lenp)
@@ -1299,8 +1327,10 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
 
+#ifdef WITH_WCHAR
 				if (type == SQL_C_WCHAR)
 					free(ptr);
+#endif
 				return SQL_ERROR;
 			}
 			if (lenp)
@@ -1333,8 +1363,10 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
 
+#ifdef WITH_WCHAR
 				if (type == SQL_C_WCHAR)
 					free(ptr);
+#endif
 				return SQL_ERROR;
 			}
 			data += sz;
@@ -1362,6 +1394,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 			break;
 		}
 		}
+#ifdef WITH_WCHAR
 		if (type == SQL_C_WCHAR) {
 			SQLSMALLINT n;
 
@@ -1371,6 +1404,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 				*origlenp = n * 2;	/* # of bytes, not chars */
 			free(ptr);
 		}
+#endif
 		break;
 	}
 	case SQL_C_BINARY:
@@ -2276,11 +2310,13 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 		sval = (char *) ptr;
 		fixODBCstring(sval, slen, addStmtError, stmt);
 		break;
+#ifdef WITH_WCHAR
 	case SQL_C_WCHAR:
 		slen = apdrec->sql_desc_octet_length_ptr ? *apdrec->sql_desc_octet_length_ptr : SQL_NTS;
 		sval = (char *) ptr;
 		fixWcharIn((SQLWCHAR *) ptr, slen, char, sval, addStmtError, stmt, return SQL_ERROR);
 		break;
+#endif
 	case SQL_C_BIT:
 		nval.precision = 1;
 		nval.scale = 0;
@@ -2502,7 +2538,9 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 		assign(buf, bufpos, buflen, '\'', stmt);
 		switch (ctype) {
 		case SQL_C_CHAR:
+#ifdef WITH_WCHAR
 		case SQL_C_WCHAR:
+#endif
 		case SQL_C_BINARY:
 			for (i = 0; i < slen; i++) {
 				char c = sval[i];
@@ -2656,7 +2694,9 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 		i = 1;
 		switch (ctype) {
 		case SQL_C_CHAR:
+#ifdef WITH_WCHAR
 		case SQL_C_WCHAR:
+#endif
 		case SQL_C_BINARY:
 			i = parsetimestamp(sval, &tsval);
 			/* fall through */
@@ -2690,7 +2730,9 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 		i = 1;
 		switch (ctype) {
 		case SQL_C_CHAR:
+#ifdef WITH_WCHAR
 		case SQL_C_WCHAR:
+#endif
 		case SQL_C_BINARY:
 			i = parsetimestamp(sval, &tsval);
 			/* fall through */
@@ -2723,7 +2765,9 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 	case SQL_TYPE_TIMESTAMP:
 		switch (ctype) {
 		case SQL_C_CHAR:
+#ifdef WITH_WCHAR
 		case SQL_C_WCHAR:
+#endif
 		case SQL_C_BINARY:
 			i = parsetimestamp(sval, &tsval);
 			if (i == 0) {
@@ -2787,7 +2831,9 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 	case SQL_INTERVAL_YEAR_TO_MONTH:
 		switch (ctype) {
 		case SQL_C_CHAR:
+#ifdef WITH_WCHAR
 		case SQL_C_WCHAR:
+#endif
 		case SQL_C_BINARY:
 			if (parsemonthintervalstring(&sval, &slen, &ival) == SQL_ERROR) {
 				addStmtError(stmt, "22018", NULL, 0);
@@ -2845,7 +2891,9 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 	case SQL_INTERVAL_MINUTE_TO_SECOND:
 		switch (ctype) {
 		case SQL_C_CHAR:
+#ifdef WITH_WCHAR
 		case SQL_C_WCHAR:
+#endif
 		case SQL_C_BINARY:
 			if (parsesecondintervalstring(&sval, &slen, &ival, &ivalprec) == SQL_ERROR) {
 				addStmtError(stmt, "22018", NULL, 0);
@@ -2904,7 +2952,9 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 			sval = data;
 			/* fall through */
 		case SQL_C_CHAR:
+#ifdef WITH_WCHAR
 		case SQL_C_WCHAR:
+#endif
 		case SQL_C_BINARY:
 			/* parse character data, reparse floating
 			   point number */
@@ -3022,7 +3072,9 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 	case SQL_DOUBLE:
 		switch (ctype) {
 		case SQL_C_CHAR:
+#ifdef WITH_WCHAR
 		case SQL_C_WCHAR:
+#endif
 		case SQL_C_BINARY:
 			if (!parsedouble(sval, &fval)) {
 				/* Invalid character value for cast specification */
