@@ -479,15 +479,15 @@ parseoptionalbracketednumber(char **svalp, SQLINTEGER *slenp, int *val1p, int *v
 }
 	
 static SQLRETURN
-parsemonthintervalstring(SQLCHAR **svalp, SQLINTEGER *slenp, SQL_INTERVAL_STRUCT *ival)
+parsemonthintervalstring(char **svalp, SQLINTEGER *slenp, SQL_INTERVAL_STRUCT *ival)
 {
-	char *sval = (char *) *svalp;
+	char *sval = *svalp;
 	int slen = slenp ? *slenp : strlen(sval);
 	char *eptr;
 	long val1 = -1, val2 = -1;
 	int leadingprecision;
 
-	if (slen < 8 || strncasecmp((char *) sval, "interval", 8) != 0)
+	if (slen < 8 || strncasecmp(sval, "interval", 8) != 0)
 		return SQL_ERROR;
 	sval += 8;
 	slen -= 8;
@@ -563,7 +563,7 @@ parsemonthintervalstring(SQLCHAR **svalp, SQLINTEGER *slenp, SQL_INTERVAL_STRUCT
 		slen--;
 		sval++;
 	}
-	if (slen >= 4 && strncasecmp((char *) sval, "year", 4) == 0) {
+	if (slen >= 4 && strncasecmp(sval, "year", 4) == 0) {
 		int p = 2;
 
 		slen -= 4;
@@ -631,9 +631,9 @@ parsemonthintervalstring(SQLCHAR **svalp, SQLINTEGER *slenp, SQL_INTERVAL_STRUCT
 }
 
 static SQLRETURN
-parsesecondintervalstring(SQLCHAR **svalp, SQLINTEGER *slenp, SQL_INTERVAL_STRUCT *ival, int *secprecp)
+parsesecondintervalstring(char **svalp, SQLINTEGER *slenp, SQL_INTERVAL_STRUCT *ival, int *secprecp)
 {
-	char *sval = (char *) *svalp;
+	char *sval = *svalp;
 	int slen = slenp ? *slenp : strlen(sval);
 	char *eptr;
 	int leadingprecision;
@@ -641,7 +641,7 @@ parsesecondintervalstring(SQLCHAR **svalp, SQLINTEGER *slenp, SQL_INTERVAL_STRUC
 	unsigned v1, v2, v3, v4;
 	int n;
 
-	if (slen < 8 || strncasecmp((char *) sval, "interval", 8) != 0)
+	if (slen < 8 || strncasecmp(sval, "interval", 8) != 0)
 		return SQL_ERROR;
 	sval += 8;
 	slen -= 8;
@@ -1922,7 +1922,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 
 		switch (sql_type) {
 		case SQL_CHAR:
-			if (parsemonthintervalstring((SQLCHAR **) &data, NULL, &ival) == SQL_ERROR) {
+			if (parsemonthintervalstring(&data, NULL, &ival) == SQL_ERROR) {
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
@@ -1997,7 +1997,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 
 		switch (sql_type) {
 		case SQL_CHAR:
-			if (parsesecondintervalstring((SQLCHAR **) &data, NULL, &ival, &ivalprec) == SQL_ERROR) {
+			if (parsesecondintervalstring(&data, NULL, &ival, &ivalprec) == SQL_ERROR) {
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
@@ -2208,7 +2208,7 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 	SQLINTEGER *indicator_ptr;
 	SQLUINTEGER bind_type;
 	SQLSMALLINT ctype, sqltype;
-	SQLCHAR *sval = NULL;
+	char *sval = NULL;
 	SQLINTEGER slen = 0;
 	bignum_t nval;
 	double fval = 0.0;
@@ -2273,13 +2273,13 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 	case SQL_C_CHAR:
 	case SQL_C_BINARY:
 		slen = apdrec->sql_desc_octet_length_ptr ? *apdrec->sql_desc_octet_length_ptr : SQL_NTS;
-		sval = (SQLCHAR *) ptr;
+		sval = (char *) ptr;
 		fixODBCstring(sval, slen, addStmtError, stmt);
 		break;
 	case SQL_C_WCHAR:
 		slen = apdrec->sql_desc_octet_length_ptr ? *apdrec->sql_desc_octet_length_ptr : SQL_NTS;
-		sval = (SQLCHAR *) ptr;
-		fixWcharIn((SQLWCHAR *) ptr, slen, sval, addStmtError, stmt, return SQL_ERROR);
+		sval = (char *) ptr;
+		fixWcharIn((SQLWCHAR *) ptr, slen, char, sval, addStmtError, stmt, return SQL_ERROR);
 		break;
 	case SQL_C_BIT:
 		nval.precision = 1;
@@ -2505,7 +2505,7 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 		case SQL_C_WCHAR:
 		case SQL_C_BINARY:
 			for (i = 0; i < slen; i++) {
-				SQLCHAR c = sval[i];
+				char c = sval[i];
 
 				if (c < 0x20 || c >= 0x7F) {
 					assign(buf, bufpos, buflen, '\\', stmt);
@@ -2658,7 +2658,7 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 		case SQL_C_CHAR:
 		case SQL_C_WCHAR:
 		case SQL_C_BINARY:
-			i = parsetimestamp((char *) sval, &tsval);
+			i = parsetimestamp(sval, &tsval);
 			/* fall through */
 		case SQL_C_TYPE_TIMESTAMP:
 			if (i) {
@@ -2669,7 +2669,7 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 				dval.year = tsval.year;
 				dval.month = tsval.month;
 				dval.day = tsval.day;
-			} else if (!parsedate((char *) sval, &dval)) {
+			} else if (!parsedate(sval, &dval)) {
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
@@ -2692,7 +2692,7 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 		case SQL_C_CHAR:
 		case SQL_C_WCHAR:
 		case SQL_C_BINARY:
-			i = parsetimestamp((char *) sval, &tsval);
+			i = parsetimestamp(sval, &tsval);
 			/* fall through */
 		case SQL_C_TYPE_TIMESTAMP:
 			if (i) {
@@ -2703,7 +2703,7 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 				tval.hour = tsval.hour;
 				tval.minute = tsval.minute;
 				tval.second = tsval.second;
-			} else if (!parsetime((char *) sval, &tval)) {
+			} else if (!parsetime(sval, &tval)) {
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
@@ -2725,9 +2725,9 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 		case SQL_C_CHAR:
 		case SQL_C_WCHAR:
 		case SQL_C_BINARY:
-			i = parsetimestamp((char *) sval, &tsval);
+			i = parsetimestamp(sval, &tsval);
 			if (i == 0) {
-				i = parsetime((char *) sval, &tval);
+				i = parsetime(sval, &tval);
 				if (i) {
 					struct tm tm;
 					time_t t;
@@ -2747,7 +2747,7 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 					tsval.second = tval.second;
 					tsval.fraction = 0;
 				} else {
-					i = parsedate((char *) sval, &dval);
+					i = parsedate(sval, &dval);
 					if (i) {
 		case SQL_TYPE_DATE:
 						tsval.year = dval.year;
@@ -2901,14 +2901,14 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 				if (fval == strtod(data, NULL))
 					break;
 			}
-			sval = (SQLCHAR *) data;
+			sval = data;
 			/* fall through */
 		case SQL_C_CHAR:
 		case SQL_C_WCHAR:
 		case SQL_C_BINARY:
 			/* parse character data, reparse floating
 			   point number */
-			if (!parseint((char *) sval, &nval)) {
+			if (!parseint(sval, &nval)) {
 				/* Invalid character value for cast
 				   specification */
 				addStmtError(stmt, "22018", NULL, 0);
@@ -3024,7 +3024,7 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 		case SQL_C_CHAR:
 		case SQL_C_WCHAR:
 		case SQL_C_BINARY:
-			if (!parsedouble((char *) sval, &fval)) {
+			if (!parsedouble(sval, &fval)) {
 				/* Invalid character value for cast specification */
 				addStmtError(stmt, "22018", NULL, 0);
 				return SQL_ERROR;

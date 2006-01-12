@@ -127,7 +127,7 @@ main(int argc, char **argv)
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle 2");
 
 	ret = SQLExecDirect(stmt, (SQLCHAR *)
-			    "CREATE TABLE test (\n"
+			    "CREATE TABLE odbcsampletest (\n"
 			    "   i INT DEFAULT '0' NOT NULL,\n"
 			    "   s VARCHAR(200),\n"
 			    "   f FLOAT,\n"
@@ -141,7 +141,7 @@ main(int argc, char **argv)
 		SQLSMALLINT coltype;
 		SQLSMALLINT colno;
 
-		ret = SQLColumns(stmt, NULL, 0, NULL, 0, (SQLCHAR *) "test", SQL_NTS, NULL, 0);
+		ret = SQLColumns(stmt, NULL, 0, NULL, 0, (SQLCHAR *) "odbcsampletest", SQL_NTS, NULL, 0);
 		check(ret, SQL_HANDLE_STMT, stmt, "SQLColumns");
 		ret = SQLBindCol(stmt, 5, SQL_C_SSHORT, &coltype, 0, NULL);
 		check(ret, SQL_HANDLE_STMT, stmt, "SQLBindCol 1");
@@ -186,7 +186,7 @@ main(int argc, char **argv)
 	/* we use a single statement with parameters whose values vary */
 
 	ret = SQLPrepare(stmt, (SQLCHAR *)
-			 "INSERT INTO test VALUES (?, ?, ?, ?, ?)", SQL_NTS);
+			 "INSERT INTO odbcsampletest VALUES (?, ?, ?, ?, ?)", SQL_NTS);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLPrepare 1");
 
 	/* do the actual filling of the test table */
@@ -251,7 +251,7 @@ main(int argc, char **argv)
 	ret = SQLBindCol(stmt, 5, SQL_C_TYPE_TIME, &f5, sizeof(f5), NULL);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLBindCol 5");
 
-	ret = SQLPrepare(stmt, (SQLCHAR *) "SELECT * FROM test WHERE 2*(i/2) = i", SQL_NTS);
+	ret = SQLPrepare(stmt, (SQLCHAR *) "SELECT * FROM odbcsampletest WHERE 2*(i/2) = i", SQL_NTS);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLPrepare 2");
 
 	ret = SQLExecute(stmt);
@@ -261,7 +261,7 @@ main(int argc, char **argv)
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt2);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle 3");
 
-	ret = SQLPrepare(stmt2, (SQLCHAR *) "SELECT * FROM test WHERE 2*(i/2) <> i", SQL_NTS);
+	ret = SQLPrepare(stmt2, (SQLCHAR *) "SELECT * FROM odbcsampletest WHERE 2*(i/2) <> i", SQL_NTS);
 	check(ret, SQL_HANDLE_STMT, stmt2, "SQLPrepare 3");
 
 	/* bind the columns after preparing the statement */
@@ -307,7 +307,7 @@ main(int argc, char **argv)
 	check(ret, SQL_HANDLE_STMT, stmt2, "SQLFreeHandle 1");
 
 	/* drop the test table */
-	ret = SQLExecDirect(stmt, (SQLCHAR *) "DROP TABLE test", SQL_NTS);
+	ret = SQLExecDirect(stmt, (SQLCHAR *) "DROP TABLE odbcsampletest", SQL_NTS);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect 3");
 
 	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt);

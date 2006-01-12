@@ -110,10 +110,10 @@ extern char *ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER n
 extern SQLCHAR *ODBCwchar2utf8(const SQLWCHAR * s, SQLINTEGER length, char **errmsg);
 extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR * buf, SQLINTEGER buflen, SQLSMALLINT *buflenout);
 
-#define fixWcharIn(ws, wsl, s, errfunc, hdl, exit)	\
+#define fixWcharIn(ws, wsl, t, s, errfunc, hdl, exit)	\
 	do {						\
 		char *e;				\
-		(s) = ODBCwchar2utf8((ws), (wsl), &e);	\
+		(s) = (t *) ODBCwchar2utf8((ws), (wsl), &e); \
 		if (e) {				\
 			/* General error */		\
 			errfunc((hdl), "HY000", e, 0);	\

@@ -214,12 +214,12 @@ SQLForeignKeysW(SQLHSTMT hStmt, SQLWCHAR * szPKCatalogName, SQLSMALLINT nPKCatal
 
 	clearStmtErrors(stmt);
 
-	fixWcharIn(szPKCatalogName, nPKCatalogNameLength, PKcatalog, addStmtError, stmt, goto exit);
-	fixWcharIn(szPKSchemaName, nPKSchemaNameLength, PKschema, addStmtError, stmt, goto exit);
-	fixWcharIn(szPKTableName, nPKTableNameLength, PKtable, addStmtError, stmt, goto exit);
-	fixWcharIn(szFKCatalogName, nFKCatalogNameLength, FKcatalog, addStmtError, stmt, goto exit);
-	fixWcharIn(szFKSchemaName, nFKSchemaNameLength, FKschema, addStmtError, stmt, goto exit);
-	fixWcharIn(szFKTableName, nFKTableNameLength, FKtable, addStmtError, stmt, goto exit);
+	fixWcharIn(szPKCatalogName, nPKCatalogNameLength, SQLCHAR, PKcatalog, addStmtError, stmt, goto exit);
+	fixWcharIn(szPKSchemaName, nPKSchemaNameLength, SQLCHAR, PKschema, addStmtError, stmt, goto exit);
+	fixWcharIn(szPKTableName, nPKTableNameLength, SQLCHAR, PKtable, addStmtError, stmt, goto exit);
+	fixWcharIn(szFKCatalogName, nFKCatalogNameLength, SQLCHAR, FKcatalog, addStmtError, stmt, goto exit);
+	fixWcharIn(szFKSchemaName, nFKSchemaNameLength, SQLCHAR, FKschema, addStmtError, stmt, goto exit);
+	fixWcharIn(szFKTableName, nFKTableNameLength, SQLCHAR, FKtable, addStmtError, stmt, goto exit);
 
 	rc = SQLForeignKeys_(stmt, PKcatalog, SQL_NTS, PKschema, SQL_NTS, PKtable, SQL_NTS, FKcatalog, SQL_NTS, FKschema, SQL_NTS, FKtable, SQL_NTS);
 

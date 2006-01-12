@@ -240,10 +240,10 @@ SQLTablesW(SQLHSTMT hStmt, SQLWCHAR * szCatalogName, SQLSMALLINT nCatalogNameLen
 
 	clearStmtErrors(stmt);
 
-	fixWcharIn(szCatalogName, nCatalogNameLength, catalog, addStmtError, stmt, goto exit);
-	fixWcharIn(szSchemaName, nSchemaNameLength, schema, addStmtError, stmt, goto exit);
-	fixWcharIn(szTableName, nTableNameLength, table, addStmtError, stmt, goto exit);
-	fixWcharIn(szTableType, nTableTypeLength, type, addStmtError, stmt, goto exit);
+	fixWcharIn(szCatalogName, nCatalogNameLength, SQLCHAR, catalog, addStmtError, stmt, goto exit);
+	fixWcharIn(szSchemaName, nSchemaNameLength, SQLCHAR, schema, addStmtError, stmt, goto exit);
+	fixWcharIn(szTableName, nTableNameLength, SQLCHAR, table, addStmtError, stmt, goto exit);
+	fixWcharIn(szTableType, nTableTypeLength, SQLCHAR, type, addStmtError, stmt, goto exit);
 
 	rc = SQLTables_(stmt, catalog, SQL_NTS, schema, SQL_NTS, table, SQL_NTS, type, SQL_NTS);
 

@@ -291,7 +291,7 @@ SQLPrepareW(SQLHSTMT hStmt, SQLWCHAR * szSqlStr, SQLINTEGER nSqlStrLength)
 
 	clearStmtErrors(stmt);
 
-	fixWcharIn(szSqlStr, nSqlStrLength, sql, addStmtError, stmt, return SQL_ERROR);
+	fixWcharIn(szSqlStr, nSqlStrLength, SQLCHAR, sql, addStmtError, stmt, return SQL_ERROR);
 
 	rc = SQLPrepare_(stmt, sql, SQL_NTS);
 

@@ -174,7 +174,7 @@ SQLBrowseConnectW(SQLHDBC hDbc, SQLWCHAR * szConnStrIn, SQLSMALLINT cbConnStrIn,
 
 	clearDbcErrors(dbc);
 
-	fixWcharIn(szConnStrIn, cbConnStrIn, in, addDbcError, dbc, return SQL_ERROR);
+	fixWcharIn(szConnStrIn, cbConnStrIn, SQLCHAR, in, addDbcError, dbc, return SQL_ERROR);
 	prepWcharOut(out, cbConnStrOutMax);
 	rc = SQLBrowseConnect_(dbc, in, SQL_NTS, out, cbConnStrOutMax * 4, &n);
 	fixWcharOut(rc, out, n, szConnStrOut, cbConnStrOutMax, pcbConnStrOut, 1, addDbcError, dbc);

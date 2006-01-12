@@ -186,9 +186,9 @@ SQLConnectW(SQLHDBC hDbc, SQLWCHAR * szDataSource, SQLSMALLINT nDataSourceLength
 
 	clearDbcErrors(dbc);
 
-	fixWcharIn(szDataSource, nDataSourceLength, ds, addDbcError, dbc, goto exit);
-	fixWcharIn(szUID, nUIDLength, uid, addDbcError, dbc, goto exit);
-	fixWcharIn(szPWD, nPWDLength, pwd, addDbcError, dbc, goto exit);
+	fixWcharIn(szDataSource, nDataSourceLength, SQLCHAR, ds, addDbcError, dbc, goto exit);
+	fixWcharIn(szUID, nUIDLength, SQLCHAR, uid, addDbcError, dbc, goto exit);
+	fixWcharIn(szPWD, nPWDLength, SQLCHAR, pwd, addDbcError, dbc, goto exit);
 
 	rc = SQLConnect_(dbc, ds, SQL_NTS, uid, SQL_NTS, pwd, SQL_NTS, NULL, 0);
 

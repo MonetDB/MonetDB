@@ -119,7 +119,7 @@ SQLSetConnectOptionW(SQLHDBC hDbc, SQLUSMALLINT nOption, SQLULEN vParam)
 	case SQL_ATTR_CURRENT_CATALOG:
 	case SQL_ATTR_TRACEFILE:
 	case SQL_ATTR_TRANSLATE_LIB:
-		fixWcharIn((SQLPOINTER) (size_t) vParam, SQL_NTS, ptr, addDbcError, dbc, return SQL_ERROR);
+		fixWcharIn((SQLPOINTER) (size_t) vParam, SQL_NTS, SQLCHAR, ptr, addDbcError, dbc, return SQL_ERROR);
 		p = (SQLULEN) (size_t) ptr;
 		break;
 	default:

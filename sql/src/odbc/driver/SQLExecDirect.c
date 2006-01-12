@@ -151,7 +151,7 @@ SQLExecDirectW(SQLHSTMT hStmt, SQLWCHAR * szSqlStr, SQLINTEGER nSqlStr)
 
 	clearStmtErrors(stmt);
 
-	fixWcharIn(szSqlStr, nSqlStr, sql, addStmtError, stmt, return SQL_ERROR);
+	fixWcharIn(szSqlStr, nSqlStr, SQLCHAR, sql, addStmtError, stmt, return SQL_ERROR);
 
 	rc = SQLExecDirect_((ODBCStmt *) hStmt, sql, SQL_NTS);
 

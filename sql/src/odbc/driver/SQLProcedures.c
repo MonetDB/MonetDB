@@ -119,9 +119,9 @@ SQLProceduresW(SQLHSTMT hStmt, SQLWCHAR * szCatalogName, SQLSMALLINT nCatalogNam
 
 	clearStmtErrors(stmt);
 
-	fixWcharIn(szCatalogName, nCatalogNameLength, catalog, addStmtError, stmt, goto exit);
-	fixWcharIn(szSchemaName, nSchemaNameLength, schema, addStmtError, stmt, goto exit);
-	fixWcharIn(szProcName, nProcNameLength, proc, addStmtError, stmt, goto exit);
+	fixWcharIn(szCatalogName, nCatalogNameLength, SQLCHAR, catalog, addStmtError, stmt, goto exit);
+	fixWcharIn(szSchemaName, nSchemaNameLength, SQLCHAR, schema, addStmtError, stmt, goto exit);
+	fixWcharIn(szProcName, nProcNameLength, SQLCHAR, proc, addStmtError, stmt, goto exit);
 
 	rc = SQLProcedures_(stmt, catalog, SQL_NTS, schema, SQL_NTS, proc, SQL_NTS);
 

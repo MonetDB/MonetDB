@@ -106,7 +106,7 @@ SQLSetCursorNameW(SQLHSTMT hStmt, SQLWCHAR * szCursor, SQLSMALLINT nCursorLength
 
 	clearStmtErrors(stmt);
 
-	fixWcharIn(szCursor, nCursorLength, cursor, addStmtError, stmt, return SQL_ERROR);
+	fixWcharIn(szCursor, nCursorLength, SQLCHAR, cursor, addStmtError, stmt, return SQL_ERROR);
 
 	rc = SQLSetCursorName_(stmt, cursor, SQL_NTS);
 

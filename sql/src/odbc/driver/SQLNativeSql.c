@@ -118,7 +118,7 @@ SQLNativeSqlW(SQLHSTMT hStmt, SQLWCHAR * szSqlStrIn, SQLINTEGER cbSqlStrIn, SQLW
 
 	clearStmtErrors(stmt);
 
-	fixWcharIn(szSqlStrIn, cbSqlStrIn, sqlin, addStmtError, stmt, return SQL_ERROR);
+	fixWcharIn(szSqlStrIn, cbSqlStrIn, SQLCHAR, sqlin, addStmtError, stmt, return SQL_ERROR);
 
 	prepWcharOut(sqlout, cbSqlStrMax);
 
