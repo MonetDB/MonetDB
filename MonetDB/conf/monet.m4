@@ -865,6 +865,13 @@ if test "x$have_python" != xno; then
 		;;
 	esac
 fi
+if test "x$have_python" != xno; then
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $PYTHON_INCS"
+	AC_TRY_COMPILE([#include <Python.h>], [], [],
+		[ if test "x$have_python" != xauto; then AC_MSG_ERROR([Cannot compile with Python]); fi; have_python=no ])
+	CPPFLAGS="$save_CPPFLAGS"
+fi
 AC_SUBST(PYTHON)
 AM_CONDITIONAL(HAVE_PYTHON, test x"$have_python" != xno)
 AC_SUBST(PYTHON_INCS)
