@@ -9,7 +9,7 @@ stdout of test 'void_multiplex.SF-1280802` in directory 'tests/BugDay_2005-12-19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-var i := new(void,int).seqbase(0@0).insert(nil,1).access(BAT_READ);
+var i := new(void,int).seqbase(0@0).append(1).access(BAT_READ);
 var s := [str](i);
 print(i,s);
 #-------------------------#

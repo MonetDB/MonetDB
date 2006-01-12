@@ -10,7 +10,7 @@ stdout of test 'assertion_on_bat_cast.SF-1230320` in directory 'tests/BugDay_200
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 var a:=new(void,lng).seqbase(0@0);
-a.insert(nil,0LL).insert(nil,1LL).insert(nil,2LL);
+a.append(0LL).append(1LL).append(2LL);
 var b:=[oid](a);
 a.print();
 #-----------------#
@@ -30,7 +30,7 @@ b.print();
 [ 2@0,	  2@0	  ]
 
 var c:=new(void,lng).seqbase(0@0);
-c.insert(nil,0LL).insert(nil,2LL).insert(nil,1LL);
+c.append(0LL).append(2LL).append(1LL);
 var d:=[oid](c);
 c.print();
 #-----------------#

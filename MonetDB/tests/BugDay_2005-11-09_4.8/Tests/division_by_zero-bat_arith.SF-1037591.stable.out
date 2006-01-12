@@ -20,7 +20,7 @@ print(0/0);
 !ERROR: intint_checkbinary_DIV: operation failed.
 !ERROR: interpret_params: print(param 1): evaluation error.
 
-var a:=new(void,int).seqbase(0@0).insert(nil,0).insert(nil, 1);
+var a:=new(void,int).seqbase(0@0).append(0).append(1);
 var b := [/](a, a);
 !ERROR: [/] (batbat_int_div): Division by Zero!
 !ERROR: batbat_int_div: operation failed.
