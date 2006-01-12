@@ -14,8 +14,8 @@ var a := new (void, BAT).seqbase (0@0);
 var b := new (void, BAT);
 
 var c := new (void, int).seqbase (0@0);
-c.insert (nil, 42);
-c.insert (nil, 47);
+c.append (42);
+c.append (47);
 
 b.insert (nil, c);
 
