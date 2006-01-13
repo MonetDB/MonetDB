@@ -62,6 +62,10 @@ CATCH((int(1)%int(0))).print();
 [ "!ERROR: Modulo zero is not possible\n!ERROR: intint_checkbinary_MOD: operation failed.\n" ]
 CATCH((lng(1)%int(0))).print();
 [ "!ERROR: Modulo zero is not possible\n!ERROR: lngint_checkbinary_MOD: operation failed.\n" ]
+CATCH((dbl(1)%dbl(0))).print();
+[ "!ERROR: Modulo zero is not possible\n!ERROR: dbldbl_checkbinary_MOD: operation failed.\n" ]
+CATCH((flt(1)%flt(0))).print();
+[ "!ERROR: Modulo zero is not possible\n!ERROR: fltflt_checkbinary_MOD: operation failed.\n" ]
 
 ('a' < 'z').print();  ('z' < 'a').print();  ('a' < 'a').print();
 [ true ]
@@ -239,6 +243,8 @@ CATCH((lng(1)%int(0))).print();
 [ 10 ]
 (sht1 / sht2).print();
 [ 0 ]
+(sht1 % sht2).print();
+[ 2 ]
 
 (sht1 + int2).print();
 [ 4 ]
@@ -293,6 +299,8 @@ CATCH((lng(1)%int(0))).print();
 [ 10 ]
 (int1 / int2).print();
 [ 2 ]
+(int1 % int2).print();
+[ 1 ]
 
 (int1 + flt2).print();
 [ 10.3999996 ]
@@ -347,6 +355,8 @@ CATCH((lng(1)%int(0))).print();
 [ 13.5 ]
 (flt1 / flt2).print();
 [ 0.462962955 ]
+(flt1 % flt2).print();
+[ 2.5 ]
 
 (flt1 + dbl2).print();
 [ 56.504566192626953 ]
@@ -401,6 +411,8 @@ CATCH((lng(1)%int(0))).print();
 [ -135.01146698433513 ]
 (dbl1 / dbl2).print();
 [ -0.046292399512240366 ]
+(dbl1 % dbl2).print();
+[ -2.5000009536743164 ]
 
 (dbl1 + lng2).print();
 [ 5400456786.499999 ]
@@ -455,6 +467,8 @@ CATCH((lng(1)%int(0))).print();
 [ 3059533224668508160 ]
 (lng1 / lng2).print();
 [ -1666 ]
+(lng1 % lng2).print();
+[ -2838989526 ]
 
 abs(sht2).print();
 [ 5 ]
@@ -499,8 +513,6 @@ inv(flt2).print();
 inv(dbl2).print();
 [ 0.018516952741239247 ]
 
-(int1% int2).print();
-[ 1 ]
 (int1<<int2).print();
 [ 20 ]
 (int1>>int2).print();

@@ -305,18 +305,24 @@ Module: "ascii_io"
 
 Module: "bat_arith"
 
-[ 138 ]
-[ 138 ]
+[ 150 ]
+[ 150 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature						help														  # name
 # str		str		str							str														  # type
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,dbl], BAT[void,dbl]) : BAT[void,dbl]",	  "optimized multiplexed mod ('%') on head-aligned [void,dbl] BATs"						  ]
+[ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,dbl], dbl) : BAT[void,dbl]",		  "optimized multiplexed right-scalar mod ('%') on [void,dbl] BAT"						  ]
+[ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,flt], BAT[void,flt]) : BAT[void,flt]",	  "optimized multiplexed mod ('%') on head-aligned [void,flt] BATs"						  ]
+[ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,flt], flt) : BAT[void,flt]",		  "optimized multiplexed right-scalar mod ('%') on [void,flt] BAT"						  ]
 [ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,int], BAT[void,int]) : BAT[void,int]",	  "optimized multiplexed mod ('%') on head-aligned [void,int] BATs"						  ]
 [ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,int], int) : BAT[void,int]",		  "optimized multiplexed right-scalar mod ('%') on [void,int] BAT"						  ]
 [ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,lng], BAT[void,lng]) : BAT[void,lng]",	  "optimized multiplexed mod ('%') on head-aligned [void,lng] BATs"						  ]
 [ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,lng], lng) : BAT[void,lng]",		  "optimized multiplexed right-scalar mod ('%') on [void,lng] BAT"						  ]
 [ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,sht], BAT[void,sht]) : BAT[void,sht]",	  "optimized multiplexed mod ('%') on head-aligned [void,sht] BATs"						  ]
 [ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,sht], sht) : BAT[void,sht]",		  "optimized multiplexed right-scalar mod ('%') on [void,sht] BAT"						  ]
+[ "[%]",	  "OPERATOR:  ",  "[%](dbl, BAT[void,dbl]) : BAT[void,dbl]",		  "optimized multiplexed left-scalar mod ('%') on [void,dbl] BAT"						  ]
+[ "[%]",	  "OPERATOR:  ",  "[%](flt, BAT[void,flt]) : BAT[void,flt]",		  "optimized multiplexed left-scalar mod ('%') on [void,flt] BAT"						  ]
 [ "[%]",	  "OPERATOR:  ",  "[%](int, BAT[void,int]) : BAT[void,int]",		  "optimized multiplexed left-scalar mod ('%') on [void,int] BAT"						  ]
 [ "[%]",	  "OPERATOR:  ",  "[%](lng, BAT[void,lng]) : BAT[void,lng]",		  "optimized multiplexed left-scalar mod ('%') on [void,lng] BAT"						  ]
 [ "[%]",	  "OPERATOR:  ",  "[%](sht, BAT[void,sht]) : BAT[void,sht]",		  "optimized multiplexed left-scalar mod ('%') on [void,sht] BAT"						  ]
@@ -380,12 +386,18 @@ Module: "bat_arith"
 [ "[/]",	  "OPERATOR:  ",  "[/](int, BAT[void,int]) : BAT[void,int]",		  "optimized multiplexed left-scalar div ('/') on [void,int] BAT"						  ]
 [ "[/]",	  "OPERATOR:  ",  "[/](lng, BAT[void,lng]) : BAT[void,lng]",		  "optimized multiplexed left-scalar div ('/') on [void,lng] BAT"						  ]
 [ "[/]",	  "OPERATOR:  ",  "[/](sht, BAT[void,sht]) : BAT[void,sht]",		  "optimized multiplexed left-scalar div ('/') on [void,sht] BAT"						  ]
+[ "[:%=]",	  "OPERATOR:  ",  "[:%=](BAT[void,dbl], BAT[void,dbl]) : BAT[void,dbl]",  "optimized multiplexed in-place mod (':%=') on head-aligned [void,dbl] BATs (overwrites first operand)"	  ]
+[ "[:%=]",	  "OPERATOR:  ",  "[:%=](BAT[void,dbl], dbl) : BAT[void,dbl]",		  "optimized multiplexed right-scalar in-place mod (':%=') on [void,dbl] BAT (overwrites first operand)"	  ]
+[ "[:%=]",	  "OPERATOR:  ",  "[:%=](BAT[void,flt], BAT[void,flt]) : BAT[void,flt]",  "optimized multiplexed in-place mod (':%=') on head-aligned [void,flt] BATs (overwrites first operand)"	  ]
+[ "[:%=]",	  "OPERATOR:  ",  "[:%=](BAT[void,flt], flt) : BAT[void,flt]",		  "optimized multiplexed right-scalar in-place mod (':%=') on [void,flt] BAT (overwrites first operand)"	  ]
 [ "[:%=]",	  "OPERATOR:  ",  "[:%=](BAT[void,int], BAT[void,int]) : BAT[void,int]",  "optimized multiplexed in-place mod (':%=') on head-aligned [void,int] BATs (overwrites first operand)"	  ]
 [ "[:%=]",	  "OPERATOR:  ",  "[:%=](BAT[void,int], int) : BAT[void,int]",		  "optimized multiplexed right-scalar in-place mod (':%=') on [void,int] BAT (overwrites first operand)"	  ]
 [ "[:%=]",	  "OPERATOR:  ",  "[:%=](BAT[void,lng], BAT[void,lng]) : BAT[void,lng]",  "optimized multiplexed in-place mod (':%=') on head-aligned [void,lng] BATs (overwrites first operand)"	  ]
 [ "[:%=]",	  "OPERATOR:  ",  "[:%=](BAT[void,lng], lng) : BAT[void,lng]",		  "optimized multiplexed right-scalar in-place mod (':%=') on [void,lng] BAT (overwrites first operand)"	  ]
 [ "[:%=]",	  "OPERATOR:  ",  "[:%=](BAT[void,sht], BAT[void,sht]) : BAT[void,sht]",  "optimized multiplexed in-place mod (':%=') on head-aligned [void,sht] BATs (overwrites first operand)"	  ]
 [ "[:%=]",	  "OPERATOR:  ",  "[:%=](BAT[void,sht], sht) : BAT[void,sht]",		  "optimized multiplexed right-scalar in-place mod (':%=') on [void,sht] BAT (overwrites first operand)"	  ]
+[ "[:%=]",	  "OPERATOR:  ",  "[:%=](dbl, BAT[void,dbl]) : BAT[void,dbl]",		  "optimized multiplexed left-scalar in-place mod (':%=') on [void,dbl] BAT (overwrites second operand)"	  ]
+[ "[:%=]",	  "OPERATOR:  ",  "[:%=](flt, BAT[void,flt]) : BAT[void,flt]",		  "optimized multiplexed left-scalar in-place mod (':%=') on [void,flt] BAT (overwrites second operand)"	  ]
 [ "[:%=]",	  "OPERATOR:  ",  "[:%=](int, BAT[void,int]) : BAT[void,int]",		  "optimized multiplexed left-scalar in-place mod (':%=') on [void,int] BAT (overwrites second operand)"	  ]
 [ "[:%=]",	  "OPERATOR:  ",  "[:%=](lng, BAT[void,lng]) : BAT[void,lng]",		  "optimized multiplexed left-scalar in-place mod (':%=') on [void,lng] BAT (overwrites second operand)"	  ]
 [ "[:%=]",	  "OPERATOR:  ",  "[:%=](sht, BAT[void,sht]) : BAT[void,sht]",		  "optimized multiplexed left-scalar in-place mod (':%=') on [void,sht] BAT (overwrites second operand)"	  ]
