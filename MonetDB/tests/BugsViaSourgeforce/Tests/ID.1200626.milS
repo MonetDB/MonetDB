@@ -11,7 +11,7 @@ var c:=[+](b,1);
 c.info().find("tsorted").print();
 
 module(bat_arith);
-a:=new(int,void).insert(1,oid(nil)).insert(2,oid(nil)).sort();
+a:=new(int,void).insert(1,nil).insert(2,nil).sort();
 a.reverse().seqbase(oid(0));
 a.info().find("hsorted").print();
 # b is a bat sorted on tail:

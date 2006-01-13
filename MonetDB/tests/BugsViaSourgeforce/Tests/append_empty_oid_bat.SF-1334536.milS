@@ -1,4 +1,4 @@
-var bar := bat(void,oid).insert(nil,nil).mark(0@0).reverse().mark(0@0);
+var bar := bat(void,void).insert(nil,nil).mark(0@0).reverse().mark(0@0);
 bar := bar.reverse().mark(0@0).reverse();
 var foo := bat(oid,oid);
 foo.append(bar);

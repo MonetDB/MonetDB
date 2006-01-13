@@ -1,5 +1,4 @@
 VAR b := new(void,str);
-b.seqbase(nil);
 b.insert(nil,"zero");
 b.print();
 printf("oid(0) -> %s\n",str(b.find(oid(0))));

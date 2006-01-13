@@ -1,4 +1,4 @@
-var bar := bat(void,oid).insert(nil,nil).mark(0@0).reverse().mark(0@0);
+var bar := bat(void,void).insert(nil,nil).mark(0@0).reverse().mark(0@0);
 bar := bar.reverse().mark(0@0).reverse();
 bar.print();
 bar.access().print();
@@ -6,7 +6,7 @@ bar := bar.access(BAT_APPEND);
 bar.print();
 bar.access().print();
 
-var foo := bat(void,oid).insert(nil,nil).mark(0@0).reverse().mark(0@0);
+var foo := bat(void,void).insert(nil,nil).mark(0@0).reverse().mark(0@0);
 foo := foo.reverse().mark(0@0).reverse();
 foo.print();
 foo.access().print();
