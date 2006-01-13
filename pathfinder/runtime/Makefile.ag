@@ -25,6 +25,9 @@ EXTRA_DIST_DIR = Tests
 INCLUDES = $(MONETDB_INCS) $(LIBXML2_CFLAGS) ../compiler/include
 PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 
+# these defines are needed to get shttpd to compile in the right way
+CFLAGS = -DEMBEDDED -DMT -DNO_CGI -DNO_AUTH -DIO_MAX=10240
+
 lib__pf_support = {
 	DIR = libdir/MonetDB
 	SOURCES = \
@@ -74,8 +77,20 @@ lib__pathfinder = {
 		-l_streams -l_builtin -l_ascii_io -l_algebra -l_sys -l_constant -l_mapi 
 }
 
+lib__pf_soap = {
+	DIR = libdir/MonetDB
+	SOURCES = \
+		shttpd.c shttpd.h \
+		pf_soap.mx
+
+	LIBS = \
+		   $(MONETDB_LIBS) $(PF_LIBS) \
+		   -lbat -lmonet -lstream -lpthread \
+		   -l_streams -l_builtin -l_ascii_io
+}
+
 scripts_mil = {
 	DIR = libdir/MonetDB
-	SOURCES = pathfinder.mx pf_support.mx pf_burk.mx
+	SOURCES = pathfinder.mx pf_support.mx pf_burk.mx pf_soap.mx
 }
 
