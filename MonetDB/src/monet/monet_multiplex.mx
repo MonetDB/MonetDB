@@ -420,6 +420,7 @@ interpret_multiplex_fcn(str s,		/* operator name */
 	ValPtr bak = (ValPtr) alloca(argc * (int) sizeof(ValRecord));
 	exec_t desc;
 	RowFcn wrap;
+	oid  hseq = oid_nil;
 
 	memset(&desc, 0, sizeof(exec_t));
 	desc.name = s;
@@ -439,6 +440,11 @@ interpret_multiplex_fcn(str s,		/* operator name */
 			if (b == NULL)
 				return 0;
 			real_type = b->htype;
+			if (real_type == TYPE_void) {
+				if (hseq == oid_nil) {
+					hseq = b->hseqbase;
+				}
+			}
 			desc.piv[desc.nbats] = b;
 			desc.c[++desc.nbats] = desc.argv + i;
 		} else if (argv[i].vtype == TYPE_bat) {
@@ -497,6 +503,7 @@ Set up type and length info for the values that will come out of BAT params.
 	desc.need_unfix = (!proc && !desc.notall);
 	if (ret > 0) {
 		desc.b = BATnew(desc.id.vtype, ret, desc.cap + 3);
+		BATseqbase(desc.b, hseq);
 
 		desc.unfix = (desc.notall) ? NULL : BATatoms[ret].atomUnfix;
 		if (desc.need_unfix && ret == TYPE_bat)
@@ -528,6 +535,7 @@ So, what tail-type should the empty return BAT have? Dilemma!
 	if (desc.b == NULL && ret <= 0) {
 		GDKwarning("%s: empty result, hence return type unknown.\n", desc.name);
 		desc.b = BATnew(desc.id.vtype, TYPE_int, 10);
+		BATseqbase(desc.b, hseq);
 	}
 @-
 Set the correct properties in the result BAT.
