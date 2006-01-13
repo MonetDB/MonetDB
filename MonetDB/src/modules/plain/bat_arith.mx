@@ -414,26 +414,26 @@ batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v)
    operator between the operands */
 #define OP(l,op,r)	((l) op (r))
 @:implementations(sht,+,add,0,2)@
-@:implementations(sht,-,sub,0,2)@
+@:implementations(sht,-,sub,0,1)@
 @:implementations(sht,*,mul,0,2)@
 @:implementations(sht,/,div,1,1)@
 @:implementations(sht,%,mod,1,0)@
 @:implementations(int,+,add,0,2)@
-@:implementations(int,-,sub,0,2)@
+@:implementations(int,-,sub,0,1)@
 @:implementations(int,*,mul,0,2)@
 @:implementations(int,/,div,1,1)@
 @:implementations(int,%,mod,1,0)@
 @:implementations(lng,+,add,0,2)@
-@:implementations(lng,-,sub,0,2)@
+@:implementations(lng,-,sub,0,1)@
 @:implementations(lng,*,mul,0,2)@
 @:implementations(lng,/,div,1,1)@
 @:implementations(lng,%,mod,1,0)@
 @:implementations(flt,+,add,0,2)@
-@:implementations(flt,-,sub,0,2)@
+@:implementations(flt,-,sub,0,1)@
 @:implementations(flt,*,mul,0,2)@
 @:implementations(flt,/,div,1,1)@
 @:implementations(dbl,+,add,0,2)@
-@:implementations(dbl,-,sub,0,2)@
+@:implementations(dbl,-,sub,0,1)@
 @:implementations(dbl,*,mul,0,2)@
 @:implementations(dbl,/,div,1,1)@
 /* a % b when a and/or b are float (double) doesn't exist, so provide
