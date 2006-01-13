@@ -9,7 +9,7 @@ stdout of test 'append_empty_oid_bat.SF-1334536` in directory 'tests/BugsViaSour
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-var bar := bat(void,oid).insert(nil,nil).mark(0@0).reverse().mark(0@0);
+var bar := bat(void,void).insert(nil,nil).mark(0@0).reverse().mark(0@0);
 bar := bar.reverse().mark(0@0).reverse();
 var foo := bat(oid,oid);
 foo.append(bar);

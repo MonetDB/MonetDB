@@ -26,7 +26,7 @@ a.print();	# used to crash
 # h	t		  # name
 # void	BAT		  # type
 #-------------------------#
-[ 0@0,	  <tmp_32>	  ]
+[ 0@0,	  <tmp_34>	  ]
 quit();
 
 # 15:33:28 >  

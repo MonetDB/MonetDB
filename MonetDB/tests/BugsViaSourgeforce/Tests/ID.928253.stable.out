@@ -18,7 +18,7 @@ x.insert(3,nil);
 x:=x.mark(0@0);
 var y:=[oid](x);
 var z:=x.copy().access(BAT_APPEND);
-z.insert(2,nil);
+z.insert(2,oid(nil));
 z.access(BAT_READ);
 var w:=x.copy().reverse().mark(0@0).reverse();
 
