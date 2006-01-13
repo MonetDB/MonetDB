@@ -14,8 +14,8 @@ module(pf_support);
 var a:=
 new(void,oid)
 .seqbase(oid(0))
-.insert(nil,oid(0))
-.insert(nil,oid(0))
+.append(oid(0))
+.append(oid(0))
 .access(BAT_READ);
 print(a);
 #-----------------#

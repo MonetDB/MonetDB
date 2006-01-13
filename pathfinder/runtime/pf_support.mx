@@ -331,6 +331,10 @@ axis step evaluation on the @2 axis from the given context."
 module("xtables");
 module("aggrX3");
 module("bat_arith");
+PROC append_bat (bat[void,bat] b1, any b2) : bat[void,bat] {
+	return b1.insert (nil, b2);	# uses above insert() overload
+}
+
 module("mmath");
 module("pcre");
 
@@ -705,8 +709,8 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 	# trivial cases	
 	if ( (count(item) = 0) or (count(cands) = 0) or (count(pre_size) = 0) ) {
 		result := new(void,bat,2).seqbase(0@0)
-		          .insert(nil,bat(void,oid,0).seqbase(0@0).access(BAT_READ))
-		          .insert(nil,bat(void,oid,0).seqbase(0@0).access(BAT_READ))
+		          .append_bat(bat(void,oid,0).seqbase(0@0).access(BAT_READ))
+		          .append_bat(bat(void,oid,0).seqbase(0@0).access(BAT_READ))
 		          .access(BAT_READ);
 		return result;
 	}
@@ -721,8 +725,8 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 			# =>  result is a simple slice of cands
 			@:descs_per_item(@1,0)@
 			result := new(void,bat,2).seqbase(0@0)
-			          .insert(nil,constant2bat(iter.fetch(0)))
-			          .insert(nil,item_descs.mark(0@0).reverse())
+			          .append_bat(constant2bat(iter.fetch(0)))
+			          .append_bat(item_descs.mark(0@0).reverse())
 			          .access(BAT_READ);
 			return result;
 		}
@@ -767,8 +771,8 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 		                   height, one_iter, one_item, 
 		                   min_iter, max_iter, (and(order,2) = 0));
 		result := new(void,bat,2).seqbase(0@0)
-		          .insert(nil,res.mark(0@0).reverse())
-		          .insert(nil,res.reverse().mark(0@0).reverse())
+		          .append_bat(res.mark(0@0).reverse())
+		          .append_bat(res.reverse().mark(0@0).reverse())
 		          .access(BAT_READ);
 	}
 	
@@ -779,8 +783,8 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 		var ord := item.tsort();
 		    ord := ord.CTrefine(iter).mark(0@0).reverse();
 		result := new(void,bat,2).seqbase(0@0)
-		          .insert(nil,ord.leftfetchjoin(iter).chk_order())
-		          .insert(nil,ord.leftfetchjoin(item).chk_order())
+		          .append_bat(ord.leftfetchjoin(iter).chk_order())
+		          .append_bat(ord.leftfetchjoin(item).chk_order())
 		          .access(BAT_READ);
 	}
 	
@@ -791,8 +795,8 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 		var ord := iter.tsort();
 		    ord := ord.CTrefine(item).mark(0@0).reverse();
 		result := new(void,bat,2).seqbase(0@0)
-		          .insert(nil,ord.leftfetchjoin(iter).chk_order())
-		          .insert(nil,ord.leftfetchjoin(item).chk_order())
+		          .append_bat(ord.leftfetchjoin(iter).chk_order())
+		          .append_bat(ord.leftfetchjoin(item).chk_order())
 		          .access(BAT_READ);
 	}
 	
@@ -831,7 +835,7 @@ pre_levels
     if (frag = 0@0)
         { doc_pre := ws.fetch(WS_FRAG); }
     else
-        { doc_pre := bat(void,oid,1).seqbase(0@0).insert(nil,1@0).access(BAT_READ); }
+        { doc_pre := bat(void,oid,1).seqbase(0@0).append(1@0).access(BAT_READ); }
 @
 @= doc_pre
 doc_pre,
@@ -881,8 +885,8 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
         res_item := res_item.seqbase(0@0).access(BAT_READ).chk_order();
     }
     return new(void,bat,2).seqbase(0@0)
-           .insert(nil,res_iter)
-           .insert(nil,res_item)
+           .append_bat(res_iter)
+           .append_bat(res_item)
            .access(BAT_READ);
 }
 ADDHELP("@1", "tsheyar", "Sep 2004",
@@ -1249,9 +1253,9 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
     if (iter.count() = 0) {
 	var empty := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
 	return bat(void,bat,3).seqbase(0@0)
-			    .insert(nil,empty)
-			    .insert(nil,empty)
-			    .insert(nil,empty)
+			    .append_bat(empty)
+			    .append_bat(empty)
+			    .append_bat(empty)
 			    .access(BAT_READ);
     }
 
@@ -1317,9 +1321,9 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
     result_item.access(BAT_READ);
     result_frag.access(BAT_READ);
     var result_scj := bat(void,bat,3).seqbase(0@0);
-    result_scj.insert(nil,result_iter);
-    result_scj.insert(nil,result_item);
-    result_scj.insert(nil,result_frag);
+    result_scj.append_bat(result_iter);
+    result_scj.append_bat(result_item);
+    result_scj.append_bat(result_frag);
 
     return result_scj.access(BAT_READ);
 }

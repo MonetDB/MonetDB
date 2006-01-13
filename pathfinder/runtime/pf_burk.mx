@@ -1056,9 +1056,9 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
     if (iter.count() = 0) {
 	var empty := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
 	return bat(void,bat,3).seqbase(0@0)
-			    .insert(nil,empty)
-			    .insert(nil,empty)
-			    .insert(nil,empty)
+			    .append_bat(empty)
+			    .append_bat(empty)
+			    .append_bat(empty)
 			    .access(BAT_READ);
     }
     var result;
@@ -1123,9 +1123,9 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
     result_item.access(BAT_READ);
     result_frag.access(BAT_READ);
     var result_scj := bat(void,bat,3).seqbase(0@0);
-    result_scj.insert(nil,result_iter);
-    result_scj.insert(nil,result_item);
-    result_scj.insert(nil,result_frag);
+    result_scj.append_bat(result_iter);
+    result_scj.append_bat(result_item);
+    result_scj.append_bat(result_frag);
 
     return result_scj.access(BAT_READ);
 }
@@ -1220,18 +1220,18 @@ PROC region_extract(BAT[void, BAT] my_ws, oid i, str tpe) : bat[str,BAT] {
 ## TODO: FIXME : the following code does not work, but should assign
 ##               the largest possible region to the document-node
 #      if (=(tpe,"lng")) {
-#        region_pre := bat(void,oid).seqbase(0@0).insert(nil,0@0)
+#        region_pre := bat(void,oid).seqbase(0@0).append(0@0)
 #                                   .insert(region_left.leftjoin(left_pre));
-#        region_start := bat(void,lng).seqbase(0@0).insert(nil,getLNG_MIN())
+#        region_start := bat(void,lng).seqbase(0@0).append(getLNG_MIN())
 #                                     .insert(region_left.leftjoin(left_start));
-#        region_end := bat(void,lng).seqbase(0@0).insert(nil,getLNG_MAX())
+#        region_end := bat(void,lng).seqbase(0@0).append(getLNG_MAX())
 #                                   .insert(region_right.leftjoin(right_end));
 #     } else {
-#       region_pre := bat(void,oid).seqbase(0@0).insert(nil,0@0)
+#       region_pre := bat(void,oid).seqbase(0@0).append(0@0)
 #                                  .insert(region_left.leftjoin(left_pre));
-#       region_start := bat(void,INT).seqbase(0@0).insert(nil,getINT_MIN())
+#       region_start := bat(void,INT).seqbase(0@0).append(getINT_MIN())
 #                                    .insert(region_left.leftjoin(left_start));
-#       region_end := bat(void,INT).seqbase(0@0).insert(nil,getINT_MAX())
+#       region_end := bat(void,INT).seqbase(0@0).append(getINT_MAX())
 #                                  .insert(region_right.leftjoin(right_end));
 #     }
       region_pre := region_left.leftjoin(left_pre);
@@ -1298,18 +1298,18 @@ PROC region_extract(BAT[str, BAT] my_ws, str tpe) : bat[str,BAT] {
 ## TODO: FIXME : the following code does not work, but should assign
 ##               the largest possible region to the document-node
 #       if (=(tpe,"lng")) {
-#        region_pre := bat(void,oid).seqbase(0@0).insert(nil,0@0)
+#        region_pre := bat(void,oid).seqbase(0@0).append(0@0)
 #                                   .insert(region_left.leftjoin(left_pre));
-#        region_start := bat(void,lng).seqbase(0@0).insert(nil,getLNG_MIN())
+#        region_start := bat(void,lng).seqbase(0@0).append(getLNG_MIN())
 #                                     .insert(region_left.leftjoin(left_start));
-#        region_end := bat(void,lng).seqbase(0@0).insert(nil,getLNG_MAX())
+#        region_end := bat(void,lng).seqbase(0@0).append(getLNG_MAX())
 #                                   .insert(region_right.leftjoin(right_end));
 #       } else {
-#        region_pre := bat(void,oid).seqbase(0@0).insert(nil,0@0)
+#        region_pre := bat(void,oid).seqbase(0@0).append(0@0)
 #                                  .insert(region_left.leftjoin(left_pre));
-#        region_start := bat(void,INT).seqbase(0@0).insert(nil,getINT_MIN())
+#        region_start := bat(void,INT).seqbase(0@0).append(getINT_MIN())
 #                                    .insert(region_left.leftjoin(left_start));
-#        region_end := bat(void,INT).seqbase(0@0).insert(nil,getINT_MAX())
+#        region_end := bat(void,INT).seqbase(0@0).append(getINT_MAX())
 #                                  .insert(region_right.leftjoin(right_end));
 #       }
         region_pre := region_left.leftjoin(left_pre);

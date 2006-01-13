@@ -296,7 +296,7 @@ PROC ws_bat(int tpe, int htp, int ttp, oid seq) : BAT[void,any]
     if (ttp != void) { # a bat of bats (persistent or view)
         var b := bat(htp,ttp);
         if (not(isnil(seq))) b.seqbase(seq); 
-        return bat(void,bat).seqbase(PRE_BASE).insert(nil, b);
+        return bat(void,bat).seqbase(PRE_BASE).append_bat(b);
     } 
     return bat(void,tpe).seqbase(PRE_BASE); # a constant bat
 }
@@ -308,7 +308,7 @@ PROC create_ws () : BAT[void,bat]
     # fill the constant bats with initial values
     ws.fetch(DOC_LOADED).seqbase(1@0);
     ws.fetch(FRAG).seqbase(0@0).insert(0@0,nil);
-    ws.fetch(HEIGHT).seqbase(0@0).insert(nil,0);
+    ws.fetch(HEIGHT).seqbase(0@0).append(0);
     return ws.access(BAT_READ);
 }
 
@@ -633,7 +633,7 @@ PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, str docid, int 
     var frag := ws.fetch(DOC_LOADED).uselect(name);
 
     if (frag.count() = 0) {
-        ws.fetch(DOC_LOADED).insert(nil,name);
+        ws.fetch(DOC_LOADED).append(name);
         frag := oid(ws.fetch(DOC_LOADED).count());
 
         # use the ws_* bats to add all bats to the working set in a multiplex
@@ -648,15 +648,15 @@ PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, str docid, int 
         [insert](dst, nil, src);
 
         # create views
-        ws.fetch(PRE_FRAG).insert(nil,constant2bat(frag));
-        ws.fetch(ATTR_FRAG).insert(nil,constant2bat(frag));
+        ws.fetch(PRE_FRAG).append_bat(constant2bat(frag));
+        ws.fetch(ATTR_FRAG).append_bat(constant2bat(frag));
 
         # adapt constants
         ws.fetch(FRAG).replace(0@0,frag);
 
         if (isnil(height))
             height := ws.fetch(PRE_LEVEL).max().int() + 1;
-        ws.fetch(HEIGHT).insert(nil,height);
+        ws.fetch(HEIGHT).append(height);
     } else { 
         ws.fetch(FRAG).replace(0@0,frag.reverse().fetch(0)); 
     }
@@ -1367,7 +1367,7 @@ xquery_resolve(xquery_client *ctx, char *ns, char *method, int argc, int *mincnt
     if (debug) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.seqbase(" @3 ");\n");
 @= bunins
     if (BUNins(ctx->@1, @2, @3) == NULL) return "xquery_method: allocation error while inserting in @1";
-    if (debug) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.insert(nil," @5 @6 ");\n", @4 @3);
+    if (debug) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.append(" @5 @6 ");\n", @4 @3);
 @c
 /*
  * call a function ns:method(). try to use the function cache (ie re-use a cached MIL tree).

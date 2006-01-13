@@ -44,7 +44,7 @@ var pos;
 var item;
 var kind;
 {
-int_values.insert (nil,1);
+int_values.append (1);
 var itemID := int_values.uselect(1);
 itemID := itemID.reverse().fetch(0);
 # translateConst (kind)
@@ -66,7 +66,7 @@ item := nil;
 kind := nil;
 # saveResult () : int
 {
-int_values.insert (nil,2);
+int_values.append (2);
 var itemID := int_values.uselect(2);
 itemID := itemID.reverse().fetch(0);
 # translateConst (kind)
@@ -210,7 +210,7 @@ var temp1 := nil;
 var temp2 := nil;
 var temp3 := nil;
 {
-int_values.insert (nil,1);
+int_values.append (1);
 var itemID := int_values.uselect(1);
 itemID := itemID.reverse().fetch(0);
 # translateConst (kind)
@@ -232,7 +232,7 @@ item := nil;
 kind := nil;
 # saveResult () : int
 {
-int_values.insert (nil,2);
+int_values.append (2);
 var itemID := int_values.uselect(2);
 itemID := itemID.reverse().fetch(0);
 # translateConst (kind)
