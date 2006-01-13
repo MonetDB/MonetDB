@@ -864,12 +864,16 @@ if test "x$have_python" != xno; then
 		have_python_libdir=yes
 		;;
 	esac
+else
+	# no Python implies no Python includes or libraries
+	have_python_incdir=no
+	have_python_libdir=no
 fi
-if test "x$have_python" != xno; then
+if test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno; then
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $PYTHON_INCS"
 	AC_TRY_COMPILE([#include <Python.h>], [], [],
-		[ if test "x$have_python" != xauto; then AC_MSG_ERROR([Cannot compile with Python]); fi; have_python=no ])
+		[ if test "x$have_python_incdir" != xauto -o "x$have_python_libdir" != xauto; then AC_MSG_ERROR([Cannot compile with Python]); fi; have_python_incdir=no have_python_libdir=no ])
 	CPPFLAGS="$save_CPPFLAGS"
 fi
 AC_SUBST(PYTHON)
