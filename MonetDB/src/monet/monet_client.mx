@@ -737,7 +737,8 @@ serveClient(Cntxt stk, YYSTREE lt, ValPtr res)
 	res->vtype = TYPE_void;
 	c = monet_clients + i;
 	if (c->mode == FINISHED) {
-		GDKwarning("serveClient: client died.\n");
+		if (i)
+			GDKwarning("serveClient: client died.\n");
 		return -1;
 	}
 	t = THRget(THRgettid());

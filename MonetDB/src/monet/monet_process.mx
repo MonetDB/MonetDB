@@ -120,7 +120,12 @@ monetInterpreter(void *status)
 	}
 	PARDEBUG THRprintf(GDKerr, "monetInterpreter(exit)\n");
 
-	MT_exit_thread(0);
+	if (monet_threads) {
+		MT_exit_thread(0);
+	} else {
+		monet_exit(0);
+		MT_global_exit(0);
+	}
 }
 
 int
