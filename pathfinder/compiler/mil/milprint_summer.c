@@ -673,9 +673,9 @@ translateElemContent (opt_t *f, int code, int cur_level, int counter, PFcnode_t 
         c->kind == c_seq   ||
         c->kind == c_empty ||
         (c->kind == c_apply &&
-         (!PFqname_eq(c->sem.fun->qname,
+         (!PFqname_eq(c->sem.apply.fun->qname,
                       PFqname (PFns_pf,"item-sequence-to-node-sequence")) ||
-          !PFqname_eq(c->sem.fun->qname,
+          !PFqname_eq(c->sem.apply.fun->qname,
                       PFqname (PFns_pf,"merge-adjacent-text-nodes")))))
         return translate2MIL (f, code, cur_level, counter, c);
    else
@@ -5633,7 +5633,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
 
     args = R(args);
     c = L(args);
-    fun = c->sem.fun;
+    fun = c->sem.apply.fun;
 
     args = R(args);
     c = L(args);
@@ -6166,21 +6166,44 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
  */
 static void
 translateUDF (opt_t *f, int cur_level, int counter, 
-        PFfun_t *fun, PFcnode_t *args)
+        PFapply_t apply, PFcnode_t *args)
 {
     int i = 0;
+    char* item_ext = kind_str(STR);
 
     counter++;
     milprintf(f,
-            "{ # UDF - function call\n"
+            "{ # begin of UDF - function call\n"
             "var fun_base%03u := proc_vid.find(\"%s\");\n"
             "var fun_vid%03u := bat(void,oid).seqbase(nil);\n"
             "var fun_iter%03u := bat(void,oid).seqbase(nil);\n"
             "var fun_item%03u := bat(void,oid).seqbase(nil);\n"
             "var fun_kind%03u := bat(void,int).seqbase(nil);\n",
-            counter, fun->sig, counter, counter, counter, counter);
+            counter, apply.fun->sig, counter, counter, counter, counter);
 
-    while ((args->kind != c_nil) && (fun->params[i]))
+    if (apply.rpc)
+    {
+        /* The extra parameter 'dst' of a SOAP RPC is not listed in
+         * fun->params[], so translate it separately.
+         * FIXME: this is a very dirty hack */
+        milprintf(f, 
+                "module(\"pf_soap\");\n"
+                "\n# begin of translate the 'dst' parameter of SOAP RPC\n");
+
+        if (translate2MIL (f, NORMAL, cur_level, counter, R(L(args))) == NORMAL)
+        {
+            milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
+        }
+
+        saveResult_ (f, counter+1, STR);
+        args = R(args);
+    }
+
+    milprintf(f, 
+            "\n# end of translate the 'dst' parameter of SOAP RPC\n"
+            "\n# begin of add arg in UDF function call\n");
+
+    while ((args->kind != c_nil) && (apply.fun->params[i]))
     {
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
@@ -6189,8 +6212,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "fun_iter%03u := fun_iter%03u.insert(iter.tmark(nil));\n"
                 "fun_item%03u := fun_item%03u.insert(item.tmark(nil));\n"
                 "kind := kind.materialize(ipik);\n"
-                "fun_kind%03u := fun_kind%03u.insert(kind.tmark(nil));\n"
-                "# end of add arg in UDF function call\n",
+                "fun_kind%03u := fun_kind%03u.insert(kind.tmark(nil));\n",
                 counter, counter, counter, i, 
                 counter, counter, 
                 counter, counter,
@@ -6198,15 +6220,15 @@ translateUDF (opt_t *f, int cur_level, int counter,
         args = R(args);
         i++;
     }
+    milprintf(f, "# end of add arg in UDF function call\n");
 
     /* map needed global variables into the function */
     milprintf(f, "var expOid;\n");
     getExpanded (f,
             /* we don't want to get the variables from
-               the surrounding scope like for
-               but from the current */
+               the surrounding scope like for but from the current */
             cur_level+1, 
-            fun->fid);
+            apply.fun->fid);
     milprintf(f,
             "var vid := expOid.leftfetchjoin(v_vid%03u);\n"
             "iter    := expOid.leftfetchjoin(v_iter%03u);\n"
@@ -6235,12 +6257,113 @@ translateUDF (opt_t *f, int cur_level, int counter,
             "fun_kind%03u := fun_kind%03u.tmark(0@0);\n",
             counter, counter, counter, counter,
             counter, counter, counter, counter);
-    /* call the proc */
-    milprintf(f, PFudfMIL(), fun->sig,
-            cur_level, cur_level, cur_level, cur_level, 
-            counter, counter, counter, counter, 
-            fun->qname.loc, fun->qname.loc,
-            counter, counter, counter, counter);
+
+    if (apply.rpc) {
+        /* call soap_sender => frag~=kind
+         * extract return value (s) from the message node
+         * into a iter|item|kind table
+         * message node: (item=0@0, kind=~frag)
+         */
+        milprintf(f, 
+                "\n{ # begin of SOAP call\n\n"
+                /* FIXME: need a better way of name giving. */
+                "var local_name := \"SOAP_RPC_res\";\n"
+                "var rpc_oid := send_soap_rpc("
+                                    "local_name,"
+                                    "item%s%03u,"
+                                    "\"%s\","
+                                    "\"%s\","
+                                    "ws,"
+                                    "fun_vid%03u,"
+                                    "fun_iter%03u,"
+                                    "fun_item%03u,"
+                                    "fun_kind%03u,"
+                                    "int_values,"
+                                    "dbl_values,"
+                                    "dec_values,"
+                                    "str_values);\n",
+                item_ext, counter+1, 
+                apply.fun->qname.ns.uri,
+                apply.fun->qname.loc,
+                counter, counter, counter, counter);
+
+        milprintf(f, "rpc_oid.print();\n");
+
+        /* Construct the iter|item|kind by hand, and fill in the value
+         * tables. */
+        milprintf(f,
+                "var pre_size  := ws.fetch(PRE_SIZE).fetch(rpc_oid);\n"
+                "var pre_level := ws.fetch(PRE_LEVEL).fetch(rpc_oid);\n"
+                "var pre_kind  := ws.fetch(PRE_KIND).fetch(rpc_oid);\n"
+                "var pre_prop  := ws.fetch(PRE_PROP).fetch(rpc_oid);  # reference to the value tables\n"
+                "var qn_prefix := ws.fetch(QN_PREFIX).fetch(rpc_oid); # str name of the element nodes\n"
+                "var qn_loc    := ws.fetch(QN_LOC).fetch(rpc_oid);\n"
+                "var prop_text := ws.fetch(PROP_TEXT).fetch(rpc_oid); # str value of the text nodes\n"
+
+                "var k := int(nil); # var to hold the kind nr of the current iteration\n"
+                "var itercnt := 0;\n"
+                "var i := int(nil);\n"
+                "var d := dbl(nil);\n"
+
+                "var iter := new(void,oid).seqbase(nil);\n"
+                "var item := new(void,oid).seqbase(nil);\n"
+                "var kind := new(void,int).seqbase(nil);\n"
+
+                "pre_size@batloop(){\n"
+                "k := pre_kind.fetch($h);\n"
+                "if (k = \'\\000\') { # calculate iter number\n"
+                "if (qn_loc.fetch(pre_prop.fetch($h)) = \"iter\"){\n"
+                "itercnt :+= 1;\n"
+                "}\n"
+                "} else if (k = \'\\001\') { # text node, get its str value, and convert it accordingly\n"
+                "var t := qn_loc.fetch(pre_prop.fetch(int($h)-1)); # type\n"
+                "var v := prop_text.fetch(pre_prop.fetch($h)); # str value\n"
+                "#t.print();\n"
+                "if (t = \"integer\"){\n"
+                "i := int(v);\n"
+                "int_values.seqbase(nil).insert(nil,i).seqbase(0@0);\n"
+                "iter.insert(nil, oid(itercnt));\n"
+                "item.insert(nil, int_values.reverse().find(i));\n"
+                "kind.insert(nil,INT);\n"
+                "} else if(t = \"double\") {\n"
+                "d := dbl(v);\n"
+                "#\"dbl_values.insert\".print();\n"
+                "dbl_values.seqbase(nil).insert(nil,d).seqbase(0@0);\n"
+                "#\"iter.insert\".print();\n"
+                "iter.insert(nil, oid(itercnt));\n"
+                "#\"item.insert\".print();\n"
+                "item.insert(nil, dbl_values.reverse().find(d));\n"
+                "#\"kind.insert\".print();\n"
+                "kind.insert(nil,DBL);\n"
+                "} else if(t = \"decimal\") {\n"
+                "d := dbl(v);\n"
+                "dbl_values.seqbase(nil).insert(nil,d).seqbase(0@0);\n"
+                "iter.insert(nil, oid(itercnt));\n"
+                "item.insert(nil, dbl_values.reverse().find(d));\n"
+                "kind.insert(nil, DEC);\n"
+                "} else if(t = \"string\") {\n"
+                "str_values.seqbase(nil).insert(nil,v).seqbase(0@0);\n"
+                "iter.insert(nil, oid(itercnt));\n"
+                "item.insert(nil, str_values.reverse().find(d));\n"
+                "kind.insert(nil, STR);\n"
+                "}\n"
+                "}\n"
+                "}\n"
+                "iter := iter.tmark(0@0);\n"
+                "item := item.tmark(0@0);\n"
+                "kind := kind.tmark(0@0);\n"
+                "ipik := iter;\n"
+
+                "return bat(void,bat,4).insert(nil,iter).insert(nil,item).insert(nil,kind).access(BAT_READ);\n"
+                "} # end of SOAP call\n\n");
+        deleteResult_ (f, counter+1, STR);
+    } else {
+        /* call the proc */
+        milprintf(f, PFudfMIL(), apply.fun->sig,
+                cur_level, cur_level, cur_level, cur_level, 
+                counter, counter, counter, counter, 
+                apply.fun->qname.loc, apply.fun->qname.loc);
+    }
     milprintf(f, "} # end of UDF - function call\n");
 }
 
@@ -7863,15 +7986,15 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             rc = translateCast (f, code, rc, cur_level, c);
             break;
         case c_apply:
-            if (c->sem.fun->builtin)
+            if (c->sem.apply.fun->builtin)
             {
                 rc = translateFunction (f, code, cur_level, counter, 
-                                        c->sem.fun, D(c));
+                                        c->sem.apply.fun, D(c));
             }
             else
             {
                 translateUDF (f, cur_level, counter,
-                              c->sem.fun, D(c));
+                              c->sem.apply, D(c));
                 rc = NORMAL;
             }
             break;
@@ -7968,7 +8091,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             } else { 
 	        f->num_fun--;
   	        opt_output(f, OPT_SEC_EPILOGUE);
-                milprintf(f, "UNDEF %s;\n", c->sem.fun->sig);
+                milprintf(f, "UNDEF %s;\n", c->sem.apply.fun->sig);
   	        opt_output(f, OPT_SEC_PROLOGUE);
             }
 /* debug statement to print actual UDF parameters
@@ -7983,20 +8106,20 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                                "bat[void,oid] v_iter000, "
                                "bat[void,oid] v_item000, "
                                "bat[void,int] v_kind000) : bat[void,bat] { # fn:%s\n"
-                    "var iter;\nvar pos;\nvar item;\nvar kind\n;var ipik;\n"
+                    "var iter;\nvar pos;\nvar item;\nvar kind;\nvar ipik;\n"
                     "var v_pos000 := tmark_grp_unique(v_iter000,v_iter000);\n"
                     "v_pos000 := [oid](v_pos000).access(BAT_WRITE);\n"
                     "v_vid000 := [oid](v_vid000).access(BAT_WRITE);\n"
                     "v_iter000 := [oid](v_iter000).access(BAT_WRITE);\n"
                     "v_item000 := [oid](v_item000).access(BAT_WRITE);\n"
                     "v_kind000 := [int](v_kind000).access(BAT_WRITE);\n",
-                    c->sem.fun->sig, c->sem.fun->qname.loc);
+                    c->sem.apply.fun->sig, c->sem.apply.fun->qname.loc);
             /* we could have multiple different calls */
             translate2MIL (f, NORMAL, 0, counter, R(c));
             milprintf(f,
                     "return bat(void,bat,4).insert(nil,iter).insert(nil,item).insert(nil,kind).access(BAT_READ);\n"
                     "} # end of PROC %s\n",
-                    c->sem.fun->sig);
+                    c->sem.apply.fun->sig);
             opt_flush(f, 0);
   	    opt_output(f, OPT_SEC_QUERY);
             rc = NORMAL; /* dummy */
@@ -8080,7 +8203,7 @@ noForBetween (PFvar_t *v, PFcnode_t *c)
     else if (c->kind == c_var && c->sem.var == v)
         return 1;
     else if (c->kind == c_apply &&
-             !PFqname_eq(c->sem.fun->qname, PFqname (PFns_pf,"join")))
+             !PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_pf,"join")))
     {
         if (var_is_used (v, D(c)))
                 return 0;
@@ -8406,7 +8529,7 @@ simplifyCoreTree (PFcnode_t *c)
             break;
         case c_apply:
             /* handle the promotable types explicitly by casting them */
-            fun = c->sem.fun;
+            fun = c->sem.apply.fun;
             {
                 unsigned int i = 0;
                 PFcnode_t *tmp = D(c);
@@ -8449,7 +8572,7 @@ simplifyCoreTree (PFcnode_t *c)
                   DL(c)->kind != c_seq) ||
                  /* merge is not needed after is2ns anymore */
                  ((DL(c)->kind == c_apply) &&
-                  !PFqname_eq(DL(c)->sem.fun->qname,
+                  !PFqname_eq(DL(c)->sem.apply.fun->qname,
                               PFqname (PFns_pf,"item-sequence-to-node-sequence"))) ||
                  /* element nodes don't contain text nodes to merge */
                  (PFty_subtype(TY(DL(c)), 
@@ -8513,13 +8636,13 @@ simplifyCoreTree (PFcnode_t *c)
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"distinct-doc-order")) &&
                      DL(c)->kind == c_apply &&
-                     !PFqname_eq((DL(c))->sem.fun->qname,PFqname (PFns_pf,"distinct-doc-order"))) 
+                     !PFqname_eq((DL(c))->sem.apply.fun->qname,PFqname (PFns_pf,"distinct-doc-order"))) 
             {
                 *c = *(DL(c));
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"distinct-doc-order")) &&
                      DL(c)->kind == c_apply &&
-                     !PFqname_eq((DL(c))->sem.fun->qname,PFqname (PFns_pf,"distinct-doc-order")))
+                     !PFqname_eq((DL(c))->sem.apply.fun->qname,PFqname (PFns_pf,"distinct-doc-order")))
             {
                 *c = *(DL(c));
             }
@@ -8539,7 +8662,7 @@ simplifyCoreTree (PFcnode_t *c)
                 TY(R(D(c))) = PFty_none ();
                 L(D(c)) = new_node;
                 TY(L(D(c))) = TY(new_node);
-                c->sem.fun = PFcore_function (PFqname (PFns_pf, "distinct-doc-order"));
+                c->sem.apply.fun = PFcore_function (PFqname (PFns_pf, "distinct-doc-order"));
             }
             /* concatentation with empty string not needed */
             else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"concat")) &&
@@ -8550,7 +8673,7 @@ simplifyCoreTree (PFcnode_t *c)
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"not")) &&
                      DL(c)->kind == c_apply &&
-                     !PFqname_eq(DL(c)->sem.fun->qname,
+                     !PFqname_eq(DL(c)->sem.apply.fun->qname,
                                  PFqname (PFns_fn,"not")))
             {
                 *c = *(DL(DL(c)));
@@ -8563,14 +8686,14 @@ simplifyCoreTree (PFcnode_t *c)
                                    PFty_empty ()))
             {
                 if (L(DL(c))->kind == c_apply &&
-                     !PFqname_eq(L(DL(c))->sem.fun->qname,
+                     !PFqname_eq(L(DL(c))->sem.apply.fun->qname,
                                  PFqname (PFns_fn,"not")))
                 {
                     *c = *DL(L(DL(c)));
                 }
                 else
                 {
-                    c->sem.fun = PFcore_function (PFqname (PFns_fn, "not"));
+                    c->sem.apply.fun = PFcore_function (PFqname (PFns_fn, "not"));
                     DL(c) = L(DL(c));
                     TY(D(c)) = TY(DL(c));
                 }
@@ -8629,7 +8752,7 @@ simplifyCoreTree (PFcnode_t *c)
             simplifyCoreTree (RR(c));
 
             if (L(c)->kind == c_apply &&
-                !PFqname_eq(L(c)->sem.fun->qname,
+                !PFqname_eq(L(c)->sem.apply.fun->qname,
                             PFqname (PFns_fn,"not")))
             {
                 L(c) = DL(L(c));
@@ -8644,10 +8767,10 @@ simplifyCoreTree (PFcnode_t *c)
             if (R(c)->kind != c_locsteps &&
                 !PFty_subtype(TY(R(c)),PFty_opt (PFty_node ())) &&
                 !(R(c)->kind == c_apply &&
-                  !PFqname_eq(R(c)->sem.fun->qname,PFqname (PFns_pf,"distinct-doc-order"))))
+                  !PFqname_eq(R(c)->sem.apply.fun->qname,PFqname (PFns_pf,"distinct-doc-order"))))
             {
                 fun = PFcore_function (PFqname (PFns_pf, "distinct-doc-order"));
-                R(c) = PFcore_apply (fun, PFcore_arg (R(c), PFcore_nil ()));
+                R(c) = PFcore_apply (PFapply(fun), PFcore_arg (R(c), PFcore_nil ()));
             }
             else
             /* don't have to look at predicates because they are already expanded */
@@ -8870,7 +8993,7 @@ create_join_function (PFcnode_t *fst_for, PFcnode_t *fst_cast, int fst_nested,
     snd_cast = (!snd_cast)?PFcore_nil():snd_cast;
 
     comp = PFcore_leaf(c_apply);
-    comp->sem.fun = fun;
+    comp->sem.apply.fun = fun;
 
     PFfun_t *join = PFfun_new(PFqname (PFns_pf,"join"), /* name */
                               10,   /* arity */
@@ -8892,7 +9015,7 @@ create_join_function (PFcnode_t *fst_for, PFcnode_t *fst_cast, int fst_nested,
     c = PFcore_arg(fst_cast,c);
     c = PFcore_arg(fst_for,c);
     c = PFcore_wire1 (c_apply, c);
-    c->sem.fun = join;
+    c->sem.apply.fun = join;
     TY(c) = TY(result);
     return c;
 }
@@ -8974,7 +9097,7 @@ static int test_join_pattern(PFcnode_t *for_node,
 
     if_node = R(for_node);
     apply_node = L(if_node);
-    fun = apply_node->sem.fun;
+    fun = apply_node->sem.apply.fun;
 
     /* test quantified pattern */
     if (!PFqname_eq (fun->qname, PFqname (PFns_fn,"empty")) &&
@@ -8993,7 +9116,7 @@ static int test_join_pattern(PFcnode_t *for_node,
                                 PFcore_empty());
         if_node = R(c);
         apply_node = L(if_node);
-        fun = apply_node->sem.fun;
+        fun = apply_node->sem.apply.fun;
 
         /* test quantified pattern for second comparison input */
         if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"empty")) &&
@@ -9011,7 +9134,7 @@ static int test_join_pattern(PFcnode_t *for_node,
                                     PFcore_empty());
             if_node = R(c);
             apply_node = L(if_node);
-            fun = apply_node->sem.fun;
+            fun = apply_node->sem.apply.fun;
         }
     }
 
@@ -9095,7 +9218,7 @@ static int test_join_pattern(PFcnode_t *for_node,
                 RL(LR(fst_inner))->kind == c_seqtype &&
                 TY_EQ (RL(LR(fst_inner))->sem.type, PFty_untypedAtomic()) &&
                 RR(LR(fst_inner))->kind == c_apply &&
-                !PFqname_eq (RR(LR(fst_inner))->sem.fun->qname,
+                !PFqname_eq (RR(LR(fst_inner))->sem.apply.fun->qname,
                              PFqname (PFns_pf,"string-value")) &&
                 DL(RR(LR(fst_inner)))->kind == c_var &&
                 DL(RR(LR(fst_inner)))->sem.var == LLL(LR(fst_inner))->sem.var &&
@@ -9136,7 +9259,7 @@ static int test_join_pattern(PFcnode_t *for_node,
                 RL(LR(snd_inner))->kind == c_seqtype &&
                 TY_EQ (RL(LR(snd_inner))->sem.type, PFty_untypedAtomic()) &&
                 RR(LR(snd_inner))->kind == c_apply &&
-                !PFqname_eq (RR(LR(snd_inner))->sem.fun->qname,
+                !PFqname_eq (RR(LR(snd_inner))->sem.apply.fun->qname,
                              PFqname (PFns_pf,"string-value")) &&
                 DL(RR(LR(snd_inner)))->kind == c_var &&
                 DL(RR(LR(snd_inner)))->sem.var == LLL(LR(snd_inner))->sem.var &&
@@ -9641,7 +9764,7 @@ walk_through_UDF (opt_t *f,
         PFarray_del (way);
     }
     else if (c->kind == c_apply && 
-             !c->sem.fun->builtin)
+             !c->sem.apply.fun->builtin)
     {
         counter = walk_through_UDF (f, D(c), way, counter, active_funs);
 
@@ -9649,7 +9772,7 @@ walk_through_UDF (opt_t *f,
            (to avoid infinite recursion */
         for (i = 0, found = false; i < PFarray_last (active_funs); i++)
         {
-            if (*(PFfun_t **) PFarray_at (active_funs, i) == c->sem.fun)
+            if (*(PFfun_t **) PFarray_at (active_funs, i) == c->sem.apply.fun)
             {
                 found = true;
                 break;
@@ -9659,11 +9782,11 @@ walk_through_UDF (opt_t *f,
            to map all global variables correctly */
         if (!found)
         {
-            *(PFfun_t **) PFarray_add (active_funs) = c->sem.fun;
+            *(PFfun_t **) PFarray_add (active_funs) = c->sem.apply.fun;
             /* add new active function to an active function stack and once
                again check UDFs to map all global variables correctly */
-            *(int *) PFarray_add (way) = c->sem.fun->fid;
-            counter = walk_through_UDF (f, c->sem.fun->core,
+            *(int *) PFarray_add (way) = c->sem.apply.fun->fid;
+            counter = walk_through_UDF (f, c->sem.apply.fun->core,
                                         way, counter, active_funs);
             PFarray_del (way);
             PFarray_del (active_funs);
@@ -9795,7 +9918,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
     }
     /* apply mapping correctly for recognized join */    
     else if (c->kind == c_apply && 
-             !PFqname_eq(c->sem.fun->qname, PFqname (PFns_pf,"join")))
+             !PFqname_eq(c->sem.apply.fun->qname, PFqname (PFns_pf,"join")))
     {
         /* get all necessary Core nodes */
             args = D(c);
@@ -9867,8 +9990,8 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
         /* create a new valid PROC name for mil */
         /* ==================================== */
 
-        char sig[1024], *p = c->sem.fun->qname.loc, *q = c->sem.fun->qname.ns.uri;
-        char *r = c->sem.fun->qname.ns.ns;
+        char sig[1024], *p = c->sem.apply.fun->qname.loc, *q = c->sem.apply.fun->qname.ns.uri;
+        char *r = c->sem.apply.fun->qname.ns.ns;
         int i = 0, j, first = 0;
         unsigned int hash = 0; /* f->module_base; */
 
@@ -9903,7 +10026,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
             args = R(args);
         }
         /* create the full signature that also is a valid MIL identifier */
-        c->sem.fun->sig = PFmalloc(12+3*(strlen(sig)+strlen(p)));
+        c->sem.apply.fun->sig = PFmalloc(12+3*(strlen(sig)+strlen(p)));
 
         /* hash uri in proc name to make it uniquely identifyable  */
         for(; *q; q++) 
@@ -9914,39 +10037,39 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
                      * (_4_ cannot be a subsequent type name; those always end in [0-3])
                      */ 
             char x = (*p == '-' || *p == '.')?'_':*p;
-            c->sem.fun->sig[j++] = x; 
+            c->sem.apply.fun->sig[j++] = x; 
             hash = (hash*3) + *(unsigned char*) p;
-            if (*p == '-') c->sem.fun->sig[j++] = '4';
-            else if (*p == '.') c->sem.fun->sig[j++] = '5';
-            if (x == '_') c->sem.fun->sig[j++] = '_';
+            if (*p == '-') c->sem.apply.fun->sig[j++] = '4';
+            else if (*p == '.') c->sem.apply.fun->sig[j++] = '5';
+            if (x == '_') c->sem.apply.fun->sig[j++] = '_';
         }
 
         while(sig[i++] == ',') {
             int ch = 0;
-            c->sem.fun->sig[j++] = '_';
+            c->sem.apply.fun->sig[j++] = '_';
             while (sig[i] && sig[i] != ',') { 
                 hash = (hash*3) + *(unsigned char*) (sig+i);
                 ch = sig[i++];
                 if (ch == '_' || ch == '{' || ch == '}' || ch == '(' || ch == ')')  { 
-                    c->sem.fun->sig[j++] = '_';
-                    c->sem.fun->sig[j++] = '_';
+                    c->sem.apply.fun->sig[j++] = '_';
+                    c->sem.apply.fun->sig[j++] = '_';
                 } else if (ch == ':') {
-                    c->sem.fun->sig[j++] = '_';
+                    c->sem.apply.fun->sig[j++] = '_';
                 } else if (ch == '?') {
-                    c->sem.fun->sig[j++] = '0';
+                    c->sem.apply.fun->sig[j++] = '0';
                 } else if (ch == '*') {
-                    c->sem.fun->sig[j++] = '2';
+                    c->sem.apply.fun->sig[j++] = '2';
                 } else if (ch == '+') {
-                    c->sem.fun->sig[j++] = '3';
+                    c->sem.apply.fun->sig[j++] = '3';
                 } else if (ch != ' ') {
-                    c->sem.fun->sig[j++] = ch;
+                    c->sem.apply.fun->sig[j++] = ch;
                 }
                     }
-            if (c->sem.fun->sig[j-1] != '0' && 
-                c->sem.fun->sig[j-1] != '2' && 
-                c->sem.fun->sig[j-1] != '3') 
+            if (c->sem.apply.fun->sig[j-1] != '0' && 
+                c->sem.apply.fun->sig[j-1] != '2' && 
+                c->sem.apply.fun->sig[j-1] != '3') 
             {
-                c->sem.fun->sig[j++] = '1';
+                c->sem.apply.fun->sig[j++] = '1';
             }
         }
 
@@ -9959,37 +10082,37 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
             hash = hash*3 + *(int*) PFarray_at(counter,i);
 
         /* finish name by printing start (hashed name), connecting and terminating it */
-        sprintf(c->sem.fun->sig, "fn%08X", hash);
-        c->sem.fun->sig[10] = '_';
-        c->sem.fun->sig[j] = 0;
+        sprintf(c->sem.apply.fun->sig, "fn%08X", hash);
+        c->sem.apply.fun->sig[10] = '_';
+        c->sem.apply.fun->sig[j] = 0;
 
         if (f->module_base || f->num_fun) {
-                 milprintf(f, "proc_vid.insert(\"%s\", %dLL);\n", c->sem.fun->sig, f->module_base+first);
+                 milprintf(f, "proc_vid.insert(\"%s\", %dLL);\n", c->sem.apply.fun->sig, f->module_base+first);
                  f->num_fun--;
         }
     }
     /* apply mapping correctly for user defined function calls */    
     else if (c->kind == c_apply && 
-             !c->sem.fun->builtin)
+             !c->sem.apply.fun->builtin)
     {
         /* get variable occurrences of the input arguments */
         counter = get_var_usage (f, D(c), way, counter);
 
-        if (!c->sem.fun->fid) /* create fid for UDF on demand */
+        if (!c->sem.apply.fun->fid) /* create fid for UDF on demand */
         {
             /* give fun_decl a fid to map global variables */
             (*(int *) PFarray_at (counter, FID))++;
-            c->sem.fun->fid = *(int *) PFarray_at (counter, FID);
+            c->sem.apply.fun->fid = *(int *) PFarray_at (counter, FID);
         }
 
         /* add new active function to an active function stack and once
            again check UDFs to map all global variables correctly */
-        *(int *) PFarray_add (way) = c->sem.fun->fid;
+        *(int *) PFarray_add (way) = c->sem.apply.fun->fid;
         /* create a new stack with active UDFs to avoid endless recursion */
         PFarray_t *active_funs = PFarray (sizeof (PFvar_t *));
-        *(PFfun_t **) PFarray_add (active_funs) = c->sem.fun;
+        *(PFfun_t **) PFarray_add (active_funs) = c->sem.apply.fun;
 
-        counter = walk_through_UDF (f, c->sem.fun->core, 
+        counter = walk_through_UDF (f, c->sem.apply.fun->core, 
                                     way, counter, active_funs);
 
         PFarray_del (active_funs);
@@ -10070,11 +10193,13 @@ const char* PFvarMIL() {
         "var _r_attr_prop; # oid|oid\n"
         "var _r_attr_frag; # oid|oid\n"
         "\n"
+        /* FIXME: remove this line */
+        "var ws := int(nil);\n"
         "# environment that represents start of any query\n"
         "var v_iter000;\n"
         "var v_item000;\n"
         "var v_kind000;\n"
-	"var outer000;\n"
+	    "var outer000;\n"
         "var inner000;\n"
         "var order_000;\n";
 }
@@ -10087,7 +10212,8 @@ const char* PFstartMIL() {
         "var time_print := 0;\n"
         "var time_exec := time();\n"
         "\n"
-        "var ws := int(nil);\n"
+        /* FIXME: turn this line on */
+        /* "var ws := int(nil);\n" */
         "var err := CATCH({\n"
         "  ws := create_ws();\n"
         "\n"
@@ -10125,7 +10251,8 @@ const char* PFstopMIL() {
         "  if (genType.search(\"none\") = -1)\n"
         "    print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n"
         "});\n"
-        "destroy_ws(ws);\n"
+        /* FIXME: out commit this line */
+        "#destroy_ws(ws);\n"
         "if (not(isnil(err))) ERROR(err);\n"
         "time_print := time() - time_print;\n"
         "if (genType.search(\"timing\") >= 0)\n"
