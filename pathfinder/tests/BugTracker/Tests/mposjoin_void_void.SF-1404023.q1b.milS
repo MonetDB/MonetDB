@@ -1,0 +1,13 @@
+module(unix,pathfinder);
+
+var TSTSRCDIR := getenv("TSTSRCDIR");
+
+var name1 := "doc1.xml";
+var name2 := "doc2.xml";
+var file1 := TSTSRCDIR+"/mposjoin_void_void.SF-1404023."+name1;
+var file2 := TSTSRCDIR+"/mposjoin_void_void.SF-1404023."+name2;
+
+xquery("xml","for $i in doc(\""+file2+"\")//b where some $j in distinct-values(doc(\""+file1+"\")//aap) satisfies ends-with(exactly-one($i/@name), $j) return element { \"test\" } { $i }").printf();
+
+delete_doc(name2);
+delete_doc(name1);

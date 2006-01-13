@@ -1359,6 +1359,7 @@ CMDisFakeProject(bit *r, ptr v, int tpe) {
 int
 CMDfakeProject(BAT **res, ptr val, int tpe) 
 {
+	assert(val);
 	if (tpe == TYPE_bat) {
 		*res = (BAT*) val;
 		BBPfix((*res)->batCacheid);
@@ -1420,6 +1421,8 @@ CMDinsertConvert(BAT** res, BAT *b, ptr h, ptr t, int tpe)
 {
 	int ret = GDK_FAIL;
 	BAT *bn = NULL;
+	assert(h);
+	assert(t);
 	if (CMDfakeProject(&bn, t, tpe) == GDK_SUCCEED) {
 		if (BUNins(*res = b, BAThtype(b) == TYPE_bat ? (ptr) &((BAT *) h)->batCacheid : h, &bn->batCacheid)) {
 			BBPfix(b->batCacheid);
@@ -2645,10 +2648,12 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 			@:mpos_free_batlist@
 			return GDK_FAIL;
 		}
-		if (batlist[0]->ttype != batlist[ii]->ttype) {
-			GDKerror("mposjoin: all BATs in the tail of the third input BAT (ws_item) must have the same tail type.\n");
+		if (ATOMtype(batlist[0]->ttype) != ATOMtype(batlist[ii]->ttype)) {
+			GDKerror("mposjoin: all BATs in the tail of the third input BAT (ws_item) must have the same tail type (%d: %d != %d).\n",
+				ii, batlist[ii]->ttype, batlist[0]->ttype);
 			ii++;
 			@:mpos_free_batlist@
+			assert(0);
 			return GDK_FAIL;
 		}
 		ii++;
@@ -2664,7 +2669,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 @= mpos_res_create
 	/* create result BAT */
 
-	bn = BATnew(TYPE_void, tt, cnt);
+	bn = BATnew(TYPE_void, ATOMtype(tt), cnt);
 	if (bn == NULL) {
 		GDKerror("mposjoin: BATnew(TYPE_void, %s, " SZFMT ") failed.\n", ATOMname(ATOMtype(tt)), cnt);
 		@:mpos_free_batlist@
@@ -2692,7 +2697,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	pf = BUNfirst(frag);
 
 @= mposjoin
-	/*  @1: ATOMstorage(batlist[0]->ttype) (chr, sht, int, flt, lng, dbl, any)
+	/*  @1: ATOMstorage(ATOMtype(batlist[0]->ttype)) (chr, sht, int, flt, lng, dbl, any)
 	 *  @2: tloc, tvar, tail
 	 */
 	 if (fake_frag) {
@@ -2708,7 +2713,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	break;
 @
 @= mposjoin_fake_fake
-	/*  @1: ATOMstorage(batlist[0]->ttype) (chr, sht, int, flt, lng, dbl, any)
+	/*  @1: ATOMstorage(ATOMtype(batlist[0]->ttype)) (chr, sht, int, flt, lng, dbl, any)
 	 *  @2: tloc, tvar, tail
 	 */
 	BAT *b = batlist[0];
@@ -2719,7 +2724,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	}
 @
 @= mposjoin_
-	/*  @1: ATOMstorage(batlist[0]->ttype) (chr, sht, int, flt, lng, dbl, any)
+	/*  @1: ATOMstorage(ATOMtype(batlist[0]->ttype)) (chr, sht, int, flt, lng, dbl, any)
 	 *  @2: tloc, tvar, tail
 	 *  @3: FALSE / is_fake_project(b)
 	 */
@@ -2744,7 +2749,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	}
 @c
 
-	switch(ATOMstorage(batlist[0]->ttype)) {
+	switch(ATOMstorage(ATOMtype(batlist[0]->ttype))) {
 	case TYPE_chr:	@:mposjoin(chr,tloc,simple)@
 	case TYPE_sht:	@:mposjoin(sht,tloc,simple)@
 	case TYPE_int:	@:mposjoin(int,tloc,simple)@
