@@ -118,6 +118,7 @@ v3.info().find("hdense").print();
 var x := new(void,void);
 x.seqbase(0@0);
 x.append(12@0);
+x.append(nil);
 x.print();
 
 var e := new(void,int);
