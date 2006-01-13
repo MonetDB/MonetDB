@@ -321,7 +321,7 @@ BATSIGinit(void)
 	(void) signal(__SIGRTMIN + 1, SIG_IGN);
 #endif
 #ifdef SIGHUP
-	(void) signal(SIGHUP, MT_exit_thread);
+	(void) signal(SIGHUP, MT_global_exit);
 #endif
 #ifdef SIGINT
 	(void) signal(SIGINT, BATSIGinterrupt);
