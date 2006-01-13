@@ -5,7 +5,7 @@ use Text::ParseWords();
 use strict;
 use warnings;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 
 my %unescape = ( n => "\n", t => "\t", r => "\r", f => "\f");
