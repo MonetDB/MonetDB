@@ -42,7 +42,7 @@ print(c);
 [ 0@0,	  1@0	  ]
 [ 1@0,	  2@0	  ]
 
-c:=mark_grp(a,b.mark(nil),oid(1));
+c:=mark_grp(a,b.project(nil),oid(1));
 print(c);
 #-----------------#
 # h	tmp_31	  # name

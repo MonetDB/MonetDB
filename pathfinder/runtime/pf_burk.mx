@@ -813,7 +813,7 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
     if (not(loop_lifted)) 
     {  
       unq@batloop () {
-	ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().mark(nil);
+	ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().project(nil);
 	ctx_slice := ctx_slice.chk_order(); # have to check because step expects it sorted
         result.insert(@3
                               (region_pre, region_start, region_end,
@@ -851,13 +851,13 @@ PROC ll_burkowski_@1_@2(BAT[void,oid] region_pre,
   var max_iter := iter.max();
   var source_region := ctx.join(region_pre.reverse()).reverse();
   var region_iter := source_region.leftjoin(iter); 
-  source_region := source_region.mirror().leftjoin(region_start).sort().mark(nil).reverse();
+  source_region := source_region.mirror().leftjoin(region_start).sort().project(nil).reverse();
   var source_iter := source_region.leftjoin(region_iter).reverse().mark(0@0).reverse();
   
   #  try to get a iter_start...
   var source_start := source_region.leftjoin(region_start).reverse().mark(0@0).reverse(); 
   var iter_start := source_iter.[oid]().reverse().leftjoin(source_start);
-  var source_end := source_region.leftjoin(region_end).reverse().mark(nil).reverse();     
+  var source_end := source_region.leftjoin(region_end).reverse().project(nil).reverse();     
 
   var sel_region := cands.reverse().mirror().leftjoin(region_pre.reverse()).reverse().mirror();
   var sel_region2 := sel_region.leftjoin(region_start).sort().mark(0@0).reverse();
@@ -906,7 +906,7 @@ PROC burkowski_@1_@2(BAT[void,oid] region_pre,
 }
 @
 @= no_pre
-	cands := ws.fetch(PRE_SIZE).fetch(theFrag).mark(nil).reverse();
+	cands := ws.fetch(PRE_SIZE).fetch(theFrag).project(nil).reverse();
 	cands := cands.chk_order();
 @
 @= kind_pre

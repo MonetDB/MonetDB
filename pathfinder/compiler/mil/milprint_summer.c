@@ -2319,7 +2319,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "ELEMENT,  _elem_kind, "
                 "root_prop,  _elem_prop, "
                 "WS,  _elem_frag, "
-     /* attr */ "root_iter.mark(nil),  _elem_iter.mirror());\n"
+     /* attr */ "root_iter.project(nil),  _elem_iter.mirror());\n"
     
                 "root_iter  := nil;\n"
                 "root_size  := nil;\n"
@@ -2986,7 +2986,7 @@ loop_liftedAttrConstr (opt_t *f, int rcode, int rc, int cur_level, int i)
                 "var qn := item%03u.tmark(seqb);\n"
                 "ws.fetch(ATTR_QN).fetch(WS).insert(qn);\n"
                 "ws.fetch(ATTR_FRAG).fetch(WS).insert(qn.project(WS));\n"
-                "ws.fetch(ATTR_OWN).fetch(WS).insert(qn.mark(nil));\n"
+                "ws.fetch(ATTR_OWN).fetch(WS).insert(qn.project(nil));\n"
                 /* get the intermediate result */
                 "iter := iter%03u;\n"
                 "pos := pos%03u;\n"
@@ -6319,7 +6319,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "  var elem_iters := elements.leftfetchjoin(iter);\n"
                 "  var elem_items := elements.leftfetchjoin(item);\n"
                 "  var elem_frags := elements.leftfetchjoin(kind.get_fragment());\n"
-                "  var elem_attrs := elements.mark(nil);\n"
+                "  var elem_attrs := elements.project(nil);\n"
                 "  var attributes := kind.get_type(ATTR).mirror();\n"
                 "  var attr_iters := attributes.leftfetchjoin(iter).materialize(attributes);\n"
                 "  var attr_attrs := attributes.leftfetchjoin(item).materialize(attributes);\n"
@@ -6547,7 +6547,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             milprintf(f,
                       "iter := iter.leftfetchjoin(data_iter);\n"
                       "data_iter := nil;\n"
-                      "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
+                      "pos := iter.mark_grp(iter.tunique().project(nil), 1@0);\n"
                       "} # end of fn:data\n");
     
             rc = (code)?STR:NORMAL;

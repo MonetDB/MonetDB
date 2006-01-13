@@ -860,7 +860,7 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
     var res_iter, res_item;
     if (count(unq) = 1) {
         res_iter := constant2bat(unq.reverse().fetch(0));
-	ctx_slice := ctx.reverse().mark(nil);
+	ctx_slice := ctx.reverse().project(nil);
 	ctx_slice := ctx_slice.chk_order(); # have to check because step expects it sorted
         res_item := @3( @5, ctx_slice, @7 heights, pre_sizes.count()).hmark(0@0);
         res_item := res_item.chk_order();
@@ -868,7 +868,7 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
         res_iter := bat(void,oid);
         res_item := bat(void,oid);
         unq@batloop () {
-            ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().mark(nil);
+            ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().project(nil);
             ctx_slice := ctx_slice.chk_order(); # have to check because step expects it sorted
             var res := @3( @5, ctx_slice, @7 heights, pre_sizes.count()).hmark(nil);
             res := res.chk_order();
@@ -3573,7 +3573,7 @@ PROC attr_constr (BAT[void, oid] qn, BAT[void, str] item, BAT[void, BAT] ws) : B
     var newAttr_prop := newProp.tmark(seqb);
     newProp := nil;
     ws.fetch(ATTR_PROP).fetch(WS).insert(newAttr_prop);
-    ws.fetch(ATTR_OWN).fetch(WS).insert(newAttr_prop.mark(nil));
+    ws.fetch(ATTR_OWN).fetch(WS).insert(newAttr_prop.project(nil));
     ws.fetch(ATTR_QN).fetch(WS).insert(qn.tmark(seqb));
     ws.fetch(ATTR_FRAG).fetch(WS).insert(newAttr_prop.project(WS));
 

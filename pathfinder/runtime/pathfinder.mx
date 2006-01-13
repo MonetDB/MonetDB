@@ -404,7 +404,7 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
         var _prop := prop_pre_bat.hmark(0@0);
         var _pre  := prop_pre_bat.tmark(0@0);
         var ord := _prop.tsort();
-            ord := ord.CTrefine(_pre).mark(nil);
+            ord := ord.CTrefine(_pre).project(nil);
         prop_pre_bat := prop_pre_bat.fetch(ord);
         prop_pre_bat := prop_pre_bat.chk_order();
     }
@@ -416,7 +416,7 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
         var _prop := prop_pre_bat.hmark(0@0);
         var _pre  := prop_pre_bat.tmark(0@0);
         var ord := _prop.tsort();
-            ord := ord.CTrefine(_pre).mark(nil);
+            ord := ord.CTrefine(_pre).project(nil);
         prop_pre_bat := prop_pre_bat.fetch(ord);
         prop_pre_bat := prop_pre_bat.chk_order();
     }

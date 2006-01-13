@@ -15,6 +15,6 @@ var c:=mark_grp(a,b);
 print(c);
 
 
-c:=mark_grp(a,b.mark(nil),oid(1));
+c:=mark_grp(a,b.project(nil),oid(1));
 print(c);
 

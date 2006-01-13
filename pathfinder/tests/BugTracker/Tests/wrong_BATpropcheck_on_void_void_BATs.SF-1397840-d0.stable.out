@@ -378,11 +378,11 @@ a0014 := unused;
 a0020 := unused;
 a0004 := a0015.mark (1@0);
 a0008 := a0015.project (2@0);
-a0014 := a0005.copy ().reverse ().mark (nil).reverse ().access (BAT_APPEND);
-a0014 := a0014.insert (a0015.copy ().reverse ().mark (nil).reverse ()).access (BAT_READ).reverse ().mark (0@0).reverse ();
-a0020 := a0000.copy ().reverse ().mark (nil).reverse ().access (BAT_APPEND);
-a0020 := a0020.insert (a0004.copy ().reverse ().mark (nil).reverse ()).access (BAT_READ).reverse ().mark (0@0).reverse ();
-#a0021 := a0005.project (oid(nil)).reverse ().mark (nil).reverse ().access (BAT_APPEND);
+a0014 := a0005.copy ().reverse ().project (nil).reverse ().access (BAT_APPEND);
+a0014 := a0014.insert (a0015.copy ().reverse ().project (nil).reverse ()).access (BAT_READ).reverse ().mark (0@0).reverse ();
+a0020 := a0000.copy ().reverse ().project (nil).reverse ().access (BAT_APPEND);
+a0020 := a0020.insert (a0004.copy ().reverse ().project (nil).reverse ()).access (BAT_READ).reverse ().mark (0@0).reverse ();
+#a0021 := a0005.project (oid(nil)).reverse ().project (nil).reverse ().access (BAT_APPEND);
 print(a0005);
 #-----------------#
 # h	t	  # name
@@ -431,7 +431,7 @@ a0021 := a0021.reverse ();	print(a0021);
 [ nil,	  8@0	  ]
 [ nil,	  9@0	  ]
 [ nil,	  10@0	  ]
-a0021 := a0021.mark (nil);	print(a0021);
+a0021 := a0021.project (nil);	print(a0021);
 #-----------------#
 # t	h	  # name
 # void	void	  # type
@@ -495,15 +495,15 @@ print(a0019);
 [ 8@0,	  1@0	  ]
 [ 9@0,	  1@0	  ]
 [ 10@0,	  1@0	  ]
-a0021 := a0021.insert (a0019.copy ().reverse ().mark (nil).reverse ()).access (BAT_READ).reverse ().mark (0@0).reverse ();
-a0022 := a0005.project (oid(nil)).reverse ().mark (nil).reverse ().access (BAT_APPEND);
-a0022 := a0022.insert (a0018.copy ().reverse ().mark (nil).reverse ()).access (BAT_READ).reverse ().mark (0@0).reverse ();
-a0023 := a0010.copy ().reverse ().mark (nil).reverse ().access (BAT_APPEND);
-a0023 := a0023.insert (a0015.project (oid(nil)).copy ().reverse ().mark (nil).reverse ()).access (BAT_APPEND).reverse ().mark (0@0).reverse ();
-a0024 := a0007.copy ().reverse ().mark (nil).reverse ().access (BAT_APPEND);
-a0024 := a0024.insert (a0015.project (oid(nil)).copy ().reverse ().mark (nil).reverse ()).access (BAT_APPEND).reverse ().mark (0@0).reverse ();
-a0025 := a0001.copy ().reverse ().mark (nil).reverse ().access (BAT_APPEND);
-a0025 := a0025.insert (a0008.copy ().reverse ().mark (nil).reverse ()).access (BAT_READ).reverse ().mark (0@0).reverse ();
+a0021 := a0021.insert (a0019.copy ().reverse ().project (nil).reverse ()).access (BAT_READ).reverse ().mark (0@0).reverse ();
+a0022 := a0005.project (oid(nil)).reverse ().project (nil).reverse ().access (BAT_APPEND);
+a0022 := a0022.insert (a0018.copy ().reverse ().project (nil).reverse ()).access (BAT_READ).reverse ().mark (0@0).reverse ();
+a0023 := a0010.copy ().reverse ().project (nil).reverse ().access (BAT_APPEND);
+a0023 := a0023.insert (a0015.project (oid(nil)).copy ().reverse ().project (nil).reverse ()).access (BAT_APPEND).reverse ().mark (0@0).reverse ();
+a0024 := a0007.copy ().reverse ().project (nil).reverse ().access (BAT_APPEND);
+a0024 := a0024.insert (a0015.project (oid(nil)).copy ().reverse ().project (nil).reverse ()).access (BAT_APPEND).reverse ().mark (0@0).reverse ();
+a0025 := a0001.copy ().reverse ().project (nil).reverse ().access (BAT_APPEND);
+a0025 := a0025.insert (a0008.copy ().reverse ().project (nil).reverse ()).access (BAT_READ).reverse ().mark (0@0).reverse ();
 print(a0014, a0020, a0021, a0022, a0023, a0024, a0025);
 #-----------------------------------------------------------------#
 # h	t	t	t	t	h	h	t	  # name
