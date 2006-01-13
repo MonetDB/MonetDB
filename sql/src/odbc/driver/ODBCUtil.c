@@ -270,7 +270,7 @@ ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER noscan)
 	while ((p = strchr(p, '{')) != NULL) {
 		char *q = p;
 		unsigned yr, mt, dy, hr, mn, sc;
-		unsigned long fr;
+		unsigned long fr = 0;
 		int n, pr;
 
 		if (sscanf(p, "{ts '%u-%u-%u %u:%u:%u%n", &yr, &mt, &dy, &hr, &mn, &sc, &n) >= 6) {
