@@ -151,124 +151,41 @@ nil_nil.insert(    nil ,    nil ); xprint(nil_nil);
 #-----------------#
 [ nil,	  nil	  ]
 [ void,	  void,	  1  ]
-nil_nil.insert(    nil ,oid(nil)); xprint(nil_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,nil], nil, oid)'.
-!MAYBE YOU MEAN:
-!	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
-!	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
-nil_nil.insert(    nil ,oid(203)); xprint(nil_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,nil], nil, oid)'.
-!MAYBE YOU MEAN:
-!	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
-!	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
-nil_nil.insert(oid(nil),    nil ); xprint(nil_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,nil], oid, nil)'.
-!MAYBE YOU MEAN:
-!	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
-!	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 nil_nil.insert(oid(nil),oid(nil)); xprint(nil_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,nil], oid, oid)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,void], oid, oid)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
-nil_nil.insert(oid(nil),oid(206)); xprint(nil_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,nil], oid, oid)'.
-!MAYBE YOU MEAN:
-!	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
-!	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
-nil_nil.insert(oid(107),    nil ); xprint(nil_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,nil], oid, nil)'.
-!MAYBE YOU MEAN:
-!	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
-!	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
-nil_nil.insert(oid(108),oid(nil)); xprint(nil_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,nil], oid, oid)'.
-!MAYBE YOU MEAN:
-!	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
-!	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
-nil_nil.insert(oid(109),oid(209)); xprint(nil_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,nil], oid, oid)'.
-!MAYBE YOU MEAN:
-!	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
-!	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
-nil_nil.insert(oid(155),oid(255)); xprint(nil_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,nil], oid, oid)'.
-!MAYBE YOU MEAN:
-!	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
-!	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
-nil_nil.insert(    nil ,    nil ); xprint(nil_nil);
-#-----------------#
-# h	t	  # name
-# void	void	  # type
-#-----------------#
-[ nil,	  nil	  ]
-[ nil,	  nil	  ]
-[ void,	  void,	  2  ]
-nil_nil.insert(    nil ,oid(nil)); xprint(nil_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,nil], nil, oid)'.
-!MAYBE YOU MEAN:
-!	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
-!	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
-nil_nil.insert(    nil ,oid(293)); xprint(nil_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,nil], nil, oid)'.
-!MAYBE YOU MEAN:
-!	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
-!	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
-nil_nil.insert(oid(nil),    nil ); xprint(nil_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,nil], oid, nil)'.
-!MAYBE YOU MEAN:
-!	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
-!	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
-nil_nil.insert(oid(nil),oid(nil)); xprint(nil_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,nil], oid, oid)'.
-!MAYBE YOU MEAN:
-!	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
-!	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
-nil_nil.insert(oid(nil),oid(296)); xprint(nil_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,nil], oid, oid)'.
-!MAYBE YOU MEAN:
-!	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
-!	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
-nil_nil.insert(oid(197),    nil ); xprint(nil_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,nil], oid, nil)'.
-!MAYBE YOU MEAN:
-!	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
-!	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
-nil_nil.insert(oid(198),oid(nil)); xprint(nil_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,nil], oid, oid)'.
-!MAYBE YOU MEAN:
-!	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
-!	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
-nil_nil.insert(oid(199),oid(299)); xprint(nil_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,nil], oid, oid)'.
+nil_nil.insert(oid(103),oid(203)); xprint(nil_nil);
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,void], oid, oid)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 
 nil_vid.insert(    nil ,    nil ); xprint(nil_vid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,void], nil, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,oid], void, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 nil_vid.insert(oid(nil),oid(nil)); xprint(nil_vid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,void], oid, oid)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,oid], oid, oid)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 nil_vid.insert(oid(103),oid(203)); xprint(nil_vid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,void], oid, oid)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,oid], oid, oid)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 nil_vid.delete();
-nil_vid.insert(    nil ,oid(nil)); xprint(nil_vid);
+nil_vid.insert(    nil ,oid(201)); xprint(nil_vid);
 #-----------------#
 # h	t	  # name
 # void	void	  # type
 #-----------------#
 [ nil,	  201@0	  ]
 [ void,	  void,	  1  ]
-nil_vid.insert(    nil ,oid(nil)); xprint(nil_vid);
+nil_vid.insert(    nil ,oid(202)); xprint(nil_vid);
 #-----------------#
 # h	t	  # name
 # void	void	  # type
@@ -285,7 +202,7 @@ nil_vid.insert(    nil ,oid(203)); xprint(nil_vid);
 [ nil,	  202@0	  ]
 [ nil,	  203@0	  ]
 [ void,	  void,	  3  ]
-nil_vid.insert(    nil ,oid(nil)); xprint(nil_vid);
+nil_vid.insert(    nil ,oid(204)); xprint(nil_vid);
 #-----------------#
 # h	t	  # name
 # void	void	  # type
@@ -295,7 +212,7 @@ nil_vid.insert(    nil ,oid(nil)); xprint(nil_vid);
 [ nil,	  203@0	  ]
 [ nil,	  204@0	  ]
 [ void,	  void,	  4  ]
-nil_vid.insert(    nil ,oid(nil)); xprint(nil_vid);
+nil_vid.insert(    nil ,oid(205)); xprint(nil_vid);
 #-----------------#
 # h	t	  # name
 # void	void	  # type
@@ -318,7 +235,7 @@ nil_vid.insert(    nil ,oid(206)); xprint(nil_vid);
 [ nil,	  205@0	  ]
 [ nil,	  206@0	  ]
 [ void,	  void,	  6  ]
-nil_vid.insert(    nil ,oid(nil)); xprint(nil_vid);
+nil_vid.insert(    nil ,oid(207)); xprint(nil_vid);
 #-----------------#
 # h	t	  # name
 # void	void	  # type
@@ -331,7 +248,7 @@ nil_vid.insert(    nil ,oid(nil)); xprint(nil_vid);
 [ nil,	  206@0	  ]
 [ nil,	  207@0	  ]
 [ void,	  void,	  7  ]
-nil_vid.insert(    nil ,oid(nil)); xprint(nil_vid);
+nil_vid.insert(    nil ,oid(208)); xprint(nil_vid);
 #-----------------#
 # h	t	  # name
 # void	void	  # type
@@ -567,17 +484,17 @@ nil_vid.insert(    nil ,oid(299)); xprint(nil_vid);
 [ void,	  oid,	  19  ]
 
 nil_oid.insert(    nil ,    nil ); xprint(nil_oid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,oid], nil, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,oid], void, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 nil_oid.insert(oid(nil),oid(nil)); xprint(nil_oid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,oid], oid, oid)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,oid], oid, oid)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 nil_oid.insert(oid(103),oid(203)); xprint(nil_oid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,oid], oid, oid)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,oid], oid, oid)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
@@ -888,17 +805,17 @@ nil_oid.insert(    nil ,oid(299)); xprint(nil_oid);
 [ void,	  oid,	  19  ]
 
 nil_int.insert(    nil ,    nil ); xprint(nil_int);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,int], nil, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,int], void, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 nil_int.insert(int(nil),int(nil)); xprint(nil_int);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,int], int, int)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,int], int, int)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 nil_int.insert(int(103),int(203)); xprint(nil_int);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[nil,int], int, int)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,int], int, int)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
@@ -1210,29 +1127,29 @@ nil_int.insert(    nil ,int(299)); xprint(nil_int);
 
 
 vid_nil.insert(    nil ,    nil ); xprint(vid_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,nil], nil, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,void], void, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 vid_nil.insert(oid(nil),oid(nil)); xprint(vid_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,nil], oid, oid)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,void], oid, oid)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 vid_nil.insert(oid(103),oid(203)); xprint(vid_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,nil], oid, oid)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,void], oid, oid)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 vid_nil.delete();
-vid_nil.insert(oid(nil),    nil ); xprint(vid_nil);
+vid_nil.insert(oid(101),    nil ); xprint(vid_nil);
 #-----------------#
 # h	t	  # name
 # void	void	  # type
 #-----------------#
 [ 101@0,  nil	  ]
 [ void,	  void,	  1  ]
-vid_nil.insert(oid(nil),    nil ); xprint(vid_nil);
+vid_nil.insert(oid(102),    nil ); xprint(vid_nil);
 #-----------------#
 # h	t	  # name
 # void	void	  # type
@@ -1240,7 +1157,7 @@ vid_nil.insert(oid(nil),    nil ); xprint(vid_nil);
 [ 101@0,  nil	  ]
 [ 102@0,  nil	  ]
 [ void,	  void,	  2  ]
-vid_nil.insert(oid(nil),    nil ); xprint(vid_nil);
+vid_nil.insert(oid(103),    nil ); xprint(vid_nil);
 #-----------------#
 # h	t	  # name
 # void	void	  # type
@@ -1249,7 +1166,7 @@ vid_nil.insert(oid(nil),    nil ); xprint(vid_nil);
 [ 102@0,  nil	  ]
 [ 103@0,  nil	  ]
 [ void,	  void,	  3  ]
-vid_nil.insert(oid(nil),    nil ); xprint(vid_nil);
+vid_nil.insert(oid(104),    nil ); xprint(vid_nil);
 #-----------------#
 # h	t	  # name
 # void	void	  # type
@@ -1259,7 +1176,7 @@ vid_nil.insert(oid(nil),    nil ); xprint(vid_nil);
 [ 103@0,  nil	  ]
 [ 104@0,  nil	  ]
 [ void,	  void,	  4  ]
-vid_nil.insert(oid(nil),    nil ); xprint(vid_nil);
+vid_nil.insert(oid(105),    nil ); xprint(vid_nil);
 #-----------------#
 # h	t	  # name
 # void	void	  # type
@@ -1270,7 +1187,7 @@ vid_nil.insert(oid(nil),    nil ); xprint(vid_nil);
 [ 104@0,  nil	  ]
 [ 105@0,  nil	  ]
 [ void,	  void,	  5  ]
-vid_nil.insert(oid(nil),    nil ); xprint(vid_nil);
+vid_nil.insert(oid(106),    nil ); xprint(vid_nil);
 #-----------------#
 # h	t	  # name
 # void	void	  # type
@@ -1531,29 +1448,29 @@ vid_nil.insert(oid(199),    nil ); xprint(vid_nil);
 [ oid,	  void,	  19  ]
 
 vid_vid.insert(    nil ,    nil ); xprint(vid_vid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,void], nil, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,oid], void, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 vid_vid.insert(    nil ,oid(nil)); xprint(vid_vid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,void], nil, oid)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,oid], void, oid)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 vid_vid.insert(oid(nil),    nil ); xprint(vid_vid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,void], oid, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,oid], oid, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 vid_vid.delete();
-vid_vid.insert(oid(nil),oid(nil)); xprint(vid_vid);
+vid_vid.insert(oid(101),oid(201)); xprint(vid_vid);
 #-----------------#
 # h	t	  # name
 # void	void	  # type
 #-----------------#
 [ 101@0,  201@0	  ]
 [ void,	  void,	  1  ]
-vid_vid.insert(oid(nil),oid(nil)); xprint(vid_vid);
+vid_vid.insert(oid(102),oid(202)); xprint(vid_vid);
 #-----------------#
 # h	t	  # name
 # void	void	  # type
@@ -1561,7 +1478,7 @@ vid_vid.insert(oid(nil),oid(nil)); xprint(vid_vid);
 [ 101@0,  201@0	  ]
 [ 102@0,  202@0	  ]
 [ void,	  void,	  2  ]
-vid_vid.insert(oid(nil),oid(203)); xprint(vid_vid);
+vid_vid.insert(oid(103),oid(203)); xprint(vid_vid);
 #-----------------#
 # h	t	  # name
 # void	void	  # type
@@ -1570,7 +1487,7 @@ vid_vid.insert(oid(nil),oid(203)); xprint(vid_vid);
 [ 102@0,  202@0	  ]
 [ 103@0,  203@0	  ]
 [ void,	  void,	  3  ]
-vid_vid.insert(oid(nil),oid(nil)); xprint(vid_vid);
+vid_vid.insert(oid(104),oid(204)); xprint(vid_vid);
 #-----------------#
 # h	t	  # name
 # void	void	  # type
@@ -1580,7 +1497,7 @@ vid_vid.insert(oid(nil),oid(nil)); xprint(vid_vid);
 [ 103@0,  203@0	  ]
 [ 104@0,  204@0	  ]
 [ void,	  void,	  4  ]
-vid_vid.insert(oid(nil),oid(nil)); xprint(vid_vid);
+vid_vid.insert(oid(105),oid(205)); xprint(vid_vid);
 #-----------------#
 # h	t	  # name
 # void	void	  # type
@@ -1591,7 +1508,7 @@ vid_vid.insert(oid(nil),oid(nil)); xprint(vid_vid);
 [ 104@0,  204@0	  ]
 [ 105@0,  205@0	  ]
 [ void,	  void,	  5  ]
-vid_vid.insert(oid(nil),oid(206)); xprint(vid_vid);
+vid_vid.insert(oid(106),oid(206)); xprint(vid_vid);
 #-----------------#
 # h	t	  # name
 # void	void	  # type
@@ -1603,7 +1520,7 @@ vid_vid.insert(oid(nil),oid(206)); xprint(vid_vid);
 [ 105@0,  205@0	  ]
 [ 106@0,  206@0	  ]
 [ void,	  void,	  6  ]
-vid_vid.insert(oid(107),oid(nil)); xprint(vid_vid);
+vid_vid.insert(oid(107),oid(207)); xprint(vid_vid);
 #-----------------#
 # h	t	  # name
 # void	void	  # type
@@ -1616,7 +1533,7 @@ vid_vid.insert(oid(107),oid(nil)); xprint(vid_vid);
 [ 106@0,  206@0	  ]
 [ 107@0,  207@0	  ]
 [ void,	  void,	  7  ]
-vid_vid.insert(oid(108),oid(nil)); xprint(vid_vid);
+vid_vid.insert(oid(108),oid(208)); xprint(vid_vid);
 #-----------------#
 # h	t	  # name
 # void	void	  # type
@@ -1852,29 +1769,29 @@ vid_vid.insert(oid(199),oid(299)); xprint(vid_vid);
 [ oid,	  oid,	  19  ]
 
 vid_oid.insert(    nil ,    nil ); xprint(vid_oid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,oid], nil, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,oid], void, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 vid_oid.insert(    nil ,oid(nil)); xprint(vid_oid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,oid], nil, oid)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,oid], void, oid)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 vid_oid.insert(oid(nil),    nil ); xprint(vid_oid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,oid], oid, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,oid], oid, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 vid_oid.delete();
-vid_oid.insert(oid(nil),oid(nil)); xprint(vid_oid);
+vid_oid.insert(oid(101),oid(nil)); xprint(vid_oid);
 #-----------------#
 # h	t	  # name
 # void	oid	  # type
 #-----------------#
 [ 101@0,  nil	  ]
 [ void,	  oid,	  1  ]
-vid_oid.insert(oid(nil),oid(nil)); xprint(vid_oid);
+vid_oid.insert(oid(102),oid(nil)); xprint(vid_oid);
 #-----------------#
 # h	t	  # name
 # void	oid	  # type
@@ -1882,7 +1799,7 @@ vid_oid.insert(oid(nil),oid(nil)); xprint(vid_oid);
 [ 101@0,  nil	  ]
 [ 102@0,  nil	  ]
 [ void,	  oid,	  2  ]
-vid_oid.insert(oid(nil),oid(203)); xprint(vid_oid);
+vid_oid.insert(oid(103),oid(203)); xprint(vid_oid);
 #-----------------#
 # h	t	  # name
 # void	oid	  # type
@@ -1891,7 +1808,7 @@ vid_oid.insert(oid(nil),oid(203)); xprint(vid_oid);
 [ 102@0,  nil	  ]
 [ 103@0,  203@0	  ]
 [ void,	  oid,	  3  ]
-vid_oid.insert(oid(nil),oid(nil)); xprint(vid_oid);
+vid_oid.insert(oid(104),oid(nil)); xprint(vid_oid);
 #-----------------#
 # h	t	  # name
 # void	oid	  # type
@@ -1901,7 +1818,7 @@ vid_oid.insert(oid(nil),oid(nil)); xprint(vid_oid);
 [ 103@0,  203@0	  ]
 [ 104@0,  nil	  ]
 [ void,	  oid,	  4  ]
-vid_oid.insert(oid(nil),oid(nil)); xprint(vid_oid);
+vid_oid.insert(oid(105),oid(nil)); xprint(vid_oid);
 #-----------------#
 # h	t	  # name
 # void	oid	  # type
@@ -1912,7 +1829,7 @@ vid_oid.insert(oid(nil),oid(nil)); xprint(vid_oid);
 [ 104@0,  nil	  ]
 [ 105@0,  nil	  ]
 [ void,	  oid,	  5  ]
-vid_oid.insert(oid(nil),oid(206)); xprint(vid_oid);
+vid_oid.insert(oid(106),oid(206)); xprint(vid_oid);
 #-----------------#
 # h	t	  # name
 # void	oid	  # type
@@ -2173,29 +2090,29 @@ vid_oid.insert(oid(199),oid(299)); xprint(vid_oid);
 [ oid,	  oid,	  19  ]
 
 vid_int.insert(    nil ,    nil ); xprint(vid_int);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,int], nil, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,int], void, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 vid_int.insert(    nil ,int(nil)); xprint(vid_int);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,int], nil, int)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,int], void, int)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 vid_int.insert(oid(nil),    nil ); xprint(vid_int);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[void,int], oid, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,int], oid, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 vid_int.delete();
-vid_int.insert(oid(nil),int(nil)); xprint(vid_int);
+vid_int.insert(oid(101),int(nil)); xprint(vid_int);
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
 [ 101@0,  nil	  ]
 [ void,	  int,	  1  ]
-vid_int.insert(oid(nil),int(nil)); xprint(vid_int);
+vid_int.insert(oid(102),int(nil)); xprint(vid_int);
 #-----------------#
 # h	t	  # name
 # void	int	  # type
@@ -2203,7 +2120,7 @@ vid_int.insert(oid(nil),int(nil)); xprint(vid_int);
 [ 101@0,  nil	  ]
 [ 102@0,  nil	  ]
 [ void,	  int,	  2  ]
-vid_int.insert(oid(nil),int(203)); xprint(vid_int);
+vid_int.insert(oid(103),int(203)); xprint(vid_int);
 #-----------------#
 # h	t	  # name
 # void	int	  # type
@@ -2212,7 +2129,7 @@ vid_int.insert(oid(nil),int(203)); xprint(vid_int);
 [ 102@0,  nil	  ]
 [ 103@0,  203	  ]
 [ void,	  int,	  3  ]
-vid_int.insert(oid(nil),int(nil)); xprint(vid_int);
+vid_int.insert(oid(104),int(nil)); xprint(vid_int);
 #-----------------#
 # h	t	  # name
 # void	int	  # type
@@ -2222,7 +2139,7 @@ vid_int.insert(oid(nil),int(nil)); xprint(vid_int);
 [ 103@0,  203	  ]
 [ 104@0,  nil	  ]
 [ void,	  int,	  4  ]
-vid_int.insert(oid(nil),int(nil)); xprint(vid_int);
+vid_int.insert(oid(105),int(nil)); xprint(vid_int);
 #-----------------#
 # h	t	  # name
 # void	int	  # type
@@ -2233,7 +2150,7 @@ vid_int.insert(oid(nil),int(nil)); xprint(vid_int);
 [ 104@0,  nil	  ]
 [ 105@0,  nil	  ]
 [ void,	  int,	  5  ]
-vid_int.insert(oid(nil),int(206)); xprint(vid_int);
+vid_int.insert(oid(106),int(206)); xprint(vid_int);
 #-----------------#
 # h	t	  # name
 # void	int	  # type
@@ -2495,17 +2412,17 @@ vid_int.insert(oid(199),int(299)); xprint(vid_int);
 
 
 oid_nil.insert(    nil ,    nil ); xprint(oid_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,nil], nil, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,void], void, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 oid_nil.insert(oid(nil),oid(nil)); xprint(oid_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,nil], oid, oid)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,void], oid, oid)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 oid_nil.insert(oid(103),oid(203)); xprint(oid_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,nil], oid, oid)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,void], oid, oid)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
@@ -2816,29 +2733,29 @@ oid_nil.insert(oid(199),    nil ); xprint(oid_nil);
 [ oid,	  void,	  19  ]
 
 oid_vid.insert(    nil ,    nil ); xprint(oid_vid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,void], nil, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,oid], void, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 oid_vid.insert(    nil ,oid(nil)); xprint(oid_vid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,void], nil, oid)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,oid], void, oid)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 oid_vid.insert(oid(nil),    nil ); xprint(oid_vid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,void], oid, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,oid], oid, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 oid_vid.delete();
-oid_vid.insert(oid(nil),oid(nil)); xprint(oid_vid);
+oid_vid.insert(oid(nil),oid(201)); xprint(oid_vid);
 #-----------------#
 # h	t	  # name
 # oid	void	  # type
 #-----------------#
 [ nil,	  201@0	  ]
 [ oid,	  void,	  1  ]
-oid_vid.insert(oid(nil),oid(nil)); xprint(oid_vid);
+oid_vid.insert(oid(nil),oid(202)); xprint(oid_vid);
 #-----------------#
 # h	t	  # name
 # oid	void	  # type
@@ -2855,7 +2772,7 @@ oid_vid.insert(oid(nil),oid(203)); xprint(oid_vid);
 [ nil,	  202@0	  ]
 [ nil,	  203@0	  ]
 [ oid,	  void,	  3  ]
-oid_vid.insert(oid(nil),oid(nil)); xprint(oid_vid);
+oid_vid.insert(oid(nil),oid(204)); xprint(oid_vid);
 #-----------------#
 # h	t	  # name
 # oid	void	  # type
@@ -2865,7 +2782,7 @@ oid_vid.insert(oid(nil),oid(nil)); xprint(oid_vid);
 [ nil,	  203@0	  ]
 [ nil,	  204@0	  ]
 [ oid,	  void,	  4  ]
-oid_vid.insert(oid(nil),oid(nil)); xprint(oid_vid);
+oid_vid.insert(oid(nil),oid(205)); xprint(oid_vid);
 #-----------------#
 # h	t	  # name
 # oid	void	  # type
@@ -2888,7 +2805,7 @@ oid_vid.insert(oid(nil),oid(206)); xprint(oid_vid);
 [ nil,	  205@0	  ]
 [ nil,	  206@0	  ]
 [ oid,	  void,	  6  ]
-oid_vid.insert(oid(107),oid(nil)); xprint(oid_vid);
+oid_vid.insert(oid(107),oid(207)); xprint(oid_vid);
 #-----------------#
 # h	t	  # name
 # oid	void	  # type
@@ -2901,7 +2818,7 @@ oid_vid.insert(oid(107),oid(nil)); xprint(oid_vid);
 [ nil,	  206@0	  ]
 [ 107@0,  207@0	  ]
 [ oid,	  void,	  7  ]
-oid_vid.insert(oid(108),oid(nil)); xprint(oid_vid);
+oid_vid.insert(oid(108),oid(208)); xprint(oid_vid);
 #-----------------#
 # h	t	  # name
 # oid	void	  # type
@@ -3137,17 +3054,17 @@ oid_vid.insert(oid(199),oid(299)); xprint(oid_vid);
 [ oid,	  oid,	  19  ]
 
 oid_oid.insert(    nil ,    nil ); xprint(oid_oid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,oid], nil, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,oid], void, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 oid_oid.insert(    nil ,oid(nil)); xprint(oid_oid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,oid], nil, oid)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,oid], void, oid)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 oid_oid.insert(oid(nil),    nil ); xprint(oid_oid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,oid], oid, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,oid], oid, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
@@ -3458,17 +3375,17 @@ oid_oid.insert(oid(199),oid(299)); xprint(oid_oid);
 [ oid,	  oid,	  19  ]
 
 oid_int.insert(    nil ,    nil ); xprint(oid_int);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,int], nil, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,int], void, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 oid_int.insert(    nil ,int(nil)); xprint(oid_int);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,int], nil, int)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,int], void, int)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 oid_int.insert(oid(nil),    nil ); xprint(oid_int);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,int], oid, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[oid,int], oid, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
@@ -3780,17 +3697,17 @@ oid_int.insert(oid(199),int(299)); xprint(oid_int);
 
 
 int_nil.insert(    nil ,    nil ); xprint(int_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,nil], nil, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,void], void, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 int_nil.insert(int(nil),int(nil)); xprint(int_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,nil], int, int)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,void], int, int)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 int_nil.insert(int(103),int(203)); xprint(int_nil);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,nil], int, int)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,void], int, int)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
@@ -4101,29 +4018,29 @@ int_nil.insert(int(199),    nil ); xprint(int_nil);
 [ int,	  void,	  19  ]
 
 int_vid.insert(    nil ,    nil ); xprint(int_vid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,void], nil, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,oid], void, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 int_vid.insert(    nil ,oid(nil)); xprint(int_vid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,void], nil, oid)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,oid], void, oid)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 int_vid.insert(int(nil),    nil ); xprint(int_vid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,void], int, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,oid], int, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 int_vid.delete();
-int_vid.insert(int(nil),oid(nil)); xprint(int_vid);
+int_vid.insert(int(nil),oid(201)); xprint(int_vid);
 #-----------------#
 # h	t	  # name
 # int	void	  # type
 #-----------------#
 [ nil,	  201@0	  ]
 [ int,	  void,	  1  ]
-int_vid.insert(int(nil),oid(nil)); xprint(int_vid);
+int_vid.insert(int(nil),oid(202)); xprint(int_vid);
 #-----------------#
 # h	t	  # name
 # int	void	  # type
@@ -4140,7 +4057,7 @@ int_vid.insert(int(nil),oid(203)); xprint(int_vid);
 [ nil,	  202@0	  ]
 [ nil,	  203@0	  ]
 [ int,	  void,	  3  ]
-int_vid.insert(int(nil),oid(nil)); xprint(int_vid);
+int_vid.insert(int(nil),oid(204)); xprint(int_vid);
 #-----------------#
 # h	t	  # name
 # int	void	  # type
@@ -4150,7 +4067,7 @@ int_vid.insert(int(nil),oid(nil)); xprint(int_vid);
 [ nil,	  203@0	  ]
 [ nil,	  204@0	  ]
 [ int,	  void,	  4  ]
-int_vid.insert(int(nil),oid(nil)); xprint(int_vid);
+int_vid.insert(int(nil),oid(205)); xprint(int_vid);
 #-----------------#
 # h	t	  # name
 # int	void	  # type
@@ -4173,7 +4090,7 @@ int_vid.insert(int(nil),oid(206)); xprint(int_vid);
 [ nil,	  205@0	  ]
 [ nil,	  206@0	  ]
 [ int,	  void,	  6  ]
-int_vid.insert(int(107),oid(nil)); xprint(int_vid);
+int_vid.insert(int(107),oid(207)); xprint(int_vid);
 #-----------------#
 # h	t	  # name
 # int	void	  # type
@@ -4186,7 +4103,7 @@ int_vid.insert(int(107),oid(nil)); xprint(int_vid);
 [ nil,	  206@0	  ]
 [ 107,	  207@0	  ]
 [ int,	  void,	  7  ]
-int_vid.insert(int(108),oid(nil)); xprint(int_vid);
+int_vid.insert(int(108),oid(208)); xprint(int_vid);
 #-----------------#
 # h	t	  # name
 # int	void	  # type
@@ -4422,17 +4339,17 @@ int_vid.insert(int(199),oid(299)); xprint(int_vid);
 [ int,	  oid,	  19  ]
 
 int_oid.insert(    nil ,    nil ); xprint(int_oid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,oid], nil, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,oid], void, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 int_oid.insert(    nil ,oid(nil)); xprint(int_oid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,oid], nil, oid)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,oid], void, oid)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 int_oid.insert(int(nil),    nil ); xprint(int_oid);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,oid], int, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,oid], int, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
@@ -4743,17 +4660,17 @@ int_oid.insert(int(199),oid(299)); xprint(int_oid);
 [ int,	  oid,	  19  ]
 
 int_int.insert(    nil ,    nil ); xprint(int_int);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,int], nil, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,int], void, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 int_int.insert(    nil ,int(nil)); xprint(int_int);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,int], nil, int)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,int], void, int)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 int_int.insert(int(nil),    nil ); xprint(int_int);
-!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,int], int, nil)'.
+!ERROR: interpret: no matching MIL operator to 'insert(BAT[int,int], int, void)'.
 !MAYBE YOU MEAN:
 !	insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 !	insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
