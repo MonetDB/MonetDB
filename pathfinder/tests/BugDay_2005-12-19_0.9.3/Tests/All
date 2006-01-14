@@ -3,6 +3,7 @@
 where_orderby.SF-1210757
 shred_doc_with_space.SF-1211372
 zero-or-one_merged-union.SF-1221336
+zero-or-one_merged-union_2.SF-1221336
 tag_name_validation.SF-1221984
 self_axis_not_supported.SF-1237444
 file_locked_after_shredding.SF-1238352
