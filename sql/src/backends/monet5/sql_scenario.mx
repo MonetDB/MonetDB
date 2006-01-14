@@ -562,7 +562,8 @@ The former comes with readline functionality.
 
 			/* The rules of auto_commit require us to finish 
 			   and start a transaction on the start of a new statement */
-			go = SQLautocommit(c,m);
+			if( m->mode != m_debug )
+				go = SQLautocommit(c,m);
 
 			if (go && ((!blocked && stream_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || stream_flush(c->fdout))) {
 				go = FALSE;
@@ -574,9 +575,9 @@ The former comes with readline functionality.
 #ifdef _SQL_READER_DEBUG
 			stream_printf(GDKout, "#rd %d  language %d eof %d\n", rd, language, in->eof);
 #endif
-			if (be->language == 'D' && in->eof == 0) {
+			if (be->language == 'D' && in->eof == 0) 
 				return 0;
-			}
+
 			if (rd == 0 && language != 0 && in->eof && !be->console) {
 				/* we hadn't seen the EOF before, so just try again
 				   (this time with prompt) */
