@@ -331,12 +331,12 @@ axis step evaluation on the @2 axis from the given context."
 module("xtables");
 module("aggrX3");
 module("bat_arith");
+module("mmath");
+module("pcre");
+
 PROC append_bat (bat[void,bat] b1, any b2) : bat[void,bat] {
 	return b1.insert (nil, b2);	# uses above insert() overload
 }
-
-module("mmath");
-module("pcre");
 
 # global constants using in the MIL translation
 const empty_bat := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
