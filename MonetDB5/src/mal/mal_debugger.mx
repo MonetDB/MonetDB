@@ -1096,7 +1096,6 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	showErrors();
 	if (cntxt->timer)
 		cntxt->timer = GDKusec();
-	stream_flush(cntxt->fdout);
 	mdbSessionActive= 0; /* for name completion */
 }
 
