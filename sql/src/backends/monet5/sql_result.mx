@@ -1061,6 +1061,11 @@ mvc_export_chunk(mvc *m, stream *s, int res_id, unsigned int offset, unsigned in
 	if (!(stream_write(s, "&6 ", 3, 1) == 1))
 		return -1;
 
+	/* result id */
+	if (!mvc_send_int(s, res_id) ||
+			stream_write(s, " ", 1, 1) != 1)
+		return -1;
+
 	/* column count */
 	if (!mvc_send_int(s, t->nr_cols) ||
 			stream_write(s, " ", 1, 1) != 1)
