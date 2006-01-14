@@ -595,7 +595,9 @@ if [ "${modpath}" ] ; then
 	echo " MONETDB_MOD_PATH=${MONETDB_MOD_PATH}"
 fi
 
-if [ "${MONET5_PREFIX}" ] ; then
+if [ "${what}" = "MONET5" ] ; then
+	monet5_config="-5 --config=${WHAT_PREFIX}/etc/MonetDB5.conf"
+  elif -o  "${MONET5_PREFIX}" ] ; then
 	monet5_config="-5 --config=${MONET5_PREFIX}/etc/MonetDB5.conf"
   else
 	monet5_config="-4"
