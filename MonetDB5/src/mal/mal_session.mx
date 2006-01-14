@@ -191,6 +191,17 @@ scheduleClient(str command, bstream *fin, stream *fout)
 	if (s)
 		*s = 0;
 	c = initClient(GDKstrdup(user), passwd, fin, fout);
+	if( findScenario(lang)  && findScenario(lang)->initSystemCmd==NULL){
+@-
+Check if we have loaded already the language library.
+The naming convention is to use the language name as an
+alias for the include file
+@c
+		Client cn = initClient(GDKstrdup(user), passwd, 0, 0);
+		defaultScenario(cn);
+		initScenario(cn, findScenario(lang));
+		killClient(cn);
+	}
 	if (c->nspace) {
 		GDKfree(c->nspace->name);
 		c->nspace->name = GDKstrdup(user);

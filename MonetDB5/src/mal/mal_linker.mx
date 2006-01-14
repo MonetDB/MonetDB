@@ -305,7 +305,7 @@ loadModuleLibrary(str modulename)
 	const char *errmsg;
 
 	initM5Loader();
-	for (idx = 0; moduleLoaded[idx] && idx < maxmodules; idx++)
+	for (idx = 0; moduleLoaded[idx] && idx < lastmodule; idx++)
 		if (strcmp(moduleLoaded[idx], modulename) == 0) {
 #ifdef DEBUG_MAL_LINKER
 			stream_printf(GDKout, "already load:%s:%s\n", modulename, handle == NULL ? (handle == NULL ? errbuf : "failed") : "succeeded");

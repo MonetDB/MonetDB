@@ -163,7 +163,7 @@ malInclude(Client c, str name, str libname, int listing)
 
 	c->fdin = NULL;
 	if ((s = malLoadScript(name, &c->fdin))) {
-		stream_printf(c->fdout, "%s\n", s);
+		stream_printf(c->fdout, "#%s\n", s);
 @-
 Load any associated module first, because this sets the context for
 resolving addresses. 

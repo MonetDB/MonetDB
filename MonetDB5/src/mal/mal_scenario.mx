@@ -164,6 +164,7 @@ mal_export str getScenarioLanguage(Client c);
 
 mal_export str defaultScenario(Client c);	/* used in src/mal/mal_session.c */
 mal_export void exitScenario(Client c);	/* used in src/mal/mal_session.c */
+mal_export str initScenario(Client c, Scenario s);
 
 mal_export void showCurrentScenario();
 mal_export void showScenarioByName(stream *f, str s);
@@ -290,14 +291,12 @@ Check if we have loaded already the language library.
 The naming convention is to use the language name as an
 alias for the include file
 @c
-/* postponed
 		if (s->initSystemCmd == 0) {
 			mal_unset_lock(mal_contextLock, "Scenario");
-			malInclude(c,s->language,0,0);
+			malInclude(c,s->language,s->language,0);
 			mal_set_lock(mal_contextLock, "Scenario");
 			s->initSystemCmd = (MALfcn) getAddress(s->language, s->initSystem, 1);
 		}
-*/
 		if (s->initSystemCmd) {
 			msg = (*s->initSystemCmd) (c);
 		} else
@@ -635,7 +634,7 @@ runScenario(Client c)
 	int cnt = 0;
 	Client c1;
 
-	assert(c && c->phase[READER] != 0);
+	if( c== 0 || c->phase[READER] == 0) return;
 
 	runScenarioBody(c);
 #ifdef MAL_SCENARIO_DEBUG
