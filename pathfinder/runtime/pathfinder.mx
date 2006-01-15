@@ -575,7 +575,7 @@ delete the persistent BATS that store the document.",
 PROC delete_all_docs_locked(bit cachedOnly) : void
 {
     bat("doc_timestamp").copy()@batloop() {
-        if (or(cachedOnly, not(isnil($t))))
+        if (not(and(cachedOnly, isnil($t))))
             delete_doc_locked($h);
     }
 }
@@ -593,7 +593,9 @@ PROC delete_all_docs(bit cachedOnly) : void
 }
 ADDHELP("delete_all_docs", "tsheyar", "July 2004",
 "DESCRIPTION:\n\
-deletes all persistent document BATs that store xml documents.",
+deletes all persistent document BATs that store xml documents;\n\
+with parameter TRUE, only the (implicitely) cached documents are deleted,\n\
+with parameter FALSE, also the (explicitely) shredded documents are deleted.",
 "pathfinder");
 
 
