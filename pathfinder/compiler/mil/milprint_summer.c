@@ -6287,7 +6287,9 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 apply.fun->qname.loc,
                 counter, counter, counter, counter);
 
-        milprintf(f, "rpc_oid.print();\n");
+        milprintf(f,
+                "printf(\"rpc_oid: \");\n"
+                "rpc_oid.print();\n");
 
         /* Construct the iter|item|kind by hand, and fill in the value
          * tables. */
@@ -6353,8 +6355,6 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "item := item.tmark(0@0);\n"
                 "kind := kind.tmark(0@0);\n"
                 "ipik := iter;\n"
-
-                "return bat(void,bat,4).insert(nil,iter).insert(nil,item).insert(nil,kind).access(BAT_READ);\n"
                 "} # end of SOAP call\n\n");
         deleteResult_ (f, counter+1, STR);
     } else {
