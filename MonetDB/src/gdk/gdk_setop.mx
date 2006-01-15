@@ -190,8 +190,16 @@ Implementation is either merge- or hash-based.
 BAT *
 BATins_kunique(BAT *bn, BAT *b)
 {
+	bit unique = FALSE;
 	BATcheck(b, "BATins_kunique: src BAT");
+	BATcheck(bn, "BATins_kunique: dst BAT");
+	unique = (BATcount(bn)==0);
 	@:elim_doubles(k)@
+	if (unique && bn->hkey == FALSE) {
+		/* we inserted unique head-values into an empty BAT;
+		   hence, the resulting BAT's head is (now) unique/key ... */
+		BATkey(bn,TRUE);
+	}
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
@@ -201,10 +209,13 @@ BATins_kunique(BAT *bn, BAT *b)
 BAT *
 BATins_sunique(BAT *bn, BAT *b)
 {
+	bit unique = FALSE;
 	BUN fst1, fst2, last1, last2;
 
 	BATcheck(b, "BATins_sunique: src BAT");
 	BATcheck(bn, "BATins_sunique: dst BAT");
+
+	unique = (BATcount(bn)==0);
 
 	fst1 = BUNfirst(bn);
 	fst2 = BUNfirst(b);
@@ -225,6 +236,11 @@ BATins_sunique(BAT *bn, BAT *b)
 		b= BATmirror(b);
 	}
 	@:elim_doubles(s)@
+	if (unique && bn->batSet == FALSE) {
+		/* we inserted unique BUNs into an empty BAT;
+		   hence, the resulting BAT is (now) unique/set ... */
+		BATset(bn,TRUE);
+	}
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
