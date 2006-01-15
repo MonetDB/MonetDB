@@ -584,7 +584,7 @@ static int handle_soap_request(struct shttpd_callback_arg *arg) {
                 "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\">\n"
                 "<env:Header />\n"
                 "<env:Body>\n"
-                "<SoapRpcResults module_name=\"%s\" method_name=\"%s\">\n",
+                "<SoapRpcResults module=\"%s\" method=\"%s\">\n",
                 module, method) >= 0)
     {
         argc += 1000; /* debug */
@@ -832,10 +832,16 @@ int CMDhttp_post(BAT **res,
                     strptr = b->buf + b->pos;
                     b->pos += BATatoms[TYPE_int].atomToStr(
                             &strptr, &len, BUNptr(int_values, i));
-                } else if (type == DBL || type == DEC) {
-                    b->pos += snprintf(
-                            (b->buf + b->pos), (b->len - b->pos),
-                            "<val type=\"xs:double\">");
+                } else if (type == DEC || type == DBL) {
+                    if (type == DEC){
+                        b->pos += snprintf(
+                                (b->buf + b->pos), (b->len - b->pos),
+                                "<val type=\"xs:decimal\">");
+                    } else {
+                        b->pos += snprintf(
+                                (b->buf + b->pos), (b->len - b->pos),
+                                "<val type=\"xs:double\">");
+                    }
                     i = *(int*)BUNtail(fun_item, BUNptr(fun_item, a));
                     /* i = *(int*)BUNtail(dbl_values, BUNptr(dbl_values, i)); */
                     len = b->len - b->pos;
@@ -846,9 +852,15 @@ int CMDhttp_post(BAT **res,
                     i = *(int*)BUNtail(fun_item, BUNptr(fun_item, a));
                     str_base = (char *)str_values->theap->base;
                     str_val  = str_base + *(int*) BUNtail(str_values, BUNptr(str_values, i));
-                    b->pos += snprintf(
-                            (b->buf + b->pos), (b->len - b->pos),
-                            "<val type=\"xs:string\">%s", str_val);
+                    if (type == STR){
+                        b->pos += snprintf(
+                                (b->buf + b->pos), (b->len - b->pos),
+                                "<val type=\"xs:string\">%s", str_val);
+                    } else {
+                        b->pos += snprintf(
+                                (b->buf + b->pos), (b->len - b->pos),
+                                "<val type=\"xs:untypedAtomic\">%s", str_val);
+                    }
                 } else {
                     GDKerror("CMDhttp_post: iter%d/param%d/item%d "
                             "has invalid type %d\n",
@@ -872,10 +884,8 @@ int CMDhttp_post(BAT **res,
             "</env:Envelope>\n");
     b->buf[b->pos] = 0;
 
-/*
 printf("=== DEBUG MSG: SOAP request to send: (msglen = %ld)\n%s\n",
         b->pos, b->buf);
-*/
 
     if (stream_printf(out,
             "POST %s HTTP/1.1\r\n"
@@ -939,9 +949,7 @@ printf("=== DEBUG MSG: SOAP request to send: (msglen = %ld)\n%s\n",
     /* Retrieve the response SOAP Envelope */
     strptr = strstr(strptr, "<env:Envelope");
 
-/*
 printf("=== DEBUG MSG: received SOAP response message:\n%s\n", strptr);
-*/
    
     if (CMDshred2bats(&docBAT, "", strptr, "")  == GDK_FAIL) {
         GDKerror("CMDhttp_post: invalid SOAP RPC response received\n");
