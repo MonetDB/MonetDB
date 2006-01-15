@@ -811,7 +811,7 @@ the commit tremendously complicated.
 		} else if (t_ == TYPE_str) {				\
 			if (strPut(P2, (var_t *) (P3), (str) (P4)) == 0) \
 				goto bunins_failed;			\
-		} else {						\
+		} else if (t_) {					\
 			if (BATatoms[t_].atomPut) {			\
 				if ((*BATatoms[t_].atomPut) (P2, (var_t *) P3, P4) == 0) \
 					goto bunins_failed;		\
