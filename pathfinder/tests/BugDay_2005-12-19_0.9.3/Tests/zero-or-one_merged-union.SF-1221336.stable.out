@@ -21,7 +21,6 @@ Over..
 # 21:26:16 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=51635 zero-or-one_merged-union.SF-1221336.xq
 # 21:26:16 >  
 
-= ? Isn't "empty output" correct due to the error that occurs ? =
 
 # 21:26:16 >  
 # 21:26:16 >  Done.
