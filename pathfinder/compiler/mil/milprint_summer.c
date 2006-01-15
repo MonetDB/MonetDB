@@ -3958,6 +3958,7 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
 {
     milprintf(f,
             "{ # translate fn:boolean (item*) as boolean\n"
+            "iter := iter.materialize(ipik);\n"
             "var iter_count := {count}(iter.reverse(), loop%03u.reverse(), FALSE);\n"
             "var trues := iter_count.[!=](0);\n",
             cur_level);
