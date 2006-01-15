@@ -4,6 +4,7 @@ Fabian Groffen <Fabian.Groffen@cwi.nl>
 
 Release date: 2006-01-09
 
+
 This JDBC driver is designed for use with MonetDB, a main-memory
 database.  For more information see http://monetdb.cwi.nl/.
 
@@ -30,15 +31,15 @@ Currently implemented:
     - nativeSQL (there is no query parsing for JDBC escapes yet)
     - prepareCall (CallableStatement not supported)
     - prepareStatement with more than just an SQL prepare statement
-    - getCatalog/setCatalog (there is no catalog management yet)
+    - setCatalog (there is no catalog management yet)
     - getHoldability/setHoldability (close/hold cursors over commit is
       not configurable)
-    - isReadOnly/setReadOnly (updatable result sets are not supported at
+    - isReadOnly/setReadOnly (updateable result sets are not supported at
       all)
 
     NOTE: be sure to check for warnings after setting concurrencies or
           isolation levels; MonetDB currently does not support anything
-          else but fully serializable transactions.
+          else but "fully serializable" transactions.
   * java.sql.Statement interface
     The next features are not implemented:
     - cancel/getQueryTimeout/setQueryTimeout (query execution cannot be
@@ -47,41 +48,27 @@ Currently implemented:
     - executeUpdate with more than just an SQL query
     - getGeneratedKeys
     - getMaxFieldSize/setMaxFieldSize
-    - getResultSetHoldability
     - setCursorName
     - setEscapeProcessing
   * java.sql.PreparedStatement interface
-    There is now a native PreparedStatement implementation which uses
-    the SQL back-end for real prepare functionality.  The old Java
-    implementation has been kept available for people that have trouble
-    with the native implementation.  Setting the property
-    "native_prepared_statements" to false at the driver call (either
-    using a property list, or in the connection url as attribute
-    "native_prepared_statements=false") switches from the default native
-    PreparedStatement to the Java implementation.
     The next features are not implemented:
     - getMetaData
-    - getParameterMetaData (1)
     - setArray
     - setAsciiStream, setBinaryStream, setCharacterStream, setUnicodeStream
-    - setBlob, setClob
+    - setBlob
     - setBytes
-    - getObject with more than just the index and the object
     - setRef, setURI
-    1) getParameterMetaData is only in the Java implementation
-       unavailable, the native implementation has this method
-       implemented.
   * java.sql.ResultSet interface
     The next features are not implemented:
     - getArray
     - getAsciiStream, getBinaryStream, getUnicodeStream, getCharacterStream
-    - getBlob, getClob
+    - getBlob
     - getRef, getURL
-    - all methods related to updatable result sets
+    - all methods related to updateable result sets
     * java.sql.ResultSetMetaData interface
   * java.sql.DatabaseMetaData interface
   * java.sql.SavePoint interface
 
-- The getObject methods currently ignore any given type map.
+- The get/setObject methods currently ignore any given type map.
 - Auto-commit behaviour is defined by the server which handles the
   auto-commit.  This is in general in line with the JDBC standard.
