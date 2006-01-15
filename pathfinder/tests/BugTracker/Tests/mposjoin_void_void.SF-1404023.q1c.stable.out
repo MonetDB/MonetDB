@@ -13,6 +13,7 @@ stdout of test 'mposjoin_void_void.SF-1404023.q1c` in directory 'tests/BugTracke
 printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 

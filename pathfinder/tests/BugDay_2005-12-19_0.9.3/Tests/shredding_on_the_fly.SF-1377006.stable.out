@@ -13,16 +13,20 @@ stdout of test 'shredding_on_the_fly.SF-1377006` in directory 'tests/BugDay_2005
 printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 
-# 02:52:14 >  
-# 02:52:14 >  Mtimeout -timeout 120 python shredding_on_the_fly.SF-1377006.XQUERY.py shredding_on_the_fly.SF-1377006 
-# 02:52:14 >  
+# 05:14:40 >  
+# 05:14:40 >  Mtimeout -timeout 120 python shredding_on_the_fly.SF-1377006.XQUERY.py shredding_on_the_fly.SF-1377006 
+# 05:14:40 >  
 
-? What's the correct/expected output ?
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>
+<x/>
+</XQueryResult>
 
-# 02:52:14 >  
-# 02:52:14 >  Done.
-# 02:52:14 >  
+# 05:14:40 >  
+# 05:14:40 >  Done.
+# 05:14:40 >  
 

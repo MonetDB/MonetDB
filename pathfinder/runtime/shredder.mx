@@ -513,10 +513,12 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
 	pv->bat = pvu;
 
 	shredBAT* ap = &shredCtx->dstBAT[ATTR_PROP];
-	BAT* lj = BATleftjoin(ap->bat,xlate_oid,BATcount(ap->bat));
+        if (BATcount(ap->bat)) {
+		BAT* lj = BATleftjoin(ap->bat,xlate_oid,BATcount(ap->bat));
+		BBPunfix(BBPcacheid(ap->bat));
+		ap->bat = lj;
+	}
 	BBPunfix(BBPcacheid(xlate_oid));
-	BBPunfix(BBPcacheid(ap->bat));
-	ap->bat = lj;
 	/* */
 	if ( 0 ) {
 		BATprintf(GDKout,shredCtx->dstBAT[ATTR_PROP].bat);

@@ -721,22 +721,23 @@ PROC add_doc(BAT[void,bat] ws, str name) : int
 
     var docBAT := new(str,bat,WS_SIZE);
     var doCommit := true;
-    var docid := "";
+    var docid := str(nil);
     var height;
 
     if (isnil(doc_oid)) {
         if (isnil(ts)) {
             doCommit := false;
-        } else {
-            docid := name;
+            docid := "";
         }
         height := shred_doc_impl(docBAT, name, name, doCommit, "", ts, int(ws));
         time_shred :+= time() - t;
-    } else { 
-        docid := str(int(bat("doc_name").reverse().find(name)));
-        height := bat("doc_height").find(oid(int(docid)));
     }
-    add_docbat(ws, docBAT, name, docid, height);  
+    if (isnil(docid)) {
+        doc_oid := bat("doc_name").reverse().find(name);
+        height := bat("doc_height").find(doc_oid);
+        docid := str(int(doc_oid));
+    }
+    add_docbat(ws, docBAT, name, docid, height);
     return time_shred;
 }
 

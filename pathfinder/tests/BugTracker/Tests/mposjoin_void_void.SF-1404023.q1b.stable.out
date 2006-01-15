@@ -25,8 +25,8 @@ xquery("xml","for $i in doc(\""+file2+"\")//b where some $j in distinct-values(d
 <test><b name="iets.jpg"/></test><test><b name="ietsmeer.jpg"/></test>
 </XQueryResult>
 
-delete_doc(name2);
-delete_doc(name1);
+delete_doc(file2);
+delete_doc(file1);
 quit();
 
 # 21:04:06 >  
