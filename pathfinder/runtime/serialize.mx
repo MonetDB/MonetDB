@@ -1331,11 +1331,11 @@ static int  seqEmitBool(XqueryCtx* ctx, int bv, int lastVal) {
     } else {
         ctx->nAttrOnLine++;
         if ( ctx->typedMode ) {
-            stream_printf(GDKout,"<xs:boolean>\n");
+            stream_printf(GDKout,"<xs:boolean>");
         }
         stream_printf(GDKout,"%s ",bool_str);
         if ( ctx->typedMode ) {
-            stream_printf(GDKout,"\n</xs:boolean>");
+            stream_printf(GDKout,"</xs:boolean>");
             if ( !lastVal )
                 stream_printf(GDKout, "\n");
         }
@@ -1358,11 +1358,11 @@ static int  seqEmitInt(XqueryCtx* ctx, lng iv, int lastVal) {
     } else {
         ctx->nAttrOnLine++;
         if ( ctx->typedMode ) {
-            stream_printf(GDKout,"<xs:integer>\n");
+            stream_printf(GDKout,"<xs:integer>");
         }
         stream_printf(GDKout,"%lld ",iv);
         if ( ctx->typedMode ) {
-            stream_printf(GDKout,"\n</xs:integer>");
+            stream_printf(GDKout,"</xs:integer>");
             if ( !lastVal )
                 stream_printf(GDKout, "\n");
         }
@@ -1385,11 +1385,11 @@ static int  seqEmitDbl(XqueryCtx* ctx, dbl dv, int lastVal) {
     } else {
         ctx->nAttrOnLine++;
         if ( ctx->typedMode ) {
-            stream_printf(GDKout,"<xs:double>\n");
+            stream_printf(GDKout,"<xs:double>");
         }
         stream_printf(GDKout,"%f ",dv);
         if ( ctx->typedMode ) {
-            stream_printf(GDKout,"\n</xs:double>");
+            stream_printf(GDKout,"</xs:double>");
             if ( !lastVal )
                 stream_printf(GDKout, "\n");
         }
@@ -1416,13 +1416,13 @@ static int  seqEmitStr(XqueryCtx* ctx, str sv, int lastVal) {
     } else {
         ctx->nAttrOnLine++;
         if ( ctx->typedMode ) {
-            stream_printf(GDKout,"<xs:string>\n");
+            stream_printf(GDKout,"<xs:string>");
         }
         stream_printf(GDKout,"\"");
         emit_escaped( sv, 1+ctx->mapiMode, 0/*ALL*/);
         stream_printf(GDKout,"\" ");
         if ( ctx->typedMode ) {
-            stream_printf(GDKout,"\n</xs:string>");
+            stream_printf(GDKout,"</xs:string>");
             if ( !lastVal )
                 stream_printf(GDKout, "\n");
         }
@@ -1538,24 +1538,12 @@ int xquery_print_result(
                          * check idxTVinWSorFRGN(ctx,frag,PRE_KIND,valoid);
                          * for TEXT
                          */
-                        /*
-                        if( ctx->typedMode && cnt == 0) {
-                            stream_printf(GDKout,"<xs:anyNode>\n");
-                        }
-                        */
                         int oldCtx = switchWsContext(ctx,frag);
                         BAT *b;
                         wsBAT(b,ctx,PRE_FRAG)
                             if ( !seqEmitNode(ctx, valoid, b, 1/*top*/, lastVal) )
                                 return GDK_FAIL;
                         switchWsContext(ctx,oldCtx);
-
-                        /*
-                        if( ctx->typedMode && lastVal) {
-                            stream_printf(GDKout,"\n</xs:anyNode>");
-                        }
-                        */
-
                         break;
                     };
                 case NODE:
