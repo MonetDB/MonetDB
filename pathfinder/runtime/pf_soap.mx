@@ -456,33 +456,27 @@ static int handle_soap_request(struct shttpd_callback_arg *arg) {
     text  = (var_t*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PROP_TEXT))));/* PROP_TEXT = 8 */
     text_base = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PROP_TEXT)))->theap->base;
 
-    /* There are at least two nodes before "module", namely "Envelope"
-     * and "Body" (a "Header" node is optional). There are at least two
-     * nodes after "module", namely "method" and "param". */
-    if (!(nid = get_nid(docBAT, "module", 2, (size[0] - 2)))) {
+    /* There are at least two nodes before "SoapRpcRequest", namely "Envelope"
+     * and "Body" (a "Header" node is optional). There are at least two nodes
+     * after "module", namely "method" and "param". */
+    if (!(nid = get_nid(docBAT, "SoapRpcRequest", 2, (size[0] - 2)))) {
         send_soap_err(out, 1, "404 Bad Request", "env:Sender", "s",
                 "SOAP request must have a \"module\" tag\n");
         goto FINISH;
     }
-    /* Find the URI of the imported module. */
-    if ((module = find_attribute(docBAT, MODULE_ATTR_NAME, nid)) == NULL) {
-        send_soap_err(out, 1, "404 Bad Request", "env:Sender", "sss",
-                "SOAP request: \"module\" tag does not have a \"",
-                MODULE_ATTR_NAME, "\" attribute.\n");
+    /* Find the URI of the module to import. */
+    if ((module = find_attribute(docBAT, "module", nid)) == NULL) {
+        send_soap_err(out, 1, "404 Bad Request", "env:Sender", "s",
+                "SOAP request: \"SoapRpcResults\" tag does not have a \"module\""
+                "attribute.\n");
         goto FINISH;
     }
    
-    if (!(nid = get_nid(docBAT, "method", (nid + 1), (size[0] - 1)))) {
+    /* Find the name of the called method. */
+    if ((method = find_attribute(docBAT, "method", nid)) == NULL) {
         send_soap_err(out, 1, "404 Bad Request", "env:Sender", "s",
-                "SOAP request must have a \"method\" tag\n");
-        goto FINISH;
-    }
-    /* Find the name of the called method. We don't check it, but the "method"
-     * node should be the only child of the "module" node. */
-    if ((method = find_attribute(docBAT, METHOD_ATTR_NAME, nid)) == NULL) {
-        send_soap_err(out, 1, "404 Bad Request", "env:Sender", "sss",
-                "SOAP request: \"method\" tag does not have a \"",
-                METHOD_ATTR_NAME, "\" attribute.\n");
+                "SOAP request: \"method\" tag does not have a \"method\""
+                "attribute.\n");
         goto FINISH;
     }
 
@@ -697,10 +691,10 @@ int CMDhttp_post(BAT **res,
             "<env:Envelope xmlnl:env=\"http://www.w3.org/2003/05/soap-envelope\">\n"
             "<env:Header />\n"
             "<env:Body>\n"
-            "<module %s=\"%s\">\n"
-            "<method %s=\"%s\">\n",
-            MODULE_ATTR_NAME, module,
-            METHOD_ATTR_NAME, method);
+            "<SoapRpcRequest\n"
+            "    module=\"%s\"\n"
+            "    method=\"%s\">\n",
+            module, method);
 
     /* Find the number of parameters and iterations. */
     argc  = *(int*)BUNtail( fun_vid,  BUNprev(fun_vid,  BUNlast(fun_vid))  );
@@ -877,8 +871,7 @@ int CMDhttp_post(BAT **res,
     }
 
     b->pos += snprintf( (b->buf + b->pos), (b->len - b->pos),
-            "</method>\n"
-            "</module>\n"
+            "</SoapRpcRequest>\n"
             "</env:Body>\n"
             "</env:Envelope>\n");
     b->buf[b->pos] = 0;
