@@ -688,7 +688,7 @@ int CMDhttp_post(BAT **res,
 
     b->pos = snprintf(b->buf, b->len,
             "<?xml version='1.0' ?>\n"
-            "<env:Envelope xmlnl:env=\"http://www.w3.org/2003/05/soap-envelope\">\n"
+            "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\">\n"
             "<env:Header />\n"
             "<env:Body>\n"
             "<SoapRpcRequest\n"
@@ -697,7 +697,8 @@ int CMDhttp_post(BAT **res,
             module, method);
 
     /* Find the number of parameters and iterations. */
-    argc  = *(int*)BUNtail( fun_vid,  BUNprev(fun_vid,  BUNlast(fun_vid))  );
+    argc  = *(int*)BUNtail( fun_vid,  BUNprev(fun_vid,  BUNlast(fun_vid))  ) - 
+            *(int*)BUNtail( fun_vid,  BUNfirst(fun_vid)) + 1;
     iterc = *(int*)BUNtail( fun_iter, BUNprev(fun_iter, BUNlast(fun_iter)) );
 
     argcnt = GDKmalloc(iterc * sizeof(int *));
