@@ -19,13 +19,13 @@ var a0012 := new (void, oid).seqbase (0@0);
 var a0013 := new (void, int).seqbase (0@0);
 a0013.append (INT);
 a0013.append (DEC);
-a0005.append (dbl(2.3));
+a0004.append (dbl(2.3));
 a0003.append (lng(1));
 a0012.append (0@0);
 a0012.append (0@0);
 a0012 := a0012.reverse ().mark (0@0).reverse ();
 a0013 := a0013.reverse ().mark (0@0).reverse ();
-print(a0005);
+print(a0004);
 #---------------------------------#
 # t	h			  # name
 # void	dbl			  # type
