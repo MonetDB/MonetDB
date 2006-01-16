@@ -53,14 +53,12 @@ AM_CONDITIONAL(MONET4,test "x$backend" = xmonet4)
 
 dnl AC_CHECK_HEADERS(limits.h malloc.h pwd.h)
 
-dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
+dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
-CXXFLAGS="$CXXFLAGS \$(X_CXXFLAGS)"
 
 dnl  However, there are still some signed-unsigned comparisons...
 if test "$GCC" = "yes"; then
 	X_CFLAGS="$X_CFLAGS -Wno-sign-compare"
-	X_CXXFLAGS="$X_CXXFLAGS -Wno-sign-compare"
 fi
 
 case "$host_os" in

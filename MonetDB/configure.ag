@@ -220,14 +220,6 @@ AC_CHECK_HEADERS(rlimit.h netdb.h sys/resource.h)
 AC_CHECK_HEADERS(string.h strings.h signal.h sys/socket.h sys/un.h termios.h)
 AC_CHECK_HEADERS(ieeefp.h winsock.h)
 CFLAGS="$CFLAGS_bak"
-AC_LANG_SAVE
-#AC_LANG_PUSH(C++)
-AC_LANG_CPLUSPLUS
-AC_CHECK_HEADER(new, AC_DEFINE(HAVE_NEW,1,[Define to 1 if you have the <new> header file.]),,[ ])
-AC_CHECK_HEADER(iostream, AC_DEFINE(HAVE_IOSTREAM,1,[Define to 1 if you have the <iostream> header file.]),,[ ])
-AC_CHECK_HEADER(cstdio, AC_DEFINE(HAVE_CSTDIO,1,[Define to 1 if you have the <cstdio> header file.]),,[ ])
-#AC_LANG_POP(C++)
-AC_LANG_RESTORE
 dnl We don't need to check for these two: they're only present on
 dnl Windows.  We list them here for completeness, since the
 dnl corresponding defines are used.
@@ -399,7 +391,6 @@ AM_CONDITIONAL(NATIVE_WIN32, false)
 ;;
 esac
 
-dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
+dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
-CXXFLAGS="$CXXFLAGS \$(X_CXXFLAGS)"
 

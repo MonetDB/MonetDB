@@ -69,13 +69,6 @@
 /* Is your compiler C99 compliant? */
 /* #undef HAVE_C99 */
 
-/* Define to 1 if you have the <cstdio> header file. */
-#if _MSC_VER >= 1300
-#define HAVE_CSTDIO 1
-#else
-/* #undef HAVE_CSTDIO */
-#endif
-
 /* Define to 1 if you have the `ctime_r' function. */
 /* #undef HAVE_CTIME_R */
 
@@ -173,13 +166,6 @@
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 /* #undef HAVE_INTTYPES_H */
-
-/* Define to 1 if you have the <iostream> header file. */
-#if _MSC_VER >= 1300
-#define HAVE_IOSTREAM 1
-#else
-/* #undef HAVE_IOSTREAM */
-#endif
 
 /* Define to 1 if you have the `isinf' function. */
 /* #undef HAVE_ISINF */
@@ -295,9 +281,6 @@
 
 /* Define to 1 if you have the <netdb.h> header file. */
 /* #undef HAVE_NETDB_H */
-
-/* Define to 1 if you have the <new> header file. */
-#define HAVE_NEW 1
 
 /* Define to 1 if you have the `nl_langinfo' function. */
 /* #undef HAVE_NL_LANGINFO */
@@ -1348,9 +1331,7 @@
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
-#ifndef __cplusplus
 /* #undef inline */
-#endif
 
 /* Define to `long' if <sys/types.h> does not define. */
 /* #undef off_t */
