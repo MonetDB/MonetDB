@@ -21,6 +21,7 @@ package nl.cwi.monetdb.jdbc;
 import java.sql.*;
 import java.util.*;
 import java.net.*;
+import nl.cwi.monetdb.jdbc.util.*;
 
 /**
  * A Driver suitable for the MonetDB database.
@@ -121,40 +122,66 @@ final public class MonetDriver implements Driver {
 
 		// url should be of style jdbc:monetdb://<host>/<database>
 		if (!acceptsURL(url)) return(null);
-		// remove "jdbc:" so the rest is a valid hierarchical URI
-		URI uri;
-		try {
-			uri = new URI(url.substring("jdbc:".length()));
-		} catch (URISyntaxException e) {
-			throw new SQLException(e.toString());
-		}
 
-		if (uri.getHost() == null)
-			throw new SQLException("Invalid URL: no hostname given or unparsable in '" + url + "'");
-		info.put("host", uri.getHost());
-		if (uri.getPort() > 0) info.put("port", "" + uri.getPort());
-
-		// check the database
-		if (uri.getPath() == null ||
-			uri.getPath().substring(1).trim().equals(""))
-			throw new SQLException("Invalid URL: A database is required in '" +  url + "'");
-		info.put("database", uri.getPath().substring(1));
-
-		if (uri.getQuery() != null) {
-			// handle additional arguments
-			String args[] = uri.getQuery().split("&");
-			for (int i = 0; i < args.length; i++) {
-				tmp = args[i].indexOf("=");
-				if (tmp > 0) info.put(args[i].substring(0, tmp), args[i].substring(tmp + 1));
+		String warnings = "";
+		do {
+			// remove leading "jdbc:" so the rest is a valid hierarchical URI
+			URI uri;
+			try {
+				uri = new URI(url.substring(5));
+			} catch (URISyntaxException e) {
+				throw new SQLException(e.toString());
 			}
-		}
 
-		// finally return the Connection as requested
-		try {
-			return(new MonetConnection(info));
-		} catch (IllegalArgumentException e) {
-			throw new SQLException(e.getMessage());
-		}
+			if (uri.getHost() == null) throw
+				new SQLException("Invalid URL: no hostname given or " +
+						"unparsable in '" + url + "'");
+			info.put("host", uri.getHost());
+			if (uri.getPort() > 0) info.put("port", "" + uri.getPort());
+
+			// check the database
+			if (uri.getPath() == null ||
+					uri.getPath().substring(1).trim().equals(""))
+				throw new SQLException("Invalid URL: A database is " +
+						"required in '" +  url + "'");
+			info.put("database", uri.getPath().substring(1));
+
+			if (uri.getQuery() != null) {
+				// handle additional arguments
+				String args[] = uri.getQuery().split("&");
+				for (int i = 0; i < args.length; i++) {
+					tmp = args[i].indexOf("=");
+					if (tmp > 0) info.put(args[i].substring(0, tmp), args[i].substring(tmp + 1));
+				}
+			}
+
+			// finally return the Connection as requested
+			try {
+				MonetConnection ret = new MonetConnection(info);
+				if (warnings != "")
+					ret.addWarning(warnings);
+				return(ret);
+			} catch (MonetRedirectException e) {
+				List redirects = e.getRedirects();
+				// Ok, server wants us to go somewhere else.  The list
+				// might have multiple clues on where to go.  For now we
+				// don't support anything intelligent but trying the
+				// first one.  URI should be in form of:
+				// "mapi:monetdb://host:port/database?args=value"
+				String suri = redirects.get(0).toString();
+				if (!suri.startsWith("mapi:"))
+					throw new SQLException("unsupported redirect: " + suri);
+				warnings += "Redirect by " + uri.getHost() + ":" + 
+					uri.getPort() + " to " + suri + "\n";
+				// overwrite url, and go through the loop again
+				url = "jdbc" + suri.substring(4);
+				if (!acceptsURL(url)) throw
+					new SQLException("redirect url '" + url + "' is " +
+							"not a valid URL");
+			} catch (IllegalArgumentException e) {
+				throw new SQLException(e.getMessage());
+			}
+		} while (true);
 	}
 
 	/**

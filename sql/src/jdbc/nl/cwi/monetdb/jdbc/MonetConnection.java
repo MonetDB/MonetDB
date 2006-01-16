@@ -22,6 +22,7 @@ import java.sql.*;
 import java.util.*;
 import java.io.*;
 import java.nio.*;
+import nl.cwi.monetdb.jdbc.util.*;
 
 /**
  * A Connection suitable for the MonetDB database.
@@ -120,7 +121,7 @@ public class MonetConnection implements Connection {
 	 */
 	MonetConnection(
 		Properties props)
-		throws SQLException, IllegalArgumentException
+		throws SQLException, IllegalArgumentException, MonetRedirectException
 	{
 		this.hostname = props.getProperty("host");
 		int port;
@@ -239,10 +240,27 @@ public class MonetConnection implements Connection {
 			}
 
 			// read monet response till prompt
-			String err;
-			if ((err = monet.waitForPrompt()) != null) {
+			List redirects = null;
+			String err = "", tmp;
+			int lineType = 0;
+			while (lineType != MonetSocketBlockMode.PROMPT1) {
+				if ((tmp = monet.readLine()) == null)
+					throw new IOException("Connection to server lost!");
+				if ((lineType = monet.getLineType()) == MonetSocketBlockMode.ERROR) {
+					err += "\n" + tmp.substring(1);
+				} else if (lineType == MonetSocketBlockMode.REDIRECT) {
+					if (redirects == null)
+						redirects = new ArrayList();
+					redirects.add(tmp.substring(1));
+				}
+			}
+			if (err != "") {
 				monet.disconnect();
-				throw new SQLException(err);
+				throw new SQLException(err.trim());
+			}
+			if (redirects != null) {
+				monet.disconnect();
+				throw new MonetRedirectException(redirects);
 			}
 
 			// we seem to have managed to log in, let's store the
@@ -1021,7 +1039,7 @@ public class MonetConnection implements Connection {
 	 *
 	 * @param reason the warning message
 	 */
-	private void addWarning(String reason) {
+	void addWarning(String reason) {
 		if (warnings == null) {
 			warnings = new SQLWarning(reason);
 		} else {

@@ -52,7 +52,7 @@ import java.util.*;
  * block in a sequence.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 2.7
+ * @version 2.8
  */
 final class MonetSocketBlockMode {
 	/** Stream from the Socket for reading */
@@ -72,21 +72,24 @@ final class MonetSocketBlockMode {
 
 	/** "there is currently no line", or the the type is unknown is
 	    represented by UNKNOWN */
-	final static int UNKNOWN = 0;
+	final static int UNKNOWN   = 0;
 	/** a line starting with ! indicates ERROR */
-	final static int ERROR = 1;
+	final static int ERROR     = 1;
 	/** a line starting with # indicates HEADER */
-	final static int HEADER = 2;
+	final static int HEADER    = 2;
 	/** a line starting with [ indicates RESULT */
-	final static int RESULT = 3;
+	final static int RESULT    = 3;
 	/** a line which matches the pattern of prompt1 is a PROMPT1 */
-	final static int PROMPT1 = 4;
+	final static int PROMPT1   = 4;
 	/** a line which matches the pattern of prompt2 is a PROMPT2 */
-	final static int PROMPT2 = 5;
+	final static int PROMPT2   = 5;
 	/** a line starting with &amp; indicates the start of a header block */
-	final static int SOHEADER = 6;
+	final static int SOHEADER  = 6;
+	/** a line starting with ^ indicates REDIRECT */
+	final static int REDIRECT  = 7;
+
 	/** The blocksize (hardcoded in compliance with stream.mx) */
-	final static int BLOCK = 8 * 1024 - 2;
+	final static int BLOCK     = 8 * 1024 - 2;
 
 	/** A buffer which holds the blocks read */
 	private StringBuffer readBuffer;
@@ -414,6 +417,9 @@ final class MonetSocketBlockMode {
 			break;
 			case '[':
 				lineType = RESULT;
+			break;
+			case '^':
+				lineType = REDIRECT;
 			break;
 			default:
 				if (first == (char)1 && line.length() == 2) {
