@@ -26,27 +26,23 @@ Example 1
 Suppose we have the following module definition available via the URI
 "http://www.cwi.nl/~zhang/soap/soap.xq":
 
-    ----------------------------------------------------------------------
-    | module namespace soap = "http://www.cwi.nl/~zhang/soap/soap.xq";   |
-    |                                                                    |
-    | declare function soap:add($v1 as xs:decimal, $v2 as xs:decimal*)   |
-    |     as xs:decimal*                                                 |
-    | {                                                                  |
-    |     let $res := $v1                                                |
-    |     for $i in $v2                                                  |   
-    |         return $res + $i                                           |
-    | };                                                                 |
-    ----------------------------------------------------------------------
+    module namespace soap = "http://www.cwi.nl/~zhang/soap/soap.xq";
+
+    declare function soap:add($v1 as xs:decimal, $v2 as xs:decimal*)
+        as xs:decimal*
+    {
+        let $res := $v1
+        for $i in $v2
+            return $res + $i
+    };
 
 The following XQeury query calls this function through SOAP RPC:
 
-    ----------------------------------------------------------------------
-    | import module namespace                                            |
-    |     soap = "http://www.cwi.nl/~zhang/soap/soap.xq"                 |
-    |     at "http://www.cwi.nl/~zhang/soap/soap.xq";                    |
-    |                                                                    |
-    | soap:add("a.b.cwi.nl", 40, (20, 40))                               |
-    ----------------------------------------------------------------------
+    import module namespace
+        soap = "http://www.cwi.nl/~zhang/soap/soap.xq"
+        at "http://www.cwi.nl/~zhang/soap/soap.xq";
+
+    soap:add("a.b.cwi.nl", 40, (20, 40))
 
 Obviously, this query requires that a SOAP receiver is running on port 8080 of
 the host "a.b.cwi.nl"
@@ -59,27 +55,25 @@ Since the special namespace identifier "soap" is used in the above XQeury query,
 the call to the function "add" is translated into the following SOAP request
 message:
 
-    ----------------------------------------------------------------------
-    | <?xml version='1.0' ?>                                             |
-    | <env:Envelope xmlnl:env="http://www.w3.org/2003/05/soap-envelope"> |
-    |   <env:Header />                                                   |
-    |   <env:Body>                                                       |
-    |     <SoapRpcRequest                                                |
-    |           module="http://www.cwi.nl/~zhang/soap/soap.xq">          |
-    |           method="add">                                            |
-    |       <iter>                                                       |
-    |         <param>                                                    |
-    |           <xs:decimal>40</xs:decimal>                              |
-    |         </param>                                                   |
-    |         <param>                                                    |
-    |           <xs:integer>20</xs:integer>                              |
-    |           <xs:integer>40</xs:integer>                              |
-    |         </param>                                                   |
-    |       </iter>                                                      |
-    |     </SoapRpcRequest>                                              |
-    |   </env:Body>                                                      |
-    | </env:Envelope>                                                    |
-    ----------------------------------------------------------------------
+    <?xml version='1.0' ?>
+    <env:Envelope xmlnl:env="http://www.w3.org/2003/05/soap-envelope">
+      <env:Header />
+      <env:Body>
+        <SoapRpcRequest
+              module="http://www.cwi.nl/~zhang/soap/soap.xq">
+              method="add">
+          <iter>
+            <param>
+              <xs:decimal>40</xs:decimal>
+            </param>
+            <param>
+              <xs:integer>20</xs:integer>
+              <xs:integer>40</xs:integer>
+            </param>
+          </iter>
+        </SoapRpcRequest>
+      </env:Body>
+    </env:Envelope>
 
 (NOTE: while writing this documentation, I got the idea of simplify the
 structure of the SOAP request message into this form. So the actually structure
@@ -105,49 +99,45 @@ Once the SOAP receiver has all these information, it calls a special function
 ("xquery_method") to load the module and execute the function call.  If no error
 occurs, this SOAP response message should be sent back to the caller:
 
-    ----------------------------------------------------------------------
-    | <env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"> |
-    |   <env:Header />                                                   |
-    |   <env:Body>                                                       |
-    |     <SoapRpcResults                                                |
-    |           module="http://www.cwi.nl/~zhang/soap/soap.xq"           |
-    |           method="add">                                            |
-    |       <iter>                                                       |
-    |         <xs:double>60.000000</xs:double>                           |
-    |         <xs:double>80.000000</xs:double>                           |
-    |       </iter>                                                      |
-    |     </SoapRpcResults>                                              |
-    |   </env:Body>                                                      |
-    | </env:Envelope>                                                    |
-    ----------------------------------------------------------------------
+    <env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope">
+      <env:Header />
+      <env:Body>
+        <SoapRpcResults
+              module="http://www.cwi.nl/~zhang/soap/soap.xq"
+              method="add">
+          <iter>
+            <xs:double>60.000000</xs:double>
+            <xs:double>80.000000</xs:double>
+          </iter>
+        </SoapRpcResults>
+      </env:Body>
+    </env:Envelope>
 
 But things can go wrong, then a SOAP Fault message will be sent back to the
 caller.  For example, if the SOAP receiver can not load the module specified in
 our example SOAP RPC call, it will send the following SOAP Fault message:
 
-    ----------------------------------------------------------------------
-    | <env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"> |
-    |   <env:Header />                                                   |
-    |   <env:Body>                                                       |
-    |     <SoapRpcResults                                                |
-    |       module="http://www.cwi.nl/~zhang/soap/soap.xq"               |
-    |       method="add">                                                |
-    |     <env:Fault>                                                    |
-    |       <env:Code>                                                   |
-    |         <env:Value>                                                |
-    |           env:Sender                                               |
-    |         </env:Value>                                               |
-    |       </env:Code>                                                  |
-    |       <env:Reason>                                                 |
-    |         <env:Text xml:lang="en">                                   |
-    |           http://www.cwi.nl/~zhang/ssoap/soap.xq:add:              |
-    |           xquery_module_load: could not load module.               |
-    |         </env:Text>                                                |
-    |       </env:Reason>                                                |
-    |     </env:Fault>                                                   |
-    |   </env:Body>                                                      |
-    | </env:Envelope>                                                    |
-    ----------------------------------------------------------------------
+    <env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope">
+      <env:Header />
+      <env:Body>
+        <SoapRpcResults
+          module="http://www.cwi.nl/~zhang/soap/soap.xq"
+          method="add">
+        <env:Fault>
+          <env:Code>
+            <env:Value>
+              env:Sender
+            </env:Value>
+          </env:Code>
+          <env:Reason>
+            <env:Text xml:lang="en">
+              http://www.cwi.nl/~zhang/ssoap/soap.xq:add:
+              xquery_module_load: could not load module.
+            </env:Text>
+          </env:Reason>
+        </env:Fault>
+      </env:Body>
+    </env:Envelope>
 
 The structure and the meaning of each tag of a SOAP Fault message are specified
 by W3C [reference].  The most important tags are "<env:Code>", which tells who
@@ -196,14 +186,12 @@ Example 2
 ---------
 Suppose we need to execute RPC calls in a 'for' loop like follwoing:
 
-    ----------------------------------------------------------------------
-    | import module namespace                                            |
-    |     soap = "http://www.cwi.nl/~zhang/soap/soap.xq"                 |
-    |     at "http://www.cwi.nl/~zhang/soap/soap.xq";                    |
-    |                                                                    |
-    | for $i in (40, 50)                                                 |
-    |   return soap:add("a.b.cwi.nl", $i, (20, 40))                      |
-    ----------------------------------------------------------------------
+    import module namespace
+        soap = "http://www.cwi.nl/~zhang/soap/soap.xq"
+        at "http://www.cwi.nl/~zhang/soap/soap.xq";
+
+    for $i in (40, 50)
+      return soap:add("a.b.cwi.nl", $i, (20, 40))
 
 A naive implementation of such a 'for' loop would be to send a RPC request to
 "a.b.cwi.nl" in each iteration with the correpsonding values.  Obviously, if the
@@ -236,56 +224,53 @@ around.
 The corresponding SOAP RPC request and response messages of Example 2 are as
 following:
 
-    ----------------------------------------------------------------------
-    | <?xml version='1.0' ?>                                             |
-    | <env:Envelope xmlnl:env="http://www.w3.org/2003/05/soap-envelope"> |
-    |   <env:Header />                                                   |
-    |   <env:Body>                                                       |
-    |     <SoapRpcRequest                                                |
-    |           module="http://www.cwi.nl/~zhang/soap/soap.xq">          |
-    |           method="add">                                            |
-    |       <iter>                                                       |
-    |         <param>                                                    |
-    |           <xs:decimal>40</xs:decimal>                              |
-    |         </param>                                                   |
-    |         <param>                                                    |
-    |           <xs:integer>20</xs:integer>                              |
-    |           <xs:integer>40</xs:integer>                              |
-    |         </param>                                                   |
-    |       </iter>                                                      |
-    |       <iter>                                                       |
-    |         <param>                                                    |
-    |           <xs:decimal>50</xs:decimal>                              |
-    |         </param>                                                   |
-    |         <param>                                                    |
-    |           <xs:integer>20</xs:integer>                              |
-    |           <xs:integer>40</xs:integer>                              |
-    |         </param>                                                   |
-    |       </iter>                                                      |
-    |     </SoapRpcRequest>                                              |
-    |   </env:Body>                                                      |
-    | </env:Envelope>                                                    |
-    ----------------------------------------------------------------------
+    <?xml version='1.0' ?>
+    <env:Envelope xmlnl:env="http://www.w3.org/2003/05/soap-envelope">
+      <env:Header />
+      <env:Body>
+        <SoapRpcRequest
+              module="http://www.cwi.nl/~zhang/soap/soap.xq">
+              method="add">
+          <iter>
+            <param>
+              <xs:decimal>40</xs:decimal>
+            </param>
+            <param>
+              <xs:integer>20</xs:integer>
+              <xs:integer>40</xs:integer>
+            </param>
+          </iter>
+          <iter>
+            <param>
+              <xs:decimal>50</xs:decimal>
+            </param>
+            <param>
+              <xs:integer>20</xs:integer>
+              <xs:integer>40</xs:integer>
+            </param>
+          </iter>
+        </SoapRpcRequest>
+      </env:Body>
+    </env:Envelope>
 
-    ----------------------------------------------------------------------
-    | <env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope"> |
-    |   <env:Header />                                                   |
-    |   <env:Body>                                                       |
-    |     <SoapRpcResults                                                |
-    |           module="http://www.cwi.nl/~zhang/soap/soap.xq"           |
-    |           method="add">                                            |
-    |       <iter>                                                       |
-    |         <xs:double>60.000000</xs:double>                           |
-    |         <xs:double>80.000000</xs:double>                           |
-    |       </iter>                                                      |
-    |       <iter>                                                       |
-    |         <xs:double>70.000000</xs:double>                           |
-    |         <xs:double>90.000000</xs:double>                           |
-    |       </iter>                                                      |
-    |     </SoapRpcResults>                                              |
-    |   </env:Body>                                                      |
-    | </env:Envelope>                                                    |
-    ----------------------------------------------------------------------
+
+    <env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope">
+      <env:Header />
+      <env:Body>
+        <SoapRpcResults
+              module="http://www.cwi.nl/~zhang/soap/soap.xq"
+              method="add">
+          <iter>
+            <xs:double>60.000000</xs:double>
+            <xs:double>80.000000</xs:double>
+          </iter>
+          <iter>
+            <xs:double>70.000000</xs:double>
+            <xs:double>90.000000</xs:double>
+          </iter>
+        </SoapRpcResults>
+      </env:Body>
+    </env:Envelope>
 
 References
 ==========
