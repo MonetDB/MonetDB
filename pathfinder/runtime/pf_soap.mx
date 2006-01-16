@@ -224,7 +224,7 @@ static int setup_connection(str location, int port, int nr_retries) {
 
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         GDKerror("setup_connection: failed to create socket\n");
-        free(resolv);
+       
         return -1;
     }
 
@@ -448,8 +448,7 @@ static int handle_soap_request(struct shttpd_callback_arg *arg) {
         goto FINISH;
     }
 
-    off = BUNindex(docBAT, BUNfirst(docBAT));
-
+    off   = BUNindex(docBAT, BUNfirst(docBAT));
     size  = (int *) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_SIZE)))); /* PRE_SIZE  = 0 */
     level = (char *)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_LEVEL))));/* PRE_LEVEL = 1 */
     prop  = (oid *) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_PROP)))); /* PRE_PROP  = 2 */
