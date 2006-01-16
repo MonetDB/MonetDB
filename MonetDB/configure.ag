@@ -93,8 +93,10 @@ else
 fi
 AC_SUBST(Xprefix)
 AC_SUBST(QXprefix)
+AC_DEFINE_UNQUOTED(MONETDB_PREFIX,"$QXprefix",[architecture-independent files])
 AC_SUBST(Xexec_prefix)
 AC_SUBST(QXexec_prefix)
+AC_DEFINE_UNQUOTED(MONETDB_EXEC_PREFIX,"$QXexec_prefix",[architecture-dependent files])
 QMONETDB_BUILD="$MONETDB_BUILD"
 XMONETDB_BUILD="`$translatepath "$MONETDB_BUILD"`"
 QXMONETDB_BUILD="`echo "$XMONETDB_BUILD" | sed 's/\\\\/\\\\\\\\/g'`"
@@ -116,6 +118,7 @@ AC_SUBST(QXsrcdir)
 Qlocalstatedir="$localstatedir"
 Xlocalstatedir="`$translatepath "$localstatedir"`"
 QXlocalstatedir="`echo "$Xlocalstatedir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_DEFINE_UNQUOTED(MONETDB_LOCALSTATEDIR,"$QXlocalstatedir",[modifiable single-machine data])
 AC_SUBST(Qlocalstatedir)
 AC_SUBST(Xlocalstatedir)
 AC_SUBST(QXlocalstatedir)
@@ -125,9 +128,11 @@ QXlibdir="`echo "$Xlibdir" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(Qlibdir)
 AC_SUBST(Xlibdir)
 AC_SUBST(QXlibdir)
+AC_DEFINE_UNQUOTED(MONETDB_LIBDIR,"$QXlibdir",[object code libraries])
 Qsysconfdir="$sysconfdir"
 Xsysconfdir="`$translatepath "$sysconfdir"`"
 QXsysconfdir="`echo "$Xsysconfdir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_DEFINE_UNQUOTED(MONETDB_SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
 AC_SUBST(Qsysconfdir)
 AC_SUBST(Xsysconfdir)
 AC_SUBST(QXsysconfdir)
