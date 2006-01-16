@@ -536,6 +536,21 @@
    */
 /* #undef ICONV_CONST */
 
+/* architecture-dependent files */
+#define MONETDB_EXEC_PREFIX "${prefix}"
+
+/* object code libraries */
+#define MONETDB_LIBDIR "${exec_prefix}\\lib"
+
+/* modifiable single-machine data */
+#define MONETDB_LOCALSTATEDIR "${prefix}\\var"
+
+/* architecture-independent files */
+#define MONETDB_PREFIX "C:\\Program Files\\CWI\\MonetDB"
+
+/* read-only single-machine data */
+#define MONETDB_SYSCONFDIR "${prefix}\\etc"
+
 /* Define if the oid type should use 32 bits on a 64-bit architecture */
 /* #undef MONET_OID32 */
 
@@ -1175,6 +1190,21 @@
 /* Define as const if the declaration of iconv() needs const for 2nd argument.
    */
 /* #undef ICONV_CONST */
+
+/* architecture-dependent files */
+#define MONETDB_EXEC_PREFIX "${prefix}"
+
+/* object code libraries */
+#define MONETDB_LIBDIR "${exec_prefix}\\lib"
+
+/* modifiable single-machine data */
+#define MONETDB_LOCALSTATEDIR "${prefix}\\var"
+
+/* architecture-independent files */
+#define MONETDB_PREFIX "C:\\Program Files\\CWI\\MonetDB"
+
+/* read-only single-machine data */
+#define MONETDB_SYSCONFDIR "${prefix}\\etc"
 
 /* Define if the oid type should use 32 bits on a 64-bit architecture */
 /* #undef MONET_OID32 */
