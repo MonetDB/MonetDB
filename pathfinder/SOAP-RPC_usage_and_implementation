@@ -60,7 +60,7 @@ message:
       <env:Header />
       <env:Body>
         <SoapRpcRequest
-              module="http://www.cwi.nl/~zhang/soap/soap.xq">
+              module="http://www.cwi.nl/~zhang/soap/soap.xq"
               method="add">
           <iter>
             <param>
@@ -74,11 +74,6 @@ message:
         </SoapRpcRequest>
       </env:Body>
     </env:Envelope>
-
-(NOTE: while writing this documentation, I got the idea of simplify the
-structure of the SOAP request message into this form. So the actually structure
-of a request message is slightly different, but will soon be adjusted to this
-form.)
 
 The tag "iter" is used to separate different iterations, which use will be
 explain in section "Loop-lifted RPC".  For now, it is clear that there is only
@@ -229,7 +224,7 @@ following:
       <env:Header />
       <env:Body>
         <SoapRpcRequest
-              module="http://www.cwi.nl/~zhang/soap/soap.xq">
+              module="http://www.cwi.nl/~zhang/soap/soap.xq"
               method="add">
           <iter>
             <param>
