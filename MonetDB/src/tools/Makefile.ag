@@ -82,7 +82,7 @@ largeTOC_SHARED_MODS =	\
 	../modules/contrib/lib_vector
 
 EXTRA_DIST = static_modules.mx 
-#monetdb-config.mx.in monetdb-config.bat.in
+#monetdb-config.sh.in monetdb-config.bat.in
 
 lib_initmodules = {
 	NOINST
@@ -115,7 +115,7 @@ bin_Mbeddedmil = {
 scripts_sh = {
 	EXT = ""
 	DIR = bindir
-	SOURCES = monetdb-config.mx.in
+	SOURCES = monetdb-config.in
 }
 
 scripts_bat = {
