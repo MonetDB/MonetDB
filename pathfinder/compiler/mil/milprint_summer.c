@@ -6171,9 +6171,28 @@ translateUDF (opt_t *f, int cur_level, int counter,
     int i = 0;
     char* item_ext = kind_str(STR);
 
+    milprintf(f, "{ # begin of UDF - function call\n");
+
+    if (apply.rpc)
+    {
+        /* The extra parameter 'dst' of a SOAP RPC is not listed in
+         * fun->params[], so translate it separately.
+         * FIXME: this is a very dirty hack */
+        milprintf(f, "\n# begin of translate the 'dst' param of SOAP\n");
+
+        if (translate2MIL (f, NORMAL, cur_level, counter, R(L(args))) == NORMAL)
+        {
+            milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
+        }
+
+        counter++;
+        saveResult_ (f, counter, STR);
+        args = R(args);
+        milprintf(f, "\n# end of translate the 'dst' param of SOAP\n");
+    }
+
     counter++;
     milprintf(f,
-            "{ # begin of UDF - function call\n"
             "var fun_base%03u := proc_vid.find(\"%s\");\n"
             "var fun_vid%03u := bat(void,oid).seqbase(nil);\n"
             "var fun_iter%03u := bat(void,oid).seqbase(nil);\n"
@@ -6181,28 +6200,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
             "var fun_kind%03u := bat(void,int).seqbase(nil);\n",
             counter, apply.fun->sig, counter, counter, counter, counter);
 
-    if (apply.rpc)
-    {
-        /* The extra parameter 'dst' of a SOAP RPC is not listed in
-         * fun->params[], so translate it separately.
-         * FIXME: this is a very dirty hack */
-        milprintf(f, 
-                "module(\"pf_soap\");\n"
-                "\n# begin of translate the 'dst' parameter of SOAP RPC\n");
-
-        if (translate2MIL (f, NORMAL, cur_level, counter, R(L(args))) == NORMAL)
-        {
-            milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
-        }
-
-        saveResult_ (f, counter+1, STR);
-        args = R(args);
-    }
-
-    milprintf(f, 
-            "\n# end of translate the 'dst' parameter of SOAP RPC\n"
-            "\n# begin of add arg in UDF function call\n");
-
+    milprintf(f, "\n# begin of add args in UDF function call\n");
     while ((args->kind != c_nil) && (apply.fun->params[i]))
     {
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
@@ -6212,7 +6210,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "fun_iter%03u := fun_iter%03u.insert(iter.tmark(nil));\n"
                 "fun_item%03u := fun_item%03u.insert(item.tmark(nil));\n"
                 "kind := kind.materialize(ipik);\n"
-                "fun_kind%03u := fun_kind%03u.insert(kind.tmark(nil));\n",
+                "fun_kind%03u := fun_kind%03u.insert(kind.tmark(nil));\n\n",
                 counter, counter, counter, i, 
                 counter, counter, 
                 counter, counter,
@@ -6227,8 +6225,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
     getExpanded (f,
             /* we don't want to get the variables from
                the surrounding scope like for but from the current */
-            cur_level+1, 
-            apply.fun->fid);
+            cur_level+1, apply.fun->fid);
     milprintf(f,
             "var vid := expOid.leftfetchjoin(v_vid%03u);\n"
             "iter    := expOid.leftfetchjoin(v_iter%03u);\n"
@@ -6265,7 +6262,8 @@ translateUDF (opt_t *f, int cur_level, int counter,
          * message node: (item=0@0, kind=~frag)
          */
         milprintf(f, 
-                "\n{ # begin of SOAP call\n\n"
+                "\n{ # begin of SOAP call\n"
+                "module(\"pf_soap\");\n"
                 /* FIXME: need a better way of name giving. */
                 "var local_name := \"SOAP_RPC_res\";\n"
                 "var rpc_oid := send_soap_rpc("
@@ -6282,14 +6280,12 @@ translateUDF (opt_t *f, int cur_level, int counter,
                                     "dbl_values,"
                                     "dec_values,"
                                     "str_values);\n",
-                item_ext, counter+1, 
+                item_ext, counter-1, 
                 apply.fun->qname.ns.uri,
                 apply.fun->qname.loc,
                 counter, counter, counter, counter);
 
-        milprintf(f,
-                "printf(\"rpc_oid: \");\n"
-                "rpc_oid.print();\n");
+        milprintf(f, "printf(\"rpc_oid: \");\nrpc_oid.print();\n");
 
         /* Construct the iter|item|kind by hand, and fill in the value
          * tables. */
@@ -6307,9 +6303,9 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "var i := int(nil);\n"
                 "var d := dbl(nil);\n"
 
-                "var iter := new(void,oid).seqbase(nil);\n"
-                "var item := new(void,oid).seqbase(nil);\n"
-                "var kind := new(void,int).seqbase(nil);\n"
+                "iter := new(void,oid).seqbase(nil);\n"
+                "item := new(void,oid).seqbase(nil);\n"
+                "kind := new(void,int).seqbase(nil);\n"
 
                 "pre_size@batloop(){\n"
                 "k := pre_kind.fetch($h);\n"
@@ -6351,12 +6347,32 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "}\n"
                 "}\n"
                 "}\n"
-                "iter := iter.tmark(0@0);\n"
-                "item := item.tmark(0@0);\n"
-                "kind := kind.tmark(0@0);\n"
+                "iter.seqbase(0@0);\n"
+                "item.seqbase(0@0);\n"
+                "kind.seqbase(0@0);\n"
+
+                "#printf(\"soap_rpc function results, before function returns:\\n\");\n"
+                "#printf(\"iter\\n\");\n"
+                "#iter.print();\n"
+                "#printf(\"\\nitem\\n\");\n"
+                "#item.print();\n"
+                "#printf(\"\\nkind\\n\");\n"
+                "#kind.print();\n"
+
+                "if (type(iter) = bat) {\n"
+                "#printf(\"ipik := iter;\\n\");\n"
                 "ipik := iter;\n"
+                "} else {\n"
+                "if (type(item) = bat) {\n"
+                "#printf(\"ipik := item;\\n\");\n"
+                "ipik := item;\n"
+                "} else {\n"
+                "#printf(\"ipik := kind;\\n\");\n"
+                "ipik := kind;\n"
+                "}\n"
+                "}\n"
                 "} # end of SOAP call\n\n");
-        deleteResult_ (f, counter+1, STR);
+        deleteResult_ (f, counter-1, STR);
     } else {
         /* call the proc */
         milprintf(f, PFudfMIL(), apply.fun->sig,
@@ -10248,6 +10264,30 @@ const char* PFstopMIL() {
         "  time_print := time();\n"
         "  time_exec := time_print - time_exec;\n"
         "  \n"
+
+        "#printf(\"\\nbefore print_result, original params:\\n\");\n"
+        "#printf(\"iter\\n\");\n"
+        "#iter.print();\n"
+        "#printf(\"\\nitem\\n\");\n"
+        "#item.print();\n"
+        "#printf(\"\\nkind\\n\");\n"
+        "#kind.print();\n"
+        "#printf(\"\\nipik\\n\");\n"
+        "#ipik.print();\n"
+        "#printf(\"params passed to print_result:\\n\");\n"
+        "#printf(\"tunique(iter):\\n\");\n"
+        "#var a := iter;\n"
+        "#tunique(a).print();\n"
+        "#printf(\"\\nconstatnt2bat(iter):\\n\");\n"
+        "#a := iter;\n"
+        "#constant2bat(a).print();\n"
+        "#printf(\"\\nitem.materializa(ipik):\\n\");\n"
+        "#a := ipik;\n"
+        "#item.materialize(a).print();\n"
+        "#printf(\"\\nconstant2bat(kind):\\n\");\n"
+        "#a := kind;\n"
+        "#constant2bat(a).print();\n"
+        
         "  if (genType.search(\"none\") = -1)\n"
         "    print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n"
         "});\n"
