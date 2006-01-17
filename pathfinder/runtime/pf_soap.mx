@@ -449,30 +449,39 @@ static int handle_soap_request(struct shttpd_callback_arg *arg) {
     }
 
     off   = BUNindex(docBAT, BUNfirst(docBAT));
-    size  = (int *) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_SIZE)))); /* PRE_SIZE  = 0 */
-    level = (char *)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_LEVEL))));/* PRE_LEVEL = 1 */
-    prop  = (oid *) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_PROP)))); /* PRE_PROP  = 2 */
-    kind  = (char *)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_KIND)))); /* PRE_KIND  = 3 */
-    text  = (var_t*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PROP_TEXT))));/* PROP_TEXT = 8 */
-    text_base = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PROP_TEXT)))->theap->base;
+    size  = (int *) BUNfirst( BBP_cache( 
+                            *(bat*) BUNtail(docBAT, BUNptr(docBAT, off+PRE_SIZE))
+                        ) );
+    level = (char *)BUNfirst( BBP_cache(
+                            *(bat*) BUNtail(docBAT, BUNptr(docBAT, off+PRE_LEVEL))
+                        ) );
+    prop  = (oid *) BUNfirst( BBP_cache(
+                            *(bat*) BUNtail(docBAT, BUNptr(docBAT, off+PRE_PROP))
+                        ) );
+    kind  = (char *)BUNfirst( BBP_cache(
+                            *(bat*) BUNtail(docBAT, BUNptr(docBAT, off+PRE_KIND))
+                        ) );
+    text  = (var_t*)BUNfirst( BBP_cache(
+                            *(bat*) BUNtail(docBAT, BUNptr(docBAT, off+PROP_TEXT))
+                        ) );
+    text_base = BBP_cache( 
+                    *(bat*) BUNtail( docBAT, BUNptr(docBAT, off+PROP_TEXT))
+                )->theap->base;
 
     /* There are at least two nodes before "SoapRpcRequest", namely "Envelope"
      * and "Body" (a "Header" node is optional). There are at least two nodes
-     * after "module", namely "method" and "param". */
+     * after "SoapRpcRequest", namely "iter" and "param". */
     if (!(nid = get_nid(docBAT, "SoapRpcRequest", 2, (size[0] - 2)))) {
         send_soap_err(out, 1, "404 Bad Request", "env:Sender", "s",
                 "SOAP request must have a \"module\" tag\n");
         goto FINISH;
     }
-    /* Find the URI of the module to import. */
     if ((module = find_attribute(docBAT, "module", nid)) == NULL) {
         send_soap_err(out, 1, "404 Bad Request", "env:Sender", "s",
-                "SOAP request: \"SoapRpcResults\" tag does not have a \"module\""
-                "attribute.\n");
+                "SOAP request: \"SoapRpcResults\" tag does not have a"
+                "\"module\" attribute.\n");
         goto FINISH;
     }
-   
-    /* Find the name of the called method. */
     if ((method = find_attribute(docBAT, "method", nid)) == NULL) {
         send_soap_err(out, 1, "404 Bad Request", "env:Sender", "s",
                 "SOAP request: \"method\" tag does not have a \"method\""
@@ -485,7 +494,7 @@ static int handle_soap_request(struct shttpd_callback_arg *arg) {
     if (iterc == 0) {
         send_soap_err(out, 1, "404 Bad Request", "env:Sender", "sssss",
                 "SOAP request: \"", module, ":", method,
-                "\": should have at least one \"iter\" tag.\n");
+                "\": should have at least one \"<iter>\" tag.\n");
         goto FINISH;
     }
     /* Calculate the number of parameters */
@@ -511,7 +520,8 @@ static int handle_soap_request(struct shttpd_callback_arg *arg) {
             pnode = get_nid(docBAT, "param", (pnode+1), (inode+size[inode]));
        
             vnode = pnode; argcnt[i][j] = 0; k = 1;
-            while ((vnode = get_nid(docBAT, "val", (vnode+1), (pnode+size[pnode]))) > 0) {
+            while ((vnode = get_nid(docBAT, "val", (vnode+1), 
+                                    (pnode+size[pnode]))) > 0) {
                 if (argval_nr == argval_size) {
                     send_soap_err(out, 1, "404 Bad Request",
                             "env:Sender", "sssssis",
@@ -522,7 +532,8 @@ static int handle_soap_request(struct shttpd_callback_arg *arg) {
                     goto FINISH;
                 }
 
-                argtpe[argval_nr] = find_attribute(docBAT, MXQ_PARAM_TYPE, vnode);
+                argtpe[argval_nr] = find_attribute(docBAT, 
+                                        MXQ_PARAM_TYPE, vnode);
                 if (argtpe[argval_nr] == NULL) {
                     send_soap_err(out, 1, "404 Bad Request",
                             "env:Sender", "sssssisisisss",
@@ -544,7 +555,8 @@ static int handle_soap_request(struct shttpd_callback_arg *arg) {
                                 "\" does not have a simple value.\n");
                         goto FINISH;
                     }
-                    argval[argval_nr] = GDKstrdup(text_base + text[prop[vnode+1]]);
+                    argval[argval_nr] = GDKstrdup(text_base + 
+                                                  text[prop[vnode+1]]);
                 } else {
                     nid = vnode + 1;
                     while (kind[nid] != ELEMENT &&
@@ -574,7 +586,8 @@ static int handle_soap_request(struct shttpd_callback_arg *arg) {
                 "HTTP/1.1 200 OK\r\n"
                 "Content-Type: application/soap+xml; charset=\"utf-8\"\r\n\r\n"
                 "<?xml version='1.0' ?>\n"
-                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\">\n"
+                "<env:Envelope"
+                "    xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\">\n"
                 "<env:Header />\n"
                 "<env:Body>\n"
                 "<SoapRpcResults module=\"%s\" method=\"%s\">\n",
@@ -586,12 +599,6 @@ static int handle_soap_request(struct shttpd_callback_arg *arg) {
         argc %= 1000;
 
         if (err) {
-            /*
-            char *escaped_err;
-            escape_str(&escaped_err, err);
-            send_soap_err(out, 0, "", "env:Sender", "ss", escaped_err, "\n");
-            GDKfree(escaped_err);
-            */
             send_soap_err(out, 0, "", "env:Sender", "sssss",
                     module, ":", method, ": ", err);
             goto FINISH;
@@ -688,7 +695,8 @@ int CMDhttp_post(BAT **res,
 
     b->pos = snprintf(b->buf, b->len,
             "<?xml version='1.0' ?>\n"
-            "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\">\n"
+            "<env:Envelope\n"
+            "    xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\">\n"
             "<env:Header />\n"
             "<env:Body>\n"
             "<SoapRpcRequest\n"
@@ -703,7 +711,8 @@ int CMDhttp_post(BAT **res,
 
     argcnt = GDKmalloc(iterc * sizeof(int *));
     for (i = 0; i < iterc; i++) {
-        argcnt[i] = GDKmalloc(argc * sizeof(int)); /* FIXME: validate malloc result */
+        /* FIXME: validate malloc result */
+        argcnt[i] = GDKmalloc(argc * sizeof(int));
         for (a = 0; a < argc; a++) {
             argcnt[i][a] = 0;
         }
@@ -712,10 +721,8 @@ int CMDhttp_post(BAT **res,
     argtpe = GDKmalloc(argval_size * sizeof(char *));
     argval = GDKmalloc(argval_size * sizeof(char *));
 
-    /* Fill the arrays 'argcnt', 'argval', 'argtpe' with the values
-     * according to the BATs 'fun_vid', 'fun_iter', 'fun_item',
-     * 'fun_kind'.
-     */
+    /* Fill the arrays 'argcnt', 'argval', 'argtpe' with the values according to
+     * the BATs 'fun_vid', 'fun_iter', 'fun_item', 'fun_kind'. */
     i = a = 0; /* i: iter counter; a: arg counter */
     iter_base = *(int*) BUNtail(fun_iter, BUNfirst(fun_iter));
     argc_base = *(int*) BUNtail(fun_vid, BUNfirst(fun_vid));
@@ -752,80 +759,71 @@ int CMDhttp_post(BAT **res,
             b->buf = realloc(b->buf, b->len);
         }
 
-        b->pos += snprintf(
-                (b->buf + b->pos),
-                (b->len - b->pos),
-                "<iter>\n");
+        b->pos += snprintf( (b->buf + b->pos), (b->len - b->pos), "<iter>\n");
 
         for (my_argc = 0; my_argc < argc; my_argc++) {
-            b->pos += snprintf(
-                    (b->buf + b->pos),
-                    (b->len - b->pos),
-                    "<param>\n");
+            b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
+                                "<param>\n");
 
             arg_offset = 0;
+            /* add the 'argcnt' of all arg-s before 'me': */
             for (a = 0; a < my_argc; a++) {
                 for (i = 0; i < iterc; i++) {
-                    /* add the 'argcnt' of all arg-s before 'me' */
                     arg_offset += argcnt[i][a];
                 }
             }
+            /* add the 'argcnt' of iter-s before 'me': */
             for (i = 0; i < my_iter; i++) {
-                /* add the 'argcnt' of iter-s before 'me' */
                 arg_offset += argcnt[i][my_argc];
             }
             /* now 'arg_offset' contains the index of the values and the
              * types of MY iter and My argc in argval and argtpe */
 
             for (itemc = 0; itemc < argcnt[my_iter][my_argc]; itemc++) {
-                a = arg_offset + itemc; /* index into the fun_item|fun_kind BATs */
+                a = arg_offset + itemc; /* index into fun_item|fun_kind */
                 type = *(int*)BUNtail(fun_kind, BUNptr(fun_kind, a));
                 if (type > WS_SIZE) {
-                    b->pos += snprintf(
-                            (b->buf + b->pos),
-                            (b->len - b->pos),
-                            "<val type=\"xs:anyNode\">\n");
+                    b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
+                                        "<val type=\"xs:anyNode\">\n");
 
-                    node_item = BUNins( BATnew(TYPE_void, TYPE_oid, 1),
-                            BUNhead(fun_item, BUNptr(fun_item, a)),
-                            BUNtail(fun_item, BUNptr(fun_item, a)) );
-                    node_kind = BUNins( BATnew(TYPE_void, TYPE_int, 1),
-                            BUNhead(fun_kind, BUNptr(fun_kind, a)),
-                            BUNtail(fun_kind, BUNptr(fun_kind, a)) );
+                    node_item = BUNins(BATnew(TYPE_void, TYPE_oid, 1),
+                                       BUNhead(fun_item, BUNptr(fun_item, a)),
+                                       BUNtail(fun_item, BUNptr(fun_item, a)) );
+                    node_kind = BUNins(BATnew(TYPE_void, TYPE_int, 1),
+                                       BUNhead(fun_kind, BUNptr(fun_kind, a)),
+                                       BUNtail(fun_kind, BUNptr(fun_kind, a)) );
 
                     if (!(bs = buffer_wastream(b, 
                                     "shred_node_param"))) {
-                        GDKerror("CMDhttp_post: "
-                                 "failed to create buffer_wastream "
-                                 "to shred node parameter\n");
+                        GDKerror("CMDhttp_post: failed to create "
+                                "buffer_wastream to shred node parameter\n");
                         goto FAIL;
                     }
+
                     THRsetdata(0, bs);
                     xquery_print_result_main("xml-noheader-noroot", ws,
-                            node_item, node_kind,
-                            int_values, dbl_values,
+                            node_item, node_kind, int_values, dbl_values,
                             dec_values, str_values);
                     THRsetdata(0, bak);
+
+                    b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
+                                        "</val>\n");
                 } else if (type == BOOL) {
-                    b->pos += snprintf(
-                            (b->buf + b->pos), (b->len - b->pos),
+                    b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
                             "<val type=\"xs:bool\">");
-                    i = *(int*)BUNtail(fun_item, BUNptr(fun_item, a));
-                    /* i = *(int*)BUNtail(int_values, BUNptr(int_values, i)); */
                     len = b->len - b->pos;
                     strptr = b->buf + b->pos;
-                    b->pos += BATatoms[TYPE_int].atomToStr(
-                            &strptr, &len, BUNptr(int_values, i));
+                    i = *(int*)BUNtail(fun_item, BUNptr(fun_item, a));
+                    b->pos += BATatoms[TYPE_bit].atomToStr(&strptr, &len,
+                                        BUNptr(int_values, i));
                 } else if (type == INT) {
-                    b->pos += snprintf(
-                            (b->buf + b->pos), (b->len - b->pos),
+                    b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
                             "<val type=\"xs:integer\">");
-                    i = *(int*)BUNtail(fun_item, BUNptr(fun_item, a));
-                    /* i = *(int*)BUNtail(int_values, BUNptr(int_values, i)); */
                     len = b->len - b->pos;
                     strptr = b->buf + b->pos;
-                    b->pos += BATatoms[TYPE_int].atomToStr(
-                            &strptr, &len, BUNptr(int_values, i));
+                    i = *(int*)BUNtail(fun_item, BUNptr(fun_item, a));
+                    b->pos += BATatoms[TYPE_int].atomToStr(&strptr, &len,
+                                        BUNptr(int_values, i));
                 } else if (type == DEC || type == DBL) {
                     if (type == DEC){
                         b->pos += snprintf(
@@ -836,12 +834,12 @@ int CMDhttp_post(BAT **res,
                                 (b->buf + b->pos), (b->len - b->pos),
                                 "<val type=\"xs:double\">");
                     }
-                    i = *(int*)BUNtail(fun_item, BUNptr(fun_item, a));
-                    /* i = *(int*)BUNtail(dbl_values, BUNptr(dbl_values, i)); */
+
                     len = b->len - b->pos;
                     strptr = b->buf + b->pos;
-                    b->pos += BATatoms[TYPE_dbl].atomToStr(
-                            &strptr, &len, BUNptr(dbl_values, i));
+                    i = *(int*)BUNtail(fun_item, BUNptr(fun_item, a));
+                    b->pos += BATatoms[TYPE_dbl].atomToStr(&strptr, &len,
+                            BUNptr(dbl_values, i));
                 } else if (type == STR || type == U_A) {
                     i = *(int*)BUNtail(fun_item, BUNptr(fun_item, a));
                     str_base = (char *)str_values->theap->base;
