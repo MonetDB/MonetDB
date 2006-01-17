@@ -181,7 +181,7 @@ function start_mserver()
 		CONFIG="--config=$DBFARM/$1/.monetdb.conf"
 		# make sure you can find strange errors
 		echo "START" `date +"%F %T"` >>$DBFARM/$DBNAME/mserver5.log
-		$MONET5_PREFIX/bin/mserver5 --set daemon=yes --set monet_welcome=no --dbname=$1 $CONFIG $ARGS $STARTUP >> $DBFARM/$DBNAME/mserver5.log &
+		$MONET5_PREFIX/bin/mserver5 --set daemon=yes --set monet_welcome=no --dbname=$1 $CONFIG $ARGS $STARTUP 2>&1 >> $DBFARM/$DBNAME/mserver5.log &
 		pid="$!"
 		if [ -z "$pid" ]
 		then
@@ -223,12 +223,18 @@ function stop_mserver()
 		# disable the guardian first
 		echo "STOP " `date +"%F %T"` >>$DBFARM/$DBNAME/mserver5.log
 		$MONET5_PREFIX/bin/mguardian --stop $1
-		wait $!
 		kill -TERM $pid
 		echo `date +"%F %T"` " STOP  $1" >>monetdb.log
 		if [ "`ps -p $pid -o comm=`" == "mserver5" ];
 		then
-			echo "FAILED"
+			# give it some time to wrap up
+			sleep 5
+			if [ "`ps -p $pid -o comm=`" == "mserver5" ];
+			then
+				echo "FAILED"
+			else
+				echo "ok"
+			fi
 		else
 			echo "ok"
 		fi
@@ -256,6 +262,11 @@ function show_status()
 			if [ -f $1/.mguardian.pid ]
 			then
 				guard=`cat $1/.mguardian.pid`
+				active=`ps --no-heading --format pid -p $guard`
+				if [ -z "$active" ]
+				then
+					guard="killed"
+				fi
 			else
 				guard=missing
 			fi
