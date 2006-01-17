@@ -124,7 +124,7 @@ final public class MonetDriver implements Driver {
 		if (!acceptsURL(url)) return(null);
 
 		String warnings = "";
-		do {
+		for (int tries = 0; tries < 10; tries++) {
 			// remove leading "jdbc:" so the rest is a valid hierarchical URI
 			URI uri;
 			try {
@@ -181,7 +181,8 @@ final public class MonetDriver implements Driver {
 			} catch (IllegalArgumentException e) {
 				throw new SQLException(e.getMessage());
 			}
-		} while (true);
+		}
+		throw new SQLException("Too many redirects");
 	}
 
 	/**
