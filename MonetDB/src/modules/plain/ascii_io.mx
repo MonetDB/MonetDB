@@ -205,14 +205,14 @@ proc dump_data( BAT[str,BAT] fmt, BAT[str,BAT] bats, str data, int cnt) : void {
 proc import( BAT[any,any] b, str filename ) : BAT[any,any] {
 
 	var names := new(void,str).seqbase(0@0);
-	names.insert(oid(nil),"head");
-	names.insert(oid(nil),"tail");
+	names.append("head");
+	names.append("tail");
 	var seps := new(void,str).seqbase(0@0);
-	seps.insert(oid(nil),",");
-	seps.insert(oid(nil),"\n");
+	seps.append(",");
+	seps.append("\n");
 	var types := new(void,str).seqbase(0@0);
-	types.insert(oid(nil),b.reverse().bat_ttype());
-	types.insert(oid(nil),b.bat_ttype());
+	types.append(b.reverse().bat_ttype());
+	types.append(b.bat_ttype());
 
 	var bats := load( names, seps, types, filename, -1);
 	b.insert (bats.find("head").reverse().join(bats.find("tail")));
@@ -224,14 +224,14 @@ proc export( BAT[any,any] b, str filename ) : void {
 	var tb := b.reverse().mark(0@0).reverse();
 
 	var names := new(void,str).seqbase(0@0);
-	names.insert(oid(nil),"head");
-	names.insert(oid(nil),"tail");
+	names.append("head");
+	names.append("tail");
 	var seps := new(void,str).seqbase(0@0);
-	seps.insert(oid(nil),",");
-	seps.insert(oid(nil),"\n");
+	seps.append(",");
+	seps.append("\n");
 	var bats := new(void,bat).seqbase(0@0);
-	bats.insert(oid(nil), hb);
-	bats.insert(oid(nil), tb);
+	bats.append(hb);
+	bats.append(tb);
 
 	dump( names, seps, bats, filename, b.count());
 }
@@ -621,8 +621,8 @@ insert_val(ascii_io *fmt, char *s, char *e, char quote)
 	char *end = e;
 	char bak = *e;
 	ptr *adt;
-	oid on = oid_nil;	/* can't use &oid_nil because of the
-				   way it's defined */
+	oid on = fmt->c->hseqbase + BATcount(fmt->c);
+
 	if (quote) {
 		/* string needs the quotes included */
 		s = find_quote(s, quote);

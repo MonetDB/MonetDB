@@ -1819,7 +1819,8 @@ CMD@1(BAT **result, BAT* b, int *param)
 int
 CMDtunique(BAT **result, BAT* b)
 {
-	BAT *v = BATmark(BATmirror(b),oid_nil);
+	oid id = oid_nil;
+	BAT *v = BATconst(BATmirror(b), TYPE_oid, &id);
 	*result = BATkunique(v);
 	BBPreclaim(v);
 	return *result?GDK_SUCCEED:GDK_FAIL;

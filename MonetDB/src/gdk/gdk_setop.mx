@@ -675,7 +675,7 @@ double elimination.
 BAT *
 BATmaterialize_(BAT *b, size_t size)
 {
-	BAT *bn = BATnew(TYPE_oid, ATOMtype(b->ttype), size);
+	BAT *bn = BATnew(TYPE_oid, b->ttype, size);
 	BUN p, q;
 	int xx;
 	oid base;
@@ -727,9 +727,9 @@ BAT@1union(BAT *l, BAT *r)
 	if (BATcount(r) == 0) {
 		return BATrcopy(l);
 	}
-	if (l->htype == TYPE_void) {
+	if (l->htype == TYPE_void && l->hseqbase != oid_nil) {
 		bn = BATmaterialize_(l, BATcount(l)+BATcount(r));
-	} else if (l->ttype == TYPE_void) {
+	} else if (l->ttype == TYPE_void && l->tseqbase != oid_nil) {
 		bn = BATmirror(BATmaterialize_(BATmirror(l),
 					       BATcount(l)+BATcount(r)));
 	} else {

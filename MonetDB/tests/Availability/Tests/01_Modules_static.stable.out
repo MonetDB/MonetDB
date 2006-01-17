@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 750 ]
+[ 751 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 750 ]
+[ 751 ]
 
 var All:=0;
 
@@ -582,8 +582,8 @@ Module: "arith"
 
 Module: "bat"
 
-[ 72 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 71 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																																																																					  # name
 # str		str		str													str																																					  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -593,9 +593,8 @@ Module: "bat"
 [ "accbuild",	  "COMMAND:   ",  "accbuild(BAT[any,any], str) : void",									  "Build an accelerator on the head column of b. The builtin accelerator\n types index and hash will be created as transient accelerators. They\n will not be saved on disk. User-defined accelerators must always be\n persistent."									  ]
 [ "access",	  "COMMAND:   ",  "access(BAT[any::1,any::2]) : int",							  "Return the update access privilige of a BAT."																																																							  ]
 [ "access",	  "COMMAND:   ",  "access(BAT[any::1,any::2], int) : BAT[any::1,any::2]",					  "Try to change the update access priviliges to this BAT. Mode:\n BAT_READ   - allow only read access.\n BAT_APPEND - allow reads and insertions of new elements.\n BAT_WRITE  - allow reads, insertions, and updates.\n BATs are updateable by default. On making a BAT readonly, all\n subsequent updates fail with an error message.\n Returns the BAT itself."  ]
-[ "append",	  "COMMAND:   ",  "append(BAT[oid,any::1], BAT[oid,any::1]) : BAT[oid,any::1]",						  "append the content of u to i (renumbers u-oids' to unique numbers)"																													  ]
+[ "append",	  "COMMAND:   ",  "append(BAT[oid,any::1], BAT[oid,any::1]) : BAT[oid,any::1]",					  "append the content of u to i (renumbers u-oids' to unique numbers, starting at i.max()+1)"																																																																										  ]
 [ "append",	  "COMMAND:   ",  "append(BAT[oid,any::1], any::1) : BAT[oid,any::1]",							  "append the value u to i"																																		  ]
-[ "append",	  "COMMAND:   ",  "append(BAT[oid,void], BAT[oid,void]) : BAT[oid,void]",						  "Special case append for empty bats, works around impossible void,void case"																												  ]
 [ "append",	  "COMMAND:   ",  "append(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]",					  "append the content of u to i"																																	  ]
 [ "append",	  "COMMAND:   ",  "append(BAT[void,any::1], BAT[void,any::1]) : BAT[void,any::1]",					  "append the content of u to i"																																	  ]
 [ "append",	  "COMMAND:   ",  "append(BAT[void,any::1], any::1) : BAT[void,any::1]",						  "append the value u to i"																																		  ]
@@ -895,7 +894,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 750 ]
+[ 751 ]
 
 quit();
 

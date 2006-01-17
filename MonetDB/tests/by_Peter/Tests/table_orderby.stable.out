@@ -56,7 +56,7 @@ print("2",c,d);
 [ 4@0,	  "the",  10004@0	  ]
 [ 5@0,	  "mat",  10005@0	  ]
 
-var e := [oid](d).access(BAT_WRITE).seqbase(nil).insert([oid]([*]([int](d),2)));
+var e := [oid](d).access(BAT_WRITE).append([oid]([*]([int](d),2)));
 e := e.insert(e.copy()).reverse().sort().mark(0@0).reverse();
 var f := a.copy().access(BAT_WRITE).insert(a).insert(a).insert(a).seqbase(0@0);
 var g := [>]([int](f.mirror()),12);

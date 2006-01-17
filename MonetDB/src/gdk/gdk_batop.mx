@@ -211,6 +211,170 @@ BATins(BAT *b, BAT *n)
 	return res;
 }
 
+BAT*
+BATappend(BAT *b, BAT *n)
+{
+	ssize_t sz = BATcount(n);
+	ssize_t needed = 0;
+	int fastpath = 0;
+
+	if (b == NULL || n == NULL || sz == 0) {
+		return b;
+	}
+	ALIGNins(b, "BATins");
+	BATcompatible(b, n);
+
+	if (b->thash == NULL && b->batSet == 0 && (b->tkey & BOUND2BTRUE) == 0 && (b->hhash == NULL || ATOMstorage(b->htype) == TYPE_int)) 
+		fastpath = 1;
+
+	needed = sz - (((b)->batBuns->size - (b)->batBuns->free) / BUNsize(b));
+	if (needed > 0) {
+		/* if needed exceeds a normal growth extend just with needed */
+		size_t ncap = BATcapacity(b) + needed;
+		size_t grows = BATgrows(b);
+
+		if (ncap > grows)
+			grows = ncap;
+		if (BATextend(b, grows) == NULL)
+			fastpath = 0;
+	}
+
+	/* append two void,void bats */
+	if (b->ttype == TYPE_void && BATtdense(b)) { 
+		oid f = n->tseqbase;
+
+		if (b->ttype != TYPE_void)
+			f = *(oid*)BUNtloc(n, BUNfirst(n)); 
+
+		if (BATtdense(n) && BATcount(b) + b->tseqbase == f) {
+			if (b->htype != TYPE_void) {
+				BUN r = BUNlast(b);
+				int yy;
+				oid m;
+
+				f = MAXoid(b);
+				f++;
+				m = f + sz;
+				for(; f<m; f++, r+= yy) {
+					bunfastins_nocheck(b, r, f, NULL, yy);
+				}
+			} else {
+				BATsetcount(b, BATcount(b)+sz);
+			}
+			return b;
+		}
+		/* we need to materialize the tail */ 
+		BATmaterializet(b, BATcount(b)+sz);
+	}
+
+	/* a hash is useless for void bats */	
+	if (b->hhash) 
+		HASHremove(b);
+
+	if (b->thash && 2 * b->thash->mask < BATcount(b)+sz) {
+		HASHremove(BATmirror(b));
+	}
+	if (fastpath) {
+		BUN p, q, r = BUNlast(b);
+		int xx, yy = BUNsize(b);
+
+		if (BATcount(b) == 0) {
+			BAT *bm = BATmirror(b);
+
+			ALIGNsetH(bm, BATmirror(n));
+		} else if (sz) {
+			BUN last = BUNlast(b) - BUNsize(b);
+			size_t idx = BUNindex(b, BUNlast(b));
+
+			xx = ATOMcmp(b->ttype, BUNtail(n, BUNfirst(n)), BUNtail(b, last));
+			if ((BATtordered(b) & 1) && ((BATtordered(n) & 1) == 0 || xx < 0)) {
+				b->tsorted = FALSE;
+				b->T->nosorted = idx;
+				if (b->tdense & 1) {
+					b->tdense = FALSE;
+					b->T->nodense = idx;
+				}
+			}
+			if ((BATtordered(b) == (bit)GDK_SORTED_REV) && ((BATtordered(n) != (bit)GDK_SORTED_REV) || xx > 0)) {
+				b->tsorted = FALSE;
+				b->T->nosorted_rev = idx;
+			}
+			if ((BATtordered(b) & 1) == 0 || n->tkey == 0 || xx == 0) {	/* StM: GDK_SORTED_REV ? */
+				if (b->tkey)
+					BATkey(BATmirror(b), FALSE);
+			}
+			if (b->ttype != TYPE_void && (b->tsorted & b->tdense & 1) && (BATtdense(n) == 0 || *(oid *) BUNtloc(b, last) != 1 + *(oid *) BUNtail(n, BUNfirst(n)))) {
+				b->tdense = FALSE;
+				b->T->nodense = idx;
+			}
+		}
+		if (b->htype == TYPE_void) {
+			BATloopFast(n, p, q, xx) {
+				bunfastins_nocheck(b, r, NULL, BUNtail(n, p), yy);
+				r += yy;
+			}
+		} else {
+			oid o = MAXoid(b);
+
+			o++;
+			BATloopFast(n, p, q, xx) {
+				bunfastins_nocheck(b, r, &o, BUNtail(n, p), yy);
+				o++;
+				r += yy;
+			}
+		}
+		b->batDirty = 1;
+	} else {
+		BUN p, q;
+		int xx;
+
+		if (b->tkey & BOUND2BTRUE) {
+			BAT *bm = BBP_cache(-b->batCacheid);
+
+			if (b->hseqbase != oid_nil) {
+				oid h = b->hseqbase + BATcount(b);
+
+				BATloopFast(n, p, q, xx) {
+					ptr t = BUNtail(n, p);
+					if (!BUNfnd(bm, t)) { 
+						if (BUNins(b ,&h, t) == NULL) 
+							return NULL;
+						h++;
+					}
+				}
+			} else {
+				oid on = oid_nil;
+	
+				BATloopFast(n, p, q, xx) {
+					ptr t = BUNtail(n, p);
+					if (!BUNfnd(bm, t)) 
+						if (BUNins(b ,&on, t) == NULL) 
+							return NULL;
+				}
+			}
+		} else if (b->hseqbase != oid_nil) {
+			oid h = b->hseqbase + BATcount(b);
+
+			BATloopFast(n, p, q, xx) {
+				if (BUNins(b ,&h, BUNtail(n, p)) == NULL) 
+					return NULL;
+				h++;
+			}
+		} else {
+			oid on = oid_nil;
+
+			BATloopFast(n, p, q, xx) {
+				if (BUNins(b ,&on, BUNtail(n, p)) == NULL) 
+					return NULL;
+			}
+		}
+	}
+	return b;
+bunins_failed:
+	return NULL;
+}
+
+
 BAT *
 BATdel(BAT *b, BAT *n)
 {
@@ -1776,7 +1940,7 @@ BATconst(BAT *b, int tailtype, ptr v)
 	int xx, yy;
 
 	BATcheck(b, "BATconst");
-	if (BATrestricted(b) == BAT_READ && (tailtype == TYPE_void || (tailtype == TYPE_oid && *(oid *) v == oid_nil))) {
+	if (BATrestricted(b) == BAT_READ && tailtype == TYPE_void) {
 		oid seqbase = (tailtype == TYPE_void) ? oid_nil : *(oid *) v;
 
 		bn = VIEWhead(b);
@@ -1785,9 +1949,6 @@ BATconst(BAT *b, int tailtype, ptr v)
 	}
 	if (tailtype == TYPE_bat) {
 		v = &((BAT *) v)->batCacheid;
-	} else if (tailtype == TYPE_void && b->htype == TYPE_void) {
-		tailtype = TYPE_oid;
-		v = ATOMnilptr(TYPE_oid);
 	}
 	bn = BATnew(b->htype, tailtype, BATcount(b));
 	if (bn == NULL) {

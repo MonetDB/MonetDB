@@ -984,10 +984,10 @@ monet_sigerror(str kind, str name, str extra, int argc, ValPtr argv)
 		p += strlen(p);
 		if ((argv[i].vtype == TYPE_bat) && (b = BATdescriptor(argv[i].val.bval))) {
 			*(p++) = '[';
-			strcpy(p, ATOMname(b->htype));
+			strcpy(p, ATOMname((b->hseqbase == oid_nil)?b->htype:ATOMtype(b->htype)));
 			p += strlen(p);
 			*(p++) = ',';
-			strcpy(p, ATOMname(b->ttype));
+			strcpy(p, ATOMname((b->tseqbase == oid_nil)?b->ttype:ATOMtype(b->ttype)));
 			p += strlen(p);
 			*(p++) = ']';
 			BBPunfix(b->batCacheid);

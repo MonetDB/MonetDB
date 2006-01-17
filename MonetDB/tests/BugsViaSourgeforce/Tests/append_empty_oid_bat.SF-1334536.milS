@@ -7,7 +7,7 @@ var foo := bat(oid,oid);
 foo.insert(bar);
 foo.print();
 
-var a := bat(void,oid).seqbase(nil).insert(nil,1@0).insert(nil,2@0).reverse();
+var a := bat(void,oid).insert(nil,1@0).insert(nil,2@0).reverse();
 a.access(BAT_APPEND);
 a.print();
 var b := a.mark(0@0).reverse();
@@ -15,7 +15,7 @@ b := b.access(BAT_READ).mirror();
 b.print();
 a.append(b).print();
 
-var a := bat(void,oid).seqbase(nil).insert(nil,1@0).insert(nil,2@0).reverse();
+var a := bat(void,oid).insert(nil,1@0).insert(nil,2@0).reverse();
 a.access(BAT_APPEND);
 a.print();
 var b := a.mark(0@0).reverse();

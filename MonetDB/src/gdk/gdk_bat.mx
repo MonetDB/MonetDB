@@ -55,6 +55,7 @@ called atomHeap.
 
 gdk_export BAT *batcopy(BAT *b, int ht, int tt, int writeable);
 extern int default_ident( char *s ); 
+extern oid MAXoid(BAT *i);
 
 #endif /* _GDK_BAT_H_ */
 @c
@@ -549,9 +550,6 @@ batcopy(BAT *b, int ht, int tt, int writeable)
 			if (ht && BATtvoid(b))
 				tt = TYPE_void;
 		}
-		if (ht == TYPE_void && tt == TYPE_void) {
-			tt = TYPE_oid;
-		}
 		bn = BATnew(ht, tt, BATcount(b));
 		if (bn == NULL)
 			return NULL;
@@ -695,14 +693,18 @@ Null values should have been obtained at a higher level.
 This code assumes that new elements are appended to the BUN list.
 @c
 @= void_insertbun
-	if ((@1) && b->@1type == TYPE_void && *(oid*) @1 != oid_nil && b->@1seqbase != oid_nil) {
-		if (BATcount(b) == 0) {
-			b->@1seqbase = *(oid*) @1;
-			bm->@2seqbase = *(oid*) @1;
-		} else if (*(oid*) @1 != (b->@1seqbase + BUNgetpos(b, BUNlast(b)))) {
+	if ((@1) && b->@1type == TYPE_void && b->@1seqbase != oid_nil) {
+		if (*(oid*) @1 != oid_nil) {
+			if (BATcount(b) == 0) {
+				b->@1seqbase = *(oid*) @1;
+				bm->@2seqbase = *(oid*) @1;
+			} else if (*(oid*) @1 != (b->@1seqbase + BUNgetpos(b, BUNlast(b)))) {
+		 		b = BATmaterialize@1(b, (size_t) ((double)BATcount(b)*1.2));
+				if (b == NULL)
+					return b;
+			}
+		} else { 
 		 	b = BATmaterialize@1(b, (size_t) ((double)BATcount(b)*1.2));
-			if (b == NULL)
-				return b;
 		}
 	}
 @c
@@ -849,6 +851,163 @@ BUNins(BAT *b, ptr h, ptr t)
       bunins_failed:
 	return NULL;
 }
+
+oid 
+MAXoid(BAT *i)
+{
+        oid o = i->hseqbase-1;
+
+        if (BATcount(i))
+                o = *(oid *) BUNhead(i, BUNlast(i) - BUNsize(i));
+        if (!BAThordered(i)) {
+                BUN r, s;
+                int d;
+
+                BATloopFast(i, r, s, d) {
+                        oid v = *(oid *) BUNhead(i, r);
+
+                        if (v > o)
+                                o = v;
+                }
+        }
+        return o;
+}
+
+@+ BUNappend
+The BUNappend function can be used to add a single value to void and oid  
+headed bats. The new head value will be a unique number, (max(bat)+1). 
+@c
+BAT *
+BUNappend(BAT *b, ptr t)
+{
+	size_t i;
+	BUN p;
+	BAT *bm;
+	ptr h = NULL;
+	oid id = 0;
+
+	BATcheck(b, "BUNappend");
+	bm = BBP_cache(-b->batCacheid);
+
+	if (b->htype != TYPE_void && b->htype != TYPE_oid) {
+		GDKerror("BATappend: can only append to void and oid bats\n");
+		return NULL;
+	}
+
+	ALIGNins(b, "BUNins");
+	b->batDirty = 1;
+	p = BUNlast(b);	/* insert at end */
+	i = BUNindex(b, p);
+	if ((b->tkey & BOUND2BTRUE) && BUNfnd(bm, t)) {
+		return b;
+	}
+	if (p > b->batFirst) {
+		unsigned int bunsize = BUNsize(b);
+		if (b->htype == TYPE_oid) {
+			h = &id;
+			id = MAXoid(b)+1;
+		}
+		if (b->ttype != TYPE_void) {
+			int cmp = 0;
+
+			if (b->tsorted & 1) {
+				ptr prv = BUNtail(b, p - bunsize);
+
+				cmp = atom_CMP(t, prv, b->ttype);
+				if (cmp < 0) {
+					b->T->nosorted = i;
+					b->tsorted = FALSE;
+				} else if (cmp && b->tdense && *(oid *) t != 1 + *(oid *) prv) {
+					b->T->nodense = i;
+					b->tdense = FALSE;
+				}
+				/* as nil < any, we only need to 
+				 * check on second BUNins if the 
+				 * first was nil */
+				if (i == 2 && cmp > 0) {	/* StM: i==1 ? */
+					int tt = b->ttype;
+					cmp = atom_CMP(prv, ATOMnilptr(tt), tt);
+					if (cmp == 0) {
+						b->T->nosorted = 1;
+						b->tsorted = FALSE;
+					}
+				}
+			} else if (b->tsorted == (bit)GDK_SORTED_REV) {
+				ptr prv = BUNtail(b, p - bunsize);
+
+				cmp = atom_CMP(t, prv, b->ttype);
+				if (cmp > 0) {
+					b->T->nosorted_rev = i;
+					b->tsorted = FALSE;
+				}
+			}
+			if (b->tkey == TRUE && cmp <= 0) {
+				b->T->nokey[0] = i - 1;
+				b->T->nokey[1] = i;
+				b->tkey = bm->hkey = b->tdense = FALSE;
+			}
+		} else if (b->tseqbase != oid_nil){ /* virtual ids */ 
+			if (b->tseqbase + BATcount(b) != *(oid*)t) {
+				int i = BATcount(b);
+
+				b = BATmaterializet(b, BATcount(b)+1);
+				b->T->nodense = i;
+				b->tdense = FALSE;
+				if (b->tsorted & 1) {
+					if (b->tseqbase + i > *(oid*)t || *(oid*)t == oid_nil) {
+						b->T->nosorted = 1;
+						b->tsorted = FALSE;
+
+						b->T->nokey[0] = i - 1;
+						b->T->nokey[1] = i;
+						b->tkey = bm->hkey = b->tdense = FALSE;
+					}
+				} else if (b->tsorted == (bit)GDK_SORTED_REV){
+					if (b->tseqbase + i < *(oid*)t) {
+						b->T->nosorted = 1;
+						b->tsorted = FALSE;
+
+						b->T->nokey[0] = i - 1;
+						b->T->nokey[1] = i;
+						b->tkey = bm->hkey = b->tdense = FALSE;
+					}
+				}
+			}
+		}
+	} else {
+		b->hkey = bm->tkey |= TRUE;
+		if (b->htype == TYPE_oid) { /* empty oid column */
+			h = &id;
+			id = 0;
+			b->hdense = TRUE;
+			b->hseqbase = bm->tseqbase = *(oid *) h;
+		}
+		if (b->ttype == TYPE_oid) {
+			b->tkey = bm->hkey |= b->tdense = TRUE;
+			b->tseqbase = bm->hseqbase = *(oid *) t;
+		} else if (b->ttype == TYPE_void && b->tseqbase != oid_nil) {
+			if (*(oid*)t == oid_nil)
+				BATmaterializet(b, BATcount(b)+1);
+			else 
+				b->tseqbase = bm->hseqbase = *(oid*)t;  
+		}
+	}
+	bunfastins(b, h, t);
+
+	/* first adapt the hashes; then the user-defined accelerators.
+	 * REASON: some accelerator updates (qsignature) use the hashes! 
+	 */
+	if (b->hhash && h) {
+		HASHins(b->hhash, (hash_t) i, h);
+	}
+	if (b->thash) {
+		HASHins(b->thash, (hash_t) i, t);
+	}
+	return b;
+      bunins_failed:
+	return NULL;
+}
+
 
 @- BUN Delete
 Deletes should maintain the BAT as a contiguous array. This

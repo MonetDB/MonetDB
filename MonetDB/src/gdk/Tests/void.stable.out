@@ -383,10 +383,11 @@ x.seqbase(0@0);
 x.append(12@0);
 !ERROR: interpret: no matching MIL operator to 'append(BAT[oid,void], oid)'.
 !MAYBE YOU MEAN:
+!	append(BAT[void,any::1], any::1) : BAT[void,any::1]
+!	append(BAT[oid,any::1], any::1) : BAT[oid,any::1]
 !	append(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]
 !	append(BAT[void,any::1], BAT[void,any::1]) : BAT[void,any::1]
 !	append(BAT[oid,any::1], BAT[oid,any::1]) : BAT[oid,any::1]
-!	append(BAT[oid,any::1], any::1) : BAT[oid,any::1]
 x.append(nil);
 x.print();
 #-----------------#

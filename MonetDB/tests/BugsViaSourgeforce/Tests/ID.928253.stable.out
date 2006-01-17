@@ -97,7 +97,7 @@ z.print();
 [ 2,	  2@0	  ]
 [ 3,	  3@0	  ]
 [ 3,	  4@0	  ]
-[ 2,	  5@0	  ]
+[ 2,	  nil	  ]
 {min}(z).print();
 #setaggr impl: int-optimized loop
 #-----------------#
@@ -105,7 +105,7 @@ z.print();
 # int	oid	  # type
 #-----------------#
 [ 1,	  0@0	  ]
-[ 2,	  2@0	  ]
+[ 2,	  nil	  ]
 [ 3,	  3@0	  ]
 quit();
 

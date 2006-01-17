@@ -17,13 +17,13 @@ b.print();
 # void	str	  # type
 #-----------------#
 [ nil,	  "zero"  ]
-printf("oid(0) -> %s\n",str(b.find(oid(0))));
+printf("void(0) -> %s\n",str(b.find(void(0))));
 !ERROR: CMDfind: value not found.
 !ERROR: CMDfind: operation failed.
 !ERROR: interpret_params: str(param 1): evaluation error.
 !ERROR: interpret_params: printf(param 2): evaluation error.
-printf("oid(nil) -> %s\n",str(b.find(oid(nil))));
-oid(nil) -> zero
+printf("void(nil) -> %s\n",str(b.find(void(nil))));
+void(nil) -> zero
 b.seqbase(0@0);
 b.append("zero");
 b.print();

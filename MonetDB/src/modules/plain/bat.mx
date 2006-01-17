@@ -122,21 +122,19 @@ can be found in this module.
  Returns the modified BAT."
 
 @+ void bats
-To prevent void bats to convert to oid bats we need overloaded insert and
-replace commands. These operations should at a later stage be moved to the
-kernel libraries, e.g. bat.mx
+The append set of commands lets you append values (or bats) with unique 
+head values which start at the maximum head value before inserting plus one.
+The appended bats tail can not be set key-ed. 
 @m
-	.COMMAND append( BAT[oid,any::1] i, any::1 u ) : BAT[oid,any::1] = oid_bat_append_val_wrap; "append the value u to i"
+	.COMMAND append( BAT[oid,any::1] i, BAT[oid,any::1] u ) : BAT[oid,any::1] = BATappend_wrap; "append the content of u to i (renumbers u-oids' to unique numbers, starting at i.max()+1)"
 
-	.COMMAND append( BAT[oid,any::1] i, BAT[oid,any::1] u ) : BAT[oid,any::1] = oid_bat_append_oid_bat_wrap; "append the content of u to i (renumbers u-oids' to unique numbers)"
+	.COMMAND append( BAT[void,any::1] i, BAT[void,any::1] u ) : BAT[void,any::1] = BATappend_wrap; "append the content of u to i"
 
-	.COMMAND append( BAT[void,any::1] i, any::1 u ) : BAT[void,any::1] = bat_append_val_wrap; "append the value u to i"
+	.COMMAND append( BAT[void,any::1] i, BAT[oid,any::1] u ) : BAT[void,any::1] = BATappend_wrap; "append the content of u to i"
 
-	.COMMAND append( BAT[void,any::1] i, BAT[void,any::1] u ) : BAT[void,any::1] = bat_append_void_bat_wrap; "append the content of u to i"
+	.COMMAND append( BAT[oid,any::1] i, any::1 u ) : BAT[oid,any::1] = BUNappend_wrap; "append the value u to i"
 
-	.COMMAND append( BAT[void,any::1] i, BAT[oid,any::1] u ) : BAT[void,any::1] = bat_append_oid_bat_wrap; "append the content of u to i"
-
-	.COMMAND append( BAT[oid,void] i, BAT[oid,void] u ) : BAT[oid,void] = bat_append_oidvoid_bat_wrap; "Special case append for empty bats, works around impossible void,void case"
+	.COMMAND append( BAT[void,any::1] i, any::1 u ) : BAT[void,any::1] = BUNappend_wrap; "append the value u to i"
 
 	.COMMAND inplace( BAT[void,any::1] o, oid id, any::1 val ) : BAT[void,any::1] = bat_inplace; "inplace replace values on the given locations"
 
@@ -563,8 +561,6 @@ these 'sync' OIDs with their own propagation rules.
 #include "monet.h"
 #include "bat.proto.h"
 
-bat_export size_t void_append_bat(BAT *b, BAT *u);
-bat_export size_t void_insert_bat(BAT *b, BAT *u);
 bat_export ssize_t void_replace_bat(BAT *b, BAT *u);
 bat_export int void_inplace(BAT *b, oid id, ptr val);
 
@@ -739,37 +735,6 @@ CMDdelete_bat_head(BAT **r, BAT *b, BAT *s)
 }
 
 
-@-
-The next collection of operators fill a hole in the MonetDB kernel libraries.
-It provide handy operations on void-BATs.
-@c
-size_t
-void_append_bat(BAT *b, BAT *u)
-{
-	size_t sz = BUNsize(u);
-	size_t old = u->hseqbase;
-	size_t sbase = b->hseqbase + BATcount(b);
-
-	BATseqbase(u, sbase);
-	BATins(b, u);
-	BATseqbase(u, old);
-	return sz;
-}
-
-size_t
-void_insert_bat(BAT *b, BAT *u)
-{
-	size_t nr = 0;
-	BUN r, s;
-	oid nil = oid_nil;
-
-	BATloop(u, r, s) {
-		BUNins(b, (ptr) &nil, BUNtail(u, r));
-		nr++;
-	}
-	return nr;
-}
-
 int
 void_inplace(BAT *b, oid id, ptr val)
 {
@@ -820,102 +785,25 @@ void_replace_bat(BAT *b, BAT *u)
 }
 
 int
-bat_append_void_bat_wrap(BAT **res, BAT *i, BAT *u)
+BATappend_wrap(BAT **res, BAT *i, BAT *u)
 {
-	*res = i;
-	void_append_bat(i, u);
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-bat_append_oid_bat_wrap(BAT **res, BAT *i, BAT *u)
-{
-	*res = i;
-	void_insert_bat(i, u);
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-bat_append_oidvoid_bat_wrap(BAT **res, BAT *i, BAT *u)
-{
-	/*(void)u; fake usage to fool compilers in case assertions are disabled
-	   assert (!BATcount(i));
-	 */
-	*res = i;
-	void_insert_bat(i, u);
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
-}
-
-static oid
-oid_max(BAT *i)
-{
-	oid o = i->hseqbase-1;
-
-	if (BATcount(i))
-		o = *(oid *) BUNhead(i, BUNlast(i) - BUNsize(i));
-	if (!BAThordered(i)) {
-		BUN r, s;
-		int d;
-
-		BATloopFast(i, r, s, d) {
-			oid v = *(oid *) BUNhead(i, r);
-
-			if (v > o)
-				o = v;
-		}
-	}
-	return o;
-}
-
-int
-oid_bat_append_oid_bat_wrap(BAT **res, BAT *i, BAT *u)
-{
-	BUN r, s;
-	oid o;
-
-	assert(i->htype == TYPE_oid && (BATcount(u) == 0 || u->htype == TYPE_oid || u->htype == TYPE_void));
-
-	o = oid_max(i);
-	o++;
-	BATloop(u, r, s) {
-		oid h = *(oid *) BUNhead(u, r) + o;
-
-		BUNins(i, &h, BUNtail(u, r));
-	}
+	if (!BATappend(i, u))
+		return GDK_FAIL;
 	*res = i;
 	BBPfix(i->batCacheid);
 	return GDK_SUCCEED;
 }
 
 int
-oid_bat_append_val_wrap(BAT **res, BAT *i, ptr t)
+BUNappend_wrap(BAT **res, BAT *i, ptr t)
 {
-	oid o;
-
-	assert(i->htype == TYPE_oid);
-	o = oid_max(i);
-	o++;
-	*res = i;
-	BUNins(i, (ptr) &o, @:batconvert(i,t)@
+	*res = BUNappend(i, @:batconvert(i,t)@
 	    );
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
-}
-
-
-int
-bat_append_val_wrap(BAT **res, BAT *i, ptr t)
-{
-	oid h = i->hseqbase + BATcount(i);
-
-	*res = i;
-	BUNins(i, (ptr) &h, @:batconvert(i,t)@
-	    );
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
+	if (*res) {
+		BBPfix((*res)->batCacheid);
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
 
 int

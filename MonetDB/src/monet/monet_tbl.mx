@@ -797,7 +797,9 @@ typedef struct {
 	ValPtr argv;		/* array with actual params */
 	str tps[1 + MAXPARAMS];	/* string type names of actual params */
 	str htps[1 + MAXPARAMS];	/* (if tps[i]==bat) string head type name */
+	str htpsl[1 + MAXPARAMS];	/* (if tps[i]==bat) string head logical type name */
 	str ttps[1 + MAXPARAMS];	/* (if tps[i]==bat) string tail type name */
+	str ttpsl[1 + MAXPARAMS];	/* (if tps[i]==bat) string tail logical type name */
 
 	/* any resolution handling */
 	int anynums;		/* number of instantiated any vars */
@@ -827,6 +829,7 @@ TBL_checkparams_init(paramcheck_t *pt, int argc, ValPtr argv, BAT *atomtbl)
 		if (argv[i].vtype == TYPE_bat) {
 			bat bid = argv[i].val.bval;
 			int htpe = 0, ttpe = 0;
+			int hvid = 0, tvid = 0;
 			BAT *b;
 
 			BBPfix(bid);
@@ -835,25 +838,31 @@ TBL_checkparams_init(paramcheck_t *pt, int argc, ValPtr argv, BAT *atomtbl)
 				/* swap head/tail types in case of mirrored bats */
 				htpe = (bid > 0) ? b->htype : b->ttype;
 				ttpe = (bid > 0) ? b->ttype : b->htype;
+				if (htpe == TYPE_void)
+				 	hvid = (bid > 0)?(b->hseqbase != oid_nil):(b->tseqbase != oid_nil);
+				if (ttpe == TYPE_void)
+				 	tvid = (bid > 0)?(b->tseqbase != oid_nil):(b->hseqbase != oid_nil);
 			}
 			BBPunfix(bid);
 			if (b) {
 				ATOM_LOOKUP(pt->htps[i], htpe, atomtbl);
+				pt->htpsl[i] = pt->htps[i];
+				if (hvid)
+					ATOM_LOOKUP(pt->htpsl[i], ATOMtype(htpe), atomtbl);
 				ATOM_LOOKUP(pt->ttps[i], ttpe, atomtbl);
+				pt->ttpsl[i] = pt->ttps[i];
+				if (tvid)
+					ATOM_LOOKUP(pt->ttpsl[i], ATOMtype(ttpe), atomtbl);
 			}
 		}
 	}
 	return 0;
 }
 
-#define same_type(s1,s2)						\
-	(strcmp(s1, s2) == 0 ||						\
-	 (s1[0] == 'v' && s1[1] == 'o' && s1[2] == 'i' &&		\
-	  s1[3] == 'd' && s1[4] == 0 &&					\
-	  s2[0] == 'o' && s2[1] == 'i' && s2[2] == 'd' && s2[3] == 0))
+#define same_type(s1,s2)	(strcmp(s1, s2) == 0)
 
 static INLINE int
-TBL_checkparam(paramcheck_t *pt, ValPtr v1, str tp1, str tp2)
+TBL_checkparam(paramcheck_t *pt, ValPtr v1, str tp1, str ltp, str tp2, bit void_equal_oid)
 {
 	int j, k;
 
@@ -861,6 +870,9 @@ TBL_checkparam(paramcheck_t *pt, ValPtr v1, str tp1, str tp2)
 
 	/* simple 1-1 match */
 	if (same_type(tp1, tp2)) {
+		return TRUE;
+	}
+	if (void_equal_oid && same_type(ltp, tp2)) {
 		return TRUE;
 	}
 
@@ -873,11 +885,9 @@ TBL_checkparam(paramcheck_t *pt, ValPtr v1, str tp1, str tp2)
 			k = atoi(tp2 + 5);
 			for (j = 0; j < pt->anynums; j++)
 				if (pt->anynum[j] == k) {
-					return same_type(tp1, pt->anyval[j]);
+					return same_type(ltp, pt->anyval[j]);
 				}
-			if (tp1[0] == 'v' && tp1[1] == 'o' && tp1[2] == 'i' && tp1[3] == 'd' && !tp1[4])
-				tp1++;
-			pt->anyval[pt->anynums] = tp1;
+			pt->anyval[pt->anynums] = ltp;
 			pt->anynum[pt->anynums++] = k;
 			return TRUE;
 		}
@@ -922,16 +932,16 @@ TBL_checkparams(paramcheck_t *pt, oid op)
 			for (v = tpe, j = 4; param[j] != ','; j++, v++)
 				*v = param[j];
 			*v = 0;
-			if (!TBL_checkparam(pt, NULL, pt->htps[i], tpe)) {
+			if (!TBL_checkparam(pt, NULL, pt->htps[i], pt->htpsl[i], tpe, TRUE)) {
 				return TBL_RESOLVE_NOSIG;
 			}
 			for (v = tpe, j++; param[j] != ']'; j++, v++)
 				*v = param[j];
 			*v = 0;
-			if (!TBL_checkparam(pt, NULL, pt->ttps[i], tpe)) {
+			if (!TBL_checkparam(pt, NULL, pt->ttps[i], pt->ttpsl[i], tpe, TRUE)) {
 				return TBL_RESOLVE_NOSIG;
 			}
-		} else if (!TBL_checkparam(pt, pt->argv + i, pt->tps[i], param)) {
+		} else if (!TBL_checkparam(pt, pt->argv + i, pt->tps[i], pt->tps[i], param, FALSE)) {
 			return TBL_RESOLVE_NOSIG;
 		}
 	}
