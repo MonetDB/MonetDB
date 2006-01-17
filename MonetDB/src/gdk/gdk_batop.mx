@@ -249,7 +249,7 @@ BATappend(BAT *b, BAT *n)
 		if (BATtdense(n) && BATcount(b) + b->tseqbase == f) {
 			if (b->htype != TYPE_void) {
 				BUN r = BUNlast(b);
-				int yy;
+				int yy = BUNsize(b);
 				oid m;
 
 				f = MAXoid(b);
