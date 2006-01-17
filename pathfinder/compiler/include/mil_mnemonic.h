@@ -124,6 +124,7 @@
 
 /** append() function */
 #define bappend(a,b) PFmil_bappend ((a), (b))
+#define append(a,b) PFmil_bappend ((a), (b))
 
 /** set access restrictions to a BAT */
 #define access(a,b) PFmil_access((a), (b))

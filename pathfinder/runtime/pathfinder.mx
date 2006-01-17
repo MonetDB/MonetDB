@@ -211,29 +211,29 @@ EXCEPT when (child-T == void)
 @:@1_ws(PROP_COM,       9, bat, void,  str, PRE_BASE)@
 @:@1_ws(PROP_INS,      10, bat, void,  str, PRE_BASE)@
 @:@1_ws(PROP_TGT,      11, bat, void,  str, PRE_BASE)@
-@:@1_ws(ID_PRE,        12, bat,  str,  oid, nil)@
-@:@1_ws(IDREF_PRE,     13, bat,  str,  oid, nil)@
+@:@1_ws(ID_PRE,        12, bat,  str,  oid, oid(nil))@
+@:@1_ws(IDREF_PRE,     13, bat,  str,  oid, oid(nil))@
 @:@1_ws(ATTR_OWN,      14, bat, void,  oid, PRE_BASE)@
 @:@1_ws(ATTR_QN,       15, bat, void,  oid, PRE_BASE)@
 @:@1_ws(ATTR_PROP,     16, bat, void,  oid, PRE_BASE)@
 @:@1_ws(ATTR_FRAG,     17, void,void,  oid, PRE_BASE)@
 @:@1_ws(PROP_VAL,      18, bat, void,  str, PRE_BASE)@
-@:@1_ws(DOC_LOADED,    19, str, void, void, nil)@
-@:@1_ws(FRAG,          20, oid, void, void, nil)@
-@:@1_ws(WS_FRAG,       21, oid, void, void, nil)@
-@:@1_ws(HEIGHT,        22, int, void, void, nil)@
+@:@1_ws(DOC_LOADED,    19, str, void, void, oid(nil))@
+@:@1_ws(FRAG,          20, oid, void, void, oid(nil))@
+@:@1_ws(WS_FRAG,       21, oid, void, void, oid(nil))@
+@:@1_ws(HEIGHT,        22, int, void, void, oid(nil))@
 @:@1_ws(QN_PREFIX_URI, 23, bat, void,  str, PRE_BASE)@
 @:@1_ws(QN_LOC_URI,    24, bat, void,  str, PRE_BASE)@
-@:@1_ws(KIND_PRE_0,    25, bat, void,  oid, nil)@
-@:@1_ws(KIND_PRE_1,    26, bat, void,  oid, nil)@
-@:@1_ws(KIND_PRE_2,    27, bat, void,  oid, nil)@
-@:@1_ws(KIND_PRE_3,    28, bat, void,  oid, nil)@
-@:@1_ws(KIND_PRE_4,    29, bat, void,  oid, nil)@
-@:@1_ws(PROP_PRE_0,    30, bat,  oid,  oid, nil)@
-@:@1_ws(PROP_PRE_3,    31, bat,  oid,  oid, nil)@
-@:@1_ws(REGION_PRE,    32, bat, void,  oid, nil)@
-@:@1_ws(REGION_START,  33, bat, void,  lng, nil)@
-@:@1_ws(REGION_END,    34, bat, void,  lng, nil)@
+@:@1_ws(KIND_PRE_0,    25, bat, void,  oid, oid(nil))@
+@:@1_ws(KIND_PRE_1,    26, bat, void,  oid, oid(nil))@
+@:@1_ws(KIND_PRE_2,    27, bat, void,  oid, oid(nil))@
+@:@1_ws(KIND_PRE_3,    28, bat, void,  oid, oid(nil))@
+@:@1_ws(KIND_PRE_4,    29, bat, void,  oid, oid(nil))@
+@:@1_ws(PROP_PRE_0,    30, bat,  oid,  oid, oid(nil))@
+@:@1_ws(PROP_PRE_3,    31, bat,  oid,  oid, oid(nil))@
+@:@1_ws(REGION_PRE,    32, bat, void,  oid, oid(nil))@
+@:@1_ws(REGION_START,  33, bat, void,  lng, oid(nil))@
+@:@1_ws(REGION_END,    34, bat, void,  lng, oid(nil))@
 
 @-
 BEWARE: WS_SIZE (below) should *always* be the size of ws (above)
@@ -269,12 +269,12 @@ const PROP_PRE := PROP_PRE_0;
 # can be retrieved with 'select(NODE,int(nil))'
 
 @= create_ws
-    ws_nme.insert(nil,toLower("@1"));
-    ws_oid.insert(nil,oid(@1));
-    ws_tpe.insert(nil,@3);
-    ws_htp.insert(nil,@4);
-    ws_ttp.insert(nil,@5);
-    ws_seq.insert(nil,@6);
+    ws_nme.append(toLower("@1"));
+    ws_oid.append(oid(@1));
+    ws_tpe.append(@3);
+    ws_htp.append(@4);
+    ws_ttp.append(@5);
+    ws_seq.append(@6);
 @mil
 # the ws_* bats contain a recipe for creating a new ws
 var ws_nme := bat(void,str,WS_SIZE); 
@@ -296,7 +296,7 @@ PROC ws_bat(int tpe, int htp, int ttp, oid seq) : BAT[void,any]
     if (ttp != void) { # a bat of bats (persistent or view)
         var b := bat(htp,ttp);
         if (not(isnil(seq))) b.seqbase(seq); 
-        return bat(void,bat).seqbase(PRE_BASE).append_bat(b);
+        return bat(void,bat).seqbase(PRE_BASE).append(b);
     } 
     return bat(void,tpe).seqbase(PRE_BASE); # a constant bat
 }
@@ -307,7 +307,7 @@ PROC create_ws () : BAT[void,bat]
 
     # fill the constant bats with initial values
     ws.fetch(DOC_LOADED).seqbase(1@0);
-    ws.fetch(FRAG).seqbase(0@0).insert(0@0,nil);
+    ws.fetch(FRAG).seqbase(0@0).append(oid(nil));
     ws.fetch(HEIGHT).seqbase(0@0).append(0);
     return ws.access(BAT_READ);
 }
@@ -383,7 +383,7 @@ PROC shred_doc_locked(BAT[str,bat] docBAT, str location, str name, timestamp ts,
 PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
 {
     # insert all bats from shredBAT in docBAT
-    var ins := ws_tpe.ord_uselect(bat).mirror().ord_select(nil,oid(-(DOC_LOADED,1))).mirror();
+    var ins := ws_tpe.ord_uselect(bat).mirror().ord_select(oid(nil),oid(-(DOC_LOADED,1))).mirror();
     [insert](const docBAT, ins.leftfetchjoin(ws_nme), ins.leftfetchjoin(ws_oid).leftjoin(shredBAT));
 
     # these are simple concatenations (to accelerate combPRINT_WS_SZined lookup)
@@ -647,11 +647,11 @@ PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, str docid, int 
         else
             # if not, the temporary document has been shredded into docBAT
             src := src.leftjoin(docBAT);
-        [insert](dst, nil, src);
+        [append](dst, src);
 
         # create views
-        ws.fetch(PRE_FRAG).append_bat(constant2bat(frag));
-        ws.fetch(ATTR_FRAG).append_bat(constant2bat(frag));
+        ws.fetch(PRE_FRAG).append(constant2bat(frag));
+        ws.fetch(ATTR_FRAG).append(constant2bat(frag));
 
         # adapt constants
         ws.fetch(FRAG).replace(0@0,frag);
@@ -667,7 +667,7 @@ PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, str docid, int 
 
 PROC add_doc_locked(str name, timestamp ts, int ws) : oid 
 {
-    var doc_oid := nil;
+    var doc_oid := oid(nil);
     # check if the document already existed
     if (bat("doc_name").texist(name)) {
         doc_oid := bat("doc_name").reverse().find(name);
@@ -680,7 +680,7 @@ PROC add_doc_locked(str name, timestamp ts, int ws) : oid
         if (not(isnil(lim))) { # a nil limit means the doc never exprires
             if  (ts > lim) {
                 delete_doc_locked(doc_oid); # remove outdated document from the cache
-                return nil;
+                return oid(nil);
             }
         }
         pin_doc(doc_oid, ws); # GOT IT! make sure nobody can delete it
@@ -710,7 +710,7 @@ PROC add_doc(BAT[void,bat] ws, str name) : int
     var time_shred := 0; 
     var filename := doc_filename(name);
     var t := time();
-    var doc_oid := nil;
+    var doc_oid := oid(nil);
     var ts := doc_curtime(filename);
     var err;
 
@@ -1371,6 +1371,9 @@ xquery_resolve(xquery_client *ctx, char *ns, char *method, int argc, int *mincnt
 @= bunins
     if (BUNins(ctx->@1, @2, @3) == NULL) return "xquery_method: allocation error while inserting in @1";
     if (debug) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.append(" @5 @6 ");\n", @4 @3);
+@= bunappend
+    if (BUNappend(ctx->@1, @2) == NULL) return "xquery_method: allocation error while inserting in @1";
+    if (debug) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.append(" @4 @5 ");\n", @3 @2);
 @c
 /*
  * call a function ns:method(). try to use the function cache (ie re-use a cached MIL tree).
@@ -1482,9 +1485,9 @@ xquery_function_call(xquery_client *ctx,
 
     for(l=i=0; i<argc; i++) {
         for(j=0; j<itercnt; j++) {
-            oid nil = oid_nil, vid = i + fun->vid, iter = j+1;
+            oid vid = i + fun->vid, iter = j+1;
             if (i == 0 && j > 0) {
-                @:bunins(loop000, &nil, &iter, (size_t) *(oid*), SZFMT, "@0")@
+                @:bunappend(loop000, &iter, (size_t) *(oid*), SZFMT, "@0")@
             }
             for(k=0; k<argcnt[j][i]; k++,l++) {
                 int t = xquery_typenr(argtpe[l]);
@@ -1501,25 +1504,25 @@ xquery_function_call(xquery_client *ctx,
                 if (ATOMfromstr(xquery_types[t].monet_tpe, &ctx->val, &ctx->vallen, argval[l]) <= 0)
                     return "xquery_function_call: illegal parameter value.\n";
 
-                @:bunins(fun_vid000, &nil, &vid, (size_t) *(oid*), SZFMT, "@0")@
-                @:bunins(fun_iter000, &nil, &iter, (size_t) *(oid*), SZFMT, "@0")@
-                @:bunins(fun_kind000, &nil, &xquery_types[t].kind, *(int*), "%d")@
+                @:bunappend(fun_vid000, &vid, (size_t) *(oid*), SZFMT, "@0")@
+                @:bunappend(fun_iter000, &iter, (size_t) *(oid*), SZFMT, "@0")@
+                @:bunappend(fun_kind000, &xquery_types[t].kind, *(int*), "%d")@
                 if (c == 'i') { /* xs:integer */
                     oid item = BATcount(ctx->int_values);
-                    @:bunins(int_values, &nil, ctx->val, *(lng*), LLFMT, "LL")@
-                    @:bunins(fun_item000, &nil, &item, (size_t) *(oid*), SZFMT, "@0")@
+                    @:bunappend(int_values, ctx->val, *(lng*), LLFMT, "LL")@
+                    @:bunappend(fun_item000, &item, (size_t) *(oid*), SZFMT, "@0")@
                 } else if (c == 'd') { /* xs:double or xs:decimal */
                     oid item = BATcount(ctx->dbl_values);
-                    @:bunins(dbl_values, &nil, ctx->val, *(dbl*), "%g")@
-                    @:bunins(fun_item000, &nil, &item , (size_t) *(oid*), SZFMT, "@0")@
+                    @:bunappend(dbl_values, ctx->val, *(dbl*), "%g")@
+                    @:bunappend(fun_item000, &item , (size_t) *(oid*), SZFMT, "@0")@
                 } else if (c == 's') { /* xs:string */
                     oid item = BATcount(ctx->str_values);
-                    @:bunins(str_values, &nil, ctx->val, (str), "\"%s\"")@
-                    @:bunins(fun_item000, &nil, &item, (size_t) *(oid*), SZFMT, "@0")@
+                    @:bunappend(str_values, ctx->val, (str), "\"%s\"")@
+                    @:bunappend(fun_item000, &item, (size_t) *(oid*), SZFMT, "@0")@
                 } else if (shredBAT == NULL) { 
                     return "xquery_function_call: node parameter without shredBAT.\n";
                 } else {
-                    @:bunins(fun_item000, &nil, ctx->val, (size_t) *(oid*), SZFMT, "@0")@
+                    @:bunappend(fun_item000, ctx->val, (size_t) *(oid*), SZFMT, "@0")@
                 }
             }
         }
@@ -1913,7 +1916,7 @@ static void
 xquery_client_end(xquery_client *ctx, 
                   int forever) 
 {
-    oid nil = oid_nil, zero = 0, one = 1;
+    oid zero = 0, one = 1;
     Variable v;
 
     /* undo any inserts by the query into the var_usage bats */
@@ -1935,7 +1938,7 @@ xquery_client_end(xquery_client *ctx,
     BATclear(ctx->dbl_values);
     BATclear(ctx->int_values);
     BATclear(ctx->str_values);
-    BUNins(ctx->str_values, &nil, (ptr)str_nil);
+    BUNappend(ctx->str_values, (ptr)str_nil);
 
     /* nil-assign all other variables */
     for(v=monet_cntxt[ctx->stk].var; v != ctx->lastvar; v = v->next) {

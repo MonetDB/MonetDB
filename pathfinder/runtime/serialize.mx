@@ -940,6 +940,7 @@ static int idxTVerror1(XqueryCtx* ctx, BAT *b, oid oid_index)
 
 static int idxTVerror2(XqueryCtx* ctx, BAT *b)
 { 
+    BATprint(b); 
     fatal_err(ctx, "%s BAT is empty.\n",
                     b?BBP_logical(b->batCacheid):"NULL");
     return 0;

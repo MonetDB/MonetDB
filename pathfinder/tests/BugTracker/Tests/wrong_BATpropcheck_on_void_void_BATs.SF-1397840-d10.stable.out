@@ -9,7 +9,7 @@ stdout of test 'wrong_BATpropcheck_on_void_void_BATs.SF-1397840-d10` in director
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-[ 0 ]
+[ 10 ]
 module(pathfinder);
 var a0025;
 var a0024;

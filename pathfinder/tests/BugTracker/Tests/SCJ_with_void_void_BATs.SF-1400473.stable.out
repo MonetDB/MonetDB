@@ -31,18 +31,18 @@ PROC elem_constr (BAT[void, oid] qn_iter,
         
     # throw out nil values and generate iter|item|frag representation
     # for attributes
-    var selected := pre.select(nil,nil);
+    var selected := pre.select(oid(nil),oid(nil));
     var piter := selected.hmark(0@0).leftfetchjoin(iter).tmark(0@0); # make it void
     pre := selected.tmark(0@0);
-    pfrag := pfrag.select(nil,nil).tmark(0@0);
+    pfrag := pfrag.select(oid(nil),oid(nil)).tmark(0@0);
     selected := nil;
 
     # throw out nil values and generate iter|item|frag representation
     # for attributes
-    selected := attr.select(nil,nil);
+    selected := attr.select(oid(nil),oid(nil));
     var aiter := selected.hmark(0@0).leftfetchjoin(iter).tmark(0@0); # make it void
     attr := selected.tmark(0@0);
-    afrag := afrag.select(nil,nil).tmark(0@0);
+    afrag := afrag.select(oid(nil),oid(nil)).tmark(0@0);
     selected := nil;
 
     if (pre.count() != 0) {

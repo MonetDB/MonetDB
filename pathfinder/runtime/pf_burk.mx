@@ -242,12 +242,12 @@ var region_end_attr_tag := "end";
 @= reject_outside
             /* insert nodes which are not contained */
             index = BUNindex(region_start,iter_start);
-            BUNins(bn, (ptr)(&oid_nil_ptr), (ptr)(&index));
+            BUNappend(bn, (ptr)(&index));
 @
 @= select_inside
             /* insert nodes which are contained */
             index = BUNindex(region_start,iter_start);
-            BUNins(bn, (ptr)(&oid_nil_ptr), (ptr)(&index));
+            BUNappend(bn, (ptr)(&index));
 @
 @= reject_inside
             /* skip nodes which are contained */
@@ -307,7 +307,7 @@ CMD@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *reg
         *outer_iter_start_next, *outer_iter_end_next;
 
     @:region_jump_decl_@2(@4)@
-        oid oid_nil_ptr = oid_nil, index;
+        oid index;
     int Sss,Sse,Srs,Sre;
     BAT * bn = NULL;
 
@@ -691,7 +691,6 @@ CMDfetch_standoff_data_@1(BAT ** result, BAT * region_start, BAT * region_end, c
         GDKerror("could not open Stand-Off data file (the BLOB)\n");
         return(GDK_FAIL);
     }
-    oid oid_nil_ptr = oid_nil;
     min_end = MAX_@1; 
     *result = BATnew(TYPE_void, TYPE_str, BATcount(region_start)); 
 
@@ -756,13 +755,13 @@ CMDfetch_standoff_data_@1(BAT ** result, BAT * region_start, BAT * region_end, c
                     if ((stack[i].start % 4096) < (blob_pos % 4096)) {
                       // we have to return (start..end)
                       buf[blob_pos % 4096] = '\0'; // zero-terminate string
-                      BUNins(*result, &oid_nil_ptr, (ptr)(buf + (stack[i].start % 4096)));
+                      BUNappend(*result, (ptr)(buf + (stack[i].start % 4096)));
                     } else {
                       // we have to concatenate the two parts (start..4095) + (0...end)
                       for (j=0; j < blob_pos - stack[i].start; j++) 
                         temp[j] = buf[(stack[i].start + j) % 4096];
                       temp[j]='\0'; // zero-terminate string
-                      BUNins(*result, &oid_nil_ptr, (ptr)temp);
+                      BUNappend(*result, (ptr)temp);
                     }
                     stack_size--; // pop from stack
                     stack[i].start = stack[stack_size].start; 
@@ -906,7 +905,7 @@ PROC burkowski_@1_@2(BAT[void,oid] region_pre,
 }
 @
 @= no_pre
-	cands := ws.fetch(PRE_SIZE).fetch(theFrag).project(nil).reverse();
+	cands := ws.fetch(PRE_SIZE).fetch(theFrag).project().reverse();
 	cands := cands.chk_order();
 @
 @= kind_pre
@@ -1071,7 +1070,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
     var uniqueFrag := frag.tunique().sort();
     var theFrag := uniqueFrag.reverse().fetch(0);
     if (uniqueFrag.count() = 1) {
-        var result_part_frag := nil;
+        var result_part_frag := oid(nil);
         var result_part_iter := iter;
         var result_part_item := item;
 
@@ -1133,7 +1132,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 @= loop_lifted_scj_per_frag
 	result_part_iter := result_part_iter.chk_order();
 	result_part_item := result_part_item.chk_order();
-        result_part_frag := nil;
+        result_part_frag := oid(nil);
 
 	# pre-test
 	@4

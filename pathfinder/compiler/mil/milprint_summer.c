@@ -1103,9 +1103,8 @@ static void
 append (opt_t *f, char *name, int level)
 {
     milprintf(f, "{ # append (%s, level)\n", name);
-    milprintf(f, "var seqb := oid(v_%s%03u.count());\n",name, level);
     milprintf(f, "%s := %s.materialize(ipik);\n", name, name);
-    milprintf(f, "v_%s%03u := v_%s%03u.insert(%s.tmark(seqb));\n", name, level, name, level, name);
+    milprintf(f, "v_%s%03u := v_%s%03u.append(%s);\n", name, level, name, level, name);
     milprintf(f, "} # append (%s, level)\n", name);
 }
 
@@ -1294,11 +1293,9 @@ join (opt_t *f, int cur_level)
 {
     milprintf(f, "# join ()\n");
     milprintf(f, "var cnt := count(v_iter%03u)*2;\n", cur_level);
-    milprintf(f, "v_iter%03u := v_iter%03u.tmark(0@0);\n",
-            cur_level, cur_level);
     milprintf(f, "var new_v_iter := v_iter%03u;\n", cur_level);
     milprintf(f, "v_iter%03u := bat(void,oid,cnt)"
-                                ".seqbase(0@0).access(BAT_APPEND).insert(new_v_iter);\n", cur_level);
+                                ".seqbase(0@0).access(BAT_APPEND).append(new_v_iter);\n", cur_level);
     milprintf(f, "new_v_iter := nil;\n");
 
     milprintf(f, "var new_v_vid := oidNew_expOid.leftjoin(v_vid%03u);\n", cur_level-1);
@@ -2590,7 +2587,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
         milprintf(f, "root_frag := item%03u.project(WS);\n", i);
     
      /* attr */ milprintf(f,
-     /* attr */ "preNew_preOld := item%03u.project(nil);\n", i);
+     /* attr */ "preNew_preOld := item%03u.project(oid(nil));\n", i);
      /* attr */ milprintf(f,
      /* attr */ "preNew_preOld := preNew_preOld.tmark(0@0);\n"
      /* attr */ "preNew_frag := preNew_preOld.tmark(0@0);\n"
@@ -2687,7 +2684,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                    and 'select(nil)' inside mvaljoin gives back all the attributes
                    not bound to a pre value first all root pre values have to
                    be thrown out */
-                "var content_preNew_preOld := preNew_preOld.ord_select(nil,nil);\n"
+                "var content_preNew_preOld := preNew_preOld.ord_select(oid(nil),oid(nil));\n"
                 "var oid_preOld := content_preNew_preOld.tmark(0@0);\n"
                 "var oid_preNew := content_preNew_preOld.hmark(0@0);\n"
                 "content_preNew_preOld := nil;\n"
@@ -2986,7 +2983,7 @@ loop_liftedAttrConstr (opt_t *f, int rcode, int rc, int cur_level, int i)
                 "var qn := item%03u.tmark(seqb);\n"
                 "ws.fetch(ATTR_QN).fetch(WS).insert(qn);\n"
                 "ws.fetch(ATTR_FRAG).fetch(WS).insert(qn.project(WS));\n"
-                "ws.fetch(ATTR_OWN).fetch(WS).insert(qn.project(nil));\n"
+                "ws.fetch(ATTR_OWN).fetch(WS).insert(qn.project(oid(nil)));\n"
                 /* get the intermediate result */
                 "iter := iter%03u;\n"
                 "pos := pos%03u;\n"
@@ -3074,8 +3071,8 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
                 "ws.fetch(PRE_KIND).fetch(WS).insert(newPre_prop.project(TEXT));\n"
                 "ws.fetch(PRE_FRAG).fetch(WS).insert(newPre_prop.project(WS));\n"
                 "{\n"
-                "  var kind_pre_ := newPre_prop.hmark(nil).chk_order();\n"
-                "  ws.fetch(KIND_PRE + int(TEXT)).fetch(WS).insert(kind_pre_);\n"
+                "  var kind_pre_ := newPre_prop.reverse().chk_order();\n"
+                "  ws.fetch(KIND_PRE + int(TEXT)).fetch(WS).append(kind_pre_);\n"
                 "}\n"
                 "item := item%s.mark(seqb);\n"
                 "kind := ELEM;\n"
@@ -6189,10 +6186,10 @@ translateUDF (opt_t *f, int cur_level, int counter,
     milprintf(f,
             "{ # UDF - function call\n"
             "var fun_base%03u := proc_vid.find(\"%s\");\n"
-            "var fun_vid%03u := bat(void,oid).seqbase(nil);\n"
-            "var fun_iter%03u := bat(void,oid).seqbase(nil);\n"
-            "var fun_item%03u := bat(void,oid).seqbase(nil);\n"
-            "var fun_kind%03u := bat(void,int).seqbase(nil);\n",
+            "var fun_vid%03u := bat(void,oid);\n"
+            "var fun_iter%03u := bat(void,oid);\n"
+            "var fun_item%03u := bat(void,oid);\n"
+            "var fun_kind%03u := bat(void,int);\n",
             counter, fun->sig, counter, counter, counter, counter);
 
     while ((args->kind != c_nil) && (fun->params[i]))
@@ -6200,11 +6197,11 @@ translateUDF (opt_t *f, int cur_level, int counter,
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
                 "item := item.materialize(ipik);\n"
-                "fun_vid%03u := fun_vid%03u.insert(iter.project(oid(fun_base%03u + %iLL)));\n"
-                "fun_iter%03u := fun_iter%03u.insert(iter.tmark(nil));\n"
-                "fun_item%03u := fun_item%03u.insert(item.tmark(nil));\n"
+                "fun_vid%03u := fun_vid%03u.append(iter.project(oid(fun_base%03u + %iLL)));\n"
+                "fun_iter%03u := fun_iter%03u.append(iter);\n"
+                "fun_item%03u := fun_item%03u.append(item);\n"
                 "kind := kind.materialize(ipik);\n"
-                "fun_kind%03u := fun_kind%03u.insert(kind.tmark(nil));\n"
+                "fun_kind%03u := fun_kind%03u.append(kind);\n"
                 "# end of add arg in UDF function call\n",
                 counter, counter, counter, i, 
                 counter, counter, 
@@ -6228,10 +6225,10 @@ translateUDF (opt_t *f, int cur_level, int counter,
             "item    := expOid.leftfetchjoin(v_item%03u);\n"
             "kind    := expOid.leftfetchjoin(v_kind%03u);\n"
             "ipik    := iter;\n"
-            "fun_vid%03u := fun_vid%03u.insert(vid.tmark(nil));\n"
-            "fun_iter%03u := fun_iter%03u.insert(iter.tmark(nil));\n"
-            "fun_item%03u := fun_item%03u.insert(item.tmark(nil));\n"
-            "fun_kind%03u := fun_kind%03u.insert(kind.tmark(nil));\n"
+            "fun_vid%03u := fun_vid%03u.append(vid);\n"
+            "fun_iter%03u := fun_iter%03u.append(iter);\n"
+            "fun_item%03u := fun_item%03u.append(item);\n"
+            "fun_kind%03u := fun_kind%03u.append(kind);\n"
             "expOid := nil;\n"
             "vid := nil;\n"
             "ipik := nil;\n"
@@ -6320,7 +6317,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "  var elem_iters := elements.leftfetchjoin(iter);\n"
                 "  var elem_items := elements.leftfetchjoin(item);\n"
                 "  var elem_frags := elements.leftfetchjoin(kind.get_fragment());\n"
-                "  var elem_attrs := elements.project(nil);\n"
+                "  var elem_attrs := elements.project(oid(nil));\n"
                 "  var attributes := kind.get_type(ATTR).mirror();\n"
                 "  var attr_iters := attributes.leftfetchjoin(iter).materialize(attributes);\n"
                 "  var attr_attrs := attributes.leftfetchjoin(item).materialize(attributes);\n"
@@ -7575,8 +7572,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 rc = NORMAL;
                 milprintf(f,
                         "{\n"
-                        "str_values := str_values.seqbase(nil)"
-                                                ".insert(nil,\"%s\").seqbase(0@0);\n"
+                        "str_values := str_values.append(\"%s\");\n"
                         "var itemID := str_values.reverse().find(\"%s\");\n",
                         PFesc_string (c->sem.str),
                         PFesc_string (c->sem.str));
@@ -7604,8 +7600,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 rc = NORMAL;
                 milprintf(f,
                         "{\n"
-                        "int_values := int_values.seqbase(nil)"
-                                                ".insert(nil," LLFMT "LL).seqbase(0@0);\n"
+                        "int_values := int_values.append(" LLFMT "LL);\n"
                         "var itemID := int_values.reverse().find(" LLFMT "LL);\n",
                         c->sem.num, c->sem.num);
                 /* translateConst needs a bound variable itemID */
@@ -7632,8 +7627,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 rc = NORMAL;
                 milprintf(f,
                         "{\n"
-                        "dec_values := dec_values.seqbase(nil)"
-                                                ".insert(nil,dbl(%gLL)).seqbase(0@0);\n"
+                        "dec_values := dec_values.append(dbl(%gLL));\n"
                         "var itemID := dec_values.reverse().find(dbl(%gLL));\n",
                         c->sem.dec, c->sem.dec);
                 /* translateConst needs a bound variable itemID */
@@ -7660,8 +7654,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 rc = NORMAL;
                 milprintf(f,
                         "{\n"
-                        "dbl_values := dbl_values.seqbase(nil)"
-                                                ".insert(nil,dbl(%gLL)).seqbase(0@0);\n"
+                        "dbl_values := dbl_values.append(dbl(%gLL));\n"
                         "var itemID := dbl_values.reverse().find(dbl(%gLL));\n",
                         c->sem.dbl, c->sem.dbl);
                 /* translateConst needs a bound variable itemID */
@@ -8008,7 +8001,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             /* we could have multiple different calls */
             translate2MIL (f, NORMAL, 0, counter, R(c));
             milprintf(f,
-                    "return bat(void,bat,4).insert(nil,iter).insert(nil,item).insert(nil,kind).access(BAT_READ);\n"
+                    "return bat(void,bat,4).append(iter).append(item).append(kind).access(BAT_READ);\n"
                     "} # end of PROC %s\n",
                     c->sem.fun->sig);
             opt_flush(f, 0);
@@ -10026,7 +10019,7 @@ const char* PFinitMIL() {
         "var int_values := bat(lng,void).key(true).reverse().seqbase(0@0);\n"
         "var dbl_values := bat(dbl,void).key(true).reverse().seqbase(0@0);\n"
         "var dec_values := dbl_values;\n"
-        "var str_values := bat(str,void).key(true).reverse().seqbase(0@0).insert(0@0,\"\");\n"
+        "var str_values := bat(str,void).key(true).reverse().seqbase(0@0).append(\"\");\n"
         "\n"
         "var fun_vid000 := bat(void,oid);\n"
         "var fun_iter000 := bat(void,oid);\n"
@@ -10036,7 +10029,7 @@ const char* PFinitMIL() {
         "var var_usage := bat(oid,oid);\n"
         "var proc_vid := bat(str,lng);\n"
         "\n"
-        "var loop000 := bat(void,oid,1).seqbase(0@0).insert(0@0, 1@0);\n"
+        "var loop000 := bat(void,oid,1).seqbase(0@0).append(1@0);\n"
         "\n"
         "var time_compile := 0;\n"
         "var genType := \"xml\";";

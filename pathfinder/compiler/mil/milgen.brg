@@ -622,7 +622,8 @@ reduce (PFpa_op_t * p, int goalnt)
 
             intVAL = new_var (1);
             dblVAL = new_var (1);
-            decVAL = new_var (1);
+            /*decVAL = new_var (1); as we currently have no decimal support we use doubles */
+            decVAL = dblVAL;
             strVAL = new_var (1);
             item = new_var (1);
             kind = new_var (1);
@@ -638,11 +639,13 @@ reduce (PFpa_op_t * p, int goalnt)
                            reverse (
                                key (new (type (m_dbl), type (m_void)), true)),
                            lit_oid (0))),
+                /*
                 assgn (var (decVAL->name),
                        seqbase (
                            reverse (
                                key (new (type (m_dbl), type (m_void)), true)),
                            lit_oid (0))),
+                */
                 assgn (var (strVAL->name),
                        seqbase (
                            reverse (
@@ -674,8 +677,8 @@ reduce (PFpa_op_t * p, int goalnt)
                         binsert (var (item->name),
                                  select2 (
                                      VAR (R(p)->env, att_item, aat_attr),
-                                     nil (),
-                                     nil ())),
+                                     cast (type (m_oid), nil ()),
+                                     cast (type (m_oid), nil ()))),
                         binsert (var (kind->name),
                                  select2 (
                                      set_kind (VAR (R(p)->env, 
@@ -706,8 +709,8 @@ reduce (PFpa_op_t * p, int goalnt)
                         binsert (var (item->name),
                                  select2 (
                                      VAR (R(p)->env, att_item, aat_pre),
-                                     nil (),
-                                     nil ())),
+                                     cast (type (m_oid), nil ()),
+                                     cast (type (m_oid), nil ()))),
                         binsert (var (kind->name),
                                  select2 (
                                      set_kind (VAR (R(p)->env, 
@@ -1038,9 +1041,8 @@ reduce (PFpa_op_t * p, int goalnt)
                             for (unsigned int row = 0;
                                     row < p->sem.lit_tbl.count; row++)
                                 execute (
-                                    insert (
+                                    append (
                                         var (v->name),
-                                        nil (),
                                         /* add_qname changes the working set 
                                            in 'var ("ws")' as side effect */
                                         add_qname (lit_str (
@@ -1078,9 +1080,8 @@ reduce (PFpa_op_t * p, int goalnt)
                             for (unsigned int row = 0;
                                     row < p->sem.lit_tbl.count; row++)
                                 execute (
-                                    insert (
+                                    append (
                                         var (v->name),
-                                        nil (),
                                         t == p->sem.lit_tbl.tuples[row]
                                                             .atoms[col].type
                                         ? literal (p->sem.lit_tbl.tuples[row]
@@ -1136,10 +1137,10 @@ reduce (PFpa_op_t * p, int goalnt)
 
             execute (
                 assgn (var (v->name),
-                       cross (mark (var (env_at (L(p)->env, 0).mvar->name),
+                       cross (project (var (env_at (L(p)->env, 0).mvar->name),
                                     nil ()),
                               reverse (
-                                  mark (var (env_at (R(p)->env, 0).mvar->name),
+                                  project (var (env_at (R(p)->env, 0).mvar->name),
                                         nil ())))),
                 assgn (var (v1->name),
                        reverse (mark (var (v->name), lit_oid (0)))),

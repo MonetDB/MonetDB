@@ -47,14 +47,15 @@ C implementation of the document shredder"
 .COMMAND print_doc(str,BAT[void,bat], str) : void = xquery_print_doc_main;
  "C interface to Workset print routine"
 
-.COMMAND print_result(str mode, BAT[void,bat] ws,
+.COMMAND print_result(str mode, BAT[oid,bat] ws,
                       BAT[oid,any] loop, BAT[void,oid] iter,
                       BAT[void,oid] item, BAT[void,int] kind, 
-                      BAT[void,lng] int_values, BAT[void,dbl] dbl_values, BAT[void,str] str_values) : void = xquery_print_result_loop;
+                      BAT[oid,lng] int_values, BAT[oid,dbl] dbl_values, BAT[oid,str] str_values) : void = xquery_print_result_loop;
  "C interface to Workset result print routine, that can print multiple iters"
 
 .COMMAND print_result(str,BAT[void,bat],BAT[void,oid],BAT[void,int],BAT[void,lng],BAT[void,dbl],BAT[void,dbl],BAT[void,str]) : void = xquery_print_result_main;
  "C interface to Workset result print routine"
+
 
 
 @- Multi Join
@@ -234,6 +235,9 @@ an overloaded insert).
 .COMMAND insert(BAT[any::1,bat] b, any::1 head, any tail) : BAT[any::1,bat] = CMDinsertConvert;
 "insert into a bat-of-bats; if a non-bat tail is inserted, it is inserted as a fake-bat."
 
+.COMMAND append(BAT[any::1,bat] b, any tail) : BAT[any::1,bat] = CMDappendConvert;
+"append into a bat-of-bats; if a non-bat tail is appended, it is appended as a fake-bat."
+
 @- Path steps (staircase join) 
 @m
 @:prec_foll(following)@
@@ -277,10 +281,10 @@ axis step evaluation on the @2 axis from the given context."
 @:ll_cmd(child)@
 
 @= ll_cmd
-.COMMAND ll_@1(BAT[void,oid] iter,
-                   BAT[void,oid] ctx,
-                   BAT[void,int] pre_size,
-                   BAT[oid,oid] cands,
+.COMMAND ll_@1(BAT[oid,oid] iter,
+                   BAT[oid,oid] ctx,
+                   BAT[oid,int] pre_size,
+                   BAT[void,oid] cands,
                    int height,
                    bit one_iter, bit one_ctx,
                    oid min_iter, oid max_iter,
@@ -334,10 +338,6 @@ module("bat_arith");
 module("mmath");
 module("pcre");
 
-PROC append_bat (bat[void,bat] b1, any b2) : bat[void,bat] {
-	return b1.insert (nil, b2);	# uses above insert() overload
-}
-
 # global constants using in the MIL translation
 const empty_bat := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
 const empty_kind_bat := bat(void,int,0).seqbase(0@0).access(BAT_READ);
@@ -346,17 +346,17 @@ const empty_dbl__bat := bat(void,dbl,0).seqbase(0@0).access(BAT_READ);
 const empty_dec__bat := empty_dbl__bat;
 const empty_str__bat := bat(void,str,0).seqbase(0@0).access(BAT_READ);
 const empty_int__bat := bat(void,lng,0).seqbase(0@0).access(BAT_READ);
-const bool_not := bat(void,oid,2).insert(nil,1@0).insert(nil,0@0).seqbase(0@0).access(BAT_READ);
+const bool_not := bat(void,oid,2).append(1@0).append(0@0).seqbase(0@0).access(BAT_READ);
 
 proc addValues(bat[void,any::1] container, any::1 delta) : oid
 {
-    container.insert(oid(container.count()), delta);
+    container.append(delta);
     return container.reverse().find(delta);
 }
 
 proc addValues(bat[void,any::1] container, bat[oid,any::1] delta) : bat[oid,oid]
 {
-    container.seqbase(nil).insert(delta.tmark(nil)).seqbase(0@0);
+    container.append(delta);
     return delta.leftjoin(container.reverse());
 }
 
@@ -462,7 +462,7 @@ is a slice of both input BATs. We just go through all outer iterations, take sli
 execute the join for corresponding iter slices on l and r; concatenating all results.
 @mil
 var samp256 := bat(void,lng,256LL);
-{ var i := 0LL; while(i < 256LL) { samp256.insert(nil,i); i :+= 1LL; } samp256.seqbase(0@0); }
+{ var i := 0LL; while(i < 256LL) { samp256.append(i); i :+= 1LL; } samp256.seqbase(0@0); }
 
 proc htordered_unique_thetajoin( int mode,
                                  bat[oid,any::1] l, bat[oid,any::1] r,
@@ -598,7 +598,7 @@ proc ll_htordered_unique_thetajoin( int mode,
         if (lv = rv) {
             # only join corresponding slices of l an r
             var bn := htordered_unique_thetajoin(mode, l.slice(li,li+ln-1), r.slice(ri,ri+rn-1), lx, rx);
-            if (count(int(bn)) > 0LL) b.insert(nil, bn);
+            if (count(int(bn)) > 0LL) b.append(bn);
         }
         if (lv <= rv) { lp :+= 1; li :+= ln; }
         if (rv <= lv) { rp :+= 1; ri :+= rn; }
@@ -674,7 +674,7 @@ proc ll_htordered_unique_thetajoin( int mode,
 	var item_descs := cands.ord_select(fst,lst).reverse().chk_order();
 @
 @= wrap
-PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int order, BAT[oid,oid] cands) : BAT[void,bat] 
+PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid frag, BAT[oid,bat] ws, int order, BAT[void,oid] cands) : BAT[void,bat]
 {
 	var result := nil;
 	var one_iter := FALSE;
@@ -709,8 +709,8 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 	# trivial cases	
 	if ( (count(item) = 0) or (count(cands) = 0) or (count(pre_size) = 0) ) {
 		result := new(void,bat,2).seqbase(0@0)
-		          .append_bat(bat(void,oid,0).seqbase(0@0).access(BAT_READ))
-		          .append_bat(bat(void,oid,0).seqbase(0@0).access(BAT_READ))
+		          .append(bat(void,oid,0).seqbase(0@0).access(BAT_READ))
+		          .append(bat(void,oid,0).seqbase(0@0).access(BAT_READ))
 		          .access(BAT_READ);
 		return result;
 	}
@@ -725,8 +725,8 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 			# =>  result is a simple slice of cands
 			@:descs_per_item(@1,0)@
 			result := new(void,bat,2).seqbase(0@0)
-			          .append_bat(constant2bat(iter.fetch(0)))
-			          .append_bat(item_descs.mark(0@0).reverse())
+			          .append(constant2bat(iter.fetch(0)))
+			          .append(item_descs.mark(0@0).reverse())
 			          .access(BAT_READ);
 			return result;
 		}
@@ -771,8 +771,8 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 		                   height, one_iter, one_item, 
 		                   min_iter, max_iter, (and(order,2) = 0));
 		result := new(void,bat,2).seqbase(0@0)
-		          .append_bat(res.mark(0@0).reverse())
-		          .append_bat(res.reverse().mark(0@0).reverse())
+		          .append(res.mark(0@0).reverse())
+		          .append(res.reverse().mark(0@0).reverse())
 		          .access(BAT_READ);
 	}
 	
@@ -783,8 +783,8 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 		var ord := item.tsort();
 		    ord := ord.CTrefine(iter).mark(0@0).reverse();
 		result := new(void,bat,2).seqbase(0@0)
-		          .append_bat(ord.leftfetchjoin(iter).chk_order())
-		          .append_bat(ord.leftfetchjoin(item).chk_order())
+		          .append(ord.leftfetchjoin(iter).chk_order())
+		          .append(ord.leftfetchjoin(item).chk_order())
 		          .access(BAT_READ);
 	}
 	
@@ -795,8 +795,8 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 		var ord := iter.tsort();
 		    ord := ord.CTrefine(item).mark(0@0).reverse();
 		result := new(void,bat,2).seqbase(0@0)
-		          .append_bat(ord.leftfetchjoin(iter).chk_order())
-		          .append_bat(ord.leftfetchjoin(item).chk_order())
+		          .append(ord.leftfetchjoin(iter).chk_order())
+		          .append(ord.leftfetchjoin(item).chk_order())
 		          .access(BAT_READ);
 	}
 	
@@ -870,14 +870,14 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
         unq@batloop () {
             ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().project(nil);
             ctx_slice := ctx_slice.chk_order(); # have to check because step expects it sorted
-            var res := @3( @5, ctx_slice, @7 heights, pre_sizes.count()).hmark(nil);
+            var res := @3( @5, ctx_slice, @7 heights, pre_sizes.count()).reverse();
             res := res.chk_order();
-            res_item.insert(res);
+            res_item.append(res);
             var l := count(res);
             if (l <= $t) {
-                res_iter.insert(iter.slice(offset, offset + l - 1).tmark(nil));
+                res_iter.append(iter.slice(offset, offset + l - 1));
             } else {
-                res_iter.insert(res.project($h));
+                res_iter.append(res.project($h));
             }
             offset := offset + $t;
         }
@@ -885,8 +885,8 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
         res_item := res_item.seqbase(0@0).access(BAT_READ).chk_order();
     }
     return new(void,bat,2).seqbase(0@0)
-           .append_bat(res_iter)
-           .append_bat(res_item)
+           .append(res_iter)
+           .append(res_item)
            .access(BAT_READ);
 }
 ADDHELP("@1", "tsheyar", "Sep 2004",
@@ -1088,7 +1088,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
  }
 @
 @= no_pre
-	cands := ws.fetch(PRE_SIZE).fetch(theFrag).hmark(nil);
+	cands := ws.fetch(PRE_SIZE).fetch(theFrag).project().reverse();
 	cands := cands.chk_order();
 @
 @= kind_pre
@@ -1106,12 +1106,12 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		    qn_nsloc := qn_nsloc.ord_uselect(loc+str('\1')+ns);
 		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
 		if (count(qn_nsloc) = 1) {
-			cands := pre_prop.ord_uselect(qn_nsloc.reverse().fetch(0)).reverse();
+			cands := pre_prop.ord_uselect(qn_nsloc.reverse().fetch(0)).project().reverse();
                         if ( not(ordered(reverse(cands))) ) {
                                 printf("= nsloc_pre(1): cands not ordered on tail.\n");
                         }
 		} else {
-			cands := pre_prop.leftjoin(qn_nsloc).sort().reverse();
+			cands := pre_prop.leftjoin(qn_nsloc).sort().project().reverse();
 		}
 		pre_prop := nil;
 		qn_nsloc := nil;
@@ -1160,12 +1160,12 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		    @1_@2 := @1_@2.ord_uselect(@2);
 		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
 		if (count(@1_@2) = 1) {
-			cands := pre_prop.ord_uselect(@1_@2.reverse().fetch(0)).reverse();
+			cands := pre_prop.ord_uselect(@1_@2.reverse().fetch(0)).project().reverse();
                         if ( not(ordered(reverse(cands))) ) {
                                 printf("= ns_loc_pre(1): cands not ordered on tail.\n");
                         }
 		} else {
-			cands := pre_prop.leftjoin(@1_@2).sort().reverse();
+			cands := pre_prop.leftjoin(@1_@2).sort().project().reverse();
 		}
 		pre_prop := nil;
 		@1_@2 := nil;
@@ -1253,9 +1253,9 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
     if (iter.count() = 0) {
 	var empty := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
 	return bat(void,bat,3).seqbase(0@0)
-			    .append_bat(empty)
-			    .append_bat(empty)
-			    .append_bat(empty)
+			    .append(empty)
+			    .append(empty)
+			    .append(empty)
 			    .access(BAT_READ);
     }
 
@@ -1269,7 +1269,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
     var uniqueFrag := frag.tunique().sort();
     var theFrag := uniqueFrag.reverse().fetch(0);
     if (uniqueFrag.count() = 1) {
-        var result_part_frag := nil;
+        var result_part_frag := oid(nil);
         var result_part_iter := iter;
         var result_part_item := item;
 
@@ -1321,9 +1321,9 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
     result_item.access(BAT_READ);
     result_frag.access(BAT_READ);
     var result_scj := bat(void,bat,3).seqbase(0@0);
-    result_scj.append_bat(result_iter);
-    result_scj.append_bat(result_item);
-    result_scj.append_bat(result_frag);
+    result_scj.append(result_iter);
+    result_scj.append(result_item);
+    result_scj.append(result_frag);
 
     return result_scj.access(BAT_READ);
 }
@@ -1371,7 +1371,7 @@ CMDfakeProject(BAT **res, ptr val, int tpe)
 	}
 	*res = BATnew(TYPE_void, tpe, 1);
 	if (*res) {
-		if (BUNins(*res, ATOMnilptr(TYPE_oid), val)) return GDK_SUCCEED;
+		if (BUNappend(*res, val)) return GDK_SUCCEED;
 		BBPreclaim(*res);
 	}
 	return GDK_FAIL;
@@ -1429,6 +1429,23 @@ CMDinsertConvert(BAT** res, BAT *b, ptr h, ptr t, int tpe)
 	assert(t);
 	if (CMDfakeProject(&bn, t, tpe) == GDK_SUCCEED) {
 		if (BUNins(*res = b, BAThtype(b) == TYPE_bat ? (ptr) &((BAT *) h)->batCacheid : h, &bn->batCacheid)) {
+			BBPfix(b->batCacheid);
+			ret = GDK_SUCCEED;
+		}
+		BBPunfix(bn->batCacheid);
+	}
+	return ret;
+}
+
+int
+CMDappendConvert(BAT** res, BAT *b, ptr t, int tpe) 
+{
+	int ret = GDK_FAIL;
+	BAT *bn = NULL;
+
+	assert(t);
+	if (CMDfakeProject(&bn, t, tpe) == GDK_SUCCEED) {
+		if (BUNappend(*res = b, &bn->batCacheid)) {
 			BBPfix(b->batCacheid);
 			ret = GDK_SUCCEED;
 		}
@@ -3259,9 +3276,9 @@ PROC doc_tbl (BAT[void, BAT] ws, BAT[void, str] item) : BAT[void,BAT]
     var ret_item := ret_frag.project (0@0);
 
     # return result as a BAT of BATs
-    return new (void, BAT).insert (nil, ws)
-                          .insert (nil, ret_item)
-                          .insert (nil, ret_frag)
+    return new (void, BAT).append (ws)
+                          .append (ret_item)
+                          .append (ret_frag)
                           .seqbase (0@0);
 }
 
@@ -3288,7 +3305,7 @@ PROC merge_adjacent_text_nodes (BAT[void,oid] iter,
                                 BAT[void,oid] pfrag,
                                 BAT[void,BAT] ws) : BAT[void,oid]
 {
-    var map := pre.ord_uselect(nil,nil).hmark(0@0);
+    var map := pre.ord_uselect(oid(nil),oid(nil)).hmark(0@0);
     iter := map.leftfetchjoin(iter);
     pre := map.leftfetchjoin(pre);
     pfrag := map.leftfetchjoin(pfrag);
@@ -3340,9 +3357,9 @@ PROC merge_adjacent_text_nodes (BAT[void,oid] iter,
                 .leftfetchjoin([ifthenelse](text,text_frag,pfrag));
 
     # return result as a BAT of BATs
-    return new (void, BAT).insert (nil, ws)
-                          .insert (nil, pre)
-                          .insert (nil, pfrag)
+    return new (void, BAT).append (ws)
+                          .append (pre)
+                          .append (pfrag)
                           .seqbase (0@0);
 }
 ADDHELP("merge_adjacent_text_nodes", "tsheyar", "Oct 2005",
@@ -3501,17 +3518,17 @@ PROC text_constr (BAT[void, str] item, BAT[void, BAT] ws) : BAT[void,BAT]
     ws.fetch(PRE_FRAG).fetch(WS).insert(newPre_prop.project(WS));
 
     { # add index entries for optimized scj
-        var kind_pre_ := newPre_prop.hmark(nil).chk_order();
-        ws.fetch(KIND_PRE + int(TEXT)).fetch(WS).insert(kind_pre_);
+        var kind_pre_ := newPre_prop.reverse().chk_order();
+        ws.fetch(KIND_PRE + int(TEXT)).fetch(WS).append(kind_pre_);
     }
     newPre_prop := nil;
     item := item.mark(seqb);
     seqb := nil;
 
     # return result as a BAT of BATs
-    var res := new (void, BAT).insert (nil, ws)
-                              .insert (nil, item)
-                              .insert (nil, item.project(WS))
+    var res := new (void, BAT).append (ws)
+                              .append (item)
+                              .append (item.project(WS))
                               .seqbase (0@0);
 
     { # adding new fragments to the WS_FRAG bat
@@ -3573,7 +3590,7 @@ PROC attr_constr (BAT[void, oid] qn, BAT[void, str] item, BAT[void, BAT] ws) : B
     var newAttr_prop := newProp.tmark(seqb);
     newProp := nil;
     ws.fetch(ATTR_PROP).fetch(WS).insert(newAttr_prop);
-    ws.fetch(ATTR_OWN).fetch(WS).insert(newAttr_prop.project(nil));
+    ws.fetch(ATTR_OWN).fetch(WS).insert(newAttr_prop.project(oid(nil)));
     ws.fetch(ATTR_QN).fetch(WS).insert(qn.tmark(seqb));
     ws.fetch(ATTR_FRAG).fetch(WS).insert(newAttr_prop.project(WS));
 
@@ -3582,9 +3599,9 @@ PROC attr_constr (BAT[void, oid] qn, BAT[void, str] item, BAT[void, BAT] ws) : B
     seqb := nil;
 
     # return result as a BAT of BATs
-    var res := new (void, BAT).insert (nil, ws)
-                              .insert (nil, item)
-                              .insert (nil, item.project(WS))
+    var res := new (void, BAT).append (ws)
+                              .append (item)
+                              .append (item.project(WS))
                               .seqbase (0@0);
 
     return res;
@@ -3617,17 +3634,17 @@ PROC elem_constr_empty (BAT[void, oid] qn, BAT[void, BAT] ws) : BAT[void,BAT]
     ws.fetch(PRE_FRAG).fetch(WS).insert(newPre_prop.project(WS));
 
     { # add index entries for optimized scj
-        var kind_pre_ := newPre_prop.hmark(nil).chk_order();
-        ws.fetch(KIND_PRE + int(ELEMENT)).fetch(WS).insert(kind_pre_);
+        var kind_pre_ := newPre_prop.reverse().chk_order();
+        ws.fetch(KIND_PRE + int(ELEMENT)).fetch(WS).append(kind_pre_);
     }
     newPre_prop := nil;
     qn := qn.mark(seqb);
     seqb := nil;
 
     # return result as a BAT of BATs
-    var res := new (void, BAT).insert (nil, ws)
-                              .insert (nil, qn)
-                              .insert (nil, qn.project(WS))
+    var res := new (void, BAT).append (ws)
+                              .append (qn)
+                              .append (qn.project(WS))
                               .seqbase (0@0);
 
     { # adding new fragments to the WS_FRAG bat
@@ -3677,18 +3694,18 @@ PROC elem_constr (BAT[void, oid] qn_iter,
         
     # throw out nil values and generate iter|item|frag representation
     # for attributes
-    var selected := pre.select(nil,nil);
+    var selected := pre.select(oid(nil),oid(nil));
     var piter := selected.hmark(0@0).leftfetchjoin(iter).tmark(0@0); # make it void
     pre := selected.tmark(0@0);
-    pfrag := pfrag.select(nil,nil).tmark(0@0);
+    pfrag := pfrag.select(oid(nil),oid(nil)).tmark(0@0);
     selected := nil;
 
     # throw out nil values and generate iter|item|frag representation
     # for attributes
-    selected := attr.select(nil,nil);
+    selected := attr.select(oid(nil),oid(nil));
     var aiter := selected.hmark(0@0).leftfetchjoin(iter).tmark(0@0); # make it void
     attr := selected.tmark(0@0);
-    afrag := afrag.select(nil,nil).tmark(0@0);
+    afrag := afrag.select(oid(nil),oid(nil)).tmark(0@0);
     selected := nil;
 
     if (pre.count() != 0) {
@@ -3969,9 +3986,9 @@ PROC elem_constr (BAT[void, oid] qn_iter,
     }
 
     # create result as a BAT of BATs
-    var res := new (void, BAT).insert (nil, ws)
-                              .insert (nil, roots)
-                              .insert (nil, roots.project(WS))
+    var res := new (void, BAT).append (ws)
+                              .append (roots)
+                              .append (roots.project(WS))
                               .seqbase (0@0);
     roots := nil;
 
