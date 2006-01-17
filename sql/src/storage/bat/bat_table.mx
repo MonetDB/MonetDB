@@ -214,10 +214,11 @@ int
 table_delete(sql_trans *tr, sql_table *t, oid rid)
 {
 	BAT *b = bind_dbat(tr, t, INS);
+	oid id = b->hseqbase + BATcount(b);
 
 	assert(rid != oid_nil);
 
-	BUNins(b, ATOMnilptr(TYPE_void), (ptr) &rid);
+	BUNins(b, (ptr) &id, (ptr) &rid);
 	bat_destroy(b);
 	t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 	return 0;

@@ -214,23 +214,11 @@ void_append_inserted(BAT *b, BAT *i )
 {
 	size_t nr = 0;
 	BUN r;
-	oid nil = oid_nil;
+	oid id = b->hseqbase+BATcount(b);
 
 	for (r = i->batInserted; r < BUNlast(i); r = BUNnext(i, r)) {
-		BUNins(b, (ptr)&nil, BUNtail(i,r));
-		nr++;
-	}
-	return nr;
-}
-
-static size_t
-oid_append_inserted(BAT *b, BAT *i )
-{
-	size_t nr = 0;
-	BUN r;
-
-	for (r = i->batInserted; r < BUNlast(i); r = BUNnext(i, r)) {
-		BUNins(b, BUNhead(i,r), BUNtail(i,r));
+		BUNins(b, (ptr)&id, BUNtail(i,r));
+		id++;
 		nr++;
 	}
 	return nr;
@@ -1466,23 +1454,24 @@ bs_init_type(struct bm *bm)
 	BAT *U_type_systemname = mvc_bat(bm, "U_types_systemname", TYPE_str);
 	BAT *D_type = mvc_bat(bm, "D_types", TYPE_oid);
 
-	if (BATcount(type_sqlname) == 0)
-		for (n = types->h; n; n = n->next) {
-			oid nil = oid_nil;
+	if (BATcount(type_sqlname) == 0) {
+		oid rid = type_id->hseqbase + BATcount(type_id);
+		for (n = types->h; n; n = n->next, rid++) {
 			sql_type *t = n->data;
 			int radix = t->radix;
 			int eclass = t->eclass;
 
-			BUNins(type_id, &nil, &t->base.id);
+			BUNins(type_id, &rid, &t->base.id);
 
-			BUNins(type_sqlname, &nil, t->sqlname);
-			BUNins(type_digits, &nil, &t->digits);
-			BUNins(type_scale, &nil, &t->scale);
-			BUNins(type_radix, &nil, &radix);
-			BUNins(type_eclass, &nil, &eclass);
-			BUNins(type_module_id, &nil, &zero);
-			BUNins(type_systemname, &nil, t->base.name);
+			BUNins(type_sqlname, &rid, t->sqlname);
+			BUNins(type_digits, &rid, &t->digits);
+			BUNins(type_scale, &rid, &t->scale);
+			BUNins(type_radix, &rid, &radix);
+			BUNins(type_eclass, &rid, &eclass);
+			BUNins(type_module_id, &rid, &zero);
+			BUNins(type_systemname, &rid, t->base.name);
 		}
+	}
 
 	bat_destroy(type_id);
 	bat_destroy(type_sqlname);
@@ -1541,84 +1530,88 @@ bs_init_func(struct bm *bm)
 	BAT *D_arg = mvc_bat(bm, "D_args", TYPE_oid);
 
 	if (BATcount(func_name) == 0) {
-		for (n = funcs->h; n; n = n->next) {
-			oid nil = oid_nil;
+		oid rid = func_id->hseqbase + BATcount(func_id);
+		for (n = funcs->h; n; n = n->next, rid++) {
 			sql_func *f = n->data;
 			bit sql = f->sql;
 			int id, nr = 0;
 			char arg_nme[] = "arg_0";
+			oid aid = arg_id->hseqbase + BATcount(arg_id);
 
-			BUNins(func_id, &nil, &f->base.id);
-			BUNins(func_name, &nil, f->base.name);
-			BUNins(func_func, &nil, f->imp);
-			BUNins(func_sql, &nil, &sql);
-			BUNins(func_aggr, &nil, &F);
-			BUNins(func_module_id, &nil, &zero);
+			BUNins(func_id, &rid, &f->base.id);
+			BUNins(func_name, &rid, f->base.name);
+			BUNins(func_func, &rid, f->imp);
+			BUNins(func_sql, &rid, &sql);
+			BUNins(func_aggr, &rid, &F);
+			BUNins(func_module_id, &rid, &zero);
 		
 			if (f->res.type) {
 				char *name = "result";
 
 				id = OIDnew(1);
-				BUNins(arg_id, &nil, &id);
-				BUNins(arg_func_id, &nil, &f->base.id);
-				BUNins(arg_name, &nil, name);
-				BUNins(arg_type, &nil, f->res.type->sqlname);
-				BUNins(arg_type_digits, &nil, &f->res.scale);
-				BUNins(arg_type_scale, &nil, &f->res.scale);
-				BUNins(arg_number, &nil, &nr);
+				BUNins(arg_id, &aid, &id);
+				BUNins(arg_func_id, &aid, &f->base.id);
+				BUNins(arg_name, &aid, name);
+				BUNins(arg_type, &aid, f->res.type->sqlname);
+				BUNins(arg_type_digits, &aid, &f->res.scale);
+				BUNins(arg_type_scale, &aid, &f->res.scale);
+				BUNins(arg_number, &aid, &nr);
 				nr++;
+				aid++;
 			}
-			for (m = f->ops->h; m; m = m->next, nr++) {
+			for (m = f->ops->h; m; m = m->next, nr++, aid++) {
 				sql_arg *a = m->data;
 
 				id = OIDnew(1);
-				BUNins(arg_id, &nil, &id);
-				BUNins(arg_func_id, &nil, &f->base.id);
+				BUNins(arg_id, &aid, &id);
+				BUNins(arg_func_id, &aid, &f->base.id);
 				if (a->name) {
-					BUNins(arg_name, &nil, a->name);
+					BUNins(arg_name, &aid, a->name);
 				} else {
 					arg_nme[4] = '0' + nr;
-					BUNins(arg_name, &nil, arg_nme);
+					BUNins(arg_name, &aid, arg_nme);
 				}
-				BUNins(arg_type, &nil, a->type.type->sqlname);
-				BUNins(arg_type_digits, &nil, &a->type.scale);
-				BUNins(arg_type_scale, &nil, &a->type.scale);
-				BUNins(arg_number, &nil, &nr);
+				BUNins(arg_type, &aid, a->type.type->sqlname);
+				BUNins(arg_type_digits, &aid, &a->type.scale);
+				BUNins(arg_type_scale, &aid, &a->type.scale);
+				BUNins(arg_number, &aid, &nr);
 			}
 		}
-		for (n = aggrs->h; n; n = n->next) {
+		for (n = aggrs->h; n; n = n->next, rid++) {
 			char *name1 = "result";
 			char *name2 = "arg";
-			oid nil = oid_nil;
 			sql_aggr *aggr = n->data;
 			int nr = 0, id;
+			oid aid = arg_id->hseqbase + BATcount(arg_id);
 
-			BUNins(func_id, &nil, &aggr->base.id);
-			BUNins(func_name, &nil, aggr->base.name);
-			BUNins(func_func, &nil, aggr->imp);
-			BUNins(func_sql, &nil, &F);
-			BUNins(func_aggr, &nil, &T);
-			BUNins(func_module_id, &nil, &zero);
+			BUNins(func_id, &rid, &aggr->base.id);
+			BUNins(func_name, &rid, aggr->base.name);
+			BUNins(func_func, &rid, aggr->imp);
+			BUNins(func_sql, &rid, &F);
+			BUNins(func_aggr, &rid, &T);
+			BUNins(func_module_id, &rid, &zero);
 
 			id = OIDnew(1);
-			BUNins(arg_id, &nil, &id);
-			BUNins(arg_func_id, &nil, &aggr->base.id);
-			BUNins(arg_name, &nil, name1);
-			BUNins(arg_type, &nil, aggr->res.type->sqlname);
-			BUNins(arg_type_digits, &nil, &aggr->res.scale);
-			BUNins(arg_type_scale, &nil, &aggr->res.scale);
-			BUNins(arg_number, &nil, &nr);
+			BUNins(arg_id, &aid, &id);
+			BUNins(arg_func_id, &aid, &aggr->base.id);
+			BUNins(arg_name, &aid, name1);
+			BUNins(arg_type, &aid, aggr->res.type->sqlname);
+			BUNins(arg_type_digits, &aid, &aggr->res.scale);
+			BUNins(arg_type_scale, &aid, &aggr->res.scale);
+			BUNins(arg_number, &aid, &nr);
 			nr++;
+			aid++;
 
 			if (aggr->tpe.type) {
 				id = OIDnew(1);
-				BUNins(arg_id, &nil, &id);
-				BUNins(arg_func_id, &nil, &aggr->base.id);
-				BUNins(arg_name, &nil, name2);
-				BUNins(arg_type, &nil, aggr->tpe.type->sqlname);
-				BUNins(arg_type_digits, &nil, &aggr->tpe.scale);
-				BUNins(arg_type_scale, &nil, &aggr->tpe.scale);
-				BUNins(arg_number, &nil, &nr);
+				BUNins(arg_id, &aid, &id);
+				BUNins(arg_func_id, &aid, &aggr->base.id);
+				BUNins(arg_name, &aid, name2);
+				BUNins(arg_type, &aid, aggr->tpe.type->sqlname);
+				BUNins(arg_type_digits, &aid, &aggr->tpe.scale);
+				BUNins(arg_type_scale, &aid, &aggr->tpe.scale);
+				BUNins(arg_number, &aid, &nr);
+				aid++;
 			}
 		}
 	}
