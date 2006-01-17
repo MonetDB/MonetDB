@@ -176,7 +176,6 @@ int
 _nc_list(BAT **out, int *ncid)
 {
 	int nc_status, nvars, i;
-	oid nil_value = oid_nil;
 	char var_name[NC_MAX_NAME + 1];
 
 	nc_status = nc_inq_nvars(*ncid, &nvars);
@@ -191,7 +190,7 @@ _nc_list(BAT **out, int *ncid)
 	for (i = 0; i < nvars; i++) {
 		nc_status = nc_inq_varname(*ncid, i, var_name);
 		ASSERT_STATUS_out;
-		BUNins(*out, &nil_value, var_name);
+		BUNappend(*out, var_name);
 	}
 	return GDK_SUCCEED;
 }
