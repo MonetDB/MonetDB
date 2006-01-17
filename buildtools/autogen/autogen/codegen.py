@@ -32,9 +32,6 @@ mx2h = re.compile("^@h[ \t\r\n]+", re.MULTILINE)
 mx2c = re.compile("^@c[ \t\r\n]+", re.MULTILINE)
 mx2y = re.compile("^@y[ \t\r\n]+", re.MULTILINE)
 mx2l = re.compile("^@l[ \t\r\n]+", re.MULTILINE)
-mx2cc = re.compile("^@C[ \t\r\n]+", re.MULTILINE)
-mx2yy = re.compile("^@Y[ \t\r\n]+", re.MULTILINE)
-mx2ll = re.compile("^@L[ \t\r\n]+", re.MULTILINE)
 mx2odl = re.compile("^@odl[ \t\r\n]+", re.MULTILINE)
 mx2fgr = re.compile("^@fgr[ \t\r\n]+", re.MULTILINE)
 mx2cfg = re.compile("^@cfg[ \t\r\n]+", re.MULTILINE)
@@ -51,13 +48,10 @@ e_mx = re.compile('^@[^{}]', re.MULTILINE)
 code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                   (mx2mal, '.mal'),
                   (mx2mel, '.m'),
-                  (mx2cc, '.cc'),
                   (mx2c, '.c'),
                   (mx2h, '.h'),
                   (mx2y, '.y'),
                   (mx2l, '.l'),
-                  (mx2yy, '.yy'),
-                  (mx2ll, '.ll'),
                   (mx2odl, '.odl'),
                   (mx2cfg, '.cfg'),
                   (mx2fgr, '.fgr'),
@@ -73,13 +67,10 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                 'mx.in': [ (mx2mil, '.mil'),
                   (mx2mal, '.mal'),
                   (mx2mel, '.m'),
-                  (mx2cc, '.cc'),
                   (mx2c, '.c'),
                   (mx2h, '.h'),
                   (mx2y, '.y'),
                   (mx2l, '.l'),
-                  (mx2yy, '.yy'),
-                  (mx2ll, '.ll'),
                   (mx2odl, '.odl'),
                   (mx2fgr, '.fgr'),
                   (mx2cfg, '.cfg'),
@@ -102,13 +93,8 @@ code_gen = {'m':       [ '.proto.h', '.glue.c', '.mil' ],
             'tab.c':    [ '.tab.o' ],
             'l':        [ '.yy.c' ],
             'yy.c':     [ '.yy.o' ],
-            'yy':       [ '.tab.cc', '.tab.h' ],
-            'tab.cc':   [ '.tab.o' ],
-            'll':       [ '.yy.cc' ],
-            'yy.cc':    [ '.yy.o' ],
             'mt':       [ '.symbols.h', '.c' ],
             'brg':      [ '.c' ],
-            'cc':       [ '.o' ],
             'c':        [ '.o' ],
             'ruby.i':     [ '.ruby.c', '.ruby' ],
             'tcl.i':     [ '.tcl.c', '.tcl' ],
@@ -158,12 +144,9 @@ xsl_inc = re.compile(xsl_inc, re.MULTILINE)
 tex_inc = re.compile(tex_inc)
 
 scan_map = { 'c': [ c_inc, None, '' ],
-         'cc': [ c_inc, None, '' ],
          'h': [ c_inc, None, '' ],
          'y': [ c_inc, None, '' ],
-         'yy': [ c_inc, None, '' ],
          'l': [ c_inc, None, '' ],
-         'll': [ c_inc, None, '' ],
          'mt': [ c_inc, None, '' ],
          'brg': [ c_inc, None, '' ],
          'm': [ m_use, m_sep, '.m' ],

@@ -30,7 +30,6 @@ CC = cl -GF -W3 -wd4273 -wd4102 -MDd -nologo -Zi -G6 -Od -D_DEBUG -RTC1 -ZI
 !ELSE
 CC = cl -GF -W3 -wd4273 -wd4102 -MD -nologo -Zi -G6
 !ENDIF
-CXX = $(CC)
 ARCHIVER = lib
 GENDLL =
 # optimize use -Ox
@@ -38,12 +37,11 @@ RC = rc
 
 JAVAC = javac
 JAR = jar
-ANT = ant
+ANT = ant.bat
 
 CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES)
 
 # No general LDFLAGS needed
-CXXFLAGS = $(CFLAGS) -EHsc
 INSTALL = copy
 # TODO
 # replace this hack by something like configure ...
@@ -51,12 +49,10 @@ MKDIR = mkdir
 ECHO = echo
 CD = cd
 
-CXXEXT = \\\"cxx\\\"
-
 '''
 
-#automake_ext = ['c', 'cc', 'h', 'y', 'yy', 'l', 'll', 'glue.c']
-automake_ext = ['c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h', 'py.i', 'pm.i', '']
+#automake_ext = ['c', 'h', 'y', 'l', 'glue.c']
+automake_ext = ['c', 'h', 'tab.c', 'tab.h', 'yy.c', 'glue.c', 'proto.h', 'py.i', 'pm.i', '']
 
 def split_filename(f):
     base = f
@@ -299,8 +295,7 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref = 'lib', dll
     fd.write(add + "\n")
 
 def msc_translate_ext(f):
-    n = string.replace(f, '.o', '.obj')
-    return string.replace(n, '.cc', '.cxx')
+    return string.replace(f, '.o', '.obj')
 
 def msc_find_target(target, msc):
     tree = msc['TREE']
@@ -368,23 +363,12 @@ def msc_deps(fd, deps, objext, msc):
                 fd.write('\t$(YACC) $(YFLAGS) "%s.y"\n' % b)
                 fd.write('\t$(MV) y.tab.c "%s.tab.c"\n' % b)
                 fd.write("\t$(DEL) y.tab.h\n")
-            if ext == "tab.cxx":
-                fd.write(getsrc)
-                fd.write('\t$(YACC) $(YFLAGS) "%s.yy"\n' % b)
-                fd.write('\t$(MV) y.tab.c "%s.tab.cxx"\n' % b)
-                fd.write("\t$(DEL) y.tab.h\n")
             if ext == "yy.c":
                 fd.write(getsrc)
                 fd.write('\t$(LEX) $(LFLAGS) "%s.l"\n' % b)
                 # either lex.yy.c or lex.$(PARSERNAME).c gets generated
                 fd.write('\tif exist lex.yy.c $(MV) lex.yy.c "%s.yy.c"\n' % b)
                 fd.write('\tif exist lex.$(PARSERNAME).c $(MV) lex.$(PARSERNAME).c "%s.yy.c"\n' % b)
-            if ext == "yy.cxx":
-                fd.write(getsrc)
-                fd.write('\t$(LEX) $(LFLAGS) "%s.ll"\n' % b)
-                # either lex.yy.c or lex.$(PARSERNAME).c gets generated
-                fd.write('\tif exist lex.yy.c $(MV) lex.yy.c "%s.yy.cxx"\n' % b)
-                fd.write('\tif exist lex.$(PARSERNAME).c $(MV) lex.$(PARSERNAME).c "%s.yy.cxx"\n' % b)
 
             if ext == "glue.c":
                 fd.write(getsrc)
@@ -409,9 +393,6 @@ def msc_deps(fd, deps, objext, msc):
                         # -DCOMPILE_DL_%s is for PHP extensions
                         fd.write('\t$(CC) $(CFLAGS) $(GENDLL) -DLIB%s -DCOMPILE_DL_%s -Fo"%s" -c "%s"\n' %
                                  (name, name, t, src))
-                    elif dext == "cc":
-                        fd.write('\t$(CXX) $(CXXFLAGS) $(GENDLL) -DLIB%s -Fo"%s" -c "%s"\n' %
-                                 (name, t, src))
             if ext == 'py' and deplist[0].endswith('.py.i'):
                 fd.write('\t$(SWIG) -python $(SWIGFLAGS) -outdir . -o dummy.c "%s"\n' % src)
             if ext == 'py.c' and deplist[0].endswith('.py.i'):
@@ -571,17 +552,7 @@ def msc_binary(fd, var, binmap, msc):
                 SCRIPTS.append(target)
     fd.write(srcs + "\n")
     fd.write("%s.exe: $(%s_OBJS)\n" % (binname, binname.replace('-','_')))
-    is_cxx = None
-    if not msc['DEPS']:
-        for tar, deplist in binmap['DEPS'].items():
-            b, ext = split_filename(tar)
-            if ext in ('cc', 'cxx'):
-                is_cxx = 1
-                break
-    if is_cxx:
-        fd.write('\t$(CXX) $(CXXFLAGS)')
-    else:
-        fd.write('\t$(CC) $(CFLAGS)')
+    fd.write('\t$(CC) $(CFLAGS)')
     fd.write(" -Fe%s.exe $(%s_OBJS) /link $(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n\n" % (binname, binname.replace('-','_'), binname.replace('-','_')))
 
     if SCRIPTS:
@@ -616,8 +587,6 @@ def msc_bins(fd, var, binsmap, msc):
         bin, ext = split_filename(binsrc)
         if ext not in automake_ext:
             msc['EXTRA_DIST'].append(binsrc)
-
-        is_cxx = ext in ('cc', 'cxx')   # whether source is C++ or C
 
         if binsmap.has_key("DIR"):
             bd = binsmap["DIR"][0] # use first name given
@@ -660,10 +629,7 @@ def msc_bins(fd, var, binsmap, msc):
                         SCRIPTS.append(target)
         fd.write(srcs + "\n")
         fd.write("%s.exe: $(%s_OBJS)\n" % (bin, bin.replace('-','_')))
-        if is_cxx:
-            fd.write('\t$(CXX) $(CXXFLAGS)')
-        else:
-            fd.write('\t$(CC) $(CFLAGS)')
+        fd.write('\t$(CC) $(CFLAGS)')
         fd.write(" -Fe%s.exe $(%s_OBJS) /link $(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n\n" % (bin, bin.replace('-','_'), bin.replace('-','_')))
 
     if SCRIPTS:
@@ -944,20 +910,20 @@ def msc_ant(fd, var, ant, msc):
 
     fd.write("\n!IFDEF HAVE_JAVA\n\n") # there is ant if configure set HAVE_JAVA
 
-    fd.write("\n%s_ant_target:\n\t$(ANT) -f $(srcdir)/build.xml -Dbuilddir=$(PWD) -Djardir=$(PWD) %s\n" % (target, target))
+    fd.write("%s_ant_target:\n\tif not exist build.xml copy \"$(SRCDIR)\\build.xml\" build.xml\n\t$(ANT) -f build.xml -Dbuilddir=. -Djardir=. %s\n" % (target, target))
 
 
     # install is done at the end, here we simply collect to be installed files
     # INSTALL expects a list of dst,src,ext,install_directory,'lib?'.
     for file in ant['FILES']:
         sfile = file.replace(".", "_")
-    	fd.write('%s: %s_ant_target\n' % (sfile, target))
-        msc['INSTALL'].append((file,file,None,jd,None))
+    	fd.write('%s: %s_ant_target\n' % (file, target))
+        msc['INSTALL'].append((file,file,'',jd,None))
 
     fd.write("\n!ELSE\n\n")
 
-    fd.write('%s:\n' % target)
-    fd.write('install_%s:\n' % target)
+    fd.write('%s:\n' % file)
+    fd.write('install_%s:\n' % file)
 
     fd.write("\n!ENDIF #HAVE_JAVA\n\n")
 
@@ -977,7 +943,6 @@ output_funcs = {'SUBDIRS': msc_subdirs,
                 'INCLUDES': msc_includes,
                 'MTSAFE': msc_mtsafe,
                 'CFLAGS': msc_cflags,
-                'CXXFLAGS': msc_cflags,
                 'STATIC_MODS': msc_mods_to_libs,
                 'smallTOC_SHARED_MODS': msc_mods_to_libs,
                 'largeTOC_SHARED_MODS': msc_mods_to_libs,

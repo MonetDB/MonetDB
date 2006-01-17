@@ -18,8 +18,8 @@ import string
 import os
 from codegen import find_org
 
-#automake_ext = ['c', 'cc', 'h', 'y', 'yy', 'l', 'll', 'glue.c']
-automake_ext = ['c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h', 'py.c', 'pm.c', '']
+#automake_ext = ['c', 'h', 'y', 'l', 'glue.c']
+automake_ext = ['c', 'h', 'tab.c', 'tab.h', 'yy.c', 'glue.c', 'proto.h', 'py.c', 'pm.c', '']
 am_assign = "+="
 
 def split_filename(f):
@@ -132,7 +132,6 @@ def am_libdir(fd, var, values, am):
 
 def am_mtsafe(fd, var, values, am):
     fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
-    fd.write("CXXFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
 
 def am_list2string(l, pre, post):
     res = ""
@@ -450,7 +449,6 @@ def am_binary(fd, var, binmap, am):
 
     if binmap.has_key('MTSAFE'):
         fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
-        fd.write("CXXFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
 
     if binmap.has_key("LIBS"):
         fd.write(am_additional_libs(norm_binname, "", "BIN", binmap["LIBS"], am))
@@ -502,7 +500,6 @@ def am_bins(fd, var, binsmap, am):
         name = binsmap["NAME"][0] # use first name given
     if binsmap.has_key('MTSAFE'):
         fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
-        fd.write("CXXFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
     for binsrc in binsmap['SOURCES']:
         SCRIPTS = []
         bin, ext = split_filename(binsrc)
@@ -625,7 +622,6 @@ def am_library(fd, var, libmap, am):
 
     if libmap.has_key('MTSAFE'):
         fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
-        fd.write("CXXFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
 
     if libmap.has_key("LIBS"):
         fd.write(am_additional_libs(libname, sep, "LIB", libmap["LIBS"], am, pref))
@@ -685,7 +681,6 @@ def am_libs(fd, var, libsmap, am):
 
     if libsmap.has_key('MTSAFE'):
         fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
-        fd.write("CXXFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
 
     libnames = []
     for libsrc in libsmap['SOURCES']:
@@ -856,7 +851,6 @@ output_funcs = {'SUBDIRS': am_subdirs,
                 'MTSAFE': am_mtsafe,
                 'SCRIPTS': am_scripts,
                 'CFLAGS': am_cflags,
-                'CXXFLAGS': am_cflags,
                 'STATIC_MODS': am_mods_to_libs,
                 'smallTOC_SHARED_MODS': am_mods_to_libs,
                 'largeTOC_SHARED_MODS': am_mods_to_libs,
@@ -879,8 +873,6 @@ def output(tree, cwd, topdir, automake, conditional):
 ## autogen includes dependencies so automake doesn\'t need to generated them
 
 AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
-
-CXXEXT = \\\"cc\\\"
 
 ''')
 
