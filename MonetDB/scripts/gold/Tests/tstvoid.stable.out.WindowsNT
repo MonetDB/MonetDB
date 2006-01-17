@@ -163,8 +163,8 @@ ls();
 [ "void_category",	  "void", "category_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "void_class",		  "void", "class_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "void_gender",	  "void", "chr",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
-[ "void_neg",		  "void", "oid",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
-[ "void_pos",		  "void", "oid",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "void_neg",		  "void", "void",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "void_pos",		  "void", "void",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "void_town",		  "void", "town_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 commit();
 quit();
