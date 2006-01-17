@@ -910,7 +910,15 @@ def msc_ant(fd, var, ant, msc):
 
     fd.write("\n!IFDEF HAVE_JAVA\n\n") # there is ant if configure set HAVE_JAVA
 
-    fd.write("%s_ant_target:\n\tif not exist build.xml copy \"$(SRCDIR)\\build.xml\" build.xml\n\t$(ANT) -f build.xml -Dbuilddir=. -Djardir=. %s\n" % (target, target))
+    # we create a bat file that contains the call to ant so that we
+    # can get hold of the full path name of the current working
+    # directory
+    fd.write("callant.bat:\n")
+    fd.write("\techo @set PWD=%~dp0>callant.bat\n")
+    fd.write("\techo @set PWD=%PWD:~0,-1%>>callant.bat\n")
+    fd.write("\techo @$(ANT) -d -f $(SRCDIR)\\build.xml \"-Dbuilddir=%%PWD%%\" \"-Djardir=%%PWD%%\" %s>>callant.bat\n" % target)
+    fd.write("%s_ant_target: callant.bat\n" % target)
+    fd.write("\tcallant.bat\n")
 
 
     # install is done at the end, here we simply collect to be installed files
