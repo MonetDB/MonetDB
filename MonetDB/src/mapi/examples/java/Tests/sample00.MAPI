@@ -1,0 +1,3 @@
+#!/bin/sh
+
+Mlog -x "ant -emacs -buildfile ${TSTSRCDIR}/../build.xml -Dbuilddir=${TSTBLDDIR}/../ -Dhost=\"${HOST}\" -Dport=${MAPIPORT} -Djardir=${TSTBLDDIR}/../../ ${TST}"
