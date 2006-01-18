@@ -1,4 +1,4 @@
-module("color","array","mmath");
+module("color");module("array");module("mmath");
 { 
 	var width := 40;
 	var height := 30;

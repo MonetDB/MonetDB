@@ -47,21 +47,17 @@ loading and unloading new modules.
 
 @+ Module management
 @m
-.BUILTIN module(str modname, ...str...) = CMDmodule;
-"Loads Monet extension modules (previously installed with Minstall)
- into a running Mserver.
- After this, you will be able to use new Atoms (e.g. polygon), Search
- Accelerators (e.g. R-tree), Commands (e.g. spatjoin(A,B)), and Iterators
- (e.g. B.nearloop(rect) {}).
- You can either load modules installed by yourself or by the system
- administrator (adm)
+.BUILTIN module(str modname) = CMDmodule;
+"Loads Monet extension module into a running Mserver.
+ After this, you will be able to use new Atoms (e.g. polygon), 
+ Buildins and Commands (e.g. spatjoin(A,B)). 
 
  In command-line mode, you can save typing the \" (providing the
  resulting identifier does not collide with another MIL keyword)."
 
-.BUILTIN drop(str modname, ...str...) = CMDdrop;
-"Unloads Monet extension modules (previously loaded with MODULE())
- You can only unload modules installed by yourself.
+.BUILTIN drop(str modname) = CMDdrop;
+"Unloads Monet extension module (previously loaded with MODULE())
+ You can only unload a module installed by yourself.
 
  In command-line mode, you can save typing the \" (though this often
  will collide with a MIL keyword)."
@@ -327,31 +323,29 @@ CMDmodule(Cntxt stk, YYSTREE lt, ValPtr res)
 
 	/* run initscript in the clients lowest stack */
 	CNTXTclient(stk, &c);
-	while (lt && ret >= 0) {
-		unsigned i;
 
-		for (i = 0; i < lt->cnt; i++) {
-			ValRecord res1;
-			str initstr = NULL;
-			str mod;
+	if (lt->cnt == 1) {
+		ValRecord res1;
+		str initstr = NULL;
+		str mod;
 
-			if (!lt->yysons[i])
-				continue;
-			(void) interpret(c->stk, lt->yysons[i], &res1);
-			if (ret < 0 || res1.vtype != TYPE_str) {
-				GDKerror("CMDmodule: illegal argument.\n");
-				return GDK_FAIL;
-			}
-			mod = res1.val.sval;
-			initstr = moduleClient(c, mod, moduleGetClient(c));
-			if (initstr != NULL) {
-				moduleEnterClient(c, mod);
-				ret = interpret_str(c->stk, initstr, res);
-				moduleExitClient(c);
-				GDKfree(initstr);
-			}
+		(void) interpret(c->stk, lt->yysons[0], &res1);
+		if (ret < 0 || res1.vtype != TYPE_str) {
+			GDKerror("CMDmodule: illegal argument.\n");
+			return GDK_FAIL;
 		}
-		lt = YYOVERFLOW(lt);
+		mod = res1.val.sval;
+		initstr = moduleClient(c, mod, moduleGetClient(c));
+		if (initstr != NULL) {
+			moduleEnterClient(c, mod);
+			ret = interpret_str(c->stk, initstr, res);
+			moduleExitClient(c);
+			GDKfree(initstr);
+		}
+	} else {
+		GDKerror("module(str) called with too many (%d) arguments", 
+		lt->cnt);
+		return GDK_FAIL;
 	}
 	if (ret < 0)
 		return GDK_FAIL;

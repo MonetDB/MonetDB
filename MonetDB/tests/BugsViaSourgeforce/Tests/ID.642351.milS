@@ -22,7 +22,7 @@
 # intersection, those values should always be there,
 # shouldn't they?
 
-module("unix","ascii_io");
+module("unix");module("ascii_io");
 var TTD := getenv("TSTTRGDIR");
 
 var b:=new(oid,str);

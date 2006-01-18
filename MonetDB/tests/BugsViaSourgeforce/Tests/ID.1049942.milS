@@ -1,4 +1,4 @@
-module(tcpip,radix);
+module(tcpip);module(radix);
 proc f(): bat[void,dbl] {
     var a := uniform(100000).[dbl]().copy();
     printf("done...\n");

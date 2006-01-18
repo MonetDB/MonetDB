@@ -20,7 +20,7 @@ stdout of test 'tstvoid` in directory 'scripts/gold` itself:
 # Monet Database Server V4.3.15
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-module(ascii_io,unix);
+module(ascii_io);module(unix);
 # should run if you set TSTTRGDIR to pwd
 
 var path:=getenv("TSTTRGDIR");
@@ -76,7 +76,7 @@ quit();
 # Monet Database Server V4.3.11
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-module(enum,str);
+module(enum);module(str);
 
 var o := bat("car_age").reverse().fetch(0);
 

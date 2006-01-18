@@ -1,4 +1,4 @@
-module(xtables,ascii_io);
+module(xtables);module(ascii_io);
 
 backup_dir := "";
 

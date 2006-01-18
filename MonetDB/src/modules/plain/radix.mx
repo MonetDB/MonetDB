@@ -980,7 +980,9 @@ res_join.count().print();
 quick test
 ==========
 
-module(radix,alarm,pcl);
+module(radix);
+module(alarm);
+module(pcl);
 
 var b := view_bbp_name.reverse();
 if (not(b.exist("res_join")))
@@ -1024,7 +1026,8 @@ tst(res_join,19);
 jivejoin
 ========
 
-module(alarm,radix);
+module(alarm);
+module(radix);
 
 proc log2(int n) : int { var ret := 0; while((n :/= 2) > 0) ret :+= 1; return ret; }
 

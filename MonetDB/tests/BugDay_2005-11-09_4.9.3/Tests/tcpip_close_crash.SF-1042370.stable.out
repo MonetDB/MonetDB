@@ -10,7 +10,7 @@ stdout of test 'tcpip_close_crash.SF-1042370` in directory 'tests/BugDay_2005-11
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 module(mapi);
-module("tcpip", "alarm");
+module("tcpip");module("alarm");
 
 VAR tcpip_port := get_mapi_port();
 

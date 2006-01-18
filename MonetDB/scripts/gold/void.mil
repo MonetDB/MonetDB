@@ -1,4 +1,4 @@
-module(enum,str);
+module(enum);module(str);
 
 var o := bat("car_age").reverse().fetch(0);
 

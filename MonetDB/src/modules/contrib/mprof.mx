@@ -1455,8 +1455,10 @@ the power of the aggregates.
 @mil
 setoid(oid(20000000));
 module(mprof);
-module(gdkmem,bulk);
-module(integer,groupFunctional);
+module(gdkmem);
+module(bulk);
+module(integer);
+module(groupFunctional);
 
 
 proc pmSummary() : void {
