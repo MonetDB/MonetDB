@@ -1107,6 +1107,21 @@ GDKfree(void *blk)
 		MT_alloc_register((char *) (s - 2), maxsize, 's');
 		GDKvmfree((char *) (s - 2), (size_t) size, maxsize);
 	} else {
+#ifndef NDEBUG
+		/* The check above detects obvious duplicate free's,
+		 * but fails in case the "check-bit" is cleared between
+		 * two free's (e.g., as the respective memory has been 
+		 * re-allocated and initialized.
+		 * To simplify detection & debugging of duplicate free's,
+		 * we now overwrite the to be freed memory, which will
+		 * (1) trigger a segfault in case the memory had already
+		 * been freed and/or trigger some error in case the memory
+		 * is accessed after is has been freed.
+		 * To avoid performance penalty in the "production version",
+		 * we only do this in debugging/development mode.
+		 */
+		memset(s,255,size - (8 + (size & 1)));
+#endif
 #ifdef GDK_MEM_MISALIGN
 		if (size & 1)
 			free(((char *) s) - 4);
