@@ -71,9 +71,9 @@ def clients(x,dbinit):
 
 def main():
     x = 0
-    x += 1; clients(x,"module(mapi,pathfinder); mapi_start(); pfstart();")
-    x += 1; clients(x,"module(mapi,pathfinder); pfstart(); mapi_start();")
-    x += 1; clients(x,"module(pathfinder,mapi); mapi_start(); pfstart();")
-    x += 1; clients(x,"module(pathfinder,mapi); pfstart(); mapi_start();")
+    x += 1; clients(x,"module(mapi);module(pathfinder); mapi_start(); pfstart();")
+    x += 1; clients(x,"module(mapi);module(pathfinder); pfstart(); mapi_start();")
+    x += 1; clients(x,"module(pathfinder);module(mapi); mapi_start(); pfstart();")
+    x += 1; clients(x,"module(pathfinder);module(mapi); pfstart(); mapi_start();")
 
 main()

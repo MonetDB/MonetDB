@@ -9,7 +9,7 @@ stdout of test 'nat_oid_conv.SF-1261765` in directory 'tests/BugDay_2005-12-19_0
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-module(unix,pathfinder);
+module(unix);module(pathfinder);
 var TSTSRCDIR := getenv("TSTSRCDIR");
 shred_doc(TSTSRCDIR+"/test1261765.xml", "test1261765.xml");
 # Shredded XML doc("test1261765.xml"), total time after commit=0.008s

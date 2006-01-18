@@ -9,7 +9,7 @@ stdout of test 'mposjoin_void_void.SF-1404023.q1a` in directory 'tests/BugTracke
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-module(unix,pathfinder);
+module(unix);module(pathfinder);
 
 var TSTSRCDIR := getenv("TSTSRCDIR");
 

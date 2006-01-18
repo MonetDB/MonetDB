@@ -1,4 +1,4 @@
-module(unix,pathfinder);
+module(unix);module(pathfinder);
 
 var TSTSRCDIR := getenv("TSTSRCDIR");
 

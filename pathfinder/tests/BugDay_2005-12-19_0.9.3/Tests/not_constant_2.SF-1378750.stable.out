@@ -9,7 +9,7 @@ stdout of test 'not_constant_2.SF-1378750` in directory 'tests/BugDay_2005-12-19
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-module(unix,pathfinder);
+module(unix);module(pathfinder);
 
 var TSTSRCDIR := getenv("TSTSRCDIR");
 
