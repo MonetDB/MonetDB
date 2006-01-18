@@ -1185,7 +1185,7 @@ clean_print(char *msg, const char *prefix, FILE *fd)
 		char *p = strchr(msg, '\n');
 
 		if (p)
-			*p = 0;
+			*p++ = 0;
 
 		/* skip over prefix */
 		if (strncmp(msg, prefix, len) == 0)
