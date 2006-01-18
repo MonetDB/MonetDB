@@ -24,3 +24,4 @@ slice
 enum
 radix
 HAVE_PCRE?pcre
+builtin
