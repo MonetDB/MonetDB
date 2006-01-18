@@ -256,7 +256,7 @@ BATappend(BAT *b, BAT *n)
 				f++;
 				m = f + sz;
 				for(; f<m; f++, r+= yy) {
-					bunfastins_nocheck(b, r, f, NULL, yy);
+					bunfastins_nocheck(b, r, (ptr)&f, NULL, yy);
 				}
 			} else {
 				BATsetcount(b, BATcount(b)+sz);
