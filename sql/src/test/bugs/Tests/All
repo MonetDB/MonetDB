@@ -46,7 +46,7 @@ view_case-bug-sf-1023058
 trimtest-bug-sf-1023588
 savepoint_rollback-bug-sf-1023652
 select_orderby_alias-bug-sf-1024615
-like-bug-sf-1031435.sql
+like-bug-sf-1031435
 unicode_varchar-bug-sf-1041324_MapiClient
 HAVE_JAVA?unicode_varchar-bug-sf-1041324_JdbcClient
 unique-bug-sf-1043512
