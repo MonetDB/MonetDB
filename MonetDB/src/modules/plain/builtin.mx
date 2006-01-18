@@ -1250,6 +1250,11 @@ CMDprint_multitable(BAT *b)
 	}
 
 	BATmultiprintf(GDKout, nbats + 1, piv, FALSE, 0, 1);
+
+	BATloopFast(b, p, q, xx) {
+		BBPunfix(*(bat *) BUNtail(b, p));
+	}
+
 	return GDK_SUCCEED;
 }
 
