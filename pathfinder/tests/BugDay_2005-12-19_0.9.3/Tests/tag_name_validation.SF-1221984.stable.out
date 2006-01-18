@@ -21,7 +21,6 @@ Over..
 # 21:40:22 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=52049 tag_name_validation.SF-1221984.xq
 # 21:40:22 >  
 
-= ? Isn't "empty output" correct/expected due to the error that occurs ? =
 
 # 21:40:22 >  
 # 21:40:22 >  Done.

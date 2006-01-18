@@ -64,13 +64,13 @@ stderr of test 'tag_name_validation.SF-1221984` in directory 'tests/BugDay_2005-
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_BugDay_2005-12-19_0.9.3
 
-# 21:40:22 >  
-# 21:40:22 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=52049 tag_name_validation.SF-1221984.xq
-# 21:40:22 >  
+# 13:24:50 >  
+# 13:24:50 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=55645 tag_name_validation.SF-1221984.xq
+# 13:24:50 >  
 
-= ? Isn't this error message correct/expected ? =
+ERROR: err:XPTY0004: illegal qname ' '
 
-# 21:40:22 >  
-# 21:40:22 >  Done.
-# 21:40:22 >  
+# 13:24:50 >  
+# 13:24:50 >  Done.
+# 13:24:50 >  
 
