@@ -658,12 +658,21 @@ CMDclientid(Cntxt stk, YYSTREE lt, ValPtr res)
 int
 CMDkill(Cntxt stk, YYSTREE lt, ValPtr res)
 {
-	Client c;
+	Client c, self;
 	int *i;
 
 	@:builtin_args(1)@;
 	@:builtin_operand(0,TYPE_int,i)@
+	CNTXTclient(stk, &self);
 	CNTXTclient(*i, &c);
+	if (c == self) {
+		GDKerror("CMDkill: cannot kill self.\n");
+		return -1;
+	}
+	if (c == monet_clients) {
+		GDKerror("CMDkill: cannot kill console.\n");
+		return -1;
+	}
 	killClient(c, TRUE);
 	@:return_void@
 	return 0;
