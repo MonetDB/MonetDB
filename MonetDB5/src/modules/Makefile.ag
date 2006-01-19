@@ -15,11 +15,4 @@
 # Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
-# 
-# Contributor(s):
-# 		Martin Kersten <Martin.Kersten@cwi.nl>
-# 		Peter Boncz <Peter.Boncz@cwi.nl>
-# 		Niels Nes <Niels.Nes@cwi.nl>
-# 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
-
 SUBDIRS = atoms kernel mal mil
