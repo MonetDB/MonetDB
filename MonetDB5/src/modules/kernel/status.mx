@@ -168,6 +168,8 @@ comment "Produce a list of default ports for a specific language";
 @h
 #ifndef _SYS_H_
 #define _SYS_H_
+mal_export str SYSgetDatabases(int *ret);
+mal_export str SYSgetPorts(int *ret, str *lang);
 #endif
 @-
 
@@ -767,7 +769,6 @@ Collect the database and their access permissions for inspection.
 Note, this code base should be changed for the Windows setting.
 @c
 #include <dirent.h>
-mal_export str SYSgetDatabases(int *ret);
 str SYSgetDatabases(int *ret)
 {
 	BAT *b;
@@ -789,7 +790,7 @@ str SYSgetDatabases(int *ret)
 			f= fopen(buf,"r");
 			if( f  && fgets(buf,PATHLENGTH,f) != NULL){
 				sscanf(buf,"USR=%d PID=%d %s", &uid,&pid,buf);
-				/* w00t! for platform independence! */
+				/* w00t! for platform independence! (NOT!) */
 				snprintf(buf,PATHLENGTH,"/proc/%d",pid);
 				fclose(f);
 			} else
@@ -805,7 +806,6 @@ str SYSgetDatabases(int *ret)
 	return MAL_SUCCEED;
 }
 
-mal_export str SYSgetPorts(int *ret, str *lang);
 str SYSgetPorts(int *ret, str *lang)
 {
 	BAT *b;
@@ -814,7 +814,10 @@ str SYSgetPorts(int *ret, str *lang)
 	char buf[PATHLENGTH];
 	FILE *f;
 	int port;
+	str llang;
 	
+	/* if lang is NULL, default to "mal" */
+	llang = (lang == NULL ? "mal" : *lang);
 	b = BATnew(TYPE_str, TYPE_int, 50);
 	/* scan the parent for directories */
 	d= opendir("..");
@@ -823,7 +826,7 @@ str SYSgetPorts(int *ret, str *lang)
 		snprintf(buf,PATHLENGTH,"../%s",e->d_name);
 		db= opendir(buf);
 		if( db != NULL) {
-			snprintf(buf,PATHLENGTH,"../%s/.%s.port",e->d_name,*lang);
+			snprintf(buf,PATHLENGTH,"../%s/.%s.port",e->d_name,llang);
 			f= fopen(buf,"r");
 			if( f  && fgets(buf,PATHLENGTH,f) != NULL){
 				port= (int) strtol(buf,NULL,10);

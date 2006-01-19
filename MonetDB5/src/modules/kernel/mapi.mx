@@ -51,7 +51,10 @@ address MAPIlisten_default
 comment "Start a Mapi server with the default settings.";
 command listen(port:int):int
 address MAPIlisten_port
-comment "Start a Mapi server with the default settings.";
+comment "Start a Mapi server on the given port";
+#command listen(open:bit):int
+#address MAPIlisten_open
+#comment "Start a Mapi server on the default port global bound or not";
 command listen(port:int, maxusers:int):int
 address MAPIlisten2
 comment "Start a Mapi server.";
@@ -248,8 +251,9 @@ MAPIlistenThread(int *Sock)
 				GDKsyserror("MAPIlisten:fdin problems\n");
 				continue;
 			}
-			/* write challenge string, the challenge is currently empty (disabled) */
-			challenge = "::mserver_mal:4\n";
+			/* write challenge string, the challenge is currently empty
+			  (disabled), note that we claim to speak proto 5 here */
+			challenge = "::mserver:5\n";
 			/* temporarily misuse name */
 			snprintf(name, BLOCK, "%2d%s", (unsigned int) strlen(challenge), challenge);
 			stream_write(fdout, name, strlen(name), 1);
@@ -278,11 +282,12 @@ MAPIlistenThread(int *Sock)
 			printf("mapi:Client accepted %s\n", name);
 			fflush(stdout);
 #endif
-			s = strrchr(name, ':');
+			s = strchr(name, ':'); /* user */
+			if (s) s = strchr(s + 1, ':'); /* password */
+			if (s) s = strchr(s + 1, ':'); /* language */
 			blocked = s && strncmp(s, ":blocked", 8) == 0;
 			if (blocked) {
 				/* printf("mapi:use blocked mode\n");fflush(stdout); */
-				*s = 0;
 				fdin = block_stream(stream_rstream(fdin));
 				fdout = block_stream(socket_wstream(msgsock, "Server mapi write"));
 			} else {
