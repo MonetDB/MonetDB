@@ -16,7 +16,7 @@
 
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.53)
-AC_INIT(src/server/sql_parser.mx)
+AC_INIT(src/include/sql_catalog.h)
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -36,10 +36,11 @@ AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
 req_monetdb_ver='4.9.3'
-AM_MONETDB_CLIENT($req_monetdb_ver)
+AM_MONET($req_monetdb_ver)
 if test "x$have_monet" != xyes; then
 	AC_MSG_ERROR([SQL requires at least version $req_monetdb_ver of MonetDB, but only version $MONETVERS was found.])
 fi
+AM_MONETDB_UTILS()
 req_monetdb_ver='4.99.19'
 AM_MONET5($req_monetdb_ver)
 AM_CONDITIONAL(MONET5,test "x$have_monet5" = xyes)
