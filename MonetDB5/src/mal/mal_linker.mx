@@ -331,7 +331,8 @@ Use the search path provided in the configuration file
 	stream_printf(GDKout, "load[%d]:%s %s:%s\n", lastmodule, modulename, fullname, 
 		handle == NULL? (handle == NULL ? errbuf : "failed") : "succeeded");
 #endif
-	if ( handle == NULL && (errmsg= dlerror()) ) {
+	if (handle == NULL) {
+		errmsg = dlerror();
 		snprintf(errbuf, 1024, "%s: loader error %s", modulename, errmsg);
 		GDKfree(fullname);
 		return (str) throwException("loaderException", 
@@ -339,15 +340,16 @@ Use the search path provided in the configuration file
 	}
 
 	mal_set_lock(mal_contextLock, "loadModule");
-	if (lastmodule  == maxmodules)
+	if (lastmodule == maxmodules) {
 		GDKerror("loadModule:internal error, too many modules loaded\n");
-	else {
-		moduleLoaded[lastmodule ] = GDKstrdup(modulename);
-		moduleFiles[lastmodule ] = fullname;
-		moduleHandle[lastmodule ] = handle;
+	} else {
+		moduleLoaded[lastmodule] = GDKstrdup(modulename);
+		moduleFiles[lastmodule] = fullname;
+		moduleHandle[lastmodule] = handle;
 		lastmodule ++;
 	}
 	mal_unset_lock(mal_contextLock, "loadModule");
+
 	return 0;
 }
 

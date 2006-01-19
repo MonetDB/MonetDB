@@ -204,7 +204,7 @@ scheduleClient(str command, bstream *fin, stream *fout)
 	}
 	
 	c = initClient(GDKstrdup(user), passwd, fin, fout);
-	if( findScenario(lang)  && findScenario(lang)->initSystemCmd==NULL){
+	if (findScenario(lang)  && findScenario(lang)->initSystemCmd == NULL) {
 @-
 Check if we have loaded already the language library.
 The naming convention is to use the language name as an
