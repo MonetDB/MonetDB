@@ -53,6 +53,7 @@ CD = cd
 
 #automake_ext = ['c', 'h', 'y', 'l', 'glue.c']
 automake_ext = ['c', 'h', 'tab.c', 'tab.h', 'yy.c', 'glue.c', 'proto.h', 'py.i', 'pm.i', '']
+buildtools_ext = ['mx', 'm', 'y', 'l']
 
 def split_filename(f):
     base = f
@@ -312,10 +313,14 @@ def msc_find_target(target, msc):
                     return "LIB", string.upper(name)
     return "UNKNOWN", "UNKNOWN"
 
+def needbuilttool(deplist):
+    for d in deplist:
+        f,ext = rsplit_filename(d)
+        if ext in buildtools_ext:
+            return 1
+    return 0
 
-def msc_deps(fd, deps, objext, msc):
-    if not msc['DEPS']:
-        for tar, deplist in deps.items():
+def msc_dep(fd, tar, deplist, msc):
             t = msc_translate_ext(tar)
             b, ext = split_filename(t)
             tf = msc_translate_file(t, msc)
@@ -399,6 +404,18 @@ def msc_deps(fd, deps, objext, msc):
                 fd.write('\t$(SWIG) -python $(SWIGFLAGS) -outdir . -o "$@" "%s"\n' % src)
             if ext == 'res':
                 fd.write("\t$(RC) -fo%s %s\n" % (t, src))
+
+def msc_deps(fd, deps, objext, msc):
+    if not msc['DEPS']:
+        fd.write("!IFDEF NEED_MX\n")
+        for t, deplist in deps.items():
+            if (needbuilttool(deplist)):
+                msc_dep(fd, t, deplist, msc)
+        fd.write("!ENDIF #NEED_MX\n")
+        for t, deplist in deps.items():
+            if (not(needbuilttool(deplist))):
+                msc_dep(fd, t, deplist, msc)
+	
     msc['DEPS'].append("DONE")
 
 # list of scripts to install
@@ -585,8 +602,8 @@ def msc_bins(fd, var, binsmap, msc):
 
     for binsrc in binsmap['SOURCES']:
         bin, ext = split_filename(binsrc)
-        if ext not in automake_ext:
-            msc['EXTRA_DIST'].append(binsrc)
+        #if ext not in automake_ext:
+        msc['EXTRA_DIST'].append(binsrc)
 
         if binsmap.has_key("DIR"):
             bd = binsmap["DIR"][0] # use first name given
@@ -735,8 +752,8 @@ def msc_library(fd, var, libmap, msc):
 
     for src in libmap['SOURCES']:
         base, ext = split_filename(src)
-        if ext not in automake_ext:
-            msc['EXTRA_DIST'].append(src)
+        #if ext not in automake_ext:
+        msc['EXTRA_DIST'].append(src)
 
     srcs = pref + sep + libname + "_OBJS ="
     deffile = ''
@@ -811,8 +828,8 @@ def msc_libs(fd, var, libsmap, msc):
 
     for libsrc in libsmap['SOURCES']:
         libname, ext = split_filename(libsrc)
-        if ext not in automake_ext:
-            msc['EXTRA_DIST'].append(libsrc)
+        #if ext not in automake_ext:
+        msc['EXTRA_DIST'].append(libsrc)
         v = sep + libname
         msc['LIBS'].append('lib' + v + '.dll')
         msc['INSTALL'].append(('lib' + v, 'lib' + v, '.dll',

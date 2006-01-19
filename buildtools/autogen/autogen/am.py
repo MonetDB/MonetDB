@@ -19,7 +19,9 @@ import os
 from codegen import find_org
 
 #automake_ext = ['c', 'h', 'y', 'l', 'glue.c']
-automake_ext = ['c', 'h', 'tab.c', 'tab.h', 'yy.c', 'glue.c', 'proto.h', 'py.c', 'pm.c', '']
+automake_ext = ['o', 'lo', 'c', 'h', 'tab.c', 'tab.h', 'yy.c', 'glue.c', 'proto.h', 'py.c', 'pm.c', '']
+buildtools_ext = ['mx', 'm', 'y', 'l']
+
 am_assign = "+="
 
 def split_filename(f):
@@ -167,9 +169,11 @@ def am_find_hdrs_r(am, target, deps, hdrs, hdrs_ext, map):
     if deps.has_key(target):
         tdeps = deps[target]
         for dtarget in tdeps:
+            t, ext = split_filename(dtarget)
+            if ext not in automake_ext and dtarget not in am['EXTRA_DIST']:
+                am['EXTRA_DIST'].append(dtarget)
             org = find_org(deps, dtarget)
             if org in map['SOURCES']:
-                t, ext = split_filename(dtarget)
                 if ext in hdrs_ext and not dtarget in hdrs:
                     hdrs.append(dtarget)
                 am_find_hdrs_r(am, dtarget, deps, hdrs, hdrs_ext, map)
@@ -181,6 +185,8 @@ def am_find_hdrs(am, map):
             t, ext = split_filename(target)
             if ext in hdrs_ext and not target in am['HDRS']:
                 am['HDRS'].append(target)
+                if ext not in automake_ext:
+                    am['EXTRA_DIST'].append(target)
             am_find_hdrs_r(am, target, map['DEPS'], am['HDRS'], hdrs_ext, map)
 
 def am_find_ins(am, map):
@@ -225,20 +231,37 @@ def am_additional_install_libs(name, sep, list, am):
             add = add + " install-" + l + "LTLIBRARIES"
     return add + "\n"
 
+def needbuildtool(deplist):
+    for d in deplist:
+        f,ext = rsplit_filename(d)
+        if ext in buildtools_ext:
+            return 1
+    return 0
+
+def am_dep(fd, t, deplist, am):
+    t = t.replace('\\', '/')
+    n = t.replace('.o', '.lo', 1)
+    f,ext = rsplit_filename(n)
+    if t != n:
+        fd.write(n + " ")
+    fd.write(t + ":")
+    for d in deplist:
+        if not os.path.isabs(d):
+            fd.write(" " + am_translate_dir(d, am))
+        else:
+            print("!WARNING: dropped absolute dependency " + d)
+    fd.write("\n")
+
 def am_deps(fd, deps, objext, am):
     if len(am['DEPS']) <= 0:
+        fd.write("if NEED_MX\n")
         for t, deplist in deps.items():
-            t = t.replace('\\', '/')
-            n = t.replace('.o', '.lo', 1)
-            if t != n:
-                fd.write(n + " ")
-            fd.write(t + ":")
-            for d in deplist:
-                if not os.path.isabs(d):
-                    fd.write(" " + am_translate_dir(d, am))
-                else:
-                    print("!WARNING: dropped absolute dependency " + d)
-            fd.write("\n")
+            if (needbuildtool(deplist)):
+                am_dep(fd, t, deplist, am)
+        fd.write("endif\n")
+        for t, deplist in deps.items():
+            if (not(needbuildtool(deplist))):
+                am_dep(fd, t, deplist, am)
     am['DEPS'].append("DONE")
 
 
@@ -246,7 +269,7 @@ def am_deps(fd, deps, objext, am):
 def am_scripts(fd, var, scripts, am):
 #todo handle 'EXT' for empty ''.
 
-    s, ext = string.split(var, '_', 1);
+    s, ext = string.split(var, '_', 1)
     ext = [ ext ]
     if scripts.has_key("EXT"):
         ext = scripts["EXT"] # list of extentions
@@ -256,8 +279,8 @@ def am_scripts(fd, var, scripts, am):
         sd = scripts["DIR"][0] # use first name given
     sd = am_translate_dir(sd, am)
 
-    for src in scripts['SOURCES']:
-        am['EXTRA_DIST'].append(src)
+    #for src in scripts['SOURCES']:
+        #am['EXTRA_DIST'].append(src)
 
     for script in scripts['TARGETS']:
         s,ext2 = rsplit_filename(script)
@@ -287,6 +310,9 @@ def am_scripts(fd, var, scripts, am):
             fd.write(" C_%s = %s\n" % (mkname,script))
             fd.write(" C_script_%s = script_%s\n" % (mkname, script))
             fd.write("endif\n")
+            am['BUILT_SOURCES'].append("$(C_" +mkname+ ")")
+        else:
+            am['BUILT_SOURCES'].append(script)
 
         fd.write("script_%s: %s\n" % (script, script))
         fd.write("\tchmod a+x $<\n")
@@ -558,6 +584,8 @@ def am_bins(fd, var, binsmap, am):
             t, ext = split_filename(target)
             if ext in hdrs_ext:
                 am['HDRS'].append(target)
+                if ext not in automake_ext:
+                    am['EXTRA_DIST'].append(target)
 
     am_find_ins(am, binsmap)
     am_deps(fd, binsmap['DEPS'], ".o", am)
@@ -745,6 +773,8 @@ def am_libs(fd, var, libsmap, am):
             t, ext = split_filename(target)
             if ext in hdrs_ext:
                 am['HDRS'].append(target)
+                if ext not in automake_ext:
+                    am['EXTRA_DIST'].append(target)
 
     am_find_ins(am, libsmap)
     am_deps(fd, libsmap['DEPS'], ".lo", am)
@@ -758,9 +788,9 @@ def am_ant(fd, var, ant, am):
         jd = ant["DIR"][0] # use first name given
     jd = am_translate_dir(jd, am)
 
-    if ant.has_key("SOURCES"):
-        for src in ant['SOURCES']:
-            am['EXTRA_DIST'].append(src)
+    #if ant.has_key("SOURCES"):
+        #for src in ant['SOURCES']:
+            #am['EXTRA_DIST'].append(src)
 
     fd.write("\nif HAVE_JAVA\n\n")  # there is ant if configure set HAVE_JAVA
 
@@ -938,8 +968,9 @@ endif
         # the BUILT_SOURCES should be cleaned up by make (mostly)clean
         fd.write("MOSTLYCLEANFILES =%s\n" % am_list2string(am['BUILT_SOURCES'], " ", ""))
 
-    fd.write("EXTRA_DIST = Makefile.ag Makefile.msc%s\n" % \
+    fd.write("EXTRA_DIST = Makefile.msc%s " % \
           am_list2string(am['EXTRA_DIST'], " ", ""))
+    fd.write(" $(BUILT_SOURCES)\n")
 
     if am['LIBS']:
         lib = 'lib'
