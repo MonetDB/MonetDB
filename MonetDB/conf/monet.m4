@@ -2003,9 +2003,13 @@ fi
 ]) dnl AC_DEFUN AM_MONETDB_LIBS
 
 AC_DEFUN([AM_MONETDB_CLIENT],[
+dnl check for MonetDB
+AM_MONET($1)
+]) dnl AC_DEFUN AM_MONETDB_CLIENT
+
+AC_DEFUN([AM_MONETDB_UTILS],[
 
 dnl check for Monet and some basic utilities
-AM_MONET($1)
 AC_ARG_WITH(mx,
 	AC_HELP_STRING([--with-mx=FILE], [Mx is installed as FILE]),
 	have_mx="$withval",
@@ -2037,5 +2041,5 @@ else
 fi
 AC_SUBST(MEL)
 
-]) dnl AC_DEFUN AM_MONETDB_CLIENT
+]) dnl AC_DEFUN AM_MONETDB_UTILS
 

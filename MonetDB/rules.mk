@@ -89,6 +89,7 @@ HIDE=1
 	grep -v '^#include.*[<"]'"$(CONFIG_H)"'[">]' $*.yy.cc.tmp >> $*.yy.cc
 	$(RM) $*.yy.cc.tmp
 
+ifdef NEED_MX
 %.m: %.mx
 	$(MX) $(MXFLAGS) -x m $<
 
@@ -132,6 +133,7 @@ HIDE=1
 
 %.glue.c: %.m $(MEL)
 	$(MEL) $(INCLUDES) -glue $< > $@
+endif
 
 # The following rules generate two files using swig, the .xx.c and the
 # .xx file.  There may be a race condition here when using a parallel
@@ -202,8 +204,10 @@ HIDE=1
 %.eps: %.feps
 	$(CP) $< $@
 
+ifdef NEED_MX
 $(NO_INLINE_FILES:.mx=.lo): %.lo: %.c
 	$(LIBTOOL) --mode=compile $(COMPILE) $(NO_INLINE_CFLAGS) -c $<
+endif
 
 $(patsubst %.mx,%.lo,$(filter %.mx,$(NO_OPTIMIZE_FILES))): %.lo: %.c
 	$(LTCOMPILE) -c -o $@ -O0 $<

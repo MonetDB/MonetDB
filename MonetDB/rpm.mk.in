@@ -18,6 +18,7 @@
 
 rpmtopdir = $(shell cd $(top_builddir) && pwd)/rpm
 
+ifdef NEED_MX
 $(top_builddir)/$(distdir).tar.gz:
 	$(MAKE) $(AM_MAKEFLAGS) dist
 
@@ -62,3 +63,4 @@ rpm:	MonetDB.spec $(top_builddir)/$(distdir).tar.gz
 	$(RPMBUILD) --target `uname -m` --rcfile $(rpmtopdir)/rpmrc -ta $(top_builddir)/$(distdir).tar.gz
 
 	rm -rf $(rpmtopdir)/BUILD
+endif
