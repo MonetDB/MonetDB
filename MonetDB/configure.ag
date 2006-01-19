@@ -346,15 +346,7 @@ AC_MSG_RESULT($ctime_r3)
 
 AC_SYS_LARGEFILE()
 
-if test -f "$srcdir"/vertoo.data; then
-        dnl check for Mx and mel if we find the not distributed vertoo.data 
-        dnl having (this) file means we're compiling from CVS
-        dnl and not from the distribution tar ball
-	AM_MONETDB_UTILS()
-	AM_CONDITIONAL(NEED_MX, true)
-else
-	AM_CONDITIONAL(NEED_MX, false)
-fi
+AM_MONETDB_UTILS()
 
 AM_CONDITIONAL(CROSS_COMPILING, test x$cross_compiling = xyes)
 

@@ -2002,44 +2002,49 @@ fi
 
 ]) dnl AC_DEFUN AM_MONETDB_LIBS
 
-AC_DEFUN([AM_MONETDB_CLIENT],[
-dnl check for MonetDB
-AM_MONET($1)
-]) dnl AC_DEFUN AM_MONETDB_CLIENT
-
 AC_DEFUN([AM_MONETDB_UTILS],[
 
-dnl check for Monet and some basic utilities
-AC_ARG_WITH(mx,
-	AC_HELP_STRING([--with-mx=FILE], [Mx is installed as FILE]),
-	have_mx="$withval",
-	have_mx=auto)
-if test "x$have_mx" = xauto; then
-	AC_PATH_PROGS(MX,[ Mx$EXEEXT Mx ],,$PATH)
-	if test "x$MX" = x; then
-		AC_ERROR([No Mx$EXEEXT found in PATH=$PATH])
+if test -f "$srcdir"/vertoo.data; then
+        dnl check for Mx and mel if we find the not distributed vertoo.data 
+        dnl having (this) file means we're compiling from CVS
+        dnl and not from the distribution tar ball
+
+	dnl check for Monet and some basic utilities
+	AC_ARG_WITH(mx,
+		AC_HELP_STRING([--with-mx=FILE], [Mx is installed as FILE]),
+		have_mx="$withval",
+		have_mx=auto)
+	if test "x$have_mx" = xauto; then
+		AC_PATH_PROGS(MX,[ Mx$EXEEXT Mx ],,$PATH)
+		if test "x$MX" = x; then
+			AC_ERROR([No Mx$EXEEXT found in PATH=$PATH])
+		fi
+	elif test "x$have_mx" = xno; then
+		AC_MSG_ERROR([Mx is required])
+	else
+		MX="$withval"
 	fi
-elif test "x$have_mx" = xno; then
-	AC_MSG_ERROR([Mx is required])
-else
-	MX="$withval"
-fi
-AC_SUBST(MX)
-AC_ARG_WITH(mel,
-	AC_HELP_STRING([--with-mel=FILE], [mel is installed as FILE]),
-	have_mel="$withval",
-	have_mel=auto)
-if test "x$have_mel" = xauto; then
-	AC_PATH_PROGS(MEL,[ mel$EXEEXT mel ],,$PATH)
-	if test "x$MEL" = x; then
-		AC_ERROR([No mel$EXEEXT found in PATH=$PATH])
+	AC_SUBST(MX)
+	AC_ARG_WITH(mel,
+		AC_HELP_STRING([--with-mel=FILE], [mel is installed as FILE]),
+		have_mel="$withval",
+		have_mel=auto)
+	if test "x$have_mel" = xauto; then
+		AC_PATH_PROGS(MEL,[ mel$EXEEXT mel ],,$PATH)
+		if test "x$MEL" = x; then
+			AC_ERROR([No mel$EXEEXT found in PATH=$PATH])
+		fi
+	elif test "x$have_mel" = xno; then
+		AC_MSG_ERROR([mel is required])
+	else
+		MEL="$withval"
 	fi
-elif test "x$have_mel" = xno; then
-	AC_MSG_ERROR([mel is required])
+	AC_SUBST(MEL)
+
+	AM_CONDITIONAL(NEED_MX, true)
 else
-	MEL="$withval"
+	AM_CONDITIONAL(NEED_MX, false)
 fi
-AC_SUBST(MEL)
 
 ]) dnl AC_DEFUN AM_MONETDB_UTILS
 
