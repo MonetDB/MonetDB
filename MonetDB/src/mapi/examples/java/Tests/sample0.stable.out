@@ -15,20 +15,45 @@ quit();
 
 Over..
 
-# 19:06:02 >  
-# 19:06:02 >  Mtimeout -timeout 60 ./sample0.MAPI sample0 
-# 19:06:02 >  
+# 16:02:40 >  
+# 16:02:40 >  Mtimeout -timeout 60 ./sample0.MAPI sample0 
+# 16:02:40 >  
 
 
-# 19:06:02 >  
-# 19:06:02 >  java sample0 43397
-# 19:06:02 >  
+# 16:02:40 >  
+# 16:02:40 >  ant -emacs -buildfile /net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/MonetDB/src/mapi/examples/java/Tests/../build.xml -Dbuilddir=/net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/build-pegasus.ins.cwi.nl/MonetDB/src/mapi/examples/java/Tests/../ -Dhost=localhost -Dport=38816 -Dmapi_jar=/net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/build-pegasus.ins.cwi.nl/MonetDB/src/mapi/examples/java/Tests/../../ sample0
+# 16:02:40 >  
 
-# Start test on localhost:43397
+Buildfile: /net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/MonetDB/src/mapi/examples/java/Tests/../build.xml
+
+sample0:
+
+prepare:
+
+find_driver:
+
+mapi:
+
+prepare:
+
+compile_mapi:
+Compiling Java Mapi
+
+jar_mapi:
+
+compile:
+Compiling Java Mapi Examples
+
+test_class:
+Testing class sample
+# Start test on localhost:38816
 John is 23
 Mary is 23
 
-# 19:06:04 >  
-# 19:06:04 >  Done.
-# 19:06:04 >  
+BUILD SUCCESSFUL
+Total time: 1 second
+
+# 16:02:42 >  
+# 16:02:42 >  Done.
+# 16:02:42 >  
 

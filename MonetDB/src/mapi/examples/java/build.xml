@@ -22,10 +22,10 @@ All Rights Reserved.
 
   <!-- set global properties for this build -->
   <property name="srcdir"             value="." /> <!-- todo: make src -->
-  <property name="jardir"             value="../../clients/java/jars" />
   <property name="builddir"           value="build" />
   <property name="javac_version"      value="1.3" />
-  <property name="mapi_jar"           value="${jardir}/mapi.jar" /> 
+  <property name="mapi_jar"
+    value="${buildir}/../../clients/java/jars/mapi.jar" /> 
 
   <!-- full target -->
   <target name="all">
@@ -36,7 +36,7 @@ All Rights Reserved.
   <target name="compile" depends="prepare,mapi">
     <echo message="Compiling Java Mapi Examples" />
     <javac
-      classpath="${srcdir}:${builddir}:${mapi_jar}"
+      classpath="${srcdir}:${mapi_jar}"
       srcdir="${srcdir}"
       destdir="${builddir}"
       target="${javac_version}"
@@ -88,18 +88,21 @@ All Rights Reserved.
       </classpath>
       <arg value="${host}" />
       <arg value="${port}" />
+      <arg value="${test.arg}" />
     </java>
   </target>
 
-  <target name="sample">
+  <target name="sample0">
     <antcall target="test_class">
       <param name="test.class" value="sample" />
+      <param name="test.arg" value="false" />
     </antcall>
   </target>
 
-  <target name="sample00">
+  <target name="sample1">
     <antcall target="test_class">
       <param name="test.class" value="sample" />
+      <param name="test.arg" value="true" />
     </antcall>
   </target>
   
