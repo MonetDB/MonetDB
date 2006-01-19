@@ -1120,7 +1120,7 @@ GDKfree(void *blk)
 		 * To avoid performance penalty in the "production version",
 		 * we only do this in debugging/development mode.
 		 */
-		memset(s,255,size - (8 + (size & 1)));
+		memset(s,0xDB,size - (8 + (size & 1))); /* 0xDeadBeef */
 #endif
 #ifdef GDK_MEM_MISALIGN
 		if (size & 1)
