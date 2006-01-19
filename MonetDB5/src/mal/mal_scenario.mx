@@ -195,6 +195,7 @@ struct SCENARIO scenarioRec[MAXSCEN] = {
 	 "MALoptimizer", 0, 0,	
 	 0, 0, 0,
 	 "MALengine", (MALfcn) &MALengine, 0, 0},
+#if 0
 	{"mil","mil",
 	 "MILinit", 0,
 	 "MILexit", 0,
@@ -202,8 +203,8 @@ struct SCENARIO scenarioRec[MAXSCEN] = {
 	 "MILexitClient", 0,
 	 "MALreader", 0, 0,
 	 "MILparser", 0, 0,
-	 0, 0, 0,		/* no MILoptimizer */
-	 0, 0, 0,		/* no MILscheduler */
+	 0, 0, 0,               /* no MILoptimizer */
+	 0, 0, 0,               /* no MILscheduler */
 	 "MILengine", 0, 0, 0},
 	{"milCompiler","mil",
 	 "MILinit", 0,
@@ -212,10 +213,11 @@ struct SCENARIO scenarioRec[MAXSCEN] = {
 	 "MILexitClient", 0,
 	 "MALreader", 0, 0,
 	 "MILparser2", 0, 0,
-	 0, 0, 0,		/* no MILoptimizer */
-	 0, 0, 0,		/* no MILscheduler */
-	 0, 0, 0, 0		/* don;t execute */
-	 },
+	 0, 0, 0,               /* no MILoptimizer */
+	 0, 0, 0,               /* no MILscheduler */
+	 0, 0, 0, 0             /* don;t execute */
+	},
+#endif
 	{"sql","sql",
 	 "SQLinit", 0,
 	 "SQLexit", 0,
@@ -279,13 +281,12 @@ call once the routine default scenario for each client first.
 str
 initScenario(Client c, Scenario s)
 {
-	str msg = 0;
+	str msg = NULL;
 
 	if (s->initSystem && s->initSystemCmd == 0) {
 		/* prepare for conclicts */
 		mal_set_lock(mal_contextLock, "Scenario");
-		if( s->initSystemCmd == 0)
-			s->initSystemCmd = (MALfcn) getAddress(s->language, s->initSystem, 1);
+		s->initSystemCmd = (MALfcn) getAddress(s->language, s->initSystem, 1);
 @-
 Check if we have loaded already the language library.
 The naming convention is to use the language name as an
@@ -299,8 +300,9 @@ alias for the include file
 		}
 		if (s->initSystemCmd) {
 			msg = (*s->initSystemCmd) (c);
-		} else
+		} else {
 			msg = throwMessage(s->language,"Scenario not initialized"); 
+		}
 		mal_unset_lock(mal_contextLock, "Scenario");
 	}
 	if (msg)
