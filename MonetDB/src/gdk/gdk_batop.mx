@@ -2290,7 +2290,7 @@ BATcount_no_nil(BAT *b)
 		break;
 #endif
 	default:
-		if (b->hvarsized) {
+		if (b->tvarsized) {
 			@:cntloop(atom,var,tt)@
 		} else {
 			@:cntloop(atom,loc,tt)@
