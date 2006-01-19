@@ -37,7 +37,7 @@ shred_doc("c:\Documents and Settings\does_not_exist.xml","does_not_exist.4");
 !ERROR: CMDshred2bats: operation failed.
 
 shred_doc("c:\\does_not_exist.xml","does_not_exist.5");
-!ERROR: I/O warning : failed to load external entity "c:does_not_exist.xml"
+!ERROR: I/O warning : failed to load external entity "c:\does_not_exist.xml"
 !ERROR: shred:mainSHREDDER: xmlCreateURLParserCtxt("c:\does_not_exist.xml") failed
 !ERROR: CMDshred2bats: operation failed.
 
