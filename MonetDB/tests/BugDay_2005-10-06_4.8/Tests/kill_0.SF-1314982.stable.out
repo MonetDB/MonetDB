@@ -10,6 +10,8 @@ stdout of test 'kill_0.SF-1314982` in directory 'tests/BugDay_2005-10-06_4.8` it
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 kill(0);
+!ERROR: CMDkill: cannot kill self.
+quit();
 
 # 13:38:01 >  
 # 13:38:01 >  Done.
