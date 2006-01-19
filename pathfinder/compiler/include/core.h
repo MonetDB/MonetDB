@@ -126,10 +126,10 @@ enum PFctype_t {
   , c_self               = 43 /**< the context node itself */
 #ifdef BURKOWSKI
   /* Xiraf Axes */
-  , c_select_narrow      = 844 /**< give me some bastards (Burkowski stand-off matching) */
-  , c_select_wide        = 845 /**< give me all bastards (Burkowski stand-off matching) */
-  , c_reject_narrow      = 846 /**< give me all but some bastards (Burkowski stand-off matching) */
-  , c_reject_wide        = 847 /**< give me all but the bastards (Burkowski stand-off matching) */
+  , c_select_narrow      = 100 /**< give me some bastards (Burkowski stand-off matching) */
+  , c_select_wide        = 101 /**< give me all bastards (Burkowski stand-off matching) */
+  , c_reject_narrow      = 102 /**< give me all but some bastards (Burkowski stand-off matching) */
+  , c_reject_wide        = 103 /**< give me all but the bastards (Burkowski stand-off matching) */
 #endif
 
   /* Constructor Nodes */
