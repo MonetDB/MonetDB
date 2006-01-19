@@ -1818,18 +1818,7 @@ interpret_seqblock(int stk, YYSTREE lt, ValPtr res, int scope)
 		for (i = 0; i < lt->cnt; i++)
 			if (lt->yysons[i]) {
 				r = interpret(stk, lt->yysons[i], res);
-				/*
-				   "Defensive programming" HACK to avoid bug #1406591
-				   "several tests cause segfault on the same subset of platforms":
-				   Somehow the above interpreter() call manages to set
-				   lt->yysons[i] to NULL; hence, we prevent the following 
-				   CLEANUP() from trapping into this.
-				   This is merely the cure of a symptom; there's probably
-				   a "real" bug somewhere in the (new) yytree implementation,
-				   which we haven't found, yet ...
-				 */
-				if (lt->yysons[i]) 
-					CLEANUP(lt->yysons[i]);
+				CLEANUP(lt->yysons[i]);
 				if (r < 0)
 					goto xit;
 			}
