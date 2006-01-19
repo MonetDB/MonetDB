@@ -874,6 +874,10 @@ def output(tree, cwd, topdir, automake, conditional):
 
 AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
 
+if NEED_MX
+NEED_MX = 1
+endif
+
 ''')
 
     if not tree.has_key('INCLUDES'):
