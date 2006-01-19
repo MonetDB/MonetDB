@@ -11,15 +11,18 @@ stdout of test 'making_void-void_BAT_writable.SF-1353017` in directory 'tests/Bu
 # Visit http://monetdb.cwi.nl/ for further information.
 module("pathfinder");
 
-delete_all_docs(false);
-delete_all_docs(true);
-commit();
+## shredding document "auctionG.xml" is now done the first test
+## ("auctionG_xml") in this directory
 
-module("unix");
-var TSTSRCDIR := getenv("TSTSRCBASE") + "/tests/XMark/Tests";
-shred_doc(TSTSRCDIR + "/" + "auctionG.xml", "auctionG.xml");
-# Shredded XML doc("auctionG.xml"), total time after commit=0.104s
-commit();
+#delete_all_docs(false);
+#delete_all_docs(true);
+#commit();
+
+#module("unix");
+#var TSTSRCDIR := getenv("TSTSRCBASE") + "/tests/XMark/Tests";
+#shred_doc(TSTSRCDIR + "/" + "auctionG.xml", "auctionG.xml");
+## Shredded XML doc("auctionG.xml"), total time after commit=0.104s
+#commit();
 
 var a0061;
 var a0060;
@@ -1854,39 +1857,39 @@ print(a0055);
 [ 30@0,	  nil	  ]
 [ 31@0,	  nil	  ]
 [ 32@0,	  nil	  ]
-[ 33@0,	  nil	  ]
-[ 34@0,	  nil	  ]
-[ 35@0,	  nil	  ]
-[ 36@0,	  nil	  ]
-[ 37@0,	  nil	  ]
-[ 38@0,	  nil	  ]
-[ 39@0,	  nil	  ]
-[ 40@0,	  nil	  ]
-[ 41@0,	  nil	  ]
-[ 42@0,	  nil	  ]
-[ 43@0,	  nil	  ]
-[ 44@0,	  nil	  ]
-[ 45@0,	  nil	  ]
-[ 46@0,	  nil	  ]
-[ 47@0,	  nil	  ]
-[ 48@0,	  nil	  ]
-[ 49@0,	  nil	  ]
-[ 50@0,	  nil	  ]
-[ 51@0,	  nil	  ]
-[ 52@0,	  nil	  ]
-[ 53@0,	  nil	  ]
-[ 54@0,	  nil	  ]
-[ 55@0,	  nil	  ]
-[ 56@0,	  nil	  ]
-[ 57@0,	  nil	  ]
-[ 58@0,	  nil	  ]
-[ 59@0,	  nil	  ]
-[ 60@0,	  nil	  ]
-[ 61@0,	  nil	  ]
-[ 62@0,	  nil	  ]
-[ 63@0,	  nil	  ]
-[ 64@0,	  nil	  ]
-[ 65@0,	  nil	  ]
+[ 33@0,	  0@0	  ]
+[ 34@0,	  1@0	  ]
+[ 35@0,	  2@0	  ]
+[ 36@0,	  3@0	  ]
+[ 37@0,	  4@0	  ]
+[ 38@0,	  5@0	  ]
+[ 39@0,	  6@0	  ]
+[ 40@0,	  7@0	  ]
+[ 41@0,	  8@0	  ]
+[ 42@0,	  9@0	  ]
+[ 43@0,	  10@0	  ]
+[ 44@0,	  11@0	  ]
+[ 45@0,	  12@0	  ]
+[ 46@0,	  13@0	  ]
+[ 47@0,	  14@0	  ]
+[ 48@0,	  15@0	  ]
+[ 49@0,	  16@0	  ]
+[ 50@0,	  17@0	  ]
+[ 51@0,	  18@0	  ]
+[ 52@0,	  19@0	  ]
+[ 53@0,	  20@0	  ]
+[ 54@0,	  21@0	  ]
+[ 55@0,	  22@0	  ]
+[ 56@0,	  23@0	  ]
+[ 57@0,	  24@0	  ]
+[ 58@0,	  25@0	  ]
+[ 59@0,	  26@0	  ]
+[ 60@0,	  27@0	  ]
+[ 61@0,	  28@0	  ]
+[ 62@0,	  29@0	  ]
+[ 63@0,	  30@0	  ]
+[ 64@0,	  31@0	  ]
+[ 65@0,	  32@0	  ]
 
 a0056 := a0032.copy ().access (BAT_APPEND);
 a0056.append (a0041.project (oid(nil))).access (BAT_APPEND);
@@ -2012,7 +2015,7 @@ a0042 := a0042.reverse ().mark (0@0).reverse ();
 print_result ("xml", ws, a0041, a0042, a0003, a0009, a0030, a0032);
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-<items person="83146.24"/><items person="91891.75"/><items person="94507.22"/><items person="50645.66"/><items person="67956.37"/><items person="55988.41"/><items person="58196.09"/><items person="50134.29"/><items person="66017.28"/><items person="57120.43"/><items person="76843.23"/><items person="64393.59"/><items person="71684.57"/><items person="61145.61"/><items person="61599.83"/><items person="65492.57"/><items person="61750.69"/><items person="74522.38"/><items person="59927.71"/><items person="73650.20"/><items person="75450.10"/><items person="70603.98"/><items person="50882.95"/><items person="55940.68"/><items person="106870.48"/><items person="74932.90"/><items person="78417.43"/><items person="57476.95"/><items person="65706.38"/><items person="59224.09"/><items person="61680.29"/><items person="71656.65"/><items person="66215.93"/>
+<items person="83146.24">6</items><items person="91891.75">6</items><items person="94507.22">7</items><items person="50645.66">6</items><items person="67956.37">6</items><items person="55988.41">6</items><items person="58196.09">6</items><items person="50134.29">6</items><items person="66017.28">6</items><items person="57120.43">6</items><items person="76843.23">6</items><items person="64393.59">6</items><items person="71684.57">6</items><items person="61145.61">6</items><items person="61599.83">6</items><items person="65492.57">6</items><items person="61750.69">6</items><items person="74522.38">6</items><items person="59927.71">6</items><items person="73650.20">6</items><items person="75450.10">6</items><items person="70603.98">6</items><items person="50882.95">6</items><items person="55940.68">6</items><items person="106870.48">9</items><items person="74932.90">6</items><items person="78417.43">6</items><items person="57476.95">6</items><items person="65706.38">6</items><items person="59224.09">6</items><items person="61680.29">6</items><items person="71656.65">6</items><items person="66215.93">6</items>
 </XQueryResult>
 a0006 := unused;
 a0001 := unused;

@@ -1,3 +1,7 @@
+# first test loads default XMark document from tests/XMark/Tests/auctionG.xml
+# used by other tests in this directory
+auctionG_xml
+
 ID.978814
 ID.981954
 ID.1015172a
@@ -60,7 +64,7 @@ ID.1267018.swallowed_error_messages-2
 ID.1286005-1
 ID.1292711-1
 ID.1292711-2
-ID.1292727.col_name-segfault.shred
+#ID.1292727.col_name-segfault.shred # done by test "auctionG_xml" above
 ID.1292727.col_name-segfault.run
 ID.1297836-1
 ID.1333969
