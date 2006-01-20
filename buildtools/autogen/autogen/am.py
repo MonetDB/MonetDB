@@ -963,7 +963,7 @@ endif
         elif i != 'TARGETS':
             am_assignment(fd, i, v, am)
 
-    if len(am['BUILT_SOURCES']) > 0:
+    if len(am['BUILT_SOURCES']) >= 0:
         fd.write("BUILT_SOURCES =%s\n" % am_list2string(am['BUILT_SOURCES'], " ", ""))
         # the BUILT_SOURCES should be cleaned up by make (mostly)clean
         fd.write("MOSTLYCLEANFILES =%s\n" % am_list2string(am['BUILT_SOURCES'], " ", ""))
