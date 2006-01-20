@@ -39,3 +39,5 @@ headers_pm = {
 	TARGETS = MapiLib.pm
 	DIR = $(prefix)/$(PERL_LIBDIR)
 }
+
+EXTRA_DIST = MapiLib.pm

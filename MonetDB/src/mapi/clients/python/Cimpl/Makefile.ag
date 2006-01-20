@@ -43,3 +43,5 @@ headers_py = {
 	TARGETS = MapiLib.py CMapi.py
 	DIR = $(prefix)/$(PYTHON_LIBDIR)
 }
+
+EXTRA_DIST = MapiLib.py

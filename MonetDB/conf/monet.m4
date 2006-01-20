@@ -686,49 +686,52 @@ AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
 AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
 
 
-AC_ARG_WITH(swig,
-	AC_HELP_STRING([--with-swig=FILE], [swig is installed as FILE]),
-	SWIG="$withval",
-	SWIG=swig)
-case "$SWIG" in
-yes|auto)
-  SWIG=swig;;
-esac
-case "$SWIG" in
-no) ;;
-/*) AC_MSG_CHECKING(whether $SWIG exists and is executable)
-    if test -x "$SWIG"; then
-      AC_MSG_RESULT(yes)
-    else
-      AC_MSG_RESULT(no)
-      SWIG=no
-    fi;;
-*)  AC_PATH_PROG(SWIG,$SWIG,no,$PATH);;
-esac
-if test "x$SWIG" != xno; then
-  # we want the right version...
-  AC_MSG_CHECKING(whether $SWIG is >= 1.3.20)
-  swig_ver="`"$SWIG" -version 2>&1 | grep Version`"
-  case "$swig_ver" in
-  *Version\ 1.3.2*)
-      AC_MSG_RESULT(yes: $swig_ver);;
-  *)  AC_MSG_RESULT(no: $swig_ver)
-      SWIG=no;;
-  esac
+if test -f "$srcdir"/vertoo.data; then
+        AC_ARG_WITH(swig,
+                AC_HELP_STRING([--with-swig=FILE], [swig is installed as FILE]),
+                SWIG="$withval",
+                SWIG=swig)
+        case "$SWIG" in
+        yes|auto)
+          SWIG=swig;;
+        esac
+        case "$SWIG" in
+        no) ;;
+        /*) AC_MSG_CHECKING(whether $SWIG exists and is executable)
+            if test -x "$SWIG"; then
+              AC_MSG_RESULT(yes)
+            else
+              AC_MSG_RESULT(no)
+              SWIG=no
+            fi;;
+        *)  AC_PATH_PROG(SWIG,$SWIG,no,$PATH);;
+        esac
+        if test "x$SWIG" != xno; then
+          # we want the right version...
+          AC_MSG_CHECKING(whether $SWIG is >= 1.3.20)
+          swig_ver="`"$SWIG" -version 2>&1 | grep Version`"
+          case "$swig_ver" in
+          *Version\ 1.3.2*)
+              AC_MSG_RESULT(yes: $swig_ver);;
+          *)  AC_MSG_RESULT(no: $swig_ver)
+              SWIG=no;;
+          esac
+        fi
+        if test "x$SWIG" != xno; then
+          # ...and it must support -outdir
+          AC_MSG_CHECKING(whether $SWIG supports "-outdir")
+          case `$SWIG -help 2>&1` in
+          *-outdir*) 
+              AC_MSG_RESULT(yes);;
+          *)  AC_MSG_RESULT(no)
+              SWIG=no;;
+          esac
+        fi
+        AC_SUBST(SWIG)
+        AM_CONDITIONAL(HAVE_SWIG, test x"$SWIG" != xno)
+else
+        AM_CONDITIONAL(HAVE_SWIG, false)
 fi
-if test "x$SWIG" != xno; then
-  # ...and it must support -outdir
-  AC_MSG_CHECKING(whether $SWIG supports "-outdir")
-  case `$SWIG -help 2>&1` in
-  *-outdir*) 
-      AC_MSG_RESULT(yes);;
-  *)  AC_MSG_RESULT(no)
-      SWIG=no;;
-  esac
-fi
-AC_SUBST(SWIG)
-AM_CONDITIONAL(HAVE_SWIG, test x"$SWIG" != xno)
-
 
 have_python=auto
 PYTHON=python
@@ -837,8 +840,11 @@ AC_SUBST(PYTHON_INCS)
 AC_SUBST(PYTHON_LIBS)
 AC_SUBST(PYTHON_LIBDIR)
 AM_CONDITIONAL(HAVE_PYTHON_DEVEL, test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno)
+if test -f "$srcdir"/vertoo.data; then
 AM_CONDITIONAL(HAVE_PYTHON_SWIG,  test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno -a x"$SWIG" != xno)
-
+else
+AM_CONDITIONAL(HAVE_PYTHON_SWIG,  test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno)
+fi
 
 AC_ARG_WITH(perl,
 	AC_HELP_STRING([--with-perl=FILE], [perl is installed as FILE]),
@@ -889,7 +895,11 @@ if test "x$PERLINC" != x; then
 fi
 AC_SUBST(PERL_LIBDIR)
 AM_CONDITIONAL(HAVE_PERL_DEVEL, test "x$PERL_LIBDIR" != x)
+if test -f "$srcdir"/vertoo.data; then
 AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$PERL_LIBDIR" != x -a x"$SWIG" != xno)
+else
+AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$PERL_LIBDIR" != x)
+fi
 
 
 dnl to shut up automake (.m files are used for mel not for objc)
