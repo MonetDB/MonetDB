@@ -868,7 +868,8 @@ flatten_outerrefs( mvc *sql, scope *scp, stmt *ls, stmt **R, stmt *subset, int f
 	return ls;
 }
 
-#define MAXDEPTH 512
+
+#define MAXDEPTH THREAD_STACK_SIZE/4096
 
 static stmt *
 sql_binop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
@@ -2318,6 +2319,7 @@ sql_or(mvc *sql, scope *scp, stmt *ls, stmt *rs, int f)
 	if (rs->type != st_set && rs->type != st_sets) {
 		rs = stmt_set(rs);
 	}
+
 	if (ls->type == st_set && rs->type == st_set) {
 		res = stmt_sets(list_append(list_append(list_create((fdestroy) &list_destroy), list_dup(ls->op1.lval, (fdup) &stmt_dup)), list_dup(rs->op1.lval, (fdup) &stmt_dup)));
 		stmt_destroy(ls);

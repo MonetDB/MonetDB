@@ -573,6 +573,7 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 {
 	int c = 0;
 	sql_subtype *t = NULL, *st = tail_type(s);
+	stmt *old = NULL;
 
 	(void)tpe;
 	if ((!st || !st->type) && set_type_param(ct, s) == 0) {
@@ -594,7 +595,7 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 	if (!t) {	/* try to convert if needed */
 		c = sql_type_convert(st->type->eclass, ct->type->eclass);
 		if (!c) { 
-			stmt_destroy(s);
+			old = s;
 			s = NULL;
 		} else {
 			s = stmt_convert(s, st, ct);
@@ -613,6 +614,8 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 			ct->scale,
 			ct->type->base.name
 		);
+		if (old)
+			stmt_destroy(old);
 		return res;
 	}
 	return s;
