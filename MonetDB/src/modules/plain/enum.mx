@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f enum
@@ -152,6 +152,9 @@ will even be the case for long 64-bit integers.
 #include "streams.h"
 #include "enum.proto.h"
 #include "enum.h"
+
+int enum_chr_shift = -(GDK_chr_min+1);	/* GDK_chr_min == GDK_chr_nil ==   -128 */
+int enum_sht_shift = -(GDK_sht_min+1);	/* GDK_sht_min == GDK_sht_nil == -32768 */
 
 #define ENUM_CHK(x,y)									\
 		BAT *b;									\
@@ -344,7 +347,7 @@ struct {
 @= def
 	{tostr@1chr, fromstr@1chr, tostr@1sht, fromstr@1sht,},
 @= imp
-	@:template(@1,chr,char)@ @:template(@1,sht,short)@
+	@:template(@1,chr)@ @:template(@1,sht)@
 @= template
 static int
 tostr@1@2(char** dst, int* len, ptr src)
@@ -355,7 +358,8 @@ tostr@1@2(char** dst, int* len, ptr src)
 	if (*(@2*)src == @2_nil) {
 		v = ATOMnilptr(b->htype);
 	} else {
-		BUN p = BUNptr(b, *(unsigned @3*) src);
+		/* shift (GDK_@2_min+1)..GDK_@2_max back to 0..(2*GDK_@2_max) */
+		BUN p = BUNptr(b, *(@2*)src + enum_@2_shift);
 		v = BUNhead(b,p);
 	}
 	if (b->htype != TYPE_str) {
@@ -390,7 +394,8 @@ fromstr@1@2(str src, int* len, ptr* dst)
 		*(@2**)dst = (@2*) GDKmalloc(*len = sizeof(@2));
 	}
 	if ((p = SORTfnd(b, v)) != NULL) {
-		**(unsigned @3**) dst = (unsigned @3) (BUNindex(b,p));
+		/* shift 0..(2*GDK_@2_max) to (GDK_@2_min+1)..GDK_@2_max */
+		**(@2**) dst = (@2) (BUNindex(b,p) - enum_@2_shift);
 	} else {
 		**(@2**)dst = @2_nil;
 	}
@@ -408,11 +413,11 @@ enum_load(int *retval, BAT *h)
 		if (enum_map[i] == 0) {
 			char *name = BATgetId(h);
 
-			if (BATcount(h) < 256) {
+			if (BATcount(h) < 255) { /* without chr_nil ! */
 				ATOMproperty(name, "storage", (GDKfcn) (ssize_t) TYPE_chr);
 				ATOMproperty(name, "tostr", (GDKfcn) enum_conv[i].tochr);
 				ATOMproperty(name, "fromstr", (GDKfcn) enum_conv[i].fromchr);
-			} else if (BATcount(h) < 65536) {
+			} else if (BATcount(h) < 65535) { /* without sht_nil ! */
 				ATOMproperty(name, "storage", (GDKfcn) (ssize_t) TYPE_sht);
 				ATOMproperty(name, "tostr", (GDKfcn) enum_conv[i].tosht);
 				ATOMproperty(name, "fromstr", (GDKfcn) enum_conv[i].fromsht);
@@ -477,15 +482,19 @@ enum_encode(ptr dst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 	p = BUNfnd(b, src);
 	if (ATOMstorage(*enum_t) == TYPE_chr) {
 		if (p == NULL) {
+			/* chr_nil = -128 */
 			*(chr *) dst = chr_nil;
 		} else {
-			*(unsigned char *) dst = (unsigned char) (BUNindex(b, p) );
+			/* shift 0..254 to -127..127 (chr is signed!) */ 
+			*(chr *) dst = (chr) (BUNindex(b, p) - enum_chr_shift);
 		}
 	} else {
 		if (p == NULL) {
+			/* sht_nil = -32767 */
 			*(sht *) dst = sht_nil;
 		} else {
-			*(unsigned short *) dst = (unsigned short) (BUNindex(b, p) );
+			/* shift 0..65534 to -32767..32767 (sht is signed!) */
+			*(sht *) dst = (sht) (BUNindex(b, p) - enum_sht_shift);
 		}
 	}
 	return GDK_SUCCEED;
@@ -514,15 +523,19 @@ enum_lower(ptr dst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 	}
 	if (ATOMstorage(*enum_t) == TYPE_chr) {
 		if (p == NULL) {
+			/* chr_nil = -128 */
 			*(chr *) dst = chr_nil;
 		} else {
-			*(unsigned char *) dst = (unsigned char) (BUNindex(b, p) );
+			/* shift 0..254 to -127..127 (chr is signed!) */ 
+			*(chr *) dst = (chr) (BUNindex(b, p) - enum_chr_shift);
 		}
 	} else {
 		if (p == NULL) {
+			/* sht_nil = -32767 */
 			*(sht *) dst = sht_nil;
 		} else {
-			*(unsigned short *) dst = (unsigned short) (BUNindex(b, p) );
+			/* shift 0..65534 to -32767..32767 (sht is signed!) */
+			*(sht *) dst = (sht) (BUNindex(b, p) - enum_sht_shift);
 		}
 	}
 	return GDK_SUCCEED;
@@ -547,15 +560,19 @@ enum_upper(ptr dst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 	}
 	if (ATOMstorage(*enum_t) == TYPE_chr) {
 		if (p == NULL) {
+			/* chr_nil = -128 */
 			*(chr *) dst = chr_nil;
 		} else {
-			*(unsigned char *) dst = (unsigned char) (BUNindex(b, p) );
+			/* shift 0..254 to -127..127 (chr is signed!) */ 
+			*(chr *) dst = (chr) (BUNindex(b, p) - enum_chr_shift);
 		}
 	} else {
 		if (p == NULL) {
+			/* sht_nil = -32767 */
 			*(sht *) dst = sht_nil;
 		} else {
-			*(unsigned short *) dst = (unsigned short) (BUNindex(b, p) );
+			/* shift 0..65534 to -32767..32767 (sht is signed!) */
+			*(sht *) dst = (sht) (BUNindex(b, p) - enum_sht_shift);
 		}
 	}
 	return GDK_SUCCEED;
@@ -576,13 +593,15 @@ enum_decode(ptr xdst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 		if (*(chr *) src == chr_nil) {
 			v = ATOMnilptr(b->htype);
 		} else {
-			v = BUNhead(b, BUNptr(b, *(unsigned char *) src));
+			/* shift -127..127 back to 0..254 */
+			v = BUNhead(b, BUNptr(b, *(chr*)src + enum_chr_shift));
 		}
 	} else {
 		if (*(sht *) src == sht_nil) {
 			v = ATOMnilptr(b->htype);
 		} else {
-			v = BUNhead(b, BUNptr(b, *(unsigned short *) src));
+			/* shift -32767..32767 back to 0..65534 */
+			v = BUNhead(b, BUNptr(b, *(sht*)src + enum_sht_shift));
 		}
 	}
 	if (b->hvarsized) {
@@ -604,17 +623,18 @@ enum_decode(ptr xdst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 	{
 		BAT *bn = BATnew(src->htype, *enum_t, BATcount(src));
 		BUN p,q,r; int xx;
-		unsigned @2 idx;
+		@1 idx;
 
 		if (bn == NULL)
 			return GDK_FAIL;
 		if (BAThordered(b)&1) {
 			BATloopFast(src, p, q, xx) {
-				BUN r = (BUN) SORTfnd@4(b, BUNt@3(src,p));
+				BUN r = (BUN) SORTfnd@3(b, BUNt@2(src,p));
 				if (r == NULL) {
 					idx = @1_nil;
 				} else {
-					idx = (unsigned @2) (BUNindex(b,r) );
+					/* shift 0..(2*GDK_@1_max) to (GDK_@1_min+1)..GDK_@1_max */
+					idx = (@1) (BUNindex(b,r) - enum_@1_shift);
 				}
 				if (BUNfastins(bn, BUNhead(src,p), &idx) == NULL) {
 					BBPreclaim(bn);
@@ -623,11 +643,12 @@ enum_decode(ptr xdst, int *dsttpe, int *enum_t, ptr src, int srctpe)
 			}
 		} else {
 			BATloopFast(src, p, q, xx) {
-				HASHfnd@4(r, b, BUNt@3(src,p));
+				HASHfnd@3(r, b, BUNt@2(src,p));
 				if (r == NULL) {
 					idx = @1_nil;
 				} else {
-					idx = (unsigned @2) (BUNindex(b,r) );
+					/* shift 0..(2*GDK_@1_max) to (GDK_@1_min+1)..GDK_@1_max */
+					idx = (@1) (BUNindex(b,r) - enum_@1_shift);
 				}
 				if (BUNfastins(bn, BUNhead(src,p), &idx) == NULL) {
 					BBPreclaim(bn);
@@ -654,28 +675,28 @@ enum_encode_multi(BAT **dst, int *enum_t, BAT *src)
 			GDKerror("enum_encode_multi: illegal tail type.\n");
 			return GDK_FAIL;
 		case TYPE_chr:
-			@:encode(chr,char,loc,_chr)@
+			@:encode(chr,loc,_chr)@
 
 		case TYPE_sht:
-			@:encode(chr,char,loc,_sht)@
+			@:encode(chr,loc,_sht)@
 
 		case TYPE_int:
-			@:encode(chr,char,loc,_int)@
+			@:encode(chr,loc,_int)@
 
 		case TYPE_flt:
-			@:encode(chr,char,loc,_flt)@
+			@:encode(chr,loc,_flt)@
 
 		case TYPE_lng:
-			@:encode(chr,char,loc,_lng)@
+			@:encode(chr,loc,_lng)@
 
 		case TYPE_dbl:
-			@:encode(chr,char,loc,_dbl)@
+			@:encode(chr,loc,_dbl)@
 
 		default:
 			if (src->tvarsized) {
-			      @:encode(chr,char,var,_var)@
+			      @:encode(chr,var,_var)@
 			} else {
-			      @:encode(chr,char,loc,_loc)@
+			      @:encode(chr,loc,_loc)@
 			}
 		}
 	} else {
@@ -684,29 +705,29 @@ enum_encode_multi(BAT **dst, int *enum_t, BAT *src)
 			GDKerror("enum_encode_multi: illegal tail type.\n");
 			return GDK_FAIL;
 		case TYPE_chr:
-			@:encode(sht,short,loc,_chr)@
+			@:encode(sht,loc,_chr)@
 
 		case TYPE_sht:
-			@:encode(sht,short,loc,_sht)@
+			@:encode(sht,loc,_sht)@
 
 		case TYPE_int:
-			@:encode(sht,short,loc,_int)@
+			@:encode(sht,loc,_int)@
 
 		case TYPE_flt:
-			@:encode(sht,short,loc,_flt)@
+			@:encode(sht,loc,_flt)@
 
 		case TYPE_lng:
-			@:encode(sht,short,loc,_lng)@
+			@:encode(sht,loc,_lng)@
 
 		case TYPE_dbl:
-			@:encode(sht,short,loc,_dbl)@
+			@:encode(sht,loc,_dbl)@
 
 		default:
 			if (src->tvarsized) {
-			      @:encode(sht,short,var,_var)@
+			      @:encode(sht,var,_var)@
 
 			} else {
-			      @:encode(sht,short,loc,_loc)@
+			      @:encode(sht,loc,_loc)@
 			}
 		}
 	}
@@ -723,11 +744,12 @@ enum_encode_multi(BAT **dst, int *enum_t, BAT *src)
 	if (bn == NULL)
 		return GDK_FAIL;
 	BATloopFast(src, p, q, xx) {
-		unsigned @2 *idx = (unsigned @2*) BUNtloc(src,p);
+		@1 *idx = (@1*) BUNtloc(src,p);
 		if (*(@1*) idx == chr_nil) {
 			w = nil;
 		} else {
-			w = BUNhead(b, BUNptr(b, *idx));
+			/* shift (GDK_@1_min+1)..GDK_@1_max back to 0..(2*GDK_@1_max) */
+			w = BUNhead(b, BUNptr(b, *idx + enum_@1_shift));
 		}
 		if (BUNfastins(bn, BUNhead(src,p), w) == NULL) {
 			BBPreclaim(bn);
@@ -747,9 +769,9 @@ enum_decode_multi(BAT **dst, int *enum_t, BAT *src)
 		return GDK_FAIL;
 	}
 	if (ATOMstorage(*enum_t) == TYPE_chr) {
-		@:decode(chr,char)@
+		@:decode(chr)@
 	} else if (ATOMstorage(*enum_t) == TYPE_sht) {
-		@:decode(sht,short)@
+		@:decode(sht)@
 	} else {
 		GDKerror("enum_decode_multi: illegal tail type.\n");
 		return GDK_FAIL;

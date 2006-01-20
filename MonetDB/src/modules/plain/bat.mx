@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f bat
@@ -39,10 +39,19 @@ can be found in this module.
 .COMMAND bat(int ht, int tt) : BAT[any,any] = CMDnew_default;
 "Creates a new empty transient BAT, with head- and tail-types as indicated."
 
+.COMMAND new(int ht, int tt) : BAT[any,any] = CMDnew_default;
+"Creates a new empty transient BAT, with head- and tail-types as indicated."
+
 .COMMAND bat(int ht, int tt, int size) : BAT[any,any] = CMDnew;
 "Creates a new empty BAT, directly allocating for 'size' elements."
 
+.COMMAND new(int ht, int tt, int size) : BAT[any,any] = CMDnew;
+"Creates a new empty BAT, directly allocating for 'size' elements."
+
 .COMMAND bat(int ht, int tt, lng size) : BAT[any,any] = CMDnew_lng;
+"Creates a new empty BAT, directly allocating for 'size' elements."
+
+.COMMAND new(int ht, int tt, lng size) : BAT[any,any] = CMDnew_lng;
 "Creates a new empty BAT, directly allocating for 'size' elements."
 
 .COMMAND reverse(BAT[any::1,any::2]) : BAT[any::2,any::1] = CMDreverse;
@@ -113,21 +122,19 @@ can be found in this module.
  Returns the modified BAT."
 
 @+ void bats
-To prevent void bats to convert to oid bats we need overloaded insert and
-replace commands. These operations should at a later stage be moved to the
-kernel libraries, e.g. bat.mx
+The append set of commands lets you append values (or bats) with unique 
+head values which start at the maximum head value before inserting plus one.
+The appended bats tail can not be set key-ed. 
 @m
-	.COMMAND append( BAT[oid,any::1] i, any::1 u ) : BAT[oid,any::1] = oid_bat_append_val_wrap; "append the value u to i"
+	.COMMAND append( BAT[oid,any::1] i, BAT[oid,any::1] u ) : BAT[oid,any::1] = BATappend_wrap; "append the content of u to i (renumbers u-oids' to unique numbers, starting at i.max()+1)"
 
-	.COMMAND append( BAT[oid,any::1] i, BAT[oid,any::1] u ) : BAT[oid,any::1] = oid_bat_append_oid_bat_wrap; "append the content of u to i (renumbers u-oids' to unique numbers)"
+	.COMMAND append( BAT[void,any::1] i, BAT[void,any::1] u ) : BAT[void,any::1] = BATappend_wrap; "append the content of u to i"
 
-	.COMMAND append( BAT[void,any::1] i, any::1 u ) : BAT[void,any::1] = bat_append_val_wrap; "append the value u to i"
+	.COMMAND append( BAT[void,any::1] i, BAT[oid,any::1] u ) : BAT[void,any::1] = BATappend_wrap; "append the content of u to i"
 
-	.COMMAND append( BAT[void,any::1] i, BAT[void,any::1] u ) : BAT[void,any::1] = bat_append_void_bat_wrap; "append the content of u to i"
+	.COMMAND append( BAT[oid,any::1] i, any::1 u ) : BAT[oid,any::1] = BUNappend_wrap; "append the value u to i"
 
-	.COMMAND append( BAT[void,any::1] i, BAT[oid,any::1] u ) : BAT[void,any::1] = bat_append_oid_bat_wrap; "append the content of u to i"
-
-	.COMMAND append( BAT[oid,void] i, BAT[oid,void] u ) : BAT[oid,void] = bat_append_oidvoid_bat_wrap; "Special case append for empty bats, works around impossible void,void case"
+	.COMMAND append( BAT[void,any::1] i, any::1 u ) : BAT[void,any::1] = BUNappend_wrap; "append the value u to i"
 
 	.COMMAND inplace( BAT[void,any::1] o, oid id, any::1 val ) : BAT[void,any::1] = bat_inplace; "inplace replace values on the given locations"
 
@@ -226,8 +233,26 @@ By default, both bits in the {\tt debugmask} are off, which gives fastest perfor
 .COMMAND head ( int bid ) : str = CMDhead;
 "Returns the type of the head column of a BAT, as a string."
 
+.COMMAND head ( BAT[any,any] b ) : str = CMDhead_bat;
+"Returns the type of the head column of a BAT, as a string."
+
+.COMMAND htype ( int bid ) : int = CMDhtype;
+"Returns the type of the head column of a BAT."
+
+.COMMAND htype ( BAT[any,any] b ) : int = CMDhtype_bat;
+"Returns the type of the head column of a BAT."
+
 .COMMAND tail ( int bid ) : str = CMDtail;
 "Returns the type of the tail column of a BAT, as a string."
+
+.COMMAND tail ( BAT[any,any] b ) : str = CMDtail_bat;
+"Returns the type of the tail column of a BAT, as a string."
+
+.COMMAND ttype ( int bid ) : int = CMDttype;
+"Returns the type of the tail column of a BAT."
+
+.COMMAND ttype ( BAT[any,any] b ) : int = CMDttype_bat;
+"Returns the type of the tail column of a BAT."
 
 .COMMAND key( BAT[any::1,any::2] b, bit mode)
 				: BAT[any::1,any::2] = CMDsetkey;
@@ -279,6 +304,8 @@ By default, both bits in the {\tt debugmask} are off, which gives fastest perfor
 .COMMAND ordered_rev(BAT[any,any]) : bit = CMDordered_rev;
 "Returns whether a BAT is ordered on head or not."
 
+.COMMAND chk_order(BAT[any::1,any::2]) : BAT[any::1,any::2] = CMDchk_order;
+"Infer the sortedness property (or not) of both head and tail."
 
 .COMMAND batsize(str batname) : lng = CMDbatsize_str;
 "A version of BATsize that does not require loading the BAT."
@@ -350,11 +377,11 @@ allocated arena gets to be large, BATs may be swapped out.
 
 .COMMAND hot(str name) : void = CMDhot;
 "Makes a BAT very hot for the BBP. The chance of being chosen for swapout is
- small, afterwards.  Returns the BAT itself."
+ small, afterwards."
 
 .COMMAND cold(str nme) : void = CMDcold;
 "Makes a BAT very cold for the BBP. The chance of being choses for swapout is
- big, afterwards.  Returns the BAT itself."
+ big, afterwards."
 
 .COMMAND heat(str nme) : int = CMDheat;
 "returns the current BBP heat (LRU stamp)"
@@ -516,36 +543,6 @@ these 'sync' OIDs with their own propagation rules.
     PROC hot(bat[any::1,any::2] b) : void {
 	hot(b.bbpname());
     }
-
-    PROC head(bat[any,any] b) : str {
-	return head(int(b));
-    }
-
-    PROC tail(bat[any,any] b) : str  {
-	return tail(int(b));
-	}
-
-    PROC ttype(any b) : int   {
-	 return monet_atomtbl.find(b.tail());
-    }
-#    ADDHELP("ttype","boncz","Apr 07 2004","Get tail-type as an integer","bat");
-
-    PROC htype(any b) : int   {
-	 return monet_atomtbl.find(b.head());
-    }
-#    ADDHELP("htype","boncz","Apr 07 2004","Get head-type as an integer","bat");
-
-    PROC new(int ht, int tt) : bat[any,any] {
-	return bat(ht,tt);
-    }
-
-    PROC new(int ht, int tt, int cnt) : bat[any,any] {
-	return bat(ht,tt,cnt);
-    }
-
-    PROC new(int ht, int tt, lng cnt) : bat[any,any] {
-	return bat(ht,tt,cnt);
-    }
 @
 @{
 @{
@@ -564,8 +561,6 @@ these 'sync' OIDs with their own propagation rules.
 #include "monet.h"
 #include "bat.proto.h"
 
-bat_export size_t void_append_bat(BAT *b, BAT *u);
-bat_export size_t void_insert_bat(BAT *b, BAT *u);
 bat_export ssize_t void_replace_bat(BAT *b, BAT *u);
 bat_export int void_inplace(BAT *b, oid id, ptr val);
 
@@ -740,35 +735,6 @@ CMDdelete_bat_head(BAT **r, BAT *b, BAT *s)
 }
 
 
-@-
-The next collection of operators fill a hole in the MonetDB kernel libraries.
-It provide handy operations on void-BATs.
-@c
-size_t
-void_append_bat(BAT *b, BAT *u)
-{
-	size_t sz = BUNsize(u);
-	size_t sbase = b->hseqbase + BATcount(b);
-
-	BATseqbase(u, sbase);
-	BATins(b, u);
-	return sz;
-}
-
-size_t
-void_insert_bat(BAT *b, BAT *u)
-{
-	size_t nr = 0;
-	BUN r, s;
-	oid nil = oid_nil;
-
-	BATloop(u, r, s) {
-		BUNins(b, (ptr) &nil, BUNtail(u, r));
-		nr++;
-	}
-	return nr;
-}
-
 int
 void_inplace(BAT *b, oid id, ptr val)
 {
@@ -819,102 +785,25 @@ void_replace_bat(BAT *b, BAT *u)
 }
 
 int
-bat_append_void_bat_wrap(BAT **res, BAT *i, BAT *u)
+BATappend_wrap(BAT **res, BAT *i, BAT *u)
 {
-	*res = i;
-	void_append_bat(i, u);
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-bat_append_oid_bat_wrap(BAT **res, BAT *i, BAT *u)
-{
-	*res = i;
-	void_insert_bat(i, u);
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-bat_append_oidvoid_bat_wrap(BAT **res, BAT *i, BAT *u)
-{
-	/*(void)u; fake usage to fool compilers in case assertions are disabled
-	   assert (!BATcount(i));
-	 */
-	*res = i;
-	void_insert_bat(i, u);
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
-}
-
-static oid
-oid_max(BAT *i)
-{
-	oid o = 0;
-
-	if (BATcount(i))
-		o = *(oid *) BUNhead(i, BUNlast(i) - BUNsize(i));
-	if (!BAThordered(i)) {
-		BUN r, s;
-		int d;
-
-		BATloopFast(i, r, s, d) {
-			oid v = *(oid *) BUNhead(i, r);
-
-			if (v > o)
-				o = v;
-		}
-	}
-	return o;
-}
-
-int
-oid_bat_append_oid_bat_wrap(BAT **res, BAT *i, BAT *u)
-{
-	BUN r, s;
-	oid o;
-
-	assert(i->htype == TYPE_oid && (BATcount(u) == 0 || u->htype == TYPE_oid || u->htype == TYPE_void));
-
-	o = oid_max(i);
-	o++;
-	BATloop(u, r, s) {
-		oid h = *(oid *) BUNhead(u, r) + o;
-
-		BUNins(i, &h, BUNtail(u, r));
-	}
+	if (!BATappend(i, u))
+		return GDK_FAIL;
 	*res = i;
 	BBPfix(i->batCacheid);
 	return GDK_SUCCEED;
 }
 
 int
-oid_bat_append_val_wrap(BAT **res, BAT *i, ptr t)
+BUNappend_wrap(BAT **res, BAT *i, ptr t)
 {
-	oid o;
-
-	assert(i->htype == TYPE_oid);
-	o = oid_max(i);
-	o++;
-	*res = i;
-	BUNins(i, (ptr) &o, @:batconvert(i,t)@
+	*res = BUNappend(i, @:batconvert(i,t)@
 	    );
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
-}
-
-
-int
-bat_append_val_wrap(BAT **res, BAT *i, ptr t)
-{
-	oid h = i->hseqbase + BATcount(i);
-
-	*res = i;
-	BUNins(i, (ptr) &h, @:batconvert(i,t)@
-	    );
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
+	if (*res) {
+		BBPfix((*res)->batCacheid);
+		return GDK_SUCCEED;
+	}
+	return GDK_FAIL;
 }
 
 int
@@ -964,9 +853,15 @@ CMDcount_bat(lng *res, int *bid)
 int
 CMDsetcount_bat(lng *res, BAT *b, lng *c)
 {
-	BATsetcount(b,*c);
+#if SIZEOF_SIZE_T < SIZEOF_LNG
+	if (*c >= ((lng) 1 << (8 * SIZEOF_SIZE_T))) {
+		GDKerror("CMDslice: argument out of range\n");
+		return GDK_FAIL;
+	}
+#endif
+	BATsetcount(b, (size_t) *c);
 	/* also need to set the end of the heap (allthough not used) */
-	b->batBuns->free += *c;
+	b->batBuns->free += (size_t) *c;
 	*res = *c;
 	return GDK_SUCCEED;
 }
@@ -991,7 +886,7 @@ int
 CMDhead(str *res, int *bid)
 {
 	if (BBPcheck((bat) *bid, "CMDhead")) {
-		str ret = str_nil;
+		str ret = (str)str_nil;
 		BAT *b = lock_desc((bat) *bid);
 
 		if (b) {
@@ -1006,10 +901,38 @@ CMDhead(str *res, int *bid)
 }
 
 int
+CMDhead_bat(str *res, BAT *b)
+{
+	return CMDhead(res, &b->batCacheid);
+}
+
+int
+CMDhtype(int *res, int *bid)
+{
+	int ret = int_nil;
+	if (BBPcheck((bat) *bid, "CMDhtype")) {
+		BAT *b = lock_desc((bat) *bid);
+		if (b) {
+			ret = *bid > 0 ? b->htype : b->ttype;
+		}
+		unlock_desc(*bid);
+	} *res = ret;
+	return GDK_SUCCEED;
+	
+}
+
+int
+CMDhtype_bat(int *res, BAT *b)
+{
+	*res = b->htype; 
+	return GDK_SUCCEED;
+}
+
+int
 CMDtail(str *res, int *bid)
 {
 	if (BBPcheck((bat) *bid, "CMDtail")) {
-		str ret = str_nil;
+		str ret = (str)str_nil;
 		BAT *b = lock_desc((bat) *bid);
 
 		if (b) {
@@ -1022,6 +945,35 @@ CMDtail(str *res, int *bid)
 	}
 	return GDK_SUCCEED;
 }
+
+int
+CMDtail_bat(str *res, BAT *b)
+{
+	return CMDtail(res, &b->batCacheid);
+}
+
+int
+CMDttype(int *res, int *bid)
+{
+	int ret = int_nil;
+	if (BBPcheck((bat) *bid, "CMDttype")) {
+		BAT *b = lock_desc((bat) *bid);
+		if (b) {
+			ret = *bid > 0 ? b->ttype : b->htype;
+		}
+		unlock_desc(*bid);
+	} *res = ret;
+	return GDK_SUCCEED;
+}
+
+int
+CMDttype_bat(int *res, BAT *b)
+{
+	*res = b->ttype; 
+	return GDK_SUCCEED;
+}
+
+
 
 int
 CMDsetkey(BAT **result, BAT *input, bit *param)
@@ -1043,6 +995,16 @@ int
 CMDordered(bit *result, BAT *input)
 {
 	*result = BATordered(input) ? 1 : 0;
+	return GDK_SUCCEED;
+}
+
+int
+CMDchk_order(BAT **result, BAT *input)
+{
+	BATordered(input);
+	BATordered(BATmirror(input));
+	BBPfix(input->batCacheid);
+	*result = input;
 	return GDK_SUCCEED;
 }
 

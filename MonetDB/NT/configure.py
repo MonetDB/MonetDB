@@ -13,7 +13,7 @@
 # The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2005 CWI.
+# Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
 import sys
@@ -63,6 +63,7 @@ subs = [
     ('@MONETDB_SOURCE@',         source),
     ('@XMONETDB_SOURCE@',        source),
     ('@NO_X_CFLAGS@',            ''),
+    ('@PYTHON@',                 'python'),
     # for these, also see rules.msc
     ('@PHP_EXTENSIONDIR@',       r'lib\php4'),
     ('@XPHP_EXTENSIONDIR@',      r'lib\php4'),
@@ -74,6 +75,7 @@ subs = [
     ('@HAVE_JAVA_FALSE@',        have_java_false),
     ('@HAVE_MONET5_FALSE@',      ''),
     ('@HAVE_MONET_FALSE@',       '#'),
+    ('@HAVE_PCRE_FALSE@',        ''),
     ('@HAVE_PERL_FALSE@',        ''),
     ('@HAVE_PERL_DEVEL_FALSE@',  ''),
     ('@HAVE_PERL_SWIG_FALSE@',   ''),

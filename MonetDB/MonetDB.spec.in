@@ -142,6 +142,8 @@ rm -rf $RPM_BUILD_ROOT
 %build
 
 ./configure \
+	--enable-assert=no \
+	--enable-optimize \
 	--enable-bits=%{bits} \
 	--with-gcc="%{comp_cc}" \
 	--with-gxx="%{comp_cxx}" \
@@ -170,6 +172,7 @@ rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/general.mil
 rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/lady.gif
 rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/docs/*/*.tex
 rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/docs/*/*/*.tex
+rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/Tests/sample.class
 
 # Fixes monet config script
 #perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config
@@ -183,9 +186,8 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/lib/libmutils.*
 %{prefix}/lib/libMapi.* 
 %{prefix}/lib/libstream.*
+%{prefix}/lib/MonetDB/Tests/*
 %{prefix}/share/%{name}/lib/*jar
-%{prefix}/lib/%{name}/Tests/*
-%{prefix}/share/%{name}/Tests/*.class
 %{prefix}/share/%{name}/python/* 
 
 %config(noreplace) %{sysconfdir}/MonetDB.conf 
@@ -218,9 +220,11 @@ rm -fr $RPM_BUILD_ROOT
 %files server
 %defattr(-,monetdb,monetdb) 
 %{prefix}/bin/Mserver 
+%{prefix}/bin/Mbeddedmil 
 
 %{prefix}/lib/libbat.*
 %{prefix}/lib/libmonet.*
+%{prefix}/lib/libembeddedmil.*
 %{prefix}/lib/%{name}/*.so* 
 %{prefix}/lib/%{name}/*.la* 
 %{prefix}/lib/%{name}/*.mil* 
@@ -234,11 +238,7 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/bin/monetdb-config*
 %{prefix}/share/%{name}/conf/monet.m4 
 
-%{prefix}/bin/mel
 %{prefix}/bin/calibrator
-%{prefix}/bin/Mx 
-%{prefix}/bin/prefixMxFile 
-%{prefix}/bin/idxmx 
 
 %{prefix}/share/%{name}/Mprofile-commands.lst 
 %{prefix}/share/%{name}/quit.mil 
@@ -253,7 +253,6 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/bin/Mtimeout*
 %{prefix}/bin/MkillUsers*
 
-%{prefix}/lib/autogen/* 
 %{prefix}/lib/pkgconfig/MonetDB.pc
 
 %{prefix}/include/%{name}/*.h

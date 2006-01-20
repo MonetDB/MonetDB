@@ -11,7 +11,7 @@
 # The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2005 CWI.
+# Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
 try:
@@ -42,7 +42,7 @@ class server:
         except (IOError, error), e:
             raise MapiError, e.args
 
-        self.cmd_intern(user+':'+password+'\n')
+        self.cmd_intern(user+':'+password+':'+language+'\n')
         self.result()
 
         if trace:
@@ -92,9 +92,9 @@ class server:
 
     def disconnect(self):
         """disconnect()
-        Disconnect from the Monet server.
+        Disconnect from the MonetDB server.
         """
-        self.result = self.cmd_intern('quit;\n')
+        self.result = self.cmd_intern('quit();\n')
         try:
             self.socket.close()
         except (IOError, error), e:
@@ -104,7 +104,7 @@ class server:
     def cmd(self, cmd):
         """cmd(MIL-command) -> result.
         Main interface to Mapi server.  Sends MIL-command (a Unicode
-        or UTF-8-encoded string to the Monet server, waits for the
+        or UTF-8-encoded string to the MonetDB server, waits for the
         result, and returns it, converted to unicode.
         """
         # add linefeed if missing
@@ -117,10 +117,10 @@ class server:
 
 
 if __name__ == '__main__':
-    s = server("localhost" , 50000, os.environ['USER'])
+    s = server("localhost" , 50000)
     sys.stdout.write(s.prompt)
     line = sys.stdin.readline()
-    while line and line != "quit;\n":
+    while line and line != "\\q\n" and line != "quit();\n":
         res = s.cmd(line)
         print res.encode('utf-8'),
         sys.stdout.write(s.prompt)

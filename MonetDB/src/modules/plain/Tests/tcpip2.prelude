@@ -1,5 +1,5 @@
-module("tcpip", "alarm");
-module("unix", "ascii_io");
+module("tcpip");module("alarm");
+module("unix");module("ascii_io");
 
 proc get_mapi_port() : void {
 	if (monet_environment.exist("mapi_port")){

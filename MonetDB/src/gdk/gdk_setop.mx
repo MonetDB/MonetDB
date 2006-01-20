@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f gdk_setop
@@ -101,7 +101,7 @@ Implementation is either merge- or hash-based.
 @= hashelim
 	zz = BUNindex(bn, BUNfirst(bn));
 	if (!bn->hhash){
-		if (BAThash(bn, 0) == NULL) {
+		if (BAThash(bn, BATcapacity(bn)/2) == NULL) {
 			BBPreclaim(bn);
 			return NULL;
 		}
@@ -190,8 +190,16 @@ Implementation is either merge- or hash-based.
 BAT *
 BATins_kunique(BAT *bn, BAT *b)
 {
+	bit unique = FALSE;
 	BATcheck(b, "BATins_kunique: src BAT");
+	BATcheck(bn, "BATins_kunique: dst BAT");
+	unique = (BATcount(bn)==0);
 	@:elim_doubles(k)@
+	if (unique && bn->hkey == FALSE) {
+		/* we inserted unique head-values into an empty BAT;
+		   hence, the resulting BAT's head is (now) unique/key ... */
+		BATkey(bn,TRUE);
+	}
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
@@ -201,10 +209,13 @@ BATins_kunique(BAT *bn, BAT *b)
 BAT *
 BATins_sunique(BAT *bn, BAT *b)
 {
+	bit unique = FALSE;
 	BUN fst1, fst2, last1, last2;
 
 	BATcheck(b, "BATins_sunique: src BAT");
 	BATcheck(bn, "BATins_sunique: dst BAT");
+
+	unique = (BATcount(bn)==0);
 
 	fst1 = BUNfirst(bn);
 	fst2 = BUNfirst(b);
@@ -225,6 +236,11 @@ BATins_sunique(BAT *bn, BAT *b)
 		b= BATmirror(b);
 	}
 	@:elim_doubles(s)@
+	if (unique && bn->batSet == FALSE) {
+		/* we inserted unique BUNs into an empty BAT;
+		   hence, the resulting BAT is (now) unique/set ... */
+		BATset(bn,TRUE);
+	}
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
@@ -444,7 +460,7 @@ TODO synced/key case..
 
 			if (rl >= ll && rl < lh) {
 				hit_start = BUNptr(l, off+(rl-ll));
-			} else if (rl < ll) {
+			} else if (rl < ll && rh > ll) {
 				hit_start = p1;
 				w += s2*(ll-rl);
 			}
@@ -659,7 +675,7 @@ double elimination.
 BAT *
 BATmaterialize_(BAT *b, size_t size)
 {
-	BAT *bn = BATnew(TYPE_oid, ATOMtype(b->ttype), size);
+	BAT *bn = BATnew(TYPE_oid, b->ttype, size);
 	BUN p, q;
 	int xx;
 	oid base;
@@ -711,9 +727,9 @@ BAT@1union(BAT *l, BAT *r)
 	if (BATcount(r) == 0) {
 		return BATrcopy(l);
 	}
-	if (l->htype == TYPE_void) {
+	if (l->htype == TYPE_void && l->hseqbase != oid_nil) {
 		bn = BATmaterialize_(l, BATcount(l)+BATcount(r));
-	} else if (l->ttype == TYPE_void) {
+	} else if (l->ttype == TYPE_void && l->tseqbase != oid_nil) {
 		bn = BATmirror(BATmaterialize_(BATmirror(l),
 					       BATcount(l)+BATcount(r)));
 	} else {
@@ -757,10 +773,14 @@ BAT@1union(BAT *l, BAT *r)
 	HASHdestroy(bn);
 
 	/* set alignment info */
-	if (!bnhdense)
+	if (!bnhdense) {
 		bn->hseqbase = oid_nil;
-	if (!bntdense)
+		bn->hdense = 0;
+	}
+	if (!bntdense) {
 		bn->tseqbase = oid_nil;
+		bn->tdense = 0;
+	}
 	bn->hsorted = hdisjunct?GDK_SORTED:FALSE;
 	bn->tsorted = tdisjunct?GDK_SORTED:FALSE;
 	bn->talign = bn->halign = 0;

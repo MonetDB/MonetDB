@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f monettime
@@ -246,6 +246,7 @@ with:	 DATE = a valid parse format of the date atom (as decribed earlier)
       DAYTIME = a valid parse format of the daytime atom (as decribed earlier)
 	 ZONE = ('+'|'-') HOUR ':' MIN [ 'DST' ]
 \end{verbatim}
+
 Though internally timestamps are stored in GMT, the printing and parsing of
 timestamps is relative to the local timezone. That is, timestamps are
 printed without GMT part, meaning that the time is relative to the local
@@ -354,7 +355,8 @@ Out-of range result values are represented by the nil.
 @T
 There are routines that decompose a date and routines that decompose a daytime.
 For decomposing a timestamp, there are routines that decompose it in a date
-and daytime.
+and daytime. The bulk variants are also provided to simplify code
+generation for SQL and to improve speed.
 @m
 # date
 .COMMAND year(date) : int = date_extract_year;
@@ -468,6 +470,10 @@ One day we should introduce the concept of locale, and hook here.
 	"create a date from the old instant format."
 .COMMAND oldduration(str format) : int = oldduration;
 	"parse the old duration format and return an (estimated) number of days."
+# time
+.COMMAND msec() : lng = CMDmsec;
+	"get time of day in msec since 1-1-1970."
+
 
 .PRELUDE = monettime_prelude;
 .EPILOGUE = monettime_epilogue;
@@ -582,6 +588,9 @@ One day we should introduce the concept of locale, and hook here.
 	proc timestamp(int secs) : timestamp{
 		return EPOCH.add(lng(secs) * lng(1000));
 	}
+	proc timestamp(lng msecs) : timestamp{
+		return EPOCH.add(lng(msecs));
+	}
 	proc epoch(timestamp t) : int {
 		return int(diff(t, EPOCH)/lng(1000));
 	}
@@ -599,7 +608,7 @@ One day we should introduce the concept of locale, and hook here.
 	}
 
 	# some utilities for the SQL front-end
-proc current_timestamp() : timestamp { return timestamp(epoch()); }
+proc current_timestamp() : timestamp { return timestamp(msec()); }
 proc current_date() : date { return date(current_timestamp()); }
 proc current_time() : daytime { return daytime(current_timestamp()); }
 
@@ -612,6 +621,13 @@ proc minutes(timestamp t) : int { return minutes(daytime(t)); }
 proc seconds(timestamp t) : int { return seconds(daytime(t)); }
 proc milliseconds(timestamp t) : int { return milliseconds(daytime(t)); }
 
+proc year(int months) : int { return months/12; }
+proc month(int months) : int { return months%12; }
+proc day(lng secs) : int { return secs/86400; }
+proc hours(lng secs) : int { return (secs%86400)/3600; }
+proc minutes(lng secs) : int { return (secs%3600)/60; }
+proc seconds(lng secs) : int { return (secs%60); }
+
 # temporary(?) HACK to distinguish type-signatures of
 # date_sub_sec_interval & date_add_sec_interval (now: date,lng) from those of
 # date_sub_month_interval & addmonth (date,int),
@@ -623,7 +639,7 @@ proc date_add_sec_interval( date d, lng s ) : date {
 	return date_add_sec_interval( d, int(s) );
 }
 proc timestamp_sub_sec_interval( timestamp ts, lng s ) : timestamp {
-	return add( ts, s*lng(1000) );
+	return add( ts, s*lng(-1000) );
 }
 proc timestamp_add_sec_interval( timestamp ts, lng s ) : timestamp {
 	return add( ts, s*lng(1000) );
@@ -641,7 +657,7 @@ proc addmonths( timestamp ts, int m ) : timestamp {
 	return timestamp(d,t);
 }
 proc time_sub_sec_interval( daytime t, lng s ) : daytime {
-	return add( t, s*lng(1000) );
+	return add( t, s*lng(-1000) );
 }
 proc time_add_sec_interval( daytime t, lng s ) : daytime {
 	return add( t, s*lng(1000) );
@@ -1597,8 +1613,8 @@ tzone_tostr(str *buf, int *len, tzone *z)
 static void
 date_prelude(void)
 {
-	MONTHS[0] = str_nil;
-	DAYS[0] = str_nil;
+	MONTHS[0] = (str)str_nil;
+	DAYS[0] = (str)str_nil;
 	NODAYS[0] = int_nil;
 	DATE_MAX = todate(31, 12, YEAR_MAX);
 	DATE_MIN = todate(1, 1, YEAR_MIN);
@@ -1931,7 +1947,7 @@ daytime_add(daytime *ret, daytime *v, lng *msec)
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
-		*ret = *v + (daytime) (*msec / 1000);
+		*ret = *v + (daytime) (*msec);
 	}
 	return GDK_SUCCEED;
 }
@@ -2388,3 +2404,25 @@ timestamp_comp_GE(bit *retval, timestamp *val1, timestamp *val2)
 		*retval = val1->days > val2->days || (val1->days == val2->days && val1->msecs >= val2->msecs);
 	return GDK_SUCCEED;
 }
+
+int
+CMDmsec(lng *r)
+{
+#ifdef HAVE_GETTIMEOFDAY
+        struct timeval tp;
+
+        gettimeofday(&tp, NULL);
+        *r = ((lng) (tp.tv_sec)) * LL_CONSTANT(1000) + (lng) tp.tv_usec / LL_CONSTANT(1000);
+#else
+#ifdef HAVE_FTIME
+        struct timeb tb;
+
+        ftime(&tb);
+        *r = ((lng) (tb.time)) * LL_CONSTANT(1000) + ((lng) tb.millitm);
+#endif
+#endif
+	return GDK_SUCCEED;
+}
+
+
+

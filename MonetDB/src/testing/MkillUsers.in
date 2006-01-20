@@ -13,7 +13,7 @@
 # The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2005 CWI.
+# Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
 for i in /sbin /usr/sbin /bin /usr/bin /usr/local/bin /usr/local/gnu/bin /cwi/bin ; do
@@ -36,7 +36,7 @@ while [ "${1#-}" != "$1" ] ; do
 done
 LOCKFILE=/tmp/.${0##*/}.$LOCKFILE
 
-files="`ls -d $* 2>/dev/null`"
+files="`ls -d $* 2>/dev/null | egrep -v '\.KILLED\.(out|err)$'`"
 
 if [ ! "$files" ] ; then  exit 0 ; fi
 
@@ -83,7 +83,7 @@ if [ "$TIMES100_BUILD" ] ; then BINPATH="$BINPATH $TIMES100_BUILD/src/tools $TIM
 if [  "$PLAYPEN_BUILD" ] ; then BINPATH="$BINPATH  $PLAYPEN_BUILD/src/tools  $PLAYPEN_BUILD/src/tools/.libs" ; fi
 if [ "$TEMPLATE_BUILD" ] ; then BINPATH="$BINPATH $TEMPLATE_BUILD/src/tools $TEMPLATE_BUILD/src/tools/.libs" ; fi
 for b in $BINPATH ; do
-	files="$files `ls $b/* 2>/dev/null | egrep '/(Mserver|MapiClient(|\.py)|Mdiff|Mlog|Mtimeout|pf)$'`"
+	files="$files `ls $b/* 2>/dev/null | egrep '/(mserver5|Mserver|MapiClient(|\.py)|Mdiff|Mlog|Mtimeout|pf)$'`"
 done
 
 case `uname` in

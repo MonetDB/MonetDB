@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f monet_process
@@ -120,7 +120,12 @@ monetInterpreter(void *status)
 	}
 	PARDEBUG THRprintf(GDKerr, "monetInterpreter(exit)\n");
 
-	MT_exit_thread(0);
+	if (monet_threads) {
+		MT_exit_thread(0);
+	} else {
+		monet_exit(0);
+		MT_global_exit(0);
+	}
 }
 
 int

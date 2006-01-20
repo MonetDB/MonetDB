@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f gdk_utils
@@ -230,7 +230,8 @@ GDKlog(const char *format, ...)
 #ifndef HAVE_GETUID
 #define getuid() 0
 #endif
-	fprintf(GDKlockFile, "%s \@ USR=%d PID=%d THR=" SZFMT " TIME=%s", buf, (int) getuid(), (int) getpid(), (size_t) MT_getpid(), ctime(&tm));
+	fprintf(GDKlockFile, "USR=%d PID=%d TIME=%s \@ %s", 
+		(int) getuid(), (int) getpid(), ctime(&tm),buf);
 	fflush(GDKlockFile);
 
 	if (mustopen)
@@ -320,7 +321,7 @@ BATSIGinit(void)
 	(void) signal(__SIGRTMIN + 1, SIG_IGN);
 #endif
 #ifdef SIGHUP
-	(void) signal(SIGHUP, MT_exit_thread);
+	(void) signal(SIGHUP, MT_global_exit);
 #endif
 #ifdef SIGINT
 	(void) signal(SIGINT, BATSIGinterrupt);
@@ -1106,6 +1107,21 @@ GDKfree(void *blk)
 		MT_alloc_register((char *) (s - 2), maxsize, 's');
 		GDKvmfree((char *) (s - 2), (size_t) size, maxsize);
 	} else {
+#ifndef NDEBUG
+		/* The check above detects obvious duplicate free's,
+		 * but fails in case the "check-bit" is cleared between
+		 * two free's (e.g., as the respective memory has been 
+		 * re-allocated and initialized.
+		 * To simplify detection & debugging of duplicate free's,
+		 * we now overwrite the to be freed memory, which will
+		 * (1) trigger a segfault in case the memory had already
+		 * been freed and/or trigger some error in case the memory
+		 * is accessed after is has been freed.
+		 * To avoid performance penalty in the "production version",
+		 * we only do this in debugging/development mode.
+		 */
+		memset(s,0xDB,size - (8 + (size & 1))); /* 0xDeadBeef */
+#endif
 #ifdef GDK_MEM_MISALIGN
 		if (size & 1)
 			free(((char *) s) - 4);
@@ -1379,7 +1395,7 @@ GDKvmtrim(void *limit)
 	do {
 		stream *fp = NULL;
 
-		sleep(wait ? 5 : 1);
+		if (wait) MT_sleep_ms(5000);
 		MEMDEBUG {
 			fp = GDKerr;
 			THRprintf(fp, "GDKvmtrim(" LLFMT ")\n", (long long) *(size_t *) limit);
@@ -1428,7 +1444,7 @@ GDKinit(char *dbname, char *dbfarm, int alloc_map)
 		GDKprotected = 0;
 
 	/* Mserver intends to rob 95% of all memory as a default */
-	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.95);
+	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
 
 	GDKmemchk(TRUE, TRUE);
 	GDKremovedir(DELDIR);
@@ -2172,7 +2188,7 @@ THRprintf(stream *s, const char *format, ...)
 	p += n;
 
 	n = 0;
-	if (stream_write(s, bf, p - bf, 1) != 1 || stream_flush(s) != 0)
+	if (stream_write(s, bf, p - bf, 1) != 1)
 		n = -1;
 	if (bf != THRprintbuf)
 		free(bf);

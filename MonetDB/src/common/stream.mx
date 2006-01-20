@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f stream
@@ -51,6 +51,7 @@ the various underlying storage types.
 #include <malloc.h>
 #endif
 #include <signal.h>
+#include <limits.h>
 
 #ifdef NATIVE_WIN32
 #ifndef LIBSTREAM
@@ -147,6 +148,10 @@ stream_export stream *open_bzwastream(const char *filename);
 
 stream_export void close_stream(stream *s);
 
+#ifdef HAVE_CURL
+stream_export stream * open_urlstream(const char *url);
+#endif
+
 stream_export stream *socket_rstream(int socket, const char *name);
 stream_export stream *socket_wstream(int socket, const char *name);
 stream_export stream *socket_rastream(int socket, const char *name);
@@ -184,7 +189,9 @@ stream_export stream *buffer_rastream(buffer *b, const char *name);
 stream_export stream *buffer_wastream(buffer *b, const char *name);
 stream_export buffer *stream_get_buffer(stream *s);
 
-#define BLOCK (8*1024)
+/* note, the size is fixed to 8K, you cannot simply change it to any
+   value */
+#define BLOCK (8 * 1024 - 2)
 /*
    Block stream is a stream which sends data in blocks of a known
    size (BLOCK size or dynamically changed using CHANGE_BLOCK_SIZE msg).
@@ -349,7 +356,7 @@ stream_init(void)
 	return 0;
 }
 
-/* #define STREAM_DEBUG 1 */
+/* #define STREAM_DEBUG 1  */
 /* #define BSTREAM_DEBUG 1 */
 
 #ifdef STREAM_DEBUG
@@ -403,7 +410,7 @@ stream_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 }
 
 /* Write cnt elements of size elmsize to the stream.  Returns the
-   number of elements actually read.  If elmsize or cnt equals zero,
+   number of elements actually written.  If elmsize or cnt equals zero,
    returns cnt. */
 ssize_t
 stream_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
@@ -462,7 +469,7 @@ char *
 stream_name(stream *s)
 {
 	if (s == 0)
-		return "Connection terminated";
+		return "connection terminated";
 	return s->name;
 }
 
@@ -546,13 +553,13 @@ error(stream *s)
 
 	switch (s->errnr) {
 	case OPEN_ERROR:
-		snprintf(buf, BUFSIZ, "Error could not open file %s\n", s->name);
+		snprintf(buf, BUFSIZ, "error could not open file %s\n", s->name);
 		return strdup(buf);
 	case READ_ERROR:
-		snprintf(buf, BUFSIZ, "Error reading file %s\n", s->name);
+		snprintf(buf, BUFSIZ, "error reading file %s\n", s->name);
 		return strdup(buf);
 	case WRITE_ERROR:
-		snprintf(buf, BUFSIZ, "Error writing file %s\n", s->name);
+		snprintf(buf, BUFSIZ, "error writing file %s\n", s->name);
 		return strdup(buf);
 	}
 	return strdup("Unknown error");
@@ -1071,7 +1078,216 @@ append_wastream(const char *filename)
 	return open_wastream_(filename, "a");
 }
 
+#ifdef HAVE_CURL
+#include <curl/curl.h>
 
+#ifdef USE_CURL_MULTI
+static CURLM *multi_handle;
+#endif
+
+struct curl_data {
+	CURL *handle;
+	char *buffer;		/* buffer to store incoming data */
+	size_t maxsize;		/* size of allocated buffer */
+	size_t usesize;		/* end of used data */
+	size_t offset;		/* start of unread data */
+	int running;		/* whether still transferring */
+#ifdef USE_CURL_MULTI
+	CURLMcode result;	/* result of transfer (if !running) */
+	struct curl_data *next;	/* linked list (curl_handles) */
+#endif
+};
+#ifdef USE_CURL_MULTI
+static struct curl_data *curl_handles;
+#endif
+
+/* this function is called by libcurl when there is data for us */
+static size_t
+write_callback(char *buffer, size_t size, size_t nitems, void *userp)
+{
+	stream *s = (stream *) userp;
+	struct curl_data *c = (struct curl_data *) s->stream_data.p;
+
+	size *= nitems;
+	/* allocate a buffer if we don't have one yet */
+	if (c->buffer == NULL && size != 0) {
+		/* BLOCK had better be a power of 2! */
+		c->maxsize = (size + BLOCK - 1) & ~(BLOCK - 1);
+		if ((c->buffer = malloc(c->maxsize)) == NULL)
+			return 0;
+		c->usesize = 0;
+		c->offset = 0;
+	}
+#ifndef USE_CURL_MULTI
+	/* move data if we don't have enough space */
+	if (c->maxsize - c->usesize < size && c->offset > 0) {
+		memmove(c->buffer, c->buffer + c->offset, c->usesize - c->offset);
+		c->usesize -= c->offset;
+		c->offset = 0;
+	}
+#endif
+	/* allocate more buffer space if we still don't have enough space */
+	if (c->maxsize - c->usesize < size) {
+		c->maxsize = (c->usesize + size + BLOCK - 1) & ~(BLOCK - 1);
+		c->buffer = realloc(c->buffer, c->usesize + size);
+	}
+	/* finally, store the data we received */
+	memcpy(c->buffer + c->usesize, buffer, size);
+	c->usesize += size;
+	return size;
+}
+
+static void
+curl_destroy(stream *s)
+{
+	struct curl_data *c;
+#ifdef USE_CURL_MULTI
+	struct curl_data **cp;
+#endif
+
+	if ((c = (struct curl_data *) s->stream_data.p) != NULL) {
+		s->stream_data.p = NULL;
+#ifdef USE_CURL_MULTI
+		/* lock access to curl_handles */
+		cp = &curl_handles;
+		while (*cp && *cp != c)
+			cp = &(*cp)->next;
+		if (*cp)
+			*cp = c->next;
+		/* unlock access to curl_handles */
+#endif
+		if (c->handle) {
+#ifdef USE_CURL_MULTI
+			curl_multi_remove_handle(mult_handle, c->handle);
+#endif
+			curl_easy_cleanup(c->handle);
+		}
+		if (c->buffer)
+			free(c->buffer);
+		free(c);
+	}
+	destroy(s);
+}
+
+static ssize_t
+curl_read(stream *s, void *buf, size_t elmsize, size_t cnt)
+{
+	struct curl_data *c = (struct curl_data *) s->stream_data.p;
+	size_t size;
+
+	if (c->usesize - c->offset >= elmsize || !c->running) {
+		/* there is at least one element's worth of data
+		   available, or we have reached the end: return as
+		   much as we have, but no more than requested */
+		if (cnt * elmsize > c->usesize - c->offset)
+			cnt = (c->usesize - c->offset) / elmsize;
+		size = cnt * elmsize;
+		memcpy(buf, c->buffer + c->offset, size);
+		c->offset += size;
+		if (c->offset == c->usesize)
+			c->usesize = c->offset = 0;
+		return (ssize_t) cnt;
+	}
+	/* not enough data, we must wait until we get some */
+#ifndef USE_CURL_MULTI
+	return 0;
+#endif
+}
+
+static ssize_t
+curl_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
+{
+	(void) s;
+	(void) buf;
+	(void) elmsize;
+	(void) cnt;
+	assert(0);
+	return -1;
+}
+
+static void
+curl_close(stream *s)
+{
+	(void) s;
+}
+
+stream *
+open_urlstream(const char *url)
+{
+	stream *s;
+	struct curl_data *c;
+#ifdef USE_CURL_MULTI
+	CURLMsg *msg;
+#endif
+
+	if ((c = malloc(sizeof(*c))) == NULL)
+		return NULL;
+	c->handle = NULL;
+	c->buffer = NULL;
+	c->maxsize = c->usesize = c->offset = 0;
+	c->running = 1;
+	if ((s = create_stream(url)) == NULL) {
+		free(c);
+		return NULL;
+	}
+#ifdef USE_CURL_MULTI
+	/* lock access to curl_handles */
+	c->next = curl_handles;
+	curl_handles = c;
+	/* unlock access to curl_handles */
+#endif
+	s->read = curl_read;
+	s->write = curl_write;
+	s->close = curl_close;
+	s->destroy = curl_destroy;
+	s->stream_data.p = (void *) c;
+	if ((c->handle = curl_easy_init()) == NULL) {
+		destroy(s);
+		return NULL;
+	}
+	curl_easy_setopt(c->handle, CURLOPT_URL, s->name);
+	curl_easy_setopt(c->handle, CURLOPT_WRITEDATA, s);
+	curl_easy_setopt(c->handle, CURLOPT_VERBOSE, FALSE);
+	curl_easy_setopt(c->handle, CURLOPT_NOSIGNAL, TRUE);
+	curl_easy_setopt(c->handle, CURLOPT_WRITEFUNCTION, write_callback);
+#ifdef USE_CURL_MULTI
+	if (multi_handle == NULL)
+		multi_handle = curl_multi_init();
+	curl_multi_add_handle(multi_handle, c->handle);
+	while (curl_multi_perform(multi_handle, NULL) == CURLM_CALL_MULTI_PERFORM)
+		;
+	while ((msg = curl_multi_info_read(multi_handle, NULL)) != NULL) {
+		struct curl_data *p;
+		/* lock access to curl_handles */
+		for (p = curl_handles; p; p = p->next) {
+			if (p->handle == msg->easy_handle) {
+				switch (msg->msg) {
+				case CURLMSG_DONE:
+					p->running = 0;
+					p->result = msg->data.result;
+					curl_multi_remove_handle(multi_handle, p->handle);
+					curl_easy_cleanup(p->handle);
+					p->handle = NULL;
+					break;
+				default:
+					break;
+				}
+				break;
+			}
+		}
+		/* unlock access to curl_handles */
+	}
+#else
+	if (curl_easy_perform(c->handle) != CURLE_OK)
+		s->errnr = OPEN_ERROR;
+	curl_easy_cleanup(c->handle);
+	c->handle = NULL;
+	c->running = 0;
+#endif
+	return s;
+}
+
+#endif /* HAVE_CURL */
 
 static ssize_t
 socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
@@ -1132,10 +1348,7 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 		s->errnr = READ_ERROR;
 		return nr;
 	}
-	if (res > 0)
-		return res / elmsize;
-	s->errnr = READ_ERROR;
-	return 0;
+	return res / elmsize;
 }
 
 #ifdef NATIVE_WIN32
@@ -1810,7 +2023,8 @@ typedef struct bs {
 	stream *s;		/* underlying stream */
 	unsigned nr;		/* how far we got in buf */
 	unsigned itotal;	/* amount available in current read block */
-	char buf[BLOCK];	/* the buffered data */
+	char buf[BLOCK];	/* the buffered data (minus the size of
+	                           size-short */
 } bs;
 
 static bs *
@@ -1842,6 +2056,7 @@ bs_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 {
 	bs *s = (bs *) ss->stream_data.p;
 	size_t todo = cnt * elmsize;
+	short blksize;
 
 	assert(ss->access == ST_WRITE);
 	assert(s->nr < sizeof(s->buf));
@@ -1855,6 +2070,7 @@ bs_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 		todo -= n;
 		buf = (void *) ((char *) buf + n);
 		if (s->nr == sizeof(s->buf)) {
+			/* block is full, write it to the stream */
 #ifdef BSTREAM_DEBUG
 			{
 				unsigned i;
@@ -1868,7 +2084,13 @@ bs_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 				printf("\"\n");
 			}
 #endif
-			if (!stream_writeInt(s->s, s->nr) || s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr) {
+			/* since the block is at max BLOCK (8K) - 2 size we can
+			   store it in a two byte integer */
+			blksize = (short) s->nr;
+			/* the last bit tells whether a flush is in there, it's not
+			 * at this moment, so shift it to the left */
+			blksize <<= 1;
+			if (!stream_writeSht(s->s, blksize) || s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr) {
 				ss->errnr = WRITE_ERROR;
 				return -1;
 			}
@@ -1886,15 +2108,14 @@ bs_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 static int
 bs_flush(stream *ss)
 {
+	short blksize;
 	bs *s = (bs *) ss->stream_data.p;
 
 	assert(ss->access == ST_WRITE);
 	assert(s->nr < sizeof(s->buf));
 	if (ss->access == ST_WRITE) {
-		/* first flush rest of buffer (if s->nr > 0), then
-		   write an extra empty buffer (second
-		   stream_writeInt) to indicate user-instigated
-		   flush */
+		/* flush the rest of buffer (if s->nr > 0), then set the
+		 * last bit to 1 to to indicate user-instigated flush */
 #ifdef BSTREAM_DEBUG
 		if (s->nr > 0) {
 			unsigned i;
@@ -1909,8 +2130,12 @@ bs_flush(stream *ss)
 			printf("W %s 0\n", ss->name);
 		}
 #endif
-		if ((s->nr > 0 && (!stream_writeInt(s->s, s->nr) || s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr)) || !stream_writeInt(s->s, 0)
-		    ) {
+		blksize = s->nr << 1;
+		/* indicate that this is the last buffer of a block by
+		   setting the low-order bit */
+		blksize |= (short) 1;
+		/* allways flush (even empty blocks) needed for the protocol) */
+		if ((!stream_writeSht(s->s, blksize) || s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr)) {
 			ss->errnr = WRITE_ERROR;
 			return -1;
 		}
@@ -1940,15 +2165,13 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 	assert(s->nr <= 1);
 
 	if (s->itotal == 0) {
-		/* There is nothing more to read in the current block,
-		   so read the count for the next block */
-		int nr = 0;
+		short blksize = 0;
 
 		if (s->nr) {
-			/* We read the 0 count of the closing block
-			   but hadn't returned that yet.  Return it
-			   now, and note that we did by setting s->nr
-			   to 0. */
+			/* We read the closing block but hadn't returned that yet.
+			   Return it now, and note that we did by setting s->nr to
+			   0.
+			*/
 			assert(s->nr == 1);
 			s->nr = 0;
 			return 0;
@@ -1956,32 +2179,24 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 
 		assert(s->nr == 0);
 
-		if (!stream_readInt(s->s, &nr) || nr < 0) {
+		/* There is nothing more to read in the current block,
+		   so read the count for the next block */
+		if (!stream_readSht(s->s, &blksize) || blksize < 0) {
 			ss->errnr = READ_ERROR;
 			return -1;
 		}
 #ifdef BSTREAM_DEBUG
-		printf("RC %s %d\n", ss->name, nr);
+		printf("RC size: %d, final: %s\n", blksize >> 1, blksize & 1 ? "true" : "false");
+		printf("RC %s %d\n", ss->name, blksize);
 #endif
-		s->itotal = (unsigned) nr;	/* amount readable */
-		if (nr == 0) {
-			/* We read the count for the closing empty
-			   block.  This means that the other side did
-			   a flush after writing no data since the
-			   previous flush, but that's ok.  Note that
-			   s->nr is still 0.  That is important so
-			   that the next call to this function doesn't
-			   return 0 again.. */
-			return 0;
-		}
-		/* indicate that we need to start reading data */
-		s->nr = 1;
+		s->itotal = (unsigned) (blksize >> 1); /* amount readable */
+		/* store whether this was the last block or not */
+		s->nr = blksize & 1;
 	}
 
 	/* Fill the caller's buffer. */
 	cnt = 0;		/* count how much we put into the buffer */
 	while (todo > 0) {
-		assert(s->itotal > 0);
 		/* there is more data waiting in the current block,
 		   so read it */
 		n = todo < s->itotal ? todo : s->itotal;
@@ -2015,29 +2230,33 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 		}
 
 		if (s->itotal == 0) {
-			/* The current block has been completely read,
-			   so read the count for the next block */
-			int nr;
+			short blksize = 0;
 
-			if (!stream_readInt(s->s, &nr) || nr < 0) {
+			/* The current block has been completely read,
+			   so read the count for the next block, only if the
+			   previous was not the last one */
+			if (s->nr) {
+				break;
+			} else if (!stream_readSht(s->s, &blksize) || blksize < 0) {
 				ss->errnr = READ_ERROR;
 				return -1;
 			}
 #ifdef BSTREAM_DEBUG
-			printf("RC %s %d\n", ss->name, nr);
+			printf("RC size: %d, final: %s\n", blksize >> 1, blksize & 1 ? "true" : "false");
+			printf("RC %s %d\n", ss->name, s->nr);
+			printf("RC %s %d\n", ss->name, blksize);
 #endif
-			s->itotal = (unsigned) nr;
-			s->nr = 1;
-			if (nr == 0) {
-				/* We read the count for the closing
-				   empty block.  Stop reading and
-				   return what we have.  Note that
-				   s->nr == 1.  That is important for
-				   the next call to this function. */
-				break;
-			}
+			s->itotal = (unsigned) (blksize >> 1); /* amount readable */
+			/* store whether this was the last block or not */
+			s->nr = blksize & 1;
 		}
 	}
+	/* if we got an empty block with the end-of-sequence marker
+	   set (low-order bit) we must only return an empty read once, so
+	   we must squash the flag that we still have to return an empty
+	   read */
+	if (todo > 0 && cnt == 0)
+		s->nr = 0;
 	return cnt / elmsize;
 }
 
@@ -2306,14 +2525,64 @@ bstream_read(bstream *s, size_t size)
 	return rd;
 }
 
+#ifdef _POSIX2_LINE_MAX
+#define STREAM_LINE_MAX _POSIX2_LINE_MAX
+#else
+#define STREAM_LINE_MAX 2048
+#endif
+
+ssize_t
+bstream_readline(bstream *s)
+{
+	size_t size = STREAM_LINE_MAX;
+	ssize_t rd;
+
+	if (s->eof)
+		return 0;
+
+	if (s->pos > 0 && s->len + size >= s->size) {
+		if (s->pos < s->len)
+			/* move all data and end of string marker */
+			memmove(s->buf, s->buf + s->pos, s->len - s->pos + 1);
+		s->len -= s->pos;
+		s->pos = 0;
+	}
+
+	if (s->len == s->size && (s->buf = realloc(s->buf, (s->size <<= 1) + 1)) == NULL) {
+		s->size = 0;
+		s->len = 0;
+		s->pos = 0;
+		return -1;
+	}
+
+	if (size > s->size - s->len)
+		size = s->size - s->len;
+
+	if (fgets(s->buf + s->len, size, s->s->stream_data.p) == NULL)
+		return -1;
+
+	rd = strlen(s->buf + s->len);
+
+	if (rd == 0) {
+		s->eof = 1;
+		return 0;
+	}
+	s->len += rd;
+	s->buf[s->len] = 0;	/* fill in the spare with EOS */
+	return rd;
+}
+
+
 ssize_t
 bstream_next(bstream *s)
 {
-	int sz = 0, rd;
-
 	if (s->mode) {
 		return bstream_read(s, s->mode);
+	} else if (s->s->read == file_read) {
+		return bstream_readline(s);
 	} else {
+		int sz = 0, rd;
+
 		while ((rd = bstream_read(s, 1)) == 1 && s->buf[s->pos + sz] != '\n') {
 			sz += rd;
 		}

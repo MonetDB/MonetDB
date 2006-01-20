@@ -12,7 +12,7 @@
  * The Original Code is the MonetDB Database System.
  *
  * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2005 CWI.
+ * Portions created by CWI are Copyright (C) 1997-2006 CWI.
  * All Rights Reserved.
  */
 
@@ -20,7 +20,7 @@
 // Make sure you have the Mapi.java package in your path
 import mapi.*;
 
-class sample
+public class sample
 {
     public static void main(String[] args) {
 	

@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f gdk_storage
@@ -328,7 +328,7 @@ GDKload(str nme, str ext, size_t size, size_t chunk, int mode)
 	}
 
 	if (store == STORE_MEM) {
-		if ((fd = GDKfdlocate(nme, "rb+", ext)) >= 0) {
+		if ((fd = GDKfdlocate(nme, "rb", ext)) >= 0) {
 			/* some systems do not give you all at once */
 			char *dst = buf = (char *) GDKmalloc(chunk);
 
@@ -345,7 +345,7 @@ GDKload(str nme, str ext, size_t size, size_t chunk, int mode)
 		if ((fp = GDKfilelocate(nme, "mrb+", ext)) != NULL) {
 			char path[MAXPATHLEN];
 			int tpe = 0;
-			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL;
+			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC;
 
 			fseek(fp, (ssize_t) chunk, SEEK_SET);
 			fputc('\n', fp);
@@ -1013,8 +1013,6 @@ Print the table header and then the multijoin.
 @-
 Cleanup.
 @c
-	if (stream_flush(s) < 0)
-		ret = -1;
       cleanup:
 	for (j = 0; j <= argc; j++) {
 		if (c[j].buf)

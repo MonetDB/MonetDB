@@ -13,7 +13,7 @@
 # The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2005 CWI.
+# Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
 $| = 1;
@@ -61,6 +61,7 @@ is( ref $ti,'HASH','Type info');
 {
   local ($dbh->{Warn}, $dbh->{PrintError});
   $dbh->{PrintError} = $dbh->{Warn} = 0;
+  $dbh->do("DROP TABLE $tbl2");
   $dbh->do("DROP TABLE $tbl");
 }
 # -----------------------------------------------------------------------------

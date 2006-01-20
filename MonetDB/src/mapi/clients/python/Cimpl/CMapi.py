@@ -11,7 +11,7 @@
 # The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2005 CWI.
+# Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
 import MapiLib
@@ -25,7 +25,8 @@ class Mapi:
             raise IOError(self.error_str())
 
     def __del__(self):
-        MapiLib.mapi_destroy(self.__mid)
+        if MapiLib:
+            MapiLib.mapi_destroy(self.__mid)
         del self.__mid
 
     def error(self):

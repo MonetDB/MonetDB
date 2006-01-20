@@ -25,8 +25,8 @@ X.insert("monet_mod_use",monet_mod_use.count());
 printf("\nMserver prologue: This is what Mserver says before MapiClient connects.\n");
 # X.print();
 # bat("adm_atomtbl").print();
-# bat("adm_fcntbl").mark(nil).sort().print();
+# bat("adm_fcntbl").project(nil).sort().print();
 # monet_atomtbl.print();
-# monet_fcntbl.mark(nil).sort().print();
+# monet_fcntbl.project(nil).sort().print();
 }
 # X := nil;

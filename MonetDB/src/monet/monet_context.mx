@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f monet_context
@@ -62,7 +62,7 @@ typedef struct CNTXT {
 	Cntxt next;		/* for making chains. differs from 'outer' due to parallel execution */
 	bit shadow;		/* shadow stk; create new variables in outer */
 	bit used;		/* in use or not */
-	short reuse;		/* context record is reused (i.e. kept around) for speed among multiple loop iterations
+	int reuse;		/* context record is reused (i.e. kept around) for speed among multiple loop iterations
 				 * reuse==-1: not in a loop, reuse==stk: reused by (while/multiplex/bat)loop in 'stk'
 				 */
 } CntxtRec;
@@ -335,8 +335,8 @@ VARnew(Cntxt stk, str name)
 	i = strlen(name);
 	v = (Variable) GDKmalloc(sizeof(VarRecord) + i);
 	memset(v, 0, sizeof(VarRecord) + i);
-	v->binding.vtype = TYPE_int;
-	v->binding.val.ival = 0;
+	v->binding.vtype = TYPE_void;
+	v->binding.val.oval = void_nil;
 
 	strncpy(v->name, name, i);
 	v->name[i] = 0;

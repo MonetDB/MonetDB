@@ -8,7 +8,7 @@ b.insert(4@0,4);
 b.print();
 var c:=a.copy().access(BAT_WRITE);;
 c.print();
-var d:=c.insert(b);
+var d:=c.append(b);
 d.print();
 a.seqbase(0@0);
 a.print();

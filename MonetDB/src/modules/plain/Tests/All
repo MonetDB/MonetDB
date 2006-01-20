@@ -23,4 +23,5 @@ tcpip2
 slice
 enum
 radix
-pcre
+HAVE_PCRE?pcre
+builtin

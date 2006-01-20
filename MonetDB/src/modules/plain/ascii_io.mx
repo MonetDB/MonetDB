@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f ascii_io
@@ -76,9 +76,9 @@ proc load_format( str fmt ) : BAT[str,BAT] {
 	var names := new(void,str); names.seqbase(oid(0));
 	var seps := new(void,str); seps.seqbase(oid(0));
 	var types := new(void,str); types.seqbase(oid(0));
-	names.insert(nil,"names");seps.insert(nil,",");types.insert(nil,"str");
-	names.insert(nil,"seps");seps.insert(nil,",");types.insert(nil,"str");
-	names.insert(nil,"types");seps.insert(nil,"\n");types.insert(nil,"str");
+	names.append("names");seps.append(",");types.append("str");
+	names.append("seps");seps.append(",");types.append("str");
+	names.append("types");seps.append("\n");types.append("str");
 	return load(names, seps, types, fmt, 1000);
 }
 ADDHELP("load_format", "niels", "Jan 2005",
@@ -149,9 +149,9 @@ proc dump_seps( BAT[void,BAT] bats ) : BAT[void,str] {
 	var cnt := bats.count() - 1;
 	bats@batloop(){
 		if (id != cnt) {
-			seps.insert(nil,",");
+			seps.append(",");
 		} else {
-			seps.insert(nil,"\n");
+			seps.append("\n");
 		}
 		id :+= 1;
 	}
@@ -168,18 +168,18 @@ proc dump_format( BAT[void,BAT] bats, str fmt ) : BAT[str,BAT] {
 	var seps  := dump_seps(bats);
 	var types := [bat_ttype](bats);
 	var fmtbats:= new(void,bat); fmtbats.seqbase(oid(0));
-	fmtbats.insert(nil,names);
-	fmtbats.insert(nil,seps);
-	fmtbats.insert(nil,types);
+	fmtbats.append(names);
+	fmtbats.append(seps);
+	fmtbats.append(types);
 
 	names := new(void,str); names.seqbase(oid(0));
 	seps := new(void,str); seps.seqbase(oid(0));
-	names.insert(nil,"names");seps.insert(nil,",");
-	names.insert(nil,"seps");seps.insert(nil,",");
-	names.insert(nil,"types");seps.insert(nil,"\n");
+	names.append("names");seps.append(",");
+	names.append("seps");seps.append(",");
+	names.append("types");seps.append("\n");
 	dump(names, seps, fmtbats, fmt, 1000);
-	names.insert(nil,"bats");
-	fmtbats.insert(nil,bats);
+	names.append("bats");
+	fmtbats.append(bats);
 	return names.reverse().join(fmtbats);
 }
 
@@ -205,14 +205,14 @@ proc dump_data( BAT[str,BAT] fmt, BAT[str,BAT] bats, str data, int cnt) : void {
 proc import( BAT[any,any] b, str filename ) : BAT[any,any] {
 
 	var names := new(void,str).seqbase(0@0);
-	names.insert(oid(nil),"head");
-	names.insert(oid(nil),"tail");
+	names.append("head");
+	names.append("tail");
 	var seps := new(void,str).seqbase(0@0);
-	seps.insert(oid(nil),",");
-	seps.insert(oid(nil),"\n");
+	seps.append(",");
+	seps.append("\n");
 	var types := new(void,str).seqbase(0@0);
-	types.insert(oid(nil),b.reverse().bat_ttype());
-	types.insert(oid(nil),b.bat_ttype());
+	types.append(b.reverse().bat_ttype());
+	types.append(b.bat_ttype());
 
 	var bats := load( names, seps, types, filename, -1);
 	b.insert (bats.find("head").reverse().join(bats.find("tail")));
@@ -224,14 +224,14 @@ proc export( BAT[any,any] b, str filename ) : void {
 	var tb := b.reverse().mark(0@0).reverse();
 
 	var names := new(void,str).seqbase(0@0);
-	names.insert(oid(nil),"head");
-	names.insert(oid(nil),"tail");
+	names.append("head");
+	names.append("tail");
 	var seps := new(void,str).seqbase(0@0);
-	seps.insert(oid(nil),",");
-	seps.insert(oid(nil),"\n");
+	seps.append(",");
+	seps.append("\n");
 	var bats := new(void,bat).seqbase(0@0);
-	bats.insert(oid(nil), hb);
-	bats.insert(oid(nil), tb);
+	bats.append(hb);
+	bats.append(tb);
 
 	dump( names, seps, bats, filename, b.count());
 }
@@ -262,6 +262,8 @@ typedef struct ascii_io_t {
 	toStr tostr;
 	frStr frstr;
 	void *extra;
+	void *data;
+	int len;
 } ascii_io;
 
 typedef struct ascii_load_t {
@@ -287,7 +289,7 @@ ascii_io_export int ASCIIoutput_file(ascii *as, BAT *order, stream *s);
 
 @+ Default from and to string functions
 @h
-ascii_io_export ptr *ASCIIstrFrStr(char *s, char *e);
+ascii_io_export ptr *ASCIIstrFrStr(ascii_io* fmt, char *s, char *e);
 ascii_io_export ptr *ASCIIadt_frStr(void *extra, int type, char *s, char *e, char quote);
 ascii_io_export int ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
 
@@ -355,33 +357,36 @@ sep_dup(char *sep)
 
 
 ptr *
-ASCIIstrFrStr(char *s, char *e)
+ASCIIstrFrStr(ascii_io *fmt, char *s, char *e)
 {
-	ptr res = GDKmalloc(e - s + 1);
+	int len = e-s+1;
+
+	if (fmt->len < len){
+		fmt->len = len;
+		fmt->data = GDKrealloc(fmt->data,len); 
+	}
 
 	if (s == e) {
-		*(char *) res = 0;
-	} else if (GDKstrFromStr(res, (unsigned char *) s, e - s) == 0) {
-		GDKfree(res);
+		*(char *) fmt->data = 0;
+	} else if (GDKstrFromStr(fmt->data, (unsigned char *) s, e - s) == 0) {
 		return NULL;
 	}
-	return res;
+	return fmt->data;
 }
 
 ptr *
 ASCIIadt_frStr(void *extra, int type, char *s, char *e, char quote)
 {
 	ptr *res = NULL;
+	ascii_io *fmt = extra;
 
-	(void) extra;
 	if (s == NULL || (!(type == TYPE_str && quote) && strcmp(s, "nil") == 0)) {
 		res = (ptr *) ATOMnil(type);
 	} else if (type == TYPE_str) {
-		return ASCIIstrFrStr(s, e);
+		return ASCIIstrFrStr(fmt, s, e);
 	} else {
-		int l = 0;
-
-		(void) (*BATatoms[type].atomFromStr) (s, &l, (ptr) &res);
+		(void) (*BATatoms[type].atomFromStr) (s, &fmt->len, (ptr) &fmt->data);
+		res = fmt->data;
 	}
 	return res;
 }
@@ -416,7 +421,9 @@ create_loadformat(ascii *as, BAT *names, BAT *seps, BAT *types)
 		}
 		fmt[p].tostr = &ASCIIadt_toStr;
 		fmt[p].frstr = &ASCIIadt_frStr;
-		fmt[p].extra = NULL;
+		fmt[p].extra = fmt+p;
+		fmt[p].data = NULL;
+		fmt[p].len = 0;
 		if (ascii_io_debug)
 			stream_printf(GDKerr, "%s\n", fmt[p].name);
 	}
@@ -448,7 +455,9 @@ create_dumpformat(ascii *as, BAT *names, BAT *seps, BAT *bats)
 		fmt[p].adt = (b)->ttype;
 		fmt[p].tostr = &ASCIIadt_toStr;
 		fmt[p].frstr = &ASCIIadt_frStr;
-		fmt[p].extra = NULL;
+		fmt[p].extra = fmt+p;
+		fmt[p].data = NULL;
+		fmt[p].len = 0;
 	}
 	return as->nr_attrs;
 }
@@ -463,6 +472,8 @@ ASCIIdestroy_format(ascii *as)
 		if (fmt[p].c)
 			BBPunfix(fmt[p].c->batCacheid);
 		GDKfree(fmt[p].sep);
+		if (fmt[p].data)
+			GDKfree(fmt[p].data);
 	}
 	GDKfree(fmt);
 }
@@ -511,7 +522,7 @@ check_BATs(ascii *as)
 			continue;
 		offset = BUNindex(b, BUNfirst(b)) + as->offset;
 
-		if (BATcount(b) != cnt || b->hseqbase != base)
+		if (BATcount(b) != cnt || !BAThdense(b) || b->hseqbase != base)
 			return oid_nil;
 
 		fmt[i].p = BUNptr(b, offset);
@@ -610,8 +621,8 @@ insert_val(ascii_io *fmt, char *s, char *e, char quote)
 	char *end = e;
 	char bak = *e;
 	ptr *adt;
-	oid on = oid_nil;	/* can't use &oid_nil because of the
-				   way it's defined */
+	oid on = fmt->c->hseqbase + BATcount(fmt->c);
+
 	if (quote) {
 		/* string needs the quotes included */
 		s = find_quote(s, quote);
@@ -638,7 +649,8 @@ insert_val(ascii_io *fmt, char *s, char *e, char quote)
 	}
 
 	BUNins(fmt->c, &on, adt);
-	GDKfree(adt);
+	if (fmt->data != adt)
+		GDKfree(adt);
 	return 0;
 }
 
@@ -680,7 +692,7 @@ insert_line(ascii *as, char *line)
 				e = line;
 				break;
 			} else if (first && (*line == '\"' || *line == '\'')
-				   && *(line - 1) != '\\') {
+				   && (line == s || *(line - 1) != '\\')) {
 				quote = *line;
 				line++;
 				line = skip_string(line, quote);
@@ -1154,6 +1166,7 @@ int
 init_ascii_io(int *debug)
 {
 	ascii_io_debug = *debug;
+
 	return GDK_SUCCEED;
 }
 
@@ -1187,6 +1200,7 @@ ascii_io_input(BAT **bats, BAT *names, BAT *seps, BAT *types, Stream *s, int *N)
 		return GDK_FAIL;
 	}
 }
+
 int
 ascii_io_dump(BAT *names, BAT *seps, BAT *bats, str datafile, int *nr)
 {

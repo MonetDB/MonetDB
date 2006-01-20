@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f gdk_value
@@ -156,6 +156,28 @@ VALcopy(ValPtr d, ValPtr s)
 		d->len = ATOMlen(d->vtype, p);
 		d->val.pval = GDKmalloc(d->len);
 		memcpy(d->val.pval, p, d->len);
+	}
+	return d;
+}
+
+ValPtr
+VALinit(ValPtr d, int tpe, ptr s)
+{
+	if (ATOMextern(tpe) == 0) {
+		d->vtype = tpe;
+		memcpy(&d->val.ival, s, ATOMlen(tpe, s));
+	} else if (s == 0) {
+		GDKerror("VALinit:unsupported init\n");
+		d->vtype = TYPE_int;
+	} else if (tpe >= TYPE_str && ATOMstorage(tpe) == TYPE_str) {
+		d->vtype = TYPE_str;
+		d->val.sval = GDKstrdup(s);
+		d->len = strLen(s);
+	} else {
+		d->vtype = tpe;
+		d->len = ATOMlen(tpe, s);
+		d->val.pval = GDKmalloc(d->len);
+		memcpy(d->val.pval, s, d->len);
 	}
 	return d;
 }

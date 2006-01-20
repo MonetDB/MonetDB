@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f monet_multiplex
@@ -114,6 +114,7 @@ bulkerror_init(bulkerror_t *bulkerror)
 {
 	bulkerror->bak = GDKerrbuf;
 	bulkerror->cnt = 0;
+	bulkerror->buf[0] = 0;
 	GDKsetbuf(bulkerror->buf);
 }
 
@@ -197,6 +198,7 @@ interpret_multiplex(str s, int argc, ValPtr argv, ValPtr res, YYSTREE t, Cntxt s
 	int one_unique = FALSE;
 	int all_unique = TRUE;
 	int all_sorted = TRUE;
+	int any_dense = FALSE;
 	size_t max_size = 0;
 	size_t min_size = REALLY_REALLY_BIG;
 	char name[128];
@@ -218,6 +220,7 @@ operator are a special case.
 			BAT *b = BBPdescriptor(argv[i].val.bval);
 			size_t sz = BATcount(b);
 
+			any_dense |= BAThdense(b);
 			if (min_size == REALLY_REALLY_BIG) {
 				all_synced = b;
 				tpe = BAThtype(b);
@@ -241,7 +244,7 @@ operator are a special case.
 				all_sorted = FALSE;
 			}
 			if (all_synced && !ALIGNsynced(all_synced, b)) {
-				all_synced = FALSE;
+				all_synced = NULL;
 			}
 			nbats++;
 		} else {
@@ -262,6 +265,8 @@ Optimizations only work on 1-1 matching of oids.
 			all_sorted = FALSE;
 		}
 	}
+	if (all_synced && any_dense)
+		tpe = TYPE_void;
 @-
 Optimization: the merge multiplex operation does a merge scan. This
 is very efficient in the bulk case, but if you are doing very sparse
@@ -415,6 +420,7 @@ interpret_multiplex_fcn(str s,		/* operator name */
 	ValPtr bak = (ValPtr) alloca(argc * (int) sizeof(ValRecord));
 	exec_t desc;
 	RowFcn wrap;
+	oid  hseq = oid_nil;
 
 	memset(&desc, 0, sizeof(exec_t));
 	desc.name = s;
@@ -434,6 +440,11 @@ interpret_multiplex_fcn(str s,		/* operator name */
 			if (b == NULL)
 				return 0;
 			real_type = b->htype;
+			if (real_type == TYPE_void) {
+				if (hseq == oid_nil) {
+					hseq = b->hseqbase;
+				}
+			}
 			desc.piv[desc.nbats] = b;
 			desc.c[++desc.nbats] = desc.argv + i;
 		} else if (argv[i].vtype == TYPE_bat) {
@@ -458,21 +469,41 @@ Set up type and length info for the values that will come out of BAT params.
 
 	desc.f[0] = multiplex_fcn(tpe);
 	desc.c[0] = &desc.id;
-	wrap =
-	    (RowFcn) (recursive_bats
-		      ? ((proc ? (ATOMextern(desc.id.vtype) ? multiplex_bat_proc_extern_tpechk : multiplex_bat_proc_intern_tpechk) : (ret > 0)
-			  ? (ATOMextern(ret) ? (ATOMextern(desc.id.vtype) ? multiplex_bat_fcn_extern_extern : multiplex_bat_fcn_intern_extern) : (ATOMextern(desc.id.vtype) ? multiplex_bat_fcn_extern_intern : multiplex_bat_fcn_intern_intern))
-			  : (ATOMextern(desc.id.vtype) ? multiplex_bat_fcn_extern_tpechk : multiplex_bat_fcn_intern_tpechk))) : ((proc ? (ATOMextern(desc.id.vtype) ? multiplex_bat_proc_extern_tpechk : multiplex_bat_proc_intern_tpechk) : (ret >
-																													      0)
-																  ? (ATOMextern(ret) ? (ATOMextern(desc.id.vtype) ? multiplex_fcn_extern_extern : multiplex_fcn_intern_extern)
-																     : (ATOMextern(desc.id.vtype) ? multiplex_fcn_extern_intern : multiplex_fcn_intern_intern)) : (ATOMextern(desc.id.
-																													      vtype) ?
-																												   multiplex_fcn_extern_tpechk
-																												   :
-																												   multiplex_fcn_intern_tpechk))));
+	wrap = (RowFcn) (recursive_bats ?
+			 (proc ?
+			  (ATOMextern(desc.id.vtype) ?
+			   multiplex_bat_proc_extern_tpechk :
+			   multiplex_bat_proc_intern_tpechk) :
+			  (ret > 0 ?
+			   (ATOMextern(ret) ?
+			    (ATOMextern(desc.id.vtype) ?
+			     multiplex_bat_fcn_extern_extern :
+			     multiplex_bat_fcn_intern_extern) :
+			    (ATOMextern(desc.id.vtype) ?
+			     multiplex_bat_fcn_extern_intern :
+			     multiplex_bat_fcn_intern_intern)) :
+			   (ATOMextern(desc.id.vtype) ?
+			    multiplex_bat_fcn_extern_tpechk :
+			    multiplex_bat_fcn_intern_tpechk))) :
+			 (proc ?
+			  (ATOMextern(desc.id.vtype) ?
+			   multiplex_bat_proc_extern_tpechk :
+			   multiplex_bat_proc_intern_tpechk) :
+			  (ret > 0 ?
+			   (ATOMextern(ret) ?
+			    (ATOMextern(desc.id.vtype) ?
+			     multiplex_fcn_extern_extern :
+			     multiplex_fcn_intern_extern) :
+			    (ATOMextern(desc.id.vtype) ?
+			     multiplex_fcn_extern_intern :
+			     multiplex_fcn_intern_intern)) :
+			   (ATOMextern(desc.id. vtype) ?
+			    multiplex_fcn_extern_tpechk :
+			    multiplex_fcn_intern_tpechk))));
 	desc.need_unfix = (!proc && !desc.notall);
 	if (ret > 0) {
 		desc.b = BATnew(desc.id.vtype, ret, desc.cap + 3);
+		BATseqbase(desc.b, hseq);
 
 		desc.unfix = (desc.notall) ? NULL : BATatoms[ret].atomUnfix;
 		if (desc.need_unfix && ret == TYPE_bat)
@@ -504,6 +535,7 @@ So, what tail-type should the empty return BAT have? Dilemma!
 	if (desc.b == NULL && ret <= 0) {
 		GDKwarning("%s: empty result, hence return type unknown.\n", desc.name);
 		desc.b = BATnew(desc.id.vtype, TYPE_int, 10);
+		BATseqbase(desc.b, hseq);
 	}
 @-
 Set the correct properties in the result BAT.
@@ -560,6 +592,7 @@ multiplex_@1_@2_@3(exec_t *desc, ValPtr* argv)
 		if (!desc->b) {
 			GDKsetbuf(desc->bulkerror.bak);
 			GDKerror("multiplex: result bat[void,void] impossible.\n");
+			desc->bulkerror.buf[0] = 0;
 			GDKsetbuf(desc->bulkerror.buf);
 			return -1;
 		}
@@ -601,6 +634,7 @@ multiplex_bat_@1_@2_@3(exec_t *desc, ValPtr* argv)
 		if (!desc->b) {
 			GDKsetbuf(desc->bulkerror.bak);
 			GDKerror("multiplex: result bat[void,void] impossible.\n");
+			desc->bulkerror.buf[0] = 0;
 			GDKsetbuf(desc->bulkerror.buf);
 			return -1;
 		}
@@ -683,7 +717,7 @@ in this implementation.
 		char buf[32];
 		sprintf(buf, PDFMT, (ptrdiff_t) (@2));
 		bulkerror_handle(&bulkerror, buf);
-		tptr = tnil; /* insert a nil */
+		*(ptr*) tptr = tnil; /* insert a nil */
 	}
 
 @= BUNins_array_special
@@ -876,8 +910,7 @@ interpret_@1_array(str name, int argc, ValPtr argv, ValPtr res, GDKfcn addr,
 	ok = TRUE;
 bunins_failed:
 	bulkerror_finish(&bulkerror, name);
-	if (tptr != tnil)
-		GDKfree(tptr);
+	GDKfree(tptr);
 	if (!ok) {
 		BBPreclaim(retb);
 		return -1;
@@ -1704,7 +1737,6 @@ we know that the head is oid (or a small version) here..
 set result bat properties
 @c
 	ret_val = 0;
-	BATkey(ret, TRUE);
 	ret->tsorted = 0;
 
 	if (histo) {
@@ -1719,6 +1751,8 @@ set result bat properties
 	} else {
 		ALIGNsetH(ret, extent);
 	}
+
+	BATkey(ret, TRUE);
 @-
 set return value
 @c

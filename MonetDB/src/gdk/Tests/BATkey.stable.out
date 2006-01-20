@@ -10,7 +10,7 @@ stdout of test 'BATkey` in directory 'src/gdk` itself:
 # Monet Database Server V4.3.5
 # Copyright (c) 1993-2002, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-module("unix","str","ascii_io");
+module("unix");module("str");module("ascii_io");
 
 var ttd := getenv("TSTTRGDIR");
 

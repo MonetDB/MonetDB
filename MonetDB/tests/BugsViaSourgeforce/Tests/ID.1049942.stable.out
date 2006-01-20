@@ -9,7 +9,7 @@ stdout of test 'ID.1049942` in directory 'tests/BugsViaSourgeforce` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-module(tcpip,radix);
+module(tcpip);module(radix);
 proc f(): bat[void,dbl] {
     var a := uniform(100000).[dbl]().copy();
     printf("done...\n");

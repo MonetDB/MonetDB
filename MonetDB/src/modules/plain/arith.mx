@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f arith
@@ -149,6 +149,8 @@ atomic types and a result type.
 	.OPERATOR1 (lng) "%"  (int) : int = lngint_checkbinary_MOD;	"modulo"
 	.OPERATOR1 (int) "%"  (chr) : chr = intchr_checkbinary_MOD;	"modulo"
 	.OPERATOR1 (int) "%"  (sht) : sht = intsht_checkbinary_MOD;	"modulo"
+	.OPERATOR1 (dbl) "%"  (dbl) : dbl = dbldbl_checkbinary_MOD;	"modulo"
+	.OPERATOR1 (flt) "%"  (flt) : flt = fltflt_checkbinary_MOD;	"modulo"
 @= mel_arith_ops
 	.OPERATOR (@1) "+" (@2) : @3 = @1@2_binary_ADD;		"addition"
 	.OPERATOR (@1) "-" (@2) : @3 = @1@2_binary_SUB;		"substraction"
@@ -292,6 +294,7 @@ The constants defined in limit.h are defined using autoloaded mil code.
 	const @1_MAX   := get@1_MAX();
 	const @1_MIN   := get@1_MIN();
 @
+	const OID_MAX  := ifthenelse(isnil(oid(LNG_MAX)), oid(INT_MAX), oid(LNG_MAX)); 
 
 @{
 @* Implementation
@@ -347,6 +350,9 @@ flt2int(int *r, flt *v)
 @:c_comp_ops(>=,GE)@
 @:c_comp_ops(>,GT)@
 
+/* the normal implementation of an operator is to just stick the
+   operator between the operands */
+#define OP(l,op,r)	((l) op (r))
 @:c_arith_ops(chr,chr,chr)@
 @:c_arith_ops(chr,sht,sht)@
 @:c_arith_ops(chr,int,int)@
@@ -433,6 +439,12 @@ flt2int(int *r, flt *v)
 @:check_binop(_MOD,%,lng,int,int,"Modulo zero is not possible")@
 @:check_binop(_MOD,%,int,chr,chr,"Modulo zero is not possible")@
 @:check_binop(_MOD,%,int,sht,sht,"Modulo zero is not possible")@
+/* a % b when a and/or b are float (double) doesn't exist, so provide
+   an alternative way of calculating the result */
+#undef OP
+#define OP(l,op,r)	((l) - (dbl) ((lng) ((l) / (r))) * (r))
+@:check_binop(_MOD,%,dbl,dbl,dbl,"Modulo zero is not possible")@
+@:check_binop(_MOD,%,flt,flt,flt,"Modulo zero is not possible")@
 
 @:c_bitwise_ops(chr)@
 @:c_bitwise_ops(sht)@
@@ -784,7 +796,7 @@ int @3@4_checkbinary@1(@5 *res, @3 *a, @4 *b)
 	} else if (*a == @3_nil || *b == @4_nil) {
 		*res = @5_nil;
 	} else {
-		*res = ((@5)(*a)) @2 ((@5)(*b));
+		*res = (@5) OP((@5)*a,@2,(@5)*b);
 	}
 	return(GDK_SUCCEED);
 }

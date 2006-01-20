@@ -19,14 +19,14 @@ word_table.print();    # the "nil" words are converted to nil values
 
 
 var names := new(void,str).seqbase(0@0);
-names.insert(oid(nil),"one");
-names.insert(oid(nil),"two");
+names.append("one");
+names.append("two");
 var seps := new(void,str).seqbase(0@0);
-seps.insert(oid(nil),",");
-seps.insert(oid(nil),"\n");
+seps.append(",");
+seps.append("\n");
 var types := new(void,str).seqbase(0@0);
-types.insert(oid(nil),"oid");
-types.insert(oid(nil),"str");
+types.append("oid");
+types.append("str");
 
 var bats := load( names, seps, types, word_file, -1);
 print(bats.find("one"),bats.find("two"));

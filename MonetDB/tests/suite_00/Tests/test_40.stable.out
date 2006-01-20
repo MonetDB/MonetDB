@@ -55,7 +55,7 @@ b.position(111).print();
 !ERROR: interpret_params: print(param 1): evaluation error.
 b.fetch(-1).print();
 !ERROR: CMDfetch: idx out of range
-!ERROR: CMDfetch: operation failed.
+!ERROR: CMDfetch_int: operation failed.
 !ERROR: interpret_params: print(param 1): evaluation error.
 b.slice(8,5).print();
 #-----------------#

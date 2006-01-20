@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f Mserver
@@ -67,9 +67,6 @@ The options have the following meaning:
 
 #endif /* _MONET_GLOBAL_H_ */
 @c
-#ifdef __cplusplus
-extern "C" {
-#endif
 #include "Mserver.h"
 
 #ifdef _CRTDBG_MAP_ALLOC
@@ -89,51 +86,6 @@ extern "C" {
 #include "monet_options.h"
 #include "initmodules.h"
 #include <locale.h>
-#ifdef __cplusplus
-}
-#ifdef HAVE_NEW
-#include <new>
-#endif
-void *operator
-new(size_t size)
-#ifdef HAVE_NEW
-throw(std::bad_alloc)
-#endif
-{
-	void *ptr = GDKmalloc(size);
-
-	return (ptr);
-}
-void operator
-delete(void *ptr)
-#ifdef HAVE_NEW
-throw()
-#endif
-{
-	GDKfree(ptr);
-}
-
-#if defined(__GNUC__) && defined(__cplusplus)
-void *operator  new[] (size_t size)
-#ifdef HAVE_NEW
-throw(std::bad_alloc)
-#endif
-{
-	void *ptr = GDKmalloc(size);
-
-	return (ptr);
-}
-void operator  delete[] (void *ptr)
-#ifdef HAVE_NEW
-throw()
-#endif
-{
-	GDKfree(ptr);
-}
-#endif
-#endif /* __cplusplus */
-
-
 @-
 The architecture is setup to handle multiple streams of requests.
 The first thread started represents the server. It reads from standard input
@@ -157,17 +109,6 @@ gdk/gdk_utils.mx and wrapping malloc in the below dummy function:
 @c
 #ifdef HAVE_MALLOPT
 static int malloc_init = 1;
-#endif
-@c
-#if defined(_MSC_VER) && defined(__cplusplus)
-#include <eh.h>
-void
-Mserver_abort()
-{
-	fprintf(stderr, "\n! Mserver_abort() was called by terminate(). !\n");
-	fflush(stderr);
-	MT_global_exit(1);
-}
 #endif
 @c
 void
@@ -329,10 +270,6 @@ capabilities depend on the malloc implementation used at run time.
 	}
 	malloc_init=0;
 @
-@c
-#if defined(_MSC_VER) && defined(__cplusplus)
-	set_terminate(Mserver_abort);
-#endif
 @c
 	if (setlocale(LC_CTYPE, "") == NULL) {
 		GDKfatal("cannot set locale\n");

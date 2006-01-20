@@ -12,7 +12,7 @@
 # The Original Code is the Monet Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2005 CWI.
+# Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
 #
@@ -24,7 +24,7 @@
 
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.53)
-AC_INIT(src/example.mx)
+AC_INIT(src/Tests/All)
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -44,10 +44,11 @@ AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
 req_monetdb_ver='4.9.0'
-AM_MONETDB_CLIENT($req_monetdb_ver)
+AM_MONET($req_monetdb_ver)
 if test "x$have_monet" != xyes; then
 	AC_MSG_ERROR([Template requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
 fi
+AM_MONETDB_UTILS()
 
 dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"

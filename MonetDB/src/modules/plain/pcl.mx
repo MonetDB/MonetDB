@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f pcl
@@ -267,7 +267,7 @@ int
 pcl_eventname(str *result, int *event)
 {
 	(void) event;
-	*result = str_nil;
+	*result = (str)str_nil;
 	return GDK_SUCCEED;
 }
 #else

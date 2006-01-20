@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f builtin
@@ -47,21 +47,17 @@ loading and unloading new modules.
 
 @+ Module management
 @m
-.BUILTIN module(str modname, ...str...) = CMDmodule;
-"Loads Monet extension modules (previously installed with Minstall)
- into a running Mserver.
- After this, you will be able to use new Atoms (e.g. polygon), Search
- Accelerators (e.g. R-tree), Commands (e.g. spatjoin(A,B)), and Iterators
- (e.g. B.nearloop(rect) {}).
- You can either load modules installed by yourself or by the system
- administrator (adm)
+.BUILTIN module(str modname) = CMDmodule;
+"Loads Monet extension module into a running Mserver.
+ After this, you will be able to use new Atoms (e.g. polygon), 
+ Buildins and Commands (e.g. spatjoin(A,B)). 
 
  In command-line mode, you can save typing the \" (providing the
  resulting identifier does not collide with another MIL keyword)."
 
-.BUILTIN drop(str modname, ...str...) = CMDdrop;
-"Unloads Monet extension modules (previously loaded with MODULE())
- You can only unload modules installed by yourself.
+.BUILTIN drop(str modname) = CMDdrop;
+"Unloads Monet extension module (previously loaded with MODULE())
+ You can only unload a module installed by yourself.
 
  In command-line mode, you can save typing the \" (though this often
  will collide with a MIL keyword)."
@@ -327,31 +323,29 @@ CMDmodule(Cntxt stk, YYSTREE lt, ValPtr res)
 
 	/* run initscript in the clients lowest stack */
 	CNTXTclient(stk, &c);
-	while (lt && ret >= 0) {
-		unsigned i;
 
-		for (i = 0; i < lt->cnt; i++) {
-			ValRecord res1;
-			str initstr = NULL;
-			str mod;
+	if (lt->cnt == 1) {
+		ValRecord res1;
+		str initstr = NULL;
+		str mod;
 
-			if (!lt->yysons[i])
-				continue;
-			(void) interpret(c->stk, lt->yysons[i], &res1);
-			if (ret < 0 || res1.vtype != TYPE_str) {
-				GDKerror("CMDmodule: illegal argument.\n");
-				return GDK_FAIL;
-			}
-			mod = res1.val.sval;
-			initstr = moduleClient(c, mod, moduleGetClient(c));
-			if (initstr != NULL) {
-				moduleEnterClient(c, mod);
-				ret = interpret_str(c->stk, initstr, res);
-				moduleExitClient(c);
-				GDKfree(initstr);
-			}
+		(void) interpret(c->stk, lt->yysons[0], &res1);
+		if (ret < 0 || res1.vtype != TYPE_str) {
+			GDKerror("CMDmodule: illegal argument.\n");
+			return GDK_FAIL;
 		}
-		lt = lt->overflow;
+		mod = res1.val.sval;
+		initstr = moduleClient(c, mod, moduleGetClient(c));
+		if (initstr != NULL) {
+			moduleEnterClient(c, mod);
+			ret = interpret_str(c->stk, initstr, res);
+			moduleExitClient(c);
+			GDKfree(initstr);
+		}
+	} else {
+		GDKerror("module(str) called with too many (%d) arguments", 
+		lt->cnt);
+		return GDK_FAIL;
 	}
 	if (ret < 0)
 		return GDK_FAIL;
@@ -607,7 +601,7 @@ CMDfreeze(Cntxt stk, YYSTREE lt, ValPtr res)
 
 	(void) res;
 
-	for (t = lt; t; t = t->overflow) {
+	for (t = lt; t; t = YYOVERFLOW(t)) {
 		for (i = 0; i < lt->cnt; i++) {
 			if ((int) arg(t, i)->token == monet_tokident) {
 				str nme = arg(t, i)->yyval.val.sval;
@@ -664,12 +658,21 @@ CMDclientid(Cntxt stk, YYSTREE lt, ValPtr res)
 int
 CMDkill(Cntxt stk, YYSTREE lt, ValPtr res)
 {
-	Client c;
+	Client c, self;
 	int *i;
 
 	@:builtin_args(1)@;
 	@:builtin_operand(0,TYPE_int,i)@
+	CNTXTclient(stk, &self);
 	CNTXTclient(*i, &c);
+	if (c == self) {
+		GDKerror("CMDkill: cannot kill self.\n");
+		return -1;
+	}
+	if (c == monet_clients) {
+		GDKerror("CMDkill: cannot kill console.\n");
+		return -1;
+	}
 	killClient(c, TRUE);
 	@:return_void@
 	return 0;
@@ -697,9 +700,8 @@ to different clients.  Schedule the background request.
 	}
 	res->vtype = TYPE_int;
 	res->val.ival = c->stk;
-	c->tree = lt->yysons[0];
+	c->tree = Myycopy(lt->yysons[0]);
 	QMwakeup(QMenqueue(c->stk, c->tree, 0, (int) (c - monet_clients)));
-	lt->yysons[0] = NULL;
 
 	return 1;
 }
@@ -975,7 +977,7 @@ CMDprompt(Cntxt stk, YYSTREE lt, ValPtr res)
 	Client c;
 	ptr x;
 
-	if (arg(lt, 0)) {
+	if (lt->cnt == 1) {
 		@:builtin_operand(0,TYPE_str,x)@
 		for (; monet_cntxt[stk].outer > 0; stk = monet_cntxt[stk].outer)
 			;
@@ -1135,6 +1137,9 @@ CMDcall(Cntxt stk, YYSTREE lt, ValPtr res)
 		return -1;
 	}
 	t = Myynode(TOK_FUNCTION, 0);
+	Myyexpand(t, Myynode(0, 0));
+	Myyexpand(t, Myynode(0, TYPE_int));
+	t->yysons[1]->yyval.val.ival = sizeof(ValRecord);
 	t->yyval = v;
 	BATloopFast(b, p, q, xx) {
 		child = Myynode(TOK_CONSTANT, 0);
@@ -1161,14 +1166,13 @@ CMDcall(Cntxt stk, YYSTREE lt, ValPtr res)
 			}
 		}
 		child->yyval = *res;
-		Myyexpand(t, child);
+		Myyexpand(t->yysons[0], child);
+		t->yysons[1]->yyval.val.ival += sizeof(ValRecord);
 	}
 	res->vtype = TYPE_void;
 	if (i == 0) {
-		if ((i = Myypostprocess(t)) >= 0) {
-			i = interpret(stk, t, res);
-			CATCHRET(stk, t, res, i);
-		}
+		i = interpret(stk, t, res);
+		CATCHRET(stk, t, res, i);
 	}
 	t->yyval.vtype = TYPE_void;
 	Myyfree(t);
@@ -1255,6 +1259,11 @@ CMDprint_multitable(BAT *b)
 	}
 
 	BATmultiprintf(GDKout, nbats + 1, piv, FALSE, 0, 1);
+
+	BATloopFast(b, p, q, xx) {
+		BBPunfix(*(bat *) BUNtail(b, p));
+	}
+
 	return GDK_SUCCEED;
 }
 

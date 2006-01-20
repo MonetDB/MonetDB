@@ -76,7 +76,7 @@ bat("a").info().reverse().select("theap.storage").reverse().print();
 # (str)			  (str)		  #
 #-----------------------------------------#
 [ "theap.storage",	  "malloced"	  ]
-bat("a").insert(nil,"make dirty..");
+bat("a").append("make dirty..");
 commit();
 #01 #BBPdir: writing BBP.dir (34 bats).
 

@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f monet_client
@@ -350,10 +350,20 @@ freeClient(Client c)
 
 		/* GDKlog("Mserver: %s session ends", c->user); */
 		monetSetChannel(t, bkin, bkout);
-		stream_close(c->fdout);
-		stream_destroy(c->fdout);
-		stream_close(c->fdin);
-		stream_destroy(c->fdin);
+		if (c->fdout != GDKstdout) {
+			if (GDKout == c->fdout)
+				t->data[0] = GDKstdout;
+			stream_close(c->fdout);
+			stream_destroy(c->fdout);
+			c->fdout = NULL;
+		} 
+		if (c->fdin != GDKstdin) {
+			if (GDKin == c->fdin) 
+				t->data[1] = GDKstdin;
+			stream_close(c->fdin);
+			stream_destroy(c->fdin);
+			c->fdin = NULL;
+		} 
 	}
 	GDKfree(c->input);
 	GDKfree(c->output);
@@ -505,10 +515,10 @@ readClient(Client c)
 	blocked = isa_block_stream(c->fdin);
 	do {
 		if (c == monet_clients) {
-			if (instring != '"' && c->prompt && *c->prompt && stream_write(fd, c->prompt, strlen(c->prompt), 1) != 1)
+			if (!blocked && instring != '"' && c->prompt && *c->prompt && stream_write(fd, c->prompt, strlen(c->prompt), 1) != 1)
 				return 0;
 		} else if (c->top == c->input) {
-			if (stream_write(fd, PROMPT1, sizeof(PROMPT1) - 1, 1) != 1)
+			if (!blocked && stream_write(fd, PROMPT1, sizeof(PROMPT1) - 1, 1) != 1)
 				return 0;
 		} else {
 			if (stream_write(fd, PROMPT2, sizeof(PROMPT2) - 1, 1) != 1)
@@ -551,6 +561,12 @@ readClient(Client c)
 		}
 		PARSEDEBUG THRprintf(GDKerr, "%.*s", c->top - (c->input + offset), c->input + offset);
 
+		if (c->input + offset == c->top) {
+			/* We didn't get any data this time round.
+			   This means that the other side doesn't have
+			   any more, so we will have to make do. */
+			break;
+		}
 		/* this loop wil check whether we got enough data for
 		   a complete MIL statement, and in addition will
 		   normalize line endings. */
@@ -656,7 +672,6 @@ lockparser(Client c)
 	ll_client = c;
 	c->cptr = c->input;
 	c->cline = c->input;
-	Myylogstart();		/* init node allocation logging */
 }
 
 void
@@ -732,7 +747,8 @@ serveClient(Cntxt stk, YYSTREE lt, ValPtr res)
 	res->vtype = TYPE_void;
 	c = monet_clients + i;
 	if (c->mode == FINISHED) {
-		GDKwarning("serveClient: client died.\n");
+		if (i)
+			GDKwarning("serveClient: client died.\n");
 		return -1;
 	}
 	t = THRget(THRgettid());
@@ -791,7 +807,7 @@ dropClient(Client c, YYSTREE lt)
 				return 0;
 			}
 		}
-		lt = lt->overflow;
+		lt = YYOVERFLOW(lt);
 	}
 	return 1;
 }

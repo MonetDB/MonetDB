@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@PYTHON@
 
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -13,7 +13,7 @@
 # The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2005 CWI.
+# Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
 #TODO:
@@ -72,8 +72,7 @@ CONDITIONALS = {
     'CROSS_COMPILING'  : "@CROSS_COMPILING_FALSE@",
     'DOCTOOLS'         : "@DOCTOOLS_FALSE@",
     'HAVE_JAVA'        : "@HAVE_JAVA_FALSE@",
-    'HAVE_MONET5'      : "@HAVE_MONET5_FALSE@",
-    'HAVE_MONET'       : "@HAVE_MONET_FALSE@",
+    'HAVE_PCRE'        : "@HAVE_PCRE_FALSE@",
     'HAVE_PERL'        : "@HAVE_PERL_FALSE@",
     'HAVE_PERL_DEVEL'  : "@HAVE_PERL_DEVEL_FALSE@",
     'HAVE_PERL_SWIG'   : "@HAVE_PERL_SWIG_FALSE@",
@@ -87,9 +86,13 @@ CONDITIONALS = {
     'NOT_WIN32'        : "@NOT_WIN32_FALSE@",
     'PROFILING'        : "@PROFILING_FALSE@",
     # SQL:
+    'NATIVE_WIN32'     : "@NATIVE_WIN32_FALSE@",
+    # unknown at compile time, as Mtest.py is compiled with MonetDB(4);
+    # hence, we set them at runtime in main() below
+    'HAVE_MONET5'      : "@HAVE_MONET5_FALSE@",
+    'HAVE_MONET'       : "@HAVE_MONET_FALSE@",
     'MONET4'           : "@MONET4_FALSE@",
     'MONET5'           : "@MONET5_FALSE@",
-    'NATIVE_WIN32'     : "@NATIVE_WIN32_FALSE@",
 }
 
 # a bunch of classes to help with generating (X)HTML files
@@ -409,11 +412,13 @@ def CreateHtmlIndex (env, *body) :
         os.chdir(TSTTRGDIR)
 
         if TSTDIR:
-            header = Element('a',
-                             {'href': '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF),
-                              'target': '%s%s_%s_body' % (URLSUFFIX_D, OSVER, TSTDIR),
-                              'class': 'black'},
-                             Text(TSTDIR))
+            header = Text(TSTDIR)
+            if URLPREFIX:
+                header = Element('a',
+                                 {'href': '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF),
+                                  'target': '%s%s_%s_body' % (URLSUFFIX_D, OSVER, TSTDIR),
+                                  'class': 'black'},
+                                 header)
         else:
             header = Element('span', {'class': 'black'},
                              Text(OSVER))
@@ -594,6 +599,11 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
     f.close()
     f = open(".%s%s.head.html" % (TST, WHAT),"w")
     target = '%s_%s_%s_%s_body' % (OSVER, TSTDIR, TST, WHAT[1:])
+    cvs = Text('cvs')
+    if URLPREFIX:
+        cvs = Element('a', {'href': '%s%s/%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, URLSUFFIX_D),
+                            'target': target},
+                      cvs)
     text = Element('div', {'class': 'header'},
                    Text(SYSTEM),
                    Text(' '),
@@ -616,9 +626,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
                    Element('a', {'href': './', 'target': target},
                            Text(TSTDIR)),
                    Text(' ('),
-                   Element('a', {'href': '%s%s/%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, URLSUFFIX_D),
-                                 'target': target},
-                           Text('cvs')),
+                   cvs,
                    Text(', '),
                    Element('a', {'href': url(env['RELSRCDIR']),
                                  'target': target},
@@ -652,6 +660,24 @@ def CreateSrcIndex (env, TST, EXT) :
     TSTSRCDIR = env['TSTSRCDIR']
     TSTDIR    = env['TSTDIR']
 
+    if URLPREFIX:
+        framesrc = '%s%s/%s/%s%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, TST, EXT, URLSUFFIX_F)
+    else:
+        f = open("."+TST+".nosrc.index.html","w")
+        html = Element('html', {},
+                       Element('head', {},
+                               Element('title', {},
+                                       Text(HTMLTITLE)),
+                               stylesheet),
+                       Element('body',
+                               {'bgcolor': white,
+                                'text': black,
+                                'link': green,
+                                'vlink': darkgreen,
+                                'alink': lime},
+                               Element('center', {},
+                                       Text('no source available'))))
+        framesrc = '.%s.nosrc.index.html' % TST
     html = Element('html', {},
                    Element('head', {},
                            Element('title', {}, Text(HTMLTITLE))),
@@ -671,7 +697,7 @@ def CreateSrcIndex (env, TST, EXT) :
                                     'marginwidth': '0',
                                     'marginheight': '0'}),
                            Element('frame',
-                                   {'src': '%s%s/%s/%s%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, TST, EXT, URLSUFFIX_F),
+                                   {'src': framesrc,
                                     'scrolling': 'auto',
                                     'name': '%s_%s_%s_body' % (OSVER, TSTDIR, TST),
                                     'frameborder': 'yes',
@@ -687,11 +713,14 @@ def CreateSrcIndex (env, TST, EXT) :
                          Text(TST)))
     for s in os.listdir(TSTSRCDIR):
         if len(s) >= len(TST)  and  s[:len(TST)] == TST:
+            slink = Text(s)
+            if URLPREFIX:
+                slink = Element('a',
+                                {'href': '%s%s/%s/%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, s, URLSUFFIX_F),
+                                 'target': '%s_%s_%s_body' % (OSVER, TSTDIR, TST)},
+                                slink)
             tr.addchild(Element('td', {'class': 'header'},
-                                Element('a',
-                                        {'href': '%s%s/%s/%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, s, URLSUFFIX_F),
-                                         'target': '%s_%s_%s_body' % (OSVER, TSTDIR, TST)},
-                                        Text(s))))
+                                slink))
     html = Element('html', {},
                    Element('head', {},
                            Element('title', {},
@@ -1061,6 +1090,9 @@ def ApproveOutput (env, TST) :
                 STDERR.write('  simply apply the patch in  %s  to them.\n\n' % patch)
                 STDERR.flush()
         else:
+            i = TST.rfind('.')
+            if i > 0:
+                return ApproveOutput(env, TST[:i])
             Warn("Output file missing: '"+testOUTPUT+"`; skipping test!")
     return sem
 ### ApproveOutput (env, TST) #
@@ -1115,9 +1147,10 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
     except IOError, (IOerrNo, IOerrStr):
         Warn("Closing input pipe in GetBitsAndOIDsAndModsAndStatic failed with #%d: '%s'." % (IOerrNo, IOerrStr))
     qOut, qErr = ReadMultiple([pOut, pErr])
+    env['TST_MODS'] = []
     env['TST_BITS'] = ""
     env['TST_OIDS'] = ""
-    env['TST_MODS'] = []
+    env['TST_FIVE'] = ""
     env['TST_STATIC'] = ""
     if qOut:
         tbs = re.compile("^# Compiled for .*/([63][42]bit) with ([63][42])bit OIDs; (.*) linked", re.MULTILINE)
@@ -1167,6 +1200,8 @@ def GetBitsAndOIDsAndModsAndStatic(env) :
             STDERR.write("\n")
             STDERR.flush()
     os.environ['TST_MODS'] = str(env['TST_MODS'])
+    if env['VERSION'] >= 49900:
+        env['TST_FIVE'] = "Five"
     return rtrn
 ### GetBitsAndOIDsAndModsAndStatic(env) #
 
@@ -1272,11 +1307,14 @@ def StopAt(ATJOB,ME) :
 def StableOutErr(env,par,TST,OS,RELEASE) :
     BITS = env['TST_BITS']
     OIDS = env['TST_OIDS']
+    FIVE = env['TST_FIVE']
     STATIC = env['TST_STATIC']
+    if FIVE:
+        FIVE = "(\.Five)?"
     if STATIC:
         STATIC = "(\.STATIC)?"
     dir,file = os.path.split(TST)
-    outre = re.compile('^'+re.escape(file)+'\.stable\.(?P<tp>out|err)(\.%s(%s)?)?(\.%s)?%s$' % (re.escape(OS), re.escape(RELEASE), BITS, STATIC))
+    outre = re.compile('^'+re.escape(file)+'\.stable\.(?P<tp>out|err)(\.%s(%s)?)?(\.%s)?(\.%s)?%s%s$' % (re.escape(OS), re.escape(RELEASE), BITS, OIDS, FIVE, STATIC))
     bestout = besterr = ''
     for f in os.listdir(dir or os.curdir):
         res = outre.match(f)
@@ -1327,45 +1365,45 @@ def RunTest(env, TST, BusyPorts, COND) :
         EXT = ".MAPI"+xM[1] ; CALL = "other"  ; SERVER = "MAPI"
     elif xQ[0]:
         EXT = ".XQUERY"+xQ[1] ; CALL = "other" ; SERVER = "XQUERY"
-    elif os.path.isfile(TST+".py")          or  os.path.isfile(TST+".py.src"):
+    elif os.path.isfile(TST+".py")            or  os.path.isfile(TST+".py.src"):
         EXT = ".py"         ; CALL = "python"
-    elif os.path.isfile(TST+".SQL"+".py")   or  os.path.isfile(TST+".SQL"+".py.src"):
+    elif os.path.isfile(TST+".SQL"+".py")     or  os.path.isfile(TST+".SQL"+".py.src")     or  os.path.isfile(TST+".SQL"+".py.in"):
         EXT = ".SQL.py"     ; CALL = "python" ; SERVER = "SQL"
-    elif os.path.isfile(TST+".MAPI"+".py")  or  os.path.isfile(TST+".MAPI"+".py.src"):
+    elif os.path.isfile(TST+".MAPI"+".py")    or  os.path.isfile(TST+".MAPI"+".py.src")    or  os.path.isfile(TST+".MAPI"+".py.in"):
         EXT = ".MAPI.py"    ; CALL = "python" ; SERVER = "MAPI"
-    elif os.path.isfile(TST+".XQUERY"+".py")  or  os.path.isfile(TST+".XQUERY"+".py.src"):
+    elif os.path.isfile(TST+".XQUERY"+".py")  or  os.path.isfile(TST+".XQUERY"+".py.src")  or  os.path.isfile(TST+".XQUERY"+".py.in"):
         EXT = ".XQUERY.py"  ; CALL = "python" ; SERVER = "XQUERY"
-    elif os.path.isfile(TST+".mal")        or  os.path.isfile(TST+".mal.src"):
+    elif os.path.isfile(TST+".mal")           or  os.path.isfile(TST+".mal.src")           or  os.path.isfile(TST+".mal.in"):
         EXT = ".mal"       ; CALL = "mal"
-    elif os.path.isfile(TST+".milM")        or  os.path.isfile(TST+".milM.src"):
+    elif os.path.isfile(TST+".milM")          or  os.path.isfile(TST+".milM.src")          or  os.path.isfile(TST+".milM.in"):
         EXT = ".milM"       ; CALL = "milM"
-    elif os.path.isfile(TST+".milS")        or  os.path.isfile(TST+".milS.src"):
+    elif os.path.isfile(TST+".milS")          or  os.path.isfile(TST+".milS.src")          or  os.path.isfile(TST+".milS.in"):
         EXT = ".milS"       ; CALL = "milS"
-    elif os.path.isfile(TST+".milC")        or  os.path.isfile(TST+".milC.src"):
+    elif os.path.isfile(TST+".milC")          or  os.path.isfile(TST+".milC.src")          or  os.path.isfile(TST+".milC.in"):
         EXT = ".milC"       ; CALL = "milC"   ; SERVER = "MAPI"
-    elif os.path.isfile(TST+"_s00.milM")    or  os.path.isfile(TST+"_s00.milM.src"):
+    elif os.path.isfile(TST+"_s00.milM")      or  os.path.isfile(TST+"_s00.milM.src")      or  os.path.isfile(TST+"_s00.milM.in"):
         EXT = ".milM"       ; CALL = "milMXs"
-    elif os.path.isfile(TST+"_s00.milS")    or  os.path.isfile(TST+"_s00.milS.src"):
+    elif os.path.isfile(TST+"_s00.milS")      or  os.path.isfile(TST+"_s00.milS.src")      or  os.path.isfile(TST+"_s00.milS.in"):
         EXT = ".milS"       ; CALL = "milSXs"
-    elif os.path.isfile(TST+"_s00.milC")    or  os.path.isfile(TST+"_s00.milC.src"):
+    elif os.path.isfile(TST+"_s00.milC")      or  os.path.isfile(TST+"_s00.milC.src")      or  os.path.isfile(TST+"_s00.milC.in"):
         EXT = ".milC"       ; CALL = "milCXs" ; SERVER = "MAPI"
-    elif os.path.isfile(TST+"_p00.milC")    or  os.path.isfile(TST+"_p00.milC.src"):
+    elif os.path.isfile(TST+"_p00.milC")      or  os.path.isfile(TST+"_p00.milC.src")      or  os.path.isfile(TST+"_p00.milC.in"):
         EXT = ".milC"       ; CALL = "milCXp" ; SERVER = "MAPI"
-    elif os.path.isfile(TST+".sql")         or  os.path.isfile(TST+".sql.src"):
+    elif os.path.isfile(TST+".sql")           or  os.path.isfile(TST+".sql.src")           or  os.path.isfile(TST+".sql.in"):
         EXT = ".sql"        ; CALL = "sql"    ; SERVER = "SQL"
-    elif os.path.isfile(TST+"_s00.sql")     or  os.path.isfile(TST+"_s00.sql.src"):
+    elif os.path.isfile(TST+"_s00.sql")       or  os.path.isfile(TST+"_s00.sql.src")       or  os.path.isfile(TST+"_s00.sql.in"):
         EXT = ".sql"        ; CALL = "sqlXs"  ; SERVER = "SQL"
-    elif os.path.isfile(TST+"_p00.sql")     or  os.path.isfile(TST+"_p00.sql.src"):
+    elif os.path.isfile(TST+"_p00.sql")       or  os.path.isfile(TST+"_p00.sql.src")       or  os.path.isfile(TST+"_p00.sql.in"):
         EXT = ".sql"        ; CALL = "sqlXp"  ; SERVER = "SQL"
-    elif os.path.isfile(TST+".xq")          or  os.path.isfile(TST+".xq.src"):
+    elif os.path.isfile(TST+".xq")            or  os.path.isfile(TST+".xq.src")            or  os.path.isfile(TST+".xq.in"):
         EXT = ".xq"         ; CALL = "xq"     ; SERVER = "XQUERY"
-    elif os.path.isfile(TST+"_s00.xq")      or  os.path.isfile(TST+"_s00.xq.src"):
+    elif os.path.isfile(TST+"_s00.xq")        or  os.path.isfile(TST+"_s00.xq.src")        or  os.path.isfile(TST+"_s00.xq.in"):
         EXT = ".xq"         ; CALL = "xqXs"   ; SERVER = "XQUERY"
-    elif os.path.isfile(TST+"_p00.xq")      or  os.path.isfile(TST+"_p00.xq.src"):
+    elif os.path.isfile(TST+"_p00.xq")        or  os.path.isfile(TST+"_p00.xq.src")        or  os.path.isfile(TST+"_p00.xq.in"):
         EXT = ".xq"         ; CALL = "xqXp"   ; SERVER = "XQUERY"
-    elif os.path.isfile(TST+".x100")         or  os.path.isfile(TST+".x100.src"):
+    elif os.path.isfile(TST+".x100")          or  os.path.isfile(TST+".x100.src")          or  os.path.isfile(TST+".x100.in"):
         EXT = ".x100"       ; CALL = "x100"   ; SERVER = "MAPI"
-    elif os.path.isfile(TST+"_s00.x100")     or  os.path.isfile(TST+"_s00.x100.src"):
+    elif os.path.isfile(TST+"_s00.x100")      or  os.path.isfile(TST+"_s00.x100.src")      or  os.path.isfile(TST+"_s00.x100.in"):
         EXT = ".x100"       ; CALL = "x100Xs" ; SERVER = "MAPI"
         #TODO:
         #elif [ -f "$TST.java"       ] ; then  EXT="java" ; CALL="Java   "+TST+" "+EXT
@@ -1373,6 +1411,9 @@ def RunTest(env, TST, BusyPorts, COND) :
         #elif [ -f "${TST}_p00.java" ] ; then  EXT="java" ; CALL="JavaXp "+TST+" "+EXT
         #elif [ -f "$TST.odmg"       ] ; then  EXT="odmg" ; CALL="odmg   "+TST+" "+EXT
     else:
+        i = TST.rfind('.')
+        if i > 0:
+            return RunTest(env, TST[:i], BusyPorts, COND)
         EXT = CALL = SERVER = ""
         if os.name == "nt":
             ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|milM|milS|milC|sql|xq|x100)`")
@@ -1406,8 +1447,8 @@ def RunTest(env, TST, BusyPorts, COND) :
         elem = SkipTest(env, TST, EXT, "as it currently crashes/hangs on WindowsNT.")
     elif sys.platform == "cygwin"  and  url(TSTDIR)+"/"+TST in NotOnCYG:
         elem = SkipTest(env, TST, EXT, "as it currently crashes/hangs on CYGWIN.")
-    elif (EXT == ".milM" or EXT == ".milS") and env['VERSION'] >= 49900:
-        elem = SkipTest(env, TST, EXT, "as M5/mil is missing modules.")
+    elif ( EXT[:4] == ".mil" or SERVER == "MAPI" ) and env['VERSION'] >= 49900:
+        elem = SkipTest(env, TST, EXT, "as Monet5 does not support MIL.")
     elif EXT == ".milC" and  not env['exe']['Mapi_Client'][0]:
         elem = SkipTest(env, TST, EXT, "as "+env['MAPICLIENT'].split(None, 1)[0]+" is not available.")
     elif EXT == ".sql" and  not env['exe']['SQL_Client'][0]:
@@ -1463,6 +1504,14 @@ def RunTest(env, TST, BusyPorts, COND) :
                     SymlinkOrCopy(TSTSRC,ff[:-4])
                 else:
                     Warn("source file '"+TSTSRC+"` is missing.")
+        test = re.compile("^"+TST+"(_[sp][0-9][0-9])?\..*\.in$", re.MULTILINE)
+        for ff in os.listdir(TSTTRGDIR):
+            fff = ff[:-3]
+            if test.match(ff) and not os.path.isfile(fff):
+                f = open(fff,"w")
+                for l in fileinput.input(ff):
+                    f.write(os.path.expandvars(l))
+                f.close()
 
         if THISFILE == "Mprofile.py":
             test = re.compile("^"+TST+"(_[sp][0-9][0-9])?\..*mil.*$", re.MULTILINE)
@@ -1535,6 +1584,7 @@ def RunTest(env, TST, BusyPorts, COND) :
         ME = ""
         ATJOB1 = ""
         MkillUsers = ""
+        MkillUsersAT = ""
         if TIMEOUT and os.name != "nt" and sys.platform != 'cygwin' and env.get('USE_AT'):
             for f in TST+".KILLED.out", TST+".KILLED.err":
                 if os.path.isfile(f):
@@ -1545,13 +1595,16 @@ def RunTest(env, TST, BusyPorts, COND) :
             for f in ["bat/\\*", '.gdk_lock']:
                 FILES = FILES+" "+os.path.join(env['GDK_DBFARM'],TSTDB,path(f))
             FILES = FILES+" "+os.path.join(env['SQL_LOGDIR'],TSTDB,'log\\*')
-            WHAT = os.path.join(THISPATH,"MkillUsers")+" -l"+ME+" -p"+ME+" "+FILES+r" \>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.out")+r" 2\>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.err")
+            WHAT0 = os.path.join(THISPATH,"MkillUsers")+" -l"+ME
+            WHAT1 = FILES+r" \>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.out")+r" 2\>\>"+os.path.join(TSTTRGDIR,TST+".KILLED.err")
+            WHAT = WHAT0+" -p"+ME+" "+WHAT1
             WHEN = "now + "+WAIT+" minutes"
             cmd  = "echo  "+WHAT+"  2>/dev/null | at "+WHEN+" 2>&1 | awk '/^[Jj]ob/{print $2}'"
             ATJOB1 = StartAt(cmd)
             #TODO:
             #LOG1x at -l >&2
-            MkillUsers = "echo  "+WHAT+"  2>/dev/null | at now + 1 minute 2>&1 | awk '/^[Jj]ob/{print $2}'"
+            MkillUsers = (WHAT0+" "+WHAT1).replace('\\','')
+            MkillUsersAT = "echo  "+WHAT+"  2>/dev/null | at now + 1 minute 2>&1 | awk '/^[Jj]ob/{print $2}'"
 
         #if THISFILE == "Mtest.py":
         TestOutFile = TST+".test.out"
@@ -1567,7 +1620,7 @@ def RunTest(env, TST, BusyPorts, COND) :
         TestErr.close()
 
         t0 = time.time()
-        DoIt (env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME)
+        DoIt (env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME)
         t1 = time.time()
         TX = t1 - t0
         if not quiet:
@@ -1580,6 +1633,9 @@ def RunTest(env, TST, BusyPorts, COND) :
             while os.path.exists(os.path.join(TSTTRGBASE,".KILLED.lck")):
                 time.sleep(1)
 
+        if MkillUsers:
+            os.system(MkillUsers)
+
         killed = 0
         n = TST+".KILLED."
         for (x,txf) in [("out",TestOutFile),("err",TestErrFile)]:
@@ -1590,7 +1646,7 @@ def RunTest(env, TST, BusyPorts, COND) :
                         shutil.copy(t,f)
                         os.remove(t)
                         break
-            if os.path.isfile(f):
+            if os.path.isfile(f) and os.path.getsize(f):
                 p = try_open(txf, 'a')
                 if p is not None:
                     for l in fileinput.input(f):
@@ -1968,7 +2024,12 @@ def mapi_ping(port) :
     return False
 ### mapi_ping() #
 
-def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) :
+if os.name == "nt":
+    devnull = 'C:nul'
+else:
+    devnull = '/dev/null'
+
+def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME) :
     quiet = env['QUIET']
     ATJOB2 = ""
     LogLine = os.path.join(env['TSTDIR'],TST+EXT)+' '+PRELUDE+' (<=%d,%d,%d) ...' % (TIMEOUT,CTIMEOUT,STIMEOUT)
@@ -2001,6 +2062,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     elif os.path.isfile(os.path.join(env['TSTSRCDIR'],"All.conf")):
         LOCAL_CONF = ' "--config=%s"' % os.path.join(env['TSTSRCDIR'],"All.conf")
 
+    if env['VERSION'] >= 49900:
+        PRINTF = "io.printf"
+    else:
+        PRINTF = "printf"
+
+
     ServerReady = True
     if SERVER in ["MAPI", "SQL", "XQUERY"]:
         SrvrOutFile = TST+".server.out"
@@ -2025,7 +2092,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             Srvr = '%s --dbinit="module(mapi); mapi_start();"' % Srvr
         if SERVER == "SQL":
             if env['VERSION'] >= 49900:
-                Srvr = '%s --dbinit="include sql; listen(%s:int);"' % (Srvr, env['SQLPORT'])
+                Srvr = '%s --dbinit="include sql; mapi.listen(%s:int);"' % (Srvr, env['SQLPORT'])
             else:
                 Srvr = '%s --dbinit="module(sql_server); sql_server_start();"' % Srvr
         if SERVER == "XQUERY":
@@ -2038,7 +2105,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             Srvr = Srvr+' ; echo ; '
         Srvr = Srvr+'echo Over..'
 
-        pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, '\nprintf("\\nReady.\\n");\n', SrvrOut, SrvrErr)
+        pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, '\n%s("\\nReady.\\n");\n' % PRINTF, SrvrOut, SrvrErr)
         ln="dummy"
         while 0 < len(ln) and ln[:6] not in ['Ready.','Over..']:
             ln=pSrvrOut.readline()
@@ -2074,7 +2141,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             for f in d:
                 if test.match(f):
                     if CALL == "mal":
-                        RunIt(cmd+f+" </dev/null", "", ClntOutFile, ClntErrFile)
+                        RunIt("%s%s < %s" % (cmd, f, devnull), "", ClntOutFile, ClntErrFile)
                     elif env['VERSION'] >= 49900:
                         RunIt(cmd+" --dbinit=\"include mil_scenario; mil();\" "+f+" </dev/null", "", ClntOutFile, ClntErrFile)
                     else:
@@ -2159,7 +2226,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             try:
                 pSrvrIn.write(EPILOGUE.read())
                 pSrvrIn.flush()
-                pSrvrIn.write(';\nprintf("\\nDone..\\n");\n')
+                pSrvrIn.write(';\n%s("\\nDone..\\n");\n' % PRINTF)
                 pSrvrIn.flush()
             except IOError, (IOerrNo, IOerrStr):
                 EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed with #"+str(IOerrNo)+": '"+IOerrStr+"'. !"
@@ -2186,10 +2253,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         except IOError, (IOerrNo, IOerrStr):
             Warn("Closing input pipe in DoIt failed with #%d: '%s'." % (IOerrNo, IOerrStr))
 
-        if MkillUsers:
-            ATJOB2 = StartAt(MkillUsers)
+        if MkillUsersAT:
+            ATJOB2 = StartAt(MkillUsersAT)
         CollectIt(pSrvrOut, pSrvrErr, SrvrOut, SrvrErr)
-        if MkillUsers:
+        if MkillUsersAT:
             StopAt(ATJOB2,ME)
 
         AllOut = [SrvrOut, ClntOutFile]
@@ -2232,7 +2299,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         TestErr.write(Prompt('Done.'))
         TestErr.close()
 
-### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) #
+
+### DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOut, TestErr, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsersAT, ME) #
 
 def Check(command, input) :
     pOut,pIn,pErr = popen2.popen3(command+" || echo ! Exit 1")
@@ -2277,7 +2345,7 @@ def CheckExec(cmd) :
     for p in os.environ['PATH'].split(os.pathsep):
         x = isexecutable(os.path.join(p,cmd))
         if x[0]:
-            return os.path.join(p,cmd+x[1])
+            return '"%s"' % os.path.join(p,cmd+x[1])
     return ""
 ### CheckExec(cmd) #
 
@@ -2308,6 +2376,7 @@ def ReadMapproveRc(f) :
     v['RELEASE'] = RELEASE
     v['BITS'] = ''
     v['OIDS'] = ''
+    v['FIVE'] = ''
     v['STATIC'] = ''
     if os.path.isfile(f):
         r = re.compile('^([A-Z]+) = "(.*)".*$')
@@ -2392,7 +2461,16 @@ else:
         HTMLTITLE = " for "+COMPILER
     HTMLTITLE = ""+THISFILE+" results"+HTMLTITLE+" on "+OSVER       #"+ ("`date`")"
 
-URLPREFIX   = 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/MonetDB/'
+URLPREFIXMAP = {
+    'MonetDB': 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/MonetDB/',
+    'sql': 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/sql/',
+    'pathfinder': 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/pathfinder/',
+    'xml': 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/xml/',
+    'buildtools': 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/buildtools/',
+    'pf-tools': 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/pf-tools/',
+    'pf-haskell': 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/pf-haskell/',
+    }
+URLPREFIX   = None
 ##URLSUFFIX_F = '?cvsroot=Monet-4.3'
 URLSUFFIX_F = ''
 ##URLSUFFIX_D = '?cvsroot=Monet-4.3'
@@ -2412,18 +2490,18 @@ def FindCmdLst(env) :
     return ""
 ### FindCmdLst(env) #
 
-def MonetDBVersion():
+def MonetDBVersion(monetdb_config):
     try:
-        cmd = CheckExec("monetdb-config")
+        cmd = CheckExec(monetdb_config)
         pOut,pIn = popen2.popen2(cmd+' --version')
         pIn.close()
         res = pOut.readlines()[0]
         res = res.strip();
         pOut.close()
         (x,y,z) = res.split('.',2)
-        return ((int(x)*100) + int(y)) * 100 + int(z);
+        return ((int(x)*100) + int(y)) * 100 + int(z)
     except:
-        pass
+        ErrXit('Could not find "%s" in your $PATH:\n%s' % (monetdb_config,os.environ['PATH']))
     return 0
 
 _MonetConfigDict = {
@@ -2464,7 +2542,6 @@ def main(argv) :
         vars = vars + ['CMDLST']
 
     env = {}
-    env['VERSION'] = MonetDBVersion()
 
     # most intuitive (?) default settings
     dft['MONETDB_SOURCE']   = "GetMonetConfig('--source')"
@@ -2501,7 +2578,11 @@ def main(argv) :
     # commandline options overrule environment
     cmd_options = [
         # long name, short name, GDK option, argument, comment
-        (None, 'r', 'recursive', None,
+        ('MonetDB4', '4', 'MonetDB4', None,
+         "use Mserver of MonetDB Version 4.* (default)"),
+        ('MonetDB5', '5', 'MonetDB5', None,
+         "use mserver5 of MonetDB Version 5"),
+        ('recursive', 'r', 'recursive', None,
          "recurse into subdirectories (implies 'All')"),
         ('MONETDB_SOURCE', None, 'MONETDB_SOURCE', '<path>',
          'default: "%s"' % GetMonetConfig('--source')),
@@ -2567,7 +2648,7 @@ def main(argv) :
     elif THISFILE == 'Mapprove.py':
         f = os.path.join(GetMonetConfig('--prefix'),dftTSTPREF,'.Mapprove.rc')
         v = ReadMapproveRc(f)
-        for i in 'BITS', 'OIDS', 'STATIC':
+        for i in 'BITS', 'OIDS', 'FIVE', 'STATIC':
             if v[i]:
                 v[i] = '[.%s]' % v[i]
         options = cmd_options + [
@@ -2576,9 +2657,9 @@ def main(argv) :
              "(default: <ext> = 'out' & 'err')"),
             (None, 'S', 'sys', '<sys>',
              "approve specific output *.<ext><sys>\n"
-             "(<sys> = '[.<OS>[<RELEASE>]][.(32|64)bit][.oid(32|64)][.STATIC]',\n"
-             "(default: longest match for <sys> = '[.%s[%s]]%s%s')"
-              % (v['OS'], v['RELEASE'], v['BITS'], v['STATIC'])),
+             "(<sys> = '[.<OS>[<RELEASE>]][.(32|64)bit][.oid(32|64)][.Five][.STATIC]',\n"
+             "(default: longest match for <sys> = '[.%s[%s]]%s%s%s%s')"
+              % (v['OS'], v['RELEASE'], v['BITS'], v['OIDS'], v['FIVE'], v['STATIC'])),
             (None, 'f', 'force', None,
              "force approval of error messages (i.e., lines starting with '!')"),
             ]
@@ -2589,6 +2670,10 @@ def main(argv) :
         opts, args = monet_options.parse_options(argv[1:], options, Usage)
     except monet_options.Error:
         sys.exit(1)
+    par['M4'] = opts.get('MonetDB4', 0)
+    par['M5'] = opts.get('MonetDB5', 0)
+    if par['M4'] and par['M5']:
+        ErrXit('Specifying both "-4/--MonetDB4" and "-5/MonetDB5" is not allowed!')
     par['RECURSIVE'] = opts.get('recursive', 0)
     par['QUIET'] = opts.get('quiet', 0)
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
@@ -2646,6 +2731,27 @@ def main(argv) :
             print"%s = %s" % (v, str(par[v]))
     STDOUT.flush()
     #env['par'] = par
+
+    
+    if par['M5']:
+        env['VERSION'] = MonetDBVersion("monetdb5-config")
+    else:
+        env['VERSION'] = MonetDBVersion("monetdb-config")
+
+    # unknown at compile time, as Mtest.py is compiled with MonetDB(4);
+    # hence, we set then at runtime.
+    # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
+    # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
+    if env['VERSION'] >= 49900:
+        CONDITIONALS['HAVE_MONET5'] = '#'
+        CONDITIONALS['HAVE_MONET'] = ''
+        CONDITIONALS['MONET4'] = ''
+        CONDITIONALS['MONET5'] = '#'
+    else:
+        CONDITIONALS['HAVE_MONET5'] = ''
+        CONDITIONALS['HAVE_MONET'] = '#'
+        CONDITIONALS['MONET4'] = '#'
+        CONDITIONALS['MONET5'] = ''
 
     #if env.has_key('MONETDB_PREFIX'):
         #bp = os.path.join(env['MONETDB_PREFIX'],"bin")
@@ -2741,17 +2847,17 @@ def main(argv) :
         os.environ['OSVER'] = OSVER
         os.environ['RELEASE'] = RELEASE
         w = {}
-        for i in 'OS', 'RELEASE', 'BITS', 'OIDS', 'STATIC':
+        for i in 'OS', 'RELEASE', 'BITS', 'OIDS', 'FIVE', 'STATIC':
             w[i] = re.escape(v[i])
-        for i in 'BITS', 'OIDS', 'STATIC':
+        for i in 'BITS', 'OIDS', 'FIVE', 'STATIC':
             j = 'TST_'+i
             env[j] = v[i]
             os.environ[j] = v[i]
             if v[i]:
                 v[i] = '(.%s)?' % v[i]
                 w[i] = '(\.%s)?' % w[i]
-        sv = '^(.%s(%s)?)?%s%s$' % (v['OS'], v['RELEASE'], v['BITS'], v['STATIC'])
-        sw = '^(\.%s(%s)?)?%s%s$' % (w['OS'], w['RELEASE'], w['BITS'], w['STATIC'])
+        sv = '^(.%s(%s)?)?%s%s%s%s$' % (v['OS'], v['RELEASE'], v['BITS'], v['OIDS'], v['FIVE'], v['STATIC'])
+        sw = '^(\.%s(%s)?)?%s%s%s%s$' % (w['OS'], w['RELEASE'], w['BITS'], w['OIDS'], w['FIVE'], w['STATIC'])
         r = re.compile(sw)
         if not r.match(par['SYSTEM']):
             ErrXit("System (-S) must match '"+sv+"' !")
@@ -2778,6 +2884,14 @@ def main(argv) :
         env['SQL_SERVER'] = "sql_server"
         env['SQL_TRACE'] = ""
 
+    # fix up URLPREFIX
+    global URLPREFIX
+    if os.path.exists(os.path.join(env['TSTSRCBASE'], 'CVS', 'Repository')):
+        repo = open(os.path.join(env['TSTSRCBASE'], 'CVS', 'Repository')).read()[:-1]
+        i = repo.find('/')
+        if i > 0:
+            repo = repo[:i]
+        URLPREFIX = URLPREFIXMAP.get(repo) # None if unknown
     # export and display env
     STDERR.flush()
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
@@ -2832,10 +2946,14 @@ def main(argv) :
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
         exe = {}
         exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-        exe['Mserver']       = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s %s --set mapi_port=%s --set sql_port=%s --set xquery_port=%s --set monet_prompt= --trace' % \
-                                                           (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['MAPIPORT'], env['SQLPORT'], env['XQUERYPORT'])
+        if env['VERSION'] >= 49900:
+            exe['Mserver']       = CheckExec('mserver5')     , 'mserver5 "--config=%s" --debug=%s %s %s %s --set mapi_port=%s --set sql_port=%s --set xquery_port=%s --set monet_prompt= --trace' % \
+                                                               (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['MAPIPORT'], env['SQLPORT'], env['XQUERYPORT'])
+        else:
+            exe['Mserver']       = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s %s --set mapi_port=%s --set sql_port=%s --set xquery_port=%s --set monet_prompt= --trace' % \
+                                                               (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['MAPIPORT'], env['SQLPORT'], env['XQUERYPORT'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
-        exe['python']        = CheckExec('python')       , 'python'
+        exe['python']        = CheckExec('@PYTHON@')     , '@PYTHON@'
         exe['Mapi_Client']   = CheckExec(env['MAPICLIENT'].split(None, 1)[0])  , '%s -u monetdb -P monetdb "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
         exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -u monetdb -P monetdb --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['SQLPORT'], env['SQL_TRACE'])
         exe['XQuery_Client'] = CheckExec(env['XQUERYCLIENT'].split(None, 1)[0]), '%s -u monetdb -P monetdb --host=%s --port=%s' % (env['XQUERYCLIENT'], HOST, env['XQUERYPORT'])
@@ -3006,7 +3124,7 @@ def main(argv) :
         env['RELEASE'] = os.environ['RELEASE']
         n = os.path.join(env['TSTTRGBASE'],TSTPREF,'.Mapprove.rc')
         f = open(n, 'w')
-        for v in 'OS', 'RELEASE', 'TST_BITS', 'TST_OIDS', 'TST_STATIC':
+        for v in 'OS', 'RELEASE', 'TST_BITS', 'TST_OIDS', 'TST_FIVE', 'TST_STATIC':
             w = v.replace('TST_','')
             f.write('%s = "%s"\n' % (w, env[v]))
         f.close()

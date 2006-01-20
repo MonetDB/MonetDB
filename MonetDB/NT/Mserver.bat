@@ -10,7 +10,7 @@ set MONETDB=%MONETDB:~0,-1%
 
 rem extend the search path with our EXE and DLL folders
 rem we depend on pthreadVCE.dll having been copied to the lib folder
-set PATH=%MONETDB%\bin;%MONETDB%\lib;%MONETDB%\lib\MonetDB;%PATH%
+set PATH=%MONETDB%\bin;%MONETDB%\lib;%MONETDB%\lib\bin;%MONETDB%\lib\MonetDB;%MONETDB%\lib\MonetDB\bin;%PATH%
 
 rem possibly move the database from a previous installation to our
 rem currently preferred location, and prepare the arguments to Mserver

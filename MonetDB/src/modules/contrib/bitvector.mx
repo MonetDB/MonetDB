@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f bitvector
@@ -108,15 +108,13 @@ bitvector_allocate(BAT **b_dst, int *nbits, bit *initial)
 {
 	lng v;
 	int nentries, n;
-	ptr atom_nil;
 
 	nentries = numentries(*nbits, (int) sizeof(lng) * 8);
 	*b_dst = BATnew(TYPE_void, TYPE_lng, nentries);
-	atom_nil = ATOMnilptr((*b_dst)->htype);
 
 	v = (*initial) ? -1 : 0;
 	for (n = 0; n != nentries; n++)
-		BUNins(*b_dst, atom_nil, (ptr) &v);
+		BUNappend(*b_dst, (ptr) &v);
 	return GDK_SUCCEED;
 }
 
@@ -196,7 +194,6 @@ bitvector_encode(BAT **b_dst, BAT *b_src)
 	lng bf;
 	int *nbits, lastentry, xx;
 	BUN p, q;
-	ptr atom_nil;
 
 	if (b_src == NULL || b_src->ttype != TYPE_oid || BATorder(b_src) == NULL) {
 		GDKerror("bitvector_encode: No OID table.\n");
@@ -205,7 +202,6 @@ bitvector_encode(BAT **b_dst, BAT *b_src)
 	nbits = (int *) BUNtail(b_src, BUNlast(b_src));
 	*nbits += 1;
 	*b_dst = BATnew(TYPE_void, TYPE_lng, numentries(*nbits, sizeof(lng) * 8));
-	atom_nil = ATOMnilptr((*b_dst)->htype);
 	lastentry = -1;
 	bf = 0;
 
@@ -216,13 +212,13 @@ bitvector_encode(BAT **b_dst, BAT *b_src)
 		entry = *bnum / ((int) sizeof(lng) * 8);
 		while (lastentry + 1 < entry) {
 			lastentry++;
-			BUNins(*b_dst, atom_nil, (ptr) &bf);
+			BUNappend(*b_dst, (ptr) &bf);
 			bf = 0;
 		}
 		bf |= ((lng) 1 << (*bnum % (sizeof(lng) * 8)));
 	}
 	lastentry++;
-	BUNins(*b_dst, atom_nil, (ptr) &bf);
+	BUNappend(*b_dst, (ptr) &bf);
 
 	return GDK_SUCCEED;
 }
@@ -280,7 +276,6 @@ bitvector_print(BAT *b_src)
 bitvector_export int
 bitvector_and(BAT **b_dst, BAT *b_src1, BAT *b_src2)
 {
-	ptr atom_nil;
 	BUN p1, q1, p2, q2;
 
 	if (b_src1->htype != TYPE_void || b_src1->ttype != TYPE_lng || b_src2->htype != TYPE_void || b_src2->ttype != TYPE_lng) {
@@ -291,7 +286,6 @@ bitvector_and(BAT **b_dst, BAT *b_src1, BAT *b_src2)
 	assert(BUNsize(b_src1) == sizeof(lng));
 
 	*b_dst = BATnew(TYPE_void, TYPE_lng, BATcount(b_src1) * sizeof(lng));
-	atom_nil = ATOMnilptr((*b_dst)->htype);
 
 	p1 = BUNfirst(b_src1);
 	q1 = BUNlast(b_src1);
@@ -303,7 +297,7 @@ bitvector_and(BAT **b_dst, BAT *b_src1, BAT *b_src2)
 		v1 = (lng *) BUNtail(b_src1, p1);
 		v2 = (lng *) BUNtail(b_src2, p2);
 		*v1 &= *v2;
-		BUNins(*b_dst, atom_nil, (ptr) v1);
+		BUNappend(*b_dst, (ptr) v1);
 	}
 
 	/* No need to copy the tail */
@@ -313,7 +307,6 @@ bitvector_and(BAT **b_dst, BAT *b_src1, BAT *b_src2)
 bitvector_export int
 bitvector_or(BAT **b_dst, BAT *b_src1, BAT *b_src2)
 {
-	ptr atom_nil;
 	BUN p1, q1, p2, q2;
 
 	if (b_src1->htype != TYPE_void || b_src1->ttype != TYPE_lng || b_src2->htype != TYPE_void || b_src2->ttype != TYPE_lng) {
@@ -324,7 +317,6 @@ bitvector_or(BAT **b_dst, BAT *b_src1, BAT *b_src2)
 	assert(BUNsize(b_src1) == sizeof(lng));
 
 	*b_dst = BATnew(TYPE_void, TYPE_lng, BATcount(b_src1) * sizeof(lng));
-	atom_nil = ATOMnilptr((*b_dst)->htype);
 
 	p1 = BUNfirst(b_src1);
 	q1 = BUNlast(b_src1);
@@ -336,7 +328,7 @@ bitvector_or(BAT **b_dst, BAT *b_src1, BAT *b_src2)
 		v1 = (lng *) BUNtail(b_src1, p1);
 		v2 = (lng *) BUNtail(b_src2, p2);
 		*v1 |= *v2;
-		BUNins(*b_dst, atom_nil, (ptr) v1);
+		BUNappend(*b_dst, (ptr) v1);
 	}
 
 	/* Copy the tail, when required */
@@ -357,7 +349,7 @@ bitvector_or(BAT **b_dst, BAT *b_src1, BAT *b_src2)
 		}
 
 		for (; p < q; p += sizeof(lng))
-			BUNins(*b_dst, atom_nil, BUNtail(b_src, p));
+			BUNappend(*b_dst, BUNtail(b_src, p));
 	}
 
 	return GDK_SUCCEED;

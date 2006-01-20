@@ -30,7 +30,7 @@ bat("a").insert(e);
 debugmask(9);
 
 bat("a").info().reverse().select("theap.storage").reverse().print();
-bat("a").insert(nil,"make dirty..");
+bat("a").append("make dirty..");
 commit();
 
 bat("a").destroy();

@@ -1,0 +1,46 @@
+#!/bin/sh
+
+Mlog "initial script"
+MapiClient -lmil -umonetdb -Pmonetdb -p $MAPIPORT << EOF
+var b:=bat(void,int);
+b.insert(0@0,1);
+b.rename("xyz");
+b.persists(true);
+commit();
+EOF
+
+Mlog "run 1"
+MapiClient -lmil -umonetdb -Pmonetdb -p $MAPIPORT << EOF
+proc int2lng(str intbat, str lngbat) : void
+{
+	printf("Destroying %s\n", lngbat);
+	destroy(lngbat);
+	commit();
+	printf("Converting int %s to lng %s\n", intbat, lngbat);
+	var i := bat(intbat);
+	var l:=[lng](i);
+	l.rename(lngbat);
+	l.persists(true);
+	commit();
+}
+
+int2lng("xyz", "xyz_lng");
+EOF
+# same script the second time
+Mlog "run 2"
+MapiClient -lmil -umonetdb -Pmonetdb -p $MAPIPORT << EOF
+proc int2lng(str intbat, str lngbat) : void
+{
+	printf("Destroying %s\n", lngbat);
+	destroy(lngbat);
+	commit();
+	printf("Converting int %s to lng %s\n", intbat, lngbat);
+	var i := bat(intbat);
+	var l:=[lng](i);
+	l.rename(lngbat);
+	l.persists(true);
+	commit();
+}
+
+int2lng("xyz", "xyz_lng");
+EOF

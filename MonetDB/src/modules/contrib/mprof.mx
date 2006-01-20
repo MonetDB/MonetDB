@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f mprof
@@ -1455,8 +1455,10 @@ the power of the aggregates.
 @mil
 setoid(oid(20000000));
 module(mprof);
-module(gdkmem,bulk);
-module(integer,groupFunctional);
+module(gdkmem);
+module(bulk);
+module(integer);
+module(groupFunctional);
 
 
 proc pmSummary() : void {

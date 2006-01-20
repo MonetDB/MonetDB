@@ -12,7 +12,7 @@
 # The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2005 CWI.
+# Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 ?>
 
@@ -370,9 +370,9 @@ class DB_monetdb extends DB_common
     function autoCommit($onoff = false)
     {
         if ($onoff === true) {
-            @monetdb_query("SET auto_commit = true;", $this->connection);
+        	@monetdb_setAutocommit($this->connection, 1);
         } else {
-            @monetdb_query("SET auto_commit = false;", $this->connection);
+        	@monetdb_setAutocommit($this->connection, 0);
         }
         $this->autocommit = ($onoff===true) ? true : false;
         $this->transaction_opcount = 0;

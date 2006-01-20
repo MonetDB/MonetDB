@@ -1,7 +1,7 @@
 var a:=new(void,int).seqbase(oid(0));
-a.insert(nil,0);
-a.insert(nil,1);
-a.insert(nil,int(nil));
+a.append(0);
+a.append(1);
+a.append(int(nil));
 
 var b:=new(int,int);
 b.insert(0,0);

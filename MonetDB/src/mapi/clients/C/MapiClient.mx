@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @a Sjoerd Mullender, based on code by M. Kersten and Peter Boncz and Niels Nes
@@ -251,7 +251,8 @@ dump_table(Mapi mid, char *tname)
 		putc('\t', toConsole);
 		quoted_print(toConsole, c_name);
 		putc(' ', toConsole);
-		if (strcmp(c_type, "int") == 0 ||
+		if (strcmp(c_type, "boolean") == 0 ||
+		    strcmp(c_type, "int") == 0 ||
 		    strcmp(c_type, "smallint") == 0 ||
 		    strcmp(c_type, "bigint") == 0 ||
 		    strcmp(c_type, "double") == 0 ||
@@ -259,9 +260,58 @@ dump_table(Mapi mid, char *tname)
 		    strcmp(c_type, "date") == 0) {
 			fprintf(toConsole, "%s", c_type);
 		} else if (strcmp(c_type, "month_interval") == 0) {
-			fprintf(toConsole, "INTERVAL MONTH");
+			if (*c_type_scale == '1') {
+				if (*c_type_digits == 1)
+					fprintf(toConsole, "INTERVAL YEAR");
+				else
+					fprintf(toConsole, "INTERVAL YEAR TO MONTH");
+			} else
+				fprintf(toConsole, "INTERVAL MONTH");
 		} else if (strcmp(c_type, "sec_interval") == 0) {
-			fprintf(toConsole, "INTERVAL SECOND");
+			switch (*c_type_scale) {
+			case '3':
+				switch (*c_type_digits) {
+				case '3':
+					fprintf(toConsole, "INTERVAL DAY");
+					break;
+				case '4':
+					fprintf(toConsole, "INTERVAL DAY TO HOUR");
+					break;
+				case '5':
+					fprintf(toConsole, "INTERVAL DAY TO MINUTE");
+					break;
+				case '6':
+					fprintf(toConsole, "INTERVAL DAY TO SECOND");
+					break;
+				}
+				break;
+			case '4':
+				switch (*c_type_digits) {
+				case '4':
+					fprintf(toConsole, "INTERVAL HOUR");
+					break;
+				case '5':
+					fprintf(toConsole, "INTERVAL HOUR TO MINUTE");
+					break;
+				case '6':
+					fprintf(toConsole, "INTERVAL HOUR TO SECOND");
+					break;
+				}
+				break;
+			case '5':
+				switch (*c_type_digits) {
+				case '5':
+					fprintf(toConsole, "INTERVAL MINUTE");
+					break;
+				case '6':
+					fprintf(toConsole, "INTERVAL MINUTE TO SECOND");
+					break;
+				}
+				break;
+			case '6':
+				fprintf(toConsole, "INTERVAL SECOND");
+				break;
+			}		
 		} else if (strcmp(c_type, "clob") == 0) {
 			fprintf(toConsole, "CHARACTER LARGE OBJECT");
 			if (strcmp(c_type_digits, "0") != 0)
@@ -732,7 +782,7 @@ doFile(Mapi mid, const char *file, int skipequals)
 	char *buf = NULL;
 	size_t length;
 	MapiHdl hdl = NULL;
-	MapiMsg rc;
+	MapiMsg rc = MOK;
 	int bufsize = 0;
 
 	if (file == NULL)
@@ -742,7 +792,7 @@ doFile(Mapi mid, const char *file, int skipequals)
 		return 1;
 	}
 
-	bufsize = BUFSIZ * 64;
+	bufsize = BUFSIZ;
 	buf = malloc(bufsize);
 	if (!buf) {
 		fprintf(stderr, "cannot allocate memory for send buffer\n");
@@ -783,6 +833,9 @@ doFile(Mapi mid, const char *file, int skipequals)
 			assert(hdl != NULL);
 			mapi_query_part(hdl, buf, length);
 			CHECK_RESULT(mid, hdl, buf, continue);
+
+			/* in case of xquery; do the whole file in one go */
+			if (command) continue;
 		}
 
 		assert(hdl != NULL);
@@ -804,10 +857,15 @@ doFile(Mapi mid, const char *file, int skipequals)
 
 			if ((reply = mapi_result_error(hdl)) != NULL)
 				mapi_explain_result(hdl, stderr);
-			while ((reply = mapi_fetch_line(hdl)) != NULL) {
-				if (*reply == '=' && skipequals)
-					reply++;
-				fprintf(toConsole, "%s\n", reply);
+			if (mapi_get_querytype(hdl) == Q_UPDATE) {
+				fprintf(toConsole, "[ %d\t]\n",
+					mapi_rows_affected(hdl));
+			} else {
+				while ((reply = mapi_fetch_line(hdl)) != NULL) {
+					if (*reply == '=' && skipequals)
+						reply++;
+					fprintf(toConsole, "%s\n", reply);
+				}
 			}
 		} while ((rc = mapi_next_result(hdl)) == 1);
 		if (rc == MMORE && (length > 0 || mapi_query_done(hdl) != MOK))
@@ -824,6 +882,7 @@ doFile(Mapi mid, const char *file, int skipequals)
 
 	free(buf);
 	if (file != NULL) fclose(fp);
+	fflush(stdout);
 	return 0;
 }
 
@@ -831,6 +890,7 @@ static void
 showCommands(void)
 {
 	fprintf(toConsole, "?\t - show this message\n");
+	fprintf(toConsole, "?text\t - sent help message\n");
 	fprintf(toConsole, "!\t - shell escape\n");
 	fprintf(toConsole, "<file\t - read input from file\n");
 	fprintf(toConsole, ">file\t - save response in file\n");
@@ -841,6 +901,8 @@ showCommands(void)
 	fprintf(toConsole, "\\T\t- toggle timer\n");
 	fprintf(toConsole, "\\D\t- dump database\n");
 	fprintf(toConsole, "\\Dtable\t- dump table\n");
+	fprintf(toConsole, "\\A\t- enable auto commit\n");
+	fprintf(toConsole, "\\a\t- disable auto commit\n");
 	fprintf(toConsole, "\\t\t- toggle interaction trace\n");
 }
 
@@ -851,7 +913,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 	char *buf = NULL;
 	size_t length;
 	MapiHdl hdl = NULL;
-	MapiMsg rc;
+	MapiMsg rc = MOK;
 
 #ifdef HAVE_LIBREADLINE
 	if (prompt == NULL)
@@ -939,6 +1001,12 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 				case 'b':
 					linemode = 0;
 					continue;
+				case 'A':
+					mapi_setAutocommit(mid, 1);
+					continue;
+				case 'a':
+					mapi_setAutocommit(mid, 0);
+					continue;
 				case 'D':
 					if (line[length - 1] == '\n')
 						line[--length] = 0;
@@ -996,7 +1064,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 				}
 				break;
 			case '?':
-				showCommands();
+				if( !isspace((int)line[1]))
+					break;
+				else showCommands();
 				continue;
 			}
 		}
@@ -1011,13 +1081,13 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			mapi_query_part(hdl, line, length);
 			CHECK_RESULT(mid, hdl, buf, continue);
 		}
-		if ((line == NULL || (length > 0 && line[length - 1] == '\n')) && linemode) {
+		if (linemode) {
 			assert(hdl != NULL);
 			/* If the server wants more but we're at the
 			   end of file (line == NULL), notify the
 			   server that we don't have anything more.
 			   If the server still wants more (shouldn't
-			   happen accordint to the protocol) we break
+			   happen according to the protocol) we break
 			   out of the loop (via the continue).  The
 			   assertion at the end will then go off. */
 			if (mapi_query_done(hdl) == MMORE && (line != NULL || mapi_query_done(hdl) == MMORE))
@@ -1035,8 +1105,13 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 						return 1;
 					}
 				}
-				while ((reply = mapi_fetch_line(hdl)) != NULL)
-					fprintf(toConsole, "%s\n", reply);
+				if (mapi_get_querytype(hdl) == Q_UPDATE) {
+					fprintf(toConsole, "[ %d\t]\n",
+						mapi_rows_affected(hdl));
+				} else {
+					while ((reply = mapi_fetch_line(hdl)) != NULL)
+						fprintf(toConsole, "%s\n", reply);
+				}
 			} while ((rc = mapi_next_result(hdl)) == 1);
 			if (rc == MMORE && (line != NULL || mapi_query_done(hdl) != MOK))
 				continue;	/* get more data */
@@ -1082,13 +1157,6 @@ simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
 		termout = stderr;
 	}
 
-	if (prompt) {
-		if (def)
-			fprintf(termout, "%s(%s):", prompt, def);
-		else
-			fprintf(termout, "%s:", prompt);
-		fflush(termout);
-	}
 #ifdef HAVE_TERMIOS_H
 	if (!echo) {
 		tcgetattr(fileno(termin), &t);
@@ -1097,6 +1165,13 @@ simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
 		tcsetattr(fileno(termin), TCSAFLUSH, &t);
 	}
 #endif
+	if (prompt) {
+		if (def)
+			fprintf(termout, "%s(%s):", prompt, def);
+		else
+			fprintf(termout, "%s:", prompt);
+		fflush(termout);
+	}
 	if (fgets(destination, maxlen, termin) == NULL)
 		destination[0] = '\0';
 

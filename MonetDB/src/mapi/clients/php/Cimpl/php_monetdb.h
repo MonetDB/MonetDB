@@ -12,7 +12,7 @@
  * The Original Code is the MonetDB Database System.
  *
  * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2005 CWI.
+ * Portions created by CWI are Copyright (C) 1997-2006 CWI.
  * All Rights Reserved.
  */
 
@@ -64,6 +64,7 @@ PHP_MINFO_FUNCTION(monetdb);
 
 PHP_FUNCTION(monetdb_connect);
 PHP_FUNCTION(monetdb_close);
+PHP_FUNCTION(monetdb_setAutocommit);
 PHP_FUNCTION(monetdb_query);
 PHP_FUNCTION(monetdb_num_rows);
 PHP_FUNCTION(monetdb_num_fields);

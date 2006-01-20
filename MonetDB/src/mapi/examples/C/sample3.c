@@ -12,7 +12,7 @@
  * The Original Code is the MonetDB Database System.
  *
  * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2005 CWI.
+ * Portions created by CWI are Copyright (C) 1997-2006 CWI.
  * All Rights Reserved.
  */
 
@@ -45,6 +45,9 @@ main(int argc, char **argv)
 
 	/* mapi_trace(dbh, 1); */
 	if (strcmp(argv[3], "sql") == 0) {
+		/* switch of autocommit */
+		if (mapi_setAutocommit(dbh, 0) != MOK || mapi_error(dbh))
+			die(dbh,NULL);
 		if ((hdl = mapi_query(dbh, "create table emp(name varchar(20), age int)")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
 		if (mapi_close_handle(hdl) != MOK)

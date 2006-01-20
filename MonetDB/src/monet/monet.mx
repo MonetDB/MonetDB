@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f monet
@@ -152,19 +152,26 @@ as well as in user defined module implementations.
 MIL blocks get parsed into parse trees. The exact form is not important here,
 as programmers will not need to manipulate parse trees directly.
 @h
-#define YYMAXSONS	11
+#define YYMAXSONS 	11
+#define YYOVERFLOW(t)	((YYSTREE) (t->extendable?t->yysons[t->capacity]:NULL))
 
+/* YYSTREE: changed in nov 2005 to squeeze Mbedded memory */
 typedef struct YYS {
-	ValRecord yyval;
-	struct YYS *yysons[YYMAXSONS];
-	struct YYS *overflow, *last, *next;
+	ValRecord yyval;          /* MIL expression result value */ 
+	unsigned int token:9,     /* MIL parse tree token */
+                     noyyval:1,   /* yyval part is not allocated => BEWARE: first 16 bytes bogus */
+                     iscopy:1,    /* yyval is a copy of something that must be alive (need no dealloc) */ 
+                     cnt:5,       /* the actual number of yysons */ 
+                     capacity:5,  /* the maximum number of yysons (default YYMAXSONS) */
+ 	             extendable:1,/* whether there is one extra slot at the end of yysons for an overflow pointer */ 
+                     malloced:1,  /* whether this node was GDKmalloced() - if not it is part of a larger chunk */
+                     dealloc:9;  /* runtime garbage collection info (see below) */
 	union {
-		ptr atmref;
-		batrec batref;
-		oid yyid;
-	} free;
-	unsigned int cnt:6, token:10, dealloc:16;
-	struct YYS *nfree;
+		ptr atmref;       /* garbage collectioon: must GDKfree an atom */
+		batrec batref;    /* garbage collectioon: must BBPunfix a bat */
+		struct YYS *delnode;  /* union space re-used only at final stage of Myyfree */
+	} free; 
+	struct YYS *yysons[YYMAXSONS+1]; /* tree sons. BEWARE: there may be fewer than YYMAXSONS space!! */
 } yystree, *YYSTREE;
 
 #define YYDEALLOC_BAT	1
@@ -289,8 +296,8 @@ See the MonetDB.conf file for additional system variable settings
 @h
 #define MAXSCRIPT 64
 
+m_export int monet_nostalgic; /* do not require () on empty parameters */
 m_export char monet_cwd[PATHLENGTH];	/* where the server started */
-m_export int monet_nostalgic;	/* do not require () on empty parameters */
 m_export int monet_listing;	/* echo input */
 m_export int monet_daemon;	/* set server console is deaf */
 m_export int monet_forks;	/* count interpreter threads */
@@ -380,7 +387,7 @@ monet_hello(stream *out)
 		if (out == NULL)
 			out = GDKout;
 		stream_printf(out, "# Monet Database Server V%s\n", monet_version);
-		stream_printf(out, "# Copyright (c) 1993-2005, CWI. "
+		stream_printf(out, "# Copyright (c) 1993-2006, CWI. "
 			      "All rights reserved.\n");
 		stream_printf(out, "# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs; %s linked.\n", 
 		                   monet_arch, (size_t) (sizeof(ptr) * 8), (size_t) (sizeof(oid) * 8), linkinfo);
@@ -606,7 +613,7 @@ monet_eval(str mil_script, int *ret_type)
 			return (ptr) b;
 		}
 		return (ptr) res;	/* HACK: value space is first!! */
-	} else if (i >= 0) {
+	} else if (i < 0) {
 		*ret_type = i;
 	} else {
 		*ret_type = TYPE_void;
@@ -626,8 +633,8 @@ monet_exec(str mil_script)
 	int restype = 0;
 	ptr resval = monet_eval(mil_script, &restype);
 
-	ATOMunfix(restype, resval);
 	if (restype > 0) {
+		ATOMunfix(restype, resval);
 		GDKfree(resval);
 	}
 	return restype;
@@ -977,10 +984,10 @@ monet_sigerror(str kind, str name, str extra, int argc, ValPtr argv)
 		p += strlen(p);
 		if ((argv[i].vtype == TYPE_bat) && (b = BATdescriptor(argv[i].val.bval))) {
 			*(p++) = '[';
-			strcpy(p, ATOMname(b->htype));
+			strcpy(p, ATOMname((b->hseqbase == oid_nil)?b->htype:ATOMtype(b->htype)));
 			p += strlen(p);
 			*(p++) = ',';
-			strcpy(p, ATOMname(b->ttype));
+			strcpy(p, ATOMname((b->tseqbase == oid_nil)?b->ttype:ATOMtype(b->ttype)));
 			p += strlen(p);
 			*(p++) = ']';
 			BBPunfix(b->batCacheid);

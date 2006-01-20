@@ -20,13 +20,13 @@
 
 var v1 := new(void,str).seqbase(0@0);
 
-v1.insert(nil,"");
-v1.insert(nil,"b");
-v1.insert(nil,"");
-v1.insert(nil,"c");
-v1.insert(nil,"");
-v1.insert(nil,"a");
-v1.insert(nil,"");
+v1.append("");
+v1.append("b");
+v1.append("");
+v1.append("c");
+v1.append("");
+v1.append("a");
+v1.append("");
 v1.print();
 
 var v2 := v1.reverse().kunique().reverse();

@@ -11,7 +11,7 @@
 # The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2005 CWI.
+# Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
 ## Process this file with automake to produce Makefile.in
@@ -22,16 +22,16 @@ EXTRA_DIST = monet_getopt.h getopt.c getopt1.c memcmp.c
 
 lib_mutils = { 
 	NAME = mutils
-	SOURCES = monet_utils.mx monet_options.mx.in monet_getopt.h
+	SOURCES = monet_utils.mx monet_options.mx monet_getopt.h
 	HEADERS = h
 }
 
-INCLUDES = $(Z_CFLAGS) $(BZ_CFLAGS) $(OPENSSL_INCS)
+INCLUDES = $(Z_CFLAGS) $(BZ_CFLAGS) $(OPENSSL_INCS) $(CURL_INCS)
 
 lib_stream  =  {
 	SOURCES = stream.mx dummy_gdk_utils.mx
 	HEADERS = h
-	LIBS = libmutils $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) $(OPENSSL_LIBS)
+	LIBS = libmutils $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) $(OPENSSL_LIBS) $(CURL_LIBS)
 }
 
 scripts_py = {

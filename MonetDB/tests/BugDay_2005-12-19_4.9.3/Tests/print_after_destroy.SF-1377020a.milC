@@ -1,0 +1,3 @@
+print(bat("test1377020a"));
+destroy("test1377020a");
+print(bat("test1377020a"));

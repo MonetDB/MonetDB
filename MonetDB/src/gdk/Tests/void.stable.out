@@ -354,9 +354,9 @@ a.print();
 
 var t1 := bat(void,int);
 t1.seqbase(0@0);
-t1.insert(nil,1);
-t1.insert(nil,2);
-t1.insert(nil,3);
+t1.append(1);
+t1.append(2);
+t1.append(3);
 var v1 := t1.mil_select("<in>", 2,int(nil));
 var v2 := v1.mark(0@0).reverse();
 v2.join(t1).print();
@@ -377,6 +377,51 @@ v3.info().find("hseqbase").print();
 [ "1@0" ]
 v3.info().find("hdense").print();
 [ "0" ]
+
+var x := new(void,void);
+x.seqbase(0@0);
+x.append(12@0);
+!ERROR: interpret: no matching MIL operator to 'append(BAT[oid,void], oid)'.
+!MAYBE YOU MEAN:
+!	append(BAT[void,any::1], any::1) : BAT[void,any::1]
+!	append(BAT[oid,any::1], any::1) : BAT[oid,any::1]
+!	append(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]
+!	append(BAT[void,any::1], BAT[void,any::1]) : BAT[void,any::1]
+!	append(BAT[oid,any::1], BAT[oid,any::1]) : BAT[oid,any::1]
+x.append(nil);
+x.print();
+#-----------------#
+# h	t	  # name
+# void	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+
+var e := new(void,int);
+e.seqbase(10@0);
+var n := new(void,int);
+n.seqbase(20@0);
+n.append(20);
+e.insert(n);
+e.print();
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 20@0,	  20	  ]
+
+var y := new(void,int);
+y.insert(nil,0);
+y.seqbase(20@0);
+var z := new(void,int);
+z.seqbase(10@0);
+z.key(true);
+z.insert(y);
+z.print();
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 20@0,	  0	  ]
 
 quit();
 

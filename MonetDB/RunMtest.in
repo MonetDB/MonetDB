@@ -13,7 +13,7 @@
 # The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2005 CWI.
+# Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
 builddir=@QXMONETDB_BUILD@
@@ -60,8 +60,8 @@ export PATH PYTHONPATH LD_LIBRARY_PATH
 cd "$srcdir"
 
 # check python version
-type -a python
-python -V
+type -a @PYTHON@
+@PYTHON@ -V
 
 # execute the script
 # if no arguments, do a recursive test (Mtest.py -r), else pass on the
@@ -69,4 +69,4 @@ python -V
 # if the environment variable MTEST_AT is set (value does not matter),
 # pass the --at flag to Mtest.py so that it uses the at command as a
 # watchdog.
-exec python "${builddir}/src/testing/Mtest.py" --monet_mod_path="${MOD_PATH}" --config="${builddir}/conf/MonetDB.conf" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/log" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--r}"
+exec @PYTHON@ "${builddir}/src/testing/Mtest.py" --monet_mod_path="${MOD_PATH}" --config="${builddir}/conf/MonetDB.conf" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/log" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--r}"

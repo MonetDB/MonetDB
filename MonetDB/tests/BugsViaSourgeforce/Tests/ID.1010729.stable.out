@@ -10,7 +10,7 @@ stdout of test 'ID.1010729` in directory 'tests/BugsViaSourgeforce` itself:
 # Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 var b := new(void, int).seqbase(0@0);
-b.insert(nil,1).insert(nil, 2).insert(nil, 3);
+b.append(1).append(2).append(3);
 
 # 11 is the type_identifier of 'str'
 [cast](b, 11).print();
@@ -45,9 +45,9 @@ b.insert(nil,1).insert(nil, 2).insert(nil, 3);
 # h	tmp_28	  # name
 # void	chr	  # type
 #-----------------#
-[ 0@0,	  1	  ]
-[ 1@0,	  2	  ]
-[ 2@0,	  3	  ]
+[ 0@0,	  '1'	  ]
+[ 1@0,	  '2'	  ]
+[ 2@0,	  '3'	  ]
 quit();
 
 # 23:29:45 >  

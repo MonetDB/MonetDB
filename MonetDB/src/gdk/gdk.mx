@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f gdk
@@ -574,8 +574,14 @@ typedef oid hash_t;		/* type used for hash tables */
 typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #if SIZEOF_OID == SIZEOF_INT	/* a type compatible with var_t */
 #define TYPE_var	TYPE_int
+#if SIZEOF_SIZE_T == SIZEOF_INT 
+#define OIDFMT		SZFMT
+#else
+#define OIDFMT		"%u"
+#endif
 #else
 #define TYPE_var	TYPE_lng
+#define OIDFMT		SZFMT
 #endif
 
 @- Checking and Error definitions:
@@ -726,8 +732,7 @@ typedef struct {
 		dbl dval;
 		lng lval;
 	} val;
-	int vtype;
-	int len;
+	int len, vtype;
 } *ValPtr, ValRecord;
 
 #define VALptr(v) (ATOMextern((v)->vtype)?(v)->val.pval:(ptr)&(v)->val.ival)
@@ -739,6 +744,7 @@ gdk_export ptr VALconvert(int typ, ValPtr t);
 gdk_export int VALformat(char **buf, ValPtr res);
 gdk_export int VALprint(stream *fd, ValPtr res);
 gdk_export ValPtr VALcopy(ValPtr dst, ValPtr src);
+gdk_export ValPtr VALinit(ValPtr d, int tpe, ptr s);
 gdk_export void VALempty(ValPtr v);
 gdk_export void VALclear(ValPtr v);
 gdk_export ValPtr VALset(ValPtr v, int t, ptr p);
@@ -757,7 +763,6 @@ typedef struct {
           int    batPersistence;   /* persistence mode */
           bit    batCopiedtodisk;  /* BAT is saved on disk? */
           bit    batSet;           /* all tuples in the BAT are unique? */
-          int    batStore;         /* multi-level storage mode */
           sht    batElmshift       /* log2 of width  */
           sht    batElmsize        /* width in byte of the BUNs */
           /* dynamic BAT properties */
@@ -928,7 +933,6 @@ typedef int (*GDKfcn) ();
 #define batPersistence	P->persistence
 #define batCopiedtodisk	P->copiedtodisk
 #define batSet		P->set
-#define batStore	P->store
 #define batDirtyflushed	P->dirtyflushed
 #define batDirty	P->dirty
 #define batConvert	P->convert
@@ -1131,9 +1135,13 @@ gdk_export int BBPreclaim(BAT *b);
 @item BAT*
 @tab BATins (BAT *b, ptr *c)
 @item BAT*
+@tab BATappend (BAT *b, ptr *c)
+@item BAT*
 @tab BATdel (BAT *b, ptr *c)
 @item BAT*
 @tab BUNins (BAT *b, ptr left, ptr right)
+@item BAT*
+@tab BUNappend (BAT *b, ptr right)
 @item BAT*
 @tab BUNreplace (BAT *b, ptr left, ptr right)
 @item int
@@ -1168,8 +1176,8 @@ the evolving nature of the sequence, which may require copying the BAT
 first.
 @
 The update operations come in three flavors. Element-wise updates
-can use @%BUNins@, @%BUNreplace@, @%BUNdel@, and @%BUNdelHead@.
-The batch update operations are @%BATins@ and @%BATdel@.
+can use @%BUNins@, @%BUNappend@, @%BUNreplace@, @%BUNdel@, and @%BUNdelHead@.
+The batch update operations are @%BATins@, @%BATappend@ and @%BATdel@.
 @
 Only experts interested in speed may use @%BUNfastins@, since it skips most
 consistency checks, does not update search accelerators, and does
@@ -1236,7 +1244,9 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 
 gdk_export BAT *BUNfastins(BAT *b, ptr left, ptr right);
 gdk_export BAT *BUNins(BAT *b, ptr left, ptr right);
+gdk_export BAT *BUNappend(BAT *b, ptr right);
 gdk_export BAT *BATins(BAT *b, BAT *c);
+gdk_export BAT *BATappend(BAT *b, BAT *c);
 gdk_export BAT *BUNdel(BAT *b, ptr left, ptr right);
 gdk_export BAT *BUNdelHead(BAT *b, ptr left);
 gdk_export BUN BUNdelete(BAT *b, BUN p);
@@ -1702,6 +1712,7 @@ The status and BAT persistency information is encoded in the status field.
 typedef struct {
 	BAT *b[2];		/* if loaded: BAT* handle + reverse */
 	str nme[2];		/* logical name + reverse */
+	str bak[2];		/* logical name + reverse backups */
 	bat next[2];		/* next BBP slot in link list */
 	BATstore *cache;	/* cached header info */
 	str path;		/* dir + basename for storage */
@@ -1958,7 +1969,6 @@ gdk_export int GDKatomcnt;
 gdk_export void ATOMdelete(int id);
 gdk_export void ATOMproperty(char *nme, char *property, GDKfcn fcn);
 gdk_export int ATOMindex(char *nme);
-gdk_export int ATOMstorage(int id);
 gdk_export int ATOMisdescendant(int id, int parentid);
 gdk_export int ATOMdump(void);
 
@@ -2588,6 +2598,8 @@ gdk_export BAT *VIEWhead_(BAT *b, int mode);
 gdk_export BAT *VIEWcombine(BAT *b);
 gdk_export BAT *VIEWreset(BAT *b);
 gdk_export BAT *BATmaterialize(BAT *b, size_t size);
+gdk_export BAT *BATmaterializeh(BAT *b, size_t size);
+gdk_export BAT *BATmaterializet(BAT *b, size_t size);
 gdk_export void VIEWdestroy(BAT *b);
 gdk_export void VIEWbounds(BAT *view, size_t l, size_t h);
 gdk_export void VIEWunlink(BAT *b);
@@ -2911,7 +2923,7 @@ properties. They can be used to improve query processing at higher levels.
 gdk_export void PROPdestroy(PROPrec *p);
 gdk_export bit BATgetprop_bit(BAT *b, int idx);
 gdk_export int BATgetprop_int(BAT *b, int idx);
-gdk_export str BATgetprop_str(BAT *b, int idx);
+gdk_export const char *BATgetprop_str(BAT *b, int idx);
 gdk_export void BATsetprop_bit(BAT *b, int idx, bit val);
 gdk_export void BATsetprop_int(BAT *b, int idx, int val);
 gdk_export void BATsetprop_str(BAT *b, int idx, str val);
@@ -3045,6 +3057,7 @@ gdk_export BAT *BATsemijoin(BAT *l, BAT *r);
 gdk_export BAT *BATmergejoin(BAT *l, BAT *r, size_t estimate);
 gdk_export BAT *BATleftmergejoin(BAT *l, BAT *r, size_t estimate);
 gdk_export BAT *BATjoin(BAT *l, BAT *r, size_t estimate);
+gdk_export BAT *BATantijoin(BAT *l, BAT *r);
 gdk_export BAT *BATleftjoin(BAT *l, BAT *r, size_t estimate);
 gdk_export BAT *BATouterjoin(BAT *l, BAT *r, size_t estimate);
 gdk_export BAT *BATcross(BAT *l, BAT *r);
@@ -3054,6 +3067,7 @@ gdk_export BAT *BATfetch(BAT *b, BAT *s);
 gdk_export BAT *BATfetchjoin(BAT *b, BAT *s, size_t estimate);
 gdk_export BAT *BATleftfetchjoin(BAT *b, BAT *s, size_t estimate);
 
+gdk_export BAT *BATins_kunique(BAT *bn, BAT *b);
 gdk_export BAT *BATsunique(BAT *b);
 gdk_export BAT *BATkunique(BAT *b);
 gdk_export BAT *BATukunique(BAT *b);

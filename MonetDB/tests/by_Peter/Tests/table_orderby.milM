@@ -16,7 +16,7 @@ var d := c.mark(10000@0);
 print("1",c,d);
 print("2",c,d);
 
-var e := [oid](d).access(BAT_WRITE).seqbase(nil).insert([oid]([*]([int](d),2)));
+var e := [oid](d).access(BAT_WRITE).append([oid]([*]([int](d),2)));
 e := e.insert(e.copy()).reverse().sort().mark(0@0).reverse();
 var f := a.copy().access(BAT_WRITE).insert(a).insert(a).insert(a).seqbase(0@0);
 var g := [>]([int](f.mirror()),12);

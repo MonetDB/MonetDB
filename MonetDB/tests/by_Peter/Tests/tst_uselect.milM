@@ -4,7 +4,7 @@ proc genbat(int size, int perc) : bat[void,oid] {
     var i := 0;
     while(i < 100) {
         if (i < perc) {
-            t.insert(nil,nil);
+            t.insert(nil,oid(nil));
         } else {
             t.insert(nil,oid(i));
         }
@@ -26,8 +26,8 @@ while(size <= 1000000) {
  	  debugmask(2);
           var b := genbat(size, perc);
           debugmask(m);
-          kdiff(b,b.uselect(nil)).count().print(); 
-          printf("kdiff(b,b.uselect(nil)) size=%d perc=%d\n", size, perc);
+          kdiff(b,b.uselect(oid(nil))).count().print(); 
+          printf("kdiff(b,b.uselect(oid(nil))) size=%d perc=%d\n", size, perc);
           [ifelse]([isnil](b), b).count().print(); 
           printf("[ifelse]([isnil](b),b) size=%d perc=%d\n", size, perc);
           perc :+= 10;

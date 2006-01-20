@@ -12,7 +12,7 @@
  * The Original Code is the MonetDB Database System.
  *
  * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2005 CWI.
+ * Portions created by CWI are Copyright (C) 1997-2006 CWI.
  * All Rights Reserved.
  */
 
@@ -51,6 +51,11 @@ main(int argc, char **argv)
 		dbh = mapi_connect("localhost", port, "monetdb", "monetdb", sql ? "sql" : 0);
 		if (dbh == NULL || mapi_error(dbh))
 			die(dbh, hdl);
+
+		/* switch of autocommit */
+		if (sql && (mapi_setAutocommit(dbh, 0) != MOK || mapi_error(dbh)))
+			die(dbh,NULL);
+
 		if (sql)
 			snprintf(buf, 40, "select %d;", i);
 		else

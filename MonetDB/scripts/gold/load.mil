@@ -1,4 +1,4 @@
-module(ascii_io,unix);
+module(ascii_io);module(unix);
 # should run if you set TSTTRGDIR to pwd
 
 var path:=getenv("TSTTRGDIR");

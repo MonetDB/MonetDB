@@ -42,10 +42,10 @@ printf("\nMserver epilogue: This is what Mserver says after MapiClient has disco
 # Z.print();
 # bat("adm_acctbl").print();
 # bat("adm_atomtbl").print();
-# bat("adm_fcntbl").mark(nil).sort().print();
+# bat("adm_fcntbl").project(nil).sort().print();
 # monet_acctbl.print();
 # monet_atomtbl.print();
-# monet_fcntbl.mark(nil).sort().print(); 
+# monet_fcntbl.project(nil).sort().print(); 
 var d := [-](Z,X);
 kdiff(d,d.uselect(0)).print();
 }
@@ -74,7 +74,7 @@ MapiClient: This is what MapiClient says.
 # h			tmp_38	  # name
 # str			int	  # type
 #---------------------------------#
-[ "monet_mod_use",	  19	  ]
+[ "monet_mod_use",	  21	  ]
 
 # 18:21:04 >  
 # 18:21:04 >  Done.

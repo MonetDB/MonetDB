@@ -39,6 +39,7 @@ table(Plain_mods.reverse().col_name(sprintf("%i modules",Plain_mods.count())));
 [ "decimal"	  ]
 [ "enum"	  ]
 [ "lock"	  ]
+[ "logger"	  ]
 [ "mapi"	  ]
 [ "mkey"	  ]
 [ "mmath"	  ]
@@ -305,18 +306,24 @@ Module: "ascii_io"
 
 Module: "bat_arith"
 
-[ 138 ]
-[ 138 ]
+[ 150 ]
+[ 150 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature						help														  # name
 # str		str		str							str														  # type
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,dbl], BAT[void,dbl]) : BAT[void,dbl]",	  "optimized multiplexed mod ('%') on head-aligned [void,dbl] BATs"						  ]
+[ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,dbl], dbl) : BAT[void,dbl]",		  "optimized multiplexed right-scalar mod ('%') on [void,dbl] BAT"						  ]
+[ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,flt], BAT[void,flt]) : BAT[void,flt]",	  "optimized multiplexed mod ('%') on head-aligned [void,flt] BATs"						  ]
+[ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,flt], flt) : BAT[void,flt]",		  "optimized multiplexed right-scalar mod ('%') on [void,flt] BAT"						  ]
 [ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,int], BAT[void,int]) : BAT[void,int]",	  "optimized multiplexed mod ('%') on head-aligned [void,int] BATs"						  ]
 [ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,int], int) : BAT[void,int]",		  "optimized multiplexed right-scalar mod ('%') on [void,int] BAT"						  ]
 [ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,lng], BAT[void,lng]) : BAT[void,lng]",	  "optimized multiplexed mod ('%') on head-aligned [void,lng] BATs"						  ]
 [ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,lng], lng) : BAT[void,lng]",		  "optimized multiplexed right-scalar mod ('%') on [void,lng] BAT"						  ]
 [ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,sht], BAT[void,sht]) : BAT[void,sht]",	  "optimized multiplexed mod ('%') on head-aligned [void,sht] BATs"						  ]
 [ "[%]",	  "OPERATOR:  ",  "[%](BAT[void,sht], sht) : BAT[void,sht]",		  "optimized multiplexed right-scalar mod ('%') on [void,sht] BAT"						  ]
+[ "[%]",	  "OPERATOR:  ",  "[%](dbl, BAT[void,dbl]) : BAT[void,dbl]",		  "optimized multiplexed left-scalar mod ('%') on [void,dbl] BAT"						  ]
+[ "[%]",	  "OPERATOR:  ",  "[%](flt, BAT[void,flt]) : BAT[void,flt]",		  "optimized multiplexed left-scalar mod ('%') on [void,flt] BAT"						  ]
 [ "[%]",	  "OPERATOR:  ",  "[%](int, BAT[void,int]) : BAT[void,int]",		  "optimized multiplexed left-scalar mod ('%') on [void,int] BAT"						  ]
 [ "[%]",	  "OPERATOR:  ",  "[%](lng, BAT[void,lng]) : BAT[void,lng]",		  "optimized multiplexed left-scalar mod ('%') on [void,lng] BAT"						  ]
 [ "[%]",	  "OPERATOR:  ",  "[%](sht, BAT[void,sht]) : BAT[void,sht]",		  "optimized multiplexed left-scalar mod ('%') on [void,sht] BAT"						  ]
@@ -380,12 +387,18 @@ Module: "bat_arith"
 [ "[/]",	  "OPERATOR:  ",  "[/](int, BAT[void,int]) : BAT[void,int]",		  "optimized multiplexed left-scalar div ('/') on [void,int] BAT"						  ]
 [ "[/]",	  "OPERATOR:  ",  "[/](lng, BAT[void,lng]) : BAT[void,lng]",		  "optimized multiplexed left-scalar div ('/') on [void,lng] BAT"						  ]
 [ "[/]",	  "OPERATOR:  ",  "[/](sht, BAT[void,sht]) : BAT[void,sht]",		  "optimized multiplexed left-scalar div ('/') on [void,sht] BAT"						  ]
+[ "[:%=]",	  "OPERATOR:  ",  "[:%=](BAT[void,dbl], BAT[void,dbl]) : BAT[void,dbl]",  "optimized multiplexed in-place mod (':%=') on head-aligned [void,dbl] BATs (overwrites first operand)"	  ]
+[ "[:%=]",	  "OPERATOR:  ",  "[:%=](BAT[void,dbl], dbl) : BAT[void,dbl]",		  "optimized multiplexed right-scalar in-place mod (':%=') on [void,dbl] BAT (overwrites first operand)"	  ]
+[ "[:%=]",	  "OPERATOR:  ",  "[:%=](BAT[void,flt], BAT[void,flt]) : BAT[void,flt]",  "optimized multiplexed in-place mod (':%=') on head-aligned [void,flt] BATs (overwrites first operand)"	  ]
+[ "[:%=]",	  "OPERATOR:  ",  "[:%=](BAT[void,flt], flt) : BAT[void,flt]",		  "optimized multiplexed right-scalar in-place mod (':%=') on [void,flt] BAT (overwrites first operand)"	  ]
 [ "[:%=]",	  "OPERATOR:  ",  "[:%=](BAT[void,int], BAT[void,int]) : BAT[void,int]",  "optimized multiplexed in-place mod (':%=') on head-aligned [void,int] BATs (overwrites first operand)"	  ]
 [ "[:%=]",	  "OPERATOR:  ",  "[:%=](BAT[void,int], int) : BAT[void,int]",		  "optimized multiplexed right-scalar in-place mod (':%=') on [void,int] BAT (overwrites first operand)"	  ]
 [ "[:%=]",	  "OPERATOR:  ",  "[:%=](BAT[void,lng], BAT[void,lng]) : BAT[void,lng]",  "optimized multiplexed in-place mod (':%=') on head-aligned [void,lng] BATs (overwrites first operand)"	  ]
 [ "[:%=]",	  "OPERATOR:  ",  "[:%=](BAT[void,lng], lng) : BAT[void,lng]",		  "optimized multiplexed right-scalar in-place mod (':%=') on [void,lng] BAT (overwrites first operand)"	  ]
 [ "[:%=]",	  "OPERATOR:  ",  "[:%=](BAT[void,sht], BAT[void,sht]) : BAT[void,sht]",  "optimized multiplexed in-place mod (':%=') on head-aligned [void,sht] BATs (overwrites first operand)"	  ]
 [ "[:%=]",	  "OPERATOR:  ",  "[:%=](BAT[void,sht], sht) : BAT[void,sht]",		  "optimized multiplexed right-scalar in-place mod (':%=') on [void,sht] BAT (overwrites first operand)"	  ]
+[ "[:%=]",	  "OPERATOR:  ",  "[:%=](dbl, BAT[void,dbl]) : BAT[void,dbl]",		  "optimized multiplexed left-scalar in-place mod (':%=') on [void,dbl] BAT (overwrites second operand)"	  ]
+[ "[:%=]",	  "OPERATOR:  ",  "[:%=](flt, BAT[void,flt]) : BAT[void,flt]",		  "optimized multiplexed left-scalar in-place mod (':%=') on [void,flt] BAT (overwrites second operand)"	  ]
 [ "[:%=]",	  "OPERATOR:  ",  "[:%=](int, BAT[void,int]) : BAT[void,int]",		  "optimized multiplexed left-scalar in-place mod (':%=') on [void,int] BAT (overwrites second operand)"	  ]
 [ "[:%=]",	  "OPERATOR:  ",  "[:%=](lng, BAT[void,lng]) : BAT[void,lng]",		  "optimized multiplexed left-scalar in-place mod (':%=') on [void,lng] BAT (overwrites second operand)"	  ]
 [ "[:%=]",	  "OPERATOR:  ",  "[:%=](sht, BAT[void,sht]) : BAT[void,sht]",		  "optimized multiplexed left-scalar in-place mod (':%=') on [void,sht] BAT (overwrites second operand)"	  ]
@@ -594,11 +607,26 @@ Module: "lock"
 [ "sema_down",	  "COMMAND:   ",  "sema_down(sema) : void",	  "decrease the semaphpore if >0; else block"				  ]
 [ "sema_up",	  "COMMAND:   ",  "sema_up(sema) : void",	  "increase the semaphore"						  ]
 
+Module: "logger"
+
+[ 6 ]
+[ 6 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function			type		signature							help													  # name
+# str			str		str								str													  # type
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "log_delta",		  "COMMAND:   ",  "log_delta(BAT[void,any::1], BAT[oid,any::1], oid) : bit",	  "log the delta in the WAL (return success)"								  ]
+[ "log_insert",		  "COMMAND:   ",  "log_insert(BAT[void,any::1], oid) : bit",			  "log the inserts in the WAL (return success)"								  ]
+[ "log_trans_end",	  "COMMAND:   ",  "log_trans_end(oid) : bit",					  "write transaction end in the WAL (return success)"							  ]
+[ "log_trans_start",	  "COMMAND:   ",  "log_trans_start(bit) : oid",					  "Log a start of a transaction, return new transaction id"						  ]
+[ "logger_start",	  "COMMAND:   ",  "logger_start(str, str) : bit",				  "Start logging; if first start, check if recovery is needed. if already logging, close the old file."	  ]
+[ "logger_start",	  "PROC:      ",  "logger_start() : void",					  "not available"											  ]
+
 Module: "mapi"
 
-[ 30 ]
-[ 30 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 32 ]
+[ 32 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature									help																																								  # name
 # str			str		str										str																																								  # type
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -621,14 +649,16 @@ Module: "mapi"
 [ "listen",		  "PROC:      ",  "listen(int, str, int, str, bit) : void",					  "Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."										  ]
 [ "listen",		  "PROC:      ",  "listen(str) : void",								  "Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called."																											  ]
 [ "listen",		  "PROC:      ",  "listen(str, bit) : void",							  "Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."																					  ]
-[ "mapi_listen",	  "PROC:      ",  "mapi_listen(int, int, str) : void",						  "Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked."																  ]
-[ "mapi_listen",	  "PROC:      ",  "mapi_listen(int, int, str, bit) : void",					  "Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."										  ]
-[ "mapi_listen2",	  "BUILTIN:   ",  "mapi_listen2(int port, str sockfile, int maxusers, str cmd, bit open) ",	  "Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked.\n <sockfile> is the name of a Unix socket.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."		  ]
+[ "mapi_listen",	  "PROC:      ",  "mapi_listen(int, int, str) : void",							  "not available"																																											  ]
+[ "mapi_listen",	  "PROC:      ",  "mapi_listen(int, int, str, bit) : void",						  "Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked."																					  ]
+[ "mapi_listen",	  "PROC:      ",  "mapi_listen(int, int, str, bit, ptr) : void",					  "Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."										  ]
+[ "mapi_listen2",	  "BUILTIN:   ",  "mapi_listen2(int port, str sockfile, int maxusers, str cmd, bit open, ptr handle) ",	  "Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked.\n <sockfile> is the name of a Unix socket.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."		  ]
 [ "mapi_listen_ssl",	  "BUILTIN:   ",  "mapi_listen_ssl(int port, int maxusers, str keyfile, str certfile, str cmd) ", "Start the Mapi listener on <port> for <maxusers> using SSL.\n<keyfile> and <certfile> give the path names for files with the server key and certificates in PEM format.\nFor a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
 [ "mapi_server",	  "PROC:      ",  "mapi_server(int, int) : void",						  "not available"																																						  ]
 [ "mapi_start",		  "PROC:      ",  "mapi_start() : void",							  "not available"																																						  ]
 [ "mapi_start",		  "PROC:      ",  "mapi_start(bit) : void",							  "not available"																																						  ]
 [ "mapi_stream_read",	  "PROC:      ",  "mapi_stream_read(Stream) : str",						  "Read a string from <S> until a '1' character."																																		  ]
+[ "milclient",		  "BUILTIN:   ",  "milclient(stream in, stream out) : void ",					  "mapi-client"																																												  ]
 [ "stream_line",	  "PROC:      ",  "stream_line(Stream) : str",							  "Read a string from <S> until a newline."																																			  ]
 [ "stream_strip",	  "PROC:      ",  "stream_strip(Stream, str) : str",						  "Read a string from <S> until the <stop> word.\nThe <stop> word is stripped from the result string."																												  ]
 [ "stream_until",	  "COMMAND:   ",  "stream_until(Stream, str) : str",						  "read a string from <S> until the <stop> word"																																		  ]
@@ -709,8 +739,8 @@ Module: "mmath"
 
 Module: "monettime"
 
-[ 110 ]
-[ 110 ]
+[ 118 ]
+[ 118 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function				type		signature														help													  # name
 # str				str		str															str													  # type
@@ -765,6 +795,7 @@ Module: "monettime"
 [ "date_sub_sec_interval",	  "PROC:      ",  "date_sub_sec_interval(date, lng) : date",										  "not available"											  ]
 [ "day",			  "COMMAND:   ",  "day(date) : int",													  "extracts day from date (value between 1 and 31)"							  ]
 [ "day",			  "COMMAND:   ",  "day(rule) : int",													  "extract day from rule (!DS2.2)."									  ]
+[ "day",			  "PROC:      ",  "day(lng) : int",													  "not available"											  ]
 [ "day",			  "PROC:      ",  "day(timestamp) : int",												  "not available"											  ]
 [ "dayname",			  "COMMAND:   ",  "dayname(int) : str",													  "Returns day name from a number between [1-7], str(nil) otherwise (!DS2.2)."				  ]
 [ "daynum",			  "COMMAND:   ",  "daynum(str) : int",													  "Returns number of day [1-7] from a string; or nil if does not match any (!DS2.2)."			  ]
@@ -782,6 +813,7 @@ Module: "monettime"
 [ "end_dst",			  "COMMAND:   ",  "end_dst(tzone) : rule",												  "extract rule that determines end of DST from tzone (!DS2.2)."					  ]
 [ "epoch",			  "PROC:      ",  "epoch(timestamp) : int",												  "not available"											  ]
 [ "hours",			  "COMMAND:   ",  "hours(daytime) : int",												  "extracts hour from daytime (value between 0 and 23)"							  ]
+[ "hours",			  "PROC:      ",  "hours(lng) : int",													  "not available"											  ]
 [ "hours",			  "PROC:      ",  "hours(timestamp) : int",												  "not available"											  ]
 [ "isnil",			  "COMMAND:   ",  "isnil(date) : bit",													  "date nil test (!DS2.2)"										  ]
 [ "isnil",			  "COMMAND:   ",  "isnil(daytime) : bit",												  "daytime nil test (!DS2.2)"										  ]
@@ -792,13 +824,16 @@ Module: "monettime"
 [ "minutes",			  "COMMAND:   ",  "minutes(daytime) : int",												  "extracts minutes from daytime (value between 0 and 59)"						  ]
 [ "minutes",			  "COMMAND:   ",  "minutes(rule) : int",												  "extract minutes from rule (!DS2.2)."									  ]
 [ "minutes",			  "COMMAND:   ",  "minutes(tzone) : int",												  "extract number of minutes that tzone is offset wrt GMT (!DS2.2)."					  ]
+[ "minutes",			  "PROC:      ",  "minutes(lng) : int",													  "not available"											  ]
 [ "minutes",			  "PROC:      ",  "minutes(timestamp) : int",												  "not available"											  ]
 [ "monettime_synonyms",		  "COMMAND:   ",  "monettime_synonyms(bit) : void",											  "Allow synonyms for the parse format of date/timestamp in addition ot their print format (!DS2.2)."	  ]
 [ "month",			  "COMMAND:   ",  "month(date) : int",													  "extracts month from date (value between 1 and 12)"							  ]
 [ "month",			  "COMMAND:   ",  "month(rule) : int",													  "extract month from rule (!DS2.2)."									  ]
+[ "month",			  "PROC:      ",  "month(int) : int",													  "not available"											  ]
 [ "month",			  "PROC:      ",  "month(timestamp) : int",												  "not available"											  ]
 [ "monthname",			  "COMMAND:   ",  "monthname(int) : str",												  "Returns month name from a number between [1-12], str(nil) otherwise (!DS2.2)."			  ]
 [ "monthnum",			  "COMMAND:   ",  "monthnum(str) : int",												  "Returns month number [1-12] from a string; or nil if does not match any (!DS2.2)."			  ]
+[ "msec",			  "COMMAND:   ",  "msec() : lng",													  "get time of day in msec since 1-1-1970."								  ]
 [ "msecs",			  "PROC:      ",  "msecs(int, int, int, int, int) : lng",										  "not available"											  ]
 [ "olddate",			  "COMMAND:   ",  "olddate(str) : date",												  "create a date from the old instant format."								  ]
 [ "oldduration",		  "COMMAND:   ",  "oldduration(str) : int",												  "parse the old duration format and return an (estimated) number of days."				  ]
@@ -807,6 +842,7 @@ Module: "monettime"
 [ "rule",			  "PROC:      ",  "rule(int, str, int, int) : rule",											  "not available"											  ]
 [ "rule",			  "PROC:      ",  "rule(int, str, int, int, int) : rule",										  "not available"											  ]
 [ "seconds",			  "COMMAND:   ",  "seconds(daytime) : int",												  "extracts seconds from daytime (value between 0 and 59)"						  ]
+[ "seconds",			  "PROC:      ",  "seconds(lng) : int",													  "not available"											  ]
 [ "seconds",			  "PROC:      ",  "seconds(timestamp) : int",												  "not available"											  ]
 [ "start_dst",			  "COMMAND:   ",  "start_dst(tzone) : rule",												  "extract rule that determines start of DST from tzone (!DS2.2)."					  ]
 [ "time_add_sec_interval",	  "PROC:      ",  "time_add_sec_interval(daytime, lng) : daytime",									  "not available"											  ]
@@ -814,6 +850,7 @@ Module: "monettime"
 [ "timestamp",			  "COMMAND:   ",  "timestamp(date, daytime) : timestamp",										  "creates a timestamp from (date,daytime) parameters (in the local timezone)."				  ]
 [ "timestamp",			  "COMMAND:   ",  "timestamp(date, daytime, tzone) : timestamp",									  "creates a timestamp from (date,daytime,tzone) parameters (!DS2.2)."					  ]
 [ "timestamp",			  "PROC:      ",  "timestamp(int) : timestamp",												  "not available"											  ]
+[ "timestamp",			  "PROC:      ",  "timestamp(lng) : timestamp",												  "not available"											  ]
 [ "timestamp_add_sec_interval",	  "PROC:      ",  "timestamp_add_sec_interval(timestamp, lng) : timestamp",								  "not available"											  ]
 [ "timestamp_sub_month_interval", "PROC:      ",  "timestamp_sub_month_interval(timestamp, int) : timestamp",								  "not available"											  ]
 [ "timestamp_sub_sec_interval",	  "PROC:      ",  "timestamp_sub_sec_interval(timestamp, lng) : timestamp",								  "not available"											  ]
@@ -824,6 +861,7 @@ Module: "monettime"
 [ "weekday",			  "COMMAND:   ",  "weekday(rule) : int",												  "extract weekday from rule (!DS2.2)."									  ]
 [ "weekofyear",			  "COMMAND:   ",  "weekofyear(date) : int",												  "Returns the week number in the year."								  ]
 [ "year",			  "COMMAND:   ",  "year(date) : int",													  "extracts year from date (nonzero value between -5867411 and +5867411)."				  ]
+[ "year",			  "PROC:      ",  "year(int) : int",													  "not available"											  ]
 [ "year",			  "PROC:      ",  "year(timestamp) : int",												  "not available"											  ]
 
 Module: "pcl"
@@ -853,8 +891,8 @@ Module: "pcre"
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "pcre_compile", "COMMAND:   ",  "pcre_compile(str) : pcre",					  "compile a pattern"						  ]
 [ "pcre_match",	  "COMMAND:   ",  "pcre_match(pcre, str) : bit",				  "match a pattern"						  ]
-[ "pcre_replace", "COMMAND:   ",  "pcre_replace(BAT[any::1,str], str, str) : BAT[any::1,str]",	  "Replace _all_ matches of \"pattern\" in every string contained in \"origin_strs\" with \"replacement\".\n    If no matches found in a string, the string is just copied to the returned BAT"	  ]
-[ "pcre_replace", "COMMAND:   ",  "pcre_replace(str, str, str) : str",				  "Replace _all_ matches of \"pattern\" in \"origin_str\" with \"replacement\". \n    If no matches found, the original string is returned."							  ]
+[ "pcre_replace", "COMMAND:   ",  "pcre_replace(BAT[any::1,str], str, str, str) : BAT[any::1,str]",	  "Replace _all_ matches of \"pattern\" in every string contained in\\n   \"origin_strs\" with \"replacement\".\n\\n   If no matches found in a string, the string is copied to the returned BAT."																																																																				  ]
+[ "pcre_replace", "COMMAND:   ",  "pcre_replace(str, str, str, str) : str",				  "Replace _all_ matches of \"pattern\" in \"origin_str\" with\\n\t\"replacement\".\n\\n    Parameter \"flags\" accept these flags: 'i', 'm', 's', and 'x'.\n\\n\t'e': if present, an empty string is considered to be a valid match\n\\n\t'i': if present, the match operates in case-insensitive mode. Otherwise, in\\n\t     case-sensitive mode.\n\\n    'm': if present, the match operates in multi-line mode.\n\\n\t's': if present, the match operates in \"dot-all\"\n\tThe specifications of the flags can be found in \"man pcreapi\"\n\\n\tThe flag letters may be repeated.\n\\n\tNo other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".\n\\n\tReturns the replaced string, or if no matches found, the original string."	  ]
 [ "pcre_select",  "COMMAND:   ",  "pcre_select(str, BAT[any::1,str]) : BAT[any::1,str]",	  "Select tuples based on the pattern"				  ]
 [ "pcre_uselect", "COMMAND:   ",  "pcre_uselect(str, BAT[any::1,str]) : BAT[any::1,void]",	  "Select tuples based on the pattern, only returning the head"	  ]
 
@@ -1151,9 +1189,9 @@ Module: "salgebra"
 [ "rename",		  "COMMAND:   ",  "rename(clusterhash, str) : void",				  "Try to name ch; fail upon error."					  ]
 [ "select",		  "PROC:      ",  "select(clusterhash, any::1) : BAT[oid,any::1]",		  "Select using a clusterhash uselect plus a cast."			  ]
 [ "test_salgebra",	  "PROC:      ",  "test_salgebra() : void",					  "not available"							  ]
-[ "ujoin",		  "COMMAND:   ",  "ujoin(clusterhash, BAT[any,any]) : BAT[oid,void]",		  "Return join(ch, b).mark(nil) with propagated clustering."		  ]
-[ "uselect",		  "COMMAND:   ",  "uselect(clusterhash, any) : BAT[oid,void]",			  "Return select(ch, v).mark(nil) with propagated clustering."		  ]
-[ "usortedjoin",	  "COMMAND:   ",  "usortedjoin(clusterhash, BAT[any,any]) : BAT[oid,void]",	  "Return join(ch, b).mark(nil).sort with propagated clustering."	  ]
+[ "ujoin",		  "COMMAND:   ",  "ujoin(clusterhash, BAT[any,any]) : BAT[oid,void]",		  "Return join(ch, b).project(nil) with propagated clustering."		  ]
+[ "uselect",		  "COMMAND:   ",  "uselect(clusterhash, any) : BAT[oid,void]",			  "Return select(ch, v).project(nil) with propagated clustering."		  ]
+[ "usortedjoin",	  "COMMAND:   ",  "usortedjoin(clusterhash, BAT[any,any]) : BAT[oid,void]",	  "Return join(ch, b).project(nil).sort with propagated clustering."	  ]
 
 Module: "stats"
 
@@ -1266,12 +1304,13 @@ Module: "upgrade"
 
 Module: "url"
 
-[ 18 ]
-[ 18 ]
+[ 20 ]
+[ 20 ]
 #---------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature				help							  # name
 # str		str		str					str							  # type
 #---------------------------------------------------------------------------------------------------------------------------------#
+[ "escape",	  "COMMAND:   ",  "escape(str) : str",			  "Convert characters in the given STR which have special meanings in a URL to their hexadecimal values"  ]
 [ "getAnchor",	  "COMMAND:   ",  "getAnchor(url) : str",		  "Extract the anchor (reference) from the URL"		  ]
 [ "getBasename",  "COMMAND:   ",  "getBasename(url) : str",		  "Extract the base file name of the URL"		  ]
 [ "getContent",	  "COMMAND:   ",  "getContent(url) : str",		  "Get the URL resource in a local file"		  ]
@@ -1290,6 +1329,7 @@ Module: "url"
 [ "isaURL",	  "COMMAND:   ",  "isaURL(url) : bit",			  "Check conformity of the URL syntax"			  ]
 [ "newurl",	  "COMMAND:   ",  "newurl(str, str, int, str) : url",	  "Construct a URL from protocol, host,port,and file"	  ]
 [ "newurl",	  "COMMAND:   ",  "newurl(str, str, str) : url",	  "Construct a URL from protocol, host,and file"	  ]
+[ "unescape",	  "COMMAND:   ",  "unescape(str) : str",		  "Convert the hexadecimal values in the given STR to ASCI chracters"					  ]
 
 Module: "xtables"
 

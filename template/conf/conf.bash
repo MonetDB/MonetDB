@@ -11,7 +11,7 @@
 # The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2005 CWI.
+# Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
 #
@@ -46,6 +46,7 @@
 #
 #	COMP="GNU"	or	COMP="ntv"
 #	BITS="32"	or	BITS="64"
+#	OIDS="32"	or	OIDS="64"
 #	LINK="dynamic"	or	LINK="static"
 #	DEBUG="somevalue" 	or not set
 #	WARNING="somevalue" 	or not set
@@ -56,7 +57,7 @@
 # (If not or wrongly set, "GNU 32 dynamic" is used as default.)
 #
 
-if [ ! -f configure.ag  -a  ! -x configure ] ; then
+if [ ! -f conf/conf.bash ] ; then
 	echo ''
 	echo 'conf/conf.bash has to be "sourced" in the top-level directory of the checked-out ${what} source tree.'
 	echo ''
@@ -74,23 +75,26 @@ else
 	wh_t="`basename $base`"
 fi
 what="`echo ${wh_t} | tr '[:lower:]' '[:upper:]' | tr '.-' '_'`"
-if [ "${what}" = "MONET5" ] ; then
-	pkgdir="MonetDB5"
-  else
-	pkgdir="MonetDB"
-fi
 
-if [ "${what}" != "MONETDB" ] ; then
-	if [ ! "${MONETDB_PREFIX}" ] ; then
-		MONETDB_PREFIX=`monetdb-config --prefix`
+if [ "${what}" != "BUILDTOOLS" ] ; then
+	if [ "${what}" = "MONET5" ] ; then
+		pkgdir="MonetDB5"
+	  else
+		pkgdir="MonetDB"
 	fi
-	if [ ! -x ${MONETDB_PREFIX}/bin/monetdb-config ] ; then
-		echo ''
-		echo 'Could not find Monet installation.'
-		echo ''
-		wh_t='' ; unset wh_t
-		what='' ; unset what
-		return 1
+
+	if [ "${what}" != "MONETDB" ] ; then
+		if [ ! "${MONETDB_PREFIX}" ] ; then
+			MONETDB_PREFIX=`monetdb-config --prefix`
+		fi
+		if [ ! -x ${MONETDB_PREFIX}/bin/monetdb-config ] ; then
+			echo ''
+			echo 'Could not find Monet installation.'
+			echo ''
+			wh_t='' ; unset wh_t
+			what='' ; unset what
+			return 1
+		fi
 	fi
 fi
 
@@ -100,6 +104,7 @@ eval WHAT_PREFIX="\${${what}_PREFIX}"
 
 binpath=""
 libpath=""
+pytpath=""
 modpath=""
 mtest_modpath=""
 conf_opts=""
@@ -109,7 +114,7 @@ hw="`uname -m`"
 host="`hostname`"
 domain="`domainname`"
 
-# check for not or incorrectly set variables (${what}_BUILD, ${what}_PREFIX, COMP, BITS, LINK)
+# check for not or incorrectly set variables (${what}_BUILD, ${what}_PREFIX, COMP, BITS, OIDS, LINK)
 
 if [ ! "${WHAT_BUILD}" ] ; then
 	echo ''
@@ -125,16 +130,10 @@ if [ ! "${WHAT_PREFIX}" ] ; then
 fi
 
 if [ "${COMP}" != "GNU"  -a  "${COMP}" != "ntv"  -a  "${os}${COMP}" != "LinuxPGI" ] ; then
+	COMP="GNU"
 	echo ''
 	echo 'COMP not set to either "GNU" or "ntv" (native) to select the desired compiler.'
-	echo 'Using COMP="GNU" (default).'
-	COMP="GNU"
-fi
-if [ "${BITS}" != "32"   -a  "${BITS}" != "64"  ] ; then
-	echo ''
-	echo 'BITS not set to either "32" or "64" to select the desired binary type.'
-	echo 'Using BITS="32" (default).'
-	BITS="32"
+	echo 'Using COMP="'${COMP}'" (default).'
 fi
 case "${LINK}" in
 d*)	LINK="d";;
@@ -146,6 +145,26 @@ s*)	LINK="s";;
 	LINK="d"
 	;;
 esac
+
+if [ "${BITS}" != "32"   -a  "${BITS}" != "64"  ] ; then
+	echo ''
+	echo 'BITS not set to either "32" or "64" to select the desired binary type.'
+	case "${os}-${hw}" in
+	Linux-*64|IRIX64-IP27|SunOS-sun4u)
+		BITS="64"
+		DFT="default";;
+	*)
+		case "${OIDS}" in
+		32|64)
+			BITS="${OIDS}"
+			DFT="=OIDS";;
+		*)
+			BITS="32"
+			DFT="default";;
+		esac
+	esac
+	echo 'Using BITS="'${BITS}'" ('${DFT}').'
+fi
 
 # exclude "illegal" combinations
 
@@ -163,6 +182,19 @@ if [ "${os}" = "Linux" ] ; then
 		echo 'Currently, we do not support 32-bit with RedHat/Fedora Linux on '"${hw}"'; hence, using BITS="64".'
 		BITS="64"
 	fi
+fi
+
+if [ "${OIDS}" != "32"   -a  "${OIDS}" != "64"  ] ; then
+	OIDS="${BITS}"
+	echo ''
+	echo 'OIDS not set to either "32" or "64" to select the desired binary type.'
+	echo 'Using OIDS="'${OIDS}'" (=BITS).'
+fi
+if [ "${BITS}${OIDS}" == "3264" ] ; then
+	echo ''
+	echo 'Using 64-bit OIDS with 32-bit compilation is not possible.'
+	echo 'Using OIDS="'${BITS}'", instead.'
+	OIDS="${BITS}"
 fi
 
 # set default compilers, configure options & paths
@@ -309,6 +341,7 @@ if [ "${os}" = "IRIX64" ] ; then
 	if [ -d "${soft32}"  -a  "${BITS}" = "64" ] ; then
 		# some tools are not in ${soft64} on medusa
 		binpath="${soft32}/bin:${binpath}"
+		libpath="${soft32}/lib:${libpath}"
 	fi
 	if [ -d "${soft32}"  -a  "${COMP}${BITS}" = "GNU64" ] ; then
 		# our gcc/g++ on medusa is in ${soft32} (also for 64 bit)
@@ -389,6 +422,9 @@ fi
 if [ "${BITS}" = "64" ] ; then
 	conf_opts="${conf_opts} --enable-bits=${BITS}"
 fi
+if [ "${BITS}${OIDS}" = "6432" ] ; then
+	conf_opts="${conf_opts} --enable-oid32"
+fi
 
 if [ "${DEBUG}" ] ; then
 	conf_opts="${conf_opts} --enable-debug"
@@ -410,7 +446,7 @@ if [ "${INSTRUMENT}" ] ; then
 	conf_opts="${conf_opts} --enable-instrument"
 fi
 
-if [ "${what}" != "MONETDB" ] ; then
+if [ "${what}" != "BUILDTOOLS"  -a  "${what}" != "MONETDB" ] ; then
 	# tell configure where to find MonetDB
 	conf_opts="${conf_opts} --with-monet=${MONETDB_PREFIX}"
 	if [ "${what}" != "MONET5"  -a  "${MONET5_PREFIX}" ] ; then
@@ -422,28 +458,34 @@ fi
 # prepend target bin-dir to PATH
 binpath="${WHAT_PREFIX}/bin:${binpath}"
 
-# the following is nolonger needed for Monet,
-# but still needed for the rest:
-if [ "${what}" != "MONETDB"  -a  "${WHAT_PREFIX}" != "${MONETDB_PREFIX}" ] ; then
-	# set MONETDB_MOD_PATH and prepend it to LD_LIBRARY_PATH
-	modpath="${WHAT_PREFIX}/lib/${pkgdir}"
-	libpath="${WHAT_PREFIX}/lib:${modpath}:${libpath}"
-	mtest_modpath="--monet_mod_path=${modpath}:`${MONETDB_PREFIX}/bin/monetdb-config --modpath`"
-fi
-if [ "${os}" = "IRIX64" ] ; then
-	# IRIX64 requires this to find dependend modules
-	if [ "${what}" = "MONETDB" ] ; then
-		libpath="${WHAT_PREFIX}/lib/${pkgdir}:${libpath}"
-	  else
-		libpath="${MONETDB_PREFIX}/lib/${pkgdir}:${libpath}"
+if [ "${what}" != "BUILDTOOLS" ] ; then
+	# the following is nolonger needed for Monet,
+	# but still needed for the rest:
+	if [ "${what}" != "MONETDB"  -a  "${WHAT_PREFIX}" != "${MONETDB_PREFIX}" ] ; then
+		# set MONETDB_MOD_PATH and prepend it to LD_LIBRARY_PATH
+		modpath="${WHAT_PREFIX}/lib/${pkgdir}"
+		libpath="${WHAT_PREFIX}/lib:${modpath}:${libpath}"
+		mtest_modpath="--monet_mod_path=${modpath}:`${MONETDB_PREFIX}/bin/monetdb-config --modpath`"
 	fi
-fi
-if [ "${os}${COMP}${BITS}" = "SunOSntv64" ] ; then
-	# native 64-bit version on SunOS needs this to find libmonet
-	if [ "${what}" = "MONETDB" ] ; then
-		libpath="${WHAT_PREFIX}/lib:${libpath}"
-	  else
-		libpath="${MONETDB_PREFIX}/lib:${libpath}"
+	if [ "${os}" = "IRIX64" ] ; then
+		# IRIX64 requires this to find dependend modules
+		if [ "${what}" = "MONETDB" ] ; then
+			libpath="${WHAT_PREFIX}/lib/${pkgdir}:${libpath}"
+		  else
+			libpath="${MONETDB_PREFIX}/lib/${pkgdir}:${libpath}"
+		fi
+	fi
+	if [ "${os}${COMP}${BITS}" = "SunOSntv64" ] ; then
+		# native 64-bit version on SunOS needs this to find libmonet
+		if [ "${what}" = "MONETDB" ] ; then
+			libpath="${WHAT_PREFIX}/lib:${libpath}"
+		  else
+			libpath="${MONETDB_PREFIX}/lib:${libpath}"
+		fi
+	fi
+  else
+	if [ "`type -p python`" ] ; then
+		pytpath="${WHAT_PREFIX}/`python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"")'`"
 	fi
 fi
 
@@ -520,6 +562,22 @@ if [ "${libpath}" ] ; then
 		echo " LIBPATH=${LIBPATH}"
 	fi
 fi
+if [ "${pytpath}" ] ; then
+	if [ "${PYTHONPATH}" ] ; then
+		# prepend new pytpath to existing PYTHONPATH, if PYTHONPATH doesn't contain pytpath, yet
+		case ":${PYTHONPATH}:" in
+		*:${pytpath}:*)
+			;;
+		*)
+			PYTHONPATH="${pytpath}:${PYTHONPATH}" ; export PYTHONPATH
+			;;
+		esac
+	  else
+		# set PYTHONPATH as pytpath
+		PYTHONPATH="${pytpath}" ; export PYTHONPATH
+	fi
+	echo " PYTHONPATH=${PYTHONPATH}"
+fi
 if [ "${modpath}" ] ; then
 	if [ "${MONETDB_MOD_PATH}" ] ; then
 		# prepend new modpath to existing MONETDB_MOD_PATH, if MONETDB_MOD_PATH doesn't contain modpath, yet
@@ -537,16 +595,20 @@ if [ "${modpath}" ] ; then
 	echo " MONETDB_MOD_PATH=${MONETDB_MOD_PATH}"
 fi
 
-if [ "${MONET5_PREFIX}" ] ; then
-	monet5_config="--config=${MONET5_PREFIX}/etc/MonetDB5.conf"
+if [ "${what}" = "MONET5" ] ; then
+	monet5_config="-5 --config=${WHAT_PREFIX}/etc/MonetDB5.conf"
+  elif [ "${MONET5_PREFIX}" ] ; then
+	monet5_config="-5 --config=${MONET5_PREFIX}/etc/MonetDB5.conf"
   else
-	monet5_config=""
+	monet5_config="-4"
 fi
 
-if [ "${what}" = "MONET5" ] ; then
-	mtest_config="${monet5_config}"
-  else
-	mtest_config=""
+if [ "${what}" != "BUILDTOOLS" ] ; then
+	if [ "${what}" = "MONET5" ] ; then
+		mtest_config="${monet5_config}"
+	  else
+		mtest_config="-4"
+	fi
 fi
 
 # for convenience: store the complete configure-call in ${what}_CONFIGURE
@@ -554,14 +616,27 @@ WHAT_CONFIGURE="${base}/configure ${conf_opts} --prefix=${WHAT_PREFIX}"
 echo " ${what}_CONFIGURE=${WHAT_CONFIGURE}"
 eval "alias configure_${wh_t}='${WHAT_CONFIGURE}'"
 eval "alias configure_${wh_t}"
-eval "alias Mtest_${wh_t}='Mtest.py ${mtest_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} ${mtest_modpath}'"
-eval "alias Mtest_${wh_t}"
-if [ "${what}" = "SQL"  -a  "${MONET5_PREFIX}" ] ; then
-	eval "alias Mtest_${wh_t}5='Mtest.py ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} --monet_mod_path=${WHAT_PREFIX}/lib/${pkgdir}5:`${MONET5_PREFIX}/bin/monetdb-config --modpath`'"
-	eval "alias Mtest_${wh_t}5"
+if [ "${what}" != "BUILDTOOLS" ] ; then
+	MTEST_WHAT="Mtest.py ${mtest_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} ${mtest_modpath}"
+	echo " MTEST_${what}=${MTEST_WHAT}"
+	eval "MTEST_${what}='${MTEST_WHAT}'; export MTEST_${what}"
+	eval "alias Mtest_${wh_t}='${MTEST_WHAT}'"
+	eval "alias Mtest_${wh_t}"
+	if [ "${what}" = "SQL"  -a  "${MONET5_PREFIX}" ] ; then
+		MTEST_WHAT="Mtest.py ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} --monet_mod_path=${WHAT_PREFIX}/lib/${pkgdir}5:`${MONET5_PREFIX}/bin/monetdb5-config --modpath`"
+		echo " MTEST_${what}5=${MTEST_WHAT}"
+		eval "MTEST_${what}5='${MTEST_WHAT}'; export MTEST_${what}5"
+		eval "alias Mtest_${wh_t}5='${MTEST_WHAT}'"
+		eval "alias Mtest_${wh_t}5"
+	fi
+	MTEST_WHAT='' ; unset MTEST_WHAT
+	eval "alias Mapprove_${wh_t}='Mapprove.py ${mtest_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX}'"
+	eval "alias Mapprove_${wh_t}"
+	if [ "${what}" = "SQL"  -a  "${MONET5_PREFIX}" ] ; then
+		eval "alias Mapprove_${wh_t}5='Mapprove.py ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX}'"
+		eval "alias Mapprove_${wh_t}5"
+	fi
 fi
-eval "alias Mapprove_${wh_t}='Mapprove.py --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX}'"
-eval "alias Mapprove_${wh_t}"
 
 mkdir -p ${WHAT_BUILD}
 

@@ -9,8 +9,8 @@ stdout of test 'cross` in directory 'src/gdk` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-var a:=new(void,int).seqbase(0@0).reverse();
-a.print();
+var a:=new(void,int).seqbase(0@0);
+reverse(a).print();
 #-----------------#
 # t	tmp_29	  # name
 # int	void	  # type
@@ -22,7 +22,7 @@ b.print();
 # void	int	  # type
 #-----------------#
 
-cross(a,a).print();
+cross(reverse(a),reverse(a)).print();
 #-----------------#
 # h	tmp_28	  # name
 # int	oid	  # type
@@ -32,25 +32,25 @@ cross(b,b).print();
 # h	tmp_28	  # name
 # oid	int	  # type
 #-----------------#
-cross(a,b).print();
+cross(reverse(a),b).print();
 #-----------------#
 # h	tmp_28	  # name
 # int	int	  # type
 #-----------------#
-cross(b,a).print();
+cross(b,reverse(a)).print();
 #-----------------#
 # h	tmp_28	  # name
 # oid	oid	  # type
 #-----------------#
 
-a.insert(1,nil);
-a.print();
+a.append(1);
+reverse(a).print();
 #-----------------#
 # t	tmp_29	  # name
 # int	void	  # type
 #-----------------#
 [ 1,	  0@0	  ]
-cross(a,a).print();
+cross(reverse(a),reverse(a)).print();
 #-----------------#
 # h	tmp_28	  # name
 # int	void	  # type
@@ -61,25 +61,25 @@ cross(b,b).print();
 # h	tmp_28	  # name
 # oid	int	  # type
 #-----------------#
-cross(a,b).print();
+cross(reverse(a),b).print();
 #-----------------#
 # t	tmp_28	  # name
 # int	int	  # type
 #-----------------#
-cross(b,a).print();
+cross(b,reverse(a)).print();
 #-----------------#
 # h	tmp_28	  # name
 # void	oid	  # type
 #-----------------#
 
-b.insert(nil,11);
+b.append(11);
 b.print();
 #-----------------#
 # h	tmp_30	  # name
 # void	int	  # type
 #-----------------#
 [ 0@0,	  11	  ]
-cross(a,a).print();
+cross(reverse(a),reverse(a)).print();
 #-----------------#
 # h	tmp_28	  # name
 # int	void	  # type
@@ -91,28 +91,28 @@ cross(b,b).print();
 # void	int	  # type
 #-----------------#
 [ 0@0,	  11	  ]
-cross(a,b).print();
+cross(reverse(a),b).print();
 #-----------------#
 # h	tmp_28	  # name
 # int	int	  # type
 #-----------------#
 [ 1,	  11	  ]
-cross(b,a).print();
+cross(b,reverse(a)).print();
 #-----------------#
 # h	tmp_28	  # name
 # void	oid	  # type
 #-----------------#
 [ 0@0,	  0@0	  ]
 
-a.insert(2,nil); 
-a.print();
+a.append(2); 
+reverse(a).print();
 #-----------------#
 # t	tmp_29	  # name
 # int	void	  # type
 #-----------------#
 [ 1,	  0@0	  ]
 [ 2,	  1@0	  ]
-cross(a,a).print();
+cross(reverse(a),reverse(a)).print();
 #-----------------#
 # h	tmp_28	  # name
 # int	oid	  # type
@@ -127,14 +127,14 @@ cross(b,b).print();
 # void	int	  # type
 #-----------------#
 [ 0@0,	  11	  ]
-cross(a,b).print();
+cross(reverse(a),b).print();
 #-----------------#
 # h	tmp_28	  # name
 # int	int	  # type
 #-----------------#
 [ 1,	  11	  ]
 [ 2,	  11	  ]
-cross(b,a).print();
+cross(b,reverse(a)).print();
 #-----------------#
 # t	tmp_28	  # name
 # oid	void	  # type
@@ -142,7 +142,7 @@ cross(b,a).print();
 [ 0@0,	  0@0	  ]
 [ 0@0,	  1@0	  ]
 
-b.insert(nil,22);
+b.append(22);
 b.print();
 #-----------------#
 # h	tmp_30	  # name
@@ -150,7 +150,7 @@ b.print();
 #-----------------#
 [ 0@0,	  11	  ]
 [ 1@0,	  22	  ]
-cross(a,a).print();
+cross(reverse(a),reverse(a)).print();
 #-----------------#
 # h	tmp_28	  # name
 # int	oid	  # type
@@ -168,7 +168,7 @@ cross(b,b).print();
 [ 0@0,	  22	  ]
 [ 1@0,	  11	  ]
 [ 1@0,	  22	  ]
-cross(a,b).print();
+cross(reverse(a),b).print();
 #-----------------#
 # h	tmp_28	  # name
 # int	int	  # type
@@ -177,7 +177,7 @@ cross(a,b).print();
 [ 1,	  22	  ]
 [ 2,	  11	  ]
 [ 2,	  22	  ]
-cross(b,a).print();
+cross(b,reverse(a)).print();
 #-----------------#
 # h	tmp_28	  # name
 # oid	oid	  # type

@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f gdk_atoms
@@ -63,6 +63,7 @@ we use the following #defines for comparing atoms:
 #define lngStrlen	48
 #define fltStrlen	48
 #define dblStrlen	96
+
 @- 
 The system comes with the traditional atomic types: int (4 bytes), bool(1 
 byte) and str (variable). In addition, we support the notion of an OID 
@@ -502,7 +503,6 @@ ATOMproperty(str id, str property, GDKfcn arg)
 		int tpe = (int) (ssize_t) arg;
 
 		BATatoms[t] = BATatoms[tpe];	/* copy from example */
-		BATatoms[t].storage = tpe;
 		strcpy(BATatoms[t].name, id);	/* restore name */
 	} else if (strcmp("fromstr", property) == 0) {
 		BATatoms[t].atomFromStr = (int (*)(char *, int *, void **)) arg;
@@ -585,14 +585,6 @@ char *
 ATOMname(int t)
 {
 	return (t >= 0 && t < GDKatomcnt && BATatoms[t].name) ? BATatoms[t].name : "null";
-}
-
-int
-ATOMstorage(int t)
-{
-	while (t != BATatoms[t].storage)
-		t = BATatoms[t].storage;
-	return t;
 }
 
 int
@@ -687,13 +679,15 @@ The routine atomnil returns a pointer to the nil value representation.
 #define GDK_dbl_min (-GDK_dbl_max)
 /* GDK_oid_max see below */
 #define GDK_oid_min ((oid) 0)
-/* representation of the nil */ gdk_export chr chr_nil;
-gdk_export short sht_nil;
-gdk_export int int_nil;
-gdk_export flt flt_nil;
-gdk_export dbl dbl_nil;
-gdk_export lng lng_nil;
-gdk_export char str_nil[2];
+
+/* representation of the nil */ 
+gdk_export const chr chr_nil;
+gdk_export const short sht_nil;
+gdk_export const int int_nil;
+gdk_export const flt flt_nil;
+gdk_export const dbl dbl_nil;
+gdk_export const lng lng_nil;
+gdk_export const char str_nil[2];
 
 /* derived NIL values - OIDDEPEND */
 #define bit_nil	((bit) chr_nil)
@@ -704,21 +698,22 @@ gdk_export char str_nil[2];
 #endif
 #define bat_nil	((bat) int_nil)
 #if SIZEOF_OID == SIZEOF_INT
-#define oid_nil	((oid) int_nil)
+#define oid_nil ((oid) GDK_int_min)
 #define GDK_oid_max ((oid) GDK_int_max)
 #else
-#define oid_nil	((oid) lng_nil)
+#define oid_nil ((oid) GDK_lng_min)
 #define GDK_oid_max ((oid) GDK_lng_max)
 #endif
+
 #define void_nil	oid_nil
 @c
-chr chr_nil = GDK_chr_min;
-sht sht_nil = GDK_sht_min;
-int int_nil = GDK_int_min;
-flt flt_nil = GDK_flt_min;
-dbl dbl_nil = GDK_dbl_min;
-lng lng_nil = GDK_lng_min;
-char str_nil[2] = { GDK_chr_min, 0 };
+const chr chr_nil = GDK_chr_min;
+const sht sht_nil = GDK_sht_min;
+const int int_nil = GDK_int_min;
+const flt flt_nil = GDK_flt_min;
+const dbl dbl_nil = GDK_dbl_min;
+const lng lng_nil = GDK_lng_min;
+const char str_nil[2] = { GDK_chr_min, 0 };
 
 ptr
 ATOMnil(int t)
@@ -765,6 +760,7 @@ from the sets of operations on the father type.
 @{
 @h
 /* use "do ... while(0)" so that lhs can safely be used in if statements */
+#define ATOMstorage(t)		BATatoms[t].storage
 #define ATOMsize(t)		BATatoms[t].size
 #define ATOMalign(t)		BATatoms[t].align
 #define ATOMfromstr(t,s,l,src)	BATatoms[t].atomFromStr(src,l,s)
@@ -815,7 +811,7 @@ the commit tremendously complicated.
 		} else if (t_ == TYPE_str) {				\
 			if (strPut(P2, (var_t *) (P3), (str) (P4)) == 0) \
 				goto bunins_failed;			\
-		} else {						\
+		} else if (t_) {					\
 			if (BATatoms[t_].atomPut) {			\
 				if ((*BATatoms[t_].atomPut) (P2, (var_t *) P3, P4) == 0) \
 					goto bunins_failed;		\
@@ -1165,14 +1161,30 @@ chrToStr(str *dst, int *len, chr *src)
 	if (*src == chr_nil) {
 		strcpy(*dst, "nil");
 		return 3;
-	} else if (*src & 0x80) {
-		(*dst)[0] = 0xC0 | ((*src >> 6) & 0x3);
-		(*dst)[1] = 0x80 | (*src & 0x3F);
-		(*dst)[2] = 0;
-		return 2;
 	} else {
-		(*dst)[0] = *src;
-		(*dst)[1] = 0;
+		str p = *dst;
+
+		*p++ = '\'';
+		if (*src & 0x80) {
+			*p++ = 0xC0 | ((*src >> 6) & 0x3);
+			*p++ = 0x80 | (*src & 0x3F);
+			*p++ = '\'';
+			*p = 0;
+		} else {
+			if (0 <= *src && *src < ' ') {
+				snprintf(p, chrStrlen - 3,
+					 "\\%03o", * (unsigned char *) src);
+				p += 4;
+			} else if (*src == '\\' || *src == '\'') {
+				*p++ = '\\';
+				*p++ = *src;
+			} else {
+				*p++ = *src;
+			}
+			*p++ = '\'';
+			*p = 0;
+		}
+		return (int) (p - *dst);
 	}
 	return 1;
 }

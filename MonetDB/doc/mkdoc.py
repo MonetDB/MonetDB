@@ -11,7 +11,7 @@
 # The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2005 CWI.
+# Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
 import sys, os, string
@@ -126,9 +126,6 @@ for f in ['monet.gif', 'mel.gif']:
     copyfile(os.path.join(srcdir, 'doc', f),
              os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core', d, f))
 
-runMx(os.path.join(srcdir, 'src', 'mel'), 'mel',
-      os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core', 'mel'), '-tool')
-
 for f in ['bat.png', 'bat1.png', 'bat2.png']:
     copyfile(os.path.join(srcdir, 'src', 'gdk', f),
              os.path.join(tmpdir, f))
@@ -160,9 +157,10 @@ runMx(os.path.join(srcdir, 'src', 'modules', 'calibrator'), 'calib',
       os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core', 'Modules'))
 
 for f in ['aggrX3', 'aggr', 'alarm', 'algebra', 'arith', 'ascii_io', 'bat',
-          'blob', 'counters', 'decimal', 'enum', 'builtin',
-          'lock', 'mmath', 'monettime', 'pcl', 'radix', 'streams', 'str', 'sys',
-          'tcpip', 'trans', 'unix', 'upgrade', 'url', 'xtables']:
+          'blob', 'counters', 'decimal', 'enum', 'builtin', 'lock',
+          'logger', 'mmath', 'monettime', 'pcl', 'pcre', 'radix',
+          'streams', 'str', 'sys', 'tcpip', 'trans', 'unix',
+          'upgrade', 'url', 'xtables']:
     runMx(os.path.join(srcdir, 'src', 'modules', 'plain'), f,
           os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core', 'Modules'))
 

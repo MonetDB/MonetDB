@@ -2,7 +2,7 @@
 #The below MIL script stress-tests all operations on decimals, as well 
 #as the performance of grouping, sort and join on decimal columns. 
 
-module(decimal,xtables,alarm,mmath);
+module(decimal);module(xtables);module(alarm);module(mmath);
 
 decimal_minrepeat(20);
 

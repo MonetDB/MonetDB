@@ -11,7 +11,7 @@ dnl
 dnl The Original Code is the MonetDB Database System.
 dnl
 dnl The Initial Developer of the Original Code is CWI.
-dnl Portions created by CWI are Copyright (C) 1997-2005 CWI.
+dnl Portions created by CWI are Copyright (C) 1997-2006 CWI.
 dnl All Rights Reserved.
 
 dnl VERSION_TO_NUMBER macro (copied from libxslt)
@@ -100,7 +100,7 @@ AC_ARG_WITH(monet5,
 	have_monet5="$withval")
 if test "x$have_monet5" != xno; then
   MPATH="$withval/bin:$PATH"
-  AC_PATH_PROG(MONET5_CONFIG,monetdb-config,,$MPATH)
+  AC_PATH_PROG(MONET5_CONFIG,monetdb5-config,,$MPATH)
 
   if test "x$MONET5_CONFIG" != x; then
     AC_MSG_CHECKING(whether MonetDB version $MONET5_REQUIRED_VERSION or newer is installed) 
@@ -150,13 +150,13 @@ AC_ARG_WITH(gcc,
 	AC_HELP_STRING([--with-gcc=<compiler>], [which C compiler to use])
 AC_HELP_STRING([--without-gcc], [do not use GCC]), [
 	case $withval in
-	yes)	CC=gcc CXX=g++;;
+	yes)	CC=gcc;;
 	no)	case $host_os-$host in
-		linux*-i?86*)	CC=icc	CXX=icpc;;
-		linux*-x86_64*)	CC=icc	CXX=icpc;;
-		linux*-ia64*)	CC=ecc	CXX=ecpc;;
-		aix*)		CC=xlc_r	CXX=xlC_r;;
-		*)		CC=cc	CXX=CC;;
+		linux*-i?86*)	CC=icc;;
+		linux*-x86_64*)	CC=icc;;
+		linux*-ia64*)	CC=ecc;;
+		aix*)		CC=xlc_r;;
+		*)		CC=cc;;
 		esac
 		case $host_os in
 		linux*)
@@ -165,7 +165,7 @@ AC_HELP_STRING([--without-gcc], [do not use GCC]), [
 		    dnl  __GNUC__, __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
 		    icc_ver="`$CC --version 2>/dev/null`"
 		    case $icc_ver in
-		    8.*)	CC="icc -no-gcc"	CXX="icpc -no-gcc";;
+		    8.*)	CC="icc -no-gcc";;
 		    esac
 		    ;;
 		esac
@@ -182,27 +182,14 @@ AC_HELP_STRING([--without-gcc], [do not use GCC]), [
 		    dnl  __GNUC__, __GNUC_MINOR__, and __GNUC_PATCHLEVEL__ macros.
 		    icc_ver="`$CC --version 2>/dev/null`"
 		    case $icc_ver in
-		    8.*)	CC="icc -no-gcc"	CXX="icpc -no-gcc";;
+		    8.*)	CC="icc -no-gcc";;
 		    esac
 		    ;;
 		esac
 		;;
 	esac])
 
-AC_ARG_WITH(gxx,
-	AC_HELP_STRING([--with-gxx=<compiler>], [which C++ compiler to use]), [
-	case $withval in
-	yes|no)	AC_MSG_ERROR(must supply a compiler when using --with-gxx);;
-	*)	CXX=$withval
-		case "$CXX" in
-		dnl  Portland Group compiler (pgcc/pgCC)
-		pgcc*)	CXX="$CXX -fPIC";;
-		esac
-		;;
-	esac])
-
 AC_PROG_CC()
-AC_PROG_CXX()
 AC_PROG_CPP()
 AC_PROG_GCC_TRADITIONAL()
 
@@ -216,15 +203,14 @@ dnl  *all* warnings and make them errors. This should help keeping the code
 dnl  as clean and portable as possible.
 dnl  It turned out, though, that this, especially turning all warnings into 
 dnl  errors is a bit too ambitious for configure/autoconf. Hence, we set
-dnl  the standard CFLAGS & CXXFLAGS to what configure/autoconf can cope with
+dnl  the standard CFLAGS to what configure/autoconf can cope with
 dnl  (basically everything except "-Werror"). For "-Werror" and some
 dnl  switches that disable selected warnings that haven't been sorted out,
-dnl  yet, we set X_CFLAGS & X_CXXFLAGS, which are added to the standard
-dnl  CFLAGS & CXXFLAGS once configure/autoconf are done with their job,
+dnl  yet, we set X_CFLAGS, which are added to the standard
+dnl  CFLAGS once configure/autoconf are done with their job,
 dnl  i.e., at the end of the configure.m4 file that includes this monet.m4.
-dnl  Only GNU (gcc/g++) and Intel ([ie]cc/[ie]cpc on Linux) are done so far.
+dnl  Only GNU (gcc) and Intel ([ie]cc/[ie]cpc on Linux) are done so far.
 X_CFLAGS=''
-X_CXXFLAGS=''
 NO_X_CFLAGS='_NO_X_CFLAGS_'
 NO_INLINE_CFLAGS=""
 case "$GCC-$CC-$host_os" in
@@ -254,7 +240,7 @@ yes-*-*)
 		X_CFLAGS="$X_CFLAGS -Wno-format"
 		LDFLAGS="$LDFLAGS -no-undefined -L/usr/lib/w32api"
 		;;
-	*-irix*|*-darwin*)
+	*-freebsd*|*-irix*|*-darwin*)
 		CFLAGS="$CFLAGS -std=c99"
 		;;
 	*-solaris*)
@@ -268,43 +254,35 @@ yes-*-*)
 		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
 		AC_DEFINE(__BSD_VISIBLE, 1, [Compiler flag])
 		CFLAGS="$CFLAGS -std=c99"
-		CXXFLAGS="$CXXFLAGS -ansi"
 		;;
 	[[34]].*-*)
 		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
 		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
 		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
 		CFLAGS="$CFLAGS -std=c99"
-		CXXFLAGS="$CXXFLAGS -ansi"
 		;;
 	esac
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
 	CFLAGS="$CFLAGS -Wall -W"
-	CXXFLAGS="$CXXFLAGS -Wall -W"
 	dnl  Be rigid; MonetDB code is supposed to adhere to this... ;-)
 	X_CFLAGS="$X_CFLAGS -Werror-implicit-function-declaration"
-	dnl X_CXXFLAGS="$X_CXXFLAGS -Werror-implicit-function-declaration"
 	X_CFLAGS="$X_CFLAGS -Werror"
-	X_CXXFLAGS="$X_CXXFLAGS -Werror"
 	dnl  ... however, some things are beyond our control:
 	case "$gcc_ver" in
 		dnl  Some versions of flex and bison require these:
 	3.4.*)	dnl  (Don't exist for gcc < 3.4.)
 		CFLAGS="$CFLAGS -fno-strict-aliasing"
 		X_CFLAGS="$X_CFLAGS -Wno-unused-function -Wno-unused-label"
-		X_CXXFLAGS="$X_CXXFLAGS -Wno-unused-function -Wno-unused-label"
 		;;
 	[[34]].*)
 		dnl  (Don't exist for gcc < 3.0.)
 		X_CFLAGS="$X_CFLAGS -Wno-unused-function -Wno-unused-label"
-		X_CXXFLAGS="$X_CXXFLAGS -Wno-unused-function -Wno-unused-label"
 		;;
 	*)	dnl  gcc < 3.0 also complains about "value computed is not used"
 		dnl  in src/monet/monet_context.mx:
 		dnl  #define VARfixate(X)   ((X) && ((X)->constant=(X)->frozen=TRUE)==TRUE)
 		dnl  But there is no "-Wno-unused-value" switch for gcc < 3.0 either...
 		X_CFLAGS="$X_CFLAGS -Wno-unused"
-		X_CXXFLAGS="$X_CXXFLAGS -Wno-unused"
 		;;
 	esac
 	case $gcc_ver-$host_os in
@@ -323,7 +301,6 @@ yes-*-*)
 		dnl  In some cases, there is a (possibly) uninitialized
 		dnl  variable in bison.simple ... |-(
 		X_CFLAGS="$X_CFLAGS -Wno-uninitialized"
-		X_CXXFLAGS="$X_CXXFLAGS -Wno-uninitialized"
 		;;
 	3.3*-*)
 		dnl  gcc 3.3* --- at least on Linux64 (Red Hat Enterprise
@@ -350,19 +327,17 @@ yes-*-*)
 	dnl  Let warning #140 "too many arguments in function call"
 	dnl  become an error to make configure tests work properly.
 	CFLAGS="$CFLAGS -we140"
-	CXXFLAGS="$CXXFLAGS -we140"
 	dnl  Check for PIC does not work with Version 8.1, unless we disable
 	dnl  remark #1418: external definition with no prior declaration ... !?
 	case $icc_ver in
 	8.1*)	CFLAGS="$CFLAGS -wd1418"
-		CXXFLAGS="$CXXFLAGS -wd1418"
 		;;
 	*)	;;
 	esac
 	dnl  Version 8.* doesn't find sigset_t when -ansi is set... !?
 	case $icc_ver in
 	8.*)	;;
-	*)	CFLAGS="$CFLAGS -ansi"	CXXFLAGS="$CXXFLAGS -ansi";;
+	*)	CFLAGS="$CFLAGS -ansi";;
 	esac
 	dnl Define the same settings as for gcc, as we use the same
 	dnl header files
@@ -371,22 +346,15 @@ yes-*-*)
 	AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
 	dnl  Be picky; "-Werror" seems to be too rigid for autoconf...
 	CFLAGS="$CFLAGS -c99 -Wall -w2"
-	CXXFLAGS="$CXXFLAGS -c99 -Wall -w2"
 	dnl  Be rigid; MonetDB code is supposed to adhere to this... ;-)
 	dnl  Let warning #266 "function declared implicitly" become an error.
 	X_CFLAGS="$X_CFLAGS -we266"
-	X_CXXFLAGS="$X_CXXFLAGS -we266"
 	X_CFLAGS="$X_CFLAGS -Werror"
-	X_CXXFLAGS="$X_CXXFLAGS -Werror"
 	dnl  ... however, some things aren't solved, yet:
 	dnl  (for the time being,) we need to disable some warnings (making them remarks doesn't seem to work with -Werror):
 	X_CFLAGS="$X_CFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,764,269,108,188,1357,102,70"
 	case $icc_ver in
 	8.[[1-9]]*)	X_CFLAGS="$X_CFLAGS,1572" ;;
-	esac
-	X_CXXFLAGS="$X_CXXFLAGS -wd1418,1419,279,310,981,810,444,193,111,177,171,181,764,269,108,188,1357,102,70"
-	case $icc_ver in
-	8.[[1-9]]*)	X_CXXFLAGS="$X_CXXFLAGS,1572" ;;
 	esac
 	dnl  #1418: external definition with no prior declaration
 	dnl  #1419: external declaration in primary source file
@@ -430,19 +398,15 @@ yes-*-*)
 	dnl  required for "scale" in module "decimal"
 	CFLAGS="$CFLAGS -Msignextend"
 	CFLAGS="$CFLAGS -c9x"
-	CXXFLAGS="$CXXFLAGS -c9x"
 	;;
 -*-irix*)
 	dnl  MIPS compiler on IRIX64
 	dnl  treat wranings as errors
 	X_CFLAGS="$X_CFLAGS -w2"
-	X_CXXFLAGS="$X_CXXFLAGS -w2"
 	;;
 esac
 AC_SUBST(CFLAGS)
-AC_SUBST(CXXFLAGS)
 AC_SUBST(X_CFLAGS)
-AC_SUBST(X_CXXFLAGS)
 AC_SUBST(NO_X_CFLAGS)
 
 dnl  default javac flags
@@ -490,43 +454,34 @@ yes-*-solaris*-64)
 	*)	AC_MSG_ERROR([need GCC version 3.X for 64 bits]);;
 	esac
 	CC="$CC -m$bits"
-	CXX="$CXX -m$bits"
 	;;
 -*-solaris*-64)
 	CC="$CC -xarch=v9"
-	CXX="$CXX -xarch=v9"
 	;;
 yes-*-irix*-64)
 	CC="$CC -mabi=$bits"
-	CXX="$CXX -mabi=$bits"
 	;;
 -*-irix*-64)
 	CC="$CC -$bits"
-	CXX="$CXX -$bits"
 	;;
 yes-*-aix*-64)
 	CC="$CC -maix$bits"
-	CXX="$CXX -maix$bits"
 	AR="ar -X64"
 	NM="nm -X64 -B"
 	;;
 -*-aix*-64)
 	CC="$CC -q$bits"
-	CXX="$CXX -q$bits"
 	AR="ar -X64"
 	NM="nm -X64 -B"
 	;;
 yes-*-linux*-x86_64*-*)
 	CC="$CC -m$bits"
-	CXX="$CXX -m$bits"
 	;;
 -pgcc*-linux*-x86_64*-*)
 	CC="$CC -tp=k8-$bits"
-	CXX="$CXX -tp=k8-$bits"
 	;;
 yes-*-darwin8*-powerpc*-*)
 	CC="$CC -m$bits"
-	CXX="$CXX -m$bits"
 	;;
 esac
 
@@ -603,13 +558,36 @@ AC_SUBST(thread_safe_flag_spec)
 AC_SUBST(THREAD_SAVE_FLAGS)
 AC_SUBST(NO_OPTIMIZE_FILES)
 
+AC_ARG_WITH(ant,
+	AC_HELP_STRING([--with-ant=FILE], [ant is installed as FILE]),
+	ANT="$withval",
+	ANT=ant)
+case "$ANT" in
+yes|auto)
+  ANT=ant;;
+esac
+case "$ANT" in
+no) ;;
+/*) AC_MSG_CHECKING(whether $ANT exists and is executable)
+    if test -x "$ANT"; then
+      AC_MSG_RESULT(yes)
+    else
+      AC_MSG_RESULT(no)
+      ANT=no
+    fi;;
+*)  AC_PATH_PROG(ANT,$ANT,no,$PATH);;
+esac
+AC_SUBST(ANT)
+AM_CONDITIONAL(HAVE_ANT, test x"$ANT" != xno)
+
 JAVA_VERSION=""
 JAVA="java"
 JAVAC="javac"
 JAR="jar"
+JAVADOC="javadoc"
 AC_ARG_WITH(java,
 	AC_HELP_STRING([--with-java=DIR],
-		[javac and jar are installed in DIR/bin]),
+		[java, javac, jar and javadoc are installed in DIR/bin]),
 	have_java="$withval",
 	have_java=auto)
 JPATH=$PATH
@@ -635,6 +613,7 @@ if test "x$have_java" != xno; then
 
   AC_PATH_PROG(JAVAC,javac,,$JPATH)
   AC_PATH_PROG(JAR,jar,,$JPATH)
+  AC_PATH_PROG(JAVADOC,javadoc,,$JPATH)
   if test x$have_java_1_4 != xyes; then
      if test "x$have_java" = xyes; then
 	AC_MSG_ERROR([Java version too old (1.4 required)])
@@ -659,13 +638,18 @@ if test "x$have_java" != xno; then
     JAVA=""
     JAVAC=""
     JAR=""
+    JAVADOC=""
     CLASSPATH=""
+  fi
+  if test x"$ANT" = xno; then
+    have_java="no"
   fi
 fi
 AC_SUBST(JAVAVERS)
 AC_SUBST(JAVA)
 AC_SUBST(JAVAC)
 AC_SUBST(JAR)
+AC_SUBST(JAVADOC)
 AC_SUBST(CLASSPATH)
 AM_CONDITIONAL(HAVE_JAVA,test x$have_java != xno)
 
@@ -702,111 +686,165 @@ AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
 AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
 
 
-AC_ARG_WITH(swig,
-	AC_HELP_STRING([--with-swig=FILE], [swig is installed as FILE]),
-	SWIG="$withval",
-	SWIG=swig)
-case "$SWIG" in
-yes|auto)
-  SWIG=swig;;
-esac
-case "$SWIG" in
-no) ;;
-/*) AC_MSG_CHECKING(whether $SWIG does exist and is executable)
-    if test -x "$SWIG"; then
-      AC_MSG_RESULT(yes)
-    else
-      AC_MSG_RESULT(no)
-      SWIG=no
-    fi;;
-*)  AC_PATH_PROG(SWIG,$SWIG,no,$PATH);;
-esac
-if test "x$SWIG" != xno; then
-  # we want the right version...
-  AC_MSG_CHECKING(whether $SWIG is >= 1.3.20)
-  swig_ver="`"$SWIG" -version 2>&1 | grep Version`"
-  case "$swig_ver" in
-  *Version\ 1.3.2*)
-      AC_MSG_RESULT(yes: $swig_ver);;
-  *)  AC_MSG_RESULT(no: $swig_ver)
-      SWIG=no;;
-  esac
+if test -f "$srcdir"/vertoo.data; then
+        AC_ARG_WITH(swig,
+                AC_HELP_STRING([--with-swig=FILE], [swig is installed as FILE]),
+                SWIG="$withval",
+                SWIG=swig)
+        case "$SWIG" in
+        yes|auto)
+          SWIG=swig;;
+        esac
+        case "$SWIG" in
+        no) ;;
+        /*) AC_MSG_CHECKING(whether $SWIG exists and is executable)
+            if test -x "$SWIG"; then
+              AC_MSG_RESULT(yes)
+            else
+              AC_MSG_RESULT(no)
+              SWIG=no
+            fi;;
+        *)  AC_PATH_PROG(SWIG,$SWIG,no,$PATH);;
+        esac
+        if test "x$SWIG" != xno; then
+          # we want the right version...
+          AC_MSG_CHECKING(whether $SWIG is >= 1.3.20)
+          swig_ver="`"$SWIG" -version 2>&1 | grep Version`"
+          case "$swig_ver" in
+          *Version\ 1.3.2*)
+              AC_MSG_RESULT(yes: $swig_ver);;
+          *)  AC_MSG_RESULT(no: $swig_ver)
+              SWIG=no;;
+          esac
+        fi
+        if test "x$SWIG" != xno; then
+          # ...and it must support -outdir
+          AC_MSG_CHECKING(whether $SWIG supports "-outdir")
+          case `$SWIG -help 2>&1` in
+          *-outdir*) 
+              AC_MSG_RESULT(yes);;
+          *)  AC_MSG_RESULT(no)
+              SWIG=no;;
+          esac
+        fi
+        AC_SUBST(SWIG)
+        AM_CONDITIONAL(HAVE_SWIG, test x"$SWIG" != xno)
+else
+        AM_CONDITIONAL(HAVE_SWIG, false)
 fi
-if test "x$SWIG" != xno; then
-  # ...and it must support -outdir
-  AC_MSG_CHECKING(whether $SWIG supports "-outdir")
-  case `$SWIG -help 2>&1` in
-  *-outdir*) 
-      AC_MSG_RESULT(yes);;
-  *)  AC_MSG_RESULT(no)
-      SWIG=no;;
-  esac
-fi
-AC_SUBST(SWIG)
-AM_CONDITIONAL(HAVE_SWIG, test x"$SWIG" != xno)
 
-
+have_python=auto
+PYTHON=python
+PYTHON_INCS=
+PYTHON_LIBS=
 AC_ARG_WITH(python,
 	AC_HELP_STRING([--with-python=FILE], [python is installed as FILE]),
-	PYTHON="$withval",
-	PYTHON=python)
-case "$PYTHON" in
-yes|auto)
-    PYTHON=python;;
+	have_python="$withval")
+case "$have_python" in
+yes|no|auto)
+	;;
+*)
+	PYTHON="$have_python"
+	have_python=yes
+	;;
 esac
-case "$PYTHON" in
-no) ;;
-/*) AC_MSG_CHECKING(whether $PYTHON does exist and is executable)
-    if test -x "$PYTHON"; then
-      AC_MSG_RESULT(yes)
-    else
-      AC_MSG_RESULT(no)
-      PYTHON=no
-    fi;;
-*)  AC_PATH_PROG(PYTHON,$PYTHON,no,$PATH);;
-esac
-if test "x$PYTHON" != xno; then
-  AC_MSG_CHECKING(whether $PYTHON is >= 2.0)
-  python_ver="`"$PYTHON" -c 'import sys; print sys.version[[:3]]' 2>/dev/null`"
-  case "$python_ver" in
-  2.*)
-     AC_MSG_RESULT(yes: $python_ver);;
-  *) AC_MSG_ERROR(no: $python_ver)
-     PYTHON=no;;
-  esac
+if test "x$have_python" != xno; then
+	if test $cross_compiling != xyes; then
+		AC_PATH_PROG(PYTHON,$PYTHON,no,$PATH)
+		if test "x$PYTHON" = xno; then
+			if "x$have_python" != xauto; then
+				AC_MSG_ERROR([No Python executable found]);
+			fi
+			have_python=no
+		fi
+	fi
+fi
+if test "x$have_python" != xno; then
+	have_python_incdir=auto
+	AC_ARG_WITH(python-incdir,
+		AC_HELP_STRING([--with-python-incdir=DIR],
+			[Python include directory]),
+		have_python_incdir="$withval")
+	case "$have_python_incdir" in
+	yes|auto)
+		if test $cross_compiling = xyes; then
+			AC_MSG_ERROR([Must specify --with-python-incdir --with-python-libdir --with-python-library when cross compiling])
+		fi
+		PYTHON_INCS=`"$PYTHON" -c 'from distutils.sysconfig import get_python_inc; print get_python_inc()' 2>/dev/null`
+		;;
+	no)	;;
+	*)	PYTHON_INCS="$have_python_incdir"
+		have_python_incdir=yes
+		;;
+	esac
+	if test "x$have_python_incdir" != no -a ! -f "$PYTHON_INCS/Python.h"; then
+		if test "x$have_python_incdir" = yes; then
+			AC_MSG_ERROR([No Python.h found, is Python installed properly?])
+		fi
+		have_python_incdir=no
+	fi
+	if test "x$have_python_incdir" != no; then
+		PYTHON_INCS="-I$PYTHON_INCS"
+	fi
+
+	have_python_library=auto
+	AC_ARG_WITH(python-library,
+		AC_HELP_STRING([--with-python-library=DIR],
+			[Python library directory (where -lpython can be found)]),
+		have_python_library="$withval")
+	case "$have_python_library" in
+	yes|auto)
+		if test $cross_compiling = xyes; then
+			AC_MSG_ERROR([Must specify --with-python-incdir --with-python-libdir --with-python-library when cross compiling])
+		fi
+		PYTHON_LIBS=`"$PYTHON" -c 'import distutils.sysconfig, os, sys; print "-L%s -lpython%s" % (os.path.dirname(distutils.sysconfig.get_makefile_filename()), sys.version[[:3]])' 2>/dev/null`
+		;;
+	no)	;;
+	*)	PYTHON_LIBS="$have_python_library"
+		have_python_library=yes
+		;;
+	esac
+
+	have_python_libdir=auto
+	AC_ARG_WITH(python-libdir,
+		AC_HELP_STRING([--with-python-libdir=DIR],
+			[relative path for Python library directory (where Python modules should be installed)]),
+		have_python_libdir="$withval")
+	case "$have_python_libdir" in
+	yes|auto)
+		if test $cross_compiling = xyes; then
+			AC_MSG_ERROR([Must specify --with-python-incdir --with-python-libdir --with-python-library when cross compiling])
+		fi
+		PYTHON_LIBDIR=`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")' 2>/dev/null`
+		;;
+	no)	;;
+	*)	PYTHON_LIBDIR="$have_python_libdir"
+		have_python_libdir=yes
+		;;
+	esac
+else
+	# no Python implies no Python includes or libraries
+	have_python_incdir=no
+	have_python_libdir=no
+fi
+if test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno; then
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $PYTHON_INCS"
+	AC_TRY_COMPILE([#include <Python.h>], [], [],
+		[ if test "x$have_python_incdir" != xauto -o "x$have_python_libdir" != xauto; then AC_MSG_ERROR([Cannot compile with Python]); fi; have_python_incdir=no have_python_libdir=no ])
+	CPPFLAGS="$save_CPPFLAGS"
 fi
 AC_SUBST(PYTHON)
-AM_CONDITIONAL(HAVE_PYTHON, test x"$PYTHON" != xno)
-
-PYTHONINC=''
-if test "x$PYTHON" != xno; then
-  AC_MSG_CHECKING(for $PYTHON's include directory)
-  PYTHONINC=`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()' 2>/dev/null`
-  if test ! "$PYTHONINC"; then
-    AC_MSG_RESULT(not found.  Is Python installed properly?)
-  elif test ! -f "$PYTHONINC/Python.h"; then
-    AC_MSG_RESULT($PYTHONINC/Python.h does not exist.  Is Python installed properly?)
-    PYTHONINC=''
-  else
-    AC_MSG_RESULT($PYTHONINC)
-  fi
-fi
-AC_SUBST(PYTHONINC)
-
-PYTHON_LIBDIR=''
-if test "x$PYTHONINC" != x; then
-  AC_MSG_CHECKING(for $PYTHON's library directory)
-  PYTHON_LIBDIR=`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")' 2>/dev/null`
-  if test ! "$PYTHON_LIBDIR"; then
-    AC_MSG_RESULT(not found.  Is Python installed properly?)
-  else
-    AC_MSG_RESULT(\$prefix/$PYTHON_LIBDIR)
-  fi
-fi
+AM_CONDITIONAL(HAVE_PYTHON, test x"$have_python" != xno)
+AC_SUBST(PYTHON_INCS)
+AC_SUBST(PYTHON_LIBS)
 AC_SUBST(PYTHON_LIBDIR)
-AM_CONDITIONAL(HAVE_PYTHON_DEVEL, test "x$PYTHON_LIBDIR" != x)
-AM_CONDITIONAL(HAVE_PYTHON_SWIG,  test "x$PYTHON_LIBDIR" != x -a x"$SWIG" != xno)
-
+AM_CONDITIONAL(HAVE_PYTHON_DEVEL, test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno)
+if test -f "$srcdir"/vertoo.data; then
+AM_CONDITIONAL(HAVE_PYTHON_SWIG,  test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno -a x"$SWIG" != xno)
+else
+AM_CONDITIONAL(HAVE_PYTHON_SWIG,  test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno)
+fi
 
 AC_ARG_WITH(perl,
 	AC_HELP_STRING([--with-perl=FILE], [perl is installed as FILE]),
@@ -818,7 +856,7 @@ yes|auto)
 esac
 case "$PERL" in
 no) ;;
-/*) AC_MSG_CHECKING(whether $PERL does exist and is executable)
+/*) AC_MSG_CHECKING(whether $PERL exists and is executable)
     if test -x "$PERL"; then
       AC_MSG_RESULT(yes)
     else
@@ -857,14 +895,17 @@ if test "x$PERLINC" != x; then
 fi
 AC_SUBST(PERL_LIBDIR)
 AM_CONDITIONAL(HAVE_PERL_DEVEL, test "x$PERL_LIBDIR" != x)
+if test -f "$srcdir"/vertoo.data; then
 AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$PERL_LIBDIR" != x -a x"$SWIG" != xno)
+else
+AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$PERL_LIBDIR" != x)
+fi
 
 
 dnl to shut up automake (.m files are used for mel not for objc)
 AC_CHECK_TOOL(OBJC,objc)
 
 #AM_DEPENDENCIES(CC)
-#AM_DEPENDENCIES(CXX)
 
 dnl Checks for header files.
 AC_HEADER_STDC()
@@ -958,18 +999,14 @@ if test "x$enable_debug" = xyes; then
     dnl  remove "-Ox" as some compilers don't like "-g -Ox" combinations
     CFLAGS=" $CFLAGS "
     CFLAGS="`echo "$CFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
-    CXXFLAGS=" $CXXFLAGS "
-    CXXFLAGS="`echo "$CXXFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
     JAVACFLAGS=" $JAVACFLAGS "
     JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -O | |g' -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
     dnl  add "-g"
     CFLAGS="$CFLAGS -g"
-    CXXFLAGS="$CXXFLAGS -g"
     JAVACFLAGS="$JAVACFLAGS -g"
     case "$GCC-$host_os" in
       yes-aix*)
         CFLAGS="$CFLAGS -gxcoff"
-        CXXFLAGS="$CXXFLAGS -gxcoff"
         ;;
     esac
   fi
@@ -1001,8 +1038,6 @@ if test "x$enable_optim" = xyes; then
     dnl  remove "-g" as some compilers don't like "-g -Ox" combinations
     CFLAGS=" $CFLAGS "
     CFLAGS="`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
-    CXXFLAGS=" $CXXFLAGS "
-    CXXFLAGS="`echo "$CXXFLAGS" | sed -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`"
     JAVACFLAGS=" $JAVACFLAGS "
     JAVACFLAGS="`echo "$JAVACFLAGS" | sed -e 's| -g | |g' -e 's| -g:[[a-z]]* | |g' -e 's|^ ||' -e 's| $||'`"
     dnl  Optimization flags
@@ -1091,18 +1126,16 @@ AC_ARG_ENABLE(warning,
 	enable_warning=$enableval,
 	enable_warning=no)
 if test "x$enable_warning" = xyes; then
-  dnl  Basically, we disable/overule X_C[XX]FLAGS, i.e., "-Werror" and some "-Wno-*".
+  dnl  Basically, we disable/overule X_CFLAGS, i.e., "-Werror" and some "-Wno-*".
   dnl  All warnings should be on by default (see above).
   case $GCC-$host_os in
   yes-*)
 	dnl  GNU (gcc/g++)
 	X_CFLAGS="-pedantic -Wno-long-long"
-	X_CXXFLAGS="-pedantic -Wno-long-long"
 	;;
   -linux*)
 	dnl  Intel ([ie]cc/[ie]cpc on Linux)
 	X_CFLAGS=""
-	X_CXXFLAGS=""
 	;;
   esac
 fi
@@ -1691,6 +1724,7 @@ have_pcre=auto
 PCRE_CFLAGS=""
 PCRE_LIBS=""
 PCRE_CONFIG=""
+PCRETEST=""
 AC_ARG_WITH(pcre,
 	AC_HELP_STRING([--with-pcre=DIR],
 		[pcre library is installed in DIR]),
@@ -1723,6 +1757,21 @@ if test "x$have_pcre" != xno; then
     fi
 
     if test "x$have_pcre" = xyes; then
+        AC_PATH_PROG(PCRETEST,pcretest,,$MPATH)
+        AC_MSG_CHECKING(whether pcre comes with UTF-8 support)
+        if test "x$PCRETEST" = x; then
+            have_pcre=no
+            AC_MSG_RESULT($have_pcre (could not find pcretest to check it))
+        else
+            pcre_utf8="`$PCRETEST -C 2>/dev/null | grep 'UTF-8 support' | sed -e 's|^ *||' -e 's| *$||'`"
+            if test "x$pcre_utf8" != "xUTF-8 support"; then
+                have_pcre=no
+            fi
+            AC_MSG_RESULT($have_pcre (pcretest says "$pcre_utf8"))
+        fi
+    fi
+
+    if test "x$have_pcre" = xyes; then
     	save_CPPFLAGS="$CPPFLAGS"
     	CPPFLAGS="$CPPFLAGS $PCRE_CFLAGS"
     	AC_CHECK_HEADER(pcre.h, have_pcre=yes, have_pcre=no)
@@ -1732,7 +1781,7 @@ if test "x$have_pcre" != xno; then
     if test "x$have_pcre" = xyes; then
     	save_LIBS="$LIBS"
     	LIBS="$LIBS $PCRE_LIBS"
-    	AC_CHECK_LIB(pcre, pcre_compile, PCRE_LIBS="$PCRE_LIBS -lpcre" have_pcre=yes, have_pcre=no)
+    	AC_CHECK_LIB(pcre, pcre_compile, have_pcre=yes, have_pcre=no)
     	LIBS="$save_LIBS"
     fi
 
@@ -1745,6 +1794,9 @@ if test "x$have_pcre" != xno; then
 fi
 AC_SUBST(PCRE_CFLAGS)
 AC_SUBST(PCRE_LIBS)
+AM_CONDITIONAL(HAVE_PCRE,test x$have_pcre != xno)
+
+AC_CHECK_HEADERS(regex.h)
 
 AC_CHECK_HEADERS(locale.h langinfo.h)
 AC_CHECK_FUNCS(nl_langinfo setlocale)
@@ -1818,6 +1870,7 @@ fi
 AC_SUBST(ICONV_CFLAGS)
 AC_SUBST(ICONV_LIBS)
 
+AC_CHECK_PROG(TEXI2HTML,texi2html,texi2html)
 AC_CHECK_PROG(LATEX2HTML,latex2html,latex2html)
 AC_CHECK_PROG(LATEX,latex,latex)
 AC_CHECK_PROG(PDFLATEX,pdflatex,pdflatex)
@@ -1833,7 +1886,7 @@ AC_MSG_CHECKING([$FIG2DEV postscript option])
 fi ]
 AC_MSG_RESULT($FIG2DEV_EPS)
 AC_SUBST(FIG2DEV_EPS)
-AM_CONDITIONAL(DOCTOOLS, test -n "$LATEX2HTML" -a -n "$LATEX" -a -n "$PDFLATEX" -a -n "$FIG2DEV" -a -n "$DVIPS") 
+AM_CONDITIONAL(DOCTOOLS, test -n "$TEXI2HTML" -a -n "$LATEX2HTML" -a -n "$LATEX" -a -n "$PDFLATEX" -a -n "$FIG2DEV" -a -n "$DVIPS") 
 
 INSTALL_BACKUP=""
 AC_MSG_CHECKING([$INSTALL --backup option])
@@ -1946,43 +1999,62 @@ AM_CONDITIONAL(HAVE_PEAR, test x"$have_pear" != xno)
 
 
 AC_SUBST(CFLAGS)
-AC_SUBST(CXXFLAGS)
+
+have_problem=no
+if test "x$have_pthread" = xno; then
+	AC_MSG_NOTICE("MonetDB requires libpthread (try --with-pthread)")
+	have_problem=yes
+fi
+
+if test "x$have_problem" != xno; then
+	AC_MSG_ERROR("A required package is missing")
+fi
+
 ]) dnl AC_DEFUN AM_MONETDB_LIBS
 
-AC_DEFUN([AM_MONETDB_CLIENT],[
+AC_DEFUN([AM_MONETDB_UTILS],[
 
-dnl check for Monet and some basic utilities
-AM_MONET($1)
-MPATH="$MONETDB_PREFIX/bin:$PATH"
-AC_ARG_WITH(mx,
-	AC_HELP_STRING([--with-mx=FILE], [Mx is installed as FILE]),
-	have_mx="$withval",
-	have_mx=auto)
-if test "x$have_mx" = xauto; then
-	AC_PATH_PROGS(MX,[ Mx$EXEEXT Mx ],,$MPATH)
-	if test "x$MX" = x; then
-		AC_ERROR([No Mx$EXEEXT found in PATH=$MPATH])
-	fi
-elif test "x$have_mx" = xno; then
-	AC_MSG_ERROR([Mx is required])
-else
-	MX="$withval"
-fi
-AC_SUBST(MX)
-AC_ARG_WITH(mel,
-	AC_HELP_STRING([--with-mel=FILE], [mel is installed as FILE]),
-	have_mel="$withval",
-	have_mel=auto)
-if test "x$have_mel" = xauto; then
-	AC_PATH_PROGS(MEL,[ mel$EXEEXT mel ],,$MPATH)
-	if test "x$MEL" = x; then
-		AC_ERROR([No mel$EXEEXT found in PATH=$MPATH])
-	fi
-elif test "x$have_mel" = xno; then
-	AC_MSG_ERROR([mel is required])
-else
-	MEL="$withval"
-fi
-AC_SUBST(MEL)
+if test -f "$srcdir"/vertoo.data; then
+        dnl check for Mx and mel if we find the not distributed vertoo.data 
+        dnl having (this) file means we're compiling from CVS
+        dnl and not from the distribution tar ball
 
-]) dnl AC_DEFUN AM_MONETDB_CLIENT
+	dnl check for Monet and some basic utilities
+	AC_ARG_WITH(mx,
+		AC_HELP_STRING([--with-mx=FILE], [Mx is installed as FILE]),
+		have_mx="$withval",
+		have_mx=auto)
+	if test "x$have_mx" = xauto; then
+		AC_PATH_PROGS(MX,[ Mx$EXEEXT Mx ],,$PATH)
+		if test "x$MX" = x; then
+			AC_ERROR([No Mx$EXEEXT found in PATH=$PATH])
+		fi
+	elif test "x$have_mx" = xno; then
+		AC_MSG_ERROR([Mx is required])
+	else
+		MX="$withval"
+	fi
+	AC_SUBST(MX)
+	AC_ARG_WITH(mel,
+		AC_HELP_STRING([--with-mel=FILE], [mel is installed as FILE]),
+		have_mel="$withval",
+		have_mel=auto)
+	if test "x$have_mel" = xauto; then
+		AC_PATH_PROGS(MEL,[ mel$EXEEXT mel ],,$PATH)
+		if test "x$MEL" = x; then
+			AC_ERROR([No mel$EXEEXT found in PATH=$PATH])
+		fi
+	elif test "x$have_mel" = xno; then
+		AC_MSG_ERROR([mel is required])
+	else
+		MEL="$withval"
+	fi
+	AC_SUBST(MEL)
+
+	AM_CONDITIONAL(NEED_MX, true)
+else
+	AM_CONDITIONAL(NEED_MX, false)
+fi
+
+]) dnl AC_DEFUN AM_MONETDB_UTILS
+

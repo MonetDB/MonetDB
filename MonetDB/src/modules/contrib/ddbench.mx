@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @v 1.0
@@ -2330,7 +2330,9 @@ echo "pushd $TEMP/$BENCH"
 
 @f scripts_init_par
 @mil
-module(str,enum,alarm); 
+module(str);
+module(enum);
+module(alarm); 
 
 threadcnt(1);
 sleep(1);
@@ -2475,7 +2477,11 @@ done
 
 @f scripts_head
 @mil
-module(unix,alarm,stream,str,xtables);
+module(unix);
+module(alarm);
+module(stream);
+module(str);
+module(xtables);
 
 #output for the Xfig overview is dumped in a separate file
 var DB := environment.find("dbname");
@@ -2496,7 +2502,8 @@ var CT_reliable := nil;
 
 @f scripts_print
 @mil
-module(stream,alarm);
+module(stream);
+module(alarm);
 
 proc revprint(stream fp, bat[any,any] b1, bat[any,any] b2) : void 
           fp.[fprintf]("%d\t%s\n", b2, [str](b1));

@@ -46,7 +46,7 @@ string( sres, -(len), 10).print();
 string( sres, -(len + 5), 10).print(); 
 [ "This " ]
 chrAt( sres, 5 ).print();
-[ i ]
+[ 'i' ]
 chrAt( sres, -3).print();
 [ nil ]
 chrAt( sres, len + 20).print();
@@ -54,9 +54,9 @@ chrAt( sres, len + 20).print();
 chrAt( sres, len).print();
 [ nil ]
 chrAt( sres, len - 1).print();
-[ e ]
+[ 'e' ]
 chrAt( sres, 0).print();
-[ T ]
+[ 'T' ]
 startsWith( i2, "of the" ).print();
 [ true ]
 startsWith( i2, i2 ).print();

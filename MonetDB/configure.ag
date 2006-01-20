@@ -13,12 +13,12 @@ dnl -*- mode: autoconf -*-
 # The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2005 CWI.
+# Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.53)
-AC_INIT(src/utils/Mx/Mx.h)
+AC_INIT(src/common/monet_getopt.h)
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -93,8 +93,10 @@ else
 fi
 AC_SUBST(Xprefix)
 AC_SUBST(QXprefix)
+AC_DEFINE_UNQUOTED(MONETDB_PREFIX,"$QXprefix",[architecture-independent files])
 AC_SUBST(Xexec_prefix)
 AC_SUBST(QXexec_prefix)
+AC_DEFINE_UNQUOTED(MONETDB_EXEC_PREFIX,"$QXexec_prefix",[architecture-dependent files])
 QMONETDB_BUILD="$MONETDB_BUILD"
 XMONETDB_BUILD="`$translatepath "$MONETDB_BUILD"`"
 QXMONETDB_BUILD="`echo "$XMONETDB_BUILD" | sed 's/\\\\/\\\\\\\\/g'`"
@@ -116,6 +118,7 @@ AC_SUBST(QXsrcdir)
 Qlocalstatedir="$localstatedir"
 Xlocalstatedir="`$translatepath "$localstatedir"`"
 QXlocalstatedir="`echo "$Xlocalstatedir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_DEFINE_UNQUOTED(MONETDB_LOCALSTATEDIR,"$QXlocalstatedir",[modifiable single-machine data])
 AC_SUBST(Qlocalstatedir)
 AC_SUBST(Xlocalstatedir)
 AC_SUBST(QXlocalstatedir)
@@ -125,9 +128,11 @@ QXlibdir="`echo "$Xlibdir" | sed 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST(Qlibdir)
 AC_SUBST(Xlibdir)
 AC_SUBST(QXlibdir)
+AC_DEFINE_UNQUOTED(MONETDB_LIBDIR,"$QXlibdir",[object code libraries])
 Qsysconfdir="$sysconfdir"
 Xsysconfdir="`$translatepath "$sysconfdir"`"
 QXsysconfdir="`echo "$Xsysconfdir" | sed 's/\\\\/\\\\\\\\/g'`"
+AC_DEFINE_UNQUOTED(MONETDB_SYSCONFDIR,"$QXsysconfdir",[read-only single-machine data])
 AC_SUBST(Qsysconfdir)
 AC_SUBST(Xsysconfdir)
 AC_SUBST(QXsysconfdir)
@@ -215,14 +220,6 @@ AC_CHECK_HEADERS(rlimit.h netdb.h sys/resource.h)
 AC_CHECK_HEADERS(string.h strings.h signal.h sys/socket.h sys/un.h termios.h)
 AC_CHECK_HEADERS(ieeefp.h winsock.h)
 CFLAGS="$CFLAGS_bak"
-AC_LANG_SAVE
-#AC_LANG_PUSH(C++)
-AC_LANG_CPLUSPLUS
-AC_CHECK_HEADER(new, AC_DEFINE(HAVE_NEW,1,[Define to 1 if you have the <new> header file.]),,[ ])
-AC_CHECK_HEADER(iostream, AC_DEFINE(HAVE_IOSTREAM,1,[Define to 1 if you have the <iostream> header file.]),,[ ])
-AC_CHECK_HEADER(cstdio, AC_DEFINE(HAVE_CSTDIO,1,[Define to 1 if you have the <cstdio> header file.]),,[ ])
-#AC_LANG_POP(C++)
-AC_LANG_RESTORE
 dnl We don't need to check for these two: they're only present on
 dnl Windows.  We list them here for completeness, since the
 dnl corresponding defines are used.
@@ -349,52 +346,21 @@ AC_MSG_RESULT($ctime_r3)
 
 AC_SYS_LARGEFILE()
 
-AC_ARG_WITH(mx,
-	AC_HELP_STRING([--with-mx=FILE], [Mx is installed as FILE]),
-	have_mx="$withval",
-	have_mx=auto)
-if test "x$have_mx" = xauto -a "x$cross_compiling" = xyes; then
-	dnl  When cross-compiling, we need to have MEL/Mx in our PATH that work on the building host.
-	AC_PATH_PROGS(MX, Mx Mx$EXEEXT,,$PATH)
-	if test "x$MX" = x; then
-		AC_ERROR([No Mx$EXEEXT found in PATH=$PATH])
-	fi
-elif test "x$have_mx" = xauto; then
-	MX="$MONETDB_BUILD/src/utils/Mx/Mx$EXEEXT"
-else
-	MX="$withval"
-fi
-AC_SUBST(MX)
-AM_CONDITIONAL(COMPILE_MX, test x$cross_compiling != xyes -a "x$have_mx" = xauto)
-
-AC_ARG_WITH(mel,
-	AC_HELP_STRING([--with-mel=FILE], [mel is installed as FILE]),
-	have_mel="$withval",
-	have_mel=auto)
-if test "x$have_mel" = xauto -a "x$cross_compiling" = xyes; then
-	dnl  When cross-compiling, we need to have mel in our PATH that work on the building host.
-	AC_PATH_PROGS(MEL, mel mel$EXEEXT,,$PATH)
-	if test "x$MEL" = x; then
-		AC_ERROR([No mel$EXEEXT found in PATH=$PATH])
-	fi
-elif test "x$have_mel" = xauto; then
-	MEL="$MONETDB_BUILD/src/mel/mel$EXEEXT"
-else
-	MEL="$withval"
-fi
-AC_SUBST(MEL)
-AM_CONDITIONAL(COMPILE_MEL, test x$cross_compiling != xyes -a "x$have_mel" = xauto)
+AM_MONETDB_UTILS()
 
 AM_CONDITIONAL(CROSS_COMPILING, test x$cross_compiling = xyes)
 
 case "$host_os" in
 *mingw*)
-AM_CONDITIONAL(NOT_WIN32, false);;
+AM_CONDITIONAL(NOT_WIN32, false)
+AM_CONDITIONAL(NATIVE_WIN32, true)
+;;
 *)
-AM_CONDITIONAL(NOT_WIN32, true);;
+AM_CONDITIONAL(NOT_WIN32, true)
+AM_CONDITIONAL(NATIVE_WIN32, false)
+;;
 esac
 
-dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
+dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
-CXXFLAGS="$CXXFLAGS \$(X_CXXFLAGS)"
 

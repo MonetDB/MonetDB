@@ -11,7 +11,7 @@
 @' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
 @f gdk_bbp
@@ -119,6 +119,7 @@ gdk_export void BBPuncacheit(bat bid);
 gdk_export int BBPreclaim(BAT *b);
 gdk_export int BBPsave(BAT *b);
 gdk_export int BBPrename(bat bid, str nme);
+gdk_export BAT * BBPrecycle(int ht, int tt, size_t cap);
 
 /* query interface */
 gdk_export bat BBPindex(str nme);
@@ -129,6 +130,9 @@ gdk_export int BBPrecover(void);
 gdk_export lng BBPdiskscan(void);
 gdk_export int BBPsync(int commit);
 gdk_export int BBPincref(bat b, int logical);
+gdk_export void BBPkeepref(bat i);
+gdk_export void BBPreleaseref(bat i);
+gdk_export void BBPreleaselref(bat i);
 gdk_export int BBPdecref(bat b, int logical);
 gdk_export void BBPshare(bat b);
 gdk_export void BBPunshare(bat b);
@@ -630,13 +634,17 @@ BBPinit(void)
 			s = logical;
 			j++;
 		}
+		/* the backup of the logical name is set too */
 		BBP_logical(i) = GDKstrdup(s);
+		BBP[ABS(i)].bak[(i)<0]= BBP_logical(i);
 		i = -i;
 		if (c && c[1]) {
 			BBP_logical(i) = GDKstrdup(c + 1);
+			BBP[ABS(i)].bak[(i)<0]= BBP_logical(i);
 			j++;
 		} else {
 			BBP_logical(i) = NULL;
+			BBP[ABS(i)].bak[(i)<0]= NULL;
 		}
 	}
 	fclose(fp);
@@ -656,6 +664,7 @@ BBPinit(void)
 	if (BBPoid == 0) {
 		OIDseed(OIDrand());	/* if not yet done, init oid */
 	}
+	OIDbase(BBPoid);
 
 	/* will call BBPrecover if needed */
 	if (prepare_backup()) {
@@ -700,6 +709,7 @@ BBPexit(void)
 			BBPuncacheit_(i, TRUE);
 			GDKfree(BBP_logical(i));
 			BBP_logical(i) = NULL;
+			BBP[ABS(i)].bak[(i)<0]= NULL;
 		}
 		if (BBP_physical(i)) {
 			GDKfree(BBP_physical(i));
@@ -836,7 +846,7 @@ BBPgetdesc(bat i)
 
 	if (i < 0)
 		i = -i;
-	if (i != bat_nil && i < BBPsize && i) {
+	if (i != bat_nil && i < BBPsize && i && BBP_logical(i)) {
 		str nme = BBP_physical(i);
 
 		b = BBP_cache(i);
@@ -966,15 +976,28 @@ BBPinsert(BAT *b)
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
 	BBP_lrefs(i) = 0;	/* ie. no logical refs */
 
-	s = BBPtmpname(dirname, 64, i);
-	BBP_logical(-i) = NULL;
-	BBP_logical(i) = GDKstrdup(s);
+	if( i == BBPsize-1){ /* new entry */
+		BBP[ABS(i)].bak[(i)<0] = NULL;
+		BBP[ABS(i)].bak[(-i)<0] = NULL;
+	}
 
-	BBPgetsubdir(dirname, i);
-	BBP_physical(i) = (str) GDKmalloc(strlen(dirname) + strLen(BATgetId(b)) - 4);
-	GDKfilepath(BBP_physical(i), dirname, BATgetId(b) + 4, NULL);
+	if( BBP[ABS(i)].bak[(i)<0] == NULL ){
+		s = BBPtmpname(dirname, 64, i);
+		BBP_logical(i) = GDKstrdup(s);
+		BBP[ABS(i)].bak[(i)<0] = BBP_logical(i);
+	} else 
+		BBP_logical(i)=  BBP[ABS(i)].bak[(i)<0];
+	BBP_logical(-i) = NULL;
+	BBP[ABS(i)].bak[(-i)<0]= NULL;
+
+	/* Keep the physical location around forever */
+	if( BBP_physical(i) == NULL){
+		BBPgetsubdir(dirname, i);
+		BBP_physical(i) = (str) GDKmalloc(strlen(dirname) + strLen(BATgetId(b)) - 4);
+		GDKfilepath(BBP_physical(i), dirname, BATgetId(b) + 4, NULL);
 
 	BATDEBUG THRprintf(GDKerr, "%d = new %s(%s,%s)\n", (int) i, BATgetId(b), ATOMname(b->htype), ATOMname(b->ttype));
+	}
 
 	return i;
 }
@@ -1085,13 +1108,17 @@ BBPclear(bat i)
 		}
 		if (BBP_logical(-i)) {
 			BBP_delete(-i);
-			GDKfree(BBP_logical(-i));
+			if( BBP_logical(-i) != BBP[ABS(i)].bak[(-i)<0])
+				GDKfree(BBP_logical(-i));
 			BBP_logical(-i) = NULL;
 		}
-		GDKfree(BBP_logical(i));
+		if( BBP_logical(i) != BBP[ABS(i)].bak[(i)<0])
+			GDKfree(BBP_logical(i));
 		BBP_logical(i) = NULL;
+		/* keep the physical location around forever
 		GDKfree(BBP_physical(i));
 		BBP_physical(i) = NULL;
+		*/
 		BBP_status_set(i, 0, "BBPclear");
 		BBP_refs(i) = 0;
 		BBP_lrefs(i) = 0;
@@ -1159,7 +1186,8 @@ BBPrename(bat bid, str nme)
 	if (BBP_logical(bid) && BBPnamecheck(BBP_logical(bid)) == 0) {
 		BBP_delete(bid);
 	}
-	GDKfree(BBP_logical(bid));
+	if( BBP_logical(bid) != BBP[ABS(bid)].bak[(bid)<0])
+		GDKfree(BBP_logical(bid));
 	BBP_logical(bid) = GDKstrdup(nme);
 	if (tmpid == 0) {
 		BBP_insert(bid);
@@ -1183,6 +1211,125 @@ BBPrename(bat bid, str nme)
 
 @}
 
+@-
+A key performance drain is the management of small temporary BATs for
+a very short time. It would be interesting to see if a re-use scheme
+would make a big difference in SQL settings. 
+
+A potential danger of delaying destruction of temporary BATs lies in
+their blocking of scarce resources. We would not like to spent all
+memory to garbage. In an ideal world we would quickly learn what
+BATs are wordt to be recycled. 
+
+The policy to start with consists of only considering BATs
+without string heaps, because they require more complex re-initialization,
+and BATs that are too 'large'. A refinement and merge with BBPtrim
+is for the future to explore.
+
+The storage structure is based on a circular buffer. Picking
+the BATs for recycling is also not intelligent yet.
+@{
+@c
+#define MAXBIN 5
+static BAT *batbin[MAXBIN];
+static int bintop=0;
+
+/* #define BBPBINTST*/
+static void BBPaddtobin(BAT *b){
+	BAT *bn;
+	/* this routine still runs with a lock enabled */
+	/* remove any view dependencies */
+	if(  VIEWparent(b) ){
+		BBPdestroy(b);
+		return;
+	}
+	/* pre-filter the BATs */
+	if( BAThtype(b)>= TYPE_str || BATttype(b)>= TYPE_str ||
+		BATcount(b)> 16*1024 ||
+		BBP_logical(b->batCacheid) != BBP[ABS(b->batCacheid)].bak[(b->batCacheid)<0]){
+		BBPdestroy(b);
+		return;
+	}
+	gdk_set_lock(GDKcacheLock, "BBPaddtobin");
+	if( (bn= batbin[bintop])){
+		batbin[bintop]=b;
+		bintop = (bintop+1) % MAXBIN;
+#ifdef BBPBINTST
+		printf("delete from bin %d\n",bn->batCacheid);
+#endif
+		BBP_status_on(bn->batCacheid, BBPUNLOADING, "BBPaddtobin");
+		gdk_unset_lock(GDKcacheLock, "BBPaddtobin");
+		BBPdestroy(bn);
+	} else {
+		batbin[bintop]=b;
+		bintop = (bintop+1) % MAXBIN;
+		gdk_unset_lock(GDKcacheLock, "BBPaddtobin");
+	}
+#ifdef BBPBINTST
+	printf("add to bin %d %d\n",b->batCacheid, (int)BATcapacity(b));
+#endif
+	BBP_status_off(b->batCacheid, BBPUNLOADING, "BBPaddtobin");
+}
+
+BAT *
+BBPrecycle(int ht, int tt, size_t cap){
+	int i;
+	BAT *b;
+
+	gdk_set_lock(GDKcacheLock, "BBPrecycle");
+	for(i=0; i<MAXBIN; i++)
+		if( (b= batbin[i]) && BAThtype(b)==ht && 
+			BATttype(b)==tt &&	BATcapacity(b)>= cap){
+#ifdef BBPBINTST
+	printf("try from bin %d \n",b->batCacheid);
+#endif
+#ifdef BBPBINTST
+	printf("get from bin %d %d %d \n",b->batCacheid,(int) cap, (int) BATcapacity(b));
+#endif
+
+			batbin[i]=0;
+			BBP_refs(b->batCacheid)=1;
+			BBP_lrefs(b->batCacheid)=0;
+			
+			/* experimental code to reset the BAT */
+			b->batRestricted = 0;
+			b->batSet = FALSE;
+			b->hdense = b->tdense= FALSE;
+			b->hsorted = b->tsorted= FALSE;
+			b->halign = OIDnew(2);
+			b->talign = b->halign + 1;
+			b->hseqbase = (ht == TYPE_void) ? oid_nil : 0;
+			b->tseqbase = (tt == TYPE_void) ? oid_nil : 0;
+			b->hkey= BAThdense(b);
+			b->tkey= BATtdense(b);
+
+			b->H->props = b->T->props = NULL;
+			b->H->nosorted = b->T->nosorted = 0;
+			b->H->nosorted_rev = b->T->nosorted_rev = 0;
+			b->H->nokey[0] = b->T->nokey[0] = 0;
+			b->H->nokey[1] = b->T->nokey[1] = 0;
+			b->batPersistence = TRANSIENT;
+			b->void_tid= -1;
+			b->void_cnt=0;
+			b->void_seq1= b->void_seq2= oid_nil;
+			HASHdestroy(b);
+			DELTAinit(b);
+			b->batDirty= TRUE;
+			if( ++BBP_curstamp < 0 )
+				BBP_curstamp = 0;
+			b->batStamp= BBP_curstamp;
+			b->creator_tid = BBP_getpid();
+			gdk_unset_lock(GDKcacheLock, "BBPrecycle");
+			b->hsorted = ((bit) ATOMlinear(ht) ? GDK_SORTED : FALSE);
+			b->tsorted = ((bit) ATOMlinear(tt) ? GDK_SORTED : FALSE);
+
+			BBPcacheit(b);
+			return b;
+		}
+	gdk_unset_lock(GDKcacheLock, "BBPrecycle");
+	return NULL;
+}
+@}
 @+ BBP swapping Policy
 The BAT can be moved back to disk using the routine @%BBPfree@.
 It frees the storage for other BATs. After this call BAT* references
@@ -1315,7 +1462,8 @@ decref(bat i, int logical, int lock)
 		int destroy = BBP_lrefs(i) == 0 && (BBP_status(i) & BBPDELETED) == 0;
 		b = BBPquickdesc(i, TRUE);
 		if (destroy) {
-			BBPdestroy(b);	/* free memory of transient */
+			 BBPdestroy(b);	  /* free memory of transient */
+			 /* BBPaddtobin(b);	  plan for re-use */
 		} else if (b) {
 			BBP_unload_cnt(i, "BBPdecref");
 			BBPfree(b, "BBPdecref" );	/* free memory (if loaded) and delete from disk (if transient but saved) */
@@ -1338,7 +1486,93 @@ BBPdecref(bat i, int logical)
 		gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPdecref");
 	return decref(i, logical, lock);
 }
+@-
+M5 often changes the physical ref into a logical reference.
+This state change consist of the sequence BBPincref(b,TRUE);BBPunfix(b).
+A faster solution is given below, because it does not trigger
+the BBP management actions, such as garbage collecting the bats.
+[first step, initiate code change]
+@c
+void
+BBPkeepref(bat i)
+{
+	int lock = locked_by ? BBP_getpid() != locked_by : 1;
 
+	if (i == bat_nil) 
+		return ;
+	if (i < 0)
+		i = -i;
+	if (BBPcheck(i, "BBPkeepref")) {
+		if (lock)
+			gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPkeepref");
+
+		while (BBP_status(i) & BBPUNLOADING) {
+			if (lock)
+				gdk_unset_lock(GDKswapLock[i & BBPLOCKMASK], "BBPincref spin wait");
+			MT_sleep_ms(1);
+			if (lock)
+				gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPincref spin wait");
+		}
+		/* got the lock */
+		++BBP_lrefs(i);
+		--BBP_refs(i);
+		if (lock)
+			gdk_unset_lock(GDKswapLock[i & BBPLOCKMASK], "BBPfix"); 
+		/* decref(i, FALSE, lock);*/
+	}
+}
+void
+BBPreleaselref(bat i)
+{
+	int lock = locked_by ? BBP_getpid() != locked_by : 1;
+
+	if (i == bat_nil || BBP_lrefs(i)<= 0) 
+		return ;
+	if (i < 0)
+		i = -i;
+	if (BBPcheck(i, "BBPreleaseref")) {
+		if (lock)
+			gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPreleaseref");
+
+		while (BBP_status(i) & BBPUNLOADING) {
+			if (lock)
+				gdk_unset_lock(GDKswapLock[i & BBPLOCKMASK], "BBPincref spin wait");
+			MT_sleep_ms(1);
+			if (lock)
+				gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPincref spin wait");
+		}
+		/* got the lock */
+		--BBP_lrefs(i);
+		if (lock)
+			gdk_unset_lock(GDKswapLock[i & BBPLOCKMASK], "BBPfix"); 
+	}
+}
+void
+BBPreleaseref(bat i)
+{
+	int lock = locked_by ? BBP_getpid() != locked_by : 1;
+
+	if (i == bat_nil || BBP_lrefs(i)<= 0) 
+		return ;
+	if (i < 0)
+		i = -i;
+	if (BBPcheck(i, "BBPreleaseref")) {
+		if (lock)
+			gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPreleaseref");
+
+		while (BBP_status(i) & BBPUNLOADING) {
+			if (lock)
+				gdk_unset_lock(GDKswapLock[i & BBPLOCKMASK], "BBPincref spin wait");
+			MT_sleep_ms(1);
+			if (lock)
+				gdk_set_lock(GDKswapLock[i & BBPLOCKMASK], "BBPincref spin wait");
+		}
+		/* got the lock */
+		--BBP_refs(i);
+		if (lock)
+			gdk_unset_lock(GDKswapLock[i & BBPLOCKMASK], "BBPfix"); 
+	}
+}
 
 void
 BBPunshare(bat parent)
@@ -1710,7 +1944,6 @@ BBPfree(BAT *b, str calledFrom )
 		BBPunshare(parent);
 	return 0;
 }
-
 @}
 @- Storage trimming
 BBPtrim unloads the least recently used BATs to free memory resources.
