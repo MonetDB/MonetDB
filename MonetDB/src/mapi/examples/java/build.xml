@@ -64,7 +64,7 @@ All Rights Reserved.
   <target name="find_driver">
     <condition property="have_driver">
       <and>
-        <available classname="mapi.mapi">
+        <available classname="mapi.Mapi">
           <classpath>
             <pathelement path="${mapi_jar}" />
           </classpath>
