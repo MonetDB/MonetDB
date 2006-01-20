@@ -68,8 +68,8 @@ export PATH LD_LIBRARY_PATH
 cd "$srcdir"
 
 # check python version
-type -a python
-python -V
+type -a @PYTHON@
+@PYTHON@ -V
 
 # execute the script
 # if no arguments, do a recursive test (Mtest.py -r), else pass on the arguments

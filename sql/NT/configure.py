@@ -58,6 +58,7 @@ subs = [
     ('@MONETDB_PREFIX@',         os.getenv('MONETDB_PREFIX')),
     ('@SQL_BACKEND@',            r'monet4'),
     ('@SQL_BUILD@',              os.getenv('SQL_BUILD')),
+    ('@PYTHON@',                 'python'),
 ]
 
 for key, val in subs[:]:

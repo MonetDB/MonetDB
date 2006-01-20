@@ -37,8 +37,8 @@ export PATH # PYTHONPATH
 cd "$srcdir"
 
 # check python version
-type -a python
-python -V
+type -a @PYTHON@
+@PYTHON@ -V
 
 # execute the script
 # if no arguments, do a recursive approve (Mapprove.py -r), else pass

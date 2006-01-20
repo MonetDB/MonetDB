@@ -29,10 +29,10 @@ export PATH PYTHONPATH
 cd "$srcdir"
 
 # check python version
-type -a python
-python -V
+type -a @PYTHON@
+@PYTHON@ -V
 
 # execute the script
 # if no arguments, do a recursive approve (Mapprove.py -r), else pass
 # on the arguments
-exec python "${builddir}/src/testing/Mapprove.py" --config="${builddir}/conf/MonetDB.conf" --TSTTRGBASE="${builddir}" "${@--r}"
+exec @PYTHON@ "${builddir}/src/testing/Mapprove.py" --config="${builddir}/conf/MonetDB.conf" --TSTTRGBASE="${builddir}" "${@--r}"

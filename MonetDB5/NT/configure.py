@@ -64,6 +64,7 @@ subs = [
     ('@XMONETDB_SOURCE@',        source),
     ('@MONETDB_PREFIX@',         os.getenv('MONETDB_PREFIX')),
     ('@NO_X_CFLAGS@',            ''),
+    ('@PYTHON@',                 'python'),
     # for these, also see rules.msc
     ('@PHP_EXTENSIONDIR@',       r'lib\php4'),
     ('@XPHP_EXTENSIONDIR@',      r'lib\php4'),
