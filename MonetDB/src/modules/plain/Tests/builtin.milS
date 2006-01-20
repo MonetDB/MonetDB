@@ -1,9 +1,0 @@
-module(radix);
-var x:=new(str,bat);
-var y:=new(int,int).insert(0,1).insert(0,2).reverse().mark(0@0).reverse();
-var z:=new(int,int).insert(0,1).insert(0,2).reverse().mark(0@0).reverse();
-x.insert("yyy",y);
-x.insert("zzz",z);
-y.info().reverse().select("batRefcnt").reverse().fetch(0).print();
-multitable(x);
-y.info().reverse().select("batRefcnt").reverse().fetch(0).print();
