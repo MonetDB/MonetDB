@@ -1738,7 +1738,6 @@ PFpa_number (const PFpa_op_t *n,
              PFalg_att_t new_att, PFalg_att_t part)
 {
     PFpa_op_t        *ret = wire1 (pa_number, n);
-    PFord_ordering_t  ord = PFordering ();
 
     ret->sem.number.attname = new_att;
     ret->sem.number.part    = part;
@@ -1756,11 +1755,39 @@ PFpa_number (const PFpa_op_t *n,
         = (PFalg_schm_item_t) { .name = new_att, .type = aat_nat };
 
     /* ---- Number: orderings ---- */
-    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
-        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+    /* copied from attach operator */
 
-    /* of course, the new attribute is also a valid ordering */
-    PFord_set_add (ret->orderings, PFord_refine (ord, new_att));
+    /* all the input orderings we consider */
+    PFord_set_t in  = n->orderings;
+
+    /*
+     * If the input has no defined ordering, we create a new
+     * set that contains one empty ordering.  Our new column
+     * will then be the only result ordering
+     */
+    if (PFord_set_count (in) == 0)
+        in = PFord_set_add (PFord_set (), PFordering ());
+
+    /* Iterate over all the input orderings... */
+    for (unsigned int i = 0; i < PFord_set_count (in); i++) {
+
+        PFord_ordering_t current_in = PFord_set_at (in, i);
+        PFord_ordering_t prefix     = PFordering ();
+
+        /* interleave the new column everywhere possible */
+        for (unsigned int j = 0; j <= PFord_count (current_in); j++) {
+
+            PFord_ordering_t ord = PFord_refine (prefix, new_att);
+
+            for (unsigned int k = j; k < PFord_count (current_in); k++)
+                ord = PFord_refine (ord, PFord_order_at (current_in, k));
+
+            PFord_set_add (ret->orderings, ord);
+
+            if (j < PFord_count (current_in))
+                prefix = PFord_refine (prefix, PFord_order_at (current_in, j));
+        }
+    }
 
     /* ---- Number: costs ---- */
     ret->cost = 1 + n->cost;
@@ -2776,16 +2803,9 @@ PFpa_textnode (const PFpa_op_t *rel, PFalg_att_t res,
             break;
         }
 
-    if (sorted_by_iter) {
-        if (PFprop_const (rel->prop, att_item))
-            PFord_set_add (ret->orderings,
-                           PFord_refine (PFord_refine (PFordering (),
-                                                       att_iter),
-                                         att_item));
-        else
-            PFord_set_add (ret->orderings,
-                           PFord_refine (PFordering (), att_iter));
-    }
+    if (sorted_by_iter)
+        PFord_set_add (ret->orderings,
+                       PFord_refine (PFordering (), att_iter));
 
     /* ---- textnode: costs ---- */
     /* dummy costs as we have only this version */
@@ -2842,7 +2862,7 @@ PFpa_roots (const PFpa_op_t *n)
         PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
 
     /* ---- Roots: costs ---- */
-    ret->cost = 0;
+    ret->cost = 10;
 
     return ret;
 }

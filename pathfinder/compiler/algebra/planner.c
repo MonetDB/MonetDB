@@ -280,6 +280,9 @@ cross_worker (PFplanlist_t *ret, const plan_t *a, const plan_t *b)
 
         for (unsigned int i = 0; i < t.count; i++) {
             plan = attach (plan, a->schema.items[i].name, t.atoms[i]);
+            /* assign logical properties to
+               the additional physical node as well */
+            plan->prop = a->prop;
         }
 
         add_plan (ret, plan);
@@ -606,7 +609,8 @@ plan_distinct (const PFla_op_t *n)
     PFplanlist_t      *sorted;
 
     for (unsigned int i = 0; i < n->schema.count; i++)
-        ord = PFord_refine (ord, n->schema.items[i].name);
+        if (!PFprop_const (n->prop, n->schema.items[i].name))
+            ord = PFord_refine (ord, n->schema.items[i].name);
 
     perms = PFord_permutations (ord);
 
@@ -1583,6 +1587,10 @@ ensure_ordering (const plan_t *unordered, PFord_ordering_t required)
 
     /* We can always apply StandardSort */
     add_plan (ret, std_sort (unordered, required));
+
+    /* assign logical properties to the additional physical node as well */
+    for (unsigned int plan = 0; plan < PFarray_last (ret); plan++)
+        (*(plan_t **) PFarray_at (ret, plan))->prop = unordered->prop;
 
     return ret;
 }

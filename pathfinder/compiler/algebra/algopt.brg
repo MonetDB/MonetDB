@@ -35,6 +35,7 @@
 #include "algebra.h"
 #include "algopt.h"
 #include "mem.h"          /* PFmalloc() */
+#include "subtyping.h"
 
 #include "properties.h"
 
@@ -145,6 +146,7 @@ Rel:    intersect (Rel, Rel)                      =  23 (10);
 Rel:    difference (Rel, Rel)                     =  24 (10);
 Rel:    difference (Rel, EmptyRel)                =  25  (5);
 Rel:    distinct (Rel)                            =  26 (10);
+Rel:    distinct (scjoin (Frag, Rel))             =  27 (5);
 Rel:    num_add (Rel)                             =  30 (10);
 Rel:    num_subtract (Rel)                        =  31 (10);
 Rel:    num_multiply (Rel)                        =  32 (10);
@@ -167,7 +169,8 @@ Rel:    seqty1 (Rel)                              =  56 (10);
 Rel:    all (Rel)                                 =  57 (10);
 Rel:    scjoin (Frag, Rel)                        =  60 (10);
 Rel:    scjoin (Frag, distinct (Rel))             =  61 (10);
-Rel:    doc_access (Frag, Rel)                    =  62 (10);
+Rel:    scjoin (Frag, scjoin (Frag, Rel))         =  62 (10);
+Rel:    doc_access (Frag, Rel)                    =  63 (10);
 
 Rel:    roots_ (doc_tbl (Rel))                    =  70 (10);
 Rel:    roots_ (element (Frag,                       
@@ -727,15 +730,23 @@ reduce (PFla_op_t *p, int goalnt)
 
         /* Rel:    disjunion (EmptyRel, Rel) */
         case 21:
+        {
             /* return right child */
-            *p = *(R(p));
-            break;
+            PFla_op_t *ret = R(p);
+            ret->prop = p->prop;
+            update_properties (ret, kids);
+            *p = *ret;
+        } break;
 
         /* Rel:    disjunion (Rel, EmptyRel) */
         case 22:
+        {
             /* return left child */
-            *p = *(L(p));
-            break;
+            PFla_op_t *ret = L(p);
+            ret->prop = p->prop;
+            update_properties (ret, kids);
+            *p = *ret;
+        } break;
 
         /* Rel:    intersect (Rel, Rel) */
         case 23:
@@ -746,14 +757,28 @@ reduce (PFla_op_t *p, int goalnt)
 
         /* Rel:    difference (Rel, EmptyRel) */
         case 25:
+        {
             /* return left child */
-            *p = *(L(p));
-            break;
+            PFla_op_t *ret = L(p);
+            ret->prop = p->prop;
+            update_properties (ret, kids);
+            *p = *ret;
+        } break;
 
         /* Rel:    distinct (Rel) */
         case 26:
             update_properties (p, kids);
             break;
+
+        /* Rel:    distinct (scjoin (Frag, Rel)) */
+        case 27:
+        {
+            /* return left child */
+            PFla_op_t *ret = L(p);
+            ret->prop = p->prop;
+            update_properties (ret, kids);
+            *p = *ret;
+        } break;
 
         /* Rel:    num_add (Rel) */
         case 30:
@@ -964,8 +989,28 @@ reduce (PFla_op_t *p, int goalnt)
             relabel (p, kids);
             break;
 
-        /* Rel:    doc_access (Frag, Rel) */
+        /* Rel:    scjoin (Frag, scjoin (Frag, Rel) */
         case 62:
+            /* combine scjoins if they are of the form:
+               ``/descandent-or-self::node()/child::element()'' */
+            if (R(p)->sem.scjoin.axis == alg_desc_s &&
+                PFty_equality (R(p)->sem.scjoin.ty, PFty_xs_anyNode ()) &&
+                p->sem.scjoin.axis == alg_chld) {
+                /* rewrite child into descendant
+                   and discard descendant-or-self step */
+                R(p) = RR(p);
+                p->sem.scjoin.axis = alg_desc;
+
+                SEEN(p) = false;
+                update_properties (p, kids);
+                relabel (p, kids);
+                break;
+            }
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    doc_access (Frag, Rel) */
+        case 63:
             /* prune doc_access if result column is not required */
             if (!PFprop_icol (p->prop, p->sem.doc_access.res)) {
                 *p = *(R(p));

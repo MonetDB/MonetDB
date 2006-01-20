@@ -80,6 +80,7 @@
                  | '[string](' expression ',' expression ')'<m_mstring>
                  | '[string](' exp ',' exp ',' exp ')'      <m_mstring2>
                  | '{count}(' expression ')'                <m_gcount>
+                 | '{count}(' expression ',' expression ')' <m_egcount>
                  | 'new_ws ()'                              <m_new_ws>
                  | 'mposjoin (' exp ',' exp ',' exp ')'     <m_mposjoin>
                  | 'mvaljoin (' exp ',' exp ',' exp ')'     <m_mvaljoin>
@@ -362,7 +363,8 @@ static char *ID[] = {
 
     , [m_max]      = "max"
     , [m_count]    = "count"
-    , [m_gcount]       = "{count}"
+    , [m_gcount]   = "{count}"
+    , [m_egcount]  = "{count}"
     , [m_bat]      = "bat"
     , [m_error]    = "ERROR"
     , [m_col_name] = "col_name"
@@ -519,10 +521,6 @@ print_statement (PFmil_t * n)
             break;
 
         case m_col_name:
-            /* as col_name is used for debugging only 
-               and triggers a bug in MonetDB itself
-               it is discarded here */
-            break;
             print_expression (n->child[0]);
             milprintf (".%s (", ID[n->kind]);
             print_expression (n->child[1]);
@@ -786,6 +784,8 @@ print_expression (PFmil_t * n)
             milprintf (")");
             break;
 
+        /* expression: '{count}(' expression ',' expression ')' */
+        case m_egcount:
         /* expression : 'doc_tbl (' expr ',' expr ')' */
         case m_doc_tbl:
         /* expression : 'elem_constr_empty (' expr ',' expr ')' */

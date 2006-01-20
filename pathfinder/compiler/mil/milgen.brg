@@ -36,6 +36,7 @@
 #include "oops.h"
 #include "mem.h"
 #include "physical.h"
+#include "properties.h"
 #include "mil.h"
 
 #include "subtyping.h"
@@ -156,12 +157,18 @@ Rel:      eqjoin (Rel, Rel)                                        =  15 (10);
 Rel:      project (Rel)                                            =  20 (10);
 Rel:      select (Rel)                                             =  21 (10);
 Rel:      append_union (Rel, Rel)                                  =  22 (10);
-Rel:      merge_union (Rel, Rel)                                   =  23 (10);
-Rel:      intersect (Rel, Rel)                                     =  24 (10);
-Rel:      difference (Rel, Rel)                                    =  25 (10);
+Rel:      append_union (hash_count (Rel),
+                        attach (difference 
+                                    (Rel, 
+                                     project (hash_count (Rel))))) =  23 (40);
+Rel:      merge_union (Rel, Rel)                                   =  24 (10);
+Rel:      intersect (Rel, Rel)                                     =  25 (10);
+Rel:      difference (Rel, Rel)                                    =  26 (10);
 Rel:      sort_distinct (Rel)                                      =  30 (10);
-Rel:      std_sort (Rel)                                           =  31 (10);
-Rel:      refine_sort (Rel)                                        =  32 (10);
+Rel:      sort_distinct (std_sort (Rel))                           =  31 (10);
+Rel:      sort_distinct (refine_sort (Rel))                        =  32 (10);
+Rel:      std_sort (Rel)                                           =  33 (10);
+Rel:      refine_sort (Rel)                                        =  34 (10);
 Rel:      num_add (Rel)                                            =  40 (10);
 Rel:      num_sub (Rel)                                            =  41 (10);
 Rel:      num_mult (Rel)                                           =  42 (10);
@@ -462,7 +469,9 @@ VAR (PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty)
 /** starting from p, make two steps right */
 #define RR(p) R(R(p))
 /* ... and so on ... */
-#define RRL(p) L(R(R(p)))
+#define RLL(p) L(L(R(p)))
+#define RLR(p) R(L(R(p)))
+#define RLRL(p) L(R(L(R(p))))
 #define RRRL(p) L(R(R(R(p))))
 #define RRRRL(p) L(R(R(R(R(p)))))
 #define RRRRRL(p) L(R(R(R(R(R(p))))))
@@ -1018,7 +1027,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
             /* iterate over table columns */
             for (unsigned int col = 0; col < p->schema.count; col++)
-
+              if (PFprop_icol (p->prop, p->schema.items[col].name))
                 for (PFalg_simple_type_t t = 1; t; t <<= 1)
                     if (t & p->schema.items[col].type) {
                         /* special support for QNames */
@@ -1113,15 +1122,18 @@ reduce (PFpa_op_t * p, int goalnt)
                 pin (entry.mvar, p->refctr);
             }
 
-            /* now create the new column */
-            mvar_t *v = new_var (p->refctr);
-            env_add (p->env, p->sem.attach.attname,
-                     p->sem.attach.value.type, v);
+            if (PFprop_icol (p->prop, p->sem.attach.attname))
+            {
+                /* now create the new column */
+                mvar_t *v = new_var (p->refctr);
+                env_add (p->env, p->sem.attach.attname,
+                         p->sem.attach.value.type, v);
 
-            execute (
-                assgn (var (v->name),
-                       project (var (env_at (p->env, 0).mvar->name),
-                                literal (p->sem.attach.value))));
+                execute (
+                    assgn (var (v->name),
+                           project (var (env_at (p->env, 0).mvar->name),
+                                    literal (p->sem.attach.value))));
+            }
 
         } break;
 
@@ -1235,28 +1247,31 @@ reduce (PFpa_op_t * p, int goalnt)
             unpin (tmp1, 1);
 
             for (unsigned short c = 0; c < 2; c++)
-                for (unsigned int i = 0; i < env_count (p->child[c]->env); i++){
+                for (unsigned int i = 0; i < env_count (p->child[c]->env); i++)
+                    if (PFprop_icol (p->prop, env_at (p->child[c]->env,
+                                                      i).att)) {
 
-                    mvar_t *v = new_var (p->refctr);
+                        mvar_t *v = new_var (p->refctr);
 
-                    execute (
-                        assgn (var (v->name),
-                            leftjoin (
-                                var (tmp[c]->name),
-                                var (env_at (p->child[c]->env, i).mvar->name))),
-                        /* because leftjoin does not know that we have 
-                           exactly one match for each tuple in v,
-                           we need to make the heads void ourselves */
-                        assgn (var (v->name),
-                               reverse (mark (reverse (var (v->name)),
-                                              lit_oid (0))))
-                        );
+                        execute (
+                            assgn (var (v->name),
+                                leftjoin (
+                                    var (tmp[c]->name),
+                                    var (env_at (p->child[c]->env,
+                                                 i).mvar->name))),
+                            /* because leftjoin does not know that we have 
+                               exactly one match for each tuple in v,
+                               we need to make the heads void ourselves */
+                            assgn (var (v->name),
+                                   reverse (mark (reverse (var (v->name)),
+                                                  lit_oid (0))))
+                            );
 
-                    env_add (p->env,
-                             env_at (p->child[c]->env, i).att,
-                             env_at (p->child[c]->env, i).ty,
-                             v);
-                }
+                        env_add (p->env,
+                                 env_at (p->child[c]->env, i).att,
+                                 env_at (p->child[c]->env, i).ty,
+                                 v);
+                    }
 
             unpin (tmp[0], 1);
             unpin (tmp[1], 1);
@@ -1397,8 +1412,79 @@ reduce (PFpa_op_t * p, int goalnt)
 
             break;
 
-        /* Rel:      merge_union (Rel, Rel) */
+        /* Rel:      append_union (hash_count (Rel),
+                                   attach (diff (Rel, 
+                                                 project (hash_count (Rel))))) */
         case 23:
+        {
+            if (L(p) == RLRL(p) && 
+                R(p)->sem.attach.attname == att_item &&
+                R(p)->sem.attach.value.type == aat_int &&
+                R(p)->sem.attach.value.val.int_ == 0 &&
+                RLL(p)->schema.count == 1 &&
+                RLL(p)->schema.items[0].name == att_iter &&
+                RLR(p)->schema.count == 1 &&
+                RLR(p)->schema.items[0].name == att_iter &&
+                L(p)->sem.count.part != att_NULL) {
+
+                for (unsigned int i = 0; i < LL(p)->schema.count; i++)
+                    for (PFalg_simple_type_t t = 1; t; t <<= 1)
+                        if (t & LL(p)->schema.items[i].type) {
+
+                            if (t != LL(p)->schema.items[i].type)
+                                PFoops (OOPS_FATAL,
+                                        "HashCount not implemented for "
+                                        "polymorphic groups");
+
+                            mvar_t *v    = new_var (1);
+                            mvar_t *res  = new_var (p->refctr);
+                            mvar_t *part = new_var (p->refctr);
+
+                            execute (
+                                /* v := {count}(p_in.reverse ()) */
+                                assgn (
+                                    var (v->name),
+                                    egcount (
+                                        reverse (VAR (LL(p)->env,
+                                                      L(p)->sem.count.part, t)),
+                                        reverse (VAR (RLL(p)->env,
+                                                      att_iter, t)))),
+                                /* align with integer representation (lng) */
+                                assgn (var (v->name),
+                                       mcast (type (m_lng), var (v->name))),
+                                /* res := v.reverse ().mark (0@0).reverse (); */
+                                assgn (
+                                    var (res->name),
+                                    reverse (
+                                        mark (
+                                            reverse (var (v->name)),
+                                            lit_oid (0)))),
+                                /* part := v.mark (0@0).reverse (); */
+                                assgn (
+                                    var (part->name),
+                                    reverse (
+                                        mark (var (v->name), lit_oid (0)))));
+
+                            env_add (p->env, L(p)->sem.count.res, aat_int, res);
+                            env_add (p->env, L(p)->sem.count.part, t, part);
+
+                            unpin (v, 1);
+                        }
+
+                /* the relation in hash_count is used twice in this pattern
+                   - the DAG however counts only one reference - thus we 
+                   increase the pin count of the affected variables */
+                for (unsigned int i = 0; i < PFarray_last (LL(p)->env); i++)
+                    pin (env_at (LL(p)->env, i).mvar, 1);
+            }
+            else
+                PFoops (OOPS_FATAL, 
+                        "translation in milgen.brg is incorrect "
+                        "- please remove");
+        } break;
+
+        /* Rel:      merge_union (Rel, Rel) */
+        case 24:
         {
             PFmil_t *grouping[2];
             PFmil_t *args;
@@ -1559,13 +1645,13 @@ reduce (PFpa_op_t * p, int goalnt)
         } break;
 
         /* Rel:      intersect (Rel, Rel) */
-        case 24:
+        case 25:
             PFoops (OOPS_FATAL,
                     "intersect not implemented yet.");
             break;
 
         /* Rel:      difference (Rel, Rel) */
-        case 25:
+        case 26:
             
             if (env_count (L(p)->env) == 1) {
 
@@ -1598,6 +1684,11 @@ reduce (PFpa_op_t * p, int goalnt)
 
         /* Rel:      sort_distinct (Rel) */
         case 30:
+        /* Rel:      sort_distinct (std_sort (Rel)) */
+        case 31: 
+        /* Rel:      sort_distinct (refine_sort (Rel)) */
+        case 32: 
+            /* as we have to sort anyway we can also skip the sort operator */
         {
             /*
              * Derive a single BAT from the multi-column grouping
@@ -1605,31 +1696,45 @@ reduce (PFpa_op_t * p, int goalnt)
              */
             mvar_t  *v = new_var (1);
             bool     initialized = false;
+            PFpa_op_t *rel;
+
+            if (L(p)->kind == pa_std_sort || L(p)->kind == pa_refine_sort)
+                rel = LL(p);
+            else
+                rel = L(p);
+
+            /* cope with completely constant relations */
+            if (!PFord_count (p->sem.sort_distinct.ord))
+                execute (assgn (var (v->name),
+                                var (env_at (rel->env, 0).mvar->name)));
 
             for (unsigned int i = 0;
                     i < PFord_count (p->sem.sort_distinct.ord); i++) {
                 for (PFalg_simple_type_t t = 1; t; t <<= 1) {
-                    if (t & type_of (L(p),
+                    if (t & type_of (rel,
                                      PFord_order_at (p->sem.sort_distinct.ord,
                                                      i))) {
                         if (!initialized) {
                             execute (
                                 assgn (
                                     var (v->name),
-                                    ctgroup (VAR (L(p)->env,
-                                             PFord_order_at (p->sem
+                                    reverse (
+                                        sort (
+                                            reverse (VAR (rel->env,
+                                                          PFord_order_at (
+                                                              p->sem
                                                                .sort_distinct
-                                                               .ord, i),
-                                             t))));
+                                                               .ord, i), 
+                                                     t))))));
                             initialized = true;
                         }
                         else {
                             execute (
                                 assgn (
                                     var (v->name),
-                                    ctderive (
-                                        ctmap (var (v->name)),
-                                        VAR (L(p)->env,
+                                    ctrefine (
+                                        var (v->name),
+                                        VAR (rel->env,
                                              PFord_order_at (p->sem
                                                                .sort_distinct
                                                                .ord, i),
@@ -1651,7 +1756,8 @@ reduce (PFpa_op_t * p, int goalnt)
              */
             execute (
                 assgn (var (v->name),
-                       reverse (mark (ctextend (var (v->name)),
+                       reverse (mark (reverse (
+                                          kunique( reverse (var (v->name)))),
                                       lit_oid (0)))));
 
             /*
@@ -1659,26 +1765,28 @@ reduce (PFpa_op_t * p, int goalnt)
              *
              * out := v.join (in);
              */
-            for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
+            for (unsigned int i = 0; i < env_count (rel->env); i++)
+                if (PFprop_icol (p->prop, env_at (rel->env, i).att)) {
 
-                mvar_t *out = new_var (p->refctr);
+                    mvar_t *out = new_var (p->refctr);
 
-                execute (
-                    assgn (var (out->name),
-                           leftjoin (var (v->name),
-                                     var (env_at (L(p)->env, i).mvar->name))),
-                    /* because leftjoin does not know that we have 
-                       exactly one match for each tuple in v,
-                       we need to make the heads void ourselves */
-                    assgn (var (out->name),
-                           reverse (mark (reverse (var (out->name)),
-                                          lit_oid (0)))));
+                    execute (
+                        assgn (var (out->name),
+                               leftjoin (var (v->name),
+                                         var (env_at (rel->env,
+                                                      i).mvar->name))),
+                        /* because leftjoin does not know that we have 
+                           exactly one match for each tuple in v,
+                           we need to make the heads void ourselves */
+                        assgn (var (out->name),
+                               reverse (mark (reverse (var (out->name)),
+                                              lit_oid (0)))));
 
-                env_add (p->env,
-                         env_at (L(p)->env, i).att,
-                         env_at (L(p)->env, i).ty,
-                         out);
-            }
+                    env_add (p->env,
+                             env_at (rel->env, i).att,
+                             env_at (rel->env, i).ty,
+                             out);
+                }
 
             /* release our temporary variable */
             unpin (v, 1);
@@ -1686,13 +1794,13 @@ reduce (PFpa_op_t * p, int goalnt)
         } break;
 
         /* Rel:      std_sort (Rel) */
-        case 31:
+        case 33:
             {
                 unsigned int  count = 0;
                 mvar_t       *v     = new_var (1);
 
                 for (unsigned int i = 0;
-                        i < PFord_count (p->sem.sortby.required); i++) {
+                        i < PFord_count (p->sem.sortby.required); i++)
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
                         if (t & type_of (L(p),
                                          PFord_order_at (p->sem.sortby.required,
@@ -1722,39 +1830,39 @@ reduce (PFpa_op_t * p, int goalnt)
                             }
                             count++;
                         }
-                }
 
                 execute (assgn (var (v->name),
                                 reverse (mark (var (v->name), lit_oid (0)))));
 
-                for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
+                for (unsigned int i = 0; i < env_count (L(p)->env); i++)
+                    if (PFprop_icol (p->prop, env_at (L(p)->env, i).att)) {
 
-                    mvar_t *a = new_var (p->refctr);
+                        mvar_t *a = new_var (p->refctr);
 
-                    execute (
-                        assgn (var (a->name),
-                               leftjoin (
-                                   var (v->name),
-                                   var (env_at (L(p)->env, i).mvar->name))),
-                        /* because leftjoin does not know that we have 
-                           exactly one match for each tuple in v,
-                           we need to make the heads void ourselves */
-                        assgn (var (a->name),
-                               reverse (mark (reverse (var (a->name)),
-                                              lit_oid (0)))));
+                        execute (
+                            assgn (var (a->name),
+                                   leftjoin (
+                                       var (v->name),
+                                       var (env_at (L(p)->env, i).mvar->name))),
+                            /* because leftjoin does not know that we have 
+                               exactly one match for each tuple in v,
+                               we need to make the heads void ourselves */
+                            assgn (var (a->name),
+                                   reverse (mark (reverse (var (a->name)),
+                                                  lit_oid (0)))));
 
-                    env_add (p->env,
-                             env_at (L(p)->env, i).att,
-                             env_at (L(p)->env, i).ty,
-                             a);
-                }
+                        env_add (p->env,
+                                 env_at (L(p)->env, i).att,
+                                 env_at (L(p)->env, i).ty,
+                                 a);
+                    }
 
                 unpin (v, 1);
             }
             break;
 
         /* Rel:      refine_sort (Rel) */
-        case 32:
+        case 34:
         {
             mvar_t  *v = new_var (1);
             bool     initialized = false;
@@ -1773,19 +1881,19 @@ reduce (PFpa_op_t * p, int goalnt)
                             execute (
                                 assgn (
                                     var (v->name),
-                                    ctgroup (VAR (L(p)->env,
-                                             PFord_order_at (p->sem
-                                                               .sortby
-                                                               .existing, i),
-                                             t))));
+                                    VAR (L(p)->env,
+                                    PFord_order_at (p->sem
+                                                      .sortby
+                                                      .existing, i),
+                                    t)));
                             initialized = true;
                         }
                         else {
                             execute (
                                 assgn (
                                     var (v->name),
-                                    ctderive (
-                                        ctmap (var (v->name)),
+                                    ctrefine (
+                                        var (v->name),
                                         VAR (L(p)->env,
                                              PFord_order_at (p->sem
                                                                .sortby
@@ -1795,12 +1903,6 @@ reduce (PFpa_op_t * p, int goalnt)
                     }
                 }
             }
-
-            /*
-             * v now describes the grouping of our input relation.
-             * Turn it into a BAT.
-             */
-            execute (assgn (var (v->name), ctmap (var (v->name))));
 
             /*
              * Now do the remaining sorting
@@ -1847,28 +1949,29 @@ reduce (PFpa_op_t * p, int goalnt)
                 assgn (var (v->name),
                        reverse (mark (var (v->name), lit_oid (0)))));
 
-            for (unsigned int i = 0; i < env_count (L(p)->env); i++){
+            for (unsigned int i = 0; i < env_count (L(p)->env); i++)
+                if (PFprop_icol (p->prop, env_at (L(p)->env, i).att)) {
 
-                mvar_t *a = new_var (p->refctr);
+                    mvar_t *a = new_var (p->refctr);
 
-                execute (
-                    assgn (var (a->name),
-                        leftjoin (
-                            var (v->name),
-                            var (env_at (L(p)->env, i).mvar->name))),
-                    /* because leftjoin does not know that we have 
-                       exactly one match for each tuple in v,
-                       we need to make the heads void ourselves */
-                    assgn (var (a->name),
-                           reverse (mark (reverse (var (a->name)),
-                                          lit_oid (0))))
-                    );
+                    execute (
+                        assgn (var (a->name),
+                            leftjoin (
+                                var (v->name),
+                                var (env_at (L(p)->env, i).mvar->name))),
+                        /* because leftjoin does not know that we have 
+                           exactly one match for each tuple in v,
+                           we need to make the heads void ourselves */
+                        assgn (var (a->name),
+                               reverse (mark (reverse (var (a->name)),
+                                              lit_oid (0))))
+                        );
 
-                env_add (p->env,
-                         env_at (L(p)->env, i).att,
-                         env_at (L(p)->env, i).ty,
-                         a);
-            }
+                    env_add (p->env,
+                             env_at (L(p)->env, i).att,
+                             env_at (L(p)->env, i).ty,
+                             a);
+                }
 
             unpin (v, 1);
 
@@ -2525,9 +2628,18 @@ reduce (PFpa_op_t * p, int goalnt)
                        reverse (mark (reverse (var (ret_iter->name)),
                                       lit_oid (0)))));
 
-            env_add (p->env, att_iter, aat_nat, ret_iter);
-            env_add (p->env, att_item, aat_attr, ret_attr);
-            env_add (p->env, att_item, aat_afrag, ret_frag);
+            if (PFprop_icol (p->prop, att_iter))
+                env_add (p->env, att_iter, aat_nat, ret_iter);
+            else
+                unpin (ret_iter, p->refctr);
+
+            if (PFprop_icol (p->prop, att_item)) {
+                env_add (p->env, att_item, aat_attr, ret_attr);
+                env_add (p->env, att_item, aat_afrag, ret_frag);
+            } else {
+                unpin (ret_attr, p->refctr);
+                unpin (ret_frag, p->refctr);
+            }
 
             unpin (tmp, 1);
         }
@@ -2576,28 +2688,33 @@ reduce (PFpa_op_t * p, int goalnt)
         /* FragRel:  doc_tbl (Rel) */
         case 100:
         {
-            /* temporary variable */
-            mvar_t *v = new_var (1);
-            /* result BATs */
-            mvar_t *pre  = new_var (p->refctr);
-            mvar_t *frag = new_var (p->refctr);
-            mvar_t *iter = env_mvar (L(p)->env, att_iter, aat_nat);
+            if (PFprop_icol (p->prop, att_iter)) {
+                /* copy the iter BAT */
+                mvar_t *iter = env_mvar (L(p)->env, att_iter, aat_nat);
 
-            env_add (p->env, att_item, aat_pre, pre);
-            env_add (p->env, att_item, aat_pfrag, frag);
+                env_add (p->env, att_iter, aat_nat, iter);
+                pin (iter, p->refctr);
+            }
 
-            execute (
-                assgn (var (v->name),
-                       doc_tbl (var ("ws"),
-                                VAR (L(p)->env, att_item, aat_str))),
-                assgn (var ("ws"), fetch (var (v->name), lit_int (0))),
-                assgn (var (pre->name), fetch (var (v->name), lit_int (1))),
-                assgn (var (frag->name), fetch (var (v->name), lit_int (2)))
-                );
+            if (PFprop_icol (p->prop, att_item)) {
+                /* temporary variable */
+                mvar_t *v = new_var (1);
+                /* result BATs */
+                mvar_t *frag = new_var (p->refctr);
+                mvar_t *pre  = new_var (p->refctr);
 
-            /* copy the iter BAT */
-            env_add (p->env, att_iter, aat_nat, iter);
-            pin (iter, p->refctr);
+                env_add (p->env, att_item, aat_pre, pre);
+                env_add (p->env, att_item, aat_pfrag, frag);
+
+                execute (
+                    assgn (var (v->name),
+                           doc_tbl (var ("ws"),
+                                    VAR (L(p)->env, att_item, aat_str))),
+                    assgn (var ("ws"), fetch (var (v->name), lit_int (0))),
+                    assgn (var (pre->name), fetch (var (v->name), lit_int (1))),
+                    assgn (var (frag->name), fetch (var (v->name), lit_int (2)))
+                    );
+            }
         } break;
 
         /* Rel:      doc_access (FragList, Rel) */
@@ -2715,85 +2832,96 @@ reduce (PFpa_op_t * p, int goalnt)
         /* FragRel: element (FragList, element_tag (Rel, empty_lit_tbl)) */
         case 102:
         {
-            /* temporary variable */
-            mvar_t *v = new_var (1);
-            /* result BATs */
-            mvar_t *pre  = new_var (p->refctr);
-            mvar_t *frag = new_var (p->refctr);
-            mvar_t *iter = env_mvar (L(R(p))->env, att_iter, aat_nat);
-
-            env_add (p->env, att_item, aat_pre, pre);
-            env_add (p->env, att_item, aat_pfrag, frag);
-
-            execute (
-                assgn (var (v->name),
-                       empty_element (VAR (L(R(p))->env, att_item, aat_qname),
-                                      var ("ws"))),
-                assgn (var ("ws"), fetch (var (v->name), lit_int (0))),
-                assgn (var (pre->name), fetch (var (v->name), lit_int (1))),
-                assgn (var (frag->name), fetch (var (v->name), lit_int (2)))
-                );
-
             /* copy the iter BAT */
-            env_add (p->env, att_iter, aat_nat, iter);
-            pin (iter, p->refctr);
+            if (PFprop_icol (p->prop, att_iter)) {
+                mvar_t *iter = env_mvar (L(R(p))->env, att_iter, aat_nat);
+                env_add (p->env, att_iter, aat_nat, iter);
+                pin (iter, p->refctr);
+            }
+
+            if (PFprop_icol (p->prop, att_item)) {
+                /* temporary variable */
+                mvar_t *v = new_var (1);
+                /* result BATs */
+                mvar_t *pre  = new_var (p->refctr);
+                mvar_t *frag = new_var (p->refctr);
+                env_add (p->env, att_item, aat_pre, pre);
+                env_add (p->env, att_item, aat_pfrag, frag);
+
+                execute (
+                    assgn (var (v->name),
+                           empty_element (VAR (L(R(p))->env, 
+                                               att_item, aat_qname),
+                                          var ("ws"))),
+                    assgn (var ("ws"), fetch (var (v->name), lit_int (0))),
+                    assgn (var (pre->name), fetch (var (v->name), 
+                                                   lit_int (1))),
+                    assgn (var (frag->name), fetch (var (v->name),
+                                                    lit_int (2)))
+                    );
+            }
         } break;
 
         /* FragRel: element (FragList, element_tag (Rel, Rel)) */
         case 103:
         {
-            PFmil_t *pre, *pfrag, *attr, *afrag;
-            mvar_t *tmp;
-
-            /* temporary variable */
-            mvar_t *v = new_var (1);
-            /* result BATs */
-            mvar_t *res_pre = new_var (p->refctr);
-            mvar_t *res_frag = new_var (p->refctr);
-            mvar_t *iter = env_mvar (L(R(p))->env, att_iter, aat_nat);
-
-            env_add (p->env, att_item, aat_pre, res_pre);
-            env_add (p->env, att_item, aat_pfrag, res_frag);
-
-            /* check occurrence of attributes and other nodes
-               and react accordingly */ 
-            if ((tmp = env_mvar_worker (R(R(p))->env, att_item, aat_pre)))
-            {
-                pre = var (tmp->name);
-                pfrag = VAR (R(R(p))->env, att_item, aat_pfrag);
-            } else {
-                pre = seqbase (new (type (m_void), type (m_oid)),
-                               lit_oid (0));
-                pfrag = pre;
-            }
-            
-            if ((tmp = env_mvar_worker (R(R(p))->env, att_item, aat_attr)))
-            {
-                attr = var (tmp->name);
-                afrag = VAR (R(R(p))->env, att_item, aat_afrag);
-            } else {
-                attr = seqbase (new (type (m_void), type (m_oid)),
-                               lit_oid (0));
-                afrag = attr;
-            }
-
-            execute (
-                assgn (var (v->name),
-                       element (VAR (L(R(p))->env, att_iter, aat_nat),
-                                VAR (L(R(p))->env, att_item, aat_qname),
-                                VAR (R(R(p))->env, att_iter, aat_nat),
-                                pre, pfrag, attr, afrag,
-                                var ("ws"))),
-                assgn (var ("ws"), fetch (var (v->name), lit_int (0))),
-                assgn (var (res_pre->name), 
-                       fetch (var (v->name), lit_int (1))),
-                assgn (var (res_frag->name),
-                       fetch (var (v->name), lit_int (2)))
-                );
-
             /* copy the iter BAT */
-            env_add (p->env, att_iter, aat_nat, iter);
-            pin (iter, p->refctr);
+            if (PFprop_icol (p->prop, att_iter)) {
+                mvar_t *iter = env_mvar (L(R(p))->env, att_iter, aat_nat);
+                env_add (p->env, att_iter, aat_nat, iter);
+                pin (iter, p->refctr);
+            }
+
+            if (PFprop_icol (p->prop, att_item)) {
+                PFmil_t *pre, *pfrag, *attr, *afrag;
+                mvar_t *tmp;
+
+                /* temporary variable */
+                mvar_t *v = new_var (1);
+                /* result BATs */
+                mvar_t *res_pre = new_var (p->refctr);
+                mvar_t *res_frag = new_var (p->refctr);
+
+                env_add (p->env, att_item, aat_pre, res_pre);
+                env_add (p->env, att_item, aat_pfrag, res_frag);
+
+                /* check occurrence of attributes and other nodes
+                   and react accordingly */ 
+                if ((tmp = env_mvar_worker (R(R(p))->env, att_item, aat_pre)))
+                {
+                    pre = var (tmp->name);
+                    pfrag = VAR (R(R(p))->env, att_item, aat_pfrag);
+                } else {
+                    pre = seqbase (new (type (m_void), type (m_oid)),
+                                   lit_oid (0));
+                    pfrag = pre;
+                }
+                
+                if ((tmp = env_mvar_worker (R(R(p))->env, att_item, aat_attr)))
+                {
+                    attr = var (tmp->name);
+                    afrag = VAR (R(R(p))->env, att_item, aat_afrag);
+                } else {
+                    attr = seqbase (new (type (m_void), type (m_oid)),
+                                   lit_oid (0));
+                    afrag = attr;
+                }
+
+                execute (
+                    assgn (var (v->name),
+                           element (VAR (L(R(p))->env, att_iter, aat_nat),
+                                    VAR (L(R(p))->env, att_item, aat_qname),
+                                    VAR (R(R(p))->env, att_iter, aat_nat),
+                                    pre, pfrag, attr, afrag,
+                                    var ("ws"))),
+                    assgn (var ("ws"), fetch (var (v->name), lit_int (0))),
+                    assgn (var (res_pre->name), 
+                           fetch (var (v->name), lit_int (1))),
+                    assgn (var (res_frag->name),
+                           fetch (var (v->name), lit_int (2)))
+                    );
+            }
+
         } break;
 
         /* FragRel: attribute (Rel, Rel) */
@@ -3044,11 +3172,17 @@ reduce (PFpa_op_t * p, int goalnt)
             unpin (((env_t *) PFarray_at (kids[c]->env, i))->mvar, 1);
 
 #ifndef NDEBUG
+    for (unsigned int i = 0; i < PFarray_last (p->env); i++)
+        assert (((env_t *) PFarray_at (p->env, i))->mvar->pins);
+#endif
+
+#ifndef NDEBUG
     /* Debugging only: assign column names to BATs */
+    /* switch off debugging information as it triggers errors in MonetDB...
     for (unsigned int i = 0; i < env_count (p->env); i++)
         execute (col_name (var (env_at (p->env, i).mvar->name),
                            lit_str (PFatt_str (env_at (p->env, i).att))));
-
+    */
 #endif
 
 }
@@ -3579,9 +3713,6 @@ llscj (enum axis_t axis, const PFpa_op_t *p)
      * kind := tmp.fetch (2);
      */
     tmp      = new_var (1);
-    ret_iter = new_var (p->refctr);
-    ret_pre  = new_var (p->refctr);
-    ret_frag = new_var (p->refctr);
 
     /*
      * Should we actually do materialize at runtime? In most cases
@@ -3596,19 +3727,30 @@ llscj (enum axis_t axis, const PFpa_op_t *p)
      * implemented as `pre|kind' for nodes. And while kind may be constant,
      * pre probably won't.
      */
-    execute (
-        assgn (var (tmp->name), scj),
-        assgn (var (ret_pre->name), fetch (var (tmp->name), lit_int (1))),
-        assgn (var (ret_iter->name), 
-               materialize (fetch (var (tmp->name), lit_int (0)),
-                            var (ret_pre->name))),
-        assgn (var (ret_frag->name), 
-               materialize (fetch (var (tmp->name), lit_int (2)),
-                            var (ret_pre->name))));
+    execute (assgn (var (tmp->name), scj));
 
-    env_add (p->env, att_iter, aat_nat, ret_iter);
-    env_add (p->env, att_item, aat_pre, ret_pre);
-    env_add (p->env, att_item, aat_pfrag, ret_frag);
+    if (PFprop_icol (p->prop, att_item)) {
+        ret_pre  = new_var (p->refctr);
+        ret_frag = new_var (p->refctr);
+        execute (
+            assgn (var (ret_pre->name), fetch (var (tmp->name), lit_int (1))),
+            assgn (var (ret_frag->name), 
+                   materialize (fetch (var (tmp->name), lit_int (2)),
+                                var (ret_pre->name))));
+        env_add (p->env, att_item, aat_pre, ret_pre);
+        env_add (p->env, att_item, aat_pfrag, ret_frag);
+    }
+
+    if (PFprop_icol (p->prop, att_iter)) {
+        ret_iter = new_var (p->refctr);
+        execute (
+            assgn (var (ret_iter->name), 
+                   materialize (fetch (var (tmp->name), lit_int (0)),
+                                fetch (var (tmp->name), lit_int (1)))));
+        env_add (p->env, att_iter, aat_nat, ret_iter);
+    }
+
+
 
     unpin (tmp, 1);
 

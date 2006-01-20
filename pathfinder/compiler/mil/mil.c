@@ -731,6 +731,15 @@ PFmil_gcount (const PFmil_t *a)
 }
 
 /**
+ * Monet grouped count operator `{count}()' with two parameters
+ */
+PFmil_t *
+PFmil_egcount (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_egcount, a, b);
+}
+
+/**
  * Type cast.
  */
 PFmil_t *

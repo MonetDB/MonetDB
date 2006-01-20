@@ -961,7 +961,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             inf_icols = diff (inf_icols, n->sem.sum.res);
             inf_icols = union_ (inf_icols, n->sem.sum.att);
             /* only infer part if available and not constant */
-            if (n->sem.sum.part != att_NULL ||
+            if (n->sem.sum.part != att_NULL &&
                 !PFprop_const (n->prop, n->sem.sum.part))
                 inf_icols = union_ (inf_icols, n->sem.sum.part);
             break;
@@ -975,7 +975,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
             inf_icols = diff (inf_icols, n->sem.count.res);
             /* only infer part if available and not constant */
-            if (n->sem.count.part != att_NULL ||
+            if (n->sem.count.part != att_NULL &&
                 !PFprop_const (n->prop, n->sem.count.part))
                 inf_icols = union_ (inf_icols, n->sem.count.part);
             break;
@@ -995,7 +995,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
                     inf_icols = union_ (inf_icols, 
                                         n->sem.rownum.sortby.atts[i]);
             /* only infer part if available and not constant */
-            if (n->sem.rownum.part != att_NULL ||
+            if (n->sem.rownum.part != att_NULL &&
                 !PFprop_const (n->prop, n->sem.rownum.part))
                 inf_icols = union_ (inf_icols, n->sem.rownum.part);
             break;
@@ -1009,7 +1009,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
             inf_icols = diff (inf_icols, n->sem.number.attname);
             /* only infer part if available and not constant */
-            if (n->sem.number.part != att_NULL ||
+            if (n->sem.number.part != att_NULL &&
                 !PFprop_const (n->prop, n->sem.number.part))
                 inf_icols = union_ (inf_icols, n->sem.number.part);
             break;
@@ -1054,7 +1054,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             inf_icols = diff (inf_icols, n->sem.blngroup.res);
             inf_icols = union_ (inf_icols, n->sem.blngroup.att);
             /* only infer part if available and not constant */
-            if (n->sem.blngroup.part != att_NULL ||
+            if (n->sem.blngroup.part != att_NULL &&
                 !PFprop_const (n->prop, n->sem.blngroup.part))
                 inf_icols = union_ (inf_icols, n->sem.blngroup.part);
             break;
