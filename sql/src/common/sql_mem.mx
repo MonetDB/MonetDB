@@ -71,7 +71,7 @@ sql_allocator *sa_create()
 
 sql_allocator *sa_reset( sql_allocator *sa )
 {
-	int i ;
+	size_t i ;
 
 	for (i = 1; i<sa->nr; i++) {
 		_DELETE(sa->blks[i]);
@@ -115,7 +115,7 @@ char *sa_alloc( sql_allocator *sa, size_t sz )
 
 void sa_destroy( sql_allocator *sa ) 
 {
-	int i ;
+	size_t i ;
 
 	for (i = 0; i<sa->nr; i++) {
 		GDKfree(sa->blks[i]);

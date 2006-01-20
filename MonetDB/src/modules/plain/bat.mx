@@ -853,9 +853,15 @@ CMDcount_bat(lng *res, int *bid)
 int
 CMDsetcount_bat(lng *res, BAT *b, lng *c)
 {
-	BATsetcount(b,*c);
+#if SIZEOF_SIZE_T < SIZEOF_LNG
+	if (*c >= ((lng) 1 << SIZEOF_SIZE_T)) {
+		GDKerror("CMDslice: argument out of range\n");
+		return GDK_FAIL;
+	}
+#endif
+	BATsetcount(b, (size_t) *c);
 	/* also need to set the end of the heap (allthough not used) */
-	b->batBuns->free += *c;
+	b->batBuns->free += (size_t) *c;
 	*res = *c;
 	return GDK_SUCCEED;
 }

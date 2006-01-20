@@ -617,7 +617,7 @@ sql_bind_member(sql_module *m, char *sqlfname, sql_subtype *tp, int nrargs)
 		if (strcmp(f->base.name, name) == 0) {
 			if (list_length(f->ops) == nrargs && is_subtype(tp, &((sql_arg *) f->ops->h->data)->type)) {
 
-				int scale = 0;
+				unsigned int scale = 0;
 				sql_subfunc *fres;
 
 				/* member functions should not match binary operators */

@@ -19,6 +19,7 @@
 #include "sql_config.h"
 #include <windows.h>
 #include <stdio.h>
+#include <stdlib.h>
 #define ALREADY_HAVE_WINDOWS_TYPE
 #include <sql.h>
 #include <sqlext.h>

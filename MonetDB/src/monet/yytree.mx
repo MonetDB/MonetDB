@@ -171,7 +171,8 @@ yychunkalloc(int tok, int cap, int extendable, int noyyval, char** next, char** 
 static YYSTREE
 yycopy(YYSTREE t, int kill_orig, int func_parent, char** next, char** end)
 {
-	int i, cap = t->cnt, extendable = func_parent || (YYOVERFLOW(t) != NULL);
+	unsigned i;
+	int cap = t->cnt, extendable = func_parent || (YYOVERFLOW(t) != NULL);
 	YYSTREE tn;
 
 	if (t->token == TOK_ITERATOR && cap < 5) {
@@ -753,7 +754,8 @@ size_t
 Myysize(YYSTREE t, size_t *attached)
 {
 	size_t sons_attached=0, me_attached=0, tot = YYNODESIZE(t->capacity + t->extendable);
-	int i;
+	unsigned i;
+
  	if (t->noyyval == 0 && t->iscopy == 0 && t->yyval.val.pval && ATOMextern(t->yyval.vtype)) {
 		me_attached = yysize(t->yyval.val.pval);
 	}

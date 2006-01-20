@@ -551,7 +551,7 @@ mvc_send_@1(stream *s, @1 cnt){
 	if(neg) cnt = -cnt;
 	b= buf+49;
 	do{
-		*b--= '0'+ (cnt %10);
+		*b--= (char) ('0'+ (cnt % 10));
 		cnt /=10;
 	} while(cnt>0);
 	if( neg) 
@@ -989,7 +989,7 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 		return -1;
 
 	/* row count, min(count, reply_size) */
-	if (!mvc_send_int(s, m->reply_size < count ? m->reply_size : count)) 
+	if (!mvc_send_int(s, (size_t) m->reply_size < count ? m->reply_size : (int) count)) 
 		return -1;
 
 	if (stream_write(s, "\n# ", 3, 1) != 1)

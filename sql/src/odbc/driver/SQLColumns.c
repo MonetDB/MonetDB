@@ -381,9 +381,9 @@ SQLColumns_(ODBCStmt *stmt, SQLCHAR *szCatalogName, SQLSMALLINT nCatalogNameLeng
 			for (j = 0; j < NCOLUMNS; j++)
 				if (tuples[i][j])
 					free((void *) tuples[i][j]);
-			free(tuples[i]);
+			free((void *) tuples[i]);
 		}
-		free(tuples);
+		free((void *) tuples);
 		return ODBCInitResult(stmt);
 	}
 

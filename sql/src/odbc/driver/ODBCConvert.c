@@ -1312,7 +1312,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 			}
 			break;
 		case SQL_INTERVAL_MONTH: {
-			int f;
+			unsigned f;
 
 			for (i = 1, f = 10; ival.intval.year_month.year >= f; f *= 10, i++)
 				;
@@ -1338,20 +1338,21 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 			break;
 		}
 		case SQL_INTERVAL_SECOND: {
-			int f;
+			unsigned f;
+			int w;
 
 			data = (char *) ptr;
 
 			for (i = 1, f = 10; ival.intval.day_second.day >= f; f *= 10, i++)
 				;
 			if (i < 10)
-				f = 17;	/* space needed for "'DAY(n) TO SECOND" */
+				w = 17;	/* space needed for "'DAY(n) TO SECOND" */
 			else
-				f = 18;	/* space needed for "'DAY(nn) TO SECOND" */
+				w = 18;	/* space needed for "'DAY(nn) TO SECOND" */
 			if (ivalprec < 10)
-				f += 3;	/* space for additional (n) */
+				w += 3;	/* space for additional (n) */
 			else
-				f += 4;	/* space for additional (nn) */
+				w += 4;	/* space for additional (nn) */
 
 			sz = snprintf(data, buflen, "INTERVAL %s'%u %02u:%02u:%02u",
 				      ival.interval_sign ? "-" : "",
@@ -1359,7 +1360,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 				      ival.intval.day_second.hour,
 				      ival.intval.day_second.minute,
 				      ival.intval.day_second.second);
-			if (sz < 0 || sz + f >= buflen) {
+			if (sz < 0 || sz + w >= buflen) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
 
@@ -1377,10 +1378,10 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr,
 			if (ival.intval.day_second.fraction) {
 				if (lenp)
 					*lenp += ivalprec + 1;
-				if (buflen > f + 2)
+				if (buflen > w + 2)
 					sz = snprintf(data, buflen, ".%0*u", ivalprec, ival.intval.day_second.fraction);
-				if (buflen <= f + 2 || sz < 0 || sz + f >= buflen) {
-					sz = buflen - f - 1;
+				if (buflen <= w + 2 || sz < 0 || sz + w >= buflen) {
+					sz = buflen - w - 1;
 					/* String data, right-truncated */
 					addStmtError(stmt, "01004", NULL, 0);
 				}
@@ -2392,8 +2393,8 @@ ODBCStore(ODBCStmt *stmt, SQLUSMALLINT param, SQLINTEGER offset, int row, char *
 		nval.val = * (SQLUBIGINT *) ptr;
 		break;
 	case SQL_C_NUMERIC:
-		nval.precision = apdrec->sql_desc_precision;
-		nval.scale = apdrec->sql_desc_scale;
+		nval.precision = (unsigned char) apdrec->sql_desc_precision;
+		nval.scale = (signed char) apdrec->sql_desc_scale;
 		nval.sign = ((SQL_NUMERIC_STRUCT *) ptr)->sign;
 		nval.val = 0;
 		for (i = 0; i < SQL_MAX_NUMERIC_LEN; i++)

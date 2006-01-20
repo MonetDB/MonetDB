@@ -2000,8 +2000,15 @@ slice(BAT **retval, BAT *b, lng start, lng end)
 		GDKerror("CMDslice: start position of slice should >= 0\n");
 		return GDK_FAIL;
 	}
+#if SIZEOF_SIZE_T < SIZEOF_LNG
+	if (start >= ((lng) 1 << SIZEOF_SIZE_T) ||
+	    end >= ((lng) 1 << SIZEOF_SIZE_T)) {
+		GDKerror("CMDslice: argument out of range\n");
+		return GDK_FAIL;
+	}
+#endif
 
-	return (*retval = BATslice(b, start, end + 1)) ? GDK_SUCCEED : GDK_FAIL;
+	return (*retval = BATslice(b, (size_t) start, (size_t) end + 1)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
