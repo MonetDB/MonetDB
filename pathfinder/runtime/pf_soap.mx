@@ -160,20 +160,6 @@ Send a SOAP RPC request via HTTP to the destination \"location\", save the reult
 #define HTTP_PORT   8080
 #define HTTPD_FUNC  "/soap_rpc"
 
-/* FIXME: definitions copied from milprint_summer.c, needed to detect what kind
- * of values the 'fun_kin' is presenting. Maybe not all of them are
- * necessary */
-#define ITEM_ORDER -1 /* scj interface `item|iter' representation */
-#define NORMAL      0 /* normal `iter|pos|item|kind' interface */
-#define VALUES      1 /* direct value interface `iter|pos|item-value|kind' */
-#define NODE       32 /* element/attribute construction interface */
-#define BOOL  3
-#define INT   4
-#define DEC   5
-#define DBL   6
-#define STR   7
-#define U_A   8
-
 #define MODULE_ATTR_NAME "name"
 #define METHOD_ATTR_NAME "name"
 
