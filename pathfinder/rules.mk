@@ -90,6 +90,7 @@ HIDE=1
 	$(RM) $*.yy.cc.tmp
 
 ifdef NEED_MX
+
 %.m: %.mx
 	$(MX) $(MXFLAGS) -x m $<
 
@@ -133,7 +134,24 @@ ifdef NEED_MX
 
 %.glue.c: %.m $(MEL)
 	$(MEL) $(INCLUDES) -glue $< > $@
-endif
+
+else # NEED_MX
+
+# Dependency "lib_%.la" prevents the %.mil script of a module from being
+# linked to the .libs/ directory in case the C-code of the module failed to
+# compile; thus, "make check" can recognize that the module is not
+# available, and will properly skip the tests that require it.
+%.mil: lib_%.la
+	test -e .libs || mkdir -p .libs
+	test -e .libs/$@ || $(LN_S) ../$@ .libs/$@
+
+%.mal:
+	test -e .libs || mkdir -p .libs
+	test -e .libs/$@ || $(LN_S) ../$@ .libs/$@
+
+endif # NEED_MX
+
+ifdef NEED_MX
 
 # The following rules generate two files using swig, the .xx.c and the
 # .xx file.  There may be a race condition here when using a parallel
@@ -168,6 +186,8 @@ endif
 
 %.pm: %.pm.i
 	$(SWIG) -perl5 $(SWIGFLAGS) -outdir . -o dymmy.c $<
+
+endif # NEED_MX
 
 %.tex: %.mx
 	$(MX) -1 -H$(HIDE) -t $< 
