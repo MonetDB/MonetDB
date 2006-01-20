@@ -6297,6 +6297,17 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "var qn_loc    := ws.fetch(QN_LOC).fetch(rpc_oid);\n"
                 "var prop_text := ws.fetch(PROP_TEXT).fetch(rpc_oid); # str value of the text nodes\n"
 
+                /* get 'pre_prop' 'oid' of '<iter>'. It's save to use 'find',
+                 * since "iter" appears only once in 'qn_loc'. */
+                "var a := qn_loc.reverse().find(\"iter\");\n"
+                /* get 'void' of the 'pre_prop' 'oid', must use 'ord_select' and
+                 * then 'fetch', since the 'oid' can appear more than once in
+                 * 'pre_prop'. */
+                "a := pre_prop.ord_select(a).reverse().fetch(0);\n"
+                /* Calculate the level number in case we have a value which type
+                 * is '<xs:anyNode>'. */
+                "var nodev_level :=  pre_level.find(a) + 2;\n"
+
                 "var k := int(nil); # var to hold the kind nr of the current iteration\n"
                 "var itercnt := 0;\n"
                 "var i := int(nil);\n"
@@ -6309,8 +6320,16 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "pre_size@batloop(){\n"
                 "k := pre_kind.fetch($h);\n"
                 "if (k = \'\\000\') {\n"
-                "if (qn_loc.fetch(pre_prop.fetch($h)) = \"iter\"){ # calculate iter number\n"
-                "itercnt :+= 1;\n"
+                /* calculate 'iter' number */
+                "if (qn_loc.fetch(pre_prop.fetch($h)) = \"iter\"){\n"
+                "itercnt := itercnt + 1;\n"
+                /* if (level == nodev_level && kind == ELEM): this is the child
+                 * of a tag '<xs:anyNode>' */
+                "} else if(int(pre_level.fetch($h)) = nodev_level) {\n"
+                "iter.insert(nil, oid(itercnt));\n"
+                "item.insert(nil, 0@0);\n"
+                "i := set_kind(local_name.leftjoin(ws.fetch(DOC_LOADED).reverse()).tmark(0@0), ELEM);\n"
+                "kind.insert(nil, i);\n"
                 "}\n"
                 "} else if (k = \'\\001\') { # text node, get its str value, and convert it accordingly\n"
                 "var t := qn_loc.fetch(pre_prop.fetch(int($h)-1)); # type\n"
@@ -10290,8 +10309,7 @@ const char* PFstopMIL() {
         "  if (genType.search(\"none\") = -1)\n"
         "    print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n"
         "});\n"
-        /* FIXME: out commit this line */
-        "#destroy_ws(ws);\n"
+        "destroy_ws(ws);\n"
         "if (not(isnil(err))) ERROR(err);\n"
         "time_print := time() - time_print;\n"
         "if (genType.search(\"timing\") >= 0)\n"
