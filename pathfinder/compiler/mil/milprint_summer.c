@@ -6176,8 +6176,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
     if (apply.rpc)
     {
         /* The extra parameter 'dst' of a SOAP RPC is not listed in
-         * fun->params[], so translate it separately.
-         * FIXME: this is a very dirty hack */
+         * fun->params[], so translate it separately. */
         milprintf(f, "\n# begin of translate the 'dst' param of SOAP\n");
 
         if (translate2MIL (f, NORMAL, cur_level, counter, R(L(args))) == NORMAL)
@@ -6281,11 +6280,11 @@ translateUDF (opt_t *f, int cur_level, int counter,
                                     "dec_values,"
                                     "str_values);\n",
                 item_ext, counter-1, 
-                apply.fun->qname.ns.uri,
+                f->soap_uri /* apply.fun->qname.ns.uri*/,
                 apply.fun->qname.loc,
                 counter, counter, counter, counter);
 
-        milprintf(f, "printf(\"rpc_oid: \");\nrpc_oid.print();\n");
+        milprintf(f, "#printf(\"rpc_oid: \");rpc_oid.print();\n");
 
         /* Construct the iter|item|kind by hand, and fill in the value
          * tables. */
@@ -6309,8 +6308,8 @@ translateUDF (opt_t *f, int cur_level, int counter,
 
                 "pre_size@batloop(){\n"
                 "k := pre_kind.fetch($h);\n"
-                "if (k = \'\\000\') { # calculate iter number\n"
-                "if (qn_loc.fetch(pre_prop.fetch($h)) = \"iter\"){\n"
+                "if (k = \'\\000\') {\n"
+                "if (qn_loc.fetch(pre_prop.fetch($h)) = \"iter\"){ # calculate iter number\n"
                 "itercnt :+= 1;\n"
                 "}\n"
                 "} else if (k = \'\\001\') { # text node, get its str value, and convert it accordingly\n"
@@ -10378,7 +10377,7 @@ expand_flwr (PFcnode_t *c, PFcnode_t *ret)
  * @param c the root of the core tree
  */
 int
-PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, char *genType, long timing, 
+PFprintMILtemp (PFcnode_t *c, int optimize, char* soap_uri, int module_base, int num_fun, char *genType, long timing, 
                 char** prologue, char** query, char** epilogue)
 {
     PFarray_t *way, *counter;
@@ -10387,6 +10386,7 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, char *
     /* hack: milprint_summer state, not mil_opt state */
     f->num_fun = num_fun;     /* for queries: the amount of functions in the query itself (if any); used to ignore module functions */
     f->module_base = module_base; /* only generate mil module; no query */
+    f->soap_uri = soap_uri; /* this query imports a module under identifier 'soap' (i.e. for rpc) */
 
     way = PFarray (sizeof (int));
     counter = PFarray (sizeof (int));
