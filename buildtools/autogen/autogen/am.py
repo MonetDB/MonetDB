@@ -238,13 +238,13 @@ def needbuildtool(deplist):
             return 1
     return 0
 
-def am_dep(fd, t, deplist, am):
+def am_dep(fd, t, deplist, am, pref = ''):
     t = t.replace('\\', '/')
     n = t.replace('.o', '.lo', 1)
     f,ext = rsplit_filename(n)
-    if t != n:
-        fd.write(n + " ")
-    fd.write(t + ":")
+    if t != n and not pref:
+        fd.write(t + " ")
+    fd.write(pref + n + ":")
     for d in deplist:
         if not os.path.isabs(d):
             fd.write(" " + am_translate_dir(d, am))
@@ -253,14 +253,14 @@ def am_dep(fd, t, deplist, am):
     fd.write("\n")
 
 def am_deps(fd, deps, objext, am):
-    if len(am['DEPS']) <= 0:
+    if not am['DEPS']:
         fd.write("if NEED_MX\n")
         for t, deplist in deps.items():
-            if (needbuildtool(deplist)):
+            if needbuildtool(deplist):
                 am_dep(fd, t, deplist, am)
         fd.write("endif\n")
         for t, deplist in deps.items():
-            if (not(needbuildtool(deplist))):
+            if not needbuildtool(deplist):
                 am_dep(fd, t, deplist, am)
     am['DEPS'].append("DONE")
 
@@ -663,8 +663,9 @@ def am_library(fd, var, libmap, am):
         if ext not in automake_ext:
             am['EXTRA_DIST'].append(src)
 
-    nsrcs = "nodist_"+pref+sep+libname+"_la_SOURCES ="
-    srcs = "dist_"+pref+sep+libname+"_la_SOURCES ="
+    fullpref = pref+sep+libname+'_la'
+    nsrcs = "nodist_"+fullpref+"_SOURCES ="
+    srcs = "dist_"+fullpref+"_SOURCES ="
     for target in libmap['TARGETS']:
         t, ext = split_filename(target)
         if ext in scripts_ext:
@@ -676,6 +677,10 @@ def am_library(fd, var, libmap, am):
                 srcs = srcs + " " + src
             else:
                 nsrcs = nsrcs + " " + src
+            if target[-2:] == '.o' and libmap['DEPS'].has_key(target):
+                am_dep(fd, target, libmap['DEPS'][target], am, fullpref+"-")
+                basename = target[:-2]
+                fd.write('\t$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(%s_CFLAGS) $(CFLAGS) -c -o %s-%s.lo `test -f \'%s.c\' || echo \'$(srcdir)/\'`%s.c\n' % (fullpref, fullpref, basename, basename, basename))
     fd.write(nsrcs + "\n")
     fd.write(srcs + "\n")
 
