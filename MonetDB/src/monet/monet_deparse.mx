@@ -140,7 +140,8 @@ yytoProlog(YYSTREE t, int cnt)
 char *
 yydeparse(Client c, YYSTREE t, char *buf, char *end)
 {
-	int i, tk = 0;
+	unsigned i;
+	int tk = 0;
 
 	if (t == NULL || buf > end) {
 		end[-1] = 0;
@@ -234,7 +235,8 @@ generate information for the performance monitor.
 char *
 yydeparseCall(Client c, YYSTREE t, char *buf, char *end)
 {
-	int i, tk = 0;
+	unsigned i;
+	int tk = 0;
 	char *s = buf;		/*,*s1=s; */
 
 	*buf = 0;

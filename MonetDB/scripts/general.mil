@@ -1,5 +1,5 @@
 # general include file
-module(builtin,arith,str,constant,bat,algebra,sys,trans);
+module(builtin);module(arith);module(str);module(constant);module(bat);module(algebra);module(sys);module(trans);
 printf("\nloaded;\n");
 loaded;
 printf("\nTry: modules;                - for other modules.\n");

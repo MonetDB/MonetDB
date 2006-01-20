@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@PYTHON@
 
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -2581,7 +2581,7 @@ def main(argv) :
         ('MonetDB4', '4', 'MonetDB4', None,
          "use Mserver of MonetDB Version 4.* (default)"),
         ('MonetDB5', '5', 'MonetDB5', None,
-         "use mserver of MonetDB Version 5"),
+         "use mserver5 of MonetDB Version 5"),
         ('recursive', 'r', 'recursive', None,
          "recurse into subdirectories (implies 'All')"),
         ('MONETDB_SOURCE', None, 'MONETDB_SOURCE', '<path>',
@@ -2947,13 +2947,13 @@ def main(argv) :
         exe = {}
         exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
         if env['VERSION'] >= 49900:
-            exe['Mserver']       = CheckExec('mserver')      , 'mserver "--config=%s" --debug=%s %s %s %s --set mapi_port=%s --set sql_port=%s --set xquery_port=%s --set monet_prompt= --trace' % \
+            exe['Mserver']       = CheckExec('mserver5')     , 'mserver5 "--config=%s" --debug=%s %s %s %s --set mapi_port=%s --set sql_port=%s --set xquery_port=%s --set monet_prompt= --trace' % \
                                                                (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['MAPIPORT'], env['SQLPORT'], env['XQUERYPORT'])
         else:
             exe['Mserver']       = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s %s --set mapi_port=%s --set sql_port=%s --set xquery_port=%s --set monet_prompt= --trace' % \
                                                                (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['MAPIPORT'], env['SQLPORT'], env['XQUERYPORT'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
-        exe['python']        = CheckExec('python')       , 'python'
+        exe['python']        = CheckExec('@PYTHON@')     , '@PYTHON@'
         exe['Mapi_Client']   = CheckExec(env['MAPICLIENT'].split(None, 1)[0])  , '%s -u monetdb -P monetdb "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
         exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -u monetdb -P monetdb --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['SQLPORT'], env['SQL_TRACE'])
         exe['XQuery_Client'] = CheckExec(env['XQUERYCLIENT'].split(None, 1)[0]), '%s -u monetdb -P monetdb --host=%s --port=%s' % (env['XQUERYCLIENT'], HOST, env['XQUERYPORT'])

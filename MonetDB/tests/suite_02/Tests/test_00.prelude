@@ -1,5 +1,5 @@
 setoid(oid(10000000));
-module("unix","ascii_io");
+module("unix");module("ascii_io");
 # initialize the database
 var t:= new(int,int);
 t.rename("k10_unique1");

@@ -10,8 +10,8 @@ stdout of test 'binsemijoin` in directory 'src/gdk` itself:
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 var a:=new(void,int).seqbase(oid(0));
-a.insert(nil,0);
-a.insert(nil,1);
+a.append(0);
+a.append(1);
 
 var b:=new(int,int);
 b.insert(0,0);

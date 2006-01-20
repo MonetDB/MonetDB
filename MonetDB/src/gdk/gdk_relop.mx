@@ -1336,7 +1336,8 @@ static int nlthetajoin_@2_@1(BAT *bn, BAT *l, BAT *r) {
 			if (cur+8 >= lim) {
 				bn->batBuns->free = ((BUN) cur) - bn->batBuns->base;
 				BATsetcount(bn,bn->batBuns->free/BUNsize(bn));
-				if (BATextend(bn, 8 + BATcount(bn) * (((dbl) lhi)/(li+1))) == NULL) return 1;
+				if (BATextend(bn, 8 + (size_t) (BATcount(bn) * (((dbl) lhi)/(li+1)))) == NULL)
+					return 1;
 				cur = (dst_t*) (bn->batBuns->base + bn->batBuns->free);
 				lim = (dst_t*) (bn->batBuns->base + bn->batBuns->size);
 			}

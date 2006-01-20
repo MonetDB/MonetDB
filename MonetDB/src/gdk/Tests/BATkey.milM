@@ -1,4 +1,4 @@
-module("unix","str","ascii_io");
+module("unix");module("str");module("ascii_io");
 
 var ttd := getenv("TSTTRGDIR");
 

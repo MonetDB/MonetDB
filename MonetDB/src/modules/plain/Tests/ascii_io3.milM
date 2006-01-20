@@ -1,12 +1,12 @@
 VAR namebat := bat(void, str);
 namebat.seqbase(0@0);
-namebat.insert(nil, "tmpdocs");
+namebat.append("tmpdocs");
 VAR sepbat := bat(void, str);
 sepbat.seqbase(0@0);
-sepbat.insert(nil, "\n");
+sepbat.append("\n");
 VAR typebat := bat(void, str);
 typebat.seqbase(0@0);
-typebat.insert(nil, "str");
+typebat.append("str");
 
 VAR len := 20;
 VAR datafile := TSTTRGDIR + "/ascii_io3.load";

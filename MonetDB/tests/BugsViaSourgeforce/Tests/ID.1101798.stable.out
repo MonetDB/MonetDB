@@ -11,7 +11,7 @@ stdout of test 'ID.1101798` in directory 'tests/BugsViaSourgeforce` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 module(xtables);
 
-var item_1 := bat (void,oid).seqbase(0@0).insert(nil,1@0).insert(nil,2@0).insert(nil,3@0).insert(nil,4@0).insert(nil,5@0).access(BAT_READ);
+var item_1 := bat (void,oid).seqbase(0@0).append(1@0).append(2@0).append(3@0).append(4@0).append(5@0).access(BAT_READ);
 var iter_1 := item_1.project(1@0);
 var iter_2 := iter_1.project(1@0);
 var item_2 := iter_2.mark(1@0);

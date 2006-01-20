@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@PYTHON@
 
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -78,11 +78,14 @@ test = (
                     r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]',
                 # ant output we want to ignore 
                     r'^Buildfile:.*$',
+                    r'^Building jar: .*$',
                     r'^Total time: [0-9]+ seconds?$',
                 # remove wine errors:
 		    r"^fixme:.*$",
 		# ignore big- vs. little-endian byte-orders in test tests/BugDay_2005-10-06_4.8/Tests/print_CTgroup.SF-1315791.*:
 		    r"^\[  ?\\000\\000\\000[ !]\\000\\000\\000!? \]$",
+                # ignore compile date/time in helps messages:
+                    r"^COMPILED:  by adm on .*$",
                  ])+')',  re.MULTILINE),
         # differing error messages when loading non-existing modules in dynamic and static Mserver
         re.compile('(?:'+')|(?:'.join([
@@ -220,7 +223,7 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
                 r'^(!ERROR: .*: [0-9]+ times inserted nil due to errors at tuples )([0-9]+)(\.)',
                 r'^(ERROR = !ERROR: )(SQLerror:assert:|MALexception:)?(.*\n)',
 		r'^(Connection warning:.*\()(mserver_mal|mserver_sql)(\).*\n)',
-                r'^(.*!ERROR: .*)(operation failed.\n)',
+                r'^()(.*!ERROR: .*)(operation failed.\n)',
            ])+')',  re.MULTILINE)
 norm_out = (
                 None, 'syntax/parse', None, 'unexpected ... on line/in: ', None,
@@ -228,7 +231,7 @@ norm_out = (
                 None, '?', None,
                 None, '', None,
 		None, 'mserver_sql', None,
-		'# ', None,
+		'= ', None, None,
            )
 
 

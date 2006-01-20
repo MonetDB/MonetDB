@@ -9,13 +9,13 @@ stdout of test 'table_type.SF-916648` in directory 'tests/BugDay_2005-10-06_4.8`
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-print(bat(void,int).seqbase(0@0).insert(nil,1));
+print(bat(void,int).seqbase(0@0).append(1));
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
 [ 0@0,	  1	  ]
-table(bat(void,int).seqbase(0@0).insert(nil,1));
+table(bat(void,int).seqbase(0@0).append(1));
 #---------#
 # t	  # name
 # int	  # type

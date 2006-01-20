@@ -9,7 +9,7 @@ stdout of test 'making_void-void_BAT_appendable.SF-1340615` in directory 'tests/
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-var bar := bat(void,oid).insert(nil,nil).mark(0@0).reverse().mark(0@0);
+var bar := bat(void,void).insert(nil,nil).mark(0@0).reverse().mark(0@0);
 bar := bar.reverse().mark(0@0).reverse();
 bar.print();
 #-----------------#
@@ -29,7 +29,7 @@ bar.print();
 bar.access().print();
 [ 2 ]
 
-var foo := bat(void,oid).insert(nil,nil).mark(0@0).reverse().mark(0@0);
+var foo := bat(void,void).insert(nil,nil).mark(0@0).reverse().mark(0@0);
 foo := foo.reverse().mark(0@0).reverse();
 foo.print();
 #-----------------#

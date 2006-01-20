@@ -18,7 +18,7 @@ x.insert(3,nil);
 x:=x.mark(0@0);
 var y:=[oid](x);
 var z:=x.copy().access(BAT_APPEND);
-z.insert(2,nil);
+z.insert(2,oid(nil));
 z.access(BAT_READ);
 var w:=x.copy().reverse().mark(0@0).reverse();
 
@@ -97,7 +97,7 @@ z.print();
 [ 2,	  2@0	  ]
 [ 3,	  3@0	  ]
 [ 3,	  4@0	  ]
-[ 2,	  5@0	  ]
+[ 2,	  nil	  ]
 {min}(z).print();
 #setaggr impl: int-optimized loop
 #-----------------#
@@ -105,7 +105,7 @@ z.print();
 # int	oid	  # type
 #-----------------#
 [ 1,	  0@0	  ]
-[ 2,	  2@0	  ]
+[ 2,	  nil	  ]
 [ 3,	  3@0	  ]
 quit();
 

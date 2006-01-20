@@ -1348,10 +1348,7 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 		s->errnr = READ_ERROR;
 		return nr;
 	}
-	if (res > 0)
-		return res / elmsize;
-	s->errnr = READ_ERROR;
-	return 0;
+	return res / elmsize;
 }
 
 #ifdef NATIVE_WIN32

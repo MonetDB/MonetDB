@@ -1,4 +1,4 @@
-module("tcpip", "alarm");
+module("tcpip");module("alarm");
 
 proc get_mapi_port() : void {
 	if (monet_environment.exist("mapi_port")){

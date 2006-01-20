@@ -172,6 +172,7 @@ rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/general.mil
 rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/lady.gif
 rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/docs/*/*.tex
 rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/docs/*/*/*.tex
+rm -rf $RPM_BUILD_ROOT%{prefix}/share/%{name}/Tests/sample.class
 
 # Fixes monet config script
 #perl -p -i -e "s|$RPM_BUILD_ROOT||" $RPM_BUILD_ROOT%{prefix}/bin/monet_config

@@ -1185,7 +1185,7 @@ clean_print(char *msg, const char *prefix, FILE *fd)
 		char *p = strchr(msg, '\n');
 
 		if (p)
-			*p = 0;
+			*p++ = 0;
 
 		/* skip over prefix */
 		if (strncmp(msg, prefix, len) == 0)
@@ -2953,19 +2953,21 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 	int i, n;
 	char **anchors;
 
-	if (result == NULL)
-		result = new_result(hdl);
-
 	if (line[0] == '&') {
 		char *n = line;
+		int qt;
 
 		/* handle fields &qt */
 
 		n++;		/* query type */
-		result->querytype = strtol(n, &n, 0);
+		qt = strtol(n, &n, 0);
+
+		if (qt != Q_BLOCK || result == NULL)
+			result = new_result(hdl);
+		result->querytype = qt;
 
 		n++;		/* skip space */
-		switch (result->querytype) {
+		switch (qt) {
 		case Q_TRANS:
 			if (*n == 'f')
 				hdl->mid->auto_commit = 0;
@@ -2998,6 +3000,9 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 		/* start of new SQL result */
 		return result;
 	}
+	if (result == NULL)
+		result = new_result(hdl);
+
 	line = strdup(line);	/* make copy we can play with */
 
 	etag = strrchr(line, '#');
@@ -3146,7 +3151,8 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			}
 			add_cache(result, strdup(line));
 			if (lookahead > 0 && (result->querytype == -1 /* unknown (not SQL) */  ||
-					      result->querytype == Q_TABLE))
+					      result->querytype == Q_TABLE ||
+					      result->querytype == Q_UPDATE))
 				return mid->error;
 			break;
 		}
@@ -3508,16 +3514,17 @@ mapi_cache_limit(Mapi mid, int limit)
 /* 		} */
 /* 	} */
 	if (mid->languageId == LANG_SQL) {
-		MapiHdl hdl = mapi_new_handle(mid);
+		MapiHdl hdl;
 
-		if (mid->active && read_into_cache(mid->active, 0) != MOK)
+		if (stream_printf(mid->to, "X" "reply_size %d\n", limit) < 0 ||
+		    stream_flush(mid->to)) {
+			close_connection(mid);
+			mapi_setError(mid, stream_error(mid->to), "mapi_cache_limit", MTIMEOUT);
 			return MERROR;
-		if (mid->active)
-			return MOK;
-		if (stream_printf(mid->to, "s" "set reply_size=%d;\n", limit) < 0 ||
-		    stream_flush(mid->to))
-			check_stream(mid, mid->to, stream_error(mid->to), "mapi_cache_limit", mid->error);
+	}
+		hdl = prepareQuery(mapi_new_handle(mid), "reply_size");
 		mid->active = hdl;
+		read_into_cache(hdl, 0);
 		mapi_close_handle(hdl);	/* reads away any output */
 	}
 	return MOK;
@@ -3652,9 +3659,10 @@ mapi_fetch_line(MapiHdl hdl)
 	    (result = hdl->result) != NULL &&
 	    hdl->mid->languageId == LANG_SQL &&
 	    result->querytype == Q_TABLE &&
-	    hdl->mid->active == NULL &&
 	    result->row_count > 0 &&
 	    result->cache.first + result->cache.tuplecount < result->row_count) {
+		if (hdl->mid->active != NULL)
+			read_into_cache(hdl->mid->active, 0);
 		hdl->mid->active = hdl;
 		hdl->active = result;
 		if (stream_printf(hdl->mid->to, "X" "export %d %d\n", result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||

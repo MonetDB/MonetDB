@@ -1069,10 +1069,10 @@ proc qgramselect(bat[void,oid] qgrams_strings,
 
 proc qgramselfjoin_test() : bat[oid, oid] {
 
-	var qgram := (new (void, oid)).seqbase(0@0).insert(nil, 1@0).insert(nil, 1@0).insert(nil,2@0).insert(nil,2@0).insert(nil,3@0).insert(nil,4@0);
-	var id := (new (void, oid)).seqbase(0@0).insert(nil, 1@0).insert(nil, 2@0).insert(nil,1@0).insert(nil,2@0).insert(nil,1@0).insert(nil,2@0);
-	var pos := (new (void, int)).seqbase(0@0).insert(nil, 0).insert(nil, 0).insert(nil, 1).insert(nil, 1).insert(nil,2).insert(nil,2);
-	var len := (new (void, int)).seqbase(0@0).insert(nil, 3).insert(nil, 2).insert(nil, 3).insert(nil, 2).insert(nil,3).insert(nil,3);
+	var qgram := (new (void, oid)).seqbase(0@0).append(1@0).append(1@0).append(2@0).append(2@0).append(3@0).append(4@0);
+	var id := (new (void, oid)).seqbase(0@0).append(1@0).append(2@0).append(1@0).append(2@0).append(1@0).append(2@0);
+	var pos := (new (void, int)).seqbase(0@0).append(0).append(0).append(1).append(1).append(2).append(2);
+	var len := (new (void, int)).seqbase(0@0).append(3).append(2).append(3).append(2).append(3).append(3);
 
 	var k := 3;
 	var c := 0.8;

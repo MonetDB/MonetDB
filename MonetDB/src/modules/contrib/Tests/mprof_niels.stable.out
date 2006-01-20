@@ -16,7 +16,7 @@ setoid(oid(20000000));
 module(mprof);
 !ERROR: locate module: bulk.
 !ERROR: TBL_loadmod: module load bulk cancelled.
-module(gdkmem,bulk);
+module(gdkmem);module(bulk);
 !ERROR: CMDmodule: load failed.
 !ERROR: locate module: integer.
 !ERROR: TBL_loadmod: module load integer cancelled.

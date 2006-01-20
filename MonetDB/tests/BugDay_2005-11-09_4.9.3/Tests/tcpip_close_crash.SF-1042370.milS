@@ -1,5 +1,5 @@
 module(mapi);
-module("tcpip", "alarm");
+module("tcpip");module("alarm");
 
 VAR tcpip_port := get_mapi_port();
 

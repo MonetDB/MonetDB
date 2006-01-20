@@ -23,7 +23,7 @@ t.insert( oid(4), "e" );
 t.insert( oid(5), "f" );
 t.insert( oid(6), "g" );
 t.insert( oid(7), "h" );
-t.mark(nil).print();
+t.project(nil).print();
 
 t  := new(void,str).seqbase(oid(0));
 t.insert( oid(0), "a" );
@@ -34,4 +34,4 @@ t.insert( oid(4), "e" );
 t.insert( oid(5), "f" );
 t.insert( oid(6), "g" );
 t.insert( oid(7), "h" );
-t.mark(nil).print();
+t.project(nil).print();

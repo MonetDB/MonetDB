@@ -513,6 +513,8 @@ Get the new information for the server socket and start listening.
 			if (get_client) {
 				/* try to get a cached client session */
 				c = (*get_client)(fdin, fdout);
+				if (c && MAPIinitClient(c, cmd, fdin, fdout) < 0) 
+					continue;
 			} 
 			if (c == 0) {
 				c = initClient(name, mp, FALSE);
@@ -538,15 +540,11 @@ Get the new information for the server socket and start listening.
 				CNTXTcopy(stk, c);
 				TBL_initclient(c, father);
 			
-				if (STREQ(cmd, "")) { 
+				if (STREQ(cmd, "")) 
 					(void) monetFork();
-				} else {
-					if (MAPIinitClient(c, cmd, fdin, fdout) < 0) {
-						closeClient(c, 0);
-						continue;
-					}
-				}
-			}
+				else if (MAPIinitClient(c, cmd, fdin, fdout) < 0) 
+					continue;
+			} 
 			scheduleClient(c);
 			PARDEBUG THRprintf(GDKerr, "MAPIlisten:client accepted %d\n", msgsock);
 		}

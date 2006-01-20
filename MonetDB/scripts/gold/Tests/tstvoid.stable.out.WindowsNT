@@ -20,7 +20,7 @@ stdout of test 'tstvoid` in directory 'scripts/gold` itself:
 # Monet Database Server V4.3.15
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-module(ascii_io,unix);
+module(ascii_io);module(unix);
 # should run if you set TSTTRGDIR to pwd
 
 var path:=getenv("TSTTRGDIR");
@@ -76,7 +76,7 @@ quit();
 # Monet Database Server V4.3.11
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-module(enum,str);
+module(enum);module(str);
 
 var o := bat("car_age").reverse().fetch(0);
 
@@ -100,7 +100,7 @@ var class_t := maketype("class");
 
 proc void_encode(int tpe, str title) : bat {
     var b := bat(sprintf("car_%s", title));
-    var bn := tpe.[encode](b.reverse().mark(nil).reverse()); 
+    var bn := tpe.[encode](b.reverse().project(nil).reverse()); 
     bn.rename(sprintf("void_%s", title));
     bn.persists(true);
     bn.seqbase(o);
@@ -113,13 +113,13 @@ proc void_create() : void {
     void_encode(category_t,"category");
     void_encode(town_t,"town");
     void_encode(class_t,"class");
-    var void_neg := bat("car_neg").mark(nil).copy();
+    var void_neg := bat("car_neg").project(nil).copy();
     void_neg.rename("void_neg");
     void_neg.persists(true);
-    var void_pos := bat("car_pos").mark(nil).copy();
+    var void_pos := bat("car_pos").project(nil).copy();
     void_pos.rename("void_pos");
     void_pos.persists(true);
-    var void_gender := bat("car_gender").reverse().mark(nil).reverse().copy();
+    var void_gender := bat("car_gender").reverse().project(nil).reverse().copy();
     void_gender.rename("void_gender");
     void_gender.persists(true);
     void_gender.seqbase(o);
@@ -163,8 +163,8 @@ ls();
 [ "void_category",	  "void", "category_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "void_class",		  "void", "class_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "void_gender",	  "void", "chr",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
-[ "void_neg",		  "void", "oid",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
-[ "void_pos",		  "void", "oid",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "void_neg",		  "void", "void",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
+[ "void_pos",		  "void", "void",	  50000,  0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 [ "void_town",		  "void", "town_t",	  100000, 0,	  "dirty",	  "load", "pers", 0,	  1		  ]
 commit();
 quit();

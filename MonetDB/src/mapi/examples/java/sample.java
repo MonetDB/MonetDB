@@ -20,7 +20,7 @@
 // Make sure you have the Mapi.java package in your path
 import mapi.*;
 
-class sample
+public class sample
 {
     public static void main(String[] args) {
 	

@@ -11,14 +11,16 @@ stdout of test 'bat_reverse_named_ls_dir.SF-1216455` in directory 'tests/BugDay_
 # Visit http://monetdb.cwi.nl/ for further information.
 module(malalgebra);
 
-var id:=new(void,oid).seqbase(0@0).insert(nil,
-0@0).insert(nil, 2@0);
-var aa:=new(void,int).seqbase(0@0).insert(nil,
-0).insert(nil, 2);
+var id:=new(void,oid).seqbase(0@0).append(0@0).append(2@0);
+var aa:=new(void,int).seqbase(0@0).append(0).append(2);
 
 # these two joins should be equivalent
 var j:=join(id.reverse(), aa).rename("T_join");
 var lj:=leftjoin(id.reverse(), aa).rename("T_leftjoin");
+
+# these two joins should be equivalent
+var j2:=join(id.reverse(), aa).reverse().rename("T_join_rev");
+var lj2:=leftjoin(id.reverse(), aa).reverse().rename("T_leftjoin_rev");
 
 ls("join");
 #-------------------------------------------------------------------------------------------------#
@@ -31,13 +33,7 @@ dir("join");
 # str		str	str	lng	int	str		str	str	int	int		  # type
 #---------------------------------------------------------------------------------------------------------#
 [ "T_join",	  "oid",  "int",  2,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "T_join_rev",	  "int",  "oid",  2,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
 [ "T_leftjoin",	  "oid",  "int",  2,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
+[ "T_leftjoin_rev",	  "int",  "oid",  2,	  0,	  "dirty",	  "load", "tran", 0,	  1		  ]
 quit();
-
-! the above output is correct (ls() does not list the BATs as they are not persistent),
-! but someone needs to check, whether this test indeed hits the point of the respective bug report...
-
-# 19:07:37 >  
-# 19:07:37 >  Done.
-# 19:07:37 >  
-

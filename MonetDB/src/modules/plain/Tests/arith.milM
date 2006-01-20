@@ -37,6 +37,8 @@ CATCH((int(1)%sht(0))).print();
 CATCH((int(1)%chr(0))).print();
 CATCH((int(1)%int(0))).print();
 CATCH((lng(1)%int(0))).print();
+CATCH((dbl(1)%dbl(0))).print();
+CATCH((flt(1)%flt(0))).print();
 
 ('a' < 'z').print();  ('z' < 'a').print();  ('a' < 'a').print();
 ('a' <= 'z').print(); ('z' <= 'a').print(); ('a' <= 'a').print();
@@ -90,6 +92,7 @@ CATCH((lng(1)%int(0))).print();
 (sht1 - sht2).print();
 (sht1 * sht2).print();
 (sht1 / sht2).print();
+(sht1 % sht2).print();
 
 (sht1 + int2).print();
 (sht1 - int2).print();
@@ -120,6 +123,7 @@ CATCH((lng(1)%int(0))).print();
 (int1 - int2).print();
 (int1 * int2).print();
 (int1 / int2).print();
+(int1 % int2).print();
 
 (int1 + flt2).print();
 (int1 - flt2).print();
@@ -150,6 +154,7 @@ CATCH((lng(1)%int(0))).print();
 (flt1 - flt2).print();
 (flt1 * flt2).print();
 (flt1 / flt2).print();
+(flt1 % flt2).print();
 
 (flt1 + dbl2).print();
 (flt1 - dbl2).print();
@@ -180,6 +185,7 @@ CATCH((lng(1)%int(0))).print();
 (dbl1 - dbl2).print();
 (dbl1 * dbl2).print();
 (dbl1 / dbl2).print();
+(dbl1 % dbl2).print();
 
 (dbl1 + lng2).print();
 (dbl1 - lng2).print();
@@ -210,6 +216,7 @@ CATCH((lng(1)%int(0))).print();
 (lng1 - lng2).print();
 (lng1 * lng2).print();
 (lng1 / lng2).print();
+(lng1 % lng2).print();
 
 abs(sht2).print();
 abs(int2).print();
@@ -235,7 +242,6 @@ min(oid1,oid2).print();
 inv(flt2).print();
 inv(dbl2).print();
 
-(int1% int2).print();
 (int1<<int2).print();
 (int1>>int2).print();
 

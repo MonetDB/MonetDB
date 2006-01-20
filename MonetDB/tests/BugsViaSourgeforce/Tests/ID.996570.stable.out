@@ -37,7 +37,7 @@ c.print();
 #-----------------#
 [ nil,	  1	  ]
 [ nil,	  2	  ]
-var d:=c.insert(b);
+var d:=c.append(b);
 d.print();
 #-----------------#
 # h	tmp_28	  # name

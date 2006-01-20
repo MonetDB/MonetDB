@@ -260,9 +260,58 @@ dump_table(Mapi mid, char *tname)
 		    strcmp(c_type, "date") == 0) {
 			fprintf(toConsole, "%s", c_type);
 		} else if (strcmp(c_type, "month_interval") == 0) {
-			fprintf(toConsole, "INTERVAL MONTH");
+			if (*c_type_scale == '1') {
+				if (*c_type_digits == 1)
+					fprintf(toConsole, "INTERVAL YEAR");
+				else
+					fprintf(toConsole, "INTERVAL YEAR TO MONTH");
+			} else
+				fprintf(toConsole, "INTERVAL MONTH");
 		} else if (strcmp(c_type, "sec_interval") == 0) {
-			fprintf(toConsole, "INTERVAL SECOND");
+			switch (*c_type_scale) {
+			case '3':
+				switch (*c_type_digits) {
+				case '3':
+					fprintf(toConsole, "INTERVAL DAY");
+					break;
+				case '4':
+					fprintf(toConsole, "INTERVAL DAY TO HOUR");
+					break;
+				case '5':
+					fprintf(toConsole, "INTERVAL DAY TO MINUTE");
+					break;
+				case '6':
+					fprintf(toConsole, "INTERVAL DAY TO SECOND");
+					break;
+				}
+				break;
+			case '4':
+				switch (*c_type_digits) {
+				case '4':
+					fprintf(toConsole, "INTERVAL HOUR");
+					break;
+				case '5':
+					fprintf(toConsole, "INTERVAL HOUR TO MINUTE");
+					break;
+				case '6':
+					fprintf(toConsole, "INTERVAL HOUR TO SECOND");
+					break;
+				}
+				break;
+			case '5':
+				switch (*c_type_digits) {
+				case '5':
+					fprintf(toConsole, "INTERVAL MINUTE");
+					break;
+				case '6':
+					fprintf(toConsole, "INTERVAL MINUTE TO SECOND");
+					break;
+				}
+				break;
+			case '6':
+				fprintf(toConsole, "INTERVAL SECOND");
+				break;
+			}		
 		} else if (strcmp(c_type, "clob") == 0) {
 			fprintf(toConsole, "CHARACTER LARGE OBJECT");
 			if (strcmp(c_type_digits, "0") != 0)

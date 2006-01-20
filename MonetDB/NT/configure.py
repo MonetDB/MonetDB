@@ -63,6 +63,7 @@ subs = [
     ('@MONETDB_SOURCE@',         source),
     ('@XMONETDB_SOURCE@',        source),
     ('@NO_X_CFLAGS@',            ''),
+    ('@PYTHON@',                 'python'),
     # for these, also see rules.msc
     ('@PHP_EXTENSIONDIR@',       r'lib\php4'),
     ('@XPHP_EXTENSIONDIR@',      r'lib\php4'),

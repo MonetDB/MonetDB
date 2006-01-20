@@ -5,7 +5,7 @@
 #
 # it requires the color, array, and, mmath modules to be loaded:
 
-module("color","array","mmath");
+module("color");module("array");module("mmath");
 
 {
 

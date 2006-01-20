@@ -217,12 +217,6 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	"extract database name from module string"
 .COMMAND format_fcn_sig(oid) : str = format_fcn_sig;
 	"print a function signature"
-
-.COMMAND getDatabases() :BAT[str,str] = getDatabases;
-	"Produce an overview of available servers"
-.COMMAND getPorts(str): BAT[str,int] = getPorts;
-	"Produce an overview of known open ports"
-
 .END sys;
 
 @+ MIL Procedure definitions
@@ -1872,78 +1866,4 @@ vm_trim(lng *lim)
 	MT_mmap_trim((size_t) *lim, GDKerr);
 	return GDK_SUCCEED;
 }
-
-@
--
-Collect the database and their access permissions for inspection.
-Note, this code base should be changed for the Windows setting.
-@c
-#include <dirent.h>
-int getDatabases(BAT **retval)
-{
-    BAT *b;
-    DIR *d, *db;
-    struct dirent *e;
-    char buf[PATHLENGTH];
-    FILE *f;
-    int uid,pid;
-
-    *retval= b = BATnew(TYPE_str, TYPE_str, 50);
-    /* scan the parent for directories */
-    d= opendir("..");
-    while ( (e=readdir(d)) != NULL){
-        if( *e->d_name == '.') continue;
-        snprintf(buf,PATHLENGTH,"../%s",e->d_name);
-        db= opendir(buf);
-        if( db != NULL) {
-            snprintf(buf,PATHLENGTH,"../%s/.gdk_lock",e->d_name);
-            f= fopen(buf,"r");
-            if( f  && fgets(buf,PATHLENGTH,f) != NULL){
-                sscanf(buf,"USR=%d PID=%d %s", &uid,&pid,buf);
-                snprintf(buf,PATHLENGTH,"/proc/%d",pid);
-                fclose(f);
-            } else
-                snprintf(buf,PATHLENGTH,"../%s/.mguardian.pid",e->d_name);
-            BUNins(b,e->d_name,(access(buf,F_OK)?"sleeping":"running"));
-            closedir(db);
-        }
-    }
-    (void) closedir(d);
-    @:Pseudo(databases,mode)@
-    return GDK_SUCCEED;
-}
-
-
-int getPorts( BAT **retval, str lang)
-{
-    BAT *b;
-    DIR *d, *db;
-    struct dirent *e;
-    char buf[PATHLENGTH];
-    FILE *f;
-    int port;
-
-    *retval = b = BATnew(TYPE_str, TYPE_int, 50);
-    /* scan the parent for directories */
-    d= opendir("..");
-    while ( (e=readdir(d)) != NULL){
-        if( *e->d_name == '.') continue;
-        snprintf(buf,PATHLENGTH,"../%s",e->d_name);
-        db= opendir(buf);
-        if( db != NULL) {
-            snprintf(buf,PATHLENGTH,"../%s/.%s.port",e->d_name,lang);
-            f= fopen(buf,"r");
-            if( f  && fgets(buf,PATHLENGTH,f) != NULL){
-                port= (int) strtol(buf,NULL,10);
-                fclose(f);
-            } else port = 0;
-            BUNins(b, e->d_name, (ptr)(port==0? &int_nil: &port));
-            closedir(db);
-        }
-    }
-    (void) closedir(d);
-    @:Pseudo(databases,port)@
-    return GDK_SUCCEED;
-}
-
 @}

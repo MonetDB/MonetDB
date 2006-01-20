@@ -16,7 +16,6 @@
 
 headers_py = {
 	HEADERS = py
-	TARGETS = __init__.py converters.py cursors.py monetexceptions.py times.py
 	SOURCES = __init__.py converters.py cursors.py monetexceptions.py times.py
 	DIR = pkgdatadir/python/MonetSQLdb
 }

@@ -9,7 +9,7 @@ stdout of test 'tcpip_rpc_crash_bat.SF-1049942` in directory 'tests/BugDay_2005-
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-module(tcpip,radix);
+module(tcpip);module(radix);
 
 PROC g(): bat[void, dbl] {
 	var a := uniform(100000).[dbl]().copy();
