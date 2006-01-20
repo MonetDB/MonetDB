@@ -333,6 +333,7 @@ Use the search path provided in the configuration file
 #endif
 	if (handle == NULL) {
 		errmsg = dlerror();
+		if (!errmsg) errmsg = "(no error from dlerror())";
 		snprintf(errbuf, 1024, "%s: loader error %s", modulename, errmsg);
 		GDKfree(fullname);
 		return (str) throwException("loaderException", 
