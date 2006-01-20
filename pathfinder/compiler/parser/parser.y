@@ -378,12 +378,20 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token rbrace                          "}"
 %token rbrace_rbrace                   "}}"
 %token rbracket                        "]"
+/* [BURKOWSKI] */
+%token reject_narrow_colon_colon       "reject-narrow::"
+%token reject_wide_colon_colon         "reject-wide::"
+/* [/BURKOWKSI] */
 %token return_                         "return"
 %token rparen                          ")"
 %token rparen_as                       ") as"
 %token satisfies                       "satisfies"
 %token schema_attribute_lparen         "schema-attribute ("
 %token schema_element_lparen           "schema-element ("
+/* [BURKOWKSI] */
+%token select_narrow_colon_colon       "select-narrow::"
+%token select_wide_colon_colon         "select-wide::"
+/* [/BURKOWKSI] */
 %token self_colon_colon                "self::"
 %token semicolon                       ";"
 %token slash                           "/"
@@ -484,6 +492,8 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %type <axis>   AttributeAxis_
                ReverseAxis
                ForwardAxis
+               BurkAxis_ /* Burkowski Axis (can only be used if corresponding 
+                            compiler flag is set) */
 
 %type <buf>    AttributeValueContTexts_
                Chars_
@@ -497,7 +507,10 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %type <pnode>  AbbrevAttribStep_ AbbrevForwardStep AbbrevReverseStep
                AdditiveExpr AndExpr AnyKindTest AtomicType AttribNameOrWildcard
                AttribNodeTest AttribStep_ AttributeTest AttributeValueCont_
-               AttributeValueConts_ AxisStep BaseURIDecl CDataSection
+               AttributeValueConts_ AxisStep BaseURIDecl 
+               BurkStep_  /* Burkowski Axis (can only be used if corresponding 
+                            compiler flag is set) */
+               CDataSection
                CDataSectionContents CaseClause CastExpr CastableExpr Characters_
                CommentTest CompAttrConstructor CompCommentConstructor
                CompDocConstructor CompElemConstructor CompPIConstructor
@@ -1477,6 +1490,12 @@ AxisStep                  : ForwardStep
                             { $$ = $1; }
                           | AttribStep_ PredicateList
                             { FIXUP (0, $2, $1); $$ = $2.root; }
+/* [BURKOWSKI] */
+                          | BurkStep_
+                            { $$ = $1; }
+                          | BurkStep_ PredicateList
+                            { FIXUP (0, $2, $1); $$ = $2.root; }
+/* [/BURKOWSKI] */
                           ;
 
 /* [65] */
@@ -1546,6 +1565,49 @@ AbbrevAttribStep_         : "@" AttribNodeTest
                                            $2))->sem.axis = p_attribute;
                             }
                           ;
+
+BurkStep_                 : BurkAxis_ NodeTest
+                            { /* Burkowski Axis (can only be used if corresponding 
+                                 compiler flag is set) */
+                              ($$ = wire1 (p_step, @$, $2))->sem.axis = $1; }
+                          ;
+
+BurkAxis_                 : "select-narrow::"      { 
+#ifndef BURKOWSKI
+                              PFoops (OOPS_PARSE,
+                                          "Invalid Axis (Burkowski was not enabled)");
+#else
+                                                     $$ = p_select_narrow; 
+#endif
+                            }
+                          | "select-wide::"        { 
+#ifndef BURKOWSKI
+                              PFoops (OOPS_PARSE,
+                                          "Invalid Axis (Burkowski was not enabled)");
+#else
+                                                     $$ = p_select_wide; 
+#endif
+                            }
+                          | "reject-narrow::"      { 
+#ifndef BURKOWSKI
+                              PFoops (OOPS_PARSE,
+                                          "Invalid Axis (Burkowski was not enabled)");
+#else
+                                                     $$ = p_reject_narrow; 
+#endif
+                            }
+                          | "reject-wide::"        { 
+#ifndef BURKOWSKI
+                              PFoops (OOPS_PARSE,
+                                          "Invalid Axis (Burkowski was not enabled)");
+#else
+                                                     $$ = p_reject_wide; 
+#endif
+                            }
+                          ;
+
+
+
 
 /* [71] */
 NodeTest                  : KindTest

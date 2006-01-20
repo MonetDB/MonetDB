@@ -22,7 +22,7 @@ var pos;
 var item;
 var kind;
 {
-str_values.insert (nil,"foo");
+str_values.append ("foo");
 var itemID := str_values.ord_uselect("foo");
 itemID := itemID.reverse().fetch(0);
 # translateConst (kind)

@@ -399,6 +399,13 @@ infer_ocol (PFla_op_t *n)
             ocols_count (n)++;
             break;
 
+        case la_contains:
+            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)) + 1);
+            ocol_at (n, ocols_count (n)).name = n->sem.binary.res;
+            ocol_at (n, ocols_count (n)).type = aat_bln;
+            ocols_count (n)++;
+            break;
+
         /* operators without schema */
         case la_fragment:
         case la_frag_union:
@@ -714,6 +721,7 @@ infer_const (PFla_op_t *n)
         case la_empty_frag:
         case la_cond_err:
         case la_concat:
+        case la_contains:
         case la_string_join:
             break;
     }
@@ -919,6 +927,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
         case la_bool_and:
         case la_bool_or:
         case la_concat:
+        case la_contains:
             inf_icols = n->prop->icols;
 
             /* do not infer input columns if operator is not required */
@@ -952,7 +961,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             inf_icols = diff (inf_icols, n->sem.sum.res);
             inf_icols = union_ (inf_icols, n->sem.sum.att);
             /* only infer part if available and not constant */
-            if (n->sem.sum.part != att_NULL ||
+            if (n->sem.sum.part != att_NULL &&
                 !PFprop_const (n->prop, n->sem.sum.part))
                 inf_icols = union_ (inf_icols, n->sem.sum.part);
             break;
@@ -966,7 +975,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
             inf_icols = diff (inf_icols, n->sem.count.res);
             /* only infer part if available and not constant */
-            if (n->sem.count.part != att_NULL ||
+            if (n->sem.count.part != att_NULL &&
                 !PFprop_const (n->prop, n->sem.count.part))
                 inf_icols = union_ (inf_icols, n->sem.count.part);
             break;
@@ -986,7 +995,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
                     inf_icols = union_ (inf_icols, 
                                         n->sem.rownum.sortby.atts[i]);
             /* only infer part if available and not constant */
-            if (n->sem.rownum.part != att_NULL ||
+            if (n->sem.rownum.part != att_NULL &&
                 !PFprop_const (n->prop, n->sem.rownum.part))
                 inf_icols = union_ (inf_icols, n->sem.rownum.part);
             break;
@@ -1000,7 +1009,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
             inf_icols = diff (inf_icols, n->sem.number.attname);
             /* only infer part if available and not constant */
-            if (n->sem.number.part != att_NULL ||
+            if (n->sem.number.part != att_NULL &&
                 !PFprop_const (n->prop, n->sem.number.part))
                 inf_icols = union_ (inf_icols, n->sem.number.part);
             break;
@@ -1045,7 +1054,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             inf_icols = diff (inf_icols, n->sem.blngroup.res);
             inf_icols = union_ (inf_icols, n->sem.blngroup.att);
             /* only infer part if available and not constant */
-            if (n->sem.blngroup.part != att_NULL ||
+            if (n->sem.blngroup.part != att_NULL &&
                 !PFprop_const (n->prop, n->sem.blngroup.part))
                 inf_icols = union_ (inf_icols, n->sem.blngroup.part);
             break;

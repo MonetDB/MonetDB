@@ -195,11 +195,24 @@
     .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
     .ret_ty = PFty_boolean (),                                           \
     .alg = PFbui_fn_boolean_item }                                       \
+, /* fn:contains (string, string) as boolean */                          \
+  { .ns = PFns_fn, .loc = "contains",                                    \
+    .arity = 2, .par_ty = { PFty_string (),                              \
+                            PFty_string () },                            \
+    .ret_ty = PFty_boolean (),                                           \
+    .alg = PFbui_fn_contains }                                           \
+, /* fn:contains (string?, string) as boolean */                         \
+  { .ns = PFns_fn, .loc = "contains",                                    \
+    .arity = 2, .par_ty = { PFty_opt (PFty_string ()),                   \
+                            PFty_string () },                            \
+    .ret_ty = PFty_boolean (),                                           \
+    .alg = PFbui_fn_contains_opt }                                       \
 , /* fn:contains (string?, string?) as boolean */                        \
   { .ns = PFns_fn, .loc = "contains",                                    \
     .arity = 2, .par_ty = { PFty_opt (PFty_string ()),                   \
                             PFty_opt (PFty_string ()) },                 \
-    .ret_ty = PFty_boolean () }                                          \
+    .ret_ty = PFty_boolean (),                                           \
+    .alg = PFbui_fn_contains_opt_opt }                                   \
 , /* fn:error () as none */                                              \
   { .ns = PFns_fn, .loc = "error",                                       \
     .arity = 0,                                                          \

@@ -34,7 +34,18 @@ lib__pf_support = {
 		prec_foll.mx \
 		levelsteps.mx \
 		shredder.mx \
-		serialize.mx
+		serialize.mx 
+
+	LIBS = \
+		$(PF_LIBS) $(MONETDB_LIBS) \
+		-lbat -lmonet -lstream \
+		-l_streams -l_builtin -l_ascii_io -l_algebra 
+}
+
+lib__pf_burk = {
+	DIR = libdir/MonetDB
+	SOURCES = \
+		pf_burk.mx 
 
 	LIBS = \
 		$(PF_LIBS) $(MONETDB_LIBS) \
@@ -65,6 +76,6 @@ lib__pathfinder = {
 
 scripts_mil = {
 	DIR = libdir/MonetDB
-	SOURCES = pathfinder.mx pf_support.mx
+	SOURCES = pathfinder.mx pf_support.mx pf_burk.mx
 }
 

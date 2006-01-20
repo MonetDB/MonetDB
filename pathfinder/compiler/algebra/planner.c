@@ -280,6 +280,9 @@ cross_worker (PFplanlist_t *ret, const plan_t *a, const plan_t *b)
 
         for (unsigned int i = 0; i < t.count; i++) {
             plan = attach (plan, a->schema.items[i].name, t.atoms[i]);
+            /* assign logical properties to
+               the additional physical node as well */
+            plan->prop = a->prop;
         }
 
         add_plan (ret, plan);
@@ -606,7 +609,8 @@ plan_distinct (const PFla_op_t *n)
     PFplanlist_t      *sorted;
 
     for (unsigned int i = 0; i < n->schema.count; i++)
-        ord = PFord_refine (ord, n->schema.items[i].name);
+        if (!PFprop_const (n->prop, n->schema.items[i].name))
+            ord = PFord_refine (ord, n->schema.items[i].name);
 
     perms = PFord_permutations (ord);
 
@@ -655,6 +659,8 @@ plan_binop (const PFla_op_t *n)
             , [la_num_divide]   = PFpa_num_div_atom
             , [la_num_modulo]   = PFpa_num_mod_atom
             , [la_num_gt]       = PFpa_gt_atom
+            , [la_bool_and]     = PFpa_and_atom
+            , [la_bool_or]      = PFpa_or_atom
         };
 
     static PFpa_op_t * (*op[]) (const PFpa_op_t *, const PFalg_att_t,
@@ -667,6 +673,8 @@ plan_binop (const PFla_op_t *n)
             , [la_num_divide]   = PFpa_num_div
             , [la_num_modulo]   = PFpa_num_mod
             , [la_num_gt]       = PFpa_gt
+            , [la_bool_and]     = PFpa_and
+            , [la_bool_or]      = PFpa_or
         };
 
 
@@ -965,7 +973,13 @@ plan_scjoin (const PFla_op_t *n)
         case alg_par:       llscj = PFpa_llscj_parent;      break;
         case alg_prec:      llscj = PFpa_llscj_prec;        break;
         case alg_prec_s:    llscj = PFpa_llscj_prec_sibl;   break;
-        case alg_self:      assert (0);
+        case alg_self:      assert (0);                     break;
+#ifdef BURKOWSKI
+        case alg_sn:        assert (0); /* llscj = PFpa_llscj_sn;  */        break;
+        case alg_sw:        assert (0); /* llscj = PFpa_llscj_sw;  */        break;
+        case alg_rn:        assert (0); /* llscj = PFpa_llscj_rn;  */        break;
+        case alg_rw:        assert (0); /* llscj = PFpa_llscj_rw;  */        break;
+#endif
     }
 
     /*
@@ -1432,6 +1446,25 @@ plan_concat (const PFla_op_t *n)
 }
 
 /**
+ * `contains' operator in the logical algebra just get a 1:1 mapping
+ * into the physical contains operator.
+ */
+static PFplanlist_t *
+plan_contains (const PFla_op_t *n)
+{
+    PFplanlist_t *ret = new_planlist ();
+
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        add_plan (ret,
+                  fn_contains (*(plan_t **) PFarray_at (L(n)->plans, i),
+                               n->sem.binary.res,
+                               n->sem.binary.att1,
+                               n->sem.binary.att2));
+
+    return ret;
+}
+
+/**
  * Create physical equivalent for the string_join operator
  * (concatenates sets of strings using a seperator for each set)
  *
@@ -1554,6 +1587,10 @@ ensure_ordering (const plan_t *unordered, PFord_ordering_t required)
 
     /* We can always apply StandardSort */
     add_plan (ret, std_sort (unordered, required));
+
+    /* assign logical properties to the additional physical node as well */
+    for (unsigned int plan = 0; plan < PFarray_last (ret); plan++)
+        (*(plan_t **) PFarray_at (ret, plan))->prop = unordered->prop;
 
     return ret;
 }
@@ -1723,13 +1760,13 @@ plan_subexpression (PFla_op_t *n)
         case la_num_modulo:                                   
         case la_num_eq:                                       
         case la_num_gt:                                       
+        case la_bool_and:
+        case la_bool_or:
                                 plans = plan_binop (n);       break;
                                                               
         case la_num_neg:                                      
         case la_bool_not:                                     
                                 plans = plan_unary (n);       break;
-     /* case la_bool_and:       */
-     /* case la_bool_or:        */
      /* case la_sum:            */
         case la_count:          plans = plan_count (n);       break;
                                                               
@@ -1767,6 +1804,7 @@ plan_subexpression (PFla_op_t *n)
         case la_cond_err:       plans = plan_cond_err (n);    break;
                                 
         case la_concat:         plans = plan_concat (n);      break;
+        case la_contains:       plans = plan_contains (n);    break;
         case la_string_join:    plans = plan_string_join (n); break;
                                                               
         default:

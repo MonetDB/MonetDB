@@ -99,6 +99,12 @@ char *c_id[]  = {
   , [c_preceding]          = "preceding"
   , [c_preceding_sibling]  = "preceding-sibling"
   , [c_self]               = "self"
+#ifdef BURKOWSKI
+  , [c_select_narrow]      = "select-narrow"
+  , [c_select_wide]        = "select-wide"
+  , [c_reject_narrow]      = "reject-narrow"
+  , [c_reject_wide]        = "reject-wide"
+#endif
 
   , [c_elem]               = "elem"
   , [c_attr]               = "attr" 

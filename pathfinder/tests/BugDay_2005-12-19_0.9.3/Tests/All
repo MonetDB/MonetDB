@@ -3,6 +3,7 @@
 where_orderby.SF-1210757
 shred_doc_with_space.SF-1211372
 zero-or-one_merged-union.SF-1221336
+zero-or-one_merged-union_2.SF-1221336
 tag_name_validation.SF-1221984
 self_axis_not_supported.SF-1237444
 file_locked_after_shredding.SF-1238352
@@ -22,4 +23,6 @@ attribute_after_non-attribute_content.SF-1351516
 shredding_one_attribute.SF-1376942
 shredding_on_the_fly.SF-1377006
 not_constant.SF-1378750
+not_constant_2.SF-1378750
 multiple_servers.SF-1385152
+multiple_servers_2.SF-1385152

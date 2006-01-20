@@ -40,10 +40,11 @@ AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
 req_monetdb_ver='4.9.3'
-AM_MONETDB_CLIENT($req_monetdb_ver)
+AM_MONET($req_monetdb_ver)
 if test "x$have_monet" != xyes; then
 	AC_MSG_ERROR([Pathfinder requires at least version $req_monetdb_ver of MonetDB, but only version $MONETDBVERS was found.])
 fi
+AM_MONETDB_UTILS()
 req_monetdb_ver='4.99.19'
 AM_MONET5($req_monetdb_ver)
 AM_CONDITIONAL(MONET5,test "x$have_monet5" = xyes)
@@ -84,21 +85,23 @@ fi   dnl Yacc found on the system?
 
 AC_LANG_C
 
-AC_ARG_WITH(burg,
-	AC_HELP_STRING([--with-burg=FILE], [burg is installed as FILE]),
-	have_burg="$withval",
-	have_burg=auto)
-if test "x$have_burg" = xauto; then
-	AC_PATH_PROGS(BURG,[ burg$EXEEXT burg ],,$PATH)
-	if test "x$BURG" = x; then
-		AC_ERROR([No burg$EXEEXT found in PATH=$PATH])
+if test -f "$srcdir"/vertoo.data; then
+	AC_ARG_WITH(burg,
+		AC_HELP_STRING([--with-burg=FILE], [burg is installed as FILE]),
+		have_burg="$withval",
+		have_burg=auto)
+	if test "x$have_burg" = xauto; then
+		AC_PATH_PROGS(BURG,[ burg$EXEEXT burg ],,$PATH)
+		if test "x$BURG" = x; then
+			AC_ERROR([No burg$EXEEXT found in PATH=$PATH])
+		fi
+	elif test "x$have_burg" = xno; then
+		AC_MSG_ERROR([burg is required])
+	else
+		BURG="$withval"
 	fi
-elif test "x$have_burg" = xno; then
-	AC_MSG_ERROR([burg is required])
-else
-	BURG="$withval"
+	AC_SUBST(BURG)
 fi
-AC_SUBST(BURG)
 
 dnl
 dnl We support the GNU getopt library (and its features for long option
@@ -278,6 +281,19 @@ AC_SUBST(LIBXML2_LIBS, $LIBXML2_LIBS)
 AC_SUBST(LIBXML2_LDADD, $LIBXML2_LDADD)
 AM_CONDITIONAL(HAVE_LIBXML2, test x"$have_libxml2" != xno)
 
+dnl Check for Burkowski Axis Steps support
+dnl --enable-burk
+AC_ARG_ENABLE(burk,
+	AC_HELP_STRING([--enable-burk],
+		[enable support for Burkowski Axis Steps [default=no]]),
+	enable_burk=$enableval,
+	enable_burk=no)
+case $enable_burk in
+yes)  AC_DEFINE(BURKOWSKI, 1, [Define if you want Burkowski])
+      AC_MSG_NOTICE([Burkowski Axis Steps will be available...])
+;;
+esac
+
 
 dnl The Burg code requires strdup(). We test here if strdup() is
 dnl available on the system. If not, we will define it ourselves
@@ -298,6 +314,5 @@ AC_TRY_COMPILE([$ac_includes_default
 [AC_DEFINE(HAVE_CTIME_R3, 1, [Define if you have ctime_r(time_t*,char *buf,size_t s)])], [ctime_r3=no])
 AC_MSG_RESULT($ctime_r3)
 
-dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
+dnl  CFLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
-CXXFLAGS="$CXXFLAGS \$(X_CXXFLAGS)"

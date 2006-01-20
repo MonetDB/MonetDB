@@ -706,8 +706,6 @@ static INLINE nat direct_chr2bat(shredCtxStruct* shredCtx, int idx, nat i, chr v
 }
 
 static INLINE nat append_str2bat(shredCtxStruct* shredCtx, int idx, str v) {
-        oid my_oid_nil = OIDNIL;
-
         shredBAT* sb = & shredCtx->dstBAT[idx];
 
 #ifdef USE_COMPRESSION
@@ -728,8 +726,8 @@ static INLINE nat append_str2bat(shredCtxStruct* shredCtx, int idx, str v) {
 #ifdef VERBOSE
         stream_printf(GDKout,"APPEND-STR[%s](%s)\n",sb->def->name,v);
 #endif
-        if ( !BUNins(sb->bat,(ptr)&my_oid_nil,(ptr)v) ) {
-            GDKerror("shredder.mx:append_str2bat: APPEND-STR[%s](%s), BUNins fails\n",sb->def->name,v);
+        if ( !BUNappend(sb->bat, (ptr)v) ) {
+            GDKerror("shredder.mx:append_str2bat: APPEND-STR[%s](%s), BUNappend fails\n",sb->def->name,v);
             return NATNIL;
         }
         return sb->cnt++;

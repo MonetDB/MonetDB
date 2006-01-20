@@ -1,0 +1,4 @@
+for $i in doc("$TSTSRCDIR/mposjoin_void_void.SF-1404023.doc2.xml")//b
+where some $j in (".jpg",".txt") satisfies
+ends-with(exactly-one($i/@name), $j)
+return $i
