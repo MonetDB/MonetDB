@@ -22,4 +22,4 @@ ant_compile = {
 }
 
 EXTRA_DIST_DIR = Tests 
-EXTRA_DIST = build.xml
+EXTRA_DIST = build.xml sample.java
