@@ -34,3 +34,5 @@ headers_py = {
 	TARGETS = odbc.py
 	DIR = $(prefix)/$(PYTHON_LIBDIR)
 }
+
+EXTRA_DIST = odbc.py
