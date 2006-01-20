@@ -30,7 +30,6 @@ INCLUDES = $(MONETDB_INCS)
 lib__example = {
 	DIR = libdir/MonetDB
 	SOURCES = example.mx
-	HEADERS = h
 	LIBS = $(MONETDB_LIBS) 
 }
 
