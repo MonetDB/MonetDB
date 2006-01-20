@@ -1127,7 +1127,7 @@ xquery_mil_exec(xquery_client *ctx,
 }
 
 /*
- * translate xquery to MIL and execute, return error(-1)/ok(0)
+ * translate xquery to MIL and execute, return error(0)/ok(1)
  * We collect the MIL scripts in three sections (prologue,query,epilogue).
  * The query may be NULL, in which case we mean that it should be ignored. 
  */
