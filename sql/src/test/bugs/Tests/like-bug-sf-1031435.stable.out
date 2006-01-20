@@ -1,4 +1,4 @@
-stdout of test 'like-bug-sf-1031435.sql` in directory 'src/test/bugs` itself:
+stdout of test 'like-bug-sf-1031435` in directory 'src/test/bugs` itself:
 
 
 # 12:54:37 >  
@@ -18,7 +18,7 @@ quit();
 Over..
 
 # 12:54:45 >  
-# 12:54:45 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < like-bug-sf-1031435.sql.sql
+# 12:54:45 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < like-bug-sf-1031435
 # 12:54:45 >  
 
 [ 1	]

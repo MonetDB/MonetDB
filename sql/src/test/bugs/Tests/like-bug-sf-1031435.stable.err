@@ -1,4 +1,4 @@
-stderr of test 'like-bug-sf-1031435.sql` in directory 'src/test/bugs` itself:
+stderr of test 'like-bug-sf-1031435` in directory 'src/test/bugs` itself:
 
 
 # 14:39:27 >  
@@ -65,7 +65,7 @@ stderr of test 'like-bug-sf-1031435.sql` in directory 'src/test/bugs` itself:
 # cmdline opt 	gdk_dbname = mTests_src_test_bugs
 
 # 14:39:27 >  
-# 14:39:27 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=40084  < like-bug-sf-1031435.sql.sql
+# 14:39:27 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=40084  < like-bug-sf-1031435
 # 14:39:27 >  
 
 
