@@ -350,10 +350,20 @@ freeClient(Client c)
 
 		/* GDKlog("Mserver: %s session ends", c->user); */
 		monetSetChannel(t, bkin, bkout);
-		stream_close(c->fdout);
-		stream_destroy(c->fdout);
-		stream_close(c->fdin);
-		stream_destroy(c->fdin);
+		if (c->fdout != GDKstdout) {
+			if (GDKout == c->fdout)
+				t->data[0] = GDKstdout;
+			stream_close(c->fdout);
+			stream_destroy(c->fdout);
+			c->fdout = NULL;
+		} 
+		if (c->fdin != GDKstdin) {
+			if (GDKin == c->fdin) 
+				t->data[1] = GDKstdin;
+			stream_close(c->fdin);
+			stream_destroy(c->fdin);
+			c->fdin = NULL;
+		} 
 	}
 	GDKfree(c->input);
 	GDKfree(c->output);
