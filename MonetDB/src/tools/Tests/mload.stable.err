@@ -1,7 +1,0 @@
-stderr of test 'mload` in directory 'src/tools` itself:
-
-#> Mtest (20:09:05):	other mload 2400
-#> Mtest (20:09:06):	Mtimeout -timeout 2400 ./mload mload
-#> Mlog (20:09:07):	Mtimeout -timeout 600 Mload mload.data -db src_tools -oid 1000000 -f mload.format
-#> Mlog (20:09:09):	Mtimeout -timeout 600 Mserver -p -modulesilent -yaccsilent -d8 -db src_tools
-#> Mlog (20:09:11):	Mtimeout -timeout 600 Mserver -p -modulesilent -yaccsilent -db src_tools

@@ -1,9 +1,0 @@
-# testing void to oid coercion
- z1:= bat.new(:void,:int);
-bat.setSequenceBase(z1,0@0);
- bat.insert(z1,nil,0);
- bat.insert(z1,nil,1);
- bat.insert(z1,nil,2);
-io.print(z1);
-o:= batcalc.oid(z1);
-io.print(o);

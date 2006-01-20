@@ -1,3 +1,0 @@
-# this file is needed in the CVS repository so that the check whether
-# we need to check for the presence of Mx works.
-# Eventually we can use vertoo to maintain version numbers in monet5.
