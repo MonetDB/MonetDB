@@ -89,6 +89,8 @@ HIDE=1
 	grep -v '^#include.*[<"]'"$(CONFIG_H)"'[">]' $*.yy.cc.tmp >> $*.yy.cc
 	$(RM) $*.yy.cc.tmp
 
+ifdef NEED_MX
+
 %.m: %.mx
 	$(MX) $(MXFLAGS) -x m $<
 
@@ -133,6 +135,24 @@ HIDE=1
 %.glue.c: %.m $(MEL)
 	$(MEL) $(INCLUDES) -glue $< > $@
 
+else # NEED_MX
+
+# Dependency "lib_%.la" prevents the %.mil script of a module from being
+# linked to the .libs/ directory in case the C-code of the module failed to
+# compile; thus, "make check" can recognize that the module is not
+# available, and will properly skip the tests that require it.
+%.mil: lib_%.la
+	test -e .libs || mkdir -p .libs
+	test -e .libs/$@ || $(LN_S) ../$@ .libs/$@
+
+%.mal:
+	test -e .libs || mkdir -p .libs
+	test -e .libs/$@ || $(LN_S) ../$@ .libs/$@
+
+endif # NEED_MX
+
+ifdef NEED_MX
+
 # The following rules generate two files using swig, the .xx.c and the
 # .xx file.  There may be a race condition here when using a parallel
 # make.  We try to alleviate the problem by sending the .xx.c output
@@ -166,6 +186,8 @@ HIDE=1
 
 %.pm: %.pm.i
 	$(SWIG) -perl5 $(SWIGFLAGS) -outdir . -o dymmy.c $<
+
+endif # NEED_MX
 
 %.tex: %.mx
 	$(MX) -1 -H$(HIDE) -t $< 
@@ -202,8 +224,10 @@ HIDE=1
 %.eps: %.feps
 	$(CP) $< $@
 
+ifdef NEED_MX
 $(NO_INLINE_FILES:.mx=.lo): %.lo: %.c
 	$(LIBTOOL) --mode=compile $(COMPILE) $(NO_INLINE_CFLAGS) -c $<
+endif
 
 $(patsubst %.mx,%.lo,$(filter %.mx,$(NO_OPTIMIZE_FILES))): %.lo: %.c
 	$(LTCOMPILE) -c -o $@ -O0 $<
