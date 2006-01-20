@@ -854,7 +854,7 @@ int
 CMDsetcount_bat(lng *res, BAT *b, lng *c)
 {
 #if SIZEOF_SIZE_T < SIZEOF_LNG
-	if (*c >= ((lng) 1 << SIZEOF_SIZE_T)) {
+	if (*c >= ((lng) 1 << (8 * SIZEOF_SIZE_T))) {
 		GDKerror("CMDslice: argument out of range\n");
 		return GDK_FAIL;
 	}
