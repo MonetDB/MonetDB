@@ -242,12 +242,12 @@ var region_end_attr_tag := "end";
 @= reject_outside
             /* insert nodes which are not contained */
             index = BUNindex(region_start,iter_start);
-            BUNins(bn, (ptr)(&oid_nil_ptr), (ptr)(&index));
+            BUNappend(bn, (ptr)(&index));
 @
 @= select_inside
             /* insert nodes which are contained */
             index = BUNindex(region_start,iter_start);
-            BUNins(bn, (ptr)(&oid_nil_ptr), (ptr)(&index));
+            BUNappend(bn, (ptr)(&index));
 @
 @= reject_inside
             /* skip nodes which are contained */
@@ -307,7 +307,7 @@ CMD@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *reg
         *outer_iter_start_next, *outer_iter_end_next;
 
     @:region_jump_decl_@2(@4)@
-        oid oid_nil_ptr = oid_nil, index;
+        oid index;
     int Sss,Sse,Srs,Sre;
     BAT * bn = NULL;
 
@@ -691,7 +691,6 @@ CMDfetch_standoff_data_@1(BAT ** result, BAT * region_start, BAT * region_end, c
         GDKerror("could not open Stand-Off data file (the BLOB)\n");
         return(GDK_FAIL);
     }
-    oid oid_nil_ptr = oid_nil;
     min_end = MAX_@1; 
     *result = BATnew(TYPE_void, TYPE_str, BATcount(region_start)); 
 
@@ -756,13 +755,13 @@ CMDfetch_standoff_data_@1(BAT ** result, BAT * region_start, BAT * region_end, c
                     if ((stack[i].start % 4096) < (blob_pos % 4096)) {
                       // we have to return (start..end)
                       buf[blob_pos % 4096] = '\0'; // zero-terminate string
-                      BUNins(*result, &oid_nil_ptr, (ptr)(buf + (stack[i].start % 4096)));
+                      BUNappend(*result, (ptr)(buf + (stack[i].start % 4096)));
                     } else {
                       // we have to concatenate the two parts (start..4095) + (0...end)
                       for (j=0; j < blob_pos - stack[i].start; j++) 
                         temp[j] = buf[(stack[i].start + j) % 4096];
                       temp[j]='\0'; // zero-terminate string
-                      BUNins(*result, &oid_nil_ptr, (ptr)temp);
+                      BUNappend(*result, (ptr)temp);
                     }
                     stack_size--; // pop from stack
                     stack[i].start = stack[stack_size].start; 
@@ -813,7 +812,7 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
     if (not(loop_lifted)) 
     {  
       unq@batloop () {
-	ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().mark(nil);
+	ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().project(nil);
 	ctx_slice := ctx_slice.chk_order(); # have to check because step expects it sorted
         result.insert(@3
                               (region_pre, region_start, region_end,
@@ -851,13 +850,13 @@ PROC ll_burkowski_@1_@2(BAT[void,oid] region_pre,
   var max_iter := iter.max();
   var source_region := ctx.join(region_pre.reverse()).reverse();
   var region_iter := source_region.leftjoin(iter); 
-  source_region := source_region.mirror().leftjoin(region_start).sort().mark(nil).reverse();
+  source_region := source_region.mirror().leftjoin(region_start).sort().project(nil).reverse();
   var source_iter := source_region.leftjoin(region_iter).reverse().mark(0@0).reverse();
   
   #  try to get a iter_start...
   var source_start := source_region.leftjoin(region_start).reverse().mark(0@0).reverse(); 
   var iter_start := source_iter.[oid]().reverse().leftjoin(source_start);
-  var source_end := source_region.leftjoin(region_end).reverse().mark(nil).reverse();     
+  var source_end := source_region.leftjoin(region_end).reverse().project(nil).reverse();     
 
   var sel_region := cands.reverse().mirror().leftjoin(region_pre.reverse()).reverse().mirror();
   var sel_region2 := sel_region.leftjoin(region_start).sort().mark(0@0).reverse();
@@ -906,7 +905,7 @@ PROC burkowski_@1_@2(BAT[void,oid] region_pre,
 }
 @
 @= no_pre
-	cands := ws.fetch(PRE_SIZE).fetch(theFrag).mark(nil).reverse();
+	cands := ws.fetch(PRE_SIZE).fetch(theFrag).project().reverse();
 	cands := cands.chk_order();
 @
 @= kind_pre
@@ -1056,9 +1055,9 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
     if (iter.count() = 0) {
 	var empty := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
 	return bat(void,bat,3).seqbase(0@0)
-			    .insert(nil,empty)
-			    .insert(nil,empty)
-			    .insert(nil,empty)
+			    .append_bat(empty)
+			    .append_bat(empty)
+			    .append_bat(empty)
 			    .access(BAT_READ);
     }
     var result;
@@ -1071,7 +1070,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
     var uniqueFrag := frag.tunique().sort();
     var theFrag := uniqueFrag.reverse().fetch(0);
     if (uniqueFrag.count() = 1) {
-        var result_part_frag := nil;
+        var result_part_frag := oid(nil);
         var result_part_iter := iter;
         var result_part_item := item;
 
@@ -1123,9 +1122,9 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
     result_item.access(BAT_READ);
     result_frag.access(BAT_READ);
     var result_scj := bat(void,bat,3).seqbase(0@0);
-    result_scj.insert(nil,result_iter);
-    result_scj.insert(nil,result_item);
-    result_scj.insert(nil,result_frag);
+    result_scj.append_bat(result_iter);
+    result_scj.append_bat(result_item);
+    result_scj.append_bat(result_frag);
 
     return result_scj.access(BAT_READ);
 }
@@ -1133,7 +1132,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 @= loop_lifted_scj_per_frag
 	result_part_iter := result_part_iter.chk_order();
 	result_part_item := result_part_item.chk_order();
-        result_part_frag := nil;
+        result_part_frag := oid(nil);
 
 	# pre-test
 	@4
@@ -1220,18 +1219,18 @@ PROC region_extract(BAT[void, BAT] my_ws, oid i, str tpe) : bat[str,BAT] {
 ## TODO: FIXME : the following code does not work, but should assign
 ##               the largest possible region to the document-node
 #      if (=(tpe,"lng")) {
-#        region_pre := bat(void,oid).seqbase(0@0).insert(nil,0@0)
+#        region_pre := bat(void,oid).seqbase(0@0).append(0@0)
 #                                   .insert(region_left.leftjoin(left_pre));
-#        region_start := bat(void,lng).seqbase(0@0).insert(nil,getLNG_MIN())
+#        region_start := bat(void,lng).seqbase(0@0).append(getLNG_MIN())
 #                                     .insert(region_left.leftjoin(left_start));
-#        region_end := bat(void,lng).seqbase(0@0).insert(nil,getLNG_MAX())
+#        region_end := bat(void,lng).seqbase(0@0).append(getLNG_MAX())
 #                                   .insert(region_right.leftjoin(right_end));
 #     } else {
-#       region_pre := bat(void,oid).seqbase(0@0).insert(nil,0@0)
+#       region_pre := bat(void,oid).seqbase(0@0).append(0@0)
 #                                  .insert(region_left.leftjoin(left_pre));
-#       region_start := bat(void,INT).seqbase(0@0).insert(nil,getINT_MIN())
+#       region_start := bat(void,INT).seqbase(0@0).append(getINT_MIN())
 #                                    .insert(region_left.leftjoin(left_start));
-#       region_end := bat(void,INT).seqbase(0@0).insert(nil,getINT_MAX())
+#       region_end := bat(void,INT).seqbase(0@0).append(getINT_MAX())
 #                                  .insert(region_right.leftjoin(right_end));
 #     }
       region_pre := region_left.leftjoin(left_pre);
@@ -1298,18 +1297,18 @@ PROC region_extract(BAT[str, BAT] my_ws, str tpe) : bat[str,BAT] {
 ## TODO: FIXME : the following code does not work, but should assign
 ##               the largest possible region to the document-node
 #       if (=(tpe,"lng")) {
-#        region_pre := bat(void,oid).seqbase(0@0).insert(nil,0@0)
+#        region_pre := bat(void,oid).seqbase(0@0).append(0@0)
 #                                   .insert(region_left.leftjoin(left_pre));
-#        region_start := bat(void,lng).seqbase(0@0).insert(nil,getLNG_MIN())
+#        region_start := bat(void,lng).seqbase(0@0).append(getLNG_MIN())
 #                                     .insert(region_left.leftjoin(left_start));
-#        region_end := bat(void,lng).seqbase(0@0).insert(nil,getLNG_MAX())
+#        region_end := bat(void,lng).seqbase(0@0).append(getLNG_MAX())
 #                                   .insert(region_right.leftjoin(right_end));
 #       } else {
-#        region_pre := bat(void,oid).seqbase(0@0).insert(nil,0@0)
+#        region_pre := bat(void,oid).seqbase(0@0).append(0@0)
 #                                  .insert(region_left.leftjoin(left_pre));
-#        region_start := bat(void,INT).seqbase(0@0).insert(nil,getINT_MIN())
+#        region_start := bat(void,INT).seqbase(0@0).append(getINT_MIN())
 #                                    .insert(region_left.leftjoin(left_start));
-#        region_end := bat(void,INT).seqbase(0@0).insert(nil,getINT_MAX())
+#        region_end := bat(void,INT).seqbase(0@0).append(getINT_MAX())
 #                                  .insert(region_right.leftjoin(right_end));
 #       }
         region_pre := region_left.leftjoin(left_pre);

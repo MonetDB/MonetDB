@@ -10,7 +10,7 @@ stdout of test 'merged_union_and_join.SF-1337630` in directory 'tests/BugDay_200
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 module(pathfinder);
-var a := bat(void,oid).insert(nil,1@0).insert(nil,1@0).insert(nil,1@0).insert(nil,2@0).insert(nil,3@0).seqbase(0@0);
+var a := bat(void,oid).append(1@0).append(1@0).append(1@0).append(2@0).append(3@0).seqbase(0@0);
 var mu := merged_union(a,a,a.project("foo"),a.project("bar"));
 mu.fetch(0).print();
 #-----------------#
@@ -85,7 +85,7 @@ mu.fetch(1).print();
 [ 7@0,	  "bar"	  ]
 [ 8@0,	  "foo"	  ]
 [ 9@0,	  "bar"	  ]
-mu.fetch(0).leftjoin(bat(void,oid).insert(0@0,1@0).seqbase(0@0)).print();
+mu.fetch(0).leftjoin(bat(void,oid).append(1@0).seqbase(0@0)).print();
 #-----------------#
 # h	t	  # name
 # void	oid	  # type

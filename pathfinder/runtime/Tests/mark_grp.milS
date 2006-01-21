@@ -3,8 +3,8 @@ module(pf_support);
 var a:=
 new(void,oid)
 .seqbase(oid(0))
-.insert(nil,oid(0))
-.insert(nil,oid(0))
+.append(oid(0))
+.append(oid(0))
 .access(BAT_READ);
 print(a);
 
@@ -15,6 +15,6 @@ var c:=mark_grp(a,b);
 print(c);
 
 
-c:=mark_grp(a,b.mark(nil),oid(1));
+c:=mark_grp(a,b.project(nil),oid(1));
 print(c);
 

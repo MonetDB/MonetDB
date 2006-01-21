@@ -5,7 +5,7 @@ declare function xmark:convert($v as xs:decimal?) as xs:decimal?
   2.20371 * $v (: convert Dfl to Euro :)
 };
 
-declare function xmark:q01($doc as xs:string, $id as xs:string) as xs:string*
+declare function xmark:q01($doc as xs:string, $id as xs:string) as xs:anyNode*
 {
   for $b in doc($doc)/descendant::person[@id=$id]
   return $b/name/text()
@@ -28,8 +28,8 @@ declare function xmark:q03($doc as xs:string) as xs:anyNode*
 declare function xmark:q04($doc as xs:string, $person1 as xs:string, $person2 as xs:string) as xs:anyNode*
 {
   for $b in doc($doc)/descendant::open_auction
-  where some $pr1 in $b/descendant::personref[@person=$person1],
-             $pr2 in $b/descendant::personref[@person=$person2] satisfies $pr1 << $pr2
+  where some $pr1 in ($b/descendant::personref)[@person=$person1],
+             $pr2 in ($b/descendant::personref)[@person=$person2] satisfies $pr1 << $pr2
   return <history> { $b/reserve/text() } </history>
 };
 
@@ -65,8 +65,8 @@ declare function xmark:q08($doc as xs:string) as xs:anyNode*
 declare function xmark:q09($doc as xs:string) as xs:anyNode*
 {
   let $auction := doc($doc)
-  let $ca := $auction/s/closed_auction
-  let $ei := $auction/descendant::item
+  let $ca := $auction/descendant::closed_auction
+  let $ei := $auction/descendant::europe/item
   for $p in $auction/descendant::person
   let $a :=
     for $t in $ca

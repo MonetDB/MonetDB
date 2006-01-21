@@ -124,6 +124,7 @@
 
 /** append() function */
 #define bappend(a,b) PFmil_bappend ((a), (b))
+#define append(a,b) PFmil_bappend ((a), (b))
 
 /** set access restrictions to a BAT */
 #define access(a,b) PFmil_access((a), (b))
@@ -188,6 +189,7 @@
 /** count() operator and grouped count */
 #define count(a) PFmil_count(a)
 #define gcount(a) PFmil_gcount(a)
+#define egcount(a,b) PFmil_egcount((a),(b))
 
 /** type cast */
 #define cast(type,e) PFmil_cast ((type), (e))

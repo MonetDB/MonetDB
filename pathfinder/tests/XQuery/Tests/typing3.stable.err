@@ -60,6 +60,10 @@ stderr of test 'typing3` in directory 'tests/XQuery` itself:
 # cmdline opt 	gdk_dbname = mTests_tests_XQuery
 
 type error: no variant of function fn:foo accepts the given argument type(s): decimal
+type error: maybe you meant:
+type error:   fn:foo (xs:integer) as item*
+type error: illegal arguments for function fn:foo
+# halted in /net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/pathfinder/compiler/semantics/typecheck.brg (overload), line 1121
 
 # 23:33:14 >  
 # 23:33:14 >  Done.

@@ -1237,6 +1237,125 @@ PFbui_fn_boolean_item (const PFla_op_t *loop __attribute__((unused)),
 }
 
 /**
+ * Algebra implementation for <code>fn:contains (xs:string, xs:string)</code>.
+ */
+struct PFla_pair_t
+PFbui_fn_contains (const PFla_op_t *loop __attribute__((unused)),
+                   bool ordering,
+                   struct PFla_pair_t *args)
+{
+    (void) loop;      /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fn_contains (
+                       eqjoin (args[0].rel,
+                               project (args[1].rel,
+                                        proj (att_iter1, att_iter),
+                                        proj (att_item1, att_item)),
+                               att_iter,
+                               att_iter1),
+                       att_res, att_item, att_item1),
+                proj (att_iter, att_iter),
+                proj (att_pos, att_pos),
+                proj (att_item, att_res)),
+        .frag = PFla_empty_set ()};
+}
+
+/**
+ * Algebra implementation for <code>fn:contains (xs:string?, xs:string)</code>.
+ */
+struct PFla_pair_t
+PFbui_fn_contains_opt (const PFla_op_t *loop __attribute__((unused)),
+                       bool ordering,
+                       struct PFla_pair_t *args)
+{
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fn_contains (
+                       eqjoin (
+                           disjunion (
+                               args[0].rel,
+                               cross (
+                                   difference (
+                                       loop,
+                                       project (
+                                           args[0].rel,
+                                           proj (att_iter, att_iter))),
+                                   lit_tbl (attlist (att_pos, att_item),
+                                            tuple (lit_nat (1),
+                                                   lit_str (""))))),
+                           project (args[1].rel,
+                                    proj (att_iter1, att_iter),
+                                    proj (att_item1, att_item)),
+                           att_iter,
+                           att_iter1),
+                       att_res, att_item, att_item1),
+                proj (att_iter, att_iter),
+                proj (att_pos, att_pos),
+                proj (att_item, att_res)),
+
+        .frag = PFla_empty_set ()};
+}
+
+/**
+ * Algebra implementation for 
+ * <code>fn:contains (xs:string?, xs:string?)</code>.
+ */
+struct PFla_pair_t
+PFbui_fn_contains_opt_opt (const PFla_op_t *loop __attribute__((unused)),
+                           bool ordering,
+                           struct PFla_pair_t *args)
+{
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+
+    return (struct PFla_pair_t) {
+        .rel = project (
+                   fn_contains (
+                       eqjoin (
+                           disjunion (
+                               args[0].rel,
+                               cross (
+                                   difference (
+                                       loop,
+                                       project (
+                                           args[0].rel,
+                                           proj (att_iter, att_iter))),
+                                   lit_tbl (attlist (att_pos, att_item),
+                                            tuple (lit_nat (1),
+                                                   lit_str (""))))),
+                           project (
+                               disjunion (
+                                   args[1].rel,
+                                   cross (
+                                       difference (
+                                           loop,
+                                           project (
+                                               args[1].rel,
+                                               proj (att_iter, att_iter))),
+                                       lit_tbl (attlist (att_pos, att_item),
+                                                tuple (lit_nat (1),
+                                                       lit_str (""))))),
+                               proj (att_iter1, att_iter),
+                               proj (att_item1, att_item)),
+                           att_iter,
+                           att_iter1),
+                       att_res, att_item, att_item1),
+                proj (att_iter, att_iter),
+                proj (att_pos, att_pos),
+                proj (att_item, att_res)),
+
+        .frag = PFla_empty_set ()};
+}
+
+/**
  * Algebra implementation for <code>fn:empty(item*)</code>.
  *
  *            env,loop,delta: e1 => (q1, delta1)
@@ -1292,8 +1411,24 @@ PFbui_op_is_same_node (const PFla_op_t *loop __attribute__((unused)),
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    assert (!"FIXME: correct algebra translation is missing");
-    return bin_arith (aat_node, PFla_eq, args);
+
+    return (struct PFla_pair_t) {
+	.rel = project (PFla_eq (
+                        eqjoin (
+                            project (args[0].rel, 
+                                     proj (att_iter, att_iter),
+                                     proj (att_pos, att_pos),
+                                     proj (att_item, att_item)),
+                            project (args[1].rel,
+                                     proj (att_iter1, att_iter),
+                                     proj (att_item1, att_item)),
+                            att_iter,
+                            att_iter1),
+                        att_res, att_item, att_item1),
+                    proj (att_iter, att_iter),
+                    proj (att_pos, att_pos),
+                    proj (att_item, att_res)),
+	.frag = PFla_empty_set () };
 }
 
 /**
@@ -1309,9 +1444,24 @@ PFbui_op_node_before (const PFla_op_t *loop __attribute__((unused)),
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    assert (!"FIXME: correct algebra translation is missing");
-    return bin_arith (aat_node, PFla_gt,
-		      (struct PFla_pair_t []) { args[1], args[0] });
+
+    return (struct PFla_pair_t) {
+	.rel = project (PFla_gt (
+                        eqjoin (
+                            project (args[1].rel, 
+                                     proj (att_iter, att_iter),
+                                     proj (att_pos, att_pos),
+                                     proj (att_item, att_item)),
+                            project (args[0].rel,
+                                     proj (att_iter1, att_iter),
+                                     proj (att_item1, att_item)),
+                            att_iter,
+                            att_iter1),
+                        att_res, att_item, att_item1),
+                    proj (att_iter, att_iter),
+                    proj (att_pos, att_pos),
+                    proj (att_item, att_res)),
+	.frag = PFla_empty_set () };
 }
 
 /**
@@ -1327,8 +1477,24 @@ PFbui_op_node_after (const PFla_op_t *loop __attribute__((unused)),
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    assert (!"FIXME: correct algebra translation is missing");
-    return bin_arith (aat_node, PFla_gt, args);
+
+    return (struct PFla_pair_t) {
+	.rel = project (PFla_gt (
+                        eqjoin (
+                            project (args[0].rel, 
+                                     proj (att_iter, att_iter),
+                                     proj (att_pos, att_pos),
+                                     proj (att_item, att_item)),
+                            project (args[1].rel,
+                                     proj (att_iter1, att_iter),
+                                     proj (att_item1, att_item)),
+                            att_iter,
+                            att_iter1),
+                        att_res, att_item, att_item1),
+                    proj (att_iter, att_iter),
+                    proj (att_pos, att_pos),
+                    proj (att_item, att_res)),
+	.frag = PFla_empty_set () };
 }
 
 /**

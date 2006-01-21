@@ -1332,7 +1332,6 @@ bin_comp (PFpa_op_kind_t op, const PFpa_op_t *n, PFalg_att_t res,
         = (PFalg_schm_item_t) { .name = res, .type = aat_bln };
 
     /* store information about attributes for arithmetics */
-    /* FIXME: Copy strings here? */
     ret->sem.binary.res = res;
     ret->sem.binary.att1 = att1;
     ret->sem.binary.att2 = att2;
@@ -1398,7 +1397,6 @@ bin_comp_atom (PFpa_op_kind_t op, const PFpa_op_t *n, PFalg_att_t res,
         = (PFalg_schm_item_t) { .name = res, .type = aat_bln };
 
     /* store information about attributes for arithmetics */
-    /* FIXME: Copy strings here? */
     ret->sem.bin_atom.res = res;
     ret->sem.bin_atom.att1 = att1;
     ret->sem.bin_atom.att2 = att2;
@@ -1515,6 +1513,34 @@ PFpa_gt_atom (const PFpa_op_t *n, PFalg_att_t res,
               PFalg_att_t att1, const PFalg_atom_t att2)
 {
     return bin_comp_atom (pa_gt_atom, n, res, att1, att2);
+}
+
+PFpa_op_t *
+PFpa_and (const PFpa_op_t *n, PFalg_att_t res,
+          PFalg_att_t att1, PFalg_att_t att2)
+{
+    return bin_comp (pa_bool_and, n, res, att1, att2);
+}
+
+PFpa_op_t *
+PFpa_or (const PFpa_op_t *n, PFalg_att_t res,
+         PFalg_att_t att1, PFalg_att_t att2)
+{
+    return bin_comp (pa_bool_or, n, res, att1, att2);
+}
+
+PFpa_op_t *
+PFpa_and_atom (const PFpa_op_t *n, PFalg_att_t res,
+               PFalg_att_t att1, const PFalg_atom_t att2)
+{
+    return bin_comp_atom (pa_bool_and_atom, n, res, att1, att2);
+}
+
+PFpa_op_t *
+PFpa_or_atom (const PFpa_op_t *n, PFalg_att_t res,
+              PFalg_att_t att1, const PFalg_atom_t att2)
+{
+    return bin_comp_atom (pa_bool_or_atom, n, res, att1, att2);
 }
 
 
@@ -1712,7 +1738,6 @@ PFpa_number (const PFpa_op_t *n,
              PFalg_att_t new_att, PFalg_att_t part)
 {
     PFpa_op_t        *ret = wire1 (pa_number, n);
-    PFord_ordering_t  ord = PFordering ();
 
     ret->sem.number.attname = new_att;
     ret->sem.number.part    = part;
@@ -1730,11 +1755,39 @@ PFpa_number (const PFpa_op_t *n,
         = (PFalg_schm_item_t) { .name = new_att, .type = aat_nat };
 
     /* ---- Number: orderings ---- */
-    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
-        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+    /* copied from attach operator */
 
-    /* of course, the new attribute is also a valid ordering */
-    PFord_set_add (ret->orderings, PFord_refine (ord, new_att));
+    /* all the input orderings we consider */
+    PFord_set_t in  = n->orderings;
+
+    /*
+     * If the input has no defined ordering, we create a new
+     * set that contains one empty ordering.  Our new column
+     * will then be the only result ordering
+     */
+    if (PFord_set_count (in) == 0)
+        in = PFord_set_add (PFord_set (), PFordering ());
+
+    /* Iterate over all the input orderings... */
+    for (unsigned int i = 0; i < PFord_set_count (in); i++) {
+
+        PFord_ordering_t current_in = PFord_set_at (in, i);
+        PFord_ordering_t prefix     = PFordering ();
+
+        /* interleave the new column everywhere possible */
+        for (unsigned int j = 0; j <= PFord_count (current_in); j++) {
+
+            PFord_ordering_t ord = PFord_refine (prefix, new_att);
+
+            for (unsigned int k = j; k < PFord_count (current_in); k++)
+                ord = PFord_refine (ord, PFord_order_at (current_in, k));
+
+            PFord_set_add (ret->orderings, ord);
+
+            if (j < PFord_count (current_in))
+                prefix = PFord_refine (prefix, PFord_order_at (current_in, j));
+        }
+    }
 
     /* ---- Number: costs ---- */
     ret->cost = 1 + n->cost;
@@ -2750,16 +2803,9 @@ PFpa_textnode (const PFpa_op_t *rel, PFalg_att_t res,
             break;
         }
 
-    if (sorted_by_iter) {
-        if (PFprop_const (rel->prop, att_item))
-            PFord_set_add (ret->orderings,
-                           PFord_refine (PFord_refine (PFordering (),
-                                                       att_iter),
-                                         att_item));
-        else
-            PFord_set_add (ret->orderings,
-                           PFord_refine (PFordering (), att_iter));
-    }
+    if (sorted_by_iter)
+        PFord_set_add (ret->orderings,
+                       PFord_refine (PFordering (), att_iter));
 
     /* ---- textnode: costs ---- */
     /* dummy costs as we have only this version */
@@ -2816,7 +2862,7 @@ PFpa_roots (const PFpa_op_t *n)
         PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
 
     /* ---- Roots: costs ---- */
-    ret->cost = 0;
+    ret->cost = 10;
 
     return ret;
 }
@@ -2927,6 +2973,46 @@ PFpa_fn_concat (const PFpa_op_t *n, PFalg_att_t res,
 
     ret->schema.items[i] 
         = (struct PFalg_schm_item_t) { .type = aat_str, .name = res };
+
+    /* insert semantic value (operand attributes and result attribute)
+     * into the result
+     */
+    ret->sem.binary.att1 = att1;
+    ret->sem.binary.att2 = att2;
+    ret->sem.binary.res = res;
+
+    /* ordering stays the same */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+
+    /* costs */
+    ret->cost = n->cost + 1;
+
+    return ret;
+}
+
+/**
+  * Constructor for builtin function fn:contains
+  * (translation is similar to arithmetic operators)
+  */
+PFpa_op_t *
+PFpa_fn_contains (const PFpa_op_t *n, PFalg_att_t res,
+                  PFalg_att_t att1, PFalg_att_t att2)
+{
+    unsigned int i;
+    PFpa_op_t *ret = wire1 (pa_contains, n);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n and change type of column  */
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    ret->schema.items[i] 
+        = (struct PFalg_schm_item_t) { .type = aat_bln, .name = res };
 
     /* insert semantic value (operand attributes and result attribute)
      * into the result

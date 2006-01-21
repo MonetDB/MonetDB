@@ -80,10 +80,12 @@ enum PFpa_op_kind_t {
     , pa_bool_not       =  45 /**< Boolean negation */
     , pa_bool_and       =  46 /**< Boolean and */
     , pa_bool_or        =  47 /**< Boolean or */
-    , pa_hash_count     =  48 /**< Hash-based count operator */
-    , pa_merge_rownum   =  50 /**< MergeRowNumber */
-    , pa_hash_rownum    =  51 /**< HashRowNumber */
-    , pa_number         =  52 /**< Number */
+    , pa_bool_and_atom  =  48 /**< Boolean and, where one arg is an atom */
+    , pa_bool_or_atom   =  49 /**< Boolean or, where one arg is an atom */
+    , pa_hash_count     =  55 /**< Hash-based count operator */
+    , pa_merge_rownum   =  56 /**< MergeRowNumber */
+    , pa_hash_rownum    =  57 /**< HashRowNumber */
+    , pa_number         =  58 /**< Number */
     , pa_type           =  60 /**< selection of rows where a column is of a
                                    certain type */
     , pa_type_assert    =  61 /**< restriction of the type of a given column */
@@ -118,7 +120,8 @@ enum PFpa_op_kind_t {
     , pa_empty_frag     = 133
     , pa_cond_err       = 140 /**< conditional error operator */
     , pa_concat         = 150 /**< Concatenation of two strings (fn:concat) */
-    , pa_string_join    = 151 /**< Concatenation of multiple strings */
+    , pa_contains       = 151 /**< string containment check (fn:contains) */
+    , pa_string_join    = 152 /**< Concatenation of multiple strings */
 };
 /** algebra operator kinds */
 typedef enum PFpa_op_kind_t PFpa_op_kind_t;
@@ -534,6 +537,30 @@ PFpa_op_t *PFpa_bool_not (const PFpa_op_t *,
                           PFalg_att_t res, PFalg_att_t att);
 
 /**
+ * Boolean and.
+ */
+PFpa_op_t *PFpa_and (const PFpa_op_t *, PFalg_att_t res,
+                     PFalg_att_t att1, PFalg_att_t att2);
+
+/**
+ * Boolean or.
+ */
+PFpa_op_t *PFpa_or (const PFpa_op_t *, PFalg_att_t res,
+                    PFalg_att_t att1, PFalg_att_t att2);
+
+/**
+ * Boolean and, where one column is an atom (constant).
+ */
+PFpa_op_t *PFpa_and_atom (const PFpa_op_t *, PFalg_att_t res,
+                          PFalg_att_t att1, PFalg_atom_t att2);
+
+/**
+ * Boolean or, where one column is an atom (constant).
+ */
+PFpa_op_t *PFpa_or_atom (const PFpa_op_t *, PFalg_att_t res,
+                         PFalg_att_t att1, PFalg_atom_t att2);
+
+/**
  * HashCount: Hash-based Count operator. Does neither benefit from
  * any existing ordering, nor does it provide/preserve any input
  * ordering.
@@ -732,6 +759,12 @@ PFpa_op_t * PFpa_cond_err (const PFpa_op_t *n, const PFpa_op_t *err,
  */
 PFpa_op_t * PFpa_fn_concat (const PFpa_op_t *n, PFalg_att_t res,
                             PFalg_att_t att1, PFalg_att_t att2);
+
+/**
+ * Constructor for builtin function fn:contains
+ */
+PFpa_op_t * PFpa_fn_contains (const PFpa_op_t *n, PFalg_att_t res,
+                              PFalg_att_t att1, PFalg_att_t att2);
 
 /**
  * Concatenation of multiple strings (using seperators)

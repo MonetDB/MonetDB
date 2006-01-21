@@ -105,6 +105,7 @@
 
 #define cond_err(a,b,c,d) PFpa_cond_err ((a), (b), (c), (d))
 #define fn_concat(a,b,c,d)  PFpa_fn_concat ((a), (b), (c), (d))
+#define fn_contains(a,b,c,d)  PFpa_fn_contains ((a), (b), (c), (d))
 #define string_join(a,b)  PFpa_string_join ((a), (b))
 
 /* vim:set shiftwidth=4 expandtab: */

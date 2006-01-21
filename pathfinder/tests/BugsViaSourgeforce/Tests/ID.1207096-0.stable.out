@@ -9,7 +9,7 @@ stdout of test 'ID.1207096-0` in directory 'tests/BugsViaSourgeforce` itself:
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-module(pathfinder,unix);
+module(pathfinder);module(unix);
 var book := getenv("TSTSRCBASE")+"/tests/XQuery/Tests/book.xml";
 shred_doc(book,"ID.1207096.book.xml");
 # Shredded XML doc("ID.1207096.book.xml"), total time after commit=0.023s
