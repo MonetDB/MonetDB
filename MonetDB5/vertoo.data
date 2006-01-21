@@ -1,3 +1,2 @@
-# this file is needed in the CVS repository so that the check whether
-# we need to check for the presence of Mx works.
-# Eventually we can use vertoo to maintain version numbers in monet5.
+monetdb = major:4; minor:10; release:0;
+monet5 = major:4; minor:99; release:19; rc:x; build:1;
