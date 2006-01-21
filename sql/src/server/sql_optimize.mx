@@ -1007,7 +1007,7 @@ set2pivot(mvc *c, list *l)
 {
 	list *lo = create_stmt_list();
 	list *pivots = create_stmt_list();
-	stmt *join, *st;
+	stmt *join, *st = NULL;
 	node *n;
 	int len = 0;
 	int markid = 0;
@@ -1033,13 +1033,13 @@ set2pivot(mvc *c, list *l)
 	n = list_find(l, (void *) join, data_cmp);
 	if (join)
 		stmt_destroy(join);
+*/
 	if (!n) {
+assert(0);
 		list_destroy(l);
 		list_destroy(pivots);
-assert(0);
 		return NULL;
 	}
-*/
 	st = n->data;
 	if (st->nrcols == 1) {
 		if (st->type == st_idxbat) {
@@ -1109,7 +1109,7 @@ assert(0);
 	return stmt_list(pivots);
 }
 
-/* list of stmt's containing filter steps is transformed into a pivot table */
+/* list of stmt's containing filter steps are transformed into a pivot table */
 static stmt *
 filter_pivots(list *pivots, list *filters)
 {
@@ -1147,7 +1147,6 @@ sets2pivot(mvc *c, list *ll)
 			stmt *npivots = set2pivot(c, n->data);
 			list *l = npivots->op1.lval;
 			list *inserts = create_stmt_list();
-
 			node *m, *c;
 
 			/* we use a special bat insert to garantee unique head 

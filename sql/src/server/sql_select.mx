@@ -3077,6 +3077,78 @@ sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 }
 
 static stmt *
+set2table( mvc *sql, scope *scp, stmt *s) 
+{
+	stmt *cur = NULL;
+	node *n;
+
+	for (n = scp->tables->h; n; n = n->next) {
+		tvar *v = n->data;
+		stmt *tmp = complex_find_subset(s, v->s);
+
+		if (!tmp) {
+			cvar *cv = v->columns->h->data;
+
+			tmp = stmt_dup(cv->s);
+			/* just add a select whole column */
+			if (!cur) {
+				cur = stmt_dup(tmp);
+				/* add join to an already used column */
+			} else {
+				tmp = stmt_join(stmt_dup(cur), 
+						stmt_reverse(tmp), cmp_all);
+			}
+			s = sql_and(sql, scp, s, tmp, sql_where);
+		} else if (!cur) {
+			cur = tmp;
+		} else {
+			stmt_destroy(tmp);
+		}
+	}
+	if (cur)
+		stmt_destroy(cur);
+	return s;
+}
+
+static stmt *
+sets2table( mvc *sql, scope *scp , stmt *s ) 
+{
+	list *l = s->op1.lval, *nl = list_create((fdestroy) &list_destroy);
+	node *n;
+
+	for (n = l->h; n; n = n->next) {
+		list *t = n->data; 
+		node *m = t->h;
+
+		if (m) {
+			list *nll;
+			stmt *s1 = m->data;
+			stmt *set = stmt_set(stmt_dup(s1));
+
+			for (m = m->next; m; m = m->next) {
+				stmt *s1 = m->data;
+
+				if (s1->nrcols > set->nrcols)
+					set -> nrcols = s1->nrcols;
+				list_append(set->op1.lval, stmt_dup(s1)); 
+			}
+			set = set2table(sql, scp, set);
+			nll = create_stmt_list();
+			for (m = set->op1.lval->h; m; m = m->next) {
+				stmt *s1 = m->data;
+
+				list_append(nll, stmt_dup(s1));
+			}
+			stmt_destroy(set);
+			list_append(nl, nll);
+		}
+	}
+	stmt_destroy(s);
+	return stmt_sets(nl);
+}
+
+
+static stmt *
 sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 {
 	list *rl = NULL;
@@ -3089,9 +3161,6 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 		return sql_simple_select(sql, scp, sn->where, sn->selection);
 
 	if (sn->where) {
-		node *n;
-		stmt *cur = NULL;
-
 		s = sql_logical_exp(sql, scp, sn->where, NULL, NULL, sql_where);
 		if (!s) {
 			sql_select_cleanup(sql, s, subset, grp);
@@ -3101,32 +3170,11 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 			s = stmt_set(s);
 		}
 		/* check for tables not used in the where part */
-		if (s->type == st_set) {	/* TODO: handle st_sets!! */
-			for (n = scp->tables->h; n; n = n->next) {
-				tvar *v = n->data;
-				stmt *tmp = complex_find_subset(s, v->s);
-
-				if (!tmp) {
-					cvar *cv = v->columns->h->data;
-
-					tmp = stmt_dup(cv->s);
-					/* just add a select whole column */
-					if (!cur) {
-						cur = stmt_dup(tmp);
-						/* add join to an already used column */
-					} else {
-						tmp = stmt_join(stmt_dup(cur), stmt_reverse(tmp), cmp_all);
-					}
-					s = sql_and(sql, scp, s, tmp, sql_where);
-				} else if (!cur) {
-					cur = tmp;
-				} else {
-					stmt_destroy(tmp);
-				}
-			}
+		if (s->type == st_set) {
+			s = set2table(sql, scp, s);
+		} else {
+			s = sets2table(sql, scp, s);
 		}
-		if (cur)
-			stmt_destroy(cur);
 
 	} else if (sn->from) {
 		node *n;
