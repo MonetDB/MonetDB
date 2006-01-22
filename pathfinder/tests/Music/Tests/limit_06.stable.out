@@ -23,7 +23,6 @@ Over..
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-= ! stable output needs to be verified ! =
 <Asset>
         <GlobalId>1</GlobalId>
         <TrackName>asset1</TrackName>
@@ -425,7 +424,6 @@ Over..
         <TrackName>asset991</TrackName>
         <TrackNr>1</TrackNr><TrackNr1/>
       </Asset>
-= ! stable output needs to be verified ! =
 </XQueryResult>
 
 # 14:25:30 >  
