@@ -630,6 +630,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 				sql_subtype *tp = tail_type(st);
 
 				mvc_create_column(sql, t, cname, tp);
+				_DELETE(cname);
 			}
 		}
 		_DELETE(subquery);
