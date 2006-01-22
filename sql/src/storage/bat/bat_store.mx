@@ -1996,7 +1996,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 	return first;
 }
 
-static int cleanup = 0;
+static int logging = 0;
 
 void
 store_exit()
@@ -2013,8 +2013,9 @@ store_exit()
 
 	if (spares > 0) 
 		destroy_spare_transactions();
-	/* busy wait till the logmanager is ready with the cleanup */
-	while (cleanup)
+	/* busy wait till the logmanager is ready with the logging and cleanup */
+	transactions ++;
+	while (logging)
 		MT_sleep_ms(100);
 	logger = NULL;
 
@@ -2038,13 +2039,13 @@ store_manager()
 		return;
 	}
 
+	logging = 1;
 	res = logger_restart(logger);
-	cleanup = 1;
 	MT_unset_lock(bs_lock, "store_manager");
-	if (cleanup && res == SQL_OK)
+	if (logging && res == SQL_OK)
 		logger_cleanup(logger);
 
-	cleanup = 0;
+	logging = 0;
 }
 
 void
