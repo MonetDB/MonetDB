@@ -3378,7 +3378,10 @@ string:
     STRING
 		{ $$ = $1; }
  |  STRING string
-		{ $$ = strconcat($1,$2); }
+		{ char *s = strconcat($1,$2); 
+	 	  $$ = sa_strdup(SA, s);	
+		  _DELETE(s);
+		}
  ;
 
 exec:
