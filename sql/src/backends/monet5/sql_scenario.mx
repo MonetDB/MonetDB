@@ -304,8 +304,15 @@ SQLcompileInternal(str *ret, str *expr, int flag)
 
 	initSQLreferences();
 	m = sql->mvc;
-	if( !m->trans)
-		mvc_trans(m);
+	if( !m->trans) {
+		int schema_nr = mvc_trans(c);
+		if (c->cache && (c->schema_number < schema_nr || c->qc->id > 1000)) {
+			c->schema_number = schema_nr;
+			if (c->qc)
+				qc_destroy(c->qc);
+			c->qc = qc_create(c->clientid);
+		}
+	}
 	if (!m->sa)
 		m->sa = sa_create();
 	o = *m;
@@ -501,11 +508,6 @@ the duration of these calls.
 
 int SQLautocommit(Client c, mvc *m){
 	if (m->auto_commit && m->trans) {
-		if (m->cache && (m->type == Q_SCHEMA || m->qc->id > 1000)) {
-			if (m->qc) 
-				qc_destroy(m->qc);
-			m->qc = qc_create(m->clientid);
-		}
 		if (mvc_status(m) < 0) {
 			mvc_rollback(m, 0, NULL);
 		} else if (mvc_commit(m, 0, NULL) < 0) {

@@ -211,16 +211,6 @@ sqlcleanup(mvc *c, int err)
 	if (err)
 		c->status = err;
 	scanner_query_processed(&(c->scanner));
-
-	/*
-	 * clear query cache after Transaction boundaries (commit/rollback)
-	 * and on schema changes
-	 */
-	if (c->cache && (c->type == Q_SCHEMA || c->qc->id > 1000)) {
-		if (c->qc)
-			qc_destroy(c->qc);
-		c->qc = qc_create(c->clientid);
-	}
 	return err;
 }
 
@@ -261,8 +251,16 @@ sqlexecute(backend *be, stream *out)
 	cq *q = NULL;
 
 	c->type = Q_PARSE;
-	if (!c->trans)
-		mvc_trans(c);
+	if (!c->trans) {
+		int schema_nr = mvc_trans(c);
+		if (c->cache && (c->schema_number < schema_nr || c->qc->id > 1000)) {
+			c->schema_number = schema_nr;
+			if (c->qc)
+				qc_destroy(c->qc);
+			c->qc = qc_create(c->clientid);
+		}
+	}
+
 	if (!c->sa)
 		c->sa = sa_create();
 
@@ -427,12 +425,6 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int console)
 
 				/* auto_commit on end of statement */
 				if (m->auto_commit && m->trans) {
-					if (m->cache && (m->type == Q_SCHEMA || 
-							 m->qc->id > 1000)) {
-						if (m->qc)
-							qc_destroy(m->qc);
-						m->qc = qc_create(m->clientid);
-					}
 					if (mvc_status(m) < 0) {
 						mvc_rollback(m, 0, NULL);
 					} else if (mvc_commit(m, 0, NULL) < 0) {
