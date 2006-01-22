@@ -189,6 +189,7 @@ log_read_string(logger *l)
 		GDKfree(buf);
 		return NULL;
 	}
+	buf[len-1] = 0;
 	return buf;
 }
 
@@ -228,32 +229,38 @@ log_read_updates(logger *logger, logformat *l, char *name)
 		fprintf(stderr, "logger found log_read_updates %s %s %d\n", name, (l->flag == SQL_LOG_INSERT) ? "insert" : "delete", l->nr);
 
 	if (b) {
-		int cnt = BATcount(b);
 		void *(*rh) (ptr, stream *, size_t) = BATatoms[b->htype].atomRead;
 		void *(*rt) (ptr, stream *, size_t) = BATatoms[b->ttype].atomRead;
-		void *hv = ATOMnil(b->htype);
 		void *tv = ATOMnil(b->ttype);
 
-		if (b->hseqbase != oid_nil)
-			cnt += b->hseqbase;
-		if (b->tseqbase != oid_nil)
-			cnt += b->tseqbase;
+		if (b->htype == TYPE_void && l->flag == SQL_LOG_INSERT) { 
+			for (; l->nr > 0; l->nr--) {
+				void *t = rt(tv, logger->log, 1);
 
-		for (; l->nr > 0; l->nr--) {
-			void *h = rh(hv, logger->log, 1);
-			void *t = rt(tv, logger->log, 1);
+				if (l->flag == SQL_LOG_INSERT)
+					BUNappend(b, t);
+				if (t != tv)
+					_DELETE(t);
+			}
 
-			if (l->flag == SQL_LOG_INSERT)
-				BUNins(b, h, t);
-			else if (l->flag == SQL_LOG_DELETE)
-				BUNdel(b, h, t);
-			cnt++;
-			if (h != hv)
-				_DELETE(h);
-			if (t != tv)
-				_DELETE(t);
+		} else {
+			void *hv = ATOMnil(b->htype);
+
+			for (; l->nr > 0; l->nr--) {
+				void *h = rh(hv, logger->log, 1);
+				void *t = rt(tv, logger->log, 1);
+
+				if (l->flag == SQL_LOG_INSERT)
+					BUNins(b, h, t);
+				else if (l->flag == SQL_LOG_DELETE)
+					BUNdel(b, h, t);
+				if (h != hv)
+					_DELETE(h);
+				if (t != tv)
+					_DELETE(t);
+			}
+			_DELETE(hv);
 		}
-		_DELETE(hv);
 		_DELETE(tv);
 		bat_destroy(b);
 	}
@@ -397,10 +404,16 @@ logger_readlog(logger *logger, char *filename)
 			if (logger->tid != 0)
 				logger_abort(logger);
 			logger->tid = l.nr;
+			if (logger->debug & 1)
+				fprintf(stderr, "logger tstart %d\n", 
+					logger->tid);
 
 			break;
 		case SQL_LOG_END:
 			if (logger->tid == l.nr) {
+				if (logger->debug & 1)
+					fprintf(stderr, "logger tend %d\n", 
+						logger->tid);
 				logger_fakecommit(logger);
 			} else {
 				logger_abort(logger);
@@ -438,7 +451,7 @@ logger_readlog(logger *logger, char *filename)
 	}
 	logger_close(logger);
 
-	if (logger->tid != 0)
+	if (logger->tid != 0) 
 		logger_abort(logger);
 
 	return 0;
