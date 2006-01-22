@@ -1511,17 +1511,17 @@ xquery_function_call(xquery_client *ctx,
                 @:bunappend(fun_iter000, &iter, (size_t) *(oid*), SZFMT, "@0")@
                 @:bunappend(fun_kind000, &xquery_types[t].kind, *(int*), "%d")@
                 if (c == 'i') { /* xs:integer */
-                    @:bunappend(int_values, &nil, ctx->val, *(lng*), LLFMT, "LL")@
+                    @:bunappend(int_values, ctx->val, *(lng*), LLFMT, "LL")@
                     item = *(oid*) BUNhead(ctx->int_values, BUNfnd(BATmirror(ctx->int_values), ctx->val));
-                    @:bunappend(fun_item000, &nil, &item, (size_t) *(oid*), SZFMT, "@0")@
+                    @:bunappend(fun_item000, &item, (size_t) *(oid*), SZFMT, "@0")@
                 } else if (c == 'd') { /* xs:double or xs:decimal */
-                    @:bunappend(dbl_values, &nil, ctx->val, *(dbl*), "%g")@
+                    @:bunappend(dbl_values, ctx->val, *(dbl*), "%g")@
                     item = *(oid*) BUNhead(ctx->dbl_values, BUNfnd(BATmirror(ctx->dbl_values), ctx->val));
-                    @:bunappend(fun_item000, &nil, &item , (size_t) *(oid*), SZFMT, "@0")@
+                    @:bunappend(fun_item000, &item , (size_t) *(oid*), SZFMT, "@0")@
                 } else if (c == 's') { /* xs:string */
-                    @:bunappend(str_values, &nil, ctx->val, (str), "\"%s\"")@
+                    @:bunappend(str_values, ctx->val, (str), "\"%s\"")@
                     item = *(oid*) BUNhead(ctx->str_values, BUNfnd(BATmirror(ctx->str_values), ctx->val));
-                    @:bunappend(fun_item000, &nil, &item, (size_t) *(oid*), SZFMT, "@0")@
+                    @:bunappend(fun_item000, &item, (size_t) *(oid*), SZFMT, "@0")@
                 } else if (shredBAT == NULL) { 
                     return "xquery_function_call: node parameter without shredBAT.\n";
                 } else {
