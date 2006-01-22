@@ -353,7 +353,9 @@ mvc_commit(mvc *m, int chain, char *name)
 	if (name && name[0] != '\0') {
 		if (mvc_debug)
 			fprintf(stderr, "mvc_savepoint\n");
+		store_lock();
 		m->trans = sql_trans_create(m->trans->stk, m->trans, name);
+		store_unlock();
 		m->trans->schema = find_sql_schema(m->trans, schema);
 		m->type = Q_TRANS;
 		_DELETE(schema);
@@ -366,9 +368,11 @@ mvc_commit(mvc *m, int chain, char *name)
 	cur = tr;
 	tr = tr->parent;
 	if (tr->parent) {
+		store_lock();
 		while (tr->parent->parent != NULL && ok == SQL_OK) {
 			tr = sql_trans_destroy(tr);
 		}
+		store_unlock();
 	}
 	cur -> parent = tr;
 	tr = cur;
@@ -385,7 +389,9 @@ mvc_commit(mvc *m, int chain, char *name)
 			if (mvc_debug)
 				fprintf(stderr, "no changes\n");
 		} else {
+			store_lock();
 			sql_trans_destroy(tr);
+			store_unlock();
 			m->trans = NULL;
 			m->auto_commit = 1;
 		}
@@ -408,11 +414,11 @@ mvc_commit(mvc *m, int chain, char *name)
 		_DELETE(schema);
 		return -1;
 	}
-	store_unlock();
 
 	while (tr->parent)
 		tr = sql_trans_destroy(tr);
 
+	store_unlock();
 	if (chain) {
 		store_lock();
 		if (tr) {
@@ -462,21 +468,25 @@ mvc_rollback(mvc *m, int chain, char *name)
 			return -1;
 		}
 		tr = m->trans;
+		store_lock();
 		while (!tr->name || strcmp(tr->name, name) != 0) {
 			/* make sure we do not reuse changed data */
 			if (tr->wtime)
 				tr->status = 1;
 			tr = sql_trans_destroy(tr);
 		}
+		store_unlock();
 		m->trans = tr;	/* restart at savepoint */
 		chain = 1;
 	} else {
+		store_lock();
 		while (tr->parent) {
 			/* make sure we do not reuse changed data */
 			if (tr->wtime)
 				tr->status = 1;
 			tr = sql_trans_destroy(tr);
 		}
+		store_unlock();
 	}
 	m->status = 0;
 	if (chain) {
@@ -521,12 +531,14 @@ mvc_release(mvc *m, char *name)
 	}
 	tr = m->trans;
 	tr = tr->parent;
+	store_lock();
 	while (ok == SQL_OK && (!tr->name || strcmp(tr->name, name) != 0)) {
 		tr = sql_trans_destroy(tr);
 	}
 	if (tr->name && strcmp(tr->name, name) == 0) {
 		tr = sql_trans_destroy(tr);
 	}
+	store_unlock();
 	cur -> parent = tr;
 
 	m->type = res;
@@ -587,9 +599,12 @@ mvc_destroy(mvc *m)
 	if (mvc_debug)
 		fprintf(stderr, "mvc_destroy\n");
 	tr = m->trans;
-	if (tr)
+	if (tr) {
+		store_lock();
 		while (tr->parent)
 			tr = sql_trans_destroy(tr);
+		store_unlock();
+	}
 
 	m->trans = NULL;
 
