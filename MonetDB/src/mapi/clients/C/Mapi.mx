@@ -2032,6 +2032,7 @@ mapi_start_talking(Mapi mid)
 	char buf[BLOCK];
 	size_t len;
 	MapiHdl hdl;
+	int pversion = 0;
 
 	/* consume server challenge */
 	len = stream_read(mid->from, buf, 1, 2);
@@ -2062,9 +2063,10 @@ mapi_start_talking(Mapi mid)
 			return mid->error;
 		}
 		*protover++ = '\0';
+		pversion = atoi(protover);
 
 		errbuf[0] = 0;
-		if (strcmp(server, "mserver_mal") != 0) {
+		if (pversion <= 4) {
 			/* MonetDB 4 supports a single language per mapi port */
 			switch (mid->languageId) {
 			case LANG_MIL:
@@ -2097,10 +2099,21 @@ mapi_start_talking(Mapi mid)
 		/* just don't do anything with the challenge */
 	}
 
-	if (mid->blocked) {
-		snprintf(buf, BLOCK, "%s:%s:%s:blocked\n", mid->username, mid->password, mid->language);
+	if (pversion <= 4) {
+		if (mid->blocked) {
+			snprintf(buf, BLOCK, "%s:%s:%s:blocked\n", mid->username, mid->password, mid->language);
+		} else {
+			snprintf(buf, BLOCK, "%s:%s:%s\n", mid->username, mid->password, mid->language);
+		}
+	} else if (pversion == 5) {
+		/* note, database can be appended here (:database), but since
+		MapiClient doesn't have a switch for it, we omit it so we get
+		the default (and don't have to implement redirect support) */
+		snprintf(buf, BLOCK, "%s:%s:%s:%s\n", mid->username, mid->password, mid->language, (mid->blocked ? "blocked" : "linemode"));
 	} else {
-		snprintf(buf, BLOCK, "%s:%s:%s\n", mid->username, mid->password, mid->language);
+		snprintf(buf, BLOCK, "unsupported protocol version: %d", pversion);
+		close_connection(mid);
+		return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
 	}
 	if (mid->trace) {
 		printf("sending first request [%d]:%s", BLOCK, buf);
