@@ -1419,9 +1419,13 @@ static int  seqEmitStr(XqueryCtx* ctx, str sv, int lastVal) {
         if ( ctx->typedMode ) {
             stream_printf(GDKout,"<xs:string>");
         }
-        stream_printf(GDKout,"\"");
+        if ( !ctx->typedMode ) {
+            stream_printf(GDKout,"\"");
+        }
         emit_escaped( sv, 1+ctx->mapiMode, 0/*ALL*/);
-        stream_printf(GDKout,"\" ");
+        if ( !ctx->typedMode ) {
+            stream_printf(GDKout,"\" ");
+        }
         if ( ctx->typedMode ) {
             stream_printf(GDKout,"</xs:string>");
             if ( !lastVal )
