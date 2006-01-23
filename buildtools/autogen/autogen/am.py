@@ -865,6 +865,8 @@ def am_translate_dir(path, am):
 def am_includes(fd, var, values, am):
     incs = "-I$(srcdir)"
     for i in values:
+        if i[:2] == "-I" and i[2] != "$":
+            i = i[2:]
         if i[0] == "-" or i[0] == "$":
             incs = incs + " " + i
         else:
