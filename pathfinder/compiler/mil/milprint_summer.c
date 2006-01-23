@@ -6377,7 +6377,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "} else if(t = \"string\") {\n"
                 "str_values.append(v);\n"
                 "iter.append(oid(itercnt));\n"
-                "item.append(str_values.reverse().find(d));\n"
+                "item.append(str_values.reverse().find(v));\n"
                 "kind.append(STR);\n"
                 "}\n"
                 "}\n"
