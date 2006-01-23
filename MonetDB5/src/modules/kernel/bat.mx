@@ -325,33 +325,24 @@ address BKCreplace_bun;
 # The SQL append/replace commands
 
 command append( i:bat[:oid,:any_1], u:bat[:oid,:any_1]) :void
-address BKCoid_bat_append_oid_bat_wrap
-comment "append the content of u to i (renumbers u-oids' to unique numbers)";
-
-command append(i:bat[:oid,:any_1], u:any_1):void
-address BKCoid_bat_append_val_wrap
-comment "append the value u to i";
+address BKCappend_wrap
+comment "append the content of u to i (renumbers u-oids' to unique numbers, starting at i.max()+1)";
 
 command append( i:bat[:void,:any_1], u:bat[:void,:any_1] ) :void
-address BKCbat_append_void_bat_wrap
+address BKCappend_wrap
 comment "append the content of u to i";
 
-command append( i:bat[:void,:any_1], u:any_1) :void
-address BKCbat_append_val_wrap
+command append( i:bat[:void,:any_1], u:bat[:oid,:any_1] ) :void
+address BKCappend_wrap
+comment "append the content of u to i";
+
+command append(i:bat[:oid,:any_1], u:any_1):void
+address BKCappend_val_wrap
 comment "append the value u to i";
 
-command append( i:bat[:void,:oid], u:bat[:oid,:void]) :void
-address BKCbat_append_oid_bat_wrap
-comment "append the content of u to i";
-
-command append( i:bat[:void,:any_1], u:bat[:oid,:any_1]) :void
-address BKCbat_append_oid_bat_wrap
-comment "append the content of u to i";
-
-command append(i:bat[:oid,:void], u:bat[:oid,:void]) :void
-address BKCbat_append_oidvoid_bat_wrap
-comment "Special case append for empty bats, works around impossible 
-        void,void case";
+command append( i:bat[:void,:any_1], u:any_1) :void
+address BKCappend_val_wrap
+comment "append the value u to i";
 
 command replace( o:bat[:void,:any_1], d:bat[:oid,:any_1]) :void
 address BKCbat_replace_oid_bat_wrap
@@ -690,10 +681,8 @@ mal_export str BKCdelete_all(int *r, int *bid);
 mal_export str BKCdelete_bat_bun(int *r, int *bid, int *sid);
 mal_export str BKCdelete_bat(int *r, int *bid, int *sid);
 mal_export str BKCdestroy_bat(bit *r, str *input);
-mal_export str BKCbat_append_oid_bat_wrap(int *r, int *bid, int *uid);
-mal_export str BKCbat_append_oidvoid_bat_wrap(int *r, int *bid, int *uid);
-mal_export str BKCoid_bat_append_oid_bat_wrap(int *res, int *bid, int *uid);
-mal_export str BKCoid_bat_append_val_wrap(int *r, int *bid, ptr u);
+mal_export str BKCappend_wrap(int *r, int *bid, int *uid);
+mal_export str BKCappend_val_wrap(int *r, int *bid, ptr u);
 mal_export str BKCbat_replace_oid_bat_wrap(int *r, int *bod, int *did);
 mal_export str BKCgetCapacity(lng *res, int *bid);
 mal_export str BKCgetHeadType(str *res, int *bid);
@@ -744,6 +733,8 @@ mal_export str BKCsetSequenceBaseNil(int *r, int *bid, oid *o);
 mal_export str BKCgetSequenceBase(oid *r, int *bid);
 
 mal_export ssize_t void_replace_bat(BAT *b, BAT *u);
+mal_export int void_inplace(BAT *b, oid id, ptr val);
+
 #endif /*_BAT_H_*/
 
 @c
@@ -926,33 +917,6 @@ CMDdelete_bat_head(BAT **r, BAT *b, BAT *s)
 The next collection of operators fill a hole in the MonetDB kernel libraries.
 It provide handy operations on void-BATs.
 @c
-size_t
-void_append_bat(BAT *b, BAT *u)
-{
-	size_t sz = BUNsize(u);
-	size_t old = u->hseqbase;
-	size_t sbase = b->hseqbase + BATcount(b);
-
-	BATseqbase(u, sbase);
-	BATins(b, u);
-	BATseqbase(u, old);
-	return sz;
-}
-
-size_t
-void_insert_bat(BAT *b, BAT *u)
-{
-	size_t nr = 0;
-	BUN r, s;
-	oid nil = oid_nil;
-
-	BATloop(u, r, s) {
-		BUNins(b, (ptr) &nil, BUNtail(u, r));
-		nr++;
-	}
-	return nr;
-}
-
 int
 void_inplace(BAT *b, oid id, ptr val)
 {
@@ -1000,105 +964,6 @@ void_replace_bat(BAT *b, BAT *u)
 		nr++;
 	}
 	return nr;
-}
-
-int
-bat_append_void_bat_wrap(BAT **res, BAT *i, BAT *u)
-{
-	*res = i;
-	void_append_bat(i, u);
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-bat_append_oid_bat_wrap(BAT **res, BAT *i, BAT *u)
-{
-	*res = i;
-	void_insert_bat(i, u);
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-bat_append_oidvoid_bat_wrap(BAT **res, BAT *i, BAT *u)
-{
-	/*(void)u; fake usage to fool compilers in case assertions are disabled
-	   assert (!BATcount(i));
-	 */
-	*res = i;
-	void_insert_bat(i, u);
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
-}
-
-static oid
-oid_max(BAT *i)
-{
-	oid o = 0;
-
-	if (BATcount(i))
-		o = *(oid *) BUNhead(i, BUNlast(i) - BUNsize(i));
-	if (!BAThordered(i)) {
-		BUN r, s;
-		int d;
-
-		BATloopFast(i, r, s, d) {
-			oid v = *(oid *) BUNhead(i, r);
-
-			if (v > o)
-				o = v;
-		}
-	}
-	return o;
-}
-
-int
-oid_bat_append_oid_bat_wrap(BAT **res, BAT *i, BAT *u)
-{
-	BUN r, s;
-	oid o;
-
-	assert(i->htype == TYPE_oid && (BATcount(u) == 0 || u->htype == TYPE_oid || u->htype == TYPE_void));
-
-	o = oid_max(i);
-	o++;
-	BATloop(u, r, s) {
-		oid h = *(oid *) BUNhead(u, r) + o;
-
-		BUNins(i, &h, BUNtail(u, r));
-	}
-	*res = i;
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
-}
-
-int
-oid_bat_append_val_wrap(BAT **res, BAT *i, ptr t)
-{
-	oid o;
-
-	assert(i->htype == TYPE_oid);
-	o = oid_max(i);
-	o++;
-	*res = i;
-	BUNins(i, (ptr) &o, @:batconvert(i,t)@
-	    );
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
-}
-
-
-int
-bat_append_val_wrap(BAT **res, BAT *i, ptr t)
-{
-	oid h = i->hseqbase + BATcount(i);
-
-	*res = i;
-	BUNins(i, (ptr) &h, @:batconvert(i,t)@
-	    );
-	BBPfix(i->batCacheid);
-	return GDK_SUCCEED;
 }
 
 int
@@ -2194,7 +2059,7 @@ void_replace_delta(BAT *b, BAT *u)
 }
 
 char *
-BKCbat_append_void_bat_wrap(int *r, int *bid, int *uid)
+BKCappend_wrap(int *r, int *bid, int *uid)
 {
 	BAT *i, *u;
 
@@ -2206,94 +2071,15 @@ BKCbat_append_void_bat_wrap(int *r, int *bid, int *uid)
 		BBPreleaseref(i->batCacheid);
 		return throwMessage("bat.append", "Cannot access descriptor");
 	}
-	if (u->htype == TYPE_void)
-		void_append_bat(i, u);
-	else
-		void_insert_bat(i, u);
+	BATappend(i, u);
 	BBPreleaseref(i->batCacheid);
 	BBPreleaseref(u->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
-BKCbat_append_oid_bat_wrap(int *r, int *bid, int *uid)
+BKCappend_val_wrap(int *r, int *bid, ptr u)
 {
-	BAT *i, *u;
-
-	(void) r;
-	if ((i = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("bat.append", "Cannot access descriptor");
-	}
-	if ((u = BATdescriptor(*uid)) == NULL) {
-		BBPreleaseref(i->batCacheid);
-		return throwMessage("bat.append", "Cannot access descriptor");
-	}
-	i = BATsetaccess(i, 0);
-	void_insert_bat(i, u);
-	BBPreleaseref(i->batCacheid);
-	BBPreleaseref(u->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCbat_append_oidvoid_bat_wrap(int *r, int *bid, int *uid)
-{
-	BAT *i, *u;
-
-	(void) r;
-	if ((i = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("bat.append", "Cannot access descriptor");
-	}
-	if ((u = BATdescriptor(*uid)) == NULL) {
-		BBPreleaseref(i->batCacheid);
-		return throwMessage("bat.append", "Cannot access descriptor");
-	}
-	i = BATsetaccess(i, 0);
-	void_insert_bat(i, u);
-	BBPreleaseref(i->batCacheid);
-	BBPreleaseref(u->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCoid_bat_append_oid_bat_wrap(int *res, int *bid, int *uid)
-{
-	BUN r = 0, s;
-	oid o;
-	BAT *i, *u;
-
-	(void) res;
-	if ((i = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("bat.append", "Cannot access descriptor");
-	}
-	if ((u = BATdescriptor(*uid)) == NULL) {
-		BBPreleaseref(i->batCacheid);
-		return throwMessage("bat.append", "Cannot access descriptor");
-	}
-
-	assert(i->htype == TYPE_oid && (BATcount(u) == 0 || u->htype == TYPE_oid));
-
-	i = BATsetaccess(i, 0);
-	o = oid_max(i);
-	o++;
-	BATloop(u, r, s) {
-		oid h = *(oid *) BUNhead(u, r) + o;
-
-		BUNins(i, &h, BUNtail(u, r));
-	}
-	BBPreleaseref(i->batCacheid);
-	BBPreleaseref(u->batCacheid);
-	return MAL_SUCCEED;
-}
-
-@-
-For BUN inserts we do not call for change in access mode.
-This would be too costly
-@c
-str
-BKCoid_bat_append_val_wrap(int *r, int *bid, ptr u)
-{
-	oid o;
 	BAT *i;
 
 	(void) r;
@@ -2301,30 +2087,8 @@ BKCoid_bat_append_val_wrap(int *r, int *bid, ptr u)
 		return throwMessage("bat.append", "Cannot access descriptor");
 	}
 
-	assert(i->htype == TYPE_oid);
-	o = oid_max(i);
-	o++;
 	@:derefStr(i,t,u)@
-	BUNins(i, (ptr) &o, u);
-	BBPreleaseref(i->batCacheid);
-	return MAL_SUCCEED;
-}
-
-
-char *
-BKCbat_append_val_wrap(int *r, int *bid, ptr u)
-{
-	BAT *i;
-	oid h;
-
-	(void) r;
-	if ((i = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("bat.append", "Cannot access descriptor");
-	}
-	h = i->hseqbase + BATcount(i);
-	@:derefStr(i,t,u)@
-	i = BATsetaccess(i, 0);
-	BUNins(i, (ptr) &h, u);
+	BUNappend(i, u);
 	BBPreleaseref(i->batCacheid);
 	return MAL_SUCCEED;
 }
