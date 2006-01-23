@@ -1142,7 +1142,6 @@ proc sql_server_start(bit global) : void {
 		# fork(mapi_listen(int(monet_environment.find("mapi_port")), 5, ""));
 	} else {
 		printf(err);
-		drop("sql_server");
 	}
 }
 

@@ -52,11 +52,13 @@ static struct logger *logger = NULL;
 static MT_Lock bs_lock = NULL;
 static int transactions = 0;
 static sql_trans *gtrans = NULL;
+static int schema_number = 0; /* each committed schema change triggers a new
+				 schema number (session wise unique number) */
 static struct bm *bm = NULL;
 static int bs_debug = 0;
 
-#define MAX_SPARES 4
-static sql_trans *spare_trans[MAX_SPARES] = { NULL, NULL };
+#define MAX_SPARES 2
+static sql_trans *spare_trans[MAX_SPARES];
 static int spares = 0;
 
 int
@@ -367,7 +369,14 @@ sql_trans_destroy(sql_trans *t)
 	sql_trans *res = t->parent;
 
 	transactions--;
+#ifdef STORE_DEBUG
+		fprintf(stderr, "destroy trans (%p)\n", t);
+#endif
+
 	if (res == gtrans && spares < MAX_SPARES && !t->name && !t->schema_updates) {
+#ifdef STORE_DEBUG
+		fprintf(stderr, "spared (%d) trans (%p)\n", spares, t);
+#endif
 		spare_trans[spares++] = t;
 		return res;
 	}
@@ -381,6 +390,16 @@ sql_trans_destroy(sql_trans *t)
 
 	_DELETE(t);
 	return res;
+}
+
+static void
+destroy_spare_transactions() 
+{
+	int i, s = spares;
+
+	spares = MAX_SPARES; /* ie now there not spared anymore */
+	for (i = 0; i < s; i++) 
+		sql_trans_destroy(spare_trans[i]);
 }
 
 static int
@@ -1850,6 +1869,12 @@ bootstrap_create_schema(sql_trans *tr, char *name, int auth_id)
 }
 
 int
+store_schema_number()
+{
+	return schema_number;
+}
+
+int
 store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 {
 	int first = 0;
@@ -1971,7 +1996,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 	return first;
 }
 
-static int cleanup = 0;
+static int logging = 0;
 
 void
 store_exit()
@@ -1982,18 +2007,15 @@ store_exit()
 	if (!logger)
 		return;
 
-	sequences_exit();
 	MT_set_lock(bs_lock, "store_exit");
+	if (gtrans)
+		sequences_exit();
 
-	if (spares > 0) {
-		int i, s = spares;
-
-		spares = MAX_SPARES; /* ie now there not spared anymore */
-		for (i = 0; i < s; i++) 
-			sql_trans_destroy(spare_trans[i]);
-	}
-	/* busy wait till the logmanager is ready with the cleanup */
-	while (cleanup)
+	if (spares > 0) 
+		destroy_spare_transactions();
+	/* busy wait till the logmanager is ready with the logging and cleanup */
+	transactions ++;
+	while (logging)
 		MT_sleep_ms(100);
 	logger = NULL;
 
@@ -2017,24 +2039,30 @@ store_manager()
 		return;
 	}
 
+	logging = 1;
 	res = logger_restart(logger);
-	cleanup = 1;
 	MT_unset_lock(bs_lock, "store_manager");
-	if (cleanup && res == SQL_OK)
+	if (logging && res == SQL_OK)
 		logger_cleanup(logger);
 
-	cleanup = 0;
+	logging = 0;
 }
 
 void
 store_lock()
 {
 	MT_set_lock(bs_lock, "trans_lock");
+#ifdef STORE_DEBUG
+	printf( "locked\n");
+#endif
 }
 
 void
 store_unlock()
 {
+#ifdef STORE_DEBUG
+	printf( "unlocked\n");
+#endif
 	MT_unset_lock(bs_lock, "trans_unlock");
 }
 
@@ -2969,14 +2997,6 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					ok = log_bat_clear(logger, oc->bat.uname);
 			}
 
-			if (oc->base.wtime > cc->base.wtime) {
-				/* write without read, ie append 
-				 * are handled by the special insert bat,
-				 * so we should not arrive here 
-				 */
-				assert(0);
-			}
-
 			ins = temp_descriptor(cc->bat.ibid);
 			if (BUNlast(ins) > ins->batInserted) {
 
@@ -3105,8 +3125,18 @@ rollforward_trans(sql_trans *tr)
 
 	if (ok == SQL_OK)
 		ok = rollforward_changeset_updates(tr, &tr->schemas, &tr->parent->schemas, (sql_base *) tr->parent, (rfufunc) &rollforward_update_schema, (rfcfunc) &rollforward_create_schema, (rfdfunc) &rollforward_drop_schema, (dupfunc) &schema_dup);
-	if (tr->parent == gtrans)
+	if (tr->parent == gtrans) {
 		gtrans->stime = tr->stime;
+		
+		if (tr->schema_updates) 
+			schema_number++;
+		/*
+		{
+			destroy_spare_transactions();
+			spares = 0;
+		}
+		*/
+	}
 	return ok;
 }
 
@@ -3269,12 +3299,14 @@ sql_trans_create(backend_stack stk, sql_trans *parent, char *name)
 			if (need_reset)
 				reset_trans(tr);
 
-			if (bs_debug)
-				fprintf(stderr, "reuse trans %d\n", need_reset);
+#ifdef STORE_DEBUG
+				fprintf(stderr, "reuse trans (%p) %d %d\n", tr, need_reset, spares);
+#endif
 		} else {
 			tr = trans_dup(stk, (parent) ? parent : gtrans, name);
-			if (bs_debug)
-				fprintf(stderr, "new trans\n");
+#ifdef STORE_DEBUG
+				fprintf(stderr, "new trans (%p)\n", tr);
+#endif
 		}
 	}
 	return tr;

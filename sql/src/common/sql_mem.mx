@@ -87,13 +87,15 @@ char *sa_alloc( sql_allocator *sa, size_t sz )
 	char *r;
 	sz = round16(sz);
 	if (sz > SA_BLOCK) {
+		char *t;
 		char *r = GDKmalloc(sz);
 		if (sa->nr >= sa->size) {
 			sa->size *=2;
 			sa->blks = RENEW_ARRAY(char*,sa->blks,sa->size);
 		}
-		sa->blks[sa->nr-1] = sa->blks[sa->nr-2];
-		sa->blks[sa->nr-2] = r;
+		t = sa->blks[sa->nr-1];
+		sa->blks[sa->nr-1] = r;
+		sa->blks[sa->nr] = t;
 		sa->nr ++;
 		return r;
 	}

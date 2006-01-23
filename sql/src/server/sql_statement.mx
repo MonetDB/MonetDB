@@ -2118,21 +2118,15 @@ schema_name(stmt *st)
 	case st_bat:
 		return _strdup(st->op1.cval->t->s->base.name);
 	case st_atom:
-		return _strdup("sys");
-		/* TODO...
-		if (st->op1.aval->data.vtype == TYPE_str)
-			return atom2string(st->op1.aval);
-		*/
+		return NULL;
 	case st_var:
 	case st_temp:
 		return NULL;
 	case st_relselect:
 	case st_reljoin:
 	case st_list:
-		/* TODO...
 		if (list_length(st->op1.lval))
 			return schema_name(st->op1.lval->h->data);
-		*/
 		return NULL;
 	default:
 		return NULL;

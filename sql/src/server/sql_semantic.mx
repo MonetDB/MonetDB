@@ -806,7 +806,11 @@ char *symbol2string(mvc *sql, symbol *se)
 		break;
 	case SQL_ATOM:{
 		AtomNode *an = (AtomNode *) se;
-		return atom2sql(an->a);
+		if (an && an->a) 
+			return atom2sql(an->a);
+		else
+			strcpy(buf,"NULL");
+		break;
 	}
 	case SQL_NEXT:{
 		char *seq = se->data.sval;

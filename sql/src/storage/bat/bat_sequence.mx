@@ -81,14 +81,21 @@ void sequences_init(void)
  *         otherwise
  */
 int sequence_exit(char* seq) {
-	sql_trans *ntr = sql_trans_create(0, NULL, NULL);
-	sql_schema *sys = find_sql_schema(ntr, "sys");
-	sql_table *seqs = find_sql_table(sys, "sequences");
-	sql_column *seq_name = find_sql_column(seqs, "name");
-	sql_column *seq_cached = find_sql_column(seqs, "cached");
+	sql_trans *ntr;
+	sql_schema *sys;
+	sql_table *seqs;
+	sql_column *seq_name;
+	sql_column *seq_cached;
 	ssize_t id;
 	node* n;
 	sql_sequence *s;
+
+	store_lock();
+ 	ntr = sql_trans_create(0, NULL, NULL);
+ 	sys = find_sql_schema(ntr, "sys");
+ 	seqs = find_sql_table(sys, "sequences");
+ 	seq_name = find_sql_column(seqs, "name");
+ 	seq_cached = find_sql_column(seqs, "cached");
 
 	/* find the right node in the list and remove it */
 	if (list_length(sql_seqs)) {
@@ -101,10 +108,12 @@ int sequence_exit(char* seq) {
 		}
 		/* the sequence was not loaded */
 		sql_trans_destroy(ntr);
+		store_unlock();
 		return(1);
 	} else {
 		/* nothing is loaded yet */
 		sql_trans_destroy(ntr);
+		store_unlock();
 		return(1);
 	}
 
@@ -115,11 +124,13 @@ int sequence_exit(char* seq) {
 		/* error message:
 		 * "Internal consistency error: no such sequence %s", s->name
 		 */
+		store_unlock();
 		return(0);
 	}
 	sql_trans_commit(ntr);
 	sql_trans_destroy(ntr);
 	sequence_destroy(s);
+	store_unlock();
 
 	return(1);
 }
@@ -152,12 +163,20 @@ static void
 sql_update_sequence_cache(sql_trans *tr, char *seq, lng cached, bit called) 
 {
 	ssize_t id;
-	sql_trans *ntr = sql_trans_create(0, NULL, NULL);
-	sql_schema *sys = find_sql_schema(ntr, "sys");
-	sql_table *seqs = find_sql_table(sys, "sequences");
-	sql_column *seq_name = find_sql_column(seqs, "name");
-	sql_column *seq_cached = find_sql_column(seqs, "cached");
-	sql_column *seq_called = find_sql_column(seqs, "called");
+	sql_trans *ntr;
+	sql_schema *sys;
+	sql_table *seqs;
+	sql_column *seq_name;
+	sql_column *seq_cached;
+	sql_column *seq_called;
+
+	store_lock();
+ 	ntr = sql_trans_create(0, NULL, NULL);
+ 	sys = find_sql_schema(ntr, "sys");
+ 	seqs = find_sql_table(sys, "sequences");
+ 	seq_name = find_sql_column(seqs, "name");
+ 	seq_cached = find_sql_column(seqs, "cached");
+ 	seq_called = find_sql_column(seqs, "called");
 
 	if ((id = column_find_row(ntr, seq_name, seq, NULL)) < 0) {
 		/* a new sequence needs to be updated in the current transaction */
@@ -167,8 +186,11 @@ sql_update_sequence_cache(sql_trans *tr, char *seq, lng cached, bit called)
 		seq_cached = find_sql_column(seqs, "cached");
 		seq_called = find_sql_column(seqs, "called");
 
-		if ((id = column_find_row(tr, seq_name, seq, NULL)) < 0) 
+		if ((id = column_find_row(tr, seq_name, seq, NULL)) < 0) {
+			sql_trans_destroy(ntr);
+			store_unlock();
 			return;
+		}
 		column_update_value(tr, seq_cached, id, &cached);
 		column_update_value(tr, seq_called, id, &called);
 	} else {
@@ -177,6 +199,7 @@ sql_update_sequence_cache(sql_trans *tr, char *seq, lng cached, bit called)
 		sql_trans_commit(ntr);
 	}
 	sql_trans_destroy(ntr);
+	store_unlock();
 }
 
 static sql_sequence *
