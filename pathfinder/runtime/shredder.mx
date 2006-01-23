@@ -1403,7 +1403,7 @@ print_error(void *ctx, const char *msg, ...) {
     va_end(args);
 
     *print_error_newline = (strchr(buf, (int)'\n') != NULL);
-    stream_printf(GDKerr,buf);
+    stream_printf(GDKerr,"%s",buf);
 }
 
 /** 
