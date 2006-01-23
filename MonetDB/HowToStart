@@ -35,21 +35,15 @@ CVS
 	SourceForge documentation`__ and look under the heading CVS
 	Instructions.
 
-__ http://sourceforge.net/project/showfiles.php?group_id=56967
-__ http://sourceforge.net/docman/?group_id=1
-
 Python
 	MonetDB uses Python (version 2.0.0 or better) during
 	configuration of the software.  See http://www.python.org/ for
 	more information.
 
 autoconf/automake/libtool
-	MonetDB uses GNU autoconf (>= 2.53), automake (>= 1.5), and
-	libtool (>= 1.4) during configuration of the software.  See
-	http://www.gnu.org/software/autoconf/,
-	http://www.gnu.org/software/automake/, and
-	http://www.gnu.org/software/libtool/ for more information.
-	Libtool is also used during the build.
+	MonetDB uses GNU autoconf__ (>= 2.53) and automake__ (>= 1.5)
+	during the Bootstrap_ phase, and libtool__ (>= 1.4) during the
+	Build_ phase.
 
 standard software development tools
 	To compile MonetDB, you also need to have the following
@@ -59,7 +53,7 @@ standard software development tools
 	- a C/C++ compiler (e.g., GNU's gcc/g++)
 	- a lexical analyzer generator (e.g., ``lex`` or ``flex``)
 	- a parser generator (e.g., ``yacc`` or ``bison``)
-	- GNU make (``gmake``) (native make on, e.g., IRIX and Solaris
+	- GNU ``make`` (``gmake``) (native ``make`` on, e.g., IRIX and Solaris
 	  usually don't work)
 
 Mx, mel, and autogen
@@ -76,21 +70,25 @@ Mx, mel, and autogen
 	and follow the instructions in the README file, then proceed
 	with MonetDB.
 
-__ http://sourceforge.net/project/showfiles.php?group_id=56967
-
 dlcompat (MacOS X/Darwin, only)
 	MacOS X/Darwin itself does not support dlopen, however, there
 	is a third-party library called dlcompat from Fink that
 	provides the respective functionality.  MonetDB requires
 	dlcompat__ to be installed on MacOS X/Darwin.
 
-__ http://fink.sourceforge.net/pdb/package.php/dlcompat
-
 disk space
 	After downloading, MonetDB takes up about 40 MB of disk space;
 	compilation adds another 70 MB.  Testing takes about 45 MB,
 	and the installation about 20 MB (not including any
 	databases).
+
+__ http://sourceforge.net/project/showfiles.php?group_id=56967
+__ http://sourceforge.net/docman/?group_id=1
+__ http://www.gnu.org/software/autoconf/
+__ http://www.gnu.org/software/automake/
+__ http://www.gnu.org/software/libtool/
+__ http://sourceforge.net/project/showfiles.php?group_id=56967
+__ http://fink.sourceforge.net/pdb/package.php/dlcompat
 
 
 Getting the Software
@@ -153,9 +151,9 @@ you should skip ``bootstrap`` and start with ``configure`` (see
 Bootstrap
 ~~~~~~~~~
 
-In the top-level directory of MonetDB type the command (note that this
-uses autogen.py which is part of the ``buildtools`` package--make sure
-it can be found in your ``$PATH``)::
+In the top-level directory of ``MonetDB`` type the command (note that
+this uses autogen.py which is part of the ``buildtools`` package ---
+make sure it can be found in your ``$PATH``)::
 
  ./bootstrap
 
@@ -163,25 +161,25 @@ Configure
 ~~~~~~~~~
 
 Then in any directory (preferably a *new, empty* directory and *not*
-in the MonetDB top-level directory) give the command::
+in the ``MonetDB`` top-level directory) give the command::
 
  .../configure [<options>]
 
 where ``...`` is replaced with the (absolute or relative) path to the
-MonetDB top-level directory.
+``MonetDB`` top-level directory.
 
-The directory where you execute configure is the place where all
+The directory where you execute ``configure`` is the place where all
 intermediate source and object files are generated during compilation
 via ``make``.
 
-By default, MonetDB is installed to ``/usr/local``.  To choose another
+By default, MonetDB is installed in ``/usr/local``.  To choose another
 target directory, you need to call
 
 ::
 
  .../configure --prefix=<prefixdir> [<options>]
 
-Some other useful configure options are:
+Some other useful ``configure`` options are:
 
 --enable-debug          enable full debugging default=off
 --enable-optimize       enable extra optimization default=off
@@ -198,8 +196,8 @@ Some other useful configure options are:
                         mel is found in your PATH)
 --enable-bits=<#bits>   specify number of bits (32 or 64)
 
-Use the ``--help`` option of configure to find out more about
-configure options.
+Use the ``--help`` option of ``configure`` to find out more about
+``configure`` options.
 
 Make
 ~~~~
@@ -213,15 +211,15 @@ command
 
 to compile the source code.
 
-On my lightly loaded, dual 1.4 GHz Athlon Linux system, configure
-takes about 30 seconds, and make about 5 to 10 minutes, depending on
-the optimization level chosen during configure.
+On my lightly loaded, dual 1.4 GHz Athlon Linux system, ``configure``
+takes about 30 seconds, and ``make`` about 5 to 10 minutes, depending on
+the optimization level chosen during ``configure``.
 
 
 Testing the Build
 -----------------
 
-If make went successfully, you can try
+If ``make`` went successfully, you can try
 
 ::
 
@@ -231,7 +229,7 @@ This will perform a large number of tests, some are unfortunately
 still expected to fail, but most should go successfully.  At the end
 of the output there is a reference to an HTML file which is created by
 the test process that shows the test results.  An explanation of the
-test results can be found in XXX--to be filled in.
+test results can be found in XXX --- to be filled in.
 
 Testing takes about 46 MB of disk space in the build directory.
 
@@ -247,7 +245,7 @@ Give the command
 
  make install
 
-By default (if no ``--prefix`` option was given to configure above),
+By default (if no ``--prefix`` option was given to ``configure`` above),
 this will install in ``/usr/local``.  Make sure you have appropriate
 privileges.
 
@@ -259,14 +257,14 @@ Make sure that ``/usr/local/bin`` (respectively ``<prefixdir>/bin``,
 where <prefixdir> is the directory you specified with ``--prefix``
 when calling ``configure``) is in your ``PATH``.
 
-In the MonetDB top-level directory issue the command
+In the ``MonetDB`` top-level directory issue the command
 
 ::
 
  Mtest.py -r
 
-This should produce much the same output as make check above, but uses
-the installed version of MonetDB.
+This should produce much the same output as ``make check`` above, but
+uses the installed version of MonetDB.
 
 You need write permissions in part of the installation directory for
 this command: it will create subdirectories ``var/dbfarm`` and
@@ -334,13 +332,13 @@ __ ../../../TechDocs/index.html
 Troubleshooting
 ---------------
 
-Bootstrap fails if any of the requisite programs cannot be found or is
+``bootstrap`` fails if any of the requisite programs cannot be found or is
 an incompatible version.
 
-Bootstrap adds files to the source directory, so it must have write
+``bootstrap`` adds files to the source directory, so it must have write
 permissions.
 
-During bootstrap, warnings like
+During ``bootstrap``, warnings like
 
 ::
 
@@ -361,39 +359,40 @@ During bootstrap, warnings like
  3 out of 3 hunks FAILED -- saving rejects to file aclocal.m4.rej
 
 might occur.  For some technical reasons, it's hard to completely
-avoid them.  However, it is usually save to ignore them and simply
+avoid them.  However, it is usually safe to ignore them and simply
 proceed with the usual compilation procedure.  Only in case the
-subsequent configure or make fails, these warning might have to be
-taken more seriously.  In any case, you should include the bootstrap
-output whenever you report (see below) compilation problems.
+subsequent ``configure`` or ``make`` fails, these warning might have
+to be taken more seriously.  In any case, you should include the
+``bootstrap`` output whenever you report (see below) compilation
+problems.
 
-Configure will fail if certain essential programs cannot be found or
+``configure`` will fail if certain essential programs cannot be found or
 certain essential tasks (such as compiling a C program) cannot be
 executed.  The problem will usually be clear from the error message.
 
-E.g., if configure cannot find package XYZ, it is either not installed
-on your machine, or it is not installed in places that configure
-usually searches (i.e., /usr, /usr/local).  In the first case, you
-need to install package XYZ before you can configure, make, and
-install MonetDB.  In the latter case, you need to tell configure via
-``--with-XYZ=<DIR>`` where to find package XYZ on your machine.
-Configure then looks for the header files in <DIR>/include, and for
-the libraries in <DIR>/lib.
+E.g., if ``configure`` cannot find package XYZ, it is either not installed
+on your machine, or it is not installed in places that ``configure``
+searches (i.e., ``/usr``, ``/usr/local``).  In the first case, you
+need to install package XYZ before you can ``configure``, ``make``,
+and install MonetDB.  In the latter case, you need to tell
+``configure`` via ``--with-XYZ=<DIR>`` where to find package XYZ on
+your machine.  ``configure`` then looks for the header files in
+<DIR>/include, and for the libraries in <DIR>/lib.
 
-In case either of ``bootstrap``, ``configure``, or ``make`` fails ---
+In case one of ``bootstrap``, ``configure``, or ``make`` fails ---
 especially after a ``cvs update``, or after you changed some code
 yourself --- try the following steps (in this order; if you are using
-the pre-packaged source distribution, you have to skip steps 2 and 3):
+the pre-packaged source distribution, you can to skip steps 2 and 3):
 
 (In case you experience problems after a ``cvs update``, first make
 sure that you used ``cvs update -dP`` (or have a line ``update -dP``
-in your ~/.cvsrc); ``-d`` ensures that cvs checks out directories that
+in your ``~/.cvsrc``); ``-d`` ensures that cvs checks out directories that
 have been added since your last ``cvs update``; ``-P`` removes
 directories that have become empty, because all their file have been
 removed from the cvs repository.  In case you did not use ``cvs update
 -dP``, re-run ``cvs update -dP``, and remember to always use ``cvs
 update -dP`` from now on (or simply add a line ``update -dP`` to your
-~/.cvsrc)!)
+``~/.cvsrc``)!)
 
 0) In case only ``make`` fails, you can try running::
 

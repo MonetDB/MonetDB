@@ -3,6 +3,7 @@ How To Start with MonetDB
 
 .. This document is written in reStructuredText (see
    http://docutils.sourceforge.net/ for more information).
+   Use ``rst2html.py`` to convert this file to HTML.
 
 This document helps you to compile the MonetDB source and install the
 result on a Windows system, using the Microsoft Visual Studio

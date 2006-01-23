@@ -3,6 +3,7 @@ How To Start with MonetDB/SQL
 
 .. This document is written in reStructuredText (see
    http://docutils.sourceforge.net/ for more information).
+   Use ``rst2html.py`` to convert this file to HTML.
 
 This document will help you compile and install the MonetDB SQL front
 end "MonetDB/SQL" on Windows using the Microsoft Visual Studio

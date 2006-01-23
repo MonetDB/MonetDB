@@ -3,6 +3,7 @@ How To Start with MonetDB--MinGW Version
 
 .. This document is written in reStructuredText (see
    http://docutils.sourceforge.net/ for more information).
+   Use ``rst2html.py`` to convert this file to HTML.
 
 It is possible to compile MonetDB using `MinGW`__ (Minimalist GNU for
 Windows) on Windows.  This uses the GNU C compiler ``gcc`` to produce
@@ -12,7 +13,7 @@ __ http://www.mingw.org/
 
 There are basically two ways in which you can use the MinGW compiler.
 The first is by installing the tools directly from the MinGW website,
-including the MSYS tools; and the second is by using the `Cygwin`__
+including the MSYS tools; and the second is by using the Cygwin__
 tools.  Cygwin is a Linux-like environment for Windows.
 
 __ http://www.cygwin.com/
@@ -29,29 +30,26 @@ tools.
 Some of the Cygwin packages that are required to build MonetDB (and
 the other projects) are::
 
-	gcc-mingw-core
-	mingw-runtime
-	w32api
+ gcc-mingw-core
+ mingw-runtime
+ w32api
 
 and optionally::
 
-	mingw-bzip2
-	mingw-zlib
+ mingw-bzip2
+ mingw-zlib
 
 In addition to Cygwin, we also need the Pthreads library compiled for
 Native Windows.  It can be found at
-
-::
-
- ftp://sources.redhat.com/pub/pthreads-win32/
+ftp://sources.redhat.com/pub/pthreads-win32/.
 
 Download the archive (the latest version we have tried is
-pthreads-w32-2-7-0-release.exe) and extract it.  Pthreads should be
-installed to ``C:\Pthreads``, so copy the contents of the prebuilt or
-Pre-built.2 folder from the extracted archive to ``C:\Pthreads`` (so
-that you end up with folders ``C:\Pthreads\lib`` and
-``C:\Pthreads\include``).  Don't use spaces in the name of the folder
-where you install the Pre-built files.
+``pthreads-w32-2-7-0-release.exe``) and extract it.  Pthreads should
+be installed to ``C:\Pthreads``, so copy the contents of the
+``prebuilt`` or ``Pre-built.2`` folder from the extracted archive to
+``C:\Pthreads`` (so that you end up with folders ``C:\Pthreads\lib``
+and ``C:\Pthreads\include``).  Don't use spaces in the name of the
+folder where you install the Pre-built files.
 
 For information about compiling the optional PCRE library, see the
 file `HowToStart-MinGW-pcre.txt`__.
@@ -70,7 +68,6 @@ In order to compile and install MonetDB, I use the following commands::
  cd MinGW
  ../configure --host=i386-pc-mingw32 \
               --with-gcc='gcc -mwin32 -mno-cygwin' \
-              --with-gxx='g++ -mwin32 -mno-cygwin' \
               --with-translatepath='cygpath -w' \
               --with-pthread=C:/Pthreads \
               --without-iconv \
@@ -86,7 +83,9 @@ MinGW uses Mx and mel.  These packages (from the buildtools module of
 the MonetDB CVS repository) need to be compiled for Cygwin and need to
 be installed in a directory in $PATH.  Alternatively, it is possible
 to use the --with-mx=.../Mx.exe and --with-mel=.../mel.exe options to
-configure to specify where these binaries are located.
+configure to specify where these binaries are located.  Mx and mel are
+not needed when building from a source distribution (i.e. a ``.tar.gz``
+file from SourceForge).
 
 ???It is essential that the path to the configure script does not
 contain any spaces.
