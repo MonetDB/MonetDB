@@ -707,12 +707,6 @@ VIEWreset(BAT *b)
 		n->batParentid = 0;
 		n->batRestricted = BAT_WRITE;
 
-		/* copy the heap data into their normal position */
-		bs->U = *n->U;
-		bs->P = *n->P;
-		bs->H = *n->H;
-		bs->T = *n->T;
-
 		/* make sure everything points there */
 		m->U = n->U = &(bs->U);
 		m->P = n->P = &(bs->P);

@@ -142,10 +142,12 @@ else # NEED_MX
 # compile; thus, "make check" can recognize that the module is not
 # available, and will properly skip the tests that require it.
 %.mil: lib_%.la
+	test -e $@ || $(LN_S) $(srcdir)/$@ $@
 	test -e .libs || mkdir -p .libs
 	test -e .libs/$@ || $(LN_S) ../$@ .libs/$@
 
 %.mal:
+	test -e $@ || $(LN_S) $(srcdir)/$@ $@
 	test -e .libs || mkdir -p .libs
 	test -e .libs/$@ || $(LN_S) ../$@ .libs/$@
 

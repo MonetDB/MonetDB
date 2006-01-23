@@ -282,6 +282,9 @@ BATappend(BAT *b, BAT *n)
 			BAT *bm = BATmirror(b);
 
 			ALIGNsetH(bm, BATmirror(n));
+			if (b->tdense && n->ttype == TYPE_oid) {
+				b->tseqbase = *(oid*)BUNtail(n, BUNfirst(n));
+			}
 		} else if (sz) {
 			BUN last = BUNlast(b) - BUNsize(b);
 			size_t idx = BUNindex(b, BUNlast(b));
@@ -1684,10 +1687,12 @@ Use the histogram to determine good split boundaries on b.
 		}
 		zz += add;
 	}
-	if ((sizes[yy - 1] + zz - target) > (target - zz)) {
-		sizes[yy] = zz;
-	} else {
-		yy--;		/* join with the last */
+	if (yy) {
+		if ((sizes[yy - 1] + zz - target) > (target - zz)) {
+			sizes[yy] = zz;
+		} else {
+			yy--;		/* join with the last */
+		}
 	}
 	seps[yy] = nilval;
 	BBPreclaim(histo);
