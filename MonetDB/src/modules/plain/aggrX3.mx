@@ -209,7 +209,8 @@ HASHfnd_oid for void- and hash-lookups, respectively
 		}
 		BATseqbase(bn,e->hseqbase);
 	} else if (BAThordered(e)&1) {
-		min = *(oid*)BUNhloc(e, BUNfirst(e));
+		if (_cnt)
+			min = *(oid*)BUNhloc(e, BUNfirst(e));
 		BATloopFast(e, p, q, xx) {
 			oid@1_bunfastins_nocheck_noinc(bn, _p, BUNhloc(e,p), &zero);
 			_p += _bunsize;
@@ -219,7 +220,8 @@ HASHfnd_oid for void- and hash-lookups, respectively
 		ALGODEBUG THRprintf(GDKout, "init_result(@1): BAThordered(e)&1, min=" SZFMT ", max=" SZFMT "\n", (size_t) min, (size_t) max);
 	} else {
 		oid i;
-		min = max = *(oid*)BUNhloc(e, BUNfirst(e));
+		if (_cnt)
+			min = max = *(oid*)BUNhloc(e, BUNfirst(e));
 		BATloopFast(e, p, q, xx) {
 			oid@1_bunfastins_nocheck_noinc(bn, _p, BUNhloc(e,p), &zero);
 			_p += _bunsize;
