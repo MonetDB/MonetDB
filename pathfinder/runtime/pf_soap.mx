@@ -18,6 +18,8 @@
 @' Portions created by the University of Konstanz are Copyright (C)
 @' 2000-2005 University of Konstanz.  All Rights Reserved.
 @'
+@' $Id$
+@'
 
 @f pf_soap
 @a Ying Zhang
@@ -33,6 +35,7 @@ using HTTP connection on top of MonetDB within the "Pathfinder" project.
 .MODULE pf_soap;
 
 .USE pathfinder;
+.USE pf_support;
 .USE url;
 
 @- HTTP server function(s)
@@ -159,9 +162,6 @@ Send a SOAP RPC request via HTTP to the destination \"location\", save the reult
 #define MAXPARAMS   32
 #define HTTP_PORT   8080
 #define HTTPD_FUNC  "/soap_rpc"
-
-#define MODULE_ATTR_NAME "name"
-#define METHOD_ATTR_NAME "name"
 
 /* Used by the http_post client */
 #define MIN_RESPONSE_SIZE 19
@@ -428,6 +428,9 @@ static int handle_soap_request(struct shttpd_callback_arg *arg) {
                 "SOAP request: bad XML structure\n");
     }
 
+printf("\n=== DEBUG MSG: SOAP request RECEIVED ======\n%s"
+       "=== END DEBUG MSG: SOAP request RECEIVED ===\n\n", strptr);
+
     if ((CMDshred2bats(&docBAT, "", strptr, "")  == GDK_FAIL)) {
         send_soap_err(out, 1, "404 Bad Request", "env:Sender", "s",
                 "SOAP request: bad XML structure, could not shred\n");
@@ -643,7 +646,7 @@ int CMDhttp_post(BAT **res,
 
     /* double dbl_val; */
     /* long int int_val, dec_val; */   /* param values */
-    str str_base = NULL, str_val = NULL;
+    str str_val = NULL;
 
     int argc = 0, argc_base = 0, my_argc = 0;
     int iterc = 0, iter_base = 0, my_iter = 0;
@@ -791,9 +794,6 @@ int CMDhttp_post(BAT **res,
                             node_item, node_kind, int_values, dbl_values,
                             dec_values, str_values);
                     THRsetdata(0, bak);
-
-                    b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
-                                        "</val>\n");
                 } else if (type == BOOL) {
                     b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
                             "<val type=\"xs:bool\">");
@@ -828,16 +828,15 @@ int CMDhttp_post(BAT **res,
                             BUNptr(dbl_values, i));
                 } else if (type == STR || type == U_A) {
                     i = *(int*)BUNtail(fun_item, BUNptr(fun_item, a));
-                    str_base = (char *)str_values->theap->base;
-                    str_val  = str_base + *(int*) BUNtail(str_values, BUNptr(str_values, i));
+                    str_val = BUNtail(str_values, BUNptr(str_values, i));
                     if (type == STR){
                         b->pos += snprintf(
                                 (b->buf + b->pos), (b->len - b->pos),
-                                "<val type=\"xs:string\">%s", str_val);
+                                "<val type=\"xs:string\">\"%s\"", str_val);
                     } else {
                         b->pos += snprintf(
                                 (b->buf + b->pos), (b->len - b->pos),
-                                "<val type=\"xs:untypedAtomic\">%s", str_val);
+                                "<val type=\"xs:untypedAtomic\">\"%s\"", str_val);
                     }
                 } else {
                     GDKerror("CMDhttp_post: iter%d/param%d/item%d "
@@ -861,8 +860,11 @@ int CMDhttp_post(BAT **res,
             "</env:Envelope>\n");
     b->buf[b->pos] = 0;
 
-printf("=== DEBUG MSG: SOAP request to send: (msglen = %ld)\n%s\n",
+/*
+printf("\n=== DEBUG MSG: SOAP request to send: (msglen = %ld) ===\n%s"
+       "=== END DEBUG MSG: SOAP request to send ===============\n\n",
         b->pos, b->buf);
+*/
 
     if (stream_printf(out,
             "POST %s HTTP/1.1\r\n"
@@ -903,6 +905,9 @@ printf("=== DEBUG MSG: SOAP request to send: (msglen = %ld)\n%s\n",
         goto FAIL;
     }
 
+printf("\n=== DEBUG MSG: received SOAP response message ======\n%s"
+       "=== END DEBUG MSG: received SOAP response message ===\n\n", b->buf);
+   
     b->len = b->pos;
     b->buf = realloc(b->buf, b->len); /* release unused memory */
     strptr = strchr(b->buf, (int)' ') + 1; /* the HTTP return code */
@@ -926,8 +931,6 @@ printf("=== DEBUG MSG: SOAP request to send: (msglen = %ld)\n%s\n",
     /* Retrieve the response SOAP Envelope */
     strptr = strstr(strptr, "<env:Envelope");
 
-printf("=== DEBUG MSG: received SOAP response message:\n%s\n", strptr);
-   
     if (CMDshred2bats(&docBAT, "", strptr, "")  == GDK_FAIL) {
         GDKerror("CMDhttp_post: invalid SOAP RPC response received\n");
         goto FAIL;
