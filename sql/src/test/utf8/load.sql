@@ -1,1 +1,1 @@
-COPY INTO províncial from 'PWD/províncial.dat' USING DELIMITERS ',','\n';
+COPY INTO provÃ­ncial from 'PWD/provÃ­ncial.dat' USING DELIMITERS ',','\n';
