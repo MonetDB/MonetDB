@@ -1,54 +1,34 @@
-This document will help you compile and install the MonetDB SQL front end
-"MonetDB/SQL".
+How To Start with MonetDB/SQL
+=============================
+
+.. This document is written in reStructuredText (see
+   http://docutils.sourceforge.net/ for more information).
+   Use ``rst2html.py`` to convert this file to HTML.
+
+This document will help you compile and install the MonetDB SQL front
+end "MonetDB/SQL".
 
 In case you prefer to install a pre-compiled binary distribution, please
-check-out http://sourceforge.net/project/showfiles.php?group_id=56967 .
+check out `the SourceForge documentation`__.
+
+__ http://sourceforge.net/project/showfiles.php?group_id=56967
 
 This document assumes that you have installed MonetDB on a Unix system
 (e.g., Linux, IRIX, Solaris, AIX, MacOs X/Darwin, or CYGWIN), and that
-you are planning to compile and install the MonetDB SQL front end on 
+you are planning to compile and install the MonetDB SQL front end on
 the same system.
-For compilation and installation on a native Windows system (NT, 2000, XP)
-see the instructions in the file 'HowToStart-SQL-Win32.txt'.
+
+For compilation and installation on a native Windows system (NT, 2000,
+XP) see the instructions in the file `HowToStart-SQL-Win32.txt`__.
+
+__ Windows/index.html
 
 
-Prerequisites:
-==============
+Prerequisites
+-------------
 
-CVS
-	You need to have a working CVS.  For instructions, see
-	http://sourceforge.net/docman/?group_id=1 and look under the
-	heading CVS Instructions.
-
-Python
-	MonetDB/SQL uses Python (version 2.0.0 or better) during
-	configuration of the software.  See http://www.python.org/ for
-	more information.
-
-autoconf/automake/libtool 
-	MonetDB/SQL uses GNU autoconf (>= 2.53), automake (>= 1.5), and
-	libtool (>= 1.4) during configuration of the software.  See
-	http://www.gnu.org/software/autoconf/,
-	http://www.gnu.org/software/automake/, and
-	http://www.gnu.org/software/libtool/
-	for more information.  Libtool is also used during the build.
-
-standard software development tools
-	To compile MonetDB/SQL, you also need to have a the following 
-	standard software development tools installed and ready for use
-	on you system:
-	 - a C/C++ compiler (e.g., GNU's gcc/g++)
-	 - a lexical analyzer generator (e.g., "lex" or "flex")
-	 - a parser generator (e.g., "yacc" or "bison")
-	 - GNU make ("gmake") (native make's on, e.g., IRIX and Solaris
-	   usually don't work)
-
-dlcompat (MacOS X/Darwin, only)
-	MacOS X/Darwin itself does not support dlopen, however, there's
-	a third-party library called dlcompat from Fink that provides
-	the respective functionality.  MonetDB/SQL requires dlcompat to be
-	installed on MacOS X/Darwin.
-	(http://fink.sourceforge.net/pdb/package.php/dlcompat)
+There are no additional prerequisites for MonetDB/SQL except for the
+extra disk space needed to compile and install the front end.
 
 disk space
 	After downloading, MonetDB/SQL takes up about 75 MB of disk space;
@@ -56,45 +36,46 @@ disk space
 	the installation about 3 MB (not including any databases).
 
 
-Getting the Software:
-=====================
+Getting the Software
+--------------------
 
 There are two ways to get the source code:
-(1) checking it out from the CVS repository on SourceForge;
-(2) downloading the pre-packaged source distribution form
-    http://sourceforge.net/project/showfiles.php?group_id=56967 .
 
-The following instruction first describe how to check out the source code
-from the CVS repository on SourceForge; in case you downloaded the
-pre-packaged source distribution, you can skip this and proceed with to
-"Bootstrap, Configure and Make".
+(1) checking it out from the CVS repository on SourceForge;
+(2) downloading the pre-packaged source distribution from
+    SourceForge__.
+
+__ http://sourceforge.net/project/showfiles.php?group_id=56967
+
+The following instruction first describe how to check out the source
+code from the CVS repository on SourceForge; in case you downloaded
+the pre-packaged source distribution, you can skip this and proceed
+with to "Bootstrap, Configure and Make".
 
 CVS checkout
-------------
+~~~~~~~~~~~~
 
-This command should be done once.  It records a password on the local
-machine to be used for all subsequent CVS accesses with this server.
+We assume the MonetDB sources have already been acquired from SourceForge.  Here we only show the additional commands to get the SQL
+source.
 
- cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb login
-
-Just type RETURN when asked for the password.
-
-Then get the software by using the command:
+Get the software by using the command::
 
  cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb checkout sql
 
-This will create a directory 'sql' in your current working directory.
+This will create a directory ``sql`` in your current working
+directory.
 
-Also see http://sourceforge.net/cvs/?group_id=56967 for more
-information.
+Also see `the SourceForge documentation`__ for more information.
+
+__ http://sourceforge.net/cvs/?group_id=56967
 
 
-Bootstrap, Configure and Make:
-==============================
+Bootstrap, Configure and Make
+-----------------------------
 
 Before executing the following steps, make sure that your
 shell-environment (especially variables like "PATH" and
-"LD_LIBRARY_PATH") is setup, thus that the tools listed above as well
+"LD_LIBRARY_PATH") is set up, thus that the tools listed above as well
 as MonetDB can be found.
 ("Bash"-users at CWI and DD are welcome to simply 
   "source conf/conf.bash".
@@ -156,7 +137,7 @@ about 13 seconds, and make about one minute.
 
 
 Testing the Build:
-==================
+------------------
 
 If make went successfully, you can try
 
@@ -174,7 +155,7 @@ Running the tests takes about 20 minutes on my system.
 
 
 Installing:
-===========
+-----------
 
 Give the command
 
@@ -185,7 +166,7 @@ will install in /usr/local/.  Make sure you have appropriate privileges.
 
 
 Testing the Installation:
-=========================
+-------------------------
 
 Make sure that /usr/local/bin (respectively <monetdb-prefix>/bin and
 <sql-prefix>/bin, where <monetdb-prefix> and <sql-prefix> are the
@@ -214,7 +195,7 @@ this command: it will create subdirectories var/dbfarm and Tests.
 
 
 Usage:
-======
+------
 
 To use the MonetDB SQL front end interactively, you first need to start
 an MonetDB server ("Mserver") with sql support. To do so, first make
@@ -238,14 +219,14 @@ MonetDB SQL front end by calling
 
 
 Documentation:
-==============
+--------------
 
 Some initial documentation of the MonetDB SQL front end is available in
 SQLfeatures.tex and SQLsessionDemo.html.
 
 
 Troubleshooting:
-================
+----------------
 
 Bootstrap fails if any of the requisite programs can not be found or
 is an incompatible version.
