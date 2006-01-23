@@ -6191,9 +6191,19 @@ translateUDF (opt_t *f, int cur_level, int counter,
          * fun->params[], so translate it separately. */
         milprintf(f, "\n# begin of translate the 'dst' param of SOAP\n");
 
-        if (translate2MIL (f, NORMAL, cur_level, counter, R(L(args))) == NORMAL)
-        {
-            milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
+        /* HACK: when 'concatstr' is used to test the send and the receive of
+         * strings, I noticed that the 'dst' parameter is contained in L(args),
+         * instead of in R(L(args)).  FIXME: find out why this happens! */
+        if (R(L(args))){
+            if (translate2MIL (f, NORMAL, cur_level, counter, R(L(args))) == NORMAL)
+            {
+                milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
+            }
+        } else {
+            if (translate2MIL (f, NORMAL, cur_level, counter, L(args)) == NORMAL)
+            {
+                milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
+            }
         }
 
         counter++;
@@ -6205,7 +6215,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
     counter++;
     milprintf(f,
             "var fun_base%03u := proc_vid.find(\"%s\");\n"
-            "var fun_vid%03u := bat(void,oid);\n"
+            "var fun_vid%03u  := bat(void,oid);\n"
             "var fun_iter%03u := bat(void,oid);\n"
             "var fun_item%03u := bat(void,oid);\n"
             "var fun_kind%03u := bat(void,int);\n",
@@ -6325,9 +6335,9 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "var i := int(nil);\n"
                 "var d := dbl(nil);\n"
 
-                "iter := new(void,oid).seqbase(oid(nil));\n"
-                "item := new(void,oid).seqbase(oid(nil));\n"
-                "kind := new(void,int).seqbase(oid(nil));\n"
+                "iter := new(void,oid);\n"
+                "item := new(void,oid);\n"
+                "kind := new(void,int);\n"
 
                 "pre_size@batloop(){\n"
                 "k := pre_kind.fetch($h);\n"
@@ -6338,42 +6348,37 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 /* if (level == nodev_level && kind == ELEM): this is the child
                  * of a tag '<xs:anyNode>' */
                 "} else if(int(pre_level.fetch($h)) = nodev_level) {\n"
-                "iter.insert(nil, oid(itercnt));\n"
-                "item.insert(nil, 0@0);\n"
+                "iter.append(oid(itercnt));\n"
+                "item.append(0@0);\n" /* FIXME: is this correct? Or should 'itercnt' be appended? */
                 "i := set_kind(local_name.leftjoin(ws.fetch(DOC_LOADED).reverse()).tmark(0@0), ELEM);\n"
-                "kind.insert(nil, i);\n"
+                "kind.append(i);\n"
                 "}\n"
                 "} else if (k = \'\\001\') { # text node, get its str value, and convert it accordingly\n"
                 "var t := qn_loc.fetch(pre_prop.fetch(int($h)-1)); # type\n"
                 "var v := prop_text.fetch(pre_prop.fetch($h)); # str value\n"
-                "#t.print();\n"
                 "if (t = \"integer\"){\n"
                 "i := int(v);\n"
-                "int_values.seqbase(oid(nil)).insert(nil,i).seqbase(0@0);\n"
-                "iter.insert(nil, oid(itercnt));\n"
-                "item.insert(nil, int_values.reverse().find(i));\n"
-                "kind.insert(nil,INT);\n"
+                "int_values.append(i);\n"
+                "iter.append(oid(itercnt));\n"
+                "item.append(int_values.reverse().find(i));\n"
+                "kind.append(INT);\n"
                 "} else if(t = \"double\") {\n"
                 "d := dbl(v);\n"
-                "#\"dbl_values.insert\".print();\n"
-                "dbl_values.seqbase(oid(nil)).insert(nil,d).seqbase(0@0);\n"
-                "#\"iter.insert\".print();\n"
-                "iter.insert(nil, oid(itercnt));\n"
-                "#\"item.insert\".print();\n"
-                "item.insert(nil, dbl_values.reverse().find(d));\n"
-                "#\"kind.insert\".print();\n"
-                "kind.insert(nil,DBL);\n"
+                "dbl_values.append(d);\n"
+                "iter.append(oid(itercnt));\n"
+                "item.append(dbl_values.reverse().find(d));\n"
+                "kind.append(DBL);\n"
                 "} else if(t = \"decimal\") {\n"
                 "d := dbl(v);\n"
-                "dbl_values.seqbase(oid(nil)).insert(nil,d).seqbase(0@0);\n"
-                "iter.insert(nil, oid(itercnt));\n"
-                "item.insert(nil, dbl_values.reverse().find(d));\n"
-                "kind.insert(nil, DEC);\n"
+                "dbl_values.append(d);\n"
+                "iter.append(oid(itercnt));\n"
+                "item.append(dbl_values.reverse().find(d));\n"
+                "kind.append(DEC);\n"
                 "} else if(t = \"string\") {\n"
-                "str_values.seqbase(oid(nil)).insert(nil,v).seqbase(0@0);\n"
-                "iter.insert(nil, oid(itercnt));\n"
-                "item.insert(nil, str_values.reverse().find(d));\n"
-                "kind.insert(nil, STR);\n"
+                "str_values.append(v);\n"
+                "iter.append(oid(itercnt));\n"
+                "item.append(str_values.reverse().find(d));\n"
+                "kind.append(STR);\n"
                 "}\n"
                 "}\n"
                 "}\n"
