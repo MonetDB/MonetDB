@@ -33,6 +33,7 @@
 @a Jens Teubner
 @a Stefan Manegold
 @a Peter Boncz 
+@a Ying Zhang
 
 @t Runtime Support for the Pathfinder XQuery Compiler
 
@@ -68,6 +69,7 @@ ADDHELP("pfstart", "boncz", "April 2005",
 "PARAMETERS:\n\
 bit whether the listener should listen to outside requests \
 (default false: only local connections).\n\
+sz per-connection size limit to the query plan cache, see also \"xquery_start_query_cache\".\n\
 DESCRIPTION:\n\
 start the xquery server.",
 "pathfinder");
@@ -1480,11 +1482,11 @@ xquery_function_call(xquery_client *ctx,
     }
 
     /* put the actual parameters into the fun_* bats (and *_values containers) */
-    @:seqbase(fun_vid000, oid_nil, "nil")@
-    @:seqbase(fun_iter000, oid_nil, "nil")@
-    @:seqbase(fun_kind000, oid_nil, "nil")@
-    @:seqbase(fun_item000, oid_nil, "nil")@
-    @:seqbase(loop000, oid_nil, "nil")@
+    @:seqbase(fun_vid000, oid_nil, "oid(nil)")@
+    @:seqbase(fun_iter000, oid_nil, "oid(nil)")@
+    @:seqbase(fun_kind000, oid_nil, "oid(nil)")@
+    @:seqbase(fun_item000, oid_nil, "oid(nil)")@
+    @:seqbase(loop000, oid_nil, "oid(nil)")@
 
     for(l=j=0; j<itercnt; j++) {
         for(i=0; i<argc; i++) {
