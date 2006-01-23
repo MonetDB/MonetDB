@@ -20,19 +20,19 @@ All Rights Reserved.
 MonetDB has played a pivotal role in the development of datamining
 applications at DataDistilleries (now SPSS).
 During its course of development we used a small mock-up database
-to study performance issues.
-This database is included in the <b>MonetDB source</b> distribution directory <tt>scripts/gold</tt>
-and provides an easy way to explore some of the MonetDB's functionality
-when it comes to processing MIL queries.
+to study performance issues in datamining algorithms.
+This database is included in the <b> MonetDB source</b> distribution 
+directory <tt>scripts/gold</tt> and accessible from the MonetDB
+website (http://monetdb.cwi.nl/Assets/).
+It provides an easy way to explore some of the MonetDB's functionality
+when it comes to processing MIL queries.<br/>
 The steps below should help you understand some of the basics in
-using MonetDB.<br />
-<b>Please note that you need a source distribution to follow this
-tutorial.  Binary installations are currently not (yet) supported.</b>
+using MonetDB. We assume that you successfully installed a MonetDB
+and have a copy of the Gold demo files. Its location is denoted
+by the variable $GOLD.<br />
 </p>
 <h4>Creating the database:</h4> <p>
-We suppose your MonetDB sources are in <tt>$MONETDB_SRC</tt> and
-you have configured and successfully installed MonetDB
-in a directory <tt>$MONETDB_PREFIX<tt>.
+We assume MonetDB is successfully installed in a directory <tt>$MONETDB_PREFIX<tt>.
 Make sure <tt>$MONETDB_PREFIX/bin</tt> is in your PATH and type:
 <pre>
 $ mkdir $MONETDB_PREFIX/var/MonetDB/dbfarm/gold
@@ -40,11 +40,11 @@ $ mkdir $MONETDB_PREFIX/var/MonetDB/dbfarm/gold
 So, creating a database is nothing more than creating a directory in the 
 'dbfarm' directory (the default dbfarm is <tt>$MONETDB_PREFIX/var/MonetDB/dbfarm</tt>)
 This manual step is only meant as an illustration, because when the
-environment variables are set, typing the following would produce
+environment variables are properly set, typing the following would produce
 the same effects and produces a message that the database has been initialized:
 <pre>
 $ Mserver --dbname=gold
-# Monet Database Server V4.6.0
+# Monet Database Server V4.10.0
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
@@ -60,7 +60,7 @@ A small MIL script is provided to quickly populate the database.
 It uses a compressed file with tuples to be inserted and a format
 file for the database loader.
 <pre>
-$ cd $MONETDB_SRC/scripts/gold
+$ cd $GOLD
 $ export TSTTRGDIR=`pwd`
 $ Mserver --dbname=gold &lt; load.mil
 </pre>

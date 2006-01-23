@@ -24,7 +24,7 @@ Over..
 # 16:02:43 >  ant -emacs -buildfile /net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/MonetDB/src/mapi/examples/java/Tests/../build.xml -Dbuilddir=/net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/build-pegasus.ins.cwi.nl/MonetDB/src/mapi/examples/java/Tests/../ -Dhost=localhost -Dport=38816 -Dmapi_jar=/net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/build-pegasus.ins.cwi.nl/MonetDB/src/mapi/examples/java/Tests/../../ sample1
 # 16:02:43 >  
 
-Buildfile: /net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/MonetDB/src/mapi/examples/java/Tests/../build.xml
+Buildfile: /net/koala.ins.cwi.nl/export/scratch1/niels/rc/MonetDB/src/mapi/examples/java/Tests/../build.xml
 
 sample1:
 
@@ -33,13 +33,6 @@ prepare:
 find_driver:
 
 mapi:
-
-prepare:
-
-compile_mapi:
-Compiling Java Mapi
-
-jar_mapi:
 
 compile:
 Compiling Java Mapi Examples

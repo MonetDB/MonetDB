@@ -2003,8 +2003,8 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 	int zero = 0, *cnt;
 	BUN p, q, r;
 	int xx;
-	size_t range;
-	oid min, max;
+	size_t range = 0;
+	oid min = 0, max = 0;
 	oid bhsb;
 	size_t base, end, w;
 	ssize_t offset;
