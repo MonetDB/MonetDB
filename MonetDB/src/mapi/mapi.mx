@@ -323,6 +323,11 @@ MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 	if (!GDKembedded) {
 		char *m_clients = GDKgetenv("mapi_clients");
 		int nr = (m_clients)?strtol(m_clients, NULL, 10):1;
+		
+		if (nr > (THREADS-GDKnrofthreads)) {
+			GDKwarning("not enough threads available, adjusting mapi_clients from %d to %d\n", nr, THREADS-GDKnrofthreads);
+			nr = THREADS-GDKnrofthreads;
+		}
 		monetAdjustThreads(nr);
 	}
 
