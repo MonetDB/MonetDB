@@ -12,7 +12,7 @@ In case you prefer to install a pre-compiled binary distribution, please
 check out `the SourceForge documentation`__.
 
 This document assumes that you have installed MonetDB on a Unix system
-(e.g., Linux, IRIX, Solaris, AIX, MacOs X/Darwin, or CYGWIN), and that
+(e.g., Linux, IRIX, Solaris, AIX, Mac OS X/Darwin, or CYGWIN), and that
 you are planning to compile and install the MonetDB/SQL front end on
 the same system.
 
@@ -151,7 +151,8 @@ command
 
  make
 
-to compile the source code.
+to compile the source code.  Please note that parallel make
+runs (e.g. ``make -j2``) are currently known to be unsuccessful.
 
 On my lightly loaded, dual 1.4 GHz Athlon Linux system, ``configure`` takes
 about 13 seconds, and ``make`` about one minute.
