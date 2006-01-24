@@ -1,3 +1,0 @@
-START TRANSACTION;
-commit;
-commit;

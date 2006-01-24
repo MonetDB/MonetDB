@@ -1,4 +1,0 @@
-module(pathfinder);
-xquery("xml","for $t in (text { \"Hello \" }, text {\"my \" }, \"World\")\n\
-where string($t) != \"my \"\n\
-return text { $t }").printf();

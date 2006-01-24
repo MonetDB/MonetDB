@@ -1,7 +1,0 @@
-# extract the definition by the optimizer
-    d:bat[:void,:int]:= mat.expand("Sales2005");
-	s:= algebra.select(d,0,300);
-	io.print(s);
-    optimizer.multitable();
-	io.print("done");
-    mdb.list();

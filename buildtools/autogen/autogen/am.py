@@ -11,15 +11,17 @@
 # The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2005 CWI.
+# Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
 import string
 import os
 from codegen import find_org
 
-#automake_ext = ['c', 'cc', 'h', 'y', 'yy', 'l', 'll', 'glue.c']
-automake_ext = ['c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h', 'py.c', 'pm.c', '']
+#automake_ext = ['c', 'h', 'y', 'l', 'glue.c']
+automake_ext = ['o', 'lo', 'c', 'h', 'tab.c', 'tab.h', 'yy.c', 'glue.c', 'proto.h', 'py.c', 'pm.c', '']
+buildtools_ext = ['mx', 'm', 'y', 'l', 'brg']
+
 am_assign = "+="
 
 def split_filename(f):
@@ -132,7 +134,6 @@ def am_libdir(fd, var, values, am):
 
 def am_mtsafe(fd, var, values, am):
     fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
-    fd.write("CXXFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
 
 def am_list2string(l, pre, post):
     res = ""
@@ -168,9 +169,11 @@ def am_find_hdrs_r(am, target, deps, hdrs, hdrs_ext, map):
     if deps.has_key(target):
         tdeps = deps[target]
         for dtarget in tdeps:
+            t, ext = split_filename(dtarget)
+            if ext not in automake_ext and dtarget not in am['EXTRA_DIST']:
+                am['EXTRA_DIST'].append(dtarget)
             org = find_org(deps, dtarget)
             if org in map['SOURCES']:
-                t, ext = split_filename(dtarget)
                 if ext in hdrs_ext and not dtarget in hdrs:
                     hdrs.append(dtarget)
                 am_find_hdrs_r(am, dtarget, deps, hdrs, hdrs_ext, map)
@@ -182,6 +185,8 @@ def am_find_hdrs(am, map):
             t, ext = split_filename(target)
             if ext in hdrs_ext and not target in am['HDRS']:
                 am['HDRS'].append(target)
+                if ext not in automake_ext:
+                    am['EXTRA_DIST'].append(target)
             am_find_hdrs_r(am, target, map['DEPS'], am['HDRS'], hdrs_ext, map)
 
 def am_find_ins(am, map):
@@ -226,20 +231,37 @@ def am_additional_install_libs(name, sep, list, am):
             add = add + " install-" + l + "LTLIBRARIES"
     return add + "\n"
 
+def needbuildtool(deplist):
+    for d in deplist:
+        f,ext = rsplit_filename(d)
+        if ext in buildtools_ext:
+            return 1
+    return 0
+
+def am_dep(fd, t, deplist, am, pref = ''):
+    t = t.replace('\\', '/')
+    n = t.replace('.o', '.lo', 1)
+    f,ext = rsplit_filename(n)
+    if t != n and not pref:
+        fd.write(t + " ")
+    fd.write(pref + n + ":")
+    for d in deplist:
+        if not os.path.isabs(d):
+            fd.write(" " + am_translate_dir(d, am))
+        else:
+            print("!WARNING: dropped absolute dependency " + d)
+    fd.write("\n")
+
 def am_deps(fd, deps, objext, am):
-    if len(am['DEPS']) <= 0:
+    if not am['DEPS']:
+        fd.write("if NEED_MX\n")
         for t, deplist in deps.items():
-            t = t.replace('\\', '/')
-            n = t.replace('.o', '.lo', 1)
-            if t != n:
-                fd.write(n + " ")
-            fd.write(t + ":")
-            for d in deplist:
-                if not os.path.isabs(d):
-                    fd.write(" " + am_translate_dir(d, am))
-                else:
-                    print("!WARNING: dropped absolute dependency " + d)
-            fd.write("\n")
+            if needbuildtool(deplist):
+                am_dep(fd, t, deplist, am)
+        fd.write("endif\n")
+        for t, deplist in deps.items():
+            if not needbuildtool(deplist):
+                am_dep(fd, t, deplist, am)
     am['DEPS'].append("DONE")
 
 
@@ -247,7 +269,7 @@ def am_deps(fd, deps, objext, am):
 def am_scripts(fd, var, scripts, am):
 #todo handle 'EXT' for empty ''.
 
-    s, ext = string.split(var, '_', 1);
+    s, ext = string.split(var, '_', 1)
     ext = [ ext ]
     if scripts.has_key("EXT"):
         ext = scripts["EXT"] # list of extentions
@@ -257,8 +279,8 @@ def am_scripts(fd, var, scripts, am):
         sd = scripts["DIR"][0] # use first name given
     sd = am_translate_dir(sd, am)
 
-    for src in scripts['SOURCES']:
-        am['EXTRA_DIST'].append(src)
+    #for src in scripts['SOURCES']:
+        #am['EXTRA_DIST'].append(src)
 
     for script in scripts['TARGETS']:
         s,ext2 = rsplit_filename(script)
@@ -288,6 +310,9 @@ def am_scripts(fd, var, scripts, am):
             fd.write(" C_%s = %s\n" % (mkname,script))
             fd.write(" C_script_%s = script_%s\n" % (mkname, script))
             fd.write("endif\n")
+            am['BUILT_SOURCES'].append("$(C_" +mkname+ ")")
+        else:
+            am['BUILT_SOURCES'].append(script)
 
         fd.write("script_%s: %s\n" % (script, script))
         fd.write("\tchmod a+x $<\n")
@@ -450,7 +475,6 @@ def am_binary(fd, var, binmap, am):
 
     if binmap.has_key('MTSAFE'):
         fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
-        fd.write("CXXFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
 
     if binmap.has_key("LIBS"):
         fd.write(am_additional_libs(norm_binname, "", "BIN", binmap["LIBS"], am))
@@ -502,7 +526,6 @@ def am_bins(fd, var, binsmap, am):
         name = binsmap["NAME"][0] # use first name given
     if binsmap.has_key('MTSAFE'):
         fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
-        fd.write("CXXFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
     for binsrc in binsmap['SOURCES']:
         SCRIPTS = []
         bin, ext = split_filename(binsrc)
@@ -561,6 +584,8 @@ def am_bins(fd, var, binsmap, am):
             t, ext = split_filename(target)
             if ext in hdrs_ext:
                 am['HDRS'].append(target)
+                if ext not in automake_ext:
+                    am['EXTRA_DIST'].append(target)
 
     am_find_ins(am, binsmap)
     am_deps(fd, binsmap['DEPS'], ".o", am)
@@ -625,7 +650,6 @@ def am_library(fd, var, libmap, am):
 
     if libmap.has_key('MTSAFE'):
         fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
-        fd.write("CXXFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
 
     if libmap.has_key("LIBS"):
         fd.write(am_additional_libs(libname, sep, "LIB", libmap["LIBS"], am, pref))
@@ -639,8 +663,9 @@ def am_library(fd, var, libmap, am):
         if ext not in automake_ext:
             am['EXTRA_DIST'].append(src)
 
-    nsrcs = "nodist_"+pref+sep+libname+"_la_SOURCES ="
-    srcs = "dist_"+pref+sep+libname+"_la_SOURCES ="
+    fullpref = pref+sep+libname+'_la'
+    nsrcs = "nodist_"+fullpref+"_SOURCES ="
+    srcs = "dist_"+fullpref+"_SOURCES ="
     for target in libmap['TARGETS']:
         t, ext = split_filename(target)
         if ext in scripts_ext:
@@ -652,6 +677,10 @@ def am_library(fd, var, libmap, am):
                 srcs = srcs + " " + src
             else:
                 nsrcs = nsrcs + " " + src
+            if target[-2:] == '.o' and libmap['DEPS'].has_key(target):
+                am_dep(fd, target, libmap['DEPS'][target], am, fullpref+"-")
+                basename = target[:-2]
+                fd.write('\t$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(%s_CFLAGS) $(CFLAGS) -c -o %s-%s.lo `test -f \'%s.c\' || echo \'$(srcdir)/\'`%s.c\n' % (fullpref, fullpref, basename, basename, basename))
     fd.write(nsrcs + "\n")
     fd.write(srcs + "\n")
 
@@ -685,7 +714,6 @@ def am_libs(fd, var, libsmap, am):
 
     if libsmap.has_key('MTSAFE'):
         fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
-        fd.write("CXXFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
 
     libnames = []
     for libsrc in libsmap['SOURCES']:
@@ -750,118 +778,59 @@ def am_libs(fd, var, libsmap, am):
             t, ext = split_filename(target)
             if ext in hdrs_ext:
                 am['HDRS'].append(target)
+                if ext not in automake_ext:
+                    am['EXTRA_DIST'].append(target)
 
     am_find_ins(am, libsmap)
     am_deps(fd, libsmap['DEPS'], ".lo", am)
 
-def am_jar(fd, var, jar, am):
+def am_ant(fd, var, ant, am):
 
-    name = var[4:]
-
-    jd = "JARDIR"
-    if jar.has_key("DIR"):
-        jd = jar["DIR"][0] # use first name given
-    jd = am_translate_dir(jd, am)
-
-    for src in jar['SOURCES']:
-        am['EXTRA_DIST'].append(src)
-
-    fd.write("\nif HAVE_JAVA\n\n")
-
-    if jar.has_key("MANIFEST") and len(jar['MANIFEST']) == 1:
-        fd.write("%s_manifest_file= %s\n" % (name, am_translate_dir(jar['MANIFEST'][0],am)))
-        manifest_flag='m'
-    else:
-        fd.write("%s_manifest_file= \n" % name)
-        manifest_flag=''
-
-    fd.write("%s_java_files= " % (name))
-    for j in jar['SOURCES']:
-        s,ext = rsplit_filename(j)
-        if ext == 'in':
-            fd.write('%s ' % s)
-        else:
-            fd.write('%s ' % j)
-
-    fd.write("\n%s_class_files= " % (name))
-    for j in jar['TARGETS']:
-        # translate any \ path separators to / -- the generated file
-        # is Unix/Linux/Cygwin only
-        fd.write("%s " % j.replace('\\', '/'))
-
-    fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
-    fd.write("\tfor f in $(subst $$,\\$$,$^); do set $${1+\"$$@\"} \"`$(CYGPATH_W) $$f`\"; done; $(JAVAC) -d . -classpath \"`$(CYGPATH_WP) \"$(CLASSPATH)\"`\" $(JAVACFLAGS) $${1+\"$$@\"}\n")
-    fd.write("%s.jar: $(%s_class_files) $(%s_manifest_file)\n" % (name, name, name))
-    fd.write("\tfor f in $@ $(%s_manifest_file) $(subst $$,\\$$,$(%s_class_files)); do set $${1+\"$$@\"} \"`$(CYGPATH_W) $$f`\"; done; $(JAR) $(JARFLAGS) -cf%s $${1+\"$$@\"}\n" % (name, name, manifest_flag))
-    fd.write("install-exec-local-%s_jar: %s.jar\n" % (name, name))
-    fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)
-    fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s.jar\n" % (jd, name))
-
-    fd.write("uninstall-local-%s_jar:\n" % name)
-    fd.write("\t$(RM) $(DESTDIR)%s/%s.jar\n" % (jd, name))
-
-    fd.write("all-local-%s_jar: %s.jar\n" % (name, name))
-    am['ALL'].append(name+"_jar")
-
-    fd.write("\nelse\n\n")
-
-    fd.write("install-exec-local-%s_jar:\n" % name)
-    fd.write("uninstall-local-%s_jar:\n" % name)
-    fd.write("all-local-%s_jar:\n" % name)
-
-    fd.write("\nendif !HAVE_JAVA\n\n")
-
-    am['INSTALL'].append(name+"_jar")
-    am['UNINSTALL'].append(name+"_jar")
-    am['InstallList'].append("\t"+jd+"/"+name+".jar\n")
-
-    am_find_ins(am, jar)
-
-def am_java(fd, var, java, am):
-
-    name = var[5:]
+    target = var[4:]	# the ant target to call
 
     jd = "JAVADIR"
-    if java.has_key("DIR"):
-        jd = java["DIR"][0] # use first name given
+    if ant.has_key("DIR"):
+        jd = ant["DIR"][0] # use first name given
     jd = am_translate_dir(jd, am)
 
-    for src in java['SOURCES']:
-        am['EXTRA_DIST'].append(src)
+    #if ant.has_key("SOURCES"):
+        #for src in ant['SOURCES']:
+            #am['EXTRA_DIST'].append(src)
 
-    fd.write("\nif HAVE_JAVA\n\n")
+    fd.write("\nif HAVE_JAVA\n\n")  # there is ant if configure set HAVE_JAVA
 
-    fd.write("%s_java_files= %s\n" % (name, am_list2string(java['SOURCES'], " ", "")))
-    fd.write("\n%s_class_files= " % (name))
-    for j in java['TARGETS']:
-        fd.write("%s " % j)
+    fd.write("\n%s_ant_target:\n\t$(ANT) -f $(srcdir)/build.xml -Dbuilddir=$(PWD) -Djardir=$(PWD) %s\n" % (target, target))
 
-    fd.write("\n$(%s_class_files): $(%s_java_files)\n" % (name, name))
-    fd.write("\tfor f in $(subst $$,\\$$,$^); do set $${1+\"$$@\"} \"`$(CYGPATH_W) $$f`\"; done; $(JAVAC) -d . -classpath \"`$(CYGPATH_WP) \"$(CLASSPATH)\"`\" $(JAVACFLAGS) $${1+\"$$@\"}\n")
+    for file in ant['FILES']:
+        sfile = file.replace(".", "_")
+        fd.write("\n%s: %s_ant_target\n" % (file, target))
 
-    fd.write("install-exec-local-%s_class: %s.class\n" % (name, name))
-    fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)
-    fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s.class\n" % (jd, name))
+        fd.write("install-exec-local-%s: %s\n" % (sfile, file))
+        fd.write("\t-mkdir -p $(DESTDIR)%s\n" % jd)
+        fd.write("\t$(INSTALL) $< $(DESTDIR)%s/%s\n" % (jd, file))
 
-    fd.write("uninstall-local-%s_class:\n" % name)
-    fd.write("\t$(RM) $(DESTDIR)%s/%s.class\n" % (jd, name))
+        fd.write("uninstall-local-%s:\n" % sfile)
+        fd.write("\t$(RM) $(DESTDIR)%s/%s\n" % (jd, file))
 
-    fd.write("all-local-%s_class: %s.class\n" % (name, name))
-    am['ALL'].append(name+"_class")
+        fd.write("all-local-%s: %s\n" % (sfile, file))
+
+        am['ALL'].append(sfile)
 
     fd.write("\nelse\n\n")
 
-    fd.write("install-exec-local-%s_class:\n" % name)
-    fd.write("uninstall-local-%s_class:\n" % name)
-    fd.write("all-local-%s_class:\n" % name)
+    for file in ant['FILES']:
+        sfile = file.replace(".", "_")
+        fd.write("install-exec-local-%s:\n" % sfile)
+        fd.write("uninstall-local-%s:\n" % sfile)
+        fd.write("all-local-%s:\n" % sfile)
 
     fd.write("\nendif !HAVE_JAVA\n\n")
 
-    am['INSTALL'].append(name+"_class")
-    am['UNINSTALL'].append(name+"_class")
-    am['InstallList'].append("\t"+jd+"/"+name+".class\n")
-
-    am_find_ins(am, java)
+    for file in ant['FILES']:
+        sfile = file.replace(".", "_")
+        am['INSTALL'].append(sfile)
+        am['UNINSTALL'].append(sfile)
+        am['InstallList'].append("\t" + jd + "/" + file + "\n")
 
 def am_add_srcdir(path, am, prefix =""):
     dir = path
@@ -896,6 +865,8 @@ def am_translate_dir(path, am):
 def am_includes(fd, var, values, am):
     incs = "-I$(srcdir)"
     for i in values:
+        if i[:2] == "-I" and i[2] != "$":
+            i = i[2:]
         if i[0] == "-" or i[0] == "$":
             incs = incs + " " + i
         else:
@@ -917,13 +888,11 @@ output_funcs = {'SUBDIRS': am_subdirs,
                 'MTSAFE': am_mtsafe,
                 'SCRIPTS': am_scripts,
                 'CFLAGS': am_cflags,
-                'CXXFLAGS': am_cflags,
                 'STATIC_MODS': am_mods_to_libs,
                 'smallTOC_SHARED_MODS': am_mods_to_libs,
                 'largeTOC_SHARED_MODS': am_mods_to_libs,
                 'HEADERS': am_headers,
-                'JAR': am_jar,
-                'JAVA': am_java,
+                'ANT': am_ant,
                 }
 
 def output(tree, cwd, topdir, automake, conditional):
@@ -942,7 +911,9 @@ def output(tree, cwd, topdir, automake, conditional):
 
 AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
 
-CXXEXT = \\\"cc\\\"
+if NEED_MX
+NEED_MX = 1
+endif
 
 ''')
 
@@ -999,13 +970,13 @@ CXXEXT = \\\"cc\\\"
         elif i != 'TARGETS':
             am_assignment(fd, i, v, am)
 
-    if len(am['BUILT_SOURCES']) > 0:
-        fd.write("BUILT_SOURCES =%s\n" % am_list2string(am['BUILT_SOURCES'], " ", ""))
-        # the BUILT_SOURCES should be cleaned up by make (mostly)clean
-        fd.write("MOSTLYCLEANFILES =%s\n" % am_list2string(am['BUILT_SOURCES'], " ", ""))
+    fd.write("BUILT_SOURCES =%s\n" % am_list2string(am['BUILT_SOURCES'], " ", ""))
+    # the BUILT_SOURCES should be cleaned up by make (mostly)clean
+    fd.write("MOSTLYCLEANFILES =%s\n" % am_list2string(am['BUILT_SOURCES'], " ", ""))
 
-    fd.write("EXTRA_DIST = Makefile.ag Makefile.msc%s\n" % \
+    fd.write("EXTRA_DIST = Makefile.msc%s " % \
           am_list2string(am['EXTRA_DIST'], " ", ""))
+    fd.write(" $(BUILT_SOURCES)\n")
 
     if am['LIBS']:
         lib = 'lib'
@@ -1079,3 +1050,5 @@ include $(top_builddir)/*.mk
     fd.close()
 
     return am['InstallList'], am['DocList'], am['OutList']
+
+# vim:ts=4 sw=4 expandtab:

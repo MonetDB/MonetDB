@@ -11,7 +11,7 @@
 # The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2005 CWI.
+# Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
 #
@@ -104,6 +104,7 @@ eval WHAT_PREFIX="\${${what}_PREFIX}"
 
 binpath=""
 libpath=""
+pytpath=""
 modpath=""
 mtest_modpath=""
 conf_opts=""
@@ -129,28 +130,10 @@ if [ ! "${WHAT_PREFIX}" ] ; then
 fi
 
 if [ "${COMP}" != "GNU"  -a  "${COMP}" != "ntv"  -a  "${os}${COMP}" != "LinuxPGI" ] ; then
+	COMP="GNU"
 	echo ''
 	echo 'COMP not set to either "GNU" or "ntv" (native) to select the desired compiler.'
-	echo 'Using COMP="GNU" (default).'
-	COMP="GNU"
-fi
-if [ "${BITS}" != "32"   -a  "${BITS}" != "64"  ] ; then
-	echo ''
-	echo 'BITS not set to either "32" or "64" to select the desired binary type.'
-	echo 'Using BITS="32" (default).'
-	BITS="32"
-fi
-if [ "${OIDS}" != "32"   -a  "${OIDS}" != "64"  ] ; then
-	echo ''
-	echo 'OIDS not set to either "32" or "64" to select the desired binary type.'
-	echo 'Using OIDS="'${BITS}'" (default).'
-	OIDS="${BITS}"
-fi
-if [ "${BITS}${OIDS}" == "3264" ] ; then
-	echo ''
-	echo 'Using 64-bit OIDS with 32-bit compilation is not possible.'
-	echo 'Using OIDS="'${BITS}'", instead.'
-	OIDS="${BITS}"
+	echo 'Using COMP="'${COMP}'" (default).'
 fi
 case "${LINK}" in
 d*)	LINK="d";;
@@ -162,6 +145,26 @@ s*)	LINK="s";;
 	LINK="d"
 	;;
 esac
+
+if [ "${BITS}" != "32"   -a  "${BITS}" != "64"  ] ; then
+	echo ''
+	echo 'BITS not set to either "32" or "64" to select the desired binary type.'
+	case "${os}-${hw}" in
+	Linux-*64|IRIX64-IP27|SunOS-sun4u)
+		BITS="64"
+		DFT="default";;
+	*)
+		case "${OIDS}" in
+		32|64)
+			BITS="${OIDS}"
+			DFT="=OIDS";;
+		*)
+			BITS="32"
+			DFT="default";;
+		esac
+	esac
+	echo 'Using BITS="'${BITS}'" ('${DFT}').'
+fi
 
 # exclude "illegal" combinations
 
@@ -179,6 +182,19 @@ if [ "${os}" = "Linux" ] ; then
 		echo 'Currently, we do not support 32-bit with RedHat/Fedora Linux on '"${hw}"'; hence, using BITS="64".'
 		BITS="64"
 	fi
+fi
+
+if [ "${OIDS}" != "32"   -a  "${OIDS}" != "64"  ] ; then
+	OIDS="${BITS}"
+	echo ''
+	echo 'OIDS not set to either "32" or "64" to select the desired binary type.'
+	echo 'Using OIDS="'${OIDS}'" (=BITS).'
+fi
+if [ "${BITS}${OIDS}" == "3264" ] ; then
+	echo ''
+	echo 'Using 64-bit OIDS with 32-bit compilation is not possible.'
+	echo 'Using OIDS="'${BITS}'", instead.'
+	OIDS="${BITS}"
 fi
 
 # set default compilers, configure options & paths
@@ -467,6 +483,10 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 			libpath="${MONETDB_PREFIX}/lib:${libpath}"
 		fi
 	fi
+  else
+	if [ "`type -p python`" ] ; then
+		pytpath="${WHAT_PREFIX}/`python -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"")'`"
+	fi
 fi
 
 # remove trailing ':'
@@ -542,6 +562,22 @@ if [ "${libpath}" ] ; then
 		echo " LIBPATH=${LIBPATH}"
 	fi
 fi
+if [ "${pytpath}" ] ; then
+	if [ "${PYTHONPATH}" ] ; then
+		# prepend new pytpath to existing PYTHONPATH, if PYTHONPATH doesn't contain pytpath, yet
+		case ":${PYTHONPATH}:" in
+		*:${pytpath}:*)
+			;;
+		*)
+			PYTHONPATH="${pytpath}:${PYTHONPATH}" ; export PYTHONPATH
+			;;
+		esac
+	  else
+		# set PYTHONPATH as pytpath
+		PYTHONPATH="${pytpath}" ; export PYTHONPATH
+	fi
+	echo " PYTHONPATH=${PYTHONPATH}"
+fi
 if [ "${modpath}" ] ; then
 	if [ "${MONETDB_MOD_PATH}" ] ; then
 		# prepend new modpath to existing MONETDB_MOD_PATH, if MONETDB_MOD_PATH doesn't contain modpath, yet
@@ -559,17 +595,19 @@ if [ "${modpath}" ] ; then
 	echo " MONETDB_MOD_PATH=${MONETDB_MOD_PATH}"
 fi
 
-if [ "${MONET5_PREFIX}" ] ; then
-	monet5_config="--config=${MONET5_PREFIX}/etc/MonetDB5.conf"
+if [ "${what}" = "MONET5" ] ; then
+	monet5_config="-5 --config=${WHAT_PREFIX}/etc/MonetDB5.conf"
+  elif [ "${MONET5_PREFIX}" ] ; then
+	monet5_config="-5 --config=${MONET5_PREFIX}/etc/MonetDB5.conf"
   else
-	monet5_config=""
+	monet5_config="-4"
 fi
 
 if [ "${what}" != "BUILDTOOLS" ] ; then
 	if [ "${what}" = "MONET5" ] ; then
 		mtest_config="${monet5_config}"
 	  else
-		mtest_config=""
+		mtest_config="-4"
 	fi
 fi
 
@@ -585,15 +623,19 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 	eval "alias Mtest_${wh_t}='${MTEST_WHAT}'"
 	eval "alias Mtest_${wh_t}"
 	if [ "${what}" = "SQL"  -a  "${MONET5_PREFIX}" ] ; then
-		MTEST_WHAT="Mtest.py ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} --monet_mod_path=${WHAT_PREFIX}/lib/${pkgdir}5:`${MONET5_PREFIX}/bin/monetdb-config --modpath`"
+		MTEST_WHAT="Mtest.py ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} --monet_mod_path=${WHAT_PREFIX}/lib/${pkgdir}5:`${MONET5_PREFIX}/bin/monetdb5-config --modpath`"
 		echo " MTEST_${what}5=${MTEST_WHAT}"
 		eval "MTEST_${what}5='${MTEST_WHAT}'; export MTEST_${what}5"
 		eval "alias Mtest_${wh_t}5='${MTEST_WHAT}'"
 		eval "alias Mtest_${wh_t}5"
 	fi
 	MTEST_WHAT='' ; unset MTEST_WHAT
-	eval "alias Mapprove_${wh_t}='Mapprove.py --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX}'"
+	eval "alias Mapprove_${wh_t}='Mapprove.py ${mtest_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX}'"
 	eval "alias Mapprove_${wh_t}"
+	if [ "${what}" = "SQL"  -a  "${MONET5_PREFIX}" ] ; then
+		eval "alias Mapprove_${wh_t}5='Mapprove.py ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX}'"
+		eval "alias Mapprove_${wh_t}5"
+	fi
 fi
 
 mkdir -p ${WHAT_BUILD}

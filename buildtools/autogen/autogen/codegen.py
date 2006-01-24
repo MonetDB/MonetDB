@@ -11,7 +11,7 @@
 # The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
-# Portions created by CWI are Copyright (C) 1997-2005 CWI.
+# Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
 import string
@@ -32,9 +32,6 @@ mx2h = re.compile("^@h[ \t\r\n]+", re.MULTILINE)
 mx2c = re.compile("^@c[ \t\r\n]+", re.MULTILINE)
 mx2y = re.compile("^@y[ \t\r\n]+", re.MULTILINE)
 mx2l = re.compile("^@l[ \t\r\n]+", re.MULTILINE)
-mx2cc = re.compile("^@C[ \t\r\n]+", re.MULTILINE)
-mx2yy = re.compile("^@Y[ \t\r\n]+", re.MULTILINE)
-mx2ll = re.compile("^@L[ \t\r\n]+", re.MULTILINE)
 mx2odl = re.compile("^@odl[ \t\r\n]+", re.MULTILINE)
 mx2fgr = re.compile("^@fgr[ \t\r\n]+", re.MULTILINE)
 mx2cfg = re.compile("^@cfg[ \t\r\n]+", re.MULTILINE)
@@ -51,13 +48,10 @@ e_mx = re.compile('^@[^{}]', re.MULTILINE)
 code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                   (mx2mal, '.mal'),
                   (mx2mel, '.m'),
-                  (mx2cc, '.cc'),
                   (mx2c, '.c'),
                   (mx2h, '.h'),
                   (mx2y, '.y'),
                   (mx2l, '.l'),
-                  (mx2yy, '.yy'),
-                  (mx2ll, '.ll'),
                   (mx2odl, '.odl'),
                   (mx2cfg, '.cfg'),
                   (mx2fgr, '.fgr'),
@@ -73,13 +67,10 @@ code_extract = { 'mx': [ (mx2mil, '.tmpmil'),
                 'mx.in': [ (mx2mil, '.mil'),
                   (mx2mal, '.mal'),
                   (mx2mel, '.m'),
-                  (mx2cc, '.cc'),
                   (mx2c, '.c'),
                   (mx2h, '.h'),
                   (mx2y, '.y'),
                   (mx2l, '.l'),
-                  (mx2yy, '.yy'),
-                  (mx2ll, '.ll'),
                   (mx2odl, '.odl'),
                   (mx2fgr, '.fgr'),
                   (mx2cfg, '.cfg'),
@@ -102,13 +93,8 @@ code_gen = {'m':       [ '.proto.h', '.glue.c', '.mil' ],
             'tab.c':    [ '.tab.o' ],
             'l':        [ '.yy.c' ],
             'yy.c':     [ '.yy.o' ],
-            'yy':       [ '.tab.cc', '.tab.h' ],
-            'tab.cc':   [ '.tab.o' ],
-            'll':       [ '.yy.cc' ],
-            'yy.cc':    [ '.yy.o' ],
             'mt':       [ '.symbols.h', '.c' ],
             'brg':      [ '.c' ],
-            'cc':       [ '.o' ],
             'c':        [ '.o' ],
             'ruby.i':     [ '.ruby.c', '.ruby' ],
             'tcl.i':     [ '.tcl.c', '.tcl' ],
@@ -158,12 +144,9 @@ xsl_inc = re.compile(xsl_inc, re.MULTILINE)
 tex_inc = re.compile(tex_inc)
 
 scan_map = { 'c': [ c_inc, None, '' ],
-         'cc': [ c_inc, None, '' ],
          'h': [ c_inc, None, '' ],
          'y': [ c_inc, None, '' ],
-         'yy': [ c_inc, None, '' ],
          'l': [ c_inc, None, '' ],
-         'll': [ c_inc, None, '' ],
          'mt': [ c_inc, None, '' ],
          'brg': [ c_inc, None, '' ],
          'm': [ m_use, m_sep, '.m' ],
@@ -250,140 +233,6 @@ def do_code_gen(targets, deps, code_map):
                 changes = 1
                 for newext in code_map[ext]:
                     newtarget = base + newext
-                    ntargets.append(newtarget)
-                    if deps.has_key(newtarget):
-                        if (f not in deps[newtarget]):
-                            deps[newtarget].append(f)
-                    else:
-                        deps[newtarget] = [ f ]
-            else:
-                ntargets.append(f)
-        targets = ntargets
-    return targets
-
-# tokenize java file
-
-class java_parser:
-    def __init__(self):
-        self.status = None
-        self.count = 0
-        self.ncount = 0
-        self.classes = []
-        self.pclass = []
-        self.pcount = []
-        self.package = None
-        self.anonnr = 1
-        self.member = 0
-
-    def ptoken(self, type, token, (srow, scol), (erow, ecol), line):
-        if token == '{':
-            self.count = self.count + 1
-            self.ncount = self.ncount + 1
-        if token == '}':
-            self.count = self.count - 1
-            self.ncount = self.ncount - 1
-            # handle end of class
-            if len(self.pclass) > 0 and self.count == self.pcount[len(self.pcount)-1]:
-                del self.pclass[len(self.pclass)-1]
-                del self.pcount[len(self.pcount)-1]
-        # handle packages
-        if self.status == 'package':
-            if token == ';':
-                self.status = None
-            elif token != '.':
-                if self.package:
-                    self.package = os.path.join(self.package,token)
-                else:
-                    self.package = token
-        if self.status == None and token == 'package':
-            self.status = 'package'
-        # handle anonymous classes
-        if self.status == None and token == 'new':
-            self.status = 'new'
-        if self.status == 'new' and token == '(':
-            self.status = 'new('
-        if self.status == 'new(' and token == ')':
-            self.status = 'new()'
-            self.ncount = 0             # reset
-        elif self.status == 'new()' and token == '{':
-            #and self.ncount == 0:
-            self.classes.append(self.pclass[len(self.pclass)-1] + "$$%d" % self.anonnr)
-            self.anonnr = self.anonnr + 1
-            self.status = None
-        elif self.status == 'new()' or ((self.status == 'new' or self.status == 'new(') and token == ';'):
-            self.status = None
-        # handle real classes
-        if self.status == 'class':
-            if self.count > 0:
-                # handle inner class
-                pclass = self.pclass[len(self.pclass)-1] + '$$' + token
-            else:
-                pclass = token
-            self.classes.append(pclass)
-            self.pclass.append(pclass)
-            self.pcount.append(self.count)
-            self.status = None
-        if self.status == None and token == 'class' and self.member != 1:
-            self.status = 'class'
-        # handle simple comments
-        if self.status == None and token == '//':
-            self.status = 'line comment'
-        if self.status == 'start comment' and token == '/':
-            self.status = 'line comment'
-        if self.status == 'line comment' and type == NL:
-            self.status = None
-        # handle complex comments
-        if self.status == 'start comment' and (token == '*' or token == '**'):
-            self.status = 'comment'
-        if self.status == 'start comment' and not(token == '*' or token == '**'):
-            self.status = None
-        if self.status == None and token == '/':
-            self.status = 'start comment'
-        if self.status == 'end comment' and token == '/':
-            self.status = None
-        if self.status == 'end comment' and token != '/':
-            self.status = 'comment'
-        if self.status == 'comment' and (token == '*' or token == '**'):
-            self.status = 'end comment'
-        # help detecting the usage of class member, i.e. <class>.class
-        if token == '.':
-            self.member = 1
-        else:
-            self.member = 0
-        #print(self.status,type,token)
-        #print(self.package,self.pclass,self.classes,self.member)
-
-    def parse(self, f):
-        try:
-            if os.path.exists(f):
-                tokenize(open(f).readline, self.ptoken)
-            else:
-                tokenize(open(f+'.in').readline, self.ptoken)
-        except:
-            pass
-        return self.package,self.classes
-
-# java specific implementation of one source file to multiple targets
-def do_java_code_gen(targets, deps, cwd):
-    changes = 1
-    while changes:
-        ntargets = []
-        changes = 0
-        for f in targets:
-            filename = f
-            base,ext = split_filename(f)
-            dir = ""
-            if string.find(base,os.sep) >= 0:
-                dir,base = os.path.split(base)
-
-            if ext == 'java':
-                j = java_parser();
-                package,classes = j.parse(os.path.join(cwd,filename))
-                changes = 1
-                for cls in classes:
-                    newtarget = cls + '.class'
-                    if package != None:
-                        newtarget = os.path.join(package,newtarget)
                     ntargets.append(newtarget)
                     if deps.has_key(newtarget):
                         if (f not in deps[newtarget]):
@@ -698,7 +547,6 @@ def codegen(tree, cwd, topdir, incdirsmap):
                 base,ext = split_filename(f)
                 do_code_extract(f,base,ext, targets, deps, cwd)
             targets = do_code_gen(targets,deps,code_gen)
-            targets = do_java_code_gen(targets,deps, cwd)
             if i[0:4] == "lib_" or i == "LIBS":
                 targets = do_code_gen(targets,deps,lib_code_gen)
             if i[0:4] == "bin_" or i == "BINS":

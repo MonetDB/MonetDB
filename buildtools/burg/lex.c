@@ -129,10 +129,10 @@ ReadCodeBlock()
 	while ((ch = getchar()) != EOF) {
 		if (ch == '%') {
 			ch = getchar();
-			if (ch != '}') {
-				yyerror("bad %%");
-			}
-			return;
+			if (ch != '}')
+				fputc ('%', outfile);
+			else
+				return;
 		}
 		fputc(ch, outfile);
 		if (ch == '\n') {
