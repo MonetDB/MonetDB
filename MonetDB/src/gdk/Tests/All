@@ -22,3 +22,4 @@ insert_bat_bat.old
 insert_bat_bat.new
 append_bat_bat.old
 append_bat_bat.new
+append_dense_tail
