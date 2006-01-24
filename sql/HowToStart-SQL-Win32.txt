@@ -1,82 +1,39 @@
-This document will help you compile and install the MonetDB SQL front end
-"MonetDB/SQL".
+How To Start with MonetDB/SQL
+=============================
+
+.. This document is written in reStructuredText (see
+   http://docutils.sourceforge.net/ for more information).
+   Use ``rst2html.py`` to convert this file to HTML.
+
+This document will help you compile and install the MonetDB SQL front
+end "MonetDB/SQL" on Windows using the Microsoft Visual Studio
+compiler.
 
 In case you prefer to install a pre-compiled binary distribution, please
-check-out http://sourceforge.net/project/showfiles.php?group_id=56967 .
+check-out `the SourceForge documentation`__.
+
+__ http://sourceforge.net/project/showfiles.php?group_id=56967
 
 This document assumes that you have installed MonetDB on a native
-Windows system (NT, 2000, XP), and that you are planning to compile and
-install the MonetDB SQL front end on the same system.
+Windows system (NT, 2000, XP), and that you want to compile and
+install the MonetDB SQL front end on the same system.  See the file
+`MonetDB HowToStart-Win32.txt`__ for information on how to compile and
+install MonetDB.
+
+__ ../MonetDB/Windows/index.html
+
 For compilation and installation on a Unix system (e.g., Linux, IRIX,
-Solaris, AIX, MacOS X/Darwin, or CYGWIN) see the instructions in the
-file 'HowToStart-SQL'.
+Solaris, AIX, MacOS X/Darwin), or on Windows using CYGWIN, see the
+instructions in the file `HowToStart-SQL`__.
+
+__ Unix/index.html
 
 
-Prerequisites:
-==============
+Prerequisites
+-------------
 
-CVS
-	You need to have a working CVS. Several solutions are
-	available. We use internally WinCVS (http://www.wincvs.org)
-	and CVS under Cygwin (http://www.cygwin.com)
-	For general information about the sourceforge repository, see
-	http://sourceforge.net/docman/?group_id=1 and look under the
-	heading CVS Instructions.  Pointers to CVS implementations 
-	for Windows can be found at e.g.:
-	http://www.cvshome.org/cyclic/cvs/windows.html
-	http://www.wincvs.org/
-	http://www.componentsoftware.com/products/CVS/
-
-Python
-	MonetDB/SQL uses Python (version 2.0.0 or better) during
-	configuration of the software.  See http://www.python.org/ for
-	more information.
-
-Pthreads for Win32
-	(ftp://sources.redhat.com/pub/pthreads-win32/)
-	Pthreads should be installed to C:\Pthreads, otherwise you need
-	to patch the "PTHREAD = C:\Pthreads" line in "NT\rules.msc"
-	according to your setup. Newer versions of Pthreads seem to
-	have the "include" & "lib" directory not in C:\Pthreads, but in
-	C:\Pthreads\prebuilt. In that case, you either have to move the
-	"include" & "lib" directory from C:\Pthreads\prebuilt to 
-	C:\Pthreads, or set "PTHREAD = C:\Pthreads\prebuilt" in
-	"NT\rules.msc".
-
-UnxUtils for Win32
-	(http://UnxUtils.sourceforge.net/)
-	UnxUtils must be installed in the root directory ("\", i.e.,
-	without the default "\UnxUtils\" prefix) of the drive where you
-	want to compile MonetDB/SQL.
-	The same drive is required, as the UnxUtils do not know about
-	drive letters, and hence absolute paths start with "\" (i.e.,
-	without a leading "C:", "D:", ...).  The default "\UnxUtils\"
-	prefix has to be omitted, as other the UnxUtils' "bison" does
-	not find its own "bison.simple" file, which it expects to be in
-	"/usr/share/bison/bison.simple" (aka. 
-	"\usr\share\bison\bison.simple").
-	Next to some tools used by Mtest.py for testing MonetDB/SQL (see
-	below), UnxUtils provide the lexical analyzer generator "flex"
-	and the parser generator "bison", which are required to compile
-	MonetDB/SQL.
-	Note: You have to install the UnxUtils using the original .zip
-	file (http://UnxUtils.sourceforge.net/UnxUtils.zip). With the
-	third-party executable installer
-	(http://www.braindonors.net/products/unxutils.asp), choosing
-	another than the default installation directory doesn't seem to
-	work...
-	
-Microsoft Visual C++
-	You need Microsoft Visual C++ 5 or higher.
-
-	Notice that if you do not own Microsoft Visual C++, you can
-	still compile on Windows using the Cygnus Posix-emulation
-	environment "CYGWIN" (http://www.cygwin.com). In that case, you
-	should follow the standard instructions in the file
-	'HowToStart-SQL'. Alternatively, it might be possible to use the
-	free WIN32-GNU compilers (http://www.mingw.org/index.shtml) as a
-	drop-in replacement for the Microsoft tools, but we have not
-	tried this yet.
+There are no additional prerequisites for MonetDB/SQL except for the
+extra disk space needed to compile and install the front end.
 
 disk space
 	After downloading, MonetDB/SQL takes up about 75 MB of disk space;
@@ -84,47 +41,52 @@ disk space
 	the installation about 3 MB (not including any databases).
 
 
-Getting the Software:
-=====================
+Getting the Software
+--------------------
 
-This command should be done once.  It records a password on the local
-machine to be used for all subsequent CVS accesses with this server.
+We assume the MonetDB sources have already been acquired from
+SourceForge.  Here we only show the additional commands to get the SQL
+source.
 
- cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb login
-
-Just type RETURN when asked for the password. The actual steps depend on
-your CVS tool, e.g. in WinCVS you have to set the Admin preferences.
-Then get the software by using the command:
+Get the software by using the command::
 
  cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb checkout sql
 
-This will create a directory 'sql' in your current working directory.
+This will create a directory ``sql`` in your current working
+directory.
 
-Also see http://sourceforge.net/cvs/?group_id=56967 for more
-information.
+Also see `the SourceForge documentation`__ for more information.
 
+__ http://sourceforge.net/cvs/?group_id=56967
 
-Compiling:
-==========
+Compiling
+---------
+
 Open a Windows command shell or a UnxUtils shell and go to the 
 top-level directory of sql.
 
 Make sure that the proper environment for MSVC++ is set,
 otherwise call the corresponding BAT file.
-(see C:\Program Files\Microsoft Visual Studio\VC98\Bin\VCVARS32.BAT).
+(see ``C:\Program Files\Microsoft Visual Studio\VC98\Bin\VCVARS32.BAT``).
 
-Make sure that Python, C:\Pthreads\lib (or wherever you installed
-Pthreads), and \usr\local\wbin are in the PATH of your command shell.
+Make sure that Python, ``C:\Pthreads\lib`` (or wherever you installed
+Pthreads), and ``\usr\local\wbin`` are in the ``PATH`` of your command
+shell.
 
-Further, create an enviroment variable MONETDB_PREFIX that contains the
-absolute path of the directory where your installed MonetDB, e.g.,
+Further, create an enviroment variable ``MONETDB_PREFIX`` that
+contains the absolute path of the directory where your installed
+MonetDB, e.g.,
+
+::
 
  set MONETDB_PREFIX=<monet-source>\NT
 
-and make sure that %MONETDB_PREFIX%\bin, %MONETDB_PREFIX%\lib, and
-%MONETDB_PREFIX%\lib\MonetDB are in your PATH.
+and make sure that ``%MONETDB_PREFIX%\bin``, ``%MONETDB_PREFIX%\lib``,
+and ``%MONETDB_PREFIX%\lib\MonetDB`` are in your ``PATH``.
 
 When all prerequisites have been satisfied, you type
+
+::
 
  cd NT
  nmake
@@ -132,10 +94,12 @@ When all prerequisites have been satisfied, you type
 to compile the source code.
 
 
-Testing the Build:
-==================
+Testing the Build
+-----------------
 
 If nmake went successfully, you can try
+
+::
 
  nmake check
 
@@ -148,10 +112,12 @@ in XXX--to be filled in.
 Testing takes about 155 MB of disk space in the build directory.
 
 
-Installing:
-===========
+Installing
+----------
 
 Give the command
+
+::
 
  nmake install
 
@@ -160,13 +126,15 @@ By default this will install MonetDB/SQL to <sql-source>\NT\ where
 The current version does not provide any means to change this default.
 
 
-Testing the Installation:
-=========================
+Testing the Installation
+------------------------
 
-Make sure that <sql-source>\NT\bin, <sql-source>\NT\lib, and
-<sql-source>\NT\lib\MonetDB are in your PATH.
+Make sure that ``<sql-source>\NT\bin``, ``<sql-source>\NT\lib``, and
+``<sql-source>\NT\lib\MonetDB`` are in your ``PATH``.
 
 In the sql top-level directory issue the command
+
+::
 
  Mtest.py --monet_mod_path=<monet-source>\NT\lib\MonetDB;<sql-source>\NT\lib\MonetDB --SQL_PREFIX=<sql-source>\NT --TSTSRCBASE=<sql-source> --TSTBLDBASE=<sql-source>\NT --TSTTRGBASE=<sql-source>\NT -r
 
@@ -174,37 +142,40 @@ This should produce much the same output as nmake check above, but uses
 the installed version of MonetDB/SQL.
 
 
-Usage:
-======
+Usage
+-----
 
-To use the MonetDB SQL front end interactively, you first need to start
-an MonetDB server ("Mserver") with sql support. To do so, first make
-sure, that your environment is set as described in "Compiling" and
-"Testing the Installation" above.
+To use the MonetDB SQL front end interactively, you first need to
+start an MonetDB server (``Mserver``) with sql support.  To do so,
+first make sure, that your environment is set as described in
+`Compiling`_ and `Testing the Installation`_ above.
 
 In case the install (i.e., prefix) directories of MonetDB and
 MonetDB/SQL are identical, simply call
+
+::
 
  Mserver --dbinit="module(sql_server); sql_server_start();"
 
 In case you use different install (i.e., prefix) directories of MonetDB
 and MonetDB/SQL, call
 
- Mserver --set monet_mod_path=<monet-prefix>\lib\MonetDB;<sql-prefix>\lib\MonetDB --dbinit="module(sql_server); sql_server_start();"
+::
 
-To change the location of the log-files, add the following option to Mserver:
- 
- --set sql_logdir=<logdir>
+ Mserver --set monet_mod_path=<monet-prefix>\lib\MonetDB;<sql-prefix>\lib\MonetDB --dbinit="module(sql_server); sql_server_start();"
 
 Then, in a second Windows command shell, set up the same environment
 and start the MonetDB SQL front end by calling
 
+::
+
  MapiClient -lsql -umonetdb -Pmonetdb
 
 
-Documentation:
-==============
+Documentation
+-------------
 
-Some initial documention of the MonetDB SQL front end is available in
-SQLfeatures.tex and SQLsessionDemo.html.
+Some initial documentation of the MonetDB SQL front end is available
+in SQLfeatures.tex and `SQLsessionDemo.html`__.
 
+__ ../../Usage/SQLsessionDemo/index.html
