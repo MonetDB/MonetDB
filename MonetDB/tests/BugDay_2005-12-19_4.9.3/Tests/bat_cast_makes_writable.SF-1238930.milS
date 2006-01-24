@@ -1,3 +1,0 @@
-var b:=new(oid,int).insert(0@0,10).insert(1@0, 10).access(BAT_READ);
-b.access().print();
-b.[dbl]().access().print();

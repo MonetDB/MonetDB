@@ -1,8 +1,0 @@
-# initialization of BATs on the stack
-# caused a problem when executed in interactve mode
-RKA:= bat.new(:int,:int,1048576);
-bat.insert(RKA,1:int,360:int);
-io.print(RKA);
-
-#the next one should fail
-bat.setWriteMode(RKB);
