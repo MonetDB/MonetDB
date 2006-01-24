@@ -1,31 +1,47 @@
-This document helps you to install the MonetDB source and compile it.
-Once succeeded, refer to doc/MonetDB.html for the user documentation
-generated as part of the process.
+How To Start with MonetDB
+=========================
+
+.. This document is written in reStructuredText (see
+   http://docutils.sourceforge.net/ for more information).
+   Use ``rst2html.py`` to convert this file to HTML.
+
+This document helps you to compile the MonetDB source and install the
+result on a Windows system, using the Microsoft Visual Studio
+compiler.  When you want to use `Cygwin`__ or `MinGW`__, or you want
+to compile on a Unix or Linux system, see the file `HowToStart`__.
+
+__ http://www.cygwin.com/
+__ http://www.mingw.org/index.shtml
+__ ../index.html
+
+This document is geared towards a build from CVS sources.  If you are
+building from a source distribution (i.e. a .tar.gz file that you got
+from SourceForge), a number of steps outlined in this document must be
+skipped.
 
 In case you prefer to install a pre-compiled binary distribution, please
-check-out http://sourceforge.net/project/showfiles.php?group_id=56967 .
+check out `the SourceForge distribution`__.
 
-This document assumes that you are planning to compile and install
-MonetDB on a native Windows system (NT, 2000, XP). 
-For compilation and installation on a Unix system (e.g., Linux, IRIX,
-Solaris, AIX, MacOS X/Darwin, or CYGWIN) see the instructions in the
-file 'HowToStart'.
+__ http://sourceforge.net/project/showfiles.php?group_id=56967
 
-
-Prerequisites:
-==============
+Prerequisites
+-------------
 
 CVS
 	You need to have a working CVS. Several solutions are
-	available. We use internally WinCVS (http://www.wincvs.org)
-	and CVS under Cygwin (http://www.cygwin.com)
-	For general information about the sourceforge repository, see
-	http://sourceforge.net/docman/?group_id=1 and look under the
-	heading CVS Instructions.  Pointers to CVS implementations 
-	for Windows can be found at e.g.:
-	http://www.cvshome.org/cyclic/cvs/windows.html
-	http://www.wincvs.org/
-	http://www.componentsoftware.com/products/CVS/
+	available.  Internally, we use `WinCVS`__ and CVS under
+	`Cygwin`__.  For general information about the SourceForge
+	repository, see `the SourceForge documentation`__ and look
+	under the heading CVS Instructions.  Pointers to CVS
+	implementations for Windows can be found at e.g.::
+
+	 http://www.cvshome.org/cyclic/cvs/windows.html
+	 http://www.wincvs.org/
+	 http://www.componentsoftware.com/products/CVS/
+
+__ http://www.wincvs.org
+__ http://www.cygwin.com
+__ http://sourceforge.net/docman/?group_id=1
 
 Python
 	MonetDB uses Python (version 2.0.0 or better) during
@@ -35,11 +51,12 @@ Python
 Mx, mel, and autogen
 	Before building MonetDB, you first need to build and install
 	the MonetDB buildtools.  Check out buildtools with
+	::
 
 	 cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb checkout buildtools
 
-	and follow the instructions in the README file, then proceed
-	with MonetDB.
+	and follow the Windows-specific instructions in the README
+	file, then proceed with MonetDB.
 
 Pthreads for Win32
 	(ftp://sources.redhat.com/pub/pthreads-win32/)
@@ -55,38 +72,44 @@ Pthreads for Win32
 
 UnxUtils for Win32
 	(http://UnxUtils.sourceforge.net/)
-	UnxUtils must be installed in the root directory ("\", i.e.,
-	without the default "\UnxUtils\" prefix) of the drive where you
+	UnxUtils must be installed in the root directory (``\``, i.e.,
+	without the default ``\UnxUtils\`` prefix) of the drive where you
 	want to compile MonetDB.
+
 	The same drive is required, as the UnxUtils do not know about
-	drive letters, and hence absolute paths start with "\" (i.e.,
-	without a leading "C:", "D:", ...).  The default "\UnxUtils\"
-	prefix has to be omitted, as otherwise the UnxUtils' "bison"
-	does not find its own "bison.simple" file, which it expects to
-	be in "/usr/share/bison/bison.simple"
-	(aka. "\usr\share\bison\bison.simple").
-	Next to some tools used by Mtest.py for testing MonetDB (see
-	below), UnxUtils provide the lexical analyzer generator "flex"
-	and the parser generator "bison", which are required to compile
-	MonetDB.
-	Note: You have to install the UnxUtils using the original .zip
-	file (http://UnxUtils.sourceforge.net/UnxUtils.zip). With the
+	drive letters, and hence absolute paths start with ``\``
+	(i.e., without a leading ``C:``, ``D:``, ...).  The default
+	``\UnxUtils\`` prefix has to be omitted, as otherwise the
+	UnxUtils' ``bison`` does not find its own ``bison.simple``
+	file, which it expects to be in
+	``/usr/share/bison/bison.simple``
+	(aka. ``\usr\share\bison\bison.simple``).
+
+	In addition to some tools used by Mtest.py for testing MonetDB
+	(see below), UnxUtils provides the lexical analyzer generator
+	``flex`` and the parser generator ``bison``, which are
+	required to compile MonetDB.
+
+	Note: You need to install the UnxUtils using the original .zip
+	file (http://UnxUtils.sourceforge.net/UnxUtils.zip).  Choosing
+	another than the default installation directory in the
 	third-party executable installer
-	(http://www.braindonors.net/products/unxutils.asp), choosing
-	another than the default installation directory doesn't seem to
-	work...
+	(http://www.braindonors.net/products/unxutils.asp) doesn't
+	seem to work...
 	
 Microsoft Visual C++
-	You need Microsoft Visual C++ 5 or higher.
+	You need Microsoft Visual C++ 7.  Other versions may work but
+	have not been tested.
 
 	Notice that if you do not own Microsoft Visual C++, you can
-	still compile on Windows using the Cygnus Posix-emulation
-	environment "CYGWIN" (http://www.cygwin.com). In that case, you
-	should follow the standard instructions in the file
-	'HowToStart'. Alternatively, it might be possible to use the
-	free WIN32-GNU compilers (http://www.mingw.org/index.shtml) as a
-	drop-in replacement for the Microsoft tools, but we have not
-	tried this yet.
+	still compile on Windows using the `MinGW`__ tools or the `Cygwin`__
+	tools.  See the files `HowToStart-MinGW.txt`__ and `HowToStart`__
+	respectively.
+	
+__ http://www.mingw.org/
+__ http://www.cygwin.com/
+__ ???
+__ ../index.html
 
 disk space
 	After downloading, MonetDB takes up about 40 MB of disk space;
@@ -94,28 +117,28 @@ disk space
 	the installation about 20 MB (not including any databases).
 
 
-Optional Software:
-==================
+Optional Software
+-----------------
 
 PHP
 	Download the Windows binaries in a zip package (i.e. not the
 	Windows installer) and the source package from
-	http://www.php.net/.  Unzip the binaries into e.g. C:\ (for
-	PHP-4, the zip file contains a top-level directory
-	php-4...-Win32 and so can be unzipped into C:).  In any case,
-	make sure there are no spaces in the path chosen.  Also
+	http://www.php.net/.  Unzip the binaries into e.g. ``C:\``
+	(for PHP-4, the zip file contains a top-level directory
+	php-4...-Win32 and so can be unzipped into ``C:``).  In any
+	case, make sure there are no spaces in the path chosen.  Also
 	extract the sources somewhere, e.g. in a directory parallel to
-	MonetDB.  If you don't use C:\php-4.4.0-Win32 for the binaries
-	or you don't extract the sources into php-4.4.0 in the same
-	directory where MonetDB is extracted, you will have to edit
-	MonetDB's NT\rules.msc to change the variables PHP_SRCDIR and
-	PHP_INSTDIR to reflect this.  Make sure there are no spaces in
-	these two path names.  Also note that the paths are only used
-	from inside the NT\src\mapi\clients\php directory, so if they
-	are relative, they have to be relative from there.  When
-	compiling MonetDB, add the flag HAVE_PHP=1 to the nmake
-	command line.  Note that only PHP versions 4.3.11 and 4.4.0
-	have been tried.
+	MonetDB.  If you don't use ``C:\php-4.4.0-Win32`` for the
+	binaries or you don't extract the sources into ``php-4.4.0``
+	in the same directory where MonetDB is extracted, you will
+	have to edit MonetDB's ``NT\rules.msc`` to change the
+	variables ``PHP_SRCDIR`` and ``PHP_INSTDIR`` to reflect this.
+	Make sure there are no spaces in these two path names.  Also
+	note that the paths are only used from inside the
+	``NT\src\mapi\clients\php`` folder, so if they are relative,
+	they have to be relative from there.  When compiling MonetDB,
+	add the flag ``HAVE_PHP=1`` to the ``nmake`` command line.
+	Note that only PHP versions 4.3.11 and 4.4.0 have been tried.
 
 Pear:
 	Pear is the PHP Extension and Application Repository.  At the
@@ -126,44 +149,51 @@ Pear:
 Java:
 	The Java SDK (JDK) can be found at http://java.sun.com/.
 	After installing, make sure that the directory with java.exe
-	and javac.exe are in your PATH environment variable, and then
-	compile MonetDB with the additional flag HAVE_JAVA=1 on the
-	nmake command line.
+	and javac.exe are in your ``PATH`` environment variable, and
+	then compile MonetDB with the additional flag ``HAVE_JAVA=1``
+	on the ``nmake`` command line.
 
-Getting the Software:
-=====================
+Getting the Software
+--------------------
 
 This command should be done once.  It records a password on the local
 machine to be used for all subsequent CVS accesses with this
 repository.
 
+::
+
  cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb login
 
-Just type RETURN when asked for the password. The actual steps depend on
-your CVS tool, e.g. in WinCVS you have to set the Admin preferences.
-Then get the software by using the command:
+Just type RETURN when asked for the password.  The actual steps depend
+on your CVS tool, e.g. in WinCVS you have to set the Admin
+preferences.  Then get the software by using the command::
 
  cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb checkout MonetDB
 
 This will create a directory MonetDB in your current working directory.
 
-Also see http://sourceforge.net/cvs/?group_id=56967 for more
-information.
+Also see `the SourceForge documentation`__ for more information about
+using CVS.
 
+__ http://sourceforge.net/cvs/?group_id=56967
 
-Compiling:
-==========
-Open a Windows command shell or a UnxUtils shell and go to the 
+Compiling
+---------
+
+Open a Windows command shell or a UnxUtils shell and go to the
 top-level directory of MonetDB.
 
 Make sure that the proper environment for MSVC++ is set,
 otherwise call the corresponding BAT file.
-(see C:\Program Files\Microsoft Visual Studio\VC98\Bin\VCVARS32.BAT).
+(see ``C:\Program Files\Microsoft Visual Studio\VC98\Bin\VCVARS32.BAT``).
 
-Make sure that Python, C:\Pthreads\lib (or wherever you installed
-Pthreads), and \usr\local\wbin are in the PATH of your command shell.
+Make sure that Python, ``C:\Pthreads\lib`` (or wherever you installed
+Pthreads), and ``\usr\local\wbin`` are in the ``PATH`` of your command
+shell.
 
 When all prerequisites have been satisfied, you type
+
+::
 
  cd NT
  nmake
@@ -171,12 +201,16 @@ When all prerequisites have been satisfied, you type
 to compile the source code.  If you want to compile with Java and PHP
 support, the command is
 
+::
+
  nmake HAVE_JAVA=1 HAVE_PHP=1
 
-Testing the Build:
-==================
+Testing the Build
+-----------------
 
-If nmake went successfully, you can try
+If ``nmake`` went successfully, you can try
+
+::
 
  nmake check
 
@@ -189,79 +223,90 @@ found in XXX--to be filled in.
 Testing takes about 46 MB of disk space in the build directory.
 
 
-Installing:
-===========
+Installing
+----------
 
 Give the command
+
+::
 
  nmake install
 
 By default this will install MonetDB to <sourcedir>\NT\ where
-<sourcedir> is the top-level directory of MonetDB source tree.
-The current version does not provide any means to change this default.
+<sourcedir> is the top-level directory of MonetDB source tree.  The
+current version does not provide any means to change this default.
 
 
-Testing the Installation:
-=========================
+Testing the Installation
+------------------------
 
 Make sure that <sourcedir>\NT\bin, <sourcedir>\NT\lib, and
 <sourcedir>\NT\lib\MonetDB are in your PATH.
 
 In the MonetDB top-level directory issue the command
 
+::
+
  Mtest.py -r
 
 (Make sure Mtest.py can be found, it should be in the bin directory that
-was filled by the nmake install command.)
+was filled by the ``nmake install`` command.)
 
-This should produce much the same output as nmake check above, but uses
-the installed version of MonetDB.
+This should produce much the same output as ``nmake check`` above, but
+uses the installed version of MonetDB.
 
 
-Usage:
-======
+Usage
+-----
 
-There are two alternatives to use MonetDB interactively.
-In both cases, you first need to make sure, that your environment is set as
-described in "Configure and Make" and "Testing the Installation" above.
+There are two alternatives to use MonetDB interactively.  In both
+cases, you first need to make sure, that your environment is set as
+described in `Compiling`_ and `Testing the Installation`_ above.
 
 If you're "in a hurry", you can then simply start
+
+::
 
  Mserver
 
 an you get the "server console", where you can type you MIL commands.
-Please, that the server console is mainly meant for administrative use, hence
-there are no conveniences such as commandline editing or command history.
+The server console is mainly meant for administrative use, hence there
+are no conveniences such as commandline editing or command history.
 
-For a more convenient MIL interface, you should use the "MapiClient" with
-the Mserver. To do so, first start an Mserver with MAPI (MonetDB Application
-Programmer's Interfaces) support as follows:
+For a more convenient MIL interface, you should use the ``MapiClient``
+with the Mserver. To do so, first start an Mserver with MAPI (MonetDB
+Application Programmer's Interfaces) support as follows::
 
  Mserver --dbinit="module(mapi); mapi_start();"
 
 Then, in a second shell, set up the same environment and start the
-MapiClient:
+MapiClient::
 
  MapiClient
 
 With MapiClient, you get a text-based MIL interface that supports
-commandline editing and a commandline history. The latter can even be stored
-persistently to be re-used after stopping and restarting MapiClient; see
+commandline editing and a commandline history.  The latter can even be
+stored persistently to be re-used after stopping and restarting
+MapiClient; see
+
+::
 
  MapiClient --help
 
 for details.
 
 
-Documentation:
-==============
+Documentation
+-------------
 
 The documentation starts in <sourcedir>\NT\doc\MonetDB.html
 
-NOTE: the current 'nmake install' does not yet generate this
-      documentation to do this manually, execute *after* successful
-      'nmake install'. In the top-level directory of the MonetDB build
-      tree, call
+NOTE: the current ``nmake install`` does not yet generate this
+documentation.  To do this manually, in the top-level directory of the
+MonetDB build tree, execute
+
+::
 
  nmake docs
 
+*after* a successful ``nmake install``.
