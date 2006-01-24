@@ -284,7 +284,7 @@ BATappend(BAT *b, BAT *n)
 			BAT *bm = BATmirror(b);
 
 			ALIGNsetH(bm, BATmirror(n));
-			b->tseqbase = t->tseqbase;
+			b->tseqbase = n->tseqbase;
 			if (n->tdense && n->ttype == TYPE_oid) {
 				b->tseqbase = *(oid*)BUNtail(n, BUNfirst(n));
 			}
