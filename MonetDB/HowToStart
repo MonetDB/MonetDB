@@ -14,7 +14,7 @@ please check-out `the SourceForge documentation`__.
 
 This document assumes that you are planning on compiling and
 installing MonetDB on a Unix system (e.g., Linux, IRIX, Solaris, AIX,
-MacOS X/Darwin, or CYGWIN).
+Mac OS X/Darwin, or CYGWIN).
 
 For compilation and installation on a native Windows system (NT, 2000, XP)
 see the instructions in the file `HowToStart-Win32.txt`__.
@@ -70,12 +70,6 @@ Mx, mel, and autogen
 	and follow the instructions in the README file, then proceed
 	with MonetDB.
 
-dlcompat (MacOS X/Darwin, only)
-	MacOS X/Darwin itself does not support dlopen, however, there
-	is a third-party library called dlcompat from Fink that
-	provides the respective functionality.  MonetDB requires
-	dlcompat__ to be installed on MacOS X/Darwin.
-
 disk space
 	After downloading, MonetDB takes up about 40 MB of disk space;
 	compilation adds another 70 MB.  Testing takes about 45 MB,
@@ -88,7 +82,6 @@ __ http://www.gnu.org/software/autoconf/
 __ http://www.gnu.org/software/automake/
 __ http://www.gnu.org/software/libtool/
 __ http://sourceforge.net/project/showfiles.php?group_id=56967
-__ http://fink.sourceforge.net/pdb/package.php/dlcompat
 
 
 Getting the Software
@@ -209,7 +202,8 @@ command
 
  make
 
-to compile the source code.
+to compile the source code.  Please note that parallel make
+runs (e.g. ``make -j2``) are currently known to be unsuccessful.
 
 On my lightly loaded, dual 1.4 GHz Athlon Linux system, ``configure``
 takes about 30 seconds, and ``make`` about 5 to 10 minutes, depending on
