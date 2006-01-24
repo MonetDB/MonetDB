@@ -1,1 +1,0 @@
-doc("foo.xml")/foo

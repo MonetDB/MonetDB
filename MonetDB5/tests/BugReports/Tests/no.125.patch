@@ -1,9 +1,0 @@
-# this file should be ran after a M2m compile
-echo "patch no.125.mal"
-echo "reason: type the take command"
-ex - no.125.mal <<!EOF
-g/:= mil.take/s//:dbl&/
-w no.125.mal
-f
-q
-!EOF
