@@ -1377,7 +1377,8 @@ CMDfakeProject(BAT **res, ptr val, int tpe)
 	return GDK_FAIL;
 }
 
-extern int CMDconstCopy(ptr ret, ptr val, int tpe);
+#include <constant.proto.h> /* for CMDconstCopy */
+
 int
 CMDdeFakeProject(ptr ret, int *tpe, ptr val, int t) 
 {
