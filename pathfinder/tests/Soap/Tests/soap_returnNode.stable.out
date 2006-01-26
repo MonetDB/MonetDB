@@ -23,14 +23,17 @@ Over..
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-<hello>
+<foo>
+    <hello>
     <world>
     </world>
-</hello>
-<hello>
+    </hello>
+</foo><foo>
+    <hello>
     <world>
     </world>
-</hello>
+    </hello>
+</foo>
 </XQueryResult>
 
 # 12:31:30 >  
