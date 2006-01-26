@@ -239,8 +239,9 @@ static void send_soap_err(stream *out, bit p_body, char* http_err,
         stream_printf(out, "HTTP/1.1 %s\r\n"
                 "Content-Type: application/soap+xml; charset=\"utf-8\"\r\n\r\n"
                 "<?xml version='1.0' ?>\n"
-                "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n"
-                "             xmlns:xml=\"http://www.w3.org/XML/1998/namespace\">\n"
+                "<env:Envelope\n"
+                "    xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n"
+                "    xmlns:xml=\"http://www.w3.org/XML/1998/namespace\">\n"
                 "  <env:Body>\n",
                 http_err);
     }
@@ -302,9 +303,9 @@ static int count_node(BAT *docBAT, char *node_name, int start_nid, int end_nid){
     assert(start_nid > 0);
    
     off    = BUNindex(docBAT, BUNfirst(docBAT));
-    prop   = (oid*) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_PROP)))); /* PRE_PROP = 2 */
-    kind   = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_KIND)))); /* PRE_KIND = 3 */
-    qn_loc = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+QN_LOC))); /* QN_LOC   = 7 */
+    prop   = (oid*) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_PROP))));
+    kind   = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_KIND))));
+    qn_loc = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+QN_LOC)));
 
     /* start_nid and end_nid included */
     for (i = start_nid; i <= end_nid; i++) {
@@ -317,8 +318,28 @@ static int count_node(BAT *docBAT, char *node_name, int start_nid, int end_nid){
     return nr;
 }
 
+/* Find the first node between 'start_nid' and 'end_nid' (incl.), which kind is
+ * 'ELEMENT', and return the nid of this node.
+ * Return 0 if no such node can be found. */
+static oid get_elem_nid(BAT *docBAT, int start_nid, int end_nid){
+    static int off;
+    static char *kind;
+    int i;
+
+    assert(start_nid > 0 && end_nid >= start_nid);
+   
+    off    = BUNindex(docBAT, BUNfirst(docBAT));
+    kind   = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_KIND))));
+
+    for (i = start_nid; i <= end_nid; i++) {
+        if (kind[i] == ELEMENT)
+            return i;
+    }
+    return 0;
+}
+
 /* Find the node ID of a node given its name.
- * Returns 0 if no NID can be found. */
+ * Return 0 if no NID can be found. */
 static oid get_nid(BAT *docBAT, char *node_name, int start_nid, int end_nid){
     static int off;
     static oid *prop;
@@ -328,12 +349,12 @@ static oid get_nid(BAT *docBAT, char *node_name, int start_nid, int end_nid){
     int i;
     char *qname;
 
-    assert(start_nid > 0);
+    assert(start_nid > 0 && end_nid >= start_nid);
    
     off    = BUNindex(docBAT, BUNfirst(docBAT));
-    prop   = (oid*) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_PROP)))); /* PRE_PROP = 2 */
-    kind   = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_KIND)))); /* PRE_KIND = 3 */
-    qn_loc = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+QN_LOC))); /* QN_LOC    =  7 */
+    prop   = (oid*) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_PROP))));
+    kind   = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_KIND))));
+    qn_loc = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+QN_LOC)));
 
     /* start_nid and end_nid included */
     for (i = start_nid; i <= end_nid; i++) {
@@ -360,14 +381,14 @@ static char* find_attribute(BAT *docBAT, char* attrname, oid node){
     BUN p;
 
     off = BUNindex(docBAT, BUNfirst(docBAT));
-    qn_prefix = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+QN_PREFIX))); /* QN_PREFIX =  6 */
-    qn_loc    = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+QN_LOC))   ); /* QN_LOC    =  7 */
+    qn_prefix = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+QN_PREFIX)));
+    qn_loc    = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+QN_LOC))   );
 
-    attr_own  = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+ATTR_OWN) ))); /* ATTR_OWN  = 14 */
-    attr_qn   = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+ATTR_QN)  ))); /* ATTR_QN   = 15 */
-    attr_prop = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+ATTR_PROP)))); /* ATTR_PROP = 16 */
+    attr_own  = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+ATTR_OWN) )));
+    attr_qn   = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+ATTR_QN)  )));
+    attr_prop = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+ATTR_PROP))));
 
-    prop_val = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PROP_VAL))); /* PROP_VAL  = 18 */
+    prop_val = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PROP_VAL)));
 
     nattrs = BATcount(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+ATTR_PROP))));
 
@@ -428,8 +449,10 @@ static int handle_soap_request(struct shttpd_callback_arg *arg) {
                 "SOAP request: bad XML structure\n");
     }
 
+/*
 printf("\n=== DEBUG MSG: SOAP request RECEIVED ======\n%s"
        "=== END DEBUG MSG: SOAP request RECEIVED ===\n\n", strptr);
+*/
 
     if ((CMDshred2bats(&docBAT, "", strptr, "")  == GDK_FAIL)) {
         send_soap_err(out, 1, "404 Bad Request", "env:Sender", "s",
@@ -437,25 +460,13 @@ printf("\n=== DEBUG MSG: SOAP request RECEIVED ======\n%s"
         goto FINISH;
     }
 
-    off   = BUNindex(docBAT, BUNfirst(docBAT));
-    size  = (int *) BUNfirst( BBP_cache( 
-                            *(bat*) BUNtail(docBAT, BUNptr(docBAT, off+PRE_SIZE))
-                        ) );
-    level = (char *)BUNfirst( BBP_cache(
-                            *(bat*) BUNtail(docBAT, BUNptr(docBAT, off+PRE_LEVEL))
-                        ) );
-    prop  = (oid *) BUNfirst( BBP_cache(
-                            *(bat*) BUNtail(docBAT, BUNptr(docBAT, off+PRE_PROP))
-                        ) );
-    kind  = (char *)BUNfirst( BBP_cache(
-                            *(bat*) BUNtail(docBAT, BUNptr(docBAT, off+PRE_KIND))
-                        ) );
-    text  = (var_t*)BUNfirst( BBP_cache(
-                            *(bat*) BUNtail(docBAT, BUNptr(docBAT, off+PROP_TEXT))
-                        ) );
-    text_base = BBP_cache( 
-                    *(bat*) BUNtail( docBAT, BUNptr(docBAT, off+PROP_TEXT))
-                )->theap->base;
+    off   = BUNindex(docBAT,BUNfirst(docBAT));
+    size  = (int *) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_SIZE))));
+    level = (char *)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_LEVEL))));
+    prop  = (oid *) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_PROP))));
+    kind  = (char *)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_KIND))));
+    text  = (var_t*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PROP_TEXT))));
+    text_base = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT, off+PROP_TEXT)))->theap->base;
 
     /* There are at least two nodes before "SoapRpcRequest", namely "Envelope"
      * and "Body" (a "Header" node is optional). There are at least two nodes
@@ -547,12 +558,8 @@ printf("\n=== DEBUG MSG: SOAP request RECEIVED ======\n%s"
                     argval[argval_nr] = GDKstrdup(text_base + 
                                                   text[prop[vnode+1]]);
                 } else {
-                    nid = vnode + 1;
-                    while (kind[nid] != ELEMENT &&
-                            nid < (oid)(vnode + size[vnode] + 1))
-                        nid++;
-                   
-                    if (kind[nid] != ELEMENT) {
+                    nid = get_elem_nid(docBAT, vnode+1, vnode+size[vnode]);
+                    if (!nid) {
                         send_soap_err(out, 1, "404 Bad Request",
                                 "env:Sender", "sssssisss",
                                 "SOAP request \"", module, ":",
@@ -561,7 +568,9 @@ printf("\n=== DEBUG MSG: SOAP request RECEIVED ======\n%s"
                                 "\" should be an element.\n");
                         goto FINISH;
                     }
-                    argval[argval_nr] = GDKstrdup("0");
+                    argval[argval_nr] = GDKmalloc(32);
+                    snprintf(argval[argval_nr], 32, "%ld", nid);
+
                 }
                 argcnt[i][j]++;
                 argval_nr++;
@@ -905,9 +914,11 @@ printf("\n=== DEBUG MSG: SOAP request to send: (msglen = %ld) ===\n%s"
         goto FAIL;
     }
 
+/*
 printf("\n=== DEBUG MSG: received SOAP response message ======\n%s"
        "=== END DEBUG MSG: received SOAP response message ===\n\n", b->buf);
-   
+*/
+
     b->len = b->pos;
     b->buf = realloc(b->buf, b->len); /* release unused memory */
     strptr = strchr(b->buf, (int)' ') + 1; /* the HTTP return code */
