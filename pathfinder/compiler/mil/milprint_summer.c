@@ -6191,9 +6191,12 @@ translateUDF (opt_t *f, int cur_level, int counter,
          * fun->params[], so translate it separately. */
         milprintf(f, "\n# begin of translate the 'dst' param of SOAP\n");
 
-        /* HACK: when 'concatstr' is used to test the send and the receive of
-         * strings, I noticed that the 'dst' parameter is contained in L(args),
-         * instead of in R(L(args)).  FIXME: find out why this happens! */
+        /* HACK: sometimes, for example, when 'concatstr' is used to test the
+         * send and the receive of strings, the 'dst' parameter is contained in
+         * L(args); sometimes, the 'dst' parameter is contained in R(L(args)),
+         * so we need to check where it is every time.
+         * TODO: this is actually a bug in the handling of the SOAP RPC calls in
+         * pathfinder core.  We still need to fix it. */
         if (R(L(args))){
             if (translate2MIL (f, NORMAL, cur_level, counter, R(L(args))) == NORMAL)
             {
@@ -6349,7 +6352,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
                  * of a tag '<xs:anyNode>' */
                 "} else if(int(pre_level.fetch($h)) = nodev_level) {\n"
                 "iter.append(oid(itercnt));\n"
-                "item.append(0@0);\n" /* FIXME: is this correct? Or should 'itercnt' be appended? */
+                "item.append($h);\n"
                 "i := set_kind(local_name.leftjoin(ws.fetch(DOC_LOADED).reverse()).tmark(0@0), ELEM);\n"
                 "kind.append(i);\n"
                 "}\n"
