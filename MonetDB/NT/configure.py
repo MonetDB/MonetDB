@@ -53,7 +53,7 @@ subs = [
     ('@libexecdir@',             r'${prefix}\libexec'),
     ('@Xlibexecdir@',            r'${prefix}\libexec'),
     ('@PACKAGE@',                r'MonetDB'),
-    ('@VERSION@',                r'4.11.0'),
+    ('@VERSION@',                r'4.11.1'),
     ('@DIRSEP@',                 '\\'),
     ('@PATHSEP@',                ';'),
     ('@prefix@',                 prefix),

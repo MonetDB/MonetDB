@@ -1,2 +1,2 @@
-monetdb = major:4; minor:10; release:0;
-template = major:0; minor:1; release:0; rc:x; build:1;
+monetdb = major:4; minor:10; release:1;
+template = major:0; minor:1; release:1; rc:x; build:1;
