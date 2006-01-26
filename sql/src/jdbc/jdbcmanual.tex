@@ -193,12 +193,114 @@ public class MJDBCTest {
 
                 // closing the connection should take care of closing all generated
                 // statements from it...
-                // Don't forget to do it yourself if the connection is reused or much
+                // don't forget to do it yourself if the connection is reused or much
                 // longer alive, since the Statement object contains a lot of things
                 // you probably want to reclaim if you don't need them anymore.
                 //st.close();
                 con.close();
         }
+}
+\end{verbatim}
+
+\subsection{Using JDBC with MonetDB/XQuery}
+Even though JDBC was designed for the SQL language, the MonetDB JDBC
+driver can be used to interact with the MonetDB/XQuery server.  The JDBC
+will act differently and limited when making such connection, but the
+basic query and answer retrieval is supported.  All SQL specific
+methods, such as <tt>COMMIT</tt>, <tt>SAVEPOINT</tt>, et-cetera will not
+work and most probably cause errors when being used.
+
+In order to use XQuery over JDBC, the driver has to be instructed to
+support this during connect:
+\begin{verbatim}
+// make sure the ClassLoader has the MonetDB JDBC driver loaded
+Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
+// request a Connection to a MonetDB/XQuery server running on
+// 'localhost' using the explicit xquery language
+Connection con = DriverManager.getConnection(
+    "jdbc:monetdb://localhost:45789/database?language=xquery",
+    "monetdb",
+    "monetdb"
+);
+\end{verbatim}
+In the above example, two things are different then for a normal SQL
+connection: 1) the port number to connect to is given explicitly, and 2)
+the language to use is specified.  Normally, the MonetDB/XQuery server
+runs on port \texttt{45789}.  If this is not the case, the JDBC
+connection URL has to reflect this.  The MonetDB JDBC driver supports
+additional settings and/or hints through arguments in the connection
+URL.  For a list of supported options, use the
+\texttt{java.sql.Driver}'s capabilities to report about this.  The
+option needed for XQuery communications is the \texttt{language} option,
+and should be set in as argument in the URL, like in the example above.
+
+After the connection is made, queries can be sent to the server using
+the conventional \texttt{Statement.executeQuery()} method, which returns
+\texttt{ResultSet}s containing the XQuery results.  Each row in such
+result set represents an XQuery resource.
+
+\subsection{XML:DB driver}
+On top of the MonetDB JDBC driver, an XML:DB driver for MonetDB/XQuery
+exists.  It is by default not shipped, due to licence issues.  If one
+wants to use it, one has to compile it by hand, following the directions
+in the \texttt{sql/src/jdbc/lib/README} file.
+
+XML:DB gives a more XML-like approach to XQuery results from the server.
+Since XML:DB support is built on top of JDBC, there is no difference in
+speed or features.  Since the XML:DB documentation itself is rather
+shallow, the best documentation we can give is an example of how to use
+it.  This example is included in the source distributed and located in
+\texttt{sql/src/jdbc/example/XMLDBtest.java}.
+
+\begin{verbatim}
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-2006 CWI.
+ * All Rights Reserved.
+ */
+
+import org.xmldb.api.*;
+import org.xmldb.api.base.*;
+import org.xmldb.api.modules.*;
+
+/**
+ * Quick example demonstrating the XML:DB driver.
+ *
+ * To compile and run this example, MonetDB_XMLDB.jar, MonetDB_JDBC.jar
+ * and xmldb.jar (from the lib dir) should be in the classpath.
+ *
+ * @author Fabian Groffen
+ */
+public class XMLDBtest {
+	public static void main(String[] args) throws Exception {
+		Class.forName("nl.cwi.monetdb.xmldb.base.MonetDBDatabase");
+		try {
+			Collection col = DatabaseManager.getCollection("xmldb:monetdb://localhost/demo", "monetdb", "monetdb"); 
+
+			XQueryService xqs = (XQueryService)col.getService("XQueryService", "1");
+			ResourceSet set = xqs.query("(<foo>1</foo>,<bar />)");
+			ResourceIterator it = set.getIterator();
+			while(it.hasMoreResources()) {
+				Resource r = it.nextResource();
+				System.out.println(r.getContent());
+			}
+			
+		} catch (XMLDBException e) {
+			e.printStackTrace();
+		}
+	}
 }
 \end{verbatim}
 
