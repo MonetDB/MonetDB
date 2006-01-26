@@ -1161,7 +1161,7 @@ static int xquery_pre_range(XqueryCtx* ctx, BAT* b, oid from, oid to) {
     return 1;
 }
 
-static int MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_frag, int top, int lastVal) {
+static int MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_frag, int top) {
     oid pre = from;
 
     if ( ctx->typedMode ){
@@ -1176,10 +1176,8 @@ static int MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_frag, 
     } while( moreTags(ctx) && (pre<=to) );
 
     if ( ctx->typedMode ) {
-        stream_printf(GDKout,"\n</xs:anyNode>");
-        if ( !lastVal )
-            stream_printf(GDKout, "\n");
-        }
+        stream_printf(GDKout,"\n</xs:anyNode>\n");
+    }
     return 1;
 }
 
@@ -1312,11 +1310,11 @@ static int  seqEnd(XqueryCtx* ctx) {
 /**
  * Emit a NODE element of an XQUERY/Pathfinder result sequence
  */
-static int seqEmitNode(XqueryCtx* ctx, oid preVal, BAT* pre_frag, int top, int lastVal) {
+static int seqEmitNode(XqueryCtx* ctx, oid preVal, BAT* pre_frag, int top) {
     ptr res;
     /* incomplete, different for dmMode ?? */
     idxTVinWS(res,ctx,PRE_SIZE,preVal);
-    return MY_xquery_pre_range(ctx,preVal,preVal+*(int*) res, pre_frag, top, lastVal);
+    return MY_xquery_pre_range(ctx,preVal,preVal+*(int*) res, pre_frag, top);
 }
 
 /**
@@ -1546,7 +1544,7 @@ int xquery_print_result(
                         int oldCtx = switchWsContext(ctx,frag);
                         BAT *b;
                         wsBAT(b,ctx,PRE_FRAG)
-                            if ( !seqEmitNode(ctx, valoid, b, 1/*top*/, lastVal) )
+                            if ( !seqEmitNode(ctx, valoid, b, 1/*top*/) )
                                 return GDK_FAIL;
                         switchWsContext(ctx,oldCtx);
                         break;
