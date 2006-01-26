@@ -99,7 +99,7 @@ typedef struct {
  * process the function bodies.  Hence, they will be replaced
  * there as well.
  */
-PFarray_t *var_env[HASH_BUCKETS];
+static PFarray_t *var_env[HASH_BUCKETS];
 
 %}
 
