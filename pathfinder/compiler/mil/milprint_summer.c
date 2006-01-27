@@ -7486,7 +7486,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f, "# fn:delete (node) as stmt\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
-                  "int_values := int_values.seqbase(nil).insert(nil, UPDATE_DELETE).seqbase(0@0);\n"
+                  "int_values := int_values.append(UPDATE_DELETE);\n"
                   "var delitemID := int_values.reverse().find(UPDATE_DELETE);\n"
                   "var item1 := constant2bat(delitemID);\n"
                   "var item2 := constant2bat(item);\n"
@@ -7554,7 +7554,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "}\n"
                   "int_values := int_values.append([lng](doclevel));\n"
                   "doclevel := [lng](doclevel).leftjoin(int_values.reverse());\n"
-                  "int_values := int_values.seqbase(nil).insert(nil, UPDATE_INSERT).seqbase(0@0);\n"
+                  "int_values := int_values.append(UPDATE_INSERT);\n"
                   "var insitemID := int_values.reverse().find(UPDATE_INSERT);\n"
                   "var item1 := constant2bat(insitemID);\n"
                   "var item2 := constant2bat(docitem);\n"
@@ -7631,7 +7631,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "var qn := loc.strconcat(\"\\001\").strconcat(prefix).strconcat(\"\\001\").strconcat(uri).strconcat(\"\\001\");\n"
                   "str_values := str_values.append(qn);\n"
                   "qn := constant2bat(qn).leftjoin(str_values.reverse());\n"
-                  "int_values := int_values.seqbase(nil).insert(nil, UPDATE_SETATTR).seqbase(0@0);\n"
+                  "int_values := int_values.append(UPDATE_SETATTR);\n"
                   "var setattrID := int_values.reverse().find(UPDATE_SETATTR);\n"
                   "var item1 := constant2bat(setattrID);\n"
                   "var item2 := constant2bat(item%03u);\n"
@@ -7715,7 +7715,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "var qn := loc.strconcat(\"\\001\").strconcat(prefix).strconcat(\"\\001\").strconcat(uri).strconcat(\"\\001\");\n"
                   "str_values := str_values.append(qn);\n"
                   "qn := constant2bat(qn).leftjoin(str_values.reverse());\n"
-                  "int_values := int_values.seqbase(nil).insert(nil, UPDATE_SETATTR).seqbase(0@0);\n"
+                  "int_values := int_values.append(UPDATE_SETATTR);\n"
                   "var unsetattrID := int_values.reverse().find(UPDATE_SETATTR);\n"
                   "var item1 := constant2bat(unsetattrID);\n"
                   "var item2 := constant2bat(item%03u);\n"
@@ -7756,7 +7756,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RL(args));
         milprintf(f,
-                  "int_values := int_values.seqbase(nil).insert(nil, UPDATE_SETTEXT).seqbase(0@0);\n"
+                  "int_values := int_values.append(UPDATE_SETTEXT);\n"
                   "var settextID := int_values.reverse().find(UPDATE_SETTEXT);\n"
                   "var item1 := constant2bat(settextID);\n"
                   "var item2 := constant2bat(item%03u);\n"
@@ -7794,7 +7794,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RL(args));
         milprintf(f,
-                  "int_values := int_values.seqbase(nil).insert(nil, UPDATE_SETCOMMENT).seqbase(0@0);\n"
+                  "int_values := int_values.append(UPDATE_SETCOMMENT);\n"
                   "var setcommentID := int_values.reverse().find(UPDATE_SETCOMMENT);\n"
                   "var item1 := constant2bat(setcommentID);\n"
                   "var item2 := constant2bat(item%03u);\n"
@@ -7835,7 +7835,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RRL(args));
         milprintf(f,
-                  "int_values := int_values.seqbase(nil).insert(nil, UPDATE_SETPI).seqbase(0@0);\n"
+                  "int_values := int_values.append(UPDATE_SETPI);\n"
                   "var setpiID := int_values.reverse().find(UPDATE_SETPI);\n"
                   "var item1 := constant2bat(setpiID);\n"
                   "var item2 := constant2bat(item%03u);\n"

@@ -418,7 +418,6 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
         var knd_no  := str(chr(48 + knd));
         var knd_pre := docBAT.find("pre_kind").ord_uselect(knd).hmark(PRE_BASE).chk_order();
         var knd_nid := knd_pre.leftfetchjoin(pre_nid).chk_order();
-knd_nid.print();
         if ((htype(knd_nid) != 0) or (head(knd_nid) != "void")) {
             ERROR("pathfinder.mx: shred_doc_impl(): htype(knd_nid) = %d, head(knd_nid) = %s !\n",
                   htype(knd_nid), head(knd_nid));
@@ -426,7 +425,6 @@ knd_nid.print();
         docBAT.insert("knd_nid_" + knd_no, knd_nid);
         if ( (knd = ELEMENT) or (knd = PI) ) {
             var knd_prop := knd_pre.leftfetchjoin(docBAT.find("pre_prop")).chk_order();
-knd_prop.print();
             if ((htype(knd_prop) != 0) or (head(knd_prop) != "void")) {
                 ERROR("pathfinder.mx: shred_doc_impl(): htype(knd_prop) = %d, head(knd_prop) = %s !\n",
                       htype(knd_prop), head(knd_prop));
@@ -477,6 +475,9 @@ knd_prop.print();
                 empty := slice(org, 0, PAGEFREE - 1).project(cast(nil,tpe));
             }
             stretch := new(void, tpe, len_1).seqbase(seq_0);
+	    if (tpe = void) {
+		stretch := stretch.reverse().seqbase(0@0).reverse();
+	    }
             var fst := 0;
             var seq := oid(nil);
             while (fst < len_0) {
