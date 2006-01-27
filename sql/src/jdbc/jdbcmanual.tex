@@ -222,6 +222,13 @@ Connection con = DriverManager.getConnection(
     "monetdb",
     "monetdb"
 );
+Statement stmt = con.createStatement();
+
+ResultSet rs = stmt.executeQuery("1 + 1");
+while (rs.next()) {
+	System.out.println(rs.getString(1));
+}
+rs.close();
 \end{verbatim}
 In the above example, two things are different then for a normal SQL
 connection: 1) the port number to connect to is given explicitly, and 2)
