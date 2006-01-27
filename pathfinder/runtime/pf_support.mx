@@ -2774,9 +2774,19 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	switch(ATOMstorage(ATOMtype(batlist[0]->ttype))) {
 	case TYPE_chr:	@:mposjoin(chr,tloc,simple)@
 	case TYPE_sht:	@:mposjoin(sht,tloc,simple)@
+#if SIZEOF_OID == SIZEOF_INT
+	/* cannot use tloc on oid(void) */
+	case TYPE_int:	@:mposjoin(int,tail,simple)@
+#else
 	case TYPE_int:	@:mposjoin(int,tloc,simple)@
+#endif
 	case TYPE_flt:	@:mposjoin(flt,tloc,simple)@
+#if SIZEOF_OID == SIZEOF_LNG
+	/* cannot use tloc on oid(void) */
+	case TYPE_lng:	@:mposjoin(lng,tail,simple)@
+#else
 	case TYPE_lng:	@:mposjoin(lng,tloc,simple)@
+#endif
 	case TYPE_dbl:	@:mposjoin(dbl,tloc,simple)@
 	default:
 		if (batlist[0]->tvarsized) {
