@@ -167,6 +167,9 @@ results:
 Example 4: multi-destinations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+'(Note: support for multi-destinations is not implemented yet, but it has
+high priority on the TODO list)'
+
 Sometimes, we might want to make the same RPC call to multiple hosts.
 This is useful in case a big XML database is distributed among several
 hosts, and we want to carry out our query on all those hosts to get all
@@ -200,7 +203,6 @@ hosts.  The host "bar.org" has the following data:
  
 The host "foo.org" contains the other fraction of "filmDB.xml":
 
-
     <filmDB>
       <film>
         <filmName>Seven Years In Tibet</filmName>
@@ -232,7 +234,6 @@ Suppose we only know that "filmDB.xml" is distributed between those two
 hosts, and we want to search in "filmDB.xml" to see in which film Sean
 Connery and Brad Pitt have acted.  In this case, we can use the
 following query (please correct me if this query contains error):
-
 
     import module namespace soap = "http://www.cwi.nl/~zhang/soap/" at
         "http://www.cwi.nl/~zhang/soap/soap.xq";
