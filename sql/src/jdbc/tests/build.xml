@@ -88,6 +88,7 @@ All Rights Reserved.
     <antcall target="Test_Cautocommit" />
     <antcall target="Test_Csavepoints" />
     <!-- antcall target="Test_Cmanycon" /-->
+    <antcall target="Test_Ctransaction" />
     <antcall target="Test_Creplysize" />
     <antcall target="Test_Sbatching" />
     <antcall target="Test_PStimedate" />
@@ -127,6 +128,12 @@ All Rights Reserved.
   <target name="Test_Cmanycon">
     <antcall target="test_class">
       <param name="test.class" value="Test_Cmanycon" />
+    </antcall>
+  </target>
+
+  <target name="Test_Ctransaction">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Ctransaction" />
     </antcall>
   </target>
 

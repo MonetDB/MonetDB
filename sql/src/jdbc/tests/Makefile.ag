@@ -17,6 +17,7 @@
 EXTRA_DIST = \
 		Test_Cautocommit.java \
 		Test_Csavepoints.java \
+		Test_Ctransaction.java \
 		Test_PStimedate.java \
 		Test_Rbooleans.java \
 		Test_Rpositioning.java \
@@ -31,6 +32,7 @@ ant_compile = {
 	FILES = \
 		Test_Cautocommit.class \
 		Test_Csavepoints.class \
+		Test_Ctransaction.class \
 		Test_PStimedate.class \
 		Test_Rbooleans.class \
 		Test_Rpositioning.class \

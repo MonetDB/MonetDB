@@ -1,5 +1,6 @@
 HAVE_JAVA?Test_Cautocommit
 HAVE_JAVA?Test_Csavepoints
+HAVE_JAVA?Test_Ctransaction
 HAVE_JAVA?Test_Creplysize
 HAVE_JAVA?Test_PStimedate
 HAVE_JAVA?Test_PStimezone
