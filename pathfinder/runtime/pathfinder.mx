@@ -467,6 +467,7 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
         var stretch;
         if (PAGEFREE > 0) {
             var tpe := ttype(org);
+            if (tpe = void) tpe := oid;
             var empty;
             if (nme = "pre_size" ) {
                 empty := slice(org, 0, PAGEFREE - 1).number();
@@ -475,9 +476,6 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
                 empty := slice(org, 0, PAGEFREE - 1).project(cast(nil,tpe));
             }
             stretch := new(void, tpe, len_1).seqbase(seq_0);
-	    if (tpe = void) {
-		stretch := stretch.reverse().seqbase(0@0).reverse();
-	    }
             var fst := 0;
             var seq := oid(nil);
             while (fst < len_0) {
