@@ -80,8 +80,8 @@ typedef struct mvc {
 	char auto_commit;
 	char ac_on_commit;	/* if 1, auto_commit should be enabled on
 	                       commit, rollback, etc. */
-	char reply_size;
-	char debug;
+	int debug;
+	int reply_size;
 
 	sql_trans *trans;
 
