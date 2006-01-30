@@ -207,7 +207,7 @@ Even though JDBC was designed for the SQL language, the MonetDB JDBC
 driver can be used to interact with the MonetDB/XQuery server.  The JDBC
 will act differently and limited when making such connection, but the
 basic query and answer retrieval is supported.  All SQL specific
-methods, such as <tt>COMMIT</tt>, <tt>SAVEPOINT</tt>, et-cetera will not
+methods, such as \texttt{COMMIT}, \texttt{SAVEPOINT}, et-cetera will not
 work and most probably cause errors when being used.
 
 In order to use XQuery over JDBC, the driver has to be instructed to
@@ -222,6 +222,13 @@ Connection con = DriverManager.getConnection(
     "monetdb",
     "monetdb"
 );
+Statement stmt = con.createStatement();
+
+ResultSet rs = stmt.executeQuery("1 + 1");
+while (rs.next()) {
+    System.out.println(rs.getString(1));
+}
+rs.close();
 \end{verbatim}
 In the above example, two things are different then for a normal SQL
 connection: 1) the port number to connect to is given explicitly, and 2)
@@ -253,24 +260,6 @@ it.  This example is included in the source distributed and located in
 \texttt{sql/src/jdbc/example/XMLDBtest.java}.
 
 \begin{verbatim}
-/*
- * The contents of this file are subject to the MonetDB Public License
- * Version 1.1 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
- *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- * License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is the MonetDB Database System.
- *
- * The Initial Developer of the Original Code is CWI.
- * Portions created by CWI are Copyright (C) 1997-2006 CWI.
- * All Rights Reserved.
- */
-
 import org.xmldb.api.*;
 import org.xmldb.api.base.*;
 import org.xmldb.api.modules.*;
@@ -284,23 +273,23 @@ import org.xmldb.api.modules.*;
  * @author Fabian Groffen
  */
 public class XMLDBtest {
-	public static void main(String[] args) throws Exception {
-		Class.forName("nl.cwi.monetdb.xmldb.base.MonetDBDatabase");
-		try {
-			Collection col = DatabaseManager.getCollection("xmldb:monetdb://localhost/demo", "monetdb", "monetdb"); 
+    public static void main(String[] args) throws Exception {
+        Class.forName("nl.cwi.monetdb.xmldb.base.MonetDBDatabase");
+        try {
+            Collection col = DatabaseManager.getCollection("xmldb:monetdb://localhost/demo", "monetdb", "monetdb"); 
 
-			XQueryService xqs = (XQueryService)col.getService("XQueryService", "1");
-			ResourceSet set = xqs.query("(<foo>1</foo>,<bar />)");
-			ResourceIterator it = set.getIterator();
-			while(it.hasMoreResources()) {
-				Resource r = it.nextResource();
-				System.out.println(r.getContent());
-			}
-			
-		} catch (XMLDBException e) {
-			e.printStackTrace();
-		}
-	}
+            XQueryService xqs = (XQueryService)col.getService("XQueryService", "1");
+            ResourceSet set = xqs.query("(<foo>1</foo>,<bar />)");
+            ResourceIterator it = set.getIterator();
+            while(it.hasMoreResources()) {
+                Resource r = it.nextResource();
+                System.out.println(r.getContent());
+            }
+            
+        } catch (XMLDBException e) {
+            e.printStackTrace();
+        }
+    }
 }
 \end{verbatim}
 
