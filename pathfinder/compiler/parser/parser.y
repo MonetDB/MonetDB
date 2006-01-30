@@ -919,10 +919,17 @@ ModuleImport              : "import module" ModuleNS_ OptAtStringLiterals_
                               c = $3;
 
                               while (c->kind == p_schm_ats) {
-                                  add_to_module_wl (
-                                      $2.root->sem.str,       /* ID */
-                                      $2.hole->sem.str,       /* NS */
-                                      c->child[0]->sem.str);  /* URI */
+                                  if($2.root){
+                                      add_to_module_wl (
+                                        $2.root->sem.str,       /* ID */
+                                        $2.hole->sem.str,       /* NS */
+                                        c->child[0]->sem.str);  /* URI */
+                                  } else {
+                                      add_to_module_wl (
+                                        "",                     /* ID */
+                                        $2.hole->sem.str,       /* NS */
+                                        c->child[0]->sem.str);  /* URI */
+                                  }
                                   c = c->child[1];
                               }
 
