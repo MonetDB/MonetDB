@@ -606,7 +606,6 @@ BBPinit(void)
 					;
 		} else {
 			GDKerror("BBPinit: ignore line %s\n", buffer);
-
 			continue;
 		}
 		if (i >= BBPsize) {
@@ -622,7 +621,7 @@ BBPinit(void)
 			max_stamp = BBP_lastused(i);
 		if (BBP_lastused(i) < min_stamp)
 			min_stamp = BBP_lastused(i);
-		BBP_lrefs(i) = 0;
+		BBP_refs(i) = 0;
 		BBP_lrefs(i) = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 		c = strchr(batname, '~');
 		if (c && c == batname) {
