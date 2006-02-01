@@ -77,9 +77,11 @@ typedef struct mvc {
 
 	modes_t mode;
 	modes_t explain; 
-	int auto_commit;
-	int reply_size;
+	char auto_commit;
+	char ac_on_commit;	/* if 1, auto_commit should be enabled on
+	                       commit, rollback, etc. */
 	int debug;
+	int reply_size;
 
 	sql_trans *trans;
 
@@ -394,7 +396,7 @@ mvc_commit(mvc *m, int chain, char *name)
 			sql_trans_destroy(tr);
 			store_unlock();
 			m->trans = NULL;
-			m->auto_commit = 1;
+			m->auto_commit = m->ac_on_commit;
 		}
 		m->type = Q_TRANS;
 		_DELETE(schema);
@@ -431,7 +433,7 @@ mvc_commit(mvc *m, int chain, char *name)
 		store_unlock();
 	} else {
 		m->trans = NULL;
-		m->auto_commit = 1;
+		m->auto_commit = m->ac_on_commit;
 	}
 	_DELETE(schema);
 	if (ok == SQL_OK)
@@ -502,7 +504,7 @@ mvc_rollback(mvc *m, int chain, char *name)
 		store_unlock();
 	} else {
 		m->trans = NULL;
-		m->auto_commit = 1;
+		m->auto_commit = m->ac_on_commit;
 	}
 	_DELETE(schema);
 	m->type = Q_TRANS;
@@ -578,6 +580,7 @@ mvc_create(int clientid, backend_stack stk, bstream *rs, stream *ws)
 	m->mode = m_normal;
 	m->explain = m_normal;
 	m->auto_commit = 1;
+	m->ac_on_commit = 1;
 	m->reply_size = 100;
 	m->debug = 0;
 	m->depth = 0;

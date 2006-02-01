@@ -87,8 +87,8 @@ transactions(mvc *sql, symbol *s)
 			return sql_error(sql, 01, "START TRANSACTION: cannot start a transaction within a transaction");
 		if (sql->trans)
 			mvc_rollback(sql, 0, NULL);
-		if (sql->auto_commit == 1)
-			sql->auto_commit = 0;
+		sql->auto_commit = 0;
+		sql->ac_on_commit = 1;
 		(void) mvc_trans(sql);
 		sql->trans->level = s->data.ival;
 	} break;

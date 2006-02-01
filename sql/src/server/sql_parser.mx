@@ -2598,6 +2598,10 @@ atom:
  	  	$$ = _symbol_create_list( SQL_COLUMN,
 			_dlist_append_int(_dlist_create(), m->argc-1));
 	   } else {
+	  	AtomNode *an = (AtomNode*)$1;
+		atom *a = an->a; 
+		an->a = atom_copy(a, SA); 
+		atom_destroy(a);
 		$$ = $1;
 	   }
 	}

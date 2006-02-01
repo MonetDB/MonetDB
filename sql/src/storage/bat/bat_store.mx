@@ -363,6 +363,8 @@ module_destroy(sql_module * s)
 	_DELETE(s);
 }
 
+/*#define STORE_DEBUG 1 */
+
 sql_trans *
 sql_trans_destroy(sql_trans *t)
 {
@@ -381,8 +383,10 @@ sql_trans_destroy(sql_trans *t)
 		return res;
 	}
 
-	if (t->name)
+	if (t->name) {
 		_DELETE(t->name);
+		t->name = NULL;
+	}
 
 	cs_destroy(&t->schemas);
 	cs_destroy(&t->modules);
@@ -1996,6 +2000,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 	return first;
 }
 
+static int active = 1;
 static int logging = 0;
 
 void
@@ -2008,22 +2013,41 @@ store_exit()
 		return;
 
 	MT_set_lock(bs_lock, "store_exit");
-	if (gtrans)
-		sequences_exit();
+#ifdef STORE_DEBUG
+	fprintf(stderr, "store exit locked\n");
+#endif
+	active = 0;
 
+	/* busy wait till the logmanager is ready */
+	while (logging) {
+		MT_unset_lock(bs_lock, "store_exit");
+		MT_sleep_ms(100);
+		MT_set_lock(bs_lock, "store_exit");
+	}
+
+	if (gtrans) {
+		MT_unset_lock(bs_lock, "store_exit");
+		sequences_exit();
+		MT_set_lock(bs_lock, "store_exit");
+	}
 	if (spares > 0) 
 		destroy_spare_transactions();
-	/* busy wait till the logmanager is ready with the logging and cleanup */
-	transactions ++;
-	while (logging)
-		MT_sleep_ms(100);
-	logger = NULL;
 
 	logger_exit(l);
 	logger_destroy(l);
 
-	sql_trans_destroy(gtrans);
-	gtrans = NULL;
+	/* Open transactions have a link to the global transaction therefor
+	   we need busy waiting until all transactions have ended or
+	   (current implementation) simply keep the gtrans alive and simply
+	   exit (but leak memory).
+	 */ 
+	if (!transactions) { 
+		sql_trans_destroy(gtrans);
+		gtrans = NULL;
+	}
+#ifdef STORE_DEBUG
+	fprintf(stderr, "store exit unlocked\n");
+#endif
 	MT_unset_lock(bs_lock, "store_exit");
 	types_exit();
 }
@@ -2031,29 +2055,32 @@ store_exit()
 void
 store_manager()
 {
-	int res = SQL_OK;
+	while (active) {
+		int res = SQL_OK;
 
-	MT_set_lock(bs_lock, "store_manager");
-	if (transactions || !logger ||log_changes(logger) < 1000) {
+		MT_sleep_ms(3000000);
+		MT_set_lock(bs_lock, "store_manager");
+		if (transactions || !active || !logger || 
+			log_changes(logger) < 1000) {
+			MT_unset_lock(bs_lock, "store_manager");
+			continue;
+		}
+		logging = 1;
+		res = logger_restart(logger);
 		MT_unset_lock(bs_lock, "store_manager");
-		return;
+		if (logging && res == SQL_OK)
+			logger_cleanup(logger);
+		logging = 0;
 	}
-
-	logging = 1;
-	res = logger_restart(logger);
-	MT_unset_lock(bs_lock, "store_manager");
-	if (logging && res == SQL_OK)
-		logger_cleanup(logger);
-
-	logging = 0;
 }
+
 
 void
 store_lock()
 {
 	MT_set_lock(bs_lock, "trans_lock");
 #ifdef STORE_DEBUG
-	printf( "locked\n");
+	fprintf(stderr, "locked\n");
 #endif
 }
 
@@ -2061,7 +2088,7 @@ void
 store_unlock()
 {
 #ifdef STORE_DEBUG
-	printf( "unlocked\n");
+	fprintf(stderr, "unlocked\n");
 #endif
 	MT_unset_lock(bs_lock, "trans_unlock");
 }
@@ -2462,7 +2489,6 @@ module_dup(sql_trans *tr, int flag, sql_module * om, sql_trans *o)
 static sql_trans *
 trans_init(sql_trans *t, backend_stack stk, sql_trans *ot)
 {
-	t->name = NULL;
 	t->wtime = t->rtime = 0;
 	t->stime = timestamp ();
 	t->schema_updates = 0;
@@ -2490,12 +2516,11 @@ trans_dup(backend_stack stk, sql_trans *ot, char *newname)
 
 	cs_init(&t->modules, (fdestroy) &module_destroy);
 	cs_init(&t->schemas, (fdestroy) &schema_destroy);
+
+	/* name the old transaction */
 	if (newname) {
-		if (ot->name)
-			_DELETE(ot->name);
+		assert(ot->name == NULL);
 		ot->name = _strdup(newname);
-	} else {
-		ot->name = NULL;
 	}
 
 	if (ot->modules.set)
@@ -2965,8 +2990,9 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			void_append_inserted(odb, db);
 
 			if (bs_debug) {
-			printf("%s " SZFMT "\n", tt->dname, BATcount(odb));
-			BATprint(odb);
+				fprintf(stderr, 
+				"%s " SZFMT "\n", tt->dname, BATcount(odb));
+				BATprint(odb);
 			}
 
 			if (ttr == gtrans)
@@ -2976,6 +3002,13 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		}
 		bat_destroy(db);
 
+		/* TODO when there are concurrent transactions running,
+		   (transactions > 1) we should keep inserts, into  
+		   the central.insert bat
+		   During the next commit which doesn't have concurrent
+		   transactions, we should first append the old inserted
+		   values.	  
+		*/ 
 		do {
 			sql_column *cc = n->data;
 			sql_column *oc = m->data;
@@ -3130,12 +3163,6 @@ rollforward_trans(sql_trans *tr)
 		
 		if (tr->schema_updates) 
 			schema_number++;
-		/*
-		{
-			destroy_spare_transactions();
-			spares = 0;
-		}
-		*/
 	}
 	return ok;
 }

@@ -331,19 +331,19 @@ log_read_create(logger *logger, logformat *l, char *name)
 }
 
 static void
-logger_fakecommit(logger *logger)
+tr_commit(logger *logger)
 {
 	if (logger->debug & 1)
-		printf("logger_fakecommit\n");
+		printf("tr_commit\n");
 
-	bm_fakecommit(logger->bm);
+	bm_commit(logger->bm);
 }
 
 static void
-logger_abort(logger *logger)
+tr_abort(logger *logger)
 {
 	if (logger->debug & 1)
-		printf("logger_abort\n");
+		printf("tr_abort\n");
 
 	bm_abort(logger->bm);
 }
@@ -402,7 +402,7 @@ logger_readlog(logger *logger, char *filename)
 		switch (l.flag) {
 		case SQL_LOG_START:
 			if (logger->tid != 0)
-				logger_abort(logger);
+				tr_abort(logger);
 			logger->tid = l.nr;
 			if (logger->debug & 1)
 				fprintf(stderr, "logger tstart %d\n", 
@@ -414,9 +414,9 @@ logger_readlog(logger *logger, char *filename)
 				if (logger->debug & 1)
 					fprintf(stderr, "logger tend %d\n", 
 						logger->tid);
-				logger_fakecommit(logger);
+				tr_commit(logger);
 			} else {
-				logger_abort(logger);
+				tr_abort(logger);
 			}
 			logger->tid = 0;
 
@@ -452,7 +452,7 @@ logger_readlog(logger *logger, char *filename)
 	logger_close(logger);
 
 	if (logger->tid != 0) 
-		logger_abort(logger);
+		tr_abort(logger);
 
 	return 0;
 }
@@ -539,6 +539,8 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 		logger->sql_log = bat_new(TYPE_oid, TYPE_int, 1, "logger_new");
 		BATmode(logger->sql_log, PERSISTENT);
 		BBPrename(logger->sql_log->batCacheid, "sql_log");
+		if (TMcommit() != 0)	
+			return SQL_ERR;
 		BUNins(logger->sql_log, &id, &logger->id);
 	} else {
 		logger->sql_log = bat_descriptor(sql_log, "bm_create");

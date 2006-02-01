@@ -499,6 +499,7 @@ query string with "M".
 			}
 			if (sscanf(in->buf + in->pos, "auto_commit %d", &id) == 1) {
 				m->auto_commit = (id)?1:0;
+				m->ac_on_commit = m->auto_commit;
 				if (mvc_rollback(m, 0, NULL) < 0)
 					break;
 				in->pos = in->len;	/* HACK: should use parsed lenght */
@@ -748,6 +749,9 @@ Use default setting for trace.
 		out = block_stream(stream_wstream(out));
 
 		monetSetChannel(sqlthread, in, out);
+
+		client->fdin = in;
+		client->fdout = out;
 	}
 
 	if (out == 0) {
