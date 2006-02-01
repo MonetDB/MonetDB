@@ -662,6 +662,8 @@ sql_cast(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 
 	stmt *l = sql_value_exp(sql, scp, s, grp, subset, f);
 
+	if (!l)
+		return NULL;
 	/* strings may need too be truncated */
 	if (tpe ->type ->localtype == TYPE_str) { 
 		if (tpe->digits > 0) {

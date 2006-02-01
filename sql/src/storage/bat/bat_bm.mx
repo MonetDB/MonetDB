@@ -20,8 +20,10 @@
 @v 1.0
 @T
 @* Introduction
-Manages a collection of bats. This gives an abstraction on top of the monet
-bat ids.
+Manages the collections of bats needed for the SQL frontend. This gives 
+an abstraction on top of the monet bat ids. Currently it stores two sets;
+the active and persistent bats. The active set is store in the bats current 
+content, the deleted and inserted can then be found using the delta status. 
 
 @* Implementation Code 
 @h
@@ -43,9 +45,6 @@ extern ptr bun_find(BAT *b, ptr v);
 extern struct bm *bm_create(int debug);
 extern void bm_destroy(struct bm *bm);
 extern int bm_commit(struct bm *bm);
-
-/* fake commits as real commits are handled by a log manager */
-extern void bm_fakecommit(struct bm *bm );
 extern void bm_abort(struct bm *bm );
 
 extern oid bm_add_bat(struct bm *bm, BAT *b, char *name);
@@ -156,12 +155,25 @@ bm_create(int debug)
 	bm->debug = debug;
 	if (sql_catalog == 0) {
 		bm->bat_name = bm_create_bat(TYPE_oid, TYPE_str, BUFSIZ);
+		if (bm->debug)
+			printf("create sql_catalog\n");
 		BATmode(bm->bat_name, PERSISTENT);
 		BBPrename(bm->bat_name->batCacheid, "sql_catalog");
-	} else {
-		bm->bat_name = bat_descriptor(sql_catalog, "bm_create");
+		if (TMcommit() != 0)	/* save sql_catalog */
+			return SQL_ERR;
+	} else { /* find the persisten sql_catalog. As non persistent bats
+		    require a logical reference we also add a logical 
+		    reference for the persistent bats */
+		BUN p, q;
+		BAT *b = bat_descriptor(sql_catalog, "bm_create");
+
+		bm->bat_name = b;
+		BATloop(b, p, q) {
+			bat bid = *(oid *) BUNhead(b, p);
+
+			bat_incref(bid, TRUE, "bm_create");
+		}
 	}
-	BATcommit(bm->bat_name);
 	return bm;
 }
 
@@ -172,11 +184,13 @@ bm_destroy(bm *bm)
 	BAT *b = bm->bat_name;
 
 	/* destroy the deleted */
+/* would be an error ....
 	for (p = b->batDeleted; p < b->batFirst; p = BUNnext(b, p)) {
 		bat bid = *(oid *) BUNhead(b, p);
 
 		bat_decref(bid, TRUE);
 	}
+*/
 	/* free resources */
 	BATloop(b, p, q) {
 		bat bid = *(oid *) BUNhead(b, p);
@@ -193,33 +207,30 @@ bm_destroy(bm *bm)
 int
 bm_commit(bm *bm)
 {
-	(void)bm;
-	if (TMcommit() != 0)	/* save new bats */
-		return SQL_ERR;
-	return 0;
-}
-
-void
-bm_fakecommit(bm *bm)
-{
-	BUN p, q;
+	BUN p;
 	BAT *b = bm->bat_name;
-
-	BATloop(b, p, q) {
-		oid bid = *(oid *) BUNhead(b, p);
-		BAT *b = bat_descriptor(bid, "bm_fakecommit");
-
-		BATcommit(b);
-		bat_destroy(b);
-	}
 
 	/* remove the destroyed bats */
 	for (p = b->batDeleted; p < b->batFirst; p = BUNnext(b, p)) {
 		bat bid = *(oid *) BUNhead(b, p);
+		BAT *b = bat_descriptor(bid, "bm_commit");
 
+		BATmode(b, TRANSIENT);
 		bat_decref(bid, TRUE);
+		bat_destroy(b);
 	}
-	BATcommit(bm->bat_name);
+
+	for (p = b->batInserted; p < BUNlast(b); p = BUNnext(b, p)) {
+		oid bid = *(oid *) BUNhead(b, p);
+		BAT *b = bat_descriptor(bid, "bm_commit");
+
+		BATmode(b, PERSISTENT);
+		bat_destroy(b);
+	}
+	BATcommit(bm->bat_name); 
+	if (TMcommit() != 0)	/* save new bats */
+		return SQL_ERR;
+	return 0;
 }
 
 void
@@ -250,10 +261,15 @@ bm_add_bat(bm *bm, BAT *b, char *name)
 {
 	oid bid = bm_find_bat(bm, name);
 
-	if (bid && bid != b->batCacheid) 
-		BUNdelHead(bm->bat_name, &bid);
+	if (bid) {
+		if (bid != b->batCacheid) 
+			BUNdelHead(bm->bat_name, &bid);
+		else
+			return bid;
+	}
 	bid = b->batCacheid;
-	BATmode(b, PERSISTENT);
+	if (bm->debug)
+		printf("create %s\n", name);
 	BUNins(bm->bat_name, &bid, name);
 	bat_incref(bid, TRUE, "bm_add_bat");
 	return bid;

@@ -327,12 +327,8 @@ mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 int
 sqllogmanager()
 {
-	/* try log cleanup every 5 minute */
-	while (1) {
-		MT_sleep_ms(300000);
-		mvc_logmanager();
-	}
-	return GDK_SUCCEED;	/* or GDK_FAIL since it is not supposed to end/return? */
+	mvc_logmanager();
+	return GDK_SUCCEED;	
 }
 
 int

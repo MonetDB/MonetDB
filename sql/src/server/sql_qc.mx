@@ -222,7 +222,7 @@ qc_insert(qc *cache, sql_allocator *sa, symbol *s, atom **params, int paramlen, 
 	n->params = NULL;
 	n->paramlen = paramlen;
 	if (paramlen)
-		n->params = SA_NEW_ARRAY(sql_subtype,paramlen);
+		n->params = SA_NEW_ARRAY(sa, sql_subtype,paramlen);
 		for (i = 0; i < paramlen; i++) {
 			atom *a = params[i];
 

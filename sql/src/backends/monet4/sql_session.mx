@@ -749,6 +749,9 @@ Use default setting for trace.
 		out = block_stream(stream_wstream(out));
 
 		monetSetChannel(sqlthread, in, out);
+
+		client->fdin = in;
+		client->fdout = out;
 	}
 
 	if (out == 0) {

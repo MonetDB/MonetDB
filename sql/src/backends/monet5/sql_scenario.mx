@@ -305,12 +305,12 @@ SQLcompileInternal(str *ret, str *expr, int flag)
 	initSQLreferences();
 	m = sql->mvc;
 	if( !m->trans) {
-		int schema_nr = mvc_trans(c);
-		if (c->cache && (c->schema_number < schema_nr || c->qc->id > 1000)) {
-			c->schema_number = schema_nr;
-			if (c->qc)
-				qc_destroy(c->qc);
-			c->qc = qc_create(c->clientid);
+		int schema_nr = mvc_trans(m);
+		if (m->cache && (m->schema_number < schema_nr || m->qc->id > 1000)) {
+			m->schema_number = schema_nr;
+			if (m->qc)
+				qc_destroy(m->qc);
+			m->qc = qc_create(m->clientid);
 		}
 	}
 	if (!m->sa)
