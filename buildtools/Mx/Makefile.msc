@@ -1,7 +1,7 @@
 !IFDEF DEBUG
-CFLAGS = -I. -GF -W3 -MDd -nologo -Zi -G6 -Od -D_DEBUG -RTC1 -ZI
+CFLAGS = -I. -GF -W3 -MDd -nologo -Zi -Od -D_DEBUG -RTC1 -ZI
 !ELSE
-CFLAGS = -I. -GF -W3 -MD -nologo -Zi -G6
+CFLAGS = -I. -GF -W3 -MD -nologo -Zi
 !ENDIF
 
 all: Mx.exe prefixMxFile.exe epsffit.exe idxmx.exe

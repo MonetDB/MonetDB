@@ -16,10 +16,10 @@
  * All Rights Reserved.
  */
 
-#include <mx_config.h>
+#include "mx_config.h"
 
-#include <stdio.h>
-#include <string.h>
+#include "Mx.h"
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -79,9 +79,9 @@ processFile(void)
 	char letter, cmd[256];
 
 	if (!outputfile) {
-		outputfile = (char *) malloc(strlen(inputfile) + 2);
+		outputfile = malloc(strlen(inputfile) + 2);
 		outputfile[0] = '.';
-		strcpy(&outputfile[1], inputfile);
+		strncpy(outputfile + 1, inputfile, strlen(inputfile) + 1);
 		temp = 1;
 	}
 	fp = stripFile(openFile(inputfile, "r"));
@@ -106,7 +106,7 @@ processFile(void)
 	fclose(fp);
 	fclose(op);
 	if (temp) {
-		sprintf(cmd, "mv %s %s", outputfile, inputfile);
+		snprintf(cmd, sizeof(cmd), "mv '%s' '%s'", outputfile, inputfile);
 		system(cmd);
 	}
 }
@@ -122,16 +122,14 @@ main(int argc, char **argv)
 			prefixfile = optarg;
 			break;
 		case 'o':
-			outputfile = (char *) malloc(strlen(optarg) + 1);
-			strcpy(outputfile, optarg);
+			outputfile = strdup(optarg);
 			break;
 		default:
 			printUsage(argv[0]);
 			exit(0);
 		}
 	if (optind < argc) {
-		inputfile = (char *) malloc(strlen(argv[optind]));
-		strcpy(inputfile, argv[optind]);
+		inputfile = strdup(argv[optind]);
 	} else {
 		printUsage(argv[0]);
 		exit(1);

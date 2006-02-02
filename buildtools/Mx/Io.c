@@ -39,6 +39,12 @@
 #endif
 #include "disclaimer.h"
 
+#ifdef NATIVE_WIN32
+/* The POSIX name for this item is deprecated. Instead, use the ISO
+   C++ conformant name: _unlink. See online help for details. */
+#define unlink _unlink
+#endif
+
 #ifndef S_ISDIR			/* On Windows :-( */
 #define S_ISDIR(x)	(((x) & S_IFMT) == S_IFDIR)
 #endif
@@ -85,9 +91,9 @@ GetFile(char *s, CmdCode m)
 	fname = (char *) malloc(outputdir_len + strlen(bname) + strlen(dir2ext(m)) + 16);
 
 	if (strlen(dir2ext(m)) == 0)
-		sprintf(fname, "%s%c%s", outputdir, DIR_SEP, BaseName(s));
+		snprintf(fname, outputdir_len + strlen(bname) + strlen(dir2ext(m)) + 16, "%s%c%s", outputdir, DIR_SEP, BaseName(s));
 	else
-		sprintf(fname, "%s%c%s.%s", outputdir, DIR_SEP, BaseName(s), dir2ext(m));
+		snprintf(fname, outputdir_len + strlen(bname) + strlen(dir2ext(m)) + 16, "%s%c%s.%s", outputdir, DIR_SEP, BaseName(s), dir2ext(m));
 
 	for (f = files; f < files + nfile; f++) {
 		if (strcmp(f->f_name, fname) == 0) {
@@ -108,7 +114,7 @@ GetFile(char *s, CmdCode m)
 		f->f_str--;
 
 	f->f_tmp = (char *) malloc(strlen(outputdir) + strlen(bname) + strlen(dir2ext(m)) + 17);
-	sprintf(f->f_tmp, "%s%c%s.%s", outputdir, DIR_SEP, TempName(s), dir2ext(m));
+	snprintf(f->f_tmp, strlen(outputdir) + strlen(bname) + strlen(dir2ext(m)) + 17, "%s%c%s.%s", outputdir, DIR_SEP, TempName(s), dir2ext(m));
 
 	f->f_mode = 0;
 
@@ -145,7 +151,7 @@ FileName(char *name)
 	else
 		p = name;
 #endif
-	strcpy(bname, p);
+	strncpy(bname, p, sizeof(bname));
 	return bname;
 }
 
@@ -431,9 +437,9 @@ NextLine(void)
 				;
 			*path = *t = 0;
 			if (*inputdir && *s != DIR_SEP) {	/* absolute path */
-				sprintf(path, "%s%c", inputdir, DIR_SEP);
+				snprintf(path, sizeof(path), "%s%c", inputdir, DIR_SEP);
 			}
-			strcat(path, s);
+			strncat(path, s, sizeof(path) - strlen(path) - 1);
 			fptop[1] = fopen(path, "r");
 			if (fptop[1] == NULL) {
 				fprintf(stderr, "Mx: failed to include '%s'.\n", s);

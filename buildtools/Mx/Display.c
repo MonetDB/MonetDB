@@ -133,7 +133,7 @@ PrRule(char *tail)
 		return;
 	if TEXMODE {
 		if (tail) {
-			strcpy((char *) strchr(filename, '.') + 1, tail);
+			strcpy(strchr(filename, '.') + 1, tail);
 			ofile_printf("\n\n");
 			if (opt_column == 2) {
 				if (bodymode == 0)
@@ -157,7 +157,7 @@ PrRule(char *tail)
 			ofile_printf("\n<hr size=1 noshade>");
 		}
 		if (tail) {
-			strcpy((char *) strchr(filename, '.') + 1, tail);
+			strcpy(strchr(filename, '.') + 1, tail);
 			ofile_printf("<table width=\"100%%\"><tr>");
 			ofile_printf("<td align=right valign=top>");
 			ofile_printf("<font size=\"-1\"><i>%s", FileName(filename));
@@ -171,7 +171,7 @@ PrRule(char *tail)
 			ofile_printf(".nf\n.na\n");
 		}
 		if (tail) {
-			strcpy((char *) strchr(filename, '.') + 1, tail);
+			strcpy(strchr(filename, '.') + 1, tail);
 			ofile_printf("\\h'\\n(.lu-\\w'\\fI%s\\fP'u'", filename);
 			ofile_printf("\\v'-2u'");
 			ofile_printf("\\fI%s\\fP", FileName(filename));
@@ -192,7 +192,7 @@ PrPrelude(char *file)
 	char *s, *t, full[200];
 
 	/* find out the full name in 'full', the basename in 's', end in 't' */
-	strcpy(full, file);
+	strncpy(full, file, sizeof(full));
 	for (s = full; s[1]; s++) ;
 	while (s >= full && *s != DIR_SEP
 #ifdef WIN32
@@ -258,15 +258,19 @@ PrPrelude(char *file)
 		extern char *outputdir;
 
 		/* install the extra HTML filenames */
-		sprintf(filename_index, "%s%c%s", outputdir, DIR_SEP, s);
-		sprintf(filename_body, "%s%c%s", outputdir, DIR_SEP, s);
+		snprintf(filename_index, sizeof(filename_index),
+			 "%s%c%s", outputdir, DIR_SEP, s);
+		snprintf(filename_body, sizeof(filename_body),
+			 "%s%c%s", outputdir, DIR_SEP, s);
 
-		strcat(filename_index, ".index.html");
+		strncat(filename_index, ".index.html",
+			sizeof(filename_index) - strlen(filename_index) - 1);
 		ofile_index = fopen(filename_index, "w+");
 		if (disclaimer)
 			insertDisclaimer(ofile_index, filename_index);
 
-		strcat(filename_body, ".body.html");
+		strncat(filename_body, ".body.html",
+			sizeof(filename_body) - strlen(filename_body) - 1);
 		ofile_body = fopen(filename_body, "w+");
 		if (disclaimer)
 			insertDisclaimer(ofile_body, filename_body);

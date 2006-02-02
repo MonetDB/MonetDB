@@ -262,8 +262,8 @@ bib_look(char *str, char *buf, char **hit)
 }
 
 
-#define output(s,p) do { sprintf(out,s,p); out+=strlen(out); } while (0)
-#define outputNArg(s) do { sprintf(out,s); out+=strlen(out); } while (0)
+#define output(s,p) do { snprintf(out,sizeof(oubuf) - (out - oubuf),s,p); out+=strlen(out); } while (0)
+#define outputNArg(s) do { snprintf(out,sizeof(oubuf) - (out - oubuf),s); out+=strlen(out); } while (0)
 /* print a bibtex reference list (in TeX!). Later, it is converted to html. 
  */
 void
@@ -761,7 +761,7 @@ translate_text(char *p1, char *p2, char **stack, char *nextstack)
 					ofile_puts("<center>");
 				if (i == TYPE_WWW) {
 					ofile_printf("<a href=\"%s\">", opt_start);
-					sprintf(nextstack, "</a>\n");
+					snprintf(nextstack, 1000, "</a>\n");
 				} else {
 					ofile_printf("<%s>", translation[i]);
 					if (i <= TYPE_THANKS) {
@@ -769,11 +769,11 @@ translate_text(char *p1, char *p2, char **stack, char *nextstack)
 							ofile_puts("<br>[");
 						else
 							ofile_puts("[");
-						sprintf(nextstack, "]</%s>", translation[i]);
+						snprintf(nextstack, 1000, "]</%s>", translation[i]);
 					} else if (i >= TYPE_TITLE) {
-						sprintf(nextstack, "</%s></center>", translation[i]);
+						snprintf(nextstack, 1000, "</%s></center>", translation[i]);
 					} else {
-						sprintf(nextstack, "</%s>", translation[i]);
+						snprintf(nextstack, 1000, "</%s>", translation[i]);
 					}
 				}
 			}
@@ -786,8 +786,8 @@ translate_text(char *p1, char *p2, char **stack, char *nextstack)
 			if (i >= TYPE_BIB) {	/* get a label or bibname */
 				for (p4 = str; (*p4++ = *p3) != 0; *p3++ = 0) ;
 				if (i == TYPE_BIB) {
-					strcpy(p4 - 1, ".bib");
-					strcpy(bibtexfile, str);
+					strncpy(p4 - 1, ".bib", sizeof(str) - (p4 - 1 - str));
+					strncpy(bibtexfile, str, sizeof(bibtexfile));
 				} else if (i == TYPE_LABEL) {
 					ofile_printf("<a name=\"%s\"></a>&#60;%s&#62;", str, str);
 				} else if (i == TYPE_REF) {
@@ -795,17 +795,17 @@ translate_text(char *p1, char *p2, char **stack, char *nextstack)
 				} else {
 					char cmd[512], file[512];
 					FILE *fp;
-					sprintf(file, "%s%c%s", outputdir, DIR_SEP, str);
+					snprintf(file, sizeof(file), "%s%c%s", outputdir, DIR_SEP, str);
 
 					p4 = strchr(file + strlen(outputdir), '.');
 					if (p4)
 						*p4 = 0;
-					strcat(file, ".gif");
+					strncat(file, ".gif", sizeof(file) - strlen(file) - 1);
 					if ((fp = fopen(file, "r")) != 0) {
 						fclose(fp);
 					} else {
 						/* translate eps to 500x500-bounded gif */
-						sprintf(cmd, "epstogif %s %s 500 500\n", str, file);
+						snprintf(cmd, sizeof(cmd), "epstogif %s %s 500 500\n", str, file);
 
 						system(cmd);
 					}
@@ -852,7 +852,7 @@ translate_text(char *p1, char *p2, char **stack, char *nextstack)
 			ofile_printf("\n<table border=2>\n<tr>");
 			printed_column = table_column = 0;
 			if (table > 1) {
-				sprintf(str, "+</font></td><td colspan=%d align=right><font size=\"-1\">+</font></td></tr>\n</table>\n", table - 1);
+				snprintf(str, sizeof(str), "+</font></td><td colspan=%d align=right><font size=\"-1\">+</font></td></tr>\n</table>\n", table - 1);
 				STACK(str, stack);
 			} else {
 				STACK("+</font></td></tr>\n</table>\n", stack);
@@ -860,9 +860,9 @@ translate_text(char *p1, char *p2, char **stack, char *nextstack)
 		} else if (i < TYPE_DEF) {
 			/* a block code: 1 start-code now, stack the end-code. */
 			if (i < TYPE_TINY) {
-				sprintf(str, " <%s>", translation[i]);
+				snprintf(str, sizeof(str), " <%s>", translation[i]);
 			} else {
-				sprintf(str, " <font size=\"%s\">", translation[i]);
+				snprintf(str, sizeof(str), " <font size=\"%s\">", translation[i]);
 			}
 			ofile_puts(str);
 			str[0] = '<';

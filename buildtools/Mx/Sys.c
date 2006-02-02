@@ -98,7 +98,7 @@ Malloc(size_t size)
 {
 	char *buf;
 
-	if ((buf = malloc((unsigned) size)) == 0)
+	if ((buf = malloc(size)) == 0)
 		Fatal("Malloc", "Not enough memory");
 	return buf;
 }
@@ -116,7 +116,8 @@ Free(char *ptr)
 char *
 StrDup(const char *str)
 {
-	return strcpy(Malloc(strlen(str) +1), str);
+	size_t len = strlen(str) + 1;
+	return strncpy(Malloc(len), str, len);
 }
 
  /*VARGARGS*/ void

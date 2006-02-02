@@ -128,7 +128,7 @@ main(int argc, char **argv)
 					ury = (int) (iury + 0.5);
 				}
 			} else if (!strncmp(buf, "%%EndComments", 13)) {
-				strcpy(buf, "\n");	/* don't repeat %%EndComments */
+				strncpy(buf, "\n", sizeof(buf)); /* don't repeat %%EndComments */
 				break;
 			} else
 				fputs(buf, output);

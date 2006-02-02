@@ -44,7 +44,7 @@ InitIndex(void)
 	}
 
 	for (it = itable; it < itable + M_ITABLE; it++) {
-		sprintf(name, "Index %ld", (long) (it - itable));
+		snprintf(name, sizeof(name), "Index %ld", (long) (it - itable));
 		it->it_name = StrDup(name);
 		it->it_nentry = 0;
 	}
@@ -159,7 +159,7 @@ PrCont(void)
 
 		/* print the HTML3.0 TOC in the body frame file */
 		mx_out = 2;
-		sprintf(file, "%s.body.html", b);
+		snprintf(file, sizeof(file), "%s.body.html", b);
 		PrCmd("<center><table border=0>\n");
 		PrCmd("<tr><th colspan=2 align=right>");
 		PrCmd("Table Of Contents</th>");

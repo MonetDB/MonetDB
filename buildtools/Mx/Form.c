@@ -67,7 +67,7 @@ GenForm(void)
 		case Bfile:
 			IoWriteFile(d->d_cmd, d->d_dir);
 			PrPrelude(d->d_cmd);
-			sprintf(filename, "%s", d->d_cmd);
+			strncpy(filename, d->d_cmd, sizeof(filename));
 			FormTitle();
 			break;
 		case Efile:
@@ -80,7 +80,7 @@ GenForm(void)
 			UpdateFiles();
 			break;
 		case Ofile:
-			sprintf(filename, "%s.", d->d_cmd);
+			snprintf(filename, sizeof(filename), "%s.", d->d_cmd);
 			break;
 		case Module:
 			FormMod(d->d_cmd, d->d_mod);
