@@ -93,6 +93,10 @@
 #include <ctype.h>
 #include <assert.h>
 
+#ifdef NATIVE_WIN32
+#define strdup _strdup
+#endif
+
 #ifndef HAVE_SSIZE_T
 #if SIZEOF_SIZE_T == SIZEOF_INT
 typedef int ssize_t;

@@ -83,6 +83,10 @@ BAT *GDKenv = NULL;
 #ifdef HAVE_PWD_H
 # include <pwd.h>
 #endif
+
+#ifdef NATIVE_WIN32
+#define chdir _chdir
+#endif
 @}
 @+ Monet configuration file
 Parse a possible MonetDB.conf file (either in the default location
@@ -1435,7 +1439,7 @@ GDKinit(char *dbname, char *dbfarm, int alloc_map)
 		struct timeb tb;
 
 		ftime(&tb);
-		GDKtime_startsec = tb.time;
+		GDKtime_startsec = (int) tb.time;
 	}
 #endif
 #endif
@@ -1929,7 +1933,7 @@ GDKms(void)
 	struct timeb tb;
 
 	ftime(&tb);
-	return (tb.time - GDKtime_startsec) * 1000 + tb.millitm;
+	return (int) ((tb.time - GDKtime_startsec) * 1000 + tb.millitm);
 #endif
 #endif
 }

@@ -682,6 +682,9 @@ by inspecting the field descriptor returned by @code{mapi_fetch_field()}.
 # endif
 #endif
 
+#ifdef NATIVE_WIN32
+#define strdup _strdup
+#endif
 @h
 #ifndef _MAPI_H_INCLUDED
 #define _MAPI_H_INCLUDED

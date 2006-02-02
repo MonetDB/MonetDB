@@ -88,6 +88,8 @@ limit the access permisions of 'monetdb' to the level of a guest account.
 #ifdef NATIVE_WIN32
 /* Windows doesn't declare chdir, even though it does provide the function */
 extern int chdir(const char *);
+#define strdup _strdup
+#define fileno _fileno
 #endif
 
 static FILE *toConsole;

@@ -51,7 +51,7 @@ typedef struct _modstack_t {
 
 typedef struct CLIENT {
 	str user;		/* user name. */
-	ssize_t login;		/* session start time */
+	time_t login;		/* session start time */
 	int permission;		/* not yet used. */
 	stream *fdin, *fdout;	/* streams from and to user. */
 	stream *bkin, *bkout;	/* backup stream storage */

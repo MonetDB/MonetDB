@@ -105,6 +105,10 @@ extern char *strdup(const char *);
 #define strdup(s)	strcpy(malloc(strlen(s)+1),(s))
 #endif
 #endif
+#ifdef NATIVE_WIN32
+#define strdup _strdup
+#define getpid _getpid
+#endif
 
 /* these two are used of the set parameter passed into functions is NULL */
 static int default_setlen = 0;

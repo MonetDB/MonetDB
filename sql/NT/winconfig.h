@@ -20,6 +20,9 @@
 
 #define WIN32_LEAN_AND_MEAN 1
 
+/* Visual Studio 8 has deprecated lots of stuff: suppress warnings */
+#define _CRT_SECURE_NO_DEPRECATE 1
+
 #if defined(_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
 /* In this case, malloc and friends are redefined in crtdbg.h to debug
    versions.  We need to include stdlib.h and malloc.h first or else
@@ -282,7 +285,7 @@ typedef int ssize_t;
 
 /* Define to 1 if you have the `strcasecmp' function. */
 #define HAVE_STRCASECMP 1
-#define strcasecmp(x,y) stricmp(x,y)
+#define strcasecmp(x,y) _stricmp(x,y)
 
 /* Define to 1 if you have the `strcspn' function. */
 #define HAVE_STRCSPN 1

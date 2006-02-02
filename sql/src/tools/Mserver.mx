@@ -86,6 +86,10 @@ The options have the following meaning:
 #include "monet_options.h"
 #include "initmodules.h"
 #include <locale.h>
+
+#ifdef NATIVE_WIN32
+#define getcwd _getcwd
+#endif
 @-
 The architecture is setup to handle multiple streams of requests.
 The first thread started represents the server. It reads from standard input

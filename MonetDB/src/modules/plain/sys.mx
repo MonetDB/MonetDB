@@ -947,7 +947,7 @@ view_client_login(BAT **retval	/* put pointer to BAT[int,str] record here. */
 
 	for (i = 0; i < MAXCLIENTS; i++)
 		if (monet_clients[i].user) {
-			time_t logintime = (time_t) monet_clients[i].login;
+			time_t logintime = monet_clients[i].login;
 			struct tm localt;
 
 #ifdef HAVE_LOCALTIME_R

@@ -1418,7 +1418,7 @@ int
 win_rmdir(const char *pathname)
 {
 	char buf[128], *p = reduce_dir_name(pathname, buf, sizeof(buf));
-	int ret = rmdir(p);
+	int ret = _rmdir(p);
 
 	if (p != buf)
 		free(p);
@@ -1429,7 +1429,7 @@ int
 win_mkdir(const char *pathname, const int mode)
 {
 	char buf[128], *p = reduce_dir_name(pathname, buf, sizeof(buf));
-	int ret = mkdir(p);
+	int ret = _mkdir(p);
 
 	(void)mode;
 	if (p != buf)

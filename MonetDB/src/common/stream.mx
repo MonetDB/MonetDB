@@ -325,6 +325,9 @@ extern char *strdup(const char *);
 #define strdup(s)	strcpy(malloc(strlen(s)+1),(s))
 #endif
 #endif
+#ifdef NATIVE_WIN32
+#define strdup _strdup
+#endif
 
 int
 stream_init(void)

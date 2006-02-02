@@ -41,6 +41,11 @@
 
 #include "monetdb_config.h"
 
+#ifdef NATIVE_WIN32
+#define WIN32 1
+#define WINNT 1
+#endif
+
 #include "php.h"
 #include "php_ini.h"
 #include "ext/standard/info.h"
