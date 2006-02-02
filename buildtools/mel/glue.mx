@@ -360,10 +360,10 @@ gen_time()
 {
 	static char buf[128];
 	time_t t = time(NULL);
-	char *q, *p = (char *) ctime(&t);
+	char *q, *p = ctime(&t);
 
 	strcpy(buf, p);
-	if ((q = (char *) strchr(buf, '\n')) != 0)
+	if ((q = strchr(buf, '\n')) != 0)
 		*q = 0;
 	return buf;
 }

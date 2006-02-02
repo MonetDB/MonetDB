@@ -25,6 +25,12 @@
 #include "list.h"
 #include <string.h>
 
+#ifdef NATIVE_WIN32
+/* The POSIX name for this item is deprecated. Instead, use the ISO
+   C++ conformant name: _strdup. See online help for details. */
+#define strdup _strdup
+#endif
+
 class Link:public language {
       private:
 	List *monet_mod_path;
@@ -50,7 +56,6 @@ class Link:public language {
 #include <mel_config.h>
 #include "link.h"
 #include "ListIterator.h"
-#include <string.h>
 #include <stdlib.h>
 
 int

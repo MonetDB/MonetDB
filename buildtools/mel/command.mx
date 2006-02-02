@@ -69,6 +69,12 @@ class Command:public Symbol {
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef NATIVE_WIN32
+/* The POSIX name for this item is deprecated. Instead, use the ISO
+   C++ conformant name: _strdup. See online help for details. */
+#define strdup _strdup
+#endif
+
 static int id_rand(void);
 
 Command::Command(int t, char *n, char *fcn, int type, Symbol *result, List *args, char *hlp) : Symbol(t, n)
@@ -238,7 +244,7 @@ id_rand(void)
 	int i, r;
 
 	if (!seeded) {
-		srand(time(NULL));
+		srand((unsigned int) time(NULL));
 		seeded = 1;
 	}
 

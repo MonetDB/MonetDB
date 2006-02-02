@@ -62,6 +62,12 @@ class Symbol {
 #include "language.h"
 #include <string.h>
 
+#ifdef NATIVE_WIN32
+/* The POSIX name for this item is deprecated. Instead, use the ISO
+   C++ conformant name: _strdup. See online help for details. */
+#define strdup _strdup
+#endif
+
 Symbol::Symbol(int token, const char *name)
 {
 	_token = token;

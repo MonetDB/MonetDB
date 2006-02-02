@@ -1,8 +1,8 @@
 MX = ..\Mx\Mx.exe
 !IFDEF DEBUG
-CFLAGS = -I. -GF -W3 -wd4273 -wd4102 -MDd -nologo -Zi -G6 -Od -D_DEBUG -RTC1 -ZI
+CFLAGS = -I. -GF -W3 -wd4273 -wd4102 -MDd -nologo -Zi -Od -D_DEBUG -RTC1 -ZI
 !ELSE
-CFLAGS = -I. -GF -wd4273 -wd4102 -W3 -MD -nologo -Zi -G6
+CFLAGS = -I. -GF -wd4273 -wd4102 -W3 -MD -nologo -Zi
 !ENDIF
 CXXFLAGS = $(CFLAGS) -EHsc
 MV=copy
@@ -42,6 +42,7 @@ unistd.h: Makefile.msc
 	$(ECHO) #ifndef UNISTD_H > unistd.h
 	$(ECHO) #define UNISTD_H >> unistd.h
 	$(ECHO) #include "io.h" >> unistd.h
+	$(ECHO) #define isatty _isatty >> unistd.h
 	$(ECHO) #endif >> unistd.h
 
 .SUFFIXES: .mx .cxx

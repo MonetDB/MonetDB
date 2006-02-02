@@ -60,6 +60,12 @@ class FileInfo {
 #include <stdio.h>
 #include <string.h>
 
+#ifdef NATIVE_WIN32
+/* The POSIX name for this item is deprecated. Instead, use the ISO
+   C++ conformant name: _strdup. See online help for details. */
+#define strdup _strdup
+#endif
+
 FileInfo::FileInfo(FILE *f, int lineno, char *filename, char *basename, FileInfo *parent)
 {
 	_f = f;

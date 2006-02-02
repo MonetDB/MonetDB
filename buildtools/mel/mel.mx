@@ -492,6 +492,12 @@ main(int argc, char *argv[])
 #include <ctype.h>
 #include <string.h>
 
+#ifdef NATIVE_WIN32
+/* The POSIX name for this item is deprecated. Instead, use the ISO
+   C++ conformant name: _strdup. See online help for details. */
+#define strdup _strdup
+#endif
+
 extern yystype yylval;
 
 #ifdef FLEX_SCANNER
@@ -859,6 +865,12 @@ using namespace std;
 #include "any_arg.h"
 #include "prelude.h"
 #include "epilogue.h"
+
+#ifdef NATIVE_WIN32
+/* The POSIX name for this item is deprecated. Instead, use the ISO
+   C++ conformant name: _strdup. See online help for details. */
+#define strdup _strdup
+#endif
 
 extern char *script;
 %}

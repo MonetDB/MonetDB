@@ -46,6 +46,12 @@ class Builtin:public Symbol {
 #include "language.h"
 #include <string.h>
 
+#ifdef NATIVE_WIN32
+/* The POSIX name for this item is deprecated. Instead, use the ISO
+   C++ conformant name: _strdup. See online help for details. */
+#define strdup _strdup
+#endif
+
 Builtin::Builtin( int t, char *n, char *fcn, char *hlp, char* sig ) 
 	: Symbol(t,n)
 {
