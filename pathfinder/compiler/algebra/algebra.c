@@ -675,7 +675,6 @@ PFatt_str (PFalg_att_t att) {
         case att_sort11:  return "sort11";
         case att_sort12:  return "sort12";
         case att_sort13:  return "sort13";
-        case att_sort14:  return "sort14";
         case att_res:     return "res";
         case att_ord:     return "ord";
         case att_res1:    return "res1";
