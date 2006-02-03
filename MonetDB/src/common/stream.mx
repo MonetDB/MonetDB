@@ -683,7 +683,8 @@ static int
 file_flush(stream *s)
 {
 	FILE *fp = (FILE*)s->stream_data.p;
-	if (s->access == ST_WRITE && (fflush(fp) < 0)){
+
+	if (s->access == ST_WRITE && fflush(fp) < 0){
 		s->errnr = WRITE_ERROR;
 		return 1;
 	}
@@ -693,8 +694,16 @@ file_flush(stream *s)
 static int
 file_fsync(stream *s)
 {
+
 	FILE *fp = (FILE*)s->stream_data.p;
-	if (s->access == ST_WRITE && (fsync(fileno(fp)) < 0)){
+
+	if (s->access == ST_WRITE &&
+#ifdef NATIVE_WIN32
+	    _commit(fileno(fp)) < 0
+#else
+	    fsync(fileno(fp)) < 0
+#endif
+		){
 		s->errnr = WRITE_ERROR;
 		return 1;
 	}
