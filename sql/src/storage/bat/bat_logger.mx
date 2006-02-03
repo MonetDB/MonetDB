@@ -535,7 +535,6 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 	logger->log = NULL;
 	logger->bm = bm;
 	if (sql_log == 0) {
-
 		logger->sql_log = bat_new(TYPE_oid, TYPE_int, 1, "logger_new");
 		BATmode(logger->sql_log, PERSISTENT);
 		BBPrename(logger->sql_log->batCacheid, "sql_log");
@@ -544,7 +543,11 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 		BUNins(logger->sql_log, &id, &logger->id);
 	} else {
 		logger->sql_log = bat_descriptor(sql_log, "bm_create");
-		logger->id = *(int*)BUNtail(logger->sql_log, BUNfnd(logger->sql_log, &id));
+		if (BATcount(logger->sql_log)) {
+			logger->id = *(int*)BUNtail(logger->sql_log, BUNfnd(logger->sql_log, &id));
+		} else {
+			BUNins(logger->sql_log, &id, &logger->id);
+		}
 	}
 
 	snprintf(filename, BUFSIZ, "%s%s", logger->dir, LOGFILE);
