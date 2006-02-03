@@ -1479,6 +1479,7 @@ backend_fastpath(backend *be, mvc *c, cq *q)
 		int i;
 
 		ValPtr argv = (ValPtr) callnode->yysons[1]->yyval.val.pval;
+		callnode->yysons[1]->iscopy = 1;
 
 		for (i = 1; i <= c->argc; i++) {
 			atom *a = c->args[i-1];
