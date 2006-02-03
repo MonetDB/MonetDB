@@ -2070,45 +2070,14 @@ mapi_start_talking(Mapi mid)
 
 		errbuf[0] = 0;
 		if (pversion <= 4) {
-			/* MonetDB 4 supports a single language per mapi port */
-			switch (mid->languageId) {
-			case LANG_MIL:
-				if (strcmp(server, "mserver_mil") != 0) {
-					snprintf(errbuf, BLOCK, "MIL language chosen, but server reports %s", server);
-					close_connection(mid);
-					return mapi_setError(mid, errbuf, "mapi_start_talking", MERROR);
-				}
-				break;
-			case LANG_MAL:
-				snprintf(errbuf, BLOCK, "MAL language chosen, but server reports %s", server);
-				close_connection(mid);
-				return mapi_setError(mid, errbuf, "mapi_start_talking", MERROR);
-			case LANG_SQL:
-				if (strcmp(server, "mserver_sql") != 0) {
-					snprintf(errbuf, BLOCK, "SQL language chosen, but server reports %s", server);
-					close_connection(mid);
-					return mapi_setError(mid, errbuf, "mapi_start_talking", MERROR);
-				}
-				break;
-			case LANG_XQUERY:
-				if (strcmp(server, "mserver_xquery") != 0) {
-					snprintf(errbuf, BLOCK, "XQuery language chosen, but server reports %s", server);
-					close_connection(mid);
-					return mapi_setError(mid, errbuf, "mapi_start_talking", MERROR);
-				}
-				break;
-			}
+			snprintf(errbuf, BLOCK, "MIL language chosen, but server reports %s", server);
+			close_connection(mid);
+			return mapi_setError(mid, errbuf, "mapi_start_talking", MERROR);
 		}
 		/* just don't do anything with the challenge */
 	}
 
-	if (pversion <= 4) {
-		if (mid->blocked) {
-			snprintf(buf, BLOCK, "%s:%s:%s:blocked\n", mid->username, mid->password, mid->language);
-		} else {
-			snprintf(buf, BLOCK, "%s:%s:%s\n", mid->username, mid->password, mid->language);
-		}
-	} else if (pversion == 5) {
+	if (pversion == 5) {
 		/* note, database can be appended here (:database), but since
 		MapiClient doesn't have a switch for it, we omit it so we get
 		the default (and don't have to implement redirect support) */

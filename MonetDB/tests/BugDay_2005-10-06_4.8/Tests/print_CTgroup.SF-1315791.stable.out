@@ -25,7 +25,7 @@ Over..
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-[  \000\000\000!\000\000\000 ]
+[ \000\000\000\000 \000\000\000 ]
 #-----------------#
 # h	t	  # name
 # void	oid	  # type

@@ -236,15 +236,15 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 #---------------------------------------------------------------------------------------------------------#
 # h			monet_environment								  # name
 # str			str										  # type
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "config",		  "/ufs/manegold/_/scratch0/Monet/Testing/Current/.ntv.64.64.d..PREFIX./etc/MonetDB.conf"										  ]
+#-----------------------------------------------------------------------------------------------------------------#
+[ "config",		  "/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf"					  ]
 [ "gdk_arch",		  "64bitx86_64-redhat-linux-gnu"																	  ]
-[ "gdk_version",	  "4.9.3"																				  ]
-[ "monet_pid",		  "21942"																				  ]
-[ "prefix",		  "/ufs/manegold/_/scratch0/Monet/Testing/Current/.ntv.64.64.d..PREFIX."												  ]
-[ "exec_prefix",	  "/ufs/manegold/_/scratch0/Monet/Testing/Current/.ntv.64.64.d..PREFIX."												  ]
+[ "gdk_version",	  "4.11.1"										  ]
+[ "monet_pid",		  "2834"										  ]
+[ "prefix",		  "/ufs/niels/scratch/Linux-x86_64"							  ]
+[ "exec_prefix",	  "/ufs/niels/scratch/Linux-x86_64"							  ]
 [ "gdk_dbname",		  "mTests_tests_suite_08"																																								  ]
-[ "gdk_dbfarm",		  "/ufs/manegold/_/scratch0/Monet/Testing/Current/.ntv.64.64.d..PREFIX./var/MonetDB/dbfarm"										  ]
+[ "gdk_dbfarm",		  "/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm"					  ]
 [ "gdk_debug",		  "10"							  ]
 [ "gdk_mem_bigsize",	  "137438953472"																			  ]
 [ "gdk_vm_minsize",	  "137438953472"																			  ]
@@ -252,24 +252,20 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "monet_admin",	  "adm"							  ]
 [ "monet_prompt",	  ""							  ]
 [ "monet_welcome",	  "yes"							  ]
-[ "monet_mod_path",	  "/ufs/manegold/_/scratch0/Monet/Testing/Current/.ntv.64.64.d..PREFIX./lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.ntv.64.64.d..PREFIX./lib/bin"	  ]
+[ "monet_mod_path",	  "/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin"	  ]
 [ "monet_daemon",	  "no"																																											  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "38059"																				  ]
+[ "mapi_port",		  "30511"										  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
 [ "mapi_clients",	  "2"										  ]
-[ "sql_port",		  "40836"																				  ]
 [ "sql_debug",		  "0"							  ]
-[ "sql_user",		  "monetdb"						  ]
-[ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "/ufs/manegold/_/scratch0/Monet/Testing/Current/.ntv.64.64.d..PREFIX./var/MonetDB/log"										  ]
-[ "xquery_port",	  "53939"																				  ]
+[ "sql_logdir",		  "/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log"					  ]
 [ "gdk_embedded",	  "no"								  ]
 [ "pf_httpd_port",	  "8080"																				  ]
 [ "xquery_output",	  "dm"																																																																  ]
 [ "xquery_cacheMB",	  "100"																																																																  ]
-[ "monet_cwd",		  "/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/.ntv.64.64.d..PREFIX./mTests/tests/suite_08"							  ]
+[ "monet_cwd",		  "/net/koala.ins.cwi.nl/export/scratch0/niels/Linux-x86_64/mTests/tests/suite_08"	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map thread to name
@@ -299,7 +295,7 @@ printf("#~BeginVariableOutput~#\n"); view_client_login().print(); printf("#~EndV
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Sat Aug 20 10:04:16 2005"	  ]
+[ 0,	  "Fri Feb  3 07:55:07 2006"	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map client identifier to its current active tree

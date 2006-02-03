@@ -204,15 +204,14 @@ it. To make this possible, we must provide it with filenames.
 BAT *
 BATnewstorage(int ht, int tt, size_t cap)
 {
-	BAT *bn ;
-/* experimental code  
-	bn= BBPrecycle(ht,tt,cap);
+	/* experimental code  */
+	BAT *bn = BBPrecycle(ht,tt,cap);
+
 	if( bn) {
 		bn->hident = (char*)string_h;
 		bn->tident = (char*)string_t;
 		return bn;
 	}
-*/
 
 	bn= BATcreatedesc(ht, tt, TRUE);
 

@@ -105,11 +105,13 @@ stream_export int stream_readLngArray(stream *s, lng *val, size_t cnt);
 stream_export int stream_writeLngArray(stream *s, const lng *val, size_t cnt);
 stream_export int stream_printf(stream *s, const char *format, ...);
 stream_export ssize_t stream_read(stream *s, void *buf, size_t elmsize, size_t cnt);
+stream_export ssize_t stream_readline(stream *s, void *buf, size_t maxcnt);
 stream_export ssize_t stream_write(stream *s, const void *buf, size_t elmsize, size_t cnt);
 stream_export void stream_close(stream *s);
 stream_export void stream_destroy(stream *s);
 stream_export char *stream_error(stream *s);
 stream_export int stream_flush(stream *s);
+stream_export int stream_fsync(stream *s);
 stream_export char *stream_name(stream *s);
 stream_export int stream_errnr(stream *s);
 stream_export int stream_type(stream *s);
@@ -311,11 +313,13 @@ struct stream {
 	} stream_data;
 	int errnr;
 	ssize_t (*read) (stream *s, void *buf, size_t elmsize, size_t cnt);
+	ssize_t (*readline) (stream *s, void *buf, size_t maxcnt);
 	ssize_t (*write) (stream *s, const void *buf, size_t elmsize, size_t cnt);
 	void (*close) (stream *s);
 	char *(*error) (stream *s);
 	void (*destroy) (stream *s);
 	int (*flush) (stream *s);
+	int (*fsync) (stream *s);
 };
 
 #if !HAVE_DECL_STRDUP
@@ -412,6 +416,30 @@ stream_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	return (*s->read) (s, buf, elmsize, cnt);
 }
 
+/* Read one line (seperated by \n) of atmost maxcnt characters from the stream. 
+   Returns the number of characters actually read. */
+ssize_t
+stream_readline(stream *s, void *buf, size_t maxcnt)
+{
+#ifdef STREAM_DEBUG
+	printf("readline %s " SZFMT "\n", s->name ? s->name : "<unnamed>", cnt);
+#endif
+	assert(s->access == ST_READ);
+	if (s->errnr) return s->errnr;
+	if (!s->readline) {
+		size_t len = 0;
+		char *b = buf, *start = buf;
+		while ((*s->read)(s, start, 1, 1) > 0 && len < maxcnt) {
+			if (*start == '\n')
+				break;
+			start++;
+		}
+		if (s->errnr) return s->errnr;
+		return (start - b);
+	} else
+		return (*s->readline) (s, buf, maxcnt);
+}
+
 /* Write cnt elements of size elmsize to the stream.  Returns the
    number of elements actually written.  If elmsize or cnt equals zero,
    returns cnt. */
@@ -465,6 +493,20 @@ stream_flush(stream *s)
 	if (s->errnr) return s->errnr;
 	if (s->flush)
 		return (*s->flush) (s);
+	return 0;
+}
+
+int
+stream_fsync(stream *s)
+{
+#ifdef STREAM_DEBUG
+	printf("fsync %s\n", s->name ? s->name : "<unnamed>");
+#endif
+	if (!s) return -1;
+	assert(s->access == ST_WRITE);
+	if (s->errnr) return s->errnr;
+	if (s->fsync)
+		return (*s->fsync) (s);
 	return 0;
 }
 
@@ -583,11 +625,13 @@ create_stream(const char *name)
 	s->errnr = NO__ERROR;
 	s->stream_data.p = NULL;
 	s->read = NULL;
+	s->readline = NULL;
 	s->write = NULL;
 	s->close = NULL;
 	s->error = error;
 	s->destroy = destroy;
 	s->flush = NULL;
+	s->fsync = NULL;
 #ifdef STREAM_DEBUG
 	printf("create_stream %s -> " PTRFMT "\n", name ? name : "<unnamed>", PTRFMTCAST s);
 #endif
@@ -638,7 +682,19 @@ file_close(stream *s)
 static int
 file_flush(stream *s)
 {
-	if (s->access == ST_WRITE && fflush((FILE *) s->stream_data.p) < 0) {
+	FILE *fp = (FILE*)s->stream_data.p;
+	if (s->access == ST_WRITE && (fflush(fp) < 0)){
+		s->errnr = WRITE_ERROR;
+		return 1;
+	}
+	return 0;
+}
+
+static int
+file_fsync(stream *s)
+{
+	FILE *fp = (FILE*)s->stream_data.p;
+	if (s->access == ST_WRITE && (fsync(fileno(fp)) < 0)){
 		s->errnr = WRITE_ERROR;
 		return 1;
 	}
@@ -656,9 +712,11 @@ open_stream(const char *filename, const char *flags)
 	if ((fp = fopen(filename, flags)) == NULL)
 		s->errnr = OPEN_ERROR;
 	s->read = file_read;
+	s->readline = NULL;
 	s->write = file_write;
 	s->close = file_close;
 	s->flush = file_flush;
+	s->fsync = file_fsync;
 	s->stream_data.p = (void *) fp;
 	return s;
 }
@@ -1354,6 +1412,24 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	return res / elmsize;
 }
 
+/* Read one line (seperated by \n) of at most maxcnt characters from the 
+   stream. Returns the number of characters actually read. */
+ssize_t
+socket_readline(stream *s, void *buf, size_t maxcnt)
+{
+	size_t len = 0;
+	char *b = buf, *start = buf;
+
+	while (socket_read(s, start, 1, 1) > 0 && len < maxcnt) {
+		if (*start == '\n')
+			break;
+		start++;
+	}
+	if (s->errnr) return s->errnr;
+	return (start - b);
+}
+
+
 #ifdef NATIVE_WIN32
 #define s_close(s)	closesocket(s)
 #else
@@ -1393,6 +1469,7 @@ socket_open(int socket, const char *name)
 	if ((s = create_stream(name)) == NULL)
 		return NULL;
 	s->read = socket_read;
+	s->readline = socket_readline;
 	s->write = socket_write;
 	s->close = socket_close;
 	s->flush = NULL;

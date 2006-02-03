@@ -1232,9 +1232,7 @@ usage(const char *prog)
 
 /* hardwired defaults, only used if monet environment cannot be found */
 #define XQuerydefaultMode "dm"	
-#define XQuerydefaultPort 45789	
-#define SQLdefaultPort 45123	
-#define MILdefaultPort 50000	
+#define defaultPort 50000	
 
 int
 main(int argc, char **argv)
@@ -1381,15 +1379,8 @@ main(int argc, char **argv)
 
 	if (port == 0) {
 		char *s = "mapi_port";
-                int p = MILdefaultPort;
+                int p = defaultPort;
 
-		if (strcmp(language, "sql") == 0) {
-			s = "sql_port";
-			p = SQLdefaultPort;
-		} else if (strcmp(language, "xquery") == 0) {
-			s = "xquery_port";
-			p = XQuerydefaultPort;
-		}
 		if ((s = mo_find_option(set, setlen, s)) != NULL) {
 			port = strtol(s, NULL, 10);
 		} else {

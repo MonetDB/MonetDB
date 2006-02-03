@@ -2323,6 +2323,9 @@ gdk_export void *THRdata[16];
 #define GDKsetbuf(x)	THRsetdata(2,(ptr)(x))
 #define GDKerr	        GDKout
 
+#define THRget_errbuf(t)	((char*)t->data[2])
+#define THRset_errbuf(t,b)	(t->data[2] = b)
+
 #ifndef GDK_NOLINK
 #ifdef __cplusplus
 extern "C" {

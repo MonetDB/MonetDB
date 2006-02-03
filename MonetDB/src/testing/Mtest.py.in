@@ -1475,11 +1475,8 @@ def RunTest(env, TST, BusyPorts, COND) :
         elem = SkipTest(env, TST, EXT, "as multiple SQL clients in parallel are currently not supported by "+THISFILE+".")
     elif CALL == "xqXp":
         elem = SkipTest(env, TST, EXT, "as multiple XQuery clients in parallel are currently not supported by "+THISFILE+".")
-    elif SERVER in BusyPorts:
-        if SERVER == "SQL":
-            elem = SkipTest(env, TST, EXT, "as SQLPORT=%s and/or MAPIPORT=%s are not available." % (env['SQLPORT'],env['MAPIPORT']))
-        else:
-            elem = SkipTest(env, TST, EXT, "as %sPORT=%s is not available." % (SERVER,env[SERVER+'PORT']))
+    elif 'MAPI' in BusyPorts:
+        elem = SkipTest(env, TST, EXT, "as MAPIPORT=%s is not available." % (env['MAPIPORT']))
     else:
         test = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
         for f in os.listdir(RELSRCDIR):
@@ -1705,10 +1702,14 @@ def RunTest(env, TST, BusyPorts, COND) :
             SetExecEnv(env['exe'],0)
 
         if THISFILE in ["Mtest.py", "Mprofile.py"]:
-            Mfilter.mFilter(TST+STABLEout,par['IGNORE'])
-            Mfilter.mFilter(TST+STABLEerr,par['IGNORE'])
-            Mfilter.mFilter(TST+".test.out",par['IGNORE'])
-            Mfilter.mFilter(TST+".test.err",par['IGNORE'])
+	    try:
+            	Mfilter.mFilter(TST+STABLEout,par['IGNORE'])
+            	Mfilter.mFilter(TST+STABLEerr,par['IGNORE'])
+            	Mfilter.mFilter(TST+".test.out",par['IGNORE'])
+            	Mfilter.mFilter(TST+".test.err",par['IGNORE'])
+    	    except:
+        	Warn("mFilter failed\n")
+		pass
 
             testO = re.compile("^/"+TST+STABLEout+"/([^/]*)/", re.MULTILINE)
             testE = re.compile("^/"+TST+STABLEerr+"/([^/]*)/", re.MULTILINE)
@@ -1830,7 +1831,7 @@ def CheckSocket(env,SERVER,SrvrErr,LogLine) :
     wait = 61
     repeat = 5
     host = 'localhost'
-    port = int(env[SERVER+'PORT'])
+    port = int(env['MAPIPORT'])
     rpt = 0
     while rpt < repeat:
         busy, Serrno, Serrstr = CheckPort(host,port)
@@ -1855,13 +1856,13 @@ def CheckSocket(env,SERVER,SrvrErr,LogLine) :
 
 def CheckSocket2(env,SERVER,SrvrErr) :
     host = 'localhost'
-    port = int(env[SERVER+'PORT'])
+    port = int(env['MAPIPORT'])
     busy, Serrno, Serrstr = CheckPort(host,port)
     if busy:
-        env[SERVER+'PORT'] = eval(dft[SERVER+'PORT'])
-        os.environ[SERVER+'PORT'] = env[SERVER+'PORT']
+        env['MAPIPORT'] = eval(dft['MAPIPORT'])
+        os.environ['MAPIPORT'] = env['MAPIPORT']
         op = 'port=%d' % port
-        np = 'port=%s' % env[SERVER+'PORT']
+        np = 'port=%s' % env['MAPIPORT']
         env['exe']['Mserver']       = env['exe']['Mserver'][0]       , env['exe']['Mserver'][1].replace(op, np)
         env['exe']['Mapi_Client']   = env['exe']['Mapi_Client'][0]   , env['exe']['Mapi_Client'][1].replace(op, np)
         env['exe']['SQL_Client']    = env['exe']['SQL_Client'][0]    , env['exe']['SQL_Client'][1].replace(op, np)
@@ -1874,8 +1875,8 @@ def CheckSocket2(env,SERVER,SrvrErr) :
         os.environ['X100_CLIENT']   = os.environ['X100_CLIENT'].replace(op, np)
         Smsg = """
 ! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
-! Using new %sPORT=%s !
-""" % (SERVER, host, port, Serrno, Serrstr, SERVER, env[SERVER+'PORT'])
+! Using new MAPIPORT=%s !
+""" % (SERVER, host, port, Serrno, Serrstr, env['MAPIPORT'])
 #        STDERR.write(Smsg)
 #        STDERR.flush()
 #        SrvrErr.write(Smsg)
@@ -1884,13 +1885,13 @@ def CheckSocket2(env,SERVER,SrvrErr) :
 
 def CheckSocket3(env,SERVER,ErrFileName) :
     host = 'localhost'
-    port = int(env[SERVER+'PORT'])
+    port = int(env['MAPIPORT'])
     busy, Serrno, Serrstr = CheckPort(host,port)
     if busy:
         Smsg = """
 ! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
-! %sPORT was not properly released by Mserver !
-""" % (SERVER, host, port, Serrno, Serrstr, SERVER)
+! MAPIPORT was not properly released by Mserver !
+""" % (SERVER, host, port, Serrno, Serrstr)
 #        STDERR.write(Smsg)
 #        STDERR.flush()
 #        ErrFile = open(ErrFileName, 'a')
@@ -2006,7 +2007,7 @@ def Log() :
     time.strftime('%H:%M:%S> ',time.localtime(time.time()))
 ### Log() #
 
-def mapi_ping(port) :
+def mapi_ping(port,lang) :
     retry = 0
     wait = 1
     host = 'localhost'
@@ -2016,7 +2017,7 @@ def mapi_ping(port) :
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((host, port))
             r = sock.makefile('r').readline();
-            sock.makefile('w').write("ping\n");
+            sock.makefile('w').write("ping:ping:"+lang+":line\n");
             return True
         except socket.error, (Serrno,Serrstr):
             pass
@@ -2088,14 +2089,17 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             PROLOGUE = " "+TST+".prologue"
 
         Srvr = '%s%s %s%s "--dbname=%s"' % (MTO, str(STO), exe['Mserver'][1], LOCAL_CONF, TSTDB)
+	lang="mil"
         if SERVER == "MAPI":
             Srvr = '%s --dbinit="module(mapi); mapi_start();"' % Srvr
         if SERVER == "SQL":
+	    lang="sql"
             if env['VERSION'] >= 49900:
-                Srvr = '%s --dbinit="include sql; mapi.listen(%s:int);"' % (Srvr, env['SQLPORT'])
+                Srvr = '%s --dbinit="include sql; mapi.listen(%s:int);"' % (Srvr, env['MAPIPORT'])
             else:
                 Srvr = '%s --dbinit="module(sql_server); sql_server_start();"' % Srvr
         if SERVER == "XQUERY":
+	    lang="xquery"
             Srvr = '%s --dbinit="module(pathfinder); pfstart();"' % Srvr
         Srvr = Srvr+PROLOGUE
         #-background"
@@ -2115,8 +2119,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             ServerReady = False
 
         if ServerReady:
-            port = int(env[SERVER+'PORT'])
-            ServerReady = mapi_ping(port)
+            port = int(env['MAPIPORT'])
+            ServerReady = mapi_ping(port, lang)
 
     else:
         ClntOutFile = TestOutFile
@@ -2558,12 +2562,10 @@ def main(argv) :
         dft['setGDK_DBFARM']     = "'--set \"gdk_dbfarm='+env['GDK_DBFARM']+'\"'"
         dft['setSQL_LOGDIR']     = "'--set \"sql_logdir='+env['SQL_LOGDIR']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(30000,39999))"
-        dft['SQLPORT']        = "str(randomPort(40000,49999))"
-        dft['XQUERYPORT']     = "str(randomPort(50000,59999))"
-        dft['MAPICLIENT']     = "'MapiClient -lmil'" # --port='+env['MAPIPORT']"
-        dft['SQLCLIENT']      = "'MapiClient -lsql'" # --port='+env['SQLPORT']"
-        dft['XQUERYCLIENT']   = "'MapiClient -lxquery -sxml'" # --port='+env['XQUERYPORT']"
-        dft['X100CLIENT']     = "'x100run_mapi'" # --port='+env['MAPIPORT']"
+        dft['MAPICLIENT']     = "'MapiClient -lmil'" 
+        dft['SQLCLIENT']      = "'MapiClient -lsql'" 
+        dft['XQUERYCLIENT']   = "'MapiClient -lxquery -sxml'" 
+        dft['X100CLIENT']     = "'x100run_mapi'" 
     if THISFILE == "Mprofile.py":
         dft['CMDLST']         = "FindCmdLst(env)"
 
@@ -2769,7 +2771,7 @@ def main(argv) :
 
     # tidy-up and fall-back to defaults where necessary
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        vars_ = vars + ['MAPIPORT', 'SQLPORT', 'XQUERYPORT', 'GDK_DEBUG', 'MONETDB_MOD_PATH']
+        vars_ = vars + ['MAPIPORT', 'GDK_DEBUG', 'MONETDB_MOD_PATH']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars
     for v in vars_:
@@ -2947,16 +2949,16 @@ def main(argv) :
         exe = {}
         exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
         if env['VERSION'] >= 49900:
-            exe['Mserver']       = CheckExec('mserver5')     , 'mserver5 "--config=%s" --debug=%s %s %s %s --set mapi_port=%s --set sql_port=%s --set xquery_port=%s --set monet_prompt= --trace' % \
-                                                               (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['MAPIPORT'], env['SQLPORT'], env['XQUERYPORT'])
+            exe['Mserver']       = CheckExec('mserver5')     , 'mserver5 "--config=%s" --debug=%s %s %s %s --set mapi_port=%s --set monet_prompt= --trace' % \
+                                                               (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['MAPIPORT'])
         else:
-            exe['Mserver']       = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s %s --set mapi_port=%s --set sql_port=%s --set xquery_port=%s --set monet_prompt= --trace' % \
-                                                               (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['MAPIPORT'], env['SQLPORT'], env['XQUERYPORT'])
+            exe['Mserver']       = CheckExec('Mserver')      , 'Mserver "--config=%s" --debug=%s %s %s %s --set mapi_port=%s --set monet_prompt= --trace' % \
+                                                               (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['MAPIPORT'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec('@PYTHON@')     , '@PYTHON@'
         exe['Mapi_Client']   = CheckExec(env['MAPICLIENT'].split(None, 1)[0])  , '%s -u monetdb -P monetdb "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
-        exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -u monetdb -P monetdb --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['SQLPORT'], env['SQL_TRACE'])
-        exe['XQuery_Client'] = CheckExec(env['XQUERYCLIENT'].split(None, 1)[0]), '%s -u monetdb -P monetdb --host=%s --port=%s' % (env['XQUERYCLIENT'], HOST, env['XQUERYPORT'])
+        exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -u monetdb -P monetdb --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'], env['SQL_TRACE'])
+        exe['XQuery_Client'] = CheckExec(env['XQUERYCLIENT'].split(None, 1)[0]), '%s -u monetdb -P monetdb --host=%s --port=%s' % (env['XQUERYCLIENT'], HOST, env['MAPIPORT'])
         exe['X100_Client']   = CheckExec(env['X100CLIENT'].split(None, 1)[0])  , '%s -u monetdb -P monetdb "--config=%s" --host=%s --port=%s' % (env['X100CLIENT'], opts.config, HOST, env['MAPIPORT'])
         if par['TIMEOUT'] == 0 or not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
@@ -3110,14 +3112,13 @@ def main(argv) :
 
         host = 'localhost'
         for S in 'MAPI', 'SQL', 'XQUERY':
-            port = int(env[S+'PORT'])
+            port = int(env['MAPIPORT'])
             busy, Serrno, Serrstr = CheckPort(host,port)
             if busy:
-                Warn("Skipping %s tests as %sPORT=%s is not available (Error #%d: '%s')!" % (S,S,env[S+'PORT'],Serrno,Serrstr))
-                BusyPorts.append(S)
-        if 'SQL' not in BusyPorts  and  'MAPI' in BusyPorts:
-            Warn("Skipping SQL tests as MAPIPORT=%s is not available!" % env['MAPIPORT'])
-            BusyPorts.append('SQL')
+                Warn("Skipping %s tests as MAPIPORT=%s is not available (Error #%d: '%s')!" % (S,env['MAPIPORT'],Serrno,Serrstr))
+                BusyPorts.append('MAPI')
+        if 'MAPI' in BusyPorts:
+            Warn("Skipping MAPI tests as MAPIPORT=%s is not available!" % env['MAPIPORT'])
 
         # create '.Mapprove.rc'
         env['OS'] = os.environ['OS']

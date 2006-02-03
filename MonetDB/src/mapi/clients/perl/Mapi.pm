@@ -35,8 +35,8 @@ sub new {
   binmode($mapi->{SOCKET},":utf8");
   print "Connection to socket established\n" if ($mapi->{trace});
   bless($mapi,"Mapi");
-  $mapi->doCmd("$user:$passwd:$language\n");
-  print "logged on:$user:$passwd:$language\n" if ($mapi->{trace});
+  $mapi->doCmd("$user:$passwd:$language:line\n");
+  print "logged on:$user:$passwd:$language:line\n" if ($mapi->{trace});
 #  print "switch to $language scenario\n";
 #  $mapi->doCmd("sql();") if ($language eq 'sql');
   return $mapi;

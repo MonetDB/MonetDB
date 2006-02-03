@@ -51,8 +51,10 @@ typedef struct _modstack_t {
 
 typedef struct CLIENT {
 	str user;		/* user name. */
+	str passwd;		/* passwd name. */
 	time_t login;		/* session start time */
 	int permission;		/* not yet used. */
+	int blocked;		/* blocked stream ? */
 	stream *fdin, *fdout;	/* streams from and to user. */
 	stream *bkin, *bkout;	/* backup stream storage */
 	int listing;		/* echo input */
@@ -138,6 +140,7 @@ initClient(str nme, str prompt, int thread)
 		return 0;	/* cannot create required MIL interpreter thread */
 	}
 	c->user = GDKstrdup(nme);
+	c->passwd = NULL;
 	c->prompt = GDKstrdup(prompt);
 	c->fdin = GDKstdin;
 	c->fdout = GDKstdout;
@@ -689,7 +692,7 @@ extern void ll_flushbuffer(void);
 YYSTREE
 parseClient(Client c, int reschedule)
 {
-	Request cur = 0, after;
+	Request cur = 0, after = 0;
 	int r;
 
 	if (reschedule) {

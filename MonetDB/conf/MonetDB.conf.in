@@ -105,8 +105,6 @@ mapi_debug=0
 
 # SQL Interface Section
 #======================
-# default port to address an Mserver for an SQL session
-sql_port=45123
 # The SQL debug level (should be disabled for normal use)
 sql_debug=0
 # Place to store SQL transaction logs
@@ -114,9 +112,6 @@ sql_logdir=@Xlocalstatedir@@DIRSEP@@PACKAGE@@DIRSEP@log
 
 # XQuery Interface Section
 #=========================
-
-# default port to address an Mserver for an XQuery session
-xquery_port=45789
 
 # default port to address the HTTP server for pathfinder
 pf_httpd_port=8080

@@ -1808,6 +1808,8 @@ strPut(Heap *h, var_t *dst, str v)
 	*dst = h->free + sizeof(var_t);
 	h->free += len;
 	memcpy((char *) l, v, i);
+	len -= sizeof(var_t);
+	memset(((char*)l)+i, 0, len-i); /* fill remainder, should solve initialisation problems within valgrind */
 
 	return *dst;
 }

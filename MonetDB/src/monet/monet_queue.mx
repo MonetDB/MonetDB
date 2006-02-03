@@ -400,7 +400,7 @@ topRequest(Client c)
 			return q;
 		}
 	}
-	GDKerror("topRequest: could not a request for this client\n");
+	GDKerror("topRequest: could not find a request for this client\n");
 	return NULL;
 }
 

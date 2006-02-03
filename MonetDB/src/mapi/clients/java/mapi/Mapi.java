@@ -344,9 +344,11 @@ throws MapiException
 	this.active = true;
 	if(trace) traceLog.println("sent initialization command");
 	if( pwd.length()>0) pwd= ":"+pwd;
+	if( lang.length()>0) lang= ":"+lang;
 	if( blocked)
-		toMonet(user+pwd+":blocked\n");
-	else 	toMonet(user+pwd+"\n");
+		toMonet(user+pwd+lang+":blocked\n");
+	else 	
+		toMonet(user+pwd+lang+":line\n");
 /* 
 The rendezvous between client application and server requires
 some care. The general approach is to expect a property table

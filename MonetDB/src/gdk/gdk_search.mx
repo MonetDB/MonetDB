@@ -513,6 +513,7 @@ HASHremove(BAT *b)
 {
 	if (b->hhash) {
 		BAT *p = BBP_cache(VIEWparent(b));
+		BAT *m = BATmirror(b);
 
 		if (p && b->hhash == p->hhash) {
 			GDKerror("HASHremove: view-bat cannot remove parent hash-table\n");
@@ -524,7 +525,9 @@ HASHremove(BAT *b)
 			GDKfree(b->hhash->heap);
 			GDKfree(b->hhash);
 		}
-		BATmirror(b)->thash = b->hhash = NULL;
+		if (m)
+			m->thash = NULL;
+		b->hhash = NULL;
 	}
 }
 
