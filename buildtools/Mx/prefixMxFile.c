@@ -130,8 +130,7 @@ main(int argc, char **argv)
 			exit(0);
 		}
 	if (optind < argc) {
-		inputfile = (char *) malloc(strlen(argv[optind]));
-		strcpy(inputfile, argv[optind]);
+		inputfile = strdup(argv[optind]);
 	} else {
 		printUsage(argv[0]);
 		exit(1);

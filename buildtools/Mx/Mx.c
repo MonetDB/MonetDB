@@ -160,7 +160,7 @@ char **argv;
 			k = 0;
 			do {
 				if (str2dir[k].code == Csrc)
-					strcpy(str2dir[k].ext, MX_CXX_SUFFIX);
+					str2dir[k].ext = MX_CXX_SUFFIX;
 			} while (str2dir[k++].code != Nop);
 			break;
 		default:
