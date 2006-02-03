@@ -260,6 +260,28 @@ plan_empty_tbl (const PFla_op_t *n)
 }
 
 /**
+ * Generate possible physical plans for logical ColumnAttach
+ * operator (direct mapping from logical to physical ColumnAttac).
+ */
+static PFplanlist_t *
+plan_attach (const PFla_op_t *n)
+{
+    PFplanlist_t  *ret  = new_planlist ();
+
+    assert (n); assert (n->kind == la_attach);
+    assert (L(n)); assert (L(n)->plans);
+
+    /* consider each plan in R */
+    for (unsigned int r = 0; r < PFarray_last (L(n)->plans); r++)
+        add_plan (ret,
+                  attach (*(plan_t **) PFarray_at (L(n)->plans, r),
+                          n->sem.attach.attname,
+                          n->sem.attach.value));
+
+    return ret;
+}
+
+/**
  * Worker for plan_cross(): adds plans for @a a x @a b to the
  * plan list @a ret.  In addition to the standard cross product,
  * this function also considers the case when @a a is a literal
@@ -1744,6 +1766,7 @@ plan_subexpression (PFla_op_t *n)
 
         case la_lit_tbl:        plans = plan_lit_tbl (n);     break;
         case la_empty_tbl:      plans = plan_empty_tbl (n);   break;
+        case la_attach:         plans = plan_attach (n);      break;
         case la_cross:          plans = plan_cross (n);       break;
         case la_eqjoin:         plans = plan_eqjoin (n);      break;
         case la_project:        plans = plan_project (n);     break;
