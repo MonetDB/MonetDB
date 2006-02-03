@@ -98,6 +98,8 @@ la_op_leaf (PFla_op_kind_t kind)
     ret->prop          = NULL;
     ret->node_id       = 0;
 
+    ret->bit_reset     = 0;
+    ret->bit_prop      = 0;
     ret->bit_opt_label = 0;
     ret->bit_opt       = 0;
     ret->bit_cse       = 0;
@@ -269,6 +271,41 @@ PFla_empty_tbl (PFalg_attlist_t attlist)
         ret->schema.items[i].type = 0;
     }
     ret->schema.count = attlist.count;
+
+    return ret;
+}
+
+/**
+ * ColumnAttach: Attach a column to a table.
+ *
+ * If you want to attach more than one column, apply ColumnAttach
+ * multiple times.
+ *
+ * @param n       Input relation
+ * @param attname Name of the new column.
+ * @parma value   Value for the new column.
+ */
+PFla_op_t *
+PFla_attach (const PFla_op_t *n,
+             PFalg_att_t attname, PFalg_atom_t value)
+{
+    PFla_op_t   *ret = la_op_wire1 (la_attach, n);
+
+    /* result schema is input schema plus new columns */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
+
+    /* copy schema from n */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    /* add new column */
+    ret->schema.items[n->schema.count]
+        = (PFalg_schm_item_t) { .name = attname, .type = value.type };
+
+    ret->sem.attach.attname = attname;
+    ret->sem.attach.value   = value;
 
     return ret;
 }
@@ -1939,7 +1976,7 @@ PFla_pf_merge_adjacent_text_nodes (const PFla_op_t *doc, const PFla_op_t *n)
     ret->schema.items[1]
         = (PFalg_schm_item_t) { .name = att_pos, .type = aat_nat };
     ret->schema.items[2]
-        = (PFalg_schm_item_t) { .name = att_item, .type = aat_pnode };
+        = (PFalg_schm_item_t) { .name = att_item, .type = aat_node };
 
     return ret;
 }

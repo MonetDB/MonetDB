@@ -180,6 +180,14 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return true;
             break;
 
+        case la_attach:
+            return (a->sem.attach.attname == b->sem.attach.attname &&
+                    PFalg_atom_comparable (a->sem.attach.value,
+                                           b->sem.attach.value) &&
+                    !PFalg_atom_cmp (a->sem.attach.value,
+                                     b->sem.attach.value));
+            break;
+
         case la_eqjoin:
             return (a->sem.eqjoin.att1 == b->sem.eqjoin.att1
                     && a->sem.eqjoin.att2 == b->sem.eqjoin.att2);

@@ -440,6 +440,7 @@ env_mvar (const PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty)
                          PFatt_str (entry.att), entry.ty, entry.mvar->name);
     }
 
+assert(0);
     PFoops (OOPS_FATAL,
             "attribute '%s' with type '%u' not found in environment",
             PFatt_str (att), ty);
@@ -2403,7 +2404,8 @@ reduce (PFpa_op_t * p, int goalnt)
                     env_add (p->env, p->sem.cast.att, p->sem.cast.ty, v);
                 }
 
-                if (att_needed) {
+                if (att_needed &&
+                    PFprop_icol (p->prop, L(p)->schema.items[i].name)) {
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
                         if (t & L(p)->schema.items[i].type) {
 

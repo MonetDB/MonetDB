@@ -18,6 +18,9 @@
 /** empty table construction */
 #define empty_tbl(atts)   PFla_empty_tbl (atts)
 
+/** ColumnAttach operator */
+#define attach(a,b,c)   PFla_attach ((a),(b),(c))
+
 /** cartesian product */
 #define cross(a,b)        PFla_cross ((a),(b))
 

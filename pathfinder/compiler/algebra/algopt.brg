@@ -72,14 +72,15 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  serialize      =   1
 %term  lit_tbl        =   2
 %term  empty_tbl      =   3
-%term  cross          =   4
-%term  eqjoin         =   5
-%term  project        =   6
-%term  select_        =   7
-%term  disjunion      =   8
-%term  intersect      =   9
-%term  difference     =  10
-%term  distinct       =  11
+%term  attach         =   4
+%term  cross          =   5
+%term  eqjoin         =   6
+%term  project        =   7
+%term  select_        =   8
+%term  disjunion      =   9
+%term  intersect      =  10
+%term  difference     =  11
+%term  distinct       =  12
 %term  num_add        =  20
 %term  num_subtract   =  21
 %term  num_multiply   =  22
@@ -125,8 +126,9 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 Query:  serialize (Frag, Rel)                     =   1 (10);
 
 Rel:    lit_tbl                                   =   2 (10);
-Rel:    cross (Rel, Rel)                          =   3 (10);
-Rel:    eqjoin (Rel, Rel)                         =   4 (10);
+Rel:    attach (Rel)                              =   3 (10);
+Rel:    cross (Rel, Rel)                          =   4 (10);
+Rel:    eqjoin (Rel, Rel)                         =   5 (10);
 Rel:    project (Rel)                             =  10 (10);
 Rel:    project (                                            
             rownum (                                         
@@ -453,8 +455,13 @@ reduce (PFla_op_t *p, int goalnt)
             update_properties (p, kids);
         } break;
 
-        /* Rel:    cross (Rel, Rel) */
+        /* Rel:    attach (Rel) */
         case 3:
+            update_properties (p, kids);
+            break;
+
+        /* Rel:    cross (Rel, Rel) */
+        case 4:
             /* remove cross product if right argument is a literal table
                containing one tuple whose columns are all unreferenced */
             if (R(p)->kind == la_lit_tbl && R(p)->sem.lit_tbl.count == 1) {
@@ -483,7 +490,7 @@ reduce (PFla_op_t *p, int goalnt)
             break;
 
         /* Rel:    eqjoin (Rel, Rel) */
-        case 4:
+        case 5:
             update_properties (p, kids);
             break;
 

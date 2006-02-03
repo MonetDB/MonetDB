@@ -81,6 +81,7 @@ struct PFstate_t {
     unsigned int debug;       /**< command line switch: -d */
     bool timing;              /**< command line switch: -T */
     bool print_dot;           /**< command line switch: -D */
+    bool print_xml;           /**< command line switch: -X */
     bool print_pretty;        /**< command line switch: -P */
     unsigned int stop_after;  /**< processing phase to stop after */
     bool print_types;         /**< command line switch: -t */
