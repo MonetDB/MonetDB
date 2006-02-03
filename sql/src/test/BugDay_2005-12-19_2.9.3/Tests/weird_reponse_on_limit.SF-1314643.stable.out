@@ -24,16 +24,16 @@ Over..
 # tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables # table_name
 # id,	name,	schema_id,	query,	istable,	system,	clear,	temporary # name
 # int,	varchar,	int,	varchar,	boolean,	boolean,	boolean,	smallint # type
-# 10,	7,	10,	1,	0,	0,	0,	6 # length
-[ 1010725,	"modules",	1010724,	NULL,	true,	true,	false,	0	]
-# tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables # table_name
+# 7,	7,	7,	1,	5,	5,	5,	1 # length
+[ 1010447,	"modules",	1010446,	NULL,	true,	true,	false,	0	]
+# .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
 # id,	name,	schema_id,	query,	istable,	system,	clear,	temporary # name
 # int,	varchar,	int,	varchar,	boolean,	boolean,	boolean,	smallint # type
-# 10,	7,	10,	1,	0,	0,	0,	6 # length
-[ 1010725,	"modules",	1010724,	NULL,	true,	true,	false,	0	]
-[ 1010729,	"schemas",	1010724,	NULL,	true,	true,	false,	0	]
+# 7,	7,	7,	1,	5,	5,	5,	1 # length
+[ 1010447,	"modules",	1010446,	NULL,	true,	true,	false,	0	]
+[ 1010451,	"schemas",	1010446,	NULL,	true,	true,	false,	0	]
 
-# 16:41:22 >  
-# 16:41:22 >  Done.
-# 16:41:22 >  
+# 15:32:53 >  
+# 15:32:53 >  Done.
+# 15:32:53 >  
 

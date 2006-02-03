@@ -13,10 +13,10 @@ EOF
 LC_CTYPE="en_US.UTF-8"
 export LC_CTYPE
 
-Mlog -x "java -jar \"$JAR\" -h $HOST -p $SQLPORT -f $RELSRCDIR/../JdbcClient_create_tables.sql"
+Mlog -x "java -jar \"$JAR\" -h $HOST -p $MAPIPORT -f $RELSRCDIR/../JdbcClient_create_tables.sql"
 
-Mlog -x "java -jar \"$JAR\" -h $HOST -p $SQLPORT -f $RELSRCDIR/../JdbcClient_inserts_selects.sql"
+Mlog -x "java -jar \"$JAR\" -h $HOST -p $MAPIPORT -f $RELSRCDIR/../JdbcClient_inserts_selects.sql"
 
-Mlog -x "java -jar \"$JAR\" -h $HOST -p $SQLPORT -d"
+Mlog -x "java -jar \"$JAR\" -h $HOST -p $MAPIPORT -d"
 
 rm -f .monetdb

@@ -230,13 +230,24 @@ static sql_exp *
 exp_alias( char *tname, char *cname, sql_exp *old) 
 {
 	sql_exp *e = exp_create(e_column);
-	e->name = _strdup(cname);
+
+	assert(cname);
 	e->card = old->card;
+	e->name = _strdup(cname);
 	e->l = (tname)?_strdup(tname):NULL;
 	e->r = _strdup(cname);
 	e->f = exp_subtype(old);
 	return e;
 }
+
+static sql_exp * 
+exp_alias_or_copy( char *tname, char *cname, sql_exp *old) 
+{
+	if (!cname)
+		return exp_dup(old);
+	return exp_alias(tname, cname, old);
+}
+
 
 
 static sql_exp * 
@@ -438,7 +449,7 @@ rel_bind_column( sql_rel *rel, char *cname )
 		if (rel->exps) {
 			sql_exp *e = exps_bind_column(rel->exps, cname);
 			if (e)
-				return exp_alias(rel->name, e->name, e);
+				return exp_alias_or_copy(rel->name, e->name, e);
 		}
 	} else if (rel->op == op_basetable) {
 		node *cn;
@@ -460,9 +471,9 @@ rel_bind_column2( sql_rel *rel, char *tname, char *cname )
 		if (rel->exps) {
 			sql_exp *e = exps_bind_column2(rel->exps, tname, cname);
 			if (e)
-				return exp_alias(tname, e->name, e);
+				return exp_alias_or_copy(tname, e->name, e);
 		}
-	} else if (rel->op == op_basetable && strcmp(rel->name,tname) == 0) {
+	} else if (rel->op == op_basetable && strcmp(rel->name, tname) == 0) {
 		node *cn;
 		sql_table *t = rel->l;
 
@@ -550,7 +561,7 @@ rel_projections( sql_rel *rel, char *tname )
 			exps = new_exp_list();
 			for (en = rel->exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
-				list_append(exps, exp_alias(tname, e->name, e));
+				list_append(exps, exp_alias_or_copy(tname, e->name, e));
 			}
 			return exps;
 		}
@@ -826,9 +837,10 @@ static char * rel_get_name( sql_rel *rel )
 
 /* forward refs */
 static sql_rel * rel_subquery(mvc *sql, sql_rel *rel, symbol *sq);
+static sql_rel * rel_setquery(mvc *sql, sql_rel *rel, symbol *sq);
 static sql_rel * rel_joinquery(mvc *sql, sql_rel *rel, symbol *sq);
+static sql_rel * rel_crossquery(mvc *sql, sql_rel *rel, symbol *q);
 static sql_exp * rel_value_exp(mvc *sql, sql_rel *rel, symbol *se, int f);
-
 
 static sql_rel *
 rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
@@ -863,6 +875,86 @@ rel_subquery_optname(mvc *sql, sql_rel *rel, symbol *query)
 
 	return rel_table_optname(sql, sq, sn->name);
 }
+
+static sql_rel *
+query_exp_optname(mvc *sql, sql_rel *r, symbol *q)
+{
+	sql_rel *res = NULL;
+
+	switch (q->token) {
+	case SQL_UNION:
+	case SQL_EXCEPT:
+	case SQL_INTERSECT:
+	{
+		sql_rel *tq = rel_setquery(sql, r, q);
+
+		if (!tq)
+			return NULL;
+		return rel_table_optname(sql, tq, q->data.lval->t->data.sym);
+	}
+	case SQL_JOIN:
+	{
+		sql_rel *tq = rel_joinquery(sql, r, q);
+
+		if (!tq)
+			return NULL;
+		return rel_table_optname(sql, tq, q->data.lval->t->data.sym);
+	}
+	case SQL_CROSS:
+	{
+		sql_rel *tq = rel_crossquery(sql, r, q);
+
+		if (!tq)
+			return NULL;
+		return rel_table_optname(sql, tq, q->data.lval->t->data.sym);
+	}
+	case SQL_UNIONJOIN:
+	{
+/*
+		node *m;
+		dnode *n = q->data.lval->h;
+*/
+
+		/*int all = n->next->data.ival; */
+/*
+		tvar *lv = table_ref(sql, nscp, n->data.sym);
+		tvar *rv = table_ref(sql, nscp, n->next->next->data.sym);
+		list *unions, *matching_columns;
+
+		if (!lv || !rv)
+			return NULL;
+
+*/
+		/* find the matching columns (all should match?)
+		 * union these 
+		 * if !all do a distinct operation at the end 
+		 */
+		/* join all result columns ie join(lh,rh) on column_name */
+
+/*
+		matching_columns = join_on_column_name(sql, nscp, lv, rv, 1);
+
+		if (!matching_columns)
+			return NULL;
+
+		unions = create_stmt_list();
+		for (m = matching_columns->h; m; m = m->next->next) {
+			stmt *l = stmt_dup(m->data);
+			stmt *r = stmt_dup(m->next->data);
+
+			list_append(unions, stmt_union(l, r));
+		}
+		res = table_optname(sql, scp, stmt_list(unions), q->data.lval->t->data.sym);
+		list_destroy(matching_columns);
+*/
+		return res;
+	}
+	default:
+		(void) sql_error(sql, 02, "case %d %s\n", q->token, token2string(q->token));
+	}
+	return NULL;
+}
+
 
 static sql_rel *
 table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
@@ -916,10 +1008,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 	} else if (tableref->token == SQL_SELECT) {
 		return rel_subquery_optname(sql, rel, tableref);
 	} else {
-		/* TODO JOIN/UNIONs ?
 		return query_exp_optname(sql, rel, tableref);
-		*/
-		return NULL;
 	}
 }
 
@@ -2306,6 +2395,78 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel)
 }
 
 static sql_rel *
+rel_setquery_(mvc *sql, sql_rel *l, sql_rel *r, dlist *cols, int op )
+{
+	sql_rel *rel;
+
+	if (!cols) {
+		node *n, *m;
+
+		list *ls = rel_projections( l, NULL);
+		list *rs = rel_projections( r, NULL);
+		list *nls = new_exp_list();
+		list *nrs = new_exp_list();
+
+		for (n = ls->h, m = rs->h; n && m; n = n->next, m = m->next) {
+			sql_exp *le = exp_dup(n->data);
+			sql_exp *re = exp_dup(m->data);
+
+			if ((rel_convert_types(sql, &le, &re, 1) < 0)) {
+				if (le)
+					exp_destroy(le);
+				if (re)
+					exp_destroy(re);
+				return NULL;
+			}
+			list_append(nls, le); 
+			list_append(nrs, re); 
+		}
+		l = rel_project(l, nls);
+		r = rel_project(r, nrs);
+	}
+	rel = rel_setop(l, r, op );
+	return rel_project(rel, rel_projections(rel, rel->name ));
+}
+
+
+static sql_rel *
+rel_setquery(mvc *sql, sql_rel *rel, symbol *q)
+{
+	sql_rel *res = NULL;
+	dnode *n = q->data.lval->h;
+	symbol *tab_ref1 = n->data.sym;
+	int dist = n->next->data.ival;
+	dlist *corresponding = n->next->next->data.lval;
+	symbol *tab_ref2 = n->next->next->next->data.sym;
+
+	sql_rel *t1 = table_ref(sql, rel, tab_ref1);
+	sql_rel *t2 = table_ref(sql, rel, tab_ref2);
+
+	if (!t1 || !t2) 
+		return NULL;
+
+	if (list_length(t1->exps) != list_length(t2->exps)) {
+		char *op = "UNION";
+		if (q->token == SQL_EXCEPT)
+			op = "EXCEPT";
+		else if (q->token == SQL_INTERSECT)
+			op = "INTERSECT";
+		return sql_error(sql, 02, "cannot %s different ordinality queries", op);
+	}
+	if ( q->token == SQL_UNION)
+		res = rel_setquery_(sql, t1, t2, corresponding, op_union );
+	if ( q->token == SQL_EXCEPT)
+		res = rel_setquery_(sql, t1, t2, corresponding, op_except );
+	if ( q->token == SQL_INTERSECT)
+		res = rel_setquery_(sql, t1, t2, corresponding, op_inter );
+	if (res && dist) 
+		res = rel_distinct(res);
+	return res;
+}
+
+
+
+static sql_rel *
 rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, symbol *tab2, symbol *js)
 {
 	operator_type op = op_join;
@@ -2426,15 +2587,11 @@ rel_selects(mvc *sql, symbol *s)
 		sql->type = Q_TABLE;
 		break;
 	case SQL_UNION:
-		sql->type = Q_TABLE;
-		break;
 	case SQL_EXCEPT:
-		sql->type = Q_TABLE;
-		break;
 	case SQL_INTERSECT:
+		ret = rel_setquery(sql, NULL, s);
 		sql->type = Q_TABLE;
 		break;
-
 	default:
 		return NULL;
 	}

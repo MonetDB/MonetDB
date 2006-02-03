@@ -2,4 +2,4 @@
 
 PATH=$MONETDB_BUILD/src/mapi/examples/C:$MONETDB_PREFIX/lib/MonetDB/Tests:$PATH ; export PATH
 
-Mlog -x sample3 $HOST $SQLPORT sql
+Mlog -x sample3 $HOST $MAPIPORT sql

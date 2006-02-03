@@ -92,7 +92,7 @@ SQLConnect_(ODBCDbc *dbc, SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength, 
 		pwd = dupODBCstring(szPWD, (size_t) nPWDLength);
 	}
 
-	if (port == 0 && (s = getenv("SQLPORT")) != NULL)
+	if (port == 0 && (s = getenv("MAPIPORT")) != NULL)
 		port = atoi(s);
 	if (port == 0)
 		port = 45123;

@@ -764,7 +764,7 @@ push_selects_down(mvc *c, list *con)
 			}
 		}
 
-		if (mvc_debug_on(c,32768)) {
+		if (!mvc_debug_on(c,32768)) {
 			/* check for foreign key joins */
 			eqjoins = list_select(ejoins, (void*)1L, (fcmp)&join_cmp_eq, (fdup)&stmt_dup );
 			if (list_length(eqjoins) > 0) {

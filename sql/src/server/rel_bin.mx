@@ -350,12 +350,21 @@ rel2bin_join( mvc *sql, sql_rel *rel )
 		char *nme = column_name(c);
 		stmt *s = stmt_join(stmt_dup(jr), stmt_dup(c), cmp_equal);
 
-		s = stmt_alias(s, _strdup(rnme), _strdup(nme));
+		rnme = (rnme)?_strdup(rnme):NULL;
+		s = stmt_alias(s, rnme, _strdup(nme));
 		list_append(l, s);
 	}
 	stmt_destroy(jr);
 	stmt_destroy(right);
 	return stmt_list(l);
+}
+
+static stmt *const_column(stmt *val ) 
+{
+	sql_subtype *ct = tail_type(val);
+	stmt *temp = stmt_temp(ct);
+
+	return stmt_append(temp, val);
 }
 
 static stmt *
@@ -379,18 +388,240 @@ rel2bin_union( mvc *sql, sql_rel *rel )
 	l = create_stmt_list();
 	for( n = left->op1.lval->h, m = right->op1.lval->h; n && m; 
 		n = n->next, m = m->next ) {
-		stmt *c1 = n->data;
-		stmt *c2 = m->data;
-		char *rnme = table_name(c1);
+		stmt *c1 = stmt_dup(n->data);
+		stmt *c2 = stmt_dup(m->data);
+		char *rnme = rel->name;
 		char *nme = column_name(c1);
-		stmt *s = stmt_append(stmt_dup(c1), stmt_dup(c2));
+		stmt *s;
 
-		s = stmt_alias(s, _strdup(rnme), _strdup(nme));
+		if (c1 ->nrcols == 0)
+			c1 = const_column(c1);
+		s = stmt_append(c1, c2);
+		if (!rnme)
+			rnme = table_name(c1);
+		nme = _strdup(nme);
+		rnme = (rnme)?_strdup(rnme):NULL;
+		s = stmt_alias(s, rnme, nme);
 		list_append(l, s);
 	}
 	stmt_destroy(left);
 	stmt_destroy(right);
 	return stmt_list(l);
+}
+
+static stmt *
+rel2bin_except( mvc *sql, sql_rel *rel )
+{
+	list *stmts; 
+	node *n, *m;
+	stmt *left = NULL, *right = NULL;
+
+	group *lgrp = NULL, *rgrp = NULL;
+	stmt *s, *lm, *ls = NULL, *rs = NULL, *ld = NULL;
+	sql_subaggr *a;
+
+	if (rel->l) /* first construct the left sub relation */
+		left = subrel_bin(sql, rel->l);
+	if (rel->r) /* first construct the right sub relation */
+		right = subrel_bin(sql, rel->r);
+	if (!left || !right) { 
+		if (left) stmt_destroy(left);
+		if (right) stmt_destroy(right);
+		return NULL;	
+	}
+
+	/* construct relation */
+	stmts = create_stmt_list();
+	/*
+	 * The multi column intersect is handled using group by's and
+	 * group size counts on both sides of the intersect. We then
+	 * return for each group of A with min(A.count,B.count), 
+	 * number of rows.
+	 * 
+	 * The problem with this approach is that the groups should
+	 * have equal group identifiers. So we take the union of all
+	 * columns before the group by.
+	 */
+	for (n = left->op1.lval->h; n; n = n->next) 
+		lgrp = grp_create(stmt_dup(n->data), lgrp, NULL);
+	for (n = right->op1.lval->h; n; n = n->next) 
+		rgrp = grp_create(stmt_dup(n->data), rgrp, NULL);
+
+ 	a = sql_bind_aggr(sql->trans->module, "count", NULL);
+	ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a); 
+	a = sql_dup_aggr(a);
+	rs = stmt_aggr(stmt_dup(rgrp->grp), grp_dup(rgrp), a); 
+
+	/* now find the matching groups */
+	s = stmt_reljoin_init();
+	for (n = left->op1.lval->h, m = right->op1.lval->h; n && m; n = n->next, m = m->next) {
+		stmt *l = stmt_dup(n->data);
+		stmt *r = stmt_dup(m->data);
+
+		l = stmt_join(stmt_dup(lgrp->ext), l, cmp_equal);
+		r = stmt_join(stmt_dup(rgrp->ext), r, cmp_equal);
+		stmt_reljoin_fill(s, l, r);
+	}
+
+	/* the join of the groups removed those in A but not in B,
+	 * we need these later so keep these in 'ld' */
+	ld = stmt_diff(stmt_dup(ls), stmt_dup(s));
+		
+	/*if (!distinct) */
+	{
+		sql_subfunc *sub;
+
+		lm = stmt_reverse(stmt_mark_tail(stmt_dup(s),0));
+		ls = stmt_join(stmt_dup(lm),ls,cmp_equal);
+		rs = stmt_join(stmt_mark(s,0),rs,cmp_equal);
+
+ 		sub = sql_bind_func(sql->trans->module, "sql_sub", tail_type(ls), tail_type(rs));
+		/*s = sql_binop_(sql, NULL, "sql_sub", ls, rs);*/
+		s = stmt_binop(ls, rs, sub);
+		s = stmt_select(s, stmt_atom_int(0), cmp_gt);
+
+		/* A ids */
+		s = stmt_join(stmt_reverse(lm), s, cmp_equal);
+		/* now we need to add the groups which weren't in B */
+		s = stmt_union(ld,s);
+		/* now we have gid,cnt, blowup to full groupsizes */
+		s = stmt_gen_group(s);
+	/*
+	} else {
+		stmt_destroy(s);
+		s = ld;
+	*/
+	}
+	s = stmt_mark_tail(s, 500); 
+	/* from gid back to A id's */
+	s = stmt_reverse(stmt_join(stmt_dup(lgrp->ext), s, cmp_equal));
+
+	grp_destroy(lgrp);
+	grp_destroy(rgrp);
+
+	/* project columns of left hand expression */
+	for (n = left->op1.lval->h; n; n = n->next) {
+		stmt *c1 = stmt_dup(n->data);
+		char *rnme = rel->name;
+		char *nme = column_name(c1);
+
+		/* retain name via the stmt_alias */
+		c1 = stmt_join(stmt_dup(s), c1, cmp_equal);
+
+		if (!rnme)
+			rnme = table_name(c1);
+		
+		nme = _strdup(nme);
+		rnme = (rnme)?_strdup(rnme):NULL;
+		c1 = stmt_alias(c1, rnme, nme);
+		list_append(stmts, c1);
+	}
+	stmt_destroy(s);
+
+	stmt_destroy(left);
+	stmt_destroy(right);
+	return stmt_list(stmts);
+}
+
+static stmt *
+rel2bin_inter( mvc *sql, sql_rel *rel )
+{
+	list *stmts; 
+	node *n, *m;
+	stmt *left = NULL, *right = NULL;
+
+	group *lgrp = NULL, *rgrp = NULL;
+	stmt *s, *lm, *ls = NULL, *rs = NULL;
+	sql_subaggr *a;
+
+	if (rel->l) /* first construct the left sub relation */
+		left = subrel_bin(sql, rel->l);
+	if (rel->r) /* first construct the right sub relation */
+		right = subrel_bin(sql, rel->r);
+	if (!left || !right) { 
+		if (left) stmt_destroy(left);
+		if (right) stmt_destroy(right);
+		return NULL;	
+	}
+
+	/* construct relation */
+	stmts = create_stmt_list();
+	/*
+	 * The multi column intersect is handled using group by's and
+	 * group size counts on both sides of the intersect. We then
+	 * return for each group of A with min(A.count,B.count), 
+	 * number of rows.
+	 * 
+	 * The problem with this approach is that the groups should
+	 * have equal group identifiers. So we take the union of all
+	 * columns before the group by.
+	 */
+	for (n = left->op1.lval->h; n; n = n->next) 
+		lgrp = grp_create(stmt_dup(n->data), lgrp, NULL);
+	for (n = right->op1.lval->h; n; n = n->next) 
+		rgrp = grp_create(stmt_dup(n->data), rgrp, NULL);
+
+ 	a = sql_bind_aggr(sql->trans->module, "count", NULL);
+	ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a); 
+	a = sql_dup_aggr(a);
+	rs = stmt_aggr(stmt_dup(rgrp->grp), grp_dup(rgrp), a); 
+
+	/* now find the matching groups */
+	s = stmt_reljoin_init();
+	for (n = left->op1.lval->h, m = right->op1.lval->h; n && m; n = n->next, m = m->next) {
+		stmt *l = stmt_dup(n->data);
+		stmt *r = stmt_dup(m->data);
+
+		l = stmt_join(stmt_dup(lgrp->ext), l, cmp_equal);
+		r = stmt_join(stmt_dup(rgrp->ext), r, cmp_equal);
+		stmt_reljoin_fill(s, l, r);
+	}
+		
+	/*if (!distinct) */
+	{
+		sql_subfunc *min;
+
+		lm = stmt_reverse(stmt_mark_tail(stmt_dup(s),0));
+		ls = stmt_join(stmt_dup(lm),ls,cmp_equal);
+		rs = stmt_join(stmt_mark(s,0),rs,cmp_equal);
+
+ 		min = sql_bind_func(sql->trans->module, "sql_min", tail_type(ls), tail_type(rs));
+		/*s = sql_binop_(sql, NULL, "sql_min", ls, rs);*/
+		s = stmt_binop(ls, rs, min);
+		/* A ids */
+		s = stmt_join(stmt_reverse(lm), s, cmp_equal);
+		/* now we have gid,cnt, blowup to full groupsizes */
+		s = stmt_gen_group(s);
+	}
+	s = stmt_mark_tail(s, 500); 
+	/* from gid back to A id's */
+	s = stmt_reverse(stmt_join(stmt_dup(lgrp->ext), s, cmp_equal));
+
+	grp_destroy(lgrp);
+	grp_destroy(rgrp);
+
+	/* project columns of left hand expression */
+	for (n = left->op1.lval->h; n; n = n->next) {
+		stmt *c1 = stmt_dup(n->data);
+		char *rnme = rel->name;
+		char *nme = column_name(c1);
+
+		/* retain name via the stmt_alias */
+		c1 = stmt_join(stmt_dup(s), c1, cmp_equal);
+
+		if (!rnme)
+			rnme = table_name(c1);
+		
+		nme = _strdup(nme);
+		rnme = (rnme)?_strdup(rnme):NULL;
+		c1 = stmt_alias(c1, rnme, nme);
+		list_append(stmts, c1);
+	}
+	stmt_destroy(s);
+
+	stmt_destroy(left);
+	stmt_destroy(right);
+	return stmt_list(stmts);
 }
 
 static stmt *
@@ -441,7 +672,8 @@ rel2bin_project( mvc *sql, sql_rel *rel )
 
 		if (!s) {
 			list_destroy(l);
-			if (sub) stmt_destroy(sub);
+			if (sub) 
+				stmt_destroy(sub);
 			return NULL;
 		}
 		if (sub && sub->nrcols >= 1 && s->nrcols == 0)
@@ -648,7 +880,6 @@ rel2bin_topn( mvc *sql, sql_rel *rel )
 	n = sub->op1.lval->h;
 	newl = create_stmt_list();
 
-
 	if (n) {
 		stmt *limit = NULL;
 
@@ -680,7 +911,6 @@ static stmt *
 subrel_bin(mvc *sql, sql_rel *rel ) 
 {
 	stmt *s = NULL;
-	char *r = NULL;
 
 	if (!rel)
 		return s;
@@ -697,15 +927,11 @@ subrel_bin(mvc *sql, sql_rel *rel )
 	case op_union: 
 		s = rel2bin_union(sql, rel);
 		break;
-	case op_inter: 
 	case op_except: 
-		r = "union";
-		if (rel->op == op_inter)
-			r = "intersect";
-		else if (rel->op == op_except)
-			r = "minus";
-		printf("todo %s\n", r);
-		subrel_bin(sql, rel->r);
+		s = rel2bin_except(sql, rel);
+		break;
+	case op_inter: 
+		s = rel2bin_inter(sql, rel);
 		break;
 	case op_project:
 		s = rel2bin_project(sql, rel);

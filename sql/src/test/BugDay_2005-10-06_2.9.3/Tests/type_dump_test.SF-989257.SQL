@@ -13,7 +13,7 @@ EOF
 LANG="en_US.UTF-8"
 export LANG
 
-Mlog   "$MTIMEOUT java -jar \"$JAR\" -h $HOST -p $SQLPORT -f $RELSRCDIR/type_dump_test.SF-989257-src.sql"
-	$MTIMEOUT java -jar  "$JAR"  -h $HOST -p $SQLPORT -f $RELSRCDIR/type_dump_test.SF-989257-src.sql 
+Mlog   "$MTIMEOUT java -jar \"$JAR\" -h $HOST -p $MAPIPORT -f $RELSRCDIR/type_dump_test.SF-989257-src.sql"
+	$MTIMEOUT java -jar  "$JAR"  -h $HOST -p $MAPIPORT -f $RELSRCDIR/type_dump_test.SF-989257-src.sql 
 
 rm -f .monetdb

@@ -871,7 +871,9 @@ log_tend(logger *logger)
 
 	l.flag = SQL_LOG_END;
 	l.nr = logger->tid;
-	if (log_write_format(logger, &l) == SQL_ERR || stream_flush(logger->log))
+	if (log_write_format(logger, &l) == SQL_ERR || 
+	    stream_flush(logger->log) ||
+	    stream_fsync(logger->log))
 		 return SQL_ERR;
 
 	return SQL_OK;

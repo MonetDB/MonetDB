@@ -142,7 +142,7 @@ module 'sql_server'
 [ "sht(str) : sht"							  ]
 [ "sht(str, int) : sht"							  ]
 [ "sht(str, int, int) : sht"						  ]
-[ "sqlclient( Stream s_in, Stream s_out ) "				  ]
+[ "sql_frontend() : ptr"							  ]
 [ "sqlconsole( ) "							  ]
 [ "sqllogmanager() : void"						  ]
 [ "str(mvc, int, int, int, int, any, int) : str"				  ]

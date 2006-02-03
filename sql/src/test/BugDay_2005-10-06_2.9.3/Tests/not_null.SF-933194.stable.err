@@ -73,7 +73,6 @@ stderr of test 'not_null.SF-933194` in directory 'src/test/BugDay_2005-10-06_2.9
 # 15:04:15 >  Mtimeout -timeout 60 java -jar /net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/sql/build/src/jdbc/MonetDB_JDBC.jar -h localhost -p 45134 -f ../../../../..//current/sql/src/test/BugDay_2005-10-06_2.9.3/Tests/not_null.SF-933194-src.sql
 # 15:04:15 >  
 
-Connection warning: database specifier not supported on this server (mserver_sql), protocol version 4
 
 # 15:04:15 >  
 # 15:04:15 >  Done.

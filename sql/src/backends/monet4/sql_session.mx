@@ -42,8 +42,6 @@ typedef struct backend {
 	stream *out;
 } backend;
 
-extern int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res);
-
 extern void monet4_parse(backend_stack stk, char *code);
 
 extern int sqlstatement(char *cmd, Cntxt stk);
@@ -66,6 +64,7 @@ extern int mvc_sql(mvc *c, str query);
 #include <sql_env.h>		/* explain,debug,reply_size,auto_commit etc */
 #include <bat/bat_store.h>
 #include <bat/res_table.h>
+#include <mapi.h>
 
 @= builtin_operand
 {
@@ -381,35 +380,12 @@ handle_error(mvc *m, stream *out, int pstatus)
 
 @c
 int
-sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int console)
+sqlclient(backend *sql, bstream *in, stream *out)
 {
-	int go = TRUE;
-	char *errbuf;
-	backend *sql;
-	Variable v;
-
-	int err;
+	mvc *m = sql->mvc;
+	int err, go = TRUE;
 	int language = 'S';
 	prot oldmode;
-
-	sql = backend_create(trace, m, console);
-
-	/* add myc and Output, Input to the stack */
-	v = VARnew(stk, "myc");
-	v->binding.vtype = TYPE_mvc;
-	v->binding.val.pval = m;
-
-	v = VARnew(stk, "Output");
-	v->binding.vtype = TYPE_Stream;
-	v->binding.val.pval = out;
-
-	v = VARnew(stk, "Input");
-	v->binding.vtype = TYPE_Bstream;
-	v->binding.val.pval = in;
-
-	errbuf = GDKmalloc(GDKMAXERRLEN);
-	errbuf[0] = '\0';
-	GDKsetbuf(errbuf);
 
 	in->eof = 1;		/* force prompt on first iteration */
 	while (go) {
@@ -523,10 +499,6 @@ query string with "M".
 		if (err) /* output error */
 			go = handle_error(m, out, pstatus);
 	}
-
-	_DELETE(errbuf);
-	GDKsetbuf(NULL);
-	backend_destroy(sql);
 	return GDK_SUCCEED;
 }
 
@@ -644,168 +616,15 @@ mvc_sql(mvc *m, char *cmd)
 		return GDK_SUCCEED;
 }
 
-@-
-The new SQL client server works with a Mapi compliant front-end.
-The routine below is called when someone knocks on the door for
-an SQL connection.
-
-To simplify the implementation, we will patch MAPIlisten to
-recognize the call for SQLmapiclient and adhere to the Mapi protocol
-to read an authentication line, i.e.
-<username>:<password>:blocked
-We assume that a new user-context has been set using a proper fork()
-command. This means that the SQL client runs under the authentication of
-the DBA.
-@c
-
-int
-sqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
-{
-	int trace = 0, ret = GDK_SUCCEED;
-	ssize_t i = 0;
-	char buf[BUFSIZ + 1];
-	char *user, *passwd, *schema, *challenge;
-	int blocked = 0;
-
-	mvc *m;
-	stream **In, **Out;
-	stream *in, *out;
-	bstream *rs;
-
-	Thread sqlthread = THRget(THRgettid());
-	Client client;
-
-	CNTXTclient((Cntxt) (ptrdiff_t) stk, &client);
-
-	if (lt->cnt != 2) {
-		return handle_argerror(res, lt->cnt, 2);
-	}
-	@:builtin_operand(0,TYPE_Stream,In)@
-	in = *In;
-	@:builtin_operand(1,TYPE_Stream,Out)@
-	out = *Out;
-
-@-
-Start analysis using the mapi-client protocol.
-Use default setting for trace.
-@c
-	if (in == 0) {
-		GDKsyserror("mapisqlclient:stream-r problems\n");
-		closeClient(client, 0); 	
-		return GDK_FAIL;
-	}
-	if (out == 0) {
-		GDKsyserror("mapisqlclient:stream-w problems\n");
-		closeClient(client, 0); 	
-		return GDK_FAIL;
-	}
-	/* send challenge string, currently empty (disabled) */
-	challenge = "::mserver_sql:4\n";
-	/* temporarily misuse user variable */
-	user = GDKmalloc(sizeof(char) * 100);
-	snprintf(user, 100, "%2u%s", (unsigned int)strlen(challenge), challenge);
-	stream_write(out, user, strlen(user), 1);
-	GDKfree(user);
-	/* get user name */
-	memset(buf, 0, BUFSIZ);
-	user = buf;
-	if (stream_read(in, user, 1, 1) < 0) {
-		closeClient(client, 0); 	
-		return GDK_FAIL;
-	}
-	for (i = 0; i < BUFSIZ && *user != '\n'; i++) {
-		user++;
-		if (stream_read(in, user, 1, 1) < 0) {
-			closeClient(client, 0); 	
-			return GDK_FAIL;
-		}
-	}
-	*user = 0;
-	user = buf;
-	passwd = strrchr(user, ':');
-	if (passwd && strncmp(passwd, ":blocked", 8) == 0) {
-		blocked = 1;
-		*passwd = 0;
-	}
-	passwd = strrchr(user, ':');
-	if (passwd && strncasecmp(passwd, ":sql", 4) == 0) {
-		/* skip :sql only used for M5 */
-		*passwd = 0;
-	}
-
-	passwd = strchr(user, ':');
-	if (passwd) {
-		*passwd = 0;
-		passwd++;
-		user = _strdup(buf);
-		passwd = _strdup(passwd);
-	} else {
-		closeClient(client, 0); 	
-		return GDK_FAIL;
-	}
-
-	if (blocked) {
-		in = block_stream(stream_rstream(in));
-		out = block_stream(stream_wstream(out));
-
-		monetSetChannel(sqlthread, in, out);
-
-		client->fdin = in;
-		client->fdout = out;
-	}
-
-	if (out == 0) {
-		GDKsyserror("mapisqlclient:stream-w problems\n");
-		GDKfree(user);
-		GDKfree(passwd);
-		closeClient(client, 0); 	
-		return GDK_FAIL;
-	}
-@-
-The server should emit an identity message, e.g. the Mserver version
-These lines should be eaten away into the prompt is encountered.
-@c
-
-	rs = bstream_create(in, isa_block_stream(in) ? (128 * BLOCK) : 0);
-	m = mvc_create(stk, (backend_stack) stk, rs, out);
-	m->cache = 1;
-	if (blocked)
-		m->scanner.mode = BLOCKED;
-	schema = mvc_login(m, user, passwd);
-	GDKfree(user);
-	GDKfree(passwd);
-
-	if (!schema) {
-		/* close the connection to the Monet server */
-		if (error(out, "!ERROR: Schema authorization error") == 0 && (!blocked && stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) >= 0))
-			stream_flush(out);
-		res_tables_destroy(m->results);
-		mvc_destroy(m);
-		closeClient(client, 0); 	
-		return GDK_FAIL;
-	}
-	GDKfree(schema);
-
-	ret = sqlclient2(m, stk, rs, out, trace, 0);
-	res_tables_destroy(m->results);
-	mvc_destroy(m);
-	/* Make sure that the write- (out-) stream is closed first,
-	 * as the related read- (in-) stream closes the shared
-	 * socket; see also MonetDB/src/common/stream.mx:socket_close .
-	 */
-	bstream_destroy(rs);
-	closeClient(client, 0); 	
-	return ret;
-}
-
 int
 sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 {
 	int ret = GDK_SUCCEED;
-	char *schema;
-
 	stream *in = GDKin, *out = GDKout;
 	bstream *rs;
+	Variable v;
+	backend *sql;
+	char *schema;
 	mvc *m;
 
 	if (lt->cnt != 0)
@@ -830,12 +649,142 @@ sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 	GDKfree(schema);
 	stream_flush(out);
 
-	ret = sqlclient2(m, stk, rs, out, 0, 1);
-	res_tables_destroy(m->results);
-	mvc_destroy(m);
+	/* add myc and Output, Input to the stack */
+	v = VARnew(stk, "myc");
+	v->binding.vtype = TYPE_mvc;
+	v->binding.val.pval = m;
+
+	v = VARnew(stk, "Output");
+	v->binding.vtype = TYPE_Stream;
+	v->binding.val.pval = out;
+
+	v = VARnew(stk, "Input");
+	v->binding.vtype = TYPE_Bstream;
+	v->binding.val.pval = rs;
+
+	sql = backend_create(0, m, 1);
+	ret = sqlclient(sql, rs, out);
 	bstream_destroy(rs);
+	res_tables_destroy(m->results);
+	m->results = NULL;	
+	backend_destroy(sql);
+	mvc_destroy(m);
 	return ret;
 }
+
+static char *
+sql_client_alloc(mapi_client *fc)
+{
+	mvc *m = mvc_create(0, (backend_stack)fc->stk, NULL, NULL);
+	backend *be = backend_create(0, m, 0);
+	Variable v;
+
+	if (!m) 
+		return "!ERROR: Couldn't allocate sql catalog";
+	fc->fc = be;
+	m->cache = 1;
+
+	/* add myc and Output, Input to the stack */
+	v = VARnew(fc->stk, "myc");
+	v->binding.vtype = TYPE_mvc;
+	v->binding.val.pval = m;
+
+	v = VARnew(fc->stk, "Output");
+	v->binding.vtype = TYPE_Stream;
+	v->binding.val.pval = NULL;
+
+	v = VARnew(fc->stk, "Input");
+	v->binding.vtype = TYPE_Bstream;
+	v->binding.val.pval = NULL;
+
+	return NULL;
+}
+
+static char * 
+sql_client_init(mapi_client *fc)
+{
+	bstream *rs;
+	backend *be = fc->fc;
+	mvc *m = be->mvc;
+	char *schema;
+	Variable v;
+
+	rs = bstream_create(fc->c->fdin, fc->c->blocked ? (128 * BLOCK) : 0);
+	mvc_reset(m, rs, fc->c->fdout);
+	schema = mvc_login(m, fc->c->user, fc->c->passwd);
+	if (!schema) {
+		char *res = "!ERROR: Schema authorization error";
+		res_tables_destroy(m->results);
+		m->results = NULL;
+		return res;
+	}
+	GDKfree(schema);
+
+        v = VARfind(&fc->stk, "Output");
+        if (v == NULL) 
+            return "sql_client_init: failed to lookup Output variable.\n"; 
+        if (v->binding.vtype != TYPE_Stream) 
+            return "sql_client_init: Output variable has wrong type != stream.\n"; 
+        v->binding.val.pval = fc->c->fdout; 
+
+        v = VARfind(&fc->stk, "Input");
+        if (v == NULL) 
+            return "sql_client_init: failed to lookup Input variable.\n"; 
+        if (v->binding.vtype != TYPE_Bstream) 
+            return "sql_client_init: Input variable has wrong type != bstream.\n"; 
+        v->binding.val.pval = m->scanner.rs; 
+	return NULL; /* no error */
+}
+
+static void
+sql_client_engine(mapi_client *fc )
+{
+	backend *be = fc->fc;
+	char *buf = THRget_errbuf(fc->thread);
+
+	if (!buf) {
+		buf = GDKmalloc(GDKMAXERRLEN);
+		buf[0] = '\0';
+		THRset_errbuf(fc->thread, buf);
+	}
+	sqlclient(be, be->mvc->scanner.rs, be->mvc->scanner.ws);
+	bstream_destroy(be->mvc->scanner.rs);
+	res_tables_destroy(be->mvc->results);
+	be->mvc->results = NULL;
+}
+
+static void  
+sql_client_free(mapi_client *fc)
+{
+	backend *be = fc->fc;
+	mvc *m = be->mvc;
+	char *buf = THRget_errbuf(fc->thread);
+
+	if (buf) {
+		GDKfree(buf);
+		THRset_errbuf(fc->thread, NULL);
+	}
+	fc->fc = NULL;
+	backend_destroy(be);
+	mvc_destroy(m);
+}
+
+int
+sql_frontend( ptr *F )
+{
+	char *m_clients = GDKgetenv("mapi_clients"); 
+	int nr = (m_clients)?strtol(m_clients, NULL, 10):1;
+	mapi_frontend *f = (mapi_frontend*)GDKmalloc(sizeof(mapi_frontend));
+	*F = f;
+	f->name = GDKstrdup("sql");
+	f->cache_limit = nr;
+	f->f_alloc = sql_client_alloc;
+	f->f_init  = sql_client_init;
+	f->f_free  = sql_client_free;
+	f->f_engine  = sql_client_engine; /* read/parse/execute loop */
+	return GDK_SUCCEED;
+}
+
 
 int
 mvc_new(Cntxt stk, YYSTREE lt, ValPtr res)

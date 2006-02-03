@@ -34,6 +34,9 @@ for the time being.
 	.ATOM mvc = ptr;
 	.END;
 
+	.COMMAND sql_frontend() : ptr = sql_frontend;
+		"create/return the sql_frontend"
+
 @+ extra low level interface 
 @m
 	.BUILTIN mvc_new() : mvc = mvc_new;
@@ -43,9 +46,6 @@ for the time being.
 	"commit/abort and destroy sql contect"
 @+ 
 @m
-
-	.BUILTIN sqlclient( Stream s_in, Stream s_out ) = sqlclient;
-	"Read sql statements from s_in and output results on s_out"
 
 	.BUILTIN sqlconsole( ) = sqlconsole;
 	"Read sql statements from stdin and output results on stdout"
@@ -1124,18 +1124,19 @@ proc sql_server_start(bit global) : void {
 	tzone_local(TIMEZONE("GMT"));
 
 	if (isnil(err)){
+		mapi_register(sql_frontend());
+
 		fork(sqllogmanager());
 
-		fork(mapi_listen(
-			int(monet_environment.find("sql_port")),
-			5,
-			"sqlclient",
-			global
-			)
-		);
-		# start a default mapi client for debugging, this should go once
-		# MonetDB SQL gets stable.
-		# fork(mapi_listen(int(monet_environment.find("mapi_port")), 5, ""));
+		if (not(mapi_running())) {
+			fork(mapi_listen(
+				int(monet_environment.find("mapi_port")),
+				str(nil),
+				5,
+				global
+				)
+			);
+		}
 	} else {
 		printf(err);
 	}

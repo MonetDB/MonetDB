@@ -98,6 +98,7 @@ extern void mvc_exit();
 extern void mvc_logmanager();
 
 extern mvc *mvc_create(int clientid, backend_stack stk, bstream *rs, stream *ws);
+extern void mvc_reset(mvc *m, bstream *rs, stream *ws);
 extern void mvc_destroy(mvc *c);
 
 extern ssize_t mvc_status(mvc *c);
@@ -594,6 +595,62 @@ mvc_create(int clientid, backend_stack stk, bstream *rs, stream *ws)
 
 	scanner_init(&m->scanner, rs, ws);
 	return m;
+}
+
+void
+mvc_reset(mvc *m, bstream *rs, stream *ws)
+{
+	sql_trans *tr;
+
+	if (mvc_debug)
+		fprintf(stderr, "mvc_reset\n");
+	tr = m->trans;
+	if (tr) {
+		store_lock();
+		while (tr->parent)
+			tr = sql_trans_destroy(tr);
+		store_unlock();
+	}
+
+	m->trans = NULL;
+
+	if (m->schema)
+		_DELETE(m->schema);
+	if (m->user)
+		_DELETE(m->user);
+	if (m->role)
+		_DELETE(m->role);
+	m->schema = m->role = m->user = NULL;
+
+	if (m->sa)
+		m->sa = sa_reset(m->sa);
+	else 
+		m->sa = sa_create();
+
+	m->errstr[0] = '\0';
+	m->schema_number = 0;
+
+	m->params = NULL;
+	m->argc = 0;
+	m->sym = NULL;
+
+	m->role_id = m->user_id = -1;
+	m->timezone = 0;
+
+	m->mode = m_normal;
+	m->explain = m_normal;
+	m->auto_commit = 1;
+	m->reply_size = 100;
+	m->debug = 0;
+	m->depth = 0;
+
+	m->status = 0;
+	m->type = Q_PARSE;
+
+	m->result_id = 0;
+	m->results = NULL;
+
+	scanner_init(&m->scanner, rs, ws);
 }
 
 void

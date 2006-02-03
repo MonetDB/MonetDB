@@ -12,6 +12,6 @@ echo password=monetdb>>	.monetdb
 
 set LANG=en_US.UTF-8
 
-call Mlog.bat -x java -jar "%JAR%" -h %HOST% -p %SQLPORT% -f "%RELSRCDIR%\alter_table_describe.SF-1146092-src.sql"
+call Mlog.bat -x java -jar "%JAR%" -h %HOST% -p %MAPIPORT% -f "%RELSRCDIR%\alter_table_describe.SF-1146092-src.sql"
 
 del .monetdb

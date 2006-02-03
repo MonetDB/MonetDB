@@ -15,10 +15,10 @@ echo password=monetdb>>	.monetdb
 
 set LANG=en_US.UTF-8
 
-call Mlog.bat -x java -jar "%JAR%" -h %HOST% -p %SQLPORT% -f "%RELSRCDIR%\..\JdbcClient_create_tables.sql"
+call Mlog.bat -x java -jar "%JAR%" -h %HOST% -p %MAPIPORT% -f "%RELSRCDIR%\..\JdbcClient_create_tables.sql"
 
-call Mlog.bat -x java -jar "%JAR%" -h %HOST% -p %SQLPORT% -f "%RELSRCDIR%\..\JdbcClient_inserts_selects.sql"
+call Mlog.bat -x java -jar "%JAR%" -h %HOST% -p %MAPIPORT% -f "%RELSRCDIR%\..\JdbcClient_inserts_selects.sql"
 
-call Mlog.bat -x java -jar "%JAR%" -h %HOST% -p %SQLPORT% -d
+call Mlog.bat -x java -jar "%JAR%" -h %HOST% -p %MAPIPORT% -d
 
 del .monetdb

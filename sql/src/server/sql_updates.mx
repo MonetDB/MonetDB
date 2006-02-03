@@ -29,6 +29,12 @@
 #include "sql_scope.h"
 #include "sql_statement.h"
 
+/*
+ * TODO change result of the update statements into  
+ *	insert(mvc, table t, rel_query q)
+ *	update(mvc, table t, rel_query newvalues, rel_query q)
+ *	delete(mvc, table t, rel_query q)
+ */
 extern stmt *updates(mvc *sql, symbol *sym);
 
 extern void cleanup_stmts(stmt **stmts, int cnt);

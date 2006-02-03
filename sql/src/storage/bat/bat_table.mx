@@ -85,6 +85,7 @@ full_column(sql_column *c, BAT *d, BAT *s )
 	if (d) {
 		r = BATkdiff(b,BATmirror(d)); bat_destroy(b); b = r;
 	}
+	assert(r->thash == NULL);
 	return r;
 }
 
@@ -217,6 +218,7 @@ table_delete(sql_trans *tr, sql_table *t, oid rid)
 	oid id = b->hseqbase + BATcount(b);
 
 	assert(rid != oid_nil);
+	assert(rid != -1);
 
 	BUNins(b, (ptr) &id, (ptr) &rid);
 	bat_destroy(b);

@@ -2,4 +2,4 @@
 
 set PATH=%MONETDB_BUILD%\src\mapi\examples\C;%MONETDB_PREFIX%\lib\MonetDB\Tests;%PATH%
 
-call Mlog.bat -x sample3.exe %HOST% %SQLPORT% sql
+call Mlog.bat -x sample3.exe %HOST% %MAPIPORT% sql

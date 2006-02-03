@@ -178,12 +178,25 @@ typedef struct sql_subfunc {
 	sql_subtype res;
 } sql_subfunc;
 
+typedef struct pbat {
+	/* TODO merge name and uname into one string 
+	 * name  = pb->nme+2 (skip U_) 
+	 * uname = pb->nme
+	 */
+	char *nme;
+	oid  base; 	/* hseqbase, columns aren't dense ranges */
+	int  clustered; /* stable bats could be clustered */
+	oid  bid;  
+
+	oid  ubid; /* updates per pbat ? */
+} pbat;
+
 typedef struct sql_bat {
 	char *name;		/* name of the main bat */
 	char *uname;		/* name of updates bat */
 	oid bid;
-	oid ubid;		/* bat with updates */
 	oid ibid;		/* bat with inserts */
+	oid ubid;		/* bat with updates */
 } sql_bat;
 
 typedef enum key_type {
@@ -208,8 +221,8 @@ typedef struct sql_idx {
 	idx_type type;		/* unique */
 	struct list *columns;	/* list of sql_kc */
 	struct sql_table *t;
-	sql_bat bat;
 	struct sql_key *key;	/* key */
+	sql_bat bat;
 } sql_idx;
 
 /* fkey consists of two of these */
@@ -344,10 +357,11 @@ typedef struct sql_trans {
 	int wtime;
 	int schema_updates;	/* set on schema changes */
 	int status;		/* status of the last query */
-	int level;
+	int level;		/* TRANSACTION isolation level */
 
 	sql_schema *schema;
 	changeset schemas;
+	/* TODO add temp tables, ttables, tcolumns, sessions etc */
 	changeset modules;
 	/* also need a current module, normaly main but during create module
 	 * different */
