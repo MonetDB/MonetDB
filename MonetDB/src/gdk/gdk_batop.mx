@@ -247,7 +247,7 @@ BATappend(BAT *b, BAT *n)
 			f = *(oid*)BUNtloc(n, BUNfirst(n)); 
 
 		if (BATcount(b) == 0)
-			b->tseqbase = f;
+			BATmirror(b)->hseqbase = b->tseqbase = f;
 		if (BATtdense(n) && BATcount(b) + b->tseqbase == f) {
 			if (b->htype != TYPE_void) {
 				BUN r = BUNlast(b);
@@ -284,9 +284,9 @@ BATappend(BAT *b, BAT *n)
 			BAT *bm = BATmirror(b);
 
 			ALIGNsetH(bm, BATmirror(n));
-			b->tseqbase = n->tseqbase;
+			b->tseqbase = bm->hseqbase = n->tseqbase;
 			if (n->tdense && n->ttype == TYPE_oid) {
-				b->tseqbase = *(oid*)BUNtail(n, BUNfirst(n));
+				b->tseqbase = bm->hseqbase = *(oid*)BUNtail(n, BUNfirst(n));
 			}
 			b->tdense = n->tdense;
 			b->T->nodense = n->T->nodense;
