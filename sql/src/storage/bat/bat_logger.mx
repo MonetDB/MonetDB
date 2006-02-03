@@ -745,7 +745,8 @@ log_bat_persists(logger *logger, BAT *b, char *name)
 		 return SQL_ERR;
 
 	if (logger->debug & 1)
-		fprintf(stderr, "Logged new bat [%s,%s] %s\n", ha, ta, name);
+		fprintf(stderr, "Logged new bat [%s,%s] %s " SZFMT "\n", ha, ta, name,
+			BATcount(b));
 	return log_bat(logger, b, name);
 }
 

@@ -2358,8 +2358,13 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 
 	t->dname = NULL;
 	t->dbid = ot->dbid;
-	if (t->dbid)
-		t->dbid = temp_copy(t->dbid, t->clear);
+	if (t->dbid) {
+		if (isNew(t) ) {
+			ot->dbid = temp_copy(t->dbid, t->clear);
+		} else {
+			t->dbid = temp_copy(t->dbid, t->clear);
+		}
+	}
 
 	t->s = s;
 	t->sz = ot->sz;
