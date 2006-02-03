@@ -1739,8 +1739,31 @@ xquery_client_new(Cntxt stk) {
 static char *
 xquery_client_alloc_(xquery_client *ctx)
 {
+    Variable v;
+
     if (!xquery_mil_exec(ctx, (char*) PFinitMIL(), 0))
         return "xquery_client_alloc: failed to execute init script.\n"; 
+
+    v = VARfind(&ctx->stk, "shredBAT");
+    if (v == NULL) 
+        return "xquery_client_init: failed to lookup shredBAT variable.\n"; 
+    if (v->binding.vtype != TYPE_int) 
+        return "xquery_client_init: shredBAT variable has wrong type != int.\n"; 
+    ctx->shredBAT = &v->binding.val.ival; 
+
+    v = VARfind(&ctx->stk, "genType");
+    if (v == NULL) 
+        return "xquery_client_init: failed to lookup genType variable.\n"; 
+    if (v->binding.vtype != TYPE_str) 
+        return "xquery_client_init: genType variable has wrong type != str.\n"; 
+    ctx->genType = &v->binding.val.sval; 
+
+    v = VARfind(&ctx->stk, "time_compile");
+    if (v == NULL) 
+        return "xquery_client_init: failed to lookup time_compile variable.\n"; 
+    if (v->binding.vtype != TYPE_int) 
+        return "xquery_client_init: time_compile variable has wrong type != int.\n"; 
+    ctx->time_compile = &v->binding.val.ival; 
 
     @:find_bat(proc_vid)@
     @:find_bat(var_usage)@
@@ -1795,36 +1818,10 @@ xquery_client_alloc(mapi_client *fc)
 static char *
 xquery_client_init_(xquery_client *ctx )
 {
-    Variable v;
-
     ctx->fderr = GDKerr;
        
-    v = VARfind(&ctx->stk, "shredBAT");
-    if (v == NULL && !xquery_mil_exec(ctx, (char*) PFvarMIL(), 0))
+    if (!xquery_mil_exec(ctx, (char*) PFvarMIL(), 0))
         return "xquery_client_init: failed to execute variable declarations.\n"; 
-    if (v == NULL) { 
-        v = VARfind(&ctx->stk, "shredBAT");
-        if (v == NULL) 
-            return "xquery_client_init: failed to lookup shredBAT variable.\n"; 
-        if (v->binding.vtype != TYPE_int) 
-            return "xquery_client_init: shredBAT variable has wrong type != int.\n"; 
-        ctx->shredBAT = &v->binding.val.ival; 
-
-        v = VARfind(&ctx->stk, "genType");
-        if (v == NULL) 
-            return "xquery_client_init: failed to lookup genType variable.\n"; 
-        if (v->binding.vtype != TYPE_str) 
-            return "xquery_client_init: genType variable has wrong type != str.\n"; 
-        ctx->genType = &v->binding.val.sval; 
-
-        v = VARfind(&ctx->stk, "time_compile");
-        if (v == NULL) 
-            return "xquery_client_init: failed to lookup time_compile variable.\n"; 
-        if (v->binding.vtype != TYPE_int) 
-            return "xquery_client_init: time_compile variable has wrong type != int.\n"; 
-        ctx->time_compile = &v->binding.val.ival; 
-    }
-
     return NULL;
 }
 
@@ -1933,6 +1930,7 @@ xquery_client_end(xquery_client *ctx, char *err)
     BATclear(ctx->int_values);
     BATclear(ctx->str_values);
     BUNappend(ctx->str_values, (ptr)str_nil);
+    *ctx->shredBAT = int_nil; 
 
     MT_set_lock(pf_cache_lock, "xquery_client_end");
     /* only deactivate the loaded modules */
