@@ -26,6 +26,8 @@ Usage: pf [OPTION] [FILE]
 = -M, --print-mil_summer: print MIL code (summer version) (default)
 = -P, --print-human-readable: print internal tree structure human-readable
 = -D, --print-att-dot: print internal tree structure in AT&T dot notation
+= -X, --print-XML: print internal tree structure in XML notation
+        (only works for logical algebra tree)
 = -T, --timing: print elapsed times for compiler phases
 = -O[0-3], --optimize: select optimization level (default=1)
 = -t, --typing: print static types (in {...}) for Core
