@@ -2013,6 +2013,7 @@ store_exit()
 		return;
 
 	MT_set_lock(bs_lock, "store_exit");
+	logger = NULL;
 #ifdef STORE_DEBUG
 	fprintf(stderr, "store exit locked\n");
 #endif
@@ -2926,10 +2927,10 @@ rollforward_drop_table(sql_trans *tr, sql_table *t)
 	return ok;
 }
 
-static void
+static int
 rollforward_drop_schema(sql_trans *tr, sql_schema *s)
 {
-	rollforward_changeset_deletes(tr, &s->tables, (rfdfunc) &rollforward_drop_table);
+	return rollforward_changeset_deletes(tr, &s->tables, (rfdfunc) &rollforward_drop_table);
 }
 
 static sql_schema *
@@ -3404,6 +3405,8 @@ sql_trans_commit(sql_trans *tr)
 		fprintf(stderr, "forwarding changes\n");
 	if (tr->parent == gtrans) {
 		tr->stime = timestamp ();
+		if (!logger)
+			return SQL_ERR;
 		ok = log_tstart(logger);
 	}
 	if (ok == SQL_OK) {
