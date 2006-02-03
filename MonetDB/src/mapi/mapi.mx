@@ -299,10 +299,9 @@ mil_client_init(mapi_client *fc)
 static void
 mil_client_engine(mapi_client *fc )
 {
-	int e = 0;
 	Client c = fc->c;
 	
-	while (c->mode != FINISHING && !stream_errnr(c->fdin) && (e=readClient(c))){
+	while (c->mode != FINISHING && !stream_errnr(c->fdin) && readClient(c)){
 		if (parseClient(c, FALSE)) {
 			ValRecord res;
 			int i = interpret(c->stk, c->tree, &res);
