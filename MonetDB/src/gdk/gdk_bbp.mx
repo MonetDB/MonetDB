@@ -179,6 +179,8 @@ static int BBPfree(BAT *b, str calledFrom );
 static int BBPdestroy(BAT *b);
 static void BBPuncacheit_(bat bid, int unloaddesc);
 
+static void BBPinitcache();
+
 
 static int stamp = 0;
 static INLINE int
@@ -656,6 +658,7 @@ BBPinit(void)
 		BBPsetstamp(max_stamp - min_stamp);
 	}
 
+	BBPinitcache();
 	/* init hash table */
 	BBPinithash();
 	BBP_notrim = 0;
@@ -1229,45 +1232,63 @@ The storage structure is based on a circular buffer. Picking
 the BATs for recycling is also not intelligent yet.
 @{
 @c
-#define MAXBIN 5
+#define MAXBIN 32
+
+/* todo change to a nxm matrix of types 
+   nr = (ht<<8+tt)&n-1 (n==2^x)
+   bintop [nr]
+   once sub array is full keep new, free old cached bat 
+ */	
 static BAT *batbin[MAXBIN];
 static int bintop=0;
 
-/* #define BBPBINTST*/
-static void BBPaddtobin(BAT *b){
-	BAT *bn;
-	/* this routine still runs with a lock enabled */
-	/* remove any view dependencies */
-	if(  VIEWparent(b) ){
-		BBPdestroy(b);
-		return;
+static void
+BBPinitcache()
+{
+	int i;
+
+	for( i = 0; i < MAXBIN; i++) {
+		batbin[i] = NULL;
 	}
+}
+
+/* #define BBPBINTST*/
+static int 
+BBPaddtobin(BAT *b){
+	int i = ABS(b->batCacheid);
+	BAT *bn;
+
 	/* pre-filter the BATs */
-	if( BAThtype(b)>= TYPE_str || BATttype(b)>= TYPE_str ||
-		BATcount(b)> 16*1024 ||
-		BBP_logical(b->batCacheid) != BBP[ABS(b->batCacheid)].bak[(b->batCacheid)<0]){
-		BBPdestroy(b);
-		return;
+	if( b->htype >= TYPE_str || b->ttype >= TYPE_str ||
+		BATcount(b)> 16*1024 || b->batCopiedtodisk){
+		BATdelete(b);
+		return 1;
 	}
 	gdk_set_lock(GDKcacheLock, "BBPaddtobin");
-	if( (bn= batbin[bintop])){
+	if( (bn = batbin[bintop])){
 		batbin[bintop]=b;
 		bintop = (bintop+1) % MAXBIN;
 #ifdef BBPBINTST
 		printf("delete from bin %d\n",bn->batCacheid);
 #endif
-		BBP_status_on(bn->batCacheid, BBPUNLOADING, "BBPaddtobin");
 		gdk_unset_lock(GDKcacheLock, "BBPaddtobin");
-		BBPdestroy(bn);
+		BATfree(bn);
 	} else {
 		batbin[bintop]=b;
 		bintop = (bintop+1) % MAXBIN;
 		gdk_unset_lock(GDKcacheLock, "BBPaddtobin");
 	}
+	HASHdestroy(b);
+	b->batCacheid = 0;
+	GDKfree(BATmirror(b));
+	BBP_cache(i) = BBP_cache(-i) = NULL;
+	BBP_status_off(i, BBPLOADED, "BBPuncacheit");
+	BBP_desc(i) = NULL;
+	BBPclear(i);
 #ifdef BBPBINTST
 	printf("add to bin %d %d\n",b->batCacheid, (int)BATcapacity(b));
 #endif
-	BBP_status_off(b->batCacheid, BBPUNLOADING, "BBPaddtobin");
+	return 0;
 }
 
 BAT *
@@ -1277,8 +1298,8 @@ BBPrecycle(int ht, int tt, size_t cap){
 
 	gdk_set_lock(GDKcacheLock, "BBPrecycle");
 	for(i=0; i<MAXBIN; i++)
-		if( (b= batbin[i]) && BAThtype(b)==ht && 
-			BATttype(b)==tt &&	BATcapacity(b)>= cap){
+		if( (b = batbin[i]) && b->htype == ht && b->ttype == tt && 
+		     BATcapacity(b) >= cap){
 #ifdef BBPBINTST
 	printf("try from bin %d \n",b->batCacheid);
 #endif
@@ -1286,21 +1307,20 @@ BBPrecycle(int ht, int tt, size_t cap){
 	printf("get from bin %d %d %d \n",b->batCacheid,(int) cap, (int) BATcapacity(b));
 #endif
 
-			batbin[i]=0;
-			BBP_refs(b->batCacheid)=1;
-			BBP_lrefs(b->batCacheid)=0;
-			
+			batbin[i] = NULL;
+			gdk_unset_lock(GDKcacheLock, "BBPrecycle");
+
 			/* experimental code to reset the BAT */
 			b->batRestricted = 0;
 			b->batSet = FALSE;
-			b->hdense = b->tdense= FALSE;
-			b->hsorted = b->tsorted= FALSE;
+			b->hdense = b->tdense = 0;
+			b->hsorted = b->tsorted = 0;
 			b->halign = OIDnew(2);
 			b->talign = b->halign + 1;
 			b->hseqbase = (ht == TYPE_void) ? oid_nil : 0;
 			b->tseqbase = (tt == TYPE_void) ? oid_nil : 0;
-			b->hkey= BAThdense(b);
-			b->tkey= BATtdense(b);
+			b->hkey= 0;
+			b->tkey= 0;
 
 			b->H->props = b->T->props = NULL;
 			b->H->nosorted = b->T->nosorted = 0;
@@ -1311,18 +1331,17 @@ BBPrecycle(int ht, int tt, size_t cap){
 			b->void_tid= -1;
 			b->void_cnt=0;
 			b->void_seq1= b->void_seq2= oid_nil;
-			HASHdestroy(b);
 			DELTAinit(b);
-			b->batDirty= TRUE;
+			b->batDirty = TRUE;
 			if( ++BBP_curstamp < 0 )
 				BBP_curstamp = 0;
 			b->batStamp= BBP_curstamp;
 			b->creator_tid = BBP_getpid();
-			gdk_unset_lock(GDKcacheLock, "BBPrecycle");
 			b->hsorted = ((bit) ATOMlinear(ht) ? GDK_SORTED : FALSE);
 			b->tsorted = ((bit) ATOMlinear(tt) ? GDK_SORTED : FALSE);
 
 			BBPcacheit(b);
+			assert(BATcount(b) == 0);
 			return b;
 		}
 	gdk_unset_lock(GDKcacheLock, "BBPrecycle");
@@ -1461,8 +1480,7 @@ decref(bat i, int logical, int lock)
 		int destroy = BBP_lrefs(i) == 0 && (BBP_status(i) & BBPDELETED) == 0;
 		b = BBPquickdesc(i, TRUE);
 		if (destroy) {
-			 BBPdestroy(b);	  /* free memory of transient */
-			 /* BBPaddtobin(b);	  plan for re-use */
+			 BBPdestroy(b);	  	/* free memory of transient */
 		} else if (b) {
 			BBP_unload_cnt(i, "BBPdecref");
 			BBPfree(b, "BBPdecref" );	/* free memory (if loaded) and delete from disk (if transient but saved) */
@@ -1874,6 +1892,7 @@ unloaded (or even destroyed, if the BAT is not persistent).
 static int
 BBPdestroy(BAT *b) 
 {
+	int clear = 1;
 	bat bid = ABS(b->batCacheid), parent = VIEWparent(b);
 
 	if (!parent) {
@@ -1900,11 +1919,12 @@ BBPdestroy(BAT *b)
 				(*tunfix) (BUNtail(b, p));
 			}
 		}
-		BATdelete(b);	/* remove persistent info and free memory */
+		clear = BBPaddtobin(b);	/* plan for re-use */
 	} else {
 		VIEWdestroy(b);
 	}
-	BBPclear(bid);	/* if destroyed; de-register from BBP */
+	if (clear)
+		BBPclear(bid);	/* if destroyed; de-register from BBP */
 
 	if (parent)	/* parent released when completely done with child */
 		BBPunshare(parent);

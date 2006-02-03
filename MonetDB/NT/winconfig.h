@@ -20,10 +20,13 @@
 
 /* We use #if _MSC_VER >= 1300 to identify Visual Studio .NET 2003 in
  * which the value is actually 0x1310 (in Visual Studio 6 the value is
- * 1200)
+ * 1200; in Visual Studio 8 the value is 1400).
  */
 
 #define WIN32_LEAN_AND_MEAN 1
+
+/* Visual Studio 8 has deprecated lots of stuff: suppress warnings */
+#define _CRT_SECURE_NO_DEPRECATE 1
 
 #if defined(_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
 /* In this case, malloc and friends are redefined in crtdbg.h to debug
@@ -321,7 +324,6 @@
 
 /* Define to 1 if you have the `putenv' function. */
 #define HAVE_PUTENV 1
-#define putenv _putenv
 
 /* Define to 1 if you have the <pwd.h> header file. */
 /* #undef HAVE_PWD_H */
@@ -374,7 +376,7 @@
 
 /* Define to 1 if you have the `strcasecmp' function. */
 #define HAVE_STRCASECMP 1
-#define strcasecmp(x,y) stricmp(x,y)
+#define strcasecmp(x,y) _stricmp(x,y)
 
 /* Define to 1 if you have the `strcspn' function. */
 #define HAVE_STRCSPN 1
@@ -393,7 +395,7 @@
 
 /* Define to 1 if you have the `strncasecmp' function. */
 #define HAVE_STRNCASECMP 1
-#define strncasecmp(x,y,z) strnicmp(x,y,z)
+#define strncasecmp(x,y,z) _strnicmp(x,y,z)
 
 /* Define to 1 if you have the `strsignal' function. */
 /* #undef HAVE_STRSIGNAL */

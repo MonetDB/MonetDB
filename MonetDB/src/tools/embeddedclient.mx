@@ -172,8 +172,8 @@ start_mil_server(void *arg)
 	in = ((stream **) arg)[0];
 	out = ((stream **) arg)[1];
 	free(arg);
-	snprintf(buf, sizeof(buf), "milclient(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));", PTRFMTCAST in, PTRFMTCAST out);
-	monet_exec("module(mapi);");
+	snprintf(buf, sizeof(buf), "client(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));", PTRFMTCAST in, PTRFMTCAST out);
+	monet_exec("module(mapi);mapi_register(mil_frontend());");
 	monet_exec(buf);
 	return NULL;
 }

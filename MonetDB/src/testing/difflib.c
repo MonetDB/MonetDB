@@ -42,6 +42,10 @@
 #ifndef DIR_SEP
 # define DIR_SEP '\\'
 #endif
+
+#define getpid _getpid
+#define unlink _unlink
+#define strdup _strdup
 #else
 #define DIFF	"diff"
 

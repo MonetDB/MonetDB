@@ -290,9 +290,9 @@ CMDctime(str *retval)
 }
 
 int
-CMDepoch(int *retval)
+CMDepoch(int *retval)		/* XXX should be lng */
 {
-	*retval = time(0);
+	*retval = (int) time(0);
 	return GDK_SUCCEED;
 }
 

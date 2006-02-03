@@ -928,7 +928,6 @@ client again.
 int
 CMDquit(Cntxt stk, YYSTREE lt, ValPtr res)
 {
-	Request q, r;
 	Client c;
 
 	CNTXTclient(stk, &c);
@@ -954,8 +953,11 @@ CMDquit(Cntxt stk, YYSTREE lt, ValPtr res)
 		stream_destroy(GDKout);
 		MT_global_exit(*statusp);
 	}
+	c->mode = FINISHING;
 	if (GDKembedded && monet_forks > 0)
 		return 0;
+	/* TODO: this is still needed for forked clients 
+	Request q, r;
 	q = topRequest(c);
 	if (q) {
 		q->ev_kill = 1 + c->stk;
@@ -964,6 +966,7 @@ CMDquit(Cntxt stk, YYSTREE lt, ValPtr res)
 			rmRequest(r);
 		q->ev_wakeup = NULL;
 	}
+	*/
 	return 0;
 }
 

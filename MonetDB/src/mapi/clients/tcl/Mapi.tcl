@@ -53,7 +53,7 @@ proc ::mapi::connect { server port user } {
 	fconfigure $::mapi::state(socket) -translation binary -encoding utf-8
 	fconfigure $::mapi::state(socket) -blocking no
 
-	mapi::cmd_intern $user
+	mapi::cmd_intern "$(user)::mil:line"
 	mapi::result
 
 	if { [ eof $::mapi::state(socket) ] } {

@@ -1,4 +1,3 @@
-
 TOPDIR = .
 SRCDIR = $(TOPDIR)\..
 INSTALL = copy
@@ -35,6 +34,12 @@ unistd.h:
 	$(ECHO) #ifndef UNISTD_H > unistd.h
 	$(ECHO) #define UNISTD_H >> unistd.h
 	$(ECHO) #include "io.h" >> unistd.h
+	$(ECHO) #define open _open >> unistd.h
+	$(ECHO) #define read _read >> unistd.h
+	$(ECHO) #define write _write >> unistd.h
+	$(ECHO) #define close _close >> unistd.h
+	$(ECHO) #define getpid _getpid >> unistd.h
+	$(ECHO) #define umask _umask >> unistd.h
 	$(ECHO) #endif >> unistd.h
 
 RunMtest.bat: "$(SRCDIR)\RunMtest.bat.in"

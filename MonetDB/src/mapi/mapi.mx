@@ -25,16 +25,25 @@ This module contains a simple interface for network connections.
 .MODULE mapi;
 	.USE streams;
 
-	.BUILTIN mapi_listen2(int port, str sockfile, int maxusers, str cmd, bit open, ptr handle) = MAPIlisten; 
-		"Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked.\n <sockfile> is the name of a Unix socket.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."
+ 	.COMMAND mapi_running() : bit = mapi_running;
+		"Is there an mapi listen active ?"
 
-	.BUILTIN mapi_listen_ssl(int port, int maxusers, str keyfile, str certfile, str cmd) = MAPIlistenSSL;
-		"Start the Mapi listener on <port> for <maxusers> using SSL.\n<keyfile> and <certfile> give the path names for files with the server key and certificates in PEM format.\nFor a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked."
+	.BUILTIN mapi_listen(int port, str sockfile, int maxusers, bit open) = MAPIlisten; 
+		"Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\n <sockfile> is the name of a Unix socket.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."
+
+	.BUILTIN mapi_listen_ssl(int port, int maxusers, str keyfile, str certfile) = MAPIlistenSSL;
+		"Start the Mapi listener on <port> for <maxusers> using SSL.\n<keyfile> and <certfile> give the path names for files with the server key and certificates in PEM format."
+
+	.COMMAND mapi_register(ptr) : void = MAPIregister;
+		"register a frontend"
+
+	.COMMAND mil_frontend() : ptr = mil_frontend;
+		"create/return the mil_frontend"
 
 	.COMMAND stream_until(Stream S,str stop) : str = stream_read_until;
 		"read a string from <S> until the <stop> word"
 
-	.BUILTIN milclient(stream in, stream out) : void = client; 
+	.BUILTIN client(stream in, stream out) : void = client; 
 		"mapi-client" 
 
 	.PRELUDE = mapi_prelude;
@@ -43,117 +52,63 @@ This module contains a simple interface for network connections.
 .END mapi;
 
 @mil
-	VAR mapi_params := bat(int,str);
-	mapi_params.rename("mapi_params");
-
-	PROC mapi_listen(int port, int maxusers, str cmd, bit open, ptr handle) : void {
-		mapi_listen2(port, str(nil), maxusers, cmd, open, handle);
-	}
-	ADDHELP("mapi_listen", "sjoerd", "May 23 2005",
-		"Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.",
-		mod());
-
-	PROC mapi_listen(int port, int maxusers, str cmd, bit open) : void {
-		mapi_listen2(port, str(nil), maxusers, cmd, open, ptr(0LL));
-	}
-
-	PROC mapi_listen(int port, int maxusers, str cmd) : void {
-		mapi_listen(port, maxusers, cmd, false);
-	}
-	ADDHELP("mapi_listen", "sjoerd", "Oct 5 2004",
-		"Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked.",
-		mod());
-
-	PROC listen(int port, str sockfile, int maxusers, str cmd, bit open) : void {
-		mapi_params.insert(port,cmd);
-		mapi_listen2(port,sockfile,maxusers,cmd,open);
-	}
-	ADDHELP("listen", "sjoerd", "May 23 2005",
-		"Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.",
-		mod());
-
-	PROC listen(int port, str sockfile, int maxusers, str cmd) : void {
-		listen(port,sockfile,maxusers,cmd,false);
+	PROC listen(int port, str sockfile, int maxusers) : void {
+		mapi_listen(port,sockfile,maxusers,false);
 	}
 	ADDHELP("listen", "sjoerd", "Oct  5 2004",
-		"Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked.",
-		mod());
+		"Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.", mod());
 
-	PROC listen(int port, int maxusers, str cmd, bit open) : void {
-		listen(port,str(nil),maxusers,cmd,open);
+	PROC listen(int port, int maxusers, bit open) : void {
+		mapi_listen(port,str(nil),maxusers,open);
 	}
 	ADDHELP("listen", "sjoerd", "May 23 2005",
-		"Start the Mapi listener on <port> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.",
+		"Start the Mapi listener on <port> for <maxusers>.\nIf <open> is true, accept connections from everywhere, otherwise only from localhost.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.",
 		mod());
 
-	PROC listen(int port, int maxusers, str cmd) : void {
-		listen(port,str(nil),maxusers,cmd);
+	PROC listen(int port, int maxusers) : void {
+		mapi_listen(port,str(nil),maxusers,false);
 	}
 	ADDHELP("listen", "windhouw", "June  22 2001",
-		"Start the Mapi listener on <port> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked.",
+		"Start the Mapi listener on <port> for <maxusers>.",
 		mod());
 
 	PROC listen(int port, int maxusers, bit open) : void {
-		listen(port,str(nil),maxusers,"",open);
+		mapi_listen(port,str(nil),maxusers,open);
 	}
 	ADDHELP("listen", "sjoerd", "May  23 2005",
 		"Start the Mapi listener on <port> for <maxusers>.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.",
 		mod());
 
 	PROC listen(int port, int maxusers) : void {
-		listen(port,str(nil),maxusers,"");
+		mapi_listen(port,str(nil),maxusers,false);
 	}
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port> for <maxusers>.",
 		mod());
 
-	PROC listen(int port, str cmd, bit open) : void {
-		listen(port,str(nil),5,cmd,open);
-	}
-	ADDHELP("listen", "sjoerd", "May 23 2005",
-		"Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.",
-		mod());
-
-	PROC listen(int port, str cmd) : void {
-		listen(port,str(nil),5,cmd);
-	}
-	ADDHELP("listen", "windhouw", "June  22 2001",
-		"Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.",
-		mod());
-
 	PROC listen(int port, bit open) : void {
-		listen(port,str(nil),5,"",open);
+		mapi_listen(port,str(nil),5,open);
 	}
 	ADDHELP("listen", "sjoerd", "May 23 2005",
-		"Start the Mapi listener on <port>.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.",
+		"Start the Mapi listener on <port>.\nIf <open> is true, accept connections from everywhere, otherwise only from localhost.",
 		mod());
 
-	PROC listen(int port) : void { listen(port,str(nil),5,""); }
+	PROC listen(int port) : void {
+		mapi_listen(port,str(nil),5,false);
+	}
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port>.",
 		mod());
 
-	PROC listen(str cmd, bit open) : void {
-		listen(50000,str(nil),5,cmd,open);
-	}
-	ADDHELP("listen", "sjoerd", "May 23 2005",
-		"Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.",
-		mod());
-
-	PROC listen(str cmd) : void { listen(50000,str(nil),5,cmd); }
-	ADDHELP("listen", "windhouw", "June  22 2001",
-		"Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called.",
-		mod());
-
 	PROC listen(bit open) : void {
-		listen(50000,str(nil),5,"",open);
+		mapi_listen(50000,str(nil),5,open);
 	}
 	ADDHELP("listen", "sjoerd", "May 23 2005",
 		"Start the Mapi listener on 50000.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.",
 		mod());
 
 	PROC listen() : void {
-		listen(50000,str(nil),5,"");
+		mapi_listen(50000,str(nil),5,false);
 	}
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on 50000.",
@@ -200,7 +155,34 @@ This module contains a simple interface for network connections.
 #define MAPISSLPORT		40000
 #define MAPIMAXUSERS 		5
 
-mapi_export int MAPIinitClient(Client c, str cmd, stream *fdin, stream *fdout);
+typedef struct mapi_client
+{
+	int frontend; 	/* which frontend (> MAX_FRONTENDS == UNUSED) */
+	int inuse;
+    	Cntxt stk; 
+	Client c;	/* monet client */
+
+    	Variable 
+	       lastvar; /* last MIL variable that should be cleared after execution */
+
+	void *fc; 	/* frontend client */
+	MT_Id t;	/* 0 (no thread assigned), or thread for this client */
+	MT_Sema s;	/* sema to (de)activate thread */ 
+	Thread thread;	/* monet thread */
+} mapi_client;
+
+typedef struct frontend
+{
+	int nr;
+	int clients;
+	int cache_limit;		    /* max number of cached clients */
+	char *name; 		
+	char *(*f_alloc)(mapi_client *fc);  /* returns error string (NULL if ok) */  
+	char *(*f_init)(mapi_client *fc);   /* returns error string (NULL if ok) */
+	void (*f_engine)(mapi_client *fc);  /* read/parse/execute loop */
+	void (*f_free)(mapi_client *fc);    /* free any resources used by the client of this frontend */
+
+} mapi_frontend;
 
 #endif /* MAPI_H */
 @c
@@ -229,6 +211,417 @@ mapi_export int MAPIinitClient(Client c, str cmd, stream *fdin, stream *fdout);
 #include <openssl/err.h>
 #endif
 
+@c
+#define MAX_FRONTENDS 8
+static int nr_frontends = 0;
+static mapi_frontend *mapi_frontends[MAX_FRONTENDS] = { NULL };
+static mapi_client mapi_clients[MAXCLIENTS + 1];
+static int nr_mapi_clients = 0;
+static MT_Lock mapi_cache_lock;
+
+void
+init_client_cache()
+{
+	int i;
+
+	mapi_cache_lock = MT_create_lock();
+
+	for(i=0; i<=MAX_FRONTENDS; i++)  
+		mapi_frontends[i] = 0;
+	nr_frontends = 0;
+	
+	for(i=0; i<=MAXCLIENTS; i++) { 
+		mapi_clients[i].frontend = MAX_FRONTENDS;
+		mapi_clients[i].inuse = 0;
+		mapi_clients[i].c = monet_clients+i;
+		mapi_clients[i].stk = i;
+		mapi_clients[i].fc = NULL;
+	}
+	nr_mapi_clients = 0;
+}
+
+void
+exit_client_cache()
+{
+	int i;
+
+	MT_set_lock(mapi_cache_lock, "mapi_client_find");
+	for(i=0; i<=MAXCLIENTS; i++) { 
+		if (mapi_clients[i].frontend != MAX_FRONTENDS) { 
+			/* no active client killing jet */
+			mapi_client *fc = mapi_clients+i;
+			
+			fc->inuse = 2;
+			MT_up_sema(fc->s, "exit_client_cache");
+		}
+	}
+	MT_unset_lock(mapi_cache_lock, "mapi_client_find");
+	/* wait for clients to finish */
+	while(nr_mapi_clients > 0) 
+		MT_sleep_ms(1000);	
+
+	for(i=0; i<nr_frontends; i++) {
+		GDKfree(mapi_frontends[i]->name);
+		GDKfree(mapi_frontends[i]);
+	}
+	nr_frontends = 0;
+}
+
+int
+MAPIregister( ptr *F ) 
+{
+	if (F && nr_frontends < MAX_FRONTENDS) {
+		mapi_frontend *f = *(mapi_frontend**)F;
+		f->nr = nr_frontends;
+		f->clients = 0;
+		mapi_frontends[nr_frontends++] = f;
+	} else {
+		GDKerror("Out of frontend slots");
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+} 
+
+static char *
+mil_client_alloc(mapi_client *fc)
+{
+	fc->fc = fc;
+	return NULL; /* no error */
+}
+
+static char * 
+mil_client_init(mapi_client *fc)
+{
+	(void)fc;
+	return NULL; /* no error */
+}
+
+static void
+mil_client_engine(mapi_client *fc )
+{
+	int e = 0;
+	Client c = fc->c;
+	
+	while (c->mode != FINISHING && !stream_errnr(c->fdin) && (e=readClient(c))){
+		if (parseClient(c, FALSE)) {
+			ValRecord res;
+			int i = interpret(c->stk, c->tree, &res);
+
+			CATCHRET(c->stk, c->tree, (&res), i);
+			CLEANUP(c->tree);
+			c->tree->par_retval = i;
+		}
+	}
+}
+
+static void  
+mil_client_free(mapi_client *fc)
+{
+	(void)fc;
+}
+
+int
+mil_frontend( ptr *F )
+{
+/* TODO caching of mil clients requires a fix for the problem of 
+	created/drop procs and loaded/dropped modules 
+
+	char *m_clients = GDKgetenv("mapi_clients");
+	int nr = (m_clients)?strtol(m_clients, NULL, 10):1;
+*/
+	mapi_frontend *f = (mapi_frontend*)GDKmalloc(sizeof(mapi_frontend));
+	*F = f;
+	f->name = GDKstrdup("mil");
+	f->cache_limit = 0;
+	f->f_alloc  = mil_client_alloc;
+	f->f_init   = mil_client_init;
+	f->f_free   = mil_client_free;
+	f->f_engine = mil_client_engine; /* read/parse/execute loop */
+	return GDK_SUCCEED;
+}
+
+static mapi_frontend*
+find_frontend( char *l )
+{
+	int i;
+
+	for(i=0; i<nr_frontends; i++) {
+		if (strcmp(mapi_frontends[i]->name, l) == 0) {
+			return mapi_frontends[i];
+		}
+	}
+	return NULL;
+}
+
+static void
+mapi_client_end(mapi_client *fc)
+{
+	Variable v;
+	
+        for(v=monet_cntxt[fc->stk].var; v != fc->lastvar; v = v->next){
+		ATOMunfix(v->binding.vtype, VALptr(&v->binding));
+		VALclear(&v->binding); /* -> void-nil (plus clean-up/free) */
+		VALset(&v->binding, v->binding.vtype, ATOMnilptr(v->binding.vtype)); /* -> typed-nil */
+	}
+	if (fc->c->fdout) {
+		stream_close(fc->c->fdout);
+		stream_destroy(fc->c->fdout);
+		fc->c->fdout = GDKstdout;
+	}
+	if (fc->c->fdin) {
+		stream_close(fc->c->fdin);
+		stream_destroy(fc->c->fdin);
+		fc->c->fdin = GDKstdin;
+	}
+}
+
+static void
+mapi_client_free(mapi_client *fc)
+{
+	mapi_frontend *f = mapi_frontends[fc->frontend];
+
+	MT_destroy_sema(fc->s);
+	fc->c->mode = BLOCKMODE;
+	closeClient(fc->c, 0);
+
+	MT_set_lock(mapi_cache_lock, "mapi_client_find");
+	f->clients --;
+	nr_mapi_clients --;
+
+	/* free this mapi slot */
+	fc->frontend = MAX_FRONTENDS;
+	fc->inuse = 0;
+
+	MT_unset_lock(mapi_cache_lock, "mapi_client_find");
+}
+
+static mapi_client *
+mapi_client_alloc_(mapi_frontend *f, Client c) 
+{
+	char *err;
+	mapi_client *mc;
+	int i = c - monet_clients;
+
+	mc = mapi_clients+i;
+	mc->frontend = f->nr;
+	mc->inuse = 1;
+	mc->t = ~(MT_Id)0;
+	mc->s = MT_create_sema(0);
+	mc->lastvar = monet_cntxt[mc->stk].var;
+	if ((err = f->f_alloc(mc)) != NULL){
+		stream_printf(c->fdout, "%s\n", err);
+
+		mapi_client_end(mc); 
+		mapi_client_free(mc);
+		return NULL;
+	}
+	mc->lastvar = monet_cntxt[mc->stk].var;
+	return mc;
+}
+
+static mapi_client *
+mapi_client_alloc(mapi_frontend *f, Client father, Cntxt stk, stream *fdin, stream *fdout)
+{
+	char *mp = GDKgetenv("monet_prompt");
+	Client c = NULL;
+	
+	MT_set_lock(mapi_cache_lock, "mapi_client_find");
+	if (nr_mapi_clients < MAXCLIENTS) 
+ 		c = initClient("mapi", mp, FALSE);
+		if (c) {
+			f->clients ++;
+			nr_mapi_clients ++;
+		}
+	MT_unset_lock(mapi_cache_lock, "mapi_client_find");
+	if (c == 0) {
+		stream_printf(fdout, "mapi_client_alloc:Failed to init client\n");
+
+		/* Make sure that the write- (from-) stream is closed first,
+		 * as the related read- (in-) stream closes the shared
+		 * socket; see also src/common/stream.mx:socket_close .
+		 */
+		stream_close(fdout);
+		stream_destroy(fdout);
+		stream_close(fdin);
+		stream_destroy(fdin);
+		return NULL;
+	}
+	c->mode = BLOCKMODE;
+	c->listing = 0;
+	c->login = time(0);
+	c->fdin = fdin;
+	c->fdout = fdout;
+	CNTXTcopy(stk, c);
+	TBL_initclient(c, father);
+	return mapi_client_alloc_(f, c);
+}
+
+static mapi_client *
+mapi_client_find(mapi_frontend *f )
+{
+	mapi_client *res = NULL;
+	int i = 0;
+
+	MT_set_lock(mapi_cache_lock, "mapi_client_find");
+	for (i=1; i<MAXCLIENTS; i++) {
+		mapi_client *mc = mapi_clients+i;
+		
+		if (mc->inuse == 0 && mc->frontend == f->nr && mc->frontend != MAX_FRONTENDS) {
+			mc->inuse = 1;
+			res = mc;
+			break;
+		}
+	}
+	MT_unset_lock(mapi_cache_lock, "mapi_client_find");
+	return res;
+}
+
+static mapi_client *
+mapi_client_get(mapi_frontend *f, Client c )
+{
+	mapi_client *mc, *res = NULL;
+	int i = c - monet_clients;
+
+	MT_set_lock(mapi_cache_lock, "mapi_client_get");
+	mc = mapi_clients+i;
+	mc->c = c;
+	mc->thread = THRget(THRgettid());
+	assert(mc->inuse == 0);
+	if (mc->frontend == f->nr && mc->frontend != MAX_FRONTENDS) {
+		mc->inuse = 1;
+		res = mc;
+	} else {
+		res = mapi_client_alloc_(f, c);
+	}
+	MT_unset_lock(mapi_cache_lock, "mapi_client_get");
+	return res;
+}
+
+static void
+mapi_client_engine(void *FC )
+{
+	mapi_client *fc = (mapi_client*)FC;
+	mapi_frontend *f = mapi_frontends[fc->frontend];
+
+	fc->thread = THRnew(MT_getpid(), "mapi_client_engine"); 
+	while(1) {
+		MT_down_sema(fc->s, "mapi_client_engine"); /* wait for work */
+		if (fc->inuse == 2)
+			break;
+		fc->thread->data[0] = fc->c->fdout;
+		fc->thread->data[1] = fc->c->fdin;
+		f->f_engine(fc);
+		fc->c->mode = STARTING;
+	
+		mapi_client_end(fc);
+		/* possible race condition, but net result is limited */
+		if (f->clients > f->cache_limit) { 
+			fc->inuse = 2;
+			break;
+		}
+		fc->inuse = 0;
+	}
+	fc->inuse = 2;
+	THRdel(fc->thread); 
+	f->f_free(fc);
+	mapi_client_free(fc);
+}
+
+
+
+static mapi_client*
+xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new_client)
+{
+	char buf[BLOCK];
+	char *user, *passwd = NULL, *lang = NULL, *mode = NULL, *db = NULL;
+	int blocked = 0;
+	char *challenge, *err;
+	int len;
+	mapi_client *fc = NULL;
+	mapi_frontend *f = NULL;
+	Client c;
+
+	user = buf;
+
+	/* write challenge string, the challenge is currently empty */
+	challenge = "::mserver:5\n";
+	snprintf(buf, BLOCK, "%2u%s", 
+		(unsigned int)strlen(challenge), challenge);
+	stream_write(fdout, buf, strlen(buf), 1);
+		
+	/* get user:passwd:language:blocked|line[:database]\n */
+	if ((len = stream_readline(fdin, user, BLOCK)) < 0) 
+		return NULL;
+	user[len] = 0;
+	passwd = strchr(user, ':');
+	if (passwd) {
+		*passwd++ = 0;
+		lang = strchr(passwd, ':');
+	}
+	if (lang) {
+		*lang++ = 0;
+		mode = strchr(lang, ':');
+	}
+	if (mode) {
+		*mode++ = 0;
+		db = strchr(mode, ':');
+	}
+	if (db) 
+		*db++ = 0;
+
+	if (mode && strncmp(mode, "blocked", 7) == 0) 
+		blocked = 1;
+
+	if (!user || !passwd || !lang || !mode) { 
+		GDKsyserror("client:protocol error\n");
+		return NULL;
+	}
+
+	if (blocked) {
+		fdin = block_stream(stream_rstream(fdin));
+		fdout = block_stream(stream_wstream(fdout));
+	}
+	f = find_frontend(lang);
+
+	if (!f) {
+		GDKsyserror("xchange_challenge: frontend not found\n");
+		stream_destroy(fdin);
+		stream_destroy(fdout);
+		return NULL;
+	}
+/* TODO
+	if (db)
+		GDKsyserror("xchange_challenge: database redirect not possible jet\n");
+*/
+
+	if (new_client)
+		fc = mapi_client_find(f);
+	else
+		fc = mapi_client_get(f, father);
+	if (!fc) {
+		if (!(fc = mapi_client_alloc(f, father, stk, fdin, fdout))) 
+			return NULL;
+	}
+
+	c = fc->c;
+	c->fdin = fdin;
+	c->fdout = fdout;
+	c->blocked = blocked;
+	if (c->user)
+		GDKfree(c->user);
+	c->user = GDKstrdup(buf);
+	c->passwd = GDKstrdup(passwd);
+
+
+	if ((err = f->f_init(fc)) != NULL) {
+		stream_printf(fdout, "%s\n", err);
+		stream_destroy(fdin);
+		stream_destroy(fdout);
+		return NULL;
+	}
+	return fc;
+}
+
 @= builtin_operand
 {       int _k = interpret(stk, arg(lt, @1), res);
         if (_k < 0) {
@@ -240,29 +633,14 @@ mapi_export int MAPIinitClient(Client c, str cmd, stream *fdin, stream *fdout);
         }
 }
 @c
-int MAPIinitClient(Client c, str cmd, stream *fdin, stream *fdout) {
-	if (c->mil_accept == NULL) {				
-		int stream_tpe = ATOMindex("Stream");
-		ValRecord fds[3];
-		monet_sig_t sig;
-	
-		fds[1].vtype = fds[2].vtype = stream_tpe;
-		Myyexpand(	
-			Myyexpand(
-				c->mil_accept = Myynode(TOK_BUILTIN, TYPE_int), 
-				Myynode(TOK_CONSTANT, stream_tpe)),
-			Myynode(TOK_CONSTANT, stream_tpe));
-		sig.token = TBL_normal_resolve(cmd, 3, fds, &sig, c->stk);
-		if (sig.token != TOK_BUILTIN) {
-			GDKerror("MAPIinitClient: builtin function %s(stream,stream) unknown\n", cmd);
-			closeClient(c, FALSE);
-			return -1;
-		}
-		c->mil_accept->yyval.val.pval = sig.fast_fcn;
-	}
-	c->mil_accept->yysons[0]->yyval.val.pval = fdin;
-	c->mil_accept->yysons[1]->yyval.val.pval = fdout;
-	return 0;
+
+static bit mapi_active = 0;
+
+int
+mapi_running(bit *b)
+{
+	*b = mapi_active;
+	return GDK_SUCCEED;
 }
 
 int
@@ -282,15 +660,13 @@ MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 
 	int port, *Port;
 	int maxusers, *Maxusers;
-	char *cmd;
 	Client father;
 	int accept_any, *Accept_any;
-	Client (*get_client)(stream*, stream*) = NULL; 
-	ptr *Get_client;
 
+	mapi_active = 1;
 	CNTXTclient(stk, &father);
-	if (lt->cnt > 6) {
-		return handle_argerror(res, lt->cnt, 5);
+	if (lt->cnt != 4) {
+		return handle_argerror(res, lt->cnt, 4);
 	}
 	@:builtin_operand(0,TYPE_int,Port)@
 	port = *Port;
@@ -307,29 +683,12 @@ MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 	}
 	@:builtin_operand(2,TYPE_int,Maxusers)@
 	maxusers = *Maxusers;
-	@:builtin_operand(3,TYPE_str,cmd)@
-	cmd = GDKstrdup(cmd);
-	@:builtin_operand(4,TYPE_bit,Accept_any);
+	@:builtin_operand(3,TYPE_bit,Accept_any);
 	accept_any = *Accept_any;
 	res->vtype = TYPE_void;
-	if (lt->cnt == 6) {
-		@:builtin_operand(5,TYPE_ptr,Get_client);
-		get_client = (Client (*)(stream *, stream *))*Get_client;
-	}
 
 	port = (port ? port : MAPIPORT);
 	maxusers = (maxusers ? maxusers : MAPIMAXUSERS);
-
-	if (!GDKembedded) {
-		char *m_clients = GDKgetenv("mapi_clients");
-		int nr = (m_clients)?strtol(m_clients, NULL, 10):1;
-		
-		if (nr > (THREADS-GDKnrofthreads)) {
-			GDKwarning("not enough threads available, adjusting mapi_clients from %d to %d\n", nr, THREADS-GDKnrofthreads);
-			nr = THREADS-GDKnrofthreads;
-		}
-		monetAdjustThreads(nr);
-	}
 
 	if (port <= 0 && usockfile == NULL) {
 		GDKsyserror("MAPIlisten: no port or socket file specified\n");
@@ -449,108 +808,32 @@ Get the new information for the server socket and start listening.
 #endif
 		} else
 			continue;
+		/* in embedded mode we allow just one client */
+		if (!(GDKembedded && monet_forks > 0)) 
 		{
+			mapi_client *fc = NULL;
 			stream *fdin = socket_rastream(msgsock, "Mserver mapi read");
 			stream *fdout = socket_wastream(msgsock, "Mserver mapi write");
-			char *mp = GDKgetenv("monet_prompt");
-			char *name = father->user;
-			Client c = NULL;
-
-			/* in embedded mode we allow just one client */
-			if (GDKembedded && monet_forks > 0) {
-				stream_close(fdin);
-				stream_destroy(fdin);
+			if (fdin == 0 || stream_errnr(fdin)) {
+				GDKsyserror("MAPIlisten:fdin problems\n");
+				continue;
+			}
+			if (fdout == 0 || stream_errnr(fdout)) {
+				GDKsyserror("MAPIlisten:fdout problems\n");
 				continue;
 			}
 
-			if (STREQ(cmd, "")) { 
-				char userbuf[BLOCK];
-				char *user;
-				int blocked = 0;
-				char *challenge, *s;
-				int i = 0;
+			fc = xchange_challenge(father, stk, fdin, fdout, 1);
+			if (!fc) 
+				continue;
 
-				name = user = userbuf;
-				if (fdin == 0 || stream_errnr(fdin)) {
-					GDKsyserror("MAPIlisten:fdin problems\n");
-					continue;
-				}
-				/* write challenge string, the challenge is currently empty (disabled) */
-				challenge = "::mserver_mil:4\n";
-				/* temporarily misuse name */
-				snprintf(name, BLOCK, "%2u%s", (unsigned int)strlen(challenge), challenge);
-				stream_write(fdout, name, strlen(name), 1);
-				
-				/* get user name */
-				stream_read(fdin, user, 1, 1);
-				for (i = 0; !stream_errnr(fdin) && i < BLOCK && *user != '\n'; i++) {
-					user++;
-					stream_read(fdin, user, 1, 1);
-				}
-				*user = 0;
-				if (stream_errnr(fdin)) {
-					GDKsyserror("MAPIlisten: fdin problems\n");
-					stream_close(fdin);
-					stream_destroy(fdin);
-					continue;
-				}
-				s = strrchr(name, ':');
-				blocked = s && strncmp(s, ":blocked", 8) == 0;
-				if (blocked) {
-					/* printf("mapi:use blocked mode\n");fflush(stdout); */
-					*s = 0;
-					fdin = block_stream(stream_rstream(fdin));
-					fdout = block_stream(socket_wstream(msgsock, "Mserver mapi write"));
-				} else {
-					fdout = socket_wastream(msgsock, "Mserver mapi write");
-				}
-				/* remove password (eventually we have to
-				   check the password, for now ignore it) */
-				s = strchr(name, ':');
-				if (s != NULL)
-					*s = 0;
-				
-				if (fdout == 0) {
-					GDKsyserror("MAPIlisten:fdout problems\n");
-					continue;
-				}
+			if (fc->t == ~(MT_Id) 0 && 
+		            MT_create_thread(&fc->t, mapi_client_engine, fc) != 0) {
+				GDKsyserror("MAPIlisten:mapi_client failed\n");
+				fc->t = ~(MT_Id) 0;
 			}
-			if (get_client) {
-				/* try to get a cached client session */
-				c = (*get_client)(fdin, fdout);
-				if (c && MAPIinitClient(c, cmd, fdin, fdout) < 0) 
-					continue;
-			} 
-			if (c == 0) {
-				c = initClient(name, mp, FALSE);
-				if (c == 0) {
-					stream_printf(fdout, "MAPIlisten:Failed to init client for user %s\n", name);
-					GDKfree(name);
-				
-					/* Make sure that the write- (from-) stream is closed first,
-					 * as the related read- (in-) stream closes the shared
-					 * socket; see also src/common/stream.mx:socket_close .
-					 */
-					stream_close(fdout);
-					stream_destroy(fdout);
-					stream_close(fdin);
-					stream_destroy(fdin);
-					continue;
-				}
-				c->mode = BLOCKMODE;
-				c->listing = 0;
-				c->login = time(0);
-				c->fdin = fdin;
-				c->fdout = fdout;
-				CNTXTcopy(stk, c);
-				TBL_initclient(c, father);
-			
-				if (STREQ(cmd, "")) 
-					(void) monetFork();
-				else if (MAPIinitClient(c, cmd, fdin, fdout) < 0) 
-					continue;
-			} 
-			scheduleClient(c);
+			/* (re)activate thread */
+			MT_up_sema(fc->s, "MAPIlisten");
 			PARDEBUG THRprintf(GDKerr, "MAPIlisten:client accepted %d\n", msgsock);
 		}
 	} while (monet_running);
@@ -645,6 +928,7 @@ id_function(void)
 bat *
 mapi_prelude(void)
 {
+	init_client_cache();
 #ifdef HAVE_OPENSSL
 	int i, nlocks;
 
@@ -665,6 +949,7 @@ mapi_prelude(void)
 void
 mapi_epilogue(void)
 {
+	exit_client_cache();
 #ifdef HAVE_OPENSSL
 	if (mutex_buf) {
 		int i, nlocks;
@@ -695,14 +980,16 @@ MAPIlistenSSL(Cntxt stk, YYSTREE lt, ValPtr res)
 	int maxusers, *Maxusers;
 	char *keyfile;
 	char *certfile;
-	char *cmd;
 	Client father;
 	SSL_CTX *ctx = NULL;
 	SSL *ssl = NULL;
+	Client (*get_client)(stream*, stream*) = NULL; 
+	ptr *Get_client;
 
+	mapi_active = 1;
 	CNTXTclient(stk, &father);
-	if (lt->cnt != 5) {
-		return handle_argerror(res, lt->cnt, 5);
+	if (lt->cnt != 4) {
+		return handle_argerror(res, lt->cnt, 4);
 	}
 	@:builtin_operand(0,TYPE_int,Port)@;
 	port = *Port;
@@ -712,20 +999,12 @@ MAPIlistenSSL(Cntxt stk, YYSTREE lt, ValPtr res)
 	keyfile = GDKstrdup(keyfile);
 	@:builtin_operand(3,TYPE_str,certfile)@;
 	certfile = GDKstrdup(certfile);
-	@:builtin_operand(4,TYPE_str,cmd)@;
-	cmd = GDKstrdup(cmd);
 	res->vtype = TYPE_void;
 
 	if (!port)
 		port = MAPISSLPORT;
 	if (!maxusers)
 		maxusers = MAPIMAXUSERS;
-
-	if (!GDKembedded) {
-		char *m_clients = GDKgetenv("mapi_clients");
-		int nr = (m_clients)?strtol(m_clients, NULL, 10):1;
-		monetAdjustThreads(nr);
-	}
 
 	ctx = SSL_CTX_new(SSLv23_method());
 	if (ctx == NULL) {
@@ -853,107 +1132,45 @@ Get the new information for the server socket and start listening.
 			}
 			break;
 		}
+		/* in embedded mode we allow just one client */
+		if (!(GDKembedded && monet_forks > 0)) 
+		{
+			mapi_client *fc = NULL;
+			stream *fdin = ssl_rastream(ssl, "mapi-r");
+			stream *fdout = ssl_wastream(SSL_dup(ssl), "mapi-w");
 
-		if (STREQ(cmd, "")) {
-			int i = 0;
-			char *name = (char *) GDKmalloc(BLOCK), *user = name, *s;
-			char *mp;
-			int blocked = 0;
-			stream *fdin = ssl_rastream(ssl, "Mserver mapi read");
-			stream *fdout = NULL;
-			Client c;
-
-			assert(name);
-			memset(name, 0, BLOCK);
 			if (fdin == 0 || stream_errnr(fdin)) {
-				GDKsyserror("MAPIlistenSSL:fdin problems\n");
-				if (fdin)
-					stream_destroy(fdin);
+				GDKsyserror("MAPIlisten:fdin problems\n");
 				continue;
 			}
-			/* get user name */
-			stream_read(fdin, user, 1, 1);
-			for (i = 0; i < BLOCK && *user != '\n' && !stream_errnr(fdin); i++) {
-				user++;
-				stream_read(fdin, user, 1, 1);
-			}
-			if (stream_errnr(fdin)) {
-				GDKsyserror("MAPIlistenSSL: fdin problems\n");
-				stream_close(fdin);
-				stream_destroy(fdin);
+			if (fdout == 0 || stream_errnr(fdout)) {
+				GDKsyserror("MAPIlisten:fdout problems\n");
 				continue;
-			}
-			*user = 0;
-			/* printf("mapi:Client accepted %s\n", name);fflush(stdout); */
-			s = strrchr(name, ':');
-			blocked = s && strncmp(s, ":blocked", 8) == 0;
-			if (blocked) {
-				/* printf("mapi:use blocked mode\n");fflush(stdout); */
-				*s = 0;
-				fdin = block_stream(stream_rstream(fdin));
-				fdout = block_stream(ssl_wstream(SSL_dup(ssl), "Mserver mapi write"));
-			} else {
-				fdout = ssl_wastream(SSL_dup(ssl), "Mserver mapi write");
 			}
 
-			if (fdout == 0) {
-				GDKsyserror("MAPIlistenSSL:fdout problems\n");
+			fc = xchange_challenge(father, stk, fdin, fdout, 1);
+			if (!fc) 
 				continue;
-			}
-			*user = 0;
-			mp = GDKgetenv("monet_prompt");
-			c = initClient(name, mp, FALSE);
-			if (c == 0) {
-				stream_printf(fdout, "MAPIlistenSSL:Failed to init client for user %s\n", name);
-				GDKfree(name);
 
-				/* Make sure that the write- (out-) stream is closed first,
-				 * as the related read- (in-) stream closes the shared
-				 * socket; see also src/common/stream.mx:ssl_close .
-				 */
-				stream_close(fdout);
-				stream_destroy(fdout);
-				stream_close(fdin);
-				stream_destroy(fdin);
-				continue;
+			if (fc->t == ~(MT_Id) 0 && 
+		            MT_create_thread(&fc->t, mapi_client_engine, fc) != 0) {
+				GDKsyserror("MAPIlisten:mapi_client failed\n");
+				fc->t = ~(MT_Id) 0;
 			}
-			GDKfree(name);
-			c->login = time(0);
-			c->listing = 0;
-			c->fdin = fdin;
-			c->fdout = fdout;
-			c->mode = BLOCKMODE;
-			CNTXTcopy(stk, c);
-			TBL_initclient(c, father);
-			(void) monetFork();
-			scheduleClient(c);
-			PARDEBUG THRprintf(GDKerr, "MAPIlistenSSL:client accepted %d\n", msgsock);
-		} else {
-			ValRecord res;
-			char buf[BUFSIZ];
-			stream *sin, *sout;
-
-			sin = ssl_rastream(ssl, "mapi-r");
-			sout = ssl_wastream(SSL_dup(ssl), "mapi-w");
-			snprintf(buf, BUFSIZ, "%s(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));\n", cmd, PTRFMTCAST sin, PTRFMTCAST sout);
-			THRprintf(GDKerr, "MAPIlistenSSL: %s", buf);
-			res.vtype = TYPE_void;
-			interpret_str(stk, buf, &res);
+			/* (re)activate thread */
+			MT_up_sema(fc->s, "MAPIlisten");
+			PARDEBUG THRprintf(GDKerr, "MAPIlisten:client accepted %d\n", msgsock);
 		}
 	      end_loop:;
 	} while (monet_running);
 	SSL_CTX_free(ctx);
 	close(sock);
-	if (cmd)
-		GDKfree(cmd);
 	return GDK_SUCCEED;
       fail:;
 	if (sock >= 0)
 		close(sock);
 	if (ctx)
 		SSL_CTX_free(ctx);
-	if (cmd)
-		GDKfree(cmd);
 	return GDK_FAIL;
 #else
 	(void) stk;
@@ -1001,16 +1218,12 @@ stream_read_until(str *res, Stream *S, str stop)
 int
 client(Cntxt stk, YYSTREE lt, ValPtr res)
 {
-	ssize_t i = 0;
-	char buf[BUFSIZ + 1];
-	char *user, *passwd, *challenge;
-	int blocked = 0;
-
+	mapi_frontend *f;
 	stream **In, **Out;
 	stream *in, *out;
-	bstream *rs;
-
+	mapi_client *mc;
 	Client client;
+	char *old_in; 
 
 	CNTXTclient((Cntxt) (ptrdiff_t) stk, &client);
 	/* get the streams from the argument list */
@@ -1032,112 +1245,19 @@ client(Cntxt stk, YYSTREE lt, ValPtr res)
 		closeClient(client, 0);
 		return GDK_FAIL;
 	}
+ 	mc = xchange_challenge(client, stk, in, out, 0);
 
-	/* send challenge string, currently empty (disabled) */
-	challenge = "::mserver_mil:4\n";
-
-	snprintf(buf, 100, "%2u%s", (unsigned int)strlen(challenge), challenge);
-	stream_write(out, buf, strlen(buf), 1);
-
-	/* get user name */
-	user = buf;
-	for (i = 0; i < BUFSIZ; i++, user++) {
-		if (stream_read(in, user, 1, 1) < 0) {
-			closeClient(client, 0);
-			return GDK_FAIL;
-		}
-		if (*user== '\n')
-			break;
-	}
-	*user = 0;
-	user = buf;
-	passwd = strrchr(user, ':');
-	if (passwd && strncmp(passwd, ":blocked", 8) == 0) {
-		blocked = 1;
-		*passwd = 0;
-	}
-	passwd = strrchr(user, ':');
-	if (passwd) {
-		/* skip :'server string' only used for M5 */
-		*passwd = 0;
-	}
-
-	passwd = strchr(user, ':');
-	if (passwd) {
-		*passwd = 0;
-		passwd++;
-		user = GDKstrdup(buf);
-		passwd = GDKstrdup(passwd);
-	} else {
-		closeClient(client, 0);
-		return GDK_FAIL;
-	}
-
-	if (blocked) {
-		in = block_stream(stream_rstream(in));
-		out = block_stream(stream_wstream(out));
-
-		monetSetChannel(THRget(THRgettid()), in, out);
-	}
-
-	if (out == 0) {
-		GDKsyserror("client:stream-w problems\n");
-		GDKfree(user);
-		GDKfree(passwd);
-		closeClient(client, 0);
-		return GDK_FAIL;
-	}
-
-	rs = bstream_create(in, isa_block_stream(in) ? (128 * BLOCK) : 0);
-	/* TODO create a context here */
-	GDKfree(user);
-	GDKfree(passwd);
-
-	/* read all */
-	{ 
-	int go = 1;
-
-	rs->eof = 1;            /* force prompt on first iteration */
-	while(go) {
-		ValRecord v;
-
-		/* skip whitespace */
-		while (rs->pos < rs->len && (isspace((int) (rs->buf[rs->pos])) || rs->buf[rs->pos] == ';'))
-		rs->pos++;
-
-               	if (rs->pos >= rs->len) {
-                	ssize_t rd;
-                
-                       	assert(rs->pos == rs->len);
-
-                       	if (rs->eof || !blocked) {
-				if ((!blocked && stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) != 1) || stream_flush(out)) {
-                                	go = FALSE;
-                                       	break;
-                               	}
-                               	rs->eof = 0;
-                       	}
-                       	if ((rd = bstream_next(rs)) <= 0) {
-                        	if (rd == 0 && rs->eof) {
-                               		/* we hadn't seen the EOF before, 
-						so just try again
-                                       		(this time with prompt) */
-                                        continue;
-                                }
-                                go = FALSE;
-                                break;
-                        }
-		}
-		v.vtype = TYPE_void;
-
-		(void) interpret_str(stk, rs->buf+rs->pos, &v);
-		rs->pos = rs->len;
-	}
-	}
-
-	/* destroy context */
-	bstream_destroy(rs);
-	closeClient(client, 0); 	
+	f = mapi_frontends[mc->frontend];
+	monetSetChannel(mc->thread, mc->c->fdin, mc->c->fdout);
+	old_in = client -> input; 
+	client->input = (str) GDKmalloc(4096);
+	client->limit = client->input + 4096;
+	client->top = client->input;
+	*client->top = 0;
+	f->f_engine(mc);
+	GDKfree(client->input);
+	client->input = old_in;
+	mapi_client_end(mc); 	
 	return GDK_SUCCEED;
 }
 
@@ -1153,17 +1273,26 @@ proc get_mapi_port() : int {
 }
 
 proc mapi_server(int port, int nr) : void {
-        var l := listen(port, nr);
+	mapi_register(mil_frontend());
+
+	if (not(mapi_running())) {
+        	var l := listen(port, nr);
+	}
 	quit();
 }
 
 proc mapi_start(bit global) : void {
-	fork(listen(
-		get_mapi_port(),
-		5,
-		global
-		)
-	);
+	mapi_register(mil_frontend());
+
+	if (not(mapi_running())) {
+		fork(mapi_listen(
+			get_mapi_port(),
+			str(nil),
+			5,
+			global
+			)
+		);
+	}
 }
 
 proc mapi_start() : void {
@@ -1173,3 +1302,4 @@ proc mapi_start() : void {
 if (mod() = "main"){
 	mapi_start();
 }
+
