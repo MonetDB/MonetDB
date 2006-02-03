@@ -50,14 +50,15 @@ enum PFla_op_kind_t {
                                   (Placed on the very top of the tree.) */
     , la_lit_tbl        =  2 /**< literal table */
     , la_empty_tbl      =  3 /**< empty literal table */
-    , la_cross          =  4 /**< cross product (Cartesian product) */
-    , la_eqjoin         =  5 /**< equi-join */
-    , la_project        =  6 /**< algebra projection and renaming operator */
-    , la_select         =  7 /**< selection of rows where column value != 0 */
-    , la_disjunion      =  8 /**< union two relations with same schema */
-    , la_intersect      =  9 /**< intersect two relations with same schema */
-    , la_difference     = 10 /**< difference of two relations w/ same schema */
-    , la_distinct       = 11 /**< duplicate elimination operator */
+    , la_attach         =  4 /**< attach constant column */
+    , la_cross          =  5 /**< cross product (Cartesian product) */
+    , la_eqjoin         =  6 /**< equi-join */
+    , la_project        =  7 /**< algebra projection and renaming operator */
+    , la_select         =  8 /**< selection of rows where column value != 0 */
+    , la_disjunion      =  9 /**< union two relations with same schema */
+    , la_intersect      = 10 /**< intersect two relations with same schema */
+    , la_difference     = 11 /**< difference of two relations w/ same schema */
+    , la_distinct       = 12 /**< duplicate elimination operator */
     , la_num_add        = 20 /**< arithmetic plus operator */
     , la_num_subtract   = 21 /**< arithmetic minus operator */
     , la_num_multiply   = 22 /**< arithmetic times operator */
@@ -123,6 +124,13 @@ union PFla_op_sem_t {
         PFalg_tuple_t  *tuples;   /**< array holding the tuples */
     } lit_tbl;                    /**< semantic content for literal table
                                        constructor */
+
+    struct {
+        PFalg_att_t     attname;  /**< names of new attribute */
+        PFalg_atom_t    value;    /**< value for the new attribute */
+    } attach;                     /**< semantic content for column attachment
+                                       operator (ColumnAttach) */
+
     /* semantic content for equi-join operator */
     struct {
         PFalg_att_t     att1;     /**< name of attribute from "left" rel */
@@ -256,10 +264,15 @@ struct PFla_op_t {
                                         algebra generation only) */
     short              state_label;/**< Burg puts its state information here. */
 
+    unsigned     bit_reset     :1; /**< used to reset the other bits 
+                                        in a DAG traversal */
+    unsigned     bit_prop      :1; /**< used in properties.c 
+                                        to work on a DAG. */
     unsigned     bit_opt_label :1; /**< used in algopt.brg to prune the
                                         DAG labeling. */
     unsigned     bit_opt       :1; /**< used in algopt.brg to work on a DAG. */
-    unsigned     bit_cse       :1; /**< used in algebra_cse.c to work on a DAG. */
+    unsigned     bit_cse       :1; /**< used in algebra_cse.c 
+                                        to work on a DAG. */
 
     PFplanlist_t      *plans;      /**< Physical algebra plans that implement
                                         this logical algebra subexpression. */
@@ -324,6 +337,8 @@ PFla_op_t *PFla_lit_tbl_ (PFalg_attlist_t a,
  */
 PFla_op_t *PFla_empty_tbl (PFalg_attlist_t a);
 
+PFla_op_t *PFla_attach (const PFla_op_t *n,
+                        PFalg_att_t attname, PFalg_atom_t value);
 
 /**
  * Cross product (Cartesian product) of two relations.

@@ -163,16 +163,15 @@ enum PFalg_att_t {
     , att_sort11  = 0x00080000    /**< sort column 11 */
     , att_sort12  = 0x00100000    /**< sort column 12 */
     , att_sort13  = 0x00200000    /**< sort column 13 */
-    , att_sort14  = 0x00400000    /**< sort column 14 */
-    , att_res     = 0x00800000    /**< res column */
-    , att_ord     = 0x01000000    /**< ord column */
-    , att_res1    = 0x02000000    /**< res1 column */
-    , att_cast    = 0x04000000    /**< cast column */
-    , att_subty   = 0x08000000    /**< subty column */
-    , att_itemty  = 0x10000000    /**< itemty column */
-    , att_notsub  = 0x20000000    /**< notsub column */
-    , att_isint   = 0x40000000    /**< isint column */
-    , att_isdec   = 0x80000000    /**< isdec column */
+    , att_res     = 0x00400000    /**< res column */
+    , att_ord     = 0x00800000    /**< ord column */
+    , att_res1    = 0x01000000    /**< res1 column */
+    , att_cast    = 0x02000000    /**< cast column */
+    , att_subty   = 0x04000000    /**< subty column */
+    , att_itemty  = 0x08000000    /**< itemty column */
+    , att_notsub  = 0x10000000    /**< notsub column */
+    , att_isint   = 0x20000000    /**< isint column */
+    , att_isdec   = 0x40000000    /**< isdec column */
 };
 /** attribute names */
 typedef enum PFalg_att_t PFalg_att_t;

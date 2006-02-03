@@ -102,6 +102,7 @@ PFstate_t PFstate = {
     .debug               = 1,
     .timing              = false,
     .print_dot           = false,
+    .print_xml           = false,
     .print_pretty        = false,
     .stop_after          = 0,
     .print_types         = false,
@@ -453,6 +454,11 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     STOP_POINT(17);
 
+    /*
+     * second run of the property inference
+     */
+    PFprop_infer (laroot);
+
     /* Compile algebra into physical algebra */
     tm = PFtimer_start ();
     paroot = PFplan (laroot);
@@ -526,6 +532,8 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
             }
             if (status->print_dot)
                 PFla_dot (pfout, laroot);
+            if (status->print_xml)
+                PFla_xml (pfout, laroot);
         }
         else
             PFinfo (OOPS_NOTICE,

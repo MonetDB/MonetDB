@@ -116,6 +116,13 @@ infer_ocol (PFla_op_t *n)
         case la_empty_tbl:
             break;
 
+        case la_attach:
+            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)) + 1);
+            ocol_at (n, ocols_count (n)).name = n->sem.attach.attname;
+            ocol_at (n, ocols_count (n)).type = n->sem.attach.value.type;
+            ocols_count (n)++;
+            break;
+
         case la_cross:
         case la_eqjoin:
             ocols (n) = copy_ocols (ocols (L(n)), 
@@ -538,6 +545,7 @@ infer_const (PFla_op_t *n)
      */
     switch (n->kind) {
 
+        case la_attach:
         case la_cross:
         case la_eqjoin:
         case la_select:
@@ -641,6 +649,13 @@ infer_const (PFla_op_t *n)
             }
             break;
 
+        case la_attach:
+            if (!PFprop_const (n->prop, n->sem.attach.attname))
+                PFprop_mark_const (n->prop,
+                                   n->sem.attach.attname,
+                                   n->sem.attach.value);
+            break;
+            
         case la_project:
 
             /*
@@ -860,6 +875,11 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
         case la_lit_tbl:
         case la_empty_tbl:
+            break;
+
+        case la_attach:
+            inf_icols = n->prop->icols;
+            inf_icols = diff (inf_icols, n->sem.attach.attname);
             break;
 
         case la_cross:

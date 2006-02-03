@@ -455,6 +455,7 @@ static struct option long_options[] = {
     { "optimize",                  optional_argument, NULL, 'O' },
     { "print-human-readable",         no_argument,    NULL, 'P' },
     { "timing",                       no_argument,    NULL, 'T' },
+    { "print-XML",                    no_argument,    NULL, 'X' },
     { "print-abstract-syntax-tree",   no_argument,    NULL, 'a' },
     { "print-core-tree",              no_argument,    NULL, 'c' },
     { "debug",                     optional_argument, NULL, 'd' },
@@ -592,10 +593,10 @@ main (int argc, char *argv[])
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
-        c = getopt_long (argc, argv, "ADHMO::PTacd::f:hlpqrs:t", 
+        c = getopt_long (argc, argv, "ADHMO::PTXacd::f:hlpqrs:t", 
                          long_options, &option_index);
 #else
-        c = getopt (argc, argv, "ADHMO::PTacd::f:hlpqrs:t");
+        c = getopt (argc, argv, "ADHMO::PTXacd::f:hlpqrs:t");
 #endif
 
         if (c == -1)
@@ -644,6 +645,9 @@ main (int argc, char *argv[])
                         long_option (opt_buf, ", --%s", 'P'));
                 printf ("  -D%s: print internal tree structure in AT&T dot notation\n",
                         long_option (opt_buf, ", --%s", 'D'));
+                printf ("  -X%s: print internal tree structure in XML notation\n"
+                        "        (only works for logical algebra tree)\n",
+                        long_option (opt_buf, ", --%s", 'X'));
                 printf ("  -T%s: print elapsed times for compiler phases\n",
                         long_option (opt_buf, ", --%s", 'T'));
                 printf ("  -O[0-3]%s: select optimization level (default=1)\n",
@@ -694,6 +698,10 @@ main (int argc, char *argv[])
 
             case 'T':
                 status->timing = true;
+                break;
+
+            case 'X':
+                status->print_xml = true;
                 break;
 
             case 'a':
