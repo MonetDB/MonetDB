@@ -94,8 +94,7 @@ module 'pathfinder'
 [ "xmlcache_print_rules() : void"		  ]
 [ "xmldb_print() : void"			  ]
 [ "xquery(mode str, xquery str, is_url bit) : str "													  ]
-[ "xquery_server(Stream in, Stream out) : void "											  ]
-[ "xquery_start_query_cache(lng) : ptr"			  ]
+[ "xquery_frontend(lng) : ptr"				  ]
 
 quit();
 
