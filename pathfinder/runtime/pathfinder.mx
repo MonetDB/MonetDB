@@ -1961,7 +1961,13 @@ xquery_client_end(xquery_client *ctx,
     /* nil-assign all other variables */
     for(v=monet_cntxt[ctx->stk].var; v != ctx->lastvar; v = v->next) {
         ATOMunfix(v->binding.vtype, VALptr(&v->binding));
-        VALclear(&v->binding); /* -> void-nil (plus clean-up/free) */
+        if (&v->binding.val.ival != ctx->shredBAT){
+            /* Do _not_ VALclear "shredBAT": make sure that MIL vairable
+             * "shredBAT" stays type INT instead of becoming void(nil).
+             * "shredBAT" needs this type information for subsequent
+             * mapiclient sessions! */
+            VALclear(&v->binding); /* -> void-nil (plus clean-up/free) */
+        }
         VALset(&v->binding, v->binding.vtype, ATOMnilptr(v->binding.vtype)); /* -> typed-nil */
     }
     monet_clients[ctx->stk].fdin = NULL; 
