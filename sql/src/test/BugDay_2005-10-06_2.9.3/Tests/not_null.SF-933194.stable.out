@@ -33,6 +33,8 @@ CREATE TABLE "sys"."test" (
 	"id2" int	NOT NULL,
 	"id3" int
 );
+Operation successful
+
 
 # 12:39:56 >  
 # 12:39:56 >  Done.
