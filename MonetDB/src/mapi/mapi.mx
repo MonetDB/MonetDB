@@ -835,7 +835,7 @@ Get the new information for the server socket and start listening.
 			MT_up_sema(fc->s, "MAPIlisten");
 			PARDEBUG THRprintf(GDKerr, "MAPIlisten:client accepted %d\n", msgsock);
 		}
-	} while (monet_running);
+	} while (1);
 #ifdef HAVE_SYS_UN_H
 	if (usockfile)
 		unlink(usockfile);
@@ -1161,7 +1161,7 @@ Get the new information for the server socket and start listening.
 			PARDEBUG THRprintf(GDKerr, "MAPIlisten:client accepted %d\n", msgsock);
 		}
 	      end_loop:;
-	} while (monet_running);
+	} while (1);
 	SSL_CTX_free(ctx);
 	close(sock);
 	return GDK_SUCCEED;
