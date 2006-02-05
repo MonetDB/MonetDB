@@ -1183,14 +1183,18 @@ table_def:
 
 opt_temp:
     /* empty */		{ $$ = NULL; }
+ |  TEMPORARY		{ $$ = _symbol_create( SQL_TEMP_LOCAL, NULL); }
  |  LOCAL TEMPORARY	{ $$ = _symbol_create( SQL_TEMP_LOCAL, NULL); }
+/* no support for global temps (ie shared with other transactions) 
  |  GLOBAL TEMPORARY	{ $$ = _symbol_create( SQL_TEMP_GLOBAL, NULL); }
+*/
  ;
 
 opt_on_commit: /* only for temporary tables */
     /* empty */			 { $$ = 0; } /* default delete rows on commit */
- |  ON COMMIT PRESERVE ROWS	 { $$ = 1; }
  |  ON COMMIT sqlDELETE ROWS	 { $$ = 0; }
+ |  ON COMMIT PRESERVE ROWS	 { $$ = 1; }
+ |  ON COMMIT DROP	 	 { $$ = 2; }
  ;
 
 table_content_source:

@@ -63,9 +63,6 @@ access after being logged in.
 	.BUILTIN mvc_init(int debug) = mvc_init_wrap; 
 		"create the global catalog"
 
-	.BUILTIN quit() = mvc_exit_wrap; 
-		"cleanup the global catalog and quit server"
-
 	.COMMAND mvc_sql( mvc m, str cmd ) = mvc_sql_wrap;
 		"execute a sql query"
 
@@ -329,22 +326,6 @@ sqllogmanager()
 {
 	mvc_logmanager();
 	return GDK_SUCCEED;	
-}
-
-int
-mvc_exit_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
-{
-	Client c;
-
-	CNTXTclient(stk, &c);
-	while (c->father >= 0) {
-		c = monet_clients + c->father;
-	}
-	/* only exit sql on a global quit */
-	if (c == monet_clients) {
-		mvc_exit();
-	}
-	return CMDquit(stk, lt, res);
 }
 
 int

@@ -2059,7 +2059,7 @@ store_manager()
 	while (active) {
 		int res = SQL_OK;
 
-		MT_sleep_ms(3000000);
+		MT_sleep_ms(30000);
 		MT_set_lock(bs_lock, "store_manager");
 		if (transactions || !active || !logger || 
 			log_changes(logger) < 1000) {
