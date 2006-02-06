@@ -59,7 +59,7 @@ static PFpnode_t *root;
 /* temporay node memory */
 static PFpnode_t *c, *c1;
 
-static void add_to_module_wl (char *ns, char *uri);
+static void add_to_module_wl (char* id, char *ns, char *uri);
 
 /* avoid `implicit declaration of yylex' warning */
 extern int pflex (void);
@@ -136,12 +136,13 @@ static char *req_module_ns = NULL;
 static PFarray_t *modules = NULL;
 
 /**
- * Each item in the work list is a namespace/URI pair.  The URI
+ * Each item in the work list is a id/namespace/URI triple.  The URI
  * denotes the URI to load the module from; the namespace is the
  * namespace that the module should be defined for (abort parsing
  * otherwise).
  */
 typedef struct module_t {
+    char *id;
     char *ns;
     char *uri;
 } module_t;
@@ -918,9 +919,17 @@ ModuleImport              : "import module" ModuleNS_ OptAtStringLiterals_
                               c = $3;
 
                               while (c->kind == p_schm_ats) {
-                                  add_to_module_wl (
-                                      $2.hole->sem.str,       /* NS */
-                                      c->child[0]->sem.str);  /* URI */
+                                  if($2.root){
+                                      add_to_module_wl (
+                                        $2.root->sem.str,       /* ID */
+                                        $2.hole->sem.str,       /* NS */
+                                        c->child[0]->sem.str);  /* URI */
+                                  } else {
+                                      add_to_module_wl (
+                                        "",                     /* ID */
+                                        $2.hole->sem.str,       /* NS */
+                                        c->child[0]->sem.str);  /* URI */
+                                  }
                                   c = c->child[1];
                               }
 
@@ -2378,20 +2387,21 @@ flatten_locpath (PFpnode_t *p, PFpnode_t *r)
  * Add an item to the work list of modules to import.  If it is
  * already in there, do nothing.
  *
+ * @param id   namespace id
  * @param ns   namespace associated with this module
  * @param uri  URI where we will find the module definition.
  *
  *  import module [prefix =] ns at uri, uri, uri...
  */
 static void
-add_to_module_wl (char *ns, char *uri)
+add_to_module_wl (char*id, char *ns, char *uri)
 {
     for (unsigned int i = 0; i < PFarray_last (modules); i++)
         if ( !strcmp (((module_t *) PFarray_at (modules, i))->uri, uri) )
             return;
 
     *(module_t *) PFarray_add (modules)
-        = (module_t) { .ns = PFstrdup (ns), .uri = PFstrdup (uri) };
+        = (module_t) { .id = PFstrdup(id), .ns = PFstrdup (ns), .uri = PFstrdup (uri) };
 }
 
 /**
@@ -2415,7 +2425,7 @@ YYLTYPE pflloc; /* why ? */
  * Parse an XQuery from the main-memory buffer pointed to by @a input.
  */
 int
-PFparse (char *input, PFpnode_t **r)
+PFparse (char *input, PFpnode_t **r, char** soap_uri)
 {
 #if YYDEBUG
     pfdebug = 1;
@@ -2439,6 +2449,13 @@ PFparse (char *input, PFpnode_t **r)
     if (pfparse ())
         PFoops (OOPS_PARSE, "XQuery parsing failed");
 
+    if (soap_uri) {
+        for (unsigned int i = 0; i < PFarray_last (modules); i++) {
+            module_t *m = (module_t *) PFarray_at (modules, i);
+            if (strcmp(m->id, "soap") == 0)
+                *soap_uri = PFstrdup(m->uri);
+        }
+    }
     *r = root;
     return num_fun;
 }
@@ -2460,7 +2477,7 @@ parse_module (char *ns, char *uri)
     /* initialisation of yylloc */
     pflloc.first_row = pflloc.last_row = 1;
     pflloc.first_col = pflloc.last_col = 0;
-
+    
     req_module_ns = ns;
 
     if (pfparse ())

@@ -37,7 +37,7 @@
 /**
  * Parse an XQuery from the main-memory buffer pointed to by @a input.
  */
-int PFparse (char* pfin, PFpnode_t **);
+int PFparse (char* pfin, PFpnode_t **, char** soap_uri);
 
 /**
  * Load and parse modules listed in working list and put them into

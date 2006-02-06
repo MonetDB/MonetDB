@@ -1,0 +1,1019 @@
+@' Copyright Notice:
+@' -----------------
+@'
+@' The contents of this file are subject to the Pathfinder Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License.  You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/PathfinderLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.  See
+@' the License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the Pathfinder system.
+@'
+@' The Initial Developer of the Original Code is the Database &
+@' Information Systems Group at the University of Konstanz, Germany.
+@' Portions created by the University of Konstanz are Copyright (C)
+@' 2000-2005 University of Konstanz.  All Rights Reserved.
+@'
+@' $Id$
+@'
+
+@f pf_soap
+@a Ying Zhang
+
+@t MIL primitives to support SOAP RPC using HTTP connection
+
+@* Introduction
+This module provides new MIL primitives to support remote XQuery execution
+using HTTP connection on top of MonetDB within the "Pathfinder" project.
+@
+@* Module Definition
+@m
+.MODULE pf_soap;
+
+.USE pathfinder;
+.USE pf_support;
+.USE url;
+
+@- HTTP server function(s)
+@m
+.COMMAND httpd_start(int port) : void = CMDhttpd_start;
+"Start the HTTP server for SOAP RPC calls on the specified port."
+
+@- HTTP client function(s)
+@m
+.COMMAND http_post(
+        str location,
+        str soap_module,
+        str method,
+        BAT[void, bat] ws,
+        BAT[void, oid] fun_vid,
+        BAT[void, oid] fun_iter,
+        BAT[void, oid] fun_item,
+        BAT[void, int] fun_kind,
+        BAT[void, lng] int_values,
+        BAT[void, dbl] dbl_values,
+        BAT[void, dbl] dec_values,
+        BAT[void, str] str_values) : BAT[oid, bat] = CMDhttp_post;
+"Create and send a SOAP RPC message to the specified destination"
+
+.PRELUDE = pf_soap_prelude;
+.EPILOGUE = pf_soap_epilogue;
+
+.END pf_soap;
+
+@mil
+
+PROC soap_receiver_start(int port) : void {
+    fork(httpd_start(port));
+}
+ADDHELP("soap_receiver_start", "zhang", "November 2005",
+"DESCRIPTION:\n\
+Start receiver for SOAP RPC calls on the specified port",
+"pf_soap");
+
+PROC soap_receiver_start() : void {
+    #soap_receiver_start( int(monet_environment.find("pf_httpd_port")) );
+    soap_receiver_start(8080);
+}
+ADDHELP("soap_receiver_start", "zhang", "November 2005",
+"DESCRIPTION:\n\
+Start receiver for SOAP RPC calls on the default port 8080",
+"pf_soap");
+
+PROC send_soap_rpc(
+        str local_name,
+        str location,
+        str soap_module,
+        str method,
+        BAT[void, bat] ws,
+        BAT[void, oid] fun_vid,
+        BAT[void, oid] fun_iter,
+        BAT[void, oid] fun_item,
+        BAT[void, int] fun_kind,
+        BAT[void, lng] int_values,
+        BAT[void, dbl] dbl_values,
+        BAT[void, dbl] dec_values,
+        BAT[void, str] str_values) : oid {
+
+    var soapres := http_post(location, soap_module, method,
+            ws, fun_vid, fun_iter, fun_item, fun_kind,
+            int_values, dbl_values, dec_values, str_values);
+
+    var docBAT := bat(str,bat,WS_SIZE);
+    var height := index_doc(soapres,docBAT);
+    return add_docbat(ws, docBAT, local_name, "", height);
+}
+ADDHELP("send_soap_rpc", "zhang", "November 2005",
+"DESCRIPTION:\n\
+Send a SOAP RPC request via HTTP to the destination \"location\", save the reults in the WorkingSet and return the fragment-id of the new added document",
+"pf_soap");
+
+@h
+
+#ifndef PF_SOAP_H
+#define PF_SOAP_H
+
+#include "pathfinder.h"
+
+/* BAT related functions */
+#include <gdk.h>
+/* escape_url() */
+#include <url.h>
+/* stream functions */
+#include <stream.h>
+#include <time.h>
+
+#ifdef _WIN32   /* Windows specific */
+    #include <winsock.h>
+    #define snprintf _snprintf
+    #ifndef __MINGW32__
+        #pragma comment(lib, "ws2_32")
+    #endif
+#else           /* UNIX specific */
+    #include <sys/select.h>
+    #include <sys/types.h>	/* used by socket */
+    #include <sys/socket.h>
+    #include <unistd.h>
+    #include <netinet/in.h> /* hton and ntoh */
+    #include <arpa/inet.h>  /* dotted IP addr to and from 32-bits int */
+    #include <netdb.h>		/* convert domain names into IP addr */
+    #include <errno.h>
+    #include <ctype.h>
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h> /* Functions to handle variable argument lists */
+
+/* CMDshred2bats() and xquery_print_result_main() */
+#include "pf_support.proto.h"
+#include "shttpd.h"
+
+#define MXQ_SIGNATURE "signature\01http://monetdb.cwi.nl/xquery/soap"
+#define MXQ_TYPE "type\01http://monetdb.cwi.nl/xquery/soap"
+#define MXQ_PARAM_TYPE "type"
+
+#define PF_TEXT     1
+#define ELEMENT     0
+#define MAXPARAMS   32
+#define HTTP_PORT   8080
+#define HTTPD_FUNC  "/soap_rpc"
+
+/* Used by the http_post client */
+#define MIN_RESPONSE_SIZE 19
+#define MAX_BUF_SIZE 1024*1024 /* MUST be the same as 'IO_MAX' in shttpd.c */
+#define MAX_POST_HEADER_SIZE 1024
+#define NR_RETRIES 3 /* #retries to connect to the SOAP receiver */
+
+/* To prevent start the HTTP server twice */
+int soap_running = 0;
+
+#endif /* PF_SOAP_H */
+
+@c
+#include "pf_soap.h"
+
+/* Create a HTTP client socket.
+ * Returns the socket if succeeded, -1 otherwise.
+ */
+static int setup_connection(str location, int port, int nr_retries) {
+    int i, ret, sock;
+    in_addr_t addr;
+    struct sockaddr_in sockaddr;
+    struct hostent *resolv = NULL;
+
+    errno = 0;
+    if (isdigit((int)location[0])) {
+        if ((i = inet_addr(location)) < 0) {
+            GDKerror("setup_connection: invalid IP address \"%s\": %s\n",
+                     location, errno ? strerror(errno) : "");
+            return -1;
+        }
+        addr = (in_addr_t) i;
+    } else {
+        if (!(resolv = gethostbyname(location))) {
+            GDKerror("setup_connection: invalid location \"%s\": %s\n",
+                     location, errno ? strerror(errno) : "");
+            return -1;
+        }
+        addr = ((struct in_addr *)resolv->h_addr_list[0])->s_addr;
+    }
+
+    sockaddr.sin_family = AF_INET;
+    sockaddr.sin_port   = htons(port);
+    sockaddr.sin_addr.s_addr = addr;
+    memset(&(sockaddr.sin_zero), '\0', 8);
+
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        GDKerror("setup_connection: failed to create socket\n");
+       
+        return -1;
+    }
+
+    ret = connect(sock, (struct sockaddr *) &sockaddr, sizeof(sockaddr));
+    for (i = 0; i < nr_retries && ret < 0; i++) {
+        sleep(1);
+        ret = connect(sock, (struct sockaddr *) &sockaddr, sizeof(sockaddr));
+    }
+       
+    if (ret < 0) {
+        GDKerror("setup_connection: failed to setup connection\n");
+        close(sock);
+        return -1;
+    }
+    return sock;
+}
+
+/* Used by the SOAP receiver to send a SOAP Fault message to the SOAP
+ * sender
+ */
+static void send_soap_err(stream *out, bit p_body, char* http_err,
+                           char *soapcodev, char *fmt, ...){
+    va_list ap;
+
+    if (p_body) {
+        stream_printf(out, "HTTP/1.1 %s\r\n"
+                "Content-Type: application/soap+xml; charset=\"utf-8\"\r\n\r\n"
+                "<?xml version='1.0' ?>\n"
+                "<env:Envelope\n"
+                "    xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n"
+                "    xmlns:xml=\"http://www.w3.org/XML/1998/namespace\">\n"
+                "  <env:Body>\n",
+                http_err);
+    }
+
+    stream_printf(out,
+            "    <env:Fault>\n"
+            "      <env:Code>\n"
+            "        <env:Value>\n"
+            "          %s\n"
+            "        </env:Value>\n"
+            "      </env:Code>\n"
+            "      <env:Reason>\n"
+            "        <env:Text xml:lang=\"en\">\n"
+            "          ", soapcodev);
+   
+    va_start(ap, fmt);
+    while(*fmt){
+        switch(*fmt++){
+            case 's':
+                stream_printf(out, "%s", va_arg(ap, char *));
+                break;
+            case 'c':
+                stream_printf(out, "%c", (char)va_arg(ap, int));
+                break;
+            case 'i':
+                stream_printf(out, "%d", va_arg(ap, int));
+                break;
+            case 'l':
+                stream_printf(out, "%ld", va_arg(ap, long));
+                break;
+            case 'd':
+                stream_printf(out, "%f", va_arg(ap, double));
+                break;
+            default:
+                GDKerror("send_soap_err: fmt contains invalid character!\n");
+                break;
+        }
+    }
+    va_end(ap);
+
+    stream_printf(out,
+            "        </env:Text>\n"
+            "      </env:Reason>\n"
+            "    </env:Fault>\n"
+            "  </env:Body>\n"
+            "</env:Envelope>");
+}
+
+/* Calculate the number of nodes which has the name "node_name" */
+static int count_node(BAT *docBAT, char *node_name, int start_nid, int end_nid){
+    static int off;
+    static oid *prop;
+    static char *kind;
+    static BAT *qn_loc;
+
+    int i, nr = 0;
+    char *qname;
+
+    assert(start_nid > 0);
+   
+    off    = BUNindex(docBAT, BUNfirst(docBAT));
+    prop   = (oid*) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_PROP))));
+    kind   = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_KIND))));
+    qn_loc = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+QN_LOC)));
+
+    /* start_nid and end_nid included */
+    for (i = start_nid; i <= end_nid; i++) {
+        if (kind[i] == ELEMENT) {
+            qname = BUNtail(qn_loc, BUNfnd(qn_loc, &(prop[i])));
+            if (strcmp(qname, node_name) == 0)
+                nr++;
+        }
+    }
+    return nr;
+}
+
+/* Find the first node between 'start_nid' and 'end_nid' (incl.), which kind is
+ * 'ELEMENT', and return the nid of this node.
+ * Return 0 if no such node can be found. */
+static oid get_elem_nid(BAT *docBAT, int start_nid, int end_nid){
+    static int off;
+    static char *kind;
+    int i;
+
+    assert(start_nid > 0 && end_nid >= start_nid);
+   
+    off    = BUNindex(docBAT, BUNfirst(docBAT));
+    kind   = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_KIND))));
+
+    for (i = start_nid; i <= end_nid; i++) {
+        if (kind[i] == ELEMENT)
+            return i;
+    }
+    return 0;
+}
+
+/* Find the node ID of a node given its name.
+ * Return 0 if no NID can be found. */
+static oid get_nid(BAT *docBAT, char *node_name, int start_nid, int end_nid){
+    static int off;
+    static oid *prop;
+    static char *kind;
+    static BAT *qn_loc;
+
+    int i;
+    char *qname;
+
+    assert(start_nid > 0 && end_nid >= start_nid);
+   
+    off    = BUNindex(docBAT, BUNfirst(docBAT));
+    prop   = (oid*) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_PROP))));
+    kind   = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_KIND))));
+    qn_loc = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+QN_LOC)));
+
+    /* start_nid and end_nid included */
+    for (i = start_nid; i <= end_nid; i++) {
+        if (kind[i] == ELEMENT) {
+            qname = BUNtail(qn_loc, BUNfnd(qn_loc, &(prop[i])));
+            if (strcmp(qname, node_name) == 0)
+                return i;
+        }
+    }
+    return 0;
+}
+
+/* Get the value of the attribute 'attrname' of 'node'
+ * NB: DO NOT free the string returned by this function!!!
+ */
+static char* find_attribute(BAT *docBAT, char* attrname, oid node){
+    static int off;
+    static oid *attr_own, *attr_qn, *attr_prop;
+    static BAT *qn_loc, *qn_prefix, *prop_val;
+    static size_t nattrs;
+
+    oid qn = oid_nil;
+    size_t i;
+    BUN p;
+
+    off = BUNindex(docBAT, BUNfirst(docBAT));
+    qn_prefix = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+QN_PREFIX)));
+    qn_loc    = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+QN_LOC))   );
+
+    attr_own  = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+ATTR_OWN) )));
+    attr_qn   = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+ATTR_QN)  )));
+    attr_prop = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+ATTR_PROP))));
+
+    prop_val = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PROP_VAL)));
+
+    nattrs = BATcount(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+ATTR_PROP))));
+
+    /* Find the attribute 'attrname' in the tail of 'qn_loc' */
+    p = BUNfnd(BATmirror(qn_loc), attrname);
+    /* Get the index of the attribute 'attrname' */
+    if (p) qn = *(oid*) BUNhead(qn_loc, p);
+    else return NULL;
+
+    /* try to find the node name */
+    for (i = 0; i < nattrs; i++) {
+        if (attr_own[i] > node) return NULL;
+        if (attr_own[i] == node && attr_qn[i] == qn) {
+                off = BUNindex(prop_val, BUNfirst(prop_val)) + attr_prop[i];
+                return (char*) BUNtail(prop_val, BUNptr(prop_val, off));
+        }
+    }
+    return NULL;
+}
+
+static int handle_soap_request(struct shttpd_callback_arg *arg) {
+    var_t *text = NULL;     /* typedef oid var_t */
+    int i = 0, j = 0, k = 0, off = 0, sock = -1, ret = GDK_FAIL;
+    stream *out = NULL;
+    char *strptr = NULL, *kind = NULL, *level = NULL, *text_base = NULL;
+    char *msg = NULL, *module = NULL, *method = NULL;
+    oid *prop = NULL;
+    int *size = NULL;
+    oid nid = 0, pnode = 0, inode = 0, vnode = 0;
+    BAT *docBAT = NULL;
+
+    int iterc = 0, argc = 0;
+    int **argcnt = NULL;    /* #items eash param/iter contains */
+    str *argval = NULL;     /* Stores all actual values sequetially. */
+    str *argtpe = NULL;     /* XQuery type of each argval */
+    int argval_nr = 0;      /* #values arg_val currently contains */
+    int argval_size;        /* max #items in "argval", doubled if necessary */
+
+    THRnew(MT_getpid(), "soap_handler");
+
+    /* Create our own output stream for further data transfer. */
+    sock = shttpd_get_socket(arg);
+    if (!(out = socket_wastream(sock, "soap_response"))) {
+        GDKerror("handle_soap_request: "
+                 "failed to create socket_wastream for socket %d", sock);
+        close(sock);
+        return GDK_FAIL;
+    }
+
+    /* Retrieve the whole received (SOAP RPC) message, and remove the first
+     * line of the request message, so that the messgae we pass to
+     * CMDshred2bats starts directly with the SOAP envelope. */
+    msg = shttpd_get_msg(arg);
+    strptr = msg + strlen("<?xml"); /* skip "<?xml" */
+    if ((strstr(msg, "<?xml") != msg) ||
+        (strptr = strchr(strptr, (int)'<')) == NULL) {
+        send_soap_err(out, 1, "404 Bad Request", "env:Sender", "s",
+                "SOAP request: bad XML structure\n");
+    }
+
+/*
+printf("\n=== DEBUG MSG: SOAP request RECEIVED ======\n%s"
+       "=== END DEBUG MSG: SOAP request RECEIVED ===\n\n", strptr);
+*/
+
+    if ((CMDshred2bats(&docBAT, "", strptr, "")  == GDK_FAIL)) {
+        send_soap_err(out, 1, "404 Bad Request", "env:Sender", "s",
+                "SOAP request: bad XML structure, could not shred\n");
+        goto FINISH;
+    }
+
+    off   = BUNindex(docBAT,BUNfirst(docBAT));
+    size  = (int *) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_SIZE))));
+    level = (char *)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_LEVEL))));
+    prop  = (oid *) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_PROP))));
+    kind  = (char *)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_KIND))));
+    text  = (var_t*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PROP_TEXT))));
+    text_base = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT, off+PROP_TEXT)))->theap->base;
+
+    /* There are at least two nodes before "SoapRpcRequest", namely "Envelope"
+     * and "Body" (a "Header" node is optional). There are at least two nodes
+     * after "SoapRpcRequest", namely "iter" and "param". */
+    if (!(nid = get_nid(docBAT, "SoapRpcRequest", 2, (size[0] - 2)))) {
+        send_soap_err(out, 1, "404 Bad Request", "env:Sender", "s",
+                "SOAP request must have a \"module\" tag\n");
+        goto FINISH;
+    }
+    if ((module = find_attribute(docBAT, "module", nid)) == NULL) {
+        send_soap_err(out, 1, "404 Bad Request", "env:Sender", "s",
+                "SOAP request: \"SoapRpcResults\" tag does not have a"
+                "\"module\" attribute.\n");
+        goto FINISH;
+    }
+    if ((method = find_attribute(docBAT, "method", nid)) == NULL) {
+        send_soap_err(out, 1, "404 Bad Request", "env:Sender", "s",
+                "SOAP request: \"method\" tag does not have a \"method\""
+                "attribute.\n");
+        goto FINISH;
+    }
+
+    /* Calculate the number of iterations */
+    iterc = count_node(docBAT, "iter", (nid+1), size[0]);
+    if (iterc == 0) {
+        send_soap_err(out, 1, "404 Bad Request", "env:Sender", "sssss",
+                "SOAP request: \"", module, ":", method,
+                "\": should have at least one \"<iter>\" tag.\n");
+        goto FINISH;
+    }
+    /* Calculate the number of parameters */
+    /* FIXME: we now just assume each iteration contains the same number
+     *        of parameters, but this is not checked! */
+    argc = count_node(docBAT, "param", (nid+2), size[0]) / iterc;
+
+    argcnt = GDKmalloc(iterc * sizeof(int *));
+    for (i = 0; i < iterc; i++) {
+        argcnt[i] = GDKmalloc(argc * sizeof(int));
+    }
+    argval_size = iterc * MAXPARAMS;
+    argval = GDKmalloc(argval_size * sizeof(char *));
+    argtpe = GDKmalloc(argval_size * sizeof(char *));
+   
+    /* Fill the arrays 'argcnt', 'argval', 'argtpe' */
+    inode = nid;
+    for (i = 0; i < iterc; i++) {
+        inode = get_nid(docBAT, "iter", (inode+1), size[0]);
+
+        pnode = inode;
+        for (j = 0; j < argc; j++) {
+            pnode = get_nid(docBAT, "param", (pnode+1), (inode+size[inode]));
+       
+            vnode = pnode; argcnt[i][j] = 0; k = 1;
+            while ((vnode = get_nid(docBAT, "val", (vnode+1), 
+                                    (pnode+size[pnode]))) > 0) {
+                if (argval_nr == argval_size) {
+                    send_soap_err(out, 1, "404 Bad Request",
+                            "env:Sender", "sssssis",
+                            "SOAP request: \"", module, ":", method,
+                            "\": too many parameters, "
+                            "maximum number of parameters is ",
+                            MAXPARAMS, ".\n");
+                    goto FINISH;
+                }
+
+                argtpe[argval_nr] = find_attribute(docBAT, 
+                                        MXQ_PARAM_TYPE, vnode);
+                if (argtpe[argval_nr] == NULL) {
+                    send_soap_err(out, 1, "404 Bad Request",
+                            "env:Sender", "sssssisisisss",
+                            "SOAP request \"", module, ":", method,
+                            "\": iteration ", (i+1), "->parameter ",
+                            (j+1), "->value ", k, " does not have a ",
+                            MXQ_PARAM_TYPE, " attribute.\n");
+                    goto FINISH;
+                }
+
+                if (strcmp(argtpe[argval_nr], "xs:anyNode") != 0) {
+                    if (kind[vnode + 1] != PF_TEXT) {
+                        send_soap_err(out, 1, "404 Bad Request",
+                                "env:Sender", "sssssisisssss",
+                                "SOAP request \"", module, ":", method,
+                                "\": iteration ", (i+1), "->parameter ",
+                                (j+1), "->value \"", argval[argval_nr],
+                                "\" of type \"", argtpe[argval_nr],
+                                "\" does not have a simple value.\n");
+                        goto FINISH;
+                    }
+                    argval[argval_nr] = GDKstrdup(text_base + 
+                                                  text[prop[vnode+1]]);
+                } else {
+                    nid = get_elem_nid(docBAT, vnode+1, vnode+size[vnode]);
+                    if (!nid) {
+                        send_soap_err(out, 1, "404 Bad Request",
+                                "env:Sender", "sssssisss",
+                                "SOAP request \"", module, ":",
+                                method, "\": parameter ", (i + 1),
+                                " of type \"", argtpe[i],
+                                "\" should be an element.\n");
+                        goto FINISH;
+                    }
+                    argval[argval_nr] = GDKmalloc(32);
+                    snprintf(argval[argval_nr], 32, "%ld", nid);
+
+                }
+                argcnt[i][j]++;
+                argval_nr++;
+                k++;
+            } /* end WHILE 'vnode' */
+        } /* end FOR 'argc' */
+    } /* end FOR 'i < iterc' */
+
+    /* write out our response */
+    if (stream_printf(out,
+                "HTTP/1.1 200 OK\r\n"
+                "Content-Type: application/soap+xml; charset=\"utf-8\"\r\n\r\n"
+                "<?xml version='1.0' ?>\n"
+                "<env:Envelope"
+                "    xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\">\n"
+                "<env:Header />\n"
+                "<env:Body>\n"
+                "<SoapRpcResults module=\"%s\" method=\"%s\">\n",
+                module, method) >= 0)
+    {
+        argc += 1000; /* debug */
+        char *err = xquery_method(out, module, method, argc, iterc,
+                            argcnt, argtpe, argval, docBAT);
+        argc %= 1000;
+
+        if (err) {
+            send_soap_err(out, 0, "", "env:Sender", "sssss",
+                    module, ":", method, ": ", err);
+            goto FINISH;
+        }
+        stream_printf(out, "</SoapRpcResults>\n</env:Body>\n</env:Envelope>\n");
+    }
+   
+    ret = GDK_SUCCEED;
+    goto FINISH;
+
+FINISH:
+    if (out) {
+        stream_flush(out);
+        stream_destroy(out);
+    }
+
+    if (argcnt) {
+        for (i = 0; i < iterc; i++)
+            GDKfree(argcnt[i]);
+        GDKfree(argcnt);
+    }
+    if (argtpe) GDKfree(argtpe);
+    if (argval) GDKfree(argval);
+
+    return ret;
+}
+
+int CMDhttp_post(BAT **res,
+                 str location,
+                 str module,
+                 str method,
+                 BAT* ws,
+                 BAT* fun_vid,
+                 BAT* fun_iter,
+                 BAT* fun_item,
+                 BAT* fun_kind,
+                 BAT* int_values,
+                 BAT* dbl_values,
+                 BAT* dec_values,
+                 BAT* str_values) {
+
+    int i, a, len, ret, sock = -1, port = HTTP_PORT;
+    int type = 0; /* param type in C */
+    buffer *b = NULL;
+    str strptr = NULL;
+    stream *in = NULL, *out = NULL, *bs = NULL, *bak = GDKout;
+
+    /* Hold the temp BATs after the SOAP response has been shredded: */
+    BAT *docBAT = NULL;
+
+    /* BATs hold item|kind of a node parameter */
+    BAT *node_item = NULL, *node_kind = NULL; 
+
+    /* Pointers to the current BUNs of the BATs: */
+    BUN p_vid, p_iter, p_item, p_kind; 
+
+    /* double dbl_val; */
+    /* long int int_val, dec_val; */   /* param values */
+    str str_val = NULL;
+
+    int argc = 0, argc_base = 0, my_argc = 0;
+    int iterc = 0, iter_base = 0, my_iter = 0;
+    int itemc = 0, arg_offset = 0;
+    int **argcnt = NULL;    /* #items eash iter/param contains */
+    str *argval = NULL;     /* Stores all actual values per iter/param. */
+    str *argtpe = NULL;     /* XQuery type of each argval per iter/param */
+    int argval_nr = 0;      /* #values arg_val currently contains */
+    int argval_size = 0;    /* max #items in "argval" */
+
+    if ((strptr = strchr(location, (int)':')) != NULL) {
+        strptr[0] = '\0'; strptr++;
+        port = atoi(strptr);
+    }
+    if ((sock = setup_connection(location, port, NR_RETRIES)) < 0) {
+        GDKerror("CMDhttp_post: could not setup connection with %s:%d\n",
+                location, port);
+        goto FAIL;
+    }
+    if (!(out = socket_wastream(sock, "http_send"))) {
+        GDKerror("CMDhttp_post: failed to create socket_wastream\n");
+        goto FAIL;
+    }
+    if (!(in = socket_rastream(sock, "http_receive"))) {
+        GDKerror("CMDhttp_post: failed to create socket_rastream\n");
+        goto FAIL;
+    }
+
+    /* Create the SOAP request message */
+    b = buffer_create(MAX_BUF_SIZE);
+    if (!b || b->len == 0) {
+        GDKerror("CMDhttp_post: not enough memory\n");
+        goto FAIL;
+    }
+
+    b->pos = snprintf(b->buf, b->len,
+            "<?xml version='1.0' ?>\n"
+            "<env:Envelope\n"
+            "    xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\">\n"
+            "<env:Header />\n"
+            "<env:Body>\n"
+            "<SoapRpcRequest\n"
+            "    module=\"%s\"\n"
+            "    method=\"%s\">\n",
+            module, method);
+
+    /* Find the number of parameters and iterations. */
+    argc  = *(int*)BUNtail( fun_vid,  BUNprev(fun_vid,  BUNlast(fun_vid))  ) - 
+            *(int*)BUNtail( fun_vid,  BUNfirst(fun_vid)) + 1;
+    iterc = *(int*)BUNtail( fun_iter, BUNprev(fun_iter, BUNlast(fun_iter)) );
+
+    argcnt = GDKmalloc(iterc * sizeof(int *));
+    for (i = 0; i < iterc; i++) {
+        /* FIXME: validate malloc result */
+        argcnt[i] = GDKmalloc(argc * sizeof(int));
+        for (a = 0; a < argc; a++) {
+            argcnt[i][a] = 0;
+        }
+    }
+    argval_size = iterc * MAXPARAMS;
+    argtpe = GDKmalloc(argval_size * sizeof(char *));
+    argval = GDKmalloc(argval_size * sizeof(char *));
+
+    /* Fill the arrays 'argcnt', 'argval', 'argtpe' with the values according to
+     * the BATs 'fun_vid', 'fun_iter', 'fun_item', 'fun_kind'. */
+    i = a = 0; /* i: iter counter; a: arg counter */
+    iter_base = *(int*) BUNtail(fun_iter, BUNfirst(fun_iter));
+    argc_base = *(int*) BUNtail(fun_vid, BUNfirst(fun_vid));
+    for (p_vid  = BUNfirst(fun_vid),  p_iter = BUNfirst(fun_iter),
+         p_item = BUNfirst(fun_item), p_kind = BUNfirst(fun_kind);
+
+         p_vid  < BUNlast(fun_vid)  && p_iter < BUNlast(fun_iter) &&
+         p_item < BUNlast(fun_item) && p_kind < BUNlast(fun_kind);
+
+         p_vid  = BUNnext(fun_vid, p_vid),
+         p_iter = BUNnext(fun_iter, p_iter),
+         p_item = BUNnext(fun_item, p_item),
+         p_kind = BUNnext(fun_kind, p_kind)) {
+
+        if (argval_nr == argval_size) {
+            GDKerror("CMDhttp_post: too many parameters.\n");
+            goto FAIL;
+        }
+
+        i = *(int*) BUNtail(fun_iter, p_iter);
+        a = *(int*) BUNtail(fun_vid, p_vid);
+        argcnt[i - iter_base][a - argc_base]++;
+        argval_nr++;
+    }
+    argval_size = argval_nr; /* actual number of argval-s */
+    argval_nr = 0;
+
+    for (my_iter = 0; my_iter < iterc; my_iter++) {
+        /* Enlarge the buffer is it is filled more than 80%.
+         * FIXME: is this really necessary? Or should we just return an error?
+         */
+        if (b->pos > (b->len * 0.8)) {
+            b->len *= 2;
+            b->buf = realloc(b->buf, b->len);
+        }
+
+        b->pos += snprintf( (b->buf + b->pos), (b->len - b->pos), "<iter>\n");
+
+        for (my_argc = 0; my_argc < argc; my_argc++) {
+            b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
+                                "<param>\n");
+
+            arg_offset = 0;
+            /* add the 'argcnt' of all arg-s before 'me': */
+            for (a = 0; a < my_argc; a++) {
+                for (i = 0; i < iterc; i++) {
+                    arg_offset += argcnt[i][a];
+                }
+            }
+            /* add the 'argcnt' of iter-s before 'me': */
+            for (i = 0; i < my_iter; i++) {
+                arg_offset += argcnt[i][my_argc];
+            }
+            /* now 'arg_offset' contains the index of the values and the
+             * types of MY iter and My argc in argval and argtpe */
+
+            for (itemc = 0; itemc < argcnt[my_iter][my_argc]; itemc++) {
+                a = arg_offset + itemc; /* index into fun_item|fun_kind */
+                type = *(int*)BUNtail(fun_kind, BUNptr(fun_kind, a));
+                if (type > WS_SIZE) {
+                    b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
+                                        "<val type=\"xs:anyNode\">\n");
+
+                    node_item = BUNins(BATnew(TYPE_void, TYPE_oid, 1),
+                                       BUNhead(fun_item, BUNptr(fun_item, a)),
+                                       BUNtail(fun_item, BUNptr(fun_item, a)) );
+                    node_kind = BUNins(BATnew(TYPE_void, TYPE_int, 1),
+                                       BUNhead(fun_kind, BUNptr(fun_kind, a)),
+                                       BUNtail(fun_kind, BUNptr(fun_kind, a)) );
+
+                    if (!(bs = buffer_wastream(b, 
+                                    "shred_node_param"))) {
+                        GDKerror("CMDhttp_post: failed to create "
+                                "buffer_wastream to shred node parameter\n");
+                        goto FAIL;
+                    }
+
+                    THRsetdata(0, bs);
+                    xquery_print_result_main("xml-noheader-noroot", ws,
+                            node_item, node_kind, int_values, dbl_values,
+                            dec_values, str_values);
+                    THRsetdata(0, bak);
+                } else if (type == BOOL) {
+                    b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
+                            "<val type=\"xs:bool\">");
+                    len = b->len - b->pos;
+                    strptr = b->buf + b->pos;
+                    i = *(int*)BUNtail(fun_item, BUNptr(fun_item, a));
+                    b->pos += BATatoms[TYPE_bit].atomToStr(&strptr, &len,
+                                        BUNptr(int_values, i));
+                } else if (type == INT) {
+                    b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
+                            "<val type=\"xs:integer\">");
+                    len = b->len - b->pos;
+                    strptr = b->buf + b->pos;
+                    i = *(int*)BUNtail(fun_item, BUNptr(fun_item, a));
+                    b->pos += BATatoms[TYPE_int].atomToStr(&strptr, &len,
+                                        BUNptr(int_values, i));
+                } else if (type == DEC || type == DBL) {
+                    if (type == DEC){
+                        b->pos += snprintf(
+                                (b->buf + b->pos), (b->len - b->pos),
+                                "<val type=\"xs:decimal\">");
+                    } else {
+                        b->pos += snprintf(
+                                (b->buf + b->pos), (b->len - b->pos),
+                                "<val type=\"xs:double\">");
+                    }
+
+                    len = b->len - b->pos;
+                    strptr = b->buf + b->pos;
+                    i = *(int*)BUNtail(fun_item, BUNptr(fun_item, a));
+                    b->pos += BATatoms[TYPE_dbl].atomToStr(&strptr, &len,
+                            BUNptr(dbl_values, i));
+                } else if (type == STR || type == U_A) {
+                    i = *(int*)BUNtail(fun_item, BUNptr(fun_item, a));
+                    str_val = BUNtail(str_values, BUNptr(str_values, i));
+                    if (type == STR){
+                        b->pos += snprintf(
+                                (b->buf + b->pos), (b->len - b->pos),
+                                "<val type=\"xs:string\">\"%s\"", str_val);
+                    } else {
+                        b->pos += snprintf(
+                                (b->buf + b->pos), (b->len - b->pos),
+                                "<val type=\"xs:untypedAtomic\">\"%s\"", str_val);
+                    }
+                } else {
+                    GDKerror("CMDhttp_post: iter%d/param%d/item%d "
+                            "has invalid type %d\n",
+                            my_iter, my_argc, i);
+                    goto FAIL;
+                }
+                b->pos += snprintf( (b->buf + b->pos), (b->len - b->pos),
+                        "</val>\n");
+            }
+            b->pos += snprintf( (b->buf + b->pos), (b->len - b->pos),
+                    "</param>\n");
+        }
+        b->pos += snprintf( (b->buf + b->pos), (b->len - b->pos),
+                "</iter>\n");
+    }
+
+    b->pos += snprintf( (b->buf + b->pos), (b->len - b->pos),
+            "</SoapRpcRequest>\n"
+            "</env:Body>\n"
+            "</env:Envelope>\n");
+    b->buf[b->pos] = 0;
+
+/*
+printf("\n=== DEBUG MSG: SOAP request to send: (msglen = %ld) ===\n%s"
+       "=== END DEBUG MSG: SOAP request to send ===============\n\n",
+        b->pos, b->buf);
+*/
+
+    if (stream_printf(out,
+            "POST %s HTTP/1.1\r\n"
+            "Host: %s\r\n"
+            "Accept: text/html, text/xml, application/soap+xml\r\n"
+            "Accept-Language: en-uk en-us\r\n"
+            "Content-Type: text/html; charset=\"utf-8\"\r\n"
+            "Content-Length: %d\r\n\r\n"
+            "%s",
+            HTTPD_FUNC, location, b->pos, b->buf) < (int)b->pos) {
+        GDKerror("CMDhttp_post: failed to send SOAP RPC request.");
+        goto FAIL;
+    }
+
+
+    /*** Receive all response data ***/
+    b->pos = b->buf[0] = 0;
+    do{
+        ret = stream_read(in, (b->buf + b->pos), 1, (b->len - b->pos));
+        b->pos += ret;
+        if (b->pos > (b->len * 0.8)) {
+            b->len *= 2;
+            b->buf = realloc(b->buf, b->len);
+        }
+    } while (ret > 0);
+    b->buf[b->pos] = 0;
+
+    if (b->pos < MIN_RESPONSE_SIZE ||
+            !strstr((b->buf + b->pos - 16), "</env:Envelope>")) {	
+        GDKerror("CMDhttp_post: failed to get response: %s\n",
+                errno?strerror(errno):"no errno available");
+        if (b->pos < MIN_RESPONSE_SIZE)
+            GDKerror("#bytes received: %ld\n", b->pos);
+        else if (!strstr((b->buf + b->pos - 16), "</env:Envelope>"))
+            GDKerror("cannot find \"</env:Envelope>\" in buffer");
+
+        GDKerror("\nDump of received data:\n%s\n", b->buf);
+        goto FAIL;
+    }
+
+/*
+printf("\n=== DEBUG MSG: received SOAP response message ======\n%s"
+       "=== END DEBUG MSG: received SOAP response message ===\n\n", b->buf);
+*/
+
+    b->len = b->pos;
+    b->buf = realloc(b->buf, b->len); /* release unused memory */
+    strptr = strchr(b->buf, (int)' ') + 1; /* the HTTP return code */
+    if (strptr[0] != '2' || strptr[1] != '0' || strptr[2] != '0' ) {
+        /* Find the end of the first HTTP header line
+         * and print the HTTP error code + message */
+        i = 0;
+        while (strptr[i] != '\r') i++;
+        strptr[i] = '\0';
+        GDKerror("CMDhttp_post: %s\n\n", b->buf);
+        goto FAIL;
+    } else if (strstr(strptr, "<env:Fault")) {
+        /* Print the SOAP Fault Envelope */
+        /* TODO: maybe it is better to shred the SOAP fault message
+         *       and let the calling XQuery method handle it. */
+        strptr = strstr((strptr + i + 1), "<env:");
+        GDKerror("%s\n", strptr);
+        goto FAIL;
+    }
+
+    /* Retrieve the response SOAP Envelope */
+    strptr = strstr(strptr, "<env:Envelope");
+
+    if (CMDshred2bats(&docBAT, "", strptr, "")  == GDK_FAIL) {
+        GDKerror("CMDhttp_post: invalid SOAP RPC response received\n");
+        goto FAIL;
+    }
+
+    *res = docBAT;
+    stream_close(in);  stream_destroy(in);
+    stream_close(out); stream_destroy(out);
+    buffer_destroy(b);
+    return GDK_SUCCEED;
+
+FAIL:
+    if (in) {
+        stream_close(in);
+        stream_destroy(in);
+        sock = -1;
+    }
+    if (out) {
+        stream_close(out);
+        stream_destroy(out);
+        sock = -1;
+    }
+    if (bs) {
+        stream_close(bs);
+        stream_destroy(bs);
+    }
+    if (b) {
+        if (b->len > 0)
+            buffer_destroy(b);
+        else
+            free(b);
+    }
+    if (sock > 0) close(sock);
+    return GDK_FAIL;
+}
+
+int CMDhttpd_start(int* port) {
+    int sock;
+       
+    if (soap_running) {
+        GDKerror("CMDhttpd_start: soap receiver already running\n");
+        return GDK_FAIL;
+    }
+    soap_running = 1;
+
+    /* Initialize with specific config file, pass NULL to use default values */
+    shttpd_init(NULL);
+
+    /* Register call back function */
+    shttpd_register_url(HTTPD_FUNC, &handle_soap_request, NULL);
+
+    /* Open listening socket */
+    sock = shttpd_open_port(*port);
+
+    /* Serve connections infinitely until someone kills us */
+    for (;soap_running;) {
+        shttpd_poll(sock, 200);
+    }
+    return GDK_SUCCEED;
+}
+
+bat* pf_soap_prelude() {
+    /* Nothing to do here. */
+    return NULL;
+}
+
+void pf_soap_epilogue() {
+    /* Shut down the HTTP server. */
+    shttpd_fini();
+
+    /* stop SOAP */
+    soap_running = 0;
+}
+
+/* vim:set shiftwidth=4 expandtab: */

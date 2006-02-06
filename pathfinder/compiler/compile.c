@@ -242,6 +242,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     PFmil_t    *mroot  = NULL;
     PFarray_t  *mil_program = NULL;
     char       *xquery = NULL;
+    char       *soap_uri = NULL;
     int        module_base;
     
     /* elapsed time for compiler phase */
@@ -261,7 +262,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         PFoops (OOPS_FATAL, "unable to load URL `%s'", url);
 
     tm_first = tm = PFtimer_start ();
-    (void) PFparse (xquery, &proot);
+    (void) PFparse (xquery, &proot, &soap_uri);
     tm = PFtimer_stop (tm);
 
     
@@ -387,7 +388,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     if (status->summer_branch) {
         char *prologue = NULL, *query = NULL, *epilogue = NULL;
         tm = PFtimer_start ();
-        if (PFprintMILtemp (croot, status->optimize, module_base, -1, status->genType, tm_first, 
+        if (PFprintMILtemp (croot, status->optimize, soap_uri, module_base, -1, status->genType, tm_first, 
                             &prologue, &query, &epilogue))
             goto failure;
         fputs(prologue, pfout);
@@ -584,6 +585,7 @@ PFcompile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char
         int num_fun;
         long timing;
         int module_base;
+        char *soap_uri = NULL;
 
         *prologue = NULL;
         *query = NULL;
@@ -601,7 +603,7 @@ PFcompile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char
 	timing = PFtimer_start ();
 
 	/* repeat PFcompile, which we can't reuse as we don't want to deal with files here */
-        num_fun = PFparse (xquery, &proot);
+        num_fun = PFparse (xquery, &proot, &soap_uri);
         module_base = PFparse_modules (proot);
         proot = PFnormalize_abssyn (proot);
         PFns_resolve (proot);
@@ -614,7 +616,7 @@ PFcompile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char
         croot = PFsimplify (croot);
         croot = PFty_check (croot);
     	croot = PFcoreopt (croot);
-        (void)  PFprintMILtemp (croot, 1, module_base, num_fun, PFstate.genType, timing, prologue, query, epilogue);
+        (void)  PFprintMILtemp (croot, 1, soap_uri, module_base, num_fun, PFstate.genType, timing, prologue, query, epilogue);
         pa_destroy(pf_alloc);
         return (*PFerrbuf) ? PFerrbuf : NULL;
 }

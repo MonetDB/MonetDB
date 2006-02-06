@@ -1,0 +1,2 @@
+module(pf_soap);
+soap_receiver_start();

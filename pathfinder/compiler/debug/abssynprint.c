@@ -319,7 +319,7 @@ abssyn_dot (FILE *f, PFpnode_t *n, char *node)
 
         case p_apply:
         case p_fun:
-            L2 (p_id[n->kind], PFqname_str (n->sem.fun->qname), n->loc);
+            L2 (p_id[n->kind], PFqname_str (n->sem.apply.fun->qname), n->loc);
             break;
 
         case p_xmls_decl:
@@ -429,7 +429,7 @@ abssyn_pretty (PFpnode_t *n)
             PFprettyprintf ("%s", PFqname_str (n->sem.qname));
             break;
         case p_apply:
-            PFprettyprintf ("%s", PFqname_str (n->sem.fun->qname));
+            PFprettyprintf ("%s", PFqname_str (n->sem.apply.fun->qname));
             break;
         case p_fun_ref:
             PFprettyprintf ("%s", PFqname_str (n->sem.qname));
@@ -450,7 +450,7 @@ abssyn_pretty (PFpnode_t *n)
             PFprettyprintf ("%s", PFqname_str (n->sem.qname));
             break;
         case p_fun:
-            PFprettyprintf ("%s", PFqname_str (n->sem.fun->qname));
+            PFprettyprintf ("%s", PFqname_str (n->sem.apply.fun->qname));
             break;
         default:
             comma = false;
