@@ -39,6 +39,11 @@ $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/Documentation/index.html:	\
 
 docs:	$(prefix)/doc/MonetDB/TechDocs/Core/Mx/index.html	\
 	$(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/Documentation/index.html	\
+	$(top_srcdir)/HowToStart.html	\
+	$(top_srcdir)/HowToStart-Win32.html	\
+	$(top_srcdir)/HowToStart-MinGW.html	\
+	$(top_srcdir)/HowToStart-MinGW-pcre.html	\
+	$(top_srcdir)/HowToStart-MinGW-swig.html	\
 	$(top_srcdir)/doc/mkdoc.py
 	mv $(prefix)/doc/MonetDB/TechDocs/Core/Mx $(prefix)/doc/
 	mv $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/Documentation $(prefix)/doc/
@@ -47,5 +52,17 @@ docs:	$(prefix)/doc/MonetDB/TechDocs/Core/Mx/index.html	\
 	mv $(prefix)/doc/Mx $(prefix)/doc/MonetDB/TechDocs/Core/
 	mv $(prefix)/doc/Documentation $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/
 
-$(top_srcdir)/HowToStart.html: $(top_srcdir)/HowToStart $(top_srcdir)/HowToStart.css
-	rst2html.py --stylesheet $(top_srcdir)/HowToStart.css $(top_srcdir)/HowToStart > $(top_srcdir)/HowToStart.html
+$(top_srcdir)/HowToStart.html: $(top_srcdir)/HowToStart
+	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart > $(top_srcdir)/HowToStart.html
+
+$(top_srcdir)/HowToStart-Win32.html: $(top_srcdir)/HowToStart-Win32.txt
+	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart-Win32.txt > $(top_srcdir)/HowToStart-Win32.html
+
+$(top_srcdir)/HowToStart-MinGW.html: $(top_srcdir)/HowToStart-MinGW.txt
+	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart-MinGW.txt > $(top_srcdir)/HowToStart-MinGW.html
+
+$(top_srcdir)/HowToStart-MinGW-pcre.html: $(top_srcdir)/HowToStart-MinGW-pcre.txt
+	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart-MinGW-pcre.txt > $(top_srcdir)/HowToStart-MinGW-pcre.html
+
+$(top_srcdir)/HowToStart-MinGW-swig.html: $(top_srcdir)/HowToStart-MinGW-swig.txt
+	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart-MinGW-swig.txt > $(top_srcdir)/HowToStart-MinGW-swig.html
