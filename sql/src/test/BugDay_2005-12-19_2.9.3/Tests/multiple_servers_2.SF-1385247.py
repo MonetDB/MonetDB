@@ -71,9 +71,9 @@ def clients(x,dbinit):
 
 def main():
     x = 0
-    x += 1; clients(x,"module(mapi);module(sql_server); mapi_start(); sql_server_start();")
-    x += 1; clients(x,"module(mapi);module(sql_server); sql_server_start(); mapi_start();")
-    x += 1; clients(x,"module(sql_server);module(mapi); mapi_start(); sql_server_start();")
-    x += 1; clients(x,"module(sql_server);module(mapi); sql_server_start(); mapi_start();")
+    x += 1; clients(x,"module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();")
+    x += 1; clients(x,"module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());")
+    x += 1; clients(x,"module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();")
+    x += 1; clients(x,"module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());")
 
 main()

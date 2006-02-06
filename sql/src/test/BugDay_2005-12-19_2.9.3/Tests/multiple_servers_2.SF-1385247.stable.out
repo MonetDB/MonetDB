@@ -6,107 +6,107 @@ stdout of test 'multiple_servers_2.SF-1385247` in directory 'src/test/BugDay_200
 # 19:47:14 >  
 
 
-server 11 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();"
+server 11 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 11 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 1: SQL
+server 11 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 1: SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 111 	]
 
-server 11 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 2: (SQL) SQL
+server 11 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 2: (SQL) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 112 	]
 
-server 11 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 3: (SQL) (SQL) MAPI
+server 11 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 3: (SQL) (SQL) MAPI
 [ 113 ]
 
-server 11 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 4: (SQL) (SQL) (MAPI) MAPI
+server 11 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 4: (SQL) (SQL) (MAPI) MAPI
 [ 114 ]
 quit();
 
-server 12 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();"
+server 12 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 12 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 1: SQL
+server 12 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 1: SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 121 	]
 
-server 12 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 2: (SQL) MAPI
+server 12 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 2: (SQL) MAPI
 [ 122 ]
 
-server 12 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 3: (SQL) (MAPI) SQL
+server 12 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 3: (SQL) (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 123 	]
 
-server 12 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 4: (SQL) (MAPI) (SQL) MAPI
+server 12 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 4: (SQL) (MAPI) (SQL) MAPI
 [ 124 ]
 quit();
 
-server 13 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();"
+server 13 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 13 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 1: MAPI
+server 13 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 1: MAPI
 [ 131 ]
 
-server 13 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 2: (MAPI) SQL
+server 13 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 2: (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 132 	]
 
-server 13 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 3: (MAPI) (SQL) SQL
+server 13 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 3: (MAPI) (SQL) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 133 	]
 
-server 13 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 4: (MAPI) (SQL) (SQL) MAPI
+server 13 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 4: (MAPI) (SQL) (SQL) MAPI
 [ 134 ]
 quit();
 
-server 14 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();"
+server 14 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 14 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 1: SQL
+server 14 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 1: SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 141 	]
 
-server 14 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 2: (SQL) MAPI
+server 14 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 2: (SQL) MAPI
 [ 142 ]
 
-server 14 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 3: (SQL) (MAPI) MAPI
+server 14 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 3: (SQL) (MAPI) MAPI
 [ 143 ]
 
-server 14 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 4: (SQL) (MAPI) (MAPI) SQL
+server 14 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 4: (SQL) (MAPI) (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
@@ -114,26 +114,26 @@ server 14 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();"
 [ 144 	]
 quit();
 
-server 15 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();"
+server 15 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 15 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 1: MAPI
+server 15 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 1: MAPI
 [ 151 ]
 
-server 15 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 2: (MAPI) SQL
+server 15 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 2: (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 152 	]
 
-server 15 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 3: (MAPI) (SQL) MAPI
+server 15 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 3: (MAPI) (SQL) MAPI
 [ 153 ]
 
-server 15 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 4: (MAPI) (SQL) (MAPI) SQL
+server 15 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 4: (MAPI) (SQL) (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
@@ -141,26 +141,26 @@ server 15 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();"
 [ 154 	]
 quit();
 
-server 16 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();"
+server 16 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 16 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 1: MAPI
+server 16 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 1: MAPI
 [ 161 ]
 
-server 16 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 2: (MAPI) MAPI
+server 16 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 2: (MAPI) MAPI
 [ 162 ]
 
-server 16 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 3: (MAPI) (MAPI) SQL
+server 16 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 3: (MAPI) (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 163 	]
 
-server 16 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();", client 4: (MAPI) (MAPI) (SQL) SQL
+server 16 : "module(mapi);module(sql_server); mapi_register(mil_frontend()); sql_server_start();", client 4: (MAPI) (MAPI) (SQL) SQL
 # . # table_name
 # single_value # name
 # smallint # type
@@ -169,107 +169,107 @@ server 16 : "module(mapi);module(sql_server); mapi_start(); sql_server_start();"
 quit();
 
 
-server 21 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();"
+server 21 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 21 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 1: SQL
+server 21 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 1: SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 211 	]
 
-server 21 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 2: (SQL) SQL
+server 21 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 2: (SQL) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 212 	]
 
-server 21 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 3: (SQL) (SQL) MAPI
+server 21 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 3: (SQL) (SQL) MAPI
 [ 213 ]
 
-server 21 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 4: (SQL) (SQL) (MAPI) MAPI
+server 21 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 4: (SQL) (SQL) (MAPI) MAPI
 [ 214 ]
 quit();
 
-server 22 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();"
+server 22 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 22 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 1: SQL
+server 22 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 1: SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 221 	]
 
-server 22 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 2: (SQL) MAPI
+server 22 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 2: (SQL) MAPI
 [ 222 ]
 
-server 22 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 3: (SQL) (MAPI) SQL
+server 22 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 3: (SQL) (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 223 	]
 
-server 22 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 4: (SQL) (MAPI) (SQL) MAPI
+server 22 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 4: (SQL) (MAPI) (SQL) MAPI
 [ 224 ]
 quit();
 
-server 23 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();"
+server 23 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 23 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 1: MAPI
+server 23 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 1: MAPI
 [ 231 ]
 
-server 23 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 2: (MAPI) SQL
+server 23 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 2: (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 232 	]
 
-server 23 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 3: (MAPI) (SQL) SQL
+server 23 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 3: (MAPI) (SQL) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 233 	]
 
-server 23 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 4: (MAPI) (SQL) (SQL) MAPI
+server 23 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 4: (MAPI) (SQL) (SQL) MAPI
 [ 234 ]
 quit();
 
-server 24 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();"
+server 24 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 24 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 1: SQL
+server 24 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 1: SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 241 	]
 
-server 24 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 2: (SQL) MAPI
+server 24 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 2: (SQL) MAPI
 [ 242 ]
 
-server 24 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 3: (SQL) (MAPI) MAPI
+server 24 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 3: (SQL) (MAPI) MAPI
 [ 243 ]
 
-server 24 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 4: (SQL) (MAPI) (MAPI) SQL
+server 24 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 4: (SQL) (MAPI) (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
@@ -277,26 +277,26 @@ server 24 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();"
 [ 244 	]
 quit();
 
-server 25 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();"
+server 25 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 25 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 1: MAPI
+server 25 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 1: MAPI
 [ 251 ]
 
-server 25 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 2: (MAPI) SQL
+server 25 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 2: (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 252 	]
 
-server 25 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 3: (MAPI) (SQL) MAPI
+server 25 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 3: (MAPI) (SQL) MAPI
 [ 253 ]
 
-server 25 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 4: (MAPI) (SQL) (MAPI) SQL
+server 25 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 4: (MAPI) (SQL) (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
@@ -304,26 +304,26 @@ server 25 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();"
 [ 254 	]
 quit();
 
-server 26 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();"
+server 26 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 26 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 1: MAPI
+server 26 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 1: MAPI
 [ 261 ]
 
-server 26 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 2: (MAPI) MAPI
+server 26 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 2: (MAPI) MAPI
 [ 262 ]
 
-server 26 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 3: (MAPI) (MAPI) SQL
+server 26 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 3: (MAPI) (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 263 	]
 
-server 26 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();", client 4: (MAPI) (MAPI) (SQL) SQL
+server 26 : "module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());", client 4: (MAPI) (MAPI) (SQL) SQL
 # . # table_name
 # single_value # name
 # smallint # type
@@ -332,107 +332,107 @@ server 26 : "module(mapi);module(sql_server); sql_server_start(); mapi_start();"
 quit();
 
 
-server 31 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();"
+server 31 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 31 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 1: SQL
+server 31 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 1: SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 311 	]
 
-server 31 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 2: (SQL) SQL
+server 31 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 2: (SQL) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 312 	]
 
-server 31 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 3: (SQL) (SQL) MAPI
+server 31 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 3: (SQL) (SQL) MAPI
 [ 313 ]
 
-server 31 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 4: (SQL) (SQL) (MAPI) MAPI
+server 31 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 4: (SQL) (SQL) (MAPI) MAPI
 [ 314 ]
 quit();
 
-server 32 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();"
+server 32 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 32 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 1: SQL
+server 32 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 1: SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 321 	]
 
-server 32 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 2: (SQL) MAPI
+server 32 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 2: (SQL) MAPI
 [ 322 ]
 
-server 32 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 3: (SQL) (MAPI) SQL
+server 32 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 3: (SQL) (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 323 	]
 
-server 32 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 4: (SQL) (MAPI) (SQL) MAPI
+server 32 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 4: (SQL) (MAPI) (SQL) MAPI
 [ 324 ]
 quit();
 
-server 33 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();"
+server 33 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 33 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 1: MAPI
+server 33 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 1: MAPI
 [ 331 ]
 
-server 33 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 2: (MAPI) SQL
+server 33 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 2: (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 332 	]
 
-server 33 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 3: (MAPI) (SQL) SQL
+server 33 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 3: (MAPI) (SQL) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 333 	]
 
-server 33 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 4: (MAPI) (SQL) (SQL) MAPI
+server 33 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 4: (MAPI) (SQL) (SQL) MAPI
 [ 334 ]
 quit();
 
-server 34 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();"
+server 34 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 34 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 1: SQL
+server 34 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 1: SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 341 	]
 
-server 34 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 2: (SQL) MAPI
+server 34 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 2: (SQL) MAPI
 [ 342 ]
 
-server 34 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 3: (SQL) (MAPI) MAPI
+server 34 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 3: (SQL) (MAPI) MAPI
 [ 343 ]
 
-server 34 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 4: (SQL) (MAPI) (MAPI) SQL
+server 34 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 4: (SQL) (MAPI) (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
@@ -440,26 +440,26 @@ server 34 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();"
 [ 344 	]
 quit();
 
-server 35 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();"
+server 35 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 35 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 1: MAPI
+server 35 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 1: MAPI
 [ 351 ]
 
-server 35 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 2: (MAPI) SQL
+server 35 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 2: (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 352 	]
 
-server 35 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 3: (MAPI) (SQL) MAPI
+server 35 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 3: (MAPI) (SQL) MAPI
 [ 353 ]
 
-server 35 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 4: (MAPI) (SQL) (MAPI) SQL
+server 35 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 4: (MAPI) (SQL) (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
@@ -467,26 +467,26 @@ server 35 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();"
 [ 354 	]
 quit();
 
-server 36 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();"
+server 36 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 36 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 1: MAPI
+server 36 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 1: MAPI
 [ 361 ]
 
-server 36 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 2: (MAPI) MAPI
+server 36 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 2: (MAPI) MAPI
 [ 362 ]
 
-server 36 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 3: (MAPI) (MAPI) SQL
+server 36 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 3: (MAPI) (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 363 	]
 
-server 36 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();", client 4: (MAPI) (MAPI) (SQL) SQL
+server 36 : "module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();", client 4: (MAPI) (MAPI) (SQL) SQL
 # . # table_name
 # single_value # name
 # smallint # type
@@ -495,107 +495,107 @@ server 36 : "module(sql_server);module(mapi); mapi_start(); sql_server_start();"
 quit();
 
 
-server 41 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();"
+server 41 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 41 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 1: SQL
+server 41 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 1: SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 411 	]
 
-server 41 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 2: (SQL) SQL
+server 41 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 2: (SQL) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 412 	]
 
-server 41 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 3: (SQL) (SQL) MAPI
+server 41 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 3: (SQL) (SQL) MAPI
 [ 413 ]
 
-server 41 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 4: (SQL) (SQL) (MAPI) MAPI
+server 41 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 4: (SQL) (SQL) (MAPI) MAPI
 [ 414 ]
 quit();
 
-server 42 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();"
+server 42 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 42 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 1: SQL
+server 42 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 1: SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 421 	]
 
-server 42 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 2: (SQL) MAPI
+server 42 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 2: (SQL) MAPI
 [ 422 ]
 
-server 42 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 3: (SQL) (MAPI) SQL
+server 42 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 3: (SQL) (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 423 	]
 
-server 42 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 4: (SQL) (MAPI) (SQL) MAPI
+server 42 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 4: (SQL) (MAPI) (SQL) MAPI
 [ 424 ]
 quit();
 
-server 43 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();"
+server 43 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 43 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 1: MAPI
+server 43 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 1: MAPI
 [ 431 ]
 
-server 43 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 2: (MAPI) SQL
+server 43 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 2: (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 432 	]
 
-server 43 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 3: (MAPI) (SQL) SQL
+server 43 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 3: (MAPI) (SQL) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 433 	]
 
-server 43 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 4: (MAPI) (SQL) (SQL) MAPI
+server 43 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 4: (MAPI) (SQL) (SQL) MAPI
 [ 434 ]
 quit();
 
-server 44 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();"
+server 44 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 44 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 1: SQL
+server 44 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 1: SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 441 	]
 
-server 44 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 2: (SQL) MAPI
+server 44 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 2: (SQL) MAPI
 [ 442 ]
 
-server 44 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 3: (SQL) (MAPI) MAPI
+server 44 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 3: (SQL) (MAPI) MAPI
 [ 443 ]
 
-server 44 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 4: (SQL) (MAPI) (MAPI) SQL
+server 44 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 4: (SQL) (MAPI) (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
@@ -603,26 +603,26 @@ server 44 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();"
 [ 444 	]
 quit();
 
-server 45 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();"
+server 45 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 45 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 1: MAPI
+server 45 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 1: MAPI
 [ 451 ]
 
-server 45 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 2: (MAPI) SQL
+server 45 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 2: (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 452 	]
 
-server 45 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 3: (MAPI) (SQL) MAPI
+server 45 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 3: (MAPI) (SQL) MAPI
 [ 453 ]
 
-server 45 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 4: (MAPI) (SQL) (MAPI) SQL
+server 45 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 4: (MAPI) (SQL) (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
@@ -630,26 +630,26 @@ server 45 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();"
 [ 454 	]
 quit();
 
-server 46 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();"
+server 46 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());"
 # Monet Database Server V4.9.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-server 46 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 1: MAPI
+server 46 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 1: MAPI
 [ 461 ]
 
-server 46 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 2: (MAPI) MAPI
+server 46 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 2: (MAPI) MAPI
 [ 462 ]
 
-server 46 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 3: (MAPI) (MAPI) SQL
+server 46 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 3: (MAPI) (MAPI) SQL
 # . # table_name
 # single_value # name
 # smallint # type
 # 3 # length
 [ 463 	]
 
-server 46 : "module(sql_server);module(mapi); sql_server_start(); mapi_start();", client 4: (MAPI) (MAPI) (SQL) SQL
+server 46 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());", client 4: (MAPI) (MAPI) (SQL) SQL
 # . # table_name
 # single_value # name
 # smallint # type
