@@ -934,6 +934,7 @@ AC_ARG_WITH(translatepath,
 	[if test $cross_compiling = yes; then
 		AC_MSG_WARN([Cross compiling, but no --with-translatepath option given])
 	fi])
+AC_SUBST(translatepath)
 
 dnl --enable-noexpand
 AC_ARG_ENABLE(noexpand,
