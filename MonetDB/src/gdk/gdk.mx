@@ -390,7 +390,9 @@ An error at this stage normally lead to an abort.
 #endif
 #ifdef NATIVE_WIN32
 #define unlink _unlink
+#ifdef _MSC_VER
 #define fileno _fileno
+#endif
 #define fdopen _fdopen
 #define putenv _putenv
 #define strdup _strdup
