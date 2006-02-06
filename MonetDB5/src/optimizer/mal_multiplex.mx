@@ -118,6 +118,7 @@ OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int alias[MAXARG];
 	char buf[128];
 	InstrPtr q;
+	int hvoid = 0;
 
 	(void) stk;
 	strcpy(buf, newFcn);
@@ -157,6 +158,7 @@ find the actual arguments at the proper place of the callee.
 	/* set the sequence base if the original had it */
 	if( getHeadType(getArgType(mb, pci, 0)) == TYPE_void){
 		int base;
+		hvoid = 1;
 		q= newFcnCall(mb,"bat","getSequenceBase");
 		base= getArg(q,0)= newTmpVariable(mb,TYPE_oid);
 		pushArgument(mb,q,iter);
@@ -198,10 +200,15 @@ find the actual arguments at the proper place of the callee.
 			q = pushArgument(mb, q, getArg(pci, i));
 		}
 
-	/* insert(resB,h,cr); */
-	q = newFcnCall(mb, "bat", "insert");
+	/* insert(resB,h,cr);  or append(resB, cr); */
+	
+	if (hvoid)
+		q = newFcnCall(mb, "bat", "append");
+	else
+		q = newFcnCall(mb, "bat", "insert");
 	pushArgument(mb, q, resB);
-	pushArgument(mb, q, hvar);
+	if (!hvoid)
+		pushArgument(mb, q, hvar);
 	pushArgument(mb, q, cr);
 
 /* catch   MALexception and ignore them  and replace value with nil*/
