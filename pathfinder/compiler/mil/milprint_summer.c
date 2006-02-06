@@ -10196,6 +10196,7 @@ const char* PFinitMIL() {
         "\n"
         "var loop000 := bat(void,oid,1).seqbase(0@0).append(1@0);\n"
         "\n"
+        "var shredBAT := int(nil); # make sure that shredBAT is of type int; non-initialized MIL variables are void(nil)!\n"
         "var time_compile := 0;\n"
         "var genType := \"xml\";";
 }
@@ -10221,7 +10222,6 @@ const char* PFvarMIL() {
         "var item_str_;\n"
         "\n"
         "# variable that holds bat-id (int) of a shredded document that may be added to the ws\n"
-        "var shredBAT := int(nil); # make sure that shredBAT is of type int; non-initialized MIL variables are void(nil)!\n"
         "\n"
         "# variables for results containing `real' xml subtrees\n"
         "var _elem_iter;  # oid|oid\n"
