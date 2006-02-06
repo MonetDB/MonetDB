@@ -59,7 +59,7 @@ mapiConnect :: String -> String -> Int -> IO Mapi
 mapiConnect user mserver mapiport = do
     sock <- connectTo mserver (PortNumber (fromIntegral mapiport))
     hSetBuffering sock NoBuffering
-    hPutStrLn sock user
+    hPutStrLn sock (user++":passwd:mil:line")
     mapiResult sock
     return sock
 	
