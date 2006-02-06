@@ -246,9 +246,11 @@ str memMap() {
 */
 @
 @c
+#ifndef NATIVE_WIN32
 static int clk = 0;
 #ifdef HAVE_TIMES
 static struct tms state;
+#endif
 #endif
 
 mal_export str SYScpuStatistics(int *ret);
