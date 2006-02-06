@@ -113,7 +113,6 @@ module 'sql_server'
 [ "mvc_schema_operation(mvc, Stream) : void"					  ]
 [ "mvc_sql(mvc, str) : void"						  ]
 [ "mvc_update_var(mvc, str) : void"					  ]
-[ "quit() "								  ]
 [ "round(dbl, dbl) : dbl"						  ]
 [ "round(flt, flt) : flt"						  ]
 [ "round(int, int) : int"						  ]
