@@ -274,12 +274,12 @@ hashing.
 
 /*
    Note:
-	 following macros take advantage of clustered property;
-	 if b is clustered, then we can stop early traversing collision lists.
+	following macros take advantage of clustered property;
+	if b is clustered, then we can stop early traversing collision lists.
 
-	 BTW, simply stopping possibly breaks chain construction, so the resulting
-	 map is not directly reuseable as a hash table; the current Monet cannot
-	 however handle multiple accellerators, so this ain't a real problem for now :)
+	BTW, simply stopping possibly breaks chain construction, so the resulting
+	map is not directly reuseable as a hash table; the current Monet cannot
+	however handle multiple accellerators, so this ain't a real problem for now :)
  */
 
 #define declare_unclustered	/* avoid warning */
