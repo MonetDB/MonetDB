@@ -960,7 +960,7 @@ PFcore_fun_decl (PFfun_t *fun, const PFcnode_t *args, const PFcnode_t *body)
     PFcnode_t *ret;
 
     ret = PFcore_wire2 (c_fun_decl, args, body);
-    ret->sem.fun = fun;
+    ret->sem.apply.fun = fun;
 
     return ret;
 }
@@ -1147,7 +1147,7 @@ apply_function_conversion (const PFcnode_t *c)
     PFcnode_t *args, *result;
 
     assert (c);
-    fun = c->sem.fun;
+    fun = c->sem.apply.fun;
     args = c->child[0];
     result = (PFcnode_t *) c;
 
@@ -1233,16 +1233,17 @@ already_converted (PFfun_t *fn)
  * @return core representation of function application
  */
 PFcnode_t *
-PFcore_apply (PFfun_t *fn, const PFcnode_t *e)
+PFcore_apply (PFapply_t *fn, const PFcnode_t *e)
 {
     PFcnode_t *core;
     PFarray_t *funs;
     PFfun_t *fun, *fun_prev;
     unsigned int arity, i;
 
-    assert (fn && e);
+    assert (fn && fn->fun && e);
     arity = actual_args (e);
-    fun = fn;
+    if (fn->rpc) arity--;
+    fun = fn->fun;
     funs = PFenv_lookup (PFfun_env, fun->qname);
 
     /*
@@ -1255,7 +1256,7 @@ PFcore_apply (PFfun_t *fn, const PFcnode_t *e)
      */
     if (PFqname_eq (fun->qname, PFqname (PFns_fn, "concat")) == 0) {
         core = PFcore_wire1 (c_apply, e);
-        core->sem.fun = fun;
+        core->sem.apply = *fn;
         return core;
     }
 
@@ -1280,7 +1281,8 @@ PFcore_apply (PFfun_t *fn, const PFcnode_t *e)
                 PFqname_str (fun->qname), fun->arity, arity);
 
     core = PFcore_wire1 (c_apply, e);
-    core->sem.fun = fun;
+    core->sem.apply.fun = fun;
+    core->sem.apply.rpc = fn->rpc;
 
     return core;
 }
@@ -1315,7 +1317,7 @@ PFcore_arg (const PFcnode_t *e, const PFcnode_t *es)
  * @return core tree representing the function application
  */
 PFcnode_t *
-PFcore_apply_ (PFfun_t *fn, ...)
+PFcore_apply_ (PFapply_t *fn, ...)
 {
     va_list arglist;
     PFarray_t *args;

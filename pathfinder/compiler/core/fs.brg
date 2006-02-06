@@ -746,7 +746,7 @@ process_fun_sigs (PFpnode_t *p, int goalnt)
 
             /* debugging only
             PFinfo (OOPS_NOTICE, "processing `%s'",
-                    PFqname_str (L(p)->sem.fun->qname));
+                    PFqname_str (L(p)->sem.apply.fun->qname));
             */
 
             /*
@@ -761,8 +761,8 @@ process_fun_sigs (PFpnode_t *p, int goalnt)
             reduce (kids[0], nts[0]);
             reduce (kids[1], nts[1]);
 
-            L(p)->sem.fun->par_ty = parameter_types (LLL(p));
-            L(p)->sem.fun->ret_ty = C(LLR(p))->sem.type;
+            L(p)->sem.apply.fun->par_ty = parameter_types (LLL(p));
+            L(p)->sem.apply.fun->ret_ty = C(LLR(p))->sem.type;
 
             /* Look out for more function declarations */
             process_fun_sigs (kids[3], nts[3]);
@@ -1004,9 +1004,9 @@ reduce (PFpnode_t * p, int goalnt)
             C(LR(p)) = flwr (let (letbind (var (v), C(LR(p))), nil ()),
                              function_conversion (var (v), 
                                                   C(LLR(p))->sem.type));
-            L(p)->sem.fun->core = C(LR(p));
+            L(p)->sem.apply.fun->core = C(LR(p));
 
-            fun_sigs = fun_decls (fun_decl (L(p)->sem.fun, C(LLL(p)), C(LR(p))),
+            fun_sigs = fun_decls (fun_decl (L(p)->sem.apply.fun, C(LLL(p)), C(LR(p))),
                                   fun_sigs);
 
         } break;
@@ -2711,16 +2711,16 @@ reduce (PFpnode_t * p, int goalnt)
              * implicitly get the current
              * context node `.' as their argument.
              */
-            if ( (!PFqname_eq (p->sem.fun->qname, PFqname (PFns_fn, "string")))
-                || (!PFqname_eq (p->sem.fun->qname, PFqname (PFns_fn, "name")))
-                || (!PFqname_eq (p->sem.fun->qname,
+            if ( (!PFqname_eq (p->sem.apply.fun->qname, PFqname (PFns_fn, "string")))
+                || (!PFqname_eq (p->sem.apply.fun->qname, PFqname (PFns_fn, "name")))
+                || (!PFqname_eq (p->sem.apply.fun->qname,
                                  PFqname (PFns_fn, "local-name")))
-                || (!PFqname_eq (p->sem.fun->qname,
+                || (!PFqname_eq (p->sem.apply.fun->qname,
                                  PFqname (PFns_fn, "namespace-uri")))
-                || (!PFqname_eq (p->sem.fun->qname, PFqname (PFns_fn, "root")))
+                || (!PFqname_eq (p->sem.apply.fun->qname, PFqname (PFns_fn, "root")))
                ) {
                 if (fs_dot)
-                    C(p) = APPLY (p->sem.fun, var (fs_dot));
+                    C(p) = APPLY (p->sem.apply.fun, var (fs_dot));
                 else
                     PFoops_loc (OOPS_NOCONTEXT, p->loc, "``.'' is unbound");
 
@@ -2734,11 +2734,11 @@ reduce (PFpnode_t * p, int goalnt)
              * node `.' as their argument if called without any
              * arguments.
              */
-            if ((!PFqname_eq (p->sem.fun->qname,
+            if ((!PFqname_eq (p->sem.apply.fun->qname,
                               PFqname (PFns_fn, "string-length")))
-                || (!PFqname_eq (p->sem.fun->qname,
+                || (!PFqname_eq (p->sem.apply.fun->qname,
                                  PFqname (PFns_fn, "normalize-space")))
-                || (!PFqname_eq (p->sem.fun->qname,
+                || (!PFqname_eq (p->sem.apply.fun->qname,
                                  PFqname (PFns_fn, "number")))
                ) {
                 if (fs_dot) {
@@ -2749,7 +2749,7 @@ reduce (PFpnode_t * p, int goalnt)
                                                       PFqname (PFns_fn,
                                                                "string")),
                                        var (fs_dot))), nil ()),
-                                 APPLY (p->sem.fun, var (v)));
+                                 APPLY (p->sem.apply.fun, var (v)));
                 }
                 else
                     PFoops_loc (OOPS_NOCONTEXT, p->loc, "``.'' is unbound");
@@ -2760,7 +2760,7 @@ reduce (PFpnode_t * p, int goalnt)
             /*
              * `fn:position' is available as variable $fs:position.
              */
-            if (!PFqname_eq (p->sem.fun->qname, PFqname (PFns_fn, "position"))){
+            if (!PFqname_eq (p->sem.apply.fun->qname, PFqname (PFns_fn, "position"))){
                 if (fs_position)
                     C(p) = var (fs_position);
                 else
@@ -2772,7 +2772,7 @@ reduce (PFpnode_t * p, int goalnt)
             /*
              * `fn:last' is available as variable $fs:last.
              */
-            if (!PFqname_eq (p->sem.fun->qname, PFqname (PFns_fn, "last"))) {
+            if (!PFqname_eq (p->sem.apply.fun->qname, PFqname (PFns_fn, "last"))) {
                 if (fs_last)
                     C(p) = var (fs_last);
                 else
@@ -2784,17 +2784,17 @@ reduce (PFpnode_t * p, int goalnt)
             /*
              * In all other cases just call the respective function
              */
-            C(p) = apply (p->sem.fun, nil ());
+            C(p) = apply (&p->sem.apply, nil ());
             break;
 
         /* FunctionCall:           apply (FuncArgList) */
         case 182:
             /* TOPDOWN */
 
-            assert (PFqname_eq (p->sem.fun->qname,
+            assert (PFqname_eq (p->sem.apply.fun->qname,
                                 PFqname (PFns_fn, "position")));
 
-            *(PFfun_t **) PFarray_add (funs) = p->sem.fun;
+            *(PFapply_t **) PFarray_add (funs) = &p->sem.apply;
             *(PFcnode_t **) PFarray_add (args) = nil ();
             *(unsigned short *) PFarray_add (arg_num) = 0;
 
@@ -2803,10 +2803,10 @@ reduce (PFpnode_t * p, int goalnt)
              * implicitly get the current context node `.' as
              * their second/last argument.
              */
-            if (p->sem.fun->arity == 1 &&
-                ((!PFqname_eq (p->sem.fun->qname,
+            if (p->sem.apply.fun->arity == 1 &&
+                ((!PFqname_eq (p->sem.apply.fun->qname,
                                PFqname (PFns_fn, "id")))
-                || (!PFqname_eq (p->sem.fun->qname,
+                || (!PFqname_eq (p->sem.apply.fun->qname,
                                  PFqname (PFns_fn, "idref")))
                 )
                ) {
@@ -2830,7 +2830,7 @@ reduce (PFpnode_t * p, int goalnt)
         /* FuncArgList:            nil */
         case 183:
         {
-            PFfun_t *fun = *(PFfun_t **) PFarray_top (funs);
+            PFapply_t *fun = *(PFapply_t **) PFarray_top (funs);
 
             C(p) = apply (fun, *(PFcnode_t **) PFarray_top (args));
 
@@ -2848,6 +2848,7 @@ reduce (PFpnode_t * p, int goalnt)
             PFfun_t      *fun;
             PFty_t        expected;
             unsigned int  param_num;
+            unsigned int  soap_rpc;
             PFfun_t      *implicit = NULL;
 
             /* translate function argument */
@@ -2866,7 +2867,8 @@ reduce (PFpnode_t * p, int goalnt)
 
 
             /* What function are we actually talking about? */
-            fun = *(PFfun_t **) PFarray_top (funs);
+            fun = (*(PFapply_t **) PFarray_top (funs))->fun;
+            soap_rpc = (*(PFapply_t **) PFarray_top (funs))->rpc;
 
             /*
              * There's exactly one function that allows an arbitrary
@@ -2877,9 +2879,13 @@ reduce (PFpnode_t * p, int goalnt)
             if (PFqname_eq (fun->qname,
                             PFqname (PFns_fn, "concat")) == 0)
                 expected = PFty_opt (PFty_atomic ());
+            else if (soap_rpc && param_num == 0) 
+                /* soap_rpc expects an additional first string+ type (the URI to call) */
+                expected = 
+                    PFty_plus( PFty_xdt_untypedAtomic() ); /* PFty_string() ); */
             else
                 /* look up expected argument type */
-                expected = fun->par_ty[param_num];
+                expected = fun->par_ty[param_num-soap_rpc];
 
             /*
              * There's implicit semantics for some functions.
@@ -2906,6 +2912,19 @@ reduce (PFpnode_t * p, int goalnt)
             }
             else {
                 /* construct return value */
+                if (soap_rpc) {
+                        /*
+                        PFty_t *t = &expected;
+                        if (t->child[0]) t = t->child[0];
+                        printf("apply %s-%s-%s: convert param to %s-%s-%s\n", 
+                            fun->qname.loc?fun->qname.loc:"", 
+                            fun->qname.ns.ns?fun->qname.ns.ns:"", 
+                            fun->qname.ns.uri?fun->qname.ns.uri:"", 
+                            t->name.loc?t->name.loc:"", 
+                            t->name.ns.ns?t->name.ns.ns:"", 
+                            t->name.ns.uri?t->name.ns.uri:"");
+                        */
+                }
                 C(p) = flwr (let (letbind (var (v),
                                            function_conversion (C(L(p)),
                                                                 expected)),
@@ -3349,7 +3368,7 @@ PFfs (PFpnode_t *r)
     core_vars = 0;
 
     /* initially, there is no function on the current function stack */
-    funs = PFarray (sizeof (PFfun_t *));
+    funs = PFarray (sizeof (PFapply_t *));
 
     /* initially, there is no argument list on the current arguments stack */
     args = PFarray (sizeof (PFcnode_t *));

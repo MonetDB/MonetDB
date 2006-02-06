@@ -33,6 +33,7 @@
 @a Jens Teubner
 @a Stefan Manegold
 @a Peter Boncz 
+@a Ying Zhang
 
 @t Runtime Support for the Pathfinder XQuery Compiler
 
@@ -71,6 +72,7 @@ ADDHELP("pfstart", "boncz", "April 2005",
 "PARAMETERS:\n\
 bit whether the listener should listen to outside requests \
 (default false: only local connections).\n\
+sz per-connection size limit to the query plan cache, see also \"xquery_start_query_cache\".\n\
 DESCRIPTION:\n\
 start the xquery server.",
 "pathfinder");
@@ -1387,20 +1389,23 @@ xquery_function_call(xquery_client *ctx,
     char mil[XQUERY_BUFSIZE], *src, *cur = mil, *end = mil + XQUERY_BUFSIZE-1;
 
     /* determine minimum and maximum sequence of the parameters, and the common ancestor type of each sequence  */
-    for(l=i=0; i<argc; i++) {
-        mincnt[i] = maxcnt[i] = argcnt[0][i];
-        tpe[i] = -1;
-        for(j=0; j<itercnt; j++) {
-            if (argcnt[j][i] > maxcnt[i]) maxcnt[i] = argcnt[j][i];
-            if (argcnt[j][i] < mincnt[i]) mincnt[i] = argcnt[j][i];
-            for(k=0; k<argcnt[j][i]; k++,l++) {
+    for(j=0; j<argc; j++) {
+        mincnt[j] = maxcnt[j] = argcnt[0][j];
+        tpe[j] = -1;
+    }
+    for(l=i=0; i<itercnt; i++) {
+        for(j=0; j<argc; j++) {
+            if (argcnt[i][j] > maxcnt[j]) maxcnt[j] = argcnt[i][j];
+            if (argcnt[i][j] < mincnt[j]) mincnt[j] = argcnt[i][j];
+            for(k=0; k<argcnt[i][j]; k++,l++) {
                 int t = xquery_typenr(argtpe[l]);
                 if (t >= XQUERY_TYPES) 
                     return (char*) -1; /* can't make a quick function resolution if unknown types are involved */
-                tpe[i] = xquery_type_common_ancestor(tpe[i],t);
+                tpe[j] = xquery_type_common_ancestor(tpe[j],t);
             }
         }
     }
+
     /* try to resolve the parameters */
     fun = xquery_resolve(ctx, ns, method, argc, mincnt, maxcnt, tpe);
     if (fun == NULL)
@@ -1464,15 +1469,15 @@ xquery_function_call(xquery_client *ctx,
     }
 
     /* put the actual parameters into the fun_* bats (and *_values containers) */
-    @:seqbase(fun_vid000, oid_nil, "nil")@
-    @:seqbase(fun_iter000, oid_nil, "nil")@
-    @:seqbase(fun_kind000, oid_nil, "nil")@
-    @:seqbase(fun_item000, oid_nil, "nil")@
-    @:seqbase(loop000, oid_nil, "nil")@
+    @:seqbase(fun_vid000, oid_nil, "oid(nil)")@
+    @:seqbase(fun_iter000, oid_nil, "oid(nil)")@
+    @:seqbase(fun_kind000, oid_nil, "oid(nil)")@
+    @:seqbase(fun_item000, oid_nil, "oid(nil)")@
+    @:seqbase(loop000, oid_nil, "oid(nil)")@
 
-    for(l=i=0; i<argc; i++) {
-        for(j=0; j<itercnt; j++) {
-            oid vid = i + fun->vid, iter = j+1;
+    for(l=j=0; j<itercnt; j++) {
+        for(i=0; i<argc; i++) {
+            oid item, vid = i + fun->vid, iter = j+1;
             if (i == 0 && j > 0) {
                 @:bunappend(loop000, &iter, (size_t) *(oid*), SZFMT, "@0")@
             }
@@ -1495,16 +1500,16 @@ xquery_function_call(xquery_client *ctx,
                 @:bunappend(fun_iter000, &iter, (size_t) *(oid*), SZFMT, "@0")@
                 @:bunappend(fun_kind000, &xquery_types[t].kind, *(int*), "%d")@
                 if (c == 'i') { /* xs:integer */
-                    oid item = BATcount(ctx->int_values);
                     @:bunappend(int_values, ctx->val, *(lng*), LLFMT, "LL")@
+                    item = *(oid*) BUNhead(ctx->int_values, BUNfnd(BATmirror(ctx->int_values), ctx->val));
                     @:bunappend(fun_item000, &item, (size_t) *(oid*), SZFMT, "@0")@
                 } else if (c == 'd') { /* xs:double or xs:decimal */
-                    oid item = BATcount(ctx->dbl_values);
                     @:bunappend(dbl_values, ctx->val, *(dbl*), "%g")@
+                    item = *(oid*) BUNhead(ctx->dbl_values, BUNfnd(BATmirror(ctx->dbl_values), ctx->val));
                     @:bunappend(fun_item000, &item , (size_t) *(oid*), SZFMT, "@0")@
                 } else if (c == 's') { /* xs:string */
-                    oid item = BATcount(ctx->str_values);
                     @:bunappend(str_values, ctx->val, (str), "\"%s\"")@
+                    item = *(oid*) BUNhead(ctx->str_values, BUNfnd(BATmirror(ctx->str_values), ctx->val));
                     @:bunappend(fun_item000, &item, (size_t) *(oid*), SZFMT, "@0")@
                 } else if (shredBAT == NULL) { 
                     return "xquery_function_call: node parameter without shredBAT.\n";
@@ -1670,16 +1675,22 @@ xquery_module_load(xquery_client *ctx,
         }
     }
     if (mod == NULL) {
+        xquery_module *def;
         mod = (xquery_loaded_module*) GDKmalloc(sizeof(xquery_loaded_module));
         if (mod == NULL) 
             return "xquery_module_load: could not allocate.\n";
+        mod->def = NULL;
 
         MT_set_lock(pf_module_lock, "xquery_module_load");
-        for(mod->def = xquery_compiled_modules; mod->def; mod->def = mod->def->next) 
-            if (strcmp(mod->def->url, url) == 0) break;
-        if (mod->def == NULL)
+        for(def = xquery_compiled_modules; def; def = def->next) 
+            if (strcmp(def->url, url) == 0) break;
+        if (def == NULL)
             mod->def = xquery_module_compile(ctx, mode, url);
         MT_unset_lock(pf_module_lock, "xquery_module_load");
+
+        /* if a compiled module was found, we still need to execute it */
+        if (def && xquery_mil_exec(ctx, def->prologue, strstr(mode, "debug") != NULL))
+            mod->def = def; /* TODO: find a way to share PROC defs between MIL sessions */
 
         if (mod->def == NULL) {
             GDKfree(mod);
@@ -1819,7 +1830,7 @@ static char *
 xquery_client_init_(xquery_client *ctx )
 {
     ctx->fderr = GDKerr;
-       
+
     if (!xquery_mil_exec(ctx, (char*) PFvarMIL(), 0))
         return "xquery_client_init: failed to execute variable declarations.\n"; 
     return NULL;
@@ -2502,9 +2513,11 @@ xquery_method(stream *out,
     Thread XQthread = THRget(THRgettid());
     xquery_client *ctx; 
     char *err = NULL, *ns = "fn", *mode = "xml-noheader-typed-root-iter";
-    //Client c;
+    Client c;
    
-    ctx = xquery_client_new(0);
+    c = initClient("soap", "soap", FALSE);
+	TBL_initclient(c, monet_clients);
+    ctx = xquery_client_new(c-monet_clients);
     if (ctx == NULL) 
         return "xquery_method: out of client slots.\n";
     if ((err = xquery_client_alloc_(ctx)) != NULL || 
@@ -2537,6 +2550,7 @@ xquery_method(stream *out,
         stream_destroy(ctx->fderr);
     }
     xquery_client_end(ctx, NULL);
+    monetSetChannel(XQthread, GDKin, GDKout);
     return err;
 }
 

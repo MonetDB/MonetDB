@@ -17,24 +17,14 @@ xquery("xml-typed-root-PrintTypedMode", "(<a><b/></a>, \"hello\", \"hi\", 1, 2.3
 <xs:anyNode>
 <a><b/></a>
 </xs:anyNode>
-<xs:string>
-"hello" 
-</xs:string>
-<xs:string>
-"hi" 
-</xs:string>
-<xs:integer>
-1 
-</xs:integer>
-<xs:double>
-2.300000 
-</xs:double>
+<xs:string>hello</xs:string>
+<xs:string>hi</xs:string>
+<xs:integer>1 </xs:integer>
+<xs:double>2.300000 </xs:double>
 <xs:anyNode>
 <bla><d/><e/></bla>
 </xs:anyNode>
-<xs:integer>
-34 
-</xs:integer>
+<xs:integer>34 </xs:integer>
 <xs:anyNode>
 <foo><bar>"hello"</bar></foo>
 </xs:anyNode>

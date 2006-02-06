@@ -142,9 +142,10 @@ typedef struct {
     size_t off[3], len[3]; /* current pointer and length of each section */
     int sec; /* active section (OPT_SEC_PROLOGUE, OPT_SEC_QUERY, OPT_SEC_EPILOGUE) */
 
-    /* these two fields don't belong here (just state for milprint_summer) */
+    /* these three fields don't belong here (just state for milprint_summer) */
     int module_base;     
     int num_fun;     
+    char* soap_uri;     
 } opt_t; /* should take ~1.5MB of RAM resources */
 
 #define opt_output(o,x) ((o)->sec = x)

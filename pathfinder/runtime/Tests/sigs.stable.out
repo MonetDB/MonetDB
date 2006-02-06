@@ -11,6 +11,7 @@ stdout of test 'sigs` in directory 'runtime` itself:
 var mods := new(void,str);
 mods.insert(nil,"pf_support");
 mods.insert(nil,"pathfinder");
+mods.insert(nil,"pf_soap");
 
 mods@batloop(){
 	printf("module '%s'\n",$t);
@@ -95,6 +96,16 @@ module 'pathfinder'
 [ "xmldb_print() : void"			  ]
 [ "xquery(mode str, xquery str, is_url bit) : str "													  ]
 [ "xquery_frontend(lng) : ptr"				  ]
+module 'pf_soap'
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# signature																						  # name
+# str																							  # type
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "http_post(str, str, str, BAT[void,BAT], BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : BAT[oid,BAT]"	  ]
+[ "httpd_start(int) : void"																				  ]
+[ "send_soap_rpc(str, str, str, str, BAT[void,BAT], BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : oid"	  ]
+[ "soap_receiver_start() : void"																			  ]
+[ "soap_receiver_start(int) : void"																			  ]
 
 quit();
 

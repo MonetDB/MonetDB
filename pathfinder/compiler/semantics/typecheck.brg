@@ -323,7 +323,7 @@ FunParam:           param (SequenceType, var)                   =  73 (10);
 /** mnemonic XQuery Core constructors */
 #include "core_mnemonic.h"
 
-static PFfun_t * overload (PFqname_t qn, PFcnode_t *args);
+static PFfun_t * overload (PFqname_t qn, PFcnode_t *args, int soap_rpc);
 static PFty_t specific (PFfun_t *fn, PFcnode_t *args);
 
 /**
@@ -739,12 +739,12 @@ reduce (PFcnode_t * p, int goalnt)
             /* resolve overloading,
              * any type errors will be detected during resolution
              */
-            p->sem.fun = overload (p->sem.fun->qname, L(p));
+            p->sem.apply.fun = overload (p->sem.apply.fun->qname, L(p), p->sem.apply.rpc);
 
             /* invoke specific typing rules for standard F&O functions 
              * (W3C XQuery Formal Semantics 6.2)
              */
-            TY(p) = specific (p->sem.fun, L(p));
+            TY(p) = specific (p->sem.apply.fun, L(p));
 
             break;
 
@@ -981,12 +981,12 @@ reduce (PFcnode_t * p, int goalnt)
             /*
              * See if function body matches function return type.
              */
-            if (!PFty_subtype (TY(R(p)), p->sem.fun->ret_ty))
+            if (!PFty_subtype (TY(R(p)), p->sem.apply.fun->ret_ty))
                 PFoops (OOPS_TYPECHECK,
                         "body of %s() evaluates to `%s' which is not "
                         "a subtype of `%s'",
-                        PFqname_str (p->sem.fun->qname),
-                        PFty_str (TY(R(p))), PFty_str (p->sem.fun->ret_ty));
+                        PFqname_str (p->sem.apply.fun->qname),
+                        PFty_str (TY(R(p))), PFty_str (p->sem.apply.fun->ret_ty));
             break;
 
         /* ParamList:          nil */
@@ -1032,7 +1032,7 @@ reduce (PFcnode_t * p, int goalnt)
  *             arg (e1, arg (e2, ..., arg (en, nil)...))
  */
 static PFfun_t *
-overload (PFqname_t qn, PFcnode_t *args)
+overload (PFqname_t qn, PFcnode_t *args, int soap_rpc)
 {
     PFarray_t *fns;
     PFarray_t *args_str;
@@ -1054,6 +1054,14 @@ overload (PFqname_t qn, PFcnode_t *args)
         /* can all actual argument types be promoted to
          * expected formal parameter types?
          */
+        if (soap_rpc) {
+            /* In soap_rpc, the first actual parameter (dst URI)
+             * should be ignored for function resolution
+             */
+            if (arg->kind == c_nil) continue;
+            arg = arg->child[1];
+        }
+
         for (a = 0, match = true; a < fn->arity; a++) {
             /* test if function has at least the same
                number of arguments as the tested function */
