@@ -1,4 +1,9 @@
--- note: ttables is used, hence output is an empty table
+create table test (
+	id1 int,
+	id2 int not null,
+	id3 int null
+);
+
 SELECT * FROM ( SELECT 'demo' AS "TABLE_CAT",
 "schemas"."name" AS "TABLE_SCHEM", "tables"."name" AS
 "TABLE_NAME", 'SYSTEM TABLE' AS "TABLE_TYPE", '' AS

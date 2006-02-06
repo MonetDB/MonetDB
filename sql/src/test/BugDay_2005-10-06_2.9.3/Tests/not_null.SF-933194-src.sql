@@ -5,3 +5,5 @@ create table test (
 );
 
 \d test
+
+drop table test;
