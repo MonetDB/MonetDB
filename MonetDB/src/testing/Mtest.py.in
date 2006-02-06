@@ -2095,7 +2095,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         if SERVER == "SQL":
 	    lang="sql"
             if env['VERSION'] >= 49900:
-                Srvr = '%s --dbinit="include sql; mapi.listen(%s:int);"' % (Srvr, env['MAPIPORT'])
+                Srvr = '%s --dbinit="include sql;"' % (Srvr)
             else:
                 Srvr = '%s --dbinit="module(sql_server); sql_server_start();"' % Srvr
         if SERVER == "XQUERY":
