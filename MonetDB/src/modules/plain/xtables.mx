@@ -277,16 +277,16 @@ grp_new( grp *g, BAT *b, BAT *h )
 
 	g->histo = 0;
 	if (h) {
-                BATkey(h, TRUE);
-                h->tsorted = 0;
-                if ((h->hsorted = BAThordered(b)) & 1) {
-                        if (BATcount(h) == BATcount(b)) {
-                                ALIGNsetH(h, BATmirror(b));
-                        }
-                } else if (BATorder(h) == NULL) {
-                        BBPreclaim(h);
-                        return GDK_FAIL;
-                }
+		BATkey(h, TRUE);
+		h->tsorted = 0;
+		if ((h->hsorted = BAThordered(b)) & 1) {
+			if (BATcount(h) == BATcount(b)) {
+				ALIGNsetH(h, BATmirror(b));
+			}
+		} else if (BATorder(h) == NULL) {
+			BBPreclaim(h);
+			return GDK_FAIL;
+		}
 		g->histo = h->batCacheid; 
 		BBPincref(h->batCacheid, TRUE );
 		BBPunfix(h->batCacheid);
@@ -352,12 +352,12 @@ hashing.
 
 /*
    Note:
-     following macros take advantage of clustered property;
-     if b is clustered, then we can stop early traversing collision lists.
+	following macros take advantage of clustered property;
+	if b is clustered, then we can stop early traversing collision lists.
 
-     BTW, simply stopping possibly breaks chain construction, so the resulting
-     map is not directly reuseable as a hash table; the current Monet cannot
-     however handle multiple accellerators, so this ain't a real problem for now :)
+	BTW, simply stopping possibly breaks chain construction, so the resulting
+	map is not directly reuseable as a hash table; the current Monet cannot
+	however handle multiple accellerators, so this ain't a real problem for now :)
  */
 
 #define declare_unclustered	/* avoid warning */
