@@ -45,17 +45,17 @@ function user.main():void;	# 0  (main:void)
     a3 := bat.new(:void,:int);	# 7 CMDBATnew (a3:bat[:void,:int])<-(_4:void)(_5:int)
     bat.setSequenceBase(a3,20@0);	# 8 BKCsetSequenceBase (_12:bat[:void,:int])<-(a3:bat[:void,:int])(_13:oid)
 barrier (go,i):= mal.newRange(0);	# 9 RNGnewRange_int (go:bit)(i:int)<-(_16:int) jump 14
-    bat.insert(a1,nil,i);	# 10 BKCinsert_bun (_17:void)<-(a1:bat[:void,:int])(_18:void)(i:int)
-    bat.insert(a2,nil,i);	# 11 BKCinsert_bun (_19:void)<-(a2:bat[:void,:int])(_18:void)(i:int)
-    bat.insert(a3,nil,i);	# 12 BKCinsert_bun (_20:void)<-(a3:bat[:void,:int])(_18:void)(i:int)
-    redo (go,i):= mal.nextElement(1,10);	# 13 RNGnextElement_int (go:bit)(i:int)<-(_21:int)(_22:int) jump 10
+    bat.append(a1,i);	# 10 BKCappend_val_wrap (_17:void)<-(a1:bat[:void,:int])(i:int)
+    bat.append(a2,i);	# 11 BKCappend_val_wrap (_18:void)<-(a2:bat[:void,:int])(i:int)
+    bat.append(a3,i);	# 12 BKCappend_val_wrap (_19:void)<-(a3:bat[:void,:int])(i:int)
+    redo (go,i):= mal.nextElement(1,10);	# 13 RNGnextElement_int (go:bit)(i:int)<-(_20:int)(_21:int) jump 10
 exit (go,i);	# 14  (go:bit)(i:int)
-# now really add it 	# 15  (_23:str)
-    partitions.deposit(a1);	# 16 BPTdeposit (_24:void)<-(a1:bat[:void,:int])
-    partitions.deposit(a1,a2);	# 17 BPTdeposit2 (_25:void)<-(a1:bat[:void,:int])(a2:bat[:void,:int])
-    partitions.deposit(a1,a3);	# 18 BPTdeposit2 (_26:void)<-(a1:bat[:void,:int])(a3:bat[:void,:int])
-    partitions.dump();	# 19 BPTdump (_27:void)
-    partitions.close();	# 20 BPTclose (_28:void)
+# now really add it 	# 15  (_22:str)
+    partitions.deposit(a1);	# 16 BPTdeposit (_23:void)<-(a1:bat[:void,:int])
+    partitions.deposit(a1,a2);	# 17 BPTdeposit2 (_24:void)<-(a1:bat[:void,:int])(a2:bat[:void,:int])
+    partitions.deposit(a1,a3);	# 18 BPTdeposit2 (_25:void)<-(a1:bat[:void,:int])(a3:bat[:void,:int])
+    partitions.dump();	# 19 BPTdump (_26:void)
+    partitions.close();	# 20 BPTclose (_27:void)
 end main;	# 21  
 ptop=3 plimit=1024
 [0] bid=6 pid=6 f=0, l=10 prv=-1 nxt=1 cap=-1
