@@ -2848,7 +2848,6 @@ reduce (PFpnode_t * p, int goalnt)
             PFfun_t      *fun;
             PFty_t        expected;
             unsigned int  param_num;
-            unsigned int  soap_rpc;
             PFfun_t      *implicit = NULL;
 
             /* translate function argument */
@@ -2868,7 +2867,6 @@ reduce (PFpnode_t * p, int goalnt)
 
             /* What function are we actually talking about? */
             fun = (*(PFapply_t **) PFarray_top (funs))->fun;
-            soap_rpc = (*(PFapply_t **) PFarray_top (funs))->rpc;
 
             /*
              * There's exactly one function that allows an arbitrary
@@ -2879,13 +2877,9 @@ reduce (PFpnode_t * p, int goalnt)
             if (PFqname_eq (fun->qname,
                             PFqname (PFns_fn, "concat")) == 0)
                 expected = PFty_opt (PFty_atomic ());
-            else if (soap_rpc && param_num == 0) 
-                /* soap_rpc expects an additional first string+ type (the URI to call) */
-                expected = 
-                    PFty_plus( PFty_xdt_untypedAtomic() ); /* PFty_string() ); */
             else
                 /* look up expected argument type */
-                expected = fun->par_ty[param_num-soap_rpc];
+                expected = fun->par_ty[param_num];
 
             /*
              * There's implicit semantics for some functions.
@@ -2912,19 +2906,6 @@ reduce (PFpnode_t * p, int goalnt)
             }
             else {
                 /* construct return value */
-                if (soap_rpc) {
-                        /*
-                        PFty_t *t = &expected;
-                        if (t->child[0]) t = t->child[0];
-                        printf("apply %s-%s-%s: convert param to %s-%s-%s\n", 
-                            fun->qname.loc?fun->qname.loc:"", 
-                            fun->qname.ns.ns?fun->qname.ns.ns:"", 
-                            fun->qname.ns.uri?fun->qname.ns.uri:"", 
-                            t->name.loc?t->name.loc:"", 
-                            t->name.ns.ns?t->name.ns.ns:"", 
-                            t->name.ns.uri?t->name.ns.uri:"");
-                        */
-                }
                 C(p) = flwr (let (letbind (var (v),
                                            function_conversion (C(L(p)),
                                                                 expected)),
