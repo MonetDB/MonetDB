@@ -1730,14 +1730,13 @@ char *
 BKCinsert_void_bun(int *r, int *bid, ptr t)
 {
 	BAT *b;
-	oid h = oid_nil;
 
 	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.insert", "Cannot access descriptor");
 	}
 	@:derefStr(b,t,t)@
-	BUNins(b, (ptr) &h, @:batconvert(b,t)@
+	BUNappend(b, @:batconvert(b,t)@
 	    );
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
