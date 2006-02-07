@@ -156,76 +156,84 @@ bats on a previously known domain "
 
 @mil
 
-     PROC CTorderby(bat[oid,any] b, bat[oid,any] a) : bat[oid,oid] {
-	 if (not(b.reverse().ordered())) {
-		b := b.reverse().sort().reverse();
-	 }
-	 return CTrefine(b,a);
-     }
+PROC CTorderby(bat[oid,any] b, bat[oid,any] a) : bat[oid,oid] {
+    if (not(b.reverse().ordered())) {
+	   b := b.reverse().sort().reverse();
+    }
+    return CTrefine(b,a);
+}
 
-     PROC CTorderby_rev(bat[oid,any] b, bat[oid,any] a) : bat[oid,oid] {
-	 if (not(b.reverse().ordered_rev())) {
-		b := b.reverse().sort_rev().reverse();
-	 }
-	 return CTrefine_rev(b,a);
-     }
+PROC CTorderby_rev(bat[oid,any] b, bat[oid,any] a) : bat[oid,oid] {
+    if (not(b.reverse().ordered_rev())) {
+	   b := b.reverse().sort_rev().reverse();
+    }
+    return CTrefine_rev(b,a);
+}
 
-     PROC CTsubgroup(BAT[oid,oid] ct, BAT[oid,any] b, BAT[oid,any] sel) : BAT[oid,oid] {
-		return ct.CTgroup(b.semijoin(sel));
+PROC CTsubgroup(BAT[oid,oid] ct, BAT[oid,any] b, BAT[oid,any] sel) : BAT[oid,oid] {
+	return ct.CTgroup(b.semijoin(sel));
+}
+
+PROC map( grp g ) : BAT[oid,oid] {
+	return g.CTmap();
+}
+
+PROC extend( grp g ) : BAT[any,int] {
+	return g.CTextend();
+}
+
+PROC histogram( grp g ) : BAT[any,int] {
+	return g.CThistogram();
+}
+
+PROC {count}(BAT[oid,bit] sel, BAT[oid,oid] ct, BAT[oid,int] dom) : BAT[oid,int] {
+	return sel.[ifthen](ct).reverse().{count}(dom);
+}
+
+PROC {count}(BAT[void,bit] sel, BAT[void,oid] ct, BAT[oid,int] dom) : BAT[oid,int] {
+	return CTsubhisto(sel, ct, dom);
+}
+
+proc orderby_table(str fcn, str spec, ..bat[any::1,any]..) : void {
+	var meta := new(str,str,$0);
+	var first := int(spec) + 2;
+	var b := $(first);
+	var s := b.reverse().sort().reverse();
+
+	while(true) {
+		var idx := spec.search(',');
+		if (idx < 0) break;
+		spec := spec.string(idx + 1);
+		s := s.CTrefine($(int(spec) + 2));
 	}
-
-     PROC map( grp g ) : BAT[oid,oid] {
-		return g.CTmap();
+	var bb := s.mirror().outerjoin(b);
+	var i := 2;
+	meta.insert("int", str(first - 2));
+	while((i :+= 1) <= $0) {
+		if (i = first) {
+		    meta.insert("BAT", str(bb));
+		} else {
+		    meta.insert("BAT", str($(i)));
+		}
 	}
+	call(fcn, meta);
+}
 
-     PROC extend( grp g ) : BAT[any,int] {
-		return g.CTextend();
-	}
+proc table(str spec, bat[any::1,any] b, ..bat[any::1,any]..) : void {
+	orderby_table("table", $(1..));
+}
 
-     PROC histogram( grp g ) : BAT[any,int] {
-		return g.CThistogram();
-	}
+proc print(str spec, bat[any::1,any] b, ..bat[any::1,any]..) : void {
+	orderby_table("print", $(1..));
+}
 
-     PROC {count}(BAT[oid,bit] sel, BAT[oid,oid] ct, BAT[oid,int] dom) : BAT[oid,int] {
-		return sel.[ifthen](ct).reverse().{count}(dom);
-	}
+proc CTgroup(grp ct, BAT[oid,any] attr) : grp {
+	return CTgroup(CTmap(ct), attr);
+}
 
-     PROC {count}(BAT[void,bit] sel, BAT[void,oid] ct, BAT[oid,int] dom) : BAT[oid,int] {
-		return CTsubhisto(sel, ct, dom);
-	}
-
-     proc orderby_table(str fcn, str spec, ..bat[any::1,any]..) : void {
-	     var meta := new(str,str,$0);
-	     var first := int(spec) + 2;
-	     var b := $(first);
-	     var s := b.reverse().sort().reverse();
-
-	     while(true) {
-		     var idx := spec.search(',');
-		     if (idx < 0) break;
-		     spec := spec.string(idx + 1);
-		     s := s.CTrefine($(int(spec) + 2));
-	     }
-	     var bb := s.mirror().outerjoin(b);
-	     var i := 2;
-	     meta.insert("int", str(first - 2));
-	     while((i :+= 1) <= $0) {
-		     if (i = first) {
-			 meta.insert("BAT", str(bb));
-		     } else {
-			 meta.insert("BAT", str($(i)));
-		     }
-	     }
-	     call(fcn, meta);
-     }
-
-     proc table(str spec, bat[any::1,any] b, ..bat[any::1,any]..) : void {
-	     orderby_table("table", $(1..));
-     }
-
-     proc print(str spec, bat[any::1,any] b, ..bat[any::1,any]..) : void {
-	     orderby_table("print", $(1..));
-     }
+proc CTderive(grp ct, BAT[oid,any] attr) : grp {
+	return CTderive(CTmap(ct), attr);
+}
 
 @{
 @* Implementation Code

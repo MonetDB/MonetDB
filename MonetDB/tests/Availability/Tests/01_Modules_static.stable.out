@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 749 ]
+[ 755 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 749 ]
+[ 755 ]
 
 var All:=0;
 
@@ -78,8 +78,8 @@ Static_mods@batloop() {
 
 Module: ""
 
-[ 54 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 55 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																																																												  # name
 # str			str		str													str																																																															  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -115,6 +115,7 @@ Module: ""
 [ "prod",	  "PROC:      ",  "prod(BAT[any,lng]) : lng",							  "not available"																																																													  ]
 [ "prod",	  "PROC:      ",  "prod(BAT[any,sht]) : sht",							  "not available"																																																													  ]
 [ "project",	  "PROC:      ",  "project(BAT[any::1,any]) : BAT[any::1,void]",				  "not available"																																																													  ]
+[ "remap_oid",		  "PROC:      ",  "remap_oid(oid, BAT[void,oid]) : oid",						  "not available"																																																																										  ]
 [ "repeat",		  "PROC:      ",  "repeat(str, int) : str",										  "not available"																																																													  ]
 [ "save",	  "PROC:      ",  "save(BAT[any::1,any::2]) : BAT[any::1,any::2]",				  "not available"																																																													  ]
 [ "space",		  "PROC:      ",  "space(int) : str",											  "not available"																																																													  ]
@@ -582,14 +583,15 @@ Module: "arith"
 
 Module: "bat"
 
-[ 71 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 76 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																																																																					  # name
 # str		str		str													str																																					  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "BAT",	  "COMMAND:   ",  "BAT(int, int) : BAT[any,any]",							  "Creates a new empty transient BAT, with head- and tail-types as indicated."																																																				  ]
 [ "BAT",	  "COMMAND:   ",  "BAT(int, int, int) : BAT[any,any]",							  "Creates a new empty BAT, directly allocating for 'size' elements."																																																					  ]
 [ "BAT",	  "COMMAND:   ",  "BAT(int, int, lng) : BAT[any,any]",							  "Creates a new empty BAT, directly allocating for 'size' elements."																																																					  ]
+[ "[remap_oid]",	  "COMMAND:   ",  "[remap_oid](BAT[void,oid], BAT[void,oid]) : BAT[void,oid]",				  "swizzle re-mapped oids (translate from logical to physical and vice versa)"																																																											  ]
 [ "accbuild",	  "COMMAND:   ",  "accbuild(BAT[any,any], str) : void",									  "Build an accelerator on the head column of b. The builtin accelerator\n types index and hash will be created as transient accelerators. They\n will not be saved on disk. User-defined accelerators must always be\n persistent."									  ]
 [ "access",	  "COMMAND:   ",  "access(BAT[any::1,any::2]) : int",							  "Return the update access privilige of a BAT."																																																							  ]
 [ "access",	  "COMMAND:   ",  "access(BAT[any::1,any::2], int) : BAT[any::1,any::2]",					  "Try to change the update access priviliges to this BAT. Mode:\n BAT_READ   - allow only read access.\n BAT_APPEND - allow reads and insertions of new elements.\n BAT_WRITE  - allow reads, insertions, and updates.\n BATs are updateable by default. On making a BAT readonly, all\n subsequent updates fail with an error message.\n Returns the BAT itself."  ]
@@ -642,8 +644,12 @@ Module: "bat"
 [ "ordered",	  "COMMAND:   ",  "ordered(BAT[any,any]) : bit",							  "Returns whether a BAT is ordered on head or not."																																																							  ]
 [ "ordered_rev",  "COMMAND:   ",  "ordered_rev(BAT[any,any]) : bit",							  "Returns whether a BAT is ordered on head or not."																																																							  ]
 [ "persists",	  "COMMAND:   ",  "persists(BAT[any::1,any::2], bit) : BAT[any::1,any::2]",				  "Make the BAT persistent (mode = TRUE), transient (mode = FALSE).\n or session (mode = bit(nil)). Returns the BAT itself."																																														  ]
+[ "remap",		  "COMMAND:   ",  "remap(BAT[void,any::1], BAT[void,oid], any::1) : BAT[void,any::1]",			  "create a non-linear VM re-map of a bat. It hase 65536-tuple pages in a different\n order, as indicated by the second bat (map)."																																																				  ]
+[ "remap_summary",	  "COMMAND:   ",  "remap_summary(BAT[void,oid], BAT[void,oid], BAT[void,any::1]) : BAT[oid,any::1]",	  "get one [h,t] bun from the master (3rd param) for each page modified by delta (first param).\n delta contains logical references, such that we need a map (2nd param) to translate the oids."																																												  ]
 [ "replace",	  "COMMAND:   ",  "replace(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",		  "Perform replace for all BUNs of the second BAT into the first.\n Returns the modified BAT."																																																		  ]
+[ "replace",	  "COMMAND:   ",  "replace(BAT[any::1,any::2], BAT[any::1,any::2], bit) : BAT[any::1,any::2]",			  "Perform replace for all BUNs of the second BAT into the first.\n Returns the modified BAT."																																																																	  ]
 [ "replace",	  "COMMAND:   ",  "replace(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]",				  "Replace the tail value of one BUN that has some head value.\n Returns the modified BAT."																										  ]
+[ "replace",	  "COMMAND:   ",  "replace(BAT[any::1,any::2], any::1, any::2, bit) : BAT[any::1,any::2]",			  "Replace the tail value of one BUN that has some head value.\n Returns the modified BAT."																																																																	  ]
 [ "reverse",	  "COMMAND:   ",  "reverse(BAT[any::1,any::2]) : BAT[any::2,any::1]",					  "Returns the reverse view of a BAT (head is tail and tail is head).\n BEWARE:  no copying is involved; input and output refer to the same object!"																																											  ]
 [ "revert",	  "COMMAND:   ",  "revert(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Puts all BUNs in a BAT in reverse order. Returns b."																																																							  ]
 [ "roles",	  "COMMAND:   ",  "roles(BAT[any::1,any::2], str, str) : BAT[any::1,any::2]",				  "Give a logical name to the columns of a BAT.\n Returns the BAT itself."																																																				  ]
@@ -799,7 +805,7 @@ Module: "str"
 Module: "sys"
 
 [ 72 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature											help																																																																												  # name
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "bbp",		  "PROC:      ",  "bbp() : BAT[str,int]",								  "Global BBP usage info"																																																												  ]
@@ -894,7 +900,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 749 ]
+[ 755 ]
 
 quit();
 

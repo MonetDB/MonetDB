@@ -96,6 +96,16 @@ can be found in this module.
 "Perform replace for all BUNs of the second BAT into the first.
  Returns the modified BAT."
 
+.COMMAND replace(BAT[any::1, any::2], any::1 h, any::2 t, bit force)
+				: BAT[any::1,any::2] = CMDreplace_bun_force;
+"Replace the tail value of one BUN that has some head value.
+ Returns the modified BAT."
+
+.COMMAND replace(BAT[any::1, any::2], BAT[any::1,any::2], bit force)
+				: BAT[any::1,any::2] = CMDreplace_bat_force;
+"Perform replace for all BUNs of the second BAT into the first.
+ Returns the modified BAT."
+
 .COMMAND delete(BAT[any::1, any::2], any::1 h, any::2 t)
 				: BAT[any::1,any::2] = CMDdelete_bun;
 "Delete one specific BUN.
@@ -437,6 +447,17 @@ documentation.
  These buffer management modes are not persistent.
  Returns the BAT operated upon."
 
+.COMMAND remap(BAT[void,any::1] b, BAT[void,oid] map, any::1 val) : BAT[void,any::1] = CMDremap;
+"create a non-linear VM re-map of a bat. It hase 65536-tuple pages in a different
+ order, as indicated by the second bat (map)."
+
+.COMMAND [remap_oid](BAT[void,oid] b, BAT[void,oid] map) : BAT[void,oid] = CMDremap_oid;
+"swizzle re-mapped oids (translate from logical to physical and vice versa)"
+
+.COMMAND remap_summary(BAT[void,oid] delta, BAT[void,oid] map, BAT[void,any::1] master) : BAT[oid,any::1] = CMDremap_summary;
+"get one [h,t] bun from the master (3rd param) for each page modified by delta (first param).
+ delta contains logical references, such that we need a map (2nd param) to translate the oids."
+
 @- BAT Accelerators
 @m
 .COMMAND accbuild(BAT[any,any] b, str acctype) = CMDaccbuild;
@@ -513,6 +534,17 @@ these 'sync' OIDs with their own propagation rules.
     CONST BUF_SEQUENTIAL:= 2;	# Expect sequential page references
     CONST BUF_WILLNEED	:= 3;	# Will need these pages
     CONST BUF_DONTNEED	:= 4;	# Don't need these pages
+
+@- constants for remap()
+@mil
+    CONST REMAP_PAGE_BITS := 16;
+    CONST REMAP_PAGE_SIZE := 1LL << REMAP_PAGE_BITS;
+    CONST REMAP_PAGE_MASK := REMAP_PAGE_SIZE - 1LL;
+
+    PROC remap_oid(oid o, BAT[void,oid] map) : oid {
+	return oid(<<(lng(map.find(oid(lng(o) >> REMAP_PAGE_BITS))),REMAP_PAGE_BITS) + and(lng(o),REMAP_PAGE_MASK));
+    }
+
 @- constants for readonly()
 @mil
     CONST BAT_READ   := 1;	# allow only read access.
@@ -674,7 +706,7 @@ CMDinsert_bat(BAT **r, BAT *b, BAT *s)
 int
 CMDreplace_bun(BAT **r, BAT *b, ptr h, ptr t)
 {
-	if (BUNreplace(*r = b, @:batconvert(b,h)@, @:batconvert(b,t)@) == NULL)
+	if (BUNreplace(*r = b, @:batconvert(b,h)@, @:batconvert(b,t)@, 0) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -683,7 +715,25 @@ CMDreplace_bun(BAT **r, BAT *b, ptr h, ptr t)
 int
 CMDreplace_bat(BAT **r, BAT *b, BAT *s)
 {
-	if (BATreplace(*r = b, s) == NULL)
+	if (BATreplace(*r = b, s, 0) == NULL)
+		return GDK_FAIL;
+	BBPfix(b->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int
+CMDreplace_bun_force(BAT **r, BAT *b, ptr h, ptr t, bit *force)
+{
+	if (BUNreplace(*r = b, @:batconvert(b,h)@, @:batconvert(b,t)@, *force) == NULL)
+		return GDK_FAIL;
+	BBPfix(b->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int
+CMDreplace_bat_force(BAT **r, BAT *b, BAT *s, bit *force)
+{
+	if (BATreplace(*r = b, s, *force) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -751,7 +801,7 @@ void_inplace(BAT *b, oid id, ptr val)
 
 	assert(p >= b->batInserted);	/* we don't want delete/ins */
 	assert(!b->batRestricted);
-	if (!BUNinplace(b, p, (ptr) &id, val))
+	if (!BUNinplace(b, p, (ptr) &id, val, 0))
 		 res = GDK_FAIL;
 
 	b->batInserted = oldInserted;
@@ -1615,5 +1665,281 @@ CMDset_seqbase(BAT **r, BAT *b, oid *o)
 	return GDK_SUCCEED;
 }
 
+#define REMAP_PAGE_BITS 16
+#define REMAP_PAGE_SIZE (1<<REMAP_PAGE_BITS)
+#define REMAP_PAGE_MASK (REMAP_PAGE_SIZE-1)
+
+static void
+mem_segment(BAT *bn, BAT *b, size_t src_off, size_t dst_off, size_t cnt, lng* const_val)
+{
+	if (const_val) { 
+		lng c = *const_val, *l = (lng*) (bn->batBuns->base + dst_off);
+		size_t k;
+
+		for (k = 0; k < cnt / 8; k++)
+			l[k] = c;	       /* fill pages with constant value */
+	} else {
+		/* copy segment from master bat */
+		memcpy(bn->batBuns->base + dst_off, b->batBuns->base + src_off, cnt);
+	}
+}
+
+int
+CMDremap(BAT **res, BAT *b, BAT *map, ptr val)
+{
+	size_t pgsz = REMAP_PAGE_SIZE*BUNsize(b), yy = 0, xx, cnt = BATcount(map);
+	ssize_t zz = 0, prev = 0, max = (((ssize_t)BATcount(b)) - 1) / REMAP_PAGE_SIZE;
+	lng lng_val[8];
+	BUN p = (BUN) lng_val, q;
+	BAT *bn;
+
+	if (BUNsize(b) != ATOMsize(b->ttype)) {
+		GDKerror("remap: %s must have a real void head column.\n", BBP_logical(b->batCacheid));
+		return GDK_FAIL;
+	}
+	if (ATOMvarsized(b->ttype)) {
+		GDKerror("remap: %s is not supported for %s tail types.\n", BBP_logical(b->batCacheid), ATOMname(b->ttype));
+		return GDK_FAIL;
+	}
+	if (BATcount(b) & REMAP_PAGE_MASK) {
+		GDKerror("remap: BATcount(%s) = %lld (not a multiple of %d).\n",
+				BBP_logical(b->batCacheid), (lng) BATcount(b), REMAP_PAGE_SIZE);
+		return GDK_FAIL;
+	}
+	if (cnt)
+		prev = (*(oid *) BUNtail(map, BUNfirst(map))) - 1;
+
+	/* fill lng_val with 8 times the constant after each other */
+	for (xx = 0; xx < 8; xx++) {
+		memcpy(p, val, ATOMsize(b->ttype));
+		p += ATOMsize(b->ttype);
+	}
+
+	/* create result bat */
+	*res = bn = BATcreatedesc(b->htype, b->ttype, TRUE); 
+	if (!bn)
+		return GDK_FAIL;
+	bn->dims = b->dims;
+
+	/*
+	if (b->batBuns->mode & STORE_MMAP) {
+	} else 
+	*/
+	{
+		if (HEAPalloc(bn->batBuns, (cnt+2)*pgsz, 1) < 0) {
+			BBPclear(bn->batCacheid);
+			return GDK_FAIL;
+		}
+		if (ATOMvarsized(bn->ttype)) {
+			bn->theap = GDKmalloc(sizeof(Heap)); 
+			if (bn->theap == NULL || HEAPalloc(bn->theap, bn->theap->free*BATMARGIN, 1) < 0) {
+				if (bn->theap)
+					HEAPfree(bn->theap);
+				else
+					GDKfree(bn->theap);
+				HEAPfree(bn->batBuns);
+				BBPclear(bn->batCacheid);
+				return GDK_FAIL;
+			}
+			memcpy(bn->theap->base, b->theap->base, bn->theap->free = b->theap->free);
+		}
+		BATloopFast(map, p, q, xx) {
+			ssize_t j = (ssize_t) *(oid *) BUNtail(map,p);
+			if (j == (ssize_t) oid_nil)
+				continue;
+			if (j - 1 != prev || (prev <= max && j > max)) {
+				mem_segment(bn, b, pgsz * yy, pgsz * (prev - zz), pgsz * zz, (prev - zz > max) ? lng_val : NULL);
+				yy += zz;
+				zz = 0;
+			}
+			zz++; prev = j;
+		}
+		mem_segment(bn, b, pgsz * yy, pgsz * (prev - zz), pgsz * zz, (prev - zz > max) ? lng_val : NULL);
+		bn->batBuns->free += yy*pgsz;
+	}
+	bn->tsorted = 0;
+	bn->batDirty = FALSE;
+	bn->batFirst = bn->batDeleted = bn->batBuns->base;
+	bn->batInserted = bn->batBuns->base + bn->batBuns->free;
+	BBPcacheit(bn);
+	BATsetcount(bn, yy*REMAP_PAGE_SIZE);
+	BATseqbase(bn, 0);
+	return GDK_SUCCEED;
+}
+
+@= swizzle
+	for(i=0, n*=@1; i<n; i+=@1) {
+		size_t idx = src[i] >> @2;
+		if (idx >= m) return 0;
+		*dst++ = (map[idx] << REMAP_PAGE_BITS) | (src[i] & REMAP_PAGE_MASK);
+	}
+@c
+#ifdef HAVE_RESTRICT
+#define __r     restrict
+#else
+#ifdef HAVE___RESTRICT__
+#define __r     __restrict__
+#else
+#define __r
+#endif
+#endif
+
+static int
+swizzle(oid *__r dst, oid *__r src, oid *__r map, size_t lo, size_t n, size_t m, size_t delta, size_t shift)
+{
+	size_t i, j, k;
+
+	if (delta == 0 && n) {
+		size_t p = (n+=lo) >> REMAP_PAGE_BITS;
+
+		if (p >= m)
+			return 0;
+		for (j = lo & REMAP_PAGE_MASK, i = lo >> REMAP_PAGE_BITS; j < REMAP_PAGE_SIZE; j++) 
+			dst[j] = (map[i << shift] << REMAP_PAGE_BITS) + j;
+		if ((shift = REMAP_PAGE_BITS-shift) == 0) {
+			for (i++; i < p; i++)
+				for (k = i << REMAP_PAGE_BITS, j = 0; j < REMAP_PAGE_SIZE; j++) 
+					dst[k + j] = (map[i] << REMAP_PAGE_BITS) + j;
+		} else {
+			for (i++; i < p; i++)
+				for (k = i << REMAP_PAGE_BITS, j = 0; j < REMAP_PAGE_SIZE; j++) 
+					dst[k + j] = (map[i << shift] << REMAP_PAGE_BITS) + j;
+		}
+		for (k = p << REMAP_PAGE_BITS, j = 0; j < n - k; j++) 
+			dst[k + j] = (map[p << shift] << REMAP_PAGE_BITS) + j;
+	} else if (delta == 1 && shift == REMAP_PAGE_BITS) {
+		@:swizzle(1,REMAP_PAGE_BITS)@ /* help register poor ISAs */
+	} else if (delta == 2 && shift == REMAP_PAGE_BITS) {
+		@:swizzle(2,REMAP_PAGE_BITS)@ /* help register poor ISAs */
+	} else if (delta == 1 && shift == REMAP_PAGE_BITS-1) {
+		@:swizzle(1,(REMAP_PAGE_BITS-1))@ /* help register poor ISAs */
+	} else if (delta == 2 && shift == REMAP_PAGE_BITS-1) {
+		@:swizzle(2,(REMAP_PAGE_BITS-1))@ /* help register poor ISAs */
+	} else {
+		@:swizzle(delta,shift)@
+	}
+	return 1;
+}
+
+int
+CMDremap_oid(BAT **res, BAT *b, BAT *map)
+{
+	BAT *bn = b;
+
+	if (map->hseqbase) {
+		GDKerror("[remap_oid]: map %s should be a void column starting at 0@0.\n", 
+			BBP_logical(map->batCacheid));
+		return GDK_FAIL;
+	}
+	if (BATtdense(map)) {
+		if (map->tseqbase) {
+			GDKerror("[remap_oid]: map %s is a void view.\n", BBP_logical(map->batCacheid)); 
+			return GDK_FAIL;
+		}
+		/* HACK does not check for out-of-range oids */
+		BBPfix(b->batCacheid);
+		return GDK_SUCCEED;
+	} 
+	*res = bn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
+	if (bn) {
+	    	if (swizzle(
+			(oid *) BUNfirst(bn), 
+			(oid *) BUNtloc(b, BUNfirst(b)), 
+			(oid *) BUNtloc(map, BUNfirst(map)), 
+			b->hseqbase,
+			BATcount(b),
+			BATcount(map),
+			BATtdense(b) ? 0 : BUNsize(b) / sizeof(oid),
+			17 - BUNsize(map) / sizeof(oid)))
+		{
+			bn->batBuns->free = sizeof(oid) * BATcount(b);
+			bn->tsorted = 0;
+			BATsetcount(bn, BATcount(b));
+			BATseqbase(bn, b->hseqbase);
+			return GDK_SUCCEED;
+		} else {
+			GDKerror("[remap_oid]: %s contains illegal offsets.\n", BBP_logical(b->batCacheid)); 
+			BBPreclaim(bn);
+		}
+	}
+	return GDK_FAIL;
+}
+
+int
+CMDremap_summary(BAT **res, BAT *delta, BAT *map, BAT *master)
+{
+	oid *oidmap, i, xx, n = BATcount(master), m = (n+REMAP_PAGE_MASK) >> REMAP_PAGE_BITS;
+	BUN p, q, r;
+	BAT *bn = NULL;
+
+	if (master->hseqbase || map->hseqbase) {
+		GDKerror("remap_summary: %s and map %s should be void columns starting at 0@0.\n", 
+			BBP_logical(master->batCacheid), BBP_logical(map->batCacheid)); 
+		return GDK_FAIL;
+	}
+	/* create temporary map */
+	oidmap = (oid *) GDKmalloc(m*sizeof(oid));
+	if (oidmap == NULL)
+		return GDK_FAIL;
+	for (i = 0; i < m; i++)
+		oidmap[i] = oid_nil; 
+
+	/* fill map */
+	n = 0;
+	BATloopFast(delta,p,q,xx) {
+		oid o = *(oid *) BUNtail(delta,p);
+		oid p = o >> REMAP_PAGE_BITS;
+
+		if (p < m) {  
+			n += (oidmap[p] == oid_nil);
+			oidmap[p] = o;
+		}
+	}
+
+	/* create result bat */
+	*res = bn = BATnew(TYPE_oid, ATOMtype(master->ttype), n);
+	if (bn == NULL) {
+		GDKfree(oidmap);
+		return GDK_FAIL;
+	}
+
+	/* fetch values from master*/
+	for (i = 0; n && i < m; i++) {
+		if (oidmap[i] != oid_nil) {
+			/* get page id */
+			oid p = oidmap[i] >> REMAP_PAGE_BITS;
+
+			BUNfndVOID(r, map, &p); 
+			if (r == NULL) {
+				GDKerror("remap_summary: %s contains illegal offset %lld.\n", 
+					BBP_logical(delta->batCacheid), (lng) p); 
+				goto bunins_failed;
+			}
+			/* translate oid back to that in master */
+			xx = *(oid *) BUNtail(map,r);
+			xx = (xx << REMAP_PAGE_BITS) | (oidmap[i] & REMAP_PAGE_MASK);
+
+			/* look up the BUN in the master */
+			BUNfndVOID(r, master, &xx);
+			if (r == NULL) {
+				GDKerror("remap_summary: map %s contains illegal offsets.\n", 
+					BBP_logical(map->batCacheid)); 
+				goto bunins_failed;
+			}
+
+			/* put [xx,t] BUN that is already in master in result bat */
+			BUNfastins(bn, &xx, BUNtail(master, r)); 
+			n--;
+		}
+	}
+	bn->hsorted = GDK_SORTED;
+	bn->tsorted = 0;
+	GDKfree(oidmap);
+	return GDK_SUCCEED;
+bunins_failed:
+	BBPreclaim(bn);
+	GDKfree(oidmap);
+	return GDK_FAIL;
+}
 @}
 @}

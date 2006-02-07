@@ -1153,7 +1153,7 @@ gdk_export int BBPreclaim(BAT *b);
 @item BAT*
 @tab BUNappend (BAT *b, ptr right)
 @item BAT*
-@tab BUNreplace (BAT *b, ptr left, ptr right)
+@tab BUNreplace (BAT *b, ptr left, ptr right, bit force)
 @item int
 @tab BUNdel (BAT *b, ptr left, ptr right)
 @item int
@@ -1263,9 +1263,9 @@ gdk_export BUN BUNdelete(BAT *b, BUN p);
 gdk_export BAT *BATdel(BAT *b, BAT *c);
 gdk_export BAT *BATdelHead(BAT *b, BAT *c);
 
-gdk_export BAT *BUNreplace(BAT *b, ptr left, ptr right);
-gdk_export BAT *BUNinplace(BAT *b, BUN p, ptr left, ptr right);
-gdk_export BAT *BATreplace(BAT *b, BAT *n);
+gdk_export BAT *BUNreplace(BAT *b, ptr left, ptr right, bit force);
+gdk_export BAT *BUNinplace(BAT *b, BUN p, ptr left, ptr right, bit force);
+gdk_export BAT *BATreplace(BAT *b, BAT *n, bit force);
 
 gdk_export BUN BUNlocate(BAT *b, ptr left, ptr right);
 gdk_export BUN BUNfnd(BAT *b, ptr left);

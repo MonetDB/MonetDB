@@ -35,6 +35,7 @@ MODULES.replace("pcre",      "plain");
 MODULES.replace("pqueue",    "plain");
 MODULES.replace("profiler",  "plain");
 MODULES.replace("radix",     "plain");
+MODULES.replace("remap",     "plain");
 MODULES.replace("salgebra",  "plain");
 MODULES.replace("stats",     "plain");
 MODULES.replace("streams",   "plain");

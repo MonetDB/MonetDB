@@ -417,17 +417,25 @@ BATdelHead(BAT *b, BAT *n)
 The last in this series is a BATreplace, which replaces all the
 buns mentioned.
 @c
-#define bunreplace(b,h,t) if (BUNreplace(b,h) == NULL) return NULL;
+#define bunreplace(b,h,t) if (BUNreplace(b,h,0) == NULL) return NULL;
 BAT *
-BATreplace(BAT *b, BAT *n)
+BATreplace(BAT *b, BAT *n, bit force)
 {
+	chr oldrestricted = 0;
+
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
 		return b;
 	}
+	if (force) {
+		oldrestricted = b->batRestricted & (BAT_APPEND|BAT_READ);
+		b->batRestricted &= ~(BAT_APPEND|BAT_READ);
+	}
 	ALIGNdel(b, "BATreplace");
 	BATcompatible(b, n);
-	@:updateloop(b,n,BUNreplace)@
+#define BUNreplace_force(a,b,c) BUNreplace(a,b,c,force)
+	@:updateloop(b,n,BUNreplace_force)@
 
+	b->batRestricted |= oldrestricted;
 	return b;
 }
 

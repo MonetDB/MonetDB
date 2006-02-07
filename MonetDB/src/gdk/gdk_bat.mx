@@ -724,10 +724,10 @@ BUNins(BAT *b, ptr h, ptr t)
 		return b;
 	}
 	if ((b->hkey & BOUND2BTRUE) && (p = BUNfnd(b, h))) {
-		if (BUNinplace(b, p, h, t) == NULL)
+		if (BUNinplace(b, p, h, t, 0) == NULL)
 			return NULL;
 	} else if ((b->tkey & BOUND2BTRUE) && (p = BUNfnd(bm, t))) {
-		if (BUNinplace(bm, p, t, h) == NULL)
+		if (BUNinplace(bm, p, t, h, 0) == NULL)
 			return NULL;
 	} else {
 		size_t i;
@@ -1144,7 +1144,8 @@ BUNdelete(BAT *b, BUN p)
 	if (p == NULL) {
 		return p;
 	}
-	if ((b->htype == TYPE_void && b->hseqbase != oid_nil) || (b->ttype == TYPE_void && b->tseqbase != oid_nil)) {
+	if ((b->htype == TYPE_void && b->hseqbase != oid_nil) ||
+	    (b->ttype == TYPE_void && b->tseqbase != oid_nil)) {
 		int bs = BUNsize(b);
 		BUN last = BUNlast(b) - bs;
 
@@ -1249,14 +1250,19 @@ explicitly.
 	}
 @c
 BAT *
-BUNinplace(BAT *b, BUN p, ptr h, ptr t)
+BUNinplace(BAT *b, BUN p, ptr h, ptr t, bit force)
 {
-	if (p >= b->batInserted) {
+	if (p >= b->batInserted || force) {
 		/* uncommitted BUN elements */
 		BUN last = BUNlast(b) - BUNsize(b);
 		BAT *bm = BBP_cache(-b->batCacheid);
 		size_t pit = BUNindex(b, p);
+		chr oldrestricted = 0;
 
+		if (force) {
+			oldrestricted = b->batRestricted & (BAT_APPEND|BAT_READ);
+			b->batRestricted &= ~(BAT_APPEND|BAT_READ);
+		}
 		ALIGNdelT(b, "BUNreplace");	/* zap alignment info */
 		if (b->tvarsized) {
 			@:uncommit_replace(var)@
@@ -1267,18 +1273,20 @@ BUNinplace(BAT *b, BUN p, ptr h, ptr t)
 			BATkey(bm, FALSE);
 		}
 		b->batDirtybuns = b->theapdirty = TRUE;
+		b->batRestricted |= oldrestricted;
 	} else {
 		/* committed BUN */
 		BUNdelete(b, p);
 		if (BUNins(b, h, t) == NULL) {
-		      bunins_failed:return NULL;
+		      bunins_failed:
+			return NULL;
 		}
 	}
 	return b;
 }
 
 BAT *
-BUNreplace(BAT *b, ptr h, ptr t)
+BUNreplace(BAT *b, ptr h, ptr t, bit force)
 {
 	BUN p;
 
@@ -1294,7 +1302,7 @@ BUNreplace(BAT *b, ptr h, ptr t)
 	if ((b->tkey & BOUND2BTRUE) && BUNfnd(BATmirror(b), t)) {
 		return b;
 	}
-	return BUNinplace(b, p, h, t);
+	return BUNinplace(b, p, h, t, force);
 }
 
 @- BUN Lookup

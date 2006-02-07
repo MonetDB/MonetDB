@@ -102,7 +102,7 @@ LIBS = {
 #	DIR = pkgdatadir/docs/plain/
 #	SOURCES = \
 #		algebra.mx arith.mx bat.mx builtin.mx sys.mx trans.mx \
-#		mkey.mx profiler.mx \
+#		mkey.mx profiler.mx constant.mx \
 #		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
 #		decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
 #		radix.mx stats.mx tcpip.mx unix.mx url.mx

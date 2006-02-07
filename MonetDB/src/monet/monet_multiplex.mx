@@ -1183,7 +1183,7 @@ but rather discard the complete result and return an error.
 		BATkey(BATmirror(retb), FALSE);
 	} else {
 		if (BATcount(retb) < BATcount(b1)) {
-			BATreplace(b1, retb);
+			BATreplace(b1, retb, 0);
 		} else {
 			oid bak = b1->halign;
 			BATclear(b1);

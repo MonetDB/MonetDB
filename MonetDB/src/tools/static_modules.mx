@@ -51,6 +51,7 @@
 @:install_module(pqueue)@
 @:install_module(profiler)@
 @:install_module(radix)@
+@:install_module(remap)@
 @:install_module(stats)@
 @:install_module(tcpip)@
 @:install_module(unix)@

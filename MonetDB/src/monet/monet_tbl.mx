@@ -1158,7 +1158,7 @@ TBL_incproc(oid pid)
 	int cnt = *(int *) BUNtail(TBL_fcn_cnt, BUNfnd(TBL_fcn_cnt, &pid));
 
 	cnt++;
-	if (BUNreplace(TBL_fcn_cnt, &pid, &cnt) == NULL)
+	if (BUNreplace(TBL_fcn_cnt, &pid, &cnt, 0) == NULL)
 		assert(0);
 }
 
@@ -1169,7 +1169,7 @@ TBL_decproc(oid pid)
 
 	if (cnt > 1) {
 		cnt--;
-		if (BUNreplace(TBL_fcn_cnt, &pid, &cnt) == NULL)
+		if (BUNreplace(TBL_fcn_cnt, &pid, &cnt, 0) == NULL)
 			assert(0);
 	} else {
 		/* remove last reference: free MIL tree, remove from TBL structures */
@@ -1695,7 +1695,7 @@ TBL_M_incref(Client client, oid mid)
 	if (BUNins(TBL_mod_use, &mid, &cid) == NULL)
 		assert(0);
 	i++;
-	if (BUNreplace(TBL_mod_cnt, &mid, &i) == NULL)
+	if (BUNreplace(TBL_mod_cnt, &mid, &i, 0) == NULL)
 		assert(0);
 	dlFPRINTF(GDKerr, "  TBL_M_incref = %d\n", i);
 
@@ -1722,7 +1722,7 @@ TBL_M_decref(Client client, oid mid)
 			if (BUNdelHead(TBL_mod_cnt, &mid) == NULL)
 				assert(0);
 		} else {
-			if (BUNreplace(TBL_mod_cnt, &mid, &i) == NULL)
+			if (BUNreplace(TBL_mod_cnt, &mid, &i, 0) == NULL)
 				assert(0);
 		}
 	}

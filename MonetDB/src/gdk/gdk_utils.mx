@@ -889,7 +889,7 @@ del_mem(BAT *b, mem_t mem)
 					GDKmprint(&idx);
 			} else {
 				BUNdelete(b, p);
-				/* BUNinplace(b,p,&mem,&idx); */
+				/* BUNinplace(b,p,&mem,&idx,0); */
 			}
 			return;
 		}
