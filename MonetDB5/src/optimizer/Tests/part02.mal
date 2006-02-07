@@ -15,12 +15,12 @@ b3:= bat.new(:void,:int);
 bat.setSequenceBase(b3,20@0);
 
 barrier (go,i):= mal.newRange(0);
-	bat.insert(a1,nil,i);
-	bat.insert(a2,nil,i);
-	bat.insert(a3,nil,i);
-	bat.insert(b1,nil,i);
-	bat.insert(b2,nil,i);
-	bat.insert(b3,nil,i);
+	bat.append(a1,i);
+	bat.append(a2,i);
+	bat.append(a3,i);
+	bat.append(b1,i);
+	bat.append(b2,i);
+	bat.append(b3,i);
 	redo (go,i):= mal.nextElement(1,10);
 exit (go,i);
 
