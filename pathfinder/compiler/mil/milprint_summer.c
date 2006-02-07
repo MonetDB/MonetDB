@@ -6229,22 +6229,9 @@ translateUDF (opt_t *f, int cur_level, int counter,
          * fun->params[], so translate it separately. */
         milprintf(f, "\n# begin of translate the 'dst' param of SOAP\n");
 
-        /* HACK: sometimes, for example, when 'concatstr' is used to test the
-         * send and the receive of strings, the 'dst' parameter is contained in
-         * L(args); sometimes, the 'dst' parameter is contained in R(L(args)),
-         * so we need to check where it is every time.
-         * TODO: this is actually a bug in the handling of the SOAP RPC calls in
-         * pathfinder core.  We still need to fix it. */
-        if (R(L(args))){
-            if (translate2MIL (f, NORMAL, cur_level, counter, R(L(args))) == NORMAL)
-            {
-                milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
-            }
-        } else {
-            if (translate2MIL (f, NORMAL, cur_level, counter, L(args)) == NORMAL)
-            {
-                milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
-            }
+        if (translate2MIL (f, NORMAL, cur_level, counter, L(args)) == NORMAL)
+        {
+            milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
         }
 
         counter++;
@@ -8773,6 +8760,7 @@ simplifyCoreTree (PFcnode_t *c)
     PFcnode_t *new_node;
     PFty_t expected, opt_expected;
     PFty_t cast_type, input_type, opt_cast_type;
+    int soap_rpc;
 
     assert(c);
     switch (c->kind)
@@ -9002,6 +8990,7 @@ simplifyCoreTree (PFcnode_t *c)
         case c_apply:
             /* handle the promotable types explicitly by casting them */
             fun = c->sem.apply.fun;
+            soap_rpc = c->sem.apply.rpc;
             {
                 unsigned int i = 0;
                 PFcnode_t *tmp = D(c);
@@ -9182,9 +9171,16 @@ simplifyCoreTree (PFcnode_t *c)
             else
             {
                 c = D(c);
-                for (i = 0; i < fun->arity; i++, c = R(c))
+                for (i = 0; i < fun->arity + soap_rpc; i++, c = R(c))
                 {
-                    expected = PFty_defn((fun->par_ty)[i]);
+                    if (soap_rpc && i == 0)
+                    {
+                        expected = PFty_plus( PFty_string() );
+                    }
+                    else
+                    {
+                        expected = PFty_defn((fun->par_ty)[i]);
+                    }
  
                     if (expected.type == ty_opt ||
                         expected.type == ty_star ||
