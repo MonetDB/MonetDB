@@ -852,7 +852,7 @@ CMDinsert_bat(BAT **r, BAT *b, BAT *s)
 int
 CMDreplace_bun(BAT **r, BAT *b, ptr h, ptr t)
 {
-	if (BUNreplace(*r = b, @:batconvert(b,h)@, @:batconvert(b,t)@) == NULL)
+	if (BUNreplace(*r = b, @:batconvert(b,h)@, @:batconvert(b,t)@, 0) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -861,7 +861,7 @@ CMDreplace_bun(BAT **r, BAT *b, ptr h, ptr t)
 int
 CMDreplace_bat(BAT **r, BAT *b, BAT *s)
 {
-	if (BATreplace(*r = b, s) == NULL)
+	if (BATreplace(*r = b, s, 0) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -933,7 +933,7 @@ void_inplace(BAT *b, oid id, ptr val)
 
 	assert(p >= b->batInserted);	/* we don't want delete/ins */
 	assert(!b->batRestricted);
-	if (!BUNinplace(b, p, (ptr) &id, val))
+	if (!BUNinplace(b, p, (ptr) &id, val, 0))
 		 res = GDK_FAIL;
 
 	b->batInserted = oldInserted;
@@ -1833,7 +1833,7 @@ BKCreplace_bun(int *r, int *bid, ptr h, ptr t)
 	}
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
-	if (BUNreplace(b, @:batconvert(b,h)@, @:batconvert(b,t)@) == NULL) {
+	if (BUNreplace(b, @:batconvert(b,h)@, @:batconvert(b,t)@, 0) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		return throwMessage("bat.replace", "BUNreplace Failed");
 	}
@@ -1854,7 +1854,7 @@ BKCreplace_bat(int *r, int *bid, int *sid)
 		BBPreleaseref(b->batCacheid);
 		return throwMessage("bat.replace", "Cannot access descriptor");
 	}
-	if (BATreplace(b, s) != NULL) {
+	if (BATreplace(b, s, 0) != NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(s->batCacheid);
 		return MAL_SUCCEED;
