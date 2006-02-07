@@ -21,7 +21,7 @@ use strict;
 
 my $dbh;
 
-$dbh = MapiLib::mapi_connect("localhost", 45123, "monetdb", "monetdb", "sql");
+$dbh = MapiLib::mapi_connect("localhost", 50000, "monetdb", "monetdb", "sql");
 
 die MapiLib::mapi_error_str($dbh) if MapiLib::mapi_error($dbh);
 

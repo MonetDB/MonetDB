@@ -48,7 +48,7 @@ int main(int argc, char **argv)
     Mapi dbh;
     MapiHdl hdl = NULL;
 
-    dbh = mapi_connect("localhost", 45123, "monetdb", "monetdb", "sql");
+    dbh = mapi_connect("localhost", 50000, "monetdb", "monetdb", "sql");
     if (mapi_error(dbh))
         die(dbh, hdl);
 

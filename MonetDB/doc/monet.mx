@@ -437,16 +437,13 @@ be able to start MapiClient without command-line parameters.
 @- SQL Front End Settings
 @T
 \begin{verbatim}
-sql_port=45123				#default place to sent the SQL query
-sql_debug=0				#default place to sent the SQL query
+sql_debug=0			#default debug setting for the SQL frontend
 \end{verbatim}
 It is urgently needed to document everything that has to do with the SQL frontend.
 
 @- XQuery Front End Settings
 @T
 \begin{verbatim}
-# default port to address an Mserver for a xquery session
-xquery_port=45789
 
 #output mode "dm" = pretty printed,
 #            "xml" = enforce XML with enclosing <XQueryResult> tags
@@ -493,8 +490,9 @@ We now load the modules {\tt @[<a href="../Modules/mapi/index.html">mapi</a>@} (
 (for cross-tabulation):
 
 \begin{verbatim}
-MonetDB>module(xtables,mapi); 
-MonetDB>fork(listen(45678));
+MonetDB>module(xtables);
+MonetDB>module(mapi); 
+MonetDB>fork(listen(50000));
 \end{verbatim}
 
 The {\tt @[<a href="../Modules/mapi/index.html">listen(port)</a>@} command from the {\tt @[<a href="../Modules/mapi/index.html">mapi</a>@} module starts a client
@@ -507,7 +505,7 @@ will establish a @[<acronym title="MonetDB Interpreter Language">MIL</acronym>@ 
 
 @[<a name="ls"></a>@;
 \begin{verbatim}
-$ MapiClient --host localhost --port 45678
+$ MapiClient --host localhost --port 50000
 # Monet Database Server V4.4.0
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
