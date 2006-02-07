@@ -434,15 +434,6 @@ mapi_client_alloc(mapi_frontend *f, Client father, Cntxt stk, stream *fdin, stre
 	MT_unset_lock(mapi_cache_lock, "mapi_client_find");
 	if (c == 0) {
 		stream_printf(fdout, "mapi_client_alloc:Failed to init client\n");
-
-		/* Make sure that the write- (from-) stream is closed first,
-		 * as the related read- (in-) stream closes the shared
-		 * socket; see also src/common/stream.mx:socket_close .
-		 */
-		stream_close(fdout);
-		stream_destroy(fdout);
-		stream_close(fdin);
-		stream_destroy(fdin);
 		return NULL;
 	}
 	c->mode = BLOCKMODE;
@@ -583,9 +574,7 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 	f = find_frontend(lang);
 
 	if (!f) {
-		GDKsyserror("xchange_challenge: frontend not found\n");
-		stream_destroy(fdin);
-		stream_destroy(fdout);
+		GDKsyserror("xchange_challenge: frontend %s not found\n", lang);
 		return NULL;
 	}
 /* TODO
@@ -614,8 +603,6 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 
 	if ((err = f->f_init(fc)) != NULL) {
 		stream_printf(fdout, "%s\n", err);
-		stream_destroy(fdin);
-		stream_destroy(fdout);
 		return NULL;
 	}
 	return fc;
@@ -823,8 +810,18 @@ Get the new information for the server socket and start listening.
 			}
 
 			fc = xchange_challenge(father, stk, fdin, fdout, 1);
-			if (!fc) 
+			if (!fc) {
+				/* Make sure that the write- (from-) stream is closed first,
+		 		 * as the related read- (in-) stream closes the shared
+		 	 	 * socket; see also src/common/stream.mx:socket_close .
+		 		 */
+				stream_close(fdout);
+				stream_destroy(fdout);
+				stream_close(fdin);
+				stream_destroy(fdin);
 				continue;
+			}
+
 
 			if (fc->t == ~(MT_Id) 0 && 
 		            MT_create_thread(&fc->t, mapi_client_engine, fc) != 0) {
@@ -1148,8 +1145,17 @@ Get the new information for the server socket and start listening.
 			}
 
 			fc = xchange_challenge(father, stk, fdin, fdout, 1);
-			if (!fc) 
+			if (!fc) {
+				/* Make sure that the write- (from-) stream is closed first,
+		 		 * as the related read- (in-) stream closes the shared
+		 	 	 * socket; see also src/common/stream.mx:socket_close .
+		 		 */
+				stream_close(fdout);
+				stream_destroy(fdout);
+				stream_close(fdin);
+				stream_destroy(fdin);
 				continue;
+			}
 
 			if (fc->t == ~(MT_Id) 0 && 
 		            MT_create_thread(&fc->t, mapi_client_engine, fc) != 0) {
