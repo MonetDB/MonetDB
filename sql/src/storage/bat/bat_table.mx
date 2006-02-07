@@ -165,7 +165,7 @@ column_update_value(sql_trans *tr, sql_column *c, oid rid, void *value)
 	if (c->bat.ubid) {
 		b = temp_descriptor(c->bat.ubid);
 		if (BUNfnd(b, &rid))
-			BUNreplace(b, (ptr) &rid, value);
+			BUNreplace(b, (ptr) &rid, value, 0);
 		else
 			BUNins(b, (ptr) &rid, value);
 		bat_destroy(b);
