@@ -1269,7 +1269,7 @@ BUNinplace(BAT *b, BUN p, ptr h, ptr t, bit force)
 		} else {
 			@:uncommit_replace(loc)@
 		}
-		if (b->ttype != TYPE_void && b->tkey && !(b->tkey & BOUND2BTRUE)) {
+		if (b->ttype != TYPE_void && b->tkey && !(b->tkey & BOUND2BTRUE) && BATcount(b) > 1) {
 			BATkey(bm, FALSE);
 		}
 		b->batDirtybuns = b->theapdirty = TRUE;
@@ -1531,6 +1531,8 @@ BATkey(BAT *b, int flag)
 	if (b->hkey != flag)
 		b->batDirtydesc = TRUE;
 	BATmirror(b)->tkey = b->hkey = flag;
+	if (!flag)
+		BATmirror(b)->tdense = b->hdense = 0;
 	if (flag && parent && ALIGNsynced(b, BBP_cache(parent)))
 		BATkey(BBP_cache(parent), TRUE);
 	return b;
