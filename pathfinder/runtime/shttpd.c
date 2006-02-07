@@ -1168,12 +1168,10 @@ shttpd_open_port(int port)
 static void
 newconnection(int sock, struct usa *usa) {
 	struct conn	*c;
-	struct usa	sa;
+
 #ifdef WITH_SSL
 	SSL		*ssl = NULL;
 #endif /* WITH_SSL */
-
-	sa.len = sizeof(sa.u.sin);
 
 	if (nonblock(sock) != 0) {
 		elog(ERR_INFO, "newconnection: nonblock: %s", strerror(ERRNO));
