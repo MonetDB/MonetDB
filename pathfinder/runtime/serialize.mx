@@ -37,7 +37,7 @@
 
 #define MAXTAGDEPTH        1024
 
-#define WS_BATS     HEIGHT
+#define WS_BATS     WS_SIZE
 
 /**
  *
@@ -1019,11 +1019,22 @@ static int process_attr(XqueryCtx* ctx, int frag, oid id, int top) {
 
 static int process_node_attr(XqueryCtx* ctx, int nFRAG, oid pre, int emptyNode) {
     BAT *b;
+    oid nid = oid_nil;
+    BUN p, q; 
 
+    wsBAT(b, ctx,PRE_NID);
+    BUNfndVOID(p, b, &pre);
+    if ( p ) {
+        nid = *(oid*)BUNtail(b,p);
+    } else {
+        fatal_err(ctx,"process_node_attr: "SZFMT" not within ["SZFMT","SZFMT"]", 
+                  (size_t)pre, (size_t)(*(oid*)BUNhead(b,BUNfirst(b))), 
+                  (size_t)(*(oid*)BUNhead(b,BUNlast(b)-BUNsize(b))));
+        return 0;
+    }
     wsBAT(b, ctx, ATTR_OWN);
-    if ( !(b  = BATuselect(b,&pre,&pre)) )
+    if ( !(b  = BATuselect(b,&nid,&nid)) )
         return fatal_err(ctx,"process_node_attr: uselect fails\n");
-    BUN p, q;
     BATloop(b, p, q) {
         oid id = *(oid*)BUNhead(b, p);
         if ( ! process_attr(ctx,nFRAG,id,0/*top*/) ) {
@@ -1052,6 +1063,7 @@ static int xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
         idxTV(res,ctx,pre_frag,pre);
         vFRAG = (int)*(oid*)res;
     }
+    if (kind == chr_nil) return -1;
     switch( kind ) {
         case (char)0:
             {	/* ELEMENT */
@@ -1115,7 +1127,7 @@ static int xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
                 break;
             }
         default:
-            return fatal_err(ctx,"Unknow kind IN xquery_node_print");
+            return fatal_err(ctx,"Unknow kind %d IN xquery_node_print", (int)kind);
     }
     return 1;
 }
@@ -1169,10 +1181,12 @@ static int MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_frag, 
     }
 
     do {
-        if ( !xquery_node_print(ctx, pre,pre_frag,top&&(from==to)) /*cheat*/ )
+        if ( !xquery_node_print(ctx, pre,pre_frag,top&&(from==to)) /*cheat*/ ) {
             return 0;
-        if ( !xquery_endtag_print(ctx,++pre) )
+        }
+        if ( !xquery_endtag_print(ctx,++pre) ) {
             return 0;
+        }
     } while( moreTags(ctx) && (pre<=to) );
 
     if ( ctx->typedMode ) {

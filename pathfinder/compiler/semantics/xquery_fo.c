@@ -52,7 +52,7 @@
 /**
  * maxmimum arity for all XQuery F&O functions
  */
-#define XQUERY_FO_MAX_ARITY 4
+#define XQUERY_FO_MAX_ARITY 5
 
 /**
  * List all XQuery built-in functions here.
@@ -1242,6 +1242,77 @@
                             PFty_double (),                              \
                             PFty_double () },                            \
     .ret_ty = PFty_star (PFty_item ()) }                                 \
+/* Below are the function declarations for the UpdateX functions */      \
+,  /* fn:delete (node) as stmt */                                        \
+  { .ns = PFns_fn, .loc = "delete",                                      \
+    .arity = 1, .par_ty = { PFty_node () },                              \
+    .ret_ty = PFty_stmt () }                                             \
+,  /* fn:insert-first (node, node) as stmt */                            \
+  { .ns = PFns_fn, .loc = "insert-first",                                \
+    .arity = 2, .par_ty = { PFty_node (),                                \
+                            PFty_node () },                              \
+    .ret_ty = PFty_stmt () }                                             \
+,  /* fn:insert-last (node, node) as stmt */                             \
+  { .ns = PFns_fn, .loc = "insert-last",                                 \
+    .arity = 2, .par_ty = { PFty_node (),                                \
+                            PFty_node () },                              \
+    .ret_ty = PFty_stmt () }                                             \
+,  /* fn:insert-before (node, node) as stmt */                           \
+  { .ns = PFns_fn, .loc = "insert-before",                               \
+    .arity = 2, .par_ty = { PFty_node (),                                \
+                            PFty_node () },                              \
+    .ret_ty = PFty_stmt () }                                             \
+,  /* fn:insert-after (node, node) as stmt */                            \
+  { .ns = PFns_fn, .loc = "insert-after",                                \
+    .arity = 2, .par_ty = { PFty_node (),                                \
+                            PFty_node () },                              \
+    .ret_ty = PFty_stmt () }                                             \
+,  /* fn:set-attr (node, str, str) as stmt */                            \
+   /* args are: node, loc, value */                                      \
+  { .ns = PFns_fn, .loc = "set-attr",                                    \
+    .arity = 3, .par_ty = { PFty_node (),                                \
+                            PFty_string (),                              \
+                            PFty_string () },                            \
+    .ret_ty = PFty_stmt () }                                             \
+,  /* fn:set-attr (node, str, str, str, str) as stmt */                  \
+   /* args are: node, loc, prefix, URI, value */                         \
+  { .ns = PFns_fn, .loc = "set-attr",                                    \
+    .arity = 5, .par_ty = { PFty_node (),                                \
+                            PFty_string (),                              \
+                            PFty_string (),                              \
+                            PFty_string (),                              \
+                            PFty_string () },                            \
+    .ret_ty = PFty_stmt () }                                             \
+,  /* fn:unset-attr (node, str) as stmt */                               \
+   /* args are: node, loc */                                             \
+  { .ns = PFns_fn, .loc = "unset-attr",                                  \
+    .arity = 2, .par_ty = { PFty_node (),                                \
+                            PFty_string () },                            \
+    .ret_ty = PFty_stmt () }                                             \
+,  /* fn:unset-attr (node, str, str, str) as stmt */                     \
+   /* args are: node, loc, prefix, URI */                                \
+  { .ns = PFns_fn, .loc = "unset-attr",                                  \
+    .arity = 4, .par_ty = { PFty_node (),                                \
+                            PFty_string (),                              \
+                            PFty_string (),                              \
+                            PFty_string () },                            \
+    .ret_ty = PFty_stmt () }                                             \
+,  /* fn:set-text (node, str) as stmt */                                 \
+  { .ns = PFns_fn, .loc = "set-text",                                    \
+    .arity = 2, .par_ty = { PFty_node (),                                \
+                            PFty_string () },                            \
+    .ret_ty = PFty_stmt () }                                             \
+,  /* fn:set-comment (node, str) as stmt */                              \
+  { .ns = PFns_fn, .loc = "set-comment",                                 \
+    .arity = 2, .par_ty = { PFty_node (),                                \
+                            PFty_string () },                            \
+    .ret_ty = PFty_stmt () }                                             \
+,  /* fn:set-pi (node, str, str) as stmt */                              \
+  { .ns = PFns_fn, .loc = "set-pi",                                      \
+    .arity = 3, .par_ty = { PFty_node (),                                \
+                            PFty_string (),                              \
+                            PFty_string () },                            \
+    .ret_ty = PFty_stmt () }                                             \
                                                                          \
 , { .loc = 0 }                                                           \
 }

@@ -1,0 +1,22 @@
+stdout of test 'shred_doc` in directory 'tests/Update` itself:
+
+
+# 10:53:12 >  
+# 10:53:12 >  Mtimeout -timeout 60 Mserver "--config=/ufs/sjoerd/Monet-update/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/devel/pathfinder-update/Linux/lib/MonetDB:/ufs/sjoerd/Monet-update/lib/MonetDB" --set "gdk_dbfarm=/ufs/sjoerd/Monet-update/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/sjoerd/Monet-update/var/MonetDB/log" --set mapi_port=32580 --set sql_port=46329 --set xquery_port=59742 --set monet_prompt= --trace --dbname=mTests_tests_Update  < shred_doc.milS
+# 10:53:12 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+module("pathfinder");
+module("unix");
+var TSTSRCDIR := getenv("TSTSRCDIR");
+shred_doc(TSTSRCDIR + "/" + "document.xml", "document.xml");
+# Shredded XML doc("document.xml"), total time after commit=0.012s
+quit();
+
+# 10:53:13 >  
+# 10:53:13 >  Done.
+# 10:53:13 >  
+

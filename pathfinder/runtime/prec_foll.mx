@@ -73,7 +73,7 @@
 
         if (ctx_pre < min_post)
         {
-            min_post = ctx_pre + size[ctx_pre];
+            min_post = ctx_pre + (size[ctx_pre]&GDK_int_max);
             pre_cur = min_post + 1;
             ctx_cur += ctx_bunsize;
         }
@@ -82,8 +82,11 @@
 @:docbounds_hi(&pre_cur,doc_hi)@
             
             /* copy nodes to result */
-            while (pre_cur < doc_hi)
-                *res_cur++ = pre_cur++;
+            while (pre_cur < doc_hi) {
+                if (!(size[pre_cur]&(1<<31)))
+                    *res_cur++ = pre_cur;
+                pre_cur++;
+            }
         
             /* skip context nodes in the same document fragment */
             while ((ctx_cur <= ctx_last) && (*(oid*)BUNhead(ctx, ctx_cur) < doc_hi))
@@ -101,8 +104,11 @@
 @:docbounds_hi(&pre_cur,doc_hi)@
         
         /* copy nodes to result */
-        while (pre_cur < doc_hi)
-            *res_cur++ = pre_cur++;
+        while (pre_cur < doc_hi) {
+            if (!(size[pre_cur]&(1<<31)))
+                *res_cur++ = pre_cur;
+            pre_cur++;
+        }
     }
 
 @:end@
@@ -150,9 +156,12 @@
             
             while (pre_cur < ctx_prev)
             {
-                if (ctx_prev > (post = pre_cur + size[pre_cur]))
-                    while (pre_cur <= post)
-                        *res_cur++ = pre_cur++;
+                if (ctx_prev > (post = pre_cur + (size[pre_cur]&GDK_int_max)))
+                    while (pre_cur <= post) {
+                        if (!(size[pre_cur]&(1<<31)))
+                            *res_cur++ = pre_cur;
+                        pre_cur++;
+                    }
                 else pre_cur++;        
             }
             
@@ -167,9 +176,12 @@
     
     while (pre_cur < ctx_prev)
     {
-        if (ctx_prev > (post = pre_cur + size[pre_cur]))
-            while (pre_cur <= post)
-                *res_cur++ = pre_cur++;
+        if (ctx_prev > (post = pre_cur + (size[pre_cur]&GDK_int_max)))
+            while (pre_cur <= post) {
+                if (!(size[pre_cur]&(1<<31)))
+                    *res_cur++ = pre_cur;
+                pre_cur++;
+            }
         else pre_cur++;        
     }
 

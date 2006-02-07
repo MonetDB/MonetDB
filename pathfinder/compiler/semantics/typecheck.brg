@@ -400,6 +400,13 @@ reduce (PFcnode_t * p, int goalnt)
              */
             reduce (kids[1], nts[1]);
             reduce (kids[0], nts[0]);
+
+            if (!PFty_subtype (TY(R(p)),
+                               PFty_choice (PFty_star (PFty_item ()),
+                                            PFty_star (PFty_stmt ()))))
+                PFoops (OOPS_TYPECHECK,
+                        "illegal combination of query and update features");
+
             break;
 
         /* Query:              CoreExpr */
@@ -440,6 +447,12 @@ reduce (PFcnode_t * p, int goalnt)
             reduce (kids[0], nts[0]);
             t1 = TY(LR(p));
 
+            if (!PFty_subtype (t1, PFty_star (PFty_item ())))
+                PFoops (OOPS_TYPECHECK,
+                        "illegal binding in for clause, cannot iterate over "
+                        "type `%s'",
+                        PFty_str (t1));
+
             /* Var : prime (t1) */
             TY(LLL(p)) = *PFty_simplify (PFty_prime (PFty_defn (t1)));
 
@@ -472,6 +485,12 @@ reduce (PFcnode_t * p, int goalnt)
             /* E |- Atom : t1 */
             reduce (kids[0], nts[0]);
             t1 = TY(LR(p));
+
+            if (!PFty_subtype (t1, PFty_star (PFty_item ())))
+                PFoops (OOPS_TYPECHECK,
+                        "illegal binding in for clause, cannot iterate over "
+                        "type `%s'",
+                        PFty_str (t1));
 
             /* Var2 : xs:integer */
             TY(LLR(p)) = PFty_xs_integer ();

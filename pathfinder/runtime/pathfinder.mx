@@ -210,8 +210,8 @@ EXCEPT when (child-T == void)
 @:@1_ws(PROP_COM,       9, bat, void,  str, PRE_BASE)@
 @:@1_ws(PROP_INS,      10, bat, void,  str, PRE_BASE)@
 @:@1_ws(PROP_TGT,      11, bat, void,  str, PRE_BASE)@
-@:@1_ws(ID_PRE,        12, bat,  str,  oid, oid(nil))@
-@:@1_ws(IDREF_PRE,     13, bat,  str,  oid, oid(nil))@
+@:@1_ws(ID_NID,        12, bat,  str,  oid, oid(nil))@
+@:@1_ws(IDREF_NID,     13, bat,  str,  oid, oid(nil))@
 @:@1_ws(ATTR_OWN,      14, bat, void,  oid, PRE_BASE)@
 @:@1_ws(ATTR_QN,       15, bat, void,  oid, PRE_BASE)@
 @:@1_ws(ATTR_PROP,     16, bat, void,  oid, PRE_BASE)@
@@ -223,22 +223,24 @@ EXCEPT when (child-T == void)
 @:@1_ws(HEIGHT,        22, int, void, void, oid(nil))@
 @:@1_ws(QN_PREFIX_URI, 23, bat, void,  str, PRE_BASE)@
 @:@1_ws(QN_LOC_URI,    24, bat, void,  str, PRE_BASE)@
-@:@1_ws(KIND_PRE_0,    25, bat, void,  oid, oid(nil))@
-@:@1_ws(KIND_PRE_1,    26, bat, void,  oid, oid(nil))@
-@:@1_ws(KIND_PRE_2,    27, bat, void,  oid, oid(nil))@
-@:@1_ws(KIND_PRE_3,    28, bat, void,  oid, oid(nil))@
-@:@1_ws(KIND_PRE_4,    29, bat, void,  oid, oid(nil))@
-@:@1_ws(PROP_PRE_0,    30, bat,  oid,  oid, oid(nil))@
-@:@1_ws(PROP_PRE_3,    31, bat,  oid,  oid, oid(nil))@
-@:@1_ws(REGION_PRE,    32, bat, void,  oid, oid(nil))@
-@:@1_ws(REGION_START,  33, bat, void,  lng, oid(nil))@
-@:@1_ws(REGION_END,    34, bat, void,  lng, oid(nil))@
+@:@1_ws(KND_NID_0,     25, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_PROP_0,    26, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_NID_1,     27, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_NID_2,     28, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_NID_3,     29, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_PROP_3,    30, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_NID_4,     31, bat, void,  oid, PRE_BASE)@
+@:@1_ws(NID_PRE,       32, bat, void,  oid, PRE_BASE)@
+@:@1_ws(PRE_NID,       33, bat, void,  oid, PRE_BASE)@
+@:@1_ws(REGION_PRE,    34, bat, void,  oid, oid(nil))@
+@:@1_ws(REGION_START,  35, bat, void,  lng, oid(nil))@
+@:@1_ws(REGION_END,    36, bat, void,  lng, oid(nil))@
 
 @-
 BEWARE: WS_SIZE (below) should *always* be the size of ws (above)
 
 @= decl
-@:@1_decl_ws(WS_SIZE, 35)@
+@:@1_decl_ws(WS_SIZE, 37)@
 @:@1_decl_ws(QNAME,    2)@
 @:@1_decl_ws(BOOL,     3)@
 @:@1_decl_ws(INT,      4)@
@@ -258,8 +260,23 @@ const @1 := @2;
 @:ws(mil_decl)@
 @:decl(mil)@
 
-const KIND_PRE := KIND_PRE_0;
-const PROP_PRE := PROP_PRE_0;
+const KND_NID  := new(chr,int,5);
+const KND_PROP := new(chr,int,2);
+{
+    var knd := ELEMENT;
+    var idx := KND_NID_0;
+    while ( knd <= DOCUMENT ) {
+        KND_NID.insert(knd,idx);
+        idx :+= 1;
+        if ( (knd = ELEMENT) or (knd = PI) ) {
+            KND_PROP.insert(knd,idx);
+            idx :+= 1;
+        }
+        knd :+= chr(1);
+    }
+}
+KND_NID .access(BAT_READ);
+KND_PROP.access(BAT_READ);
 
 # ATOMIC is not a type but all atomic types
 # can be retrieved with 'select(int(nil),ATOMIC)'
@@ -385,41 +402,115 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
     var ins := ws_tpe.ord_uselect(bat).mirror().ord_select(oid(nil),oid(-(DOC_LOADED,1))).mirror();
     [insert](const docBAT, ins.leftfetchjoin(ws_nme), ins.leftfetchjoin(ws_oid).leftjoin(shredBAT));
 
-    # these are simple concatenations (to accelerate combPRINT_WS_SZined lookup)
+    # these are simple concatenations (to accelerate combined lookup)
     docBAT.insert("qn_prefix_uri", docBAT.find("qn_prefix").[+](str('\1')).[+](docBAT.find("qn_uri")));
     docBAT.insert("qn_loc_uri",    docBAT.find("qn_loc").[+](str('\1')).[+](docBAT.find("qn_uri")));
+
+    # mapping between immutable node-id's and pre-order ranks
+    var pre_size := docBAT.find("pre_size");
+    var pre_nid  := pre_size.mirror().copy();
+    var nid_pre  := pre_nid;
 
     # create our indices
     var knd := ELEMENT;
     while ( knd <= DOCUMENT ) {
-        docBAT.insert("kind_pre" + "_" + str(chr(48 + knd)),
-                      docBAT.find("pre_kind").ord_uselect(knd).reverse().chk_order());
+        var knd_no  := str(chr(48 + knd));
+        var knd_pre := docBAT.find("pre_kind").ord_uselect(knd).hmark(PRE_BASE).chk_order();
+        var knd_nid := knd_pre.leftfetchjoin(pre_nid).chk_order();
+        if ((htype(knd_nid) != 0) or (head(knd_nid) != "void")) {
+            ERROR("pathfinder.mx: shred_doc_impl(): htype(knd_nid) = %d, head(knd_nid) = %s !\n",
+                  htype(knd_nid), head(knd_nid));
+        }
+        docBAT.insert("knd_nid_" + knd_no, knd_nid);
+        if ( (knd = ELEMENT) or (knd = PI) ) {
+            var knd_prop := knd_pre.leftfetchjoin(docBAT.find("pre_prop")).chk_order();
+            if ((htype(knd_prop) != 0) or (head(knd_prop) != "void")) {
+                ERROR("pathfinder.mx: shred_doc_impl(): htype(knd_prop) = %d, head(knd_prop) = %s !\n",
+                      htype(knd_prop), head(knd_prop));
+            }
+            docBAT.insert("knd_prop_" + knd_no, knd_prop);
+        }
         knd :+= chr(1);
     }
 
-    var knd_pre_bat := docBAT.find("kind_pre" + "_" + str(chr(48 + ELEMENT))).reverse().mirror();
-    var prop_pre_bat := knd_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().chk_order();
-    if (not(ordered(prop_pre_bat))) {
-        var _prop := prop_pre_bat.hmark(0@0);
-        var _pre  := prop_pre_bat.tmark(0@0);
-        var ord := _prop.tsort();
-            ord := ord.CTrefine(_pre).project(nil);
-        prop_pre_bat := prop_pre_bat.fetch(ord);
-        prop_pre_bat := prop_pre_bat.chk_order();
-    }
-    docBAT.insert("prop_pre" + "_" + str(chr(48 + ELEMENT)), prop_pre_bat);
+    docBAT.insert("nid_pre", nid_pre);
+    docBAT.insert("pre_nid", pre_nid);
+    nid_pre := nil;
+    
+    docBAT.replace("attr_own", docBAT.find("attr_own").leftfetchjoin(pre_nid));
 
-    knd_pre_bat := docBAT.find("kind_pre" + "_" + str(chr(48 + PI))).reverse().mirror();
-    prop_pre_bat := knd_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().chk_order();
-    if (not(ordered(prop_pre_bat))) {
-        var _prop := prop_pre_bat.hmark(0@0);
-        var _pre  := prop_pre_bat.tmark(0@0);
-        var ord := _prop.tsort();
-            ord := ord.CTrefine(_pre).project(nil);
-        prop_pre_bat := prop_pre_bat.fetch(ord);
-        prop_pre_bat := prop_pre_bat.chk_order();
+{ # TODO/FIXME: Slack-space creation should be done in the shredder.
+
+    # insert 25% free space per 64k tuples
+    const PAGESIZE := 4;	#64 * 1024;
+    const PAGEFILL := 3;	#48 * 1024;
+    const PAGEFREE := PAGESIZE - PAGEFILL;
+
+    var seq_0 := seqbase(pre_size);
+    var len_0 := count(pre_size);
+    var pages := int(ceil(dbl(len_0) / dbl(PAGEFILL)));
+    var len_1 := pages * PAGESIZE;
+    pre_size  := nil;
+
+    var pre := new(str,bat,5);
+    pre.insert("pre_size" , docBAT.find("pre_size" ));
+    pre.insert("pre_level", docBAT.find("pre_level"));
+    pre.insert("pre_prop" , docBAT.find("pre_prop" ));
+    pre.insert("pre_kind" , docBAT.find("pre_kind" ));
+    pre.insert("pre_nid"  , docBAT.find("pre_nid"  ));
+    pre.access(BAT_READ);
+    
+    pre@batloop() {
+        var nme := $h;
+        var org := $t;
+        var stretch;
+        if (PAGEFREE > 0) {
+            var tpe := ttype(org);
+            if (tpe = void) tpe := oid;
+            var empty;
+            if (nme = "pre_size" ) {
+                empty := slice(org, 0, PAGEFREE - 1).number();
+                empty := (count(empty)-1).[-](empty).[xor](not(0)).[xor](INT_MAX);
+            } else {
+                empty := slice(org, 0, PAGEFREE - 1).project(cast(nil,tpe));
+            }
+            stretch := new(void, tpe, len_1).seqbase(seq_0);
+            var fst := 0;
+            var seq := oid(nil);
+            while (fst < len_0) {
+                var lst := fst + PAGEFILL - 1;
+                seq := oid(int(seq_0) + count(stretch));
+                var full := slice(org, fst, lst);
+                if (nme = "pre_size") {
+                    var p0 := [int](slice(pre_nid, fst, lst));
+                    var p1 := [+](p0, full);
+                    var x0 := [/](p0, PAGEFILL); p0 := nil;
+                    var x1 := [/](p1, PAGEFILL); p1 := nil;
+                    var x  := [-](x1, x0); x0 := nil; x1 := nil;
+                    var y  := [*](PAGEFREE, x); x := nil;
+                    var z  := [+](full, y); y := nil;
+                    full := [ifthenelse]([<=](full, 0), full, z); z:= nil;
+                }
+                stretch.insert(full.seqbase(seq));
+                fst :+= PAGEFILL;
+                if (fst < len_0) {
+                   seq := oid(int(seq_0) + count(stretch));
+                   stretch.insert(empty.seqbase(seq));
+                }
+            }
+            stretch.access(BAT_READ);
+        } else {
+            stretch := org;
+        }
+        docBAT.replace(nme, stretch);
     }
-    docBAT.insert("prop_pre" + "_" + str(chr(48 + PI)), prop_pre_bat);
+    pre_nid := nil;
+    pre := nil;
+
+    docBAT.replace("nid_pre", docBAT.find("pre_nid").select(oid(nil),oid(nil)).tsort().hmark(seq_0).copy());
+
+} # TODO/FIXME: Slack-space creation should be done in the shredder.
+
     docBAT := docBAT.access(BAT_READ);
     return shredBAT.fetch(PRE_LEVEL).max().int() + 1;
 }

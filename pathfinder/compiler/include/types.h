@@ -70,6 +70,8 @@
        +- none (empty set)
        |
        +- named qn (reference to named type)
+       |
+       +- stmt
 @endverbatim
  *
  * 
@@ -119,6 +121,14 @@
  *
  *      - element qn context qn'/qn''/...  
  *      - attribute qn context qn'/qn''/... 
+ *     
+ *  - The type `stmt' is a Pathfinder specific extension to accomodate
+ *    for our update language.  Any (update) function with side effects
+ *    has type `stmt'.  An input query is allowed to either have a
+ *    subtype of stmt* (i.e., be a pure update statement), or be disjoint
+ *    from stmt (i.e., be a side effect free query).  With this
+ *    restriction we can avoid semantical problems that might occur
+ *    if an input contains a mix of query and update.
  */
 
 
@@ -161,6 +171,7 @@ enum PFtytype_t {
   ty_text,                     /**< text                        */
   ty_pi,                       /**< pi                          */
   ty_comm,                     /**< comm                        */
+  ty_stmt,                     /**< stmt                        */
 
   ty_types                     /**< # of types                  */
 };
@@ -212,6 +223,7 @@ PFty_t PFty_string (void);
 PFty_t PFty_boolean (void);
 PFty_t PFty_decimal (void);
 PFty_t PFty_double (void);
+PFty_t PFty_stmt (void);
 
 /** 
  * Type constructors (internal).
