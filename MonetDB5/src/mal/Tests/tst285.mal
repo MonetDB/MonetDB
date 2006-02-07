@@ -1,7 +1,7 @@
 b:= bat.new(:void,:str);
 bat.setSequenceBase(b,0@0);
-bat.insert(b,nil,"hello");
-bat.insert(b,nil,"goodbye");
+bat.append(b,"hello");
+bat.append(b,"goodbye");
 
 z1:= batstr.match(b,"hel");
 io.print(z1);

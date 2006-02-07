@@ -2,10 +2,10 @@
 
 S:= bat.new(:void,:str);
 bat.setSequenceBase(S,0:oid);
-bat.insert(S,nil,"hello");
-bat.insert(S,nil,"brave");
-bat.insert(S,nil,"new");
-bat.insert(S,nil,"world");
+bat.append(S,"hello");
+bat.append(S,"brave");
+bat.append(S,"new");
+bat.append(S,"world");
 io.print(S);
 
 L:= batstr.length(S);
