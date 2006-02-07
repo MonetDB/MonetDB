@@ -2,4 +2,5 @@ soap_add_dbl
 soap_add_int
 soap_concatStr
 soap_missing_param
+soap_multi_clnt
 soap_returnNode
