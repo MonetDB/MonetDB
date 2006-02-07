@@ -1,6 +1,7 @@
 str_heap
 refcnt
 bat_insert
+bat_replace
 reload
 BATkey
 semijoin
