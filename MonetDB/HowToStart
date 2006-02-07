@@ -43,7 +43,7 @@ Python
 autoconf/automake/libtool
 	MonetDB uses GNU autoconf__ (>= 2.53) and automake__ (>= 1.5)
 	during the Bootstrap_ phase, and libtool__ (>= 1.4) during the
-	Build_ phase.
+	Make_ phase.
 
 standard software development tools
 	To compile MonetDB, you also need to have the following

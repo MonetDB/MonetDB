@@ -978,11 +978,6 @@ BBPinsert(BAT *b)
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
 	BBP_lrefs(i) = 0;	/* ie. no logical refs */
 
-	if( i == BBPsize-1){ /* new entry */
-		BBP[ABS(i)].bak[(i)<0] = NULL;
-		BBP[ABS(i)].bak[(-i)<0] = NULL;
-	}
-
 	if( BBP[ABS(i)].bak[(i)<0] == NULL ){
 		s = BBPtmpname(dirname, 64, i);
 		BBP_logical(i) = GDKstrdup(s);

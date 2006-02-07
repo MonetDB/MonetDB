@@ -304,7 +304,7 @@ ascii_io_export int ASCIIadt_toStr(void *extra, char **buf, int *len, int type, 
 
 static int ascii_io_debug = 0;
 
-ptr
+static ptr
 bun_tail(BAT *b, size_t nr)
 {
 	REGISTER size_t _i = BUNindex((b), BUNfirst((b)));
@@ -313,7 +313,7 @@ bun_tail(BAT *b, size_t nr)
 }
 
 
-BAT *
+static BAT *
 void_bat_create(int adt, size_t nr)
 {
 	BAT *b = BATnew(TYPE_void, adt, nr);
@@ -357,36 +357,36 @@ sep_dup(char *sep)
 
 
 ptr *
-ASCIIstrFrStr(ascii_io *fmt, char *s, char *e)
+ASCIIstrFrStr(ascii_io *c, char *s, char *e)
 {
 	int len = e-s+1;
 
-	if (fmt->len < len){
-		fmt->len = len;
-		fmt->data = GDKrealloc(fmt->data,len); 
+	if (c->len < len){
+		c->len = len;
+		c->data = GDKrealloc(c->data,len); 
 	}
 
 	if (s == e) {
-		*(char *) fmt->data = 0;
-	} else if (GDKstrFromStr(fmt->data, (unsigned char *) s, e - s) == 0) {
+		*(char *) c->data = 0;
+	} else if (GDKstrFromStr(c->data, (unsigned char *) s, e - s) == 0) {
 		return NULL;
 	}
-	return fmt->data;
+	return c->data;
 }
 
 ptr *
 ASCIIadt_frStr(void *extra, int type, char *s, char *e, char quote)
 {
 	ptr *res = NULL;
-	ascii_io *fmt = extra;
+	ascii_io *c = extra;
 
 	if (s == NULL || (!(type == TYPE_str && quote) && strcmp(s, "nil") == 0)) {
 		res = (ptr *) ATOMnil(type);
 	} else if (type == TYPE_str) {
-		return ASCIIstrFrStr(fmt, s, e);
+		return ASCIIstrFrStr(c, s, e);
 	} else {
-		(void) (*BATatoms[type].atomFromStr) (s, &fmt->len, (ptr) &fmt->data);
-		res = fmt->data;
+		(void) (*BATatoms[type].atomFromStr) (s, &c->len, (ptr) &c->data);
+		res = c->data;
 	}
 	return res;
 }
@@ -398,8 +398,7 @@ ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 	return (*BATatoms[type].atomToStr) (buf, len, a);
 }
 
-static
-    size_t
+static size_t
 create_loadformat(ascii *as, BAT *names, BAT *seps, BAT *types)
 {
 	size_t p;
@@ -621,7 +620,6 @@ insert_val(ascii_io *fmt, char *s, char *e, char quote)
 	char *end = e;
 	char bak = *e;
 	ptr *adt;
-	oid on = fmt->c->hseqbase + BATcount(fmt->c);
 
 	if (quote) {
 		/* string needs the quotes included */
@@ -648,7 +646,7 @@ insert_val(ascii_io *fmt, char *s, char *e, char quote)
 		return 1;
 	}
 
-	BUNins(fmt->c, &on, adt);
+	BUNappend(fmt->c, adt);
 	if (fmt->data != adt)
 		GDKfree(adt);
 	return 0;
@@ -856,7 +854,7 @@ output_line_lookup(char **buf, int *len, ascii_io *fmt, stream *fd, size_t nr_at
 
 		if (f->c) {
 			char *p = BUNtail(f->c, BUNptr(f->c,
-						       id +BUNindex(f->c, BUNfirst(f->c))));
+						   id +BUNindex(f->c, BUNfirst(f->c))));
 			int l = f->tostr(f->extra, buf, len, f->adt, p);
 
 			if (stream_write(fd, *buf, 1, l) != l)
