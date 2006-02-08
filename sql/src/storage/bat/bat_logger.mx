@@ -539,7 +539,7 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 		BATmode(logger->sql_log, PERSISTENT);
 		BBPrename(logger->sql_log->batCacheid, "sql_log");
 		if (TMcommit() != 0)	
-			return SQL_ERR;
+			return NULL;
 		BUNins(logger->sql_log, &id, &logger->id);
 	} else {
 		logger->sql_log = bat_descriptor(sql_log, "bm_create");
