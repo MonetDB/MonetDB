@@ -160,7 +160,7 @@ bm_create(int debug)
 		BATmode(bm->bat_name, PERSISTENT);
 		BBPrename(bm->bat_name->batCacheid, "sql_catalog");
 		if (TMcommit() != 0)	/* save sql_catalog */
-			return SQL_ERR;
+			return NULL;
 	} else { /* find the persisten sql_catalog. As non persistent bats
 		    require a logical reference we also add a logical 
 		    reference for the persistent bats */
