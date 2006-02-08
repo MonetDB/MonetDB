@@ -32,6 +32,7 @@
   +----------------------------------------------------------------------+
   | Authors: Marcin Zukowski <marcin@cwi.nl>,                            |
   |          Arjan Scherpenisse <A.C.Scherpenisse@cwi.nl>                |
+  |          Fabian Groffen <Fabian.Groffen@cwi.nl>                      |
   | partly derived from work of authors of MySQL PHP module and          |
   | Manfred Stienstra <manfred.stienstra@dwerg.net>                      |
   +----------------------------------------------------------------------+
@@ -52,7 +53,7 @@
 
 #include "php_monetdb.h"
 
-#define MONETDB_PHP_VERSION "0.02"
+#define MONETDB_PHP_VERSION "0.03"
 
 #include <Mapi.h>
 #include <stdlib.h>
@@ -102,6 +103,7 @@ function_entry monetdb_functions[] = {
 	PHP_FE(monetdb_field_len, NULL)
 	PHP_FE(monetdb_errno, NULL)
 	PHP_FE(monetdb_error, NULL)
+	PHP_FE(monetdb_last_error, NULL)
 	PHP_FE(monetdb_fetch_array, NULL)
 	PHP_FE(monetdb_fetch_assoc, NULL)
 	PHP_FE(monetdb_fetch_object, NULL)
@@ -207,6 +209,7 @@ php_monetdb_init_globals(zend_monetdb_globals * monetdb_globals)
 	monetdb_globals->default_hostname = NULL;
 	monetdb_globals->default_username = NULL;
 	monetdb_globals->default_password = NULL;
+	monetdb_globals->last_error = NULL;
 	monetdb_globals->query_timeout = 0;
 }
 
@@ -386,7 +389,8 @@ PHP_FUNCTION(monetdb_connect)
 	conn->first = NULL;
 	conn->mid = mapi_connect(hostname, port, username, password, language);
 
-	if (mapi_error(conn->mid) || mapi_error_str(conn->mid)) {
+	if (mapi_error(conn->mid) ||
+			(MONET_G(last_error) = mapi_error_str(conn->mid))) {
 		/*~ printf("MON: failed\n"); */
 		MONETDB_CONNECT_RETURN_FALSE();
 	}
@@ -439,8 +443,9 @@ PHP_FUNCTION(monetdb_close)
 	/*~ printf("MON: disconnecting %p\n", conn); */
 	mapi_disconnect(conn->mid);
 
-	if (mapi_error(conn->mid) && mapi_error_str(conn->mid)) ;
-	RETURN_FALSE;
+	if (mapi_error(conn->mid) &&
+			(MONET_G(last_error) = mapi_error_str(conn->mid)))
+		RETURN_FALSE;
 
 	if (id == -1) {		/* explicit resource number */
 		zend_list_delete(Z_RESVAL_PP(mapi_link));
@@ -487,14 +492,16 @@ PHP_FUNCTION(monetdb_setAutocommit)
 	/*~ printf("MON: disconnecting %p\n", conn); */
 	mapi_setAutocommit(conn->mid, autocommit);
 
-	if (mapi_error(conn->mid) && mapi_error_str(conn->mid)) ;
-	RETURN_FALSE;
+	if (mapi_error(conn->mid) &&
+			(MONET_G(last_error) = mapi_error_str(conn->mid)))
+		RETURN_FALSE;
 
 	if (id == -1) {		/* explicit resource number */
 		zend_list_delete(Z_RESVAL_PP(mapi_link));
 	}
 	RETURN_TRUE;
 }
+/* }}} */
 
 
 /* {{{ proto resource monetdb_query(string query[, resource db])
@@ -552,6 +559,7 @@ PHP_FUNCTION(monetdb_query)
 	if ((error = mapi_result_error(handle)) != NULL) {
 		/* mapi_close_handle(handle); */
 		php_error(E_WARNING, "monetdb_query: Error: %s", error);
+		MONET_G(last_error) = error;
 		/* php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "MonetDB Error: %s", error); */
 		RETURN_FALSE;
 	}
@@ -559,7 +567,8 @@ PHP_FUNCTION(monetdb_query)
 	if (mapi_get_querytype(handle) != 7)
 		mapi_fetch_all_rows(handle);
 
-	/* We need to cache all rows directly, otherwise things get confusing. This is a mapi bug/feature. */
+	/* We need to cache all rows directly, otherwise things get
+	 * confusing. This is a mapi bug/feature. */
 	/* mapi_fetch_all_rows(handle); */
 
 	/*~ printf("MON: successfull, handle=%p\n", handle); */
@@ -569,10 +578,11 @@ PHP_FUNCTION(monetdb_query)
 	h->resno = ZEND_REGISTER_RESOURCE(return_value, handle, le_handle);
 
 	/* add resource id to linked list for automatic cleanup on disconnect(). */
-	if (conn->first)
+	if (conn->first) {
 		h->next = conn->first;
-	else
+	} else {
 		h->next = NULL;
+	}
 	conn->first = h;
 }
 
@@ -651,6 +661,7 @@ PHP_FUNCTION(monetdb_next_result)
 	if ((error = mapi_result_error(handle)) != NULL) {
 		/* mapi_close_handle(handle); */
 		php_error(E_WARNING, "monetdb_query: Error: %s", error);
+		MONET_G(last_error) = error;
 		/* php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "MonetDB Error: %s", error); */
 		RETURN_FALSE;
 	}
@@ -881,6 +892,7 @@ PHP_FUNCTION(monetdb_error)
 
 	errstr = mapi_error_str(conn->mid);
 	if (errstr != NULL) {
+		MONET_G(last_error) = errstr;
 		RETURN_STRING(errstr, 1);
 	} else {
 		RETURN_STRING("", 1);
@@ -890,6 +902,18 @@ PHP_FUNCTION(monetdb_error)
 
 /* }}} */
 
+/* {{{ proto string monetdb_last_error()
+   Returns the text of the last error message. */
+PHP_FUNCTION(monetdb_last_error)
+{
+	if (ZEND_NUM_ARGS() != 0) {
+		WRONG_PARAM_COUNT;
+	}
+
+	RETURN_STRING(MONET_G(last_error), 1);
+}
+
+/* }}} */
 
 /* {{{ php_monetdb_fetch_hash
  */
@@ -983,7 +1007,6 @@ php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int result_type)
 
 /* }}} */
 
-
 /* {{{ proto array monetdb_fetch_row(resource result)
    Gets a result row as an enumerated array */
 PHP_FUNCTION(monetdb_fetch_row)
@@ -1006,7 +1029,6 @@ PHP_FUNCTION(monetdb_fetch_object)
 
 /* }}} */
 
-
 /* {{{ proto array monetdb_fetch_array(resource result)
    Fetch a result row as an array (associative and numeric ) */
 PHP_FUNCTION(monetdb_fetch_array)
@@ -1015,7 +1037,6 @@ PHP_FUNCTION(monetdb_fetch_array)
 }
 
 /* }}} */
-
 
 /* {{{ proto array monetdb_fetch_assoc(resource result)
    Fetch a result row as an associative array */

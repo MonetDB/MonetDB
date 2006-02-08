@@ -32,6 +32,7 @@
   +----------------------------------------------------------------------+
   | Authors: Marcin Zukowski <marcin@cwi.nl>,                            |
   |          Arjan Scherpenisse <A.C.Scherpenisse@cwi.nl>                |
+  |          Fabian Groffen <Fabian.Groffen@cwi.nl>                      |
   | partly derived from work of authors of MySQL PHP module and          |
   | Manfred Stienstra <manfred.stienstra@dwerg.net>                      |
   +----------------------------------------------------------------------+
@@ -106,6 +107,7 @@ char *default_language;
 char *default_hostname;
 char *default_username;
 char *default_password;
+char *last_error;
 long query_timeout;
 
 ZEND_END_MODULE_GLOBALS(monetdb)
