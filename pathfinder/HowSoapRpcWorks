@@ -4,19 +4,18 @@ How SOAP RPC Works
 
 .. This document is written in reStructuredText (see
    http://docutils.sourceforge.net/ for more information).
-   Use ``rst2html.py`` (?) to convert this file to HTML.
+   Use ``rst2html.py`` to convert this file to HTML.
 
 In this document, we first explains how SOAP RPC can be use in MonetDB/XQuery
 to carry out XQuery queries on remote hosts by several examples.  In the
 second section, we elaborate how the examples given in the first section
 are implemented.
 
-
 *****
 Usage
 *****
 
-The SOAP RPC support in MonetDB/XQeury consists of two parts, an SOAP
+The SOAP RPC support in MonetDB/XQuery consists of two parts, an SOAP
 RPC receiver and an SOAP RPC sender (henceforth just SOAP receiver and
 SOAP sender).
 
@@ -24,15 +23,15 @@ SOAP sender).
 SOAP RPC receiver
 -----------------
 
-The SOAP receiver can be started in 'Mserver' with the following
-commands: 
+The SOAP receiver can be started in ``Mserver`` with the following
+commands::
 
     MonetDB>module(pf_soap);
     MonetDB>soap_receiver_start();
 
 By default, the SOAP receiver listens to the port number 8080, because
 it runs on top of an HTTP connection.  The command
-'soap_receiver_start(<portnr>)' can be used to specify another port
+``soap_receiver_start(<portnr>)`` can be used to specify another port
 number to use.
 
 
@@ -40,15 +39,15 @@ Make SOAP RPC calls
 -------------------
 
 The SOAP sender is automatically used if a RPC call is made in an XQuery
-query.  An XQuery function call is interpretted as an RPC if a special
+query.  An XQuery function call is interpreted as an RPC if a special
 namespace identifier, currently 'soap', is used.  All RPC functions need
 an additional leading string parameter, which provides the destination
-URI in the form '<uri>[:port]'.
+URI in the form ``<uri>[:port]``.
 
 All functions that can be called by using the RPC technique are
-predefined.  In pathfinder, functions that are avialable for RPCs are
+predefined.  In pathfinder, functions that are available for RPCs are
 pre-declared in modules.  For all examples in this documentation, the
-following module decleration is used:
+following module declaration is used::
 
     module namespace soap = "http://www.cwi.nl/~zhang/soap/";
 
@@ -96,7 +95,7 @@ Example 1: simple case
 
 If we want to let the host "bar.foo.org" carry out the function "add",
 we use the "soap" namespace identifier to indicate that it is a SOAP RPC
-call, pass an additional leading string as the destination URI:
+call, pass an additional leading string as the destination URI::
 
     import module namespace soap = "http://www.cwi.nl/~zhang/soap/" at
         "http://www.cwi.nl/~zhang/soap/soap.xq";
@@ -104,7 +103,7 @@ call, pass an additional leading string as the destination URI:
     soap:add("bar.foo.org", 40, (20, 40))
 
 If the output mode "xml" is used, this query should return the following
-results:
+results::
 
     <?xml version="1.0" encoding="utf-8"?>
     <XQueryResult>
@@ -116,7 +115,7 @@ Example 2: XML tree node as parameter
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 XML tree nodes can also be passed as function parameters.  It usage is
-as simple as the previous example:
+as simple as the previous example::
 
     import module namespace soap = "http://www.cwi.nl/~zhang/soap/" at
         "http://www.cwi.nl/~zhang/soap/soap.xq";
@@ -125,7 +124,7 @@ as simple as the previous example:
                     doc("http://www.cwi.nl/~zhang/soap/soap.xml"))
 
 If the output mode "xml" is used, this query should return the following
-results:
+results::
 
     <?xml version="1.0" encoding="utf-8"?>
     <XQueryResult>
@@ -148,7 +147,7 @@ Example 3: multi-iterations
 
 SOAP RPC calls can be included in 'for' loops.  In the next section, we
 will explain how the following multiple SOAP RPC calls can be handles by
-sending only one message to the destination:
+sending only one message to the destination::
 
     import module namespace soap = "http://www.cwi.nl/~zhang/soap/" at
         "http://www.cwi.nl/~zhang/soap/soap.xq";
@@ -157,7 +156,7 @@ sending only one message to the destination:
         return soap:convert("bar.foo.org", $i)
 
 If the output mode "xml" is used, this query should return the following
-results:
+results::
 
     <?xml version="1.0" encoding="utf-8"?>
     <XQueryResult>
@@ -177,7 +176,7 @@ necessary information.
 
 For example, a big XML database, "filmDB.xml", in which actor names are
 mapped to the film names they have played, is distributed between two
-hosts.  The host "bar.org" has the following data:
+hosts.  The host "bar.org" has the following data::
 
     <filmDB>
       <film>
@@ -201,7 +200,7 @@ hosts.  The host "bar.org" has the following data:
       </film>
     </filmDB>
  
-The host "foo.org" contains the other fraction of "filmDB.xml":
+The host "foo.org" contains the other fraction of "filmDB.xml"::
 
     <filmDB>
       <film>
@@ -233,7 +232,7 @@ The host "foo.org" contains the other fraction of "filmDB.xml":
 Suppose we only know that "filmDB.xml" is distributed between those two
 hosts, and we want to search in "filmDB.xml" to see in which film Sean
 Connery and Brad Pitt have acted.  In this case, we can use the
-following query (please correct me if this query contains error):
+following query (please correct me if this query contains error)::
 
     import module namespace soap = "http://www.cwi.nl/~zhang/soap/" at
         "http://www.cwi.nl/~zhang/soap/soap.xq";
@@ -247,7 +246,7 @@ following query (please correct me if this query contains error):
                         </actor>
 
 If the output mode "xml" is used, this query should return the following
-results (note: the node order is random):
+results (note: the node order is random)::
 
     <?xml version="1.0" encoding="utf-8"?>
     <XQueryResult>
@@ -271,11 +270,11 @@ The SOAP RPC support is implemented as a module, "pf_soap", in
 pathfinder. 
 
 Since the special namespace identifier "soap" is used in the above
-XQeury query, the call to the function "add" is translated into the
-following SOAP request message:
+XQuery query, the call to the function "add" is translated into the
+following SOAP request message::
 
     <?xml version='1.0' ?>
-    <env:Envelope xmlnl:env="http://www.w3.org/2003/05/soap-envelope">
+    <env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope">
       <env:Header />
       <env:Body>
         <SoapRpcRequest
@@ -312,7 +311,7 @@ retrieves the following information from the message:
 Once the SOAP receiver has all these information, it calls a special
 function ("xquery_method") to load the module and execute the function
 call.  If no error occurs, this SOAP response message should be sent
-back to the caller:
+back to the caller::
 
     <env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope">
       <env:Header />
@@ -331,7 +330,7 @@ back to the caller:
 But things can go wrong, then a SOAP Fault message will be sent back to
 the caller.  For example, if the SOAP receiver can not load the module
 specified in our example SOAP RPC call, it will send the following SOAP
-Fault message:
+Fault message::
 
     <env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope">
       <env:Header />
@@ -387,7 +386,7 @@ In the SOAP RPC implementation of another project, a new node is first
 constructed by copying all parameters as its child nodes.  The new node
 is then translated into SOAP RPC request message.  With the
 automatically generated stub implementation, we avoid this step of
-element recontruction, which can be very expensive if a large XML
+element reconstruction, which can be very expensive if a large XML
 document is given as a parameter.  Thus in our implementation, we only
 need to copy the values once, namely, from the pathfinder' internal data
 representation to the SOAP request message.  We regard this copy step as
@@ -399,17 +398,17 @@ Handling of XML tree node as parameter
 
 If a XML tree nodes is passed as arguments, I use
 'xquery_print_result_main' to print the node into the outgoing buffer.
-For example, we have the following module definition:
+For example, we have the following module definition::
 
-module namespace soap = "http://www.cwi.nl/~zhang/soap/soap.xq";
+    module namespace soap = "http://www.cwi.nl/~zhang/soap/soap.xq";
 
-declare function soap:testnode($v1 as xs:double, $v2 as xs:anyNode*)
-    as xs:double
-{
-    $v1
-};
+    declare function soap:testnode($v1 as xs:double, $v2 as xs:anyNode*)
+        as xs:double
+    {
+        $v1
+    };
 
-And we want to execute this query:
+And we want to execute this query::
 
     import module namespace soap = "http://www.cwi.nl/~zhang/soap/soap.xq" at
         "http://www.cwi.nl/~zhang/soap/soap.xq";
@@ -418,7 +417,7 @@ And we want to execute this query:
                   doc("http://www.cwi.nl/~zhang/soap/soap.xml"))
 
 where, 'http://www.cwi.nl/~zhang/soap/soap.xml' has the following
-contents:
+contents::
 
     <foo>
       <hello>
@@ -427,7 +426,7 @@ contents:
       </hello>
     </foo>
 
-Then the query will be translated into the following request message:
+Then the query will be translated into the following request message::
 
     <?xml version='1.0' ?>
     <env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope">
@@ -474,7 +473,7 @@ receiver, and the overhead per message.
 
 Example 2
 ~~~~~~~~~
-Suppose we need to execute RPC calls in a 'for' loop like follwoing:
+Suppose we need to execute RPC calls in a 'for' loop like following::
 
     import module namespace
         soap = "http://www.cwi.nl/~zhang/soap/soap.xq"
@@ -484,13 +483,13 @@ Suppose we need to execute RPC calls in a 'for' loop like follwoing:
       return soap:add("a.b.cwi.nl", $i, (20, 40))
 
 A naive implementation of such a 'for' loop would be to send a RPC
-request to "a.b.cwi.nl" in each iteration with the correpsonding values.
+request to "a.b.cwi.nl" in each iteration with the corresponding values.
 Obviously, if the number of iterations is large, communication will take
 a lot of time; if there are very few values need to be send, say one
 integer per iteration, a big percentage of band-width will be wasted on
 message overhead.
 
-We can easily improve the naive implementation by marshalling the
+We can easily improve the naive implementation by marshaling the
 parameter values of all iterations into one SOAP RPC request message to
 send to the destination.  The destination should then execute all
 iterations and gather the results to send them back in one SOAP RPC
@@ -506,19 +505,19 @@ times ('n' is the number of iterations) with each time the values of one
 iteration, but called only once with values of all iterations passed to
 the function in one time.
 
-The "loop-lifted staircasejoin" makes it extremely easy to implememnt
+The "loop-lifted staircasejoin" makes it extremely easy to implement
 the "loop-lifted RPC" algorithm.  When the stub of 'add' is called,
 values of all iterations are already passed to it.  (Values are passed
 in the order of per parameter and then per iteration).  All it needs to
 do is reordering the values in the order of per iteration and then per
-parameter and add XML tags where necessary.  The unmarshalling of the
+parameter and add XML tags where necessary.  The unmarshaling of the
 response message is just the other way around.
 
 The corresponding SOAP RPC request and response messages of Example 2
-are as following:
+are as following::
 
     <?xml version='1.0' ?>
-    <env:Envelope xmlnl:env="http://www.w3.org/2003/05/soap-envelope">
+    <env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope">
       <env:Header />
       <env:Body>
         <SoapRpcRequest
