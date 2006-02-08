@@ -1546,10 +1546,9 @@ DESCRIPITON:\n\
 const UPDATE_INSERT := 1LL;
 const UPDATE_DELETE := 2LL;
 const UPDATE_SETATTR := 3LL;
-const UPDATE_UNSETATTR := 4LL;
-const UPDATE_SETTEXT := 5LL;
-const UPDATE_SETCOMMENT := 6LL;
-const UPDATE_SETPI := 7LL;
+const UPDATE_SETTEXT := 4LL;
+const UPDATE_SETCOMMENT := 5LL;
+const UPDATE_SETPI := 6LL;
 
 proc myinsert(bat[any::1,any::2] oldbat, bat[any::1,any::2] newbat) : bat[any::1,any::2]
 {
@@ -2072,9 +2071,22 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
 
 proc do_update_text(bat[bat,bat] replacements, bat[void,bat] ws, int tableid, bat [void,oid] itembat, bat[void,int] kindbat, bat[void,str] textbat) : bat[bat,bat]
 {
+  var elemtype;
+  if (tableid = PROP_TEXT) {
+    elemtype := TEXT;
+  } else {
+    elemtype := COMMENT;
+  }
   var fragbat := kindbat.get_fragment();
   itembat@batloop() {
     var frag := fragbat.find($h);
+    if (ws.fetch(PRE_KIND).find(frag).find($t) != elemtype) {
+      if (elemtype = TEXT) {
+	ERROR("node must be of type TEXT\n");
+      } else {
+	ERROR("node must be of type COMMENT\n");
+      }
+    }
     var id := add_string_unique_inplace(ws, frag, tableid, textbat.find($h));
     var b := replacementsfetch(replacements, ws.fetch(PRE_PROP).find(frag));
     if (b.exist($t)) {
@@ -2091,6 +2103,9 @@ proc do_update_pi(bat[bat,bat] replacements, bat[void,bat] ws, bat [void,oid] it
   var fragbat := kindbat.get_fragment();
   itembat@batloop() {
     var frag := fragbat.find($h);
+    if (ws.fetch(PRE_KIND).find(frag).find($t) != PI) {
+      ERROR("node must be of type PI\n");
+    }
     var id := add_pi_inplace(ws, frag, insbat.find($h), tgtbat.find($h));
     var b := replacementsfetch(replacements, ws.fetch(PRE_PROP).find(frag));
     if (b.exist($t)) {
@@ -2108,6 +2123,10 @@ proc do_update_attr(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid] i
   itembat@batloop() {
     var frag := fragbat.find($h);
     var node := $t;
+    if (ws.fetch(PRE_KIND).find(frag).find(node) != ELEMENT) {
+      ERROR("node must be of type ELEMENT\n");
+    }
+    var nid := ws.fetch(PRE_NID).find(frag).find(node);
     var qn := qnbat.find($h);
     var val := valbat.find($h);
     var loc, prefix, uri;
@@ -2119,7 +2138,7 @@ proc do_update_attr(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid] i
     }
     var qnid, atid;
     {
-      var ids := find_qn(ws, frag, node, loc, prefix, uri, not(isnil(val)));
+      var ids := find_qn(ws, frag, nid, loc, prefix, uri, not(isnil(val)));
       qnid := ids.fetch(0);
       atid := ids.fetch(1);
     }
@@ -2154,7 +2173,7 @@ proc do_update_attr(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid] i
         # add attribute to node
         atid := oid(ws.fetch(ATTR_PROP).fetch(frag).count() + attr_prop_bat.count());
         attr_prop_bat.insert(atid, valid);
-        attr_own_bat.insert(atid, node);
+        attr_own_bat.insert(atid, nid);
         attr_qn_bat.insert(atid, qnid);
       } else {
         # replace attribute value
