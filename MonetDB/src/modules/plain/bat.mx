@@ -1732,7 +1732,7 @@ CMDremap(BAT **res, BAT *b, BAT *map, ptr val)
 		}
 		if (ATOMvarsized(bn->ttype)) {
 			bn->theap = GDKmalloc(sizeof(Heap)); 
-			if (bn->theap == NULL || HEAPalloc(bn->theap, bn->theap->free*BATMARGIN, 1) < 0) {
+			if (bn->theap == NULL || HEAPalloc(bn->theap, (size_t) (bn->theap->free*BATMARGIN), 1) < 0) {
 				if (bn->theap)
 					HEAPfree(bn->theap);
 				else
