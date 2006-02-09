@@ -95,8 +95,14 @@ static int monetdb_set_last_error(char *error) {
 	/* free the previous error, if any */
 	if (last_error) efree(last_error);
 
-	/* copy the error string */
-	MONET_G(last_error) = estrdup(error);
+	/* copy the error string, omiting some protocol specific stuff */
+	if (strncmp(error, "!ERROR ", 7) == 0) {
+		MONET_G(last_error) = estrdup(error + 7);
+	} else if (error[0] == '!') {
+		MONET_G(last_error) = estrdup(error + 1);
+	} else {
+		MONET_G(last_error) = estrdup(error);
+	}
 
 	return(1);
 }
@@ -405,6 +411,7 @@ PHP_FUNCTION(monetdb_connect)
 
 	if (mapi_error(conn->mid) &&
 			monetdb_set_last_error(mapi_error_str(conn->mid))) {
+		php_error(E_WARNING, "monetdb_connect: Error: %s", MONET_G(last_error));
 		/*~ printf("MON: failed\n"); */
 		MONETDB_CONNECT_RETURN_FALSE();
 	}
@@ -556,14 +563,18 @@ PHP_FUNCTION(monetdb_query)
 	query = Z_STRVAL_PP(z_query);
 
 	if (!conn || !conn->mid) {
-		php_error(E_WARNING, "monetdb_query: Query on uninitialized/closed connection");
+		char *error = "monetdb_query: Query on uninitialized/closed connection";
+		php_error(E_WARNING, error);
+		monetdb_set_last_error(error);
 		/* php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "Query on uninitialized/closed connection"); */
 		RETURN_FALSE;
 	}
 
 	handle = mapi_new_handle(conn->mid);
 	if (!handle) {
-		php_error(E_WARNING, "monetdb_query: Query on uninitialized/closed connection");
+		char *error = "monetdb_query: Query on uninitialized/closed connection";
+		php_error(E_WARNING, error);
+		monetdb_set_last_error(error);
 		/* php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "Query on uninitialized/closed connection"); */
 		RETURN_FALSE;
 	}
