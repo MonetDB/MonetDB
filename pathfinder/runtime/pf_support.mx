@@ -2259,7 +2259,7 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
       }
       while (c) {
         i :+= niland(s, INT_MAX) + 1;
-        c := (i < docsize);
+        c := (i < lng(docsize));
         if (c) {
           s := replacementvalue(replacements, docsizebat, oid(i));
           c := isnil(niland(s, int(nil)));
@@ -2732,10 +2732,10 @@ proc fix_consecutive_texts(bat[void,bat] ws, oid frag) : void
   var p := t.reverse().kunique().reverse(); # [PRE,GRP] one representative from t per group
   var pre_prop := ws.fetch(PRE_PROP).fetch(frag);
   pre_prop.replace(p.leftjoin(i), true);
-  var h := kdiff(t, p).project(nil);
+  var h := kdiff(t, p).project(oid(nil));
   pre_prop.replace(h, true);
   ws.fetch(PRE_SIZE).fetch(frag).replace(h.project(int(nil)), true);
-  ws.fetch(NID_PRE).fetch(frag).replace(h.mirror().leftfetchjoin(ws.fetch(PRE_NID).fetch(frag)).reverse().project(nil), true);
+  ws.fetch(NID_PRE).fetch(frag).replace(h.mirror().leftfetchjoin(ws.fetch(PRE_NID).fetch(frag)).reverse().project(oid(nil)), true);
   ws.fetch(PRE_NID).fetch(frag).replace(h, true);
   h := h.project(chr(nil));
   ws.fetch(PRE_KIND).fetch(frag).replace(h, true);
