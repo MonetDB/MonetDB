@@ -76,6 +76,7 @@ PHP_FUNCTION(monetdb_field_type);
 PHP_FUNCTION(monetdb_field_len);
 PHP_FUNCTION(monetdb_errno);
 PHP_FUNCTION(monetdb_error);
+PHP_FUNCTION(monetdb_last_error);
 PHP_FUNCTION(monetdb_fetch_array);
 PHP_FUNCTION(monetdb_fetch_assoc);
 PHP_FUNCTION(monetdb_fetch_object);
