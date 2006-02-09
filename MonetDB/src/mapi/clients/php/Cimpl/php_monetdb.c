@@ -85,6 +85,22 @@ typedef struct _phpMonetConn phpMonetConn;
 /* TODO: maybe we want to introduce persistant connections?
 static int le_plink; */
 
+/* utility function to set the last error */
+static int monetdb_set_last_error(char *error) {
+	char *last_error = MONET_G(last_error);
+
+	/* if there is no error, don't do anything */
+	if (!error) return(0);
+	
+	/* free the previous error, if any */
+	if (last_error) efree(last_error);
+
+	/* copy the error string */
+	MONET_G(last_error) = estrdup(error);
+
+	return(1);
+}
+
 /* {{{ monetdb_functions[]
  *
  * Every user visible function must have an entry in monet_functions[].
@@ -188,7 +204,7 @@ PHP_INI_BEGIN()
 #else
     STD_PHP_INI_ENTRY("monetdb.default_port", "50000", PHP_INI_ALL, OnUpdateLong, default_port, zend_monetdb_globals, monetdb_globals)
 #endif
-    STD_PHP_INI_ENTRY("monetdb.default_language", "mil", PHP_INI_ALL, OnUpdateString, default_language, zend_monetdb_globals, monetdb_globals)
+    STD_PHP_INI_ENTRY("monetdb.default_language", "sql", PHP_INI_ALL, OnUpdateString, default_language, zend_monetdb_globals, monetdb_globals)
     STD_PHP_INI_ENTRY("monetdb.default_hostname", "localhost", PHP_INI_ALL, OnUpdateString, default_hostname, zend_monetdb_globals, monetdb_globals)
     STD_PHP_INI_ENTRY("monetdb.default_username", "monetdb", PHP_INI_ALL, OnUpdateString, default_username, zend_monetdb_globals, monetdb_globals)
     STD_PHP_INI_ENTRY("monetdb.default_password", "monetdb", PHP_INI_ALL, OnUpdateString, default_password, zend_monetdb_globals, monetdb_globals)
@@ -199,6 +215,7 @@ PHP_INI_BEGIN()
 #endif
     PHP_INI_END()
 /* }}} */
+
 /* {{{ php_monetdb_init_globals
  */
 static void
@@ -386,8 +403,8 @@ PHP_FUNCTION(monetdb_connect)
 	conn->first = NULL;
 	conn->mid = mapi_connect(hostname, port, username, password, language);
 
-	if (mapi_error(conn->mid) ||
-			(MONET_G(last_error) = mapi_error_str(conn->mid))) {
+	if (mapi_error(conn->mid) &&
+			monetdb_set_last_error(mapi_error_str(conn->mid))) {
 		/*~ printf("MON: failed\n"); */
 		MONETDB_CONNECT_RETURN_FALSE();
 	}
@@ -441,7 +458,7 @@ PHP_FUNCTION(monetdb_close)
 	mapi_disconnect(conn->mid);
 
 	if (mapi_error(conn->mid) &&
-			(MONET_G(last_error) = mapi_error_str(conn->mid)))
+			monetdb_set_last_error(mapi_error_str(conn->mid)))
 		RETURN_FALSE;
 
 	if (id == -1) {		/* explicit resource number */
@@ -490,7 +507,7 @@ PHP_FUNCTION(monetdb_setAutocommit)
 	mapi_setAutocommit(conn->mid, autocommit);
 
 	if (mapi_error(conn->mid) &&
-			(MONET_G(last_error) = mapi_error_str(conn->mid)))
+			monetdb_set_last_error(mapi_error_str(conn->mid)))
 		RETURN_FALSE;
 
 	if (id == -1) {		/* explicit resource number */
@@ -556,7 +573,7 @@ PHP_FUNCTION(monetdb_query)
 	if ((error = mapi_result_error(handle)) != NULL) {
 		/* mapi_close_handle(handle); */
 		php_error(E_WARNING, "monetdb_query: Error: %s", error);
-		MONET_G(last_error) = error;
+		monetdb_set_last_error(error);
 		/* php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "MonetDB Error: %s", error); */
 		RETURN_FALSE;
 	}
@@ -658,7 +675,7 @@ PHP_FUNCTION(monetdb_next_result)
 	if ((error = mapi_result_error(handle)) != NULL) {
 		/* mapi_close_handle(handle); */
 		php_error(E_WARNING, "monetdb_query: Error: %s", error);
-		MONET_G(last_error) = error;
+		monetdb_set_last_error(error);
 		/* php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "MonetDB Error: %s", error); */
 		RETURN_FALSE;
 	}
@@ -889,7 +906,7 @@ PHP_FUNCTION(monetdb_error)
 
 	errstr = mapi_error_str(conn->mid);
 	if (errstr != NULL) {
-		MONET_G(last_error) = errstr;
+		monetdb_set_last_error(errstr);
 		RETURN_STRING(errstr, 1);
 	} else {
 		RETURN_STRING("", 1);
@@ -907,7 +924,10 @@ PHP_FUNCTION(monetdb_last_error)
 		WRONG_PARAM_COUNT;
 	}
 
-	RETURN_STRING(MONET_G(last_error), 1);
+	if (MONET_G(last_error) == NULL)
+		RETURN_FALSE;
+
+	RETURN_STRINGL(MONET_G(last_error), strlen(MONET_G(last_error)), 0);
 }
 
 /* }}} */
@@ -1084,9 +1104,9 @@ PHP_FUNCTION(monetdb_escape_string)
 
 	tmp = mapi_quote(Z_STRVAL_PP(str), Z_STRLEN_PP(str));
 
-	realstr = (char *) emalloc(strlen(tmp));
-	strcpy(realstr, tmp);
+	realstr = estrdup(tmp);
 	free(tmp);
+
 	RETURN_STRINGL(realstr, strlen(realstr), 0);
 }
 
