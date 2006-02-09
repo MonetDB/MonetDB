@@ -2220,6 +2220,11 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
     var doclevelbat := ws.fetch(PRE_LEVEL).fetch(docfrag);
     var docsize := doclevelbat.count(); # size of current document
 
+    # docinsertafter may point to a hole, so back track to a non-hole item
+    while (isnil(doclevelbat.find(docinsertafter))) {
+      docinsertafter := oid(lng(docinsertafter) - 1);
+    }
+
     # the start of the page on which the new element is to be inserted
     # use "int" because we pass this value to slice which needs int
     var docpage := ((int(docinsertafter) + 1) >> PAGESHIFT) << PAGESHIFT;

@@ -7697,13 +7697,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         else                    /* insert-after */
             milprintf(f, "docitem := [oid]([+]([lng](docitem), size));\n");
         milprintf(f,
-                  "var nilitem := mposjoin(docitem, docfrag, ws.fetch(PRE_LEVEL)).uselect(chr(nil));\n"
-                  "while (nilitem.count() > 0) {\n"
-                  "  var updateitem := [oid]([-]([lng](join(nilitem.mirror(), docitem)), 1));\n"
-                  "  docitem := docitem.access(BAT_WRITE).replace(updateitem);\n"
-                  "#   nilitem := mposjoin(updateitem, updateitem.mirror().leftjoin(docfrag), ws.fetch(PRE_LEVEL)).uselect(chr(nil));\n"
-                  "  nilitem := mposjoin(docitem, docfrag, ws.fetch(PRE_LEVEL)).uselect(chr(nil));\n"
-                  "}\n"
                   "int_values := int_values.append([lng](doclevel));\n"
                   "doclevel := [lng](doclevel).leftjoin(int_values.reverse());\n"
                   "int_values := int_values.append(UPDATE_INSERT);\n"
