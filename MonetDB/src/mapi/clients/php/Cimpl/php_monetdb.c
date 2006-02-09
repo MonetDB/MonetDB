@@ -377,9 +377,6 @@ PHP_FUNCTION(monetdb_connect)
 		convert_to_string_ex(z_password);
 		password = Z_STRVAL_PP(z_password);
 	}
-	/* Provide the default SQL port in case it isnt given */
-	if (!z_port && z_language && !strcasecmp(language, "sql"))
-		port = 45123;
 
 	/* ~printf("MON: Connecting to: hostname=%s port=%d username=%s password=%s language=%s\n",
 	   ~ hostname, port, username, password, language); */

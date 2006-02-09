@@ -53,7 +53,7 @@ sub connect {
     }
     my $lang  = $dsn{language} || 'sql';
     my $host  = $dsn{host} || 'localhost';
-    my $port  = $dsn{port} || ( $lang eq 'sql' ? 45123 : 50000 );
+    my $port  = $dsn{port} || 50000;
     $user     ||= 'monetdb';
     $password ||= 'monetdb';
 
@@ -793,7 +793,7 @@ The default host to connect to is 'localhost', i.e. your workstation.
 
 =item port
 
-The port where MonetDB daemon listens to. Default for SQL is 45123.
+The port where MonetDB daemon listens to. Default for MonetDB is 50000.
 
 =back
 

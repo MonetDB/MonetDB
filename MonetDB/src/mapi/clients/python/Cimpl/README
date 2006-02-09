@@ -14,7 +14,7 @@ interface to Python is the generated module MapiLib.py.
 A tiny example of the use of CMapi.py follows:
 
 import CMapi
-m = CMapi.Mapi(host = 'localhost', port = 45123, username = 'monetdb',
+m = CMapi.Mapi(host = 'localhost', port = 50000, username = 'monetdb',
               password = 'monetdb', lang = 'sql')
 h = m.query('select * from tables')
 while h.fetch_row() > 0:

@@ -128,10 +128,7 @@ class DB_monetdb extends DB_common
         if (!empty($dsninfo['port'])) {
             $port = (int)$dsninfo['port'];
         } else {
-            if ($dsninfo['dbsyntax']=='mil')
-                $port = 50000;
-            else
-                $port = 45123;
+            $port = 50000;
         }
         if (!empty($dsninfo['dbsyntax']) && $dsninfo['dbsyntax']!='monetdb') {
             $lang = $dsninfo['dbsyntax'];

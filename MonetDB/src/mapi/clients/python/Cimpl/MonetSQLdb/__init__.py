@@ -95,7 +95,7 @@ class Connection:
 
     def __init__(self, **kwargs):
         if not kwargs.has_key('host'): kwargs['host'] = 'localhost'
-        if not kwargs.has_key('port'): kwargs['port'] = 45123
+        if not kwargs.has_key('port'): kwargs['port'] = 50000
         if not kwargs.has_key('user'): kwargs['user'] = 'monetdb'
         if not kwargs.has_key('password'): kwargs['password'] = 'monetdb'
         if not kwargs.has_key('lang'): kwargs['lang'] = 'sql'

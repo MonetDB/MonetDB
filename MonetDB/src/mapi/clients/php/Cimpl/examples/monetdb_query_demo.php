@@ -31,7 +31,7 @@
 <?php
 dl("monetdb.so");
 
-$db = monetdb_connect("sql", "localhost", 45123, "monetdb", "monetdb");
+$db = monetdb_connect("sql", "localhost", 50000, "monetdb", "monetdb");
 
 $tables = monetdb_query('SELECT name FROM tables');
 

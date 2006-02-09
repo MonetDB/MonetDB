@@ -26,7 +26,7 @@ use MonetDB::CLI::MapiPP;
 pass('Connection tests');
 
 my $host = $ENV{MONETDB_HOST} || 'localhost';
-my $port = $ENV{MONETDB_PORT} || 45123;
+my $port = $ENV{MONETDB_PORT} || 50000;
 my $user = $ENV{MONETDB_USER} || 'monetdb';
 my $pass = $ENV{MONETDB_PASS} || 'monetdb';
 my $lang = 'sql';

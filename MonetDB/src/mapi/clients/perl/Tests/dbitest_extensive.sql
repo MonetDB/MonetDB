@@ -14,7 +14,7 @@ my $database = "testDBI";
 my $username = "monetdb";
 my $password = "monetdb";
 my $host = "localhost";
-my $port = "45123"; #def. sql port
+my $port = "50000"; #def. port
 my $driver = "monetdb";
 
 my $def_dsn = "dbi:$driver:database=$database;host=$host;port=$port;language=sql";
