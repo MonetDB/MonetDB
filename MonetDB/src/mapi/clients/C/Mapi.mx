@@ -2069,11 +2069,6 @@ mapi_start_talking(Mapi mid)
 		pversion = atoi(protover);
 
 		errbuf[0] = 0;
-		if (pversion <= 4) {
-			snprintf(errbuf, BLOCK, "MIL language chosen, but server reports %s", server);
-			close_connection(mid);
-			return mapi_setError(mid, errbuf, "mapi_start_talking", MERROR);
-		}
 		/* just don't do anything with the challenge */
 	}
 

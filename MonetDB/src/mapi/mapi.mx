@@ -563,7 +563,7 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 		blocked = 1;
 
 	if (!user || !passwd || !lang || !mode) { 
-		GDKsyserror("client:protocol error\n");
+		stream_printf(fdout, "!ERROR: client: protocol error\n");
 		return NULL;
 	}
 
@@ -574,12 +574,16 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 	f = find_frontend(lang);
 
 	if (!f) {
-		GDKsyserror("xchange_challenge: frontend %s not found\n", lang);
+		stream_printf(fdout,
+		 "!ERROR: xchange_challenge: frontend %s not found\n", lang);
 		return NULL;
 	}
 /* TODO
-	if (db)
-		GDKsyserror("xchange_challenge: database redirect not possible jet\n");
+	if (db) {
+		stream_printf(fdout,
+		 "!ERROR: xchange_challenge: TODO database redirect\n");
+		return NULL;
+	}
 */
 
 	if (new_client)
