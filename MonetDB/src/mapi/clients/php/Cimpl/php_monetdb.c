@@ -87,13 +87,11 @@ static int le_plink; */
 
 /* utility function to set the last error */
 static int monetdb_set_last_error(char *error) {
-	char *last_error = MONET_G(last_error);
-
 	/* if there is no error, don't do anything */
 	if (!error) return(0);
 	
 	/* free the previous error, if any */
-	if (last_error) efree(last_error);
+	if (MONET_G(last_error)) efree(MONET_G(last_error));
 
 	/* copy the error string, omiting some protocol specific stuff */
 	if (strncmp(error, "!ERROR ", 7) == 0) {
@@ -581,10 +579,9 @@ PHP_FUNCTION(monetdb_query)
 
 	mapi_query_handle(handle, query);
 
-	if ((error = mapi_result_error(handle)) != NULL) {
+	if (monetdb_set_last_error(mapi_result_error(handle)) != NULL) {
 		/* mapi_close_handle(handle); */
-		php_error(E_WARNING, "monetdb_query: Error: %s", error);
-		monetdb_set_last_error(error);
+		php_error(E_WARNING, "monetdb_query: Error: %s", MONET_G(last_error));
 		/* php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "MonetDB Error: %s", error); */
 		RETURN_FALSE;
 	}
