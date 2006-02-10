@@ -713,9 +713,11 @@ BBPexit(void)
 					BATfree(b);
 			}
 			BBPuncacheit_(i, TRUE);
+			if (BBP_logical(i) != BBP[ABS(i)].bak[(i)<0])
+				GDKfree(BBP[ABS(i)].bak[(i)<0]);
+			BBP[ABS(i)].bak[(i)<0] = NULL;
 			GDKfree(BBP_logical(i));
 			BBP_logical(i) = NULL;
-			BBP[ABS(i)].bak[(i)<0] = NULL;
 		}
 		if (BBP_physical(i)) {
 			GDKfree(BBP_physical(i));
@@ -989,7 +991,6 @@ BBPinsert(BAT *b)
 	} else 
 		BBP_logical(i) =  BBP[ABS(i)].bak[(i)<0];
 	BBP_logical(-i) = NULL;
-	BBP[ABS(i)].bak[(-i)<0] = NULL;
 
 	/* Keep the physical location around forever */
 	if( BBP_physical(i) == NULL){
@@ -1274,8 +1275,8 @@ BBPaddtobin(BAT *b){
 		gdk_unset_lock(GDKcacheLock, "BBPaddtobin");
 	}
 	HASHdestroy(b);
-	b->batCacheid = 0;
 	GDKfree(BATmirror(b));
+	b->batCacheid = 0;
 	BBP_cache(i) = BBP_cache(-i) = NULL;
 	BBP_status_off(i, BBPLOADED, "BBPuncacheit");
 	BBP_desc(i) = NULL;
