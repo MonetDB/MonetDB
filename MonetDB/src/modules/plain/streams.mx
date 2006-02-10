@@ -16,9 +16,13 @@
 
 @f streams
 @a Niels Nes
-@* An simple interface to IO streams
-This interface can be used to open 'non compressed, gzipped, bz2zipped'
-data files.
+@* A simple interface to IO streams
+All file IO is funneled through the stream library, which
+guarantees cross-platform capabilities.
+Several protocols are provided, e.g. it can be used to 
+open 'non compressed, gzipped, bzipped' data files. 
+It encapsulates the corresponding library managed in
+.../stream.
 
 @m
 .MODULE streams;
@@ -182,7 +186,7 @@ stream_open_@1(Stream *S, str filename)
 	if ((s = open_@1( filename )) == NULL || stream_errnr(s)) {
 		if (s)
 			stream_destroy(s);
-		GDKerror("stream_open: could not open file %s\n", filename);
+		GDKerror("stream_open: could not open file '%s'\n", filename);
 		return GDK_FAIL;
 	} else {
 		*(stream**)S = s;

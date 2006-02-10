@@ -15,15 +15,12 @@
 @' All Rights Reserved.
 
 @f str
-@a N.J. Nes
+@a N.J. Nes, M.L. Kersten
 @v 1.1
 @t The "string" module
 
 @* Introduction
 @T
-All functions in the module have now been converted to Unicode. Internally,
-we use UTF-8 to store strings as Unicode in zero-terminated byte-sequences.
-
 Strings can be created in many ways. Already in the built-in operations
 each atom can be cast to a string using the str(atom) mil command.
 The string module gives the possibility of construction string as a
@@ -55,7 +52,7 @@ The toLower and toUpper functions cast the string to lower or upper case
 characters.
 
 The search(str,chr) function searches for the first occurrence of a
-character from the beginning of the string. The search(chr,str) searches
+character from the begining of the string. The search(chr,str) searches
 for the last occurrence (or first from the end of the string). The last
 search function locates the position of first occurrence of the string s2
 in string s. All search functions return -1 when the search failed.
@@ -65,6 +62,8 @@ All string functions fail when an incorrect string (NULL pointer) is given.
 In the current implementation, a fail is signaled by returning nil, since
 this facilitates the use of the string module in bulk operations.
 
+All functions in the module have now been converted to Unicode. Internally,
+we use UTF-8 to store strings as Unicode in zero-terminated byte-sequences.
 @* Module Definition
 @m
 .MODULE str;
@@ -1714,8 +1713,8 @@ int
 strSubstitute(str *res, str s, str src, str dst, bit *g)
 {
 	int repeat = *g;
-	size_t lsrc = strlen(src), ldst = strlen(dst);
-	size_t l = strLen(s), n = l + ldst;
+	size_t lsrc = (src?strlen(src):0), ldst = (dst?strlen(dst):0);
+	size_t l = (s?strLen(s):0), n = l + ldst;
 	str buf, fnd, end;
 
 	if (repeat && ldst > lsrc && lsrc) {

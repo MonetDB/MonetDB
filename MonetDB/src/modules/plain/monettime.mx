@@ -1032,6 +1032,7 @@ static int dummy;
 
 #define BEFORE(d1,m1,d2,m2) (d1 < d2 || (d1 == d2 && m1 <= m2))
 
+int timestamp_add(timestamp *ret, timestamp *v, lng *msecs);
 static INLINE int
 timestamp_inside(timestamp *ret, timestamp *t, tzone *z, lng offset)
 {
@@ -1055,9 +1056,9 @@ timestamp_inside(timestamp *ret, timestamp *t, tzone *z, lng offset)
 	start_days = compute_rule(&start, year);
 	end_days = compute_rule(&end, year);
 
-	return BEFORE(start_days, start_msecs, end_days, end_msecs) ? (BEFORE(start_days, start_msecs, ret->days, ret->msecs)
-								       && BEFORE(ret->days, ret->msecs, end_days, end_msecs)) : (BEFORE(start_days, start_msecs, ret->days, ret->msecs)
-																 || BEFORE(ret->days, ret->msecs, end_days, end_msecs));
+	return BEFORE(start_days, start_msecs, end_days, end_msecs) ? (BEFORE(start_days, start_msecs, ret->days, ret->msecs) && 
+		BEFORE(ret->days, ret->msecs, end_days, end_msecs)) : (BEFORE(start_days, start_msecs, ret->days, ret->msecs) || 
+		BEFORE(ret->days, ret->msecs, end_days, end_msecs));
 }
 
 
@@ -2010,6 +2011,8 @@ timestamp_extract_date_default(date *ret, timestamp *t)
 	return timestamp_extract_date(ret, t, &tzone_local);
 }
 
+int date_adddays(date *ret, date *v, int *delta);
+
 /* returns the date that comes a number of years after 'v' (or before iff *delta < 0). */
 int
 date_addyears(date *ret, date *v, int *delta)
@@ -2274,9 +2277,31 @@ date_sub_sec_interval_wrap(date *ret, date *t, int *sec)
 
 	return GDK_SUCCEED;
 }
+int
+date_sub_sec_interval_lng_wrap(date *ret, date *t, lng *sec)
+{
+	if (*sec > 0) {
+		int delta = -1 * *sec / 86400;
+
+		return date_adddays(ret, t, &delta);
+	}
+
+	return GDK_SUCCEED;
+}
 
 int
 date_add_sec_interval_wrap(date *ret, date *t, int *sec)
+{
+	if (*sec > 0) {
+		int delta = *sec / 86400;
+
+		return date_adddays(ret, t, &delta);
+	}
+
+	return GDK_SUCCEED;
+}
+int
+date_add_sec_interval_lng_wrap(date *ret, date *t, lng *sec)
 {
 	if (*sec > 0) {
 		int delta = *sec / 86400;
@@ -2423,6 +2448,3 @@ CMDmsec(lng *r)
 #endif
 	return GDK_SUCCEED;
 }
-
-
-

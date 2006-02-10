@@ -21,7 +21,7 @@
 
 This module contains some efficient aggregate functions that compute their
 result in one scan, rather than in the iterative manner of the generic
-MIL aggr_ implementations.
+MIL aggregrate implementations.
 
 The implementation code is derived from the original aggr module.
 Major changes are
@@ -386,7 +386,7 @@ HASHfnd_oid for void- and hash-lookups, respectively
 	@8:	BUNt@7(bn,r)	BUNt@7(bn,r)	&sums[(*(oid*)h)-min]
 								*dst: sum in-place or in sums-array ?
 
-	@9:	     BUNindex(bn,r)-off		(*(oid*)h)-min	index in cnt array
+	@9:		BUNindex(bn,r)-off		(*(oid*)h)-min	index in cnt array
 */
 @= aggrX3_avg
 	ALGODEBUG THRprintf(GDKout, "aggrX3_avg(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
@@ -671,7 +671,7 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 	@7:	"loc" for fixsized b/bn-tail-type,		b/bn-tail-access
 		"var" for varsized b/bn-tail-type
 
-	@8:	     BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
+	@8:		BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
 	@9:		max/min					initial result value
 */
 @= aggrX3_minmax_ptr
@@ -727,7 +727,7 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 	@7:	"loc" for fixsized b/bn-tail-type,		b/bn-tail-access
 		"var" for varsized b/bn-tail-type
 
-	@8:	     BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
+	@8:		BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
 	@9:		max/min					initial result value
 */
 @= aggrX3_minmax_oid
@@ -1253,7 +1253,7 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 	@8:	BUNt@7(bn,r)	BUNt@7(bn,r)	&sums[(*(oid*)h)-min]
 								*dst: sum in-place or in sums-array ?
 
-	@9:	     BUNindex(bn,r)-off		(*(oid*)h)-min	index in cnt array
+	@9:		BUNindex(bn,r)-off		(*(oid*)h)-min	index in cnt array
 */
 @= aggrX3_avg3
 	ALGODEBUG THRprintf(GDKout, "aggrX3_avg3(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
@@ -1352,7 +1352,7 @@ aggrX3_sum3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, size_t rang
 	ssize_t offset;
 
 	ALGODEBUG THRprintf(GDKout, "aggrX3_sum3_@1_@2_EarrayBvoidGvoid(bn=%s,b=%s,g=%s,e=%s,range=" SZFMT ",min=" SZFMT ",max=" SZFMT ");\n",
-			    BATgetId(bn),BATgetId(b),BATgetId(g),BATgetId(e),
+				BATgetId(bn),BATgetId(b),BATgetId(g),BATgetId(e),
 				range,(size_t) min,(size_t) max);
 	@:aggrX3_sum3(1,0,CHKrange,loc,&bhsb;bhsb++,@1,&sums[(*(oid*)h)-min],,@2)@
 	return GDK_SUCCEED;
@@ -1451,7 +1451,7 @@ aggrX3_prod3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, size_t ran
 	ssize_t offset;
 
 	ALGODEBUG THRprintf(GDKout, "aggrX3_prod3_@1_@2_EarrayBvoidGvoid(bn=%s,b=%s,g=%s,e=%s,range=" SZFMT ",min=" SZFMT ",max=" SZFMT ");\n",
-				    BATgetId(bn),BATgetId(b),BATgetId(g),BATgetId(e),
+					BATgetId(bn),BATgetId(b),BATgetId(g),BATgetId(e),
 					range,(size_t) min,(size_t) max);
 	@:aggrX3_prod3(1,0,CHKrange,loc,&bhsb;bhsb++,@1,&prods[(*(oid*)h)-min],,@2)@
 
@@ -1649,7 +1649,7 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 	@7:	"loc" for fixsized b/bn-tail-type,		b/bn-tail-access
 		"var" for varsized b/bn-tail-type
 
-	@8:	     BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
+	@8:		BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
 	@9:		max/min					initial result value
 */
 @= aggrX3_minmax3_ptr
@@ -1711,7 +1711,7 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 	@7:	"loc" for fixsized b/bn-tail-type,		b/bn-tail-access
 		"var" for varsized b/bn-tail-type
 
-	@8:	     BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
+	@8:		BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
 	@9:		max/min					initial result value
 */
 @= aggrX3_minmax3_oid

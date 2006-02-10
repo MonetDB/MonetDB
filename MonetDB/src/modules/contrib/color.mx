@@ -19,7 +19,6 @@
 @a Alex van Ballegooij
 @v 1.0
 @* Introduction
-@T
 The color atom is a simple 32bit (24bit+zeros) encoding of a standard RGB 
 color encoding, consisting of the red component in bits 16-23, 
 the green component in bits 8-15, and the blue component in bits 0-7.
@@ -27,10 +26,16 @@ the green component in bits 8-15, and the blue component in bits 0-7.
 The module contains a number of color conversion methods to construct
 colors in various colorspaces and extract relevant color channels.
 
-rgb = (byte,byte,byte) colorspace r,g,b=[0..255]
-hsv = (flt,flt,flt) colorspace h=[0..360], s,v=[0..1]
-ycc = (byte,byte,byte) colorspace y,c,c=[0..255]
+@enumerate
+@item rgb
+= (byte,byte,byte) colorspace r,g,b=[0..255]
+@item hsv
+= (flt,flt,flt) colorspace h=[0..360], s,v=[0..1]
+@item ycc
+= (byte,byte,byte) colorspace y,c,c=[0..255]
+@end enumerate
 
+@{
 @* Implementation
 
 @+ MEL definition
@@ -41,31 +46,31 @@ ycc = (byte,byte,byte) colorspace y,c,c=[0..255]
 		.TOSTR   = color_tostr;
 	.END;
 
-	.COMMAND rgb(int r,int g,int b) : color = rgb;
+	.COMMAND rgb(int r,int g,int b) : color = CLRrgb;
 		"Converts an RGB triplets to a color atom"
-	.COMMAND red  (color c) : int = red;
+	.COMMAND red  (color c) : int = CLRred;
 		"Extracts red component from a color atom"
-	.COMMAND green(color c) : int = green;
+	.COMMAND green(color c) : int = CLRgreen;
 		"Extracts green component from a color atom"
-	.COMMAND blue (color c) : int = blue;
+	.COMMAND blue (color c) : int = CLRblue;
 		"Extracts blue component from a color atom"
 
-	.COMMAND hsv(flt h,flt s,flt v) : color = hsv;
+	.COMMAND hsv(flt h,flt s,flt v) : color = CLRhsv;
 		"Converts an HSV triplets to a color atom"
-	.COMMAND hue       (color c) : flt = hue;
+	.COMMAND hue       (color c) : flt = CLRhue;
 		"Extracts hue component from a color atom"
-	.COMMAND saturation(color c) : flt = saturation;
+	.COMMAND saturation(color c) : flt = CLRsaturation;
 		"Extracts saturation component from a color atom"
-	.COMMAND value     (color c) : flt = value;
+	.COMMAND value     (color c) : flt = CLRvalue;
 		"Extracts value component from a color atom"
 
-	.COMMAND ycc(int y,int cr,int cb) : color = ycc;
+	.COMMAND ycc(int y,int cr,int cb) : color = CLRycc;
 		"Converts an YCC triplets to a color atom"
-	.COMMAND luminance (color c) : int = luminance;
+	.COMMAND luminance (color c) : int = CLRluminance;
 		"Extracts Y(luminance) component from a color atom"
-	.COMMAND cr        (color c) : int = cr;
+	.COMMAND cr        (color c) : int = CLRcr;
 		"Extracts Cr(red color) component from a color atom"
-	.COMMAND cb        (color c) : int = cb;
+	.COMMAND cb        (color c) : int = CLRcb;
 		"Extracts Cb(blue color) component from a color atom"
 
 .END color;
@@ -74,7 +79,7 @@ ycc = (byte,byte,byte) colorspace y,c,c=[0..255]
 @c
 
 /*
-#define DEBUG 
+#define DEBUG_COLOR 
 */
 
 @h
@@ -84,23 +89,6 @@ typedef unsigned int color;
 
 #include "color.proto.h"
 #define color_nil ((color)int_nil)
-@-
-Type-mappers for convenience
-@= HT_bunfastins_typemap
-#define @1@2_bunfastins_nocheck_noinc(b, p, h, t) @1@3_bunfastins_nocheck_noinc(b, p, h, t)
-#define @1@2_bunfastins_nocheck(b, p, h, t, s)    @1@3_bunfastins_nocheck(b, p, h, t, s)
-#define @1@2_bunfastins(b, h, t) @1@3_bunfastins_nocheck_noinc(b, h, t)
-#define @2@1_bunfastins_nocheck_noinc(b, p, h, t) @3@1_bunfastins_nocheck_noinc(b, p, h, t)
-#define @2@1_bunfastins_nocheck(b, p, h, t, s)    @3@1_bunfastins_nocheck(b, p, h, t, s)
-#define @2@1_bunfastins(b, h, t) @3@1_bunfastins_nocheck_noinc(b, h, t)
-@h
-@:HT_bunfastins_typemap(void,color,int)@
-@:HT_bunfastins_typemap(oid,color,int)@
-@:HT_bunfastins_typemap(chr,color,int)@
-@:HT_bunfastins_typemap(sht,color,int)@
-@:HT_bunfastins_typemap(int,color,int)@
-@:HT_bunfastins_typemap(lng,color,int)@
-@:HT_bunfastins_typemap(any,color,int)@
 
 #endif
 @c
@@ -112,7 +100,7 @@ Type-mappers for convenience
 @c
 
 int
-hextoint(chr h, chr l)
+CLRhextoint(chr h, chr l)
 {
 	int r = 0;
 
@@ -136,7 +124,7 @@ color_fromstr(char *colorStr, int *len, color **c)
 {
 	char *p = colorStr;
 
-#ifdef DEBUG
+#ifdef DEBUG_COLOR
 	printf("* color_fromstr:\n");
 	printf("  - colorStr: %s\n", (colorStr != NULL ? colorStr : "null"));
 	printf("  - *len: %d\n", *len);
@@ -159,9 +147,9 @@ color_fromstr(char *colorStr, int *len, color **c)
 		p += 3;
 	} else {
 		if (p[0] == '0' && p[1] == 'x' && p[2] == '0' && p[3] == '0') {
-			int r = hextoint(p[4], p[5]);
-			int g = hextoint(p[6], p[7]);
-			int b = hextoint(p[8], p[9]);
+			int r = CLRhextoint(p[4], p[5]);
+			int g = CLRhextoint(p[6], p[7]);
+			int b = CLRhextoint(p[8], p[9]);
 
 			**c = (color) (r << 16 | g << 8 | b);
 		} else {
@@ -170,7 +158,7 @@ color_fromstr(char *colorStr, int *len, color **c)
 		}
 	}
 
-#ifdef DEBUG
+#ifdef DEBUG_COLOR
 	printf("  = *c: 0x%08X\n", (int) **c);
 	printf("  = *len: %d\n", *len);
 #endif
@@ -183,10 +171,10 @@ color_tostr(char **colorStr, int *len, color *c)
 {
 	color sc = *c;
 
-#ifdef DEBUG
+#ifdef DEBUG_COLOR
 	printf("* color_tostr:\n");
 	printf("  - *len: %d\n", *len);
-	printf("  - c: %s\n", (c != NULL ? c : "null"));
+	printf("  - c: %X\n", *c);
 #endif
 
 	/* allocate and fill a new string */
@@ -203,8 +191,7 @@ color_tostr(char **colorStr, int *len, color *c)
 	}
 	snprintf(*colorStr, *len, "0x%08X", (unsigned int) sc);
 
-#ifdef DEBUG
-	printf("  = buf: %s\n", buf);
+#ifdef DEBUG_COLOR
 	printf("  = *colorStr: %s\n", *colorStr);
 	printf("  = *len: %d\n", *len);
 #endif
@@ -213,28 +200,28 @@ color_tostr(char **colorStr, int *len, color *c)
 
 
 int
-rgb(color *rgb, int *r, int *g, int *b)
+CLRrgb(color *rgb, int *r, int *g, int *b)
 {
 	*rgb = (color) (((*r & 0xFF) << 16) | ((*g & 0xFF) << 8) | (*b & 0xFF));
 	return (GDK_SUCCEED);
 }
 
 int
-red(int *r, color *c)
+CLRred(int *r, color *c)
 {
 	*r = (int) ((*c >> 16) & 0xFF);
 	return (GDK_SUCCEED);
 }
 
 int
-green(int *g, color *c)
+CLRgreen(int *g, color *c)
 {
 	*g = (int) ((*c >> 8) & 0xFF);
 	return (GDK_SUCCEED);
 }
 
 int
-blue(int *b, color *c)
+CLRblue(int *b, color *c)
 {
 	*b = (int) (*c & 0xFF);
 	return (GDK_SUCCEED);
@@ -283,7 +270,7 @@ color_rgb2hsv(float *h, float *s, float *v, int R, int G, int B)
 }
 
 int
-hsv(color *c, flt *h, flt *s, flt *v)
+CLRhsv(color *c, flt *h, flt *s, flt *v)
 {
 	int r, g, b;
 	float Rtmp, Gtmp, Btmp;
@@ -333,11 +320,11 @@ hsv(color *c, flt *h, flt *s, flt *v)
 	r = (int) ((Rtmp * 255.0f) + 0.5f);
 	g = (int) ((Gtmp * 255.0f) + 0.5f);
 	b = (int) ((Btmp * 255.0f) + 0.5f);
-	return rgb(c, &r, &g, &b);
+	return CLRrgb(c, &r, &g, &b);
 }
 
 int
-hue(flt *f, color *c)
+CLRhue(flt *f, color *c)
 {
 	float h, s, v;
 
@@ -347,7 +334,7 @@ hue(flt *f, color *c)
 }
 
 int
-saturation(flt *f, color *c)
+CLRsaturation(flt *f, color *c)
 {
 	float h, s, v;
 
@@ -357,7 +344,7 @@ saturation(flt *f, color *c)
 }
 
 int
-value(flt *f, color *c)
+CLRvalue(flt *f, color *c)
 {
 	float h, s, v;
 
@@ -372,7 +359,7 @@ value(flt *f, color *c)
 #endif
 
 int
-ycc(color *c, int *y, int *cr, int *cb)
+CLRycc(color *c, int *y, int *cr, int *cb)
 {
 	int r, g, b;
 	float Y = (float) *y;
@@ -385,11 +372,11 @@ ycc(color *c, int *y, int *cr, int *cb)
 	g = CLIP(g);
 	b = (int) (Y + CB * 1.7710f);
 	b = CLIP(b);
-	return rgb(c, &r, &g, &b);
+	return CLRrgb(c, &r, &g, &b);
 }
 
 int
-luminance(int *y, color *c)
+CLRluminance(int *y, color *c)
 {
 	int r = (int) ((*c >> 16) & 0xFF);
 	int g = (int) ((*c >> 8) & 0xFF);
@@ -401,7 +388,7 @@ luminance(int *y, color *c)
 }
 
 int
-cr(int *cr, color *c)
+CLRcr(int *cr, color *c)
 {
 	int r = (int) ((*c >> 16) & 0xFF);
 	int g = (int) ((*c >> 8) & 0xFF);
@@ -412,7 +399,7 @@ cr(int *cr, color *c)
 }
 
 int
-cb(int *cb, color *c)
+CLRcb(int *cb, color *c)
 {
 	int r = (int) ((*c >> 16) & 0xFF);
 	int g = (int) ((*c >> 8) & 0xFF);

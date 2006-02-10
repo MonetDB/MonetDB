@@ -18,7 +18,7 @@
 @t The URL module
 @a M. Kersten
 @a Y. Zhang
-@v 1.1
+@v 1.2
 @* The URL module
 The URL module contains a collection of commands to manipulate
 Uniform Resource Locators - a resource on the World Wide Web-
@@ -95,10 +95,10 @@ The URLs are stored as strings without further optimization.
 A more compact representation is feasible, but not considered yet to
 invest energy.
 @= Pseudo
-        BATrename(b,"@1_@2");
-        BATroles(b,"@1","@2");
-        BATmode(b,TRANSIENT);
-        *retval= b;
+	BATrename(b,"@1_@2");
+	BATroles(b,"@1","@2");
+	BATmode(b,TRANSIENT);
+	*retval= b;
 @-
 The key action is to break an url into its constituents.
 Parsing is done for each individual request, because this way we
@@ -132,7 +132,7 @@ void plustospace(char *str);
 int
 url_getAnchor(str *retval,	/* put string: pointer to char here. */
 	      url Str1		/* string: pointer to char. */
-    )
+	)
 {
 	char *s, *d;
 
@@ -183,15 +183,15 @@ url_getBasename(str *retval, url t)
 int
 url_getContent(str *retval,	/* put string: pointer to char here. */
 	       url Str1		/* string: pointer to char. */
-    )
+	)
 {
-    /* TODO: getContent should not return a string */
-    if (!Str1) {
-        return GDK_FAIL;
-    } else {
-        strcpy(*retval, "functions not implemented");
-        return GDK_SUCCEED;
-    }
+	/* TODO: getContent should not return a string */
+	if (!Str1) {
+		return GDK_FAIL;
+	} else {
+		strcpy(*retval, "functions not implemented");
+		return GDK_SUCCEED;
+	}
 }
 
 /* COMMAND "getContext": Extract the path context from the URL
@@ -204,11 +204,11 @@ url_getContext(str *retval, url Str1)
 	if (Str1 == 0)
 		return GDK_FAIL;
 
-    s = strstr(Str1, "://");
-    if (s)
-        s +=3;
-    else
-        s = Str1;
+	s = strstr(Str1, "://");
+	if (s)
+		s +=3;
+	else
+		s = Str1;
 
 	s = strchr(s, '/');
 	if (s == 0) {
@@ -272,7 +272,7 @@ url_getDirectory(BAT **retval,	/* put pointer to BAT[int,str] record here. */
 			break;
 		}
 	}
-      getDir_done:
+getDir_done:
 	@:Pseudo(dir,name)@
 	return GDK_SUCCEED;
 }
@@ -316,7 +316,7 @@ url_getDomain(str *retval,	/* put string: pointer to char here. */
 	*b = 0;
 	if (d)
 		s = d + 1;
-      getDomain_done:
+getDomain_done:
 	d = GDKmalloc(strlen(s) + 1);
 	if (d)
 		strcpy(d, s);
@@ -405,7 +405,7 @@ url_getHost(str *retval,	/* is GDKfree needed ? */
 		}
 	}
 	*b = 0;
-      getHost_done:
+getHost_done:
 	d = GDKmalloc(strlen(s) + 1);
 	if (d)
 		strcpy(d, s);
@@ -450,7 +450,7 @@ url_getPort(str *retval, url t)
 		s = d + 1;
 	else
 		s = (str)str_nil;
-      getPort_done:
+getPort_done:
 	d = GDKmalloc(strlen(s) + 1);
 	if (d)
 		strcpy(d, s);
@@ -519,7 +519,6 @@ url_getQueryArg(BAT **retval, url t)
 	char *unescapedval;
 	BAT *b;
 
-    
 	if (t == 0)
 		return GDK_FAIL;
 	if (unescape_str(&unescapedval, t) == GDK_FAIL)
@@ -552,7 +551,7 @@ url_getQueryArg(BAT **retval, url t)
 int
 url_getRobotURL(str *retval,	/* put string: pointer to char here. */
 		url t		/* string: pointer to char. */
-    )
+	)
 {
 	static char buf[1024];
 	char *b, *d, *s = buf;
@@ -578,7 +577,7 @@ url_getRobotURL(str *retval,	/* put string: pointer to char here. */
 		}
 	}
 	strcpy(b, "/robots.txt");
-      getRobot_done:
+getRobot_done:
 	d = GDKmalloc(strlen(s) + 1);
 	if (d)
 		strcpy(d, s);
@@ -630,7 +629,7 @@ url_getUser(str *retval, url t)
 		}
 		*b = 0;
 	}
-      getUser_done:
+getUser_done:
 	d = GDKmalloc(strlen(s) + 1);
 	if (d)
 		strcpy(d, s);
@@ -643,16 +642,16 @@ url_getUser(str *retval, url t)
 int
 url_isaURL(bit *retval,		/* put return atom here. */
 	   url Str1		/* string: pointer to char. */
-    )
+	)
 {
 	(void) retval;
 	if (Str1 == 0)
 		return GDK_FAIL;
 
-    if (strlen(Str1) == 0)
-        *retval = FALSE;
-    else
-        *retval = TRUE;
+	if (strlen(Str1) == 0)
+		*retval = FALSE;
+	else
+		*retval = TRUE;
 	return GDK_SUCCEED;
 }
 
@@ -745,7 +744,7 @@ url_new3(str *retval,		/* put string: pointer to char here. */
 	 str Protocol,		/* string: pointer to char. */
 	 str Server,		/* string: pointer to char. */
 	 str File		/* string: pointer to char. */
-    )
+	)
 {
 	char buf[1024];
 	char *d, *s = buf;
@@ -769,7 +768,7 @@ url_new4(str *retval,		/* put string: pointer to char here. */
 	 str Server,		/* string: pointer to char. */
 	 int *Port,		/* pointer to integer. */
 	 str File		/* string: pointer to char. */
-    )
+	)
 {
 	char buf[1024];
 	char *d, *s = buf;

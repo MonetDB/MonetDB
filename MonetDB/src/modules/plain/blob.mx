@@ -16,16 +16,25 @@
 
 @f blob
 @v 1.0
-@a Wilko Quak, Peter Boncz
-@t The blob Type
+@a Wilko Quak, Peter Boncz, M. Kersten, N. Nes
+@+ The blob data type
+The datatype 'blob' introduced here illustrates the power
+in the hands of a programmer to extend the functionality of the
+Monet GDK library. It consists of an interface specification for
+the necessary operators, a startup routine to register the
+type in thekernel, and some additional operators used outside
+the kernel itself.
 
-@* Introduction
-Monet support for blob. It is the generic form of a variable
-sized extension atom. Easy to derive from. Its memory layout
-consists of first 4 bytes containing the bytes-size of the
-blob (excluding the integer), and then just binary data.
+The 'blob' data type is used in many database engines to
+store a variable sized atomary value.  
+Its definition forms a generic base to store arbitrary structures
+in the database, without knowing its internal coding, layout,
+or interpretation. 
 
-@* Module Definition
+The blob memory layout consists of first 4 bytes containing 
+the bytes-size of the blob (excluding the integer), and then just binary data.
+
+@+ Module Definition
 @m
 .MODULE blob;
 
@@ -71,6 +80,7 @@ Not to be confused with blob parsing and printing.
 @h
 #ifndef __BLOB_H__
 #define __BLOB_H__
+#include <gdk.h>
 
 typedef struct blob {
 	size_t nitems;
@@ -85,8 +95,6 @@ blob_export size_t blobsize(size_t nitems);
 
 #endif /* __BLOB_H__ */
 @c
-#include <gdk.h>
-
 #include "blob.h"
 
 size_t
@@ -598,8 +606,8 @@ Get the binary line length.
 @-
 Pad with blanks.
 @c
-	      decod:for (bp = &buf[c = len]; c < CODEDLN; c++, bp++)
-			*bp = ' ';
+	decod:for (bp = &buf[c = len]; c < CODEDLN; c++, bp++)
+		*bp = ' ';
 @-
 Output a group of 3 bytes (4 input characters).  The input chars are pointed
 to by p, they are to be output to file f.  n is used to tell us not to

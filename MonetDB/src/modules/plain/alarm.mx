@@ -57,7 +57,7 @@ The top contains the next timer event to go off.
 The timer is disabled when no timer events are outstanding.
 @h
 #include <monet.h>
-# include <signal.h>
+#include <signal.h>
 #define MAXtimer                200
 
 typedef struct {
@@ -244,7 +244,7 @@ ctime is actually thread-safe.
 int
 CMDtimers(BAT **retval)
 {
-	char buf[26];
+	char buf[27];
 	int k;
 
 	*retval = BATnew(TYPE_str, TYPE_str, timerTop);

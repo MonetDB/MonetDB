@@ -15,8 +15,8 @@
 @' All Rights Reserved.
 
 @f algebra
-@a Peter Boncz
-@v 1.0
+@a Peter Boncz, Martin Kersten, Niels Nes
+@v 2.0
 @t BAT Algebra
 
 @* Introduction
@@ -1608,8 +1608,10 @@ CMDminany(ptr result, BAT *b)
 {
 	if (!ATOMlinear(b->ttype))
 		return GDKerror("CMDminANY: atom '%s' cannot be ordered linearly\n", ATOMname(b->ttype));
-	if (ATOMvarsized(b->ttype))
-		return (*(ptr *) result = BATmin(b, NULL)) ? GDK_SUCCEED : GDK_FAIL;
+	if (ATOMvarsized(b->ttype)) {
+			*(ptr *) result = BATmin(b, NULL);
+			return (result)?GDK_SUCCEED:GDK_FAIL;
+	}
 	if (BATmin(b, result)) {
 		if (b->ttype == TYPE_bat)
 			*(BAT **) result = BATdescriptor(*(bat *) result);
@@ -1623,8 +1625,10 @@ CMDmaxany(ptr result, BAT *b)
 {
 	if (!ATOMlinear(b->ttype))
 		return GDKerror("CMDmaxANY: atom '%s' cannot be ordered linearly\n", ATOMname(b->ttype));
-	if (ATOMvarsized(b->ttype))
-		return (*(ptr *) result = BATmax(b, NULL)) ? GDK_SUCCEED : GDK_FAIL;
+	if (ATOMvarsized(b->ttype)) {
+			*(ptr *) result = BATmax(b, NULL);
+			return (result)?GDK_SUCCEED:GDK_FAIL;
+	}
 	if (BATmax(b, result)) {
 		if (b->ttype == TYPE_bat)
 			*(BAT **) result = BATdescriptor(*(bat *) result);
@@ -1852,23 +1856,23 @@ CMDgen_group(BAT **result, BAT *b )
 
 	if (b->hvarsized) {
 		BATloopFast(b, u, v, xx) {
-		    int i, sz = *(int*)BUNtloc(b, u);
-		    for(i = 0; i < sz; i++) {
-			if (BUNfastins(r, BUNhvar(b, u), NULL) == NULL) {
-				BBPreclaim(r);
-				return GDK_FAIL;
+			int i, sz = *(int*)BUNtloc(b, u);
+			for(i = 0; i < sz; i++) {
+				if (BUNfastins(r, BUNhvar(b, u), NULL) == NULL) {
+					BBPreclaim(r);
+					return GDK_FAIL;
+				}
 			}
-		    }
 		}
 	} else {
 		BATloopFast(b, u, v, xx) {
-		    int i, sz = *(int*)BUNtloc(b, u);
-		    for(i = 0; i < sz; i++) {
-			if (BUNfastins(r, BUNhloc(b, u), NULL) == NULL) {
-				BBPreclaim(r);
-				return GDK_FAIL;
+			int i, sz = *(int*)BUNtloc(b, u);
+			for(i = 0; i < sz; i++) {
+				if (BUNfastins(r, BUNhloc(b, u), NULL) == NULL) {
+					BBPreclaim(r);
+					return GDK_FAIL;
+				}
 			}
-		    }
 		}
 	}
 	r -> hsorted = BAThordered(b);
@@ -1971,14 +1975,14 @@ CMDlike(BAT **ret, BAT *b, str s)
 
 	if (b->hvarsized) {
 		BATloopFast(b, u, v, xx)
-		    if (like(BUNtvar(b, u), t, yy))
+			if (like(BUNtvar(b, u), t, yy))
 			if (BUNfastins(c, BUNhvar(b, u), BUNtvar(b, u)) == NULL) {
 				BBPreclaim(c);
 				return GDK_FAIL;
 			}
 	} else {
 		BATloopFast(b, u, v, xx)
-		    if (like(BUNtvar(b, u), t, yy))
+			if (like(BUNtvar(b, u), t, yy))
 			if (BUNfastins(c, BUNhloc(b, u), BUNtvar(b, u)) == NULL) {
 				BBPreclaim(c);
 				return GDK_FAIL;
@@ -2100,12 +2104,14 @@ fetch(ptr ret, BAT *b, lng i)
 }
 
 int
-CMDfetch(ptr ret, BAT *b, lng *pos) {
+CMDfetch(ptr ret, BAT *b, lng *pos)
+{
 	return fetch(ret, b, (size_t) *pos);
 }
 
 int
-CMDfetch_int(ptr ret, BAT *b, int *pos) {
+CMDfetch_int(ptr ret, BAT *b, int *pos)
+{
 	return fetch(ret, b, (size_t) *pos);
 }
 
