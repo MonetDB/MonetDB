@@ -1,4 +1,4 @@
-stdout of test 'bat_destroy.SF-1428446` in directory 'tests/BugTracker` itself:
+stdout of test 'bat_destroy-2.SF-1428446` in directory 'tests/BugTracker` itself:
 
 
 # 10:23:51 >  
@@ -15,7 +15,8 @@ dir("killer_bat");
 #-------------------------------------------------------------------------------------------------#
 # name	htype	ttype	count	heat	dirty		status	kind	refcnt	lrefcnt		  # name
 # str	str	str	lng	int	str		str	str	int	int		  # type
-#-------------------------------------------------------------------------------------------------#
+#---------------------------------------------------------------------------------------------------------#
+[ "killer_bat",	  "oid",  "int",  1024,	  0,	  "clean",	  "disk", "pers", 0,	  1		  ]
 
 destroy("killer_bat");
 commit();
