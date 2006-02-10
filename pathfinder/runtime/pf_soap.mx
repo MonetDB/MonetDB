@@ -569,8 +569,7 @@ printf("\n=== DEBUG MSG: SOAP request RECEIVED ======\n%s"
                         goto FINISH;
                     }
                     argval[argval_nr] = GDKmalloc(32);
-                    snprintf(argval[argval_nr], 32, "%ld", nid);
-
+                    snprintf(argval[argval_nr], 32, OIDFMT, nid);
                 }
                 argcnt[i][j]++;
                 argval_nr++;
