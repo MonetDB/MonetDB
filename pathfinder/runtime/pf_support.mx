@@ -2128,7 +2128,11 @@ proc do_update_attr(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid] i
     }
     var nid := ws.fetch(PRE_NID).find(frag).find(node);
     var qn := qnbat.find($h);
-    var val := valbat.find($h);
+    var val;
+    if (valbat.exist($h))
+      val := valbat.find($h);
+    else
+      val := str(nil); # unset-attr
     var loc, prefix, uri;
     {
       var qnfrags := qn.split("\001");
@@ -2147,7 +2151,7 @@ proc do_update_attr(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid] i
     var attr_qn_bat := replacements.replacementsfetch(ws.fetch(ATTR_QN).fetch(frag));
     if (isnil(val)) {
       # unset-attr
-      if (isnil(atid) and not(isnil(anid))) {
+      if (isnil(atid) and not(isnil(qnid))) {
         # attribute does not occur in original document, but maybe it
         # has been added since
         var aq := attr_qn_bat.uselect(qnid);
@@ -2224,6 +2228,10 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
     while (isnil(doclevelbat.find(docinsertafter))) {
       docinsertafter := oid(lng(docinsertafter) - 1);
     }
+
+    # docinsertafter uses the "old" numbering scheme (i.e. the unmodified
+    # document), translate to the modified document numbering
+    docinsertafter := replacementvalue(replacements, ws, NID_PRE, docfrag, ws.fetch(PRE_NID).find(docfrag).find(docinsertafter));
 
     # the start of the page on which the new element is to be inserted
     # use "int" because we pass this value to slice which needs int
