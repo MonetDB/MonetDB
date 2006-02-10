@@ -1,22 +1,22 @@
-@' The contents of this file are subject to the MonetDB Public
-@' License Version 1.0 (the "License"); you may not use this file
-@' except in compliance with the License. You may obtain a copy of
-@' the License at
-@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 @'
-@' Software distributed under the License is distributed on an "AS
-@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
-@' implied. See the License for the specific language governing
-@' rights and limitations under the License.
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
 @'
-@' The Original Code is the Monet Database System.
+@' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
+@f blob
 @v 1.0
-@a Wilko Quak, Peter Boncz, M. Kersten
+@a Wilko Quak, Peter Boncz, M. Kersten, N. Nes
 @+ The blob data type
 The datatype 'blob' introduced here illustrates the power
 in the hands of a programmer to extend the functionality of the
@@ -43,13 +43,13 @@ command fromstr() address BLOBfromstr;
 command nequal()  address BLOBnequal;
 command hash()    address BLOBhash;
 command null()    address BLOBnull;
+command read()    address BLOBread;
+command write()   address BLOBwrite;
 command convert() address BLOBconvert;
 command put()     address BLOBput;
 command del()     address BLOBdel;
 command length()  address BLOBlength;
 command heap()    address BLOBheap;
-command read()    address BLOBread;
-command write()   address BLOBwrite;
 
 @+ string functions
 Manipulation functions to extract strings from blobs and vice versa.
@@ -655,8 +655,8 @@ Get the binary line length.
 @-
 Pad with blanks.
 @c
-	  decod:for (bp = &buf[c = len]; c < CODEDLN; c++, bp++)
-			*bp = ' ';
+	decod:for (bp = &buf[c = len]; c < CODEDLN; c++, bp++)
+		*bp = ' ';
 @-
 Output a group of 3 bytes (4 input characters).  The input chars are pointed
 to by p, they are to be output to file f.  n is used to tell us not to
