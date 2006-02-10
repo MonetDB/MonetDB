@@ -208,7 +208,7 @@ scheduleClient(str command, bstream *fin, stream *fout)
 	c->nspace->outer = mal_scope;
 	c->sessionkey = key;
 
-	if (database && strcmp(database, GDKgetenv("gdk_dbname")) != 0) {
+	if (0 && database && strcmp(database, GDKgetenv("gdk_dbname")) != 0) {
 		BAT *b = NULL;
 		BUN p, q;
 		int bid = 0;
