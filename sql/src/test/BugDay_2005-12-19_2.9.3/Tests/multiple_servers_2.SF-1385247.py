@@ -75,5 +75,8 @@ def main():
     x += 1; clients(x,"module(mapi);module(sql_server); sql_server_start(); mapi_register(mil_frontend());")
     x += 1; clients(x,"module(sql_server);module(mapi); mapi_register(mil_frontend()); sql_server_start();")
     x += 1; clients(x,"module(sql_server);module(mapi); sql_server_start(); mapi_register(mil_frontend());")
+    # test for bug [ 1428431 ] MAPI: MapiClient hangs when sending invalid challenge
+    # should give an error for each mapi mil connection
+    x += 1; clients(x,"module(sql_server);module(mapi); sql_server_start();")
 
 main()

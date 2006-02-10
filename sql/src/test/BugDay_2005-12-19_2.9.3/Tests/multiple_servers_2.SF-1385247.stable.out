@@ -657,7 +657,181 @@ server 46 : "module(sql_server);module(mapi); sql_server_start(); mapi_register(
 [ 464 	]
 quit();
 
-# 19:48:15 >  
-# 19:48:15 >  Done.
-# 19:48:15 >  
+server 51 : "module(sql_server);module(mapi); sql_server_start();"
+# Monet Database Server V4.11.1
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+server 51 : "module(sql_server);module(mapi); sql_server_start();", client 1: SQL
+# . # table_name
+# single_value # name
+# smallint # type
+# 3 # length
+[ 511	]
+
+server 51 : "module(sql_server);module(mapi); sql_server_start();", client 2: (SQL) SQL
+# . # table_name
+# single_value # name
+# smallint # type
+# 3 # length
+[ 512	]
+
+server 51 : "module(sql_server);module(mapi); sql_server_start();", client 3: (SQL) (SQL) MAPI
+MAPI  = monetdb@localhost:32522
+ERROR = !ERROR: xchange_challenge: frontend mil not found
+
+server 51 : "module(sql_server);module(mapi); sql_server_start();", client 4: (SQL) (SQL) (MAPI) MAPI
+MAPI  = monetdb@localhost:32522
+ERROR = !ERROR: xchange_challenge: frontend mil not found
+quit();
+
+server 52 : "module(sql_server);module(mapi); sql_server_start();"
+# Monet Database Server V4.11.1
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+server 52 : "module(sql_server);module(mapi); sql_server_start();", client 1: SQL
+# . # table_name
+# single_value # name
+# smallint # type
+# 3 # length
+[ 521	]
+
+server 52 : "module(sql_server);module(mapi); sql_server_start();", client 2: (SQL) MAPI
+MAPI  = monetdb@localhost:32522
+ERROR = !ERROR: xchange_challenge: frontend mil not found
+
+server 52 : "module(sql_server);module(mapi); sql_server_start();", client 3: (SQL) (MAPI) SQL
+# . # table_name
+# single_value # name
+# smallint # type
+# 3 # length
+[ 523	]
+
+server 52 : "module(sql_server);module(mapi); sql_server_start();", client 4: (SQL) (MAPI) (SQL) MAPI
+MAPI  = monetdb@localhost:32522
+ERROR = !ERROR: xchange_challenge: frontend mil not found
+quit();
+
+server 53 : "module(sql_server);module(mapi); sql_server_start();"
+# Monet Database Server V4.11.1
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+server 53 : "module(sql_server);module(mapi); sql_server_start();", client 1: MAPI
+MAPI  = monetdb@localhost:32522
+ERROR = !ERROR: xchange_challenge: frontend mil not found
+
+server 53 : "module(sql_server);module(mapi); sql_server_start();", client 2: (MAPI) SQL
+# . # table_name
+# single_value # name
+# smallint # type
+# 3 # length
+[ 532	]
+
+server 53 : "module(sql_server);module(mapi); sql_server_start();", client 3: (MAPI) (SQL) SQL
+# . # table_name
+# single_value # name
+# smallint # type
+# 3 # length
+[ 533	]
+
+server 53 : "module(sql_server);module(mapi); sql_server_start();", client 4: (MAPI) (SQL) (SQL) MAPI
+MAPI  = monetdb@localhost:32522
+ERROR = !ERROR: xchange_challenge: frontend mil not found
+quit();
+
+server 54 : "module(sql_server);module(mapi); sql_server_start();"
+# Monet Database Server V4.11.1
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+server 54 : "module(sql_server);module(mapi); sql_server_start();", client 1: SQL
+# . # table_name
+# single_value # name
+# smallint # type
+# 3 # length
+[ 541	]
+
+server 54 : "module(sql_server);module(mapi); sql_server_start();", client 2: (SQL) MAPI
+MAPI  = monetdb@localhost:32522
+ERROR = !ERROR: xchange_challenge: frontend mil not found
+
+server 54 : "module(sql_server);module(mapi); sql_server_start();", client 3: (SQL) (MAPI) MAPI
+MAPI  = monetdb@localhost:32522
+ERROR = !ERROR: xchange_challenge: frontend mil not found
+
+server 54 : "module(sql_server);module(mapi); sql_server_start();", client 4: (SQL) (MAPI) (MAPI) SQL
+# . # table_name
+# single_value # name
+# smallint # type
+# 3 # length
+[ 544	]
+quit();
+
+server 55 : "module(sql_server);module(mapi); sql_server_start();"
+# Monet Database Server V4.11.1
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+server 55 : "module(sql_server);module(mapi); sql_server_start();", client 1: MAPI
+MAPI  = monetdb@localhost:32522
+ERROR = !ERROR: xchange_challenge: frontend mil not found
+
+server 55 : "module(sql_server);module(mapi); sql_server_start();", client 2: (MAPI) SQL
+# . # table_name
+# single_value # name
+# smallint # type
+# 3 # length
+[ 552	]
+
+server 55 : "module(sql_server);module(mapi); sql_server_start();", client 3: (MAPI) (SQL) MAPI
+MAPI  = monetdb@localhost:32522
+ERROR = !ERROR: xchange_challenge: frontend mil not found
+
+server 55 : "module(sql_server);module(mapi); sql_server_start();", client 4: (MAPI) (SQL) (MAPI) SQL
+# . # table_name
+# single_value # name
+# smallint # type
+# 3 # length
+[ 554	]
+quit();
+
+server 56 : "module(sql_server);module(mapi); sql_server_start();"
+# Monet Database Server V4.11.1
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+server 56 : "module(sql_server);module(mapi); sql_server_start();", client 1: MAPI
+MAPI  = monetdb@localhost:32522
+ERROR = !ERROR: xchange_challenge: frontend mil not found
+
+server 56 : "module(sql_server);module(mapi); sql_server_start();", client 2: (MAPI) MAPI
+MAPI  = monetdb@localhost:32522
+ERROR = !ERROR: xchange_challenge: frontend mil not found
+
+server 56 : "module(sql_server);module(mapi); sql_server_start();", client 3: (MAPI) (MAPI) SQL
+# . # table_name
+# single_value # name
+# smallint # type
+# 3 # length
+[ 563	]
+
+server 56 : "module(sql_server);module(mapi); sql_server_start();", client 4: (MAPI) (MAPI) (SQL) SQL
+# . # table_name
+# single_value # name
+# smallint # type
+# 3 # length
+[ 564	]
+quit();
+
+# 10:01:58 >  
+# 10:01:58 >  Done.
+# 10:01:58 >  
 
