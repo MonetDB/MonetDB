@@ -6304,6 +6304,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
             counter, counter, counter, counter,
             counter, counter, counter, counter);
 
+    /* Defind a variable to hold the results of a function call. */
     if (apply.rpc) {
         /* call soap_sender => frag~=kind
          * extract return value (s) from the message node
@@ -6311,134 +6312,38 @@ translateUDF (opt_t *f, int cur_level, int counter,
          * message node: (item=0@0, kind=~frag)
          */
         milprintf(f, 
-                "\n{ # begin of SOAP call\n"
-                "module(\"pf_soap\");\n"
+                "\n"
+                "{ # begin of SOAP call\n"
+                "  module(\"pf_soap\");\n"
                 /* FIXME: need a better way of name giving. */
-                "var local_name := \"SOAP_RPC_res\";\n"
-                "var rpc_oid := send_soap_rpc("
-                                    "local_name,"
-                                    "item%s%03u,"
-                                    "\"%s\","
-                                    "\"%s\","
-                                    "ws,"
-                                    "fun_vid%03u,"
-                                    "fun_iter%03u,"
-                                    "fun_item%03u,"
-                                    "fun_kind%03u,"
-                                    "int_values,"
-                                    "dbl_values,"
-                                    "dec_values,"
-                                    "str_values);\n",
+                "  var local_name := \"SOAP_RPC_res\";\n"
+                "  var rpc_oid := send_soap_rpc(local_name, item%s%03u, \"%s\", \"%s\", ws,"
+                                    "fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u,"
+                                    "int_values, dbl_values, dec_values, str_values);\n"
+                "  var proc_res := get_rpc_res(ws, rpc_oid, int_values, dbl_values, dec_values, str_values);\n"
+                "  iter := proc_res.fetch(0);\n"
+                "  item := proc_res.fetch(1);\n"
+                "  kind := proc_res.fetch(2);\n"
+                "  if (type(iter) = bat) {\n"
+                "    ipik := iter;\n"
+                "  } else {\n"
+                "    if (type(item) = bat) {\n"
+                "      ipik := item;\n"
+                "    } else {\n"
+                "      ipik := kind;\n"
+                "    }\n"
+                "  }\n"
+                "} # end of SOAP call\n",
                 item_ext, counter-1, 
                 f->soap_uri /* apply.fun->qname.ns.uri*/,
                 apply.fun->qname.loc,
                 counter, counter, counter, counter);
 
-        milprintf(f, "#printf(\"rpc_oid: \");rpc_oid.print();\n");
-
-        /* Construct the iter|item|kind by hand, and fill in the value
-         * tables. */
-        milprintf(f,
-                "var pre_size  := ws.fetch(PRE_SIZE).fetch(rpc_oid);\n"
-                "var pre_level := ws.fetch(PRE_LEVEL).fetch(rpc_oid);\n"
-                "var pre_kind  := ws.fetch(PRE_KIND).fetch(rpc_oid);\n"
-                "var pre_prop  := ws.fetch(PRE_PROP).fetch(rpc_oid);  # reference to the value tables\n"
-                "var qn_prefix := ws.fetch(QN_PREFIX).fetch(rpc_oid); # str name of the element nodes\n"
-                "var qn_loc    := ws.fetch(QN_LOC).fetch(rpc_oid);\n"
-                "var prop_text := ws.fetch(PROP_TEXT).fetch(rpc_oid); # str value of the text nodes\n"
-
-                /* get 'pre_prop' 'oid' of '<iter>'. It's save to use 'find',
-                 * since "iter" appears only once in 'qn_loc'. */
-                "var a := qn_loc.reverse().find(\"iter\");\n"
-                /* get 'void' of the 'pre_prop' 'oid', must use 'ord_select' and
-                 * then 'fetch', since the 'oid' can appear more than once in
-                 * 'pre_prop'. */
-                "a := pre_prop.ord_select(a).reverse().fetch(0);\n"
-                /* Calculate the level number in case we have a value which type
-                 * is '<xs:anyNode>'. */
-                "var nodev_level :=  pre_level.find(a) + 2;\n"
-
-                "var k := int(nil); # var to hold the kind nr of the current iteration\n"
-                "var itercnt := 0;\n"
-                "var i := int(nil);\n"
-                "var d := dbl(nil);\n"
-
-                "iter := new(void,oid);\n"
-                "item := new(void,oid);\n"
-                "kind := new(void,int);\n"
-
-                "pre_size@batloop(){\n"
-                "k := pre_kind.fetch($h);\n"
-                "if (k = \'\\000\') {\n"
-                /* calculate 'iter' number */
-                "if (qn_loc.fetch(pre_prop.fetch($h)) = \"iter\"){\n"
-                "itercnt := itercnt + 1;\n"
-                /* if (level == nodev_level && kind == ELEM): this is the child
-                 * of a tag '<xs:anyNode>' */
-                "} else if(int(pre_level.fetch($h)) = nodev_level) {\n"
-                "iter.append(oid(itercnt));\n"
-                "item.append($h);\n"
-                "i := set_kind(local_name.leftjoin(ws.fetch(DOC_LOADED).reverse()).tmark(0@0), ELEM);\n"
-                "kind.append(i);\n"
-                "}\n"
-                "} else if (k = \'\\001\') { # text node, get its str value, and convert it accordingly\n"
-                "var t := qn_loc.fetch(pre_prop.fetch(int($h)-1)); # type\n"
-                "var v := prop_text.fetch(pre_prop.fetch($h)); # str value\n"
-                "if (t = \"integer\"){\n"
-                "i := int(v);\n"
-                "int_values.append(i);\n"
-                "iter.append(oid(itercnt));\n"
-                "item.append(int_values.reverse().find(i));\n"
-                "kind.append(INT);\n"
-                "} else if(t = \"double\") {\n"
-                "d := dbl(v);\n"
-                "dbl_values.append(d);\n"
-                "iter.append(oid(itercnt));\n"
-                "item.append(dbl_values.reverse().find(d));\n"
-                "kind.append(DBL);\n"
-                "} else if(t = \"decimal\") {\n"
-                "d := dbl(v);\n"
-                "dbl_values.append(d);\n"
-                "iter.append(oid(itercnt));\n"
-                "item.append(dbl_values.reverse().find(d));\n"
-                "kind.append(DEC);\n"
-                "} else if(t = \"string\") {\n"
-                "str_values.append(v);\n"
-                "iter.append(oid(itercnt));\n"
-                "item.append(str_values.reverse().find(v));\n"
-                "kind.append(STR);\n"
-                "}\n"
-                "}\n"
-                "}\n"
-                "iter.seqbase(0@0);\n"
-                "item.seqbase(0@0);\n"
-                "kind.seqbase(0@0);\n"
-
-                "#printf(\"soap_rpc function results, before function returns:\\n\");\n"
-                "#printf(\"iter\\n\");\n"
-                "#iter.print();\n"
-                "#printf(\"\\nitem\\n\");\n"
-                "#item.print();\n"
-                "#printf(\"\\nkind\\n\");\n"
-                "#kind.print();\n"
-
-                "if (type(iter) = bat) {\n"
-                "#printf(\"ipik := iter;\\n\");\n"
-                "ipik := iter;\n"
-                "} else {\n"
-                "if (type(item) = bat) {\n"
-                "#printf(\"ipik := item;\\n\");\n"
-                "ipik := item;\n"
-                "} else {\n"
-                "#printf(\"ipik := kind;\\n\");\n"
-                "ipik := kind;\n"
-                "}\n"
-                "}\n"
-                "} # end of SOAP call\n\n");
         deleteResult_ (f, counter-1, STR);
     } else {
         /* call the proc */
-        milprintf(f, PFudfMIL(), apply.fun->sig,
+        milprintf(f, PFudfMIL(),
+                apply.fun->sig,
                 cur_level, cur_level, cur_level, cur_level, 
                 counter, counter, counter, counter, 
                 apply.fun->qname.loc, apply.fun->qname.loc);
@@ -10716,29 +10621,6 @@ static const char* _PFstopMIL(bool is_update) {
         strcat(buf, "  play_update_tape(ws, item, kind);\n");
     else
         strcat(buf,
-               "#printf(\"\\nbefore print_result, original params:\\n\");\n"
-               "#printf(\"iter\\n\");\n"
-               "#iter.print();\n"
-               "#printf(\"\\nitem\\n\");\n"
-               "#item.print();\n"
-               "#printf(\"\\nkind\\n\");\n"
-               "#kind.print();\n"
-               "#printf(\"\\nipik\\n\");\n"
-               "#ipik.print();\n"
-               "#printf(\"params passed to print_result:\\n\");\n"
-               "#printf(\"tunique(iter):\\n\");\n"
-               "#var a := iter;\n"
-               "#tunique(a).print();\n"
-               "#printf(\"\\nconstatnt2bat(iter):\\n\");\n"
-               "#a := iter;\n"
-               "#constant2bat(a).print();\n"
-               "#printf(\"\\nitem.materializa(ipik):\\n\");\n"
-               "#a := ipik;\n"
-               "#item.materialize(a).print();\n"
-               "#printf(\"\\nconstant2bat(kind):\\n\");\n"
-               "#a := kind;\n"
-               "#constant2bat(a).print();\n"
-
                "  if (genType.search(\"none\") = -1)\n"
                "    print_result(genType,ws,tunique(iter),constant2bat(iter),item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n");
     strcat(buf,
@@ -10760,19 +10642,19 @@ const char* PFstopMIL() {
 const char* PFudfMIL() {
     return  
         "{\n"
-        "var proc_res := %s(loop%03u, outer%03u, order_%03u, inner%03u, fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u); #%s\n" 
-        "iter := proc_res.fetch(0);\n"
-        "item := proc_res.fetch(1);\n"
-        "kind := proc_res.fetch(2);\n"
-        "if (type(iter) = bat) {\n"
-        " ipik := iter;\n"
-        "} else {\n"
-        "  if (type(item) = bat) {\n"
-        "    ipik := item;\n"
+        "  var proc_res := %s(loop%03u, outer%03u, order_%03u, inner%03u, fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u); #%s\n"
+        "  iter := proc_res.fetch(0);\n"
+        "  item := proc_res.fetch(1);\n"
+        "  kind := proc_res.fetch(2);\n"
+        "  if (type(iter) = bat) {\n"
+        "    ipik := iter;\n"
         "  } else {\n"
-        "    ipik := kind;\n"
+        "    if (type(item) = bat) {\n"
+        "      ipik := item;\n"
+        "    } else {\n"
+        "      ipik := kind;\n"
+        "    }\n"
         "  }\n"
-        "}\n"
         "}\n";
 }
 
