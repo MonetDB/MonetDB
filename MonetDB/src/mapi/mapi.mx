@@ -518,6 +518,14 @@ mapi_client_engine(void *FC )
 }
 
 
+static void
+prompt(stream *fdout, int blocked)
+{
+	if (!blocked)
+		stream_write(fdout, PROMPT1, sizeof(PROMPT1) - 1, 1);
+	else
+		stream_flush(fdout);
+}
 
 static mapi_client*
 xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new_client)
@@ -564,6 +572,7 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 
 	if (!user || !passwd || !lang || !mode) { 
 		stream_printf(fdout, "!ERROR: client: protocol error\n");
+		prompt(fdout, 0);
 		return NULL;
 	}
 
@@ -576,12 +585,14 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 	if (!f) {
 		stream_printf(fdout,
 		 "!ERROR: xchange_challenge: frontend %s not found\n", lang);
+		prompt(fdout, blocked);
 		return NULL;
 	}
 /* TODO
 	if (db) {
 		stream_printf(fdout,
 		 "!ERROR: xchange_challenge: TODO database redirect\n");
+		prompt(fdout, blocked);
 		return NULL;
 	}
 */
@@ -607,6 +618,7 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 
 	if ((err = f->f_init(fc)) != NULL) {
 		stream_printf(fdout, "%s\n", err);
+		prompt(fdout, blocked);
 		return NULL;
 	}
 	return fc;
