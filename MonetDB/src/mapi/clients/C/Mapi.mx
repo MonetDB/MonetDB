@@ -2051,7 +2051,6 @@ mapi_start_talking(Mapi mid)
 		char *chal;
 		char *server;
 		char *protover;
-		char errbuf[BLOCK];
 
 		chal = buf + 1;
 		server = strchr(chal, ':');
@@ -2068,7 +2067,6 @@ mapi_start_talking(Mapi mid)
 		*protover++ = '\0';
 		pversion = atoi(protover);
 
-		errbuf[0] = 0;
 		/* just don't do anything with the challenge */
 	}
 
