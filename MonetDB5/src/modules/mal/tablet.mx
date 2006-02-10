@@ -1494,7 +1494,6 @@ read_more(bstream *in, stream *out, int n)
 }
 
 
-
 int
 TABLETload_file(Tablet * as, bstream *b, stream *out)
 {
