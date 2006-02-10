@@ -1,14 +1,14 @@
-stderr of test 'bat_destroy-2.SF-1428446` in directory 'tests/BugTracker` itself:
+stderr of test 'mmap_bats-2.SF-1428389` in directory 'tests/BugTracker` itself:
 
 
-# 10:23:51 >  
-# 10:23:51 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=31213 --set monet_prompt= --trace --dbname=mTests_tests_BugTracker  < bat_destroy.SF-1428446.milS
-# 10:23:51 >  
+# 14:07:22 >  
+# 14:07:22 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=37862 --set monet_prompt= --trace --dbname=mTests_tests_BugTracker mmap_bats-2.SF-1428389.prelude < mmap_bats-2.SF-1428389.milS
+# 14:07:22 >  
 
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
 # builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
 # builtin opt 	gdk_version = 4.11.1
-# builtin opt 	monet_pid = 12404
+# builtin opt 	monet_pid = 7877
 # builtin opt 	prefix = /ufs/niels/scratch/Linux-x86_64
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -41,7 +41,7 @@ stderr of test 'bat_destroy-2.SF-1428446` in directory 'tests/BugTracker` itself
 # config opt 	monet_welcome = yes
 # config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB:${exec_prefix}/lib/bin
 # config opt 	monet_daemon = no
-# config opt 	mapi_port = 50001
+# config opt 	mapi_port = 50000
 # config opt 	mapi_debug = 0
 # config opt 	sql_debug = 0
 # config opt 	sql_logdir = ${prefix}/var/MonetDB/log
@@ -53,11 +53,11 @@ stderr of test 'bat_destroy-2.SF-1428446` in directory 'tests/BugTracker` itself
 # cmdline opt 	monet_mod_path = /ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin
 # cmdline opt 	gdk_dbfarm = /ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm
 # cmdline opt 	sql_logdir = /ufs/niels/scratch/Linux-x86_64/var/MonetDB/log
-# cmdline opt 	mapi_port = 31213
+# cmdline opt 	mapi_port = 37862
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_BugTracker
 
-# 10:23:51 >  
-# 10:23:51 >  Done.
-# 10:23:51 >  
+# 14:07:22 >  
+# 14:07:22 >  Done.
+# 14:07:22 >  
 
