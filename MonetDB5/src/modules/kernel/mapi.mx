@@ -804,7 +804,7 @@ stream_read_until(str *res, stream *S, str stop)
 @- Wrappers
 The Monet Version 5 wrappers are collected here
 The latest port known to gain access is stored
-in the datase, so that others can more easily
+in the database, so that others can more easily
 be notified.
 @c
 void MAPIannounce(str lang, int port){
