@@ -144,7 +144,8 @@ void initNamespace() {
 void finishNamespace() {
 	int i;
 	for(i=0;i<namespace.nmetop; i++) {
-		if( namespace.nme[i]) GDKfree(namespace.nme[i]);
+		if( namespace.nme[i]) 
+			GDKfree(namespace.nme[i]);
 		namespace.nme[i]= 0;
 	}
 	GDKfree(namespace.nme); namespace.nme= 0;
