@@ -1,15 +1,14 @@
-@' The contents of this file are subject to the MonetDB Public
-@' License Version 1.0 (the "License"); you may not use this file
-@' except in compliance with the License. You may obtain a copy of
-@' the License at
-@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 @'
-@' Software distributed under the License is distributed on an "AS
-@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
-@' implied. See the License for the specific language governing
-@' rights and limitations under the License.
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
 @'
-@' The Original Code is the Monet Database System.
+@' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
@@ -237,7 +236,8 @@ HASHfnd_oid for void- and hash-lookups, respectively
 		}
 		BATseqbase(bn,e->hseqbase);
 	} else if (BAThordered(e)&1) {
-		min = *(oid*)BUNhloc(e, BUNfirst(e));
+		if (_cnt)
+			min = *(oid*)BUNhloc(e, BUNfirst(e));
 		BATloopFast(e, p, q, xx) {
 			oid@1_bunfastins_nocheck_noinc(bn, _p, BUNhloc(e,p), &zero);
 			_p += _bunsize;
@@ -247,7 +247,8 @@ HASHfnd_oid for void- and hash-lookups, respectively
 		ALGODEBUG THRprintf(GDKout, "init_result(@1): BAThordered(e)&1, min=" SZFMT ", max=" SZFMT "\n", (size_t) min, (size_t) max);
 	} else {
 		oid i;
-		min = max = *(oid*)BUNhloc(e, BUNfirst(e));
+		if (_cnt)
+			min = max = *(oid*)BUNhloc(e, BUNfirst(e));
 		BATloopFast(e, p, q, xx) {
 			oid@1_bunfastins_nocheck_noinc(bn, _p, BUNhloc(e,p), &zero);
 			_p += _bunsize;
@@ -412,7 +413,7 @@ HASHfnd_oid for void- and hash-lookups, respectively
 	@8:	BUNt@7(bn,r)	BUNt@7(bn,r)	&sums[(*(oid*)h)-min]
 								*dst: sum in-place or in sums-array ?
 
-	@9:		 BUNindex(bn,r)-off		(*(oid*)h)-min	index in cnt array
+	@9:		BUNindex(bn,r)-off		(*(oid*)h)-min	index in cnt array
 */
 @= aggrX3_avg
 	ALGODEBUG THRprintf(GDKout, "aggrX3_avg(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
@@ -698,7 +699,7 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 	@7:	"loc" for fixsized b/bn-tail-type,		b/bn-tail-access
 		"var" for varsized b/bn-tail-type
 
-	@8:		 BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
+	@8:		BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
 	@9:		max/min					initial result value
 */
 @= aggrX3_minmax_ptr
@@ -754,7 +755,7 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 	@7:	"loc" for fixsized b/bn-tail-type,		b/bn-tail-access
 		"var" for varsized b/bn-tail-type
 
-	@8:		 BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
+	@8:		BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
 	@9:		max/min					initial result value
 */
 @= aggrX3_minmax_oid
@@ -1280,7 +1281,7 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 	@8:	BUNt@7(bn,r)	BUNt@7(bn,r)	&sums[(*(oid*)h)-min]
 								*dst: sum in-place or in sums-array ?
 
-	@9:		 BUNindex(bn,r)-off		(*(oid*)h)-min	index in cnt array
+	@9:		BUNindex(bn,r)-off		(*(oid*)h)-min	index in cnt array
 */
 @= aggrX3_avg3
 	ALGODEBUG THRprintf(GDKout, "aggrX3_avg3(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
@@ -1677,7 +1678,7 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 	@7:	"loc" for fixsized b/bn-tail-type,		b/bn-tail-access
 		"var" for varsized b/bn-tail-type
 
-	@8:		 BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
+	@8:		BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
 	@9:		max/min					initial result value
 */
 @= aggrX3_minmax3_ptr
@@ -1739,7 +1740,7 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 	@7:	"loc" for fixsized b/bn-tail-type,		b/bn-tail-access
 		"var" for varsized b/bn-tail-type
 
-	@8:		 BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
+	@8:		BUNindex(bn,r)-off		(*(oid*)h)-min	index in extremes array
 	@9:		max/min					initial result value
 */
 @= aggrX3_minmax3_oid
@@ -2033,8 +2034,8 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 	int zero = 0, *cnt;
 	BUN p, q, r;
 	int xx;
-	size_t range;
-	oid min, max;
+	size_t range = 0;
+	oid min = 0, max = 0;
 	oid bhsb;
 	size_t base, end, w;
 	ssize_t offset;

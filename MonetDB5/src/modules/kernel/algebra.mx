@@ -1,15 +1,14 @@
-@' The contents of this file are subject to the MonetDB Public
-@' License Version 1.0 (the "License"); you may not use this file
-@' except in compliance with the License. You may obtain a copy of
-@' the License at
-@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 @'
-@' Software distributed under the License is distributed on an "AS
-@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
-@' implied. See the License for the specific language governing
-@' rights and limitations under the License.
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
 @'
-@' The Original Code is the Monet Database System.
+@' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
@@ -21,7 +20,7 @@
 @* BAT Algebra
 This modules contains the most common algebraic BAT manipulation
 commands. We call them @#algebra@, because all operations take
-values as parameters, and produce new result values, but 
+values as parameters, and produce new result values, but
 @%do not modify their parameters@.
 @
 Unlike the previous Monet versions, we reduce the number
@@ -155,8 +154,12 @@ command fragment ( b:bat[:any_1,:any_2], hlow:any_1, hhigh:any_1,
 address ALGfragment
 comment "Select both on head and tail range.";
 
-command slice(b:bat[:any_1,:any_2], x:int, y:int) :bat[:any_1,:any_2] 
+command slice(b:bat[:any_1,:any_2], x:lng, y:lng) :bat[:any_1,:any_2] 
 address ALGslice
+comment "Return the slice with the BUNs at position x till y.";
+
+command slice(b:bat[:any_1,:any_2], x:int, y:int) :bat[:any_1,:any_2] 
+address ALGslice_int
 comment "Return the slice with the BUNs at position x till y.";
 
 command topN( b:bat[:any_1,:any_2], top:lng ) :bat[:any_1,:any_2]
@@ -772,7 +775,7 @@ different situations as conditions.
 #endif
 algebra_export ptr BATmax(BAT *b, ptr aggr);
 algebra_export ptr BATmin(BAT *b, ptr aggr);
-algebra_export int doCMDfetch(ptr ret, BAT *b, size_t i);
+algebra_export int doCMDfetch(ptr ret, BAT *b, lng i);
 
 #endif
 
@@ -1018,25 +1021,43 @@ operations are part of the GDK kernel.
 int
 CMDselect1(BAT **result, BAT *b, ptr value)
 {
-	return (*result = BATselect(b, value, 0)) ? GDK_SUCCEED : GDK_FAIL;
+	ptr v = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) value)->batCacheid : value;
+
+	return (*result = BATselect(b, v, 0)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
 CMDuselect1(BAT **result, BAT *b, ptr value)
 {
-	return (*result = BATuselect(b, value, 0)) ? GDK_SUCCEED : GDK_FAIL;
+	ptr v = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) value)->batCacheid : value;
+
+	return (*result = BATuselect(b, v, 0)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
 CMDselect(BAT **result, BAT *b, ptr low, ptr high)
 {
-	return (*result = BATselect(b, low, high)) ? GDK_SUCCEED : GDK_FAIL;
+	ptr l = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) low )->batCacheid : low ;
+	ptr h = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) high)->batCacheid : high;
+
+	if (b->ttype == TYPE_bat && l != h ) {
+		GDKerror("CMDselect: range-selects on type BAT are not supported\n");
+		return GDK_FAIL;
+	}
+	return (*result = BATselect(b, l, h)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
 CMDuselect(BAT **result, BAT *b, ptr low, ptr high)
 {
-	return (*result = BATuselect(b, low, high)) ? GDK_SUCCEED : GDK_FAIL;
+	ptr l = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) low )->batCacheid : low ;
+	ptr h = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) high)->batCacheid : high;
+
+	if (b->ttype == TYPE_bat && l != h ) {
+		GDKerror("CMDuselect: range-selects on type BAT are not supported\n");
+		return GDK_FAIL;
+	}
+	return (*result = BATuselect(b, l, h)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
@@ -1044,16 +1065,22 @@ CMDselect_(BAT **result, BAT *b, ptr low, ptr high, bit *l_in, bit *h_in)
 {
 	int tt = b->ttype;
 	ptr nil = ATOMnilptr(tt);
+	ptr l = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) low )->batCacheid : low ;
+	ptr h = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) high)->batCacheid : high;
 
-	if (*l_in == bit_nil && ATOMcmp(tt, low, nil)) {
+	if (b->ttype == TYPE_bat && l != h ) {
+		GDKerror("CMDselect: range-selects on type BAT are not supported\n");
+		return GDK_FAIL;
+	}
+	if (*l_in == bit_nil && ATOMcmp(tt, l, nil)) {
 		GDKerror("CMDselect: flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
 		return GDK_FAIL;
 	}
-	if (*h_in == bit_nil && ATOMcmp(tt, high, nil)) {
+	if (*h_in == bit_nil && ATOMcmp(tt, h, nil)) {
 		GDKerror("CMDselect: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
 		return GDK_FAIL;
 	}
-	return (*result = BATselect_(b, low, high, *l_in, *h_in)) ? GDK_SUCCEED : GDK_FAIL;
+	return (*result = BATselect_(b, l, h, *l_in, *h_in)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
@@ -1061,16 +1088,22 @@ CMDuselect_(BAT **result, BAT *b, ptr low, ptr high, bit *l_in, bit *h_in)
 {
 	int tt = b->ttype;
 	ptr nil = ATOMnilptr(tt);
+	ptr l = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) low )->batCacheid : low ;
+	ptr h = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) high)->batCacheid : high;
 
-	if (*l_in == bit_nil && ATOMcmp(tt, low, nil)) {
+	if (b->ttype == TYPE_bat && l != h ) {
+		GDKerror("CMDuselect: range-selects on type BAT are not supported\n");
+		return GDK_FAIL;
+	}
+	if (*l_in == bit_nil && ATOMcmp(tt, l, nil)) {
 		GDKerror("CMDuselect: flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
 		return GDK_FAIL;
 	}
-	if (*h_in == bit_nil && ATOMcmp(tt, high, nil)) {
+	if (*h_in == bit_nil && ATOMcmp(tt, h, nil)) {
 		GDKerror("CMDuselect: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
 		return GDK_FAIL;
 	}
-	return (*result = BATuselect_(b, low, high, *l_in, *h_in)) ? GDK_SUCCEED : GDK_FAIL;
+	return (*result = BATuselect_(b, l, h, *l_in, *h_in)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
@@ -1145,6 +1178,16 @@ CMD@1(BAT **result, BAT* b, int *param)
 @:binary(sdiff,BATsdiff)@
 @:binary(kdiff,BATkdiff)@
 @:binaryint(sample,BATsample)@
+
+int
+CMDtunique(BAT **result, BAT* b)
+{
+	oid id = oid_nil;
+	BAT *v = BATconst(BATmirror(b), TYPE_oid, &id);
+	*result = BATkunique(v);
+	BBPreclaim(v);
+	return *result?GDK_SUCCEED:GDK_FAIL;
+}
 
 int
 CMDcount_nil(int *result, BAT *b, bit *ignore_nils)
@@ -1314,16 +1357,35 @@ CMDlike(BAT **ret, BAT *b, str s)
 
 @- BAT slice
 @c
-int
-CMDslice(BAT **retval, BAT *b, int *start, int *end)
+static int
+slice(BAT **retval, BAT *b, lng start, lng end)
 {
 	/* the internal BATslice requires exclusive end */
-	if (*start < 0) {
+	if (start < 0) {
 		GDKerror("CMDslice: start position of slice should >= 0\n");
 		return GDK_FAIL;
 	}
+#if SIZEOF_SIZE_T < SIZEOF_LNG
+	if (start >= ((lng) 1 << (8 * SIZEOF_SIZE_T)) ||
+	    end >= ((lng) 1 << (8 * SIZEOF_SIZE_T))) {
+		GDKerror("CMDslice: argument out of range\n");
+		return GDK_FAIL;
+	}
+#endif
 
-	return (*retval = BATslice(b, (size_t) * start, (size_t) * end + 1)) ? GDK_SUCCEED : GDK_FAIL;
+	return (*retval = BATslice(b, (size_t) start, (size_t) end + 1)) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
+CMDslice(BAT **retval, BAT *b, lng *start, lng *end)
+{
+	return slice(retval, b, *start, *end);
+}
+
+int
+CMDslice_int(BAT **retval, BAT *b, int *start, int *end)
+{
+	return slice(retval, b, *start, *end);
 }
 
 @- BUN Get/Fetch
@@ -1364,16 +1426,16 @@ CMDfetchbat(BAT **ret, BAT *b, BAT *s)
 }
 
 int
-doCMDfetch(ptr ret, BAT *b, size_t i)
+doCMDfetch(ptr ret, BAT *b, lng i)
 {
-	if (i >= BATcount(b)) {
+	if (i < 0 || i >= (lng) BATcount(b)) {
 		GDKerror("CMDfetch: idx out of range\n");
 		return GDK_FAIL;
 	}
 	i += BUNindex(b, BUNfirst(b));
-	@:putTail(BUNptr(b,i))@
+	@:putTail(BUNptr(b,(size_t)i))@
 @= putTail
-	if (b->theap) {
+	if (b->ttype && b->theap) {
 		ptr _src = BUNtvar(b,@1);/*b->theap->base + *(var_t*) BUNtloc(b,@1);*/
 		int _len = ATOMlen(b->ttype, _src);
 		ptr _dst = GDKmalloc(_len);
@@ -1403,7 +1465,7 @@ doCMDfetch(ptr ret, BAT *b, size_t i)
 }
 
 int
-CMDfetch(ptr ret, BAT *b, int *pos)
+CMDfetch(ptr ret, BAT *b, lng *pos)
 {
 	return doCMDfetch(ret, b, (size_t) * pos);
 }
@@ -1426,6 +1488,11 @@ CMDexist(bit *ret, BAT *b, ptr val)
 
 	*ret = q ? 1 : 0;
 	return GDK_SUCCEED;
+}
+int
+CMDtexist(bit *ret, BAT *b, ptr val)
+{
+	return CMDexist(ret, BATmirror(b), val);
 }
 
 int
@@ -1451,6 +1518,12 @@ CMDfind(ptr ret, BAT *b, ptr val)
 	}
 	@:putTail(q)@
 	return GDK_SUCCEED;
+}
+
+int
+CMDfind_oid(ptr ret, BAT *b, oid* val)
+{
+	return CMDfind(ret, b, (ptr) val); 
 }
 
 @= find_bounds
@@ -1623,7 +1696,10 @@ CMDmerge(BAT **ret, BAT *b)
 
 	bn->hsorted = ( BAThordered(b)&1 && (BATtordered(b)&1 || BAThkey(b))) 
 		? GDK_SORTED : FALSE ;
+	bn->tsorted = FALSE ;
+	bn->tdense = FALSE ;
 	BATkey(bn, BAThkey(b) || BATtkey(b)) ;
+	BATkey(BATmirror(bn), FALSE) ;
 
 	return GDK_SUCCEED;
 }
@@ -1645,6 +1721,11 @@ CMDsplit(BAT **ret, BAT *b)
 
 	bn->hsorted = BAThordered(b)&1 ? GDK_SORTED : FALSE ;
 	bn->tsorted = FALSE ;
+	bn->hdense = FALSE ;
+	bn->tdense = FALSE ;
+	BATkey(bn, FALSE) ;
+	BATkey(BATmirror(bn), FALSE) ;
+
 	return GDK_SUCCEED;
 bunins_failed:
 	BBPreclaim(bn);
@@ -2687,9 +2768,9 @@ ALGlike(int *ret, int *bid, str *k)
 	return throwMessage("algebra.like", "GDKerror");
 }
 
-mal_export str ALGslice(int *ret, bat *bid, int *start, int *end);
+mal_export str ALGslice(int *ret, bat *bid, lng *start, lng *end);
 str
-ALGslice(int *ret, bat *bid, int *start, int *end)
+ALGslice(int *ret, bat *bid, lng *start, lng *end)
 {
 	BAT *b, *bn = NULL;
 
@@ -2705,6 +2786,16 @@ ALGslice(int *ret, bat *bid, int *start, int *end)
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.slice", "GDKerror");
+}
+
+mal_export str ALGslice_int(int *ret, bat *bid, int *start, int *end);
+str
+ALGslice_int(int *ret, bat *bid, int *start, int *end)
+{
+	lng s = *start;
+	lng e = *end;
+
+	return ALGslice(ret, bid, &s, &e);
 }
 
 @- BUN Get/Fetch
