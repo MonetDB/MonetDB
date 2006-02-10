@@ -1939,8 +1939,24 @@ if test "x$have_php" != xno; then
 		AC_MSG_RESULT($have_php)
 	else
 		PHP_INCS=" `$PHP_CONFIG --includes`"
-		PHP_EXTENSIONDIR="`$PHP_CONFIG --extension-dir | sed -e s+$php_prefix/++g`"
 		have_php=yes
+		have_php_extensiondir=auto
+		AC_ARG_WITH(php-extensiondir,
+				AC_HELP_STRING([--with-php-extensiondir=DIR],
+					[relative path for php extension directory (where php modules should be installed)]),
+				have_php_extensiondir="$withval")
+		case "$have_php_extensiondir" in
+		yes|auto)
+			if test $cross_compiling = xyes; then
+				AC_MSG_ERROR([Must specify --with-php-extensiondir when cross compiling])
+				have_php=no
+			fi
+			PHP_EXTENSIONDIR="`$PHP_CONFIG --extension-dir | sed -e s+$php_prefix/++g`";
+			;;
+		no)	;;
+		*)	PHP_EXTENSIONDIR="$have_php_extensiondir";
+			;;
+		esac
 		AC_MSG_RESULT($have_php: PHP_INCS="$PHP_INCS" PHP_EXTENSIONDIR="\$prefix/$PHP_EXTENSIONDIR")
 	fi
 fi
