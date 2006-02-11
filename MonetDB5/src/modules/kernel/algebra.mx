@@ -2621,15 +2621,16 @@ ALGmarkHead(int *result, int *bid, oid *base)
 {
 	BAT *b, *bn = NULL;
 	ptr p, q;
-	oid o = oid_nil;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("algebra.markH", "Cannot access descriptor");
 	}
 	bn = BATnew(TYPE_void, b->ttype, BATcount(b));
+	if (b->ttype == TYPE_void && b->tseqbase != oid_nil) 
+		BATseqbase(BATmirror(bn), 0);
 	BATseqbase(bn, *base);
 	BATloop(b, p, q) {
-		BUNins(bn, &o, BUNtail(b, p));
+		BUNappend(bn, BUNtail(b, p));
 	}
 
 	*result = bn->batCacheid;

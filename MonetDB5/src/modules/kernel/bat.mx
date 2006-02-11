@@ -2032,10 +2032,9 @@ void_insert_delta(BAT *b, BAT *u)
 {
 	size_t nr = 0;
 	BUN r;
-	oid nil = oid_nil;
 
 	for (r = u->batInserted; r < BUNlast(u); r = BUNnext(u, r)) {
-		BUNins(b, (ptr) &nil, BUNtail(u, r));
+		BUNappend(b, BUNtail(u, r));
 		nr++;
 	}
 	return nr;
