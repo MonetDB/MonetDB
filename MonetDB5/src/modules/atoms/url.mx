@@ -140,6 +140,15 @@ secure concurrent use from different threads.
 
 typedef str url;
 
+#ifdef _MSC_VER
+#ifndef LIBURL
+#define url_export extern __declspec(dllimport)
+#else
+#define url_export extern __declspec(dllexport)
+#endif
+#else
+#define url_export extern
+#endif
 
 url_export int escape_str(str *retval, str s);
 url_export int unescape_str(str *retval, str s);
@@ -152,16 +161,6 @@ url_export int unescape_str(str *retval, str s);
 void getword(char *word, char *line, char stop);
 char x2c(char *what);
 void plustospace(char *str);
-
-#ifdef _MSC_VER
-#ifndef LIBURL
-#define url_export extern __declspec(dllimport)
-#else
-#define url_export extern __declspec(dllexport)
-#endif
-#else
-#define url_export extern
-#endif
 
 url_export str URLnew(str *url, str *val);
 url_export str URLgetAnchor(str *retval, str *val);
