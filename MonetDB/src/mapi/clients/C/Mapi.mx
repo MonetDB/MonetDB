@@ -93,9 +93,8 @@ int main(int argc, char **argv)
 The @code{mapi_connect()} operation establishes a communication channel with
 a running server on the local machine. The user name is "monetdb" with
 password "monetdb".
-The query language interface is either "sql" of "mil".  Future
-versions are expected to recognize also "xcore" and "xquery", and the
-experimental languages "ram" and "mal".
+The query language interface is either "sql", "mil" or "xquery".  Future
+versions are expected to recognize also "ram" and "mal".
 
 Errors on the interaction can be captured using @code{mapi_error()},
 possibly followed by a request to dump a short error message
@@ -106,11 +105,6 @@ Provided we can establish a connection, the interaction proceeds as in
 many similar application development packages. Queries are shipped for
 execution using @code{mapi_query()} and an answer table can be consumed one
 row at a time. In many cases these functions suffice.
-
-The tabular data exchange model is primarily meant to support sql
-(mil, mal). For xml and xcore the engine is expected to generate an
-XPath-like token stream from which the application can build the
-internal representation of the document (e.g. a DOM-tree).
 
 The Mapi interface provides caching of rows at the client side.
 @code{mapi_query()} will load tuples into the cache, after which they can be
@@ -294,7 +288,7 @@ If port == 0, a default port is used.  If username == NULL,
 the username of the owner of the client application
 containing the Mapi code is used.  If password == NULL, the password
 is omitted.  The preferred query language is any of
-@verb{ { }sql,mil,mal,xcore,xquery @verb{ } } On success, the function returns a
+@verb{ { }sql,mil,mal,xquery @verb{ } }.  On success, the function returns a
 pointer to a structure with administration about the connection.
 
 @item Mapi mapi_connect_ssl(const char *host, int port, const char *username, const char *password, const char *lang)
@@ -421,7 +415,7 @@ is returned if this information is not available.
 @item int mapi_rows_affected(MapiHdl hdl)
 
 Return the number of rows affected by a database update command
-(INSERT/DELETE/REPLACE).
+such as SQL's INSERT/DELETE/UPDATE statements.
 
 @item int mapi_fetch_row(MapiHdl hdl)
 
@@ -561,9 +555,9 @@ Clear all parameter bindings.
 @itemize
 @item MapiMsg mapi_setAutocommit(Mapi mid, int autocommit)
 
-Set the autocommit flag (default is off).  This only has an effect
-when the language is SQL.  In that case, a commit statement is added
-to the end of each query sent to the server.
+Set the autocommit flag (default is on).  This only has an effect
+when the language is SQL.  In that case, the server commits after each
+statement sent to the server.
 
 @item MapiMsg mapi_cache_limit(Mapi mid, int maxrows)
 
