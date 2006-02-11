@@ -232,18 +232,19 @@ The host "foo.org" contains the other fraction of "filmDB.xml"::
 Suppose we only know that "filmDB.xml" is distributed between those two
 hosts, and we want to search in "filmDB.xml" to see in which film Sean
 Connery and Brad Pitt have acted.  In this case, we can use the
-following query (please correct me if this query contains error)::
+following query::
 
     import module namespace soap = "http://www.cwi.nl/~zhang/soap/" at
         "http://www.cwi.nl/~zhang/soap/soap.xq";
 
     for $dst in ("foo.org", "bar.org")
         for $actor in ("Sean Connery", "Hugh Grant")
-            for $film in soap:plays($dst, $actor)
-                return <actor>
-                            $actor
-                            <film>$film</film>
-                        </actor>
+        return 
+            element { "actor" } {
+                for $film in soap:plays($dst, $actor)
+                return  
+                    element { "film" } { $film }
+            }
 
 If the output mode "xml" is used, this query should return the following
 results (note: the node order is random)::
