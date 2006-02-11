@@ -149,7 +149,7 @@ str
 SQLepilogue()
 {
 	if( SQLinitialized){
-		mvc_exit();
+		mvc_exit(); 
 		SQLinitialized= FALSE;
 	}
 	return MAL_SUCCEED;
@@ -720,9 +720,10 @@ SQLparser(Client c)
 		}
 		if( strncmp(in->buf+in->pos,"auto_commit ", 12)==0 ){
 			id= (int) strtol(in->buf+in->pos+12,NULL,10);
-			if (mvc_rollback(m, 0, NULL) < 0)
-				return throwMessage("SQLparser", "set auto_commit failed\n");
 			m->auto_commit = (id)?1:0;
+			m->ac_on_commit = m->auto_commit;
+			if (mvc_rollback(m, 0, NULL) < 0)
+				return throwMessage("SQLparser", "Xauto_commit failed\n");
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
 		}

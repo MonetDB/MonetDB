@@ -602,10 +602,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				q = newStmt1(mb, algebraRef, "markH");
 				q = pushArgument(mb, q, j);
+				q = pushOid(mb, q, 0);
 				mhj = getDestVar(q);
 
 				q = newStmt1(mb, algebraRef, "markT");
 				q = pushArgument(mb, q, j);
+				q = pushOid(mb, q, 0);
 				mtj = getDestVar(q);
 
 				q = newStmt2(mb, batRef, reverseRef );
@@ -623,11 +625,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				r = getDestVar(q);
 
 				q= dump_multiplex(mb,convertOperator(op),l,r,tail_type(s->op2.stval)->type->localtype, TYPE_bit);
-
 				k = getDestVar(q);
+
 				q = newStmt1(mb, algebraRef, "uselect");
 				q = pushArgument(mb, q, k);
 				q = pushBit(mb, q, TRUE);
+				k = getDestVar(q);
 
 				q = newStmt2(mb, batRef, reverseRef );
 				q = pushArgument(mb, q, k);

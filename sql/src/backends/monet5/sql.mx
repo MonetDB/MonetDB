@@ -26,10 +26,6 @@ from the Version 4 code base.
 @mal
 module sql;
 
-command listen():void 
-address SQLlisten_wrap
-comment "Start the listener on the default sql port";
-
 command start():void 
 address SQLsession
 comment "Switch to processing SQL statements";
@@ -804,16 +800,6 @@ getContext(mvc **c, backend **b )
 	if (b)
 		*b = ((backend*) _client->state[PARSER]);
 	return MAL_SUCCEED;
-}
-
-str
-SQLlisten_wrap(int *ret){
-	int port;
-	str p= GDKgetenv("sql_port");
-	port= (int) strtol(p,NULL,10);
-	if( port == 0)
-		return throwMessage("sql.listen","Illegal default port");
-	return MAPIlisten_port(ret,&port);
 }
 
 str

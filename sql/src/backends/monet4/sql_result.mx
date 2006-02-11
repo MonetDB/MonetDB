@@ -889,7 +889,9 @@ mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d,
 	int ok = 1;
 	char *rsep = "\t]\n";
 
-	(void)qtype;
+#ifdef NDEBUG
+	(void) qtype; /* pacify compiler in case asserts are disabled */
+#endif
 	assert(qtype == Q_TABLE);
 	if (stream_write(s, "&1 0 1 1 1\n", 11, 1) == 1 &&
 	    /* fallback to default tuplecount (1) and id (0) */
@@ -941,7 +943,9 @@ mvc_export_affrows(mvc *m, stream *s, lng val)
 	 */
 	if (!s) return 0;
 	
-	(void)m;
+#ifdef NDEBUG
+	(void) m; /* pacify compiler in case asserts are disabled */
+#endif
 	assert(m->type == Q_UPDATE);
 	if (stream_write(s, "&2 ", 3, 1) != 1 || !mvc_send_lng(s, val) ||
 			stream_write(s, "\n", 1, 1) != 1)
@@ -1048,6 +1052,9 @@ int
 mvc_export_chunk(mvc *m, stream *s, int res_id, unsigned int offset, unsigned int nr)
 {
 	res_table *t = res_tables_find(m->results, res_id);
+
+	if (!s || !t)
+		return 0;
 
 	/* query type: Q_BLOCK */
 	if (!(stream_write(s, "&6 ", 3, 1) == 1))
