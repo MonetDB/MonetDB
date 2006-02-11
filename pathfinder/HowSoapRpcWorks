@@ -241,6 +241,7 @@ following query::
         for $actor in ("Sean Connery", "Hugh Grant")
         return 
             element { "actor" } {
+                $actor, 
                 for $film in soap:plays($dst, $actor)
                 return  
                     element { "film" } { $film }
