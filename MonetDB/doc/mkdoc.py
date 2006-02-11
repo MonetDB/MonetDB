@@ -172,14 +172,14 @@ for f in ['bitset', 'bitvector', 'ddbench', 'mel', 'mprof', 'oo7', 'qt',
 for f in ['README', 'load.mil', 'init.mil']:
     copyfile(os.path.join(srcdir, 'scripts', 'gold', f),
              os.path.join(dstdir, 'doc', 'MonetDB', f))
-for f in ['HowToStart', 'HowToStart-Win32.txt']:
-    copyfile(os.path.join(srcdir, f),
+for f in ['HowToStart.html', 'HowToStart-Win32.html']:
+    copyfile(os.path.join(srcdir, 'doc', f),
              os.path.join(dstdir, 'doc', 'MonetDB', f))
 os.makedirs(os.path.join(dstdir, 'doc', 'MonetDB', 'GetGoing', 'Setup', 'MonetDB', 'Unix'))
-copyfile(os.path.join(srcdir, 'HowToStart'),
+copyfile(os.path.join(srcdir, 'doc', 'HowToStart.html'),
              os.path.join(dstdir, 'doc', 'MonetDB', 'GetGoing', 'Setup', 'MonetDB', 'Unix', 'index.html'))
 os.makedirs(os.path.join(dstdir, 'doc', 'MonetDB', 'GetGoing', 'Setup', 'MonetDB', 'Windows'))
-copyfile(os.path.join(srcdir, 'HowToStart-Win32.txt'),
+copyfile(os.path.join(srcdir, 'doc', 'HowToStart-Win32.html'),
              os.path.join(dstdir, 'doc', 'MonetDB', 'GetGoing', 'Setup', 'MonetDB', 'Windows', 'index.html'))
 
 os.makedirs(os.path.join(dstdir, 'doc', 'MonetDB', 'monet-compiled', 'etc'))
