@@ -369,7 +369,8 @@ command xor(left:bit, right:bit) :bit
 address CALCbinaryXORbit;
 command not(left:bit) :bit 
 address CALCunarybitNOT ;
-command ifthenelse(b:bit,t:any_1,tpe:any_1,f:any_1):any_1 
+
+pattern ifthenelse(b:bit,t:any_1,f:any_1):any_1 
 address CALCswitchbit;
 
 @+ Bitwise operations
@@ -647,6 +648,7 @@ the string representations.
 #include "stdlib.h"
 #include "mal.h"
 #include "mal_exception.h"
+#include "mal_interpreter.h"
 
 /* third param indicates return value if one of the params is nil */
 @:c_comp_ops(<,LT)@
@@ -886,29 +888,35 @@ CALCunarybitNOT(bit *retval, bit *value)
 	return MAL_SUCCEED;
 }
 
-mal_export str CALCswitchbit(ptr retval, bit *b, ptr v1, int tpe, ptr v2);
+/*
+mal_export str CALCswitchbit(ptr retval, bit *b, ptr v1, ptr v2);
 str
-CALCswitchbit(ptr retval, bit *b, ptr v1, int tpe, ptr v2)
+*/
+mal_export str CALCswitchbit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str 
+CALCswitchbit(MalBlkPtr mb, MalStkPtr stk, InstrPtr P)
 {
 	ptr p;
+	ptr retval = getArgReference(stk,P,0);
+	bit b = *(bit*) getArgReference(stk,P,1);
+	int t1 = getArgType(mb, P, 2);
+	int t2 = getArgType(mb, P, 3);
 
-	(void) retval;
-	(void) b;
-	(void) v1;
-	(void) v2;		/* fool compiler */
-	return throwMessage("ifthenelse", "not yet implemented\n");
-	if (*b == bit_nil) {
-		return MAL_SUCCEED;
-		p = ATOMnilptr(tpe);
-	} else if (*b) {
-		p = v1;
+	if (t1 != t2)
+		return throwMessage("ifthenelse", "types should match\n");
+
+	if (b == bit_nil) {
+		p = ATOMnilptr(t1);
+		return throwMessage("ifthenelse", "cannot switch on nil value\n");
+	} else if (b) {
+		p = getArgReference(stk,P,2);
 	} else {
-		p = v2;
+		p = getArgReference(stk,P,3);
 	}
-	if (ATOMextern(tpe)) {
-		*(ptr **) retval = ATOMdup(tpe, p);
+	if (ATOMextern(t1)) {
+		*(ptr **) retval = ATOMdup(t1, *(ptr**)p);
 	} else {
-		memcpy(retval, p, ATOMsize(tpe));
+		memcpy(retval, p, ATOMsize(t1));
 	}
 	return MAL_SUCCEED;
 }
