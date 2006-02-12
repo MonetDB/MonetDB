@@ -392,12 +392,13 @@ void mal_exit(Client cntxt){
 	profileReport( cntxt->nspace,1, f= open_wastream("/tmp/Monet.prof"));
 	close_stream(f);
 #endif
+	/* early exit to solve random crashes, needs work */
+	MT_global_exit(0);
 	freeBoxes();
 	freeModuleList(cntxt->nspace);
 	mal_scope = 0;
 	unloadModuleLibraries(); 
 	finishNamespace();
-	TMcommit();
 	if( cntxt->user)
 		GDKfree(cntxt->user);
 	if( cntxt->cwd)
