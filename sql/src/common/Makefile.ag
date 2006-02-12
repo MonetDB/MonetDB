@@ -16,7 +16,7 @@
 
 ## Process this file with automake to produce Makefile.in
 
-INCLUDES = .. ../include $(MONETDB_INCS)
+INCLUDES = .. ../include ../storage $(MONETDB_INCS)
 
 lib_sqlcommon = {
 	NOINST

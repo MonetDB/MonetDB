@@ -277,16 +277,6 @@ sql_column_ref(mvc *sql, scope *scp, symbol *column_r)
 	return cs;
 }
 
-static char *
-tmp_table_name()
-{
-	oid id = OIDnew(1);
-	static char buf[BUFSIZ];
-	snprintf(buf, BUFSIZ, "c" SZFMT "", (size_t)id);
-
-	return buf;
-}
-
 static tvar *
 table_optname(mvc *sql, scope *scp, stmt *sq, symbol *optname)
 {

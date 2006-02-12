@@ -149,8 +149,9 @@ str
 SQLepilogue()
 {
 	if( SQLinitialized){
-		mvc_exit(); 
+		/*mvc_exit(); 
 		SQLinitialized= FALSE;
+		*/
 	}
 	return MAL_SUCCEED;
 }

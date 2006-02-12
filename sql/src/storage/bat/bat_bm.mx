@@ -47,6 +47,9 @@ extern void bm_destroy(struct bm *bm);
 extern int bm_commit(struct bm *bm);
 extern void bm_abort(struct bm *bm );
 
+extern void bm_set_oid(struct bm *bm, int id );
+extern int  bm_get_oid(struct bm *bm );
+
 extern oid bm_add_bat(struct bm *bm, BAT *b, char *name);
 extern void bm_del_bat(struct bm *bm, oid bid);
 

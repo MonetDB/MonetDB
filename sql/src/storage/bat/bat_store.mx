@@ -50,6 +50,7 @@ extern BAT *temp_descriptor(oid b);
 
 static struct logger *logger = NULL;
 static MT_Lock bs_lock = NULL;
+static int store_oid = 0;
 static int transactions = 0;
 static sql_trans *gtrans = NULL;
 static int schema_number = 0; /* each committed schema change triggers a new
@@ -1188,6 +1189,22 @@ mvc_bat(struct bm *bm, char *name, int type)
 	return b;
 }
 
+static int
+next_oid()
+{
+	int id = 0;
+	MT_set_lock(bs_lock, "next_oid");
+	id = store_oid++;
+	MT_unset_lock(bs_lock, "next_oid");
+	return id;
+}
+
+int
+store_next_oid()
+{
+	return next_oid();
+}
+
 
 static void
 bs_init_modules(struct bm *bm)
@@ -1571,7 +1588,7 @@ bs_init_func(struct bm *bm)
 			if (f->res.type) {
 				char *name = "result";
 
-				id = OIDnew(1);
+				id = next_oid();
 				BUNins(arg_id, &aid, &id);
 				BUNins(arg_func_id, &aid, &f->base.id);
 				BUNins(arg_name, &aid, name);
@@ -1585,7 +1602,7 @@ bs_init_func(struct bm *bm)
 			for (m = f->ops->h; m; m = m->next, nr++, aid++) {
 				sql_arg *a = m->data;
 
-				id = OIDnew(1);
+				id = next_oid();
 				BUNins(arg_id, &aid, &id);
 				BUNins(arg_func_id, &aid, &f->base.id);
 				if (a->name) {
@@ -1614,7 +1631,7 @@ bs_init_func(struct bm *bm)
 			BUNins(func_aggr, &rid, &T);
 			BUNins(func_module_id, &rid, &zero);
 
-			id = OIDnew(1);
+			id = next_oid();
 			BUNins(arg_id, &aid, &id);
 			BUNins(arg_func_id, &aid, &aggr->base.id);
 			BUNins(arg_name, &aid, name1);
@@ -1626,7 +1643,7 @@ bs_init_func(struct bm *bm)
 			aid++;
 
 			if (aggr->tpe.type) {
-				id = OIDnew(1);
+				id = next_oid();
 				BUNins(arg_id, &aid, &id);
 				BUNins(arg_func_id, &aid, &aggr->base.id);
 				BUNins(arg_name, &aid, name2);
@@ -1683,7 +1700,7 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, 
 	if (bs_debug)
 		fprintf(stderr, "bootstrap_create_column %s\n", name );
 
-	base_init(&col->base, OIDnew(1), TR_NEW, name);
+	base_init(&col->base, next_oid(), TR_NEW, name);
 	sql_find_subtype(&col->type, sqltype, digits, 0);
 	col->def = NULL;
 	col->null = 1;
@@ -1754,7 +1771,7 @@ create_table_intern(char *name, bit table, bit system, bit persists, bit clear)
 {
 	sql_table *t = NEW(sql_table);
 
-	base_init(&t->base, OIDnew(1), TR_NEW, name);
+	base_init(&t->base, next_oid(), TR_NEW, name);
 	t->table = table;
 	t->system = system;
 	t->persists = persists;
@@ -1844,7 +1861,7 @@ bootstrap_create_schema(sql_trans *tr, char *name, int auth_id)
 	if (bs_debug)
 		fprintf(stderr, "bootstrap_create_schema %s %d\n", name, auth_id);
 
-	base_init(&s->base, OIDnew(1), TR_NEW, name);
+	base_init(&s->base, next_oid(), TR_NEW, name);
 	s->auth_id = auth_id;
 	cs_init(&s->tables, (fdestroy) &table_destroy);
 	s->keys = list_create((fdestroy) NULL);
@@ -1886,6 +1903,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 	bs_debug = debug;
 	bm = bm_create(debug);
 	logger = logger_create(debug, logdir, dbname, CATALOG_VERSION, bm);
+	store_oid = logger_oid(logger);
 
 	if (!logger)
 		return -1;
@@ -2062,7 +2080,7 @@ store_manager()
 		MT_sleep_ms(30000);
 		MT_set_lock(bs_lock, "store_manager");
 		if (transactions || !active || !logger || 
-			log_changes(logger) < 1000) {
+			logger_changes(logger) < 1000) {
 			MT_unset_lock(bs_lock, "store_manager");
 			continue;
 		}
@@ -3415,6 +3433,7 @@ sql_trans_commit(sql_trans *tr)
 		/*catalog_corrupt(tr->parent);*/
 	}
 	if (tr->parent == gtrans) {
+		ok = log_oid(logger, store_oid);
 		if (ok == SQL_OK)
 			ok = log_tend(logger);
 	}
@@ -3585,7 +3604,7 @@ sql_trans_create_module(sql_trans *tr, char *name, char *opt_mod)
 	sql_module *m = NEW(sql_module);
 	sql_table *sysmodule = find_sql_table(find_sql_schema(tr, "sys"), "modules");
 
-	base_init(&m->base, OIDnew(1), TR_NEW, name);
+	base_init(&m->base, next_oid(), TR_NEW, name);
 	cs_init(&m->types, (fdestroy) &type_destroy);
 	cs_init(&m->funcs, (fdestroy) &func_destroy);
 	m->internal = NULL;
@@ -3624,7 +3643,7 @@ sql_trans_create_type(sql_trans *tr, sql_module * m, char *sqlname, int digits, 
 	sql_type *t = NEW(sql_type);
 	sql_table *systype = find_sql_table(find_sql_schema(tr, "sys"), "types");
 
-	base_init(&t->base, OIDnew(1), TR_NEW, impl);
+	base_init(&t->base, next_oid(), TR_NEW, impl);
 	t->sqlname = _strdup(sqlname);
 	t->digits = digits;
 	t->scale = scale;
@@ -3651,7 +3670,7 @@ sql_trans_create_func(sql_trans *tr, sql_module * m, char *func, list *args, bit
 	node *n;
 	int number = 0;
 
-	base_init(&t->base, OIDnew(1), TR_NEW, func);
+	base_init(&t->base, next_oid(), TR_NEW, func);
 	t->imp = _strdup(impl);
 	t->sql = sql;
 	t->aggr = aggr;
@@ -3664,7 +3683,7 @@ sql_trans_create_func(sql_trans *tr, sql_module * m, char *func, list *args, bit
 	table_insert(tr, sysfunc, &t->base.id, t->base.name, t->imp, &t->sql, &t->aggr, &m->base.id);
 	if (t->ops) for (n = t->ops->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;
-		oid id = OIDnew(1);
+		oid id = next_oid();
 
 		table_insert(tr, sysarg, &id, &t->base.id, a->name, a->type.type->sqlname, &a->type.type->digits, &a->type.type->scale, &number);
 	}
@@ -3686,7 +3705,7 @@ sql_trans_create_schema(sql_trans *tr, char *name, int auth_id)
 	sql_schema *s = NEW(sql_schema);
 	sql_table *sysschema = find_sql_table(find_sql_schema(tr, "sys"), "schemas");
 
-	base_init(&s->base, OIDnew(1), TR_NEW, name);
+	base_init(&s->base, next_oid(), TR_NEW, name);
 	s->auth_id = auth_id;
 	cs_init(&s->tables, (fdestroy) &table_destroy);
 	s->keys = list_create((fdestroy) NULL);
@@ -3779,7 +3798,7 @@ create_column_bat(sql_trans *tr, sql_table *t, char *name, sql_subtype *tpe, BAT
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *syscolumn = find_sql_table(syss, t->persists ? "pcolumns" : "tcolumns");
 
-	base_init(&col->base, OIDnew(1), TR_NEW, name);
+	base_init(&col->base, next_oid(), TR_NEW, name);
 	col->type = *tpe;
 	col->def = NULL;
 	col->null = 1;
@@ -4065,7 +4084,7 @@ sql_trans_create_key(sql_trans *tr, sql_table *t, char *name, key_type kt, sql_k
 	: (sql_key *) NEW(sql_fkey);
 
 	assert(name);
-	base_init(&nk->base, OIDnew(1), TR_NEW, name);
+	base_init(&nk->base, next_oid(), TR_NEW, name);
 	nk->type = kt;
 	nk->columns = list_create((fdestroy) &kc_destroy);
 	nk->t = t;
@@ -4151,7 +4170,7 @@ sql_trans_create_idx(sql_trans *tr, sql_table *t, char *name, idx_type it)
 		return NULL;
 
 	assert(name);
-	base_init(&ni->base, OIDnew(1), TR_NEW, name);
+	base_init(&ni->base, next_oid(), TR_NEW, name);
 	ni->type = it;
 	ni->columns = list_create((fdestroy) &kc_destroy);
 	ni->t = t;

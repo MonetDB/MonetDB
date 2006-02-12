@@ -84,7 +84,7 @@ sql_create_role(mvc *m, str auth, int grantor)
 	if (column_find_row(m->trans, auth_name, auth, NULL) >= 0)
 		return FALSE;
 
-	id = OIDnew(1);
+	id = store_next_oid();
 	table_insert(m->trans, auths, &id, auth, &grantor);
 
 	return TRUE;

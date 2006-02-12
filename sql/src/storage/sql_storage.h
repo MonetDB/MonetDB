@@ -52,6 +52,7 @@ extern void
 extern void store_lock();
 extern void store_unlock();
 extern int store_schema_number();
+extern int store_next_oid();
 
 extern sql_trans *sql_trans_create(backend_stack stk, sql_trans *parent, char *name);
 extern sql_trans *sql_trans_destroy(sql_trans *tr);

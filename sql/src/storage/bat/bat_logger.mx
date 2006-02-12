@@ -32,7 +32,7 @@ transaction commit to include the changes in the log file.
 
 [The alternative storage structure is an ASCII dump, using a slightly
 enhanced Monet dump file format.
- +batname[hv,tv]	insert the bun
+ +batnams[hv,tv]	insert the bun
  -batname[hv,tv]	delete the bun
  *batname[headtype,tailtype]	define a bat
  =bat timestamp		check/update the bat timestamp
@@ -89,15 +89,17 @@ extern void logger_destroy(struct logger *logger);
 extern int logger_exit(struct logger *logger);
 extern int logger_restart(struct logger *logger);
 extern int logger_cleanup(struct logger *logger);
+extern int logger_changes(struct logger *logger);
+extern int logger_oid(struct logger *logger);
 
 extern int log_bat(struct logger *logger, BAT *b, char *n);
 extern int log_bat_clear(struct logger *logger, char *n);
 extern int log_bat_persists(struct logger *logger, BAT *b, char *n);
 extern int log_bat_transient(struct logger *logger, char *n);
-extern int log_changes(struct logger *logger);
 
 extern int log_tstart(struct logger *logger);
 extern int log_tend(struct logger *logger);
+extern int log_oid(struct logger *logger, int id);
 
 #endif /*_SQL_LOGGER_H_*/
 @c
@@ -135,6 +137,7 @@ multiple files) has a too great performance impact.]
 #define SQL_LOG_CREATE		5
 #define SQL_LOG_DESTROY		6
 #define SQL_LOG_CLEAR		7
+#define SQL_LOG_OID		8
 
 typedef struct logformat_t {
 	char flag;
@@ -149,6 +152,7 @@ typedef struct logger {
 	int version;
 	int id;
 	int tid;
+	int oid; 
 	char *dir;
 	stream *log;
 	struct bm *bm;
@@ -391,7 +395,8 @@ logger_readlog(logger *logger, char *filename)
 	while (log_read_format(logger, &l)) {
 		char *name = NULL;
 
-		if (l.flag != SQL_LOG_START && l.flag != SQL_LOG_END) {
+		if (l.flag != SQL_LOG_START && l.flag != SQL_LOG_END && 
+		    l.flag != SQL_LOG_OID) {
 			name = log_read_string(logger);
 
 			if (!name) {
@@ -420,6 +425,9 @@ logger_readlog(logger *logger, char *filename)
 			}
 			logger->tid = 0;
 
+			break;
+		case SQL_LOG_OID:
+			logger->oid = l.nr;
 			break;
 		case SQL_LOG_INSERT:
 			log_read_updates(logger, &l, name);
@@ -501,7 +509,7 @@ logger_commit(logger *logger)
 static int
 check_version(logger *logger, FILE *fp)
 {
-	int version = 0;
+	int id, version = 0;
 
 	if (fscanf(fp, "%6d", &version) != 1 || version != logger->version) {
 		GDKerror("Incompatible database version %06d, "
@@ -509,6 +517,11 @@ check_version(logger *logger, FILE *fp)
 			 version, logger->version);
 
 		return -1;
+	}
+	fgetc(fp);		/* skip \n */
+	if (fscanf(fp, "%d", &id) == 1) {
+		logger->oid = id;
+		fgetc(fp);	/* skip \n */
 	}
 	fgetc(fp);		/* skip \n */
 	return 0;
@@ -529,6 +542,7 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 	logger->version = version;
 	logger->id = 1;
 	logger->tid = 0;
+	logger->oid = 0;
 
 	snprintf(filename, BUFSIZ, "%s%c%s%c", logdir, DIR_SEP, dbname, DIR_SEP);
 	logger->dir = _strdup(filename);
@@ -580,11 +594,11 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 			GDKerror("logger could not create file %s\n", filename);
 			return NULL;
 		}
-		fprintf(fp, "%06d\n\n", logger->version);
+		fprintf(fp, "%06d\n%d\n\n", logger->version, logger->oid);
 		logger->id ++;
 		fprintf(fp, "%d\n", logger->id);
 	} else {
-		fprintf(fp, "%06d\n\n", logger->version);
+		fprintf(fp, "%06d\n%d\n\n", logger->version, logger->oid);
 		logger->id ++;
 		fprintf(fp, "%d\n", logger->id);
 	}
@@ -639,7 +653,7 @@ logger_exit(logger *logger)
 	if ((fp = fopen(filename, "w")) != NULL) {
 		char ext[BUFSIZ];
 
-		fprintf(fp, "%06d\n", logger->version);
+		fprintf(fp, "%06d\n%d\n\n", logger->version, logger->oid);
 		logger->id ++;
 
 		if (logger_commit(logger) < 0)
@@ -705,9 +719,15 @@ logger_cleanup(logger *logger)
 }
 
 int
-log_changes(logger *logger)
+logger_changes(logger *logger)
 {
 	return logger->changes;
+}
+
+int
+logger_oid(logger *logger)
+{
+	return logger->oid;
 }
 
 @-
@@ -881,4 +901,19 @@ log_tend(logger *logger)
 		 return SQL_ERR;
 
 	return SQL_OK;
+}
+
+int
+log_oid(logger *logger, int id)
+{
+	logformat l;
+
+	l.flag = SQL_LOG_OID;
+	l.nr = id;
+	logger->oid = id;
+
+	if (logger->debug)
+		fprintf(stderr, "log_oid %d\n", id);
+
+	return log_write_format(logger, &l);
 }
