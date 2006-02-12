@@ -28,9 +28,6 @@ gdk_dbfarm=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@dbfarm
 # and restart MonetDB.
 gdk_dbname=demo			# default database to open
 
-gdk_version=@VERSION@
-monet_welcome=yes		#Version and copyright information
-
 # The options below deal with various aspects of memory usage behaviour.
 # If you don't know what these values mean, you should leave them alone.
 
@@ -47,6 +44,9 @@ monet_welcome=yes		#Version and copyright information
 # also, you need to tell valgrind to use 8-byte alignment, hence:
 # "valgrind --alignment=8 mserver --set gdk_alloc_map=no ..."
 gdk_alloc_map=no
+
+# the kernel can be used in embedded situations (don't set this yourself)
+gdk_embedded=no
 
 # You can enable debug for specific parts.  By default debug is
 # switched off.
@@ -76,15 +76,19 @@ gdk_debug=0
 # 2097152 = show join/select algorithm chosen
 # 4194304 = show result size estimations (for join,select)
 # 8388608 = extended property checking: tells also about not set properties
-#
-# the kernel can be used in embedded situations (don't set this yourself)
-gdk_embedded=no
 
+# General client Section
+#=======================
+#host=localhost				#the host the server runs on
 
 # Monet Section
 #==============
 monet_admin=adm			#administrator user name 
+# Prompt when using MAL interface 
 #monet_prompt=>
+# Show version and copyright information when starting the server or
+# a MIL client?
+monet_welcome=yes		#Version and copyright information
 # Where do the MonetDB modules reside? The second path is for windows dlls.
 monet_mod_path=@libdir@@DIRSEP@@PACKAGE@
 # Start mserver in daemon mode, or start with MAL interactive interface?
@@ -102,21 +106,17 @@ mal_debug = yes                 # debugging the MAL component
 mal_details = 14                # instruction listing details
 mal_listing = 15                # echoing the input
 
-# General client Section
-#====================================
-#host=localhost				#the host the server runs on
-
 # Monet Application Interface Section
 #====================================
 mapi_port=50000			#default port to address a mserver
 #mapi_noheaders=no			#show all the mil output
 #mapi_debug=0				#The mapi debug level		
+# The number of concurrent clients can be set using mapi_clients
+# (smaller than 1 is not very useful)
+#mapi_clients=2
 
 # SQL Interface Section
 #====================================
-sql_prompt=sql>
-# default port to address an mserver for an SQL session
-sql_port=45123
 # The SQL debug level (should be disabled for normal use)
 sql_debug=0
 # Place to store SQL transaction logs
@@ -126,9 +126,6 @@ sql_logdir=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@dblogs
 
 # XQuery Interface Section
 #=========================
-
-# default port to address an mserver for an XQuery session
-xquery_port=45789
 
 # default port to address the HTTP server for pathfinder
 pf_httpd_port=8080
@@ -146,4 +143,3 @@ xquery_cacheMB=100
 # set to "no" to run mserver with valgrind.
 # valgrind --tool=callgrind mserver --set gdk_alloc_map=no ..."
 #gdk_alloc_map=yes
-
