@@ -261,7 +261,9 @@ BATappend(BAT *b, BAT *n)
 					bunfastins_nocheck(b, r, (ptr)&f, NULL, yy);
 				}
 			} else {
-				BATsetcount(b, BATcount(b)+sz);
+				sz += BATcount(b);
+				BATsetcount(b, sz);
+				b->batBuns->free = sz*BUNsize(b);
 			}
 			return b;
 		}
