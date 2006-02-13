@@ -1,4 +1,3 @@
-module("pathfinder");
 module("unix");
 var TSTSRCDIR := getenv("TSTSRCDIR");
 shred_doc(TSTSRCDIR + "/" + "document.xml", "document.xml");

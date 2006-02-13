@@ -1,11 +1,6 @@
-shred_doc
-check-1
 setattr-1
-check-2
 insert-1
-check-3
 insert-2
-check-4
 symm-test-1
 symm-test-2
 symm-test-3
