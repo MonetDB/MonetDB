@@ -20,7 +20,7 @@
 
 #ifdef HAVE_LIBREADLINE
 
-void init_readline(Mapi mid, const char *language, int save_history);
+void init_readline(Mapi mid, char *language, int save_history);
 void deinit_readline(void);
 rl_completion_func_t *suspend_completion(void);
 void continue_completion(rl_completion_func_t * func);
@@ -65,6 +65,7 @@ static const char *sql_commands[] = {
 static Mapi _mid;
 static char _history_file[PATHLENGTH];
 static int _save_history = 0;
+static char *language;
 
 static char *
 sql_tablename_generator(const char *text, int state)
@@ -126,6 +127,7 @@ sql_command_generator(const char *text, int state)
 	return NULL;
 }
 
+
 static char **
 sql_completion(const char *text, int start, int end)
 {
@@ -136,10 +138,15 @@ sql_completion(const char *text, int start, int end)
 	(void) end;
 
 	/* FIXME: Nice, context-sensitive completion strategy should go here */
-	if (start == 0) {
-		matches = rl_completion_matches(text, sql_command_generator);
-	} else {
-		matches = rl_completion_matches(text, sql_tablename_generator);
+	if( strcmp(language,"sql") ==0){
+		if (start == 0) {
+			matches = rl_completion_matches(text, sql_command_generator);
+		} else {
+			matches = rl_completion_matches(text, sql_tablename_generator);
+		}
+	}
+	if( strcmp(language,"mal") ==0){
+			matches = rl_completion_matches(text, sql_tablename_generator);
 	}
 
 	return (matches);
@@ -189,6 +196,89 @@ mil_completion(const char *text, int start, int end)
 	return rl_completion_matches(text, mil_batname_generator);
 }
 
+/* The MAL completion help */
+
+static char *mal_commands[] = {
+    "address",
+    "atom",
+    "barrier",
+    "catch",
+    "command",
+    "comment",
+    "exit",
+    "end",
+    "function",
+    "factory",
+    "leave",
+    "pattern",
+    "module",
+    "raise",
+    "redo",
+    0
+};
+
+static char *
+mal_command_generator(const char *text, int state)
+{
+
+	static int index;
+	static int seekpos, len, rowcount;
+	static MapiHdl table_hdl;
+	char *name, buf[BUFSIZ];
+
+	if (!state) {
+		index = 0;
+		len = strlen(text);
+	}
+
+
+	while ( mal_commands[index] && (name = mal_commands[index++])) {
+#ifdef HAVE_STRNCASECMP
+		if (strncasecmp(name, text, len) == 0)
+#else
+		if (strncmp(name, text, len) == 0)
+#endif
+			return strdup(name);
+	}
+	/* try the server to answer */
+	if (!state) {
+		seekpos = 0;
+		len = strlen(text);
+		snprintf(buf,BUFSIZ, "manual.completion(\"%s\");", text);
+		if ((table_hdl = mapi_query(_mid, buf)) == NULL || mapi_error(_mid)) {
+			if (table_hdl) {
+				mapi_explain_query(table_hdl, stderr);
+				mapi_close_handle(table_hdl);
+			} else
+				mapi_explain(_mid, stderr);
+			return NULL;
+		}
+		mapi_fetch_all_rows(table_hdl);
+		rowcount = mapi_get_row_count(table_hdl);
+	}
+
+	while (seekpos < rowcount) {
+		mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET);
+		mapi_fetch_row(table_hdl);
+		name = mapi_fetch_field(table_hdl, 0);
+		if ( name && strncmp(name, text, len) == 0)
+			return strdup(name);
+	}
+
+	return NULL;
+}
+
+static char **
+mal_completion(const char *text, int start, int end)
+{
+	(void) start;
+	(void) end;
+
+	/* FIXME: Nice, context-sensitive completion strategy should go here */
+	return rl_completion_matches(text, mal_command_generator);
+}
+
+
 rl_completion_func_t *
 suspend_completion(void)
 {
@@ -205,16 +295,20 @@ continue_completion(rl_completion_func_t * func)
 }
 
 void
-init_readline(Mapi mid, const char *language, int save_history)
+init_readline(Mapi mid, char *lang, int save_history)
 {
+	language= lang;
 	_mid = mid;
 	/* Allow conditional parsing of the ~/.inputrc file. */
 	rl_readline_name = "MapiClient";
 	/* Tell the completer that we want to try our own completion before std completion (filename) kicks in. */
 	if (strcmp(language, "sql") == 0) {
 		rl_attempted_completion_function = sql_completion;
-	} else {
+	} else
+	if (strcmp(language, "mil") == 0) {
 		rl_attempted_completion_function = mil_completion;
+	} else {
+		rl_attempted_completion_function = mal_completion;
 	}
 
 	if (save_history) {

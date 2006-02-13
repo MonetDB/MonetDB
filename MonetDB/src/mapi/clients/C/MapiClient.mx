@@ -95,6 +95,7 @@ extern int chdir(const char *);
 #endif
 
 static FILE *toConsole;
+static char *language = "mil";
 
 char *command = NULL;
 
@@ -1241,7 +1242,6 @@ main(int argc, char **argv)
 {
 	opt *set = NULL;
 	int setlen;
-	char *language = "mil";
 	int port = 0;
 	char *user = NULL;
 	char *passwd = NULL;
