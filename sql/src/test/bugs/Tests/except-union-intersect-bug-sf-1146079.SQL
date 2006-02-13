@@ -13,7 +13,7 @@ EOF
 LC_CTYPE="en_US.UTF-8"
 export LC_CTYPE
 
-Mlog   "$MTIMEOUT java -jar \"$JAR\" -h $HOST -p $MAPIPORT -e -f $RELSRCDIR/../except-union-intersect-bug-sf-1146079.sql"
-	$MTIMEOUT java -jar  "$JAR"  -h $HOST -p $MAPIPORT -e -f $RELSRCDIR/../except-union-intersect-bug-sf-1146079.sql 
+Mlog   "$MTIMEOUT java -jar \"$JAR\" -h $HOST -p $MAPIPORT -b${TSTDB} -e -f $RELSRCDIR/../except-union-intersect-bug-sf-1146079.sql"
+	$MTIMEOUT java -jar  "$JAR"  -h $HOST -p $MAPIPORT -b${TSTDB} -e -f $RELSRCDIR/../except-union-intersect-bug-sf-1146079.sql 
 
 rm -f .monetdb
