@@ -49,7 +49,7 @@ public class JdbcClient {
 
 		// arguments which need exactly one value
 		copts.addOption("h", "host", CmdLineOpts.CAR_ONE, "localhost");
-		copts.addOption("p", "port", CmdLineOpts.CAR_ONE, "45123");
+		copts.addOption("p", "port", CmdLineOpts.CAR_ONE, "50000");
 		copts.addOption("u", "user", CmdLineOpts.CAR_ONE, System.getProperty("user.name"));
 		copts.addOption("b", "database", CmdLineOpts.CAR_ONE, "demo");
 		copts.addOption("l", "language", CmdLineOpts.CAR_ONE, "sql");
@@ -114,9 +114,9 @@ public class JdbcClient {
 "                                 [-e] [-X<opt>]\n" +
 "or using long option equivalents --host --port --file --user --language\n" +
 "--dump --echo --database.\n" +
-"Arguments may be written directly after the option like -p45123.\n" +
+"Arguments may be written directly after the option like -p50000.\n" +
 "\n" +
-"If no host and port are given, localhost and 45123 are assumed.  An .monetdb\n" +
+"If no host and port are given, localhost and 50000 are assumed.  An .monetdb\n" +
 "file may exist in the user's home directory.  This file can contain\n" +
 "preferences to use each time JdbcClient is started.  Options given on the\n" +
 "command line override the preferences file.  The .monetdb file syntax is\n" +
