@@ -69,9 +69,6 @@ gdk_debug=0
 # 2097152 = show join/select algorithm chosen
 # 4194304 = show result size estimations (for join,select)
 # 8388608 = extended property checking: tells also about not set properties
-#
-#gdk_version <ver>		create BATs in old formats[out of date?]
-
 
 # General client Section
 #=======================
@@ -108,6 +105,8 @@ mapi_debug=0
 # The SQL debug level (should be disabled for normal use)
 sql_debug=0
 # Place to store SQL transaction logs
+# The logs are typically stored on a different storage medium
+# to protect the database against accidental hardware loss.
 sql_logdir=@Xlocalstatedir@@DIRSEP@@PACKAGE@@DIRSEP@log
 
 # XQuery Interface Section
