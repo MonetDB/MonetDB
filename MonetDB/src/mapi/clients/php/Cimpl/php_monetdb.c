@@ -590,7 +590,7 @@ PHP_FUNCTION(monetdb_query)
 
 	mapi_query_handle(handle, query);
 
-	if (monetdb_set_last_error(mapi_result_error(handle) TSRMLS_CC) != NULL) {
+	if (monetdb_set_last_error(mapi_result_error(handle) TSRMLS_CC) != 0) {
 		/* mapi_close_handle(handle); */
 		php_error(E_WARNING, "monetdb_query: Error: %s", MONET_G(last_error));
 		/* php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "MonetDB Error: %s", error); */
