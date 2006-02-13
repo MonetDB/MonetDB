@@ -18,9 +18,6 @@
 @t SQL to MAL code generation.
 @a N. Nes, M. Kersten
 @+ MAL Code generation
-[TODO, check code generation, in particular the assignment of
-the result to the proper variable]
-
 This module contains the actions to construct a MAL program, ready for
 optimization and execution by the Monet V5 kernel.
 
@@ -365,11 +362,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->nr = getDestVar(q);
 
 			l = getDestVar(q);
-			/* r = newConstant(mb, TYPE_oid, _strdup("0@0"), TRUE);*/
 			q = newStmt1(mb, batRef, "setSequenceBase");
 			q = pushArgument(mb, q, l);
 			pushOid(mb,q,0);
-			/* q = pushArgument(mb, q, r);*/
 		} break;
 		case st_column:
 			s->nr = _dumpstmt(sql, mb, s->op1.stval);
@@ -471,6 +466,28 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			@:SQLprelude@
 
+			/* first insert single value into a bat */
+			if (s->nrcols == 0) { 
+				int k;
+				int ht = TYPE_void;
+				int tt = tail_type(s->op1.stval)->type->localtype;
+
+				q = newStmt1(mb, batRef, "new");
+				setVarType(mb, getArg(q, 0), newBatType(ht,tt));
+				q = pushNil(mb, q, ht);
+				q = pushNil(mb, q, tt);
+				k = getDestVar(q);
+
+				q = newStmt1(mb, batRef, "setSequenceBase");
+				q = pushArgument(mb, q, k);
+				pushOid(mb,q,0);
+				k = getDestVar(q);
+
+				q = newStmt2(mb, batRef, appendRef);
+				q = pushArgument(mb, q, k);
+				q = pushArgument(mb, q, l);
+				l = k;
+			}
 			if (s->flag) {
 				int topn = 0;
 				char *name = "topn_min";
@@ -506,7 +523,15 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushArgument(mb, q, l);
 			q = pushArgument(mb, q, offset);
 			q = pushArgument(mb, q, len);
-			s->nr = getDestVar(q);
+			l = getDestVar(q);
+			/* retrieve the single values again */ 
+			if (s->nrcols == 0) { 
+				q = newStmt1(mb, algebraRef, "find");
+				q = pushArgument(mb, q, l);
+				pushOid(mb,q,0);
+				l = getDestVar(q);
+			}
+			s->nr = l;
 			@:SQLpostlude@
 		} break;
 		case st_order:{
