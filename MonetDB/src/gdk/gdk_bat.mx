@@ -130,6 +130,7 @@ add to BBP
 fill in heap names, so HEAPallocs can resort to disk for very large writes.
 @c
 	bn->batBuns->filename = NULL;
+	bn->batMapbuns = -1;
 	if (heapnames) {
 		str nme = BBP_physical(bn->batCacheid);
 
@@ -140,12 +141,14 @@ fill in heap names, so HEAPallocs can resort to disk for very large writes.
 			bn->hheap = (Heap*)GDKzalloc(sizeof(Heap));
 			bn->hheap->filename = (str) GDKmalloc(strlen(nme) + 12);
 			GDKfilepath(bn->hheap->filename, NULL, nme, "hheap");
+			bn->batMaphheap = -1;
 		}
 
 		if (ATOMneedheap(tt)) {
 			bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
 			bn->theap->filename = (str) GDKmalloc(strlen(nme) + 12);
 			GDKfilepath(bn->theap->filename, NULL, nme, "theap");
+			bn->batMaptheap = -1;
 		}
 	}
 	return bn;
@@ -482,14 +485,12 @@ BATfree(BAT *b)
 	/* deallocate all memory for a bat */
 	if (b->batCacheid < 0)
 		b = BBP_cache(-(b->batCacheid));
-	if (b->hident && !default_ident(b->hident)) {
+	if (b->hident && !default_ident(b->hident)) 
 		GDKfree(b->hident);
-		b->hident = string_h;
-	}
-	if (b->tident && !default_ident(b->tident)) {
+	b->hident = string_h;
+	if (b->tident && !default_ident(b->tident)) 
 		GDKfree(b->tident);
-		b->tident = string_t;
-	}
+	b->tident = string_t;
 	HASHdestroy(b);
 	DELTAsave(b);	       /* convert to disk format */
 	HEAPfree(b->batBuns);
@@ -506,6 +507,12 @@ BATfree(BAT *b)
 void
 BATdestroy( BAT *b )
 {
+	if (b->hident && !default_ident(b->hident)) 
+		GDKfree(b->hident);
+	b->hident = string_h;
+	if (b->tident && !default_ident(b->tident)) 
+		GDKfree(b->tident);
+	b->tident = string_t;
 	if (b->hheap)
 		GDKfree(b->hheap);
 	if (b->theap)
