@@ -16,6 +16,13 @@
 
 # make rules to generate sql's documentation
 
+# entry point
+docs: $(prefix)/doc/SQLsessionDemo.html \
+	$(prefix)/doc/SQLfeatures/SQLfeatures.html \
+	$(prefix)/doc/jdbcmanual/jdbcmanual.html \
+	$(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Unix/index.html \
+	$(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Windows/index.html
+
 $(prefix)/doc/jdbcmanual.html:	$(top_srcdir)/jdbcmanual.html
 	-@mkdir -p $(prefix)/doc
 	cp $< $@
@@ -45,4 +52,10 @@ $(prefix)/doc/SQLfeatures/SQLfeatures.aux:	$(prefix)/doc/SQLfeatures/SQLfeatures
 $(prefix)/doc/SQLfeatures/SQLfeatures.html:	$(prefix)/doc/SQLfeatures/SQLfeatures.aux
 	(cd $(prefix); latex2html -ascii_mode -address '' -style http://monetdb.cwi.nl/MonetDB.css -dir doc/SQLfeatures doc/SQLfeatures/SQLfeatures.tex -noinfo)
 
-docs: $(prefix)/doc/SQLsessionDemo.html $(prefix)/doc/SQLfeatures/SQLfeatures.html $(prefix)/doc/jdbcmanual/jdbcmanual.html
+$(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Unix/index.html: $(top_srcdir)/HowToStart-SQL
+	mkdir -p $(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Unix
+	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart-SQL > $(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Unix/index.html
+
+$(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Windows/index.html: $(top_srcdir)/HowToStart-SQL-Win32.txt
+	mkdir -p $(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Windows
+	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart-SQL-Win32.txt > $(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Windows/index.html
