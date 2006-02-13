@@ -2270,7 +2270,7 @@ int
 date_sub_sec_interval_wrap(date *ret, date *t, int *sec)
 {
 	if (*sec > 0) {
-		int delta = -1 * *sec / 86400;
+		int delta = -(*sec / 86400);
 
 		return date_adddays(ret, t, &delta);
 	}
@@ -2281,7 +2281,7 @@ int
 date_sub_sec_interval_lng_wrap(date *ret, date *t, lng *sec)
 {
 	if (*sec > 0) {
-		int delta = -1 * *sec / 86400;
+		int delta = (int) -(*sec / 86400);
 
 		return date_adddays(ret, t, &delta);
 	}
@@ -2304,7 +2304,7 @@ int
 date_add_sec_interval_lng_wrap(date *ret, date *t, lng *sec)
 {
 	if (*sec > 0) {
-		int delta = *sec / 86400;
+		int delta = (int) (*sec / 86400);
 
 		return date_adddays(ret, t, &delta);
 	}
