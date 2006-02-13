@@ -69,7 +69,6 @@ language features and illustrative examples.
 @end menu
 * Boxed variables::
 * Property management::
-* Modules::
 @end menu
 
 @node MAL instructions, Flow of control, MonetDB Assembler Language , MonetDB Assembler Language
@@ -90,7 +89,7 @@ t1 := constant;
 Variables are implicitly defined upon first use and take
 on a type through a type classifier or inherit it from
 the context in which they are used, see @ref{Type resolution}. 
-Operators are grouped into user defined modules @ref{Modules}.
+Operators are grouped into user defined modules @ref{MAL Modules}.
 Binary arithmetic operations are merely provided as a short-hand,
 e.g. the expression @code{t:=2+2} is converted directly 
 into @code{t:= calc.+(2,2)}.

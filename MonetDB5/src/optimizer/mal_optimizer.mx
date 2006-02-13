@@ -34,16 +34,16 @@ but can also be ran at runtime for query fragments.
 @menu
 * Optimizer landscape::
 @menu
-* What optimizers to consider?::
-* Optimization Dependencies::
+* Optimizers::
+* Optimizer Dependencies::
 * Optimizer Building Blocks::
 * Query Optimizer Framework::
 @end menu
 * Optimizer toolkit::
 @end menu
 
-@node What optimizers to consider?, Optimization Dependencies ,Optimizer landscape, Optimizer landscape
-@+ What optimizers to consider?
+@node Optimizers, Optimizer Dependencies ,Optimizer landscape, Optimizer landscape
+@+ Optimizers
 A query optimizer is often a large and complex piece of code, which
 enumerates alternative evaluation plans from which 'the best' plan
 is selected for evaluation. Limited progress has been made sofar to
@@ -313,8 +313,8 @@ Rationale: the code produced by the SQL frontend involves foreign key
 constraints, which provides many opportunities for speedy code.
 Impact: large
 
-@node Optimization Dependencies, Optimizer Building Blocks, What optimizers to consider?, Optimizer landscape
-@section What is the dependency between optimizers?
+@node Optimizer Dependencies, Optimizer Building Blocks, Optimizers, Optimizer landscape
+@section Optimizer Dependencies
 The optimizers are highly targeted to a particular problem.
 Aside from the resources available to invest in plan optimization,
 optimizers are partly dependent and may interfere.
@@ -381,7 +381,7 @@ them in a preferred order of deployment.
 @end multitable
 @-
 Alias removal can be applied after each other optimization step.
-@node Optimizer Building Blocks, Query Optimizer Framework, Optimization Dependencies, Optimizer landscape
+@node Optimizer Building Blocks, Query Optimizer Framework, Optimizer Dependencies, Optimizer landscape
 @+ Optimizer building blocks
 
 Some instructions are independent of the execution context. In particular,

@@ -56,7 +56,7 @@ Redesign of the MonetDB software stack was driven by the need to
 reduce the Total Execution Cost (TEC) for query execution.
 The TEC is what an end-user or application program will
 notice. The TEC is composed on several cost factors:
-@itemize
+@itemize @bullet
 @item  API message handling
 @item  Parsing and semantic analysis
 @item  Optimization and plan generation
@@ -156,7 +156,7 @@ setting. In particular, it should provide a clean infrastructure
 to implement triggers and stream-based database applications.
 Its design and implementation takes the functionality a 
 significant step further. To name a few:
-@itemize
+@itemize @bullet
 @item All instructions are strongly typed before being executed. 
 @item Polymorphic functions are supported. 
 They act as templates that produce strongly typed instantiations when needed.
@@ -270,7 +270,7 @@ and in balance with the primary research activities.
 
 The development of Version 5 was driven by the following 
 compatibility requirements:
-@itemize
+@itemize @bullet
 @item The programming interface technology (ODBC, JDBC, Mapi)
 are all retained to reduce impact on external applications.
 @item SQL and XQuery should compile 

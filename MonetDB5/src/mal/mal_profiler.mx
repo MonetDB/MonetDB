@@ -41,8 +41,12 @@ For this case the event record is turned into a XML structure and
 sent over the stream (most likely linked with a file)
 Reflective performance analysis is supported by an event cache,
 emptied explicitly upon need.
- 
-@node Event Filtering, Event Caching, Execution Profiling, Top
+@menu
+* Event Filtering ::
+* Event Caching::
+@end menu
+
+@node Event Filtering, Event Caching, Execution Profiling, Execution Profiling
 @+ Event Filtering 
 The profiler supports selective retrieval of such information by
 tagging the instructions of interest. This means that a profiler
@@ -100,7 +104,7 @@ of a code block with the pair @code{profiler.setOfflineProfiling()}.
 The default is tuple format, which can be requested
 explicitly using @code{profiler.setOnlineProfiling()}.
 
-@node Event Caching, MonetDB Extension Modules, Event Filtering, Top
+@node Event Caching, MonetDB Extension Modules, Event Filtering, Execution Profiling
 @+ Event Caching
 Aside from shipping events to a separate process, the profiler
 can keep the events in a local @code{BAT} group, 
