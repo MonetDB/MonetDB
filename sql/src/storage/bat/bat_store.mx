@@ -3911,10 +3911,10 @@ sql_trans_clear_table(sql_trans *tr, sql_table *t)
 
 		c->base.wtime = tr->stime;
 		b = temp_descriptor(c->bat.ibid);
+		sz += BATcount(b);
 		BATclear(b);
 		BATcommit(b);
 		bat_destroy(b);
-		sz += BATcount(b);
 
 		if (c->bat.bid) {
 			b = bind_bat(tr, c, RDONLY);
