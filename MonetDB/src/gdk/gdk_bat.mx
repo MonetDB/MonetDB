@@ -211,8 +211,12 @@ BATnewstorage(int ht, int tt, size_t cap)
 	BAT *bn = BBPrecycle(ht,tt,cap);
 
 	if( bn) {
-		bn->hident = (char*)string_h;
-		bn->tident = (char*)string_t;
+		if (bn->hident && !default_ident(bn->hident)) 
+			GDKfree(bn->hident);
+		bn->hident = string_h;
+		if (bn->tident && !default_ident(bn->tident))
+			GDKfree(bn->tident);
+		bn->tident = string_t;
 		return bn;
 	}
 
@@ -484,14 +488,12 @@ BATfree(BAT *b)
 	/* deallocate all memory for a bat */
 	if (b->batCacheid < 0)
 		b = BBP_cache(-(b->batCacheid));
-	if (b->hident && !default_ident(b->hident)) {
+	if (b->hident && !default_ident(b->hident)) 
 		GDKfree(b->hident);
-		b->hident = string_h;
-	}
-	if (b->tident && !default_ident(b->tident)) {
+	b->hident = string_h;
+	if (b->tident && !default_ident(b->tident)) 
 		GDKfree(b->tident);
-		b->tident = string_t;
-	}
+	b->tident = string_t;
 	HASHdestroy(b);
 	DELTAsave(b);	       /* convert to disk format */
 	HEAPfree(b->batBuns);
@@ -508,6 +510,12 @@ BATfree(BAT *b)
 void
 BATdestroy( BAT *b )
 {
+	if (b->hident && !default_ident(b->hident)) 
+		GDKfree(b->hident);
+	b->hident = string_h;
+	if (b->tident && !default_ident(b->tident)) 
+		GDKfree(b->tident);
+	b->tident = string_t;
 	if (b->hheap)
 		GDKfree(b->hheap);
 	if (b->theap)
