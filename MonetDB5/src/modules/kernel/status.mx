@@ -770,7 +770,6 @@ SYSgdkThread(int *ret)
 Collect the database and their access permissions for inspection.
 Note, this code base should be changed for the Windows setting.
 @c
-#include <dirent.h>
 str SYSgetDatabases(int *ret)
 {
 	BAT *b;

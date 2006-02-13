@@ -267,7 +267,7 @@ ctime is actually thread-safe.
 int
 CMDtimers(BAT **retval)
 {
-	char buf[27];
+	char buf[26];
 	int k;
 
 	*retval = BATnew(TYPE_str, TYPE_str, timerTop);
