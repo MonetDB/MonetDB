@@ -5,15 +5,21 @@ system components.
 A precise timeline can not be given. It depends too much on the
 available resources and urgency (= pressure by our research and
 clients).
+@menu
+* SQL Roadmap ::
+* XQuery Roadmap ::
+* Embedded Server Roadmap ::
+* Server Roadmap ::
+@end menu
 
-@node SQL Roadmap, XQuery Roadmap, Development Roadmap, Top
+@node SQL Roadmap, XQuery Roadmap, Development Roadmap, Development Roadmap
 @subsection SQL Roadmap
 In this section we summarize the SQL features scheduled for implementation
 and those that won;t be supported in the foreseeable future.
 
 Our current assessment of the features planned for upcoming releases,
 in order of priority, are:
-@itemize
+@itemize @bullet
 @item @emph{Full text retrieval }
 A full text retrieval support function consists of a special
 constructed index over text appearing in multiple columns of
@@ -38,7 +44,7 @@ procedures less important.
 The database backend architecture prohibits easy implementation of
 several SQL-99 features. Those on the list below are not expected to
 be supported.
-@itemize
+@itemize @bullet
 @item
 Cursor based processing, because the execution engine is not based
 on the iterator model deployed in other engines. A simulation of the
@@ -49,7 +55,7 @@ Multi-level transaction isolation levels. Coarse grain isolation is
 provided using table level locks.
 @end itemize
 
-@node XQuery Roadmap, Embedded Server Roadmap, SQL Roadmap, Top
+@node XQuery Roadmap, Embedded Server Roadmap, SQL Roadmap, Development Roadmap
 @subsection XQuery Roadmap
 The XQuery compiler is currently only available on MonetDB Version 4.
 It is based on the @url{pathfinder.org,Pathfinder} compiler project.
@@ -58,7 +64,7 @@ A novel compiler based on a XQuery algebra is under development.
 We expect that an alpha release for MonetDB Version 5
 becomes available in the fall of 2006.
 
-@node Embedded Server Roadmap, Server Roadmap, XQuery Roadmap, Top
+@node Embedded Server Roadmap, Server Roadmap, XQuery Roadmap, Development Roadmap
 @subsection Embedded MonetDB Roadmap
 The embedded MonetDB software family provides support for both
 SQL and Xquery (Version 4 only). The software has been tuned to
@@ -75,10 +81,10 @@ A separate project, called the Datacell, is underway and geared at
 providing a streaming environment for embedded applications.
 The supportive modules are scheduled for release in 2006.
 
-@node Server Roadmap, SQL, Embedded Server Roadmap, Top
+@node Server Roadmap, SQL, Embedded Server Roadmap, Development Roadmap
 @subsection MonetDB Roadmap
 The MonetDB server code base is continously being improved. 
-@itemize
+@itemize @bullet
 @item @emph{Replication Service}
 A single-write multiple-read distributed replication service is
 prepared for release mid 2006.  It will provide both the concept

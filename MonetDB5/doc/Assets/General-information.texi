@@ -1,3 +1,14 @@
+
+@menu
+* Intended audience::
+* Get Going::
+* Features and Limitations::
+* The History of MonetDB::
+* Manual Generation::
+* Conventions and Notation::
+* Additional Resources::
+@end menu
+
 MonetDB is an open-source high-performance database system developed at 
 @url{_ROOTURL_/Development/Developers/, CWI}, the Institute for Mathematics and Computer Science Research in The Netherlands.
 Thru several iterations of functional enhancements, both in a commercial

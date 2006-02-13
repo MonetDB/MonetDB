@@ -4,4 +4,8 @@ Although some tools are targetted to a single backend server, the
 systems described below have been successfully linked with MonetDB/SQL.
 For all systems considered, make sure you have Mserver installed
 on your system and that you can access the server using the ref(JDBC client).
+@menu
+* Aqua Data Studio::
+* iSQL-Viewer::
+@end menu
 

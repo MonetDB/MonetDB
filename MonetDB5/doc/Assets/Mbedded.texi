@@ -1,16 +1,16 @@
 @section Embedded MonetDB
 The Embedded MonetDB version is optimized for running on small board computers
 as a database back-end for a single client.
-It is of particular interest if you need database functionality within 
+It is of particular interest if you need database functionality within
 a limited application setting, e.g a self-contained database distributed
 as part of the application.
 Within this context, much of the code to facilitate and protect
-concurrent use of the kernel can be disabled. For example, 
+concurrent use of the kernel can be disabled. For example,
 the communication overhead of client-server TCP-IP interaction is removed.
-Moreover, locking of critical resources in the kernel is not needed anymore, 
-which results in significant performance improvements. 
+Moreover, locking of critical resources in the kernel is not needed anymore,
+which results in significant performance improvements.
 
-The approach taken is to wrap a server such that the interaction 
+The approach taken is to wrap a server such that the interaction
 between client code and server can still follow the Mapi protocol.
 It leads to a C-program with calls to the Mapi library routines,
 which provides some protection against havoq behaviour.
@@ -18,7 +18,7 @@ From a programming view, it differs from a client-server application in
 the startup and (implicit) termination.
 
 You normally only have to change the call @code{mapi_connect()} into
-@code{embedded_sql()} (or @code{embedded_mal()}). It requires an 
+@code{embedded_sql()} (or @code{embedded_mal()}). It requires an
 optional argument list to refine the environment variables used by the server.
 In combination with the header file @code{embeddedclient.h}
 it provides the basis to compile and link the program.
@@ -28,12 +28,12 @@ it provides the basis to compile and link the program.
 The behavior of an embedded SQL program can be simulated with
 a server started as follows:
 @example
-mserver --set embedded=yes --dbinit="include sql; mapi.listen(45123);" &
+mserver5 --set embedded=yes --dbinit="include sql;" &
 @end example
 
 As a result, the server starts in 'daemon' mode,
-loads the SQL support library, and waits for a single connection
-at the port.
+loads the SQL support library, and waits for a connection.
+Only one connection is permitted.
 
 @menu
 * A Simple Example::
@@ -47,7 +47,7 @@ A minimalistic embedded application is shown below. It creates
 a temporary table in the database, fills it, and retrieves the
 records for some statistics gathering.
 
-The key operation is @code{embedded_sql()} which takes an optional 
+The key operation is @code{embedded_sql()} which takes an optional
 environment argument list. Upon success of this call, there
 will be a separate server thread running in the same user space to handle
 the database requests. A short-circuit interaction is established
@@ -56,13 +56,13 @@ between the application and the kernel using in memory buffers.
 The body of the program consists of the Mapi calls you have
 already seen (@pxref{The Mapi Library}). It terminates with a call
 to @code{mapi_disconnect()} which lets the MonetDB thread
-gracefully die. 
+gracefully die.
 
 The tight coupling of application and kernel code also carries some
-dangers. 
-Many of the MonetDB data structures can be directly accessed, 
-or calls to the kernel routines are possible. 
-It is highly advised to stick to the Mapi interaction protocol. 
+dangers.
+Many of the MonetDB data structures can be directly accessed,
+or calls to the kernel routines are possible.
+It is highly advised to stick to the Mapi interaction protocol.
 It gives a little more protection against malicious behavior
 or unintended side-effects.
 
@@ -124,7 +124,7 @@ main()
 @end verbatim
 @end example
 
-The embedded MonetDB engine is available as the 
+The embedded MonetDB engine is available as the
 library @code{libembedded_sql.a} (and @code{libembedded_mal.a})
 to be linked with a C-program.
 Provided the programming environment have been initialized properly, it
@@ -133,7 +133,7 @@ suffices to prepare the embedded application using
 gcc myprog.c -o myprog `monetdb-config --cflags --libs`
 @end example
 
-You might also write a Makefile to build the program as follows.
+You might also write a Makefile to build the program as follows.[todo]
 @example
 @verbatim
 CC= gcc
@@ -142,8 +142,8 @@ INCLUDE= -I${PREFIX}
 LIBS= -l${PREFIX}/lib/libMbedded.a -lm -lz -lstreams ...
 myprog: myprog.o
 	${CC} myprog.o -o myprog ${LIBS}
-myprog.o : myprog.c 
-	${CC} -c ${INCLUDES} myprog.c 
+myprog.o : myprog.c
+	${CC} -c ${INCLUDES} myprog.c
 
 clean: myprog.o
 	rm -f myprog myprog.o
@@ -189,11 +189,11 @@ After module loading the space quickly grows to about 60Mb.
 
 A better frame of reference for embedded applications is our sample
 program, which is a simple, yet complete embedded application inspired by an
-MP3 player. The table below illustrates some basic properties 
+MP3 player. The table below illustrates some basic properties
 on different embedded SQL platforms.
 
 @multitable @columnfractions 0.2 0.2 0.2 0.2 0.2
-@item 
+@item
 @tab Mbedded
 @tab SQLite
 @tab MySQL
@@ -213,8 +213,8 @@ is to reduce the modules loaded. This requires patches to the
 startup scripts.
 
 The benefit of an embedded database application also comes with limitations.
-The one and foremost limitation of embedded MonetDB is that the first 
-application accessing the database effectively locks out any other concurrent 
+The one and foremost limitation of embedded MonetDB is that the first
+application accessing the database effectively locks out any other concurrent
 use.
 Even in those situations where concurrent applications merely read the database,
 or create privately held tables.

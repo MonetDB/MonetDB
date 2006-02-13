@@ -38,10 +38,11 @@ xml:
 	-mkdir -p ${MONET5_PREFIX}/share/MonetDB5
 	mkbdy; cp manual.texi ${MONET5_PREFIX}/share/MonetDB5
 	cp -r ../Assets ${MONET5_PREFIX}/share/MonetDB5
+	cp paperclip.xsl ${MONET5_PREFIX}/share/MonetDB5
 	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
 	makeinfo --force --xml manual.texi \
 	)
-	cp ${MONET5_PREFIX}/share/MonetDB5/MonetDB5.xml /ufs/mk/cwi/public_html 
+	cp ${MONET5_PREFIX}/share/MonetDB5/MonetDB.xml /ufs/mk/cwi/public_html 
 	echo "XML file created"
 
 gdkpdf: 

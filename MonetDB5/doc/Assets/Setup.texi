@@ -27,26 +27,35 @@ cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb checkout MonetDB5 
 
 This will create the directories MonetDB5 and SQL in your current working 
 directory, which hold the sources. 
+MonetDB developers should use @code{ext} instead of @code{pserver}, e.g.
+@verbatim
+cvs -d:ext:dev@monetdb.sf.net:/cvsroot/monetdb checkout MonetDB5 sql
+@end verbatim
 Also see @url{http://sourceforge.net/cvs/?group_id=56967,SourceForge documentation} for more information on using cvs.
 
-@node Linux Installation, Windows Installation, Source Distribution, Download and Installation
+@menu
+* Linux Installation ::
+* Windows Installation ::
+* Daily Builds ::
+@end menu
+@node Linux Installation, Windows Installation, Source Distribution, Source Distribution 
 @subsection Linux Installation
 
 @include Assets/LinuxInstall.texi
 
-@node Windows Installation, Daily Builds, Linux Installation, Download and Installation
+@node Windows Installation, Daily Builds, Linux Installation, Source Distribution
 @subsection Windows Installation
 
 @include Assets/WindowsInstall.texi
 
-@node Daily Builds, Start and Stop the Server, Windows Installation, Download and Installation
+@node Daily Builds, Start and Stop the Server, Windows Installation, Source Distribution
 @subsection Daily Builds
 Next to functionality and performance, stability and portability are first 
 class goals of the MonetDB project. Pursuing these goals requires to 
 constantly monitor stability and portability of the evolving MonetDB code base.
 For this purpose, we developed a test environment that automatically compiles 
 and tests MonetDB (and its most prominent add-on packages) every night on 
-currently no less than 16 different system configurations. 
+currently a large number of different system configurations. 
 
 Software patches and functional enhancements are checked into
 the repositories on a daily basis. A limited set of distribution
@@ -62,7 +71,7 @@ that summarizes the results of the Automated Testing activities on various
 It is a good starting point before picking up a daily build version.
 
 Two versions of MonetDB are tested daily on all available platforms:
-@itemize
+@itemize @bullet
 @item
 the @emph{cutting edge} development version ("Current"), i.e. the head of the main CVS branch; and
 @item

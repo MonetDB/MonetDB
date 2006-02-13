@@ -2,7 +2,7 @@ This section helps you to install the MonetDB source and compile it
 on a Unix platform (e.g., Linux, MacOS X/Darwin, or CYGWIN).
 
 @subsubsection Prerequisites
-@itemize
+@itemize @bullet
 @item @emph{CVS}
 You need to have a working CVS.  For instructions, see
 @url{http://sourceforge.net/docman/?group_id=1,docman}
@@ -22,7 +22,7 @@ configuration of the software. Libtool is also used during the build.
 To compile MonetDB, you also need to have a the following 
 standard software development tools installed and ready for use
 on you system:
-@itemize
+@itemize @bullet
 @item a C/C++ compiler (e.g., GNU's gcc/g++)</li>
 @item a lexical analyzer generator (e.g., "lex" or "flex")</li>
 @item a parser generator (e.g., "yacc" or "bison")</li>

@@ -1,7 +1,7 @@
 @subsection Database Dumps
 An alternative scheme to safeguard and transport a SQL database is to produce
 an @code{ascii}-based database dump. 
-This option is standard available through the MapiClient and JdbcClient. 
+This option is standard available through the @code{mclient} and JdbcClient. 
 However, be prepared that not all SQL schema features may be retained 
 in the process. It also takes much more time to produce the dump file.
 
@@ -9,8 +9,7 @@ Consider you have already installed the SQL tutorial database @code{VOC}
 and wish to transport it to another machine. The following steps are
 required. After you have started the database server.
 @example
-shell> MapiClient -lsql --dump -umonetdb  >/tmp/voc.sql
-password: *******
+shell> mclient -lsql --dump >/tmp/voc.sql
 @end example
 You can inspect the file @code{/tmp/voc.sql} to confirm that indeed
 a compact database dump is available. Move this file over to the new
@@ -21,8 +20,6 @@ to either client program to populate the database.
 shell> monetdb --start --dbname=voc
 Do you want to create database 'voc' ? [yes/no]yes
 Database voc initialized
-Should the MAL listener be activated? [yes/no]yes
-Should the SQL listener be activated ? [yes/no]yes
 !WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
 !WARNING: BBPdir: initializing BBP.
 # Monet Database Server V4.99.19
@@ -32,15 +29,8 @@ Should the SQL listener be activated ? [yes/no]yes
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:voc
 # Visit http://monetdb.cwi.nl/ for further information.
-#mapi.listen();
-#include sql; sql.listen();
-#
-function user.main():void;      # 0  (main:void)
-    sql.listen();       # 1 SQLlisten_wrap (_1:void)
-end main;       # 2
-
-shell> MapiClient -lsql -umonetdb /tmp/voc.sql
-password: *******
+#include sql; mapi.listen();
+shell> mclient -lsql /tmp/voc.sql
 @end example
 
 The dump facility is also avaible as an option to the @code{monetdb},

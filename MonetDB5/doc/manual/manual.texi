@@ -5,7 +5,7 @@
 
 @c environment
 @set VERSION 5.0
-@set UPDATED Jan 4, 2006
+@set UPDATED Feb 13, 2006
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual
@@ -43,169 +43,23 @@ Last updated: @value{UPDATED}
 
 @menu
 * General Introduction::
-@menu
 * Intended audience::
-* Get Going::
 * Features and Limitations::
-@menu
-* When to consider MonetDB::
-* When not to consider MonetDB::
-* What are the MonetDB key features::
-* Size limitations for MonetDB::
-@end menu
-* The History of MonetDB::
-* Manual Generation::
-* Conventions and Notation::
-* Additional Resources::
-@end menu
-
 * Download and Installation::
-@menu
-* Software Versions::
-* Standard Distribution::
-* Source Distribution::
-@menu
-* Linux Installation ::
-* Windows Installation ::
-@end menu
-* Start and Stop the Server::
-@menu
-* Database Configuration ::
-* Checkpoint and Recovery ::
-* Database Dumps ::
-@end menu
-@end menu
-
 * MonetDB Overview ::
-@menu
-* Architecture overview:: 
-* Design considerations:: 
-* MAL synopsis:: 
-* Backward compatibility:: 
-* Scenario management::
-@menu
-* Client administration::
-* Session scenarios::
-* MAL execution:: 
-@end menu
 * Development Roadmap::
-@menu
-* SQL Roadmap ::
-* XQuery Roadmap ::
-* Embedded Server Roadmap ::
-* Server Roadmap ::
-@end menu
-@end menu
-
 * SQL ::
-@menu
-* Getting Started with SQL::
-* The VOC Tutorial::
-* SQL Feature Overview::
-@detailmenu
-* SQL Feature List::
-* SET Statement::
-* EXPLAIN Statement::
-* DEBUG Statement::
-@end detailmenu
-* Optimizer Control::
-@end menu
-
 * XQuery ::
-
 * User Interfaces::
-@menu
-* MapiClient::
-* JdbcClient::
-* Data Management Tools::
-@menu
-* Aqua Data Studio::
-* iSQL-Viewer::
-@end menu
-* Application Programming Interfaces::
-@menu
-* The Mapi Library ::
-@menu
-* Caveats::
-* Compilation::
-* Command Summary::
-* Library Synopsis::
-* Mapi Function Reference::
-@end menu
-* The Perl Library::
-* The PHP Library::
-* The Python Library::
-@end menu
-@end menu
+* Programming Interfaces::
 * Embedded MonetDB::
-@menu
-* A Simple Example::
-* Configuration Parameters::
-* Embedded MonetDB Limitations::
-@end menu
 * MonetDB Assembler Language::
-@menu
-* MAL instructions::
-* Flow of control::
-* Function definitions::
-@menu
-* Function Clones::
-* Commands and Patterns::
-@end menu
-* Factory definitions::
-* Modules::
-* Type resolution::
-@menu
-* Atomary types::
-@end menu
-* Boxed variables::
-* Property management::
-@end menu
-
+* MAL Modules::
 * MAL interpreter::
-
 * Optimizer landscape::
-@menu
-* What optimizers to consider?::
-* Optimization Dependencies::
-* Optimizer Building Blocks::
-* Query Optimizer Framework::
-@end menu
-
 * Optimizer toolkit::
-@menu
-* Alias Removal::
-* Dead Code Removal::
-* Accumulator Evaluations::
-* Heuristic Rewrite Rules::
-* Common Sub-Expression Removal::
-* Empty Set Reduction::
-* Singleton Set Replacement::
-* Peephole Optimization::
-* Multiplex Compiler::
-* Garbage Collector::
-* Code Factorization::
-* Multi-Association Tables ::
-* Partitioned Databases::
-* Strength Reduction::
-* Costmodels::
-* Variable Stack Reduction::
-* Query Execution Plans::
-@end menu
-
 * Program Debugging::
-@menu
-* The MAL Debugger::
-* Handling Breakpoints::
-* Runtime Inspection::
-@end menu
-
 * Execution Profiling::
-@menu
-* Event Filtering ::
-* Event Caching::
-@end menu
-
 * MonetDB Extension Modules ::
 * MonetDB BAT Kernel ::
 * Advanced Topics::
@@ -264,38 +118,44 @@ Last updated: @value{UPDATED}
 
 @node SQL, Getting Started with SQL, Server Roadmap, Top
 @include Assets/SQLoverview.texi
+
+@node The VOC Tutorial, SQL Feature Overview, Getting Started with SQL, SQL
+@include Assets/VOCtutorial.texi
+
+@node SQL Feature Overview, SQL Feature List, The VOC Tutorial, SQL
+@include Assets/SQLfeatures.texi
 @node XQuery, User Interfaces, Overlaying the BAT storage, Top
 @include Assets/XQueryOverview.texi
 
-@node User Interfaces, MapiClient, XQuery, Top
-@chapter User Interfaces
+@node User Interfaces, Mapi Client, XQuery, Top
+@include Assets/UserInterfaces.texi
 
-@node MapiClient, JdbcClient, User Interfaces , Top
+@node Mapi Client, Jdbc Client, User Interfaces , User Interfaces
 @include Assets/MapiClient.texi
-@node JdbcClient, Data Management Tools, MapiClient, Top
+@node Jdbc Client, Data Management Tools, Mapi Client, User Interfaces
 @include Assets/JdbcClient.texi
 
-@section Console and MapiClient 
+@section Console and Mapi Client
 @include mal_readline.bdy.texi
 
-@node Data Management Tools, Aqua Data Studio, JdbcClient , Top
+@node Data Management Tools, Aqua Data Studio, Jdbc Client , User Interfaces
 @include Assets/DBA-GUIs.texi
 
-@node Aqua Data Studio, iSQL-Viewer, Data Management Tools, Top
+@node Aqua Data Studio, iSQL-Viewer, Data Management Tools, Data Management Tools
 @include Assets/AquaDataStudio.texi
 
-@node iSQL-Viewer, Application Programming Interfaces, Aqua Data Studio, Top
+@node iSQL-Viewer, Programming Interfaces, Aqua Data Studio, Data Management Tools
 @include Assets/iSQL-Viewer.texi
 
 
-@node Application Programming Interfaces, The Mapi Library, iSQL-Viewer, Top
+@node Programming Interfaces, The Mapi Library, iSQL-Viewer, Top
 @include Assets/APIs.texi
-@node The Mapi Library, Caveats, Application Programming Interfaces, Top
+@node The Mapi Library, Sample Application, Programming Interfaces, Programming Interfaces
 @include Mapi.bdy.texi
 
-@node The Perl Library, The PHP Library, Mapi Function Reference , Top
-@node The PHP Library, The Python Library, The Perl Library , Top
-@node The Python Library, Embedded MonetDB , The PHP Library, Top
+@node The Perl Library, The PHP Library, Mapi Function Reference , Programming Interfaces
+@node The PHP Library, The Python Library, The Perl Library , Programming Interfaces
+@node The Python Library, Embedded MonetDB , The PHP Library, Programming Interfaces
 
 @node Embedded MonetDB, A Simple Example, The Python Library , Top
 @include Assets/Mbedded.texi
@@ -317,18 +177,18 @@ Last updated: @value{UPDATED}
 @node Boxed variables, Property management , Atomary types, MonetDB Assembler Language
 @include mal_box.bdy.texi
 
-@node Property management,  Modules, Boxed variables, MonetDB Assembler Language
+@node Property management,  MAL Modules, Boxed variables, MonetDB Assembler Language
 @include mal_properties.bdy.texi
 
-@node Modules , MAL interpreter , Property management, Top
+@node MAL Modules , MAL interpreter , Property management, Top
 @include mal_import.bdy.texi
 
-@node MAL interpreter, Optimizer landscape, Modules, Top
+@node MAL interpreter, Optimizer landscape, MAL Modules, Top
 @include mal_interpreter.bdy.texi
 @include mal_linker.bdy.texi
 @include mal_stack.bdy.texi
 
-@node Optimizer landscape, What optimizers to consider?, MAL interpreter, Top
+@node Optimizer landscape, Optimizers, MAL interpreter, Top
 @include mal_optimizer.bdy.texi
 @include mal_commonExpressions.bdy.texi
 @include mal_emptyset.bdy.texi
@@ -360,8 +220,8 @@ This is the place to describe Membedded, distribution stuff...
 @menu
 * MAL Syntax ::
 * Conversion of MIL Programs::
-* MAL Instruction Overview:: 
-* MAL Instruction Help:: 
+* MAL Instruction Overview::
+* MAL Instruction Help::
 @end menu
 
 @node MAL Syntax, Conversion of MIL Programs, Appendices, Appendices

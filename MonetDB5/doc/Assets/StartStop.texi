@@ -11,16 +11,18 @@ it is adviceable to check its functionality with the following actions:
 > monetdb --help
 @end example
 The @code{monetdb} script is a wrapper around the MonetDB
-server program @code{mserver} and its protection program @code{mguardian}.
-The call triggers @code{mserver --help} and responds
+server program @code{mserver5} and its protection program @code{mguardian}.
+The call triggers @code{mserver5 --help} and responds
 with something like:
 @verbatim
 Usage: monetdb [command] [options] [script]
 Primary command:
-    --status        Show the server status  [default]
-    --start         Server(s) are started in the dbfarm
-    --stop          Server(s) are gracefully stopped
+    --status        Show the server status [default]
+    --start         Server(s) is (are) started
+    --stop          Server(s) is (are) stopped
     --databases     Show the known databases
+    --checkpoint    Create the checkpoint for a database
+    --recover       Restore a database to an earlier date
     --log           Show the server management log
 
 Secondary options:
@@ -31,6 +33,7 @@ Secondary options:
     --debug=<number>          Trace server actions[0]
     --daemon=yes|no           Run in background [no]
     --set <option>=<value>    Set environment value
+    --ascii                   Use ascii dump for the database [default=no]
     --help                    This list of options
 @end verbatim
 
@@ -46,10 +49,12 @@ in the location specified.
 To start a server for a database simpy type
 @example
 > monetdb --start --dbname=voc
+Do you want to create database 'voc' ? [yes/no]yes
+Database xyz initialized
+Starting database server 'voc'... ok
 @end example
-The first time this command is given, it asks you if you
-want to create the @code{voc} database and what listeners
-to be activated upon restart. Answers those questions with "yes".
+The question is asked only the first time you attempt
+to access o the @code{voc} database.
 
 It responds with a message that this action 
 was successful, or an error message explains the problems encountered.
@@ -78,18 +83,18 @@ be inspected with @code{monetdb --log}
 @subsection Database Configuration
 The database environment is collected in a configuration file,
 which is used by server-side applications, such as @code{monetb},
-@code{mserver}, and @code{mguardian}.
+@code{mserver5}, and @code{mguardian}.
 A default version is installed in the database store upon its creation
 using the command @code{monetdb}.
 Below we illustrate its most important components.
-@itemize 
+@itemize  @bullet
 @item prefix=/ufs/myhome/monet5/Linux
 @item exec_prefix=$@verb{ { }prefix@verb{ } }
 @item dbfarm=$@verb{ { }prefix@verb{ } }/var/MonetDB5/dbfarm	
 @item monet_mod_path=$@verb{ { }exec_prefix@verb{ } }/lib/MonetDB5
 @item checkpoint_dir=$@verb{ { }prefix@verb{ } }/var/MonetDB5/chkpnt
 @item dbname=demo
-@item version=4.99.19
+@item version=5.0
 @item welcome=yes
 @item embedded=no
 @item gdk_debug=0	# to control level of debugging
@@ -102,25 +107,16 @@ the libraries. These arguments are critical for a proper working server.
 
 The remainder consists of arguments used by functional modules, or
 related tools. Consult the documentation before changing them.
-@multitable @columnfractions 0.2 0.7
-@item delay=11		#waiting between pinging the server 
+@itemize @bullet
+@item delay=120		
 @item mal_init=$@verb{ { }prefix@verb{ } }/lib/MonetDB5/mal_init.mal
-@item mal_listing = 15    
-@tab # Bit mask for listing
+@item mal_listing = 7    
 @item sql_port=45123
-@tab # default port to address an Mserver for an SQL session
 @item sql_debug=0
-@tab # The SQL debug level (should be disabled for normal use)
 @item sql_logdir=$@verb{ { }prefix@verb{ } }/var/MonetDB5/dblogs 
-@tab # Place to store SQL transaction logs
 @item xquery_port=45789
-@tab # default port to address an Mserver for an XQuery session
 @item pf_httpd_port=8080
-@tab default port to address the HTTP server for pathfinder
 @item xquery_output=dm
-@tab # output mode "dm" = pretty printed,
-@item @tab # "xml" = enforce XML with enclosing <XQueryResult> tags
 @item xquery_cacheMB=100
-@tab # limit the document cache on disk to 100MB
-@end multitable
+@end itemize
 
