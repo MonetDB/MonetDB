@@ -86,7 +86,7 @@ typedef struct _phpMonetConn phpMonetConn;
 static int le_plink; */
 
 /* {{{ utility function to set the last error */
-static int monetdb_set_last_error(char *error) {
+static int monetdb_set_last_error(char *error TSRMLS_DC) {
 	/* if there is no error, don't do anything */
 	if (!error) return(0);
 	
@@ -413,7 +413,7 @@ PHP_FUNCTION(monetdb_connect)
 	conn->mid = mapi_connect(hostname, port, username, password, language);
 
 	if (mapi_error(conn->mid) &&
-			monetdb_set_last_error(mapi_error_str(conn->mid))) {
+			monetdb_set_last_error(mapi_error_str(conn->mid) TSRMLS_CC)) {
 		php_error(E_WARNING, "monetdb_connect: Error: %s", MONET_G(last_error));
 		/*~ printf("MON: failed\n"); */
 		MONETDB_CONNECT_RETURN_FALSE();
@@ -470,7 +470,7 @@ PHP_FUNCTION(monetdb_close)
 
 	ret = 1;
 	if (mapi_error(conn->mid) &&
-			monetdb_set_last_error(mapi_error_str(conn->mid)))
+			monetdb_set_last_error(mapi_error_str(conn->mid) TSRMLS_CC))
 		ret = 0;
 
 	if (id == -1) {		/* explicit resource number */
@@ -524,7 +524,7 @@ PHP_FUNCTION(monetdb_setAutocommit)
 	mapi_setAutocommit(conn->mid, autocommit);
 
 	if (mapi_error(conn->mid) &&
-			monetdb_set_last_error(mapi_error_str(conn->mid)))
+			monetdb_set_last_error(mapi_error_str(conn->mid) TSRMLS_CC))
 		RETURN_FALSE;
 
 	if (id == -1) {		/* explicit resource number */
@@ -574,7 +574,7 @@ PHP_FUNCTION(monetdb_query)
 	if (!conn || !conn->mid) {
 		char *error = "monetdb_query: Query on uninitialized/closed connection";
 		php_error(E_WARNING, error);
-		monetdb_set_last_error(error);
+		monetdb_set_last_error(error TSRMLS_CC);
 		/* php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "Query on uninitialized/closed connection"); */
 		RETURN_FALSE;
 	}
@@ -583,14 +583,14 @@ PHP_FUNCTION(monetdb_query)
 	if (!handle) {
 		char *error = "monetdb_query: Query on uninitialized/closed connection";
 		php_error(E_WARNING, error);
-		monetdb_set_last_error(error);
+		monetdb_set_last_error(error TSRMLS_CC);
 		/* php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "Query on uninitialized/closed connection"); */
 		RETURN_FALSE;
 	}
 
 	mapi_query_handle(handle, query);
 
-	if (monetdb_set_last_error(mapi_result_error(handle)) != NULL) {
+	if (monetdb_set_last_error(mapi_result_error(handle) TSRMLS_CC) != NULL) {
 		/* mapi_close_handle(handle); */
 		php_error(E_WARNING, "monetdb_query: Error: %s", MONET_G(last_error));
 		/* php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "MonetDB Error: %s", error); */
@@ -693,7 +693,7 @@ PHP_FUNCTION(monetdb_next_result)
 	if ((error = mapi_result_error(handle)) != NULL) {
 		/* mapi_close_handle(handle); */
 		php_error(E_WARNING, "monetdb_query: Error: %s", error);
-		monetdb_set_last_error(error);
+		monetdb_set_last_error(error TSRMLS_CC);
 		/* php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "MonetDB Error: %s", error); */
 		RETURN_FALSE;
 	}
