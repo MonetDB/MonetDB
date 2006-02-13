@@ -1903,11 +1903,11 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 	bs_debug = debug;
 	bm = bm_create(debug);
 	logger = logger_create(debug, logdir, dbname, CATALOG_VERSION, bm);
-	store_oid = logger_oid(logger);
 
 	if (!logger)
 		return -1;
 
+	store_oid = logger_oid(logger);
 	bs_lock = MT_create_lock();
 
 	types_init(debug);
