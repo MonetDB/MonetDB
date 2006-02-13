@@ -83,7 +83,8 @@ mal_export int      displayModule(stream *f, Module v, str fcn,int listing);
 mal_export void     showModules(stream *f, Module v);
 mal_export void     debugModule(stream *f, Module v, str nme);
 mal_export void     dumpManual(stream *f, Module v, int recursive);
-mal_export void dumpManualHelp(stream *f, Module s, int recursive);
+mal_export void 	dumpManualHelp(stream *f, Module s, int recursive);
+mal_export void 	dumpManualTags(stream *f, Module s, str text, int recursive);
 mal_export void     dumpManualOverview(stream *f, Module v, int recursive);
 mal_export void     dumpManualHeader(stream *f);
 mal_export void     dumpManualFooter(stream *f);
@@ -685,6 +686,127 @@ void dumpManualHelp(stream *f, Module s, int recursive){
 		}
 	}
 	stream_printf(f,"@end multitable\n");
+}
+@-
+The tags file is used by the MapiClient frontend to
+enable language specific word completion.
+@c
+void dumpManualTags(stream *f, Module s, str text, int recursive){
+	int j,z;
+	Symbol t;
+	InstrPtr sig;
+	Module list[256]; int k, ftop, fnd,top=0;
+	MalBlkPtr mod[5000];
+	InstrPtr fcn[5000];
+	str hlp[5000],msg;
+	char buf[BUFSIZ], *c;
+	int len=0;
+	int signature=0;
+	int help=0;
+	int point=0;
+
+
+	if(s==NULL || f==NULL){
+		return;
+	}
+	list[top++]=s;
+	while(s->outer && recursive){ list[top++]= s->outer;s=s->outer;}
+
+	if( text ){
+		len= strlen(text);
+		signature= strchr(text,'(')!= 0;
+		help = strchr(text,')')!= 0;
+		point = strchr(text,'.')!= 0;
+		if( signature) 
+			*strchr(text,'(')= 0;
+		else
+		if( help) 
+			*strchr(text,')')= 0;
+	}
+	stream_printf(f,"&1 0 23 1 23\n");
+	stream_printf(f,"# .tables # table_name\n");
+	stream_printf(f,"# name # name\n");
+	stream_printf(f,"# varchar # type\n");
+	stream_printf(f,"# 20 # length\n");
+	if(top>1) qsort(list, top, sizeof(Module), 
+		(int(*)(const void *, const void *))cmpModName);
+
+	for(k=0;k<top;k++){
+		s= list[k];
+		ftop = 0;
+		if( s->subscope)
+		for(j=0;j<MAXSCOPE;j++)
+		if(s->subscope[j]){
+			for(t= s->subscope[j];t!=NULL;t=t->peer) {
+				sig= getSignature(t);
+				fnd = 0;
+				fnd= *functionId(sig) == '#';
+				for(z=0; z<ftop; z++)
+				if( strcmp(functionId(fcn[z]),functionId(sig))==0){
+					if( hlp[z] == 0)
+						hlp[z]= t->def->help;
+					fnd++;
+					break;
+				}
+				if( fnd == 0 && ftop<5000){
+					hlp[ftop]= t->def->help;
+					mod[ftop] = t->def;
+					fcn[ftop++] = sig;
+				}
+			}
+		}
+		for(j=0; j<ftop; j++)
+		for(z=j+1; z<ftop; z++)
+		if( strcmp(functionId(fcn[j]),functionId(fcn[z]))  >0) {
+			msg= hlp[j]; hlp[j]=hlp[z]; hlp[z]= msg;
+			 sig= fcn[j]; fcn[j]=fcn[z]; fcn[z]= sig;
+		}
+
+		for(z=0; z<ftop; z++){
+			char *adr="";
+			snprintf(buf,BUFSIZ,"%s.%s",
+				moduleId(fcn[z]), functionId(fcn[z]));
+			if( len) {
+				if( strncmp(buf,text,len) )
+					continue;
+			}
+			if( !signature && ! help){
+				stream_printf(f,"[ \"%s\" ]\n",buf);
+				continue;
+			}
+			buf[0]=0;
+			fcnDefinition(mod[z],mod[z]->stmt[0],buf,FALSE);
+			buf[strlen(buf)-1]=0;
+			c= strrchr(buf,' ');
+			if( c ) { 
+				*c=0; 
+				adr= c+1;
+				c=strrchr(buf,' ');
+				if( c) *c = 0;
+			}
+			if( signature && !help){
+				if( point )
+					stream_printf(f,"[ \"%s\" ]\n",strchr(buf+1,' ')+1);
+				else
+					stream_printf(f,"[ \"%s\" ]\n",buf+1);
+				continue;
+			}
+			if( help && hlp[z] ){
+				char *h;
+				stream_printf(f,"[ \"%s\t",buf+1);
+				for( h= hlp[z]; *h; h++)
+				if( *h =='"') 
+					stream_printf(f,"\\\"");
+				else
+				if( *h== '\n' || *h=='\t' || *h==' '){
+					while( *h== '\n' || *h=='\t' || *h==' ') h++;
+					stream_printf(f," %c",*h);
+				} else
+					stream_printf(f,"%c",*h);
+				stream_printf(f,"\" ]\n");
+			} 
+		}
+	}
 }
 @-
 Summarize the type resolution table.

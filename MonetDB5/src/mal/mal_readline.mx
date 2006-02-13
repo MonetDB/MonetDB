@@ -88,21 +88,21 @@ void continue_completion(rl_completion_func_t * func);
 
 
 static const char *mal_commands[] = {
-	"ADDRESS",
-	"ATOM",
-	"BARRIER",
-	"CATCH",
-	"COMMAND",
-	"COMMENT",
-	"EXIT",
-	"END",
-	"FUNCTION",
-	"FACTORY",
-	"LEAVE",
-	"PATTERN",
-	"MODULE",
-	"RAISE",
-	"REDO",
+	"address",
+	"atom",
+	"barrier",
+	"catch",
+	"command",
+	"comment",
+	"exit",
+	"end",
+	"function",
+	"factory",
+	"leave",
+	"pattern",
+	"module",
+	"raise",
+	"redo",
 	0
 };
 const char *mdb_commands[] = {
