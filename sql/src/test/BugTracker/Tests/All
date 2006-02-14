@@ -12,3 +12,4 @@ cardinality_violation.SF-1240701
 rows_affected.SF-1377180
 broken_join.SF-1373391
 insert_not_exists.SF-1380287
+authorization.SF-1430616
