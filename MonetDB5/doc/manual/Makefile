@@ -42,6 +42,15 @@ xml:
 	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
 	makeinfo --force --xml manual.texi \
 	)
+	mv ${MONET5_PREFIX}/share/MonetDB5/MonetDB.xml /tmp/monetdb.xml
+	cat /tmp/monetdb.xml |sed -e "s/&bullet;/<bullet\/>/g" \
+		-e "s/&ndash;/<ndash\/>/g" \
+		-e "s/&mdash;/<mdash\/>/g" \
+		-e "s/&dots;/<dots\/>/g" \
+		-e "s/&eosperiod;/<eosperiod\/>/g" \
+		-e "s/&space;/<space\/>/g" \
+			>${MONET5_PREFIX}/share/MonetDB5/MonetDB.xml
+	rm /tmp/monetdb.xml
 	cp ${MONET5_PREFIX}/share/MonetDB5/MonetDB.xml /ufs/mk/cwi/public_html 
 	echo "XML file created"
 

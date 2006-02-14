@@ -55,14 +55,6 @@ features to analyse and your SQL code.
 * Getting Started with SQL::
 * The VOC Tutorial::
 * SQL Feature Overview::
-@menu
-* SQL Feature List::
-* SET Statement::
-* EXPLAIN Statement::
-* DEBUG Statement::
-@end menu
-* Optimizer Control::
-* Overlaying the BAT storage::
 @end menu
 
 @node Getting Started with SQL, The VOC Tutorial, SQL, SQL
