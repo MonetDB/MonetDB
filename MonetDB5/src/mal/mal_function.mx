@@ -40,6 +40,10 @@ introduced within guarded blocks may not be used elsewhere.
 Input variables changed in the process preferably also appear in
 the target list, i.e. the instruction models the input/output flow.
 This greatly simplifies future optimization decisions.
+@menu
+* Function Clones::
+* Commands and Patterns::
+@end menu
 @{
 @-
 The information maintained for each MAL function should both
@@ -644,7 +648,7 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 }
 @}
 @-
-@node Function Clones, Commands and Patterns, Function definitions, MonetDB Assembler Language
+@node Function Clones, Commands and Patterns, Function definitions, Function definitions
 @- Function Clones
 MAL supports functions defined with type variables, i.e.
 polymorphic functions. The type variable is denoted
@@ -681,7 +685,7 @@ other arguments types, i.e. @code{bit,sht,lng,flt,dbl,...}.
 For example, calling @code{helloWorld(3.14:flt)} echoes
 a float value.
 
-@node Commands and Patterns, Factory definitions, Function Clones, MonetDB Assembler Language
+@node Commands and Patterns, Factory definitions, Function Clones, Function definitions
 @- Commands and patterns
 The MAL function body can also be implemented with a C-function.
 They are introduced to the MAL type checker by providing their

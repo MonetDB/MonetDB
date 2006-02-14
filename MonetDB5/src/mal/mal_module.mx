@@ -723,11 +723,11 @@ void dumpManualTags(stream *f, Module s, str text, int recursive){
 		if( help) 
 			*strchr(text,')')= 0;
 	}
-	stream_printf(f,"&1 0 23 1 23\n");
+	stream_printf(f,"&1 0 100 1 100\n");
 	stream_printf(f,"# .tables # table_name\n");
 	stream_printf(f,"# name # name\n");
 	stream_printf(f,"# varchar # type\n");
-	stream_printf(f,"# 20 # length\n");
+	stream_printf(f,"# 0 # length\n");
 	if(top>1) qsort(list, top, sizeof(Module), 
 		(int(*)(const void *, const void *))cmpModName);
 
@@ -793,16 +793,22 @@ void dumpManualTags(stream *f, Module s, str text, int recursive){
 			}
 			if( help && hlp[z] ){
 				char *h;
-				stream_printf(f,"[ \"%s\t",buf+1);
-				for( h= hlp[z]; *h; h++)
-				if( *h =='"') 
-					stream_printf(f,"\\\"");
-				else
-				if( *h== '\n' || *h=='\t' || *h==' '){
-					while( *h== '\n' || *h=='\t' || *h==' ') h++;
-					stream_printf(f," %c",*h);
-				} else
-					stream_printf(f,"%c",*h);
+				int cnt=0,max=strlen(buf);
+				stream_printf(f,"[ \"%s\\n",buf+1);
+				for( h= hlp[z]; *h; h++, cnt++){
+					if( *h =='"') 
+						stream_printf(f,"\\\"");
+					else
+					if( *h== '\n' || *h=='\t' || *h==' '){
+						while( *h== '\n' || *h=='\t' || *h==' ') h++;
+						if(cnt >= max){
+							cnt=0;
+							stream_printf(f,"\\n%c",*h);
+						} else
+							stream_printf(f," %c",*h);
+					} else
+						stream_printf(f,"%c",*h);
+				}
 				stream_printf(f,"\" ]\n");
 			} 
 		}

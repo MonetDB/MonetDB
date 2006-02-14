@@ -58,15 +58,9 @@ language features and illustrative examples.
 * MAL instructions::
 * Flow of control::
 * Function definitions::
-@menu
-* Function Clones::
-* Commands and Patterns::
-@end menu
 * Factory definitions::
 * Type resolution::
-@menu
 * Atomary types::
-@end menu
 * Boxed variables::
 * Property management::
 @end menu
