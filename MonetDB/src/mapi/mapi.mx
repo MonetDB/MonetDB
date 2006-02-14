@@ -617,6 +617,7 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 
 
 	if ((err = f->f_init(fc)) != NULL) {
+		fc->inuse = 0; 
 		stream_printf(fdout, "%s\n", err);
 		prompt(fdout, blocked);
 		return NULL;

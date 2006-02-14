@@ -19,16 +19,17 @@
 @t PCRE - Perl-compatible regular expressions
 @v 0.1
 @T
-       The  PCRE library is a set of functions that implement regular expres-
-       sion pattern matching using the same syntax  and  semantics  as  Perl,
-       with  just  a  few  differences.  The  current  implementation of PCRE
-       (release 4.x) corresponds approximately with Perl 5.8, including  sup-
-       port  for  UTF-8  encoded  strings.   However,  this support has to be
-       explicitly enabled; it is not the default.
+The  PCRE library is a set of functions that implement regular expres-
+sion pattern matching using the same syntax  and  semantics  as  Perl,
+with  just  a  few  differences.  The  current  implementation of PCRE
+(release 4.x) corresponds approximately with Perl 5.8, including  sup-
+port  for  UTF-8  encoded  strings.   However,  this support has to be
+explicitly enabled; it is not the default.
 
 \begin{center}
-       ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
+ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
 \end{center}
+
 
 @+ Module Definition
 @m
@@ -626,9 +627,9 @@ sql2pcre(str *r, str pat, str esc_str)
 
 		if (c == esc) {
 			if (escaped) {
-				if (specials) /* change ++ into \\+ */
+				if (specials) { /* change ++ into \\+ */
 					*ppat++ = esc;
-				else { /* do not escape simple escape symbols */
+				} else { /* do not escape simple escape symbols */
 					ppat[-1] = esc;
 				}
 				escaped = 0;
