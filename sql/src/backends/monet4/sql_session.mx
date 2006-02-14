@@ -563,21 +563,35 @@ mvc_sql(mvc *m, char *cmd)
 
 	int err = 0;
 	backend *sql;
-	Variable v;
+	Variable MVC, OUTPUT;
 	buffer *b;
 	char *n;
 	int len = strlen(cmd);
 
 	sql = backend_create(0, m, 1);
 
-	/* add myc and Output */
-	v = VARnew(stk, "myc");
-	v->binding.vtype = TYPE_mvc;
-	v->binding.val.pval = m;
+	/* shouldn't be needed to reset the myc variable ! */ 
+        MVC = VARfind(&stk, "myc");
+        if (MVC == NULL) {
+            GDKerror("sql_client_init: failed to lookup myc variable.\n"); 
+	    return GDK_FAIL;
+	}
+        if (MVC->binding.vtype != TYPE_mvc) {
+            GDKerror("sql_client_init: myc variable has wrong type != mvc.\n"); 
+	    return GDK_FAIL;
+	}
+        MVC->binding.val.pval = m; 
 
-	v = VARnew(stk, "Output");
-	v->binding.vtype = TYPE_Stream;
-	v->binding.val.pval = NULL;
+        OUTPUT = VARfind(&stk, "Output");
+        if (OUTPUT == NULL) {
+            GDKerror("sql_client_init: failed to lookup Output variable.\n"); 
+	    return GDK_FAIL;
+	}
+        if (OUTPUT->binding.vtype != TYPE_Stream) {
+            GDKerror("sql_client_init: Output variable has wrong type != stream.\n"); 
+	    return GDK_FAIL;
+	}
+        OUTPUT->binding.val.pval = NULL;
 
 	m->qc = NULL;
 	m->cache = 0;
@@ -609,7 +623,7 @@ mvc_sql(mvc *m, char *cmd)
 	assert(m->qc == NULL);
 
 	*m = o;
-	VARdel(stk, v);
+        OUTPUT->binding.val.pval = m->scanner.ws;
 	if (err)
 		return GDK_FAIL;
 	else
@@ -719,6 +733,16 @@ sql_client_init(mapi_client *fc)
 		return res;
 	}
 	GDKfree(schema);
+
+	/* shouldn't be needed to reset the myc variable ! */ 
+        v = VARfind(&fc->stk, "myc");
+        if (v == NULL) 
+            return "sql_client_init: failed to lookup myc variable.\n"; 
+        if (v->binding.vtype != TYPE_mvc) {
+	    printf("missing mvc\n");
+            return "sql_client_init: myc variable has wrong type != mvc.\n"; 
+	}
+        v->binding.val.pval = m; 
 
         v = VARfind(&fc->stk, "Output");
         if (v == NULL) 
