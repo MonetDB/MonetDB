@@ -918,24 +918,30 @@ BATclosure(BAT *b)
 	case TYPE_bit:
 	case TYPE_chr:
 		closure_loc_simple_chr__chr(bn, delta);
+		delta = NULL;
 		break;
 	case TYPE_sht:
 		closure_loc_simple_sht__sht(bn, delta);
+		delta = NULL;
 		break;
 	case TYPE_bat:
 	case TYPE_int:
 	case TYPE_flt:
 		closure_loc_simple_int__int(bn, delta);
+		delta = NULL;
 		break;
 	case TYPE_oid:
 		closure_loc_simple_oid__oid(bn, delta);
+		delta = NULL;
 		break;
 	case TYPE_ptr:
 		closure_loc_simple_ptr__ptr(bn, delta);
+		delta = NULL;
 		break;
 	case TYPE_dbl:
 	case TYPE_lng:
 		closure_loc_simple_lng__lng(bn, delta);
+		delta = NULL;
 		break;
 
 	default:
@@ -944,9 +950,12 @@ BATclosure(BAT *b)
 		} else {
 			closure_loc_atom_tpe_loc(bn, delta);
 		}
+		delta = NULL;
 	}
-	BATins(bn, delta);
-	(void) BBPreclaim(delta);
+	if (delta) {
+		BATins(bn, delta);
+		(void) BBPreclaim(delta);
+	}
 	return bn;
 }
 
