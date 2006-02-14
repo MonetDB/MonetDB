@@ -226,11 +226,17 @@ mal_command_generator(const char *text, int state)
 	static MapiHdl table_hdl;
 	char *name, buf[BUFSIZ];
 
+	/* we pick our own portion of the linebuffer*/
+	text= rl_line_buffer+strlen(rl_line_buffer)-1;
+	while( text > rl_line_buffer && ! isspace((int) *text)) 
+		text--;
 	if (!state) {
 		index = 0;
 		len = strlen(text);
 	}
 
+/*	printf("expand test:%s\n",text);
+	printf("currentline:%s\n",rl_line_buffer); */
 
 	while ( mal_commands[index] && (name = mal_commands[index++])) {
 #ifdef HAVE_STRNCASECMP
@@ -261,7 +267,7 @@ mal_command_generator(const char *text, int state)
 		mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET);
 		mapi_fetch_row(table_hdl);
 		name = mapi_fetch_field(table_hdl, 0);
-		if ( name && strncmp(name, text, len) == 0)
+		if ( name )
 			return strdup(name);
 	}
 
