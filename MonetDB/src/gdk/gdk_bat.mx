@@ -501,6 +501,12 @@ BATfree(BAT *b)
 	if (b->tident && !default_ident(b->tident)) 
 		GDKfree(b->tident);
 	b->tident = string_t;
+	if (b->H->props)
+		PROPdestroy(b->H->props);
+	b->H->props = NULL;
+	if (b->T->props)
+		PROPdestroy(b->T->props);
+	b->T->props = NULL;
 	HASHdestroy(b);
 	DELTAsave(b);	       /* convert to disk format */
 	HEAPfree(b->batBuns);

@@ -837,45 +837,73 @@ does not affect the BATloop [it doesn't!]
 
 @= closure
 
-#undef  ANTICHECK
-#define ANTICHECK(src, p, chk) {\
-    BUN w,u=BUNh@2(src, p);\
-    hash_t i; \
-    int r=0; \
-    (void) BATprepareHash(chk);\
-    HASHloop@1(chk, chk->hhash, i, u, w) {\
-        if (@3_EQ(BUNt@2(chk, w), BUNt@2(src, p), @4)) { r=1; break;}\
-    } if (r) continue; }
+int
+ANTICHECK_@1_@2_@3_@4(BAT *src, BUN p, BAT *chk, int tpe) 
+{
+    BUN w,u=BUNh@1(src, p);
+    hash_t i; 
 
-#undef  INSERT_ANTICHECK
+    (void) tpe;
+    (void) BATprepareHash(chk);
+    HASHloop@4(chk, chk->hhash, i, u, w) {
+        if (@2_EQ(BUNt@1(chk, w), BUNt@1(src, p), @3)) { 
+		return 1;
+	}
+    } 
+    return 0;
+}
 
-#define INSERT_ANTICHECK(dst, src, chk) {\
-        BUN p, q;\
-        BATloopFast(src, p, q, xx) {\
-            ANTICHECK(src, p, dst);\
-	    ANTICHECK(src, p, chk);\
-            BUNins(dst, BUNh@2(src, p), BUNt@2(src, p));\
-        } BBPreclaim(src); }
+void
+INSERT_ANTICHECK_@1_@2_@3_@4(BAT *dst, BAT *src, BAT *chk) 
+{
+        BUN p, q;
+	int xx;
+	int tpe = chk->htype;
 
-while (BATcount(delta) > 0) {
-        BAT *new = BATjoin(delta,bn,oid_nil);
-        BAT *dst = BATnew(tpe, tpe, BATcount(new));
-        BATins(bn, delta);
-        INSERT_ANTICHECK(dst, new, bn);
-        new = BATmirror(BATjoin(BATmirror(delta), BATmirror(bn), oid_nil));
-        BBPreclaim(delta);
-        delta = BATnew(tpe, tpe, BATcount(dst)+BATcount(new));
-        delta->hsorted = delta->tsorted = 0;
-        BATins(delta, dst); BBPreclaim(dst);
-        INSERT_ANTICHECK(delta, new, bn);
-} break;
+        BATloopFast(src, p, q, xx) {
+            if (ANTICHECK_@1_@2_@3_@4(src, p, dst, tpe))
+		continue;
+            if (ANTICHECK_@1_@2_@3_@4(src, p, chk, tpe))
+		continue;
+            BUNins(dst, BUNh@1(src, p), BUNt@1(src, p));
+        } 
+	BBPreclaim(src); 
+}
+
+void
+closure_@1_@2_@3_@4( BAT *bn, BAT *delta ) 
+{
+	int tpe = bn->htype;
+	while (BATcount(delta) > 0) {
+        	BAT *new = BATjoin(delta,bn,oid_nil);
+        	BAT *dst = BATnew(tpe, tpe, BATcount(new));
+        	BATins(bn, delta);
+        	INSERT_ANTICHECK_@1_@2_@3_@4(dst, new, bn);
+        	new = BATmirror(BATjoin(BATmirror(delta), BATmirror(bn), oid_nil));
+        	BBPreclaim(delta);
+        	delta = BATnew(tpe, tpe, BATcount(dst)+BATcount(new));
+        	delta->hsorted = delta->tsorted = 0;
+        	BATins(delta, dst); BBPreclaim(dst);
+        	INSERT_ANTICHECK_@1_@2_@3_@4(delta, new, bn);
+	} 
+}
 @
+
 @c
+@:closure(loc,simple,chr,_chr)@
+@:closure(loc,simple,sht,_sht)@
+@:closure(loc,simple,int,_int)@
+@:closure(loc,simple,lng,_lng)@
+@:closure(loc,simple,ptr,_ptr)@
+@:closure(loc,simple,oid,_oid)@
+@:closure(var,atom,tpe,var)@
+@:closure(loc,atom,tpe,loc)@
+
 BAT *
 BATclosure(BAT *b)
 {
 	BAT *bn, *delta;
-	int xx, tpe;
+	int tpe;
 
 	BATcheck(b, "BATclosure");
 	ERRORcheck(TYPEerror(b->ttype, b->htype), "BATclosure:type conflict\n");
@@ -889,27 +917,32 @@ BATclosure(BAT *b)
 		break;
 	case TYPE_bit:
 	case TYPE_chr:
-		@:closure(_chr,loc,simple,chr)@
-
+		closure_loc_simple_chr__chr(bn, delta);
+		break;
 	case TYPE_sht:
-		@:closure(_sht,loc,simple,sht)@
-
+		closure_loc_simple_sht__sht(bn, delta);
+		break;
 	case TYPE_bat:
 	case TYPE_int:
-	case TYPE_oid:
-	case TYPE_ptr:
 	case TYPE_flt:
-		@:closure(_int,loc,simple,int)@
-
+		closure_loc_simple_int__int(bn, delta);
+		break;
+	case TYPE_oid:
+		closure_loc_simple_oid__oid(bn, delta);
+		break;
+	case TYPE_ptr:
+		closure_loc_simple_ptr__ptr(bn, delta);
+		break;
 	case TYPE_dbl:
 	case TYPE_lng:
-		@:closure(_lng,loc,simple,lng)@
+		closure_loc_simple_lng__lng(bn, delta);
+		break;
 
 	default:
 		if (bn->hvarsized) {
-			@:closure(var,var,atom,tpe)@
+			closure_var_atom_tpe_var(bn, delta);
 		} else {
-			@:closure(loc,loc,atom,tpe)@
+			closure_loc_atom_tpe_loc(bn, delta);
 		}
 	}
 	BATins(bn, delta);

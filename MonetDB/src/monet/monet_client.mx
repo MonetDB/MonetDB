@@ -371,10 +371,12 @@ freeClient(Client c)
 	GDKfree(c->input);
 	GDKfree(c->output);
 	GDKfree(c->user);
+	if (c->passwd)
+		GDKfree(c->passwd);
 	GDKfree(c->prompt);
 
 	c->input = c->output = NULL;
-	c->user = c->prompt = NULL;
+	c->user = c->passwd = c->prompt = NULL;
 	c->cline = c->cptr = NULL;
 	c->mil_accept = NULL;
 	c->children = 0;

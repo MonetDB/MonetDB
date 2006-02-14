@@ -1255,7 +1255,8 @@ BBPaddtobin(BAT *b){
 	BAT *bn;
 
 	/* pre-filter the BATs */
-	if( b->htype >= TYPE_str || b->ttype >= TYPE_str ||
+	if( b->batCacheid < 0 ||
+		b->htype >= TYPE_str || b->ttype >= TYPE_str ||
 		BATcount(b)> 16*1024 || b->batCopiedtodisk){
 		BATdelete(b);
 		return 1;
@@ -1318,7 +1319,12 @@ BBPrecycle(int ht, int tt, size_t cap){
 			b->hkey= 0;
 			b->tkey= 0;
 
-			b->H->props = b->T->props = NULL;
+			if (b->H->props)
+				PROPdestroy(b->H->props);
+			b->H->props = NULL;
+			if (b->T->props)
+				PROPdestroy(b->T->props);
+			b->T->props = NULL;
 			b->H->nosorted = b->T->nosorted = 0;
 			b->H->nosorted_rev = b->T->nosorted_rev = 0;
 			b->H->nokey[0] = b->T->nokey[0] = 0;

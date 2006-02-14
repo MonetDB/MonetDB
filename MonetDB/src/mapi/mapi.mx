@@ -612,9 +612,10 @@ xchange_challenge(Client father, Cntxt stk, stream *fdin, stream *fdout, bit new
 	c->blocked = blocked;
 	if (c->user)
 		GDKfree(c->user);
+	if (c->passwd)
+		GDKfree(c->passwd);
 	c->user = GDKstrdup(buf);
 	c->passwd = GDKstrdup(passwd);
-
 
 	if ((err = f->f_init(fc)) != NULL) {
 		fc->inuse = 0; 
