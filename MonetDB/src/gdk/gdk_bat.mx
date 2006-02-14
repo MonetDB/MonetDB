@@ -55,6 +55,7 @@ called atomHeap.
 
 gdk_export BAT *batcopy(BAT *b, int ht, int tt, int writeable);
 extern int default_ident( char *s ); 
+extern void BATinit_idents(BAT *bn);
 extern oid MAXoid(BAT *i);
 
 #endif /* _GDK_BAT_H_ */
@@ -77,6 +78,12 @@ default_ident( char *s)
 	return ((s) == string_h || (s) == string_t);
 }
 
+void
+BATinit_idents(BAT * bn) 
+{
+	bn->hident = (char*)string_h;
+	bn->tident = (char*)string_t;
+}
 
 BAT *
 BATcreatedesc(int ht, int tt, int heapnames)

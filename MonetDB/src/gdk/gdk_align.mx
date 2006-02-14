@@ -216,6 +216,7 @@ a void. Take care to zero the accelerator data, though.
 	*bn->T = *b->T;
 	*bn->U = *b->U;
 	bn->H->props = bn->T->props = NULL;
+	BATinit_idents(bn);
 @-
 The b->P structure cannot be shared and must be copied individually.
 @c
