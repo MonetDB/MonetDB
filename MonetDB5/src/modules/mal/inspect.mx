@@ -141,6 +141,12 @@ comment "Produces an overview of all functions grouped by module.";
 command createHelp()
 address MANUALcreateHelp
 comment "Produces a manual with help lines grouped by module.";
+command completion(text:str)
+address MANUALcompletion
+comment "Produces the wordcompletion table.";
+command createTags()
+address MANUALcreateTags
+comment "Produces the tags for wordcompletion.";
 @-
 @{
 @+ Implementation
@@ -790,6 +796,21 @@ MANUALcreateHelp(int *ret)
 {
 	(void) ret;		/* fool compiler */
 	dumpManualHelp(GDKout, getClient()->nspace, 1);
+	return MAL_SUCCEED;
+}
+str
+MANUALcreateTags(int *ret)
+{
+	(void) ret;		/* fool compiler */
+	dumpManualTags(GDKout, getClient()->nspace, 0, 1);
+	return MAL_SUCCEED;
+}
+
+str
+MANUALcompletion(int *ret, str *text)
+{
+	(void) ret;		/* fool compiler */
+	dumpManualTags(GDKout, getClient()->nspace, *text, 1);
 	return MAL_SUCCEED;
 }
 
