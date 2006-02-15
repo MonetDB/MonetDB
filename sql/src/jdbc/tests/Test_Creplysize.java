@@ -36,8 +36,8 @@ public class Test_Creplysize {
 			stmt1.executeUpdate("CREATE TABLE table_Test_Creplysize ( id int )");
 			System.out.println("passed :)");
 
-			System.out.print("2. populating with 20 records... ");
-			for (int i = 0; i < 20; i++)
+			System.out.print("2. populating with 21 records... ");
+			for (int i = 0; i < 21; i++)
 				stmt1.executeUpdate("INSERT INTO table_Test_Creplysize (id) values (" + (i + 1) + ")");
 			System.out.println("passed :)");
 
@@ -50,7 +50,7 @@ public class Test_Creplysize {
 			int i = 0;
 			while (rs.next()) i++;
 			rs.close();
-			if (i == 20) {
+			if (i == 21) {
 				System.out.println("passed :)");
 			} else {
 				throw new SQLException("got " + i + " records!!!");
