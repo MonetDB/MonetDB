@@ -217,6 +217,41 @@ static char *mal_commands[] = {
     0
 };
 
+static int mal_help(int a, int b){
+	char *name, *c, buf[BUFSIZ];
+	int seekpos=0,rowcount;
+	MapiHdl table_hdl;
+
+	(void) a;
+	(void) b;
+
+	c= rl_line_buffer+strlen(rl_line_buffer)-1;
+	while( c > rl_line_buffer && isspace(*c)) 
+		c--;
+	while( c > rl_line_buffer && !isspace(*c)) 
+		c--;
+	snprintf(buf,BUFSIZ, "manual.help(\"%s\");", c);
+	if ((table_hdl = mapi_query(_mid, buf)) == NULL || mapi_error(_mid)) {
+		if (table_hdl) {
+			mapi_explain_query(table_hdl, stderr);
+			mapi_close_handle(table_hdl);
+		} else
+			mapi_explain(_mid, stderr);
+		return 0;
+	}
+	mapi_fetch_all_rows(table_hdl);
+	rowcount = mapi_get_row_count(table_hdl);
+
+	printf("\n");
+	while (seekpos < rowcount) {
+		mapi_seek_row(table_hdl, seekpos++, MAPI_SEEK_SET);
+		mapi_fetch_row(table_hdl);
+		name = mapi_fetch_field(table_hdl, 0);
+		if ( name )
+			printf("%s\n",name);
+	}
+	return 0;
+}
 static char *
 mal_command_generator(const char *text, int state)
 {
@@ -314,6 +349,8 @@ init_readline(Mapi mid, char *lang, int save_history)
 	if (strcmp(language, "mil") == 0) {
 		rl_attempted_completion_function = mil_completion;
 	} else {
+		/* recognize the help function, should react to <FCN_2> */
+		rl_bind_key('\033',mal_help);
 		rl_attempted_completion_function = mal_completion;
 	}
 
