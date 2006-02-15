@@ -339,7 +339,8 @@ PHP_FUNCTION(monetdb_connect)
 	char *language = NULL;
 	int port = 50000;
 	int timeout = 0;
-	zval **z_hostname = NULL, **z_username = NULL, **z_password = NULL, **z_language = NULL, **z_port = NULL;
+	zval **args[5];
+	int argc;
 
 	hostname = MONET_G(default_hostname);
 	username = MONET_G(default_username);
@@ -348,64 +349,40 @@ PHP_FUNCTION(monetdb_connect)
 	port = MONET_G(default_port);
 	timeout = MONET_G(query_timeout);
 
-	/* Parse parameters */
-	switch (ZEND_NUM_ARGS()) {
-	case 0:		/* defaults */
-		break;
-	case 1:		/* language */
-		if (zend_get_parameters_ex(1, &z_language) == FAILURE) {
-			MONETDB_CONNECT_RETURN_FALSE();
-		}
-		break;
-	case 2:		/* language, hostname */
-		if (zend_get_parameters_ex(2, &z_language, z_hostname) == FAILURE) {
-			MONETDB_CONNECT_RETURN_FALSE();
-		}
-		break;
-	case 3:		/* language, hostname, port */
-		if (zend_get_parameters_ex(3, &z_language, &z_hostname, &z_port) == FAILURE) {
-			MONETDB_CONNECT_RETURN_FALSE();
-		}
-		break;
-	case 4:		/* language, hostname, port, username */
-		if (zend_get_parameters_ex(4, &z_language, &z_hostname, &z_port, &z_username) == FAILURE) {
-			MONETDB_CONNECT_RETURN_FALSE();
-		}
-		break;
-	case 5:		/* language, hostname, port, username, password */
-		if (zend_get_parameters_ex(5, &z_language, &z_hostname, &z_port, &z_username, &z_password) == FAILURE) {
-			MONETDB_CONNECT_RETURN_FALSE();
-		}
-		break;
-	default:
+	/* retrieve parameters */
+	argc = ZEND_NUM_ARGS();
+	if (argc > 5 ||
+		zend_get_parameters_array_ex(argc, args) != SUCCESS)
 		WRONG_PARAM_COUNT;
+
+	switch (argc) {
+		case 5:		/* password */
+			convert_to_string_ex(args[4]);
+			password = Z_STRVAL_PP(args[4]);
+			/* fall through */
+		case 4:		/* username */
+			convert_to_string_ex(args[3]);
+			username = Z_STRVAL_PP(args[3]);
+			/* fall through */
+		case 3:		/* port */
+			convert_to_long_ex(args[2]);
+			port = Z_LVAL_PP(args[2]);
+			/* fall through */
+		case 2:		/* hostname */
+			convert_to_string_ex(args[1]);
+			hostname = Z_STRVAL_PP(args[1]);
+			/* fall through */
+		case 1:		/* language */
+			convert_to_string_ex(args[0]);
+			language = Z_STRVAL_PP(args[0]);
+			/* fall through */
 		break;
 	}
 
-	/* Take values of parsed parameters */
-	if (z_language) {
-		convert_to_string_ex(z_language);
-		language = Z_STRVAL_PP(z_language);
-	}
-	if (z_hostname) {
-		convert_to_string_ex(z_hostname);
-		hostname = Z_STRVAL_PP(z_hostname);
-	}
-	if (z_port) {
-		convert_to_long_ex(z_port);
-		port = Z_LVAL_PP(z_port);
-	}
-	if (z_username) {
-		convert_to_string_ex(z_username);
-		username = Z_STRVAL_PP(z_username);
-	}
-	if (z_password) {
-		convert_to_string_ex(z_password);
-		password = Z_STRVAL_PP(z_password);
-	}
-
-	/* ~printf("MON: Connecting to: hostname=%s port=%d username=%s password=%s language=%s\n",
-	   ~ hostname, port, username, password, language); */
+	/*
+	printf("MON: Connecting to: hostname=%s port=%d username=%s password=%s language=%s\n",
+	   hostname, port, username, password, language); 
+	   */
 
 	/* Connect to MonetDB server */
 	conn = (phpMonetConn *) malloc(sizeof(phpMonetConn));
