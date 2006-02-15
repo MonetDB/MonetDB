@@ -109,12 +109,12 @@ It can be extracted into a BAT for inspection, such as providing
 an online help facility.
 @mal
 module manual;
-command help(k:str):bat[:str,:str] 
-address MANUALhelp
+command search(k:str):bat[:str,:str] 
+address MANUALsearch
 comment "Search the commentary strings for one matching the keyword";
 
-command help(mod:str,fcn:str) :bat[:str,:str] 
-address MANUALhelp2
+command search(mod:str,fcn:str) :bat[:str,:str] 
+address MANUALsearch2
 comment "Collect the comments for a given function pattern";
 @- Manual construction
 The manual operations ease offline inspection of all function definitions.
@@ -141,9 +141,14 @@ comment "Produces an overview of all functions grouped by module.";
 command createHelp()
 address MANUALcreateHelp
 comment "Produces a manual with help lines grouped by module.";
+
 command completion(text:str)
 address MANUALcompletion
 comment "Produces the wordcompletion table.";
+command help(text:str)
+address MANUALhelp
+comment "Produces the help table.";
+
 command createTags()
 address MANUALcreateTags
 comment "Produces the tags for wordcompletion.";
@@ -194,8 +199,10 @@ mal_export str MANUALcreate(int *ret, str *fname, str *mod, int *recursive);
 mal_export str MANUALcreate2(int *ret, str *fname, str *mod, int *recursive);
 mal_export str MANUALcreate1(int *ret, str *mod);
 mal_export str MANUALcreate0(int *ret);
-mal_export str MANUALhelp(int *ret, str *mod);
-mal_export str MANUALhelp2(int *ret, str *mod, str *fcn);
+mal_export str MANUALsearch(int *ret, str *mod);
+mal_export str MANUALsearch2(int *ret, str *mod, str *fcn);
+mal_export str MANUALcompletion(int *ret, str *text);
+mal_export str MANUALhelp(int *ret, str *text);
 
 @+ Symbol table 
 Mal symbol table and environment analysis.
@@ -802,7 +809,7 @@ str
 MANUALcreateTags(int *ret)
 {
 	(void) ret;		/* fool compiler */
-	dumpManualTags(GDKout, getClient()->nspace, 0, 1);
+	dumpHelpTable(GDKout, getClient()->nspace, 0,0);
 	return MAL_SUCCEED;
 }
 
@@ -810,12 +817,20 @@ str
 MANUALcompletion(int *ret, str *text)
 {
 	(void) ret;		/* fool compiler */
-	dumpManualTags(GDKout, getClient()->nspace, *text, 1);
+	dumpHelpTable(GDKout, getClient()->nspace, *text,1);
 	return MAL_SUCCEED;
 }
 
 str
-MANUALhelp(int *ret, str *pat)
+MANUALhelp(int *ret, str *text)
+{
+	(void) ret;		/* fool compiler */
+	dumpHelpTable(GDKout, getClient()->nspace, *text,0);
+	return MAL_SUCCEED;
+}
+
+str
+MANUALsearch(int *ret, str *pat)
 {
 	char **msg;
 	int i;
@@ -849,7 +864,7 @@ MANUALhelp(int *ret, str *pat)
 }
 
 str
-MANUALhelp2(int *ret, str *mod, str *fcn)
+MANUALsearch2(int *ret, str *mod, str *fcn)
 {
 	Symbol s;
 	str msg;
