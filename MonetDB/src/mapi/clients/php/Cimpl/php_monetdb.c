@@ -322,12 +322,6 @@ php_monetdb_set_default_link(int id TSRMLS_DC)
 
 /* }}} */
 
-#define MONETDB_CONNECT_CLEANUP()
-
-#define MONETDB_CONNECT_RETURN_FALSE()		\
-	MONETDB_CONNECT_CLEANUP();				\
-	RETURN_FALSE;
-
 /* {{{ proto resource monetdb_connect(string language [, string hostname [, int port [, string username [, string password]]]])
    Open a connection to a MonetDB server */
 PHP_FUNCTION(monetdb_connect)
@@ -375,26 +369,26 @@ PHP_FUNCTION(monetdb_connect)
 		case 1:		/* language */
 			convert_to_string_ex(args[0]);
 			language = Z_STRVAL_PP(args[0]);
-			/* fall through */
 		break;
 	}
 
 	/*
 	printf("MON: Connecting to: hostname=%s port=%d username=%s password=%s language=%s\n",
 	   hostname, port, username, password, language); 
-	   */
+	*/
 
 	/* Connect to MonetDB server */
 	conn = (phpMonetConn *) malloc(sizeof(phpMonetConn));
 	conn->first = NULL;
 	conn->mid = mapi_connect(hostname, port, username, password, language);
 
-	if (mapi_error(conn->mid) &&
-			monetdb_set_last_error(mapi_error_str(conn->mid) TSRMLS_CC)) {
-		php_error(E_WARNING, "monetdb_connect: Error: %s", MONET_G(last_error));
-		/*~ printf("MON: failed\n"); */
-		MONETDB_CONNECT_RETURN_FALSE();
+	if (mapi_error(conn->mid)) {
+		int e = monetdb_set_last_error(mapi_error_str(conn->mid) TSRMLS_CC);
+		php_error(E_WARNING, "monetdb_connect: Error: %s",
+				e ? MONET_G(last_error) : "(null)");
+		RETURN_FALSE;
 	}
+
 #if 0
 	/* mapi_timeout is not yet implemented :-/ */
 
@@ -404,12 +398,9 @@ PHP_FUNCTION(monetdb_connect)
 		mapi_timeout(conn, 1000 * timeout);
 #endif
 
-	/*~ printf("MON: succeeded, conn=%p\n", conn); */
 	/* return value is the return value in the PHP_FUNCTION */
 	ZEND_REGISTER_RESOURCE(return_value, conn, le_link);
 	php_monetdb_set_default_link(Z_LVAL_P(return_value) TSRMLS_CC);
-
-	MONETDB_CONNECT_CLEANUP();
 }
 
 /* }}} */
@@ -446,9 +437,10 @@ PHP_FUNCTION(monetdb_close)
 	mapi_disconnect(conn->mid);
 
 	ret = 1;
-	if (mapi_error(conn->mid) &&
-			monetdb_set_last_error(mapi_error_str(conn->mid) TSRMLS_CC))
+	if (mapi_error(conn->mid)) {
+		monetdb_set_last_error(mapi_error_str(conn->mid) TSRMLS_CC);
 		ret = 0;
+	}
 
 	if (id == -1) {		/* explicit resource number */
 		zend_list_delete(Z_RESVAL_PP(mapi_link));
@@ -500,9 +492,10 @@ PHP_FUNCTION(monetdb_setAutocommit)
 	/*~ printf("MON: disconnecting %p\n", conn); */
 	mapi_setAutocommit(conn->mid, autocommit);
 
-	if (mapi_error(conn->mid) &&
-			monetdb_set_last_error(mapi_error_str(conn->mid) TSRMLS_CC))
+	if (mapi_error(conn->mid)) {
+		monetdb_set_last_error(mapi_error_str(conn->mid) TSRMLS_CC);
 		RETURN_FALSE;
+	}
 
 	if (id == -1) {		/* explicit resource number */
 		zend_list_delete(Z_RESVAL_PP(mapi_link));
@@ -667,10 +660,9 @@ PHP_FUNCTION(monetdb_next_result)
 
 	result = (int) mapi_next_result(handle);
 
-	if ((error = mapi_result_error(handle)) != NULL) {
+	if (monetdb_set_last_error(mapi_result_error(handle) TSRMLS_CC) != 0) {
 		/* mapi_close_handle(handle); */
-		php_error(E_WARNING, "monetdb_query: Error: %s", error);
-		monetdb_set_last_error(error TSRMLS_CC);
+		php_error(E_WARNING, "monetdb_query: Error: %s", MONET_G(last_error));
 		/* php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "MonetDB Error: %s", error); */
 		RETURN_FALSE;
 	}
