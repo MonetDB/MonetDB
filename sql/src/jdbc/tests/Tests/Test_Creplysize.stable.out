@@ -43,7 +43,7 @@ test_class:
 Testing class Test_Creplysize
 0. true	false
 1. create... passed :)
-2. populating with 20 records... passed :)
+2. populating with 21 records... passed :)
 3. hinting the driver to use fetchsize 10... passed :)
 4. selecting all values... passed :)
 5. resetting driver fetchsize hint... passed :)
