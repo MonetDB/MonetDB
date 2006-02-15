@@ -181,7 +181,7 @@ mal_command_generator(const char *text, int state)
 	}
 	if( msg == 0){
 		if(*text == '?') text++;
-		msg= getHelp(getClient()->nspace,(str)(text));
+		msg= getHelp(getClient()->nspace,(str)(text),0);
 		last =0;
 	}
 	if( msg[last]){
