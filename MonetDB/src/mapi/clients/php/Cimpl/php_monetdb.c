@@ -368,12 +368,12 @@ PHP_FUNCTION(monetdb_connect)
 		}
 		break;
 	case 4:		/* language, hostname, port, username */
-		if (zend_get_parameters_ex(3, &z_language, &z_hostname, &z_port, &z_username) == FAILURE) {
+		if (zend_get_parameters_ex(4, &z_language, &z_hostname, &z_port, &z_username) == FAILURE) {
 			MONETDB_CONNECT_RETURN_FALSE();
 		}
 		break;
-	case 5:		/* language, hostname, port, password */
-		if (zend_get_parameters_ex(3, &z_language, &z_hostname, &z_port, &z_username, &z_password) == FAILURE) {
+	case 5:		/* language, hostname, port, username, password */
+		if (zend_get_parameters_ex(5, &z_language, &z_hostname, &z_port, &z_username, &z_password) == FAILURE) {
 			MONETDB_CONNECT_RETURN_FALSE();
 		}
 		break;
