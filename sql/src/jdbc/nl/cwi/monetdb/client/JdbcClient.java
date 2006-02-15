@@ -503,8 +503,26 @@ public class JdbcClient {
 						String object = qp.getQuery().substring(2).trim().toLowerCase();
 						if (object.endsWith(";")) object = object.substring(0, object.length() - 1);
 						if (!object.equals("")) {
-							ResultSet tbl = dbmd.getTables(null, null, null, null);
-							// we have an object, see is we can find it
+							int dot;
+							String schema;
+							
+							if ((dot = object.indexOf(".")) != -1) {
+								// use provided schema
+								schema = object.substring(0, dot);
+								object = object.substring(dot + 1);
+							} else {
+								// get current schema
+								ResultSet rs =
+									stmt.executeQuery("SELECT current_schema");
+								if (!rs.next())
+									throw new SQLException("current schema unknown!");
+								schema = rs.getString(1);
+								rs.close();
+							}
+							ResultSet tbl = dbmd.getTables(
+									null, schema, null, null);
+
+							// we have an object, see if we can find it
 							boolean found = false;
 							while (tbl.next()) {
 								if (tbl.getString("TABLE_NAME").equalsIgnoreCase(object) ||
@@ -526,7 +544,13 @@ public class JdbcClient {
 							tbl.close();
 						} else {
 							String[] types = {"TABLE", "VIEW"};
-							ResultSet tbl = dbmd.getTables(null, null, null, types);
+							ResultSet rs =
+								stmt.executeQuery("SELECT current_schema");
+							rs.next();	// should in theory always succeed
+							ResultSet tbl = dbmd.getTables(
+									null, rs.getString(1), null, types);
+							rs.close();
+
 							// give us a list with tables
 							while (tbl.next()) {
 								out.println(tbl.getString("TABLE_TYPE") + "\t" +
