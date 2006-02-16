@@ -1270,15 +1270,14 @@ gdk_export BAT *BATreplace(BAT *b, BAT *n, bit force);
 gdk_export BUN BUNlocate(BAT *b, ptr left, ptr right);
 gdk_export BUN BUNfnd(BAT *b, ptr left);
 
-#define BUNfndVOID(p,b,v)						\
-	if ((*(oid*) (v) == oid_nil) != ((b)->hseqbase == oid_nil)) {	\
-		/* (v == ni) XOR (seqbase == nil) ! */			\
-		/* What about (v == nil) AND (seqbase == nil) ? */	\
-		p = NULL;						\
-	} else {							\
-		REGISTER size_t _i = BUNindex((b),BUNfirst((b))) + (*(oid*) (v) - (b)->hseqbase); \
-		p = BUNptr((b), _i);  if (p < BUNfirst(b) || p >= BUNlast(b)) p = NULL;	\
-	}
+#define BUNfndVOID(p,b,v) {                                                             \
+    ssize_t result = ((ssize_t) BUNfirst(b)) + BUNsize(b)*(*(oid*)(v) - (b)->hseqbase); \
+    ssize_t check = ((*(oid*) (v) == oid_nil) |                                         \
+                    ((b)->hseqbase == oid_nil) |                                        \
+                    (*(oid*) v < (b)->hseqbase) |                                       \
+                    (*(oid*) v >= (b)->hseqbase + (b)->batCount));                      \
+    p = (BUN) (result&(check-1)); /* and with 0xFF...FF or 0x00..00 */                  \
+}
 #if SIZEOF_OID == SIZEOF_INT
 #define BUNfndOID(p,b,v)			\
 	if (BAThdense(b)) {			\
@@ -1310,8 +1309,7 @@ gdk_export BUN BUNfnd(BAT *b, ptr left);
 #define BUNtail(b,p)	((b)->tvarsized ? BUNtvar(b,p) : BUNtloc(b,p))
 
 #define BUNsize(b)	((b)->dims.bunwidth)
-#define BUNptr(b,i)	((BUN) ((char *) Bunbase(b) + ((b)->batElmshift < 0 ? \
-				(i) * BUNsize(b) : (i) << (b)->batElmshift)))
+#define BUNptr(b,i)	((BUN) ((char *) Bunbase(b) + (i) * BUNsize(b)))
 #define BUNindex(b,p)	((size_t) ((b)->batElmshift < 0 ? \
 				   (((char*)(p)-(char*)Bunbase(b))/BUNsize(b)) : \
 				   (((char*)(p)-(char*)Bunbase(b)) >> (b)->batElmshift)))
@@ -1541,6 +1539,11 @@ expected usage pattern of the memory in a heap.
 #define STORE_MEM	0	/* load into GDKmalloced memory */
 #define STORE_MMAP	1	/* mmap() into virtual memory */
 #define STORE_PRIV	2	/* BAT copy of copy-on-write mmap */
+
+/* page size for non-linear mmaps */
+#define REMAP_PAGE_BITS 16
+#define REMAP_PAGE_SIZE (1<<REMAP_PAGE_BITS)
+#define REMAP_PAGE_MASK (REMAP_PAGE_SIZE-1)
 
 /* Flags to be ORed into above mode bits */
 #define STORE_VARSIZE	0x100	/* variable sized */

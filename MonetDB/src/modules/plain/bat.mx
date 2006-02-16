@@ -1665,10 +1665,6 @@ CMDset_seqbase(BAT **r, BAT *b, oid *o)
 	return GDK_SUCCEED;
 }
 
-#define REMAP_PAGE_BITS 16
-#define REMAP_PAGE_SIZE (1<<REMAP_PAGE_BITS)
-#define REMAP_PAGE_MASK (REMAP_PAGE_SIZE-1)
-
 static void
 mem_segment(BAT *bn, BAT *b, size_t src_off, size_t dst_off, size_t cnt, lng* const_val)
 {
