@@ -1,2 +1,0 @@
-module(xtables);
-CTgroup(new(void,int).insert(nil,0).seqbase(0@0)).print();

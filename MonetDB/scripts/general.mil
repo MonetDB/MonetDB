@@ -1,8 +1,0 @@
-# general include file
-module(builtin);module(arith);module(str);module(constant);module(bat);module(algebra);module(sys);module(trans);
-printf("\nloaded;\n");
-loaded;
-printf("\nTry: modules;                - for other modules.\n");
-printf("     ls;                     - for persistent bat listing.\n");
-printf("     sigs(\"<module>\")        - for available commands per module.\n");
-printf("     help(\"<command>\")       - for help one-liner for a command.\n");
