@@ -568,15 +568,6 @@ PHP_FUNCTION(monetdb_query)
 		RETURN_FALSE;
 	}
 
-	/* TODO: this might awfully inefficient... */
-	if (mapi_get_querytype(handle) != Q_TABLE &&
-			mapi_get_querytype(handle) != Q_PREPARE)
-		mapi_fetch_all_rows(handle);
-
-	/* We need to cache all rows directly, otherwise things get
-	 * confusing. This is a mapi bug/feature. */
-	/* mapi_fetch_all_rows(handle); */
-
 	h = (phpMonetHandle *) malloc(sizeof(phpMonetHandle));
 	h->resno = ZEND_REGISTER_RESOURCE(return_value, handle, le_handle);
 
