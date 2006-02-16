@@ -217,13 +217,13 @@ static char *mal_commands[] = {
     0
 };
 
-static int mal_help(int a, int b){
+static int mal_help(int cnt, int key){
 	char *name, *c, buf[BUFSIZ];
 	int seekpos=0,rowcount;
 	MapiHdl table_hdl;
 
-	(void) a;
-	(void) b;
+	(void) cnt;
+	(void) key;
 
 	c= rl_line_buffer+strlen(rl_line_buffer)-1;
 	while( c > rl_line_buffer && isspace(*c)) 
@@ -250,7 +250,7 @@ static int mal_help(int a, int b){
 		if ( name )
 			printf("%s\n",name);
 	}
-	return 0;
+	return key;
 }
 static char *
 mal_command_generator(const char *text, int state)
@@ -349,8 +349,8 @@ init_readline(Mapi mid, char *lang, int save_history)
 	if (strcmp(language, "mil") == 0) {
 		rl_attempted_completion_function = mil_completion;
 	} else {
-		/* recognize the help function, should react to <FCN_2> */
-		rl_bind_key('\033',mal_help);
+		/* recognize the help function, should react to <FCN2> */
+		/* rl_bind_key('\033',mal_help); */
 		rl_attempted_completion_function = mal_completion;
 	}
 
