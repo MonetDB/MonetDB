@@ -492,8 +492,13 @@ PROC get_rpc_res ( BAT[void, bat] ws, oid frag,
 
     # Get 'pre_prop' value of an "iter" node.  It's save to use 'find',
     # since "iter" appears only once in 'qn_loc'.
+    var a;
+    var error := CATCH ({ a := qn_loc.reverse().find("iter"); });
+    # If we can not find "iter", then the result is empty, so return empty BATs
+    if (not(isnil(error))) 
+        return bat(void,bat,4).append(res_iter).append(res_item).append(res_kind).access(BAT_READ);
 
-    var a := qn_loc.reverse().find("iter");
+
     # Fetch the position of the "pre_prop" value.  Must use 'ord_select'
     # and 'fetch', since the the "pre_prop" value can appear more than
     # once in the 'pre_prop' bat.
