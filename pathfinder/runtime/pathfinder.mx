@@ -171,6 +171,9 @@ if (isnil(CATCH(bat("doc_query").count()))) {
 }
 lock_unset(pf_lock);
 
+const PAGESIZE := 4;	#64 * 1024;
+const PAGEFREE := 1;
+
 # DEFINITION of constants concerning the data model
 const PRE_BASE := 0@0;
 const ELEMENT := chr(0);
@@ -217,21 +220,21 @@ EXCEPT when (child-T == void)
 @:@1_ws(ATTR_PROP,     16, bat, void,  oid, PRE_BASE)@
 @:@1_ws(ATTR_FRAG,     17, void,void,  oid, PRE_BASE)@
 @:@1_ws(PROP_VAL,      18, bat, void,  str, PRE_BASE)@
-@:@1_ws(DOC_LOADED,    19, str, void, void, oid(nil))@
-@:@1_ws(FRAG,          20, oid, void, void, oid(nil))@
-@:@1_ws(WS_FRAG,       21, oid, void, void, oid(nil))@
-@:@1_ws(HEIGHT,        22, int, void, void, oid(nil))@
-@:@1_ws(QN_PREFIX_URI, 23, bat, void,  str, PRE_BASE)@
-@:@1_ws(QN_LOC_URI,    24, bat, void,  str, PRE_BASE)@
-@:@1_ws(KND_NID_0,     25, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_PROP_0,    26, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_NID_1,     27, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_NID_2,     28, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_NID_3,     29, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_PROP_3,    30, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_NID_4,     31, bat, void,  oid, PRE_BASE)@
-@:@1_ws(NID_PRE,       32, bat, void,  oid, PRE_BASE)@
-@:@1_ws(PRE_NID,       33, bat, void,  oid, PRE_BASE)@
+@:@1_ws(NID_PRE,       19, bat, void,  oid, PRE_BASE)@
+@:@1_ws(PRE_NID,       20, bat, void,  oid, PRE_BASE)@
+@:@1_ws(DOC_LOADED,    21, str, void, void, oid(nil))@
+@:@1_ws(FRAG,          22, oid, void, void, oid(nil))@
+@:@1_ws(WS_FRAG,       23, oid, void, void, oid(nil))@
+@:@1_ws(HEIGHT,        24, int, void, void, oid(nil))@
+@:@1_ws(QN_PREFIX_URI, 25, bat, void,  str, PRE_BASE)@
+@:@1_ws(QN_LOC_URI,    26, bat, void,  str, PRE_BASE)@
+@:@1_ws(KND_NID_0,     27, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_PROP_0,    28, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_NID_1,     29, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_NID_2,     30, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_NID_3,     31, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_PROP_3,    32, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_NID_4,     33, bat, void,  oid, PRE_BASE)@
 @:@1_ws(REGION_PRE,    34, bat, void,  oid, oid(nil))@
 @:@1_ws(REGION_START,  35, bat, void,  lng, oid(nil))@
 @:@1_ws(REGION_END,    36, bat, void,  lng, oid(nil))@
@@ -408,8 +411,7 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
 
     # mapping between immutable node-id's and pre-order ranks
     var pre_size := docBAT.find("pre_size");
-    var pre_nid  := pre_size.mirror().copy();
-    var nid_pre  := pre_nid;
+    var pre_nid := docBAT.find("pre_nid");
 
     # create our indices
     var knd := ELEMENT;
@@ -432,12 +434,13 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
         }
         knd :+= chr(1);
     }
-
-    docBAT.insert("nid_pre", nid_pre);
-    docBAT.insert("pre_nid", pre_nid);
-    nid_pre := nil;
-    
     docBAT.replace("attr_own", docBAT.find("attr_own").leftfetchjoin(pre_nid));
+    docBAT := docBAT.access(BAT_READ);
+    return shredBAT.fetch(PRE_LEVEL).max().int() + 1;
+}
+
+@-
+disabled code: hole creation
 
 { # TODO/FIXME: Slack-space creation should be done in the shredder.
 
@@ -511,10 +514,7 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
 
 } # TODO/FIXME: Slack-space creation should be done in the shredder.
 
-    docBAT := docBAT.access(BAT_READ);
-    return shredBAT.fetch(PRE_LEVEL).max().int() + 1;
-}
-
+@mil
 PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, bit doCommit, str opt, timestamp ts, int ws) : int
 {
     var shredRES := shred2bats(location,"",opt);
@@ -575,7 +575,12 @@ PROC shred_doc_base(str location, str name, bit doCommit, str opt) : void
 }
 PROC shred_doc(str location, str name) : void
 {
-    shred_doc_base(location, name, true, "");
+    shred_doc_base(location, name, true, "0");
+}
+
+PROC shred_doc(str location, str name, bit writable) : void
+{
+    shred_doc_base(location, name, true, writable.ifthen(str(nil),str()));
 }
 ADDHELP("shred_doc", "flokstra", "Dec 2004",
 "PARAMETERS:\n\
@@ -821,7 +826,7 @@ PROC add_doc(BAT[void,bat] ws, str name) : int
             doCommit := false;
             docid := "";
         }
-        height := shred_doc_impl(docBAT, name, name, doCommit, "", ts, int(ws));
+        height := shred_doc_impl(docBAT, name, name, doCommit, "0", ts, int(ws));
         time_shred :+= time() - t;
     }
     if (isnil(docid)) {

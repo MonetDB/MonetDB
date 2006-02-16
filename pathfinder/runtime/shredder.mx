@@ -192,7 +192,7 @@ static int disposeAttrDB(specAttrDbStr* adb) {
 }
 
 /* define the number of BATs in the requuired result set */
-#define SHRED_BATS (PROP_VAL + 1)
+#define SHRED_BATS (PRE_NID + 1)
 
 /* description of the static properties of a result BAT */
 typedef struct shredBATdef {
@@ -224,7 +224,9 @@ static shredBATdef shredbatdef[SHRED_BATS] = {
         { ATTR_QN,  "ATTR_QN",  TYPE_void, TYPE_oid, 0.5, 0},
         { ATTR_PROP,"ATTR_PROP",TYPE_void, TYPE_oid, 0.5, 0},
         { ATTR_FRAG,"ATTR_FRAG",TYPE_void, TYPE_oid, 0.0, 0},
-        { PROP_VAL, "PROP_VAL", TYPE_void, TYPE_str, 0.0, 0}
+        { PROP_VAL, "PROP_VAL", TYPE_void, TYPE_str, 0.0, 0},
+        { NID_PRE, "NID_PRE", TYPE_void, TYPE_void, 1.0, 0},
+        { PRE_NID, "PRE_NID", TYPE_void, TYPE_void, 1.0, 0}
 };
 
 /* description of the dynamic properties of a result BAT */
@@ -291,6 +293,7 @@ typedef struct shredCtxStruct {
     shredBAT    dstBAT[SHRED_BATS]; /* all the result BATs */
     BAT*        pfxlocBAT;      /* the BAT to compress NS and LOC */
     int         pfxlocDUPL;     /* the number of duplicates pfxlocs */
+    off_t       pageFree;       /* number of bytes per page to leave empty */
     int         shredWords;     /* store all words in text seperate,
                                  * this is something the Tijah 
                                  * people were asking for
@@ -492,6 +495,21 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
           (setBATcapacity(shredCtx,ATTR_PROP,shredCtx->nnode_attr) < 0)
 	)
 		return NULL;
+
+        /* FIXME: should peform hole-creation *during* parsing iff
+         *        shredCtx->pageFree != 0 */
+
+        /* pre_nid and nid_pre [void,void] are identity mappings with nid=pre */
+        size_t cnt = BATcount(shredCtx->dstBAT[PRE_SIZE].bat);
+
+        BATseqbase(BATmirror(shredCtx->dstBAT[PRE_NID].bat),0);
+        BATsetcount(shredCtx->dstBAT[PRE_NID].bat,cnt);
+        shredCtx->dstBAT[PRE_NID].bat->batBuns->free += cnt*BUNsize(shredCtx->dstBAT[PRE_NID].bat);
+
+        BATseqbase(BATmirror(shredCtx->dstBAT[NID_PRE].bat),0);
+        BATsetcount(shredCtx->dstBAT[NID_PRE].bat,cnt);
+        shredCtx->dstBAT[NID_PRE].bat->batBuns->free += cnt*BUNsize(shredCtx->dstBAT[NID_PRE].bat);
+
 	/* */
 	shredBAT* pv = &shredCtx->dstBAT[PROP_VAL];
 
@@ -621,7 +639,13 @@ CMDshred2bats(BAT **res2mil, str location, str buffer, str opt)
 
     if ( !(shredCtx = createShredCtx(location,xmlFileSize)) )
         return GDK_FAIL;
-    shredCtx->shredWords = (strcmp(opt,"tijah")==0);
+    if (strcmp(opt,"tijah")==0) {
+        shredCtx->shredWords = 1; 
+        shredCtx->pageFree = 0; 
+    } else {
+        shredCtx->shredWords = 0; 
+        shredCtx->pageFree = REMAP_PAGE_SIZE*MIN(99,MAX(0,atoi(opt)))/100; 
+    }
 
     if ( mainSHREDDER(shredCtx, location, buffer) < 0 )
         return GDK_FAIL;
