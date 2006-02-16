@@ -838,15 +838,12 @@ char **getHelp(Module m, str pat, int completion)
 						*v = 0;
 					}
 					if( tstDuplicate(msg,buf) ) continue;
-				} else if( sig || strcmp(fcnnme,s->name)==0 ) {
+				} else if( strcmp(fcnnme,s->name)==0 || *fcnnme=='*' ) {
 					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE);
 					buf[0]=' ';
 					t= strstr(buf,"address");
 					if( t) *t= 0;
 				} 
-#ifdef MAL_SCOPE_DEBUG 
-				printf("%s",buf);
-#endif
 				fnd=0;
 				for(f=0;f<top;f++)
 				if( msg[f] && strcmp(buf+1, msg[f]) == 0 ) fnd++;
@@ -914,6 +911,7 @@ char **getHelpMatch(char *pat){
 	}
 	return msg;
 }
+
 void
 showHelp(Module m, str txt, stream *fs){
 	int i;
