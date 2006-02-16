@@ -1305,8 +1305,8 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_3066A35C957C48FB8C3BFBFE9ED883D1"
             {
-            "SourcePath" = "8:..\\..\\..\\MinGW\\lib\\bin\\lib_pf_burk-0.dll"
-            "TargetName" = "8:lib_pf_burk-0.dll"
+            "SourcePath" = "8:..\\..\\..\\MinGW\\lib\\bin\\lib_pf_standoff-0.dll"
+            "TargetName" = "8:lib_pf_standoff-0.dll"
             "Tag" = "8:"
             "Folder" = "8:_81E903B0A77D4EC19DA1725A0FCDBA20"
             "Condition" = "8:"
@@ -2945,8 +2945,8 @@
             }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_BC1996887A6C4C718E6451DDA10DB2F9"
             {
-            "SourcePath" = "8:..\\..\\..\\MinGW\\lib\\MonetDB\\pf_burk.mil"
-            "TargetName" = "8:pf_burk.mil"
+            "SourcePath" = "8:..\\..\\..\\MinGW\\lib\\MonetDB\\pf_standoff.mil"
+            "TargetName" = "8:pf_standoff.mil"
             "Tag" = "8:"
             "Folder" = "8:_81E903B0A77D4EC19DA1725A0FCDBA20"
             "Condition" = "8:"
