@@ -2037,7 +2037,7 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
         case c_self:
             axis = "self";
             break;
-#ifdef STANDOFF
+#ifdef BURKOWSKI
         case c_select_narrow:
             axis = "select_narrow";
             break;

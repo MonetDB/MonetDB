@@ -1,5 +1,5 @@
 module("pathfinder");
-module("pf_standoff");
+module("pf_burk");
 module("unix");
 
 var TSTSRCDIR := getenv("TSTSRCBASE") + "/tests/StandOff/video/Tests";

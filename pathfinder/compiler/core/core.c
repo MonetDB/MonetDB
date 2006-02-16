@@ -833,7 +833,7 @@ PFcore_step (PFpaxis_t paxis, const PFcnode_t *nodetest)
     case p_self:               
         kind = c_self; 
         break;
-#ifdef STANDOFF
+#ifdef BURKOWSKI
     case p_select_narrow:
         kind = c_select_narrow;
         break;

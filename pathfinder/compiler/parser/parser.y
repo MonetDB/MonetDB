@@ -379,20 +379,20 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token rbrace                          "}"
 %token rbrace_rbrace                   "}}"
 %token rbracket                        "]"
-/* [STANDOFF] */
+/* [BURKOWSKI] */
 %token reject_narrow_colon_colon       "reject-narrow::"
 %token reject_wide_colon_colon         "reject-wide::"
-/* [/STANDOFF] */
+/* [/BURKOWKSI] */
 %token return_                         "return"
 %token rparen                          ")"
 %token rparen_as                       ") as"
 %token satisfies                       "satisfies"
 %token schema_attribute_lparen         "schema-attribute ("
 %token schema_element_lparen           "schema-element ("
-/* [STANDOFF] */
+/* [BURKOWKSI] */
 %token select_narrow_colon_colon       "select-narrow::"
 %token select_wide_colon_colon         "select-wide::"
-/* [/STANDOFF] */
+/* [/BURKOWKSI] */
 %token self_colon_colon                "self::"
 %token semicolon                       ";"
 %token slash                           "/"
@@ -493,7 +493,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %type <axis>   AttributeAxis_
                ReverseAxis
                ForwardAxis
-               StandOffAxis_ /* StandOff Axis (can only be used if corresponding 
+               BurkAxis_ /* Burkowski Axis (can only be used if corresponding 
                             compiler flag is set) */
 
 %type <buf>    AttributeValueContTexts_
@@ -509,7 +509,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
                AdditiveExpr AndExpr AnyKindTest AtomicType AttribNameOrWildcard
                AttribNodeTest AttribStep_ AttributeTest AttributeValueCont_
                AttributeValueConts_ AxisStep BaseURIDecl 
-               StandOffStep_  /* StandOff Axis (can only be used if corresponding 
+               BurkStep_  /* Burkowski Axis (can only be used if corresponding 
                             compiler flag is set) */
                CDataSection
                CDataSectionContents CaseClause CastExpr CastableExpr Characters_
@@ -1499,12 +1499,12 @@ AxisStep                  : ForwardStep
                             { $$ = $1; }
                           | AttribStep_ PredicateList
                             { FIXUP (0, $2, $1); $$ = $2.root; }
-/* [STANDOFF] */
-                          | StandOffStep_
+/* [BURKOWSKI] */
+                          | BurkStep_
                             { $$ = $1; }
-                          | StandOffStep_ PredicateList
+                          | BurkStep_ PredicateList
                             { FIXUP (0, $2, $1); $$ = $2.root; }
-/* [/STANDOFF] */
+/* [/BURKOWSKI] */
                           ;
 
 /* [65] */
@@ -1575,40 +1575,40 @@ AbbrevAttribStep_         : "@" AttribNodeTest
                             }
                           ;
 
-StandOffStep_             : StandOffAxis_ NodeTest
-                            { /* StandOff Axis (can only be used if corresponding 
+BurkStep_                 : BurkAxis_ NodeTest
+                            { /* Burkowski Axis (can only be used if corresponding 
                                  compiler flag is set) */
                               ($$ = wire1 (p_step, @$, $2))->sem.axis = $1; }
                           ;
 
-StandOffAxis_             : "select-narrow::"      { 
-#ifndef STANDOFF
+BurkAxis_                 : "select-narrow::"      { 
+#ifndef BURKOWSKI
                               PFoops (OOPS_PARSE,
-                                          "Invalid Axis (StandOff was not enabled)");
+                                          "Invalid Axis (Burkowski was not enabled)");
 #else
                                                      $$ = p_select_narrow; 
 #endif
                             }
                           | "select-wide::"        { 
-#ifndef STANDOFF
+#ifndef BURKOWSKI
                               PFoops (OOPS_PARSE,
-                                          "Invalid Axis (StandOff was not enabled)");
+                                          "Invalid Axis (Burkowski was not enabled)");
 #else
                                                      $$ = p_select_wide; 
 #endif
                             }
                           | "reject-narrow::"      { 
-#ifndef STANDOFF
+#ifndef BURKOWSKI
                               PFoops (OOPS_PARSE,
-                                          "Invalid Axis (StandOff was not enabled)");
+                                          "Invalid Axis (Burkowski was not enabled)");
 #else
                                                      $$ = p_reject_narrow; 
 #endif
                             }
                           | "reject-wide::"        { 
-#ifndef STANDOFF
+#ifndef BURKOWSKI
                               PFoops (OOPS_PARSE,
-                                          "Invalid Axis (StandOff was not enabled)");
+                                          "Invalid Axis (Burkowski was not enabled)");
 #else
                                                      $$ = p_reject_wide; 
 #endif
