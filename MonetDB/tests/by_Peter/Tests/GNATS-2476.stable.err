@@ -1,4 +1,0 @@
-stderr of test 'GNATS-2476` in directory 'tests/by_Peter` itself:
-
-#> Mtest:	milM GNATS-2476 milM
-#> Mtest:	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_by_Peter GNATS-2476.milM
