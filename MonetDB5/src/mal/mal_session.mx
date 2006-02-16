@@ -59,7 +59,8 @@ mal_export int MALcommentsOnly(MalBlkPtr mb);
 #include "mal_parser.h"		/* for parseMAL() */
 #include "mal_namespace.h"
 #include "mal_readline.h"
-/* doesn't work unfortunately
+#include "mal_authorize.h"
+/* FIXME: doesn't work unfortunately
 #include <status.h> */	/* for SYSgetDatabases(), SYSgetPorts() */
 
 mal_export str SYSgetDatabases(int *ret);
@@ -177,31 +178,55 @@ scheduleClient(str command, bstream *fin, stream *fout)
 	if (s) {
 		*s = 0;
 		passwd = s + 1;
+	} else {
+		stream_printf(fout, "!incomplete challenge '%s'\n", user);
+		stream_flush(fout);
+		return;
 	}
 
 	/* lang */
-	if (s) s = strchr(passwd, ':');
+	s = strchr(passwd, ':');
 	if (s) {
 		*s = 0;
 		lang = s + 1;
+	} else {
+		stream_printf(fout, "!incomplete challenge, missing language\n");
+		stream_flush(fout);
+		return;
 	}
 
 	/* blocked or not (we don't care here) */
-	if (s) s = strchr(lang, ':');
-	if (s) {
-		*s = 0;
-		database = s + 1;
-	}
-
-	/* database */
-	if (s) s = strchr(database, ':');
+	s = strchr(lang, ':');
 	if (s) {
 		*s = 0;
 		database = s + 1;
 	} else {
-		/* reset database variable, which we misused above */
+		stream_printf(fout, "!incomplete challenge, missing database\n");
+		stream_flush(fout);
+		return;
+	}
+
+	/* database */
+	s = strchr(database, ':');
+	if (s) {
+		*s = 0;
+		database = s + 1;
+	} else {
+		/* reset database variable, which we misused above, don't error,
+		   as database is optional */
 		database = NULL;
 	}
+
+	/* access control: verify the credentials supplied by the user */
+	/*
+	str err = authorizeClient(user, passwd, lang, database);
+	=> checkAuthorization
+	if (err) {
+		stream_printf(fout, "!%s\n", err);
+		stream_flush(fout);
+		return;
+	}
+	*/
 	
 	c = initClient(GDKstrdup(user), passwd, fin, fout);
 	c->nspace = newModule(NULL, putName("user", 4));
@@ -293,12 +318,12 @@ scheduleClient(str command, bstream *fin, stream *fout)
 	} else {
 		if (!lang) {
 			if ((s = defaultScenario(c))) {
-				stream_printf(c->fdout, "!ERROR %s\n", s);
+				stream_printf(c->fdout, "!%s\n", s);
 				stream_flush(c->fdout);
 				c->mode= FINISHING;
 			}
 		} else if ((s = setScenario(c, lang)) != NULL) {
-			stream_printf(c->fdout, "!ERROR %s\n", s);
+			stream_printf(c->fdout, "!%s\n", s);
 			stream_flush(c->fdout);
 			c->mode= FINISHING;
 		}
