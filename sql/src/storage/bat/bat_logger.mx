@@ -428,6 +428,9 @@ logger_readlog(logger *logger, char *filename)
 			break;
 		case SQL_LOG_OID:
 			logger->oid = l.nr;
+			if (logger->debug & 1)
+				fprintf(stderr, "logger oid %d\n", logger->oid);
+
 			break;
 		case SQL_LOG_INSERT:
 			log_read_updates(logger, &l, name);

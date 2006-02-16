@@ -268,7 +268,6 @@ sql_create_subtype(sql_type *t, unsigned int digits, unsigned int scale)
 	return res;
 }
 
-
 int
 localtypes_cmp(int nlt, int olt)
 {

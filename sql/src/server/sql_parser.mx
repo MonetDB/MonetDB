@@ -3335,6 +3335,12 @@ non_reserved_word:  /* (lexicographically sorted for convenience) */
 | TYPE		{ $$ = sa_strdup(SA, "type"); }
 | VALUE		{ $$ = sa_strdup(SA, "value"); }	/* sloppy: officially reserved */
 | ZONE		{ $$ = sa_strdup(SA, "zone"); }		/* sloppy: officially reserved */
+
+|  CACHE	{ $$ = sa_strdup(SA, "cache"); }
+|  OPTIONS	{ $$ = sa_strdup(SA, "options"); }
+|  sqlSESSION	{ $$ = sa_strdup(SA, "session"); }
+|  TIMESTAMP	{ $$ = sa_strdup(SA, "timestamp"); }
+
 |  PREPARE	{ $$ = sa_strdup(SA, "prepare"); }
 |  EXECUTE	{ $$ = sa_strdup(SA, "execute"); }
 |  SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }

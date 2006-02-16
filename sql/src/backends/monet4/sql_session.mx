@@ -144,15 +144,18 @@ sql_symbol2stmt(mvc *c)
 		printf("# semantic relational algebra\n");
 		r = rel_semantic(c, c->sym);
 		if (!r) {
+			if (c->errstr[0])
+				printf("# %s\n", c->errstr);
 			printf("# falling back to direct mode \n");
 			s = semantic(c, c->sym);
-		} else 
+		} else {
 			s = rel_bin(c, r);
-		if (s){
-			stmt *opt = rel2bin(c, s);
-
-			stmt_destroy(s);
-			return opt;
+			if (s){
+				stmt *opt = rel2bin(c, s);
+	
+				stmt_destroy(s);
+				return opt;
+			}
 		}
 	}  else {
 		/*printf("# semantic binary algebra\n");*/
@@ -595,6 +598,8 @@ mvc_sql(mvc *m, char *cmd)
 
 	m->qc = NULL;
 	m->cache = 0;
+	m->user_id = m->role_id = USER_MONETDB;
+	m->user = _strdup("monetdb");
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	n = GDKmalloc(len + 1 + 1);
@@ -622,6 +627,7 @@ mvc_sql(mvc *m, char *cmd)
 	bstream_destroy(m->scanner.rs);
 	assert(m->qc == NULL);
 
+	GDKfree(m->user);
 	*m = o;
         OUTPUT->binding.val.pval = m->scanner.ws;
 	if (err)
