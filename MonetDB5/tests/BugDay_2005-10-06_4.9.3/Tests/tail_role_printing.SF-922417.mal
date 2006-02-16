@@ -1,6 +1,0 @@
-b := bat.new(:oid,:oid);
-bat.setRole(b,"A","B");
-io.print(b);
-c := bat.new(:oid,:oid);
-bat.setRole(c,"A","C");
-io.print(b,c);
