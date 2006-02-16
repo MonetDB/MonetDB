@@ -538,9 +538,6 @@ PHP_FUNCTION(monetdb_query)
 
 	ZEND_FETCH_RESOURCE(conn, phpMonetConn *, z_mapi_link, id, "MonetDB connection", le_link);
 
-	convert_to_string_ex(z_query);
-	query = Z_STRVAL_PP(z_query);
-
 	if (!conn || !conn->mid) {
 		char *error = "monetdb_query: Query on uninitialized/closed connection";
 		php_error(E_WARNING, error);
@@ -558,7 +555,14 @@ PHP_FUNCTION(monetdb_query)
 		RETURN_FALSE;
 	}
 
+	convert_to_string_ex(z_query);
+	error = Z_STRVAL_PP(z_query);
+	query = emalloc(strlen(error) + 2);
+	strcpy(query, error);
+	strcat(query, ";");
+	error = NULL;
 	mapi_query_handle(handle, query);
+	efree(query);
 
 	if (monetdb_set_last_error(mapi_result_error(handle) TSRMLS_CC) != 0) {
 		/* mapi_close_handle(handle); */
