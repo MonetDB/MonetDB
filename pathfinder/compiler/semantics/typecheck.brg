@@ -128,16 +128,16 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 %term preceding          = 41 /**< nodes before context node (document order) */
 %term preceding_sibling  = 42 /**< all preceding nodes with same parent */
 %term self               = 43 /**< the context node itself */
-/* [STANDOFF] */
-%term select_narrow      = 100 /**< give me some bastards (stand-off 
+/* [BURKOWSKI] */
+%term select_narrow      = 100 /**< give me some bastards (Burkowski stand-off 
                                    matching) */
-%term select_wide        = 101 /**< give me all bastards (stand-off 
+%term select_wide        = 101 /**< give me all bastards (Burkowski stand-off 
                                    matching) */
-%term reject_narrow      = 102 /**< give me all but some bastards (
+%term reject_narrow      = 102 /**< give me all but some bastards (Burkowski 
                                    stand-off matching) */
-%term reject_wide        = 103 /**< give me all but the bastards (
+%term reject_wide        = 103 /**< give me all but the bastards (Burkowski 
                                    stand-off matching) */
-/* [/STANDOFF] */
+/* [/BURKOWSKI] */
 
 %term elem               = 44 /**< the element constructor */
 %term attr               = 45 /**< the attribute constructor */
@@ -211,12 +211,12 @@ LocationStep:       parent (SequenceType)                       =  27 (10);
 LocationStep:       preceding (SequenceType)                    =  28 (10);
 LocationStep:       preceding_sibling (SequenceType)            =  29 (10);
 LocationStep:       self (SequenceType)                         =  30 (10);
-/* [STANDOFF] */
+/* [BURKOWSKI] */
 LocationStep:       select_narrow (SequenceType)                =  100 (10);
 LocationStep:       select_wide (SequenceType)                  =  101 (10);
 LocationStep:       reject_narrow (SequenceType)                =  102 (10);
 LocationStep:       reject_wide (SequenceType)                  =  103 (10);
-/* [/STANDOFF] */
+/* [/BURKOWSKI] */
 
 LocationSteps:      locsteps (LocationStep, LocationSteps)      =  31 (10);
 LocationSteps:      locsteps (LocationStep, Atom)               =  32 (10);
@@ -323,7 +323,7 @@ FunParam:           param (SequenceType, var)                   =  73 (10);
 /** mnemonic XQuery Core constructors */
 #include "core_mnemonic.h"
 
-static PFfun_t * overload (PFqname_t qn, PFcnode_t *args, int soap_rpc);
+static PFfun_t * overload (PFqname_t qn, PFcnode_t *args);
 static PFty_t specific (PFfun_t *fn, PFcnode_t *args);
 
 /**
@@ -400,13 +400,6 @@ reduce (PFcnode_t * p, int goalnt)
              */
             reduce (kids[1], nts[1]);
             reduce (kids[0], nts[0]);
-
-            if (!PFty_subtype (TY(R(p)),
-                               PFty_choice (PFty_star (PFty_item ()),
-                                            PFty_star (PFty_stmt ()))))
-                PFoops (OOPS_TYPECHECK,
-                        "illegal combination of query and update features");
-
             break;
 
         /* Query:              CoreExpr */
@@ -447,12 +440,6 @@ reduce (PFcnode_t * p, int goalnt)
             reduce (kids[0], nts[0]);
             t1 = TY(LR(p));
 
-            if (!PFty_subtype (t1, PFty_star (PFty_item ())))
-                PFoops (OOPS_TYPECHECK,
-                        "illegal binding in for clause, cannot iterate over "
-                        "type `%s'",
-                        PFty_str (t1));
-
             /* Var : prime (t1) */
             TY(LLL(p)) = *PFty_simplify (PFty_prime (PFty_defn (t1)));
 
@@ -485,12 +472,6 @@ reduce (PFcnode_t * p, int goalnt)
             /* E |- Atom : t1 */
             reduce (kids[0], nts[0]);
             t1 = TY(LR(p));
-
-            if (!PFty_subtype (t1, PFty_star (PFty_item ())))
-                PFoops (OOPS_TYPECHECK,
-                        "illegal binding in for clause, cannot iterate over "
-                        "type `%s'",
-                        PFty_str (t1));
 
             /* Var2 : xs:integer */
             TY(LLR(p)) = PFty_xs_integer ();
@@ -721,7 +702,7 @@ reduce (PFcnode_t * p, int goalnt)
         case 30:
             TY(p) = TY(L(p));
             break;
-/* [STANDOFF] */
+/* [BURKOWSKI] */
         case 100:
         /* LocationStep:       select_narrow (SequenceType) */
             TY(p) = PFty_star (TY(L(p)));
@@ -741,7 +722,7 @@ reduce (PFcnode_t * p, int goalnt)
         case 103:
             TY(p) = PFty_star (TY(L(p)));
             break;
-/* [/STANDOFF] */
+/* [/BURKOWSKI] */
 
         /* LocationSteps:      locsteps (LocationStep, LocationSteps) */
         case 31:
@@ -758,12 +739,12 @@ reduce (PFcnode_t * p, int goalnt)
             /* resolve overloading,
              * any type errors will be detected during resolution
              */
-            p->sem.apply.fun = overload (p->sem.apply.fun->qname, L(p), p->sem.apply.rpc);
+            p->sem.fun = overload (p->sem.fun->qname, L(p));
 
             /* invoke specific typing rules for standard F&O functions 
              * (W3C XQuery Formal Semantics 6.2)
              */
-            TY(p) = specific (p->sem.apply.fun, L(p));
+            TY(p) = specific (p->sem.fun, L(p));
 
             break;
 
@@ -1000,12 +981,12 @@ reduce (PFcnode_t * p, int goalnt)
             /*
              * See if function body matches function return type.
              */
-            if (!PFty_subtype (TY(R(p)), p->sem.apply.fun->ret_ty))
+            if (!PFty_subtype (TY(R(p)), p->sem.fun->ret_ty))
                 PFoops (OOPS_TYPECHECK,
                         "body of %s() evaluates to `%s' which is not "
                         "a subtype of `%s'",
-                        PFqname_str (p->sem.apply.fun->qname),
-                        PFty_str (TY(R(p))), PFty_str (p->sem.apply.fun->ret_ty));
+                        PFqname_str (p->sem.fun->qname),
+                        PFty_str (TY(R(p))), PFty_str (p->sem.fun->ret_ty));
             break;
 
         /* ParamList:          nil */
@@ -1051,7 +1032,7 @@ reduce (PFcnode_t * p, int goalnt)
  *             arg (e1, arg (e2, ..., arg (en, nil)...))
  */
 static PFfun_t *
-overload (PFqname_t qn, PFcnode_t *args, int soap_rpc)
+overload (PFqname_t qn, PFcnode_t *args)
 {
     PFarray_t *fns;
     PFarray_t *args_str;
@@ -1073,14 +1054,6 @@ overload (PFqname_t qn, PFcnode_t *args, int soap_rpc)
         /* can all actual argument types be promoted to
          * expected formal parameter types?
          */
-        if (soap_rpc) {
-            /* In soap_rpc, the first actual parameter (dst URI)
-             * should be ignored for function resolution
-             */
-            if (arg->kind == c_nil) continue;
-            arg = arg->child[1];
-        }
-
         for (a = 0, match = true; a < fn->arity; a++) {
             /* test if function has at least the same
                number of arguments as the tested function */

@@ -281,16 +281,16 @@ AC_SUBST(LIBXML2_LIBS, $LIBXML2_LIBS)
 AC_SUBST(LIBXML2_LDADD, $LIBXML2_LDADD)
 AM_CONDITIONAL(HAVE_LIBXML2, test x"$have_libxml2" != xno)
 
-dnl Check for StandOff Axis Steps support
-dnl --enable-standoff
-AC_ARG_ENABLE(standoff,
-	AC_HELP_STRING([--enable-standoff],
-		[enable support for StandOff Axis Steps [default=no]]),
-	enable_standoff=$enableval,
-	enable_standoff=no)
-case $enable_standoff in
-yes)  AC_DEFINE(STANDOFF, 1, [Define if you want StandOff])
-      AC_MSG_NOTICE([StandOff Axis Steps will be available...])
+dnl Check for Burkowski Axis Steps support
+dnl --enable-burk
+AC_ARG_ENABLE(burk,
+	AC_HELP_STRING([--enable-burk],
+		[enable support for Burkowski Axis Steps [default=no]]),
+	enable_burk=$enableval,
+	enable_burk=no)
+case $enable_burk in
+yes)  AC_DEFINE(BURKOWSKI, 1, [Define if you want Burkowski])
+      AC_MSG_NOTICE([Burkowski Axis Steps will be available...])
 ;;
 esac
 

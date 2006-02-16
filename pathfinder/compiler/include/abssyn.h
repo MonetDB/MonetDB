@@ -41,9 +41,6 @@
 #include "functions.h"
 */
 
-/* PFapply_t */
-#include "apply.h"
-
 /** no type of parse tree node will need more than
  *  this many child nodes 
  */
@@ -182,13 +179,17 @@ enum PFpaxis_t {
     p_preceding,          /**< nodes before context node (document order) */
     p_preceding_sibling,  /**< all preceding nodes with same parent */
     p_self                /**< the context node itself */
-#ifdef STANDOFF
-    /* StandOff Axes */
+#ifdef BURKOWSKI
+    /* Burkowski Axes Steps */
     ,
-    p_select_narrow,      /**< give me some bastards (stand-off matching) */
-    p_select_wide,        /**< give me all bastards (stand-off matching) */
-    p_reject_narrow,      /**< give me all but some bastards (stand-off matching) */
-    p_reject_wide         /**< give me all but the bastards (stand-off matching) */
+    p_select_narrow,      /**< give me some bastards (Burkowski stand-off 
+                               matching) */
+    p_select_wide,        /**< give me all bastards (Burkowski stand-off 
+                               matching) */
+    p_reject_narrow,      /**< give me all but some bastards (Burkowski 
+                               stand-off matching) */
+    p_reject_wide         /**< give me all but the bastards (Burkowski 
+                               stand-off matching) */
 #endif
 };
 
@@ -243,7 +244,7 @@ union PFpsem_t {
 
   PFvar_t   *var;        /**< variable information (used after var scoping) */
 
-  PFapply_t apply;       /**< function application information (used after fun checks) */
+  struct PFfun_t *fun;   /**< function information (used after fun checks) */
 }; 
 
 

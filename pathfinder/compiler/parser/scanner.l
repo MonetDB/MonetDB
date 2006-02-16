@@ -124,13 +124,13 @@ extern char *pfinput;
 #define yield(t) return (t)
 #endif
 
-/* If the STANDOFF flag was set, the steps should be recognized
+/* If the BURKOWSKI flag was set, the steps should be recognized
    Otherwise, they (select-narrow::, select-wide::, reject-narrow::, and
    reject-wide::,  should return an error */
-#ifdef STANDOFF
-#define standoff_yield(t) yield(t);
+#ifdef BURKOWSKI
+#define burk_yield(t) yield(t);
 #else
-#define standoff_yield(t) yield(invalid_character);
+#define burk_yield(t) yield(invalid_character);
 #endif
 
 /* lexical state stack */
@@ -433,10 +433,10 @@ _                                ({S}|{ExprComment})+
 "preceding-sibling::"              { yield (preceding_sibling_colon_colon); }
 "preceding::"                      { yield (preceding_colon_colon); }
 "ancestor-or-self::"               { yield (ancestor_or_self_colon_colon); }
-"select-narrow::"                  { standoff_yield (select_narrow_colon_colon); }
-"select-wide::"                    { standoff_yield (select_wide_colon_colon); }
-"reject-narrow::"                  { standoff_yield (reject_narrow_colon_colon); }
-"reject-wide::"                    { standoff_yield (reject_wide_colon_colon); }
+"select-narrow::"                  { burk_yield (select_narrow_colon_colon); }
+"select-wide::"                    { burk_yield (select_wide_colon_colon); }
+"reject-narrow::"                  { burk_yield (reject_narrow_colon_colon); }
+"reject-wide::"                    { burk_yield (reject_wide_colon_colon); }
 ".."                               { gotoState (OPERATOR); yield (dot_dot); }
 "."                                { gotoState (OPERATOR); yield (dot); }
 "*"                                { gotoState (OPERATOR); yield (star); }

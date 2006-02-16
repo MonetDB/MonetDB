@@ -59,7 +59,7 @@ static PFpnode_t *root;
 /* temporay node memory */
 static PFpnode_t *c, *c1;
 
-static void add_to_module_wl (char* id, char *ns, char *uri);
+static void add_to_module_wl (char *ns, char *uri);
 
 /* avoid `implicit declaration of yylex' warning */
 extern int pflex (void);
@@ -136,13 +136,12 @@ static char *req_module_ns = NULL;
 static PFarray_t *modules = NULL;
 
 /**
- * Each item in the work list is a id/namespace/URI triple.  The URI
+ * Each item in the work list is a namespace/URI pair.  The URI
  * denotes the URI to load the module from; the namespace is the
  * namespace that the module should be defined for (abort parsing
  * otherwise).
  */
 typedef struct module_t {
-    char *id;
     char *ns;
     char *uri;
 } module_t;
@@ -379,20 +378,20 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token rbrace                          "}"
 %token rbrace_rbrace                   "}}"
 %token rbracket                        "]"
-/* [STANDOFF] */
+/* [BURKOWSKI] */
 %token reject_narrow_colon_colon       "reject-narrow::"
 %token reject_wide_colon_colon         "reject-wide::"
-/* [/STANDOFF] */
+/* [/BURKOWKSI] */
 %token return_                         "return"
 %token rparen                          ")"
 %token rparen_as                       ") as"
 %token satisfies                       "satisfies"
 %token schema_attribute_lparen         "schema-attribute ("
 %token schema_element_lparen           "schema-element ("
-/* [STANDOFF] */
+/* [BURKOWKSI] */
 %token select_narrow_colon_colon       "select-narrow::"
 %token select_wide_colon_colon         "select-wide::"
-/* [/STANDOFF] */
+/* [/BURKOWKSI] */
 %token self_colon_colon                "self::"
 %token semicolon                       ";"
 %token slash                           "/"
@@ -493,7 +492,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %type <axis>   AttributeAxis_
                ReverseAxis
                ForwardAxis
-               StandOffAxis_ /* StandOff Axis (can only be used if corresponding 
+               BurkAxis_ /* Burkowski Axis (can only be used if corresponding 
                             compiler flag is set) */
 
 %type <buf>    AttributeValueContTexts_
@@ -509,7 +508,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
                AdditiveExpr AndExpr AnyKindTest AtomicType AttribNameOrWildcard
                AttribNodeTest AttribStep_ AttributeTest AttributeValueCont_
                AttributeValueConts_ AxisStep BaseURIDecl 
-               StandOffStep_  /* StandOff Axis (can only be used if corresponding 
+               BurkStep_  /* Burkowski Axis (can only be used if corresponding 
                             compiler flag is set) */
                CDataSection
                CDataSectionContents CaseClause CastExpr CastableExpr Characters_
@@ -919,17 +918,9 @@ ModuleImport              : "import module" ModuleNS_ OptAtStringLiterals_
                               c = $3;
 
                               while (c->kind == p_schm_ats) {
-                                  if($2.root){
-                                      add_to_module_wl (
-                                        $2.root->sem.str,       /* ID */
-                                        $2.hole->sem.str,       /* NS */
-                                        c->child[0]->sem.str);  /* URI */
-                                  } else {
-                                      add_to_module_wl (
-                                        "",                     /* ID */
-                                        $2.hole->sem.str,       /* NS */
-                                        c->child[0]->sem.str);  /* URI */
-                                  }
+                                  add_to_module_wl (
+                                      $2.hole->sem.str,       /* NS */
+                                      c->child[0]->sem.str);  /* URI */
                                   c = c->child[1];
                               }
 
@@ -1499,12 +1490,12 @@ AxisStep                  : ForwardStep
                             { $$ = $1; }
                           | AttribStep_ PredicateList
                             { FIXUP (0, $2, $1); $$ = $2.root; }
-/* [STANDOFF] */
-                          | StandOffStep_
+/* [BURKOWSKI] */
+                          | BurkStep_
                             { $$ = $1; }
-                          | StandOffStep_ PredicateList
+                          | BurkStep_ PredicateList
                             { FIXUP (0, $2, $1); $$ = $2.root; }
-/* [/STANDOFF] */
+/* [/BURKOWSKI] */
                           ;
 
 /* [65] */
@@ -1575,40 +1566,40 @@ AbbrevAttribStep_         : "@" AttribNodeTest
                             }
                           ;
 
-StandOffStep_             : StandOffAxis_ NodeTest
-                            { /* StandOff Axis (can only be used if corresponding 
+BurkStep_                 : BurkAxis_ NodeTest
+                            { /* Burkowski Axis (can only be used if corresponding 
                                  compiler flag is set) */
                               ($$ = wire1 (p_step, @$, $2))->sem.axis = $1; }
                           ;
 
-StandOffAxis_             : "select-narrow::"      { 
-#ifndef STANDOFF
+BurkAxis_                 : "select-narrow::"      { 
+#ifndef BURKOWSKI
                               PFoops (OOPS_PARSE,
-                                          "Invalid Axis (StandOff was not enabled)");
+                                          "Invalid Axis (Burkowski was not enabled)");
 #else
                                                      $$ = p_select_narrow; 
 #endif
                             }
                           | "select-wide::"        { 
-#ifndef STANDOFF
+#ifndef BURKOWSKI
                               PFoops (OOPS_PARSE,
-                                          "Invalid Axis (StandOff was not enabled)");
+                                          "Invalid Axis (Burkowski was not enabled)");
 #else
                                                      $$ = p_select_wide; 
 #endif
                             }
                           | "reject-narrow::"      { 
-#ifndef STANDOFF
+#ifndef BURKOWSKI
                               PFoops (OOPS_PARSE,
-                                          "Invalid Axis (StandOff was not enabled)");
+                                          "Invalid Axis (Burkowski was not enabled)");
 #else
                                                      $$ = p_reject_narrow; 
 #endif
                             }
                           | "reject-wide::"        { 
-#ifndef STANDOFF
+#ifndef BURKOWSKI
                               PFoops (OOPS_PARSE,
-                                          "Invalid Axis (StandOff was not enabled)");
+                                          "Invalid Axis (Burkowski was not enabled)");
 #else
                                                      $$ = p_reject_wide; 
 #endif
@@ -2387,21 +2378,20 @@ flatten_locpath (PFpnode_t *p, PFpnode_t *r)
  * Add an item to the work list of modules to import.  If it is
  * already in there, do nothing.
  *
- * @param id   namespace id
  * @param ns   namespace associated with this module
  * @param uri  URI where we will find the module definition.
  *
  *  import module [prefix =] ns at uri, uri, uri...
  */
 static void
-add_to_module_wl (char*id, char *ns, char *uri)
+add_to_module_wl (char *ns, char *uri)
 {
     for (unsigned int i = 0; i < PFarray_last (modules); i++)
         if ( !strcmp (((module_t *) PFarray_at (modules, i))->uri, uri) )
             return;
 
     *(module_t *) PFarray_add (modules)
-        = (module_t) { .id = PFstrdup(id), .ns = PFstrdup (ns), .uri = PFstrdup (uri) };
+        = (module_t) { .ns = PFstrdup (ns), .uri = PFstrdup (uri) };
 }
 
 /**
@@ -2425,7 +2415,7 @@ YYLTYPE pflloc; /* why ? */
  * Parse an XQuery from the main-memory buffer pointed to by @a input.
  */
 int
-PFparse (char *input, PFpnode_t **r, char** soap_uri)
+PFparse (char *input, PFpnode_t **r)
 {
 #if YYDEBUG
     pfdebug = 1;
@@ -2449,13 +2439,6 @@ PFparse (char *input, PFpnode_t **r, char** soap_uri)
     if (pfparse ())
         PFoops (OOPS_PARSE, "XQuery parsing failed");
 
-    if (soap_uri) {
-        for (unsigned int i = 0; i < PFarray_last (modules); i++) {
-            module_t *m = (module_t *) PFarray_at (modules, i);
-            if (strcmp(m->id, "soap") == 0)
-                *soap_uri = PFstrdup(m->uri);
-        }
-    }
     *r = root;
     return num_fun;
 }
@@ -2477,7 +2460,7 @@ parse_module (char *ns, char *uri)
     /* initialisation of yylloc */
     pflloc.first_row = pflloc.last_row = 1;
     pflloc.first_col = pflloc.last_col = 0;
-    
+
     req_module_ns = ns;
 
     if (pfparse ())
