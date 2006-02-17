@@ -386,7 +386,7 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
     var ins := ws_tpe.ord_uselect(bat).mirror().ord_select(oid(nil),oid(-(DOC_LOADED,1))).mirror();
     [insert](const docBAT, ins.leftfetchjoin(ws_nme), ins.leftfetchjoin(ws_oid).leftjoin(shredBAT));
 
-    # these are simple concatenations (to accelerate combined lookup)
+    # these are simple concatenations (to accelerate combPRINT_WS_SZined lookup)
     docBAT.insert("qn_prefix_uri", docBAT.find("qn_prefix").[+](str('\1')).[+](docBAT.find("qn_uri")));
     docBAT.insert("qn_loc_uri",    docBAT.find("qn_loc").[+](str('\1')).[+](docBAT.find("qn_uri")));
 
@@ -398,28 +398,29 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
         knd :+= chr(1);
     }
 
-    # we must now get all elemment-ids (prop) sorted, and within that, all pre's sorted
-    var prop_pre_bat, sorted_pros;
-
-    # get all element-pre's with their prop values in *reverse* pre order (note revert())
-    prop_pre_bat := docBAT.find("kind_pre" + "_" + str(chr(48 + ELEMENT))).reverse().mirror();
-    prop_pre_bat := prop_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().access(BAT_WRITE).revert();
-
-    # get all unique props, and sort them (we hope for a small set of values => small hash table)
-    var sorted_props := prop_pre_bat.project(nil).kunique().sort().mirror();
-
-    # lefthashjoin will keep props in order and output pre's ordered again within that
-    # ..will construct a big hash-table, but exploits reverse-insert-order-out property of hash join
-    prop_pre_bat := sorted_props.lefthashjoin(prop_pre_bat);
+    var knd_pre_bat := docBAT.find("kind_pre" + "_" + str(chr(48 + ELEMENT))).reverse().mirror();
+    var prop_pre_bat := knd_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().chk_order();
+    if (not(ordered(prop_pre_bat))) {
+        var _prop := prop_pre_bat.hmark(0@0);
+        var _pre  := prop_pre_bat.tmark(0@0);
+        var ord := _prop.tsort();
+            ord := ord.CTrefine(_pre).project(nil);
+        prop_pre_bat := prop_pre_bat.fetch(ord);
+        prop_pre_bat := prop_pre_bat.chk_order();
+    }
     docBAT.insert("prop_pre" + "_" + str(chr(48 + ELEMENT)), prop_pre_bat);
 
-    # same procedure for PI (tends to be very small set anyway)
-    prop_pre_bat := docBAT.find("kind_pre" + "_" + str(chr(48 + PI))).reverse().mirror();
-    prop_pre_bat := prop_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().access(BAT_WRITE).revert();
-    sorted_props := prop_pre_bat.project(nil).kunique().sort().mirror();
-    prop_pre_bat := sorted_props.lefthashjoin(prop_pre_bat);
+    knd_pre_bat := docBAT.find("kind_pre" + "_" + str(chr(48 + PI))).reverse().mirror();
+    prop_pre_bat := knd_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().chk_order();
+    if (not(ordered(prop_pre_bat))) {
+        var _prop := prop_pre_bat.hmark(0@0);
+        var _pre  := prop_pre_bat.tmark(0@0);
+        var ord := _prop.tsort();
+            ord := ord.CTrefine(_pre).project(nil);
+        prop_pre_bat := prop_pre_bat.fetch(ord);
+        prop_pre_bat := prop_pre_bat.chk_order();
+    }
     docBAT.insert("prop_pre" + "_" + str(chr(48 + PI)), prop_pre_bat);
-
     docBAT := docBAT.access(BAT_READ);
     return shredBAT.fetch(PRE_LEVEL).max().int() + 1;
 }
@@ -676,7 +677,7 @@ PROC add_doc_locked(str name, timestamp ts, int ws) : oid
     }
     if (not(isnil(doc_oid))) {
         var lim := bat("doc_timestamp").find(doc_oid);
-        if (not(isnil(lim))) { # a nil limit means the doc never expires
+        if (not(isnil(lim))) { # a nil limit means the doc never exprires
             if  (ts > lim) {
                 delete_doc_locked(doc_oid); # remove outdated document from the cache
                 return oid(nil);
@@ -692,7 +693,7 @@ PROC lifetime_doc_locked(str name, str filename, oid doc_oid, timestamp ts) : ti
     if (isnil(doc_oid) and isnil(filename)) {
         # for not-yet-cached URIs: get lifetime from uri_lifetime BAT
         var uri_lifetime := bat("uri_lifetime");
-        var b := [startsWith](name, mirror(uri_lifetime)).uselect(true);
+        var b := [startsWith](filename, mirror(uri_lifetime)).uselect(true);
         var lifetime := lng(nil);
         if (b.count() > 0) {
             var matchlen := [length](mirror(b));
