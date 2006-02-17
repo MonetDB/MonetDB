@@ -629,9 +629,13 @@ SQLsetDebugger(Client c, mvc *m, int onoff)
 	q = newInstruction(c->curprg->def,ASSIGNsymbol);
 	getArg(q,0)= newTmpVariable(c->curprg->def,TYPE_any);
 	moduleId(q) = putName("mdb",3);
-	if( onoff)
+	if( onoff){
 		functionId(q) = putName("start",5);
-	else functionId(q) = putName("stop",4);
+		c->debugOptimizer= TRUE;
+	} else {
+		functionId(q) = putName("stop",4);
+		c->debugOptimizer= FALSE;
+	}
 	pushInstruction(c->curprg->def, q);
 }
 
@@ -679,7 +683,7 @@ SQLparser(Client c)
 	be->vtop = oldvtop;
 #ifdef _SQL_PARSER_DEBUG
 	stream_printf(GDKout, "#SQL compilation \n");
-	printf("debugger? %d %d\n", debugPlan(), be->mvc->mode);
+	printf("debugger? %d\n", be->mvc->mode);
 #endif
 	m = be->mvc;
 	m->type = Q_PARSE;
@@ -744,7 +748,7 @@ SQLparser(Client c)
 		return throwMessage("SQLparser", "Unrecognized language prefix\n");
 	}
 
-	if( explainPerformance())
+	if( be->mvc->mode== m_profile )
 		T0 = GDKusec();
 
 	if ((err = sqlparse(m)) && m->debug){
@@ -805,7 +809,7 @@ produce code.
 */
 		if( m->mode == m_debug)
 			SQLsetDebugger(c, m, m->mode == m_debug); 
-		if (m->mode != m_prepare && !m->cache && !explainPlan()){
+		if (m->mode != m_prepare && !m->cache && m->mode!= m_explain ){
 			backend_callinline(be, c, s );
 		} else {
 			/* generate a factory instantiation */
@@ -849,10 +853,10 @@ produce code.
 In the final phase we add any debugging control
 @c
 	/* turn off debugger */
-	if( debugPlan() && m->mode != m_inplace)
+	if( m->mode == m_debug )
 		SQLsetDebugger(c, m, FALSE);
 
-	if (explainPerformance()) {
+	if (be->mvc->mode == m_profile ) {
 		be->qry = sql_escape_str(QUERY(m->scanner));
 		be->Tparse = GDKusec() - T0;
 	}
@@ -1013,7 +1017,7 @@ SQLengine(Client c)
 		sqlcleanup(be->mvc, 0);
 		return MAL_SUCCEED;
 	}
-	if( explainPerformance())
+	if( m->mode == m_profile)
 		T0 = GDKusec();
 	if (m->mode == m_inplace) {
 		msg= SQLexecutePrepared(c, be, be->q );
@@ -1021,7 +1025,7 @@ SQLengine(Client c)
 	}
 	if( m->mode == m_prepare){
 		goto cleanup_engine;
-	} else if(explainPlan()){
+	} else if( m->mode == m_explain ){
 @-
 If you want to see the detailed code, we have to pick it up from
 the cache as well. This calls for finding the call to the
@@ -1066,7 +1070,7 @@ Any error encountered during execution should block further processing
 unless auto_commit has been set.
 @c
 	c->glb = oldglb;
-	if (explainPerformance()) {
+	if (m->mode== m_profile) {
 		str ret;
 		int mode = m->mode;
 		int explain = m->explain;
