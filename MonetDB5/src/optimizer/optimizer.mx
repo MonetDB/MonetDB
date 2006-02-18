@@ -84,6 +84,12 @@ pattern peephole(mod:str, fcn:str):str
 address QOTPHoptimizerCALL
 comment "Perform local rewrites";
 
+pattern crack():str 
+address QOTCRKoptimizer;
+pattern crack(mod:str, fcn:str):str 
+address QOTCRKoptimizerCALL
+comment "Replace algebra select with crackers select";
+
 pattern singleton():str 
 address QOTSToptimizer;
 pattern singleton(mod:str, fcn:str):str 
@@ -227,6 +233,7 @@ optimizer.prelude();
 #include "mal_reduce.h"
 #include "mal_multitable.h"
 #include "mal_generators.h"
+#include "mal_crack.h"
 
 opt_export str QOTMEoptimizerSymbol(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 opt_export str QOTMEoptimizerModule(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -350,6 +357,7 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 @:QOTC(BG, "generators")@
 @:QOTC(MR, "reduce")@
 @:QOTC(CO, "coercions")@
+@:QOTC(CRK, "crack")@
 
 str
 QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
