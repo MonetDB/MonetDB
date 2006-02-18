@@ -155,11 +155,11 @@ supported.
 @end verbatim
 
 @subsubsection Default values
-%--p
-%Specify the default for a column, domain, or attribute.
-%--/p
-% as domain/attribute are currently not support default values are only 
-% important for columns
+@c --p
+@c Specify the default for a column, domain, or attribute.
+@c --/p
+@c  as domain/attribute are currently not support default values are only 
+@c  important for columns
 
 To make insert statements easier a default value can associated with
 each column. Besides literal values, temporal and sequence functions 
@@ -202,7 +202,7 @@ RESTRICT, ie an update fails if a other columns have references to it.
         |       <references specification>
         -|       <check constraint definition>
 
-% we need to update to the new 2003 syntax soon...
+@c  we need to update to the new 2003 syntax soon...
 
 <reference scope check> ::= REFERENCES ARE [ NOT ] CHECKED [ ON DELETE <reference scope check action> ]
 
@@ -303,29 +303,37 @@ Specify a condition for the SQL-data.
 @subsection SQL Data Types
 MonetDB/SQL supports the following list of types. 
 
-@multitable @columnfractions .15 .8
-%@item SQLSTATE ?
-@item CHAR[ACTER] (L) @tab character string with length L
-@item VARCHAR (L) | CHARACTER VARYING (L)  @tab string with atmost length L
-@item CLOB | CHARACTER LARGE OBJECT
-@item BLOB | BINARY LARGE OBJECT
-@item DECIMAL(P,S) | NUMERIC(P,S)	 
-@item SMALLINT				@tab 16 bit integer
-@item INT				@tab 32 bit integer
-@item BIGINT				@tab 64 bit integer
-@item serial				@tab special 64 bit integer (sequence generator) 
-@item REAL				@tab 32 bit floating point
-@item DOUBLE [PRECISION]		@tab 64 bit floating point
+@multitable {VARCHAR (L) | CHARACTER VARYING (L) :} {special 64 bit integer (sequence generator)}
+@c @item SQLSTATE ?			@tab
+@item CHAR[ACTER] (L) 
+@tab character string with length L
+@item VARCHAR (L) | CHARACTER VARYING (L)
+@tab string with atmost length L
+@item CLOB | CHARACTER LARGE OBJECT	
+@item BLOB | BINARY LARGE OBJECT	
+@item DECIMAL(P,S) | NUMERIC(P,S)	
+@item SMALLINT				
+@tab 16 bit integer
+@item INT				
+@tab 32 bit integer
+@item BIGINT				
+@tab 64 bit integer
+@item serial				
+@tab special 64 bit integer (sequence generator) 
+@item REAL				
+@tab 32 bit floating point
+@item DOUBLE [PRECISION]		
+@tab 64 bit floating point
 @item BOO[LEAN]
 @item DATE
 @item TIME(T)
 @item TIMESTAMP(T)
 @item INTERVAL(Q)
-%@item user-defined type
-%@item REF				@tab char, with length N 
-%@item ROW
-%@item ARRAY
-%@item MULTISET
+@c @item user-defined type
+@c @item REF				@tab char, with length N 
+@c @item ROW
+@c @item ARRAY
+@c @item MULTISET
 @end multitable
 
 @node SQL Data Manipulation, SQL Schema Definition, SQL Data Types, SQL Language
