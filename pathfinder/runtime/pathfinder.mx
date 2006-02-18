@@ -807,11 +807,6 @@ PROC add_doc(BAT[void,bat] ws, str name) : int
     var t := time();
     var doc_oid := oid(nil);
     var ts := doc_curtime(filename);
-print("add_doc=======");
-print("name:");
-print(name);
-print("ts:");
-print(ts);
     var err;
 
     # always make sure not to cause errors while holding the lock
@@ -825,21 +820,15 @@ print(ts);
     var doCommit := true;
     var docid := str(nil);
     var height;
-print("doc_oid:");
-print(doc_oid);
 
     if (isnil(doc_oid)) {
         if (isnil(ts)) {
             doCommit := false;
             docid := "";
         }
-print("doCommit:");
-print(doCommit);
         height := shred_doc_impl(docBAT, name, name, doCommit, "0", ts, int(ws));
         time_shred :+= time() - t;
     }
-print("docid:");
-print(docid);
     if (isnil(docid)) {
         doc_oid := bat("doc_name").reverse().find(name);
         height := bat("doc_height").find(doc_oid);
