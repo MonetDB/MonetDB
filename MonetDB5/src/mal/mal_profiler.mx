@@ -450,12 +450,12 @@ onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		str nme = "";
 
 		if (stk->blk)
-			nme = functionName(getInstrPtr(stk->blk, 0));
+			nme = getFunctionId(getInstrPtr(stk->blk, 0));
 
 		/* get identity of caller */
 		log2("%s.%d,\t", nme, getPC(mb, pci));
-		if (moduleId(pci) && functionId(pci)) {
-			log2("\"%s.%s\",\t", moduleName(pci), functionName(pci));
+		if (getModuleId(pci) && getFunctionId(pci)) {
+			log2("\"%s.%s\",\t", getModuleId(pci), getFunctionId(pci));
 		} else {
 			log("\"%s\",\t", operatorName(pci->token));
 		}
@@ -669,8 +669,8 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		}
 		log0("\"");
 
-		log(" module=\"%s\"", (moduleId(pci) ? moduleName(pci) : "unknown"));
-		log(" function=\"%s\"", (functionId(pci) ? functionName(pci) : "unknown"));
+		log(" module=\"%s\"", (getModuleId(pci) ? getModuleId(pci) : "unknown"));
+		log(" function=\"%s\"", (getFunctionId(pci) ? getFunctionId(pci) : "unknown"));
 		log(" calls=\"%d\"", mb->profiler[pc].counter);
 
 		if (mb->profiler[pc].counter) {
@@ -1003,11 +1003,11 @@ int
 instrFilter(InstrPtr pci, str mod, str fcn)
 {
 #ifdef MALprofiler
-	if (functionId(pci) && (*fcn == '*' || strcmp(fcn, functionName(pci)) == 0)) {
-		if (moduleId(pci) && (*mod == '*' || strcmp(mod, moduleName(pci)) == 0))
+	if (getFunctionId(pci) && (*fcn == '*' || strcmp(fcn, getFunctionId(pci)) == 0)) {
+		if (getModuleId(pci) && (*mod == '*' || strcmp(mod, getModuleId(pci)) == 0))
 			return 1;
 	}
-	if (moduleId(pci) && *fcn == '*' && (*mod == '*' || strcmp(mod, moduleName(pci)) == 0))
+	if (getModuleId(pci) && *fcn == '*' && (*mod == '*' || strcmp(mod, getModuleId(pci)) == 0))
 		return 1;
 #else
 	stream_printf(GDKout, "# Monet not compiled for profiling\n");
@@ -1043,7 +1043,7 @@ setFilter(Module cntxt, str mod, str fcn)
 				if (s->subscope[j]) {
 					for (t = s->subscope[j]; t != NULL; t = t->peer) {
 						p = getInstrPtr(mb=t->def, 0);
-						moduleOnly = moduleId(p) && strcmp(moduleName(p), mod) == 0;
+						moduleOnly = getModuleId(p) && strcmp(getModuleId(p), mod) == 0;
 						initProfiler(mb);
 						for (k = 0; k < t->def->stop; k++) {
 							p = getInstrPtr(t->def, k);
@@ -1280,10 +1280,14 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	if (profileCounter[PROFpc].status) {
 		char buf[1024];
 
-		snprintf(buf, 1024, "%s.%s[%d]", moduleName(getInstrPtr(mb, 0)), functionName(getInstrPtr(mb, 0)), getPC(mb, pci));
+		snprintf(buf, 1024, "%s.%s[%d]", 
+			getModuleId(getInstrPtr(mb, 0)), 
+			getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci));
 		BUNins(TRACE_id_pc, &evnt, buf);
-		if (moduleId(pci) && functionId(pci)) {
-			snprintf(buf, 1024, "%s.%s", moduleName(pci), functionName(pci));
+		if (getModuleId(pci) && getFunctionId(pci)) {
+			snprintf(buf, 1024, "%s.%s", 
+				getModuleId(pci), 
+				getFunctionId(pci));
 		} else {
 			snprintf(buf, 1024, "%s", operatorName(pci->token));
 		}

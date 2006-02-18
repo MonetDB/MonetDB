@@ -119,9 +119,9 @@ Symbol  getFunctionSymbol(Module scope, InstrPtr p){
 	Module m;
 	Symbol s;
 
-	for(m= findModule(scope,moduleName(p)); m; m= m->outer)
-		if(idcmp(m->name, moduleName(p))==0 ) {
-				s= m->subscope[(int)(getSubScope(functionName(p)))];
+	for(m= findModule(scope,getModuleId(p)); m; m= m->outer)
+		if(idcmp(m->name, getModuleId(p))==0 ) {
+				s= m->subscope[(int)(getSubScope(getFunctionId(p)))];
 				for(; s; s= s->peer)
 				if( getSignature(s)->fcn == p->fcn) return s;
 		}
@@ -367,7 +367,7 @@ void chkFlow(MalBlkPtr mb)
 			(p->token==FUNCTIONsymbol || p->token==FACTORYsymbol)){
 			GDKerror("%s missing in %s.%s\n", 
 				(p->token== FUNCTIONsymbol?"return":"yield"),
-				moduleId(p), functionId(p));
+				getModuleId(p), getFunctionId(p));
 			mb->errors++;
 		}
 	}
@@ -577,11 +577,11 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 	    getVarDepth(mb,p->argv[k])= 0;
 	}
 	/* and the function name as well */
-	if( functionName(p) == NULL){
+	if( getFunctionId(p) == NULL){
 		GDKerror("Function name missing in signature\n");
 		return;
 	}
-	nme= functionName(p);
+	nme= getFunctionId(p);
 		
 	/* printFunction(GDKout,mb, LIST_MAL_ALL);*/
 

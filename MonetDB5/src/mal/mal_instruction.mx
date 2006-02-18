@@ -372,23 +372,20 @@ Allocation of space assumes a rather exotic number of arguments.
 Access to module and function name are cast in macros to prepare
 for separate name space management.
 @h
-#define moduleId(P)     (P)->modname
+#define getModuleId(P)     (P)->modname
 #define setModuleId(P,S)    (P)->modname= S
-#define moduleName(P)       (P)->modname
-#define freeModuleName(P)   {(P)->modname=0;}
 #define setModuleScope(P,S) {(P)->modname= (S)==NULL?NULL: (S)->name;}
 
-#define functionId(P)       (P)->fcnname
+#define getFunctionId(P)       (P)->fcnname
 #define setFunctionId(P,S)  (P)->fcnname= S
-#define functionName(P)     (P)->fcnname
 #define garbageControl(P)   ((P)->gc & GARBAGECONTROL)
 #define needsCleanup(P)   ((P)->gc & QUICKCLEANUP)
 
 #define getInstrPtr(M,I)    (M)->stmt[I]
 #define getSignature(S)     getInstrPtr((S)->def,0)
-#define getFcnName(M)       functionName(getInstrPtr(M,0))
+#define getFcnName(M)       getFunctionId(getInstrPtr(M,0))
 #define getArgCount(M)      getInstrPtr(M,0)->argc
-#define getModName(M)       moduleName(getInstrPtr(M,0))
+#define getModName(M)       getModuleId(getInstrPtr(M,0))
 #define getPrgSize(M)       (M)->stop
 
 #define getVar(M,I)     (M)->var[I]
@@ -859,8 +856,8 @@ void
 clrFunction(InstrPtr p)
 {
 	p->fcn = 0;
-	p->modname = NULL;
-	p->fcnname = NULL;
+	setModuleId(p, NULL);
+	setFunctionId(p, NULL);
 }
 
 void
@@ -888,8 +885,8 @@ oldmoveInstruction(InstrPtr new, InstrPtr p)
 
 	space = sizeof(InstrRecord) + sizeof(int) * p->argc;
 	memcpy((char *) new, (char *) p, space);
-	setFunctionId(new, functionId(p));
-	setModuleId(new, moduleId(p));
+	setFunctionId(new, getFunctionId(p));
+	setModuleId(new, getModuleId(p));
 }
 
 @-
@@ -1943,9 +1940,9 @@ variable to hold the result instead.
 */
 	assert(p->argv[0]>=0);
 	if (mb->stmt[i]) {
-		/* if( moduleId(mb->stmt[i] ) )
+		/* if( getModuleId(mb->stmt[i] ) )
 		   printf("Garbage collect statement %s.%s\n", 
-		   moduleId(mb->stmt[i]), functionId(mb->stmt[i])); */
+		   getModuleId(mb->stmt[i]), getFunctionId(mb->stmt[i])); */
 		freeInstruction(mb->stmt[i]);
 	}
 	mb->stmt[i] = p;
@@ -2097,12 +2094,12 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg)
 	sprintf(t, "%s%s ", (flg ? "" : "#"), fcnClass(p));
 
 	advance(t);
-	if (moduleId(p))
-		sprintf(t, "%s.", moduleName(p));
+	if (getModuleId(p))
+		sprintf(t, "%s.", getModuleId(p));
 	else
 		sprintf(t, "user.");
 	advance(t);
-	sprintf(t, "%s(", functionName(p));
+	sprintf(t, "%s(", getFunctionId(p));
 	for (i = p->retc; i < p->argc; i++) {
 	@:showParam(argc)@}
 	advance(t);
@@ -2211,7 +2208,7 @@ fillTarget(MalBlkPtr mb, InstrPtr p, char *t)
 			pstring = 0;
 		}
 		advance(t);
-		if (p->argc > p->retc || functionId(p)) {
+		if (p->argc > p->retc || getFunctionId(p)) {
 			sprintf(t, ":= ");
 			t += 3;
 		}
@@ -2239,7 +2236,7 @@ fillTarget(MalBlkPtr mb, InstrPtr p, char *t)
 	}
 	sprintf(t, ")");
 	t++;
-	if (p->argc > p->retc || functionId(p)) {
+	if (p->argc > p->retc || getFunctionId(p)) {
 		sprintf(t, ":= ");
 		t += 3;
 	}
@@ -2306,7 +2303,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 	case PATcall:
 	case CMDcall:
 	case ASSIGNsymbol:
-		if (p->argc <= 1 && functionId(p) == NULL) {
+		if (p->argc <= 1 && getFunctionId(p) == NULL) {
 			sprintf(t, "%s%s", nme, pstring);
 		} else {
 			for (i = 0; i < p->retc; i++) 
@@ -2342,7 +2339,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 			else
 				*t++ = ' ';
 
-			if (p->argc > p->retc || functionId(p)) {
+			if (p->argc > p->retc || getFunctionId(p)) {
 				sprintf(t, ":= ");
 				t += 3;
 			}
@@ -2351,7 +2348,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 		}
 		break;
 	case ENDsymbol:
-		sprintf(t, "end %s", functionId(getInstrPtr(mb, 0)));
+		sprintf(t, "end %s", getFunctionId(getInstrPtr(mb, 0)));
 		break;
 	case COMMANDsymbol:
 	case FUNCTIONsymbol:
@@ -2373,11 +2370,11 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 	advance(t);
 	low = p->retc;
 	high = p->argc;
-	if (moduleId(p))
-		sprintf(t, "%s.", moduleName(p));
+	if (getModuleId(p))
+		sprintf(t, "%s.", getModuleId(p));
 	advance(t);
-	if (functionId(p)) {
-		sprintf(t, "%s(", functionName(p));
+	if (getFunctionId(p)) {
+		sprintf(t, "%s(", getFunctionId(p));
 	} else if (p->argc > p->retc + 1)
 		sprintf(t, "(");
 
@@ -2459,7 +2456,7 @@ Dump the type and value information.
 		}
 	}
 	advance(t);
-	if (functionId(p) || p->argc > p->retc + 1)
+	if (getFunctionId(p) || p->argc > p->retc + 1)
 		sprintf(t, ")");
 	advance(t);
 	if (p->token != REMsymbol)

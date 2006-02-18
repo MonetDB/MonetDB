@@ -100,7 +100,7 @@ if( idcmp(@1,name) || pci->argc != 1)
 else{
 #ifdef MAL_ATOM_DEBUG
 	stream_printf(GDKout,"set the atom property %s.%s\n",
-		moduleName(pci),functionName(pci));
+		getModuleId(pci),getFunctionId(pci));
 #endif
 	BATatoms[tpe].@2= (@4) (*pci->fcn)();
 	setAtomName(pci);
@@ -113,7 +113,7 @@ if( idcmp(@1,name) || pci->argc != 1)
 	return 0;
 #ifdef MAL_ATOM_DEBUG
 	stream_printf(GDKout,"set the atom property %s.%s\n",
-		moduleName(pci),functionName(pci));
+		getModuleId(pci),getFunctionId(pci));
 #endif
 	BATatoms[tpe].@2= (*pci->fcn)();
 	setAtomName(pci);
@@ -128,21 +128,21 @@ if( idcmp(@1,name) || pci->argc != 1)
 
 void setAtomName(InstrPtr pci){
 	char buf[MAXPATHLEN];
-	snprintf(buf,MAXPATHLEN,"#%s", functionName(pci));
+	snprintf(buf,MAXPATHLEN,"#%s", getFunctionId(pci));
 	setFunctionId(pci, putName(buf,strlen(buf)));
 #ifdef MAL_ATOM_DEBUG
 	stream_printf(GDKout,"replaced the function %s.%s\n",
-		moduleName(pci),functionName(pci));
+		getModuleId(pci),getFunctionId(pci));
 #endif
 }
 
 int malAtomProperty(MalBlkPtr mb, InstrPtr pci){
-	str name= functionName(pci);
-	int tpe = getTypeIndex(moduleName(pci), strlen(moduleName(pci)), TYPE_any);
+	str name= getFunctionId(pci);
+	int tpe = getTypeIndex(getModuleId(pci), strlen(getModuleId(pci)), TYPE_any);
 	(void) mb; /* fool compilers */
 #ifdef MAL_ATOM_DEBUG
 	stream_printf(GDKout,"Atomproperty %s.%s\n",
-		moduleName(pci),functionName(pci));
+		getModuleId(pci),getFunctionId(pci));
 #endif
 	if( pci->fcn == 0)
 		GDKwarning("malAtomProperty:function not bound\n");

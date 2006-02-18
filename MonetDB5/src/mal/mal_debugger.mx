@@ -393,10 +393,10 @@ isBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 		if( mdbTable[cntxt->idx].brkPc[i] == pc )
 			return mdbTable[cntxt->idx].brkCmd[i];
 
-		if( mdbTable[cntxt->idx].brkMod[i] && moduleId(p) &&
-		    mdbTable[cntxt->idx].brkFcn[i] && functionId(p) &&
-			strcmp(mdbTable[cntxt->idx].brkMod[i], moduleId(p))==0 &&
-			strcmp(mdbTable[cntxt->idx].brkFcn[i], functionId(p))==0)
+		if( mdbTable[cntxt->idx].brkMod[i] && getModuleId(p) &&
+		    mdbTable[cntxt->idx].brkFcn[i] && getFunctionId(p) &&
+			strcmp(mdbTable[cntxt->idx].brkMod[i], getModuleId(p))==0 &&
+			strcmp(mdbTable[cntxt->idx].brkFcn[i], getFunctionId(p))==0)
 			return mdbTable[cntxt->idx].brkCmd[i];
 
 		if( mdbTable[cntxt->idx].brkVar[i] >= 0 )
@@ -605,8 +605,8 @@ printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	str msg;
 	msg = call2str(mb, stk, pc);
 	stream_printf(cntxt->fdout, "%s at %s.%s[%d]\n", msg, 
-		moduleId(getInstrPtr(mb,0)),
-		functionId(getInstrPtr(mb,0)),pc);
+		getModuleId(getInstrPtr(mb,0)),
+		getFunctionId(getInstrPtr(mb,0)),pc);
 	GDKfree(msg);
 }
 
@@ -1539,8 +1539,8 @@ showOptimizerHistory()
 	for (i = 0; i < optTop; i++)
 		stream_printf(fd, "[%d] %s  %s.%s\tactions=%2d time " LLFMT " usec\n",
 			i, optimizerHistory[i].title,
-			moduleId(getInstrPtr(optimizerHistory[i].mb,0)),
-			functionId(getInstrPtr(optimizerHistory[i].mb,0)),
+			getModuleId(getInstrPtr(optimizerHistory[i].mb,0)),
+			getFunctionId(getInstrPtr(optimizerHistory[i].mb,0)),
 			optimizerHistory[i].actions, 
 			optimizerHistory[i].usec);
 }

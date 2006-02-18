@@ -566,7 +566,7 @@ shutdownFactoryByName(Module m, str nme){
 			MalStkPtr stk;
 
 			p= getInstrPtr(pl->factory,0);
-			if( strcmp(nme, functionId(p)) != 0) continue;
+			if( strcmp(nme, getFunctionId(p)) != 0) continue;
 			s = findSymbolInModule(m, getName(nme,strlen(nme)) );
 			if (s == NULL){
 				return throwMessage("sql_cache.remove", 

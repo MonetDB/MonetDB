@@ -71,8 +71,8 @@ newStmt(MalBlkPtr mb, char *module, char *name)
 {
 	InstrPtr q = newAssignment(mb);
 
-	moduleId(q) = (module) ? putName(module, strlen(module)) : 0;
-	functionId(q) = (name) ? putName(name, strlen(name)) : 0;
+	setModuleId(q, (module) ? putName(module, strlen(module)) : NULL);
+	setFunctionId(q, (name) ? putName(name, strlen(name)) : NULL);
 	setDestVar(q, newTmpVariable(mb, TYPE_any));
 	return q;
 }
@@ -81,8 +81,8 @@ newStmt1(MalBlkPtr mb, str module, char *name)
 {
 	InstrPtr q = newAssignment(mb);
 
-	moduleId(q) = module;
-	functionId(q) = (name) ? putName(name, strlen(name)) : 0;
+	setModuleId(q, module);
+	setFunctionId(q, (name) ? putName(name, strlen(name)) : NULL);
 	setDestVar(q, newTmpVariable(mb, TYPE_any));
 	return q;
 }
@@ -91,8 +91,8 @@ newStmt2(MalBlkPtr mb, str module, char *name)
 {
 	InstrPtr q = newAssignment(mb);
 
-	moduleId(q) = module;
-	functionId(q) = name;
+	setModuleId(q, module);
+	setFunctionId(q, name);
 	setDestVar(q, newTmpVariable(mb, TYPE_any));
 	return q;
 }
@@ -101,8 +101,8 @@ newStmtId(MalBlkPtr mb, char *id, char *module, char *name)
 {
 	InstrPtr q = newAssignment(mb);
 
-	moduleId(q) = (module) ? putName(module, strlen(module)) : 0;
-	functionId(q) = (name) ? putName(name, strlen(name)) : 0;
+	setModuleId(q, (module) ? putName(module, strlen(module)) : NULL);
+	setFunctionId(q, (name) ? putName(name, strlen(name)) : NULL);
 	setDestVar(q, newVariable(mb, GDKstrdup(id), TYPE_any));
 
 	return q;

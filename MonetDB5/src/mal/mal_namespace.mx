@@ -218,6 +218,8 @@ str putName(str nme, int len)
 	char buf[1024];
 	str s;
 
+	if( nme == NULL)
+		return NULL;
 	for(l= nme[0]; l && namespace.nme[l]; l= namespace.link[l]){
 #ifdef _BACKUP_
 		chkName(l);

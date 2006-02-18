@@ -1167,7 +1167,8 @@ This scheme is intended for just-in-time compilation.
 		}
 		cntxt->blkmode=0;
 		nme = idCopy(cntxt,i);
-		if( moduleId(curInstr)) freeModuleName(curInstr);
+		if( getModuleId(curInstr)) 
+			setModuleId(curInstr, NULL);
 		setModuleScope(curInstr, 
 			findModule(cntxt->nspace, putName(modnme,strlen(modnme))) );
 		curInstr->fcn = getAddressFromLib(cntxt->nspace,nme);

@@ -175,7 +175,7 @@ Module cpyModule(Module scope){
 @-
 The scope can be fixed. This is used by the parser to avoid creation of
 a string structure when possible. Subsequently we can
-replace the modname in the instructions to become a pointer
+replace the module name in the instructions to become a pointer
 to the scope directly.
 Reading a module often calls for opening a scope level
 if it didn't exist.
@@ -248,14 +248,14 @@ void insertSymbol(Module scope, Symbol prg){
 	Module c;
 
 	sig = getSignature(prg);
-	if(moduleId(sig) && moduleName(sig)!= scope->name){
+	if(getModuleId(sig) && getModuleId(sig)!= scope->name){
 		/* move the definition to the proper place */
-		c= findModule(scope,moduleId(sig));
+		c= findModule(scope,getModuleId(sig));
 		if(c == NULL){
 			GDKwarning("insertSymbol:undefined module\n");
 		} else scope = c;
 	}
-	t = getSubScope(functionName(sig));
+	t = getSubScope(getFunctionId(sig));
 	if( scope->subscope == NULL)
 		newSubScope(scope);
 	if(scope->subscope[t] == prg){
@@ -283,14 +283,14 @@ void deleteSymbol(Module scope, Symbol prg){
 		int t;
 
 		sig = getSignature(prg);
-	if(moduleId(sig) && moduleName(sig)!= scope->name){
+	if( getModuleId(sig) && getModuleId(sig)!= scope->name ){
 		/* move the definition to the proper place */
-		Module c= findModule(scope,moduleName(sig));
+		Module c= findModule(scope,getModuleId(sig));
 		if(c == NULL){
 			GDKwarning("deleteSymbol:undefined module\n");
 		} else scope = c;
 	}
-	t = getSubScope(functionName(sig));
+	t = getSubScope(getFunctionId(sig));
 	if( scope->subscope[t] == prg){
 		scope->subscope[t] = scope->subscope[t]->peer;
 		freeSymbol(prg);
@@ -492,8 +492,8 @@ int cmpModName(Module *f, Module *l){
 	return strcmp((*f)->name, (*l)->name);
 }
 int cmpFcnName(InstrPtr f, InstrPtr l){
-	if(functionId(f) && functionId(l))
-		return strcmp(functionId(f), functionId(l));
+	if(getFunctionId(f) && getFunctionId(l))
+		return strcmp(getFunctionId(f), getFunctionId(l));
 	return 0;
 }
 void dumpManual(stream *f, Module s, int recursive){
@@ -591,9 +591,9 @@ void dumpManualOverview(stream *f, Module s, int recursive){
 			for(t= s->subscope[j];t!=NULL;t=t->peer) {
 				sig= getSignature(t);
 				fnd = 0;
-				fnd= *functionId(sig) == '#';
+				fnd= *getFunctionId(sig) == '#';
 				for(z=0; z<ftop; z++)
-				if( strcmp(functionId(fcn[z]),functionId(sig))==0){
+				if( strcmp(getFunctionId(fcn[z]),getFunctionId(sig))==0){
 					fnd++;
 					break;
 				}
@@ -603,7 +603,7 @@ void dumpManualOverview(stream *f, Module s, int recursive){
 		}
 		for(j=0; j<ftop; j++)
 		for(z=j+1; z<ftop; z++)
-		if( strcmp(functionId(fcn[j]),functionId(fcn[z]))  >0) {
+		if( strcmp(getFunctionId(fcn[j]),getFunctionId(fcn[z]))  >0) {
 			 sig= fcn[j]; fcn[j]=fcn[z]; fcn[z]= sig;
 		}
 		stream_printf(f,"@" "item\n");
@@ -611,16 +611,16 @@ void dumpManualOverview(stream *f, Module s, int recursive){
 		rows += (ftop %4) ?1:0;
 		for(z=0; z<rows; z++){
 			stream_printf(f,"@" "item\n%s.%s\n",
-				moduleId(fcn[z]), functionId(fcn[z]));
+				getModuleId(fcn[z]), getFunctionId(fcn[z]));
 			if( z+rows <ftop)
 			stream_printf(f,"@" "tab\n%s.%s\n",
-				moduleId(fcn[z+rows]), functionId(fcn[z+rows]));
+				getModuleId(fcn[z+rows]), getFunctionId(fcn[z+rows]));
 			if(z+rows*2 <ftop)
 			stream_printf(f,"@" "tab\n%s.%s\n",
-				moduleId(fcn[z+rows*2]), functionId(fcn[z+rows*2]));
+				getModuleId(fcn[z+rows*2]), getFunctionId(fcn[z+rows*2]));
 			if(z+rows*3 <ftop)
 			stream_printf(f,"@" "tab\n%s.%s\n",
-				moduleId(fcn[z+rows*3]), functionId(fcn[z+rows*3]));
+				getModuleId(fcn[z+rows*3]), getFunctionId(fcn[z+rows*3]));
 		}
 	}
 	stream_printf(f,"@end multitable\n");
@@ -657,9 +657,9 @@ void dumpManualHelp(stream *f, Module s, int recursive){
 			for(t= s->subscope[j];t!=NULL;t=t->peer) {
 				sig= getSignature(t);
 				fnd = 0;
-				fnd= *functionId(sig) == '#';
+				fnd= *getFunctionId(sig) == '#';
 				for(z=0; z<ftop; z++)
-				if( strcmp(functionId(fcn[z]),functionId(sig))==0){
+				if( strcmp(getFunctionId(fcn[z]),getFunctionId(sig))==0){
 					if( hlp[z] == 0)
 						hlp[z]= t->def->help;
 					fnd++;
@@ -673,14 +673,14 @@ void dumpManualHelp(stream *f, Module s, int recursive){
 		}
 		for(j=0; j<ftop; j++)
 		for(z=j+1; z<ftop; z++)
-		if( strcmp(functionId(fcn[j]),functionId(fcn[z]))  >0) {
+		if( strcmp(getFunctionId(fcn[j]),getFunctionId(fcn[z]))  >0) {
 			msg= hlp[j]; hlp[j]=hlp[z]; hlp[z]= msg;
 			 sig= fcn[j]; fcn[j]=fcn[z]; fcn[z]= sig;
 		}
 		stream_printf(f,"@" "item\n");
 		for(z=0; z<ftop; z++){
 			stream_printf(f,"@" "item %s.%s\n",
-				moduleId(fcn[z]), functionId(fcn[z]));
+				getModuleId(fcn[z]), getFunctionId(fcn[z]));
 			if( hlp[z] )
 				stream_printf(f,"@" "tab %s\n", hlp[z]);
 		}

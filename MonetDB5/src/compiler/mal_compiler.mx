@@ -197,7 +197,7 @@ mccInit(stream *f, MalBlkPtr mb)
 	for (i = 0; mccPrelude[i]; i++)
 		stream_printf(f, "%s", mccPrelude[i]);
 	p = getInstrPtr(mb, 0);
-	stream_printf(f, "str MCC%s_%s(", moduleName(p), functionName(p));
+	stream_printf(f, "str MCC%s_%s(", getModuleId(p), getFunctionId(p));
 	if (p->argc > 0) {
 		mccType(f, mb, i);
 		mccVar(f, mb, getArg(p, 0));
@@ -378,10 +378,10 @@ mccMultiplex(stream *f, MalBlkPtr mb, InstrPtr p)
 	InstrPtr pn;
 
 	pn = copyInstruction(p);
-	if (functionId(pn))
+	if (getFunctionId(pn))
 		GDKfree(pn->fcnname);
-	if (moduleId(pn))
-		freeModuleName(p);
+	if (getModuleId(pn))
+		setModuleId(p,NULL);
 	setModuleId(pn, NULL);
 	setFunctionId(pn, GDKstrdup(getVarConstant(mb, pn->argv[pn->retc]).val.sval));
 	delArgument(pn, pn->retc);
@@ -423,12 +423,15 @@ directly.
 A simple extension would be to also compile the dependent
 functions.
 @c
-		if (p->token != CMDcall && functionId(p)) {
-			if (moduleName(p) && functionName(p) && idcmp(moduleName(p), "multiplex") == 0 && idcmp(functionName(p), "script") == 0) {
+		if (p->token != CMDcall && getFunctionId(p)) {
+			if (getModuleId(p) && getFunctionId(p) && 
+				idcmp(getModuleId(p), "multiplex") == 0 && 
+				idcmp(getFunctionId(p), "script") == 0) {
 				mccMultiplex(f, mb, p);
 				continue;
 			}
-			GDKwarning("call to %s.%s can not be handled correctly\n", moduleName(p), functionName(p));
+			GDKwarning("call to %s.%s can not be handled correctly\n", 
+				getModuleId(p), getFunctionId(p));
 			errors++;
 		}
 		errors += mccInstruction(f, mb, p, i, catch, &ctop);
@@ -455,7 +458,8 @@ mccGenerate(MalBlkPtr mb)
 	char buf[1024];
 	stream *f;
 
-	snprintf(buf, 1024, "%s/MCC%s_%s.c", monet_cwd, moduleName(getInstrPtr(mb, 0)), functionName(getInstrPtr(mb, 0)));
+	snprintf(buf, 1024, "%s/MCC%s_%s.c", monet_cwd, 
+			getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)));
 	f = open_wastream(buf);
 	if (f == NULL)
 		return throwMessage("optimizer.MCcompiler", "Could not access file");
@@ -496,7 +500,8 @@ MCdynamicCompiler(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			j = getSubScope(fcn);
 			for (t = s->subscope[j]; t != NULL; t = t->peer)
 				if (t->def->errors == 0) {
-					if (getSignature(t)->token == FUNCTIONsymbol && idcmp(fcn, functionName(getSignature(t))) == 0)
+					if (getSignature(t)->token == FUNCTIONsymbol && 
+						idcmp(fcn, getFunctionId(getSignature(t))) == 0)
 						/* call macro expansion */
 						mccGenerate(t->def);
 					if (msg)

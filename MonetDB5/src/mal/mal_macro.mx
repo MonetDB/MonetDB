@@ -119,15 +119,15 @@ malMatch(InstrPtr p1, InstrPtr p2)
 {
 	int i, j;
 
-	if (functionId(p1) == 0 && functionId(p2) != 0)
+	if (getFunctionId(p1) == 0 && getFunctionId(p2) != 0)
 		return 0;
-	if (moduleId(p1) == 0 && moduleId(p2) != 0)
+	if (getModuleId(p1) == 0 && getModuleId(p2) != 0)
 		return 0;
-	if (moduleName(p1) != moduleName(p2))
+	if (getModuleId(p1) != getModuleId(p2))
 		return 0;
-	if (functionId(p2) == 0)
+	if (getFunctionId(p2) == 0)
 		return 0;
-	if (idcmp(functionName(p1), functionName(p2)))
+	if (getFunctionId(p1) != getFunctionId(p2))
 		return 0;
 	if (p1->retc != p2->retc)
 		return 0;
@@ -322,7 +322,7 @@ MACROprocessor(MalBlkPtr mb, Symbol t)
 		return msg;
 	for (i = 0; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
-		if (functionId(q) && idcmp(functionName(q), t->name) == 0 && getSignature(t)->token == FUNCTIONsymbol) {
+		if (getFunctionId(q) && idcmp(getFunctionId(q), t->name) == 0 && getSignature(t)->token == FUNCTIONsymbol) {
 #ifdef DEBUG_MAL_MACRO
 			printf("Hit, replace macro call %s\n", t->name);
 #endif

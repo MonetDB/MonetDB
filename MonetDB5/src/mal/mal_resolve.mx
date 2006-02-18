@@ -147,10 +147,10 @@ it will be looked up multiple types to resolve the instruction.[todo]
 Simplify polytype using a map into the concrete argument table.
 @c
 	m= scope;
-	s= m->subscope[(int)(getSubScope(functionName(p)))];
+	s= m->subscope[(int)(getSubScope(getFunctionId(p)))];
 	if( s == 0) return -1;
 	while(s != NULL){   /* single scope element check */
-	if( functionName(p) != s->name  ){
+	if( getFunctionId(p) != s->name  ){
 		s= s->skip; continue;
 	}
 @-
@@ -293,7 +293,7 @@ An optimizer may at a later stage automatically insert such coercion requests.
 #ifdef DEBUG_MAL_RESOLVE
 	if(tracefcn) {
 		 stream_printf(GDKout,"finished %s.%s unmatched=%d polymorphic=%d %d\n",
-			moduleName(sig), functionName(sig), unmatched, polymorphic,p==sig);
+			getModuleId(sig), getFunctionId(sig), unmatched, polymorphic,p==sig);
 		if( sig->polymorphic){
 			int l;
 			for(l=0;l<2*p->argc;l++) 
@@ -475,10 +475,10 @@ with one of the target variables.
 @c
 	if( foundbutwrong && !silent){
 		if(m->name)
-			GDKerror("type conflict in assignment of %s.%s\n", m->name,functionName(p));
+			GDKerror("type conflict in assignment of %s.%s\n", m->name,getFunctionId(p));
 		else {
 			str err;
-			GDKerror("type conflict in assignment of %s\n", functionName(p));
+			GDKerror("type conflict in assignment of %s\n", getFunctionId(p));
 			err= instruction2str(mb,p,0);
 			GDKerror(err);
 			GDKfree(err);
@@ -622,11 +622,11 @@ void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
 		return;
 	}
 	if( p->token == IGNOREsymbol) return;
-	if( functionId(p) && moduleId(p)){
+	if( getFunctionId(p) && getModuleId(p)){
 #ifdef DEBUG_MAL_RESOLVE
-		tracefcn= idcmp(functionName(p),traceFcnName)==0;
+		tracefcn= idcmp(getFunctionId(p),traceFcnName)==0;
 #endif
-		m= findModule(scope,moduleId(p));
+		m= findModule(scope,getModuleId(p));
 		s1= findFunctionType(m,mb,p,silent);
 		if( s1>= 0) return;
 @-
@@ -640,13 +640,13 @@ that the error was not caused by checking the definition
 of a polymorphic function or the module or function name are variables,
 In those cases, the detailed analysis is performed upon an actual call.
 [ NOT ALLOWED ANYMORE
-		if( moduleId(p) && (i=findVariable(mb,moduleName(p))) != -1 &&
+		if( getModuleId(p) && (i=findVariable(mb,getModuleId(p))) != -1 &&
 					getVarType(mb,i) == TYPE_str){
 			for(i=0;i<p->retc;i++) setFixed(mb,getArg(p,i));
 			p->typechk= TYPE_UNKNOWN;
 			return;
 		} 
-		if( functionId(p) && (i=findVariable(mb,functionName(p))) != -1 &&
+		if( getFunctionId(p) && (i=findVariable(mb,getFunctionId(p))) != -1 &&
 					getVarType(mb,i) == TYPE_str){
 			for(i=0;i<p->retc;i++) setFixed(mb,getArg(p,i));
 			p->typechk= TYPE_UNKNOWN; 
@@ -657,9 +657,9 @@ In those cases, the detailed analysis is performed upon an actual call.
 			mb->errors++;
 			if( !silent)
 				GDKerror("'%s%s%s' undefined in %s.%s[%d]\n", 
-					(moduleId(p)?moduleName(p):""), (moduleName(p)?".":""),
-					functionName(p), scope->name,
-					functionName(getInstrPtr(mb,0)),getPC(mb,p));
+					(getModuleId(p)?getModuleId(p):""), (getModuleId(p)?".":""),
+					getFunctionId(p), scope->name,
+					getFunctionId(getInstrPtr(mb,0)),getPC(mb,p));
 				p->typechk= TYPE_UNKNOWN;
 		} else p->typechk= TYPE_RESOLVED;
 		return;
@@ -670,7 +670,7 @@ The language should also recognize (a,b):=(1,2);
 This is achieved by propagation of the rhs types to the lhs
 variables.
 @c
-	if( functionId(p) ) return;
+	if( getFunctionId(p) ) return;
 	if( p->retc > 1 && p->argc>p->retc && p->argc!= 2 * p->retc){
 		GDKerror("Multiple assignment mismatch\n");
 		mb->errors++;
@@ -725,14 +725,14 @@ InstrPtr dynamicTypeChecker(Module scope, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	printInstruction(GDKout, mb, p,LIST_MAL_ALL);
 
 	pci = copyInstruction(p);
-	if( functionId(pci) && (i=findVariable(mb,functionName(pci))) != -1){
+	if( getFunctionId(pci) && (i=findVariable(mb,getFunctionId(pci))) != -1){
 		if( getVarType(mb,i) != TYPE_str)
 			setFunctionId(pci, 0);
 		else 
 			setFunctionId(pci,putName( stk->stk[i].val.sval,
 						strlen(stk->stk[i].val.sval)));
 	}
-	if( moduleId(pci) && (i=findVariable(mb,moduleName(pci))) != -1){
+	if( getModuleId(pci) && (i=findVariable(mb,getModuleId(pci))) != -1){
 		if( getVarType(mb,i) != TYPE_str)
 				setModuleId(pci, NULL);
 		else {
@@ -761,12 +761,12 @@ int fcnBinder(Module scope, MalBlkPtr mb, InstrPtr p){
 	Symbol s;
 
 	if( p->token != ASSIGNsymbol) return 0;
-	if( moduleId(p)== NULL || functionId(p)== NULL) return 0;
-	for(m= findModule(scope,moduleName(p)); m; m= m->outer)
-	if( m->name == moduleName(p) ) {
-		s= m->subscope[(int)(getSubScope(functionName(p)))];
+	if( getModuleId(p)== NULL || getFunctionId(p)== NULL) return 0;
+	for(m= findModule(scope,getModuleId(p)); m; m= m->outer)
+	if( m->name == getModuleId(p) ) {
+		s= m->subscope[(int)(getSubScope(getFunctionId(p)))];
 		for(; s; s= s->peer)
-		if( functionName(p)==s->name &&
+		if( getFunctionId(p)==s->name &&
 			p->argc == getSignature(s)->argc ){
 			/* found it */
 			@:bindFunction@
@@ -811,7 +811,7 @@ void chkTypes(Module s, MalBlkPtr mb){
 		else /*  not ready if( p->typechk != TYPE_RESOLVED)*/
 			typeChecker(s,mb,p,FALSE);
 
-		if( functionId(p) ){
+		if( getFunctionId(p) ){
 			if(p->fcn != NULL && p->typechk== TYPE_RESOLVED) chk++;
 		} else
 		if( p->typechk== TYPE_RESOLVED) chk++;
