@@ -1,0 +1,157 @@
+@section SQL Language 
+The MonetDB/SQL language follows the SQL-2003 specification. In this manual
+we explain which components of the standard we support and were we differ. 
+
+@menu
+* Not supported SQL-2003 Features 
+* Data Definition Statements::
+* Data types
+* Data Manipulation Statements::
+* Schema definition::
+* Users:: 
+* Transactions and auto commit mode::
+@end menu
+
+@node Preface
+Todo explain notation espesialy the extra bits.
+
++ extra syntax
+- 2003 syntax but not supported
+
+@node SQL-2003 Features Not supported 
+Currently we have partial support for SQL-2003. Features are added when 
+(enough) users express their interest in these.
+
+Not supported are
+@itemize @bullet
+@item 
+Cursors
+@item 
+Triggers
+@item 
+Asserts
+@item 
+Character sets
+@item 
+SQL User Defined Types 
+@end itemize
+
+@node Data Definition Statements
+
+@subsection Create TABLE
+
+The CREATE table statement follows the 2003 syntax, ie 
+
+	CREATE [ <table scope> ] TABLE 
+		<table name> 
+		<table contents source>
+		[ ON COMMIT <table commit action> ROWS ]
+		+[ ON COMMIT DROP ]
+
+	<table scope> ::= <global or local> TEMPORARY
+
+	<global or local> ::= GLOBAL | LOCAL
+
+	<table commit action> ::= PRESERVE | DELETE
+
+The parser currently supports the full <table scope> specifier, but the 
+implementation is limited to LOCAL TEMPORARY tables 
+(ie the tables are only visable in the clients session) and 
+on COMMIT we 'DROP' these temporaries. 
+
+<table contents source> ::=
+		<table element list>
+	-|	OF <path-resolved user-defined type name> [ <subtable clause> ] [ <table element list> ]
+	-|	<as subquery clause>
+
+<table element list> ::= ( <table element> [ { , <table element> }... ] )
+
+<table element> ::=
+		<column definition>
+	|	<table constraint definition>
+	|	<like clause>
+	-|	<self-referencing column specification>
+	|	<column options>
+
+-<self-referencing column specification> ::= REF IS <self-referencing column name> <reference generation>
+
+-<reference generation> ::= SYSTEM GENERATED | USER GENERATED | DERIVED
+
+-<self-referencing column name> ::= <column name>
+
+<column options> ::= <column name> WITH OPTIONS <column option list>
+
+<column option list> ::= [ -<scope clause> ] [ <default clause> ] [ <column constraint definition>... ]
+
+-<subtable clause> ::= UNDER <supertable clause>
+
+-<supertable clause> ::= <supertable name>
+
+-<supertable name> ::= <table name>
+
+<like clause> ::= LIKE <table name> [ <like options> ]
+
+-<like options> ::= <identity option> | <column default option>
+
+-<identity option> ::= INCLUDING IDENTITY | EXCLUDING IDENTITY
+
+-<column default option> ::= INCLUDING DEFAULTS | EXCLUDING DEFAULTS
+
+-<as subquery clause> ::= [ ( <column name list> ) ] AS <subquery> <with or without data>
+
+-<with or without data> ::= WITH NO DATA | WITH DATA
+
+
+	
+--h3 11.4 <column definition> (p534)
+--/h3
+
+--p
+Define a column of a base table.
+--/p
+
+<column definition> ::=
+                <column name> [ <data type> | <domain name> ] [ <reference scope check> ]
+                [ <default clause> | <identity column specification> | <generation clause> ]
+                [ <column constraint definition>... ] [ <collate clause> ]
+
+<column constraint definition> ::= [ <constraint name definition> ] <column constraint> [ <constraint characteristics> ]
+
+<column constraint> ::=
+                NOT NULL
+        |       <unique specification>
+        |       <references specification>
+        |       <check constraint definition>
+
+<reference scope check> ::= REFERENCES ARE [ NOT ] CHECKED [ ON DELETE <reference scope check action> ]
+
+<reference scope check action> ::= <referential action>
+
+<identity column specification> ::=
+                GENERATED { ALWAYS | BY DEFAULT } AS IDENTITY
+                [ <left paren> <common sequence generator options> <right paren> ]
+
+<generation clause> ::= <generation rule> AS <generation expression>
+
+<generation rule> ::= GENERATED ALWAYS
+
+<generation expression> ::= <left paren> <value expression> <right paren>
+
+--h3 11.5 <default clause> (p539)
+--/h3
+
+--p
+Specify the default for a column, domain, or attribute.
+--/p
+
+<default clause> ::= DEFAULT <default option>
+
+<default option> ::=
+                <literal>
+        |       <datetime value function>
+        |       USER
+        |       CURRENT_USER
+        |       CURRENT_ROLE
+        |       SESSION_USER
+        |       NULL
+	+|	NEXT VALUE FOR <sequence name>
