@@ -1,3 +1,4 @@
+@node SQL Language, SQL Preface, , SQL Overview
 @section SQL Language 
 The MonetDB/SQL language follows the SQL-2003 specification. This section
 introduces the language components supported in the current and upcoming
@@ -10,10 +11,11 @@ releases.
 * SQL Data Manipulation ::
 * SQL Schema Definition::
 * SQL Users:: 
-* SQL Transactions ::
+* SQL Transactions::
 @end menu
 
-@node SQL Preface, SQL Data Definition, SQL Language, SQL Language
+@node SQL Preface, SQL Data Definition, , SQL Language
+@subsection SQL Preface
 We use the following notation to explain the supported variation SQL.
 The SQL syntax is summarized in extended BNF. Alternative constructs 
 are seperated by | and grouped by parenthesis. Optional parts are 
@@ -48,7 +50,14 @@ SQL User Defined Types
 
 @node SQL Data Definition, SQL Data Types, SQL Preface, SQL Language
 
-@subsection Create TABLE
+@subsection SQL Data Definition
+@subsubsection Create TABLE
+
+The parser currently supports the full <table scope> specifier, but the 
+implementation is limited to LOCAL TEMPORARY tables 
+(ie the tables are only visable in the clients session) and 
+on COMMIT we 'DROP' these temporaries. 
+
 
 @verbatim
 The CREATE table statement follows the 2003 syntax, ie 
@@ -64,11 +73,6 @@ The CREATE table statement follows the 2003 syntax, ie
 	<global or local> ::= GLOBAL | LOCAL
 
 	<table commit action> ::= PRESERVE | DELETE
-
-The parser currently supports the full <table scope> specifier, but the 
-implementation is limited to LOCAL TEMPORARY tables 
-(ie the tables are only visable in the clients session) and 
-on COMMIT we 'DROP' these temporaries. 
 
 <table contents source> ::=
 		<table element list>
@@ -99,16 +103,19 @@ on COMMIT we 'DROP' these temporaries.
 -<supertable clause> ::= <supertable name>
 
 -<supertable name> ::= <table name>
+@end verbatim
 
-@node create table like 
-<like clause> ::= LIKE <table name> [ <like options> ]
-
--<like options> ::= <identity option> | <column default option>
+@subsubsection create table like 
 
 It is posible to create a table which looks like an existing table. This 
 can be done using the create table like statement. Currently there is no
 support for additional options. A work around is to use the alter
 statement to change options.
+
+@verbatim
+<like clause> ::= LIKE <table name> [ <like options> ]
+
+-<like options> ::= <identity option> | <column default option>
 
 -<identity option> ::= INCLUDING IDENTITY | EXCLUDING IDENTITY
 
@@ -117,20 +124,24 @@ statement to change options.
 -<as subquery clause> ::= [ ( <column name list> ) ] AS <subquery> <with or without data>
 
 -<with or without data> ::= WITH NO DATA | WITH DATA
+@end verbatim
 	
-@node columns
+@subsubsection columns
 
+@verbatim
 <column definition> ::=
                 <column name> [ <data type> | -<domain name> ] [ -<reference scope check> ]
                 [ <default clause> | <identity column specification> | -<generation clause> ]
                 [ <column constraint definition>... ] [ -<collate clause> ]
+@end verbatim
 
-@node Identity column
+@subsubsection Identity column
 SQL 2003 added identity columns, which are columns for which the values are
 coming from a sequenc generator. Besides the SQL 2003 syntax also the 
 syntax from mysql (auto_increment) and postgress (serial data type) are 
 supported.
 
+@verbatim
 <identity column specification> ::=
                 GENERATED { ALWAYS | BY DEFAULT } AS IDENTITY
                 [ ( <common sequence generator options> ) ]
@@ -141,8 +152,9 @@ supported.
 -<generation rule> ::= GENERATED ALWAYS
 
 -<generation expression> ::= ( <value expression> )
+@end verbatim
 
-@node Default values
+@subsubsection Default values
 %--p
 %Specify the default for a column, domain, or attribute.
 %--/p
@@ -154,6 +166,7 @@ each column. Besides literal values, temporal and sequence functions
 can be used as default value. Value of these functions at insert time will
 be used. 
 
+@verbatim
 <default clause> ::= DEFAULT <default option>
 
 <default option> ::=
@@ -171,7 +184,7 @@ For example an auto increment column can be created using the following
 column specification:
 	col_name integer default NEXT VALUE FOR sequence_name
 
-@node Column and Table Constraints 
+@subsubsection Column and Table Constraints 
 Column and Table constraints are supported. Besides the simple NOT NULL check
 also UNIQUE, PRIMARY and FOREIGN keys are supported. The limitation stems from
 the missing triggers, ie we currently check constraints directly on insert, 
@@ -180,6 +193,7 @@ MATCH type (NULL values statisfy the constraint). The FULL and PARTIAL MATCH
 types are not supported. The referential action is currently limited to 
 RESTRICT, ie an update fails if a other columns have references to it. 
 
+@verbatim
 <column constraint definition> ::= [ <constraint name definition> ] <column constraint> [ <constraint characteristics> ]
 
 <column constraint> ::=
@@ -253,9 +267,12 @@ Specify a condition for the SQL-data.
 
 <check constraint definition> ::= CHECK ( <search condition> )
 
+@end verbatim
 
-@node CREATE VIEW
 
+@subsubsection CREATE VIEW
+
+@verbatim
 
 <view definition> ::=
                 CREATE -[ RECURSIVE ] VIEW <table name> <view specification> AS <query expression>
@@ -279,36 +296,37 @@ Specify a condition for the SQL-data.
 
 <view column list> ::= <column name list>
 
+@end verbatim
 
 
 @node SQL Data Types, SQL Data Manipulation, SQL Data Definition, SQL Language
 @subsection SQL Data Types
 MonetDB/SQL supports the following list of types. 
 
-@itemize @bullet
+@multitable @columnfractions .15 .8
 %@item SQLSTATE ?
-@item CHAR[ACTER] (L) 			   character string with length L
-@item VARCHAR (L) | CHARACTER VARYING (L)  string with atmost length L
+@item CHAR[ACTER] (L) @tab character string with length L
+@item VARCHAR (L) | CHARACTER VARYING (L)  @tab string with atmost length L
 @item CLOB | CHARACTER LARGE OBJECT
 @item BLOB | BINARY LARGE OBJECT
 @item DECIMAL(P,S) | NUMERIC(P,S)	 
-@item SMALLINT				16 bit integer
-@item INT				32 bit integer
-@item BIGINT				64 bit integer
-@item serial				special 64 bit integer (sequence generator) 
-@item REAL				32 bit floating point
-@item DOUBLE [PRECISION]		64 bit floating point
+@item SMALLINT				@tab 16 bit integer
+@item INT				@tab 32 bit integer
+@item BIGINT				@tab 64 bit integer
+@item serial				@tab special 64 bit integer (sequence generator) 
+@item REAL				@tab 32 bit floating point
+@item DOUBLE [PRECISION]		@tab 64 bit floating point
 @item BOO[LEAN]
 @item DATE
 @item TIME(T)
 @item TIMESTAMP(T)
 @item INTERVAL(Q)
 %@item user-defined type
-%@item REF				char, with length N 
+%@item REF				@tab char, with length N 
 %@item ROW
 %@item ARRAY
 %@item MULTISET
-@end itemize
+@end multitable
 
 @node SQL Data Manipulation, SQL Schema Definition, SQL Data Types, SQL Language
 @subsection SQL Data Manipulation
@@ -319,7 +337,7 @@ MonetDB/SQL supports the following list of types.
 @node SQL Users, SQL Transactions, SQL Schema Definition, SQL Language
 @subsection SQL Users
 
-@node SQL Transactions, MonetDB/SQL Features , SQL Users, SQL Language
+@node SQL Transactions, MonetDB/SQL Features, SQL Users, SQL Language
 @subsection SQL Transactions
 
 
