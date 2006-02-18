@@ -114,7 +114,6 @@ statement to change options.
 	
 @node columns
 
-
 <column definition> ::=
                 <column name> [ <data type> | -<domain name> ] [ -<reference scope check> ]
                 [ <default clause> | <identity column specification> | -<generation clause> ]
@@ -249,6 +248,31 @@ Specify a condition for the SQL-data.
 
 @node SQL Data Types, SQL Data Manipulation, SQL Data Definition, SQL Language
 @subsection SQL Data Types
+MonetDB/SQL supports the following list of types. 
+
+@itemize @bullet
+%@item SQLSTATE ?
+@item CHAR[ACTER] (L) 			   character string with length L
+@item VARCHAR (L) | CHARACTER VARYING (L)  string with atmost length L
+@item CLOB | CHARACTER LARGE OBJECT
+@item BLOB | BINARY LARGE OBJECT
+@item DECIMAL(P,S) | NUMERIC(P,S)	 
+@item SMALLINT				16 bit integer
+@item INT				32 bit integer
+@item BIGINT				64 bit integer
+@item REAL				32 bit floating point
+@item DOUBLE [PRECISION]		64 bit floating point
+@item BOO[LEAN]
+@item DATE
+@item TIME(T)
+@item TIMESTAMP(T)
+@item INTERVAL(Q)
+%@item user-defined type
+%@item REF				char, with length N 
+%@item ROW
+%@item ARRAY
+%@item MULTISET
+@end itemize
 
 @node SQL Data Manipulation, SQL Schema Definition, SQL Data Types, SQL Language
 @subsection SQL Data Manipulation
