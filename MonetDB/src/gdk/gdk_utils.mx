@@ -385,7 +385,7 @@ the memory consumption.
 #endif
 @c
 size_t GDK_mem_maxsize = GDK_VM_MAXSIZE;
-size_t GDK_mem_bigsize = GDK_VM_MAXSIZE;
+size_t GDK_mem_bigsize = 1<<20;
 size_t GDK_vm_minsize = GDK_VM_MAXSIZE;
 size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
 
@@ -502,14 +502,20 @@ GDKmem_heapinuse(void)
 }
 
 volatile int GDK_heapcheck_last = 0;
+int mallinfo_ok = 1;
 
 INLINE void
 GDKmem_heapcheck(int t)
 {
 	/* correct heap estimate with the real thing */
-	struct mallinfo m = MT_mallinfo();
-
-	GDK_mallocedbytes_estimate = (size_t) (m.usmblks + m.uordblks + m.hblkhd);
+	if (mallinfo_ok) {
+		struct mallinfo m = MT_mallinfo();
+		if (m.usmblks < 0 || m.uordblks < 0 || m.hblkhd < 0) {
+			mallinfo_ok = 0; /* incredible POSIX incompetence!! non-64-bit safe mallinfo */
+		} else {
+			GDK_mallocedbytes_estimate = (size_t) (m.usmblks + m.uordblks + m.hblkhd);
+		}
+	}
 	GDK_heapcheck_last = t;
 }
 
@@ -956,8 +962,12 @@ In that case, it makes sense to redirect large block requests (taken to be
 larger than GDK_mem_bigsize) to anonymous virtual memory. The seamless
 implementation of this stores the @strong{negative} block size in front of the
 pointer (as well as the VM maxsize), so the malloc primitives can recognize
-these redirected blocks.This behavior is enabled by defining GDK_MEM_VMREDIRECT.
+these redirected blocks.
 @end table
+
+64-bits update: POSIX mallinfo is severely broken, as it uses int-s for memory sizes!!
+This causes corruption of mallinfo stats. As we depend on those, we should keep the
+malloc arena small. Thus, VM redirection is now quickly applied: for all mallocs > 1MB.
 @{
 @c
 void
@@ -1399,7 +1409,7 @@ GDKvmtrim(void *limit)
 	do {
 		stream *fp = NULL;
 
-		if (wait) MT_sleep_ms(5000);
+		MT_sleep_ms(wait?5000:500);
 		MEMDEBUG {
 			fp = GDKerr;
 			THRprintf(fp, "GDKvmtrim(" LLFMT ")\n", (long long) *(size_t *) limit);
@@ -1448,7 +1458,7 @@ GDKinit(char *dbname, char *dbfarm, int alloc_map)
 		GDKprotected = 0;
 
 	/* Mserver intends to rob 95% of all memory as a default */
-	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
+	GDK_vm_minsize = GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
 
 	GDKmemchk(TRUE, TRUE);
 	GDKremovedir(DELDIR);

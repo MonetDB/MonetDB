@@ -362,15 +362,15 @@ mo_builtin_settings(opt **Set)
 	set[i].name = strdup("gdk_debug");
 	set[i].value = strdup("8");
 	i++;
-	/*
-	 * gdk_mem_bigsize & gdk_vm_minsize will be set/limited to
-	 * 1/2 of the physically available amount of main-memory
-	 * during start-up in src/tools/Mserver.mx
-	 */
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_mem_bigsize");
-	set[i].value = strdup("137438953472");
+	set[i].value = strdup("1048576");
 	i++;
+	/*
+	 * gdk_vm_minsize will be set/limited to
+	 * 1/8 of the physically available amount of main-memory
+	 * during start-up in src/tools/Mserver.mx
+	 */
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_vm_minsize");
 	set[i].value = strdup("137438953472");
