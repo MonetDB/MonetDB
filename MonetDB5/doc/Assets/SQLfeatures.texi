@@ -1,4 +1,4 @@
-@section SQL Features 
+@section MonetDB/SQL Features 
 The SQL Implementation implementation is based on the SQL-99 standard. 
 It is built incrementally over time to cope with the effort
 required to realize all features. Priority is given to those
@@ -20,7 +20,7 @@ separately. The list below provides a synopsis of the SQL features
 supported in the released version.
 
 @menu
-* SQL Feature List::
+* Feature List::
 * SET Statement::
 * EXPLAIN Statement::
 * DEBUG Statement::
@@ -28,7 +28,7 @@ supported in the released version.
 * Overlaying the BAT storage::
 @end menu
 
-@node SQL Feature List, SET Statement, SQL Feature Overview, SQL Feature Overview
+@node Feature List, SET Statement, MonetDB/SQL Features, MonetDB/SQL Features
 @subsection SQL-99 Feature list
 In this section we give an itemized list of the SQL-99 features
 supported in the current release.
@@ -48,7 +48,7 @@ Auto-increment keys (SQL 2003).
 @end itemize
 
 
-@node SET Statement, EXPLAIN Statement, SQL Feature List, SQL Feature Overview
+@node SET Statement, EXPLAIN Statement, Feature List, MonetDB/SQL Features
 @subsection SET Statement
 
 MonetDB/SQL comes with a limited variable scheme.
@@ -115,7 +115,7 @@ called 'sessions'. Its default content is shown below:
 [ "optimizer",            "yes",              "varchar",      0       ]
 @end example
 
-@node EXPLAIN Statement, DEBUG Statement, SET Statement, SQL Feature Overview
+@node EXPLAIN Statement, DEBUG Statement, SET Statement, MonetDB/SQL Features
 @subsection EXPLAIN Statement
 The intermediate code produced by the SQL Implementation compiler can be made 
 visible using the @code{explain} statement modifier. 
@@ -189,7 +189,7 @@ The query cache disappears when the server is brought to a halt.
 When/how is the cache cleared? Can you list elements in the
 cache directly, e.g @code{explain;} or @code{explain sqlcache} or @code{explain sqlcache.sql0;}
 
-@node DEBUG Statement, Optimizer Control, EXPLAIN Statement, SQL Feature Overview
+@node DEBUG Statement, Optimizer Control, EXPLAIN Statement, MonetDB/SQL Features
 @subsection DEBUG Statement
 
 The SQL statements are translated into MAL programs, which
@@ -254,7 +254,7 @@ mdb>continue
 >
 @end verbatim
 
-@node Optimizer Control, Overlaying the BAT storage, DEBUG Statement,  SQL Feature Overview
+@node Optimizer Control, Overlaying the BAT storage, DEBUG Statement,  MonetDB/SQL Features
 @section Optimizer Control
 The code produced by MonetDB/SQL is massaged by several code optimizers
 to arrive at the best possible plan for evaluation.
@@ -277,7 +277,7 @@ The final result the optimizer steps become visible using the @code{explain}
 statement modifier. Alternatively, the optimizer script line may include
 a call to @code{optimizer.showPlan();}.
 
-@node Overlaying the BAT storage,XQuery, Optimizer Control,  SQL Feature Overview
+@node Overlaying the BAT storage,XQuery, Optimizer Control,  MonetDB/SQL Features
 @section Overlaying the BAT storage
 The SQL implementation exploits many facilities of the underlying
 MonetDB kernel. Most notably, its efficient column-wise storage

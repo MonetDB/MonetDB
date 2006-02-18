@@ -54,7 +54,8 @@ features to analyse and your SQL code.
 @menu
 * Getting Started with SQL::
 * The VOC Tutorial::
-* SQL Feature Overview::
+* SQL Language ::
+* MonetDB/SQL Features::
 @end menu
 
 @node Getting Started with SQL, The VOC Tutorial, SQL, SQL

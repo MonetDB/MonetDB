@@ -1,45 +1,46 @@
 @section SQL Language 
-The MonetDB/SQL language follows the SQL-2003 specification. In this manual
-we explain which components of the standard we support and were we differ. 
+The MonetDB/SQL language follows the SQL-2003 specification. This section
+introduces the language components supported in the current and upcoming
+releases.
 
 @menu
-* Not supported SQL-2003 Features 
-* Data Definition Statements::
-* Data types
-* Data Manipulation Statements::
-* Schema definition::
-* Users:: 
-* Transactions and auto commit mode::
+* SQL Preface::
+* SQL Data Definition ::
+* SQL Data Types::
+* SQL Data Manipulation ::
+* SQL Schema Definition::
+* SQL Users:: 
+* SQL Transactions ::
 @end menu
 
-@node Preface
+@node SQL Preface, SQL Data Definition, SQL Language, SQL Language
 Todo explain notation espesialy the extra bits.
 
 + extra syntax
 - 2003 syntax but not supported
 
-@node SQL-2003 Features Not supported 
 Currently we have partial support for SQL-2003. Features are added when 
 (enough) users express their interest in these.
 
-Not supported are
 @itemize @bullet
 @item 
-Cursors
-@item 
-Triggers
+Cursors, because the underlying engine is not based on record iterators.
+@item Triggers
+They will be supported in a future release.
 @item 
 Asserts
+They will be supported in a future release.
 @item 
 Character sets
 @item 
 SQL User Defined Types 
 @end itemize
 
-@node Data Definition Statements
+@node SQL Data Definition, SQL Data Types, SQL Preface, SQL Language
 
 @subsection Create TABLE
 
+@verbatim
 The CREATE table statement follows the 2003 syntax, ie 
 
 	CREATE [ <table scope> ] TABLE 
@@ -167,6 +168,21 @@ be used.
         |       SESSION_USER
         |       NULL
 	+|	NEXT VALUE FOR <sequence name>
+@end verbatim
+@node SQL Data Types, SQL Data Manipulation, SQL Data Definition, SQL Language
+@subsection SQL Data Types
+
+@node SQL Data Manipulation, SQL Schema Definition, SQL Data Types, SQL Language
+@subsection SQL Data Manipulation
+
+@node SQL Schema Definition, SQL Users, SQL Data Manipulation, SQL Language
+@subsection SQL Schema Definition
+
+@node SQL Users, SQL Transactions, SQL Schema Definition, SQL Language
+@subsection SQL Users
+
+@node SQL Transactions, MonetDB/SQL Features , SQL Users, SQL Language
+@subsection SQL Transactions
 
 For example an auto increment column can be created using the following
 column specification:
