@@ -31,6 +31,8 @@ They will be supported in a future release.
 Asserts
 They will be supported in a future release.
 @item 
+Domains
+@item 
 Character sets
 @item 
 SQL User Defined Types 
@@ -133,24 +135,29 @@ Define a column of a base table.
 
 <reference scope check action> ::= <referential action>
 
+@node Identity column
+SQL 2003 added identity columns, which are columns for which the values are
+coming from a sequenc generator. Besides the SQL 2003 syntax also the 
+syntax from mysql (auto_increment) and postgress (serial data type) are 
+supported.
+
 <identity column specification> ::=
                 GENERATED { ALWAYS | BY DEFAULT } AS IDENTITY
-                [ <left paren> <common sequence generator options> <right paren> ]
+                [ ( <common sequence generator options> ) ]
+	+| 	auto_increment
 
-<generation clause> ::= <generation rule> AS <generation expression>
+-<generation clause> ::= <generation rule> AS <generation expression>
 
-<generation rule> ::= GENERATED ALWAYS
+-<generation rule> ::= GENERATED ALWAYS
 
-<generation expression> ::= <left paren> <value expression> <right paren>
-
---h3 11.5 <default clause> (p539)
---/h3
-
---p
-Specify the default for a column, domain, or attribute.
---/p
+-<generation expression> ::= ( <value expression> )
 
 @node Default values
+%--p
+%Specify the default for a column, domain, or attribute.
+%--/p
+% as domain/attribute are currently not support default values are only 
+% important for columns
 
 To make insert statements easier a default value can associated with
 each column. Besides literal values, temporal and sequence functions 
@@ -169,6 +176,7 @@ be used.
         |       NULL
 	+|	NEXT VALUE FOR <sequence name>
 @end verbatim
+
 @node SQL Data Types, SQL Data Manipulation, SQL Data Definition, SQL Language
 @subsection SQL Data Types
 
