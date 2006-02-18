@@ -132,51 +132,51 @@ RMcalculator(MalBlkPtr mb)
 
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		if (moduleId(p)==algebraRef) {
-			if (functionId(p) && idcmp(functionName(p), "markRef") == 0) {
+		if (getModuleId(p)==algebraRef) {
+			if (getFunctionId(p) && idcmp(getFunctionId(p), "markRef") == 0) {
 				@:newCost(1, *c1)@
-			} else if (functionId(p)== kdifferenceRef) {
+			} else if (getFunctionId(p)== kdifferenceRef) {
 				@:newCost2(1, 2, *c1 - *c2 < 0 ? 0 : *c1 - *c2)@
-			} else if (functionId(p)==joinRef ) {
+			} else if (getFunctionId(p)==joinRef ) {
 				@:newCost2(1, 2, *c1 < *c2 ? *c1 : *c2)@
-			} else if (functionId(p)== selectRef) {
+			} else if (getFunctionId(p)== selectRef) {
 				@:newCost(1, *c1 > 100 ? *c1 / 2 : *c1)@
-			} else if (functionId(p)==uselectRef) {
+			} else if (getFunctionId(p)==uselectRef) {
 				@:newCost(1, *c1 > 100 ? *c1 / 2 : *c1)@
-			} else if (functionId(p)== crossRef) {
+			} else if (getFunctionId(p)== crossRef) {
 				@:newCost2(1, 2, (log((double) *c1) + log((double) *c2) > log(INT_MAX) ? INT_MAX : *c1 * *c2))@
-			} else if (functionId(p) && idcmp(functionName(p), "tunique") == 0) {
+			} else if (getFunctionId(p) && idcmp(getFunctionId(p), "tunique") == 0) {
 				@:newCost(1, *c1 < 50 ? *c1 : *c1 / 10)@
-			} else if (functionId(p)==sortRef || 
-						idcmp(functionName(p), "sort_reverse") == 0) {
+			} else if (getFunctionId(p)==sortRef || 
+						idcmp(getFunctionId(p), "sort_reverse") == 0) {
 				@:newCost(1, *c1)@
 			}
 
-		} else if (moduleId(p)==batRef) {
-			if (functionId(p) == reverseRef) {
+		} else if (getModuleId(p)==batRef) {
+			if (getFunctionId(p) == reverseRef) {
 				@:newCost(1, *c1)@
-			} else if (functionId(p)==mirrorRef) {
+			} else if (getFunctionId(p)==mirrorRef) {
 				@:newCost(1, *c1)@
 			}
-		} else if (moduleId(p)==groupRef) {
-			if (functionId(p) ==newRef) {
+		} else if (getModuleId(p)==groupRef) {
+			if (getFunctionId(p) ==newRef) {
 				@:newCost(1, *c1 / 10)@
 			} else {
 				@:newCost(1, *c1)@
 			}
-		} else if (moduleId(p) && idcmp(moduleName(p), "multiplex") == 0) {
-			if (functionId(p) && idcmp(functionName(p), "script") == 0) {
+		} else if (getModuleId(p) && idcmp(getModuleId(p), "multiplex") == 0) {
+			if (getFunctionId(p) && idcmp(getFunctionId(p), "script") == 0) {
 				if (getVarCost(getArg(p, 1))) {
 					@:newCost(1, *c1)@
 				} else {
 					@:newCost(2, *c1)@
 				}
 			}
-		} else if (moduleId(p)== aggrRef) {
-			if (functionId(p) ==sumRef || 
-				functionId(p) ==minRef || 
-				functionId(p) ==maxRef || 
-				functionId(p) ==avgRef) {
+		} else if (getModuleId(p)== aggrRef) {
+			if (getFunctionId(p) ==sumRef || 
+				getFunctionId(p) ==minRef || 
+				getFunctionId(p) ==maxRef || 
+				getFunctionId(p) ==avgRef) {
 				@:newCost(2, *c1)@
 			}
 		} else {

@@ -32,14 +32,11 @@ alternative evaluation plans. This exploration may take place up front,
 but can also be ran at runtime for query fragments.
 
 @menu
-* Optimizer landscape::
-@menu
 * Optimizers::
+* Optimizer toolkit::
 * Optimizer Dependencies::
 * Optimizer Building Blocks::
 * Query Optimizer Framework::
-@end menu
-* Optimizer toolkit::
 @end menu
 
 @node Optimizers, Optimizer Dependencies ,Optimizer landscape, Optimizer landscape
@@ -582,7 +579,7 @@ optimizeMALBlock(MalBlkPtr mb)
 		qot = 0;
 		for (pc = 0; pc < mb->stop; pc++) {
 			p = getInstrPtr(mb, pc);
-			if (moduleId(p) && idcmp(moduleId(p), "optimizer") == 0) {
+			if (getModuleId(p) && idcmp(getModuleId(p), "optimizer") == 0) {
 				qot++;
 				if (p->fcn)
 					/* all optimizers should behave like patterns */
@@ -617,13 +614,13 @@ MALoptimizer(Client c)
 
 int hasSameSignature(InstrPtr p, InstrPtr q){   
 	if( q->retc != p->retc || q->argc != p->argc) return FALSE;
-	if( functionId(q)==0 && functionId(p)!=0 ) return FALSE;
-	if( functionId(q)!=0 && functionId(p)==0 ) return FALSE;
-	if( functionId(q) && functionId(p) && idcmp(functionName(q),functionName(p)) ) 
+	if( getFunctionId(q)==0 && getFunctionId(p)!=0 ) return FALSE;
+	if( getFunctionId(q)!=0 && getFunctionId(p)==0 ) return FALSE;
+	if( getFunctionId(q) && getFunctionId(p) && idcmp(getFunctionId(q),getFunctionId(p)) ) 
 		return FALSE;
-	if( moduleId(q)==0 && moduleId(p)!=0 ) return FALSE;
-	if( moduleId(q)!=0 && moduleId(p)==0 ) return FALSE;
-	if( moduleId(q) && moduleId(p) && idcmp(moduleName(q),moduleName(p)))
+	if( getModuleId(q)==0 && getModuleId(p)!=0 ) return FALSE;
+	if( getModuleId(q)!=0 && getModuleId(p)==0 ) return FALSE;
+	if( getModuleId(q) && getModuleId(p) && idcmp(getModuleId(q),getModuleId(p)))
 		return FALSE;
 	/* actually also check their types */
 	return TRUE;
@@ -705,7 +702,7 @@ isUnsafeFunction(InstrPtr q)
 {
 	InstrPtr p;
 
-	if (q->fcn == 0 || functionId(q) == 0 || q->blk == NULL)
+	if (q->fcn == 0 || getFunctionId(q) == 0 || q->blk == NULL)
 		return FALSE;
 	p= getInstrPtr(q->blk,0);
 	return isPropertyDefined( getVar(q->blk,getArg(p,0))->props, unsafeRef);
@@ -955,7 +952,7 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 	else
 		f = open_wastream(fname);
 	p = getInstrPtr(mb, 0);
-	stream_printf(f, "digraph %s{\n", functionName(p));
+	stream_printf(f, "digraph %s{\n", getFunctionId(p));
 	p = getInstrPtr(mb, 0);
 	showFlowDetails(mb, stk, p, 0, f);
 	for (k = p->retc; k < p->argc; k++) {
@@ -1152,7 +1149,7 @@ ARoptimizerStep(MalBlkPtr mb, int pc)
 	InstrPtr p;
 
 	p = getInstrPtr(mb, pc);
-	if (p == 0 || moduleId(p) || functionId(p))
+	if (p == 0 || getModuleId(p) || getFunctionId(p))
 		return pc;
 	if (p->token != ASSIGNsymbol)
 		return pc;
@@ -1261,22 +1258,22 @@ hasSideEffects(InstrPtr p, int strict)
 {
 	if (blockStart(p) || blockExit(p) || blockCntrl(p))
 		return TRUE;
-	if( functionId(p)== NULL) return FALSE;
-	if (functionName(p) == printRef ||
-		functionName(p) == depositRef ||
-		functionName(p) == insertRef ||
-		functionName(p) == appendRef ||
-		functionName(p) == deleteRef)
+	if( getFunctionId(p)== NULL) return FALSE;
+	if (getFunctionId(p) == printRef ||
+		getFunctionId(p) == depositRef ||
+		getFunctionId(p) == insertRef ||
+		getFunctionId(p) == appendRef ||
+		getFunctionId(p) == deleteRef)
 		return TRUE;
-	if (idcmp("destroy", functionName(p)) == 0)
+	if (idcmp("destroy", getFunctionId(p)) == 0)
 		return TRUE;
-	if (idcmp("prelude", functionName(p)) == 0)
+	if (idcmp("prelude", getFunctionId(p)) == 0)
 		return TRUE;
-	if (idcmp("decimal_prelude", functionName(p)) == 0)
+	if (idcmp("decimal_prelude", getFunctionId(p)) == 0)
 		return TRUE;
-	if (idcmp("keep", functionName(p)) == 0)
+	if (idcmp("keep", getFunctionId(p)) == 0)
 		return TRUE;
-	if (strict && functionId(p) && strcmp(functionName(p),newRef)==0)
+	if (strict && getFunctionId(p) && strcmp(getFunctionId(p),newRef)==0)
 		return TRUE;
 	return FALSE;
 }
@@ -1406,11 +1403,11 @@ modules.
 @{
 @c
 int AEvalidInstruction(InstrPtr p){
-	if (moduleId(p) && strcmp(moduleId(p), "batcalc") == 0)
-		return strcmp(functionId(p),"init") != 0;
-	if (moduleId(p) && strcmp(moduleId(p), "array") == 0)
-			return strcmp(functionId(p),"grid") != 0;
-	if (moduleId(p) && strcmp(moduleId(p), "batcalc"))
+	if (getModuleId(p) && strcmp(getModuleId(p), "batcalc") == 0)
+		return strcmp(getFunctionId(p),"init") != 0;
+	if (getModuleId(p) && strcmp(getModuleId(p), "array") == 0)
+			return strcmp(getFunctionId(p),"grid") != 0;
+	if (getModuleId(p) && strcmp(getModuleId(p), "batcalc"))
 		return 0;
 	return 0;
 }
@@ -1424,42 +1421,42 @@ coercionOptimizerStep(MalBlkPtr mb, int i, InstrPtr p)
 	b = getArg(p, 1);
 	t = getVarType(mb, b);
 	if( getVarType(mb,a) != t) return 0;
-	if (strcmp(functionName(p), "int") == 0 && t == TYPE_int) {
+	if (strcmp(getFunctionId(p), "int") == 0 && t == TYPE_int) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
 		return 1;
 	}
-	if (strcmp(functionName(p), "str") == 0 && t == TYPE_str) {
+	if (strcmp(getFunctionId(p), "str") == 0 && t == TYPE_str) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
 		return 1;
 	}
-	if (strcmp(functionName(p), "oid") == 0 && t == TYPE_oid) {
+	if (strcmp(getFunctionId(p), "oid") == 0 && t == TYPE_oid) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
 		return 1;
 	}
-	if (strcmp(functionName(p), "lng") == 0 && t == TYPE_lng) {
+	if (strcmp(getFunctionId(p), "lng") == 0 && t == TYPE_lng) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
 		return 1;
 	}
-	if (strcmp(functionName(p), "sht") == 0 && t == TYPE_sht) {
+	if (strcmp(getFunctionId(p), "sht") == 0 && t == TYPE_sht) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
 		return 1;
 	}
-	if (strcmp(functionName(p), "bit") == 0 && t == TYPE_bit) {
+	if (strcmp(getFunctionId(p), "bit") == 0 && t == TYPE_bit) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
 		return 1;
 	}
-	if (strcmp(functionName(p), "dbl") == 0 && t == TYPE_dbl) {
+	if (strcmp(getFunctionId(p), "dbl") == 0 && t == TYPE_dbl) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
 		return 1;
 	}
-	if (strcmp(functionName(p), "flt") == 0 && t == TYPE_flt) {
+	if (strcmp(getFunctionId(p), "flt") == 0 && t == TYPE_flt) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
 		return 1;
@@ -1484,9 +1481,9 @@ COoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		if (moduleId(p) == NULL)
+		if (getModuleId(p) == NULL)
 			continue;
-		if (moduleId(p)==calcRef && p->argc == 2) {
+		if (getModuleId(p)==calcRef && p->argc == 2) {
 			k= coercionOptimizerStep(mb, i, p);
 			actions += k;
 			if( k) i--;
@@ -1542,7 +1539,7 @@ at the end of the optimization attempt.
 		VarPtr v;
 
 		p = getInstrPtr(mb, i);
-		if (moduleId(p) == NULL)
+		if (getModuleId(p) == NULL)
 			continue;
 		if( !AEvalidInstruction(p) ) continue;
 
@@ -1691,8 +1688,8 @@ z:= selectHead(x,R,l,h)
 During a final pass through the program, we can convert all combinators 
 back into their elementary steps.
 @= fndOperator
-	(( moduleId(@1)==0 || (@2 && idcmp(moduleName(@1),@2)==0) ) &&
-		 (functionId(@1)==0 || (@3 && idcmp(functionName(@1),@3)==0) ))
+	(( getModuleId(@1)==0 || (@2 && idcmp(getModuleId(@1),@2)==0) ) &&
+		 (getFunctionId(@1)==0 || (@3 && idcmp(getFunctionId(@1),@3)==0) ))
 @-
 A more complete implementation should als push the selection through
 multiple operators. In particular, a reverse operator may obscure

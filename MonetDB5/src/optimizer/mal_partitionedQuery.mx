@@ -185,7 +185,7 @@ BPTvalidFlowNetwork(MalBlkPtr mb, int *first, int *last, int varid)
 	*first = i;
 	for (; i <= *last; i++) {
 		p = getInstrPtr(mb, i);
-		if (functionId(p) && strncmp(functionId(p), "print", 5) == 0)
+		if (getFunctionId(p) && strncmp(getFunctionId(p), "print", 5) == 0)
 			iocount++;
 		else if (p->barrier)
 			iocount++;

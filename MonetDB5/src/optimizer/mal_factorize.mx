@@ -102,7 +102,7 @@ optimization step.
 int
 FTallowed(InstrPtr p)
 {
-	if (moduleId(p) && strcmp(moduleId(p), "batcalc") == 0) {
+	if (getModuleId(p) && strcmp(getModuleId(p), "batcalc") == 0) {
 		if (isUnsafeInstruction(p))
 			return 0;
 	}

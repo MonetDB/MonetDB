@@ -182,8 +182,8 @@ MToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	for( i=0; i<oldtop; i++){
 		p= old[i];
-		if( (moduleId(p)== matRef && functionId(p)==newRef) ||
-			(moduleId(p)== matRef && functionId(p)==packRef) ){
+		if( (getModuleId(p)== matRef && getFunctionId(p)==newRef) ||
+			(getModuleId(p)== matRef && getFunctionId(p)==packRef) ){
 			mat[mtop]= p;
 			mvar[mtop] = getArg(p,0);
 			mtop++;
@@ -194,7 +194,7 @@ MToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 A mat.expand() operation looks up the components of the partitioned
 bat and prepares the instruction to expand it.
 @c
-		if( (moduleId(p)== matRef && functionId(p)==expandRef) &&
+		if( (getModuleId(p)== matRef && getFunctionId(p)==expandRef) &&
 			isConstant(mb,getArg(p,1)) && 
 			getVarType(mb,getArg(p,1))== TYPE_str){
 			openBox("pbm");
@@ -216,7 +216,7 @@ bat and prepares the instruction to expand it.
 				pushInstruction(mb,r);
 				pushArgument(mb,p,j);
 			}
-			functionId(p)=newRef;
+			getFunctionId(p)=newRef;
 			pushInstruction(mb,p);
 			mat[mtop]= p;
 			mvar[mtop] = getArg(p,0);
@@ -275,19 +275,19 @@ group them and check for them individually.
 At first we look for the first argument. Others are dealt with
 through the default case.
 @c
-		if(( (moduleId(p)== algebraRef && functionId(p)== selectRef) ||
-			(moduleId(p)== algebraRef && functionId(p)==uselectRef) ||
-			(moduleId(p)== algebraRef && functionId(p)==likeselectRef) ||
-			(moduleId(p)== batRef && functionId(p)==reverseRef) ||
-			(moduleId(p)== batRef && functionId(p)==mirrorRef) ||
-			(moduleId(p)== algebraRef && functionId(p)==markTRef) ||
-			(moduleId(p)== algebraRef && functionId(p)==kdifferenceRef) ||
-			(moduleId(p)== algebraRef && functionId(p)== joinRef) ||
-			(moduleId(p)== algebraRef && functionId(p)== semijoinRef) ||
-			(moduleId(p)== batRef && functionId(p)== setAccessRef) ||
-			(moduleId(p)== batRef && functionId(p)== appendRef)  ||
-			(moduleId(p)== batRef && functionId(p)== deleteRef)  ||
-			moduleId(p)== calcRef 
+		if(( (getModuleId(p)== algebraRef && getFunctionId(p)== selectRef) ||
+			(getModuleId(p)== algebraRef && getFunctionId(p)==uselectRef) ||
+			(getModuleId(p)== algebraRef && getFunctionId(p)==likeselectRef) ||
+			(getModuleId(p)== batRef && getFunctionId(p)==reverseRef) ||
+			(getModuleId(p)== batRef && getFunctionId(p)==mirrorRef) ||
+			(getModuleId(p)== algebraRef && getFunctionId(p)==markTRef) ||
+			(getModuleId(p)== algebraRef && getFunctionId(p)==kdifferenceRef) ||
+			(getModuleId(p)== algebraRef && getFunctionId(p)== joinRef) ||
+			(getModuleId(p)== algebraRef && getFunctionId(p)== semijoinRef) ||
+			(getModuleId(p)== batRef && getFunctionId(p)== setAccessRef) ||
+			(getModuleId(p)== batRef && getFunctionId(p)== appendRef)  ||
+			(getModuleId(p)== batRef && getFunctionId(p)== deleteRef)  ||
+			getModuleId(p)== calcRef 
 		)  && (m=isMATalias(getArg(p,1),mvar,mtop)) >= 0){
 			r = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(r,matRef);
@@ -297,8 +297,8 @@ through the default case.
 
 			for(k=1; k< mat[m]->argc; k++){
 				if( k<mat[m]->argc-1 &&  (
-					functionId(p)== insertRef ||
-					functionId(p)== appendRef ))
+					getFunctionId(p)== insertRef ||
+					getFunctionId(p)== appendRef ))
 					continue;
 				q= copyInstruction(p);
 				getArg(q,1) = getArg(mat[m],k);
@@ -306,9 +306,9 @@ through the default case.
 				pushInstruction(mb,q);
 				r= pushArgument(mb,r,getArg(q,0));
 			}
-			if( functionId(p)== insertRef ||
-				functionId(p)== appendRef ||
-				functionId(p)== deleteRef )
+			if( getFunctionId(p)== insertRef ||
+				getFunctionId(p)== appendRef ||
+				getFunctionId(p)== deleteRef )
 					match=1;
 			else {
 				match =0;
@@ -329,7 +329,7 @@ through the default case.
 The insertions are sent to the last component of the MAT.
 Selection of the proper componetn based on range descriptors will follow.
 @c
-		if(moduleId(p)== batRef && functionId(p)== insertRef &&
+		if(getModuleId(p)== batRef && getFunctionId(p)== insertRef &&
 		(m=isMATalias(getArg(p,1),mvar,mtop)) >= 0){
 			getArg(p,1) = getArg(mat[m],mat[m]->argc-1);
 			pushInstruction(mb,p);
@@ -338,7 +338,7 @@ Selection of the proper componetn based on range descriptors will follow.
 @-
 The MAT argument could also occur as the second one.
 @c
-		if( moduleId(p)==algebraRef && functionId(p)== joinRef &&
+		if( getModuleId(p)==algebraRef && getFunctionId(p)== joinRef &&
 			(m=isMATalias(getArg(p,2),mvar,mtop)) >= 0){
 			r = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(r,matRef);
@@ -367,8 +367,8 @@ The MAT argument could also occur as the second one.
 @-
 Handle the rewrite v:=aggr.count(b) and sum()
 @c
-		if( ((moduleId(p)==aggrRef && functionId(p)== countRef) || 
-			(moduleId(p)==aggrRef && functionId(p)==sumRef && p->argc==2)) &&
+		if( ((getModuleId(p)==aggrRef && getFunctionId(p)== countRef) || 
+			(getModuleId(p)==aggrRef && getFunctionId(p)==sumRef && p->argc==2)) &&
 			(m=isMATalias(getArg(p,1),mvar,mtop)) >= 0){
 			r = newInstruction(mb,ASSIGNsymbol);
 			getArg(r,0)= getArg(p,0);
@@ -378,7 +378,7 @@ Handle the rewrite v:=aggr.count(b) and sum()
 				int v= newTmpVariable(mb,TYPE_int);
 				q= newInstruction(mb,ASSIGNsymbol);
 				setModuleId(q,aggrRef);
-				setFunctionId(q,functionId(p));
+				setFunctionId(q,getFunctionId(p));
 				getArg(q,0)= v;
 				q= pushArgument(mb,q,getArg(mat[m],k));
 				pushInstruction(mb,q);
@@ -396,8 +396,8 @@ Handle the rewrite v:=aggr.count(b) and sum()
 @-
 And the min/max is as easy
 @c
-		if( ((moduleId(p)==aggrRef && functionId(p)== maxRef) || 
-			(moduleId(p)==aggrRef && functionId(p)==minRef )) &&
+		if( ((getModuleId(p)==aggrRef && getFunctionId(p)== maxRef) || 
+			(getModuleId(p)==aggrRef && getFunctionId(p)==minRef )) &&
 			p->argc==3 &&
 			(m=isMATalias(getArg(p,1),mvar,mtop)) >= 0){
 			r = newInstruction(mb,ASSIGNsymbol);
@@ -408,7 +408,7 @@ And the min/max is as easy
 				int v= newTmpVariable(mb,TYPE_int);
 				q= newInstruction(mb,ASSIGNsymbol);
 				setModuleId(q,aggrRef);
-				setFunctionId(q,functionId(p));
+				setFunctionId(q,getFunctionId(p));
 				getArg(q,0)= v;
 				q= pushArgument(mb,q,getArg(mat[m],k));
 				pushInstruction(mb,q);
@@ -440,7 +440,7 @@ MATdefault:
 			setFunctionId(r,packRef);
 			getArg(r,0)= getArg(mat[m],0);
 			r= MATpackAll(mb, r, m, mat, mvar, mtop);
-			if(	!( moduleId(p) == matRef && functionId(p)== newRef) )
+			if(	!( getModuleId(p) == matRef && getFunctionId(p)== newRef) )
 				pushInstruction(mb,r);
 			else freeInstruction(r);
 

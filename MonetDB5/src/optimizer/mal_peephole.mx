@@ -37,8 +37,8 @@ front-end specific variations are foreseen.
 
 opt_export str PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-#define match(X,M,F) ( (X) && functionId(X) && strcmp(functionId(X),F)==0 && \
-	moduleId(X) && strcmp(moduleId(X),M)==0)
+#define match(X,M,F) ( (X) && getFunctionId(X) && strcmp(getFunctionId(X),F)==0 && \
+	getModuleId(X) && strcmp(getModuleId(X),M)==0)
 #endif
 
 @c

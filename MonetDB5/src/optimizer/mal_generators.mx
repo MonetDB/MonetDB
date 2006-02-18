@@ -108,7 +108,7 @@ static void BGcloseLoop(MalBlkPtr mb, int m, InstrPtr *stmt ){
 	InstrPtr r;
 	r = newInstruction(mb, ASSIGNsymbol);
 	r->barrier= REDOsymbol;
-	setModuleId(r, moduleId(stmt[m]));
+	setModuleId(r, getModuleId(stmt[m]));
 	setFunctionId(r,putName("getNextElement",14));
 	getArg(r,0)= getArg(stmt[m],0);
 	pushArgument(mb,r,getArg(stmt[m],1));
@@ -182,8 +182,8 @@ Deal with iterator requests aimed at partitioned BATs.
 Generators are stacked for inspection. They don't correspond to
 code immediately.
 @c
-		if( moduleId(p)== pbmRef && functionId(p)== generatorRef) {
-			functionId(p)= putName("newIterator",11);
+		if( getModuleId(p)== pbmRef && getFunctionId(p)== generatorRef) {
+			getFunctionId(p)= putName("newIterator",11);
 			p->barrier = BARRIERsymbol;
 			mvar[mtop] = getArg(p,0);
 			mstatus[mtop] = CLOSED; /* not yet opened */
@@ -205,14 +205,14 @@ In that case we can wrape the code in an iterator or rely on such a routine
 to be available in the @code{pbm} module.
 The case below is to used as a starting point for experimentation.
 @c
-		if( functionId(p) == setWriteModeRef && moduleId(p) == batRef){
+		if( getFunctionId(p) == setWriteModeRef && getModuleId(p) == batRef){
 			for(k=0;k<mtop;k++)
 			if( mvar[k]== getArg(p,1)){
 				r= copyInstruction(stmt[m]);
 				getArg(r,0)= getArg(p,0);
 				getArg(r,1)= getArg(stmt[k],1);
 				getArg(p,1)= getArg(stmt[k],1);
-				moduleId(p)= pbmRef;
+				getModuleId(p)= pbmRef;
 
 				mvar[mtop] = getArg(r,0);
 				mstatus[mtop]= CLOSED;
@@ -227,20 +227,20 @@ The case below is to used as a starting point for experimentation.
 Not all instructions can be replaced by the sequence. We have to
 group them and check for them individually.
 @c
-		if( (moduleId(p)== algebraRef 	&& functionId(p)== selectRef) ||
-			(moduleId(p)== algebraRef 	&& functionId(p)== uselectRef) ||
-			(moduleId(p)== algebraRef 	&& functionId(p)== likeselectRef) ||
-			(moduleId(p)== batRef 		&& functionId(p)== reverseRef) ||
-			(moduleId(p)== batRef 		&& functionId(p)== mirrorRef) ||
-			(moduleId(p)== algebraRef 	&& functionId(p)== markTRef) ||
-			(moduleId(p)== algebraRef	&& functionId(p)== kdifferenceRef) ||
-			(moduleId(p)== algebraRef	&& functionId(p)== kunionRef) ||
-			(moduleId(p)== algebraRef	&& functionId(p)== joinRef) ||
-			(moduleId(p)== algebraRef	&& functionId(p)== semijoinRef) ||
-			(moduleId(p)== batRef		&& functionId(p)== setAccessRef) ||
-			(moduleId(p)== batRef		&& functionId(p)== appendRef)  ||
-			(moduleId(p)== batRef		&& functionId(p)== deleteRef) ||
-			(moduleId(p)== batRef		&& functionId(p)== setWriteModeRef) 
+		if( (getModuleId(p)== algebraRef 	&& getFunctionId(p)== selectRef) ||
+			(getModuleId(p)== algebraRef 	&& getFunctionId(p)== uselectRef) ||
+			(getModuleId(p)== algebraRef 	&& getFunctionId(p)== likeselectRef) ||
+			(getModuleId(p)== batRef 		&& getFunctionId(p)== reverseRef) ||
+			(getModuleId(p)== batRef 		&& getFunctionId(p)== mirrorRef) ||
+			(getModuleId(p)== algebraRef 	&& getFunctionId(p)== markTRef) ||
+			(getModuleId(p)== algebraRef	&& getFunctionId(p)== kdifferenceRef) ||
+			(getModuleId(p)== algebraRef	&& getFunctionId(p)== kunionRef) ||
+			(getModuleId(p)== algebraRef	&& getFunctionId(p)== joinRef) ||
+			(getModuleId(p)== algebraRef	&& getFunctionId(p)== semijoinRef) ||
+			(getModuleId(p)== batRef		&& getFunctionId(p)== setAccessRef) ||
+			(getModuleId(p)== batRef		&& getFunctionId(p)== appendRef)  ||
+			(getModuleId(p)== batRef		&& getFunctionId(p)== deleteRef) ||
+			(getModuleId(p)== batRef		&& getFunctionId(p)== setWriteModeRef) 
 			){
 @-
 Locate the arguments that depend on a partitioned BAT.
@@ -287,10 +287,10 @@ Handle the rewrite v:=aggr.count(b) and sum()
 In this case we have to include an initialization statement before the
 generator.
 @c
-		if( ((moduleId(p)==aggrRef && functionId(p)== countRef) || 
-			(moduleId(p)==aggrRef && functionId(p)== minRef && p->argc==3) ||
-			(moduleId(p)==aggrRef && functionId(p)== maxRef && p->argc==3) ||
-			(moduleId(p)==aggrRef && functionId(p)==sumRef && p->argc==2)) &&
+		if( ((getModuleId(p)==aggrRef && getFunctionId(p)== countRef) || 
+			(getModuleId(p)==aggrRef && getFunctionId(p)== minRef && p->argc==3) ||
+			(getModuleId(p)==aggrRef && getFunctionId(p)== maxRef && p->argc==3) ||
+			(getModuleId(p)==aggrRef && getFunctionId(p)==sumRef && p->argc==2)) &&
 			(m=isPBMalias(getArg(p,1),mvar,mtop)) >= 0){
 			r = newInstruction(mb,ASSIGNsymbol);
 			getArg(r,0)= getArg(p,0);
@@ -308,8 +308,8 @@ references a newIterator
 			m= 0;
 			for(k= mb->stop-1; k>0; k--){
 				q= getInstrPtr(mb,k);
-				if( moduleId(q)== pbmRef && 
-					functionId(q)== putName("newIterator",11))
+				if( getModuleId(q)== pbmRef && 
+					getFunctionId(q)== putName("newIterator",11))
 					m=k;
 			}
 			insertInstruction(mb,r,m);
@@ -321,10 +321,10 @@ references a newIterator
 
 			q= newInstruction(mb,ASSIGNsymbol);
 			setModuleId(q,calcRef); 
-			if( functionId(p)== countRef || functionId(p)== sumRef)
+			if( getFunctionId(p)== countRef || getFunctionId(p)== sumRef)
 				setFunctionId(q,plusRef);
 			else
-				setFunctionId(q,functionId(p));
+				setFunctionId(q,getFunctionId(p));
 			getArg(q,0)= getArg(r,0);
 			q= pushArgument(mb,q,getArg(r,0));
 			q= pushArgument(mb,q,k);
@@ -360,8 +360,8 @@ Moreover, it then terminates the block in which it was used.
 			if( getVar(mb,getArg(stmt[index[k]],0))->endLifespan>= i){
 				BGkeepPartial(mb,mb->stop,stmt[index[k]]);
 				r= newInstruction(mb,ASSIGNsymbol);
-				moduleId(r)=pbmRef;
-				functionId(r)=putName("discard",7);
+				getModuleId(r)=pbmRef;
+				getFunctionId(r)=putName("discard",7);
 				getArg(r,0)= newTmpVariable(mb, TYPE_any);
 				snprintf(tmpname,128,"pbat_%s", 
 						getVarName(mb,getArg(stmt[index[k]],0)));

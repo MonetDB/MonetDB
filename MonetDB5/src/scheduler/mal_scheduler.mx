@@ -214,7 +214,7 @@ schedulerMALBlock(MalBlkPtr mb)
 		cnt = 0;
 		for (pc = 0; pc < mb->stop; pc++) {
 			p = getInstrPtr(mb, pc);
-			if (moduleId(p) && idcmp(moduleName(p), "scheduler") == 0) {
+			if (getModuleId(p) && idcmp(getModuleId(p), "scheduler") == 0) {
 				cnt++;
 				callMALinterpreter++;
 				if (p->fcn)

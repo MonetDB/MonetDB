@@ -95,7 +95,7 @@ SRoverwritten(InstrPtr p, int varid)
 	return 0;
 }
 int isNewSource(InstrPtr p) {
-	str mp= moduleId(p);
+	str mp= getModuleId(p);
 	if( mp == getName("calc",4)) return 1;
 	if( mp == getName("batcalc",7)) return 1;
 	if( mp == getName("str",3)) return 1;

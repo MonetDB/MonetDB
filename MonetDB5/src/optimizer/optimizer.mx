@@ -542,7 +542,7 @@ str QOT@1optimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		for(t= s->subscope[j];t!=NULL;t=t->peer) 
 		if( t->def->errors == 0) {
 			if( getSignature(t)->token == FUNCTIONsymbol &&
-				idcmp(fcn, functionName(getSignature(t)) )==0
+				idcmp(fcn, getFunctionId(getSignature(t)) )==0
 				)
 				/* call macro expansion */
 				msg= @2processor(mb,t);
@@ -640,7 +640,7 @@ OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	limit = mb->stop;
 	for (i = 0; i < limit; i++) {
 		p = old[i];
-		if (moduleId(p) == optimizerRef && functionId(p) == multiplexRef) {
+		if (getModuleId(p) == optimizerRef && getFunctionId(p) == multiplexRef) {
 			if(init==0){
 				newMalBlkStmt(mb, mb->stop);
 				for(j= 0; j<i; j++)

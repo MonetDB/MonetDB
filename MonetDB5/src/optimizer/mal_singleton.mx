@@ -194,8 +194,8 @@ variables on the stack.
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		/* decode operations */
-		if (getName("bat", 3) == moduleId(p)) {
-			if (getName("reverse", 7) == functionId(p) && (k = STalias(getArg(p, 1), top, tuples) >= 0)) {
+		if (getName("bat", 3) == getModuleId(p)) {
+			if (getName("reverse", 7) == getFunctionId(p) && (k = STalias(getArg(p, 1), top, tuples) >= 0)) {
 				setModuleId(p, NULL);
 				setFunctionId(p, NULL);
 				p->retc = p->argc = 2;
@@ -208,8 +208,8 @@ variables on the stack.
 				doAR++;
 			} else
 				goto STrepack;
-		} else if (getName("io", 2) == moduleId(p)) {
-			if (getName("print", 5) == functionId(p) && p->argc == 3 && (k = STalias(getArg(p, 1), top, tuples)) >= 0) {
+		} else if (getName("io", 2) == getModuleId(p)) {
+			if (getName("print", 5) == getFunctionId(p) && p->argc == 3 && (k = STalias(getArg(p, 1), top, tuples)) >= 0) {
 				if (tuples[k].packed == 0) {
 					getArg(p, 1) = tuples[k].hidx;
 					pushArgument(mb, p, tuples[k].tidx);
@@ -217,8 +217,8 @@ variables on the stack.
 					goto STrepack;
 			} else
 				goto STrepack;
-		} else if (getName("algebra", 7) == moduleId(p)) {
-			if (getName("markH", 5) == functionId(p) && 
+		} else if (getName("algebra", 7) == getModuleId(p)) {
+			if (getName("markH", 5) == getFunctionId(p) && 
 				(k = STalias(getArg(p, 1), top, tuples)) >= 0) {
 				STunpack(mb, k, tuples);
 				setModuleId(p, NULL);
@@ -233,7 +233,7 @@ variables on the stack.
 				p->token = ASSIGNsymbol;
 				p->fcn = NULL;
 				doAR++;
-			} else if (getName("markT", 5) == functionId(p) && 
+			} else if (getName("markT", 5) == getFunctionId(p) && 
 						(k = STalias(getArg(p, 1), top, tuples)) >= 0) {
 				STunpack(mb, k, tuples);
 				setModuleId(p, NULL);
@@ -248,7 +248,7 @@ variables on the stack.
 				p->token = ASSIGNsymbol;
 				p->fcn = NULL;
 				doAR++;
-			} else if (getName("join", 4) == functionId(p)) {
+			} else if (getName("join", 4) == getFunctionId(p)) {
 				int k1 = STalias(getArg(p, 1), top, tuples);
 				int k2 = STalias(getArg(p, 2), top, tuples);
 
@@ -278,16 +278,16 @@ variables on the stack.
 				/* just push instruction */
 			} else
 /*
-				getName("kunion",6)== functionId(p) ||
-				getName("join",4)== functionId(p) ||
-				getName("fetchjoin",9)== functionId(p) ||
-				getName("mergejoin",9)== functionId(p) ||
-				getName("indexjoin",9)== functionId(p) ||
-				getName("hashjoin",8)== functionId(p) ||
-				getName("cartesianproduct",16)== functionId(p) ||
-				getName("union",5)== functionId(p) )
+				getName("kunion",6)== getFunctionId(p) ||
+				getName("join",4)== getFunctionId(p) ||
+				getName("fetchjoin",9)== getFunctionId(p) ||
+				getName("mergejoin",9)== getFunctionId(p) ||
+				getName("indexjoin",9)== getFunctionId(p) ||
+				getName("hashjoin",8)== getFunctionId(p) ||
+				getName("cartesianproduct",16)== getFunctionId(p) ||
+				getName("union",5)== getFunctionId(p) )
 */
-			if (getName("count", 5) == functionId(p) && (k = STalias(getArg(p, 1), top, tuples)) >= 0) {
+			if (getName("count", 5) == getFunctionId(p) && (k = STalias(getArg(p, 1), top, tuples)) >= 0) {
 				STunpack(mb, k, tuples);
 				/* count propagation */
 				setModuleId(p, NULL);
@@ -302,7 +302,7 @@ variables on the stack.
 					if ((k = STalias(getArg(p, j), top, tuples)) >= 0 && tuples[k].packed == 0)
 						STpack(mb, k, tuples);
 			}
-		} else if (getName("datacell", 8) == moduleId(p)) {
+		} else if (getName("datacell", 8) == getModuleId(p)) {
 			if (getName("bindReceptor", 12) && (k = STalias(getArg(p, 0), top, tuples)) >= 0) {
 				setFunctionId(p, putName("bindReceptorTuple", 17));
 				getArg(p, 0) = tuples[k].hidx;
