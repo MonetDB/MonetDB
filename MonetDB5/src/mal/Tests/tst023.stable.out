@@ -20,8 +20,8 @@ stdout of test 'tst023` in directory 'src/mal` itself:
 #end help
 function transaction.help():void;	# 0  (help:void)
     io.print("added function to specific module");	# 1 IOprint_val (_1:int)<-(_2:str)
-    b := inspect.getDefinition("transaction","help");	# 2 INSPECTgetDefinition (b:bat[:int,:str])<-(_4:str)(_5:str)
-    io.print(b);	# 3 IOprint_val (_6:int)<-(b:bat[:int,:str])
+    b := inspect.getDefinition("transaction","help");	# 2 INSPECTgetDefinition (b:bat[:str,:str])<-(_4:str)(_5:str)
+    io.print(b);	# 3 IOprint_val (_6:int)<-(b:bat[:str,:str])
 end help;	# 4  
 #transaction.help();
 #
@@ -32,13 +32,13 @@ end main;	# 3
 [ "added function to specific module" ]
 #-------------------------------------------------------------------------#
 # view	fcn								  # name
-# int	str								  # type
-#-------------------------------------------------------------------------#
-[ 0,	  "function transaction.help():void;"				  ]
-[ 1,	  "    io.print(\"added function to specific module\");"	  ]
-[ 2,	  "    b := inspect.getDefinition(\"transaction\",\"help\");"	  ]
-[ 3,	  "    io.print(b);"						  ]
-[ 4,	  "end help;"							  ]
+# str			str								  # type
+#-----------------------------------------------------------------------------------------#
+[ "transaction.help",	  "function transaction.help():void;"				  ]
+[ "transaction.help",	  "    io.print(\"added function to specific module\");"	  ]
+[ "transaction.help",	  "    b := inspect.getDefinition(\"transaction\",\"help\");"	  ]
+[ "transaction.help",	  "    io.print(b);"						  ]
+[ "transaction.help",	  "end help;"							  ]
 
 # 07:58:39 >  
 # 07:58:39 >  Done.

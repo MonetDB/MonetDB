@@ -115,17 +115,12 @@ end main;	# 9
 # bbp	t			htype	ttype		count	heat	dirty		status		kind		refcnt	  # name
 # int	str			str	str		lng	int	str		str		str		int	  # type
 #---------------------------------------------------------------------------------------------------------------------------------#
-[ 1,	  "monet_environment",	  "str",  "str",	  36,	  387,	  "dirty",	  "dirty",	  "transient",	  1	  ]
-[ 2,	  "monet_unicode_case",	  "int",  "int",	  732,	  388,	  "dirty",	  "dirty",	  "transient",	  1	  ]
-[ 3,	  "timezones",		  "str",  "tzone",	  24,	  389,	  "dirty",	  "dirty",	  "transient",	  1	  ]
-[ 4,	  "users",		  "str",  "str",	  0,	  302,	  "clean",	  "clean",	  "persistent",	  1	  ]
-[ 5,	  "password",		  "str",  "str",	  0,	  303,	  "clean",	  "clean",	  "persistent",	  1	  ]
-[ 6,	  "simplemind",		  "int",  "int",	  0,	  394,	  "dirty",	  "dirty",	  "transient",	  0	  ]
-[ 7,	  "trace_id_time",	  "int",  "str",	  0,	  305,	  "clean",	  "clean",	  "persistent",	  0	  ]
-[ 8,	  "trace_id_ticks",	  "int",  "int",	  0,	  306,	  "clean",	  "clean",	  "persistent",	  0	  ]
-[ 9,	  "trace_id_pc",	  "int",  "str",	  0,	  307,	  "clean",	  "clean",	  "persistent",	  0	  ]
-[ 10,	  "trace_id_modfcn",	  "int",  "str",	  0,	  308,	  "clean",	  "clean",	  "persistent",	  0	  ]
-[ 11,	  "trace_id_statement",	  "int",  "str",	  0,	  309,	  "clean",	  "clean",	  "persistent",	  0	  ]
+[ 1,	  "monet_environment",	  "str",  "str",	  33,	  151,	  "dirty",	  "dirty",	  "transient",	  1	  ]
+[ 2,	  "monet_unicode_case",	  "int",  "int",	  732,	  152,	  "dirty",	  "dirty",	  "transient",	  1	  ]
+[ 3,	  "timezones",		  "str",  "tzone",	  24,	  153,	  "dirty",	  "dirty",	  "transient",	  1	  ]
+[ 4,	  "users",		  "str",  "str",	  0,	  154,	  "dirty",	  "dirty",	  "persistent",	  1	  ]
+[ 5,	  "password",		  "str",  "str",	  0,	  155,	  "dirty",	  "dirty",	  "persistent",	  1	  ]
+[ 6,	  "simplemind",		  "int",  "int",	  0,	  156,	  "dirty",	  "dirty",	  "transient",	  0	  ]
 [ "Search directory by name" ]
 #-------------------------#
 # h	t		  # name
@@ -136,7 +131,7 @@ end main;	# 9
 # h	t		htype	ttype	count	heat	dirty		status		kind		refcnt	  # name
 # int	str		str	str	lng	int	str		str		str		int	  # type
 #-----------------------------------------------------------------------------------------------------------------#
-[ 6,	  "simplemind",	  "int",  "int",  0,	  399,	  "dirty",	  "dirty",	  "transient",	  0	  ]
+[ 6,	  "simplemind",	  "int",  "int",  0,	  156,	  "dirty",	  "dirty",	  "transient",	  0	  ]
 
 # 18:09:04 >  
 # 18:09:04 >  Done.
