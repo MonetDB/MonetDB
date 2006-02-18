@@ -410,16 +410,16 @@ MDBStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	msg = call2str(s->blk, s, pc=getPC(m, p));
 	snprintf(buf,8192,"%s at %s.%s[%d]", msg+5,
-		moduleId(getInstrPtr(m,0)),
-		functionId(getInstrPtr(m,0)), pc);
+		getModuleId(getInstrPtr(m,0)),
+		getFunctionId(getInstrPtr(m,0)), pc);
 	BUNins(b, &k, buf);
 	GDKfree(msg);
 
 	for (s = s->up, k++; s != NULL; s = s->up, k++) {
 		msg = call2str(s->blk, s, s->pcup);
 		snprintf(buf,8192,"%s at %s.%s[%d]", msg+5,
-			moduleId(getInstrPtr(s->blk,0)),
-			functionId(getInstrPtr(s->blk,0)), s->pcup);
+			getModuleId(getInstrPtr(s->blk,0)),
+			getFunctionId(getInstrPtr(s->blk,0)), s->pcup);
 		BUNins(b, &k, buf);
 		GDKfree(msg);
 	}

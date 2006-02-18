@@ -163,6 +163,8 @@ typedef struct {
 	long readtime;
 	long parsetime;
 	long exectime;
+	char language;
+	int console;
 } *MILbackend;
 
 
@@ -238,6 +240,8 @@ newMILbackend()
 
 	be = GDKmalloc(sizeof(*be));
 	memset(be, 0, sizeof(*be));
+	be->console= isAdministrator(getClient());
+	be->language= 'M';
 	return be;
 }
 

@@ -31,15 +31,22 @@ the pseudo BAT to a variable.
 @+ Module inspection
 Each module forms a separately named scope. Modules visible to a user
 are relevant for resolving function names.
-
+Inspection is organized for two purposes, for interactive use
+and as a bases for reflective code. The latter needs BATs
+to work with. The former merely dumps the result in a table
+for the front-ends to consume.
 @mal
 module inspect;
 
-command getDefinition(mod:str,fcn:str)
-	:bat[:int,:str] 
+command getDefinition(mod:str,fcn:str) :bat[:str,:str] 
 address INSPECTgetDefinition
-comment "Returns a string representation 
-	of a specific function";
+comment "Returns a string representation of a specific function";
+command getSignature(mod:str,fcn:str) :bat[:str,:str] 
+address INSPECTgetSignature
+comment "Returns the function signature(s)";
+command getComment(mod:str,fcn:str) :bat[:str,:str]
+address INSPECTgetComment
+comment "Returns the function help information.";
 
 @-
 The symbol table can be accessed as if it was a relational
@@ -52,19 +59,15 @@ command getKind():bat[:void,:str]
 address INSPECTgetkind
 comment "Obtain the instruction kind";
 command getModule():bat[:void,:str]
-address INSPECTgetModule
+address INSPECTgetAllModules
 comment "Obtain the function name";
 command getFunction():bat[:void,:str]
-address INSPECTgetFunction
+address INSPECTgetAllFunctions
 comment "Obtain the function name";
+command getSignatures():bat[:void,:str]
+address INSPECTgetAllSignatures
+comment "Obtain the function signatures";
 
-command getSignature():bat[:void,:str]
-address INSPECTgetsignature
-comment "Obtain the function name";
-command getSignature(mod:str,fcn:str)
-	:bat[:str,:str] 
-address INSPECTgetSignature
-comment "Returns the function signature(s)";
 
 pattern getSize():lng
 address INSPECTgetSize
@@ -109,13 +112,17 @@ It can be extracted into a BAT for inspection, such as providing
 an online help facility.
 @mal
 module manual;
-command search(k:str):bat[:str,:str] 
-address MANUALsearch
-comment "Search the commentary strings for one matching the keyword";
 
-command search(mod:str,fcn:str) :bat[:str,:str] 
-address MANUALsearch2
-comment "Collect the comments for a given function pattern";
+command completion(text:str)
+address MANUALcompletion
+comment "Produces the wordcompletion table.";
+command help(text:str)
+address MANUALhelp
+comment "Produces the help table for the pattern.";
+command search(text:str)
+address MANUALsearch
+comment "Search the manual for entries matching the keyword";
+
 @- Manual construction
 The manual operations ease offline inspection of all function definitions.
 It purposely generates an XML organized file, because we expect external
@@ -141,17 +148,6 @@ comment "Produces an overview of all functions grouped by module.";
 command createHelp()
 address MANUALcreateHelp
 comment "Produces a manual with help lines grouped by module.";
-
-command completion(text:str)
-address MANUALcompletion
-comment "Produces the wordcompletion table.";
-command help(text:str)
-address MANUALhelp
-comment "Produces the help table.";
-
-command createTags()
-address MANUALcreateTags
-comment "Produces the tags for wordcompletion.";
 @-
 @{
 @+ Implementation
@@ -170,19 +166,20 @@ comment "Produces the tags for wordcompletion.";
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
 
-mal_export str INSPECTmoduleNames(int *ret);
+mal_export str INSPECTgetModuleIds(int *ret);
 mal_export str INSPECTsymbolFind(int *ret, int kind);
 mal_export str INSPECTfactoryNames(int *ret);
-mal_export str INSPECTfunctionNames(int *ret);
+mal_export str INSPECTgetFunctionIds(int *ret);
 mal_export str INSPECTpatternNames(int *ret);
 mal_export str INSPECTcommandNames(int *ret);
 mal_export str INSPECTgetFunction(int *ret);
 mal_export str INSPECTgetModule(int *ret);
 mal_export str INSPECTgetkind(int *ret);
 mal_export str INSPECTgetaddress(int *ret);
-mal_export str INSPECTgetsignature(int *ret);
+mal_export str INSPECTgetAllSignatures(int *ret);
 mal_export str INSPECTgetDefinition(int *ret, str *nme, str *fcn);
 mal_export str INSPECTgetSignature(int *ret, str *mod, str *fcn);
+mal_export str INSPECTgetComment(int *ret, str *mod, str *fcn);
 mal_export str INSPECTgetModuleSize(int *ret, str *mod);
 mal_export str INSPECTgetFunctionSize(lng *ret, str *mod, str *fcn);
 mal_export str INSPECTgetSize(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -200,7 +197,6 @@ mal_export str MANUALcreate2(int *ret, str *fname, str *mod, int *recursive);
 mal_export str MANUALcreate1(int *ret, str *mod);
 mal_export str MANUALcreate0(int *ret);
 mal_export str MANUALsearch(int *ret, str *mod);
-mal_export str MANUALsearch2(int *ret, str *mod, str *fcn);
 mal_export str MANUALcompletion(int *ret, str *text);
 mal_export str MANUALhelp(int *ret, str *text);
 
@@ -209,7 +205,7 @@ Mal symbol table and environment analysis.
 @c
 
 str
-INSPECTmoduleNames(int *ret)
+INSPECTgetModuleIds(int *ret)
 {
 	Client c;
 	Module s;
@@ -217,7 +213,7 @@ INSPECTmoduleNames(int *ret)
 	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
 
 	if (b == 0)
-		return throwMessage("inspect.moduleNames", "failed to create BAT");
+		return throwMessage("inspect.getModuleIds", "failed to create BAT");
 	c = getClient();
 
 	for (s = c->nspace; s; s = s->outer, i++)
@@ -249,7 +245,7 @@ INSPECTsymbolFind(int *ret, int kind)
 
 					if (kind && kind != sig->token)
 						continue;
-					BUNins(b, moduleName(sig), functionName(sig));
+					BUNins(b, getModuleId(sig), getFunctionId(sig));
 				}
 			}
 		s = s->outer;
@@ -266,7 +262,7 @@ INSPECTfactoryNames(int *ret)
 }
 
 str
-INSPECTfunctionNames(int *ret)
+INSPECTgetFunctionIds(int *ret)
 {
 	return INSPECTsymbolFind(ret, FUNCTIONsymbol);
 }
@@ -290,7 +286,7 @@ which makes it susceptable for intermediate updates
 @c
 
 str
-INSPECTgetFunction(int *ret)
+INSPECTgetAllFunctions(int *ret)
 {
 	Client c;
 	Module s;
@@ -300,7 +296,7 @@ INSPECTgetFunction(int *ret)
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
 
 	if (b == 0)
-		return throwMessage("inspect.getfunctionName", "failed to create BAT");
+		return throwMessage("inspect.getgetFunctionId", "failed to create BAT");
 	BATseqbase(b, k);
 	c = getClient();
 	s = c->nspace;
@@ -310,7 +306,7 @@ INSPECTgetFunction(int *ret)
 				for (t = s->subscope[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
 
-					BUNins(b, &k, functionName(sig));
+					BUNins(b, &k, getFunctionId(sig));
 					k++;
 				}
 			}
@@ -322,7 +318,7 @@ INSPECTgetFunction(int *ret)
 }
 
 str
-INSPECTgetModule(int *ret)
+INSPECTgetAllModules(int *ret)
 {
 	Client c;
 	Module s;
@@ -342,7 +338,7 @@ INSPECTgetModule(int *ret)
 				for (t = s->subscope[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
 
-					BUNins(b, &k, moduleName(sig));
+					BUNins(b, &k, getModuleId(sig));
 					k++;
 				}
 			}
@@ -422,7 +418,7 @@ INSPECTgetaddress(int *ret)
 
 
 str
-INSPECTgetsignature(int *ret)
+INSPECTgetAllSignatures(int *ret)
 {
 	Client c;
 	Module s;
@@ -454,22 +450,24 @@ INSPECTgetsignature(int *ret)
 }
 
 str
-INSPECTgetDefinition(int *ret, str *nme, str *fcn)
+INSPECTgetDefinition(int *ret, str *mod, str *fcn)
 {
 	Symbol s;
-	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
+	char buf[BUFSIZ];
+	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
 
 	if (b == 0)
 		return throwMessage("inspect.getDefinition", "failed to create BAT");
 
-	s = findMALSymbol(putName(*nme, strlen(*nme)), putName(*fcn, strlen(*fcn)));
+	snprintf(buf,BUFSIZ,"%s.%s",*mod,*fcn);
+	s = findMALSymbol(putName(*mod, strlen(*mod)), putName(*fcn, strlen(*fcn)));
 	while (s) {
 		int i;
 		str ps;
 
 		for (i = 0; i < s->def->stop; i++) {
 			ps = instruction2str(s->def, getInstrPtr(s->def, i), 0);
-			BUNins(b, &i, ps + 1);
+			BUNins(b, buf, ps + 1);
 			GDKfree(ps);
 		}
 		s = s->peer;
@@ -483,7 +481,8 @@ str
 INSPECTgetSignature(int *ret, str *mod, str *fcn)
 {
 	Symbol s;
-	str ps;
+	char buf[BUFSIZ];
+	str ps, tail;
 	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
 
 	if (b == 0)
@@ -493,29 +492,47 @@ INSPECTgetSignature(int *ret, str *mod, str *fcn)
 	if (s == 0)
 		return throwMessage("inspect.getSignature", "failed to find <module>.<function>");
 
+	snprintf(buf,BUFSIZ,"%s.%s",*mod,*fcn);
 	while (s != NULL) {
 		if (idcmp(s->name, *fcn) == 0) {
-			char *i, *o;
+			char *c;
 
 			ps = instruction2str(s->def, getSignature(s), 0);
-			i = strchr(ps, '(');
-			if (i == 0)
+			c = strchr(ps, '(');
+			if (c == 0)
 				continue;
-			*i = 0;
-			i++;
-			o = strchr(i, ')');
-			if (o == 0)
-				continue;
-			*o = 0;
-			o++;
-			if (*o == '(')
-				o++;
-			if (strchr(o, ')'))
-				*strchr(o, '(') = 0;
-			if (strchr(o, ';'))
-				*strchr(o, ';') = 0;
-			BUNins(b, i, o);
+			tail= strstr(c,"address");
+			if( tail)
+				*tail = 0;
+			if (strchr(tail, ';'))
+				*strchr(tail, ';') = 0;
+			BUNins(b, buf, c);
 			GDKfree(ps);
+		}
+		s = s->peer;
+	}
+
+	@:Pseudo(view,input,result)@
+	return MAL_SUCCEED;
+}
+str
+INSPECTgetComment(int *ret, str *mod, str *fcn)
+{
+	Symbol s;
+	char buf[BUFSIZ];
+	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
+
+	if (b == 0)
+		return throwMessage("inspect.getSignature", "failed to create BAT");
+
+	s = findMALSymbol(putName(*mod, strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	if (s == 0)
+		return throwMessage("inspect.getSignature", "failed to find <module>.<function>");
+
+	snprintf(buf,BUFSIZ,"%s.%s",*mod,*fcn);
+	while (s != NULL) {
+		if (idcmp(s->name, *fcn) == 0) {
+			BUNins(b, buf, s->def->help);
 		}
 		s = s->peer;
 	}
@@ -834,56 +851,18 @@ MANUALsearch(int *ret, str *pat)
 {
 	char **msg;
 	int i;
-	char *t;
 	BAT *b = BATnew(TYPE_str, TYPE_str, 1000);
 
 	if (b == 0)
 		return throwMessage("manual.help", "failed to create BAT");
 	msg= getHelpMatch(*pat);
 	for( i=0; msg[i]; i++){
-		t= strstr(msg[i],"address");
-		if( t) {
-			t[-1]= 0;
-			BUNins(b, msg[i]+1, t);
-		} else {
-			t= strrchr(msg[i],')');
-			if( t) {
-				t[1]= 0;
-				BUNins(b, msg[i]+1, t+2);
-			} else {
-				str h="<unknown>";
-				BUNins(b, &h, msg[i]+1);
-			}
-		}
+		stream_printf(GDKout,msg[i]+1);
+		stream_printf(GDKout,"\n");
 		GDKfree(msg[i]);
 	}
 	GDKfree(msg);
 
-	@:Pseudo(help,Comment)@
-	return MAL_SUCCEED;
-}
-
-str
-MANUALsearch2(int *ret, str *mod, str *fcn)
-{
-	Symbol s;
-	str msg;
-
-	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
-
-	if (b == 0)
-		return throwMessage("manual.helpComment", "failed to create BAT");
-
-	s = findMALSymbol(*mod, *fcn);
-	while (s != NULL) {
-		if (idcmp(s->name, *fcn) == 0) {
-			msg = s->def->help;
-			if (msg == NULL)
-				msg = (str)str_nil;
-			BUNins(b, s->name, msg);
-		}
-		s = s->peer;
-	}
 	@:Pseudo(help,Comment)@
 	return MAL_SUCCEED;
 }

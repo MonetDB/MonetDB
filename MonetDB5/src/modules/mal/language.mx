@@ -244,14 +244,14 @@ CMDregisterFunction(int *ret, str *m, str *f, str *code, str *help){
 	msg= compileString(&sym, c,*code);
 	if( sym) {
 		stream_printf(GDKout,"REGISTER FUNCTIOn %s.%s\n",
-			moduleId(sym->def->stmt[0]), functionId(sym->def->stmt[0]));
+			getModuleId(sym->def->stmt[0]), getFunctionId(sym->def->stmt[0]));
 		mb= sym->def;
 		if( help)
 			mb->help= GDKstrdup(*help);
 		printFunction(c->fdout, mb,0);
 /*
 		sig= getSignature(sym);
-		renameFunction( moduleId(sig), functionId(sig), 
+		renameFunction( getModuleId(sig), getFunctionId(sig), 
 			putName(*m, strlen(*m)), putName(*f,strlen(*f)));
 */
 	}

@@ -96,13 +96,16 @@ mil_export str CMDMILsession(str *ret);
 str
 MILinit(Client cntxt)
 {
+	Client cn= initClient(GDKstrdup("milStartup"),0,0,0);
 #ifdef _MIL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#MILinit MonetDB V5\n");
 #endif
 	/* load the modules */
-	malInclude(cntxt, "mil_algebra_procs", "mil_algebra_procs", 0);
-	malInclude(cntxt, "mil_system_procs", "mil_system_procs", 0);
+	defaultScenario(cn);
+	malInclude(cn, "mil_algebra_procs", "mil_algebra_procs", 0);
+	malInclude(cn, "mil_system_procs", "mil_system_procs", 0);
 	(void) cntxt;
+	killClient(cn);
 	return MAL_SUCCEED;
 }
 
@@ -153,68 +156,75 @@ The MIL reader collects a (sequence) of statements from the input
 stream, but only when no unresolved 'nxt' character is visible.
 Actually, we can use the MAL reader for this purpose.
 @c
+#define _MIL_SCENARIO_DEBUG
 str
 MILreader(Client c)
 {
 	int go = TRUE;
+	int more= TRUE;
 	lng T0;
 	bstream *in = c->fdin;
+	int blocked = isa_block_stream(in->s);
 	MILbackend be = (MILbackend) c->state[PARSER];
 	int language = 'M';	/* 'M' for MIL, 'D' for debugger */
 
 #ifdef _MIL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#MILparser: start reading MIL block\n");
 #endif
-	if (c->mode <= FINISHING)
+	if (!be || c->mode <= FINISHING)
 		return throwMessage("MILreader", "end of MIL input\n");
 
 @-
 Continue processing any left-over input from the previous round.
 @c
 	T0 = GDKusec();
-	/* clean the input buffer, we eat it all */
-	c->fdin->pos = c->fdin->len;
-	c->fdin->eof = 1;
 #ifdef _MIL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#pos %d len %d\n", in->pos, in->len);
 #endif
-	if (in->pos >= in->len) {
-		ssize_t rd;
+	while(more){
+		more= FALSE;
+		if (go && in->pos >= in->len) {
+			ssize_t rd;
 
-		assert(in->pos == in->len);
-
-		if (in->eof || !isa_block_stream(in->s)) {
-			language = 0;
-
-			if (go && (stream_write(c->fdout, c->prompt, c->promptlength, 1) != 1 || stream_flush(c->fdout))) {
-				go = FALSE;
+			if (c->bak) {
+				popClientInput(c);
+				in = c->fdin;
+				c->fdin->pos += c->yycur;
+				c->yycur = 0;
 			}
-			in->eof = 0;
-		}
-		if (go && (rd = bstream_next(in)) <= 0) {
+
+			if (in->eof || !blocked){
+				language = (be->console) ? 'M' : 0;
+
+				if (go && (stream_write(c->fdout, c->prompt, c->promptlength, 1) != 1 || stream_flush(c->fdout))) {
+					go = FALSE;
+				}
+				in->eof = 0;
+			}
+			if (go && (rd = bstream_next(in)) <= 0) {
+	#ifdef _MIL_SCENARIO_DEBUG
+				stream_printf(GDKout, "#rd %d  eof %d\n", rd, in->eof);
+	#endif
+				if (language == 'D' && in->eof == 0)
+					return 0;
+				if (rd == 0 && language!= 0 && in->eof && !be->console) {
+					/* we hadn't seen the EOF before, so just try again
+					   (this time with prompt) 
+					   MILreader(c);
+					 */
+					more = TRUE;
+					continue;
+				} 
+				go = FALSE;
+				break;
+			} else if (go && !be->console && language == 0) {
+				be->language = in->buf[in->pos++];
+			}
 #ifdef _MIL_SCENARIO_DEBUG
-			stream_printf(GDKout, "#rd %d  eof %d\n", rd, in->eof);
+			stream_printf(GDKout, "#MIL blk:%s\n", in->buf + in->pos);
 #endif
-			if (language == 'D' && in->eof == 0)
-				return 0;
-			if (rd == 0 && in->eof) {
-				/* we hadn't seen the EOF before, so just try again
-				   (this time with prompt) 
-				   MILreader(c);
-				 */
-				go = FALSE;
-			} else if (rd == 0 && in->eof == 0) {
-				return 0;
-			} else {
-				go = FALSE;
-			}
-			if (go && !isAdministrator(c) && language == 0)
-				language = in->buf[in->pos++];
 		}
 	}
-#ifdef _MIL_SCENARIO_DEBUG
-	stream_printf(GDKout, "#MIL blk:%s\n", in->buf + in->pos);
-#endif
 	if (!go || (strncmp(CURRENT(c), "quit", 4) == 0)) {
 		in->pos = in->len;	/* skip rest of the input */
 		c->mode = FINISHING;
@@ -253,7 +263,7 @@ MILparserAll(Client c, int flag)
 		MILinitClient(c);
 		be = c->state[PARSER];
 		if (be == NULL)
-			GDKfatal("MILparser", "internal error\n");
+			return throwMessage("MILparser", "internal error\n");
 	}
 	T0 = GDKusec();
 	c->curprg->def->errors = 0;
@@ -310,7 +320,7 @@ to check the MAL program.
 str
 MILparser(Client c)
 {
-	return MILparserAll(c, 0);
+	return MILparserAll(c, 1);
 }
 
 str
