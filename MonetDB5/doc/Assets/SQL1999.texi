@@ -1,6 +1,6 @@
 @appendix SQL 1999 Features
-The table below illustrates the features supported (+) and not
-supported (-) in the MonetDB/SQL distribution.
+The table below illustrates the features supported (S) and not
+supported (N) in the MonetDB/SQL distribution.
 Beware, some of the features are technically impossible to
 support without major code changes or excessive performance
 consequences.
@@ -48,8 +48,8 @@ consequences.
 @item E021-03  
 @tab Character literals 
 @item E021-04  
-@tab S
 @tab CHARACTER_LENGTH function 
+@tab S
 @item E021-05  
 @tab OCTET_LENGTH function  
 @tab N (TODO!!!) 
@@ -87,8 +87,8 @@ consequences.
 @tab Trailing underscore 
 @tab S 
 @item E051  
-@tab S 
 @tab Basic query specification (FULL support)
+@tab S 
 @item E051-01  
 @tab SELECT DISTINCT 
 @tab S
@@ -174,8 +174,8 @@ consequences.
 @tab Table operators in subqueries 
 @tab S 
 @item E081  
-@tab S
 @tab Basic Privileges
+@tab S
 @item E081-01  
 @tab SELECT privilege at the table level 
 @tab S
@@ -231,8 +231,8 @@ consequences.
 @tab DISTINCT quantifier 
 @tab S
 @item E101  
-@tab S
 @tab Basic data manipulation (FULL support)
+@tab S
 @item E101-01  
 @tab INSERT statement 
 @tab S
@@ -243,8 +243,8 @@ consequences.
 @tab Searched DELETE statement  
 @tab S
 @item E111  
-@tab S
 @tab Single row SELECT statement
+@tab S
 @item E121  
 @tab Basic cursor support  
 @tab N (Cursors are not supported, no change in ..)
