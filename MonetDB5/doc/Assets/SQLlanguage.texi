@@ -89,9 +89,15 @@ on COMMIT we 'DROP' these temporaries.
 
 -<supertable name> ::= <table name>
 
+@node create table like 
 <like clause> ::= LIKE <table name> [ <like options> ]
 
 -<like options> ::= <identity option> | <column default option>
+
+It is posible to create a table which looks like an existing table. This 
+can be done using the create table like statement. Currently there is no
+support for additional options. A work around is to use the alter
+statement to change options.
 
 -<identity option> ::= INCLUDING IDENTITY | EXCLUDING IDENTITY
 
@@ -100,7 +106,6 @@ on COMMIT we 'DROP' these temporaries.
 -<as subquery clause> ::= [ ( <column name list> ) ] AS <subquery> <with or without data>
 
 -<with or without data> ::= WITH NO DATA | WITH DATA
-
 
 	
 --h3 11.4 <column definition> (p534)
@@ -144,6 +149,13 @@ Define a column of a base table.
 Specify the default for a column, domain, or attribute.
 --/p
 
+@node Default values
+
+To make insert statements easier a default value can associated with
+each column. Besides literal values, temporal and sequence functions 
+can be used as default value. Value of these functions at insert time will
+be used. 
+
 <default clause> ::= DEFAULT <default option>
 
 <default option> ::=
@@ -155,3 +167,7 @@ Specify the default for a column, domain, or attribute.
         |       SESSION_USER
         |       NULL
 	+|	NEXT VALUE FOR <sequence name>
+
+For example an auto increment column can be created using the following
+column specification:
+	col_name integer default NEXT VALUE FOR sequence_name
