@@ -423,6 +423,9 @@ static int setBATcapacity(shredCtxStruct* shredCtx, int idx, int n) {
         void* top;
         
         int bottomTop = n;
+        if (n > 65536) {
+                BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+        }
         shredCtx->dstBAT[idx].cnt = n;
         switch( shredCtx->dstBAT[idx].def->tailType ) {
          case TYPE_int :
@@ -668,7 +671,7 @@ CMDshred2bats(BAT **res2mil, str location, str buffer, str opt)
 #define CHECK_BAT_SIZE(SB,I)    if ( ((off_t)(I)>=(SB)->size) && incrBATsize(SB,I)<0) return NATNIL; 
 
 static int incrBATsize(shredBAT* sb, nat i) {
-    off_t newsize = MAX(sb->size+MAX(MINCHUNK,sb->size/4),(off_t)i);
+    off_t maxsize = MAX(sb->size,i), newsize = maxsize+MAX(MINCHUNK,maxsize/4);
 
     /* first check if the number of BUN's < INT_MAX. If this was the case
      * and the previous time INT_MAX was returned this means the BAT cannot

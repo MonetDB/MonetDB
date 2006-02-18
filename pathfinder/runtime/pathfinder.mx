@@ -772,7 +772,7 @@ PROC add_doc_locked(str name, timestamp ts, int ws) : oid
     }
     if (not(isnil(doc_oid))) {
         var lim := bat("doc_timestamp").find(doc_oid);
-        if (not(isnil(lim))) { # a nil limit means the doc never exprires
+        if (not(isnil(lim))) { # a nil limit means the doc never expires
             if  (ts > lim) {
                 delete_doc_locked(doc_oid); # remove outdated document from the cache
                 return oid(nil);
@@ -788,7 +788,7 @@ PROC lifetime_doc_locked(str name, str filename, oid doc_oid, timestamp ts) : ti
     if (isnil(doc_oid) and isnil(filename)) {
         # for not-yet-cached URIs: get lifetime from uri_lifetime BAT
         var uri_lifetime := bat("uri_lifetime");
-        var b := [startsWith](filename, mirror(uri_lifetime)).uselect(true);
+        var b := [startsWith](name, mirror(uri_lifetime)).uselect(true);
         var lifetime := lng(nil);
         if (b.count() > 0) {
             var matchlen := [length](mirror(b));
@@ -807,6 +807,11 @@ PROC add_doc(BAT[void,bat] ws, str name) : int
     var t := time();
     var doc_oid := oid(nil);
     var ts := doc_curtime(filename);
+print("add_doc=======");
+print("name:");
+print(name);
+print("ts:");
+print(ts);
     var err;
 
     # always make sure not to cause errors while holding the lock
@@ -820,15 +825,21 @@ PROC add_doc(BAT[void,bat] ws, str name) : int
     var doCommit := true;
     var docid := str(nil);
     var height;
+print("doc_oid:");
+print(doc_oid);
 
     if (isnil(doc_oid)) {
         if (isnil(ts)) {
             doCommit := false;
             docid := "";
         }
+print("doCommit:");
+print(doCommit);
         height := shred_doc_impl(docBAT, name, name, doCommit, "0", ts, int(ws));
         time_shred :+= time() - t;
     }
+print("docid:");
+print(docid);
     if (isnil(docid)) {
         doc_oid := bat("doc_name").reverse().find(name);
         height := bat("doc_height").find(doc_oid);
@@ -1764,8 +1775,10 @@ xquery_module_load(xquery_client *ctx,
                 if (prev) prev->next = mod->next;
                 else ctx->loaded_modules = NULL;
                 break; /* put module at front of list */
+/* pf itself does not enforce this
             } else if (mod->nslen == nslen && strncmp(mod->ns, ns, nslen)) {
                 return "xquery_module_load: module already loaded under different namespace.\n";
+ */
             }
             return NULL;
         }
@@ -2264,37 +2277,32 @@ xquery_prepare(xquery_client *ctx,
                     if (*p == '=') {
                         p = xquery_parse_space(p+1);
                     } else {
-                        err = "xquery_prepare: expecting '=' after namespace declaration";
+                        return "xquery_prepare: expecting '=' after namespace declaration";
                     }
                 }
                 p = xquery_parse_string(p, url1, 256);
                 p = xquery_parse_space(p);
-                if (err == NULL && *p == 'a' && *(++p) == 't' && ISSPACE(p[1])) do {
+                if (*p == 'a' && *(++p) == 't' && ISSPACE(p[1])) do {
+                    char bak = *nsend;
                     loc = xquery_parse_space(p+1);
                     locend = xquery_parse_string(loc, url2, 256);
-                    if (strlen(url1) > strlen(url2) || strncmp(url1, url2, strlen(url1))) {
-                        err = "xquery_prepare: module namespace does not match import statement.\n";
-                    } else { 
-                        char bak = *nsend;
-                        p = xquery_parse_space(locend);
-                        /* cut off module import from the query, and load it here (to have it cached later) */
-                        *nsend = 0; 
-                        err = xquery_module_load(ctx, mode, ns, url2);
-                        *nsend = bak; 
-                    }
-                } while (*p == ',' && err == NULL);
+                    p = xquery_parse_space(locend);
+
+                    /* cut off module import from the query, and load it here (to have it cached later) */
+                    *nsend = 0; 
+                    err = xquery_module_load(ctx, mode, ns, url2);
+                    if (err) return err;
+                    *nsend = bak; 
+                } while (*p == ',');
             }
             if (*p != ';') {
-                err = "xquery_prepare: missing ';' after module import.\n";
+                return "xquery_prepare: missing ';' after module import.\n";
             } else {
                 loaded_modules++;
                 p++;
             }
         }
     }
-
-    /* some error has already been detected: query has failed already */
-    if (err) return err; 
 
     if (loaded_modules == 0) {
         err = (char*) -1; /* no module loaded: query not recognized as a function call */
