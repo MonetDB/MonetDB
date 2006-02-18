@@ -14,10 +14,16 @@ releases.
 @end menu
 
 @node SQL Preface, SQL Data Definition, SQL Language, SQL Language
-Todo explain notation espesialy the extra bits.
+We use the following notation to explain the supported variation SQL.
+The SQL syntax is summarized in extended BNF. Alternative constructs 
+are seperated by | and grouped by parenthesis. Optional parts are 
+marked with square brackets. A repetition is marked with either '+' 
+or '*' to indicate at least once and many times, respectively.
+Lexical tokens are illustrated in capitals.
 
-+ extra syntax
-- 2003 syntax but not supported
+Sometimes MonetDB/SQL supports extra syntax this is identified by a
+'+' before the clause. Unfortunately, we do not support the full
+SQL 2003 jet and this is specified by a '-' before the clause. 
 
 Currently we have partial support for SQL-2003. Features are added when 
 (enough) users express their interest in these.
@@ -161,6 +167,10 @@ be used.
 	+|	NEXT VALUE FOR <sequence name>
 @end verbatim
 
+For example an auto increment column can be created using the following
+column specification:
+	col_name integer default NEXT VALUE FOR sequence_name
+
 @node Column and Table Constraints 
 Column and Table constraints are supported. Besides the simple NOT NULL check
 also UNIQUE, PRIMARY and FOREIGN keys are supported. The limitation stems from
@@ -243,8 +253,33 @@ Specify a condition for the SQL-data.
 
 <check constraint definition> ::= CHECK <left paren> <search condition> <right paren>
 
---h3 11.10 <alter table statement> (p569)
---/h3
+
+@node CREATE VIEW
+
+
+<view definition> ::=
+                CREATE -[ RECURSIVE ] VIEW <table name> <view specification> AS <query expression>
+                [ WITH -[ <levels clause> ] CHECK OPTION ]
+
+<view specification> ::= <regular view specification> | <referenceable view specification>
+
+<regular view specification> ::= [ ( <view column list> ) ]
+
+-<referenceable view specification> ::= OF <path-resolved user-defined type name> [ <subview clause> ] [ <view element list> ]
+
+-<subview clause> ::= UNDER <table name>
+
+<view element list> ::= ( <view element> [ { , <view element> }... ] )
+
+<view element> ::= <self-referencing column specification> | <view column option>
+
+<view column option> ::= <column name> WITH OPTIONS -<scope clause>
+
+<levels clause> ::= CASCADED | LOCAL
+
+<view column list> ::= <column name list>
+
+
 
 @node SQL Data Types, SQL Data Manipulation, SQL Data Definition, SQL Language
 @subsection SQL Data Types
@@ -260,6 +295,7 @@ MonetDB/SQL supports the following list of types.
 @item SMALLINT				16 bit integer
 @item INT				32 bit integer
 @item BIGINT				64 bit integer
+@item serial				special 64 bit integer (sequence generator) 
 @item REAL				32 bit floating point
 @item DOUBLE [PRECISION]		64 bit floating point
 @item BOO[LEAN]
@@ -286,6 +322,5 @@ MonetDB/SQL supports the following list of types.
 @node SQL Transactions, MonetDB/SQL Features , SQL Users, SQL Language
 @subsection SQL Transactions
 
-For example an auto increment column can be created using the following
-column specification:
-	col_name integer default NEXT VALUE FOR sequence_name
+
+@node 
