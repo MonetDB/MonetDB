@@ -320,6 +320,9 @@ static oid get_pre(BAT *docBAT, int start_pre, int end_pre){
     static int first;   /* values of 'first' and 'kind' are stable */
 
     assert(start_pre > 0 && end_pre >= start_pre);
+#ifdef NDEBUG
+    (void) end_pre; /* pacify compiler */
+#endif
     
     first   = BUNindex(docBAT, BUNfirst(docBAT));
     (void)first;
