@@ -232,7 +232,7 @@ Specify a referential constraint.
 
 <referencing columns> ::= <reference column list>
 
-<referenced table and columns> ::= <table name> [ <left paren> <reference column list> <right paren> ]
+<referenced table and columns> ::= <table name> [ ( <reference column list> ) ]
 
 <reference column list> ::= <column name list>
 
@@ -251,7 +251,7 @@ Specify a referential constraint.
 Specify a condition for the SQL-data.
 --/p
 
-<check constraint definition> ::= CHECK <left paren> <search condition> <right paren>
+<check constraint definition> ::= CHECK ( <search condition> )
 
 
 @node CREATE VIEW
