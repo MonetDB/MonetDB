@@ -1,0 +1,83 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' All Rights Reserved.
+
+@f mal_crack
+@a S.Idreos
+
+
+@h
+#ifndef _MAL_CRACK_
+#define _MAL_CRACK_
+#include "mal_optimizer.h"
+
+#define DEBUG_MAL_CRACK
+
+opt_export str CRKoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+#define match(X,M,F) ( (X) && functionId(X) && strcmp(functionId(X),F)==0 && \
+	moduleId(X) && strcmp(moduleId(X),M)==0)
+#endif
+
+@c  
+#include "mal_crack.h"
+#include "mal_namespace.h"
+#include "mal_interpreter.h"	/* for showErrors() */
+
+/* find all algebra select structions in a mal block mb and change them to the corresponding crackers command
+   TODO: make the change only if the first argument in select is a base relation */
+str
+CRKoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	InstrPtr p, *old;
+	int i, limit;
+
+	lng clk = GDKusec();
+
+	if( mb->errors) 
+		return MAL_SUCCEED;
+
+#ifdef DEBUG_MAL_CRACK
+	printf("Crack optimizer started\n");
+#endif
+	(void) stk;
+	(void) pci;
+	
+	setLifespan(mb);
+	limit = mb->stop;
+	old = mb->stmt;
+	
+	for (i = 0; i < limit; i++) {
+		p = old[i];
+#ifdef DEBUG_MAL_CRACK
+		printf("limit is at: %d and i is at: %d  ", limit, i);
+	        printInstruction(GDKout, mb, p, LIST_MAL_ALL);	
+#endif
+		/* find and replace algebra select commands with crack select ones*/
+		if (match(p, "algebra", "select")){
+#ifdef DEBUG_MAL_CRACK
+			printf("\n found one at %d \n", i);
+#endif
+	                setModuleId(p,putName("crackers",8));
+			setFunctionId(p,putName("crackTwoScans",13));
+			}
+		if (match(p, "optimizer", "crack")) removeInstruction(mb, p);
+
+	}
+	optimizerCheck(mb, "mal.crack", 1, GDKusec() - clk);	
+	return MAL_SUCCEED;
+}
+
