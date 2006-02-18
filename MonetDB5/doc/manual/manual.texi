@@ -119,11 +119,15 @@ Last updated: @value{UPDATED}
 @node SQL, Getting Started with SQL, Server Roadmap, Top
 @include Assets/SQLoverview.texi
 
-@node The VOC Tutorial, SQL Feature Overview, Getting Started with SQL, SQL
+@node The VOC Tutorial, SQL Language, Getting Started with SQL, SQL
 @include Assets/VOCtutorial.texi
 
-@node SQL Feature Overview, SQL Feature List, The VOC Tutorial, SQL
+@node SQL Language, SQL Preface, The VOC Tutorial, SQL
+@include Assets/SQLlanguage.texi
+
+@node MonetDB/SQL Features, Feature List, SQL Transactions, SQL
 @include Assets/SQLfeatures.texi
+
 @node XQuery, User Interfaces, Overlaying the BAT storage, Top
 @include Assets/XQueryOverview.texi
 
@@ -216,15 +220,18 @@ Last updated: @value{UPDATED}
 @node Advanced Topics , Appendices, MonetDB BAT Kernel , Top
 This is the place to describe Membedded, distribution stuff...
 
-@node Appendices, MAL Syntax , Advanced Topics, Top
+@node Appendices, SQL 1999 Features , Advanced Topics, Top
 @menu
+* SQL 1999 Features::
 * MAL Syntax ::
 * Conversion of MIL Programs::
 * MAL Instruction Overview::
 * MAL Instruction Help::
 @end menu
 
-@node MAL Syntax, Conversion of MIL Programs, Appendices, Appendices
+@node SQL 1999 Features, MAL Syntax, Appendices, Appendices
+@include Assets/SQL1999.texi
+@node MAL Syntax, Conversion of MIL Programs, SQL 1999 Features, Appendices
 @ifnottex
 @include mal_syntax.bdy.texi
 @end ifnottex

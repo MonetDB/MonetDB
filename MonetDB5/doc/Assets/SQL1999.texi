@@ -1,211 +1,538 @@
+@appendix SQL 1999 Features
+The table below illustrates the features supported (+) and not
+supported (-) in the MonetDB/SQL distribution.
+Beware, some of the features are technically impossible to
+support without major code changes or excessive performance
+consequences.
 
 
-(N not supported)
-(S supported)
+@multitable @columnfractions .15 .75 .10 @verb @verb @verb
+@item Feature ID  
+@tab Feature name  
+@tab S/- 
 
-Feature ID 	Feature name 	
+@item B011-B017 
+@tab Embedded Language support. Core SQL:1999 says that at least one of Embedded Ada, Embedded C, Embedded Cobol, Embedded Fortran, Embedded MUMPS, Embedded Pascal or Embedded PL/I 1 should be supported.
+@tab N
 
-B011-B017 	Embedded Language support. Core SQL:1999 says that at least one of Embedded Ada, Embedded C, Embedded Cobol, Embedded Fortran, Embedded MUMPS, Embedded Pascal or Embedded PL/I 1 should be supported. 	 	N
-
-
-E011 	Numeric data types 	S (FULL)
-E011-01 	INTEGER and SMELLIEST data types (including all spellings)	S
-E011-02 	REAL, DOUBLE PRECISON, and FLOAT data types 	S
-E011-03 	DECIMAL and NUMERIC data types 		S
-E011-04 	Arithmetic operators	S
-E011-05 	Numeric comparison	S
-E011-06 	Implicit casting among the numeric data types	S
-
-E021 	Character data types	S (PARTIAL)
-E021-01 	CHARACTER data type (including all its spellings)	S
-E021-02 	CHARACTER VARYING data type (including all its spellings) S	x 	x 	x
-E021-03 	Character literals	S
-E021-04 	CHARACTER_LENGTH function	S
-E021-05 	OCTET_LENGTH function 	N (TODO!!!)	  	 
-E021-06 	SUBSTRING function 	S  	 
-E021-07 	Character concatenation	S
-E021-08 	UPPER and LOWER functions	S
-E021-09 	TRIM function	S
-E021-10 	Implicit casting among the character data types	S
-E021-11 	POSITION function	N (TODO!!!)
-E021-12 	Character comparison	S
-
-E031 	Identifiers	S (FULL)
-E031-01 	Delimited identifiers	S
-E031-02 	Lower case identifiers	S
-E031-03 	Trailing underscore	S 
-
-E051 	Basic query specification	S (FULL)
-E051-01 	SELECT DISTINCT	S
-E051-02 	GROUP BY clause	S
-E051-04 	GROUP BY can contain columns not in select-list	S
-E051-05 	Select list items can be renamed	S
-E051-06 	HAVING clause	S
-E051-07 	Qualified * in select list	S
-E051-08 	Correlation names in the FROM clause	S
-E051-09 	Rename columns in the FROM clause	S
-
-E061 	Basic predicates and search conditions	S (FULL)
-E061-01 	Comparison predicate	S
-E061-02 	BETWEEN predicate	S
-E061-03 	IN predicate with list of values	S
-E061-04 	LIKE predicate	S
-E061-05 	LIKE predicate: ESCAPE clause	S
-E061-06 	NULL predicate	S
-E061-07 	Quantified comparison predicate	S
-E061-08 	EXISTS predicate	S
-E061-09 	Subqueries in comparison predicate	S
-E061-11 	Subqueries in IN predicate	S
-E061-12 	Subqueries in quantified comparison predicate	S
-E061-13 	Correlated subqueries	S
-E061-14 	Search condition	S
-
-E071 	Basic query expressions	S (FULL)	  	  	  	 
-E071-01 	UNION DISTINCT table operator	S
-E071-02 	UNION ALL table operator	S
-E071-03 	EXCEPT DISTINCT table operator	S 	  	 
-E071-05 	Columns combined via table operators need not have exactly the same data type	S
-E071-06 	Table operators in subqueries	S 
-
-E081 	Basic Privileges	S
-E081-01 	SELECT privilege at the table level	S
-E081-02 	DELETE privilege	S
-E081-03 	INSERT privilege at the table level	S
-E081-04 	UPDATE privilege at the table level	S
-E081-05 	UPDATE privilege at the column level	S
-E081-06 	REFERENCES privilege at the table level 	N (not checked? needs work)
-E081-07 	REFERENCES privilege at the column level 	N (not checked? needs work)
-E081-08 	WITH GRANT OPTION	S
-E081-09 	USAGE privilege	N
-E081-10 	EXECUTE privilege	N (Not checked)
-
-E091 	Set functions	S (FULL)
-E091-01 	AVG	S 
-E091-02 	COUNT	S
-E091-03 	MAX 	S
-E091-04 	MIN	S
-E091-05 	SUM	S
-E091-06 	ALL quantifier	S
-E091-07 	DISTINCT quantifier	S
-
-E101 	Basic data manipulation 	S (FULL)
-E101-01 	INSERT statement	S
-E101-03 	Searched UPDATE statement	S
-E101-04 	Searched DELETE statement 	S
-
-E111 	Single row SELECT statement	S
-
-E121 	Basic cursor support 	N (Cursors are not supported, no change in ..)
-E121-01 	DECLARE CURSOR 	
-E121-02 	ORDER BY columns need not be in select list	S  
-E121-03 	Value expressions in ORDER BY clause	N (should be checked)
-E121-04 	OPEN statement 		N
-E121-06 	Positioned UPDATE statement	N
-E121-07 	Positioned DELETE statement	N
-E121-08 	CLOSE statement	N
-E121-10 	FETCH statement: implicit NEXT	N
-E121-17 	WITH HOLD cursors	N
-
-E131 	Null value support (nulls in lieu of values) S
-E141 	Basic integrity constraints 	S
-E141-01 	NOT NULL constraints	S
-E141-02 	UNIQUE constraints of NOT NULL columns	S
-E141-03 	PRIMARY KEY constraints	S
-E141-04 	Basic FOREIGN KEY constraint with the NO ACTION default	S
-E141-06 	CHECK constraints	N
-E141-07 	Column defaults		N
-E141-08 	NOT NULL inferred on PRIMARY KEY	N
-E141-10 	Names in a foreign key can be specified in any order N (columns should be in the proper order)
-
-E151 	Transaction support	S
-E151-01 	COMMIT statement	S
-E151-02 	ROLLBACK statement	S
-E152 	Basic SET TRANSACTION statement 	S
-E152-01 	SET TRANSACTION statement: ISOLATION LEVEL SERIALIZABLE clause	S
-E152-02 	SET TRANSACTION statement: READ ONLY and READ WRITE clauses	N
-
-E153 	Updatable queries with subqueries	S
-E161 	SQL comments using leading double minus S
-E171 	SQLSTATE support	N
-F021 	Basic information schema	N
-F021-01 	COLUMNS view 		
-F021-02 	TABLES view 
-F021-03 	VIEWS view 
-F021-04 	TABLE_CONSTRAINTS view
-F021-05 	REFERENTIAL_CONSTRAINTS view
-F021-06 	CHECK_CONSTRAINTS view 
-
-F031 	Basic schema manipulation 	S
-F031-01 	CREATE TABLE statement to create persistent base tables	S
-F031-02 	CREATE VIEW statement	S
-F031-03 	GRANT statement	S
-F031-04 	ALTER TABLE statement: ADD COLUMN clause	S
-F031-13 	DROP TABLE statement: RESTRICT clause	S
-F031-16 	DROP VIEW statement: RESTRICT clause 	S
-F031-19 	REVOKE statement: RESTRICT clause	S
-
-F041 	Basic joined table 	S
-F041-01 	Inner join (but not necessarily the INNER keyword)	S
-F041-02 	INNER keyword	S
-F041-03 	LEFT OUTER JOIN 	S
-F041-04 	RIGHT OUTER JOIN	S
-F041-05 	Outer joins can be nested	S
-F041-07 	The inner table in a left or right outer join can also be used in an inner join 	S
-F041-08 	All comparison operators are supported (rather than just =)	S
-
-F051 	Basic date and time	S
-F051-01 	DATE data type (including DATE literal)	S
-F051-02 	TIME data type (including TIME literal) with fractional seconds precision of 0	S
-F051-03 	TIMESTAMP data type (including TIMESTAMP literal) with fractional seconds precision of 0 and 6	S
-F051-04 	Comparison predicate on DATE, TIME, and TIMESTAMP data types	S
-F051-05 	Explicit CAST between datetime types and character types	S
-F051-06 	CURRENT_DATE	S
-F051-07 	LOCALTIME	S
-F051-08 	LOCALTIMESTAMP	S
-
-F081 	UNION and EXCEPT in views	S
-
-F131 	Grouped operations	S
-F131-01 	WHERE, GROUP BY, and HAVING clauses supported in queries with grouped views	S (could use a test!)
-F131-02 	Multiple tables supported in queries with grouped views	S
-F131-03 	Set functions supported in queries with grouped views	S
-F131-04 	Subqueries with GROUP BY and HAVING clauses and grouped views	S
-F131-05 	Single row SELECT with GROUP BY and HAVING clauses and grouped views	S
-
-F181 	Multiple module support	N (limited support)
-
-F201 	CAST function	S
-F221 	Explicit defaults	S
-F261 	CASE expression 	S
-F261-01 	Simple CASE 		S
-F261-02 	Searched CASE 		N
-F261_03 	NULLIF 	S
-F261-04 	COALESCE	S
-
-F311 	Schema definition statement 	S
-F311-01 	CREATE SCHEMA 	S
-F311-02 	CREATE TABLE for persistent base tables	S
-F311-03 	CREATE VIEW 	S
-F311-04 	CREATE VIEW: WITH CHECK OPTION 	N
-F311-05 	GRANT statement	S
-
-F471 	Scalar subquery values 	S
-F481 	Expanded NULL predicate S
-
-F501 	Features and conformance views 	N
-F501-01 	SQL_FEATURES view 	
-F501-02 	SQL_SIZING view 
-F501-03 	SQL_LANGUAGES view
-
-F812 	Basic flagging 		N 	  	  	 
-S011 	Distinct data types	S
-S011-01 	USER_DEFINED_TYPES view	N
-
-T321 	Basic SQL-invoked routines	N
-T321-01 	User-defined functions with no overloading	N
-T321-02 	User-defined stored procedures with no overloading	N
-T321-03 	Function invocation	N
-T321-04 	CALL statement 	N
-T321-05 	RETURN statement	N
-T321-06 	ROUTINES view	N
-T321-07 	PARAMETERS view 	N
+@item E011  
+@tab Numeric data types (FULL support)
+@tab S
+@item E011-01  
+@tab INTEGER and SMELLIEST data types (including all spellings) 
+@tab S
+@item E011-02  
+@tab REAL, DOUBLE PRECISON, and FLOAT data types  
+@tab S
+@item E011-03  
+@tab DECIMAL and NUMERIC data types  
+@tab S
+@item E011-04  
+@tab Arithmetic operators 
+@tab S
+@item E011-05  
+@tab Numeric comparison 
+@tab S
+@item E011-06  
+@tab Implicit casting among the numeric data types 
+@tab S
+@item E021  
+@tab Character data types 
+@tab S(PARTIAL support)
+@item E021-01  
+@tab CHARACTER data type (including all its spellings) 
+@tab S
+@item E021-02  
+@tab CHARACTER VARYING data type (including all its spellings) 
+@tab S  
+@item E021-03  
+@tab Character literals 
+@item E021-04  
+@tab S
+@tab CHARACTER_LENGTH function 
+@item E021-05  
+@tab OCTET_LENGTH function  
+@tab N (TODO!!!) 
+@item E021-06  
+@tab SUBSTRING function  
+@tab S   
+@item E021-07  
+@tab Character concatenation 
+@tab S
+@item E021-08  
+@tab UPPER and LOWER functions 
+@tab S
+@item E021-09  
+@tab TRIM function 
+@tab S
+@item E021-10  
+@tab Implicit casting among the character data types 
+@tab S
+@item E021-11  
+@tab POSITION function 
+@tab N (TODO!!!)
+@item E021-12  
+@tab Character comparison 
+@tab S
+@item E031  
+@tab Identifiers (FULL support)
+@tab S 
+@item E031-01  
+@tab Delimited identifiers 
+@tab S
+@item E031-02  
+@tab Lower case identifiers 
+@tab S
+@item E031-03  
+@tab Trailing underscore 
+@tab S 
+@item E051  
+@tab S 
+@tab Basic query specification (FULL support)
+@item E051-01  
+@tab SELECT DISTINCT 
+@tab S
+@item E051-02  
+@tab GROUP BY clause 
+@tab S
+@item E051-04  
+@tab GROUP BY can contain columns not in select-list 
+@tab S
+@item E051-05  
+@tab Select list items can be renamed 
+@tab S
+@item E051-06  
+@tab HAVING clause 
+@tab S
+@item E051-07  
+@tab Qualified * in select list 
+@tab S
+@item E051-08  
+@tab Correlation names in the FROM clause 
+@tab S
+@item E051-09  
+@tab Rename columns in the FROM clause 
+@tab S
+@item E061  
+@tab Basic predicates and search conditions (FULL support)
+@tab S
+@item E061-01  
+@tab Comparison predicate 
+@tab S
+@item E061-02  
+@tab BETWEEN predicate 
+@tab S
+@item E061-03  
+@tab IN predicate with list of values 
+@tab S
+@item  E061-04  
+@tab LIKE predicate 
+@tab S
+@item E061-05  
+@tab LIKE predicate: ESCAPE clause 
+@tab S
+@item E061-06  
+@tab NULL predicate 
+@tab S
+@item E061-07  
+@tab Quantified comparison predicate 
+@tab S
+@item E061-08  
+@tab EXISTS predicate 
+@tab S
+@item E061-09  
+@tab Subqueries in comparison predicate 
+@tab S
+@item E061-11  
+@tab Subqueries in IN predicate 
+@tab S
+@item E061-12  
+@tab Subqueries in quantified comparison predicate 
+@tab S
+@item E061-13  
+@tab Correlated subqueries 
+@tab S
+@item E061-14  
+@tab Search condition 
+@tab S
+@item E071  
+@tab Basic query expressions 
+@tab S (FULL support) 
+@item E071-01  
+@tab UNION DISTINCT table operator 
+@tab S
+@item E071-02  
+@tab UNION ALL table operator 
+@tab S
+@item E071-03  
+@tab EXCEPT DISTINCT table operator 
+@tab S  
+@item E071-05  
+@tab Columns combined via table operators need not have exactly the same data type 
+@tab S
+@item E071-06  
+@tab Table operators in subqueries 
+@tab S 
+@item E081  
+@tab S
+@tab Basic Privileges
+@item E081-01  
+@tab SELECT privilege at the table level 
+@tab S
+@item E081-02  
+@tab DELETE privilege 
+@tab S
+@item E081-03  
+@tab INSERT privilege at the table level 
+@tab S
+@item  E081-04  
+@tab UPDATE privilege at the table level 
+@tab S
+@item E081-05  
+@tab UPDATE privilege at the column level 
+@tab S
+@item  E081-06  
+@tab REFERENCES privilege at the table level  
+@tab N (not checked? needs work)
+@item E081-07  
+@tab REFERENCES privilege at the column level  
+@tab N (not checked? needs work)
+@item E081-08  
+@tab WITH GRANT OPTION 
+@tab S
+@item E081-09  
+@tab USAGE privilege 
+@tab N
+@item E081-10  
+@tab EXECUTE privilege 
+@tab N (Not checked)
+@item E091  
+@tab Set functions (FULL support)
+@tab S
+@item E091-01  
+@tab AVG 
+@tab S 
+@item E091-02  
+@tab COUNT 
+@tab S
+@item E091-03  
+@tab MAX  
+@tab S
+@item E091-04  
+@tab MIN 
+@tab S
+@item E091-05  
+@tab SUM 
+@tab S
+@item E091-06  
+@tab ALL quantifier 
+@tab S
+@item E091-07  
+@tab DISTINCT quantifier 
+@tab S
+@item E101  
+@tab S
+@tab Basic data manipulation (FULL support)
+@item E101-01  
+@tab INSERT statement 
+@tab S
+@item E101-03  
+@tab Searched UPDATE statement 
+@tab S
+@item E101-04  
+@tab Searched DELETE statement  
+@tab S
+@item E111  
+@tab S
+@tab Single row SELECT statement
+@item E121  
+@tab Basic cursor support  
+@tab N (Cursors are not supported, no change in ..)
+@item E121-01  
+@tab DECLARE CURSOR  
+@tab 
+@item E121-02  
+@tab ORDER BY columns need not be in select list 
+@tab S  
+@item E121-03  
+@tab Value expressions in ORDER BY clause 
+@tab N (should be checked)
+@item E121-04  
+@tab OPEN statement  
+@tab N
+@item E121-06  
+@tab Positioned UPDATE statement 
+@tab N
+@item E121-07  
+@tab Positioned DELETE statement 
+@tab N
+@item E121-08  
+@tab CLOSE statement 
+@tab N
+@item E121-10  
+@tab FETCH statement: implicit NEXT 
+@tab N
+@item E121-17  
+@tab WITH HOLD cursors 
+@tab N
+@item E131  
+@tab Null value support (nulls in lieu of values)
+@tab S
+@item E141  
+@tab Basic integrity constraints  
+@tab S
+@item E141-01  
+@tab NOT NULL constraints 
+@tab S
+@item E141-02  
+@tab UNIQUE constraints of NOT NULL columns 
+@tab S
+@item E141-03  
+@tab PRIMARY KEY constraints 
+@tab S
+@item E141-04  
+@tab Basic FOREIGN KEY constraint with the NO ACTION default 
+@tab S
+@item E141-06  
+@tab CHECK constraints 
+@tab N
+@item E141-07  
+@tab Column defaults 
+@tab N
+@item E141-08  
+@tab NOT NULL inferred on PRIMARY KEY 
+@tab N
+@item E141-10  
+@tab Names in a foreign key can be specified in any order (columns should be in the proper order)
+@tab N
+@item E151  
+@tab Transaction support 
+@tab S
+@item E151-01  
+@tab COMMIT statement 
+@tab S
+@item E151-02  
+@tab ROLLBACK statement 
+@tab S
+@item E152  
+@tab Basic SET TRANSACTION statement  
+@tab S
+@item E152-01  
+@tab SET TRANSACTION statement: ISOLATION LEVEL SERIALIZABLE clause 
+@tab S
+@item E152-02  
+@tab SET TRANSACTION statement: READ ONLY and READ WRITE clauses 
+@tab N
+@item E153  
+@tab Updatable queries with subqueries 
+@tab S
+@item E161  
+@tab SQL comments using leading double minus 
+@tab S
+@item E171  
+@tab SQLSTATE support 
+@tab N
+@item F021  
+@tab Basic information schema 
+@tab N
+@item F021-01  
+@tab COLUMNS view  
+@tab 
+@item F021-02  
+@tab TABLES view 
+@item F021-03  
+@tab VIEWS view 
+@item F021-04  
+@tab TABLE_CONSTRAINTS view
+@item F021-05  
+@tab REFERENTIAL_CONSTRAINTS view
+@item F021-06  
+@tab CHECK_CONSTRAINTS view 
+@item F031  
+@tab Basic schema manipulation  
+@tab S
+@item F031-01  
+@tab CREATE TABLE statement to create persistent base tables 
+@tab S
+@item F031-02  
+@tab CREATE VIEW statement 
+@tab S
+@item F031-03  
+@tab GRANT statement 
+@tab S
+@item F031-04  
+@tab ALTER TABLE statement: ADD COLUMN clause 
+@tab S
+@item F031-13  
+@tab DROP TABLE statement: RESTRICT clause 
+@tab S
+@item F031-16  
+@tab DROP VIEW statement: RESTRICT clause  
+@tab S
+@item F031-19  
+@tab REVOKE statement: RESTRICT clause 
+@tab S
+@item F041  
+@tab Basic joined table 
+@tab S
+@item F041-01  
+@tab Inner join (but not necessarily the INNER keyword) 
+@tab S
+@item F041-02  
+@tab INNER keyword 
+@tab S
+@item F041-03  
+@tab LEFT OUTER JOIN  
+@tab S
+@item F041-04  
+@tab RIGHT OUTER JOIN 
+@tab S
+@item F041-05  
+@tab Outer joins can be nested 
+@tab S
+@item F041-07  
+@tab The inner table in a left or right outer join can also be used in an inner join  
+@tab S
+@item F041-08  
+@tab All comparison operators are supported (rather than just =) 
+@tab S
+@item F051  
+@tab Basic date and time
+@tab S
+@item F051-01  
+@tab DATE data type (including DATE literal) 
+@tab S
+@item F051-02  
+@tab TIME data type (including TIME literal) with fractional seconds precision of 0 
+@tab S
+@item F051-03  
+@tab TIMESTAMP data type (including TIMESTAMP literal) with fractional seconds precision of 0 and 6 
+@tab S
+@item F051-04  
+@tab Comparison predicate on DATE, TIME, and TIMESTAMP data types 
+@tab S
+@item F051-05  
+@tab Explicit CAST between datetime types and character types 
+@tab S
+@item F051-06  
+@tab CURRENT_DATE 
+@tab S
+@item F051-07  
+@tab LOCALTIME 
+@tab S
+@item F051-08  
+@tab LOCALTIMESTAMP 
+@tab S
+@item F081  
+@tab UNION and EXCEPT in views 
+@tab S
+@item F131  
+@tab Grouped operations 
+@tab S
+@item F131-01  
+@tab WHERE, GROUP BY, and HAVING clauses supported in queries with grouped views 
+@tab S (could use a test!)
+@item F131-02  
+@tab Multiple tables supported in queries with grouped views 
+@tab S
+@item F131-03  
+@tab Set functions supported in queries with grouped views 
+@tab S
+@item F131-04  
+@tab Subqueries with GROUP BY and HAVING clauses and grouped views 
+@tab S
+@item F131-05  
+@tab Single row SELECT with GROUP BY and HAVING clauses and grouped views 
+@tab S
+@item F181  
+@tab Multiple module support 
+@tab N (limited support)
+@item F201  
+@tab CAST function 
+@tab S
+@item F221  
+@tab Explicit defaults 
+@tab S
+@item F261  
+@tab CASE expression  
+@tab S
+@item F261-01  
+@tab Simple CASE  
+@tab S
+@item F261-02  
+@tab Searched CASE  
+@tab N
+@item F261_03  
+@tab NULLIF  
+@tab S
+@item F261-04  
+@tab COALESCE 
+@tab S
+@item F311  
+@tab Schema definition statement  
+@tab S
+@item F311-01  
+@tab CREATE SCHEMA  
+@tab S
+@item F311-02  
+@tab CREATE TABLE for persistent base tables 
+@tab S
+@item F311-03  
+@tab CREATE VIEW  
+@tab S
+@item F311-04  
+@tab CREATE VIEW: WITH CHECK OPTION  
+@tab N
+@item F311-05  
+@tab GRANT statement 
+@tab S
+@item F471  
+@tab Scalar subquery values  
+@tab S
+@item F481  
+@tab Expanded NULL predicate 
+@tab S
+@item F501  
+@tab Features and conformance views  
+@tab N
+@item F501-01  
+@tab SQL_FEATURES view  
+@tab 
+@item F501-02  
+@tab SQL_SIZING view 
+@item F501-03  
+@tab SQL_LANGUAGES view
+@item F812  
+@tab Basic flagging  
+@tab N  
+@item S011  
+@tab Distinct data types 
+@tab S
+@item S011-01  
+@tab USER_DEFINED_TYPES view 
+@tab N
+@item T321  
+@tab Basic SQL-invoked routines 
+@tab N
+@item T321-01  
+@tab User-defined functions with no overloading 
+@tab N
+@item T321-02  
+@tab User-defined stored procedures with no overloading 
+@tab N
+@item T321-03  
+@tab Function invocation 
+@tab N
+@item T321-04  
+@tab CALL statement  
+@tab N
+@item T321-05  
+@tab RETURN statement 
+@tab N
+@item T321-06  
+@tab ROUTINES view 
+@tab N
+@item T321-07  
+@tab PARAMETERS view  
+@tab N
+@end multitable

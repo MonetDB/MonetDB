@@ -1,4 +1,3 @@
-@node SQL Language, SQL Preface, , SQL Overview
 @section SQL Language 
 The MonetDB/SQL language follows the SQL-2003 specification. This section
 introduces the language components supported in the current and upcoming
@@ -14,7 +13,7 @@ releases.
 * SQL Transactions::
 @end menu
 
-@node SQL Preface, SQL Data Definition, , SQL Language
+@node SQL Preface, SQL Data Definition, SQL Language , SQL Language
 @subsection SQL Preface
 We use the following notation to explain the supported variation SQL.
 The SQL syntax is summarized in extended BNF. Alternative constructs 
@@ -268,12 +267,9 @@ Specify a condition for the SQL-data.
 <check constraint definition> ::= CHECK ( <search condition> )
 
 @end verbatim
-
-
 @subsubsection CREATE VIEW
 
 @verbatim
-
 <view definition> ::=
                 CREATE -[ RECURSIVE ] VIEW <table name> <view specification> AS <query expression>
                 [ WITH -[ <levels clause> ] CHECK OPTION ]
@@ -347,6 +343,3 @@ MonetDB/SQL supports the following list of types.
 
 @node SQL Transactions, MonetDB/SQL Features, SQL Users, SQL Language
 @subsection SQL Transactions
-
-
-@node 
