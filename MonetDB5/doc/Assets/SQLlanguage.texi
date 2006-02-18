@@ -33,6 +33,8 @@ They will be supported in a future release.
 @item 
 Domains
 @item 
+Collate 
+@item 
 Character sets
 @item 
 SQL User Defined Types 
@@ -109,31 +111,14 @@ statement to change options.
 -<as subquery clause> ::= [ ( <column name list> ) ] AS <subquery> <with or without data>
 
 -<with or without data> ::= WITH NO DATA | WITH DATA
-
 	
---h3 11.4 <column definition> (p534)
---/h3
+@node columns
 
---p
-Define a column of a base table.
---/p
 
 <column definition> ::=
-                <column name> [ <data type> | <domain name> ] [ <reference scope check> ]
-                [ <default clause> | <identity column specification> | <generation clause> ]
-                [ <column constraint definition>... ] [ <collate clause> ]
-
-<column constraint definition> ::= [ <constraint name definition> ] <column constraint> [ <constraint characteristics> ]
-
-<column constraint> ::=
-                NOT NULL
-        |       <unique specification>
-        |       <references specification>
-        |       <check constraint definition>
-
-<reference scope check> ::= REFERENCES ARE [ NOT ] CHECKED [ ON DELETE <reference scope check action> ]
-
-<reference scope check action> ::= <referential action>
+                <column name> [ <data type> | -<domain name> ] [ -<reference scope check> ]
+                [ <default clause> | <identity column specification> | -<generation clause> ]
+                [ <column constraint definition>... ] [ -<collate clause> ]
 
 @node Identity column
 SQL 2003 added identity columns, which are columns for which the values are
@@ -176,6 +161,91 @@ be used.
         |       NULL
 	+|	NEXT VALUE FOR <sequence name>
 @end verbatim
+
+@node Column and Table Constraints 
+Column and Table constraints are supported. Besides the simple NOT NULL check
+also UNIQUE, PRIMARY and FOREIGN keys are supported. The limitation stems from
+the missing triggers, ie we currently check constraints directly on insert, 
+update and delete. The NULL matching on foreign keys is limited to the SIMPLE
+MATCH type (NULL values statisfy the constraint). The FULL and PARTIAL MATCH
+types are not supported. The referential action is currently limited to 
+RESTRICT, ie an update fails if a other columns have references to it. 
+
+<column constraint definition> ::= [ <constraint name definition> ] <column constraint> [ <constraint characteristics> ]
+
+<column constraint> ::=
+                NOT NULL
+        |       <unique specification>
+        |       <references specification>
+        -|       <check constraint definition>
+
+% we need to update to the new 2003 syntax soon...
+
+<reference scope check> ::= REFERENCES ARE [ NOT ] CHECKED [ ON DELETE <reference scope check action> ]
+
+<reference scope check action> ::= <referential action>
+
+--h3 11.6 <table constraint definition> (p543)
+--/h3
+
+--p 
+Specify an integrity constraint.
+--/p
+
+<table constraint definition> ::= [ <constraint name definition> ] <table constraint> [ <constraint characteristics> ]
+
+<table constraint> ::=
+		<unique constraint definition>
+	|	<referential constraint definition>
+	|	<check constraint definition>
+
+
+<unique constraint definition> ::=
+		<unique specification> ( <unique column list> )
+	-|	UNIQUE ( VALUE )
+
+<unique specification> ::= UNIQUE | PRIMARY KEY
+
+<unique column list> ::= <column name list>
+
+--h3 11.8 <referential constraint definition> (p547)
+--/h3
+
+--p 
+Specify a referential constraint.
+--/p
+
+<referential constraint definition> ::= FOREIGN KEY ( <referencing columns> ) <references specification>
+
+<references specification> ::= REFERENCES <referenced table and columns> [ MATCH <match type> ] [ <referential triggered action> ]
+
+<match type> ::= FULL | PARTIAL | SIMPLE
+
+<referencing columns> ::= <reference column list>
+
+<referenced table and columns> ::= <table name> [ <left paren> <reference column list> <right paren> ]
+
+<reference column list> ::= <column name list>
+
+<referential triggered action> ::= <update rule> [ <delete rule> ] | <delete rule> [ <update rule> ]
+
+<update rule> ::= ON UPDATE <referential action>
+
+<delete rule> ::= ON DELETE <referential action>
+
+<referential action> ::= CASCADE | SET NULL | SET DEFAULT | RESTRICT | NO ACTION
+
+--h3 11.9 <check constraint definition> (p567)
+--/h3
+
+--p 
+Specify a condition for the SQL-data.
+--/p
+
+<check constraint definition> ::= CHECK <left paren> <search condition> <right paren>
+
+--h3 11.10 <alter table statement> (p569)
+--/h3
 
 @node SQL Data Types, SQL Data Manipulation, SQL Data Definition, SQL Language
 @subsection SQL Data Types
