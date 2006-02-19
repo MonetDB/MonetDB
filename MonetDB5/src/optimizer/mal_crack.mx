@@ -28,17 +28,19 @@
 
 opt_export str CRKoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-#define match(X,M,F) ( (X) && getFunctionId(X) && strcmp(getFunctionId(X),F)==0 && \
-	getModuleId(X) && strcmp(getModuleId(X),M)==0)
 #endif
+
 
 @c  
 #include "mal_crack.h"
 #include "mal_namespace.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 
+#define match(X,M,F) ( (X) && getFunctionId(X) && strcmp(getFunctionId(X),F)==0 && \
+	getModuleId(X) && strcmp(getModuleId(X),M)==0)
+
 /* find all algebra select structions in a mal block mb and change them to the corresponding crackers command
-   TODO: make the change only if the first argument in select is a base relation */
+    */
 str
 CRKoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -56,7 +58,6 @@ CRKoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 	
-	setLifespan(mb);
 	limit = mb->stop;
 	old = mb->stmt;
 	
@@ -67,17 +68,32 @@ CRKoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	        printInstruction(GDKout, mb, p, LIST_MAL_ALL);	
 #endif
 		/* find and replace algebra select commands with crack select ones*/
-		if (match(p, "algebra", "select")){
+
+		if (match(p, "sql", "bind")){  /* add a property can be cracked to every base relation */
+        		if (mb->var[getArg(p,0)]->props == 0)
+                		mb->var[getArg(p,0)]->props = newPropertySet();
+			setProperty(mb->var[getArg(p,0)]->props,"CanBeCracked","=", TYPE_int, &i);
+		}
+		if (match(p, "algebra", "select")){ /* replace the algebra select with the crackers instruction iff the operation is on a base relation */
+
 #ifdef DEBUG_MAL_CRACK
 			printf("\n found one at %d \n", i);
 #endif
-	                setModuleId(p,putName("crackers",8));
-			setFunctionId(p,putName("crackTwoScans",13));
+			if(fndProperty(mb->var[getArg(p,1)]->props,"CanBeCracked")){
+
+#ifdef DEBUG_MAL_CRACK
+				printf("property value is: %d",* (int*) getPropertyValue(mb->var[getArg(p,1)]->props,"CanBeCracked"));
+#endif
+	        	        setModuleId(p,putName("crackers",8));
+				setFunctionId(p,putName("crackTwoScans",13));
 			}
+#ifdef DEBUG_MAL_CRACK
+			else printf("did not do the replacement\n");
+#endif
+		}
 		if (match(p, "optimizer", "crack")) removeInstruction(mb, p);
 
 	}
 	optimizerCheck(mb, "mal.crack", 1, GDKusec() - clk);	
 	return MAL_SUCCEED;
 }
-
