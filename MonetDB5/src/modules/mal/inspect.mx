@@ -841,8 +841,20 @@ MANUALcompletion(int *ret, str *text)
 str
 MANUALhelp(int *ret, str *text)
 {
+	char **msg;
+	int i;
+
 	(void) ret;		/* fool compiler */
-	dumpHelpTable(GDKout, getClient()->nspace, *text,0);
+	msg= getHelp(getClient()->nspace,*text,1);
+	if( msg && msg[0] ){
+		for(i=0; msg[i];i++){
+			mal_unquote(msg[i]);
+			stream_printf(GDKout,"%s\n",msg[i]);
+			GDKfree(msg[i]);
+		}
+	}
+	if( msg) 
+		GDKfree(msg);
 	return MAL_SUCCEED;
 }
 
@@ -851,19 +863,17 @@ MANUALsearch(int *ret, str *pat)
 {
 	char **msg;
 	int i;
-	BAT *b = BATnew(TYPE_str, TYPE_str, 1000);
-
-	if (b == 0)
-		return throwMessage("manual.help", "failed to create BAT");
+	(void) ret;
 	msg= getHelpMatch(*pat);
-	for( i=0; msg[i]; i++){
-		stream_printf(GDKout,msg[i]+1);
-		stream_printf(GDKout,"\n");
-		GDKfree(msg[i]);
+	if( msg && msg[0] ){
+		for(i=0; msg[i];i++){
+			mal_unquote(msg[i]);
+			stream_printf(GDKout,"%s\n",msg[i]+1);
+			GDKfree(msg[i]);
+		}
 	}
-	GDKfree(msg);
-
-	@:Pseudo(help,Comment)@
+	if( msg) 
+		GDKfree(msg);
 	return MAL_SUCCEED;
 }
 

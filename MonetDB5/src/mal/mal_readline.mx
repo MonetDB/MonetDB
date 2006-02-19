@@ -16,16 +16,15 @@
 @-
 @- Online Help
 Online help on the modules and functions can be obtained 
-using manual commands and the readline key-binding '<TAB>'. 
-
-In both cases the argument is a (partial) operator call,
+using manual commands and the readline key-binding '<TAB><TAB>'. 
+The argument is a (partial) operator call,
 which is looked up in the symbol table.
 If the pattern includes a '(' it also
-displays the complete signature for each match.
+displays the signature for each match.
 The @code{address} and @code{address} attributes
-are also shown if the call ends with '()'.
+are also shown if the call contains the closing bracket ')'.
 @example
->manual.help("bat.is");
+>manual.completion("bat.is");
 bat.isSynced
 bat.isCached
 bat.isPersistent
@@ -34,13 +33,14 @@ bat.isSortedReverse
 bat.isSorted
 bat.isaSet
 bat.isaKey
->manual.hel("bat.isSorted(");
-command bat.isSortedReverse(b:bat[:any_1,:any_2]):bit
+>manual.help("bat.isSorted(");
 command bat.isSorted(b:bat[:any_1,:any_2]):bit
 >manual.help("bat.isSorted()");
+command bat.isSorted(b:bat[:any_1,:any_2]):bit address BKCisSorted;
+Returns whether a BAT is ordered on head or not.
+>manual.search("isSorted()");
 command bat.isSortedReverse(b:bat[:any_1,:any_2]):bit address BKCisSortedReverse;
 Returns whether a BAT is ordered on head or not.
-
 command bat.isSorted(b:bat[:any_1,:any_2]):bit address BKCisSorted;
 Returns whether a BAT is ordered on head or not.
 @end example
@@ -50,7 +50,17 @@ Additional routines are available in the @code{inspect}
 module to built reflexive code.
 
 The module and function names can be replaced by the 
-wildcard character '*'. [Todo, general pattern match]
+wildcard character '*'. General regulat pattern matching is not supported.
+@example
+> *.print(<TAB><TAB>
+command color.print(c:color):void
+pattern array.print(a:bat[:any_1,:any_2],b:bat[:any_1,:int]...):void
+pattern io.print(b1:bat[:any_1,:any]...):int
+pattern io.print(order:int,b:bat[:any_1,:any],b2:bat[:any_1,:any]...):int
+pattern io.print(val:any_1):int
+pattern io.print(val:any_1,lst:any...):int
+pattern io.print(val:bat[:any_1,:any_2]):int
+@end example
 
 @{
 For console input the @code{readline} library linked with
@@ -186,13 +196,18 @@ mal_command_generator(const char *text, int state)
 	static int index, len, last;
 	static char **msg =0;
 	const char *name;
+    char buf[BUFSIZ];
 	int i;
 
-    /* we pick our own portion of the linebuffer 
+    /* we pick our own portion of the linebuffer  */
     text= rl_line_buffer+strlen(rl_line_buffer)-1;
     while( text > rl_line_buffer && ! isspace((int) *text))
         text--;
-	*/
+	if( strlen(text)< BUFSIZ){
+		strcpy(buf,text);
+		text= buf;
+	}
+
 
 #ifdef _MAL_READLINE_DEBUG
 	printf("expand:%d [%d] %s \n",state,(int)strlen(text),text);
@@ -225,6 +240,7 @@ mal_command_generator(const char *text, int state)
 	}
 	if( msg[last]){
 		last++;
+		mal_unquote(msg[last-1]);
 		return strdup(msg[last-1]);
 	}
 	return NULL;

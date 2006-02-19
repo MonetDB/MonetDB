@@ -85,6 +85,7 @@ mal_export void     debugModule(stream *f, Module v, str nme);
 mal_export void     dumpManual(stream *f, Module v, int recursive);
 mal_export void 	dumpManualHelp(stream *f, Module s, int recursive);
 mal_export void 	dumpHelpTable(stream *f, Module s, str text, int flag);
+mal_export void 	dumpSearchTable(stream *f, str text);
 mal_export void     dumpManualOverview(stream *f, Module v, int recursive);
 mal_export void     dumpManualHeader(stream *f);
 mal_export void     dumpManualFooter(stream *f);
@@ -882,7 +883,7 @@ char **getHelpMatch(char *pat){
 				if( strstr(m->name,pat) || strstr(s->name,pat) ||
 					(s->def->help && strstr(s->def->help,pat))) {
 					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE);
-					buf[0]='#';
+					buf[0]=' ';
 					if( s->def->help) {
 						char *v,*w;
 						v= strchr(buf,0);
@@ -900,6 +901,8 @@ char **getHelpMatch(char *pat){
 								w--;
 							}
 						} else *v++ = *w;
+						*v++ = '\\';
+						*v++ = 'n';
 						*v = 0;
 					}
 					msg[top++] = GDKstrdup(buf);
@@ -940,7 +943,28 @@ void dumpHelpTable(stream *f, Module s, str text, int flag){
 	stream_printf(f,"# name # name\n");
 	stream_printf(f,"# varchar # type\n");
 	stream_printf(f,"# 0 # length\n");
-	for(j=0; j<m; j++)
+	for(j=0; j<m; j++) {
 		stream_printf(f,"[ \"%s\" ]\n",msg[j]);
+		GDKfree(msg[j]);
+	}
+	GDKfree(msg);
+}
+void dumpSearchTable(stream *f, str text){
+	str *msg;
+	int j,m;
+
+	msg= getHelpMatch(text);
+	for(m=0; msg[m]; m++ ) ;
+
+	stream_printf(f,"&1 0 %d 1 %d\n",m,m);
+	stream_printf(f,"# help # table_name\n");
+	stream_printf(f,"# name # name\n");
+	stream_printf(f,"# varchar # type\n");
+	stream_printf(f,"# 0 # length\n");
+	for(j=0; j<m; j++) {
+		stream_printf(f,"[ \"%s\" ]\n",msg[j]);
+		GDKfree(msg[j]);
+	}
+	GDKfree(msg);
 }
 @}
