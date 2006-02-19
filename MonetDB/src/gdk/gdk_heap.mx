@@ -184,12 +184,16 @@ HEAPextend(Heap *h, size_t size)
 		/* extend a malloced heap, possibly switching over to file-mapped storage */
 		Heap bak = *h;
 
-		/* when using anonymous vm we malloc we need 64K chunks, also we
-		 * 20% extra malloc */
-		h->maxsize = h->size = size;
-		if (size > GDK_mem_bigsize) {
-			h->maxsize = (size_t) ((double) h->maxsize * BATMARGIN) - 1;
-			h->maxsize = (1 + (h->maxsize >> 16)) << 16;
+		h->size = size;
+		if (size <= GDK_mem_bigsize) {
+			h->maxsize = size; /* for normal GDKmalloc, maxsize = size */
+		} else {
+			/* in anonymous vm, if have to realloc anyway, we reserve some extra space */
+			if (size > h->maxsize) {
+				h->maxsize = (size_t) ((double) size * BATMARGIN);
+			}
+			/* when using anonymous vm we malloc we need 64K chunks */
+			h->maxsize = (1 + ((h->maxsize-1) >> 16)) << 16;
 		}
 
 		/* try GDKrealloc if the heap size stays within reasonable limits */
