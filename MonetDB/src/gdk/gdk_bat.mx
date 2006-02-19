@@ -2220,21 +2220,21 @@ check if duplicated properties are equal
 			b->batDirty = TRUE;
 		}
 		zz = (b->GDKversion != bm->GDKversion) +
-		     (b->U != bm->U) +
-		     (b->P != bm->P) +
-		     (b->H != bm->T) +
-		     (b->htype != bm->ttype) +
-		     (b->hloc != bm->tloc) +
-		     (b->dims.headvarsized != bm->dims.tailvarsized) +
-		     (b->dims.bunshift != bm->dims.bunshift) +
-		     (b->dims.bunwidth != bm->dims.bunwidth) +
-		     (b->batDeleted < b->batBuns->base) +
-		     (b->batFirst < b->batDeleted) +
-		     (b->batFirst > b->batInserted) +
-		     (b->batBuns->free > b->batBuns->size) +
-		     (b->batInserted > b->batBuns->base + b->batBuns->free);
+		     ((b->U != bm->U) << 1) +
+		     ((b->P != bm->P) << 2) +
+		     ((b->H != bm->T) << 3) +
+		     ((b->htype != bm->ttype) << 4) +
+		     ((b->hloc != bm->tloc) << 5) +
+		     ((b->dims.headvarsized != bm->dims.tailvarsized) << 6) +
+		     ((b->dims.bunshift != bm->dims.bunshift) << 7) +
+		     ((b->dims.bunwidth != bm->dims.bunwidth) << 8) +
+		     ((b->batDeleted < b->batBuns->base) << 9) +
+		     ((b->batFirst < b->batDeleted) << 10) +
+		     ((b->batFirst > b->batInserted) << 11) +
+		     ((b->batBuns->free > b->batBuns->size) << 12) +
+		     ((b->batInserted > b->batBuns->base + b->batBuns->free) << 13);
 		if (zz) {
-			GDKfatal("BATpropcheck: BAT %s has inconsistent descriptor %d\n", BBPname(b->batCacheid), zz);
+			GDKfatal("BATpropcheck: BAT %s has inconsistent descriptor %d (%o)\n", BBPname(b->batCacheid), zz, zz);
 
 		}
 		if (b->hhash!= bm->thash) {
