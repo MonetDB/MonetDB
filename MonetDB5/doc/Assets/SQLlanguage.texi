@@ -266,14 +266,53 @@ Specify a referential constraint.
 
 <referential action> ::= CASCADE | SET NULL | SET DEFAULT | RESTRICT | NO ACTION
 
---h3 11.9 <check constraint definition> (p567)
---/h3
-
---p 
-Specify a condition for the SQL-data.
---/p
-
 <check constraint definition> ::= CHECK ( <search condition> )
+
+@subsubsection ALTER TABLE
+
+<alter table statement> ::= ALTER TABLE <table name> <alter table action>
+
+<alter table action> ::=
+		<add column definition>
+	|	<alter column definition>
+	|	<drop column definition>
+	|	<add table constraint definition>
+	|	<drop table constraint definition>
+
+@subsubsection ADD column
+
+<add column definition> ::= ADD [ COLUMN ] <column definition>
+
+@subsubsection ALTER column
+
+<alter column definition> ::= ALTER [ COLUMN ] <column name> <alter column action>
+<alter column action> ::=
+		<set column default clause>
+	|	<drop column default clause>
+	|	<add column scope clause>
+	|	<drop column scope clause>
+	|	<alter identity column specification>
+
+<set column default clause> ::= SET <default clause>
+<drop column default clause> ::= DROP DEFAULT
+-<add column scope clause> ::= ADD <scope clause>
+-<drop column scope clause> ::= DROP SCOPE <drop behavior>
+
+<alter identity column specification> ::= <alter identity column option>...
+
+<alter identity column option> ::=
+		<alter sequence generator restart option>
+	|	SET <basic sequence generator option>
+
+<drop column definition> ::= DROP [ COLUMN ] <column name> <drop behavior>
+
+@subsubsection ADD constraint
+<add table constraint definition> ::= ADD <table constraint definition>
+<drop table constraint definition> ::= DROP CONSTRAINT <constraint name> <drop behavior>
+
+@subsubsection DROP table
+<drop table statement> ::= DROP TABLE <table name> <drop behavior>
+
 
 @end verbatim
 @subsubsection CREATE VIEW
@@ -312,7 +351,6 @@ the system it is only open to the ADMIN_ROLE.
 <view column list> ::= <column name list>
 
 @end verbatim
-
 
 @node SQL Data Types, SQL Data Manipulation, SQL Data Definition, SQL Language
 @subsection SQL Data Types
