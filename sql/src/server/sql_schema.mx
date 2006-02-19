@@ -574,6 +574,34 @@ create_func(mvc *sql, dlist *qname, dlist *params, sql_subtype *res, char *impl,
 	return stmt_none();
 }
 
+static void
+as_subquery( mvc *sql, sql_table *t, stmt *sq, dlist *column_spec )
+{
+	if (column_spec) {
+		dnode *n = column_spec->h;
+		node *m = sq->op1.lval->h;
+
+		for (; n; n = n->next, m = m->next) {
+			char *cname = n->data.sval;
+			stmt *st = m->data;
+			sql_subtype *tp = tail_type(st);
+
+			mvc_create_column(sql, t, cname, tp);
+		}
+	} else {
+		node *m;
+
+		for (m = sq->op1.lval->h; m; m = m->next) {
+			stmt *st = m->data;
+			char *cname = column_name(st);
+			sql_subtype *tp = tail_type(st);
+
+			mvc_create_column(sql, t, cname, tp);
+			_DELETE(cname);
+		}
+	}
+}
+
 static stmt *
 create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *query, int check)
 {
@@ -589,6 +617,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 	} else if (query) {
 		stmt *sq = NULL;
 		char *subquery = NULL;
+		sql_table *t = NULL;
 
 		if (query->token == SQL_SELECT) {
 			SelectNode *sn = (SelectNode *) query;
@@ -608,31 +637,8 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 			subquery[sql->scanner.view_end - sql->scanner.as+1] = 0;
 		}
 
-		if (column_spec) {
-			sql_table *t = mvc_create_view(sql, ss, name, subquery, 0, 1);
-			dnode *n = column_spec->h;
-			node *m = sq->op1.lval->h;
-
-			for (; n; n = n->next, m = m->next) {
-				char *cname = n->data.sval;
-				stmt *st = m->data;
-				sql_subtype *tp = tail_type(st);
-
-				mvc_create_column(sql, t, cname, tp);
-			}
-		} else {
-			node *m;
-			sql_table *t = mvc_create_view(sql, ss, name, subquery, 0, 1);
-
-			for (m = sq->op1.lval->h; m; m = m->next) {
-				stmt *st = m->data;
-				char *cname = column_name(st);
-				sql_subtype *tp = tail_type(st);
-
-				mvc_create_column(sql, t, cname, tp);
-				_DELETE(cname);
-			}
-		}
+		t = mvc_create_view(sql, ss, name, subquery, 0, 1);
+		as_subquery( sql, t, sq, column_spec );
 		_DELETE(subquery);
 		stmt_destroy(sq);
 		return stmt_none();
@@ -1295,7 +1301,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 }
 
 static stmt *
-create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, dlist *columns, int size)
+create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table_elements_or_subquery, int size)
 {
 	char *name = qname_table(qname);
 
@@ -1303,10 +1309,12 @@ create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, dlist *columns, i
 		return sql_error(sql, 02, "CREATE TABLE: name '%s' already in use", name);
 	} else if (!schema_privs(sql->role_id, ss)) {
 		return sql_error(sql, 02, "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", sql->user, ss->base.name);
-	} else {
+	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) { 
+		/* table element list */
 		sql_table *t = mvc_create_table(sql, ss, name, 0, !temp, 0, size);
 		list *new_columns = create_stmt_list();
 		dnode *n;
+		dlist *columns = table_elements_or_subquery->data.lval;
 
 		for (n = columns->h; n; n = n->next) {
 			symbol *sym = n->data.sym;
@@ -1319,6 +1327,39 @@ create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, dlist *columns, i
 			list_append_stmt(new_columns, te);
 		}
 		return list2stmt(new_columns);
+	} else { /* [col name list] as subquery with or without data */
+		stmt *sq = NULL, *res = NULL;
+		dlist *as_sq = table_elements_or_subquery->data.lval;
+		dlist *column_spec = as_sq->h->data.lval;
+		symbol *subquery = as_sq->h->next->data.sym;
+		int with_data = as_sq->h->next->next->data.ival;
+		sql_table *t = NULL; 
+
+		sq = scope_subquery(sql, NULL, subquery);
+		if (!sq)
+			return NULL;
+		/* create table */
+		t = mvc_create_table(sql, ss, name, 0, !temp, 0, size);
+		as_subquery( sql, t, sq, column_spec);
+
+		/* insert query result into this table */
+		if (with_data) {
+			node *n, *m;
+			scope *scp = scope_open(NULL);
+			tvar *tv = scope_add_table_columns(sql, scp, t, t->base.name, INS);
+			list *l = create_stmt_list();
+			list *cl = t->columns.set;
+
+			for (n = sq->op1.lval->h, m = cl->h; n && m; n = n->next, m = m->next) {
+				sql_column *c = m->data;
+				stmt *ins = stmt_dup(n->data);
+				list_append(l, stmt_append(stmt_bat(c, stmt_dup(tv->s), INS), ins));
+			}
+			scope_close(scp);
+			res = stmt_list(l);
+		}
+		stmt_destroy(sq);
+		return res;
 	}
 }
 
@@ -1441,7 +1482,7 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 			if (n->data.sym->token == SQL_CREATE_TABLE) {
 				dlist *l = n->data.sym->data.lval;
 
-				res = create_table(sql, ss, l->h->data.ival, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.ival);
+				res = create_table(sql, ss, l->h->data.ival, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.ival);
 			} else if (n->data.sym->token == SQL_CREATE_VIEW) {
 				dlist *l = n->data.sym->data.lval;
 
@@ -1519,7 +1560,7 @@ schemas(mvc *sql, symbol *s)
 
 		dlist *l = s->data.lval;
 
-		ret = create_table(sql, cur_schema(sql), l->h->data.ival, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.ival);
+		ret = create_table(sql, cur_schema(sql), l->h->data.ival, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.ival);
 		sql->type = Q_SCHEMA;
 	}
 		break;

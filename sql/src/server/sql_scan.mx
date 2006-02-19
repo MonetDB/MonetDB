@@ -223,6 +223,7 @@ scanner_init_keywords()
 	keywords_insert("VIEW", VIEW);
 	keywords_insert("WHERE", WHERE);
 	keywords_insert("WITH", WITH);
+	keywords_insert("DATA", DATA);
 
 	keywords_insert("DATE", sqlDATE);
 	keywords_insert("TIME", TIME);

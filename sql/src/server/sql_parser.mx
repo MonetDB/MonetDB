@@ -286,6 +286,7 @@ int yydebug=1;
 	grant
 	revoke
 	operation
+	table_content_source
 	table_element
 	add_table_element
 	alter_table_element
@@ -387,7 +388,7 @@ int yydebug=1;
 	table_exp
 	table_ref_commalist
 	table_element_list
-	table_content_source
+	as_subquery_clause
 	column_exp_commalist
 	column_option_list
 	selection
@@ -443,6 +444,7 @@ int yydebug=1;
 	opt_cycle
 	opt_ref_action
 	ref_on
+	with_or_without_data
 
 %type <bval>
 	opt_brackets
@@ -504,7 +506,7 @@ int yydebug=1;
 /* operators */
 %left UNION EXCEPT INTERSECT CORRESPONDING UNIONJOIN
 %left JOIN CROSS LEFT FULL RIGHT INNER NATURAL
-%left LIKE BETWEEN sqlIN WITH
+%left LIKE BETWEEN sqlIN WITH DATA
 %left <operation> OR
 %left <operation> AND
 %left <operation> NOT
@@ -1176,7 +1178,7 @@ table_def:
 	{ dlist *l = _dlist_create();
 	  _dlist_append_symbol(l, $2);
 	  _dlist_append_list(l, $4);
-	  _dlist_append_list(l, $5);
+	  _dlist_append_symbol(l, $5);
 	  _dlist_append_int(l, $7);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  ;
@@ -1198,7 +1200,23 @@ opt_on_commit: /* only for temporary tables */
  ;
 
 table_content_source:
-    '(' table_element_list ')'	{ $$ = $2; }
+    '(' table_element_list ')'	{ $$ = _symbol_create_list( SQL_CREATE_TABLE, $2); }
+ |  as_subquery_clause		{ $$ = _symbol_create_list( SQL_SELECT, $1); }		
+ ;
+
+as_subquery_clause:
+	opt_column_commalist
+	AS
+	view_as			
+	with_or_without_data
+			{ $$ = _dlist_append_list(_dlist_create(), $1);
+			  _dlist_append_symbol($$, $3); 
+			  _dlist_append_int($$, $4); }
+ ;
+
+with_or_without_data:
+     WITH NO DATA  	{ $$ = 0; }
+ |   WITH DATA 		{ $$ = 1; }
  ;
 
 table_element_list:
@@ -2761,6 +2779,7 @@ user:
     USER
  |  SESSION_USER
  |  CURRENT_USER
+ |  CURRENT_ROLE
  ;
 
 literal:
