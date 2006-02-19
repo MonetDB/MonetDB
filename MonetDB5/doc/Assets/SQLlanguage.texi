@@ -277,13 +277,21 @@ Specify a condition for the SQL-data.
 
 @end verbatim
 @subsubsection CREATE VIEW
-Base view support is supported. Recursive views and referenceable views are 
-not supported.
+Regular view specifications are supported. However, recursive views and 
+referenceable views are not supported. Next to this 2003 feature we support 
+creating a view on top of a set of bats. In this case the query expression is
+replaced by the keyword BATS, and the bats are found based on the
+view specification. As this feature requires indepth knowledge of 
+the system it is only open to the ADMIN_ROLE. 
 
 @verbatim
 <view definition> ::=
-                CREATE -[ RECURSIVE ] VIEW <table name> <view specification> AS <query expression>
+                CREATE -[ RECURSIVE ] VIEW <table name> <view specification> AS <view query expression>
                 [ WITH -[ <levels clause> ] CHECK OPTION ]
+
+<view query expression> ::=
+	<query expression>
+ +|	BATS
 
 <view specification> ::= <regular view specification> | <referenceable view specification>
 
