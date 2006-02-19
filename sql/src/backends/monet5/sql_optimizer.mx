@@ -146,8 +146,8 @@ is a bind operation.
 	if (mb->stop <= TOSMALL){
 		for(i=0; i< mb->stop; i++){
 			p= getInstrPtr(mb,0);
-			if (functionName(p)== bindRef && 
-				moduleName(p)== sqlRef)  break;
+			if (getFunctionId(p)== bindRef && 
+				getModuleId(p)== sqlRef)  break;
 		}
 		if(i == mb->stop)
 			return MAL_SUCCEED;
@@ -165,8 +165,8 @@ Double bind operations should also be eliminated.
  	setVarType(mb, getArg(ns[0],0), TYPE_bit);
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		if ( (functionName(p)== bindRef || functionName(p)==binddbatRef) && 
-			moduleName(p)== sqlRef) {
+		if ( (getFunctionId(p)== bindRef || getFunctionId(p)==binddbatRef) && 
+			getModuleId(p)== sqlRef) {
 			ns[k++] = p;
 		}
 @-
@@ -174,9 +174,9 @@ Check if the relation is already made write-enabled in the plan.
 It uses the knowledge that at this stage the plan is still a linear
 sequence of instructions.
 @c
-		if (functionName(p)== setWriteModeRef ) {
+		if (getFunctionId(p)== setWriteModeRef ) {
 			for (j = 0; j < k; j++)
-				if ( functionName(ns[j]) == setWriteModeRef && 
+				if ( getFunctionId(ns[j]) == setWriteModeRef && 
 						ns[j]->argv[1] == p->argv[1])
 							break;
 				else if (ns[j]->argv[0] == p->argv[1]) {
@@ -201,8 +201,8 @@ instructions, producing a syntactic correct MAL program again.
 		int doit = 0;
 
 		p = getInstrPtr(mb, i);
-		if (!( (functionName(p)== bindRef || functionName(p)==binddbatRef) && 
-			  moduleName(p)== sqlRef))
+		if (!( (getFunctionId(p)== bindRef || getFunctionId(p)==binddbatRef) && 
+			  getModuleId(p)== sqlRef))
 			doit = 1;
 @-
 Skip it if the writeMode relates to a base table
@@ -367,8 +367,8 @@ void SQLkdiffSplitter(Client c){
 
 		for(i=0;i<limit; i++){
 			p= old[i];
-			if( moduleId(p) && strcmp(moduleName(p),"sql")==0 &&
-			    strcmp(functionName(p),"kdifference")==0){
+			if( getModuleId(p) && strcmp(getModuleId(p),"sql")==0 &&
+			    strcmp(getFunctionId(p),"kdifference")==0){
 				total++;
 				foundit++;
 @-
@@ -419,8 +419,8 @@ We have to perform the expensive kdifference anyway
 					q= old[i];
 /* just handle the first */
 					pushInstruction(mb,q);
-					if( moduleId(q) && strcmp(moduleName(q),"sql")==0 &&
-						strcmp(functionName(q),"kdifference")==0){
+					if( getModuleId(q) && strcmp(getModuleId(q),"sql")==0 &&
+						strcmp(getFunctionId(q),"kdifference")==0){
 						setModuleId(q,putName("algebra",7));
 					}
 				}
@@ -459,8 +459,8 @@ Now we don;t have to perform the expensive kdifference
 				for(i++;i< limit-1; i++){
 					q= copyInstruction(old[i]);
 /* just handle the first */
-					if( moduleId(q) && strcmp(moduleName(q),"sql")==0 &&
-						strcmp(functionName(q),"kdifference")==0){
+					if( getModuleId(q) && strcmp(getModuleId(q),"sql")==0 &&
+						strcmp(getFunctionId(q),"kdifference")==0){
 						setModuleId(q,putName("algebra",7));
 					}
 					for(k=0;k<q->argc; k++)

@@ -400,7 +400,7 @@ We don;t search the cache for a previous incarnation.
 			resetInstructions(c->curprg->def, 1);
 			freeVariables(c->curprg->def, c->glb, vtop);
 		} else
-			*ret= GDKstrdup(functionId(getInstrPtr(c->curprg->def,0)));
+			*ret= GDKstrdup(getFunctionId(getInstrPtr(c->curprg->def,0)));
 		c->curprg = curPrg;
 
 #ifdef _SQL_COMPILE
@@ -628,12 +628,12 @@ SQLsetDebugger(Client c, mvc *m, int onoff)
 	c->itrace='n';
 	q = newInstruction(c->curprg->def,ASSIGNsymbol);
 	getArg(q,0)= newTmpVariable(c->curprg->def,TYPE_any);
-	moduleId(q) = putName("mdb",3);
+	getModuleId(q) = putName("mdb",3);
 	if( onoff){
-		functionId(q) = putName("start",5);
+		getFunctionId(q) = putName("start",5);
 		c->debugOptimizer= TRUE;
 	} else {
-		functionId(q) = putName("stop",4);
+		getFunctionId(q) = putName("stop",4);
 		c->debugOptimizer= FALSE;
 	}
 	pushInstruction(c->curprg->def, q);
@@ -1160,8 +1160,8 @@ pushCatchDefault(MalBlkPtr mb, str nme, int autocommit)
 	if (autocommit) {
 		p = newInstruction(mb,ASSIGNsymbol);
 		getArg(p,0)= newTmpVariable(mb,TYPE_any);
-		moduleId(p) = putName("sql",3);
-		functionId(p) = putName("commit",6);
+		getModuleId(p) = putName("sql",3);
+		getFunctionId(p) = putName("commit",6);
 		pushInstruction(mb, p);
 	}
 */
@@ -1176,8 +1176,8 @@ pushCatchDefault(MalBlkPtr mb, str nme, int autocommit)
 
 	p= newInstruction(mb,ASSIGNsymbol);
 	getArg(p,0)= newTmpVariable(mb,TYPE_any);
-	moduleId(p)= putName("io",2);
-	functionId(p)= putName("print",5);
+	getModuleId(p)= putName("io",2);
+	getFunctionId(p)= putName("print",5);
 	pushArgumentId(mb, p, GDKstrdup(nme));
 	pushInstruction(mb,p);
 */
@@ -1186,8 +1186,8 @@ pushCatchDefault(MalBlkPtr mb, str nme, int autocommit)
 	if (autocommit) {
 		p = newInstruction(mb,ASSIGNsymbol);
 		getArg(p,0)= newTmpVariable(mb,TYPE_any);
-		moduleId(p) = putName("sql",3);
-		functionId(p) = putName("rollback",8);
+		setModuleId(p, putName("sql",3));
+		setFunctionId(p, putName("rollback",8));
 		pushInstruction(mb, p);
 	}
 */
