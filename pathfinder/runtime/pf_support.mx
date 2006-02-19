@@ -5294,17 +5294,18 @@ PROC text_constr (BAT[void, str] item, BAT[void, BAT] ws) : BAT[void,BAT]
     # add new text nodes to the working set
     var seqb := oid(count(ws.fetch(PRE_KIND).fetch(WS)) +
                     int(ws.fetch(PRE_KIND).fetch(WS).seqbase()));
-    var newPre_prop := newProp.tmark(seqb);
+    var newPre_prop := newProp.tmark(seqb).chk_order();
     newProp := nil;
     ws.fetch(PRE_PROP).fetch(WS).insert(newPre_prop);
     ws.fetch(PRE_SIZE).fetch(WS).insert(newPre_prop.project(0));
     ws.fetch(PRE_LEVEL).fetch(WS).insert(newPre_prop.project(chr(0)));
     ws.fetch(PRE_KIND).fetch(WS).insert(newPre_prop.project(TEXT));
     ws.fetch(PRE_FRAG).fetch(WS).insert(newPre_prop.project(WS));
+    ws.fetch(PRE_NID).fetch(WS).append(newPre_prop.mirror());
+    ws.fetch(NID_PRE).fetch(WS).append(newPre_prop.mirror());
 
     { # add index entries for optimized scj
-        var kind_pre_ := newPre_prop.reverse().chk_order();
-        ws.fetch(KIND_PRE + int(TEXT)).fetch(WS).append(kind_pre_);
+        ws.fetch(KND_NID.find(TEXT)).fetch(WS).append(newPre_prop.reverse());
     }
     newPre_prop := nil;
     item := item.mark(seqb);
@@ -5411,16 +5412,18 @@ PROC elem_constr_empty (BAT[void, oid] qn, BAT[void, BAT] ws) : BAT[void,BAT]
     # add new element nodes to the working set
     var seqb := oid(count(ws.fetch(PRE_KIND).fetch(WS)) +
                     int(ws.fetch(PRE_KIND).fetch(WS).seqbase()));
-    var newPre_prop := qn.tmark(seqb);
+    var newPre_prop := qn.tmark(seqb).chk_order();
     ws.fetch(PRE_PROP).fetch(WS).insert(newPre_prop);
     ws.fetch(PRE_SIZE).fetch(WS).insert(newPre_prop.project(0));
     ws.fetch(PRE_LEVEL).fetch(WS).insert(newPre_prop.project(chr(0)));
     ws.fetch(PRE_KIND).fetch(WS).insert(newPre_prop.project(ELEMENT));
     ws.fetch(PRE_FRAG).fetch(WS).insert(newPre_prop.project(WS));
+    ws.fetch(PRE_NID).fetch(WS).append(newPre_prop.mirror());
+    ws.fetch(NID_PRE).fetch(WS).append(newPre_prop.mirror());
 
     { # add index entries for optimized scj
-        var kind_pre_ := newPre_prop.reverse().chk_order();
-        ws.fetch(KIND_PRE + int(ELEMENT)).fetch(WS).append(kind_pre_);
+        ws.fetch(KND_NID .find(ELEMENT)).fetch(WS).append(newPre_prop.reverse());
+        ws.fetch(KND_PROP.find(ELEMENT)).fetch(WS).append(newPre_prop);
     }
     newPre_prop := nil;
     qn := qn.mark(seqb);
@@ -5633,24 +5636,19 @@ PROC elem_constr (BAT[void, oid] qn_iter,
     ws.fetch(PRE_PROP).fetch(WS).insert(root_prop);
     ws.fetch(PRE_FRAG).fetch(WS).insert(root_frag);
     ws.fetch(PRE_LEVEL).fetch(WS).insert(root_level);
+    ws.fetch(PRE_NID).fetch(WS).append(root_kind.mirror());
+    ws.fetch(NID_PRE).fetch(WS).append(root_kind.mirror());
 
     # update indexes
     {
+      var pre_nid := ws.fetch(PRE_NID).fetch(WS);
       var knd := ELEMENT;
       while ( knd <= DOCUMENT ) {
-        var kind_root := root_kind.ord_uselect(knd).reverse().chk_order();
-        ws.fetch(KIND_PRE + int(knd)).fetch(WS).insert(kind_root);
-        if (knd = ELEMENT) {
-          var prop_root := kind_root.reverse().mirror()
-                                    .leftfetchjoin(root_prop)
-                                    .reverse().chk_order();
-          ws.fetch(PROP_PRE + int(knd)).fetch(WS).insert(prop_root);
-        }
-        if (knd = PI) {
-          var prop_root := kind_root.reverse().mirror()
-                                    .leftfetchjoin(root_prop)
-                                    .reverse().chk_order();
-          ws.fetch(PROP_PRE + 1).fetch(WS).insert(prop_root);
+        var knd_nid := root_kind.ord_uselect(knd).reverse().chk_order();
+        ws.fetch(KND_NID.find(knd)).fetch(WS).append(knd_nid);
+        if ( (knd = ELEMENT) or (knd = PI) ) {
+          var knd_prop := knd_nid.leftfetchjoin(root_prop).chk_order();
+          ws.fetch(KND_PROP.find(knd)).fetch(WS).append(knd_prop);
         }
         knd :+= chr(1);
       }
