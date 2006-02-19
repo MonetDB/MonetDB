@@ -70,7 +70,7 @@ consequences.
 @tab S
 @item E021-11  
 @tab POSITION function 
-@tab N (TODO!!!)
+@tab S
 @item E021-12  
 @tab Character comparison 
 @tab S
