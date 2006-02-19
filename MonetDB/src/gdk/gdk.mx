@@ -1272,8 +1272,7 @@ gdk_export BUN BUNfnd(BAT *b, ptr left);
 
 #define BUNfndVOID(p,b,v) {                                                             \
     ssize_t result = ((ssize_t) BUNfirst(b)) + BUNsize(b)*(*(oid*)(v) - (b)->hseqbase); \
-    ssize_t check = ((*(oid*) (v) == oid_nil) |                                         \
-                    ((b)->hseqbase == oid_nil) |                                        \
+    ssize_t check = (((*(oid*) (v) == oid_nil) ^ ((b)->hseqbase == oid_nil)) |          \
                     (*(oid*) v < (b)->hseqbase) |                                       \
                     (*(oid*) v >= (b)->hseqbase + (b)->batCount));                      \
     p = (BUN) (result&(check-1)); /* and with 0xFF...FF or 0x00..00 */                  \
