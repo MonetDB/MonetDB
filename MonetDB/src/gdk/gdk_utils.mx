@@ -1062,7 +1062,7 @@ GDKmallocmax(size_t size, size_t * maxsize, int emergency)
 		MT_alloc_register(s, *maxsize, 'S');
 		s += 2;
 		s[-2] = (ssize_t) newmax;
-		s[-1] = -((ssize_t) size);
+		s[-1] = -((ssize_t) newsize);
 		*maxsize = newmax - (sizeof(size_t) + sizeof(size_t));
 		return (void *) s;
 	}
