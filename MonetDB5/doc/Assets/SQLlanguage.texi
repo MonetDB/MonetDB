@@ -25,6 +25,8 @@ Lexical tokens are illustrated in capitals.
 Sometimes MonetDB/SQL supports extra syntax this is identified by a
 '+' before the clause. Unfortunately, we do not support the full
 SQL 2003 jet and this is specified by a '-' before the clause. 
+If next to the '-' a '<' and version number are given the feature is supported
+in the older releases.
 
 Currently we have partial support for SQL-2003. Features are added when 
 (enough) users express their interest in these.
@@ -76,7 +78,7 @@ The CREATE table statement follows the 2003 syntax, ie
 <table contents source> ::=
 		<table element list>
 	-|	OF <path-resolved user-defined type name> [ <subtable clause> ] [ <table element list> ]
-	-|	<as subquery clause>
+	-<3.0|	<as subquery clause>
 
 <table element list> ::= ( <table element> [ { , <table element> }... ] )
 
@@ -119,10 +121,15 @@ statement to change options.
 -<identity option> ::= INCLUDING IDENTITY | EXCLUDING IDENTITY
 
 -<column default option> ::= INCLUDING DEFAULTS | EXCLUDING DEFAULTS
+@end verbatim
 
--<as subquery clause> ::= [ ( <column name list> ) ] AS <subquery> <with or without data>
+@subsubsection create table AS subquery
+As of version 3.0 support is added for table construction based on subqueries.
 
--<with or without data> ::= WITH NO DATA | WITH DATA
+@verbatim
+-<3.0	<as subquery clause> ::= [ ( <column name list> ) ] AS <subquery> <with or without data>
+
+-<3.0	<with or without data> ::= WITH NO DATA | WITH DATA
 @end verbatim
 	
 @subsubsection columns
@@ -164,6 +171,8 @@ To make insert statements easier a default value can associated with
 each column. Besides literal values, temporal and sequence functions 
 can be used as default value. Value of these functions at insert time will
 be used. 
+@c todo explain that our DEFAULT is more powerfull (like postgress), ie 
+@c support any function not just temporal and sequence related
 
 @verbatim
 <default clause> ::= DEFAULT <default option>
@@ -268,6 +277,8 @@ Specify a condition for the SQL-data.
 
 @end verbatim
 @subsubsection CREATE VIEW
+Base view support is supported. Recursive views and referenceable views are 
+not supported.
 
 @verbatim
 <view definition> ::=
