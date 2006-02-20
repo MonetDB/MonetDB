@@ -3755,7 +3755,7 @@ evaluateOpOpt (opt_t *f, int rcode, int rc1, int rc2,
 
     if (rc1 != NORMAL)
         milprintf(f, "var val_fst := iters.tmark(0@0).leftfetchjoin(item%s%03u);\n", 
-		kind_str(rc2), counter);
+		kind_str(rc1), counter);
     else
         milprintf(f, "var val_fst := iters.tmark(0@0).leftfetchjoin(item%03u).leftfetchjoin(%s);\n", 
                 counter, t_co.table);
