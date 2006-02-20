@@ -275,6 +275,7 @@ BATnew(int ht, int tt, size_t cap)
 	ERRORcheck((tt < 0) || (tt > GDKatomcnt), "BATnew:tt error\n");
 
 	cap = MAX(BATTINY, cap);
+        if (ht == TYPE_void && tt == TYPE_void) cap = 1;
 
 	b = BATnewstorage(ht, tt, cap);
 	if (b == NULL)
@@ -2219,20 +2220,23 @@ check if duplicated properties are equal
 
 			b->batDirty = TRUE;
 		}
-		zz = (b->GDKversion != bm->GDKversion) +
-		     ((b->U != bm->U) << 1) +
-		     ((b->P != bm->P) << 2) +
-		     ((b->H != bm->T) << 3) +
-		     ((b->htype != bm->ttype) << 4) +
-		     ((b->hloc != bm->tloc) << 5) +
-		     ((b->dims.headvarsized != bm->dims.tailvarsized) << 6) +
-		     ((b->dims.bunshift != bm->dims.bunshift) << 7) +
-		     ((b->dims.bunwidth != bm->dims.bunwidth) << 8) +
-		     ((b->batDeleted < b->batBuns->base) << 9) +
-		     ((b->batFirst < b->batDeleted) << 10) +
-		     ((b->batFirst > b->batInserted) << 11) +
-		     ((b->batBuns->free > b->batBuns->size) << 12) +
-		     ((b->batInserted > b->batBuns->base + b->batBuns->free) << 13);
+		zz = (b->GDKversion != bm->GDKversion) |
+		     ((b->U != bm->U) << 1) |
+		     ((b->P != bm->P) << 2) |
+		     ((b->H != bm->T) << 3) |
+		     ((b->htype != bm->ttype) << 4) |
+		     ((b->hloc != bm->tloc) << 5) |
+		     ((b->dims.headvarsized != bm->dims.tailvarsized) << 6) |
+		     ((b->dims.bunshift != bm->dims.bunshift) << 7) |
+		     ((b->dims.bunwidth != bm->dims.bunwidth) << 8) |
+		     ((b->batDeleted < b->batBuns->base) << 9) |
+		     ((b->batFirst < b->batDeleted) << 10) |
+		     ((b->batFirst > b->batInserted) << 11) |
+		     ((b->batInserted > b->batBuns->base + b->batBuns->free) << 12) |
+		     ((b->batBuns->size > b->batBuns->maxsize) << 13) |
+		     (((b->batBuns->free > b->batBuns->size) & 
+                       ((b->htype != TYPE_void) | (b->ttype != TYPE_void))) << 14);
+
 		if (zz) {
 			GDKfatal("BATpropcheck: BAT %s has inconsistent descriptor %d (%o)\n", BBPname(b->batCacheid), zz, zz);
 

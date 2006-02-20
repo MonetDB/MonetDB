@@ -883,7 +883,7 @@ MT_mmap(char *path, int mode, off_t off, size_t len, void *fixed)
 	void *ret = (void *) -1L;
 
 	if (fd >= 0) {
-		ret = mmap(fixed, len, ((mode & MMAP_WRITABLE) ? PROT_WRITE : 0) | PROT_READ, ((mode & MMAP_COPY) ? MAP_PRIVATE : MAP_SHARED) | (fixed ? MAP_FIXED : 0), fd, off);
+		ret = mmap(fixed, len, ((mode & MMAP_WRITABLE) ? PROT_WRITE : 0) | PROT_READ, ((mode & MMAP_COPY) ? (MAP_PRIVATE|MAP_NORESERVE) : MAP_SHARED) | (fixed ? MAP_FIXED : 0), fd, off);
 
 		if (ret != (void *) -1L) {
 			fd = MT_mmap_new(path, ret, len, fd, (mode & MMAP_WRITABLE));
