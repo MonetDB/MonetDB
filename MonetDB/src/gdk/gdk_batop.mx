@@ -124,6 +124,7 @@ BATins(BAT *b, BAT *n)
 	if (b->thash == NULL && b->tkey & BOUND2BTRUE) {
 		BAThash(BATmirror(b), BATcount(b) + BATcount(n));
 	}
+	b->batDirty = 1;
 	if (fastpath) {
 		BUN p, q, r = BUNlast(b);
 		int xx, yy = BUNsize(b);
@@ -200,7 +201,6 @@ BATins(BAT *b, BAT *n)
 				r += yy;
 			}
 		}
-		b->batDirty = 1;
 	} else {
 		@:updateloop(b,n,bunins)@
 	}
@@ -224,6 +224,7 @@ BATappend(BAT *b, BAT *n)
 	ALIGNins(b, "BATappend");
 	BATcompatible(b, n);
 
+	b->batDirty = 1;
 	if (b->thash == NULL && b->batSet == 0 && (b->tkey & BOUND2BTRUE) == 0 && (b->hhash == NULL || ATOMstorage(b->htype) == TYPE_int)) 
 		fastpath = 1;
 
@@ -247,7 +248,7 @@ BATappend(BAT *b, BAT *n)
 			f = *(oid*)BUNtloc(n, BUNfirst(n)); 
 
 		if (BATcount(b) == 0)
-			BATmirror(b)->hseqbase = b->tseqbase = f;
+			BATseqbase(BATmirror(b), f);
 		if (BATtdense(n) && BATcount(b) + b->tseqbase == f) {
 			if (b->htype != TYPE_void) {
 				BUN r = BUNlast(b);
@@ -290,8 +291,11 @@ BATappend(BAT *b, BAT *n)
 			if (n->tdense && n->ttype == TYPE_oid) {
 				b->tseqbase = bm->hseqbase = *(oid*)BUNtail(n, BUNfirst(n));
 			}
-			b->tdense = n->tdense;
-			b->T->nodense = n->T->nodense;
+			b->tdense = bm->hdense = n->tdense;
+			b->T->nodense = bm->H->nodense = n->T->nodense;
+			b->tkey = bm->hkey |= (n->tkey & TRUE);
+			b->T->nokey[0] = bm->H->nokey[0] = n->T->nokey[0];
+			b->T->nokey[1] = bm->H->nokey[1] = n->T->nokey[1];
 		} else {
 			BUN last = BUNlast(b) - BUNsize(b);
 			size_t idx = BUNindex(b, BUNlast(b));
@@ -333,7 +337,6 @@ BATappend(BAT *b, BAT *n)
 				r += yy;
 			}
 		}
-		b->batDirty = 1;
 	} else {
 		BUN p, q;
 		int xx;

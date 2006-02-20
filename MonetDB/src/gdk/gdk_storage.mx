@@ -516,7 +516,8 @@ BATsave(BAT *bd)
 
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
-	if (b->batCopiedtodisk == 0 || b->batDirty || b->batDirtybuns) {
+	if ((b->batCopiedtodisk == 0 || b->batDirty || b->batDirtybuns) &&
+	    (b->htype != TYPE_void || b->ttype != TYPE_void)) {
 		if (err == 0)
 			err = HEAPsave(b->batBuns, nme, "buns");
 	}
@@ -562,15 +563,17 @@ BATload_intern(bat i)
 	bat bid = ABS(i);
 	str nme = BBP_physical(bid);
 	BAT *b = DESCload(bid);
-	int ret;
+	int ret = 0;
 
 	if (b == NULL) {
 		return NULL;
 	}
 	/* LOAD bun heap */
-	ret = HEAPload(b->batBuns, nme, "buns", b->batRestricted == BAT_READ);
-	if (ret < 0) {
-		return NULL;
+	if (b->htype != TYPE_void || b->ttype != TYPE_void) {
+		ret = HEAPload(b->batBuns, nme, "buns", b->batRestricted == BAT_READ);
+		if (ret < 0) {
+			return NULL;
+		}
 	}
 
 	/* LOAD head heap */
