@@ -2005,8 +2005,8 @@ proc replace(bat[bat,bat] replacements, bat[void,bat] ws, int prop, oid frag, ba
   return replacements.replace(propbat, newpropbat);
 }
 
-var PAGESHIFT := 16;
-var PAGESIZE := (1 << PAGESHIFT);
+var UPD_PAGESHIFT := 16;
+var UPD_PAGESIZE := (1 << UPD_PAGESHIFT);
 
 # implicit args:
 # bat[void,lng] int_values
@@ -2252,10 +2252,11 @@ proc do_update_attr(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid] i
     var nid := ws.fetch(PRE_NID).find(frag).find(node);
     var qn := qnbat.find($h);
     var val;
-    if (valbat.exist($h))
+    if (valbat.exist($h)) {
       val := valbat.find($h);
-    else
+    } else {
       val := str(nil); # unset-attr
+    }
     var loc, prefix, uri;
     {
       var qnfrags := qn.split("\001");
@@ -2358,12 +2359,12 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
 
     # the start of the page on which the new element is to be inserted
     # use "int" because we pass this value to slice which needs int
-    var docpage := ((int(docinsertafter) + 1) >> PAGESHIFT) << PAGESHIFT;
+    var docpage := ((int(docinsertafter) + 1) >> UPD_PAGESHIFT) << UPD_PAGESHIFT;
 
     # figure out the number of holes on the page on which the new
     # element is to be inserted (we use the PRE_LEVEL table for this,
     # holes are indicated with NIL)
-    var docpagelevel := doclevelbat.slice(docpage, docpage + PAGESIZE - 1);
+    var docpagelevel := doclevelbat.slice(docpage, docpage + UPD_PAGESIZE - 1);
     var doclevelupdatebat := replacements.replacementsfetch(doclevelbat);
     # update with values from replacements (if any)
     if (doclevelupdatebat.count() > 0) {
@@ -2372,11 +2373,11 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
       if (doclevelupdatemax > docsize) {
         docsize := doclevelupdatemax;
        }
-      var doclevelupdate := doclevelupdatebat.reverse().select(oid(docpage), oid(docpage + PAGESIZE - 1)).reverse();
+      var doclevelupdate := doclevelupdatebat.reverse().select(oid(docpage), oid(docpage + UPD_PAGESIZE - 1)).reverse();
       docpagelevel := docpagelevel.copy().key(true).access(BAT_WRITE).myinsert(doclevelupdate);
     }
     var docpageholes := docpagelevel.uselect(chr(nil));
-    var docpagefreespace := (PAGESIZE - docpagelevel.count()) + docpageholes.count();
+    var docpagefreespace := (UPD_PAGESIZE - docpagelevel.count()) + docpageholes.count();
 
     if (insertsize > lng(docpagefreespace)) {
       # not enough space on the current page
@@ -2411,11 +2412,11 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
         # hole below?
         var j := ((lng(docinsertafter) + holesize) + i) + 1;
         # still on same page?
-        if (j < (lng(docpage) + PAGESIZE)) {
+        if (j < (lng(docpage) + UPD_PAGESIZE)) {
           # yes
           if (j >= lng(docsize)) {
             # big gaping hole after the document
-            var hs := int((lng(docpage) + PAGESIZE) - docsize);
+            var hs := int((lng(docpage) + UPD_PAGESIZE) - docsize);
             if (lng(hs) > holeneeded) {
               hs := int(holeneeded);
             }
@@ -2587,12 +2588,13 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
           insertattrbat.seqbase(attr_id);
           # [void,oid] list of QN table indices for "our" attributes
           var insertattrqnbat := insertattrbat.leftfetchjoin(ws.fetch(ATTR_QN).fetch(insertfrag));
-	  var attr_frag := ws.fetch(ATTR_FRAG).find(insertfrag);
-	  var insertattrfragbat;
-	  if (is_constant(attr_frag))
-	    insertattrfragbat := bat2constant(attr_frag);
-          else
+          var attr_frag := ws.fetch(ATTR_FRAG).find(insertfrag);
+          var insertattrfragbat;
+          if (is_constant(attr_frag)) {
+            insertattrfragbat := bat2constant(attr_frag);
+          } else {
             insertattrfragbat := insertattrbat.leftfetchjoin(attr_frag);
+          }
 # original failing: var insertattrfragbat := insertattrbat.leftfetchjoin(ws.fetch(ATTR_FRAG).find(insertfrag));
           # in one fell swoop, add the qualified names of the attributes to the document
           var newinsertattrpropbat := [find_qn](const ws, docfrag,
