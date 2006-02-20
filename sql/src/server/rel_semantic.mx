@@ -31,6 +31,9 @@
 extern sql_rel *rel_semantic(mvc *sql, symbol *sym);
 extern sql_rel * rel_parse(mvc *m, char *query);
 
+/* TODO: move to general code base (include/common) later */
+extern comp_type swap_compare( comp_type t );
+
 #endif /*_REL_SEMANTIC_H_*/
 
 @c
@@ -44,6 +47,26 @@ extern sql_rel * rel_parse(mvc *m, char *query);
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+
+comp_type 
+swap_compare( comp_type t )
+{
+	switch(t) {
+	case cmp_equal:
+		return cmp_equal;
+	case cmp_lt:
+		return cmp_gt;
+	case cmp_lte:
+		return cmp_gte;
+	case cmp_gte:
+		return cmp_lte;
+	case cmp_gt:
+		return cmp_lt;
+	default:
+		return cmp_equal;
+	}
+	return cmp_equal;
+}
 
 sql_rel *
 rel_parse(mvc *m, char *query)
@@ -141,6 +164,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_CREATE_FUNC:
 
 	case SQL_CREATE_SEQ:
+	case SQL_ALTER_SEQ:
 	case SQL_DROP_SEQ:
 
 	case SQL_COPYFROM:
@@ -152,6 +176,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_SET:
 
 	case SQL_PREP:
+	case SQL_MULSTMT:
 		/*return sql_error(sql, 02, "Not implemented");*/
 		return NULL;
 

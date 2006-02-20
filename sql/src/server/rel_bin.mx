@@ -63,8 +63,22 @@ static stmt *const_column(stmt *val )
 {
 	sql_subtype *ct = tail_type(val);
 	stmt *temp = stmt_temp(ct);
-
 	return stmt_append(temp, val);
+}
+
+static stmt *column( stmt *val )
+{
+	val = stmt_dup(val);
+	if (val->nrcols == 0)
+		return const_column(val);
+	return val;
+}
+
+static stmt *copy_column( stmt *val )
+{
+	val = stmt_dup(val);
+	/* miss use of const column (ie create temp column append value(s)) */
+	return const_column(val);
 }
 
 static stmt *
@@ -141,7 +155,17 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 		}
 		if (!as) 
 			return NULL;	
-		if (e->flag){ /* distinct */
+		/* inconsistent sql requires NULL != NULL and NULL <> NULL, ie unknown
+		 * but also NULL means no values, which means 'ignore'
+		 *
+		 * so here we need to ignore NULLs
+		 */
+		if (e->flag&NO_NIL) {
+			sql_subtype *t = tail_type(as);
+			stmt *n = stmt_atom(atom_general(t, NULL, 0));
+			as = stmt_select2(as, n, stmt_dup(n), 0);
+		}
+		if (e->flag&DISTINCT){ /* distinct */
 			if (g)
 				as = stmt_unique(as, grp_dup(grp));
 			else
@@ -202,7 +226,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 		}
 		if (left && right) {
 			if (swapped)
-				s = stmt_join(r, stmt_reverse(l), e->flag);
+				s = stmt_join(r, stmt_reverse(l), swap_compare(e->flag));
 			else
 				s = stmt_join(l, stmt_reverse(r), e->flag);
 		} else {
@@ -280,6 +304,7 @@ rel2bin_join( mvc *sql, sql_rel *rel )
 	list *l; 
 	node *en, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr;
+	stmt *ld = NULL, *rd = NULL;
 
 	if (rel->l) /* first construct the left sub relation */
 		left = subrel_bin(sql, rel->l);
@@ -334,37 +359,60 @@ rel2bin_join( mvc *sql, sql_rel *rel )
 			stmt_reverse(bin_first_column(right)), cmp_all); 
 		
 	}
-/*
-	// handle all outerjoin types (left,right and full)
-	//if (rel->type == op_left)
-		// add rest of the left outer join
-*/
 
 	/* construct relation */
 	l = create_stmt_list();
+
 	jl = stmt_reverse(stmt_mark_tail(stmt_dup(join),0));
+	if (rel->op == op_left || rel->op == op_full) {
+		/* we need to add the missing oid's */
+		ld = stmt_diff(bin_first_column(left), stmt_reverse(stmt_dup(jl)));
+		ld = stmt_mark(stmt_reverse(ld), 0);
+	}
+	jr = stmt_reverse(stmt_mark_tail(stmt_reverse(join),0));
+	if (rel->op == op_right || rel->op == op_full) {
+		/* we need to add the missing oid's */
+		rd = stmt_diff(bin_first_column(right), stmt_reverse(stmt_dup(jr)));
+		rd = stmt_mark(stmt_reverse(rd), 0);
+	}
+
 	for( n = left->op1.lval->h; n; n = n->next ) {
 		stmt *c = n->data;
 		char *rnme = table_name(c);
 		char *nme = column_name(c);
 		stmt *s = stmt_join(stmt_dup(jl), stmt_dup(c), cmp_equal);
 
+		if (rel->op == op_left || rel->op == op_full)
+			s = stmt_append(s, stmt_join(stmt_dup(ld), stmt_dup(c), cmp_equal));
+		if (rel->op == op_right || rel->op == op_full) 
+			s = stmt_append(s, stmt_const(stmt_dup(rd), stmt_atom(atom_general(tail_type(c), NULL, 0))));
+
 		s = stmt_alias(s, _strdup(rnme), _strdup(nme));
 		list_append(l, s);
 	}
-	stmt_destroy(jl);
-	stmt_destroy(left);
-	jr = stmt_reverse(stmt_mark_tail(stmt_reverse(join),0));
 	for( n = right->op1.lval->h; n; n = n->next ) {
 		stmt *c = n->data;
 		char *rnme = table_name(c);
 		char *nme = column_name(c);
 		stmt *s = stmt_join(stmt_dup(jr), stmt_dup(c), cmp_equal);
 
+		if (rel->op == op_left || rel->op == op_full) 
+			s = stmt_append(s, stmt_const(stmt_dup(ld), stmt_atom(atom_general(tail_type(c), NULL, 0))));
+		if (rel->op == op_right || rel->op == op_full) 
+			s = stmt_append(s, stmt_join(stmt_dup(rd), stmt_dup(c), cmp_equal));
+
 		rnme = (rnme)?_strdup(rnme):NULL;
 		s = stmt_alias(s, rnme, _strdup(nme));
 		list_append(l, s);
 	}
+	if (ld)
+		stmt_destroy(ld);
+	if (rd)
+		stmt_destroy(rd);
+
+	stmt_destroy(jl);
+	stmt_destroy(left);
+
 	stmt_destroy(jr);
 	stmt_destroy(right);
 	return stmt_list(l);
@@ -391,15 +439,18 @@ rel2bin_union( mvc *sql, sql_rel *rel )
 	l = create_stmt_list();
 	for( n = left->op1.lval->h, m = right->op1.lval->h; n && m; 
 		n = n->next, m = m->next ) {
-		stmt *c1 = stmt_dup(n->data);
+		stmt *c1 = n->data;
 		stmt *c2 = stmt_dup(m->data);
 		char *rnme = rel->name;
 		char *nme = column_name(c1);
 		stmt *s;
 
-		if (c1 ->nrcols == 0)
-			c1 = const_column(c1);
-		s = stmt_append(c1, c2);
+		/* append isn't save, ie use union 
+			(also not save loses unique head oids) 
+
+		   so we create append on copies.
+		*/
+		s = stmt_append(copy_column(c1), c2);
 		if (!rnme)
 			rnme = table_name(c1);
 		nme = _strdup(nme);
@@ -446,9 +497,9 @@ rel2bin_except( mvc *sql, sql_rel *rel )
 	 * columns before the group by.
 	 */
 	for (n = left->op1.lval->h; n; n = n->next) 
-		lgrp = grp_create(stmt_dup(n->data), lgrp, NULL);
+		lgrp = grp_create(column(n->data), lgrp, NULL);
 	for (n = right->op1.lval->h; n; n = n->next) 
-		rgrp = grp_create(stmt_dup(n->data), rgrp, NULL);
+		rgrp = grp_create(column(n->data), rgrp, NULL);
 
  	a = sql_bind_aggr(sql->trans->module, "count", NULL);
 	ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a); 
@@ -560,9 +611,9 @@ rel2bin_inter( mvc *sql, sql_rel *rel )
 	 * columns before the group by.
 	 */
 	for (n = left->op1.lval->h; n; n = n->next) 
-		lgrp = grp_create(stmt_dup(n->data), lgrp, NULL);
+		lgrp = grp_create(column(n->data), lgrp, NULL);
 	for (n = right->op1.lval->h; n; n = n->next) 
-		rgrp = grp_create(stmt_dup(n->data), rgrp, NULL);
+		rgrp = grp_create(column(n->data), rgrp, NULL);
 
  	a = sql_bind_aggr(sql->trans->module, "count", NULL);
 	ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a); 
@@ -637,7 +688,7 @@ rel2bin_distinct(stmt *s)
 	for (n = s->op1.lval->h; n; n = n->next) {
 		stmt *t = n->data;
 
-		grp = grp_create(stmt_dup(t), grp, NULL);
+		grp = grp_create(column(t), grp, NULL);
 	}
 
 	for (n = s->op1.lval->h; n; n = n->next) {
@@ -696,11 +747,9 @@ rel2bin_project( mvc *sql, sql_rel *rel )
 static stmt *
 rel2bin_predicate(void) 
 {
-	stmt *t = NULL;
 	sql_subtype *bt = sql_bind_localtype("bit");
-	t = stmt_temp(bt);
-	t = stmt_append(t, stmt_bool(1));
-	return t;
+	stmt *temp = stmt_temp(bt);
+	return stmt_append(temp, stmt_bool(1));
 }
 
 static stmt *

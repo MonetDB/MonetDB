@@ -55,6 +55,9 @@ typedef struct expression {
 				(3 multi value)
 			*/
 } sql_exp;
+
+#define DISTINCT	1
+#define NO_NIL		2
  
 typedef enum operator_type {
 	op_basetable,
