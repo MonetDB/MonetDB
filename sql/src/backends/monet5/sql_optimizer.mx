@@ -123,7 +123,6 @@ FXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int v;
 	int i, j, k, klim,newssize;/*, argseen=0;*/
 	lng clk = GDKusec();
-	str sqlRef= putName("sql",3);
 
 #ifdef _SQL_OPTIMIZER_DEBUG
 	stream_printf(GDKout, "First call to FXoptimizer\n");
@@ -367,7 +366,7 @@ void SQLkdiffSplitter(Client c){
 
 		for(i=0;i<limit; i++){
 			p= old[i];
-			if( getModuleId(p) && strcmp(getModuleId(p),"sql")==0 &&
+			if( getModuleId(p)== sqlRef &&
 			    strcmp(getFunctionId(p),"kdifference")==0){
 				total++;
 				foundit++;
@@ -419,7 +418,7 @@ We have to perform the expensive kdifference anyway
 					q= old[i];
 /* just handle the first */
 					pushInstruction(mb,q);
-					if( getModuleId(q) && strcmp(getModuleId(q),"sql")==0 &&
+					if( getModuleId(q)== sqlRef  &&
 						strcmp(getFunctionId(q),"kdifference")==0){
 						setModuleId(q,putName("algebra",7));
 					}
@@ -459,7 +458,7 @@ Now we don;t have to perform the expensive kdifference
 				for(i++;i< limit-1; i++){
 					q= copyInstruction(old[i]);
 /* just handle the first */
-					if( getModuleId(q) && strcmp(getModuleId(q),"sql")==0 &&
+					if( getModuleId(q)== sqlRef && 
 						strcmp(getFunctionId(q),"kdifference")==0){
 						setModuleId(q,putName("algebra",7));
 					}
@@ -502,4 +501,5 @@ The code is wrong, we should not try it more than once
 #endif
 	}
 }
+
 @}
