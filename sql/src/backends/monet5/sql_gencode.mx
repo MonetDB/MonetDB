@@ -97,9 +97,6 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 To speedup code generation we freeze the references to the major modules.
 This safes table lookups.
 @c
-static str batcalcRef;
-static str batstrRef;
-static str sqlRef;
 static str resultSetRef;
 static str exportValueRef;
 static str exportResultRef;
@@ -107,19 +104,14 @@ static str exportOperationRef;
 static str sql_cacheRef;
 
 void initSQLreferences(){
-	if( batcalcRef != 0) return;
+	if( resultSetRef != 0) return;
 	optInit();
-	batcalcRef= putName("batcalc",7);
-	batstrRef= putName("batstr",6);
-	sqlRef= putName("sql",3);
 	exportValueRef = putName("exportValue",11);
 	resultSetRef= putName("resultSet",9);
 	exportResultRef= putName("exportResult",12);
 	exportOperationRef= putName("exportOperation",15);
 	sql_cacheRef= putName("sql_cache",9);
-	if( batcalcRef == NULL || batstrRef== NULL || 
-		algebraRef==NULL || sqlRef==NULL || 
-		resultSetRef==NULL || exportValueRef==NULL ||
+	if( algebraRef==NULL || resultSetRef==NULL || exportValueRef==NULL ||
 		exportResultRef==NULL || exportOperationRef==NULL || 
 		sql_cacheRef== NULL)
 			GDKfatal("error initSQLreferences");
