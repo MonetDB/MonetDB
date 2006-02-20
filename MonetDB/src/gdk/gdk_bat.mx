@@ -1322,11 +1322,22 @@ BUNreplace(BAT *b, ptr h, ptr t, bit force)
 	if (!(p = BUNfnd(b, h)))
 		return b;
 
-	ERRORcheck((b->ttype == TYPE_void), "BUNreplace: cannot update void column\n");
-
 	if ((b->tkey & BOUND2BTRUE) && BUNfnd(BATmirror(b), t)) {
 		return b;
 	}
+	if (b->ttype == TYPE_void) {
+		size_t i;
+
+		/* no need to materialize if value doesn't change */
+		if (b->tseqbase == oid_nil || * (oid *) BUNtpos(b, p) == * (oid *) t)
+			return b;
+		i = BUNindex(b, p);
+		b = BATmaterializet(b, BATcount(b));
+		if (b == NULL)
+			return NULL;
+		p = BUNptr(b, i);
+	}
+
 	return BUNinplace(b, p, h, t, force);
 }
 
