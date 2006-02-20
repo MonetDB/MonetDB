@@ -35,9 +35,13 @@ opt_export str CRKoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #include "mal_crack.h"
 #include "mal_namespace.h"
 #include "mal_interpreter.h"	/* for showErrors() */
+#include "mal_prelude.h"
 
 #define match(X,M,F) ( (X) && getFunctionId(X) && strcmp(getFunctionId(X),F)==0 && \
 	getModuleId(X) && strcmp(getModuleId(X),M)==0)
+
+#define match2(X,M,F) ( (X) && getFunctionId(X) && getFunctionId(X)==F && \
+	getModuleId(X) && getModuleId(X)==M)
 
 /* find all algebra select structions in a mal block mb and change them to the corresponding crackers command
     */
@@ -69,20 +73,28 @@ CRKoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 		/* find and replace algebra select commands with crack select ones*/
 
-		if (match(p, "sql", "bind")){  /* add a property can be cracked to every base relation */
+		if (match2(p, sqlRef, bindRef)){  /* add a property can be cracked to every base relation */
         		if (mb->var[getArg(p,0)]->props == 0)
                 		mb->var[getArg(p,0)]->props = newPropertySet();
-			setProperty(mb->var[getArg(p,0)]->props,"CanBeCracked","=", TYPE_int, &i);
+			setProperty(mb->var[getArg(p,0)]->props,"canBeCracked","=", TYPE_int, &i);
 		}
-		if (match(p, "algebra", "select")){ /* replace the algebra select with the crackers instruction iff the operation is on a base relation */
+		if (match2(p, batRef, setWriteModeRef)){ /* propagete the canBeCracked property */
+			
+			if(fndProperty(mb->var[getArg(p,1)]->props,"canBeCracked")){
+        			if (mb->var[getArg(p,0)]->props == 0)
+                			mb->var[getArg(p,0)]->props = newPropertySet();
+				setProperty(mb->var[getArg(p,0)]->props,"canBeCracked","=", TYPE_int, &i);
+			}
+		}
+		if (match2(p, algebraRef, selectRef) || match2(p, algebraRef, uselectRef)){ /* replace the algebra select with the crackers instruction iff the operation is on a base relation */
 
 #ifdef DEBUG_MAL_CRACK
 			printf("\n found one at %d \n", i);
 #endif
-			if(fndProperty(mb->var[getArg(p,1)]->props,"CanBeCracked")){
+			if(fndProperty(mb->var[getArg(p,1)]->props,"canBeCracked")){
 
 #ifdef DEBUG_MAL_CRACK
-				printf("property value is: %d",* (int*) getPropertyValue(mb->var[getArg(p,1)]->props,"CanBeCracked"));
+				printf("property value is: %d",* (int*) getPropertyValue(mb->var[getArg(p,1)]->props,"canBeCracked"));
 #endif
 	        	        setModuleId(p,putName("crackers",8));
 				setFunctionId(p,putName("crackTwoScans",13));
@@ -91,7 +103,8 @@ CRKoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			else printf("did not do the replacement\n");
 #endif
 		}
-		if (match(p, "optimizer", "crack")) removeInstruction(mb, p);
+		if (p == pci) 
+			removeInstruction(mb, p);
 
 	}
 	optimizerCheck(mb, "mal.crack", 1, GDKusec() - clk);	
