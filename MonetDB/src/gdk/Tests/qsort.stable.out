@@ -254,22 +254,20 @@ v_i.sort_rev().print();
 [ 1@0,	  1	  ]
 [ 0@0,	  2	  ]
 v_i.copy().access(BAT_WRITE).order_rev().print();
-!WARNING: Cannot reverse order on void columns.
-!WARNING: Please materialize them to oid, first.
 #-----------------#
 # h	tmp_35	  # name
 # void	int	  # type
 #-----------------#
-[ 0@0,	  2	  ]
-[ 1@0,	  1	  ]
-[ 2@0,	  9	  ]
-[ 3@0,	  6	  ]
-[ 4@0,	  5	  ]
-[ 5@0,	  3	  ]
-[ 6@0,	  0	  ]
-[ 7@0,	  8	  ]
-[ 8@0,	  4	  ]
 [ 9@0,	  7	  ]
+[ 8@0,	  4	  ]
+[ 7@0,	  8	  ]
+[ 6@0,	  0	  ]
+[ 5@0,	  3	  ]
+[ 4@0,	  5	  ]
+[ 3@0,	  6	  ]
+[ 2@0,	  9	  ]
+[ 1@0,	  1	  ]
+[ 0@0,	  2	  ]
 i_v.print();
 #-----------------#
 # h	tmp_32	  # name
@@ -301,22 +299,20 @@ i_v.sort().print();
 [ 8,	  7@0	  ]
 [ 9,	  2@0	  ]
 i_v.copy().access(BAT_WRITE).order().print();
-!WARNING: void tail column will become nil during order.
-!WARNING: To keep it, please materialize it to oid, first.
 #-----------------#
 # h	tmp_35	  # name
 # int	void	  # type
 #-----------------#
-[ 0,	  nil	  ]
-[ 1,	  nil	  ]
-[ 2,	  nil	  ]
-[ 3,	  nil	  ]
-[ 4,	  nil	  ]
-[ 5,	  nil	  ]
-[ 6,	  nil	  ]
-[ 7,	  nil	  ]
-[ 8,	  nil	  ]
-[ 9,	  nil	  ]
+[ 0,	  6@0	  ]
+[ 1,	  1@0	  ]
+[ 2,	  0@0	  ]
+[ 3,	  5@0	  ]
+[ 4,	  8@0	  ]
+[ 5,	  4@0	  ]
+[ 6,	  3@0	  ]
+[ 7,	  9@0	  ]
+[ 8,	  7@0	  ]
+[ 9,	  2@0	  ]
 i_v.sort_rev().print();
 #-----------------#
 # h	tmp_35	  # name
@@ -333,22 +329,20 @@ i_v.sort_rev().print();
 [ 1,	  1@0	  ]
 [ 0,	  6@0	  ]
 i_v.copy().access(BAT_WRITE).order_rev().print();
-!WARNING: void tail column will become nil during order_rev.
-!WARNING: To keep it, please materialize it to oid, first.
 #-----------------#
 # h	tmp_35	  # name
 # int	void	  # type
 #-----------------#
-[ 9,	  nil	  ]
-[ 8,	  nil	  ]
-[ 7,	  nil	  ]
-[ 6,	  nil	  ]
-[ 5,	  nil	  ]
-[ 4,	  nil	  ]
-[ 3,	  nil	  ]
-[ 2,	  nil	  ]
-[ 1,	  nil	  ]
-[ 0,	  nil	  ]
+[ 9,	  2@0	  ]
+[ 8,	  7@0	  ]
+[ 7,	  9@0	  ]
+[ 6,	  3@0	  ]
+[ 5,	  4@0	  ]
+[ 4,	  8@0	  ]
+[ 3,	  5@0	  ]
+[ 2,	  0@0	  ]
+[ 1,	  1@0	  ]
+[ 0,	  6@0	  ]
 o_i.print();
 #-----------------#
 # h	tmp_33	  # name

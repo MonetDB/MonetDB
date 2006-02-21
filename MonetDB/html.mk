@@ -53,16 +53,16 @@ docs:	$(prefix)/doc/MonetDB/TechDocs/Core/Mx/index.html	\
 	mv $(prefix)/doc/Documentation $(prefix)/doc/MonetDB/TechDocs/APIs/Mapi/Java/
 
 $(top_srcdir)/doc/HowToStart.html: $(top_srcdir)/HowToStart
-	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart > $(top_srcdir)/doc/HowToStart.html
+	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart | xsltproc --html $(top_srcdir)/body.xsl - > $(top_srcdir)/doc/HowToStart.html
 
 $(top_srcdir)/doc/HowToStart-Win32.html: $(top_srcdir)/HowToStart-Win32.txt
-	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart-Win32.txt > $(top_srcdir)/doc/HowToStart-Win32.html
+	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart-Win32.txt | xsltproc --html $(top_srcdir)/body.xsl - > $(top_srcdir)/doc/HowToStart-Win32.html
 
 $(top_srcdir)/doc/HowToStart-MinGW.html: $(top_srcdir)/HowToStart-MinGW.txt
-	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart-MinGW.txt > $(top_srcdir)/doc/HowToStart-MinGW.html
+	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart-MinGW.txt | xsltproc --html $(top_srcdir)/body.xsl - > $(top_srcdir)/doc/HowToStart-MinGW.html
 
 $(top_srcdir)/doc/HowToStart-MinGW-pcre.html: $(top_srcdir)/HowToStart-MinGW-pcre.txt
-	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart-MinGW-pcre.txt > $(top_srcdir)/doc/HowToStart-MinGW-pcre.html
+	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart-MinGW-pcre.txt | xsltproc --html $(top_srcdir)/body.xsl - > $(top_srcdir)/doc/HowToStart-MinGW-pcre.html
 
 $(top_srcdir)/doc/HowToStart-MinGW-swig.html: $(top_srcdir)/HowToStart-MinGW-swig.txt
-	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart-MinGW-swig.txt > $(top_srcdir)/doc/HowToStart-MinGW-swig.html
+	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart-MinGW-swig.txt | xsltproc --html $(top_srcdir)/body.xsl - > $(top_srcdir)/doc/HowToStart-MinGW-swig.html

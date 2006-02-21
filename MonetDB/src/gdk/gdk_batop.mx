@@ -1490,10 +1490,8 @@ BATorder@3(BAT *b)
 		return b;
 	}
 	if (b->ttype == TYPE_void && b->tseqbase != oid_nil) {
-		GDKwarning("void tail column will become nil during order@3.\nTo keep it, please materialize it to oid, first.\n");
-		/* ignore the void case here */
-		b->tseqbase = oid_nil;
-		BATmirror(b)->hseqbase = oid_nil;
+		/* materialize void-tail in-place */
+		b = BATmaterializet(b, BATcount(b));
 	}
 	if ((GDK_SORTED@2 == GDK_SORTED_REV && b->htype == TYPE_void) || (b->htype != TYPE_void && BATordered@4(b))) {
 		/* b is ordered in the opposite direction, hence we revert b */
@@ -1525,8 +1523,8 @@ BATrevert(BAT *b)
 
 	BATcheck(b, "BATrevert");
 	if ((b->htype == TYPE_void && b->hseqbase != oid_nil) || (b->ttype == TYPE_void && b->tseqbase != oid_nil)) {
-		GDKwarning("Cannot reverse order on void columns.\nPlease materialize them to oid, first.\n");
-		return b;
+		/* materialize void columns in-place */
+		b = BATmaterialize(b, BATcount(b));
 	}
 	ALIGNdel(b, "BATrevert");
 	xx = BUNsize(b);

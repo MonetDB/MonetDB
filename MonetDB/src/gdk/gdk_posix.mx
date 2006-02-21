@@ -622,7 +622,6 @@ MT_mmap_del(void *base, size_t len)
 #ifdef MMAP_DEBUG
 			stream_printf(GDKerr, "MT_mmap_del: close(%s fd=%d) = %d\n", MT_mmap_tab[victim].path, MT_mmap_tab[victim].fd, ret);
 #endif
-
 			MT_mmap_tab[victim].next = MT_mmap_free;
 			MT_mmap_empty(victim);
 			MT_mmap_free = victim;

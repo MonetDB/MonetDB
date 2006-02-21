@@ -154,12 +154,17 @@ in BATs that can do aways with explicit use of fake_project in the generated MIL
 
 .END constant;
 @mil
-proc CTgroup ( oid b, BAT[oid,any] b) : BAT[oid,oid]
+proc CTgroup ( oid a, BAT[oid,any] b) : BAT[oid,oid]
 {
     return CTgroup(b);
 }
 
-proc CTrefine ( oid b, BAT[oid,any] b) : BAT[oid,oid]
+proc CTrefine ( oid a, any b) : oid
+{
+    return a;
+}
+
+proc CTrefine ( oid a, BAT[oid,any] b) : BAT[oid,oid]
 {
     return tsort(b);
 }
