@@ -833,7 +833,7 @@ def msc_libs(fd, var, libsmap, msc):
         v = sep + libname
         msc['LIBS'].append('lib' + v + '.dll')
         msc['INSTALL'].append(('lib' + v, 'lib' + v, '.dll',
-                               '$(%sdir)' % lib.replace('-', '_'), 1))
+                               ld, 1))
 
         dlib = []
         if libsmap.has_key(libname + "_DLIBS"):
@@ -892,9 +892,6 @@ def msc_libs(fd, var, libsmap, msc):
             t, ext = split_filename(target)
             if ext in hdrs_ext:
                 msc['HDRS'].append(target)
-
-    if ld != 'LIBDIR':
-        fd.write("%sdir = %s\n" % (lib.replace('-','_'), ld))
 
     msc_deps(fd, libsmap['DEPS'], ".obj", msc)
 

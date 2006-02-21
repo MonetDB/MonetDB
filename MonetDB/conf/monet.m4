@@ -228,6 +228,7 @@ yes-*-*)
 		dnl  the "sa_handler" member of the "sigaction" struct,
 		dnl  which is defined in an unnamed union in
 		dnl  /usr/include/cygwin/signal.h ...
+		CFLAGS="$CFLAGS -std=gnu99"
 		;;
 	*-mingw*)
 		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
@@ -602,7 +603,7 @@ if test "x$have_java" != xno; then
   AC_PATH_PROG(JAVA,java,,$JPATH)
   if test "x$JAVA" != "x"; then
     AC_MSG_CHECKING(for Java >= 1.4)
-    JAVA_VERSION=[`$JAVA -version 2>&1 | grep '[0-9]\.[0-9]' | head -n1 | sed -e 's|^[^0-9]*||' -e 's|[^0-9]*$||'`]
+    JAVA_VERSION=[`"$JAVA" -version 2>&1 | grep '[0-9]\.[0-9]' | head -n1 | sed -e 's|^[^0-9]*||' -e 's|[^0-9]*$||'`]
     if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "1.4"); then
       have_java_1_4=yes
     else
@@ -934,6 +935,15 @@ AC_ARG_WITH(translatepath,
 	[if test $cross_compiling = yes; then
 		AC_MSG_WARN([Cross compiling, but no --with-translatepath option given])
 	fi])
+AC_SUBST(translatepath)
+
+dnl --with-anttranslatepath
+anttranslatepath="$translatepath"
+AC_ARG_WITH(anttranslatepath,
+	AC_HELP_STRING([--with-anttranslatepath=PROG],
+		[program to translate paths from configure-time format to a format that can be given to the ant program [default: value for --with-translatepath]]),
+	anttranslatepath="$withval")
+AC_SUBST(anttranslatepath)
 
 dnl --enable-noexpand
 AC_ARG_ENABLE(noexpand,
