@@ -393,6 +393,16 @@ proc mvaljoin( BAT[oid,oid] pre, oid frag, BAT[oid, bat] ws_item ) : BAT[oid,oid
     return pre.leftjoin(ws_item.find(frag).reverse());
 }
 
+proc tmark_unique( any::1 col, BAT[void,any] ipik) : BAT[oid,oid]
+{
+    return bat(void,oid).append(reverse(ipik).fetch(0)).seqbase(0@0).access(BAT_READ);
+}
+
+proc tmark_unique( BAT[oid,any] col, BAT[oid,any] ipik) : BAT[oid,oid]
+{
+    return tmark(kunique(reverse(col)),0@0);
+}
+
 proc tmark_grp_unique( any iter, BAT[oid,any] ipik) : BAT[oid,oid]
 {
     return ipik.mark(1@0);
