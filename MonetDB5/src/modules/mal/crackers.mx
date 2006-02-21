@@ -51,7 +51,7 @@ overhead on a 1M bat during the first crack operation.
 @mal
 module crackers;
 
-command new(b:bat[:int,:int]) 
+command new(b:bat[:oid,:int]) 
 address CRKnew
 comment "Create the index tables for a cracked table.";
 command new(b:bat[:int,:int], granule:int) 
@@ -64,7 +64,7 @@ For debugging we provide a simple routine to dump
 the cracker index. Future versions should provide
 a BAT-like access to this internal information.
 @mal
-command info(b:bat[:int,:int])
+command info(b:bat[:oid,:int])
 address CRKinfo
 comment "Print the cracker index administration";
 
@@ -79,7 +79,7 @@ address CRKcrackRange
 comment "Break the partitions into smaller pieces
 	using a range over the tail";
 
-command crackTwoScans(b:bat[:int,:int],low:int,hgh:int) :bat[:int,:int]
+command crackTwoScans(b:bat[:oid,:int],low:int,hgh:int,tail:bit) :bat[:oid,:int]
 address CRKcrackRangeWithTwoScans
 comment "Break the partitions into smaller pieces
 	with two scans";
@@ -127,7 +127,7 @@ the pieces are combined to form a new BAT.
 command select(b:bat[:int,:int],l:int,h:int,li:bit,hi:bit):bat[:int,:int]
 address CRKselect
 comment "Retrieve the subset using a cracker
-	index producing preferably a BATview.";
+        index producing preferably a BATview.";
 command drop(b:bat[:int,:int])
 address CRKdropPiece
 comment	"Garbage collect the piece representation";
@@ -135,6 +135,31 @@ command dropView(b:bat[:int,:int])
 address CRKdropView
 comment	"Garbage collect the piece representation.
 	Should be a side-effect of dropping the bat!";
+
+command crackSelect(b:bat[:oid,:int],low:int,hgh:int) :bat[:oid,:int]
+address CRKcrackSelect
+comment "same as select plus crack";
+
+command crackSelect(b:bat[:oid,:int],low:int,hgh:int, inclusiveLow:bit,inclusiveHgh:bit) :bat[:oid,:int]
+address CRKcrackSelectBounds
+comment "same as select plus crack";
+
+command crackSelect(b:bat[:oid,:int],value:int) :bat[:oid,:int]
+address CRKcrackSelectEquality
+comment "same as select plus crack";
+
+command crackUSelect(b:bat[:oid,:int],low:int,hgh:int) :bat[:oid,:int]
+address CRKcrackUSelect
+comment "same as select plus crack";
+
+command crackUSelect(b:bat[:oid,:int],low:int,hgh:int, inclusiveLow:bit,inclusiveHgh:bit) :bat[:oid,:int]
+address CRKcrackUSelectBounds
+comment "same as select plus crack";
+
+command crackuSelect(b:bat[:oid,:int],value:int) :bat[:oid,:int]
+address CRKcrackUSelectEquality
+comment "same as select plus crack";
+
 @{
 @include prelude.mx
 @* Implementation
@@ -160,8 +185,8 @@ typedef struct {
 	char kind;		/* kind of piece */
 	int rng_max;		/* the value ranges */
 	int rng_min;
-	int idx_first;		/* the slice boundaries */
-	int idx_last;
+	size_t idx_first;		/* the slice boundaries */
+	size_t idx_last;
 	int parent;		/* lineage */
 	int left, middle, right;	/* tree branch directions */
 } Piece;
@@ -176,7 +201,7 @@ mal_export str CRKnew(int *cret, int *bid);
 mal_export str CRKnewGranule(int *cret, int *bid, int *gran);
 mal_export str CRKinfo(int *k, int *bid);
 mal_export str CRKcrackRange(int *partid, int *bid, int *low, int *hgh);
-mal_export str CRKcrackRangeWithTwoScans(int *vid, int *bid, int *low, int *hgh);
+mal_export str CRKcrackRangeWithTwoScans(int *vid, int *bid, int *low, int *hgh, bit tail);
 mal_export str CRKcrackJoin(int *partid, int *bid, int *cid);
 mal_export int CRKsetBounds(BAT *b, BAT *view, int mid, int pid);
 mal_export str CRKnewIterator(lng *newpid, int *vid, int *bid);
@@ -188,6 +213,12 @@ mal_export str CRKselect(int *vid, int *bid, int *low, int *high, bit *li, bit *
 mal_export str CRKselectPieces(int *result, int *bid, int *low, int *hgh);
 mal_export str CRKdropPiece(int *newpid, int *bid);
 mal_export str CRKdropView(int *newpid, int *bid);
+mal_export str CRKcrackSelect(int *vid, int *bid, int *low, int *hgh);
+mal_export str CRKcrackSelectBounds(int *vid, int *bid, int *low, int *hgh, bit inclusiveLow, bit inclusiveHgh);
+mal_export str CRKcrackSelectEquality(int *vid, int *bid, int *value);
+mal_export str CRKcrackUSelect(int *vid, int *bid, int *low, int *hgh);
+mal_export str CRKcrackUSelectBounds(int *vid, int *bid, int *low, int *hgh, bit inclusiveLow, bit inclusiveHgh);
+mal_export str CRKcrackUSelectEquality(int *vid, int *bid, int *value);
 
 #endif /* _CRACKERS_H */
 @-
@@ -267,8 +298,8 @@ printCrackMapElement(Piece * list, int i, int bid)
 	stream_printf(GDKout, "%d ", list[i].parent);
 	stream_printf(GDKout, "%d, ", list[i].rng_min);
 	stream_printf(GDKout, "%d, ", list[i].rng_max);
-	stream_printf(GDKout, "%d, ", list[i].idx_first);
-	stream_printf(GDKout, "%d, ", list[i].idx_last);
+	stream_printf(GDKout, "SZFMT, ", list[i].idx_first);
+	stream_printf(GDKout, "SZFMT, ", list[i].idx_last);
 	stream_printf(GDKout, "%d, ", list[i].left);
 	stream_printf(GDKout, "%d, ", list[i].middle);
 	stream_printf(GDKout, "%d ]\n ", list[i].right);
@@ -581,13 +612,13 @@ the ranges of the outer partitions as well.
 
 
 /* alter previous function to achieve the minimum number of exchanges
-   when a poper piece is found for cracking it is scanned once to count the
+   when a proper piece is found for cracking it is scanned once to count the
    the positions low high where the desired piece will be at the end
    then this information is used for more efficient exchanges
 
    It is not going to be always better depending on the size of the piece, in memory or not etc*/
 str
-CRKcrackRangeWithTwoScans(int *vid, int *bid, int *low, int *hgh)
+CRKcrackRangeWithTwoScans(int *vid, int *bid, int *low, int *hgh, bit tail)
 {
 	BAT *b, *view;
 	Piece *piece, *npiece;
@@ -595,8 +626,8 @@ CRKcrackRangeWithTwoScans(int *vid, int *bid, int *low, int *hgh)
 	ptr p, pn=0;
 	char buf[128];		/* scratch space */
 	ptr vmax = 0, vmin = 0, vm, bl, bls, bh;
-	int lim, m, i, l, h, pid = -1;
-
+	int lim, m, i, pid = -1;
+	size_t l, h;
 
 	if (*(int *) low > *(int *) hgh)
 		return throwMessage("crackers.crack", "illegal range");
@@ -646,19 +677,12 @@ Inspect the value range table to only further crack qualifying fragments.
 		
 		bls = (ptr) ((char *) bl);
 		
-#ifdef DEBUG_CRACKERS
-		printf("first middle bun is at: %d,%d   while first high bun is at : %d,%d  and the stable pointer for first loaw points at: %d,%d \n", *(int *)BUNhead(b,bl), *(int *)BUNtail(b,bl), *(int *)BUNhead(b,bh),*(int *)BUNtail(b,bh), *(int *)BUNhead(b,bls),*(int *)BUNtail(b,bls));
-		
-#endif
 
 		/* Make a second scan to resufle the buns */
 
 		vm = BUNtail(b, (ptr) ((char *) vmin + xx));
 		for (p = (ptr) ((char *) vmin + xx); p < vmax; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)) {
 
-#ifdef DEBUG_CRACKERS
-			printf("\n checking for: %d,%d  ",*(int *)BUNhead(b,p), *(int *)BUNtail(b,p)); 
-#endif
 			if (p >= bls){	/* then we have already created the <low partition so we can follow more simple rules now*/
 					
 				printf("in the middle partition  "); 
@@ -696,7 +720,7 @@ Inspect the value range table to only further crack qualifying fragments.
 							vmax = (ptr) ((char *) vmax - xx);	
 						if (*(int *) BUNtail(b, vmax) >= *(int *) low && *(int *) BUNtail(b, vmax) <= *(int *) hgh)
 							@:exchange(vmax, pn)@
-						if (*(int *) BUNtail(b, vmax) < *(int *) low){
+					if (*(int *) BUNtail(b, vmax) < *(int *) low){
 							@:exchange2(p,pn,vmax)@
 							bl = (ptr) ((char *) bl + xx);
 							break;
@@ -715,18 +739,12 @@ Inspect the value range table to only further crack qualifying fragments.
 				 
 				for (pn = (ptr) ((char *) vmax-xx); pn >= bh; pn = (ptr) ((char *) pn - xx), vmax = (ptr) ((char *) vmax - xx)){
 					
-#ifdef DEBUG_CRACKERS
-					printf("\n      checking against: %d,%d  ",*(int *)BUNhead(b,pn), *(int *)BUNtail(b,pn));
-#endif
 					if (*(int *) BUNtail(b, pn) < *(int *) low){ printf("it belong in low");
 						@:exchange(pn, p)@						
 						break;						
 					}
 					if (*(int *) BUNtail(b, pn) >= *(int *) low && *(int *) BUNtail(b, pn) <= *(int *) hgh){  
 
-#ifdef DEBUG_CRACKERS
-						printf("it belong in middle");
-#endif
 						while (*(int *) BUNtail(b, bl) >= *(int *) low && *(int *) BUNtail(b, bl) <= *(int *) hgh && bl < bh)
 							bl = (ptr) ((char *) bl + xx);
 
@@ -739,9 +757,6 @@ Inspect the value range table to only further crack qualifying fragments.
 						}
 					}
 
-#ifdef DEBUG_CRACKERS
-					printf("it belong in high, take next one ");
-#endif
 				}
 				
 			}
@@ -761,12 +776,10 @@ and update the administration BATs.
 
 		*vid = view->batCacheid;
 	        VIEWbounds(view, l, h);
-
+		/*(void) tail;*/
+	        if (tail) view = VIEWhead_(view, view->batRestricted);
 		if (piece->idx_first == l) {
 			if (h < piece->idx_last) {
-#ifdef DEBUG_CRACKERS
-				printf("left split [%d] %d-%d \n", i, l, h);
-#endif
 				piece->kind = PHI;
 				piece->left = pid = crackMap[m].freepiece;
 				@:newPiece(m, npiece)@
@@ -790,9 +803,6 @@ and update the administration BATs.
 			}
 		} else if (piece->idx_last == h) {
 			if (l > piece->idx_first) {
-#ifdef DEBUG_CRACKERS
-				printf("right split [%d] %d-%d \n", i, l, h);
-#endif
 				/* falls at high end */
 				piece->kind = PHI;
 				piece->left = crackMap[m].freepiece;
@@ -816,9 +826,6 @@ and update the administration BATs.
 				npiece->parent = i;
 			}
 		} else {
-#ifdef DEBUG_CRACKERS
-			printf("middle split [%d] %d-%d \n", i, l, h);
-#endif
 			piece->kind = PHI;
 			piece->left = crackMap[m].freepiece;
 			@:newPiece(m, npiece)@
@@ -860,6 +867,61 @@ the ranges of the outer partitions as well.
 	return MAL_SUCCEED;
 	
 }
+
+str
+CRKcrackSelect(int *vid, int *bid, int *low, int *hgh)
+{
+        CRKcrackRangeWithTwoScans(vid, bid, low, hgh, TRUE);
+	return MAL_SUCCEED;
+}
+
+
+str
+CRKcrackSelectBounds(int *vid, int *bid, int *low, int *hgh, bit inclusiveLow, bit inclusiveHgh)
+{
+	if (!inclusiveLow && !inclusiveHgh) CRKcrackRangeWithTwoScans(vid, bid, low+1, hgh-1, TRUE);
+	if (!inclusiveLow && inclusiveHgh) CRKcrackRangeWithTwoScans(vid, bid, low+1, hgh, TRUE);
+	if (inclusiveLow && !inclusiveHgh) CRKcrackRangeWithTwoScans(vid, bid, low, hgh-1, TRUE);
+	return MAL_SUCCEED;
+}
+
+str                             
+CRKcrackSelectEquality(int *vid, int *bid, int *value)
+{                               
+        /* to do */
+	(void) vid;
+	(void) bid;
+	(void) value;	
+        return MAL_SUCCEED;     
+} 
+
+str                             
+CRKcrackUSelect(int *vid, int *bid, int *low, int *hgh)
+{                               
+        CRKcrackRangeWithTwoScans(vid, bid, low, hgh, FALSE);
+        return MAL_SUCCEED;     
+}                               
+                        
+                
+str                     
+CRKcrackUSelectBounds(int *vid, int *bid, int *low, int *hgh, bit inclusiveLow, bit inclusiveHgh)
+{                       
+        if (!inclusiveLow && !inclusiveHgh) CRKcrackRangeWithTwoScans(vid, bid, low+1, hgh-1, FALSE);
+        if (!inclusiveLow && inclusiveHgh) CRKcrackRangeWithTwoScans(vid, bid, low+1, hgh, FALSE);
+        if (inclusiveLow && !inclusiveHgh) CRKcrackRangeWithTwoScans(vid, bid, low, hgh-1, FALSE);
+        return MAL_SUCCEED;
+}                       
+
+str
+CRKcrackUSelectEquality(int *vid, int *bid, int *value)
+{
+        /* to do */
+	(void) vid;
+        (void) bid; 
+        (void) value;
+        return MAL_SUCCEED;
+}
+
 
 str
 CRKcrackJoin(int *partid, int *bid, int *cid)
@@ -1090,78 +1152,80 @@ CRKselectNew(int *vid, int *bid, int *low, int *high, bit *li, bit *hi)
 str
 CRKselect(int *vid, int *bid, int *low, int *high, bit *li, bit *hi)
 {
-	BAT *b, *view;
-	int m, i;
-	int leftover, glued;
-	int idxlow = -1, idxhgh = -1;
+        BAT *b, *view;
+        int m, i;
+        int leftover, glued;
+        int idxlow = -1, idxhgh = -1;
 
-	(void) li;
-	(void) hi;
+        (void) li;
+        (void) hi;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("crackers.selectPiece", "Cannot access descriptor");
-	}
-	m = findCrackMap(*bid);
+        if ((b = BATdescriptor(*bid)) == NULL) {
+                return throwMessage("crackers.selectPiece", "Cannot access descriptor");
+        }
+        m = findCrackMap(*bid);
 
-	b->batRestricted = BAT_READ;
-	view = VIEWcreate_(b, TRUE);
-	*vid = view->batCacheid;
+        b->batRestricted = BAT_READ;
+        view = VIEWcreate_(b, TRUE);
+        *vid = view->batCacheid;
 
 @-
 Select an interval with a desirable value to start the gluing process
 @c
-	for (i = 0; i < crackMap[m].freepiece; i++)
-		if (crackMap[m].pieces[i].kind == LEAF &&	/* NOT NEEDED */
-			((crackMap[m].pieces[i].rng_min <= *(int *) low && *(int *) low <= crackMap[m].pieces[i].rng_max) || (crackMap[m].pieces[i].rng_min <= *(int *) high && *(int *) high <= crackMap[m].pieces[i].rng_max)
-			)) {
-			CRKsetBounds(b, view, m, i);
-			idxlow = crackMap[m].pieces[i].idx_first;
-			idxhgh = crackMap[m].pieces[i].idx_last;
+        for (i = 0; i < crackMap[m].freepiece; i++)
+                if (crackMap[m].pieces[i].kind == LEAF &&       /* NOT NEEDED */
+                        ((crackMap[m].pieces[i].rng_min <= *(int *) low && *(int *) low <= crackMap[m].pieces[i].rng_max) || (crackMap[m].pieces[i].rng_min <= *(int *) high && *(int *) high <= crackMap[m].pieces[i].rng_max)
+                        )) {
+                        CRKsetBounds(b, view, m, i);
+                        idxlow = crackMap[m].pieces[i].idx_first;
+                        idxhgh = crackMap[m].pieces[i].idx_last;
 #ifdef DEBUG_CRACKERS
-			printf("start glue: [%d][%d]%d %d\n", m, i, crackMap[m].pieces[i].idx_first, crackMap[m].pieces[i].idx_last);
+                        printf("start glue: [%d][%d] "SZFMT" "SZFMT" \n", m, i, crackMap[m].pieces[i].idx_first, crackMap[m].pieces[i].idx_last);
 #endif
-			break;
-		}
-	/* start glue cycle */
-	if (idxlow >= 0)
-		do {
-			glued = 0;
-			leftover = 0;
-			for (i = 0; i < crackMap[m].freepiece; i++)
-				if (crackMap[m].pieces[i].kind == LEAF &&	/* NOT NEEDED */
-					crackMap[m].pieces[i].rng_min >= *(int *) low && 
-					crackMap[m].pieces[i].rng_max <= *(int *) high) {
-/* no little speedup, discarded
-			if( crackMap[m].pieces[i].idx_first < idxlow &&
-				crackMap[m].pieces[i].idx_last > idxhgh){
-				VIEWbounds(view,
-					idxlow= crackMap[m].pieces[i].idx_first,
-					idxhgh=crackMap[m].pieces[i].idx_last);
-				glued++;
-			} else
-*/
-					if (crackMap[m].pieces[i].idx_last == idxlow - 1) {
-#ifdef DEBUG_CRACKERS
-						printf("lglue: [%d][%d]%d %d\n", m, i, crackMap[m].pieces[i].idx_first, idxhgh);
-#endif
-						VIEWbounds(view, idxlow = crackMap[m].pieces[i].idx_first, idxhgh);
-						glued++;
-					} else if (crackMap[m].pieces[i].idx_first == idxhgh + 1) {
-#ifdef DEBUG_CRACKERS
-						printf("rglue: [%d][%d]%d %d\n", m, i, idxlow, crackMap[m].pieces[i].idx_last);
-#endif
-						VIEWbounds(view, idxlow, idxhgh = crackMap[m].pieces[i].idx_last);
-						glued++;
-					} else if (crackMap[m].pieces[i].idx_first > idxhgh || crackMap[m].pieces[i].idx_last < idxlow)
-						leftover++;
 
-				}
+                        break;
+                }
+        /* start glue cycle */
+        if (idxlow >= 0)
+                do {
+                        glued = 0;
+                        leftover = 0;
+                        for (i = 0; i < crackMap[m].freepiece; i++)
+                                if (crackMap[m].pieces[i].kind == LEAF &&       /* NOT NEEDED */
+                                        crackMap[m].pieces[i].rng_min >= *(int *) low &&
+                                        crackMap[m].pieces[i].rng_max <= *(int *) high) {
+/* no little speedup, discarded
+                        if( crackMap[m].pieces[i].idx_first < idxlow &&
+                                crackMap[m].pieces[i].idx_last > idxhgh){
+                                VIEWbounds(view,
+                                        idxlow= crackMap[m].pieces[i].idx_first,
+                                        idxhgh=crackMap[m].pieces[i].idx_last);
+                                glued++;
+
+                        } else
+*/
+                                        if (crackMap[m].pieces[i].idx_last == idxlow - 1) {
 #ifdef DEBUG_CRACKERS
-			printf("glued %d leftover %d\n", glued, leftover);
+                                                printf("lglue: [%d][%d] "SZFMT"  %d\n", m, i, crackMap[m].pieces[i].idx_first, idxhgh);
 #endif
-		} while (leftover);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
+                                                VIEWbounds(view, idxlow = crackMap[m].pieces[i].idx_first, idxhgh);
+                                                glued++;
+                                        } else if (crackMap[m].pieces[i].idx_first == idxhgh + 1) {
+#ifdef DEBUG_CRACKERS
+                                                printf("rglue: [%d][%d]%d "SZFMT" \n", m, i, idxlow, crackMap[m].pieces[i].idx_last);
+#endif
+                                                VIEWbounds(view, idxlow, idxhgh = crackMap[m].pieces[i].idx_last);
+                                                glued++;
+                                        } else if (crackMap[m].pieces[i].idx_first > idxhgh || crackMap[m].pieces[i].idx_last < idxlow)
+                                                leftover++;
+
+                                }
+#ifdef DEBUG_CRACKERS
+                        printf("glued %d leftover %d\n", glued, leftover);
+#endif
+                } while (leftover);
+        BBPunfix(b->batCacheid);
+        return MAL_SUCCEED;
 }
 
 @-
