@@ -583,7 +583,8 @@ ensure enough space (already done by BATnew) and a fast memory
 copy of the valid BUN sequence.
 @c
 		if (!VIEWparent(b) && (ht < TYPE_str && tt < TYPE_str) && !(ht == TYPE_bat || ht == TYPE_ptr) && !(tt == TYPE_bat || tt == TYPE_ptr) && b->dims.headloc == bn->dims.headloc && BUNsize(b) == BUNsize(bn)) {
-			memcpy((char *) BUNfirst(bn), (char *) BUNfirst(b), BATcount(b) * BUNsize(b));
+			if (ht != TYPE_void && tt != TYPE_void)
+				memcpy((char *) BUNfirst(bn), (char *) BUNfirst(b), BATcount(b) * BUNsize(b));
 			bn->batBuns->free = BUNsize(b) * BATcount(b);
 			BATsetcount(bn, BATcount(b));
 			bn->hseqbase = b->hseqbase;
