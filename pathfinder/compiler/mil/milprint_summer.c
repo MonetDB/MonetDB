@@ -6407,6 +6407,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "  sorting := iter.tsort();\n"
                 "  sorting := sorting.CTrefine(kind);\n"
                 "  sorting := sorting.CTrefine(item);\n"
+                "  sorting := sorting.materialize(ipik);\n"
                 "} else { # cope also with attributes and sort them according to their owner\n"
                 "  var elements := kind.get_type(ELEM).mirror();\n"
                 "  var elem_iters := elements.leftfetchjoin(iter);\n"
