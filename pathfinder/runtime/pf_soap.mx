@@ -460,7 +460,7 @@ static int handle_soap_request(struct shttpd_callback_arg *arg) {
     var_t *text = NULL;     /* typedef oid var_t */
     int i = 0, j = 0, k = 0, off = 0, sock = -1, retval = GDK_FAIL;
     stream *out = NULL;
-    char *strptr = NULL, *kind = NULL, *level = NULL, *text_base = NULL;
+    char *strptr = NULL, *kind = NULL, *text_base = NULL;
     char *msg = NULL, *module = NULL, *method = NULL;
     char errstr[1024];
     oid *prop = NULL;
@@ -495,12 +495,10 @@ static int handle_soap_request(struct shttpd_callback_arg *arg) {
         send_soap_err(out, 1, "404 Bad Request", "env:Sender",
                 "SOAP request: bad XML structure\n");
     }
-
 /*
 printf("\n=== DEBUG MSG: SOAP request RECEIVED ======\n%s"
        "=== END DEBUG MSG: SOAP request RECEIVED ===\n\n", strptr);
 */
-
     if ((CMDshred2bats(&docBAT, "", strptr, "")  == GDK_FAIL)) {
         send_soap_err(out, 1, "404 Bad Request", "env:Sender",
                 "SOAP request: bad XML structure, could not shred\n");
@@ -509,7 +507,6 @@ printf("\n=== DEBUG MSG: SOAP request RECEIVED ======\n%s"
 
     off   = BUNindex(docBAT,BUNfirst(docBAT));
     size  = (int *) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_SIZE))));
-    level = (char *)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_LEVEL))));
     prop  = (oid *) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_PROP))));
     kind  = (char *)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_KIND))));
     text  = (var_t*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PROP_TEXT))));
@@ -858,13 +855,11 @@ int CMDhttp_post(BAT **res,
 
     str2buf(b, "</SoapRpcRequest>\n</env:Body>\n</env:Envelope>\n");
     b->buf[b->pos] = 0;
-
 /*
 printf("\n=== DEBUG MSG: SOAP request to send: (msglen = %ld) ===\n%s"
        "=== END DEBUG MSG: SOAP request to send ===============\n\n",
         b->pos, b->buf);
 */
-
     if (stream_printf(out,
             "POST %s HTTP/1.1\r\n"
             "Host: %s\r\n"
@@ -902,12 +897,10 @@ printf("\n=== DEBUG MSG: SOAP request to send: (msglen = %ld) ===\n%s"
         GDKerror("\nDump of received data:\n%s\n", b->buf);
         goto FINISH_HTTP_POST;
     }
-
 /*
 printf("\n=== DEBUG MSG: received SOAP response message ======\n%s"
        "=== END DEBUG MSG: received SOAP response message ===\n\n", b->buf);
 */
-
     b->len = b->pos;
     b->buf = realloc(b->buf, b->len); /* release unused memory */
     strptr = strchr(b->buf, (int)' ') + 1; /* the HTTP return code */
