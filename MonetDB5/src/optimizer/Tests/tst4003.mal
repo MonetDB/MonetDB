@@ -1,9 +1,0 @@
-# The 4000 series deals with strategic optimizer constructs
-# common subexpression evaluation
-optimizer.setDebug();
-optimizer.commonExpressionRemoval();
-b:= bat.new(:str,:str);
-c:= bat.new(:str,:str);       # identical until insert takes place
-d:= algebra.select(b,"hello","world");
-e:= algebra.select(b,"hello","world");    # mapped onto one instruction
-
