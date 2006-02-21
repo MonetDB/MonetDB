@@ -1,3 +1,0 @@
-module(pathfinder);
-
-xquery("dm","<a>{text {()}}</a>/text()").printf();
