@@ -546,7 +546,8 @@ public class JdbcClient {
 							String[] types = {"TABLE", "VIEW"};
 							ResultSet rs =
 								stmt.executeQuery("SELECT current_schema");
-							rs.next();	// should in theory always succeed
+							if (!rs.next())
+								throw new SQLException("current schema unknown!");
 							ResultSet tbl = dbmd.getTables(
 									null, rs.getString(1), null, types);
 							rs.close();
