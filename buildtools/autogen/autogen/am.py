@@ -799,7 +799,7 @@ def am_ant(fd, var, ant, am):
 
     fd.write("\nif HAVE_JAVA\n\n")  # there is ant if configure set HAVE_JAVA
 
-    fd.write("\n%s_ant_target:\n\t\"$(ANT)\" -f \"`$(translatepath) $(srcdir)/build.xml`\" -Dbuilddir=\"`$(translatepath) $(PWD)`\" -Djardir=\"`$(translatepath) $(PWD)`\" %s\n" % (target, target))
+    fd.write("\n%s_ant_target:\n\t\"$(ANT)\" -f \"`$(anttranslatepath) $(srcdir)/build.xml`\" -Dbuilddir=\"`$(anttranslatepath) $(PWD)`\" -Djardir=\"`$(anttranslatepath) $(PWD)`\" %s\n" % (target, target))
 
     for file in ant['FILES']:
         sfile = file.replace(".", "_")

@@ -228,6 +228,7 @@ yes-*-*)
 		dnl  the "sa_handler" member of the "sigaction" struct,
 		dnl  which is defined in an unnamed union in
 		dnl  /usr/include/cygwin/signal.h ...
+		CFLAGS="$CFLAGS -std=gnu99"
 		;;
 	*-mingw*)
 		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
@@ -935,6 +936,14 @@ AC_ARG_WITH(translatepath,
 		AC_MSG_WARN([Cross compiling, but no --with-translatepath option given])
 	fi])
 AC_SUBST(translatepath)
+
+dnl --with-anttranslatepath
+anttranslatepath="$translatepath"
+AC_ARG_WITH(anttranslatepath,
+	AC_HELP_STRING([--with-anttranslatepath=PROG],
+		[program to translate paths from configure-time format to a format that can be given to the ant program [default: value for --with-translatepath]]),
+	anttranslatepath="$withval")
+AC_SUBST(anttranslatepath)
 
 dnl --enable-noexpand
 AC_ARG_ENABLE(noexpand,
