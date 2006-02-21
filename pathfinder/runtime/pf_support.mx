@@ -2369,7 +2369,7 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
     # update with values from replacements (if any)
     if (doclevelupdatebat.count() > 0) {
       # replace updated values from replacements BAT
-      var doclevelupdatemax := doclevelupdatebat.count();
+      var doclevelupdatemax := doclevelupdatebat.reverse().max().int() + 1;
       if (doclevelupdatemax > docsize) {
         docsize := doclevelupdatemax;
        }
