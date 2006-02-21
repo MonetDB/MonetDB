@@ -54,8 +54,8 @@ $(prefix)/doc/SQLfeatures/SQLfeatures.html:	$(prefix)/doc/SQLfeatures/SQLfeature
 
 $(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Unix/index.html: $(top_srcdir)/HowToStart-SQL
 	mkdir -p $(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Unix
-	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart-SQL > $(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Unix/index.html
+	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart-SQL | xsltproc --html $(top_srcdir)/body.xsl - > $(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Unix/index.html
 
 $(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Windows/index.html: $(top_srcdir)/HowToStart-SQL-Win32.txt
 	mkdir -p $(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Windows
-	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart-SQL-Win32.txt > $(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Windows/index.html
+	rst2html.py --stylesheet http://monetdb.cwi.nl/MonetDB.css --link-stylesheet $(top_srcdir)/HowToStart-SQL-Win32.txt | xsltproc --html $(top_srcdir)/body.xsl - > $(prefix)/doc/MonetDB/GetGoing/Setup/SQL/Windows/index.html
