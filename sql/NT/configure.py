@@ -47,7 +47,7 @@ subs = [
     ('@libexecdir@',             r'${prefix}\libexec'),
     ('@Xlibexecdir@',            r'${prefix}\libexec'),
     ('@PACKAGE@',                r'sql'),
-    ('@VERSION@',                r'2.10.1'),
+    ('@VERSION@',                r'2.10.2'),
     ('@DIRSEP@',                 '\\'),
     ('@prefix@',                 prefix),
     ('@Xprefix@',                prefix),
