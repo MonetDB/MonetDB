@@ -212,7 +212,7 @@ char *PFurlcache (char *uri, int keep)
 /**
  * flush url cache
  */
-void PFurlcache_flush() {
+void PFurlcache_flush(void) {
     urlcache_t *cache = urlcache;
     while(cache) {
 	urlcache_t *del = cache;

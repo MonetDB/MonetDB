@@ -37,14 +37,14 @@ char* PFcompile_MonetDB (char* xquery, char* mode, char** prologue, char** query
 char* PFurlcache(char *url, int keep);
 
 /* flush the url cache */
-void PFurlcache_flush();
+void PFurlcache_flush(void);
 
-const char* PFinitMIL();   /* MIL pattern for module init */
-const char* PFvarMIL();    /* MIL pattern for global variable definitions */
-const char* PFstartMIL();  /* MIL pattern for starting query execution */
-const char* PFdocbatMIL(); /* MIL pattern for adding a shredded document to the ws */
-const char* PFudfMIL();    /* MIL pattern for calling a UDF */
-const char* PFstopMIL();   /* MIL pattern for stopping query execution (and print) */
+const char* PFinitMIL(void);   /* MIL pattern for module init */
+const char* PFvarMIL(void);    /* MIL pattern for global variable definitions */
+const char* PFstartMIL(void);  /* MIL pattern for starting query execution */
+const char* PFdocbatMIL(void); /* MIL pattern for adding a shredded document to the ws */
+const char* PFudfMIL(void);    /* MIL pattern for calling a UDF */
+const char* PFstopMIL(void);   /* MIL pattern for stopping query execution (and print) */
 
 #endif
 
