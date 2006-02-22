@@ -2936,7 +2936,8 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 		bit hsh, srt;
 		bat bid = *(bat*)BUNtloc(ws_item, pw);
 		batlist[ii] = BATdescriptor(bid);
-		if (batlist[ii]->ttype != TYPE_oid) {
+		if (batlist[ii]->ttype != TYPE_oid &&
+		    (batlist[ii]->ttype != TYPE_void || batlist[ii]->tseqbase == oid_nil)) {
 			GDKerror("mvaljoin: all BATs in the tail of the third input BAT (ws_item) must have tail type OID.\n");
 			ii++;
 			@:mval_free_batlist@
