@@ -4916,7 +4916,7 @@ translateIntersect (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c
                 "pos := tmark_grp_unique(iter,ipik);\n"
                 "item := ipik.leftfetchjoin(item%03u);\n"
                 "kind := ipik.leftfetchjoin(kind%03u);\n",
-                counter, counter, counter, counter, counter, counter, counter);
+                counter, counter, counter, counter, counter, counter);
     }
 
     milprintf(f,
