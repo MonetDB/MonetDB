@@ -2118,8 +2118,11 @@ mapi_start_talking(Mapi mid)
 			char *errorstr = hdl->result ? hdl->result->errorstr : mid->errorstr;
 			MapiMsg error = mid->error;
 
+			hdl->result->errorstr = NULL; /* clear these so errorstr doesn't get freed */
+			mid->errorstr = NULL;
 			mapi_close_handle(hdl);
 			mapi_setError(mid, errorstr, "mapi_start_talking", error);
+			free(errorstr);	/* now free it after a copy has been made */
 		}
 		return mid->error;
 	}
