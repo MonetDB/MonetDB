@@ -83,7 +83,7 @@ PFty_t (*PFty_quantifier (PFty_t)) (PFty_t);
 
 /** FIXME: type system debugging, to be removed eventually */
 #ifdef DEBUG_TYPES 
-void ty_FIXME ();
+void ty_FIXME (void);
 #endif
 
 

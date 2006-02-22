@@ -90,7 +90,7 @@ PFgettime (void)
  * @return timer value to be passed to PFtimer_stop ()
  */
 long 
-PFtimer_start ()
+PFtimer_start (void)
 { 
     return PFgettime();
 }

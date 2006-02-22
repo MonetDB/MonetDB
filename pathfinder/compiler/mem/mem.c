@@ -46,7 +46,7 @@
 
 pf_allocator *pf_alloc = NULL;
 
-pf_allocator *pa_create()
+pf_allocator *pa_create(void)
 {
 	pf_allocator *pa = (pf_allocator*)malloc(sizeof(pf_allocator));
 	

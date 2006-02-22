@@ -87,7 +87,7 @@ typedef struct pf_allocator {
 	size_t used; 	/* memory used in last block */
 } pf_allocator;
 
-extern pf_allocator *pa_create();
+extern pf_allocator *pa_create(void);
 extern char *pa_alloc( pf_allocator *pa,  size_t sz );
 extern void pa_destroy( pf_allocator *pa );
 

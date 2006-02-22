@@ -4953,7 +4953,7 @@ translateIntersect (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c
                 "pos := tmark_grp_unique(iter,ipik);\n"
                 "item := ipik.leftfetchjoin(item%03u);\n"
                 "kind := ipik.leftfetchjoin(kind%03u);\n",
-                counter, counter, counter, counter, counter, counter, counter);
+                counter, counter, counter, counter, counter, counter);
     }
 
     milprintf(f,
@@ -10492,7 +10492,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
     return counter;
 }
 
-const char* PFinitMIL() {
+const char* PFinitMIL(void) {
     return 
         "module(\"pathfinder\");\n"
         "\n"
@@ -10518,7 +10518,7 @@ const char* PFinitMIL() {
         "var genType := \"xml\";";
 }
 
-const char* PFvarMIL() {
+const char* PFvarMIL(void) {
     return
         "# volatile variable environment\n"
         "var v_vid000;\n"
@@ -10568,7 +10568,7 @@ const char* PFvarMIL() {
         "var order_000;\n";
 }
 
-const char* PFstartMIL() {
+const char* PFstartMIL(void) {
     return  
         "{\n"
         "var time_read := 0;\n"
@@ -10596,7 +10596,7 @@ const char* PFstartMIL() {
         "  order_000 := outer000;\n";
 }
 
-const char* PFdocbatMIL() {
+const char* PFdocbatMIL(void) {
     return  
         " var docBAT := new(str,bat,WS_SIZE);\n"
         " var height := index_doc(bat(shredBAT), docBAT);\n"
@@ -10632,11 +10632,11 @@ static const char* _PFstopMIL(bool is_update) {
     return buf;
 }
 
-const char* PFstopMIL() {
+const char* PFstopMIL(void) {
     return _PFstopMIL(false);
 }
 
-const char* PFudfMIL() {
+const char* PFudfMIL(void) {
     return  
         "{\n"
         "  var proc_res := %s(loop%03u, outer%03u, order_%03u, inner%03u, fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u); #%s\n"
