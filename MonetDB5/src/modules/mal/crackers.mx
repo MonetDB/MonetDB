@@ -295,6 +295,56 @@ findCrackMap(int bid)
 	return i;
 }
 
+int     
+existsCrackMap(int bid)
+{       
+        int i;
+        
+        for (i = 0; i < maxCrackMap; i++)
+                if (crackMap[i].bid == bid)
+                        return i;
+	return -1;
+}
+
+int     
+newCrackMap(int bid)
+{       
+        int i, freemap = -1, units = 1024;
+        
+        for (i = 0; i < maxCrackMap; i++)
+                if (crackMap[i].bid == -1)
+        	        freemap = i;
+
+	if (freemap != -1) {
+		crackMap[freemap].bid = bid;
+		return freemap;
+	}
+
+        if (i == maxCrackMap) {
+                CrackMap *x;
+        
+                if (maxCrackMap > 0)
+                        units = (int) (1.2 * maxCrackMap);
+                x = (CrackMap *) GDKmalloc(sizeof(CrackMap) * units);
+                memset(x, 0, sizeof(CrackMap) * units);
+                if (crackMap) { 
+                        fprintf(stderr, "reallocate Crackmap\n");
+                        memcpy(x, crackMap, sizeof(CrackMap) * i);
+                        GDKfree(crackMap);
+                }
+                crackMap = x;
+                maxCrackMap = units;
+        }
+        /* init the crackmap */
+        crackMap[i].bid = bid;
+        crackMap[i].pieces = GDKmalloc(sizeof(Piece) * MAXPIECE);
+        memset((void *) crackMap[i].pieces, 0, sizeof(Piece) * MAXPIECE);
+        crackMap[i].freepiece = 0;
+        crackMap[i].maxpiece = MAXPIECE;
+        return i;
+}
+
+
 void
 freeCrackMap(int m)
 {
@@ -644,14 +694,18 @@ CRKcrackRangeWithTwoScans(int *vid, int *bid, int *low, int *hgh, bit tail)
 	int lim, m, i, pid = -1;
 	size_t l=0, h=0, vl=0, vh=0;
 	bit done = FALSE;
-	(void) tail;
-
+	
 	if (*(int *) low > *(int *) hgh)
 		return throwMessage("crackers.crack", "illegal range");
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("crackers.crackRange", "Cannot access descriptor");
 	}
-	m = findCrackMap(*bid);
+
+	m = existsCrackMap(*bid);
+	if (m == -1){
+		m = newCrackMap(*bid);
+	        initCrackMap(crackMap + m, bid);	
+	}
 @-
 Inspect the value range table to only further crack qualifying fragments.
 @c
@@ -918,8 +972,7 @@ and update the administration BATs.
 	VIEWbounds(view, vl, vh);
 	
 	if (!tail) {
-		uview = BATconst(view,TYPE_void,ATOMnilptr(TYPE_void));
-		printf("\n-------------------------------------------------making the change\n");
+		uview = BATconst(view,TYPE_void,ATOMnilptr(TYPE_void));		
 		*vid = uview->batCacheid;
 	}
 	else *vid = view->batCacheid;
