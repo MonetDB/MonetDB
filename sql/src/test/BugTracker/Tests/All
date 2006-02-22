@@ -13,3 +13,4 @@ rows_affected.SF-1377180
 broken_join.SF-1373391
 insert_not_exists.SF-1380287
 authorization.SF-1430616
+mapi_connect_errors_vanish.SF-1432134
