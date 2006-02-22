@@ -686,7 +686,6 @@ checkPiece(int m, BAT *b, int xx, int i, int *low, int *hgh, size_t  *vl, size_t
 	char buf[128];		/* scratch space */
 
         if (crackMap[m].pieces[i].kind == LEAF || firstCrack){
-			                      printf("in cracking mode\n"); 
                 if (*(int *) low < crackMap[m].pieces[i].rng_min && *(int *) hgh > crackMap[m].pieces[i].rng_max)
                         return;               
                 else if (crackMap[m].pieces[i].rng_max < *(int *) low)
@@ -733,10 +732,12 @@ checkPiece(int m, BAT *b, int xx, int i, int *low, int *hgh, size_t  *vl, size_t
                         }
                         h = BUNindex(b, vmax)-1;
                         l = BUNindex(b, vmin)+1;
-                        *vl = BUNindex(b, vmin)+1;
+                        *vl = BUNindex(b, vmax);
                 }
                 else{
-                       printf("splitting in three pieces \n");
+        #ifdef DEBUG_CRACKERS
+                       printf("#splitting in three pieces \n");
+	#endif
                         vmin = (ptr) ((char *) BUNptr(b, piece->idx_first) - xx);
                         vmax = (ptr) ((char *) BUNptr(b, piece->idx_last) + xx);
                         
@@ -757,17 +758,22 @@ checkPiece(int m, BAT *b, int xx, int i, int *low, int *hgh, size_t  *vl, size_t
 
                         bls = (ptr) ((char *) bl);
                        
-                        printf("\n bounds are: low %d, high %d  ", *(int *) BUNtail(b, bl), *(int *) BUNtail(b, bh)); 
-
+        #ifdef DEBUG_CRACKERS
+                        printf("# bounds are: low %d, high %d  ", *(int *) BUNtail(b, bl), *(int *) BUNtail(b, bh)); 
+	#endif
                         /* Make a second scan to resufle the buns */
 
                         vm = BUNtail(b, (ptr) ((char *) vmin + xx));
                         for (p = (ptr) ((char *) vmin + xx); p < bh; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)) {
-printf("checking  tail %d", *(int *) BUNtail(b, p));
-                                if (p >= bls){  /* then we have already created the <low partition so we can follow more simple rules now*/
 
-                                        printf("in the middle partition  ");
+        #ifdef DEBUG_CRACKERS
+				printf("#checking  tail %d", *(int *) BUNtail(b, p));
+        #endif                        
+				if (p >= bls){  /* then we have already created the <low partition so we can follow more simple rules now*/
 
+        #ifdef DEBUG_CRACKERS
+                                        printf("#in the middle partition  ");
+        #endif
                                         if (*(int *) vm > *(int *) hgh){
                                                 vmax = (ptr) ((char *) vmax - xx);
                                                 while (*(int *) BUNtail(b, vmax) > *(int *) hgh && vmax > bh)
@@ -779,14 +785,14 @@ printf("checking  tail %d", *(int *) BUNtail(b, p));
                                 }
 
         #ifdef DEBUG_CRACKERS
-                                printf("still in the low partition ");
+                                printf("#still in the low partition ");
         #endif
                                 /* if current BUN is below the low range just leave it there */
 
                                 if (*(int *) vm >= *(int *) low && *(int *) vm <= *(int *) hgh) {
 
         #ifdef DEBUG_CRACKERS
-                                        printf("current belongs in the middle partition");
+                                        printf("#current belongs in the middle partition");
         #endif
 
                                         for (pn = (ptr) ((char *) bl); pn < bh; pn = (ptr) ((char *) pn + xx), bl = (ptr) ((char *) bl + xx)){
@@ -812,7 +818,7 @@ printf("checking  tail %d", *(int *) BUNtail(b, p));
                                 } else if (*(int *) vm > *(int *) hgh) {
 
         #ifdef DEBUG_CRACKERS
-                                        printf("current belongs in the high partition");
+                                        printf("#current belongs in the high partition");
         #endif
                                         /* exchange with qualifying tail elm */
 
@@ -843,32 +849,26 @@ printf("checking  tail %d", *(int *) BUNtail(b, p));
                                 }
 
         #ifdef DEBUG_CRACKERS
-                                else printf("current belongs in the low partition");
+                                else printf("#current belongs in the low partition");
         #endif
                         }
-			printf("setting values");
                 	l = BUNindex(b, bls);
-printf("setting values\n");                
-	h = BUNindex(b, bh)-1;
-printf("setting values\n");
+			h = BUNindex(b, bh)-1;
                 	*vl = BUNindex(b, bls);
-printf("setting values\n");                
-	*vh = BUNindex(b, bh)-1;
-printf("setting values\n");
+			*vh = BUNindex(b, bh)-1;
                 }
 @-
 For each fragment discovered we have to break it into several pieces
 and update the administration BATs.
 @c              
-                printf("ready to create pieces");
-		printf("finished :  l "SZFMT", h "SZFMT", vl "SZFMT", vh "SZFMT" ", l,h,*vl,*vh );
                 if (piece->idx_first == l) {
                         if (h < piece->idx_last) {
                                 piece->kind = PHI;
                                 piece->left = crackMap[m].freepiece;
                                 @:newPiece(m, npiece)@
                                 npiece->rng_min = piece->rng_min;
-                                npiece->rng_max = *(int *) hgh;
+                                if (*(int *) hgh > piece->rng_max) npiece->rng_max = *(int *) low;
+				else npiece->rng_max = *(int *) hgh;
                                 npiece->idx_first = piece->idx_first;
                                 npiece->idx_last = h;
                                 npiece->kind = LEAF;
@@ -878,7 +878,8 @@ and update the administration BATs.
 
                                 piece->right = crackMap[m].freepiece;
                                 @:newPiece(m, npiece)@
-                                npiece->rng_min = *(int *) hgh + 1;
+                                if (*(int *) hgh > piece->rng_max) npiece->rng_min = *(int *) low + 1;
+				else npiece->rng_min = *(int *) hgh + 1;
                                 npiece->rng_max = piece->rng_max;
                                 npiece->idx_first = h + 1;
                                 npiece->idx_last = piece->idx_last;
@@ -987,15 +988,13 @@ Inspect the value range table to only further crack qualifying fragments.
 
         lim = crackMap[m].freepiece;
 #ifdef DEBUG_CRACKERS
-        printf("search range %d %d [lim=%d]\n", *(int *) low, *(int *) hgh, lim);
+        printf("#search range %d %d [lim=%d]\n", *(int *) low, *(int *) hgh, lim);
 #endif
         xx = BUNsize(b);
 
         checkPiece(m, b, xx, 0, low, hgh, &vl, &vh, firstCrack);
 
-        printf("\n returned values    vl "SZFMT", vh "SZFMT" ", vl,vh );
-       
-         view=VIEWcreate_(b,TRUE);
+        view=VIEWcreate_(b,TRUE);
         VIEWbounds(view, vl, vh);
 
         if (!tail) {
