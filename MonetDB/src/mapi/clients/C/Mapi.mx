@@ -2115,7 +2115,7 @@ mapi_start_talking(Mapi mid)
 			/* propagate error from result to mid
 			   mapi_close_handle clears the errors, so
 			   save them first*/
-			char *errorstr = hdl->result->errorstr;
+			char *errorstr = hdl->result ? hdl->result->errorstr : mid->errorstr;
 			MapiMsg error = mid->error;
 
 			mapi_close_handle(hdl);
