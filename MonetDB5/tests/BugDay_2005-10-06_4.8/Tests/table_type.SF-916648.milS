@@ -1,2 +1,0 @@
-print(bat(void,int).seqbase(0@0).insert(nil,1));
-table(bat(void,int).seqbase(0@0).insert(nil,1));

@@ -1,4 +1,0 @@
-	b:= bat.new(:int,:int);
-	bat.insert(b,1,1);
-	c:bat[:int,:int]:=optimizer.multiplex("calc.+",b,1);
-	mdb.list();
