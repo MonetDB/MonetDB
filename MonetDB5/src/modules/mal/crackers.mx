@@ -189,7 +189,7 @@ is locally maintained.
 #ifndef _CRACKERS_H_
 #define _CRACKERS_H_
 
- #define DEBUG_CRACKERS  
+/* #define DEBUG_CRACKERS */  
 
 #define LEAF 'L'
 #define PHI  'P'		/* broken using a select */
@@ -200,6 +200,8 @@ typedef struct {
 	char kind;		/* kind of piece */
 	int rng_max;		/* the value ranges */
 	int rng_min;
+	int real_rng_max;       /* the value ranges that actually exist in a piece */
+	int real_rng_min;
 	size_t idx_first;		/* the slice boundaries */
 	size_t idx_last;
 	int parent;		/* lineage */
@@ -363,6 +365,8 @@ printCrackMapElement(Piece * list, int i, int bid)
 	stream_printf(GDKout, "%d ", list[i].parent);
 	stream_printf(GDKout, "%d, ", list[i].rng_min);
 	stream_printf(GDKout, "%d, ", list[i].rng_max);
+        stream_printf(GDKout, "%d, ", list[i].real_rng_min);
+        stream_printf(GDKout, "%d, ", list[i].real_rng_max);
 	stream_printf(GDKout, " "SZFMT", ", list[i].idx_first);
 	stream_printf(GDKout, " "SZFMT", ", list[i].idx_last);
 	stream_printf(GDKout, "%d, ", list[i].left);
@@ -377,7 +381,7 @@ printCrackMap(int bid)
 
 	m = findCrackMap(bid);
 	if (crackMap[m].freepiece)
-		stream_printf(GDKout, "# idx bid kind parent rng_min rng_max idx_first idx_last left middle right# name\n");
+		stream_printf(GDKout, "# idx bid kind parent rng_min rng_max real_min real_max idx_first idx_last left middle right# name\n");
 	for (i = 0; i < crackMap[m].freepiece; i++)
 		printCrackMapElement(crackMap[m].pieces, i, bid);
 }
@@ -398,6 +402,8 @@ already. [todo]
 
 	map->pieces[0].rng_min = INT_MIN;
 	map->pieces[0].rng_max = INT_MAX;
+	map->pieces[0].real_rng_min = INT_MIN;
+        map->pieces[0].real_rng_max = INT_MAX;
 	map->pieces[0].idx_first = BUNindex(b, BUNfirst(b));
 	map->pieces[0].idx_last = BUNindex(b, BUNlast(b)) - 1;
 	map->pieces[0].kind = LEAF;
@@ -675,6 +681,49 @@ the ranges of the outer partitions as well.
 	return MAL_SUCCEED;
 }
 
+@= updateRealBoundsRight
+
+#ifdef DEBUG_CRACKERS
+	printf("\n changed right bounds from %d to %d  to  ", real_low3, real_high3);
+#endif
+	if (real_low3 < @2) real_low3 = *(int *) BUNtail(b, @1);
+        else if (real_low3 > *(int *) BUNtail(b, @1)) real_low3 = *(int *) BUNtail(b, @1);
+        if (real_high3 < @2) real_high3  = *(int *) BUNtail(b, @1);
+        else if (real_high3 < *(int *) BUNtail(b, @1)) real_high3  = *(int *) BUNtail(b, @1);
+	
+#ifdef DEBUG_CRACKERS
+	printf("%d to %d \n", real_low3, real_high3);	
+#endif
+
+@= updateRealBoundsLeft
+
+#ifdef DEBUG_CRACKERS
+	printf("\n changed left bounds from %d to %d  to  ", real_low1, real_high1);
+#endif
+	if (real_low1 > @2) real_low1 = *(int *) BUNtail(b, @1);
+        else if (real_low1 > *(int *) BUNtail(b, @1)) real_low1 = *(int *) BUNtail(b, @1);
+        if (real_high1 > @2) real_high1 = *(int *) BUNtail(b, @1);
+        else if (real_high1 < *(int *) BUNtail(b, @1)) real_high1 = *(int *) BUNtail(b, @1);
+
+#ifdef DEBUG_CRACKERS
+	printf("%d to %d \n", real_low1, real_high1);
+#endif
+
+@= updateRealBoundsMiddle
+
+#ifdef DEBUG_CRACKERS
+	printf("\n changed middle bounds from %d to %d  to  ", real_low2, real_high2);
+#endif
+        if ((real_low2 > *(int *) hgh) || (real_low2 < *(int *) low)) real_low2 = *(int *) BUNtail(b, @1); 
+        else if (real_low2 > *(int *) BUNtail(b, @1)) real_low2 = *(int *) BUNtail(b, @1);
+        if ((real_high2 > *(int *) hgh) || (real_high2 < *(int *) low)) real_high2 = *(int *) BUNtail(b, @1);
+	else if (real_high2 < *(int *) BUNtail(b, @1)) real_high2 = *(int *) BUNtail(b, @1);
+
+#ifdef DEBUG_CRACKERS
+	printf("%d to %d \n", real_low2, real_high2);
+#endif
+
+@c
 void
 checkPiece(int m, BAT *b, int xx, int i, int *low, int *hgh, size_t  *vl, size_t *vh, bit firstCrack)
 {
@@ -684,6 +733,9 @@ checkPiece(int m, BAT *b, int xx, int i, int *low, int *hgh, size_t  *vl, size_t
         size_t l=0, h=0;
 	piece = crackMap[m].pieces + i;
 	char buf[128];		/* scratch space */
+	int real_low1, real_high1, 
+	    real_low2, real_high2, 
+	    real_low3=-1, real_high3=-1;
 
         if (crackMap[m].pieces[i].kind == LEAF || firstCrack){
                 if (*(int *) low < crackMap[m].pieces[i].rng_min && *(int *) hgh > crackMap[m].pieces[i].rng_max)
@@ -699,15 +751,24 @@ checkPiece(int m, BAT *b, int xx, int i, int *low, int *hgh, size_t  *vl, size_t
                         vmax = (ptr) ((char *) BUNptr(b, piece->idx_last) + xx); 
                                 
                         vm = BUNtail(b, (ptr) ((char *) vmin + xx));
-                                        
+
+                        real_low1 = real_high1 = *(int *) BUNtail(b,BUNptr(b, piece->idx_first));
+               		real_low2 = real_high2 = *(int *) BUNtail(b,BUNptr(b, piece->idx_last));	
+
                         for (p = (ptr) ((char *) vmin + xx); p < vmax; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)){
                                 if (*(int *) vm > *(int*)hgh){
                                         vmax = (ptr) ((char *) vmax - xx);
-                                        while (*(int *) BUNtail(b, vmax) > *(int*)hgh && vmax > p)
+                                        while (*(int *) BUNtail(b, vmax) > *(int*)hgh && vmax > p){
+						@:updateRealBoundsRight(vmax, *(int *) hgh)@
                                                 vmax = (ptr) ((char *) vmax - xx);
+					}
 
-                                        if (vmax != p) @:exchange(vmax, p)@
+                                        if (vmax != p) {
+						@:exchange(vmax, p)@
+						@:updateRealBoundsRight(vmax, *(int *) hgh)@
+					}
                                 }
+				@:updateRealBoundsLeft(p, *(int *) hgh)@
                         }
                         h = BUNindex(b, vmax)-1;
                         *vh = BUNindex(b, vmax)-1;
@@ -721,14 +782,24 @@ checkPiece(int m, BAT *b, int xx, int i, int *low, int *hgh, size_t  *vl, size_t
 
                         vm = BUNtail(b, (ptr) ((char *) vmin + xx));
 
+                        real_low1 = real_high1 = *(int *) BUNtail(b,BUNptr(b, piece->idx_first));
+                        real_low2 = real_high2 = *(int *) BUNtail(b,BUNptr(b, piece->idx_last)); 
+
                         for (p = (ptr) ((char *) vmin + xx); p < vmax; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)){
                                 if (*(int *) vm > *(int*)low){
                                         vmax = (ptr) ((char *) vmax - xx);
-                                        while (*(int *) BUNtail(b, vmax) > *(int*)low && vmax > p)
+                                        while (*(int *) BUNtail(b, vmax) > *(int*)low && vmax > p){
+						@:updateRealBoundsRight(vmax, *(int *) low)@	
                                                 vmax = (ptr) ((char *) vmax - xx);
+                                        }
 
-                                        if (vmax != p) @:exchange(vmax, p)@
+                                        if (vmax != p){ 
+						@:exchange(vmax, p)@
+						@:updateRealBoundsRight(vmax, *(int *) low)@
+					}
+					
                                 }
+				@:updateRealBoundsLeft(p, *(int *) low)@
                         }
                         h = BUNindex(b, vmax)-1;
                         l = BUNindex(b, vmin)+1;
@@ -764,6 +835,11 @@ checkPiece(int m, BAT *b, int xx, int i, int *low, int *hgh, size_t  *vl, size_t
                         /* Make a second scan to resufle the buns */
 
                         vm = BUNtail(b, (ptr) ((char *) vmin + xx));
+
+			real_low1 = real_high1 = *(int *) BUNtail(b,BUNptr(b, piece->idx_first));
+			real_low2 = real_high2 = *(int *) BUNtail(b,bls);
+                        real_low3 = real_high3 = *(int *) BUNtail(b,BUNptr(b, piece->idx_last));
+
                         for (p = (ptr) ((char *) vmin + xx); p < bh; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)) {
 
         #ifdef DEBUG_CRACKERS
@@ -776,12 +852,18 @@ checkPiece(int m, BAT *b, int xx, int i, int *low, int *hgh, size_t  *vl, size_t
         #endif
                                         if (*(int *) vm > *(int *) hgh){
                                                 vmax = (ptr) ((char *) vmax - xx);
-                                                while (*(int *) BUNtail(b, vmax) > *(int *) hgh && vmax > bh)
+                                                while (*(int *) BUNtail(b, vmax) > *(int *) hgh && vmax > bh){
+							@:updateRealBoundsRight(vmax, *(int *) hgh)@
                                                         vmax = (ptr) ((char *) vmax - xx);
-                                                if (*(int *) BUNtail(b, vmax) >= *(int *) low && *(int *) BUNtail(b, vmax) <= *(int *) hgh)
+                                       		 }
+	
+                                                if (*(int *) BUNtail(b, vmax) >= *(int *) low && *(int *) BUNtail(b, vmax) <= *(int *) hgh){
                                                         @:exchange(vmax, p)@
+							@:updateRealBoundsRight(vmax, *(int *) hgh)@
+						}
                                         }
-                                        continue;
+					@:updateRealBoundsMiddle(p)@
+					continue;
                                 }
 
         #ifdef DEBUG_CRACKERS
@@ -798,22 +880,37 @@ checkPiece(int m, BAT *b, int xx, int i, int *low, int *hgh, size_t  *vl, size_t
                                         for (pn = (ptr) ((char *) bl); pn < bh; pn = (ptr) ((char *) pn + xx), bl = (ptr) ((char *) bl + xx)){
                                                 if (*(int *) BUNtail(b, pn) < *(int *) low){
                                                         @:exchange(pn, p)@
+							
+							@:updateRealBoundsMiddle(pn)@
+
                                                         bl = (ptr) ((char *) bl + xx);
-                                                        break;
+
+		                                        break;
                                                 }
                                                 if (*(int *) BUNtail(b, pn) > *(int *) hgh){
                                                         vmax = (ptr) ((char *) vmax - xx);
-                                                        while (*(int *) BUNtail(b, vmax) > *(int *) hgh && vmax > bh)
-                                                                vmax = (ptr) ((char *) vmax - xx);
-                                                        if (*(int *) BUNtail(b, vmax) >= *(int *) low && *(int *) BUNtail(b, vmax) <= *(int *) hgh)
+                                                        while (*(int *) BUNtail(b, vmax) > *(int *) hgh && vmax > bh){
+                                                       	       @:updateRealBoundsRight(vmax, *(int *) hgh)@ 
+								vmax = (ptr) ((char *) vmax - xx);
+                                	                }
+
+                                                        if (*(int *) BUNtail(b, vmax) >= *(int *) low && *(int *) BUNtail(b, vmax) <= *(int *) hgh){
                                                                 @:exchange(vmax, pn)@
-                                                if (*(int *) BUNtail(b, vmax) < *(int *) low){
+								@:updateRealBoundsRight(vmax, *(int *) hgh)@
+							}
+                                                	if (*(int *) BUNtail(b, vmax) < *(int *) low){
                                                                 @:exchange2(p,pn,vmax)@
+                                                        	
+								@:updateRealBoundsMiddle(pn)@	
+								@:updateRealBoundsRight(vmax, *(int *) hgh)@	
+
                                                                 bl = (ptr) ((char *) bl + xx);
-                                                                break;
+
+								break;
                                                         }
                                                 }
-                                        }
+						@:updateRealBoundsMiddle(pn)@
+					}
 
                                 } else if (*(int *) vm > *(int *) hgh) {
 
@@ -822,35 +919,39 @@ checkPiece(int m, BAT *b, int xx, int i, int *low, int *hgh, size_t  *vl, size_t
         #endif
                                         /* exchange with qualifying tail elm */
 
-
-
                                         for (pn = (ptr) ((char *) vmax-xx); pn >= bh; pn = (ptr) ((char *) pn - xx), vmax = (ptr) ((char *) vmax - xx)){
 
-                                                if (*(int *) BUNtail(b, pn) < *(int *) low){ printf("it belong in low");
+                                                if (*(int *) BUNtail(b, pn) < *(int *) low){
                                                         @:exchange(pn, p)@
-                                                        break;
+							@:updateRealBoundsRight(pn, *(int *) hgh)@	
+							break;
                                                 }
                                                 if (*(int *) BUNtail(b, pn) >= *(int *) low && *(int *) BUNtail(b, pn) <= *(int *) hgh){
 
-                                                        while (*(int *) BUNtail(b, bl) >= *(int *) low && *(int *) BUNtail(b, bl) <= *(int *) hgh && bl < bh)
+                                                        while (*(int *) BUNtail(b, bl) >= *(int *) low && *(int *) BUNtail(b, bl) <= *(int *) hgh && bl < bh){
+								@:updateRealBoundsMiddle(bl)@
                                                                 bl = (ptr) ((char *) bl + xx);
-
-                                                        if (*(int *) BUNtail(b, bl) > *(int *) hgh)
+							}
+                                                        if (*(int *) BUNtail(b, bl) > *(int *) hgh){
                                                                 @:exchange(bl, pn)@
+								@:updateRealBoundsMiddle(bl)@
+							}
                                                         if (*(int *) BUNtail(b, bl) < *(int *) low){
                                                                 @:exchange2(pn, bl, p)@
+								
+								@:updateRealBoundsRight(pn, *(int *) hgh)@
+								@:updateRealBoundsMiddle(bl)@
+
                                                                 bl = (ptr) ((char *) bl + xx);
+
                                                                 break;
                                                         }
                                                 }
-
+						@:updateRealBoundsRight(pn, *(int *) hgh)@
                                         }
 
                                 }
-
-        #ifdef DEBUG_CRACKERS
-                                else printf("#current belongs in the low partition");
-        #endif
+				@:updateRealBoundsLeft(p, *(int *) low)@
                         }
                 	l = BUNindex(b, bls);
 			h = BUNindex(b, bh)-1;
@@ -863,12 +964,18 @@ and update the administration BATs.
 @c              
                 if (piece->idx_first == l) {
                         if (h < piece->idx_last) {
+				if (firstCrack) {
+					piece->real_rng_min = piece->rng_min = real_low1;
+					piece->real_rng_max = piece->rng_max = real_high2;
+				}
                                 piece->kind = PHI;
                                 piece->left = crackMap[m].freepiece;
                                 @:newPiece(m, npiece)@
                                 npiece->rng_min = piece->rng_min;
                                 if (*(int *) hgh > piece->rng_max) npiece->rng_max = *(int *) low;
 				else npiece->rng_max = *(int *) hgh;
+				npiece->real_rng_min = real_low1;
+				npiece->real_rng_max = real_high1;
                                 npiece->idx_first = piece->idx_first;
                                 npiece->idx_last = h;
                                 npiece->kind = LEAF;
@@ -881,6 +988,8 @@ and update the administration BATs.
                                 if (*(int *) hgh > piece->rng_max) npiece->rng_min = *(int *) low + 1;
 				else npiece->rng_min = *(int *) hgh + 1;
                                 npiece->rng_max = piece->rng_max;
+				npiece->real_rng_min = real_low3;
+                                npiece->real_rng_max = real_high3;
                                 npiece->idx_first = h + 1;
                                 npiece->idx_last = piece->idx_last;
                                 npiece->kind = LEAF;
@@ -894,6 +1003,8 @@ and update the administration BATs.
                                 @:newPiece(m, npiece)@
                                 npiece->rng_min = piece->rng_min;
                                 npiece->rng_max = *(int *) low - 1;
+				npiece->real_rng_min = real_low1;
+                                npiece->real_rng_max = real_high1;
                                 npiece->idx_first = piece->idx_first;
                                 npiece->idx_last = l - 1;
                                 npiece->kind = LEAF;
@@ -905,17 +1016,25 @@ and update the administration BATs.
                                 @:newPiece(m, npiece)@
                                 npiece->rng_min = *(int *) low;
                                 npiece->rng_max = piece->rng_max;
+				npiece->real_rng_min = real_low3;
+                                npiece->real_rng_max = real_high3;
                                 npiece->idx_first = l;
                                 npiece->idx_last = piece->idx_last;
                                 npiece->kind = LEAF;
                                 npiece->parent = i;
                         }
                 } else {
+			if (firstCrack) {
+                        	piece->real_rng_min = piece->rng_min = real_low1;
+                                piece->real_rng_max = piece->rng_max = real_high3;
+                        }
                         piece->kind = PHI;
                         piece->left = crackMap[m].freepiece;
                         @:newPiece(m, npiece)@
                         npiece->rng_min = piece->rng_min;
                         npiece->rng_max = *(int *) low - 1;
+			npiece->real_rng_min = real_low1;
+                        npiece->real_rng_max = real_high1;
                         npiece->idx_first = piece->idx_first;
                         npiece->idx_last = l - 1;
                         npiece->kind = LEAF;
@@ -925,6 +1044,8 @@ and update the administration BATs.
                         @:newPiece(m, npiece)@
                         npiece->rng_min = *(int *) low;
                         npiece->rng_max = *(int *) hgh;
+			npiece->real_rng_min = real_low2;
+                        npiece->real_rng_max = real_high2;
                         npiece->idx_first = l;
                         npiece->idx_last = h;
                         npiece->kind = LEAF;
@@ -934,6 +1055,8 @@ and update the administration BATs.
                         @:newPiece(m, npiece)@
                         npiece->rng_min = *(int *) hgh + 1;
                         npiece->rng_max = piece->rng_max;
+			npiece->real_rng_min = real_low3;
+                        npiece->real_rng_max = real_high3;
                         npiece->idx_first = h + 1;
                         npiece->idx_last = piece->idx_last;
                         npiece->kind = LEAF;
