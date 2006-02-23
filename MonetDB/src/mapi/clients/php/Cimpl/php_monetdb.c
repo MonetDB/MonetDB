@@ -891,14 +891,21 @@ PHP_FUNCTION(monetdb_last_error)
 /* {{{ php_monetdb_fetch_hash
  */
 static void
-php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int result_type)
+php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int result_type, int into_object)
 {
 	zval **z_handle = NULL;
 	MapiHdl handle;
+	zend_class_entry *ce = NULL;
 	int i;
 
 	if ((ZEND_NUM_ARGS() != 1) || (zend_get_parameters_ex(1, &z_handle) == FAILURE)) {
 		WRONG_PARAM_COUNT;
+	}
+
+	if (into_object) {
+		ce = zend_standard_class_def;
+		/* force associative array fetching */
+		result_type = MONETDB_ASSOC;
 	}
 
 	if (Z_TYPE_PP(z_handle) == IS_RESOURCE && Z_LVAL_PP(z_handle) == 0)
@@ -976,6 +983,13 @@ php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int result_type)
 			}
 		}		/* not null */
 	}			/* for each row */
+
+	if (into_object) {
+		zval dataset = *return_value;
+
+		object_and_properties_init(return_value, ce, NULL);
+		zend_merge_properties(return_value, Z_ARRVAL(dataset), 1 TSRMLS_CC);
+	}
 }
 
 /* }}} */
@@ -984,7 +998,7 @@ php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int result_type)
    Gets a result row as an enumerated array */
 PHP_FUNCTION(monetdb_fetch_row)
 {
-	php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAM_PASSTHRU, MONETDB_NUM);
+	php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAM_PASSTHRU, MONETDB_NUM, 0);
 }
 
 /* }}} */
@@ -993,11 +1007,7 @@ PHP_FUNCTION(monetdb_fetch_row)
    Fetch a result row as an object */
 PHP_FUNCTION(monetdb_fetch_object)
 {
-	php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAM_PASSTHRU, MONETDB_ASSOC);
-
-	if (Z_TYPE_P(return_value) == IS_ARRAY) {
-		object_and_properties_init(return_value, &zend_standard_class_def, Z_ARRVAL_P(return_value));
-	}
+	php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAM_PASSTHRU, MONETDB_ASSOC, 1);
 }
 
 /* }}} */
@@ -1006,7 +1016,7 @@ PHP_FUNCTION(monetdb_fetch_object)
    Fetch a result row as an array (associative and numeric ) */
 PHP_FUNCTION(monetdb_fetch_array)
 {
-	php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAM_PASSTHRU, MONETDB_BOTH);
+	php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAM_PASSTHRU, MONETDB_BOTH, 0);
 }
 
 /* }}} */
@@ -1015,7 +1025,7 @@ PHP_FUNCTION(monetdb_fetch_array)
    Fetch a result row as an associative array */
 PHP_FUNCTION(monetdb_fetch_assoc)
 {
-	php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAM_PASSTHRU, MONETDB_ASSOC);
+	php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAM_PASSTHRU, MONETDB_ASSOC, 0);
 }
 
 /* }}} */
