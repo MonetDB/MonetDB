@@ -2338,7 +2338,7 @@ TBL_multiplex_resolve(str name, int argc, ValPtr argv, monet_sig_t *sig, Cntxt s
 			if (b->ttype == TYPE_bat) {
 				p = (BATcount(b) <= 0) ? ((ptr) &z) : BUNtloc(b, BUNfirst(b));
 			}
-			VALset(argv + i, b->ttype, p);
+			VALset(argv + i, b->ttype == TYPE_void && b->tseqbase != oid_nil ? TYPE_oid : b->ttype, p);
 
 			if (tpe < 0) {
 				tpe = b->htype;

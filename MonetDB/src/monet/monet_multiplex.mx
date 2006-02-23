@@ -366,10 +366,15 @@ multiplex_fcn(int tpe)
 		return (ColFcn) multiplex_copy_chr;
 	case TYPE_sht:
 		return (ColFcn) multiplex_copy_sht;
+#if SIZEOF_OID == SIZEOF_INT
 	case TYPE_void:
+#endif
 	case TYPE_int:
 	case TYPE_flt:
 		return (ColFcn) multiplex_copy_int;
+#if SIZEOF_OID == SIZEOF_LNG
+	case TYPE_void:
+#endif
 	case TYPE_lng:
 	case TYPE_dbl:
 		return (ColFcn) multiplex_copy_lng;
