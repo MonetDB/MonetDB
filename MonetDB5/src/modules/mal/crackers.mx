@@ -734,8 +734,11 @@ checkPiece(int m, BAT *b, int xx, int i, int *low, int *hgh, size_t  *vl, size_t
 	piece = crackMap[m].pieces + i;
 	char buf[128];		/* scratch space */
 	int real_low1, real_high1, 
-	    real_low2, real_high2, 
-	    real_low3=-1, real_high3=-1;
+	    real_low2=INT_MIN, real_high2=INT_MAX, 
+	    real_low3=INT_MIN, real_high3=INT_MAX;
+#ifdef DEBUG_CRACKERS
+	printf("\n checking piece %d, changing low high from %d, %d to ",i,*(int*)low,*(int*)hgh);
+#endif
 
         if (crackMap[m].pieces[i].kind == LEAF || firstCrack){
                 if (*(int *) low < crackMap[m].pieces[i].rng_min && *(int *) hgh > crackMap[m].pieces[i].rng_max)
@@ -744,6 +747,10 @@ checkPiece(int m, BAT *b, int xx, int i, int *low, int *hgh, size_t  *vl, size_t
                         return;
                 else if (crackMap[m].pieces[i].rng_min > *(int *) hgh)
                         return;
+		else if (*(int *) low < crackMap[m].pieces[i].rng_min && *(int *) hgh == crackMap[m].pieces[i].real_rng_max){
+                        *vh = piece->idx_last;
+                        return;
+                }
                 else if (*(int *) low < crackMap[m].pieces[i].rng_min && *(int *) hgh < crackMap[m].pieces[i].rng_max
                                                                  && *(int *) hgh > crackMap[m].pieces[i].rng_min){
                         
@@ -753,7 +760,7 @@ checkPiece(int m, BAT *b, int xx, int i, int *low, int *hgh, size_t  *vl, size_t
                         vm = BUNtail(b, (ptr) ((char *) vmin + xx));
 
                         real_low1 = real_high1 = *(int *) BUNtail(b,BUNptr(b, piece->idx_first));
-               		real_low2 = real_high2 = *(int *) BUNtail(b,BUNptr(b, piece->idx_last));	
+               		real_low3 = real_high3 = *(int *) BUNtail(b,BUNptr(b, piece->idx_last));	
 
                         for (p = (ptr) ((char *) vmin + xx); p < vmax; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)){
                                 if (*(int *) vm > *(int*)hgh){
@@ -774,6 +781,10 @@ checkPiece(int m, BAT *b, int xx, int i, int *low, int *hgh, size_t  *vl, size_t
                         *vh = BUNindex(b, vmax)-1;
                         l = BUNindex(b, vmin)+1;
                 }
+		else if  (*(int *) hgh > crackMap[m].pieces[i].rng_max && *(int *) low == crackMap[m].pieces[i].real_rng_min){
+                        *vl = piece->idx_first;
+                        return;
+                }
                 else if  (*(int *) hgh > crackMap[m].pieces[i].rng_max && *(int *) low < crackMap[m].pieces[i].rng_max
                                                                  && *(int *) low > crackMap[m].pieces[i].rng_min){
 
@@ -783,7 +794,7 @@ checkPiece(int m, BAT *b, int xx, int i, int *low, int *hgh, size_t  *vl, size_t
                         vm = BUNtail(b, (ptr) ((char *) vmin + xx));
 
                         real_low1 = real_high1 = *(int *) BUNtail(b,BUNptr(b, piece->idx_first));
-                        real_low2 = real_high2 = *(int *) BUNtail(b,BUNptr(b, piece->idx_last)); 
+                        real_low3 = real_high3 = *(int *) BUNtail(b,BUNptr(b, piece->idx_last)); 
 
                         for (p = (ptr) ((char *) vmin + xx); p < vmax; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)){
                                 if (*(int *) vm > *(int*)low){
@@ -996,6 +1007,9 @@ and update the administration BATs.
                                 npiece->parent = i;
                         }
                 } else if (piece->idx_last == h) {
+#ifdef DEBUG_CRACKERS
+			printf("\n administer in the right part\n");
+#endif
                         if (l > piece->idx_first) {
                                 /* falls at high end */
                                 piece->kind = PHI;
@@ -1064,7 +1078,15 @@ and update the administration BATs.
                 }
 	}
 	else if (crackMap[m].pieces[i].kind != LEAF && !firstCrack){
-		if (*(int *) low == crackMap[m].pieces[i].rng_min && *(int *) hgh == crackMap[m].pieces[i].rng_max){
+#ifdef DEBUG_CRACKERS
+		printf("\n checking piece %d, changing low high from %d, %d to ",i,*(int*)low,*(int*)hgh);
+#endif
+		if (*(int *) low >= crackMap[m].pieces[i].rng_min && *(int *) low < crackMap[m].pieces[i].real_rng_min) *low = crackMap[m].pieces[i].real_rng_min;
+		if (*(int *) hgh > crackMap[m].pieces[i].real_rng_max && *(int *) hgh <= crackMap[m].pieces[i].rng_max) *hgh = crackMap[m].pieces[i].real_rng_max; 
+#ifdef DEBUG_CRACKERS
+		printf(" %d, %d \n", *(int*)low,*(int*)hgh);
+#endif
+		if (*(int *) low == crackMap[m].pieces[i].real_rng_min && *(int *) hgh == crackMap[m].pieces[i].real_rng_max){
 			*vl = piece->idx_first;
 			*vh = piece->idx_last;
 			return;
