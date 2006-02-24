@@ -903,6 +903,9 @@ php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int result_type, int into_o
 	}
 
 	if (into_object) {
+		/* TODO: Darwin thinks this assignment is incompatible; maybe
+		 *       PHP version there is too old?  It also complains about
+		 *       zend_merge_properties which is not defined. */
 		ce = zend_standard_class_def;
 		/* force associative array fetching */
 		result_type = MONETDB_ASSOC;
