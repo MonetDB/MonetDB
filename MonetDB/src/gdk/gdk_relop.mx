@@ -1394,6 +1394,7 @@ typedef struct { oid l,r; } dst_t;
 @:nlthetajoin_tpe(impl,ge,>=)@
 @:nlthetajoin_tpe(impl,lt,<)@
 @:nlthetajoin_tpe(impl,le,<=)@
+@:nlthetajoin_tpe(impl,eq,==)@
 BAT *
 BATnlthetajoin(BAT *l, BAT *r, int op, size_t estimate) {
 	int optimize = (l->htype == TYPE_oid || BAThdense(l)) && (r->ttype == TYPE_oid || BATtdense(r));
@@ -1418,6 +1419,9 @@ BATnlthetajoin(BAT *l, BAT *r, int op, size_t estimate) {
 		lo = GDK_int_min;
 		hi = 0;
 		if (optimize) switch(ATOMstorage(l->ttype)) { @:nlthetajoin_tpe(call,le)@ default: optimize=0; }
+	} else if (op == JOIN_EQ) {
+		if (optimize) switch(ATOMstorage(l->ttype)) { @:nlthetajoin_tpe(call,eq)@ default: optimize=0; }
+
 	}
 	if (!optimize) {
 		int lx, rx, (*cmp) (ptr, ptr) = BATatoms[l->ttype].atomCmp;
