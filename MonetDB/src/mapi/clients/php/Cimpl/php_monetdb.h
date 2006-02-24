@@ -74,8 +74,6 @@ PHP_FUNCTION(monetdb_field_table);
 PHP_FUNCTION(monetdb_field_name);
 PHP_FUNCTION(monetdb_field_type);
 PHP_FUNCTION(monetdb_field_len);
-PHP_FUNCTION(monetdb_errno);
-PHP_FUNCTION(monetdb_error);
 PHP_FUNCTION(monetdb_last_error);
 PHP_FUNCTION(monetdb_fetch_array);
 PHP_FUNCTION(monetdb_fetch_assoc);
@@ -110,7 +108,6 @@ char *default_username;
 char *default_password;
 char *last_error;
 long query_timeout;
-
 ZEND_END_MODULE_GLOBALS(monetdb)
 
 /* In every utility function you add that needs to use variables 

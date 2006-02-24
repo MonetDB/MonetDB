@@ -71,13 +71,15 @@ static int le_handle;
 
 struct _phpMonetHandle {
 	int resno;
+	MapiHdl mhdl;
+	struct _phpMonetConn *conn;
 	struct _phpMonetHandle *next;
 };
 typedef struct _phpMonetHandle phpMonetHandle;
 
-
 struct _phpMonetConn {
 	Mapi mid;
+	char *error;	/* differs from the mapi error in that it is cleaned */
 	phpMonetHandle *first;
 };
 typedef struct _phpMonetConn phpMonetConn;
@@ -85,21 +87,43 @@ typedef struct _phpMonetConn phpMonetConn;
 /* TODO: maybe we want to introduce persistant connections?
 static int le_plink; */
 
-/* {{{ utility function to set the last error */
-static int monetdb_set_last_error(char *error TSRMLS_DC) {
-	/* if there is no error, don't do anything */
-	if (!error) return(0);
+/* {{{ php_monetdb_set_last_error(error, connection)
+ * utility function to set the last error
+ * if the given connection is NULL, the error is put in the global
+ * buffer, otherwise, it is put in the connection specific buffer */
+static int php_monetdb_set_last_error(char *error, phpMonetConn* con TSRMLS_DC) {
+	char *tmperror;
 	
-	/* free the previous error, if any */
-	if (MONET_G(last_error)) efree(MONET_G(last_error));
+	/* if there is no error, don't try to do intelligent things */
+	if (!error) {
+		return(0);
+	}
 
 	/* copy the error string, omiting some protocol specific stuff */
 	if (strncmp(error, "!ERROR ", 7) == 0) {
-		MONET_G(last_error) = estrdup(error + 7);
+		tmperror = estrdup(error + 7);
 	} else if (error[0] == '!') {
-		MONET_G(last_error) = estrdup(error + 1);
+		tmperror = estrdup(error + 1);
 	} else {
-		MONET_G(last_error) = estrdup(error);
+		tmperror = estrdup(error);
+	}
+
+	/* if con == NULL we have to use the global error buffer in this
+	 * function, otherwise the connection specific buffer. */
+	if (con == NULL) {
+		/* free the previous global error, if any */
+		if (MONET_G(last_error)) efree(MONET_G(last_error));
+		MONET_G(last_error) = tmperror;
+	} else {
+		/* clear global error on new connection error, to avoid the
+		 * global error overriding the connection error */
+		if (MONET_G(last_error)) efree(MONET_G(last_error));
+		MONET_G(last_error) = NULL;
+
+		/* because we just cleaned up the error, we can't use mapi's
+		 * error buffer, so we use our own. */
+		if (con->error) efree(con->error);
+		con->error = tmperror;
 	}
 
 	return(1);
@@ -122,8 +146,6 @@ function_entry monetdb_functions[] = {
 	PHP_FE(monetdb_field_name, NULL)
 	PHP_FE(monetdb_field_type, NULL)
 	PHP_FE(monetdb_field_len, NULL)
-	PHP_FE(monetdb_errno, NULL)
-	PHP_FE(monetdb_error, NULL)
 	PHP_FE(monetdb_last_error, NULL)
 	PHP_FE(monetdb_fetch_array, NULL)
 	PHP_FE(monetdb_fetch_assoc, NULL)
@@ -181,13 +203,15 @@ _free_monetdb_link(zend_rsrc_list_entry * rsrc TSRMLS_DC)
 		/* remove from resource list to avoid double free lateron */
 		zend_list_delete(h->resno);
 		next = h->next;
-		free(h);
+		efree(h);
 		h = next;
 	}
 	/* fprintf(stderr, "Freed link and %d handles\n", i); */
 	mapi_destroy(monet_link->mid);
 	monet_link->mid = NULL;
-	free(monet_link);
+	if (monet_link->error) efree(monet_link->error);
+	monet_link->error = NULL;
+	efree(monet_link);
 	monet_link = NULL;
 }
 
@@ -198,9 +222,9 @@ _free_monetdb_link(zend_rsrc_list_entry * rsrc TSRMLS_DC)
 static void
 _free_monetdb_handle(zend_rsrc_list_entry * rsrc TSRMLS_DC)
 {
-	MapiHdl mapi_handle = (MapiHdl) rsrc->ptr;
+	phpMonetHandle *handle = (phpMonetHandle *)rsrc->ptr;
 
-	mapi_close_handle(mapi_handle);
+	mapi_close_handle(handle->mhdl);
 }
 
 /* }}} */
@@ -378,12 +402,13 @@ PHP_FUNCTION(monetdb_connect)
 	*/
 
 	/* Connect to MonetDB server */
-	conn = (phpMonetConn *) malloc(sizeof(phpMonetConn));
+	conn = (phpMonetConn *) emalloc(sizeof(phpMonetConn));
 	conn->first = NULL;
+	conn->error = NULL;
 	conn->mid = mapi_connect(hostname, port, username, password, language);
 
 	if (mapi_error(conn->mid)) {
-		int e = monetdb_set_last_error(mapi_error_str(conn->mid) TSRMLS_CC);
+		int e = php_monetdb_set_last_error(mapi_error_str(conn->mid), NULL TSRMLS_CC);
 		php_error(E_WARNING, "monetdb_connect: Error: %s",
 				e ? MONET_G(last_error) : "(null)");
 		RETURN_FALSE;
@@ -438,7 +463,7 @@ PHP_FUNCTION(monetdb_close)
 
 	ret = 1;
 	if (mapi_error(conn->mid)) {
-		monetdb_set_last_error(mapi_error_str(conn->mid) TSRMLS_CC);
+		php_monetdb_set_last_error(mapi_error_str(conn->mid), NULL TSRMLS_CC);
 		ret = 0;
 	}
 
@@ -493,7 +518,7 @@ PHP_FUNCTION(monetdb_setAutocommit)
 	mapi_setAutocommit(conn->mid, autocommit);
 
 	if (mapi_error(conn->mid)) {
-		monetdb_set_last_error(mapi_error_str(conn->mid) TSRMLS_CC);
+		php_monetdb_set_last_error(mapi_error_str(conn->mid), conn TSRMLS_CC);
 		RETURN_FALSE;
 	}
 
@@ -541,7 +566,7 @@ PHP_FUNCTION(monetdb_query)
 	if (!conn || !conn->mid) {
 		char *error = "monetdb_query: Query on uninitialized/closed connection";
 		php_error(E_WARNING, error);
-		monetdb_set_last_error(error TSRMLS_CC);
+		php_monetdb_set_last_error(error, NULL TSRMLS_CC);
 		/* php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "Query on uninitialized/closed connection"); */
 		RETURN_FALSE;
 	}
@@ -550,7 +575,7 @@ PHP_FUNCTION(monetdb_query)
 	if (!handle) {
 		char *error = "monetdb_query: Query on uninitialized/closed connection";
 		php_error(E_WARNING, error);
-		monetdb_set_last_error(error TSRMLS_CC);
+		php_monetdb_set_last_error(error, conn TSRMLS_CC);
 		/* php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "Query on uninitialized/closed connection"); */
 		RETURN_FALSE;
 	}
@@ -564,7 +589,7 @@ PHP_FUNCTION(monetdb_query)
 	mapi_query_handle(handle, query);
 	efree(query);
 
-	if (monetdb_set_last_error(mapi_result_error(handle) TSRMLS_CC) != 0) {
+	if (php_monetdb_set_last_error(mapi_result_error(handle), conn TSRMLS_CC) != 0) {
 		/* mapi_close_handle(handle); */
 		php_error(E_WARNING, "monetdb_query: Error: %s", MONET_G(last_error));
 		/* php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "MonetDB Error: %s", error); */
@@ -572,8 +597,10 @@ PHP_FUNCTION(monetdb_query)
 		RETURN_FALSE;
 	}
 
-	h = (phpMonetHandle *) malloc(sizeof(phpMonetHandle));
-	h->resno = ZEND_REGISTER_RESOURCE(return_value, handle, le_handle);
+	h = (phpMonetHandle *) emalloc(sizeof(phpMonetHandle));
+	h->mhdl = handle;
+	h->conn = conn;
+	h->resno = ZEND_REGISTER_RESOURCE(return_value, h, le_handle);
 
 	/* add resource id to linked list for automatic cleanup on disconnect(). */
 	if (conn->first) {
@@ -591,7 +618,7 @@ PHP_FUNCTION(monetdb_query)
 PHP_FUNCTION(monetdb_num_rows)
 {
 	zval **z_handle = NULL;
-	MapiHdl handle;
+	phpMonetHandle *handle = NULL;
 
 	if ((ZEND_NUM_ARGS() != 1) || (zend_get_parameters_ex(1, &z_handle) == FAILURE)) {
 		WRONG_PARAM_COUNT;
@@ -600,11 +627,9 @@ PHP_FUNCTION(monetdb_num_rows)
 	if (Z_TYPE_PP(z_handle) == IS_RESOURCE && Z_LVAL_PP(z_handle) == 0)
 		RETURN_FALSE;
 
-	ZEND_FETCH_RESOURCE(handle, MapiHdl, z_handle, -1, "MonetDB result handle", le_handle);
+	ZEND_FETCH_RESOURCE(handle, phpMonetHandle *, z_handle, -1, "MonetDB result handle", le_handle);
 
-	/*~ printf("MON: num rows handle=%p\n", handle); */
-
-	Z_LVAL_P(return_value) = (long) mapi_get_row_count(handle);
+	Z_LVAL_P(return_value) = (long)mapi_get_row_count(handle->mhdl);
 	Z_TYPE_P(return_value) = IS_LONG;
 }
 
@@ -640,7 +665,7 @@ PHP_FUNCTION(monetdb_num_fields)
 PHP_FUNCTION(monetdb_next_result)
 {
 	zval **z_handle = NULL;
-	MapiHdl handle;
+	phpMonetHandle *handle = NULL;
 	int result = -1;
 	char *error = NULL;
 
@@ -651,14 +676,13 @@ PHP_FUNCTION(monetdb_next_result)
 	if (Z_TYPE_PP(z_handle) == IS_RESOURCE && Z_LVAL_PP(z_handle) == 0)
 		RETURN_FALSE;
 
-	ZEND_FETCH_RESOURCE(handle, MapiHdl, z_handle, -1, "MonetDB result handle", le_handle);
+	ZEND_FETCH_RESOURCE(handle, phpMonetHandle *, z_handle, -1, "MonetDB result handle", le_handle);
 
-	result = (int) mapi_next_result(handle);
+	result = (int)mapi_next_result(handle->mhdl);
 
-	if (monetdb_set_last_error(mapi_result_error(handle) TSRMLS_CC) != 0) {
-		/* mapi_close_handle(handle); */
-		php_error(E_WARNING, "monetdb_query: Error: %s", MONET_G(last_error));
-		/* php_error_docref("function.monetdb_query" TSRMLS_CC, E_WARNING, "MonetDB Error: %s", error); */
+	if (error = mapi_result_error(handle->mhdl) != NULL) {
+		php_monetdb_set_last_error(error, handle->conn TSRMLS_CC);
+		php_error(E_WARNING, "monetdb_next_result: Error: %s", error);
 		RETURN_FALSE;
 	}
 
@@ -673,9 +697,10 @@ PHP_FUNCTION(monetdb_next_result)
 PHP_FUNCTION(monetdb_field_table)
 {
 	zval **z_handle = NULL, **z_index = NULL;
-	MapiHdl handle;
+	phpMonetHandle *handle = NULL;
 	long index;
 	char *table;
+	char *error;
 
 	if ((ZEND_NUM_ARGS() != 2) || (zend_get_parameters_ex(2, &z_handle, &z_index) == FAILURE)) {
 		WRONG_PARAM_COUNT;
@@ -684,22 +709,21 @@ PHP_FUNCTION(monetdb_field_table)
 	if (Z_TYPE_PP(z_handle) == IS_RESOURCE && Z_LVAL_PP(z_handle) == 0)
 		RETURN_FALSE;
 
-	ZEND_FETCH_RESOURCE(handle, MapiHdl, z_handle, -1, "MonetDB result handle", le_handle);
+	ZEND_FETCH_RESOURCE(handle, phpMonetHandle *, z_handle, -1, "MonetDB result handle", le_handle);
 
 	convert_to_long_ex(z_index);
 	index = Z_LVAL_PP(z_index);
 
-	/*~ printf("MON: _field_table: index=%d handle=%p\n", index, handle); */
-
-	if (index >= mapi_get_field_count(handle)) {
-		php_error(E_WARNING, "monetdb_field_table: Accessing field number #%ld, which is out of range", index);
-		/* php_error_docref("function.monetdb_field_table" TSRMLS_CC, E_WARNING, "Accessing field number #%ld, which is out of range", index); */
+	if (index >= mapi_get_field_count(handle->mhdl)) {
+		error = emalloc(sizeof(char) * 128);
+		snprintf(error, 127, "Field index out of range: %ld", index);
+		php_monetdb_set_last_error(error, handle->conn TSRMLS_CC);
+		php_error(E_WARNING, "monetdb_field_table: Error: %s", error);
+		efree(error);
 		RETURN_FALSE;
 	}
 
-	table = mapi_get_table(handle, index);
-
-	/*~ printf("MON: _field_table: table=%s\n", table); */
+	table = mapi_get_table(handle->mhdl, index);
 
 	Z_STRLEN_P(return_value) = strlen(table);
 	Z_STRVAL_P(return_value) = estrndup(table, Z_STRLEN_P(return_value));
@@ -713,9 +737,9 @@ PHP_FUNCTION(monetdb_field_table)
 PHP_FUNCTION(monetdb_field_name)
 {
 	zval **z_handle = NULL, **z_index = NULL;
-	MapiHdl handle;
+	phpMonetHandle *handle = NULL;
 	long index;
-	char *name;
+	char *name = NULL, *error = NULL;
 
 	if ((ZEND_NUM_ARGS() != 2) || (zend_get_parameters_ex(2, &z_handle, &z_index) == FAILURE)) {
 		WRONG_PARAM_COUNT;
@@ -724,22 +748,21 @@ PHP_FUNCTION(monetdb_field_name)
 	if (Z_TYPE_PP(z_handle) == IS_RESOURCE && Z_LVAL_PP(z_handle) == 0)
 		RETURN_FALSE;
 
-	ZEND_FETCH_RESOURCE(handle, MapiHdl, z_handle, -1, "MonetDB result handle", le_handle);
+	ZEND_FETCH_RESOURCE(handle, phpMonetHandle *, z_handle, -1, "MonetDB result handle", le_handle);
 
 	convert_to_long_ex(z_index);
 	index = Z_LVAL_PP(z_index);
 
-	/*~ printf("MON: _field_name: index=%d handle=%p\n", index, handle); */
-
-	if (index >= mapi_get_field_count(handle)) {
-		php_error(E_WARNING, "monetdb_field_name: Accessing field number #%ld, which is out of range", index);
-		/* php_error_docref("function.monetdb_field_name" TSRMLS_CC, E_WARNING, "Accessing field number #%ld, which is out of range", index); */
+	if (index >= mapi_get_field_count(handle->mhdl)) {
+		error = emalloc(sizeof(char) * 128);
+		snprintf(error, 127, "Field index out of range: %ld", index);
+		php_monetdb_set_last_error(error, handle->conn TSRMLS_CC);
+		php_error(E_WARNING, "monetdb_field_table: Error: %s", error);
+		efree(error);
 		RETURN_FALSE;
 	}
 
-	name = mapi_get_name(handle, index);
-
-	/*~ printf("MON: _field_name: name=%s\n", name); */
+	name = mapi_get_name(handle->mhdl, index);
 
 	Z_STRLEN_P(return_value) = strlen(name);
 	Z_STRVAL_P(return_value) = estrndup(name, Z_STRLEN_P(return_value));
@@ -753,9 +776,9 @@ PHP_FUNCTION(monetdb_field_name)
 PHP_FUNCTION(monetdb_field_type)
 {
 	zval **z_handle = NULL, **z_index = NULL;
-	MapiHdl handle;
+	phpMonetHandle *handle = NULL;
 	long index;
-	char *type;
+	char *type = NULL, *error = NULL;;
 
 	if ((ZEND_NUM_ARGS() != 2) || (zend_get_parameters_ex(2, &z_handle, &z_index) == FAILURE)) {
 		WRONG_PARAM_COUNT;
@@ -764,22 +787,21 @@ PHP_FUNCTION(monetdb_field_type)
 	if (Z_TYPE_PP(z_handle) == IS_RESOURCE && Z_LVAL_PP(z_handle) == 0)
 		RETURN_FALSE;
 
-	ZEND_FETCH_RESOURCE(handle, MapiHdl, z_handle, -1, "MonetDB result handle", le_handle);
+	ZEND_FETCH_RESOURCE(handle, phpMonetHandle *, z_handle, -1, "MonetDB result handle", le_handle);
 
 	convert_to_long_ex(z_index);
 	index = Z_LVAL_PP(z_index);
 
-	/*~ printf("MON: _field_type: index=%d handle=%p\n", index, handle); */
-
-	if (index >= mapi_get_field_count(handle)) {
-		php_error(E_WARNING, "monetdb_field_type: Accessing field number #%ld, which is out of range", index);
-		/* php_error_docref("function.monetdb_field_type" TSRMLS_CC, E_WARNING, "Accessing field number #%ld, which is out of range", index); */
+	if (index >= mapi_get_field_count(handle->mhdl)) {
+		error = emalloc(sizeof(char) * 128);
+		snprintf(error, 127, "Field index out of range: %ld", index);
+		php_monetdb_set_last_error(error, handle->conn TSRMLS_CC);
+		php_error(E_WARNING, "monetdb_field_table: Error: %s", error);
+		efree(error);
 		RETURN_FALSE;
 	}
 
-	type = mapi_get_type(handle, index);
-
-	/*~ printf("MON: _field_type: type=%s\n", type); */
+	type = mapi_get_type(handle->mhdl, index);
 
 	Z_STRLEN_P(return_value) = strlen(type);
 	Z_STRVAL_P(return_value) = estrndup(type, Z_STRLEN_P(return_value));
@@ -793,9 +815,10 @@ PHP_FUNCTION(monetdb_field_type)
 PHP_FUNCTION(monetdb_field_len)
 {
 	zval **z_handle = NULL, **z_index = NULL;
-	MapiHdl handle;
+	phpMonetHandle *handle = NULL;
 	long index;
 	long len;
+	char *error = NULL;
 
 	if ((ZEND_NUM_ARGS() != 2) || (zend_get_parameters_ex(2, &z_handle, &z_index) == FAILURE)) {
 		WRONG_PARAM_COUNT;
@@ -804,86 +827,59 @@ PHP_FUNCTION(monetdb_field_len)
 	if (Z_TYPE_PP(z_handle) == IS_RESOURCE && Z_LVAL_PP(z_handle) == 0)
 		RETURN_FALSE;
 
-	ZEND_FETCH_RESOURCE(handle, MapiHdl, z_handle, -1, "MonetDB result handle", le_handle);
+	ZEND_FETCH_RESOURCE(handle, phpMonetHandle *, z_handle, -1, "MonetDB result handle", le_handle);
 
 	convert_to_long_ex(z_index);
 	index = Z_LVAL_PP(z_index);
 
-	/*~ printf("MON: _field_len: index=%d handle=%p\n", index, handle); */
-
-	if (index >= mapi_get_field_count(handle)) {
-		php_error(E_WARNING, "monetdb_field_len: Accessing field number #%ld, which is out of range", index);
-		/* php_error_docref("function.monetdb_field_len" TSRMLS_CC, E_WARNING, "Accessing field number #%ld, which is out of range", index); */
+	if (index >= mapi_get_field_count(handle->mhdl)) {
+		error = emalloc(sizeof(char) * 128);
+		snprintf(error, 127, "Field index out of range: %ld", index);
+		php_monetdb_set_last_error(error, handle->conn TSRMLS_CC);
+		php_error(E_WARNING, "monetdb_field_table: Error: %s", error);
+		efree(error);
 		RETURN_FALSE;
 	}
 
-	len = mapi_get_len(handle, index);
-
-	/*~ printf("MON: _field_len: len=%d\n", len); */
+	len = mapi_get_len(handle->mhdl, index);
 
 	RETURN_LONG(len);
 }
 
 /* }}} */
 
-/* {{{ proto int monetdb_errno([resource db])
-   Returns the numerical value of the error message from previous MonetDB operation */
-PHP_FUNCTION(monetdb_errno)
-{
-	zval **mapi_link = NULL;
-	int id;
-	phpMonetConn *conn;
-
-	switch (ZEND_NUM_ARGS()) {
-	case 0:
-		id = MONET_G(default_link);
-
-		break;
-	case 1:
-		if (zend_get_parameters_ex(1, &mapi_link) == FAILURE) {
-			RETURN_FALSE;
-		}
-		id = -1;
-
-		break;
-	default:
-		WRONG_PARAM_COUNT;
-		break;
-	}
-
-	ZEND_FETCH_RESOURCE(conn, phpMonetConn *, mapi_link, id, "MonetDB connection", le_link);
-
-	RETURN_LONG(mapi_error(conn->mid));
-}
-
-/* }}} */
-
-/* {{{ proto string monetdb_error([resource db])
-   Returns the text of the error message from previous MonetDB operation */
-PHP_FUNCTION(monetdb_error)
-{
-	php_error(E_WARNING, "monetdb_error: warning: function deprecated, use monetdb_last_error()");
-	
-	if (MONET_G(last_error) == NULL)
-		RETURN_FALSE;
-
-	RETURN_STRINGL(MONET_G(last_error), strlen(MONET_G(last_error)), 0);
-}
-
-/* }}} */
-
-/* {{{ proto string monetdb_last_error()
-   Returns the text of the last error message. */
+/* {{{ proto string monetdb_last_error([resource db])
+   Returns the text of the last error message.  Global errors take
+   precedence over connection errors, if no explicit resource is given.
+*/
 PHP_FUNCTION(monetdb_last_error)
 {
-	if (ZEND_NUM_ARGS() != 0) {
+	zval **z_mapi_link = NULL;
+	phpMonetConn *conn;
+
+	if (ZEND_NUM_ARGS() > 1 ) {
 		WRONG_PARAM_COUNT;
+	} else if (ZEND_NUM_ARGS() == 1) {
+		if (zend_get_parameters_ex(1, &z_mapi_link) == FAILURE) {
+			RETURN_FALSE;
+		}
+		ZEND_FETCH_RESOURCE(conn, phpMonetConn *, z_mapi_link, -1, "MonetDB connection", le_link);
+	} else {
+		/* if there is a global error, return it */
+		if (MONET_G(last_error))
+			RETURN_STRINGL(MONET_G(last_error), strlen(MONET_G(last_error)), 0);
+		
+		/* grab last resource */
+		ZEND_FETCH_RESOURCE(conn, phpMonetConn *, z_mapi_link, MONET_G(default_link), "MonetDB connection", le_link);
 	}
 
-	if (MONET_G(last_error) == NULL)
+	if (!conn || !conn->mid)
 		RETURN_FALSE;
 
-	RETURN_STRINGL(MONET_G(last_error), strlen(MONET_G(last_error)), 0);
+	if (conn->error == NULL)
+		RETURN_FALSE;
+
+	RETURN_STRINGL(conn->error, strlen(conn->error), 0);
 }
 
 /* }}} */
@@ -894,7 +890,7 @@ static void
 php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int result_type, int into_object)
 {
 	zval **z_handle = NULL;
-	MapiHdl handle;
+	phpMonetHandle *handle = NULL;
 	zend_class_entry *ce = NULL;
 	int i;
 
@@ -914,15 +910,14 @@ php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int result_type, int into_o
 	if (Z_TYPE_PP(z_handle) == IS_RESOURCE && Z_LVAL_PP(z_handle) == 0)
 		RETURN_FALSE;
 
-	ZEND_FETCH_RESOURCE(handle, MapiHdl, z_handle, -1, "MonetDB result handle", le_handle);
+	ZEND_FETCH_RESOURCE(handle, phpMonetHandle *, z_handle, -1, "MonetDB result handle", le_handle);
 
 	if ((result_type & MONETDB_BOTH) == 0) {
 		php_error(E_CORE_ERROR, "php_monetdb_fetch_hash: result_type==%d is incorrect", result_type);
-		/* php_error_docref(NULL TSRMLS_CC, E_CORE_ERROR, "php_monetdb_fetch_hash: result_type==%d is incorrect", result_type); */
 		RETURN_FALSE;
 	}
 
-	if (!mapi_fetch_row(handle)) {	/* EOF or ERROR */
+	if (!mapi_fetch_row(handle->mhdl)) {	/* EOF or ERROR */
 		/* TODO: check error */
 		RETURN_FALSE;
 	}
@@ -931,10 +926,10 @@ php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int result_type, int into_o
 		RETURN_FALSE;
 	}
 
-	for (i = 0; i < mapi_get_field_count(handle); i++) {
-		char *fieldtype = mapi_get_type(handle, i);
-		char *value = mapi_fetch_field(handle, i);
-		char *fieldname = mapi_get_name(handle, i);
+	for (i = 0; i < mapi_get_field_count(handle->mhdl); i++) {
+		char *fieldtype = mapi_get_type(handle->mhdl, i);
+		char *value = mapi_fetch_field(handle->mhdl, i);
+		char *fieldname = mapi_get_name(handle->mhdl, i);
 
 		if (!value || !strcmp(value, "nil")) {	/* NULL VALUE */
 			if (result_type & MONETDB_NUM) {
@@ -997,7 +992,7 @@ php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int result_type, int into_o
 
 /* }}} */
 
-/* {{{ proto array monetdb_fetch_row(resource result)
+/* {{{ proto array monetdb_fetch_row(resource handle)
    Gets a result row as an enumerated array */
 PHP_FUNCTION(monetdb_fetch_row)
 {
@@ -1006,7 +1001,7 @@ PHP_FUNCTION(monetdb_fetch_row)
 
 /* }}} */
 
-/* {{{ proto object monetdb_fetch_object(resource result)
+/* {{{ proto object monetdb_fetch_object(resource handle)
    Fetch a result row as an object */
 PHP_FUNCTION(monetdb_fetch_object)
 {
@@ -1015,7 +1010,7 @@ PHP_FUNCTION(monetdb_fetch_object)
 
 /* }}} */
 
-/* {{{ proto array monetdb_fetch_array(resource result)
+/* {{{ proto array monetdb_fetch_array(resource handle)
    Fetch a result row as an array (associative and numeric ) */
 PHP_FUNCTION(monetdb_fetch_array)
 {
@@ -1024,7 +1019,7 @@ PHP_FUNCTION(monetdb_fetch_array)
 
 /* }}} */
 
-/* {{{ proto array monetdb_fetch_assoc(resource result)
+/* {{{ proto array monetdb_fetch_assoc(resource handle)
    Fetch a result row as an associative array */
 PHP_FUNCTION(monetdb_fetch_assoc)
 {
@@ -1033,26 +1028,34 @@ PHP_FUNCTION(monetdb_fetch_assoc)
 
 /* }}} */
 
-/* {{{ proto bool monetdb_data_seek(resource result, int row_number)
+/* {{{ proto bool monetdb_data_seek(resource handle, int row_number)
    Move internal result pointer */
 PHP_FUNCTION(monetdb_data_seek)
 {
-	zval **result, **offset;
-	MapiHdl handle;
+	zval **z_handle, **offset;
+	phpMonetHandle *handle = NULL;
+	char *error = NULL;
 
-	if (ZEND_NUM_ARGS() != 2 || zend_get_parameters_ex(2, &result, &offset) == FAILURE) {
+	if (ZEND_NUM_ARGS() != 2 || zend_get_parameters_ex(2, &z_handle, &offset) == FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 
-	ZEND_FETCH_RESOURCE(handle, MapiHdl, result, -1, "MonetDB result handle", le_handle);
+	ZEND_FETCH_RESOURCE(handle, phpMonetHandle *, z_handle, -1, "MonetDB result handle", le_handle);
 
 	convert_to_long_ex(offset);
-	if (Z_LVAL_PP(offset) < 0 || Z_LVAL_PP(offset) >= (int) mapi_get_row_count(handle)) {
-		php_error(E_WARNING, "monetdb_data_seek: Offset %ld is invalid for MonetDB result index %ld", Z_LVAL_PP(offset), Z_LVAL_PP(result));
-		/* php_error_docref(NULL TSRMLS_CC, E_WARNING, "Offset %ld is invalid for MonetDB result index %ld", Z_LVAL_PP(offset), Z_LVAL_PP(result)); */
+
+	if (Z_LVAL_PP(offset) < 0 ||
+			Z_LVAL_PP(offset) >= (int)mapi_get_row_count(handle->mhdl))
+	{
+		error = emalloc(sizeof(char) * 128);
+		snprintf(error, 127, "Row index out of range: %ld", Z_LVAL_PP(offset));
+		php_monetdb_set_last_error(error, handle->conn TSRMLS_CC);
+		php_error(E_WARNING, "monetdb_data_seek: Error: %s", error);
+		efree(error);
 		RETURN_FALSE;
 	}
-	mapi_seek_row(handle, Z_LVAL_PP(offset), MAPI_SEEK_SET);
+
+	mapi_seek_row(handle->mhdl, Z_LVAL_PP(offset), MAPI_SEEK_SET);
 	RETURN_TRUE;
 }
 
@@ -1081,25 +1084,25 @@ PHP_FUNCTION(monetdb_escape_string)
 
 /* }}} */
 
-/* {{{ proto long monetdb_affected_rows([int link_identifier])
+/* {{{ proto long monetdb_affected_rows([resource handle])
    Get affected row count */
 PHP_FUNCTION(monetdb_affected_rows)
 {
-	zval **result;
-	MapiHdl handle;
+	zval **z_handle;
+	phpMonetHandle *handle = NULL;
 
-	if (ZEND_NUM_ARGS() != 1 || zend_get_parameters_ex(1, &result) == FAILURE) {
+	if (ZEND_NUM_ARGS() != 1 || zend_get_parameters_ex(1, &z_handle) == FAILURE) {
 		WRONG_PARAM_COUNT;
 	}
 
-	ZEND_FETCH_RESOURCE(handle, MapiHdl, result, -1, "MonetDB result handle", le_handle);
+	ZEND_FETCH_RESOURCE(handle, phpMonetHandle *, z_handle, -1, "MonetDB result handle", le_handle);
 
-	RETURN_LONG(mapi_rows_affected(handle));
+	RETURN_LONG(mapi_rows_affected(handle->mhdl));
 }
 
 /* }}} */
 
-/* {{{ proto bool monetdb_ping([int link_identifier])
+/* {{{ proto bool monetdb_ping([resource db])
    Ping a server connection. If no connection then reconnect. */
 PHP_FUNCTION(monetdb_ping)
 {
@@ -1131,12 +1134,11 @@ PHP_FUNCTION(monetdb_ping)
 
 /* }}} */
 
-/* {{{ proto bool monetdb_free_result(resource result)
+/* {{{ proto bool monetdb_free_result(resource handle)
    Free result memory */
 PHP_FUNCTION(monetdb_free_result)
 {
 	zval **z_handle = NULL;
-	MapiHdl handle;
 
 	if ((ZEND_NUM_ARGS() != 1) || (zend_get_parameters_ex(1, &z_handle) == FAILURE)) {
 		WRONG_PARAM_COUNT;
@@ -1145,15 +1147,13 @@ PHP_FUNCTION(monetdb_free_result)
 	if (Z_TYPE_PP(z_handle) == IS_RESOURCE && Z_LVAL_PP(z_handle) == 0)
 		RETURN_FALSE;
 
-	ZEND_FETCH_RESOURCE(handle, MapiHdl, z_handle, -1, "MonetDB result handle", le_handle);
-
 	zend_list_delete(Z_LVAL_PP(z_handle));
 	RETURN_TRUE;
 }
 
 /* }}} */
 
-/* {{{ proto bool monetdb_info([int link_identifier])
+/* {{{ proto bool monetdb_info([resource db])
    Returns associative array with information about the connection and server. */
 PHP_FUNCTION(monetdb_info)
 {
