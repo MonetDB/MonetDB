@@ -123,5 +123,5 @@ You can now test the MonetDB installation using the following command::
  rem MonetDB was built.
  set MNSRC=...\MonetDB
  rem the following command should be on a single line
- cd "%MNSRC"
+ cd "%MNSRC%"
  Mtest.py --TSTSRCBASE="%MNSRC%" --TSTBLDBASE="%MNSRC%\MinGW" --TSTTRGBASE="%MONETDB_PREFIX%" -r
