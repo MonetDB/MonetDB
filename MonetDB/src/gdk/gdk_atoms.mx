@@ -385,7 +385,7 @@ atomDesc BATatoms[MAXATOMS] = {
 	 0, 0,
 	 0, 0,
 	 0, 0},
-	{"str", TYPE_str, 1, sizeof(var_t), sizeof(var_t), 0, 1, (ptr) &chr_nil,
+	{"str", TYPE_str, 1, sizeof(var_t), sizeof(var_t), 0, 1, (ptr) str_nil,
 	 (int (*)(str, int *, ptr *)) strFromStr, (int (*)(str *, int *, ptr)) strToStr,
 	 (void *(*)(void *, stream *, size_t)) strRead, (int (*)(void *, stream *, size_t)) strWrite,
 	 (int (*)(ptr, ptr)) strCmp,
