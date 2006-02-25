@@ -201,7 +201,6 @@ BATsetdims(BAT *b)
 }
 
 @- BAT allocation 
-@T
 Allocate BUN heap and variable-size atomheaps (see e.g. strHeap).
 We now initialize new BATs with their heapname such that the modified
 HEAPalloc/HEAPextend primitives can possibly use memory mapped files
@@ -543,9 +542,8 @@ BATdestroy( BAT *b )
 
 @}
 @+ BAT copying
-@T
-The @%BATcopy@ command takes a BAT and produces a writable copy of it.
-Likewise, @%BATrcopy@ command produces a read-only copy, which
+The @code{BATcopy} command takes a BAT and produces a writable copy of it.
+Likewise, @code{BATrcopy} command produces a read-only copy, which
 allows it to make important space optimizations.
 
 The new BAT is always in memory allocated by @%BATcopy@, the user does 
@@ -1041,15 +1039,16 @@ to use the BUNdelete routines, by not modifying what is in
 front of the deleted bun. 
 
 This routine returns the next BUN in b after deletion of p.
-@T
 Note: to cause less trouble when updating BATs with void columns
 the delete policy has been changed. Deleted volatile elements 
 are now being overwritten by the last element; instead of causing 
 a cascade of moves. The sequential deletability property
 is changed somewhat: instead of doing 
-{\small\tt BATloop(b,p,q) BUNdelete(b,p)}
+@verbatim
+	BATloop(b,p,q) BUNdelete(b,p)
 one now must do:
-{\small\tt BATloopDEL(b,p) p = BUNdelete(b,p)}.
+	BATloopDEL(b,p) p = BUNdelete(b,p)
+@end verbatim
 @
 @c
 static INLINE BUN
@@ -1879,10 +1878,13 @@ to X.priv). To change a temporary writable MMAP heap into a readonly permanent
 MMAP heap, we must *modify* the filename.
 @-
 To summarize, there are three heap attributes of interest;
-@itemize
-@item[H = (priv,map)] heap mode as registered in h->storage 
-@item[M = (priv,map)] heap mode as has been requested from the OS 
-@item[F = (X,X.priv)] h->filename 
+@itemize @code
+@item H=(priv,map)
+ heap mode as registered in h->storage 
+@item M=(priv,map)
+heap mode as has been requested from the OS 
+@item F=(X,X.priv)
+h->filename 
 @end itemize
 
 We show now all 4 legal heap states, and transitions between them:

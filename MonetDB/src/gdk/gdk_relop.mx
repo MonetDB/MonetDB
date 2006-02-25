@@ -1265,7 +1265,7 @@ join columns.  We factor out more by splitting on storage strategy
 columns (2*2).
 
 In the end, this results in 4*5*2*2 = 80 different inner loops.
-
+@{
 @c
 BAT *
 BATthetajoin(BAT *l, BAT *r, int op, size_t estimate)

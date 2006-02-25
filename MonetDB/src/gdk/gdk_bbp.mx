@@ -21,14 +21,14 @@ The BATs created and loaded are collected in a BAT buffer pool.
 The Bat Buffer Pool has a number of functions:
 @table @code
 
-@item[administration and lookup]
+@item administration and lookup
 The BBP is a directory which contains status information about all known BATs. 
 This interface may be used very heavily, by data-intensive applications.
 To eliminate all overhead, read-only access to the BBP may be done by 
 table-lookups. The integer index type for these lookups is @%bat@, as 
 retrieved by @%BBPcacheid(b)@. The @%bat@ zero is reserved for the nil bat. 
 
-@item[persistence]
+@item persistence
 The BBP is made persistent by saving it to the dictionary file 
 called @emph{BBP.dir} in the database. The dictionary can always be 
 reconstructed from the @emph{ .desc} files. Its main role is to 
@@ -40,14 +40,14 @@ When the number of BATs rises, having all files in one directory
 becomes a bottleneck.  The BBP therefore implements a scheme that distributes
 all BATs in a growing directory tree with at most 64 BATs stored in one node.
 
-@item[buffer management]
+@item buffer management
 The BBP is responsible for loading and saving of BATs to disk. It also 
 contains routines to unload BATs from memory when memory resources 
 get scarce. For this purpose, it administers BAT memory reference 
 counts (to know which BATs can be unloaded) and BAT usage statistics 
 (it unloads the least recently used BATs).
 
-@item[recovery]
+@item recovery
 When the database is closed or during a run-time syncpoint, the system
 tables must be written to disk in a safe way, that is immune for system 
 failures (like disk full). To do so, the BBP implements an atomic commit and 
@@ -56,7 +56,7 @@ dir. If that succeeds, the writes are done. If that also fully succeeds
 the BACKUP/ dir is renamed to DELETE_ME/ and subsequently deleted.
 If not, all files in BACKUP/ are moved back to their original location.
 
-@item [unloading]
+@item unloading
 Bats which have a logical reference (ie. a lrefs > 0) but no memory
 reference (refcnt == 0) can be unloaded. Unloading dirty bats means,
 moving the original (committed version) to the BACKUP/ dir and saving
@@ -64,13 +64,13 @@ the bat. This complicates the commit and recovery/abort issues.
 The commit has to check if the bat is already moved. And The recovery
 has to always move back the files from the BACKUP/ dir.
 
-@item [reference counting]
+@item reference counting
 Bats use have two kinds of references: logical and physical (pointer) ones.
 Both are administered with the BBPincref/BBPdecref routines. For 
 backward compatibility, we maintain BBPfix/BBPunfix as shorthands
 for the adjusting the pointer references.
 
-@item [share counting]
+@item share counting
 Views use the heaps of there parent bats. To save guard this, the
 parent has a shared counter, which is incremented and decremented
 using BBPshare and BBPunshare. These functions make sure the
@@ -247,13 +247,13 @@ is sure that there is at least one reference count to that BAT.
 
 The main BBP array is protected by two locks:
 @table @code
-@item[GDKcacheLock] 
+@item GDKcacheLock]
 this lock guards the free slot management in the BBP array.  The BBP 
 operations that allocate a new slot for a new BAT (@%BBPinit@,@%BBPcacheit@), 
 delete the slot of a destroyed BAT (@%BBPreclaim@), or rename a BAT 
 (@%BBPrename@), hold this lock. It also protects all BAT (re)naming actions 
 include (read and write) in the hash table with BAT names.
-@item[GDKswapLock]
+@item GDKswapLock
 this lock guards the swap (loaded/unloaded) status of the BATs. Hence, all
 BBP routines that influence the swapping policy, or actually carry out the
 swapping policy itself, acquire this lock (e.g. @%BBPfix@,@%BBPunfix@).
@@ -271,8 +271,9 @@ To obtain maximum speed, read operations to existing elements in the BBP are
 unguarded. As said, it is the users responsibility that the BAT that is being 
 read is not being modified. BBP update actions that modify the BBP data structure 
 itself are locked by the BBP functions themselves. Hence, multiple concurrent BBP read 
-operations may be ongoing while at the same time at most one BBP write operation 
-{\bf on a different BAT} is executing.  This holds for accesses to the public (quasi-)
+operations may be ongoing while at the same time at most one BBP write 
+operation @strong{on a different BAT} is executing.  
+This holds for accesses to the public (quasi-)
 arrays @%BBPcache@, @%BBPstatus@, @%BBPrefs@, @%BBPlogical@ and @%BBPphysical@. These 
 arrays are called quasi as now they are actually stored together in one big BBPrec 
 array called BBP, that is allocated in anonymous VM space, so we can reallocate 

@@ -18,19 +18,19 @@
 @a M. L. Kersten, P. Boncz, S. Manegold
 @* Common BAT Operations
 This module contains the following BAT algebra operations:
-@itemize
-@item[bulk updates]
+@itemize @code
+@item bulk updates
 multi-insert, multi-delete, multi-replace
-@item[common aggregates]
+@item common aggregates
 min, max and histogram
-@item[oid column manipulations]
+@item oid column manipulations
 mark, number and split.
-@item[bat selections]
+@item bat selections
 select, slice, sample, fragment and restrict.
 Note: non hash-/index-supported scanselects have been "outsourced"
 to gdk_scanselect.mx as the fully expanded code grows too large to be
 (conveniently) compiled in a single file.
-@item[bat partitioning]
+@item bat partitioning
 hash partition, range partitioning
 @end itemize
 We factor out all possible overhead by inlining code.

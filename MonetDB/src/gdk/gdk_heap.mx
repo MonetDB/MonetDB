@@ -22,18 +22,18 @@ to a large, possibly huge, contiguous area of main memory, that can
 be allocated in various ways (discriminated by the heap->storage field):
 
 @table @code
-@item[STORE_MEM: malloc-ed memory]
+@item STORE_MEM: malloc-ed memory
 small (or rather: not huge) heaps are allocated with GDKmalloc.
 Notice that GDKmalloc may redirect big requests to anonymous
 virtual memory to prevent @emph{memory fragmentation} in the 
 malloc library (see gdk_utils.mx). 
 
-@item[STORE_MMAP: read-only mapped region]
+@item STORE_MMAP: read-only mapped region
 this is a file on disk that is mapped into virtual memory.   
 This is normally done MAP_SHARED, so we can use msync() to commit dirty 
 data using the OS virtual memory management.
 
-@item[STORE_PRIV: read-write mapped region]
+@item STORE_PRIV: read-write mapped region
 in order to preserve ACID properties, we use a different memory mapping
 on virtual memory that is writable, This is because in case of a crash
 on a dirty STORE_MMAP heap, the OS may have written some of the dirty pages

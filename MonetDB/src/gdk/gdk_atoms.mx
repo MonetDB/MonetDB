@@ -1680,7 +1680,6 @@ strHeap(Heap *d, size_t cap)
 
 
 @- Hash Function 
-@T
 The string hash function is a very simple hash function that xors and 
 rotates all characters together. 
 

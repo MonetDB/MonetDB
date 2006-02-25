@@ -15,8 +15,7 @@
 @' All Rights Reserved.
 
 @f gdk
-@T
-@' define titlepage @t The Goblin Database Kernel
+@t The Goblin Database Kernel
 @v Version 3.05
 @a Martin L. Kersten & Peter Boncz
 
@@ -678,12 +677,12 @@ BUNs (@strong{Binary UNits}).  The two attributes of a BUN are called
 @strong{head} (left) and @strong{tail} (right) in the remainder of this
 document.
 
-@image{bat1}
+@image{bat1,,,,feps}
 
 The above figure shows what a BAT looks like. It consists of two
 columns, called head and tail, such that we have always binary tuples
-(BUNs). The overlooking structure is the @strong{BAT
-record}.  It points to a heap structure called the @strong{BUN heap}.
+(BUNs). The overlooking structure is the @strong{BAT record}.  
+It points to a heap structure called the @strong{BUN heap}.
 This heap contains the atomic values inside the two columns. If they
 are fixed-sized atoms, these atoms reside directly in the BUN heap. If
 they are variable-sized atoms (such as string or polygon), however,
@@ -766,7 +765,7 @@ gdk_export void *VALget(ValPtr v);
 The elements of the BAT structure are introduced in the remainder.
 Instead of using the underlying types hidden beneath it, one should
 use a @%BAT@ type that is supposed to look like this:
-@example
+@verbatim
 typedef struct {
           /* static BAT properties */
           bat    batCacheid;       /* bat id: index in BBPcache */
@@ -811,7 +810,7 @@ typedef struct {
           Heap   theap;            /* heap for varsized tail values */
           Hash   thash;            /* linair chained hash table on tail */
  } BAT;
-@end example
+@end verbatim
 
 The internal structure of the @strong{BAT} record is in fact much more complex,
 but GDK programmers should refrain of making use of that.
@@ -828,7 +827,7 @@ in the same line, we allow @strong{synchronized BATs} (BATs with identical
 head columns, and marked as such in the @strong{BAT Alignment} interface) now to
 be clustered horizontally.
 
-@image{bat2}
+@image{bat2,,,,feps}
 @
 
 @{
@@ -1876,7 +1875,7 @@ Valid names are "size", "align", "null", "fromstr", "tostr", "cmp",
 
 @item The @emph{ATOMalign()} operation returns the atoms minimum alignment. If the
 alignment info was not specified explicitly during atom install, it
-assumes the maximum value of {1,2,4,8} smaller than the atom size.
+assumes the maximum value of @verb{ { }1,2,4,8@verb{ } } smaller than the atom size.
 
 @item  The @emph{ATOMnilptr()} operation returns a pointer to the nil-value of an
 atom. We usually take one dedicated value halfway down the negative
@@ -2418,13 +2417,12 @@ BATmirror(REGISTER BAT *b)
 MonetDB by default offers a global transaction environment.  
 The global transaction involves all activities on all persistent 
 BATs by all threads.  Each global transaction ends with either 
-@%TMabort@ or @%TMcommit@, and immediately starts a new transaction.
-
-@%TMcommit@ implements atomic commit to disk on the collection
+@%TMabort@ or @%TMcommit@, and immediately starts a new 
+transaction.  @%TMcommit@ implements atomic commit to disk on the collection
 of all persistent BATs. For all persistent BATs, the global
 commit also flushes the delta status for these BATs 
-(see @%BATcommit@/@%BATabort@). This allows to perform
-@%TMabort@ quickly in memory (without re-reading all disk images 
+(see @%BATcommit@/@%BATabort@). This allows to perform @%TMabort@ 
+quickly in memory (without re-reading all disk images 
 from disk).  The collection of which BATs is persistent is also part
 of the global transaction state. All BATs that where 
 persistent at the last commit, but were made transient 
@@ -2433,9 +2431,9 @@ In other words, BATs that are deleted, are only
 physically deleted at @%TMcommit@ time. Until that time,
 rollback (@%TMabort@) is possible. 
 
-Use of @%TMabort is currently NOT RECOMMENDED due to two bugs:
+Use of @%TMabort@ is currently NOT RECOMMENDED due to two bugs:
 
-@begin itemize
+@itemize
 @item
 @%TMabort after a failed @%TMcommit@ does not
 bring us back to the previous committed state; but to the
@@ -2725,7 +2723,7 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 
 The @emph{BATloop()} looks like a function call, but is actually a macro.
 The following example gives an indication of how they are to be used:
-@example
+@verbatim
 void
 print\_a\_bat(BAT *b)
 {
@@ -2734,7 +2732,7 @@ print\_a\_bat(BAT *b)
 		printf("Element %3d has value %d\n",
 			   *(int*) BUNhead(b, p), *(int*) BUNtail(b, p));
 }
-@end example
+@end verbatim
 
 @- simple sequential scan
 The first parameter is a BAT, the p and q are BUN pointers, where
@@ -2792,7 +2790,7 @@ If so, we can just compare integer index numbers instead of strings:
 @
 The following example shows how the hashloop is used:
 
-@example
+@verbatim
 void
 print_books(BAT *author\_books, str author)
 {
@@ -2803,7 +2801,7 @@ print_books(BAT *author\_books, str author)
         HASHloop(b, (b)->hhash, i, author)
 			printf("%s\n", ((str) BUNtail(b, BUNptr(b,i)));
 }
-@end example
+@end verbatim
 @
 Note that for optimization purposes, we could have used a
 @%HASHloop_str@ instead, and also a @%BUNtvar@ instead of
@@ -3117,7 +3115,8 @@ gdk_export int BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_d
 #endif /* _GDK_H_ */
 @
 @}
-@T
+@iftex
 %\bibliographystyle{plain}
 \bibliography{gdk}
+@end iftex
 @}

@@ -729,7 +729,7 @@ by passing a pattern-string that matches the following regexp:
 	"[X:] Y0 {,Yi}"
 @end verbatim
 
-where X and Yi are column numbers, {\bf starting at 1} for the first
+where X and Yi are column numbers, @strong{starting at 1} for the first
 BAT parameter.
 
 The table ordering has two aspects:
