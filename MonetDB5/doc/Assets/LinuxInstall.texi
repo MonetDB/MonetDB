@@ -4,7 +4,9 @@ on a Unix platform (e.g., Linux, MacOS X/Darwin, or CYGWIN).
 @subsubsection Prerequisites
 @itemize @bullet
 @item @emph{CVS}
-You need to have a working CVS.  For instructions, see
+You only need this if you are building from CVS. 
+If you start with the source distribution from SourceForge you don't need CVS.
+Otherwise, you need to have a working CVS.  For instructions, see
 @url{http://sourceforge.net/docman/?group_id=1,docman}
 and look under the heading CVS Instructions.
 @item @emph{Python}
@@ -26,16 +28,12 @@ on you system:
 @item a C/C++ compiler (e.g., GNU's gcc/g++)</li>
 @item a lexical analyzer generator (e.g., "lex" or "flex")</li>
 @item a parser generator (e.g., "yacc" or "bison")</li>
-@item GNU make ("gmake") (native make's on, e.g., IRIX and Solaris usually don't work)
+@item GNU make ("gmake") (native make's on, e.g., IRIX and Solaris usually don't work).
 @end itemize
 
-@item
-@emph{dlcompat (MacOS X/Darwin, only)}
-MacOS X/Darwin itself does not support dlopen, however, there's
-a third-party library called dlcompat from Fink that provides
-the respective functionality.  MonetDB requires 
-@url{http://fink.sourceforge.net/pdb/package.php/dlcompat,dlcompat}
-to be installed on MacOS X/Darwin.
+@item Mx, mel, and autogen
+These tools are only needed if you are building from CVS. 
+If you start with the source distribution from SourceForge you don't need this.
 @item
 @emph{disk space}
 After downloading, MonetDB takes up about 40 MB of disk space;

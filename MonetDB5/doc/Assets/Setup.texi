@@ -36,6 +36,7 @@ Also see @url{http://sourceforge.net/cvs/?group_id=56967,SourceForge documentati
 @menu
 * Linux Installation ::
 * Windows Installation ::
+* Gentoo Installation ::
 * Daily Builds ::
 @end menu
 @node Linux Installation, Windows Installation, Source Distribution, Source Distribution 
@@ -43,12 +44,16 @@ Also see @url{http://sourceforge.net/cvs/?group_id=56967,SourceForge documentati
 
 @include Assets/LinuxInstall.texi
 
-@node Windows Installation, Daily Builds, Linux Installation, Source Distribution
+@node Windows Installation, Gentoo Installation, Linux Installation, Source Distribution
 @subsection Windows Installation
 
 @include Assets/WindowsInstall.texi
 
-@node Daily Builds, Start and Stop the Server, Windows Installation, Source Distribution
+@node Gentoo Installation, Daily Builds, Windows Installation, Source Distribution
+@subsection Gentoo Installation
+@include Assets/GentooInstall.texi
+
+@node Daily Builds, Start and Stop the Server, Gentoo Installation, Source Distribution
 @subsection Daily Builds
 Next to functionality and performance, stability and portability are first 
 class goals of the MonetDB project. Pursuing these goals requires to 
