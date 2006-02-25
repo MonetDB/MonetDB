@@ -121,11 +121,6 @@ end main;	# 42
 [ 4,	  "users",		  1,	  1		  ]
 [ 5,	  "password",		  1,	  1		  ]
 [ 6,	  "tasks",		  0,	  2		  ]
-[ 7,	  "trace_id_time",	  0,	  1		  ]
-[ 8,	  "trace_id_ticks",	  0,	  1		  ]
-[ 9,	  "trace_id_pc",	  0,	  1		  ]
-[ 10,	  "trace_id_modfcn",	  0,	  1		  ]
-[ 11,	  "trace_id_statement",	  0,	  1		  ]
 #-----------------#
 # h	t	  # name
 # int	int	  # type
@@ -140,11 +135,6 @@ end main;	# 42
 [ 3,	  "timezones",		  1,	  0		  ]
 [ 4,	  "users",		  1,	  1		  ]
 [ 5,	  "password",		  1,	  1		  ]
-[ 7,	  "trace_id_time",	  0,	  1		  ]
-[ 8,	  "trace_id_ticks",	  0,	  1		  ]
-[ 9,	  "trace_id_pc",	  0,	  1		  ]
-[ 10,	  "trace_id_modfcn",	  0,	  1		  ]
-[ 11,	  "trace_id_statement",	  0,	  1		  ]
 [ nil ]
 [ "BAT was destroyed" ]
 [ "BAT was removed from the box" ]
