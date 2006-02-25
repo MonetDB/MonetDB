@@ -675,7 +675,7 @@ MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 	@:builtin_operand(0,TYPE_int,Port)@
 	port = *Port;
 	@:builtin_operand(1,TYPE_str,usockfile)@
-	if (usockfile == NULL || *usockfile == 0 || strcmp(usockfile, str_nil) == 0)
+	if (usockfile == NULL || *usockfile == 0 || GDK_STRNIL(usockfile))
 		usockfile = NULL;
 	else {
 #ifdef HAVE_SYS_UN_H
