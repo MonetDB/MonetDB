@@ -18,7 +18,7 @@
 @a M. L. Kersten, P. Boncz, S. Manegold
 @* Common BAT Operations
 This module contains the following BAT algebra operations:
-@itemize @code
+@itemize 
 @item bulk updates
 multi-insert, multi-delete, multi-replace
 @item common aggregates

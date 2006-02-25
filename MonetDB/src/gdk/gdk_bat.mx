@@ -1878,13 +1878,13 @@ to X.priv). To change a temporary writable MMAP heap into a readonly permanent
 MMAP heap, we must *modify* the filename.
 @-
 To summarize, there are three heap attributes of interest;
-@itemize @code
-@item H=(priv,map)
- heap mode as registered in h->storage 
-@item M=(priv,map)
-heap mode as has been requested from the OS 
-@item F=(X,X.priv)
-h->filename 
+@itemize 
+@item
+H =(priv,map) heap mode as registered in h->storage 
+@item
+M =(priv,map) heap mode as has been requested from the OS 
+@item
+F =(X,X.priv) h->filename 
 @end itemize
 
 We show now all 4 legal heap states, and transitions between them:
