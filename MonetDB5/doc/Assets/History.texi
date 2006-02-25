@@ -20,9 +20,10 @@ A more detailed account on the experiences can be found in REF.
 
 @strong{The Early Days [1993-1995]}
 Immediately after the PRISMA project was termed dead, the basis
-for a new database kernel based on the BATs was laid.
-The original target was to better support scientific databases
-with their archaic file structures. 
+for a new database kernel based on Binary Association Tables (BATs) 
+was laid out.
+The original target was to aim for better support of scientific databases
+with their then archaic file structures. 
 
 @strong{The Data Distilleries Era [1996-2003]}
 The datamining projects running as of 1993 called for better
@@ -35,19 +36,20 @@ were paired with strong industrial maturing of the software base.
 @strong{The Open-Source Challenge [2003-2006]}
 Moving MonetDB Version 4 into the open-source field required a large number of
 extensions to the code base. It became utmost important to
-support a decent implementation of the SQL99 standard,
-the bulk of application programming interfaces.
-
+support a mature implementation of the SQL99 standard,
+and the bulk of application programming interfaces (PHP,JDBC,Perl,ODBC).
 The culprit of this activity was the first official release in 2004
 and the release of the XQuery front-end in 2005.
 
 @strong{The Road Ahead [2006-}
 This manual marks the alpha-release of MonetDB Version 5,
 the result of a multi-year activity to clean up the software 
-backbone and to better support for simple database requests.
+stack and to better support for simple database requests.
 (See @ref{Backward compatibility})
 
 @strong{The future: X100, Armada}
+New versions in the MonetDB software family are 
+under development.
 Extensions and renovation of the kernel are tackled in
 the X100 project, which provides high-volume access to
 columns stored in compressed form. 

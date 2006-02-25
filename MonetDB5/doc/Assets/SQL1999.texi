@@ -6,15 +6,13 @@ support without major code changes or excessive performance
 consequences.
 
 
-@multitable @columnfractions .15 .70 .15 @verb @verb @verb
+@multitable @columnfractions .15 .70 .15 
 @item Feature ID  
 @tab Feature name  
 @tab S/N 
-
 @item B011-B017 
 @tab Embedded Language support. Core SQL:1999 says that at least one of Embedded Ada, Embedded C, Embedded Cobol, Embedded Fortran, Embedded MUMPS, Embedded Pascal or Embedded PL/I 1 should be supported.
 @tab N
-
 @item E011  
 @tab Numeric data types (FULL support)
 @tab S

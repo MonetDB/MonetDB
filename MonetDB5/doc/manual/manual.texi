@@ -5,7 +5,7 @@
 
 @c environment
 @set VERSION 5.0
-@set UPDATED Feb 13, 2006
+@set UPDATED Feb 19, 2006
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual
@@ -218,8 +218,7 @@ Last updated: @value{UPDATED}
 @node MonetDB Extension Modules , MonetDB BAT Kernel, Event Caching, Top
 @node MonetDB BAT Kernel , Advanced Topics, MonetDB Extension Modules , Top
 @node Advanced Topics , Appendices, MonetDB BAT Kernel , Top
-This is the place to describe Membedded, distribution stuff...
-
+Some additional stuff
 @node Appendices, SQL 1999 Features , Advanced Topics, Top
 @menu
 * SQL 1999 Features::

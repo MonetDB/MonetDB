@@ -162,8 +162,7 @@ is given hardwired knowledge on the desired settings:
 @verbatim
 main(){
 ...
-	Mbedded_option("welcome","false");
-	Mbedded_option("gdk_dbfarm","/tmp/dbfarm");
+	Mbedded_option("dbfarm",".");
 	Mbedded_option("dbname","demo");
 	Mbedded_option("user","guest");
 	Mbedded_option("password","anonymous");
