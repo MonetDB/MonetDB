@@ -2,5 +2,6 @@
 k:= inspect.getKind();
 m:= inspect.getModule();
 f:= inspect.getFunction();
-s:= inspect.getSignature();
-io.print(k,m,f,s);
+s:= inspect.getSignatures();
+a:= inspect.getAddresses();
+io.print(k,m,f,s,a);
