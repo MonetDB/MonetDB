@@ -48,7 +48,7 @@ as global variables or references to catalogue information.
 During parallel execution additional layers may be constructed.
 @menu
 * Client administration::
-* Session scenarios::
+* Session Scenarios::
 @end menu
 
 @{

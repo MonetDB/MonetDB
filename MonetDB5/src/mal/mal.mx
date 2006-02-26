@@ -45,8 +45,8 @@ a quick overview of the MonetDB Version 5 architecture.
 * Architecture overview::
 * MAL synopsis::
 * MAL execution::
-* Backward compatibility::
-* Session scenarios::
+* Backward Compatibility::
+* Session Scenarios::
 * Scenario management::
 * Client administration ::
 @end menu
@@ -229,7 +229,7 @@ str *monet_script;
 int monet_daemon=0;
 @}
 @-
-@node MAL execution, Backward compatibility, MAL synopsis , MonetDB Overview
+@node MAL execution, Session Scenarios, MAL synopsis , MonetDB Overview
 @- MonetDB bootstrap
 
 Startup of the MonetDB engine leads to loading the system kernel
@@ -254,45 +254,6 @@ Especially, dropping modules may cause sever problems by not being
 able to detect references kept around.
 This danger required all accesses to global information to be packaged
 in a critical section, which was known to be a performance hindrence.
-
-@-
-@node Backward compatibility, Session scenarios ,MAL execution, MonetDB Overview
-@- Backward compatibility
-The oldest MonetDB software runs back to the early nineties and
-users have based their business
-critical applications on the platform since the mid-nineties.
-This long history creates
-a challenge in a research laboratory setting to find an evoluationary
-software developement track. Fortunately, the core development team
-is still at CWI and is dedicated to maintain the software base.
-Ofcourse, within the confines of limited resources available
-and in balance with the primary research activities.
-
-The development of Version 5 was driven by the following 
-compatibility requirements:
-@itemize @bullet
-@item The programming interface technology (ODBC, JDBC, Mapi)
-are all retained to reduce impact on external applications.
-@item SQL and XQuery should compile 
-directly on both old and new versions. 
-@item The MIL language is depreciated, but MIL programs can
-mostly be converted to the MAL language.@footnote{
-Only those features are compiled that do not require runtime
-knowledge on the typing structure.}
-@item The kernel library GDK remains the primary
-execution engine, but it
-should also facilitate alternatives, such as the column buffer manager, and 
-possibly the X100 kernel.
-@item The key extension modules to the GDK kernel
-are mostly carried over without change.
-@item Nested BATs are not supported anymore, due to unnecessary
-complexity at the language layer. However, the concept of a BAT type
-is retained, it denotes the bat of interest with a guarantee
-that the bat was not removed after it got referenced.
-@item Auxiliary search paths are not supported, due to lack
-of interest in Version 4 user community and alternatives based on
-the BAT algebra.
-@end itemize
 
 @{
 @h
