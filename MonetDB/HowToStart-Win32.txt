@@ -12,7 +12,7 @@ to compile on a Unix or Linux system, see the file `HowToStart`__.
 
 __ http://www.cygwin.com/
 __ http://www.mingw.org/index.shtml
-__ ../index.html
+__ ../Unix/index.html
 
 This document is geared towards a build from CVS sources.  If you are
 building from a source distribution (i.e. a .tar.gz file that you got
@@ -109,7 +109,7 @@ Microsoft Visual C++
 __ http://www.mingw.org/
 __ http://www.cygwin.com/
 __ ???
-__ ../index.html
+__ ../Unix/index.html
 
 disk space
 	After downloading, MonetDB takes up about 40 MB of disk space;
