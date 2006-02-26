@@ -27,8 +27,8 @@ and consists of a @emph{reader}, @emph{parser}, @emph{optimizer},
 @emph{tactic scheduler} and @emph{engine}. These hooks allow
 for both linked-in and external components.
 
-The languages supported are SQL, XQuery, a large 
-part of Monet Version 4 MIL, and the Monet Assembler Language (MAL).
+The languages supported are SQL, XQuery, 
+and the Monet Assembler Language (MAL).
 The default scenario handles MAL instructions, which is used
 to illustrate the behavior of the scenario steps.
 
@@ -39,7 +39,7 @@ data in large chunks, if possible. In interactive mode the lines
 are processed one at a time. 
 
 The MAL parser component turns the string into
-an internal MAL representation of the program. 
+an internal representation of the MAL program. 
 During this phase semantic checks are performed, such that
 we end up with a type correct program.
 

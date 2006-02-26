@@ -21,23 +21,20 @@
 @+ MonetDB Client Interface
 Clients gain access to the Monet server through a internet connection
 or through its server console.
-Access through the internet requires a MonetDB client program at the
-source, but ordinary telnet connections can be applied when the internet
-PORT NUMBer of the database server is publicised.
+Access through the internet requires a client program at the
+source, which addresses the default port of a running server.
 
-At the server side, each client is represented by a session record about the
+At the server side, each client is represented by a session record with the
 current status, such as name, file descriptors, namespace, and local stack.
 Each client session has a dedicated thread of control, which limits
 the number of concurrent users to the thread management facilities of the
-underlying OS. A large client base should be supported using
-a single serverside client thread, geared at providing
+underlying operating system. A large client base should be supported using
+a single server-side client thread, geared at providing
 a particular service.
 
 The number of clients permitted concurrent access is 
 a compile time option. The console is the first and is always present.
 It reads from standard input and writes to standard output.
-[It is an instance of MapiClient, directly linked
-with the server code]
 
 Client records are linked into a hierarchy, where the top record
 denotes the context of the Monet administrator. The next layer
@@ -46,10 +43,7 @@ user sessions.
 This hierachy is used to share and constrain resources, such
 as global variables or references to catalogue information.
 During parallel execution additional layers may be constructed.
-@menu
-* Client administration::
-* Session Scenarios::
-@end menu
+[This feature needs more implementation support]
 
 @{
 The routines defined below provide management of the client
@@ -136,9 +130,9 @@ communication channels break or its retention timer expires
 The administrator and owner of a sesssion
 can manipulate the timeout with a system call.
 
+@{
 Session structures are currently not saved over network failures.
 Future releases may support a re-connect facility.  [TODO]
-@{
 @h
 	time_t      login;  
 	time_t      logout;
@@ -174,12 +168,14 @@ Nesting is indicated using a '+' before the prompt.
 @}
 @-
 Keeping track of instructions executed is a valueable tool for
-script processing. Its value is defined in the MonetDB environment
-variable profile. It can be changed at runtime using
-the operation @code{clients.listin}(@emph{mask}).
+script processing and debugging. 
+Its default value is defined in the MonetDB configuration file.
+It can be changed at runtime for individual clients using
+the operation @code{clients.listing}(@emph{mask}).
 A listing bit controls the level of detail to be generated during
 program execution tracing. The lowest level (1) simply dumps the input,
-(2) also demonstrates the MAL internal structur (4) adds the hidden information
+(2) also demonstrates the MAL internal structur (4) adds the hidden 
+type information
 @{
 @h
 	bitset  listing;        
