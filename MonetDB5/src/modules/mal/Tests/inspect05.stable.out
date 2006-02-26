@@ -2066,7 +2066,7 @@ end main;	# 8
 [ 2030@0, "command",	  "algebra",	  "unique",			  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",							  "ALGsunique;"				  ]
 [ 2031@0, "command",	  "algebra",	  "uselect",			  "(b:bat[:any_1,:any_2],value:any_2):bat[:any_1,:void] ",					  "ALGuselect1;"			  ]
 [ 2032@0, "command",	  "algebra",	  "uselect",			  "(b:bat[:any_1,:any_2],low:any_2,high:any_2):bat[:any_1,:void] ",				  "ALGuselect;"				  ]
-[ 2033@0, "command",	  "algebra",	  "uselect",			  "(b:bat[:any_1,:any_2],low:any_2,high:any_2,li:bit,hi:bit):bat[:any_1,:any_2] ",		  "ALGuselectInclusive;"		  ]
+[ 2033@0, "command",	  "algebra",	  "uselect",			  "(b:bat[:any_1,:any_2],low:any_2,high:any_2,li:bit,hi:bit):bat[:any_1,:void] ",		  "ALGuselectInclusive;"		  ]
 [ 2034@0, "command",	  "aggr",	  "avg",			  "(b:bat[:void,:dbl],g:bat[:void,:oid],e:bat[:void,:any_1]):bat[:oid,:dbl] ",			  "AX3aggrX3_avg3_dbl;"			  ]
 [ 2035@0, "command",	  "aggr",	  "avg",			  "(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1]):bat[:oid,:dbl] ",			  "AX3aggrX3_avg3_dbl;"			  ]
 [ 2036@0, "command",	  "aggr",	  "avg",			  "(b:bat[:void,:dbl],e:bat[:void,:any_1]):bat[:oid,:dbl] ",					  "AX3aggrX3_avg_dbl;"			  ]
