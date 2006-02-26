@@ -54,7 +54,7 @@ Database xyz initialized
 Starting database server 'voc'... ok
 @end example
 The question is asked only the first time you attempt
-to access o the @code{voc} database.
+to access the @code{voc} database.
 
 It responds with a message that this action 
 was successful, or an error message explains the problems encountered.
@@ -78,43 +78,4 @@ A server can be put to sleep using the command
 Ommission of a database name stops all running servers.
 The actions of monetdb are logged for post analysis, which can
 be inspected with @code{monetdb --log}
-
-@node Database Configuration , Checkpoint and Recovery, Start and Stop the Server, Download and Installation
-@subsection Database Configuration
-The database environment is collected in a configuration file,
-which is used by server-side applications, such as @code{monetb},
-@code{mserver5}, and @code{mguardian}.
-A default version is installed in the database store upon its creation
-using the command @code{monetdb}.
-Below we illustrate its most important components.
-@itemize  @bullet
-@item prefix=/ufs/myhome/monet5/Linux
-@item exec_prefix=$@verb{ { }prefix@verb{ } }
-@item dbfarm=$@verb{ { }prefix@verb{ } }/var/MonetDB5/dbfarm	
-@item monet_mod_path=$@verb{ { }exec_prefix@verb{ } }/lib/MonetDB5
-@item checkpoint_dir=$@verb{ { }prefix@verb{ } }/var/MonetDB5/chkpnt
-@item dbname=demo
-@item version=5.0
-@item welcome=yes
-@item embedded=no
-@item gdk_debug=0	# to control level of debugging
-@end itemize
-
-The header consist of system wide information.
-The @code{prefix} and @code{exec_prefix} describe the location where
-MonetDB has been installed. @code{monet_mod_path} tells where to find
-the libraries. These arguments are critical for a proper working server.
-
-The remainder consists of arguments used by functional modules, or
-related tools. Consult the documentation before changing them.
-@itemize @bullet
-@item delay=120		
-@item mal_init=$@verb{ { }prefix@verb{ } }/lib/MonetDB5/mal_init.mal
-@item mal_listing = 7    
-@item sql_debug=0
-@item sql_logdir=$@verb{ { }prefix@verb{ } }/var/MonetDB5/dblogs 
-@item pf_httpd_port=8080
-@item xquery_output=dm
-@item xquery_cacheMB=100
-@end itemize
 

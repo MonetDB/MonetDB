@@ -81,8 +81,8 @@ A separate project, called the Datacell, is underway and geared at
 providing a streaming environment for embedded applications.
 The supportive modules are scheduled for release in 2006.
 
-@node Server Roadmap, SQL, Embedded Server Roadmap, Development Roadmap
-@subsection MonetDB Roadmap
+@node Server Roadmap, Backward Compatibility, Embedded Server Roadmap, Development Roadmap
+@subsection Server Roadmap
 The MonetDB server code base is continously being improved. 
 @itemize @bullet
 @item @emph{Replication Service}

@@ -25,8 +25,9 @@ Then get the MonetDB and SQL module sources by using the command:
 cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb checkout MonetDB5 sql
 @end verbatim
 
-This will create the directories MonetDB5 and SQL in your current working 
-directory, which hold the sources. 
+This will create the directories buildtools and MonetDB5 in 
+your current working directory, which hold the sources. 
+See the readme file to install the buildtools.
 MonetDB developers should use @code{ext} instead of @code{pserver}, e.g.
 @verbatim
 cvs -d:ext:dev@monetdb.sf.net:/cvsroot/monetdb checkout MonetDB5 sql
@@ -60,7 +61,7 @@ class goals of the MonetDB project. Pursuing these goals requires to
 constantly monitor stability and portability of the evolving MonetDB code base.
 For this purpose, we developed a test environment that automatically compiles 
 and tests MonetDB (and its most prominent add-on packages) every night on 
-currently a large number of different system configurations. 
+a variety of system configurations. 
 
 Software patches and functional enhancements are checked into
 the repositories on a daily basis. A limited set of distribution
@@ -105,7 +106,7 @@ extend the test collection. E.g., each developer should add some tests as soon
 as she/he adds new functionality. Likewise, a test script should be added for 
 each bug report to monitor whether/when the bug is fixed, and to prevent 
 (or at least detect) future occurrences of the same bug. 
-The collection consists for of hundreds of test scripts.
+The collection consists for hundreds of test scripts.
 
 To run all the tests and compare their current output to their stable output, 
 a tool called Mtest is included in the MonetDB code base. 
@@ -130,7 +131,7 @@ Using standard configuration tools like automake, autoconf, and libtool,
 we have the same code base compiling not only on various flavors of 
 Unix (e.g., Linux, Cygwin, AIX, IRIX, Solaris, MacOS X) but also on 
 native Windows. Furthermore, the very code base compiles with a wide 
-spectrum of (c-) compilers, ranging from GNU's gcc over several native 
+spectrum of (C-) compilers, ranging from GNU's gcc over several native 
 Unix compilers (IBM, SGI, Sun, Intel, Portland Group) to 
 Microsoft's Visual Studio and Visual Studio .NET on Windows.
 
@@ -138,7 +139,3 @@ On the hardware side, we have MonetDB running on "almost anything"
 from a Intel StrongARM-based Linux PDA with 64 MB of flash memory to an 
 SGI Origin2000 with 32 MIPS R12k CPU's and a total of 64 GB of (shared) 
 main memory.
-
-Automated nightly testing on the many different platforms assures that 
-any compatibility/portability problems are detected early and 
-can thus be resolved quickly. 

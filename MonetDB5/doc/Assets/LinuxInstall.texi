@@ -41,7 +41,7 @@ compilation adds another 70 MB.  Testing takes about 45 MB, and
 the installation about 20 MB (not including any databases).
 @end itemize
 
-@subsubsection Configure and Make
+@subsubsection Bootstrap, Configure and Make
 Before executing the following steps, make sure that your
 shell-environment (especially variables like "PATH" and
 "LD_LIBRARY_PATH") is setup, thus that the tools listed above can be

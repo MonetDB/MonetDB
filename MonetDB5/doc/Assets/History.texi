@@ -45,7 +45,7 @@ and the release of the XQuery front-end in 2005.
 This manual marks the alpha-release of MonetDB Version 5,
 the result of a multi-year activity to clean up the software 
 stack and to better support for simple database requests.
-(See @ref{Backward compatibility})
+(See @ref{Backward Compatibility})
 
 @strong{The future: X100, Armada}
 New versions in the MonetDB software family are 

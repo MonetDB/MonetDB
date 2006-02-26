@@ -1,7 +1,7 @@
 This section helps you to install MonetDB on a native Windows system (NT, 2000, XP).
 
 @subsubsection Prerequisites
-@enumerate
+@itemize
 @item @emph{CVS}
 	You need to have a working CVS.  Several solutions are
 	available. We use internally
@@ -65,7 +65,7 @@ This section helps you to install MonetDB on a native Windows system (NT, 2000, 
 	After downloading, MonetDB takes up about 40 MB of disk space;
 	compilation adds another 70 MB.  Testing takes about 45 MB, and
 	the installation about 20 MB (not including any databases).
-@end enumerate
+@end itemize
 
 @subsubsection Compiling
 Open a Windows command shell or a UnxUtils shell and go to the

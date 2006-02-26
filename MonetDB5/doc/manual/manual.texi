@@ -5,7 +5,7 @@
 
 @c environment
 @set VERSION 5.0
-@set UPDATED Feb 19, 2006
+@set UPDATED Feb 26, 2006
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual
@@ -94,19 +94,22 @@ Last updated: @value{UPDATED}
 @node Source Distribution, Linux Installation, Standard Distribution, Download and Installation
 @include Assets/Setup.texi
 
+@node Start and Stop the Server, Database Configuration ,Daily Builds, Download and Installation
+@include Assets/StartStop.texi
+
+@node Database Configuration , Checkpoint and Recovery, Start and Stop the Server, Download and Installation
+@include Assets/DatabaseConfiguration.texi
+
 @node Checkpoint and Recovery, Database Dumps, Database Configuration, Download and Installation
 @include Assets/Checkpoints.texi
 
 @node Database Dumps, MonetDB Overview, Checkpoint and Recovery, Download and Installation
 @include Assets/Databasedump.texi
 
-@node Start and Stop the Server, Database Configuration ,Daily Builds, Download and Installation
-@include Assets/StartStop.texi
-
 @node MonetDB Overview, Design considerations, Database Dumps, Top
 @include mal.bdy.texi
 
-@node Session scenarios , Scenario management , Backward compatibility, MonetDB Overview
+@node Session Scenarios , Scenario management , MAL execution, MonetDB Overview
 @include mal_scenario.bdy.texi
 
 
@@ -116,7 +119,10 @@ Last updated: @value{UPDATED}
 @node Development Roadmap, SQL Roadmap, Client administration, Top
 @include Assets/Roadmap.texi
 
-@node SQL, Getting Started with SQL, Server Roadmap, Top
+@node Backward Compatibility, SQL ,Server Roadmap, MonetDB Overview
+@include Assets/Compatability.texi
+
+@node SQL, Getting Started with SQL, Backward Compatibility, Top
 @include Assets/SQLoverview.texi
 
 @node The VOC Tutorial, SQL Language, Getting Started with SQL, SQL
