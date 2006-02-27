@@ -189,7 +189,7 @@ is locally maintained.
 #ifndef _CRACKERS_H_
 #define _CRACKERS_H_
 
-/* #define DEBUG_CRACKERS */  
+/* #define DEBUG_CRACKERS*/
 
 #define LEAF 'L'
 #define PHI  'P'		/* broken using a select */
@@ -1487,7 +1487,13 @@ CRKcrackRangeWithTwoScans(int *vid, int *bid, int *low, int *hgh, bit tail)
         }
         m = existsCrackMap(*bid);
         if (m == -1){
-		if (b->htype ==TYPE_void) b = BATmaterializeh(b,BATcount(b));
+		if (b->htype ==TYPE_void) {
+			 b = BATmaterializeh(b,BATcount(b));
+			 b->hsorted = FALSE;
+			 b->tsorted = FALSE;
+			 b->hdense = FALSE; 
+		 	 b->hdense = FALSE;	
+		}
                 m = newCrackMap(*bid);
                 initCrackMap(crackMap + m, bid);
 		firstCrack = TRUE;
@@ -1501,16 +1507,18 @@ Inspect the value range table to only further crack qualifying fragments.
 #endif
         xx = BUNsize(b);
 
-        /*checkPieceWithGaps(m, b, xx, 0, low, hgh, &vl, &vh, firstCrack);*/
-        checkPieceWithoutGaps(m, b, xx, 0, low, hgh, &vl, &vh, firstCrack);
+        checkPieceWithGaps(m, b, xx, 0, low, hgh, &vl, &vh, firstCrack);
+        /*checkPieceWithoutGaps(m, b, xx, 0, low, hgh, &vl, &vh, firstCrack);*/
 
 	view = BATslice(b, vl, vh+1);
 
         if (!tail) {
                 uview = BATconst(view,TYPE_void,ATOMnilptr(TYPE_void));
-                *vid = uview->batCacheid;
+                *vid = uview->batCacheid;		
         }
         else *vid = view->batCacheid;
+
+	BBPfix(*vid);
 @-              
 If this was the first cracking operation it makes sense to administer
 the ranges of the outer partitions as well.                      
