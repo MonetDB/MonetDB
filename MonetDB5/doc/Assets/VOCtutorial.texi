@@ -76,6 +76,9 @@ downloaded:
 @example
 shell> mjclient -uvoc -f voc_dump.sql -Xbatching=400
 password: ***
+@end example
+Or using a remotely living dump.
+@example
 shell> mjclient -uvoc -f http://monetdb.cwi.nl/Assets/VOC/voc_dump.sql.gz -Xbatching=400
 password:***
 shell>mclient -lsql -uvoc <voc_dump.sql
@@ -90,7 +93,7 @@ denoted by @code{\d} to inspect the
 definition of the database schema and its tables.
 This functionality is not available in @code{MapiClient}. 
 @example
-monetdb-> \d
+voc-> \d
 TABLE   sys.craftsmen
 TABLE   sys.impotenten
 TABLE   sys.invoices
@@ -130,42 +133,42 @@ all share the same columns. We can define a VIEW that combines them all
 into one big table, to make them easier to access.
 @example
 voc-> CREATE VIEW onboard_people AS
-voc-> SELECT * FROM (
-voc-(    SELECT 'craftsmen' AS type, craftsmen.* FROM craftsmen
-voc-(    UNION ALL
-voc-(    SELECT 'impotenten' AS type, impotenten.* FROM impotenten
-voc-(    UNION ALL
-voc-(    SELECT 'passengers' AS type, passengers.* FROM passengers
-voc-(    UNION ALL
-voc-(    SELECT 'seafarers' AS type, seafarers.* FROM seafarers
-voc-(    UNION ALL
-voc-(    SELECT 'soldiers' AS type, soldiers.* FROM soldiers
-voc-(    UNION ALL
-voc-(    SELECT 'total' AS type, total.* FROM total
-voc-( ) AS onboard_people_table;
+voc=> SELECT * FROM (
+voc=(    SELECT 'craftsmen' AS type, craftsmen.* FROM craftsmen
+voc=(    UNION ALL
+voc=(    SELECT 'impotenten' AS type, impotenten.* FROM impotenten
+voc=(    UNION ALL
+voc=(    SELECT 'passengers' AS type, passengers.* FROM passengers
+voc=(    UNION ALL
+voc=(    SELECT 'seafarers' AS type, seafarers.* FROM seafarers
+voc=(    UNION ALL
+voc=(    SELECT 'soldiers' AS type, soldiers.* FROM soldiers
+voc=(    UNION ALL
+voc=(    SELECT 'total' AS type, total.* FROM total
+voc=( ) AS onboard_people_table;
 Operation successful
 @end example
 The new view will show up and we can just use it as a normal table, 
 to for instance calculate the number of records for each group of people:
 @example
 voc-> SELECT type, COUNT(*) AS total FROM onboard_people GROUP BY type ORDER BY type;
-+------------+----------+
-| type       | total    |
-+============+==========+
-| craftsmen  | 2349     |
-| impotenten | 938      |
-| passengers | 2813     |
-| seafarers  | 4468     |
-| soldiers   | 4177     |
-| total      | 2454     |
-+------------+----------+
-5 rows
++------------+-------+
+| type       | total |
++============+=======+
+| craftsmen  |  2349 |
+| impotenten |   938 |
+| passengers |  2813 |
+| seafarers  |  4468 |
+| soldiers   |  4177 |
+| total      |  2454 |
++------------+-------+
+6 rows
  
 voc-> select count(*) from impotenten;
 +--------------+
 | count_number |
 +==============+
-| 938          |
+|          938 |
 +--------------+
 1 row
 @end example
@@ -177,25 +180,25 @@ voc-> SELECT COUNT(*) FROM voyages WHERE particulars LIKE '%_recked%';
 +--------------+
 | count_number |
 +==============+
-| 358          |
+|          354 |
 +--------------+
 1 row
  
 voc-> SELECT chamber, CAST(AVG(invoice) AS integer) AS average
-voc-> FROM invoices
-voc-> WHERE invoice IS NOT NULL
-voc-> GROUP BY chamber
-voc-> ORDER BY average DESC;
+voc=> FROM invoices
+voc=> WHERE invoice IS NOT NULL
+voc=> GROUP BY chamber
+voc=> ORDER BY average DESC;
 +---------+----------+
 | chamber | average  |
 +=========+==========+
-| A       | 282996   |
-| Z       | 259300   |
-| H       | 150182   |
-| R       | 149628   |
-| D       | 149522   |
-| E       | 149518   |
-| <NULL>  | 83309    |
+| A       |  282996 |
+| Z       |  259300 |
+| H       |  150182 |
+| R       |  149628 |
+| D       |  149522 |
+| E       |  149518 |
+| <NULL>  |   83309 |
 +---------+----------+
 7 rows
  

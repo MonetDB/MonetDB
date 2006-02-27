@@ -100,7 +100,7 @@ If you are familiar with JDBC-based applications, or intend to
 build those, this interface may be your prime choice.
 The @code{mjclient} utility is illustrated:
 @example
-shell> mjclient
+shell> mjclient --database=voc
 password: ********
 Welcome to the MonetDB interactive JDBC terminal!
 Database: MonetDB 4.99.19

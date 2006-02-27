@@ -3,8 +3,8 @@ In this section we summarize the MonetDB development roadmap as
 foreseen early 2006. The information is organized around the major
 system components.
 A precise timeline can not be given. It depends too much on the
-available resources and urgency (= pressure by our research and
-clients).
+available resources and urgency (= pressure) by our research needs and
+clients.
 @menu
 * SQL Roadmap ::
 * XQuery Roadmap ::
@@ -14,8 +14,12 @@ clients).
 
 @node SQL Roadmap, XQuery Roadmap, Development Roadmap, Development Roadmap
 @subsection SQL Roadmap
-In this section we summarize the SQL features scheduled for implementation
-and those that won;t be supported in the foreseeable future.
+The long term objective for the SQL front-end is to provide all features
+available in SQL:2003. The priority for individual features
+is determined in an ad hoq way.
+The SQL features scheduled for implementation
+and those that won;t be supported in the foreseeable future
+are shown below.
 
 Our current assessment of the features planned for upcoming releases,
 in order of priority, are:
@@ -74,8 +78,6 @@ A broader deployment of the embedded technology requires both
 extensions in the distributed MonetDB versions and its replication
 services. Continual attention is given to the memory footprint and cpu/io
 resource consumptions on embedded devices.
-These developments take place in the context of a project with
-Philips Research.
 
 A separate project, called the Datacell, is underway and geared at
 providing a streaming environment for embedded applications.
@@ -84,10 +86,14 @@ The supportive modules are scheduled for release in 2006.
 @node Server Roadmap, Backward Compatibility, Embedded Server Roadmap, Development Roadmap
 @subsection Server Roadmap
 The MonetDB server code base is continously being improved. 
+Major areas under developement are:
 @itemize @bullet
 @item @emph{Replication Service}
 A single-write multiple-read distributed replication service is
 prepared for release mid 2006.  It will provide both the concept
 of merge tables and selective replication of tuples to different
 servers.
+@item @emph{GIS support}
+Support for geographical application is underway. It consists of
+a concise library for managing geometric types.
 @end itemize
