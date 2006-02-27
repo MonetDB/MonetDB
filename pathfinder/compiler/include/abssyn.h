@@ -280,6 +280,7 @@ struct PFpnode_t {
   PFloc_t           loc;               /**< textual location of this node */
   struct PFcnode_t *core;              /**< pointer to core representation */
   short             state_label;       /**< for BURG pattern matcher */
+  char              rpc;               /**< for RPC modules */
 };
 
 /*

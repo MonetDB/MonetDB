@@ -264,7 +264,7 @@ add_ufuns (PFpnode_t *n)
 static void
 check_fun_usage (PFpnode_t * n)
 {
-    unsigned int i, soap_rpc = 0;
+    unsigned int i, is_rpc = 0;
     PFarray_t *funs;
     PFfun_t *fun;
     unsigned int arity;
@@ -316,8 +316,8 @@ check_fun_usage (PFpnode_t * n)
          * - we will require the first parameter to be string* (destination machine)
          * - it is excluded from function resolution
          */
-        if (n->kind == p_fun_ref && n->sem.qname.ns.ns && strcmp(n->sem.qname.ns.ns, "soap") == 0) {
-            soap_rpc = 1;
+        if (n->kind == p_fun_ref && n->rpc) {
+            is_rpc = 1;
         }
 
         /*
@@ -345,9 +345,9 @@ check_fun_usage (PFpnode_t * n)
          */
         for (i = 0; i < PFarray_last (funs); i++) { 
             fun = *((PFfun_t **) PFarray_at (funs, i));
-            if ((arity - soap_rpc) == fun->arity) {
+            if ((arity - is_rpc) == fun->arity) {
                 n->sem.apply.fun = fun;
-                n->sem.apply.rpc = soap_rpc;
+                n->sem.apply.rpc = is_rpc;
             }
         }
 
@@ -356,7 +356,7 @@ check_fun_usage (PFpnode_t * n)
             PFoops_loc (OOPS_APPLYERROR, n->loc,
                         "wrong number of arguments for function `%s' "
                         "(expected %u, got %u)",
-                        PFqname_str (fun->qname), (fun->arity + soap_rpc), arity);
+                        PFqname_str (fun->qname), (fun->arity + is_rpc), arity);
         
         /*
          * Replace semantic value of abstract syntax tree node

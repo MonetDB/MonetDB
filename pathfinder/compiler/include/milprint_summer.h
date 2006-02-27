@@ -35,7 +35,7 @@
 
 #include "core.h"
 
-int PFprintMILtemp (PFcnode_t *, int optimize, char* soap_uri, int module_base, int num_fun, char* genType, long tm, char** prologue, char** query, char** epilogue);
+int PFprintMILtemp (PFcnode_t *, int optimize, char* rpc_uri, int module_base, int num_fun, char* genType, long tm, char** prologue, char** query, char** epilogue);
 
 #endif    /* MILPRINT_H */
 

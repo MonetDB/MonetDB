@@ -2238,7 +2238,7 @@ xquery_prepare(xquery_client *ctx,
                char* mode, 
                char* query) 
 {
-    int nsbuf = 0, loaded_modules = 0;
+    int nsbuf = 0, loaded_modules = 0, len;
     char *ns = (char*)&nsbuf, *nsend = ns, *locend, *loc = NULL, *p = query;
     char val[256], url1[256], url2[256];
     char *err = NULL;
@@ -2257,8 +2257,10 @@ xquery_prepare(xquery_client *ctx,
         } else {
             /* e.g. import module namespace xmark = "/cygwin/tmp/" at "/cygwin/tmp/mod1.xq"; */ 
             p = xquery_parse_space(p+6);
-            if (strncmp(p, "module", 6) == 0 && ISSPACE(p[6])) {
-                p = xquery_parse_space(p+6);
+            if ( (strncmp(p, "module", 6) == 0 && ISSPACE(p[6])) ||
+                 (strncmp(p, "rpc-module", 10) == 0 && ISSPACE(p[10])) ){
+                len = p[0] == 'm' ? 6 : 10;
+                p = xquery_parse_space(p+len);
                 if (strncmp(p, "namespace", 9) == 0 && ISSPACE(p[9])) {
                     ns = xquery_parse_space(p+9);
                     nsend = xquery_parse_ident(ns);

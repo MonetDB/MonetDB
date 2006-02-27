@@ -59,7 +59,8 @@ static PFpnode_t *root;
 /* temporay node memory */
 static PFpnode_t *c, *c1;
 
-static void add_to_module_wl (char* id, char *ns, char *uri);
+static void add_to_module_wl (char rpc, char* id, char *ns, char *uri);
+static int is_rpc_prefix (char *prefix);
 
 /* avoid `implicit declaration of yylex' warning */
 extern int pflex (void);
@@ -99,9 +100,10 @@ extern int pflineno;
 /**
  * True if we have been invoked via parse_module().
  *
- * For queries that contain "import module" instructions, we
- * re-invoke the parser for each imported module.  In that case
- * we _only_ allow modules to be read and refuse query scripts.
+ * For queries that contain "import module" or "import rpc-module"
+ * instructions, we re-invoke the parser for each imported module.  In
+ * that case we _only_ allow modules to be read and refuse query
+ * scripts.
  */
 static bool module_only = false;
 
@@ -129,9 +131,10 @@ static char *req_module_ns = NULL;
 /**
  * Work list of modules that we have to load.
  *
- * Whenever we encounter an "import module" statement, we add an
- * URI to the list (if it is not in there already).  We process
- * the work list after parsing the main query file.
+ * Whenever we encounter an "import module" statement or an "import
+ * rpc-module" statement, we add an URI to the list (if it is not in
+ * there already).  We process the work list after parsing the main
+ * query file.
  */
 static PFarray_t *modules = NULL;
 
@@ -142,6 +145,7 @@ static PFarray_t *modules = NULL;
  * otherwise).
  */
 typedef struct module_t {
+    char rpc;  /* To distiguish an RPC module from normal module */
     char *id;
     char *ns;
     char *uri;
@@ -339,6 +343,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token idiv                            "idiv"
 %token if_lparen                       "if ("
 %token import_module                   "import module"
+%token import_rpc_module               "import rpc-module"
 %token import_schema                   "import schema"
 %token in_                             "in"
 %token instance_of                     "instance of"
@@ -545,8 +550,10 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 
 
 %type <phole>  CaseClauses_ DirAttributeList ForLetClauses_ Import
-               ImportAndNSDecls_ ModuleImport ModuleNS_ PredicateList
-               SchemaImport SchemaSrc_ Setters_ StringLiterals_ VarFunDecls_
+               ImportAndNSDecls_ ModuleImport RPCModuleImport ModuleNS_
+               ModuleNSWithPrefix ModuleNSWithoutPrefix PredicateList
+               SchemaImport SchemaSrc_ Setters_ StringLiterals_
+               VarFunDecls_
 
 /*
  * We expect 16 shift/reduce conflicts:
@@ -723,6 +730,7 @@ ImportAndNSDecls_         : /* empty */
 
 /* [8] */
 Import                    : SchemaImport { $$ = $1; }
+                          | RPCModuleImport { $$ = $1; }
                           | ModuleImport { $$ = $1; }
                           ;
 
@@ -921,11 +929,13 @@ ModuleImport              : "import module" ModuleNS_ OptAtStringLiterals_
                               while (c->kind == p_schm_ats) {
                                   if($2.root){
                                       add_to_module_wl (
+                                        0,                      /* Normal module */
                                         $2.root->sem.str,       /* ID */
                                         $2.hole->sem.str,       /* NS */
                                         c->child[0]->sem.str);  /* URI */
                                   } else {
                                       add_to_module_wl (
+                                        0,                      /* Normal module */
                                         "",                     /* ID */
                                         $2.hole->sem.str,       /* NS */
                                         c->child[0]->sem.str);  /* URI */
@@ -938,11 +948,53 @@ ModuleImport              : "import module" ModuleNS_ OptAtStringLiterals_
                             }
                           ;
 
-ModuleNS_                 : StringLiteral
+RPCModuleImport           : "import rpc-module" ModuleNSWithPrefix OptAtStringLiterals_
+                            { /* RPC extension of XQuery: call to
+                               *   functions defined in this module will
+                               *   be translated into an RPC call.
+                               *
+                               * Merge a module import and an associated
+                               * namespace declaration is not allowed
+                               * when importing rpc-modules.  Thus the
+                               * only valid syntax to import a module
+                               * for RPC is:
+                               *
+                               * import rpc-module namespace ns = "ns" [at "url"]
+                               *
+                               * We return the module import in $$.root
+                               * and the namespace declaration in
+                               * $$.hole, which is the same as the
+                               * normal module import, but $2.root is
+                               * never NULL, since namespace decl is
+                               * always present.
+                               */
+                              c = $3;
+
+                              while (c->kind == p_schm_ats) {
+                                  add_to_module_wl (
+                                    1,                      /* RPC module */
+                                    $2.root->sem.str,       /* ID */
+                                    $2.hole->sem.str,       /* NS */
+                                    c->child[0]->sem.str);  /* URI */
+                                  c = c->child[1];
+                              }
+
+                              $$.root = wire2 (p_mod_imp, @$, $2.hole, $3);
+                              $$.hole = $2.root;
+                            }
+                          ;
+
+ModuleNS_                 : ModuleNSWithPrefix
+                          | ModuleNSWithoutPrefix
+                          ;
+
+ModuleNSWithoutPrefix     : StringLiteral
                             { $$.root = NULL;
                               ($$.hole = leaf (p_lit_str, @$))->sem.str = $1;
                             }
-                          | "namespace" NCName "=" StringLiteral
+                          ;
+
+ModuleNSWithPrefix        : "namespace" NCName "=" StringLiteral
                             { ($$.root = wire1 (p_ns_decl, @$,
                                                 (c = leaf (p_lit_str, @4),
                                                  c->sem.str = $4,
@@ -950,6 +1002,7 @@ ModuleNS_                 : StringLiteral
                               ($$.hole = leaf (p_lit_str, @4))->sem.str = $4;
                             }
                           ;
+
 
 /* [21] */
 VarDecl                   : "declare variable $" VarName OptTypeDeclaration_
@@ -1746,8 +1799,14 @@ UnorderedExpr             : "unordered {" Expr "}"
 
 /* [85] */
 FunctionCall              : QName_LParen OptFuncArgList_ ")"
-                            { ($$ = wire1 (p_fun_ref, @$, $2))
-                                ->sem.qname = $1; }
+                            { PFpnode_t *tmp = wire1(p_fun_ref, @$, $2);
+                              tmp->sem.qname = $1;
+                              if (is_rpc_prefix(tmp->sem.qname.ns.ns))
+                                tmp->rpc = 1;
+                              else
+                                tmp->rpc = 0;
+                              $$ = tmp;
+                            }
                           ;
 
 OptFuncArgList_           : /* empty */   { $$ = nil (@$); }
@@ -2387,6 +2446,7 @@ flatten_locpath (PFpnode_t *p, PFpnode_t *r)
  * Add an item to the work list of modules to import.  If it is
  * already in there, do nothing.
  *
+ * @param rpc  normale module or rpc module
  * @param id   namespace id
  * @param ns   namespace associated with this module
  * @param uri  URI where we will find the module definition.
@@ -2394,14 +2454,26 @@ flatten_locpath (PFpnode_t *p, PFpnode_t *r)
  *  import module [prefix =] ns at uri, uri, uri...
  */
 static void
-add_to_module_wl (char*id, char *ns, char *uri)
+add_to_module_wl (char rpc, char*id, char *ns, char *uri)
 {
     for (unsigned int i = 0; i < PFarray_last (modules); i++)
         if ( !strcmp (((module_t *) PFarray_at (modules, i))->uri, uri) )
             return;
 
     *(module_t *) PFarray_add (modules)
-        = (module_t) { .id = PFstrdup(id), .ns = PFstrdup (ns), .uri = PFstrdup (uri) };
+        = (module_t) { .rpc = rpc, .id = PFstrdup(id), .ns = PFstrdup (ns), .uri = PFstrdup (uri) };
+}
+
+static int
+is_rpc_prefix(char *prefix){
+    if (!prefix) return 0;
+
+    for (unsigned int i = 0; i < PFarray_last (modules); i++){
+        module_t *m = (module_t *) PFarray_at(modules, i);
+        if ( m->rpc && !strcmp (m->id, prefix) )
+            return 1;
+    }
+    return 0;
 }
 
 /**
@@ -2425,7 +2497,7 @@ YYLTYPE pflloc; /* why ? */
  * Parse an XQuery from the main-memory buffer pointed to by @a input.
  */
 int
-PFparse (char *input, PFpnode_t **r, char** soap_uri)
+PFparse (char *input, PFpnode_t **r, char** rpc_uri)
 {
 #if YYDEBUG
     pfdebug = 1;
@@ -2436,7 +2508,7 @@ PFparse (char *input, PFpnode_t **r, char** soap_uri)
 
     /* initialize work list of modules to load */
     modules = PFarray (sizeof (module_t));
-
+    
     /* we don't explicitly ask for modules */
     module_only = false;
     module_base = 0;
@@ -2449,11 +2521,11 @@ PFparse (char *input, PFpnode_t **r, char** soap_uri)
     if (pfparse ())
         PFoops (OOPS_PARSE, "XQuery parsing failed");
 
-    if (soap_uri) {
+    if (rpc_uri) {
         for (unsigned int i = 0; i < PFarray_last (modules); i++) {
             module_t *m = (module_t *) PFarray_at (modules, i);
-            if (strcmp(m->id, "soap") == 0)
-                *soap_uri = PFstrdup(m->uri);
+            if (m->rpc)
+                *rpc_uri = PFstrdup(m->uri);
         }
     }
     *r = root;

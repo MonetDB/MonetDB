@@ -6314,7 +6314,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "{ # begin of SOAP call\n"
                 "  module(\"pf_soap\");\n"
                 /* FIXME: need a better way of name giving. */
-                "  var local_name := \"SOAP_RPC_res\";\n"
+                "  var local_name := \"rpc_res\";\n"
                 "  var rpc_oid := send_soap_rpc(local_name, item%s%03u, \"%s\", \"%s\", ws,"
                                     "fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u,"
                                     "int_values, dbl_values, dec_values, str_values);\n"
@@ -6333,7 +6333,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "  }\n"
                 "} # end of SOAP call\n",
                 item_ext, counter-1, 
-                f->soap_uri /* apply.fun->qname.ns.uri*/,
+                f->rpc_uri /* apply.fun->qname.ns.uri*/,
                 apply.fun->qname.loc,
                 counter, counter, counter, counter);
 
@@ -10713,7 +10713,7 @@ expand_flwr (PFcnode_t *c, PFcnode_t *ret)
  * @param c the root of the core tree
  */
 int
-PFprintMILtemp (PFcnode_t *c, int optimize, char* soap_uri, int module_base, int num_fun, char *genType, long timing, 
+PFprintMILtemp (PFcnode_t *c, int optimize, char* rpc_uri, int module_base, int num_fun, char *genType, long timing, 
                 char** prologue, char** query, char** epilogue)
 {
     PFarray_t *way, *counter;
@@ -10722,7 +10722,7 @@ PFprintMILtemp (PFcnode_t *c, int optimize, char* soap_uri, int module_base, int
     /* hack: milprint_summer state, not mil_opt state */
     f->num_fun = num_fun;     /* for queries: the amount of functions in the query itself (if any); used to ignore module functions */
     f->module_base = module_base; /* only generate mil module; no query */
-    f->soap_uri = soap_uri; /* this query imports a module under identifier 'soap' (i.e. for rpc) */
+    f->rpc_uri = rpc_uri; /* this query imports a module under identifier 'soap' (i.e. for rpc) */
 
     way = PFarray (sizeof (int));
     counter = PFarray (sizeof (int));

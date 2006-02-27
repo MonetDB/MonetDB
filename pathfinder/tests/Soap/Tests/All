@@ -3,4 +3,7 @@ soap_add_int
 soap_concatStr
 soap_missing_param
 soap_multi_clnt
+soap_returnAncestor
+soap_returnAncestorOrSelf
 soap_returnNode
+soap_returnParent
