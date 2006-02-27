@@ -73,7 +73,8 @@ CRKoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 		/* find and replace algebra select commands with crack select ones*/
 
-		if (match2(p, batRef, newRef)){  /* add a property can be cracked to every base relation */
+		if (match2(p, batRef, newRef)|| match2(p, sqlRef, bindRef)){  
+				/* add a property can be cracked to every base relation */
         		if (mb->var[getArg(p,0)]->props == 0)
                 		mb->var[getArg(p,0)]->props = newPropertySet();
 			setProperty(mb->var[getArg(p,0)]->props,"canBeCracked","=", TYPE_int, &i);
