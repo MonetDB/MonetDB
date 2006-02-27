@@ -646,9 +646,10 @@ runScenario(Client c)
 Check if we are closing the last client, because then we also
 have to call the scenario exit.
 @c
-	for (c1 = mal_clients; c1 < mal_clients + MAL_MAXCLIENTS; c1++)
-		if (c1->scenario && strcmp(c->scenario, c1->scenario) == 0)
-			cnt++;
+	if( c->scenario)
+		for (c1 = mal_clients; c1 < mal_clients + MAL_MAXCLIENTS; c1++)
+			if (c1->scenario && strcmp(c->scenario, c1->scenario) == 0)
+				cnt++;
 
 	if (c->phase[EXITCLIENT]) {
 #ifdef MAL_SCENARIO_DEBUG
