@@ -20,9 +20,9 @@
 @+ MAL functions
 MAL comes with a standard functional abstraction scheme.
 MAL functions are represented by MAL instruction lists, enclosed
-by a @code{function} and @code{exit} statement. The @code{function}
+by a @code{function} and @code{end} statement. The @code{function}
 designates its signature, i.e. it lists the arguments and their types.
-The @code{exit} statement marks the end of this sequence. 
+The @code{end} statement marks the end of this sequence. 
 Its argument is the function name.
 
 An illustrative example is:
@@ -33,16 +33,12 @@ function helloWorld(msg:str):str;
 end hellowWorld;
 @end example
 
-The type checker ensures that all variables are assigned
-a value before they are used as arguments. Moreover, variables
-introduced within guarded blocks may not be used elsewhere.
-
-Input variables changed in the process preferably also appear in
-the target list, i.e. the instruction models the input/output flow.
-This greatly simplifies future optimization decisions.
+The functional abstraction scheme comes with several variations:
+commands, patterns, and factories. They are discussed shortly.
 @menu
-* Function Clones::
+* Polymorphic Functions ::
 * Commands and Patterns::
+* Factories::
 @end menu
 @{
 @-
@@ -411,6 +407,237 @@ int getBarrierEnvelop(MalBlkPtr mb){
 	return newTmpVariable(mb,TYPE_any);
 }
 @}
+@-
+@node Polymorphic Functions, Commands and Patterns, Function definitions, Function definitions
+@- Polymorphic Functions
+MAL supports functions defined with type variables, i.e.
+polymorphic functions. The type variable is denoted
+by @code{any} and an optional index.
+Each time a polymorphic  MAL function is called, the
+symbol table is first inspected for the matching strongly typed
+version.  If non exists, a copy of
+the polymorphic routine is generated, whereafter the type
+variables are replaced with their concrete types.
+The function body is immediately type checked and, if
+no errors occured, added to the symbol table.
+
+The generic type variable @code{any} designates an unknown type, which may
+be filled at type resolution time. Unlike indexed polymorphic type 
+arguments, @code{any} type arguments match possibly with different 
+concrete types.
+
+
+An example of a parameterised function is shown below:
+@example
+function helloWorld(msg:any_1):any_1;
+	io.print(msg);
+return msg;
+@end example
+The type variables ensure that the return type equals the
+argument type. Type variables can be used at any place
+where a type name is permitted. 
+Beware that polymorphic type variables are propagated
+throughout the function body. This may invalidate 
+type resolutions taken @ref{Type resolution}.
+
+This version of @code{helloWorld} can also be used for
+other arguments types, i.e. @code{bit,sht,lng,flt,dbl,...}.
+For example, calling @code{helloWorld(3.14:flt)} echoes
+a float value.
+
+@node Commands and Patterns, Factory definitions, Polymorphic Functions, Function definitions
+@- Commands and patterns
+The MAL function body can also be implemented with a C-function.
+They are introduced to the MAL type checker by providing their
+signature and an @code{address} qualifier for linkage.
+
+We distinguish both @code{command} and @code{pattern} MAL blocks.
+They differ in the information accessible at run time. The @code{command}
+variant calls the underlying C-function, passing pointers to the arguments
+on the MAL runtime stack. The @code{pattern} command is passed pointers
+to the MAL definitin, the runtime stack, and the instruction itself.
+It can be used to analyse the types of the arguments directly.
+
+For example, the definitions below link the kernel routine @code{BKCinsert_bun}
+with the function @code{bat.insert()}. 
+It does not fully specify the result type.
+The @code{io.print()} pattern applies to any BAT argument list, 
+provided they match on the head column type.
+@example
+command bat.insert(b:bat[:any_1,:any_2], ht:any_1, tt:any_2) :bat[:any_1,:any_2]
+address BKCinsert_bun;
+
+pattern io.print(b1:bat[:any_1,:any]...):int
+address IOtable;
+@end example
+
+The internal representation of the MAL functions is rather traditional,
+using C-structure to collect the necessary information.
+Moreover, we assume that MAL functions are relatively small, up to
+a few hundred of instructions. This assumption makes us to rely on
+linear scans as it comes to locating information of interest.
+@{
+
+Patterns should not be cloned, because the alternative interpretations
+are handled by the underlying code fragments.
+@c
+void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
+	int j,i,x,y;
+#ifdef DEBUG_MAL_FCN
+	stream_printf(GDKout,"replace type _%d by type %s\n",v,
+		getTypeName(t));
+#endif
+	for(j=0; j<mb->stop; j++){
+	    p= getInstrPtr(mb,j);
+#ifdef DEBUG_MAL_FCN
+		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+#endif 
+	if( p->polymorphic)
+	for(i=0;i<p->argc; i++)
+	if( isPolymorphic(x= getArgType(mb,p,i))) {
+		if( isaBatType(x)){
+			int head,tail;
+			int hx,tx;
+			head = getHeadType(x);
+			tail = getTailType(x);
+			hx = getHeadIndex(x);
+			tx = getTailIndex(x);
+			if(v && hx == v && head == TYPE_any){
+			    hx =0;
+			    head =t;
+			}
+			if(v && tx == v && tail == TYPE_any){
+			    tx= 0;
+			    tail = t;
+			}
+			y= newBatType(head,tail);
+			setAnyHeadIndex(y,hx);
+			setAnyTailIndex(y,tx);
+			setArgType(mb,p,i,y);
+#ifdef DEBUG_MAL_FCN
+		stream_printf(GDKout," %d replaced %s->%s \n",i,getTypeName(x),getTypeName(y));
+#endif 
+		} else
+		if( isaColType(x)){
+			int tail;
+			int tx;
+			tail = getTailType(x);
+			tx = getTailIndex(x);
+			if(v && tx == v && tail == TYPE_any){
+			    tx= 0;
+			    tail = t;
+			}
+			y= newColType(tail);
+			setAnyTailIndex(y,tx);
+			setArgType(mb,p,i,y);
+#ifdef DEBUG_MAL_FCN
+		stream_printf(GDKout," %d replaced %s->%s \n",i,getTypeName(x),getTypeName(y));
+#endif 
+		} else
+		if(v>0 &&  getTailIndex(x) == v){
+#ifdef DEBUG_MAL_FCN
+		stream_printf(GDKout," replace x= %s polymorphic\n",getTypeName(x));
+#endif 
+			setArgType(mb,p,i,t);
+		} 
+#ifdef DEBUG_MAL_FCN
+		else 
+		stream_printf(GDKout," non x= %s %d\n",getTypeName(x),getTailIndex(x));
+#endif 
+	}
+#ifdef DEBUG_MAL_FCN
+		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+#endif 
+	}
+}
+@-
+Upon cloning a function we should remove all the polymorphic flags.
+Otherwise we may end up with a recursive clone.
+@c
+Symbol  cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
+	Symbol new;
+	int i,v;
+	InstrPtr pp;
+
+#ifdef DEBUG_CLONE
+	stream_printf(GDKout,"clone the function %s to scope %s\n",
+			proc->name,scope->name);
+	printInstruction(GDKout,mb, p,LIST_MAL_ALL);
+#endif
+	new= newFunction(putName(proc->name,strlen(proc->name)), 
+	            getSignature(proc)->token );
+	new->def = copyMalBlk(proc->def);
+	/* now change the definition of the original proc */
+/*
+printf("CLONED VERSION\n");
+printFunction(GDKout, new->def, LIST_MAL_ALL);
+*/
+	/* check for errors after fixation , TODO*/
+	pp = getSignature(new);
+	for(i=0;i<pp->argc;i++)
+	if( isPolymorphic(v= getArgType(new->def,pp,i)) ){
+		int t = getArgType(mb,p,i);
+
+		if( isaBatType(t) ){
+			if( getHeadIndex(v) )
+	            replaceTypeVar(new->def, pp, getHeadIndex(v), getHeadType(t));
+			if( getTailIndex(v) )
+	            replaceTypeVar(new->def, pp, getTailIndex(v), getTailType(t));
+		} else
+		if( isaColType(t) ){
+			if( getTailIndex(v) )
+				replaceTypeVar(new->def, pp, getTailIndex(v), getTailType(t));
+		} else
+			replaceTypeVar(new->def, pp, getTailIndex(v), t);
+	} 
+#ifdef DEBUG_MAL_FCN
+	else stream_printf(GDKout,"%d remains %s\n",i, getTypeName(v));
+#endif
+	/* include the function at the proper place in the scope */
+	insertSymbol(scope,new);
+	/* clear polymorphic and type to force analysis*/
+	for(i=0;i<new->def->stop;i++) {
+		pp= getInstrPtr(new->def,i);
+	    pp->typechk= TYPE_UNKNOWN;
+		pp->polymorphic= 0;
+	}
+	/* clear type fixations */
+	for(i=0;i< new->def->vtop; i++)
+		new->def->var[i]->fixtype=0;
+/*
+printf("FUNCTION TO BE CHECKED\n");
+printFunction(GDKout, new->def, LIST_MAL_ALL);
+*/
+	/* check for errors after fixation , TODO*/
+	/* beware, we should now ignore any cloning */
+	if(proc->def->errors == 0) {
+		chkProgram(scope,new->def);
+		if( new->def->errors){
+			str err;
+			GDKerror("Error in cloned function\n");
+			err= function2str(new->def,LIST_MAL_ALL);
+			GDKerror("%s",err);
+			GDKfree(err);
+			showErrors();
+		}
+	}
+#ifdef DEBUG_CLONE
+	stream_printf(GDKout,"newly cloned function added to %s %d \n",scope->name,i);
+	printFunction(GDKout,new->def, LIST_MAL_ALL);
+#endif
+	return new;
+}
+@-
+For commands we do not have to clone the routine. We merely have to
+assure that the type-constraints are obeyed. The resulting type
+is returned.
+@c
+void printFunction(stream *fd, MalBlkPtr mb, int flg){
+	int i;
+	for(i=0;i<mb->stop;i++)
+	printInstruction(fd,mb, getInstrPtr(mb,i),flg);
+}
+@}
 @- Lifespan analysis
 Optimizers may be interested in the characteristic of the
 barrier blocks for making a decision.
@@ -645,236 +872,5 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 			}
 		}
 	}
-}
-@}
-@-
-@node Function Clones, Commands and Patterns, Function definitions, Function definitions
-@- Function Clones
-MAL supports functions defined with type variables, i.e.
-polymorphic functions. The type variable is denoted
-by @code{any} and an optional index.
-Each time a polymorphic  MAL function is called, the
-symbol table is first inspected for the matching strongly typed
-version.  If non exists, a copy of
-the polymorphic routine is generated, whereafter the type
-variables are replaced with their concrete types.
-The function body is immediately type checked and, if
-no errors occured, added to the symbol table.
-
-The generic type variable @code{any} designates an unknown type, which may
-be filled at type resolution time. Unlike indexed polymorphic type 
-arguments, @code{any} type arguments match possibly with different 
-concrete types.
-
-
-An example of a parameterised function is shown below:
-@example
-function helloWorld(msg:any_1):any_1;
-	io.print(msg);
-return msg;
-@end example
-The type variables ensure that the return type equals the
-argument type. Type variables can be used at any place
-where a type name is permitted. 
-Beware that polymorphic type variables are propagated
-throughout the function body. This may invalidate 
-type resolutions taken @ref{Type resolution}.
-
-This version of @code{helloWorld} can also be used for
-other arguments types, i.e. @code{bit,sht,lng,flt,dbl,...}.
-For example, calling @code{helloWorld(3.14:flt)} echoes
-a float value.
-
-@node Commands and Patterns, Factory definitions, Function Clones, Function definitions
-@- Commands and patterns
-The MAL function body can also be implemented with a C-function.
-They are introduced to the MAL type checker by providing their
-signature and an @code{address} qualifier for linkage.
-
-We distinguish both @code{command} and @code{pattern} MAL blocks.
-They differ in the information accessible at run time. The @code{command}
-variant calls the underlying C-function, passing pointers to the arguments
-on the MAL runtime stack. The @code{pattern} command is passed pointers
-to the MAL definitin, the runtime stack, and the instruction itself.
-It can be used to analyse the types of the arguments directly.
-
-For example, the definitions below link the kernel routine @code{BKCinsert_bun}
-with the function @code{bat.insert()}. 
-It does not fully specify the result type.
-The @code{io.print()} pattern applies to any BAT argument list, 
-provided they match on the head column type.
-@example
-command bat.insert(b:bat[:any_1,:any_2], ht:any_1, tt:any_2) :bat[:any_1,:any_2]
-address BKCinsert_bun;
-
-pattern io.print(b1:bat[:any_1,:any]...):int
-address IOtable;
-@end example
-
-The internal representation of the MAL functions is rather traditional,
-using C-structure to collect the necessary information.
-Moreover, we assume that MAL functions are relatively small, up to
-a few hundred of instructions. This assumption makes us to rely on
-linear scans as it comes to locating information of interest.
-@{
-
-Patterns should not be cloned, because the alternative interpretations
-are handled by the underlying code fragments.
-@c
-void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
-	int j,i,x,y;
-#ifdef DEBUG_MAL_FCN
-	stream_printf(GDKout,"replace type _%d by type %s\n",v,
-		getTypeName(t));
-#endif
-	for(j=0; j<mb->stop; j++){
-	    p= getInstrPtr(mb,j);
-#ifdef DEBUG_MAL_FCN
-		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-#endif 
-	if( p->polymorphic)
-	for(i=0;i<p->argc; i++)
-	if( isPolymorphic(x= getArgType(mb,p,i))) {
-		if( isaBatType(x)){
-			int head,tail;
-			int hx,tx;
-			head = getHeadType(x);
-			tail = getTailType(x);
-			hx = getHeadIndex(x);
-			tx = getTailIndex(x);
-			if(v && hx == v && head == TYPE_any){
-			    hx =0;
-			    head =t;
-			}
-			if(v && tx == v && tail == TYPE_any){
-			    tx= 0;
-			    tail = t;
-			}
-			y= newBatType(head,tail);
-			setAnyHeadIndex(y,hx);
-			setAnyTailIndex(y,tx);
-			setArgType(mb,p,i,y);
-#ifdef DEBUG_MAL_FCN
-		stream_printf(GDKout," %d replaced %s->%s \n",i,getTypeName(x),getTypeName(y));
-#endif 
-		} else
-		if( isaColType(x)){
-			int tail;
-			int tx;
-			tail = getTailType(x);
-			tx = getTailIndex(x);
-			if(v && tx == v && tail == TYPE_any){
-			    tx= 0;
-			    tail = t;
-			}
-			y= newColType(tail);
-			setAnyTailIndex(y,tx);
-			setArgType(mb,p,i,y);
-#ifdef DEBUG_MAL_FCN
-		stream_printf(GDKout," %d replaced %s->%s \n",i,getTypeName(x),getTypeName(y));
-#endif 
-		} else
-		if(v>0 &&  getTailIndex(x) == v){
-#ifdef DEBUG_MAL_FCN
-		stream_printf(GDKout," replace x= %s polymorphic\n",getTypeName(x));
-#endif 
-			setArgType(mb,p,i,t);
-		} 
-#ifdef DEBUG_MAL_FCN
-		else 
-		stream_printf(GDKout," non x= %s %d\n",getTypeName(x),getTailIndex(x));
-#endif 
-	}
-#ifdef DEBUG_MAL_FCN
-		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-#endif 
-	}
-}
-@-
-Upon cloning a function we should remove all the polymorphic flags.
-Otherwise we may end up with a recursive clone.
-@c
-Symbol  cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
-	Symbol new;
-	int i,v;
-	InstrPtr pp;
-
-#ifdef DEBUG_CLONE
-	stream_printf(GDKout,"clone the function %s to scope %s\n",
-			proc->name,scope->name);
-	printInstruction(GDKout,mb, p,LIST_MAL_ALL);
-#endif
-	new= newFunction(putName(proc->name,strlen(proc->name)), 
-	            getSignature(proc)->token );
-	new->def = copyMalBlk(proc->def);
-	/* now change the definition of the original proc */
-/*
-printf("CLONED VERSION\n");
-printFunction(GDKout, new->def, LIST_MAL_ALL);
-*/
-	/* check for errors after fixation , TODO*/
-	pp = getSignature(new);
-	for(i=0;i<pp->argc;i++)
-	if( isPolymorphic(v= getArgType(new->def,pp,i)) ){
-		int t = getArgType(mb,p,i);
-
-		if( isaBatType(t) ){
-			if( getHeadIndex(v) )
-	            replaceTypeVar(new->def, pp, getHeadIndex(v), getHeadType(t));
-			if( getTailIndex(v) )
-	            replaceTypeVar(new->def, pp, getTailIndex(v), getTailType(t));
-		} else
-		if( isaColType(t) ){
-			if( getTailIndex(v) )
-				replaceTypeVar(new->def, pp, getTailIndex(v), getTailType(t));
-		} else
-			replaceTypeVar(new->def, pp, getTailIndex(v), t);
-	} 
-#ifdef DEBUG_MAL_FCN
-	else stream_printf(GDKout,"%d remains %s\n",i, getTypeName(v));
-#endif
-	/* include the function at the proper place in the scope */
-	insertSymbol(scope,new);
-	/* clear polymorphic and type to force analysis*/
-	for(i=0;i<new->def->stop;i++) {
-		pp= getInstrPtr(new->def,i);
-	    pp->typechk= TYPE_UNKNOWN;
-		pp->polymorphic= 0;
-	}
-	/* clear type fixations */
-	for(i=0;i< new->def->vtop; i++)
-		new->def->var[i]->fixtype=0;
-/*
-printf("FUNCTION TO BE CHECKED\n");
-printFunction(GDKout, new->def, LIST_MAL_ALL);
-*/
-	/* check for errors after fixation , TODO*/
-	/* beware, we should now ignore any cloning */
-	if(proc->def->errors == 0) {
-		chkProgram(scope,new->def);
-		if( new->def->errors){
-			str err;
-			GDKerror("Error in cloned function\n");
-			err= function2str(new->def,LIST_MAL_ALL);
-			GDKerror("%s",err);
-			GDKfree(err);
-			showErrors();
-		}
-	}
-#ifdef DEBUG_CLONE
-	stream_printf(GDKout,"newly cloned function added to %s %d \n",scope->name,i);
-	printFunction(GDKout,new->def, LIST_MAL_ALL);
-#endif
-	return new;
-}
-@-
-For commands we do not have to clone the routine. We merely have to
-assure that the type-constraints are obeyed. The resulting type
-is returned.
-@c
-void printFunction(stream *fd, MalBlkPtr mb, int flg){
-	int i;
-	for(i=0;i<mb->stop;i++)
-	printInstruction(fd,mb, getInstrPtr(mb,i),flg);
 }
 @}

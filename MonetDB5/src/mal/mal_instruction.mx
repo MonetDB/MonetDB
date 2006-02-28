@@ -17,8 +17,8 @@
 
 @a M. Kersten
 @v 1.0
-@* Monet Assembler Language
-The primary textual interface to the Monet kernel
+@* Monetdb Assembler Language
+The primary textual interface to the Monetdb kernel
 is a simple, assembler-like language, called MAL. 
 The language reflects the virtual machine architecture around the
 kernel libraries and has been designed for speed of parsing,
@@ -31,7 +31,8 @@ of intended computation and data flow behavior. It should be
 understood that its actual evaluation depends on the execution
 paradigm chosen in the scenario. The program blocks can both
 be interpreted as ordered sequences of assembler instructions,
-or as a representation of a data-flow graph that should be resolved.
+or as a representation of a data-flow graph that should be resolved
+in a dataflow driven manner.
 The language syntax uses a functional style definition of actions and
 mark those that affect the flow explicitly.
 Flow of control keywords identify a point to chance
@@ -77,7 +78,7 @@ The assignment patterns recognized are illustrated below.
 t1 := module.fcn(a1,..,a32);
 t1 := v1 operator v2;
 t1 := constant;
-(t1,..,tn) := (c1,..,cn);
+(t1,..,tn) := (a1,..,an);
 @end example
 
 Variables are implicitly defined upon first use and take
@@ -93,7 +94,7 @@ variables to hold the result of the expression upon need.
 They act as data sinks in the flow graph.
 
 For parsing simplicity, each instruction fits on a single line.
-Comment starts with a sharp '#' and continues to the end of the line.
+Comments start with a sharp '#' and continues to the end of the line.
 They are retained in the internal code representation to ease
 debugging of compiler generated MAL programs.
 
@@ -105,42 +106,42 @@ and administrative data for the interpreter.
 
 This method leads to a large allocated block, which can be easily freed, and
 pattern makes it possible to accommodate a variable argument list.
-Variable- and stmt- block together describe the
+Variable- and statement- block together describe the
 static part of a MAL procedure. It carries carry enough 
 information to produce a listing and to aid symbolic debugging.
+
 @node Flow of control, Function definitions, MAL instructions, MonetDB Assembler Language
 @+ Flow of control
-An assignment statement is turned into a flow of control statement
-by tagging it with a control modifier.
-The primary control flow modifiers are @code{ return} and @code{ yield}.
-They mark the end of a function call and return one or more results
-to the calling environment. 
-The @code{ return} and @code{ yield} are followed by a target list
+The flow of control within a MAL program block can be changed by
+tagging an assignment with either @code{return}, @code{yield},
+@code{barrier}, @code{catch}, @code{leave}, @code{redo}, or @code{exit}.
+
+The flow modifiers @code{return} and @code{yield} mark the end 
+of a call and return one or more results to the calling environment. 
+The @code{return} and @code{yield} are followed by a target list
 or an assignment, which is executed first.
 
-The flow of control within a MAL program block can be changed by
-tagging an assignment with either
-@code{ barrier}, @code{ leave}, @code{ redo}, or @code{ exit}.
-The @code{ barrier} and @code{ exit} pair mark a guarded statement block.
+The @code{barrier} (@code{catch}) and @code{exit} pair mark a
+guarded statement block. They may be nested to form a proper
+hierarchy identified by their target variables.
 
-The @code{barrier}, @code{leave} and @code{redo} are conditional 
-flow modifiers, because they use the value of the first target 
-variable after the expression has been evaluated to decide
+The @code{leave} and @code{redo} are conditional flow modifiers. 
+Their first target variable is also denoted as the control variable.
+It is used after  the assignment statement has been evaluated to decide
 on the flow-of-control action to be taken.
-Built-in barrier controls exists for booleans and numeric values.
-The barrier is opened when the first target variable holds
+Built-in controls exists for booleans and numeric values.
+The barrier block is opened when the control variable holds
 true, when its numeric value >= 0, or when it is a non-empty
-string. The @code{ nil} value blocks entry in all cases.
-
+string. The @code{nil} value blocks entry in all cases.
 
 Once inside the barrier you have an option to prematurely
-@code{ leave} it at the exit statement
-or to @code{ redo} interpretation just after the corresponding
+@code{leave} it at the exit statement
+or to @code{redo} interpretation just after the corresponding
 barrier statement. Much like 'break' and 'continue' statements 
-in C.
-The control action is taken when the condition is met.
+in the programming language C.
+The action is taken when the condition is met.
 
-The @code{ exit} marks the exit for a block. Its optional assignment
+The @code{exit} marks the exit for a block. Its optional assignment
 can be used to re-initialize the barrier control variables
 or wrap-up any related administration.
 
@@ -151,7 +152,7 @@ The barrier blocks can be properly nested to form
 a hierarchy of basic blocks.
 The control flow within and between blocks is
 simple enough to deal with during an optimizer stage.
-The @code{ redo} and @code{ leave} statements mark
+The @code{redo} and @code{leave} statements mark
 the partial end of a block. Statements within these
 blocks can be re-arranged according to the data-flow
 dependencies. The order of partial blocks can not
@@ -187,7 +188,7 @@ exit elsepart;
 
 Note that both guarded blocks can be interchanged without
 affecting the outcome. Moreover, neither block would
-have been entered if the variable happens to be assigned @code{ nil }.
+have been entered if the variable happens to be assigned @code{nil}.
 
 The primitives are sufficient to model a wide variety of iterators, 
 whose pattern look like:
