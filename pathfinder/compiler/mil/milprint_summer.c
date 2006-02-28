@@ -6223,9 +6223,9 @@ translateUDF (opt_t *f, int cur_level, int counter,
 
     if (apply.rpc)
     {
-        /* The extra parameter 'dst' of a SOAP RPC is not listed in
+        /* The extra parameter 'dst' of an RPC call is not listed in
          * fun->params[], so translate it separately. */
-        milprintf(f, "\n# begin of translate the 'dst' param of SOAP\n");
+        milprintf(f, "\n# begin of translate the 'dst' param of RPC call\n");
 
         if (translate2MIL (f, NORMAL, cur_level, counter, L(args)) == NORMAL)
         {
@@ -6235,7 +6235,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
         counter++;
         saveResult_ (f, counter, STR);
         args = R(args);
-        milprintf(f, "\n# end of translate the 'dst' param of SOAP\n");
+        milprintf(f, "\n# end of translate the 'dst' param of RPC call\n");
     }
 
     counter++;
@@ -6304,18 +6304,18 @@ translateUDF (opt_t *f, int cur_level, int counter,
 
     /* Defind a variable to hold the results of a function call. */
     if (apply.rpc) {
-        /* call soap_sender => frag~=kind
+        /* call rpc_sender => frag~=kind
          * extract return value (s) from the message node
          * into a iter|item|kind table
          * message node: (item=0@0, kind=~frag)
          */
         milprintf(f, 
                 "\n"
-                "{ # begin of SOAP call\n"
-                "  module(\"pf_soap\");\n"
+                "{ # begin of RPC call\n"
+                "  module(\"xquery_rpc\");\n"
                 /* FIXME: need a better way of name giving. */
                 "  var local_name := \"rpc_res\";\n"
-                "  var rpc_oid := send_soap_rpc(local_name, item%s%03u, \"%s\", \"%s\", ws,"
+                "  var rpc_oid := rpc_client(local_name, item%s%03u, \"%s\", \"%s\", ws,"
                                     "fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u,"
                                     "int_values, dbl_values, dec_values, str_values);\n"
                 "  var proc_res := get_rpc_res(ws, rpc_oid, int_values, dbl_values, dec_values, str_values);\n"
@@ -6331,7 +6331,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "      ipik := kind;\n"
                 "    }\n"
                 "  }\n"
-                "} # end of SOAP call\n",
+                "} # end of RPC call\n",
                 item_ext, counter-1, 
                 f->rpc_uri /* apply.fun->qname.ns.uri*/,
                 apply.fun->qname.loc,
@@ -8657,7 +8657,7 @@ simplifyCoreTree (PFcnode_t *c)
     PFcnode_t *new_node;
     PFty_t expected, opt_expected;
     PFty_t cast_type, input_type, opt_cast_type;
-    int soap_rpc;
+    int is_rpc;
 
     assert(c);
     switch (c->kind)
@@ -8887,7 +8887,7 @@ simplifyCoreTree (PFcnode_t *c)
         case c_apply:
             /* handle the promotable types explicitly by casting them */
             fun = c->sem.apply.fun;
-            soap_rpc = c->sem.apply.rpc;
+            is_rpc = c->sem.apply.rpc;
             {
                 unsigned int i = 0;
                 PFcnode_t *tmp = D(c);
@@ -9068,9 +9068,9 @@ simplifyCoreTree (PFcnode_t *c)
             else
             {
                 c = D(c);
-                for (i = 0; i < fun->arity + soap_rpc; i++, c = R(c))
+                for (i = 0; i < fun->arity + is_rpc; i++, c = R(c))
                 {
-                    if (soap_rpc && i == 0)
+                    if (is_rpc && i == 0)
                     {
                         expected = PFty_plus( PFty_string() );
                     }
@@ -10722,7 +10722,7 @@ PFprintMILtemp (PFcnode_t *c, int optimize, char* rpc_uri, int module_base, int 
     /* hack: milprint_summer state, not mil_opt state */
     f->num_fun = num_fun;     /* for queries: the amount of functions in the query itself (if any); used to ignore module functions */
     f->module_base = module_base; /* only generate mil module; no query */
-    f->rpc_uri = rpc_uri; /* this query imports a module under identifier 'soap' (i.e. for rpc) */
+    f->rpc_uri = rpc_uri; /* this query imports an RPC module */
 
     way = PFarray (sizeof (int));
     counter = PFarray (sizeof (int));
