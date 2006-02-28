@@ -171,8 +171,10 @@ if (isnil(CATCH(bat("doc_query").count()))) {
 }
 lock_unset(pf_lock);
 
+# insert 25% free space per 64k tuples
 const PAGESIZE := 4;	#64 * 1024;
-const PAGEFREE := 1;
+const PAGEFILL := 3;	#48 * 1024;
+const PAGEFREE := PAGESIZE - PAGEFILL;
 
 # DEFINITION of constants concerning the data model
 const PRE_BASE := 0@0;
@@ -443,11 +445,6 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
 disabled code: hole creation
 
 { # TODO/FIXME: Slack-space creation should be done in the shredder.
-
-    # insert 25% free space per 64k tuples
-    const PAGESIZE := 4;	#64 * 1024;
-    const PAGEFILL := 3;	#48 * 1024;
-    const PAGEFREE := PAGESIZE - PAGEFILL;
 
     var seq_0 := seqbase(pre_size);
     var len_0 := count(pre_size);
