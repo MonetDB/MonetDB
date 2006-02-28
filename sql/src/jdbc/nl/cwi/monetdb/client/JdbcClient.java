@@ -604,6 +604,10 @@ public class JdbcClient {
 				} else {
 					System.err.println("Error: " + e.getMessage());
 				}
+				// print all error messages in the chain (if any)
+				while ((e = e.getNextException()) != null) {
+					System.err.println(e.getMessage());
+				}
 			}
 		}
 	}
@@ -700,10 +704,6 @@ public class JdbcClient {
 		String curLine;
 		int i = 0;
 		try {
-			// because this is an explicit batch from a file, we turn off
-			// auto-commit
-			con.setAutoCommit(false);
-
 			// the main loop
 			for (i = 1; (curLine = in.readLine()) != null; i++) {
 				query.append(curLine);
@@ -723,11 +723,12 @@ public class JdbcClient {
 			stmt.addBatch(query.toString());
 			stmt.executeBatch();
 			stmt.clearBatch();
-
-			// commit the transaction (if we came this far)
-			con.commit();
 		} catch (SQLException e) {
 			System.err.println("Error at line " + i + ": " + e.getMessage());
+			// print all error messages in the chain (if any)
+			while ((e = e.getNextException()) != null) {
+				System.err.println(e.getMessage());
+			}
 		}
 	}
 
