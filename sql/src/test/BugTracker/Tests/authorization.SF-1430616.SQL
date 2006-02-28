@@ -13,15 +13,15 @@ EOF
 LANG="en_US.UTF-8"
 export LANG
 
-Mlog   "$MTIMEOUT java -jar \"$JAR\" -h $HOST -p $MAPIPORT -b${TSTDB} -f $RELSRCDIR/authorization.SF-1430616-data.sql"
-	$MTIMEOUT java -jar  "$JAR"  -h $HOST -p $MAPIPORT -b${TSTDB} -f $RELSRCDIR/authorization.SF-1430616-data.sql 
+Mlog   "$MTIMEOUT java -jar \"$JAR\" -h $HOST -p $MAPIPORT -d ${TSTDB} -f $RELSRCDIR/authorization.SF-1430616-data.sql"
+	$MTIMEOUT java -jar  "$JAR"  -h $HOST -p $MAPIPORT -d ${TSTDB} -f $RELSRCDIR/authorization.SF-1430616-data.sql 
 
 cat << EOF > .monetdb
 user=voc
 password=voc
 EOF
 
-Mlog   "$MTIMEOUT java -jar \"$JAR\" -h $HOST -p $MAPIPORT -b${TSTDB}" 
-	$MTIMEOUT java -jar  "$JAR"  -h $HOST -p $MAPIPORT -b${TSTDB}  
+Mlog   "$MTIMEOUT java -jar \"$JAR\" -h $HOST -p $MAPIPORT -d ${TSTDB}" 
+	$MTIMEOUT java -jar  "$JAR"  -h $HOST -p $MAPIPORT -d ${TSTDB}  
 
 rm -f .monetdb
