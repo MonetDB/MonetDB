@@ -48,51 +48,44 @@ relevant if you switch partitioning head and tail.
 Initial performance indicates around 70 ms processing
 overhead on a 1M bat during the first crack operation.
 (Athlon 1400, 1Gb)
+
+@= crackfcn
+command new(b:bat[:@1,:int]):void
+address CRKnew
+comment "Create the index tables for a cracked table.";
+
+command setGranule(b:bat[:@1,:int], granule:int):void
+address CRKsetGranule
+comment "Set the minimum granularity for a BAT.";
+
+command info(b:bat[:@1,:int])
+address CRKinfo
+comment "Print the cracker index administration";
+
+command crack(b:bat[:@1,:int],low:int,hgh:int) :int
+address CRKcrackRange
+comment "Break the partitions into smaller pieces
+	using a range over the tail";
+
+command crack(b:bat[:@1,:int],low:int,hgh:int,lincl:bit,rincl:bit) :int
+address CRKcrackRangeAll
+comment "Break the partitions into smaller pieces
+	using a range over the tail";
 @mal
 module crackers;
 
-command new(b:bat[:oid,:int]) 
-address CRKnew
-comment "Create the index tables for a cracked table.";
-
-command new(b:bat[:int,:int]) 
-address CRKnew
-comment "Create the index tables for a cracked table.";
-
-command new(b:bat[:int,:int], granule:int) 
-address CRKnewGranule
-comment "Create the index tables for a cracked
-	table. Set the minimum granularity";
-
+@:crackfcn(int)@
+@:crackfcn(oid)@
 @-
 For debugging we provide a simple routine to dump
 the cracker index. Future versions should provide
 a BAT-like access to this internal information.
-@mal
-command info(b:bat[:oid,:int])
-address CRKinfo
-comment "Print the cracker index administration";
-
-command info(b:bat[:int,:int])
-address CRKinfo
-comment "Print the cracker index administration";
-
 @-
 The cracker comes in two variants. One to split the
 table using an inclusive range over its tail, and a second to 
 bi-partite two bats using a join over its tail
 [TODO mirroring information should be kept around]
 @mal
-command crack(b:bat[:int,:int],low:int,hgh:int) :int
-address CRKcrackRange
-comment "Break the partitions into smaller pieces
-	using a range over the tail";
-
-command crack(b:bat[:oid,:int],low:int,hgh:int) :int
-address CRKcrackRange
-comment "Break the partitions into smaller pieces
-	using a range over the tail";
-
 
 command crackTwoScans(b:bat[:oid,:int],low:int,hgh:int,tail:bit) :bat[:oid,:int]
 address CRKcrackRangeWithTwoScans
@@ -211,13 +204,15 @@ typedef struct {
 typedef struct {
 	int bid;		/* the original bat */
 	int freepiece, maxpiece;
+	int granule;
 	Piece *pieces;
 } CrackMap;
 
 mal_export str CRKnew(int *cret, int *bid);
-mal_export str CRKnewGranule(int *cret, int *bid, int *gran);
+mal_export str CRKsetGranule(int *cret, int *bid, int *gran);
 mal_export str CRKinfo(int *k, int *bid);
 mal_export str CRKcrackRange(int *partid, int *bid, int *low, int *hgh);
+mal_export str CRKcrackRangeAll(int *partid, int *bid, int *low, int *hgh, bit *lincl, bit *rincl);
 mal_export str CRKcrackRangeWithTwoScans(int *vid, int *bid, int *low, int *hgh, bit tail);
 mal_export str CRKcrackJoin(int *partid, int *bid, int *cid);
 mal_export int CRKsetBounds(BAT *b, BAT *view, int mid, int pid);
@@ -255,17 +250,26 @@ The granularity can be used to limit the number of pieces.
 
 static CrackMap *crackMap;
 static int maxCrackMap = 0;
-static int minGranule = 2;
 
-int
-findCrackMap(int bid)
-{
-	int i, freemap = -1, units = 1024;
 
+int     
+existsCrackMap(int bid)
+{       
+	int i;
+	
 	for (i = 0; i < maxCrackMap; i++)
 		if (crackMap[i].bid == bid)
 			return i;
-		else if (crackMap[i].bid == -1)
+	return -1;
+}
+
+int     
+newCrackMap(int bid)
+{       
+	int i, freemap = -1, units = 1024;
+	
+	for (i = 0; i < maxCrackMap; i++)
+		if (crackMap[i].bid == -1)
 			freemap = i;
 
 	if (freemap != -1) {
@@ -275,12 +279,12 @@ findCrackMap(int bid)
 
 	if (i == maxCrackMap) {
 		CrackMap *x;
-
+        
 		if (maxCrackMap > 0)
 			units = (int) (1.2 * maxCrackMap);
 		x = (CrackMap *) GDKmalloc(sizeof(CrackMap) * units);
 		memset(x, 0, sizeof(CrackMap) * units);
-		if (crackMap) {
+		if (crackMap) { 
 			fprintf(stderr, "reallocate Crackmap\n");
 			memcpy(x, crackMap, sizeof(CrackMap) * i);
 			GDKfree(crackMap);
@@ -297,55 +301,15 @@ findCrackMap(int bid)
 	return i;
 }
 
-int     
-existsCrackMap(int bid)
-{       
-        int i;
-        
-        for (i = 0; i < maxCrackMap; i++)
-                if (crackMap[i].bid == bid)
-                        return i;
-	return -1;
+int
+findCrackMap(int bid)
+{
+	int m;
+	m= existsCrackMap(bid);
+	if( m < 0 )
+		m= newCrackMap(bid);
+	return m;
 }
-
-int     
-newCrackMap(int bid)
-{       
-        int i, freemap = -1, units = 1024;
-        
-        for (i = 0; i < maxCrackMap; i++)
-                if (crackMap[i].bid == -1)
-        	        freemap = i;
-
-	if (freemap != -1) {
-		crackMap[freemap].bid = bid;
-		return freemap;
-	}
-
-        if (i == maxCrackMap) {
-                CrackMap *x;
-        
-                if (maxCrackMap > 0)
-                        units = (int) (1.2 * maxCrackMap);
-                x = (CrackMap *) GDKmalloc(sizeof(CrackMap) * units);
-                memset(x, 0, sizeof(CrackMap) * units);
-                if (crackMap) { 
-                        fprintf(stderr, "reallocate Crackmap\n");
-                        memcpy(x, crackMap, sizeof(CrackMap) * i);
-                        GDKfree(crackMap);
-                }
-                crackMap = x;
-                maxCrackMap = units;
-        }
-        /* init the crackmap */
-        crackMap[i].bid = bid;
-        crackMap[i].pieces = GDKmalloc(sizeof(Piece) * MAXPIECE);
-        memset((void *) crackMap[i].pieces, 0, sizeof(Piece) * MAXPIECE);
-        crackMap[i].freepiece = 0;
-        crackMap[i].maxpiece = MAXPIECE;
-        return i;
-}
-
 
 void
 freeCrackMap(int m)
@@ -365,8 +329,8 @@ printCrackMapElement(Piece * list, int i, int bid)
 	stream_printf(GDKout, "%d ", list[i].parent);
 	stream_printf(GDKout, "%d, ", list[i].rng_min);
 	stream_printf(GDKout, "%d, ", list[i].rng_max);
-        stream_printf(GDKout, "%d, ", list[i].real_rng_min);
-        stream_printf(GDKout, "%d, ", list[i].real_rng_max);
+	stream_printf(GDKout, "%d, ", list[i].real_rng_min);
+	stream_printf(GDKout, "%d, ", list[i].real_rng_max);
 	stream_printf(GDKout, " "SZFMT", ", list[i].idx_first);
 	stream_printf(GDKout, " "SZFMT", ", list[i].idx_last);
 	stream_printf(GDKout, "%d, ", list[i].left);
@@ -391,19 +355,18 @@ initCrackMap(CrackMap * map, int *bid)
 {
 	BAT *b;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("crackers.initCrackMap", "Cannot access descriptor");
-	}
+	if ((b = BATdescriptor(*bid)) == NULL)
+		return throwMessage("crackers.initCrackMap", 
+						"Cannot access descriptor");
 @-
 The target BAT should not be modified by the applications,
 otherwise the partitioning scheme becomes void
 already. [todo]
 @c
-
 	map->pieces[0].rng_min = INT_MIN;
 	map->pieces[0].rng_max = INT_MAX;
 	map->pieces[0].real_rng_min = INT_MIN;
-        map->pieces[0].real_rng_max = INT_MAX;
+	map->pieces[0].real_rng_max = INT_MAX;
 	map->pieces[0].idx_first = BUNindex(b, BUNfirst(b));
 	map->pieces[0].idx_last = BUNindex(b, BUNlast(b)) - 1;
 	map->pieces[0].kind = LEAF;
@@ -431,11 +394,16 @@ CRKnew(int *cret, int *bid)
 }
 
 str
-CRKnewGranule(int *cret, int *bid, int *gran)
+CRKsetGranule(int *cret, int *bid, int *gran)
 {
-	(void) minGranule;	/* fool compile on its use */
-	minGranule = *gran;
-	return CRKnew(cret, bid);
+	int m;
+	(void) cret;
+
+	m= findCrackMap(*bid);
+	if( m >=0 )
+		crackMap[m].granule= *gran;
+	else return throwMessage("crackers.crack", "unknown cracked BAT");
+	return MAL_SUCCEED;
 }
 
 str
@@ -445,7 +413,6 @@ CRKinfo(int *k, int *bid)
 	printCrackMap(*bid);
 	return MAL_SUCCEED;
 }
-
 @-
 @= exchange
 #ifdef DEBUG_CRACKERS_DETAIL
@@ -511,7 +478,7 @@ The advantage over the naive shuffle is potential less data writes.
 First experiment is a simple partitioning on the tail value.
 @= newPiece
 	if(crackMap[@1].maxpiece == crackMap[@1].freepiece ){
-		printf("too many pieces");
+		GDKerror("#too many pieces");
 		exit(0);
 	}
 	@2 = crackMap[@1].pieces+ crackMap[@1].freepiece;
@@ -519,7 +486,7 @@ First experiment is a simple partitioning on the tail value.
 	crackMap[@1].freepiece++;
 @c
 str
-CRKcrackRange(int *partid, int *bid, int *low, int *hgh)
+CRKcrackRangeAll(int *partid, int *bid, int *low, int *hgh, bit *lincl, bit *rincl)
 {
 	BAT *b;
 	Piece *piece, *npiece;
@@ -529,6 +496,8 @@ CRKcrackRange(int *partid, int *bid, int *low, int *hgh)
 	ptr vmax = 0, vmin = 0, vm;
 	int lim, m, i, pid = -1;
 	size_t l,h;
+	(void) lincl;
+	(void) rincl;
 
 	if (*(int *) low > *(int *) hgh)
 		return throwMessage("crackers.crack", "illegal range");
@@ -547,29 +516,42 @@ Inspect the value range table to only further crack qualifying fragments.
 	for (i = 0; i < lim; i++) {
 		if (crackMap[m].pieces[i].kind != LEAF)
 			continue;
-		if (*(int *) low <= crackMap[m].pieces[i].rng_min && *(int *) hgh >= crackMap[m].pieces[i].rng_max) {
+		if ( *(int *) low <= crackMap[m].pieces[i].rng_min && 
+			 *(int *) hgh >= crackMap[m].pieces[i].rng_max) {
+			/* the range encloses the complete piece */
 			continue;
 		}
+		/* ignore pieces outside the scope of interest */
 		if (crackMap[m].pieces[i].rng_max < *(int *) low)
+			continue;
+		if (crackMap[m].pieces[i].rng_max == *(int *) low && ! *lincl)
 			continue;
 		if (crackMap[m].pieces[i].rng_min > *(int *) hgh)
 			continue;
+		if (crackMap[m].pieces[i].rng_min == *(int *) hgh && ! *rincl)
+			continue;
 
 		piece = crackMap[m].pieces + i;
-		/* set bounds */
+		/* set bounds for the iterator */
 		xx = BUNsize(b);
 		vmin = (ptr) ((char *) BUNptr(b, piece->idx_first) - xx);
 		vmax = (ptr) ((char *) BUNptr(b, piece->idx_last) + xx);
 
 		vm = BUNtail(b, (ptr) ((char *) vmin + xx));
-		for (p = (ptr) ((char *) vmin + xx); p < vmax; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)) {
-			if (*(int *) vm < *(int *) low) {
+@-
+The loop should take into account the inclusive bound flags.
+We need for copies of this one.
+@= crackLoop
+		if( @1 )
+		for (p = (ptr) ((char *) vmin + xx); p < vmax; 
+			 p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)) {
+			if (*(int *) vm @2 *(int *) low) {
 				/* exchange with first low */
 				vmin = (ptr) ((char *) vmin + xx);
 				if (vmin != p) {
 					@:exchange(vmin, p)@
 				}
-			} else if (*(int *) vm > *(int *) hgh) {
+			} else if (*(int *) vm @3 *(int *) hgh) {
 				/* exchange with qualifying tail elm */
 				vmax = (ptr) ((char *) vmax - xx);
 				while (*(int *) BUNtail(b, vmax) > *(int *) hgh && vmax > p)
@@ -578,17 +560,21 @@ Inspect the value range table to only further crack qualifying fragments.
 					@:exchange(vmax, p)@
 					vm = (ptr) ((char *) vm - xx);
 					p = (ptr) ((char *) p - xx);
+
+				}
+			}
+		}
 @-
-The chosen element could also be less then 'low' and an 
+The element choosen could also be less then 'low' and an 
 exchange operation could be saved. It turned out that
 this optimization was not effective when a BUNtail
 test was performed. A similar remark holds for having
 an additional variable to keep track of the tail value.
 @c
-
-				}
-			}
-		}
+@:crackLoop(*lincl==FALSE && *rincl==FALSE,<,>)@
+@:crackLoop(*lincl==FALSE && *rincl==TRUE,<,>=)@
+@:crackLoop(*lincl==TRUE && *rincl==FALSE,<=,>)@
+@:crackLoop(*lincl==TRUE && *rincl==TRUE,<=,>=)@
 @-
 For each fragment discovered we have to break it into several pieces
 and update the administration BATs. 
@@ -692,6 +678,14 @@ the ranges of the outer partitions as well.
 	BBPunfix(b->batCacheid);
 	*partid = pid;
 	return MAL_SUCCEED;
+}
+@-
+The short cut version 
+@c
+str
+CRKcrackRange(int *partid, int *bid, int *low, int *high){
+	bit f= FALSE;
+	return CRKcrackRangeAll(partid,bid,low,high,&f,&f);
 }
 
 @= updateRealBoundsRight
