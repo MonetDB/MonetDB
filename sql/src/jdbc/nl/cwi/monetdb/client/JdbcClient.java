@@ -51,7 +51,7 @@ public class JdbcClient {
 		copts.addOption("h", "host", CmdLineOpts.CAR_ONE, "localhost");
 		copts.addOption("p", "port", CmdLineOpts.CAR_ONE, "50000");
 		copts.addOption("u", "user", CmdLineOpts.CAR_ONE, System.getProperty("user.name"));
-		copts.addOption("b", "database", CmdLineOpts.CAR_ONE, "demo");
+		copts.addOption("d", "database", CmdLineOpts.CAR_ONE, "demo");
 		copts.addOption("l", "language", CmdLineOpts.CAR_ONE, "sql");
 		copts.addOption(null, "Xblksize", CmdLineOpts.CAR_ONE, null);
 		copts.addOption(null, "Xoutput", CmdLineOpts.CAR_ONE, null);
@@ -63,7 +63,7 @@ public class JdbcClient {
 		copts.addOption(null, "password", CmdLineOpts.CAR_ONE, null);
 
 		// arguments which can have zero to lots of arguments
-		copts.addOption("d", "dump", CmdLineOpts.CAR_ZERO_MANY, null);
+		copts.addOption("D", "dump", CmdLineOpts.CAR_ZERO_MANY, null);
 
 		// arguments which can have zero or one argument(s)
 		copts.addOption(null, "Xdebug", CmdLineOpts.CAR_ZERO_ONE, null);
@@ -136,11 +136,11 @@ public class JdbcClient {
 "           text file that is optionally gzip compressed.\n" +
 "-u --user  The username to use when connecting to the database.\n" +
 "-l --language  Use the given language, for example 'xquery'.\n" +
-"-d --dump  Dumps the given table(s), or the complete database if none given.\n" +
+"-D --dump  Dumps the given table(s), or the complete database if none given.\n" +
 "--help     This screen.\n" +
 "-e --echo  Also outputs the contents of the input file, if any.\n" +
-"-b --database  Try to connect to the given database (only makes sense\n" +
-"           if connecting to a DatabasePool or equivalent process).\n" +
+"-d --database  Try to connect to the given database (only makes sense\n" +
+"           if connecting to a DatabasePool, M5 or equivalent process).\n" +
 "\n" +
 "EXTRA OPTIONS\n" +
 "-Xdebug    Writes a transmission log to disk for debugging purposes.  If a\n" +
