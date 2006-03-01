@@ -726,12 +726,13 @@ Experiments should (dis) proof this.
 void
 checkPieceWithoutGaps(int m, BAT *b, int xx, int i, int low, int hgh, size_t  *vl, size_t *vh, bit firstCrack)
 {
-	ptr vmax = 0, vmin = 0, vm, bl, bls, bh;
+	ptr vmax = 0, vmin = 0, vm, vmx, bl, bls, bh;
 	ptr p, pn=0;
 	Piece *piece, *npiece;
 	size_t l=0, h=0;
 	piece = crackMap[m].pieces + i;
 	char buf[128];	  /* scratch space */
+	int tmpTmax, tmpTmid;
 #ifdef DEBUG_CRACKERS
 	printf("\n checking piece %d, changing low high from %d, %d to ",i,low,hgh);
 #endif
@@ -817,30 +818,29 @@ checkPieceWithoutGaps(int m, BAT *b, int xx, int i, int low, int hgh, size_t  *v
 #ifdef DEBUG_CRACKERS
 			   printf("#splitting in three pieces \n");
 #endif
-			vmin = (ptr) ((char *) BUNptr(b, piece->idx_first) - xx);
-			vmax = (ptr) ((char *) BUNptr(b, piece->idx_last) + xx);
-
-			vm = BUNtail(b, (ptr) ((char *) vmin + xx));
+			vmin = BUNptr(b, piece->idx_first);
+			vmax = BUNptr(b, piece->idx_last);
 
 			/* Make a first scan to count the number of buns that have a value lower than low.
 			After the scan bl points to the first BUN with value > low */
 				
-			bl = (ptr) ((char *) vmin + xx);
-			bh = (ptr) ((char *) vmin + xx);
-			for (p = (ptr) ((char *) vmin + xx); p < vmax; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)){
+			bl = vmin;
+			bh = vmin;
+			vmx = BUNtail(b, vmax);
+			for (vm = BUNtail(b, vmin); vm <= vmx;  vm = (ptr) ((char *) vm + xx)){
 				bl = (ptr) ((char *) bl + xx*(*(int *) vm < low));
 				bh = (ptr) ((char *) bh + xx*(*(int *) vm <= hgh));
 			}
-			bls = (ptr) ((char *) bl);
+			bls = bl;
 			   
 #ifdef DEBUG_CRACKERS
 			printf("# bounds are: low %d, high %d  ", *(int *) BUNtail(b, bl), *(int *) BUNtail(b, bh));
 #endif	  
 			/* Make a second scan to reshufle the buns */
 				
-			vm = BUNtail(b, (ptr) ((char *) vmin + xx));
+			vm = BUNtail(b, vmin);
 				
-			for (p = (ptr) ((char *) vmin + xx); p < bh; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)) {
+			for (p = vmin; p < bh; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)) {
 
 #ifdef DEBUG_CRACKERS   
 				printf("#checking  tail %d", *(int *) BUNtail(b, p));
@@ -851,12 +851,13 @@ checkPieceWithoutGaps(int m, BAT *b, int xx, int i, int low, int hgh, size_t  *v
 					printf("#in the middle partition  ");
 #endif	                  
 					if (*(int *) vm >  hgh){
-						vmax = (ptr) ((char *) vmax - xx);
-						while (*(int *) BUNtail(b, vmax) > hgh && vmax > bh)
-								vmax = (ptr) ((char *) vmax - xx);
-						if (*(int *) BUNtail(b, vmax) >= low &&
-							*(int *) BUNtail(b, vmax) <=  hgh){
-									@:exchange(vmax, p)@
+						tmpTmax = *(int *) BUNtail(b, vmax);
+						while (*(int *) BUNtail(b, vmax) > hgh && vmax > bh){
+							vmax = (ptr) ((char *) vmax - xx);
+							tmpTmax = *(int *) BUNtail(b, vmax);
+						}
+						if (tmpTmax >= low && tmpTmax <=  hgh){
+							@:exchange(vmax, p)@
 						}
 					}
 					continue;
@@ -872,22 +873,24 @@ checkPieceWithoutGaps(int m, BAT *b, int xx, int i, int low, int hgh, size_t  *v
 #ifdef DEBUG_CRACKERS   
 					printf("#current belongs in the middle partition");
 #endif	                  
-					for (pn = (ptr) ((char *) bl); pn < bh; pn = (ptr) ((char *) pn + xx), bl = (ptr) ((char *) bl + xx)){
-						if (*(int *) BUNtail(b, pn) < low){
-							   @:exchange(pn, p)@
-								bl = (ptr) ((char *) bl + xx);
-								break;
+					for (pn = bl; pn < bh; pn = (ptr) ((char *) pn + xx), bl = (ptr) ((char *) bl + xx)){
+						tmpTmid = *(int *) BUNtail(b, pn);
+						if (tmpTmid < low){
+							@:exchange(pn, p)@
+							bl = (ptr) ((char *) bl + xx);
+							break;
 						}
 
-						if (*(int *) BUNtail(b, pn) >  hgh){
-							vmax = (ptr) ((char *) vmax - xx);
-							while (*(int *) BUNtail(b, vmax) > hgh && vmax > bh)
+						if (tmpTmid >  hgh){
+							tmpTmax = *(int *) BUNtail(b, vmax);
+							while (*(int *) BUNtail(b, vmax) > hgh && vmax > bh){
 								vmax = (ptr) ((char *) vmax - xx);
-							if (*(int *) BUNtail(b, vmax) >= low  &&
-								*(int *) BUNtail(b, vmax) <=  hgh){
-										@:exchange(vmax, pn)@
+								tmpTmax = *(int *) BUNtail(b, vmax);
 							}
-							if (*(int *) BUNtail(b, vmax) < low){
+							if (tmpTmax >= low  && tmpTmax <=  hgh){
+								@:exchange(vmax, pn)@
+							}
+							if (tmpTmax < low){
 								@:exchange2(p,pn,vmax)@
 								bl = (ptr) ((char *) bl + xx);
 								break;
@@ -901,20 +904,22 @@ checkPieceWithoutGaps(int m, BAT *b, int xx, int i, int low, int hgh, size_t  *v
 #endif
 					/* exchange with qualifying tail elm */
 
-					for (pn = (ptr) ((char *) vmax-xx); pn >= bh; pn = (ptr) ((char *) pn - xx), vmax = (ptr) ((char *) vmax - xx)){
-
-						if (*(int *) BUNtail(b, pn) < low){
-								@:exchange(pn, p)@
-								break;
+					for (pn = vmax; pn >= bh; pn = (ptr) ((char *) pn - xx), vmax = (ptr) ((char *) vmax - xx)){
+						tmpTmax = *(int *) BUNtail(b, pn);
+						if (tmpTmax < low){
+							@:exchange(pn, p)@
+							break;
 						}
-					if (*(int *) BUNtail(b, pn) >= low && *(int *) BUNtail(b, pn) <=  hgh){
-
-						while (*(int *) BUNtail(b, bl) >= low && *(int *) BUNtail(b, bl) <=  hgh && bl < bh)
-							bl = (ptr) ((char *) bl + xx);
-							if (*(int *) BUNtail(b, bl) > hgh){
+						if (tmpTmax >= low && tmpTmax <=  hgh){
+							tmpTmid = *(int *) BUNtail(b, bl);
+							while (tmpTmid >= low && tmpTmid <=  hgh && bl < bh){
+								bl = (ptr) ((char *) bl + xx);
+								tmpTmid = *(int *) BUNtail(b, bl);
+							}
+							if (tmpTmid > hgh){
 								@:exchange(bl, pn)@
 							}
-							if (*(int *) BUNtail(b, bl) < low){
+							if (tmpTmid < low){
 								@:exchange2(pn, bl, p)@
 								bl = (ptr) ((char *) bl + xx);
 								break;
@@ -1503,7 +1508,6 @@ Inspect the value range table to only further crack qualifying fragments.
                 *vid = uview->batCacheid;		
         }
         else *vid = view->batCacheid;
-	printf("vid is %d",*vid);
 	BBPfix(*vid);
 @-              
 If this was the first cracking operation it makes sense to administer
