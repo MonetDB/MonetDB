@@ -10514,7 +10514,7 @@ const char* PFinitMIL(void) {
         "\n"
         "# variable that holds bat-id (int) of a shredded document that may be added to the ws\n"
         "var shredBAT := int(nil); # make sure that shredBAT is of type int; non-initialized MIL variables are void(nil)!\n"
-       "var time_compile := 0;\n"
+        "var time_compile := 0;\n"
         "var genType := \"xml\";";
 }
 
@@ -10557,7 +10557,8 @@ const char* PFvarMIL(void) {
         "var _r_attr_prop; # oid|oid\n"
         "var _r_attr_frag; # oid|oid\n"
         "\n"
-        /* FIXME: remove this line */
+        /* Decleration of 'ws' has been moved from PFstartMIL to here to
+         * easy debugging. */
         "var ws := int(nil);\n"
         "# environment that represents start of any query\n"
         "var v_iter000;\n"
@@ -10576,8 +10577,6 @@ const char* PFstartMIL(void) {
         "var time_print := 0;\n"
         "var time_exec := time();\n"
         "\n"
-        /* FIXME: turn this line on */
-        /* "var ws := int(nil);\n" */
         "var err := CATCH({\n"
         "  ws := create_ws();\n"
         "\n"
