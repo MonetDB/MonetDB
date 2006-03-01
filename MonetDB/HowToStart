@@ -19,9 +19,9 @@ Mac OS X/Darwin, or CYGWIN).
 For compilation and installation on a native Windows system (NT, 2000, XP)
 see the instructions in the file `HowToStart-Win32.txt`__.
 
-__ ../../../TechDocs/index.html
+__ ../../../../TechDocs/Tools/index.html
 __ http://sourceforge.net/project/showfiles.php?group_id=56967
-__ Windows/index.html
+__ ../Windows/index.html
 
 Prerequisites
 -------------
@@ -320,7 +320,7 @@ install``.  In the top-level directory of the MonetDB build tree, call
 
  make docs
 
-__ ../../../TechDocs/index.html
+__ ../../../../TechDocs/index.html
 
 
 Troubleshooting
