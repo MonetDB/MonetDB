@@ -18,6 +18,8 @@
 @' Portions created by the University of Konstanz are Copyright (C)
 @' 2000-2005 University of Konstanz.  All Rights Reserved.
 @'
+@' $Id$
+@'
 
 @f xquery_rpc
 @a Ying Zhang
@@ -553,15 +555,12 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
    
     /* Fill the arrays 'argcnt', 'argval', 'argtpe' */
     inode_pre = pre;
-    int maxsize = size[0];
     for (i = 0; i < iterc; i++) {
-        /* inode_pre = get_node_pre(docBAT, "iter", (inode_pre + 1), size[0]); */
-        inode_pre = get_node_pre(docBAT, "iter", (inode_pre + 1), maxsize); 
+        inode_pre = get_node_pre(docBAT, "iter", (inode_pre + 1), size[0]);
 
         pnode_pre = inode_pre;
         for (j = 0; j < argc; j++) {
-            /* pnode_pre = get_node_pre(docBAT, "param", (pnode_pre + 1), (inode_pre + size[inode_pre])); */
-            pnode_pre = get_node_pre(docBAT, "param", (pnode_pre + 1), maxsize);
+            pnode_pre = get_node_pre(docBAT, "param", (pnode_pre + 1), (inode_pre + size[inode_pre]));
        
             tnode_pre = pnode_pre + 1; argcnt[i][j] = 0; k = 1;
             while(tnode_pre < (pnode_pre + size[pnode_pre]) && 
