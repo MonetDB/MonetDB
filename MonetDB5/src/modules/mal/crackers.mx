@@ -108,6 +108,30 @@ module crackers;
 
 @:crackfcn(int)@
 @:crackfcn(oid)@
+
+@-
+Temporary interface for the "new cracking competition".
+For the time being, we ignore the cracking administration and repeated
+cracking, and focus on cracking a complete BAT, returning the cracked BAT.
+@
+@= crack
+command crack_@1 (b:bat[:oid,:int], mid:int) :bat[:oid,:int]
+address CRKcrackOne_@1
+comment "Break a BAT into three pieces with
+	 tail<mid, tail==mid, tail>mid,
+	 respectively. (By @2.)";
+
+command crack_@1 (b:bat[:oid,:int], low:int, hgh:int) :bat[:oid,:int]
+address CRKcrackTwo_@1
+comment "Break a BAT into five pieces with
+	 tail<low, tail==low, low<tail<hgh, tail==hgh, tail>hgh,
+	 respectively. (By @2.)";
+@
+@mal
+@:crack(SI,Stratos Idreos)@
+@:crack(MK,Martin Kersten)@
+@:crack(SM,Stefan Manegold)@
+@
 @-
 For debugging we provide a simple routine to dump
 the cracker index. Future versions should provide
@@ -2011,6 +2035,117 @@ CRKdropView(int *newpid, int *bid)
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
+
+@-
+Temporary templates for the "new cracking competition".
+For the time being, we ignore the cracking administration and repeated
+cracking, and focus on cracking a complete BAT, returning the cracked BAT.
+@
+@-
+Stratos Idreos
+@c
+str
+CRKcrackOne_SI (int *res, int *bid, int *mid)
+{
+	BAT *b;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
+	}
+
+	(void)mid;
+
+	BBPunfix(b->batCacheid);
+	*res = *bid;
+	return MAL_SUCCEED;
+}
+
+str
+CRKcrackTwo_SI (int *res, int *bid, int *low, int *hgh)
+{
+	BAT *b;
+
+	if (*(int *) low > *(int *) hgh)
+		return throwMessage("crackers.crack_SI", "illegal range");
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
+	}
+
+	BBPunfix(b->batCacheid);
+	*res = *bid;
+	return MAL_SUCCEED;
+}
+@
+@-
+Martin Kersten
+@c
+str
+CRKcrackOne_MK (int *res, int *bid, int *mid)
+{
+	BAT *b;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
+	}
+
+	(void)mid;
+
+	BBPunfix(b->batCacheid);
+	*res = *bid;
+	return MAL_SUCCEED;
+}
+
+str
+CRKcrackTwo_MK (int *res, int *bid, int *low, int *hgh)
+{
+	BAT *b;
+
+	if (*(int *) low > *(int *) hgh)
+		return throwMessage("crackers.crack_MK", "illegal range");
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
+	}
+
+	BBPunfix(b->batCacheid);
+	*res = *bid;
+	return MAL_SUCCEED;
+}
+@
+@-
+Stefan Manegold
+@c
+str
+CRKcrackOne_SM (int *res, int *bid, int *mid)
+{
+	BAT *b;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_SM", "Cannot access descriptor");
+	}
+
+	(void)mid;
+
+	BBPunfix(b->batCacheid);
+	*res = *bid;
+	return MAL_SUCCEED;
+}
+
+str
+CRKcrackTwo_SM (int *res, int *bid, int *low, int *hgh)
+{
+	BAT *b;
+
+	if (*(int *) low > *(int *) hgh)
+		return throwMessage("crackers.crack_SM", "illegal range");
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_SM", "Cannot access descriptor");
+	}
+
+	BBPunfix(b->batCacheid);
+	*res = *bid;
+	return MAL_SUCCEED;
+}
+@
 
 @-
 Test cases for this experiment are stored under the sequence tst5000
