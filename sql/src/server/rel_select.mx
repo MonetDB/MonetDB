@@ -122,8 +122,6 @@ exp_destroy(sql_exp *exp)
 		exp_destroy(exp->r);
 		break;
 	case e_relation:
-		//if (exp->l)
-		//	rel_destroy(exp->l);
 		break;
 	case e_column:
 		if (exp->l)
