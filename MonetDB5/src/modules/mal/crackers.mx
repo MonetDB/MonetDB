@@ -2015,6 +2015,8 @@ The code base is prepared to run with different types.
 Create a 3- and 5-way cracking of the BAT. Updates of the cracker index
 is left along for a while. We don't return anything right now.
 Cracking is inplace!
+The piece cracking routines are parameterized with a closed bun index
+interval.
 
 @= exchangeMK
 #ifdef DEBUG_CRACKERS_DETAIL
@@ -2035,7 +2037,9 @@ Cracking is inplace!
 The three way split use knowledge on the type size to issue
 the exchanges. Moreover, we should be prepared to handle
 a cracking over a mirrored bat.
-We support only fixed size buns.
+We support only fixed size buns and rely on the compiler
+to arrange proper structs. More advanced schemes, or slower
+stepwise ones, are for the future.
 @= MK_operations
 str
 CRKpieceZERO_MK_@1( BAT *b, @1 mval, int first, int last){
@@ -2052,7 +2056,7 @@ CRKpieceZERO_MK_@1( BAT *b, @1 mval, int first, int last){
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
 	vm = BUNtloc(b, BUNptr(b,first));
-	vlast= BUNtloc(b,BUNptr(b,last));
+	vlast= BUNtloc(b,BUNptr(b,last+1));
 
 	/* deal with startup */
 	while( *(@1*)vm <= mval && vm < vlast)
@@ -2089,7 +2093,7 @@ CRKcrackZERO_MK_@1 (int *res, int *bid, @1 *mid)
 	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
-	CRKpieceZERO_MK_@1( b, *mid, 0, BATcount(b));
+	CRKpieceZERO_MK_@1( b, *mid, 0, BATcount(b)-1);
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
@@ -2111,14 +2115,19 @@ CRKpieceONE_MK_@1( BAT *b, @1 mval, int first, int last){
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
 	vm = BUNtloc(b, BUNptr(b,first));
-	vlast= BUNtloc(b,BUNptr(b,last));
+	vlast= BUNtloc(b,BUNptr(b,last+1));
 
 	/* deal with startup */
 	while( *(@1*)vm < mval && vm < vlast)
 		 vm = (ptr) ((char *) vm + xx);
-	
 	vmin= (ptr) ((char*)vm - b->tloc -xx);
+	while( *(@1*)vm == mval && vm < vlast)
+		 vm = (ptr) ((char *) vm + xx);
 	vmax= (ptr) ((char*)vm - b->tloc);
+
+#ifdef MK_DEBUG
+	printf("crack start %d %d\n", (int) BUNindex(b,vmin), (int) BUNindex(b,vmax));
+#endif
 
 	while(vm<vlast) {
 		if (*(@1 *) vm <= mval) {
@@ -2144,6 +2153,7 @@ CRKpieceONE_MK_@1( BAT *b, @1 mval, int first, int last){
 #ifdef MK_DEBUG
 	printf("cracked index %d %d\n", (int) BUNindex(b,vmin), (int) BUNindex(b,vmax));
 #endif
+	printf("indices %d %d\n",(int) BUNindex(b,vmin)+1, (int) BUNindex(b,vmax)-1);
 	return MAL_SUCCEED;
 }
 
@@ -2159,16 +2169,17 @@ CRKcrackOne_MK_@1 (int *res, int *bid, int *mid)
 	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
-	CRKpieceONE_MK_@1( b, *mid, 0, BATcount(b));
+	CRKpieceONE_MK_@1( b, *mid, 0, BATcount(b)-1);
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
 	return MAL_SUCCEED;
 }
 
+/* assume that the [first,last] are inclusive bounds */
 str
 CRKpieceTWO_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
-	ptr p, vm, lmin, lmax, llast;
+	ptr p, vm, lmin, lmax;
 	ptr hmin, hmax;
 	int xx;
 	struct SCRATCH{
@@ -2182,25 +2193,52 @@ CRKpieceTWO_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
 	vm = BUNtloc(b, BUNptr(b,first));
-	llast= BUNtloc(b,BUNptr(b,last));
+	hmax= BUNtloc(b,BUNptr(b,last+1));
 
 	/* deal with startup low values */
-	while( *(@1*)vm < low && vm < llast)
+	while( *(@1*)vm < low && vm < hmax)
 		 vm = (ptr) ((char *) vm + xx);
-	
-	lmin= (ptr) ((char*)vm - b->tloc -xx);
+	lmin= (ptr) ((char*)vm - b->tloc-xx);
+	while( *(@1*)vm == low && vm < hmax)
+		 vm = (ptr) ((char *) vm + xx);
 	lmax= (ptr) ((char*)vm - b->tloc);
 
 	/* deal with startup high values */
-	vm = BUNtloc(b, BUNptr(b,last-1));
+	vm = BUNtloc(b, BUNptr(b,last));
 	while( *(@1*)vm > hgh && vm > lmax)
-		 vm = (ptr) ((char *) vm - xx);
-	
-	hmin= (ptr) ((char*)vm - b->tloc -xx);
-	hmax= (ptr) ((char*)vm - b->tloc);
+		vm = (ptr) ((char *) vm - xx);
+	hmax= (ptr) ((char*)vm - b->tloc+xx);
+	while( *(@1*)vm == hgh && vm > lmax)
+		vm = (ptr) ((char *) vm - xx);
+	hmin= (ptr) ((char*)vm - b->tloc);
 
-	vm = (ptr) ((char*)hmax - b->tloc);
-	while(vm<hmin) {
+#ifdef MK_DEBUG
+	printf("range %d %d\n",low,hgh);
+	printf("crack start %d %d ", (int) BUNindex(b,lmin), (int) BUNindex(b,lmax));
+	printf("%d %d\n", (int) BUNindex(b,hmin), (int) BUNindex(b,hmax));
+#endif
+	/* walk backward to the front */
+	while(hmin>= lmax) {
+		if (*(@1 *) vm >= hgh) {
+			if (*(@1 *) vm == hgh) {
+				p= (ptr) ((char*)vm - b->tloc);
+				dummy = *(struct SCRATCH *) hmin;
+				*(struct SCRATCH *) hmin= *(struct SCRATCH *) p;
+				*(struct SCRATCH *) p= dummy;
+				hmin = (ptr) ((char *) hmin - xx);
+				vm = (ptr) ((char *) vm - xx);
+			} else {
+				/* exchange with first free highest */
+				hmax = (ptr) ((char *) hmax - xx);
+				p= (ptr) ((char*)vm - b->tloc);
+
+				dummy = *(struct SCRATCH *) p;
+				*(struct SCRATCH *) p= *(struct SCRATCH *) hmin;
+				*(struct SCRATCH *) hmin= *(struct SCRATCH *) hmax;
+				*(struct SCRATCH *) hmax= dummy;
+				hmin = (ptr) ((char *) hmin - xx);
+			}
+		} else
 		if (*(@1 *) vm <= low) {
 			if (*(@1 *) vm == low) {
 				/* exchange with equality top */
@@ -2209,21 +2247,28 @@ CRKpieceTWO_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
 				*(struct SCRATCH *) lmax= *(struct SCRATCH *) p;
 				*(struct SCRATCH *) p= dummy;
 				lmax = (ptr) ((char *) lmax + xx);
-				vm = (ptr) ((char *) vm + xx);
+				vm = (ptr) ((char *) vm - xx);
 			} else {
-				/* exchange with first non low */
-				p= (ptr) ((char*)vm - b->tloc);
-				dummy = *(struct SCRATCH *) p;
-				*(struct SCRATCH *) p= *(struct SCRATCH *) lmin;
-				*(struct SCRATCH *) lmin= dummy;
+				/* shuffle the elements in the low range. */
 				lmin = (ptr) ((char *) lmin + xx);
+				p= (ptr) ((char*)vm - b->tloc);
+
+				dummy = *(struct SCRATCH *) p;
+				*(struct SCRATCH *) p= *(struct SCRATCH *) lmax;
+				*(struct SCRATCH *) lmax= *(struct SCRATCH *) lmin;
+				*(struct SCRATCH *) lmin= dummy;
+				lmax = (ptr) ((char *) lmax + xx);
 			}
 		} else
-			vm = (ptr) ((char *) vm + xx);
-	} 
+			vm = (ptr) ((char *) vm - xx);
 #ifdef MK_DEBUG
-	printf("cracked index %d %d\n", (int) BUNindex(b,lmin), (int) BUNindex(b,lmax));
+	printf("crack step %d %d ", (int) BUNindex(b,lmin), (int) BUNindex(b,lmax));
+	printf("%d %d\n", (int) BUNindex(b,hmin), (int) BUNindex(b,hmax));
+	BATprintf(GDKout,b);
 #endif
+	} 
+	printf("indices %d %d %d %d\n",(int) BUNindex(b,lmin)+1, (int) BUNindex(b,lmax)-1,
+		(int) BUNindex(b,hmin)+1, (int) BUNindex(b,hmax)-1);
 	return MAL_SUCCEED;
 }
 
@@ -2242,7 +2287,7 @@ CRKcrackTwo_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
-	CRKpieceTWO_MK_@1( b, *low, *hgh, 0, BATcount(b));
+	CRKpieceTWO_MK_@1( b, *low, *hgh, 0, BATcount(b)-1);
 
 
 	BBPunfix(b->batCacheid);

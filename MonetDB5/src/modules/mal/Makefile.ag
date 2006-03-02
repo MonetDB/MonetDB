@@ -11,7 +11,7 @@ LIBS = {
 	SOURCES = \
 		chopper.mx language.mx box.mx \
 		profiler.mx const.mx print.mx \
-		inspect.mx manual.mx crackers.mx crackersMK.mx \
+		inspect.mx manual.mx crackers.mx \
 		clients.mx factory.mx mdb.mx  pbm.mx \
 		rsbox.mx urlbox.mx multitable.mx
 		#datacell.mx 
@@ -96,7 +96,7 @@ scripts_mal = {
 	DIR = pkglibdir
 	SOURCES = language.mx mal_init.mx box.mx bbp.mx \
 		profiler.mx const.mx \
-		inspect.mx manual.mx crackersMK.mx crackers.mx print.mal \
+		inspect.mx manual.mx crackers.mx print.mal \
 		chopper.mx clients.mx \
 		factory.mx mdb.mx pcre.mx  tablet.mx multitable.mx \
 		rsbox.mx urlbox.mx statistics.mx transaction.mx partitions.mx pbm.mx
