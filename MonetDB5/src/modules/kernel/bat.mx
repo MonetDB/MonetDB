@@ -261,7 +261,7 @@ command isSortedReverse(b:bat[:any_1,:any_2]) :bit
 address BKCisSortedReverse
 comment "Returns whether a BAT is ordered on head or not.";
 
-command getBatSize(b:bat[:any_1,:any_2]) :int 
+command getBatSize(b:bat[:any_1,:any_2]) :lng 
 address BKCbatsize
 comment "A version of BATsize that does not require loading the BAT.";
 
@@ -704,8 +704,8 @@ mal_export str BKCaccess(int *res, int *bid, int *m);
 mal_export str BKCsetAccess(int *res, int *bid, str *param);
 mal_export str BKCgetAccess(str *res, int *bid);
 mal_export str BKCinfo(int *retval, int *bid);
-mal_export str BKCbatsize(int *tot, int *bid);
-mal_export str BKCbatsize_str(int *tot, str batname);
+mal_export str BKCbatsize(lng *tot, int *bid);
+mal_export str BKCbatsize_str(lng *tot, str batname);
 mal_export str BKCisSynced(bit *ret, int *bid1, int *bid2);
 mal_export str BKCsetColumn(int *r, int *bid, str *tname);
 mal_export str BKCsetColumns(int *r, int *bid, str *hname, str *tname);
@@ -2475,26 +2475,24 @@ BKCinfo(int *retval, int *bid)
 #define ROUND_UP(x,y) ((y)*(((x)+(y)-1)/(y)))
 
 str
-BKCbatsize(int *tot, int *bid)
+BKCbatsize(lng *tot, int *bid)
 {
 	BAT *b;
 
-	(void) tot;
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		return throwMessage("bat.batsize", "Cannot access descriptor");
-	}
+	CMDbatsize(tot,b);
 	BBPreleaseref(b->batCacheid);
-	return throwMessage("bat.batsize", "Not yet implemented");
+	return MAL_SUCCEED;
 }
 
 str
-BKCbatsize_str(int *tot, str batname)
+BKCbatsize_str(lng *tot, str batname)
 {
-	bat bid = BBPindex(batname);
+	int bid = BBPindex(batname);
 
-	if (bid == 0) {
+	if (bid == 0) 
 		return throwMessage("BKCbatsizes", "no such bat.\n");
-	}
 	return BKCbatsize(tot, &bid);
 }
 
