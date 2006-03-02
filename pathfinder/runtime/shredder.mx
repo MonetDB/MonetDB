@@ -83,112 +83,112 @@ static char emptyString[1] = "";
 #define ADB_STARTSIZE	4
 
 typedef struct specAttrStr {
-	char*	ownerTag;
-	char*	attrTag;
-	int	type; /* XML_ATTRIBUTE_[ID|IDREF|IDREFS] */
+    char*	ownerTag;
+    char*	attrTag;
+    int	type; /* XML_ATTRIBUTE_[ID|IDREF|IDREFS] */
 } specAttrStr;
 
 typedef struct specAttrDbStr {
-	int doCheck;  /* boolean to signal if the attr db is in use */
-	int n_specAttr;
-	int max_specAttr;
-	specAttrStr* specAttr;
+    int doCheck;  /* boolean to signal if the attr db is in use */
+    int n_specAttr;
+    int max_specAttr;
+    specAttrStr* specAttr;
 } specAttrDbStr;
 
 static int initAttrDB(specAttrDbStr* adb) {
 #ifdef ADB_DEBUG
-	stream_printf(GDKout,"[ADB] initialize database\n");
+    stream_printf(GDKout,"[ADB] initialize database\n");
 #endif
-	adb->n_specAttr = adb->max_specAttr = 0;
-	adb->specAttr   = 0;
+    adb->n_specAttr = adb->max_specAttr = 0;
+    adb->specAttr   = 0;
 #ifdef ADB_USE_NAMES
-	/* in this case even when no attributes are encountered the db is in use. */
-	adb->doCheck    = 1;
+    /* in this case even when no attributes are encountered the db is in use. */
+    adb->doCheck    = 1;
 #else
-	adb->doCheck    = 0;
+    adb->doCheck    = 0;
 #endif
-	return 1;
+    return 1;
 }
 
 static specAttrStr* findAttrDB(specAttrDbStr* adb, char* oTag, char* aTag) {
-	int i;
+    int i;
 
-	for(i=0; i<adb->n_specAttr; i++) {
-		specAttrStr* sas = &adb->specAttr[i];
-		if ( (strcmp(oTag, sas->ownerTag) == 0) &&
-		     (strcmp(aTag, sas->attrTag) == 0) ) {
+    for(i=0; i<adb->n_specAttr; i++) {
+        specAttrStr* sas = &adb->specAttr[i];
+        if ( (strcmp(oTag, sas->ownerTag) == 0) &&
+                (strcmp(aTag, sas->attrTag) == 0) ) {
 #ifdef ADB_DEBUG
-			/* stream_printf(GDKout,"[ADB] found(%s,%s,%d)\n",sas->ownerTag,sas->attrTag,sas->type); */
+            /* stream_printf(GDKout,"[ADB] found(%s,%s,%d)\n",sas->ownerTag,sas->attrTag,sas->type); */
 #endif
-			return sas;
-		};
-	}
-	return 0;
+            return sas;
+        };
+    }
+    return 0;
 }
 
 static int specialAttrType(specAttrDbStr* adb, char* oTag, char* aTag) {
-	if ( adb->doCheck ) { /* check if db is in use */
-	    specAttrStr* sas;
-	    if ( (sas = findAttrDB(adb,oTag,aTag)) )
-		return sas->type;
-	    else {
+    if ( adb->doCheck ) { /* check if db is in use */
+        specAttrStr* sas;
+        if ( (sas = findAttrDB(adb,oTag,aTag)) )
+            return sas->type;
+        else {
 #ifdef ADB_USE_NAMES
-		if ( (strcmp(aTag,"id")==0) || (strcmp(aTag,"ID")==0) )
-		     return XML_ATTRIBUTE_ID;
-		else if ( (strcmp(aTag,"idref")==0) || (strcmp(aTag,"IDREF")==0) )
-		     return XML_ATTRIBUTE_IDREF;
-		else if ( (strcmp(aTag,"idrefs")==0) || (strcmp(aTag,"IDREFS")==0) )
-		     return XML_ATTRIBUTE_IDREFS;
+            if ( (strcmp(aTag,"id")==0) || (strcmp(aTag,"ID")==0) )
+                return XML_ATTRIBUTE_ID;
+            else if ( (strcmp(aTag,"idref")==0) || (strcmp(aTag,"IDREF")==0) )
+                return XML_ATTRIBUTE_IDREF;
+            else if ( (strcmp(aTag,"idrefs")==0) || (strcmp(aTag,"IDREFS")==0) )
+                return XML_ATTRIBUTE_IDREFS;
 #endif
-	    }
-	}
-	return 0;
+        }
+    }
+    return 0;
 }
 
 static int insertAttrDB(specAttrDbStr* adb, char* oTag, char* aTag, int type) {
-        adb->doCheck = 1; /* signal database is in use */
-	if ( findAttrDB(adb,oTag,aTag) ) {
-		GDKerror("shredder.mx:insertAttrDB: specAttrDb(%s,%s,%d) is duplicate.\n",oTag, aTag, type);
-		return -1;
-	}
-	if ( ++adb->n_specAttr > adb->max_specAttr ) {
-		int newsz = (adb->max_specAttr?(adb->max_specAttr*2):ADB_STARTSIZE);
+    adb->doCheck = 1; /* signal database is in use */
+    if ( findAttrDB(adb,oTag,aTag) ) {
+        GDKerror("shredder.mx:insertAttrDB: specAttrDb(%s,%s,%d) is duplicate.\n",oTag, aTag, type);
+        return -1;
+    }
+    if ( ++adb->n_specAttr > adb->max_specAttr ) {
+        int newsz = (adb->max_specAttr?(adb->max_specAttr*2):ADB_STARTSIZE);
 
-		specAttrStr* newb = (specAttrStr*)malloc(newsz*sizeof(specAttrStr));
-		if ( adb->specAttr ) {
-			memcpy(newb,adb->specAttr,adb->max_specAttr*sizeof(specAttrStr));
-			free(adb->specAttr);
-		}
-		adb->specAttr     = newb;
-		adb->max_specAttr = newsz;
-	}
-	specAttrStr* sas = &adb->specAttr[adb->n_specAttr - 1];
-	sas->type     = type;
-	sas->ownerTag = strdup(oTag);
-	sas->attrTag  = strdup(aTag);
+        specAttrStr* newb = (specAttrStr*)malloc(newsz*sizeof(specAttrStr));
+        if ( adb->specAttr ) {
+            memcpy(newb,adb->specAttr,adb->max_specAttr*sizeof(specAttrStr));
+            free(adb->specAttr);
+        }
+        adb->specAttr     = newb;
+        adb->max_specAttr = newsz;
+    }
+    specAttrStr* sas = &adb->specAttr[adb->n_specAttr - 1];
+    sas->type     = type;
+    sas->ownerTag = strdup(oTag);
+    sas->attrTag  = strdup(aTag);
 #ifdef ADB_DEBUG
-	stream_printf(GDKout,"[ADB] inserted(%s,%s,%d)\n",oTag,aTag,type);
+    stream_printf(GDKout,"[ADB] inserted(%s,%s,%d)\n",oTag,aTag,type);
 #endif
-	return 1;
+    return 1;
 }
 
 static int disposeAttrDB(specAttrDbStr* adb) {
-	int i;
+    int i;
 
-	for(i=0; i<adb->n_specAttr; i++) {
-		specAttrStr* sas = &adb->specAttr[i];
-		free(sas->ownerTag);
-		free(sas->attrTag);
-	}
-	if ( adb->specAttr )
-		free(adb->specAttr);
-	adb->n_specAttr = adb->max_specAttr = 0;
-	adb->specAttr   = 0;
-	adb->doCheck	= 0;
+    for(i=0; i<adb->n_specAttr; i++) {
+        specAttrStr* sas = &adb->specAttr[i];
+        free(sas->ownerTag);
+        free(sas->attrTag);
+    }
+    if ( adb->specAttr )
+        free(adb->specAttr);
+    adb->n_specAttr = adb->max_specAttr = 0;
+    adb->specAttr   = 0;
+    adb->doCheck	= 0;
 #ifdef ADB_DEBUG
-	stream_printf(GDKout,"[ADB] disposed database\n");
+    stream_printf(GDKout,"[ADB] disposed database\n");
 #endif
-	return 1;
+    return 1;
 }
 
 /* define the number of BATs in the requuired result set */
@@ -196,53 +196,53 @@ static int disposeAttrDB(specAttrDbStr* adb) {
 
 /* description of the static properties of a result BAT */
 typedef struct shredBATdef {
-        int     id;       /* the index in the BAT, for assert usage */
-        char*   name;     /* the name for the bat */
-        int     headType; /* the headType of the BAT */
-        int     tailType; /* the tailtype of the BAT */
-        double  sizeFact; /* The mult. factor sizewise */
-        char    compress; /* In case of str BAT to flag compression */
+    int     id;       /* the index in the BAT, for assert usage */
+    char*   name;     /* the name for the bat */
+    int     headType; /* the headType of the BAT */
+    int     tailType; /* the tailtype of the BAT */
+    double  sizeFact; /* The mult. factor sizewise */
+    char    compress; /* In case of str BAT to flag compression */
 } shredBATdef;
 
 /* values of the static properties of a result BAT */
 static shredBATdef shredbatdef[SHRED_BATS] = {
-        { PRE_SIZE, "PRE_SIZE", TYPE_void, TYPE_int, 1.0, 0},
-        { PRE_LEVEL,"PRE_LEVEL",TYPE_void, TYPE_chr, 1.0, 0},
-        { PRE_PROP, "PRE_PROP", TYPE_void, TYPE_oid, 1.0, 0},
-        { PRE_KIND, "PRE_KIND", TYPE_void, TYPE_chr, 1.0, 0},
-        { PRE_FRAG, "PRE_FRAG", TYPE_void, TYPE_oid, 1.0, 0},
-        { QN_URI,   "QN_URI",   TYPE_void, TYPE_str, 0.0, 0},
-        { QN_PREFIX,"QN_PREFIX",TYPE_void, TYPE_str, 0.0, 0},
-        { QN_LOC,   "QN_LOC",   TYPE_void, TYPE_str, 0.0, 0},
-        { PROP_TEXT,"PROP_TEXT",TYPE_void, TYPE_str, 0.0, 1},
-        { PROP_COM, "PROP_COM", TYPE_void, TYPE_str, 0.0, 1},
-        { PROP_INS, "PROP_INS", TYPE_void, TYPE_str, 0.0, 0},
-        { PROP_TGT, "PROP_TGT", TYPE_void, TYPE_str, 0.0, 0},
-        { ID_NID,   "ID_NID",   TYPE_str,  TYPE_oid, 0.0, 0},
-        { IDREF_NID,"IDREF_NID",TYPE_str,  TYPE_oid, 0.0, 0},
-        { ATTR_OWN, "ATTR_OWN", TYPE_void, TYPE_oid, 0.5, 0},
-        { ATTR_QN,  "ATTR_QN",  TYPE_void, TYPE_oid, 0.5, 0},
-        { ATTR_PROP,"ATTR_PROP",TYPE_void, TYPE_oid, 0.5, 0},
-        { ATTR_FRAG,"ATTR_FRAG",TYPE_void, TYPE_oid, 0.0, 0},
-        { PROP_VAL, "PROP_VAL", TYPE_void, TYPE_str, 0.0, 0},
-        { NID_PRE, "NID_PRE", TYPE_void, TYPE_void, 1.0, 0},
-        { PRE_NID, "PRE_NID", TYPE_void, TYPE_void, 1.0, 0}
+    { PRE_SIZE, "PRE_SIZE", TYPE_void, TYPE_int, 1.0, 0},
+    { PRE_LEVEL,"PRE_LEVEL",TYPE_void, TYPE_chr, 1.0, 0},
+    { PRE_PROP, "PRE_PROP", TYPE_void, TYPE_oid, 1.0, 0},
+    { PRE_KIND, "PRE_KIND", TYPE_void, TYPE_chr, 1.0, 0},
+    { PRE_FRAG, "PRE_FRAG", TYPE_void, TYPE_oid, 1.0, 0},
+    { QN_URI,   "QN_URI",   TYPE_void, TYPE_str, 0.0, 0},
+    { QN_PREFIX,"QN_PREFIX",TYPE_void, TYPE_str, 0.0, 0},
+    { QN_LOC,   "QN_LOC",   TYPE_void, TYPE_str, 0.0, 0},
+    { PROP_TEXT,"PROP_TEXT",TYPE_void, TYPE_str, 0.0, 1},
+    { PROP_COM, "PROP_COM", TYPE_void, TYPE_str, 0.0, 1},
+    { PROP_INS, "PROP_INS", TYPE_void, TYPE_str, 0.0, 0},
+    { PROP_TGT, "PROP_TGT", TYPE_void, TYPE_str, 0.0, 0},
+    { ID_NID,   "ID_NID",   TYPE_str,  TYPE_oid, 0.0, 0},
+    { IDREF_NID,"IDREF_NID",TYPE_str,  TYPE_oid, 0.0, 0},
+    { ATTR_OWN, "ATTR_OWN", TYPE_void, TYPE_oid, 0.5, 0},
+    { ATTR_QN,  "ATTR_QN",  TYPE_void, TYPE_oid, 0.5, 0},
+    { ATTR_PROP,"ATTR_PROP",TYPE_void, TYPE_oid, 0.5, 0},
+    { ATTR_FRAG,"ATTR_FRAG",TYPE_void, TYPE_oid, 0.0, 0},
+    { PROP_VAL, "PROP_VAL", TYPE_void, TYPE_str, 0.0, 0},
+    { NID_PRE, "NID_PRE", TYPE_void, TYPE_void, 1.0, 0},
+    { PRE_NID, "PRE_NID", TYPE_void, TYPE_void, 1.0, 0}
 };
 
 /* description of the dynamic properties of a result BAT */
 typedef struct shredBAT {
-        shredBATdef     *def; /* pointer to static properties */
-        nat             cnt;  /* current #of elements in the BAT */
-        nat             dupl; /* the number of duplicate BUNins so far */
-        off_t           size; /* current maximum size of the BAT */
-        BAT             *bat; /* the physical BAT */
-        /* */
-        union { /* cast to perform direct indexex insert in [void,any] BATs */
-            void* voidCAST; /* the basecast */
-            nat*  natCAST;  /* cast for [void,int] BAT */
-            chr*  chrCAST;  /* cast for [void,chr] BAT */
-            oid*  oidCAST;  /* cast for [void,oid] BAT */
-        } cast;
+    shredBATdef     *def; /* pointer to static properties */
+    nat             cnt;  /* current #of elements in the BAT */
+    nat             dupl; /* the number of duplicate BUNins so far */
+    off_t           size; /* current maximum size of the BAT */
+    BAT             *bat; /* the physical BAT */
+    /* */
+    union { /* cast to perform direct indexex insert in [void,any] BATs */
+        void* voidCAST; /* the basecast */
+        nat*  natCAST;  /* cast for [void,int] BAT */
+        chr*  chrCAST;  /* cast for [void,chr] BAT */
+        oid*  oidCAST;  /* cast for [void,oid] BAT */
+    } cast;
 } shredBAT;
 
 /*
@@ -268,7 +268,7 @@ struct node_t {
     nat  pre;                   /**< preorder rank */
     nat  size;                  /**< size of subtree below node */
     int  level;                 /**< tree level of parent 
-                                     (0 if root, -1 if document node) */
+                                  (0 if root, -1 if document node) */
     nat  prop;                  /**< property ID */
     nat  kind;                  /**< node kind */
 };
@@ -309,269 +309,269 @@ typedef struct shredCtxStruct {
 #define MINCHUNK        1024
 
 static shredCtxStruct *createShredCtx(char* location, off_t  fileSize) {
-        int i;
+    int i;
 
-        shredCtxStruct *res = (shredCtxStruct*)malloc( sizeof(shredCtxStruct) );
-        res->location = location;
-        res->fileSize = fileSize;
-        res->estSize  = MIN(MAX(MINCHUNK,fileSize/20),INT_MAX);
-        for(i=0; i<SHRED_BATS; i++) {
-                shredBAT* sb = &res->dstBAT[i];
+    shredCtxStruct *res = (shredCtxStruct*)malloc( sizeof(shredCtxStruct) );
+    res->location = location;
+    res->fileSize = fileSize;
+    res->estSize  = MIN(MAX(MINCHUNK,fileSize/20),INT_MAX);
+    for(i=0; i<SHRED_BATS; i++) {
+        shredBAT* sb = &res->dstBAT[i];
 
-                sb->def = & shredbatdef[i];
+        sb->def = & shredbatdef[i];
 
-                if ( sb->def->id != i ) {
-                        GDKerror("shredder.mx:createShredCtx: id - sync\n");
-                        return NULL;
-                }
-                sb->cnt  = sb->dupl = 0;
-                if ( sb->def->headType == TYPE_str || sb->def->tailType == TYPE_str)
-                        sb->size = MINCHUNK; /* let Monet do the resize self */
-                else 
-                        sb->size = (int)(sb->def->sizeFact * res->estSize);
-                sb->bat  = BATnew(sb->def->headType,sb->def->tailType,sb->size);
-                if ( !sb->bat ) {
-                        GDKerror("shredder.mx:createShredCtx: BATnew(%d) for %s fails, disk full?\n",sb->size,sb->def->name);
-                        return NULL;
-                }
-#ifdef USE_COMPRESSION
-                if ( sb->def->compress ) {
-                        /* create an accelerator on the str tail of the BAT */
-                        sb->bat = BATmirror(BAThash(BATmirror(sb->bat),0));
-                        if ( !sb->bat ) {
-                                GDKerror("shredder.mx:createShredCtx: Hash[%d]:create fails\n",i);
-                                return NULL;
-                        }
-                }
-#endif
-                BATseqbase(sb->bat,0);
-                if ( sb->def->tailType != TYPE_str )
-                        sb->cast.voidCAST = (void*)BUNfirst(sb->bat);
-        }
-#ifdef USE_COMPRESSION
-        /* incomplete, what does second arg of BAThash do ?? */
-        res->pfxlocBAT = BAThash(BATnew(TYPE_str,TYPE_oid,res->estSize/50),0);
-        if ( !res->pfxlocBAT ) {
-            GDKerror("shredder.mx:createShredCtx: pfxlocBAT:create fails\n");
+        if ( sb->def->id != i ) {
+            GDKerror("shredder.mx:createShredCtx: id - sync\n");
             return NULL;
         }
-        res->pfxlocDUPL= 0;
+        sb->cnt  = sb->dupl = 0;
+        if ( sb->def->headType == TYPE_str || sb->def->tailType == TYPE_str)
+            sb->size = MINCHUNK; /* let Monet do the resize self */
+        else 
+            sb->size = (int)(sb->def->sizeFact * res->estSize);
+        sb->bat  = BATnew(sb->def->headType,sb->def->tailType,sb->size);
+        if ( !sb->bat ) {
+            GDKerror("shredder.mx:createShredCtx: BATnew(%d) for %s fails, disk full?\n",sb->size,sb->def->name);
+            return NULL;
+        }
+#ifdef USE_COMPRESSION
+        if ( sb->def->compress ) {
+            /* create an accelerator on the str tail of the BAT */
+            sb->bat = BATmirror(BAThash(BATmirror(sb->bat),0));
+            if ( !sb->bat ) {
+                GDKerror("shredder.mx:createShredCtx: Hash[%d]:create fails\n",i);
+                return NULL;
+            }
+        }
 #endif
-        res->shredWords = 0; /* do not shred words by default */
-	/* and finally init the special attribute database */
-	initAttrDB(&res->specAttrDb);
-        return res;
+        BATseqbase(sb->bat,0);
+        if ( sb->def->tailType != TYPE_str )
+            sb->cast.voidCAST = (void*)BUNfirst(sb->bat);
+    }
+#ifdef USE_COMPRESSION
+    /* incomplete, what does second arg of BAThash do ?? */
+    res->pfxlocBAT = BAThash(BATnew(TYPE_str,TYPE_oid,res->estSize/50),0);
+    if ( !res->pfxlocBAT ) {
+        GDKerror("shredder.mx:createShredCtx: pfxlocBAT:create fails\n");
+        return NULL;
+    }
+    res->pfxlocDUPL= 0;
+#endif
+    res->shredWords = 0; /* do not shred words by default */
+    /* and finally init the special attribute database */
+    initAttrDB(&res->specAttrDb);
+    return res;
 }
 
 /* Compress a [void,str] BAT in the most efficient way. 
  * (c:)P.Boncz
  */
 int pf_compress(BAT *b,    /* BAT[void,str] input with duplicates */
-                BAT **unq, /* BAT[void,str] output with unique strings */
-                BAT **map  /* BAT[void,oid] output maps old oids into new */
-){
-  BAT *tmp_i, *tmp_m, *tmp_o, *bm = BATmirror(b);
-  size_t hashmask_size = BATcount(b);
-  int ret = -1;
+        BAT **unq, /* BAT[void,str] output with unique strings */
+        BAT **map  /* BAT[void,oid] output maps old oids into new */
+        ){
+    BAT *tmp_i, *tmp_m, *tmp_o, *bm = BATmirror(b);
+    size_t hashmask_size = BATcount(b);
+    int ret = -1;
 
-  if (b->ttype == TYPE_str && GDK_ELIMDOUBLES(b->theap)) {
-    b->ttype = bm->htype = TYPE_var; /* hack: use str offsets as int */
-    b->tvarsized = bm->hvarsized = 0;
-    hashmask_size = 65536;
-  }
-
-  /* guarantee a hash table suitable for some serious double elim */
-  tmp_i = BATnew(b->ttype, TYPE_oid , hashmask_size);
-  if (tmp_i != NULL && BAThash(tmp_i, hashmask_size) != NULL) {     
-    tmp_i = BATins_kunique(tmp_i, bm); /* bat[str,oid] */
-    if (tmp_i != NULL) {
-      tmp_m = BATmark(BATsetaccess(tmp_i, BAT_READ), 0); /* bat[str,void] */
-      if (tmp_m != NULL) {
-        tmp_o = BATmark(BATmirror(tmp_i), 0); /* bat[oid,void] */
-        if (tmp_o != NULL) {
-          *map = BATleftjoin(b, tmp_m, BATcount(b)); /* bat[void,oid] */
-          if (*map != NULL) {
-            b->ttype = bm->htype = TYPE_str; /* undo hack for join */
-	    b->tvarsized = bm->hvarsized = 1;
-            *unq = BATleftfetchjoin(BATmirror(tmp_o), b, BATcount(tmp_o)); /* bat[v?oid,oid] */
-            if (*unq != NULL) {
-              BATsetaccess(*map, BAT_READ);
-              BATsetaccess(*unq, BAT_READ);
-              ret = 0; /* success */          
-            } else {
-              BBPreclaim(*map);
-            }
-          }
-          BBPreclaim(tmp_o);
-        }
-        BBPreclaim(tmp_m);
-      }
-      BBPreclaim(tmp_i);
+    if (b->ttype == TYPE_str && GDK_ELIMDOUBLES(b->theap)) {
+        b->ttype = bm->htype = TYPE_var; /* hack: use str offsets as int */
+        b->tvarsized = bm->hvarsized = 0;
+        hashmask_size = 65536;
     }
-  }
-  b->ttype = bm->htype = TYPE_str; /* undo hack (in error case) */
-  b->tvarsized = bm->hvarsized = 1;
-  return ret;
+
+    /* guarantee a hash table suitable for some serious double elim */
+    tmp_i = BATnew(b->ttype, TYPE_oid , hashmask_size);
+    if (tmp_i != NULL && BAThash(tmp_i, hashmask_size) != NULL) {     
+        tmp_i = BATins_kunique(tmp_i, bm); /* bat[str,oid] */
+        if (tmp_i != NULL) {
+            tmp_m = BATmark(BATsetaccess(tmp_i, BAT_READ), 0); /* bat[str,void] */
+            if (tmp_m != NULL) {
+                tmp_o = BATmark(BATmirror(tmp_i), 0); /* bat[oid,void] */
+                if (tmp_o != NULL) {
+                    *map = BATleftjoin(b, tmp_m, BATcount(b)); /* bat[void,oid] */
+                    if (*map != NULL) {
+                        b->ttype = bm->htype = TYPE_str; /* undo hack for join */
+                        b->tvarsized = bm->hvarsized = 1;
+                        *unq = BATleftfetchjoin(BATmirror(tmp_o), b, BATcount(tmp_o)); /* bat[v?oid,oid] */
+                        if (*unq != NULL) {
+                            BATsetaccess(*map, BAT_READ);
+                            BATsetaccess(*unq, BAT_READ);
+                            ret = 0; /* success */          
+                        } else {
+                            BBPreclaim(*map);
+                        }
+                    }
+                    BBPreclaim(tmp_o);
+                }
+                BBPreclaim(tmp_m);
+            }
+            BBPreclaim(tmp_i);
+        }
+    }
+    b->ttype = bm->htype = TYPE_str; /* undo hack (in error case) */
+    b->tvarsized = bm->hvarsized = 1;
+    return ret;
 }
 
 /* function to tailor the exact size 'n' of the bat ctx->dstBAT[idx]. If
  * correct the batsize will always shrink!
  */
 static int setBATcapacity(shredCtxStruct* shredCtx, int idx, int n) {
-        BAT* b = shredCtx->dstBAT[idx].bat;
+    BAT* b = shredCtx->dstBAT[idx].bat;
 
-        void* top;
-        
-        int bottomTop = n;
-        if (n > 65536) {
-                BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP);
-        }
-        shredCtx->dstBAT[idx].cnt = n;
-        switch( shredCtx->dstBAT[idx].def->tailType ) {
-         case TYPE_int :
-                top = &shredCtx->dstBAT[idx].cast.natCAST[bottomTop];
-                break;
-         case TYPE_chr: {
-                b->batBuns->free = n; 
-                BATsetcount(b, n);
-                b->tsorted = 0;
-                return 1;
-                }
-         case TYPE_oid:
-                top = &shredCtx->dstBAT[idx].cast.oidCAST[bottomTop];
-                break;
-         default:
-                GDKerror("shredder.mx:setBATcapacity: bad tailType\n");
-                return -1;
-        }
-        b->batBuns->free = ((BUN)top) - BUNfirst(b);
-        BATsetcount(b, n);
-        b->tsorted = 0;
-	return 1;
+    void* top;
+
+    int bottomTop = n;
+    if (n > 65536) {
+        BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP);
+    }
+    shredCtx->dstBAT[idx].cnt = n;
+    switch( shredCtx->dstBAT[idx].def->tailType ) {
+        case TYPE_int :
+            top = &shredCtx->dstBAT[idx].cast.natCAST[bottomTop];
+            break;
+        case TYPE_chr: {
+                           b->batBuns->free = n; 
+                           BATsetcount(b, n);
+                           b->tsorted = 0;
+                           return 1;
+                       }
+        case TYPE_oid:
+                       top = &shredCtx->dstBAT[idx].cast.oidCAST[bottomTop];
+                       break;
+        default:
+                       GDKerror("shredder.mx:setBATcapacity: bad tailType\n");
+                       return -1;
+    }
+    b->batBuns->free = ((BUN)top) - BUNfirst(b);
+    BATsetcount(b, n);
+    b->tsorted = 0;
+    return 1;
 }
 
 static void printStat(shredCtxStruct* shredCtx) {
-        int i;
+    int i;
 
-        stream_printf(GDKout,"############\n");
-        stream_printf(GDKout,"# STATISTICS of shredding \"%s\":\n",shredCtx->location);
-        for(i=0; i<SHRED_BATS; i++) {
-                shredBAT* sb = &shredCtx->dstBAT[i];
+    stream_printf(GDKout,"############\n");
+    stream_printf(GDKout,"# STATISTICS of shredding \"%s\":\n",shredCtx->location);
+    for(i=0; i<SHRED_BATS; i++) {
+        shredBAT* sb = &shredCtx->dstBAT[i];
 
-                stream_printf(GDKout,"# [%9s, ",sb->def->name);
-                stream_printf(GDKout,"cnt=%d",sb->cnt);
-                if ( sb->def->compress || i==QN_PREFIX || i==QN_LOC) {
-                    int dupl;
+        stream_printf(GDKout,"# [%9s, ",sb->def->name);
+        stream_printf(GDKout,"cnt=%d",sb->cnt);
+        if ( sb->def->compress || i==QN_PREFIX || i==QN_LOC) {
+            int dupl;
 
-                    if ( sb->def->compress )
-                        dupl = sb->dupl;
-                    else
-                        dupl = shredCtx->pfxlocDUPL;
-                    stream_printf(GDKout,", dupl=%d(=%.f%%) ",dupl, ((dupl+sb->cnt)?100.0*(float)(sb->cnt)/(float)(dupl+sb->cnt):100.0));
-                }
-                if ( i==PRE_SIZE )
-                        stream_printf(GDKout,", eg. the number of document nodes");
-                if ( i==QN_PREFIX )
-                        stream_printf(GDKout,", eg. the number of distinct tags");
-                if ( i==ATTR_OWN )
-                        stream_printf(GDKout,", eg. the number of attributes");
-                stream_printf(GDKout,"]\n");
+            if ( sb->def->compress )
+                dupl = sb->dupl;
+            else
+                dupl = shredCtx->pfxlocDUPL;
+            stream_printf(GDKout,", dupl=%d(=%.f%%) ",dupl, ((dupl+sb->cnt)?100.0*(float)(sb->cnt)/(float)(dupl+sb->cnt):100.0));
         }
+        if ( i==PRE_SIZE )
+            stream_printf(GDKout,", eg. the number of document nodes");
+        if ( i==QN_PREFIX )
+            stream_printf(GDKout,", eg. the number of distinct tags");
+        if ( i==ATTR_OWN )
+            stream_printf(GDKout,", eg. the number of attributes");
+        stream_printf(GDKout,"]\n");
+    }
 }
 
 static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
-        oid i;
+    oid i;
 
-        BAT* res = BATnew(TYPE_oid,TYPE_bat,SHRED_BATS); /* create result BAT */
+    BAT* res = BATnew(TYPE_oid,TYPE_bat,SHRED_BATS); /* create result BAT */
 
-        if ( !res ) {
-                GDKerror("shredder.mx:finalizeShredCtx: resultBAT:create failed.\n");
-                return NULL;
-        }
-	if (
-          (setBATcapacity(shredCtx,PRE_SIZE, shredCtx->nnode_pre)  < 0) ||
-          (setBATcapacity(shredCtx,PRE_LEVEL,shredCtx->nnode_pre)  < 0) ||
-          (setBATcapacity(shredCtx,PRE_PROP, shredCtx->nnode_pre)  < 0) ||
-          (setBATcapacity(shredCtx,PRE_KIND, shredCtx->nnode_pre)  < 0) ||
-          (setBATcapacity(shredCtx,ATTR_OWN, shredCtx->nnode_attr) < 0) ||
-          (setBATcapacity(shredCtx,ATTR_QN,  shredCtx->nnode_attr) < 0) ||
-          (setBATcapacity(shredCtx,ATTR_PROP,shredCtx->nnode_attr) < 0)
-	)
-		return NULL;
+    if ( !res ) {
+        GDKerror("shredder.mx:finalizeShredCtx: resultBAT:create failed.\n");
+        return NULL;
+    }
+    if (
+            (setBATcapacity(shredCtx,PRE_SIZE, shredCtx->nnode_pre)  < 0) ||
+            (setBATcapacity(shredCtx,PRE_LEVEL,shredCtx->nnode_pre)  < 0) ||
+            (setBATcapacity(shredCtx,PRE_PROP, shredCtx->nnode_pre)  < 0) ||
+            (setBATcapacity(shredCtx,PRE_KIND, shredCtx->nnode_pre)  < 0) ||
+            (setBATcapacity(shredCtx,ATTR_OWN, shredCtx->nnode_attr) < 0) ||
+            (setBATcapacity(shredCtx,ATTR_QN,  shredCtx->nnode_attr) < 0) ||
+            (setBATcapacity(shredCtx,ATTR_PROP,shredCtx->nnode_attr) < 0)
+       )
+        return NULL;
 
-        /* FIXME: should peform hole-creation *during* parsing iff
-         *        shredCtx->pageFree != 0 */
+    /* FIXME: should peform hole-creation *during* parsing iff
+     *        shredCtx->pageFree != 0 */
 
-        /* pre_nid and nid_pre [void,void] are identity mappings with nid=pre */
-        size_t cnt = BATcount(shredCtx->dstBAT[PRE_SIZE].bat);
+    /* pre_nid and nid_pre [void,void] are identity mappings with nid=pre */
+    size_t cnt = BATcount(shredCtx->dstBAT[PRE_SIZE].bat);
 
-        BATseqbase(BATmirror(shredCtx->dstBAT[PRE_NID].bat),0);
-        BATsetcount(shredCtx->dstBAT[PRE_NID].bat,cnt);
-        shredCtx->dstBAT[PRE_NID].bat->batBuns->free += cnt*BUNsize(shredCtx->dstBAT[PRE_NID].bat);
+    BATseqbase(BATmirror(shredCtx->dstBAT[PRE_NID].bat),0);
+    BATsetcount(shredCtx->dstBAT[PRE_NID].bat,cnt);
+    shredCtx->dstBAT[PRE_NID].bat->batBuns->free += cnt*BUNsize(shredCtx->dstBAT[PRE_NID].bat);
 
-        BATseqbase(BATmirror(shredCtx->dstBAT[NID_PRE].bat),0);
-        BATsetcount(shredCtx->dstBAT[NID_PRE].bat,cnt);
-        shredCtx->dstBAT[NID_PRE].bat->batBuns->free += cnt*BUNsize(shredCtx->dstBAT[NID_PRE].bat);
+    BATseqbase(BATmirror(shredCtx->dstBAT[NID_PRE].bat),0);
+    BATsetcount(shredCtx->dstBAT[NID_PRE].bat,cnt);
+    shredCtx->dstBAT[NID_PRE].bat->batBuns->free += cnt*BUNsize(shredCtx->dstBAT[NID_PRE].bat);
 
-	/* */
-	shredBAT* pv = &shredCtx->dstBAT[PROP_VAL];
+    /* */
+    shredBAT* pv = &shredCtx->dstBAT[PROP_VAL];
 
-	BAT* pvu;
-	BAT* xlate_oid;
+    BAT* pvu;
+    BAT* xlate_oid;
 
-	if ( pf_compress(pv->bat,&pvu,&xlate_oid) < 0 ) {
-        	GDKerror("shredder.mx:finalizeShredCtx: compressing PROP_VAL fails\n");
-                return NULL;
-	}
-	/* */
-	if ( BATcount(pv->bat) != BATcount(xlate_oid) ) {
-		GDKerror("shredder.mx:finalizeShredCtx: pf_compress() returns bad # of xlate oids: " SZFMT " (expected " SZFMT ")\n",BATcount(xlate_oid),BATcount(pv->bat));
-		return NULL;
-	}
-	/* */
-	BBPunfix(BBPcacheid(pv->bat));
-	pv->cnt = (nat)BATcount(pvu); /* set the correct #values in the bat */
-	pv->bat = pvu;
+    if ( pf_compress(pv->bat,&pvu,&xlate_oid) < 0 ) {
+        GDKerror("shredder.mx:finalizeShredCtx: compressing PROP_VAL fails\n");
+        return NULL;
+    }
+    /* */
+    if ( BATcount(pv->bat) != BATcount(xlate_oid) ) {
+        GDKerror("shredder.mx:finalizeShredCtx: pf_compress() returns bad # of xlate oids: " SZFMT " (expected " SZFMT ")\n",BATcount(xlate_oid),BATcount(pv->bat));
+        return NULL;
+    }
+    /* */
+    BBPunfix(BBPcacheid(pv->bat));
+    pv->cnt = (nat)BATcount(pvu); /* set the correct #values in the bat */
+    pv->bat = pvu;
 
-	shredBAT* ap = &shredCtx->dstBAT[ATTR_PROP];
-        if (BATcount(ap->bat)) {
-		BAT* lj = BATleftjoin(ap->bat,xlate_oid,BATcount(ap->bat));
-		BBPunfix(BBPcacheid(ap->bat));
-		ap->bat = lj;
-	}
-	BBPunfix(BBPcacheid(xlate_oid));
-	/* */
-	if ( 0 ) {
-		BATprintf(GDKout,shredCtx->dstBAT[ATTR_PROP].bat);
-		BATprintf(GDKout,shredCtx->dstBAT[PROP_VAL].bat);
-	}
+    shredBAT* ap = &shredCtx->dstBAT[ATTR_PROP];
+    if (BATcount(ap->bat)) {
+        BAT* lj = BATleftjoin(ap->bat,xlate_oid,BATcount(ap->bat));
+        BBPunfix(BBPcacheid(ap->bat));
+        ap->bat = lj;
+    }
+    BBPunfix(BBPcacheid(xlate_oid));
+    /* */
+    if ( 0 ) {
+        BATprintf(GDKout,shredCtx->dstBAT[ATTR_PROP].bat);
+        BATprintf(GDKout,shredCtx->dstBAT[PROP_VAL].bat);
+    }
 
-        for(i=0; i<SHRED_BATS; i++) {
-                shredBAT* sb = &shredCtx->dstBAT[i];
+    for(i=0; i<SHRED_BATS; i++) {
+        shredBAT* sb = &shredCtx->dstBAT[i];
 #ifdef USE_COMPRESSION
-                if ( sb->def->compress ) {
-                        /* remove all accelerators from the BAT */
-                        HASHdestroy(sb->bat);
-                }
-#endif
-                if ( sb->def->headType==TYPE_void && !BAThdense(sb->bat) )
-                        stream_printf(GDKout,"WARNING: BAT[%s] not dense\n",sb->def->name);
-                sb->bat = BATsetaccess( sb->bat, BAT_READ );
-                bat bbb = BBPcacheid( sb->bat );
-                if ( ! BUNins(res, &i, &bbb) ) {
-                     GDKerror("shredder.mx:finalizeShredCtx: copy2result fails\n");
-                     return NULL;
-                }
-                BBPunfix( bbb );
+        if ( sb->def->compress ) {
+            /* remove all accelerators from the BAT */
+            HASHdestroy(sb->bat);
         }
-        if ( PRINT_STAT )
-                printStat(shredCtx);
-#ifdef USE_COMPRESSION
-        BBPunfix( BBPcacheid( shredCtx->pfxlocBAT ) );
 #endif
-	disposeAttrDB(&shredCtx->specAttrDb);
-        free( shredCtx );
-        return BATsetaccess( res, BAT_READ );
+        if ( sb->def->headType==TYPE_void && !BAThdense(sb->bat) )
+            stream_printf(GDKout,"WARNING: BAT[%s] not dense\n",sb->def->name);
+        sb->bat = BATsetaccess( sb->bat, BAT_READ );
+        bat bbb = BBPcacheid( sb->bat );
+        if ( ! BUNins(res, &i, &bbb) ) {
+            GDKerror("shredder.mx:finalizeShredCtx: copy2result fails\n");
+            return NULL;
+        }
+        BBPunfix( bbb );
+    }
+    if ( PRINT_STAT )
+        printStat(shredCtx);
+#ifdef USE_COMPRESSION
+    BBPunfix( BBPcacheid( shredCtx->pfxlocBAT ) );
+#endif
+    disposeAttrDB(&shredCtx->specAttrDb);
+    free( shredCtx );
+    return BATsetaccess( res, BAT_READ );
 }
 
 
@@ -583,13 +583,13 @@ static char *timer_str (long elapsed);
    a URL if it starts with at least two letters, followed by a
    colon. */
 int isURL(char* location) {
-	int i = 0;
-	while (*location && (('a' <= *location && *location <= 'z') ||
-			     ('A' <= *location && *location <= 'Z'))) {
-		location++;
-		i++;
-	}
-	return i > 1 && *location == ':';
+    int i = 0;
+    while (*location && (('a' <= *location && *location <= 'z') ||
+                ('A' <= *location && *location <= 'Z'))) {
+        location++;
+        i++;
+    }
+    return i > 1 && *location == ':';
 }
 
 off_t  fileSize(char* location) {
@@ -599,12 +599,12 @@ off_t  fileSize(char* location) {
     if ( !isURL(location) ) {
         if (stat (location, &statbuf) < 0) {
             GDKerror("shredder.mx:fileSize: cannot stat `%s': %s\n",
-                     location, strerror (errno));
+                    location, strerror (errno));
             return ~(off_t)0;
         } else
             return statbuf.st_size;
     } else {
-	/* INCOMPLETE, return an estimate of the size of the XML file */
+        /* INCOMPLETE, return an estimate of the size of the XML file */
         return ~(off_t)100000;
     }
 }
@@ -633,7 +633,7 @@ CMDshred2bats(BAT **res2mil, str location, str buffer, str opt)
     /* start timer */
     (void) gettimeofday (&now, 0);
     start = now.tv_sec * 1000000 + now.tv_usec;
-    
+
     off_t xmlFileSize;
     if (strcmp(buffer, str_nil) != 0)
         xmlFileSize = strlen(buffer);
@@ -661,9 +661,9 @@ CMDshred2bats(BAT **res2mil, str location, str buffer, str opt)
     stop = now.tv_sec * 1000000 + now.tv_usec;
 
     if ( PRINT_STAT ) {
-            stream_printf(GDKout,"# Elapsed time = %s [%s/node]\n",
-                        timer_str (abs (stop - start)),
-                        timer_str (abs (stop - start) / shredCtx->nnode_pre));
+        stream_printf(GDKout,"# Elapsed time = %s [%s/node]\n",
+                timer_str (abs (stop - start)),
+                timer_str (abs (stop - start) / shredCtx->nnode_pre));
     }
     return GDK_SUCCEED;
 }
@@ -678,12 +678,12 @@ static int incrBATsize(shredBAT* sb, nat i) {
      * grow any longer.
      */
     if ( newsize > INT_MAX ) {
-    	newsize = INT_MAX;
+        newsize = INT_MAX;
 
-	if ( sb->size == INT_MAX ) {
-        	GDKerror("shredder.mx:incrBATsize: BATextend[\"%s\"](size>INT_MAX) fails\n",sb->def->name);
-		return -1;
-	}
+        if ( sb->size == INT_MAX ) {
+            GDKerror("shredder.mx:incrBATsize: BATextend[\"%s\"](size>INT_MAX) fails\n",sb->def->name);
+            return -1;
+        }
     }
     sb->size= newsize;
     if ( !(sb->bat = BATextend(sb->bat,newsize)) ) {
@@ -691,84 +691,84 @@ static int incrBATsize(shredBAT* sb, nat i) {
         return -1;
     }
     if ( sb->def->tailType != TYPE_str ) {
-         sb->cast.voidCAST = (void*)BUNfirst(sb->bat);
+        sb->cast.voidCAST = (void*)BUNfirst(sb->bat);
     }
     return 1;
 }
 
 static INLINE nat direct_nat2bat(shredCtxStruct* shredCtx, int idx, nat i, nat v) {
-        shredBAT* sb = & shredCtx->dstBAT[idx];
+    shredBAT* sb = & shredCtx->dstBAT[idx];
 #ifdef VERBOSE
-        stream_printf(GDKout,"DIRECT[%s](%d) = %d\n",sb->def->name,i,v);
+    stream_printf(GDKout,"DIRECT[%s](%d) = %d\n",sb->def->name,i,v);
 #endif
-        CHECK_BAT_SIZE(sb,i);
-        sb->cast.natCAST[i] = v;
-        return i;
+    CHECK_BAT_SIZE(sb,i);
+    sb->cast.natCAST[i] = v;
+    return i;
 }
 
 static INLINE nat direct_natoid2bat(shredCtxStruct* shredCtx, int idx, nat i, nat v_nat) {
-        shredBAT* sb = & shredCtx->dstBAT[idx];
+    shredBAT* sb = & shredCtx->dstBAT[idx];
 #ifdef VERBOSE
-        stream_printf(GDKout,"DIRECT[%s](%d) = %d@0\n",sb->def->name,i,v);
+    stream_printf(GDKout,"DIRECT[%s](%d) = %d@0\n",sb->def->name,i,v);
 #endif
-        CHECK_BAT_SIZE(sb,i);
-	oid v_oid;
-	if ( v_nat != NATNIL ) {
-		v_oid = v_nat;
-	} else {
-        	v_oid = OIDNIL;
-	}
-        sb->cast.oidCAST[i] = v_oid;
-        return i;
+    CHECK_BAT_SIZE(sb,i);
+    oid v_oid;
+    if ( v_nat != NATNIL ) {
+        v_oid = v_nat;
+    } else {
+        v_oid = OIDNIL;
+    }
+    sb->cast.oidCAST[i] = v_oid;
+    return i;
 }
 
 static INLINE nat direct_chr2bat(shredCtxStruct* shredCtx, int idx, nat i, chr v) {
-        shredBAT* sb = & shredCtx->dstBAT[idx];
+    shredBAT* sb = & shredCtx->dstBAT[idx];
 #ifdef VERBOSE
-        stream_printf(GDKout,"DIRECT[%s](%d) = chr(%d)\n",sb->def->name,i,v);
+    stream_printf(GDKout,"DIRECT[%s](%d) = chr(%d)\n",sb->def->name,i,v);
 #endif
-        CHECK_BAT_SIZE(sb,i);
-        sb->cast.chrCAST[i] = v;
-        return i;
+    CHECK_BAT_SIZE(sb,i);
+    sb->cast.chrCAST[i] = v;
+    return i;
 }
 
 static INLINE nat append_str2bat(shredCtxStruct* shredCtx, int idx, str v) {
-        shredBAT* sb = & shredCtx->dstBAT[idx];
+    shredBAT* sb = & shredCtx->dstBAT[idx];
 
 #ifdef USE_COMPRESSION
-        if ( sb->def->compress ) {
-                /* incomplete, this mirror stuff looks rather clumsy */
-                BAT* mb = BATmirror(sb->bat);
+    if ( sb->def->compress ) {
+        /* incomplete, this mirror stuff looks rather clumsy */
+        BAT* mb = BATmirror(sb->bat);
 
-                BUN bun;
-                bun = BUNfnd(mb,v);
-                if ( bun ) {
-                        oid fo = *(oid*)BUNtail(mb,bun);
-                        sb->dupl++;
-                        return (nat)fo;
-                }
+        BUN bun;
+        bun = BUNfnd(mb,v);
+        if ( bun ) {
+            oid fo = *(oid*)BUNtail(mb,bun);
+            sb->dupl++;
+            return (nat)fo;
         }
+    }
 #endif /*USE_COMPRESSION*/
 
 #ifdef VERBOSE
-        stream_printf(GDKout,"APPEND-STR[%s](%s)\n",sb->def->name,v);
+    stream_printf(GDKout,"APPEND-STR[%s](%s)\n",sb->def->name,v);
 #endif
-        if ( !BUNappend(sb->bat, (ptr)v) ) {
-            GDKerror("shredder.mx:append_str2bat: APPEND-STR[%s](%s), BUNappend fails\n",sb->def->name,v);
-            return NATNIL;
-        }
-        return sb->cnt++;
+    if ( !BUNappend(sb->bat, (ptr)v) ) {
+        GDKerror("shredder.mx:append_str2bat: APPEND-STR[%s](%s), BUNappend fails\n",sb->def->name,v);
+        return NATNIL;
+    }
+    return sb->cnt++;
 }
 
 static INLINE nat append_str_oid2bat(shredCtxStruct* shredCtx, int idx, str s, oid o) {
-        shredBAT* sb = & shredCtx->dstBAT[idx];
+    shredBAT* sb = & shredCtx->dstBAT[idx];
 #ifdef VERBOSE
-        stream_printf(GDKout,"APPEND-STR-OID[%s](%s,%d)\n",sb->def->name,s,o);
+    stream_printf(GDKout,"APPEND-STR-OID[%s](%s,%d)\n",sb->def->name,s,o);
 #endif
-        if ( !BUNins(sb->bat,(ptr)s,(ptr)&o) ) {
-            return NATNIL;
-        }
-        return sb->cnt++;
+    if ( !BUNins(sb->bat,(ptr)s,(ptr)&o) ) {
+        return NATNIL;
+    }
+    return sb->cnt++;
 }
 
 /*******
@@ -809,12 +809,12 @@ timer_str (long elapsed)
         str += sprintf (str, "%03ldh ", elapsed / 3600000000UL);
         elapsed %= 3600000000UL;
     }
-  
+
     if (elapsed / 60000000UL) {
         str += sprintf (str, "%02ldm ", elapsed / 60000000UL);
         elapsed %= 60000000UL;
     }
-  
+
     if (elapsed / 1000000UL) {
         str += sprintf (str, "%02lds ", elapsed / 1000000UL);
         elapsed %= 1000000UL;
@@ -837,11 +837,11 @@ static int
 emitnode (shredCtxStruct* shredCtx, node_t node)
 {
     if (
-       direct_nat2bat(shredCtx,PRE_SIZE, node.pre,node.size)  == NATNIL ||
-       direct_chr2bat(shredCtx,PRE_LEVEL,node.pre,node.level) == NATNIL ||
-       direct_natoid2bat(shredCtx,PRE_PROP, node.pre,node.prop)  == NATNIL ||
-       direct_chr2bat(shredCtx,PRE_KIND, node.pre,node.kind)  == NATNIL 
-    )
+            direct_nat2bat(shredCtx,PRE_SIZE, node.pre,node.size)  == NATNIL ||
+            direct_chr2bat(shredCtx,PRE_LEVEL,node.pre,node.level) == NATNIL ||
+            direct_natoid2bat(shredCtx,PRE_PROP, node.pre,node.prop)  == NATNIL ||
+            direct_chr2bat(shredCtx,PRE_KIND, node.pre,node.kind)  == NATNIL 
+       )
         return -1;
     else
         return 1;
@@ -871,11 +871,11 @@ shred_start_document (void *xmlCtx)
 
     /* push document node */
     PUSH (shredCtx,((node_t) { .pre   = 0, 
-                      .size  = 0, 
-                      .level = -1,
-                      .prop  = NATNIL,
-                      .kind  = DOCUMENT
-                    }));
+                .size  = 0, 
+                .level = -1,
+                .prop  = NATNIL,
+                .kind  = DOCUMENT
+                }));
     NEXT_PRE(shredCtx->nnode_pre);
 }
 
@@ -886,7 +886,7 @@ shred_end_document (void *xmlCtx)
 
     /* pop document node and enter into pre|size|level|prop|kind relation */
     if ( emitnode (shredCtx,POP(shredCtx)) < 0 ) {
-    	BAILOUT(xmlCtx);
+        BAILOUT(xmlCtx);
     }
 #ifdef DEBUG
     stream_printf(GDKout,"end_document()\n");
@@ -908,7 +908,7 @@ emitString(shredCtxStruct* shredCtx, char* s)
     node.level = shredCtx->level;
     node.kind  = PFTEXT;
     if ( (node.prop=append_str2bat(shredCtx,PROP_TEXT,s)) == NATNIL)
-            return -1;
+        return -1;
 
     /* this text node contributes to the size of its parent */
     TOP(shredCtx).size++;
@@ -928,7 +928,7 @@ emitShreddedString(shredCtxStruct* shredCtx, char* s)
 
     if ( (t = strtok(s,del)) ) do {
         if ( emitString(shredCtx,t) < 0 )
-             return -1;
+            return -1;
     } while ( (t=strtok(NULL,del)) );
     return 1;
 }
@@ -955,101 +955,101 @@ handleXmlCharacters (shredCtxStruct* shredCtx)
 
 static nat store_PfxLoc4SAX1(shredCtxStruct* shredCtx, char* pfxloc) {
 #ifdef USE_COMPRESSION
-        BUN bun;
-        if ( (bun = BUNfnd(shredCtx->pfxlocBAT,pfxloc)) ) {
-                shredCtx->pfxlocDUPL++;
-                return (nat)*(oid*)BUNtail(shredCtx->pfxlocBAT,bun);
-        }
-	oid res_oid;
+    BUN bun;
+    if ( (bun = BUNfnd(shredCtx->pfxlocBAT,pfxloc)) ) {
+        shredCtx->pfxlocDUPL++;
+        return (nat)*(oid*)BUNtail(shredCtx->pfxlocBAT,bun);
+    }
+    oid res_oid;
 #endif
-        nat res;
-        char *colon, *nsStr, *locStr;
+    nat res;
+    char *colon, *nsStr, *locStr;
 
-        /* new fast namespace/localname decoding */
-        if ( (colon = strchr (pfxloc, ':')) ) {
-            nsStr  = pfxloc;
-            *colon = '\0';
-            locStr = &colon[1]; 
-        } else {
-            nsStr  = emptyString;
-            locStr = pfxloc; 
-        }
-	/* incomplete, do something with the URI here */
-        if ( (res=append_str2bat(shredCtx,QN_URI,emptyString))==NATNIL)
-                return NATNIL;
-        if ( (res=append_str2bat(shredCtx,QN_PREFIX,nsStr))==NATNIL)
-                return NATNIL;
-        if ( res != append_str2bat(shredCtx,QN_LOC,locStr) ) {
-                GDKerror("shredder.mx:store_PfxLoc: NS-LOC sync error\n");
-                return NATNIL;
-        }
+    /* new fast namespace/localname decoding */
+    if ( (colon = strchr (pfxloc, ':')) ) {
+        nsStr  = pfxloc;
+        *colon = '\0';
+        locStr = &colon[1]; 
+    } else {
+        nsStr  = emptyString;
+        locStr = pfxloc; 
+    }
+    /* incomplete, do something with the URI here */
+    if ( (res=append_str2bat(shredCtx,QN_URI,emptyString))==NATNIL)
+        return NATNIL;
+    if ( (res=append_str2bat(shredCtx,QN_PREFIX,nsStr))==NATNIL)
+        return NATNIL;
+    if ( res != append_str2bat(shredCtx,QN_LOC,locStr) ) {
+        GDKerror("shredder.mx:store_PfxLoc: NS-LOC sync error\n");
+        return NATNIL;
+    }
 #ifdef USE_COMPRESSION
-	res_oid = (oid)res;
-        if ( !BUNins(shredCtx->pfxlocBAT,pfxloc,&res_oid) ) {
-                GDKerror("shredder.mx:store_PfxLoc: compression table insert fails\n");
-                return NATNIL;
-        }
+    res_oid = (oid)res;
+    if ( !BUNins(shredCtx->pfxlocBAT,pfxloc,&res_oid) ) {
+        GDKerror("shredder.mx:store_PfxLoc: compression table insert fails\n");
+        return NATNIL;
+    }
 #endif
-	if ( colon ) {
-	    /* undo the inserted '\0' between the ns and the locName */
-	    *colon = ':';
-	}
-        return res;
+    if ( colon ) {
+        /* undo the inserted '\0' between the ns and the locName */
+        *colon = ':';
+    }
+    return res;
 }
 
 
 static nat store_PfxLocNEW(
-		shredCtxStruct* shredCtx,
-		const xmlChar*  a_uri,
-		const xmlChar*  a_pfx,
-		const xmlChar*  a_tag
-	) {
-	char *pfxloc;
+        shredCtxStruct* shredCtx,
+        const xmlChar*  a_uri,
+        const xmlChar*  a_pfx,
+        const xmlChar*  a_tag
+        ) {
+    char *pfxloc;
 
-	if ( a_uri ) {
-	   if ( !a_pfx )
-	       a_pfx = (xmlChar*)emptyString;
-	   sprintf(shredCtx->workSpace,"%s:%s:%s",a_uri,a_pfx,a_tag);
-	   pfxloc = &shredCtx->workSpace[0];
-	} else if ( a_pfx ) {
-	   a_uri = (xmlChar*)emptyString;
-	   sprintf(shredCtx->workSpace,"%s:%s",a_pfx,a_tag);
-	   pfxloc = &shredCtx->workSpace[0];
-	} else {
-	   a_uri = a_pfx = (xmlChar*)emptyString;
-	   pfxloc = (char*)a_tag;
-	}
-    	/* stream_printf(GDKout,"** store_PfxLocNEW(%s)\n",pfxloc); */
+    if ( a_uri ) {
+        if ( !a_pfx )
+            a_pfx = (xmlChar*)emptyString;
+        sprintf(shredCtx->workSpace,"%s:%s:%s",a_uri,a_pfx,a_tag);
+        pfxloc = &shredCtx->workSpace[0];
+    } else if ( a_pfx ) {
+        a_uri = (xmlChar*)emptyString;
+        sprintf(shredCtx->workSpace,"%s:%s",a_pfx,a_tag);
+        pfxloc = &shredCtx->workSpace[0];
+    } else {
+        a_uri = a_pfx = (xmlChar*)emptyString;
+        pfxloc = (char*)a_tag;
+    }
+    /* stream_printf(GDKout,"** store_PfxLocNEW(%s)\n",pfxloc); */
 #ifdef USE_COMPRESSION
-        BUN bun;
-        if ( (bun = BUNfnd(shredCtx->pfxlocBAT,pfxloc)) ) {
-                shredCtx->pfxlocDUPL++;
-                return (nat)*(oid*)BUNtail(shredCtx->pfxlocBAT,bun);
-        }
-	oid res_oid;
+    BUN bun;
+    if ( (bun = BUNfnd(shredCtx->pfxlocBAT,pfxloc)) ) {
+        shredCtx->pfxlocDUPL++;
+        return (nat)*(oid*)BUNtail(shredCtx->pfxlocBAT,bun);
+    }
+    oid res_oid;
 #endif
-        nat res;
+    nat res;
 
-        if ( (res=append_str2bat(shredCtx,QN_URI,(char*)a_uri))==NATNIL)
-                return NATNIL;
-        if ( res != append_str2bat(shredCtx,QN_PREFIX,(char*)a_pfx) )
-                return NATNIL;
-        if ( res != append_str2bat(shredCtx,QN_LOC,(char*)a_tag) ) {
-                GDKerror("shredder.mx:store_PfxLoc: NS-LOC sync error\n");
-                return NATNIL;
-        }
+    if ( (res=append_str2bat(shredCtx,QN_URI,(char*)a_uri))==NATNIL)
+        return NATNIL;
+    if ( res != append_str2bat(shredCtx,QN_PREFIX,(char*)a_pfx) )
+        return NATNIL;
+    if ( res != append_str2bat(shredCtx,QN_LOC,(char*)a_tag) ) {
+        GDKerror("shredder.mx:store_PfxLoc: NS-LOC sync error\n");
+        return NATNIL;
+    }
 #ifdef USE_COMPRESSION
-	res_oid = (oid)res;
-        if ( !BUNins(shredCtx->pfxlocBAT,pfxloc,&res_oid) ) {
-                GDKerror("shredder.mx:store_PfxLoc: compression table insert fails\n");
-                return NATNIL;
-        }
+    res_oid = (oid)res;
+    if ( !BUNins(shredCtx->pfxlocBAT,pfxloc,&res_oid) ) {
+        GDKerror("shredder.mx:store_PfxLoc: compression table insert fails\n");
+        return NATNIL;
+    }
 #endif
-	/* if ( colon ) { */
-	    /* undo the inserted '\0' between the ns and the locName */
-	    /* *colon = ':'; */
-	/* } */
-        return res;
+    /* if ( colon ) { */
+    /* undo the inserted '\0' between the ns and the locName */
+    /* *colon = ':'; */
+    /* } */
+    return res;
 }
 
 
@@ -1058,66 +1058,66 @@ static int tokenize_IDREFS( shredCtxStruct *shredCtx, char* ownerTag, oid pre, s
 
 static int 
 handleID_IDREF( shredCtxStruct *shredCtx, 
-		char* ownerTag,
-		oid   pre,
-		str   attrTag,
-		str   attrVal,
-		int   attrType)
+        char* ownerTag,
+        oid   pre,
+        str   attrTag,
+        str   attrVal,
+        int   attrType)
 {
 #ifdef ADB_DEBUG
-	stream_printf(GDKout,"handleID_IDREF(own=%s,pre=%d,pfxloc=%s,v=\"%s\") = %d\n",ownerTag,pre,attrTag,attrVal,attrType);
+    stream_printf(GDKout,"handleID_IDREF(own=%s,pre=%d,pfxloc=%s,v=\"%s\") = %d\n",ownerTag,pre,attrTag,attrVal,attrType);
 #endif
-	int batIdx = 0;
+    int batIdx = 0;
 
-	switch( attrType ) {
-	 case XML_ATTRIBUTE_ID:
-		batIdx = ID_NID;
-	 	break;
-	 case XML_ATTRIBUTE_IDREF:
-		batIdx = IDREF_NID;
-	 	break;
-	 case XML_ATTRIBUTE_IDREFS:
-		return tokenize_IDREFS(shredCtx,ownerTag,pre,attrTag,attrVal);
-	}
-	if ( append_str_oid2bat(shredCtx,batIdx,attrVal,pre) == NATNIL ) {
-		GDKerror("shredder.mx:handleID_IDREF: append() for handleID_IDREF(own=%s,pre=%d,pfxloc=%s,v=\"%s\") = %d FAILED\n",ownerTag,pre,attrTag,attrVal,attrType);
-		return 0;
-	}
-	return 1;
+    switch( attrType ) {
+        case XML_ATTRIBUTE_ID:
+            batIdx = ID_NID;
+            break;
+        case XML_ATTRIBUTE_IDREF:
+            batIdx = IDREF_NID;
+            break;
+        case XML_ATTRIBUTE_IDREFS:
+            return tokenize_IDREFS(shredCtx,ownerTag,pre,attrTag,attrVal);
+    }
+    if ( append_str_oid2bat(shredCtx,batIdx,attrVal,pre) == NATNIL ) {
+        GDKerror("shredder.mx:handleID_IDREF: append() for handleID_IDREF(own=%s,pre=%d,pfxloc=%s,v=\"%s\") = %d FAILED\n",ownerTag,pre,attrTag,attrVal,attrType);
+        return 0;
+    }
+    return 1;
 }
 
 static int 
 tokenize_IDREFS( shredCtxStruct *shredCtx, 
-		 char* ownerTag,
-		 oid   pre,
-		 str   attrTag,
-		 str   attrVal) {
-	/* tokenize IDREFS value attrVal and handle every tokenized value
-	 * as an IDREF.
-	 */ 
-	/* Windows doesn't support strtok_r, but at least strtok is
-	 * thread-safe
-	 */
+        char* ownerTag,
+        oid   pre,
+        str   attrTag,
+        str   attrVal) {
+    /* tokenize IDREFS value attrVal and handle every tokenized value
+     * as an IDREF.
+     */ 
+    /* Windows doesn't support strtok_r, but at least strtok is
+     * thread-safe
+     */
 #ifdef HAVE_STRTOK_R
-	char* insideStrtok;
+    char* insideStrtok;
 #endif
-	char* spaces = " \t";
-	char *tok;
+    char* spaces = " \t";
+    char *tok;
 #ifdef HAVE_STRTOK_R
-	tok = strtok_r(attrVal,spaces,&insideStrtok);
+    tok = strtok_r(attrVal,spaces,&insideStrtok);
 #else
-	tok = strtok(attrVal,spaces);
+    tok = strtok(attrVal,spaces);
 #endif
-	while ( tok ) {
-		if ( !handleID_IDREF(shredCtx,ownerTag,pre,attrTag,tok,XML_ATTRIBUTE_IDREF) )
-			return 0;
+    while ( tok ) {
+        if ( !handleID_IDREF(shredCtx,ownerTag,pre,attrTag,tok,XML_ATTRIBUTE_IDREF) )
+            return 0;
 #ifdef HAVE_STRTOK_R
-		tok = strtok_r(0,spaces,&insideStrtok);
+        tok = strtok_r(0,spaces,&insideStrtok);
 #else
-		tok = strtok(0,spaces);
+        tok = strtok(0,spaces);
 #endif
-	}
-	return 1;
+    }
+    return 1;
 }
 
 /**
@@ -1125,11 +1125,11 @@ tokenize_IDREFS( shredCtxStruct *shredCtx,
  */
 void 
 shred_start_element(void *xmlCtx, 
-                     const xmlChar  *e_uri, 
-                     const xmlChar  *e_pfx, 
-                     const xmlChar  *e_loc, 
-		     int	     n_atts,
-		     const xmlChar **atts)
+        const xmlChar  *e_uri, 
+        const xmlChar  *e_pfx, 
+        const xmlChar  *e_loc, 
+        int	     n_atts,
+        const xmlChar **atts)
 {
     node_t node;
     nat qn_id, val_id;
@@ -1173,52 +1173,52 @@ shred_start_element(void *xmlCtx,
     /* (2) process the elements attribute(s) */
     int i;
     for(i=0;i<(5*n_atts); i+=5) {
-    	    const xmlChar *a_tag = atts[i];
-    	    const xmlChar *a_pfx = atts[i+1];
-    	    const xmlChar *a_uri = atts[i+2];
-    	    const xmlChar *a_val = atts[i+3];
-    	    const xmlChar *a_end = atts[i+4];
+        const xmlChar *a_tag = atts[i];
+        const xmlChar *a_pfx = atts[i+1];
+        const xmlChar *a_uri = atts[i+2];
+        const xmlChar *a_val = atts[i+3];
+        const xmlChar *a_end = atts[i+4];
 
-	    xmlChar qiChar = *a_end; /* remember char value */
-	    *(xmlChar*)a_end = 0; /* UGLY HACK: ignore const modifier */
+        xmlChar qiChar = *a_end; /* remember char value */
+        *(xmlChar*)a_end = 0; /* UGLY HACK: ignore const modifier */
 #ifdef DEBUG
-    	    stream_printf(GDKout,"  attr(");
-    	    if (a_uri) stream_printf(GDKout,"uri=%s,",a_uri);
-    	    if (a_pfx) stream_printf(GDKout,"pfx=%s,",a_pfx);
-    	    stream_printf(GDKout,"tag=%s",a_tag);
-    	    stream_printf(GDKout,",val=\"%s\"",a_val);
-    	    stream_printf(GDKout,")\n");
+        stream_printf(GDKout,"  attr(");
+        if (a_uri) stream_printf(GDKout,"uri=%s,",a_uri);
+        if (a_pfx) stream_printf(GDKout,"pfx=%s,",a_pfx);
+        stream_printf(GDKout,"tag=%s",a_tag);
+        stream_printf(GDKout,",val=\"%s\"",a_val);
+        stream_printf(GDKout,")\n");
 #endif
-            qn_id  = store_PfxLocNEW(shredCtx,a_uri,a_pfx,a_tag);
+        qn_id  = store_PfxLocNEW(shredCtx,a_uri,a_pfx,a_tag);
 
-	    /* INCOMPLETE, this value stuff should be done properly by libxml2, but how? */
-            val_id = append_str2bat(shredCtx,PROP_VAL,(char*)a_val);
-            /* */
-            if ( 
-               qn_id  == NATNIL ||
-               val_id == NATNIL ||
-               direct_natoid2bat(shredCtx,ATTR_OWN ,shredCtx->nnode_attr, node.pre) == NATNIL ||
-               direct_natoid2bat(shredCtx,ATTR_QN  ,shredCtx->nnode_attr, qn_id)    == NATNIL ||
-               direct_natoid2bat(shredCtx,ATTR_PROP,shredCtx->nnode_attr, val_id)   == NATNIL
-            ) {
+        /* INCOMPLETE, this value stuff should be done properly by libxml2, but how? */
+        val_id = append_str2bat(shredCtx,PROP_VAL,(char*)a_val);
+        /* */
+        if ( 
+                qn_id  == NATNIL ||
+                val_id == NATNIL ||
+                direct_natoid2bat(shredCtx,ATTR_OWN ,shredCtx->nnode_attr, node.pre) == NATNIL ||
+                direct_natoid2bat(shredCtx,ATTR_QN  ,shredCtx->nnode_attr, qn_id)    == NATNIL ||
+                direct_natoid2bat(shredCtx,ATTR_PROP,shredCtx->nnode_attr, val_id)   == NATNIL
+           ) {
+            BAILOUT(xmlCtx);
+        }
+        int attrType;
+
+        if ( (attrType = specialAttrType(&shredCtx->specAttrDb,(char*)e_loc,(char*)*atts)) ) {
+            if ( !handleID_IDREF(shredCtx,(char*)e_loc,node.pre,(char*)a_tag,(char*)a_val,attrType) ) {
                 BAILOUT(xmlCtx);
             }
-	    int attrType;
-
-	    if ( (attrType = specialAttrType(&shredCtx->specAttrDb,(char*)e_loc,(char*)*atts)) ) {
-	        if ( !handleID_IDREF(shredCtx,(char*)e_loc,node.pre,(char*)a_tag,(char*)a_val,attrType) ) {
-                	BAILOUT(xmlCtx);
-		}
-	    }
-	    *(xmlChar*)a_end = qiChar;	      /* restore the quote */
-            /* process next attribute */
-            shredCtx->nnode_attr++;
+        }
+        *(xmlChar*)a_end = qiChar;	      /* restore the quote */
+        /* process next attribute */
+        shredCtx->nnode_attr++;
     }
 }
 
 void 
 shred_start_element4SAX1(void *xmlCtx, 
-                     const xmlChar *t, const xmlChar **atts)
+        const xmlChar *t, const xmlChar **atts)
 {
     node_t node;
     nat qn_id, val_id;
@@ -1255,21 +1255,21 @@ shred_start_element4SAX1(void *xmlCtx,
             val_id = append_str2bat(shredCtx,PROP_VAL,(char*)*(atts + 1));
             /* */
             if ( 
-               qn_id  == NATNIL ||
-               val_id == NATNIL ||
-               direct_natoid2bat(shredCtx,ATTR_OWN ,shredCtx->nnode_attr, node.pre) == NATNIL ||
-               direct_natoid2bat(shredCtx,ATTR_QN  ,shredCtx->nnode_attr, qn_id)    == NATNIL ||
-               direct_natoid2bat(shredCtx,ATTR_PROP,shredCtx->nnode_attr, val_id)   == NATNIL
-            ) {
+                    qn_id  == NATNIL ||
+                    val_id == NATNIL ||
+                    direct_natoid2bat(shredCtx,ATTR_OWN ,shredCtx->nnode_attr, node.pre) == NATNIL ||
+                    direct_natoid2bat(shredCtx,ATTR_QN  ,shredCtx->nnode_attr, qn_id)    == NATNIL ||
+                    direct_natoid2bat(shredCtx,ATTR_PROP,shredCtx->nnode_attr, val_id)   == NATNIL
+               ) {
                 BAILOUT(xmlCtx);
             }
-	    int attrType;
+            int attrType;
 
-	    if ( (attrType = specialAttrType(&shredCtx->specAttrDb,(char*)t,(char*)*atts)) ) {
-	        if ( !handleID_IDREF(shredCtx,(char*)t,node.pre,(char*)*atts,(char*)*(atts + 1),attrType) ) {
-                	BAILOUT(xmlCtx);
-		}
-	    }
+            if ( (attrType = specialAttrType(&shredCtx->specAttrDb,(char*)t,(char*)*atts)) ) {
+                if ( !handleID_IDREF(shredCtx,(char*)t,node.pre,(char*)*atts,(char*)*(atts + 1),attrType) ) {
+                    BAILOUT(xmlCtx);
+                }
+            }
             /* process next attribute */
             shredCtx->nnode_attr++;
             atts += 2;
@@ -1328,7 +1328,7 @@ shred_characters (void *xmlCtx, const xmlChar *cs, int n)
 
     if (l < n)
         GDKwarning("shredder.mx:shred_characters: WARNING: truncated text node > %" NATFMT " characters (starts with `%.16s...')\n",
-                 PFSHRED_STRLEN_MAX,cs);
+                PFSHRED_STRLEN_MAX,cs);
 }
 
 /**
@@ -1365,13 +1365,13 @@ shred_pi (void *xmlCtx, const xmlChar *tgt, const xmlChar *ins)
 
     /* this comment p-i contributes to the size of its parent */
     TOP(shredCtx).size++;
-        
+
     node.prop = append_str2bat(shredCtx,PROP_TGT,(char*)tgt);
     if ( node.prop != append_str2bat(shredCtx,PROP_INS,(char*)ins) ) {
         GDKerror("shredder.mx:shred_pi: tgt-ins sync error\n");
         BAILOUT(xmlCtx);
     }
-    
+
     /* enter p-i node into pre|size|level|prop|kind relation */
     if ( emitnode (shredCtx,node) < 0 ) {
         BAILOUT(xmlCtx);
@@ -1439,106 +1439,106 @@ print_error(void *ctx, const char *msg, ...) {
  * handeling of the shredder.
  */
 void catchAttributeDef(	void *ctx,
-		const xmlChar *elem,
-		const xmlChar *fullname,
-		int type,
-		int def,
-		const xmlChar *defaultValue,
-		xmlEnumerationPtr tree) {
-	(void)ctx;
-	(void)def; /* XML_ATTRIBUTE_(NONE|REQUIRED:IMPLIED) */
-	(void)*defaultValue;
-	(void)tree;
-	specAttrDbStr* adb = &SHREDCTX(ctx)->specAttrDb;
+        const xmlChar *elem,
+        const xmlChar *fullname,
+        int type,
+        int def,
+        const xmlChar *defaultValue,
+        xmlEnumerationPtr tree) {
+    (void)ctx;
+    (void)def; /* XML_ATTRIBUTE_(NONE|REQUIRED:IMPLIED) */
+    (void)*defaultValue;
+    (void)tree;
+    specAttrDbStr* adb = &SHREDCTX(ctx)->specAttrDb;
 
-	switch(type) {
-	 case XML_ATTRIBUTE_ID:
-	 case XML_ATTRIBUTE_IDREF:
-	 case XML_ATTRIBUTE_IDREFS:
-	 	if ( insertAttrDB(adb,(char*)elem,(char*)fullname,type) < 0 ) {
-			BAILOUT(ctx);
-		}
-		break;
-	}
+    switch(type) {
+        case XML_ATTRIBUTE_ID:
+        case XML_ATTRIBUTE_IDREF:
+        case XML_ATTRIBUTE_IDREFS:
+            if ( insertAttrDB(adb,(char*)elem,(char*)fullname,type) < 0 ) {
+                BAILOUT(ctx);
+            }
+            break;
+    }
 }
 
 int handleExternalSubset(shredCtxStruct* shredCtx, xmlDtdPtr dtd) {
-	struct _xmlNode *p = dtd->children;
+    struct _xmlNode *p = dtd->children;
 
-	while( p ) {
-	   if ( p->type == XML_ATTRIBUTE_DECL ) {
-	   	xmlAttributePtr ap = (xmlAttributePtr)p;
+    while( p ) {
+        if ( p->type == XML_ATTRIBUTE_DECL ) {
+            xmlAttributePtr ap = (xmlAttributePtr)p;
 
-		switch( ap->atype ) {
-		 case XML_ATTRIBUTE_ID:
-		 case XML_ATTRIBUTE_IDREF:
-		 case XML_ATTRIBUTE_IDREFS:
-	 		if ( insertAttrDB(&shredCtx->specAttrDb,(char*)ap->elem,(char*)ap->name,ap->atype) < 0 ) {
-				return -1;
-			}
-			break;
-		 default:
-		 	break; /* ignore */
-	        }
-	    }
-	    p = p->next;
-	}
-	return 1;
+            switch( ap->atype ) {
+                case XML_ATTRIBUTE_ID:
+                case XML_ATTRIBUTE_IDREF:
+                case XML_ATTRIBUTE_IDREFS:
+                    if ( insertAttrDB(&shredCtx->specAttrDb,(char*)ap->elem,(char*)ap->name,ap->atype) < 0 ) {
+                        return -1;
+                    }
+                    break;
+                default:
+                    break; /* ignore */
+            }
+        }
+        p = p->next;
+    }
+    return 1;
 }
 
 void catchExternalSubset(
-		void *ctx,
-		const xmlChar * name, 
-		const xmlChar * ExternalID, 
-		const xmlChar * SystemID) {
-	(void)name;
+        void *ctx,
+        const xmlChar * name, 
+        const xmlChar * ExternalID, 
+        const xmlChar * SystemID) {
+    (void)name;
 #ifdef ADB_DEBUG
-	stream_printf(GDKout,"catchExternalSubset(ctx,%s,%s,%s)\n",name,ExternalID,SystemID);
+    stream_printf(GDKout,"catchExternalSubset(ctx,%s,%s,%s)\n",name,ExternalID,SystemID);
 #endif
-	if ( ExternalID || SystemID ) {
-		/* INCOMPLETE, this part only works with absolute filenames or
-		 * files located in the current working directory! A bit more
-		 * inteligence could be applied here.
-	 	 */
-		xmlDtdPtr dtd;
+    if ( ExternalID || SystemID ) {
+        /* INCOMPLETE, this part only works with absolute filenames or
+         * files located in the current working directory! A bit more
+         * inteligence could be applied here.
+         */
+        xmlDtdPtr dtd;
 
-		if ( (dtd=xmlParseDTD(ExternalID,SystemID)) ) {
-			if ( !handleExternalSubset(SHREDCTX(ctx),dtd) )
-			    GDKwarning("shredder.mx:catchExternalSubset: WARNING: xmlParseDTD(\"%s\") SUBSET HANDLING FAILED, NO ID/IDREF QUERIES\n",SystemID);
-			xmlFreeDtd(dtd);
-		} else {
-			GDKerror("shredder.mx:catchExternalSubset: WARNING: xmlParseDTD(\"%s\") FAILED, NO ID/IDREF QUERIES\n",SystemID);
-			GDKerror("shredder.mx:catchExternalSubset: NOTE   : maybe using absolute filenames works, sorry!\n");
-			BAILOUT(ctx);
-		}
-	}
+        if ( (dtd=xmlParseDTD(ExternalID,SystemID)) ) {
+            if ( !handleExternalSubset(SHREDCTX(ctx),dtd) )
+                GDKwarning("shredder.mx:catchExternalSubset: WARNING: xmlParseDTD(\"%s\") SUBSET HANDLING FAILED, NO ID/IDREF QUERIES\n",SystemID);
+            xmlFreeDtd(dtd);
+        } else {
+            GDKerror("shredder.mx:catchExternalSubset: WARNING: xmlParseDTD(\"%s\") FAILED, NO ID/IDREF QUERIES\n",SystemID);
+            GDKerror("shredder.mx:catchExternalSubset: NOTE   : maybe using absolute filenames works, sorry!\n");
+            BAILOUT(ctx);
+        }
+    }
 }
 
 /* libxml2 SAX2 version for the startElement construction */
 static void my_startElementNsSAX2Func(
-		void * ctx, 
-		const xmlChar * localname, 
-		const xmlChar * prefix, 
-		const xmlChar * URI, 
-		int nb_namespaces, 
-		const xmlChar ** namespaces, 
-		int nb_attributes, 
-		int nb_defaulted, 
-		const xmlChar ** attributes) {
-	(void)nb_namespaces; 
-	(void)namespaces; 
-	shred_start_element(ctx,URI,prefix,localname,nb_attributes+nb_defaulted,attributes);
+        void * ctx, 
+        const xmlChar * localname, 
+        const xmlChar * prefix, 
+        const xmlChar * URI, 
+        int nb_namespaces, 
+        const xmlChar ** namespaces, 
+        int nb_attributes, 
+        int nb_defaulted, 
+        const xmlChar ** attributes) {
+    (void)nb_namespaces; 
+    (void)namespaces; 
+    shred_start_element(ctx,URI,prefix,localname,nb_attributes+nb_defaulted,attributes);
 }
 
 /* libxml2 SAX2 version for the endElement construction */
 static void my_endElementNsSAX2Func(
-	void * ctx, 
-	const xmlChar * localname, 
-	const xmlChar * prefix, 
-	const xmlChar * URI) {
-	(void)prefix;
-	(void)URI;
-	shred_end_element(ctx,localname /* unused byfunc */);
+        void * ctx, 
+        const xmlChar * localname, 
+        const xmlChar * prefix, 
+        const xmlChar * URI) {
+    (void)prefix;
+    (void)URI;
+    shred_end_element(ctx,localname /* unused byfunc */);
 }
 
 
@@ -1607,7 +1607,7 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* location, char* buffer)
     /* allocate XML node stack */
     if (! (shredCtx->lifo = (node_t *) malloc ((xml_depth_max+1) * sizeof (node_t)))) {
         GDKerror("shredder.mx:mainSHREDDER: cannot allocate XML node stack: %s\n",
-                 strerror (errno));
+                strerror (errno));
 
         return -1;
     }
@@ -1624,27 +1624,20 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* location, char* buffer)
             GDKerror("shred:mainSHREDDER: xmlCreateMemoryParserCtxt() failed\n");
             return -1;
         }
-/*
-    } else if ( !isURL(location) ) {
-        if ( !(xmlCtx = xmlCreateFileParserCtxt (location)) ) {
-            GDKerror("shred:mainSHREDDER: xmlCreateFileParserCtxt(\"%s\") failed\n",location);
-            return -1;
-        }
-*/
     } else {
 #if HAVE_SAX2
         if ( !(xmlCtx = xmlCreateURLParserCtxt (location, XML_PARSE_XINCLUDE
 #ifdef XML_PARSE_NOXINCNODE
-                                                         |XML_PARSE_NOXINCNODE
+                        |XML_PARSE_NOXINCNODE
 #endif
-               ))) 
+                        ))) 
         {
             GDKerror("shred:mainSHREDDER: xmlCreateURLParserCtxt(\"%s\") failed\n",location); 
             return -1;
         }
 #else
-	GDKerror("shred:mainSHREDDER: xmlCreateURLParserCtxt() not set. Configure HAVE_SAX2 for this.\n");
-	return -1;
+        GDKerror("shred:mainSHREDDER: xmlCreateURLParserCtxt() not set. Configure HAVE_SAX2 for this.\n");
+        return -1;
 #endif
     }
     xmlCtx->sax        = &shredder;
