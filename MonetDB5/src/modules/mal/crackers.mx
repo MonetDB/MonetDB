@@ -101,12 +101,17 @@ command info(b:bat[:oid,:@1])
 address CRKinfo
 comment "Print the cracker index administration";
 
-command crack(b:bat[:oid,:@1],low:@1,hgh:@1) :void
+command crack(b:bat[:oid,:@1],mid:@1) :bat[:oid,:@1]
+address CRKcrackValue
+comment "Break the partitions into smaller pieces
+	using an inclusive range over the tail.";
+
+command crack(b:bat[:oid,:@1],low:@1,hgh:@1) :bat[:oid,:@1]
 address CRKcrackRange
 comment "Break the partitions into smaller pieces
 	using an inclusive range over the tail.";
 
-command crack(b:bat[:oid,:@1],low:@1,hgh:@1,lincl:bit,rincl:bit) :void
+command crack(b:bat[:oid,:@1],low:@1,hgh:@1,lincl:bit,rincl:bit) :bat[:oid,:@1]
 address CRKcrackRangeAll
 comment "Break the partitions into smaller pieces
 	using a range over the tail";
@@ -193,22 +198,28 @@ For the time being, we ignore the cracking administration and repeated
 cracking, and focus on cracking a complete BAT, returning the cracked BAT.
 @
 @= crack
-command crack_@1 (b:bat[:oid,:int], mid:int) :bat[:oid,:int]
-address CRKcrackOne_@1
+command zcrack_@1 (b:bat[:oid,:@3], mid:@3) :bat[:oid,:@3]
+address CRKcrackZERO_@1_@3
 comment "Break a BAT into three pieces with
 	 tail<mid, tail==mid, tail>mid,
 	 respectively. (By @2.)";
 
-command crack_@1 (b:bat[:oid,:int], low:int, hgh:int) :bat[:oid,:int]
-address CRKcrackTwo_@1
+command crack_@1 (b:bat[:oid,:@3], mid:@3) :bat[:oid,:@3]
+address CRKcrackOne_@1_@3
+comment "Break a BAT into three pieces with
+	 tail<mid, tail==mid, tail>mid,
+	 respectively. (By @2.)";
+
+command crack_@1 (b:bat[:oid,:@3], low:@3, hgh:@3) :bat[:oid,:@3]
+address CRKcrackTwo_@1_@3
 comment "Break a BAT into five pieces with
 	 tail<low, tail==low, low<tail<hgh, tail==hgh, tail>hgh,
 	 respectively. (By @2.)";
 @
 @mal
-@:crack(SI,Stratos Idreos)@
-@:crack(MK,Martin Kersten)@
-@:crack(SM,Stefan Manegold)@
+@:crack(SI,Stratos Idreos,int)@
+@:crack(MK,Martin Kersten,int)@
+@:crack(SM,Stefan Manegold,int)@
 @-
 @{
 @include prelude.mx
@@ -262,6 +273,7 @@ mal_export str CRKdestroy(int *cret, int *bid);
 mal_export str CRKsetGranule(int *cret, int *bid, int *gran);
 mal_export str CRKsetLimit(int *cret, int *bid, int *cnt);
 mal_export str CRKinfo(int *k, int *bid);
+mal_export str CRKcrackValue(int *partid, int *bid, int *mid );
 mal_export str CRKcrackRange(int *partid, int *bid, int *low, int *hgh);
 mal_export str CRKcrackRangeAll(int *partid, int *bid, int *low, int *hgh, bit *lincl, bit *rincl);
 mal_export str CRKcrackRangeWithTwoScans(int *vid, int *bid, int *low, int *hgh, bit tail);
@@ -744,8 +756,13 @@ the ranges of the outer partitions as well.
 	return MAL_SUCCEED;
 }
 @-
-The short cut version 
+The short cut versions.
 @c
+str
+CRKcrackValue(int *partid, int *bid, int *mid){
+	bit f= FALSE;
+	return CRKcrackRangeAll(partid,bid,mid,mid,&f,&f);
+}
 str
 CRKcrackRange(int *partid, int *bid, int *low, int *high){
 	bit f= FALSE;
@@ -1991,50 +2008,255 @@ For the time being, we ignore the cracking administration and repeated
 cracking, and focus on cracking a complete BAT, returning the cracked BAT.
 @
 @-
-Stratos Idreos
-@c
-str
-CRKcrackOne_SI (int *res, int *bid, int *mid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
-	}
-
-	(void)mid;
-
-	BBPunfix(b->batCacheid);
-	*res = *bid;
-	return MAL_SUCCEED;
-}
-
-str
-CRKcrackTwo_SI (int *res, int *bid, int *low, int *hgh)
-{
-	BAT *b;
-
-	if (*(int *) low > *(int *) hgh)
-		return throwMessage("crackers.crack_SI", "illegal range");
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
-	}
-
-	BBPunfix(b->batCacheid);
-	*res = *bid;
-	return MAL_SUCCEED;
-}
-@
-@-
 Martin Kersten
-@c
+
+The code base is prepared to run with different types.
+@-
+Create a 3- and 5-way cracking of the BAT. Updates of the cracker index
+is left along for a while. We don't return anything right now.
+Cracking is inplace!
+
+@= exchangeMK
+#ifdef DEBUG_CRACKERS_DETAIL
+	printf("exchange %d %d\n",BUNindex(b,@1),BUNindex(b,@2));
+#endif
+{ 
+	oid hdummy;
+	@3 tdummy;
+	(void) buf;
+	hdummy= *(oid*) BUNhead(b,@1);
+	tdummy= *(@3*) BUNtail(b,@1);
+	*(oid*) BUNhead(b,@1) = *(oid*) BUNhead(b,@2);
+	*(@3*) BUNtail(b,@1) = *(@3*) BUNtail(b,@2);
+	*(oid*) BUNhead(b,@2)= hdummy;
+	*(@3*) BUNtail(b,@2)= tdummy;
+}
+@-
+The three way split use knowledge on the type size to issue
+the exchanges. Moreover, we should be prepared to handle
+a cracking over a mirrored bat.
+We support only fixed size buns.
+@= MK_operations
 str
-CRKcrackOne_MK (int *res, int *bid, int *mid)
+CRKpieceZERO_MK_@1( BAT *b, @1 mval, int first, int last){
+	ptr p, vm, vmin, vlast;
+	int xx;
+	struct SCRATCH{
+		oid hdummy;
+		@1 tdummy;
+	} dummy;
+
+	/* set bounds for the iterator */
+	xx = BUNsize(b);
+	if( sizeof(dummy) != xx)
+		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
+
+	vm = BUNtloc(b, BUNptr(b,first));
+	vlast= BUNtloc(b,BUNptr(b,last));
+
+	/* deal with startup */
+	while( *(@1*)vm <= mval && vm < vlast)
+		 vm = (ptr) ((char *) vm + xx);
+	
+	vmin= (ptr) ((char*)vm - b->tloc);
+
+	while(vm<vlast) {
+		if (*(@1 *) vm <= mval) {
+			/* exchange with first non low */
+			p= (ptr) ((char*)vm - b->tloc);
+			dummy = *(struct SCRATCH *) p;
+			*(struct SCRATCH *) p= *(struct SCRATCH *) vmin;
+			*(struct SCRATCH *) vmin= dummy;
+			vmin = (ptr) ((char *) vmin + xx);
+		} 
+		vm = (ptr) ((char *) vm + xx);
+	} 
+#ifdef MK_DEBUG
+	printf("cracked index %d\n", (int) BUNindex(b,vmin));
+#endif
+	return MAL_SUCCEED;
+}
+
+str
+CRKcrackZERO_MK_@1 (int *res, int *bid, @1 *mid)
+{
+	BAT *b;
+
+	if ((b = BATdescriptor(*bid)) == NULL) 
+		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
+
+	/* set bounds for the iterator */
+	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
+		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
+
+	CRKpieceZERO_MK_@1( b, *mid, 0, BATcount(b));
+
+	BBPkeepref(b->batCacheid);
+	*res = *bid;
+	return MAL_SUCCEED;
+}
+
+str
+CRKpieceONE_MK_@1( BAT *b, @1 mval, int first, int last){
+	ptr p, vm, vmin, vmax, vlast;
+	int xx;
+	struct SCRATCH{
+		oid hdummy;
+		@1 tdummy;
+	} dummy;
+
+	/* set bounds for the iterator */
+	xx = BUNsize(b);
+	if( sizeof(dummy) != xx)
+		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
+
+	vm = BUNtloc(b, BUNptr(b,first));
+	vlast= BUNtloc(b,BUNptr(b,last));
+
+	/* deal with startup */
+	while( *(@1*)vm < mval && vm < vlast)
+		 vm = (ptr) ((char *) vm + xx);
+	
+	vmin= (ptr) ((char*)vm - b->tloc -xx);
+	vmax= (ptr) ((char*)vm - b->tloc);
+
+	while(vm<vlast) {
+		if (*(@1 *) vm <= mval) {
+			if (*(@1 *) vm == mval) {
+				/* exchange with equality top */
+				p= (ptr) ((char*)vm - b->tloc);
+				dummy = *(struct SCRATCH *) vmax;
+				*(struct SCRATCH *) vmax= *(struct SCRATCH *) p;
+				*(struct SCRATCH *) p= dummy;
+				vmax = (ptr) ((char *) vmax + xx);
+				vm = (ptr) ((char *) vm + xx);
+			} else {
+				/* exchange with first non low */
+				p= (ptr) ((char*)vm - b->tloc);
+				dummy = *(struct SCRATCH *) p;
+				*(struct SCRATCH *) p= *(struct SCRATCH *) vmin;
+				*(struct SCRATCH *) vmin= dummy;
+				vmin = (ptr) ((char *) vmin + xx);
+			}
+		} else
+			vm = (ptr) ((char *) vm + xx);
+	} 
+#ifdef MK_DEBUG
+	printf("cracked index %d %d\n", (int) BUNindex(b,vmin), (int) BUNindex(b,vmax));
+#endif
+	return MAL_SUCCEED;
+}
+
+str
+CRKcrackOne_MK_@1 (int *res, int *bid, int *mid)
 {
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
+	}
+	/* set bounds for the iterator */
+	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
+		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
+
+	CRKpieceONE_MK_@1( b, *mid, 0, BATcount(b));
+
+	BBPkeepref(b->batCacheid);
+	*res = *bid;
+	return MAL_SUCCEED;
+}
+
+str
+CRKpieceTWO_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
+	ptr p, vm, lmin, lmax, llast;
+	ptr hmin, hmax;
+	int xx;
+	struct SCRATCH{
+		oid hdummy;
+		@1 tdummy;
+	} dummy;
+
+	/* set bounds for the iterator */
+	xx = BUNsize(b);
+	if( sizeof(dummy) != xx)
+		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
+
+	vm = BUNtloc(b, BUNptr(b,first));
+	llast= BUNtloc(b,BUNptr(b,last));
+
+	/* deal with startup low values */
+	while( *(@1*)vm < low && vm < llast)
+		 vm = (ptr) ((char *) vm + xx);
+	
+	lmin= (ptr) ((char*)vm - b->tloc -xx);
+	lmax= (ptr) ((char*)vm - b->tloc);
+
+	/* deal with startup high values */
+	vm = BUNtloc(b, BUNptr(b,last-1));
+	while( *(@1*)vm > hgh && vm > lmax)
+		 vm = (ptr) ((char *) vm - xx);
+	
+	hmin= (ptr) ((char*)vm - b->tloc -xx);
+	hmax= (ptr) ((char*)vm - b->tloc);
+
+	vm = (ptr) ((char*)hmax - b->tloc);
+	while(vm<hmin) {
+		if (*(@1 *) vm <= low) {
+			if (*(@1 *) vm == low) {
+				/* exchange with equality top */
+				p= (ptr) ((char*)vm - b->tloc);
+				dummy = *(struct SCRATCH *) lmax;
+				*(struct SCRATCH *) lmax= *(struct SCRATCH *) p;
+				*(struct SCRATCH *) p= dummy;
+				lmax = (ptr) ((char *) lmax + xx);
+				vm = (ptr) ((char *) vm + xx);
+			} else {
+				/* exchange with first non low */
+				p= (ptr) ((char*)vm - b->tloc);
+				dummy = *(struct SCRATCH *) p;
+				*(struct SCRATCH *) p= *(struct SCRATCH *) lmin;
+				*(struct SCRATCH *) lmin= dummy;
+				lmin = (ptr) ((char *) lmin + xx);
+			}
+		} else
+			vm = (ptr) ((char *) vm + xx);
+	} 
+#ifdef MK_DEBUG
+	printf("cracked index %d %d\n", (int) BUNindex(b,lmin), (int) BUNindex(b,lmax));
+#endif
+	return MAL_SUCCEED;
+}
+
+str
+CRKcrackTwo_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
+{
+	BAT *b;
+
+	if (*(@1 *) low > *(@1 *) hgh)
+		return throwMessage("crackers.crack_MK", "illegal range");
+	if ((b = BATdescriptor(*bid)) == NULL)
+		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
+	(void) *res;
+
+	/* set bounds for the iterator */
+	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
+		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
+
+	CRKpieceTWO_MK_@1( b, *low, *hgh, 0, BATcount(b));
+
+
+	BBPunfix(b->batCacheid);
+	*res = *bid;
+	return MAL_SUCCEED;
+}
+
+str
+CRKcrackZero_SM_@1 (int *res, int *bid, @1 *mid)
+{
+	BAT *b;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_SM", "Cannot access descriptor");
 	}
 
 	(void)mid;
@@ -2043,28 +2265,8 @@ CRKcrackOne_MK (int *res, int *bid, int *mid)
 	*res = *bid;
 	return MAL_SUCCEED;
 }
-
 str
-CRKcrackTwo_MK (int *res, int *bid, int *low, int *hgh)
-{
-	BAT *b;
-
-	if (*(int *) low > *(int *) hgh)
-		return throwMessage("crackers.crack_MK", "illegal range");
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
-	}
-
-	BBPunfix(b->batCacheid);
-	*res = *bid;
-	return MAL_SUCCEED;
-}
-@
-@-
-Stefan Manegold
-@c
-str
-CRKcrackOne_SM (int *res, int *bid, int *mid)
+CRKcrackOne_SM_@1 (int *res, int *bid, @1 *mid)
 {
 	BAT *b;
 
@@ -2080,11 +2282,11 @@ CRKcrackOne_SM (int *res, int *bid, int *mid)
 }
 
 str
-CRKcrackTwo_SM (int *res, int *bid, int *low, int *hgh)
+CRKcrackTwo_SM_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 {
 	BAT *b;
 
-	if (*(int *) low > *(int *) hgh)
+	if (*(@1 *) low > *(@1 *) hgh)
 		return throwMessage("crackers.crack_SM", "illegal range");
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("crackers.crack_SM", "Cannot access descriptor");
@@ -2095,4 +2297,53 @@ CRKcrackTwo_SM (int *res, int *bid, int *low, int *hgh)
 	return MAL_SUCCEED;
 }
 
+str
+CRKcrackZero_SI_@1 (int *res, int *bid, @1 *mid)
+{
+	BAT *b;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
+	}
+
+	(void)mid;
+
+	BBPunfix(b->batCacheid);
+	*res = *bid;
+	return MAL_SUCCEED;
+}
+str
+CRKcrackOne_SI_@1 (int *res, int *bid, @1 *mid)
+{
+	BAT *b;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
+	}
+
+	(void)mid;
+
+	BBPunfix(b->batCacheid);
+	*res = *bid;
+	return MAL_SUCCEED;
+}
+
+str
+CRKcrackTwo_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
+{
+	BAT *b;
+
+	if (*(@1 *) low > *(@1 *) hgh)
+		return throwMessage("crackers.crack_SI", "illegal range");
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
+	}
+
+	BBPunfix(b->batCacheid);
+	*res = *bid;
+	return MAL_SUCCEED;
+}
+@
+@c
+@:MK_operations(int)@
 @}
