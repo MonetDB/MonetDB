@@ -2214,7 +2214,6 @@ CRKpieceTWO_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
 		vm = (ptr) ((char *) vm - xx);
 	hmin= (ptr) ((char*)vm - b->tloc);
 
-#define MK_DEBUG
 #ifdef MK_DEBUG
 	printf("range %d %d\n",low,hgh);
 	printf("crack start %d %d ", (int) BUNindex(b,lmin), (int) BUNindex(b,lmax));
