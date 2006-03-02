@@ -2141,11 +2141,13 @@ CRKpieceONE_MK_@1( BAT *b, @1 mval, int first, int last){
 				vm = (ptr) ((char *) vm + xx);
 			} else {
 				/* exchange with first non low */
+				vmin = (ptr) ((char *) vmin + xx);
 				p= (ptr) ((char*)vm - b->tloc);
 				dummy = *(struct SCRATCH *) p;
-				*(struct SCRATCH *) p= *(struct SCRATCH *) vmin;
+				*(struct SCRATCH *) p= *(struct SCRATCH *) vmax;
+				*(struct SCRATCH *) vmax= *(struct SCRATCH *) vmin;
 				*(struct SCRATCH *) vmin= dummy;
-				vmin = (ptr) ((char *) vmin + xx);
+				vmax = (ptr) ((char *) vmax + xx);
 			}
 		} else
 			vm = (ptr) ((char *) vm + xx);
@@ -2153,7 +2155,7 @@ CRKpieceONE_MK_@1( BAT *b, @1 mval, int first, int last){
 #ifdef MK_DEBUG
 	printf("cracked index %d %d\n", (int) BUNindex(b,vmin), (int) BUNindex(b,vmax));
 #endif
-	printf("indices %d %d\n",(int) BUNindex(b,vmin)+1, (int) BUNindex(b,vmax)-1);
+	printf("indices %d %d\n",((int) BUNindex(b,vmin))+1, ((int) BUNindex(b,vmax)));
 	return MAL_SUCCEED;
 }
 
@@ -2212,6 +2214,7 @@ CRKpieceTWO_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
 		vm = (ptr) ((char *) vm - xx);
 	hmin= (ptr) ((char*)vm - b->tloc);
 
+#define MK_DEBUG
 #ifdef MK_DEBUG
 	printf("range %d %d\n",low,hgh);
 	printf("crack start %d %d ", (int) BUNindex(b,lmin), (int) BUNindex(b,lmax));
@@ -2237,6 +2240,7 @@ CRKpieceTWO_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
 				*(struct SCRATCH *) hmin= *(struct SCRATCH *) hmax;
 				*(struct SCRATCH *) hmax= dummy;
 				hmin = (ptr) ((char *) hmin - xx);
+				vm = (ptr) ((char *) vm - xx);
 			}
 		} else
 		if (*(@1 *) vm <= low) {
@@ -2267,8 +2271,8 @@ CRKpieceTWO_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
 	BATprintf(GDKout,b);
 #endif
 	} 
-	printf("indices %d %d %d %d\n",(int) BUNindex(b,lmin)+1, (int) BUNindex(b,lmax)-1,
-		(int) BUNindex(b,hmin)+1, (int) BUNindex(b,hmax)-1);
+	printf("indices %d %d %d %d\n",(int) BUNindex(b,lmin)+1, (int) BUNindex(b,lmax),
+		(int) BUNindex(b,hmin)+1, (int) BUNindex(b,hmax));
 	return MAL_SUCCEED;
 }
 
