@@ -16,36 +16,58 @@
 @' All Rights Reserved.
 
 @f crackers
-@a Martin Kersten Stratos Idreos
-@d Feb 2006
+@a Martin Kersten, Stratos Idreos, Stefan Manegold
+@d March 2006
 @* Cracker index
 
-A cracker is a logically partitioned bat.  Its partitions are 
-administered in a cracker index, a volatile data structure.
-The partitions are mostly derived from ordered, tail values.
-However, a derived fragmentation based on the (v)oid heads
-is also used.
+A cracker index is a volatile datastructure which acts as
+a non-dense index into a BAT. The index is incrementally built
+based on the fragments needed by queries.
+Each select operation results in a partial re-clustering of the tuples
+such that the result set is a consecutive memory area in the BAT.
+This set can be returned as a BAT view for further processing.
 
-A table is explicitly cracked further, each time we issue a select.
-It will scan the cracker index and will split all partitions
-accordingly and retain their location. In this process we
-re-shuffle BUNs around to produce dense range lists.
-The cracker index can be used in subsequent scans to speed up the search.
+A cracker index is created with the command @code{crackers.new}
+and destroyed using @code{crackers.destroy}.
+Multiple calls to create/destroy the cracker index on the same
+argument are ignored.
+
+The cracker index can be created for the time being on
+columns of type {int,lng,dbl,flt,time}.
+
+Once a cracker index exist, portions can be extracted 
+using @code{crackers.select} and @code{crackers.uselect},
+which semantically behave as their algebraic counterparts.
+Both operations may have to glue pieces from the cracked
+bat to satisfy the BAT semantics.
+
+In addition, the cracker index can be used to feed a generator
+for pieces satisfying a range constraint.
+
+Repeated cracking leads to an ever growing index. This process
+can be stopped by setting the granule size,
+i.e.  the minimum number of tuples in each piece,
+or the maximum number of pieces. 
+The operations @code{crackers.setGranule()} and @code{crackers.setLimit()}
+implement them. The default is to allow an arbitrary number pieces
+with arbitrary sizes.
+
+Pitfalls.
+The policy in the kernel to take a copy of a BAT when there
+is a need to write to it and there are also views around becomes 
+an issue. Instead, it should isolate the views, giving them a
+private copy. This way the underlying base table becomes free to re-arrange.
+This issue is postponed to the future.
+
+The cracker module should be prepared to deal with any of the base types.
+For strings this becomes an issue.
 
 This module contains the experimental code to play with cracked tables.
 It supports int-based bats for the time being only.
+
 The current implementation uses an unprotected cracker
 index. This limits the interface at slightly more overhead
 of searching the cracker index upon each call.
-
-[todo] Cracking a BAT should be bounded by either the
-number of pieces already obtained or the granularity
-of a piece. 
-
-[todo] Coalescing pieces to create larger ones. Especially
-relevant if you switch partitioning head and tail.
-Should only be done for pieces that are not part of
-a result.
 
 Initial performance indicates around 70 ms processing
 overhead on a 1M bat during the first crack operation.
@@ -54,11 +76,19 @@ overhead on a 1M bat during the first crack operation.
 @= crackfcn
 command new(b:bat[:@1,:int]):void
 address CRKnew
-comment "Create the index tables for a cracked table.";
+comment "Create the index for a cracked table.";
+
+command destroy(b:bat[:@1,:int]):void
+address CRKdestroy
+comment "Destroy the index for a cracked table.";
 
 command setGranule(b:bat[:@1,:int], granule:int):void
 address CRKsetGranule
 comment "Set the minimum granularity for a BAT.";
+
+command setLimit(b:bat[:@1,:int], cnt:int):void
+address CRKsetLimit
+comment "Set the maximum number of pieces in the cracker index.";
 
 command info(b:bat[:@1,:int])
 address CRKinfo
@@ -213,11 +243,14 @@ typedef struct {
 	int bid;		/* the original bat */
 	int freepiece, maxpiece;
 	int granule;	/* low watermark for piece sizes */
+	int limit;		/* maximum number of pieces allowed */
 	Piece *pieces;
 } CrackMap;
 
 mal_export str CRKnew(int *cret, int *bid);
+mal_export str CRKdestroy(int *cret, int *bid);
 mal_export str CRKsetGranule(int *cret, int *bid, int *gran);
+mal_export str CRKsetLimit(int *cret, int *bid, int *cnt);
 mal_export str CRKinfo(int *k, int *bid);
 mal_export str CRKcrackRange(int *partid, int *bid, int *low, int *hgh);
 mal_export str CRKcrackRangeAll(int *partid, int *bid, int *low, int *hgh, bit *lincl, bit *rincl);
@@ -402,15 +435,46 @@ CRKnew(int *cret, int *bid)
 }
 
 str
+CRKdestroy(int *cret, int *bid)
+{
+	int m;
+
+	(void) cret;
+	m = findCrackMap(*bid);
+	if( m < 0)
+		return throwMessage("crackers.destroy", "Unknown cracked BAT");
+	return MAL_SUCCEED;
+}
+
+str
 CRKsetGranule(int *cret, int *bid, int *gran)
 {
 	int m;
 	(void) cret;
 
+	if( *gran<=0 )
+		return throwMessage("crackers.setGranule", "Illegal granule size");
+
 	m= findCrackMap(*bid);
 	if( m >=0 )
 		crackMap[m].granule= *gran;
-	else return throwMessage("crackers.crack", "unknown cracked BAT");
+	else return throwMessage("crackers.setGranule", "unknown cracked BAT");
+	return MAL_SUCCEED;
+}
+
+str
+CRKsetLimit(int *cret, int *bid, int *cnt)
+{
+	int m;
+	(void) cret;
+
+	if( *cnt<=0 )
+		return throwMessage("crackers.setLimit", "Illegal count");
+
+	m= findCrackMap(*bid);
+	if( m >=0 )
+		crackMap[m].limit= *cnt;
+	else return throwMessage("crackers.setLimit", "unknown cracked BAT");
 	return MAL_SUCCEED;
 }
 
@@ -492,6 +556,15 @@ First experiment is a simple partitioning on the tail value.
 	@2 = crackMap[@1].pieces+ crackMap[@1].freepiece;
 	@2->left= @2->middle= @2->right = -1;
 	crackMap[@1].freepiece++;
+	/* clone it */
+	if( @3){
+		@2->rng_min = @3->rng_min;
+		@2->rng_max = @3->rng_max;
+		@2->idx_first = @3->idx_first;
+		@2->idx_last = @3->idx_last;
+		@2->kind = LEAF;
+		@2->parent = @4;
+	}
 @c
 str
 CRKcrackRangeAll(int *partid, int *bid, int *low, int *hgh, bit *lincl, bit *rincl)
@@ -598,25 +671,17 @@ and update the administration BATs.
 #endif
 				piece->kind = PHI;
 				piece->left = crackMap[m].freepiece;
-				@:newPiece(m, npiece)@
-				npiece->rng_min = piece->rng_min;
+				@:newPiece(m, npiece,piece,i)@
 				npiece->rng_max = *(int *) hgh;	/* WRONG depend on incl */
-				npiece->idx_first = piece->idx_first;
 				npiece->idx_last = h;
-				npiece->kind = LEAF;
-				npiece->parent = i;
 				pid= piece->left;
 
 				piece->middle = -1;
 
 				piece->right = crackMap[m].freepiece;
-				@:newPiece(m, npiece)@
+				@:newPiece(m, npiece,piece,i)@
 				npiece->rng_min = *(int *) hgh + 1;
-				npiece->rng_max = piece->rng_max;
 				npiece->idx_first = h + 1;
-				npiece->idx_last = piece->idx_last;
-				npiece->kind = LEAF;
-				npiece->parent = i;
 			}
 		} else if (piece->idx_last == h) {
 			if (l > piece->idx_first) {
@@ -626,24 +691,16 @@ and update the administration BATs.
 				/* falls at high end */
 				piece->kind = PHI;
 				piece->left = crackMap[m].freepiece;
-				@:newPiece(m, npiece)@
-				npiece->rng_min = piece->rng_min;
+				@:newPiece(m, npiece,piece,i)@
 				npiece->rng_max = *(int *) low - 1;
-				npiece->idx_first = piece->idx_first;
 				npiece->idx_last = l - 1;
-				npiece->kind = LEAF;
-				npiece->parent = i;
 
 				piece->middle = -1;
 
 				piece->right = pid = crackMap[m].freepiece;
-				@:newPiece(m, npiece)@
+				@:newPiece(m, npiece,piece,i)@
 				npiece->rng_min = *(int *) low;
-				npiece->rng_max = piece->rng_max;
 				npiece->idx_first = l;
-				npiece->idx_last = piece->idx_last;
-				npiece->kind = LEAF;
-				npiece->parent = i;
 			}
 		} else {
 #ifdef DEBUG_CRACKERS
@@ -651,31 +708,21 @@ and update the administration BATs.
 #endif
 			piece->kind = PHI;
 			piece->left = crackMap[m].freepiece;
-			@:newPiece(m, npiece)@
-			npiece->rng_min = piece->rng_min;
+			@:newPiece(m, npiece,piece,i)@
 			npiece->rng_max = *(int *) low - 1;
-			npiece->idx_first = piece->idx_first;
 			npiece->idx_last = l - 1;
-			npiece->kind = LEAF;
-			npiece->parent = i;
 
 			piece->middle = pid = crackMap[m].freepiece;
-			@:newPiece(m, npiece)@
+			@:newPiece(m, npiece,piece,i)@
 			npiece->rng_min = *(int *) low;
 			npiece->rng_max = *(int *) hgh;
 			npiece->idx_first = l;
 			npiece->idx_last = h;
-			npiece->kind = LEAF;
-			npiece->parent = i;
 
 			piece->right = crackMap[m].freepiece;
-			@:newPiece(m, npiece)@
+			@:newPiece(m, npiece,piece,i)@
 			npiece->rng_min = *(int *) hgh + 1;
-			npiece->rng_max = piece->rng_max;
 			npiece->idx_first = h + 1;
-			npiece->idx_last = piece->idx_last;
-			npiece->kind = LEAF;
-			npiece->parent = i;
 		}
 	}
 @-
@@ -942,28 +989,20 @@ and update the administration BATs.
 			if (h < piece->idx_last) {
 				piece->kind = PHI;
 				piece->left = crackMap[m].freepiece;
-				@:newPiece(m, npiece)@
-				npiece->rng_min = piece->rng_min;
+				@:newPiece(m, npiece,piece,i)@
 				if ( hgh >= piece->rng_max) 
 					npiece->rng_max = low-1;
 				else npiece->rng_max =  hgh;
-				npiece->idx_first = piece->idx_first;
 				npiece->idx_last = h;
-				npiece->kind = LEAF;    
-				npiece->parent = i;	     
 														
 				piece->middle = -1;     
 												
 				piece->right = crackMap[m].freepiece;
-				@:newPiece(m, npiece)@	  
+				@:newPiece(m, npiece,piece,i)@	  
 				if (hgh >= piece->rng_max) 
 					npiece->rng_min = low;
 				else npiece->rng_min =  hgh + 1;
-				npiece->rng_max = piece->rng_max;
 				npiece->idx_first = h + 1;      
-				npiece->idx_last = piece->idx_last;
-				npiece->kind = LEAF;	    
-				npiece->parent = i;
 			}
 		} else if (piece->idx_last == h) {      
 #ifdef DEBUG_CRACKERS
@@ -973,53 +1012,35 @@ and update the administration BATs.
 				/* falls at high end */
 				piece->kind = PHI;
 				piece->left = crackMap[m].freepiece;
-				@:newPiece(m, npiece)@
-				npiece->rng_min = piece->rng_min;
+				@:newPiece(m, npiece,piece,i)@
 				npiece->rng_max =  low - 1;
-				npiece->idx_first = piece->idx_first;
 				npiece->idx_last = l - 1;
-				npiece->kind = LEAF;
-				npiece->parent = i;
 
 				piece->middle = -1;
 						
 				piece->right = crackMap[m].freepiece;
-				@:newPiece(m, npiece)@
+				@:newPiece(m, npiece,piece,i)@
 				npiece->rng_min = low;
-				npiece->rng_max = piece->rng_max;
 				npiece->idx_first = l;
-				npiece->idx_last = piece->idx_last;
-				npiece->kind = LEAF;
-				npiece->parent = i;
 			}
 		} else {
 				piece->kind = PHI;
 				piece->left = crackMap[m].freepiece;
-				@:newPiece(m, npiece)@
-				npiece->rng_min = piece->rng_min;
+				@:newPiece(m, npiece,piece,i)@
 				npiece->rng_max =  low - 1;
-				npiece->idx_first = piece->idx_first;
 				npiece->idx_last = l - 1;
-				npiece->kind = LEAF;
-				npiece->parent = i;
 
 				piece->middle = crackMap[m].freepiece;
-				@:newPiece(m, npiece)@
+				@:newPiece(m, npiece,piece,i)@
 				npiece->rng_min =  low;
 				npiece->rng_max =  hgh;
 				npiece->idx_first = l;
 				npiece->idx_last = h;
-				npiece->kind = LEAF;
-				npiece->parent = i;
 
 				piece->right = crackMap[m].freepiece;
-				@:newPiece(m, npiece)@
+				@:newPiece(m, npiece,piece,i)@
 				npiece->rng_min =  hgh + 1;
-				npiece->rng_max = piece->rng_max;
 				npiece->idx_first = h + 1;
-				npiece->idx_last = piece->idx_last;
-				npiece->kind = LEAF;
-				npiece->parent = i;
 		}
 	}
 	else if (crackMap[m].pieces[i].kind != LEAF && !firstCrack){
@@ -1314,32 +1335,24 @@ and update the administration BATs.
 				}
                                 piece->kind = PHI;
                                 piece->left = crackMap[m].freepiece;
-                                @:newPiece(m, npiece)@
-                                npiece->rng_min = piece->rng_min;
+                                @:newPiece(m, npiece,piece,i)@
                                 if ((*(int *) hgh > piece->rng_max) || (*(int *) hgh == piece->real_rng_max)) 
 					npiece->rng_max = *(int *) low-1;
 				else npiece->rng_max = *(int *) hgh;
 				npiece->real_rng_min = real_low1;
 				npiece->real_rng_max = real_high1;
-                                npiece->idx_first = piece->idx_first;
                                 npiece->idx_last = h;
-                                npiece->kind = LEAF;
-                                npiece->parent = i;
 
                                 piece->middle = -1;
 
                                 piece->right = crackMap[m].freepiece;
-                                @:newPiece(m, npiece)@
+                                @:newPiece(m, npiece,piece,i)@
                                 if ((*(int *) hgh > piece->rng_max) || (*(int *) hgh == piece->real_rng_max)) 
 					npiece->rng_min = *(int *) low;
 				else npiece->rng_min = *(int *) hgh + 1;
-                                npiece->rng_max = piece->rng_max;
 				npiece->real_rng_min = real_low3;
                                 npiece->real_rng_max = real_high3;
                                 npiece->idx_first = h + 1;
-                                npiece->idx_last = piece->idx_last;
-                                npiece->kind = LEAF;
-                                npiece->parent = i;
                         }
                 } else if (piece->idx_last == h) {
                         if (l > piece->idx_first) {
@@ -1353,28 +1366,20 @@ and update the administration BATs.
                                 /* falls at high end */
                                 piece->kind = PHI;
                                 piece->left = crackMap[m].freepiece;
-                                @:newPiece(m, npiece)@
-                                npiece->rng_min = piece->rng_min;
+                                @:newPiece(m, npiece,piece,i)@
                                 npiece->rng_max = *(int *) low - 1;
 				npiece->real_rng_min = real_low1;
                                 npiece->real_rng_max = real_high1;
-                                npiece->idx_first = piece->idx_first;
                                 npiece->idx_last = l - 1;
-                                npiece->kind = LEAF;
-                                npiece->parent = i;
 
                                 piece->middle = -1;
 
                                 piece->right = crackMap[m].freepiece;
-                                @:newPiece(m, npiece)@
+                                @:newPiece(m, npiece,piece,i)@
                                 npiece->rng_min = *(int *) low;
-                                npiece->rng_max = piece->rng_max;
 				npiece->real_rng_min = real_low3;
                                 npiece->real_rng_max = real_high3;
                                 npiece->idx_first = l;
-                                npiece->idx_last = piece->idx_last;
-                                npiece->kind = LEAF;
-                                npiece->parent = i;
                         }
                 } else {
 			if (firstCrack) {
@@ -1383,37 +1388,27 @@ and update the administration BATs.
                         }
                         piece->kind = PHI;
                         piece->left = crackMap[m].freepiece;
-                        @:newPiece(m, npiece)@
-                        npiece->rng_min = piece->rng_min;
+                        @:newPiece(m, npiece,piece,i)@
                         npiece->rng_max = *(int *) low - 1;
-			npiece->real_rng_min = real_low1;
+						npiece->real_rng_min = real_low1;
                         npiece->real_rng_max = real_high1;
-                        npiece->idx_first = piece->idx_first;
                         npiece->idx_last = l - 1;
-                        npiece->kind = LEAF;
-                        npiece->parent = i;
 
                         piece->middle = crackMap[m].freepiece;
-                        @:newPiece(m, npiece)@
+                        @:newPiece(m, npiece,piece,i)@
                         npiece->rng_min = *(int *) low;
                         npiece->rng_max = *(int *) hgh;
-			npiece->real_rng_min = real_low2;
+						npiece->real_rng_min = real_low2;
                         npiece->real_rng_max = real_high2;
                         npiece->idx_first = l;
                         npiece->idx_last = h;
-                        npiece->kind = LEAF;
-                        npiece->parent = i;
          
 	                piece->right = crackMap[m].freepiece;
-                        @:newPiece(m, npiece)@
+                        @:newPiece(m, npiece,piece,i)@
                         npiece->rng_min = *(int *) hgh + 1;
-                        npiece->rng_max = piece->rng_max;
 			npiece->real_rng_min = real_low3;
                         npiece->real_rng_max = real_high3;
                         npiece->idx_first = h + 1;
-                        npiece->idx_last = piece->idx_last;
-                        npiece->kind = LEAF;
-                        npiece->parent = i;
                 }
 	}
 	else if (crackMap[m].pieces[i].kind != LEAF && !firstCrack){
