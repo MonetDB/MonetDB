@@ -1165,6 +1165,8 @@ sqltypeinit()
 		sql_create_func("<=", "<=", ts[i], ts[i], BIT, SCALE_FIX);
 		sql_create_aggr("exist", "exist", ts[i], BIT);
 		sql_create_aggr("not_exist", "not_exist", ts[i], BIT);
+		/* needed for relational version */
+		sql_create_func("in", "in", ts[i], ts[i], BIT, SCALE_NONE);
 	}
 
 	for (i = 0; ts[i]; i++) {
@@ -1338,7 +1340,7 @@ sqltypeinit()
 
 	sql_create_func("year", "year", MONINT, NULL, INT, SCALE_FIX);
 	sql_create_func("month", "month", MONINT, NULL, INT, SCALE_FIX);
-	sql_create_func("day", "day", SECINT, NULL, INT, SCALE_FIX);
+	sql_create_func("day", "day", SECINT, NULL, LNG, SCALE_FIX);
 	sql_create_func("hour", "hours", SECINT, NULL, INT, SCALE_FIX);
 	sql_create_func("minute", "minutes", SECINT, NULL, INT, SCALE_FIX);
 	sql_create_func("second", "seconds", SECINT, NULL, INT, SCALE_FIX);
@@ -1355,6 +1357,9 @@ sqltypeinit()
 		sql_create_func("substring", "substring", *t, INT, *t, SCALE_NONE);
 		sql_create_func3("substring", "substring", *t, INT, INT, *t, SCALE_NONE);
 		sql_create_func("like", "like", *t, *t, BIT, SCALE_NONE);
+		sql_create_func3("like", "like", *t, *t, *t, BIT, SCALE_NONE);
+		sql_create_func("not_like", "not_like", *t, *t, BIT, SCALE_NONE);
+		sql_create_func3("not_like", "not_like", *t, *t, *t, BIT, SCALE_NONE);
 		sql_create_func("truncate", "stringleft", *t, INT, *t, SCALE_NONE);
 		sql_create_func("concat", "+", *t, *t, *t, DIGITS_ADD);
 		sql_create_func("ascii", "ascii", *t, NULL, INT, SCALE_NONE);

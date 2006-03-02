@@ -553,7 +553,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, sql_subtype *res, char *impl,
 			char *name = _strdup(m->data.sval);
 			sql_subtype *t = &m->next->data.typeval;
 
-			sql_add_param(sql, name, stmt_var(_strdup(name), t));
+			sql_add_param(sql, name, t);
 		}
 		if (!(b = scope_subquery(sql, NULL, body))) {
 			sql_destroy_params(sql);

@@ -57,15 +57,24 @@ extern stmt *scope_sqlparse(mvc *m, scope *scp, char *query);
 
 extern stmt *first_subset(stmt *subset);
 
-extern void sql_add_arg(mvc *sql, atom *v);	/* used in src/server/sql_parser.y */
-extern void sql_add_param(mvc *sql, char *name, stmt *s);	/* used in src/server/sql_parser.y */
-extern stmt *sql_bind_param(mvc *sql, char *name);
+/* literals in the parser are kept outside of the abstract syntax tree
+   in the arg array, this to allow for more reuse of cached queries */
+
+extern void sql_add_arg(mvc *sql, atom *v);
 extern atom *sql_bind_arg(mvc *sql, int nr);
+extern void sql_destroy_args(mvc *sql);		/* used in backend */
 
+/* SQL's parameters '?' (in prepare statements) and parameters of sql
+ * functions and procedures are kept in the param list.  */
+
+extern void sql_add_param(mvc *sql, char *name, sql_subtype *st);	
+extern sql_arg *sql_bind_param(mvc *sql, char *name);
+/* once the type of the '?' parameters is known its set using the set_type
+ * function */
+extern int set_type_param(mvc *sql, sql_subtype *type, char *name);
+extern int stmt_set_type_param(mvc *sql, sql_subtype *type, stmt *param);
 extern void sql_destroy_params(mvc *sql);	/* used in backend */
-extern void sql_destroy_args(mvc *sql);	/* used in backend */
 
-extern int set_type_param(sql_subtype *type, stmt *param);
 extern char *symbol2string(mvc *sql, symbol *s);
 
 
@@ -94,14 +103,10 @@ extern char *symbol2string(mvc *sql, symbol *s);
  * For debugging purposes we need to be able to convert sql-tokens to 
  * a string representation.
  *
- *
  * !SQL ERROR <sqlerrno> : <details>
  * !SQL DEBUG  <details>
  * !SQL WARNING <details>
  * !SQL  <informative message, reserved for ...rows affected>
- *
- * Todo add insert bats used for inserts (ie should change the 
- * 	query code to use the global bats (mvc_bat) in read only mode).
  */
 
 void
@@ -111,31 +116,32 @@ sql_add_arg(mvc *sql, atom *v)
 }
 
 void
-sql_add_param(mvc *sql, char *name, stmt *s)
+sql_add_param(mvc *sql, char *name, sql_subtype *st)
 {
-	var_ *v = NEW(var_);
+	sql_arg *a = NEW(sql_arg);
 
-	v->name = name;
-	v->s = s;
-	sql_ref_init(&(v->ref));
+	a->name = _strdup(name);
+	if (st)
+		a->type = *st;
+	else
+		a->type.type = NULL;
 
 	if (!sql->params)
-		sql->params = list_create((fdestroy) &var_destroy);
-	list_append(sql->params, v);
+		sql->params = list_create((fdestroy) &arg_destroy);
+	list_append(sql->params, a);
 }
 
-stmt *
+sql_arg *
 sql_bind_param(mvc *sql, char *name)
 {
 	node *n;
 
 	if (sql->params) {
 		for (n = sql->params->h; n; n = n->next) {
-			var_ *v = n->data;
+			sql_arg *a = n->data;
 
-			if (strcmp(v->name, name) == 0) {
-				return stmt_dup(v->s);
-			}
+			if (strcmp(a->name, name) == 0) 
+				return a;
 		}
 	}
 	return NULL;
@@ -565,6 +571,31 @@ inplace_convert(mvc *sql, sql_subtype *ct, stmt *s)
 	return s;
 }
 
+int
+set_type_param(mvc *sql, sql_subtype *type, char *name)
+{
+	sql_arg *a = sql_bind_param(sql, name);
+
+	if (!a) 
+		return -1;
+	a->type = *type;
+	return 0;
+}
+
+int
+stmt_set_type_param(mvc *sql, sql_subtype *type, stmt *param)
+{
+	if (!type || !param || param->type != st_var)
+		return -1;
+
+	if (set_type_param(sql, type, param->op1.sval) == 0) {
+		param->op2.typeval = *type;
+		return 0;
+	}
+	return -1;
+}
+
+
 /* check_types tries to match the ct type with the type of s if they don't
  * match s is converted. Returns NULL on failure.
  */
@@ -576,7 +607,7 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 	stmt *old = NULL;
 
 	(void)tpe;
-	if ((!st || !st->type) && set_type_param(ct, s) == 0) {
+	if ((!st || !st->type) && stmt_set_type_param(sql, ct, s) == 0) {
 		return s;
 	} else if (!st) {
 	        stmt_destroy(s);
@@ -676,16 +707,6 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 	return super;
 }
 
-int
-set_type_param(sql_subtype *type, stmt *param)
-{
-	if (!type || !param || param->type != st_var)
-		return -1;
-
-	param->op2.typeval = *type;
-	return 0;
-}
-
 /* convert_types convert both the stmt's L and R such that they get
  * matching types. On failure <0 is returned;
  */
@@ -703,10 +724,10 @@ convert_types(mvc *sql, stmt **L, stmt **R, int scale_fixing)
 	}
 
 	if (rt && (!lt || !lt->type))
-		return set_type_param(rt, ls);
+		return stmt_set_type_param(sql, rt, ls);
 
 	if ((!rt || !rt->type) && lt)
-		return set_type_param(lt, rs);
+		return stmt_set_type_param(sql, lt, rs);
 
 	if (rt && lt) {
 		sql_subtype *i = lt;

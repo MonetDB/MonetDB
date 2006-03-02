@@ -32,7 +32,7 @@ typedef enum expression_type {
 	e_cmp,
 	e_func,
 	e_aggr,
-	e_convert,
+	e_convert
 } expression_type;
 
 #define CARD_ATOM 1
@@ -42,10 +42,10 @@ typedef enum expression_type {
 typedef struct expression {
 	sql_ref ref;
 
+	expression_type  type;	/* atom, cmp, func/aggr */
 	char *name;
 	void *l;
 	void *r;
-	expression_type  type;	/* atom, cmp, func/aggr */
 	void *f; 	/* =,!=, but also func's and aggr's and column type */
 	int  flag;
 	char card;	/* card 
@@ -61,7 +61,6 @@ typedef struct expression {
  
 typedef enum operator_type {
 	op_basetable,
-	op_crossproduct,
 	op_project,
 	op_select,
 	op_join,
@@ -71,21 +70,34 @@ typedef enum operator_type {
 	op_union,
 	op_inter,
 	op_except,
-	op_groupby,
+	op_groupby,	/* currently includes the projection (aggr) */
 	op_orderby,
 	op_topn
 } operator_type;
 
-#define is_join(op) (op == op_join || op == op_left)
+#define is_join(op) \
+	(op == op_join || op == op_left || op == op_right || op == op_full)
+#define is_select(op) \
+	(op == op_select)
+#define is_set(op) \
+	(op == op_union || op == op_inter || op == op_except)
+#define is_project(op) \
+	(op == op_project || op == op_groupby)
+#define is_sort(op) \
+	(op == op_orderby || op == op_topn)
+#define is_distinct(rel) \
+	(rel->op == op_project && rel->r != NULL)
 
 typedef struct relation {
+	operator_type op;	
 	char *name;   
 	void *l;
 	void *r;
-	operator_type op;	
 	list *exps; 
 	int nrcols;	/* nr of cols */	
-	int card;	/* 0, 1 (row), 2 aggr, 3 */
+	char card;	/* 0, 1 (row), 2 aggr, 3 */
+	char processed; /* fully processed or still in the process of building */
+	char subquery;	/* is this part a subquery, this is needed for proper name binding */
 } sql_rel;
 
 #endif /* SQL_RELATION_H */

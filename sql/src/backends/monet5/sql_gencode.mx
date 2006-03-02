@@ -1584,8 +1584,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	} else if (be->mvc->params) { /* needed for prepare statements */
 
 		for (n = be->mvc->params->h; n; n = n->next, argc++) {
-			var_ *v = n->data;
-			int type = tail_type(v->s)->type->localtype;
+			sql_arg *a = n->data;
+			int type = a->type.type->localtype;
 			int varid = 0;
 
 			snprintf(arg, 32, "A%d", argc);

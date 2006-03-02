@@ -240,6 +240,7 @@ atom2string(atom *a)
 		if (a->data.val.cval[0])
 			return _strdup("true");
 		return _strdup("false");
+	case TYPE_flt:
 	case TYPE_dbl:
 		sprintf(buf, "%f", a->data.val.dval);
 		break;

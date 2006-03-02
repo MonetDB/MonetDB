@@ -3356,6 +3356,7 @@ non_reserved_word:  /* (lexicographically sorted for convenience) */
 | ZONE		{ $$ = sa_strdup(SA, "zone"); }		/* sloppy: officially reserved */
 
 |  CACHE	{ $$ = sa_strdup(SA, "cache"); }
+|  DATA 	{ $$ = sa_strdup(SA, "data"); }
 |  OPTIONS	{ $$ = sa_strdup(SA, "options"); }
 |  sqlSESSION	{ $$ = sa_strdup(SA, "session"); }
 |  TIMESTAMP	{ $$ = sa_strdup(SA, "timestamp"); }

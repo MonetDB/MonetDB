@@ -39,7 +39,7 @@ print_indent( mvc *sql, int depth)
 	int i;
 
 	(void)sql;
-	depth *= 4; /* tab stop 4 */
+	depth *= 1; /* tab stop 1 */
 	if (depth > LINESIZE)
 		depth = LINESIZE;
 	for(i=0; i<depth; i++){
@@ -85,6 +85,12 @@ exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias)
 		printf(", ");
 		exp_print(sql, e->r, depth, 0, 0);
 	 	break;
+	case e_convert: {
+		printf("convert( ");
+		exp_print(sql, e->l, depth, 0, 0);
+		printf(") ");
+	 	break;
+	}
 	case e_atom: {
 		if (e->l) {
 			atom *a = e->l;
@@ -94,13 +100,22 @@ exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias)
 			else
 				printf("%s", s);
 			_DELETE(s);
-		} else {
-			printf("A%d", e->flag);
+		} else { /* variables */
+			if (e->r) { /* named parameters */
+				char *name = e->r;
+				printf("%s", name);
+			} else { /* numbered arguments */
+				printf("A%d", e->flag);
+			}
 		}
 	} 	break;
 	case e_func: {
-		sql_subfunc *f = e->f;
-		printf("'%s' ", f->func->base.name );
+		if (!e->flag) {
+			sql_subfunc *f = e->f;
+			printf("'%s' ", f->func->base.name );
+		} else { /* internal function, needed for next value of */
+			printf("'func_%d' ", e->flag );
+		}
 		exps_print( sql, e->l, depth, alias);
 	} 	break;
 	case e_aggr: {
@@ -117,6 +132,8 @@ exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias)
 		if (e->l)
 			printf("%s.", (char*)e->l);
 		printf("%s", (char*)e->r);
+		if (e->name && strcmp(e->name, e->r)==0)
+			alias = 0;
 	 	break;
 	case e_cmp: 
 		exp_print(sql, e->l, depth+1, 0, 0);
@@ -194,6 +211,8 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 		print_indent(sql, depth);
 		printf(")");
 		exps_print(sql, rel->exps, depth, 0);
+		if (rel->name)
+			printf(" as %s", rel->name);
 		break;
 	case op_project:
 	case op_select: 
@@ -218,14 +237,16 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 			print_indent(sql, depth);
 			printf(")");
 		}
-		exps_print(sql, rel->exps, depth, 1);
-		if (rel->r && rel->op == op_groupby) { /* group by aggrs */
+		if (rel->r && rel->op == op_groupby) { /* group by columns */
 			exps_print(sql, rel->r, depth, 1);
 		}
+		exps_print(sql, rel->exps, depth, 1);
 		if (rel->name)
 			printf(" as %s", rel->name);
 		break;
 	default:
 		printf("todo: print %d\n", rel->op);
 	}
+	if (!depth)
+		printf("\n");
 }

@@ -175,10 +175,19 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_DECLARE:
 	case SQL_SET:
 
-	case SQL_PREP:
 	case SQL_MULSTMT:
 		/*return sql_error(sql, 02, "Not implemented");*/
 		return NULL;
+	case SQL_PREP:
+	{
+		dnode *d = s->data.lval->h;
+		symbol *sym = d->data.sym;
+		sql_rel *r = rel_semantic(sql, sym);
+
+		if (!r) 
+			return NULL;
+		return r;
+	}
 
 	case SQL_SELECT:
 	case SQL_JOIN:

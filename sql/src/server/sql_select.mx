@@ -241,8 +241,8 @@ sql_column_ref(mvc *sql, scope *scp, symbol *column_r)
 			return stmt_mirror(stmt_dup(cv->s));
 		} else if (!(cs = scope_bind(scp, NULL, name))) {
 			/* maybe simple param */
-			cs = sql_bind_param(sql, name);
-			if (!cs) {
+			sql_arg *a = sql_bind_param(sql, name);
+			if (!a) {
 				char *v, *t;
 				sql_subtype tpe;
 
@@ -253,6 +253,8 @@ sql_column_ref(mvc *sql, scope *scp, symbol *column_r)
 					return sql_error(sql, 02, "could not find type %s", t);
 
 				cs = stmt_atom(atom_general(&tpe, _strdup(v), 1));
+			} else {
+				cs = stmt_var(a->name, &a->type);
 			}
 		}
 	} else if (dlist_length(l) == 2) {
@@ -965,7 +967,7 @@ sql_unop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
 			stmt *res;
 			sql_arg *a = f->func->ops->h->data;
 
-			sql_add_param(sql, _strdup(a->name), rs);
+			sql_add_param(sql, a->name, rt);
 
 			res = sqlparse_intern(sql, f->func->imp);
 			sql_subfunc_destroy(f);
@@ -1124,14 +1126,13 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 	}
 	case SQL_PARAMETER:{
 		char n[BUFSIZ];
-		stmt *s;
 
-		if (sql->mode != m_prepare) {
+		if (sql->mode != m_prepare) 
 			return sql_error(sql, 02, "cannot have parameters (?) in normal queries, use PREPARE;");
-		}
-		snprintf(n, BUFSIZ, "A%d", (sql->params)?list_length(sql->params):0);
-		sql_add_param(sql, _strdup(n), s = stmt_var(_strdup(n), NULL));
-		return stmt_dup(s);
+		snprintf(n, BUFSIZ, "A%d", 
+			(sql->params)?list_length(sql->params):0);
+		sql_add_param(sql, n, NULL);
+		return stmt_var(_strdup(n), NULL);
 	}
 	case SQL_NULL:
 		return stmt_atom(atom_general(sql_bind_localtype("str"), NULL, 0));
@@ -1168,7 +1169,6 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 	case SQL_CAST:
 		return sql_cast(sql, scp, se, grp, subset, f);
 	case SQL_CASE:
-		return sql_case_exp(sql, scp, se, grp, subset, f);
 	case SQL_COALESCE:
 	case SQL_NULLIF:
 		return sql_case_exp(sql, scp, se, grp, subset, f);
@@ -2447,7 +2447,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 			e = stmt_atom_string(_strdup(es));
 		}
 		if (!tail_type(a)) {
-			if (set_type_param(st, a) == -1) {
+			if (stmt_set_type_param(sql, st, a) == -1) {
 				stmt_destroy(ls);
 				stmt_destroy(a);
 				return sql_error(sql, 02, "wrong type used with LIKE statement, should be string");

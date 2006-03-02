@@ -46,6 +46,7 @@ extern void monet4_parse(backend_stack stk, char *code);
 
 extern int sqlstatement(char *cmd, Cntxt stk);
 extern int mvc_sql(mvc *c, str query);
+extern ptr sql_frontend(void);
 
 #endif /*_SQL_SESSION_H_*/
 @c
@@ -144,10 +145,14 @@ sql_symbol2stmt(mvc *c)
 		printf("# semantic relational algebra\n");
 		r = rel_semantic(c, c->sym);
 		if (!r) {
-			if (c->errstr[0])
+			if (c->errstr[0]) {
 				printf("# %s\n", c->errstr);
-			printf("# falling back to direct mode \n");
-			s = semantic(c, c->sym);
+				return NULL;
+			} else {
+				c->status = 0;
+				printf("# falling back to direct mode \n");
+				s = semantic(c, c->sym);
+			}
 		} else {
 			s = rel_bin(c, r);
 			if (s){
@@ -799,20 +804,19 @@ sql_client_free(mapi_client *fc)
 	mvc_destroy(m);
 }
 
-int
-sql_frontend( ptr *F )
+ptr
+sql_frontend(void)
 {
 	char *m_clients = GDKgetenv("mapi_clients"); 
 	int nr = (m_clients)?strtol(m_clients, NULL, 10):1;
 	mapi_frontend *f = (mapi_frontend*)GDKmalloc(sizeof(mapi_frontend));
-	*F = f;
 	f->name = GDKstrdup("sql");
 	f->cache_limit = nr;
 	f->f_alloc = sql_client_alloc;
 	f->f_init  = sql_client_init;
 	f->f_free  = sql_client_free;
 	f->f_engine  = sql_client_engine; /* read/parse/execute loop */
-	return GDK_SUCCEED;
+	return (ptr)f;
 }
 
 

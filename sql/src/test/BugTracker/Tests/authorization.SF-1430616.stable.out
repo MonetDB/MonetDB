@@ -31,8 +31,8 @@ Operation successful
 +---------+---------------+----------------+
 | name    | fullname      | default_schema |
 +=========+===============+================+
-| monetdb | MonetDB Admin |           4261 |
-| voc     | VOC Explorer  |           4261 |
+| monetdb | MonetDB Admin |           4391 |
+| voc     | VOC Explorer  |           4391 |
 +---------+---------------+----------------+
 2 rows
 
@@ -47,7 +47,7 @@ Operation successful
 
 Welcome to the MonetDB interactive JDBC terminal!
 Database: MonetDB 4.11.1
-Driver: MonetDB Native Driver 1.3 (Spur_devel 20060123)
+Driver: MonetDB Native Driver 1.3 (Spur_devel 20060214)
 Type \q to quit, \h for a list of available commands
 auto commit mode: on
 voc-> 

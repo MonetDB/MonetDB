@@ -34,7 +34,7 @@ for the time being.
 	.ATOM mvc = ptr;
 	.END;
 
-	.COMMAND sql_frontend() : ptr = sql_frontend;
+	.BUILTIN sql_frontend() : ptr = sql_frontend_wrap;
 		"create/return the sql_frontend"
 
 @+ extra low level interface 
@@ -60,9 +60,6 @@ in the user context and should be provided to all commands.
 No sanity check is performed on its validity and authorized
 access after being logged in.
 @m
-	.BUILTIN mvc_init(int debug) = mvc_init_wrap; 
-		"create the global catalog"
-
 	.COMMAND mvc_sql( mvc m, str cmd ) = mvc_sql_wrap;
 		"execute a sql query"
 
@@ -294,17 +291,14 @@ monet4_freecode(backend_code code, backend_stack stk, int nr, char *name)
 }
 
 int
-mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
+sql_frontend_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 {
 	Client father = NULL;
-	int *Debug = NULL, **D = &Debug;
 
-	if (lt->cnt != 1) {
-		return handle_argerror(res, lt->cnt, 1);
-	}
-	builtin_operand(stk, lt, 0, (ptr *) D, TYPE_int, res);
+	if (lt->cnt != 0) 
+		return handle_argerror(res, lt->cnt, 0);
+
 	backend_init(&monet4_freestack, &monet4_freecode, &monet4_parse);
-
 	CNTXTclient(stk, &father);
 	if (father && father->father >= 0) {
 		/* if the father itself is a temporary client, let
@@ -315,9 +309,11 @@ mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 	}
 	if (father)
 		stk = father->stk;
-	if (mvc_init(*Debug, (backend_stack) stk) < 0) {
+	if (mvc_init(0, (backend_stack) stk) < 0) {
 		return GDK_FAIL;
 	}
+	res->vtype = TYPE_ptr;
+	res->val.pval = (ptr) sql_frontend();
 	return GDK_SUCCEED;
 }
 
@@ -1092,20 +1088,23 @@ proc sql_diff (bat[any::1,any::2] b1, bat[any::1,any::3] b2) : bat[any::1,any::2
 }
 
 proc sql_union (bat[any::1,any::2] b1, bat[any::1,any::2] b2) : bat[any::1,any::2] {
-	if (count(b1) = 0)
-		return b2;
-	if (count(b2) > 0)
+#	if (count(b1) = 0)
+#		return b2;
+#	if (count(b2) > 0)
 		return kunion(b1,b2);
-	return b1;
+#	return b1;
 }
 
+proc in (bat[any::1,any::2] b, any::2 v) : bit { return b.reverse().exist(v); }
+proc in (any::2 b, any::2 v) : bit { return (b = v); }
+
 proc sql_server_start(bit global) : void {
-	var err := CATCH( mvc_init(int(monet_environment.find("sql_debug"))) );
-
 	tzone_local(TIMEZONE("GMT"));
+	var fc := nil;
 
-	if (isnil(err)){
-		mapi_register(sql_frontend());
+	var err := CATCH({ fc := sql_frontend(); });
+	if (isnil(err)) {
+		mapi_register(fc);
 
 		fork(sqllogmanager());
 

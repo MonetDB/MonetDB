@@ -351,10 +351,6 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 
 				len = snprintf(buf, buflen, "var s%d := %s;\n", -s->nr, s->op1.sval);
 				assert(len <= buflen);
-				/* This is necessary because named st_var's are 
-				 * also stored in the mvc param list 
-				 */
-				backend_dec_nr2(s);
 			} else {
 				size_t buflen = 32;
 				buf = NEW_ARRAY(char, buflen + 1);
@@ -1366,9 +1362,9 @@ backend_dumpproc(backend *be, cq *q, stmt *s)
 		int argc = 0;
 
 		for (n = be->mvc->params->h; n; n = n->next, argc++) {
-			var_ *v = n->data;
+			sql_arg *a = n->data;
 
-			i += snprintf(buf + i, BUFSIZ - i, "%s A%d%c", tail_type(v->s)->type->base.name, argc, (n->next) ? ',' : ' ');
+			i += snprintf(buf + i, BUFSIZ - i, "%s A%d%c", a->type.type->base.name, argc, (n->next) ? ',' : ' ');
 		}
 	}
 	i += snprintf(buf + i, BUFSIZ - i, ") : void \n");

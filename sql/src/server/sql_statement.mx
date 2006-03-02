@@ -158,6 +158,7 @@ extern stmt *stmt_var(char *varname, sql_subtype *t);
 extern stmt *stmt_varnr(int nr, sql_subtype *t);
 extern stmt *stmt_update_var(char *varname);
 extern stmt *stmt_seq_next(char *seqname);
+extern stmt *stmt_internal(int st, list *ops);
 
 extern stmt *stmt_basetable(sql_table *t, char *tname);
 
@@ -790,6 +791,19 @@ stmt_seq_next(char *seqname)
 	stmt *s = stmt_create(st_seq_next);
 
 	s->op1.stval = stmt_atom_string(seqname);
+	s->key = 1;
+	return s;
+}
+
+stmt *
+stmt_internal(int st, list *ops)
+{
+	stmt *s = stmt_create(st);
+	int len = list_length(ops);
+
+	if (len >= 1) s->op1.stval = stmt_dup(ops->h->data);
+	if (len >= 2) s->op2.stval = stmt_dup(ops->h->next->data);
+	if (len >= 3) s->op3.stval = stmt_dup(ops->h->next->next->data);
 	s->key = 1;
 	return s;
 }
@@ -1736,6 +1750,7 @@ tail_type(stmt *st)
 	case st_const:
 	case st_join:
 	case st_outerjoin:
+	case st_insert:
 		return tail_type(st->op2.stval);
 	case st_reljoin:
 		/* The tail type of a reljoin is the head of the second list!,
@@ -2113,8 +2128,8 @@ schema_name(stmt *st)
 	case st_op:
 		return NULL;
 	case st_alias:
-		/* TODO... */
-		return schema_name(st->op3.stval);
+		/* there are no schema aliases, ie look into the base column */
+		return schema_name(st->op1.stval);
 	case st_bat:
 		return _strdup(st->op1.cval->t->s->base.name);
 	case st_atom:
