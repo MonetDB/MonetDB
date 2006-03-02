@@ -1,5 +1,4 @@
 # The first reference case for fast cracking
-
 include microbenchmark;
 
 tuples:= 64*1024; #67108864= 64* 1024*1024
@@ -8,6 +7,8 @@ b:= microbenchmark.uniform(0@0,tuples,tuples);
 size:= bat.getBatSize(b);
 io.printf("# tuples %d\n",tuples);
 io.printf("# BAT size %d\n",size);
+
+crackers.new(b);
 
 barrier (go,i):= (true,0);
     low:int:= mmath.rand();
@@ -22,4 +23,6 @@ t1:= alarm.usec();
 	io.print(low,hgh,time);
     redo (go,i):= mal.nextElement(1,25);
 exit (go,i);
+
+crackers.destroy(b);
 
