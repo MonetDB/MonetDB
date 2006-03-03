@@ -200,8 +200,8 @@ cracking, and focus on cracking a complete BAT, returning the cracked BAT.
 @= crack
 command zcrack_@1 (b:bat[:oid,:@3], mid:@3) :bat[:oid,:@3]
 address CRKcrackZero_@1_@3
-comment "Break a BAT into three pieces with
-	 tail<mid, tail==mid, tail>mid,
+comment "Break a BAT into two pieces with
+	 tail<=mid, tail>mid,
 	 respectively. (By @2.)";
 
 command crack_@1 (b:bat[:oid,:@3], mid:@3) :bat[:oid,:@3]
@@ -216,10 +216,30 @@ comment "Break a BAT into five pieces with
 	 tail<low, tail==low, low<tail<hgh, tail==hgh, tail>hgh,
 	 respectively. (By @2.)";
 @
+@= crack_validate
+command zcrack_validate (b:bat[:oid,:@1], mid:@1) :bit
+address CRKcrackZero_validate_@1
+comment "Validate whether a BAT is correctly broken into two pieces with
+	 tail<=mid, tail>mid,
+	 respectively.";
+
+command crack_validate (b:bat[:oid,:@1], mid:@1) :bit
+address CRKcrackOne_validate_@1
+comment "Validate whether a BAT is correctly broken into three pieces with
+	 tail<mid, tail==mid, tail>mid,
+	 respectively.";
+
+command crack_validate (b:bat[:oid,:@1], low:@1, hgh:@1) :bit
+address CRKcrackTwo_validate_@1
+comment "Validate whether a BAT is correctly broken into five pieces with
+	 tail<low, tail==low, low<tail<hgh, tail==hgh, tail>hgh,
+	 respectively.";
+@
 @mal
 @:crack(SI,Stratos Idreos,int)@
 @:crack(MK,Martin Kersten,int)@
 @:crack(SM,Stefan Manegold,int)@
+@:crack_validate(int)@
 @-
 @{
 @include prelude.mx
@@ -463,6 +483,7 @@ CRKdestroy(int *cret, int *bid)
 	m = findCrackMap(*bid);
 	if( m < 0)
 		return throwMessage("crackers.destroy", "Unknown cracked BAT");
+	freeCrackMap(m);
 	return MAL_SUCCEED;
 }
 
@@ -2306,54 +2327,257 @@ CRKcrackTwo_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	*res = *bid;
 	return msg;
 }
+@
 
+@= SM_operations
+@:SM_operation_Zero(@1)@
+@:SM_operation_One(@1)@
+@:SM_operation_Two(@1)@
+@
+@= CRKcrackZero_SM_advance
+	while (bn_s < bn_l && *(@1*)tl_s <= mid) {
+		bn_s += bs;
+		tl_s += bs;
+	}
+	while (bn_l > bn_s && *(@1*)tl_l > mid) {
+		bn_l -= bs;
+		tl_l -= bs;
+	}
+@= SM_operation_Zero
 str
-CRKcrackZero_SM_@1 (int *res, int *bid, @1 *mid)
+CRKcrackZero_SM_@1 (int *res, int *bid, @1 *_mid)
 {
 	BAT *b;
+	BUN bn_s, bn_l, fst_bn, lst_bn, fst_tl, lst_tl, tl_s, tl_l;
+	int bs;
+	@1 mid=*_mid;
 
+	/* initialization */
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("crackers.crack_SM", "Cannot access descriptor");
+		return throwMessage("crackers.zcrack_SM", "Cannot access descriptor");
+	}
+	bs = BUNsize(b);
+	fst_bn = BUNfirst(b);
+	lst_bn = BUNlast(b);
+	fst_tl = BUNtloc(b, fst_bn);
+	lst_tl = BUNtloc(b, lst_bn);
+	bn_s = fst_bn;
+	tl_s = fst_tl;
+	bn_l = lst_bn-bs;
+	tl_l = lst_tl-bs;
+
+	/* advance cursors, skipping over BUNs that are already in the right place */
+	@:CRKcrackZero_SM_advance(@1)@
+	
+	/* re-shuffel BUNs */
+	while (bn_s < bn_l) {
+		/* swap BUNs */
+		oid *hd_s  = (oid*)BUNhloc(b, bn_s);
+		oid *hd_l  = (oid*)BUNhloc(b, bn_l);
+		oid h      = *hd_s;
+		@1  t      = *(@1*)tl_s;
+		*hd_s      = *hd_l;
+		*(@1*)tl_s = *(@1*)tl_l;
+		*hd_l      = h;
+		*(@1*)tl_l = t;
+		bn_s += bs;
+		tl_s += bs;
+		bn_l -= bs;
+		tl_l -= bs;
+		
+		/* advance cursors, skipping over BUNs that are already in the right place */
+		@:CRKcrackZero_SM_advance(@1)@
 	}
 
-	(void)mid;
+	/* final sanity check */
+	assert(bn_s >= bn_l);
 
-	BBPunfix(b->batCacheid);
+	BBPkeepref(b->batCacheid);
 	*res = *bid;
 	return MAL_SUCCEED;
 }
+@
+@= CRKcrackOne_SM_advance
+	while (bn_@2 < bn_@2x && *(@1*)BUNtloc(b, bn_@2) @3 mid)
+		bn_@2 += bs;
+@= CRKcrackOne_SM_advance_se
+	@:CRKcrackOne_SM_advance(@1,s,< )@
+	@:CRKcrackOne_SM_advance(@1,e,==)@
+@= CRKcrackOne_SM_advance_sl
+	@:CRKcrackOne_SM_advance(@1,s,< )@
+	@:CRKcrackOne_SM_advance(@1,l,> )@
+@= CRKcrackOne_SM_advance_el
+	@:CRKcrackOne_SM_advance(@1,e,==)@
+	@:CRKcrackOne_SM_advance(@1,l,> )@
+@= CRKcrackOne_SM_advance_sel
+	@:CRKcrackOne_SM_advance(@1,s,< )@
+	@:CRKcrackOne_SM_advance(@1,e,==)@
+	@:CRKcrackOne_SM_advance(@1,l,> )@
+@
+@= CRKcrackOne_SM_swap_BUNs
+	oid *h_@2 = (oid*)BUNhloc(b, bn_@2);
+	@1  *t_@2 = (@1 *)BUNtloc(b, bn_@2);
+	oid *h_@3 = (oid*)BUNhloc(b, bn_@3);
+	@1  *t_@3 = (@1 *)BUNtloc(b, bn_@3);
+	oid h = *h_@2;
+	*h_@2 = *h_@3;
+	*t_@2 = @3;
+	*h_@3 = h;
+	*t_@3 = @2;
+	bn_@2 += bs;
+	bn_@3 += bs;
+@
+@= CRKcrackOne_SM_shift_BUNs
+	oid *h_@2 = (oid*)BUNhloc(b, bn_@2);
+	@1  *t_@2 = (@1 *)BUNtloc(b, bn_@2);
+	oid *h_@3 = (oid*)BUNhloc(b, bn_@3);
+	@1  *t_@3 = (@1 *)BUNtloc(b, bn_@3);
+	oid *h_@4 = (oid*)BUNhloc(b, bn_@4);
+	@1  *t_@4 = (@1 *)BUNtloc(b, bn_@4);
+	oid h = *h_@2;
+	*h_@2 = *h_@3;
+	*t_@2 = @3;
+	*h_@3 = *h_@4;
+	*t_@3 = @4;
+	*h_@4 = h;
+	*t_@4 = @2;
+	bn_@2 += bs;
+	bn_@3 += bs;
+	bn_@4 += bs;
+@
+@= CRKcrackOne_SM_finish_swap
+	while (bn_@2 < bn_@2x && bn_@4 < bn_@4x) {
+		@1 @2 = *(@1*)BUNtloc(b, bn_@2);
+		@1 @4 = *(@1*)BUNtloc(b, bn_@4);
+		assert (@2 @3 mid && @4 @5 mid);
+		@:CRKcrackOne_SM_swap_BUNs(@1,@2,@4)@
+		@:CRKcrackOne_SM_advance_@2@4(@1)@
+	}
+@
+@= SM_operation_One
 str
-CRKcrackOne_SM_@1 (int *res, int *bid, @1 *mid)
+CRKcrackOne_SM_@1 (int *res, int *bid, @1 *_mid)
 {
 	BAT *b;
+	BUN bn_s, bn_e, bn_l, bn_sx, bn_ex, bn_lx, fst_bn, lst_bn, fst_tl, lst_tl, ts, te, tl;
+	int bs;
+	@1 mid=*_mid;
+	size_t smaller=0, equal=0, larger=0;
 
+	/* initialization */
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("crackers.crack_SM", "Cannot access descriptor");
 	}
+	bs = BUNsize(b);
+	fst_bn = BUNfirst(b);
+	lst_bn = BUNlast(b);
+	fst_tl = BUNtloc(b, fst_bn);
+	lst_tl = BUNtloc(b, lst_bn);
+	bn_s  = fst_bn;
+	bn_lx = lst_bn;
+	
+	/* count partition sizes */
+	for (tl = lst_tl - bs; tl >= fst_tl && *(@1*)tl > mid; tl -= bs) {
+		larger++;
+		bn_lx -= bs;
+	}
+	for (ts = fst_tl; ts <= tl && *(@1*)ts < mid; ts += bs) {
+		smaller++;
+		bn_s += bs;
+	}
+	for (te = ts; te <= tl; te += bs) {
+		smaller += (*(@1*)te < mid);
+		larger  += (*(@1*)te > mid);
+	}
+	assert(smaller + larger <= BATcount(b));
+	equal = BATcount(b) - smaller - larger;
+	
+	/* set partition-cursors bn_? and -boundaries bn_?x */
+	bn_e = bn_sx = fst_bn + (smaller * bs);
+	bn_l = bn_ex = bn_e   + (equal   * bs);
+	assert(fst_bn <= bn_s);
+	assert(bn_s <= bn_sx);
+	assert(bn_e <= bn_ex);
+	assert(bn_l <= bn_lx);
+	assert(bn_lx <= lst_bn);
 
-	(void)mid;
+	/* advance cursors, skipping over BUNs that are already in the right place */
+	@:CRKcrackOne_SM_advance_sel(@1)@
 
-	BBPunfix(b->batCacheid);
+	/* re-shuffel BUNs between the three partitions until one partition is ready */
+	while (bn_s < bn_sx && bn_e < bn_ex && bn_l < bn_lx) {
+		@1 s = *(@1*)BUNtloc(b, bn_s);
+		@1 e = *(@1*)BUNtloc(b, bn_e);
+		@1 l = *(@1*)BUNtloc(b, bn_l);
+
+		/* first try to simply swap two BUNs */
+		if (s == mid && e < mid) {
+			@:CRKcrackOne_SM_swap_BUNs(@1,s,e)@
+		} else 
+		if (s > mid && l < mid) {
+			@:CRKcrackOne_SM_swap_BUNs(@1,s,l)@
+		} else 
+		if (e > mid && l == mid) {
+			@:CRKcrackOne_SM_swap_BUNs(@1,e,l)@
+		} else 
+
+		/* simply swaping two BUNs is not possible;  */
+		/* hence, we have to shift/rotate three BUNs */
+		if (s == mid && e > mid && l < mid) {
+			@:CRKcrackOne_SM_shift_BUNs(@1,l,e,s)@
+		} else 
+		if (s > mid && e < mid && l == mid) {
+			@:CRKcrackOne_SM_shift_BUNs(@1,s,e,l)@
+		} else {
+			/* sanity check: we must never come here! */
+			assert(0);
+		}
+		/* advance cursors, skipping over BUNs that are already in the right place */
+		@:CRKcrackOne_SM_advance_sel(@1)@
+	}
+
+	/* one partition is ready;     */
+	/* we finish the remaining two */
+	@:CRKcrackOne_SM_finish_swap(@1,s,==,e,< )@
+	@:CRKcrackOne_SM_finish_swap(@1,s,> ,l,< )@
+	@:CRKcrackOne_SM_finish_swap(@1,e,> ,l,==)@
+
+	/* final sanity check */
+	assert(bn_s >= bn_sx);
+	assert(bn_e >= bn_ex);
+	assert(bn_l >= bn_lx);
+
+	BBPkeepref(b->batCacheid);
 	*res = *bid;
 	return MAL_SUCCEED;
 }
-
+@
+@= SM_operation_Two
 str
 CRKcrackTwo_SM_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 {
 	BAT *b;
 
+	/* initialization */
 	if (*(@1 *) low > *(@1 *) hgh)
 		return throwMessage("crackers.crack_SM", "illegal range");
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("crackers.crack_SM", "Cannot access descriptor");
 	}
 
-	BBPunfix(b->batCacheid);
+	/* FAKE */
+	b = BATorder(b);
+	if (b == NULL) {
+		return throwMessage("crackers.crack_SM", "BATorder failed");
+	}
+
+	BBPkeepref(b->batCacheid);
 	*res = *bid;
 	return MAL_SUCCEED;
 }
+@
 
+@= SI_operations
 str
 CRKcrackZero_SI_@1 (int *res, int *bid, @1 *mid)
 {
@@ -2522,6 +2746,173 @@ CRKcrackTwo_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	return MAL_SUCCEED;
 }
 @
+
+@= validate_operations
+@:validate_operation_Zero(@1)@
+@:validate_operation_One(@1)@
+@:validate_operation_Two(@1)@
+@
+@= validate_operation_Zero
+str
+CRKcrackZero_validate_@1 (bit *res, int *bid, @1 *_mid)
+{
+	BAT *b;
+	BUN bn, fst_bn, lst_bn, fst_tl, lst_tl, tl;
+	int bs;
+	size_t count[2] = {0,0};
+	@1 mid=*_mid;
+
+	/* initialization */
+	*res = FALSE;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.zcrack_validate", "Cannot access descriptor");
+	}
+	bs = BUNsize(b);
+	fst_bn = BUNfirst(b);
+	lst_bn = BUNlast(b);
+	fst_tl = BUNtloc(b, fst_bn);
+	lst_tl = BUNtloc(b, lst_bn);
+	bn = fst_bn;
+	tl = fst_tl;
+
+	while (bn < lst_tl && *(@1*)tl <= mid) {
+		bn += bs;
+		tl += bs;
+		count[0]++;
+	}
+	while (bn < lst_tl && *(@1*)tl > mid) {
+		bn += bs;
+		tl += bs;
+		count[1]++;
+	}
+	
+	if (count[0] + count[1] < BATcount(b)) {
+		printf("|b|="SZFMT" ; |tail<=mid|="SZFMT", |tail>mid|="SZFMT" !\n",
+		       BATcount(b), count[0], count[1]);
+		return throwMessage("crackers.zcrack_validate", "Invalid crack");
+	}
+
+	BBPunfix(b->batCacheid);
+	*res = TRUE;
+	return MAL_SUCCEED;
+}
+@
+@= validate_operation_One
+str
+CRKcrackOne_validate_@1 (int *res, int *bid, @1 *_mid)
+{
+	BAT *b;
+	BUN bn, fst_bn, lst_bn, fst_tl, lst_tl, tl;
+	int bs;
+	size_t count[3] = {0,0};
+	@1 mid=*_mid;
+
+	/* initialization */
+	*res = FALSE;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_validate", "Cannot access descriptor");
+	}
+	bs = BUNsize(b);
+	fst_bn = BUNfirst(b);
+	lst_bn = BUNlast(b);
+	fst_tl = BUNtloc(b, fst_bn);
+	lst_tl = BUNtloc(b, lst_bn);
+	bn = fst_bn;
+	tl = fst_tl;
+
+	while (bn < lst_tl && *(@1*)tl < mid) {
+		bn += bs;
+		tl += bs;
+		count[0]++;
+	}
+	while (bn < lst_tl && *(@1*)tl == mid) {
+		bn += bs;
+		tl += bs;
+		count[1]++;
+	}
+	while (bn < lst_tl && *(@1*)tl > mid) {
+		bn += bs;
+		tl += bs;
+		count[2]++;
+	}
+	
+	if (count[0] + count[1] + count[2] < BATcount(b)) {
+		printf("|b|="SZFMT" ; |tail<mid|="SZFMT", |tail==mid|="SZFMT", |tail>mid|="SZFMT" !\n",
+		       BATcount(b), count[0], count[1], count[2]);
+		return throwMessage("crackers.crack_validate", "Invalid crack");
+	}
+
+	BBPunfix(b->batCacheid);
+	*res = TRUE;
+	return MAL_SUCCEED;
+}
+@
+@= validate_operation_Two
+str
+CRKcrackTwo_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
+{
+	BAT *b;
+	BUN bn, fst_bn, lst_bn, fst_tl, lst_tl, tl;
+	int bs;
+	size_t count[5] = {0,0};
+	@1 low=*_low, hgh=*_hgh;
+
+	/* initialization */
+	*res = FALSE;
+	if (low > hgh) {
+		return throwMessage("crackers.crack_SI", "illegal range");
+	}
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_validate", "Cannot access descriptor");
+	}
+	bs = BUNsize(b);
+	fst_bn = BUNfirst(b);
+	lst_bn = BUNlast(b);
+	fst_tl = BUNtloc(b, fst_bn);
+	lst_tl = BUNtloc(b, lst_bn);
+	bn = fst_bn;
+	tl = fst_tl;
+
+	while (bn < lst_tl && *(@1*)tl < low) {
+		bn += bs;
+		tl += bs;
+		count[0]++;
+	}
+	while (bn < lst_tl && *(@1*)tl == low) {
+		bn += bs;
+		tl += bs;
+		count[1]++;
+	}
+	while (bn < lst_tl && *(@1*)tl > low && *(@1*)tl < hgh) {
+		bn += bs;
+		tl += bs;
+		count[2]++;
+	}
+	while (bn < lst_tl && *(@1*)tl == hgh) {
+		bn += bs;
+		tl += bs;
+		count[3]++;
+	}
+	while (bn < lst_tl && *(@1*)tl > hgh) {
+		bn += bs;
+		tl += bs;
+		count[4]++;
+	}
+	
+	if (count[0] + count[1] + count[2] + count[3] + count[4] < BATcount(b)) {
+		printf("|b|="SZFMT" ; |tail<low|="SZFMT", |tail==low|="SZFMT", |low<tail<hgh|="SZFMT", |tail==hgh|="SZFMT", |tail>hgh|="SZFMT" !\n",
+		       BATcount(b), count[0], count[1], count[2], count[3], count[4]);
+		return throwMessage("crackers.crack_validate", "Invalid crack");
+	}
+
+	BBPunfix(b->batCacheid);
+	*res = TRUE;
+	return MAL_SUCCEED;
+}
+@
 @c
 @:MK_operations(int)@
+@:SM_operations(int)@
+@:SI_operations(int)@
+@:validate_operations(int)@
 @}
