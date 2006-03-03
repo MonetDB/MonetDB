@@ -2403,7 +2403,7 @@ CRKcrackONE_SI_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 	Walk from the first BUN as long as values are < low or > hgh and can be 
 	exchanged with a value from the end of the BUN*/ 
 	
-	nmin=vmin = BUNptr(b, idx_first);
+	vmin = BUNptr(b, idx_first);
 	vmax = BUNptr(b, idx_last);
 	vm = BUNtail(b, vmin);
 	
@@ -2430,12 +2430,15 @@ CRKcrackONE_SI_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
  
 	bl = nmin;
 	vmx = BUNtloc(b, vmax);
-	for (vm = BUNtloc(b, nmin); vm <= vmax;  vm = (ptr) ((char *) vm + xx))
+	for (vm = BUNtloc(b, nmin); vm <= vmx;  vm = (ptr) ((char *) vm + xx))
 		bl = (ptr) ((char *) bl + xx*(*(int *) vm < low));
 			
 	bls = bl;
 	vm = BUNtail(b, nmin);
-				
+	
+	/* Now for each value that is >hgh if a middle value m occurs in vmax we can save a redudant exchange by seaching 
+	in the middle partition. There middle values are ignored and  a high value is  exchanged with m. 
+	Similarly when a middle value occurs */  			
 	for (p = nmin; p < vmax; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)) {
 
 		if (p >= bls){  
