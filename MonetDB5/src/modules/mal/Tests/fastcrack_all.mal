@@ -37,15 +37,15 @@ barrier (go,i):= (true,0);
 	redo go := low>hgh;
 	io.print(mid,low,hgh);
 
-	b:=algebra.copy(b0);
-t0:= alarm.usec();
-	c:=crackers.crack(b,mid);
-t1:= alarm.usec();
-	time:= t1 - t0;
-	t_Zero_00 := t_Zero_00 + time;
-	v := crackers.zcrack_validate(c,mid);
-	io.print("Zero_00",time,v);
-	crackers.destroy(b);
+#	b:=algebra.copy(b0);
+#t0:= alarm.usec();
+#	c:=crackers.crack(b,mid);
+#t1:= alarm.usec();
+#	time:= t1 - t0;
+#	t_Zero_00 := t_Zero_00 + time;
+#	v := crackers.zcrack_validate(c,mid);
+#	io.print("Zero_00",time,v);
+#	crackers.destroy(b);
 
 	b:=algebra.copy(b0);
 t0:= alarm.usec();
@@ -103,14 +103,14 @@ t1:= alarm.usec();
 	io.print("One_SM",time,v);
 
 
-	b:=algebra.copy(b0);
-t0:= alarm.usec();
-	c:=crackers.crack(b,low,hgh);
-t1:= alarm.usec();
-	time:= t1 - t0;
-	t_Two_00 := t_Two_00 + time;
-	v := crackers.crack_validate(c,low,hgh);
-	io.print("Two_00",time,v);
+#	b:=algebra.copy(b0);
+#t0:= alarm.usec();
+#	c:=crackers.crack(b,low,hgh);
+#t1:= alarm.usec();
+#	time:= t1 - t0;
+#	t_Two_00 := t_Two_00 + time;
+#	v := crackers.crack_validate(c,low,hgh);
+#	io.print("Two_00",time,v);
 
 #	b:=algebra.copy(b0);
 #t0:= alarm.usec();
