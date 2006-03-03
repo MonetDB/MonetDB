@@ -2451,6 +2451,7 @@ CRKcrackONE_SI_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 	in the middle partition. There middle values are ignored and  a high value is  exchanged with m. 
 	Similarly when a middle value occurs */  			
 	for (p = nmin; p < vmax; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)) {
+		if (*(@1*)vm < low) continue;
 		if (p >= bls){  
 			if (*(int *) vm >  hgh){
 				@:move(@1,tmpTmax,vmax,-,>hgh,&& vmax > bl)@
@@ -2458,7 +2459,6 @@ CRKcrackONE_SI_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 					@:exchangeTest(vmax,p,@1)@
 					vmax = (ptr) ((char *) vmax - xx);
 					bl = (ptr) ((char *) bl + xx);
-					
 				}
 			}
 			continue;
@@ -2485,7 +2485,7 @@ CRKcrackONE_SI_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 					} 
 				}       
 			}       
-		} else 
+		}  
 		if (*(int *) vm > hgh) {
 			for (pn = vmax; pn >= bl; pn = (ptr) ((char *) pn - xx), vmax = (ptr) ((char *) vmax - xx)){
 				tmpTmax = *(int *) BUNtail(b, pn);
@@ -2498,6 +2498,7 @@ CRKcrackONE_SI_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 					@:move(@1,tmpTmid,bl,+, >= low && tmpTmid <=  hgh,&& bl < vmax)@
 					if (tmpTmid > hgh){
 						@:exchangeTest(bl,pn,@1)@
+						bl = (ptr) ((char *) bl + xx);	
 					}
 					if (tmpTmid < low){
 						@:exchange2Test(pn,bl,p,@1)@
