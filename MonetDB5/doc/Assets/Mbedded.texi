@@ -130,20 +130,19 @@ to be linked with a C-program.
 Provided the programming environment have been initialized properly, it
 suffices to prepare the embedded application using
 @example
-gcc myprog.c -o myprog `monetdb-config --cflags --libs`
+gcc myprog.c -o myprog `monetdb5-config --cflags --libs`
 @end example
 
 You might also write a Makefile to build the program as follows.[todo]
 @example
 @verbatim
 CC= gcc
-PREFIX=${MONET5_PREFIX}
-INCLUDE= -I${PREFIX}
-LIBS= -l${PREFIX}/lib/libMbedded.a -lm -lz -lstreams ...
+INCLUDE=`monetdb5-config --cflags`
+LIBS=`monetdb5-config --libs`
 myprog: myprog.o
 	${CC} myprog.o -o myprog ${LIBS}
 myprog.o : myprog.c
-	${CC} -c ${INCLUDES} myprog.c
+	${CC} -c ${INCLUDE} myprog.c
 
 clean: myprog.o
 	rm -f myprog myprog.o
