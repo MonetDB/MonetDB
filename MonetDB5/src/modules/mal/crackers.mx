@@ -2759,7 +2759,7 @@ CRKcrackZero_validate_@1 (bit *res, int *bid, @1 *_mid)
 	BAT *b;
 	BUN bn, fst_bn, lst_bn, fst_tl, lst_tl, tl;
 	int bs;
-	size_t count[2] = {0,0};
+	size_t count[3] = {0,0,0};
 	@1 mid=*_mid;
 
 	/* initialization */
@@ -2785,14 +2785,16 @@ CRKcrackZero_validate_@1 (bit *res, int *bid, @1 *_mid)
 		tl += bs;
 		count[1]++;
 	}
+	count[2] = BATcount(b);
+
+	BBPunfix(b->batCacheid);
 	
-	if (count[0] + count[1] < BATcount(b)) {
+	if (count[0] + count[1] < count[2]) {
 		printf("|b|="SZFMT" ; |tail<=mid|="SZFMT", |tail>mid|="SZFMT" !\n",
-		       BATcount(b), count[0], count[1]);
+		       count[2], count[0], count[1]);
 		return throwMessage("crackers.zcrack_validate", "Invalid crack");
 	}
 
-	BBPunfix(b->batCacheid);
 	*res = TRUE;
 	return MAL_SUCCEED;
 }
@@ -2804,7 +2806,7 @@ CRKcrackOne_validate_@1 (int *res, int *bid, @1 *_mid)
 	BAT *b;
 	BUN bn, fst_bn, lst_bn, fst_tl, lst_tl, tl;
 	int bs;
-	size_t count[3] = {0,0};
+	size_t count[4] = {0,0,0,0};
 	@1 mid=*_mid;
 
 	/* initialization */
@@ -2835,14 +2837,16 @@ CRKcrackOne_validate_@1 (int *res, int *bid, @1 *_mid)
 		tl += bs;
 		count[2]++;
 	}
+	count[3] = BATcount(b);
+
+	BBPunfix(b->batCacheid);
 	
-	if (count[0] + count[1] + count[2] < BATcount(b)) {
+	if (count[0] + count[1] + count[2] < count[3]) {
 		printf("|b|="SZFMT" ; |tail<mid|="SZFMT", |tail==mid|="SZFMT", |tail>mid|="SZFMT" !\n",
-		       BATcount(b), count[0], count[1], count[2]);
+		       count[3], count[0], count[1], count[2]);
 		return throwMessage("crackers.crack_validate", "Invalid crack");
 	}
 
-	BBPunfix(b->batCacheid);
 	*res = TRUE;
 	return MAL_SUCCEED;
 }
@@ -2854,7 +2858,7 @@ CRKcrackTwo_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
 	BAT *b;
 	BUN bn, fst_bn, lst_bn, fst_tl, lst_tl, tl;
 	int bs;
-	size_t count[5] = {0,0};
+	size_t count[6] = {0,0,0,0,0,0};
 	@1 low=*_low, hgh=*_hgh;
 
 	/* initialization */
@@ -2898,10 +2902,13 @@ CRKcrackTwo_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
 		tl += bs;
 		count[4]++;
 	}
+	count[5] = BATcount(b);
+
+	BBPunfix(b->batCacheid);
 	
-	if (count[0] + count[1] + count[2] + count[3] + count[4] < BATcount(b)) {
+	if (count[0] + count[1] + count[2] + count[3] + count[4] < count[5]) {
 		printf("|b|="SZFMT" ; |tail<low|="SZFMT", |tail==low|="SZFMT", |low<tail<hgh|="SZFMT", |tail==hgh|="SZFMT", |tail>hgh|="SZFMT" !\n",
-		       BATcount(b), count[0], count[1], count[2], count[3], count[4]);
+		       count[5], count[0], count[1], count[2], count[3], count[4]);
 		return throwMessage("crackers.crack_validate", "Invalid crack");
 	}
 
