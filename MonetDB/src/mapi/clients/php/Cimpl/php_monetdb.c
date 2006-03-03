@@ -396,11 +396,6 @@ PHP_FUNCTION(monetdb_connect)
 		break;
 	}
 
-	/*
-	printf("MON: Connecting to: hostname=%s port=%d username=%s password=%s language=%s\n",
-	   hostname, port, username, password, language); 
-	*/
-
 	/* Connect to MonetDB server */
 	conn = (phpMonetConn *) emalloc(sizeof(phpMonetConn));
 	conn->first = NULL;
@@ -899,10 +894,7 @@ php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int result_type, int into_o
 	}
 
 	if (into_object) {
-		/* TODO: Darwin thinks this assignment is incompatible; maybe
-		 *       PHP version there is too old?  It also complains about
-		 *       zend_merge_properties which is not defined. */
-		ce = zend_standard_class_def;
+		ce = ZEND_STANDARD_CLASS_DEF_PTR;
 		/* force associative array fetching */
 		result_type = MONETDB_ASSOC;
 	}
