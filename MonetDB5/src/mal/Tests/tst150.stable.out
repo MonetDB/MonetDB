@@ -35,8 +35,8 @@ end sample;	# 8
 #user.sample("hello","world");
 #user.sample("hello",1);
 #
-!ERROR: 'user.sample' undefined in user.main[1]
-!ERROR: 'user.sample' undefined in user.main[2]
+!ERROR: 'user.sample' undefined in user.main[1] _1:bit := user.sample(_2:str, _3:str)
+!ERROR: 'user.sample' undefined in user.main[2] _4:bit := user.sample(_2:str, _5:int)
 function user.main():void;	# 0  (main:void)
     user.sample("hello","world");	# 1  unknown (_1:bit)<-(_2:str)(_3:str)
     user.sample("hello",1);	# 2  unknown (_4:bit)<-(_2:str)(_5:int)

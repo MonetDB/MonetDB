@@ -92,14 +92,15 @@ stdout of test 'no.100` in directory 'tests/BugReports` itself:
 #	mil.line("quit();");
 #	xa_a := quit();
 ##Identifer 'seqbase' mapped to 'bat.setSequenceBase'
-!ERROR: 'batcalc.oid' undefined in user.main[60]
-!ERROR: 'bat.reverse' undefined in user.main[61]
-!ERROR: 'bat.setSequenceBase' undefined in user.main[64]
-!ERROR: 'batcalc.oid' undefined in user.main[67]
-!ERROR: 'bat.reverse' undefined in user.main[68]
-!ERROR: 'batcalc.oid' undefined in user.main[72]
-!ERROR: 'bat.reverse' undefined in user.main[73]
-!ERROR: 'algebra.copy' undefined in user.main[74]
+#
+!ERROR: 'batcalc.oid' undefined in user.main[60] ka_a:any := batcalc.oid(ja_a:bat[:int,:void])
+!ERROR: 'bat.reverse' undefined in user.main[61] la_a:any := bat.reverse(ka_a:any)
+!ERROR: 'bat.setSequenceBase' undefined in user.main[64] na_a:any := bat.setSequenceBase(a:bat[:int,:str], _138:oid)
+!ERROR: 'batcalc.oid' undefined in user.main[67] pa_a:any := batcalc.oid(oa_a:bat[:int,:void])
+!ERROR: 'bat.reverse' undefined in user.main[68] qa_a:any := bat.reverse(pa_a:any)
+!ERROR: 'batcalc.oid' undefined in user.main[72] ta_a:any := batcalc.oid(sa_a:bat[:int,:void])
+!ERROR: 'bat.reverse' undefined in user.main[73] ua_a:any := bat.reverse(ta_a:any)
+!ERROR: 'algebra.copy' undefined in user.main[74] va_a:any := algebra.copy(ua_a:any)
 function user.main():void;	# 0  (main:void)
 # Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_31:str)
 #Predefined code segment 	# 2  (_32:str)

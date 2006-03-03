@@ -45,7 +45,7 @@ stdout of test 'ID.642344` in directory 'tests/BugsViaSourgeforce` itself:
 #	aa_a := varval("bar");
 #	ba_a := print(aa_a);
 #
-!ERROR: 'user.varval' undefined in user.main[25]
+!ERROR: 'user.varval' undefined in user.main[25] aa_a:any := user.varval(_72:str)
 function user.main():void;	# 0  (main:void)
 # Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_31:str)
 #Predefined code segment 	# 2  (_32:str)

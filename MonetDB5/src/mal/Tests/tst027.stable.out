@@ -22,7 +22,7 @@ end test;	# 2
 #c:= bbp.new(:int,:int);
 #user.test("hello",b,c);
 #
-!ERROR: 'user.test' undefined in user.main[3]
+!ERROR: 'user.test' undefined in user.main[3] _4:any := user.test(_5:str, b:bat[:int,:int], c:bat[:int,:int])
 function user.main():void;	# 0  (main:void)
     b := bat.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
     c := bat.new(:int,:int);	# 2 CMDBATnew (c:bat[:int,:int])<-(_2:int)(_2:int)

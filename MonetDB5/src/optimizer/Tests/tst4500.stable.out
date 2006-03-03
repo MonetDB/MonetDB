@@ -159,9 +159,9 @@ end bind;	# 2
 ##	s72 := group.count(s8,s8);
 #io.print(s64,s67,s66,s70,s69);
 #
-!ERROR: 'batcalc.-' undefined in user.main[89]
-!ERROR: 'batcalc.-' undefined in user.main[106]
-!ERROR: 'batcalc.+' undefined in user.main[121]
+!ERROR: 'batcalc.-' undefined in user.main[89] s40:any := batcalc.-(s45:bat[:void,:flt], s43:bat[:void,:int])
+!ERROR: 'batcalc.-' undefined in user.main[106] s51:any := batcalc.-(s55:bat[:void,:flt], s54:bat[:void,:int])
+!ERROR: 'batcalc.+' undefined in user.main[121] s56:any := batcalc.+(s61:bat[:void,:flt], s59:bat[:void,:int])
 function user.main():void;	# 0  (main:void)
 # Beware this is not the correct TPC-1, but a merely a test 	# 1  (_1:str)
     optimizer.setDebug();	# 2 QOTdebugOptimizers (_2:void)
