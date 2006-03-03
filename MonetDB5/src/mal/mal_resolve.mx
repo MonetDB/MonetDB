@@ -655,12 +655,18 @@ In those cases, the detailed analysis is performed upon an actual call.
 @c
 		if( ! isaSignature(p) && !getInstrPtr(mb,0)->polymorphic )  {
 			mb->errors++;
-			if( !silent)
-				GDKerror("'%s%s%s' undefined in %s.%s[%d]\n", 
+			if( !silent) {
+				char errmsg[BUFSIZ];
+				char errsig[BUFSIZ];
+
+				recognizedCall(mb,p,errsig);
+				snprintf(errmsg,BUFSIZ,"'%s%s%s' undefined in %s.%s[%d] %s\n", 
 					(getModuleId(p)?getModuleId(p):""), (getModuleId(p)?".":""),
 					getFunctionId(p), scope->name,
-					getFunctionId(getInstrPtr(mb,0)),getPC(mb,p));
-				p->typechk= TYPE_UNKNOWN;
+					getFunctionId(getInstrPtr(mb,0)),getPC(mb,p), errsig);
+				GDKerror(errmsg);
+			}
+			p->typechk= TYPE_UNKNOWN;
 		} else p->typechk= TYPE_RESOLVED;
 		return;
 	}

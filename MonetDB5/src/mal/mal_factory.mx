@@ -23,18 +23,6 @@ is specified as an ordinary function, but maintains its
 own state between calls, and permits re-entry other than
 by the first statement. 
 
-For simple cases, e.g. implementation of a random function,
-it suffices to ensure that the state is secured between calls.
-But, in a database context there are multiple clients
-active. This means we have to be more precise on the relationship
-between a co-routine and the client for which it works.
-
-The co-routine concept researched in Monet 5 is the notion of a 'factory',
-which consists of 'factory plants' at possibly different locations and
-with different policies to handle client requests.
-Factory management is limited to its owner, which is derived from the module
-in which it is placed. By default Admin is the owner of all modules.
-
 The random generator example is used to illustrate its definition and use.
 @example
 factory random(seed:int,limit:int):int;
@@ -73,7 +61,6 @@ and @code{random()}. This can be defined as follows:
 factory random(seed:int,limit:int):int;
     rnd:=seed;
     lim:= limit;
-    box.deposit(rnd);
 barrier lim;
     LEAVE lim:= lim-1;
     rnd:= rnd*125;
@@ -91,6 +78,18 @@ end random;
 @end example
 
 @- Client support
+For simple cases, e.g. implementation of a random function,
+it suffices to ensure that the state is secured between calls.
+But, in a database context there are multiple clients
+active. This means we have to be more precise on the relationship
+between a co-routine and the client for which it works.
+
+The co-routine concept researched in Monet 5 is the notion of a 'factory',
+which consists of 'factory plants' at possibly different locations and
+with different policies to handle client requests.
+Factory management is limited to its owner, which is derived from the module
+in which it is placed. By default Admin is the owner of all modules.
+
 The factory produces elements for multiple clients.
 Sharing the factory state or even remote processing is 
 up to the factory owner.
@@ -103,17 +102,17 @@ the states.
 A possible implementation would be:
 @example
 factory random(seed:int,clientid:int):int;
-    clt:= new(:int,:int);
-    insert(clt,clientid,seed);
+    clt:= bat.new(:int,:int);
+    bat.insert(clt,clientid,seed);
 barrier always:=true;
-    rnd:= find(clt,clientid);
+    rnd:= algebra.find(clt,clientid);
 catch   rnd; #failed to find client
     insert(clt,clientid,seed);
-    rnd:= find(clt,clientid);
+    rnd:= algebra.find(clt,clientid);
 exit    rnd;
     rnd:= rnd * 125;
     rnd:= rnd % 32676;
-    replace(clt,clientid,rnd);
+    algebra.replace(clt,clientid,rnd);
     yield rnd;
     redo always;
 exit always;
@@ -131,7 +130,7 @@ can be shielded using the factory:
 factory random(seed:int):int;
 barrier always:=true;
     clientid:= factory.getCaller();
-    yield random(seed, clientid);
+    yield user.random(seed, clientid);
     redo always;
 exit always;
 end random;
@@ -149,28 +148,28 @@ by a NIL chunk.
 
 @example
 factory query();
-    Left:= bind("relationA");
-    Right:= bind("relationB");
-    rc:= joinStep(Left,Right);
+    Left:= sql.bind("relationA");
+    Right:= sql.bind("relationB");
+    rc:= sql.joinStep(Left,Right);
 barrier rc!= nil;
-    print(rc);
-    rc:= joinStep(Left,Right);
+    io.print(rc);
+    rc:= sql.joinStep(Left,Right);
     redo rc!= nil;
 exit rc;
 end query;
 
 #nested loop join
-factory joinStep(Left:bat[:any,:any],Right:bat[:any,:any]):bat[:any,:any];
-    lc:= chunkStep(Left);
+factory sql.joinStep(Left:bat[:any,:any],Right:bat[:any,:any]):bat[:any,:any];
+    lc:= chopper.chunkStep(Left);
 barrier outer:= lc != nil;
-    rc:= chunkStep(Right);
+    rc:= chopper.chunkStep(Right);
     barrier inner:= rc != nil;
-        chunk:= join(lc,rc);
+        chunk:= algebra.join(lc,rc);
         yield chunk;
-        rc:= chunkStep(Right);
+        rc:= chopper.chunkStep(Right);
         redo inner:= rc != nil;
     exit inner;
-    lc:= chunkStep(Left);
+    lc:= chopper.chunkStep(Left);
     redo outer:= lc != nil;
 exit outer;
     # we have seen everything
@@ -181,16 +180,16 @@ end joinStep;
 factory chunkStepL(L:bat[:any,:any]):bat[:any,:any];
     i:= 0;
     j:= 20;
-    cnt:= count(L);
+    cnt:= algebra.count(L);
 barrier outer:= j<cnt;
-    chunk:= slice(L,i,j);
+    chunk:= algebra.slice(L,i,j);
     i:= j;
     j:= i+ 20;
     yield chunk;
     redo loop:= j<cnt;
 exit outer;
     # send last portion
-    chunk:= slice(L,i,cnt);
+    chunk:= algebra.slice(L,i,cnt);
     yielD chunk;
     return nil;
 end chunkStep;

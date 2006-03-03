@@ -481,6 +481,7 @@ mal_export void setVarProperty(MalBlkPtr mb, int i, str name, str op, ValPtr cst
 mal_export str fcnClass(InstrPtr p);
 mal_export str fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg);
 mal_export void printInstruction(stream *fd, MalBlkPtr mb, InstrPtr p, int flg);
+mal_export str recognizedCall(MalBlkPtr mb, InstrPtr p, str s);
 mal_export void promptInstruction(stream *fd, MalBlkPtr mb, InstrPtr p, int flg);
 mal_export char *fillTarget(MalBlkPtr mb, InstrPtr p, char *t);
 mal_export str instruction2str(MalBlkPtr mb, InstrPtr p, int hidden);
@@ -2017,6 +2018,49 @@ typechkName(int i)
 		return "";
 	}
 }
+str
+recognizedCall(MalBlkPtr mb, InstrPtr p, str s)
+{
+	int i;
+	str tpe;
+
+	for (i = 0; i < p->retc; i++)
+		if (p->argv[i] >= 0) {
+			str nme;
+			char nmebuf[PATHLENGTH];
+			tpe = getTypeName(getArgType(mb, p, i));
+			if (isTmpVar(mb, getArg(p, i)) || isTypeVar(mb, getArg(p, i))) {
+				snprintf(nmebuf, PATHLENGTH, "%c%d", TMPMARKER, getVarTmp(mb, getArg(p, i)));
+				nme = nmebuf;
+			} else
+				nme = getArgName(mb, p, i);
+			sprintf(s, "%s:%s%s", (nme ? nme : "nil"), tpe, (i?", ":""));
+			advance(s);
+			GDKfree(tpe);
+		}
+	sprintf(s," := %s.%s", getModuleId(p),getFunctionId(p));
+	advance(s);
+	for (i = p->retc; i < p->argc; i++)
+		if (p->argv[i] >= 0) {
+			str nme;
+			char nmebuf[PATHLENGTH];
+
+			tpe = getTypeName(getArgType(mb, p, i));
+			if (isTmpVar(mb, getArg(p, i)) || isTypeVar(mb, getArg(p, i))) {
+				snprintf(nmebuf, PATHLENGTH, "%c%d", TMPMARKER, getVarTmp(mb, getArg(p, i)));
+				nme = nmebuf;
+			} else
+				nme = getArgName(mb, p, i);
+			sprintf(s, "%s:%s, ", (nme ? nme : "nil"), tpe);
+			advance(s);
+			GDKfree(tpe);
+		}
+	advance(s);
+	*s++= ')';
+	*s=0;
+	return s;
+}
+
 str
 hiddenInstructionArgs(MalBlkPtr mb, InstrPtr p, str s)
 {

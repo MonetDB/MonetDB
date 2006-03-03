@@ -410,9 +410,8 @@ int getBarrierEnvelop(MalBlkPtr mb){
 @-
 @node Polymorphic Functions, Commands and Patterns, Function definitions, Function definitions
 @- Polymorphic Functions
-MAL supports functions defined with type variables, i.e.
-polymorphic functions. The type variable is denoted
-by @code{any} and an optional index.
+MAL supports polymorphic functions using type variables.
+The type variable is denoted by @code{any} and an optional index.
 Each time a polymorphic  MAL function is called, the
 symbol table is first inspected for the matching strongly typed
 version.  If non exists, a copy of
@@ -451,11 +450,11 @@ The MAL function body can also be implemented with a C-function.
 They are introduced to the MAL type checker by providing their
 signature and an @code{address} qualifier for linkage.
 
-We distinguish both @code{command} and @code{pattern} MAL blocks.
+We distinguish both @code{command} and @code{pattern} C-function blocks.
 They differ in the information accessible at run time. The @code{command}
 variant calls the underlying C-function, passing pointers to the arguments
 on the MAL runtime stack. The @code{pattern} command is passed pointers
-to the MAL definitin, the runtime stack, and the instruction itself.
+to the MAL definition block, the runtime stack, and the instruction itself.
 It can be used to analyse the types of the arguments directly.
 
 For example, the definitions below link the kernel routine @code{BKCinsert_bun}
@@ -471,12 +470,12 @@ pattern io.print(b1:bat[:any_1,:any]...):int
 address IOtable;
 @end example
 
+@{
 The internal representation of the MAL functions is rather traditional,
 using C-structure to collect the necessary information.
 Moreover, we assume that MAL functions are relatively small, up to
 a few hundred of instructions. This assumption makes us to rely on
 linear scans as it comes to locating information of interest.
-@{
 
 Patterns should not be cloned, because the alternative interpretations
 are handled by the underlying code fragments.
