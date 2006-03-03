@@ -199,7 +199,7 @@ cracking, and focus on cracking a complete BAT, returning the cracked BAT.
 @
 @= crack
 command zcrack_@1 (b:bat[:oid,:@3], mid:@3) :bat[:oid,:@3]
-address CRKcrackZERO_@1_@3
+address CRKcrackZero_@1_@3
 comment "Break a BAT into three pieces with
 	 tail<mid, tail==mid, tail>mid,
 	 respectively. (By @2.)";
@@ -2068,7 +2068,7 @@ to arrange proper structs. More advanced schemes, or slower
 stepwise ones, are for the future.
 @= MK_operations
 str
-CRKpieceZERO_MK_@1( BAT *b, @1 mval, int first, int last){
+CRKpieceZero_MK_@1( BAT *b, @1 mval, int first, int last){
 	ptr p, vm, vmin, vlast;
 	int xx;
 	struct SCRATCH{
@@ -2108,7 +2108,7 @@ CRKpieceZERO_MK_@1( BAT *b, @1 mval, int first, int last){
 }
 
 str
-CRKcrackZERO_MK_@1 (int *res, int *bid, @1 *mid)
+CRKcrackZero_MK_@1 (int *res, int *bid, @1 *mid)
 {
 	BAT *b;
 	str msg;
@@ -2120,7 +2120,7 @@ CRKcrackZERO_MK_@1 (int *res, int *bid, @1 *mid)
 	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
-	msg=CRKpieceZERO_MK_@1( b, *mid, 0, BATcount(b)-1);
+	msg=CRKpieceZero_MK_@1( b, *mid, 0, BATcount(b)-1);
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
