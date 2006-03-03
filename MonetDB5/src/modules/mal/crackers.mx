@@ -2128,12 +2128,13 @@ CRKcrackZERO_MK_@1 (int *res, int *bid, @1 *mid)
 
 str
 CRKpieceONE_MK_@1( BAT *b, @1 mval, int first, int last){
-	ptr p, vm, vmin, vmax, vlast;
+	ptr vm, vmin, vmax, vlast;
 	int xx;
 	struct SCRATCH{
 		oid hdummy;
 		@1 tdummy;
 	} dummy;
+	ptr p;
 
 	/* set bounds for the iterator */
 	xx = BUNsize(b);
@@ -2156,7 +2157,9 @@ CRKpieceONE_MK_@1( BAT *b, @1 mval, int first, int last){
 #endif
 
 	while(vm<vlast) {
-		if (*(@1 *) vm <= mval) {
+		if (*(@1 *) vm > mval) {
+			vm = (ptr) ((char *) vm + xx);
+		} else{
 			if (*(@1 *) vm == mval) {
 				/* exchange with equality top */
 				p= (ptr) ((char*)vm - b->tloc);
@@ -2174,14 +2177,13 @@ CRKpieceONE_MK_@1( BAT *b, @1 mval, int first, int last){
 				*(struct SCRATCH *) vmax= *(struct SCRATCH *) vmin;
 				*(struct SCRATCH *) vmin= dummy;
 				vmax = (ptr) ((char *) vmax + xx);
+				vm = (ptr) ((char *) vm + xx);
 			}
-		} else
-			vm = (ptr) ((char *) vm + xx);
+		}
 	} 
 #ifdef MK_DEBUG
-	printf("cracked index %d %d\n", (int) BUNindex(b,vmin), (int) BUNindex(b,vmax));
-#endif
 	printf("indices %d %d\n",((int) BUNindex(b,vmin))+1, ((int) BUNindex(b,vmax)));
+#endif
 	return MAL_SUCCEED;
 }
 
@@ -2296,8 +2298,10 @@ CRKpieceTWO_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
 	BATprintf(GDKout,b);
 #endif
 	} 
+#ifdef MK_DEBUG
 	printf("indices %d %d %d %d\n",(int) BUNindex(b,lmin)+1, (int) BUNindex(b,lmax),
 		(int) BUNindex(b,hmin)+1, (int) BUNindex(b,hmax));
+#endif
 	return MAL_SUCCEED;
 }
 
@@ -2319,7 +2323,7 @@ CRKcrackTwo_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	CRKpieceTWO_MK_@1( b, *low, *hgh, 0, BATcount(b)-1);
 
 
-	BBPunfix(b->batCacheid);
+	BBPkeepref(b->batCacheid);
 	*res = *bid;
 	return MAL_SUCCEED;
 }
@@ -2526,7 +2530,7 @@ CRKcrackTwo_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
 	}
 
-	BBPunfix(b->batCacheid);
+	BBPkeepref(b->batCacheid);
 	*res = *bid;
 	return MAL_SUCCEED;
 }

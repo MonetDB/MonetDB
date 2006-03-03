@@ -11,6 +11,7 @@ io.printf("# BAT size %d\n",size);
 crackers.new(b);
 
 total:=0:lng;
+n:= 25;
 barrier (go,i):= (true,0);
     low:int:= mmath.rand();
 	low := low % tuples;
@@ -18,13 +19,16 @@ barrier (go,i):= (true,0);
 	hgh := hgh % tuples;
 	redo go := low>hgh;
 t0:= alarm.usec();
-	crackers.crack_MK(b,low);
+	crackers.crack_SI(b,low);
 t1:= alarm.usec();
 	time:= t1 - t0;
 	total:= total+time;
 	io.print(low,hgh,time);
-    redo (go,i):= mal.nextElement(1,25);
+    redo (go,i):= mal.nextElement(1,n);
 exit (go,i);
 
+m:= calc.lng(n);
+f:= total/m;
+io.print(f);
 crackers.destroy(b);
 
