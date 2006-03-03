@@ -2034,7 +2034,7 @@ recognizedCall(MalBlkPtr mb, InstrPtr p, str s)
 				nme = nmebuf;
 			} else
 				nme = getArgName(mb, p, i);
-			sprintf(s, "%s:%s%s", (nme ? nme : "nil"), tpe, (i?", ":""));
+			sprintf(s, "%s:%s%s", (nme ? nme : "nil"), tpe, (i<p->retc-1?", ":""));
 			advance(s);
 			GDKfree(tpe);
 		}
