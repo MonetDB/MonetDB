@@ -2111,6 +2111,7 @@ str
 CRKcrackZERO_MK_@1 (int *res, int *bid, @1 *mid)
 {
 	BAT *b;
+	str msg;
 
 	if ((b = BATdescriptor(*bid)) == NULL) 
 		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
@@ -2119,11 +2120,11 @@ CRKcrackZERO_MK_@1 (int *res, int *bid, @1 *mid)
 	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
-	CRKpieceZERO_MK_@1( b, *mid, 0, BATcount(b)-1);
+	msg=CRKpieceZERO_MK_@1( b, *mid, 0, BATcount(b)-1);
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
-	return MAL_SUCCEED;
+	return msg;
 }
 
 str
@@ -2191,6 +2192,7 @@ str
 CRKcrackOne_MK_@1 (int *res, int *bid, int *mid)
 {
 	BAT *b;
+	str msg;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
@@ -2199,11 +2201,11 @@ CRKcrackOne_MK_@1 (int *res, int *bid, int *mid)
 	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
-	CRKpieceONE_MK_@1( b, *mid, 0, BATcount(b)-1);
+	msg= CRKpieceONE_MK_@1( b, *mid, 0, BATcount(b)-1);
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
-	return MAL_SUCCEED;
+	return msg;
 }
 
 /* assume that the [first,last] are inclusive bounds */
@@ -2309,6 +2311,7 @@ str
 CRKcrackTwo_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 {
 	BAT *b;
+	str msg;
 
 	if (*(@1 *) low > *(@1 *) hgh)
 		return throwMessage("crackers.crack_MK", "illegal range");
@@ -2320,12 +2323,12 @@ CRKcrackTwo_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
-	CRKpieceTWO_MK_@1( b, *low, *hgh, 0, BATcount(b)-1);
+	msg= CRKpieceTWO_MK_@1( b, *low, *hgh, 0, BATcount(b)-1);
 
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
-	return MAL_SUCCEED;
+	return msg;
 }
 
 str
@@ -2507,16 +2510,17 @@ str
 CRKcrackOne_SI_@1 (int *res, int *bid, @1 *mid)
 {
 	BAT *b;
+	str msg;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
 	}
 
-	CRKcrackONE_SI_@1(b,*mid,*mid, 0, BATcount(b)-1);
+	msg= CRKcrackONE_SI_@1(b,*mid,*mid, 0, BATcount(b)-1);
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
-	return MAL_SUCCEED;
+	return msg;
 }
 
 str
