@@ -28,6 +28,9 @@ gdk_dbfarm=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@dbfarm
 # and restart MonetDB.
 gdk_dbname=demo			# default database to open
 
+gdk_version=4.99.19
+monet_welcome=yes       #Version and copyright information
+
 # The options below deal with various aspects of memory usage behaviour.
 # If you don't know what these values mean, you should leave them alone.
 
@@ -39,8 +42,9 @@ gdk_dbname=demo			# default database to open
 # memory chunks of size >= gdk_vm_minsize (in bytes) will be mmaped;
 #gdk_vm_minsize=134217728
 
-# for 32 bit systems try claim 3G of (virtual) memory
-# set to "no" to run mserver with valgrind;
+# valgrind issues:
+# for 32 bit systems it tries claim 3G of (virtual) memory
+# set the alloca map to "no" to run mserver with valgrind;
 # also, you need to tell valgrind to use 8-byte alignment, hence:
 # "valgrind --alignment=8 mserver --set gdk_alloc_map=no ..."
 gdk_alloc_map=no
@@ -77,43 +81,42 @@ gdk_debug=0
 # 4194304 = show result size estimations (for join,select)
 # 8388608 = extended property checking: tells also about not set properties
 
-# General client Section
-#=======================
-#host=localhost				#the host the server runs on
-
 # Monet Section
 #==============
-monet_admin=adm			#administrator user name 
+# monet_admin=adm			#administrator user name 
 # Prompt when using MAL interface 
-#monet_prompt=>
-# Show version and copyright information when starting the server or
-# a MIL client?
-monet_welcome=yes		#Version and copyright information
+# monet_prompt=>
 # Where do the MonetDB modules reside? The second path is for windows dlls.
 monet_mod_path=@libdir@@DIRSEP@@PACKAGE@
+
 # Start mserver in daemon mode, or start with MAL interactive interface?
 monet_daemon=no	
 
 #Mguardian section
 #====================================
-delay=300		#waiting between pinging the server 
+delay=120		#waiting between pinging the server 
+# if the guardian process is running, it will automatically
+# restart the server upon failuer and sent an email to the owner
 
 # MAL section
 # Monet Virtual Machine
 #====================================
 mal_init=${prefix}/lib/MonetDB5/mal_init.mal
-mal_debug = yes                 # debugging the MAL component
-mal_details = 14                # instruction listing details
-mal_listing = 15                # echoing the input
+mal_listing = 7           # List everything
+#    1 = List the original input
+#    2 = List the MAL instruction
+#    4 = List the MAL type information
+
+# Checkpoint and recovery
+#===================================
+# Checkpoints are stored in their own area, preferrably
+# on a different storage device. Checkpoints should be
+# initialized manually.
+checkpoint_dir=${prefix}/var/MonetDB5/chkpnt
 
 # Monet Application Interface Section
 #====================================
 mapi_port=50000			#default port to address a mserver
-#mapi_noheaders=no			#show all the mil output
-#mapi_debug=0				#The mapi debug level		
-# The number of concurrent clients can be set using mapi_clients
-# (smaller than 1 is not very useful)
-#mapi_clients=2
 
 # SQL Interface Section
 #====================================
@@ -126,7 +129,6 @@ sql_logdir=@localstatedir@@DIRSEP@@PACKAGE@@DIRSEP@dblogs
 
 # XQuery Interface Section
 #=========================
-
 # default port to address the HTTP server for pathfinder
 pf_httpd_port=8080
 
@@ -136,10 +138,3 @@ xquery_output=dm
 
 #limit the document cache on disk to 100MB
 xquery_cacheMB=100
-
-# Profile Interface Section
-#====================================
-# for 32 bit systems try to claim 3G of (virtual) memory;
-# set to "no" to run mserver with valgrind.
-# valgrind --tool=callgrind mserver --set gdk_alloc_map=no ..."
-#gdk_alloc_map=yes
