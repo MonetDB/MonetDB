@@ -104,7 +104,6 @@ CRKoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if(fndProperty(mb->var[getArg(p,1)]->props,"canBeCracked")){
 
 	        	        setModuleId(p,putName("crackers",8));
-				setFunctionId(p,putName("crackSelect",11));
 			}
 		}
 		if (match2(p, algebraRef, uselectRef)){ /* replace the algebra uselect with the crackers instruction iff the operation is on a base relation */
@@ -112,7 +111,6 @@ CRKoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
                         if(fndProperty(mb->var[getArg(p,1)]->props,"canBeCracked")){
 
                                 setModuleId(p,putName("crackers",8));
-                                setFunctionId(p,putName("crackUSelect",12));
                         }
                 }
 
