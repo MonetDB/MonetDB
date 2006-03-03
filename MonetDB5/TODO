@@ -1,28 +1,21 @@
-AGENDA FOR MonetDB Version 5.02 release Jan 2006
-- target: MonetDB Version 5 with SQL and APIs
-- Overall documentation at a reasonable stage
-- Migration documentation
-- SQL test set needs work
-- APIs should be tested
-- Database pool for web-applications
-- Mguardian to watch over server
-- GDK should switch to private-bats unless stated otherwise.
-  ATOMcmp should not walk the storage field, this should be
-  made explicit if needed.
-- look at memory leaks in connections
+AGENDA FOR MonetDB Version 5.0alpha release Jan 2006
+- target: MonetDB Version 5 with SQL and APIs(Java,C, PHP,Perl)
++ Overall documentation at a reasonable stage
+- Migration documentation Howto's etc
++ SQL test set needs work
++ mguardian to watch over server
 
-AGENDA FOR MonetDB Version 5.04 release Apr 2006
+AGENDA FOR MonetDB Version 5.0beta release Apr 2006
+- Redirection  issues
 - Target: benefit from compression and scale out
 - AMDB column store available 
 - Distributed processing by remote MAL execution
 
 AGENDA FOR MonetDB Version 5.06 release Jun 2006
-- Target: XQuery
 - XQuery port finished
 
 MapiClient:
-- propagate the '?' command to the server
-- merge word completion semantics with the back-end
+- history revival + command completion file
 
 Pathfinder support
 - it heavily relies on BAT admininistration, which is currently
@@ -30,18 +23,22 @@ Pathfinder support
 
 - DD: factor out the error handling to prepare for internationalization
 - DD: strong need for partitioned tables.
+
+- addition of MERGE tables
+
 - DD: mapping BATs to external file sources
+SQL
+- create/connect database primitives
+- sharing databases for read-only playground
+
 - we limit BAT* operation as much as possible to :void headed versions
 - all signatures should make in/out role of parameters explicit to
 facilitate flow analysis
 - BBP should become a fully serialized module, encapsulation with a single lock
 (this calls for check for IO triggered activities inside BBP)
 - All BATs should be considered private unless otherwise marked (add BATshared())
-- we need a small size BAT/HEAP cache to significantly reduce cost for small queries.
 
 MIL 5
-- reduce the symbol table during chkFlow as well to save
-on stack initialization and garbage collection cost
 - make sure the sorted bit is set in batcalc routines where appropriate
 
 MIL 4 'loss' in M5
@@ -52,9 +49,11 @@ MIL 4 'loss' in M5
 MAL language issues
 - BATs entered into a box should become persistent? (tst1004,1005,1014)
 - use a process buffer pool to avoid expensive client starts.
-- implement an (Box) authorization scheme
 
 Implementation
+- GDK should switch to private-bats unless stated otherwise.
+  ATOMcmp should not walk the storage field, this should be
+  made explicit if needed.
 - BAT calc module only works for aligned BATs. This is less
  powerful than Monet 4. SQL relies on it, so we have to extend
 functionality
@@ -63,7 +62,7 @@ is about 5 times slower. It appears that it grows too slow,
 spending its time on copying bats all the time.
 
 API issues
-- The java front-end terminal and profiler should be re-vived
++ The java front-end terminal and profiler should be re-vived
 - Multi-client (concurrent) access has not been tested yet
 
 V4 issues
@@ -75,6 +74,11 @@ Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
+200601 we need a small size BAT/HEAP cache to significantly reduce cost for small queries.
+20051225 introduction of the monetdb/mguardian scripts and documentation
+   foundation for the authorization scheme laid
+   lot of performance squeezing (reduce storage, improve dec/incref)
+   reduce the variable stack before going into execution mode (SQL)
 20051125 started development of the multitable and generator modules.
 20051100 the storage requirements for the MAL blocks has been 
 reduced. e.g. by moving statistics gathering to its own
