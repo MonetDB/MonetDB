@@ -2054,7 +2054,7 @@ interval.
 @
 @= move
 	@2 = *(@1*)BUNtloc(b,@3);
-        while(@2 @5){
+        while(@2 @5 @6){
         	@3 = (ptr) ((char *) @3 @4 xx);
                 @2 = *(@1*)BUNtloc(b,@3);
         }
@@ -2412,28 +2412,32 @@ CRKcrackONE_SI_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 	
 	vmin = BUNptr(b, idx_first);
 	vmax = BUNptr(b, idx_last);
-	vm = BUNtail(b, vmin);
+	vm = BUNtloc(b, vmin);
 	
+	@:move(@1,tmpTmax,vmax,-,>hgh, && vmax > vmin)@
 	for (nmin = vmin; nmin <= vmax; nmin = (ptr) ((char *) nmin + xx), vm = (ptr) ((char *) vm + xx)) {
 		if (*(@1*)vm < low) continue;
 		if (*(@1*)vm > hgh){
-			@:move(@1,tmpTmax,vmax,-,>hgh)@
+			@:move(@1,tmpTmax,vmax,-,>hgh,&& vmax > nmin)@
 			if (tmpTmax < low){
 				@:exchangeTest(nmin,vmax,@1)@							
+				vmax = (ptr) ((char *) vmax - xx);
 			}	
 			else break;
 		}
 		if (*(@1*)vm >= low && *(@1*)vm <= hgh)
 			break; 
 	}
-	
 	/* Empty result*/
 	if (nmin == vmax)
 		 return MAL_SUCCEED;
 	
 	/* Scan the remaining piece to determine the position where after cracking the first BUN 
 	with a tail value >=low and <=high will be located. This means we have to count the remaining
-	BUN with value <low*/
+	BUN with value <low
+	
+	TODO check if removing the second check/pointer in the prescan pays off since in the last of Martin's
+	checks in tstcrack more scans are second needed that do nothing*/
  
 	bl = nmin;
 	vmx = BUNtloc(b, vmax);
@@ -2441,32 +2445,34 @@ CRKcrackONE_SI_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 		bl = (ptr) ((char *) bl + xx*(*(int *) vm < low));
 			
 	bls = bl;
-	vm = BUNtail(b, nmin);
+	vm = BUNtloc(b, nmin);
 	
 	/* Now for each value that is >hgh if a middle value m occurs in vmax we can save a redudant exchange by seaching 
 	in the middle partition. There middle values are ignored and  a high value is  exchanged with m. 
 	Similarly when a middle value occurs */  			
 	for (p = nmin; p < vmax; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)) {
-
 		if (p >= bls){  
 			if (*(int *) vm >  hgh){
-				@:move(@1,tmpTmax,vmax,-,>hgh)@
+				@:move(@1,tmpTmax,vmax,-,>hgh,&& vmax > bl)@
 				if (tmpTmax >= low && tmpTmax <=  hgh){
 					@:exchangeTest(vmax,p,@1)@
+					vmax = (ptr) ((char *) vmax - xx);
+					bl = (ptr) ((char *) bl + xx);
+					
 				}
 			}
 			continue;
 		} 											
 		if (*(int *) vm >= low && *(int *) vm <= hgh) {
 			for (pn = bl; pn <= vmax; pn = (ptr) ((char *) pn + xx), bl = (ptr) ((char *) bl + xx)){
-				tmpTmid = *(int *) BUNtail(b, pn);
+				tmpTmid = *(int *) BUNtloc(b, pn);
 				if (tmpTmid < low){
 					@:exchangeTest(pn,p,@1)@
 					bl = (ptr) ((char *) bl + xx);
 					break;
 				}
 				if (tmpTmid >  hgh){
-					@:move(@1,tmpTmax,vmax,-,>hgh)@
+					@:move(@1,tmpTmax,vmax,-,>hgh,&& vmax > bl)@
 					if (tmpTmax >= low  && tmpTmax <=  hgh){
 						@:exchangeTest(vmax,pn,@1)@
 						vmax = (ptr) ((char *) vmax - xx);
@@ -2489,7 +2495,7 @@ CRKcrackONE_SI_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 					break;
 				}
 				if (tmpTmax >= low && tmpTmax <=  hgh){
-					@:move(@1,tmpTmid,bl,+, >= low && tmpTmid <=  hgh)@
+					@:move(@1,tmpTmid,bl,+, >= low && tmpTmid <=  hgh,&& bl < vmax)@
 					if (tmpTmid > hgh){
 						@:exchangeTest(bl,pn,@1)@
 					}
