@@ -2033,6 +2033,32 @@ interval.
 	*(oid*) BUNhead(b,@2)= hdummy;
 	*(@3*) BUNtail(b,@2)= tdummy;
 }
+@= exchangeTest
+	(void) buf;
+	hdummy= *(oid*) BUNhloc(b,@1);
+	tdummy= *(int*) BUNtloc(b,@1);
+	*(oid*) BUNhloc(b,@1) = *(oid*) BUNhloc(b,@2);
+	*(@3*) BUNtail(b,@1) = *(@3*) BUNtloc(b,@2);
+	*(oid*) BUNhloc(b,@2)= hdummy;
+	*(@3*) BUNtloc(b,@2)= tdummy;
+@= exchange2Test
+        (void) buf;
+        hdummy= *(oid*) BUNhloc(b,@1);
+        tdummy= *(int*) BUNtloc(b,@1);
+        *(oid*) BUNhloc(b,@1) = *(oid*) BUNhloc(b,@3);
+        *(@4*) BUNtloc(b,@1) = *(@4*) BUNtloc(b,@3);
+        *(oid*) BUNhloc(b,@3) = *(oid*) BUNhloc(b,@2);
+        *(@4*) BUNtloc(b,@3) = *(@4*) BUNtloc(b,@2);
+        *(oid*) BUNhloc(b,@2)= hdummy;
+        *(@4*) BUNtloc(b,@2)= tdummy;
+@
+@= move
+	@2 = *(@1*)BUNtloc(b,@3);
+        while(@2 @5){
+        	@3 = (ptr) ((char *) @3 @4 xx);
+                @2 = *(@1*)BUNtloc(b,@3);
+        }
+@
 @-
 The three way split use knowledge on the type size to issue
 the exchanges. Moreover, we should be prepared to handle
@@ -2360,6 +2386,116 @@ CRKcrackZero_SI_@1 (int *res, int *bid, @1 *mid)
 	*res = *bid;
 	return MAL_SUCCEED;
 }
+
+str
+CRKcrackONE_SI_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
+{
+
+	ptr vmax, vmin, nmin, vm, vmx, bl, bls;
+	ptr p, pn=0;
+	char buf[128];	  /* scratch space */
+	@1 tmpTmax, tmpTmid;
+	int xx = BUNsize(b);
+	oid hdummy;
+	@1 tdummy;
+
+	/* Start a scan to reduce the size of the piece that 'requires' a prescan. 
+	Walk from the first BUN as long as values are < low or > hgh and can be 
+	exchanged with a value from the end of the BUN*/ 
+	
+	nmin=vmin = BUNptr(b, idx_first);
+	vmax = BUNptr(b, idx_last);
+	vm = BUNtail(b, vmin);
+	
+	for (nmin = vmin; nmin <= vmax; nmin = (ptr) ((char *) nmin + xx), vm = (ptr) ((char *) vm + xx)) {
+		if (*(@1*)vm < low) continue;
+		if (*(@1*)vm > hgh){
+			@:move(@1,tmpTmax,vmax,-,>hgh)@
+			if (tmpTmax < low){
+				@:exchangeTest(nmin,vmax,@1)@							
+			}	
+			else break;
+		}
+		if (*(@1*)vm >= low && *(@1*)vm <= hgh)
+			break; 
+	}
+	
+	/* Empty result*/
+	if (nmin == vmax)
+		 return MAL_SUCCEED;
+	
+	/* Scan the remaining piece to determine the position where after cracking the first BUN 
+	with a tail value >=low and <=high will be located. This means we have to count the remaining
+	BUN with value <low*/
+ 
+	bl = nmin;
+	vmx = BUNtloc(b, vmax);
+	for (vm = BUNtloc(b, nmin); vm <= vmax;  vm = (ptr) ((char *) vm + xx))
+		bl = (ptr) ((char *) bl + xx*(*(int *) vm < low));
+			
+	bls = bl;
+	vm = BUNtail(b, nmin);
+				
+	for (p = nmin; p < vmax; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)) {
+
+		if (p >= bls){  
+			if (*(int *) vm >  hgh){
+				@:move(@1,tmpTmax,vmax,-,>hgh)@
+				if (tmpTmax >= low && tmpTmax <=  hgh){
+					@:exchangeTest(vmax,p,@1)@
+				}
+			}
+			continue;
+		} 											
+		if (*(int *) vm >= low && *(int *) vm <= hgh) {
+			for (pn = bl; pn <= vmax; pn = (ptr) ((char *) pn + xx), bl = (ptr) ((char *) bl + xx)){
+				tmpTmid = *(int *) BUNtail(b, pn);
+				if (tmpTmid < low){
+					@:exchangeTest(pn,p,@1)@
+					bl = (ptr) ((char *) bl + xx);
+					break;
+				}
+				if (tmpTmid >  hgh){
+					@:move(@1,tmpTmax,vmax,-,>hgh)@
+					if (tmpTmax >= low  && tmpTmax <=  hgh){
+						@:exchangeTest(vmax,pn,@1)@
+						vmax = (ptr) ((char *) vmax - xx);
+					}
+					if (tmpTmax < low){
+						@:exchange2Test(p,pn,vmax,@1)@
+						bl = (ptr) ((char *) bl + xx);
+						vmax = (ptr) ((char *) vmax - xx);
+						break;
+					} 
+				}       
+			}       
+		} else 
+		if (*(int *) vm > hgh) {
+			for (pn = vmax; pn >= bl; pn = (ptr) ((char *) pn - xx), vmax = (ptr) ((char *) vmax - xx)){
+				tmpTmax = *(int *) BUNtail(b, pn);
+				if (tmpTmax < low){
+					@:exchangeTest(pn,p,@1)@
+					vmax = (ptr) ((char *) vmax - xx);
+					break;
+				}
+				if (tmpTmax >= low && tmpTmax <=  hgh){
+					@:move(@1,tmpTmid,bl,+, >= low && tmpTmid <=  hgh)@
+					if (tmpTmid > hgh){
+						@:exchangeTest(bl,pn,@1)@
+					}
+					if (tmpTmid < low){
+						@:exchange2Test(pn,bl,p,@1)@
+						bl = (ptr) ((char *) bl + xx);
+						vmax = (ptr) ((char *) vmax - xx);
+						break;
+					}
+				}
+			}
+		}
+	}
+	return MAL_SUCCEED;
+}
+
 str
 CRKcrackOne_SI_@1 (int *res, int *bid, @1 *mid)
 {
@@ -2369,9 +2505,9 @@ CRKcrackOne_SI_@1 (int *res, int *bid, @1 *mid)
 		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
 	}
 
-	(void)mid;
+	CRKcrackONE_SI_@1(b,*mid,*mid, 0, BATcount(b)-1);
 
-	BBPunfix(b->batCacheid);
+	BBPkeepref(b->batCacheid);
 	*res = *bid;
 	return MAL_SUCCEED;
 }
