@@ -239,6 +239,7 @@ comment "Validate whether a BAT is correctly broken into five pieces with
 @:crack(SI,Stratos Idreos,int)@
 @:crack(MK,Martin Kersten,int)@
 @:crack(SM,Stefan Manegold,int)@
+@:crack(sm,Stefan Manegold,int)@
 @:crack_validate(int)@
 @-
 @{
@@ -2330,41 +2331,33 @@ CRKcrackTwo_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 @
 
 @= SM_operations
-@:SM_operation_Zero(@1)@
-@:SM_operation_One(@1)@
-@:SM_operation_Two(@1)@
+@:SM_operation_Zero(@1,@2)@
+@:SM_operation_One(@1,@2)@
+@:SM_operation_Two(@1,@2)@
+@
+@= sm_operations
+@:sm_operation_Zero(@1,@2)@
+@:sm_operation_One(@1,@2)@
+@:sm_operation_Two(@1,@2)@
 @
 @= CRKcrackZero_SM_advance
-	while (bn_s < bn_l && *(@1*)tl_s <= mid) {
+	while (bn_s < bn_l && *(@1*)BUNtloc(b, bn_s) <= mid) {
 		bn_s += bs;
-		tl_s += bs;
 	}
-	while (bn_l > bn_s && *(@1*)tl_l > mid) {
+	while (bn_l > bn_s && *(@1*)BUNtloc(b, bn_l) > mid) {
 		bn_l -= bs;
-		tl_l -= bs;
 	}
 @= SM_operation_Zero
 str
-CRKcrackZero_SM_@1 (int *res, int *bid, @1 *_mid)
+CRKpieceZero_SM_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *pos)
 {
-	BAT *b;
-	BUN bn_s, bn_l, fst_bn, lst_bn, fst_tl, lst_tl, tl_s, tl_l;
+	BUN bn_s, bn_l;
 	int bs;
-	@1 mid=*_mid;
 
 	/* initialization */
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("crackers.zcrack_SM", "Cannot access descriptor");
-	}
 	bs = BUNsize(b);
-	fst_bn = BUNfirst(b);
-	lst_bn = BUNlast(b);
-	fst_tl = BUNtloc(b, fst_bn);
-	lst_tl = BUNtloc(b, lst_bn);
-	bn_s = fst_bn;
-	tl_s = fst_tl;
-	bn_l = lst_bn-bs;
-	tl_l = lst_tl-bs;
+	bn_s = BUNptr(b, fst);
+	bn_l = BUNptr(b, lst);
 
 	/* advance cursors, skipping over BUNs that are already in the right place */
 	@:CRKcrackZero_SM_advance(@1)@
@@ -2372,18 +2365,14 @@ CRKcrackZero_SM_@1 (int *res, int *bid, @1 *_mid)
 	/* re-shuffel BUNs */
 	while (bn_s < bn_l) {
 		/* swap BUNs */
-		oid *hd_s  = (oid*)BUNhloc(b, bn_s);
-		oid *hd_l  = (oid*)BUNhloc(b, bn_l);
-		oid h      = *hd_s;
-		@1  t      = *(@1*)tl_s;
-		*hd_s      = *hd_l;
-		*(@1*)tl_s = *(@1*)tl_l;
-		*hd_l      = h;
-		*(@1*)tl_l = t;
+		oid h       = *(oid*)BUNhloc(b, bn_l);
+		@1  t       = *(@1 *)BUNtloc(b, bn_l);
+		*(oid*)BUNhloc(b, bn_l) = *(oid*)BUNhloc(b, bn_s);
+		*(@1 *)BUNtloc(b, bn_l) = *(@1 *)BUNtloc(b, bn_s);
+		*(oid*)BUNhloc(b, bn_s) = h;
+		*(@1 *)BUNtloc(b, bn_s) = t;
 		bn_s += bs;
-		tl_s += bs;
 		bn_l -= bs;
-		tl_l -= bs;
 		
 		/* advance cursors, skipping over BUNs that are already in the right place */
 		@:CRKcrackZero_SM_advance(@1)@
@@ -2391,10 +2380,124 @@ CRKcrackZero_SM_@1 (int *res, int *bid, @1 *_mid)
 
 	/* final sanity check */
 	assert(bn_s >= bn_l);
+	
+	if (*(@1*)BUNtloc(b, bn_l) <= mid) {
+		*pos = BUNindex(b, bn_l);
+	} else
+	if (*(@1*)BUNtloc(b, bn_l-bs) <= mid) {
+		*pos = BUNindex(b, bn_l-bs);
+	} else {
+		assert(0);
+	}
+
+	return MAL_SUCCEED;
+}
+str
+CRKcrackZero_SM_@1 (int *res, int *bid, @1 *mid)
+{
+	BAT *b;
+	str msg;
+	size_t fst, lst, pos;
+
+	/* initialization */
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.zcrack_SM", "Cannot access descriptor");
+	}
+	fst = BUNindex(b, BUNfirst(b));
+	lst = BUNindex(b, BUNlast (b));
+
+	msg = CRKpieceZero_SM_@1(b, *mid, fst, lst, &pos);
+	(void)pos;
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
+	return msg;
+}
+@
+@= CRKcrackZero_sm_advance
+	while (bn_s < bn_l && *(@1*)tl_s <= mid) {
+		bn_s += bs;
+		hd_s += bs;
+		tl_s += bs;
+	}
+	while (bn_l > bn_s && *(@1*)tl_l > mid) {
+		bn_l -= bs;
+		hd_l -= bs;
+		tl_l -= bs;
+	}
+@= sm_operation_Zero
+str
+CRKpieceZero_sm_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *pos)
+{
+	BUN bn_s, bn_l, hd_s, hd_l, tl_s, tl_l;
+	int bs;
+
+	/* initialization */
+	bs = BUNsize(b);
+	bn_s = BUNptr(b, fst);
+	bn_l = BUNptr(b, lst);
+	hd_s = BUNhloc(b, bn_s);
+	hd_l = BUNhloc(b, bn_l);
+	tl_s = BUNtloc(b, bn_s);
+	tl_l = BUNtloc(b, bn_l);
+
+	/* advance cursors, skipping over BUNs that are already in the right place */
+	@:CRKcrackZero_sm_advance(@1)@
+	
+	/* re-shuffel BUNs */
+	while (bn_s < bn_l) {
+		/* swap BUNs */
+		oid h       = *(oid*)hd_l;
+		@1  t       = *(@1 *)tl_l;
+		*(oid*)hd_l = *(oid*)hd_s;
+		*(@1 *)tl_l = *(@1 *)tl_s;
+		*(oid*)hd_s = h;
+		*(@1 *)tl_s = t;
+		bn_s += bs;
+		hd_s += bs;
+		tl_s += bs;
+		bn_l -= bs;
+		hd_l -= bs;
+		tl_l -= bs;
+		
+		/* advance cursors, skipping over BUNs that are already in the right place */
+		@:CRKcrackZero_sm_advance(@1)@
+	}
+
+	/* final sanity check */
+	assert(bn_s >= bn_l);
+	
+	if (*(@1*)BUNtloc(b, bn_l) <= mid) {
+		*pos = BUNindex(b, bn_l);
+	} else
+	if (*(@1*)BUNtloc(b, bn_l-bs) <= mid) {
+		*pos = BUNindex(b, bn_l-bs);
+	} else {
+		assert(0);
+	}
+
 	return MAL_SUCCEED;
+}
+str
+CRKcrackZero_sm_@1 (int *res, int *bid, @1 *mid)
+{
+	BAT *b;
+	str msg;
+	size_t fst, lst, pos;
+
+	/* initialization */
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.zcrack_sm", "Cannot access descriptor");
+	}
+	fst = BUNindex(b, BUNfirst(b));
+	lst = BUNindex(b, BUNlast (b));
+
+	msg = CRKpieceZero_sm_@1(b, *mid, fst, lst, &pos);
+	(void)pos;
+
+	BBPkeepref(b->batCacheid);
+	*res = *bid;
+	return msg;
 }
 @
 @= CRKcrackOne_SM_advance
@@ -2552,6 +2655,71 @@ CRKcrackOne_SM_@1 (int *res, int *bid, @1 *_mid)
 	return MAL_SUCCEED;
 }
 @
+@= CRKcrackOne_sm_advance
+	while (bn_s < bn_l && *(@1*)BUNtloc(b, bn_s) < mid) {
+		bn_s += bs;
+	}
+	while (bn_l > bn_s && *(@1*)BUNtloc(b, bn_l) == mid) {
+		bn_l -= bs;
+	}
+@= sm_operation_One
+str
+CRKcrackOne_sm_@1 (int *res, int *bid, @1 *_mid)
+{
+	BAT *b;
+	str msg;
+	size_t fst, lst, pos;
+	BUN bn_s, bn_l;
+	int bs;
+	@1 mid=*_mid;
+
+	/* initialization */
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_sm", "Cannot access descriptor");
+	}
+	fst = BUNindex(b, BUNfirst(b));
+	lst = BUNindex(b, BUNlast (b));
+
+	msg = CRKpieceZero_sm_@1(b, mid, fst, lst, &pos);
+	
+	if (msg != MAL_SUCCEED) {
+		BBPunfix(b->batCacheid);
+		*res = 0;
+		return msg;
+	}
+
+	/* initialization */
+	bs = BUNsize(b);
+	bn_s = BUNptr(b, fst);
+	bn_l = BUNptr(b, pos);
+
+	/* advance cursors, skipping over BUNs that are already in the right place */
+	@:CRKcrackOne_sm_advance(@1)@
+	
+	/* re-shuffel BUNs */
+	while (bn_s < bn_l) {
+		/* swap BUNs */
+		oid h       = *(oid*)BUNhloc(b, bn_l);
+		@1  t       = *(@1 *)BUNtloc(b, bn_l);
+		*(oid*)BUNhloc(b, bn_l) = *(oid*)BUNhloc(b, bn_s);
+		*(@1 *)BUNtloc(b, bn_l) = *(@1 *)BUNtloc(b, bn_s);
+		*(oid*)BUNhloc(b, bn_s) = h;
+		*(@1 *)BUNtloc(b, bn_s) = t;
+		bn_s += bs;
+		bn_l -= bs;
+		
+		/* advance cursors, skipping over BUNs that are already in the right place */
+		@:CRKcrackOne_sm_advance(@1)@
+	}
+
+	/* final sanity check */
+	assert(bn_s >= bn_l);
+	
+	BBPkeepref(b->batCacheid);
+	*res = *bid;
+	return MAL_SUCCEED;
+}
+@
 @= SM_operation_Two
 str
 CRKcrackTwo_SM_@1 (int *res, int *bid, @1 *low, @1 *hgh)
@@ -2569,6 +2737,30 @@ CRKcrackTwo_SM_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	b = BATorder(b);
 	if (b == NULL) {
 		return throwMessage("crackers.crack_SM", "BATorder failed");
+	}
+
+	BBPkeepref(b->batCacheid);
+	*res = *bid;
+	return MAL_SUCCEED;
+}
+@
+@= sm_operation_Two
+str
+CRKcrackTwo_sm_@1 (int *res, int *bid, @1 *low, @1 *hgh)
+{
+	BAT *b;
+
+	/* initialization */
+	if (*(@1 *) low > *(@1 *) hgh)
+		return throwMessage("crackers.crack_sm", "illegal range");
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_sm", "Cannot access descriptor");
+	}
+
+	/* FAKE */
+	b = BATorder(b);
+	if (b == NULL) {
+		return throwMessage("crackers.crack_sm", "BATorder failed");
 	}
 
 	BBPkeepref(b->batCacheid);
@@ -2920,6 +3112,7 @@ CRKcrackTwo_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
 @c
 @:MK_operations(int)@
 @:SM_operations(int)@
+@:sm_operations(int)@
 @:SI_operations(int)@
 @:validate_operations(int)@
 @}

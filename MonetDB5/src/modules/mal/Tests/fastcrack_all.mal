@@ -19,13 +19,16 @@ t_Zero_00:=0:lng;
 t_Zero_MK:=0:lng;
 t_Zero_SI:=0:lng;
 t_Zero_SM:=0:lng;
+t_Zero_sm:=0:lng;
 t_One_MK:=0:lng;
 t_One_SI:=0:lng;
 t_One_SM:=0:lng;
+t_One_sm:=0:lng;
 t_Two_00:=0:lng;
 t_Two_MK:=0:lng;
 t_Two_SI:=0:lng;
 t_Two_SM:=0:lng;
+t_Two_sm:=0:lng;
 barrier (go,i):= (true,0);
 	b0:= microbenchmark.uniform(0@0,tuples,values);
 	mid:int:= mmath.rand();
@@ -74,6 +77,15 @@ t1:= alarm.usec();
 	v := crackers.zcrack_validate(c,mid);
 	io.print("Zero_SM",time,v);
 
+	b:=algebra.copy(b0);
+t0:= alarm.usec();
+	c:=crackers.zcrack_sm(b,mid);
+t1:= alarm.usec();
+	time:= t1 - t0;
+	t_Zero_sm := t_Zero_sm + time;
+	v := crackers.zcrack_validate(c,mid);
+	io.print("Zero_sm",time,v);
+
 
 	b:=algebra.copy(b0);
 t0:= alarm.usec();
@@ -101,6 +113,15 @@ t1:= alarm.usec();
 	t_One_SM := t_One_SM + time;
 	v := crackers.crack_validate(c,mid);
 	io.print("One_SM",time,v);
+
+	b:=algebra.copy(b0);
+t0:= alarm.usec();
+	c:=crackers.crack_sm(b,mid);
+t1:= alarm.usec();
+	time:= t1 - t0;
+	t_One_sm := t_One_sm + time;
+	v := crackers.crack_validate(c,mid);
+	io.print("One_sm",time,v);
 
 
 #	b:=algebra.copy(b0);
@@ -139,6 +160,15 @@ t1:= alarm.usec();
 #	v := crackers.crack_validate(c,low,hgh);
 #	io.print("Two_SM",time,v);
 
+#	b:=algebra.copy(b0);
+#t0:= alarm.usec();
+#	c:=crackers.crack_sm(b,low,hgh);
+#t1:= alarm.usec();
+#	time:= t1 - t0;
+#	t_Two_sm := t_Two_sm + time;
+#	v := crackers.crack_validate(c,low,hgh);
+#	io.print("Two_sm",time,v);
+
 	redo (go,i):= mal.nextElement(1,n);
 exit (go,i);
 
@@ -151,12 +181,16 @@ t_ := t_Zero_SI / n;
 io.print("Zero_SI",t_);
 t_ := t_Zero_SM / n;
 io.print("Zero_SM",t_);
+t_ := t_Zero_sm / n;
+io.print("Zero_sm",t_);
 t_ := t_One_MK / n;
 io.print("One_MK",t_);
 t_ := t_One_SI / n;
 io.print("One_SI",t_);
 t_ := t_One_SM / n;
 io.print("One_SM",t_);
+t_ := t_One_sm / n;
+io.print("One_sm",t_);
 t_ := t_Two_00 / n;
 io.print("Two_00",t_);
 t_ := t_Two_MK / n;
@@ -165,3 +199,5 @@ t_ := t_Two_SI / n;
 io.print("Two_SI",t_);
 t_ := t_Two_SM / n;
 io.print("Two_SM",t_);
+t_ := t_Two_sm / n;
+io.print("Two_sm",t_);
