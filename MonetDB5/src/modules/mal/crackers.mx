@@ -2067,7 +2067,7 @@ stepwise ones, are for the future.
 @= MK_operations
 str
 CRKpieceZero_MK_@1( BAT *b, @1 mval, int first, int last){
-	ptr p, vm, vmin, vlast;
+	ptr p, vm, vl, vlast;
 	int xx;
 	struct SCRATCH{
 		oid hdummy;
@@ -2080,27 +2080,24 @@ CRKpieceZero_MK_@1( BAT *b, @1 mval, int first, int last){
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
 	vm = BUNtloc(b, BUNptr(b,first));
-	vlast= BUNtloc(b,BUNptr(b,last+1));
+	vl= BUNtloc(b,BUNptr(b,last));
 
-	/* deal with startup */
-	while( *(@1*)vm <= mval && vm < vlast)
-		 vm = (ptr) ((char *) vm + xx);
-	
-	vmin= (ptr) ((char*)vm - b->tloc);
-
-	while(vm<vlast) {
-		if (*(@1 *) vm <= mval) {
-			/* exchange with first non low */
+	while(vm<vl) {
+		if (*(@1 *) vm <= mval)
+			vm = (ptr) ((char *) vm + xx);
+		else {
 			p= (ptr) ((char*)vm - b->tloc);
 			dummy = *(struct SCRATCH *) p;
-			*(struct SCRATCH *) p= *(struct SCRATCH *) vmin;
-			*(struct SCRATCH *) vmin= dummy;
-			vmin = (ptr) ((char *) vmin + xx);
+			vlast= (ptr) ((char*)vl - b->tloc);
+			*(struct SCRATCH *) p= *(struct SCRATCH *) vlast;
+			*(struct SCRATCH *) vlast= dummy;
+			vl = (ptr) ((char *) vl - xx);
+			while( *(@1 *) vl > mval && vl>vm)
+				vl = (ptr) ((char *) vl - xx);
 		} 
-		vm = (ptr) ((char *) vm + xx);
 	} 
 #ifdef MK_DEBUG
-	printf("cracked index %d\n", (int) BUNindex(b,vmin));
+	printf("cracked index %d\n", (int) BUNindex(b,(ptr) ((char*)vm - b->tloc)));
 #endif
 	return MAL_SUCCEED;
 }
