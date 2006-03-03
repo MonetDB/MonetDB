@@ -169,21 +169,21 @@ comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
 command select(b:bat[:oid,:@1],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@1]
-address CRKselectBounds
+address CRKselectBounds_
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command uselect(b:bat[:oid,:@1],l:@1,h:@1):bat[:oid,:@1]
+command uselect(b:bat[:oid,:@1],l:@1,h:@1):bat[:oid,:void]
 address CRKuselect
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command select(b:bat[:oid,:@1],l:@1):bat[:oid,:@1]
+command uselect(b:bat[:oid,:@1],l:@1):bat[:oid,:void]
 address CRKuselectValue
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command uselect(b:bat[:oid,:@1],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:@1]
+command uselect(b:bat[:oid,:@1],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:void]
 address CRKuselectBounds
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
@@ -276,7 +276,7 @@ mal_export str CRKinfo(int *k, int *bid);
 mal_export str CRKcrackValue(int *partid, int *bid, int *mid );
 mal_export str CRKcrackRange(int *partid, int *bid, int *low, int *hgh);
 mal_export str CRKcrackRangeAll(int *partid, int *bid, int *low, int *hgh, bit *lincl, bit *rincl);
-mal_export str CRKcrackRangeWithTwoScans(int *vid, int *bid, int *low, int *hgh, bit tail);
+mal_export str CRKcrackRangeWithTwoScans(int *vid, int *bid, int low, int hgh, bit tail);
 mal_export str CRKcrackJoin(int *partid, int *bid, int *cid);
 mal_export int CRKsetBounds(BAT *b, BAT *view, int mid, int pid);
 mal_export str CRKnewIterator(lng *newpid, int *vid, int *bid);
@@ -287,6 +287,7 @@ mal_export str CRKselectNew(int *vid, int *bid, int *low, int *high, bit *li, bi
 mal_export str CRKselectPieces(int *result, int *bid, int *low, int *hgh);
 mal_export str CRKselect(int *vid, int *bid, int *low, int *hgh);
 mal_export str CRKselectBounds(int *vid, int *bid, int *low, int *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+mal_export str CRKselectBounds_(int *vid, int *bid, int *low, int *hgh, bit *inclusiveLow, bit *inclusiveHgh);
 mal_export str CRKselectValue(int *vid, int *bid, int *value);
 mal_export str CRKuselect(int *vid, int *bid, int *low, int *hgh);
 mal_export str CRKuselectBounds(int *vid, int *bid, int *low, int *hgh, bit *inclusiveLow, bit *inclusiveHgh);
@@ -793,13 +794,38 @@ Experiments should (dis) proof this.
 	printf("%d to %d \n", real_low@2, real_high@2);
 #endif
 
+@= decideNextPiece
+	tmpPiece = crackMap[m].pieces + @1;
+	if (tmpPiece->kind == LEAF || firstCrack){
+		
+		/* CASE low [min, max=hgh] */
+		if (low < tmpPiece->rng_min && hgh == tmpPiece->rng_max)
+			@2vh = tmpPiece->idx_last;
+		/* CASE [min=low,max] hgh */
+		else 
+		if  (hgh > tmpPiece->rng_max && low == tmpPiece->rng_min)
+			@2vl = tmpPiece->idx_first;
+		else 
+		if  (!(( low < tmpPiece->rng_min && hgh > tmpPiece->rng_max) ||
+			(tmpPiece->rng_max < low)||
+		 	(tmpPiece->rng_min > hgh)))
+			checkPieceWithoutGaps( m, b, xx, @1, low, hgh, @3vl, @3vh, FALSE); 
+	}
+	else	
+	if (tmpPiece->kind != LEAF && !firstCrack){
+		if ( low == tmpPiece->rng_min &&  hgh == tmpPiece->rng_max){
+                        @2vl = tmpPiece->idx_first;
+                        @2vh = tmpPiece->idx_last;
+                }
+		else checkPieceWithoutGaps( m, b, xx, @1, low, hgh, @3vl, @3vh, FALSE);
+	}
 @c
 void
 checkPieceWithoutGaps(int m, BAT *b, int xx, int i, int low, int hgh, size_t  *vl, size_t *vh, bit firstCrack)
 {
 	ptr vmax = 0, vmin = 0, vm, vmx, bl, bls, bh;
 	ptr p, pn=0;
-	Piece *piece, *npiece;
+	Piece *piece, *npiece, *tmpPiece;
 	size_t l=0, h=0;
 	piece = crackMap[m].pieces + i;
 	char buf[128];	  /* scratch space */
@@ -808,86 +834,51 @@ checkPieceWithoutGaps(int m, BAT *b, int xx, int i, int low, int hgh, size_t  *v
 	printf("\n checking piece %d, changing low high from %d, %d to ",i,low,hgh);
 #endif
 
-/* TODO don't do this simple check inside a function call. Too expensive */
-	if (crackMap[m].pieces[i].kind == LEAF || firstCrack){
-		/* CASE low [min, max] hgh*/
-		if ( low < crackMap[m].pieces[i].rng_min && hgh > crackMap[m].pieces[i].rng_max)
-			return;
-
-		/* CASE [min, max] low hgh*/
-		if (crackMap[m].pieces[i].rng_max < low)
-			return;
-
-		/* CASE low hgh [min, max] */
-		if (crackMap[m].pieces[i].rng_min > hgh)
-			return;
-
-		/* CASE low [min, max=hgh] */
-		if (low < crackMap[m].pieces[i].rng_min && hgh == crackMap[m].pieces[i].rng_max){
-			*vh = piece->idx_last;
-			return;
-		}
+	if (piece->kind == LEAF || firstCrack){
 		/* CASE low [min, hgh, max] */
-		if (low <= crackMap[m].pieces[i].rng_min &&  
-			 hgh < crackMap[m].pieces[i].rng_max &&
-			 hgh > crackMap[m].pieces[i].rng_min){
-
-				vmin = (ptr) ((char *) BUNptr(b, piece->idx_first) - xx);
-				vmax = (ptr) ((char *) BUNptr(b, piece->idx_last) + xx);
-
-				vm = BUNtail(b, (ptr) ((char *) vmin + xx));
-
-				for (p = (ptr) ((char *) vmin + xx); p < vmax; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)){
-					if (*(int *) vm > hgh){
+		if (low <= piece->rng_min && hgh < piece->rng_max && hgh > piece->rng_min){
+			vmin = (ptr) ((char *) BUNptr(b, piece->idx_first) - xx);
+			vmax = (ptr) ((char *) BUNptr(b, piece->idx_last) + xx);
+			vm = BUNtail(b, (ptr) ((char *) vmin + xx));
+			for (p = (ptr) ((char *) vmin + xx); p < vmax; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)){
+				if (*(int *) vm > hgh){
+					vmax = (ptr) ((char *) vmax - xx);
+					while (*(int *) BUNtail(b, vmax) > hgh && vmax > p)
 						vmax = (ptr) ((char *) vmax - xx);
-						while (*(int *) BUNtail(b, vmax) > hgh && vmax > p)
-								vmax = (ptr) ((char *) vmax - xx);
-						if (vmax != p){
-								@:exchange(vmax, p)@
+					if (vmax != p){
+						@:exchange(vmax, p)@
 					}
 				}
 			}
 			h = BUNindex(b, vmax)-1;
 			*vh = BUNindex(b, vmax)-1;
 			l = BUNindex(b, vmin)+1;
-			if (low == crackMap[m].pieces[i].rng_min) 
+			if (low == piece->rng_min) 
 				*vl = piece->idx_first;
 		} else 
-
-		/* CASE [min=low,max] hgh */
-		if  (hgh > crackMap[m].pieces[i].rng_max && low == crackMap[m].pieces[i].rng_min){
-			*vl = piece->idx_first;
-			return;
-		} else 
-
 		/* CASE low [min,max=hgh] or [min,low,max=hgh] or [min,low,max] hgh */
-		if  (hgh >= crackMap[m].pieces[i].rng_max && 
-					  low < crackMap[m].pieces[i].rng_max &&
-			  low > crackMap[m].pieces[i].rng_min){
+		if  (hgh >= piece->rng_max && low < piece->rng_max && low > piece->rng_min){
 
-		vmin = (ptr) ((char *) BUNptr(b, piece->idx_first) - xx);
-		vmax = (ptr) ((char *) BUNptr(b, piece->idx_last) + xx);
-
-		vm = BUNtail(b, (ptr) ((char *) vmin + xx));
-
-		for (p = (ptr) ((char *) vmin + xx); p < vmax; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx))
-			if (*(int *) vm >= low){
-				vmax = (ptr) ((char *) vmax - xx);
-				while (*(int *) BUNtail(b, vmax) >= low && vmax > p)
+			vmin = (ptr) ((char *) BUNptr(b, piece->idx_first) - xx);
+			vmax = (ptr) ((char *) BUNptr(b, piece->idx_last) + xx);
+			vm = BUNtail(b, (ptr) ((char *) vmin + xx));
+			for (p = (ptr) ((char *) vmin + xx); p < vmax; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx))
+				if (*(int *) vm >= low){
 					vmax = (ptr) ((char *) vmax - xx);
-				if (vmax != p){
-					@:exchange(vmax, p)@
+					while (*(int *) BUNtail(b, vmax) >= low && vmax > p)
+						vmax = (ptr) ((char *) vmax - xx);
+					if (vmax != p){
+						@:exchange(vmax, p)@
 				}
-			}
-			
-		h = BUNindex(b, vmax)-1;
-		l = BUNindex(b, vmin)+1;
-		*vl = BUNindex(b, vmax);
-		if (hgh == crackMap[m].pieces[i].rng_max) 
-			*vh = piece->idx_last;
-	} else{
+			}		
+			h = BUNindex(b, vmax)-1;
+			l = BUNindex(b, vmin)+1;
+			*vl = BUNindex(b, vmax);
+			if (hgh == piece->rng_max) 
+				*vh = piece->idx_last;
+		} else{
 #ifdef DEBUG_CRACKERS
-			   printf("#splitting in three pieces \n");
+			printf("#splitting in three pieces \n");
 #endif
 			vmin = BUNptr(b, piece->idx_first);
 			vmax = BUNptr(b, piece->idx_last);
@@ -1067,7 +1058,7 @@ and update the administration BATs.
 				npiece->idx_first = h + 1;
 		}
 	}
-	else if (crackMap[m].pieces[i].kind != LEAF && !firstCrack){
+	else if (piece->kind != LEAF && !firstCrack){
 #ifdef DEBUG_CRACKERS
 		printf("\n checking piece %d, changing low high from %d, %d to ",i,low,hgh);
 #endif
@@ -1075,16 +1066,11 @@ and update the administration BATs.
 #ifdef DEBUG_CRACKERS   
 		printf(" %d, %d \n", low,hgh);
 #endif	          
-		if ( low == crackMap[m].pieces[i].rng_min &&  hgh == crackMap[m].pieces[i].rng_max){
-				*vl = piece->idx_first;
-				*vh = piece->idx_last;
-				return;
-		}       
-		if (  ( low >= crackMap[m].pieces[i].rng_min &&  low <= crackMap[m].pieces[i].rng_max) ||
-			  ( hgh >= crackMap[m].pieces[i].rng_min &&  hgh <= crackMap[m].pieces[i].rng_max) ){
-				if (piece->left != -1) checkPieceWithoutGaps( m, b, xx, piece->left, low, hgh, vl, vh, FALSE);
-				if (piece->middle != -1) checkPieceWithoutGaps(m, b, xx, piece->middle, low, hgh, vl, vh, FALSE);
-				if (piece->right != -1) checkPieceWithoutGaps(m, b, xx, piece->right, low, hgh, vl, vh, FALSE);
+		if (  ( low >= piece->rng_min &&  low <= piece->rng_max) ||
+			  ( hgh >= piece->rng_min &&  hgh <= piece->rng_max) ){
+			if (piece->left != -1) {@:decideNextPiece(piece->left,*,)@}
+			if (piece->middle != -1) {@:decideNextPiece(piece->middle,*,)@}
+			if (piece->right != -1) {@:decideNextPiece(piece->right,*,)@}
 		}       
 	}
 }   
@@ -1483,14 +1469,15 @@ and update the administration BATs.
 
    It is not going to be always better depending on the size of the piece, in memory or not etc*/
 str
-CRKcrackRangeWithTwoScans(int *vid, int *bid, int *low, int *hgh, bit tail)
+CRKcrackRangeWithTwoScans(int *vid, int *bid, int low, int hgh, bit tail)
 {
         BAT *b, *view, *uview;
         int xx;
         int  m;
         size_t vl=0, vh=0;
 	bit firstCrack = FALSE;
-        if (*(int *) low > *(int *) hgh)
+	Piece *piece, *tmpPiece;
+        if (low >  hgh)
                 return throwMessage("crackers.crack", "illegal range");
         if ((b = BATdescriptor(*bid)) == NULL) {
                 return throwMessage("crackers.crackRange", "Cannot access descriptor");
@@ -1508,17 +1495,18 @@ CRKcrackRangeWithTwoScans(int *vid, int *bid, int *low, int *hgh, bit tail)
                 initCrackMap(crackMap + m, bid);
 		firstCrack = TRUE;
         }
+	piece = crackMap[m].pieces;
 @-
 Inspect the value range table to only further crack qualifying fragments.
 @c
 
 #ifdef DEBUG_CRACKERS
-        printf("#search range %d %d \n", *(int *) low, *(int *) hgh);
+        printf("#search range %d %d \n", low, hgh);
 #endif
         xx = BUNsize(b);
-
        /* checkPieceWithGaps(m, b, xx, 0, low, hgh, &vl, &vh, firstCrack);*/
-        checkPieceWithoutGaps(m, b, xx, 0, *low, *hgh, &vl, &vh, firstCrack);
+       /* checkPieceWithoutGaps(m, b, xx, 0, *low, *hgh, &vl, &vh, firstCrack);*/
+	@:decideNextPiece(0,,&)@
 
 	view = BATslice(b, vl, vh+1);
 
@@ -1540,17 +1528,15 @@ the ranges of the outer partitions as well.
 str
 CRKselect(int *vid, int *bid, int *low, int *hgh)
 {
-	int *l = malloc(sizeof(int));
-        *l = *(int*) low;
-	int *h = malloc(sizeof(int));
-        *h = *(int*) hgh;
+        int l = *(int*) low;
+        int h = *(int*) hgh;
 
-	if (*l == int_nil) {
-		*l = INT_MIN;
+	if (l == int_nil) {
+		l = INT_MIN;
 		CRKcrackRangeWithTwoScans(vid, bid, l, h, TRUE);
 	}
-	else if (*h == int_nil) {
-		*h = INT_MAX;
+	else if (h == int_nil) {
+		h = INT_MAX;
 		CRKcrackRangeWithTwoScans(vid, bid, l, h, TRUE);
 	} 
         else CRKcrackRangeWithTwoScans(vid, bid, l, h, TRUE);
@@ -1558,46 +1544,42 @@ CRKselect(int *vid, int *bid, int *low, int *hgh)
 }
 
 
-/*
-str
-CRKselectBounds(int *vid, int *bid, int *low, int *hgh, bit *inclusiveLow, bit *inclusiveHgh)
-{		
-	int *l = malloc(sizeof(int));
-        *l = *(int*) low;
-	int *h = malloc(sizeof(int));
-        *h = *(int*) hgh;
 
-	if (*l == int_nil)
-		*l = INT_MIN;
-	if (*h == int_nil)
-		*h = INT_MAX;
+str
+CRKselectBounds_(int *vid, int *bid, int *low, int *hgh, bit *inclusiveLow, bit *inclusiveHgh)
+{		
+        int l = *(int*) low;
+        int h = *(int*) hgh;
+
+	if (l == int_nil)
+		l = INT_MIN;
+	if (h == int_nil)
+		h = INT_MAX;
 
 	if (*(bit*)inclusiveLow == FALSE && *(bit*)inclusiveHgh == FALSE) {
-		*l=*(int*)l+1;
-		*h=*(int*)h-1;
+		l=l+1;
+		h=h-1;
 		CRKcrackRangeWithTwoScans(vid, bid, l, h, TRUE);
 	}
 	else if (*(bit*)inclusiveLow == FALSE && *(bit*)inclusiveHgh  == TRUE) {	
-		*l=*(int*)l+1;	
+		l=l+1;	
 		CRKcrackRangeWithTwoScans(vid, bid,  l, h, TRUE);
 	}
 	else if (*(bit*)inclusiveLow == TRUE && *(bit*)inclusiveHgh == FALSE){
-		 *h=*(int*)h-1;
-		 CRKcrackRangeWithTwoScans(vid, bid, l, h, TRUE);
+		h=h-1;
+		CRKcrackRangeWithTwoScans(vid, bid, l, h, TRUE);
 	}
 	else 
-		 CRKcrackRangeWithTwoScans(vid, bid, l, h, TRUE);
+		CRKcrackRangeWithTwoScans(vid, bid, l, h, TRUE);
 	return MAL_SUCCEED;
 }
-*/
+
 
 str                             
 CRKselectValue(int *vid, int *bid, int *value)
 {                                       
-	int *l = malloc(sizeof(int));
-        *l = *(int*) value;
-	int *h = malloc(sizeof(int));
-        *h = *(int*) value;
+        int l = *(int*) value;
+        int h = *(int*) value;
 
 	CRKcrackRangeWithTwoScans(vid, bid, l, h, TRUE);
         return MAL_SUCCEED;     
@@ -1606,17 +1588,15 @@ CRKselectValue(int *vid, int *bid, int *value)
 str                             
 CRKuselect(int *vid, int *bid, int *low, int *hgh)
 {                               
-	int *l = malloc(sizeof(int));
-        *l = *(int*) low;
-	int *h = malloc(sizeof(int));
-        *h = *(int*) hgh;
+        int l = *(int*) low;
+        int h = *(int*) hgh;
 
-	if (*l == int_nil) {
-		*l = INT_MIN;
+	if (l == int_nil) {
+		l = INT_MIN;
 		CRKcrackRangeWithTwoScans(vid, bid, l, h, FALSE);
 	}
-	else if (*h == int_nil) {
-		*h = INT_MAX;
+	else if (h == int_nil) {
+		h = INT_MAX;
 		CRKcrackRangeWithTwoScans(vid, bid, l, h, FALSE);
 	} 
         else CRKcrackRangeWithTwoScans(vid, bid, l, h, FALSE);
@@ -1627,27 +1607,25 @@ CRKuselect(int *vid, int *bid, int *low, int *hgh)
 str                     
 CRKuselectBounds(int *vid, int *bid, int *low, int *hgh, bit *inclusiveLow, bit *inclusiveHgh)
 {                       
-	int *l = malloc(sizeof(int));
-        *l = *(int*) low;
-	int *h = malloc(sizeof(int));
-        *h = *(int*) hgh;
+        int l = *(int*) low;
+        int h = *(int*) hgh;
 
-	if (*l == int_nil)
-		*l = INT_MIN;
-	if (*h == int_nil)
-		*h = INT_MAX;
+	if (l == int_nil)
+		l = INT_MIN;
+	if (h == int_nil)
+		h = INT_MAX;
 
 	if (*(bit*)inclusiveLow == FALSE && *(bit*)inclusiveHgh == FALSE) {
-		*l=*(int*)l+1;
-		*h=*(int*)h-1;
+		l=l+1;
+		h=h-1;
 		CRKcrackRangeWithTwoScans(vid, bid, l, h, FALSE);
 	}
 	else if (*(bit*)inclusiveLow == FALSE && *(bit*)inclusiveHgh  == TRUE) {		
-		*l=*(int*)l+1;		
+		l=l+1;		
 		CRKcrackRangeWithTwoScans(vid, bid,  l, h, FALSE);
 	}
 	else if (*(bit*)inclusiveLow == TRUE && *(bit*)inclusiveHgh == FALSE){		
-		 *h=*(int*)h-1;
+		 h=h-1;
 		 CRKcrackRangeWithTwoScans(vid, bid, l, h, FALSE);
 	}
 	else
@@ -1658,10 +1636,8 @@ CRKuselectBounds(int *vid, int *bid, int *low, int *hgh, bit *inclusiveLow, bit 
 str
 CRKuselectValue(int *vid, int *bid, int *value)
 {
-	int *l = malloc(sizeof(int));
-        *l = *(int*) value;
-	int *h = malloc(sizeof(int));
-        *h = *(int*) value;
+        int l = *(int*) value;
+        int h = *(int*) value;
 
         CRKcrackRangeWithTwoScans(vid, bid, l, h, FALSE);
         return MAL_SUCCEED;
