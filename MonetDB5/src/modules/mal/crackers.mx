@@ -2650,19 +2650,10 @@ CRKcrackONE_SI_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 	/* Now for each value that is >hgh if a middle value m occurs in vmax we can save a redudant exchange by seaching 
 	in the middle partition. There middle values are ignored and  a high value is  exchanged with m. 
 	Similarly when a middle value occurs */  			
-	for (p = nmin; p < vmax; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)) {
+	for (p = nmin; p < bl; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)) {
 		if (*(@1*)vm < low) continue;
-		if (p >= bls){  
-			if (*(int *) vm >  hgh){
-				@:move(@1,tmpTmax,vmax,-,>hgh,&& vmax > bl)@
-				if (tmpTmax >= low && tmpTmax <=  hgh){
-					@:exchangeTest(vmax,p,@1)@
-					vmax = (ptr) ((char *) vmax - xx);
-					bl = (ptr) ((char *) bl + xx);
-				}
-			}
-			continue;
-		} 											
+		if (p == bls) break; 
+													
 		if (*(int *) vm >= low && *(int *) vm <= hgh) {
 			for (pn = bl; pn <= vmax; pn = (ptr) ((char *) pn + xx), bl = (ptr) ((char *) bl + xx)){
 				tmpTmid = *(int *) BUNtloc(b, pn);
@@ -2688,7 +2679,7 @@ CRKcrackONE_SI_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 		}  
 		if (*(int *) vm > hgh) {
 			for (pn = vmax; pn >= bl; pn = (ptr) ((char *) pn - xx), vmax = (ptr) ((char *) vmax - xx)){
-				tmpTmax = *(int *) BUNtail(b, pn);
+				tmpTmax = *(int *) BUNtloc(b, pn);
 				if (tmpTmax < low){
 					@:exchangeTest(pn,p,@1)@
 					vmax = (ptr) ((char *) vmax - xx);
@@ -2709,6 +2700,19 @@ CRKcrackONE_SI_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 				}
 			}
 		}
+	}
+
+	for (p = bls; p < vmax; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)) {
+		if (*(int *) vm >  hgh){
+			@:move(@1,tmpTmax,vmax,-,>hgh,&& vmax > bl)@
+			if (tmpTmax >= low && tmpTmax <=  hgh){
+				@:exchangeTest(vmax,p,@1)@
+				vmax = (ptr) ((char *) vmax - xx);
+			}
+			else break;
+		}
+		bl = (ptr) ((char *) bl + xx);
+		
 	}
 	return MAL_SUCCEED;
 }
