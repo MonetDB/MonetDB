@@ -173,7 +173,7 @@ Last updated: @value{UPDATED}
 @node MonetDB Assembler Language, MAL instructions, Embedded MonetDB Limitations , Top
 @include mal_instruction.bdy.texi
 
-@node Function definitions, Function Clones ,Flow of control , MonetDB Assembler Language
+@node Function definitions, Polymorphic Functions ,Flow of control , MonetDB Assembler Language
 @include mal_function.bdy.texi
 
 @node Factory definitions, Type resolution , Commands and Patterns, MonetDB Assembler Language
