@@ -155,10 +155,8 @@ An example initialization string would be "guest:23" which indicates access
 of the client named 'guest' to a session previously started under identity 23.
 
 @{
-The scheduleClient receives a single block from the API.
-The first line should represent a user. The remainder may
-be a request to be handled. This way, a single message
-can be used to issue a short (<8192byte,=BLOCK) transaction.
+The scheduleClient receives a challenge response consisting of
+user:password:lang:blocked:database.
 @c
 void
 scheduleClient(str command, bstream *fin, stream *fout)
@@ -227,7 +225,7 @@ scheduleClient(str command, bstream *fin, stream *fout)
 		return;
 	}
 	*/
-    if (findScenario(lang)  && findScenario(lang)->initSystemCmd == NULL) {
+    if (findScenario(lang) && findScenario(lang)->initSystemCmd == NULL) {
 @-
 Check if we have loaded already the language library.
 The naming convention is to use the language name as an
@@ -239,7 +237,6 @@ alias for the include file
         killClient(cn);
     }
 
-	
 	c = initClient(GDKstrdup(user), passwd, fin, fout);
 	c->nspace = newModule(NULL, putName("user", 4));
 	c->nspace->outer = mal_scope;
@@ -326,18 +323,18 @@ alias for the include file
 		BBPunfix(b->batCacheid);
 
 		stream_flush(c->fdout);
-		c->mode= FINISHING;
+		c->mode = FINISHING;
 	} else {
 		if (!lang) {
 			if ((s = defaultScenario(c))) {
 				stream_printf(c->fdout, "!%s\n", s);
 				stream_flush(c->fdout);
-				c->mode= FINISHING;
+				c->mode = FINISHING;
 			}
 		} else if ((s = setScenario(c, lang)) != NULL) {
 			stream_printf(c->fdout, "!%s\n", s);
 			stream_flush(c->fdout);
-			c->mode= FINISHING;
+			c->mode = FINISHING;
 		}
 	}
 
