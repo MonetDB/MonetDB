@@ -2166,7 +2166,6 @@ CRKpieceONE_MK_@1( BAT *b, @1 mval, int first, int last){
 		if (*(@1 *) vm == mval){
 			@:shuffleMK(@1)@
 			vl = (ptr) ((char *) vl - xx);
-			vm = (ptr) ((char *) vm - xx);
 		} 
 		vm = (ptr) ((char *) vm - xx);
 	} 
