@@ -97,15 +97,15 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 		tname = qname_table(tableref->data.lval->h->data.lval);
 
 		if (!s) {
-			(void) sql_error(sql, 02, "unknown schema");
+			(void) sql_error(sql, 02, "SELECT: no such schema");
 			return NULL;
 		}
 		t = mvc_bind_table(sql, s, tname);
 		if (!t) {
-			(void) sql_error(sql, 02, "unknown table %s", tname);
+			(void) sql_error(sql, 02, "SELECT: no such table '%s'", tname);
 			return NULL;
 		} else if (!table_privs(sql, t, PRIV_SELECT)) {
-			(void) sql_error(sql, 02, "user is not allowed to perform SELECT operation on table %s", tname);
+			(void) sql_error(sql, 02, "SELECT: access denied for %s to table '%s.%s'", sql->user, s->base.name, tname);
 			return NULL;
 		}
 		if (tableref->data.lval->h->next->data.sym) {	/* AS */
@@ -151,10 +151,10 @@ sql_subquery(mvc *sql, scope *scp, symbol *sq, int toplevel)
 	assert(sn->s.token == SQL_SELECT);
 
 	if (!toplevel && sn->limit >= 0)
-		return sql_error(sql, 01, "LIMIT only allowed on outer select");
+		return sql_error(sql, 01, "SELECT: LIMIT only allowed on outermost SELECT");
 
 	if (!toplevel && sn->orderby)
-		return sql_error(sql, 01, "ORDER BY only allowed on outer select ");
+		return sql_error(sql, 01, "SELECT: ORDER BY only allowed on outermost SELECT");
 
 	if (sn->from) {		/* keep variable list with tables and names */
 		dlist *fl = sn->from->data.lval;
@@ -237,7 +237,7 @@ sql_column_ref(mvc *sql, scope *scp, symbol *column_r)
 			cvar *cv = scope_first_column(scp);
 
 			if (!cv)
-				return sql_error(sql, 02, "ROWID used without table ref");
+				return sql_error(sql, 02, "SELECT: ROWID column used without table reference");
 			return stmt_mirror(stmt_dup(cv->s));
 		} else if (!(cs = scope_bind(scp, NULL, name))) {
 			/* maybe simple param */
@@ -247,10 +247,10 @@ sql_column_ref(mvc *sql, scope *scp, symbol *column_r)
 				sql_subtype tpe;
 
 				if (!(v = sql_get_var(sql, name)))
-					return sql_error(sql, 02, "identifier %s unknown or ambigious", name);
+					return sql_error(sql, 02, "SELECT: identifier '%s' unknown or ambigious", name);
 				t = sql_get_type(sql, name);
 				if (!sql_find_subtype(&tpe, t, 0, 0))
-					return sql_error(sql, 02, "could not find type %s", t);
+					return sql_error(sql, 02, "SELECT: no such type '%s'", t);
 
 				cs = stmt_atom(atom_general(&tpe, _strdup(v), 1));
 			} else {
@@ -266,12 +266,12 @@ sql_column_ref(mvc *sql, scope *scp, symbol *column_r)
 			cvar *cv;
 
 			if (!tv) {
-				return sql_error(sql, 02, "identifier %s unknown", tname);
+				return sql_error(sql, 02, "SELECT: no such identifier '%s'", tname);
 			}
 			cv = tv->columns->h->data;
 			return stmt_mirror(stmt_dup(cv->s));
 		} else if (!(cs = scope_bind(scp, tname, cname))) {
-			return sql_error(sql, 02, "column %s.%s unknown", tname, cname);
+			return sql_error(sql, 02, "SELECT: no such column '%s.%s'", tname, cname);
 		}
 	} else if (dlist_length(l) >= 3) {
 		return sql_error(sql, 02, "TODO: column names of level >= 3");
@@ -296,7 +296,7 @@ table_optname(mvc *sql, scope *scp, stmt *sq, symbol *optname)
 		dnode *d;
 
 		if (list_length(sq->op1.lval) != dlist_length(columnrefs)) {
-			return sql_error(sql, 02, "column definition list does not match real list of columns");
+			return sql_error(sql, 02, "SELECT: column definition list does not match real list of columns");
 		}
 		for (m = sq->op1.lval->h, d = columnrefs->h; d && m; d = d->next, m = m->next) {
 			stmt *st = m->data;
@@ -388,7 +388,7 @@ find_pivot(stmt *subset, stmt *t)
 
 /* before the pivot table is created we need to check on both head and
  * tail for the subset.
- * */
+ */
 stmt *
 complex_find_subset(stmt *subset, stmt *t)
 {
@@ -490,7 +490,7 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 	if (!restype) {
 		list_destroy(conds);
 		list_destroy(results);
-		return sql_error(sql, 02, "result type missing");
+		return sql_error(sql, 02, "CASE: result type missing");
 	}
 	for (; dn; dn = dn->next) {
 		stmt *cond = NULL, *result = NULL;
@@ -526,13 +526,13 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 		if (!tpe) {
 			list_destroy(conds);
 			list_destroy(results);
-			return sql_error(sql, 02, "result type missing");
+			return sql_error(sql, 02, "CASE: result type missing");
 		}
 		supertype(&rtype, restype, tpe);
 		if (!tpe) {
 			list_destroy(conds);
 			list_destroy(results);
-			return sql_error(sql, 02, "result types %s,%s of case are not compatible", restype->type->sqlname, tpe->type->sqlname);
+			return sql_error(sql, 02, "CASE: incompatible result types '%s' and '%s'", restype->type->sqlname, tpe->type->sqlname);
 		}
 		restype = &rtype;
 	}
@@ -541,10 +541,10 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 		if (!res) {
 			list_destroy(conds);
 			list_destroy(results);
-			return sql_error(sql, 02, "subset not found for CASE statement");
+			return sql_error(sql, 02, "CASE: subset not found");
 		}
 	} else if (f != sql_sel) {
-		return sql_error(sql, 02, "CASE in query currently not supported");
+		return sql_error(sql, 02, "CASE: currently not supported here");
 	}
 	if (opt_else || else_stmt) {
 		stmt *result = else_stmt;
@@ -587,7 +587,7 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 			res = a;
 		} else {
 			stmt_destroy(a);
-			return sql_error(sql, 02, "CASE in query currently not supported");
+			return sql_error(sql, 02, "CASE: currently not supported here");
 		}
 	}
 
@@ -689,7 +689,7 @@ sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3)
 	list_destroy(tl);
 	if (f)
 		return stmt_Nop(stmt_list(sl), f);
-	return sql_error(sql, 02, "operator: %s unknown", fname);
+	return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
 }
 
 static stmt *
@@ -741,7 +741,7 @@ sql_Nop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
 			}
 		}
 		list_destroy(sl);
-		return sql_error(sql, 02, "operator: %s unknown", l->data.sval);
+		return sql_error(sql, 02, "SELECT: no such operator '%s'", l->data.sval);
 	}
 	return NULL;
 }
@@ -817,7 +817,7 @@ sql_binop_(mvc *sql, scope *scp, char *fname, stmt *ls, stmt *rs)
 		}
 	}
 	if (rs && ls)
-		res = sql_error(sql, 02, "binary operator %s(%s,%s) unknown", fname, tail_type(ls)->type->sqlname, tail_type(rs)->type->sqlname);
+		res = sql_error(sql, 02, "SELECT: no such binary operator '%s(%s,%s)'", fname, tail_type(ls)->type->sqlname, tail_type(rs)->type->sqlname);
 	if (ls)
 		stmt_destroy(ls);
 	if (rs)
@@ -843,7 +843,7 @@ flatten_outerrefs( mvc *sql, scope *scp, stmt *ls, stmt **R, stmt *subset, int f
 		stmt_destroy(sqa);
 		stmt_destroy(ls);
 		stmt_destroy(rs);
-		return sql_error(sql, 02, "too many outer references");
+		return sql_error(sql, 02, "SELECT: too many outer references");
 	}
 	cmp = stmt_join(stmt_reverse(oref), sqa, cmp_equal);
 
@@ -873,7 +873,7 @@ sql_binop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 
 	sql->depth++;
 	if (sql->depth > MAXDEPTH)
-		return sql_error(sql, 02, "Too many nested operators");
+		return sql_error(sql, 02, "SELECT: too many nested operators");
 
  	ls = sql_value_exp(sql, scp, l->next->data.sym, grp, subset, f);
 	rs = sql_value_exp(sql, scp, l->next->next->data.sym, grp, subset, f);
@@ -926,7 +926,7 @@ sql_op(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset)
 	if (f) {
 		return stmt_op(f);
 	} else {
-		return sql_error(sql, 02, "operator: %s() unknown", l->data.sval);
+		return sql_error(sql, 02, "SELECT: no such operator '%s()'", l->data.sval);
 	}
 	return NULL;
 }
@@ -944,7 +944,7 @@ sql_unop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
 		return NULL;
 	rt = tail_type(rs);
 	f = sql_bind_func(sql->trans->module, fname, rt, NULL);
-	/* try to find the function with out a type, and convert
+	/* try to find the function without a type, and convert
 	 * the value to the type needed by this function!
 	 */
 	if (!f && (f = sql_find_func(sql->trans->module, fname, 1)) != NULL) {
@@ -977,11 +977,26 @@ sql_unop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
 		char *type = tail_type(rs)->type->sqlname;
 
 		stmt_destroy(rs);
-		return sql_error(sql, 02, "unary operator %s(%s) unknown", l->data.sval, type);
+		return sql_error(sql, 02, "SELECT: no such unary operator '%s(%s)'", l->data.sval, type);
 	}
 	return NULL;
 }
 
+char * toUpper(char *dest, const char *src) {
+	int i, len;
+
+	if (src == NULL) {
+		*dest = '\0';
+		return(dest);
+	}
+
+	len = strlen(src);
+	for (i = 0; i < len; i++)
+		dest[i] = (char)toupper((int)src[i]);
+	
+	dest[i] = '\0';
+	return(dest);
+}
 
 static stmt *
 sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
@@ -994,13 +1009,13 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 	int remove_nils = 0; 
 
 	if (f == sql_where) 
-		return sql_error(sql, 02, "aggregates not allowed in WHERE clause");
+		return sql_error(sql, 02, "%s: not allowed in WHERE clause", toUpper(alloca(strlen(l->h->data.sval) + 1), l->h->data.sval));
 	
 	if (!l->h->next->next->data.sym) {	/* count(*) case */
 		cvar *cv;
 
 		if (strcmp(aggrstr, "count") != 0) {
-			return sql_error(sql, 02, "unable to perform %s(*) aggregate", l->h->data.sval);
+			return sql_error(sql, 02, "%s: unable to perform '%s(*)'", toUpper(alloca(strlen(l->h->data.sval) + 1), l->h->data.sval), l->h->data.sval);
 		}
 		if (grp) {
 			a = sql_bind_aggr(sql->trans->module, aggrstr, NULL);
@@ -1012,7 +1027,7 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 
 			assert(foundsubset);
 			if (!foundsubset) {
-				return sql_error(sql, 02, "aggregate: cannot find subset for column %s\n", cv->cname);
+				return sql_error(sql, 02, "%s: no subset for column '%s'", toUpper(alloca(strlen(l->h->data.sval) + 1), l->h->data.sval), cv->cname);
 			}
 			s = stmt_join(foundsubset, stmt_dup(cv->s), cmp_equal);
 		} else if (!cv) { /* count(*) without from */
@@ -1058,7 +1073,7 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		char *type = tail_type(s)->type->sqlname;
 
 		stmt_destroy(s);
-		return sql_error(sql, 02, "aggregate: %s(%s) unknown", l->h->data.sval, type);
+		return sql_error(sql, 02, "%s: no such operator '%s(%s)'", toUpper(alloca(strlen(l->h->data.sval) + 1), l->h->data.sval), l->h->data.sval, type);
 	}
 	return NULL;
 }
@@ -1073,7 +1088,7 @@ sql_column_value(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int
 		stmt *foundsubset = find_pivot(subset, s->h);
 
 		if (!foundsubset)
-			return sql_error(sql, 02, "subset not found for value expression");
+			return sql_error(sql, 02, "SELECT: no subset found for value expression");
 
 		s = stmt_join(foundsubset, s, cmp_equal);
 		if (s && grp && f && s->type != st_aggr && grp->cols) {
@@ -1084,9 +1099,9 @@ sql_column_value(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int
 
 				stmt_destroy(s);
 				if (name)
-					return sql_error(sql, 02, "cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
+					return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
 				else
-					return sql_error(sql, 02, "cannot use non GROUP BY column in query results without an aggregate function");
+					return sql_error(sql, 02, "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 			}
 		} else if (s && grp && f && s->type != st_aggr) {
 			s = stmt_join(stmt_dup(grp->ext), s, cmp_equal);
@@ -1128,7 +1143,7 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		char n[BUFSIZ];
 
 		if (sql->mode != m_prepare) 
-			return sql_error(sql, 02, "cannot have parameters (?) in normal queries, use PREPARE;");
+			return sql_error(sql, 02, "SELECT: parameters ('?') not allowed in normal queries, use PREPARE");
 		snprintf(n, BUFSIZ, "A%d", 
 			(sql->params)?list_length(sql->params):0);
 		sql_add_param(sql, n, NULL);
@@ -1251,10 +1266,10 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 		return NULL;
 
 	if (js && natural) {
-		return sql_error(sql, 02, "cannot have a NATURAL JOIN with a join specification (ON or USING);");
+		return sql_error(sql, 02, "SELECT: cannot have a NATURAL JOIN with a join specification (ON or USING);");
 	}
 	if (!js && !natural) {
-		return sql_error(sql, 02, "must have NATURAL JOIN or a JOIN with a specification (ON or USING);");
+		return sql_error(sql, 02, "SELECT: must have NATURAL JOIN or a JOIN with a join specification (ON or USING);");
 	}
 
 	if (js && js->token != SQL_USING) {	/* On sql_logical_exp */
@@ -1276,7 +1291,7 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 					stmt_destroy(rs);
 				if (s)
 					stmt_destroy(s);
-				return sql_error(sql, 02, "tables %s and/or %s do not have a matching column %s\n", tv1->tname, tv2->tname, nm);
+				return sql_error(sql, 02, "JOIN: tables '%s' and '%s' do not have a matching column '%s'\n", tv1->tname, tv2->tname, nm);
 			}
 			if ((convert_types(sql, &ls, &rs, 1) < 0)) {
 				if (ls)
@@ -1298,7 +1313,7 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 		if (!matching_columns || list_length(matching_columns) == 0) {
 			if (matching_columns)
 				list_destroy(matching_columns);
-			return sql_error(sql, 02, "no attributes of tables %s and %s match\n", tv1->tname, tv2->tname);
+			return sql_error(sql, 02, "JOIN: no columns of tables '%s' and '%s' match", tv1->tname, tv2->tname);
 		}
 
 		s = stmt_reljoin_init();
@@ -1338,13 +1353,12 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 			if (fs2)
 				stmt_destroy(fs2);
 			if (!fs1) {
-				return sql_error(sql, 02, "subset %s not found in JOIN expression", tv1->tname);
+				return sql_error(sql, 02, "JOIN: subset '%s' not found", tv1->tname);
 			} else if (!fs2) {
-				return sql_error(sql, 02, "subset %s not found in JOIN expression", tv2->tname);
+				return sql_error(sql, 02, "JOIN: subset '%s' not found", tv2->tname);
 			} else {
-				return sql_error(sql, 02, "subsets %s,%s not found in JOIN expression", tv1->tname, tv2->tname);
+				return sql_error(sql, 02, "JOIN: subsets '%s' and '%s' not found", tv1->tname, tv2->tname);
 			}
-
 		}
 
 		t = tv1;
@@ -1519,7 +1533,7 @@ sql_except(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols, int distinct )
 		 * The multi column except is handled using group by's and
 		 * group size counts on both sides of the except. We then
 		 * return for each group of A with (A.count - B.count) > 0, 
-	         * number of rows.
+		 * number of rows.
 		 * 
 		 * The problem with this approach is that the groups should
 		 * have equal group identifiers. So we take the union of all
@@ -1629,7 +1643,7 @@ sql_intersect(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols, int distinct )
 		 * The multi column intersect is handled using group by's and
 		 * group size counts on both sides of the intersect. We then
 		 * return for each group of A with min(A.count,B.count), 
-	         * number of rows.
+		 * number of rows.
 		 * 
 		 * The problem with this approach is that the groups should
 		 * have equal group identifiers. So we take the union of all
@@ -1740,7 +1754,7 @@ sql_setop(mvc *sql, scope *scp, symbol *q)
 			op = "EXCEPT";
 		else if (q->token == SQL_INTERSECT)
 			op = "INTERSECT";
-		return sql_error(sql, 02, "cannot %s different ordinality queries", op);
+		return sql_error(sql, 02, "%s: column counts (%d and %d) do not match", op, list_length(tv1->columns), list_length(tv2->columns));
 	}
 	if ( q->token == SQL_UNION)
 		res = sql_union(sql, tv1, tv2, corresponding );
@@ -1957,7 +1971,7 @@ columns_exp(mvc *sql, scope *scp, symbol *column_e, group *grp, stmt *subset, in
 			list_destroy(columns);
 	}
 	if (!tv)
-		return sql_error(sql, 02, "column expression table %s unknown", tname);
+		return sql_error(sql, 02, "SELECT: no such table '%s'", tname);
 	return NULL;
 }
 
@@ -2114,7 +2128,7 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 		if (grp && (!rs->key || !ls->key)) {
 			stmt_destroy(rs);
 			stmt_destroy(ls);
-			return sql_error(sql, 02, "cannot compare sets with values, probably an aggregate function missing");
+			return sql_error(sql, 02, "SELECT: cannot compare sets with values (did you forget an aggregate function?)");
 		}
 		return sql_compare(sql, ls, rs, compare_op, f);
 	} else {
@@ -2129,7 +2143,7 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 		if (rs->type != st_list || list_length(rs->op1.lval) == 0) {
 			stmt_destroy(ls);
 			stmt_destroy(rs);
-			return sql_error(sql, 02, "subquery result wrong");
+			return sql_error(sql, 02, "SELECT: subquery result wrong");
 		}
 		o = rs->op1.lval->h;
 		/* no outer references */
@@ -2144,7 +2158,7 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 				sql_subaggr *cnt = sql_bind_aggr(sql->trans->module, "count", NULL);
 				sql_subfunc *ne = sql_bind_func_result(sql->trans->module, "<>", it, it, bt);
 				stmt *cond = stmt_binop(stmt_aggr(stmt_dup(sqa), NULL, cnt), stmt_atom_int(1), ne);
-				buf = _strdup("subquery returned more than one row");
+				buf = _strdup("SELECT: subquery returned more than one row");
 				sqa = stmt_exception(sqa, cond, buf, 00001);
 			}
 			return sql_compare(sql, ls, sqa, compare_op, f);
@@ -2159,7 +2173,7 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 				stmt_destroy(oref);
 				stmt_destroy(sqa);
 				stmt_destroy(rs);
-				return sql_error(sql, 02, "comparision between incompatible types");
+				return sql_error(sql, 02, "SELECT: comparision between incompatible types");
 			}
 
 			cmp = stmt_join(stmt_reverse(oref), sqa, cmp_equal);
@@ -2192,7 +2206,7 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 						sql_subaggr *cnt = sql_bind_aggr(sql->trans->module, "count", NULL);
 						sql_subfunc *ne = sql_bind_func_result(sql->trans->module, "<>", it, it, bt);
 						stmt *cond = stmt_binop(stmt_aggr(stmt_dup(cmp), NULL, cnt), stmt_aggr(stmt_semijoin(stmt_dup(ls), stmt_dup(cmp)), NULL, cnt), ne);
-						buf = _strdup("subquery returned more than one row");
+						buf = _strdup("SELECT: subquery returned more than one row");
 						cmp = stmt_exception(cmp, cond, buf, 00001);
 					}
 				}
@@ -2432,7 +2446,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 
 		if (!tail_type(ls)) {
 			stmt_destroy(ls);
-			return sql_error(sql, 02, "No parameter allowed on left hand of LIKE statement");
+			return sql_error(sql, 02, "SELECT: parameter not allowed on left hand of LIKE operator");
 		}
 
 		lo = ro->data.lval->h->data.sym;
@@ -2450,11 +2464,11 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 			if (stmt_set_type_param(sql, st, a) == -1) {
 				stmt_destroy(ls);
 				stmt_destroy(a);
-				return sql_error(sql, 02, "wrong type used with LIKE statement, should be string");
+				return sql_error(sql, 02, "LIKE: wrong type, should be string");
 			}
 		} else if ((a = check_types(sql, st, a, type_equal)) == NULL) {
 			stmt_destroy(ls);
-			return sql_error(sql, 02, "wrong type used with LIKE statement, should be string");
+			return sql_error(sql, 02, "LIKE: wrong type, should be string");
 		}
 		/* predicate case ? */
 		if (ls->nrcols == 0 || f == sql_sel) {
@@ -2568,7 +2582,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 
 			if (sq->type != st_list || list_length(sq->op1.lval) == 0) {
 				stmt_destroy(sq);
-				return sql_error(sql, 02, "subquery result wrong");
+				return sql_error(sql, 02, "SELECT: subquery result wrong");
 			}
 
 			if (list_length(sq->op1.lval) == 1) {
@@ -2669,7 +2683,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 
 		if (ls->type != st_list) {
 			stmt_destroy(ls);
-			return sql_error(sql, 02, "subquery result wrong");
+			return sql_error(sql, 02, "SELECT: subquery result wrong");
 		}
 		if (list_length(ls->op1.lval) == 1 || f == sql_sel) {
 			/* predicate case */
@@ -2762,8 +2776,13 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		   scope_setop */
 		stmt *r, *s = scope_setop(sql, sc);
 		if (s->type != st_list || list_length(s->op1.lval) != 1) {
+			char *op = "UNION";
+			if (sc->token == SQL_EXCEPT)
+				op = "EXCEPT";
+			else if (sc->token == SQL_INTERSECT)
+				op = "INTERSECT";
 			stmt_destroy(s);
-			return sql_error(sql, 02, "Expecting a single column instead of a table");
+			return sql_error(sql, 02, "%s: single column instead of a table expected", op);
 		}
 		r = stmt_dup( s->op1.lval->h->data );
 		stmt_destroy(s);
@@ -2830,7 +2849,7 @@ query_groupby_inner(mvc *sql, scope *scp, stmt *c, stmt *subset, group *cur)
 	if (!cur) {
 		char *cn = column_name(c);
 
-		(void) sql_error(sql, 02, "subset not found for groupby column %s\n", cn);
+		(void) sql_error(sql, 02, "GROUP BY: no subset for column '%s'", cn);
 		_DELETE(cn);
 		return NULL;
 	}
@@ -2928,7 +2947,7 @@ orderby_column_ref(mvc *sql, symbol *column_r, stmt *s)
 			}
 			_DELETE(cn);
 		}
-		return sql_error(sql, 02, "unknown column name (%s) in ORDER BY", name);
+		return sql_error(sql, 02, "ORDER BY: no such column '%s'", name);
 	}
 	if (dlist_length(l) == 2) {
 		char *tname = l->h->data.sval;
@@ -2950,9 +2969,9 @@ orderby_column_ref(mvc *sql, symbol *column_r, stmt *s)
 				_DELETE(tn);
 			_DELETE(cn);
 		}
-		return sql_error(sql, 02, "unknown column name (%s) in ORDER BY", name);
+		return sql_error(sql, 02, "ORDER BY: no such column '%s'", name);
 	}
-	return sql_error(sql, 02, "only single column names supported in ORDER BY");
+	return sql_error(sql, 02, "ORDER BY: absolute column names not supported");
 }
 
 static stmt *
@@ -2978,7 +2997,7 @@ query_orderby(mvc *sql, symbol *orderby, stmt *s)
 				return NULL;
 			}
 		} else {
-			return sql_error(sql, 02, "order not of type SQL_COLUMN\n");
+			return sql_error(sql, 02, "ORDER BY: not a column");
 		}
 		o = o->next;
 	}
@@ -3008,7 +3027,7 @@ sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 	int aggr = 0;
 
 	if (!selection) 
-		return sql_error(sql, 02, "A query without a 'from' part cannot have a '*' selection");
+		return sql_error(sql, 02, "SELECT: '*' not allowed without FROM");
 		
 	if (where) {
 		s = sql_logical_exp(sql, scp, where, NULL, NULL, sql_where);
@@ -3027,7 +3046,7 @@ sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 			if (cs) stmt_destroy(cs);
 			list_destroy(sl);
 			sql_select_cleanup(sql, s, subset, NULL);
-			return sql_error(sql, 02, "subquery result missing");
+			return sql_error(sql, 02, "SELECT: subquery result missing");
 		}
 		list_append(sl, cs);
 		aggr |= cs->aggr;
@@ -3046,7 +3065,7 @@ sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 				if (subset) stmt_destroy(subset);
 				list_destroy(rl);
 				list_destroy(sl);
-				return sql_error(sql, 02, "subquery should return a single value");
+				return sql_error(sql, 02, "SELECT: subquery should return a single value");
 			}
 		} else if (subset) {
 			stmt *ss = find_base_row(subset, aggr);
@@ -3064,7 +3083,7 @@ sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 	s = stmt_list(rl);
 
 	if (!s)
-		return sql_error(sql, 02, "subquery result missing");
+		return sql_error(sql, 02, "SELECT: subquery result missing");
 	return s;
 }
 
@@ -3156,7 +3175,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 		s = sql_logical_exp(sql, scp, sn->where, NULL, NULL, sql_where);
 		if (!s) {
 			sql_select_cleanup(sql, s, subset, grp);
-			return sql_error(sql, 02, "subquery result missing");
+			return sql_error(sql, 02, "SELECT: subquery result missing");
 		}
 		if (s->type != st_set && s->type != st_sets) {
 			s = stmt_set(s);
@@ -3190,7 +3209,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 		}
 		if (!cur) {
 			sql_select_cleanup(sql, s, subset, grp);
-			return sql_error(sql, 02, "subquery has no columns");
+			return sql_error(sql, 02, "SELECT: subquery has no columns");
 		}
 		if (!s)
 			s = cur;
@@ -3208,7 +3227,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 			grp = query_groupby(sql, scp, sn->groupby, s);
 			if (!grp) {
 				sql_select_cleanup(sql, s, subset, grp);
-				return sql_error(sql, 02, "subquery result missing");
+				return sql_error(sql, 02, "SELECT: subquery result missing");
 			}
 			/*
 			   s = stmt_groupby(s, cols);
@@ -3221,7 +3240,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 			if (!grp) {
 				assert(0);
 				sql_select_cleanup(sql, s, subset, grp);
-				return sql_error(sql, 02, "subquery outer ref GROUP BY result missing");
+				return sql_error(sql, 02, "SELECT: subquery outer ref GROUP BY result missing");
 			}
 		}
 	}
@@ -3241,7 +3260,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 		t = sql_logical_exp(sql, scp, sn->having, grp, ss, sql_search);
 		if (!t) {
 			sql_select_cleanup(sql, s, subset, grp);
-			return sql_error(sql, 02, "subquery result missing");
+			return sql_error(sql, 02, "SELECT: subquery result missing");
 		}
 
 		if (!grp) {
@@ -3253,7 +3272,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 
 	if (!subset) {
 		sql_select_cleanup(sql, s, subset, grp);
-		return sql_error(sql, 02, "subquery result missing");
+		return sql_error(sql, 02, "SELECT: subquery result missing");
 	}
 
 	rl = create_stmt_list();
@@ -3270,7 +3289,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 				list_destroy(sl);
 				list_destroy(rl);
 				sql_select_cleanup(sql, s, subset, grp);
-				return sql_error(sql, 02, "subquery result missing");
+				return sql_error(sql, 02, "SELECT: subquery result missing");
 			}
 
 			list_append(sl, cs);
@@ -3307,7 +3326,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 					list_destroy(sl);
 					list_destroy(rl);
 					sql_select_cleanup(sql, s, subset, grp);
-					return sql_error(sql, 02, "single value in column expression");
+					return sql_error(sql, 02, "SELECT: single value in column expression");
 					/* properly handle select '' from x */
 				} else if (!cs->aggr && !aggr) {
 					stmt *ss = first_subset(subset);
@@ -3336,7 +3355,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 		if (grp && list_length(scp->outers) <= 0) {
 			list_destroy(rl);
 			sql_select_cleanup(sql, s, subset, grp);
-			return sql_error(sql, 02, "cannot combine SELECT * with GROUP BY");
+			return sql_error(sql, 02, "SELECT: cannot combine '*' with GROUP BY");
 		}
 		if (toplevel) {
 			node *nv;
@@ -3371,7 +3390,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 			if (!foundsubset) {
 				list_destroy(rl);
 				sql_select_cleanup(sql, s, subset, grp);
-				return sql_error(sql, 02, "subquery result missing");
+				return sql_error(sql, 02, "SELECT: subquery result missing");
 			}
 			if (tv->columns->h) {
 				node *n = tv->columns->h;
@@ -3406,7 +3425,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 			if (!foundsubset) {
 				list_destroy(rl);
 				sql_select_cleanup(sql, s, subset, grp);
-				return sql_error(sql, 02, "subquery result missing");
+				return sql_error(sql, 02, "SELECT: subquery result missing");
 			}
 			list_append(rl, stmt_join(stmt_dup(grp->ext), foundsubset, cmp_equal));
 		}
@@ -3422,13 +3441,13 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 		order = query_orderby(sql, sn->orderby, s);
 		if (!order) {
 			sql_select_cleanup(sql, s, subset, grp);
-			return sql_error(sql, 02, "subquery result missing");
+			return sql_error(sql, 02, "SELECT: subquery result missing");
 		}
 	}
 
 	if (!s) {
 		sql_select_cleanup(sql, s, subset, grp);
-		return sql_error(sql, 02, "subquery result missing");
+		return sql_error(sql, 02, "SELECT: subquery result missing");
 	}
 
 	sql_select_cleanup(sql, NULL, subset, grp);
