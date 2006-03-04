@@ -2156,7 +2156,10 @@ CRKpieceONE_MK_@1( BAT *b, @1 mval, int first, int last){
 	} 
 
 	/* reshuffle one part using same algorithm */
-	vm = base? base: (ptr) ((char *) vm - xx);
+	if( base == 0 || base == vl )
+		 return MAL_SUCCEED;
+	
+	vm = base;
 	vmax = (ptr) ((char *) vl + xx);
 	base = BUNtloc(b, BUNptr(b,first));
 	while(vm > base) {
