@@ -2207,28 +2207,57 @@ CRKpieceTWO_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
 	xx = BUNsize(b);
 
 	vm = BUNtloc(b, BUNptr(b,first));
-	vl= BUNtloc(b,BUNptr(b,last));
+	hmax = BUNtloc(b,BUNptr(b,last));
+	while( *(@1 *) hmax > hgh && hmax>vm)
+		hmax= (ptr)((char*) hmax - xx);
+	vl =hmax;
+	while( *(@1 *) vl > low && vl>vm){
+		/* move all high values into their final place */
+		if( *(@1 *) vl > hgh){
+			tdummy= *(@1*)vl;
+			*(@1*)vl= *(@1*)hmax;
+			*(@1*)hmax= tdummy;
+
+			hdummy= *(oid*)((char*)vl - b->tloc);
+			*(oid*)((char*)vl - b->tloc) = *(oid*)((char*)hmax - b->tloc);
+			*(oid*)((char*)hmax - b->tloc) = hdummy;
+			hmax= (ptr)((char*) hmax - xx);
+		}
+		vl= (ptr)((char*) vl - xx);
+	}
+	/* vl point to the first <=low, all values >hg are beyond hmax */
 
 	/* perform Zero crack first */
-	while(vm<vl) {
+	while(vm<=vl) {
 		if (*(@1 *) vm <= low){
 			if (*(@1 *) vm == low)
 				base =vm;
 			vm = (ptr) ((char *) vm + xx);
 		} else {
 			@:shuffleMK(@1)@
-			vl = (ptr) ((char *) vl - xx);
-			while( *(@1 *) vl > low && vl>vm)
+			while( *(@1 *) vl > low && vl>vm){
+				if( *(@1*) vl > hgh ){
+					/* move all high values into their final place */
+					tdummy= *(@1*)vl;
+					*(@1*)vl= *(@1*)hmax;
+					*(@1*)hmax= tdummy;
+
+					hdummy= *(oid*)((char*)vl - b->tloc);
+					*(oid*)((char*)vl - b->tloc) = *(oid*)((char*)hmax - b->tloc);
+					*(oid*)((char*)hmax - b->tloc) = hdummy;
+					hmax= (ptr)((char*) hmax - xx);
+				}
 				vl = (ptr) ((char *) vl - xx);
+			}
 		} 
 	} 
 
 	vmax= (ptr) ((char *) vl + xx);
 	/* reshuffle left part using same algorithm */
 	if( ! ( base == 0 || base == vl ) ){
-		vm = base;
+		vm = vl;
 		base = BUNtloc(b, BUNptr(b,first));
-		while(vm > base) {
+		while(vm >= base) {
 			if (*(@1 *) vm == low){
 				@:shuffleMK(@1)@
 				vl = (ptr) ((char *) vl - xx);
@@ -2239,35 +2268,18 @@ CRKpieceTWO_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
 	vmin= vl;
 
 	/* perform the same operation on low<V< infinite */
-	vm = vmax;
-	vl= BUNtloc(b,BUNptr(b,last));
+	vm = hmax;
+	vl= hmax;
+	hmax= (ptr)((char*) hmax + xx);
 
-	while(vm<vl) {
-		if (*(@1 *) vm <= hgh){
-			if (*(@1 *) vm == hgh)
-				base =vm;
-			vm = (ptr) ((char *) vm + xx);
-		} else {
+	/* reshuffle low<V<=hgh  part */
+	while(vm >= vmin) {
+		if (*(@1 *) vm == hgh){
 			@:shuffleMK(@1)@
 			vl = (ptr) ((char *) vl - xx);
-			while( *(@1 *) vl > hgh && vl>vm)
-				vl = (ptr) ((char *) vl - xx);
 		} 
-	} 
-
-	hmax= (ptr) ((char *) vl + xx);
-	/* reshuffle low<V<=hgh  part */
-	if( ! ( base == 0 || base == vl ) ){
-		vm = base;
-		base = vmax;
-		while(vm > base) {
-			if (*(@1 *) vm == hgh){
-				@:shuffleMK(@1)@
-				vl = (ptr) ((char *) vl - xx);
-			} 
-			vm = (ptr) ((char *) vm - xx);
-		}
-	} 
+		vm = (ptr) ((char *) vm - xx);
+	}
 	hmin= vl;
 
 #ifdef MK_DEBUG
@@ -2548,7 +2560,7 @@ CRKcrackZero_SI_@1 (int *res, int *bid, @1 *mid)
 
 	(void)mid;
 
-	BBPunfix(b->batCacheid);
+	BBPkeepref(b->batCacheid);
 	*res = *bid;
 	return MAL_SUCCEED;
 }
@@ -2746,7 +2758,7 @@ CRKcrackZero_validate_@1 (bit *res, int *bid, @1 *_mid)
 	}
 	count[2] = BATcount(b);
 
-	BBPunfix(b->batCacheid);
+	BBPkeepref(b->batCacheid);
 	
 	if (count[0] + count[1] < count[2]) {
 		printf("|b|="SZFMT" ; |tail<=mid|="SZFMT", |tail>mid|="SZFMT" !\n",
@@ -2863,8 +2875,6 @@ CRKcrackTwo_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
 	}
 	count[5] = BATcount(b);
 
-	BBPunfix(b->batCacheid);
-	
 	if (count[0] + count[1] + count[2] + count[3] + count[4] < count[5]) {
 		printf("|b|="SZFMT" ; |tail<low|="SZFMT", |tail==low|="SZFMT", |low<tail<hgh|="SZFMT", |tail==hgh|="SZFMT", |tail>hgh|="SZFMT" !\n",
 		       count[5], count[0], count[1], count[2], count[3], count[4]);
