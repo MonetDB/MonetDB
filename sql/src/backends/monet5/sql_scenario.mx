@@ -177,8 +177,10 @@ SQLinitAdmin(Client c)
 		m->cache = 1;
 		/* replace user name with client record setting later on */
 		schema = mvc_login(m, "monetdb", "monetdb");
-		if (!schema) 
+		if (!schema) {
+			_DELETE(schema);
 			return throwMessage("SQLparser", "No schema defined\n");
+		}
 		_DELETE(schema);
 		c->state[PARSER] = (void *) backend_create(0 /*debug */ , m, c);
 		((backend*)c->state[PARSER])->language = 'S';	/*expect SQL text first */
@@ -193,17 +195,38 @@ str
 SQLinitClient(Client c)
 {
 	str msg;
+	mvc *m;
+	str schema;
 
 #ifdef _SQL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#SQLinitClient\n");
 #endif
 
-	msg = SQLinitAdmin(c);
+	if (!SQLinitialized && (msg = SQLinit(c)) != MAL_SUCCEED)
+		return msg;
+	
+	if ((backend *) c->state[PARSER] == 0) {
+		m = mvc_create((c-mal_clients), 0, c->fdin, c->fdout);
+		m->cache = 1;
+		/* replace user name with client record setting later on */
+		schema = mvc_login(m, c->user, c->password);
+		if (!schema) {
+			_DELETE(schema);
+			return throwMessage("SQLinitClient", "Schema authorization error\n");
+		}
+		_DELETE(schema);
+		c->state[PARSER] = (void *) backend_create(0 /*debug */ , m, c);
+		((backend*)c->state[PARSER])->language = 'S';	/*expect SQL text first */
+		c->state[OPTIMIZE] = m;
+	} else {
+		m = c->state[OPTIMIZE];
+	}
 
 	c->yycur = 0;		/* make sure we don't reuse the used input */
 	c->fdin->eof = 1;	/* force prompt on first iteration */
 	initSQLreferences();
-	return msg;
+
+	return MAL_SUCCEED;
 }
 
 str
@@ -525,8 +548,8 @@ SQLreader(Client c)
 	int more = TRUE;
 	backend *be = ((backend *) c->state[PARSER]);
 	bstream *in = c->fdin;
-	int language = be->language;	/* 'S' for SQL, 'D' from debugger */
-	mvc *m = be->mvc;
+	int language = -1;
+	mvc *m = NULL;
 	int blocked = isa_block_stream(in->s);
 
 #ifdef _SQL_READER_DEBUG
@@ -536,7 +559,8 @@ SQLreader(Client c)
 		c->mode = FINISHING;
 		return NULL;
 	}
-
+	language = be->language;	/* 'S' for SQL, 'D' from debugger */
+	m = be->mvc;
 @- 
 Continue processing any left-over input from the previous round.
 @c
