@@ -459,7 +459,7 @@ query string with "M".
 			m->scanner.mode = LINE_1;
 		}
 		if (language != 'S' && language != 'X') {
-			error(out, "!ERROR: Unrecognized language prefix");
+			error(out, "!unrecognized language prefix");
 			break;
 		}
 		if (language == 'X') {
@@ -494,7 +494,7 @@ query string with "M".
 				in->pos = in->len;	/* HACK: should use parsed lenght */
 				continue;
 			}
-			error(out, "!ERROR: Unrecognized X command");
+			error(out, "!unrecognized X command");
 			break;
 		}
 
@@ -665,7 +665,7 @@ sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 	schema = mvc_login(m, "monetdb", "monetdb");
 
 	if (!schema) {
-		stream_printf(out, "!ERROR: Schema authorization error");
+		stream_printf(out, "!schema authorization error");
 		stream_flush(out);
 		res_tables_destroy(m->results);
 		mvc_destroy(m);
@@ -705,7 +705,7 @@ sql_client_alloc(mapi_client *fc)
 	Variable v;
 
 	if (!m) 
-		return "!ERROR: Couldn't allocate sql catalog";
+		return "!couldn't allocate sql catalog";
 	fc->fc = be;
 	m->cache = 1;
 

@@ -141,14 +141,14 @@ main(int argc, char **av)
 				*tmp = '\0';
 				setlen = mo_add_option(&set, setlen, opt_cmdline, optarg, tmp + 1);
 			} else {
-				fprintf(stderr, "!ERROR: wrong format %s\n", optarg);
+				fprintf(stderr, "!wrong format %s\n", optarg);
 			}
 		}
 			break;
 		case '?':
 			usage(prog);
 		default:
-			fprintf(stderr, "!ERROR: getopt returned character code 0%o ??\n", c);
+			fprintf(stderr, "!getopt returned character code 0%o ??\n", c);
 			usage(prog);
 		}
 	}
