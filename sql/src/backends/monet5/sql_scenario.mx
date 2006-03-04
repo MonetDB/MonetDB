@@ -208,7 +208,7 @@ SQLinitClient(Client c)
 	if ((backend *) c->state[PARSER] == 0) {
 		m = mvc_create((c-mal_clients), 0, c->fdin, c->fdout);
 		m->cache = 1;
-		/* replace user name with client record setting later on */
+		/* pass through credentials of the user */
 		schema = mvc_login(m, c->user, c->password);
 		if (!schema) {
 			_DELETE(schema);
