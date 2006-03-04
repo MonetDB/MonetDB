@@ -1,0 +1,12 @@
+mserver5 fastcrack_One_MK.mal   </dev/null |tail -2
+#mserver5 fastcrack_One_SI.mal   </dev/null |tail -2
+mserver5 fastcrack_One_sm.mal   </dev/null |tail -2
+mserver5 fastcrack_One_SM.mal   </dev/null |tail -2
+mserver5 fastcrack_Two_MK.mal   </dev/null |tail -2
+#mserver5 fastcrack_Two_SI.mal   </dev/null |tail -2
+mserver5 fastcrack_Two_sm.mal   </dev/null |tail -2
+mserver5 fastcrack_Two_SM.mal   </dev/null |tail -2
+mserver5 fastcrack_Zero_MK.mal   </dev/null |tail -2
+#mserver5 fastcrack_Zero_SI.mal   </dev/null |tail -2
+mserver5 fastcrack_Zero_sm.mal   </dev/null |tail -2
+mserver5 fastcrack_Zero_SM.mal   </dev/null |tail -2
