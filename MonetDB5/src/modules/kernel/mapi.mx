@@ -311,7 +311,7 @@ MAPIlistenThread(int *Sock)
 			/* in M4 it is possible to execute a command directly */
 		}
 	} while (1);
-	  error:
+error:
 	return throwMessage("mapi.listen", msg);
 }
 
