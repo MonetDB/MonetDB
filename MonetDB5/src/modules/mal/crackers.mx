@@ -2124,7 +2124,7 @@ CRKcrackZero_MK_@1 (int *res, int *bid, @1 *mid)
 
 str
 CRKpieceONE_MK_@1( BAT *b, @1 mval, int first, int last){
-	ptr vm, vmin, vmax, vlast;
+	ptr vm, vl, vmax, vlast;
 	int xx;
 	struct SCRATCH{
 		oid hdummy;
@@ -2138,47 +2138,43 @@ CRKpieceONE_MK_@1( BAT *b, @1 mval, int first, int last){
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
 	vm = BUNtloc(b, BUNptr(b,first));
-	vlast= BUNtloc(b,BUNptr(b,last+1));
+	vl= BUNtloc(b,BUNptr(b,last));
 
-	/* deal with startup */
-	while( *(@1*)vm < mval && vm < vlast)
-		 vm = (ptr) ((char *) vm + xx);
-	vmin= (ptr) ((char*)vm - b->tloc -xx);
-	while( *(@1*)vm == mval && vm < vlast)
-		 vm = (ptr) ((char *) vm + xx);
-	vmax= (ptr) ((char*)vm - b->tloc);
-
-#ifdef MK_DEBUG
-	printf("crack start %d %d\n", (int) BUNindex(b,vmin), (int) BUNindex(b,vmax));
-#endif
-
-	while(vm<vlast) {
-		if (*(@1 *) vm > mval) {
+	/* perform Zero crack first */
+	while(vm<vl) {
+		if (*(@1 *) vm <= mval)
 			vm = (ptr) ((char *) vm + xx);
-		} else{
-			if (*(@1 *) vm == mval) {
-				/* exchange with equality top */
-				p= (ptr) ((char*)vm - b->tloc);
-				dummy = *(struct SCRATCH *) vmax;
-				*(struct SCRATCH *) vmax= *(struct SCRATCH *) p;
-				*(struct SCRATCH *) p= dummy;
-				vmax = (ptr) ((char *) vmax + xx);
-				vm = (ptr) ((char *) vm + xx);
-			} else {
-				/* exchange with first non low */
-				vmin = (ptr) ((char *) vmin + xx);
-				p= (ptr) ((char*)vm - b->tloc);
-				dummy = *(struct SCRATCH *) p;
-				*(struct SCRATCH *) p= *(struct SCRATCH *) vmax;
-				*(struct SCRATCH *) vmax= *(struct SCRATCH *) vmin;
-				*(struct SCRATCH *) vmin= dummy;
-				vmax = (ptr) ((char *) vmax + xx);
-				vm = (ptr) ((char *) vm + xx);
-			}
-		}
+		else {
+			p= (ptr) ((char*)vm - b->tloc);
+			dummy = *(struct SCRATCH *) p;
+			vlast= (ptr) ((char*)vl - b->tloc);
+			*(struct SCRATCH *) p= *(struct SCRATCH *) vlast;
+			*(struct SCRATCH *) vlast= dummy;
+			vl = (ptr) ((char *) vl - xx);
+			while( *(@1 *) vl > mval && vl>vm)
+				vl = (ptr) ((char *) vl - xx);
+		} 
+	} 
+
+	/* reshuffle one part using same algorithm */
+	vmax = (ptr) ((char *) vl + xx);
+	vm = BUNtloc(b, BUNptr(b,first));
+	while(vm<vl) {
+		if (*(@1 *) vm < mval)
+			vm = (ptr) ((char *) vm + xx);
+		else {
+			p= (ptr) ((char*)vm - b->tloc);
+			dummy = *(struct SCRATCH *) p;
+			vlast= (ptr) ((char*)vl - b->tloc);
+			*(struct SCRATCH *) p= *(struct SCRATCH *) vlast;
+			*(struct SCRATCH *) vlast= dummy;
+			vl = (ptr) ((char *) vl - xx);
+			while( *(@1 *) vl == mval && vl>vm)
+				vl = (ptr) ((char *) vl - xx);
+		} 
 	} 
 #ifdef MK_DEBUG
-	printf("indices %d %d\n",((int) BUNindex(b,vmin))+1, ((int) BUNindex(b,vmax)));
+	printf("indices %d %d\n",((int) BUNindex(b,vl))+1, ((int) BUNindex(b,vmax)));
 #endif
 	return MAL_SUCCEED;
 }
