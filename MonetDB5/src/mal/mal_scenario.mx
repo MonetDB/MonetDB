@@ -158,7 +158,7 @@ mal_export Scenario dropScenario();
 mal_export str setScenario(Client c, str nme);
 mal_export void runScenario(Client c);
 mal_export void runScenarioBody(Client c);
-mal_export void fillScenario(Client c, Scenario scen);
+mal_export str fillScenario(Client c, Scenario scen);
 mal_export void clrScenario(Client c);
 mal_export str getScenarioLanguage(Client c);
 
@@ -315,9 +315,7 @@ alias for the include file
 	@:initScen(s, optimizer,s->language)@
 	@:initScen(s, tactics,s->language)@
 	@:initScen(s, engine,s->language)@
-	fillScenario(c, s);
-
-	return MAL_SUCCEED;
+	return(fillScenario(c, s));
 }
 
 str
@@ -437,7 +435,7 @@ proper ones.
 All client records should be initialized with a default
 scenario, i.e. the first described in the scenario table.
 @c
-void
+str
 fillScenario(Client c, Scenario scen)
 {
 	c->scenario = scen->name;
@@ -457,7 +455,9 @@ fillScenario(Client c, Scenario scen)
 	c->state[INITCLIENT] = 0;
 	c->state[EXITCLIENT] = 0;
 	if (scen->initClientCmd)
-		(*scen->initClientCmd) (c);
+		return((*scen->initClientCmd) (c));
+
+	return(MAL_SUCCEED);
 }
 
 void
