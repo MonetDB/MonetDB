@@ -41,7 +41,7 @@ barrier (go,i):= (true,0);
 	hgh:int:= mmath.rand();
 	hgh := hgh % values;
 	redo go := low>hgh;
-	io.print(mid,low,hgh);
+	io.print(values,mid,low,hgh);
 
 	b:=algebra.copy(b0);
 t0:= alarm.usec();
@@ -178,23 +178,27 @@ t1:= alarm.usec();
 #	v := crackers.crack_validate(c,low,hgh);
 #	io.print("Two_SI",time,v);
 
-#	b:=algebra.copy(b0);
-#t0:= alarm.usec();
-#	c:=crackers.crack_SM(b,low,hgh);
-#t1:= alarm.usec();
-#	time:= t1 - t0;
-#	t_Two_SM := t_Two_SM + time;
-#	v := crackers.crack_validate(c,low,hgh);
-#	io.print("Two_SM",time,v);
+	b:=algebra.copy(b0);
+t0:= alarm.usec();
+	c:=crackers.crack_SM(b,low,hgh);
+t1:= alarm.usec();
+	time:= t1 - t0;
+	t_Two_SM := t_Two_SM + time;
+	v := crackers.crack_validate(c,low,hgh);
+	io.print("Two_SM",time,v);
 
-#	b:=algebra.copy(b0);
-#t0:= alarm.usec();
-#	c:=crackers.crack_sm(b,low,hgh);
-#t1:= alarm.usec();
-#	time:= t1 - t0;
-#	t_Two_sm := t_Two_sm + time;
-#	v := crackers.crack_validate(c,low,hgh);
-#	io.print("Two_sm",time,v);
+	b:=algebra.copy(b0);
+t0:= alarm.usec();
+	c:=crackers.crack_sm(b,low,hgh);
+t1:= alarm.usec();
+	time:= t1 - t0;
+	t_Two_sm := t_Two_sm + time;
+	v := crackers.crack_validate(c,low,hgh);
+	io.print("Two_sm",time,v);
+
+	values:int:= mmath.rand();
+	values:= values % tuples;
+	values:= values + 1;
 
 	redo (go,i):= mal.nextElement(1,n);
 exit (go,i);

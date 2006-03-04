@@ -18,16 +18,19 @@ n:=20;
 t:=0:lng;
 barrier (go,i):= (true,0);
 	b:= microbenchmark.uniform(0@0,tuples,values);
-	mid:int:= mmath.rand();
-	mid := mid % values;
+	low:int:= mmath.rand();
+	low := low % values;
+	hgh:int:= mmath.rand();
+	hgh := hgh % values;
+	redo go := low>hgh;
 
 t0:= alarm.usec();
-	c:=crackers.crack_SM(b,mid);
+	c:=crackers.crack_sm(b,low,hgh);
 t1:= alarm.usec();
 	time:= t1 - t0;
 	t := t + time;
-	v := crackers.crack_validate(c,mid);
-	io.print(values,mid,time,v);
+	v := crackers.crack_validate(c,low,hgh);
+	io.print(values,low,hgh,time,v);
 
 	values:int:= mmath.rand();
 	values:= values % tuples;
@@ -38,4 +41,4 @@ exit (go,i);
 
 io.print("");
 t := t / n;
-io.print("One_SM",t);
+io.print("Two_sm",t);

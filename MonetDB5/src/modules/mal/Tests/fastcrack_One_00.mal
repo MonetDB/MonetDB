@@ -27,8 +27,12 @@ t1:= alarm.usec();
 	time:= t1 - t0;
 	t := t + time;
 	v := crackers.crack_validate(c,mid);
-	io.print(mid,time,v);
+	io.print(values,mid,time,v);
 	crackers.destroy(b);
+
+	values:int:= mmath.rand();
+	values:= values % tuples;
+	values:= values + 1;
 
 	redo (go,i):= mal.nextElement(1,n);
 exit (go,i);

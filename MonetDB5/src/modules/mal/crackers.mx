@@ -2319,456 +2319,224 @@ CRKcrackTwo_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 }
 @
 
+
 @= SM_operations
-@:SM_operation_Zero(@1,@2)@
-@:SM_operation_One(@1,@2)@
-@:SM_operation_Two(@1,@2)@
+@:SM_split_in_two(@1,LE,GT,<=,>)@
+@:SM_split_in_two(@1,LT,EQ,<,==)@
+@:SMsm_piece_Zero(@1,SM)@
+@:SMsm_piece_One(@1,SM)@
+@:SMsm_piece_Two(@1,SM)@
+@:SMsm_crack_ZeroOne(@1,SM,Zero,z)@
+@:SMsm_crack_ZeroOne(@1,SM,One,)@
+@:SMsm_crack_Two(@1,SM)@
 @
 @= sm_operations
-@:sm_operation_Zero(@1,@2)@
-@:sm_operation_One(@1,@2)@
-@:sm_operation_Two(@1,@2)@
+@:sm_split_in_two(@1,LE,GT,<=,>)@
+@:sm_split_in_two(@1,LT,EQ,<,==)@
+@:SMsm_piece_Zero(@1,sm)@
+@:SMsm_piece_One(@1,sm)@
+@:SMsm_piece_Two(@1,sm)@
+@:SMsm_crack_ZeroOne(@1,sm,Zero,z)@
+@:SMsm_crack_ZeroOne(@1,sm,One,)@
+@:SMsm_crack_Two(@1,sm)@
 @
-@= CRKcrackZero_SM_advance
-	while (bn_s < bn_l && *(@1*)BUNtloc(b, bn_s) <= mid) {
-		bn_s += bs;
-	}
-	while (bn_l > bn_s && *(@1*)BUNtloc(b, bn_l) > mid) {
-		bn_l -= bs;
-	}
-@= SM_operation_Zero
-str
-CRKpieceZero_SM_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *le)
-{
-	BUN bn_s, bn_l;
-	int bs;
 
+@= SMsm_swapTwoBUNs
+	oid h     = *(oid*)@2;
+	@1  t     = *(@1 *)@3;
+	*(oid*)@2 = *(oid*)@4;
+	*(@1 *)@3 = *(@1 *)@5;
+	*(oid*)@4 = h;
+	*(@1 *)@5 = t;
+	bn_s += bs;
+	bn_l -= bs;
+	@6
+@
+
+@= SMsm_advance
+	while (bn_s < bn_l && *(@1*)@4 @2 mid) {
+		bn_s += bs;
+		@6
+	}
+	while (bn_l > bn_s && *(@1*)@5 @3 mid) {
+		bn_l -= bs;
+		@7
+	}
+@
+
+@= SMsm_split_in_two_init
 	/* initialization */
-	bs = BUNsize(b);
-	bn_s = BUNptr(b, fst);
-	bn_l = BUNptr(b, lst);
-
-	/* advance cursors, skipping over BUNs that are already in the right place */
-	while (bn_s < bn_l && *(@1*)BUNtloc(b, bn_s) < mid) {
-		bn_s += bs;
-	}
-	*lt = BUNindex(b, bn_s);
-	@:CRKcrackZero_SM_advance(@1)@
-	
-	/* re-shuffel BUNs */
-	while (bn_s < bn_l) {
-		/* swap BUNs */
-		oid h       = *(oid*)BUNhloc(b, bn_l);
-		@1  t       = *(@1 *)BUNtloc(b, bn_l);
-		*(oid*)BUNhloc(b, bn_l) = *(oid*)BUNhloc(b, bn_s);
-		*(@1 *)BUNtloc(b, bn_l) = *(@1 *)BUNtloc(b, bn_s);
-		*(oid*)BUNhloc(b, bn_s) = h;
-		*(@1 *)BUNtloc(b, bn_s) = t;
-		bn_s += bs;
-		bn_l -= bs;
-		
-		/* advance cursors, skipping over BUNs that are already in the right place */
-		@:CRKcrackZero_SM_advance(@1)@
-	}
-
+	int bs = BUNsize(b);
+	BUN bn_s = BUNptr(b, fst);
+	BUN bn_l = BUNptr(b, lst);
+@
+@= SMsm_split_in_two_finish
 	/* final sanity check */
 	assert(bn_s >= bn_l);
 	
-	if (*(@1*)BUNtloc(b, bn_l) <= mid) {
+	if (*(@1*)BUNtloc(b, bn_l) @2 mid) {
 		*le = BUNindex(b, bn_l);
 	} else
-	if (*(@1*)BUNtloc(b, bn_l-bs) <= mid) {
+	if (*(@1*)BUNtloc(b, bn_l-bs) @2 mid) {
 		*le = BUNindex(b, bn_l-bs);
 	} else {
 		assert(0);
 	}
 
 	return MAL_SUCCEED;
-}
-str
-CRKcrackZero_SM_@1 (int *res, int *bid, @1 *mid)
-{
-	BAT *b;
-	str msg;
-	size_t fst, lst, lt, le;
-
-	/* initialization */
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("crackers.zcrack_SM", "Cannot access descriptor");
-	}
-	fst = BUNindex(b, BUNfirst(b));
-	lst = BUNindex(b, BUNlast (b));
-
-	msg = CRKpieceZero_SM_@1(b, *mid, fst, lst, &lt, &le);
-	(void)lt;
-	(void)le;
-
-	BBPkeepref(b->batCacheid);
-	*res = *bid;
-	return msg;
-}
 @
-@= CRKcrackZero_sm_advance
-	while (bn_s < bn_l && *(@1*)tl_s <= mid) {
-		bn_s += bs;
-		hd_s += bs;
-		tl_s += bs;
-	}
-	while (bn_l > bn_s && *(@1*)tl_l > mid) {
-		bn_l -= bs;
-		hd_l -= bs;
-		tl_l -= bs;
-	}
-@= sm_operation_Zero
-str
-CRKpieceZero_sm_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *le)
-{
-	BUN bn_s, bn_l, hd_s, hd_l, tl_s, tl_l;
-	int bs;
 
-	/* initialization */
-	bs = BUNsize(b);
-	bn_s = BUNptr(b, fst);
-	bn_l = BUNptr(b, lst);
-	hd_s = BUNhloc(b, bn_s);
-	hd_l = BUNhloc(b, bn_l);
-	tl_s = BUNtloc(b, bn_s);
-	tl_l = BUNtloc(b, bn_l);
+@= SM_split_in_two
+str
+CRKsplit_SM_@1_@2_@3 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *le)
+{
+	@:SMsm_split_in_two_init@	
 
 	/* advance cursors, skipping over BUNs that are already in the right place */
-	while (bn_s < bn_l && *(@1*)tl_s < mid) {
-		bn_s += bs;
-		hd_s += bs;
-		tl_s += bs;
-	}
+	@:SMsm_advance(@1,<,@5,BUNtloc(b, bn_s),BUNtloc(b, bn_l),,)@
 	*lt = BUNindex(b, bn_s);
-	@:CRKcrackZero_sm_advance(@1)@
+	@:SMsm_advance(@1,@4,@5,BUNtloc(b, bn_s),BUNtloc(b, bn_l),,)@
 	
 	/* re-shuffel BUNs */
 	while (bn_s < bn_l) {
 		/* swap BUNs */
-		oid h       = *(oid*)hd_l;
-		@1  t       = *(@1 *)tl_l;
-		*(oid*)hd_l = *(oid*)hd_s;
-		*(@1 *)tl_l = *(@1 *)tl_s;
-		*(oid*)hd_s = h;
-		*(@1 *)tl_s = t;
-		bn_s += bs;
-		hd_s += bs;
-		tl_s += bs;
-		bn_l -= bs;
-		hd_l -= bs;
-		tl_l -= bs;
+		@:SMsm_swapTwoBUNs(@1,BUNhloc(b, bn_l),BUNtloc(b, bn_l),BUNhloc(b, bn_s),BUNtloc(b, bn_s),)@
 		
 		/* advance cursors, skipping over BUNs that are already in the right place */
-		@:CRKcrackZero_sm_advance(@1)@
+		@:SMsm_advance(@1,@4,@5,BUNtloc(b, bn_s),BUNtloc(b, bn_l),,)@
 	}
 
-	/* final sanity check */
-	assert(bn_s >= bn_l);
-	
-	if (*(@1*)BUNtloc(b, bn_l) <= mid) {
-		*le = BUNindex(b, bn_l);
-	} else
-	if (*(@1*)BUNtloc(b, bn_l-bs) <= mid) {
-		*le = BUNindex(b, bn_l-bs);
-	} else {
-		assert(0);
-	}
-
-	return MAL_SUCCEED;
-}
-str
-CRKcrackZero_sm_@1 (int *res, int *bid, @1 *mid)
-{
-	BAT *b;
-	str msg;
-	size_t fst, lst, lt, le;
-
-	/* initialization */
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("crackers.zcrack_sm", "Cannot access descriptor");
-	}
-	fst = BUNindex(b, BUNfirst(b));
-	lst = BUNindex(b, BUNlast (b));
-
-	msg = CRKpieceZero_sm_@1(b, *mid, fst, lst, &lt, &le);
-	(void)lt;
-	(void)le;
-
-	BBPkeepref(b->batCacheid);
-	*res = *bid;
-	return msg;
+	@:SMsm_split_in_two_finish(@1,@4)@
 }
 @
-@= CRKcrackOne_SM_advance
-	while (bn_@2 < bn_@2x && *(@1*)BUNtloc(b, bn_@2) @3 mid)
-		bn_@2 += bs;
-@= CRKcrackOne_SM_advance_se
-	@:CRKcrackOne_SM_advance(@1,s,< )@
-	@:CRKcrackOne_SM_advance(@1,e,==)@
-@= CRKcrackOne_SM_advance_sl
-	@:CRKcrackOne_SM_advance(@1,s,< )@
-	@:CRKcrackOne_SM_advance(@1,l,> )@
-@= CRKcrackOne_SM_advance_el
-	@:CRKcrackOne_SM_advance(@1,e,==)@
-	@:CRKcrackOne_SM_advance(@1,l,> )@
-@= CRKcrackOne_SM_advance_sel
-	@:CRKcrackOne_SM_advance(@1,s,< )@
-	@:CRKcrackOne_SM_advance(@1,e,==)@
-	@:CRKcrackOne_SM_advance(@1,l,> )@
-@
-@= CRKcrackOne_SM_swap_BUNs
-	oid *h_@2 = (oid*)BUNhloc(b, bn_@2);
-	@1  *t_@2 = (@1 *)BUNtloc(b, bn_@2);
-	oid *h_@3 = (oid*)BUNhloc(b, bn_@3);
-	@1  *t_@3 = (@1 *)BUNtloc(b, bn_@3);
-	oid h = *h_@2;
-	*h_@2 = *h_@3;
-	*t_@2 = @3;
-	*h_@3 = h;
-	*t_@3 = @2;
-	bn_@2 += bs;
-	bn_@3 += bs;
-@
-@= CRKcrackOne_SM_shift_BUNs
-	oid *h_@2 = (oid*)BUNhloc(b, bn_@2);
-	@1  *t_@2 = (@1 *)BUNtloc(b, bn_@2);
-	oid *h_@3 = (oid*)BUNhloc(b, bn_@3);
-	@1  *t_@3 = (@1 *)BUNtloc(b, bn_@3);
-	oid *h_@4 = (oid*)BUNhloc(b, bn_@4);
-	@1  *t_@4 = (@1 *)BUNtloc(b, bn_@4);
-	oid h = *h_@2;
-	*h_@2 = *h_@3;
-	*t_@2 = @3;
-	*h_@3 = *h_@4;
-	*t_@3 = @4;
-	*h_@4 = h;
-	*t_@4 = @2;
-	bn_@2 += bs;
-	bn_@3 += bs;
-	bn_@4 += bs;
-@
-@= CRKcrackOne_SM_finish_swap
-	while (bn_@2 < bn_@2x && bn_@4 < bn_@4x) {
-		@1 @2 = *(@1*)BUNtloc(b, bn_@2);
-		@1 @4 = *(@1*)BUNtloc(b, bn_@4);
-		assert (@2 @3 mid && @4 @5 mid);
-		@:CRKcrackOne_SM_swap_BUNs(@1,@2,@4)@
-		@:CRKcrackOne_SM_advance_@2@4(@1)@
-	}
-@
-@= SM_operation_One
+@= sm_split_in_two
 str
-CRKcrackOne_SM_@1 (int *res, int *bid, @1 *_mid)
+CRKsplit_sm_@1_@2_@3 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *le)
 {
-	BAT *b;
-	BUN bn_s, bn_e, bn_l, bn_sx, bn_ex, bn_lx, fst_bn, lst_bn, fst_tl, lst_tl, ts, te, tl;
-	int bs;
-	@1 mid=*_mid;
-	size_t smaller=0, equal=0, larger=0;
-
-	/* initialization */
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("crackers.crack_SM", "Cannot access descriptor");
-	}
-	bs = BUNsize(b);
-	fst_bn = BUNfirst(b);
-	lst_bn = BUNlast(b);
-	fst_tl = BUNtloc(b, fst_bn);
-	lst_tl = BUNtloc(b, lst_bn);
-	bn_s  = fst_bn;
-	bn_lx = lst_bn;
-	
-	/* count partition sizes */
-	for (tl = lst_tl - bs; tl >= fst_tl && *(@1*)tl > mid; tl -= bs) {
-		larger++;
-		bn_lx -= bs;
-	}
-	for (ts = fst_tl; ts <= tl && *(@1*)ts < mid; ts += bs) {
-		smaller++;
-		bn_s += bs;
-	}
-	for (te = ts; te <= tl; te += bs) {
-		smaller += (*(@1*)te < mid);
-		larger  += (*(@1*)te > mid);
-	}
-	assert(smaller + larger <= BATcount(b));
-	equal = BATcount(b) - smaller - larger;
-	
-	/* set partition-cursors bn_? and -boundaries bn_?x */
-	bn_e = bn_sx = fst_bn + (smaller * bs);
-	bn_l = bn_ex = bn_e   + (equal   * bs);
-	assert(fst_bn <= bn_s);
-	assert(bn_s <= bn_sx);
-	assert(bn_e <= bn_ex);
-	assert(bn_l <= bn_lx);
-	assert(bn_lx <= lst_bn);
+	@:SMsm_split_in_two_init@	
+	BUN hd_s = BUNhloc(b, bn_s);
+	BUN hd_l = BUNhloc(b, bn_l);
+	BUN tl_s = BUNtloc(b, bn_s);
+	BUN tl_l = BUNtloc(b, bn_l);
 
 	/* advance cursors, skipping over BUNs that are already in the right place */
-	@:CRKcrackOne_SM_advance_sel(@1)@
-
-	/* re-shuffel BUNs between the three partitions until one partition is ready */
-	while (bn_s < bn_sx && bn_e < bn_ex && bn_l < bn_lx) {
-		@1 s = *(@1*)BUNtloc(b, bn_s);
-		@1 e = *(@1*)BUNtloc(b, bn_e);
-		@1 l = *(@1*)BUNtloc(b, bn_l);
-
-		/* first try to simply swap two BUNs */
-		if (s == mid && e < mid) {
-			@:CRKcrackOne_SM_swap_BUNs(@1,s,e)@
-		} else 
-		if (s > mid && l < mid) {
-			@:CRKcrackOne_SM_swap_BUNs(@1,s,l)@
-		} else 
-		if (e > mid && l == mid) {
-			@:CRKcrackOne_SM_swap_BUNs(@1,e,l)@
-		} else 
-
-		/* simply swaping two BUNs is not possible;  */
-		/* hence, we have to shift/rotate three BUNs */
-		if (s == mid && e > mid && l < mid) {
-			@:CRKcrackOne_SM_shift_BUNs(@1,l,e,s)@
-		} else 
-		if (s > mid && e < mid && l == mid) {
-			@:CRKcrackOne_SM_shift_BUNs(@1,s,e,l)@
-		} else {
-			/* sanity check: we must never come here! */
-			assert(0);
-		}
+	@:SMsm_advance(@1,<,@5,tl_s,tl_l,hd_s += bs; tl_s += bs;,hd_l -= bs; tl_l -= bs;)@
+	*lt = BUNindex(b, bn_s);
+	@:SMsm_advance(@1,@4,@5,tl_s,tl_l,hd_s += bs; tl_s += bs;,hd_l -= bs; tl_l -= bs;)@
+	
+	/* re-shuffel BUNs */
+	while (bn_s < bn_l) {
+		/* swap BUNs */
+		@:SMsm_swapTwoBUNs(@1,hd_l,tl_l,hd_s,tl_s,hd_s += bs; tl_s += bs; hd_l -= bs; tl_l -= bs;)@
+		
 		/* advance cursors, skipping over BUNs that are already in the right place */
-		@:CRKcrackOne_SM_advance_sel(@1)@
+		@:SMsm_advance(@1,@4,@5,tl_s,tl_l,hd_s += bs; tl_s += bs;,hd_l -= bs; tl_l -= bs;)@
 	}
 
-	/* one partition is ready;     */
-	/* we finish the remaining two */
-	@:CRKcrackOne_SM_finish_swap(@1,s,==,e,< )@
-	@:CRKcrackOne_SM_finish_swap(@1,s,> ,l,< )@
-	@:CRKcrackOne_SM_finish_swap(@1,e,> ,l,==)@
-
-	/* final sanity check */
-	assert(bn_s >= bn_sx);
-	assert(bn_e >= bn_ex);
-	assert(bn_l >= bn_lx);
-
-	BBPkeepref(b->batCacheid);
-	*res = *bid;
-	return MAL_SUCCEED;
+	@:SMsm_split_in_two_finish(@1,@4)@
 }
 @
-@= CRKcrackOne_sm_advance
-	while (bn_s < bn_l && *(@1*)BUNtloc(b, bn_s) < mid) {
-		bn_s += bs;
-	}
-	while (bn_l > bn_s && *(@1*)BUNtloc(b, bn_l) == mid) {
-		bn_l -= bs;
-	}
-@= sm_operation_One
+
+@= SMsm_piece_Zero
 str
-CRKcrackOne_sm_@1 (int *res, int *bid, @1 *_mid)
+CRKpieceZero_@2_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *le)
 {
-	BAT *b;
+	return CRKsplit_@2_@1_LE_GT (b, mid, fst, lst, lt, le);
+}
+@
+
+@= SMsm_piece_One
+str
+CRKpieceOne_@2_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *le)
+{
+	size_t x;
 	str msg;
-	size_t fst, lst, lt, le;
-	BUN bn_s, bn_l;
-	int bs;
-	@1 mid=*_mid;
 
-	/* initialization */
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("crackers.crack_sm", "Cannot access descriptor");
-	}
-	fst = BUNindex(b, BUNfirst(b));
-	lst = BUNindex(b, BUNlast (b));
-
-	msg = CRKpieceZero_sm_@1(b, mid, fst, lst, &lt, &le);
-	
+	msg = CRKsplit_@2_@1_LE_GT (b, mid, fst, lst, &x, le);
 	if (msg != MAL_SUCCEED) {
-		BBPunfix(b->batCacheid);
-		*res = 0;
 		return msg;
 	}
-
-	/* initialization */
-	bs = BUNsize(b);
-	bn_s = BUNptr(b, lt);
-	bn_l = BUNptr(b, le);
-
-	/* advance cursors, skipping over BUNs that are already in the right place */
-	@:CRKcrackOne_sm_advance(@1)@
-	
-	/* re-shuffel BUNs */
-	while (bn_s < bn_l) {
-		/* swap BUNs */
-		oid h       = *(oid*)BUNhloc(b, bn_l);
-		@1  t       = *(@1 *)BUNtloc(b, bn_l);
-		*(oid*)BUNhloc(b, bn_l) = *(oid*)BUNhloc(b, bn_s);
-		*(@1 *)BUNtloc(b, bn_l) = *(@1 *)BUNtloc(b, bn_s);
-		*(oid*)BUNhloc(b, bn_s) = h;
-		*(@1 *)BUNtloc(b, bn_s) = t;
-		bn_s += bs;
-		bn_l -= bs;
-		
-		/* advance cursors, skipping over BUNs that are already in the right place */
-		@:CRKcrackOne_sm_advance(@1)@
-	}
-
-	/* final sanity check */
-	assert(bn_s >= bn_l);
-	
-	BBPkeepref(b->batCacheid);
-	*res = *bid;
-	return MAL_SUCCEED;
+	return CRKsplit_@2_@1_LT_EQ (b, mid, x, *le, &x, lt);
 }
 @
-@= SM_operation_Two
+
+@= SMsm_piece_Two
 str
-CRKcrackTwo_SM_@1 (int *res, int *bid, @1 *low, @1 *hgh)
+CRKpieceTwo_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl, size_t *lel, size_t *lth, size_t *leh)
+{
+	size_t x;
+	str msg;
+
+	msg = CRKsplit_@2_@1_LE_GT (b, low, fst, lst, &x, lel);
+	if (msg != MAL_SUCCEED) {
+		return msg;
+	}
+	msg = CRKsplit_@2_@1_LT_EQ (b, low, x, *lel, &x, ltl);
+	if (msg != MAL_SUCCEED) {
+		return msg;
+	}
+	msg = CRKsplit_@2_@1_LE_GT (b, hgh, *lel, lst, &x, leh);
+	if (msg != MAL_SUCCEED) {
+		return msg;
+	}
+	return CRKsplit_@2_@1_LT_EQ (b, hgh, x, *leh, &x, lth);
+}
+@
+
+@= SMsm_crack_ZeroOne
+str
+CRKcrack@3_@2_@1 (int *res, int *bid, @1 *mid)
 {
 	BAT *b;
+	str msg;
+	size_t fst, lst, lt, le;
 
 	/* initialization */
-	if (*(@1 *) low > *(@1 *) hgh)
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.@4crack_SM", "Cannot access descriptor");
+	}
+	fst = BUNindex(b, BUNfirst(b));
+	lst = BUNindex(b, BUNlast (b));
+
+	msg = CRKpiece@3_@2_@1(b, *mid, fst, lst, &lt, &le);
+	(void)lt;
+	(void)le;
+
+	BBPkeepref(b->batCacheid);
+	*res = *bid;
+	return msg;
+}
+@
+
+@= SMsm_crack_Two
+str
+CRKcrackTwo_@2_@1 (int *res, int *bid, @1 *low, @1 *hgh)
+{
+	BAT *b;
+	str msg;
+	size_t fst, lst, ltl, lel, lth, leh;
+
+	/* initialization */
+	if (*low > *hgh)
 		return throwMessage("crackers.crack_SM", "illegal range");
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("crackers.crack_SM", "Cannot access descriptor");
 	}
+	fst = BUNindex(b, BUNfirst(b));
+	lst = BUNindex(b, BUNlast (b));
 
-	/* FAKE */
-	b = BATorder(b);
-	if (b == NULL) {
-		return throwMessage("crackers.crack_SM", "BATorder failed");
-	}
-
-	BBPkeepref(b->batCacheid);
-	*res = *bid;
-	return MAL_SUCCEED;
-}
-@
-@= sm_operation_Two
-str
-CRKcrackTwo_sm_@1 (int *res, int *bid, @1 *low, @1 *hgh)
-{
-	BAT *b;
-
-	/* initialization */
-	if (*(@1 *) low > *(@1 *) hgh)
-		return throwMessage("crackers.crack_sm", "illegal range");
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("crackers.crack_sm", "Cannot access descriptor");
-	}
-
-	/* FAKE */
-	b = BATorder(b);
-	if (b == NULL) {
-		return throwMessage("crackers.crack_sm", "BATorder failed");
-	}
+	msg = CRKpieceTwo_@2_@1(b, *low, *hgh, fst, lst, &ltl, &lel, &lth, &leh);
+	(void)ltl;
+	(void)lel;
+	(void)lth;
+	(void)leh;
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
 	return MAL_SUCCEED;
 }
 @
+
 
 @= SI_operations
 str
