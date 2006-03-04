@@ -2358,7 +2358,7 @@ CRKcrackTwo_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 		bn_s += bs;
 		@6
 	}
-	while (bn_l > bn_s && *(@1*)@5 @3 mid) {
+	while (bn_s < bn_l && *(@1*)@5 @3 mid) {
 		bn_l -= bs;
 		@7
 	}
@@ -2420,9 +2420,11 @@ CRKsplit_sm_@1_@2_@3 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t
 	BUN tl_l = BUNtloc(b, bn_l);
 
 	/* advance cursors, skipping over BUNs that are already in the right place */
-	@:SMsm_advance(@1,<,@5,tl_s,tl_l,hd_s += bs; tl_s += bs;,hd_l -= bs; tl_l -= bs;)@
+	@:SMsm_advance(@1,<,@5,tl_s,tl_l,tl_s += bs;,tl_l -= bs;)@
 	*lt = BUNindex(b, bn_s);
-	@:SMsm_advance(@1,@4,@5,tl_s,tl_l,hd_s += bs; tl_s += bs;,hd_l -= bs; tl_l -= bs;)@
+	@:SMsm_advance(@1,@4,@5,tl_s,tl_l,tl_s += bs;,tl_l -= bs;)@
+	hd_s = BUNhloc(b, bn_s);
+	hd_l = BUNhloc(b, bn_l);
 	
 	/* re-shuffel BUNs */
 	while (bn_s < bn_l) {
@@ -2466,6 +2468,19 @@ CRKpieceTwo_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl, 
 {
 	size_t x;
 	str msg;
+
+	/* advance cursors, skipping over BUNs that are already in the right place */
+	int bs = BUNsize(b);
+	BUN bn_s = BUNptr(b, fst);
+	BUN bn_l = BUNptr(b, lst);
+	while (bn_s < bn_l && *(@1*)BUNtloc(b, bn_s) < low) {
+		bn_s += bs;
+	}
+	while (bn_s < bn_l && *(@1*)BUNtloc(b, bn_l) > hgh) {
+		bn_l -= bs;
+	}
+	fst = BUNindex(b, bn_s);
+	lst = BUNindex(b, bn_l);
 
 	msg = CRKsplit_@2_@1_LE_GT (b, low, fst, lst, &x, lel);
 	if (msg != MAL_SUCCEED) {
