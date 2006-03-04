@@ -15,6 +15,8 @@ size:= bat.getBatSize(b0);
 io.printf(" BAT size %d\n",size);
 
 n:=20;
+select0:= 0:lng;
+select1:= 0:lng;
 sort:=0:lng;
 t_Zero_00:=0:lng;
 t_Zero_MK:=0:lng;
@@ -48,6 +50,22 @@ t1:= alarm.usec();
 	time:= t1 - t0;
 	sort := sort + time;
 	io.print("sorted",time);
+
+	b:=algebra.copy(b0);
+t0:= alarm.usec();
+	c:=algebra.select(b,mid);
+t1:= alarm.usec();
+	time:= t1 - t0;
+	select0 := select0 + time;
+	io.print("Select mid",time);
+
+	b:=algebra.copy(b0);
+t0:= alarm.usec();
+	c:=algebra.select(b,low,hgh);
+t1:= alarm.usec();
+	time:= t1 - t0;
+	select1 := select1 + time;
+	io.print("Select low,hgh ",time);
 
 #	b:=algebra.copy(b0);
 #t0:= alarm.usec();
@@ -182,6 +200,10 @@ t1:= alarm.usec();
 exit (go,i);
 
 io.print("");
+t_ := select0 / n;
+io.print("Select mid ",t_);
+t_ := select1 / n;
+io.print("Select low,hgh ",t_);
 t_ := sort / n;
 io.print("Sort",t_);
 t_ := t_Zero_00 / n;
