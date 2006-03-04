@@ -2496,7 +2496,7 @@ CRKcrack@3_@2_@1 (int *res, int *bid, @1 *mid)
 		return throwMessage("crackers.@4crack_SM", "Cannot access descriptor");
 	}
 	fst = BUNindex(b, BUNfirst(b));
-	lst = BUNindex(b, BUNlast (b));
+	lst = BUNindex(b, BUNlast (b)) - 1;
 
 	msg = CRKpiece@3_@2_@1(b, *mid, fst, lst, &lt, &le);
 	(void)lt;
@@ -2523,7 +2523,7 @@ CRKcrackTwo_@2_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 		return throwMessage("crackers.crack_SM", "Cannot access descriptor");
 	}
 	fst = BUNindex(b, BUNfirst(b));
-	lst = BUNindex(b, BUNlast (b));
+	lst = BUNindex(b, BUNlast (b)) - 1;
 
 	msg = CRKpieceTwo_@2_@1(b, *low, *hgh, fst, lst, &ltl, &lel, &lth, &leh);
 	(void)ltl;
