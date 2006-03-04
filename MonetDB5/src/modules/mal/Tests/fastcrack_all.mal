@@ -15,6 +15,7 @@ size:= bat.getBatSize(b0);
 io.printf(" BAT size %d\n",size);
 
 n:=20;
+sort:=0:lng;
 t_Zero_00:=0:lng;
 t_Zero_MK:=0:lng;
 t_Zero_SI:=0:lng;
@@ -39,6 +40,14 @@ barrier (go,i):= (true,0);
 	hgh := hgh % values;
 	redo go := low>hgh;
 	io.print(mid,low,hgh);
+
+	b:=algebra.copy(b0);
+t0:= alarm.usec();
+	c:=algebra.sort(b);
+t1:= alarm.usec();
+	time:= t1 - t0;
+	sort := sort + time;
+	io.print("sorted",time);
 
 #	b:=algebra.copy(b0);
 #t0:= alarm.usec();
@@ -173,6 +182,8 @@ t1:= alarm.usec();
 exit (go,i);
 
 io.print("");
+t_ := sort / n;
+io.print("Sort",t_);
 t_ := t_Zero_00 / n;
 io.print("Zero_00",t_);
 t_ := t_Zero_MK / n;
