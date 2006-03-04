@@ -2342,7 +2342,7 @@ CRKcrackTwo_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	}
 @= SM_operation_Zero
 str
-CRKpieceZero_SM_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *pos)
+CRKpieceZero_SM_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *le)
 {
 	BUN bn_s, bn_l;
 	int bs;
@@ -2353,6 +2353,10 @@ CRKpieceZero_SM_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *pos)
 	bn_l = BUNptr(b, lst);
 
 	/* advance cursors, skipping over BUNs that are already in the right place */
+	while (bn_s < bn_l && *(@1*)BUNtloc(b, bn_s) < mid) {
+		bn_s += bs;
+	}
+	*lt = BUNindex(b, bn_s);
 	@:CRKcrackZero_SM_advance(@1)@
 	
 	/* re-shuffel BUNs */
@@ -2375,10 +2379,10 @@ CRKpieceZero_SM_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *pos)
 	assert(bn_s >= bn_l);
 	
 	if (*(@1*)BUNtloc(b, bn_l) <= mid) {
-		*pos = BUNindex(b, bn_l);
+		*le = BUNindex(b, bn_l);
 	} else
 	if (*(@1*)BUNtloc(b, bn_l-bs) <= mid) {
-		*pos = BUNindex(b, bn_l-bs);
+		*le = BUNindex(b, bn_l-bs);
 	} else {
 		assert(0);
 	}
@@ -2390,7 +2394,7 @@ CRKcrackZero_SM_@1 (int *res, int *bid, @1 *mid)
 {
 	BAT *b;
 	str msg;
-	size_t fst, lst, pos;
+	size_t fst, lst, lt, le;
 
 	/* initialization */
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -2399,8 +2403,9 @@ CRKcrackZero_SM_@1 (int *res, int *bid, @1 *mid)
 	fst = BUNindex(b, BUNfirst(b));
 	lst = BUNindex(b, BUNlast (b));
 
-	msg = CRKpieceZero_SM_@1(b, *mid, fst, lst, &pos);
-	(void)pos;
+	msg = CRKpieceZero_SM_@1(b, *mid, fst, lst, &lt, &le);
+	(void)lt;
+	(void)le;
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
@@ -2420,7 +2425,7 @@ CRKcrackZero_SM_@1 (int *res, int *bid, @1 *mid)
 	}
 @= sm_operation_Zero
 str
-CRKpieceZero_sm_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *pos)
+CRKpieceZero_sm_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *le)
 {
 	BUN bn_s, bn_l, hd_s, hd_l, tl_s, tl_l;
 	int bs;
@@ -2435,6 +2440,12 @@ CRKpieceZero_sm_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *pos)
 	tl_l = BUNtloc(b, bn_l);
 
 	/* advance cursors, skipping over BUNs that are already in the right place */
+	while (bn_s < bn_l && *(@1*)tl_s < mid) {
+		bn_s += bs;
+		hd_s += bs;
+		tl_s += bs;
+	}
+	*lt = BUNindex(b, bn_s);
 	@:CRKcrackZero_sm_advance(@1)@
 	
 	/* re-shuffel BUNs */
@@ -2461,10 +2472,10 @@ CRKpieceZero_sm_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *pos)
 	assert(bn_s >= bn_l);
 	
 	if (*(@1*)BUNtloc(b, bn_l) <= mid) {
-		*pos = BUNindex(b, bn_l);
+		*le = BUNindex(b, bn_l);
 	} else
 	if (*(@1*)BUNtloc(b, bn_l-bs) <= mid) {
-		*pos = BUNindex(b, bn_l-bs);
+		*le = BUNindex(b, bn_l-bs);
 	} else {
 		assert(0);
 	}
@@ -2476,7 +2487,7 @@ CRKcrackZero_sm_@1 (int *res, int *bid, @1 *mid)
 {
 	BAT *b;
 	str msg;
-	size_t fst, lst, pos;
+	size_t fst, lst, lt, le;
 
 	/* initialization */
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -2485,8 +2496,9 @@ CRKcrackZero_sm_@1 (int *res, int *bid, @1 *mid)
 	fst = BUNindex(b, BUNfirst(b));
 	lst = BUNindex(b, BUNlast (b));
 
-	msg = CRKpieceZero_sm_@1(b, *mid, fst, lst, &pos);
-	(void)pos;
+	msg = CRKpieceZero_sm_@1(b, *mid, fst, lst, &lt, &le);
+	(void)lt;
+	(void)le;
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
@@ -2661,7 +2673,7 @@ CRKcrackOne_sm_@1 (int *res, int *bid, @1 *_mid)
 {
 	BAT *b;
 	str msg;
-	size_t fst, lst, pos;
+	size_t fst, lst, lt, le;
 	BUN bn_s, bn_l;
 	int bs;
 	@1 mid=*_mid;
@@ -2673,7 +2685,7 @@ CRKcrackOne_sm_@1 (int *res, int *bid, @1 *_mid)
 	fst = BUNindex(b, BUNfirst(b));
 	lst = BUNindex(b, BUNlast (b));
 
-	msg = CRKpieceZero_sm_@1(b, mid, fst, lst, &pos);
+	msg = CRKpieceZero_sm_@1(b, mid, fst, lst, &lt, &le);
 	
 	if (msg != MAL_SUCCEED) {
 		BBPunfix(b->batCacheid);
@@ -2683,8 +2695,8 @@ CRKcrackOne_sm_@1 (int *res, int *bid, @1 *_mid)
 
 	/* initialization */
 	bs = BUNsize(b);
-	bn_s = BUNptr(b, fst);
-	bn_l = BUNptr(b, pos);
+	bn_s = BUNptr(b, lt);
+	bn_l = BUNptr(b, le);
 
 	/* advance cursors, skipping over BUNs that are already in the right place */
 	@:CRKcrackOne_sm_advance(@1)@
