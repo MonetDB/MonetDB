@@ -15,6 +15,7 @@ size:= bat.getBatSize(b0);
 io.printf(" BAT size %d\n",size);
 
 n:=20;
+nulls:= 0:lng;
 select0:= 0:lng;
 select1:= 0:lng;
 sort:=0:lng;
@@ -42,6 +43,14 @@ barrier (go,i):= (true,0);
 	hgh := hgh % values;
 	redo go := low>hgh;
 	io.print(values,mid,low,hgh);
+
+	b:=algebra.copy(b0);
+t0:= alarm.usec();
+	c:=algebra.select(b,nil:int,nil:int);
+t1:= alarm.usec();
+	time:= t1 - t0;
+	nulls := nulls + time;
+	io.print("Null select",time);
 
 	b:=algebra.copy(b0);
 t0:= alarm.usec();
@@ -160,14 +169,14 @@ t1:= alarm.usec();
 #	v := crackers.crack_validate(c,low,hgh);
 #	io.print("Two_00",time,v);
 
-#	b:=algebra.copy(b0);
-#t0:= alarm.usec();
-#	c:=crackers.crack_MK(b,low,hgh);
-#t1:= alarm.usec();
-#	time:= t1 - t0;
-#	t_Two_MK := t_Two_MK + time;
-#	v := crackers.crack_validate(c,low,hgh);
-#	io.print("Two_MK",time,v);
+	b:=algebra.copy(b0);
+t0:= alarm.usec();
+	c:=crackers.crack_MK(b,low,hgh);
+t1:= alarm.usec();
+	time:= t1 - t0;
+	t_Two_MK := t_Two_MK + time;
+	v := crackers.crack_validate(c,low,hgh);
+	io.print("Two_MK",time,v);
 
 #	b:=algebra.copy(b0);
 #t0:= alarm.usec();
@@ -204,6 +213,8 @@ t1:= alarm.usec();
 exit (go,i);
 
 io.print("");
+t_ := nulls / n;
+io.print("Null select",t_);
 t_ := select0 / n;
 io.print("Select mid ",t_);
 t_ := select1 / n;
