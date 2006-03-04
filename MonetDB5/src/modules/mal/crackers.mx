@@ -2064,20 +2064,30 @@ a cracking over a mirrored bat.
 We support only fixed size buns and rely on the compiler
 to arrange proper structs. More advanced schemes, or slower
 stepwise ones, are for the future.
+
+The 'struct SCRATCH{ oid hdummy; @1 tdummy; } dummy;' approach
+did not produce a noticable difference on the machine at hand.
+The generic solution avoids possible compiler alignment issues.
+
+@= shuffleMK
+	tdummy= *(@1*)vm;
+	*(@1*)vm= *(@1*)vl;
+	*(@1*)vl= tdummy;
+
+	hdummy= *(oid*)((char*)vm - b->tloc);
+	*(oid*)((char*)vm - b->tloc) = *(oid*)((char*)vl - b->tloc);
+	*(oid*)((char*)vl - b->tloc) = hdummy;
+
 @= MK_operations
 str
 CRKpieceZero_MK_@1( BAT *b, @1 mval, int first, int last){
-	ptr p, vm, vl, vlast;
+	ptr vm, vl;
 	int xx;
-	struct SCRATCH{
-		oid hdummy;
-		@1 tdummy;
-	} dummy;
+	oid hdummy;
+	@1 tdummy;
 
 	/* set bounds for the iterator */
 	xx = BUNsize(b);
-	if( sizeof(dummy) != xx)
-		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
 	vm = BUNtloc(b, BUNptr(b,first));
 	vl= BUNtloc(b,BUNptr(b,last));
@@ -2086,11 +2096,7 @@ CRKpieceZero_MK_@1( BAT *b, @1 mval, int first, int last){
 		if (*(@1 *) vm <= mval)
 			vm = (ptr) ((char *) vm + xx);
 		else {
-			p= (ptr) ((char*)vm - b->tloc);
-			dummy = *(struct SCRATCH *) p;
-			vlast= (ptr) ((char*)vl - b->tloc);
-			*(struct SCRATCH *) p= *(struct SCRATCH *) vlast;
-			*(struct SCRATCH *) vlast= dummy;
+			@:shuffleMK(@1)@
 			vl = (ptr) ((char *) vl - xx);
 			while( *(@1 *) vl > mval && vl>vm)
 				vl = (ptr) ((char *) vl - xx);
@@ -2124,32 +2130,25 @@ CRKcrackZero_MK_@1 (int *res, int *bid, @1 *mid)
 
 str
 CRKpieceONE_MK_@1( BAT *b, @1 mval, int first, int last){
-	ptr vm, vl, vmax, vlast;
+	ptr vm, vl, vmax,base= 0;
 	int xx;
-	struct SCRATCH{
-		oid hdummy;
-		@1 tdummy;
-	} dummy;
-	ptr p;
+	oid hdummy;
+	@1 tdummy;
 
 	/* set bounds for the iterator */
 	xx = BUNsize(b);
-	if( sizeof(dummy) != xx)
-		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
 	vm = BUNtloc(b, BUNptr(b,first));
 	vl= BUNtloc(b,BUNptr(b,last));
 
 	/* perform Zero crack first */
 	while(vm<vl) {
-		if (*(@1 *) vm <= mval)
+		if (*(@1 *) vm <= mval){
+			if (*(@1 *) vm == mval)
+				base =vm;
 			vm = (ptr) ((char *) vm + xx);
-		else {
-			p= (ptr) ((char*)vm - b->tloc);
-			dummy = *(struct SCRATCH *) p;
-			vlast= (ptr) ((char*)vl - b->tloc);
-			*(struct SCRATCH *) p= *(struct SCRATCH *) vlast;
-			*(struct SCRATCH *) vlast= dummy;
+		} else {
+			@:shuffleMK(@1)@
 			vl = (ptr) ((char *) vl - xx);
 			while( *(@1 *) vl > mval && vl>vm)
 				vl = (ptr) ((char *) vl - xx);
@@ -2157,21 +2156,16 @@ CRKpieceONE_MK_@1( BAT *b, @1 mval, int first, int last){
 	} 
 
 	/* reshuffle one part using same algorithm */
+	vm = base? base: (ptr) ((char *) vm - xx);
 	vmax = (ptr) ((char *) vl + xx);
-	vm = BUNtloc(b, BUNptr(b,first));
-	while(vm<vl) {
-		if (*(@1 *) vm < mval)
-			vm = (ptr) ((char *) vm + xx);
-		else {
-			p= (ptr) ((char*)vm - b->tloc);
-			dummy = *(struct SCRATCH *) p;
-			vlast= (ptr) ((char*)vl - b->tloc);
-			*(struct SCRATCH *) p= *(struct SCRATCH *) vlast;
-			*(struct SCRATCH *) vlast= dummy;
+	base = BUNtloc(b, BUNptr(b,first));
+	while(vm > base) {
+		if (*(@1 *) vm == mval){
+			@:shuffleMK(@1)@
 			vl = (ptr) ((char *) vl - xx);
-			while( *(@1 *) vl == mval && vl>vm)
-				vl = (ptr) ((char *) vl - xx);
+			vm = (ptr) ((char *) vm - xx);
 		} 
+		vm = (ptr) ((char *) vm - xx);
 	} 
 #ifdef MK_DEBUG
 	printf("indices %d %d\n",((int) BUNindex(b,vl))+1, ((int) BUNindex(b,vmax)));
