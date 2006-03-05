@@ -21,10 +21,15 @@ mserver5 --set monet_prompt='' <fastcrack_One_SI.mal |tail -1
 mserver5 --set monet_prompt='' <fastcrack_One_sm.mal |tail -1
 mserver5 --set monet_prompt='' <fastcrack_One_SM.mal |tail -1
 echo 'tail<=LOW , LOW<tail<=HGH , tail>HGH'
-#mserver5 --set monet_prompt='' <fastcrack_Three_MK.mal |tail -1
+mserver5 --set monet_prompt='' <fastcrack_Three_MK.mal |tail -1
 #mserver5 --set monet_prompt='' <fastcrack_Three_SI.mal |tail -1
 mserver5 --set monet_prompt='' <fastcrack_Three_sm.mal |tail -1
 mserver5 --set monet_prompt='' <fastcrack_Three_SM.mal |tail -1
+echo 'tail<LOW , LOW<=tail<=HGH , tail>HGH'
+mserver5 --set monet_prompt='' <fastcrack_Four_MK.mal |tail -1
+#mserver5 --set monet_prompt='' <fastcrack_Four_SI.mal |tail -1
+#mserver5 --set monet_prompt='' <fastcrack_Four_sm.mal |tail -1
+#mserver5 --set monet_prompt='' <fastcrack_Four_SM.mal |tail -1
 echo 'tail<LOW , tail==LOW , LOW<tail<HGH , tail==HGH , tail>HGH'
 mserver5 --set monet_prompt='' <fastcrack_Two_MK.mal |tail -1
 #mserver5 --set monet_prompt='' <fastcrack_Two_SI.mal |tail -1
