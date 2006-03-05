@@ -221,6 +221,12 @@ address CRKcrackThree_@1_@3
 comment "Break a BAT into three pieces with
 	 tail<=low, low<tail<=hgh, tail>hgh,
 	 respectively. (By @2.)";
+
+command ycrack_@1 (b:bat[:oid,:@3], low:@3, hgh:@3) :bat[:oid,:@3]
+address CRKcrackFour_@1_@3
+comment "Break a BAT into three pieces with
+	 tail<low, low<=tail<=hgh, tail>hgh,
+	 respectively. (By @2.)";
 @
 @= crack_validate
 command zcrack_validate (b:bat[:oid,:@1], mid:@1) :bit
@@ -243,6 +249,11 @@ comment "Validate whether a BAT is correctly broken into five pieces with
 
 command zcrack_validate (b:bat[:oid,:@1], low:@1, hgh:@1) :bit
 address CRKcrackThree_validate_@1
+comment "Validate whether a BAT is correctly broken into three pieces with
+	 tail<=low, low<tail<=hgh, tail>hgh,
+	 respectively.";
+command ycrack_validate (b:bat[:oid,:@1], low:@1, hgh:@1) :bit
+address CRKcrackFour_validate_@1
 comment "Validate whether a BAT is correctly broken into three pieces with
 	 tail<=low, low<tail<=hgh, tail>hgh,
 	 respectively.";
@@ -2082,9 +2093,9 @@ did not produce a noticable difference on the machine at hand.
 The generic solution avoids possible compiler alignment issues.
 
 @= shuffleMK
-	tdummy= *(@1*)vm;
-	*(@1*)vm= *(@1*)vl;
-	*(@1*)vl= tdummy;
+	tdummy= *(@1*) @2;
+	*(@1*) @2= *(@1*) @3;
+	*(@1*) @3= tdummy;
 
 	hdummy= *(oid*)((char*)vm - b->tloc);
 	*(oid*)((char*)vm - b->tloc) = *(oid*)((char*)vl - b->tloc);
@@ -2103,12 +2114,14 @@ CRKpieceZero_MK_@1( BAT *b, @1 mval, int first, int last){
 
 	vm = BUNtloc(b, BUNptr(b,first));
 	vl= BUNtloc(b,BUNptr(b,last));
+	while( *(@1 *) vl > mval && vl>vm)
+		vl = (ptr) ((char *) vl - xx);
 
 	while(vm<vl) {
 		if (*(@1 *) vm <= mval)
 			vm = (ptr) ((char *) vm + xx);
 		else {
-			@:shuffleMK(@1)@
+			@:shuffleMK(@1,vm,vl)@
 			vl = (ptr) ((char *) vl - xx);
 			while( *(@1 *) vl > mval && vl>vm)
 				vl = (ptr) ((char *) vl - xx);
@@ -2141,7 +2154,7 @@ CRKcrackZero_MK_@1 (int *res, int *bid, @1 *mid)
 }
 
 str
-CRKpieceONE_MK_@1( BAT *b, @1 mval, int first, int last){
+CRKpieceOne_MK_@1( BAT *b, @1 mval, int first, int last){
 	ptr vm, vl, vmax,base= 0;
 	int xx;
 	oid hdummy;
@@ -2160,7 +2173,7 @@ CRKpieceONE_MK_@1( BAT *b, @1 mval, int first, int last){
 				base =vm;
 			vm = (ptr) ((char *) vm + xx);
 		} else {
-			@:shuffleMK(@1)@
+			@:shuffleMK(@1,vm,vl)@
 			vl = (ptr) ((char *) vl - xx);
 			while( *(@1 *) vl > mval && vl>vm)
 				vl = (ptr) ((char *) vl - xx);
@@ -2176,7 +2189,7 @@ CRKpieceONE_MK_@1( BAT *b, @1 mval, int first, int last){
 	base = BUNtloc(b, BUNptr(b,first));
 	while(vm > base) {
 		if (*(@1 *) vm == mval){
-			@:shuffleMK(@1)@
+			@:shuffleMK(@1,vm,vl)@
 			vl = (ptr) ((char *) vl - xx);
 		} 
 		vm = (ptr) ((char *) vm - xx);
@@ -2200,7 +2213,7 @@ CRKcrackOne_MK_@1 (int *res, int *bid, int *mid)
 	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
-	msg= CRKpieceONE_MK_@1( b, *mid, 0, BATcount(b)-1);
+	msg= CRKpieceOne_MK_@1( b, *mid, 0, BATcount(b)-1);
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
@@ -2209,7 +2222,7 @@ CRKcrackOne_MK_@1 (int *res, int *bid, int *mid)
 
 /* assume that the [first,last] are inclusive bounds */
 str
-CRKpieceTWO_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
+CRKpieceTwo_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
 	ptr vm, vl, vmax, vmin, hmin, hmax, base= 0;
 	int xx;
 	oid hdummy;
@@ -2246,17 +2259,10 @@ CRKpieceTWO_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
 				base =vm;
 			vm = (ptr) ((char *) vm + xx);
 		} else {
-			@:shuffleMK(@1)@
+			@:shuffleMK(@1,vm,vl)@
 			while( *(@1 *) vl > low && vl>vm){
 				if( *(@1*) vl > hgh ){
-					/* move all high values into their final place */
-					tdummy= *(@1*)vl;
-					*(@1*)vl= *(@1*)hmax;
-					*(@1*)hmax= tdummy;
-
-					hdummy= *(oid*)((char*)vl - b->tloc);
-					*(oid*)((char*)vl - b->tloc) = *(oid*)((char*)hmax - b->tloc);
-					*(oid*)((char*)hmax - b->tloc) = hdummy;
+					@:shuffleMK(@1,vl,hmax)@
 					hmax= (ptr)((char*) hmax - xx);
 				}
 				vl = (ptr) ((char *) vl - xx);
@@ -2271,7 +2277,7 @@ CRKpieceTWO_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
 		base = BUNtloc(b, BUNptr(b,first));
 		while(vm >= base) {
 			if (*(@1 *) vm == low){
-				@:shuffleMK(@1)@
+				@:shuffleMK(@1,vm,vl)@
 				vl = (ptr) ((char *) vl - xx);
 			} 
 			vm = (ptr) ((char *) vm - xx);
@@ -2287,7 +2293,7 @@ CRKpieceTWO_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
 	/* reshuffle low<V<=hgh  part */
 	while(vm >= vmin) {
 		if (*(@1 *) vm == hgh){
-			@:shuffleMK(@1)@
+			@:shuffleMK(@1,vm,vl)@
 			vl = (ptr) ((char *) vl - xx);
 		} 
 		vm = (ptr) ((char *) vm - xx);
@@ -2317,7 +2323,9 @@ CRKcrackTwo_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
-	msg= CRKpieceTWO_MK_@1( b, *low, *hgh, 0, BATcount(b)-1);
+	msg= CRKpieceTwo_MK_@1( b, *low, *hgh, 0, BATcount(b)-1);
+	/* msg= CRKpieceOne_MK_@1( b, *low, 0, BATcount(b)-1);
+	msg= CRKpieceOne_MK_@1( b, *hgh, 0, BATcount(b)-1);*/
 
 
 	BBPkeepref(b->batCacheid);
@@ -2325,10 +2333,153 @@ CRKcrackTwo_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	return msg;
 }
 
+/* case: <=low, <=hgh, >hgh */
+str
+CRKpieceThree_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
+	ptr vm, vl, hmax;
+	int xx;
+	oid hdummy;
+	@1 tdummy;
+
+	/* set bounds for the iterator */
+	xx = BUNsize(b);
+
+	vm = BUNtloc(b, BUNptr(b,first));
+	hmax = BUNtloc(b,BUNptr(b,last));
+	while( *(@1 *) hmax > hgh && hmax>vm)
+		hmax= (ptr)((char*) hmax - xx);
+	vl =hmax;
+	while( *(@1 *) vl > low && vl>vm){
+		/* move all high values into their final place */
+		if( *(@1 *) vl > hgh){
+			@:shuffleMK(@1,vl,hmax)@
+			hmax= (ptr)((char*) hmax - xx);
+		}
+		vl= (ptr)((char*) vl - xx);
+	}
+	/* vl point to the first <=low, all values >hg are beyond hmax */
+
+	/* perform Zero crack first */
+	while(vm<=vl) {
+		if (*(@1 *) vm <= low){
+			vm = (ptr) ((char *) vm + xx);
+		} else {
+			@:shuffleMK(@1,vm,vl)@
+			while( *(@1 *) vl > low && vl>vm){
+				if( *(@1*) vl > hgh ){
+					@:shuffleMK(@1,vl,hmax)@
+					hmax= (ptr)((char*) hmax - xx);
+				}
+				vl = (ptr) ((char *) vl - xx);
+			}
+		} 
+	} 
+
+	return MAL_SUCCEED;
+}
+/* handle <=low, low<tail<=hgh, >hgh */
 str
 CRKcrackThree_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 {
-	return CRKcrackTwo_MK_@1(res, bid, low, hgh);
+	BAT *b;
+	str msg;
+
+	if (*(@1 *) low > *(@1 *) hgh)
+		return throwMessage("crackers.crack_MK", "illegal range");
+	if ((b = BATdescriptor(*bid)) == NULL)
+		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
+	(void) *res;
+
+	/* set bounds for the iterator */
+	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
+		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
+
+	msg= CRKpieceThree_MK_@1( b, *low, *hgh, 0, BATcount(b)-1);
+
+
+	BBPkeepref(b->batCacheid);
+	*res = *bid;
+	return msg;
+}
+
+
+/* handle <low, low<=tail<=hgh, >hgh */
+str
+CRKpieceFour_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
+	ptr vm, vl, hmax;
+	int xx;
+	oid hdummy;
+	@1 tdummy;
+
+	/* set bounds for the iterator */
+	xx = BUNsize(b);
+
+	vm = BUNtloc(b, BUNptr(b,first));
+	hmax = BUNtloc(b,BUNptr(b,last));
+	while( *(@1 *) hmax > hgh && hmax>vm)
+		hmax= (ptr)((char*) hmax - xx);
+	vl =hmax;
+	while( *(@1 *) vl >= low && vl>vm){
+		/* move all high values into their final place */
+		if( *(@1 *) vl > hgh){
+			tdummy= *(@1*)vl;
+			*(@1*)vl= *(@1*)hmax;
+			*(@1*)hmax= tdummy;
+
+			hdummy= *(oid*)((char*)vl - b->tloc);
+			*(oid*)((char*)vl - b->tloc) = *(oid*)((char*)hmax - b->tloc);
+			*(oid*)((char*)hmax - b->tloc) = hdummy;
+			hmax= (ptr)((char*) hmax - xx);
+		}
+		vl= (ptr)((char*) vl - xx);
+	}
+
+	while(vm<=vl) {
+		if (*(@1 *) vm < low)
+			vm = (ptr) ((char *) vm + xx);
+		else {
+			@:shuffleMK(@1,vm,vl)@
+			while( *(@1 *) vl >= low && vl>vm){
+				if( *(@1*) vl > hgh ){
+					/* move all high values into their final place */
+					tdummy= *(@1*)vl;
+					*(@1*)vl= *(@1*)hmax;
+					*(@1*)hmax= tdummy;
+
+					hdummy= *(oid*)((char*)vl - b->tloc);
+					*(oid*)((char*)vl - b->tloc) = *(oid*)((char*)hmax - b->tloc);
+					*(oid*)((char*)hmax - b->tloc) = hdummy;
+					hmax= (ptr)((char*) hmax - xx);
+				}
+				vl = (ptr) ((char *) vl - xx);
+			}
+		} 
+	} 
+	return MAL_SUCCEED;
+}
+/* handle <=low, low<tail<=hgh, >hgh */
+str
+CRKcrackFour_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
+{
+	BAT *b;
+	str msg;
+
+	if (*(@1 *) low > *(@1 *) hgh)
+		return throwMessage("crackers.crack_MK", "illegal range");
+	if ((b = BATdescriptor(*bid)) == NULL)
+		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
+	(void) *res;
+
+	/* set bounds for the iterator */
+	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
+		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
+
+	msg= CRKpieceFour_MK_@1( b, *low, *hgh, 0, BATcount(b)-1);
+
+
+	BBPkeepref(b->batCacheid);
+	*res = *bid;
+	return msg;
 }
 @
 
@@ -2757,7 +2908,26 @@ CRKcrackTwo_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 str
 CRKcrackThree_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 {
-	return CRKcrackTwo_SI_@1 (res, bid, low, hgh);
+	(void) res; (void) bid; (void) low; (void) hgh;
+	return MAL_SUCCEED;
+}
+str
+CRKcrackFour_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
+{
+	(void) res; (void) bid; (void) low; (void) hgh;
+	return MAL_SUCCEED;
+}
+str
+CRKcrackFour_SM_@1 (int *res, int *bid, @1 *low, @1 *hgh)
+{
+	(void) res; (void) bid; (void) low; (void) hgh;
+	return MAL_SUCCEED;
+}
+str
+CRKcrackFour_sm_@1 (int *res, int *bid, @1 *low, @1 *hgh)
+{
+	(void) res; (void) bid; (void) low; (void) hgh;
+	return MAL_SUCCEED;
 }
 @
 
@@ -2766,6 +2936,7 @@ CRKcrackThree_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 @:validate_operation_One(@1)@
 @:validate_operation_Two(@1)@
 @:validate_operation_Three(@1)@
+@:validate_operation_Four(@1)@
 @
 @= validate_operation_Zero
 str
@@ -2957,6 +3128,62 @@ CRKcrackThree_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
 	tl = fst_tl;
 
 	while (bn < lst_tl && *(@1*)tl <= low) {
+		bn += bs;
+		tl += bs;
+		count[0]++;
+	}
+	while (bn < lst_tl && *(@1*)tl <= hgh) {
+		bn += bs;
+		tl += bs;
+		count[1]++;
+	}
+	while (bn < lst_tl && *(@1*)tl > hgh) {
+		bn += bs;
+		tl += bs;
+		count[2]++;
+	}
+	count[3] = BATcount(b);
+
+	if (count[0] + count[1] + count[2] < count[3]) {
+		printf("|b|="SZFMT" ; |tail<=low|="SZFMT", |low<tail<=hgh|="SZFMT", |tail>hgh|="SZFMT" !\n",
+		       count[3], count[0], count[1], count[2]);
+		return throwMessage("crackers.zcrack_validate", "Invalid crack");
+	}
+
+	BBPunfix(b->batCacheid);
+	*res = TRUE;
+	return MAL_SUCCEED;
+}
+
+@-
+The <low, low<=tail<=hgh, >hgh sequence
+@= validate_operation_Four
+str
+CRKcrackFour_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
+{
+	BAT *b;
+	BUN bn, fst_bn, lst_bn, fst_tl, lst_tl, tl;
+	int bs;
+	size_t count[4] = {0,0,0,0};
+	@1 low=*_low, hgh=*_hgh;
+
+	/* initialization */
+	*res = FALSE;
+	if (low > hgh) {
+		return throwMessage("crackers.zcrack_validate", "illegal range");
+	}
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.zcrack_validate", "Cannot access descriptor");
+	}
+	bs = BUNsize(b);
+	fst_bn = BUNfirst(b);
+	lst_bn = BUNlast(b);
+	fst_tl = BUNtloc(b, fst_bn);
+	lst_tl = BUNtloc(b, lst_bn);
+	bn = fst_bn;
+	tl = fst_tl;
+
+	while (bn < lst_tl && *(@1*)tl < low) {
 		bn += bs;
 		tl += bs;
 		count[0]++;
