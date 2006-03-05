@@ -72,6 +72,7 @@ public class JdbcClient {
 		// arguments which have no argument(s)
 		copts.addOption(null, "help", CmdLineOpts.CAR_ZERO, null);
 		copts.addOption("e", "echo", CmdLineOpts.CAR_ZERO, null);
+		copts.addOption("q", "quiet", CmdLineOpts.CAR_ZERO, null);
 
 		// we store user and password in separate variables in order to
 		// be able to properly act on them like forgetting the password
@@ -139,6 +140,7 @@ public class JdbcClient {
 "-D --dump  Dumps the given table(s), or the complete database if none given.\n" +
 "--help     This screen.\n" +
 "-e --echo  Also outputs the contents of the input file, if any.\n" +
+"-q --quiet Suppress printing the welcome header.\n" +
 "-d --database  Try to connect to the given database (only makes sense\n" +
 "           if connecting to a DatabasePool, M5 or equivalent process).\n" +
 "\n" +
@@ -409,7 +411,7 @@ public class JdbcClient {
 				} else {
 					processInteractive(true, doEcho, user);
 				}
-			} else {
+			} else if (!copts.getOption("quiet").isPresent()) {
 				// print welcome message
 				out.println("Welcome to the MonetDB interactive JDBC terminal!");
 				if (dbmd != null) {
