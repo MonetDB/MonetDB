@@ -19,7 +19,7 @@ barrier (go,i):= (true,0);
 	b:= microbenchmark.uniform(0@0,tuples,values);
 
 t0:= alarm.usec();
-	c:=algebra.select(b,-1,-1);
+	c:=algebra.select(b,-2,-1);
 t1:= alarm.usec();
 	time:= t1 - t0;
 	t := t + time;
