@@ -2731,7 +2731,7 @@ CRKcrack@3_@2_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
-	return MAL_SUCCEED;
+	return msg;
 }
 @
 
