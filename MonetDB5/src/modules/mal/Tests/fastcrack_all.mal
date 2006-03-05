@@ -28,11 +28,15 @@ t_One_MK:=0:lng;
 t_One_SI:=0:lng;
 t_One_SM:=0:lng;
 t_One_sm:=0:lng;
-t_Two_00:=0:lng;
 t_Two_MK:=0:lng;
 t_Two_SI:=0:lng;
 t_Two_SM:=0:lng;
 t_Two_sm:=0:lng;
+t_Three_00:=0:lng;
+t_Three_MK:=0:lng;
+t_Three_SI:=0:lng;
+t_Three_SM:=0:lng;
+t_Three_sm:=0:lng;
 barrier (go,i):= (true,0);
 	b0:= microbenchmark.uniform(0@0,tuples,values);
 	mid:int:= mmath.rand();
@@ -44,6 +48,7 @@ barrier (go,i):= (true,0);
 	redo go := low>hgh;
 	io.print(values,mid,low,hgh);
 
+	io.print("sorted");
 	b:=algebra.copy(b0);
 t0:= alarm.usec();
 	c:=algebra.select(b,nil:int,nil:int);
@@ -60,6 +65,7 @@ t1:= alarm.usec();
 	sort := sort + time;
 	io.print("sorted",time);
 
+	io.print("Select mid");
 	b:=algebra.copy(b0);
 t0:= alarm.usec();
 	c:=algebra.select(b,mid);
@@ -68,14 +74,17 @@ t1:= alarm.usec();
 	select0 := select0 + time;
 	io.print("Select mid",time);
 
+	io.print("Select low,hgh");
 	b:=algebra.copy(b0);
 t0:= alarm.usec();
 	c:=algebra.select(b,low,hgh);
 t1:= alarm.usec();
 	time:= t1 - t0;
 	select1 := select1 + time;
-	io.print("Select low,hgh ",time);
+	io.print("Select low,hgh",time);
 
+
+#	io.print("Zero_00");
 #	b:=algebra.copy(b0);
 #t0:= alarm.usec();
 #	c:=crackers.crack(b,mid);
@@ -86,6 +95,7 @@ t1:= alarm.usec();
 #	io.print("Zero_00",time,v);
 #	crackers.destroy(b);
 
+	io.print("Zero_MK");
 	b:=algebra.copy(b0);
 t0:= alarm.usec();
 	c:=crackers.zcrack_MK(b,mid);
@@ -95,6 +105,7 @@ t1:= alarm.usec();
 	v := crackers.zcrack_validate(c,mid);
 	io.print("Zero_MK",time,v);
 
+#	io.print("Zero_SI");
 #	b:=algebra.copy(b0);
 #t0:= alarm.usec();
 #	c:=crackers.zcrack_SI(b,mid);
@@ -104,6 +115,7 @@ t1:= alarm.usec();
 #	v := crackers.zcrack_validate(c,mid);
 #	io.print("Zero_SI",time,v);
 
+	io.print("Zero_SM");
 	b:=algebra.copy(b0);
 t0:= alarm.usec();
 	c:=crackers.zcrack_SM(b,mid);
@@ -113,6 +125,7 @@ t1:= alarm.usec();
 	v := crackers.zcrack_validate(c,mid);
 	io.print("Zero_SM",time,v);
 
+	io.print("Zero_sm");
 	b:=algebra.copy(b0);
 t0:= alarm.usec();
 	c:=crackers.zcrack_sm(b,mid);
@@ -123,6 +136,7 @@ t1:= alarm.usec();
 	io.print("Zero_sm",time,v);
 
 
+	io.print("One_MK");
 	b:=algebra.copy(b0);
 t0:= alarm.usec();
 	c:=crackers.crack_MK(b,mid);
@@ -132,6 +146,7 @@ t1:= alarm.usec();
 	v := crackers.crack_validate(c,mid);
 	io.print("One_MK",time,v);
 
+	io.print("One_SI");
 	b:=algebra.copy(b0);
 t0:= alarm.usec();
 	c:=crackers.crack_SI(b,mid);
@@ -141,6 +156,7 @@ t1:= alarm.usec();
 	v := crackers.crack_validate(c,mid);
 	io.print("One_SI",time,v);
 
+	io.print("One_SM");
 	b:=algebra.copy(b0);
 t0:= alarm.usec();
 	c:=crackers.crack_SM(b,mid);
@@ -150,6 +166,7 @@ t1:= alarm.usec();
 	v := crackers.crack_validate(c,mid);
 	io.print("One_SM",time,v);
 
+	io.print("One_sm");
 	b:=algebra.copy(b0);
 t0:= alarm.usec();
 	c:=crackers.crack_sm(b,mid);
@@ -160,15 +177,7 @@ t1:= alarm.usec();
 	io.print("One_sm",time,v);
 
 
-#	b:=algebra.copy(b0);
-#t0:= alarm.usec();
-#	c:=crackers.crack(b,low,hgh);
-#t1:= alarm.usec();
-#	time:= t1 - t0;
-#	t_Two_00 := t_Two_00 + time;
-#	v := crackers.crack_validate(c,low,hgh);
-#	io.print("Two_00",time,v);
-
+	io.print("Two_MK");
 	b:=algebra.copy(b0);
 t0:= alarm.usec();
 	c:=crackers.crack_MK(b,low,hgh);
@@ -178,6 +187,7 @@ t1:= alarm.usec();
 	v := crackers.crack_validate(c,low,hgh);
 	io.print("Two_MK",time,v);
 
+#	io.print("Two_SI");
 #	b:=algebra.copy(b0);
 #t0:= alarm.usec();
 #	c:=crackers.crack_SI(b,low,hgh);
@@ -187,6 +197,7 @@ t1:= alarm.usec();
 #	v := crackers.crack_validate(c,low,hgh);
 #	io.print("Two_SI",time,v);
 
+	io.print("Two_SM");
 	b:=algebra.copy(b0);
 t0:= alarm.usec();
 	c:=crackers.crack_SM(b,low,hgh);
@@ -196,6 +207,7 @@ t1:= alarm.usec();
 	v := crackers.crack_validate(c,low,hgh);
 	io.print("Two_SM",time,v);
 
+	io.print("Two_sm");
 	b:=algebra.copy(b0);
 t0:= alarm.usec();
 	c:=crackers.crack_sm(b,low,hgh);
@@ -204,6 +216,62 @@ t1:= alarm.usec();
 	t_Two_sm := t_Two_sm + time;
 	v := crackers.crack_validate(c,low,hgh);
 	io.print("Two_sm",time,v);
+
+	values:int:= mmath.rand();
+	values:= values % tuples;
+	values:= values + 1;
+
+
+#	io.print("Three_00");
+#	b:=algebra.copy(b0);
+#t0:= alarm.usec();
+#	c:=crackers.crack(b,low,hgh);
+#t1:= alarm.usec();
+#	time:= t1 - t0;
+#	t_Three_00 := t_Three_00 + time;
+#	v := crackers.crack_validate(c,low,hgh);
+#	io.print("Three_00",time,v);
+#	crackers.destroy(b);
+
+#	io.print("Three_MK");
+#	b:=algebra.copy(b0);
+#t0:= alarm.usec();
+#	c:=crackers.crack_MK(b,low,hgh);
+#t1:= alarm.usec();
+#	time:= t1 - t0;
+#	t_Three_MK := t_Three_MK + time;
+#	v := crackers.crack_validate(c,low,hgh);
+#	io.print("Three_MK",time,v);
+
+#	io.print("Three_SI");
+#	b:=algebra.copy(b0);
+#t0:= alarm.usec();
+#	c:=crackers.crack_SI(b,low,hgh);
+#t1:= alarm.usec();
+#	time:= t1 - t0;
+#	t_Three_SI := t_Three_SI + time;
+#	v := crackers.crack_validate(c,low,hgh);
+#	io.print("Three_SI",time,v);
+
+	io.print("Three_SM");
+	b:=algebra.copy(b0);
+t0:= alarm.usec();
+	c:=crackers.crack_SM(b,low,hgh);
+t1:= alarm.usec();
+	time:= t1 - t0;
+	t_Three_SM := t_Three_SM + time;
+	v := crackers.crack_validate(c,low,hgh);
+	io.print("Three_SM",time,v);
+
+	io.print("Three_sm");
+	b:=algebra.copy(b0);
+t0:= alarm.usec();
+	c:=crackers.crack_sm(b,low,hgh);
+t1:= alarm.usec();
+	time:= t1 - t0;
+	t_Three_sm := t_Three_sm + time;
+	v := crackers.crack_validate(c,low,hgh);
+	io.print("Three_sm",time,v);
 
 	values:int:= mmath.rand();
 	values:= values % tuples;
@@ -239,8 +307,6 @@ t_ := t_One_SM / n;
 io.print("One_SM",t_);
 t_ := t_One_sm / n;
 io.print("One_sm",t_);
-t_ := t_Two_00 / n;
-io.print("Two_00",t_);
 t_ := t_Two_MK / n;
 io.print("Two_MK",t_);
 t_ := t_Two_SI / n;
@@ -249,3 +315,13 @@ t_ := t_Two_SM / n;
 io.print("Two_SM",t_);
 t_ := t_Two_sm / n;
 io.print("Two_sm",t_);
+t_ := t_Three_00 / n;
+io.print("Three_00",t_);
+t_ := t_Three_MK / n;
+io.print("Three_MK",t_);
+t_ := t_Three_SI / n;
+io.print("Three_SI",t_);
+t_ := t_Three_SM / n;
+io.print("Three_SM",t_);
+t_ := t_Three_sm / n;
+io.print("Three_sm",t_);

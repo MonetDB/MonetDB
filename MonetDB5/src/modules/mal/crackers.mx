@@ -215,6 +215,12 @@ address CRKcrackTwo_@1_@3
 comment "Break a BAT into five pieces with
 	 tail<low, tail==low, low<tail<hgh, tail==hgh, tail>hgh,
 	 respectively. (By @2.)";
+
+command zcrack_@1 (b:bat[:oid,:@3], low:@3, hgh:@3) :bat[:oid,:@3]
+address CRKcrackThree_@1_@3
+comment "Break a BAT into three pieces with
+	 tail<=low, low<tail<=hgh, tail>hgh,
+	 respectively. (By @2.)";
 @
 @= crack_validate
 command zcrack_validate (b:bat[:oid,:@1], mid:@1) :bit
@@ -233,6 +239,12 @@ command crack_validate (b:bat[:oid,:@1], low:@1, hgh:@1) :bit
 address CRKcrackTwo_validate_@1
 comment "Validate whether a BAT is correctly broken into five pieces with
 	 tail<low, tail==low, low<tail<hgh, tail==hgh, tail>hgh,
+	 respectively.";
+
+command zcrack_validate (b:bat[:oid,:@1], low:@1, hgh:@1) :bit
+address CRKcrackThree_validate_@1
+comment "Validate whether a BAT is correctly broken into three pieces with
+	 tail<=low, low<tail<=hgh, tail>hgh,
 	 respectively.";
 @
 @mal
@@ -2312,28 +2324,26 @@ CRKcrackTwo_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	*res = *bid;
 	return msg;
 }
+
+str
+CRKcrackThree_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
+{
+	return CRKcrackTwo_MK_@1(res, bid, low, hgh);
+}
 @
 
 
-@= SM_operations
-@:SM_split_in_two(@1,LE,GT,<=,>)@
-@:SM_split_in_two(@1,LT,EQ,<,==)@
-@:SMsm_piece_Zero(@1,SM)@
-@:SMsm_piece_One(@1,SM)@
-@:SMsm_piece_Two(@1,SM)@
-@:SMsm_crack_ZeroOne(@1,SM,Zero,z)@
-@:SMsm_crack_ZeroOne(@1,SM,One,)@
-@:SMsm_crack_Two(@1,SM)@
-@
-@= sm_operations
-@:sm_split_in_two(@1,LE,GT,<=,>)@
-@:sm_split_in_two(@1,LT,EQ,<,==)@
-@:SMsm_piece_Zero(@1,sm)@
-@:SMsm_piece_One(@1,sm)@
-@:SMsm_piece_Two(@1,sm)@
-@:SMsm_crack_ZeroOne(@1,sm,Zero,z)@
-@:SMsm_crack_ZeroOne(@1,sm,One,)@
-@:SMsm_crack_Two(@1,sm)@
+@= SMsm_operations
+@:@2_split_in_two(@1,LE,GT,<=,>)@
+@:@2_split_in_two(@1,LT,EQ,<,==)@
+@:SMsm_piece_Zero(@1,@2)@
+@:SMsm_piece_One(@1,@2)@
+@:SMsm_piece_Two(@1,@2)@
+@:SMsm_piece_Three(@1,@2)@
+@:SMsm_crack_ZeroOne(@1,@2,Zero,z)@
+@:SMsm_crack_ZeroOne(@1,@2,One,)@
+@:SMsm_crack_TwoThree(@1,@2,Two,)@
+@:SMsm_crack_TwoThree(@1,@2,Three,z)@
 @
 
 @= SMsm_swapTwoBUNs
@@ -2493,6 +2503,33 @@ CRKpieceTwo_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl, 
 }
 @
 
+@= SMsm_piece_Three
+str
+CRKpieceThree_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl, size_t *lel, size_t *lth, size_t *leh)
+{
+	str msg;
+
+	/* advance cursors, skipping over BUNs that are already in the right place */
+	int bs = BUNsize(b);
+	BUN bn_s = BUNptr(b, fst);
+	BUN bn_l = BUNptr(b, lst);
+	while (bn_s < bn_l && *(@1*)BUNtloc(b, bn_s) <= low) {
+		bn_s += bs;
+	}
+	while (bn_s < bn_l && *(@1*)BUNtloc(b, bn_l) > hgh) {
+		bn_l -= bs;
+	}
+	fst = BUNindex(b, bn_s);
+	lst = BUNindex(b, bn_l);
+
+	msg = CRKsplit_@2_@1_LE_GT (b, low, fst, lst, ltl, lel);
+	if (msg != MAL_SUCCEED) {
+		return msg;
+	}
+	return CRKsplit_@2_@1_LE_GT (b, hgh, *lel, lst, lth, leh);
+}
+@
+
 @= SMsm_crack_ZeroOne
 str
 CRKcrack@3_@2_@1 (int *res, int *bid, @1 *mid)
@@ -2518,9 +2555,9 @@ CRKcrack@3_@2_@1 (int *res, int *bid, @1 *mid)
 }
 @
 
-@= SMsm_crack_Two
+@= SMsm_crack_TwoThree
 str
-CRKcrackTwo_@2_@1 (int *res, int *bid, @1 *low, @1 *hgh)
+CRKcrack@3_@2_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 {
 	BAT *b;
 	str msg;
@@ -2528,14 +2565,14 @@ CRKcrackTwo_@2_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 
 	/* initialization */
 	if (*low > *hgh)
-		return throwMessage("crackers.crack_SM", "illegal range");
+		return throwMessage("crackers.@4crack_SM", "illegal range");
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("crackers.crack_SM", "Cannot access descriptor");
+		return throwMessage("crackers.@4crack_SM", "Cannot access descriptor");
 	}
 	fst = BUNindex(b, BUNfirst(b));
 	lst = BUNindex(b, BUNlast (b)) - 1;
 
-	msg = CRKpieceTwo_@2_@1(b, *low, *hgh, fst, lst, &ltl, &lel, &lth, &leh);
+	msg = CRKpiece@3_@2_@1(b, *low, *hgh, fst, lst, &ltl, &lel, &lth, &leh);
 	(void)ltl;
 	(void)lel;
 	(void)lth;
@@ -2716,12 +2753,19 @@ CRKcrackTwo_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	*res = *bid;
 	return MAL_SUCCEED;
 }
+
+str
+CRKcrackThree_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
+{
+	return CRKcrackTwo_SI_@1 (res, bid, low, hgh);
+}
 @
 
 @= validate_operations
 @:validate_operation_Zero(@1)@
 @:validate_operation_One(@1)@
 @:validate_operation_Two(@1)@
+@:validate_operation_Three(@1)@
 @
 @= validate_operation_Zero
 str
@@ -2835,7 +2879,7 @@ CRKcrackTwo_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
 	/* initialization */
 	*res = FALSE;
 	if (low > hgh) {
-		return throwMessage("crackers.crack_SI", "illegal range");
+		return throwMessage("crackers.crack_validate", "illegal range");
 	}
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("crackers.crack_validate", "Cannot access descriptor");
@@ -2886,10 +2930,64 @@ CRKcrackTwo_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
 	return MAL_SUCCEED;
 }
 @
+@= validate_operation_Three
+str
+CRKcrackThree_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
+{
+	BAT *b;
+	BUN bn, fst_bn, lst_bn, fst_tl, lst_tl, tl;
+	int bs;
+	size_t count[4] = {0,0,0,0};
+	@1 low=*_low, hgh=*_hgh;
+
+	/* initialization */
+	*res = FALSE;
+	if (low > hgh) {
+		return throwMessage("crackers.zcrack_validate", "illegal range");
+	}
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.zcrack_validate", "Cannot access descriptor");
+	}
+	bs = BUNsize(b);
+	fst_bn = BUNfirst(b);
+	lst_bn = BUNlast(b);
+	fst_tl = BUNtloc(b, fst_bn);
+	lst_tl = BUNtloc(b, lst_bn);
+	bn = fst_bn;
+	tl = fst_tl;
+
+	while (bn < lst_tl && *(@1*)tl <= low) {
+		bn += bs;
+		tl += bs;
+		count[0]++;
+	}
+	while (bn < lst_tl && *(@1*)tl <= hgh) {
+		bn += bs;
+		tl += bs;
+		count[1]++;
+	}
+	while (bn < lst_tl && *(@1*)tl > hgh) {
+		bn += bs;
+		tl += bs;
+		count[2]++;
+	}
+	count[3] = BATcount(b);
+
+	if (count[0] + count[1] + count[2] < count[3]) {
+		printf("|b|="SZFMT" ; |tail<=low|="SZFMT", |low<tail<=hgh|="SZFMT", |tail>hgh|="SZFMT" !\n",
+		       count[3], count[0], count[1], count[2]);
+		return throwMessage("crackers.zcrack_validate", "Invalid crack");
+	}
+
+	BBPunfix(b->batCacheid);
+	*res = TRUE;
+	return MAL_SUCCEED;
+}
+@
 @c
 @:MK_operations(int)@
-@:SM_operations(int)@
-@:sm_operations(int)@
+@:SMsm_operations(int,SM)@
+@:SMsm_operations(int,sm)@
 @:SI_operations(int)@
 @:validate_operations(int)@
 @}
