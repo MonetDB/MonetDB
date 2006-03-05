@@ -411,17 +411,19 @@ public class JdbcClient {
 				} else {
 					processInteractive(true, doEcho, user);
 				}
-			} else if (!copts.getOption("quiet").isPresent()) {
-				// print welcome message
-				out.println("Welcome to the MonetDB interactive JDBC terminal!");
-				if (dbmd != null) {
-					out.println("Database: " + dbmd.getDatabaseProductName() + " " +
-						dbmd.getDatabaseProductVersion());
-					out.println("Driver: " + dbmd.getDriverName() + " " +
-						dbmd.getDriverVersion());
+			} else {
+				if (!copts.getOption("quiet").isPresent()) {
+					// print welcome message
+					out.println("Welcome to the MonetDB interactive JDBC terminal!");
+					if (dbmd != null) {
+						out.println("Database: " + dbmd.getDatabaseProductName() + " " +
+							dbmd.getDatabaseProductVersion());
+						out.println("Driver: " + dbmd.getDriverName() + " " +
+							dbmd.getDriverVersion());
+					}
+					out.println("Type \\q to quit, \\h for a list of available commands");
+					out.flush();
 				}
-				out.println("Type \\q to quit, \\h for a list of available commands");
-				out.flush();
 				processInteractive(false, doEcho, user);
 			}
 
