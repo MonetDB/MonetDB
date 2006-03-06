@@ -26,10 +26,12 @@ Over..
 <hello>
         <world>
         </world>
-    </hello><hello>
+    </hello><world>
+        </world><hello>
         <world>
         </world>
-    </hello>
+    </hello><world>
+        </world>
 </XQueryResult>
 
 # 17:11:50 >  

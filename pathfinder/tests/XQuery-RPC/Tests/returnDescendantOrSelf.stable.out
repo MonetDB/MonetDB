@@ -28,12 +28,20 @@ Over..
         <world>
         </world>
     </hello>
-</foo><foo>
+</foo><hello>
+        <world>
+        </world>
+    </hello><world>
+        </world><foo>
     <hello>
         <world>
         </world>
     </hello>
-</foo>
+</foo><hello>
+        <world>
+        </world>
+    </hello><world>
+        </world>
 </XQueryResult>
 
 # 17:11:51 >  
