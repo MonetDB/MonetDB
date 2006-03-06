@@ -47,32 +47,69 @@ public class JdbcClient {
 	public final static void main(String[] args) throws Exception {
 		CmdLineOpts copts = new CmdLineOpts();
 
-		// arguments which need exactly one value
-		copts.addOption("h", "host", CmdLineOpts.CAR_ONE, "localhost");
-		copts.addOption("p", "port", CmdLineOpts.CAR_ONE, "50000");
-		copts.addOption("u", "user", CmdLineOpts.CAR_ONE, System.getProperty("user.name"));
-		copts.addOption("d", "database", CmdLineOpts.CAR_ONE, "demo");
-		copts.addOption("l", "language", CmdLineOpts.CAR_ONE, "sql");
-		copts.addOption(null, "Xblksize", CmdLineOpts.CAR_ONE, null);
-		copts.addOption(null, "Xoutput", CmdLineOpts.CAR_ONE, null);
-		copts.addOption(null, "Xprepare", CmdLineOpts.CAR_ONE, "native");
+		// arguments which take exactly one argument
+		copts.addOption("h", "host", CmdLineOpts.CAR_ONE, "localhost",
+				"The hostname of the host that runs the MonetDB database.  " +
+				"A port number can be supplied by use of a colon, i.e. " +
+				"-h somehost:12345.");
+		copts.addOption("p", "port", CmdLineOpts.CAR_ONE, "50000",
+				"The port number to connect to.");
 		// todo make it CAR_ONE_MANY
-		copts.addOption("f", "file", CmdLineOpts.CAR_ONE, null);
+		copts.addOption("f", "file", CmdLineOpts.CAR_ONE, null,
+				"A file name to use either for reading or writing.  The " +
+				"file will be used for writing when dump mode is used " +
+				"(-d --dump).  In read mode, the file can also be an URL " +
+				"pointing to a plain text file that is optionally gzip " +
+				"compressed.");
+		copts.addOption("u", "user", CmdLineOpts.CAR_ONE, System.getProperty("user.name"),
+				"The username to use when connecting to the database.");
 		// this one is only here for the .monetdb file parsing, it is
 		// removed before the command line arguments are parsed
-		copts.addOption(null, "password", CmdLineOpts.CAR_ONE, null);
-
-		// arguments which can have zero to lots of arguments
-		copts.addOption("D", "dump", CmdLineOpts.CAR_ZERO_MANY, null);
-
-		// arguments which can have zero or one argument(s)
-		copts.addOption(null, "Xdebug", CmdLineOpts.CAR_ZERO_ONE, null);
-		copts.addOption(null, "Xbatching", CmdLineOpts.CAR_ZERO_ONE, null);
+		copts.addOption(null, "password", CmdLineOpts.CAR_ONE, null, null);
+		copts.addOption("d", "database", CmdLineOpts.CAR_ONE, "demo",
+				"Try to connect to the given database (only makes sense " +
+				"if connecting to a DatabasePool, M5 or equivalent process).");
+		copts.addOption("l", "language", CmdLineOpts.CAR_ONE, "sql",
+				"Use the given language, for example 'xquery'.");
 
 		// arguments which have no argument(s)
-		copts.addOption(null, "help", CmdLineOpts.CAR_ZERO, null);
-		copts.addOption("e", "echo", CmdLineOpts.CAR_ZERO, null);
-		copts.addOption("q", "quiet", CmdLineOpts.CAR_ZERO, null);
+		copts.addOption(null, "help", CmdLineOpts.CAR_ZERO, null,
+				"This help screen.");
+		copts.addOption("e", "echo", CmdLineOpts.CAR_ZERO, null,
+				"Also outputs the contents of the input file, if any.");
+		copts.addOption("q", "quiet", CmdLineOpts.CAR_ZERO, null,
+				"Suppress printing the welcome header.");
+
+		// arguments which have zero to many arguments
+		copts.addOption("D", "dump", CmdLineOpts.CAR_ZERO_MANY, null, 
+				"Dumps the given table(s), or the complete database if " +
+				"none given.");
+
+		// extended options
+		copts.addOption(null, "Xblksize", CmdLineOpts.CAR_ONE, null,
+				"Specifies the blocksize when using block mode, given " +
+				"in bytes.");
+		copts.addOption(null, "Xoutput", CmdLineOpts.CAR_ONE, null,
+				"The output mode when dumping.  Default is sql, xml may " +
+				"be used for an experimental XML output.");
+		copts.addOption(null, "Xembedded", CmdLineOpts.CAR_ONE, null,
+				"Uses an \"embedded\" Mserver instance.  The argument to " +
+				"this option should be in the form of path/to/mserver:dbname" +
+				"[:dbfarm[:dbinit]].");
+		// arguments which can have zero or one argument(s)
+		copts.addOption(null, "Xdebug", CmdLineOpts.CAR_ZERO_ONE, null,
+				"Writes a transmission log to disk for debugging purposes.  " +
+				"If a file name is given, it is used, otherwise a file " +
+				"called monet<timestamp>.log is created.  A given file " +
+				"never be overwritten; instead a unique variation of the " +
+				"file is used.");
+		copts.addOption(null, "Xbatching", CmdLineOpts.CAR_ZERO_ONE, null,
+				"Indicates that a batch should be used instead of direct " +
+				"communication with the server for each statement.  If a " +
+				"number is given, it is used as batch size.  i.e. 8000 " +
+				"would execute the contents on the batch after each 8000 " +
+				"statements read.  Batching can greatly speedup the " +
+				"process of restoring a database dump.");
 
 		// we store user and password in separate variables in order to
 		// be able to properly act on them like forgetting the password
@@ -128,48 +165,19 @@ public class JdbcClient {
 "started on the terminal.\n" +
 "\n" +
 "OPTIONS\n" +
-"-h --host  The hostname of the host that runs the MonetDB database.  A port\n" +
-"           number can be supplied by use of a colon, i.e. -h somehost:12345.\n" +
-"-p --port  The port number to connect to.\n" +
-"-f --file  A file name to use either for reading or writing.  The file will\n" +
-"           be used for writing when dump mode is used (-d --dump).\n" +
-"           In read mode, the file can also be an URL pointing to a plain\n" +
-"           text file that is optionally gzip compressed.\n" +
-"-u --user  The username to use when connecting to the database.\n" +
-"-l --language  Use the given language, for example 'xquery'.\n" +
-"-D --dump  Dumps the given table(s), or the complete database if none given.\n" +
-"--help     This screen.\n" +
-"-e --echo  Also outputs the contents of the input file, if any.\n" +
-"-q --quiet Suppress printing the welcome header.\n" +
-"-d --database  Try to connect to the given database (only makes sense\n" +
-"           if connecting to a DatabasePool, M5 or equivalent process).\n" +
-"\n" +
-"EXTRA OPTIONS\n" +
-"-Xdebug    Writes a transmission log to disk for debugging purposes.  If a\n" +
-"           file name is given, it is used, otherwise a file called\n" +
-"           monet<timestamp>.log is created.  A given file will never be\n" +
-"           overwritten; instead a unique variation of the file is used.\n" +
-"-Xblksize  Specifies the blocksize when using block mode, given in bytes.\n" +
-"-Xoutput   The output mode when dumping.  Default is sql, xml may be used for\n" +
-"           an experimental XML output.\n" +
-"-Xbatching Indicates that a batch should be used instead of direct\n" +
-"           communication with the server for each statement.  If a number is\n" +
-"           given, it is used as batch size.  I.e. 8000 would execute the\n" +
-"           contents on the batch after each 8000 read rows.  Batching can\n" +
-"           greatly speedup the process of restoring a database dump.\n" +
-/*
-"-Xprepare  Specifies which PreparedStatement to use.  Valid arguments are:\n" +
-"           'native' and 'java'.  The default behaviour if not specified or\n" +
-"           with an unknown value is to request for a native PreparedStatement\n" +
-"           at the MonetDB JDBC driver.\n" +
-*/
-""
+copts.produceHelpMessage()
 );
 			System.exit(0);
 		}
 
 		in = new BufferedReader(new InputStreamReader(System.in));
 		out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.out)));
+
+		boolean isEmbedded = copts.getOption("Xembedded").isPresent();
+		if (isEmbedded) {
+			// user and password don't matter for embedded
+			pass = "";
+		}
 
 		// we need the password from the user, fetch it with a pseudo
 		// password protector
@@ -200,9 +208,6 @@ public class JdbcClient {
 		CmdLineOpts.OptionContainer oc = copts.getOption("Xblksize");
 		if (oc.isPresent())
 			attr += "blockmode_blocksize=" + oc.getArgument() + "&";
-		oc = copts.getOption("Xprepare");
-		if (oc.isPresent())
-			attr += "native_prepared_statements=" + ("java".equals(oc.getArgument()) ? "false" : "true") + "&";
 		oc = copts.getOption("language");
 		String lang = oc.getArgument();
 		if (oc.isPresent())
@@ -221,11 +226,31 @@ public class JdbcClient {
 		con = null;
 		String database = copts.getOption("database").getArgument();
 		try {
-			con = DriverManager.getConnection(
-					"jdbc:monetdb://" + host + "/" + database + attr,
-					user,
-					pass
-			);
+			if (!isEmbedded) {
+				con = DriverManager.getConnection(
+						"jdbc:monetdb://" + host + "/" + database + attr,
+						user,
+						pass
+				);
+			} else {
+				String[] eargs =
+					copts.getOption("Xembedded").getArgument().split(":");
+				if (eargs.length < 2 || eargs.length > 4) {
+					System.err.println("Expecting path/to/mserver:dbname" +
+							"[:dbfarm[:dbinit]]");
+					System.exit(-1);
+				}
+				Properties p = new Properties();
+				p.setProperty("executable", eargs[0]);
+				p.setProperty("dbname", eargs[1]);
+				if (args.length > 2) p.setProperty("dbfarm", eargs[2]);
+				if (args.length > 3) p.setProperty("dbinit", eargs[3]);
+				nl.cwi.monetdb.jdbc.MonetConnection.setEmbeddedProperties(p);
+				// what do you mean? "descriptive names suck" ?!?
+				out.println("Starting embedded instance...");
+				out.flush();
+				con = nl.cwi.monetdb.jdbc.MonetConnection.getEmbeddedInstanceConnection();
+			}
 			SQLWarning warn = con.getWarnings();
 			while (warn != null) {
 				System.err.println("Connection warning: " +

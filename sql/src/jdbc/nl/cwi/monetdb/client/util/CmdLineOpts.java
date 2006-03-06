@@ -24,7 +24,9 @@ import java.io.*;
 public class CmdLineOpts {
 	/** the arguments we handle */
 	private Map opts = new HashMap();
-
+	/** the options themself */
+	private List options = new ArrayList();
+	
 	/** no arguments */
 	public static int CAR_ZERO		= 0;
 	/** always one argument */
@@ -43,10 +45,18 @@ public class CmdLineOpts {
 			String shorta,
 			String longa,
 			int type,
-			String defaulta)
+			String defaulta,
+			String descriptiona)
 		throws OptionsException
 	{
-		OptionContainer oc = new OptionContainer(shorta, longa, type, defaulta);
+		OptionContainer oc =
+			new OptionContainer(
+				shorta,
+				longa,
+				type,
+				defaulta,
+				descriptiona
+			);
 		if (shorta != null) opts.put(shorta, oc);
 		if (longa != null) opts.put(longa, oc);
 	}
@@ -165,6 +175,94 @@ public class CmdLineOpts {
 		}
 	}
 
+	/**
+	 * Returns a help message for all options loaded.
+	 *
+	 * @return the help message
+	 */
+	public String produceHelpMessage() {
+		List ocs = options;
+
+		// first calculate how much space is necessary for the options
+		int maxlen = 0;
+		for (int i = 0; i < ocs.size(); i++) {
+			OptionContainer oc = (OptionContainer)(ocs.get(i));
+			String shorta = oc.getShort();
+			String longa = oc.getLong();
+			int len = 0;
+			if (shorta != null) len += shorta.length() + 1 + 1;
+			if (longa != null) len += longa.length() + 2 + 1;
+			// yes, we don't care about branch mispredictions here ;)
+			if (maxlen < len) maxlen = len;
+		}
+		
+		// get the individual strings
+		StringBuffer ret = new StringBuffer();
+		for (int i = 0; i < ocs.size(); i++) {
+			OptionContainer oc = (OptionContainer)(ocs.get(i));
+			ret.append(produceHelpMessage(oc, maxlen));
+		}
+
+		return(ret.toString());
+	}
+
+	/**
+	 * Returns the help message for the given OptionContainer.  The
+	 * command line flags will be padded to optwidth spaces to allow for
+	 * aligning.  The description of the flags will be wrapped at 80
+	 * characters.
+	 *
+	 * @param oc the OptionContainer
+	 * @param indentwidth padding width for the command line flags
+	 * @return the help message for the option
+	 */
+	public String produceHelpMessage(OptionContainer oc, int indentwidth) {
+		String desc = oc.getDescription();
+		if (desc == null) return("");
+
+		String shorta = oc.getShort();
+		String longa = oc.getLong();
+		int optwidth = 0;
+		if (shorta != null) optwidth += shorta.length() + 1 + 1;
+		if (longa != null) optwidth += longa.length() + 2 + 1;
+		int descwidth = 80 - indentwidth;
+
+		// default to with of command line flags if no width given
+		if (indentwidth <= 0) indentwidth = optwidth;
+
+		StringBuffer ret = new StringBuffer();
+
+		// add the command line flags
+		if (shorta != null) ret.append('-').append(shorta).append(' ');
+		if (longa != null) ret.append('-').append('-').append(longa).append(' ');
+		for (int i = optwidth; i < indentwidth; i++) ret.append(' ');
+		// add the description, wrap around words
+		int pos = 0, lastpos = 0;
+		while (pos < desc.length()) {
+			pos += descwidth;
+			if (lastpos != 0) {
+				for (int i = 0; i < indentwidth; i++) ret.append(' ');
+			}
+			if (pos >= desc.length()) {
+				ret.append(desc.substring(lastpos)).append('\n');
+				break;
+			}
+			int space;
+			for (space = pos; desc.charAt(space) != ' '; space--) {
+				if (space == 0) {
+					space = pos;
+					break;
+				}
+			}
+			pos = space;
+			ret.append(desc.substring(lastpos, pos)).append('\n');
+			while (desc.charAt(pos) == ' ') pos++;
+			lastpos = pos;
+		}
+
+		return(ret.toString());
+	}
+
 	public class OptionContainer {
 		int cardinality;
 		String shorta;
@@ -172,19 +270,22 @@ public class CmdLineOpts {
 		List values;
 		String name;
 		String defaulta;
+		String descriptiona;
 		boolean present;
 
 		public OptionContainer(
 				String shorta, 
 				String longa,
 				int cardinality,
-				String defaulta)
+				String defaulta,
+				String descriptiona)
 			throws IllegalArgumentException
 		{
 			this.cardinality = cardinality;
 			this.shorta = shorta;
 			this.longa = longa;
 			this.defaulta = defaulta;
+			this.descriptiona = descriptiona;
 			this.present = false;
 
 			if (cardinality != CAR_ZERO &&
@@ -212,6 +313,8 @@ public class CmdLineOpts {
 			} else {
 				name = shorta;
 			}
+
+			options.add(this);
 		}
 
 		public void resetArguments() {
@@ -262,6 +365,18 @@ public class CmdLineOpts {
 
 		public String[] getArguments() {
 			return((String[])(values.toArray(new String[values.size()])));
+		}
+
+		public String getShort() {
+			return(shorta);
+		}
+
+		public String getLong() {
+			return(longa);
+		}
+
+		public String getDescription() {
+			return(descriptiona);
 		}
 	}
 }
