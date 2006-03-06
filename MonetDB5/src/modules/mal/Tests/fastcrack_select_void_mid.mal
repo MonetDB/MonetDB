@@ -42,4 +42,4 @@ exit (go,i);
 
 io.print("");
 t := t / n;
-io.print("Void mid",t);
+io.print("VID mid",t);

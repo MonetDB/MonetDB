@@ -42,4 +42,4 @@ exit (go,i);
 
 io.print("");
 t := t / n;
-io.print("Void low,hgh",t);
+io.print("VID low,hgh",t);

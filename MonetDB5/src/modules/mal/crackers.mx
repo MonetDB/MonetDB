@@ -222,11 +222,6 @@ comment "Break a BAT into three pieces with
 	 tail<=low, low<tail<=hgh, tail>hgh,
 	 respectively. (By @2.)";
 
-command ycrack_@1 (b:bat[:oid,:@3], low:@3, hgh:@3) :bat[:oid,:@3]
-address CRKcrackFour_@1_@3
-comment "Break a BAT into three pieces with
-	 tail<low, low<=tail<=hgh, tail>hgh,
-	 respectively. (By @2.)";
 @
 @= crack_validate
 command zcrack_validate (b:bat[:oid,:@1], mid:@1) :bit
@@ -249,11 +244,6 @@ comment "Validate whether a BAT is correctly broken into five pieces with
 
 command zcrack_validate (b:bat[:oid,:@1], low:@1, hgh:@1) :bit
 address CRKcrackThree_validate_@1
-comment "Validate whether a BAT is correctly broken into three pieces with
-	 tail<=low, low<tail<=hgh, tail>hgh,
-	 respectively.";
-command ycrack_validate (b:bat[:oid,:@1], low:@1, hgh:@1) :bit
-address CRKcrackFour_validate_@1
 comment "Validate whether a BAT is correctly broken into three pieces with
 	 tail<=low, low<tail<=hgh, tail>hgh,
 	 respectively.";
@@ -2155,9 +2145,6 @@ CRKcrackZero_MK_@1 (int *res, int *bid, @1 *mid)
 str
 CRKpieceOne_MK_@1( BAT *b, @1 mval, int first, int last){
 	ptr vm, vl, base= 0;
-#ifdef MK_DEBUG
-	ptr vmax;
-#endif
 	int xx;
 	oid hdummy;
 	@1 tdummy;
@@ -2228,9 +2215,6 @@ CRKcrackOne_MK_@1 (int *res, int *bid, int *mid)
 str
 CRKpieceTwo_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
 	ptr vm, vl, vmin, hmax, base= 0;
-#ifdef MK_DEBUG
-	ptr hmin;
-#endif
 	int xx;
 	oid hdummy;
 	@1 tdummy;
@@ -2305,10 +2289,8 @@ CRKpieceTwo_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
 		vm = (ptr) ((char *) vm - xx);
 	}
 #ifdef MK_DEBUG
-	hmin= vl;
-
 	printf("indices %d %d %d %d\n",(int) BUNindex(b,lmin)+1, (int) BUNindex(b,lmax),
-		(int) BUNindex(b,hmin)+1, (int) BUNindex(b,hmax));
+		(int) BUNindex(b,vl)+1, (int) BUNindex(b,hmax));
 #endif
 	return MAL_SUCCEED;
 }
@@ -2409,84 +2391,6 @@ CRKcrackThree_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 }
 
 
-/* handle <low, low<=tail<=hgh, >hgh */
-str
-CRKpieceFour_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
-	ptr vm, vl, hmax;
-	int xx;
-	oid hdummy;
-	@1 tdummy;
-
-	/* set bounds for the iterator */
-	xx = BUNsize(b);
-
-	vm = BUNtloc(b, BUNptr(b,first));
-	hmax = BUNtloc(b,BUNptr(b,last));
-	while( *(@1 *) hmax > hgh && hmax>vm)
-		hmax= (ptr)((char*) hmax - xx);
-	vl =hmax;
-	while( *(@1 *) vl >= low && vl>vm){
-		/* move all high values into their final place */
-		if( *(@1 *) vl > hgh){
-			tdummy= *(@1*)vl;
-			*(@1*)vl= *(@1*)hmax;
-			*(@1*)hmax= tdummy;
-
-			hdummy= *(oid*)((char*)vl - b->tloc);
-			*(oid*)((char*)vl - b->tloc) = *(oid*)((char*)hmax - b->tloc);
-			*(oid*)((char*)hmax - b->tloc) = hdummy;
-			hmax= (ptr)((char*) hmax - xx);
-		}
-		vl= (ptr)((char*) vl - xx);
-	}
-
-	while(vm<=vl) {
-		if (*(@1 *) vm < low)
-			vm = (ptr) ((char *) vm + xx);
-		else {
-			@:shuffleMK(@1,vm,vl)@
-			while( *(@1 *) vl >= low && vl>vm){
-				if( *(@1*) vl > hgh ){
-					/* move all high values into their final place */
-					tdummy= *(@1*)vl;
-					*(@1*)vl= *(@1*)hmax;
-					*(@1*)hmax= tdummy;
-
-					hdummy= *(oid*)((char*)vl - b->tloc);
-					*(oid*)((char*)vl - b->tloc) = *(oid*)((char*)hmax - b->tloc);
-					*(oid*)((char*)hmax - b->tloc) = hdummy;
-					hmax= (ptr)((char*) hmax - xx);
-				}
-				vl = (ptr) ((char *) vl - xx);
-			}
-		} 
-	} 
-	return MAL_SUCCEED;
-}
-/* handle <=low, low<tail<=hgh, >hgh */
-str
-CRKcrackFour_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
-{
-	BAT *b;
-	str msg;
-
-	if (*(@1 *) low > *(@1 *) hgh)
-		return throwMessage("crackers.crack_MK", "illegal range");
-	if ((b = BATdescriptor(*bid)) == NULL)
-		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
-	(void) *res;
-
-	/* set bounds for the iterator */
-	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
-		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
-
-	msg= CRKpieceFour_MK_@1( b, *low, *hgh, 0, BATcount(b)-1);
-
-
-	BBPkeepref(b->batCacheid);
-	*res = *bid;
-	return msg;
-}
 @
 
 
@@ -3083,7 +2987,6 @@ CRKcrackFour_sm_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 @:validate_operation_One(@1)@
 @:validate_operation_Two(@1)@
 @:validate_operation_Three(@1)@
-@:validate_operation_Four(@1)@
 @
 @= validate_operation_Zero
 str
@@ -3302,61 +3205,6 @@ CRKcrackThree_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
 	return MAL_SUCCEED;
 }
 
-@-
-The <low, low<=tail<=hgh, >hgh sequence
-@= validate_operation_Four
-str
-CRKcrackFour_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
-{
-	BAT *b;
-	BUN bn, fst_bn, lst_bn, fst_tl, lst_tl, tl;
-	int bs;
-	size_t count[4] = {0,0,0,0};
-	@1 low=*_low, hgh=*_hgh;
-
-	/* initialization */
-	*res = FALSE;
-	if (low > hgh) {
-		return throwMessage("crackers.zcrack_validate", "illegal range");
-	}
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("crackers.zcrack_validate", "Cannot access descriptor");
-	}
-	bs = BUNsize(b);
-	fst_bn = BUNfirst(b);
-	lst_bn = BUNlast(b);
-	fst_tl = BUNtloc(b, fst_bn);
-	lst_tl = BUNtloc(b, lst_bn);
-	bn = fst_bn;
-	tl = fst_tl;
-
-	while (bn < lst_tl && *(@1*)tl < low) {
-		bn += bs;
-		tl += bs;
-		count[0]++;
-	}
-	while (bn < lst_tl && *(@1*)tl <= hgh) {
-		bn += bs;
-		tl += bs;
-		count[1]++;
-	}
-	while (bn < lst_tl && *(@1*)tl > hgh) {
-		bn += bs;
-		tl += bs;
-		count[2]++;
-	}
-	count[3] = BATcount(b);
-
-	if (count[0] + count[1] + count[2] < count[3]) {
-		printf("|b|="SZFMT" ; |tail<=low|="SZFMT", |low<tail<=hgh|="SZFMT", |tail>hgh|="SZFMT" !\n",
-		       count[3], count[0], count[1], count[2]);
-		return throwMessage("crackers.zcrack_validate", "Invalid crack");
-	}
-
-	BBPunfix(b->batCacheid);
-	*res = TRUE;
-	return MAL_SUCCEED;
-}
 @
 @c
 @:MK_operations(int)@
