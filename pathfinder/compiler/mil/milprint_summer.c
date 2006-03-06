@@ -2687,9 +2687,9 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                    working set, that a following (preceding) step can check
                    the fragment boundaries */
                 "{  # adding new fragments to the WS_FRAG bat\n"
-                "var seqb := oid(count(ws.fetch(WS_FRAG)));\n"
+                "var seqb := oid(count(ws.fetch(WS_FRAG).fetch(WS)));\n"
                 "var new_pres := roots.tmark(seqb);\n"
-                "ws.fetch(WS_FRAG).insert(new_pres);\n"
+                "ws.fetch(WS_FRAG).fetch(WS).insert(new_pres);\n"
                 "}\n"
                );
     
@@ -2901,9 +2901,9 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                working set, that a following (preceding) step can check
                the fragment boundaries */
             "{  # adding new fragments to the WS_FRAG bat\n"
-            "var seqb := oid(count(ws.fetch(WS_FRAG)));\n"
+            "var seqb := oid(count(ws.fetch(WS_FRAG).fetch(WS)));\n"
             "var new_pres := roots.tmark(seqb);\n"
-            "ws.fetch(WS_FRAG).insert(new_pres);\n"
+            "ws.fetch(WS_FRAG).fetch(WS).insert(new_pres);\n"
             "}\n"
             /* return the root elements in iter|pos|item|kind representation */
             /* should contain for each iter exactly 1 root element
@@ -3119,10 +3119,10 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
                    working set, that a following (preceding) step can check
                the fragment boundaries */
                 "{ # adding new fragments to the WS_FRAG bat\n"
-                "var seqb := ws.fetch(WS_FRAG).count();\n"
+                "var seqb := ws.fetch(WS_FRAG).fetch(WS).count();\n"
                 "seqb := oid(seqb);\n"
                 "var new_pres := item.tmark(seqb);\n"
-                "ws.fetch(WS_FRAG).insert(new_pres);\n"
+                "ws.fetch(WS_FRAG).fetch(WS).insert(new_pres);\n"
                 /* get the maximum level of the new constructed nodes
                    and set the maximum of the working set */
                 "ws.fetch(HEIGHT).replace(WS, max(ws.fetch(HEIGHT).fetch(WS), 1));\n",
@@ -6496,7 +6496,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 /* retrieve only transient nodes */
                 "if (transient_nodes.count() = iter.count()) {\n"
                 "item := leftthetajoin(item, "
-                                      "ws.fetch(WS_FRAG).reverse().mirror(), "
+                                      "ws.fetch(WS_FRAG).fetch(WS).reverse().mirror(), "
                                       "GE).{max}();\n"
                 "item := item.tmark(0@0);\n"
                 /* retrieve only document nodes */
@@ -6507,7 +6507,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "var t_item := transient_nodes.leftfetchjoin(item);\n"
                 "var t_iter := transient_nodes.leftfetchjoin(iter);\n"
                 "t_item := leftthetajoin(t_item, "
-                                        "ws.fetch(WS_FRAG).reverse().mirror(), "
+                                        "ws.fetch(WS_FRAG).fetch(WS).reverse().mirror(), "
                                         "GE).{max}();\n"
                 "t_item := t_item.tmark(0@0);\n"
 
