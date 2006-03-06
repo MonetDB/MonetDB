@@ -285,24 +285,24 @@ static void send_error(stream *out, bit p_body, char* http_err, char *soapcodev,
 /* Calculate the number of nodes which has the name "node_name", within
  * the range 'start_pre' and 'end_pre' (incl.). */
 static int count_node(BAT *docBAT, char *node_name, int start_pre, int end_pre){
-    static int first;   /* Since the values of these variables are always */
-    static oid *prop;   /* the same, we use 'static' here to prevent the  */
-    static char *kind;  /* values of these variables being retrieved at   */
-    static BAT *qn_loc; /* every call to this function */
+    static int first;       /* Since the values of these variables are always */
+    static oid *pre_prop;   /* the same, we use 'static' here to prevent the  */
+    static char *pre_kind;  /* values of these variables being retrieved at   */
+    static BAT *qn_loc;     /* every call to this function */
 
     int i, nr = 0;
     char *qname;
 
     assert(start_pre > 0);
    
-    first  = BUNindex(docBAT, BUNfirst(docBAT));
-    prop   = (oid*) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+PRE_PROP))));
-    kind   = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+PRE_KIND))));
-    qn_loc = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+QN_LOC)));
+    first    = BUNindex(docBAT, BUNfirst(docBAT));
+    pre_prop = (oid*) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+PRE_PROP))));
+    pre_kind = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+PRE_KIND))));
+    qn_loc   = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+QN_LOC)));
 
     for (i = start_pre; i <= end_pre; i++) {
-        if (kind[i] == ELEMENT) {
-            qname = BUNtail(qn_loc, BUNfnd(qn_loc, &(prop[i])));
+        if (pre_kind[i] == ELEMENT) {
+            qname = BUNtail(qn_loc, BUNfnd(qn_loc, &(pre_prop[i])));
             if (strcmp(qname, node_name) == 0)
                 nr++;
         }
@@ -316,16 +316,16 @@ static int count_node(BAT *docBAT, char *node_name, int start_pre, int end_pre){
  * Return 0 if such node can not be found. */
 static oid get_elem_pre(BAT *docBAT, int start_pre, int end_pre){
     static int first;   /* values of 'first' and 'kind' are stable */
-    static char *kind;
+    static char *pre_kind;
     int i;
 
     assert(start_pre > 0 && end_pre >= start_pre);
    
-    first = BUNindex(docBAT, BUNfirst(docBAT));
-    kind  = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+PRE_KIND))));
+    first    = BUNindex(docBAT, BUNfirst(docBAT));
+    pre_kind = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+PRE_KIND))));
 
     for (i = start_pre; i <= end_pre; i++) {
-        if (kind[i] == ELEMENT)
+        if (pre_kind[i] == ELEMENT)
             return i;
     }
     return 0;
@@ -336,8 +336,8 @@ static oid get_elem_pre(BAT *docBAT, int start_pre, int end_pre){
  * Return 0 if such node can not be found. */
 static oid get_node_pre(BAT *docBAT, char *node_name, int start_pre, int end_pre){
     static int first;   /* Since the values of these variables are always */
-    static oid *prop;   /* the same, we use 'static' here to prevent the  */
-    static char *kind;  /* values of these variables being retrieved at   */
+    static oid *pre_prop;   /* the same, we use 'static' here to prevent the  */
+    static char *pre_kind;  /* values of these variables being retrieved at   */
     static BAT *qn_loc; /* every call to this function */
 
     int i;
@@ -345,14 +345,14 @@ static oid get_node_pre(BAT *docBAT, char *node_name, int start_pre, int end_pre
 
     assert(start_pre > 0 && end_pre >= start_pre);
    
-    first  = BUNindex(docBAT, BUNfirst(docBAT));
-    prop   = (oid*) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+PRE_PROP))));
-    kind   = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+PRE_KIND))));
-    qn_loc = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+QN_LOC)));
+    first    = BUNindex(docBAT, BUNfirst(docBAT));
+    pre_prop = (oid*) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+PRE_PROP))));
+    pre_kind = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+PRE_KIND))));
+    qn_loc   = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+QN_LOC)));
 
     for (i = start_pre; i <= end_pre; i++) {
-        if (kind[i] == ELEMENT) {
-            qname = BUNtail(qn_loc, BUNfnd(qn_loc, &(prop[i])));
+        if (pre_kind[i] == ELEMENT) {
+            qname = BUNtail(qn_loc, BUNfnd(qn_loc, &(pre_prop[i])));
             if (strcmp(qname, node_name) == 0)
                 return i;
         }
@@ -370,7 +370,7 @@ static char* find_attribute(BAT *docBAT, char* attrname, oid pre){
     static oid *attr_own, *attr_qn, *attr_prop;
     static BAT *qn_loc, *prop_val;
 
-    oid qn = oid_nil, nid = oid_nil;
+    oid qn = oid_nil;
     size_t i;
     BUN p;
 
@@ -388,15 +388,11 @@ static char* find_attribute(BAT *docBAT, char* attrname, oid pre){
     if (p) qn = *(oid*) BUNhead(qn_loc, p);
     else return NULL;
 
-    /* Find 'nid' of the 'pre' value */
-    /* TODO: currently, pre == nid */
-    nid = pre;
-    
     /* try to find the attribute value */
     nattrs = BATcount(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+ATTR_PROP))));
     for (i = 0; i < nattrs; i++) {
-        if (attr_own[i] > nid) return NULL;
-        if (attr_own[i] == nid && attr_qn[i] == qn) {
+        if (attr_own[i] > pre) return NULL;
+        if (attr_own[i] == pre && attr_qn[i] == qn) {
                 first = BUNindex(prop_val, BUNfirst(prop_val)) + attr_prop[i];
                 return (char*) BUNtail(prop_val, BUNptr(prop_val, first));
         }
@@ -442,16 +438,16 @@ static char* get_type(stream *out, BAT *docBAT, oid tnode_pre){
 }
 
 static int handle_rpc_request(struct shttpd_callback_arg *arg) {
-    var_t *text = NULL;     /* typedef oid var_t */
+    var_t *prop_text = NULL; /* typedef oid var_t */
     int i = 0, j = 0, k = 0, off = 0, sock = -1, retval = GDK_FAIL;
     stream *out = NULL;
-    char *strptr = NULL, *kind = NULL, *text_base = NULL;
+    char *strptr = NULL, *pre_kind = NULL, *text_base = NULL;
     char *msg = NULL, *module = NULL, *method = NULL;
     char errstr[1024];
-    oid *prop = NULL;
-    int *size = NULL;
+    oid *pre_prop = NULL;
+    int *pre_size = NULL;
     oid pre = 0, pnode_pre = 0, inode_pre = 0, tnode_pre = 0, vnode_pre = 0;
-    BAT *docBAT = NULL;
+    BAT *docBAT = NULL, *ws_frag = NULL;
 
     int iterc = 0, argc = 0;
     int **argcnt = NULL;    /* #items eash param/iter contains */
@@ -490,18 +486,19 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
         goto FINISH_HANDLE_RPC_REQUEST;
     }
 
-    off   = BUNindex(docBAT,BUNfirst(docBAT));
-    size  = (int *) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_SIZE))));
-    prop  = (oid *) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_PROP))));
-    kind  = (char *)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_KIND))));
-    text  = (var_t*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PROP_TEXT))));
+    off       = BUNindex(docBAT,BUNfirst(docBAT));
+    pre_size  = (int *) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_SIZE))));
+    pre_prop  = (oid *) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_PROP))));
+    pre_kind  = (char *)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_KIND))));
+    prop_text = (var_t*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PROP_TEXT))));
     text_base = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT, off+PROP_TEXT)))->theap->base;
+    ws_frag   = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+WS_FRAG)));
 
     /* There are at least two nodes before "SoapRpcRequest", namely
      * "Envelope" and "Body" (a "Header" node is optional). There are at
      * least two nodes after "SoapRpcRequest", namely "iter" and
      * "param". */
-    if (!(pre = get_node_pre(docBAT, "XQueryRpcRequest", 2, (size[0] - 2)))) {
+    if (!(pre = get_node_pre(docBAT, "XQueryRpcRequest", 2, (pre_size[0] - 2)))) {
         send_error(out, 1, "404 Bad Request", "env:Sender",
                 "XQuery RPC request must have a \"XQueryRpcRequest\" tag\n");
         goto FINISH_HANDLE_RPC_REQUEST;
@@ -518,7 +515,7 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
     }
 
     /* Calculate the number of iterations */
-    iterc = count_node(docBAT, "iter", (pre+1), size[0]);
+    iterc = count_node(docBAT, "iter", (pre+1), pre_size[0]);
     if (iterc == 0) {
         snprintf(errstr, 1024, "XQuery RPC request [%s:%s]: should have at "
                 "least one <iter> tag.\n", module, method);
@@ -528,7 +525,7 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
     /* Calculate the number of parameters */
     /* FIXME: we now just assume each iteration contains the same number
      *        of parameters, but this is not checked! */
-    argc = count_node(docBAT, "param", (pre + 2), size[0]) / iterc;
+    argc = count_node(docBAT, "param", (pre + 2), pre_size[0]) / iterc;
 
     argcnt = GDKmalloc(iterc * sizeof(int *));
     if (!argcnt) {
@@ -556,16 +553,16 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
     /* Fill the arrays 'argcnt', 'argval', 'argtpe' */
     inode_pre = pre;
     for (i = 0; i < iterc; i++) {
-        inode_pre = get_node_pre(docBAT, "iter", (inode_pre + 1), size[0]);
+        inode_pre = get_node_pre(docBAT, "iter", (inode_pre + 1), pre_size[0]);
 
         pnode_pre = inode_pre;
         for (j = 0; j < argc; j++) {
-            pnode_pre = get_node_pre(docBAT, "param", (pnode_pre + 1), (inode_pre + size[inode_pre]));
+            pnode_pre = get_node_pre(docBAT, "param", (pnode_pre + 1), (inode_pre + pre_size[inode_pre]));
        
             tnode_pre = pnode_pre + 1; argcnt[i][j] = 0; k = 1;
-            while(tnode_pre < (pnode_pre + size[pnode_pre]) && 
-                    (tnode_pre = get_elem_pre(docBAT, tnode_pre, (pnode_pre + size[pnode_pre]))) > 0){
-                if (!(size[tnode_pre] > 0)) {
+            while(tnode_pre < (pnode_pre + pre_size[pnode_pre]) && 
+                    (tnode_pre = get_elem_pre(docBAT, tnode_pre, (pnode_pre + pre_size[pnode_pre]))) > 0){
+                if (!(pre_size[tnode_pre] > 0)) {
                     snprintf(errstr, 1024, "XQuery RPC request [%s:%s]: "
                             "iteration[%d]->parameter[%d]->value[%d] does not contain value\n",
                             module, method, (i + 1), (j + 1), k);
@@ -589,17 +586,18 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
 
                 vnode_pre = tnode_pre + 1;
                 if (strcmp(argtpe[argval_nr], "xs:anyNode") == 0) {
-                    vnode_pre = get_elem_pre(docBAT, vnode_pre, (tnode_pre + size[tnode_pre]));
+                    vnode_pre = get_elem_pre(docBAT, vnode_pre, (tnode_pre + pre_size[tnode_pre]));
                     argval[argval_nr] = GDKmalloc(32);
                     if (!argval[argval_nr]) {
                         snprintf(errstr, 1024, "Receiver internal error: not enough memory");
                         send_error(out, 1, "404 Bad Request", "env:Receiver", errstr);
                         goto FINISH_HANDLE_RPC_REQUEST;
                     }
+                    ws_frag = BUNappend(ws_frag, (ptr)&vnode_pre);
                     snprintf(argval[argval_nr], 32, OIDFMT, vnode_pre);
-                    tnode_pre += (size[tnode_pre] + 1);
+                    tnode_pre += (pre_size[tnode_pre] + 1);
                 } else {
-                    if (kind[vnode_pre] != TEXT) {
+                    if (pre_kind[vnode_pre] != TEXT) {
                         snprintf(errstr, 1024, "XQuery RPC request [%s:%s]: "
                                 "iteration[%d]->parameter[%d]->value[\"%d\"] "
                                 "of type[\"%s\"] is expected to have a simple value.\n",
@@ -607,7 +605,7 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
                         send_error(out, 1, "404 Bad Request", "env:Sender", errstr);
                         goto FINISH_HANDLE_RPC_REQUEST;
                     }
-                    argval[argval_nr] = GDKstrdup(text_base + text[prop[vnode_pre]]);
+                    argval[argval_nr] = GDKstrdup(text_base + prop_text[pre_prop[vnode_pre]]);
                     tnode_pre++;
                 }
                 argcnt[i][j]++;
