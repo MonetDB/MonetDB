@@ -230,10 +230,10 @@ print("res_scj");  [print](res_scj);
     # working set, that a following (preceding) step can check
     # the fragment boundaries
     {
-        var seqb := oid(count(ws.fetch(WS_FRAG)));
+        var seqb := oid(count(ws.fetch(WS_FRAG).fetch(WS)));
         var new_pre_values := roots.tmark(seqb);
         seqb := nil;
-        ws.fetch(WS_FRAG).insert(new_pre_values);
+        ws.fetch(WS_FRAG).fetch(WS).insert(new_pre_values);
         new_pre_values := nil;
     }
 
@@ -328,9 +328,9 @@ print("res_scj");  [print](res_scj);
     }
 
     # create result as a BAT of BATs
-    var res := new (void, BAT).insert (nil, ws)
-                              .insert (nil, roots)
-                              .insert (nil, roots.project(WS))
+    var res := new (void, BAT).append (ws)
+                              .append (roots)
+                              .append (roots.project(WS))
                               .seqbase (0@0);
     roots := nil;
 
