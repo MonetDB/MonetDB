@@ -224,9 +224,9 @@ EXCEPT when (child-T == void)
 @:@1_ws(PROP_VAL,      18, bat, void,  str, PRE_BASE)@
 @:@1_ws(NID_PRE,       19, bat, void,  oid, PRE_BASE)@
 @:@1_ws(PRE_NID,       20, bat, void,  oid, PRE_BASE)@
-@:@1_ws(DOC_LOADED,    21, str, void, void, oid(nil))@
-@:@1_ws(FRAG,          22, oid, void, void, oid(nil))@
-@:@1_ws(WS_FRAG,       23, oid, void, void, oid(nil))@
+@:@1_ws(WS_FRAG,       21, bat, void,  oid, PRE_BASE)@
+@:@1_ws(DOC_LOADED,    22, str, void, void, oid(nil))@
+@:@1_ws(FRAG,          23, oid, void, void, oid(nil))@
 @:@1_ws(HEIGHT,        24, int, void, void, oid(nil))@
 @:@1_ws(QN_PREFIX_URI, 25, bat, void,  str, PRE_BASE)@
 @:@1_ws(QN_LOC_URI,    26, bat, void,  str, PRE_BASE)@
@@ -1527,7 +1527,7 @@ xquery_function_call(xquery_client *ctx,
             while(*src && cur < end) *cur++ = *src++;
 
             if (shredBAT) {
-                /* add shredded soap message to the working set */
+                /* add shredded RPC request message to the working set */
                 src = (char*) PFdocbatMIL();
                 while(*src && cur < end) *cur++ = *src++;
             }
@@ -2607,7 +2607,7 @@ xquery_method(stream *out,
     char *err = NULL, *ns = "fn", *mode = "xml-noheader-typed-root-iter";
     Client c;
    
-    c = initClient("soap", "soap", FALSE);
+    c = initClient("xquery_rpc", "xquery_rpc", FALSE);
 	TBL_initclient(c, monet_clients);
     ctx = xquery_client_new(c-monet_clients);
     if (ctx == NULL) 
@@ -2619,7 +2619,7 @@ xquery_method(stream *out,
     monetSetChannel(XQthread, GDKin, out);
     if (argc > 1000) {
         /* hack: pass argc+1000 and you get debug output */
-        stream *s = open_wstream("/tmp/soap.mil");
+        stream *s = open_wstream("/tmp/xquery_rpc.mil");
         char *prologue = (char*) PFinitMIL();
         if (s) {
             ctx->fderr = s;
@@ -2630,7 +2630,7 @@ xquery_method(stream *out,
     }
 
     if (err == NULL && module)
-        err = xquery_module_load(ctx, mode, ns="soap", module); 
+        err = xquery_module_load(ctx, mode, ns="xquery_rpc", module); 
 
     if (err == NULL) { 
         err = xquery_function_call(ctx, msec, mode, ns, method, argc, itercnt, argcnt, argtpe, argval, shredBAT);
