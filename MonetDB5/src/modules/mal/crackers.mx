@@ -1521,7 +1521,7 @@ CRKcrackRangeWithTwoScans(int *vid, int *bid, int low, int hgh, bit tail)
         int  m;
         size_t vl=0, vh=0;
 	bit firstCrack = FALSE;
-	Piece *piece, *tmpPiece;
+	Piece *tmpPiece;
         if (low >  hgh)
                 return throwMessage("crackers.crack", "illegal range");
         if ((b = BATdescriptor(*bid)) == NULL) {
@@ -1540,7 +1540,6 @@ CRKcrackRangeWithTwoScans(int *vid, int *bid, int low, int hgh, bit tail)
                 initCrackMap(crackMap + m, bid);
 		firstCrack = TRUE;
         }
-	piece = crackMap[m].pieces;
 @-
 Inspect the value range table to only further crack qualifying fragments.
 @c
@@ -2155,7 +2154,10 @@ CRKcrackZero_MK_@1 (int *res, int *bid, @1 *mid)
 
 str
 CRKpieceOne_MK_@1( BAT *b, @1 mval, int first, int last){
-	ptr vm, vl, vmax,base= 0;
+	ptr vm, vl, base= 0;
+#ifdef MK_DEBUG
+	ptr vmax;
+#endif
 	int xx;
 	oid hdummy;
 	@1 tdummy;
@@ -2185,7 +2187,9 @@ CRKpieceOne_MK_@1( BAT *b, @1 mval, int first, int last){
 		 return MAL_SUCCEED;
 	
 	vm = base;
+#ifdef MK_DEBUG
 	vmax = (ptr) ((char *) vl + xx);
+#endif
 	base = BUNtloc(b, BUNptr(b,first));
 	while(vm > base) {
 		if (*(@1 *) vm == mval){
@@ -2223,7 +2227,10 @@ CRKcrackOne_MK_@1 (int *res, int *bid, int *mid)
 /* assume that the [first,last] are inclusive bounds */
 str
 CRKpieceTwo_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
-	ptr vm, vl, vmax, vmin, hmin, hmax, base= 0;
+	ptr vm, vl, vmin, hmax, base= 0;
+#ifdef MK_DEBUG
+	ptr hmin;
+#endif
 	int xx;
 	oid hdummy;
 	@1 tdummy;
@@ -2270,7 +2277,6 @@ CRKpieceTwo_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
 		} 
 	} 
 
-	vmax= (ptr) ((char *) vl + xx);
 	/* reshuffle left part using same algorithm */
 	if( ! ( base == 0 || base == vl ) ){
 		vm = vl;
@@ -2298,9 +2304,9 @@ CRKpieceTwo_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
 		} 
 		vm = (ptr) ((char *) vm - xx);
 	}
+#ifdef MK_DEBUG
 	hmin= vl;
 
-#ifdef MK_DEBUG
 	printf("indices %d %d %d %d\n",(int) BUNindex(b,lmin)+1, (int) BUNindex(b,lmax),
 		(int) BUNindex(b,hmin)+1, (int) BUNindex(b,hmax));
 #endif
