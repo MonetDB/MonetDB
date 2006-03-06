@@ -2170,7 +2170,7 @@ CRKpieceOne_MK_@1( BAT *b, @1 mval, int first, int last){
 	} 
 
 	/* reshuffle one part using same algorithm */
-	if( base == 0 || base == vl )
+	if( base == vl )
 		 return MAL_SUCCEED;
 	
 	vm = base;
@@ -2262,7 +2262,7 @@ CRKpieceTwo_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
 	} 
 
 	/* reshuffle left part using same algorithm */
-	if( ! ( base == 0 || base == vl ) ){
+	if( base != vl ){
 		vm = vl;
 		base = BUNtloc(b, BUNptr(b,first));
 		while(vm >= base) {
