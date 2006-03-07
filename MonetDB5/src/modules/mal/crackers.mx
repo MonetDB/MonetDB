@@ -2439,8 +2439,8 @@ CRKcrackThree_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 
 
 @= SMsm_operations
+@:@2_split_in_two(@1,LT,GE,<,>=)@
 @:@2_split_in_two(@1,LE,GT,<=,>)@
-@:@2_split_in_two(@1,LT,EQ,<,==)@
 @:SMsm_piece_Zero(@1,@2)@
 @:SMsm_piece_One(@1,@2)@
 @:SMsm_piece_Two(@1,@2)@
@@ -2480,34 +2480,32 @@ CRKcrackThree_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	BUN bn_s = BUNptr(b, fst);
 	BUN bn_l = BUNptr(b, lst);
 @
-@= SMsm_split_in_two_finish
-	/* final sanity check */
-	assert(bn_s >= bn_l);
-	
-	if (BUNindex(b, bn_l) <= *lt) {
-		*le = *lt;
-	} else
-	if (*(@1*)BUNtloc(b, bn_l) @2 mid) {
-		*le = BUNindex(b, bn_l);
-	} else
-	if (*(@1*)BUNtloc(b, bn_l-bs) @2 mid) {
-		*le = BUNindex(b, bn_l-bs);
-	} else {
-		assert(0);
+@= SMsm_split_in_two_finish_LT_GE
+	bn_l = BUNptr(b, *gt);
+	while (bn_s < bn_l && *(@1*)@2 < mid) {
+		bn_s += bs;
+		@3
 	}
-
-	return MAL_SUCCEED;
+	*lt = BUNindex(b, bn_s);
+@= SMsm_split_in_two_finish_LE_GT
+	bn_s = BUNptr(b, *lt);
+	while (bn_s < bn_l && *(@1*)@4 > mid) {
+		bn_l -= bs;
+		@5
+	}
+	*gt = BUNindex(b, bn_l);
 @
 
 @= SM_split_in_two
 str
-CRKsplit_SM_@1_@2_@3 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *le)
+CRKsplit_SM_@1_@2_@3 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *gt)
 {
 	@:SMsm_split_in_two_init@	
 
 	/* advance cursors, skipping over BUNs that are already in the right place */
-	@:SMsm_advance(@1,BUNtloc(b, bn_s),<,mid,,BUNtloc(b, bn_l),@5,mid,)@
+	@:SMsm_advance(@1,BUNtloc(b, bn_s),<,mid,,BUNtloc(b, bn_l),>,mid,)@
 	*lt = BUNindex(b, bn_s);
+	*gt = BUNindex(b, bn_l);
 	@:SMsm_advance(@1,BUNtloc(b, bn_s),@4,mid,,BUNtloc(b, bn_l),@5,mid,)@
 	
 	/* re-shuffel BUNs */
@@ -2518,13 +2516,17 @@ CRKsplit_SM_@1_@2_@3 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t
 		/* advance cursors, skipping over BUNs that are already in the right place */
 		@:SMsm_advance(@1,BUNtloc(b, bn_s),@4,mid,,BUNtloc(b, bn_l),@5,mid,)@
 	}
+	/* final sanity check */
+	assert(bn_s >= bn_l);
 
-	@:SMsm_split_in_two_finish(@1,@4)@
+	@:SMsm_split_in_two_finish_@2_@3(@1,BUNtloc(b, bn_s),,BUNtloc(b, bn_l),)@
+
+	return MAL_SUCCEED;
 }
 @
 @= sm_split_in_two
 str
-CRKsplit_sm_@1_@2_@3 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *le)
+CRKsplit_sm_@1_@2_@3 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *gt)
 {
 	@:SMsm_split_in_two_init@	
 	BUN hd_s = BUNhloc(b, bn_s);
@@ -2533,8 +2535,9 @@ CRKsplit_sm_@1_@2_@3 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t
 	BUN tl_l = BUNtloc(b, bn_l);
 
 	/* advance cursors, skipping over BUNs that are already in the right place */
-	@:SMsm_advance(@1,tl_s,<,mid,tl_s += bs;,tl_l,@5,mid,tl_l -= bs;)@
+	@:SMsm_advance(@1,tl_s,<,mid,tl_s += bs;,tl_l,>,mid,tl_l -= bs;)@
 	*lt = BUNindex(b, bn_s);
+	*gt = BUNindex(b, bn_l);
 	@:SMsm_advance(@1,tl_s,@4,mid,tl_s += bs;,tl_l,@5,mid,tl_l -= bs;)@
 	hd_s = BUNhloc(b, bn_s);
 	hd_l = BUNhloc(b, bn_l);
@@ -2547,39 +2550,41 @@ CRKsplit_sm_@1_@2_@3 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t
 		/* advance cursors, skipping over BUNs that are already in the right place */
 		@:SMsm_advance(@1,tl_s,@4,mid,hd_s += bs; tl_s += bs;,tl_l,@5,mid,hd_l -= bs; tl_l -= bs;)@
 	}
+	/* final sanity check */
+	assert(bn_s >= bn_l);
 
-	@:SMsm_split_in_two_finish(@1,@4)@
+	@:SMsm_split_in_two_finish_@2_@3(@1,tl_s,tl_s += bs;,tl_l,tl_l -= bs;)@
+
+	return MAL_SUCCEED;
 }
 @
 
 @= SMsm_piece_Zero
 str
-CRKpieceZero_@2_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *le)
+CRKpieceZero_@2_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *gt)
 {
-	return CRKsplit_@2_@1_LE_GT (b, mid, fst, lst, lt, le);
+	return CRKsplit_@2_@1_LE_GT (b, mid, fst, lst, lt, gt);
 }
 @
 
 @= SMsm_piece_One
 str
-CRKpieceOne_@2_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *le)
+CRKpieceOne_@2_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *gt)
 {
-	size_t x;
 	str msg;
 
-	msg = CRKsplit_@2_@1_LE_GT (b, mid, fst, lst, &x, le);
+	msg = CRKsplit_@2_@1_LT_GE (b, mid, fst, lst, lt, gt);
 	if (msg != MAL_SUCCEED) {
 		return msg;
 	}
-	return CRKsplit_@2_@1_LT_EQ (b, mid, x, *le, &x, lt);
+	return CRKsplit_@2_@1_LE_GT (b, mid, *lt, *gt, lt, gt);
 }
 @
 
 @= SMsm_piece_Two
 str
-CRKpieceTwo_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl, size_t *lel, size_t *lth, size_t *leh)
+CRKpieceTwo_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl, size_t *gtl, size_t *lth, size_t *gth)
 {
-	size_t x;
 	str msg;
 
 	/* advance cursors, skipping over BUNs that are already in the right place */
@@ -2588,25 +2593,25 @@ CRKpieceTwo_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl, 
 	fst = BUNindex(b, bn_s);
 	lst = BUNindex(b, bn_l);
 
-	msg = CRKsplit_@2_@1_LE_GT (b, low, fst, lst, &x, lel);
+	msg = CRKsplit_@2_@1_LT_GE (b, low, fst, lst, ltl, gtl);
 	if (msg != MAL_SUCCEED) {
 		return msg;
 	}
-	msg = CRKsplit_@2_@1_LT_EQ (b, low, x, *lel, &x, ltl);
+	msg = CRKsplit_@2_@1_LT_GE (b, hgh, *ltl, lst, lth, gth);
 	if (msg != MAL_SUCCEED) {
 		return msg;
 	}
-	msg = CRKsplit_@2_@1_LE_GT (b, hgh, *lel, lst, &x, leh);
+	msg = CRKsplit_@2_@1_LE_GT (b, hgh, *lth, *gth, lth, gth);
 	if (msg != MAL_SUCCEED) {
 		return msg;
 	}
-	return CRKsplit_@2_@1_LT_EQ (b, hgh, x, *leh, &x, lth);
+	return CRKsplit_@2_@1_LE_GT (b, low, *ltl, MIN(*gtl,*lth), ltl, gtl);
 }
 @
 
 @= SMsm_piece_Three
 str
-CRKpieceThree_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl, size_t *lel, size_t *lth, size_t *leh)
+CRKpieceThree_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl, size_t *gtl, size_t *lth, size_t *gth)
 {
 	str msg;
 
@@ -2616,11 +2621,11 @@ CRKpieceThree_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl
 	fst = BUNindex(b, bn_s);
 	lst = BUNindex(b, bn_l);
 
-	msg = CRKsplit_@2_@1_LE_GT (b, low, fst, lst, ltl, lel);
+	msg = CRKsplit_@2_@1_LE_GT (b, low, fst, lst, ltl, gtl);
 	if (msg != MAL_SUCCEED) {
 		return msg;
 	}
-	return CRKsplit_@2_@1_LE_GT (b, hgh, *lel, lst, lth, leh);
+	return CRKsplit_@2_@1_LE_GT (b, hgh, *gtl, lst, lth, gth);
 }
 @
 
@@ -2630,7 +2635,7 @@ CRKcrack@3_@2_@1 (int *res, int *bid, @1 *mid)
 {
 	BAT *b;
 	str msg;
-	size_t fst, lst, lt, le;
+	size_t fst, lst, lt, gt;
 
 	/* initialization */
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -2639,9 +2644,9 @@ CRKcrack@3_@2_@1 (int *res, int *bid, @1 *mid)
 	fst = BUNindex(b, BUNfirst(b));
 	lst = BUNindex(b, BUNlast (b)) - 1;
 
-	msg = CRKpiece@3_@2_@1(b, *mid, fst, lst, &lt, &le);
+	msg = CRKpiece@3_@2_@1(b, *mid, fst, lst, &lt, &gt);
 	(void)lt;
-	(void)le;
+	(void)gt;
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
@@ -2655,7 +2660,7 @@ CRKcrack@3_@2_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 {
 	BAT *b;
 	str msg;
-	size_t fst, lst, ltl, lel, lth, leh;
+	size_t fst, lst, ltl, gtl, lth, gth;
 
 	/* initialization */
 	if (*low > *hgh)
@@ -2666,11 +2671,11 @@ CRKcrack@3_@2_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	fst = BUNindex(b, BUNfirst(b));
 	lst = BUNindex(b, BUNlast (b)) - 1;
 
-	msg = CRKpiece@3_@2_@1(b, *low, *hgh, fst, lst, &ltl, &lel, &lth, &leh);
+	msg = CRKpiece@3_@2_@1(b, *low, *hgh, fst, lst, &ltl, &gtl, &lth, &gth);
 	(void)ltl;
-	(void)lel;
+	(void)gtl;
 	(void)lth;
-	(void)leh;
+	(void)gth;
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
