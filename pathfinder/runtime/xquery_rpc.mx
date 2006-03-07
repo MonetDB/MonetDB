@@ -284,7 +284,7 @@ static void send_error(stream *out, bit p_body, char* http_err, char *soapcodev,
 
 /* Calculate the number of nodes which has the name "node_name", within
  * the range 'start_pre' and 'end_pre' (incl.). */
-static int count_node(BAT *docBAT, char *node_name, int start_pre, int end_pre){
+static int count_node(BAT *shredBAT, char *node_name, int start_pre, int end_pre){
     static int first;       /* Since the values of these variables are always */
     static oid *pre_prop;   /* the same, we use 'static' here to prevent the  */
     static char *pre_kind;  /* values of these variables being retrieved at   */
@@ -295,10 +295,10 @@ static int count_node(BAT *docBAT, char *node_name, int start_pre, int end_pre){
 
     assert(start_pre > 0);
    
-    first    = BUNindex(docBAT, BUNfirst(docBAT));
-    pre_prop = (oid*) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+PRE_PROP))));
-    pre_kind = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+PRE_KIND))));
-    qn_loc   = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+QN_LOC)));
+    first    = BUNindex(shredBAT, BUNfirst(shredBAT));
+    pre_prop = (oid*) BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+PRE_PROP))));
+    pre_kind = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+PRE_KIND))));
+    qn_loc   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+QN_LOC)));
 
     for (i = start_pre; i <= end_pre; i++) {
         if (pre_kind[i] == ELEMENT) {
@@ -314,15 +314,15 @@ static int count_node(BAT *docBAT, char *node_name, int start_pre, int end_pre){
  * kind is 'ELEMENT'.
  * Return the 'pre' value of this node.
  * Return 0 if such node can not be found. */
-static oid get_elem_pre(BAT *docBAT, int start_pre, int end_pre){
+static oid get_elem_pre(BAT *shredBAT, int start_pre, int end_pre){
     static int first;   /* values of 'first' and 'kind' are stable */
     static char *pre_kind;
     int i;
 
     assert(start_pre > 0 && end_pre >= start_pre);
    
-    first    = BUNindex(docBAT, BUNfirst(docBAT));
-    pre_kind = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+PRE_KIND))));
+    first    = BUNindex(shredBAT, BUNfirst(shredBAT));
+    pre_kind = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+PRE_KIND))));
 
     for (i = start_pre; i <= end_pre; i++) {
         if (pre_kind[i] == ELEMENT)
@@ -334,7 +334,7 @@ static oid get_elem_pre(BAT *docBAT, int start_pre, int end_pre){
 /* Given a node name, find the 'pre' value of the node given within the range
  * 'start_pre' and 'end_pre' (incl.).
  * Return 0 if such node can not be found. */
-static oid get_node_pre(BAT *docBAT, char *node_name, int start_pre, int end_pre){
+static oid get_node_pre(BAT *shredBAT, char *node_name, int start_pre, int end_pre){
     static int first;   /* Since the values of these variables are always */
     static oid *pre_prop;   /* the same, we use 'static' here to prevent the  */
     static char *pre_kind;  /* values of these variables being retrieved at   */
@@ -345,10 +345,10 @@ static oid get_node_pre(BAT *docBAT, char *node_name, int start_pre, int end_pre
 
     assert(start_pre > 0 && end_pre >= start_pre);
    
-    first    = BUNindex(docBAT, BUNfirst(docBAT));
-    pre_prop = (oid*) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+PRE_PROP))));
-    pre_kind = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+PRE_KIND))));
-    qn_loc   = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+QN_LOC)));
+    first    = BUNindex(shredBAT, BUNfirst(shredBAT));
+    pre_prop = (oid*) BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+PRE_PROP))));
+    pre_kind = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+PRE_KIND))));
+    qn_loc   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+QN_LOC)));
 
     for (i = start_pre; i <= end_pre; i++) {
         if (pre_kind[i] == ELEMENT) {
@@ -364,7 +364,7 @@ static oid get_node_pre(BAT *docBAT, char *node_name, int start_pre, int end_pre
  * node with the given 'pre' value.
  * NB: DO NOT free the string returned by this function!!!
  */
-static char* find_attribute(BAT *docBAT, char* attrname, oid pre){
+static char* find_attribute(BAT *shredBAT, char* attrname, oid pre){
     static size_t nattrs;
     static int first;
     static oid *attr_own, *attr_qn, *attr_prop;
@@ -374,13 +374,13 @@ static char* find_attribute(BAT *docBAT, char* attrname, oid pre){
     size_t i;
     BUN p;
 
-    first    = BUNindex(docBAT, BUNfirst(docBAT));
-    qn_loc   = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+QN_LOC))   );
-    prop_val = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+PROP_VAL)) );
+    first    = BUNindex(shredBAT, BUNfirst(shredBAT));
+    qn_loc   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+QN_LOC))   );
+    prop_val = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+PROP_VAL)) );
 
-    attr_own  = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+ATTR_OWN) )));
-    attr_qn   = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+ATTR_QN)  )));
-    attr_prop = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+ATTR_PROP))));
+    attr_own  = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+ATTR_OWN) )));
+    attr_qn   = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+ATTR_QN)  )));
+    attr_prop = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+ATTR_PROP))));
 
     /* Find 'attrname' in the tail of 'qn_loc' */
     p = BUNfnd(BATmirror(qn_loc), attrname);
@@ -389,7 +389,7 @@ static char* find_attribute(BAT *docBAT, char* attrname, oid pre){
     else return NULL;
 
     /* try to find the attribute value */
-    nattrs = BATcount(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+ATTR_PROP))));
+    nattrs = BATcount(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+ATTR_PROP))));
     for (i = 0; i < nattrs; i++) {
         if (attr_own[i] > pre) return NULL;
         if (attr_own[i] == pre && attr_qn[i] == qn) {
@@ -402,7 +402,7 @@ static char* find_attribute(BAT *docBAT, char* attrname, oid pre){
 
 /* Given the pre value of a type node, return the name of the type node as a
  * string in the form "prefix:loc" */
-static char* get_type(stream *out, BAT *docBAT, oid tnode_pre){
+static char* get_type(stream *out, BAT *shredBAT, oid tnode_pre){
     static int first;
     static BAT *qn_loc, *qn_prefix;
     static oid *pre_prop;
@@ -411,11 +411,11 @@ static char* get_type(stream *out, BAT *docBAT, oid tnode_pre){
     char errstr[1024];
     int l, p;
     
-    first = BUNindex(docBAT, BUNfirst(docBAT));
-    pre_prop = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+PRE_PROP))));
+    first = BUNindex(shredBAT, BUNfirst(shredBAT));
+    pre_prop = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+PRE_PROP))));
 
-    qn_prefix = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+QN_PREFIX)));
-    qn_loc    = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,first+QN_LOC))   );
+    qn_prefix = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+QN_PREFIX)));
+    qn_loc    = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+QN_LOC))   );
 
     first  = BUNindex(qn_prefix, BUNfirst(qn_prefix)) + tnode_pre;
     prefix = (char*) BUNtail(qn_prefix, BUNptr(qn_prefix, pre_prop[tnode_pre]));
@@ -438,23 +438,39 @@ static char* get_type(stream *out, BAT *docBAT, oid tnode_pre){
 }
 
 static int handle_rpc_request(struct shttpd_callback_arg *arg) {
-    var_t *prop_text = NULL; /* typedef oid var_t */
     int i = 0, j = 0, k = 0, off = 0, sock = -1, retval = GDK_FAIL;
-    stream *out = NULL;
-    char *strptr = NULL, *pre_kind = NULL, *text_base = NULL;
-    char *msg = NULL, *module = NULL, *method = NULL;
+    char *strptr = NULL, *req_msg = NULL;
+    char *module = NULL, *method = NULL;
     char errstr[1024];
-    oid *pre_prop = NULL;
+    stream *out = NULL;
+
+    /* pointers to the temporarily shredded BATs and to the values in
+     * shredBAT */
+    BAT *shredBAT = NULL, *ws_frag = NULL;
     int *pre_size = NULL;
-    oid pre = 0, pnode_pre = 0, inode_pre = 0, tnode_pre = 0, vnode_pre = 0;
-    BAT *docBAT = NULL, *ws_frag = NULL;
+    char *pre_level = NULL, *pre_kind = NULL, *text_base = NULL;
+    oid *pre_prop = NULL;
+    var_t *prop_text = NULL;
+
+    /* indecates from which node we should start with invalidate the
+     * pre_level and the pre_size values */
+    oid start_invalidate = 0;
+
+    /* used for invalidation of the pre_level and the pre_size values */
+    unsigned int l = 0, level_diff = 0, total_size;
+
+    oid pre = 0, pnode_pre = 0, inode_pre = 0, tnode_pre = 0, vnode_pre = 0, next_frag = 0;
+
+    /* used to save the pre_sizes of some nodes, before the node's
+     * pre_size value is overwritten. */
+    int root_size = 0, pnode_size = 0, inode_size = 0, tnode_size = 0;
 
     int iterc = 0, argc = 0;
     int **argcnt = NULL;    /* #items eash param/iter contains */
     str *argval = NULL;     /* Stores all actual values sequetially. */
     str *argtpe = NULL;     /* XQuery type of each argval */
     int argval_nr = 0;      /* #values arg_val currently contains */
-    int argval_size;        /* max #items in "argval", doubled if necessary */
+    int argval_size = 0;    /* max #items in "argval", doubled if necessary */
 
     THRnew(MT_getpid(), "rpc_req_handler");
 
@@ -469,9 +485,9 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
     /* Retrieve the whole received RPC request message, and remove the
      * first line of the message, so that the messgae we pass to
      * CMDshred2bats starts directly with the envelope tag. */
-    msg = shttpd_get_msg(arg);
-    strptr = msg + strlen("<?xml"); /* skip "<?xml" */
-    if ((strstr(msg, "<?xml") != msg) ||
+    req_msg = shttpd_get_msg(arg);
+    strptr = req_msg + strlen("<?xml"); /* skip "<?xml" */
+    if ((strstr(req_msg, "<?xml") != req_msg) ||
         (strptr = strchr(strptr, (int)'<')) == NULL) {
         send_error(out, 1, "404 Bad Request", "env:Sender",
                 "XQuery RPC request: bad XML structure\n");
@@ -480,42 +496,44 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
 printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
        "=== END DEBUG MSG: RPC request RECEIVED ===\n\n", strptr);
 */
-    if ((CMDshred2bats(&docBAT, "", strptr, "")  == GDK_FAIL)) {
+    if ((CMDshred2bats(&shredBAT, "", strptr, "")  == GDK_FAIL)) {
         send_error(out, 1, "404 Bad Request", "env:Sender",
                 "XQuery RPC request: bad XML structure, could not shred\n");
         goto FINISH_HANDLE_RPC_REQUEST;
     }
 
-    off       = BUNindex(docBAT,BUNfirst(docBAT));
-    pre_size  = (int *) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_SIZE))));
-    pre_prop  = (oid *) BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_PROP))));
-    pre_kind  = (char *)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PRE_KIND))));
-    prop_text = (var_t*)BUNfirst(BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+PROP_TEXT))));
-    text_base = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT, off+PROP_TEXT)))->theap->base;
-    ws_frag   = BBP_cache(*(bat*)BUNtail(docBAT,BUNptr(docBAT,off+WS_FRAG)));
+    off       = BUNindex(shredBAT,BUNfirst(shredBAT));
+    pre_size  = (int *) BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PRE_SIZE))));
+    pre_level = (char *)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PRE_LEVEL))));
+    pre_prop  = (oid *) BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PRE_PROP))));
+    pre_kind  = (char *)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PRE_KIND))));
+    prop_text = (var_t*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PROP_TEXT))));
+    text_base = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT, off+PROP_TEXT)))->theap->base;
+    ws_frag   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+WS_FRAG)));
+    total_size = BATcount(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PRE_SIZE))));
 
     /* There are at least two nodes before "SoapRpcRequest", namely
      * "Envelope" and "Body" (a "Header" node is optional). There are at
      * least two nodes after "SoapRpcRequest", namely "iter" and
      * "param". */
-    if (!(pre = get_node_pre(docBAT, "XQueryRpcRequest", 2, (pre_size[0] - 2)))) {
+    if (!(pre = get_node_pre(shredBAT, "XQueryRpcRequest", 2, (pre_size[0] - 2)))) {
         send_error(out, 1, "404 Bad Request", "env:Sender",
                 "XQuery RPC request must have a \"XQueryRpcRequest\" tag\n");
         goto FINISH_HANDLE_RPC_REQUEST;
     }
-    if ((module = find_attribute(docBAT, "module", pre)) == NULL) {
+    if ((module = find_attribute(shredBAT, "module", pre)) == NULL) {
         send_error(out, 1, "404 Bad Request", "env:Sender",
             "XQuery RPC request: \"XQueryRpcRquest\" tag does not have a \"module\" attribute.\n");
         goto FINISH_HANDLE_RPC_REQUEST;
     }
-    if ((method = find_attribute(docBAT, "method", pre)) == NULL) {
+    if ((method = find_attribute(shredBAT, "method", pre)) == NULL) {
         send_error(out, 1, "404 Bad Request", "env:Sender",
             "XQuery RPC request: \"SoapRpcRquest\" tag does not have a \"method\" attribute.\n");
         goto FINISH_HANDLE_RPC_REQUEST;
     }
 
     /* Calculate the number of iterations */
-    iterc = count_node(docBAT, "iter", (pre+1), pre_size[0]);
+    iterc = count_node(shredBAT, "iter", (pre+1), pre_size[0]);
     if (iterc == 0) {
         snprintf(errstr, 1024, "XQuery RPC request [%s:%s]: should have at "
                 "least one <iter> tag.\n", module, method);
@@ -525,7 +543,7 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
     /* Calculate the number of parameters */
     /* FIXME: we now just assume each iteration contains the same number
      *        of parameters, but this is not checked! */
-    argc = count_node(docBAT, "param", (pre + 2), pre_size[0]) / iterc;
+    argc = count_node(shredBAT, "param", (pre + 2), pre_size[0]) / iterc;
 
     argcnt = GDKmalloc(iterc * sizeof(int *));
     if (!argcnt) {
@@ -552,17 +570,22 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
    
     /* Fill the arrays 'argcnt', 'argval', 'argtpe' */
     inode_pre = pre;
+    root_size = pre_size[0];
     for (i = 0; i < iterc; i++) {
-        inode_pre = get_node_pre(docBAT, "iter", (inode_pre + 1), pre_size[0]);
+        inode_pre  = get_node_pre(shredBAT, "iter", (inode_pre + 1), root_size);
+        inode_size = pre_size[inode_pre];
 
         pnode_pre = inode_pre;
         for (j = 0; j < argc; j++) {
-            pnode_pre = get_node_pre(docBAT, "param", (pnode_pre + 1), (inode_pre + pre_size[inode_pre]));
+            pnode_pre  = get_node_pre(shredBAT, "param", (pnode_pre + 1), (inode_pre + inode_size));
+            pnode_size = pre_size[pnode_pre];
        
             tnode_pre = pnode_pre + 1; argcnt[i][j] = 0; k = 1;
-            while(tnode_pre < (pnode_pre + pre_size[pnode_pre]) && 
-                    (tnode_pre = get_elem_pre(docBAT, tnode_pre, (pnode_pre + pre_size[pnode_pre]))) > 0){
-                if (!(pre_size[tnode_pre] > 0)) {
+            while(tnode_pre < (pnode_pre + pnode_size) && 
+                    (tnode_pre = get_elem_pre(shredBAT, tnode_pre, (pnode_pre + pnode_size))) > 0){
+                tnode_size = pre_size[tnode_pre];
+
+                if (tnode_size <= 0) {
                     snprintf(errstr, 1024, "XQuery RPC request [%s:%s]: "
                             "iteration[%d]->parameter[%d]->value[%d] does not contain value\n",
                             module, method, (i + 1), (j + 1), k);
@@ -579,23 +602,36 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
                     goto FINISH_HANDLE_RPC_REQUEST;
                 }
 
-                if ((argtpe[argval_nr] = get_type(out, docBAT, tnode_pre)) == NULL) {
+                if ((argtpe[argval_nr] = get_type(out, shredBAT, tnode_pre)) == NULL) {
                     /* Error message is already sent by 'get_type' */
                     goto FINISH_HANDLE_RPC_REQUEST;
                 }
 
                 vnode_pre = tnode_pre + 1;
                 if (strcmp(argtpe[argval_nr], "xs:anyNode") == 0) {
-                    vnode_pre = get_elem_pre(docBAT, vnode_pre, (tnode_pre + pre_size[tnode_pre]));
+                    vnode_pre = get_elem_pre(shredBAT, vnode_pre, (tnode_pre + tnode_size));
                     argval[argval_nr] = GDKmalloc(32);
                     if (!argval[argval_nr]) {
                         snprintf(errstr, 1024, "Receiver internal error: not enough memory");
                         send_error(out, 1, "404 Bad Request", "env:Receiver", errstr);
                         goto FINISH_HANDLE_RPC_REQUEST;
                     }
-                    ws_frag = BUNappend(ws_frag, (ptr)&vnode_pre);
                     snprintf(argval[argval_nr], 32, OIDFMT, vnode_pre);
-                    tnode_pre += (pre_size[tnode_pre] + 1);
+
+                    ws_frag = BUNappend(ws_frag, (ptr)&vnode_pre);
+                    next_frag = vnode_pre + pre_size[vnode_pre] + 1;
+                    if (next_frag < total_size){
+                        ws_frag = BUNappend(ws_frag, (ptr)&next_frag);
+                    }
+                    for (l = start_invalidate; l < vnode_pre; l++) {
+                        pre_level[l] = pre_level[0];
+                        pre_size[l] = 0;
+                    }
+                    level_diff = pre_level[vnode_pre];
+                    for (l = vnode_pre; l <= (vnode_pre + pre_size[vnode_pre]); l++) {
+                        pre_level[l] -= level_diff;
+                    }
+                    start_invalidate = vnode_pre + pre_size[vnode_pre] + 1;
                 } else {
                     if (pre_kind[vnode_pre] != TEXT) {
                         snprintf(errstr, 1024, "XQuery RPC request [%s:%s]: "
@@ -606,14 +642,24 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
                         goto FINISH_HANDLE_RPC_REQUEST;
                     }
                     argval[argval_nr] = GDKstrdup(text_base + prop_text[pre_prop[vnode_pre]]);
-                    tnode_pre++;
                 }
+                tnode_pre += (tnode_size + 1); /* skip all children of tnode and go to the next possible tnode */
                 argcnt[i][j]++;
                 argval_nr++;
                 k++;
             } /* end WHILE 'tnode_pre' */
         } /* end FOR 'argc' */
     } /* end FOR 'i < iterc' */
+
+    /* (start_invalidate > 0) => there is at least one node parameter in
+     * the request message, so invalidate all pre_level and pre_size
+     * values after the last node parameter, if any. */
+    if (start_invalidate > 0 && start_invalidate < total_size){
+        for (l = start_invalidate; l < total_size; l++){
+            pre_level[l] = pre_level[0];
+            pre_size[l] = 0;
+        }
+    }
 
     /* write out our response */
     if (stream_printf(out,
@@ -631,7 +677,7 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
                 module, method) >= 0)
     {
         argc += 1000; /* debug */
-        char *err = xquery_method(out, module, method, argc, iterc, argcnt, argtpe, argval, docBAT);
+        char *err = xquery_method(out, module, method, argc, iterc, argcnt, argtpe, argval, shredBAT);
         argc %= 1000;
 
         if (err) {
@@ -672,7 +718,7 @@ int CMDhttp_post(BAT **res,
     buffer *b = NULL;
     str strptr = NULL;
     stream *in = NULL, *out = NULL, *bs = NULL, *bak = GDKout;
-    BAT *docBAT = NULL; /* Hold the temp BATs after the RPC response has been shredded: */
+    BAT *shredBAT = NULL; /* Hold the temp BATs after the RPC response has been shredded: */
     BAT *node_item = NULL, *node_kind = NULL; /* BATs hold item|kind of a node parameter */
     BUN p_vid, p_iter, p_item, p_kind; /* Pointers to the current BUNs of the BATs. */
     str str_val = NULL;
@@ -920,12 +966,12 @@ printf("\n=== DEBUG MSG: received RPC response message ======\n%s"
     /* Retrieve the SOAP Envelope from the response message */
     strptr = strstr(strptr, "<env:Envelope");
 
-    if (CMDshred2bats(&docBAT, "", strptr, "")  == GDK_FAIL) {
+    if (CMDshred2bats(&shredBAT, "", strptr, "")  == GDK_FAIL) {
         GDKerror("CMDhttp_post: invalid XQuery RPC response received\n");
         goto FINISH_HTTP_POST;
     }
 
-    *res = docBAT;
+    *res = shredBAT;
     retval = GDK_SUCCEED;
     goto FINISH_HTTP_POST;
 
