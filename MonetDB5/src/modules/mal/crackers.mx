@@ -2420,13 +2420,13 @@ CRKcrackThree_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 @
 
 @= SMsm_advance
-	while (bn_s < bn_l && *(@1*)@4 @2 mid) {
+	while (bn_s < bn_l && *(@1*)@2 @3 @4) {
 		bn_s += bs;
-		@6
+		@5
 	}
-	while (bn_s < bn_l && *(@1*)@5 @3 mid) {
+	while (bn_s < bn_l && *(@1*)@6 @7 @8) {
 		bn_l -= bs;
-		@7
+		@9
 	}
 @
 
@@ -2459,9 +2459,9 @@ CRKsplit_SM_@1_@2_@3 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t
 	@:SMsm_split_in_two_init@	
 
 	/* advance cursors, skipping over BUNs that are already in the right place */
-	@:SMsm_advance(@1,<,@5,BUNtloc(b, bn_s),BUNtloc(b, bn_l),,)@
+	@:SMsm_advance(@1,BUNtloc(b, bn_s),<,mid,,BUNtloc(b, bn_l),@5,mid,)@
 	*lt = BUNindex(b, bn_s);
-	@:SMsm_advance(@1,@4,@5,BUNtloc(b, bn_s),BUNtloc(b, bn_l),,)@
+	@:SMsm_advance(@1,BUNtloc(b, bn_s),@4,mid,,BUNtloc(b, bn_l),@5,mid,)@
 	
 	/* re-shuffel BUNs */
 	while (bn_s < bn_l) {
@@ -2469,7 +2469,7 @@ CRKsplit_SM_@1_@2_@3 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t
 		@:SMsm_swapTwoBUNs(@1,BUNhloc(b, bn_l),BUNtloc(b, bn_l),BUNhloc(b, bn_s),BUNtloc(b, bn_s),)@
 		
 		/* advance cursors, skipping over BUNs that are already in the right place */
-		@:SMsm_advance(@1,@4,@5,BUNtloc(b, bn_s),BUNtloc(b, bn_l),,)@
+		@:SMsm_advance(@1,BUNtloc(b, bn_s),@4,mid,,BUNtloc(b, bn_l),@5,mid,)@
 	}
 
 	@:SMsm_split_in_two_finish(@1,@4)@
@@ -2486,9 +2486,9 @@ CRKsplit_sm_@1_@2_@3 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t
 	BUN tl_l = BUNtloc(b, bn_l);
 
 	/* advance cursors, skipping over BUNs that are already in the right place */
-	@:SMsm_advance(@1,<,@5,tl_s,tl_l,tl_s += bs;,tl_l -= bs;)@
+	@:SMsm_advance(@1,tl_s,<,mid,tl_s += bs;,tl_l,@5,mid,tl_l -= bs;)@
 	*lt = BUNindex(b, bn_s);
-	@:SMsm_advance(@1,@4,@5,tl_s,tl_l,tl_s += bs;,tl_l -= bs;)@
+	@:SMsm_advance(@1,tl_s,@4,mid,tl_s += bs;,tl_l,@5,mid,tl_l -= bs;)@
 	hd_s = BUNhloc(b, bn_s);
 	hd_l = BUNhloc(b, bn_l);
 	
@@ -2498,7 +2498,7 @@ CRKsplit_sm_@1_@2_@3 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t
 		@:SMsm_swapTwoBUNs(@1,hd_l,tl_l,hd_s,tl_s,hd_s += bs; tl_s += bs; hd_l -= bs; tl_l -= bs;)@
 		
 		/* advance cursors, skipping over BUNs that are already in the right place */
-		@:SMsm_advance(@1,@4,@5,tl_s,tl_l,hd_s += bs; tl_s += bs;,hd_l -= bs; tl_l -= bs;)@
+		@:SMsm_advance(@1,tl_s,@4,mid,hd_s += bs; tl_s += bs;,tl_l,@5,mid,hd_l -= bs; tl_l -= bs;)@
 	}
 
 	@:SMsm_split_in_two_finish(@1,@4)@
@@ -2536,15 +2536,8 @@ CRKpieceTwo_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl, 
 	str msg;
 
 	/* advance cursors, skipping over BUNs that are already in the right place */
-	int bs = BUNsize(b);
-	BUN bn_s = BUNptr(b, fst);
-	BUN bn_l = BUNptr(b, lst);
-	while (bn_s < bn_l && *(@1*)BUNtloc(b, bn_s) < low) {
-		bn_s += bs;
-	}
-	while (bn_s < bn_l && *(@1*)BUNtloc(b, bn_l) > hgh) {
-		bn_l -= bs;
-	}
+	@:SMsm_split_in_two_init@
+	@:SMsm_advance(@1,BUNtloc(b, bn_s),<,low,,BUNtloc(b, bn_l),>,hgh,)@
 	fst = BUNindex(b, bn_s);
 	lst = BUNindex(b, bn_l);
 
@@ -2571,15 +2564,8 @@ CRKpieceThree_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl
 	str msg;
 
 	/* advance cursors, skipping over BUNs that are already in the right place */
-	int bs = BUNsize(b);
-	BUN bn_s = BUNptr(b, fst);
-	BUN bn_l = BUNptr(b, lst);
-	while (bn_s < bn_l && *(@1*)BUNtloc(b, bn_s) <= low) {
-		bn_s += bs;
-	}
-	while (bn_s < bn_l && *(@1*)BUNtloc(b, bn_l) > hgh) {
-		bn_l -= bs;
-	}
+	@:SMsm_split_in_two_init@
+	@:SMsm_advance(@1,BUNtloc(b, bn_s),<=,low,,BUNtloc(b, bn_l),>,hgh,)@
 	fst = BUNindex(b, bn_s);
 	lst = BUNindex(b, bn_l);
 
