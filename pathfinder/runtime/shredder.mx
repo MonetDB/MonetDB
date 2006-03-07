@@ -311,6 +311,7 @@ typedef struct shredCtxStruct {
 
 static shredCtxStruct *createShredCtx(char* location, off_t  fileSize) {
     int i;
+    //oid frag = 1;
 
     shredCtxStruct *res = (shredCtxStruct*)malloc( sizeof(shredCtxStruct) );
     res->location = location;
@@ -330,7 +331,15 @@ static shredCtxStruct *createShredCtx(char* location, off_t  fileSize) {
             sb->size = MINCHUNK; /* let Monet do the resize self */
         else 
             sb->size = (int)(sb->def->sizeFact * res->estSize);
+
         sb->bat  = BATnew(sb->def->headType,sb->def->tailType,sb->size);
+
+        /*
+        if (i == WS_FRAG){
+            sb->bat = BATseqbase(BUNappend(sb->bat, (ptr)&frag), 0);
+        }
+        */
+
         if ( !sb->bat ) {
             GDKerror("shredder.mx:createShredCtx: BATnew(%d) for %s fails, disk full?\n",sb->size,sb->def->name);
             return NULL;
@@ -558,7 +567,8 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
         if ( sb->def->headType==TYPE_void && !BAThdense(sb->bat) )
             stream_printf(GDKout,"WARNING: BAT[%s] not dense\n",sb->def->name);
         if ( i == WS_FRAG ) {
-            sb->bat = BATsetaccess( sb->bat, BAT_APPEND);
+            sb->bat = BATsetaccess(sb->bat, BAT_APPEND);
+            sb->bat = BATseqbase(sb->bat,  0);
         } else {
             sb->bat = BATsetaccess( sb->bat, BAT_READ );
         }
