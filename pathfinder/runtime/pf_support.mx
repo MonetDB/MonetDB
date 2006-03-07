@@ -1012,9 +1012,8 @@ pre_levels
 @= foll_prec_code
     # dirty code to make possible, that old scj still works
     var doc_pre := ws.fetch(WS_FRAG).fetch(frag);
-    # TODO: remove this 'if' 
     if (doc_pre.count() = 0)
-        { doc_pre := doc_pre.append(1@0).access(BAT_READ); }
+        { doc_pre := doc_pre.append(1@0); }
 
 @
 @= doc_pre
