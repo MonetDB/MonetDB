@@ -61,7 +61,7 @@ PFfollowing_void(BAT **result, BAT *pre_size, BAT *ctx, BAT *doc_pre, int *heigh
 
     /* the context set */
     oid *ctx_cur = (oid*) BUNhead(ctx, BUNfirst(ctx)); 
-    oid *ctx_last = (oid*) BUNhead(ctx, BUNlast(ctx));
+    oid *ctx_end = (oid*) BUNhead(ctx, BUNlast(ctx));
     int ctx_nxt = BUNsize(ctx)/sizeof(oid);
 
     /* result bat allocation. for result size use upperbound parameter */
@@ -99,7 +99,7 @@ PFfollowing_void(BAT **result, BAT *pre_size, BAT *ctx, BAT *doc_pre, int *heigh
         boundary += size[boundary] + 1;
 
         /* within the fragment (boundary), go over all context nodes */
-        while(ctx_cur < ctx_last && *ctx_cur < boundary) { 
+        while(ctx_cur < ctx_end && *ctx_cur < boundary) { 
             /* new following is the first following node of the current context node */
             oid new_following = *ctx_cur + size[*ctx_cur] + 1;
 
@@ -139,17 +139,22 @@ PFpreceding_void(BAT **result, BAT *pre_size, BAT *ctx, BAT *doc_pre, int *heigh
     @:init(preceding)@
 
     BATloopFast(doc_pre, p, q, xx) {
-        oid cur_preceding = *(oid*) BUNtail(doc_pre,p);
-        oid boundary = cur_preceding + size[cur_preceding] + 1;
+        oid cur_preceding = *(oid*) BUNtail(doc_pre,p); /* first node of the fragment */
+        oid boundary = cur_preceding + size[cur_preceding] + 1; /* first of next fragment */
+        oid ctx_last = INT_MAX;
 
-        /* within the fragment (boundary), go over all context nodes */
-        while(ctx_cur < ctx_last && *ctx_cur < boundary) { 
-
-            /* cur_preceding is before ctx_cur, so it contains ancestors and preceding nodes */
-            while(cur_preceding < *ctx_cur) {
+        /* within the fragment (boundary), go over all context nodes; and remember the last one */
+        while(ctx_cur < ctx_end && *ctx_cur < boundary) { 
+            ctx_last = *ctx_cur;
+            ctx_cur += ctx_nxt;
+        }
+       
+        /* cur_preceding is before ctx_last, so it contains its preceding *and* ancestor nodes */
+        if (ctx_last != INT_MAX) {
+            while(cur_preceding < ctx_last) {
                 oid new_preceding = cur_preceding + size[cur_preceding] + 1;
-                if (new_preceding <= *ctx_cur) {
-                    /* all descendants of cur_preceding are before ctx_cur 
+                if (new_preceding <= ctx_last) {
+                    /* cur_preceding and all its descendants are before ctx_last 
                      * thus, they cannot be ancestors
                      * thus, they are preceding 
                      */
@@ -159,7 +164,6 @@ PFpreceding_void(BAT **result, BAT *pre_size, BAT *ctx, BAT *doc_pre, int *heigh
                     cur_preceding++; /* skip ancestor */
                 }
             } 
-            ctx_cur += ctx_nxt;
         }
     }
     @:end@
