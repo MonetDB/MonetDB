@@ -21,7 +21,7 @@ acoi_soft="/ufs/acoi/local"
 
 xml=""
 
-for d in /usr /usr/local ${softpath} ${acoi_soft}/${os}/${BITS} \
+for d in /Users/monet/soft/local /usr /usr/local ${softpath} ${acoi_soft}/${os}/${BITS} \
 		`ls -d /soft/${BITS}/libxml2* 2>/dev/null | tail -n1` ; do
 	if [ ! "${xml}"  -a  -x "${d}/bin/xml2-config"  -a  "${host%.ins.cwi.nl}${d}" != "titan/usr" ] ; then
 		xml="${d}"
