@@ -21,7 +21,7 @@
 @' $Id$
 
 @f prec_foll
-@a Henning Rode
+@a Peter Boncz, Jenni Zhang 
 @t prec_foll
 
 @c
@@ -51,159 +51,29 @@
  */
 
 /* FOLLOWING STEP */
-@:head(following)@
-    oid min_post;
-@:specialcases@
-@:init@
-    min_post = INT_MAX;
-    pre_cur = 0;
-    
-    /* ---------------------------- main part ----------------------------- 
-     * - the outer loop traverses all context nodes
-     * - if a context node with minimal postorder rank is found
-     *   we search for the limit of the corresponding document fragment
-     *   and copy all nodes with preorder rank < limit to the result
-     * - all further context nodes in the same document fragment are
-     *   skipped
-     */
-
-    while (ctx_cur <= ctx_last)
-    {
-        ctx_pre = *(oid*)BUNhead(ctx, ctx_cur);
-
-        if (ctx_pre < min_post)
-        {
-            min_post = ctx_pre + (size[ctx_pre]&GDK_int_max);
-            pre_cur = min_post + 1;
-            ctx_cur += ctx_bunsize;
-        }
-        else
-        {
-@:docbounds_hi(&pre_cur,doc_hi)@
-            
-            /* copy nodes to result */
-            while (pre_cur < doc_hi) {
-                if (!(size[pre_cur]&(1<<31)))
-                    *res_cur++ = pre_cur;
-                pre_cur++;
-            }
-        
-            /* skip context nodes in the same document fragment */
-            while ((ctx_cur <= ctx_last) && (*(oid*)BUNhead(ctx, ctx_cur) < doc_hi))
-                ctx_cur += ctx_bunsize;
-            
-            /* reset post value */    
-            min_post = INT_MAX;
-        }
-    }
-    
-    /* handling of the last context node, in case it has a minimal postorder
-       rank within its document fragment */
-    if (min_post < INT_MAX)
-    {
-@:docbounds_hi(&pre_cur,doc_hi)@
-        
-        /* copy nodes to result */
-        while (pre_cur < doc_hi) {
-            if (!(size[pre_cur]&(1<<31)))
-                *res_cur++ = pre_cur;
-            pre_cur++;
-        }
-    }
-
-@:end@
-
-/* PRECEDING STEP */
-@:head(preceding)@
-    oid ctx_prev, post, doc_lo;
-@:specialcases@
-@:init@
-    
-    /* ---------------------------- main part ----------------------------- 
-     * - the outer loop traverses all context nodes
-     * - if the context node with maximal postorder rank in the current
-     *   document fragment is found, we scan the document partition of
-     *   that context node for preceding nodes.
-     * - all other context nodes are pruned.
-     */
-    
-    ctx_pre = *(oid*)BUNhead(ctx, ctx_cur);
-
-@:docbounds_lo_hi(&ctx_pre,doc_lo,doc_hi)@
-
-    ctx_prev = ctx_pre;
-    ctx_cur += ctx_bunsize;
-            
-    while (ctx_cur <= ctx_last)
-    {
-        ctx_pre = *(oid*)BUNhead(ctx, ctx_cur);
-        
-        /* search for last context node within current document fragement */
-        if (ctx_pre < doc_hi)
-        {
-            ctx_prev = ctx_pre;
-            ctx_cur += ctx_bunsize;
-        } 
-        
-        /* start collecting preceding nodes from the beginning
-         * of the document fragment.
-         * we can copy preceding nodes and their descendants to the result,
-         * but have to skip ancestors */
-        else
-        {
-       
-            pre_cur = doc_lo;
-            
-            while (pre_cur < ctx_prev)
-            {
-                if (ctx_prev > (post = pre_cur + (size[pre_cur]&GDK_int_max)))
-                    while (pre_cur <= post) {
-                        if (!(size[pre_cur]&(1<<31)))
-                            *res_cur++ = pre_cur;
-                        pre_cur++;
-                    }
-                else pre_cur++;        
-            }
-            
-            /* determine document fragment of current context node */
-@:docbounds_lo_hi(&ctx_pre,doc_lo,doc_hi)@
-
-        }
-    }
-    
-    /* handling of last context node */
-    pre_cur = *(oid*)BUNtail(doc_pre, doc_cur);
-    
-    while (pre_cur < ctx_prev)
-    {
-        if (ctx_prev > (post = pre_cur + (size[pre_cur]&GDK_int_max)))
-            while (pre_cur <= post) {
-                if (!(size[pre_cur]&(1<<31)))
-                    *res_cur++ = pre_cur;
-                pre_cur++;
-            }
-        else pre_cur++;        
-    }
-
-@:end@
-@-
-
-PARAMETERS: function name
-@= head
 int
-PF@1_void(BAT **result, BAT *pre_size, BAT *ctx, BAT *doc_pre, int *height, int *upperbound)
+PFfollowing_void(BAT **result, BAT *pre_size, BAT *ctx, BAT *doc_pre, int *height, int *upperbound)
 {
-    /* --------------------------- declaration ----------------------------- */
-
+@= init
     char *name = "PF_@1_void";
-    BUN ctx_cur, ctx_last, doc_cur, doc_last;
-    oid pre_cur, *res_cur, ctx_pre, doc_hi;
-    int ctx_bunsize, doc_bunsize, *size;
-    
+    BUN p, q;
+    int xx;
+
+    /* the context set */
+    oid *ctx_cur = (oid*) BUNhead(ctx, BUNfirst(ctx)); 
+    oid *ctx_last = (oid*) BUNhead(ctx, BUNlast(ctx));
+    int ctx_nxt = BUNsize(ctx)/sizeof(oid);
+
     /* result bat allocation. for result size use upperbound parameter */
     BAT *res = BATnew(TYPE_oid, TYPE_void, *upperbound);
+    oid *res_cur = (oid*) BUNhead(res, BUNfirst(res)); 
 
-@= specialcases
+    int *size = ((int*) BUNfirst(pre_size)) - pre_size->hseqbase;
+
+    ALGODEBUG
+        THRprintf(GDKout, "%s: node set of %u buns, context set of %u buns, height %u\n",
+                          name, BATcount(pre_size), BATcount(ctx), *height);
+
     /* --------------------------- special cases --------------------------- */
     if (!(BAThordered(ctx) & 1))
     {
@@ -220,51 +90,33 @@ PF@1_void(BAT **result, BAT *pre_size, BAT *ctx, BAT *doc_pre, int *height, int 
         GDKerror("%s: could not allocate a result BAT of size %d.\n", name, *upperbound);
         return GDK_FAIL;
     }
+@c
+    @:init(following)@
 
-@= init
-    /* ----------------- initialization of table cursors ------------------- */
+    BATloopFast(doc_pre, p, q, xx) {
+        oid cur_following = INT_MAX;
+        oid boundary = *(oid*) BUNtail(doc_pre,p);
+        boundary += size[boundary] + 1;
 
-    ctx_bunsize = BUNsize(ctx);
-    ctx_cur = BUNfirst(ctx);
-    ctx_last = BUNlast(ctx) - ctx_bunsize;
-    doc_bunsize = BUNsize(doc_pre);
-    doc_last = BUNlast(doc_pre) - doc_bunsize;
-    
-    res_cur = (oid*)BUNfirst(res);
-    
-    /* definition for "array-like" access on size values of given nodes */
-    size = ((int*) BUNfirst(pre_size)) - pre_size->hseqbase;
+        /* within the fragment (boundary), go over all context nodes */
+        while(ctx_cur < ctx_last && *ctx_cur < boundary) { 
+            /* new following is the first following node of the current context node */
+            oid new_following = *ctx_cur + size[*ctx_cur] + 1;
 
-    ALGODEBUG
-        THRprintf(GDKout, "%s: node set of %u buns, context set of %u buns, height %u\n",
-                          name, BATcount(pre_size), BATcount(ctx), *height);
-@-
-PARAMETERS: pointer to compared value, lower and, higher document limit 
-@= docbounds_lo_hi
-    /* SORTfndlast returns the BUN of doc_pre 
-       with the smallest value higher than the 2nd parameter */
-    doc_cur = SORTfndlast(doc_pre, @1) - doc_bunsize;
-    @2 = *(oid*)BUNtail(doc_pre, doc_cur);
-    @3 = (doc_cur < doc_last) ? 
-             *(oid*)BUNtail(doc_pre, (doc_cur + doc_bunsize)) : 
-             BATcount(pre_size);
-@-
-PARAMETERS: pointer to compared value, lower and, higher document limit 
-@= docbounds_hi
-    /* SORTfndlast returns the BUN of doc_pre 
-       with the smallest value higher than the 2nd parameter */
-    doc_cur = SORTfndlast(doc_pre, @1);
-    @2 = (doc_cur <= doc_last) ? 
-             *(oid*)BUNtail(doc_pre, doc_cur) : 
-	     BATcount(pre_size);
-
+            if (new_following < cur_following) {
+                cur_following = new_following; /* keep setting cur_following back */
+            }
+            /* if we overtake the cur_following, we cannot set it back anymore: generate results */
+            if (cur_following < *ctx_cur) break;
+            ctx_cur += ctx_nxt;
+        }
+        /* everything until the end of the fragment is a following node */
+        while(cur_following < boundary) {
+            *res_cur++ = cur_following++;
+        }
+    }
 @= end
-    /* ---------------------------- end of main part --------------------------
-     * tidy up and propagate result properties
-     */
-
-    /* mark the end point of the BUNs section in the BUNheap 
-     */
+    /* mark the end point of the BUNs section in the BUNheap */
     res->batBuns->free = ((BUN)res_cur) - res->batBuns->base;
     BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/BUNsize(res));
 
@@ -275,7 +127,42 @@ PARAMETERS: pointer to compared value, lower and, higher document limit
     *result = res;
 
     return GDK_SUCCEED;
+@c
+    @:end@
 }
 
+
+/* PRECEDING STEP */
+int
+PFpreceding_void(BAT **result, BAT *pre_size, BAT *ctx, BAT *doc_pre, int *height, int *upperbound)
+{
+    @:init(preceding)@
+
+    BATloopFast(doc_pre, p, q, xx) {
+        oid cur_preceding = *(oid*) BUNtail(doc_pre,p);
+        oid boundary = cur_preceding + size[cur_preceding] + 1;
+
+        /* within the fragment (boundary), go over all context nodes */
+        while(ctx_cur < ctx_last && *ctx_cur < boundary) { 
+
+            /* cur_preceding is before ctx_cur, so it contains ancestors and preceding nodes */
+            while(cur_preceding < *ctx_cur) {
+                oid new_preceding = cur_preceding + size[cur_preceding] + 1;
+                if (new_preceding <= *ctx_cur) {
+                    /* all descendants of cur_preceding are before ctx_cur 
+                     * thus, they cannot be ancestors
+                     * thus, they are preceding 
+                     */
+                    while(cur_preceding < new_preceding)    
+                        *res_cur++ = cur_preceding++;
+                } else {
+                    cur_preceding++; /* skip ancestor */
+                }
+            } 
+            ctx_cur += ctx_nxt;
+        }
+    }
+    @:end@
+}
 @c
 /* vim:set shiftwidth=4 expandtab: */
