@@ -2086,9 +2086,9 @@ The generic solution avoids possible compiler alignment issues.
 	*(@1*) @2= *(@1*) @3;
 	*(@1*) @3= tdummy;
 
-	hdummy= *(oid*)((char*)vm - b->tloc);
-	*(oid*)((char*)vm - b->tloc) = *(oid*)((char*)vl - b->tloc);
-	*(oid*)((char*)vl - b->tloc) = hdummy;
+	hdummy= *(oid*)((char*)@2 - b->tloc);
+	*(oid*)((char*)@2 - b->tloc) = *(oid*)((char*)@3 - b->tloc);
+	*(oid*)((char*)@3 - b->tloc) = hdummy;
 
 @= MK_operations
 str
@@ -2142,12 +2142,58 @@ CRKcrackZero_MK_@1 (int *res, int *bid, @1 *mid)
 	return msg;
 }
 
+/* STILL WRONG */
+str
+CRKorderedpieceOne_MK_@1( BAT *b, @1 mval, int first, int last){
+	ptr tc, hc, hv,tv, vtop;
+	int xx;
+	oid *hdummy, *hd;
+	@1  *tdummy, *td;
+	hd= hdummy= (ptr) malloc((last-first+1) *sizeof(oid));
+	td= tdummy= (ptr) malloc((last-first+1) *sizeof(@1));
+
+	/* set bounds for the iterator */
+	xx = BUNsize(b);
+	tc = BUNtloc(b, BUNptr(b,first));
+	hc = BUNhloc(b, BUNptr(b,first));
+	vtop= BUNtloc(b,BUNptr(b,last));
+
+	/* pre-scan */
+	for( ; tc<=vtop && *(@1 *) tc <= mval; tc = (ptr) ((char *) tc + xx),  hc = (ptr) ((char *) hc + xx)) 
+		;
+	tv= tc;
+	hv= hc;
+
+	for( ; tc<=vtop; tc = (ptr) ((char *) tc + xx), hc = (ptr) ((char *) hc + xx)) {
+		if (*(@1 *) tc <= mval){
+			 *(oid*) hv++ = *(oid*)hc;
+			 *(@1*) tv++ = *(@1*)tc;
+		} else {
+			 *hd++ = *(oid*)hc;
+			 *td++ = *(@1*)tc;
+		} 
+	} 
+	
+	/* collect rest */
+	vtop= hd;
+	td= tdummy;
+	hd= hdummy;
+	for( ; (ptr) hd < (ptr) vtop;  td ++,hd++){
+			 *(oid*) hv++ = *hd;
+			 *(@1*) tv++ = *td;
+	}
+	return MAL_SUCCEED;
+}
+
 str
 CRKpieceOne_MK_@1( BAT *b, @1 mval, int first, int last){
-	ptr vm, vl, base= 0;
+	ptr vm, vl;
 	int xx;
 	oid hdummy;
 	@1 tdummy;
+#ifdef WITHBASE
+	ptr base=0;
+#endif
 
 	/* set bounds for the iterator */
 	xx = BUNsize(b);
@@ -2156,10 +2202,13 @@ CRKpieceOne_MK_@1( BAT *b, @1 mval, int first, int last){
 	vl= BUNtloc(b,BUNptr(b,last));
 
 	/* perform Zero crack first */
-	while(vm<vl) {
+	while(vm<=vl) {
 		if (*(@1 *) vm <= mval){
-			if (*(@1 *) vm == mval)
-				base =vm;
+#ifdef WITHBASE
+			if (*(@1 *) vm == mval){
+				base=vm;
+			}
+#endif
 			vm = (ptr) ((char *) vm + xx);
 		} else {
 			@:shuffleMK(@1,vm,vl)@
@@ -2170,24 +2219,19 @@ CRKpieceOne_MK_@1( BAT *b, @1 mval, int first, int last){
 	} 
 
 	/* reshuffle one part using same algorithm */
-	if( base == vl )
-		 return MAL_SUCCEED;
-	
-	vm = base;
-#ifdef MK_DEBUG
-	vmax = (ptr) ((char *) vl + xx);
+	vm = BUNtloc(b, BUNptr(b,first));
+#ifdef WITHBASE
+	if( base == 0) base =vl;
+	while(vm <= base) {
+#else
+	while(vm <= vl) {
 #endif
-	base = BUNtloc(b, BUNptr(b,first));
-	while(vm > base) {
-		if (*(@1 *) vm == mval){
+		if (*(@1 *) vm == mval ){
 			@:shuffleMK(@1,vm,vl)@
 			vl = (ptr) ((char *) vl - xx);
-		} 
-		vm = (ptr) ((char *) vm - xx);
+		} else 
+			vm = (ptr) ((char *) vm + xx);
 	} 
-#ifdef MK_DEBUG
-	printf("indices %d %d\n",((int) BUNindex(b,vl))+1, ((int) BUNindex(b,vmax)));
-#endif
 	return MAL_SUCCEED;
 }
 
