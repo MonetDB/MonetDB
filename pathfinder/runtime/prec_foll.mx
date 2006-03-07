@@ -141,16 +141,16 @@ PFpreceding_void(BAT **result, BAT *pre_size, BAT *ctx, BAT *doc_pre, int *heigh
     BATloopFast(doc_pre, p, q, xx) {
         oid cur_preceding = *(oid*) BUNtail(doc_pre,p); /* first node of the fragment */
         oid boundary = cur_preceding + size[cur_preceding] + 1; /* first of next fragment */
-        oid ctx_last = INT_MAX;
+        oid *ctx_start = ctx_cur;
 
         /* within the fragment (boundary), go over all context nodes; and remember the last one */
         while(ctx_cur < ctx_end && *ctx_cur < boundary) { 
-            ctx_last = *ctx_cur;
             ctx_cur += ctx_nxt;
         }
        
-        /* cur_preceding is before ctx_last, so it contains its preceding *and* ancestor nodes */
-        if (ctx_last != INT_MAX) {
+        if (ctx_start < ctx_cur) {
+            /* cur_preceding is before ctx_last, so it contains its preceding *and* ancestor nodes */
+            oid ctx_last = ctx_cur[-ctx_nxt]; 
             while(cur_preceding < ctx_last) {
                 oid new_preceding = cur_preceding + size[cur_preceding] + 1;
                 if (new_preceding <= ctx_last) {
