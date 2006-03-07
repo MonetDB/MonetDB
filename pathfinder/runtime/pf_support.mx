@@ -787,27 +787,27 @@ proc ll_htordered_unique_thetajoin( int mode,
 # 
 
 @(
-@:step(descendant,descendant,scj_desc,,@:sizes_code@,,,bit(1),bit(0))@
-@:step(descendant_or_self,descendant-or-self,scj_descorself,,@:sizes_code@,,,bit(1),bit(0))@
+@:step(descendant,descendant,scj_desc,,@:sizes_code@,,)@
+@:step(descendant_or_self,descendant-or-self,scj_descorself,,@:sizes_code@,,)@
 @)
 
 @:wrap(descendant)@
 @:wrap(descendant_or_self)@
 
-@:step(ancestor,ancestor,scj_anc,,@:sizes_code@,,,bit(1),bit(0))@
-@:step(ancestor_or_self,ancestor-or-self,scj_ancorself,,@:sizes_code@,,,bit(1),bit(0))@
+@:step(ancestor,ancestor,scj_anc,,@:sizes_code@,,)@
+@:step(ancestor_or_self,ancestor-or-self,scj_ancorself,,@:sizes_code@,,)@
 
 @(
-@:step(child,child,lev_child,@:level_intro@,@:level_code@,,,bit(0),bit(0))@
+@:step(child,child,lev_child,@:level_intro@,@:level_code@,,)@
 @)
 
 @:wrap(child)@
 
-@:step(parent,parent,lev_parent,@:level_intro@,@:level_code@,,,bit(0),bit(1))@
-@:step(following_sibling,following-sibling,lev_fs,@:level_intro@,@:level_code@,,,bit(0),bit(0))@
-@:step(preceding_sibling,preceding-sibling,lev_ps,@:level_intro@,@:level_code@,,,bit(0),bit(1))@
-@:step(following,following,following_void,,@:sizes_code@, @:foll_prec_code@,@:doc_pre@,bit(1),bit(0))@
-@:step(preceding,preceding,preceding_void,,@:sizes_code@, @:foll_prec_code@,@:doc_pre@,bit(1),bit(0))@
+@:step(parent,parent,lev_parent,@:level_intro@,@:level_code@,,)@
+@:step(following_sibling,following-sibling,lev_fs,@:level_intro@,@:level_code@,,)@
+@:step(preceding_sibling,preceding-sibling,lev_ps,@:level_intro@,@:level_code@,,)@
+@:step(following,following,following_void,,@:sizes_code@, @:foll_prec_code@,@:doc_pre@)@
+@:step(preceding,preceding,preceding_void,,@:sizes_code@, @:foll_prec_code@,@:doc_pre@)@
 
 @= chk_order
 	if ( and(order,1) = @2 ) {
@@ -883,7 +883,7 @@ PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid frag, BAT[oid,bat] ws, int or
     if (ws.fetch(WS_FRAG).fetch(frag).count() > 0){
         var min_size := int(ws.fetch(WS_FRAG).fetch(frag).fetch(0));
         var max_size := min_size + int(ws.fetch(PRE_SIZE).fetch(frag).fetch(min_size));
-        pre_size     := pre_size.slice(min_size, max_size);
+#pre_size     := pre_size.slice(min_size, max_size);
     }
     
 	# trivial cases	
@@ -1011,13 +1011,11 @@ pre_levels
 # code for following and preceding steps
 @= foll_prec_code
     # dirty code to make possible, that old scj still works
-    var doc_pre;
-    if (frag = 0@0)
-        { doc_pre := ws.fetch(WS_FRAG).fetch(WS); }
-    else if (ws.fetch(WS_FRAG).fetch(frag).count() > 0)
-        { doc_pre := ws.fetch(WS_FRAG).fetch(frag); }
-    else
-        { doc_pre := bat(void,oid,1).seqbase(0@0).append(1@0).access(BAT_READ); }
+    var doc_pre := ws.fetch(WS_FRAG).fetch(frag);
+    # TODO: remove this 'if' 
+    if (doc_pre.count() = 0)
+        { doc_pre := doc_pre.append(1@0).access(BAT_READ); }
+
 @
 @= doc_pre
 doc_pre,
@@ -1034,9 +1032,6 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
 
     var unq := {count}(iter.reverse(), iter.tunique(),FALSE);
 
-    var adjust_pre_sizes  := and((ws.fetch(WS_FRAG).fetch(frag).count() > 0), @8);
-    var adjust_pre_levels := and((ws.fetch(WS_FRAG).fetch(frag).count() > 0), @9);
-
     var offset := 0;
     var ctx_slice;
 
@@ -1047,44 +1042,15 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
         res_iter := constant2bat(unq.reverse().fetch(0));
 	    ctx_slice := ctx.reverse().project(nil);
 	    ctx_slice := ctx_slice.chk_order(); # have to check because step expects it sorted
-        
-        if (adjust_pre_sizes) {
-            var min_size := int(ws.fetch(WS_FRAG).fetch(frag).fetch(0));
-            var max_size := min_size + int(ws.fetch(PRE_SIZE).fetch(frag).fetch(min_size));
-            pre_sizes    := pre_sizes.slice(min_size, max_size);
-            res_item := @3( pre_sizes, ctx_slice, @7 heights, pre_sizes.count()).hmark(0@0);
-        } else if(adjust_pre_levels) {
-            var min_size := int(ws.fetch(WS_FRAG).fetch(frag).fetch(0));
-            var max_size := min_size + int(ws.fetch(PRE_SIZE).fetch(frag).fetch(min_size));
-            pre_levels   := pre_levels.slice(min_size, max_size);
-            res_item := @3( pre_levels, ctx_slice, @7 heights, pre_sizes.count()).hmark(0@0);
-        } else {
-            res_item := @3( @5, ctx_slice, @7 heights, pre_sizes.count()).hmark(0@0);
-        }
-
+        res_item := @3( @5, ctx_slice, @7 heights, pre_sizes.count()).hmark(0@0);
         res_item := res_item.chk_order();
     } else {
         res_iter := bat(void,oid);
         res_item := bat(void,oid);
-        var pos  := int(0);
         unq@batloop () {
             ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().project(nil);
             ctx_slice := ctx_slice.chk_order(); # have to check because step expects it sorted
-            var res;
-
-            if (adjust_pre_sizes) {
-                var min_size := int(ws.fetch(WS_FRAG).fetch(frag).fetch(pos));
-                var max_size := min_size + int(ws.fetch(PRE_SIZE).fetch(frag).fetch(min_size));
-                var tmp_sizes := pre_sizes.slice(min_size, max_size); 
-                res := @3( tmp_sizes, ctx_slice, @7 heights, tmp_sizes.count()).reverse();
-            } else if(adjust_pre_levels) {
-                var min_size := int(ws.fetch(WS_FRAG).fetch(frag).fetch(pos));
-                var max_size := min_size + int(ws.fetch(PRE_SIZE).fetch(frag).fetch(min_size));
-                var tmp_levels := pre_levels.slice(min_size, max_size); 
-                res := @3( tmp_levels, ctx_slice, @7 heights, pre_sizes.count()).reverse();
-            } else {
-                res := @3( @5, ctx_slice, @7 heights, pre_sizes.count()).reverse();
-            }
+            var res := @3( @5, ctx_slice, @7 heights, pre_sizes.count()).reverse();
             res := res.chk_order();
             res_item.append(res);
             var l := count(res);
@@ -1094,7 +1060,6 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
                 res_iter.append(res.project($h));
             }
             offset := offset + $t;
-            pos := pos + 1;
         }
         res_iter := res_iter.seqbase(0@0).access(BAT_READ).chk_order();
         res_item := res_item.seqbase(0@0).access(BAT_READ).chk_order();
