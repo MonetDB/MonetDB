@@ -2440,6 +2440,9 @@ CRKcrackThree_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	/* final sanity check */
 	assert(bn_s >= bn_l);
 	
+	if (BUNindex(b, bn_l) <= *lt) {
+		*le = *lt;
+	} else
 	if (*(@1*)BUNtloc(b, bn_l) @2 mid) {
 		*le = BUNindex(b, bn_l);
 	} else
@@ -2979,7 +2982,7 @@ str
 CRKcrackZero_validate_@1 (bit *res, int *bid, @1 *_mid)
 {
 	BAT *b;
-	BUN bn, fst_bn, lst_bn, fst_tl, lst_tl, tl;
+	BUN fst_tl, lst_tl, tl;
 	int bs;
 	size_t count[3] = {0,0,0};
 	@1 mid=*_mid;
@@ -2990,20 +2993,15 @@ CRKcrackZero_validate_@1 (bit *res, int *bid, @1 *_mid)
 		return throwMessage("crackers.zcrack_validate", "Cannot access descriptor");
 	}
 	bs = BUNsize(b);
-	fst_bn = BUNfirst(b);
-	lst_bn = BUNlast(b);
-	fst_tl = BUNtloc(b, fst_bn);
-	lst_tl = BUNtloc(b, lst_bn);
-	bn = fst_bn;
+	fst_tl = BUNtloc(b, BUNfirst(b));
+	lst_tl = BUNtloc(b, BUNlast(b));
 	tl = fst_tl;
 
-	while (bn < lst_tl && *(@1*)tl <= mid) {
-		bn += bs;
+	while (tl < lst_tl && *(@1*)tl <= mid) {
 		tl += bs;
 		count[0]++;
 	}
-	while (bn < lst_tl && *(@1*)tl > mid) {
-		bn += bs;
+	while (tl < lst_tl && *(@1*)tl > mid) {
 		tl += bs;
 		count[1]++;
 	}
@@ -3026,7 +3024,7 @@ str
 CRKcrackOne_validate_@1 (int *res, int *bid, @1 *_mid)
 {
 	BAT *b;
-	BUN bn, fst_bn, lst_bn, fst_tl, lst_tl, tl;
+	BUN fst_tl, lst_tl, tl;
 	int bs;
 	size_t count[4] = {0,0,0,0};
 	@1 mid=*_mid;
@@ -3037,25 +3035,19 @@ CRKcrackOne_validate_@1 (int *res, int *bid, @1 *_mid)
 		return throwMessage("crackers.crack_validate", "Cannot access descriptor");
 	}
 	bs = BUNsize(b);
-	fst_bn = BUNfirst(b);
-	lst_bn = BUNlast(b);
-	fst_tl = BUNtloc(b, fst_bn);
-	lst_tl = BUNtloc(b, lst_bn);
-	bn = fst_bn;
+	fst_tl = BUNtloc(b, BUNfirst(b));
+	lst_tl = BUNtloc(b, BUNlast(b));
 	tl = fst_tl;
 
-	while (bn < lst_tl && *(@1*)tl < mid) {
-		bn += bs;
+	while (tl < lst_tl && *(@1*)tl < mid) {
 		tl += bs;
 		count[0]++;
 	}
-	while (bn < lst_tl && *(@1*)tl == mid) {
-		bn += bs;
+	while (tl < lst_tl && *(@1*)tl == mid) {
 		tl += bs;
 		count[1]++;
 	}
-	while (bn < lst_tl && *(@1*)tl > mid) {
-		bn += bs;
+	while (tl < lst_tl && *(@1*)tl > mid) {
 		tl += bs;
 		count[2]++;
 	}
@@ -3078,7 +3070,7 @@ str
 CRKcrackTwo_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
 {
 	BAT *b;
-	BUN bn, fst_bn, lst_bn, fst_tl, lst_tl, tl;
+	BUN fst_tl, lst_tl, tl;
 	int bs;
 	size_t count[6] = {0,0,0,0,0,0};
 	@1 low=*_low, hgh=*_hgh;
@@ -3092,35 +3084,27 @@ CRKcrackTwo_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
 		return throwMessage("crackers.crack_validate", "Cannot access descriptor");
 	}
 	bs = BUNsize(b);
-	fst_bn = BUNfirst(b);
-	lst_bn = BUNlast(b);
-	fst_tl = BUNtloc(b, fst_bn);
-	lst_tl = BUNtloc(b, lst_bn);
-	bn = fst_bn;
+	fst_tl = BUNtloc(b, BUNfirst(b));
+	lst_tl = BUNtloc(b, BUNlast(b));
 	tl = fst_tl;
 
-	while (bn < lst_tl && *(@1*)tl < low) {
-		bn += bs;
+	while (tl < lst_tl && *(@1*)tl < low) {
 		tl += bs;
 		count[0]++;
 	}
-	while (bn < lst_tl && *(@1*)tl == low) {
-		bn += bs;
+	while (tl < lst_tl && *(@1*)tl == low) {
 		tl += bs;
 		count[1]++;
 	}
-	while (bn < lst_tl && *(@1*)tl > low && *(@1*)tl < hgh) {
-		bn += bs;
+	while (tl < lst_tl && *(@1*)tl > low && *(@1*)tl < hgh) {
 		tl += bs;
 		count[2]++;
 	}
-	while (bn < lst_tl && *(@1*)tl == hgh) {
-		bn += bs;
+	while (tl < lst_tl && *(@1*)tl == hgh) {
 		tl += bs;
 		count[3]++;
 	}
-	while (bn < lst_tl && *(@1*)tl > hgh) {
-		bn += bs;
+	while (tl < lst_tl && *(@1*)tl > hgh) {
 		tl += bs;
 		count[4]++;
 	}
@@ -3142,7 +3126,7 @@ str
 CRKcrackThree_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
 {
 	BAT *b;
-	BUN bn, fst_bn, lst_bn, fst_tl, lst_tl, tl;
+	BUN fst_tl, lst_tl, tl;
 	int bs;
 	size_t count[4] = {0,0,0,0};
 	@1 low=*_low, hgh=*_hgh;
@@ -3156,25 +3140,19 @@ CRKcrackThree_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
 		return throwMessage("crackers.zcrack_validate", "Cannot access descriptor");
 	}
 	bs = BUNsize(b);
-	fst_bn = BUNfirst(b);
-	lst_bn = BUNlast(b);
-	fst_tl = BUNtloc(b, fst_bn);
-	lst_tl = BUNtloc(b, lst_bn);
-	bn = fst_bn;
+	fst_tl = BUNtloc(b, BUNfirst(b));
+	lst_tl = BUNtloc(b, BUNlast(b));
 	tl = fst_tl;
 
-	while (bn < lst_tl && *(@1*)tl <= low) {
-		bn += bs;
+	while (tl < lst_tl && *(@1*)tl <= low) {
 		tl += bs;
 		count[0]++;
 	}
-	while (bn < lst_tl && *(@1*)tl <= hgh) {
-		bn += bs;
+	while (tl < lst_tl && *(@1*)tl <= hgh) {
 		tl += bs;
 		count[1]++;
 	}
-	while (bn < lst_tl && *(@1*)tl > hgh) {
-		bn += bs;
+	while (tl < lst_tl && *(@1*)tl > hgh) {
 		tl += bs;
 		count[2]++;
 	}
