@@ -90,10 +90,10 @@ static stmt *column( stmt *val )
 
 static stmt *copy_column( stmt *val )
 {
-	val = stmt_dup(val);
 	sql_subtype *ct = tail_type(val);
 	stmt *temp = stmt_temp(ct);
-	return stmt_insert(temp, val);
+
+	return stmt_insert(temp, stmt_dup(val));
 }
 
 static stmt *
