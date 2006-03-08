@@ -70,6 +70,8 @@ lib__pathfinder = {
 		../compiler/semantics/libsemantics \
 		../compiler/core/libcore \
 		../compiler/algebra/libalgebra \
+		../compiler/algebra/prop/libprop \
+		../compiler/algebra/opt/libopt \
 		../compiler/mil/libmil \
 		../compiler/libcompiler2 \
 		$(PF_LIBS) $(MONETDB_LIBS) \
