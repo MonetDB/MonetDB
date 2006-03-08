@@ -2226,6 +2226,7 @@ CRKpieceZero_MK_@1( BAT *b, @1 mval, size_t first, size_t last){
 			vl = (ptr) ((char *) vl - xx);
 			while( *(@1 *) vl > mval && vl>vm)
 				vl = (ptr) ((char *) vl - xx);
+			vm = (ptr) ((char *) vm + xx);
 		} 
 	} 
 #ifdef MK_DEBUG
@@ -2255,7 +2256,7 @@ CRKcrackZero_MK_@1 (int *res, int *bid, @1 *mid)
 }
 
 str
-CRKorderedpieceOne_MK_@1( BAT *b, @1 mval, size_t first, size_t last, size_t *start, size_t *end){
+CRKOrderedpieceOne_MK_@1( BAT *b, @1 mval, size_t first, size_t last, size_t *start, size_t *end){
 	ptr tc, hc, hv,tv, vtop;
 	int xx;
 	oid *hdummy, *hd, *he;
@@ -2379,7 +2380,7 @@ CRKcrackOne_MK_@1 (int *res, size_t *bid, size_t *mid)
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
 #ifdef ORDERED
-	msg= CRKorderedpieceOne_MK_@1( b, *mid, 0, BATcount(b)-1, &start, &size);
+	msg= CRKOrderedpieceOne_MK_@1( b, *mid, 0, BATcount(b)-1, &start, &size);
 #else
 	msg= CRKpieceOne_MK_@1( b, *mid, 0, BATcount(b)-1, &start, &size);
 #endif
