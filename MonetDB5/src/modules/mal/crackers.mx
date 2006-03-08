@@ -2337,24 +2337,20 @@ CRKpieceOne_MK_@1( BAT *b, @1 mval, int first, int last){
 	int xx;
 	oid hdummy;
 	@1 tdummy;
-#ifdef WITHBASE
 	ptr base=0;
-#endif
 
+	assert(first<last);
 	/* set bounds for the iterator */
 	xx = BUNsize(b);
 
 	vm = BUNtloc(b, BUNptr(b,first));
-	vl= BUNtloc(b,BUNptr(b,last));
+	vl = BUNtloc(b,BUNptr(b,last));
 
 	/* perform Zero crack first */
-	while(vm<=vl) {
+	while(vm<vl) {
 		if (*(@1 *) vm <= mval){
-#ifdef WITHBASE
-			if (*(@1 *) vm == mval){
+			if (*(@1 *) vm == mval )
 				base=vm;
-			}
-#endif
 			vm = (ptr) ((char *) vm + xx);
 		} else {
 			@:shuffleMK(@1,vm,vl)@
@@ -2365,19 +2361,24 @@ CRKpieceOne_MK_@1( BAT *b, @1 mval, int first, int last){
 	} 
 
 	/* reshuffle one part using same algorithm */
-	vm = BUNtloc(b, BUNptr(b,first));
-#ifdef WITHBASE
-	if( base == 0) base =vl;
-	while(vm <= base) {
-#else
-	while(vm <= vl) {
-#endif
+	vm= base;
+	base= BUNtloc(b, BUNptr(b,first));
+	while( *(@1*)vl == mval && vl>= base)
+		vl= (ptr) ((char*) vl-xx);
+
+	while(vm >= base) {
 		if (*(@1 *) vm == mval ){
 			@:shuffleMK(@1,vm,vl)@
-			vl = (ptr) ((char *) vl - xx);
-		} else 
-			vm = (ptr) ((char *) vm + xx);
+			do {
+				vl = (ptr) ((char *) vl - xx);
+			} while( *(@1 *) vl == mval && vl>vm);
+		} 
+		vm = (ptr) ((char *) vm - xx);
 	} 
+/*
+printf(" vm %d before %d  middle %d after %d\n", *(int*) vm,
+*(int*) ((char*) vl-xx),*(int*) vl,*(int*) ((char*) vl+xx));
+*/
 	return MAL_SUCCEED;
 }
 
@@ -2452,17 +2453,19 @@ CRKpieceTwo_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
 	} 
 
 	/* reshuffle left part using same algorithm */
-	if( base != vl ){
-		vm = vl;
-		base = BUNtloc(b, BUNptr(b,first));
-		while(vm >= base) {
-			if (*(@1 *) vm == low){
-				@:shuffleMK(@1,vm,vl)@
+	if( base)
+		vm = base;
+	else vm = vl;
+	base = BUNtloc(b, BUNptr(b,first));
+	while(vm >= base) {
+		if (*(@1 *) vm == low){
+			@:shuffleMK(@1,vm,vl)@
+			do {
 				vl = (ptr) ((char *) vl - xx);
-			} 
-			vm = (ptr) ((char *) vm - xx);
-		}
-	} 
+			} while( *(@1 *) vl == low && vl>vm);
+		} 
+		vm = (ptr) ((char *) vm - xx);
+	}
 	vmin= vl;
 
 	/* perform the same operation on low<V< infinite */
@@ -2502,9 +2505,6 @@ CRKcrackTwo_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
 	msg= CRKpieceTwo_MK_@1( b, *low, *hgh, 0, BATcount(b)-1);
-	/* msg= CRKpieceOne_MK_@1( b, *low, 0, BATcount(b)-1);
-	msg= CRKpieceOne_MK_@1( b, *hgh, 0, BATcount(b)-1);*/
-
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
@@ -3173,13 +3173,20 @@ CRKcrackOne_validate_@1 (int *res, int *bid, @1 *_mid)
 	}
 	count[3] = BATcount(b);
 
-	BBPunfix(b->batCacheid);
 	
 	if (count[0] + count[1] + count[2] < count[3]) {
 		printf("|b|="SZFMT" ; |tail<mid|="SZFMT", |tail==mid|="SZFMT", |tail>mid|="SZFMT" !\n",
 		       count[3], count[0], count[1], count[2]);
+		tl = BUNtloc(b, BUNfirst(b));
+		while (tl < lst_tl ) {
+			tl += bs;
+			printf("%d ",*(@1*)tl);
+		}
+		printf("\n");
+	BBPunfix(b->batCacheid);
 		return throwMessage("crackers.crack_validate", "Invalid crack");
 	}
+	BBPunfix(b->batCacheid);
 
 	*res = TRUE;
 	return MAL_SUCCEED;
@@ -3291,9 +3298,10 @@ CRKcrackThree_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
 
 @
 @c
+@:validate_operations(int)@
 @:MK_operations(int)@
+
 @:SMsm_operations(int,SM)@
 @:SMsm_operations(int,sm)@
 @:SI_operations(int)@
-@:validate_operations(int)@
 @}
