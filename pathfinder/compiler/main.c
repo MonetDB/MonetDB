@@ -462,6 +462,7 @@ static struct option long_options[] = {
     { "format",                    required_argument, NULL, 'f' },
     { "help",                         no_argument,    NULL, 'h' },
     { "print-logical-algebra",        no_argument,    NULL, 'l' },
+    { "optimize-algebra",          required_argument, NULL, 'o' },
     { "print-physical-algebra",       no_argument,    NULL, 'p' },
     { "quiet",                        no_argument,    NULL, 'q' },
     { "stop-after",                required_argument, NULL, 's' },
@@ -529,12 +530,11 @@ static char *phases[] = {
     [12]  = "after type inference and checking",
     [13]  = "after XQuery Core optimization",
     [14]  = "after the Core tree has been translated to the logical algebra",
-    [15]  = "after the logical algebra has been annotated with properties",
-    [16]  = "after the logical algebra tree has been rewritten/optimized",
-    [17]  = "after the CSE on the logical algebra tree",
-    [18]  = "after compiling logical into the physical algebra",
-    [19]  = "after compiling the physical algebra into MIL code",
-    [20]  = "after the MIL program has been serialized"
+    [15]  = "after the logical algebra tree has been rewritten/optimized",
+    [16]  = "after the CSE on the logical algebra tree",
+    [17]  = "after compiling logical into the physical algebra",
+    [18]  = "after compiling the physical algebra into MIL code",
+    [19]  = "after the MIL program has been serialized"
 };
 
 /**
@@ -593,10 +593,10 @@ main (int argc, char *argv[])
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
-        c = getopt_long (argc, argv, "ADHMO::PTXacd::f:hlpqrs:t", 
+        c = getopt_long (argc, argv, "ADHMO::PTXacd::f:hlo:pqrs:t", 
                          long_options, &option_index);
 #else
-        c = getopt (argc, argv, "ADHMO::PTXacd::f:hlpqrs:t");
+        c = getopt (argc, argv, "ADHMO::PTXacd::f:hlo:pqrs:t");
 #endif
 
         if (c == -1)
@@ -668,7 +668,8 @@ main (int argc, char *argv[])
                         long_option (opt_buf, ", --%s", 'l'));
                 printf ("  -p%s: print physical algebra tree\n",
                         long_option (opt_buf, ", --%s", 'p'));
-                printf ("  -f format%s: print optional information in algebra dot output:\n",
+                printf ("  -f format%s: print optional information in algebra "
+                                            "dot output:\n",
                         long_option (opt_buf, ", --%s=format", 'f'));
 
                 printf ("         C  print cost value (physical algebra)\n");
@@ -679,6 +680,25 @@ main (int argc, char *argv[])
                 printf ("         o  print orderings (physical algebra)\n");
                 printf ("         +  print all available properties (logical/"
                                      "physical algebra)\n");
+
+                printf ("  -o options%s: optimize algebra according to "
+                                            "options:\n",
+                        long_option (opt_buf, ", --%s=options", 'o'));
+
+                printf ("         O  apply optimization based on constant "
+                                            "property\n");
+                printf ("         I  apply optimization based on icols "
+                                            "property\n");
+                printf ("         K  apply optimization based on key "
+                                            "property\n");
+                printf ("         C  apply optimization using multiple "
+                                            "properties (complex)\n");
+                printf ("         G  apply general optimization (without "
+                                            "properties)\n");
+                printf ("         P  infer all properties\n");
+                printf ("            (used for debug output and physical "
+                                            "algebra\n");
+                printf ("         (default is: '-o OIKCGP')\n");
 
                 printf ("\n");
                 printf ("Enjoy.\n");
@@ -753,6 +773,13 @@ main (int argc, char *argv[])
 
             case 'l':
                 status->print_la_tree = true;
+                break;
+
+            case 'o':
+                status->opt_alg = PFstrdup (optarg);
+                PFinfo (OOPS_NOTICE, 
+                        "optimization options: `%s'", 
+                        status->opt_alg);
                 break;
 
             case 'q':

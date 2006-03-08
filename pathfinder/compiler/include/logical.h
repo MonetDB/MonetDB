@@ -263,16 +263,13 @@ struct PFla_op_t {
                                         MIL algebra expression trees (for MIL
                                         algebra generation only) */
     short              state_label;/**< Burg puts its state information here. */
+    short              child_state_label[PFLA_OP_MAXCHILD];
+                                   /**< control information for Burg pattern
+                                        matching */
 
-    unsigned     bit_reset     :1; /**< used to reset the other bits 
-                                        in a DAG traversal */
-    unsigned     bit_prop      :1; /**< used in properties.c 
-                                        to work on a DAG. */
-    unsigned     bit_opt_label :1; /**< used in algopt.brg to prune the
-                                        DAG labeling. */
-    unsigned     bit_opt       :1; /**< used in algopt.brg to work on a DAG. */
-    unsigned     bit_cse       :1; /**< used in algebra_cse.c 
-                                        to work on a DAG. */
+    unsigned           bit_reset:1;/**< used to reset the dag bit
+                                             in a DAG traversal */
+    unsigned           bit_dag:1;  /**< enables DAG traversal */
 
     PFplanlist_t      *plans;      /**< Physical algebra plans that implement
                                         this logical algebra subexpression. */

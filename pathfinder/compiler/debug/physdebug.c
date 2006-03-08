@@ -38,7 +38,6 @@
 /* #include "pfstrings.h" */
 #include "prettyp.h"
 #include "oops.h"
-
 #include "properties.h"
 
 /** Node names to print out for all the Algebra tree nodes. */
@@ -429,6 +428,21 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
                             atomtype[n->sem.cast.ty]);
             break;
 
+        case pa_llscj_anc:
+        case pa_llscj_anc_self:
+        case pa_llscj_attr:
+        case pa_llscj_child:
+        case pa_llscj_desc:
+        case pa_llscj_desc_self:
+        case pa_llscj_foll:
+        case pa_llscj_foll_sibl:
+        case pa_llscj_parent:
+        case pa_llscj_prec:
+        case pa_llscj_prec_sibl:
+            PFarray_printf (dot, "%s", a_id[n->kind]);
+            PFarray_printf (dot, "::%s", PFty_str (n->sem.scjoin.ty));
+            break;
+
         case pa_doc_access:
             PFarray_printf (dot, "%s ", a_id[n->kind]);
 
@@ -479,17 +493,6 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         case pa_append_union:
         case pa_intersect:
         case pa_difference:
-        case pa_llscj_anc:
-        case pa_llscj_anc_self:
-        case pa_llscj_attr:
-        case pa_llscj_child:
-        case pa_llscj_desc:
-        case pa_llscj_desc_self:
-        case pa_llscj_foll:
-        case pa_llscj_foll_sibl:
-        case pa_llscj_parent:
-        case pa_llscj_prec:
-        case pa_llscj_prec_sibl:
         case pa_doc_tbl:
         case pa_element:
         case pa_element_tag:
@@ -514,32 +517,54 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         while (*fmt) { 
             if (*fmt == '+')
             {
-                if (n->prop)
-                {
-                    PFalg_attlist_t icols = PFprop_icols_to_attlist (n->prop);
+                PFalg_attlist_t icols = PFprop_icols_to_attlist (n->prop);
+                PFalg_attlist_t keys = PFprop_keys_to_attlist (n->prop);
 
-                    /* list costs if requested */
-                    PFarray_printf (dot, "\\ncost: %lu", n->cost);
+                /* list costs if requested */
+                PFarray_printf (dot, "\\ncost: %lu", n->cost);
 
-                    /* list attributes marked const */
-                    for (unsigned int i = 0;
-                            i < PFprop_const_count (n->prop); i++)
-                        PFarray_printf (dot, i ? ", %s" : "\\nconst: %s",
-                                        PFatt_str (
-                                            PFprop_const_at (n->prop, i)));
-                    /* list icols attributes */
-                    for (unsigned int i = 0; i < icols.count; i++)
-                        PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
-                                        PFatt_str (icols.atts[i]));
-                    /* list orderings if requested */
-                    PFarray_printf (dot, "\\norderings:");
-                    for (unsigned int i = 0;
-                            i < PFarray_last (n->orderings); i++)
-                        PFarray_printf (
-                                dot, "\\n%s",
-                                PFord_str (
-                                    *(PFord_ordering_t *)
-                                            PFarray_at (n->orderings,i)));
+                /* if present print cardinality */
+                if (PFprop_card (n->prop))
+                    PFarray_printf (dot, "\\ncard: %i", PFprop_card (n->prop));
+
+                /* list attributes marked const */
+                for (unsigned int i = 0;
+                        i < PFprop_const_count (n->prop); i++)
+                    PFarray_printf (dot, i ? ", %s" : "\\nconst: %s",
+                                    PFatt_str (
+                                        PFprop_const_at (n->prop, i)));
+
+                /* list icols attributes */
+                for (unsigned int i = 0; i < icols.count; i++)
+                    PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
+                                    PFatt_str (icols.atts[i]));
+
+                /* list keys attributes */
+                for (unsigned int i = 0; i < keys.count; i++)
+                    PFarray_printf (dot, i ? ", %s" : "\\nkeys: %s",
+                                    PFatt_str (keys.atts[i]));
+
+                /* list attributes and their corresponding domains */
+                for (unsigned int i = 0; i < n->schema.count; i++)
+                    if (PFprop_dom (n->prop, n->schema.items[i].name))
+                        PFarray_printf (dot, i ? ", %s %i" : "\\ndom: %s %i",
+                                        PFatt_str (n->schema.items[i].name),
+                                        PFprop_dom (n->prop,
+                                                    n->schema.items[i].name));
+
+                /* list orderings if requested */
+                PFarray_printf (dot, "\\norderings:");
+                for (unsigned int i = 0;
+                        i < PFarray_last (n->orderings); i++)
+                    PFarray_printf (
+                            dot, "\\n%s",
+                            PFord_str (
+                                *(PFord_ordering_t *)
+                                        PFarray_at (n->orderings,i)));
+
+                /* list domain - subdomain relationships */
+                if (n->kind == pa_serialize) {
+                    PFprop_write_dom_rel (dot, n->prop);
                 }
                 all = true;
             }
@@ -557,25 +582,23 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
 
                 /* list attributes marked const if requested */
                 case 'c':
-                    if (n->prop)
-                        for (unsigned int i = 0;
-                                i < PFprop_const_count (n->prop); i++)
-                            PFarray_printf (dot, i ? ", %s" : "\\nconst: %s",
-                                            PFatt_str (
-                                                PFprop_const_at (n->prop, i)));
+                    for (unsigned int i = 0;
+                            i < PFprop_const_count (n->prop); i++)
+                        PFarray_printf (dot, i ? ", %s" : "\\nconst: %s",
+                                        PFatt_str (
+                                            PFprop_const_at (n->prop, i)));
                     break;
 
                 /* list icols attributes if requested */
                 case 'i':
-                    if (n->prop) {
-                        PFalg_attlist_t icols =
-                                        PFprop_icols_to_attlist (n->prop);
-                        for (unsigned int i = 0;
-                                i < icols.count; i++)
-                            PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
-                                            PFatt_str (icols.atts[i]));
-                    }
-                    break;
+                {
+                    PFalg_attlist_t icols =
+                                    PFprop_icols_to_attlist (n->prop);
+                    for (unsigned int i = 0;
+                            i < icols.count; i++)
+                        PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
+                                        PFatt_str (icols.atts[i]));
+                } break;
 
                 /* list orderings if requested */
                 case 'o':

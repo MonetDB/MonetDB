@@ -499,10 +499,10 @@ reduce (PFcnode_t * p, int goalnt)
              *                   \        \   1 |   c  /     /
              */
             A(p) = (struct  PFla_pair_t) {
-                     .rel = cross (loop,
-                                   lit_tbl (attlist (att_pos, att_item),
-                                            tuple (lit_nat (1),
-                                                   lit_str (p->sem.str)))),
+                     .rel = attach (
+                                attach (loop,
+                                        att_pos, lit_nat (1)),
+                                att_item, lit_str (p->sem.str)),
                      .frag = PFla_empty_set () };
         } break;
 
@@ -516,10 +516,10 @@ reduce (PFcnode_t * p, int goalnt)
              *                   \        \   1 |   c  /     /
              */
             A(p) = (struct  PFla_pair_t) {
-                     .rel = cross (loop,
-                                   lit_tbl (attlist (att_pos, att_item),
-                                            tuple (lit_nat (1),
-                                                   lit_int (p->sem.num)))),
+                     .rel = attach (
+                                attach (loop,
+                                        att_pos, lit_nat (1)),
+                                att_item, lit_int (p->sem.num)),
                      .frag = PFla_empty_set () };
         } break;
 
@@ -533,10 +533,10 @@ reduce (PFcnode_t * p, int goalnt)
              *                   \        \   1 |   c  /     /
              */
             A(p) = (struct  PFla_pair_t) {
-                     .rel = cross (loop,
-                                   lit_tbl (attlist (att_pos, att_item),
-                                            tuple (lit_nat (1),
-                                                   lit_dec (p->sem.dec)))),
+                     .rel = attach (
+                                attach (loop,
+                                        att_pos, lit_nat (1)),
+                                att_item, lit_dec (p->sem.dec)),
                      .frag = PFla_empty_set () };
         } break;
 
@@ -550,10 +550,10 @@ reduce (PFcnode_t * p, int goalnt)
              *                   \        \   1 |   c  /     /
              */
             A(p) = (struct  PFla_pair_t) {
-                     .rel = cross (loop,
-                                   lit_tbl (attlist (att_pos, att_item),
-                                            tuple (lit_nat (1),
-                                                   lit_dbl (p->sem.dbl)))),
+                     .rel = attach (
+                                attach (loop,
+                                        att_pos, lit_nat (1)),
+                                att_item, lit_dbl (p->sem.dbl)),
                      .frag = PFla_empty_set () };
         } break;
 
@@ -568,10 +568,10 @@ reduce (PFcnode_t * p, int goalnt)
              *                   \        \   1 |   c  /     /
              */
             A(p) = (struct  PFla_pair_t) {
-                     .rel = cross (loop,
-                                   lit_tbl (attlist (att_pos, att_item),
-                                            tuple (lit_nat (1),
-                                                   lit_bln (true)))),
+                     .rel = attach (
+                                attach (loop,
+                                        att_pos, lit_nat (1)),
+                                att_item, lit_bln (true)),
                      .frag = PFla_empty_set () };
         } break;
 
@@ -585,10 +585,10 @@ reduce (PFcnode_t * p, int goalnt)
              *                   \        \   1 |   c  /     /
              */
             A(p) = (struct  PFla_pair_t) {
-                     .rel = cross (loop,
-                                   lit_tbl (attlist (att_pos, att_item),
-                                            tuple (lit_nat (1),
-                                                   lit_bln (false)))),
+                     .rel = attach (
+                                attach (loop,
+                                        att_pos, lit_nat (1)),
+                                att_item, lit_bln (false)),
                      .frag = PFla_empty_set () };
         } break;
 
@@ -652,14 +652,9 @@ reduce (PFcnode_t * p, int goalnt)
             unsigned int old_map_count = map_count;
             PFarray_t    *old_env      = env;
         
-
-            PFla_op_t *init_map = project (loop,
-                                           proj (att_outer, att_iter),
-                                           proj (att_inner, att_iter));
-
-            map = init_map;
-            /* first two attributes in map are inner and outer */
-            map_count = 2;
+            /* start with empty map relation */
+            map = 0;
+            map_count = 0;
 
             /* initiate translation of bindings */
             reduce (kids[0], nts[0]);
@@ -673,7 +668,7 @@ reduce (PFcnode_t * p, int goalnt)
             /* the map relation has been changed by a for loop
                (and an order by) and therefore backmapping is
                required */
-            if (init_map != map) {
+            if (map) {
                 /* Note that ordering mode has no effect on a FLWOR 
                    expression if an order by clause is present, 
                    since order by takes precedence over ordering mode. */
@@ -817,11 +812,10 @@ reduce (PFcnode_t * p, int goalnt)
             number = number (A(LR(p)).rel, att_inner, att_NULL);
 
             /* translate $v */
-            var = cross (lit_tbl (attlist (att_pos),
-                                  tuple (lit_nat (1))),
-                         project (number,
-                                  proj (att_iter, att_inner),
-                                  proj (att_item, att_item)));
+            var = attach (project (number,
+                                   proj (att_iter, att_inner),
+                                   proj (att_item, att_item)),
+                          att_pos, lit_nat (1));
 
             /* create new environment */
             env = PFarray (sizeof (PFla_env_t));
@@ -849,14 +843,13 @@ reduce (PFcnode_t * p, int goalnt)
              */
             if (LLR(p)->kind == c_var) {
                 assert (LLR(p)->sem.var);
-                opt_var = cross (lit_tbl (attlist (att_pos),
-                                          tuple (lit_nat (1))),
-                                 project (cast (rownum (var_map, att_item,
-                                                        sortby (att_sort),
-                                                        att_outer),
-                                                att_cast, att_item, aat_int),
-                                          proj (att_iter, att_inner),
-                                          proj (att_item, att_cast)));
+                opt_var = attach (project (cast (rownum (var_map, att_item,
+                                                         sortby (att_sort),
+                                                         att_outer),
+                                                 att_cast, att_item, aat_int),
+                                           proj (att_iter, att_inner),
+                                           proj (att_item, att_cast)),
+                                  att_pos, lit_nat (1));
 
                 /* insert $p into NEW environment */
                 *((PFla_env_t *) PFarray_add (env)) =
@@ -876,36 +869,43 @@ reduce (PFcnode_t * p, int goalnt)
                     enventry (e.var, new_bind, e.frag);
             }
 
-            /* extend the backmapping relation map with
-             * (a) position information of the for-loop input sequence and
-             * (b) the current iteration values */
-            map_count++;
-            PFalg_proj_t *atts = PFmalloc (map_count *
-                                           sizeof (PFalg_proj_t));
-            /* column outer remains the same */
-            atts[0].new = att_outer;
-            atts[0].old = att_outer;
-            /* column iter1 becomes the new inner column */
-            atts[1].new = att_inner;
-            atts[1].old = att_iter1;
-            /* copy all old sort columns */
-            for (unsigned i = 2; i < map_count - 1; i++)
-                atts[i].new = 
-                atts[i].old = att_sort << (i - 2);
-            /* we now have on additional sort column generated 
-               from column pos */
-            /* the first sort criterion is column sort itself */
-            atts[map_count -1].new = att_sort << (map_count - 3);
-            atts[map_count -1].old = att_pos;
+            if (!map) {
+                /* create a first backmapping relation */
+                map = var_map;
+                map_count = 3;
+            } else {
+                /* extend the backmapping relation map with
+                 * (a) position information of the for-loop input sequence and
+                 * (b) the current iteration values */
 
-            map = PFla_project_ (eqjoin (map, 
-                                         project (number,
-                                                  proj (att_iter1, att_inner),
-                                                  proj (att_iter, att_iter),
-                                                  proj (att_pos, att_pos)),
-                                         att_inner,
-                                         att_iter),
-                                 map_count, atts);
+                map_count++;
+                PFalg_proj_t *atts = PFmalloc (map_count *
+                                               sizeof (PFalg_proj_t));
+                /* column outer remains the same */
+                atts[0].new = att_outer;
+                atts[0].old = att_outer;
+                /* column iter1 becomes the new inner column */
+                atts[1].new = att_inner;
+                atts[1].old = att_iter1;
+                /* copy all old sort columns */
+                for (unsigned i = 2; i < map_count - 1; i++)
+                    atts[i].new = 
+                    atts[i].old = att_sort << (i - 2);
+                /* we now have on additional sort column generated 
+                   from column pos */
+                /* the first sort criterion is column sort itself */
+                atts[map_count -1].new = att_sort << (map_count - 3);
+                atts[map_count -1].old = att_pos;
+
+                map = PFla_project_ (eqjoin (map, 
+                                             project (number,
+                                                      proj (att_iter1, att_inner),
+                                                      proj (att_iter, att_iter),
+                                                      proj (att_pos, att_pos)),
+                                             att_inner,
+                                             att_iter),
+                                     map_count, atts);
+            }
             
             /* translate e2 under the specified conditions (updated
              * environment, loop(v))
@@ -1106,14 +1106,12 @@ reduce (PFcnode_t * p, int goalnt)
                      .rel = project (
                                 rownum (
                                     disjunion (
-                                        cross (
-                                            lit_tbl (attlist (att_ord),
-                                                     tuple (lit_nat (1))),
-                                            A(L(p)).rel),
-                                        cross (
-                                            lit_tbl (attlist (att_ord),
-                                                     tuple (lit_nat (2))),
-                                            A(R(p)).rel)),
+                                        attach (
+                                            A(L(p)).rel,
+                                            att_ord, lit_nat (1)),
+                                        attach (
+                                            A(R(p)).rel,
+                                            att_ord, lit_nat (2))),
                                     att_pos1,
                                     sortby (att_ord, att_pos),
                                     att_iter),
@@ -1207,13 +1205,12 @@ reduce (PFcnode_t * p, int goalnt)
                                                att_cast, att_item, algty),
                                          proj (att_iter, att_iter),
                                          proj (att_item, att_cast)),
-                                cross (
+                                attach (
                                     difference (
                                         loop,
                                         project (A(L(p)).rel, 
                                                  proj (att_iter, att_iter))),
-                                    lit_tbl (attlist (att_item),
-                                             tuple (atom))));
+                                    att_item, atom));
             }
 
             /* extend the backmapping relation map with
@@ -1538,9 +1535,8 @@ reduce (PFcnode_t * p, int goalnt)
                                        A(L(p)).rel, A(R(p)).rel);
 
             A(p) = (struct  PFla_pair_t) {
-                     .rel = cross (lit_tbl (attlist (att_pos), 
-                                            tuple (lit_nat (1))),
-                                   roots (elem)),
+                     .rel = attach (roots (elem),
+                                    att_pos, lit_nat (1)),
                      .frag = PFla_set (fragment (elem))};
         } break;
 
@@ -1582,10 +1578,10 @@ reduce (PFcnode_t * p, int goalnt)
         /* TagName:            tag */
         case 400:
             A(p) = (struct PFla_pair_t) {
-                .rel = cross (loop,
-                              lit_tbl (attlist (att_pos, att_item),
-                                       tuple (lit_nat (1),
-                                              lit_qname (p->sem.qname)))),
+                .rel = attach (
+                           attach (loop,
+                                   att_pos, lit_nat (1)),
+                           att_item, lit_qname (p->sem.qname)),
                 .frag = PFla_empty_set () };
             break;
 
@@ -1887,14 +1883,14 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
     if (PFty_subtype (ty, PFty_empty ()))
         return
             disjunion (
-                cross (
+                attach (
                     distinct (project (e.rel, proj (att_iter, att_iter))),
-                    lit_tbl (attlist (att_subty), tuple (lit_bln (false)))),
-                cross (
+                    att_subty, lit_bln (false)),
+                attach (
                     difference (
                         loop,
                         distinct (project (e.rel, proj (att_iter, att_iter)))),
-                    lit_tbl (attlist (att_subty), tuple (lit_bln (true)))));
+                    att_subty, lit_bln (true)));
     /*
      * To test, e.g., for integer values, use
      *
@@ -1968,11 +1964,11 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
                                  proj (att_iter, att_iter),
                                  proj (att_item, att_itemty)),
                         att_subty, att_item, att_iter),
-                cross (
+                attach (
                     difference (
                         loop,
                         project (itemty, proj (att_iter, att_iter))),
-                    lit_tbl (attlist (att_subty), tuple (lit_bln (false)))));
+                    att_subty, lit_bln (false)));
 
     /*
      * Ocurrence indicator `?' (zero or one item).
@@ -1992,11 +1988,11 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
                                  proj (att_iter, att_iter),
                                  proj (att_item, att_itemty)),
                         att_subty, att_item, att_iter),
-                cross (
+                attach (
                     difference (
                         loop,
                         project (itemty, proj (att_iter, att_iter))),
-                    lit_tbl (attlist (att_subty), tuple (lit_bln (true)))));
+                    att_subty, lit_bln (true)));
 
     /*
      * Ocurrence indicator `+' (one or more items).
@@ -2022,11 +2018,11 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
                               proj (att_iter, att_iter),
                               proj (att_item, att_itemty)),
                      att_subty, att_item, att_iter),
-                cross (
+                attach (
                     difference (
                         loop,
                         project (itemty, proj (att_iter, att_iter))),
-                    lit_tbl (attlist (att_subty), tuple (lit_bln (false)))));
+                    att_subty, lit_bln (false)));
 
     /*
      * Ocurrence indicator `*' (zero or more items).
@@ -2046,11 +2042,11 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
                               proj (att_iter, att_iter),
                               proj (att_item, att_itemty)),
                      att_subty, att_item, att_iter),
-                cross (
+                attach (
                     difference (
                         loop,
                         project (itemty, proj (att_iter, att_iter))),
-                    lit_tbl (attlist (att_subty), tuple (lit_bln (true)))));
+                    att_subty, lit_bln (true)));
 
     /*
      * We should never reach this point.

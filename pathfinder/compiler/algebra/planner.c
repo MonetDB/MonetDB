@@ -1154,6 +1154,7 @@ plan_doc_access (const PFla_op_t *n)
 static PFplanlist_t *
 plan_element (const PFla_op_t *n)
 {
+    PFpa_op_t     *element;
     PFplanlist_t  *ret                = new_planlist ();
     PFplanlist_t  *ordered_qn         = new_planlist ();
     PFplanlist_t  *ordered_cont       = new_planlist ();
@@ -1196,9 +1197,14 @@ plan_element (const PFla_op_t *n)
                          cheapest_cont_plan))
             cheapest_cont_plan = *(plan_t **) PFarray_at (ordered_cont, i);
 
-    add_plan (ret, element (cheapest_frag_plan,
-                            cheapest_qn_plan,
-                            cheapest_cont_plan));
+    element = element (cheapest_frag_plan,
+                       cheapest_qn_plan,
+                       cheapest_cont_plan);
+
+    /* assure that element_tag also gets a property */
+    R(element)->prop = PFprop ();
+
+    add_plan (ret, element);
 
     return ret;
 }

@@ -22,6 +22,7 @@
 EXTRA_DIST = \
 	abssyn.h \
 	abssynprint.h \
+    alg_dag.h \
 	algebra_cse.h \
 	algebra.h \
 	algebra_mnemonic.h \

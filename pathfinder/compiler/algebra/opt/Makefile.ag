@@ -22,32 +22,17 @@
 #
 
 
-#SUBDIRS = hskparser
-SUBDIRS = opt prop
+SUBDIRS = 
 
-#YFLAGS = -d -p pf
-#LFLAGS = -Ppf -olex.yy.c
+INCLUDES = ../../include $(MONETDB_INCS)
 
-INCLUDES = ../include $(MONETDB_INCS)
-
-# locally disable "-Werror"
-#X_CFLAGS = "-pedantic"
-
-lib_algebra = {
+lib_opt = {
 	NOINST
 	DIR = libdir
 	SOURCES = \
-		core2alg.brg \
-        alg_dag.c \
-		algebra.c \
-		properties.c \
-		algopt.c \
-		algebra_cse.c \
-		logical.c \
-		planner.c \
-		physical.c \
-		ordering.c \
-		builtins.c
+		opt_icol.c \
+		opt_key.c \
+		opt_const.c \
+        opt_general.brg \
+        opt_complex.c
 }
-
-#EXTRA_DIST =

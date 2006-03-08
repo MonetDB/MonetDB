@@ -685,8 +685,7 @@ PFatt_str (PFalg_att_t att) {
         case att_isint:   return "isint";
         case att_isdec:   return "isdec";
         default:
-            PFoops (OOPS_FATAL,
-                    "unknown attribute name");
+            PFoops (OOPS_FATAL, "unknown attribute name (%i)", att);
     }
     return NULL;
 }

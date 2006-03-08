@@ -95,14 +95,12 @@ la_op_leaf (PFla_op_kind_t kind)
         ret->child[i] = NULL;
 
     ret->plans         = NULL;
-    ret->prop          = NULL;
+    ret->prop          = PFprop ();
     ret->node_id       = 0;
 
+    /* bits required to allow DAG traversals */
     ret->bit_reset     = 0;
-    ret->bit_prop      = 0;
-    ret->bit_opt_label = 0;
-    ret->bit_opt       = 0;
-    ret->bit_cse       = 0;
+    ret->bit_dag       = 0;
 
     return ret;
 }

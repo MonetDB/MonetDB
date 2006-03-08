@@ -33,14 +33,16 @@
 #include "oops.h"
 #include "algebra_cse.h"
 #include "array.h"
+#include "alg_dag.h"
 
 /* compare types in staircase join operator nodes */
 #include "subtyping.h"
 
 #include <assert.h>
+#include <string.h> /* strcmp */
 
 /* prune already checked nodes */
-#define SEEN(p) ((p)->bit_cse)
+#define SEEN(p) ((p)->bit_dag)
 
 /**
  * Subexpressions that we already saw.
@@ -86,7 +88,7 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
                 break;
             /* if type is str, compare str member of union */
             case aat_str:
-                if (a.atoms[i].val.str != b.atoms[i].val.str)
+                if (strcmp (a.atoms[i].val.str, b.atoms[i].val.str))
                     mismatch = true;
                 break;
             /* if type is float, compare float member of union */
@@ -152,6 +154,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
     switch (a->kind) {
 
         case la_lit_tbl:
+        case la_empty_tbl:
 
             if (a->schema.count != b->schema.count)
                 return false;
@@ -323,7 +326,6 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             break;
 
         case la_serialize:
-        case la_empty_tbl:
         case la_cross:
         case la_disjunion:
         case la_intersect:
@@ -415,9 +417,18 @@ la_cse (PFla_op_t *n)
 PFla_op_t *
 PFla_cse (PFla_op_t *n)
 {
+    PFla_op_t *res;
+
     subexps = PFarray (sizeof (PFarray_t *));
 
-    return la_cse (n);
+    res = la_cse (n);
+    PFla_dag_reset (res);
+
+    /* infer all top-down properties as some values
+       might get lost during the merging of nodes */
+    PFprop_infer_icol (res);
+
+    return res;
 }
 
 /* vim:set shiftwidth=4 expandtab: */

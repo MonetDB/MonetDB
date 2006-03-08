@@ -88,12 +88,11 @@ static char *phases[] = {
     [12]  = "after type inference and checking",
     [13]  = "after XQuery Core optimization",
     [14]  = "after the Core tree has been translated to the logical algebra",
-    [15]  = "after the logical algebra has been annotated with properties",
-    [16]  = "after the logical algebra tree has been rewritten/optimized",
-    [17]  = "after the CSE on the logical algebra tree",
-    [18]  = "after compiling logical into the physical algebra",
-    [19]  = "after compiling the physical algebra into MIL code",
-    [20]  = "after the MIL program has been serialized"
+    [15]  = "after the logical algebra tree has been rewritten/optimized",
+    [16]  = "after the CSE on the logical algebra tree",
+    [17]  = "after compiling logical into the physical algebra",
+    [18]  = "after compiling the physical algebra into MIL code",
+    [19]  = "after the MIL program has been serialized"
 };
 
 /* pretty ugly to have such a global, could not entirely remove it yet JF */
@@ -113,6 +112,7 @@ PFstate_t PFstate = {
     .print_pa_tree       = false,
     .summer_branch       = true,
 
+    .opt_alg             = "OIKCGP",
     .format              = NULL,
 
     .genType             = "xml"
@@ -267,7 +267,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     
     if (status->timing)
-        PFlog ("parsing:\t\t %s", PFtimer_str (tm));
+        PFlog ("parsing:\t\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(1);
     
@@ -276,7 +276,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     tm = PFtimer_stop (tm);
 
     if (status->timing)
-        PFlog ("module import:\t\t %s", PFtimer_str (tm));
+        PFlog ("module import:\t\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(2);
     
@@ -288,7 +288,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("normalization:\t %s", PFtimer_str (tm));
+        PFlog ("normalization:\t\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(3);
     
@@ -315,7 +315,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("semantical analysis:\t %s", PFtimer_str (tm));
+        PFlog ("semantical analysis:\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(7);
 
@@ -331,7 +331,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("XML Schema import:\t %s", PFtimer_str (tm));
+        PFlog ("XML Schema import:\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(9);
 
@@ -343,7 +343,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("core mapping:\t\t %s", PFtimer_str (tm));
+        PFlog ("core mapping:\t\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(10);
 
@@ -354,7 +354,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("core simplification:\t %s", PFtimer_str (tm));
+        PFlog ("core simplification:\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(11);
 
@@ -365,7 +365,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("type checking:\t %s", PFtimer_str (tm));
+        PFlog ("type checking:\t\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(12);
 
@@ -377,7 +377,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("core tree optimization:\t %s", PFtimer_str (tm));
+        PFlog ("core tree optimization:\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(13);
 
@@ -396,7 +396,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
         /* epilogue is not needed for standalone MIL scripts */
         tm = PFtimer_stop (tm);
         if (status->timing)
-            PFlog ("MIL code output:\t %s", PFtimer_str (tm));
+            PFlog ("MIL code output:\t\t %s", PFtimer_str (tm));
         goto bailout;
     }
 
@@ -409,37 +409,23 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("logical algebra tree generation:\t %s", PFtimer_str (tm));
+        PFlog ("logical algebra tree generation: %s", PFtimer_str (tm));
 
     STOP_POINT(14);
-
-    /*
-     * Infer interesting properties about algebra expressions
-     */
-    tm = PFtimer_start ();
-
-    PFprop_infer (laroot);
-
-    tm = PFtimer_stop (tm);
-    if (status->timing)
-        PFlog ("logical algebra tree property inference:\t %s",
-               PFtimer_str (tm));
-
-    STOP_POINT(15);
 
     /*
      * Rewrite/optimize algebra tree
      */
     tm = PFtimer_start ();
 
-    laroot = PFalgopt (laroot);
+    laroot = PFalgopt (laroot, status->timing);
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("logical algebra tree rewrite/optimization:\t %s",
+        PFlog ("logical algebra optimization:\t %s",
                PFtimer_str (tm));
 
-    STOP_POINT(16);
+    STOP_POINT(15);
 
     /* 
      * common subexpression elimination in the algebra tree
@@ -450,15 +436,10 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("common subexpression elimination in logical algebra tree:\t %s",
+        PFlog ("CSE in logical algebra tree:\t %s",
                PFtimer_str (tm));
 
-    STOP_POINT(17);
-
-    /*
-     * second run of the property inference
-     */
-    PFprop_infer (laroot);
+    STOP_POINT(16);
 
     /* Compile algebra into physical algebra */
     tm = PFtimer_start ();
@@ -466,9 +447,9 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     tm = PFtimer_stop (tm);
 
     if (status->timing)
-        PFlog ("compilation to physical algebra:\t %s", PFtimer_str (tm));
+        PFlog ("compilation to physical algebra: %s", PFtimer_str (tm));
 
-    STOP_POINT(18);
+    STOP_POINT(17);
 
     /* Map physical algebra to MIL */
     tm = PFtimer_start ();
@@ -476,16 +457,23 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     tm = PFtimer_stop (tm);
 
     if (status->timing)
-        PFlog ("MIL code generation:\t %s", PFtimer_str (tm));
+        PFlog ("MIL code generation:\t\t %s", PFtimer_str (tm));
 
-    STOP_POINT(19);
+    STOP_POINT(18);
 
     /* Render MIL program in Monet MIL syntax 
      */
-    if (!(mil_program = PFmil_serialize (mroot)))
+    tm = PFtimer_start ();
+    mil_program = PFmil_serialize (mroot);
+    tm = PFtimer_stop (tm);
+
+    if (!mil_program)
         goto failure;
 
-    STOP_POINT(20);
+    if (status->timing)
+        PFlog ("MIL code serialization:\t\t %s", PFtimer_str (tm));
+
+    STOP_POINT(19);
 
     /* Print MIL program to pfout */
     if (mil_program)

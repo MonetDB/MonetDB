@@ -48,22 +48,6 @@
 #define false   (char)0
 #endif
 
-/** Compilation phases */
-enum PFphases_t {
-      phas_parse     = 1   /**< Parsing and abstract syntax tree generation */
-    , phas_semantics       /**< Semantics checks (varscope, ns, functions) */
-    , phas_fs              /**< Compilation to core language */
-    , phas_simpl           /**< Simplification/normalization of core language */
-    , phas_alg             /**< Algebra tree generation */
-    , phas_algopt          /**< Algebra tree rewrite/optimization */
-    , phas_mil             /**< MIL code generation */
-    , phas_mil_summer      /**< temporary MIL code generation and print */
-   
-    , phas_all             /**< Do all processing phases */
-};
-
-typedef enum PFphases_t PFphases_t;
-
 /** global state of the compiler  */
 typedef struct PFstate_t PFstate_t;
 
@@ -92,6 +76,8 @@ struct PFstate_t {
     bool print_pa_tree;       /**< command line switch: -a */
     bool summer_branch;       /**< command line switch: -M */
 
+    char *opt_alg;            /**< list of algebraic optimizations 
+                                   (command line switch -o) */
     char *format;             /**< dot output format (command line switch -f) */
 
     char* genType;     /* kind of output */

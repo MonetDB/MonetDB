@@ -622,20 +622,41 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
         while (*fmt) { 
             if (*fmt == '+')
             {
-                if (n->prop)
-                {
-                    PFalg_attlist_t icols = PFprop_icols_to_attlist (n->prop);
+                PFalg_attlist_t icols = PFprop_icols_to_attlist (n->prop);
+                PFalg_attlist_t keys = PFprop_keys_to_attlist (n->prop);
 
-                    /* list attributes marked const */
-                    for (unsigned int i = 0;
-                            i < PFprop_const_count (n->prop); i++)
-                        PFarray_printf (dot, i ? ", %s" : "\\nconst: %s",
-                                        PFatt_str (
-                                            PFprop_const_at (n->prop, i)));
-                    /* list icols attributes */
-                    for (unsigned int i = 0; i < icols.count; i++)
-                        PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
-                                        PFatt_str (icols.atts[i]));
+                /* if present print cardinality */
+                if (PFprop_card (n->prop))
+                    PFarray_printf (dot, "\\ncard: %i", PFprop_card (n->prop));
+
+                /* list attributes marked const */
+                for (unsigned int i = 0;
+                        i < PFprop_const_count (n->prop); i++)
+                    PFarray_printf (dot, i ? ", %s" : "\\nconst: %s",
+                                    PFatt_str (
+                                        PFprop_const_at (n->prop, i)));
+
+                /* list icols attributes */
+                for (unsigned int i = 0; i < icols.count; i++)
+                    PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
+                                    PFatt_str (icols.atts[i]));
+
+                /* list keys attributes */
+                for (unsigned int i = 0; i < keys.count; i++)
+                    PFarray_printf (dot, i ? ", %s" : "\\nkeys: %s",
+                                    PFatt_str (keys.atts[i]));
+
+                /* list attributes and their corresponding domains */
+                for (unsigned int i = 0; i < n->schema.count; i++)
+                    if (PFprop_dom (n->prop, n->schema.items[i].name))
+                        PFarray_printf (dot, i ? ", %s %i" : "\\ndom: %s %i",
+                                        PFatt_str (n->schema.items[i].name),
+                                        PFprop_dom (n->prop,
+                                                    n->schema.items[i].name));
+
+                /* list domain - subdomain relationships */
+                if (n->kind == la_serialize) {
+                    PFprop_write_dom_rel (dot, n->prop);
                 }
                 all = true;
             }
@@ -647,23 +668,21 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
             switch (*fmt) {
                 /* list attributes marked const if requested */
                 case 'c':
-                    if (n->prop)
-                        for (unsigned int i = 0;
-                                i < PFprop_const_count (n->prop); i++)
-                            PFarray_printf (dot, i ? ", %s" : "\\nconst: %s",
-                                            PFatt_str (
-                                                PFprop_const_at (n->prop, i)));
+                    for (unsigned int i = 0;
+                            i < PFprop_const_count (n->prop); i++)
+                        PFarray_printf (dot, i ? ", %s" : "\\nconst: %s",
+                                        PFatt_str (
+                                            PFprop_const_at (n->prop, i)));
                     break;
                 /* list icols attributes if requested */
                 case 'i':
-                    if (n->prop) {
-                        PFalg_attlist_t icols = 
-                                        PFprop_icols_to_attlist (n->prop);
-                        for (unsigned int i = 0; i < icols.count; i++)
-                            PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
-                                            PFatt_str (icols.atts[i]));
-                    }
-                    break;
+                {
+                    PFalg_attlist_t icols = 
+                                    PFprop_icols_to_attlist (n->prop);
+                    for (unsigned int i = 0; i < icols.count; i++)
+                        PFarray_printf (dot, i ? ", %s" : "\\nicols: %s",
+                                        PFatt_str (icols.atts[i]));
+                } break;
             }
             fmt++;
         }
@@ -719,21 +738,47 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *node)
         while (*fmt) { 
             if (*fmt == '+')
             {
-                if (n->prop)
-                {
-                    PFalg_attlist_t icols = PFprop_icols_to_attlist (n->prop);
+                PFalg_attlist_t icols = PFprop_icols_to_attlist (n->prop);
+                PFalg_attlist_t keys = PFprop_keys_to_attlist (n->prop);
 
-                    /* list attributes marked const */
-                    for (unsigned int i = 0;
-                            i < PFprop_const_count (n->prop); i++)
-                        PFarray_printf (xml, "      <const column=\"%s\"/>\n",
-                                        PFatt_str (
-                                            PFprop_const_at (n->prop, i)));
-                    /* list icols attributes */
-                    for (unsigned int i = 0; i < icols.count; i++)
-                        PFarray_printf (xml, "      <icols column=\"%s\"/>\n",
-                                        PFatt_str (icols.atts[i]));
+                /* if present print cardinality */
+                if (PFprop_card (n->prop))
+                    PFarray_printf (xml, "      <card value=\"%i\"/>\n",
+                                    PFprop_card (n->prop));
+
+                /* list attributes marked const */
+                for (unsigned int i = 0;
+                        i < PFprop_const_count (n->prop); i++)
+                    PFarray_printf (xml, "      <const column=\"%s\"/>\n",
+                                    PFatt_str (
+                                        PFprop_const_at (n->prop, i)));
+
+                /* list icols attributes */
+                for (unsigned int i = 0; i < icols.count; i++)
+                    PFarray_printf (xml, "      <icols column=\"%s\"/>\n",
+                                    PFatt_str (icols.atts[i]));
+
+                /* list keys attributes */
+                for (unsigned int i = 0; i < keys.count; i++)
+                    PFarray_printf (xml, "      <keys column=\"%s\"/>\n",
+                                    PFatt_str (keys.atts[i]));
+
+                /* list attributes and their corresponding domains */
+                for (unsigned int i = 0; i < n->schema.count; i++)
+                    if (PFprop_dom (n->prop, n->schema.items[i].name))
+                        PFarray_printf (xml, "      <domain attr=\"%s\" "
+                                        "value=\"%i\"/>\n",
+                                        PFatt_str (n->schema.items[i].name),
+                                        PFprop_dom (n->prop,
+                                                    n->schema.items[i].name));
+
+                /* list domain - subdomain relationships */
+                if (n->kind == la_serialize) {
+                    PFarray_printf (xml, "      <![CDATA[");
+                    PFprop_write_dom_rel (xml, n->prop);
+                    PFarray_printf (xml, "]]>\n");
                 }
+
                 all = true;
             }
             fmt++;
@@ -744,25 +789,23 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *node)
             switch (*fmt) {
                 /* list attributes marked const if requested */
                 case 'c':
-                    if (n->prop)
-                        for (unsigned int i = 0;
-                                i < PFprop_const_count (n->prop); i++)
-                            PFarray_printf (xml, 
-                                            "      <const column=\"%s\"/>\n",
-                                            PFatt_str (
-                                                PFprop_const_at (n->prop, i)));
+                    for (unsigned int i = 0;
+                            i < PFprop_const_count (n->prop); i++)
+                        PFarray_printf (xml, 
+                                        "      <const column=\"%s\"/>\n",
+                                        PFatt_str (
+                                            PFprop_const_at (n->prop, i)));
                     break;
                 /* list icols attributes if requested */
                 case 'i':
-                    if (n->prop) {
-                        PFalg_attlist_t icols = 
-                                        PFprop_icols_to_attlist (n->prop);
-                        for (unsigned int i = 0; i < icols.count; i++)
-                            PFarray_printf (xml, 
-                                            "      <icols column=\"%s\"/>\n",
-                                            PFatt_str (icols.atts[i]));
-                    }
-                    break;
+                {
+                    PFalg_attlist_t icols = 
+                                    PFprop_icols_to_attlist (n->prop);
+                    for (unsigned int i = 0; i < icols.count; i++)
+                        PFarray_printf (xml, 
+                                        "      <icols column=\"%s\"/>\n",
+                                        PFatt_str (icols.atts[i]));
+                } break;
             }
             fmt++;
         }
@@ -1014,7 +1057,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *node)
                             "    <content>\n",
                             PFatt_str (n->sem.unary.res),
                             PFatt_str (n->sem.unary.att));
-	    break;
+            break;
 
         case la_sum:
             PFarray_printf (xml,
@@ -1058,6 +1101,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *node)
                             "      </column>\n",
                             PFatt_str (n->sem.count.part));
             PFarray_printf (xml, "    </content>\n");
+            break;
 
         case la_rownum:
             PFarray_printf (xml, 

@@ -49,6 +49,8 @@ bin_pf = {
 		semantics/libsemantics \
 		core/libcore \
 		algebra/libalgebra \
+		algebra/opt/libopt \
+		algebra/prop/libprop \
 		mil/libmil \
 		libcompiler2 \
 		$(LIBXML2_LDADD) $(LIBXML2_LIBS) \

@@ -272,6 +272,29 @@ PFarray_concat (PFarray_t *a1, PFarray_t *a2)
 }
 
 /**
+ * Array copy.  The entries of input are inserted
+ * into a new array output.  
+ *
+ * @param input input array (unchanged)
+ * @return array @a output with a copy of the entries of @a input
+ */
+PFarray_t *
+PFarray_copy (PFarray_t *input)
+{
+    unsigned size = PFarray_last (input);
+    PFarray_t *output = PFarray (input->esize);
+
+    if (size) {
+        PFarray_nadd (output, size);
+
+        memcpy (PFarray_at (output, 0),
+                PFarray_at (input, 0),
+                size * input->esize);
+    }
+    return output;
+}
+
+/**
  * Delete the last element from an array.
  *
  * @param a   array

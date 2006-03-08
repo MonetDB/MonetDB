@@ -1,7 +1,8 @@
 /**
  * @file
  *
- * Optimize relational algebra expression tree.
+ * Functions related to algebra tree optimization.
+ * (Generic stuff for logical algebra.)
  *
  * Copyright Notice:
  * -----------------
@@ -26,24 +27,18 @@
  * $Id$
  */
 
-#ifndef ALGOPT_H
-#define ALGOPT_H
+#ifndef ALG_DAG_H
+#define ALG_DAG_H
 
-#include "logical.h"
+#include <logical.h>
 
-PFla_op_t * PFalgopt (PFla_op_t *root, bool timing);
-
-/**
- * Infer property for a DAG rooted in root
- * (The implementation is located in the
- *  corresponding opt/opt_*.[brg|c] file)
+/*
+ * Reset the DAG bit of the logical algebra tree.
+ * (it requires a clean reset bit to traverse
+ *  the logical tree as DAG.)
  */
-PFla_op_t * PFalgopt_const (PFla_op_t *root, bool no_attach);
-PFla_op_t * PFalgopt_icol (PFla_op_t *root);
-PFla_op_t * PFalgopt_key (PFla_op_t *root);
-PFla_op_t * PFalgopt_complex (PFla_op_t *root);
-PFla_op_t * PFalgopt_general (PFla_op_t *root);
+void PFla_dag_reset (PFla_op_t *n);
 
-#endif  /* ALGOPT_H */
+#endif  /* ALG_DAG_H */
 
 /* vim:set shiftwidth=4 expandtab: */
