@@ -2817,27 +2817,28 @@ CRKcrack@3_@2_@1 (int *res, int *bid, @1 *low, @1 *hgh)
         while( @6 *(@1*)@2 @5 ){
         	@3 = (ptr) ((char *) @3 @4 xx);
                 @2 = (ptr) ((char *) @2 @4 xx);
+                @7 = (ptr) ((char *) @7 @4 xx);
         }
 @
 
 @= exchangeTest
 	(void) buf;
-	hdummy= *(oid*) BUNhloc(b,@1);
-	tdummy= *(int*) BUNtloc(b,@1);
-	*(oid*) BUNhloc(b,@1) = *(oid*) BUNhloc(b,@2);
-	*(@3*) BUNtail(b,@1) = *(@3*) BUNtloc(b,@2);
-	*(oid*) BUNhloc(b,@2)= hdummy;
-	*(@3*) BUNtloc(b,@2)= tdummy;
+	hdummy= *(oid*) @4;
+	tdummy= *(@1*) @2;
+	*(oid*) @4 = *(oid*) @5;
+	*(@1*) @2 = *(@1*) @3;
+	*(oid*) @4= hdummy;
+	*(@1*) @3= tdummy;
 @= exchange2Test
         (void) buf;
-        hdummy= *(oid*) BUNhloc(b,@1);
-        tdummy= *(int*) BUNtloc(b,@1);
-        *(oid*) BUNhloc(b,@1) = *(oid*) BUNhloc(b,@3);
-        *(@4*) BUNtloc(b,@1) = *(@4*) BUNtloc(b,@3);
-        *(oid*) BUNhloc(b,@3) = *(oid*) BUNhloc(b,@2);
-        *(@4*) BUNtloc(b,@3) = *(@4*) BUNtloc(b,@2);
-        *(oid*) BUNhloc(b,@2)= hdummy;
-        *(@4*) BUNtloc(b,@2)= tdummy;
+        hdummy= *(oid*) @5;
+        tdummy= *(@1*) @2;
+        *(oid*) @5 = *(oid*) @7;
+        *(@1*) @2 = *(@1*) @4;
+        *(oid*) @7 = *(oid*) @6;
+        *(@1*) @4 = *(@1*) @3;
+        *(oid*) @6= hdummy;
+        *(@1*) @3= tdummy;
 @
 @= crackInThreePiecesSI
 str
@@ -2845,9 +2846,9 @@ CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 {
 
 	ptr vmax, nmin, vm, bl, bls;
-	ptr p, pn=0;
+	ptr p;
 	char buf[128];	  /* scratch space */
-	ptr tmpTmax, tmpTmid;
+	ptr tmpTmax, tmpTmid, hl, hm, hh;
 	@1 tmpVmax,tmpVmid;
 	int xx = BUNsize(b);
 	oid hdummy;
@@ -2859,21 +2860,25 @@ CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 	
 	vmax = BUNptr(b, idx_last);
 	tmpTmax =  BUNtloc(b, vmax);
- 
-	for (nmin = BUNptr(b, idx_first),vm = BUNtloc(b, nmin); nmin < vmax; nmin = (ptr) ((char *) nmin + xx), vm = (ptr) ((char *) vm + xx)) {
+	hh = BUNhloc(b, vmax);
+	nmin = BUNptr(b, idx_first);
+	vm = BUNtloc(b, nmin);
+	hl = BUNhloc(b, nmin);
+	for (; nmin < vmax; nmin = (ptr) ((char *) nmin + xx), vm = (ptr) ((char *) vm + xx), hl = (ptr) ((char *) hl + xx)) {
 		if (*(@1*)vm @7 hgh){
-			@:move(@1,tmpTmax,vmax,-,@7hgh, vmax > nmin &&)@
+			@:move(@1,tmpTmax,vmax,-,@7hgh, vmax > nmin &&,hh)@
 			if (vmax!=nmin && *(@1*)tmpTmax @4 low){
-				@:exchangeTest(nmin,vmax,@1)@							
+				@:exchangeTest(@1,vm,tmpTmax,hl,hh)@							
 				vmax = (ptr) ((char *) vmax - xx);
 				tmpTmax = (ptr) ((char *) tmpTmax - xx);
+				hh = (ptr) ((char *) hh - xx); 
 			}	
 			else break;
 		}
 		if (*(@1*)vm @5 low && *(@1*)vm @6 hgh)
 			break; 
 	}
-	@:move(@1,tmpTmax,vmax,-,@7hgh, vmax > nmin &&)@
+	@:move(@1,tmpTmax,vmax,-,@7hgh, vmax > nmin &&,hh)@
 	/* Empty result*/
 	if (nmin == vmax)
 		 return MAL_SUCCEED;
@@ -2891,81 +2896,90 @@ CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 			
 	bls = bl;
 	tmpTmid = BUNtloc(b, bl);
+	hm = BUNhloc(b, bl);
 	vm = BUNtloc(b, nmin);
 	
 	/* Now for each value that is >hgh if a middle value m occurs in vmax we can save a redudant exchange by seaching 
 	in the middle partition. There middle values are ignored and  a high value is  exchanged with m. 
 	Similarly when a middle value occurs */  			
-	for (p = nmin; p < bls; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)) {
+	for (p = nmin; p < bls; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx), hl = (ptr) ((char *) hl + xx)) {
 		if (*(int *) vm @5 low && *(int *) vm @6 hgh) {
-			for (pn = bl; pn < vmax; pn = (ptr) ((char *) pn + xx), bl = (ptr) ((char *) bl + xx),tmpTmid = (ptr) ((char *) tmpTmid + xx)){
+			for (; bl < vmax; bl = (ptr) ((char *) bl + xx),tmpTmid = (ptr) ((char *) tmpTmid + xx),hm = (ptr) ((char *) hm + xx)){
 				tmpVmid = *(@1*)tmpTmid;
 				if (tmpVmid @4 low){
-					@:exchangeTest(pn,p,@1)@
+					@:exchangeTest(@1,tmpTmid,vm,hm,hl)@
 					bl = (ptr) ((char *) bl + xx);
 					tmpTmid = (ptr) ((char *) tmpTmid + xx);
+					hm = (ptr) ((char *) hm + xx);
 					goto next;
 				}
 				if (tmpVmid @7 hgh){
-					@:move(@1,tmpTmax,vmax,-,@7hgh, vmax > bl &&)@
+					@:move(@1,tmpTmax,vmax,-,@7hgh, vmax > bl &&,hh)@
 					if (vmax == bl){
-						@:exchangeTest(p,vmax,@1)@
+						@:exchangeTest(@1,vm,tmpTmax,hl,hh)@
 						return MAL_SUCCEED;
 					}
 					tmpVmax = *(@1*)tmpTmax;
 					if (tmpVmax @5 low  && tmpVmax @6  hgh){
-						@:exchangeTest(vmax,pn,@1)@
+						@:exchangeTest(@1,tmpTmax,tmpTmid,hh,hm)@
 						vmax = (ptr) ((char *) vmax - xx);
 						tmpTmax = (ptr) ((char *) tmpTmax - xx);
+						hh = (ptr) ((char *) hh - xx); 
 					}
 					if (tmpVmax @4 low){
-						@:exchange2Test(p,pn,vmax,@1)@
+						@:exchange2Test(@1,vm,tmpTmid,tmpTmax,hl,hm,hh)@
 						bl = (ptr) ((char *) bl + xx);
 						tmpTmid = (ptr) ((char *) tmpTmid + xx);
+						hm = (ptr) ((char *) hm + xx);
 						vmax = (ptr) ((char *) vmax - xx);
 						tmpTmax = (ptr) ((char *) tmpTmax - xx);
+						hh = (ptr) ((char *) hh - xx); 
 						goto next;
 					} 
 				}       
 			}       
 			if (bl == vmax){
-                                @:exchangeTest(p,vmax,@1)@
+                                @:exchangeTest(@1,vm,tmpTmax,hl,hh)@
                                 return MAL_SUCCEED;
 			}
 		}  
 		if (*(int *) vm @7 hgh) {
-			for (pn = vmax; pn > bl; pn = (ptr) ((char *) pn - xx), vmax = (ptr) ((char *) vmax - xx),tmpTmax = (ptr) ((char *) tmpTmax - xx)){
+			for (; vmax> bl; vmax = (ptr) ((char *) vmax - xx),tmpTmax = (ptr) ((char *) tmpTmax - xx),hh = (ptr) ((char *) hh - xx)){
 				tmpVmax = *(@1*)tmpTmax;
 				if (tmpVmax @4 low){
-					@:exchangeTest(pn,p,@1)@
+					@:exchangeTest(@1,tmpTmax,vm,hh,hl)@
 					vmax = (ptr) ((char *) vmax - xx);
 					tmpTmax = (ptr) ((char *) tmpTmax - xx);
+					hh = (ptr) ((char *) hh - xx); 
 					goto next;
 				}
 				if (tmpVmax @5 low && tmpVmax @6  hgh){
-					@:move(@1,tmpTmid,bl,+, @5 low && *(@1*)tmpTmid @6  hgh, bl < vmax &&)@
+					@:move(@1,tmpTmid,bl,+, @5 low && *(@1*)tmpTmid @6  hgh, bl < vmax &&,hm)@
 					if (vmax == bl){
-                                                @:exchangeTest(p,vmax,@1)@
+                                                @:exchangeTest(@1,vm,tmpTmax,hl,hh)@
                                                 return MAL_SUCCEED;
                                         }
 					tmpVmid = *(@1*)tmpTmid;
 					if (tmpVmid @7 hgh){
-						@:exchangeTest(bl,pn,@1)@
+						@:exchangeTest(@1,tmpTmid,tmpTmax,hm,hh)@
 						bl = (ptr) ((char *) bl + xx);	
 						tmpTmid = (ptr) ((char *) tmpTmid + xx);
+						hm = (ptr) ((char *) hm + xx);
 					}
 					if (tmpVmid @4 low){
-						@:exchange2Test(pn,bl,p,@1)@
+						@:exchange2Test(@1,tmpTmax,tmpTmid,vm,hh,hm,hl)@
 						bl = (ptr) ((char *) bl + xx);
 						tmpTmid = (ptr) ((char *) tmpTmid + xx);
+						hm = (ptr) ((char *) hm + xx);
 						vmax = (ptr) ((char *) vmax - xx);
 						tmpTmax = (ptr) ((char *) tmpTmax - xx);
+						hh = (ptr) ((char *) hh - xx); 
 						goto next;
 					}
 				}
 			}
 			if (bl == vmax){
-                                @:exchangeTest(p,vmax,@1)@
+                                @:exchangeTest(@1,vm,tmpTmax,hl,hh)@
                                 return MAL_SUCCEED;
                         }
 
@@ -2973,21 +2987,44 @@ CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 		next:;
 	}
 
-	for (vm = BUNtloc(b, bl); bl < vmax; bl = (ptr) ((char *) bl + xx), vm = (ptr) ((char *) vm + xx)) {
-		if (*(int *) vm @7  hgh){
-			@:move(@1,tmpTmax,vmax,-,@7hgh, vmax > bl &&)@
+	for (; bl < vmax; bl = (ptr) ((char *) bl + xx), tmpTmid = (ptr) ((char *) tmpTmid + xx), hm = (ptr) ((char *) hm + xx)) {
+		if (*(int *) tmpTmid @7  hgh){
+			@:move(@1,tmpTmax,vmax,-,@7hgh, vmax > bl &&,hh)@
 			if (vmax != bl ){ 
-				@:exchangeTest(vmax,bl,@1)@
+				@:exchangeTest(@1,tmpTmax,tmpTmid,hh,hm)@
 				vmax = (ptr) ((char *) vmax - xx);
 				tmpTmax = (ptr) ((char *) tmpTmax - xx);
+				hh = (ptr) ((char *) hh - xx); 
 			}
-			else break;
+			if (vmax == bl) break;
 		}
 	}
 	return MAL_SUCCEED;
 }
 @
 
+@= crackInThreeOrderedPiecesSI
+str
+CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
+{
+
+	ptr vmax, nmin, vm,;
+	ptr tmpTmax, tmpTmin;
+
+	vmax = BUNptr(b, idx_last);
+	tmpTmax =  BUNtloc(b, vmax);
+ 
+	nmin = BUNptr(b, idx_first),
+	tmpTmin = BUNtloc(b, nmin); 
+	@:move(@1,tmpTmax,vmax,-,@7hgh, vmax > nmin &&)@
+	@:move(@1,tmpTmin,nmin,+,@4low, vmax > nmin &&)@
+	/* Empty result*/
+	if (nmin == vmax)
+		 return MAL_SUCCEED;
+		 
+	return MAL_SUCCEED;
+}
+@
 @= SI_operations
 @:crackInThreePiecesSI(@1,LE,RE,<,>=,<=,>)@
 @:crackInThreePiecesSI(@1,LO,RE,<=,>,<=,>)@
