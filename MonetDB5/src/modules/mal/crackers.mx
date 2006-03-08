@@ -2204,7 +2204,7 @@ The generic solution avoids possible compiler alignment issues.
 
 @= MK_operations
 str
-CRKpieceZero_MK_@1( BAT *b, @1 mval, int first, int last){
+CRKpieceZero_MK_@1( BAT *b, @1 mval, size_t first, size_t last){
 	ptr vm, vl;
 	int xx;
 	oid hdummy;
@@ -2247,7 +2247,7 @@ CRKcrackZero_MK_@1 (int *res, int *bid, @1 *mid)
 	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
-	msg=CRKpieceZero_MK_@1( b, *mid, 0, BATcount(b)-1);
+	msg=CRKpieceZero_MK_@1( b, *mid,(size_t) 0, BATcount(b)-1);
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
@@ -2255,7 +2255,7 @@ CRKcrackZero_MK_@1 (int *res, int *bid, @1 *mid)
 }
 
 str
-CRKorderedpieceOne_MK_@1( BAT *b, @1 mval, int first, int last, int *start, int *end){
+CRKorderedpieceOne_MK_@1( BAT *b, @1 mval, size_t first, size_t last, size_t *start, size_t *end){
 	ptr tc, hc, hv,tv, vtop;
 	int xx;
 	oid *hdummy, *hd, *he;
@@ -2312,22 +2312,23 @@ CRKorderedpieceOne_MK_@1( BAT *b, @1 mval, int first, int last, int *start, int 
 }
 
 str
-CRKpieceOne_MK_@1( BAT *b, @1 mval, int first, int last, int *start, int *end){
+CRKpieceOne_MK_@1( BAT *b, @1 mval, size_t first, size_t last, size_t *start, size_t *end){
 	ptr vm, vl;
 	int xx;
 	oid hdummy;
 	@1 tdummy;
 	ptr base=0;
 
-	assert(first<last);
 	/* set bounds for the iterator */
 	xx = BUNsize(b);
 
 	vm = BUNtloc(b, BUNptr(b,first));
-	vl = BUNtloc(b,BUNptr(b,last));
+	vl = BUNtloc(b, BUNptr(b,last));
 
+	while(vl>vm && *(@1 *) vl > mval )
+		vl = (ptr) ((char *) vl - xx);
 	/* perform Zero crack first */
-	while(vm<vl) {
+	while(vm <= vl) {
 		if (*(@1 *) vm <= mval){
 			if (*(@1 *) vm == mval )
 				base=vm;
@@ -2335,18 +2336,22 @@ CRKpieceOne_MK_@1( BAT *b, @1 mval, int first, int last, int *start, int *end){
 		} else {
 			@:shuffleMK(@1,vm,vl)@
 			vl = (ptr) ((char *) vl - xx);
-			while( *(@1 *) vl > mval && vl>vm)
+			while(vl>vm && *(@1 *) vl > mval )
 				vl = (ptr) ((char *) vl - xx);
 		} 
 	} 
 
+/* printf("vl %u vm %d base %d\n",(int)BUNindex(b,(ptr)((char*)vl-b->tloc)), (int) BUNindex(b,(ptr)((char*)vm-b->tloc)), base?(int)BUNindex(b,(ptr)((char*)base-b->tloc)):0);
+	BATprint(b); */
 	/* reshuffle one part using same algorithm */
 	*end= BUNindex(b,(ptr) ((char *) vl - b->tloc));
-	vm= base;
+	vm= base?base: BUNtloc(b,BUNptr(b,last));
 	base= BUNtloc(b, BUNptr(b,first));
-	while( *(@1*)vl == mval && vl>= base)
+	while(vl>base && *(@1*)vl == mval )
 		vl= (ptr) ((char*) vl-xx);
 
+	if( vl< vm) vm= vl;	/* the last recognized equal may have been shifted */
+/* printf("vl %u vm %d\n",(int)BUNindex(b,(ptr)((char*)vl-b->tloc)), (int) BUNindex(b,(ptr)((char*)vm-b->tloc))); */
 	while(vm >= base) {
 		if (*(@1 *) vm == mval ){
 			@:shuffleMK(@1,vm,vl)@
@@ -2354,16 +2359,17 @@ CRKpieceOne_MK_@1( BAT *b, @1 mval, int first, int last, int *start, int *end){
 		} 
 		vm = (ptr) ((char *) vm - xx);
 	} 
+	/* BATprint(b);*/
 	*start= BUNindex(b,(ptr) ((char *) vl - b->tloc)) +1;
 	return MAL_SUCCEED;
 }
 
 str
-CRKcrackOne_MK_@1 (int *res, int *bid, int *mid)
+CRKcrackOne_MK_@1 (int *res, size_t *bid, size_t *mid)
 {
 	BAT *b;
 	str msg;
-	int start, size;
+	size_t start, size;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
@@ -3223,7 +3229,7 @@ CRKcrackOne_validate_@1 (int *res, int *bid, @1 *_mid)
 			printf("%d ",*(@1*)tl);
 		}
 		printf("\n");
-	BBPunfix(b->batCacheid);
+		BBPunfix(b->batCacheid);
 		return throwMessage("crackers.crack_validate", "Invalid crack");
 	}
 	BBPunfix(b->batCacheid);
