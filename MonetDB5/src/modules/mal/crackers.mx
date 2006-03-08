@@ -2215,17 +2215,15 @@ CRKpieceZero_MK_@1( BAT *b, @1 mval, size_t first, size_t last){
 
 	vm = BUNtloc(b, BUNptr(b,first));
 	vl= BUNtloc(b,BUNptr(b,last));
-	while( *(@1 *) vl > mval && vl>vm)
-		vl = (ptr) ((char *) vl - xx);
 
 	while(vm<vl) {
 		if (*(@1 *) vm <= mval)
 			vm = (ptr) ((char *) vm + xx);
 		else {
-			@:shuffleMK(@1,vm,vl)@
-			vl = (ptr) ((char *) vl - xx);
 			while( *(@1 *) vl > mval && vl>vm)
 				vl = (ptr) ((char *) vl - xx);
+			@:shuffleMK(@1,vm,vl)@
+			vl = (ptr) ((char *) vl - xx);
 			vm = (ptr) ((char *) vm + xx);
 		} 
 	} 
