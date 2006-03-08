@@ -21,10 +21,13 @@ barrier (go,i):= (true,0);
 	mid:int:= mmath.rand();
 	mid := mid % values;
 
+	#io.print(mid);
+	#io.print(b);
 t0:= alarm.usec();
 	c:=crackers.crack_MK(b,mid);
 t1:= alarm.usec();
 	time:= t1 - t0;
+	#io.print(c);
 	t := t + time;
 	v := crackers.crack_validate(c,mid);
 	io.print(values,mid,time,v);
