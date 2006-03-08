@@ -2350,17 +2350,11 @@ CRKpieceOne_MK_@1( BAT *b, @1 mval, int first, int last, int *start, int *end){
 	while(vm >= base) {
 		if (*(@1 *) vm == mval ){
 			@:shuffleMK(@1,vm,vl)@
-			do {
-				vl = (ptr) ((char *) vl - xx);
-			} while( *(@1 *) vl == mval && vl>vm);
+			vl = (ptr) ((char *) vl - xx);
 		} 
 		vm = (ptr) ((char *) vm - xx);
 	} 
 	*start= BUNindex(b,(ptr) ((char *) vl - b->tloc)) +1;
-/*
-printf(" vm %d before %d  middle %d after %d\n", *(int*) vm,
-*(int*) ((char*) vl-xx),*(int*) vl,*(int*) ((char*) vl+xx));
-*/
 	return MAL_SUCCEED;
 }
 
