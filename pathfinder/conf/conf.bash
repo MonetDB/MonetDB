@@ -304,6 +304,14 @@ if [ "${os}" = "Darwin" ] ; then
 	done
 	binpath="${mypath}:${binpath}"
 	unset mypath
+	if [ "${BITS}" = 64 ] ; then
+		if [ -f /Users/monet/soft/local/lib/libz.dylib ] ; then
+			conf_opts="${conf_opts} --with-z=/Users/monet/soft/local"
+		fi
+		if [ -f /Users/monet/soft/local/lib/libiconv.dylib ] ; then
+			conf_opts="${conf_opts} --with-iconv=/Users/monet/soft/local"
+		fi
+	fi
 fi
 
 if [ "${os}" = "SunOS" ] ; then
