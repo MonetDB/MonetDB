@@ -2180,40 +2180,6 @@ is left along for a while. We don't return anything right now.
 Cracking is inplace!
 The piece cracking routines are parameterized with a closed bun index
 interval.
-
-@= exchangeMK
-#ifdef DEBUG_CRACKERS_DETAIL
-	printf("exchange %d %d\n",BUNindex(b,@1),BUNindex(b,@2));
-#endif
-{ 
-	oid hdummy;
-	@3 tdummy;
-	(void) buf;
-	hdummy= *(oid*) BUNhead(b,@1);
-	tdummy= *(@3*) BUNtail(b,@1);
-	*(oid*) BUNhead(b,@1) = *(oid*) BUNhead(b,@2);
-	*(@3*) BUNtail(b,@1) = *(@3*) BUNtail(b,@2);
-	*(oid*) BUNhead(b,@2)= hdummy;
-	*(@3*) BUNtail(b,@2)= tdummy;
-}
-@= exchangeTest
-	(void) buf;
-	hdummy= *(oid*) BUNhloc(b,@1);
-	tdummy= *(int*) BUNtloc(b,@1);
-	*(oid*) BUNhloc(b,@1) = *(oid*) BUNhloc(b,@2);
-	*(@3*) BUNtail(b,@1) = *(@3*) BUNtloc(b,@2);
-	*(oid*) BUNhloc(b,@2)= hdummy;
-	*(@3*) BUNtloc(b,@2)= tdummy;
-@= exchange2Test
-        (void) buf;
-        hdummy= *(oid*) BUNhloc(b,@1);
-        tdummy= *(int*) BUNtloc(b,@1);
-        *(oid*) BUNhloc(b,@1) = *(oid*) BUNhloc(b,@3);
-        *(@4*) BUNtloc(b,@1) = *(@4*) BUNtloc(b,@3);
-        *(oid*) BUNhloc(b,@3) = *(oid*) BUNhloc(b,@2);
-        *(@4*) BUNtloc(b,@3) = *(@4*) BUNtloc(b,@2);
-        *(oid*) BUNhloc(b,@2)= hdummy;
-        *(@4*) BUNtloc(b,@2)= tdummy;
 @
 @-
 The three way split use knowledge on the type size to issue
@@ -2288,15 +2254,16 @@ CRKcrackZero_MK_@1 (int *res, int *bid, @1 *mid)
 	return msg;
 }
 
-/* STILL WRONG */
 str
-CRKorderedpieceOne_MK_@1( BAT *b, @1 mval, int first, int last){
+CRKorderedpieceOne_MK_@1( BAT *b, @1 mval, int first, int last, int *start, int *end){
 	ptr tc, hc, hv,tv, vtop;
 	int xx;
-	oid *hdummy, *hd;
-	@1  *tdummy, *td;
-	hd= hdummy= (ptr) malloc((last-first+1) *sizeof(oid));
-	td= tdummy= (ptr) malloc((last-first+1) *sizeof(@1));
+	oid *hdummy, *hd, *he;
+	@1  *tdummy, *td, *te;
+	hd= hdummy= (ptr) GDKmalloc((last-first+1) *sizeof(oid));
+	he= hd+(last-first);
+	td= tdummy= (ptr) GDKmalloc((last-first+1) *sizeof(@1));
+	te= td+(last-first);
 
 	/* set bounds for the iterator */
 	xx = BUNsize(b);
@@ -2304,35 +2271,48 @@ CRKorderedpieceOne_MK_@1( BAT *b, @1 mval, int first, int last){
 	hc = BUNhloc(b, BUNptr(b,first));
 	vtop= BUNtloc(b,BUNptr(b,last));
 
-	/* pre-scan */
-	for( ; tc<=vtop && *(@1 *) tc <= mval; tc = (ptr) ((char *) tc + xx),  hc = (ptr) ((char *) hc + xx)) 
-		;
-	tv= tc;
 	hv= hc;
+	tv= tc;
 
 	for( ; tc<=vtop; tc = (ptr) ((char *) tc + xx), hc = (ptr) ((char *) hc + xx)) {
 		if (*(@1 *) tc <= mval){
-			 *(oid*) hv++ = *(oid*)hc;
-			 *(@1*) tv++ = *(@1*)tc;
+			if( *(@1*) tc == mval){
+			 *(oid*) he-- = *(oid*)hc; 
+			 *(@1*) te-- = *(@1*)tc; 
+			} else{
+			 *(oid*) hv = *(oid*)hc; hv= (ptr)((char*)hv+xx);
+			 *(@1*) tv = *(@1*)tc; tv= (ptr)((char*)tv+xx);
+			}
 		} else {
-			 *hd++ = *(oid*)hc;
-			 *td++ = *(@1*)tc;
+			 *hd++ = *(oid*)hc; 
+			 *td++ = *(@1*)tc; 
 		} 
 	} 
 	
+	/* group the equals */
+	*start= BUNindex(b, hv);
+
+	vtop= hdummy+ (last-first);
+	for(te++,he++; (ptr) he <= (ptr) vtop;  te++, he++){
+			 *(oid*) hv = *he; hv= (ptr)((char*)hv+xx);
+			 *(@1*) tv = *te; tv= (ptr)((char*)tv+xx);
+	}
+
+	*end= BUNindex(b, hv);
 	/* collect rest */
 	vtop= hd;
 	td= tdummy;
 	hd= hdummy;
 	for( ; (ptr) hd < (ptr) vtop;  td ++,hd++){
-			 *(oid*) hv++ = *hd;
-			 *(@1*) tv++ = *td;
+			 *(oid*) hv = *hd; hv= (ptr)((char*)hv+xx);
+			 *(@1*) tv = *td; tv= (ptr)((char*)tv+xx);
 	}
+	GDKfree(hdummy); GDKfree(tdummy);
 	return MAL_SUCCEED;
 }
 
 str
-CRKpieceOne_MK_@1( BAT *b, @1 mval, int first, int last){
+CRKpieceOne_MK_@1( BAT *b, @1 mval, int first, int last, int *start, int *end){
 	ptr vm, vl;
 	int xx;
 	oid hdummy;
@@ -2361,6 +2341,7 @@ CRKpieceOne_MK_@1( BAT *b, @1 mval, int first, int last){
 	} 
 
 	/* reshuffle one part using same algorithm */
+	*end= BUNindex(b,(ptr) ((char *) vl - b->tloc));
 	vm= base;
 	base= BUNtloc(b, BUNptr(b,first));
 	while( *(@1*)vl == mval && vl>= base)
@@ -2375,6 +2356,7 @@ CRKpieceOne_MK_@1( BAT *b, @1 mval, int first, int last){
 		} 
 		vm = (ptr) ((char *) vm - xx);
 	} 
+	*start= BUNindex(b,(ptr) ((char *) vl - b->tloc)) +1;
 /*
 printf(" vm %d before %d  middle %d after %d\n", *(int*) vm,
 *(int*) ((char*) vl-xx),*(int*) vl,*(int*) ((char*) vl+xx));
@@ -2387,6 +2369,7 @@ CRKcrackOne_MK_@1 (int *res, int *bid, int *mid)
 {
 	BAT *b;
 	str msg;
+	int start, size;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
@@ -2395,7 +2378,14 @@ CRKcrackOne_MK_@1 (int *res, int *bid, int *mid)
 	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
-	msg= CRKpieceOne_MK_@1( b, *mid, 0, BATcount(b)-1);
+#ifdef ORDERED
+	msg= CRKorderedpieceOne_MK_@1( b, *mid, 0, BATcount(b)-1, &start, &size);
+#else
+	msg= CRKpieceOne_MK_@1( b, *mid, 0, BATcount(b)-1, &start, &size);
+#endif
+/*
+	printf("range %d - %d\n",start,size);
+*/
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
@@ -2835,6 +2825,26 @@ CRKcrack@3_@2_@1 (int *res, int *bid, @1 *low, @1 *hgh)
         	@3 = (ptr) ((char *) @3 @4 xx);
                 @2 = *(@1*)BUNtloc(b,@3);
         }
+@
+
+@= exchangeTest
+	(void) buf;
+	hdummy= *(oid*) BUNhloc(b,@1);
+	tdummy= *(int*) BUNtloc(b,@1);
+	*(oid*) BUNhloc(b,@1) = *(oid*) BUNhloc(b,@2);
+	*(@3*) BUNtail(b,@1) = *(@3*) BUNtloc(b,@2);
+	*(oid*) BUNhloc(b,@2)= hdummy;
+	*(@3*) BUNtloc(b,@2)= tdummy;
+@= exchange2Test
+        (void) buf;
+        hdummy= *(oid*) BUNhloc(b,@1);
+        tdummy= *(int*) BUNtloc(b,@1);
+        *(oid*) BUNhloc(b,@1) = *(oid*) BUNhloc(b,@3);
+        *(@4*) BUNtloc(b,@1) = *(@4*) BUNtloc(b,@3);
+        *(oid*) BUNhloc(b,@3) = *(oid*) BUNhloc(b,@2);
+        *(@4*) BUNtloc(b,@3) = *(@4*) BUNtloc(b,@2);
+        *(oid*) BUNhloc(b,@2)= hdummy;
+        *(@4*) BUNtloc(b,@2)= tdummy;
 @
 @= crackInThreePiecesSI
 str
