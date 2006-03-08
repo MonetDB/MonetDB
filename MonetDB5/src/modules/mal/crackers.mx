@@ -286,6 +286,8 @@ typedef struct {
 	char kind;		/* kind of piece */
 	int rng_max;		/* the value ranges */
 	int rng_min;
+	bit inclusiveMin;       
+	bit inclusiveMax;
 	int real_rng_max;       /* the value ranges that actually exist in a piece */
 	int real_rng_min;
 	size_t idx_first;		/* the slice boundaries */
@@ -460,6 +462,8 @@ already. [todo]
 @c
 	map->pieces[0].rng_min = INT_MIN;
 	map->pieces[0].rng_max = INT_MAX;
+	map->pieces[0].inclusiveMin = TRUE;
+	map->pieces[0].inclusiveMax = TRUE;
 	map->pieces[0].real_rng_min = INT_MIN;
 	map->pieces[0].real_rng_max = INT_MAX;
 	map->pieces[0].idx_first = BUNindex(b, BUNfirst(b));
@@ -854,7 +858,156 @@ Experiments should (dis) proof this.
                 }
 		else checkPieceWithoutGaps( m, b, xx, @1, low, hgh, @3vl, @3vh, FALSE);
 	}
+
+
+@= greater
+	((@1>@2) || (@1==@2 && @3==TRUE && @4==FALSE))
+@= smaller
+	((@1<@2) || (@1==@2 && @3==FALSE && @4==TRUE))
+@= equal
+	(@1==@1 && @3==@4)
+@= greaterORequal
+	((@1>@2) || (@1==@2 && ((@3==TRUE && @4==FALSE) || @3==@4)))
+@= smallerORequal
+	((@1<@2) || (@1==@2 && ((@3==FALSE && @4==TRUE) || @3==@4)))
+
+@= checkNextPiece
+	tmpPiece = crackMap[m].pieces + @1;
+	if (tmpPiece->kind == LEAF || firstCrack){
+		
+		/* CASE low [min, max=hgh] */
+		if (@:smaller(low,tmpPiece->rng_min,inclusiveLow,tmpPiece->inclusiveMin)@ && 
+			@:equal(hgh,tmpPiece->rng_max,inclusiveHgh,tmpPiece->inclusiveMax)@)
+			@2vh = tmpPiece->idx_last;
+		/* CASE [min=low,max] hgh */
+		else 
+		if  (@:greater(hgh,tmpPiece->rng_max,inclusiveHgh,tmpPiece->inclusiveMax)@ && 
+			@:equal(low,tmpPiece->rng_min,inclusiveLow,tmpPiece->inclusiveMin)@)
+			@2vl = tmpPiece->idx_first;
+		else 
+		if  (!((@:smaller(low,tmpPiece->rng_min,inclusiveLow,tmpPiece->inclusiveMin)@ && 
+				@:greater(hgh,tmpPiece->rng_max,inclusiveHgh,tmpPiece->inclusiveMax)@) ||
+			(@:greater(low,tmpPiece->rng_max,inclusiveLow,tmpPiece->inclusiveMax)@)||
+		 	(@:smaller(hgh,tmpPiece->rng_min,inclusiveHgh,tmpPiece->inclusiveMin)@)))
+			checkPiece( m, b, xx, @1, low, hgh, inclusiveLow, inclusiveHgh, @3vl, @3vh, FALSE); 
+	}
+	else	
+	if (tmpPiece->kind != LEAF && !firstCrack){
+		if ( @:equal(low,tmpPiece->rng_min,inclusiveLow,tmpPiece->inclusiveMin)@ && 
+			@:equal(hgh,tmpPiece->rng_max,inclusiveHgh,tmpPiece->inclusiveMax)@){
+                        @2vl = tmpPiece->idx_first;
+                        @2vh = tmpPiece->idx_last;
+                }
+		else checkPiece( m, b, xx, @1, low, hgh,inclusiveLow,inclusiveHgh, @3vl, @3vh, FALSE);
+	}
+
+
 @c
+void
+checkPiece(int m, BAT *b, int xx, int i, int low, int hgh, bit inclusiveLow, bit inclusiveHgh, size_t  *vl, size_t *vh, bit firstCrack)
+{
+	Piece *piece, *npiece, *tmpPiece;
+        size_t l=0, h=0;
+        piece = crackMap[m].pieces + i;
+
+	if (piece->kind != LEAF && !firstCrack){
+		if (  ( low >= piece->rng_min &&  low <= piece->rng_max) ||
+			  ( hgh >= piece->rng_min &&  hgh <= piece->rng_max) ){
+			if (piece->left != -1) {@:checkNextPiece(piece->left,*,)@}
+			if (piece->middle != -1) {@:checkNextPiece(piece->middle,*,)@}
+			if (piece->right != -1) {@:checkNextPiece(piece->right,*,)@}
+		}       
+	}
+	if (piece->kind == LEAF || firstCrack){
+		if (@:smallerORequal(low,piece->rng_min,inclusiveLow,piece->inclusiveMin)@ && 
+			@:smaller(hgh,piece->rng_max,inclusiveHgh,piece->inclusiveMax)@ && 
+			@:greater(hgh,piece->rng_min,inclusiveHgh,piece->inclusiveMin)@){
+			
+			/* split in two pieces, h,l get the the indices of the left  new piece, vh is the upper bound for the result
+			   also check if we can get the lower bound of the result too in vl
+			h = BUNindex(b, vmax)-1;
+			*vh = BUNindex(b, vmax)-1;
+			l = BUNindex(b, vmin)+1;
+			if (low == piece->rng_min) 
+				*vl = piece->idx_first;
+			*/
+		} else 
+		if  (@:greaterORequal(hgh,piece->rng_max,inclusiveHgh,piece->inclusiveMax)@ && 
+			@:smaller(low,piece->rng_max,inclusiveLow,piece->inclusiveMax)@ && 
+			@:greater(low,piece->rng_min,inclusiveLow,piece->inclusiveMin)@){
+
+			/* split in two pieces, h,l get the the indices of the left  new piece, vl is the lower bound for the result
+                           also check if we can get the upper bound of the result too in vh
+			h = BUNindex(b, vmax)-1;
+			l = BUNindex(b, vmin)+1;
+			*vl = BUNindex(b, vmax);
+			if (hgh == piece->rng_max) 
+				*vh = piece->idx_last;
+			*/
+		} else{
+			/* split in three pieces, h,l get the the indices of the middle  new piece, result bounds are the same
+			l = BUNindex(b, bls);
+			h = BUNindex(b, bh)-1;
+			*vl = BUNindex(b, bls);
+			*vh = BUNindex(b, bh)-1;
+			*/
+		}
+		if (piece->idx_first == l) {
+			if (h < piece->idx_last) {
+				piece->kind = PHI;
+				piece->left = crackMap[m].freepiece;
+				@:newPiece(m, npiece,piece,i)@
+				if ( hgh >= piece->rng_max) 
+					npiece->rng_max = low-1;
+				else npiece->rng_max = hgh;
+				npiece->idx_last = h;
+														
+				piece->middle = -1;     
+												
+				piece->right = crackMap[m].freepiece;
+				@:newPiece(m, npiece,piece,i)@	  
+				if (hgh >= piece->rng_max) 
+					npiece->rng_min = low;
+				else npiece->rng_min =  hgh + 1;
+				npiece->idx_first = h + 1;      
+			}
+		} else if (piece->idx_last == h) {      
+			if (l > piece->idx_first) {
+				piece->kind = PHI;
+				piece->left = crackMap[m].freepiece;
+				@:newPiece(m, npiece,piece,i)@
+				npiece->rng_max =  low - 1;
+				npiece->idx_last = l - 1;
+
+				piece->middle = -1;
+						
+				piece->right = crackMap[m].freepiece;
+				@:newPiece(m, npiece,piece,i)@
+				npiece->rng_min = low;
+				npiece->idx_first = l;
+			}
+		} else {
+				piece->kind = PHI;
+				piece->left = crackMap[m].freepiece;
+				@:newPiece(m, npiece,piece,i)@
+				npiece->rng_max = low - 1;
+				npiece->idx_last = l - 1;
+
+				piece->middle = crackMap[m].freepiece;
+				@:newPiece(m, npiece,piece,i)@
+				npiece->rng_min = low;
+				npiece->rng_max =  hgh;
+				npiece->idx_first = l;
+				npiece->idx_last = h;
+
+				piece->right = crackMap[m].freepiece;
+				@:newPiece(m, npiece,piece,i)@
+				npiece->rng_min = hgh + 1;
+				npiece->idx_first = h + 1;
+		}
+	}
+}   
+
 void
 checkPieceWithoutGaps(int m, BAT *b, int xx, int i, int low, int hgh, size_t  *vl, size_t *vh, bit firstCrack)
 {
@@ -2062,13 +2215,6 @@ interval.
         *(oid*) BUNhloc(b,@2)= hdummy;
         *(@4*) BUNtloc(b,@2)= tdummy;
 @
-@= move
-	@2 = *(@1*)BUNtloc(b,@3);
-        while(@2 @5 @6){
-        	@3 = (ptr) ((char *) @3 @4 xx);
-                @2 = *(@1*)BUNtloc(b,@3);
-        }
-@
 @-
 The three way split use knowledge on the type size to issue
 the exchanges. Moreover, we should be prepared to handle
@@ -2683,26 +2829,16 @@ CRKcrack@3_@2_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 }
 @
 
-
-@= SI_operations
+@= move
+	@2 = *(@1*)BUNtloc(b,@3);
+        while(@2 @5 @6){
+        	@3 = (ptr) ((char *) @3 @4 xx);
+                @2 = *(@1*)BUNtloc(b,@3);
+        }
+@
+@= crackInThreePiecesSI
 str
-CRKcrackZero_SI_@1 (int *res, int *bid, @1 *mid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
-	}
-
-	(void)mid;
-
-	BBPkeepref(b->batCacheid);
-	*res = *bid;
-	return MAL_SUCCEED;
-}
-
-str
-CRKcrackONE_SI_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
+CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 {
 
 	ptr vmax, vmin, nmin, vm, vmx, bl, bls;
@@ -2721,19 +2857,19 @@ CRKcrackONE_SI_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 	vmax = BUNptr(b, idx_last);
 	vm = BUNtloc(b, vmin);
 	
-	@:move(@1,tmpTmax,vmax,-,>hgh, && vmax > vmin)@
-	for (nmin = vmin; nmin <= vmax; nmin = (ptr) ((char *) nmin + xx), vm = (ptr) ((char *) vm + xx)) {
-		if (*(@1*)vm > hgh){
-			@:move(@1,tmpTmax,vmax,-,>hgh,&& vmax > nmin)@
-			if (tmpTmax < low){
+	for (nmin = vmin; nmin < vmax; nmin = (ptr) ((char *) nmin + xx), vm = (ptr) ((char *) vm + xx)) {
+		if (*(@1*)vm @7 hgh){
+			@:move(@1,tmpTmax,vmax,-,@7hgh,&& vmax > nmin)@
+			if (vmax!=nmin && tmpTmax @4 low){
 				@:exchangeTest(nmin,vmax,@1)@							
 				vmax = (ptr) ((char *) vmax - xx);
 			}	
 			else break;
 		}
-		if (*(@1*)vm >= low && *(@1*)vm <= hgh)
+		if (*(@1*)vm @5 low && *(@1*)vm @6 hgh)
 			break; 
 	}
+	@:move(@1,tmpTmax,vmax,-,@7hgh, && vmax > nmin)@
 	/* Empty result*/
 	if (nmin == vmax)
 		 return MAL_SUCCEED;
@@ -2748,7 +2884,7 @@ CRKcrackONE_SI_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 	bl = nmin;
 	vmx = BUNtloc(b, vmax);
 	for (vm = BUNtloc(b, nmin); vm <= vmx;  vm = (ptr) ((char *) vm + xx))
-		bl = (ptr) ((char *) bl + xx*(*(int *) vm < low));
+		bl = (ptr) ((char *) bl + xx*(*(int *) vm @4 low));
 			
 	bls = bl;
 	vm = BUNtloc(b, nmin);
@@ -2757,58 +2893,86 @@ CRKcrackONE_SI_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 	in the middle partition. There middle values are ignored and  a high value is  exchanged with m. 
 	Similarly when a middle value occurs */  			
 	for (p = nmin; p < bls; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)) {
-		if (*(int *) vm >= low && *(int *) vm <= hgh) {
-			for (pn = bl; pn <= vmax; pn = (ptr) ((char *) pn + xx), bl = (ptr) ((char *) bl + xx)){
+		if (*(int *) vm @5 low && *(int *) vm @6 hgh) {
+			for (pn = bl; pn < vmax; pn = (ptr) ((char *) pn + xx), bl = (ptr) ((char *) bl + xx)){
 				tmpTmid = *(int *) BUNtloc(b, pn);
-				if (tmpTmid < low){
+				if (tmpTmid @4 low){
 					@:exchangeTest(pn,p,@1)@
 					bl = (ptr) ((char *) bl + xx);
-					break;
+					goto next;
 				}
-				if (tmpTmid >  hgh){
-					@:move(@1,tmpTmax,vmax,-,>hgh,&& vmax > bl)@
-					if (tmpTmax >= low  && tmpTmax <=  hgh){
+				if (tmpTmid @7 hgh){
+					@:move(@1,tmpTmax,vmax,-,@7hgh,&& vmax > bl)@
+					if (vmax == bl){
+						/*if (tmpTmax < low){*/
+							@:exchangeTest(p,vmax,@1)@
+						
+						return MAL_SUCCEED;
+					}
+					if (tmpTmax @5 low  && tmpTmax @6  hgh){
 						@:exchangeTest(vmax,pn,@1)@
 						vmax = (ptr) ((char *) vmax - xx);
 					}
-					if (tmpTmax < low){
+					if (tmpTmax @4 low){
 						@:exchange2Test(p,pn,vmax,@1)@
 						bl = (ptr) ((char *) bl + xx);
 						vmax = (ptr) ((char *) vmax - xx);
-						break;
+						goto next;
 					} 
 				}       
 			}       
+			if (bl == vmax){
+				/*if (*(int *) BUNtloc(b, vmax) < low){ */
+                                	@:exchangeTest(p,vmax,@1)@
+                                
+                                return MAL_SUCCEED;
+			}
 		}  
-		if (*(int *) vm > hgh) {
-			for (pn = vmax; pn >= bl; pn = (ptr) ((char *) pn - xx), vmax = (ptr) ((char *) vmax - xx)){
+		if (*(int *) vm @7 hgh) {
+			for (pn = vmax; pn > bl; pn = (ptr) ((char *) pn - xx), vmax = (ptr) ((char *) vmax - xx)){
 				tmpTmax = *(int *) BUNtloc(b, pn);
-				if (tmpTmax < low){
+				if (tmpTmax @4 low){
 					@:exchangeTest(pn,p,@1)@
 					vmax = (ptr) ((char *) vmax - xx);
-					break;
+					goto next;
 				}
-				if (tmpTmax >= low && tmpTmax <=  hgh){
-					@:move(@1,tmpTmid,bl,+, >= low && tmpTmid <=  hgh,&& bl < vmax)@
-					if (tmpTmid > hgh){
+				if (tmpTmax @5 low && tmpTmax @6  hgh){
+					@:move(@1,tmpTmid,bl,+, @5 low && tmpTmid @6  hgh,&& bl < vmax)@
+					if (vmax == bl){
+                                                /*if (tmpTmid < low){*/
+                                                        @:exchangeTest(p,vmax,@1)@
+                                                
+                                                return MAL_SUCCEED;
+                                        }
+
+					if (tmpTmid @7 hgh){
 						@:exchangeTest(bl,pn,@1)@
 						bl = (ptr) ((char *) bl + xx);	
 					}
-					if (tmpTmid < low){
+					if (tmpTmid @4 low){
 						@:exchange2Test(pn,bl,p,@1)@
 						bl = (ptr) ((char *) bl + xx);
 						vmax = (ptr) ((char *) vmax - xx);
-						break;
+						goto next;
 					}
 				}
 			}
+			if (bl == vmax){
+                                /*if (*(int *) BUNtloc(b, vmax) < low){ */
+                                        @:exchangeTest(p,vmax,@1)@
+                                
+                                return MAL_SUCCEED;
+                        }
+
 		}
+		next:;
 	}
 
-	for (p = bls; p < vmax; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)) {
-		if (*(int *) vm >  hgh){
-			@:move(@1,tmpTmax,vmax,-,>hgh,&& vmax > bl)@
-			if (tmpTmax >= low && tmpTmax <=  hgh){
+	vm = BUNtloc(b, bl); 
+	for (p = bl; p < vmax; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)) {
+		if (*(int *) vm @7  hgh){
+			@:move(@1,tmpTmax,vmax,-,@7hgh,&& vmax > bl)@
+			if (vmax != bl ){   /*&& tmpTmax >= low && tmpTmax <=  hgh){*/
 				@:exchangeTest(vmax,p,@1)@
 				vmax = (ptr) ((char *) vmax - xx);
 			}
@@ -2819,6 +2983,29 @@ CRKcrackONE_SI_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 	}
 	return MAL_SUCCEED;
 }
+@
+
+@= SI_operations
+@:crackInThreePiecesSI(@1,LE,RE,<,>=,<=,>)@
+@:crackInThreePiecesSI(@1,LO,RE,<=,>,<=,>)@
+@:crackInThreePiecesSI(@1,LE,RO,<,>=,<,>=)@
+@:crackInThreePiecesSI(@1,LO,RO,<=,>,<,>=)@
+str
+CRKcrackZero_SI_@1 (int *res, int *bid, @1 *mid)
+{
+	BAT *b;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
+	}
+
+	(void)mid;
+
+	BBPkeepref(b->batCacheid);
+	*res = *bid;
+	return MAL_SUCCEED;
+}
+
 
 str
 CRKcrackOne_SI_@1 (int *res, int *bid, @1 *mid)
@@ -2830,7 +3017,7 @@ CRKcrackOne_SI_@1 (int *res, int *bid, @1 *mid)
 		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
 	}
 
-	msg= CRKcrackONE_SI_@1(b,*mid,*mid, 0, BATcount(b)-1);
+	msg= CRKcrackONE_SI_LE_RE_@1(b,*mid,*mid, 0, BATcount(b)-1);
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
@@ -2853,124 +3040,6 @@ CRKcrackTwo_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	return MAL_SUCCEED;
 }
 
-str
-CRKcrackTHREE_SI_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
-{
-
-	ptr vmax, vmin, nmin, vm, vmx, bl, bls;
-	ptr p, pn=0;
-	char buf[128];	  /* scratch space */
-	@1 tmpTmax, tmpTmid;
-	int xx = BUNsize(b);
-	oid hdummy;
-	@1 tdummy;
-
-	/* Start a scan to reduce the size of the piece that 'requires' a prescan. 
-	Walk from the first BUN as long as values are < low or > hgh and can be 
-	exchanged with a value from the end of the BUN*/ 
-	
-	vmin = BUNptr(b, idx_first);
-	vmax = BUNptr(b, idx_last);
-	vm = BUNtloc(b, vmin);
-	
-	@:move(@1,tmpTmax,vmax,-,>hgh, && vmax > vmin)@
-	for (nmin = vmin; nmin <= vmax; nmin = (ptr) ((char *) nmin + xx), vm = (ptr) ((char *) vm + xx)) {
-		if (*(@1*)vm > hgh){
-			@:move(@1,tmpTmax,vmax,-,>hgh,&& vmax > nmin)@
-			if (tmpTmax <= low){
-				@:exchangeTest(nmin,vmax,@1)@							
-				vmax = (ptr) ((char *) vmax - xx);
-			}	
-			else break;
-		}
-		if (*(@1*)vm > low && *(@1*)vm <= hgh)
-			break; 
-	}
-	/* Empty result*/
-	if (nmin == vmax)
-		 return MAL_SUCCEED;
-	
-	/* Scan the remaining piece to determine the position where after cracking the first BUN 
-	with a tail value >low and <=high will be located. This means we have to count the remaining
-	BUN with value <=low
-	
-	TODO check if removing the second check/pointer in the prescan pays off since in the last of Martin's
-	checks in tstcrack more scans are second needed that do nothing*/
- 
-	bl = nmin;
-	vmx = BUNtloc(b, vmax);
-	for (vm = BUNtloc(b, nmin); vm <= vmx;  vm = (ptr) ((char *) vm + xx))
-		bl = (ptr) ((char *) bl + xx*(*(int *) vm <= low));
-			
-	bls = bl;
-	vm = BUNtloc(b, nmin);
-	
-	/* Now for each value that is >hgh if a middle value m occurs in vmax we can save a redudant exchange by seaching 
-	in the middle partition. There middle values are ignored and  a high value is  exchanged with m. 
-	Similarly when a middle value occurs */  			
-	for (p = nmin; p < bls; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)) {
-		if (*(int *) vm > low && *(int *) vm <= hgh) {
-			for (pn = bl; pn <= vmax; pn = (ptr) ((char *) pn + xx), bl = (ptr) ((char *) bl + xx)){
-				tmpTmid = *(int *) BUNtloc(b, pn);
-				if (tmpTmid <= low){
-					@:exchangeTest(pn,p,@1)@
-					bl = (ptr) ((char *) bl + xx);
-					break;
-				}
-				if (tmpTmid >  hgh){
-					@:move(@1,tmpTmax,vmax,-,>hgh,&& vmax > bl)@
-					if (tmpTmax > low  && tmpTmax <=  hgh){
-						@:exchangeTest(vmax,pn,@1)@
-						vmax = (ptr) ((char *) vmax - xx);
-					}
-					if (tmpTmax <= low){
-						@:exchange2Test(p,pn,vmax,@1)@
-						bl = (ptr) ((char *) bl + xx);
-						vmax = (ptr) ((char *) vmax - xx);
-						break;
-					} 
-				}       
-			}       
-		}  
-		if (*(int *) vm > hgh) {
-			for (pn = vmax; pn >= bl; pn = (ptr) ((char *) pn - xx), vmax = (ptr) ((char *) vmax - xx)){
-				tmpTmax = *(int *) BUNtloc(b, pn);
-				if (tmpTmax <= low){
-					@:exchangeTest(pn,p,@1)@
-					vmax = (ptr) ((char *) vmax - xx);
-					break;
-				}
-				if (tmpTmax > low && tmpTmax <=  hgh){
-					@:move(@1,tmpTmid,bl,+, > low && tmpTmid <=  hgh,&& bl < vmax)@
-					if (tmpTmid > hgh){
-						@:exchangeTest(bl,pn,@1)@
-						bl = (ptr) ((char *) bl + xx);	
-					}
-					if (tmpTmid <= low){
-						@:exchange2Test(pn,bl,p,@1)@
-						bl = (ptr) ((char *) bl + xx);
-						vmax = (ptr) ((char *) vmax - xx);
-						break;
-					}
-				}
-			}
-		}
-	}
-
-	for (p = bls; p < vmax; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)) {
-		if (*(int *) vm >  hgh){
-			@:move(@1,tmpTmax,vmax,-,>hgh,&& vmax > bl)@
-			if (tmpTmax > low && tmpTmax <=  hgh){
-				@:exchangeTest(vmax,p,@1)@
-				vmax = (ptr) ((char *) vmax - xx);
-			}
-			else break;
-		}
-		bl = (ptr) ((char *) bl + xx);
-		
-	}
-	return MAL_SUCCEED;
-}
 
 str
 CRKcrackThree_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
@@ -2982,7 +3051,7 @@ CRKcrackThree_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
 	}
 
-	msg= CRKcrackTHREE_SI_@1(b,*low,*hgh, 0, BATcount(b)-1);
+	msg= CRKcrackONE_SI_LO_RE_@1(b,*low,*hgh, 0, BATcount(b)-1);
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
@@ -2994,12 +3063,14 @@ CRKcrackFour_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 {
 	BAT *b;
 	str msg;
+	
+	(void) low; (void)hgh;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
 	}
 
-	msg= CRKcrackONE_SI_@1(b,*low,*hgh, 0, BATcount(b)-1);
+	msg= "dummy";
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
