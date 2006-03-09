@@ -2364,6 +2364,61 @@ CRKpieceOne_MK_@1( BAT *b, @1 mval, size_t first, size_t last, size_t *start, si
 }
 
 str
+CRKpieceOneA_MK_@1( BAT *b, @1 mval, size_t first, size_t last, size_t *start, size_t *end){
+	ptr vm, vl;
+	int xx;
+	oid hdummy;
+	@1 tdummy;
+	ptr *base,*bp;
+
+	/* set bounds for the iterator */
+	xx = BUNsize(b);
+	bp=base = (ptr*) GDKmalloc((last-first+1)*sizeof(ptr));
+
+	vm = BUNtloc(b, BUNptr(b,first));
+	vl = BUNtloc(b, BUNptr(b,last));
+
+	while(vl>vm && *(@1 *) vl > mval )
+		vl = (ptr) ((char *) vl - xx);
+	/* perform Zero crack first */
+	while(vm <= vl) {
+		if (*(@1 *) vm <= mval){
+			if (*(@1 *) vm == mval )
+				*bp++ =vm;
+			vm = (ptr) ((char *) vm + xx);
+		} else {
+			@:shuffleMK(@1,vm,vl)@
+			vl = (ptr) ((char *) vl - xx);
+			while(vl>vm && *(@1 *) vl > mval )
+				vl = (ptr) ((char *) vl - xx);
+		} 
+	} 
+
+/* printf("vl %u vm %d \n",(int)BUNindex(b,(ptr)((char*)vl-b->tloc)), (int) BUNindex(b,(ptr)((char*)vm-b->tloc)));
+	BATprint(b); */
+	vm = BUNtloc(b, BUNptr(b,first));
+	while(vl>vm && *(@1*)vl == mval )
+		vl= (ptr) ((char*) vl-xx);
+
+	/* get the equals from the scratch*/
+	*end= BUNindex(b,(ptr) ((char *) vl - b->tloc));
+	while(bp > base){
+		bp--;
+		vm= *bp;
+		if( vm < vl){
+			@:shuffleMK(@1,vm,vl)@
+			vl = (ptr) ((char *) vl - xx);
+		}
+	}
+
+/* printf("vl %u vm %d\n",(int)BUNindex(b,(ptr)((char*)vl-b->tloc)), (int) BUNindex(b,(ptr)((char*)vm-b->tloc))); */
+	/* BATprint(b);*/
+	*start= BUNindex(b,(ptr) ((char *) vl - b->tloc)) +1;
+	GDKfree(base);
+	return MAL_SUCCEED;
+}
+
+str
 CRKcrackOne_MK_@1 (int *res, size_t *bid, size_t *mid)
 {
 	BAT *b;
@@ -2380,7 +2435,7 @@ CRKcrackOne_MK_@1 (int *res, size_t *bid, size_t *mid)
 #ifdef ORDERED
 	msg= CRKOrderedpieceOne_MK_@1( b, *mid, 0, BATcount(b)-1, &start, &size);
 #else
-	msg= CRKpieceOne_MK_@1( b, *mid, 0, BATcount(b)-1, &start, &size);
+	msg= CRKpieceOneA_MK_@1( b, *mid, 0, BATcount(b)-1, &start, &size);
 #endif
 /*
 	printf("range %d - %d\n",start,size);
