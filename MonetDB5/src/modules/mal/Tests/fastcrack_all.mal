@@ -226,10 +226,6 @@ t1:= alarm.usec();
 	v := crackers.crack_validate(c,low,hgh);
 	io.print("Two_sm",time,v);
 
-	values:int:= mmath.rand();
-	values:= values % tuples;
-	values:= values + 1;
-
 
 #	io.print("Three_00");
 #	b:=algebra.copy(b0);
@@ -242,15 +238,15 @@ t1:= alarm.usec();
 #	io.print("Three_00",time,v);
 #	crackers.destroy(b);
 
-#	io.print("Three_MK");
-#	b:=algebra.copy(b0);
-#t0:= alarm.usec();
-#	c:=crackers.crack_MK(b,low,hgh);
-#t1:= alarm.usec();
-#	time:= t1 - t0;
-#	t_Three_MK := t_Three_MK + time;
-#	v := crackers.crack_validate(c,low,hgh);
-#	io.print("Three_MK",time,v);
+	io.print("Three_MK");
+	b:=algebra.copy(b0);
+t0:= alarm.usec();
+	c:=crackers.crack_MK(b,low,hgh);
+t1:= alarm.usec();
+	time:= t1 - t0;
+	t_Three_MK := t_Three_MK + time;
+	v := crackers.crack_validate(c,low,hgh);
+	io.print("Three_MK",time,v);
 
 #	io.print("Three_SI");
 #	b:=algebra.copy(b0);
