@@ -1167,6 +1167,7 @@ sqltypeinit()
 		sql_create_aggr("not_exist", "not_exist", ts[i], BIT);
 		/* needed for relational version */
 		sql_create_func("in", "in", ts[i], ts[i], BIT, SCALE_NONE);
+		sql_create_func("identity", "identity", ts[i], NULL, OID, SCALE_NONE);
 	}
 
 	for (i = 0; ts[i]; i++) {

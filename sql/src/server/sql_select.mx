@@ -247,7 +247,7 @@ sql_column_ref(mvc *sql, scope *scp, symbol *column_r)
 				sql_subtype tpe;
 
 				if (!(v = sql_get_var(sql, name)))
-					return sql_error(sql, 02, "SELECT: identifier '%s' unknown or ambigious", name);
+					return sql_error(sql, 02, "SELECT: identifier '%s' unknown or ambiguous", name);
 				t = sql_get_type(sql, name);
 				if (!sql_find_subtype(&tpe, t, 0, 0))
 					return sql_error(sql, 02, "SELECT: no such type '%s'", t);
@@ -980,22 +980,6 @@ sql_unop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
 		return sql_error(sql, 02, "SELECT: no such unary operator '%s(%s)'", l->data.sval, type);
 	}
 	return NULL;
-}
-
-char * toUpper(char *dest, const char *src) {
-	int i, len;
-
-	if (src == NULL) {
-		*dest = '\0';
-		return(dest);
-	}
-
-	len = strlen(src);
-	for (i = 0; i < len; i++)
-		dest[i] = (char)toupper((int)src[i]);
-	
-	dest[i] = '\0';
-	return(dest);
 }
 
 static stmt *

@@ -83,6 +83,8 @@ typedef enum operator_type {
 	(op == op_union || op == op_inter || op == op_except)
 #define is_project(op) \
 	(op == op_project || op == op_groupby)
+#define is_groupby(op) \
+	(op == op_groupby)
 #define is_sort(op) \
 	(op == op_orderby || op == op_topn)
 #define is_distinct(rel) \

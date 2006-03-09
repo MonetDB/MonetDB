@@ -1,5 +1,4 @@
 
-
 select
 	cntrycode,
 	count(*) as numcust,

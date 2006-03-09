@@ -370,7 +370,7 @@ find_table_column(list *columns, char *tname, char *cname)
 }
 
 static int
-ambigious_column(list *cols, cvar *cv)
+ambiguous_column(list *cols, cvar *cv)
 {
 	node *n;
 
@@ -398,7 +398,7 @@ scope_bind_column(scope *scp, char *tname, char *cname)
 			tvar *tv = n->data;
 
 			if ((cv = scope_find_column(tv->columns, cname)) != NULL) {
-				if (ambigious_column(tv->columns, cv))
+				if (ambiguous_column(tv->columns, cv))
 					return NULL;
 				return cv;
 			}
@@ -433,7 +433,7 @@ scope_bind_column_(scope *scp, char *tname, char *cname)
 				tvar *tv = n->data;
 
 				if ((cv = scope_find_column(tv->columns, cname)) != NULL) {
-					if (ambigious_column(tv->columns, cv))
+					if (ambiguous_column(tv->columns, cv))
 						return NULL;
 					if (start != scp) {
 						stmt *s = find_pivot(scp, tv->s);

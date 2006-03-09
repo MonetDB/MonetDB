@@ -88,6 +88,7 @@ typedef struct mvc {
 	int type;
 	ssize_t status;
 	int depth;
+	int label;
 
 	int result_id;
 	res_table *results;
@@ -585,6 +586,7 @@ mvc_create(int clientid, backend_stack stk, bstream *rs, stream *ws)
 	m->reply_size = 100;
 	m->debug = 0;
 	m->depth = 0;
+	m->label = 0;
 
 	m->trans = NULL;
 	m->status = 0;
@@ -643,6 +645,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws)
 	m->reply_size = 100;
 	m->debug = 0;
 	m->depth = 0;
+	m->label = 0;
 
 	m->status = 0;
 	m->type = Q_PARSE;

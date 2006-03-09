@@ -77,6 +77,7 @@ extern void sql_destroy_params(mvc *sql);	/* used in backend */
 
 extern char *symbol2string(mvc *sql, symbol *s);
 
+extern char * toUpper(char *dest, const char *src); 
 
 #endif /*_SQL_SEMANTIC_H_*/
 
@@ -778,6 +779,24 @@ first_subset(stmt *subset)
 		return stmt_dup(n->data);
 	return NULL;
 }
+
+char * toUpper(char *dest, const char *src) 
+{
+	int i, len;
+
+	if (src == NULL) {
+		*dest = '\0';
+		return(dest);
+	}
+
+	len = strlen(src);
+	for (i = 0; i < len; i++)
+		dest[i] = (char)toupper((int)src[i]);
+	
+	dest[i] = '\0';
+	return(dest);
+}
+
 
 char *symbol2string(mvc *sql, symbol *se)
 {

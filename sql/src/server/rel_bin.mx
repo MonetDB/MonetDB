@@ -232,12 +232,15 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 		}
 	 }	break;
 	case e_cmp: {
-		stmt *l = exp_bin(sql, e->l, left, NULL, grp);
-		stmt *r;
+		stmt *l = NULL, *r = NULL;
 		int swapped = 0;
 
 		if (!l) {
-			l = exp_bin(sql, e->l, right, NULL, grp);
+			l = exp_bin(sql, e->l, left, NULL, grp);
+			swapped = 0;
+		}
+		if (!l && right) {
+ 			l = exp_bin(sql, e->l, right, NULL, grp);
 			swapped = 1;
 		}
 		/* the escape charachter of like is in the right expression */
