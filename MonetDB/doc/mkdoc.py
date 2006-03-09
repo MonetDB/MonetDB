@@ -141,8 +141,8 @@ runMx(os.path.join(srcdir, 'src', 'monet'), 'monet',
 copyfile(os.path.join(srcdir, 'src', 'monet', 'monet.gif'),
          os.path.join(dstdir, 'doc', 'MonetDB', 'monet', 'monet.gif'))
 
-runMx(os.path.join(srcdir, 'src', 'mapi', 'clients', 'C'), 'Mapi',
-      os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'APIs'), os.sep + 'C')
+runMxTexi(os.path.join(srcdir, 'src', 'mapi', 'clients', 'C'), 'Mapi',
+          os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'APIs'), os.sep + 'C')
 
 runMx(os.path.join(srcdir, 'src', 'mapi', 'clients', 'C'), 'MapiClient',
       os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Tools'))
