@@ -3,9 +3,7 @@
 include microbenchmark;
 include crackers;
 
-tuples:= 1; #67108864= 64* 1024*1024
-tuples:= tuples * 1024;
-tuples:= tuples * 1024;
+tuples:=1048576;
 values:= tuples;
 io.printf(" tuples %d\n",tuples);
 io.printf(" values %d\n",values);
@@ -14,7 +12,7 @@ b:= microbenchmark.uniform(0@0,tuples,values);
 size:= bat.getBatSize(b);
 io.printf(" BAT size %d\n",size);
 
-n:=20;
+n:=30;
 t:=0:lng;
 barrier (go,i):= (true,0);
 	b:= microbenchmark.uniform(0@0,tuples,values);
