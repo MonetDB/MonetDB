@@ -2456,7 +2456,7 @@ CRKcrackOne_MK_@1 (int *res, size_t *bid, size_t *mid)
 	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
-	msg= CRKpieceOne_MK_@1( b, *mid, 0, BATcount(b)-1, &start, &size);
+	msg= CRKpieceOneA_MK_@1( b, *mid, 0, BATcount(b)-1, &start, &size);
 /*
 	printf("range %d - %d\n",start,size);
 */
