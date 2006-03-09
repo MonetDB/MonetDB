@@ -2820,7 +2820,7 @@ CRKcrack@3_@2_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 
 @= move
         while( @6 *(@1*)@2 @5 ){
-        	@3 = (ptr) ((char *) @3 @4 xx);
+                @3	
                 @2 = (ptr) ((char *) @2 @4 xx);
                 @7 = (ptr) ((char *) @7 @4 xx);
         }
@@ -2850,8 +2850,7 @@ str
 CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 {
 
-	ptr vmax, nmin, vm, bl, bls;
-	ptr p;
+	ptr vmax, nmin, vm, bls, bh;
 	char buf[128];	  /* scratch space */
 	ptr tmpTmax, tmpTmid, hl, hm, hh;
 	@1 tmpVmax,tmpVmid;
@@ -2869,12 +2868,11 @@ CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 	nmin = BUNptr(b, idx_first);
 	vm = BUNtloc(b, nmin);
 	hl = BUNhloc(b, nmin);
-	for (; nmin < vmax; nmin = (ptr) ((char *) nmin + xx), vm = (ptr) ((char *) vm + xx), hl = (ptr) ((char *) hl + xx)) {
+	for (; vm < tmpTmax; vm = (ptr) ((char *) vm + xx), hl = (ptr) ((char *) hl + xx)) {
 		if (*(@1*)vm @7 hgh){
-			@:move(@1,tmpTmax,vmax,-,@7hgh, vmax > nmin &&,hh)@
-			if (vmax!=nmin && *(@1*)tmpTmax @4 low){
+			@:move(@1,tmpTmax,,-,@7hgh, tmpTmax > vm &&,hh)@
+			if (tmpTmax!=vm && *(@1*)tmpTmax @4 low){
 				@:exchangeTest(@1,vm,tmpTmax,hl,hh)@							
-				vmax = (ptr) ((char *) vmax - xx);
 				tmpTmax = (ptr) ((char *) tmpTmax - xx);
 				hh = (ptr) ((char *) hh - xx); 
 			}	
@@ -2883,9 +2881,9 @@ CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 		if (*(@1*)vm @5 low && *(@1*)vm @6 hgh)
 			break; 
 	}
-	@:move(@1,tmpTmax,vmax,-,@7hgh, vmax > nmin &&,hh)@
+	@:move(@1,tmpTmax,,-,@7hgh, tmpTmax > vm &&,hh)@
 	/* Empty result*/
-	if (nmin == vmax)
+	if (tmpTmax == vm)
 		 return MAL_SUCCEED;
 	
 	/* Scan the remaining piece to determine the position where after cracking the first BUN 
@@ -2895,116 +2893,150 @@ CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 	TODO check if removing the second check/pointer in the prescan pays off since in the last of Martin's
 	checks in tstcrack more scans are second needed that do nothing*/
  
-	bl = nmin;
-	for (vm = BUNtloc(b, nmin); vm <= tmpTmax;  vm = (ptr) ((char *) vm + xx))
-		bl = (ptr) ((char *) bl + xx*(*(int *) vm @4 low));
-			
-	bls = bl;
-	tmpTmid = BUNtloc(b, bl);
-	hm = BUNhloc(b, bl);
-	vm = BUNtloc(b, nmin);
+	int ibl = 0, ibh = 0;
+	ptr v = vm;
+	for (; v <= tmpTmax;  v = (ptr) ((char *) v + xx)){
+		ibl += *(int *) v @4 low;
+		ibh += *(int *) v @6 hgh;
+	}
+
+	vmax = tmpTmax;
 	
+	tmpTmid = (ptr) ((char *) vm + xx*ibl);
+	hm = (ptr) ((char *) hl + xx*ibl);
+	
+	hh = (ptr) ((char *) hl + xx*ibh); 
+	tmpTmax = (ptr) ((char *) vm + xx*ibh);
+
+	bls = tmpTmid;
+	bh = tmpTmax;
+
 	/* Now for each value that is >hgh if a middle value m occurs in vmax we can save a redudant exchange by seaching 
 	in the middle partition. There middle values are ignored and  a high value is  exchanged with m. 
 	Similarly when a middle value occurs */  			
-	for (p = nmin; p < bls; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx), hl = (ptr) ((char *) hl + xx)) {
+	/*for (p = nmin, vm = BUNtloc(b, p); p < bls; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx), hl = (ptr) ((char *) hl + xx)) {*/
+
+	while(vm != bls){
 		if (*(int *) vm @5 low && *(int *) vm @6 hgh) {
-			for (; bl < vmax; bl = (ptr) ((char *) bl + xx),tmpTmid = (ptr) ((char *) tmpTmid + xx),hm = (ptr) ((char *) hm + xx)){
+			
+			while(1){
+				@:move(@1,tmpTmid,,+, @5 low && *(@1*)tmpTmid @6  hgh, ,hm)@
 				tmpVmid = *(@1*)tmpTmid;
 				if (tmpVmid @4 low){
 					@:exchangeTest(@1,tmpTmid,vm,hm,hl)@
-					bl = (ptr) ((char *) bl + xx);
 					tmpTmid = (ptr) ((char *) tmpTmid + xx);
 					hm = (ptr) ((char *) hm + xx);
-					goto next;
+					break;
 				}
 				if (tmpVmid @7 hgh){
-					@:move(@1,tmpTmax,vmax,-,@7hgh, vmax > bl &&,hh)@
-					if (vmax == bl){
-						@:exchangeTest(@1,vm,tmpTmax,hl,hh)@
-						return MAL_SUCCEED;
-					}
+					@:move(@1,tmpTmax,,+,@7hgh, ,hh)@
+					
 					tmpVmax = *(@1*)tmpTmax;
-					if (tmpVmax @5 low  && tmpVmax @6  hgh){
+					if (tmpVmax @5 low  && tmpVmax @6 hgh){
 						@:exchangeTest(@1,tmpTmax,tmpTmid,hh,hm)@
-						vmax = (ptr) ((char *) vmax - xx);
-						tmpTmax = (ptr) ((char *) tmpTmax - xx);
-						hh = (ptr) ((char *) hh - xx); 
+						tmpTmax = (ptr) ((char *) tmpTmax + xx);
+						hh = (ptr) ((char *) hh + xx); 
 					}
 					if (tmpVmax @4 low){
 						@:exchange2Test(@1,vm,tmpTmid,tmpTmax,hl,hm,hh)@
-						bl = (ptr) ((char *) bl + xx);
 						tmpTmid = (ptr) ((char *) tmpTmid + xx);
 						hm = (ptr) ((char *) hm + xx);
-						vmax = (ptr) ((char *) vmax - xx);
-						tmpTmax = (ptr) ((char *) tmpTmax - xx);
-						hh = (ptr) ((char *) hh - xx); 
-						goto next;
+						tmpTmax = (ptr) ((char *) tmpTmax + xx);
+						hh = (ptr) ((char *) hh + xx); 
+						break;
 					} 
-				}       
+				}
+				tmpTmid = (ptr) ((char *) tmpTmid + xx);
+				hm = (ptr) ((char *) hm + xx);       
 			}       
-			if (bl == vmax){
-                                @:exchangeTest(@1,vm,tmpTmax,hl,hh)@
-                                return MAL_SUCCEED;
-			}
 		}  
 		if (*(int *) vm @7 hgh) {
-			for (; vmax> bl; vmax = (ptr) ((char *) vmax - xx),tmpTmax = (ptr) ((char *) tmpTmax - xx),hh = (ptr) ((char *) hh - xx)){
+			while(1){
+				@:move(@1,tmpTmax,,+,@7hgh, ,hh)@
 				tmpVmax = *(@1*)tmpTmax;
 				if (tmpVmax @4 low){
 					@:exchangeTest(@1,tmpTmax,vm,hh,hl)@
-					vmax = (ptr) ((char *) vmax - xx);
-					tmpTmax = (ptr) ((char *) tmpTmax - xx);
-					hh = (ptr) ((char *) hh - xx); 
-					goto next;
+					tmpTmax = (ptr) ((char *) tmpTmax + xx);
+					hh = (ptr) ((char *) hh + xx); 
+					break;
 				}
 				if (tmpVmax @5 low && tmpVmax @6  hgh){
-					@:move(@1,tmpTmid,bl,+, @5 low && *(@1*)tmpTmid @6  hgh, bl < vmax &&,hm)@
-					if (vmax == bl){
-                                                @:exchangeTest(@1,vm,tmpTmax,hl,hh)@
-                                                return MAL_SUCCEED;
-                                        }
+					@:move(@1,tmpTmid,,+, @5 low && *(@1*)tmpTmid @6  hgh, ,hm)@
 					tmpVmid = *(@1*)tmpTmid;
 					if (tmpVmid @7 hgh){
 						@:exchangeTest(@1,tmpTmid,tmpTmax,hm,hh)@
-						bl = (ptr) ((char *) bl + xx);	
 						tmpTmid = (ptr) ((char *) tmpTmid + xx);
 						hm = (ptr) ((char *) hm + xx);
 					}
 					if (tmpVmid @4 low){
 						@:exchange2Test(@1,tmpTmax,tmpTmid,vm,hh,hm,hl)@
-						bl = (ptr) ((char *) bl + xx);
 						tmpTmid = (ptr) ((char *) tmpTmid + xx);
 						hm = (ptr) ((char *) hm + xx);
-						vmax = (ptr) ((char *) vmax - xx);
-						tmpTmax = (ptr) ((char *) tmpTmax - xx);
-						hh = (ptr) ((char *) hh - xx); 
-						goto next;
+						tmpTmax = (ptr) ((char *) tmpTmax + xx);
+						hh = (ptr) ((char *) hh + xx); 
+						break;
 					}
 				}
+				tmpTmax = (ptr) ((char *) tmpTmax + xx);
+				hh = (ptr) ((char *) hh + xx);
 			}
-			if (bl == vmax){
-                                @:exchangeTest(@1,vm,tmpTmax,hl,hh)@
-                                return MAL_SUCCEED;
-                        }
-
 		}
-		next:;
+                if (tmpTmid == bh )
+               		goto finishLowHigh;
+
+                if (tmpTmax > vmax)
+                        goto finishLowMiddle;
+		
+		@:move(@1,vm,,+,@4low,vm < bls &&,hl)@
 	}
 
-	for (; bl < vmax; bl = (ptr) ((char *) bl + xx), tmpTmid = (ptr) ((char *) tmpTmid + xx), hm = (ptr) ((char *) hm + xx)) {
+	for (; tmpTmid < bh; tmpTmid = (ptr) ((char *) tmpTmid + xx), hm = (ptr) ((char *) hm + xx)) {
 		if (*(int *) tmpTmid @7  hgh){
-			@:move(@1,tmpTmax,vmax,-,@7hgh, vmax > bl &&,hh)@
-			if (vmax != bl ){ 
-				@:exchangeTest(@1,tmpTmax,tmpTmid,hh,hm)@
-				vmax = (ptr) ((char *) vmax - xx);
-				tmpTmax = (ptr) ((char *) tmpTmax - xx);
-				hh = (ptr) ((char *) hh - xx); 
-			}
-			if (vmax == bl) break;
+			@:move(@1,tmpTmax,,+,@7hgh,,hh)@
+ 
+			@:exchangeTest(@1,tmpTmax,tmpTmid,hh,hm)@
+			tmpTmax = (ptr) ((char *) tmpTmax + xx);
+			hh = (ptr) ((char *) hh + xx); 
+			if (tmpTmax > vmax) break;
 		}
 	}
 	return MAL_SUCCEED;
+
+finishLowHigh:;
+	vm = (ptr) ((char *) vm + xx);
+	hl = (ptr) ((char *) hl + xx);
+
+	for (; vm < bls; vm = (ptr) ((char *) vm + xx), hl = (ptr) ((char *) hl + xx)) {
+		if (*(int *) vm @7  hgh){
+			@:move(@1,tmpTmax,,+,@7hgh,,hh)@
+			 
+			@:exchangeTest(@1,tmpTmax,vm,hh,hl)@
+			tmpTmax = (ptr) ((char *) tmpTmax + xx);
+			hh = (ptr) ((char *) hh + xx); 
+		
+			if (tmpTmax > vmax) break;
+		}
+	}
+	return MAL_SUCCEED;
+	
+finishLowMiddle:;
+	vm = (ptr) ((char *) vm + xx);
+	hl = (ptr) ((char *) hl + xx);
+
+	for (; vm < bls; vm = (ptr) ((char *) vm + xx), hl = (ptr) ((char *) hl + xx)) {
+		if (*(@1*)vm @5 low && *(@1*)vm @6  hgh){
+              		@:move(@1,tmpTmid,,+, @5 low && *(@1*)tmpTmid @6  hgh,,hm)@
+			 
+			@:exchangeTest(@1,vm,tmpTmid,hl,hm)@
+			tmpTmid = (ptr) ((char *) tmpTmid + xx);
+			hm = (ptr) ((char *) hm + xx); 
+		
+			if (bh == tmpTmid) break;
+		}
+	}
+	return MAL_SUCCEED;
+	
+	
 }
 @
 
