@@ -2442,6 +2442,29 @@ CRKpieceOneA_MK_@1( BAT *b, @1 mval, size_t first, size_t last, size_t *start, s
 	return MAL_SUCCEED;
 }
 
+str
+CRKcrackOne_MK_@1 (int *res, size_t *bid, size_t *mid)
+{
+	BAT *b;
+	str msg;
+	size_t start, size;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
+	}
+	/* set bounds for the iterator */
+	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
+		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
+
+	msg= CRKpieceOne_MK_@1( b, *mid, 0, BATcount(b)-1, &start, &size);
+/*
+	printf("range %d - %d\n",start,size);
+*/
+
+	BBPkeepref(b->batCacheid);
+	*res = *bid;
+	return msg;
+}
 
 /* assume that the [first,last] are inclusive bounds */
 str
