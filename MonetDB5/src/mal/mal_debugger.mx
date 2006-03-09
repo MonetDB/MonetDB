@@ -640,7 +640,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 	int m = 1;
 	char *b, *c;
 	stream *out = cntxt->fdout;
-	int listing = cntxt->listing;
+	/* int listing = cntxt->listing;*/
 	char *oldprompt = cntxt->prompt;
 	int oldpromptlength = cntxt->promptlength;
 
@@ -648,7 +648,8 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 		if (cntxt != mal_clients) 
 			/* help MapiClients with fake prompt */
 			stream_printf(out,"mdb>");
-		printInstruction(out, mb, p, listing);
+		/* printInstruction(out, mb, p, listing);*/
+		printTraceCall(cntxt,mb,stk,pc);
 	}
 	if (cntxt == mal_clients) {
 		cntxt->prompt = "mdb>";
@@ -682,11 +683,12 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			if (strncmp("atoms", b, 5) == 0)
 				showAtoms(out);
 			break;
-		case 'C':
-			/* catch the next exception */
-			stk->cmd = 'C';
-			break;
 		case 'c':
+			if (strncmp("catch", b, 5) == 0) {
+				/* catch the next exception */
+				stk->cmd = 'C';
+				break;
+			}
 			if (strncmp("call", b, 4) == 0) {
 				GDKerror("call instruction not yet implemented\n");
 				break;
@@ -779,14 +781,24 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			}
 		}
 			break;
-		case 't':	/* trace breakpoint */
-			if (strncmp("trace", b, 5) == 0) {
+		case 'T':	/* debug type resolver for a function call */
+			if (strncmp("Trace", b, 5) == 0) {
 				skipWord(cntxt, b);
 				skipBlanc(cntxt, b);
 				if (strchr(b, '\n'))
 					*strchr(b, '\n') = 0;
 				traceFcnName = GDKstrdup(b);
-			} else if (strncmp("timer", b, 5) == 0) {
+			}
+			break;
+		case 't':	/* trace a variable toggle */
+			if (strncmp("trace", b, 5) == 0) {
+				skipWord(cntxt, b);
+				skipBlanc(cntxt, b);
+				if (strchr(b, '\n'))
+					*strchr(b, '\n') = 0;
+				mdbSetBreakRequest(cntxt, mb, b, 't');
+			} else
+			if (strncmp("timer", b, 5) == 0) {
 				if (cntxt->timer == 0)
 					cntxt->timer = GDKusec();
 				else
@@ -1068,12 +1080,19 @@ void
 mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	InstrPtr p;
+	char ch;
 
 	mdbSessionActive= 1; /* for name completion */
 	switch (stk->cmd) {
 	case 'c':
 		p = getInstrPtr(mb, pc);
-		if (isBreakpoint(cntxt,mb, p, pc))
+		ch= isBreakpoint(cntxt,mb, p, pc);
+		if( ch == 't'){
+			if (cntxt != mal_clients) 
+				/* help MapiClients with fake prompt */
+				stream_printf(cntxt->fdout,"mdb>");
+			printTraceCall(cntxt,mb,stk,pc);
+		} else if( ch )
 			mdbCommand(cntxt, mb, stk, p, pc);
 		break;
 	case 's':
@@ -1422,9 +1441,10 @@ mdbHelp(stream *f)
 {
 	stream_printf(f, "next       -- Advance to next statement\n");
 	stream_printf(f, "continue   -- Continue program being debugged\n");
+	stream_printf(f, "catch      -- Catch the next exception \n");
 	stream_printf(f, "break      -- set breakpoint on current instruction\n");
 	stream_printf(f, "break <var>    -- break on assignment to <var>\n");
-	stream_printf(f, "delete <var>   -- remove break point <var>\n");
+	stream_printf(f, "delete <var>   -- remove break/trace point <var>\n");
 	stream_printf(f, "step       -- advance to next MAL instruction\n");
 	stream_printf(f, "modules    -- show module list\n");
 	stream_printf(f, "module     -- display a module signatures\n");
@@ -1444,6 +1464,7 @@ mdbHelp(stream *f)
 	stream_printf(f, "down       -- go down the stack\n");
 	stream_printf(f, "up         -- go up the stack\n");
 	stream_printf(f, "timer      -- produce micro-second response time\n");
+	stream_printf(f, "trace <var>-- trace assignment to variables\n");
 	stream_printf(f, "io         -- produce page activity trace \n");
 	stream_printf(f, "help       -- this message\n");
 }

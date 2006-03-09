@@ -356,7 +356,7 @@ Let's call it as a synchronous action, without concern on parallelism.
 	if (firstcall )
 		msg = runMAL(cntxt, mb, 1, 0, pl->stk, 0);
 	else {
-		if( cmd)
+		if( cmd && cntxt->timer == 0)
 			mdbStep(cntxt,mb,pl->stk,pl->pc);
 		msg = reenterMAL(cntxt, mb, pl->pc, -1, pl->stk, 0, 0);
 	}
@@ -419,7 +419,7 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 		lhs = &pl->stk->stk[getArg(psig, i)];
 		VALcopy(lhs, argv[i]);
 	}
-	if( flag)
+	if( flag && cntxt->timer == 0)
 		mdbStep(cntxt,mb,pl->stk,pl->pc);
 	ret=  reenterMAL(cntxt, mb, pl->pc, -1, pl->stk, 0, 0);
 	/* garbage collect the string arguments, these positions

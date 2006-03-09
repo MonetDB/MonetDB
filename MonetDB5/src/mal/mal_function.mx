@@ -38,7 +38,6 @@ commands, patterns, and factories. They are discussed shortly.
 @menu
 * Polymorphic Functions ::
 * Commands and Patterns::
-* Factories::
 @end menu
 @{
 @-

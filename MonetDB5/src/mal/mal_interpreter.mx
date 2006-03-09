@@ -187,7 +187,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
 	    showErrors();
 	    sprintf(buf, "'%s.%s' contains errors\n",
 	        getModName(mb),getFcnName(mb));
-		if( cntxt->itrace == 0 )
+		if( cntxt->itrace == 0 ) /* permit debugger analysis */
 			return raiseException(mb,0,"SyntaxError",buf);
 	}
 @-
@@ -459,10 +459,10 @@ str runMALsequence( malTask *task)
 	str ret=0;
 	int backup[MAXARG];
 	str sbackup[MAXARG];
-	lng total=0;
+	lng oldtimer=0;
 	@:performanceVariables@
 
-	if( cntxt->timer)
+	if( (oldtimer= cntxt->timer) )
 		cntxt->timer= GDKusec();
 		
 MALrestart:
@@ -569,8 +569,7 @@ elements in the value stack.
 	case ENDsymbol: 
 	    if( getInstrPtr(mb,0)->token == FACTORYsymbol)
 	        ret= shutdownFactory(mb);
-		if( total  )
-			cntxt->timer= GDKusec()-total;
+		cntxt->timer= oldtimer;
 		if( pcicaller && garbageControl(getInstrPtr(mb,0)) )
 			garbageCollectAll(mb, stk);
 	    @:endProfile@
@@ -656,6 +655,7 @@ possible change in the control flow.
 	    @:skipToCatch(stkexception)@
 	    break;
 	case YIELDsymbol: /* to be defined */
+		cntxt->timer= oldtimer;
 	    return yieldFactory( mb, pci, stkpc);
 	case RETURNsymbol:
 	    /* Return from factory involves cleanup */
@@ -688,9 +688,8 @@ possible change in the control flow.
 	        }
 	        if( garbageControl(getInstrPtr(mb,0)) )
 	            garbageCollectAll(mb, stk);
-			/* propagate fake response time */
-			if( total )
-				cntxt->timer= GDKusec()-total;
+			/* reset the clock */
+			cntxt->timer= oldtimer;
 	        goto MALevalExit;
 	    } 
 	    @:endProfile@
@@ -1061,8 +1060,7 @@ starts with the exception identifer, followed by contextual details.
 if( cntxt->timer){
 	lng n= GDKusec();
 	lng l= n - cntxt->timer;
-	total += l;
-	if( stk->cmd != 'T' && stk->cmd != 'C')
+	if( stk->cmd != 't' && stk->cmd != 'C')
 	    stream_printf(cntxt->fdout,"#%6d usec",l);
 #ifdef HAVE_SYS_RESOURCE_H
 	if( cntxt->resource.ru_minflt > 0){
