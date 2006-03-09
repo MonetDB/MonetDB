@@ -229,7 +229,6 @@ MDBstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	Client cntxt = getClient();
 
-	cntxt->timer = 0;
 	stk->cmd = 'n';
 	cntxt->itrace = 'n';
 	cntxt->debugOptimizer= TRUE;
@@ -243,7 +242,6 @@ MDBstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	Client cntxt = getClient();
 
-	cntxt->timer = 0;
 	stk->cmd = 0;
 	cntxt->itrace = 0;
 	cntxt->debugOptimizer= FALSE;
@@ -273,7 +271,7 @@ MDBsetTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) mb;		/* still unused */
 	b = *(chr *) getArgReference(stk, p, 1);
-	MDBtraceFlag(getClient(), stk, (b? (int) 'T':0));
+	MDBtraceFlag(getClient(), stk, (b? (int) 't':0));
 	return MAL_SUCCEED;
 }
 
