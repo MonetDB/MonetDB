@@ -448,7 +448,7 @@ documentation.
  Returns the BAT operated upon."
 
 .COMMAND remap(BAT[void,any::1] b, BAT[void,oid] map, any::1 val) : BAT[void,any::1] = CMDremap;
-"create a non-linear VM re-map of a bat. It hase 65536-tuple pages in a different
+"create a non-linear VM re-map of a bat. It has 65536-tuple pages in a different
  order, as indicated by the second bat (map)."
 
 .COMMAND [remap_oid](BAT[void,oid] b, BAT[void,oid] map) : BAT[void,oid] = CMDremap_oid;
@@ -1698,8 +1698,8 @@ CMDremap(BAT **res, BAT *b, BAT *map, ptr val)
 		return GDK_FAIL;
 	}
 	if (BATcount(b) & REMAP_PAGE_MASK) {
-		GDKerror("remap: BATcount(%s) = %lld (not a multiple of %d).\n",
-				BBP_logical(b->batCacheid), (lng) BATcount(b), REMAP_PAGE_SIZE);
+		GDKerror("remap: BATcount(%s) = " SZFMT " (not a multiple of %d).\n",
+				BBP_logical(b->batCacheid), BATcount(b), REMAP_PAGE_SIZE);
 		return GDK_FAIL;
 	}
 	if (cnt)
@@ -1907,7 +1907,7 @@ CMDremap_summary(BAT **res, BAT *delta, BAT *map, BAT *master)
 
 			BUNfndVOID(r, map, &p); 
 			if (r == NULL) {
-				GDKerror("remap_summary: %s contains illegal offset %lld.\n", 
+				GDKerror("remap_summary: %s contains illegal offset " LLFMT ".\n", 
 					BBP_logical(delta->batCacheid), (lng) p); 
 				goto bunins_failed;
 			}
