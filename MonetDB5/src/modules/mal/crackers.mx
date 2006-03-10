@@ -251,6 +251,7 @@ comment "Validate whether a BAT is correctly broken into three pieces with
 @mal
 @:crack(SI,Stratos Idreos,int,,)@
 @:crack(MK,Martin Kersten,int,,)@
+@:crack(MK,Martin Kersten,int,Ordered,; maintaining the head-oid order within each piece)@
 @:crack(SM,Stefan Manegold,int,,)@
 @:crack(sm,Stefan Manegold,int,,)@
 @:crack(SM,Stefan Manegold,int,Ordered,; maintaining the head-oid order within each piece)@
@@ -2294,8 +2295,10 @@ CRKOrderedpieceOne_MK_@1( BAT *b, @1 mval, size_t first, size_t last, size_t *st
 	/* group the equals */
 	*start= BUNindex(b, hv);
 
-	vtop= hdummy+ (last-first);
-	for(te++,he++; (ptr) he <= (ptr) vtop;  te++, he++){
+	vtop= he;
+	he= hdummy+(last-first);
+	te= tdummy+(last-first);
+	for(; (ptr) he > (ptr) vtop;  te--, he--){
 			 *(oid*) hv = *he; hv= (ptr)((char*)hv+xx);
 			 *(@1*) tv = *te; tv= (ptr)((char*)tv+xx);
 	}
@@ -2312,8 +2315,108 @@ CRKOrderedpieceOne_MK_@1( BAT *b, @1 mval, size_t first, size_t last, size_t *st
 	GDKfree(hdummy); GDKfree(tdummy);
 	return MAL_SUCCEED;
 }
+
 str
-CRKOrderedcrackOne_MK_@1 (int *res, size_t *bid, size_t *mid)
+CRKOrderedpieceThree_MK_@1( BAT *b, @1 low, @1 hgh, size_t first, size_t last, size_t *start, size_t *end){
+	ptr tc, hc, hv,tv, vtop;
+	int xx;
+	oid *hdummy, *hd, *he;
+	@1  *tdummy, *td, *te;
+	hd= hdummy= (ptr) GDKmalloc((last-first+1) *sizeof(oid));
+	he= hd+(last-first);
+	td= tdummy= (ptr) GDKmalloc((last-first+1) *sizeof(@1));
+	te= td+(last-first);
+
+	/* set bounds for the iterator */
+	xx = BUNsize(b);
+	tc = BUNtloc(b, BUNptr(b,first));
+	hc = BUNhloc(b, BUNptr(b,first));
+	vtop= BUNtloc(b,BUNptr(b,last));
+
+	hv= hc;
+	tv= tc;
+
+	for( ; tc<=vtop; tc = (ptr) ((char *) tc + xx), hc = (ptr) ((char *) hc + xx)) {
+		if (*(@1 *) tc <= low){
+			 *(oid*) hv = *(oid*)hc; hv= (ptr)((char*)hv+xx);
+			 *(@1*) tv = *(@1*)tc; tv= (ptr)((char*)tv+xx);
+		} else if (*(@1 *) tc > hgh){
+			 *hd++ = *(oid*)hc; 
+			 *td++ = *(@1*)tc; 
+		} else {
+			 *(oid*) he-- = *(oid*)hc; 
+			 *(@1*) te-- = *(@1*)tc; 
+		} 
+	} 
+	
+	/* group the equals */
+	*start= BUNindex(b, hv);
+
+	vtop= he;
+	he= hdummy+(last-first);
+	te= tdummy+(last-first);
+	for(; (ptr) he > (ptr) vtop;  te--, he--){
+			 *(oid*) hv = *he; hv= (ptr)((char*)hv+xx);
+			 *(@1*) tv = *te; tv= (ptr)((char*)tv+xx);
+	}
+
+	*end= BUNindex(b, hv);
+	/* collect rest */
+	vtop= hd;
+	td= tdummy;
+	hd= hdummy;
+	for( ; (ptr) hd < (ptr) vtop;  td ++,hd++){
+			 *(oid*) hv = *hd; hv= (ptr)((char*)hv+xx);
+			 *(@1*) tv = *td; tv= (ptr)((char*)tv+xx);
+	}
+	GDKfree(hdummy); GDKfree(tdummy);
+	return MAL_SUCCEED;
+}
+
+str
+CRKOrderedpieceZero_MK_@1( BAT *b, @1 mval, size_t first, size_t last, size_t *start, size_t *end){
+	ptr tc, hc, hv,tv, vtop;
+	int xx;
+	oid *hdummy, *hd;
+	@1  *tdummy, *td;
+	hd= hdummy= (ptr) GDKmalloc((last-first+1) *sizeof(oid));
+	td= tdummy= (ptr) GDKmalloc((last-first+1) *sizeof(@1));
+
+	/* set bounds for the iterator */
+	xx = BUNsize(b);
+	tc = BUNtloc(b, BUNptr(b,first));
+	hc = BUNhloc(b, BUNptr(b,first));
+	vtop= BUNtloc(b,BUNptr(b,last));
+
+	hv= hc;
+	tv= tc;
+
+	for( ; tc<=vtop; tc = (ptr) ((char *) tc + xx), hc = (ptr) ((char *) hc + xx)) {
+		if (*(@1 *) tc <= mval){
+			 *(oid*) hv = *(oid*)hc; hv= (ptr)((char*)hv+xx);
+			 *(@1*) tv = *(@1*)tc; tv= (ptr)((char*)tv+xx);
+		} else {
+			 *hd++ = *(oid*)hc; 
+			 *td++ = *(@1*)tc; 
+		} 
+	} 
+	
+	/* group the remainder */
+	*start= BUNindex(b, hv);
+	*end= BUNindex(b, hv);
+	/* collect rest */
+	vtop= hd;
+	td= tdummy;
+	hd= hdummy;
+	for( ; (ptr) hd < (ptr) vtop;  td ++,hd++){
+			 *(oid*) hv = *hd; hv= (ptr)((char*)hv+xx);
+			 *(@1*) tv = *td; tv= (ptr)((char*)tv+xx);
+	}
+	GDKfree(hdummy); GDKfree(tdummy);
+	return MAL_SUCCEED;
+}
+str
+CRKcrackOrderedOne_MK_@1 (int *res, size_t *bid, size_t *mid)
 {
 	BAT *b;
 	str msg;
@@ -2327,9 +2430,70 @@ CRKOrderedcrackOne_MK_@1 (int *res, size_t *bid, size_t *mid)
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
 	msg= CRKOrderedpieceOne_MK_@1( b, *mid, 0, BATcount(b)-1, &start, &size);
+
+	BBPkeepref(b->batCacheid);
+	*res = *bid;
+	return msg;
+}
+str
+CRKcrackOrderedTwo_MK_@1 (int *res, size_t *bid, size_t *mid)
+{
+	BAT *b;
+	str msg= MAL_SUCCEED;
+	size_t start, size;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
+	}
+	/* set bounds for the iterator */
+	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
+		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
+
+	(void) start; (void) size;
+	(void) mid;
 /*
-	printf("range %d - %d\n",start,size);
+	msg= CRKOrderedpieceOne_MK_@1( b, *mid, 0, BATcount(b)-1, &start, &size);
 */
+
+	BBPkeepref(b->batCacheid);
+	*res = *bid;
+	return msg;
+}
+str
+CRKcrackOrderedThree_MK_@1 (int *res, size_t *bid, @1 *low, @1 *hgh)
+{
+	BAT *b;
+	str msg= MAL_SUCCEED;
+	size_t start, size;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
+	}
+	/* set bounds for the iterator */
+	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
+		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
+
+	msg= CRKOrderedpieceThree_MK_@1( b, *low, *hgh, 0, BATcount(b)-1, &start, &size);
+
+	BBPkeepref(b->batCacheid);
+	*res = *bid;
+	return msg;
+}
+str
+CRKcrackOrderedZero_MK_@1 (int *res, size_t *bid, size_t *mid)
+{
+	BAT *b;
+	str msg= MAL_SUCCEED;
+	size_t start, size;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
+	}
+	/* set bounds for the iterator */
+	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
+		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
+
+	msg= CRKOrderedpieceZero_MK_@1( b, *mid, 0, BATcount(b)-1, &start, &size);
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
