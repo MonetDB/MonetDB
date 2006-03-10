@@ -198,29 +198,29 @@ For the time being, we ignore the cracking administration and repeated
 cracking, and focus on cracking a complete BAT, returning the cracked BAT.
 @
 @= crack
-command zcrack_@1 (b:bat[:oid,:@3], mid:@3) :bat[:oid,:@3]
-address CRKcrackZero_@1_@3
+command zcrack@4_@1 (b:bat[:oid,:@3], mid:@3) :bat[:oid,:@3]
+address CRKcrack@4Zero_@1_@3
 comment "Break a BAT into two pieces with
 	 tail<=mid, tail>mid,
-	 respectively. (By @2.)";
+	 respectively@5. (By @2.)";
 
-command crack_@1 (b:bat[:oid,:@3], mid:@3) :bat[:oid,:@3]
-address CRKcrackOne_@1_@3
+command crack@4_@1 (b:bat[:oid,:@3], mid:@3) :bat[:oid,:@3]
+address CRKcrack@4One_@1_@3
 comment "Break a BAT into three pieces with
 	 tail<mid, tail==mid, tail>mid,
-	 respectively. (By @2.)";
+	 respectively@5. (By @2.)";
 
-command crack_@1 (b:bat[:oid,:@3], low:@3, hgh:@3) :bat[:oid,:@3]
-address CRKcrackTwo_@1_@3
+command crack@4_@1 (b:bat[:oid,:@3], low:@3, hgh:@3) :bat[:oid,:@3]
+address CRKcrack@4Two_@1_@3
 comment "Break a BAT into five pieces with
 	 tail<low, tail==low, low<tail<hgh, tail==hgh, tail>hgh,
-	 respectively. (By @2.)";
+	 respectively@5. (By @2.)";
 
-command zcrack_@1 (b:bat[:oid,:@3], low:@3, hgh:@3) :bat[:oid,:@3]
-address CRKcrackThree_@1_@3
+command zcrack@4_@1 (b:bat[:oid,:@3], low:@3, hgh:@3) :bat[:oid,:@3]
+address CRKcrack@4Three_@1_@3
 comment "Break a BAT into three pieces with
 	 tail<=low, low<tail<=hgh, tail>hgh,
-	 respectively. (By @2.)";
+	 respectively@5. (By @2.)";
 
 @
 @= crack_validate
@@ -249,10 +249,12 @@ comment "Validate whether a BAT is correctly broken into three pieces with
 	 respectively@3.";
 @
 @mal
-@:crack(SI,Stratos Idreos,int)@
-@:crack(MK,Martin Kersten,int)@
-@:crack(SM,Stefan Manegold,int)@
-@:crack(sm,Stefan Manegold,int)@
+@:crack(SI,Stratos Idreos,int,,)@
+@:crack(MK,Martin Kersten,int,,)@
+@:crack(SM,Stefan Manegold,int,,)@
+@:crack(sm,Stefan Manegold,int,,)@
+@:crack(SM,Stefan Manegold,int,Ordered,; maintaining the head-oid order within each piece)@
+@:crack(sm,Stefan Manegold,int,Ordered,; maintaining the head-oid order within each piece)@
 @:crack_validate(int)@
 @:crack_validate(int,Ordered,; maintaining the head-oid order within each piece)@
 @-
@@ -2734,19 +2736,27 @@ CRKcrackThree_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 @
 
 
+@= SMsm_piece_
+@:SMsm_piece_Zero@4(@1,@2,@3,@4)@
+@:SMsm_piece_One@4(@1,@2,@3,@4)@
+@:SMsm_piece_Two(@1,@2,@3,@4)@
+@:SMsm_piece_Three@4(@1,@2,@3,@4)@
+@
+@= SMsm_crack_
+@:SMsm_crack_ZeroOne(@1,@2,Zero,z,@3)@
+@:SMsm_crack_ZeroOne(@1,@2,One,,@3)@
+@:SMsm_crack_TwoThree(@1,@2,Two,,@3)@
+@:SMsm_crack_TwoThree(@1,@2,Three,z,@3)@
+@
 @= SMsm_operations
 @:SMsm_split_in_two(@1,@2,@3,LT,GE,,l,)@
 @:SMsm_split_in_two(@1,@2,@3,LE,GT,,g,)@
 @:SMsm_split_in_two(@1,@2,@3,LT,GE,EQ,l,*_eq = eq;)@
 @:SMsm_split_in_two(@1,@2,@3,LE,GT,EQ,g,*_eq = eq;)@
-@:SMsm_piece_Zero(@1,@2,@3)@
-@:SMsm_piece_One(@1,@2,@3)@
-@:SMsm_piece_Two(@1,@2,@3)@
-@:SMsm_piece_Three(@1,@2,@3)@
-@:SMsm_crack_ZeroOne(@1,@2,Zero,z)@
-@:SMsm_crack_ZeroOne(@1,@2,One,)@
-@:SMsm_crack_TwoThree(@1,@2,Two,)@
-@:SMsm_crack_TwoThree(@1,@2,Three,z)@
+@:SMsm_piece_(@1,@2,@3,)@
+@:SMsm_piece_(@1,@2,@3,Ordered)@
+@:SMsm_crack_(@1,@2,)@
+@:SMsm_crack_(@1,@2,Ordered)@
 @
 @c
 #define LT	<
@@ -2829,7 +2839,7 @@ CRKsplit_@2_@1_@4_@5_@6 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lg  SIG
 
 @= SMsm_piece_Zero
 static str
-CRKpieceZero_@2_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *gt)
+CRKpiece@4Zero_@2_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *gt)
 {
 	*lt=0;
 	return CRKsplit_@2_@1_LE_GT_ (b, mid, fst, lst, gt);
@@ -2848,7 +2858,7 @@ CRKpieceZero_@2_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *
 @
 @= SMsm_piece_One
 static str
-CRKpieceOne_@2_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *gt)
+CRKpiece@4One_@2_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *gt)
 {
 	str msg;
 	@3ho(b);
@@ -2856,7 +2866,7 @@ CRKpieceOne_@2_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *g
 	BUN bn, *eq, *equal = (BUN*)GDKmalloc(((lst-fst)+1)*sizeof(BUN));
 
 	if (!equal) {
-		return throwMessage("CRKpieceOne_@2_@1","GDKmalloc failed");
+		return throwMessage("CRKpiece@4One_@2_@1","GDKmalloc failed");
 	}
 	msg = CRKsplit_@2_@1_LT_GE_EQ (b, mid, fst, lst, lt, equal, &eq);
 	if (msg != MAL_SUCCEED) {
@@ -2886,7 +2896,7 @@ CRKpieceOne_@2_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *g
 
 @= SMsm_piece_Two
 static str
-CRKpieceTwo_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl, size_t *gtl, size_t *lth, size_t *gth)
+CRKpiece@4Two_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl, size_t *gtl, size_t *lth, size_t *gth)
 {
 	str msg;
 	@3ho(b);
@@ -2898,7 +2908,7 @@ CRKpieceTwo_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl, 
 	equal = (BUN*)GDKmalloc(((lst-fst)+1)*sizeof(BUN));
 
 	if (!equal) {
-		return throwMessage("CRKpieceOne_@2_@1","GDKmalloc failed");
+		return throwMessage("CRKpiece@4Two_@2_@1","GDKmalloc failed");
 	}
 	msg = CRKsplit_@2_@1_LT_GE_EQ (b, low, fst, lst, ltl, equal, &eq);
 	if (msg != MAL_SUCCEED) {
@@ -2918,7 +2928,7 @@ CRKpieceTwo_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl, 
 
 @= SMsm_piece_Three
 static str
-CRKpieceThree_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl, size_t *gtl, size_t *lth, size_t *gth)
+CRKpiece@4Three_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl, size_t *gtl, size_t *lth, size_t *gth)
 {
 	str msg;
 	int bs = BUNsize(b);
@@ -2935,9 +2945,149 @@ CRKpieceThree_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl
 }
 @
 
+@= SMsm_piece_ZeroOrdered
+static str
+CRKpiece@4Zero_@2_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *gt)
+{
+	@3ho(b);
+	int bs = BUNsize(b);
+	BUN r = @3ptr(b, fst);
+	BUN w = @3ptr(b, fst);
+	BUN q = @3ptr(b, lst);
+	size_t n = (lst - fst) + 1, GTm_i = 0;
+	oid *buf_h;
+	@1  *buf_t;
+
+	buf_h = (oid*) GDKmalloc(n * sizeof(oid));
+	buf_t = (@1 *) GDKmalloc(n * sizeof(@1 ));
+	for (;r <= q; r += bs) {
+		if (*(@1*)@3tloc(b, r) <= mid) {
+			*(oid*)@3hloc(b, w) = *(oid*)@3hloc(b, r);
+			*(@1 *)@3tloc(b, w) = *(@1 *)@3tloc(b, r);
+			w += bs;
+		}
+		if (*(@1*)@3tloc(b, r) > mid) {
+			buf_h[GTm_i] = *(oid*)@3hloc(b, r);
+			buf_t[GTm_i] = *(@1 *)@3tloc(b, r);
+			GTm_i++;
+		}
+	}
+	for (n = 0; n < GTm_i; n++, w += bs) {
+		*(oid*)@3hloc(b, w) = buf_h[n];
+		*(@1 *)@3tloc(b, w) = buf_t[n];
+	}
+	*lt = 0;
+	*gt = lst + GTm_i;
+
+	GDKfree(buf_h);
+	GDKfree(buf_t);
+	return MAL_SUCCEED;
+}
+@
+
+@= SMsm_piece_OneOrdered
+static str
+CRKpiece@4One_@2_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *gt)
+{
+	@3ho(b);
+	int bs = BUNsize(b);
+	BUN r = @3ptr(b, fst);
+	BUN w = @3ptr(b, fst);
+	BUN q = @3ptr(b, lst);
+	size_t n = (lst - fst) + 1, EQm_i = n, GTm_i = 0;
+	oid *buf_h;
+	@1  *buf_t;
+
+	buf_h = (oid*) GDKmalloc(n * sizeof(oid));
+	buf_t = (@1 *) GDKmalloc(n * sizeof(@1 ));
+	for (;r <= q; r += bs) {
+		if (*(@1*)@3tloc(b, r) < mid) {
+			*(oid*)@3hloc(b, w) = *(oid*)@3hloc(b, r);
+			*(@1 *)@3tloc(b, w) = *(@1 *)@3tloc(b, r);
+			w += bs;
+		}
+		if (*(@1*)@3tloc(b, r) == mid) {
+			EQm_i--;
+			buf_h[EQm_i] = *(oid*)@3hloc(b, r);
+			buf_t[EQm_i] = *(@1 *)@3tloc(b, r);
+		}
+		if (*(@1*)@3tloc(b, r) > mid) {
+			buf_h[GTm_i] = *(oid*)@3hloc(b, r);
+			buf_t[GTm_i] = *(@1 *)@3tloc(b, r);
+			GTm_i++;
+		}
+	}
+	for (n--; n >= EQm_i; n--, w += bs) {
+		*(oid*)@3hloc(b, w) = buf_h[n];
+		*(@1 *)@3tloc(b, w) = buf_t[n];
+	}
+	for (n = 0; n < GTm_i; n++, w += bs) {
+		*(oid*)@3hloc(b, w) = buf_h[n];
+		*(@1 *)@3tloc(b, w) = buf_t[n];
+	}
+	*gt = lst - GTm_i;
+	*lt = *gt - EQm_i + 1;
+
+	GDKfree(buf_h);
+	GDKfree(buf_t);
+	return MAL_SUCCEED;
+}
+@
+
+@= SMsm_piece_ThreeOrdered
+static str
+CRKpiece@4Three_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl, size_t *gtl, size_t *lth, size_t *gth)
+{
+	@3ho(b);
+	int bs = BUNsize(b);
+	BUN r = @3ptr(b, fst);
+	BUN w = @3ptr(b, fst);
+	BUN q = @3ptr(b, lst);
+	size_t n = (lst - fst) + 1, LEh_i = n, GTh_i = 0;
+	oid *buf_h;
+	@1  *buf_t;
+
+	buf_h = (oid*) GDKmalloc(n * sizeof(oid));
+	buf_t = (@1 *) GDKmalloc(n * sizeof(@1 ));
+	for (;r <= q; r += bs) {
+		if (*(@1*)@3tloc(b, r) <= low) {
+			*(oid*)@3hloc(b, w) = *(oid*)@3hloc(b, r);
+			*(@1 *)@3tloc(b, w) = *(@1 *)@3tloc(b, r);
+			w += bs;
+		} else
+		if (*(@1*)@3tloc(b, r) <= hgh) {
+			LEh_i--;
+			buf_h[LEh_i] = *(oid*)@3hloc(b, r);
+			buf_t[LEh_i] = *(@1 *)@3tloc(b, r);
+		}
+		if (*(@1*)@3tloc(b, r) > hgh) {
+			buf_h[GTh_i] = *(oid*)@3hloc(b, r);
+			buf_t[GTh_i] = *(@1 *)@3tloc(b, r);
+			GTh_i++;
+		}
+	}
+	for (n--; n >= LEh_i; n--, w += bs) {
+		*(oid*)@3hloc(b, w) = buf_h[n];
+		*(@1 *)@3tloc(b, w) = buf_t[n];
+	}
+	for (n = 0; n < GTh_i; n++, w += bs) {
+		*(oid*)@3hloc(b, w) = buf_h[n];
+		*(@1 *)@3tloc(b, w) = buf_t[n];
+	}
+	*ltl = 0;
+	*lth = 0;
+	*gth = lst - GTh_i;
+	*gtl = *gth - LEh_i + 1;
+
+	GDKfree(buf_h);
+	GDKfree(buf_t);
+	return MAL_SUCCEED;
+}
+@
+
 @= SMsm_crack_ZeroOne
 str
-CRKcrack@3_@2_@1 (int *res, int *bid, @1 *mid)
+CRKcrack@5@3_@2_@1 (int *res, int *bid, @1 *mid)
 {
 	BAT *b;
 	str msg;
@@ -2945,12 +3095,12 @@ CRKcrack@3_@2_@1 (int *res, int *bid, @1 *mid)
 
 	/* initialization */
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("crackers.@4crack_SM", "Cannot access descriptor");
+		return throwMessage("crackers.@4crack@5_SM", "Cannot access descriptor");
 	}
 	fst = BUNindex(b, BUNfirst(b));
 	lst = BUNindex(b, BUNlast (b)) - 1;
 
-	msg = CRKpiece@3_@2_@1(b, *mid, fst, lst, &lt, &gt);
+	msg = CRKpiece@5@3_@2_@1(b, *mid, fst, lst, &lt, &gt);
 	(void)lt;
 	(void)gt;
 
@@ -2962,7 +3112,7 @@ CRKcrack@3_@2_@1 (int *res, int *bid, @1 *mid)
 
 @= SMsm_crack_TwoThree
 str
-CRKcrack@3_@2_@1 (int *res, int *bid, @1 *low, @1 *hgh)
+CRKcrack@5@3_@2_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 {
 	BAT *b;
 	str msg;
@@ -2970,14 +3120,14 @@ CRKcrack@3_@2_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 
 	/* initialization */
 	if (*low > *hgh)
-		return throwMessage("crackers.@4crack_SM", "illegal range");
+		return throwMessage("crackers.@4crack@5_SM", "illegal range");
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("crackers.@4crack_SM", "Cannot access descriptor");
+		return throwMessage("crackers.@4crack@5_SM", "Cannot access descriptor");
 	}
 	fst = BUNindex(b, BUNfirst(b));
 	lst = BUNindex(b, BUNlast (b)) - 1;
 
-	msg = CRKpiece@3_@2_@1(b, *low, *hgh, fst, lst, &ltl, &gtl, &lth, &gth);
+	msg = CRKpiece@5@3_@2_@1(b, *low, *hgh, fst, lst, &ltl, &gtl, &lth, &gth);
 	(void)ltl;
 	(void)gtl;
 	(void)lth;
@@ -2988,6 +3138,7 @@ CRKcrack@3_@2_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	return msg;
 }
 @
+
 
 @= move
         while( @6 *(@1*)@2 @5 ){
@@ -3342,8 +3493,8 @@ CRKcrackThree_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	}
 @
 @= validate_checkOrdered
-{	oid hd = oid_nil;
-	while (bn < lst_bn && hd < *(oid*)BUNhloc(b, bn) @3 @4 ) {
+{	oid hd = 0;
+	while (bn < lst_bn && hd <= *(oid*)BUNhloc(b, bn) @3 @4 ) {
 		hd = *(oid*)BUNhloc(b, bn);
 		bn += bs;
 		count[@2]++;
