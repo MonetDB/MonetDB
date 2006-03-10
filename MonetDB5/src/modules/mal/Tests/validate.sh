@@ -8,7 +8,7 @@ for x in 0 1 2 3 4 5 6 7 8 9 11 12 13 15 16 17 23 24 25 31 32 33 47 48 49 63 64 
 	./set_tuples.sh $x >/dev/null
 	for i in {Zero,One,Three,Two}_{ms,SM,MK} {One,Three}_SI ; do
 		echo $i:
-		mserver5 --set monet_prompt='' <fastcrack_$i.mal |egrep -v '^[# ]|^\[ .*\]$'
+		mserver5 --set monet_prompt='' <fastcrack_$i.mal |egrep -v '^[# ]|, true\]$|^\[ "" \]$|^\[ ".*", [0-9]+\]$'
 	done
 	echo
 done
