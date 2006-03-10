@@ -507,6 +507,26 @@ infer_const (PFla_op_t *n)
                             (PFprop_const_val (L(n)->prop, att2)).val.bln));
                 }
             }
+            /* if one argument of the and operator has constant value
+               false the result will be false as well */
+            else if (n->kind == la_bool_and &&
+                     PFprop_const (L(n)->prop, n->sem.binary.att1) &&
+                     !(PFprop_const_val (L(n)->prop,
+                                         n->sem.binary.att1)).val.bln)
+                PFprop_mark_const (
+                    n->prop,
+                    n->sem.binary.res,
+                    PFalg_lit_bln (false));
+            /* if one argument of the or operator has constant value
+               true the result will be true as well */
+            else if (n->kind == la_bool_or &&
+                     PFprop_const (L(n)->prop, n->sem.binary.att1) &&
+                     (PFprop_const_val (L(n)->prop,
+                                        n->sem.binary.att1)).val.bln)
+                PFprop_mark_const (
+                    n->prop,
+                    n->sem.binary.res,
+                    PFalg_lit_bln (true));
             break;
 
         case la_sum:

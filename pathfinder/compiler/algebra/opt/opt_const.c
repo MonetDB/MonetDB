@@ -485,9 +485,9 @@ opt_const (PFla_op_t *p, bool no_attach)
         case la_num_divide:
         case la_num_modulo:
         case la_num_eq:
-        case la_num_gt:
-        case la_bool_and:
-        case la_bool_or:
+        case la_num_gt:   /* possible extensions for 'and' and 'or': */
+        case la_bool_and: /* if one arg is const && false replace by project */
+        case la_bool_or:  /* if one arg is const && true replace by project */
         case la_concat:
         case la_contains:
             /* introduce attach if necessary */
