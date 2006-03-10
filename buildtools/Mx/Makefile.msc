@@ -4,7 +4,7 @@ CFLAGS = -I. -GF -W3 -MDd -nologo -Zi -Od -D_DEBUG -RTC1 -ZI
 CFLAGS = -I. -GF -W3 -MD -nologo -Zi
 !ENDIF
 
-all: Mx.exe prefixMxFile.exe epsffit.exe idxmx.exe
+all: Mx.exe prefixMxFile.exe idxmx.exe
 
 clean:
 	del *.exe *.obj mx_config.h
@@ -18,15 +18,11 @@ PREFIXMXFILE_OBJS = prefixMxFile.obj disclaimer.obj getopt.obj
 prefixMxFile.exe: $(PREFIXMXFILE_OBJS)
 	$(CC) $(CFLAGS) /FeprefixMxFile.exe $(PREFIXMXFILE_OBJS) /link /subsystem:console /NODEFAULTLIB:LIBC
 
-EPSFFIT_OBJS = epsffit.obj
-epsffit.exe: $(EPSFFIT_OBJS)
-	$(CC) $(CFLAGS) /Feepsffit.exe $(EPSFFIT_OBJS) /link /subsystem:console /NODEFAULTLIB:LIBC
-
 IDXMX_OBJS = idxmx.obj
 idxmx.exe: $(IDXMX_OBJS)
 	$(CC) $(CFLAGS) /Feidxmx.exe $(IDXMX_OBJS) /link /subsystem:console /NODEFAULTLIB:LIBC
 
-$(MX_OBJS) $(PREFIXMXFILE_OBJS) $(EPSFFIT_OBJS) $(IDXMX_OBJS): mx_config.h
+$(MX_OBJS) $(PREFIXMXFILE_OBJS) $(IDXMX_OBJS): mx_config.h
 
 mx_config.h: winconfig.h
 	copy winconfig.h mx_config.h
