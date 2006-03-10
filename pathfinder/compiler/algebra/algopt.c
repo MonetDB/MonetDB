@@ -97,8 +97,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                            PFtimer_str (tm));
                 break;
 
-            case 'D': /* disabled */
-                /*
+            case 'D':
                 tm = PFtimer_start ();
                 
                 root = PFalgopt_dom (root);
@@ -107,7 +106,6 @@ PFalgopt (PFla_op_t *root, bool timing)
                 if (timing)
                     PFlog ("\tdomain optimization:\t\t %s",
                            PFtimer_str (tm));
-                */
                 break;
 
             case 'A': /* disabled */

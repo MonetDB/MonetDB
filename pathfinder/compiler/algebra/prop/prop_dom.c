@@ -45,36 +45,63 @@
 #define RL(p) L(R(p))
 
 /**
- * Return domain of attribute @a attr stored in property container @a prop.
+ * Return domain of attribute @a attr stored
+ * in property container @a prop.
  */
-unsigned int
+dom_t
 PFprop_dom (const PFprop_t *prop, PFalg_att_t attr)
 {
     assert (prop);
     assert (prop->domains);
     
     for (unsigned int i = 0; i < PFarray_last (prop->domains); i++)
-        if (attr == ((dom_t *) PFarray_at (prop->domains, i))->attr)
-            return ((dom_t *) PFarray_at (prop->domains, i))->dom;
+        if (attr == ((dom_pair_t *) PFarray_at (prop->domains, i))->attr)
+            return ((dom_pair_t *) PFarray_at (prop->domains, i))->dom;
 
     return 0;
 }
 
 /**
  * Return domain of attribute @a attr in the domains of the
- * children nodes (stored in property container @a prop)
+ * left child node (stored in property container @a prop)
  */
-static unsigned int
-PFprop_dom_child (const PFprop_t *prop, PFalg_att_t attr)
+dom_t
+PFprop_dom_left (const PFprop_t *prop, PFalg_att_t attr)
 {
     assert (prop);
-    assert (prop->child_domains);
+    assert (prop->l_domains);
     
-    for (unsigned int i = 0; i < PFarray_last (prop->child_domains); i++)
-        if (attr == ((dom_t *) PFarray_at (prop->child_domains, i))->attr)
-            return ((dom_t *) PFarray_at (prop->child_domains, i))->dom;
+    for (unsigned int i = 0; i < PFarray_last (prop->l_domains); i++)
+        if (attr == ((dom_pair_t *) PFarray_at (prop->l_domains, i))->attr)
+            return ((dom_pair_t *) PFarray_at (prop->l_domains, i))->dom;
 
     return 0;
+}
+
+/**
+ * Return domain of attribute @a attr in the domains of the
+ * right child nod (stored in property container @a prop)
+ */
+dom_t
+PFprop_dom_right (const PFprop_t *prop, PFalg_att_t attr)
+{
+    assert (prop);
+    assert (prop->r_domains);
+    
+    for (unsigned int i = 0; i < PFarray_last (prop->r_domains); i++)
+        if (attr == ((dom_pair_t *) PFarray_at (prop->r_domains, i))->attr)
+            return ((dom_pair_t *) PFarray_at (prop->r_domains, i))->dom;
+
+    return 0;
+}
+
+/**
+ * Writes domain represented by @a domain to character array @a f.
+ */
+void
+PFprop_write_domain (PFarray_t *f, dom_t domain)
+{
+    PFarray_printf (f, "%i", domain);
 }
 
 /**
@@ -100,17 +127,18 @@ PFprop_write_dom_rel (PFarray_t *f, const PFprop_t *prop)
 }
 
 /**
- * Test if domain @a in_subdom is contained in domain @a in_dom using
- * the domain-subdomain relationship list.
+ * Test if domain @a in_subdom is a subdomain of the domain @a in_dom
+ * (using the domain relationship list in property container @a prop).
  */
-static bool
-subdom (PFarray_t *dom_rel, unsigned int in_subdom, unsigned int in_dom)
+bool
+PFprop_subdom (const PFprop_t *prop, dom_t in_subdom, dom_t in_dom)
 {
     PFarray_t *subdomains;
     bool insert, duplicate;
-    unsigned int subdom, dom, subitem;
+    dom_t subdom, dom, subitem;
 
-    assert (dom_rel);
+    assert (prop);
+    assert (prop->dom_rel);
 
     /* check trivial case of identity */
     if (in_subdom == in_dom)
@@ -122,12 +150,12 @@ subdom (PFarray_t *dom_rel, unsigned int in_subdom, unsigned int in_dom)
      * matches one item of the subdomains list, but the
      * expected result domain differs.
      */
-    subdomains = PFarray (sizeof (unsigned int));
-    *(unsigned int *) PFarray_add (subdomains) = in_subdom;
+    subdomains = PFarray (sizeof (dom_t));
+    *(dom_t *) PFarray_add (subdomains) = in_subdom;
 
-    for (unsigned int i = PFarray_last (dom_rel); i > 0; --i) {
-        subdom = ((dom_rel_t *) PFarray_at (dom_rel, i))->subdom;
-        dom = ((dom_rel_t *) PFarray_at (dom_rel, i))->dom;
+    for (unsigned int i = PFarray_last (prop->dom_rel); i > 0; --i) {
+        subdom = ((dom_rel_t *) PFarray_at (prop->dom_rel, i))->subdom;
+        dom = ((dom_rel_t *) PFarray_at (prop->dom_rel, i))->dom;
         insert = false;
         duplicate = false;
         
@@ -135,7 +163,7 @@ subdom (PFarray_t *dom_rel, unsigned int in_subdom, unsigned int in_dom)
            if the match occurs or the superdomain is already
            in the list of subdomains */
         for (unsigned int j = 0; j < PFarray_last (subdomains); j++) {
-            subitem = *(unsigned int *) PFarray_at (subdomains, j);
+            subitem = *(dom_t *) PFarray_at (subdomains, j);
 
             if (subdom == subitem) {
                 if (dom == in_dom)
@@ -150,23 +178,10 @@ subdom (PFarray_t *dom_rel, unsigned int in_subdom, unsigned int in_dom)
         /* the current relationship results in a new domain
            that is added to the list of subdomains */
         if (insert && !duplicate)
-            *(unsigned int *) PFarray_add (subdomains) = dom;
+            *(dom_t *) PFarray_add (subdomains) = dom;
     }
     
     return false;
-}
-
-/**
- * Test if domain of attribute @a attr1 is a subdomain of the domain of 
- * attribute @a attr2 (looking up the children domains in 
- * container @a prop).
- */
-bool
-PFprop_subdom (const PFprop_t *prop, PFalg_att_t attr1, PFalg_att_t attr2)
-{
-    return subdom (prop->dom_rel,
-                   PFprop_dom_child (prop, attr1), 
-                   PFprop_dom_child (prop, attr2));
 }
 
 /**
@@ -177,18 +192,20 @@ copy_child_domains (PFla_op_t *n)
 {
     if (L(n))
         for (unsigned int i = 0; i < L(n)->schema.count; i++) {
-            *(dom_t *) PFarray_add (n->prop->child_domains)
-                = (dom_t) { .attr = L(n)->schema.items[i].name, 
-                            .dom  = PFprop_dom (L(n)->prop,
-                                                L(n)->schema.items[i].name)};
+            *(dom_pair_t *) PFarray_add (n->prop->l_domains)
+                = (dom_pair_t) { .attr = L(n)->schema.items[i].name, 
+                                 .dom  = PFprop_dom (
+                                             L(n)->prop,
+                                             L(n)->schema.items[i].name)};
         }
 
     if (R(n))
         for (unsigned int i = 0; i < R(n)->schema.count; i++) {
-            *(dom_t *) PFarray_add (n->prop->child_domains)
-                = (dom_t) { .attr = R(n)->schema.items[i].name, 
-                            .dom  = PFprop_dom (R(n)->prop,
-                                                R(n)->schema.items[i].name)};
+            *(dom_pair_t *) PFarray_add (n->prop->r_domains)
+                = (dom_pair_t) { .attr = R(n)->schema.items[i].name, 
+                                 .dom  = PFprop_dom (
+                                             R(n)->prop,
+                                             R(n)->schema.items[i].name)};
         }
 }
 
@@ -196,7 +213,7 @@ copy_child_domains (PFla_op_t *n)
  * Add a domain-subdomain relationship.
  */
 static void
-add_dom_rel (PFprop_t *prop, unsigned int dom, unsigned int subdom)
+add_dom_rel (PFprop_t *prop, dom_t dom, dom_t subdom)
 {
     assert (prop);
     assert (prop->dom_rel);
@@ -210,13 +227,13 @@ add_dom_rel (PFprop_t *prop, unsigned int dom, unsigned int subdom)
  * (stored in property container @a prop).
  */
 static void
-add_dom (PFprop_t *prop, PFalg_att_t attr, unsigned int dom)
+add_dom (PFprop_t *prop, PFalg_att_t attr, dom_t dom)
 {
     assert (prop);
     assert (prop->domains);
     
-    *(dom_t *) PFarray_add (prop->domains)
-        = (dom_t) { .attr = attr, .dom = dom };
+    *(dom_pair_t *) PFarray_add (prop->domains)
+        = (dom_pair_t) { .attr = attr, .dom = dom };
 }
 
 /**
@@ -279,18 +296,18 @@ infer_dom (PFla_op_t *n, unsigned int id)
              * (whose domain is different from the domains of the
              * join arguments) remain unchanged.
              */
-            unsigned int att1_dom = PFprop_dom (L(n)->prop,
-                                                n->sem.eqjoin.att1);
-            unsigned int att2_dom = PFprop_dom (R(n)->prop,
-                                                n->sem.eqjoin.att2);
-            unsigned int join_dom;
-            unsigned int cur_dom;
+            dom_t att1_dom = PFprop_dom (L(n)->prop,
+                                         n->sem.eqjoin.att1);
+            dom_t att2_dom = PFprop_dom (R(n)->prop,
+                                         n->sem.eqjoin.att2);
+            dom_t join_dom;
+            dom_t cur_dom;
 
             if (att1_dom == att2_dom)
                 join_dom = att1_dom;
-            else if (subdom (n->prop->dom_rel, att1_dom, att2_dom))
+            else if (PFprop_subdom (n->prop, att1_dom, att2_dom))
                 join_dom = att1_dom;
-            else if (subdom (n->prop->dom_rel, att2_dom, att1_dom))
+            else if (PFprop_subdom (n->prop, att2_dom, att1_dom))
                 join_dom = att2_dom;
             else {
                 join_dom = id++;
@@ -349,7 +366,9 @@ infer_dom (PFla_op_t *n, unsigned int id)
         case la_disjunion:
             /* create new superdomains for all existing attributes */
             for (unsigned int i = 0; i < L(n)->schema.count; i++) {
-                unsigned int j, dom1, dom2, union_dom;
+                unsigned int j;
+                dom_t dom1, dom2, union_dom;
+
                 for (j = 0; j < R(n)->schema.count; j++)
                     if (L(n)->schema.items[i].name ==
                         R(n)->schema.items[j].name) {
@@ -360,9 +379,9 @@ infer_dom (PFla_op_t *n, unsigned int id)
                         
                         if (dom1 == dom2)
                             union_dom = dom1;
-                        else if (subdom (n->prop->dom_rel, dom1, dom2))
+                        else if (PFprop_subdom (n->prop, dom1, dom2))
                             union_dom = dom1;
-                        else if (subdom (n->prop->dom_rel, dom2, dom1))
+                        else if (PFprop_subdom (n->prop, dom2, dom1))
                             union_dom = dom2;
                         else {
                             union_dom = id++;

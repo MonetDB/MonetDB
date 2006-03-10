@@ -89,8 +89,10 @@ opt_complex (PFla_op_t *p)
                                        L(p)->schema.items[i].name);
                 }
                 if (PFprop_subdom (p->prop, 
-                                   p->sem.eqjoin.att2,
-                                   p->sem.eqjoin.att1) &&
+                                   PFprop_dom_right (p->prop,
+                                                     p->sem.eqjoin.att2),
+                                   PFprop_dom_left (p->prop,
+                                                    p->sem.eqjoin.att1)) &&
                     !left_arg_req) {
                     *p = *(R(p));
                     break;
@@ -103,8 +105,10 @@ opt_complex (PFla_op_t *p)
                                         R(p)->schema.items[i].name);
                 }
                 if (PFprop_subdom (p->prop, 
-                                   p->sem.eqjoin.att1,
-                                   p->sem.eqjoin.att2) &&
+                                   PFprop_dom_left (p->prop,
+                                                    p->sem.eqjoin.att1),
+                                   PFprop_dom_right (p->prop,
+                                                     p->sem.eqjoin.att2)) &&
                     !right_arg_req) {
                     *p = *(L(p));
                     break;

@@ -691,6 +691,8 @@ main (int argc, char *argv[])
                                             "property\n");
                 printf ("         K  apply optimization based on key "
                                             "property\n");
+                printf ("         D  apply optimization based on domain "
+                                            "property\n");
                 printf ("         C  apply optimization using multiple "
                                             "properties (complex)\n");
                 printf ("         G  apply general optimization (without "
@@ -698,7 +700,7 @@ main (int argc, char *argv[])
                 printf ("         P  infer all properties\n");
                 printf ("            (used for debug output and physical "
                                             "algebra\n");
-                printf ("         (default is: '-o OIKCGP')\n");
+                printf ("         (default is: '-o OIKDCGP')\n");
 
                 printf ("\n");
                 printf ("Enjoy.\n");

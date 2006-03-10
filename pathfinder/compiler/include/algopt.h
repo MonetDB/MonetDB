@@ -41,6 +41,7 @@ PFla_op_t * PFalgopt (PFla_op_t *root, bool timing);
 PFla_op_t * PFalgopt_const (PFla_op_t *root, bool no_attach);
 PFla_op_t * PFalgopt_icol (PFla_op_t *root);
 PFla_op_t * PFalgopt_key (PFla_op_t *root);
+PFla_op_t * PFalgopt_dom (PFla_op_t *root);
 PFla_op_t * PFalgopt_complex (PFla_op_t *root);
 PFla_op_t * PFalgopt_general (PFla_op_t *root);
 

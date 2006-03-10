@@ -69,9 +69,10 @@ PFprop (void)
     ret->card = 0;
 
     /* initialize domain information */
-    ret->domains       = PFarray (sizeof (dom_t));
-    ret->dom_rel       = NULL;
-    ret->child_domains = PFarray (sizeof (dom_t));
+    ret->domains   = PFarray (sizeof (dom_pair_t));
+    ret->dom_rel   = NULL;
+    ret->l_domains = PFarray (sizeof (dom_pair_t));
+    ret->r_domains = PFarray (sizeof (dom_pair_t));
 
     return ret;
 }

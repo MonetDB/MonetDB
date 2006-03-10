@@ -648,11 +648,13 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
 
                 /* list attributes and their corresponding domains */
                 for (unsigned int i = 0; i < n->schema.count; i++)
-                    if (PFprop_dom (n->prop, n->schema.items[i].name))
-                        PFarray_printf (dot, i ? ", %s %i" : "\\ndom: %s %i",
-                                        PFatt_str (n->schema.items[i].name),
-                                        PFprop_dom (n->prop,
-                                                    n->schema.items[i].name));
+                    if (PFprop_dom (n->prop, n->schema.items[i].name)) {
+                        PFarray_printf (dot, i ? ", %s " : "\\ndom: %s ",
+                                        PFatt_str (n->schema.items[i].name));
+                        PFprop_write_domain (
+                            dot, 
+                            PFprop_dom (n->prop, n->schema.items[i].name));
+                    }
 
                 /* list domain - subdomain relationships */
                 if (n->kind == la_serialize) {
@@ -765,12 +767,15 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *node)
 
                 /* list attributes and their corresponding domains */
                 for (unsigned int i = 0; i < n->schema.count; i++)
-                    if (PFprop_dom (n->prop, n->schema.items[i].name))
+                    if (PFprop_dom (n->prop, n->schema.items[i].name)) {
                         PFarray_printf (xml, "      <domain attr=\"%s\" "
-                                        "value=\"%i\"/>\n",
-                                        PFatt_str (n->schema.items[i].name),
-                                        PFprop_dom (n->prop,
-                                                    n->schema.items[i].name));
+                                        "value=\"",
+                                        PFatt_str (n->schema.items[i].name));
+                        PFprop_write_domain (
+                            xml, 
+                            PFprop_dom (n->prop, n->schema.items[i].name));
+                        PFarray_printf (xml, "\"/>\n");
+                    }
 
                 /* list domain - subdomain relationships */
                 if (n->kind == la_serialize) {
