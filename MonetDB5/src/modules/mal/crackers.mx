@@ -3387,8 +3387,8 @@ CRKcrack@1Zero_validate_@2 (bit *res, int *bid, @2 *_mid)
 	@:validate_check_1(@1,@2,2,> ,mid)@
 
 	@:validate_end(@1,@2,z,\
-		printf("|b|="SZFMT" ; |tail<=mid|="SZFMT", |tail>mid|="SZFMT" !\n",\
-		       count[0], count[1], count[2]);\
+		printf("|b|="SZFMT" ; |tail<=%d|="SZFMT", |tail>%d|="SZFMT" !\n",\
+		       count[0], mid, count[1], mid, count[2]);\
 	)@
 }
 @
@@ -3404,8 +3404,8 @@ CRKcrack@1One_validate_@2 (int *res, int *bid, @2 *_mid)
 	@:validate_check_1(@1,@2,3,> ,mid)@
 	
 	@:validate_end(@1,@2,,\
-		printf("|b|="SZFMT" ; |tail<mid|="SZFMT", |tail==mid|="SZFMT", |tail>mid|="SZFMT" !\n",\
-		       count[0], count[1], count[2], count[3]);\
+		printf("|b|="SZFMT" ; |tail<%d|="SZFMT", |tail==%d|="SZFMT", |tail>%d|="SZFMT" !\n",\
+		       count[0], mid, count[1], mid, count[2], mid, count[3]);\
 	)@
 }
 @
@@ -3424,8 +3424,8 @@ CRKcrack@1Two_validate_@2 (bit *res, int *bid, @2 *_low, @2 *_hgh)
 	@:validate_check_1(@1,@2,5,> ,hgh)@
 
 	@:validate_end(@1,@2,,\
-		printf("|b|="SZFMT" ; |tail<low|="SZFMT", |tail==low|="SZFMT", |low<tail<hgh|="SZFMT", |tail==hgh|="SZFMT", |tail>hgh|="SZFMT" !\n",\
-		       count[0], count[1], count[2], count[3], count[4], count[5]);\
+		printf("|b|="SZFMT" ; |tail<%d|="SZFMT", |tail==%d|="SZFMT", |%d<tail<%d|="SZFMT", |tail==%d|="SZFMT", |tail>%d|="SZFMT" !\n",\
+		       count[0], low, count[1], low, count[2], low, hgh, count[3], hgh, count[4], hgh, count[5]);\
 	)@
 }
 @
@@ -3442,8 +3442,8 @@ CRKcrack@1Three_validate_@2 (bit *res, int *bid, @2 *_low, @2 *_hgh)
 	@:validate_check_1(@1,@2,3,> ,hgh)@
 
 	@:validate_end(@1,@2,z,\
-		printf("|b|="SZFMT" ; |tail<=low|="SZFMT", |low<tail<=hgh|="SZFMT", |tail>hgh|="SZFMT" !\n",\
-		       count[0], count[1], count[2], count[3]);\
+		printf("|b|="SZFMT" ; |tail<=%d|="SZFMT", |%d<tail<=%d|="SZFMT", |tail>%d|="SZFMT" !\n",\
+		       count[0], low, count[1], low, hgh, count[2], hgh, count[3]);\
 	)@
 }
 @
