@@ -3,7 +3,7 @@
 include microbenchmark;
 include crackers;
 
-tuples:=1024*1024;
+tuples:=1048576;
 values:= tuples;
 io.printf(" tuples %d\n",tuples);
 io.printf(" values %d\n",values);
@@ -12,25 +12,20 @@ b:= microbenchmark.uniform(0@0,tuples,values);
 size:= bat.getBatSize(b);
 io.printf(" BAT size %d\n",size);
 
-n:=20;
+n:=30;
 t:=0:lng;
 barrier (go,i):= (true,0);
 	b:= microbenchmark.uniform(0@0,tuples,values);
-	low:int:= mmath.rand();
-	low := low % values;
-	hgh:int:= mmath.rand();
-	hgh := hgh % values;
-	redo go := low>hgh;
+	mid:int:= mmath.rand();
+	mid := mid % values;
 
-	#io.print(low,hgh);
-	#io.print(b);
 t0:= alarm.usec();
-	c:=crackers.crack_MK(b,low,hgh);
+	c:=crackers.crackOrdered_MK(b,mid);
 t1:= alarm.usec();
 	time:= t1 - t0;
 	t := t + time;
-	v := crackers.crack_validate(c,low,hgh);
-	io.print(values,low,hgh,time,v);
+	v := crackers.crackOrdered_validate(c,mid);
+	io.print(values,mid,time,v);
 
 	values:int:= mmath.rand();
 	values:= values % tuples;
@@ -41,4 +36,4 @@ exit (go,i);
 
 io.print("");
 t := t / n;
-io.print("Two_MK",t);
+io.print("OneOrdered_MK",t);
