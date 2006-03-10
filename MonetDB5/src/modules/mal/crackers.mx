@@ -2735,193 +2735,203 @@ CRKcrackThree_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 
 
 @= SMsm_operations
-@:@2_split_in_two(@1,LT,GE,<,>=)@
-@:@2_split_in_two(@1,LE,GT,<=,>)@
-@:SMsm_piece_Zero(@1,@2)@
-@:SMsm_piece_One(@1,@2)@
-@:SMsm_piece_Two(@1,@2)@
-@:SMsm_piece_Three(@1,@2)@
+@:SMsm_split_in_two(@1,@2,@3,LT,GE,,l,)@
+@:SMsm_split_in_two(@1,@2,@3,LE,GT,,g,)@
+@:SMsm_split_in_two(@1,@2,@3,LT,GE,EQ,l,*_eq = eq;)@
+@:SMsm_split_in_two(@1,@2,@3,LE,GT,EQ,g,*_eq = eq;)@
+@:SMsm_piece_Zero(@1,@2,@3)@
+@:SMsm_piece_One(@1,@2,@3)@
+@:SMsm_piece_Two(@1,@2,@3)@
+@:SMsm_piece_Three(@1,@2,@3)@
 @:SMsm_crack_ZeroOne(@1,@2,Zero,z)@
 @:SMsm_crack_ZeroOne(@1,@2,One,)@
 @:SMsm_crack_TwoThree(@1,@2,Two,)@
 @:SMsm_crack_TwoThree(@1,@2,Three,z)@
 @
+@c
+#define LT	<
+#define LE	<=
+#define GE	>=
+#define GT	>
+#define BUNho(b)
+#define TAILho(b)	int ho = b->hloc - b->tloc
+#define TAILhloc(b,p)	((p) + ho)
+#define TAILtloc(b,p)	(p)
+#define TAILindex(b,p)	BUNindex(b, (p) - b->tloc)
+#define TAILptr(b,i)	BUNtloc(b, BUNptr(b, i))
+#define SIG_(x,y,z)
+#define SIG_EQ(x,y,z)	x,y,z
+#define IF_LT_(x)
+#define IF_LE_(x)
+#define IF_GE_(x)
+#define IF_GT_(x)
+#define IF_LT_EQ(x)
+#define IF_LE_EQ(x)	x
+#define IF_GE_EQ(x)	x
+#define IF_GT_EQ(x)
+@
 
 @= SMsm_swapTwoBUNs
-	oid h     = *(oid*)@2;
-	@1  t     = *(@1 *)@3;
-	*(oid*)@2 = *(oid*)@4;
-	*(@1 *)@3 = *(@1 *)@5;
-	*(oid*)@4 = h;
-	*(@1 *)@5 = t;
-	bn_s += bs;
-	bn_l -= bs;
-	@6
-@
-
-@= SMsm_advance
-	while (bn_s < bn_l && *(@1*)@2 @3 @4) {
-		bn_s += bs;
-		@5
-	}
-	while (bn_s < bn_l && *(@1*)@6 @7 @8) {
-		bn_l -= bs;
-		@9
-	}
-@
-
-@= SMsm_split_in_two_init
-	/* initialization */
-	int bs = BUNsize(b);
-	BUN bn_s = BUNptr(b, fst);
-	BUN bn_l = BUNptr(b, lst);
-@
-@= SMsm_split_in_two_finish_LT_GE
-	bn_l = BUNptr(b, *gt);
-	while (bn_s < bn_l && *(@1*)@2 < mid) {
-		bn_s += bs;
-		@3
-	}
-	*lt = BUNindex(b, bn_s);
-@= SMsm_split_in_two_finish_LE_GT
-	bn_s = BUNptr(b, *lt);
-	while (bn_s < bn_l && *(@1*)@4 > mid) {
-		bn_l -= bs;
-		@5
-	}
-	*gt = BUNindex(b, bn_l);
-@
-
-@= SM_split_in_two
-str
-CRKsplit_SM_@1_@2_@3 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *gt)
 {
-	@:SMsm_split_in_two_init@	
-
-	/* advance cursors, skipping over BUNs that are already in the right place */
-	@:SMsm_advance(@1,BUNtloc(b, bn_s),<,mid,,BUNtloc(b, bn_l),>,mid,)@
-	*lt = BUNindex(b, bn_s);
-	*gt = BUNindex(b, bn_l);
-	@:SMsm_advance(@1,BUNtloc(b, bn_s),@4,mid,,BUNtloc(b, bn_l),@5,mid,)@
-	
-	/* re-shuffel BUNs */
-	while (bn_s < bn_l) {
-		/* swap BUNs */
-		@:SMsm_swapTwoBUNs(@1,BUNhloc(b, bn_l),BUNtloc(b, bn_l),BUNhloc(b, bn_s),BUNtloc(b, bn_s),)@
-		
-		/* advance cursors, skipping over BUNs that are already in the right place */
-		@:SMsm_advance(@1,BUNtloc(b, bn_s),@4,mid,,BUNtloc(b, bn_l),@5,mid,)@
-	}
-	/* final sanity check */
-	assert(bn_s >= bn_l);
-
-	@:SMsm_split_in_two_finish_@2_@3(@1,BUNtloc(b, bn_s),,BUNtloc(b, bn_l),)@
-
-	return MAL_SUCCEED;
+	oid *h1 = (oid*)@2;
+	@1  *t1 = (@1 *)@3;
+	oid *h2 = (oid*)@4;
+	@1  *t2 = (@1 *)@5;
+	oid h   = *h1;
+	@1  t   = *t1;
+	*h1     = *h2;
+	*t1     = *t2;
+	*h2     = h;
+	*t2     = t;
 }
 @
-@= sm_split_in_two
-str
-CRKsplit_sm_@1_@2_@3 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *gt)
+
+@= SMsm_split_in_two_advance
+	/* advance cursors, skipping over BUNs that are already in the right place */
+	while (@6 *(@1*)@2tloc(b, bn_l) @3 mid) {
+		IF_@3_@5(if (*(@1*)@2tloc(b, bn_l) == mid) { *eq++ = bn_l; })
+		bn_l += bs;
+	}
+	while (@6 *(@1*)@2tloc(b, bn_g) @4 mid) {
+		IF_@4_@5(if (*(@1*)@2tloc(b, bn_g) == mid) { *eq++ = bn_g; })
+		bn_g -= bs;
+	}
+@
+@= SMsm_split_in_two
+static str
+CRKsplit_@2_@1_@4_@5_@6 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lg  SIG_@6(, BUN *eq, BUN **_eq))
 {
-	@:SMsm_split_in_two_init@	
-	BUN hd_s = BUNhloc(b, bn_s);
-	BUN hd_l = BUNhloc(b, bn_l);
-	BUN tl_s = BUNtloc(b, bn_s);
-	BUN tl_l = BUNtloc(b, bn_l);
+	/* initialization */
+	@3ho(b);
+	int bs = BUNsize(b);
+	BUN bn_l = @3ptr(b, fst);
+	BUN bn_g = @3ptr(b, lst);
 
 	/* advance cursors, skipping over BUNs that are already in the right place */
-	@:SMsm_advance(@1,tl_s,<,mid,tl_s += bs;,tl_l,>,mid,tl_l -= bs;)@
-	*lt = BUNindex(b, bn_s);
-	*gt = BUNindex(b, bn_l);
-	@:SMsm_advance(@1,tl_s,@4,mid,tl_s += bs;,tl_l,@5,mid,tl_l -= bs;)@
-	hd_s = BUNhloc(b, bn_s);
-	hd_l = BUNhloc(b, bn_l);
-	
+	@:SMsm_split_in_two_advance(@1,@3,@4,@5,@6,bn_l <= bn_g &&)@
+
 	/* re-shuffel BUNs */
-	while (bn_s < bn_l) {
+	while (bn_l < bn_g) {
 		/* swap BUNs */
-		@:SMsm_swapTwoBUNs(@1,hd_l,tl_l,hd_s,tl_s,hd_s += bs; tl_s += bs; hd_l -= bs; tl_l -= bs;)@
+		@:SMsm_swapTwoBUNs(@1,@3hloc(b, bn_g),@3tloc(b, bn_g),@3hloc(b, bn_l),@3tloc(b, bn_l))@
 		
 		/* advance cursors, skipping over BUNs that are already in the right place */
-		@:SMsm_advance(@1,tl_s,@4,mid,hd_s += bs; tl_s += bs;,tl_l,@5,mid,hd_l -= bs; tl_l -= bs;)@
+		@:SMsm_split_in_two_advance(@1,@3,@4,@5,@6,)@
 	}
+	*lg = @3index(b, bn_@7);
+	@8
+
 	/* final sanity check */
-	assert(bn_s >= bn_l);
-
-	@:SMsm_split_in_two_finish_@2_@3(@1,tl_s,tl_s += bs;,tl_l,tl_l -= bs;)@
-
+	assert(bn_l >= bn_g);
 	return MAL_SUCCEED;
 }
 @
 
 @= SMsm_piece_Zero
-str
+static str
 CRKpieceZero_@2_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *gt)
 {
-	return CRKsplit_@2_@1_LE_GT (b, mid, fst, lst, lt, gt);
+	*lt=0;
+	return CRKsplit_@2_@1_LE_GT_ (b, mid, fst, lst, gt);
 }
 @
 
+@= SMsm_piece_OneTwo_EQ
+	bn = @2ptr(b, @3);
+	while (eq-- > equal) {
+		if (*eq != bn) {
+			@:SMsm_swapTwoBUNs(@1,@2hloc(b, bn),@2tloc(b, bn),@2hloc(b, *eq),@2tloc(b, *eq))@
+		}
+		bn @5 bs;
+	}
+	@4 = @2index(b, bn);
+@
 @= SMsm_piece_One
-str
+static str
 CRKpieceOne_@2_@1 (BAT *b, @1 mid, size_t fst, size_t lst, size_t *lt, size_t *gt)
 {
 	str msg;
+	@3ho(b);
+	int bs = BUNsize(b);
+	BUN bn, *eq, *equal = (BUN*)GDKmalloc(((lst-fst)+1)*sizeof(BUN));
 
-	msg = CRKsplit_@2_@1_LT_GE (b, mid, fst, lst, lt, gt);
+	if (!equal) {
+		return throwMessage("CRKpieceOne_@2_@1","GDKmalloc failed");
+	}
+	msg = CRKsplit_@2_@1_LT_GE_EQ (b, mid, fst, lst, lt, equal, &eq);
 	if (msg != MAL_SUCCEED) {
 		return msg;
 	}
-	return CRKsplit_@2_@1_LE_GT (b, mid, *lt, *gt, lt, gt);
+	@:SMsm_piece_OneTwo_EQ(@1,@3,*lt,*gt,+=)@
+
+	GDKfree(equal);
+	return msg;
 }
 @
 
+@= SMsm_piece_TwoThree_skip
+	/* advance cursors, skipping over BUNs that are already in the right place */
+	/* initialization */
+	BUN bn_l = @2ptr(b, fst);
+	BUN bn_g = @2ptr(b, lst);
+	while (bn_l < bn_g && *(@1*)@2tloc(b, bn_l) @3 low) {
+		bn_l += bs;
+	}
+	while (bn_l < bn_g && *(@1*)@2tloc(b, bn_g) @4 hgh) {
+		bn_g -= bs;
+	}
+	fst = @2index(b, bn_l);
+	lst = @2index(b, bn_g);
+@
+
 @= SMsm_piece_Two
-str
+static str
 CRKpieceTwo_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl, size_t *gtl, size_t *lth, size_t *gth)
 {
 	str msg;
+	@3ho(b);
+	int bs = BUNsize(b);
+	BUN bn, *eq, *equal;
 
-	/* advance cursors, skipping over BUNs that are already in the right place */
-	@:SMsm_split_in_two_init@
-	@:SMsm_advance(@1,BUNtloc(b, bn_s),<,low,,BUNtloc(b, bn_l),>,hgh,)@
-	fst = BUNindex(b, bn_s);
-	lst = BUNindex(b, bn_l);
+	@:SMsm_piece_TwoThree_skip(@1,@3,<,>)@
 
-	msg = CRKsplit_@2_@1_LT_GE (b, low, fst, lst, ltl, gtl);
+	equal = (BUN*)GDKmalloc(((lst-fst)+1)*sizeof(BUN));
+
+	if (!equal) {
+		return throwMessage("CRKpieceOne_@2_@1","GDKmalloc failed");
+	}
+	msg = CRKsplit_@2_@1_LT_GE_EQ (b, low, fst, lst, ltl, equal, &eq);
 	if (msg != MAL_SUCCEED) {
 		return msg;
 	}
-	msg = CRKsplit_@2_@1_LT_GE (b, hgh, *ltl, lst, lth, gth);
+	@:SMsm_piece_OneTwo_EQ(@1,@3,*ltl,*gtl,+=)@
+	msg = CRKsplit_@2_@1_LT_GE_EQ (b, hgh, *gtl, lst, lth, equal, &eq);
 	if (msg != MAL_SUCCEED) {
 		return msg;
 	}
-	msg = CRKsplit_@2_@1_LE_GT (b, hgh, *lth, *gth, lth, gth);
-	if (msg != MAL_SUCCEED) {
-		return msg;
-	}
-	return CRKsplit_@2_@1_LE_GT (b, low, *ltl, MIN(*gtl,*lth), ltl, gtl);
+	@:SMsm_piece_OneTwo_EQ(@1,@3,*lth,*gth,+=)@
+
+	GDKfree(equal);
+	return msg;
 }
 @
 
 @= SMsm_piece_Three
-str
+static str
 CRKpieceThree_@2_@1 (BAT *b, @1 low, @1 hgh, size_t fst, size_t lst, size_t *ltl, size_t *gtl, size_t *lth, size_t *gth)
 {
 	str msg;
+	int bs = BUNsize(b);
 
-	/* advance cursors, skipping over BUNs that are already in the right place */
-	@:SMsm_split_in_two_init@
-	@:SMsm_advance(@1,BUNtloc(b, bn_s),<=,low,,BUNtloc(b, bn_l),>,hgh,)@
-	fst = BUNindex(b, bn_s);
-	lst = BUNindex(b, bn_l);
+	@:SMsm_piece_TwoThree_skip(@1,@3,<=,>)@
 
-	msg = CRKsplit_@2_@1_LE_GT (b, low, fst, lst, ltl, gtl);
+	*ltl=0;
+	msg = CRKsplit_@2_@1_LE_GT_ (b, low, fst, lst, gtl);
 	if (msg != MAL_SUCCEED) {
 		return msg;
 	}
-	return CRKsplit_@2_@1_LE_GT (b, hgh, *gtl, lst, lth, gth);
+	*lth=0;
+	return CRKsplit_@2_@1_LE_GT_ (b, hgh, *gtl, lst, gth);
 }
 @
 
@@ -3444,7 +3454,7 @@ CRKcrack@1Three_validate_@2 (bit *res, int *bid, @2 *_low, @2 *_hgh)
 
 @:MK_operations(int)@
 
-@:SMsm_operations(int,SM)@
-@:SMsm_operations(int,sm)@
+@:SMsm_operations(int,SM,BUN)@
+@:SMsm_operations(int,sm,TAIL)@
 @:SI_operations(int)@
 @}
