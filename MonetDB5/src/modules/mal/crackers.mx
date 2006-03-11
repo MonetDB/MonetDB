@@ -250,6 +250,7 @@ comment "Validate whether a BAT is correctly broken into three pieces with
 @
 @mal
 @:crack(SI,Stratos Idreos,int,,)@
+@:crack(SI,Stratos Idreos,int,Ordered,; maintaining the head-oid order within each piece)@
 @:crack(MK,Martin Kersten,int,,)@
 @:crack(MK,Martin Kersten,int,Ordered,; maintaining the head-oid order within each piece)@
 @:crack(SM,Stefan Manegold,int,,)@
@@ -3307,8 +3308,8 @@ CRKcrack@5@3_@2_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 @= move
         while( @6 *(@1*)@2 @5 ){
                 @3	
-                @2 = (ptr) ((char *) @2 @4 xx);
-                @7 = (ptr) ((char *) @7 @4 xx);
+                @2 @4= xx;
+                @7 @4= xx;
         }
 @
 
@@ -3331,14 +3332,18 @@ CRKcrack@5@3_@2_@1 (int *res, int *bid, @1 *low, @1 *hgh)
         *(oid*) @6= hdummy;
         *(@1*) @3= tdummy;
 @
+@= incdecSI
+	@1 @3=xx;
+	@2 @3=xx;
+@
 @= crackInThreePiecesSI
 str
 CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 {
 
-	ptr vmax, nmin, vm, bls, bh;
+	BUN vmax, nmin, vm, bls, bh;
 	char buf[128];	  /* scratch space */
-	ptr tmpTmax, tmpTmid, hl, hm, hh;
+	BUN tmpTmax, tmpTmid, hl, hm, hh;
 	@1 tmpVmax,tmpVmid;
 	int xx = BUNsize(b);
 	oid hdummy;
@@ -3354,13 +3359,12 @@ CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 	nmin = BUNptr(b, idx_first);
 	vm = BUNtloc(b, nmin);
 	hl = BUNhloc(b, nmin);
-	for (; vm < tmpTmax; vm = (ptr) ((char *) vm + xx), hl = (ptr) ((char *) hl + xx)) {
+	for (; vm < tmpTmax; vm += xx, hl += xx) {
 		if (*(@1*)vm @7 hgh){
 			@:move(@1,tmpTmax,,-,@7hgh, tmpTmax > vm &&,hh)@
 			if (tmpTmax!=vm && *(@1*)tmpTmax @4 low){
 				@:exchangeTest(@1,vm,tmpTmax,hl,hh)@							
-				tmpTmax = (ptr) ((char *) tmpTmax - xx);
-				hh = (ptr) ((char *) hh - xx); 
+				@:incdecSI(tmpTmax,hh,-)@
 			}	
 			else break;
 		}
@@ -3380,19 +3384,19 @@ CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 	checks in tstcrack more scans are second needed that do nothing*/
  
 	int ibl = 0, ibh = 0;
-	ptr v = vm;
-	for (; v <= tmpTmax;  v = (ptr) ((char *) v + xx)){
+	BUN v = vm;
+	for (; v <= tmpTmax;  v += xx){
 		ibl += *(int *) v @4 low;
 		ibh += *(int *) v @6 hgh;
 	}
 
 	vmax = tmpTmax;
 	
-	tmpTmid = (ptr) ((char *) vm + xx*ibl);
-	hm = (ptr) ((char *) hl + xx*ibl);
+	tmpTmid =vm+ xx*ibl;
+	hm = hl+xx*ibl;
 	
-	hh = (ptr) ((char *) hl + xx*ibh); 
-	tmpTmax = (ptr) ((char *) vm + xx*ibh);
+	hh =hl+xx*ibh; 
+	tmpTmax =vm+ xx*ibh;
 
 	bls = tmpTmid;
 	bh = tmpTmax;
@@ -3400,7 +3404,6 @@ CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 	/* Now for each value that is >hgh if a middle value m occurs in vmax we can save a redudant exchange by seaching 
 	in the middle partition. There middle values are ignored and  a high value is  exchanged with m. 
 	Similarly when a middle value occurs */  			
-	/*for (p = nmin, vm = BUNtloc(b, p); p < bls; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx), hl = (ptr) ((char *) hl + xx)) {*/
 
 	while(vm != bls){
 		if (*(int *) vm @5 low && *(int *) vm @6 hgh) {
@@ -3410,8 +3413,7 @@ CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 				tmpVmid = *(@1*)tmpTmid;
 				if (tmpVmid @4 low){
 					@:exchangeTest(@1,tmpTmid,vm,hm,hl)@
-					tmpTmid = (ptr) ((char *) tmpTmid + xx);
-					hm = (ptr) ((char *) hm + xx);
+					@:incdecSI(tmpTmid,hm,+)@
 					break;
 				}
 				if (tmpVmid @7 hgh){
@@ -3420,20 +3422,16 @@ CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 					tmpVmax = *(@1*)tmpTmax;
 					if (tmpVmax @5 low  && tmpVmax @6 hgh){
 						@:exchangeTest(@1,tmpTmax,tmpTmid,hh,hm)@
-						tmpTmax = (ptr) ((char *) tmpTmax + xx);
-						hh = (ptr) ((char *) hh + xx); 
+						@:incdecSI(tmpTmax,hh,+)@
 					}
 					if (tmpVmax @4 low){
 						@:exchange2Test(@1,vm,tmpTmid,tmpTmax,hl,hm,hh)@
-						tmpTmid = (ptr) ((char *) tmpTmid + xx);
-						hm = (ptr) ((char *) hm + xx);
-						tmpTmax = (ptr) ((char *) tmpTmax + xx);
-						hh = (ptr) ((char *) hh + xx); 
+						@:incdecSI(tmpTmid,hm,+)@
+						@:incdecSI(tmpTmax,hh,+)@
 						break;
 					} 
 				}
-				tmpTmid = (ptr) ((char *) tmpTmid + xx);
-				hm = (ptr) ((char *) hm + xx);       
+				@:incdecSI(tmpTmid,hm,+)@
 			}       
 		}  
 		if (*(int *) vm @7 hgh) {
@@ -3442,8 +3440,7 @@ CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 				tmpVmax = *(@1*)tmpTmax;
 				if (tmpVmax @4 low){
 					@:exchangeTest(@1,tmpTmax,vm,hh,hl)@
-					tmpTmax = (ptr) ((char *) tmpTmax + xx);
-					hh = (ptr) ((char *) hh + xx); 
+					@:incdecSI(tmpTmax,hh,+)@
 					break;
 				}
 				if (tmpVmax @5 low && tmpVmax @6  hgh){
@@ -3451,20 +3448,16 @@ CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 					tmpVmid = *(@1*)tmpTmid;
 					if (tmpVmid @7 hgh){
 						@:exchangeTest(@1,tmpTmid,tmpTmax,hm,hh)@
-						tmpTmid = (ptr) ((char *) tmpTmid + xx);
-						hm = (ptr) ((char *) hm + xx);
+						@:incdecSI(tmpTmid,hm,+)@
 					}
 					if (tmpVmid @4 low){
 						@:exchange2Test(@1,tmpTmax,tmpTmid,vm,hh,hm,hl)@
-						tmpTmid = (ptr) ((char *) tmpTmid + xx);
-						hm = (ptr) ((char *) hm + xx);
-						tmpTmax = (ptr) ((char *) tmpTmax + xx);
-						hh = (ptr) ((char *) hh + xx); 
+						@:incdecSI(tmpTmid,hm,+)@
+						@:incdecSI(tmpTmax,hh,+)@
 						break;
 					}
 				}
-				tmpTmax = (ptr) ((char *) tmpTmax + xx);
-				hh = (ptr) ((char *) hh + xx);
+					@:incdecSI(tmpTmax,hh,+)@
 			}
 		}
                 if (tmpTmid == bh )
@@ -3476,47 +3469,38 @@ CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 		@:move(@1,vm,,+,@4low,vm < bls &&,hl)@
 	}
 
-	for (; tmpTmid < bh; tmpTmid = (ptr) ((char *) tmpTmid + xx), hm = (ptr) ((char *) hm + xx)) {
+	for (; tmpTmid < bh; tmpTmid += xx, hm +=xx) {
 		if (*(int *) tmpTmid @7  hgh){
 			@:move(@1,tmpTmax,,+,@7hgh,,hh)@
- 
 			@:exchangeTest(@1,tmpTmax,tmpTmid,hh,hm)@
-			tmpTmax = (ptr) ((char *) tmpTmax + xx);
-			hh = (ptr) ((char *) hh + xx); 
+			@:incdecSI(tmpTmax,hh,+)@
 			if (tmpTmax > vmax) break;
 		}
 	}
 	return MAL_SUCCEED;
 
 finishLowHigh:;
-	vm = (ptr) ((char *) vm + xx);
-	hl = (ptr) ((char *) hl + xx);
+	@:incdecSI(vm,hl,+)@
 
-	for (; vm < bls; vm = (ptr) ((char *) vm + xx), hl = (ptr) ((char *) hl + xx)) {
+	for (; vm < bls; vm += xx, hl += xx) {
 		if (*(int *) vm @7  hgh){
 			@:move(@1,tmpTmax,,+,@7hgh,,hh)@
-			 
 			@:exchangeTest(@1,tmpTmax,vm,hh,hl)@
-			tmpTmax = (ptr) ((char *) tmpTmax + xx);
-			hh = (ptr) ((char *) hh + xx); 
-		
+			@:incdecSI(tmpTmax,hh,+)@
 			if (tmpTmax > vmax) break;
 		}
 	}
 	return MAL_SUCCEED;
 	
 finishLowMiddle:;
-	vm = (ptr) ((char *) vm + xx);
-	hl = (ptr) ((char *) hl + xx);
+		
+	@:incdecSI(vm,hl,+)@
 
-	for (; vm < bls; vm = (ptr) ((char *) vm + xx), hl = (ptr) ((char *) hl + xx)) {
+	for (; vm < bls; vm += xx, hl += xx) {
 		if (*(@1*)vm @5 low && *(@1*)vm @6  hgh){
               		@:move(@1,tmpTmid,,+, @5 low && *(@1*)tmpTmid @6  hgh,,hm)@
-			 
 			@:exchangeTest(@1,vm,tmpTmid,hl,hm)@
-			tmpTmid = (ptr) ((char *) tmpTmid + xx);
-			hm = (ptr) ((char *) hm + xx); 
-		
+			@:incdecSI(tmpTmid,hm,+)@
 			if (bh == tmpTmid) break;
 		}
 	}
@@ -3525,26 +3509,124 @@ finishLowMiddle:;
 	
 }
 @
-
-@= crackInThreeOrderedPiecesSI
+@= moveOrdered
+	while (@1){
+		@2 @4= xx;
+		@3 @4= xx;
+		@5
+	}
+@
+@= crackInTwoOrderedPieces
 str
-CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
+CRKcrackOrderedZERO_SI_@1(BAT *b, @1 mid, int idx_first, int idx_last)
 {
 
-	ptr vmax, nmin, vm,;
-	ptr tmpTmax, tmpTmin;
+	BUN lh, lt, hh, ht, fhh, fht, tmpt, tmph, fh, llh, llt;
+	oid *scr_h;
+	@1  *scr_t;
+	int lastShrinked = 0;
+	int xx = BUNsize(b);
 
-	vmax = BUNptr(b, idx_last);
-	tmpTmax =  BUNtloc(b, vmax);
- 
-	nmin = BUNptr(b, idx_first),
-	tmpTmin = BUNtloc(b, nmin); 
-	@:move(@1,tmpTmax,vmax,-,@7hgh, vmax > nmin &&)@
-	@:move(@1,tmpTmin,nmin,+,@4low, vmax > nmin &&)@
-	/* Empty result*/
-	if (nmin == vmax)
-		 return MAL_SUCCEED;
-		 
+	lh = BUNhloc(b, BUNptr(b, idx_first));
+	lt = BUNtloc(b, BUNptr(b, idx_first));
+	ht = BUNtloc(b, BUNptr(b, idx_last));
+	hh = BUNhloc(b, BUNptr(b, idx_last));
+
+	@:moveOrdered(*(@1*)lt <= mid,lh,lt,+,)@
+	@:moveOrdered(*(@1*)ht >  mid,hh,ht,-,lastShrinked++;)@
+
+	tmph = fhh = lh;
+	tmpt = fht = lt;	
+	
+	int hghPos = 0; 
+	for(; tmpt <= ht; tmpt+=xx){
+		hghPos+=(*(@1*)tmpt <= mid);
+	}
+
+	fhh = lh + xx*hghPos;
+	fht = lt + xx*hghPos;
+	if (fht == ht) return MAL_SUCCEED;
+	if (fht == lt) return MAL_SUCCEED;
+	
+	int scr_size = idx_last-idx_first + 1 - hghPos - lastShrinked;
+	scr_h = (oid*) GDKmalloc(scr_size * sizeof(oid));
+	scr_t = (@1 *) GDKmalloc(scr_size * sizeof(@1 ));
+	int spl = 0, sph = scr_size-1;
+
+	tmph = lh;
+	tmpt = lt;
+
+	llh = fhh - xx;
+	llt = fht - xx;
+
+	fh = fht;
+	while(tmpt < fh){
+		if (*(@1*)fht <= mid){
+			scr_h[spl] = *(oid*)fhh;
+			scr_t[spl] = *(@1* )fht;
+			spl++;
+		}
+		else{
+			scr_h[sph] = *(oid*)fhh;
+			scr_t[sph] = *(@1* )fht;
+			sph--;
+		}
+		*(oid*) fhh = *(oid*)tmph;
+                *(@1* ) fht = *(@1 *)tmpt;
+
+		fhh += xx;
+		fht += xx;
+
+		tmph += xx;
+		tmpt += xx;
+		while (*(@1*)tmpt <= mid){
+			*(oid*) lh = *(oid*)tmph;
+			*(@1* ) lt = *(@1 *)tmpt;
+			lh += xx;
+			lt += xx;
+			tmph += xx;
+			tmpt += xx;
+		}
+	}
+
+	tmph = hh;	
+	tmpt = ht;
+	while (tmpt >= fht){
+		*(oid*)llh = *(oid*)tmph;
+		*(@1 *)llt = *(@1 *)tmpt;
+
+		llh -= xx;
+		llt -= xx;
+
+		tmph -= xx;
+		tmpt -= xx;
+		while (*(@1*)tmpt > mid && tmpt >= fht){
+			*(oid*) hh = *(oid*)tmph;
+			*(@1* ) ht = *(@1 *)tmpt;
+			hh -= xx;
+			ht -= xx;
+			tmph -= xx;
+			tmpt -= xx;
+		}
+	}
+	int i = 0;
+	for (;i < spl;i++){
+		*(oid*)lh = scr_h[i];
+		*(@1 *)lt = scr_t[i];
+		lh += xx;
+		lt += xx;
+	}
+	i = scr_size-1;
+	for (;i > sph;i--){
+		*(oid*)fhh = scr_h[i];
+		*(@1 *)fht = scr_t[i];
+		fhh += xx;
+		fht += xx;
+	}
+
+	GDKfree(scr_h);
+	GDKfree(scr_t);
+	
 	return MAL_SUCCEED;
 }
 @
@@ -3553,6 +3635,7 @@ CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 @:crackInThreePiecesSI(@1,LO,RE,<=,>,<=,>)@
 @:crackInThreePiecesSI(@1,LE,RO,<,>=,<,>=)@
 @:crackInThreePiecesSI(@1,LO,RO,<=,>,<,>=)@
+@:crackInTwoOrderedPieces(@1)@
 str
 CRKcrackZero_SI_@1 (int *res, int *bid, @1 *mid)
 {
@@ -3569,6 +3652,22 @@ CRKcrackZero_SI_@1 (int *res, int *bid, @1 *mid)
 	return MAL_SUCCEED;
 }
 
+str             
+CRKcrackOrderedZero_SI_@1 (int *res, int *bid, @1 *mid)
+{       
+        BAT *b;
+        str msg;
+
+        if ((b = BATdescriptor(*bid)) == NULL) {
+                return throwMessage("crackers.crack_SI", "Cannot access descriptor");
+        }
+
+        msg= CRKcrackOrderedZERO_SI_@1(b,*mid, 0, BATcount(b)-1);
+
+        BBPkeepref(b->batCacheid);
+        *res = *bid;    
+        return MAL_SUCCEED;             
+}  
 
 str
 CRKcrackOne_SI_@1 (int *res, int *bid, @1 *mid)
@@ -3588,6 +3687,22 @@ CRKcrackOne_SI_@1 (int *res, int *bid, @1 *mid)
 }
 
 str
+CRKcrackOrderedOne_SI_@1 (int *res, int *bid, @1 *mid)
+{
+	BAT *b;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
+	}
+
+	(void)mid;
+
+	BBPkeepref(b->batCacheid);
+	*res = *bid;
+	return MAL_SUCCEED;
+}
+
+str
 CRKcrackTwo_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 {
 	BAT *b;
@@ -3597,6 +3712,22 @@ CRKcrackTwo_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
 	}
+
+	BBPkeepref(b->batCacheid);
+	*res = *bid;
+	return MAL_SUCCEED;
+}
+
+str
+CRKcrackOrderedTwo_SI_@1 (int *res, int *bid, @1 *mid)
+{
+	BAT *b;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
+	}
+
+	(void)mid;
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
@@ -3619,6 +3750,22 @@ CRKcrackThree_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
 	return msg;
+}
+
+str
+CRKcrackOrderedThree_SI_@1 (int *res, int *bid, @1 *mid)
+{
+	BAT *b;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
+	}
+
+	(void)mid;
+
+	BBPkeepref(b->batCacheid);
+	*res = *bid;
+	return MAL_SUCCEED;
 }
 @
 
