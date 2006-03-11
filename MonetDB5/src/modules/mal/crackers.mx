@@ -3516,39 +3516,7 @@ finishLowMiddle:;
 		@5
 	}
 @
-@= crackInTwoOrderedPieces
-str
-CRKcrackOrderedZERO_SI_@1(BAT *b, @1 mid, int idx_first, int idx_last)
-{
-
-	BUN lh, lt, hh, ht, fhh, fht, tmpt, tmph, fh, llh, llt;
-	oid *scr_h;
-	@1  *scr_t;
-	int lastShrinked = 0;
-	int xx = BUNsize(b);
-
-	lh = BUNhloc(b, BUNptr(b, idx_first));
-	lt = BUNtloc(b, BUNptr(b, idx_first));
-	ht = BUNtloc(b, BUNptr(b, idx_last));
-	hh = BUNhloc(b, BUNptr(b, idx_last));
-
-	@:moveOrdered(*(@1*)lt <= mid,lh,lt,+,)@
-	@:moveOrdered(*(@1*)ht >  mid,hh,ht,-,lastShrinked++;)@
-
-	tmph = fhh = lh;
-	tmpt = fht = lt;	
-	
-	int hghPos = 0; 
-	for(; tmpt <= ht; tmpt+=xx){
-		hghPos+=(*(@1*)tmpt <= mid);
-	}
-
-	fhh = lh + xx*hghPos;
-	fht = lt + xx*hghPos;
-	if (fht == ht) return MAL_SUCCEED;
-	if (fht == lt) return MAL_SUCCEED;
-	
-	int scr_size = idx_last-idx_first + 1 - hghPos - lastShrinked;
+@= rightOrderedZeroSplit
 	scr_h = (oid*) GDKmalloc(scr_size * sizeof(oid));
 	scr_t = (@1 *) GDKmalloc(scr_size * sizeof(@1 ));
 	int spl = 0, sph = scr_size-1;
@@ -3623,6 +3591,130 @@ CRKcrackOrderedZERO_SI_@1(BAT *b, @1 mid, int idx_first, int idx_last)
 		fhh += xx;
 		fht += xx;
 	}
+
+@
+
+@= leftOrderedZeroSplit
+	scr_h = (oid*) GDKmalloc(scr_size * sizeof(oid));
+	scr_t = (@1 *) GDKmalloc(scr_size * sizeof(@1 ));
+	int spl = 0, sph = scr_size-1;
+
+	tmph = hh;
+	tmpt = ht;
+
+	llh = fhh - xx;
+	llt = fht - xx;
+
+	fh = llt;
+	while(tmpt > fh){
+		if (*(@1*)llt <= mid){
+			scr_h[spl] = *(oid*)llh;
+			scr_t[spl] = *(@1* )llt;
+			spl++;
+		}
+		else{
+			scr_h[sph] = *(oid*)llh;
+			scr_t[sph] = *(@1* )llt;
+			sph--;
+		}
+		*(oid*) llh = *(oid*)tmph;
+                *(@1* ) llt = *(@1 *)tmpt;
+
+		llh -= xx;
+		llt -= xx;
+
+		tmph -= xx;
+		tmpt -= xx;
+		while (*(@1*)tmpt > mid){
+			*(oid*) hh = *(oid*)tmph;
+			*(@1* ) ht = *(@1 *)tmpt;
+			hh -= xx;
+			ht -= xx;
+			tmph -= xx;
+			tmpt -= xx;
+		}
+	}
+
+	tmph = lh;	
+	tmpt = lt;
+	while (tmpt <= llt){
+		*(oid*)fhh = *(oid*)tmph;
+		*(@1 *)fht = *(@1 *)tmpt;
+
+		fhh += xx;
+		fht += xx;
+
+		tmph += xx;
+		tmpt += xx;
+		while (*(@1*)tmpt <= mid && tmpt <= llt){
+			*(oid*) lh = *(oid*)tmph;
+			*(@1* ) lt = *(@1 *)tmpt;
+			lh += xx;
+			lt += xx;
+			tmph += xx;
+			tmpt += xx;
+		}
+	}
+	int i = spl - 1;
+	for (; i >= 0 ; i--){
+		*(oid*)lh = scr_h[i];
+		*(@1 *)lt = scr_t[i];
+		lh += xx;
+		lt += xx;
+	}
+	i = sph + 1;
+	for (; i <= scr_size - 1; i++){
+		*(oid*)fhh = scr_h[i];
+		*(@1 *)fht = scr_t[i];
+		fhh += xx;
+		fht += xx;
+	}
+
+@= crackInTwoOrderedPieces
+str
+CRKcrackOrderedZERO_SI_@1(BAT *b, @1 mid, int idx_first, int idx_last)
+{
+
+	BUN lh, lt, hh, ht, fhh, fht, tmpt, tmph, fh, llh, llt;
+	oid *scr_h;
+	@1  *scr_t;
+	int hghShrinked = 0, lowShrinked = 0;
+	int xx = BUNsize(b);
+
+	lh = BUNhloc(b, BUNptr(b, idx_first));
+	lt = BUNtloc(b, BUNptr(b, idx_first));
+	ht = BUNtloc(b, BUNptr(b, idx_last));
+	hh = BUNhloc(b, BUNptr(b, idx_last));
+
+	@:moveOrdered(*(@1*)lt <= mid,lh,lt,+,lowShrinked++;)@
+	@:moveOrdered(*(@1*)ht >  mid,hh,ht,-,hghShrinked++;)@
+
+	tmph = fhh = lh;
+	tmpt = fht = lt;	
+	
+	int hghPos = 0; 
+	for(; tmpt <= ht; tmpt+=xx){
+		hghPos+=(*(@1*)tmpt <= mid);
+	}
+
+	fhh = lh + xx*hghPos;
+	fht = lt + xx*hghPos;
+
+	if (fht == ht) return MAL_SUCCEED;
+	if (fht == lt) return MAL_SUCCEED;
+	
+	int right_scr_size = idx_last-idx_first + 1 - hghPos - hghShrinked;
+	int left_scr_size  = hghPos - lowShrinked;
+	int scr_size;
+
+	if (right_scr_size <= left_scr_size){
+		scr_size = right_scr_size;
+		@:rightOrderedZeroSplit(@1)@
+	}
+	else{
+		scr_size = left_scr_size;
+		@:leftOrderedZeroSplit(@1)@
+	} 
 
 	GDKfree(scr_h);
 	GDKfree(scr_t);
