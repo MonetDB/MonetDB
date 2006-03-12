@@ -3529,7 +3529,7 @@ finishLowMiddle:;
 
 	fh = fht;
 	while(tmpt < fh){
-		if (*(@1*)fht <= mid){
+		if (*(@1*)fht @2 mid){
 			scr_h[spl] = *(oid*)fhh;
 			scr_t[spl] = *(@1* )fht;
 			spl++;
@@ -3547,7 +3547,7 @@ finishLowMiddle:;
 
 		tmph += xx;
 		tmpt += xx;
-		while (*(@1*)tmpt <= mid){
+		while (*(@1*)tmpt @2 mid){
 			*(oid*) lh = *(oid*)tmph;
 			*(@1* ) lt = *(@1 *)tmpt;
 			lh += xx;
@@ -3568,7 +3568,7 @@ finishLowMiddle:;
 
 		tmph -= xx;
 		tmpt -= xx;
-		while (*(@1*)tmpt > mid && tmpt >= fht){
+		while (*(@1*)tmpt @3 mid && tmpt >= fht){
 			*(oid*) hh = *(oid*)tmph;
 			*(@1* ) ht = *(@1 *)tmpt;
 			hh -= xx;
@@ -3607,7 +3607,7 @@ finishLowMiddle:;
 
 	fh = llt;
 	while(tmpt > fh){
-		if (*(@1*)llt <= mid){
+		if (*(@1*)llt @2 mid){
 			scr_h[spl] = *(oid*)llh;
 			scr_t[spl] = *(@1* )llt;
 			spl++;
@@ -3625,7 +3625,7 @@ finishLowMiddle:;
 
 		tmph -= xx;
 		tmpt -= xx;
-		while (*(@1*)tmpt > mid){
+		while (*(@1*)tmpt @3 mid){
 			*(oid*) hh = *(oid*)tmph;
 			*(@1* ) ht = *(@1 *)tmpt;
 			hh -= xx;
@@ -3646,7 +3646,7 @@ finishLowMiddle:;
 
 		tmph += xx;
 		tmpt += xx;
-		while (*(@1*)tmpt <= mid && tmpt <= llt){
+		while (*(@1*)tmpt @2 mid && tmpt <= llt){
 			*(oid*) lh = *(oid*)tmph;
 			*(@1* ) lt = *(@1 *)tmpt;
 			lh += xx;
@@ -3672,7 +3672,7 @@ finishLowMiddle:;
 
 @= crackInTwoOrderedPieces
 str
-CRKcrackOrderedZERO_SI_@1(BAT *b, @1 mid, int idx_first, int idx_last)
+CRKcrackOrderedZERO_SI_@2_@1(BAT *b, @1 mid, int idx_first, int idx_last, int *bound)
 {
 
 	BUN lh, lt, hh, ht, fhh, fht, tmpt, tmph, fh, llh, llt;
@@ -3686,20 +3686,20 @@ CRKcrackOrderedZERO_SI_@1(BAT *b, @1 mid, int idx_first, int idx_last)
 	ht = BUNtloc(b, BUNptr(b, idx_last));
 	hh = BUNhloc(b, BUNptr(b, idx_last));
 
-	@:moveOrdered(*(@1*)lt <= mid,lh,lt,+,lowShrinked++;)@
-	@:moveOrdered(*(@1*)ht >  mid,hh,ht,-,hghShrinked++;)@
+	@:moveOrdered(*(@1*)lt @3 mid,lh,lt,+,lowShrinked++;)@
+	@:moveOrdered(*(@1*)ht @4 mid,hh,ht,-,hghShrinked++;)@
 
 	tmph = fhh = lh;
 	tmpt = fht = lt;	
 	
 	int hghPos = 0; 
-	for(; tmpt <= ht; tmpt+=xx){
-		hghPos+=(*(@1*)tmpt <= mid);
-	}
+	for(; tmpt <= ht; tmpt+=xx)
+		hghPos+=(*(@1*)tmpt @3 mid);
+	
 
 	fhh = lh + xx*hghPos;
 	fht = lt + xx*hghPos;
-
+	*bound = hghPos + lowShrinked;
 	if (fht == ht) return MAL_SUCCEED;
 	if (fht == lt) return MAL_SUCCEED;
 	
@@ -3709,11 +3709,11 @@ CRKcrackOrderedZERO_SI_@1(BAT *b, @1 mid, int idx_first, int idx_last)
 
 	if (right_scr_size <= left_scr_size){
 		scr_size = right_scr_size;
-		@:rightOrderedZeroSplit(@1)@
+		@:rightOrderedZeroSplit(@1,@3,@4)@
 	}
 	else{
 		scr_size = left_scr_size;
-		@:leftOrderedZeroSplit(@1)@
+		@:leftOrderedZeroSplit(@1,@3,@4)@
 	} 
 
 	GDKfree(scr_h);
@@ -3727,7 +3727,8 @@ CRKcrackOrderedZERO_SI_@1(BAT *b, @1 mid, int idx_first, int idx_last)
 @:crackInThreePiecesSI(@1,LO,RE,<=,>,<=,>)@
 @:crackInThreePiecesSI(@1,LE,RO,<,>=,<,>=)@
 @:crackInThreePiecesSI(@1,LO,RO,<=,>,<,>=)@
-@:crackInTwoOrderedPieces(@1)@
+@:crackInTwoOrderedPieces(@1,LE,<=,>)@
+@:crackInTwoOrderedPieces(@1,RE,<,>=)@
 str
 CRKcrackZero_SI_@1 (int *res, int *bid, @1 *mid)
 {
@@ -3753,8 +3754,8 @@ CRKcrackOrderedZero_SI_@1 (int *res, int *bid, @1 *mid)
         if ((b = BATdescriptor(*bid)) == NULL) {
                 return throwMessage("crackers.crack_SI", "Cannot access descriptor");
         }
-
-        msg= CRKcrackOrderedZERO_SI_@1(b,*mid, 0, BATcount(b)-1);
+	int bound;
+        msg= CRKcrackOrderedZERO_SI_LE_@1(b,*mid, 0, BATcount(b)-1,&bound);
 
         BBPkeepref(b->batCacheid);
         *res = *bid;    
@@ -3845,15 +3846,17 @@ CRKcrackThree_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 }
 
 str
-CRKcrackOrderedThree_SI_@1 (int *res, int *bid, @1 *mid)
+CRKcrackOrderedThree_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 {
 	BAT *b;
-
+	str msg;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
 	}
-
-	(void)mid;
+	int bound;	
+	msg= CRKcrackOrderedZERO_SI_LE_@1(b,*hgh, 0, BATcount(b)-1, &bound);
+	msg= CRKcrackOrderedZERO_SI_RE_@1(b,*low, 0, bound, &bound);
+	
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
