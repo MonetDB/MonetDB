@@ -67,6 +67,7 @@ ZEND_DECLARE_MODULE_GLOBALS(monetdb)
 
 /* True global resources - no need for thread safety here */
 static int le_link;
+static int le_plink;
 static int le_handle;
 
 struct _phpMonetHandle {
@@ -81,6 +82,7 @@ struct _phpMonetConn {
 	Mapi mid;
 	char *error;	/* differs from the mapi error in that it is cleaned */
 	phpMonetHandle *first;
+	int persistent;
 };
 typedef struct _phpMonetConn phpMonetConn;
 
@@ -136,6 +138,7 @@ static int php_monetdb_set_last_error(char *error, phpMonetConn* con TSRMLS_DC) 
  */
 function_entry monetdb_functions[] = {
 	PHP_FE(monetdb_connect, NULL)
+	PHP_FE(monetdb_pconnect, NULL)
 	PHP_FE(monetdb_close, NULL)
 	PHP_FE(monetdb_setAutocommit, NULL)
 	PHP_FE(monetdb_query, NULL)
@@ -207,6 +210,7 @@ _free_monetdb_link(zend_rsrc_list_entry * rsrc TSRMLS_DC)
 		h = next;
 	}
 	/* fprintf(stderr, "Freed link and %d handles\n", i); */
+	mapi_disconnect(monet_link->mid);
 	mapi_destroy(monet_link->mid);
 	monet_link->mid = NULL;
 	if (monet_link->error) efree(monet_link->error);
@@ -241,11 +245,7 @@ PHP_INI_BEGIN()
     STD_PHP_INI_ENTRY("monetdb.default_hostname", "localhost", PHP_INI_ALL, OnUpdateString, default_hostname, zend_monetdb_globals, monetdb_globals)
     STD_PHP_INI_ENTRY("monetdb.default_username", "monetdb", PHP_INI_ALL, OnUpdateString, default_username, zend_monetdb_globals, monetdb_globals)
     STD_PHP_INI_ENTRY("monetdb.default_password", "monetdb", PHP_INI_ALL, OnUpdateString, default_password, zend_monetdb_globals, monetdb_globals)
-#if PHP_API_VERSION <= 20020918
-    STD_PHP_INI_ENTRY("monetdb.query_timeout", "0", PHP_INI_ALL, OnUpdateInt, query_timeout, zend_monetdb_globals, monetdb_globals)
-#else
-    STD_PHP_INI_ENTRY("monetdb.query_timeout", "0", PHP_INI_ALL, OnUpdateLong, query_timeout, zend_monetdb_globals, monetdb_globals)
-#endif
+    STD_PHP_INI_BOOLEAN("monetdb.allow_persistent", "1", PHP_INI_SYSTEM, OnUpdateBool, allow_persistent, zend_monetdb_globals, monetdb_globals)
     PHP_INI_END()
 /* }}} */
 
@@ -254,15 +254,9 @@ PHP_INI_BEGIN()
 static void
 php_monetdb_init_globals(zend_monetdb_globals * monetdb_globals)
 {
-	monetdb_globals->default_port = 0;
-	monetdb_globals->default_language = NULL;
-	monetdb_globals->default_hostname = NULL;
-	monetdb_globals->default_username = NULL;
-	monetdb_globals->default_password = NULL;
-	monetdb_globals->last_error = NULL;
-	monetdb_globals->query_timeout = 0;
+	/* default everything to 0, NULL or empty string */
+	memset(monetdb_globals, 0, sizeof(zend_monetdb_globals));
 }
-
 /* }}} */
 
 /* {{{ PHP_MINIT_FUNCTION
@@ -274,6 +268,7 @@ PHP_MINIT_FUNCTION(monetdb)
 
 	le_handle = zend_register_list_destructors_ex(_free_monetdb_handle, NULL, "MonetDB result handle", module_number);
 	le_link = zend_register_list_destructors_ex(_free_monetdb_link, NULL, "MonetDB connection", module_number);
+	le_plink = zend_register_list_destructors_ex(NULL, _free_monetdb_link, "MonetDB persistent connection", module_number);
 
 	REGISTER_LONG_CONSTANT("MONETDB_ASSOC", MONETDB_ASSOC, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("MONETDB_NUM", MONETDB_NUM, CONST_CS | CONST_PERSISTENT);
@@ -346,26 +341,20 @@ php_monetdb_set_default_link(int id TSRMLS_DC)
 
 /* }}} */
 
-/* {{{ proto resource monetdb_connect(string language [, string hostname [, int port [, string username [, string password]]]])
-   Open a connection to a MonetDB server */
-PHP_FUNCTION(monetdb_connect)
+/* {{{ php_monetdb_do_connect
+ */
+static void
+php_monetdb_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 {
-	phpMonetConn *conn;
-	char *hostname = NULL;
-	char *username = NULL;
-	char *password = NULL;
-	char *language = NULL;
-	int port = 50000;
-	int timeout = 0;
+	phpMonetConn *conn = NULL;
+	char *hostname = MONET_G(default_hostname);
+	char *username = MONET_G(default_username);
+	char *password = MONET_G(default_password);
+	char *language = MONET_G(default_language);
+	int port = MONET_G(default_port);
+	char *key = NULL;
 	zval **args[5];
-	int argc;
-
-	hostname = MONET_G(default_hostname);
-	username = MONET_G(default_username);
-	password = MONET_G(default_password);
-	language = MONET_G(default_language);
-	port = MONET_G(default_port);
-	timeout = MONET_G(query_timeout);
+	int argc, len;
 
 	/* retrieve parameters */
 	argc = ZEND_NUM_ARGS();
@@ -396,33 +385,91 @@ PHP_FUNCTION(monetdb_connect)
 		break;
 	}
 
-	/* Connect to MonetDB server */
-	conn = (phpMonetConn *) emalloc(sizeof(phpMonetConn));
-	conn->first = NULL;
-	conn->error = NULL;
-	conn->mid = mapi_connect(hostname, port, username, password, language);
+	len = strlen(password) + strlen(username) + strlen(hostname) +
+			strlen(language) + strlen("monetdb") + 5 + 5 + 1;
+	key = emalloc(len);
+	snprintf(key, len - 1, "monetdb_%s_%s_%ld_%s_%s",
+			password, username, port, hostname, language);
 
-	if (mapi_error(conn->mid)) {
-		int e = php_monetdb_set_last_error(mapi_error_str(conn->mid), NULL TSRMLS_CC);
-		php_error(E_WARNING, "monetdb_connect: Error: %s",
-				e ? MONET_G(last_error) : "(null)");
-		RETURN_FALSE;
+	persistent &= MONET_G(allow_persistent);
+
+	if (persistent) {
+		zend_rsrc_list_entry *le;
+
+		/* see if we already have a connection that matches the 'key' */
+		if (zend_hash_find(&EG(persistent_list), key, strlen(key) + 1, (void **)&le) != FAILURE) {
+			/* ok, fetch the connection */
+			if (Z_TYPE_P(le) != le_plink)
+				RETURN_FALSE;
+
+			/* try and see if the connection is still alive... use
+			 * mapi_ping to see if that gives trouble
+			 */
+			conn = (phpMonetConn *)le->ptr;
+			if (mapi_ping(conn->mid)) {
+				/* ok, connection is dead */
+				conn = NULL;
+			}
+		}
 	}
 
-#if 0
-	/* mapi_timeout is not yet implemented :-/ */
+	if (conn == NULL) {
+		/* Connect to MonetDB server */
+		conn = (phpMonetConn *) emalloc(sizeof(phpMonetConn));
+		conn->first = NULL;
+		conn->error = NULL;
+		conn->mid = mapi_connect(hostname, port, username, password, language);
 
-	/* Set the query timeout, if any. */
-	if (timeout > 0)
-		/* Timeout in .ini file is given in seconds, so convert to msecs */
-		mapi_timeout(conn, 1000 * timeout);
-#endif
+		if (mapi_error(conn->mid)) {
+			int e = php_monetdb_set_last_error(mapi_error_str(conn->mid), NULL TSRMLS_CC);
+			php_error(E_WARNING, "monetdb_connect: Error: %s",
+					e ? MONET_G(last_error) : "(null)");
+			RETURN_FALSE;
+		}
+
+		if (persistent) {
+			zend_rsrc_list_entry new_le;
+
+			conn->persistent = 1;
+			/* save the connection in the hashlist */
+			Z_TYPE(new_le) = le_plink;
+			new_le.ptr = conn;
+			if (zend_hash_update(&EG(persistent_list), key, strlen(key) + 1, (void *)&new_le, sizeof(zend_rsrc_list_entry), NULL) == FAILURE) {
+				php_error(E_ERROR, "adding connection to hash list failed!");
+				mapi_disconnect(conn->mid);
+				RETURN_FALSE;
+			}
+		} else {
+			conn->persistent = 0;
+		}
+	}
+
+	efree(key);
 
 	/* return value is the return value in the PHP_FUNCTION */
-	ZEND_REGISTER_RESOURCE(return_value, conn, le_link);
+	if (persistent) {
+		ZEND_REGISTER_RESOURCE(return_value, conn, le_plink);
+	} else {
+		ZEND_REGISTER_RESOURCE(return_value, conn, le_link);
+	}
 	php_monetdb_set_default_link(Z_LVAL_P(return_value) TSRMLS_CC);
 }
+/* }}} */
 
+/* {{{ proto resource monetdb_connect(string language [, string hostname [, int port [, string username [, string password]]]])
+   Open a connection to a MonetDB server */
+PHP_FUNCTION(monetdb_connect)
+{
+	php_monetdb_do_connect(INTERNAL_FUNCTION_PARAM_PASSTHRU, 0);
+}
+/* }}} */
+
+/* {{{ proto resource monetdb_pconnect(string language [, string hostname [, int port [, string username [, string password]]]])
+   Open a persistent connection to a MonetDB server */
+PHP_FUNCTION(monetdb_pconnect)
+{
+	php_monetdb_do_connect(INTERNAL_FUNCTION_PARAM_PASSTHRU, 1);
+}
 /* }}} */
 
 /* {{{ proto bool monetdb_close([resource db])
@@ -452,6 +499,9 @@ PHP_FUNCTION(monetdb_close)
 	}
 
 	ZEND_FETCH_RESOURCE(conn, phpMonetConn *, mapi_link, id, "MonetDB connection", le_link);
+
+	if (conn->persistent)
+		RETURN_TRUE;
 
 	/*~ printf("MON: disconnecting %p\n", conn); */
 	mapi_disconnect(conn->mid);

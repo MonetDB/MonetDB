@@ -64,6 +64,7 @@ PHP_RSHUTDOWN_FUNCTION(monetdb);
 PHP_MINFO_FUNCTION(monetdb);
 
 PHP_FUNCTION(monetdb_connect);
+PHP_FUNCTION(monetdb_pconnect);
 PHP_FUNCTION(monetdb_close);
 PHP_FUNCTION(monetdb_setAutocommit);
 PHP_FUNCTION(monetdb_query);
@@ -107,7 +108,7 @@ char *default_hostname;
 char *default_username;
 char *default_password;
 char *last_error;
-long query_timeout;
+long allow_persistent;
 ZEND_END_MODULE_GLOBALS(monetdb)
 
 /* In every utility function you add that needs to use variables 
