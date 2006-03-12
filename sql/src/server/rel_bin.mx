@@ -340,6 +340,8 @@ char *compare_func( comp_type t )
 		return ">=";
 	case cmp_gt:
 		return ">";
+	case cmp_notequal:
+		return "<>";
 	default:
 		return NULL;
 	}

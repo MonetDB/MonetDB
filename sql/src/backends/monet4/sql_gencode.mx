@@ -1079,7 +1079,8 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			int buflen = 32;
 			buf = NEW_ARRAY(char, buflen + 1);
 			len = snprintf(buf, buflen, "var s%d := s%d;\n", -s->nr, l);
-			dump(sql, buf, len, -s->nr);
+			write_command(sql, buf);
+			write_part(sql, buf, len);
 			_DELETE(buf);
 			backend_dec_nr2(s->op1.stval);
 		} 	break;

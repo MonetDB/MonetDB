@@ -62,6 +62,8 @@ swap_compare( comp_type t )
 		return cmp_lte;
 	case cmp_gt:
 		return cmp_lt;
+	case cmp_notequal:
+		return cmp_notequal;
 	default:
 		return cmp_equal;
 	}

@@ -1097,9 +1097,9 @@ proc sql_union (bat[any::1,any::2] b1, bat[any::1,any::2] b2) : bat[any::1,any::
 
 proc in (bat[any::1,any::2] b, any::2 v) : bit { return b.reverse().exist(v); }
 proc in (any::2 b, any::2 v) : bit { return (b = v); }
+proc [identity](bat[oid,any::1] b) : bat[oid,oid] { return mirror(b); }
 
 proc sql_server_start(bit global) : void {
-	tzone_local(TIMEZONE("GMT"));
 	var fc := nil;
 
 	var err := CATCH({ fc := sql_frontend(); });
@@ -1125,6 +1125,8 @@ proc sql_server_start(bit global) : void {
 proc sql_server_start() : void {
 	sql_server_start(false);
 }
+
+tzone_local(TIMEZONE("GMT"));
 
 if (mod() = "main") {
 	sql_server_start();

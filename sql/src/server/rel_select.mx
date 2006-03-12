@@ -2504,6 +2504,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		char *cmp;
 		sql_subaggr *a;
 		sql_exp *cnt, *re;
+		list *exps = NULL;
 
 		rel = rel_subquery(sql, rel, lo, f);
 		if (!rel)
@@ -2512,12 +2513,28 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		/* change to aggr(count(*)) > 0 */
 		if (sc->token == SQL_EXISTS) {
  			cmp = ">";
-		/* change to aggr(count(*)) != 0 */
-		} else {	/* NOT EXISTS */
- 			cmp = "<>";
+		/* change to left join (aggr(count(right_exp)) == 0) */
+		} else {	/* NOT EXISTS, needs left join */
+			list *rexps = NULL;
+			sql_rel *r = rel;
+ 			cmp = "=";
+			while(r && r->l && !is_join(r->op))
+				r = r->l;
+			if (!r)
+				return NULL;
+			assert(r->op == op_join);
+			r->op = op_left;
+			exps = new_exp_list();
+			/* find first right expression */
+			if (r->r)
+				r = r->r;
+			rexps = rel_projections(sql, r, NULL);
+			assert(rexps && rexps->h);
+			append(exps, exp_dup(rexps->h->data) );
+			list_destroy(rexps);
 		}
 		a = sql_bind_aggr(sql->trans->module, "count", NULL);
-		cnt = exp_aggr(NULL, a, 0, 0, rel->card);
+		cnt = exp_aggr(exps, a, 0, 1 /* no_nil */, rel->card);
 		cnt = rel_groupby_add_aggr(sql, rel, cnt);
 		re = exp_atom_int(0); 
 		return rel_compare_exp(sql, rel, cnt, re, cmp, NULL, f); 
@@ -3511,9 +3528,21 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, int tople
 
 		if (outer && rel->op == op_join && rel->l == outer) {
 			/* all projections of the outer are group by columns */
-			list *groupby_cols = rel_outerrefs( sql, rel );
+			list *groupby_cols;// = rel_outerrefs( sql, rel );
 			list *aggr_exps = rel_projections(sql, outer, NULL);
+			sql_exp *e = NULL;
 
+			if (!is_project(outer->op)) {
+				list *exps = rel_projections(sql, outer, NULL);
+				outer = rel_project(sql, outer, exps);
+				rel->l = outer;
+			}
+			e = exp_dup(outer->exps->h->data);
+			e = rel_unop_(sql, e, "identity");
+			rel_project_add_exp(sql, outer, e);
+			e = rel_project_label_exp(sql, outer, e);
+			groupby_cols = new_exp_list();
+			append(groupby_cols, e);
 			rel = rel_groupby_aggrs( sql, rel, groupby_cols, aggr_exps );
 		}
 	}
