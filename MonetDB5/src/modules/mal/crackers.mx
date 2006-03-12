@@ -2380,20 +2380,20 @@ CRKOrderedpieceZero_MK_@1( BAT *b, @1 mval, size_t first, size_t last, size_t *s
 	const int xx= BUNsize(b);
 	oid *hdummy, *hd;
 	@1  *tdummy, *td;
-	int lt=0, mid= BATcount(b)/2;
+	int lt=0, mid= BATcount(b)/2, m2= mid/2;
 	
-	hd= hdummy= (ptr) GDKmalloc((last-first+1) *sizeof(oid));
-	td= tdummy= (ptr) GDKmalloc((last-first+1) *sizeof(@1));
-
 	/* set bounds for the iterator */
 	tc = BUNtloc(b, BUNptr(b,first));
 	hc = BUNhloc(b, BUNptr(b,first));
-	vtop= BUNtloc(b,BUNptr(b,last/2));
-	for(; tc< vtop && lt <= mid; tc += xx)
+	vtop= BUNtloc(b,BUNptr(b,mid));
+	for(; tc< vtop && lt <m2; tc += xx)
 		lt += *(@1*) tc <=mval;
 
 	/* move the smallest portion to the scratch area */
 	if( lt >= mid/2 ){
+		hd= hdummy= (ptr) GDKmalloc((last-first+1-lt) *sizeof(oid));
+		td= tdummy= (ptr) GDKmalloc((last-first+1-lt) *sizeof(@1));
+
 		tc = BUNtloc(b, BUNptr(b,first));
 		hc = BUNhloc(b, BUNptr(b,first));
 		vtop= BUNtloc(b,BUNptr(b,last));
@@ -2422,6 +2422,9 @@ CRKOrderedpieceZero_MK_@1( BAT *b, @1 mval, size_t first, size_t last, size_t *s
 				 *(@1*) tv = *td;  tv += xx;
 		}
 	} else {
+		hd= hdummy= (ptr) GDKmalloc((last-first+2-mid/2) *sizeof(oid));
+		td= tdummy= (ptr) GDKmalloc((last-first+2-mid/2) *sizeof(@1));
+
 		/* run backwards */
 		tc = BUNtloc(b, BUNptr(b,last));
 		hc = BUNhloc(b, BUNptr(b,last));
