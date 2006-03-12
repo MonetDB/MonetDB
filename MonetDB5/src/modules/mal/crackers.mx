@@ -2376,42 +2376,80 @@ CRKOrderedpieceThree_MK_@1( BAT *b, @1 low, @1 hgh, size_t first, size_t last, s
 
 str
 CRKOrderedpieceZero_MK_@1( BAT *b, @1 mval, size_t first, size_t last, size_t *start, size_t *end){
-	ptr tc, hc, hv,tv, vtop;
-	int xx;
+	char *tc, *hc, *hv,*tv, *vtop;
+	const int xx= BUNsize(b);
 	oid *hdummy, *hd;
 	@1  *tdummy, *td;
+	int lt=0, mid= BATcount(b)/2;
+	
 	hd= hdummy= (ptr) GDKmalloc((last-first+1) *sizeof(oid));
 	td= tdummy= (ptr) GDKmalloc((last-first+1) *sizeof(@1));
 
 	/* set bounds for the iterator */
-	xx = BUNsize(b);
 	tc = BUNtloc(b, BUNptr(b,first));
 	hc = BUNhloc(b, BUNptr(b,first));
-	vtop= BUNtloc(b,BUNptr(b,last));
+	vtop= BUNtloc(b,BUNptr(b,last/2));
+	for(; tc< vtop && lt <= mid; tc += xx)
+		lt += *(@1*) tc <=mval;
 
-	hv= hc;
-	tv= tc;
+	/* move the smallest portion to the scratch area */
+	if( lt >= mid/2 ){
+		tc = BUNtloc(b, BUNptr(b,first));
+		hc = BUNhloc(b, BUNptr(b,first));
+		vtop= BUNtloc(b,BUNptr(b,last));
+		hv= hc;
+		tv= tc;
 
-	for( ; tc<=vtop; tc = (ptr) ((char *) tc + xx), hc = (ptr) ((char *) hc + xx)) {
-		if (*(@1 *) tc <= mval){
-			 *(oid*) hv = *(oid*)hc; hv= (ptr)((char*)hv+xx);
-			 *(@1*) tv = *(@1*)tc; tv= (ptr)((char*)tv+xx);
-		} else {
-			 *hd++ = *(oid*)hc; 
-			 *td++ = *(@1*)tc; 
+		for( ; tc<=vtop; tc += xx, hc += xx) {
+			if (*(@1 *) tc <= mval){
+				 *(oid*) hv = *(oid*)hc; hv += xx;
+				 *(@1*) tv = *(@1*)tc;   tv += xx;
+			} else {
+				 *hd++ = *(oid*)hc; 
+				 *td++ = *(@1*)tc; 
+			} 
 		} 
-	} 
-	
-	/* group the remainder */
-	*start= BUNindex(b, hv);
-	*end= BUNindex(b, hv);
-	/* collect rest */
-	vtop= hd;
-	td= tdummy;
-	hd= hdummy;
-	for( ; (ptr) hd < (ptr) vtop;  td ++,hd++){
-			 *(oid*) hv = *hd; hv= (ptr)((char*)hv+xx);
-			 *(@1*) tv = *td; tv= (ptr)((char*)tv+xx);
+		
+		/* group the remainder */
+		*start= BUNindex(b, hv);
+		*end= BUNindex(b, hv);
+		/* collect rest */
+		vtop= (char*) hd;
+		td= tdummy;
+		hd= hdummy;
+		for( ; (ptr) hd < (ptr) vtop;  td ++,hd++){
+				 *(oid*) hv = *hd; hv += xx;
+				 *(@1*) tv = *td;  tv += xx;
+		}
+	} else {
+		/* run backwards */
+		tc = BUNtloc(b, BUNptr(b,last));
+		hc = BUNhloc(b, BUNptr(b,last));
+		vtop= BUNtloc(b,BUNptr(b,first));
+		hv= hc;
+		tv= tc;
+
+		for( ; tc>=vtop; tc -= xx, hc -= xx) {
+			if (*(@1 *) tc > mval){
+				 *(oid*) hv = *(oid*)hc; hv -= xx;
+				 *(@1*) tv = *(@1*)tc;   tv -= xx;
+			} else {
+				 *hd++ = *(oid*)hc; 
+				 *td++ = *(@1*)tc; 
+			} 
+		} 
+		
+		/* group the remainder */
+		*start= BUNindex(b, hv);
+		*end= BUNindex(b, hv);
+		/* collect rest */
+		vtop= (char*) hd;
+		td= tdummy;
+		hd= hdummy;
+		for(; (ptr) hd < (ptr) vtop;  td++,hd++){
+				 *(oid*) hv = *hd; hv -= xx;
+				 *(@1*) tv = *td;  tv -= xx;
+		}
 	}
 	GDKfree(hdummy); GDKfree(tdummy);
 	return MAL_SUCCEED;
