@@ -23,11 +23,11 @@ barrier (go,i):= (true,0);
 	redo go := low>hgh;
 
 t0:= alarm.usec();
-	c:=crackers.zcrack_MK(b,low,hgh);
+	c:=crackers.crackOrdered_MK(b,low,hgh);
 t1:= alarm.usec();
 	time:= t1 - t0;
 	t := t + time;
-	v := crackers.zcrack_validate(c,low,hgh);
+	v := crackers.crackOrdered_validate(c,low,hgh);
 	io.print(values,low,hgh,time,v);
 
 	values:int:= mmath.rand();
@@ -39,4 +39,4 @@ exit (go,i);
 
 io.print("");
 t := t / n;
-io.print("Three_MK",t);
+io.print("TwoOrdered_MK",t);
