@@ -2397,6 +2397,8 @@ CRKOrderedpieceZero_MK_@1( BAT *b, @1 mval, size_t first, size_t last, size_t *s
 		tc = BUNtloc(b, BUNptr(b,first));
 		hc = BUNhloc(b, BUNptr(b,first));
 		vtop= BUNtloc(b,BUNptr(b,last));
+		while( *(@1*) vtop > mval) vtop -= xx;
+
 		hv= hc;
 		tv= tc;
 
@@ -2429,6 +2431,7 @@ CRKOrderedpieceZero_MK_@1( BAT *b, @1 mval, size_t first, size_t last, size_t *s
 		tc = BUNtloc(b, BUNptr(b,last));
 		hc = BUNhloc(b, BUNptr(b,last));
 		vtop= BUNtloc(b,BUNptr(b,first));
+		while( *(@1*) vtop <= mval) vtop += xx;
 		hv= hc;
 		tv= tc;
 
