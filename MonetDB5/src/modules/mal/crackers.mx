@@ -3805,23 +3805,23 @@ CRKcrackOrderedTHREE_SI_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 	@:moveOrdered(*(@1*)lt <= hgh,lh,lt,+,midShrinked++;)@
 	int right_scr_size = idx_last-idx_first + 1 - hghPos - lowShrinked - hghShrinked;
 	int left_scr_size  = hghPos - midShrinked;
+	int scr_size = 0;
 	int spl, sph;
 	int mid = hgh;
 	if (right_scr_size <= left_scr_size){
 		spl = 0; sph = right_scr_size-1;
+		scr_size = right_scr_size;
 		scr_h = (oid*) GDKmalloc(right_scr_size * sizeof(oid));
 		scr_t = (@1 *) GDKmalloc(right_scr_size * sizeof(@1 ));
 		@:rightOrderedZeroSplit(@1,<=,>)@
 	}
 	else{
 		spl = 0; sph = left_scr_size-1;
+		scr_size = left_scr_size;
 		scr_h = (oid*) GDKmalloc(left_scr_size * sizeof(oid));
 		scr_t = (@1 *) GDKmalloc(left_scr_size * sizeof(@1 ));
 		@:leftOrderedZeroSplit(@1,<=,>)@
 	} 
-	GDKfree(scr_h);
-	GDKfree(scr_t);
-	
 	int size = lowShrinked + hghPos;
 	lh = BUNhloc(b, BUNptr(b, idx_first + lowShrinked));
 	lt = BUNtloc(b, BUNptr(b, idx_first + lowShrinked));
@@ -3838,17 +3838,20 @@ CRKcrackOrderedTHREE_SI_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 
 	right_scr_size = hghPos - midPos - hghShrinked;
 	left_scr_size  = midPos - lowShrinked;
+	int scr_size2 = 0;
+	if (right_scr_size <= left_scr_size) scr_size2 = right_scr_size;
+	else scr_size2 = left_scr_size;
+	if (scr_size2 > scr_size){
+		scr_h = (oid*) GDKrealloc(scr_h, scr_size2 * sizeof(oid));
+		scr_t = (@1 *) GDKrealloc(scr_t, scr_size2 * sizeof(@1 ));
+	}
 	mid = low;
 	if (right_scr_size <= left_scr_size){
 		spl = 0; sph = right_scr_size-1;
-		scr_h = (oid*) GDKmalloc(right_scr_size * sizeof(oid));
-		scr_t = (@1 *) GDKmalloc(right_scr_size * sizeof(@1 ));
 		@:rightOrderedZeroSplit(@1,<,>=)@
 	}
 	else{
 		spl = 0; sph = left_scr_size-1;
-		scr_h = (oid*) GDKmalloc(left_scr_size * sizeof(oid));
-		scr_t = (@1 *) GDKmalloc(left_scr_size * sizeof(@1 ));
 		@:leftOrderedZeroSplit(@1,<,>=)@
 	} 
 
