@@ -412,7 +412,6 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
     docBAT.insert("qn_loc_uri",    docBAT.find("qn_loc").[+](str('\1')).[+](docBAT.find("qn_uri")));
 
     # mapping between immutable node-id's and pre-order ranks
-    var pre_size := docBAT.find("pre_size");
     var pre_nid := docBAT.find("pre_nid");
 
     # create our indices
@@ -436,7 +435,6 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
         }
         knd :+= chr(1);
     }
-    docBAT.replace("attr_own", docBAT.find("attr_own").leftfetchjoin(pre_nid));
     docBAT := docBAT.access(BAT_READ);
     return shredBAT.fetch(PRE_LEVEL).max().int() + 1;
 }
@@ -446,6 +444,9 @@ disabled code: hole creation
 
 { # TODO/FIXME: Slack-space creation should be done in the shredder.
 
+    docBAT.replace("attr_own", docBAT.find("attr_own").leftfetchjoin(pre_nid));
+
+    var pre_size := docBAT.find("pre_size");
     var seq_0 := seqbase(pre_size);
     var len_0 := count(pre_size);
     var pages := int(ceil(dbl(len_0) / dbl(PAGEFILL)));
