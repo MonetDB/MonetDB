@@ -2313,15 +2313,14 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 	case SQL_NOT_NULL:
 	/* is (NOT) NULL */
 	{
-		sql_exp *re, *le = rel_value_exp(sql, rel, sc->data.sym, f);
+		sql_exp *le = rel_value_exp(sql, rel, sc->data.sym, f);
 
 		if (!le)
 			return NULL;
-		re = exp_atom(atom_general(sql_bind_localtype("str"), NULL, 0));
-		if (sc->token == SQL_NULL) 
-			return rel_binop_(sql, le, re, "=");
-		else
-			return rel_binop_(sql, le, re, "!=");
+		le = rel_unop_(sql, le, "isnull");
+		if (sc->token != SQL_NULL) 
+			le = rel_unop_(sql, le, "not");
+		return le;
 	}
 	case SQL_NOT: { 
 		sql_exp *le = rel_logical_value_exp(sql, rel, sc->data.sym, f);
@@ -2637,11 +2636,13 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 		if (!le)
 			return NULL;
-		re = exp_atom(atom_general(sql_bind_localtype("str"), NULL, 0));
+		le = rel_unop_(sql, le, "isnull");
+		re = exp_atom_bool(1);
 		if (sc->token == SQL_NULL) 
-			return rel_compare_exp(sql, rel, le, re, "=", NULL, f);
+			le = exp_compare( le, re, cmp_equal);
 		else
-			return rel_compare_exp(sql, rel, le, re, "!=", NULL, f);
+			le = exp_compare( le, re, cmp_notequal);
+		return rel_select(rel, le);
 	}
 	case SQL_ATOM: {
 		/* TRUE or FALSE */
