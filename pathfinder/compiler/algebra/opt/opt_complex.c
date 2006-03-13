@@ -94,7 +94,28 @@ opt_complex (PFla_op_t *p)
                                    PFprop_dom_left (p->prop,
                                                     p->sem.eqjoin.att1)) &&
                     !left_arg_req) {
-                    *p = *(R(p));
+                    /* Every column of the left argument will point
+                       to the join argument of the right argument to
+                       avoid missing references. (Columns that are not
+                       required may be still referenced by the following
+                       operators.) */
+                    PFla_op_t *ret;
+                    PFalg_proj_t *proj = PFmalloc (p->schema.count *
+                                                   sizeof (PFalg_proj_t));
+                    unsigned int count = 0;
+
+                    for (unsigned int i = 0; i < L(p)->schema.count; i++)
+                        proj[count++] = PFalg_proj (
+                                            L(p)->schema.items[i].name,
+                                            p->sem.eqjoin.att2);
+
+                    for (unsigned int i = 0; i < R(p)->schema.count; i++)
+                        proj[count++] = PFalg_proj (
+                                            R(p)->schema.items[i].name,
+                                            R(p)->schema.items[i].name);
+
+                    ret = PFla_project_ (R(p), count, proj);
+                    *p = *ret;
                     break;
                 }
                 
@@ -110,7 +131,28 @@ opt_complex (PFla_op_t *p)
                                    PFprop_dom_right (p->prop,
                                                      p->sem.eqjoin.att2)) &&
                     !right_arg_req) {
-                    *p = *(L(p));
+                    /* Every column of the right argument will point
+                       to the join argument of the left argument to
+                       avoid missing references. (Columns that are not
+                       required may be still referenced by the following
+                       operators.) */
+                    PFla_op_t *ret;
+                    PFalg_proj_t *proj = PFmalloc (p->schema.count *
+                                                   sizeof (PFalg_proj_t));
+                    unsigned int count = 0;
+
+                    for (unsigned int i = 0; i < L(p)->schema.count; i++)
+                        proj[count++] = PFalg_proj (
+                                            L(p)->schema.items[i].name,
+                                            L(p)->schema.items[i].name);
+
+                    for (unsigned int i = 0; i < R(p)->schema.count; i++)
+                        proj[count++] = PFalg_proj (
+                                            R(p)->schema.items[i].name,
+                                            p->sem.eqjoin.att1);
+
+                    ret = PFla_project_ (L(p), count, proj);
+                    *p = *ret;
                     break;
                 }
             }
@@ -136,9 +178,11 @@ PFalgopt_complex (PFla_op_t *root)
     opt_complex (root);
     PFla_dag_reset (root);
 
-    /* Infer ocol properties as the rewrite
-       rules introduced inconsistencies */
-    PFprop_infer_ocol (root);
+    /* In addition optimize the resulting DAG using the icols property 
+       to remove inconsistencies introduced by changing the types 
+       of unreferenced columns (rule eqjoin). The icols optimization
+       will ensure that these columns are 'really' never used. */
+    root = PFalgopt_icol (root);
 
     return root;
 }
