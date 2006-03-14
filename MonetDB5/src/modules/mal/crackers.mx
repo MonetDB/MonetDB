@@ -3753,38 +3753,51 @@ CRKcrackOrderedZERO_Si_@2_@1(BAT *b, @1 mid, int idx_first, int idx_last)
 	BUN ch = lh, ct = lt; 
 	scr_h = (oid*) GDKmalloc(scr_size * sizeof(oid));
 	scr_t = (@1 *) GDKmalloc(scr_size * sizeof(@1 ));
-	for(; tmpt <= ht; tmpt+=xx, tmph+=xx){
-		if (*(@1*)tmpt @3 mid){
-			hghPos++;
-			if (*(@1*)ct @4 mid){
-				scr_h[hil] = *(oid*)ch;
-				scr_t[hil] = *(@1* )ct;				
-				hil++;	
-						
-			}
-			*(oid*)ch = *(oid*)tmph;
-			*(@1 *)ct = *(@1 *)tmpt;
-			ch += xx;
-			ct += xx;
+	while (tmpt <= ht && (*(@1*)tmpt @4 mid)){
+		tmpt+=xx;
+		tmph+=xx;
+	}
+	while (tmpt <= ht){ 
+		hghPos++;
+		if (*(@1*)ct @4 mid){
+			scr_h[hil] = *(oid*)ch;
+			scr_t[hil] = *(@1* )ct;				
+			hil++;	
+		}
+		*(oid*)ch = *(oid*)tmph;
+		*(@1 *)ct = *(@1 *)tmpt;
+		ch += xx;
+		ct += xx;
+		
+		tmpt+=xx;
+		tmph+=xx;
+		while (tmpt <= ht && (*(@1*)tmpt @4 mid)){
+			tmpt+=xx;
+			tmph+=xx;
 		}
 	}
 	tmph = hh;
 	tmpt = ht;
+	ct += xx*hil;
 	for(; tmpt >= ct; tmph-=xx, tmpt-=xx){
 		if (*(@1*)tmpt @4 mid){
 			*(oid*)hh = *(oid*)tmph;
 			*(@1 *)ht = *(@1 *)tmpt;
 			hh -= xx;
 			ht -= xx;
-			
 		}
 	}
-	;
-	for (int i=0; i < hil ; i++){
-		*(oid*)ch = scr_h[i];
-		*(@1 *)ct = scr_t[i];
-		ch += xx;
-		ct += xx;
+	for (int i=hil-1; i >=0 ; i--){
+		if (*(@1*)tmpt @4 mid){
+			*(oid*)hh = *(oid*)tmph;
+			*(@1 *)ht = *(@1 *)tmpt;
+			hh -= xx;
+			ht -= xx;
+		}	
+		*(oid*)tmph = scr_h[i];
+		*(@1 *)tmpt = scr_t[i];
+		tmpt-=xx;
+		tmph-=xx;
 	}
 	
 	GDKfree(scr_h);
