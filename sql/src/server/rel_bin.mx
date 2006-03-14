@@ -51,6 +51,7 @@ print_stmtlist( stmt *l )
 static stmt *
 bin_find_column( stmt *sub, char *rname, char *name ) 
 {
+	stmt *res = NULL;
 	node *n;
 
 	if (rname) {
@@ -59,18 +60,24 @@ bin_find_column( stmt *sub, char *rname, char *name )
 			char *nme = column_name(n->data);
 
 			if (rnme && strcmp(rnme, rname) == 0 && 
-				    strcmp(nme, name) == 0) 
-				return stmt_dup(n->data);
+				    strcmp(nme, name) == 0) {
+				res = n->data;
+				break;
+			}
 		}
 	} else {
 		for (n = sub->op1.lval->h; n; n = n->next) {
 			char *nme = column_name(n->data);
 
-			if (strcmp(nme, name) == 0) 
-				return stmt_dup(n->data);
+			if (strcmp(nme, name) == 0) {
+				res = n->data;
+				break;
+			}
 		}
 	}
-	return NULL;
+	if (!res)
+		return NULL;
+	return stmt_dup(res);
 }
 
 static stmt *const_column(stmt *val ) 
@@ -310,7 +317,7 @@ static stmt *
 rel2bin_basetable( mvc *sql, sql_rel *rel )
 {
 	list *l; 
-	stmt *ts;
+	stmt *ts, *sub = NULL;
 	sql_table *t = rel->l;
 	node *n;
 			
@@ -323,8 +330,25 @@ rel2bin_basetable( mvc *sql, sql_rel *rel )
 		stmt *sc = stmt_bat(c, stmt_dup(ts), RDONLY);
 		list_append(l, sc);
 	}
+	sub = stmt_list(l);
+	/* add aliases */
+	if (rel->exps) {
+		node *en;
+		for( en = rel->exps->h; en; en = en->next ) {
+			sql_exp *exp = en->data;
+			stmt *s = bin_find_column(sub, exp->l, exp->r);
+	
+			if (!s) {
+				assert(0);
+				stmt_destroy(sub);
+				return NULL;
+			}
+			s = stmt_alias(s, NULL, _strdup(exp->name));
+			list_append(l, s);
+		}
+	}
 	stmt_destroy(ts);
-	return stmt_list(l);
+	return sub;
 }
 
 char *compare_func( comp_type t )
@@ -382,8 +406,8 @@ rel2bin_join( mvc *sql, sql_rel *rel )
 				join = s;
 			} else {
 				/* break column join */
-				stmt *l = stmt_mark(stmt_reverse(join), 4);
-				stmt *r = stmt_mark(stmt_dup(join), 4);
+				stmt *l = stmt_mark(stmt_reverse(join), 100);
+				stmt *r = stmt_mark(stmt_dup(join), 100);
 				stmt *ld = stmt_dup(s->op1.stval);
 				stmt *rd = stmt_reverse(stmt_dup(s->op2.stval));
 				stmt *le = stmt_join(l, ld, cmp_equal);

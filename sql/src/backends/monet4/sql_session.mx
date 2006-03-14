@@ -156,9 +156,12 @@ sql_symbol2stmt(mvc *c)
 		} else {
 			s = rel_bin(c, r);
 			if (s){
-				stmt *opt = rel2bin(c, s);
-	
+				stmt *opt;
+
+				opt = optimize(c, s);
 				stmt_destroy(s);
+				s = rel2bin(c, opt);
+				stmt_destroy(opt);
 				return opt;
 			}
 		}

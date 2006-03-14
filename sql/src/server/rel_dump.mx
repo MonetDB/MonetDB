@@ -39,7 +39,7 @@ print_indent( mvc *sql, int depth)
 	int i;
 
 	(void)sql;
-	depth *= 1; /* tab stop 1 */
+	depth *= 4; /* tab stop 4 */
 	if (depth > LINESIZE)
 		depth = LINESIZE;
 	for(i=0; i<depth; i++){
@@ -179,6 +179,10 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 				t->s->base.name,
 				t->base.name,
 				rel->name);
+		}
+		if (rel->exps) {
+			printf(" aliases");
+			exps_print(sql, rel->exps, depth, 1);
 		}
 		break;
 	case op_join: 
