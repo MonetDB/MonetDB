@@ -323,7 +323,7 @@ FunParam:           param (SequenceType, var)                   =  73 (10);
 /** mnemonic XQuery Core constructors */
 #include "core_mnemonic.h"
 
-static PFfun_t * overload (PFqname_t qn, PFcnode_t *args, int soap_rpc);
+static PFfun_t * overload (PFqname_t qn, PFcnode_t *args, int is_rpc);
 static PFty_t specific (PFfun_t *fn, PFcnode_t *args);
 
 /**
@@ -782,7 +782,7 @@ reduce (PFcnode_t * p, int goalnt)
             /* resolve overloading,
              * any type errors will be detected during resolution
              */
-            p->sem.apply.fun = overload (p->sem.apply.fun->qname, L(p), p->sem.apply.rpc);
+            p->sem.apply.fun = overload (p->sem.apply.fun->qname, L(p), (p->sem.apply.rpc_uri != NULL));
 
             /* invoke specific typing rules for standard F&O functions 
              * (W3C XQuery Formal Semantics 6.2)
@@ -1075,7 +1075,7 @@ reduce (PFcnode_t * p, int goalnt)
  *             arg (e1, arg (e2, ..., arg (en, nil)...))
  */
 static PFfun_t *
-overload (PFqname_t qn, PFcnode_t *args, int soap_rpc)
+overload (PFqname_t qn, PFcnode_t *args, int is_rpc)
 {
     PFarray_t *fns;
     PFarray_t *args_str;
@@ -1097,8 +1097,8 @@ overload (PFqname_t qn, PFcnode_t *args, int soap_rpc)
         /* can all actual argument types be promoted to
          * expected formal parameter types?
          */
-        if (soap_rpc) {
-            /* In soap_rpc, the first actual parameter (dst URI)
+        if (is_rpc) {
+            /* In RPC function call, the first actual parameter (dst URI)
              * should be ignored for function resolution
              */
             if (arg->kind == c_nil) continue;
