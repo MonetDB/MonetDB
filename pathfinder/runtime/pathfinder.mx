@@ -952,6 +952,7 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
 char*
 xquery_method(stream *out, 
               char* module, 
+              char* uri, 
               char *method, 
               int argc, 
               int itercnt, 
@@ -2594,6 +2595,7 @@ CMDxquery(Cntxt stk,
 char*
 xquery_method(stream *out, 
               char* module, 
+              char* uri, 
               char *method, 
               int argc, 
               int itercnt, 
@@ -2607,7 +2609,7 @@ xquery_method(stream *out,
     xquery_client *ctx; 
     char *err = NULL, *ns = "fn", *mode = "xml-noheader-typed-root-iter";
     Client c;
-   
+    
     c = initClient("xquery_rpc", "xquery_rpc", FALSE);
 	TBL_initclient(c, monet_clients);
     ctx = xquery_client_new(c-monet_clients);
@@ -2626,12 +2628,16 @@ xquery_method(stream *out,
             ctx->fderr = s;
             mode = "xml-debug-noheader-typed-root-iter";
         }
+        /* This 'stream_write' is _only_ used to pacify the compiler.
+         * It should be removed when sanity check of module namespace is
+         * implemented in 'xquery_module_load'. */
+        stream_write(ctx->fderr, module, strlen(module), 1);
         stream_write(ctx->fderr, prologue, strlen(prologue), 1);
         argc = argc % 1000;
     }
 
     if (err == NULL && module)
-        err = xquery_module_load(ctx, mode, ns="xquery_rpc", module); 
+        err = xquery_module_load(ctx, mode, ns="xquery_rpc", uri); 
 
     if (err == NULL) { 
         err = xquery_function_call(ctx, msec, mode, ns, method, argc, itercnt, argcnt, argtpe, argval, shredBAT);
