@@ -1242,7 +1242,7 @@ PFcore_apply (PFapply_t *fn, const PFcnode_t *e)
 
     assert (fn && fn->fun && e);
     arity = actual_args (e);
-    if (fn->rpc) arity--;
+    if (fn->rpc_uri != NULL) arity--;
     fun = fn->fun;
     funs = PFenv_lookup (PFfun_env, fun->qname);
 
@@ -1282,7 +1282,7 @@ PFcore_apply (PFapply_t *fn, const PFcnode_t *e)
 
     core = PFcore_wire1 (c_apply, e);
     core->sem.apply.fun = fun;
-    core->sem.apply.rpc = fn->rpc;
+    core->sem.apply.rpc_uri = fn->rpc_uri;
 
     return core;
 }
