@@ -48,6 +48,7 @@ using HTTP connection on top of MonetDB within the "Pathfinder" project.
 .COMMAND http_post(
         str location,
         str rpc_module,
+        str rpc_uri,
         str rpc_method,
         BAT[void, bat] ws,
         BAT[void, oid] fun_vid,
@@ -86,6 +87,7 @@ PROC rpc_client(
         str local_name,
         str location,
         str rpc_module,
+        str rpc_uri,
         str rpc_method,
         BAT[void, bat] ws,
         BAT[void, oid] fun_vid,
@@ -97,9 +99,9 @@ PROC rpc_client(
         BAT[void, dbl] dec_values,
         BAT[void, str] str_values) : oid {
 
-    var rpcres := http_post(location, rpc_module, rpc_method, ws, 
-            fun_vid,    fun_iter,   fun_item,   fun_kind,
-            int_values, dbl_values, dec_values, str_values);
+    var rpcres := http_post(location, rpc_module, rpc_uri, rpc_method, ws, 
+                            fun_vid,    fun_iter,   fun_item,   fun_kind,
+                            int_values, dbl_values, dec_values, str_values);
 
     var docBAT := bat(str,bat,WS_SIZE);
     var height := index_doc(rpcres,docBAT);
@@ -212,15 +214,15 @@ static int setup_connection(str location, int port, int nr_retries) {
     errno = 0;
     if (isdigit((int)location[0])) {
         if ((i = inet_addr(location)) < 0) {
-            GDKerror("setup_connection: invalid IP address \"%s\": %s\n",
-                     location, errno ? strerror(errno) : "");
+            GDKerror("setup_connection: invalid IP address \"%s\"\n", location);
+            if (errno) GDKerror("setup_connection: %s\n", strerror(errno));
             return -1;
         }
         addr = (in_addr_t) i;
     } else {
         if (!(resolv = gethostbyname(location))) {
-            GDKerror("setup_connection: invalid location \"%s\": %s\n",
-                     location, errno ? strerror(errno) : "");
+            GDKerror("setup_connection: invalid IP address \"%s\"\n", location);
+            if (errno) GDKerror("setup_connection: %s\n", strerror(errno));
             return -1;
         }
         addr = ((struct in_addr *)resolv->h_addr_list[0])->s_addr;
@@ -243,7 +245,8 @@ static int setup_connection(str location, int port, int nr_retries) {
     }
        
     if (ret < 0) {
-        GDKerror("setup_connection: failed to setup connection\n");
+        GDKerror("setup_connection: could not setup connection with "
+                "%s:%d\n", location, port);
         close(sock);
         return -1;
     }
@@ -440,7 +443,7 @@ static char* get_type(stream *out, BAT *shredBAT, oid tnode_pre){
 static int handle_rpc_request(struct shttpd_callback_arg *arg) {
     int i = 0, j = 0, k = 0, off = 0, sock = -1, retval = GDK_FAIL;
     char *strptr = NULL, *req_msg = NULL;
-    char *module = NULL, *method = NULL;
+    char *module = NULL, *uri = NULL, *method = NULL;
     char errstr[1024];
     stream *out = NULL;
 
@@ -524,6 +527,11 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
     if ((module = find_attribute(shredBAT, "module", pre)) == NULL) {
         send_error(out, 1, "404 Bad Request", "env:Sender",
             "XQuery RPC request: \"XQueryRpcRquest\" tag does not have a \"module\" attribute.\n");
+        goto FINISH_HANDLE_RPC_REQUEST;
+    }
+    if ((uri = find_attribute(shredBAT, "uri", pre)) == NULL) {
+        send_error(out, 1, "404 Bad Request", "env:Sender",
+            "XQuery RPC request: \"XQueryRpcRquest\" tag does not have a \"uri\" attribute.\n");
         goto FINISH_HANDLE_RPC_REQUEST;
     }
     if ((method = find_attribute(shredBAT, "method", pre)) == NULL) {
@@ -673,11 +681,12 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
                 "<env:Body>\n"
                 "<XQueryRpcResults \n"
                 "    module=\"%s\"\n"
+                "    uri=\"%s\"\n"
                 "    method=\"%s\">\n",
-                module, method) >= 0)
+                module, uri, method) >= 0)
     {
         argc += 1000; /* debug */
-        char *err = xquery_method(out, module, method, argc, iterc, argcnt, argtpe, argval, shredBAT);
+        char *err = xquery_method(out, module, uri, method, argc, iterc, argcnt, argtpe, argval, shredBAT);
         argc %= 1000;
 
         if (err) {
@@ -702,6 +711,7 @@ FINISH_HANDLE_RPC_REQUEST:
 int CMDhttp_post(BAT **res,
                  str location,
                  str rpc_module,
+                 str rpc_uri,
                  str rpc_method,
                  BAT* ws,
                  BAT* fun_vid,
@@ -735,8 +745,6 @@ int CMDhttp_post(BAT **res,
         port = atoi(strptr);
     }
     if ((sock = setup_connection(location, port, NR_RETRIES)) < 0) {
-        GDKerror("CMDhttp_post: could not setup connection with"
-                "%s:%d\n", location, port);
         goto FINISH_HTTP_POST;
     }
     if (!(out = socket_wastream(sock, "http_send"))) {
@@ -764,8 +772,9 @@ int CMDhttp_post(BAT **res,
             "<env:Body>\n"
             "<XQueryRpcRequest\n"
             "    module=\"%s\"\n"
+            "    uri=\"%s\"\n"
             "    method=\"%s\">\n",
-            rpc_module, rpc_method);
+            rpc_module, rpc_uri, rpc_method);
 
     /* Find the number of parameters and iterations. */
     argc  = *(int*)BUNtail(fun_vid, BUNprev(fun_vid, BUNlast(fun_vid)) ) - *(int*)BUNtail(fun_vid,BUNfirst(fun_vid)) + 1;
