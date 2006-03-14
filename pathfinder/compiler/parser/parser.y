@@ -60,7 +60,7 @@ static PFpnode_t *root;
 static PFpnode_t *c, *c1;
 
 static void add_to_module_wl (char rpc, char* id, char *ns, char *uri);
-static int is_rpc_prefix (char *prefix);
+static char *get_rpc_uri (char *prefix);
 
 /* avoid `implicit declaration of yylex' warning */
 extern int pflex (void);
@@ -145,7 +145,7 @@ static PFarray_t *modules = NULL;
  * otherwise).
  */
 typedef struct module_t {
-    char rpc;  /* To distiguish an RPC module from normal module */
+    char rpc; /* To distiguish an RPC module from normal module */
     char *id;
     char *ns;
     char *uri;
@@ -652,7 +652,7 @@ ModuleDecl                : "module namespace" NCName
                                           "import statement (`%s' vs. `%s')",
                                           $4, req_module_ns);
 
-			      if (!module_only)
+			                  if (!module_only)
                                   module_base = 1;
 
                               ($$ = wire1 (p_mod_ns,
@@ -1035,10 +1035,13 @@ ConstructionDecl          : "declare construction preserve"
 /* [23] */
 FunctionDecl              : "declare function" QName_LParen
                             OptParamList_ OptAsSequenceType_ EnclosedExpr
-                            { ($$ = wire2 (p_fun_decl, @$,
+                            { PFpnode_t *tmp = wire2 (p_fun_decl, @$,
                                            wire2 (p_fun_sig, loc_rng (@2, @4),
                                                   $3, $4),
-                                           $5))->sem.qname = $2;
+                                           $5);
+                              tmp->sem.qname = $2;
+                              tmp->rpc_uri = get_rpc_uri(tmp->sem.qname.ns.ns);
+                              $$ = tmp;
                               num_fun++;
                               if (module_base) module_base = 1 | (module_base ^ (unsigned long) $$);
                             }
@@ -1801,10 +1804,7 @@ UnorderedExpr             : "unordered {" Expr "}"
 FunctionCall              : QName_LParen OptFuncArgList_ ")"
                             { PFpnode_t *tmp = wire1(p_fun_ref, @$, $2);
                               tmp->sem.qname = $1;
-                              if (is_rpc_prefix(tmp->sem.qname.ns.ns))
-                                tmp->rpc = 1;
-                              else
-                                tmp->rpc = 0;
+                              tmp->rpc_uri = get_rpc_uri(tmp->sem.qname.ns.ns);
                               $$ = tmp;
                             }
                           ;
@@ -2464,16 +2464,16 @@ add_to_module_wl (char rpc, char*id, char *ns, char *uri)
         = (module_t) { .rpc = rpc, .id = PFstrdup(id), .ns = PFstrdup (ns), .uri = PFstrdup (uri) };
 }
 
-static int
-is_rpc_prefix(char *prefix){
-    if (!prefix) return 0;
+static char *
+get_rpc_uri(char *prefix){
+    if (!prefix) return NULL;
 
     for (unsigned int i = 0; i < PFarray_last (modules); i++){
         module_t *m = (module_t *) PFarray_at(modules, i);
-        if ( m->rpc && !strcmp (m->id, prefix) )
-            return 1;
+        if ( m->rpc && (strcmp (m->id, prefix) == 0))
+            return m->uri;
     }
-    return 0;
+    return NULL;
 }
 
 /**
@@ -2497,7 +2497,7 @@ YYLTYPE pflloc; /* why ? */
  * Parse an XQuery from the main-memory buffer pointed to by @a input.
  */
 int
-PFparse (char *input, PFpnode_t **r, char** rpc_uri)
+PFparse (char *input, PFpnode_t **r)
 {
 #if YYDEBUG
     pfdebug = 1;
@@ -2521,13 +2521,6 @@ PFparse (char *input, PFpnode_t **r, char** rpc_uri)
     if (pfparse ())
         PFoops (OOPS_PARSE, "XQuery parsing failed");
 
-    if (rpc_uri) {
-        for (unsigned int i = 0; i < PFarray_last (modules); i++) {
-            module_t *m = (module_t *) PFarray_at (modules, i);
-            if (m->rpc)
-                *rpc_uri = PFstrdup(m->uri);
-        }
-    }
     *r = root;
     return num_fun;
 }
