@@ -2849,6 +2849,7 @@ reduce (PFpnode_t * p, int goalnt)
             PFty_t        expected;
             unsigned int  param_num;
             PFfun_t      *implicit = NULL;
+            PFcnode_t    *converted = NULL;
 
             /* translate function argument */
             reduce (kids[0], nts[0]);
@@ -2882,6 +2883,21 @@ reduce (PFpnode_t * p, int goalnt)
                 expected = fun->par_ty[param_num];
 
             /*
+             * Apply function conversion rules (XQuery 3.1.5.)
+             * to this function argument, but leave the *literal*
+             * empty sequence alone.
+             *
+             * (Account for specific issues around the empty sequence
+             * here.  In particular, function conversion would try to
+             * iterate over the empty sequence, which resulted in an
+             * undefined type for the iteration variable.)
+             */
+            if (C(L(p))->kind == c_empty)
+                converted = C(L(p));
+            else
+                converted = function_conversion (C(L(p)), expected);
+
+            /*
              * There's implicit semantics for some functions.
              */
             /* Implicitly call fn:boolean() before fn:not(). */
@@ -2895,9 +2911,7 @@ reduce (PFpnode_t * p, int goalnt)
             if (implicit) {
                 PFvar_t *v1 = new_var (NULL);
 
-                C(p) = flwr (let (letbind (var (v1),
-                                           function_conversion (C(L(p)),
-                                                                expected)),
+                C(p) = flwr (let (letbind (var (v1), converted),
                                   nil ()),
                              flwr (let (letbind (var (v),
                                                  APPLY (implicit, var (v1))),
@@ -2906,9 +2920,7 @@ reduce (PFpnode_t * p, int goalnt)
             }
             else {
                 /* construct return value */
-                C(p) = flwr (let (letbind (var (v),
-                                           function_conversion (C(L(p)),
-                                                                expected)),
+                C(p) = flwr (let (letbind (var (v), converted),
                                   nil ()),
                              C(R(p)));
             }

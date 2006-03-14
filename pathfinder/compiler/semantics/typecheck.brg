@@ -447,6 +447,15 @@ reduce (PFcnode_t * p, int goalnt)
             reduce (kids[0], nts[0]);
             t1 = TY(LR(p));
 
+            /*
+             * The specs prohibit the (statically typed) empty sequence
+             * in many places.  (see XQuery FS, beginning of Section 4)
+             */
+            if (PFty_subtype (t1, PFty_empty ()))
+                PFoops (OOPS_TYPECHECK,
+                        "binding sequence in a for clause has static "
+                        "type `empty'");
+
             if (!PFty_subtype (t1, PFty_star (PFty_item ())))
                 PFoops (OOPS_TYPECHECK,
                         "illegal binding in for clause, cannot iterate over "
@@ -455,6 +464,9 @@ reduce (PFcnode_t * p, int goalnt)
 
             /* Var : prime (t1) */
             TY(LLL(p)) = *PFty_simplify (PFty_prime (PFty_defn (t1)));
+
+            /* Var1 should now have a sensible type (not `none') */
+            assert (PFty_subtype (TY(LLL(p)), PFty_star (PFty_item ())));
 
             /* E[Var : prime (t1)] |- CoreExpr : t2 */
             assert (LLL(p)->sem.var);
@@ -486,6 +498,15 @@ reduce (PFcnode_t * p, int goalnt)
             reduce (kids[0], nts[0]);
             t1 = TY(LR(p));
 
+            /*
+             * The specs prohibit the (statically typed) empty sequence
+             * in many places.  (see XQuery FS, beginning of Section 4)
+             */
+            if (PFty_subtype (t1, PFty_empty ()))
+                PFoops (OOPS_TYPECHECK,
+                        "binding sequence in a for clause has static "
+                        "type `empty'");
+
             if (!PFty_subtype (t1, PFty_star (PFty_item ())))
                 PFoops (OOPS_TYPECHECK,
                         "illegal binding in for clause, cannot iterate over "
@@ -499,6 +520,9 @@ reduce (PFcnode_t * p, int goalnt)
 
             /* Var1 : prime (t1) */
             TY(LLL(p)) = *PFty_simplify (PFty_prime (PFty_defn (t1)));
+
+            /* Var1 should now have a sensible type (not `none') */
+            assert (PFty_subtype (TY(LLL(p)), PFty_star (PFty_item ())));
 
             /* E[Var1 : prime (t1), Var2 : xs:integer] |- CoreExpr : t2 */
             assert (LLL(p)->sem.var);
