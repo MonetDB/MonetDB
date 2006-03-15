@@ -175,11 +175,13 @@
 , /* fn:true () as boolean */                                            \
   { .ns = PFns_fn, .loc = "true",                                        \
     .arity = 0,                                                          \
-    .ret_ty = PFty_boolean () }                                          \
+    .ret_ty = PFty_boolean (),                                           \
+    .alg = PFbui_fn_true }                                               \
 , /* fn:false () as boolean */                                           \
   { .ns = PFns_fn, .loc = "false",                                       \
     .arity = 0,                                                          \
-    .ret_ty = PFty_boolean () }                                          \
+    .ret_ty = PFty_boolean (),                                           \
+    .alg = PFbui_fn_false }                                              \
 , /* fn:boolean (boolean) as boolean */                                  \
   { .ns = PFns_fn, .loc = "boolean",                                     \
     .arity = 1, .par_ty = { PFty_boolean () },                           \
@@ -657,30 +659,36 @@
 , /* fn:sum (integer*) as integer */                                     \
   { .ns = PFns_fn, .loc = "sum",                                         \
     .arity = 1, .par_ty = { PFty_star (PFty_integer ()) },               \
-    .ret_ty = PFty_integer () }                                          \
+    .ret_ty = PFty_integer (),                                           \
+    .alg = PFbui_fn_sum }                                                \
 , /* fn:sum (decimal*) as decimal */                                     \
   { .ns = PFns_fn, .loc = "sum",                                         \
     .arity = 1, .par_ty = { PFty_star (PFty_decimal ()) },               \
-    .ret_ty = PFty_decimal () }                                          \
+    .ret_ty = PFty_decimal (),                                           \
+    .alg = PFbui_fn_sum }                                                \
 , /* fn:sum (double*) as double */                                       \
   { .ns = PFns_fn, .loc = "sum",                                         \
     .arity = 1, .par_ty = { PFty_star (PFty_double ()) },                \
-    .ret_ty = PFty_double () }                                           \
+    .ret_ty = PFty_double (),                                            \
+    .alg = PFbui_fn_sum }                                                \
 , /* fn:sum (integer*, integer?) as integer */                           \
   { .ns = PFns_fn, .loc = "sum",                                         \
     .arity = 2, .par_ty = { PFty_star (PFty_integer ()),                 \
                             PFty_opt (PFty_integer ()) },                \
-    .ret_ty = PFty_integer () }                                          \
+    .ret_ty = PFty_integer (),                                           \
+    .alg = PFbui_fn_sum_zero }                                           \
 , /* fn:sum (decimal*, decimal?) as decimal */                           \
   { .ns = PFns_fn, .loc = "sum",                                         \
     .arity = 2, .par_ty = { PFty_star (PFty_decimal ()),                 \
                             PFty_opt (PFty_decimal ()) },                \
-    .ret_ty = PFty_decimal () }                                          \
+    .ret_ty = PFty_decimal (),                                           \
+    .alg = PFbui_fn_sum_zero }                                           \
 , /* fn:sum (double*, double?) as double */                              \
   { .ns = PFns_fn, .loc = "sum",                                         \
     .arity = 2, .par_ty = { PFty_star (PFty_double ()),                  \
                             PFty_opt (PFty_double ()) },                 \
-    .ret_ty = PFty_double () }                                           \
+    .ret_ty = PFty_double (),                                            \
+    .alg = PFbui_fn_sum_zero }                                           \
 , /* fn:abs (integer?) as integer? */                                    \
   { .ns = PFns_fn, .loc = "abs",                                         \
     .arity = 1, .par_ty = { PFty_opt (PFty_integer ()) },                \

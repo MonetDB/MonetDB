@@ -1,3 +1,5 @@
+/* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
+
 /**
  * @file
  *
@@ -83,9 +85,10 @@ enum PFpa_op_kind_t {
     , pa_bool_and_atom  =  48 /**< Boolean and, where one arg is an atom */
     , pa_bool_or_atom   =  49 /**< Boolean or, where one arg is an atom */
     , pa_hash_count     =  55 /**< Hash-based count operator */
-    , pa_merge_rownum   =  56 /**< MergeRowNumber */
-    , pa_hash_rownum    =  57 /**< HashRowNumber */
-    , pa_number         =  58 /**< Number */
+    , pa_sum            =  56 /**< Sum operator */
+    , pa_merge_rownum   =  57 /**< MergeRowNumber */
+    , pa_hash_rownum    =  58 /**< HashRowNumber */
+    , pa_number         =  59 /**< Number */
     , pa_type           =  60 /**< selection of rows where a column is of a
                                    certain type */
     , pa_type_assert    =  61 /**< restriction of the type of a given column */
@@ -206,6 +209,13 @@ union PFpa_op_sem_t {
         PFalg_att_t         res;  /**< Name of result attribute */
         PFalg_att_t         part; /**< Partitioning attribute */
     } count;
+
+    /* semantic content for operators for (partitioned) sum of a column */
+    struct {
+        PFalg_att_t     att;      /**< attribute to be summed up */
+        PFalg_att_t     part;     /**< partitioning attribute */
+        PFalg_att_t     res;      /**< attribute to hold the result */
+    } sum;
 
     /* semantic content for rownum operator */
     struct {
@@ -567,6 +577,14 @@ PFpa_op_t *PFpa_or_atom (const PFpa_op_t *, PFalg_att_t res,
  */
 PFpa_op_t *PFpa_hash_count (const PFpa_op_t *,
                             PFalg_att_t, PFalg_att_t);
+
+/**
+ * Sum: Sum operator. Does neither benefit from
+ * any existing ordering, nor does it provide/preserve any input
+ * ordering.
+ */
+PFpa_op_t *PFpa_sum (const PFpa_op_t *n, PFalg_att_t res, 
+		     PFalg_att_t att, PFalg_att_t part);
 
 /****************************************************************/
 

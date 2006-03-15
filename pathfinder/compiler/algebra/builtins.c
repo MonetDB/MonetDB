@@ -1,3 +1,5 @@
+/* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
+
 /**
  * @file
  *
@@ -451,7 +453,96 @@ PFbui_op_numeric_modulo_dbl (const PFla_op_t *loop __attribute__((unused)),
     return bin_arith (aat_dbl, PFla_modulo, args);
 }
 
+/**
+ * Build up operator tree for built-in function 'fn:sum ($arg, $zero)'.
+ *
+ *  env,loop: e1 => (q1,delta1)             env,loop: e2 => (q2,delta2)
+ *  -------------------------------------------------------------------
+ *                         env,loop: fn:sum(e1, e2) =>
+ *  //                                         \    
+ * ||sum_item/(item, iter) (proj_iter,item (q1))|
+ *  \\                                         / 
+ *                                 U
+ *  //                   \                    /                        \\
+ * ||loop \ proj_iter (q1)| |X|(iter, iter1) |proj_iter1:iter,item (q2) || X 
+ *  \\                   /                    \                        //
+ * pos  
+ * ---,
+ *  1
+ *                                ()
+ */
+struct PFla_pair_t
+PFbui_fn_sum_zero (const PFla_op_t *loop __attribute__((unused)),
+                bool ordering,
+                struct PFla_pair_t *args)
+{
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
 
+    PFla_op_t *sum = sum (project (args[0].rel,
+                                   proj (att_iter, att_iter),
+				   proj (att_item, att_item)),
+			    att_item, att_item, att_iter);
+
+    return (struct PFla_pair_t) {
+        .rel = attach (
+                disjunion (
+                    sum,
+		    project (
+			 eqjoin (
+			      difference (
+				   loop,
+				   project (sum, proj (att_iter, att_iter))),
+			      project (args[1].rel,
+				       proj (att_iter1, att_iter),
+				       proj (att_item, att_item)),
+			      att_iter, att_iter1),
+			 proj (att_iter, att_iter),
+			 proj (att_item, att_item))),
+                att_pos, lit_nat (1)),
+        .frag = PFla_empty_set () };
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:sum ($arg)'.
+ *
+ *                env,loop: e => (q,delta)
+ *  -------------------------------------------------------------------
+ *                         env,loop: fn:sum(e) =>
+ *  //                                        \    
+ * ||sum_item/(item, iter) (proj_iter,item (q))|
+ *  \\                                        / 
+ *                         U
+ *  //                  \    item\\    pos   
+ * ||loop \ proj_iter (q)| X ---- || X ---,
+ *  \\                  /      0 //     1
+ *                                ()
+ */
+struct PFla_pair_t
+PFbui_fn_sum (const PFla_op_t *loop __attribute__((unused)),
+                bool ordering,
+                struct PFla_pair_t *args)
+{
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+
+    PFla_op_t *sum = sum (project (args[0].rel,
+                                   proj (att_iter, att_iter),
+				   proj (att_item, att_item)),
+			    att_item, att_item, att_iter);
+
+    return (struct PFla_pair_t) {
+        .rel = attach (
+                disjunion (
+                    sum,
+                    attach (
+                        difference (
+                            loop,
+                            project (sum, proj (att_iter, att_iter))),
+                        att_item, lit_int (0))),
+                att_pos, lit_nat (1)),
+        .frag = PFla_empty_set () };
+}
 
 /**
  * Build up operator tree for built-in function 'fn:count'.
@@ -1136,6 +1227,46 @@ PFbui_op_and_bln (const PFla_op_t *loop __attribute__((unused)),
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
     return bin_arith (aat_bln, PFla_and, args);
+}
+
+static struct PFla_pair_t 
+PFbui_fn_bln_lit (const PFla_op_t *loop,
+                  bool value)
+{
+    return (struct PFla_pair_t) {
+        .rel = attach(attach(loop, att_pos, lit_nat(1)), att_item, 
+                      lit_bln(value)),
+        .frag = PFla_empty_set () }; 
+}
+
+/**
+ * Algebra implementation for <code>fn:true ()</code>.
+ */
+struct PFla_pair_t 
+PFbui_fn_true (const PFla_op_t *loop,
+               bool ordering __attribute__((unused)),
+               struct PFla_pair_t *args __attribute__((unused)))
+{
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) args;      /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return PFbui_fn_bln_lit(loop, true);
+}
+
+/**
+ * Algebra implementation for <code>fn:false ()</code>.
+ */
+struct PFla_pair_t 
+PFbui_fn_false (const PFla_op_t *loop,
+               bool ordering __attribute__((unused)),
+               struct PFla_pair_t *args __attribute__((unused)))
+{
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) args;      /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return PFbui_fn_bln_lit(loop, false);
 }
 
 /**

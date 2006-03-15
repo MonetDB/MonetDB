@@ -49,6 +49,7 @@
                  | expression '.sort ()'                    <m_sort>
                  | expression '.max ()'                     <m_max>
                  | expression '.count ()'                   <m_count>
+                 | expression '.sum ()'                     <m_sum>
                  | expression 'bat ()'                      <m_bat>
                  | expression '.CTgroup ()'                 <m_ctgroup>
                  | expression '.CTmap ()'                   <m_ctmap>
@@ -81,6 +82,7 @@
                  | '[string](' exp ',' exp ',' exp ')'      <m_mstring2>
                  | '{count}(' expression ')'                <m_gcount>
                  | '{count}(' expression ',' expression ')' <m_egcount>
+                 | '{sum}(' expression ')'                  <m_gsum>
                  | 'new_ws ()'                              <m_new_ws>
                  | 'mposjoin (' exp ',' exp ',' exp ')'     <m_mposjoin>
                  | 'mvaljoin (' exp ',' exp ',' exp ')'     <m_mvaljoin>
@@ -365,6 +367,8 @@ static char *ID[] = {
     , [m_count]    = "count"
     , [m_gcount]   = "{count}"
     , [m_egcount]  = "{count}"
+    , [m_sum]      = "sum"
+    , [m_gsum]     = "{sum}"
     , [m_bat]      = "bat"
     , [m_error]    = "ERROR"
     , [m_col_name] = "col_name"
@@ -642,6 +646,8 @@ print_expression (PFmil_t * n)
         case m_max:
         /* expression : expression '.count' */
         case m_count:
+        /* expression : expression '.sum' */
+        case m_sum:
         /* expression : expression 'bat()' */
         case m_bat:
         /* expression '.CTgroup ()' */
@@ -738,6 +744,8 @@ print_expression (PFmil_t * n)
 
         /* expression: '{count}(' expression ')' */
         case m_gcount:
+        /* expression: '{sum}(' expression ')' */
+        case m_gsum:
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (")");

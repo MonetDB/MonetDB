@@ -740,6 +740,24 @@ PFmil_egcount (const PFmil_t *a, const PFmil_t *b)
 }
 
 /**
+ * Monet sum operator
+ */
+PFmil_t *
+PFmil_sum (const PFmil_t *a)
+{
+    return wire1 (m_sum, a);
+}
+
+/**
+ * Monet grouped sum operator `{sum}()'
+ */
+PFmil_t *
+PFmil_gsum (const PFmil_t *a)
+{
+    return wire1 (m_gsum, a);
+}
+
+/**
  * Type cast.
  */
 PFmil_t *

@@ -128,7 +128,9 @@ enum PFmil_kind_t {
     , m_count        /**< MIL count() function */
     , m_gcount       /**< Grouped count() function `{count}()' */
     , m_egcount      /**< Grouped count() function `{count}()' */
-
+    , m_sum          /**< MIL sum() function */
+    , m_gsum         /**< Grouped sum() function `{sum}()' */
+    
     , m_declare      /**< declare variable */
     , m_nop          /**< `no operation', do nothing.
                           (This may be produced during compilation.) */
@@ -508,6 +510,12 @@ PFmil_t * PFmil_gcount (const PFmil_t *);
 /** Grouped count function `{count}()' with two parameters
     (aka. ``pumped count'') */
 PFmil_t * PFmil_egcount (const PFmil_t *, const PFmil_t *);
+
+/** MIL sum() function */
+PFmil_t * PFmil_sum (const PFmil_t *);
+
+/** Grouped sum function `{sum}()' (aka. ``pumped sum'') */
+PFmil_t * PFmil_gsum (const PFmil_t *);
 
 /** typecast */
 PFmil_t * PFmil_cast (const PFmil_t *, const PFmil_t *);

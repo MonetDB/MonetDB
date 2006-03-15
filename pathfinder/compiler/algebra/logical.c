@@ -1,3 +1,5 @@
+/* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
+
 /**
  * @file
  *

@@ -1,3 +1,4 @@
+/* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
 %{
 
 /*
@@ -107,9 +108,10 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term bool_and_atom  =  48
 %term bool_or_atom   =  49
 %term hash_count     =  55
-%term merge_rownum   =  56
-%term hash_rownum    =  57
-%term number         =  58
+%term sum	     =  56
+%term merge_rownum   =  57
+%term hash_rownum    =  58
+%term number         =  59
 %term type           =  60
 %term type_assert    =  61
 %term cast           =  62
@@ -190,6 +192,7 @@ Rel:      bool_or (Rel)                                            =  63 (10);
 Rel:      bool_and_atom (Rel)                                      =  64 (10);
 Rel:      bool_or_atom (Rel)                                       =  65 (10);
 Rel:      hash_count (Rel)                                         =  66 (10);
+Rel:      sum (Rel)                                                =  67 (10);
 Rel:      merge_rownum (Rel)                                       =  70 (10);
 Rel:      hash_rownum (Rel)                                        =  71 (10);
 Rel:      number (Rel)                                             =  72 (10);
@@ -2139,6 +2142,91 @@ reduce (PFpa_op_t * p, int goalnt)
                 env_add (p->env, p->sem.count.res, aat_int, v);
             }
             break;
+
+        /* Rel:      sum (Rel) */
+        case 67:
+	{
+	    PFalg_att_t part = p->sem.sum.part;
+	    PFalg_att_t att = p->sem.sum.att;
+	    bool has_part = part != att_NULL;
+	    PFalg_type_t poly_att_type = 0;
+	    PFalg_type_t poly_part_type = 0;
+	    /* determine att and part type */
+	    for (unsigned int i = 0; i < L(p)->schema.count; i++) {
+		if (L(p)->schema.items[i].name == part)
+		    poly_part_type = L(p)->schema.items[i].type;
+		else if (L(p)->schema.items[i].name == att)
+		    poly_att_type = L(p)->schema.items[i].type;
+	    }
+	    /* sanity checks */
+	    if (poly_att_type == 0) 
+		PFoops (OOPS_FATAL,
+			"attribute `%s' referenced in sum not found", 
+			PFatt_str (att));
+	    if (has_part && poly_part_type == 0)
+		PFoops (OOPS_FATAL,
+			"attribute `%s' referenced in sum not found", 
+			PFatt_str (part));
+	    if (!monomorphic(poly_att_type)
+		|| (has_part && !monomorphic(poly_part_type)))
+		PFoops (OOPS_FATAL,
+			"Sum not implemented for "
+			"polymorphic groups");
+	    PFalg_simple_type_t att_type = (PFalg_simple_type_t)poly_att_type;
+            if (has_part) {		    		
+		PFalg_simple_type_t part_type 
+		    = (PFalg_simple_type_t)poly_part_type;
+		mvar_t *v    = new_var (1);
+		mvar_t *res  = new_var (p->refctr);
+		mvar_t *part_var = new_var (p->refctr);
+		
+		execute (
+		    /* v := 
+		       {sum}(att.reverse().join(part).reverse()) */
+		    assgn (
+			var (v->name),
+			gsum (
+			    reverse (
+				join (
+				    
+				    reverse (VAR (L(p)->env, 
+						  att, 
+						  att_type)),
+				    VAR (L(p)->env, 
+					 part, 
+					 part_type))))),
+		    /* res := v.reverse ().mark (0@0).reverse (); */
+		    assgn (
+			var (res->name),
+			reverse (
+			    mark (
+				reverse (var (v->name)),
+				lit_oid (0)))),
+		    /* part := v.mark (0@0).reverse (); */
+		    assgn (
+			var (part_var->name),
+			reverse (
+			    mark (var (v->name), lit_oid (0)))));
+		
+		env_add (p->env, att, att_type, res);
+		env_add (p->env, part, part_type, part_var);
+		
+		unpin (v, 1);
+            }
+            else {
+                mvar_t *v = new_var (p->refctr);
+                execute (
+                    assgn (var (v->name),
+                           sum (VAR (L(p)->env, att, att_type))),
+                    assgn (var (v->name),
+                           append (
+                               seqbase (
+                                   new (type (m_void), type (m_lng)),
+                                   lit_oid (0)),
+                               var (v->name))));
+                env_add (p->env, p->sem.sum.res, att_type, v);
+            }
+	} break;
 
         /* Rel:      merge_rownum (Rel) */
         case 70:

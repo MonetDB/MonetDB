@@ -1,3 +1,5 @@
+/* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
+
 /**
  * @file
  *
@@ -787,6 +789,27 @@ plan_unary (const PFla_op_t *n)
             default:
                 PFoops (OOPS_FATAL, "error in plan_unary");
         }
+
+    return ret;
+}
+
+/**
+ * Generate physical plan for the logical `Sum' operator.
+ */
+static PFplanlist_t *
+plan_sum (const PFla_op_t *n)
+{
+    PFplanlist_t  *ret  = new_planlist ();
+
+    assert (n); assert (n->kind == la_sum);
+    assert (L(n)); assert (L(n)->plans);
+
+    /* consider each plan in n */
+    for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
+        add_plan (ret,
+                  sum (
+                      *(plan_t **) PFarray_at (L(n)->plans, i),
+                      n->sem.sum.res, n->sem.sum.att, n->sem.sum.part));
 
     return ret;
 }
@@ -1790,7 +1813,7 @@ plan_subexpression (PFla_op_t *n)
         case la_num_neg:                                      
         case la_bool_not:                                     
                                 plans = plan_unary (n);       break;
-     /* case la_sum:            */
+        case la_sum:            plans = plan_sum (n);	      break;
         case la_count:          plans = plan_count (n);       break;
                                                               
         case la_rownum:         plans = plan_rownum (n);      break;

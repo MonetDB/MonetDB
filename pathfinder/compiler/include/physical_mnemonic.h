@@ -59,6 +59,8 @@
 
 #define hash_count(a,b,c) PFpa_hash_count ((a), (b), (c))
 
+#define sum(a,b,c,d) PFpa_sum ((a), (b), (c), (d))
+
 /** a sort specification list is just another attribute list */
 /* FIXME */
 #define sortby(...)       PFalg_attlist (__VA_ARGS__)

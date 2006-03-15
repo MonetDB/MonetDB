@@ -1,3 +1,5 @@
+/* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
+
 /**
  * @file
  *
@@ -674,7 +676,7 @@ PFpa_project (const PFpa_op_t *n, unsigned int count, PFalg_proj_t *proj)
 
         /* did we find the attribute? */
         if (j >= n->schema.count)
-            PFoops (OOPS_FATAL,
+	     PFoops (OOPS_FATAL,
                     "attribute `%s' referenced in projection not found",
                     PFatt_str (ret->sem.proj.items[i].old));
     }
@@ -1651,6 +1653,68 @@ PFpa_op_t *PFpa_hash_count (const PFpa_op_t *n,
     /* HashCount does not provide any orderings. */
 
     /* ---- HashCount: costs ---- */
+    ret->cost = n->cost * 3 / 2;
+
+    return ret;
+}
+
+/**
+ * Sum: Sum operator. Does neither benefit from
+ * any existing ordering, nor does it provide/preserve any input
+ * ordering.
+ */
+PFpa_op_t *PFpa_sum (const PFpa_op_t *n, PFalg_att_t res, 
+		     PFalg_att_t att, PFalg_att_t part)
+{
+    PFpa_op_t *ret = wire1 (pa_sum, n);
+    unsigned int  i;
+    bool          c1 = false;
+    bool          c2 = false;
+
+    ret->sem.sum.res  = res;
+    ret->sem.sum.att = att;
+    ret->sem.sum.part = part;
+
+    /* set number of schema items in the result schema
+     * (partitioning attribute plus result attribute)
+     */
+    ret->schema.count = part ? 2 : 1;
+
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* verify that attributes 'att' and 'part' are attributes of n
+     * and include them into the result schema
+     */
+    for (i = 0; i < n->schema.count; i++) {
+        if (att == n->schema.items[i].name) {
+            ret->schema.items[0] = n->schema.items[i];
+            ret->schema.items[0].name = res;
+            c1 = true;
+        }
+        if (part && part == n->schema.items[i].name) {
+            ret->schema.items[1] = n->schema.items[i];
+            c2 = true;
+        }
+    }
+#ifndef NDEBUG
+    /* did we find attribute 'att'? */
+    if (!c1)
+        PFoops (OOPS_FATAL,
+                "attribute `%s' referenced in sum not found", 
+                PFatt_str (att));
+
+    /* did we find attribute 'part'? */
+    if (part && !c2)
+        PFoops (OOPS_FATAL,
+                "partitioning attribute `%s' referenced in sum not found",
+                PFatt_str (part));
+#endif
+
+    /* ---- Sum: orderings ---- */
+    /* Sum does not provide any orderings. */
+
+    /* ---- Sum: costs ---- */
     ret->cost = n->cost * 3 / 2;
 
     return ret;
