@@ -377,7 +377,7 @@ reduce (PFla_op_t *p, int goalnt)
                only one row by a number of attach operators (one for each
                tuple). */
             if (R(p)->sem.lit_tbl.count == 1) {
-                PFla_op_t *ret = R(p);
+                PFla_op_t *ret = L(p);
                 for (unsigned int i = 0; i < R(p)->schema.count; i++)
                     ret = PFla_attach (ret, R(p)->schema.items[i].name,
                                        R(p)->sem.lit_tbl.tuples[0].atoms[i]);
@@ -390,7 +390,7 @@ reduce (PFla_op_t *p, int goalnt)
                only one row by a number of attach operators (one for each
                tuple). */
             if (L(p)->sem.lit_tbl.count == 1) {
-                PFla_op_t *ret = L(p);
+                PFla_op_t *ret = R(p);
                 for (unsigned int i = 0; i < L(p)->schema.count; i++)
                     ret = PFla_attach (ret, L(p)->schema.items[i].name,
                                        L(p)->sem.lit_tbl.tuples[0].atoms[i]);
