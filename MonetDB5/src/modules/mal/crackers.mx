@@ -3826,6 +3826,160 @@ CRKcrackOrderedTHREE_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_
 	
 	return MAL_SUCCEED;
 }
+str
+CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
+{
+	BUN lh, lt, hh, ht, fhh, fht, tmpt, tmph;/* fh, llh, llt;*/
+	oid *scr_h,*mscr_h;
+	@1  *scr_t,*mscr_t;
+	int scr_size = idx_last - idx_first +1;
+	int hghShrinked = 0, lowShrinked = 0;
+	int xx = BUNsize(b);
+
+	lh = BUNhloc(b, BUNptr(b, idx_first));
+	lt = BUNtloc(b, BUNptr(b, idx_first));
+	ht = BUNtloc(b, BUNptr(b, idx_last));
+	hh = BUNhloc(b, BUNptr(b, idx_last));
+
+	@:moveOrdered(*(@1*)lt @4 low,lh,lt,+,lowShrinked++;)@
+	@:moveOrdered(*(@1*)ht @7 hgh ,hh,ht,-,hghShrinked++;)@
+
+	if (lowShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
+	if (hghShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
+	tmph = fhh = lh;
+	tmpt = fht = lt;	
+	int scrH = scr_size-1;	
+	int hp = 0, hil = 0, mids = scrH, mmids = 0;
+	scr_h = (oid*) GDKmalloc(scr_size * sizeof(oid));
+	scr_t = (@1 *) GDKmalloc(scr_size * sizeof(@1 ));
+	mscr_h = (oid*) GDKmalloc(scr_size * sizeof(oid));
+	mscr_t = (@1 *) GDKmalloc(scr_size * sizeof(@1 ));
+	while (*(@1*)tmpt @7 hgh){
+		tmpt += xx;
+		tmph += xx;
+	}
+	BUN tmp1 = lt, tmp2;
+	while (tmpt <= ht){/*; tmpt+=xx,tmph+=xx){*/
+		if ( *(@1*)tmpt @4 low){
+			if (*(@1*)lt @7 hgh){
+				scr_h[hil] = *(oid*)lh;
+				scr_t[hil] = *(@1* )lt;				
+				hil++;	
+			}
+			if (*(@1*)lt @5 low && *(@1*)lt @6 hgh){
+				scr_h[mids] = *(oid*)lh;
+				scr_t[mids] = *(@1* )lt;				
+				mids--;	
+			}
+			*(oid*)lh = *(oid*)tmph;
+			*(@1 *)lt = *(@1 *)tmpt;
+			lh += xx;
+			lt += xx;
+		}
+		hp++;
+		tmpt += xx;
+		tmph += xx;
+		while ((*(@1*)tmpt @7 hgh)){
+			tmpt += xx;
+			tmph += xx;
+		}
+	}
+	tmph = hh;
+	tmpt = ht;
+	tmp2 = lt;
+	tmp1 += xx*(hp+hil);
+	for(; tmpt >= tmp1; tmph-=xx, tmpt-=xx){
+		if (*(@1*)tmpt @7 hgh ){
+			*(oid*)hh = *(oid*)tmph;
+			*(@1 *)ht = *(@1 *)tmpt;
+			hh -= xx;
+			ht -= xx;
+		}
+		if (*(@1*)tmpt @5 low && *(@1*)tmpt @6 hgh){
+			mscr_h[mmids] = *(oid*)tmph;
+			mscr_t[mmids] = *(@1* )tmpt;				
+			mmids++;	
+		}
+	}
+	int i;
+	for (i= hil-1; i >= 0; i--){
+		if (*(@1*)tmpt @7 hgh){
+			*(oid*)hh = *(oid*)tmph;
+			*(@1 *)ht = *(@1 *)tmpt;
+			hh -= xx;
+			ht -= xx;
+		}	
+		if (*(@1*)tmpt @5 low && *(@1*)tmpt @6 hgh){
+			mscr_h[mmids] = *(oid*)tmph;
+			mscr_t[mmids] = *(@1* )tmpt;				
+			mmids++;	
+		}
+		*(oid*)tmph = scr_h[i];
+		*(@1 *)tmpt = scr_t[i];
+		tmpt -= xx;
+		tmph -= xx;
+	}
+	i = 0;
+	for (; i < mmids; i++){
+		 if (*(@1*)tmpt @7 hgh ){
+                        *(oid*)hh = *(oid*)tmph;
+                        *(@1 *)ht = *(@1 *)tmpt;
+                        hh -= xx;
+                        ht -= xx;
+                }
+		if (*(@1*)tmpt @5 low && *(@1*)tmpt @6 hgh){
+			mscr_h[mmids] = *(oid*)tmph;
+			mscr_t[mmids] = *(@1* )tmpt;				
+			mmids++;	
+		}
+		*(oid*)tmph = mscr_h[i];
+		*(@1 *)tmpt = mscr_t[i];
+		tmph -= xx;
+		tmpt -= xx;
+	}
+	tmp2 += xx*(scrH-mids);
+	BUN mh= tmph, mt = tmpt;
+	for(; tmpt >= tmp2; tmph-=xx, tmpt-=xx){
+		if (*(@1*)tmpt @7 hgh ){
+                        *(oid*)hh = *(oid*)tmph;
+                        *(@1 *)ht = *(@1 *)tmpt;
+                        hh -= xx;
+                        ht -= xx;
+                }
+		if (*(@1*)tmpt @5 low && *(@1*)tmpt @6 hgh){
+			if (mt != tmpt){
+				*(oid*)mh = *(oid*)tmph;
+                        	*(@1 *)mt = *(@1 *)tmpt;
+			}
+                        mh -= xx;
+                        mt -= xx;
+		}
+	}
+
+        i = mids+1;
+        for (; i <= scrH; i++){
+                 if (*(@1*)tmpt @7 hgh ){
+                        *(oid*)hh = *(oid*)tmph;
+                        *(@1 *)ht = *(@1 *)tmpt;
+                        hh -= xx;
+                        ht -= xx;
+                }
+                if (*(@1*)tmpt @5 low && *(@1*)tmpt @6 hgh){
+	        	*(oid*)mh = *(oid*)tmph;
+                        *(@1 *)mt = *(@1 *)tmpt;
+                        mh -= xx;
+                        mt -= xx;
+                }
+                *(oid*)tmph = scr_h[i];
+                *(@1 *)tmpt = scr_t[i];
+                tmph -= xx;
+                tmpt -= xx;
+        }
+	
+	GDKfree(scr_h);
+	GDKfree(scr_t);
+	return MAL_SUCCEED;
+}
 @
 @= crackInTwoOrderedPiecesII
 str
@@ -4256,7 +4410,7 @@ CRKcrackOrderedThree_is_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
 	}
-        msg= CRKcrackOrderedTHREE_is_LO_RE_@1(b,*low,*hgh, 0, BATcount(b)-1);
+        msg= CRKcrackOrderedTHREELateCopying_is_LO_RE_@1(b,*low,*hgh, 0, BATcount(b)-1);
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
 	return msg;
