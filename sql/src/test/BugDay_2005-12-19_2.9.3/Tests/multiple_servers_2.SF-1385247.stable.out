@@ -678,12 +678,8 @@ server 51 : "module(sql_server);module(mapi); sql_server_start();", client 2: (S
 [ 512	]
 
 server 51 : "module(sql_server);module(mapi); sql_server_start();", client 3: (SQL) (SQL) MAPI
-MAPI  = monetdb@localhost:32522
-ERROR = !ERROR: xchange_challenge: frontend mil not found
 
 server 51 : "module(sql_server);module(mapi); sql_server_start();", client 4: (SQL) (SQL) (MAPI) MAPI
-MAPI  = monetdb@localhost:32522
-ERROR = !ERROR: xchange_challenge: frontend mil not found
 quit();
 
 server 52 : "module(sql_server);module(mapi); sql_server_start();"
@@ -700,8 +696,6 @@ server 52 : "module(sql_server);module(mapi); sql_server_start();", client 1: SQ
 [ 521	]
 
 server 52 : "module(sql_server);module(mapi); sql_server_start();", client 2: (SQL) MAPI
-MAPI  = monetdb@localhost:32522
-ERROR = !ERROR: xchange_challenge: frontend mil not found
 
 server 52 : "module(sql_server);module(mapi); sql_server_start();", client 3: (SQL) (MAPI) SQL
 # . # table_name
@@ -711,8 +705,6 @@ server 52 : "module(sql_server);module(mapi); sql_server_start();", client 3: (S
 [ 523	]
 
 server 52 : "module(sql_server);module(mapi); sql_server_start();", client 4: (SQL) (MAPI) (SQL) MAPI
-MAPI  = monetdb@localhost:32522
-ERROR = !ERROR: xchange_challenge: frontend mil not found
 quit();
 
 server 53 : "module(sql_server);module(mapi); sql_server_start();"
@@ -722,8 +714,6 @@ server 53 : "module(sql_server);module(mapi); sql_server_start();"
 # Visit http://monetdb.cwi.nl/ for further information.
 
 server 53 : "module(sql_server);module(mapi); sql_server_start();", client 1: MAPI
-MAPI  = monetdb@localhost:32522
-ERROR = !ERROR: xchange_challenge: frontend mil not found
 
 server 53 : "module(sql_server);module(mapi); sql_server_start();", client 2: (MAPI) SQL
 # . # table_name
@@ -740,8 +730,6 @@ server 53 : "module(sql_server);module(mapi); sql_server_start();", client 3: (M
 [ 533	]
 
 server 53 : "module(sql_server);module(mapi); sql_server_start();", client 4: (MAPI) (SQL) (SQL) MAPI
-MAPI  = monetdb@localhost:32522
-ERROR = !ERROR: xchange_challenge: frontend mil not found
 quit();
 
 server 54 : "module(sql_server);module(mapi); sql_server_start();"
@@ -758,12 +746,8 @@ server 54 : "module(sql_server);module(mapi); sql_server_start();", client 1: SQ
 [ 541	]
 
 server 54 : "module(sql_server);module(mapi); sql_server_start();", client 2: (SQL) MAPI
-MAPI  = monetdb@localhost:32522
-ERROR = !ERROR: xchange_challenge: frontend mil not found
 
 server 54 : "module(sql_server);module(mapi); sql_server_start();", client 3: (SQL) (MAPI) MAPI
-MAPI  = monetdb@localhost:32522
-ERROR = !ERROR: xchange_challenge: frontend mil not found
 
 server 54 : "module(sql_server);module(mapi); sql_server_start();", client 4: (SQL) (MAPI) (MAPI) SQL
 # . # table_name
@@ -780,8 +764,6 @@ server 55 : "module(sql_server);module(mapi); sql_server_start();"
 # Visit http://monetdb.cwi.nl/ for further information.
 
 server 55 : "module(sql_server);module(mapi); sql_server_start();", client 1: MAPI
-MAPI  = monetdb@localhost:32522
-ERROR = !ERROR: xchange_challenge: frontend mil not found
 
 server 55 : "module(sql_server);module(mapi); sql_server_start();", client 2: (MAPI) SQL
 # . # table_name
@@ -791,8 +773,6 @@ server 55 : "module(sql_server);module(mapi); sql_server_start();", client 2: (M
 [ 552	]
 
 server 55 : "module(sql_server);module(mapi); sql_server_start();", client 3: (MAPI) (SQL) MAPI
-MAPI  = monetdb@localhost:32522
-ERROR = !ERROR: xchange_challenge: frontend mil not found
 
 server 55 : "module(sql_server);module(mapi); sql_server_start();", client 4: (MAPI) (SQL) (MAPI) SQL
 # . # table_name
@@ -809,12 +789,8 @@ server 56 : "module(sql_server);module(mapi); sql_server_start();"
 # Visit http://monetdb.cwi.nl/ for further information.
 
 server 56 : "module(sql_server);module(mapi); sql_server_start();", client 1: MAPI
-MAPI  = monetdb@localhost:32522
-ERROR = !ERROR: xchange_challenge: frontend mil not found
 
 server 56 : "module(sql_server);module(mapi); sql_server_start();", client 2: (MAPI) MAPI
-MAPI  = monetdb@localhost:32522
-ERROR = !ERROR: xchange_challenge: frontend mil not found
 
 server 56 : "module(sql_server);module(mapi); sql_server_start();", client 3: (MAPI) (MAPI) SQL
 # . # table_name
