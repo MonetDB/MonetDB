@@ -68,6 +68,49 @@ opt_complex (PFla_op_t *p)
 
     /* action code */
     switch (p->kind) {
+        case la_attach:
+            /**
+             * if an attach column is the only required column
+             * and we know its exact cardinality we can replace
+             * the complete subtree by a literal table.
+             */
+            if (PFprop_icols_count (p->prop) == 1 &&
+                PFprop_icol (p->prop, p->sem.attach.attname) &&
+                PFprop_card (p->prop) >= 1) {
+                
+                PFla_op_t *res;
+                unsigned int count = PFprop_card (p->prop);
+                /* create projection list to avoid missing attributes */
+                PFalg_proj_t *proj = PFmalloc (p->schema.count *
+                                               sizeof (PFalg_proj_t));
+
+                /* create list of tuples each containing a list of atoms */
+                PFalg_tuple_t *tuples = PFmalloc (count *
+                                                  sizeof (*(tuples)));;
+                                                  
+                for (unsigned int i = 0; i < count; i++) {
+                    tuples[i].atoms = PFmalloc (sizeof (*(tuples[i].atoms)));
+                    tuples[i].atoms[0] = p->sem.attach.value;
+                    tuples[i].count = 1;
+                }
+
+                res = PFla_lit_tbl_ (PFalg_attlist (p->sem.attach.attname),
+                                     count, tuples);
+
+                /* Every column of the relation will point
+                   to the attach argument to avoid missing
+                   references. (Columns that are not required
+                   may be still referenced by the following
+                   operators.) */
+                for (unsigned int i = 0; i < p->schema.count; i++)
+                    proj[i] = PFalg_proj (p->schema.items[i].name,
+                                          p->sem.attach.attname);
+                                          
+                res = PFla_project_ (res, p->schema.count, proj);
+                *p = *res;
+            }
+            break;
+            
         case la_eqjoin:
             /**
              * if we have a key join (key property) on a 
