@@ -2020,9 +2020,6 @@ proc replace(bat[bat,bat] replacements, bat[void,bat] ws, int prop, oid frag, ba
   return replacements.replace(propbat, newpropbat);
 }
 
-var UPD_PAGESHIFT := 16;
-var UPD_PAGESIZE := (1 << UPD_PAGESHIFT);
-
 # implicit args:
 # bat[void,lng] int_values
 # bat[void,str] str_values
@@ -2220,9 +2217,9 @@ proc do_update_text(bat[bat,bat] replacements, bat[void,bat] ws, int tableid, ba
     var frag := fragbat.find($h);
     if (ws.fetch(PRE_KIND).find(frag).find($t) != elemtype) {
       if (elemtype = TEXT) {
-	ERROR("node must be of type TEXT\n");
+        ERROR("node must be of type TEXT\n");
       } else {
-	ERROR("node must be of type COMMENT\n");
+        ERROR("node must be of type COMMENT\n");
       }
     }
     var id := add_string_unique_inplace(ws, frag, tableid, textbat.find($h));
@@ -2372,32 +2369,14 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
     # document), translate to the modified document numbering
     docinsertafter := replacementvalue(replacements, ws, NID_PRE, docfrag, ws.fetch(PRE_NID).find(docfrag).find(docinsertafter));
 
-    # the start of the page on which the new element is to be inserted
-    # use "int" because we pass this value to slice which needs int
-    var docpage := ((int(docinsertafter) + 1) >> UPD_PAGESHIFT) << UPD_PAGESHIFT;
-
-    # figure out the number of holes on the page on which the new
-    # element is to be inserted (we use the PRE_LEVEL table for this,
-    # holes are indicated with NIL)
-    var docpagelevel := doclevelbat.slice(docpage, docpage + UPD_PAGESIZE - 1);
+    # fix docsize with value from replacements
     var doclevelupdatebat := replacements.replacementsfetch(doclevelbat);
-    # update with values from replacements (if any)
     if (doclevelupdatebat.count() > 0) {
-      # replace updated values from replacements BAT
       var doclevelupdatemax := doclevelupdatebat.reverse().max().int() + 1;
       if (doclevelupdatemax > docsize) {
-        docsize := doclevelupdatemax;
-       }
-      var doclevelupdate := doclevelupdatebat.reverse().select(oid(docpage), oid(docpage + UPD_PAGESIZE - 1)).reverse();
-      docpagelevel := docpagelevel.copy().key(true).access(BAT_WRITE).myinsert(doclevelupdate);
+	docsize := doclevelupdatemax;
+      }
     }
-    var docpageholes := docpagelevel.uselect(chr(nil));
-    var docpagefreespace := (UPD_PAGESIZE - docpagelevel.count()) + docpageholes.count();
-
-    if (insertsize > lng(docpagefreespace)) {
-      # not enough space on the current page
-      # XXX insert a new page
-    } # else? XXX
 
     # holesize is the size of the hole after the node where we have to insert
     var holesize;
@@ -2426,66 +2405,57 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
       while (holeneeded > 0LL) {
         # hole below?
         var j := ((lng(docinsertafter) + holesize) + i) + 1;
-        # still on same page?
-        if (j < (lng(docpage) + UPD_PAGESIZE)) {
-          # yes
-          if (j >= lng(docsize)) {
-            # big gaping hole after the document
-            var hs := int((lng(docpage) + UPD_PAGESIZE) - docsize);
+        if (j >= lng(docsize)) {
+          # big gaping hole after the document
+          var hs := int(holeneeded);
+#           if (debug) printf("movedata %%d %%d %%d\n", int(lng(docinsertafter) + holesize + 1), int(i), hs);
+          movedata(replacements, ws, docfrag, oid(lng(docinsertafter) + holesize + 1), i, hs);
+          holeneeded :-= hs;
+          holesize :+= hs;
+          docsize :+= hs;
+        } else {
+          # looking at hole?
+          var s := replacementvalue(replacements, docsizebat, oid(j));
+          if (isnil(niland(s, int(nil)))) {
+            var hs := niland(s, INT_MAX) + 1;
             if (lng(hs) > holeneeded) {
-              hs := int(holeneeded);
+              hs := holeneeded;
             }
-#             if (debug) printf("movedata %%d %%d %%d\n", int(lng(docinsertafter) + holesize + 1), int(i), hs);
-            movedata(replacements, ws, docfrag, oid(lng(docinsertafter) + holesize + 1), i, hs);
+            # move the hole to just below the hole already at docinsertafter
+#             if (debug) printf("movedata %%d %%d %%d\n", int(lng(docinsertafter) + holesize + 1), int(i), int(hs));
+            movedata(replacements, ws, docfrag, oid(lng(docinsertafter) + holesize + 1), i, int(hs));
             holeneeded :-= hs;
             holesize :+= hs;
-            docsize :+= hs;
-          } else {
-            # looking at hole?
-            var s := replacementvalue(replacements, docsizebat, oid(j));
-            if (isnil(niland(s, int(nil)))) {
-              var hs := niland(s, INT_MAX) + 1;
-              if (lng(hs) > holeneeded) {
-                hs := holeneeded;
-              }
-              # move the hole to just below the hole already at docinsertafter
-#               if (debug) printf("movedata %%d %%d %%d\n", int(lng(docinsertafter) + holesize + 1), int(i), int(hs));
-              movedata(replacements, ws, docfrag, oid(lng(docinsertafter) + holesize + 1), i, int(hs));
-              holeneeded :-= hs;
-              holesize :+= hs;
-            }
           }
         }
-        if ((lng(docinsertafter) - i) >= lng(docpage)) {
+        if (((lng(docinsertafter) - i) >= 0LL) and (holeneeded > 0LL)) {
           # hole above?
-          if (holeneeded > 0LL) {
-            if (isnil(replacementvalue(replacements, doclevelbat, oid(lng(docinsertafter) - i)))) {
-              # yes, find out how large, but stop when we have a hole
-              # that is big enough (and stay on the page)
-              var hs := 1;
-              var cont := (((lng(docinsertafter) - i) - hs) >= lng(docpage));
+          if (isnil(replacementvalue(replacements, doclevelbat, oid(lng(docinsertafter) - i)))) {
+            # yes, find out how large, but stop when we have a hole
+            # that is big enough
+            var hs := 1;
+            var cont := (((lng(docinsertafter) - i) - hs) >= 0LL);
+            if (cont) {
+              cont := (lng(hs) < holeneeded);
+            }
+            if (cont) {
+              cont := isnil(replacementvalue(replacements, docsizebat, oid((lng(docinsertafter) - i) - hs)));
+            }
+            while (cont) {
+              hs :+= 1;
+              cont := (((lng(docinsertafter) - i) - hs) >= 0LL);
               if (cont) {
                 cont := (lng(hs) < holeneeded);
               }
               if (cont) {
                 cont := isnil(replacementvalue(replacements, docsizebat, oid((lng(docinsertafter) - i) - hs)));
               }
-              while (cont) {
-                hs :+= 1;
-                cont := (((lng(docinsertafter) - i) - hs) >= lng(docpage));
-                if (cont) {
-                  cont := (lng(hs) < holeneeded);
-                }
-                if (cont) {
-                  cont := isnil(replacementvalue(replacements, docsizebat, oid((lng(docinsertafter) - i) - hs)));
-                }
-              }
-#               if (debug) printf("movedata %%d %%d %%d\n", int(lng(docinsertafter) - i), int(i), -(int(hs)));
-              movedata(replacements, ws, docfrag, oid((lng(docinsertafter) - i) + 1), i, -(int(hs)));
-              docinsertafter := oid(lng(docinsertafter) - hs);
-              holeneeded :-= hs;
-              holesize :+= hs;
             }
+#             if (debug) printf("movedata %%d %%d %%d\n", int(lng(docinsertafter) - i), int(i), -(int(hs)));
+            movedata(replacements, ws, docfrag, oid((lng(docinsertafter) - i) + 1), i, -(int(hs)));
+            docinsertafter := oid(lng(docinsertafter) - hs);
+            holeneeded :-= hs;
+            holesize :+= hs;
           }
         }
         i :+= 1;
