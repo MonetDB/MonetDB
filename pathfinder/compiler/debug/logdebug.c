@@ -1449,6 +1449,10 @@ void
 PFla_dot (FILE *f, PFla_op_t *root)
 {
     if (root) {
+        if (root->node_id)
+            PFoops (OOPS_FATAL, 
+                    "only run PFla_dot once - node ids are not resetted.");
+
         /* initialize array to hold dot output */
         PFarray_t *dot = PFarray (sizeof (char));
 
@@ -1479,6 +1483,10 @@ void
 PFla_xml (FILE *f, PFla_op_t *root)
 {
     if (root) {
+        if (root->node_id)
+            PFoops (OOPS_FATAL, 
+                    "only run PFla_xml once - node ids are not resetted.");
+
         /* initialize array to hold dot output */
         PFarray_t *xml = PFarray (sizeof (char));
 
