@@ -35,6 +35,14 @@
  *        generates a lot of extra confusing 'noise'
  */
 
+#define SHRED_HOLES
+
+#ifdef SHRED_HOLES
+#define TUPLES_PER_PAGE REMAP_PAGE_SIZE
+/* #define TUPLES_PER_PAGE 4 */ /* nice for debugging */
+#define PRE2NID(PRE,FREE) (PRE-(PRE/TUPLES_PER_PAGE)*FREE)
+#endif
+
 /* #define DEBUG */
 
 #define USE_COMPRESSION 1
@@ -267,7 +275,9 @@ nat xml_depth_max = XML_DEPTH_MAX;
 typedef struct node_t node_t;
 struct node_t {
     nat  pre;                   /**< preorder rank */
+#ifdef OLDSIZE
     nat  size;                  /**< size of subtree below node */
+#endif
     int  level;                 /**< tree level of parent 
                                   (0 if root, -1 if document node) */
     nat  prop;                  /**< property ID */
@@ -294,7 +304,7 @@ typedef struct shredCtxStruct {
     shredBAT    dstBAT[SHRED_BATS]; /* all the result BATs */
     BAT*        pfxlocBAT;      /* the BAT to compress NS and LOC */
     int         pfxlocDUPL;     /* the number of duplicates pfxlocs */
-    off_t       pageFree;       /* number of bytes per page to leave empty */
+    off_t       pageFree;       /* number of tuples per page to leave empty */
     int         shredWords;     /* store all words in text seperate,
                                  * this is something the Tijah 
                                  * people were asking for
@@ -309,7 +319,7 @@ typedef struct shredCtxStruct {
 /* the minimal incremental size of a BAT during estimation process */
 #define MINCHUNK        1024
 
-static shredCtxStruct *createShredCtx(char* location, off_t  fileSize) {
+static shredCtxStruct *createShredCtx(char* location, off_t  fileSize, off_t pageFree) {
     int i;
     //oid frag = 1;
 
@@ -317,6 +327,7 @@ static shredCtxStruct *createShredCtx(char* location, off_t  fileSize) {
     res->location = location;
     res->fileSize = fileSize;
     res->estSize  = MIN(MAX(MINCHUNK,fileSize/20),INT_MAX);
+    res->pageFree = pageFree;
     for(i=0; i<SHRED_BATS; i++) {
         shredBAT* sb = &res->dstBAT[i];
 
@@ -326,14 +337,25 @@ static shredCtxStruct *createShredCtx(char* location, off_t  fileSize) {
             GDKerror("shredder.mx:createShredCtx: id - sync\n");
             return NULL;
         }
+	int ht = sb->def->headType;
+	int tt = sb->def->tailType;
         sb->cnt  = sb->dupl = 0;
-        if ( sb->def->headType == TYPE_str || sb->def->tailType == TYPE_str)
+        if ( ht == TYPE_str || tt == TYPE_str)
             sb->size = MINCHUNK; /* let Monet do the resize self */
         else 
             sb->size = (int)(sb->def->sizeFact * res->estSize);
-
-        sb->bat  = BATnew(sb->def->headType,sb->def->tailType,sb->size);
-
+#ifdef SHRED_HOLES
+	if ( pageFree && ht == TYPE_void && tt == TYPE_void) {
+	    if ( i==PRE_NID || i==NID_PRE) {
+		/* The PRE_NID and NID_PRE are default generated as a
+		 * [void,void] BAT. When holes are generated however they 
+		 * get 'real' content and should be [void,oid].
+		 */
+		tt = TYPE_oid;
+	    }
+	}
+#endif
+        sb->bat  = BATnew(ht,tt,sb->size);
         /*
         if (i == WS_FRAG){
             sb->bat = BATseqbase(BUNappend(sb->bat, (ptr)&frag), 0);
@@ -437,7 +459,8 @@ static int setBATcapacity(shredCtxStruct* shredCtx, int idx, int n) {
         BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP);
     }
     shredCtx->dstBAT[idx].cnt = n;
-    switch( shredCtx->dstBAT[idx].def->tailType ) {
+    /* switch( shredCtx->dstBAT[idx].def->tailType ) { */
+    switch( b->ttype ) {
         case TYPE_int :
             top = &shredCtx->dstBAT[idx].cast.natCAST[bottomTop];
             break;
@@ -450,6 +473,9 @@ static int setBATcapacity(shredCtxStruct* shredCtx, int idx, int n) {
         case TYPE_oid:
             top = &shredCtx->dstBAT[idx].cast.oidCAST[bottomTop];
             break;
+        case TYPE_void:
+            GDKerror("shredder.mx:setBATcapacity: unexpected void tailType\n");
+            return -1;
         default:
             GDKerror("shredder.mx:setBATcapacity: bad tailType\n");
             return -1;
@@ -509,19 +535,32 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
        )
         return NULL;
 
-    /* FIXME: should peform hole-creation *during* parsing iff
-     *        shredCtx->pageFree != 0 */
+    if ( shredCtx->pageFree ) {
+#ifdef SHRED_HOLES
+        /* PRE-NID and NID_PRE data is generated tailor the BATs to the correct
+	 * size.
+	 */
+    	if (
+            (setBATcapacity(shredCtx,PRE_NID, shredCtx->nnode_pre)  < 0) ||
+            (setBATcapacity(shredCtx,NID_PRE, PRE2NID(shredCtx->nnode_pre,shredCtx->pageFree))  < 0) )
+	   return NULL;
+#endif
+    } else {
+	/* No PRE_NID and NID_PRE bat data is generated in this case. We now
+	 * make a [void,void] bat of it.
+    	 * The new pre_nid and nid_pre [void,void] BAt's are identity mappings
+	 * with nid=pre
+	 */
+        size_t cnt = BATcount(shredCtx->dstBAT[PRE_SIZE].bat);
 
-    /* pre_nid and nid_pre [void,void] are identity mappings with nid=pre */
-    size_t cnt = BATcount(shredCtx->dstBAT[PRE_SIZE].bat);
+        BATseqbase(BATmirror(shredCtx->dstBAT[PRE_NID].bat),0);
+        BATsetcount(shredCtx->dstBAT[PRE_NID].bat,cnt);
+        shredCtx->dstBAT[PRE_NID].bat->batBuns->free += cnt*BUNsize(shredCtx->dstBAT[PRE_NID].bat);
 
-    BATseqbase(BATmirror(shredCtx->dstBAT[PRE_NID].bat),0);
-    BATsetcount(shredCtx->dstBAT[PRE_NID].bat,cnt);
-    shredCtx->dstBAT[PRE_NID].bat->batBuns->free += cnt*BUNsize(shredCtx->dstBAT[PRE_NID].bat);
-
-    BATseqbase(BATmirror(shredCtx->dstBAT[NID_PRE].bat),0);
-    BATsetcount(shredCtx->dstBAT[NID_PRE].bat,cnt);
-    shredCtx->dstBAT[NID_PRE].bat->batBuns->free += cnt*BUNsize(shredCtx->dstBAT[NID_PRE].bat);
+        BATseqbase(BATmirror(shredCtx->dstBAT[NID_PRE].bat),0);
+        BATsetcount(shredCtx->dstBAT[NID_PRE].bat,cnt);
+        shredCtx->dstBAT[NID_PRE].bat->batBuns->free += cnt*BUNsize(shredCtx->dstBAT[NID_PRE].bat);
+    }
 
     /* */
     shredBAT* pv = &shredCtx->dstBAT[PROP_VAL];
@@ -551,6 +590,13 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
     }
     BBPunfix(BBPcacheid(xlate_oid));
     /* */
+    if ( 0 ) {
+        BATprintf(GDKout , shredCtx->dstBAT[PRE_SIZE].bat);
+    }
+    if ( 0 ) {
+        BATprintf(GDKout , shredCtx->dstBAT[PRE_NID].bat);
+        BATprintf(GDKout , shredCtx->dstBAT[NID_PRE].bat);
+    }
     if ( 0 ) {
         BATprintf(GDKout,shredCtx->dstBAT[ATTR_PROP].bat);
         BATprintf(GDKout,shredCtx->dstBAT[PROP_VAL].bat);
@@ -655,14 +701,26 @@ CMDshred2bats(BAT **res2mil, str location, str buffer, str opt)
     else if ( (xmlFileSize = fileSize(location)) == ~(off_t)0 )
         return GDK_FAIL;
 
-    if ( !(shredCtx = createShredCtx(location,xmlFileSize)) )
+#ifdef SHRED_HOLES
+    int pageFree;
+
+    if ( opt && (pageFree=atoi(opt)) >= 0 ) {
+        pageFree = TUPLES_PER_PAGE*MIN(99,MAX(0,pageFree))/100; 
+    } else {
+    	pageFree = 0;
+    }
+    if ( pageFree )
+    	stream_printf(GDKout,"# shredding with holes: pagesize=%d, #tuples in hole=%d\n",TUPLES_PER_PAGE, pageFree);
+#else
+    int pageFree = 0;
+#endif
+
+    if ( !(shredCtx = createShredCtx(location,xmlFileSize,pageFree)) )
         return GDK_FAIL;
     if (strcmp(opt,"tijah")==0) {
         shredCtx->shredWords = 1; 
-        shredCtx->pageFree = 0; 
     } else {
         shredCtx->shredWords = 0; 
-        shredCtx->pageFree = REMAP_PAGE_SIZE*MIN(99,MAX(0,atoi(opt)))/100; 
     }
 
     if ( mainSHREDDER(shredCtx, location, buffer) < 0 )
@@ -724,7 +782,7 @@ static INLINE nat direct_nat2bat(shredCtxStruct* shredCtx, int idx, nat i, nat v
 static INLINE nat direct_natoid2bat(shredCtxStruct* shredCtx, int idx, nat i, nat v_nat) {
     shredBAT* sb = & shredCtx->dstBAT[idx];
 #ifdef VERBOSE
-    stream_printf(GDKout,"DIRECT[%s](%d) = %d@0\n",sb->def->name,i,v);
+    stream_printf(GDKout,"DIRECT[%s](%d) = %d@0\n",sb->def->name,i,v_nat);
 #endif
     CHECK_BAT_SIZE(sb,i);
     oid v_oid;
@@ -845,30 +903,77 @@ timer_str (long elapsed)
     return tm;
 }
 
-/**
- * enter new XML node into pre|size|level|prop|kind relation
- */
-static int
-emitnode (shredCtxStruct* shredCtx, node_t node)
+static INLINE int
+emitPreTuple(shredCtxStruct* shredCtx, nat pre, int size, chr level, nat prop,chr kind, nat nid)
 {
+    if(0) stream_printf(GDKout,"emitPreTuple(pre=%d,size=%d,level=%d)\n",pre,size,level);
+
     if (
-            direct_nat2bat(shredCtx,PRE_SIZE, node.pre,node.size)  == NATNIL ||
-            direct_chr2bat(shredCtx,PRE_LEVEL,node.pre,node.level) == NATNIL ||
-            direct_natoid2bat(shredCtx,PRE_PROP, node.pre,node.prop)  == NATNIL ||
-            direct_chr2bat(shredCtx,PRE_KIND, node.pre,node.kind)  == NATNIL 
+            direct_nat2bat(shredCtx,PRE_SIZE,	pre,size)  == NATNIL ||
+            direct_chr2bat(shredCtx,PRE_LEVEL,	pre,level) == NATNIL ||
+            direct_natoid2bat(shredCtx,PRE_PROP,pre,prop)  == NATNIL ||
+            direct_chr2bat(shredCtx,PRE_KIND,	pre,kind)  == NATNIL 
+#ifdef SHRED_HOLES
+	    || (shredCtx->pageFree&&(direct_natoid2bat(shredCtx,PRE_NID, pre,nid)==NATNIL)) 
+	    || (shredCtx->pageFree&&(nid!=NATNIL)&&(direct_natoid2bat(shredCtx,NID_PRE, nid,(nat)pre)==NATNIL)) 
+#endif
        )
         return -1;
     else
-        return 1;
+    	return 1;
 }
 
 /* This method checks for a maximum of INT_MAX for the pre number because it
  * must be stored in an [void,int] BAT. When the BAT will store unsigned int's
  * the maximum will become UINT_MAX.
  */
-#define NEXT_PRE(P)     if ( (P++) == INT_MAX ) { GDKerror("shredder.mx: FATAL_ERROR: NEXT_PRE(): pre >INT_MAX. Use 64bit oid!\n"); exit(0); }
+
+#ifdef SHRED_HOLES
+#define CHECK_HOLE(P) if (P->pageFree && ((P->nnode_pre % TUPLES_PER_PAGE) == P->pageFree)) createHole(P);
+
+static int createHole(shredCtxStruct* shredCtx)
+{
+    int cnt = TUPLES_PER_PAGE - (shredCtx->nnode_pre % TUPLES_PER_PAGE) ;
+
+    if(0) stream_printf(GDKout,"CREATEHOLE: pre=%d\n",shredCtx->nnode_pre);
+    while( cnt-- ) { 
+    /* while( shredCtx->nnode_pre % TUPLES_PER_PAGE ) { */
+       nat sizefill = cnt|(1<<31);
+       if(0) stream_printf(GDKout,"SHRHOLE: FILL HOLE[%d,rest=%d]\n",shredCtx->nnode_pre,cnt);
+       if (emitPreTuple(shredCtx,shredCtx->nnode_pre,sizefill,chr_nil,NATNIL,chr_nil,NATNIL) < 0)
+           return -1;
+       shredCtx->nnode_pre++;
+    }
+    return 1;
+}
+#else
+#define CHECK_HOLE(P)
+#endif
+
+#define NEXT_PRE(P)     { if ( (P->nnode_pre++) == INT_MAX ) { GDKerror("shredder.mx: FATAL_ERROR: NEXT_PRE(): pre >INT_MAX. Use 64bit oid!\n"); exit(0); }; CHECK_HOLE(P); if (0) stream_printf(GDKout,"NEXT_PRE=%d\n",P->nnode_pre); }
 
 #define SHREDCTX(X)   ((shredCtxStruct*)((xmlParserCtxtPtr)X)->_private)
+
+/**
+ * enter new XML node into pre|size|level|prop|kind relation
+ */
+static int
+emitnode (shredCtxStruct* shredCtx, node_t* node)
+{
+#ifdef SHRED_HOLES
+    nat nidPre = PRE2NID(node->pre, shredCtx->pageFree);
+#else
+    nat nidPre = NATNIL;
+#endif
+
+#ifdef OLDSIZE
+    int nodeSize = node.size;
+#else
+    int nodeSize = shredCtx->nnode_pre-node->pre-1;
+#endif
+
+    return emitPreTuple(shredCtx,node->pre,nodeSize,node->level,node->prop,node->kind,nidPre);
+}
 
 void 
 shred_start_document (void *xmlCtx)
@@ -886,12 +991,14 @@ shred_start_document (void *xmlCtx)
 
     /* push document node */
     PUSH (shredCtx,((node_t) { .pre   = 0, 
+#ifdef OLDSIZE
                 .size  = 0, 
+#endif
                 .level = -1,
                 .prop  = NATNIL,
                 .kind  = DOCUMENT
                 }));
-    NEXT_PRE(shredCtx->nnode_pre);
+    NEXT_PRE(shredCtx);
 }
 
 void 
@@ -900,7 +1007,7 @@ shred_end_document (void *xmlCtx)
     shredCtxStruct* shredCtx = SHREDCTX(xmlCtx);
 
     /* pop document node and enter into pre|size|level|prop|kind relation */
-    if ( emitnode (shredCtx,POP(shredCtx)) < 0 ) {
+    if ( emitnode (shredCtx,&POP(shredCtx)) < 0 ) {
         BAILOUT(xmlCtx);
     }
 #ifdef DEBUG
@@ -918,18 +1025,22 @@ emitString(shredCtxStruct* shredCtx, char* s)
 
     /* fill the node */
     node.pre   = shredCtx->nnode_pre;
-    NEXT_PRE(shredCtx->nnode_pre);
+    NEXT_PRE(shredCtx);
+#ifdef OLDSIZE
     node.size  = 0;
+#endif
     node.level = shredCtx->level;
     node.kind  = PFTEXT;
     if ( (node.prop=append_str2bat(shredCtx,PROP_TEXT,s)) == NATNIL)
         return -1;
 
+#ifdef OLDSIZE
     /* this text node contributes to the size of its parent */
     TOP(shredCtx).size++;
+#endif
 
     /* enter text node into pre|size|level|prop|kind relation */
-    if ( emitnode (shredCtx,node) < 0 )
+    if ( emitnode (shredCtx,&node) < 0 )
         return -1;
     return 1;
 }
@@ -1155,8 +1266,10 @@ shred_start_element(void *xmlCtx,
     }
     /* (1) assign preorder rank (document order), size, level, and kind */
     node.pre   = shredCtx->nnode_pre;
-    NEXT_PRE(shredCtx->nnode_pre);
+    NEXT_PRE(shredCtx);
+#ifdef OLDSIZE
     node.size  = 0;
+#endif
     node.level = shredCtx->level;
     node.kind  = ELEMENT;
 
@@ -1209,10 +1322,16 @@ shred_start_element(void *xmlCtx,
         /* INCOMPLETE, this value stuff should be done properly by libxml2, but how? */
         val_id = append_str2bat(shredCtx,PROP_VAL,(char*)a_val);
         /* */
+#ifdef SHRED_HOLES
+	nat ownerPre = (shredCtx->pageFree? PRE2NID(node.pre,shredCtx->pageFree): node.pre);
+	/* stream_printf(GDKout,"** covert onwerpre(%d) to nidpre(%d)\n",node.pre,ownerPre); */
+#else
+	nat ownerPre = node.pre;
+#endif
         if ( 
                 qn_id  == NATNIL ||
                 val_id == NATNIL ||
-                direct_natoid2bat(shredCtx,ATTR_OWN ,shredCtx->nnode_attr, node.pre) == NATNIL ||
+                direct_natoid2bat(shredCtx,ATTR_OWN ,shredCtx->nnode_attr, ownerPre) == NATNIL ||
                 direct_natoid2bat(shredCtx,ATTR_QN  ,shredCtx->nnode_attr, qn_id)    == NATNIL ||
                 direct_natoid2bat(shredCtx,ATTR_PROP,shredCtx->nnode_attr, val_id)   == NATNIL
            ) {
@@ -1243,8 +1362,10 @@ shred_start_element4SAX1(void *xmlCtx, const xmlChar *t, const xmlChar **atts)
     }
     /* (1) assign preorder rank (document order), size, level, and kind */
     node.pre   = shredCtx->nnode_pre;
-    NEXT_PRE(shredCtx->nnode_pre);
+    NEXT_PRE(shredCtx);
+#ifdef OLDSIZE
     node.size  = 0;
+#endif
     node.level = shredCtx->level;
     node.kind  = ELEMENT;
 
@@ -1267,11 +1388,17 @@ shred_start_element4SAX1(void *xmlCtx, const xmlChar *t, const xmlChar **atts)
         while (*atts) {            
             qn_id  = store_PfxLoc4SAX1(shredCtx, (char*) *atts);
             val_id = append_str2bat(shredCtx,PROP_VAL,(char*)*(atts + 1));
+#ifdef SHRED_HOLES
+	    nat ownerPre = (shredCtx->pageFree? PRE2NID(node.pre,shredCtx->pageFree): node.pre);
+	    /* stream_printf(GDKout,"** covert onwerpre(%d) to nidpre(%d)\n",node.pre,ownerPre); */
+#else
+	    nat ownerPre = node.pre;
+#endif
             /* */
             if ( 
                     qn_id  == NATNIL ||
                     val_id == NATNIL ||
-                    direct_natoid2bat(shredCtx,ATTR_OWN ,shredCtx->nnode_attr, node.pre) == NATNIL ||
+                    direct_natoid2bat(shredCtx,ATTR_OWN ,shredCtx->nnode_attr, ownerPre) == NATNIL ||
                     direct_natoid2bat(shredCtx,ATTR_QN  ,shredCtx->nnode_attr, qn_id)    == NATNIL ||
                     direct_natoid2bat(shredCtx,ATTR_PROP,shredCtx->nnode_attr, val_id)   == NATNIL
                ) {
@@ -1310,13 +1437,15 @@ shred_end_element (void *xmlCtx, const xmlChar *tag)
     /* ascend up one level */
     shredCtx->level--;
 
+#ifdef OLDSIZE
     /* the size of the subtree below this element and the element
      * itself contributes to the size of its parent
      */
     TOP(shredCtx).size += node.size + 1;
+#endif
 
     /* enter element node into pre|size|level|prop|kind relation */
-    if ( emitnode (shredCtx,node) < 0 ) {
+    if ( emitnode (shredCtx,&node) < 0 ) {
         BAILOUT(xmlCtx);
     }
 #ifdef DEBUG
@@ -1372,13 +1501,17 @@ shred_pi (void *xmlCtx, const xmlChar *tgt, const xmlChar *ins)
     }
 
     node.pre   = shredCtx->nnode_pre;
-    NEXT_PRE(shredCtx->nnode_pre);
+    NEXT_PRE(shredCtx);
+#ifdef OLDSIZE
     node.size  = 0;
+#endif
     node.level = shredCtx->level;
     node.kind  = PI;
 
+#ifdef OLDSIZE
     /* this comment p-i contributes to the size of its parent */
     TOP(shredCtx).size++;
+#endif
 
     node.prop = append_str2bat(shredCtx,PROP_TGT,(char*)tgt);
     if ( node.prop != append_str2bat(shredCtx,PROP_INS,(char*)ins) ) {
@@ -1387,7 +1520,7 @@ shred_pi (void *xmlCtx, const xmlChar *tgt, const xmlChar *ins)
     }
 
     /* enter p-i node into pre|size|level|prop|kind relation */
-    if ( emitnode (shredCtx,node) < 0 ) {
+    if ( emitnode (shredCtx,&node) < 0 ) {
         BAILOUT(xmlCtx);
     }
 }
@@ -1403,18 +1536,22 @@ shred_comment (void *xmlCtx, const xmlChar *c)
     }
 
     node.pre   = shredCtx->nnode_pre;
-    NEXT_PRE(shredCtx->nnode_pre);
+    NEXT_PRE(shredCtx);
+#ifdef OLDSIZE
     node.size  = 0;
+#endif
     node.level = shredCtx->level;
     node.kind  = COMMENT;
 
+#ifdef OLDSIZE
     /* this comment node contributes to the size of its parent */
     TOP(shredCtx).size++;
+#endif
 
     node.prop = append_str2bat(shredCtx,PROP_COM,(char*)c);
 
     /* enter comment node into pre|size|level|prop|kind relation */
-    if ( emitnode (shredCtx,node) < 0 ) {
+    if ( emitnode (shredCtx,&node) < 0 ) {
         BAILOUT(xmlCtx);
     }
 }
