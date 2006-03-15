@@ -251,7 +251,7 @@ comment "Validate whether a BAT is correctly broken into three pieces with
 @mal
 @:crack(SI,Stratos Idreos,int,,)@
 @:crack(SI,Stratos Idreos,int,Ordered,; maintaining the head-oid order within each piece)@
-@:crack(Si,Stratos Idreos,int,Ordered,; maintaining the head-oid order within each piece)@
+@:crack(is,Stratos Idreos,int,Ordered,; maintaining the head-oid order within each piece)@
 @:crack(MK,Martin Kersten,int,,)@
 @:crack(MK,Martin Kersten,int,Ordered,; maintaining the head-oid order within each piece)@
 @:crack(SM,Stefan Manegold,int,,)@
@@ -3725,7 +3725,7 @@ finishLowMiddle:;
 @
 @= crackInThreeOrderedPiecesII
 str
-CRKcrackOrderedTHREE_Si_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
+CRKcrackOrderedTHREE_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 {
 	BUN lh, lt, hh, ht, fhh, fht, tmpt, tmph;/* fh, llh, llt;*/
 	oid *scr_h;
@@ -3822,7 +3822,7 @@ CRKcrackOrderedTHREE_Si_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_
 @
 @= crackInTwoOrderedPiecesII
 str
-CRKcrackOrderedZERO_Si_@2_@1(BAT *b, @1 mid, int idx_first, int idx_last)
+CRKcrackOrderedZERO_is_@2_@1(BAT *b, @1 mid, int idx_first, int idx_last)
 {
 
 	BUN lh, lt, hh, ht, fhh, fht, tmpt, tmph;/* fh, llh, llt;*/
@@ -3842,7 +3842,6 @@ CRKcrackOrderedZERO_Si_@2_@1(BAT *b, @1 mid, int idx_first, int idx_last)
 
 	if (lowShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
 	if (hghShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
-	printf("low shrinked= %d,  hghShrinked=%d ",lowShrinked,hghShrinked);
 	tmph = fhh = lh;
 	tmpt = fht = lt;	
 	
@@ -4101,7 +4100,7 @@ CRKcrackOrderedZero_SI_@1 (int *res, int *bid, @1 *mid)
 }  
 
 str             
-CRKcrackOrderedZero_Si_@1 (int *res, int *bid, @1 *mid)
+CRKcrackOrderedZero_is_@1 (int *res, int *bid, @1 *mid)
 {       
         BAT *b;
         str msg;
@@ -4109,7 +4108,7 @@ CRKcrackOrderedZero_Si_@1 (int *res, int *bid, @1 *mid)
         if ((b = BATdescriptor(*bid)) == NULL) {
                 return throwMessage("crackers.crack_SI", "Cannot access descriptor");
         }
-        msg= CRKcrackOrderedZERO_Si_LE_@1(b,*mid, 0, BATcount(b)-1);
+        msg= CRKcrackOrderedZERO_is_LE_@1(b,*mid, 0, BATcount(b)-1);
 
         BBPkeepref(b->batCacheid);
         *res = *bid;    
@@ -4150,7 +4149,7 @@ CRKcrackOrderedOne_SI_@1 (int *res, int *bid, @1 *mid)
 }
 
 str             
-CRKcrackOrderedOne_Si_@1 (int *res, int *bid, @1 *mid)
+CRKcrackOrderedOne_is_@1 (int *res, int *bid, @1 *mid)
 {       
         BAT *b;
 	str msg;
@@ -4158,7 +4157,7 @@ CRKcrackOrderedOne_Si_@1 (int *res, int *bid, @1 *mid)
         if ((b = BATdescriptor(*bid)) == NULL) {
                 return throwMessage("crackers.crack_SI", "Cannot access descriptor");
         }
-	msg= CRKcrackOrderedTHREE_Si_LE_RE_@1(b,*mid,*mid, 0, BATcount(b)-1);
+	msg= CRKcrackOrderedTHREE_is_LE_RE_@1(b,*mid,*mid, 0, BATcount(b)-1);
         BBPkeepref(b->batCacheid);
         *res = *bid;    
         return MAL_SUCCEED;             
@@ -4196,7 +4195,7 @@ CRKcrackOrderedTwo_SI_@1 (int *res, int *bid, @1 *mid)
 }
 
 str
-CRKcrackOrderedTwo_Si_@1 (int *res, int *bid, @1 *low, @1 *hgh)
+CRKcrackOrderedTwo_is_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 {
 	BAT *b;
 
@@ -4243,14 +4242,14 @@ CRKcrackOrderedThree_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	return MAL_SUCCEED;
 }
 str
-CRKcrackOrderedThree_Si_@1 (int *res, int *bid, @1 *low, @1 *hgh)
+CRKcrackOrderedThree_is_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 {
 	BAT *b;
 	str msg;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
 	}
-        msg= CRKcrackOrderedTHREE_Si_LO_RE_@1(b,*low,*hgh, 0, BATcount(b)-1);
+        msg= CRKcrackOrderedTHREE_is_LO_RE_@1(b,*low,*hgh, 0, BATcount(b)-1);
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
 	return msg;
