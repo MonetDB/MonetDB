@@ -623,7 +623,7 @@ proc milliseconds(timestamp t) : int { return milliseconds(daytime(t)); }
 
 proc year(int months) : int { return months/12; }
 proc month(int months) : int { return months%12; }
-proc day(lng secs) : int { return secs/86400; }
+proc day(lng secs) : lng { return secs/86400; }
 proc hours(lng secs) : int { return (secs%86400)/3600; }
 proc minutes(lng secs) : int { return (secs%3600)/60; }
 proc seconds(lng secs) : int { return (secs%60); }

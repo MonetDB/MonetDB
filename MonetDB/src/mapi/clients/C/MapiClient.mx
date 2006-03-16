@@ -216,13 +216,13 @@ dump_table(Mapi mid, char *tname)
 	fprintf(toConsole, " (\n");
 
 	snprintf(query, maxquerylen,
-		 "SELECT \"name\","			/* 0 */
-			"\"type\","			/* 1 */
-			"\"type_digits\","		/* 2 */
-			"\"type_scale\","		/* 3 */
-			"\"null\","			/* 4 */
-			"\"default\","			/* 5 */
-			"\"number\" "			/* 6 */
+		 "SELECT c.\"name\","			/* 0 */
+			"c.\"type\","			/* 1 */
+			"c.\"type_digits\","		/* 2 */
+			"c.\"type_scale\","		/* 3 */
+			"c.\"null\","			/* 4 */
+			"c.\"default\","		/* 5 */
+			"c.\"number\" "			/* 6 */
 		 "FROM \"columns\" \"c\",\"tables\" \"t\" "
 		 "WHERE \"c\".\"table_id\" = \"t\".\"id\" "
 		 "AND '%s' = \"t\".\"name\" ORDER BY \"number\"", tname);
