@@ -197,42 +197,6 @@ yourself by typing {\tt 12345\@2}.
 
 The database identifier concept is not yet supported in the current release;
 the {\tt STAMP} is 0 by default: e.g. 01@3 = 01@0
-@- Search Accelerator Identifiers
-@T
-With {\em search accelerators} we mean:
-\begin{itemize}
-\item special {\em data structures},
-\item {\em attached to a column of a table}, i.e. head or tail of a BAT.
-\item {\em maintained under table updates} by the database automatically.
-\end{itemize}
-All decent database systems maintain such structures, often called
-{\em indices}. They are used for speeding up database operations, like
-select and/or join. Famous examples are {\bf hash-tables, B-trees, R-trees,
-Grid-files}, etc.\\
-Whereas these structures are vital to the efficiency of many database
-operations, they do not play a big role on the user interface level.
-
-@-
-These accelerator identifiers serve to identify a specific
-search accelerator, and are used by the @%search accelerator management@
-commands, that can be found in the @[<a href="../../Core/Modules/bat/index.html">BAT module</a>@.
-This set can change over time
-(see the @[<a href="../../Core/mel/index.html">Monet Extension Language</a>@),
-and their mapping to strings can be looked up in system BAT by the name
-of @#monet_acctbl@:
-@T
-{\small\begin{verbatim}
-monet>monet_acctbl.print();
-#-----------------#
-# h       | t     #
-#-----------------#
-[ "hash",   1     ]
-[ "index",  2     ]
-\end{verbatim}}
-The {\tt\bf hash} identifier stands for Monet's built-in bucket-chained
-hash-tables. The {\tt\bf index} identifier stands for Monet's built-in
-binary search trees.
-
 
 @+ Expressions
 @T
