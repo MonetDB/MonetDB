@@ -99,13 +99,65 @@ struct PFla_pair_t PFbui_op_numeric_modulo_dbl (const PFla_op_t *loop,
                                                 bool ordering,
                                                 struct PFla_pair_t *args);
 
-struct PFla_pair_t PFbui_fn_sum_zero (const PFla_op_t *loop,
+struct PFla_pair_t PFbui_fn_avg (const PFla_op_t *loop,
                                  bool ordering,
                                  struct PFla_pair_t *args);
 
-struct PFla_pair_t PFbui_fn_sum (const PFla_op_t *loop,
-                                 bool ordering,
-                                 struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_max_str (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_max_int (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_max_dec (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_max_dbl (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_min_str (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_min_int (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_min_dec (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_min_dbl (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_sum_zero_int (const PFla_op_t *loop,
+                                          bool ordering,
+                                          struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_sum_zero_dec (const PFla_op_t *loop,
+                                          bool ordering,
+                                          struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_sum_zero_dbl (const PFla_op_t *loop,
+                                          bool ordering,
+                                          struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_sum_int (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_sum_dec (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_sum_dbl (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_fn_count (const PFla_op_t *loop,
                                    bool ordering,

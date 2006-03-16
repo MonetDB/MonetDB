@@ -1118,18 +1118,19 @@ unary_op(PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
 }
 
 
-/**
- * Constructor for operators forming (partitioned) sum of a column.
+/** 
+ * Constructor for operators forming the application of a 
+ * (partitioned) aggregation function (sum, min, max and avg) on a column.
  *
- * The values of attribute @a att are to be summed up. The partitioning
- * (group by) attribute is represented by @a part. The result (sum) is
- * stored in attribute @a res.
+ * The values of attribute @a att are used by the aggregation functaion.
+ * The partitioning (group by) attribute is represented by @a part.
+ * The result is stored in attribute @a res.
  */
-PFla_op_t * PFla_sum (const PFla_op_t *n, PFalg_att_t res,
+PFla_op_t * PFla_aggr (PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
                       PFalg_att_t att, PFalg_att_t part)
 {
-    /* build a new sum node */
-    PFla_op_t    *ret = la_op_wire1 (la_sum, n);
+    /* build a new aggr node */
+    PFla_op_t    *ret = la_op_wire1 (kind, n);
     unsigned int  i;
     bool          c1 = false;
     bool          c2 = false;
@@ -1161,21 +1162,22 @@ PFla_op_t * PFla_sum (const PFla_op_t *n, PFalg_att_t res,
     /* did we find attribute 'att'? */
     if (!c1)
         PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in sum not found", 
+                "attribute `%s' referenced in aggregation function not found", 
                 PFatt_str (att));
 
     /* did we find attribute 'part'? */
     if (!c2)
         PFoops (OOPS_FATAL,
-                "partitioning attribute `%s' referenced in sum not found",
+                "partitioning attribute `%s' referenced in aggregation "
+                "function not found",
                 PFatt_str (part));
 
-    /* insert semantic value (summed-up attribute, partitioning
+    /* insert semantic value (result (aggregated) attribute, partitioning
      * attribute(s), and result attribute) into the result
      */
-    ret->sem.sum.att = att;
-    ret->sem.sum.part = part;
-    ret->sem.sum.res = res;
+    ret->sem.aggr.att = att;
+    ret->sem.aggr.part = part;
+    ret->sem.aggr.res = res;
 
     return ret;
 }

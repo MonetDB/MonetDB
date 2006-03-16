@@ -234,14 +234,17 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                     && a->sem.unary.res == b->sem.unary.res);
             break;
 
+        case la_avg:
+	case la_max:
+	case la_min:
         case la_sum:
-            if (a->sem.sum.att != b->sem.sum.att
-                || a->sem.sum.res != b->sem.sum.res)
+            if (a->sem.aggr.att != b->sem.aggr.att
+                || a->sem.aggr.res != b->sem.aggr.res)
                 return false;
 
             /* either both aggregates are partitioned or none */
             /* partitioning attribute must be equal (if available) */
-            if (a->sem.sum.part != b->sem.sum.part)
+            if (a->sem.aggr.part != b->sem.aggr.part)
                 return false;
 
             return true;

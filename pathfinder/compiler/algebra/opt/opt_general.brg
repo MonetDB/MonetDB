@@ -70,7 +70,7 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 
 /*
  * Node identifiers.
- * Keep them aligned with the node kinds in include/algebra.h!
+ * Keep them aligned with the node kinds in include/logical.h!
  */
 %term  serialize      =   1
 %term  lit_tbl        =   2
@@ -95,10 +95,13 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term  bool_and       =  28
 %term  bool_or        =  29
 %term  bool_not       =  30
-%term  sum            =  31
-%term  count          =  32
-%term  rownum         =  35
-%term  number         =  36
+%term  avg            =  31
+%term  max_           =  32
+%term  min_           =  33
+%term  sum            =  34
+%term  count          =  35
+%term  rownum         =  36
+%term  number         =  37
 %term  type           =  40
 %term  type_assert    =  41
 %term  cast           =  42
@@ -157,8 +160,11 @@ Rel:    num_eq (Rel)                              =  37 (10);
 Rel:    bool_and (Rel)                            =  38 (10);
 Rel:    bool_or (Rel)                             =  39 (10);
 Rel:    bool_not (Rel)                            =  40 (10);
-Rel:    sum (Rel)                                 =  41 (10);
-Rel:    count (Rel)                               =  42 (10);
+Rel:    avg (Rel)                                 =  41 (10);
+Rel:    max_ (Rel)                                =  42 (10);
+Rel:    min_ (Rel)                                =  43 (10);
+Rel:    sum (Rel)                                 =  44 (10);
+Rel:    count (Rel)                               =  45 (10);
 Rel:    rownum (Rel)                              =  50 (10);
 Rel:    number (Rel)                              =  51 (10);
 Rel:    type (Rel)                                =  53 (10);
@@ -229,8 +235,11 @@ EmptyRel:    num_eq (EmptyRel)                    = 147  (0);
 EmptyRel:    bool_and (EmptyRel)                  = 148  (0);
 EmptyRel:    bool_or (EmptyRel)                   = 149  (0);
 EmptyRel:    bool_not (EmptyRel)                  = 150  (0);
-EmptyRel:    sum (EmptyRel)                       = 151  (0);
-EmptyRel:    count (EmptyRel)                     = 152  (0);
+EmptyRel:    avg (EmptyRel)                       = 151  (0);
+EmptyRel:    max_ (EmptyRel)                      = 152  (0);
+EmptyRel:    min_ (EmptyRel)                      = 153  (0);
+EmptyRel:    sum (EmptyRel)                       = 154  (0);
+EmptyRel:    count (EmptyRel)                     = 155  (0);
 EmptyRel:    rownum (EmptyRel)                    = 160  (0);
 EmptyRel:    number (EmptyRel)                    = 161  (0);
 EmptyRel:    type (EmptyRel)                      = 162  (0);
@@ -644,10 +653,16 @@ reduce (PFla_op_t *p, int goalnt)
         case 149:
         /* EmptyRel:    bool_not (EmptyRel) */
         case 150:
-        /* EmptyRel:    sum (EmptyRel) */
+        /* EmptyRel:    avg (EmptyRel) */
         case 151:
-        /* EmptyRel:    count (EmptyRel) */
+        /* EmptyRel:    max_ (EmptyRel) */
         case 152:
+        /* EmptyRel:    min_ (EmptyRel) */
+        case 153:
+        /* EmptyRel:    sum (EmptyRel) */
+        case 154:
+        /* EmptyRel:    count (EmptyRel) */
+        case 155:
         /* EmptyRel:    rownum (EmptyRel) */
         case 160:
         /* EmptyRel:    number (EmptyRel) */

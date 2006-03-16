@@ -76,17 +76,20 @@ opt_key (PFla_op_t *p)
                 }
             break;
             
+        case la_avg:
+	case la_max:
+	case la_min:
         case la_sum:
             /* if part is key we already have our aggregate */
-            if (p->sem.sum.part &&
-                PFprop_key_left (p->prop, p->sem.sum.part)) {
+            if (p->sem.aggr.part &&
+                PFprop_key_left (p->prop, p->sem.aggr.part)) {
                 PFla_op_t *ret;
                 ret = PFla_project (
                           L(p), 
-                          PFalg_proj (p->sem.sum.res,
-                                      p->sem.sum.att),
-                          PFalg_proj (p->sem.sum.part,
-                                      p->sem.sum.part));
+                          PFalg_proj (p->sem.aggr.res,
+                                      p->sem.aggr.att),
+                          PFalg_proj (p->sem.aggr.part,
+                                      p->sem.aggr.part));
                 *p = *ret;
                 SEEN(p) = true;                   
             }

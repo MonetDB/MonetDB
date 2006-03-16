@@ -108,13 +108,16 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term bool_and_atom  =  48
 %term bool_or_atom   =  49
 %term hash_count     =  55
-%term sum	     =  56
-%term merge_rownum   =  57
-%term hash_rownum    =  58
-%term number         =  59
-%term type           =  60
-%term type_assert    =  61
-%term cast           =  62
+%term avg	     =  56
+%term max_	     =  57
+%term min_	     =  58
+%term sum	     =  59
+%term merge_rownum   =  60
+%term hash_rownum    =  61
+%term number         =  62
+%term type           =  63
+%term type_assert    =  64
+%term cast           =  65
 %term llscj_anc      = 100
 %term llscj_anc_self = 101
 %term llscj_attr     = 102
@@ -192,13 +195,16 @@ Rel:      bool_or (Rel)                                            =  63 (10);
 Rel:      bool_and_atom (Rel)                                      =  64 (10);
 Rel:      bool_or_atom (Rel)                                       =  65 (10);
 Rel:      hash_count (Rel)                                         =  66 (10);
-Rel:      sum (Rel)                                                =  67 (10);
-Rel:      merge_rownum (Rel)                                       =  70 (10);
-Rel:      hash_rownum (Rel)                                        =  71 (10);
-Rel:      number (Rel)                                             =  72 (10);
-Rel:      type (Rel)                                               =  73 (10);
-Rel:      type_assert (Rel)                                        =  74 (10);
-Rel:      cast (Rel)                                               =  75 (10);
+Rel:      avg (Rel)                                                =  67 (10);
+Rel:      max_ (Rel)                                               =  68 (10);
+Rel:      min_ (Rel)                                               =  69 (10);
+Rel:      sum (Rel)                                                =  70 (10);
+Rel:      merge_rownum (Rel)                                       =  71 (10);
+Rel:      hash_rownum (Rel)                                        =  72 (10);
+Rel:      number (Rel)                                             =  73 (10);
+Rel:      type (Rel)                                               =  74 (10);
+Rel:      type_assert (Rel)                                        =  75 (10);
+Rel:      cast (Rel)                                               =  76 (10);
 
 Rel:      llscj_anc (FragList, Rel)                                =  80 (10);
 Rel:      llscj_anc_self (FragList, Rel)                           =  81 (10);
@@ -521,6 +527,10 @@ static void bin_bool_atom (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
                            PFpa_op_t *p);
 /* translate unary operators (numeric negation, Boolean not) */
 static void unary_op (PFmil_t * (*op) (const PFmil_t *), PFpa_op_t *p);
+
+/* Generic handling of aggregation functions (avg, max, min and sum). */
+static void aggr_function(PFmil_t * (*op) (const PFmil_t *), PFmil_t * (*gop) (const PFmil_t *),
+			  PFpa_op_t *p);
 
 /* check if attribute @a attr is required */
 static bool attr_req (PFprop_t *prop, PFalg_att_t attr);
@@ -2143,93 +2153,28 @@ reduce (PFpa_op_t * p, int goalnt)
             }
             break;
 
-        /* Rel:      sum (Rel) */
+        /* Rel:      avg (Rel) */
         case 67:
-	{
-	    PFalg_att_t part = p->sem.sum.part;
-	    PFalg_att_t att = p->sem.sum.att;
-	    bool has_part = part != att_NULL;
-	    PFalg_type_t poly_att_type = 0;
-	    PFalg_type_t poly_part_type = 0;
-	    /* determine att and part type */
-	    for (unsigned int i = 0; i < L(p)->schema.count; i++) {
-		if (L(p)->schema.items[i].name == part)
-		    poly_part_type = L(p)->schema.items[i].type;
-		else if (L(p)->schema.items[i].name == att)
-		    poly_att_type = L(p)->schema.items[i].type;
-	    }
-	    /* sanity checks */
-	    if (poly_att_type == 0) 
-		PFoops (OOPS_FATAL,
-			"attribute `%s' referenced in sum not found", 
-			PFatt_str (att));
-	    if (has_part && poly_part_type == 0)
-		PFoops (OOPS_FATAL,
-			"attribute `%s' referenced in sum not found", 
-			PFatt_str (part));
-	    if (!monomorphic(poly_att_type)
-		|| (has_part && !monomorphic(poly_part_type)))
-		PFoops (OOPS_FATAL,
-			"Sum not implemented for "
-			"polymorphic groups");
-	    PFalg_simple_type_t att_type = (PFalg_simple_type_t)poly_att_type;
-            if (has_part) {		    		
-		PFalg_simple_type_t part_type 
-		    = (PFalg_simple_type_t)poly_part_type;
-		mvar_t *v    = new_var (1);
-		mvar_t *res  = new_var (p->refctr);
-		mvar_t *part_var = new_var (p->refctr);
-		
-		execute (
-		    /* v := 
-		       {sum}(att.reverse().join(part).reverse()) */
-		    assgn (
-			var (v->name),
-			gsum (
-			    reverse (
-				join (
-				    
-				    reverse (VAR (L(p)->env, 
-						  att, 
-						  att_type)),
-				    VAR (L(p)->env, 
-					 part, 
-					 part_type))))),
-		    /* res := v.reverse ().mark (0@0).reverse (); */
-		    assgn (
-			var (res->name),
-			reverse (
-			    mark (
-				reverse (var (v->name)),
-				lit_oid (0)))),
-		    /* part := v.mark (0@0).reverse (); */
-		    assgn (
-			var (part_var->name),
-			reverse (
-			    mark (var (v->name), lit_oid (0)))));
-		
-		env_add (p->env, att, att_type, res);
-		env_add (p->env, part, part_type, part_var);
-		
-		unpin (v, 1);
-            }
-            else {
-                mvar_t *v = new_var (p->refctr);
-                execute (
-                    assgn (var (v->name),
-                           sum (VAR (L(p)->env, att, att_type))),
-                    assgn (var (v->name),
-                           append (
-                               seqbase (
-                                   new (type (m_void), type (m_lng)),
-                                   lit_oid (0)),
-                               var (v->name))));
-                env_add (p->env, p->sem.sum.res, att_type, v);
-            }
-	} break;
+	     aggr_function(PFmil_avg, PFmil_gavg, p);
+	     break;
+
+        /* Rel:      max_ (Rel) */
+        case 68:
+	     aggr_function(PFmil_max, PFmil_gmax, p);
+	     break;
+
+        /* Rel:      min_ (Rel) */
+        case 69:
+	     aggr_function(PFmil_min, PFmil_gmin, p);
+	     break;
+
+        /* Rel:      sum (Rel) */
+        case 70:
+	     aggr_function(PFmil_sum, PFmil_gsum, p);
+	     break;
 
         /* Rel:      merge_rownum (Rel) */
-        case 70:
+        case 71:
         {
             mvar_t *v = new_var (p->refctr);
 
@@ -2271,13 +2216,13 @@ reduce (PFpa_op_t * p, int goalnt)
         } break;
 
         /* Rel:      hash_rownum (Rel) */
-        case 71:
+        case 72:
             PFoops (OOPS_FATAL,
                     "hash_rownum not implemented yet.");
             break;
 
         /* Rel:      number (Rel) */
-        case 72:
+        case 73:
         {
             mvar_t *res = new_var (p->refctr);
 
@@ -2319,7 +2264,7 @@ reduce (PFpa_op_t * p, int goalnt)
         } break;
 
         /* Rel:      type (Rel) */
-        case 73:
+        case 74:
         {
             mvar_t              *res = new_var (p->refctr);
 
@@ -2369,7 +2314,7 @@ reduce (PFpa_op_t * p, int goalnt)
             break;
 
         /* Rel:      type_assert (Rel) */
-        case 74:
+        case 75:
             /* copy all the attributes */
             for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
                 pin (env_at (L(p)->env, i).mvar, p->refctr);
@@ -2381,7 +2326,7 @@ reduce (PFpa_op_t * p, int goalnt)
             break;
 
         /* Rel:      cast (Rel) */
-        case 75:
+        case 76:
             for (unsigned int i = 0; i < L(p)->schema.count; i++)
             {
                 bool att_needed = true;
@@ -4078,7 +4023,7 @@ bin_bool_atom (PFmil_t * (*op) (const PFmil_t *, const PFmil_t *),
 /**
  * Generic handling of unary operators (numeric and Boolean negation).
  *
- * @param op A MIL multiplex operation that implements the operation
+ * @param op A MIL multiplex operation that implements the
  *           operation of interest (as a function pointer to the
  *           constructor function).
  * @param p  The physical algebra tree node that we are to translate.
@@ -4108,6 +4053,121 @@ unary_op (PFmil_t * (*op) (const PFmil_t *), PFpa_op_t *p)
 
         pin (entry.mvar, p->refctr);
     }
+}
+
+/**
+ * Generic handling of aggregation functions (avg, max, min and sum).
+ *
+ * @param op  A MIL operation that implements the function
+ *            of interest (as a function pointer to the
+ *            constructor function).
+ * @param gop A MIL operation that implements the function
+ *            of interest (as a function pointer to the
+ *            constructor function), grouped version.
+ * @param p   The physical algebra tree node that we are to translate.
+ *            This function will actually fill @a p's environment
+ *            <code>p->env</code>.
+ */
+static void 
+aggr_function(PFmil_t * (*op) (const PFmil_t *), PFmil_t * (*gop) (const PFmil_t *),
+	      PFpa_op_t *p) 
+{
+     PFalg_att_t part = p->sem.aggr.part;
+     PFalg_att_t att = p->sem.aggr.att;
+     PFalg_att_t res = p->sem.aggr.res;
+     bool has_part = part != att_NULL;
+     PFalg_type_t poly_att_type = 0;
+     PFalg_type_t poly_part_type = 0;
+     PFalg_type_t poly_res_type = 0;
+     /* determine res type */
+     for (unsigned int i = 0; i < p->schema.count; i++) {
+	  if (p->schema.items[i].name == res) {
+	       poly_res_type = p->schema.items[i].type;
+	       break;
+	  }
+     }
+     /* determine att and part type */
+     for (unsigned int i = 0; i < L(p)->schema.count; i++) {
+	  if (L(p)->schema.items[i].name == part)
+	       poly_part_type = L(p)->schema.items[i].type;
+	  else if (L(p)->schema.items[i].name == att)
+	       poly_att_type = L(p)->schema.items[i].type;
+     }
+     /* sanity checks */
+     if (poly_att_type == 0) 
+	  PFoops (OOPS_FATAL,
+		  "attribute `%s' referenced in aggregation function "
+		  "not found", 
+		  PFatt_str (att));
+     if (has_part && poly_part_type == 0)
+	  PFoops (OOPS_FATAL,
+		  "attribute `%s' referenced in aggregation function "
+		  "not found", 
+		  PFatt_str (part));
+     if (poly_res_type == 0) 
+	  PFoops (OOPS_FATAL,
+		  "attribute `%s' referenced in aggregation function "
+		  "not found", 
+		  PFatt_str (res));
+     if (!monomorphic(poly_att_type) || !monomorphic(poly_res_type)
+	 || (has_part && !monomorphic(poly_part_type)))
+	  PFoops (OOPS_FATAL,
+		  "Aggregation function not implemented for "
+		  "polymorphic groups");
+     PFalg_simple_type_t att_type = (PFalg_simple_type_t)poly_att_type;
+     PFalg_simple_type_t res_type = (PFalg_simple_type_t)poly_res_type;
+     if (has_part) {		    		
+	  PFalg_simple_type_t part_type 
+	       = (PFalg_simple_type_t)poly_part_type;
+	  mvar_t *v    = new_var (1);
+	  mvar_t *res_var  = new_var (p->refctr);
+	  mvar_t *part_var = new_var (p->refctr);
+	  
+	  execute (
+	       /* v := 
+		  {gop}(att.reverse().join(part).reverse()) */
+	       assgn (
+		    var (v->name),
+		    gop (
+			 reverse (
+			      join (
+				   reverse (VAR (L(p)->env, 
+						 att, 
+						 att_type)),
+				   VAR (L(p)->env, 
+					part, 
+					part_type))))),
+	       /* res := v.reverse ().mark (0@0).reverse (); */
+	       assgn (
+		    var (res_var->name),
+		    reverse (
+			 mark (
+			      reverse (var (v->name)),
+			      lit_oid (0)))),
+	       /* part := v.mark (0@0).reverse (); */
+	       assgn (
+		    var (part_var->name),
+		    reverse (
+			 mark (var (v->name), lit_oid (0)))));
+	  
+	  env_add (p->env, res, res_type, res_var);
+	  env_add (p->env, part, part_type, part_var);
+	  
+	  unpin (v, 1);
+     }
+     else {
+	  mvar_t *v = new_var (p->refctr);
+	  execute (
+	       assgn (var (v->name),
+		      op (VAR (L(p)->env, att, att_type))),
+	       assgn (var (v->name),
+		      append (
+			   seqbase (
+				new (type (m_void), type (m_lng)),
+				lit_oid (0)),
+			   var (v->name))));
+	  env_add (p->env, res, res_type, v);
+     }
 }
 
 /**

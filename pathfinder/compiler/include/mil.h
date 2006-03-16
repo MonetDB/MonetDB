@@ -124,10 +124,15 @@ enum PFmil_kind_t {
     , m_mand         /**< multiplexed boolean operator `and' */
     , m_mor          /**< multiplexed boolean operator `or' */
 
-    , m_max          /**< MIL max() function */
     , m_count        /**< MIL count() function */
     , m_gcount       /**< Grouped count() function `{count}()' */
     , m_egcount      /**< Grouped count() function `{count}()' */
+    , m_avg          /**< MIL avg() function */
+    , m_gavg         /**< Grouped avg() function `{avg}()' */
+    , m_max          /**< MIL max() function */
+    , m_gmax         /**< Grouped max() function `{max}()' */
+    , m_min          /**< MIL min() function */
+    , m_gmin         /**< Grouped min() function `{min}()' */
     , m_sum          /**< MIL sum() function */
     , m_gsum         /**< Grouped sum() function `{sum}()' */
     
@@ -498,9 +503,6 @@ PFmil_t * PFmil_ctrefine (const PFmil_t *, const PFmil_t *);
 /** MIL ctderive function */
 PFmil_t * PFmil_ctderive (const PFmil_t *, const PFmil_t *);
 
-/** MIL max() function, return maximum tail value */
-PFmil_t * PFmil_max (const PFmil_t *);
-
 /** MIL count() function, return number of BUNs in a BAT */
 PFmil_t * PFmil_count (const PFmil_t *);
 
@@ -510,6 +512,24 @@ PFmil_t * PFmil_gcount (const PFmil_t *);
 /** Grouped count function `{count}()' with two parameters
     (aka. ``pumped count'') */
 PFmil_t * PFmil_egcount (const PFmil_t *, const PFmil_t *);
+
+/** MIL avg() function */
+PFmil_t * PFmil_avg (const PFmil_t *);
+
+/** Grouped avg function `{avg}()' (aka. ``pumped avg'') */
+PFmil_t * PFmil_gavg (const PFmil_t *);
+
+/** MIL max() function */
+PFmil_t * PFmil_max (const PFmil_t *);
+
+/** Grouped max function `{max}()' (aka. ``pumped max'') */
+PFmil_t * PFmil_gmax (const PFmil_t *);
+
+/** MIL min() function */
+PFmil_t * PFmil_min (const PFmil_t *);
+
+/** Grouped min function `{min}()' (aka. ``pumped min'') */
+PFmil_t * PFmil_gmin (const PFmil_t *);
 
 /** MIL sum() function */
 PFmil_t * PFmil_sum (const PFmil_t *);

@@ -306,14 +306,17 @@ infer_key (PFla_op_t *n)
                                         n->sem.unary.res);
             break;
             
+        case la_avg:
+	case la_max:
+	case la_min:
         case la_sum:
             /* either the partition is key or if not
                present the aggregated result as it
                contains only one tuple */
-            if (PFprop_key (L(n)->prop, n->sem.sum.part))
-                n->prop->keys = n->sem.sum.part;
+            if (PFprop_key (L(n)->prop, n->sem.aggr.part))
+                n->prop->keys = n->sem.aggr.part;
             else
-                n->prop->keys = n->sem.sum.res;
+                n->prop->keys = n->sem.aggr.res;
             break;
             
         case la_count:

@@ -238,6 +238,9 @@ copy_child_constants (PFla_op_t *n)
         case la_bool_and:
         case la_bool_or:
         case la_bool_not:
+        case la_avg:
+	case la_max:
+	case la_min:
         case la_sum:
         case la_count:
         case la_rownum:
@@ -529,13 +532,16 @@ infer_const (PFla_op_t *n)
                     PFalg_lit_bln (true));
             break;
 
+        case la_avg:
+	case la_max:
+	case la_min:
         case la_sum:
-            if (n->sem.sum.part &&
-                PFprop_const (L(n)->prop, n->sem.sum.part))
+            if (n->sem.aggr.part &&
+                PFprop_const (L(n)->prop, n->sem.aggr.part))
                 PFprop_mark_const (
                         n->prop,
-                        n->sem.sum.part,
-                        PFprop_const_val (L(n)->prop, n->sem.sum.part));
+                        n->sem.aggr.part,
+                        PFprop_const_val (L(n)->prop, n->sem.aggr.part));
             break;
 
         case la_count:

@@ -704,15 +704,6 @@ PFmil_ctderive (const PFmil_t *a, const PFmil_t *b)
 }
 
 /**
- * Monet max operator, return maximum tail value
- */
-PFmil_t *
-PFmil_max (const PFmil_t *a)
-{
-    return wire1 (m_max, a);
-}
-
-/**
  * Monet count operator, return number of items in @a a.
  */
 PFmil_t *
@@ -737,6 +728,54 @@ PFmil_t *
 PFmil_egcount (const PFmil_t *a, const PFmil_t *b)
 {
     return wire2 (m_egcount, a, b);
+}
+
+/** 
+ * MIL avg() function 
+ */
+PFmil_t * PFmil_avg (const PFmil_t *a)
+{
+    return wire1 (m_avg, a);
+}
+
+/**
+ * Grouped avg function `{avg}()' (aka. ``pumped avg'') 
+ */
+PFmil_t * PFmil_gavg (const PFmil_t *a)
+{
+    return wire1 (m_gavg, a);
+}
+
+/** 
+ * MIL max() function 
+ */
+PFmil_t * PFmil_max (const PFmil_t *a)
+{
+    return wire1 (m_max, a);
+}
+
+/** 
+ * Grouped max function `{max}()' (aka. ``pumped max'') 
+ */
+PFmil_t * PFmil_gmax (const PFmil_t *a)
+{
+    return wire1 (m_gmax, a);
+}
+
+/**
+ * MIL min() function 
+ */
+PFmil_t * PFmil_min (const PFmil_t *a)
+{
+    return wire1 (m_min, a);
+}
+
+/** 
+ * Grouped min function `{min}()' (aka. ``pumped min'') 
+ */
+PFmil_t * PFmil_gmin (const PFmil_t *a)
+{
+    return wire1 (m_gmin, a);
 }
 
 /**

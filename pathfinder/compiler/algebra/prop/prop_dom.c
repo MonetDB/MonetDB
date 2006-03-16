@@ -460,12 +460,15 @@ infer_dom (PFla_op_t *n, unsigned int id)
             add_dom (n->prop, n->sem.unary.res, id++);
             break;
 
+        case la_avg:
+	case la_max:
+	case la_min:
         case la_sum:
-            add_dom (n->prop, n->sem.sum.res, id++);
-            if (n->sem.sum.part)
+            add_dom (n->prop, n->sem.aggr.res, id++);
+            if (n->sem.aggr.part)
                 add_dom (n->prop, 
-                         n->sem.sum.part,
-                         PFprop_dom (L(n)->prop, n->sem.sum.part));
+                         n->sem.aggr.part,
+                         PFprop_dom (L(n)->prop, n->sem.aggr.part));
             break;
 
         case la_count:

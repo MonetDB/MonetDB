@@ -150,7 +150,6 @@ un_func (PFalg_simple_type_t t,
 	.frag = PFla_empty_set () };
 }
 
-
 /**
  * Algebra implementation for op:numeric-add(integer?,integer?)
  * @see bin_arith()
@@ -454,34 +453,192 @@ PFbui_op_numeric_modulo_dbl (const PFla_op_t *loop __attribute__((unused)),
 }
 
 /**
+ * Build up operator tree for built-in aggregate functions 'fn:avg ($arg)',
+ * 'fn:min ($arg)' and 'fn:max ($arg)'
+ *
+ *                env,loop: e => (q,delta)
+ *  -------------------------------------------------------------------
+ *                         env,loop: fn:sum(e) =>
+ *  //                                                     \    
+ * ||aggr_item/(item, iter) (proj_iter,item cast_item,t(q)))| @pos(0)
+ *  \\                                                     / 
+ *                                ()
+ */
+static struct PFla_pair_t
+PFbui_fn_aggr (PFalg_simple_type_t t, PFla_op_kind_t kind,
+               struct PFla_pair_t *args)
+{
+    return (struct PFla_pair_t) {
+        .rel = attach(aggr (kind,
+                            project (cast(args[0].rel, att_cast, att_item, t),
+                                     proj (att_iter, att_iter),
+                                     proj (att_item, att_cast)),
+                            att_item, att_item, att_iter),
+                      att_pos, lit_nat (1)),
+        .frag = PFla_empty_set () };
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:avg ($arg)'.
+ */
+struct PFla_pair_t
+PFbui_fn_avg (const PFla_op_t *loop __attribute__((unused)),
+              bool ordering __attribute__((unused)),
+              struct PFla_pair_t *args)
+{
+    (void) loop;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return PFbui_fn_aggr(aat_dbl, la_avg, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:max (string*)'.
+ */
+struct PFla_pair_t
+PFbui_fn_max_str (const PFla_op_t *loop __attribute__((unused)),
+                  bool ordering __attribute__((unused)),
+                  struct PFla_pair_t *args)
+{
+    (void) loop;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return PFbui_fn_aggr(aat_str, la_max, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:max (integer*)'.
+ */
+struct PFla_pair_t
+PFbui_fn_max_int (const PFla_op_t *loop __attribute__((unused)),
+                  bool ordering __attribute__((unused)),
+                  struct PFla_pair_t *args)
+{
+    (void) loop;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return PFbui_fn_aggr(aat_int, la_max, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:max (decimal*)'.
+ */
+struct PFla_pair_t
+PFbui_fn_max_dec (const PFla_op_t *loop __attribute__((unused)),
+                  bool ordering __attribute__((unused)),
+                  struct PFla_pair_t *args)
+{
+    (void) loop;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return PFbui_fn_aggr(aat_dec, la_max, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:max (double*)'.
+ */
+struct PFla_pair_t
+PFbui_fn_max_dbl (const PFla_op_t *loop __attribute__((unused)),
+                  bool ordering __attribute__((unused)),
+                  struct PFla_pair_t *args)
+{
+    (void) loop;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return PFbui_fn_aggr(aat_dbl, la_max, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:min (string*)'.
+ */
+struct PFla_pair_t
+PFbui_fn_min_str (const PFla_op_t *loop __attribute__((unused)),
+                  bool ordering __attribute__((unused)),
+                  struct PFla_pair_t *args)
+{
+    (void) loop;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return PFbui_fn_aggr(aat_str, la_min, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:min (integer*)'.
+ */
+struct PFla_pair_t
+PFbui_fn_min_int (const PFla_op_t *loop __attribute__((unused)),
+                  bool ordering __attribute__((unused)),
+                  struct PFla_pair_t *args)
+{
+    (void) loop;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return PFbui_fn_aggr(aat_int, la_min, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:min (decimal*)'.
+ */
+struct PFla_pair_t
+PFbui_fn_min_dec (const PFla_op_t *loop __attribute__((unused)),
+                  bool ordering __attribute__((unused)),
+                  struct PFla_pair_t *args)
+{
+    (void) loop;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return PFbui_fn_aggr(aat_dec, la_min, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:min (double*)'.
+ */
+struct PFla_pair_t
+PFbui_fn_min_dbl (const PFla_op_t *loop __attribute__((unused)),
+                  bool ordering __attribute__((unused)),
+                  struct PFla_pair_t *args)
+{
+    (void) loop;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return PFbui_fn_aggr(aat_dbl, la_min, args);
+}
+
+/**
  * Build up operator tree for built-in function 'fn:sum ($arg, $zero)'.
  *
  *  env,loop: e1 => (q1,delta1)             env,loop: e2 => (q2,delta2)
  *  -------------------------------------------------------------------
  *                         env,loop: fn:sum(e1, e2) =>
- *  //                                         \    
- * ||sum_item/(item, iter) (proj_iter,item (q1))|
- *  \\                                         / 
+ *  //                                                      \    
+ * ||sum_item/(item, iter) (proj_iter,item (cast_item,t(q1)))|
+ *  \\                                                      / 
  *                                 U
- *  //                   \                    /                        \\
- * ||loop \ proj_iter (q1)| |X|(iter, iter1) |proj_iter1:iter,item (q2) || X 
- *  \\                   /                    \                        //
+ *  //                   \                    /                                     \\
+ * ||loop \ proj_iter (q1)| |X|(iter, iter1) |proj_iter1:iter,item (cast_item,t(q2)) || X 
+ *  \\                   /                    \                                     //
  * pos  
  * ---,
  *  1
  *                                ()
  */
-struct PFla_pair_t
-PFbui_fn_sum_zero (const PFla_op_t *loop __attribute__((unused)),
-                bool ordering,
-                struct PFla_pair_t *args)
+static struct PFla_pair_t
+PFbui_fn_sum_zero (PFalg_simple_type_t t, const PFla_op_t *loop,
+                   struct PFla_pair_t *args)
 {
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-
-    PFla_op_t *sum = sum (project (args[0].rel,
+     PFla_op_t *sum = aggr (la_sum,
+                           project (cast(args[0].rel, att_cast, att_item, t),
                                    proj (att_iter, att_iter),
-				   proj (att_item, att_item)),
+				   proj (att_item, att_cast)),
 			    att_item, att_item, att_iter);
 
     return (struct PFla_pair_t) {
@@ -493,9 +650,9 @@ PFbui_fn_sum_zero (const PFla_op_t *loop __attribute__((unused)),
 			      difference (
 				   loop,
 				   project (sum, proj (att_iter, att_iter))),
-			      project (args[1].rel,
+			      project (cast(args[1].rel, att_cast, att_item, t),
 				       proj (att_iter1, att_iter),
-				       proj (att_item, att_item)),
+				       proj (att_item, att_cast)),
 			      att_iter, att_iter1),
 			 proj (att_iter, att_iter),
 			 proj (att_item, att_item))),
@@ -504,32 +661,72 @@ PFbui_fn_sum_zero (const PFla_op_t *loop __attribute__((unused)),
 }
 
 /**
+ * Build up operator tree for built-in function 'fn:sum (integer*, integer?)'.
+ */
+struct PFla_pair_t
+PFbui_fn_sum_zero_int (const PFla_op_t *loop,
+                bool ordering __attribute__((unused)),
+                struct PFla_pair_t *args)
+{
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+
+    return PFbui_fn_sum_zero(aat_int, loop, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:sum (decimal*, decimal?)'.
+ */
+struct PFla_pair_t
+PFbui_fn_sum_zero_dec (const PFla_op_t *loop,
+                bool ordering __attribute__((unused)),
+                struct PFla_pair_t *args)
+{
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+
+    return PFbui_fn_sum_zero(aat_dec, loop, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:sum (double*, double?)'.
+ */
+struct PFla_pair_t
+PFbui_fn_sum_zero_dbl (const PFla_op_t *loop,
+                bool ordering __attribute__((unused)),
+                struct PFla_pair_t *args)
+{
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+
+    return PFbui_fn_sum_zero(aat_dbl, loop, args);
+}
+
+/**
  * Build up operator tree for built-in function 'fn:sum ($arg)'.
  *
  *                env,loop: e => (q,delta)
  *  -------------------------------------------------------------------
  *                         env,loop: fn:sum(e) =>
- *  //                                        \    
- * ||sum_item/(item, iter) (proj_iter,item (q))|
- *  \\                                        / 
+ *  //                                                     \    
+ * ||sum_item/(item, iter) (proj_iter,item (cast_item,t(q)))|
+ *  \\                                                     / 
  *                         U
  *  //                  \    item\\    pos   
  * ||loop \ proj_iter (q)| X ---- || X ---,
  *  \\                  /      0 //     1
  *                                ()
  */
-struct PFla_pair_t
-PFbui_fn_sum (const PFla_op_t *loop __attribute__((unused)),
-                bool ordering,
-                struct PFla_pair_t *args)
+static struct PFla_pair_t
+PFbui_fn_sum (PFalg_simple_type_t t,
+              const PFla_op_t *loop,
+              struct PFla_pair_t *args)
 {
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-
-    PFla_op_t *sum = sum (project (args[0].rel,
+    PFla_op_t *sum = aggr (la_sum,
+                           project (cast(args[0].rel, att_cast, att_item, t),
                                    proj (att_iter, att_iter),
-				   proj (att_item, att_item)),
-			    att_item, att_item, att_iter);
+				   proj (att_item, att_cast)),
+                           att_item, att_item, att_iter);
 
     return (struct PFla_pair_t) {
         .rel = attach (
@@ -542,6 +739,45 @@ PFbui_fn_sum (const PFla_op_t *loop __attribute__((unused)),
                         att_item, lit_int (0))),
                 att_pos, lit_nat (1)),
         .frag = PFla_empty_set () };
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:sum (integer*)'.
+ */
+struct PFla_pair_t
+PFbui_fn_sum_int (const PFla_op_t *loop,
+              bool ordering __attribute__((unused)),
+              struct PFla_pair_t *args)
+{
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return PFbui_fn_sum(aat_int, loop, args); 
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:sum (decimal*)'.
+ */
+struct PFla_pair_t
+PFbui_fn_sum_dec (const PFla_op_t *loop,
+              bool ordering __attribute__((unused)),
+              struct PFla_pair_t *args)
+{
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return PFbui_fn_sum(aat_dec, loop, args); 
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:sum (double*)'.
+ */
+struct PFla_pair_t
+PFbui_fn_sum_dbl (const PFla_op_t *loop,
+              bool ordering __attribute__((unused)),
+              struct PFla_pair_t *args)
+{
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    return PFbui_fn_sum(aat_dbl, loop, args); 
 }
 
 /**

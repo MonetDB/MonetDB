@@ -85,14 +85,17 @@ enum PFpa_op_kind_t {
     , pa_bool_and_atom  =  48 /**< Boolean and, where one arg is an atom */
     , pa_bool_or_atom   =  49 /**< Boolean or, where one arg is an atom */
     , pa_hash_count     =  55 /**< Hash-based count operator */
-    , pa_sum            =  56 /**< Sum operator */
-    , pa_merge_rownum   =  57 /**< MergeRowNumber */
-    , pa_hash_rownum    =  58 /**< HashRowNumber */
-    , pa_number         =  59 /**< Number */
-    , pa_type           =  60 /**< selection of rows where a column is of a
+    , pa_avg            =  56 /**< Avg operator */
+    , pa_max            =  57 /**< Max operator */
+    , pa_min            =  58 /**< Min operator */    
+    , pa_sum            =  59 /**< Sum operator */
+    , pa_merge_rownum   =  60 /**< MergeRowNumber */
+    , pa_hash_rownum    =  61 /**< HashRowNumber */
+    , pa_number         =  62 /**< Number */
+    , pa_type           =  63 /**< selection of rows where a column is of a
                                    certain type */
-    , pa_type_assert    =  61 /**< restriction of the type of a given column */
-    , pa_cast           =  62 /**< cast a table to a given type */
+    , pa_type_assert    =  64 /**< restriction of the type of a given column */
+    , pa_cast           =  65 /**< cast a table to a given type */
     , pa_llscj_anc      = 100 /**< Loop-Lifted StaircaseJoin Ancestor */
     , pa_llscj_anc_self = 101 /**< Loop-Lifted StaircaseJoin AncestorOrSelf */
     , pa_llscj_attr     = 102 /**< Loop-Lifted StaircaseJoin AncestorOrSelf */
@@ -210,12 +213,15 @@ union PFpa_op_sem_t {
         PFalg_att_t         part; /**< Partitioning attribute */
     } count;
 
-    /* semantic content for operators for (partitioned) sum of a column */
+    /*
+     * semantic content for operators applying a 
+     * (partitioned) aggregation function (sum, min, max and avg) on a column
+     */
     struct {
-        PFalg_att_t     att;      /**< attribute to be summed up */
-        PFalg_att_t     part;     /**< partitioning attribute */
-        PFalg_att_t     res;      /**< attribute to hold the result */
-    } sum;
+        PFalg_att_t     att;  /**< attribute to be used for the agg. func. */
+        PFalg_att_t     part; /**< partitioning attribute */
+        PFalg_att_t     res;  /**< attribute to hold the result */
+    } aggr;
 
     /* semantic content for rownum operator */
     struct {
@@ -579,11 +585,11 @@ PFpa_op_t *PFpa_hash_count (const PFpa_op_t *,
                             PFalg_att_t, PFalg_att_t);
 
 /**
- * Sum: Sum operator. Does neither benefit from
+ * Aggr: Aggregation function operator. Does neither benefit from
  * any existing ordering, nor does it provide/preserve any input
  * ordering.
  */
-PFpa_op_t *PFpa_sum (const PFpa_op_t *n, PFalg_att_t res, 
+PFpa_op_t *PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n, PFalg_att_t res, 
 		     PFalg_att_t att, PFalg_att_t part);
 
 /****************************************************************/

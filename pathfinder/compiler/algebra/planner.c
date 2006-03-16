@@ -794,22 +794,25 @@ plan_unary (const PFla_op_t *n)
 }
 
 /**
- * Generate physical plan for the logical `Sum' operator.
+ * Generate physical plan for logical aggregation operators
+ * (avg, max, min, sum).
  */
 static PFplanlist_t *
-plan_sum (const PFla_op_t *n)
+plan_aggr (PFpa_op_kind_t kind, const PFla_op_t *n)
 {
     PFplanlist_t  *ret  = new_planlist ();
 
-    assert (n); assert (n->kind == la_sum);
+    assert (n); 
+    assert (n->kind == la_avg || n->kind == la_max 
+            || n->kind == la_min || n->kind == la_sum);
     assert (L(n)); assert (L(n)->plans);
 
     /* consider each plan in n */
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
         add_plan (ret,
-                  sum (
-                      *(plan_t **) PFarray_at (L(n)->plans, i),
-                      n->sem.sum.res, n->sem.sum.att, n->sem.sum.part));
+                  aggr (kind,
+                        *(plan_t **) PFarray_at (L(n)->plans, i),
+                        n->sem.aggr.res, n->sem.aggr.att, n->sem.aggr.part));
 
     return ret;
 }
@@ -1813,7 +1816,10 @@ plan_subexpression (PFla_op_t *n)
         case la_num_neg:                                      
         case la_bool_not:                                     
                                 plans = plan_unary (n);       break;
-        case la_sum:            plans = plan_sum (n);	      break;
+        case la_avg:            plans = plan_aggr (pa_avg, n);break;
+        case la_max:            plans = plan_aggr (pa_max, n);break;
+        case la_min:            plans = plan_aggr (pa_min, n);break;
+        case la_sum:            plans = plan_aggr (pa_sum, n);break;
         case la_count:          plans = plan_count (n);       break;
                                                               
         case la_rownum:         plans = plan_rownum (n);      break;

@@ -70,10 +70,13 @@ enum PFla_op_kind_t {
     , la_bool_and       = 28 /**< boolean AND operator */
     , la_bool_or        = 29 /**< boolean OR operator */
     , la_bool_not       = 30 /**< boolean NOT operator */
-    , la_sum            = 31 /**< operator for (partitioned) sum of a column */
-    , la_count          = 32 /**< (partitioned) row counting operator */
-    , la_rownum         = 35 /**< consecutive number generation */
-    , la_number         = 36 /**< consecutive number generation */
+    , la_avg            = 31 /**< operator for (partitioned) avg of a column */
+    , la_max            = 32 /**< operator for (partitioned) max of a column */
+    , la_min            = 33 /**< operator for (partitioned) min of a column */
+    , la_sum            = 34 /**< operator for (partitioned) sum of a column */
+    , la_count          = 35 /**< (partitioned) row counting operator */
+    , la_rownum         = 36 /**< consecutive number generation */
+    , la_number         = 37 /**< consecutive number generation */
     , la_type           = 40 /**< selection of rows where a column is of a
                                   certain type */
     , la_type_assert    = 41 /**< restricts the type of a relation */
@@ -161,12 +164,15 @@ union PFla_op_sem_t {
         PFalg_att_t     res;      /**< attribute to hold the result */
     } unary;
 
-    /* semantic content for operators for (partitioned) sum of a column */
+    /*
+     * semantic content for operators applying a 
+     * (partitioned) aggregation function (sum, min, max and avg) on a column
+     */
     struct {
-        PFalg_att_t     att;      /**< attribute to be summed up */
-        PFalg_att_t     part;     /**< partitioning attribute */
-        PFalg_att_t     res;      /**< attribute to hold the result */
-    } sum;
+        PFalg_att_t     att;   /**< attribute to be used for the agg. func. */
+        PFalg_att_t     part;  /**< partitioning attribute */
+        PFalg_att_t     res;   /**< attribute to hold the result */
+    } aggr;
 
     /* semantic content for (partitioned) row counting operator */
     struct {
@@ -444,9 +450,12 @@ PFla_op_t * PFla_or (const PFla_op_t *n, PFalg_att_t res,
 /** Constructor for boolean NOT operators. */
 PFla_op_t * PFla_not (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t att);
 
-/** Constructor for operators forming (partitioned) sum of a column. */
-PFla_op_t * PFla_sum (const PFla_op_t *n, PFalg_att_t res,
-                      PFalg_att_t att, PFalg_att_t part);
+/** 
+ * Constructor for operators forming the application of a 
+ * (partitioned) aggregation function (sum, min, max and avg) on a column.
+ */
+PFla_op_t * PFla_aggr (PFla_op_kind_t kind, const PFla_op_t *n,
+		       PFalg_att_t res, PFalg_att_t att, PFalg_att_t part);
 
 /** Constructor for (partitioned) row counting operators. */
 PFla_op_t * PFla_count (const PFla_op_t *n, PFalg_att_t res,

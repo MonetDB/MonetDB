@@ -237,24 +237,27 @@ infer_ocol (PFla_op_t *n)
             ocols_count (n)++;
             break;
 
+        case la_avg:
+	case la_max:
+	case la_min:
         case la_sum:
             /* set number of schema items in the result schema:
              * result attribute plus partitioning attribute 
              * (if available -- constant optimizations may
              *  have removed it).
              */
-            new_ocols (n, n->sem.sum.part ? 2 : 1);
+            new_ocols (n, n->sem.aggr.part ? 2 : 1);
 
             /* verify that attributes 'att' and 'part' are attributes of n
              * and include them into the result schema
              */
             for (unsigned int i = 0; i < ocols_count (L(n)); i++) {
-                if (n->sem.sum.att == ocol_at (L(n), i).name) {
+                if (n->sem.aggr.att == ocol_at (L(n), i).name) {
                     ocol_at (n, 0) = ocol_at (L(n), i);
-                    ocol_at (n, 0).name = n->sem.sum.res;
+                    ocol_at (n, 0).name = n->sem.aggr.res;
                 }
-                if (n->sem.sum.part &&
-                    n->sem.sum.part == ocol_at (L(n), i).name) {
+                if (n->sem.aggr.part &&
+                    n->sem.aggr.part == ocol_at (L(n), i).name) {
                     ocol_at (n, 1) = ocol_at (L(n), i);
                 }
             }

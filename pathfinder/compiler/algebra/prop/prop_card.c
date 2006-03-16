@@ -138,23 +138,26 @@ infer_card (PFla_op_t *n)
                             L(n)->prop->card + R(n)->prop->card : 0;
             break;
 
+        case la_avg:
+	case la_max:
+	case la_min:
         case la_sum:
             /* if part is not present the
                aggregation yields only one tuple */
-            n->prop->card = n->sem.sum.part?0:1;
+            n->prop->card = n->sem.aggr.part ? 0 : 1;
             break;
 
         case la_count:
             /* if part is not present the
                aggregation yields only one tuple */
-            n->prop->card = n->sem.count.part?0:1;
+            n->prop->card = n->sem.count.part ? 0 : 1;
             break;
 
         case la_seqty1:
         case la_all:
             /* if part is not present the
                aggregation yields only one tuple */
-            n->prop->card = n->sem.blngroup.part?0:1;
+            n->prop->card = n->sem.blngroup.part ? 0 : 1;
             break;
 
         case la_docnode:

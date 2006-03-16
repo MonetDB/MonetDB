@@ -66,6 +66,9 @@ static char *a_id[]  = {
     , [la_bool_and ]        = "AND"
     , [la_bool_or ]         = "OR"
     , [la_bool_not]         = "NOT"
+    , [la_avg]              = "AVG"
+    , [la_max]              = "MAX"
+    , [la_min]              = "MIN"
     , [la_sum]              = "SUM"
     , [la_count]            = "COUNT"
     , [la_rownum]           = "ROW#"              /* \"#FF0000\" */
@@ -121,6 +124,9 @@ static char *xml_id[]  = {
     , [la_bool_and ]        = "and"
     , [la_bool_or ]         = "or"
     , [la_bool_not]         = "not"
+    , [la_avg]              = "avg"
+    , [la_max]              = "max"
+    , [la_min]              = "min"
     , [la_sum]              = "sum"
     , [la_count]            = "count"
     , [la_rownum]           = "rownum"
@@ -201,6 +207,9 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
         , [la_bool_and ]      = "\"#C0C0C0\""
         , [la_bool_or ]       = "\"#C0C0C0\""
         , [la_bool_not]       = "\"#C0C0C0\""
+        , [la_avg]            = "\"#C0C0C0\""
+        , [la_max]            = "\"#C0C0C0\""
+        , [la_min]            = "\"#C0C0C0\""
         , [la_sum]            = "\"#C0C0C0\""
         , [la_count]          = "\"#C0C0C0\""
         , [la_rownum]         = "\"#FF0000\""
@@ -403,16 +412,19 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
                             PFatt_str (n->sem.unary.att));
 	    break;
 
+        case la_avg:
+        case la_max:
+        case la_min:
         case la_sum:
-            if (n->sem.sum.part == att_NULL)
+            if (n->sem.aggr.part == att_NULL)
                 PFarray_printf (dot, "%s %s:(%s)", a_id[n->kind],
-                                PFatt_str (n->sem.sum.res),
-                                PFatt_str (n->sem.sum.att));
+                                PFatt_str (n->sem.aggr.res),
+                                PFatt_str (n->sem.aggr.att));
             else
                 PFarray_printf (dot, "%s %s:(%s)/%s", a_id[n->kind],
-                                PFatt_str (n->sem.sum.res),
-                                PFatt_str (n->sem.sum.att),
-                                PFatt_str (n->sem.sum.part));
+                                PFatt_str (n->sem.aggr.res),
+                                PFatt_str (n->sem.aggr.att),
+                                PFatt_str (n->sem.aggr.part));
             break;
 
         case la_count:
@@ -1064,27 +1076,32 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *node)
                             PFatt_str (n->sem.unary.att));
             break;
 
+        case la_avg:
+        case la_max:
+        case la_min:
         case la_sum:
             PFarray_printf (xml,
                             "    <content>\n"
                             "      <column name=\"%s\" new=\"true\">\n"
-                            "        <annotation>result of the sum operator"
+                            "        <annotation>result of the %s operator"
                                     "</annotation>\n"
                             "      </column>\n"
                             "      <column name=\"%s\" new=\"false\">\n"
-                            "        <annotation>argument to sum up"
+                            "        <annotation>argument for %s"
                                     "</annotation>\n"
                             "      </column>\n",
-                            PFatt_str (n->sem.sum.res),
-                            PFatt_str (n->sem.sum.att));
-            if (n->sem.sum.part != att_NULL)
+                            PFatt_str (n->sem.aggr.res),
+                            xml_id[n->kind],
+                            PFatt_str (n->sem.aggr.att),
+                            xml_id[n->kind]);
+            if (n->sem.aggr.part != att_NULL)
                 PFarray_printf (xml,
                             "      <column name=\"%s\" function=\"partition\""
                                     " new=\"false\">\n"
                             "        <annotation>partitioning argument"
                                     "</annotation>\n"
                             "      </column>\n",
-                            PFatt_str (n->sem.sum.part));
+                            PFatt_str (n->sem.aggr.part));
             PFarray_printf (xml, "    </content>\n");
 
             break;

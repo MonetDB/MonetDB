@@ -59,7 +59,7 @@
 
 #define hash_count(a,b,c) PFpa_hash_count ((a), (b), (c))
 
-#define sum(a,b,c,d) PFpa_sum ((a), (b), (c), (d))
+#define aggr(a,b,c,d, e) PFpa_aggr ((a), (b), (c), (d), (e))
 
 /** a sort specification list is just another attribute list */
 /* FIXME */

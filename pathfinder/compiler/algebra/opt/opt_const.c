@@ -513,31 +513,38 @@ opt_const (PFla_op_t *p, bool no_attach)
             }
             break;
 
+/* Optimization causes problems with datatype != int */
+#if 0
+        case la_avg:
+	case la_max:
+	case la_min:
         case la_sum:
             /* introduce attach if necessary */
-            if (PFprop_const_left (p->prop, p->sem.sum.att)) {
-                L(p) = add_attach (L(p), p->sem.sum.att,
+            if (PFprop_const_left (p->prop, p->sem.aggr.att)) {
+                L(p) = add_attach (L(p), p->sem.aggr.att,
                                    PFprop_const_val_left (p->prop,
-                                                          p->sem.sum.att));
+                                                          p->sem.aggr.att));
             }
 
             /* if partitiong attribute is constant remove it
                and attach it after the operator */
-            if (p->sem.sum.part &&
-                PFprop_const_left (p->prop, p->sem.sum.part)) {
-                PFla_op_t *sum = PFla_sum (L(p),
-                                           p->sem.sum.res,
-                                           p->sem.sum.att,
-                                           p->sem.sum.part);
-                PFla_op_t *ret = add_attach (sum, p->sem.sum.part,
+            if (p->sem.aggr.part &&
+                PFprop_const_left (p->prop, p->sem.aggr.part)) {
+	        PFla_op_t *sum = PFla_aggr (p->kind,
+					   L(p),
+                                           p->sem.aggr.res,
+                                           p->sem.aggr.att,
+                                           p->sem.aggr.part);
+                PFla_op_t *ret = add_attach (sum, p->sem.aggr.part,
                                              PFprop_const_val_left (
                                                  p->prop,
-                                                 p->sem.sum.part));
-                sum->sem.sum.part = att_NULL;
+                                                 p->sem.aggr.part));
+                sum->sem.aggr.part = att_NULL;
                 *p = *ret;
                 SEEN(p) = true;
             }
             break;
+#endif
 
         case la_count:
             /* if partitiong attribute is constant remove it

@@ -308,18 +308,21 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             n->prop->l_icols = union_ (n->prop->l_icols, n->sem.unary.att);
             break;
 
+        case la_avg:
+	case la_max:
+	case la_min:
         case la_sum:
             n->prop->l_icols = n->prop->icols;
 
             /* do not infer input columns if operator is not required */
-            if (!(n->prop->icols & n->sem.sum.res))
+            if (!(n->prop->icols & n->sem.aggr.res))
                 break;
 
-            n->prop->l_icols = diff (n->prop->l_icols, n->sem.sum.res);
-            n->prop->l_icols = union_ (n->prop->l_icols, n->sem.sum.att);
+            n->prop->l_icols = diff (n->prop->l_icols, n->sem.aggr.res);
+            n->prop->l_icols = union_ (n->prop->l_icols, n->sem.aggr.att);
             /* only infer part if available */
-            if (n->sem.sum.part != att_NULL)
-                n->prop->l_icols = union_ (n->prop->l_icols, n->sem.sum.part);
+            if (n->sem.aggr.part != att_NULL)
+                n->prop->l_icols = union_ (n->prop->l_icols, n->sem.aggr.part);
             break;
 
         case la_count:

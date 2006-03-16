@@ -78,8 +78,8 @@
 /* boolean NOT operator */
 #define not(a,b,c)        PFla_not ((a),(b),(c))
 
-/* operator forming (partitioned) sum of a column */
-#define sum(a,b,c,d)      PFla_sum ((a),(b),(c),(d))
+/* operator applying a (partitioned) aggregation function on a column */
+#define aggr(a,b,c,d,e)      PFla_aggr ((a),(b),(c),(d),(e))
 
 /* (partitioned) row counting operator */
 #define count(a,b,c)      PFla_count ((a),(b),(c))

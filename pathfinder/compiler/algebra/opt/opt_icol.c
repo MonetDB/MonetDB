@@ -266,21 +266,24 @@ opt_icol (PFla_op_t *p)
             }
             break;
 
+        case la_avg:
+	case la_max:
+	case la_min:
         case la_sum:
-            /* replace sum if result column is not required */
-            if (!PFprop_icol (p->prop, p->sem.sum.res)) {
+            /* replace aggregate function if result column is not required */
+            if (!PFprop_icol (p->prop, p->sem.aggr.res)) {
                 PFla_op_t *ret;
                 /* as an aggregate is required we either
                    (a) evaluate a distinct on the partition (if present) or
                    (b) create a one tuple literal table with a bogus value
                        (as it is never referenced) */
-                if (p->sem.sum.part) {
+                if (p->sem.aggr.part) {
                     PFalg_proj_t *proj = PFmalloc (sizeof (PFalg_proj_t));
-                    proj[0] = PFalg_proj (p->sem.sum.part, p->sem.sum.part);
+                    proj[0] = PFalg_proj (p->sem.aggr.part, p->sem.aggr.part);
                     ret = PFla_distinct (PFla_project_ (L(p), 1, proj));
                     PFprop_update_ocol (L(ret));
                 } else {
-                    ret = PFla_lit_tbl (PFalg_attlist (p->sem.sum.res),
+                    ret = PFla_lit_tbl (PFalg_attlist (p->sem.aggr.res),
                                         PFalg_tuple (PFalg_lit_nat (42)));
                 }
                 *p = *ret;

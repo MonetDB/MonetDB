@@ -1659,21 +1659,21 @@ PFpa_op_t *PFpa_hash_count (const PFpa_op_t *n,
 }
 
 /**
- * Sum: Sum operator. Does neither benefit from
+ * Aggr: Aggregation function operator. Does neither benefit from
  * any existing ordering, nor does it provide/preserve any input
  * ordering.
  */
-PFpa_op_t *PFpa_sum (const PFpa_op_t *n, PFalg_att_t res, 
+PFpa_op_t *PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n, PFalg_att_t res, 
 		     PFalg_att_t att, PFalg_att_t part)
 {
-    PFpa_op_t *ret = wire1 (pa_sum, n);
+    PFpa_op_t *ret = wire1 (kind, n);
     unsigned int  i;
     bool          c1 = false;
     bool          c2 = false;
 
-    ret->sem.sum.res  = res;
-    ret->sem.sum.att = att;
-    ret->sem.sum.part = part;
+    ret->sem.aggr.res  = res;
+    ret->sem.aggr.att = att;
+    ret->sem.aggr.part = part;
 
     /* set number of schema items in the result schema
      * (partitioning attribute plus result attribute)
@@ -1697,24 +1697,26 @@ PFpa_op_t *PFpa_sum (const PFpa_op_t *n, PFalg_att_t res,
             c2 = true;
         }
     }
+
 #ifndef NDEBUG
     /* did we find attribute 'att'? */
     if (!c1)
         PFoops (OOPS_FATAL,
-                "attribute `%s' referenced in sum not found", 
+                "attribute `%s' referenced in aggregation function not found", 
                 PFatt_str (att));
 
     /* did we find attribute 'part'? */
     if (part && !c2)
         PFoops (OOPS_FATAL,
-                "partitioning attribute `%s' referenced in sum not found",
+                "partitioning attribute `%s' referenced in aggregation "
+                "function not found",
                 PFatt_str (part));
 #endif
 
-    /* ---- Sum: orderings ---- */
-    /* Sum does not provide any orderings. */
+    /* ---- Aggr: orderings ---- */
+    /* Aggr does not provide any orderings. */
 
-    /* ---- Sum: costs ---- */
+    /* ---- Aggr: costs ---- */
     ret->cost = n->cost * 3 / 2;
 
     return ret;

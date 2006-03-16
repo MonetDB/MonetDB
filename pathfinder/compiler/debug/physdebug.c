@@ -79,6 +79,9 @@ static char *a_id[]  = {
     , [pa_bool_and_atom]   = "AndAtom"
     , [pa_bool_or_atom]    = "OrAtom"
     , [pa_hash_count]      = "HashCount"
+    , [pa_avg]             = "Avg"
+    , [pa_min]             = "Max"
+    , [pa_max]             = "Min"
     , [pa_sum]             = "Sum"
     , [pa_merge_rownum]    = "MROW#"
     , [pa_hash_rownum]     = "HROW#"
@@ -188,6 +191,9 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         , [pa_bool_or]         = "\"#E0E000\""
         , [pa_bool_and_atom]   = "\"#FFFF00\""
         , [pa_bool_or_atom]    = "\"#FFFF00\""
+        , [pa_avg]             = "\"#C0C0C0\""
+        , [pa_max]             = "\"#C0C0C0\""
+        , [pa_min]             = "\"#C0C0C0\""
         , [pa_sum]             = "\"#C0C0C0\""
         , [pa_hash_count]      = "\"#C0C0C0\""
         , [pa_hash_rownum]     = "\"#C0C0C0\""
@@ -376,16 +382,19 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
                                 PFatt_str (n->sem.count.res));
             break;
 
+        case pa_avg:
+        case pa_max:
+        case pa_min:
         case pa_sum:
-            if (n->sem.sum.part == att_NULL)
+            if (n->sem.aggr.part == att_NULL)
                 PFarray_printf (dot, "%s\\n%s:(%s)", a_id[n->kind],
-                                PFatt_str (n->sem.sum.res),
-                                PFatt_str (n->sem.sum.att));
+                                PFatt_str (n->sem.aggr.res),
+                                PFatt_str (n->sem.aggr.att));
             else
                 PFarray_printf (dot, "%s\\n%s:(%s)/%s", a_id[n->kind],
-                                PFatt_str (n->sem.sum.res),
-                                PFatt_str (n->sem.sum.att),
-                                PFatt_str (n->sem.sum.part));
+                                PFatt_str (n->sem.aggr.res),
+                                PFatt_str (n->sem.aggr.att),
+                                PFatt_str (n->sem.aggr.part));
             break;
 
         case pa_hash_rownum:
