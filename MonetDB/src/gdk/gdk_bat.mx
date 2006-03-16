@@ -2018,6 +2018,7 @@ BATsetaccess(BAT *b, int mode)
 		int reload = FALSE;
 		int remap = FALSE;
 
+		@:check_copied(BATsetaccess)@
 		if (b->batSharecnt && mode != BAT_READ) {
 			GDKwarning("BATsetaccess: %s has %d views; deliver a copy.\n", BATgetId(b), b->batSharecnt);
 			b = BATsetaccess(batcopy(b, b->htype, b->ttype, TRUE), mode);
@@ -2118,6 +2119,16 @@ need to do anything with heap modes yet at this point.
 			 ATOMname(b->htype), ATOMname(b->ttype));
 		return NULL;
 	}
+@= check_copied
+	if (b->batBuns->copied) {
+		Heap hp;
+		if (HEAPcopy(&hp, b->batBuns) < 0) {
+			GDKerror("@1: remapped bun heap of %s could not be copied.\n", BATgetId(b));
+			return NULL;
+		}
+		HEAPfree(b->batBuns);
+		*(b->batBuns) = hp;
+	}
 @c
 BAT *
 BATmode(BAT *b, int mode)
@@ -2130,6 +2141,7 @@ BATmode(BAT *b, int mode)
 		if (mode == PERSISTENT) {
 			@:check_type(b->htype)@
 			@:check_type(b->ttype)@
+			@:check_copied(BATmode)@
 		}
 		BBPdirty(1);
 

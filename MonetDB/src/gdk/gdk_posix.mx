@@ -878,7 +878,7 @@ MT_heapcur(void)
 void *
 MT_mmap(char *path, int mode, off_t off, size_t len, void *fixed)
 {
-	int fd = open(path, O_CREAT | ((mode & MMAP_WRITABLE) ? O_RDWR : O_RDONLY));
+	int fd = open(path, O_CREAT | ((mode & MMAP_WRITE) ? O_RDWR : O_RDONLY));
 	void *ret = (void *) -1L;
 
 	if (fd >= 0) {
@@ -1032,7 +1032,7 @@ MT_mmap(char *path, int mode, off_t off, size_t len, void *fixed)
 	SECURITY_ATTRIBUTES sa;
 	HANDLE h1, h2;
 
-	if (mode & MMAP_WRITABLE) {
+	if (mode & MMAP_WRITE) {
 		mode0 |= GENERIC_WRITE;
 		mode1 |= FILE_SHARE_WRITE;
 	}

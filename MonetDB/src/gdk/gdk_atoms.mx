@@ -857,7 +857,7 @@ the commit tremendously complicated.
 			if (BATatoms[t_].atomDel) {			\
 				ATOMdel(t_, P2, (var_t *) P3);		\
 			}						\
-			*(P3) = loc_;					\
+			*(var_t *) (P3) = loc_;				\
 			ATOMfix(t_, P4);				\
 		} else {						\
 			ATOMunfix(t_, P3);				\

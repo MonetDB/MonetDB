@@ -351,7 +351,7 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, size_t estimate)
 	return NULL;
 }
 
-static BAT * batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap);
+static BAT * batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways);
 
 static BAT *
 batmergejoin(BAT *l, BAT *r, size_t estimate, bit swap)
@@ -359,7 +359,7 @@ batmergejoin(BAT *l, BAT *r, size_t estimate, bit swap)
 	@:joincheck(BATmergejoin,l->ttype,r->htype)@
         if (BAThdense(r) || (swap && BATtdense(l))) {
             /* batmergejoin can't handle void tail columns at all (fetchjoin is better anyway) */
-            return batfetchjoin(l, r, estimate, swap);
+            return batfetchjoin(l, r, estimate, swap, FALSE);
         }
 	if (swap && (((BAThordered(r) & 1) == 0) || ((BATtordered(l) & 1) && (BATcount(l) > BATcount(r))))) {
 		/* reverse join if required (r not sorted) or if l is larger (quick jump through l with binary search) */
@@ -736,7 +736,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		/* and we can do a "synchronized walk" through l & r */
 		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BAThvoid(l) && !BATtvoid(l) && BATtdense(l)\n");
 		@:densevoidfetchjoin(@1,@2,@3)@
-	} else if (BATtordered(l)&1) {
+	} else if ((BATtordered(l)&1) || hitalways) {
 		/* we did check the bounderies already above */
 		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BAThvoid(l) && !BATtvoid(l) && !BATtdense(l) && BATtordered(l)&1\n");
 		@:orderedvoidfetchjoin(@1,@2,@3)@
@@ -748,7 +748,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 #define SIMPLEput(tpe,hp,dst,src) *(tpe*) (dst) = *(tpe*) (src)
 
 static BAT *
-batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
+batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap, bit hitalways)
 {
 	int xx, yy, zz, lht, rtt;
 	size_t base, end;
@@ -757,6 +757,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 	BUN r_cur, l_cur, l_end, dst;
 	oid seqbase;
 	BAT *ret = NULL, *bn = NULL, *l_orig = l;
+	int hitalways_check = 0;
 
 	BATcheck(l, "BATfetchjoin: l");
 	BATcheck(r, "BATfetchjoin: r");
@@ -772,11 +773,14 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 			ERRORcheck(!BATtdense(l), "BATfetchjoin: one join column must be dense");
 			ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BATmirror(BATfetchjoin(BATmirror(r),BATmirror(l)));\n");
 
-			return BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), estimate));
+			return BATmirror(batfetchjoin(BATmirror(r), BATmirror(l), estimate, FALSE, FALSE));
 		}
 	} else {
 		ERRORcheck(!BAThdense(r), "BATfetchjoin: head column of right input must be dense");
 	}
+	/* not checking boundaries is very dangerous; use regression tests with debugmask=8 first */
+	PROPDEBUG { hitalways_check = hitalways; hitalways = 0; }
+
 	if ( (lcount == 0) || (rcount == 0) ){
 		/* below range checking do not support empty bats. so treat them separately (easy) */
 		bn = BATnew(l->htype, r->ttype, 0);
@@ -792,7 +796,10 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 			BATseqbase(BATmirror(bn), r->tseqbase);
 		}
 		return bn;
-	} else if (BATtordered(l) & 1) {
+	} else if (hitalways && BAThdense(r) && BATtdense(r) && r->hseqbase == r->tseqbase) { 
+		/* idempotent join: always hit and substitute tail with the same value */
+		return VIEWcreate(l);
+	} else if ((BATtordered(l) & 1) && !hitalways) {
 		/* optimization to be able to carry over more void head columns */
 		/* (only needed if neither operand is empty) */
 		oid r_lo = *(oid *) BUNhead(r, BUNfirst(r));
@@ -849,8 +856,8 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 			ALGODEBUG THRprintf(GDKout, "BATfetchjoin: !BAThvoid(l) && BATtdense(l)\n");
 
 			@:fetchjoin_switch_lht(dense)@
-		} else if (BATtordered(l) & 1) {
-			/* we did check the bounderies already above */
+		} else if ((BATtordered(l) & 1) || hitalways) {
+			/* we did check the boundaries already above */
 			ALGODEBUG THRprintf(GDKout, "BATfetchjoin: !BAThvoid(l) && !BATtdense(l) && BATtordered(l)&1\n");
 
 			@:fetchjoin_switch_lht(ordered)@
@@ -977,6 +984,9 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 	if ( BATcount(bn) == lcount) {
 		ALIGNsetH(bn, l);	/* BAThkey(r), remember? */
 	} else {
+		if (hitalways_check) {
+			GDKerror("BATfetchjoin(%s,%s) does not hit always => can't use fetchjoin.\n", BATgetId(l), BATgetId(r));
+		}
 		bn->hsorted = l->hsorted;
 	}
 	bn->tsorted = (BATtordered(l) & BATtordered(r) & 1) ? GDK_SORTED : 0;
@@ -1001,16 +1011,18 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 BAT *
 BATfetchjoin(BAT *l, BAT *r, size_t estimate)
 {
+	/* fetchjoin now implies that you assure no fetch misses (hitalways) */
 	/* allows swapping of left and right input for faster processing */
-	return batfetchjoin(l, r, estimate, TRUE);
+	return batfetchjoin(l, r, estimate, TRUE, TRUE);
 }
 
 BAT *
 BATleftfetchjoin(BAT *l, BAT *r, size_t estimate)
 {
+	/* fetchjoin now implies that you assure no fetch misses (hitalways) */
 	/* do not swap left and right input,
 	   and hence maintain order of left head in result */
-	return batfetchjoin(l, r, estimate, FALSE);
+	return batfetchjoin(l, r, estimate, FALSE, TRUE);
 }
 
 @-
@@ -1071,11 +1083,11 @@ join columns), we take special action.
 	if (swap && lfetch && !(rfetch && lcount < rcount)) {
 		ALGODEBUG THRprintf(GDKout, "BATjoin: BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), " SZFMT "));\n", estimate);
 
-		return BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), estimate));
+		return BATmirror(batfetchjoin(BATmirror(r), BATmirror(l), estimate, TRUE, FALSE));
 	} else if (rfetch) {
 		ALGODEBUG THRprintf(GDKout, "BATjoin: BATfetchjoin(l, r, " SZFMT ");\n", estimate);
 
-		return batfetchjoin(l, r, estimate, swap);
+		return batfetchjoin(l, r, estimate, swap, FALSE);
 	}
 @-
 If both are ordered we do merge-join, or if hash-join is not possible right

@@ -244,15 +244,17 @@ The {\tt kintersect(l,r)} is used also as implementation for the
 @- head-unique elements
 @m
 .COMMAND kunique ( BAT[any::1,any::2] b ) :
-				BAT[any::1,any::2] = CMDkunique;
+                                BAT[any::1,any::2] = CMDkunique;
 "Select unique tuples from the input BAT. Double elimination is done
- only looking at the head column. Result is a BAT with hkeyed() == true."
+ only looking at the head column. The result is a proper subset of
+ the input BAT (which subset is implementation-dependent).
+ Result is a BAT with hkeyed() == true."
 
 .COMMAND tunique ( BAT[any,any::1] b ) :
-				BAT[any::1,void] = CMDtunique;
-"Select unique tuples from the input BAT. Double elimination is done
- only looking at the tail column. Result is a BAT with hkeyed() == true."
-@- bun-intersecting elements
+                                BAT[any::1,void] = CMDtunique;
+"Select unique tail values from the input BAT in the head column of the result.
+ The tail of the result is nil.  Result is a BAT with hkeyed() == true."
+
 @m
 .COMMAND sintersect ( BAT[any::1,any::2] left, BAT[any::1,any::2] right) :
 				BAT[any::1,any::2] = CMDsintersect;

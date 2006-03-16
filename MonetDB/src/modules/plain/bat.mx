@@ -447,16 +447,23 @@ documentation.
  These buffer management modes are not persistent.
  Returns the BAT operated upon."
 
-.COMMAND remap(BAT[void,any::1] b, BAT[void,oid] map, any::1 val) : BAT[void,any::1] = CMDremap;
-"create a non-linear VM re-map of a bat. It has 65536-tuple pages in a different
- order, as indicated by the second bat (map)."
+.COMMAND remap(BAT[void,any::1] b, BAT[void,oid] map) : BAT[void,any::1] = CMDremap;
+"create a page-wise access(BAT_WRITE) copy of the first parameter input BAT[void,X]. 
 
-.COMMAND [remap_oid](BAT[void,oid] b, BAT[void,oid] map) : BAT[void,oid] = CMDremap_oid;
-"swizzle re-mapped oids (translate from logical to physical and vice versa)"
+ The second parameter map BAT[void,oid] (seqbase 0@00) indicates the order
+ in which the 65536-tuple logical pages must appear in the result. It may not 
+ contain illegal nor duplicate page-ids in the tail (page-ids start at 0).
 
-.COMMAND remap_summary(BAT[void,oid] delta, BAT[void,oid] map, BAT[void,any::1] master) : BAT[oid,any::1] = CMDremap_summary;
-"get one [h,t] bun from the master (3rd param) for each page modified by delta (first param).
- delta contains logical references, such that we need a map (2nd param) to translate the oids."
+ If the last page of the input BAT is requested in the map, and the input bat is 
+ not an exact multiple of 65536 (hence the last page is incomplete), the missing 
+ tuples appear as NILs in the result. 
+
+ Finally, note that this operation is optimized for the case where the input
+ BAT is memory-mapped directly (not: privately mapped). In that case, you get
+ a fast copy-on-write copy of the BUN heap. Otherwise, an im-memory copy is made."
+
+.COMMAND [swizzle](BAT[void,oid] b, BAT[void,oid] map) : BAT[void,oid] = CMDswizzle;
+"swizzle re-mapped oids (translate from logical to physical using a page-id map)"
 
 @- BAT Accelerators
 @m
@@ -541,8 +548,17 @@ these 'sync' OIDs with their own propagation rules.
     CONST REMAP_PAGE_SIZE := 1LL << REMAP_PAGE_BITS;
     CONST REMAP_PAGE_MASK := REMAP_PAGE_SIZE - 1LL;
 
-    PROC remap_oid(oid o, BAT[void,oid] map) : oid {
-	return oid(<<(lng(map.find(oid(lng(o) >> REMAP_PAGE_BITS))),REMAP_PAGE_BITS) + and(lng(o),REMAP_PAGE_MASK));
+    PROC swizzle(oid o, BAT[void,oid] map) : oid {
+        var pid := oid(lng(o) >> REMAP_PAGE_BITS);
+        if (map.exist(pid))
+	    return oid(<<(lng(map.find(pid)),REMAP_PAGE_BITS) + and(lng(o),REMAP_PAGE_MASK));
+        return o;
+    }
+
+    PROC pagesample(BAT[oid,any] b) : BAT[oid,void] {
+        var lb := [lng](b.project(nil)).access(BAT_WRITE);
+	lb := reverse(kunique(reverse([:>>=](lb,REMAP_PAGE_BITS)))).access(BAT_WRITE);
+        return reverse([oid]([:<<=](lb,REMAP_PAGE_BITS)));
     }
 
 @- constants for readonly()
@@ -1210,7 +1226,7 @@ infoHeap(BAT *bn, Heap *hp, str nme)
 	strcpy(p, "maxsize");
 	BUNins(bn, buf, local_utoa(hp->maxsize));
 	strcpy(p, "storage");
-	BUNins(bn, buf, (hp->base == NULL) ? "absent" : (hp->storage == STORE_MMAP) ? (hp->filename ? "memory mapped" : "anonymous vm") : (hp->storage == STORE_PRIV) ? "private map" : "malloced");
+	BUNins(bn, buf, (hp->base == NULL) ? "absent" : (hp->storage == STORE_MMAP) ? (hp->filename ? "memory mapped" : "anonymous vm") : (hp->storage & STORE_PRIV) ? "private map" : "malloced");
 	strcpy(p, "filename");
 	BUNins(bn, buf, hp->filename ? hp->filename : "no file");
 }
@@ -1665,110 +1681,230 @@ CMDset_seqbase(BAT **r, BAT *b, oid *o)
 	return GDK_SUCCEED;
 }
 
-static void
-mem_segment(BAT *bn, BAT *b, size_t src_off, size_t dst_off, size_t cnt, lng* const_val)
-{
-	if (const_val) { 
-		lng c = *const_val, *l = (lng*) (bn->batBuns->base + dst_off);
-		size_t k;
+@+ Page-wise BAT remappings
+@T
+The XML node storage scheme of MonetDB/XQuery needs some extra kernel support. 
 
-		for (k = 0; k < cnt / 8; k++)
-			l[k] = c;	       /* fill pages with constant value */
-	} else {
-		/* copy segment from master bat */
-		memcpy(bn->batBuns->base + dst_off, b->batBuns->base + src_off, cnt);
+\begin{itemize}
+\item
+  we introduce a fast way to create BATs with the VM pages in a different order
+  (to cheaply support inserting new pages halfway). 
+\item
+  we introduce a primitive to swizzle OIDs for such remappings between RIDs (the real
+  voids on disk) and PREs (the voids of the remapped copy).
+\end{itemize}
+
+Also, we use copy-on-write maps for transaction isolation. Contrary to intuition, we 
+write into STORE_MMAP read-only master bats (overriding the read-only protection 
+with a new 'force' flag), and read only from the copy-on-write copies produced by 
+the 'remap'. These copies provide efficient shadow paging. That is, before a master bat 
+is replaced into (appends are no problem) then all live read copies (copy-on-write remaps) 
+get a 'idempotent' replace on the affected pages (a BUN replace with a value that was 
+already there), such that a shadow copy of the page is made by the OS. In this way, 
+the subsequent update in the master bat is invisible in the copy-on-write copies 
+(transaction isolation). There is a 'pagesample' PROC that produces such an 
+idempotent
+
+other changes were:
+
+\begin{itemize}
+\item
+  gdk_bat.mx/gdk_batop.mx: a 'force' flag in update operations that allow to update
+  read-only/append-only BATs anyway. Note that if used, another (WAL-based) recovery
+  mechanism must be used to repair BATs after a system crash!! This is a user
+  responability (in this case, of the MonetDB/XQuery frontend).
+\item
+  gdk_bat.mx: make a true copy of remapped BUN heaps if the bat becomes persistent or updatable. 
+\item
+  gdk_batop.mx: optimized fetchjoin for idempotent positional joins (into a bat[void,void]
+  with equal seqbase and all tuples hitting).
+\end{itemize}
+
+In swizzling as well as in positional join, specific optimizations are made for
+the common case where all pages appear in order (this occurs in XML tables that have
+not yet received updates or are read-only). In this case swizzling is a no-op.
+
+For read-only tables, logical node IDs (nids) are equal to both PREs and RIDs. A 
+translation from NID to PRE (or RID) then becomes positional join onto a bat[void,void] 
+with seqbases 0@0, which is an idempotent join. This case now returns a view at
+zero cost.
+
+@- Remapped Copy
+@T
+CMDremap makes a copy of a bat, putting the logical 'pages' (65536 tuples) in an 
+alternative order, specified by a map. It is optimized to use copy-on-write memory 
+mappings to make cheap copies, when possible.
+
+The result is a read-only copy of the original. As it is a true copy, in principle 
+we can replace (but nor insert/delete) BUNs in it, overriding the access restriction.
+
+Making such bats persistent or appendable/writable, will force a true copy of the 
+copy-on-write mmap heap to be made.
+@c
+static int
+copy_segment(char* mmap, BAT *bn, BAT *b, int src, int dst, int cnt) {
+	if (cnt) {
+	        size_t xx = REMAP_PAGE_SIZE * BUNsize(b);
+		size_t src_off = ((size_t) src) * xx;
+		size_t dst_off = ((size_t) dst) * xx;
+		size_t nbytes  = ((size_t) cnt) * xx;
+		size_t partial = (BUNlast(b) - BUNfirst(b)) - src_off;
+		if (!mmap) {
+			/* copy segment from master bat */
+			memcpy(BUNfirst(bn) + dst_off, BUNfirst(b) + src_off, (partial < nbytes)?partial:nbytes);
+		} else if (src_off != dst_off) { /* otherwise it is already mapped so */
+			void *fixed = (bn->batBuns->base + dst_off);
+                        if (GDKmmap(mmap, MMAP_READ|MMAP_SEQUENTIAL|MMAP_COPY, src_off, nbytes, fixed) != fixed) {
+bunins_failed:			return 0;
+			}
+		}
+		if (partial < nbytes) {
+			/* fill a partial page with nils */
+			ptr nil = ATOMnilptr(bn->ttype);
+			BUN cur = BUNfirst(bn) + dst_off + partial;
+			BUN end = BUNlast(bn);
+			for(xx=BUNsize(bn); cur < end; cur += xx) {
+				ATOMreplace(bn->ttype, bn->theap, BUNtail(bn,cur), nil); 
+			}
+		}
 	}
+	return 1;
 }
 
 int
-CMDremap(BAT **res, BAT *b, BAT *map, ptr val)
+CMDremap(BAT **res, BAT *b, BAT *map)
 {
-	size_t pgsz = REMAP_PAGE_SIZE*BUNsize(b), yy = 0, xx, cnt = BATcount(map);
-	ssize_t zz = 0, prev = 0, max = (((ssize_t)BATcount(b)) - 1) / REMAP_PAGE_SIZE;
-	lng lng_val[8];
-	BUN p = (BUN) lng_val, q;
+	size_t cnt = BATcount(map), n = BATcount(b), max = (((ssize_t) n) - 1) / REMAP_PAGE_SIZE;
+	int (*fix) (ptr) = BATatoms[b->ttype].atomFix;
+	oid* pid = (oid*) alloca(cnt*sizeof(oid));
+        size_t xx, yy = 0, zz = 0;
+	char path[MAXPATHLEN];
+        char *chk;
+	BUN p, q;
 	BAT *bn;
 
-	if (BUNsize(b) != ATOMsize(b->ttype)) {
-		GDKerror("remap: %s must have a real void head column.\n", BBP_logical(b->batCacheid));
-		return GDK_FAIL;
-	}
-	if (ATOMvarsized(b->ttype)) {
-		GDKerror("remap: %s is not supported for %s tail types.\n", BBP_logical(b->batCacheid), ATOMname(b->ttype));
-		return GDK_FAIL;
-	}
-	if (BATcount(b) & REMAP_PAGE_MASK) {
-		GDKerror("remap: BATcount(%s) = " SZFMT " (not a multiple of %d).\n",
-				BBP_logical(b->batCacheid), BATcount(b), REMAP_PAGE_SIZE);
-		return GDK_FAIL;
-	}
-	if (cnt)
-		prev = (*(oid *) BUNtail(map, BUNfirst(map))) - 1;
+   	/* try to use fast page-wise memory mapping technique on read-only mmapped [void,X] bats */ 
+        int failure = 0;
+        char* mmap = (((BUNfirst(b) - b->batBuns->base) & REMAP_PAGE_MASK) == 0 &&
+                    (b->batRestricted != BAT_WRITE) &&
+	            (b->batBuns->storage == STORE_MMAP))?path:NULL;
 
-	/* fill lng_val with 8 times the constant after each other */
-	for (xx = 0; xx < 8; xx++) {
-		memcpy(p, val, ATOMsize(b->ttype));
-		p += ATOMsize(b->ttype);
+        /* sanity check on page map */
+	if (BAThdense(map) == 0 || map->hseqbase ) {
+		GDKerror("remap: map head column must be dense and starting from 0@0.\n");
+		return GDK_FAIL;
 	}
 
-	/* create result bat */
-	*res = bn = BATcreatedesc(b->htype, b->ttype, TRUE); 
-	if (!bn)
-		return GDK_FAIL;
-	bn->dims = b->dims;
+        /* chk is a bit mask to ensure that no page is requested twice */
+	chk = (char*) GDKmalloc(n = 1 + max/8);
+	if (chk == NULL) return GDK_FAIL;
+	memset(chk, 0, n);
 
-	/*
-	if (b->batBuns->mode & STORE_MMAP) {
-	} else 
-	*/
-	{
-		if (HEAPalloc(bn->batBuns, (cnt+2)*pgsz, 1) < 0) {
-			BBPclear(bn->batCacheid);
+	/* check that the set of requested page-ids is a subset of all existing page-ids */
+	BATloopFast(map, p, q, xx) {
+		oid id = *(oid*) BUNtail(map, p);
+		size_t idx = id >> 3;  
+		size_t mask = 1 << (id & 7);  
+		if (id > max) {
+			GDKerror("remap: map index " SZFMT "@0 out of range [0@0," SZFMT "@0]\n", id, max);
+			GDKfree(chk);
+			return GDK_FAIL;
+		} else if (chk[idx] & mask) {
+			GDKerror("remap: map index " SZFMT "@0 occurs twice.\n", id);
+			GDKfree(chk);
 			return GDK_FAIL;
 		}
-		if (ATOMvarsized(bn->ttype)) {
-			bn->theap = GDKmalloc(sizeof(Heap)); 
-			if (bn->theap == NULL || HEAPalloc(bn->theap, (size_t) (bn->theap->free*BATMARGIN), 1) < 0) {
-				if (bn->theap)
-					HEAPfree(bn->theap);
-				else
-					GDKfree(bn->theap);
-				HEAPfree(bn->batBuns);
-				BBPclear(bn->batCacheid);
-				return GDK_FAIL;
-			}
-			memcpy(bn->theap->base, b->theap->base, bn->theap->free = b->theap->free);
-		}
-		BATloopFast(map, p, q, xx) {
-			ssize_t j = (ssize_t) *(oid *) BUNtail(map,p);
-			if (j == (ssize_t) oid_nil)
-				continue;
-			if (j - 1 != prev || (prev <= max && j > max)) {
-				mem_segment(bn, b, pgsz * yy, pgsz * (prev - zz), pgsz * zz, (prev - zz > max) ? lng_val : NULL);
-				yy += zz;
-				zz = 0;
-			}
-			zz++; prev = j;
-		}
-		mem_segment(bn, b, pgsz * yy, pgsz * (prev - zz), pgsz * zz, (prev - zz > max) ? lng_val : NULL);
-		bn->batBuns->free += yy*pgsz;
+		pid[yy++] = id;
+		chk[idx] |= mask;
 	}
+	GDKfree(chk);
+
+	/* create result bat descriptor */
+	*res = bn = BATcreatedesc(TYPE_void, b->ttype, TRUE); 
+	if (bn == NULL) return GDK_FAIL;
+        BATinit_idents(bn);
+	bn->dims = b->dims;
+	bn->htype = TYPE_void;
+	bn->hvarsized = 1;
+	bn->hseqbase = oid_nil;
 	bn->tsorted = 0;
-	bn->batDirty = FALSE;
+	bn->hkey = bn->tkey = 0;
+	bn->batRestricted = BAT_READ;
+	BATsetcount(bn, n = (cnt << REMAP_PAGE_BITS));
+	n *= BUNsize(b);
+
+	/* copy the entire tail heap (if present) */
+	if (ATOMvarsized(bn->ttype)) {
+		if (HEAPalloc(bn->theap, (size_t) (b->theap->free*BATMARGIN), 1) >= 0) {
+        		memcpy(bn->theap->base, b->theap->base, bn->theap->free = b->theap->free);
+		} else {
+			failure = 1;
+		}
+	}
+	/* try to get a reserved mmap region */
+	if (failure == 0 && mmap) {
+		if (bn->batBuns->filename) GDKfree(bn->batBuns->filename); 
+		bn->batBuns->filename = GDKstrdup(b->batBuns->filename); 
+		failure = (bn->batBuns->filename == NULL);
+                GDKfilepath(mmap, BATDIR, bn->batBuns->filename, NULL);
+	}
+	if (failure == 0 && mmap) {
+		bn->batBuns->base = GDKmmap(mmap, MMAP_READ|MMAP_SEQUENTIAL|MMAP_COPY, 0, n, NULL);
+
+		if ((bn->batBuns->base != NULL) & (bn->batBuns->base != (BUN) -1)) {
+			bn->batBuns->size = bn->batBuns->maxsize = n; 
+			bn->batBuns->storage = STORE_MMAP | STORE_PRIV;
+			bn->batBuns->copied = 1;
+		} else {
+			mmap = NULL; /* fall back on heap memory */
+		}
+	}
+	if (failure == 0) {
+retry:		if (!mmap) failure = (HEAPalloc(bn->batBuns, n, 1) < 0);
+	}
+	if (failure) {
+		/* failed to allocate */
+		if (bn->theap) {
+			HEAPfree(bn->theap);
+			GDKfree(bn->theap);
+		}
+		HEAPfree(bn->batBuns);
+		BBPclear(bn->batCacheid);
+		return GDK_FAIL;
+        }
+
+	/* set the right bat size */
+	bn->batBuns->free = n;
 	bn->batFirst = bn->batDeleted = bn->batBuns->base;
-	bn->batInserted = bn->batBuns->base + bn->batBuns->free;
+	bn->batInserted = bn->batBuns->base + n;
+
+	/* go over all pages and copy them in segments that unite consecutively mapped pages */
+	for(xx=1; xx<cnt; xx++) {
+		if (pid[xx]-1 != pid[xx-1]) {
+			if (!copy_segment(mmap, bn, b, pid[zz], zz, xx-zz)) break;
+			zz = xx;
+		}
+	}
+	if (xx < cnt || !copy_segment(mmap, bn, b, pid[zz], zz, cnt-zz)) {
+		HEAPfree(bn->batBuns);
+		failure = 1; mmap = (char*) (((lng) mmap) ^ ((lng) path));
+		goto retry;
+	}
+
+	/* if the tail atom has refcounting, we must fix the copies */
+	if (fix) {
+		BATloopFast(bn, p, q, xx) {
+			fix(BUNtail(bn, p));
+		}
+	}
 	BBPcacheit(bn);
-	BATsetcount(bn, yy*REMAP_PAGE_SIZE);
 	BATseqbase(bn, 0);
 	return GDK_SUCCEED;
 }
 
-@= swizzle
-	for(i=0, n*=@1; i<n; i+=@1) {
-		size_t idx = src[i] >> @2;
-		if (idx >= m) return 0;
-		*dst++ = (map[idx] << REMAP_PAGE_BITS) | (src[i] & REMAP_PAGE_MASK);
-	}
+@- page-wise OID swizzling
+
+I am really sorry I did all these premature optimizions. However, they have been tested and work now.
 @c
 #ifdef HAVE_RESTRICT
 #define __r     restrict
@@ -1780,56 +1916,102 @@ CMDremap(BAT **res, BAT *b, BAT *map, ptr val)
 #endif
 #endif
 
+#define GET_IDX(pos,shift,mask) (((pos & ~REMAP_PAGE_MASK) >> shift) & mask)  
+#define FAST_IDX(pos,shift,mask) ((pos >> shift) & mask)  
+
+@= swizzle
+{	int ok = 1, mask0, mask1, mask2, mask3;
+	i = j = 0;
+	m <<= REMAP_PAGE_BITS;
+	for(n*=@1; i+@1+@1+@1<n; i+=@1+@1+@1+@1, j+=4) {
+		mask0 = (src[i] >= m) - 1; 
+		dst[j] = (map[@3_IDX(src[i],@2,mask0)] << REMAP_PAGE_BITS) | (src[i] & REMAP_PAGE_MASK);
+
+		mask1 = (src[i+@1] >= m) - 1; 
+		dst[j+1] = (map[@3_IDX(src[i+@1],@2,mask1)] << REMAP_PAGE_BITS) | (src[i+@1] & REMAP_PAGE_MASK);
+
+		mask2 = (src[i+@1+@1] >= m) - 1; 
+		dst[j+2] = (map[@3_IDX(src[i+@1+@1],@2,mask2)] << REMAP_PAGE_BITS) | (src[i+@1+@1] & REMAP_PAGE_MASK);
+
+		mask3 = (src[i+@1+@1+@1] >= m) - 1; 
+		dst[j+3] = (map[@3_IDX(src[i+@1+@1+@1],@2,mask3)] << REMAP_PAGE_BITS) | (src[i+@1+@1+@1] & REMAP_PAGE_MASK);
+
+		/* hand unrolled above because compiler can't see through this dependency */
+		ok &= mask0 & mask1 & mask2 & mask3;
+	}
+	for(; i<n; i+=@1, j++) {
+		mask0 = (src[i] >= m) - 1; /* 0xFFFFFF if OK, 0 if out-of range */
+		dst[j] = (map[@3_IDX(src[i],@2,mask0)] << REMAP_PAGE_BITS) | (src[i] & REMAP_PAGE_MASK);
+		ok &= mask0;
+	}
+	if (!ok) return 0;
+}
+@c
 static int
 swizzle(oid *__r dst, oid *__r src, oid *__r map, size_t lo, size_t n, size_t m, size_t delta, size_t shift)
 {
 	size_t i, j, k;
 
 	if (delta == 0 && n) {
-		size_t p = (n+=lo) >> REMAP_PAGE_BITS;
+		/* in case of a dense tail in b, we can check for overflow in advance */ 
+		size_t base, p = (n+lo) >> REMAP_PAGE_BITS;
+		if (p >= m) return 0; /* here it goes */ 
 
-		if (p >= m)
-			return 0;
-		for (j = lo & REMAP_PAGE_MASK, i = lo >> REMAP_PAGE_BITS; j < REMAP_PAGE_SIZE; j++) 
-			dst[j] = (map[i << shift] << REMAP_PAGE_BITS) + j;
-		if ((shift = REMAP_PAGE_BITS-shift) == 0) {
-			for (i++; i < p; i++)
-				for (k = i << REMAP_PAGE_BITS, j = 0; j < REMAP_PAGE_SIZE; j++) 
-					dst[k + j] = (map[i] << REMAP_PAGE_BITS) + j;
-		} else {
-			for (i++; i < p; i++)
-				for (k = i << REMAP_PAGE_BITS, j = 0; j < REMAP_PAGE_SIZE; j++) 
-					dst[k + j] = (map[i << shift] << REMAP_PAGE_BITS) + j;
+                /* the rest of the code is also faster as the index i in map[] stays constant per page */
+		shift = REMAP_PAGE_BITS - shift;
+                p <<= shift;
+
+		/* first do the partial first page */
+		j = lo & REMAP_PAGE_MASK;
+		k = (j+n < REMAP_PAGE_SIZE)?j+n:REMAP_PAGE_SIZE;
+		i = (lo >> REMAP_PAGE_BITS) << shift;
+		for (base = map[i] << REMAP_PAGE_BITS; j < k; j++) { 
+			*dst++ = base + j;
 		}
-		for (k = p << REMAP_PAGE_BITS, j = 0; j < n - k; j++) 
-			dst[k + j] = (map[p << shift] << REMAP_PAGE_BITS) + j;
+		if (j < REMAP_PAGE_SIZE) return 1;
+
+		/* do all full pages as fast as possible */
+		for (i+= 1<<shift; i < p; i += 1<<shift) {
+			k = i << (REMAP_PAGE_BITS-shift);
+			for (base = map[i] << REMAP_PAGE_BITS, j = 0; j < REMAP_PAGE_SIZE; j++) 
+				*dst++ = base + j;
+		}
+		/* finally do the partial last page */
+		k = p << (REMAP_PAGE_BITS-shift);
+		for (base = map[p] << REMAP_PAGE_BITS, j = 0; j < lo + n - k; j++) 
+			*dst++ = base + j;
 	} else if (delta == 1 && shift == REMAP_PAGE_BITS) {
-		@:swizzle(1,REMAP_PAGE_BITS)@ /* help register poor ISAs */
+		@:swizzle(1,REMAP_PAGE_BITS,FAST)@ /* help register poor ISAs */
 	} else if (delta == 2 && shift == REMAP_PAGE_BITS) {
-		@:swizzle(2,REMAP_PAGE_BITS)@ /* help register poor ISAs */
+		@:swizzle(2,REMAP_PAGE_BITS,FAST)@ /* help register poor ISAs */
 	} else if (delta == 1 && shift == REMAP_PAGE_BITS-1) {
-		@:swizzle(1,(REMAP_PAGE_BITS-1))@ /* help register poor ISAs */
+		@:swizzle(1,(REMAP_PAGE_BITS-1),GET)@ /* help register poor ISAs */
 	} else if (delta == 2 && shift == REMAP_PAGE_BITS-1) {
-		@:swizzle(2,(REMAP_PAGE_BITS-1))@ /* help register poor ISAs */
+		@:swizzle(2,(REMAP_PAGE_BITS-1),GET)@ /* help register poor ISAs */
 	} else {
-		@:swizzle(delta,shift)@
+		@:swizzle(delta,shift,GET)@
 	}
 	return 1;
 }
 
 int
-CMDremap_oid(BAT **res, BAT *b, BAT *map)
+CMDswizzle(BAT **res, BAT *b, BAT *map)
 {
-	BAT *bn = b;
+	BAT *bn = *res = b;
 
 	if (map->hseqbase) {
-		GDKerror("[remap_oid]: map %s should be a void column starting at 0@0.\n", 
+		GDKerror("[swizzle]: map %s should be a void column starting at 0@0.\n", 
 			BBP_logical(map->batCacheid));
 		return GDK_FAIL;
 	}
-	if (BATtdense(map)) {
+	if (BATcount(map) == 0) {
+		/* special semantics: empty bat => no remapping */
+		BBPfix(b->batCacheid);
+		return GDK_SUCCEED;
+	}
+	if (BATtdense(map)) { 
 		if (map->tseqbase) {
-			GDKerror("[remap_oid]: map %s is a void view.\n", BBP_logical(map->batCacheid)); 
+			GDKerror("[swizzle]: map %s is a void view.\n", BBP_logical(map->batCacheid)); 
 			return GDK_FAIL;
 		}
 		/* HACK does not check for out-of-range oids */
@@ -1838,15 +2020,17 @@ CMDremap_oid(BAT **res, BAT *b, BAT *map)
 	} 
 	*res = bn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
 	if (bn) {
+		int i = BUNsize(map)/sizeof(oid), shift = 0;
+		while(i>>=1) shift++;
 	    	if (swizzle(
 			(oid *) BUNfirst(bn), 
 			(oid *) BUNtloc(b, BUNfirst(b)), 
 			(oid *) BUNtloc(map, BUNfirst(map)), 
-			b->hseqbase,
+			*(oid *) BUNtail(b, BUNfirst(b)), 
 			BATcount(b),
 			BATcount(map),
 			BATtdense(b) ? 0 : BUNsize(b) / sizeof(oid),
-			17 - BUNsize(map) / sizeof(oid)))
+			REMAP_PAGE_BITS - shift))
 		{
 			bn->batBuns->free = sizeof(oid) * BATcount(b);
 			bn->tsorted = 0;
@@ -1854,87 +2038,10 @@ CMDremap_oid(BAT **res, BAT *b, BAT *map)
 			BATseqbase(bn, b->hseqbase);
 			return GDK_SUCCEED;
 		} else {
-			GDKerror("[remap_oid]: %s contains illegal offsets.\n", BBP_logical(b->batCacheid)); 
+			GDKerror("[swizzle]: %s contains illegal offsets.\n", BBP_logical(b->batCacheid)); 
 			BBPreclaim(bn);
 		}
 	}
-	return GDK_FAIL;
-}
-
-int
-CMDremap_summary(BAT **res, BAT *delta, BAT *map, BAT *master)
-{
-	oid *oidmap, i, xx, n = BATcount(master), m = (n+REMAP_PAGE_MASK) >> REMAP_PAGE_BITS;
-	BUN p, q, r;
-	BAT *bn = NULL;
-
-	if (master->hseqbase || map->hseqbase) {
-		GDKerror("remap_summary: %s and map %s should be void columns starting at 0@0.\n", 
-			BBP_logical(master->batCacheid), BBP_logical(map->batCacheid)); 
-		return GDK_FAIL;
-	}
-	/* create temporary map */
-	oidmap = (oid *) GDKmalloc(m*sizeof(oid));
-	if (oidmap == NULL)
-		return GDK_FAIL;
-	for (i = 0; i < m; i++)
-		oidmap[i] = oid_nil; 
-
-	/* fill map */
-	n = 0;
-	BATloopFast(delta,p,q,xx) {
-		oid o = *(oid *) BUNtail(delta,p);
-		oid p = o >> REMAP_PAGE_BITS;
-
-		if (p < m) {  
-			n += (oidmap[p] == oid_nil);
-			oidmap[p] = o;
-		}
-	}
-
-	/* create result bat */
-	*res = bn = BATnew(TYPE_oid, ATOMtype(master->ttype), n);
-	if (bn == NULL) {
-		GDKfree(oidmap);
-		return GDK_FAIL;
-	}
-
-	/* fetch values from master*/
-	for (i = 0; n && i < m; i++) {
-		if (oidmap[i] != oid_nil) {
-			/* get page id */
-			oid p = oidmap[i] >> REMAP_PAGE_BITS;
-
-			BUNfndVOID(r, map, &p); 
-			if (r == NULL) {
-				GDKerror("remap_summary: %s contains illegal offset " LLFMT ".\n", 
-					BBP_logical(delta->batCacheid), (lng) p); 
-				goto bunins_failed;
-			}
-			/* translate oid back to that in master */
-			xx = *(oid *) BUNtail(map,r);
-			xx = (xx << REMAP_PAGE_BITS) | (oidmap[i] & REMAP_PAGE_MASK);
-
-			/* look up the BUN in the master */
-			BUNfndVOID(r, master, &xx);
-			if (r == NULL) {
-				GDKerror("remap_summary: map %s contains illegal offsets.\n", 
-					BBP_logical(map->batCacheid)); 
-				goto bunins_failed;
-			}
-
-			/* put [xx,t] BUN that is already in master in result bat */
-			BUNfastins(bn, &xx, BUNtail(master, r)); 
-			n--;
-		}
-	}
-	bn->hsorted = GDK_SORTED;
-	bn->tsorted = 0;
-	GDKfree(oidmap);
-	return GDK_SUCCEED;
-bunins_failed:
-	BBPreclaim(bn);
-	GDKfree(oidmap);
 	return GDK_FAIL;
 }
 @}
