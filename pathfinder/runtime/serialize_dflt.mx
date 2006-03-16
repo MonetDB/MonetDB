@@ -1,0 +1,470 @@
+@' Copyright Notice:
+@' -----------------
+@'
+@' The contents of this file are subject to the Pathfinder Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License.  You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/PathfinderLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.  See
+@' the License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the Pathfinder system.
+@'
+@' The Initial Developer of the Original Code is the Database &
+@' Information Systems Group at the University of Konstanz, Germany.
+@' Portions created by the University of Konstanz are Copyright (C)
+@' 2000-2006 University of Konstanz.  All Rights Reserved.
+@'
+
+@f serialize_dflt
+@a Jan Flokstra
+@t serialize_dflt
+
+@c
+/*******************************************
+ * serialize_dflt.c : XML serialization functions
+ * The default serialization function definitions are in this file.
+ * They are called by the driver software in serialize.c
+ *
+ */
+
+#include <gdk.h>
+
+#include "pathfinder.h"
+
+#include "serialize.h"
+
+/**
+ * Default driver initialization function
+ */
+static int dflt_init(XqueryCtx* ctx, char* args) {
+    (void) ctx;
+    (void) args;
+    ctx->driverWs = NULL; /* driverWs not used */
+    return 1;
+}
+
+/**
+ * Output generation handler. Handles equivalent of * SAX startDocument() event.
+ */
+static int dflt_handle_startDocument(XqueryCtx* ctx) {
+    if (ctx->mapiMode) { /* xml mode (mapi) */
+        stream_printf(GDKout,"=<?xml version=\"1.0\" encoding=\"utf-8\"?>\n=");
+    } else if (ctx->printMode) { /* SQL-ish mapi */
+        stream_printf(GDKout,"<?xml version=\"1.0\" encoding=\"utf-8\"?>\\n");
+    } else { /* xml mode */
+        stream_printf(GDKout,"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+    }
+    return 1;
+}
+
+/**
+ * Output generation handler. Handles equivalent of * SAX endDocument() event.
+ */
+static int dflt_handle_endDocument(XqueryCtx* ctx) {
+    (void)ctx;
+    stream_printf(GDKout,"\n");
+    return 1;
+}
+
+/**
+ * Output generation handler. This one of my own invented event describing
+ * the usage of an attribute. A sequence of these events will be ended
+ * by a handle_attributeEnd() call.
+ */
+static int dflt_handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, str value, int top) {
+    (void)uri;
+    if ( 1 && !checkNsChange(ctx,uri,prefix,top) )
+        return 0;
+    if (ctx->printMode) {
+        if ( prefix && *prefix && loc && *loc ) {
+            stream_printf(GDKout," %s:%s=\\\"%s\\\"",prefix,loc,value);
+        } else if (prefix && *prefix) {
+            /* default namespace */
+            stream_printf(GDKout," %s=\\\"%s\\\"",prefix,value);
+        } else {
+            stream_printf(GDKout," %s=\\\"%s\\\"",loc,value);
+        }
+    } else if (ctx->dmMode && top) { /* dmMode */
+        if ( prefix && *prefix ) {
+            if ( strcmp(prefix,"xmlns")==0 ) {
+                if (loc && *loc) {
+                    stream_printf(GDKout,"attribute %s:%s { %s }%s",prefix,loc,value,ctx->dmSeparator);
+                } else {
+                    /* default namespace */
+                    stream_printf(GDKout,"attribute %s { %s }%s",prefix,value,ctx->dmSeparator);
+                }
+            } else
+                stream_printf(GDKout,"attribute %s:%s { %s }",prefix,loc,value);
+        } else {
+            stream_printf(GDKout,"attribute %s { %s }",loc,value);
+        }
+    } else { /* xmlMode */
+        if ( prefix && *prefix && loc && *loc ) {
+            stream_printf(GDKout," %s:%s=",prefix,loc);
+        } else if ( prefix && *prefix ) {
+            /* default namespace */
+            stream_printf(GDKout," %s=",prefix);
+        } else {
+            stream_printf(GDKout," %s=",loc);
+        }
+        /* stream_printf(GDKout,"\"%s\"",value); */
+        stream_printf(GDKout,"\"");
+        emit_escaped(value, 1+ctx->mapiMode, 0/*ALL*/);
+        stream_printf(GDKout,"\"");
+    }
+    return 1;
+}
+
+/**
+ * Output generation handler. This one of my own invented event indicating
+ * there will be no more attribute events for this node.
+ */
+static int dflt_handle_attributeEnd(XqueryCtx* ctx, int emptyNode) {
+    (void)ctx;
+    if ( emptyNode )
+            stream_printf(GDKout,"/");
+    stream_printf(GDKout,">");
+    return 1;
+}
+
+/**
+ * Output generation handler. Handles equivalent of * SAX startElement() event.
+ */
+static int dflt_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
+    (void)ctx;
+    (void)pre; /* the Pathfinder PRE number is not used by this fun */
+    if ( ns && *ns ) {
+        stream_printf(GDKout,"<%s:%s",ns,name);
+    } else {
+        stream_printf(GDKout,"<%s",name);
+    }
+    return 1;
+}
+
+/**
+ * Output generation handler. Handles equivalent of * SAX endElement() event.
+ */
+static int dflt_handle_endElement(XqueryCtx* ctx, str ns, str name, int emptyNode) {
+    (void)ctx;
+    if ( !emptyNode ) {
+        if ( ns && *ns ) {
+            stream_printf(GDKout,"</%s:%s>",ns,name);
+        } else {
+            stream_printf(GDKout,"</%s>",name);
+        }
+    }
+    return 1;
+}
+
+/**
+ * Output generation handler. One on my own again. This one should handle a
+ * reference. Don't know wat to to about it now.
+ */
+static int dflt_handle_reference(XqueryCtx* ctx, str name) {
+    (void)ctx;
+    (void)name;
+    return 1;
+}
+
+/**
+ * Output generation handler. Handles equivalent of * SAX characters() event.
+ */
+static int dflt_handle_characters(XqueryCtx* ctx, str ch, str top) {
+    if ( ctx->printMode ) { /* SQL-ish/MCL-ish mode */
+        if ( ctx->dmMode && top )
+            stream_printf(GDKout,"%s {\\\"", top);
+
+        /* we need to escape newlines */
+        emit_escaped(ch, ctx->saxMode, 1 /*JUST ENTITIES*/ );
+
+        if ( ctx->dmMode && top )
+            stream_printf(GDKout,"\\\"}");
+    } else if ( ctx->mapiMode ) {
+        /* we need to prepend "=" to each line, so
+           make sure that we print one after each
+           newline */
+        /*
+         * str nl;
+         * while ((nl = strchr(ch, '\n')) != NULL) {
+         * 	nl++;
+         * 	stream_printf(GDKout, "%.*s=", (nl - ch), ch);
+         * 	ch = nl;
+         * }
+         */
+        if ( ctx->dmMode && top )
+            stream_printf(GDKout,"%s {\"", top);
+
+        emit_escaped(ch,1+ctx->mapiMode, 1/*JUST ENTITIES*/ );
+
+        if ( ctx->dmMode && top )
+            stream_printf(GDKout,"\"}");
+    } else {
+        /*
+         * stream_printf(GDKout,"%s",ch);
+         */
+        if ( ctx->dmMode && top )
+            stream_printf(GDKout,"%s {\"", top);
+
+        emit_escaped(ch,1+ctx->mapiMode, 1/*JUST ENTITIES*/ );
+
+        if ( ctx->dmMode && top )
+            stream_printf(GDKout,"\"}");
+    }
+    return 1;
+}
+
+/**
+ * Output generation handler. Handles equivalent of * SAX ignorableWhitespace()
+ * event. I see no reason why it should be used here but I include it for
+ * completeness.
+ */
+static int dflt_handle_ignorableWhitespace(XqueryCtx* ctx, str ch) {
+    return dflt_handle_characters(ctx,ch,0); /* dispatch */
+}
+
+/**
+ * Output generation handler. Again an own event. But this one should be
+ * used I think because the comments are used and stored by  Pathfinder.
+ */
+static int dflt_handle_comment(XqueryCtx* ctx, str comm) {
+    (void)ctx;
+    stream_printf(GDKout,"<!--%s-->",comm);
+    return 1;
+}
+
+/**
+ * Output generation handler. Handles equivalent of * SAX
+ * processingInstruction() event.
+ */
+static int dflt_handle_processingInstruction(XqueryCtx* ctx, str target, str data) {
+    (void)ctx;
+    stream_printf(GDKout,"<?%s %s?>",target,data);
+    return 1;
+}
+
+/*
+ *
+ * Second the sequence emitting functions are defined
+ *
+ */
+
+/**
+ * Handle the start() of an XQUERY/Pathfinder result sequence.
+ */
+static int id_sequence_counter = 0; /* CHANGE, not multiuser */
+static int dflt_seqStart(XqueryCtx* ctx, BAT* item) {
+    if (ctx->printMode) {
+        /* write SQL-ish header */
+        stream_printf(GDKout,"&1 %d %d 1 %d\n",
+            id_sequence_counter++, BATcount(item), BATcount(item));
+        stream_printf(GDKout,"# xquery_result\t# table_name\n");
+        stream_printf(GDKout,"# xml\t# name\n");
+        stream_printf(GDKout,"# varchar\t# type\n");
+        stream_printf(GDKout,"# %d\t# length\n", 60);
+    } else if (ctx->dmMode == 0  && ctx->norootMode == 0) { /* dmMode has no header */
+        if (ctx->noheaderMode == 0) {
+            if (ctx->mapiMode) {
+                stream_printf(GDKout,"=<?xml version=\"1.0\" encoding=\"utf-8\"?>\n=");
+            } else if ( !ctx->saxMode ) {
+                stream_printf(GDKout,"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+            }
+        }
+        ctx->driverFun->handle_startElement(ctx, NULL, ctx->restag, oid_nil);
+        ctx->nAttrOnLine = 0;
+    }
+    return 1;
+}
+
+static int dflt_seqDmAttrStart(XqueryCtx* ctx) {
+    (void)ctx;
+    return 1;
+}
+
+static int dflt_seqDmAttrEnd(XqueryCtx* ctx) {
+    if (ctx->dmMode == 0  && ctx->norootMode == 0) { /* dmMode has no header */
+        ctx->driverFun->handle_attributeEnd(ctx, 0);
+        if ( !ctx->saxMode )
+            stream_printf(GDKout,
+                    (ctx->mapiMode ? "\n=" : (ctx->printMode ? "\\n" : "\n")));
+    }
+    return 1;
+}
+
+/**
+ * Handle the end() of an XQUERY/Pathfinder result sequence
+ */
+static int  dflt_seqEnd(XqueryCtx* ctx) {
+    if (ctx->printMode) {
+        /* do nothing! SQL-ish/MCL-ish output has no footer */
+    } else if (ctx->dmMode) {
+        stream_printf(GDKout, "\n");
+    } else if (ctx->mapiMode) {
+        stream_write(GDKout,"\n=", 2, 1);
+        if (!ctx->norootMode) stream_printf(GDKout,"</%s>\n", ctx->restag);
+    } else {
+        stream_write(GDKout,"\n", 1, 1);
+        if (!ctx->norootMode) stream_printf(GDKout, "</%s>\n", ctx->restag);
+    }
+    return 1;
+}
+
+
+/**
+ * Emit a Boolean element of an XQUERY/Pathfinder result sequence
+ */
+static int  dflt_seqEmitBool(XqueryCtx* ctx, int bv, int lastVal) {
+    char *bool_str = (char*)(bv ? "true" : "false");
+
+    if ( ctx->dmMode ) {
+        stream_printf(GDKout,"%s ",bool_str);
+    } else {
+        ctx->nAttrOnLine++;
+        if ( ctx->typedMode ) {
+            stream_printf(GDKout,"<xs:boolean>");
+        }
+        stream_printf(GDKout,"%s ",bool_str);
+        if ( ctx->typedMode ) {
+            stream_printf(GDKout,"</xs:boolean>");
+            if ( !lastVal )
+                stream_printf(GDKout, "\n");
+        }
+    }
+    return 1;
+}
+
+/**
+ * Emit a Integer element of an XQUERY/Pathfinder result sequence
+ */
+static int  dflt_seqEmitInt(XqueryCtx* ctx, lng iv, int lastVal) {
+    if ( ctx->dmMode ) {
+        ctx->nAttrOnLine++;
+        stream_printf(GDKout,"%lld",iv);
+    } else {
+        ctx->nAttrOnLine++;
+        if ( ctx->typedMode ) {
+            stream_printf(GDKout,"<xs:integer>");
+        }
+        stream_printf(GDKout,"%lld ",iv);
+        if ( ctx->typedMode ) {
+            stream_printf(GDKout,"</xs:integer>");
+            if ( !lastVal )
+                stream_printf(GDKout, "\n");
+        }
+    }
+    return 1;
+}
+
+/**
+ * Emit a Double element of an XQUERY/Pathfinder result sequence
+ */
+static int  dflt_seqEmitDbl(XqueryCtx* ctx, dbl dv, int lastVal) {
+    if ( ctx->dmMode ) {
+        ctx->nAttrOnLine++;
+        stream_printf(GDKout,"%f",dv);
+    } else {
+        ctx->nAttrOnLine++;
+        if ( ctx->typedMode ) {
+            stream_printf(GDKout,"<xs:double>");
+        }
+        stream_printf(GDKout,"%f ",dv);
+        if ( ctx->typedMode ) {
+            stream_printf(GDKout,"</xs:double>");
+            if ( !lastVal )
+                stream_printf(GDKout, "\n");
+        }
+    }
+    return 1;
+}
+
+static int  dflt_seqElementStart(XqueryCtx* ctx, int cnt) {
+    if (ctx->printMode) {
+        /* SQL-ish mode: write start of tuple and open string */
+        stream_printf(GDKout, "[ \"");
+    } else if ( cnt && ctx->dmMode  ) {
+        /* should print a separator here */
+        stream_printf(GDKout,"%s",ctx->dmSeparator);
+    }
+    return 1;
+}
+
+static int  dflt_seqElementEnd(XqueryCtx* ctx, int cnt) {
+    (void)cnt;
+    if (ctx->printMode) {
+        /* SQL-ish mode: write end of string and end of tuple */
+        stream_printf(GDKout,"\"\t]\n");
+    }
+    return 1;
+}
+
+/**
+ * Emit a String element of an XQUERY/Pathfinder result sequence
+ */
+static int  dflt_seqEmitStr(XqueryCtx* ctx, str sv, int lastVal) {
+    if ( ctx->printMode ) { /* SQL-ish/MCL-ish mode */
+        ctx->nAttrOnLine++;
+        stream_printf(GDKout,"\\\"");
+        emit_escaped(sv, ctx->saxMode, 0 /*ALL*/);
+        stream_printf(GDKout,"\\\"");
+    } else if ( ctx->dmMode ) {
+        ctx->nAttrOnLine++;
+        stream_printf(GDKout,"\"");
+        emit_escaped( sv, 1+ctx->mapiMode, 0/*ALL*/ );
+        stream_printf(GDKout,"\"");
+    } else {
+        ctx->nAttrOnLine++;
+        if ( ctx->typedMode ) {
+            stream_printf(GDKout,"<xs:string>");
+        }
+        if ( !ctx->typedMode ) {
+            stream_printf(GDKout,"\"");
+        }
+        emit_escaped( sv, 1+ctx->mapiMode, 0/*ALL*/);
+        if ( !ctx->typedMode ) {
+            stream_printf(GDKout,"\" ");
+        }
+        if ( ctx->typedMode ) {
+            stream_printf(GDKout,"</xs:string>");
+            if ( !lastVal )
+                stream_printf(GDKout, "\n");
+        }
+    }
+    return 1;
+}
+
+
+/**
+ *
+ * Definition of the structure containing the functions
+ */
+
+struct serializeFunStruct dfltSerializeFun = {
+	"default",
+	dflt_init,
+	dflt_handle_startDocument,
+	dflt_handle_endDocument,
+	dflt_handle_attribute,
+	dflt_handle_attributeEnd,
+	dflt_handle_startElement,
+	dflt_handle_endElement,
+	dflt_handle_characters,
+	dflt_handle_ignorableWhitespace,
+	dflt_handle_comment,
+	dflt_handle_processingInstruction,
+	/* */
+	dflt_seqStart,
+	dflt_seqDmAttrStart,
+	dflt_seqDmAttrEnd,
+	dflt_seqElementStart,
+	dflt_seqElementEnd,
+	dflt_seqEnd,
+	dflt_seqEmitBool,
+	dflt_seqEmitInt,
+	dflt_seqEmitDbl,
+	dflt_seqEmitStr
+};
+
+/* vim:set shiftwidth=4 expandtab: */

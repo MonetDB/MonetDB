@@ -25,6 +25,9 @@
 
 @h
 
+#define NEW_WS
+/* #define SHOW_TIMING */
+
 /**
  * The SmartStrBuff structure is defined to prevent too much alloc/free actions.
  * If the size of a string is smaller then SMART_STR_SZ the value is
@@ -69,6 +72,12 @@ typedef struct SerializeFrame {
 
 struct serializeFunStruct; /* forward */
 
+#ifdef NEW_WS
+typedef struct wsBatDescr {
+	BAT*	bat;
+} wsBatDescr;
+#endif
+
 typedef struct {
     int     dmMode;         /* Data model flag, true if printing in
                              * data-model mode, eg. look like GALAX */
@@ -86,7 +95,10 @@ typedef struct {
     char*   dmSeparator;    /* seperation char in DM mode */
     BAT*    ws;             /* working set BAT */
     int     curFRAG;        /* current fragment used by working set */
+#ifdef NEW_WS
+#else
     BAT*    curBAT[WS_BATS];/* The BAT's of the current fragment*/
+#endif
     /* */
     XmlNsFrame* nsTop;	/* top of the namespace stack */
     /**
@@ -101,13 +113,19 @@ typedef struct {
                           * the current line.
                           */
     struct serializeFunStruct*	driverFun; /* the output handling functions */
-    char*			driverArg; /* arguments to the driver */
     void*			driverWs;  /* optional workspace for the driver */
+#ifdef NEW_WS
+    int		wsFrags;
+    int		wsBats;
+    wsBatDescr	*wsMatrix;
+#endif
 } XqueryCtx;
 
 typedef struct serializeFunStruct {
 	const char* name;
-	/* first the document handlers */
+	/* the initialization handler */
+	int (*init)(XqueryCtx* ctx, char* args);
+	/* the (part of ) document handler functions */
 	int (*handle_startDocument)(XqueryCtx* ctx);
 	int (*handle_endDocument)(XqueryCtx* ctx);
 	int (*handle_attribute)(XqueryCtx* ctx, str uri, str prefix, str loc, str value, int top);
@@ -132,6 +150,7 @@ typedef struct serializeFunStruct {
 } serializeFunStruct;
 
 extern struct serializeFunStruct dfltSerializeFun;
+extern struct serializeFunStruct saxSerializeFun;
 
 extern int xquery_print_doc_DRIVER(
 	str			mode, 
@@ -153,6 +172,13 @@ extern int xquery_print_result_DRIVER(
         BAT*			intVAL,
         BAT*			dblVAL,
         BAT*			strVAL);
+
+
+/* INCOMPLETE, should not be neccesary here */
+extern int checkNsChange(XqueryCtx* ctx, str par_uri, str par_prefix, int top);
+
+extern int emit_escaped(char* src, int mode, int onlyEntity);
+
 @c
 
 /*******************************************
@@ -302,10 +328,72 @@ static int fatal_err(XqueryCtx* ctx, const char *msg, ...) {
     return 0;
 }
 
+
+#ifdef NEW_WS
+
+/* #define DEBUGWS */
+
 /**
  * Functions fills a new context() record with mode and BAT data and
  * initializes all other data structures.
  */
+
+#define WSMI(F,B) ((F)*WS_BATS+B)
+
+static int initWsMatrix(XqueryCtx* ctx) {
+    oid first = 0;
+    BUN bun;
+    BAT* batbat = NULL;
+    if ( !(bun = BUNfnd(ctx->ws,&first)) ) {
+        fatal_err(ctx,"initWsMatrix: cannot find ws-bat[0]");
+        return 0;
+    }
+    if ( !( batbat = BATdescriptor(*(bat*)bun)) ) {
+        fatal_err(ctx,"initWsMatrix: cannot find ws-bat[0]");
+        return 0;
+    }
+    /* */
+    ctx->wsFrags = BATcount(batbat);
+    BBPunfix( BBPcacheid( batbat ) );
+    ctx->wsBats  = WS_BATS;
+    if ( !( ctx->wsMatrix = (wsBatDescr*)malloc(ctx->wsFrags*ctx->wsBats*sizeof(wsBatDescr))) ) {
+    	return 0;
+    }
+    for(int i=0; i<ctx->wsFrags; i++) {
+        for(int j=0; j<ctx->wsBats; j++) {
+	    wsBatDescr* bd = &ctx->wsMatrix[WSMI(i,j)];
+
+	    bd->bat = NULL;
+        }
+    }
+#ifdef DEBUGWS
+    stream_printf(GDKout,"+ initWsMatrix(wsFrags=%d, wsBats=%d).\n",ctx->wsFrags,ctx->wsBats);
+#endif
+    /* */
+    return 1;
+}
+
+static int disposeWsMatrix(XqueryCtx* ctx) {
+    for(int i=0; i<ctx->wsFrags; i++) {
+        for(int j=0; j<ctx->wsBats; j++) {
+	    wsBatDescr* bd = &ctx->wsMatrix[WSMI(i,j)];
+
+	    if ( bd->bat ) {
+#ifdef DEBUGWS
+    		stream_printf(GDKout,"+ disposeWsMatrix(close(frag=%d,bats=%d))\n",i,j);
+#endif
+    		BBPunfix( BBPcacheid( bd->bat ) );
+	    	bd->bat = NULL;
+	    }
+        }
+    }
+#ifdef DEBUGWS
+    stream_printf(GDKout,"+ disposeWsMatrix() finished.\n");
+#endif
+    return 1;
+}
+
+#endif /* NEW_WS */
 
 static BAT* fetchWsContextBAT(XqueryCtx* ctx, BAT* ws, int batID, int wsID) {
     BUN bun;
@@ -320,15 +408,11 @@ static BAT* fetchWsContextBAT(XqueryCtx* ctx, BAT* ws, int batID, int wsID) {
         fatal_err(ctx,"fetchWsContextBAT: NOT FOUND BAT[%d]",batID);
         return NULL;
     }
-
-
     BAT* batbat;
-
     if ( !( batbat = BATdescriptor(*(bat*)bun)) ) {
         fatal_err(ctx,"fetchWsContextBAT:FETCH BATBAT for WS[%d][%d] FAILED\n",batID ,wsID);
         return NULL;
     }
-
     BUN bbun = BUNfnd(batbat,&WSid);
     BAT *res = NULL;
     if ( !bbun ) {
@@ -346,7 +430,31 @@ static BAT* fetchWsContextBAT(XqueryCtx* ctx, BAT* ws, int batID, int wsID) {
     return res;
 }
 
+#ifdef NEW_WS
+static BAT* getMatrixBAT(XqueryCtx* ctx, int fragID, int batID) {
+    wsBatDescr* bd = &ctx->wsMatrix[WSMI(fragID,batID)];
 
+    if ( !bd->bat ) {
+        if ( !(bd->bat = fetchWsContextBAT(ctx,ctx->ws,batID,fragID)) ) {
+#ifdef DEBUGWS
+    	    stream_printf(GDKout,"+ getMatrixBAT(open(frag=%d,bats=%d)) = FAIL\n",fragID,batID);
+#endif
+	    return NULL;
+        }
+#ifdef DEBUGWS
+    	stream_printf(GDKout,"+ getMatrixBAT(open(frag=%d,bats=%d)) = SUCCES\n",fragID,batID);
+#endif
+    }
+    return bd->bat;
+}
+#endif
+
+#ifdef NEW_WS
+static int switchWsContext(XqueryCtx* ctx, int wsID) {
+    ctx->curFRAG   = wsID;
+    return 1;
+}
+#else
 static int switchWsContext(XqueryCtx* ctx, int wsID) {
     int res = ctx->curFRAG;
 
@@ -366,6 +474,7 @@ static int switchWsContext(XqueryCtx* ctx, int wsID) {
     }
     return res;
 }
+#endif
 
 static int createWsContext(
 		XqueryCtx*		ctx,
@@ -375,8 +484,6 @@ static int createWsContext(
 		serializeFunStruct*	driverFun,
 		char*			driverArg
 	) {
-    int i;
-
     ctx->dmMode = ctx->mapiMode = ctx->printMode = 0;
     ctx->norootMode = ctx->noheaderMode = ctx->typedMode = 0;
     ctx->saxMode = 1;
@@ -406,13 +513,15 @@ static int createWsContext(
         }
     }
     /* */
-    if ( driverFun ) {
+    if ( driverFun )
     	ctx->driverFun = driverFun;
-    } else {
-    	ctx->driverFun = & dfltSerializeFun;
-    }
-    ctx->driverArg = driverArg;
-    ctx->driverWs  = NULL;
+    else
+	if ( ctx->saxMode )
+    	    ctx->driverFun = & saxSerializeFun;
+	else
+    	    ctx->driverFun = & dfltSerializeFun;
+    if ( !ctx->driverFun->init(ctx,driverArg) )
+        return GDK_FAIL;
     /* */
     if (!ctx->saxMode) {
         /* add mapi = characters at the start of each line */
@@ -426,24 +535,35 @@ static int createWsContext(
     }
     ctx->dmSeparator =
         (ctx->mapiMode ? ",\n=" : (ctx->printMode ? ",\\n" : ",\n"));
-    ctx->ws        = ws;
-    ctx->curFRAG   = -1; /* empty, no frag loaded */
 
+
+    ctx->ws        = ws;
+#ifdef NEW_WS
+#else
+    ctx->curFRAG   = -1; /* empty, no frag loaded */
     /* initialize with all wsBAT()'s closed */
-    for(i=0; i<WS_BATS; i++) {
+    for(int i=0; i<WS_BATS; i++) {
         ctx->curBAT[i] = NULL;
     }
+#endif
     /* */
     if ( wsID >= 0 )
         switchWsContext(ctx, wsID);
     /* */
     ctx->stackPtr  = 0;
-    /* */
+#ifdef NEW_WS
+    if ( !initWsMatrix(ctx) )
+    	return GDK_FAIL;
+#endif
     return 1;
 }
 
 static int disposeWsContext(XqueryCtx* ctx) {
     xmlNsDispose( &ctx->nsTop );
+#ifdef NEW_WS
+    if ( !disposeWsMatrix(ctx) )
+    	return(0);
+#endif
     return 1;
 }
 
@@ -497,9 +617,7 @@ static void popTag(XqueryCtx* ctx) {
     --ctx->stackPtr;
 }
 
-static int dflt_handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, str value, int top); /* forward */
-
-static int checkNsChange(XqueryCtx* ctx, str par_uri, str par_prefix, int top) {
+int checkNsChange(XqueryCtx* ctx, str par_uri, str par_prefix, int top) {
     char *uri, *prefix;
 
     if ( strcmp(par_uri,str_nil) == 0 || *par_uri == 0 )
@@ -522,6 +640,8 @@ static int checkNsChange(XqueryCtx* ctx, str par_uri, str par_prefix, int top) {
                 return 0;
             }
             /* generate the xmlns:xxx=uri tag */
+    	    if ( 0 && !checkNsChange(ctx,(str)str_nil,(str)"xmlns",top) )
+      	        return 0;
             ctx->driverFun->handle_attribute(ctx,(str)str_nil,"xmlns",prefix,uri,top);
 
             SerializeFrame* sf = topSF(ctx);
@@ -547,14 +667,6 @@ static int checkNsChange(XqueryCtx* ctx, str par_uri, str par_prefix, int top) {
  * TODO: solve characters() newline in string problem.
  *
  */
-
-static int emit_start() {
-    stream_printf(GDKout,"#-------------------------#\n");
-    stream_printf(GDKout,"# h     SAXtape           #\n");
-    stream_printf(GDKout,"# str   str               #\n");
-    stream_printf(GDKout,"#-------------------------#\n");
-    return 1;
-}
 
 /**
  * The character translation section responsible for the special
@@ -620,7 +732,7 @@ static void init_isspecial() {
  * This function is responsible for the presentation of special characters
  * and XML entity characters in the result.
  */
-static int emit_escaped(char* src, int mode, int onlyEntity) {
+int emit_escaped(char* src, int mode, int onlyEntity) {
     /* Emit a string with all special character escaped. Inspired by
      * function strToStr() in gdk_atoms.mx
      */
@@ -660,31 +772,24 @@ static int emit_escaped(char* src, int mode, int onlyEntity) {
     return 1;
 }
 
-static int emit(char* eventName, char* val, int escaped) {
-    if ( val ) {
-        if ( escaped ) {
-            stream_printf(GDKout,"[\"%s\",\t\"",eventName);
-            if ( !emit_escaped(val, escaped-1, 0/*ALL*/) )
-                return 0;
-            stream_printf(GDKout,"\"]\n");
-        } else {
-            stream_printf(GDKout,"[\"%s\",\t\"%s\"]\n",eventName,val);
-        }
-    } else
-        stream_printf(GDKout,"[\"%s\",\tnil]\n",eventName);
-    return 1;
-}
-
-static int emit_end() {
-    return 1;
-}
-
 /**
  * The wsBAT() function is responsible for 'demand-loading' the BAT with index
  * 'batId in the current working set. No BAT is loaded until it is needed. This
  * solves some funny problems with loading BAT's which were not needed
  * anyway.
  */
+#ifdef NEW_WS
+#define wsBAT2(_b, ctx, fragId, batId) {           \
+    _b = getMatrixBAT(ctx,fragId,batId);           \
+    if ( _b == NULL )                              \
+        return wsBATerror(ctx,batId,ctx->curFRAG); \
+}
+#define wsBAT(_b, ctx, batId) {                    \
+    _b = getMatrixBAT(ctx,ctx->curFRAG,batId);     \
+    if ( _b == NULL )                              \
+        return wsBATerror(ctx,batId,ctx->curFRAG); \
+}
+#else
 #define wsBAT(_b, ctx, batId) {                                 \
     if (ctx->curBAT[batId] == NULL) {                           \
         ctx->curBAT[batId] = _b = fetchWsContextBAT(ctx, ctx->ws, batId, ctx->curFRAG);\
@@ -692,6 +797,8 @@ static int emit_end() {
     }                                                           \
     _b = ctx->curBAT[batId];                                    \
 }
+#endif
+
 
 static int wsBATerror(XqueryCtx* ctx, int batId, int fragId)
 {
@@ -755,6 +862,22 @@ static int idxTVerror3(XqueryCtx* ctx, BAT *b, oid oid_index)
  * Reads the index tailvalue in a Working Set BAT or when fragId is not the
  * current working set it reads in the BAT outside the working set.
  */
+#ifdef NEW_WS
+
+#define idxTVinWS2(res, ctx, fragId, batId, oid_index) {        \
+    BAT* _b;                                                    \
+    wsBAT2(_b, ctx, fragId, batId);                             \
+    idxTV(res,ctx,_b,oid_index);                                \
+}
+
+#define idxTVinWSorFRGN(res, ctx, fragId, batId, oid_index) {   \
+    if (ctx->curFRAG == fragId) {                               \
+        idxTVinWS(res,ctx,batId,oid_index);                     \
+    } else {                                                    \
+        idxTVinWS2(res,ctx,fragId, batId,oid_index);            \
+    }                                                           \
+}
+#else
 #define idxTVinWSorFRGN(res, ctx, fragId, batId, oid_index) {   \
     if (ctx->curFRAG == fragId) {                               \
         idxTVinWS(res,ctx,batId,oid_index);                     \
@@ -763,7 +886,6 @@ static int idxTVerror3(XqueryCtx* ctx, BAT *b, oid oid_index)
         if (res == NULL) return 0;                              \
     }                                                           \
 }
-
 
 static int idxTV_expensive(ptr *res, XqueryCtx* ctx, BAT *b, oid oid_index)
 {
@@ -784,6 +906,8 @@ static ptr idxTVinWS_expensive(XqueryCtx* ctx, int fragId, int batId, oid oid_in
     return res;
 }
 
+#endif /* NEW_WS */
+
 /**
  * Handle the generation of the attributes of the node with oid 'pre'. This
  * function is only called from the xquery_node_print() function.
@@ -803,6 +927,9 @@ static int process_attr(XqueryCtx* ctx, int frag, oid id, int top) {
     idxTVinWSorFRGN(res, ctx, afrag, QN_PREFIX, qn_oid);   prefix   = (str)        res;
     idxTVinWSorFRGN(res, ctx, afrag, QN_LOC,    qn_oid);   loc      = (str)        res;
 
+    
+    if ( 0 && !checkNsChange(ctx,uri,prefix,top) )
+      return 0;
     return ctx->driverFun->handle_attribute(ctx, uri, prefix, loc, val, top);
 }
 
@@ -1015,6 +1142,54 @@ static int ws_documentIndex(BAT* ws, str docName) {
     return -1;
 }
 
+#ifdef SHOW_TIMING
+
+static char *
+timer_str (long elapsed)
+{
+    char *tm, *str;
+
+    tm = str = strdup ("000h 00m 00s 000ms 000us");
+
+    if (elapsed / 3600000000UL) {
+        str += sprintf (str, "%03ldh ", elapsed / 3600000000UL);
+        elapsed %= 3600000000UL;
+    }
+
+    if (elapsed / 60000000UL) {
+        str += sprintf (str, "%02ldm ", elapsed / 60000000UL);
+        elapsed %= 60000000UL;
+    }
+
+    if (elapsed / 1000000UL) {
+        str += sprintf (str, "%02lds ", elapsed / 1000000UL);
+        elapsed %= 1000000UL;
+    }
+
+    if (elapsed / 1000UL) {
+        str += sprintf (str, "%03ldms ", elapsed / 1000UL);
+        elapsed %= 1000UL;
+    }
+
+    str += sprintf (str, "%03ldus", elapsed);
+
+    return tm;
+}
+
+#define TIMER_START() \
+	struct timeval now; \
+	(void) gettimeofday (&now, 0); \
+	long start = now.tv_sec * 1000000 + now.tv_usec;
+#define TIMER_STOP(T,V) \
+	gettimeofday (&now, 0); \
+	long stop = now.tv_sec * 1000000 + now.tv_usec; \
+	fprintf(stderr,T,V); \
+	fprintf(stderr,": %s\n",timer_str (abs (stop - start)));
+#else
+#define TIMER_START()
+#define TIMER_STOP(T,V)
+#endif
+
 int xquery_print_doc_DRIVER(
 	str			mode, 
 	serializeFunStruct*	driverFun,
@@ -1022,6 +1197,7 @@ int xquery_print_doc_DRIVER(
 	BAT*			ws,
 	str			docName
     ) {
+    TIMER_START();
     int docIndex = ws_documentIndex(ws,docName);
     BAT *b;
     if ( docIndex < 0 ) {
@@ -1044,6 +1220,8 @@ int xquery_print_doc_DRIVER(
     /* */
     if ( !disposeWsContext(ctx) )
         return GDK_FAIL;
+    /* */
+    TIMER_STOP("# serialization of \"%s\"",docName);
     /* */
     return GDK_SUCCEED;
 }
@@ -1103,6 +1281,7 @@ int xquery_print_result_DRIVER(
         BAT*			dblVAL,
         BAT*			strVAL)
 {
+    TIMER_START();
     size_t xx, yy, curcnt = 0, maxcnt = BATcount(item), buncnt;
     XqueryCtx ctx_struct, *ctx = &ctx_struct;
     if ( !createWsContext(ctx,ws,-1,mode,driverFun,driverArg) )
@@ -1224,6 +1403,7 @@ int xquery_print_result_DRIVER(
             return GDK_FAIL;
     } 
     switchWsContext(ctx,-1); /* close all open context BAT's */
+    TIMER_STOP("# serialization of result%s","");
     return disposeWsContext(ctx)?GDK_SUCCEED:GDK_FAIL;
 }
 
@@ -1255,538 +1435,3 @@ int xquery_print_result_main(
     (void) decVAL;
     return xquery_print_result_DRIVER(mode, NULL, NULL, ws, 1, item, item, item, kind, intVAL, dblVAL, strVAL);
 }
-
-/**
- *
- * Definition of the default handlers. First the handle_* output handlers are
- * defined. Generating the output representing
- * the handles xml structure. Cuurently 3 output structures are used:
- *
- * 1) plain xml text (ctx->saxMode is false)
- * 2) xml Sax-O-Phone stream (ctx->saxMode is true AND SAXOPHONE=1 )
- * 3) My own SAX event stream (ctx->saxMode is true AND SAXOPHONE=0 )
- *
- */
-
-/* The SAXOPHONE define is a temporary flag used by JF to compile 'in'
- * his own Sax-O-Phone version which he thinks is much more efficient
- * than the original (but not as fancy) of course.
- */
-
-#define SAXOPHONE 1
-
-/**
- * Output generation handler. Handles equivalent of * SAX startDocument() event.
- */
-static int dflt_handle_startDocument(XqueryCtx* ctx) {
-    if (ctx->saxMode ) {
-        if ( SAXOPHONE ) {
-            if ( !emit_start() )
-                return 0;
-        } else
-            stream_printf(GDKout,"<S\n");
-    } else if (ctx->mapiMode) { /* xml mode (mapi) */
-        stream_printf(GDKout,"=<?xml version=\"1.0\" encoding=\"utf-8\"?>\n=");
-    } else if (ctx->printMode) { /* SQL-ish mapi */
-        stream_printf(GDKout,"<?xml version=\"1.0\" encoding=\"utf-8\"?>\\n");
-    } else { /* xml mode */
-        stream_printf(GDKout,"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
-    }
-    return 1;
-}
-
-/**
- * Output generation handler. Handles equivalent of * SAX endDocument() event.
- */
-static int dflt_handle_endDocument(XqueryCtx* ctx) {
-    if (ctx->saxMode ) {
-        if ( SAXOPHONE ) {
-            if ( !emit_end() )
-                return 0;
-        } else
-            stream_printf(GDKout,"<E\n");
-    } else { /* xmlMode */
-        stream_printf(GDKout,"\n");
-    }
-    return 1;
-}
-
-/**
- * Output generation handler. This one of my own invented event describing
- * the usage of an attribute. A sequence of these events will be ended
- * by a handle_attributeEnd() call.
- */
-static int dflt_handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, str value, int top) {
-    if ( !checkNsChange(ctx,uri,prefix,top) )
-        return 0;
-    if (ctx->saxMode ) {
-        if ( SAXOPHONE ) {
-            if ( loc && *loc) {
-                if (!emit(" attribute",loc,0) )
-                    return 0;
-                if ( prefix && *prefix )
-                    if ( !emit(" attribute prefix",prefix,0) )
-                        return 0;
-            } else if (prefix && *prefix) {
-                /* default namespace */
-                if (!emit(" attribute",prefix,0) )
-                    return 0;
-            }
-            if ( !emit(" attribute value",value,0) )
-                return 0;
-        } else {
-            stream_printf(GDKout,"<A %s=\"%s\"\n",loc,value);
-        }
-    } else if (ctx->printMode) {
-        if ( prefix && *prefix && loc && *loc ) {
-            stream_printf(GDKout," %s:%s=\\\"%s\\\"",prefix,loc,value);
-        } else if (prefix && *prefix) {
-            /* default namespace */
-            stream_printf(GDKout," %s=\\\"%s\\\"",prefix,value);
-        } else {
-            stream_printf(GDKout," %s=\\\"%s\\\"",loc,value);
-        }
-    } else if (ctx->dmMode && top) { /* dmMode */
-        if ( prefix && *prefix ) {
-            if ( strcmp(prefix,"xmlns")==0 ) {
-                if (loc && *loc) {
-                    stream_printf(GDKout,"attribute %s:%s { %s }%s",prefix,loc,value,ctx->dmSeparator);
-                } else {
-                    /* default namespace */
-                    stream_printf(GDKout,"attribute %s { %s }%s",prefix,value,ctx->dmSeparator);
-                }
-            } else
-                stream_printf(GDKout,"attribute %s:%s { %s }",prefix,loc,value);
-        } else {
-            stream_printf(GDKout,"attribute %s { %s }",loc,value);
-        }
-    } else { /* xmlMode */
-        if ( prefix && *prefix && loc && *loc ) {
-            stream_printf(GDKout," %s:%s=",prefix,loc);
-        } else if ( prefix && *prefix ) {
-            /* default namespace */
-            stream_printf(GDKout," %s=",prefix);
-        } else {
-            stream_printf(GDKout," %s=",loc);
-        }
-        /* stream_printf(GDKout,"\"%s\"",value); */
-        stream_printf(GDKout,"\"");
-        emit_escaped(value, 1+ctx->mapiMode, 0/*ALL*/);
-        stream_printf(GDKout,"\"");
-    }
-    return 1;
-}
-
-/**
- * Output generation handler. This one of my own invented event indicating
- * there will be no more attribute events for this node.
- */
-static int dflt_handle_attributeEnd(XqueryCtx* ctx, int emptyNode) {
-    if (ctx->saxMode ) {
-    } else { /* xmlMode */
-        if ( emptyNode )
-            stream_printf(GDKout,"/");
-        stream_printf(GDKout,">");
-    }
-    return 1;
-}
-
-/**
- * Output generation handler. Handles equivalent of * SAX startElement() event.
- */
-static int dflt_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
-    (void)pre; /* the Pathfinder PRE number is not used by this fun */
-    if (ctx->saxMode ) {
-        if ( SAXOPHONE ) {
-            if ( !emit("startElement",NULL,0) )
-                return 0;
-            if ( ns && *ns )
-                if ( !emit(" prefix",ns,0) )
-                    return 0;
-            if ( !emit(" localname",name,0) )
-                return 0;
-        } else {
-            stream_printf(GDKout,"<s %s\n",name);
-        }
-    } else { /* xmlMode */
-        if ( ns && *ns ) {
-            stream_printf(GDKout,"<%s:%s",ns,name);
-        } else {
-            stream_printf(GDKout,"<%s",name);
-        }
-    }
-    return 1;
-}
-
-/**
- * Output generation handler. Handles equivalent of * SAX endElement() event.
- */
-static int dflt_handle_endElement(XqueryCtx* ctx, str ns, str name, int emptyNode) {
-    if (ctx->saxMode ) {
-        if ( SAXOPHONE ) {
-            if ( !emit("endElement",NULL,0) )
-                return 0;
-            if ( ns && *ns )
-                if ( !emit(" prefix",ns,0) )
-                    return 0;
-            if ( !emit(" localname",name,0) )
-                return 0;
-        } else {
-            stream_printf(GDKout,"<e %s\n",name);
-        }
-    } else { /* xmlMode */
-        if ( !emptyNode ) {
-            if ( ns && *ns ) {
-                stream_printf(GDKout,"</%s:%s>",ns,name);
-            } else {
-                stream_printf(GDKout,"</%s>",name);
-            }
-        }
-    }
-    return 1;
-}
-
-/**
- * Output generation handler. One on my own again. This one should handle a
- * reference. Don't know wat to to about it now.
- */
-static int dflt_handle_reference(XqueryCtx* ctx, str name) {
-    (void)ctx;
-    (void)name;
-    return 1;
-}
-
-/**
- * Output generation handler. Handles equivalent of * SAX characters() event.
- */
-static int dflt_handle_characters(XqueryCtx* ctx, str ch, str top) {
-    /* INCOMPLETE, we need to escape stuff here
-    */
-    if ( ctx->saxMode ) {
-        if ( SAXOPHONE ) {
-            if (!emit("characters",NULL,0))
-                return 0;
-            if (!emit(" pcdata",ch,1))
-                return 0;
-        } else {
-            stream_printf(GDKout,"%s\n",ch); /* ESCAPE !! */
-        }
-    } else { /* xmlMode */
-        if ( ctx->printMode ) { /* SQL-ish/MCL-ish mode */
-            if ( ctx->dmMode && top )
-                stream_printf(GDKout,"%s {\\\"", top);
-
-            /* we need to escape newlines */
-            emit_escaped(ch, ctx->saxMode, 1 /*JUST ENTITIES*/ );
-
-            if ( ctx->dmMode && top )
-                stream_printf(GDKout,"\\\"}");
-        } else if ( ctx->mapiMode ) {
-            /* we need to prepend "=" to each line, so
-               make sure that we print one after each
-               newline */
-            /*
-             * str nl;
-             * while ((nl = strchr(ch, '\n')) != NULL) {
-             * 	nl++;
-             * 	stream_printf(GDKout, "%.*s=", (nl - ch), ch);
-             * 	ch = nl;
-             * }
-             */
-            if ( ctx->dmMode && top )
-                stream_printf(GDKout,"%s {\"", top);
-
-            emit_escaped(ch,1+ctx->mapiMode, 1/*JUST ENTITIES*/ );
-
-            if ( ctx->dmMode && top )
-                stream_printf(GDKout,"\"}");
-        } else {
-            /*
-             * stream_printf(GDKout,"%s",ch);
-             */
-            if ( ctx->dmMode && top )
-                stream_printf(GDKout,"%s {\"", top);
-
-            emit_escaped(ch,1+ctx->mapiMode, 1/*JUST ENTITIES*/ );
-
-            if ( ctx->dmMode && top )
-                stream_printf(GDKout,"\"}");
-        }
-    }
-    return 1;
-}
-
-/**
- * Output generation handler. Handles equivalent of * SAX ignorableWhitespace()
- * event. I see no reason why it should be used here but I include it for
- * completeness.
- */
-static int dflt_handle_ignorableWhitespace(XqueryCtx* ctx, str ch) {
-    return dflt_handle_characters(ctx,ch,0); /* dispatch */
-}
-
-/**
- * Output generation handler. Again an own event. But this one should be
- * used I think because the comments are used and stored by  Pathfinder.
- */
-static int dflt_handle_comment(XqueryCtx* ctx, str comm) {
-    if (ctx->saxMode ) {
-        /* incomplete */
-    } else { /* xmlMode */
-        stream_printf(GDKout,"<!--%s-->",comm);
-    }
-    return 1;
-}
-
-/**
- * Output generation handler. Handles equivalent of * SAX
- * processingInstruction() event.
- */
-static int dflt_handle_processingInstruction(XqueryCtx* ctx, str target, str data) {
-    if (ctx->saxMode ) {
-        /* incomplete */
-    } else { /* xmlMode */
-        stream_printf(GDKout,"<?%s %s?>",target,data);
-    }
-    return 1;
-}
-
-/*
- *
- * Second the sequence emitting functions are defined
- *
- */
-
-/**
- * Handle the start() of an XQUERY/Pathfinder result sequence.
- */
-static int id_sequence_counter = 0; /* CHANGE, not multiuser */
-static int dflt_seqStart(XqueryCtx* ctx, BAT* item) {
-    if (ctx->printMode) {
-        /* write SQL-ish header */
-        stream_printf(GDKout,"&1 %d %d 1 %d\n",
-            id_sequence_counter++, BATcount(item), BATcount(item));
-        stream_printf(GDKout,"# xquery_result\t# table_name\n");
-        stream_printf(GDKout,"# xml\t# name\n");
-        stream_printf(GDKout,"# varchar\t# type\n");
-        stream_printf(GDKout,"# %d\t# length\n", 60);
-    } else if (ctx->dmMode == 0  && ctx->norootMode == 0) { /* dmMode has no header */
-        if (ctx->noheaderMode == 0) {
-            if (ctx->mapiMode) {
-                stream_printf(GDKout,"=<?xml version=\"1.0\" encoding=\"utf-8\"?>\n=");
-            } else if ( !ctx->saxMode ) {
-                stream_printf(GDKout,"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
-            }
-        }
-        ctx->driverFun->handle_startElement(ctx, NULL, ctx->restag, oid_nil);
-        ctx->nAttrOnLine = 0;
-    }
-    return 1;
-}
-
-static int dflt_seqDmAttrStart(XqueryCtx* ctx) {
-    (void)ctx;
-    return 1;
-}
-
-static int dflt_seqDmAttrEnd(XqueryCtx* ctx) {
-    if (ctx->dmMode == 0  && ctx->norootMode == 0) { /* dmMode has no header */
-        ctx->driverFun->handle_attributeEnd(ctx, 0);
-        if ( !ctx->saxMode )
-            stream_printf(GDKout,
-                    (ctx->mapiMode ? "\n=" : (ctx->printMode ? "\\n" : "\n")));
-    }
-    return 1;
-}
-
-/**
- * Handle the end() of an XQUERY/Pathfinder result sequence
- */
-static int  dflt_seqEnd(XqueryCtx* ctx) {
-    if ( ctx->saxMode ) {
-        if (!ctx->norootMode) {
-            ctx->driverFun->handle_endElement(ctx, NULL, ctx->restag, 0 /* not empty*/);
-        }
-    } else if (ctx->printMode) {
-        /* do nothing! SQL-ish/MCL-ish output has no footer */
-    } else if (ctx->dmMode) {
-        stream_printf(GDKout, "\n");
-    } else if (ctx->mapiMode) {
-        stream_write(GDKout,"\n=", 2, 1);
-        if (!ctx->norootMode) stream_printf(GDKout,"</%s>\n", ctx->restag);
-    } else {
-        stream_write(GDKout,"\n", 1, 1);
-        if (!ctx->norootMode) stream_printf(GDKout, "</%s>\n", ctx->restag);
-    }
-    return 1;
-}
-
-
-/**
- * Emit a Boolean element of an XQUERY/Pathfinder result sequence
- */
-static int  dflt_seqEmitBool(XqueryCtx* ctx, int bv, int lastVal) {
-    char *bool_str = (char*)(bv ? "true" : "false");
-
-    if ( ctx->saxMode ) {
-        return ctx->driverFun->handle_characters(ctx,bool_str,0);
-    } else if ( ctx->dmMode ) {
-        stream_printf(GDKout,"%s ",bool_str);
-    } else {
-        ctx->nAttrOnLine++;
-        if ( ctx->typedMode ) {
-            stream_printf(GDKout,"<xs:boolean>");
-        }
-        stream_printf(GDKout,"%s ",bool_str);
-        if ( ctx->typedMode ) {
-            stream_printf(GDKout,"</xs:boolean>");
-            if ( !lastVal )
-                stream_printf(GDKout, "\n");
-        }
-    }
-    return 1;
-}
-
-/**
- * Emit a Integer element of an XQUERY/Pathfinder result sequence
- */
-static int  dflt_seqEmitInt(XqueryCtx* ctx, lng iv, int lastVal) {
-    if ( ctx->saxMode ) {
-        char buff[32];
-
-        sprintf(buff,"%lld",iv);
-        return ctx->driverFun->handle_characters(ctx,buff,0);
-    } else if ( ctx->dmMode ) {
-        ctx->nAttrOnLine++;
-        stream_printf(GDKout,"%lld",iv);
-    } else {
-        ctx->nAttrOnLine++;
-        if ( ctx->typedMode ) {
-            stream_printf(GDKout,"<xs:integer>");
-        }
-        stream_printf(GDKout,"%lld ",iv);
-        if ( ctx->typedMode ) {
-            stream_printf(GDKout,"</xs:integer>");
-            if ( !lastVal )
-                stream_printf(GDKout, "\n");
-        }
-    }
-    return 1;
-}
-
-/**
- * Emit a Double element of an XQUERY/Pathfinder result sequence
- */
-static int  dflt_seqEmitDbl(XqueryCtx* ctx, dbl dv, int lastVal) {
-    if ( ctx->saxMode ) {
-        char buff[32];
-
-        sprintf(buff,"%f",dv);
-        return ctx->driverFun->handle_characters(ctx,buff,0);
-    } else if ( ctx->dmMode ) {
-        ctx->nAttrOnLine++;
-        stream_printf(GDKout,"%f",dv);
-    } else {
-        ctx->nAttrOnLine++;
-        if ( ctx->typedMode ) {
-            stream_printf(GDKout,"<xs:double>");
-        }
-        stream_printf(GDKout,"%f ",dv);
-        if ( ctx->typedMode ) {
-            stream_printf(GDKout,"</xs:double>");
-            if ( !lastVal )
-                stream_printf(GDKout, "\n");
-        }
-    }
-    return 1;
-}
-
-static int  dflt_seqElementStart(XqueryCtx* ctx, int cnt) {
-    if (ctx->printMode) {
-        /* SQL-ish mode: write start of tuple and open string */
-        stream_printf(GDKout, "[ \"");
-    } else if ( cnt && ctx->dmMode  ) {
-        /* should print a separator here */
-        stream_printf(GDKout,"%s",ctx->dmSeparator);
-    }
-    return 1;
-}
-
-static int  dflt_seqElementEnd(XqueryCtx* ctx, int cnt) {
-    (void)cnt;
-    if (ctx->printMode) {
-        /* SQL-ish mode: write end of string and end of tuple */
-        stream_printf(GDKout,"\"\t]\n");
-    }
-    return 1;
-}
-
-/**
- * Emit a String element of an XQUERY/Pathfinder result sequence
- */
-static int  dflt_seqEmitStr(XqueryCtx* ctx, str sv, int lastVal) {
-    if ( ctx->saxMode ) {
-        return ctx->driverFun->handle_characters(ctx,sv,"text");
-    } else if ( ctx->printMode ) { /* SQL-ish/MCL-ish mode */
-        ctx->nAttrOnLine++;
-        stream_printf(GDKout,"\\\"");
-        emit_escaped(sv, ctx->saxMode, 0 /*ALL*/);
-        stream_printf(GDKout,"\\\"");
-    } else if ( ctx->dmMode ) {
-        ctx->nAttrOnLine++;
-        stream_printf(GDKout,"\"");
-        emit_escaped( sv, 1+ctx->mapiMode, 0/*ALL*/ );
-        stream_printf(GDKout,"\"");
-    } else {
-        ctx->nAttrOnLine++;
-        if ( ctx->typedMode ) {
-            stream_printf(GDKout,"<xs:string>");
-        }
-        if ( !ctx->typedMode ) {
-            stream_printf(GDKout,"\"");
-        }
-        emit_escaped( sv, 1+ctx->mapiMode, 0/*ALL*/);
-        if ( !ctx->typedMode ) {
-            stream_printf(GDKout,"\" ");
-        }
-        if ( ctx->typedMode ) {
-            stream_printf(GDKout,"</xs:string>");
-            if ( !lastVal )
-                stream_printf(GDKout, "\n");
-        }
-    }
-    return 1;
-}
-
-
-/**
- *
- * Definition of the structure containing the functions
- */
-
-struct serializeFunStruct dfltSerializeFun = {
-	"default",
-	dflt_handle_startDocument,
-	dflt_handle_endDocument,
-	dflt_handle_attribute,
-	dflt_handle_attributeEnd,
-	dflt_handle_startElement,
-	dflt_handle_endElement,
-	dflt_handle_characters,
-	dflt_handle_ignorableWhitespace,
-	dflt_handle_comment,
-	dflt_handle_processingInstruction,
-	/* */
-	dflt_seqStart,
-	dflt_seqDmAttrStart,
-	dflt_seqDmAttrEnd,
-	dflt_seqElementStart,
-	dflt_seqElementEnd,
-	dflt_seqEnd,
-	dflt_seqEmitBool,
-	dflt_seqEmitInt,
-	dflt_seqEmitDbl,
-	dflt_seqEmitStr
-};
-
-/* vim:set shiftwidth=4 expandtab: */
