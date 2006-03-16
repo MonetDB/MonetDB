@@ -229,6 +229,7 @@ yes-*-*)
 		dnl  which is defined in an unnamed union in
 		dnl  /usr/include/cygwin/signal.h ...
 		CFLAGS="$CFLAGS -std=gnu99"
+		LDFLAGS="$LDFLAGS -no-undefined"
 		;;
 	*-mingw*)
 		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
