@@ -478,7 +478,7 @@ the configuration file.
 	GDKfree(monet_script);
 	if( monet_daemon){
 		while(1) 
-			sleep(5);
+			MT_sleep_ms(5000);
 	} else
 		serveClient(mal_clients);
 	mal_exit(mal_clients);

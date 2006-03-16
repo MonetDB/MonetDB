@@ -137,10 +137,10 @@ The key administration is to keep track of the outstanding
 iterator blocks and whether a variable represents a PBAT result.
 The table mloop contains the PC of the corresponding iterator.
 @c
-#define CLOSED 0
-#define OPENED 1
-#define PARTIAL 2
-#define PACKED 4
+#define GEN_CLOSED 0
+#define GEN_OPENED 1
+#define GEN_PARTIAL 2
+#define GEN_PACKED 4
 str
 BGoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	InstrPtr *old=0, q,r, stmt[256];
@@ -186,7 +186,7 @@ code immediately.
 			getFunctionId(p)= putName("newIterator",11);
 			p->barrier = BARRIERsymbol;
 			mvar[mtop] = getArg(p,0);
-			mstatus[mtop] = CLOSED; /* not yet opened */
+			mstatus[mtop] = GEN_CLOSED; /* not yet opened */
 			stmt[mtop++]= p;
 			continue;
 		}
@@ -215,7 +215,7 @@ The case below is to used as a starting point for experimentation.
 				getModuleId(p)= pbmRef;
 
 				mvar[mtop] = getArg(r,0);
-				mstatus[mtop]= CLOSED;
+				mstatus[mtop]= GEN_CLOSED;
 				stmt[mtop]= r;
 				index[iter++]= mtop;
 				mtop++;
@@ -251,10 +251,10 @@ added to the loop nesting table, but this time claim it is already openend.
 			match=0;
 			for(k=p->retc; k<p->argc;k++)
 			if( (m=isPBMalias(getArg(p,k),mvar,mtop)) >= 0) {
-				if( mstatus[m]== CLOSED){
+				if( mstatus[m]== GEN_CLOSED){
 					r= copyInstruction(stmt[m]);
 					pushInstruction(mb,r);
-					mstatus[m]= OPENED;
+					mstatus[m]= GEN_OPENED;
 					index[iter++]=m;
 				}
 				match++;
@@ -274,7 +274,7 @@ may turn into a partition BAT
 				pushStr(mb,r,tmpname);
 
 				mvar[mtop] = getArg(r,0);
-				mstatus[mtop]= PARTIAL;
+				mstatus[mtop]= GEN_PARTIAL;
 				stmt[mtop]= r;
 				index[iter++]= mtop;
 				mtop++;
@@ -340,7 +340,7 @@ Otherwise we have to decide on either packing them or replacement.
 @c
 		match=0;
 		for(j=p->retc; j<p->argc; j++)
-		if(  isPBMalias(getArg(p,j),mvar,mtop) >= OPENED) {
+		if(  isPBMalias(getArg(p,j),mvar,mtop) >= GEN_OPENED) {
 			m=i; match++;
 		}
 @-
@@ -352,11 +352,11 @@ and the instruction should be moved outside the loop.
 Moreover, it then terminates the block in which it was used.
 @c
 		for(k=iter-1;k>=0; k--)
-		if(mstatus[index[k]]== OPENED) {
+		if(mstatus[index[k]]== GEN_OPENED) {
 			BGcloseLoop(mb,index[k],stmt);
-			mstatus[index[k]]= CLOSED;
+			mstatus[index[k]]= GEN_CLOSED;
 		} else
-		if( mstatus[index[k]]== PARTIAL){
+		if( mstatus[index[k]]== GEN_PARTIAL){
 			if( getVar(mb,getArg(stmt[index[k]],0))->endLifespan>= i){
 				BGkeepPartial(mb,mb->stop,stmt[index[k]]);
 				r= newInstruction(mb,ASSIGNsymbol);
@@ -371,7 +371,7 @@ Moreover, it then terminates the block in which it was used.
 				old[oldtop-1]=r;
 				oldtop++;
 			}
-			mstatus[index[k]]= CLOSED;
+			mstatus[index[k]]= GEN_CLOSED;
 		} else
 		iter = 0;
 		
@@ -386,7 +386,7 @@ Moreover, it then terminates the block in which it was used.
 			setFunctionId(r,packRef);
 			getArg(r,0)= getArg(stmt[m],0);
 			pushInstruction(mb,r);
-			mstatus[m]= PACKED;
+			mstatus[m]= GEN_PACKED;
 			actions++;
 			break;
 		}
@@ -396,7 +396,7 @@ Moreover, it then terminates the block in which it was used.
 At this stage we should close any open generators.
 @c
 	for(i=iter-1; i>=0; i--)
-	if( mstatus[index[i]]== OPENED){
+	if( mstatus[index[i]]== GEN_OPENED){
 		BGcloseLoop(mb,index[i],stmt);
 	}
 	pushInstruction(mb,old[oldtop-1]);
