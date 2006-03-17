@@ -777,22 +777,22 @@ CMDfetch_standoff_data_@1(BAT ** result, BAT * region_start, BAT * region_end, c
 @
 
 @= burk_step
-PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int order, bat[oid,oid] cands) : BAT[oid,oid]
+PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid cont, BAT[void,bat] ws, int order, bat[oid,oid] cands) : BAT[oid,oid]
 {
     # TODO: "order" is not (yet?) used, here.
 
-    var pre_sizes := ws.fetch(PRE_SIZE).fetch(frag);
+    var pre_sizes := ws.fetch(PRE_SIZE).fetch(cont);
     
     # Wouter: code to do region-steps: SN, SW, RN, RW
-    ws := region_extract(ws,frag,"lng");
-    var region_pre := ws.fetch(REGION_PRE).find(frag);
-    var region_start := ws.fetch(REGION_START).find(frag);
-    var region_end := ws.fetch(REGION_END).find(frag);
+    ws := region_extract(ws,cont,"lng");
+    var region_pre := ws.fetch(REGION_PRE).find(cont);
+    var region_start := ws.fetch(REGION_START).find(cont);
+    var region_end := ws.fetch(REGION_END).find(cont);
     #region_pre.hot(); # doesn't seem to have any influence
     #region_start.hot();
     #region_end.hot();
     
-    var heights := ws.fetch(HEIGHT).fetch(frag);
+    var heights := ws.fetch(HEIGHT).fetch(cont);
 
     var unq := {count}(iter.reverse(), iter.tunique());
 
@@ -828,7 +828,7 @@ ADDHELP("@1", "wouter", "Oct 2005",
 "PARAMETERS:\n\
 BAT[void,any] iter (grouping relation)\n\
 BAT[void,any] ctx (context set)\n\
-oid frag (the current fragment of the ws)\n\
+oid cont (the current container of the ws)\n\
 BAT[void,bat] ws (working set)\n\
 DESCRIPITON:\n\
 returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.",
@@ -924,11 +924,11 @@ PROC burkowski_@1_@2(BAT[void,oid] region_pre,
 @
 @= nsloc_pre
  {
-	var pre_frag := ws.fetch(PRE_FRAG).fetch(theFrag);
-	if (is_constant(pre_frag)) {
-		var frag := pre_frag.fetch(0);
-		pre_frag := nil;
-		var qn_nsloc := ws.fetch(QN_LOC_URI).fetch(frag);
+	var pre_cont := ws.fetch(PRE_CONT).fetch(theFrag);
+	if (is_constant(pre_cont)) {
+		var cont := pre_cont.fetch(0);
+		pre_cont := nil;
+		var qn_nsloc := ws.fetch(QN_LOC_URI).fetch(cont);
 		    qn_nsloc := qn_nsloc.ord_uselect(loc+str('\1')+ns);
 		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
 		if (count(qn_nsloc) = 1) {
@@ -943,15 +943,15 @@ PROC burkowski_@1_@2(BAT[void,oid] region_pre,
 		qn_nsloc := nil;
 	} else {
 		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
-		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
+		    pre_cont := pre_prop.mirror().leftfetchjoin(pre_cont);
 		var X_pre    := pre_prop.hmark(0@0);
 		var X_prop   := pre_prop.tmark(0@0);
 		    pre_prop := nil;
-		var X_frag   := pre_frag.tmark(0@0);
-		    pre_frag := nil;
-		var X_nsloc  := mposjoin(X_prop, X_frag, ws.fetch(QN_LOC_URI));
+		var X_cont   := pre_cont.tmark(0@0);
+		    pre_cont := nil;
+		var X_nsloc  := mposjoin(X_prop, X_cont, ws.fetch(QN_LOC_URI));
 		    X_prop   := nil;
-		    X_frag   := nil;
+		    X_cont   := nil;
 		var _X       := X_nsloc.ord_uselect(loc+str('\1')+ns).reverse();
 		    X_nsloc  := nil;
 		cands := _X.leftfetchjoin(X_pre); #.reverse().sort().reverse()
@@ -1000,11 +1000,11 @@ PROC burkowski_@1_@2(BAT[void,oid] region_pre,
 @
 @= ns_loc_pre
  {
-	var pre_frag := ws.fetch(PRE_FRAG).fetch(theFrag);
-	if (is_constant(pre_frag)) {
-		var frag := pre_frag.fetch(0);
-		pre_frag := nil;
-		var @1_@2 := ws.fetch(@3_@4).fetch(frag);
+	var pre_cont := ws.fetch(PRE_CONT).fetch(theFrag);
+	if (is_constant(pre_cont)) {
+		var cont := pre_cont.fetch(0);
+		pre_cont := nil;
+		var @1_@2 := ws.fetch(@3_@4).fetch(cont);
 		    @1_@2 := @1_@2.ord_uselect(@2);
 		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
 		if (count(@1_@2) = 1) {
@@ -1019,15 +1019,15 @@ PROC burkowski_@1_@2(BAT[void,oid] region_pre,
 		@1_@2 := nil;
 	} else {
 		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
-		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
+		    pre_cont := pre_prop.mirror().leftfetchjoin(pre_cont);
 		var X_pre    := pre_prop.hmark(0@0);
 		var X_prop   := pre_prop.tmark(0@0);
 		    pre_prop := nil;
-		var X_frag   := pre_frag.tmark(0@0);
-		    pre_frag := nil;
-		var X_@2     := mposjoin(X_prop, X_frag, ws.fetch(@3_@4));
+		var X_cont   := pre_cont.tmark(0@0);
+		    pre_cont := nil;
+		var X_@2     := mposjoin(X_prop, X_cont, ws.fetch(@3_@4));
 		    X_prop   := nil;
-		    X_frag   := nil;
+		    X_cont   := nil;
 		var _X       := X_@2.ord_uselect(@2).reverse();
 		    X_@2     := nil;
 		cands := _X.leftfetchjoin(X_pre); #.reverse().sort().reverse()
@@ -1044,12 +1044,12 @@ PROC burkowski_@1_@2(BAT[void,oid] region_pre,
 @
 
 @= loop_lifted_scj_step_burk2
-proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] frag, bat[void, bat] ws @3 ) : bat[void,bat]
+proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] cont, bat[void, bat] ws @3 ) : bat[void,bat]
 {
-    var result := loop_lifted_@1_step@2 (iter, item, frag, ws, 0 @4);
+    var result := loop_lifted_@1_step@2 (iter, item, cont, ws, 0 @4);
     return result;
 }
-proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] frag, bat[void, bat] ws, int order @3 ) : bat[void,bat]
+proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] cont, bat[void, bat] ws, int order @3 ) : bat[void,bat]
 {
     # handle empty results correctly
     if (iter.count() = 0) {
@@ -1063,76 +1063,76 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
     var result;
     var result_iter;
     var result_item;
-    var result_frag;
+    var result_cont;
     var tmp_res;
     var cands;
 
-    var uniqueFrag := frag.tunique().sort();
+    var uniqueFrag := cont.tunique().sort();
     var theFrag := uniqueFrag.reverse().fetch(0);
     if (uniqueFrag.count() = 1) {
-        var result_part_frag := oid(nil);
+        var result_part_cont := oid(nil);
         var result_part_iter := iter;
         var result_part_item := item;
 
-        @:loop_lifted_scj_per_frag(@1,@5,@6,@7)@
+        @:loop_lifted_scj_per_cont(@1,@5,@6,@7)@
 
         result_iter := result_part_iter;
         result_item := result_part_item;
-        result_frag := result_part_frag;
+        result_cont := result_part_cont;
         result_part_iter := nil;
         result_part_item := nil;
-        result_part_frag := nil;
+        result_part_cont := nil;
     } else {
-        var result_part_frag := frag.ord_uselect(theFrag).mark(0@0).reverse();
-        var result_part_iter := result_part_frag.leftfetchjoin(iter);
-        var result_part_item := result_part_frag.leftfetchjoin(item);
+        var result_part_cont := cont.ord_uselect(theFrag).mark(0@0).reverse();
+        var result_part_iter := result_part_cont.leftfetchjoin(iter);
+        var result_part_item := result_part_cont.leftfetchjoin(item);
 
-        @:loop_lifted_scj_per_frag(@1,@5,@6,@7)@
+        @:loop_lifted_scj_per_cont(@1,@5,@6,@7)@
 
         result_iter := result_part_iter;
         result_item := result_part_item;
-        result_frag := result_part_frag;
+        result_cont := result_part_cont;
         result_part_iter := nil;
         result_part_item := nil;
-        result_part_frag := nil;
+        result_part_cont := nil;
 
         var res_mu;
 	uniqueFrag.slice(1,uniqueFrag.count() - 1)@batloop () {
 	    theFrag := $h;
-            result_part_frag := frag.ord_uselect(theFrag).mark(0@0).reverse();
-            result_part_iter := result_part_frag.leftfetchjoin(iter);
-            result_part_item := result_part_frag.leftfetchjoin(item);
+            result_part_cont := cont.ord_uselect(theFrag).mark(0@0).reverse();
+            result_part_iter := result_part_cont.leftfetchjoin(iter);
+            result_part_item := result_part_cont.leftfetchjoin(item);
 
-            @:loop_lifted_scj_per_frag(@1,@5,@6,@7)@
+            @:loop_lifted_scj_per_cont(@1,@5,@6,@7)@
 
             res_mu := merged_union(result_iter, result_part_iter,
 				   result_item, result_part_item,
-				   result_frag, result_part_frag);
+				   result_cont, result_part_cont);
             result_part_iter := nil;
             result_part_item := nil;
-            result_part_frag := nil;
+            result_part_cont := nil;
             result_iter := res_mu.fetch(0);
             result_item := res_mu.fetch(1);
-            result_frag := res_mu.fetch(2);
+            result_cont := res_mu.fetch(2);
             res_mu := nil;
         }
     }
     
     result_iter.access(BAT_READ);
     result_item.access(BAT_READ);
-    result_frag.access(BAT_READ);
+    result_cont.access(BAT_READ);
     var result_scj := bat(void,bat,3).seqbase(0@0);
     result_scj.append_bat(result_iter);
     result_scj.append_bat(result_item);
-    result_scj.append_bat(result_frag);
+    result_scj.append_bat(result_cont);
 
     return result_scj.access(BAT_READ);
 }
 @
-@= loop_lifted_scj_per_frag
+@= loop_lifted_scj_per_cont
 	result_part_iter := result_part_iter.chk_order();
 	result_part_item := result_part_item.chk_order();
-        result_part_frag := oid(nil);
+        result_part_cont := oid(nil);
 
 	# pre-test
 	@4
@@ -1140,7 +1140,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 
 	result_part_iter := result.mark(0@0).reverse();
 	result_part_item := result.reverse().mark(0@0).reverse();
-        result_part_frag := constant2bat(theFrag);
+        result_part_cont := constant2bat(theFrag);
 	cands := nil;
 
 	# post-test

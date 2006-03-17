@@ -102,11 +102,15 @@ PROC xquery_server_start() : void {
 # the transient 'working set', a global document collection represented
 # by the ws-BAT.
 #
-# Each collection contains the following BATs:
-# - pre_size    : BAT[oid,int]  pre-value of node / and its descendant size,
-# - pre_level   : BAT[oid,chr]  pre-value of node / and its level,
-# - pre_prop    : BAT[oid,oid]  pre-value of node / and property ID,
-# - pre_kind    : BAT[oid,chr]  pre-value of node / and node kind,
+# Each collection contains the following rid_* BATs from which the pre_* BATs can be reconstructed:
+# - map_pid     : BAT[oid,oid]  64K tuple page-id / and its page index in the rid_table
+# - rid_size    : BAT[oid,int]  rid-value of node / and its descendant size,
+# - rid_level   : BAT[oid,chr]  rid-value of node / and its level,
+# - rid_prop    : BAT[oid,oid]  rid-value of node / and property ID,
+# - rid_kind    : BAT[oid,chr]  rid-value of node / and node kind,
+#                              
+# NOTE: page indices start at oid(0). by putting the rid_* phyisical pages in the 
+#       order specified by map_pid we get the original pre_* tables back.
 #
 # - qn_ns        : BAT[oid,str]  property ID / and name space (elements and attributes),
 # - qn_loc       : BAT[oid,str]  property ID / and local name (elements and attributes),
@@ -128,19 +132,19 @@ PROC xquery_server_start() : void {
 # - doc_timestamp : BAT[oid,timestamp]  document ID / end-of-cache-time (nil if none)
 # - uri_lifetime  : BAT[str,lng]        URI prefix  / time-to-live (seconds), nil if not to be cached 
 # 
-# Information on documents/fragments in the working set:
-# - PRE_FRAG   : BAT[void,BAT[void,oid]] list of bats with fragments
+# Information on documents/containers in the working set:
+# - PRE_CONT   : BAT[void,BAT[void,oid]] list of bats with containers
 #                oids for each pre value (copied in element construction)
-# - ATTR_FRAG  : BAT[void,BAT[void,oid]] list of bats with fragments
+# - ATTR_CONT  : BAT[void,BAT[void,oid]] list of bats with containers
 #                oids for each attr value (copied in element/attribute 
 #                construction)
-# - DOC_LOADED : BAT[void,str] fragment ID / name of document 
+# - DOC_LOADED : BAT[void,str] containers ID / name of document 
 #                (starts with 1@0 because WS is first 'loaded' document
-# - FRAG       : BAT[void,oid] 0@0 / oid of the newest added fragment
+# - CONT       : BAT[void,oid] 0@0 / oid of the newest added containers
 # - WS_FRAG    : BAT[void,oid] enumeration / root-pre values of
-#                generated element fragments
-# - HEIGTH     : BAT[void,int] enumeration of the fragments / maximal
-#                depth of the fragment (starts with 0@0 - WS)
+#                generated element XML fragments
+# - HEIGTH     : BAT[void,int] enumeration of the containers / maximal
+#                depth of the container (starts with 0@0 - WS)
 
 module(pf_support); 
 
@@ -203,43 +207,44 @@ EXCEPT when (child-T == void)
         name       number  tpe  col[H,T]    col-seqbase 
         ========   ======  ===  ==========  ===========
 @= ws
-@:@1_ws(PRE_SIZE,       0, bat, void,  int, PRE_BASE)@
-@:@1_ws(PRE_LEVEL,      1, bat, void,  chr, PRE_BASE)@
-@:@1_ws(PRE_PROP,       2, bat, void,  oid, PRE_BASE)@
-@:@1_ws(PRE_KIND,       3, bat, void,  chr, PRE_BASE)@
-@:@1_ws(PRE_FRAG,       4, void,void,  oid, PRE_BASE)@
-@:@1_ws(QN_URI,         5, bat, void,  str, PRE_BASE)@
-@:@1_ws(QN_PREFIX,      6, bat, void,  str, PRE_BASE)@
-@:@1_ws(QN_LOC,         7, bat, void,  str, PRE_BASE)@
-@:@1_ws(PROP_TEXT,      8, bat, void,  str, PRE_BASE)@
-@:@1_ws(PROP_COM,       9, bat, void,  str, PRE_BASE)@
-@:@1_ws(PROP_INS,      10, bat, void,  str, PRE_BASE)@
-@:@1_ws(PROP_TGT,      11, bat, void,  str, PRE_BASE)@
-@:@1_ws(ID_NID,        12, bat,  str,  oid, oid(nil))@
-@:@1_ws(IDREF_NID,     13, bat,  str,  oid, oid(nil))@
-@:@1_ws(ATTR_OWN,      14, bat, void,  oid, PRE_BASE)@
-@:@1_ws(ATTR_QN,       15, bat, void,  oid, PRE_BASE)@
-@:@1_ws(ATTR_PROP,     16, bat, void,  oid, PRE_BASE)@
-@:@1_ws(ATTR_FRAG,     17, void,void,  oid, PRE_BASE)@
-@:@1_ws(PROP_VAL,      18, bat, void,  str, PRE_BASE)@
-@:@1_ws(NID_PRE,       19, bat, void,  oid, PRE_BASE)@
-@:@1_ws(PRE_NID,       20, bat, void,  oid, PRE_BASE)@
-@:@1_ws(WS_FRAG,       21, bat, void,  oid, PRE_BASE)@
-@:@1_ws(DOC_LOADED,    22, str, void, void, oid(nil))@
-@:@1_ws(FRAG,          23, oid, void, void, oid(nil))@
-@:@1_ws(HEIGHT,        24, int, void, void, oid(nil))@
-@:@1_ws(QN_PREFIX_URI, 25, bat, void,  str, PRE_BASE)@
-@:@1_ws(QN_LOC_URI,    26, bat, void,  str, PRE_BASE)@
-@:@1_ws(KND_NID_0,     27, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_PROP_0,    28, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_NID_1,     29, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_NID_2,     30, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_NID_3,     31, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_PROP_3,    32, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_NID_4,     33, bat, void,  oid, PRE_BASE)@
-@:@1_ws(REGION_PRE,    34, bat, void,  oid, oid(nil))@
-@:@1_ws(REGION_START,  35, bat, void,  lng, oid(nil))@
-@:@1_ws(REGION_END,    36, bat, void,  lng, oid(nil))@
+@:@1_ws(MAP_PID,        0, bat, void,  oid, PRE_BASE)@
+@:@1_ws(PRE_SIZE,       1, bat, void,  int, PRE_BASE)@
+@:@1_ws(PRE_LEVEL,      2, bat, void,  chr, PRE_BASE)@
+@:@1_ws(PRE_PROP,       3, bat, void,  oid, PRE_BASE)@
+@:@1_ws(PRE_KIND,       4, bat, void,  chr, PRE_BASE)@
+@:@1_ws(PRE_CONT,       5, void,void,  oid, PRE_BASE)@
+@:@1_ws(PRE_NID,        6, bat, void,  oid, PRE_BASE)@
+@:@1_ws(NID_RID,        7, bat, void,  oid, PRE_BASE)@
+@:@1_ws(QN_URI,         8, bat, void,  str, PRE_BASE)@
+@:@1_ws(QN_PREFIX,      9, bat, void,  str, PRE_BASE)@
+@:@1_ws(QN_LOC,        10, bat, void,  str, PRE_BASE)@
+@:@1_ws(PROP_TEXT,     11, bat, void,  str, PRE_BASE)@
+@:@1_ws(PROP_COM,      12, bat, void,  str, PRE_BASE)@
+@:@1_ws(PROP_INS,      13, bat, void,  str, PRE_BASE)@
+@:@1_ws(PROP_TGT,      14, bat, void,  str, PRE_BASE)@
+@:@1_ws(ID_NID,        15, bat,  str,  oid, oid(nil))@
+@:@1_ws(IDREF_NID,     16, bat,  str,  oid, oid(nil))@
+@:@1_ws(ATTR_OWN,      17, bat, void,  oid, PRE_BASE)@
+@:@1_ws(ATTR_QN,       18, bat, void,  oid, PRE_BASE)@
+@:@1_ws(ATTR_PROP,     19, bat, void,  oid, PRE_BASE)@
+@:@1_ws(ATTR_CONT,     20, void,void,  oid, PRE_BASE)@
+@:@1_ws(PROP_VAL,      21, bat, void,  str, PRE_BASE)@
+@:@1_ws(WS_FRAG,       22, bat, void,  oid, PRE_BASE)@
+@:@1_ws(DOC_LOADED,    23, str, void, void, oid(nil))@
+@:@1_ws(CONT,          24, oid, void, void, oid(nil))@
+@:@1_ws(HEIGHT,        25, int, void, void, oid(nil))@
+@:@1_ws(QN_PREFIX_URI, 26, bat, void,  str, PRE_BASE)@
+@:@1_ws(QN_LOC_URI,    27, bat, void,  str, PRE_BASE)@
+@:@1_ws(KND_NID_0,     28, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_PROP_0,    29, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_NID_1,     30, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_NID_2,     31, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_NID_3,     32, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_PROP_3,    33, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_NID_4,     34, bat, void,  oid, PRE_BASE)@
+@:@1_ws(REGION_PRE,    35, bat, void,  oid, oid(nil))@
+@:@1_ws(REGION_START,  36, bat, void,  lng, oid(nil))@
+@:@1_ws(REGION_END,    37, bat, void,  lng, oid(nil))@
 
 @-
 BEWARE: WS_SIZE (below) should *always* be the size of ws (above)
@@ -290,7 +295,7 @@ KND_PROP.access(BAT_READ);
 # can be retrieved with 'select(NODE,int(nil))'
 
 @= create_ws
-    ws_nme.append(toLower("@1"));
+    ws_nme.append(toLower("@1").substitute("pre_","rid_",false));
     ws_oid.append(oid(@1));
     ws_tpe.append(@3);
     ws_htp.append(@4);
@@ -328,7 +333,7 @@ PROC create_ws () : BAT[void,bat]
 
     # fill the constant bats with initial values
     ws.fetch(DOC_LOADED).seqbase(1@0);
-    ws.fetch(FRAG).seqbase(0@0).append(oid(nil));
+    ws.fetch(CONT).seqbase(0@0).append(oid(nil));
     ws.fetch(HEIGHT).seqbase(0@0).append(0);
     return ws.access(BAT_READ);
 }
@@ -411,14 +416,14 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
     docBAT.insert("qn_prefix_uri", docBAT.find("qn_prefix").[+](str('\1')).[+](docBAT.find("qn_uri")));
     docBAT.insert("qn_loc_uri",    docBAT.find("qn_loc").[+](str('\1')).[+](docBAT.find("qn_uri")));
 
-    # mapping between immutable node-id's and pre-order ranks
-    var pre_nid := docBAT.find("pre_nid");
+    # mapping between immutable node-id's and pre-order ranks (pre==rid, just after shredding)
+    var pre_nid := docBAT.find("rid_nid");
 
     # create our indices
     var knd := ELEMENT;
     while ( knd <= DOCUMENT ) {
         var knd_no  := str(chr(48 + knd));
-        var knd_pre := docBAT.find("pre_kind").ord_uselect(knd).hmark(PRE_BASE).chk_order();
+        var knd_pre := docBAT.find("rid_kind").ord_uselect(knd).hmark(PRE_BASE).chk_order();
         var knd_nid := knd_pre.leftfetchjoin(pre_nid).chk_order();
         if ((htype(knd_nid) != 0) or (head(knd_nid) != "void")) {
             ERROR("pathfinder.mx: shred_doc_impl(): htype(knd_nid) = %d, head(knd_nid) = %s !\n",
@@ -426,7 +431,7 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
         }
         docBAT.insert("knd_nid_" + knd_no, knd_nid);
         if ( (knd = ELEMENT) or (knd = PI) ) {
-            var knd_prop := knd_pre.leftfetchjoin(docBAT.find("pre_prop")).chk_order();
+            var knd_prop := knd_pre.leftfetchjoin(docBAT.find("rid_prop")).chk_order();
             if ((htype(knd_prop) != 0) or (head(knd_prop) != "void")) {
                 ERROR("pathfinder.mx: shred_doc_impl(): htype(knd_prop) = %d, head(knd_prop) = %s !\n",
                       htype(knd_prop), head(knd_prop));
@@ -508,11 +513,15 @@ disabled code: hole creation
     pre_nid := nil;
     pre := nil;
 
-    docBAT.replace("nid_pre", docBAT.find("pre_nid").select(oid(nil),oid(nil)).tsort().hmark(seq_0).copy());
+    docBAT.replace("nid_rid", docBAT.find("rid_nid").select(oid(nil),oid(nil)).tsort().hmark(seq_0).copy());
 
 } # TODO/FIXME: Slack-space creation should be done in the shredder.
 
 @mil
+var burkowski := false;
+if (monet_environment.exist("burkowski"))
+    burkowski := =(monet_environment.find("burkowski"),"enabled"); 
+
 PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, bit doCommit, str opt, timestamp ts, int ws) : int
 {
     var shredRES := shred2bats(location,"",opt);
@@ -530,8 +539,6 @@ PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, bit doCommit, s
     var height := index_doc(shredRES, docBAT);
 
 #[BURKOWSKI]
-    var burkowski := false;
-    CATCH( { burkowski := =(monet_environment.find("burkowski"),"enabled"); } );
     if (burkowski) {
         print("# extracting regions...\n");
         docBAT := region_extract(docBAT, "lng");
@@ -546,8 +553,9 @@ PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, bit doCommit, s
 #[/BURKOWSKI]
 
     if (doCommit) {
-        [mmap](docBAT, [ifthenelse]([<]([count](docBAT), 65536), STORE_MEM, STORE_MMAP));
-        [save](docBAT);
+        docBAT.[access](BAT_WRITE).[access](BAT_READ); # to get rid of views
+        [mmap](docBAT, [ifthenelse]([<]([count](docBAT), 4*int(REMAP_PAGE_SIZE)), STORE_MEM, STORE_MMAP));
+        [save](docBAT); # flush to disk before locking
 
         # add doc to the database locked
         lock_set(pf_lock);
@@ -725,38 +733,46 @@ PROC doc_curtime(str filename) : timestamp {
 PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, str docid, int height) : oid
 {
     # add it to the working set
-    var frag := ws.fetch(DOC_LOADED).uselect(name);
+    var cont := ws.fetch(DOC_LOADED).uselect(name);
 
-    if (frag.count() = 0) {
+    if (cont.count() = 0) {
         ws.fetch(DOC_LOADED).append(name);
-        frag := oid(ws.fetch(DOC_LOADED).count());
+        cont := oid(ws.fetch(DOC_LOADED).count());
 
         # use the ws_* bats to add all bats to the working set in a multiplex
         var src := ws_tpe.ord_uselect(bat).mirror().leftfetchjoin(ws_nme);
         var dst := src.mirror().leftfetchjoin(ws);
-        if (docid != "") 
-            # if docid != "", it holds the str(id) of the persistent doc
-            src := [bat]([+](src, docid));
-        else
-            # if not, the temporary document has been shredded into docBAT
+        if (docid = "") { 
+            # the temporary document has just been shredded into docBAT
             src := src.leftjoin(docBAT);
+        } else {
+            # if docid holds the str(id) of the persistent doc
+            src := [bat]([+](src, docid));
+
+            # get stable, remapped, copies of the persistent bats here
+            var map_pid := src.find(oid(MAP_PID));
+            var rid_bats := reverse(reverse(src).select(oid(PRE_SIZE),oid(PRE_NID)));
+            rid_bats := [remap](rid_bats,const map_pid);
+            src.access(BAT_WRITE).replace(rid_bats);
+        }
         [append](dst, src);
 
         # create views
-        ws.fetch(PRE_FRAG).append(constant2bat(frag));
-        ws.fetch(ATTR_FRAG).append(constant2bat(frag));
+        ws.fetch(PRE_CONT).append(constant2bat(cont));
+        ws.fetch(ATTR_CONT).append(constant2bat(cont));
 
         # adapt constants
-        ws.fetch(FRAG).replace(0@0,frag);
+        ws.fetch(CONT).replace(0@0,cont);
 
         if (isnil(height))
             height := ws.fetch(PRE_LEVEL).max().int() + 1;
         ws.fetch(HEIGHT).append(height);
     } else { 
-        ws.fetch(FRAG).replace(0@0,frag.reverse().fetch(0)); 
+        ws.fetch(CONT).replace(0@0,cont.reverse().fetch(0)); 
     }
-    return frag;
+    return cont;
 }
+
 
 PROC add_doc_locked(str name, timestamp ts, int ws) : oid 
 {
@@ -934,7 +950,7 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
 @:decl(c)@
 
 #define XTRACT_KIND(X)  (X & 63)
-#define XTRACT_FRAG(X)  (X >> 6)
+#define XTRACT_CONT(X)  (X >> 6)
 
 /* xquery_method : execute a loop-lifted xquery function
  *

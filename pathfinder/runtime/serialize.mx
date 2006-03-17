@@ -75,7 +75,7 @@ typedef struct SerializeFrame {
 /**
  * The definition of the working-set BAT structure. For every bat in the
  * working set there is a structure of this type in the wsMatrix matrix
- * representation of the working set. The first dimension is the fragment
+ * representation of the working set. The first dimension is the container
  * of the bat and the second is the BAT id.
  */
 typedef struct wsBatDescr {
@@ -105,7 +105,7 @@ typedef struct {
     char*   restag;         /* root element name XQueryResult */
     char*   dmSeparator;    /* separation char in DM mode */
     BAT*    ws;             /* working set BAT */
-    int     curFRAG;        /* current fragment used by working set */
+    int     curCONT;        /* current container used by working set */
     /* */
     XmlNsFrame* nsTop;	/* top of the namespace stack */
     /**
@@ -121,7 +121,7 @@ typedef struct {
                           */
     struct serializeFunStruct*	driverFun; /* the output handling functions */
     void*			driverWs;  /* optional workspace for the driver */
-    int		wsFrags; /* The number of fragments in the working set */
+    int		wsFrags; /* The number of containers in the working set */
     wsBatDescr	*wsMatrix;
 } XqueryCtx;
 
@@ -380,7 +380,7 @@ static int disposeWsMatrix(XqueryCtx* ctx) {
 
 	    if ( bd->bat ) {
 #ifdef DEBUGWS
-    		stream_printf(GDKout,"+ disposeWsMatrix(close(frag=%d,bats=%d))\n",i,j);
+    		stream_printf(GDKout,"+ disposeWsMatrix(close(cont=%d,bats=%d))\n",i,j);
 #endif
     		BBPunfix( BBPcacheid( bd->bat ) );
 	    	bd->bat = NULL;
@@ -393,13 +393,13 @@ static int disposeWsMatrix(XqueryCtx* ctx) {
     return 1;
 }
 
-static BAT* fetchWsContextBAT(XqueryCtx* ctx, BAT* ws, int fragID, int batID) {
+static BAT* fetchWsContextBAT(XqueryCtx* ctx, BAT* ws, int contID, int batID) {
     BUN bun;
     oid BATid = (oid)batID;
-    oid FRAGid  = (oid)fragID;
+    oid CONTid  = (oid)contID;
 
-    if ( fragID < 0 ) {
-        fatal_err(ctx,"fetchWsContextBAT: NO fragID CONTEXT SELECTED");
+    if ( contID < 0 ) {
+        fatal_err(ctx,"fetchWsContextBAT: NO contID CONTEXT SELECTED");
         return NULL;
     }
     if ( !(bun = BUNfnd(ws,&BATid)) ) {
@@ -408,19 +408,19 @@ static BAT* fetchWsContextBAT(XqueryCtx* ctx, BAT* ws, int fragID, int batID) {
     }
     BAT* batbat;
     if ( !( batbat = BATdescriptor(*(bat*)bun)) ) {
-        fatal_err(ctx,"fetchWsContextBAT:FETCH BATBAT for WS[%d][%d] FAILED\n",batID ,fragID);
+        fatal_err(ctx,"fetchWsContextBAT:FETCH BATBAT for WS[%d][%d] FAILED\n",batID ,contID);
         return NULL;
     }
-    BUN bbun = BUNfnd(batbat,&FRAGid);
+    BUN bbun = BUNfnd(batbat,&CONTid);
     BAT *res = NULL;
     if ( !bbun ) {
         BBPunfix( BBPcacheid( batbat ) );
-        fatal_err(ctx,"fetchWsContextBAT:NOT FOUND BAT[%d][%d] in WS!!!!\n",batID,fragID);
+        fatal_err(ctx,"fetchWsContextBAT:NOT FOUND BAT[%d][%d] in WS!!!!\n",batID,contID);
         return NULL;
     } else {
         if ( !(res = BATdescriptor(*(bat*)bbun)) ) {
             BBPunfix( BBPcacheid( batbat ) );
-            fatal_err(ctx,"fetchWsContextBAT:FETCH WS[%d][%d] FAILED\n",batID,fragID);
+            fatal_err(ctx,"fetchWsContextBAT:FETCH WS[%d][%d] FAILED\n",batID,contID);
             return NULL;
         }
     }
@@ -428,13 +428,13 @@ static BAT* fetchWsContextBAT(XqueryCtx* ctx, BAT* ws, int fragID, int batID) {
     return res;
 }
 
-static wsBatDescr* getMatrixBATrecord(XqueryCtx* ctx, int fragID, int batID) {
-    wsBatDescr* bd = &ctx->wsMatrix[WSMI(fragID,batID)];
+static wsBatDescr* getMatrixBATrecord(XqueryCtx* ctx, int contID, int batID) {
+    wsBatDescr* bd = &ctx->wsMatrix[WSMI(contID,batID)];
 
     if ( !bd->bat ) {
-        if ( !(bd->bat = fetchWsContextBAT(ctx,ctx->ws,fragID,batID)) ) {
+        if ( !(bd->bat = fetchWsContextBAT(ctx,ctx->ws,contID,batID)) ) {
 #ifdef DEBUGWS
-    	    stream_printf(GDKout,"+ getMatrixBAT(open(frag=%d,bats=%d)) = FAIL\n",fragID,batID);
+    	    stream_printf(GDKout,"+ getMatrixBAT(open(cont=%d,bats=%d)) = FAIL\n",contID,batID);
 #endif
 	    return NULL;
         }
@@ -444,26 +444,26 @@ static wsBatDescr* getMatrixBATrecord(XqueryCtx* ctx, int fragID, int batID) {
              bd->fake_prj = 0;
 	
 #ifdef DEBUGWS
-    	stream_printf(GDKout,"+ getMatrixBAT(open(frag=%d,bats=%d)) = SUCCES\n",fragID,batID);
+    	stream_printf(GDKout,"+ getMatrixBAT(open(cont=%d,bats=%d)) = SUCCES\n",contID,batID);
 #endif
     }
     return bd;
 }
 
-static INLINE BAT* getMatrixBAT(XqueryCtx* ctx, int fragID, int batID) {
-	wsBatDescr* res = getMatrixBATrecord(ctx,fragID,batID);
+static INLINE BAT* getMatrixBAT(XqueryCtx* ctx, int contID, int batID) {
+	wsBatDescr* res = getMatrixBATrecord(ctx,contID,batID);
 
 	return (res?res->bat:NULL);
 }
 
 /**
  * The getWsBAT() function is responsible for the BAT with index
- * 'batID from fragment 'fragID in the working set
+ * 'batID from container' contID in the working set
  */
-#define getWsBAT(_b, ctx, fragID, batID) {                                  \
-    _b = getMatrixBAT(ctx,fragID,batID);                                    \
+#define getWsBAT(_b, ctx, contID, batID) {                                  \
+    _b = getMatrixBAT(ctx,contID,batID);                                    \
     if ( _b == NULL )                                                       \
-        return fatal_err(ctx, "getWsBAT(id=%d,frag=%d) fails",batID,ctx->curFRAG); \
+        return fatal_err(ctx, "getWsBAT(id=%d,cont=%d) fails",batID,ctx->curCONT); \
 }
 
 #define IS_FAKE_PROJECT(b) ((b->batCount == 1) & (b->hseqbase == oid_nil) & (b->htype == TYPE_void))
@@ -507,14 +507,14 @@ static int idxTVerror3(XqueryCtx* ctx, BAT *b, oid oid_index)
         return idxTVerror3(ctx,b,oid_index);                    \
 }
 
-#define getWsValue(RES, ctx, fragID, batID, oid_index) {        \
-    RES = readWsValue(ctx,fragID,batID,oid_index);              \
+#define getWsValue(RES, ctx, contID, batID, oid_index) {        \
+    RES = readWsValue(ctx,contID,batID,oid_index);              \
     if ( RES == NULL )                                          \
         return idxTVerror3(ctx,NULL,oid_index);                 \
 }
 
-static ptr readWsValue(XqueryCtx* ctx, int fragID, int batID, oid oid_index) {
-    wsBatDescr* mr = getMatrixBATrecord(ctx,fragID,batID);
+static ptr readWsValue(XqueryCtx* ctx, int contID, int batID, oid oid_index) {
+    wsBatDescr* mr = getMatrixBATrecord(ctx,contID,batID);
 
     if ( mr ) {
         if ( mr->fake_prj)
@@ -540,14 +540,14 @@ static ptr readWsValue(XqueryCtx* ctx, int fragID, int batID, oid oid_index) {
 }
 
 
-static INLINE void setDefaultFRAG(XqueryCtx* ctx, int fragID) {
-    ctx->curFRAG   = fragID;
+static INLINE void setDefaultCONT(XqueryCtx* ctx, int contID) {
+    ctx->curCONT   = contID;
 }
 
 static int createWsContext(
 		XqueryCtx*		ctx,
 		BAT*			ws,
-		int			fragID,
+		int			contID,
 		str			mode,
 		serializeFunStruct*	driverFun,
 		char*			driverArg
@@ -607,8 +607,8 @@ static int createWsContext(
 
     ctx->ws        = ws;
     /* */
-    if ( fragID >= 0 )
-        setDefaultFRAG(ctx, fragID);
+    if ( contID >= 0 )
+        setDefaultCONT(ctx, contID);
     /* */
     ctx->stackPtr  = 0;
     if ( !initWsMatrix(ctx) )
@@ -834,19 +834,19 @@ int emit_escaped(char* src, int mode, int onlyEntity) {
  * function is only called from the xquery_node_print() function.
  */
 
-static int process_attr(XqueryCtx* ctx, int frag, oid id, int top) {
+static int process_attr(XqueryCtx* ctx, int cont, oid id, int top) {
     str val, uri, prefix, loc; 
     oid qn_oid, prop_oid;
-    int afrag;
+    int acont;
     ptr res;
 
-    getWsValue(res, ctx, frag,  ATTR_PROP, id);       prop_oid = *(oid*)      res;
-    getWsValue(res, ctx, frag,  ATTR_FRAG, id);       afrag    = (int)*(oid*) res;
-    getWsValue(res, ctx, afrag, PROP_VAL,  prop_oid); val      = (str)        res;
-    getWsValue(res, ctx, frag,  ATTR_QN,   id);       qn_oid   = *(oid*)      res;
-    getWsValue(res, ctx, afrag, QN_URI,    qn_oid);   uri      = (str)        res;
-    getWsValue(res, ctx, afrag, QN_PREFIX, qn_oid);   prefix   = (str)        res;
-    getWsValue(res, ctx, afrag, QN_LOC,    qn_oid);   loc      = (str)        res;
+    getWsValue(res, ctx, cont,  ATTR_PROP, id);       prop_oid = *(oid*)      res;
+    getWsValue(res, ctx, cont,  ATTR_CONT, id);       acont    = (int)*(oid*) res;
+    getWsValue(res, ctx, acont, PROP_VAL,  prop_oid); val      = (str)        res;
+    getWsValue(res, ctx, cont,  ATTR_QN,   id);       qn_oid   = *(oid*)      res;
+    getWsValue(res, ctx, acont, QN_URI,    qn_oid);   uri      = (str)        res;
+    getWsValue(res, ctx, acont, QN_PREFIX, qn_oid);   prefix   = (str)        res;
+    getWsValue(res, ctx, acont, QN_LOC,    qn_oid);   loc      = (str)        res;
 
     
     if ( 0 && !checkNsChange(ctx,uri,prefix,top) )
@@ -854,12 +854,12 @@ static int process_attr(XqueryCtx* ctx, int frag, oid id, int top) {
     return ctx->driverFun->handle_attribute(ctx, uri, prefix, loc, val, top);
 }
 
-static int process_node_attr(XqueryCtx* ctx, int nFRAG, oid pre, int emptyNode) {
+static int process_node_attr(XqueryCtx* ctx, int nCONT, oid pre, int emptyNode) {
     BAT *b;
     oid nid = oid_nil;
     BUN p, q; 
 
-    getWsBAT(b, ctx,ctx->curFRAG,PRE_NID);
+    getWsBAT(b, ctx,ctx->curCONT,PRE_NID);
     BUNfndVOID(p, b, &pre);
     if ( p ) {
         nid = *(oid*)BUNtail(b,p);
@@ -869,12 +869,12 @@ static int process_node_attr(XqueryCtx* ctx, int nFRAG, oid pre, int emptyNode) 
                   (size_t)(*(oid*)BUNhead(b,BUNlast(b)-BUNsize(b))));
         return 0;
     }
-    getWsBAT(b, ctx,ctx->curFRAG, ATTR_OWN);
+    getWsBAT(b, ctx,ctx->curCONT, ATTR_OWN);
     if ( !(b  = BATuselect(b,&nid,&nid)) )
         return fatal_err(ctx,"process_node_attr: uselect fails\n");
     BATloop(b, p, q) {
         oid id = *(oid*)BUNhead(b, p);
-        if ( ! process_attr(ctx,nFRAG,id,0/*top*/) ) {
+        if ( ! process_attr(ctx,nCONT,id,0/*top*/) ) {
             BBPunfix( BBPcacheid( b ) );
             return 0;
         }
@@ -886,34 +886,34 @@ static int process_node_attr(XqueryCtx* ctx, int nFRAG, oid pre, int emptyNode) 
 /**
  * Handle the generation of the node with oid 'pre'.
  */
-static int xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
+static int xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_cont, int top) {
     ptr res;
     chr kind;
     oid prop;
 
-    getWsValue(res,ctx,ctx->curFRAG,PRE_KIND,pre);
+    getWsValue(res,ctx,ctx->curCONT,PRE_KIND,pre);
     kind = *(chr*) res;
-    getWsValue(res,ctx,ctx->curFRAG,PRE_PROP,pre);
+    getWsValue(res,ctx,ctx->curCONT,PRE_PROP,pre);
     prop = *(oid*) res;
-    int vFRAG = ctx->curFRAG;
-    if ( pre_frag ) {
-        findTailValue(res,ctx,pre_frag,pre);
-        vFRAG = (int)*(oid*)res;
+    int vCONT = ctx->curCONT;
+    if ( pre_cont ) {
+        findTailValue(res,ctx,pre_cont,pre);
+        vCONT = (int)*(oid*)res;
     }
     if (kind == chr_nil) return -1;
     switch( kind ) {
         case (char)0:
             {	/* ELEMENT */
                 str uri, prefix, loc;
-                getWsValue(res,ctx,vFRAG,QN_URI,prop);
+                getWsValue(res,ctx,vCONT,QN_URI,prop);
                 uri   = (str)res;
-                getWsValue(res,ctx,vFRAG,QN_PREFIX,prop);
+                getWsValue(res,ctx,vCONT,QN_PREFIX,prop);
                 prefix   = (str)res;
-                getWsValue(res,ctx,vFRAG,QN_LOC,prop);
+                getWsValue(res,ctx,vCONT,QN_LOC,prop);
                 loc = (str)res;
                 if ( !ctx->driverFun->handle_startElement(ctx,prefix,loc,pre) )
                     return 0;
-                getWsValue(res,ctx,ctx->curFRAG,PRE_SIZE,pre);
+                getWsValue(res,ctx,ctx->curCONT,PRE_SIZE,pre);
                 int size = *(int*)res;
                 if (!pushTag(ctx,pre+size,prefix,loc,(size==0)))
                     return 0;
@@ -923,21 +923,21 @@ static int xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
                  */
                 if ( ! checkNsChange(ctx,uri,prefix,0) )
                     return 0;
-                if ( !process_node_attr(ctx,ctx->curFRAG,pre,(size==0)))
+                if ( !process_node_attr(ctx,ctx->curCONT,pre,(size==0)))
                     return 0;
                 break;
             }
         case (char)1:
             {	/* PFTEXT */
         
-                getWsValue(res,ctx,vFRAG,PROP_TEXT,prop);
+                getWsValue(res,ctx,vCONT,PROP_TEXT,prop);
                 if ( !ctx->driverFun->handle_characters(ctx,(str)res,(top?"text":0)))
                     return 0;
                 break;
             }
         case (char)2:
             {	/* COMMENT */
-                getWsValue(res,ctx,vFRAG,PROP_COM,prop);
+                getWsValue(res,ctx,vCONT,PROP_COM,prop);
                 if ( !ctx->driverFun->handle_comment(ctx,(str)res))
                     return 0;
                 break;
@@ -945,9 +945,9 @@ static int xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
         case (char)3:
             {	/* PI */
                 str target, data;
-                getWsValue(res,ctx,vFRAG,PROP_TGT,prop);
+                getWsValue(res,ctx,vCONT,PROP_TGT,prop);
                 target = (str) res;
-                getWsValue(res,ctx,vFRAG,PROP_INS,prop);
+                getWsValue(res,ctx,vCONT,PROP_INS,prop);
                 data = (str) res;
                 if (!ctx->driverFun->handle_processingInstruction(ctx,target,data))
                     return 0;
@@ -957,7 +957,7 @@ static int xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
             {	/* DOCUMENT */
                 /* The node represents an entire document */
                 int offset;
-                getWsValue(res,ctx,ctx->curFRAG,PRE_SIZE,pre);
+                getWsValue(res,ctx,ctx->curCONT,PRE_SIZE,pre);
                 offset = *(int*)res;
                 if (!pushTag(ctx,pre+offset,"","",0/*false*/))
                     return 0;
@@ -996,7 +996,7 @@ static int xquery_pre_range(XqueryCtx* ctx, BAT* b, oid from, oid to) {
     for(q = BUNlast(b); p<q; p = BUNnext(b, p)) {
         oid pre = *(oid*)BUNhead(b, p);
         do {
-            if ( !xquery_node_print(ctx, pre, 0 /*pre_frag*/, 0 /*false*/))
+            if ( !xquery_node_print(ctx, pre, 0 /*pre_cont*/, 0 /*false*/))
                 return 0;
             if ( !xquery_endtag_print(ctx,++pre) )
                 return 0;
@@ -1010,7 +1010,7 @@ static int xquery_pre_range(XqueryCtx* ctx, BAT* b, oid from, oid to) {
     return 1;
 }
 
-static int MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_frag, int top) {
+static int MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_cont, int top) {
     oid pre = from;
 
     if ( ctx->typedMode ){
@@ -1018,7 +1018,7 @@ static int MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_frag, 
     }
 
     do {
-        if ( !xquery_node_print(ctx, pre,pre_frag,top&&(from==to)) /*cheat*/ ) {
+        if ( !xquery_node_print(ctx, pre,pre_cont,top&&(from==to)) /*cheat*/ ) {
             return 0;
         }
         if ( !xquery_endtag_print(ctx,++pre) ) {
@@ -1130,14 +1130,14 @@ int xquery_print_doc_DRIVER(
     if ( !createWsContext(ctx,ws,docIndex,mode,driverFun,driverArg) )
         return GDK_FAIL;
     /* */
-    getWsBAT(b,ctx,ctx->curFRAG,PRE_SIZE);
+    getWsBAT(b,ctx,ctx->curCONT,PRE_SIZE);
     if ( !ctx->driverFun->handle_startDocument(ctx) )
         return GDK_FAIL;
     if ( !xquery_pre_range(ctx,b,0/*start*/,1 /* first is doc ? */) )
         return GDK_FAIL;
     if ( !ctx->driverFun->handle_endDocument(ctx) )
         return GDK_FAIL;
-    setDefaultFRAG(ctx,-1); /* close all open context BAT's */
+    setDefaultCONT(ctx,-1); /* close all open context BAT's */
     /* */
     if ( !disposeWsContext(ctx) )
         return GDK_FAIL;
@@ -1162,11 +1162,11 @@ int xquery_print_doc_main(str mode, BAT* ws, str docName) {
 /**
  * Emit a NODE element of an XQUERY/Pathfinder result sequence
  */
-static int emitNodeInSeq(XqueryCtx* ctx, oid preVal, BAT* pre_frag, int top) {
+static int emitNodeInSeq(XqueryCtx* ctx, oid preVal, BAT* pre_cont, int top) {
     ptr res;
     /* incomplete, different for dmMode ?? */
-    getWsValue(res,ctx,ctx->curFRAG,PRE_SIZE,preVal);
-    return MY_xquery_pre_range(ctx,preVal,preVal+*(int*) res, pre_frag, top);
+    getWsValue(res,ctx,ctx->curCONT,PRE_SIZE,preVal);
+    return MY_xquery_pre_range(ctx,preVal,preVal+*(int*) res, pre_cont, top);
 }
 
 /**
@@ -1239,13 +1239,13 @@ int xquery_print_result_DRIVER(
             BATloop_off(item,p,q,xx,curcnt,buncnt) { 
                 oid pre = *(oid*)BUNhead(item, p);
                 oid valoid = *(oid*)BUNtail(item, p);
-                int cmbn_frag_kind;
+                int cmbn_cont_kind;
                 findTailValue(res,ctx,kind,pre);
-                cmbn_frag_kind = *(int*)res;
+                cmbn_cont_kind = *(int*)res;
 
-                if ( XTRACT_KIND(cmbn_frag_kind) == ATTR ) {
-                    int frag = XTRACT_FRAG(cmbn_frag_kind);
-                    if ( !process_attr(ctx,frag,valoid,1/* top */) )
+                if ( XTRACT_KIND(cmbn_cont_kind) == ATTR ) {
+                    int cont = XTRACT_CONT(cmbn_cont_kind);
+                    if ( !process_attr(ctx,cont,valoid,1/* top */) )
                         return GDK_FAIL;
                 }
             }
@@ -1257,33 +1257,33 @@ int xquery_print_result_DRIVER(
         BATloop_off(item,p,q,xx,curcnt,buncnt) {
             oid pre = *(oid*)BUNhead(item, p);
             oid valoid = *(oid*)BUNtail(item, p);
-            int cmbn_frag_kind, lastVal = (p + xx < q ) ? 0 : 1;
+            int cmbn_cont_kind, lastVal = (p + xx < q ) ? 0 : 1;
             findTailValue(res,ctx,kind,pre);
-            cmbn_frag_kind = *(int*)res;
+            cmbn_cont_kind = *(int*)res;
 	    if ( !ctx->driverFun->seqElementStart(ctx,cnt) )
 	    	 return GDK_FAIL;
-            switch( XTRACT_KIND(cmbn_frag_kind) ) {
+            switch( XTRACT_KIND(cmbn_cont_kind) ) {
                 case ATTR:
                     if ( ctx->dmMode ) {
-                        int frag = XTRACT_FRAG(cmbn_frag_kind);
-                        if ( !process_attr(ctx,frag,valoid,1/* top */) )
+                        int cont = XTRACT_CONT(cmbn_cont_kind);
+                        if ( !process_attr(ctx,cont,valoid,1/* top */) )
                             return GDK_FAIL;
                     }
                     break;
                 case ELEM:
                     {
-                        int frag = XTRACT_FRAG(cmbn_frag_kind);
+                        int cont = XTRACT_CONT(cmbn_cont_kind);
                         /* if ( ctx->dmMode ),check for first kind text { "t" }
-                         * check getWsValue(ctx,frag,PRE_KIND,valoid);
+                         * check getWsValue(ctx,cont,PRE_KIND,valoid);
                          * for TEXT
                          */
-                        int oldCtx = ctx->curFRAG;
-			setDefaultFRAG(ctx,frag);
+                        int oldCtx = ctx->curCONT;
+			setDefaultCONT(ctx,cont);
                         BAT *b;
-                        getWsBAT(b,ctx,ctx->curFRAG,PRE_FRAG)
+                        getWsBAT(b,ctx,ctx->curCONT,PRE_CONT)
                         if ( !emitNodeInSeq(ctx, valoid, b, 1/*top*/) )
                             return GDK_FAIL;
-                        setDefaultFRAG(ctx,oldCtx);
+                        setDefaultCONT(ctx,oldCtx);
                         break;
                     };
                 case NODE:
@@ -1311,9 +1311,9 @@ int xquery_print_result_DRIVER(
                         return GDK_FAIL;
                     break;
                 default:
-                    GDKerror("serialize.mx:xquery_print_result_main: [kind=%d, frag=%d]\n",
-                            XTRACT_KIND(cmbn_frag_kind),XTRACT_FRAG(cmbn_frag_kind));
-                    fatal_err(ctx,"UNKNOW_TYPE(\'%c\'ch(%d))\n",cmbn_frag_kind,cmbn_frag_kind);
+                    GDKerror("serialize.mx:xquery_print_result_main: [kind=%d, cont=%d]\n",
+                            XTRACT_KIND(cmbn_cont_kind),XTRACT_CONT(cmbn_cont_kind));
+                    fatal_err(ctx,"UNKNOW_TYPE(\'%c\'ch(%d))\n",cmbn_cont_kind,cmbn_cont_kind);
                     return GDK_FAIL;
             }
 	    if ( !ctx->driverFun->seqElementEnd(ctx,cnt) )
@@ -1324,7 +1324,7 @@ int xquery_print_result_DRIVER(
         if ( !ctx->driverFun->seqEnd(ctx) )
             return GDK_FAIL;
     } 
-    setDefaultFRAG(ctx,-1);
+    setDefaultCONT(ctx,-1);
     TIMER_STOP("# serialization of result%s","");
     return disposeWsContext(ctx)?GDK_SUCCEED:GDK_FAIL;
 }

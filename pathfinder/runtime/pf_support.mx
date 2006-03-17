@@ -65,11 +65,11 @@ C implementation of the document shredder"
 
 @- Multi Join
 @m
-.COMMAND mposjoin( BAT[oid,oid] pre, BAT[oid,oid] frag, BAT[oid, bat] ws_item )
+.COMMAND mposjoin( BAT[oid,oid] pre, BAT[oid,oid] cont, BAT[oid, bat] ws_item )
 		: BAT[void,any] = CMDmposjoin;
 "PARAMETERS:
 BAT[oid,oid] - the values which have to be looked up
-BAT[oid,oid] - the corresponding fragments in which the values have to be looked up
+BAT[oid,oid] - the corresponding containers in which the values have to be looked up
 BAT[oid,BAT[oid,any]] - the list of bats where the values are looked up
 All BAT-heads must be dense.
 DESCRIPITON:
@@ -79,11 +79,11 @@ the value (see also 'mvaljoin').
 The result is a bat with the tail values from the batlist (any) and the same
 void column like the first two arguments"
 
-.COMMAND mvaljoin( BAT[oid,oid] pre, BAT[oid,oid] frag, BAT[oid, bat] ws_item )
+.COMMAND mvaljoin( BAT[oid,oid] pre, BAT[oid,oid] cont, BAT[oid, bat] ws_item )
 		: BAT[oid,oid] = CMDmvaljoin;
 "PARAMETERS:
 BAT[oid,oid] - the values which have to be joined
-BAT[oid,oid] - the corresponding fragments in which the values have to be looked up
+BAT[oid,oid] - the corresponding containers in which the values have to be looked up
 BAT[oid,BAT[oid,oid]] - the list of bats where the tail values are joined
 All BAT-heads must be dense.
 DESCRIPITON:
@@ -262,7 +262,7 @@ an overloaded insert).
 "PARAMETERS
   pre_size: the complete size BAT (preorder rank, size)
   ctx: context node sequence (preorder rank, *)
-  doc_pre: table of document fragments (doc id, preorder start value)
+  doc_pre: table of document containers (doc id, preorder start value)
   height: document height
   upperbound: upperbound for size of result context node sequence
 DESCRIPTION
@@ -383,14 +383,14 @@ proc addValues(bat[void,any::1] container, bat[oid,any::1] delta) : bat[oid,oid]
     return delta.leftjoin(container.reverse());
 }
 
-proc mposjoin( BAT[oid,oid] pre, oid frag, BAT[oid, bat] ws_item ) : BAT[void,any] 
+proc mposjoin( BAT[oid,oid] pre, oid cont, BAT[oid, bat] ws_item ) : BAT[void,any] 
 {
-    return pre.leftfetchjoin(bat2constant(ws_item.find(frag)));
+    return pre.leftfetchjoin(bat2constant(ws_item.find(cont)));
 }
 
-proc mvaljoin( BAT[oid,oid] pre, oid frag, BAT[oid, bat] ws_item ) : BAT[oid,oid] 
+proc mvaljoin( BAT[oid,oid] pre, oid cont, BAT[oid, bat] ws_item ) : BAT[oid,oid] 
 {
-    return pre.leftjoin(ws_item.find(frag).reverse());
+    return pre.leftjoin(ws_item.find(cont).reverse());
 }
 
 proc tmark_unique( any::1 col, BAT[void,any] ipik) : BAT[oid,oid]
@@ -429,29 +429,29 @@ PROC get_type_atomic (bat[void,int] kind) : bat[oid,void]
         return kind.ord_uselect(int(nil), ATOMIC);
 }
 
-PROC get_fragment (int kind) : oid
+PROC get_container (int kind) : oid
 {
         return kind.>>(6).oid();
 }
 
-PROC get_fragment (bat[oid,int] kind) : bat[oid,oid]
+PROC get_container (bat[oid,int] kind) : bat[oid,oid]
 {
         return kind.[>>](6).[oid]();
 }
 
-PROC get_fragment (bat[void,int] kind) : bat[void,oid]
+PROC get_container (bat[void,int] kind) : bat[void,oid]
 {
         return kind.[>>](6).[oid]();
 }
 
-PROC set_kind (oid frag, int type_) : int
+PROC set_kind (oid cont, int type_) : int
 {
-        return frag.int().<<(6).or(type_);
+        return cont.int().<<(6).or(type_);
 }
 
-PROC set_kind (bat[void,oid] frag, int type_) : bat[void,int]
+PROC set_kind (bat[void,oid] cont, int type_) : bat[void,int]
 {
-        return frag.[int]().[<<](6).[or](type_);
+        return cont.[int]().[<<](6).[or](type_);
 }
 
 PROC get_types (bat[void,int] kind) : bat[void,int]
@@ -474,7 +474,7 @@ PROC correct_sizes (oid iter, bat[void,oid] item, bat[void,int] size) : bat[void
 #   1. retrieve the right values
 #   2. build the iter|item|kind BATs
 #   3. fill in the value containers
-PROC get_rpc_res ( BAT[void, bat] ws, oid frag,
+PROC get_rpc_res ( BAT[void, bat] ws, oid cont,
         BAT[void, lng] int_values,
         BAT[void, dbl] dbl_values, 
         BAT[void, dbl] dec_values,
@@ -486,14 +486,14 @@ PROC get_rpc_res ( BAT[void, bat] ws, oid frag,
     var res_kind := new(void,int);
 
     # get values out of WS for later use
-    var pre_size  := ws.fetch(PRE_SIZE).fetch(frag);
-    var pre_level := ws.fetch(PRE_LEVEL).fetch(frag);
-    var pre_kind  := ws.fetch(PRE_KIND).fetch(frag);
-    var pre_nid   := ws.fetch(PRE_NID).fetch(frag);
-    var pre_prop  := ws.fetch(PRE_PROP).fetch(frag); # reference to the value tables
-    var qn_prefix := ws.fetch(QN_PREFIX).fetch(frag);
-    var qn_loc    := ws.fetch(QN_LOC).fetch(frag); # str name of ELEM nodes
-    var prop_text := ws.fetch(PROP_TEXT).fetch(frag); # str value of TEXT nodes
+    var pre_size  := ws.fetch(PRE_SIZE).fetch(cont);
+    var pre_level := ws.fetch(PRE_LEVEL).fetch(cont);
+    var pre_kind  := ws.fetch(PRE_KIND).fetch(cont);
+    var pre_nid   := ws.fetch(PRE_NID).fetch(cont);
+    var pre_prop  := ws.fetch(PRE_PROP).fetch(cont); # reference to the value tables
+    var qn_prefix := ws.fetch(QN_PREFIX).fetch(cont);
+    var qn_loc    := ws.fetch(QN_LOC).fetch(cont); # str name of ELEM nodes
+    var prop_text := ws.fetch(PROP_TEXT).fetch(cont); # str value of TEXT nodes
     # First BUN is the DOCUMENT node, never used, so remove it
     pre_size  := pre_size.slice(1,  pre_size.count() - 1);
     pre_level := pre_level.slice(1, pre_level.count() - 1);
@@ -848,7 +848,7 @@ proc ll_htordered_unique_thetajoin( int mode,
 	var item_descs := cands.ord_select(fst,lst).reverse().chk_order();
 @
 @= wrap
-PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid frag, BAT[oid,bat] ws, int order, BAT[void,oid] cands) : BAT[void,bat]
+PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid cont, BAT[oid,bat] ws, int order, BAT[void,oid] cands) : BAT[void,bat]
 {
 	var result := nil;
 	var one_iter := FALSE;
@@ -877,12 +877,12 @@ PROC @1 (BAT[oid,oid] iter, BAT[oid,oid] item, oid frag, BAT[oid,bat] ws, int or
 		ERROR("@1(5): tail of cands must be sorted!");
 	}
 
-	var pre_size := ws.fetch(PRE_SIZE).fetch(frag);
-	var height   := ws.fetch(HEIGHT).fetch(frag);
+	var pre_size := ws.fetch(PRE_SIZE).fetch(cont);
+	var height   := ws.fetch(HEIGHT).fetch(cont);
 
-    if (ws.fetch(WS_FRAG).fetch(frag).count() > 0){
-        var min_size := int(ws.fetch(WS_FRAG).fetch(frag).fetch(0));
-        var max_size := min_size + int(ws.fetch(PRE_SIZE).fetch(frag).fetch(min_size));
+    if (ws.fetch(WS_FRAG).fetch(cont).count() > 0){
+        var min_size := int(ws.fetch(WS_FRAG).fetch(cont).fetch(0));
+        var max_size := min_size + int(ws.fetch(PRE_SIZE).fetch(cont).fetch(min_size));
 #pre_size     := pre_size.slice(min_size, max_size);
     }
     
@@ -986,7 +986,7 @@ ADDHELP("@1", "tsheyar", "Sep 2004",
 "PARAMETERS:\n\
 BAT[void,oid] iter (grouping relation)\n\
 BAT[void,oid] item (context set)\n\
-oid frag (the current fragment of the ws)\n\
+oid cont (the current container of the ws)\n\
 BAT[void,bat] ws (working set)\n\
 int order (input & output order properties:\n\
            bit 0: input is sorted on iter(0) or item(1)\n\
@@ -1003,7 +1003,7 @@ pre_sizes
 @
 # use level concept
 @= level_intro
-    var pre_levels := ws.fetch(PRE_LEVEL).fetch(frag);
+    var pre_levels := ws.fetch(PRE_LEVEL).fetch(cont);
 @
 @= level_code
 pre_levels
@@ -1011,7 +1011,7 @@ pre_levels
 # code for following and preceding steps
 @= foll_prec_code
     # dirty code to make possible, that old scj still works
-    var doc_pre := ws.fetch(WS_FRAG).fetch(frag);
+    var doc_pre := ws.fetch(WS_FRAG).fetch(cont);
     if (doc_pre.count() = 0)
         { doc_pre := doc_pre.append(1@0); }
 
@@ -1021,13 +1021,13 @@ doc_pre,
 @
 
 @= step
-PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int order ) : BAT[void,bat]
+PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid cont, BAT[void,bat] ws, int order ) : BAT[void,bat]
 {
     # "order" is not (yet?) used, here.
 
-    var pre_sizes := ws.fetch(PRE_SIZE).fetch(frag);
+    var pre_sizes := ws.fetch(PRE_SIZE).fetch(cont);
     @4
-    var heights := ws.fetch(HEIGHT).fetch(frag);
+    var heights := ws.fetch(HEIGHT).fetch(cont);
 
     var unq := {count}(iter.reverse(), iter.tunique(),FALSE);
 
@@ -1072,7 +1072,7 @@ ADDHELP("@1", "tsheyar", "Sep 2004",
 "PARAMETERS:\n\
 BAT[void,any] iter (grouping relation)\n\
 BAT[void,any] ctx (context set)\n\
-oid frag (the current fragment of the ws)\n\
+oid cont (the current container of the ws)\n\
 BAT[void,bat] ws (working set)\n\
 DESCRIPITON:\n\
 returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.",
@@ -1134,15 +1134,16 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 # code for tagname testing
 @= nsloc_post
  {
-	var pre_frag := ws.fetch(PRE_FRAG).fetch(theFrag);
-	if (is_constant(pre_frag)) {
-		var frag := pre_frag.fetch(0);
-		pre_frag := nil;
-		var qn_nsloc := ws.fetch(QN_LOC_URI).fetch(frag);
+	var pre_cont := ws.fetch(PRE_CONT).fetch(contID);
+	var map_pid  := ws.fetch(MAP_PID).fetch(contID);
+	var nid_rid  := ws.fetch(NID_RID).fetch(contID);
+	var knd_nid  := ws.fetch(KND_NID .find(ELEMENT)).fetch(contID);
+	var knd_prop := ws.fetch(KND_PROP.find(ELEMENT)).fetch(contID);
+	if (is_constant(pre_cont)) {
+		var cont := pre_cont.fetch(0);
+		pre_cont := nil;
+		var qn_nsloc := ws.fetch(QN_LOC_URI).fetch(cont);
 		    qn_nsloc := qn_nsloc.ord_uselect(loc+str('\1')+ns);
-	 	var nid_pre  := ws.fetch(NID_PRE).fetch(theFrag);
-		var knd_nid  := ws.fetch(KND_NID .find(ELEMENT)).fetch(theFrag);
-		var knd_prop := ws.fetch(KND_PROP.find(ELEMENT)).fetch(theFrag);
 		if (flt(count(knd_prop)) <= (1.1 * flt(count(result_part_item)))) {
 			var knd_nsloc;
 			if (count(qn_nsloc) = 1) {
@@ -1150,43 +1151,29 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 			} else {
 				knd_nsloc := knd_prop.leftjoin(qn_nsloc);
 			}
-			knd_prop := nil;
-			qn_nsloc := nil;
-			var pre_nsloc := knd_nsloc.reverse().leftfetchjoin(knd_nid).leftfetchjoin(nid_pre).reverse();
-			nid_pre := nil;
-			knd_nid := nil;
-			knd_nsloc := nil;
+			var pre_nsloc := knd_nsloc.reverse().leftfetchjoin(knd_nid).leftfetchjoin(nid_rid).[swizzle](map_pid).reverse();
 			tmp_res := result_part_item.leftjoin(pre_nsloc).hmark(0@0);
 		} else {
-			var pre_prop := knd_prop.reverse().leftfetchjoin(knd_nid).leftfetchjoin(nid_pre).reverse();
-			nid_pre := nil;
-			knd_nid := nil;
-			knd_prop := nil;
+			var pre_prop := knd_prop.reverse().leftfetchjoin(knd_nid).leftfetchjoin(nid_rid).[swizzle](map_pid).reverse();
 			var res_prop := result_part_item.leftjoin(pre_prop);
 			pre_prop := nil;
 			tmp_res := res_prop.leftjoin(qn_nsloc).hmark(0@0);
 		}
 	} else {
-	 	var nid_pre  := ws.fetch(NID_PRE).fetch(theFrag);
-	 	var knd_nid  := ws.fetch(KND_NID .find(ELEMENT)).fetch(theFrag);
-	 	var knd_prop := ws.fetch(KND_PROP.find(ELEMENT)).fetch(theFrag);
-		var pre_prop := knd_prop.reverse().leftfetchjoin(knd_nid).leftfetchjoin(nid_pre).reverse();
-		    knd_prop := nil;
-		    knd_nid  := nil;
-		    nid_pre  := nil;
-		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
+		var pre_prop := knd_prop.reverse().leftfetchjoin(knd_nid).leftfetchjoin(nid_rid).[swizzle](map_pid).reverse();
+		    pre_cont := pre_prop.mirror().leftfetchjoin(pre_cont);
 		var res_prop := result_part_item.leftjoin(pre_prop);
 		    pre_prop := nil;
-		var res_frag := result_part_item.leftjoin(pre_frag);
-		    pre_frag := nil;
+		var res_cont := result_part_item.leftjoin(pre_cont);
+		    pre_cont := nil;
 		var X_res    := res_prop.hmark(0@0);
 		var X_prop   := res_prop.tmark(0@0);
 		    res_prop := nil;
-		var X_frag   := res_frag.tmark(0@0);
-		    res_frag := nil;
-		var X_nsloc  := mposjoin(X_prop, X_frag, ws.fetch(QN_LOC_URI));
+		var X_cont   := res_cont.tmark(0@0);
+		    res_cont := nil;
+		var X_nsloc  := mposjoin(X_prop, X_cont, ws.fetch(QN_LOC_URI));
 		    X_prop   := nil;
-		    X_frag   := nil;
+		    X_cont   := nil;
 		var _X       := X_nsloc.ord_uselect(loc+str('\1')+ns).reverse();
 		    X_nsloc  := nil;
 		tmp_res := _X.leftfetchjoin(X_res).tmark(0@0);
@@ -1205,15 +1192,16 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @
 @= ns_loc_post
  {
-	var pre_frag := ws.fetch(PRE_FRAG).fetch(theFrag);
-	if (is_constant(pre_frag)) {
-		var frag := pre_frag.fetch(0);
-		pre_frag := nil;
-		var @1_@2 := ws.fetch(@3_@4).fetch(frag);
+	var pre_cont := ws.fetch(PRE_CONT).fetch(contID);
+	var map_pid  := ws.fetch(MAP_PID).fetch(contID);
+	var nid_rid  := ws.fetch(NID_RID).fetch(contID);
+	var knd_nid  := ws.fetch(KND_NID .find(@5)).fetch(contID);
+	var knd_prop := ws.fetch(KND_PROP.find(@5)).fetch(contID);
+	if (is_constant(pre_cont)) {
+		var cont := pre_cont.fetch(0);
+		pre_cont := nil;
+		var @1_@2 := ws.fetch(@3_@4).fetch(cont);
 		    @1_@2 := @1_@2.ord_uselect(@2);
-	 	var nid_pre  := ws.fetch(NID_PRE).fetch(theFrag);
-	 	var knd_nid  := ws.fetch(KND_NID .find(@5)).fetch(theFrag);
-	 	var knd_prop := ws.fetch(KND_PROP.find(@5)).fetch(theFrag);
 		if (flt(count(knd_prop)) <= (1.1 * flt(count(result_part_item)))) {
 			var knd_@2;
 			if (count(@1_@2) = 1) {
@@ -1221,43 +1209,31 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 			} else {
 				knd_@2 := knd_prop.leftjoin(@1_@2);
 			}
-			knd_prop := nil;
 			@1_@2    := nil;
-			var pre_@2 := knd_@2.reverse().leftfetchjoin(knd_nid).leftfetchjoin(nid_pre).reverse();
-			nid_pre := nil;
-			knd_nid := nil;
+			var pre_@2 := knd_@2.reverse().leftfetchjoin(knd_nid).leftfetchjoin(nid_rid).[swizzle](map_pid).reverse();
 			knd_@2  := nil;
 			tmp_res := result_part_item.leftjoin(pre_@2).hmark(0@0);
 		} else {
-			var pre_prop := knd_prop.reverse().leftfetchjoin(knd_nid).leftfetchjoin(nid_pre).reverse();
-			nid_pre  := nil;
-			knd_nid  := nil;
-			knd_prop := nil;
+			var pre_prop := knd_prop.reverse().leftfetchjoin(knd_nid).leftfetchjoin(nid_rid).[swizzle](map_pid).reverse();
 			var res_prop := result_part_item.leftjoin(pre_prop);
 			pre_prop := nil;
 			tmp_res := res_prop.leftjoin(@1_@2).hmark(0@0);
 		}
 	} else {
-	 	var nid_pre  := ws.fetch(NID_PRE).fetch(theFrag);
-	 	var knd_nid  := ws.fetch(KND_NID .find(@5)).fetch(theFrag);
-	 	var knd_prop := ws.fetch(KND_PROP.find(@5)).fetch(theFrag);
-		var pre_prop := knd_prop.reverse().leftfetchjoin(knd_nid).leftfetchjoin(nid_pre).reverse();
-		    knd_prop := nil;
-		    knd_nid  := nil;
-		    nid_pre  := nil;
-		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
+		var pre_prop := knd_prop.reverse().leftfetchjoin(knd_nid).leftfetchjoin(nid_rid).[swizzle](map_pid).reverse();
+		    pre_cont := pre_prop.mirror().leftfetchjoin(pre_cont);
 		var res_prop := result_part_item.leftjoin(pre_prop);
 		    pre_prop := nil;
-		var res_frag := result_part_item.leftjoin(pre_frag);
-		    pre_frag := nil;
+		var res_cont := result_part_item.leftjoin(pre_cont);
+		    pre_cont := nil;
 		var X_res    := res_prop.hmark(0@0);
 		var X_prop   := res_prop.tmark(0@0);
 		    res_prop := nil;
-		var X_frag   := res_frag.tmark(0@0);
-		    res_frag := nil;
-		var X_@2     := mposjoin(X_prop, X_frag, ws.fetch(@3_@4));
+		var X_cont   := res_cont.tmark(0@0);
+		    res_cont := nil;
+		var X_@2     := mposjoin(X_prop, X_cont, ws.fetch(@3_@4));
 		    X_prop   := nil;
-		    X_frag   := nil;
+		    X_cont   := nil;
 		var _X       := X_@2.ord_uselect(@2).reverse();
 		    X_@2     := nil;
 		tmp_res := _X.leftfetchjoin(X_res).tmark(0@0);
@@ -1267,11 +1243,11 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @
 @= kind_post
  {
- 	var nid_pre := ws.fetch(NID_PRE).fetch(theFrag);
-	var nid_    := ws.fetch(KND_NID.find(@1)).fetch(theFrag).reverse().project(nil);
-	var pre_    := nid_.reverse().leftfetchjoin(nid_pre).reverse();
+	var map_pid := ws.fetch(MAP_PID).fetch(contID);
+ 	var nid_rid := ws.fetch(NID_RID).fetch(contID);
+	var nid_    := ws.fetch(KND_NID.find(@1)).fetch(contID).reverse().project(nil);
+	var pre_    := nid_.reverse().leftfetchjoin(nid_rid).[swizzle](map_pid).reverse();
 	nid_    := nil;
-	nid_pre := nil;
 	tmp_res := result_part_item.leftjoin(pre_).hmark(0@0);
 	pre_    := nil;
 	@:mapping_code@
@@ -1302,29 +1278,32 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
  }
 @
 @= no_pre
-	cands := ws.fetch(PRE_SIZE).fetch(theFrag).uselect(0,int(nil)).reverse();
+	cands := ws.fetch(PRE_SIZE).fetch(contID).uselect(0,int(nil)).reverse();
 	cands := cands.chk_order();
 @
 @= kind_pre
 {
- 	var nid_pre := ws.fetch(NID_PRE).fetch(theFrag);
-	var nid_    := ws.fetch(KND_NID.find(@1)).fetch(theFrag).reverse().project(nil);
-	cands := nid_.reverse().leftfetchjoin(nid_pre);
+	var map_pid := ws.fetch(MAP_PID).fetch(contID);
+ 	var nid_rid := ws.fetch(NID_RID).fetch(contID);
+	var nid_    := ws.fetch(KND_NID.find(@1)).fetch(contID).reverse().project(nil);
+	cands := nid_.reverse().leftfetchjoin(nid_rid).[swizzle](map_pid);
 	nid_    := nil;
-	nid_pre := nil;
 	cands := cands.reverse().access(BAT_WRITE).order().access(BAT_READ).reverse();
 	@:shrink_code@
 }
 @
 @= nsloc_pre
  {
-	var pre_frag := ws.fetch(PRE_FRAG).fetch(theFrag);
-	if (is_constant(pre_frag)) {
-		var frag := pre_frag.fetch(0);
-		pre_frag := nil;
-		var qn_nsloc := ws.fetch(QN_LOC_URI).fetch(frag);
+	var pre_cont := ws.fetch(PRE_CONT).fetch(contID);
+	var map_pid  := ws.fetch(MAP_PID).fetch(contID);
+	var nid_rid  := ws.fetch(NID_RID).fetch(contID);
+	var knd_nid  := ws.fetch(KND_NID .find(ELEMENT)).fetch(contID);
+	if (is_constant(pre_cont)) {
+		var cont := pre_cont.fetch(0);
+		pre_cont := nil;
+		var qn_nsloc := ws.fetch(QN_LOC_URI).fetch(cont);
 		    qn_nsloc := qn_nsloc.ord_uselect(loc+str('\1')+ns);
-		var knd_prop := ws.fetch(KND_PROP.find(ELEMENT)).fetch(theFrag);
+		var knd_prop := ws.fetch(KND_PROP.find(ELEMENT)).fetch(contID);
 		if (count(qn_nsloc) = 1) {
 			cands := knd_prop.ord_uselect(qn_nsloc.reverse().fetch(0)).project().reverse();
 		} else {
@@ -1332,26 +1311,20 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		}
 		knd_prop := nil;
 		qn_nsloc := nil;
-	 	var nid_pre := ws.fetch(NID_PRE).fetch(theFrag);
-	 	var knd_nid := ws.fetch(KND_NID.find(ELEMENT)).fetch(theFrag);
-		cands := cands.leftfetchjoin(knd_nid).leftfetchjoin(nid_pre);
+		cands := cands.leftfetchjoin(knd_nid).leftfetchjoin(nid_rid).[swizzle](map_pid);
 	} else {
-	 	var nid_pre  := ws.fetch(NID_PRE).fetch(theFrag);
-	 	var knd_nid  := ws.fetch(KND_NID .find(ELEMENT)).fetch(theFrag);
-		var knd_prop := ws.fetch(KND_PROP.find(ELEMENT)).fetch(theFrag);
-		var pre_prop := knd_prop.reverse().leftfetchjoin(knd_nid).leftfetchjoin(nid_pre).reverse();
+		var knd_prop := ws.fetch(KND_PROP.find(ELEMENT)).fetch(contID);
+		var pre_prop := knd_prop.reverse().leftfetchjoin(knd_nid).leftfetchjoin(nid_rid).[swizzle](map_pid).reverse();
 		    knd_prop := nil;
-		    knd_nid  := nil;
-		    nid_pre  := nil;
-		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
+		    pre_cont := pre_prop.mirror().leftfetchjoin(pre_cont);
 		var X_pre    := pre_prop.hmark(0@0);
 		var X_prop   := pre_prop.tmark(0@0);
 		    pre_prop := nil;
-		var X_frag   := pre_frag.tmark(0@0);
-		    pre_frag := nil;
-		var X_nsloc  := mposjoin(X_prop, X_frag, ws.fetch(QN_LOC_URI));
+		var X_cont   := pre_cont.tmark(0@0);
+		    pre_cont := nil;
+		var X_nsloc  := mposjoin(X_prop, X_cont, ws.fetch(QN_LOC_URI));
 		    X_prop   := nil;
-		    X_frag   := nil;
+		    X_cont   := nil;
 		var _X       := X_nsloc.ord_uselect(loc+str('\1')+ns).reverse();
 		    X_nsloc  := nil;
 		cands := _X.leftfetchjoin(X_pre); #.reverse().sort().reverse()
@@ -1377,13 +1350,15 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @
 @= ns_loc_pre
  {
-	var pre_frag := ws.fetch(PRE_FRAG).fetch(theFrag);
-	if (is_constant(pre_frag)) {
-		var frag := pre_frag.fetch(0);
-		pre_frag := nil;
-		var @1_@2 := ws.fetch(@3_@4).fetch(frag);
+	var pre_cont := ws.fetch(PRE_CONT).fetch(contID);
+	var map_pid := ws.fetch(MAP_PID).fetch(contID);
+	var nid_rid := ws.fetch(NID_RID).fetch(contID);
+	var knd_nid := ws.fetch(KND_NID.find(@5)).fetch(contID);
+	if (is_constant(pre_cont)) {
+		var cont := pre_cont.fetch(0);
+		var @1_@2 := ws.fetch(@3_@4).fetch(cont);
 		    @1_@2 := @1_@2.ord_uselect(@2);
-		var knd_prop := ws.fetch(KND_PROP.find(@5)).fetch(theFrag);
+		var knd_prop := ws.fetch(KND_PROP.find(@5)).fetch(contID);
 		if (count(@1_@2) = 1) {
 			cands := knd_prop.ord_uselect(@1_@2.reverse().fetch(0)).project().reverse();
 		} else {
@@ -1391,26 +1366,20 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		}
 		knd_prop := nil;
 		@1_@2 := nil;
-		var nid_pre := ws.fetch(NID_PRE).fetch(theFrag);
-		var knd_nid := ws.fetch(KND_NID.find(@5)).fetch(theFrag);
-		cands := cands.leftfetchjoin(knd_nid).leftfetchjoin(nid_pre);
+		cands := cands.leftfetchjoin(knd_nid).leftfetchjoin(nid_rid).[swizzle](map_pid);
 	} else {
-	 	var nid_pre  := ws.fetch(NID_PRE).fetch(theFrag);
-	 	var knd_nid  := ws.fetch(KND_NID .find(@5)).fetch(theFrag);
-	 	var knd_prop := ws.fetch(KND_PROP.find(@5)).fetch(theFrag);
-		var pre_prop := knd_prop.reverse().leftfetchjoin(knd_nid).leftfetchjoin(nid_pre).reverse();
+	 	var knd_prop := ws.fetch(KND_PROP.find(@5)).fetch(contID);
+		var pre_prop := knd_prop.reverse().leftfetchjoin(knd_nid).leftfetchjoin(nid_rid).[swizzle](map_pid).reverse();
 		    knd_prop := nil;
-		    knd_nid  := nil;
-		    nid_pre  := nil;
-		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
+		    pre_cont := pre_prop.mirror().leftfetchjoin(pre_cont);
 		var X_pre    := pre_prop.hmark(0@0);
 		var X_prop   := pre_prop.tmark(0@0);
 		    pre_prop := nil;
-		var X_frag   := pre_frag.tmark(0@0);
-		    pre_frag := nil;
-		var X_@2     := mposjoin(X_prop, X_frag, ws.fetch(@3_@4));
+		var X_cont   := pre_cont.tmark(0@0);
+		    pre_cont := nil;
+		var X_@2     := mposjoin(X_prop, X_cont, ws.fetch(@3_@4));
 		    X_prop   := nil;
-		    X_frag   := nil;
+		    X_cont   := nil;
 		var _X       := X_@2.ord_uselect(@2).reverse();
 		    X_@2     := nil;
 		cands := _X.leftfetchjoin(X_pre); #.reverse().sort().reverse()
@@ -1456,29 +1425,29 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @
 #==================================================================
 # actual definition of the scj proc
-@= loop_lifted_scj_per_frag
+@= loop_lifted_scj_per_cont
 	result_part_iter := result_part_iter.chk_order();
 	result_part_item := result_part_item.chk_order();
-        result_part_frag := nil;
+        result_part_cont := nil;
 
 	# pre-test
 	@4
 
-        var result := @1 (result_part_iter, result_part_item, theFrag, ws, order @3);
+        var result := @1 (result_part_iter, result_part_item, contID, ws, order @3);
 	result_part_iter := result.fetch(0);
 	result_part_item := result.fetch(1);
-        result_part_frag := constant2bat(theFrag);
+        result_part_cont := constant2bat(contID);
 	cands := nil;
 
 	# post-test
 	@2
 @
 @= loop_lifted_scj_step2
-proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] frag, bat[void, bat] ws @3) : bat[void,bat]
+proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] cont, bat[void, bat] ws @3) : bat[void,bat]
 {
-     return loop_lifted_@1_step@2 (iter, item, frag, ws, 0 @4);
+     return loop_lifted_@1_step@2 (iter, item, cont, ws, 0 @4);
 }
-proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] frag, bat[void, bat] ws, int order @3) : bat[void,bat]
+proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] cont, bat[void, bat] ws, int order @3) : bat[void,bat]
 {
     # handle empty results correctly
     if (iter.count() = 0) {
@@ -1493,68 +1462,68 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
     var result;
     var result_iter;
     var result_item;
-    var result_frag;
+    var result_cont;
     var tmp_res;
     var cands;
 
-    var uniqueFrag := frag.tunique().sort();
-    var theFrag := uniqueFrag.reverse().fetch(0);
-    if (uniqueFrag.count() = 1) {
-        var result_part_frag := oid(nil);
+    var uniqueCont := cont.tunique().sort();
+    var contID := uniqueCont.reverse().fetch(0);
+    if (uniqueCont.count() = 1) {
+        var result_part_cont := oid(nil);
         var result_part_iter := iter;
         var result_part_item := item;
 
-        @:loop_lifted_scj_per_frag(@1,@5,@6,@7)@
+        @:loop_lifted_scj_per_cont(@1,@5,@6,@7)@
 
         result_iter := result_part_iter;
         result_item := result_part_item;
-        result_frag := result_part_frag;
+        result_cont := result_part_cont;
         result_part_iter := nil;
         result_part_item := nil;
-        result_part_frag := nil;
+        result_part_cont := nil;
     } else {
-        var result_part_frag := frag.ord_uselect(theFrag).hmark(0@0);
-        var result_part_iter := result_part_frag.leftfetchjoin(iter);
-        var result_part_item := result_part_frag.leftfetchjoin(item);
+        var result_part_cont := cont.ord_uselect(contID).hmark(0@0);
+        var result_part_iter := result_part_cont.leftfetchjoin(iter);
+        var result_part_item := result_part_cont.leftfetchjoin(item);
 
-        @:loop_lifted_scj_per_frag(@1,@5,@6,@7)@
+        @:loop_lifted_scj_per_cont(@1,@5,@6,@7)@
 
         result_iter := result_part_iter;
         result_item := result_part_item;
-        result_frag := result_part_frag;
+        result_cont := result_part_cont;
         result_part_iter := nil;
         result_part_item := nil;
-        result_part_frag := nil;
+        result_part_cont := nil;
 
         var res_mu;
-	uniqueFrag.slice(1,uniqueFrag.count() - 1)@batloop () {
-	    theFrag := $h;
-            result_part_frag := frag.ord_uselect(theFrag).hmark(0@0);
-            result_part_iter := result_part_frag.leftfetchjoin(iter);
-            result_part_item := result_part_frag.leftfetchjoin(item);
+	uniqueCont.slice(1,uniqueCont.count() - 1)@batloop () {
+	    contID := $h;
+            result_part_cont := cont.ord_uselect(contID).hmark(0@0);
+            result_part_iter := result_part_cont.leftfetchjoin(iter);
+            result_part_item := result_part_cont.leftfetchjoin(item);
 
-            @:loop_lifted_scj_per_frag(@1,@5,@6,@7)@
+            @:loop_lifted_scj_per_cont(@1,@5,@6,@7)@
 
             res_mu := merged_union(result_iter, result_part_iter,
 				   result_item, result_part_item,
-				   result_frag, result_part_frag);
+				   result_cont, result_part_cont);
             result_part_iter := nil;
             result_part_item := nil;
-            result_part_frag := nil;
+            result_part_cont := nil;
             result_iter := res_mu.fetch(0);
             result_item := res_mu.fetch(1);
-            result_frag := res_mu.fetch(2);
+            result_cont := res_mu.fetch(2);
             res_mu := nil;
         }
     }
     
     result_iter.access(BAT_READ);
     result_item.access(BAT_READ);
-    result_frag.access(BAT_READ);
+    result_cont.access(BAT_READ);
     var result_scj := bat(void,bat,3).seqbase(0@0);
     result_scj.append(result_iter);
     result_scj.append(result_item);
-    result_scj.append(result_frag);
+    result_scj.append(result_cont);
 
     return result_scj.access(BAT_READ);
 }
@@ -1581,51 +1550,51 @@ PROC delete_nodes_prepare (BAT[void,oid] item, BAT[void,int] kind, BAT[void,bat]
         var bit30 := 1<<30;
         var order :=  3; # input & output of location step is sorted on item
         var cols  := 13; # number of PRE_* columns and *NID* indices to be updated: 
-                         # PRE_{SIZE,LEVEL,KIND,PROP,NID}, NID_PRE, KND_{NID_[0-4],PROP_{0,3}}
-        var frag  := kind.get_fragment();
+                         # PRE_{SIZE,LEVEL,KIND,PROP,NID}, NID_RID, KND_{NID_[0-4],PROP_{0,3}}
+        var cont  := kind.get_container();
             kind  := nil;
-        var uFrag := frag.tunique().sort();
-            res   := new(bat, bat, cols * count(uFrag));
-	uFrag@batloop () {
-	    var theFrag  := $h;
-            var pre_size := ws.fetch(PRE_SIZE).fetch(theFrag);
+        var uCont := cont.tunique().sort();
+            res   := new(bat, bat, cols * count(uCont));
+	uCont@batloop () {
+	    var contID  := $h;
+            var pre_size := ws.fetch(PRE_SIZE).fetch(contID);
             if (count(pre_size) > 0) {
-                var frags := frag.ord_uselect(theFrag).project(nil).reverse();
-                if (count(frags) > 0) {
-                    var items    := frags.leftfetchjoin(item).reverse().sort().mark(0@0).reverse();
-                        frags    := nil;
+                var conts := cont.ord_uselect(contID).project(nil).reverse();
+                if (count(conts) > 0) {
+                    var items    := conts.leftfetchjoin(item).reverse().sort().mark(0@0).reverse();
+                        conts    := nil;
                     var iters    := items.project(0@0); # we don\'t care about iters, here
                     var cands    := pre_size.project(nil).reverse().chk_order();
-                    var descs    := descendant_or_self (iters, items, theFrag, ws, order, cands);
+                    var descs    := descendant_or_self (iters, items, contID, ws, order, cands);
                         cands    := nil;
                         iters    := nil;
                         items    := nil;
                     var pre_     := descs.reverse().project(nil).chk_order();
                         descs    := nil;
 
-                        res      := res.insert(ws.fetch(PRE_SIZE ).fetch(theFrag), delete_nodes_prepare_pre_size(pre_size, pre_));
+                        res      := res.insert(ws.fetch(PRE_SIZE ).fetch(contID), delete_nodes_prepare_pre_size(pre_size, pre_));
                         pre_size := nil;
                     var pre_chr  := pre_.[chr]();
-                        res      := res.insert(ws.fetch(PRE_LEVEL).fetch(theFrag), pre_chr);
-                        res      := res.insert(ws.fetch(PRE_KIND ).fetch(theFrag), pre_chr);
+                        res      := res.insert(ws.fetch(PRE_LEVEL).fetch(contID), pre_chr);
+                        res      := res.insert(ws.fetch(PRE_KIND ).fetch(contID), pre_chr);
                         pre_chr  := nil;
-                        res      := res.insert(ws.fetch(PRE_PROP ).fetch(theFrag), pre_);
-                        res      := res.insert(ws.fetch(PRE_NID  ).fetch(theFrag), pre_);
-                    var pre_nid  := ws.fetch(PRE_NID).fetch(theFrag);
+                        res      := res.insert(ws.fetch(PRE_PROP ).fetch(contID), pre_);
+                        res      := res.insert(ws.fetch(PRE_NID  ).fetch(contID), pre_);
+                    var pre_nid  := ws.fetch(PRE_NID).fetch(contID);
                     var nid_     := pre_.reverse().leftfetchjoin(pre_nid).reverse().sort();
                         pre_     := nil;
                         pre_nid  := nil;
-                        res      := res.insert(ws.fetch(NID_PRE  ).fetch(theFrag), nid_);
+                        res      := res.insert(ws.fetch(NID_RID  ).fetch(contID), nid_);
                     
                     var knd := ELEMENT;
                     while ( knd <= DOCUMENT ) {
-                        var knd_nid := ws.fetch(KND_NID.find(knd)).fetch(theFrag);
+                        var knd_nid := ws.fetch(KND_NID.find(knd)).fetch(contID);
                         var knd_    := knd_nid.leftjoin(nid_);
                         if (count(knd_) > 0) {
                             res     := res.insert(knd_nid, knd_);
                         }
                         if ( (knd = ELEMENT) or (knd = PI) ) {
-                            var knd_prop := ws.fetch(KND_PROP.find(knd)).fetch(theFrag);
+                            var knd_prop := ws.fetch(KND_PROP.find(knd)).fetch(contID);
                                 knd_     := knd_prop.leftjoin(nid_);
                             if (count(knd_) > 0) {
                                 res      := res.insert(knd_prop, knd_);
@@ -1643,12 +1612,12 @@ PROC delete_nodes_prepare (BAT[void,oid] item, BAT[void,int] kind, BAT[void,bat]
 ADDHELP("delete_nodes_prepare", "manegold", "Aug 26 2005",
 "PARAMETERS:\n\
  BAT[void,oid] item (pre-order values of nodes that are to be deleted)\n\
- BAT[void,oid] kind (encoded fragment of nodes that are to be deleted)\n\
+ BAT[void,oid] kind (encoded container-id of nodes that are to be deleted)\n\
  BAT[void,bat] ws (working set)\n\
 RESULT:\n\
  BAT[bat,bat] BAT of BAT-pairs ('dst','src')\n\
 DESCRIPITON:\n\
- Given a list of nodes (item) to be deleted and their fragment (encoded in kind),\n\
+ Given a list of nodes (item) to be deleted and their container-id (encoded in kind),\n\
  delete_nodes_prepare() finds all decendants of the nodes that have to be deleted,\n\
  and returns a BAT of BAT-pairs ('dst','src'), where\n\
  'dst' is the (persistent) BAT that has to be updated, and\n\
@@ -1670,10 +1639,10 @@ PROC delete_nodes_execute (BAT[void,oid] item, BAT[void,int] kind, BAT[void,bat]
 ADDHELP("delete_nodes_execute", "manegold", "Aug 26 2005",
 "PARAMETERS:\n\
  BAT[void,oid] item (pre-order values of nodes that are to be deleted)\n\
- BAT[void,oid] kind (encoded fragment of nodes that are to be deleted)\n\
+ BAT[void,oid] kind (encoded container-id of nodes that are to be deleted)\n\
  BAT[void,bat] ws (working set)\n\
 DESCRIPITON:\n\
- Given a list of nodes (item) to be deleted and their fragment (encoded in kind),\n\
+ Given a list of nodes (item) to be deleted and their container-id (encoded in kind),\n\
  delete_nodes_execute() calls delete_nodes_prepare()\n\
  to calculate all BATs that have to be updates and their new values.\n\
  The updates are then first committed to the log\n\
@@ -1730,7 +1699,7 @@ proc strconcat(bat[void,str] a, bat[void,str] b) : bat[void,str]
 # This function returns the modified replacements BAT (in
 # fact, the BATs that are in the tail of the replacements BAT may be
 # modified by this function).
-proc movedata(bat[bat,bat] replacements, bat[void,bat] ws, oid frag, oid from, int size, int delta): bat[bat,bat]
+proc movedata(bat[bat,bat] replacements, bat[void,bat] ws, oid cont, oid from, int size, int delta): bat[bat,bat]
 {
   if (delta = 0)
     return replacements;        # not moving, so nothing to do
@@ -1760,12 +1729,12 @@ proc movedata(bat[bat,bat] replacements, bat[void,bat] ws, oid frag, oid from, i
     newholelast := oid(lng(from) + delta - 1);
   }
 
-  var pre_size := ws.fetch(PRE_SIZE).fetch(frag);
-  var pre_level := ws.fetch(PRE_LEVEL).fetch(frag);
-  var pre_prop := ws.fetch(PRE_PROP).fetch(frag);
-  var pre_kind := ws.fetch(PRE_KIND).fetch(frag);
-  var pre_nid := ws.fetch(PRE_NID).fetch(frag);
-  var nid_pre := ws.fetch(NID_PRE).fetch(frag);
+  var pre_size := ws.fetch(PRE_SIZE).fetch(cont);
+  var pre_level := ws.fetch(PRE_LEVEL).fetch(cont);
+  var pre_prop := ws.fetch(PRE_PROP).fetch(cont);
+  var pre_kind := ws.fetch(PRE_KIND).fetch(cont);
+  var pre_nid := ws.fetch(PRE_NID).fetch(cont);
+  var nid_pre := ws.fetch(NID_RID).fetch(cont);
 
   var repl_pre_size := replacements.replacementsfetch(pre_size);
   var repl_pre_level := replacements.replacementsfetch(pre_level);
@@ -1985,9 +1954,9 @@ proc replacementvalue(BAT[bat,bat] replacements, BAT[any::1,any::2] oldbat, any:
     return oldbat.find(key);
   }
 }
-proc replacementvalue(BAT[bat,bat] replacements, BAT[void,BAT] ws, int prop, oid frag, any::1 key) : any::2
+proc replacementvalue(BAT[bat,bat] replacements, BAT[void,BAT] ws, int prop, oid cont, any::1 key) : any::2
 {
-  return replacementvalue(replacements, ws.fetch(prop).fetch(frag), key);
+  return replacementvalue(replacements, ws.fetch(prop).fetch(cont), key);
 }
 # do a "fetch" on replacements, except that the second arg, though a BAT, is actually the key to be fetched
 proc replacementsfetch(BAT[BAT,BAT] replacements, BAT[any::1,any::2] oldbat): BAT[any::1,any::2]
@@ -2009,9 +1978,9 @@ proc replacementsfetch(BAT[BAT,BAT] replacements, BAT[any::1,any::2] oldbat): BA
   }
 }
 
-proc replace(bat[bat,bat] replacements, bat[void,bat] ws, int prop, oid frag, bat[oid,any] newval): bat[bat,bat]
+proc replace(bat[bat,bat] replacements, bat[void,bat] ws, int prop, oid cont, bat[oid,any] newval): bat[bat,bat]
 {
-  var propbat := ws.fetch(prop).fetch(frag);
+  var propbat := ws.fetch(prop).fetch(cont);
   var newpropbat := replacements.replacementsfetch(propbat);
   var insval := kdiff(newval, newpropbat);
   var replval := kdiff(newval, insval);
@@ -2032,8 +2001,8 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
   # extract the commands from the update tape 
   var update_cmd := [and]([lng](item.mirror()), 3LL).uselect(0LL).mirror().leftfetchjoin(item).leftfetchjoin(int_values);
 
-  # [void,oid] list of all frags of affected documents
-  var affected_frags := [and]([lng](item.mirror()), 3LL).uselect(1LL).mirror().leftfetchjoin(kind).get_fragment().reverse().kunique().mark(0@0).reverse();
+  # [void,oid] list of all conts of affected documents
+  var affected_conts := [and]([lng](item.mirror()), 3LL).uselect(1LL).mirror().leftfetchjoin(kind).get_container().reverse().kunique().mark(0@0).reverse();
 
   var text_update := update_cmd.uselect(UPDATE_SETTEXT);
   if (text_update.count() > 0) {
@@ -2041,12 +2010,12 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
     var update_node_kind := [oid]([+]([lng](text_update.mirror()), 1)).leftfetchjoin(kind);
     var update_text := [oid]([+]([lng](text_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
 
-    # now select all the unique nodes (both item and fragment must be
+    # now select all the unique nodes (both item and container-id must be
     # the same), and when there are multiple occurences, select the
     # *last*.
     if (update_node_item.count() > 1) {
-      var update_node_frag := update_node_kind.get_fragment();
-      var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_frag.access(BAT_WRITE).revert()).CTmap();
+      var update_node_cont := update_node_kind.get_container();
+      var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_cont.access(BAT_WRITE).revert()).CTmap();
       update_node_item := update_node_unique.leftjoin(update_node_item);
       update_node_kind := update_node_unique.leftjoin(update_node_kind);
       update_text := update_node_unique.leftjoin(update_text);
@@ -2068,12 +2037,12 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
     var update_ins := [oid]([+]([lng](pi_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
     var update_tgt := [oid]([+]([lng](pi_update.mirror()), 3)).leftfetchjoin(item).leftfetchjoin(str_values);
 
-    # now select all the unique nodes (both item and fragment must be
+    # now select all the unique nodes (both item and container-id must be
     # the same), and when there are multiple occurences, select the
     # *last*.
     if (update_node_item.count() > 1) {
-      var update_node_frag := update_node_kind.get_fragment();
-      var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_frag.access(BAT_WRITE).revert()).CTmap();
+      var update_node_cont := update_node_kind.get_container();
+      var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_cont.access(BAT_WRITE).revert()).CTmap();
       update_node_item := update_node_unique.leftjoin(update_node_item);
       update_node_kind := update_node_unique.leftjoin(update_node_kind);
       update_ins := update_node_unique.leftjoin(update_ins);
@@ -2096,12 +2065,12 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
     var update_node_kind := [oid]([+]([lng](comment_update.mirror()), 1)).leftfetchjoin(kind);
     var update_comment := [oid]([+]([lng](comment_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
 
-    # now select all the unique nodes (both item and fragment must be
+    # now select all the unique nodes (both item and container-id must be
     # the same), and when there are multiple occurences, select the
     # *last*.
     if (update_node_item.count() > 1) {
-      var update_node_frag := update_node_kind.get_fragment();
-      var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_frag.access(BAT_WRITE).revert()).CTmap();
+      var update_node_cont := update_node_kind.get_container();
+      var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_cont.access(BAT_WRITE).revert()).CTmap();
       update_node_item := update_node_unique.leftjoin(update_node_item);
       update_node_kind := update_node_unique.leftjoin(update_node_kind);
       update_comment := update_node_unique.leftjoin(update_comment);
@@ -2123,12 +2092,12 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
     var update_qn := [oid]([+]([lng](attr_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
     var update_val := [oid]([+]([lng](attr_update.mirror()), 3)).leftfetchjoin(item).leftfetchjoin(str_values);
 
-    # now select all the unique nodes (item, fragment, and qn must all
+    # now select all the unique nodes (item, container-id, and qn must all
     # be the same), and when there are multiple occurences, select the
     # *last*.
     if (update_node_item.count() > 1) {
-      var update_node_frag := update_node_kind.get_fragment();
-      var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_frag.access(BAT_WRITE).revert()).CTgroup(update_qn.access(BAT_WRITE).revert()).CTmap();
+      var update_node_cont := update_node_kind.get_container();
+      var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_cont.access(BAT_WRITE).revert()).CTgroup(update_qn.access(BAT_WRITE).revert()).CTmap();
       update_node_item := update_node_unique.leftjoin(update_node_item);
       update_node_kind := update_node_unique.leftjoin(update_node_kind);
       update_qn := update_node_unique.leftjoin(update_qn);
@@ -2171,11 +2140,11 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
     var update_node_item := [oid]([+]([lng](delete_update.mirror()), 1)).leftfetchjoin(item);
     var update_node_kind := [oid]([+]([lng](delete_update.mirror()), 1)).leftfetchjoin(kind);
     
-    # now select all the unique nodes (both item and fragment must be
+    # now select all the unique nodes (both item and container-id must be
     # the same).
     if (update_node_item.count() > 1) {
-      var update_node_frag := update_node_kind.get_fragment();
-      var update_node_unique := update_node_item.access(BAT_WRITE).CTgroup().CTderive(update_node_frag.access(BAT_WRITE)).CTmap();
+      var update_node_cont := update_node_kind.get_container();
+      var update_node_unique := update_node_item.access(BAT_WRITE).CTgroup().CTderive(update_node_cont.access(BAT_WRITE)).CTmap();
       update_node_item := update_node_unique.leftjoin(update_node_item);
       update_node_kind := update_node_unique.leftjoin(update_node_kind);
     }
@@ -2197,8 +2166,8 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
       $h.append(newvals);
       $h.access(a);
     }
-    [fix_consecutive_texts](const ws, affected_frags);
-    [build_indices](const ws, affected_frags);
+    [fix_consecutive_texts](const ws, affected_conts);
+    [build_indices](const ws, affected_conts);
   }
 
   commit();
@@ -2212,18 +2181,18 @@ proc do_update_text(bat[bat,bat] replacements, bat[void,bat] ws, int tableid, ba
   } else {
     elemtype := COMMENT;
   }
-  var fragbat := kindbat.get_fragment();
+  var contbat := kindbat.get_container();
   itembat@batloop() {
-    var frag := fragbat.find($h);
-    if (ws.fetch(PRE_KIND).find(frag).find($t) != elemtype) {
+    var cont := contbat.find($h);
+    if (ws.fetch(PRE_KIND).find(cont).find($t) != elemtype) {
       if (elemtype = TEXT) {
         ERROR("node must be of type TEXT\n");
       } else {
         ERROR("node must be of type COMMENT\n");
       }
     }
-    var id := add_string_unique_inplace(ws, frag, tableid, textbat.find($h));
-    var b := replacementsfetch(replacements, ws.fetch(PRE_PROP).find(frag));
+    var id := add_string_unique_inplace(ws, cont, tableid, textbat.find($h));
+    var b := replacementsfetch(replacements, ws.fetch(PRE_PROP).find(cont));
     if (b.exist($t)) {
       b.replace($t, id);
     } else {
@@ -2235,14 +2204,14 @@ proc do_update_text(bat[bat,bat] replacements, bat[void,bat] ws, int tableid, ba
 
 proc do_update_pi(bat[bat,bat] replacements, bat[void,bat] ws, bat [void,oid] itembat, bat[void,int] kindbat, bat[void,str] insbat, bat[void,str] tgtbat) : bat[bat,bat]
 {
-  var fragbat := kindbat.get_fragment();
+  var contbat := kindbat.get_container();
   itembat@batloop() {
-    var frag := fragbat.find($h);
-    if (ws.fetch(PRE_KIND).find(frag).find($t) != PI) {
+    var cont := contbat.find($h);
+    if (ws.fetch(PRE_KIND).find(cont).find($t) != PI) {
       ERROR("node must be of type PI\n");
     }
-    var id := add_pi_inplace(ws, frag, insbat.find($h), tgtbat.find($h));
-    var b := replacementsfetch(replacements, ws.fetch(PRE_PROP).find(frag));
+    var id := add_pi_inplace(ws, cont, insbat.find($h), tgtbat.find($h));
+    var b := replacementsfetch(replacements, ws.fetch(PRE_PROP).find(cont));
     if (b.exist($t)) {
       b.replace($t, id);
     } else {
@@ -2254,14 +2223,14 @@ proc do_update_pi(bat[bat,bat] replacements, bat[void,bat] ws, bat [void,oid] it
 
 proc do_update_attr(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid] itembat, bat[void,int] kindbat, bat[void,str] qnbat, bat[void,str] valbat) : bat[bat,bat]
 {
-  var fragbat := kindbat.get_fragment();
+  var contbat := kindbat.get_container();
   itembat@batloop() {
-    var frag := fragbat.find($h);
+    var cont := contbat.find($h);
     var node := $t;
-    if (ws.fetch(PRE_KIND).find(frag).find(node) != ELEMENT) {
+    if (ws.fetch(PRE_KIND).find(cont).find(node) != ELEMENT) {
       ERROR("node must be of type ELEMENT\n");
     }
-    var nid := ws.fetch(PRE_NID).find(frag).find(node);
+    var nid := ws.fetch(PRE_NID).find(cont).find(node);
     var qn := qnbat.find($h);
     var val;
     if (valbat.exist($h)) {
@@ -2271,20 +2240,20 @@ proc do_update_attr(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid] i
     }
     var loc, prefix, uri;
     {
-      var qnfrags := qn.split("\001");
-      loc := qnfrags.fetch(0);
-      prefix := qnfrags.fetch(1);
-      uri := qnfrags.fetch(2);
+      var qnconts := qn.split("\001");
+      loc := qnconts.fetch(0);
+      prefix := qnconts.fetch(1);
+      uri := qnconts.fetch(2);
     }
     var qnid, atid;
     {
-      var ids := find_qn(ws, frag, nid, loc, prefix, uri, not(isnil(val)));
+      var ids := find_qn(ws, cont, nid, loc, prefix, uri, not(isnil(val)));
       qnid := ids.fetch(0);
       atid := ids.fetch(1);
     }
-    var attr_prop_bat := replacements.replacementsfetch(ws.fetch(ATTR_PROP).fetch(frag));
-    var attr_own_bat := replacements.replacementsfetch(ws.fetch(ATTR_OWN).fetch(frag));
-    var attr_qn_bat := replacements.replacementsfetch(ws.fetch(ATTR_QN).fetch(frag));
+    var attr_prop_bat := replacements.replacementsfetch(ws.fetch(ATTR_PROP).fetch(cont));
+    var attr_own_bat := replacements.replacementsfetch(ws.fetch(ATTR_OWN).fetch(cont));
+    var attr_qn_bat := replacements.replacementsfetch(ws.fetch(ATTR_QN).fetch(cont));
     if (isnil(val)) {
       # unset-attr
       if (isnil(atid) and not(isnil(qnid))) {
@@ -2308,10 +2277,10 @@ proc do_update_attr(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid] i
       }
     } else {
       # set-attr
-      var valid := add_string_unique_inplace(ws, frag, PROP_VAL, val);
+      var valid := add_string_unique_inplace(ws, cont, PROP_VAL, val);
       if (isnil(atid)) {
         # add attribute to node
-        atid := oid(ws.fetch(ATTR_PROP).fetch(frag).count() + attr_prop_bat.count());
+        atid := oid(ws.fetch(ATTR_PROP).fetch(cont).count() + attr_prop_bat.count());
         attr_prop_bat.insert(atid, valid);
         attr_own_bat.insert(atid, nid);
         attr_qn_bat.insert(atid, qnid);
@@ -2330,22 +2299,22 @@ proc do_update_attr(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid] i
 
 proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid] batdocitem, bat[void,int] batdockind, bat[void,lng] batdoclevel, bat[void,oid] item, bat[void,int] kind) : bat[bat,bat]
 {
-  # extract fragment ID from kind
-  var batdocfrag := batdockind.get_fragment();
-  var batfrag := kind.get_fragment();
+  # extract container ID from kind
+  var batdoccont := batdockind.get_container();
+  var batcont := kind.get_container();
 
   item@batloop() {
 #     if (debug) printf("\nstart of loop for argument %%d\n", int($h));
-    var insertfrag := batfrag.fetch($h);
+    var insertcont := batcont.fetch($h);
     var insertitem := $t;
-    var insertsize := lng(ws.fetch(PRE_SIZE).fetch(insertfrag).fetch(insertitem)) + 1;
+    var insertsize := lng(ws.fetch(PRE_SIZE).fetch(insertcont).fetch(insertitem)) + 1;
 
-    var docfrag := batdocfrag.fetch($h);
+    var doccont := batdoccont.fetch($h);
     var docheightbat := ws.fetch(HEIGHT);
-    var docheight := docheightbat.fetch(docfrag);
+    var docheight := docheightbat.fetch(doccont);
     if (replacements.exist(docheightbat)) {
-      if (replacements.find(docheightbat).exist(docfrag)) {
-        docheight := replacements.find(docheightbat).fetch(docfrag);
+      if (replacements.find(docheightbat).exist(doccont)) {
+        docheight := replacements.find(docheightbat).fetch(doccont);
       }
     }
 
@@ -2356,8 +2325,8 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
     var docinsertafter := batdocitem.fetch($h);
     var docinsertlevel := batdoclevel.fetch($h);
 
-    var docsizebat := ws.fetch(PRE_SIZE).fetch(docfrag);
-    var doclevelbat := ws.fetch(PRE_LEVEL).fetch(docfrag);
+    var docsizebat := ws.fetch(PRE_SIZE).fetch(doccont);
+    var doclevelbat := ws.fetch(PRE_LEVEL).fetch(doccont);
     var docsize := doclevelbat.count(); # size of current document
 
     # docinsertafter may point to a hole, so back track to a non-hole item
@@ -2367,7 +2336,7 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
 
     # docinsertafter uses the "old" numbering scheme (i.e. the unmodified
     # document), translate to the modified document numbering
-    docinsertafter := replacementvalue(replacements, ws, NID_PRE, docfrag, ws.fetch(PRE_NID).find(docfrag).find(docinsertafter));
+    docinsertafter := replacementvalue(replacements, ws, NID_PRE, doccont, ws.fetch(PRE_NID).find(doccont).find(docinsertafter));
 
     # fix docsize with value from replacements
     var doclevelupdatebat := replacements.replacementsfetch(doclevelbat);
@@ -2409,7 +2378,7 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
           # big gaping hole after the document
           var hs := int(holeneeded);
 #           if (debug) printf("movedata %%d %%d %%d\n", int(lng(docinsertafter) + holesize + 1), int(i), hs);
-          movedata(replacements, ws, docfrag, oid(lng(docinsertafter) + holesize + 1), i, hs);
+          movedata(replacements, ws, doccont, oid(lng(docinsertafter) + holesize + 1), i, hs);
           holeneeded :-= hs;
           holesize :+= hs;
           docsize :+= hs;
@@ -2423,7 +2392,7 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
             }
             # move the hole to just below the hole already at docinsertafter
 #             if (debug) printf("movedata %%d %%d %%d\n", int(lng(docinsertafter) + holesize + 1), int(i), int(hs));
-            movedata(replacements, ws, docfrag, oid(lng(docinsertafter) + holesize + 1), i, int(hs));
+            movedata(replacements, ws, doccont, oid(lng(docinsertafter) + holesize + 1), i, int(hs));
             holeneeded :-= hs;
             holesize :+= hs;
           }
@@ -2452,7 +2421,7 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
               }
             }
 #             if (debug) printf("movedata %%d %%d %%d\n", int(lng(docinsertafter) - i), int(i), -(int(hs)));
-            movedata(replacements, ws, docfrag, oid((lng(docinsertafter) - i) + 1), i, -(int(hs)));
+            movedata(replacements, ws, doccont, oid((lng(docinsertafter) - i) + 1), i, -(int(hs)));
             docinsertafter := oid(lng(docinsertafter) - hs);
             holeneeded :-= hs;
             holesize :+= hs;
@@ -2503,7 +2472,7 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
     # (required semantics)
 
     # find NID value for new node (highest existing plus one)
-    var docnidbat := ws.fetch(NID_PRE).fetch(docfrag);
+    var docnidbat := ws.fetch(NID_PRE).fetch(doccont);
     var docnidnew := nil;
     if (docnidbat.count() > 0) {
       docnidnew := docnidbat.reverse().max();
@@ -2526,41 +2495,41 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
     }
 
     # retrieve (or create) the update BATs for all BATs that we need to update
-    var docpropupdatebat := replacements.replacementsfetch(ws.fetch(PRE_PROP).fetch(docfrag));
-    var dockindupdatebat := replacements.replacementsfetch(ws.fetch(PRE_KIND).fetch(docfrag));
-    var docprenidupdatebat := replacements.replacementsfetch(ws.fetch(PRE_NID).fetch(docfrag));
+    var docpropupdatebat := replacements.replacementsfetch(ws.fetch(PRE_PROP).fetch(doccont));
+    var dockindupdatebat := replacements.replacementsfetch(ws.fetch(PRE_KIND).fetch(doccont));
+    var docprenidupdatebat := replacements.replacementsfetch(ws.fetch(PRE_NID).fetch(doccont));
     var docnidpreupdatebat := replacements.replacementsfetch(docnidbat);
 
-    var leveldiff := int(docinsertlevel) - int(ws.fetch(PRE_LEVEL).fetch(insertfrag).find(insertitem));
+    var leveldiff := int(docinsertlevel) - int(ws.fetch(PRE_LEVEL).fetch(insertcont).find(insertitem));
 #     if (debug) printf("leveldiff %%d\n", leveldiff);
 
     while (insertsize > 0LL) {
       # for each to-be-inserted element
 
-      var insertprop := ws.fetch(PRE_PROP).fetch(insertfrag).find(insertitem);
-      var insertkind := ws.fetch(PRE_KIND).fetch(insertfrag).find(insertitem);
-      var insertnode := ws.fetch(PRE_NID).fetch(insertfrag).find(insertitem);
+      var insertprop := ws.fetch(PRE_PROP).fetch(insertcont).find(insertitem);
+      var insertkind := ws.fetch(PRE_KIND).fetch(insertcont).find(insertitem);
+      var insertnode := ws.fetch(PRE_NID).fetch(insertcont).find(insertitem);
       if (isnil(insertkind)) {
       } else if (insertkind = ELEMENT) {
-        var insertfragbat := ws.fetch(PRE_FRAG).fetch(insertfrag);
-        var elemfrag;
-        if (is_constant(insertfragbat)) {
-          elemfrag := bat2constant(insertfragbat);
+        var insertcontbat := ws.fetch(PRE_CONT).fetch(insertcont);
+        var elemcont;
+        if (is_constant(insertcontbat)) {
+          elemcont := bat2constant(insertcontbat);
         } else {
-          elemfrag := insertfragbat.find(insertitem);
+          elemcont := insertcontbat.find(insertitem);
         }
-        var loc := ws.fetch(QN_LOC).fetch(elemfrag).find(insertprop);
-        var prefix := ws.fetch(QN_PREFIX).fetch(elemfrag).find(insertprop);
-        var uri := ws.fetch(QN_URI).fetch(elemfrag).find(insertprop);
-        insertprop := find_qn(ws, docfrag, loc, prefix, uri, true);
+        var loc := ws.fetch(QN_LOC).fetch(elemcont).find(insertprop);
+        var prefix := ws.fetch(QN_PREFIX).fetch(elemcont).find(insertprop);
+        var uri := ws.fetch(QN_URI).fetch(elemcont).find(insertprop);
+        insertprop := find_qn(ws, doccont, loc, prefix, uri, true);
 #         if (debug) printf("find_qn \"%%s\" \"%%s\" \"%%s\" %%d\n", loc, prefix, uri, int(insertprop));
 
         # deal with the attributes
         # [void,oid] list of ATTR table IDs for current element
-        var insertattrbat := ws.fetch(ATTR_OWN).fetch(insertfrag).uselect(insertnode).reverse();
+        var insertattrbat := ws.fetch(ATTR_OWN).fetch(insertcont).uselect(insertnode).reverse();
         if (insertattrbat.count() > 0) { # do not bother if there are no attrs on inserted element
           # figure out next OID in ATTR table of doc, store in attr_id
-          var docattrownbat := ws.fetch(ATTR_OWN).fetch(docfrag);
+          var docattrownbat := ws.fetch(ATTR_OWN).fetch(doccont);
           var docattrownupdatebat := replacements.replacementsfetch(docattrownbat);
           var attr_id;
           if (docattrownupdatebat.count() > 0) {
@@ -2572,40 +2541,40 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
           }
           insertattrbat.seqbase(attr_id);
           # [void,oid] list of QN table indices for "our" attributes
-          var insertattrqnbat := insertattrbat.leftfetchjoin(ws.fetch(ATTR_QN).fetch(insertfrag));
-          var attr_frag := ws.fetch(ATTR_FRAG).find(insertfrag);
-          var insertattrfragbat;
-          if (is_constant(attr_frag)) {
-            insertattrfragbat := bat2constant(attr_frag);
+          var insertattrqnbat := insertattrbat.leftfetchjoin(ws.fetch(ATTR_QN).fetch(insertcont));
+          var attr_cont := ws.fetch(ATTR_CONT).find(insertcont);
+          var insertattrcontbat;
+          if (is_constant(attr_cont)) {
+            insertattrcontbat := bat2constant(attr_cont);
           } else {
-            insertattrfragbat := insertattrbat.leftfetchjoin(attr_frag);
+            insertattrcontbat := insertattrbat.leftfetchjoin(attr_cont);
           }
-# original failing: var insertattrfragbat := insertattrbat.leftfetchjoin(ws.fetch(ATTR_FRAG).find(insertfrag));
+# original failing: var insertattrcontbat := insertattrbat.leftfetchjoin(ws.fetch(ATTR_CONT).find(insertcont));
           # in one fell swoop, add the qualified names of the attributes to the document
-          var newinsertattrpropbat := [find_qn](const ws, docfrag,
-                                                mposjoin(insertattrqnbat, insertattrfragbat, ws.fetch(QN_LOC)),
-                                                mposjoin(insertattrqnbat, insertattrfragbat, ws.fetch(QN_PREFIX)),
-                                                mposjoin(insertattrqnbat, insertattrfragbat, ws.fetch(QN_URI)),
+          var newinsertattrpropbat := [find_qn](const ws, doccont,
+                                                mposjoin(insertattrqnbat, insertattrcontbat, ws.fetch(QN_LOC)),
+                                                mposjoin(insertattrqnbat, insertattrcontbat, ws.fetch(QN_PREFIX)),
+                                                mposjoin(insertattrqnbat, insertattrcontbat, ws.fetch(QN_URI)),
                                                 true);
           # and the same for the attribute values
-          var insertattrpropbat := insertattrbat.leftfetchjoin(ws.fetch(ATTR_PROP).fetch(insertfrag));
-          var newinsertattrvalbat := [add_string_unique_inplace](const ws, docfrag, PROP_VAL,
-                                                                  mposjoin(insertattrpropbat, insertattrfragbat, ws.fetch(PROP_VAL)));
+          var insertattrpropbat := insertattrbat.leftfetchjoin(ws.fetch(ATTR_PROP).fetch(insertcont));
+          var newinsertattrvalbat := [add_string_unique_inplace](const ws, doccont, PROP_VAL,
+                                                                  mposjoin(insertattrpropbat, insertattrcontbat, ws.fetch(PROP_VAL)));
           # add to the ATTR table
           docattrownupdatebat := docattrownupdatebat.insert(insertattrbat.project(docnidnew));
-          replacements.replacementsfetch(ws.fetch(ATTR_QN).fetch(docfrag)).insert(newinsertattrpropbat);
-          replacements.replacementsfetch(ws.fetch(ATTR_PROP).fetch(docfrag)).insert(newinsertattrvalbat);
+          replacements.replacementsfetch(ws.fetch(ATTR_QN).fetch(doccont)).insert(newinsertattrpropbat);
+          replacements.replacementsfetch(ws.fetch(ATTR_PROP).fetch(doccont)).insert(newinsertattrvalbat);
         }
       } else if (insertkind = TEXT) {
-        var text := ws.fetch(PROP_TEXT).fetch(insertfrag).find(insertprop);
-        insertprop := add_string_unique_inplace(ws, docfrag, PROP_TEXT, text);
+        var text := ws.fetch(PROP_TEXT).fetch(insertcont).find(insertprop);
+        insertprop := add_string_unique_inplace(ws, doccont, PROP_TEXT, text);
       } else if (insertkind = COMMENT) {
-        var text := ws.fetch(PROP_COM).fetch(insertfrag).find(insertprop);
-        insertprop := add_string_unique_inplace(ws, docfrag, PROP_COM, text);
+        var text := ws.fetch(PROP_COM).fetch(insertcont).find(insertprop);
+        insertprop := add_string_unique_inplace(ws, doccont, PROP_COM, text);
       } else if (insertkind = PI) {
-        var ins := ws.fetch(PROP_INS).fetch(insertfrag).find(insertprop);
-        var tgt := ws.fetch(PROP_TGT).fetch(insertfrag).find(insertprop);
-        insertprop := add_pi(ws, docfrag, ins, tgt);
+        var ins := ws.fetch(PROP_INS).fetch(insertcont).find(insertprop);
+        var tgt := ws.fetch(PROP_TGT).fetch(insertcont).find(insertprop);
+        insertprop := add_pi(ws, doccont, ins, tgt);
       } else if (insertkind = DOCUMENT) {
         ERROR("attempt to insert a complete document foiled\n");
       } else {
@@ -2614,7 +2583,7 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
 
       docinsertafter := oid(lng(docinsertafter) + 1);
 
-      docsizeupdatebat.myinsert(docinsertafter, ws.fetch(PRE_SIZE).fetch(insertfrag).find(insertitem));
+      docsizeupdatebat.myinsert(docinsertafter, ws.fetch(PRE_SIZE).fetch(insertcont).find(insertitem));
       docpropupdatebat.myinsert(docinsertafter, insertprop);
       dockindupdatebat.myinsert(docinsertafter, insertkind);
       if (isnil(insertkind)) {        # inserting a hole
@@ -2622,11 +2591,11 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
         docprenidupdatebat.myinsert(docinsertafter, oid(nil));
       } else {
         docnidpreupdatebat.myinsert(docnidnew, docinsertafter);
-        var newlevel := int(ws.fetch(PRE_LEVEL).fetch(insertfrag).find(insertitem)) + leveldiff;
+        var newlevel := int(ws.fetch(PRE_LEVEL).fetch(insertcont).find(insertitem)) + leveldiff;
         doclevelupdatebat.myinsert(docinsertafter, chr(newlevel));
         if (newlevel >= docheight) {
           docheight := newlevel + 1;
-          replacements.replacementsfetch(docheightbat).insert(docfrag, docheight);
+          replacements.replacementsfetch(docheightbat).insert(doccont, docheight);
         }
         docprenidupdatebat.myinsert(docinsertafter, docnidnew);
         docnidnew := oid(lng(docnidnew) + 1);
@@ -2642,16 +2611,16 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
 
 proc do_update_delete(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid] item, bat[void,int] kind) : bat[bat,bat]
 {
-  var frags := kind.get_fragment();
+  var conts := kind.get_container();
 
   # XXX need to do this while the "item" parameter contains PRE values instead of NID values
-  var nidbat := mposjoin(item, frags, ws.fetch(PRE_NID));
+  var nidbat := mposjoin(item, conts, ws.fetch(PRE_NID));
 
   nidbat@batloop() {
-    var frag := frags.fetch($h);
-    var itemval := replacementvalue(replacements, ws, NID_PRE, frag, $t);
+    var cont := conts.fetch($h);
+    var itemval := replacementvalue(replacements, ws, NID_RID, cont, $t);
     if (not(isnil(itemval))) {
-      var pre_size := ws.fetch(PRE_SIZE).find(frag);
+      var pre_size := ws.fetch(PRE_SIZE).find(cont);
       var size := replacementvalue(replacements, pre_size, itemval);
       if (not(isnil(niland(size, int(nil))))) { # result of niland(size, int(nil)) is either 0 or int(nil)
         # coalesce with potential consecutive hole
@@ -2663,7 +2632,7 @@ proc do_update_delete(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
           # no following hole
           nsize := 0;
         }
-        var pre_nid := ws.fetch(PRE_NID).find(frag);
+        var pre_nid := ws.fetch(PRE_NID).find(cont);
         var new_size := new(void, int, size).seqbase(itemval).key(true);
         var nidlist := new(oid, oid, size).key(true);
         var i := 0;
@@ -2675,24 +2644,24 @@ proc do_update_delete(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
           }
           i :+= 1;
         }
-        replacements := replace(replacements, ws, PRE_SIZE, frag, new_size);
-        replacements := replace(replacements, ws, NID_PRE, frag, nidlist);
+        replacements := replace(replacements, ws, PRE_SIZE, cont, new_size);
+        replacements := replace(replacements, ws, NID_RID, cont, nidlist);
         var oidlist := new_size.project(oid(nil));
-        replacements := replace(replacements, ws, PRE_PROP, frag, oidlist);
-        replacements := replace(replacements, ws, PRE_NID, frag, oidlist);
+        replacements := replace(replacements, ws, PRE_PROP, cont, oidlist);
+        replacements := replace(replacements, ws, PRE_NID, cont, oidlist);
         var chrlist := oidlist.[chr]();
-        replacements := replace(replacements, ws, PRE_KIND, frag, chrlist);
-        replacements := replace(replacements, ws, PRE_LEVEL, frag, chrlist);
+        replacements := replace(replacements, ws, PRE_KIND, cont, chrlist);
+        replacements := replace(replacements, ws, PRE_LEVEL, cont, chrlist);
       }
     }
   }
   return replacements;
 }
 
-proc add_string_unique_inplace(bat[void,bat] ws, oid frag, int tableid, str value) : oid
+proc add_string_unique_inplace(bat[void,bat] ws, oid cont, int tableid, str value) : oid
 {
   # find value in table
-  var table := ws.fetch(tableid).fetch(frag);
+  var table := ws.fetch(tableid).fetch(cont);
   var strid;
   var valuelist := table.uselect(value);
   if (valuelist.count() = 0) {
@@ -2706,11 +2675,11 @@ proc add_string_unique_inplace(bat[void,bat] ws, oid frag, int tableid, str valu
   return strid;
 }
 
-proc add_pi(bat[void,bat] ws, oid frag, str ins, str tgt) : oid
+proc add_pi(bat[void,bat] ws, oid cont, str ins, str tgt) : oid
 {
   # shortcuts
-  var prop_ins := ws.fetch(PROP_INS).fetch(frag);
-  var prop_tgt := ws.fetch(PROP_TGT).fetch(frag);
+  var prop_ins := ws.fetch(PROP_INS).fetch(cont);
+  var prop_tgt := ws.fetch(PROP_TGT).fetch(cont);
 
   # [oid,nil] list of entries with ins
   var ins_list := prop_ins.ord_uselect(ins);
@@ -2732,12 +2701,12 @@ proc add_pi(bat[void,bat] ws, oid frag, str ins, str tgt) : oid
   return pi_id;
 }
 
-proc find_qn(bat[void,bat] ws, oid frag, oid nid, str loc, str prefix, str uri, bit add) : bat[void,oid]
+proc find_qn(bat[void,bat] ws, oid cont, oid nid, str loc, str prefix, str uri, bit add) : bat[void,oid]
 {
   # shortcuts
   var loc_uri := loc + "\001" + uri;
-  var qn_loc_uri := ws.fetch(QN_LOC_URI).fetch(frag);
-  var qn_prefix := ws.fetch(QN_PREFIX).fetch(frag);
+  var qn_loc_uri := ws.fetch(QN_LOC_URI).fetch(cont);
+  var qn_prefix := ws.fetch(QN_PREFIX).fetch(cont);
 
   # [oid,nil] list of prefixes used by loc_uri
   var loc_uri_list := qn_loc_uri.ord_uselect(loc_uri);
@@ -2748,8 +2717,8 @@ proc find_qn(bat[void,bat] ws, oid frag, oid nid, str loc, str prefix, str uri, 
   if (not(isnil(nid))) {
     # check that the attribute/URI does not occur already with a
     # different prefix
-    var attr_own := ws.fetch(ATTR_OWN).fetch(frag);
-    var attr_qn := ws.fetch(ATTR_QN).fetch(frag);
+    var attr_own := ws.fetch(ATTR_OWN).fetch(cont);
+    var attr_qn := ws.fetch(ATTR_QN).fetch(cont);
     # [oid,nil] list of ATTR indexes for current node
     var attr_list := attr_own.uselect(nid);
     # [oid,oid] list of ATTR indexes/ATTR QN IDs for current node
@@ -2776,11 +2745,11 @@ proc find_qn(bat[void,bat] ws, oid frag, oid nid, str loc, str prefix, str uri, 
       loc_uri_list := nil;
       qn_list := nil;
 
-      ws.fetch(QN_LOC).fetch(frag).access(BAT_WRITE).insert(qn_id, loc);
+      ws.fetch(QN_LOC).fetch(cont).access(BAT_WRITE).insert(qn_id, loc);
       qn_prefix.access(BAT_WRITE).insert(qn_id, prefix);
-      ws.fetch(QN_URI).fetch(frag).access(BAT_WRITE).insert(qn_id, uri);
+      ws.fetch(QN_URI).fetch(cont).access(BAT_WRITE).insert(qn_id, uri);
       qn_loc_uri.access(BAT_WRITE).insert(qn_id, loc_uri);
-      ws.fetch(QN_PREFIX_URI).fetch(frag).access(BAT_WRITE).insert(qn_id, prefix + "\001" + uri);
+      ws.fetch(QN_PREFIX_URI).fetch(cont).access(BAT_WRITE).insert(qn_id, prefix + "\001" + uri);
     } else {
       qn_id := nil;
     }
@@ -2800,36 +2769,36 @@ proc find_qn(bat[void,bat] ws, oid frag, oid nid, str loc, str prefix, str uri, 
   return result;
 }
 
-proc find_qn(bat[void,bat] ws, oid frag, str loc, str prefix, str uri, bit add) : oid
+proc find_qn(bat[void,bat] ws, oid cont, str loc, str prefix, str uri, bit add) : oid
 {
-  return find_qn(ws, frag, oid(nil), loc, prefix, uri, add).fetch(0);
+  return find_qn(ws, cont, oid(nil), loc, prefix, uri, add).fetch(0);
 }
 
-proc build_indices(bat[void,bat] ws, oid frag) : void
+proc build_indices(bat[void,bat] ws, oid cont) : void
 {
-  var pre_kind_bat := ws.fetch(PRE_KIND).fetch(frag);
-  var pre_nid_bat := ws.fetch(PRE_NID).fetch(frag);
-  var pre_prop_bat := ws.fetch(PRE_PROP).fetch(frag);
+  var pre_kind_bat := ws.fetch(PRE_KIND).fetch(cont);
+  var pre_nid_bat := ws.fetch(PRE_NID).fetch(cont);
+  var pre_prop_bat := ws.fetch(PRE_PROP).fetch(cont);
   var i := 0;
   while (i < 5) {
     var k := pre_kind_bat.uselect(chr(i)).mirror();
     var n := k.leftfetchjoin(pre_nid_bat).reverse().mark(0@0).reverse();
-    var b := ws.fetch(KND_NID.find(chr(i))).fetch(frag);
+    var b := ws.fetch(KND_NID.find(chr(i))).fetch(cont);
     b := b.access(BAT_WRITE).delete().insert(n);
     if ((i = 0) or (i = 3)) {
       var p := k.leftfetchjoin(pre_prop_bat).reverse().mark(0@0).reverse();
-      var b := ws.fetch(KND_PROP.find(chr(i))).fetch(frag);
+      var b := ws.fetch(KND_PROP.find(chr(i))).fetch(cont);
       b := b.access(BAT_WRITE).delete().insert(p);
     }
     i :+= 1;
   }
 }
 
-proc fix_consecutive_texts(bat[void,bat] ws, oid frag) : void
+proc fix_consecutive_texts(bat[void,bat] ws, oid cont) : void
 {
   # select all non-hole entries for both level and kind tables
-  var l := ws.fetch(PRE_LEVEL).fetch(frag).ord_select(chr(0),chr(nil)); # [PRE,level]
-  var k := l.mirror().leftfetchjoin(ws.fetch(PRE_KIND).fetch(frag)); # [PRE,kind]
+  var l := ws.fetch(PRE_LEVEL).fetch(cont).ord_select(chr(0),chr(nil)); # [PRE,level]
+  var k := l.mirror().leftfetchjoin(ws.fetch(PRE_KIND).fetch(cont)); # [PRE,kind]
   # combine them into a single table
   var x := [+]([<<]([sht](l),8),[sht](k)); # [PRE,(level<<8)|kind]
   # use an undocumented feature of CTrefine: it does not check whether
@@ -2849,20 +2818,20 @@ proc fix_consecutive_texts(bat[void,bat] ws, oid frag) : void
     # more to do
     return;
   }
-  var c := t.reverse().leftfetchjoin(ws.fetch(PRE_PROP).fetch(frag)).leftfetchjoin(ws.fetch(PROP_TEXT).fetch(frag)); # [GRP,content] hsorted
+  var c := t.reverse().leftfetchjoin(ws.fetch(PRE_PROP).fetch(cont)).leftfetchjoin(ws.fetch(PROP_TEXT).fetch(cont)); # [GRP,content] hsorted
   var v := string_join(c, c.kunique().project("")); # [GRP,content] combined content with unique GRP values
-  var i := [add_string_unique_inplace](const ws, frag, PROP_TEXT, v); # [GRP,SID] OID into PROP_TEXT table
+  var i := [add_string_unique_inplace](const ws, cont, PROP_TEXT, v); # [GRP,SID] OID into PROP_TEXT table
   var p := t.reverse().kunique().reverse(); # [PRE,GRP] one representative from t per group
-  var pre_prop := ws.fetch(PRE_PROP).fetch(frag);
+  var pre_prop := ws.fetch(PRE_PROP).fetch(cont);
   pre_prop.replace(p.leftjoin(i), true);
   var h := kdiff(t, p).project(oid(nil));
   pre_prop.replace(h, true);
-  ws.fetch(PRE_SIZE).fetch(frag).replace(h.project(int(nil)), true);
-  ws.fetch(NID_PRE).fetch(frag).replace(h.mirror().leftfetchjoin(ws.fetch(PRE_NID).fetch(frag)).reverse().project(oid(nil)), true);
-  ws.fetch(PRE_NID).fetch(frag).replace(h, true);
+  ws.fetch(PRE_SIZE).fetch(cont).replace(h.project(int(nil)), true);
+  ws.fetch(NID_RID).fetch(cont).replace(h.mirror().leftfetchjoin(ws.fetch(PRE_NID).fetch(cont)).reverse().project(oid(nil)), true);
+  ws.fetch(PRE_NID).fetch(cont).replace(h, true);
   h := h.project(chr(nil));
-  ws.fetch(PRE_KIND).fetch(frag).replace(h, true);
-  ws.fetch(PRE_LEVEL).fetch(frag).replace(h, true);
+  ws.fetch(PRE_KIND).fetch(cont).replace(h, true);
+  ws.fetch(PRE_LEVEL).fetch(cont).replace(h, true);
 }
 @* Module Implementation
 @h
@@ -4219,15 +4188,15 @@ bunins_failed:
 	return GDK_FAIL;
 }
 
-int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
+int CMDmposjoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 {
-	BAT *bn, **batlist = NULL, *the_frag_bat = NULL;
+	BAT *bn, **batlist = NULL, *the_cont_bat = NULL;
 	BUN q, pp, pf, pw, dst;
 	int bs, bsp, bsf, ii = 0, tt = 0;
 	size_t cnt, len;
 	oid base, wl, wh;
 	bit triv_prop;
-	bit fake_frag = FALSE;
+	bit fake_cont = FALSE;
 	bit fake_ws_item = FALSE;
 	
 	*res = NULL;
@@ -4235,32 +4204,32 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	/* check arguments */
 
 	BATcheck(pre, "mposjoin");
-	BATcheck(frag, "mposjoin");
+	BATcheck(cont, "mposjoin");
 	BATcheck(ws_item, "mposjoin");
 
 	len = BATcount(ws_item);
 	cnt = BATcount(pre);
 	base = pre->hseqbase;
-	fake_frag = is_fake_project(frag);
+	fake_cont = is_fake_project(cont);
 	
-	if (fake_frag) {
+	if (fake_cont) {
 		ERRORcheck(!BAThdense(pre), 
 			"mposjoin: input BAT pre must have a dense head.\n");
 		ERRORcheck(!BAThdense(ws_item), 
 			"mposjoin: input BAT ws_item must have a dense head.\n");
 	} else {
-		ERRORcheck(!BAThdense(pre) || !BAThdense(frag) || !BAThdense(ws_item), 
-			"mposjoin: all input BATs (pre, frag, ws_item) must have a dense head.\n");
-		ERRORcheck(BATcount(frag)!=cnt || frag->hseqbase!=base,
-			"mposjoin: first two input BATs (pre & frag) must be head-aligned.\n");
+		ERRORcheck(!BAThdense(pre) || !BAThdense(cont) || !BAThdense(ws_item), 
+			"mposjoin: all input BATs (pre, cont, ws_item) must have a dense head.\n");
+		ERRORcheck(BATcount(cont)!=cnt || cont->hseqbase!=base,
+			"mposjoin: first two input BATs (pre & cont) must be head-aligned.\n");
 	}
 	ERRORcheck(len==0,
 		"mposjoin: third input BAT (ws_item) must not be empty.\n");
 
-	the_frag_bat = BATdescriptor(*(bat*)BUNtloc(ws_item, BUNfirst(ws_item)));
-	tt = the_frag_bat->ttype;
-	BBPunfix(the_frag_bat->batCacheid);
-	the_frag_bat = NULL;
+	the_cont_bat = BATdescriptor(*(bat*)BUNtloc(ws_item, BUNfirst(ws_item)));
+	tt = the_cont_bat->ttype;
+	BBPunfix(the_cont_bat->batCacheid);
+	the_cont_bat = NULL;
 
 	if (cnt==0) {
 		@:mpos_res_empty@
@@ -4268,11 +4237,11 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 
 	ii = 0;
 	
-	if (fake_frag) {
-		oid the_frag_id = *(oid*)BUNtail(frag, BUNfirst(frag));
+	if (fake_cont) {
+		oid the_cont_id = *(oid*)BUNtail(cont, BUNfirst(cont));
 		len = 1;
-		batlist = &the_frag_bat;
-		BUNfndVOID(pw, ws_item, &the_frag_id);
+		batlist = &the_cont_bat;
+		BUNfndVOID(pw, ws_item, &the_cont_id);
 		if (pw==NULL) {
 			@:mpos_res_empty@
 		}
@@ -4283,7 +4252,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 			@:mpos_free_batlist@
 			if (bn == NULL) {
 				GDKerror("mposjoin: BATleftfetchjoin(pre, ws_item["SZFMT"]) failed.\n",
-					 the_frag_id);
+					 the_cont_id);
 				return GDK_FAIL;
 			}
 			return GDK_SUCCEED;
@@ -4352,20 +4321,20 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	wh = wl + len - 1;
 
 	bsp = BUNsize(pre);
-	if (fake_frag) {
+	if (fake_cont) {
 		bsf = 0;
 	} else {
-		bsf = BUNsize(frag);
+		bsf = BUNsize(cont);
 	}
 
 	pp = BUNfirst(pre);
-	pf = BUNfirst(frag);
+	pf = BUNfirst(cont);
 
 @= mposjoin
 	/*  @1: ATOMstorage(ATOMtype(batlist[0]->ttype)) (chr, sht, int, flt, lng, dbl, any)
 	 *  @2: tloc, tvar, tail
 	 */
-	 if (fake_frag) {
+	 if (fake_cont) {
 	 	/* !fake_ws_item handled above */
 	 	@:mposjoin_fake_fake(@1,@2)@
 	 } else {
@@ -4395,7 +4364,7 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	 */
 	for (q = BUNlast(pre) ; pp < q ; pp += bsp, pf += bsf) {
 		oid p = *(oid*)BUNtail(pre,pp);  /* FIXME: "tvar" (void) vs. "tloc" (oid) */
-		oid f = *(oid*)BUNtail(frag,pf); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
+		oid f = *(oid*)BUNtail(cont,pf); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
 		if (f >= wl && f <= wh) {
 			BAT *b = batlist[f - wl];
 			if (@3) {
@@ -4480,7 +4449,7 @@ bunins_failed:
 	while (ii > 0) {
 		BBPunfix(batlist[--ii]->batCacheid);
 	}
-	if (batlist && !fake_frag) {
+	if (batlist && !fake_cont) {
 		GDKfree(batlist);
 	}
 @c
@@ -4489,36 +4458,36 @@ bunins_failed:
 }
 
 
-int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
+int CMDmvaljoin ( BAT** res, BAT* pre, BAT* cont, BAT* ws_item )
 {
-	BAT *bn, **batlist = NULL, *the_frag_bat = NULL;
+	BAT *bn, **batlist = NULL, *the_cont_bat = NULL;
 	BUN q, pp, pf, pw;
 	int bsp, bsf, bsw, ii = 0;
 	size_t cnt, len, sze;
 	oid base, wl, wh;
-	bit triv_prop, all_hash, all_sort, some_hash, some_sort, all_key, fake_frag = FALSE;
+	bit triv_prop, all_hash, all_sort, some_hash, some_sort, all_key, fake_cont = FALSE;
 	
 	*res = NULL;
 
 	/* check arguments */
 
 	BATcheck(pre, "mvaljoin");
-	BATcheck(frag, "mvaljoin");
+	BATcheck(cont, "mvaljoin");
 	BATcheck(ws_item, "mvaljoin");
 
 	len = BATcount(ws_item);
 	cnt = BATcount(pre);
 	base = pre->hseqbase;
-	fake_frag = is_fake_project(frag);
+	fake_cont = is_fake_project(cont);
 	
-	if (fake_frag) {
+	if (fake_cont) {
 		ERRORcheck(!BAThdense(pre) || !BAThdense(ws_item), 
 			"mvaljoin: input BATs pre & ws_item must have a dense head.\n");
 	} else {
-		ERRORcheck(!BAThdense(pre) || !BAThdense(frag) || !BAThdense(ws_item), 
-			"mvaljoin: all input BATs (pre, frag, ws_item) must have a dense head.\n");
-		ERRORcheck(BATcount(frag)!=cnt || frag->hseqbase!=base,
-			"mvaljoin: first two input BATs (pre & frag) must be head-aligned.\n");
+		ERRORcheck(!BAThdense(pre) || !BAThdense(cont) || !BAThdense(ws_item), 
+			"mvaljoin: all input BATs (pre, cont, ws_item) must have a dense head.\n");
+		ERRORcheck(BATcount(cont)!=cnt || cont->hseqbase!=base,
+			"mvaljoin: first two input BATs (pre & cont) must be head-aligned.\n");
 	}
 	ERRORcheck(len==0,
 		"mvaljoin: third input BAT (ws_item) must not be empty.\n");
@@ -4531,11 +4500,11 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	if (sze == 0) {
 		@:mval_res_empty@
 	}
-	if (fake_frag) {
-		oid the_frag_id = *(oid*)BUNtail(frag, BUNfirst(frag));
+	if (fake_cont) {
+		oid the_cont_id = *(oid*)BUNtail(cont, BUNfirst(cont));
 		len = 1;
-		batlist = &the_frag_bat;
-		BUNfndVOID(pw, ws_item, &the_frag_id);
+		batlist = &the_cont_bat;
+		BUNfndVOID(pw, ws_item, &the_cont_id);
 		if (pw==NULL) {
 			@:mval_res_empty@
 		}
@@ -4545,7 +4514,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 		@:mval_free_batlist@
 		if (bn == NULL) {
 			GDKerror("mvaljoin: BATleftjoin(pre, BATmirror(ws_item["SZFMT"])) failed.\n",
-				 the_frag_id);
+				 the_cont_id);
 			return GDK_FAIL;
 		}
 		return GDK_SUCCEED;
@@ -4612,10 +4581,10 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	wh = wl + len - 1;
 
 	bsp = BUNsize(pre);
-	bsf = BUNsize(frag);
+	bsf = BUNsize(cont);
 
 	pp = BUNfirst(pre);
-	pf = BUNfirst(frag);
+	pf = BUNfirst(cont);
 
 @= hash_only
 	hash_t h;
@@ -4661,7 +4630,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 @= mvaljoin
 	for (q = BUNlast(pre) ; pp < q ; pp += bsp, pf += bsf) {
 		oid p = *(oid*)BUNtail(pre,pp); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
-		oid f = *(oid*)BUNtail(frag,pf); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
+		oid f = *(oid*)BUNtail(cont,pf); /* FIXME: "tvar" (void) vs. "tloc" (oid) */
 		if (f >= wl && f <= wh) {
 			BAT *b = batlist[f - wl];
 			@1
@@ -4716,7 +4685,7 @@ bunins_failed:
 	while (ii > 0) {
 		BBPunfix(batlist[--ii]->batCacheid);
 	}
-	if (batlist && !fake_frag) {
+	if (batlist && !fake_cont) {
 		GDKfree(batlist);
 	}
 @c
@@ -5038,19 +5007,19 @@ PROC doc_tbl (BAT[void, BAT] ws, BAT[void, str] item) : BAT[void,BAT]
 
     # The working set now contains all documents we need.
 
-    # pick the according frag value for each document requested
-    var ret_frag := item.leftjoin (ws.fetch (DOC_LOADED).reverse ())
+    # pick the according cont value for each document requested
+    var ret_cont := item.leftjoin (ws.fetch (DOC_LOADED).reverse ())
                         .reverse ()
                         .mark (0@0)
                         .reverse ();
 
     # pre values will all be zero
-    var ret_item := ret_frag.project (0@0);
+    var ret_item := ret_cont.project (0@0);
 
     # return result as a BAT of BATs
     return new (void, BAT).append (ws)
                           .append (ret_item)
-                          .append (ret_frag)
+                          .append (ret_cont)
                           .seqbase (0@0);
 }
 
@@ -5066,7 +5035,7 @@ BATs with the components\n\
 (a) the modified working set,\n\
 (b) an `item' column with the pre values of the\n\
 document roots, and\n\
-(c) a `frag' column that encodes document\n\
+(c) a `cont' column that encodes document\n\
 container (within the working set) according to our\n\
 working set representation.",
                 "pf_support");
@@ -5074,25 +5043,25 @@ working set representation.",
 # primitive for supporting highly specific XQuery functionality
 PROC merge_adjacent_text_nodes (BAT[void,oid] iter,
                                 BAT[void,oid] pre,
-                                BAT[void,oid] pfrag,
+                                BAT[void,oid] pcont,
                                 BAT[void,BAT] ws) : BAT[void,oid]
 {
     var map := pre.ord_uselect(oid(nil),oid(nil)).hmark(0@0);
     iter := map.leftfetchjoin(iter);
     pre := map.leftfetchjoin(pre);
-    pfrag := map.leftfetchjoin(pfrag);
+    pcont := map.leftfetchjoin(pcont);
 
-    var kind := mposjoin (pre, pfrag, ws.fetch(PRE_KIND));
+    var kind := mposjoin (pre, pcont, ws.fetch(PRE_KIND));
     var text := kind.[=](TEXT);
     var text_sel := text.select(true).hmark(0@0);
     var text_pre := text_sel.leftfetchjoin(pre).tmark(0@0);
-    var text_frag := text_sel.leftfetchjoin(pfrag).tmark(0@0);
+    var text_cont := text_sel.leftfetchjoin(pcont).tmark(0@0);
 
-    var text_prop := mposjoin (mposjoin (text_pre, text_frag, ws.fetch(PRE_PROP)),
-                               mposjoin (text_pre, text_frag, ws.fetch(PRE_FRAG)),
+    var text_prop := mposjoin (mposjoin (text_pre, text_cont, ws.fetch(PRE_PROP)),
+                               mposjoin (text_pre, text_cont, ws.fetch(PRE_CONT)),
                                ws.fetch(PROP_TEXT));
     text_pre := nil;
-    text_frag := nil;
+    text_cont := nil;
 
     var pre_prop := pre.mirror()
                        .outerjoin(text_prop.reverse()
@@ -5119,34 +5088,34 @@ PROC merge_adjacent_text_nodes (BAT[void,oid] iter,
     text_pre := pre.mirror()
                    .outerjoin(res_strs.mark(0@0)
                                       .leftfetchjoin(textnodes));
-    text_frag := pre.mirror()
+    text_cont := pre.mirror()
                     .outerjoin(res_strs.project(WS));
     res_strs := nil;
     textnodes := nil;
     pre := map.reverse()
               .leftfetchjoin([ifthenelse](text,text_pre,pre));
-    pfrag := map.reverse()
-                .leftfetchjoin([ifthenelse](text,text_frag,pfrag));
+    pcont := map.reverse()
+                .leftfetchjoin([ifthenelse](text,text_cont,pcont));
 
     # return result as a BAT of BATs
     return new (void, BAT).append (ws)
                           .append (pre)
-                          .append (pfrag)
+                          .append (pcont)
                           .seqbase (0@0);
 }
 ADDHELP("merge_adjacent_text_nodes", "tsheyar", "Oct 2005",
         "PARAMETERS:\n\
 BAT[void,str] iter : prefix of qname\n\
 BAT[void,str] pre  : URI of the qname\n\
-BAT[void,str] frag : local part of the qname\n\
+BAT[void,str] cont : local part of the qname\n\
 BAT[void,BAT] ws   : working set that stores the qname\n\
 DESCRIPTION:\n\
-merge_adjacent_text_nodes takes an iter|pre|frag schema and\n\
+merge_adjacent_text_nodes takes an iter|pre|cont schema and\n\
 combines within each iteration all adjacent text nodes.\n\
 (Note that the order is given by the input order.)\n\
 New textnodes are added into the working set ws and the result is\n\
-a bat of bats (ws, modified_pres, modified_frags). The heads of the\n\
-pre and frag are aligned to the input relations.",
+a bat of bats (ws, modified_pres, modified_conts). The heads of the\n\
+pre and cont are aligned to the input relations.",
         "pf_support");
                                 
 # add_qnames changes the working set as side effect
@@ -5287,9 +5256,9 @@ PROC text_constr (BAT[void, str] item, BAT[void, BAT] ws) : BAT[void,BAT]
     ws.fetch(PRE_SIZE).fetch(WS).insert(newPre_prop.project(0));
     ws.fetch(PRE_LEVEL).fetch(WS).insert(newPre_prop.project(chr(0)));
     ws.fetch(PRE_KIND).fetch(WS).insert(newPre_prop.project(TEXT));
-    ws.fetch(PRE_FRAG).fetch(WS).insert(newPre_prop.project(WS));
+    ws.fetch(PRE_CONT).fetch(WS).insert(newPre_prop.project(WS));
     ws.fetch(PRE_NID).fetch(WS).append(newPre_prop.mirror());
-    ws.fetch(NID_PRE).fetch(WS).append(newPre_prop.mirror());
+    ws.fetch(NID_RID).fetch(WS).append(newPre_prop.mirror());
 
     { # add index entries for optimized scj
         ws.fetch(KND_NID.find(TEXT)).fetch(WS).append(newPre_prop.reverse());
@@ -5326,7 +5295,7 @@ item a new textnode. These textnodes are added to the working\n\
 set ws. Output is a BAT of BATs with the following components:\n\
 (a) the modified working set,\n\
 (b) the pre values of the textnodes, and\n\
-(c) the frag values of the textnodes",
+(c) the cont values of the textnodes",
         "pf_support");
 
 PROC attr_constr (BAT[void, oid] qn, BAT[void, str] item, BAT[void, BAT] ws) : BAT[void,BAT]
@@ -5365,7 +5334,7 @@ PROC attr_constr (BAT[void, oid] qn, BAT[void, str] item, BAT[void, BAT] ws) : B
     ws.fetch(ATTR_PROP).fetch(WS).insert(newAttr_prop);
     ws.fetch(ATTR_OWN).fetch(WS).insert(newAttr_prop.project(oid(nil)));
     ws.fetch(ATTR_QN).fetch(WS).insert(qn.tmark(seqb));
-    ws.fetch(ATTR_FRAG).fetch(WS).insert(newAttr_prop.project(WS));
+    ws.fetch(ATTR_CONT).fetch(WS).insert(newAttr_prop.project(WS));
 
     newAttr_prop := nil;
     item := item.mark(seqb);
@@ -5391,7 +5360,7 @@ added to the working set ws. Output is a BAT of BATs with the\n\
 following components:\n\
 (a) the modified working set,\n\
 (b) the attribute ids, and\n\
-(c) the frag values of the attributes",
+(c) the cont values of the attributes",
         "pf_support");
 
 PROC elem_constr_empty (BAT[void, oid] qn, BAT[void, BAT] ws) : BAT[void,BAT]
@@ -5404,9 +5373,9 @@ PROC elem_constr_empty (BAT[void, oid] qn, BAT[void, BAT] ws) : BAT[void,BAT]
     ws.fetch(PRE_SIZE).fetch(WS).insert(newPre_prop.project(0));
     ws.fetch(PRE_LEVEL).fetch(WS).insert(newPre_prop.project(chr(0)));
     ws.fetch(PRE_KIND).fetch(WS).insert(newPre_prop.project(ELEMENT));
-    ws.fetch(PRE_FRAG).fetch(WS).insert(newPre_prop.project(WS));
+    ws.fetch(PRE_CONT).fetch(WS).insert(newPre_prop.project(WS));
     ws.fetch(PRE_NID).fetch(WS).append(newPre_prop.mirror());
-    ws.fetch(NID_PRE).fetch(WS).append(newPre_prop.mirror());
+    ws.fetch(NID_RID).fetch(WS).append(newPre_prop.mirror());
 
     { # add index entries for optimized scj
         ws.fetch(KND_NID .find(ELEMENT)).fetch(WS).append(newPre_prop.reverse());
@@ -5445,42 +5414,42 @@ elements are added to the working set ws. Output is a BAT of\n\
 BATs with the following components:\n\
 (a) the modified working set,\n\
 (b) the pre values, and\n\
-(c) the frag values of the elements",
+(c) the cont values of the elements",
         "pf_support");
 
 PROC elem_constr (BAT[void, oid] qn_iter,
                   BAT[void, oid] qn_item,
                   BAT[void, oid] iter,
                   BAT[oid, oid] pre,
-                  BAT[oid, oid] pfrag,
+                  BAT[oid, oid] pcont,
                   BAT[void, oid] attr,
-                  BAT[void, oid] afrag,
+                  BAT[void, oid] acont,
                   BAT[void, BAT] ws) : BAT[void,BAT]
 {
     var root_iter;
     var root_size;
     var root_prop;
     var root_kind;
-    var root_frag;
+    var root_cont;
     var root_level;
     # attr
         var root_pre;
-        var root_pre_frag;
+        var root_pre_cont;
         
-    # throw out nil values and generate iter|item|frag representation
+    # throw out nil values and generate iter|item|cont representation
     # for attributes
     var selected := pre.select(oid(nil),oid(nil));
     var piter := selected.hmark(0@0).leftfetchjoin(iter).tmark(0@0); # make it void
     pre := selected.tmark(0@0);
-    pfrag := pfrag.select(oid(nil),oid(nil)).tmark(0@0);
+    pcont := pcont.select(oid(nil),oid(nil)).tmark(0@0);
     selected := nil;
 
-    # throw out nil values and generate iter|item|frag representation
+    # throw out nil values and generate iter|item|cont representation
     # for attributes
     selected := attr.select(oid(nil),oid(nil));
     var aiter := selected.hmark(0@0).leftfetchjoin(iter).tmark(0@0); # make it void
     attr := selected.tmark(0@0);
-    afrag := afrag.select(oid(nil),oid(nil)).tmark(0@0);
+    acont := acont.select(oid(nil),oid(nil)).tmark(0@0);
     selected := nil;
 
     if (pre.count() != 0) {
@@ -5490,14 +5459,14 @@ PROC elem_constr (BAT[void, oid] qn_iter,
         var iter_unq := piter.mirror();
         # get all subtree copies
         var res_scj := loop_lifted_descendant_or_self_step 
-                           (iter_unq, pre, pfrag, ws, 0);
+                           (iter_unq, pre, pcont, ws, 0);
         iter_unq := nil;
 
         # variables for the result of the scj 
         var res_iter := res_scj.fetch(0);
         var res_item := res_scj.fetch(1);
-        # !be aware that res_frag is only a fake_project!
-        var res_frag := res_scj.fetch(2);
+        # !be aware that res_cont is only a fake_project!
+        var res_cont := res_scj.fetch(2);
         # !avoid being res_iter a fake_project!
         res_iter := materialize (res_iter, res_item);
         res_scj := nil;
@@ -5505,14 +5474,14 @@ PROC elem_constr (BAT[void, oid] qn_iter,
         # create content_iter as sorting argument for the merged union
         var content_iter := res_iter.leftfetchjoin(piter).chk_order();
         # create subtree copies for all bats
-        var content_size := mposjoin(res_item, res_frag, ws.fetch(PRE_SIZE));
-        var content_prop := mposjoin(res_item, res_frag, ws.fetch(PRE_PROP));
-        var content_kind := mposjoin(res_item, res_frag, ws.fetch(PRE_KIND));
-        var content_frag := mposjoin(res_item, res_frag, ws.fetch(PRE_FRAG));
-        var content_level := mposjoin(res_item, res_frag, ws.fetch(PRE_LEVEL));
+        var content_size := mposjoin(res_item, res_cont, ws.fetch(PRE_SIZE));
+        var content_prop := mposjoin(res_item, res_cont, ws.fetch(PRE_PROP));
+        var content_kind := mposjoin(res_item, res_cont, ws.fetch(PRE_KIND));
+        var content_cont := mposjoin(res_item, res_cont, ws.fetch(PRE_CONT));
+        var content_level := mposjoin(res_item, res_cont, ws.fetch(PRE_LEVEL));
         # change the level of the subtree copies
         content_level := content_level.[+](chr(1));
-        var contentRoot_level := mposjoin(pre, pfrag, ws.fetch(PRE_LEVEL));
+        var contentRoot_level := mposjoin(pre, pcont, ws.fetch(PRE_LEVEL));
         # map Root_level to the result of the scj 
         #using the faked iteration values
         contentRoot_level := res_iter.leftfetchjoin(contentRoot_level);
@@ -5523,8 +5492,8 @@ PROC elem_constr (BAT[void, oid] qn_iter,
         # attr
             # content_pre is needed for attribute subtree copies
             var content_pre := res_item;
-            # as well as content_pre_frag
-            var content_pre_frag := res_frag;
+            # as well as content_pre_cont
+            var content_pre_cont := res_cont;
             
         # get the maximum level of the new constructed nodes
         # and set the maximum of the working set
@@ -5541,14 +5510,14 @@ PROC elem_constr (BAT[void, oid] qn_iter,
         root_size := {count}(content_iter.reverse(), qn_iter.reverse(), FALSE).tmark(seqbase(qn_iter));
         root_prop := qn_item;
         root_kind := constant2bat(ELEMENT);
-        root_frag := constant2bat(WS);
+        root_cont := constant2bat(WS);
         root_level := constant2bat(chr(0));
 
         # attr
             # root_pre is a dummy needed for merge union with content_pre 
             root_pre := constant2bat(oid(nil));
-            # as well as root_frag_pre
-            root_pre_frag := constant2bat(oid(nil));
+            # as well as root_cont_pre
+            root_pre_cont := constant2bat(oid(nil));
 
         # merge union root and nodes
         {
@@ -5558,28 +5527,28 @@ PROC elem_constr (BAT[void, oid] qn_iter,
                                  root_level, content_level,
                                  root_kind, content_kind,
                                  root_prop, content_prop,
-                                 root_frag, content_frag,
+                                 root_cont, content_cont,
         # attr
                                  root_pre, content_pre,
-                                 root_pre_frag, content_pre_frag);
+                                 root_pre_cont, content_pre_cont);
         root_iter := nil;
         content_iter := nil;
         content_size := nil;
         content_level := nil;
         content_kind := nil;
         content_prop := nil;
-        content_frag := nil;
+        content_cont := nil;
         # attr
             content_pre := nil;
-            content_pre_frag := nil;
+            content_pre_cont := nil;
         root_size := merged_result.fetch(1);
         root_level := merged_result.fetch(2);
         root_kind := merged_result.fetch(3);
         root_prop := merged_result.fetch(4);
-        root_frag := merged_result.fetch(5);
+        root_cont := merged_result.fetch(5);
         # attr
             root_pre := merged_result.fetch(6);
-            root_pre_frag := merged_result.fetch(7);
+            root_pre_cont := merged_result.fetch(7);
 
         merged_result := nil;
 
@@ -5593,11 +5562,11 @@ PROC elem_constr (BAT[void, oid] qn_iter,
         root_size := qn_iter.project(0);
         root_prop := qn_item; # !the seqbase of qn_item is later modified
         root_kind := qn_iter.project(ELEMENT);
-        root_frag := qn_iter.project(WS);
+        root_cont := qn_iter.project(WS);
         root_level := qn_iter.project(chr(0));
         # attr
             root_pre := qn_iter.project(oid(nil));
-            root_pre_frag := qn_iter.project(oid(nil));
+            root_pre_cont := qn_iter.project(oid(nil));
 
     }  # end of else in ``if (pre.count() != 0)''
         
@@ -5608,12 +5577,12 @@ PROC elem_constr (BAT[void, oid] qn_iter,
         root_size := root_size.seqbase(seqb);
         root_prop := root_prop.seqbase(seqb);
         root_kind := root_kind.seqbase(seqb);
-        root_frag := root_frag.seqbase(seqb);
+        root_cont := root_cont.seqbase(seqb);
         root_level := root_level.seqbase(seqb);
         # attr
             # get the new pre values
             root_pre := root_pre.seqbase(seqb);
-            root_pre_frag := root_pre_frag.seqbase(seqb);
+            root_pre_cont := root_pre_cont.seqbase(seqb);
         seqb := nil;
     }
 
@@ -5621,10 +5590,10 @@ PROC elem_constr (BAT[void, oid] qn_iter,
     ws.fetch(PRE_SIZE).fetch(WS).insert(root_size);
     ws.fetch(PRE_KIND).fetch(WS).insert(root_kind);
     ws.fetch(PRE_PROP).fetch(WS).insert(root_prop);
-    ws.fetch(PRE_FRAG).fetch(WS).insert(root_frag);
+    ws.fetch(PRE_CONT).fetch(WS).insert(root_cont);
     ws.fetch(PRE_LEVEL).fetch(WS).insert(root_level);
     ws.fetch(PRE_NID).fetch(WS).append(root_kind.mirror());
-    ws.fetch(NID_PRE).fetch(WS).append(root_kind.mirror());
+    ws.fetch(NID_RID).fetch(WS).append(root_kind.mirror());
 
     # update indexes
     {
@@ -5651,7 +5620,7 @@ PROC elem_constr (BAT[void, oid] qn_iter,
     root_size := nil;
     root_prop := nil;
     root_kind := nil;
-    root_frag := nil;
+    root_cont := nil;
     root_level := nil;
         
     # adding the new constructed roots to the WS_FRAG bat of the
@@ -5672,7 +5641,7 @@ PROC elem_constr (BAT[void, oid] qn_iter,
     if (pre.count() != 0) { # but only if there are any subtree nodes
         # lookup the affected attributes using the old pre values
         var preNew_attr := mvaljoin(root_pre, 
-                                    root_pre_frag,
+                                    root_pre_cont,
                                     ws.fetch(ATTR_OWN));
         # lookup the first free attr value
         var seqb := oid(ws.fetch(ATTR_QN).fetch(WS).count());
@@ -5680,45 +5649,45 @@ PROC elem_constr (BAT[void, oid] qn_iter,
         var attrNew_preNew := preNew_attr.mark(seqb).reverse();
         var attrNew_attrOld := preNew_attr.reverse().mark(seqb).reverse();
         preNew_attr := nil;
-        var attrNew_pre_frag := attrNew_preNew.leftfetchjoin(root_pre_frag);
+        var attrNew_pre_cont := attrNew_preNew.leftfetchjoin(root_pre_cont);
         # help MIL to keep head void
-        attrNew_pre_frag := attrNew_pre_frag.reverse().mark(seqb).reverse();
+        attrNew_pre_cont := attrNew_pre_cont.reverse().mark(seqb).reverse();
         seqb := nil;
 
         # get the values of the QN/OID offsets for the reference to the
         # string values
         var attrNew_qn := mposjoin(attrNew_attrOld,
-                                   attrNew_pre_frag,
+                                   attrNew_pre_cont,
                                    ws.fetch(ATTR_QN));
         var attrNew_prop := mposjoin(attrNew_attrOld,
-                                     attrNew_pre_frag,
+                                     attrNew_pre_cont,
                                      ws.fetch(ATTR_PROP));
-        # get fragment where values are stored (not where attribute is stored)
-        var attrNew_frag := mposjoin(attrNew_attrOld,
-                                     attrNew_pre_frag,
-                                     ws.fetch(ATTR_FRAG));
+        # get container where values are stored (not where attribute is stored)
+        var attrNew_cont := mposjoin(attrNew_attrOld,
+                                     attrNew_pre_cont,
+                                     ws.fetch(ATTR_CONT));
         attrNew_attrOld := nil;
-        attrNew_pre_frag := nil;
+        attrNew_pre_cont := nil;
 
         ws.fetch(ATTR_QN).fetch(WS).insert(attrNew_qn);
         ws.fetch(ATTR_PROP).fetch(WS).insert(attrNew_prop);
         ws.fetch(ATTR_OWN).fetch(WS).insert(attrNew_preNew);
-        ws.fetch(ATTR_FRAG).fetch(WS).insert(attrNew_frag);
+        ws.fetch(ATTR_CONT).fetch(WS).insert(attrNew_cont);
         attrNew_qn := nil;
         attrNew_prop := nil;
         attrNew_preNew := nil;
-        attrNew_frag := nil;
+        attrNew_cont := nil;
     }
 
     # 2. step: add attribute binding for new elements
     if (attr.count() != 0) { # but only if there are any top level attributes
         
-        # use iter, qn and frag to find unique combinations
-        var attr_qn := mposjoin(attr, afrag, ws.fetch(ATTR_QN));
-        var attr_frag := mposjoin(attr, afrag, ws.fetch(ATTR_FRAG));
+        # use iter, qn and cont to find unique combinations
+        var attr_qn := mposjoin(attr, acont, ws.fetch(ATTR_QN));
+        var attr_cont := mposjoin(attr, acont, ws.fetch(ATTR_CONT));
         var sorting := aiter.tsort();
         sorting := sorting.CTrefine(mposjoin(attr_qn,
-                                             attr_frag,
+                                             attr_cont,
                                              ws.fetch(QN_LOC_URI)));
         var unq_attrs := sorting.tunique();
         sorting := nil;
@@ -5740,19 +5709,19 @@ PROC elem_constr (BAT[void, oid] qn_iter,
         var attr_own := aiter.leftjoin(qn_iter.reverse())
                              .leftfetchjoin(roots)
                              .reverse().mark(seqb).reverse();
-        var attr_prop := mposjoin(attr, afrag, ws.fetch(ATTR_PROP));
+        var attr_prop := mposjoin(attr, acont, ws.fetch(ATTR_PROP));
         attr_prop := attr_prop.seqbase(seqb);
-        attr_frag := attr_frag.seqbase(seqb);
+        attr_cont := attr_cont.seqbase(seqb);
         seqb := nil;
 
         ws.fetch(ATTR_QN).fetch(WS).insert(attr_qn);
         ws.fetch(ATTR_PROP).fetch(WS).insert(attr_prop);
         ws.fetch(ATTR_OWN).fetch(WS).insert(attr_own);
-        ws.fetch(ATTR_FRAG).fetch(WS).insert(attr_frag);
+        ws.fetch(ATTR_CONT).fetch(WS).insert(attr_cont);
         attr_qn := nil;
         attr_prop := nil;
         attr_own := nil;
-        attr_frag := nil;
+        attr_cont := nil;
     }
 
     # create result as a BAT of BATs
@@ -5770,9 +5739,9 @@ BAT[void, oid] qn_iter : iteration values of the qnames\n\
 BAT[void, oid] qn_item : names of the elements\n\
 BAT[void, oid] iter    : iteration values of the content\n\
 BAT[oid, oid] pre      : pre values of the content (heads aligned with head of iter)\n\
-BAT[oid, oid] pfrag    : node frag values of the content (heads aligned with head of iter)\n\
+BAT[oid, oid] pcont    : node cont values of the content (heads aligned with head of iter)\n\
 BAT[void, oid] attr    : attribute ids of the content (heads aligned with head of iter)\n\
-BAT[void, oid] afrag   : attribute fragments of the content (heads aligned with head of iter)\n\
+BAT[void, oid] acont   : attribute container-ids of the content (heads aligned with head of iter)\n\
 BAT[void, BAT] ws      : working set that stores the document representations\n\
 DESCRIPTION:\n\
 elem_constr is a full featured element constructor that requires\n\
@@ -5781,5 +5750,5 @@ information for the content. These elements are added to the working\n\
 set ws. Output is a BAT of BATs with the following components:\n\
 (a) the modified working set,\n\
 (b) the pre values, and\n\
-(c) the frag values of the elements",
+(c) the containder-ids of the elements",
         "pf_support");

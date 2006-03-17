@@ -214,11 +214,14 @@ typedef struct shredBATdef {
 
 /* values of the static properties of a result BAT */
 static shredBATdef shredbatdef[SHRED_BATS] = {
+    { MAP_PID,  "MAP_PID",  TYPE_void, TYPE_oid,  1.0/REMAP_PAGE_SIZE, 0},
     { PRE_SIZE, "PRE_SIZE", TYPE_void, TYPE_int,  1.0, 0},
     { PRE_LEVEL,"PRE_LEVEL",TYPE_void, TYPE_chr,  1.0, 0},
     { PRE_PROP, "PRE_PROP", TYPE_void, TYPE_oid,  1.0, 0},
     { PRE_KIND, "PRE_KIND", TYPE_void, TYPE_chr,  1.0, 0},
-    { PRE_FRAG, "PRE_FRAG", TYPE_void, TYPE_oid,  1.0, 0},
+    { PRE_CONT, "PRE_CONT", TYPE_void, TYPE_oid,  1.0, 0},
+    { PRE_NID, "PRE_NID",   TYPE_void, TYPE_void, 1.0, 0},
+    { NID_RID, "NID_RID",   TYPE_void, TYPE_void, 1.0, 0},
     { QN_URI,   "QN_URI",   TYPE_void, TYPE_str,  0.0, 0},
     { QN_PREFIX,"QN_PREFIX",TYPE_void, TYPE_str,  0.0, 0},
     { QN_LOC,   "QN_LOC",   TYPE_void, TYPE_str,  0.0, 0},
@@ -231,10 +234,8 @@ static shredBATdef shredbatdef[SHRED_BATS] = {
     { ATTR_OWN, "ATTR_OWN", TYPE_void, TYPE_oid,  0.5, 0},
     { ATTR_QN,  "ATTR_QN",  TYPE_void, TYPE_oid,  0.5, 0},
     { ATTR_PROP,"ATTR_PROP",TYPE_void, TYPE_oid,  0.5, 0},
-    { ATTR_FRAG,"ATTR_FRAG",TYPE_void, TYPE_oid,  0.0, 0},
+    { ATTR_CONT,"ATTR_CONT",TYPE_void, TYPE_oid,  0.0, 0},
     { PROP_VAL, "PROP_VAL", TYPE_void, TYPE_str,  0.0, 0},
-    { NID_PRE, "NID_PRE",   TYPE_void, TYPE_void, 1.0, 0},
-    { PRE_NID, "PRE_NID",   TYPE_void, TYPE_void, 1.0, 0},
     { WS_FRAG, "WS_FRAG",   TYPE_void, TYPE_oid,  1.0, 0}
 };
 
@@ -321,7 +322,7 @@ typedef struct shredCtxStruct {
 
 static shredCtxStruct *createShredCtx(char* location, off_t  fileSize, off_t pageFree) {
     int i;
-    //oid frag = 1;
+    //oid cont = 1;
 
     shredCtxStruct *res = (shredCtxStruct*)malloc( sizeof(shredCtxStruct) );
     res->location = location;
@@ -346,8 +347,8 @@ static shredCtxStruct *createShredCtx(char* location, off_t  fileSize, off_t pag
             sb->size = (int)(sb->def->sizeFact * res->estSize);
 #ifdef SHRED_HOLES
 	if ( pageFree && ht == TYPE_void && tt == TYPE_void) {
-	    if ( i==PRE_NID || i==NID_PRE) {
-		/* The PRE_NID and NID_PRE are default generated as a
+	    if ( i==PRE_NID || i==NID_RID) {
+		/* The PRE_NID and NID_RID are default generated as a
 		 * [void,void] BAT. When holes are generated however they 
 		 * get 'real' content and should be [void,oid].
 		 */
@@ -358,7 +359,7 @@ static shredCtxStruct *createShredCtx(char* location, off_t  fileSize, off_t pag
         sb->bat  = BATnew(ht,tt,sb->size);
         /*
         if (i == WS_FRAG){
-            sb->bat = BATseqbase(BUNappend(sb->bat, (ptr)&frag), 0);
+            sb->bat = BATseqbase(BUNappend(sb->bat, (ptr)&cont), 0);
         }
         */
 
@@ -455,7 +456,7 @@ static int setBATcapacity(shredCtxStruct* shredCtx, int idx, int n) {
     void* top;
 
     int bottomTop = n;
-    if (n > 65536) {
+    if (n >= (1<<18)) { /* use mmap if we have more than 256K tuples in the pre table */
         BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP);
     }
     shredCtx->dstBAT[idx].cnt = n;
@@ -516,10 +517,18 @@ static void printStat(shredCtxStruct* shredCtx) {
 }
 
 static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
-    oid i;
+    oid i, p = shredCtx->nnode_pre >> REMAP_PAGE_BITS;
+    BAT* res = NULL;
 
-    BAT* res = BATnew(TYPE_oid,TYPE_bat,SHRED_BATS); /* create result BAT */
+    /* fill the MAP_PID bat with an identity mapping */
+    for(i=0; i<= p; i++) {
+        if (BUNfastins(shredCtx->dstBAT[MAP_PID].bat,&i,&i) == NULL) break;
+    }
+    shredCtx->dstBAT[MAP_PID].bat->tsorted = GDK_SORTED;
+    shredCtx->dstBAT[MAP_PID].bat->tdense = 1;
 
+    if (i > p)
+        res = BATnew(TYPE_oid,TYPE_bat,SHRED_BATS); /* create result BAT */
     if ( !res ) {
         GDKerror("shredder.mx:finalizeShredCtx: resultBAT:create failed.\n");
         return NULL;
@@ -537,16 +546,16 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
 
     if ( shredCtx->pageFree ) {
 #ifdef SHRED_HOLES
-        /* PRE-NID and NID_PRE data is generated tailor the BATs to the correct
+        /* PRE_NID and NID_RID data is generated tailor the BATs to the correct
 	 * size.
 	 */
     	if (
             (setBATcapacity(shredCtx,PRE_NID, shredCtx->nnode_pre)  < 0) ||
-            (setBATcapacity(shredCtx,NID_PRE, PRE2NID(shredCtx->nnode_pre,shredCtx->pageFree))  < 0) )
+            (setBATcapacity(shredCtx,NID_RID, PRE2NID(shredCtx->nnode_pre,shredCtx->pageFree))  < 0) )
 	   return NULL;
 #endif
     } else {
-	/* No PRE_NID and NID_PRE bat data is generated in this case. We now
+	/* No PRE_NID and NID_RID bat data is generated in this case. We now
 	 * make a [void,void] bat of it.
     	 * The new pre_nid and nid_pre [void,void] BAt's are identity mappings
 	 * with nid=pre
@@ -557,9 +566,9 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
         BATsetcount(shredCtx->dstBAT[PRE_NID].bat,cnt);
         shredCtx->dstBAT[PRE_NID].bat->batBuns->free += cnt*BUNsize(shredCtx->dstBAT[PRE_NID].bat);
 
-        BATseqbase(BATmirror(shredCtx->dstBAT[NID_PRE].bat),0);
-        BATsetcount(shredCtx->dstBAT[NID_PRE].bat,cnt);
-        shredCtx->dstBAT[NID_PRE].bat->batBuns->free += cnt*BUNsize(shredCtx->dstBAT[NID_PRE].bat);
+        BATseqbase(BATmirror(shredCtx->dstBAT[NID_RID].bat),0);
+        BATsetcount(shredCtx->dstBAT[NID_RID].bat,cnt);
+        shredCtx->dstBAT[NID_RID].bat->batBuns->free += cnt*BUNsize(shredCtx->dstBAT[NID_RID].bat);
     }
 
     /* */
@@ -595,7 +604,7 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
     }
     if ( 0 ) {
         BATprintf(GDKout , shredCtx->dstBAT[PRE_NID].bat);
-        BATprintf(GDKout , shredCtx->dstBAT[NID_PRE].bat);
+        BATprintf(GDKout , shredCtx->dstBAT[NID_RID].bat);
     }
     if ( 0 ) {
         BATprintf(GDKout,shredCtx->dstBAT[ATTR_PROP].bat);
@@ -915,7 +924,7 @@ emitPreTuple(shredCtxStruct* shredCtx, nat pre, int size, chr level, nat prop,ch
             direct_chr2bat(shredCtx,PRE_KIND,	pre,kind)  == NATNIL 
 #ifdef SHRED_HOLES
 	    || (shredCtx->pageFree&&(direct_natoid2bat(shredCtx,PRE_NID, pre,nid)==NATNIL)) 
-	    || (shredCtx->pageFree&&(nid!=NATNIL)&&(direct_natoid2bat(shredCtx,NID_PRE, nid,(nat)pre)==NATNIL)) 
+	    || (shredCtx->pageFree&&(nid!=NATNIL)&&(direct_natoid2bat(shredCtx,NID_RID, nid,(nat)pre)==NATNIL)) 
 #endif
        )
         return -1;
