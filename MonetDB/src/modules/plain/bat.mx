@@ -1826,7 +1826,7 @@ CMDremap(BAT **res, BAT *b, BAT *map)
 	bn->dims = b->dims;
 	bn->htype = TYPE_void;
 	bn->hvarsized = 1;
-	bn->hseqbase = oid_nil;
+	bn->hseqbase = 0;
 	bn->tsorted = 0;
 	bn->hkey = bn->tkey = 0;
 	bn->batRestricted = BAT_READ;
@@ -1854,7 +1854,6 @@ CMDremap(BAT **res, BAT *b, BAT *map)
 		if ((bn->batBuns->base != NULL) & (bn->batBuns->base != (BUN) -1)) {
 			bn->batBuns->size = bn->batBuns->maxsize = n; 
 			bn->batBuns->storage = STORE_MMAP | STORE_PRIV;
-			bn->batBuns->copied = 1;
 		} else {
 			mmap = NULL; /* fall back on heap memory */
 		}
@@ -1897,8 +1896,15 @@ retry:		if (!mmap) failure = (HEAPalloc(bn->batBuns, n, 1) < 0);
 			fix(BUNtail(bn, p));
 		}
 	}
+	/* more safety: make mmap-ed remaps  a view to ensure the parent stays alive */
+	if (mmap) {
+		bn->batParentid = VIEWparent(b);
+		if (bn->batParentid == 0) bn->batParentid = b->batCacheid;
+		BBPshare(ABS(bn->batParentid));
+		bn->batBuns->copied = 1;
+		if (bn->theap) bn->theap->copied = 1;
+	}
 	BBPcacheit(bn);
-	BATseqbase(bn, 0);
 	return GDK_SUCCEED;
 }
 

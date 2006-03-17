@@ -803,19 +803,24 @@ Destroy a view.
 void
 VIEWdestroy(BAT *v)
 {
-	BAT *b = ((v) = BBP_cache(ABS((v)->batCacheid)));
-	BAT *m = BATmirror(b);
-
+	BAT *b = BBP_cache(ABS((v)->batCacheid));
 	if (b) {
 		VIEWunlink(b);
-		HASHdestroy(b);
-	}
 
-	/* free memory private to this view */
-	if (m != NULL) {
-		GDKfree(m);
-		BBP_cache(-b->batCacheid) = NULL;
+		/* free memory private to this view */
+		if (!b->batBuns->copied) {
+			b->batBuns->base = NULL;
+			b->batBuns->filename = NULL;
+		}
+		if (b->hheap && !b->hheap->copied) {
+			GDKfree(b->hheap);
+			b->hheap = NULL;
+		}
+		if (b->theap && !b->theap->copied) {
+			GDKfree(b->theap);
+			b->theap = NULL;
+		}
+		BATfree(b);
 	}
 }
-
 @}

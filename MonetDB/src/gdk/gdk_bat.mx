@@ -514,9 +514,12 @@ BATfree(BAT *b)
 		HEAPfree(b->hheap);
 	if (b->theap) 
 		HEAPfree(b->theap);
-	GDKfree(BATmirror(b));
-	BBP_cache(-b->batCacheid) = NULL;
 
+	b = BBP_cache(-b->batCacheid);
+	if (b) {
+		BBP_cache(b->batCacheid) = NULL;
+		GDKfree(b);
+	}
 	return 0;
 }
 
