@@ -1797,6 +1797,24 @@ CMDremap(BAT **res, BAT *b, BAT *map)
 		GDKerror("remap: map head column must be dense and starting from 0@0.\n");
 		return GDK_FAIL;
 	}
+	if (b->ttype == TYPE_void) {
+		/* remappings on bat[void,void] are only supported in the trivial case (all pages in order) */
+		if (!BATtdense(map)) {
+			GDKerror("remap: a bat[void,void] cannot me remapped.\n");
+			return GDK_FAIL;
+		}
+		/* create another bat[void,void]. BEWARE: last page is not NIL padded!! */
+		*res = bn = BATnew(TYPE_void, TYPE_void, 10);
+		if (bn == NULL) return GDK_FAIL;
+		BATseqbase(bn, 0);
+		if (cnt) {
+			oid pid = *(oid*) BUNtail(map,BUNfirst(map));
+			BATseqbase(BATmirror(bn), pid << REMAP_PAGE_BITS);
+		}
+        	BATsetcount(bn,cnt <<= REMAP_PAGE_BITS);
+		bn->batBuns->free += cnt*BUNsize(bn);
+		return GDK_SUCCEED;
+	}
 
         /* chk is a bit mask to ensure that no page is requested twice */
 	chk = (char*) GDKmalloc(n = 1 + max/8);
