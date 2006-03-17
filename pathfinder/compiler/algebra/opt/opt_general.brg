@@ -434,19 +434,28 @@ reduce (PFla_op_t *p, int goalnt)
         /* Rel:    project (attach (Rel)) */
         case 11:
             /* only rewrite if there are more than one columns */
-            if (p->schema.count > 1)
-            /* if the projection neither discards nor renames
-               the attach result we can switch both operands  */
-            for (unsigned int i = 0; i < p->schema.count; i++)
-                if (p->sem.proj.items[i].old == L(p)->sem.attach.attname &&
-                    p->sem.proj.items[i].old == p->sem.proj.items[i].new) {
+            if (p->schema.count > 1) {
+                bool found = false, rewrite = true;
+                for (unsigned int i = 0; i < p->schema.count; i++)
+                    if (p->sem.proj.items[i].old == L(p)->sem.attach.attname) {
+                        found = true;
+                        rewrite = rewrite &&
+                                  (p->sem.proj.items[i].old 
+                                   == p->sem.proj.items[i].new);
+                    }
+                    
+                /* if the projection neither discards nor renames
+                   the attach result we can switch both operands  */
+                if (found && rewrite) {
                     PFla_op_t *ret;
                     PFalg_proj_t *proj = PFmalloc ((p->schema.count - 1) *
                                                    sizeof (PFalg_proj_t));
                     unsigned int count = 0;
                     
                     for (unsigned int j = 0; j < p->schema.count; j++)
-                        if (i != j) proj[count++] = p->sem.proj.items[j];
+                        if (L(p)->sem.attach.attname
+                            != p->sem.proj.items[j].old)
+                            proj[count++] = p->sem.proj.items[j];
 
                     ret = PFla_attach (PFla_project_ (LL(p), count, proj),
                                        L(p)->sem.attach.attname,
@@ -457,6 +466,7 @@ reduce (PFla_op_t *p, int goalnt)
                     relabel (p, kids);
                     break;
                 }
+            }
             break;
             
         /* Rel:    project (project (Rel)) */
