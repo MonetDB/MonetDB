@@ -160,8 +160,73 @@ infer_ocol (PFla_op_t *n)
         } break;
 
         case la_select:
+            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
+            break;
+
         case la_disjunion:
+        {
+            unsigned int  i, j;
+
+            /* see if both operands have same number of attributes */
+            if (ocols_count (L(n)) != ocols_count (R(n)))
+                PFoops (OOPS_FATAL,
+                        "Schema of two arguments of UNION do not match");
+
+            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
+
+            /* combine types of the both arguments */
+            for (i = 0; i < ocols_count (n); i++) {
+                for (j = 0; j < ocols_count (R(n)); j++)
+                    if ((ocol_at (n, i)).name == (ocol_at (R(n), j)).name) {
+                        /* The two attributes match, so include their name
+                         * and type information into the result. This allows
+                         * for the order of schema items in n1 and n2 to be
+                         * different.
+                         */
+                        (ocol_at (n, i)).type = (ocol_at (n, i)).type
+                                                | (ocol_at (R(n), j)).type;
+                        break;
+                    }
+
+                if (j == ocols_count (R(n)))
+                    PFoops (OOPS_FATAL,
+                            "Schema of two arguments of "
+                            "UNION do not match");
+            }
+        } break;
+
         case la_intersect:
+        {
+            unsigned int  i, j;
+
+            /* see if both operands have same number of attributes */
+            if (ocols_count (L(n)) != ocols_count (R(n)))
+                PFoops (OOPS_FATAL,
+                        "Schema of two arguments of INTERSECTION do not match");
+
+            ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
+
+            /* combine types of the both arguments */
+            for (i = 0; i < ocols_count (n); i++) {
+                for (j = 0; j < ocols_count (R(n)); j++)
+                    if ((ocol_at (n, i)).name == (ocol_at (R(n), j)).name) {
+                        /* The two attributes match, so include their name
+                         * and type information into the result. This allows
+                         * for the order of schema items in n1 and n2 to be
+                         * different.
+                         */
+                        (ocol_at (n, i)).type = (ocol_at (n, i)).type
+                                                & (ocol_at (R(n), j)).type;
+                        break;
+                    }
+
+                if (j == ocols_count (R(n)))
+                    PFoops (OOPS_FATAL,
+                            "Schema of two arguments of "
+                            "INTERSECTION do not match");
+            }
+        } break;
+
         case la_difference:
         case la_distinct:
             ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)));
