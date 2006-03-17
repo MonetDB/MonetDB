@@ -2671,13 +2671,13 @@ proc do_update_delete(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
           new_size := new_size.append(nilor((size + nsize) - i, int(nil)));
           var nid := replacementvalue(replacements, pre_nid, oid(lng(itemval) + i));
           if (not(isnil(nid))) {
-            nidlist := nidlist.insert(nid, nil);
+            nidlist := nidlist.insert(nid, oid(nil));
           }
           i :+= 1;
         }
         replacements := replace(replacements, ws, PRE_SIZE, frag, new_size);
         replacements := replace(replacements, ws, NID_PRE, frag, nidlist);
-        var oidlist := new_size.project(nil);
+        var oidlist := new_size.project(oid(nil));
         replacements := replace(replacements, ws, PRE_PROP, frag, oidlist);
         replacements := replace(replacements, ws, PRE_NID, frag, oidlist);
         var chrlist := oidlist.[chr]();
