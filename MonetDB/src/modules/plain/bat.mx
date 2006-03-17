@@ -1828,7 +1828,7 @@ CMDremap(BAT **res, BAT *b, BAT *map)
 	bn->hvarsized = 1;
 	bn->hseqbase = 0;
 	bn->tsorted = 0;
-	bn->hkey = bn->tkey = 0;
+	bn->tkey = 0;
 	bn->batRestricted = BAT_READ;
 	BATsetcount(bn, n = (cnt << REMAP_PAGE_BITS));
 	n *= BUNsize(b);
@@ -1854,6 +1854,7 @@ CMDremap(BAT **res, BAT *b, BAT *map)
 		if ((bn->batBuns->base != NULL) & (bn->batBuns->base != (BUN) -1)) {
 			bn->batBuns->size = bn->batBuns->maxsize = n; 
 			bn->batBuns->storage = STORE_MMAP | STORE_PRIV;
+			bn->batBuns->copied = 1;
 		} else {
 			mmap = NULL; /* fall back on heap memory */
 		}
@@ -1901,8 +1902,6 @@ retry:		if (!mmap) failure = (HEAPalloc(bn->batBuns, n, 1) < 0);
 		bn->batParentid = VIEWparent(b);
 		if (bn->batParentid == 0) bn->batParentid = b->batCacheid;
 		BBPshare(ABS(bn->batParentid));
-		bn->batBuns->copied = 1;
-		if (bn->theap) bn->theap->copied = 1;
 	}
 	BBPcacheit(bn);
 	return GDK_SUCCEED;

@@ -197,7 +197,7 @@ VIEWcreate_(BAT *b, int slice_view)
 	bn = BATcreatedesc(b->htype, b->ttype, FALSE);
 	parent = VIEWparent(b);
 
-	if (parent == 0) {
+	if (parent == 0 || b->batBuns->copied) {
 		parent = b->batCacheid;
 	}
 	bn->batParentid = parent;
@@ -215,6 +215,7 @@ a void. Take care to zero the accelerator data, though.
 	*bn->H = *b->H;
 	*bn->T = *b->T;
 	*bn->U = *b->U;
+	bn->batBuns->copied = 0;
 	bn->H->props = bn->T->props = NULL;
 	BATinit_idents(bn);
 @-
@@ -811,14 +812,6 @@ VIEWdestroy(BAT *v)
 		if (!b->batBuns->copied) {
 			b->batBuns->base = NULL;
 			b->batBuns->filename = NULL;
-		}
-		if (b->hheap && !b->hheap->copied) {
-			GDKfree(b->hheap);
-			b->hheap = NULL;
-		}
-		if (b->theap && !b->theap->copied) {
-			GDKfree(b->theap);
-			b->theap = NULL;
 		}
 		BATfree(b);
 	}
