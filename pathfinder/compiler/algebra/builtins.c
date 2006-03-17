@@ -458,15 +458,14 @@ PFbui_op_numeric_modulo_dbl (const PFla_op_t *loop __attribute__((unused)),
  *
  *                env,loop: e => (q,delta)
  *  -------------------------------------------------------------------
- *                         env,loop: fn:sum(e) =>
+ *                         env,loop: fn:___(e) =>
  *  //                                                     \    
  * ||aggr_item/(item, iter) (proj_iter,item cast_item,t(q)))| @pos(0)
  *  \\                                                     / 
  *                                ()
  */
 static struct PFla_pair_t
-PFbui_fn_aggr (PFalg_simple_type_t t, PFla_op_kind_t kind,
-               struct PFla_pair_t *args)
+fn_aggr (PFalg_simple_type_t t, PFla_op_kind_t kind, struct PFla_pair_t *args)
 {
     return (struct PFla_pair_t) {
         .rel = attach(aggr (kind,
@@ -490,7 +489,7 @@ PFbui_fn_avg (const PFla_op_t *loop __attribute__((unused)),
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    return PFbui_fn_aggr(aat_dbl, la_avg, args);
+    return fn_aggr(aat_dbl, la_avg, args);
 }
 
 /**
@@ -505,7 +504,7 @@ PFbui_fn_max_str (const PFla_op_t *loop __attribute__((unused)),
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    return PFbui_fn_aggr(aat_str, la_max, args);
+    return fn_aggr(aat_str, la_max, args);
 }
 
 /**
@@ -520,7 +519,7 @@ PFbui_fn_max_int (const PFla_op_t *loop __attribute__((unused)),
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    return PFbui_fn_aggr(aat_int, la_max, args);
+    return fn_aggr(aat_int, la_max, args);
 }
 
 /**
@@ -535,7 +534,7 @@ PFbui_fn_max_dec (const PFla_op_t *loop __attribute__((unused)),
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    return PFbui_fn_aggr(aat_dec, la_max, args);
+    return fn_aggr(aat_dec, la_max, args);
 }
 
 /**
@@ -550,7 +549,7 @@ PFbui_fn_max_dbl (const PFla_op_t *loop __attribute__((unused)),
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    return PFbui_fn_aggr(aat_dbl, la_max, args);
+    return fn_aggr(aat_dbl, la_max, args);
 }
 
 /**
@@ -565,7 +564,7 @@ PFbui_fn_min_str (const PFla_op_t *loop __attribute__((unused)),
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    return PFbui_fn_aggr(aat_str, la_min, args);
+    return fn_aggr(aat_str, la_min, args);
 }
 
 /**
@@ -580,7 +579,7 @@ PFbui_fn_min_int (const PFla_op_t *loop __attribute__((unused)),
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    return PFbui_fn_aggr(aat_int, la_min, args);
+    return fn_aggr(aat_int, la_min, args);
 }
 
 /**
@@ -595,7 +594,7 @@ PFbui_fn_min_dec (const PFla_op_t *loop __attribute__((unused)),
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    return PFbui_fn_aggr(aat_dec, la_min, args);
+    return fn_aggr(aat_dec, la_min, args);
 }
 
 /**
@@ -610,7 +609,7 @@ PFbui_fn_min_dbl (const PFla_op_t *loop __attribute__((unused)),
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    return PFbui_fn_aggr(aat_dbl, la_min, args);
+    return fn_aggr(aat_dbl, la_min, args);
 }
 
 /**
@@ -632,30 +631,30 @@ PFbui_fn_min_dbl (const PFla_op_t *loop __attribute__((unused)),
  *                                ()
  */
 static struct PFla_pair_t
-PFbui_fn_sum_zero (PFalg_simple_type_t t, const PFla_op_t *loop,
+fn_sum_zero (PFalg_simple_type_t t, const PFla_op_t *loop,
                    struct PFla_pair_t *args)
 {
      PFla_op_t *sum = aggr (la_sum,
-                           project (cast(args[0].rel, att_cast, att_item, t),
-                                   proj (att_iter, att_iter),
-				   proj (att_item, att_cast)),
-			    att_item, att_item, att_iter);
+                            project (cast (args[0].rel, att_cast, att_item, t),
+                                     proj (att_iter, att_iter),
+                                     proj (att_item, att_cast)),
+                            att_item, att_item, att_iter);
 
     return (struct PFla_pair_t) {
         .rel = attach (
                 disjunion (
                     sum,
-		    project (
-			 eqjoin (
-			      difference (
-				   loop,
-				   project (sum, proj (att_iter, att_iter))),
-			      project (cast(args[1].rel, att_cast, att_item, t),
-				       proj (att_iter1, att_iter),
-				       proj (att_item, att_cast)),
-			      att_iter, att_iter1),
-			 proj (att_iter, att_iter),
-			 proj (att_item, att_item))),
+                    project (
+                         eqjoin (
+                              difference (
+                                   loop,
+                                   project (sum, proj (att_iter, att_iter))),
+                              project (cast(args[1].rel, att_cast, att_item, t),
+                                       proj (att_iter1, att_iter),
+                                       proj (att_item, att_cast)),
+                              att_iter, att_iter1),
+                         proj (att_iter, att_iter),
+                         proj (att_item, att_item))),
                 att_pos, lit_nat (1)),
         .frag = PFla_empty_set () };
 }
@@ -671,7 +670,7 @@ PFbui_fn_sum_zero_int (const PFla_op_t *loop,
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
 
-    return PFbui_fn_sum_zero(aat_int, loop, args);
+    return fn_sum_zero(aat_int, loop, args);
 }
 
 /**
@@ -685,7 +684,7 @@ PFbui_fn_sum_zero_dec (const PFla_op_t *loop,
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
 
-    return PFbui_fn_sum_zero(aat_dec, loop, args);
+    return fn_sum_zero(aat_dec, loop, args);
 }
 
 /**
@@ -699,7 +698,7 @@ PFbui_fn_sum_zero_dbl (const PFla_op_t *loop,
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
 
-    return PFbui_fn_sum_zero(aat_dbl, loop, args);
+    return fn_sum_zero(aat_dbl, loop, args);
 }
 
 /**
@@ -718,14 +717,12 @@ PFbui_fn_sum_zero_dbl (const PFla_op_t *loop,
  *                                ()
  */
 static struct PFla_pair_t
-PFbui_fn_sum (PFalg_simple_type_t t,
-              const PFla_op_t *loop,
-              struct PFla_pair_t *args)
+fn_sum (PFalg_simple_type_t t, const PFla_op_t *loop, struct PFla_pair_t *args)
 {
     PFla_op_t *sum = aggr (la_sum,
                            project (cast(args[0].rel, att_cast, att_item, t),
                                    proj (att_iter, att_iter),
-				   proj (att_item, att_cast)),
+                                   proj (att_item, att_cast)),
                            att_item, att_item, att_iter);
 
     return (struct PFla_pair_t) {
@@ -751,7 +748,7 @@ PFbui_fn_sum_int (const PFla_op_t *loop,
 {
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    return PFbui_fn_sum(aat_int, loop, args); 
+    return fn_sum(aat_int, loop, args); 
 }
 
 /**
@@ -764,7 +761,7 @@ PFbui_fn_sum_dec (const PFla_op_t *loop,
 {
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    return PFbui_fn_sum(aat_dec, loop, args); 
+    return fn_sum(aat_dec, loop, args); 
 }
 
 /**
@@ -777,7 +774,7 @@ PFbui_fn_sum_dbl (const PFla_op_t *loop,
 {
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    return PFbui_fn_sum(aat_dbl, loop, args); 
+    return fn_sum(aat_dbl, loop, args); 
 }
 
 /**
@@ -878,7 +875,7 @@ PFbui_fn_string_join (const PFla_op_t *loop __attribute__((unused)),
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
     return (struct PFla_pair_t) {
-		        .rel  = attach (
+                .rel  = attach (
                             fn_string_join (args[0].rel,
                                             project (
                                                 args[1].rel,
@@ -1456,7 +1453,7 @@ PFbui_op_or_bln (const PFla_op_t *loop __attribute__((unused)),
 struct PFla_pair_t
 PFbui_op_and_bln (const PFla_op_t *loop __attribute__((unused)),
                   bool ordering,
-		  struct PFla_pair_t *args)
+                  struct PFla_pair_t *args)
 {
     (void) loop;      /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
