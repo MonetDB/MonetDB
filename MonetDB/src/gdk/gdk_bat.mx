@@ -1285,23 +1285,17 @@ BUNinplace(BAT *b, BUN p, ptr h, ptr t, bit force)
 		BUN last = BUNlast(b) - BUNsize(b);
 		BAT *bm = BBP_cache(-b->batCacheid);
 		size_t pit = BUNindex(b, p);
-		chr oldrestricted = 0;
 
-		if (force) {
-			oldrestricted = b->batRestricted & (BAT_APPEND|BAT_READ);
-			b->batRestricted &= ~(BAT_APPEND|BAT_READ);
-		}
-		ALIGNdelT(b, "BUNreplace");	/* zap alignment info */
+		ALIGNinp(b, "BUNreplace", force);	/* zap alignment info */
 		if (b->tvarsized) {
 			@:uncommit_replace(var)@
 		} else {
 			@:uncommit_replace(loc)@
 		}
-		if (b->ttype != TYPE_void && b->tkey && !(b->tkey & BOUND2BTRUE) && BATcount(b) > 1) {
+		if (((b->ttype != TYPE_void) & b->tkey & !(b->tkey & BOUND2BTRUE)) && BATcount(b) > 1) {
 			BATkey(bm, FALSE);
 		}
 		b->batDirtybuns = b->theapdirty = TRUE;
-		b->batRestricted |= oldrestricted;
 	} else {
 		/* committed BUN */
 		BUNdelete(b, p);

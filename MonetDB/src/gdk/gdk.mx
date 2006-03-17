@@ -2622,12 +2622,11 @@ gdk_export int ALIGNundo(BAT *b);
 gdk_export int ALIGNcommit(BAT *b);
 gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 
-#define ALIGNsetT(x,y)	ALIGNsetH(BATmirror(x),BATmirror(y))
-#define ALIGNdel(x,y)	{ALIGNchk(x,y);(x)->halign=(x)->talign=0; }
-#define ALIGNins(x,y)	{VIEWchk(x,y,BAT_READ);(x)->halign=(x)->talign=0; }
-#define ALIGNdelH(x,y)	{ALIGNchk(x,y);(x)->halign=0;}
-#define ALIGNdelT(x,y)	{ALIGNchk(x,y);(x)->talign=0;}
 #define ALIGNset(x,y)	{ALIGNsetH(x,y);ALIGNsetT(x,y);}
+#define ALIGNsetT(x,y)	ALIGNsetH(BATmirror(x),BATmirror(y))
+#define ALIGNins(x,y)	{VIEWchk(x,y,BAT_READ);(x)->halign=(x)->talign=0; }
+#define ALIGNdel(x,y)	{VIEWchk(x,y,BAT_READ|BAT_APPEND);(x)->halign=(x)->talign=0; }
+#define ALIGNinp(x,y,f) {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND);(x)->talign=0; }
 
 #define BATrestricted(b) (VIEWparent(b)?BBP_cache(VIEWparent(b))->batRestricted:(b)->batRestricted)
 
@@ -2637,10 +2636,10 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  *                BAT_READ   = read-only
  * VIEW bats are always mapped read-only.
  */
-#define	VIEWchk(x,y,z)							\
-	if (((x)->batRestricted & (z)) || (x)->batSharecnt > 0) {	\
-		GDKerror("%s: access denied to %s, aborting.\n", y, BATgetId(x)); \
-		return 0;						\
+#define	VIEWchk(x,y,z)							  	\
+	if ((((x)->batRestricted & (z)) != 0) | ((x)->batSharecnt > 0)) {	 \
+		GDKerror("%s: access denied to %s, aborting.\n", y, BATgetId(x));\
+		return 0;							 \
 	}
 
 /* the parentid in a VIEW is correct for the normal view. We must correct
@@ -2657,8 +2656,6 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 			   && (b)->htype == BBP_cache(VIEWparent(b))->htype \
 			   && (b)->hloc == BBP_cache(VIEWparent(b))->hloc) \
 			  ?VIEWparent(b):0)
-
-#define ALIGNchk(x,y)	VIEWchk(x,y,BAT_APPEND|BAT_READ)
 @
 @}
 
