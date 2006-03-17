@@ -51,6 +51,7 @@ bool
 PFprop_const (const PFprop_t *prop, PFalg_att_t attr)
 {
     assert (prop);
+    assert (prop->constants);
 
     for (unsigned int i = 0; i < PFarray_last (prop->constants); i++)
         if (attr == ((const_t *) PFarray_at (prop->constants, i))->attr)
@@ -67,6 +68,7 @@ bool
 PFprop_const_left (const PFprop_t *prop, PFalg_att_t attr)
 {
     assert (prop);
+    assert (prop->l_constants);
 
     for (unsigned int i = 0; i < PFarray_last (prop->l_constants); i++)
         if (attr == ((const_t *) PFarray_at (prop->l_constants, i))->attr)
@@ -83,6 +85,7 @@ bool
 PFprop_const_right (const PFprop_t *prop, PFalg_att_t attr)
 {
     assert (prop);
+    assert (prop->r_constants);
 
     for (unsigned int i = 0; i < PFarray_last (prop->r_constants); i++)
         if (attr == ((const_t *) PFarray_at (prop->r_constants, i))->attr)
@@ -93,7 +96,10 @@ PFprop_const_right (const PFprop_t *prop, PFalg_att_t attr)
 
 /* worker for PFprop_const_val(_left|_right)? */
 static PFalg_atom_t
-const_val (PFarray_t *constants, PFalg_att_t attr) {
+const_val (PFarray_t *constants, PFalg_att_t attr)
+{
+    assert (constants);
+
     for (unsigned int i = 0; i < PFarray_last (constants); i++)
         if (attr == ((const_t *) PFarray_at (constants, i))->attr)
             return ((const_t *) PFarray_at (constants, i))->value;
@@ -102,7 +108,7 @@ const_val (PFarray_t *constants, PFalg_att_t attr) {
             "could not find attribute that is supposed to be constant: `%s'",
             PFatt_str (attr));
 
-    assert(0); /* never reached due to "exit" in PFoops */
+    assert (0); /* never reached due to "exit" in PFoops */
     return PFalg_lit_int (0); /* pacify picky compilers */
 }
 
@@ -113,6 +119,8 @@ const_val (PFarray_t *constants, PFalg_att_t attr) {
 PFalg_atom_t
 PFprop_const_val (const PFprop_t *prop, PFalg_att_t attr)
 {
+    assert (prop);
+
     return const_val (prop->constants, attr);
 }
 
@@ -125,6 +133,8 @@ PFprop_const_val (const PFprop_t *prop, PFalg_att_t attr)
 PFalg_atom_t
 PFprop_const_val_left (const PFprop_t *prop, PFalg_att_t attr)
 {
+    assert (prop);
+
     return const_val (prop->l_constants, attr);
 }
 
@@ -137,6 +147,8 @@ PFprop_const_val_left (const PFprop_t *prop, PFalg_att_t attr)
 PFalg_atom_t
 PFprop_const_val_right (const PFprop_t *prop, PFalg_att_t attr)
 {
+    assert (prop);
+
     return const_val (prop->r_constants, attr);
 }
 
@@ -147,6 +159,9 @@ PFprop_const_val_right (const PFprop_t *prop, PFalg_att_t attr)
 unsigned int
 PFprop_const_count (const PFprop_t *prop)
 {
+    assert (prop);
+    assert (prop->constants);
+
     return PFarray_last (prop->constants);
 }
 
@@ -157,6 +172,9 @@ PFprop_const_count (const PFprop_t *prop)
 PFalg_att_t
 PFprop_const_at (const PFprop_t *prop, unsigned int i)
 {
+    assert (prop);
+    assert (prop->constants);
+
     return ((const_t *) PFarray_at (prop->constants, i))->attr;
 }
 
@@ -167,6 +185,9 @@ PFprop_const_at (const PFprop_t *prop, unsigned int i)
 PFalg_atom_t
 PFprop_const_val_at (const PFprop_t *prop, unsigned int i)
 {
+    assert (prop);
+    assert (prop->constants);
+
     return ((const_t *) PFarray_at (prop->constants, i))->value;
 }
 
@@ -177,6 +198,8 @@ static void
 PFprop_mark_const (PFprop_t *prop, PFalg_att_t attr, PFalg_atom_t value)
 {
     assert (prop);
+    assert (prop->constants);
+
 
 #ifndef NDEBUG
     if (PFprop_const (prop, attr))
@@ -239,8 +262,8 @@ copy_child_constants (PFla_op_t *n)
         case la_bool_or:
         case la_bool_not:
         case la_avg:
-	case la_max:
-	case la_min:
+        case la_max:
+        case la_min:
         case la_sum:
         case la_count:
         case la_rownum:
@@ -546,6 +569,12 @@ infer_const (PFla_op_t *n)
         case la_avg:
         case la_max:
         case la_min:
+            /* if column 'att' is constant the result 'res' will be as well */
+            if (PFprop_const (L(n)->prop, n->sem.aggr.att))
+                PFprop_mark_const (
+                        n->prop,
+                        n->sem.aggr.res,
+                        PFprop_const_val (L(n)->prop, n->sem.aggr.att));
         case la_sum:
             if (n->sem.aggr.part &&
                 PFprop_const (L(n)->prop, n->sem.aggr.part))

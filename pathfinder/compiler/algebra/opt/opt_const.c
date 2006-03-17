@@ -102,7 +102,11 @@ opt_const (PFla_op_t *p, bool no_attach)
             case la_select:
             case la_difference:
             case la_distinct:
+            case la_avg:
+            case la_max:
+            case la_min:
             case la_rownum:
+            case la_number:
                 /* these rules apply a 'real rewrite'
                    and therefore continue */
                 break;
@@ -522,11 +526,49 @@ opt_const (PFla_op_t *p, bool no_attach)
             }
             break;
 
-/* Optimization causes problems with datatype != int */
-#if 0
         case la_avg:
 	case la_max:
 	case la_min:
+            /* some optimization opportunities for 
+               aggregate operators arise if 'att' is constant */
+            if (PFprop_const_left (p->prop, p->sem.aggr.att)) {
+                /* if partitioning column is constant as well
+                   replace aggregate by a new literal table 
+                   with one row containing 'att' and 'part' */
+                if (p->sem.aggr.part &&
+                    PFprop_const_left (p->prop, p->sem.aggr.part))
+                    *p = *PFla_lit_tbl (
+                              PFalg_attlist (p->sem.aggr.res,
+                                             p->sem.aggr.part),
+                              PFalg_tuple (PFprop_const_val_left (
+                                               p->prop,
+                                               p->sem.aggr.att),
+                                           PFprop_const_val_left (
+                                               p->prop,
+                                               p->sem.aggr.part)));
+                /* if the partitioning column is present but not
+                   constant we can replace the aggregate by a
+                   distinct operator (value in 'att' stays the same). */
+                else if (p->sem.aggr.part)
+                    *p = *PFla_distinct (
+                              PFla_project (
+                                  L(p),
+                                  PFalg_proj (p->sem.aggr.res,
+                                              p->sem.aggr.att),
+                                  PFalg_proj (p->sem.aggr.part,
+                                              p->sem.aggr.part)));
+                /* replace aggregate by a new literal table
+                   containining a single record with the result of
+                   aggregate operator. */
+                else
+                    *p = *PFla_lit_tbl (PFalg_attlist (p->sem.aggr.res),
+                                        PFalg_tuple (
+                                            PFprop_const_val_left (
+                                                p->prop,
+                                                p->sem.aggr.att)));
+            }
+            break;
+
         case la_sum:
             /* introduce attach if necessary */
             if (PFprop_const_left (p->prop, p->sem.aggr.att)) {
@@ -553,7 +595,6 @@ opt_const (PFla_op_t *p, bool no_attach)
                 SEEN(p) = true;
             }
             break;
-#endif
 
         case la_count:
             /* if partitiong attribute is constant remove it
