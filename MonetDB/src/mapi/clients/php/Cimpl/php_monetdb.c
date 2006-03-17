@@ -82,12 +82,8 @@ struct _phpMonetConn {
 	Mapi mid;
 	char *error;	/* differs from the mapi error in that it is cleaned */
 	phpMonetHandle *first;
-	int persistent;
 };
 typedef struct _phpMonetConn phpMonetConn;
-
-/* TODO: maybe we want to introduce persistant connections?
-static int le_plink; */
 
 /* {{{ php_monetdb_set_last_error(error, connection)
  * utility function to set the last error
@@ -209,7 +205,6 @@ _free_monetdb_link(zend_rsrc_list_entry * rsrc TSRMLS_DC)
 		efree(h);
 		h = next;
 	}
-	/* fprintf(stderr, "Freed link and %d handles\n", i); */
 	mapi_disconnect(monet_link->mid);
 	mapi_destroy(monet_link->mid);
 	monet_link->mid = NULL;
@@ -386,12 +381,13 @@ php_monetdb_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 	}
 
 	len = strlen(password) + strlen(username) + strlen(hostname) +
-			strlen(language) + strlen("monetdb") + 5 + 5 + 1;
-	key = emalloc(len);
-	snprintf(key, len - 1, "monetdb_%s_%s_%ld_%s_%s",
+			strlen(language) + strlen("monetdb") + 5 + 5;
+	key = emalloc(len + 1);
+	snprintf(key, len + 1, "monetdb_%s_%s_%ld_%s_%s",
 			password, username, port, hostname, language);
 
-	persistent &= MONET_G(allow_persistent);
+	/* only allow persistant links if the global configuration allows it */
+	persistent = persistent && MONET_G(allow_persistent);
 
 	if (persistent) {
 		zend_rsrc_list_entry *le;
@@ -430,7 +426,6 @@ php_monetdb_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 		if (persistent) {
 			zend_rsrc_list_entry new_le;
 
-			conn->persistent = 1;
 			/* save the connection in the hashlist */
 			Z_TYPE(new_le) = le_plink;
 			new_le.ptr = conn;
@@ -439,8 +434,6 @@ php_monetdb_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 				mapi_disconnect(conn->mid);
 				RETURN_FALSE;
 			}
-		} else {
-			conn->persistent = 0;
 		}
 	}
 
@@ -500,10 +493,6 @@ PHP_FUNCTION(monetdb_close)
 
 	ZEND_FETCH_RESOURCE(conn, phpMonetConn *, mapi_link, id, "MonetDB connection", le_link);
 
-	if (conn->persistent)
-		RETURN_TRUE;
-
-	/*~ printf("MON: disconnecting %p\n", conn); */
 	mapi_disconnect(conn->mid);
 
 	ret = 1;
@@ -559,7 +548,6 @@ PHP_FUNCTION(monetdb_setAutocommit)
 	convert_to_long_ex(val);
 	autocommit = Z_LVAL_PP(val);
 
-	/*~ printf("MON: disconnecting %p\n", conn); */
 	mapi_setAutocommit(conn->mid, autocommit);
 
 	if (mapi_error(conn->mid)) {
@@ -695,8 +683,6 @@ PHP_FUNCTION(monetdb_num_fields)
 		RETURN_FALSE;
 
 	ZEND_FETCH_RESOURCE(handle, MapiHdl, z_handle, -1, "MonetDB result handle", le_handle);
-
-	/*~ printf("MON: num fields handle=%p\n", handle); */
 
 	Z_LVAL_P(return_value) = (long) mapi_get_field_count(handle);
 	Z_TYPE_P(return_value) = IS_LONG;
