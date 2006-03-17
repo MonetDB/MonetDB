@@ -658,6 +658,17 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
                     PFarray_printf (dot, i ? ", %s" : "\\nkeys: %s",
                                     PFatt_str (keys.atts[i]));
 
+                /* list required value columns and their values */
+                for (unsigned int pre = 0, i = 0; i < n->schema.count; i++) {
+                    PFalg_att_t att = n->schema.items[i].name;
+                    if (PFprop_reqval (n->prop, att))
+                        PFarray_printf (
+                            dot, 
+                            pre++ ? ", %s=%s " : "\\nreq. val: %s=%s ",
+                            PFatt_str (att),
+                            PFprop_reqval_val (n->prop, att)?"true":"false");
+                }
+
                 /* list attributes and their corresponding domains */
                 for (unsigned int i = 0; i < n->schema.count; i++)
                     if (PFprop_dom (n->prop, n->schema.items[i].name)) {
@@ -776,6 +787,17 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *node)
                 for (unsigned int i = 0; i < keys.count; i++)
                     PFarray_printf (xml, "      <keys column=\"%s\"/>\n",
                                     PFatt_str (keys.atts[i]));
+
+                /* list required value columns and their values */
+                for (unsigned int i = 0; i < n->schema.count; i++) {
+                    PFalg_att_t att = n->schema.items[i].name;
+                    if (PFprop_reqval (n->prop, att))
+                        PFarray_printf (
+                            xml, 
+                            "      <required attr=\"%s\" value=\"%s\"/>\n",
+                            PFatt_str (att),
+                            PFprop_reqval_val (n->prop, att)?"true":"false");
+                }
 
                 /* list attributes and their corresponding domains */
                 for (unsigned int i = 0; i < n->schema.count; i++)

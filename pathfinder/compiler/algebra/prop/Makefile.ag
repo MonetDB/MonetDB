@@ -30,10 +30,11 @@ lib_prop = {
 	NOINST
 	DIR = libdir
 	SOURCES = \
+		prop_card.c \
+		prop_const.c \
+		prop_dom.c \
 		prop_icol.c \
 		prop_key.c \
 		prop_ocol.c \
-		prop_const.c \
-		prop_dom.c \
-		prop_card.c
+		prop_reqval.c
 }

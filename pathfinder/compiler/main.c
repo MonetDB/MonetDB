@@ -695,12 +695,19 @@ main (int argc, char *argv[])
                                             "property\n");
                 printf ("         C  apply optimization using multiple "
                                             "properties (complex)\n");
+                printf ("            - icols based optimization will be "
+                                            "applied afterwards.\n");
                 printf ("         G  apply general optimization (without "
                                             "properties)\n");
+                printf ("         V  apply optimization based on required "
+                                            "values property\n");
                 printf ("         P  infer all properties\n");
                 printf ("            (used for debug output and physical "
                                             "algebra\n");
-                printf ("         (default is: '-o OIKDCGP')\n");
+                printf ("         N  skip the following optimizations\n");
+                printf ("            (used for avoiding all property analysis "
+                                            "and optimization phases\n");
+                printf ("         (default is: '-o OIKDCGV OIKDCGP')\n");
 
                 printf ("\n");
                 printf ("Enjoy.\n");

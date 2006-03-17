@@ -116,7 +116,7 @@ PFstate_t PFstate = {
     .print_pa_tree       = false,
     .summer_branch       = true,
 
-    .opt_alg             = "OIKDCGP",
+    .opt_alg             = "OIKDCGVOIKDCGP",
     .format              = NULL,
 
     .genType             = "xml"

@@ -68,6 +68,10 @@ PFprop (void)
     /* initialize cardinality */
     ret->card = 0;
 
+    /* initialize key attribute list */
+    ret->reqvals.name = 0;
+    ret->reqvals.val  = 0;
+
     /* initialize domain information */
     ret->domains   = PFarray (sizeof (dom_pair_t));
     ret->dom_rel   = NULL;
@@ -82,26 +86,28 @@ PFprop (void)
  * rooted in root whose flag is set.
  */
 void
-PFprop_infer (bool const_, bool ocols, bool icols,
-              bool key, bool card, bool dom,
+PFprop_infer (bool card, bool const_, bool dom,
+              bool icols, bool key, bool ocols, bool reqval,
               PFla_op_t *root)
 {
     PFprop_create_prop (root);
 
     /* for each property required infer
        the properties of the complete DAG */
-    if (const_)
-        PFprop_infer_const (root);
-    if (icols)
-        PFprop_infer_icol (root);
-    if (ocols)
-        PFprop_infer_ocol (root);
-    if (key)
-        PFprop_infer_key (root);
     if (card)
         PFprop_infer_card (root);
+    if (const_)
+        PFprop_infer_const (root);
     if (dom)
         PFprop_infer_dom (root);
+    if (icols)
+        PFprop_infer_icol (root);
+    if (key)
+        PFprop_infer_key (root);
+    if (ocols)
+        PFprop_infer_ocol (root);
+    if (reqval)
+        PFprop_infer_reqval (root);
 }
 
 /* worker for PFprop_create_prop () */

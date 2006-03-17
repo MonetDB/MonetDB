@@ -50,64 +50,6 @@ PFalgopt (PFla_op_t *root, bool timing)
 
     while (*args) {
         switch (*args) {
-            case 'G':
-                tm = PFtimer_start ();
-                
-                root = PFalgopt_general (root);
-                
-                tm = PFtimer_stop (tm);
-                if (timing)
-                    PFlog ("\tgeneral optimization:\t\t %s",
-                           PFtimer_str (tm));
-                break;
-
-            case 'O':
-                tm = PFtimer_start ();
-                
-                root = PFalgopt_const (root, const_no_attach);
-                
-                tm = PFtimer_stop (tm);
-                if (timing)
-                    PFlog ("\tconstant optimization:\t\t %s",
-                           PFtimer_str (tm));
-                /* avoid adding attach nodes in the following
-                   constant optimization runs */
-                const_no_attach = true;
-                break;
-
-            case 'I':
-                tm = PFtimer_start ();
-                
-                root = PFalgopt_icol (root);
-                
-                tm = PFtimer_stop (tm);
-                if (timing)
-                    PFlog ("\ticol optimization:\t\t %s",
-                           PFtimer_str (tm));
-                break;
-
-            case 'K':
-                tm = PFtimer_start ();
-                
-                root = PFalgopt_key (root);
-                
-                tm = PFtimer_stop (tm);
-                if (timing)
-                    PFlog ("\tkey optimization:\t\t %s",
-                           PFtimer_str (tm));
-                break;
-
-            case 'D':
-                tm = PFtimer_start ();
-                
-                root = PFalgopt_dom (root);
-                
-                tm = PFtimer_stop (tm);
-                if (timing)
-                    PFlog ("\tdomain optimization:\t\t %s",
-                           PFtimer_str (tm));
-                break;
-
             case 'A': /* disabled */
                 /*
                 tm = PFtimer_start ();
@@ -132,18 +74,91 @@ PFalgopt (PFla_op_t *root, bool timing)
                            PFtimer_str (tm));
                 break;
 
+            case 'O':
+                tm = PFtimer_start ();
+                
+                root = PFalgopt_const (root, const_no_attach);
+                
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("\tconstant optimization:\t\t %s",
+                           PFtimer_str (tm));
+                /* avoid adding attach nodes in the following
+                   constant optimization runs */
+                const_no_attach = true;
+                break;
+
+            case 'D':
+                tm = PFtimer_start ();
+                
+                root = PFalgopt_dom (root);
+                
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("\tdomain optimization:\t\t %s",
+                           PFtimer_str (tm));
+                break;
+
+            case 'G':
+                tm = PFtimer_start ();
+                
+                root = PFalgopt_general (root);
+                
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("\tgeneral optimization:\t\t %s",
+                           PFtimer_str (tm));
+                break;
+
+            case 'I':
+                tm = PFtimer_start ();
+                
+                root = PFalgopt_icol (root);
+                
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("\ticol optimization:\t\t %s",
+                           PFtimer_str (tm));
+                break;
+
+            case 'K':
+                tm = PFtimer_start ();
+                
+                root = PFalgopt_key (root);
+                
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("\tkey optimization:\t\t %s",
+                           PFtimer_str (tm));
+                break;
+
+            case 'V':
+                tm = PFtimer_start ();
+                
+                root = PFalgopt_reqval (root);
+                
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("\trequired value optimization:\t %s",
+                           PFtimer_str (tm));
+                break;
+
             case 'P':
                 tm = PFtimer_start ();
                 
-                PFprop_infer (true /* const */, true /* ocols */, 
-                              true /* icols */, true /* key */,
-                              true /* card */, true /* dom */, root);
+                PFprop_infer (true /* card */, true /* const */,
+                              true /* dom */, true /* icols */,
+                              true /* key */, true /* ocols */, 
+                              true /* reqval */, root);
                 
                 tm = PFtimer_stop (tm);
                 if (timing)
                     PFlog ("\tcomplete property inference:\t %s",
                            PFtimer_str (tm));
                 break;
+
+            case 'N':
+                return root;
 
             case ' ':
                 break;

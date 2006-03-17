@@ -41,19 +41,28 @@ typedef struct PFprop_t PFprop_t;
 #include "algebra.h"
 #include "logical.h"
 
+/* required values list */
+struct reqval_t {
+    PFalg_att_t  name;
+    PFalg_att_t  val;
+};
+typedef struct reqval_t reqval_t;
+
 struct PFprop_t {
-    PFarray_t   *constants;  /**< List of attributes marked constant,
-                                  along with their corresponding values. */
-    PFalg_att_t  icols;      /**< List of attributes required by the
-                                  parent operators. */
-    PFalg_att_t  keys;       /**< List of attributes that have
-                                  unique values. */
     unsigned int card;       /**< Exact number of tuples in intermediate
                                   result. (0 means we don't know) */
+    PFarray_t   *constants;  /**< List of attributes marked constant,
+                                  along with their corresponding values. */
     PFarray_t   *domains;    /**< List of attributes along with their
                                   corresponding domain identifier. */
     PFarray_t   *dom_rel;    /**< List of domain pairs that store 
                                   the relationship between different domains */
+    PFalg_att_t  icols;      /**< List of attributes required by the
+                                  parent operators. */
+    PFalg_att_t  keys;       /**< List of attributes that have
+                                  unique values. */
+    reqval_t     reqvals;    /**< List of attributes with their corresponding
+                                  required values. */
 
     /* to allow peep-hole optimizations we also store property
        information of the children (left child 'l_', right child 'r_' */
@@ -61,6 +70,10 @@ struct PFprop_t {
                                   along with their corresponding values. */
     PFarray_t  *r_constants; /**< List of attributes marked constant,
                                   along with their corresponding values. */
+    PFarray_t  *l_domains;   /**< List of attributes along with their
+                                  corresponding domain identifier. */
+    PFarray_t  *r_domains;   /**< List of attributes along with their
+                                  corresponding domain identifier. */
     PFalg_att_t l_icols;     /**< List of attributes required by the
                                   parent operators. */
     PFalg_att_t r_icols;     /**< List of attributes required by the
@@ -69,10 +82,6 @@ struct PFprop_t {
                                   unique values. */
     PFalg_att_t r_keys;      /**< List of attributes that have
                                   unique values. */
-    PFarray_t  *l_domains;   /**< List of attributes along with their
-                                  corresponding domain identifier. */
-    PFarray_t  *r_domains;   /**< List of attributes along with their
-                                  corresponding domain identifier. */
 };
 
 /* constant item */
@@ -107,8 +116,8 @@ PFprop_t *PFprop (void);
  * Infer all properties of the current tree
  * rooted in root whose flag is set.
  */
-void PFprop_infer (bool const_, bool ocols, bool icols,
-                   bool key, bool card, bool dom, PFla_op_t *root);
+void PFprop_infer (bool card, bool const_, bool dom, bool icols,
+                   bool key, bool ocols, bool reqval, PFla_op_t *root);
 
 /**
  * Create new property fields for a DAG rooted in @a root
@@ -120,12 +129,20 @@ void PFprop_create_prop (PFla_op_t *root);
  * (The implementation is located in the
  *  corresponding prop/prop_*.c file)
  */
-void PFprop_infer_const (PFla_op_t *root);
-void PFprop_infer_icol (PFla_op_t *root);
-void PFprop_infer_ocol (PFla_op_t *root);
-void PFprop_infer_key (PFla_op_t *root);
 void PFprop_infer_card (PFla_op_t *root);
+void PFprop_infer_const (PFla_op_t *root);
 void PFprop_infer_dom (PFla_op_t *root);
+void PFprop_infer_icol (PFla_op_t *root);
+void PFprop_infer_key (PFla_op_t *root);
+void PFprop_infer_ocol (PFla_op_t *root);
+void PFprop_infer_reqval (PFla_op_t *root);
+
+/* --------------------- cardinality propery accessors --------------------- */
+
+/**
+ * Return cardinality stored in property container @a prop.
+ */
+unsigned int PFprop_card (const PFprop_t *prop);
 
 /* ---------------------- constant property accessors ---------------------- */
 
@@ -185,84 +202,6 @@ PFalg_att_t PFprop_const_at (const PFprop_t *prop, unsigned int i);
  */
 PFalg_atom_t PFprop_const_val_at (const PFprop_t *prop, unsigned int i);
 
-/* ------------------------ icol property accessors ------------------------ */
-
-/**
- * Test if @a attr is in the list of icol columns in container @a prop
- */
-bool PFprop_icol (const PFprop_t *prop, PFalg_att_t attr);
-
-/**
- * Test if @a attr is in the list of icol columns of the left child
- * (information is stored in property container @a prop)
- */
-bool PFprop_icol_left (const PFprop_t *prop, PFalg_att_t attr);
-
-/**
- * Test if @a attr is in the list of icol columns of the right child
- * (information is stored in property container @a prop)
- */
-bool PFprop_icol_right (const PFprop_t *prop, PFalg_att_t attr);
-
-/*
- * count number of icols attributes
- */
-unsigned int PFprop_icols_count (const PFprop_t *prop);
-
-/**
- * Return icols attributes as an attlist.
- */
-PFalg_attlist_t PFprop_icols_to_attlist (const PFprop_t *prop);
-
-/* ------------------------ ocol property accessors ------------------------ */
-
-/**
- * Test if @a attr is in the list of ocol columns of node @a n
- */
-bool PFprop_ocol (const PFla_op_t *n, PFalg_att_t attr);
-
-/**
- * Infer ocol property for a single node based on 
- * the schemas of its children
- */
-void PFprop_update_ocol (PFla_op_t *n);
-
-/* ------------------------- key property accessors ------------------------ */
-
-/**
- * Test if @a attr is in the list of key columns in container @a prop
- */
-bool PFprop_key (const PFprop_t *prop, PFalg_att_t attr);
-
-/**
- * Test if @a attr is in the list of key columns of the left child
- * (information is stored in property container @a prop)
- */
-bool PFprop_key_left (const PFprop_t *prop, PFalg_att_t attr);
-
-/**
- * Test if @a attr is in the list of key columns of the right child
- * (information is stored in property container @a prop)
- */
-bool PFprop_key_right (const PFprop_t *prop, PFalg_att_t attr);
-
-/*
- * count number of keys attributes
- */
-unsigned int PFprop_keys_count (const PFprop_t *prop);
-
-/**
- * Return keys attributes as an attlist.
- */
-PFalg_attlist_t PFprop_keys_to_attlist (const PFprop_t *prop);
-
-/* --------------------- cardinality propery accessors --------------------- */
-
-/**
- * Return cardinality stored in property container @a prop.
- */
-unsigned int PFprop_card (const PFprop_t *prop);
-
 /* ----------------------- domain property accessors ----------------------- */
 
 /**
@@ -298,6 +237,91 @@ void PFprop_write_domain (PFarray_t *f, dom_t domain);
  * to character array @a f.
  */
 void PFprop_write_dom_rel (PFarray_t *f, const PFprop_t *prop);
+
+/* ------------------------ icol property accessors ------------------------ */
+
+/**
+ * Test if @a attr is in the list of icol columns in container @a prop
+ */
+bool PFprop_icol (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
+ * Test if @a attr is in the list of icol columns of the left child
+ * (information is stored in property container @a prop)
+ */
+bool PFprop_icol_left (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
+ * Test if @a attr is in the list of icol columns of the right child
+ * (information is stored in property container @a prop)
+ */
+bool PFprop_icol_right (const PFprop_t *prop, PFalg_att_t attr);
+
+/*
+ * count number of icols attributes
+ */
+unsigned int PFprop_icols_count (const PFprop_t *prop);
+
+/**
+ * Return icols attributes as an attlist.
+ */
+PFalg_attlist_t PFprop_icols_to_attlist (const PFprop_t *prop);
+
+/* ------------------------- key property accessors ------------------------ */
+
+/**
+ * Test if @a attr is in the list of key columns in container @a prop
+ */
+bool PFprop_key (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
+ * Test if @a attr is in the list of key columns of the left child
+ * (information is stored in property container @a prop)
+ */
+bool PFprop_key_left (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
+ * Test if @a attr is in the list of key columns of the right child
+ * (information is stored in property container @a prop)
+ */
+bool PFprop_key_right (const PFprop_t *prop, PFalg_att_t attr);
+
+/*
+ * count number of keys attributes
+ */
+unsigned int PFprop_keys_count (const PFprop_t *prop);
+
+/**
+ * Return keys attributes as an attlist.
+ */
+PFalg_attlist_t PFprop_keys_to_attlist (const PFprop_t *prop);
+
+/* ------------------------ ocol property accessors ------------------------ */
+
+/**
+ * Test if @a attr is in the list of ocol columns of node @a n
+ */
+bool PFprop_ocol (const PFla_op_t *n, PFalg_att_t attr);
+
+/**
+ * Infer ocol property for a single node based on 
+ * the schemas of its children
+ */
+void PFprop_update_ocol (PFla_op_t *n);
+
+/* -------------------- required value property accessors ------------------ */
+
+/**
+ * Test if @a attr is in the list of required value columns
+ * in container @a prop
+ */
+bool PFprop_reqval (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
+ * Looking up required value of column @a attr
+ * in container @a prop
+ */
+bool PFprop_reqval_val (const PFprop_t *prop, PFalg_att_t attr);
 
 #endif  /* PROPERTIES_H */
 

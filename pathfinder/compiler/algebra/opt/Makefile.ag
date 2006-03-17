@@ -27,13 +27,14 @@ SUBDIRS =
 INCLUDES = ../../include $(MONETDB_INCS)
 
 lib_opt = {
-	NOINST
-	DIR = libdir
-	SOURCES = \
-		opt_const.c \
-		opt_icol.c \
-		opt_key.c \
-		opt_dom.c \
-        opt_complex.c \
-        opt_general.brg
+        NOINST
+        DIR = libdir
+        SOURCES = \
+                opt_complex.c \
+                opt_const.c \
+                opt_dom.c \
+                opt_general.brg \
+                opt_icol.c \
+                opt_key.c \
+                opt_reqval.c
 }
