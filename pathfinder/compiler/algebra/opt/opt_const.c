@@ -100,7 +100,9 @@ opt_const (PFla_op_t *p, bool no_attach)
         switch (p->kind) {
             case la_eqjoin:
             case la_select:
+            case la_difference:
             case la_distinct:
+            case la_rownum:
                 /* these rules apply a 'real rewrite'
                    and therefore continue */
                 break;
@@ -366,8 +368,11 @@ opt_const (PFla_op_t *p, bool no_attach)
             break;
 
         case la_difference:
+            /* as this rule does not cope with empty sequences
+               correctly it is disabled */
+            break;
         {   /**
-             * difference can pruned if all columns of both operands
+             * difference can be pruned if all columns of both operands
              * are constant and the comparison between the single
              * columns are stable (in respect to the implementations)
              * e.g. type integer or native.
@@ -378,26 +383,26 @@ opt_const (PFla_op_t *p, bool no_attach)
              * difference can be discarded.
              */
             PFalg_att_t att;
-            bool same_rows = true;
+            bool all_const = true;
             bool all_match = true;
 
             for (unsigned int i = 0; i < p->schema.count; i++) {
                 att = p->schema.items[i].name;
-                same_rows = same_rows &&
+                all_const = all_const &&
                             PFprop_const_left (p->prop, att) &&
                             PFprop_const_right (p->prop, att) &&
                             (PFprop_const_val_left (p->prop,
                                                     att)).type == aat_nat &&
                             (PFprop_const_val_right (p->prop,
                                                      att)).type == aat_nat;
-                if (same_rows)
+                if (all_const)
                     all_match = all_match &&
                                 !PFalg_atom_cmp (
                                      PFprop_const_val_left (p->prop, att),
                                      PFprop_const_val_right (p->prop, att));
             }
 
-            if (same_rows) {
+            if (all_const) {
                 if (all_match) {
                     /* for each tuple in the left argument there
                        exists one in the right argument - thus
@@ -457,6 +462,10 @@ opt_const (PFla_op_t *p, bool no_attach)
                 *p = *ret;
                 SEEN(p) = true;
             } else if (!count) {
+                /* as this rule does not cope with empty sequences
+                   correctly it is disabled */
+                break;
+
                 /* as all columns are constant, the distinct operator
                    can be replaced by lit_tbl of the current schema
                    whose single row contains the constant values */
