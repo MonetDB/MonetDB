@@ -2314,11 +2314,11 @@ quick check on trivial cases (void columns, 0 or 1 tuple bats).
 @-
 first propagate already known properties. that will save some effort.
 @c
-	if (VIEWparentcol(b)) {
+	if (VIEWparentcol(b) && !b->batBuns->copied) { /* copied=remapped bat => {sorted,key,dense} properties do not inherit */
 		/* quickly propagate properties from parent to child */
 		BAT *parent = BBP_cache(VIEWparent(b));
 
-		if ((BAThordered(parent) & 1) && !(BAThordered(b) & 1)) {
+		if (((BAThordered(parent) & 1) && !(BAThordered(b) & 1)) && !b->batBuns->copied) {
 			XPROPDEBUG GDKwarning("BATpropcheck: BAT %s(%d) inherits (h)sorted from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, BATgetId(parent), parent->batCacheid);
 
 			b->batDirtydesc = TRUE;
