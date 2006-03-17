@@ -1743,6 +1743,7 @@ copy-on-write mmap heap to be made.
 @c
 static int
 copy_segment(char* mmap, BAT *bn, BAT *b, int src, int dst, int cnt) {
+	int ret = 0;
 	if (cnt) {
 	        size_t xx = REMAP_PAGE_SIZE * BUNsize(b);
 		size_t src_off = ((size_t) src) * xx;
@@ -1755,7 +1756,7 @@ copy_segment(char* mmap, BAT *bn, BAT *b, int src, int dst, int cnt) {
 		} else if (src_off != dst_off) { /* otherwise it is already mapped so */
 			void *fixed = (bn->batBuns->base + dst_off);
                         if (GDKmmap(mmap, MMAP_READ|MMAP_SEQUENTIAL|MMAP_COPY, src_off, nbytes, fixed) != fixed) {
-bunins_failed:			return 0;
+				return 0;
 			}
 		}
 		if (partial < nbytes) {
@@ -1768,7 +1769,9 @@ bunins_failed:			return 0;
 			}
 		}
 	}
-	return 1;
+	ret = 1;
+bunins_failed:			
+	return ret;
 }
 
 int
