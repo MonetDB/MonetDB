@@ -112,9 +112,9 @@ static int dflt_handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, s
             stream_printf(GDKout," %s=",loc);
         }
         /* stream_printf(GDKout,"\"%s\"",value); */
-        stream_printf(GDKout,"\"");
+        stream_write(GDKout,"\"",1,1);
         emit_escaped(value, 1+ctx->mapiMode, 0/*ALL*/);
-        stream_printf(GDKout,"\"");
+        stream_write(GDKout,"\"",1,1);
     }
     return 1;
 }
@@ -126,8 +126,8 @@ static int dflt_handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, s
 static int dflt_handle_attributeEnd(XqueryCtx* ctx, int emptyNode) {
     (void)ctx;
     if ( emptyNode )
-            stream_printf(GDKout,"/");
-    stream_printf(GDKout,">");
+            stream_write(GDKout,"/",1,1);
+    stream_write(GDKout,">",1,1);
     return 1;
 }
 
@@ -187,21 +187,13 @@ static int dflt_handle_characters(XqueryCtx* ctx, str ch, str top) {
         /* we need to prepend "=" to each line, so
            make sure that we print one after each
            newline */
-        /*
-         * str nl;
-         * while ((nl = strchr(ch, '\n')) != NULL) {
-         * 	nl++;
-         * 	stream_printf(GDKout, "%.*s=", (nl - ch), ch);
-         * 	ch = nl;
-         * }
-         */
         if ( ctx->dmMode && top )
             stream_printf(GDKout,"%s {\"", top);
 
         emit_escaped(ch,1+ctx->mapiMode, 1/*JUST ENTITIES*/ );
 
         if ( ctx->dmMode && top )
-            stream_printf(GDKout,"\"}");
+            stream_write(GDKout,"\"}",2,1);
     } else {
         /*
          * stream_printf(GDKout,"%s",ch);
@@ -212,7 +204,7 @@ static int dflt_handle_characters(XqueryCtx* ctx, str ch, str top) {
         emit_escaped(ch,1+ctx->mapiMode, 1/*JUST ENTITIES*/ );
 
         if ( ctx->dmMode && top )
-            stream_printf(GDKout,"\"}");
+            stream_write(GDKout,"\"}",2,1);
     }
     return 1;
 }
@@ -269,9 +261,8 @@ static int dflt_seqStart(XqueryCtx* ctx, BAT* item) {
         if (ctx->noheaderMode == 0) {
             if (ctx->mapiMode) {
                 stream_printf(GDKout,"=<?xml version=\"1.0\" encoding=\"utf-8\"?>\n=");
-            } else if ( !ctx->saxMode ) {
+            } else 
                 stream_printf(GDKout,"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
-            }
         }
         ctx->driverFun->handle_startElement(ctx, NULL, ctx->restag, oid_nil);
         ctx->nAttrOnLine = 0;
@@ -287,9 +278,7 @@ static int dflt_seqDmAttrStart(XqueryCtx* ctx) {
 static int dflt_seqDmAttrEnd(XqueryCtx* ctx) {
     if (ctx->dmMode == 0  && ctx->norootMode == 0) { /* dmMode has no header */
         ctx->driverFun->handle_attributeEnd(ctx, 0);
-        if ( !ctx->saxMode )
-            stream_printf(GDKout,
-                    (ctx->mapiMode ? "\n=" : (ctx->printMode ? "\\n" : "\n")));
+        stream_printf(GDKout,(ctx->mapiMode ? "\n=" : (ctx->printMode ? "\\n" : "\n")));
     }
     return 1;
 }
@@ -301,7 +290,7 @@ static int  dflt_seqEnd(XqueryCtx* ctx) {
     if (ctx->printMode) {
         /* do nothing! SQL-ish/MCL-ish output has no footer */
     } else if (ctx->dmMode) {
-        stream_printf(GDKout, "\n");
+        stream_write(GDKout, "\n",1,1);
     } else if (ctx->mapiMode) {
         stream_write(GDKout,"\n=", 2, 1);
         if (!ctx->norootMode) stream_printf(GDKout,"</%s>\n", ctx->restag);
