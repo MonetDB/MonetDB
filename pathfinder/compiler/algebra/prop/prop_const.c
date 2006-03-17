@@ -532,9 +532,20 @@ infer_const (PFla_op_t *n)
                     PFalg_lit_bln (true));
             break;
 
+        case la_bool_not:
+            /* if input is constant, output is constant as 
+               well with the switched value */
+            if (PFprop_const (n->prop, n->sem.unary.att))
+                PFprop_mark_const (
+                    n->prop,
+                    n->sem.unary.res,
+                    PFalg_lit_bln (!PFprop_const_val (
+                                        n->prop,
+                                        n->sem.unary.att).val.bln));
+
         case la_avg:
-	case la_max:
-	case la_min:
+        case la_max:
+        case la_min:
         case la_sum:
             if (n->sem.aggr.part &&
                 PFprop_const (L(n)->prop, n->sem.aggr.part))
@@ -628,7 +639,6 @@ infer_const (PFla_op_t *n)
         case la_num_divide:
         case la_num_modulo:
         case la_num_neg:
-        case la_bool_not:
         case la_rownum:
         case la_number:
         case la_type:
