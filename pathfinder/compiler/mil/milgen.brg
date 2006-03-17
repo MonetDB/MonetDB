@@ -4163,7 +4163,7 @@ aggr_function(PFmil_t * (*op) (const PFmil_t *), PFmil_t * (*gop) (const PFmil_t
 	       assgn (var (v->name),
 		      append (
 			   seqbase (
-				new (type (m_void), type (m_lng)),
+				new (type (m_void), implty (res_type)),
 				lit_oid (0)),
 			   var (v->name))));
 	  env_add (p->env, res, res_type, v);
