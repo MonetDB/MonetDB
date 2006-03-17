@@ -460,7 +460,7 @@ PFbui_op_numeric_modulo_dbl (const PFla_op_t *loop __attribute__((unused)),
  *  -------------------------------------------------------------------
  *                         env,loop: fn:___(e) =>
  *  //                                                     \    
- * ||aggr_item/(item, iter) (proj_iter,item cast_item,t(q)))| @pos(0)
+ * ||aggr_item:(item)/iter (proj_iter,item cast_item,t(q))) | @pos(0)
  *  \\                                                     / 
  *                                ()
  */
@@ -619,7 +619,7 @@ PFbui_fn_min_dbl (const PFla_op_t *loop __attribute__((unused)),
  *  -------------------------------------------------------------------
  *                         env,loop: fn:sum(e1, e2) =>
  *  //                                                      \    
- * ||sum_item/(item, iter) (proj_iter,item (cast_item,t(q1)))|
+ * ||sum_item:(item)/iter (proj_iter,item (cast_item,t(q1))) |
  *  \\                                                      / 
  *                                 U
  *  //                   \                    /                                     \\
@@ -708,7 +708,7 @@ PFbui_fn_sum_zero_dbl (const PFla_op_t *loop,
  *  -------------------------------------------------------------------
  *                         env,loop: fn:sum(e) =>
  *  //                                                     \    
- * ||sum_item/(item, iter) (proj_iter,item (cast_item,t(q)))|
+ * ||sum_item:(item)/iter (proj_iter,item (cast_item,t(q))) |
  *  \\                                                     / 
  *                         U
  *  //                  \    item\\    pos   
