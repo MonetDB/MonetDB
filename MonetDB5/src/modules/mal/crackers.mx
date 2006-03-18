@@ -4366,7 +4366,7 @@ CRKcrackOrderedZero_SI_@1 (int *res, int *bid, @1 *mid)
 
         BBPkeepref(b->batCacheid);
         *res = *bid;    
-        return MAL_SUCCEED;             
+        return msg;             
 }  
 
 str             
@@ -4382,7 +4382,7 @@ CRKcrackOrderedZero_is_@1 (int *res, int *bid, @1 *mid)
 
         BBPkeepref(b->batCacheid);
         *res = *bid;    
-        return MAL_SUCCEED;             
+        return msg;             
 }  
 
 str
@@ -4430,7 +4430,7 @@ CRKcrackOrderedOne_is_@1 (int *res, int *bid, @1 *mid)
 	msg= CRKcrackOrderedTHREE_is_LE_RE_@1(b,*mid,*mid, 0, BATcount(b)-1);
         BBPkeepref(b->batCacheid);
         *res = *bid;    
-        return MAL_SUCCEED;             
+        return msg;             
 }  
 str
 CRKcrackTwo_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
@@ -4509,7 +4509,7 @@ CRKcrackOrderedThree_SI_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
-	return MAL_SUCCEED;
+	return msg;
 }
 str
 CRKcrackOrderedThree_is_@1 (int *res, int *bid, @1 *low, @1 *hgh)
