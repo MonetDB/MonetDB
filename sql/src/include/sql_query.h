@@ -15,6 +15,7 @@
  * Portions created by CWI are Copyright (C) 1997-2006 CWI.
  * All Rights Reserved.
  */
+
 #ifndef SQL_QUERY_H
 #define SQL_QUERY_H
 
