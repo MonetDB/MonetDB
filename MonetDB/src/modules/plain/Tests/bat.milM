@@ -56,11 +56,12 @@ var i := 0;
 var bak := debugmask();
 debugmask(0); # do this quick: 150K times BATpropcheck is not nice
 while(i < 150000) { 
-  b.append(i); i :+= 1; 
+  b.append(i); 
   o.insert(oid(i),i+100); 
   l.insert(lng(i),i+100); 
   if ((i and 4095) = 0) 
     sample.append(oid(i));
+  i :+= 1; 
 }
 debugmask(bak); # set debug to whatever we want it to be
 

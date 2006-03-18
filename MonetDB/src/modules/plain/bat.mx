@@ -462,7 +462,7 @@ documentation.
  BAT is memory-mapped directly (not: privately mapped). In that case, you get
  a fast copy-on-write copy of the BUN heap. Otherwise, an im-memory copy is made."
 
-.COMMAND [swizzle](BAT[void,oid] b, BAT[void,oid] map) : BAT[void,oid] = CMDswizzle;
+.COMMAND [swizzle](BAT[oid,oid] b, BAT[void,oid] map) : BAT[oid,oid] = CMDswizzle;
 "swizzle re-mapped oids (translate from logical to physical using a page-id map)"
 
 @- BAT Accelerators
@@ -1929,8 +1929,6 @@ retry:		if (!mmap) failure = (HEAPalloc(bn->batBuns, n, 1) < 0);
 }
 
 @- page-wise OID swizzling
-
-I am really sorry I did all these premature optimizions. However, they have been tested and work now.
 @c
 #ifdef HAVE_RESTRICT
 #define __r     restrict
@@ -1942,88 +1940,51 @@ I am really sorry I did all these premature optimizions. However, they have been
 #endif
 #endif
 
-#define GET_IDX(pos,shift,mask) (((pos & ~REMAP_PAGE_MASK) >> shift) & mask)  
-#define FAST_IDX(pos,shift,mask) ((pos >> shift) & mask)  
+#define SWIZZLE(idx) ((map[idx >> REMAP_PAGE_BITS] << REMAP_PAGE_BITS) | (idx & REMAP_PAGE_MASK))  
+#define SWIZZLE_CHECK(idx) ((map[(idx >> REMAP_PAGE_BITS) & (ok &= ((idx >= max) - 1))] << REMAP_PAGE_BITS) | (idx & REMAP_PAGE_MASK))  
 
-@= swizzle
-{	int ok = 1, mask0, mask1, mask2, mask3;
-	i = j = 0;
-	m <<= REMAP_PAGE_BITS;
-	for(n*=@1; i+@1+@1+@1<n; i+=@1+@1+@1+@1, j+=4) {
-		mask0 = (src[i] >= m) - 1; 
-		dst[j] = (map[@3_IDX(src[i],@2,mask0)] << REMAP_PAGE_BITS) | (src[i] & REMAP_PAGE_MASK);
-
-		mask1 = (src[i+@1] >= m) - 1; 
-		dst[j+1] = (map[@3_IDX(src[i+@1],@2,mask1)] << REMAP_PAGE_BITS) | (src[i+@1] & REMAP_PAGE_MASK);
-
-		mask2 = (src[i+@1+@1] >= m) - 1; 
-		dst[j+2] = (map[@3_IDX(src[i+@1+@1],@2,mask2)] << REMAP_PAGE_BITS) | (src[i+@1+@1] & REMAP_PAGE_MASK);
-
-		mask3 = (src[i+@1+@1+@1] >= m) - 1; 
-		dst[j+3] = (map[@3_IDX(src[i+@1+@1+@1],@2,mask3)] << REMAP_PAGE_BITS) | (src[i+@1+@1+@1] & REMAP_PAGE_MASK);
-
-		/* hand unrolled above because compiler can't see through this dependency */
-		ok &= mask0 & mask1 & mask2 & mask3;
-	}
-	for(; i<n; i+=@1, j++) {
-		mask0 = (src[i] >= m) - 1; /* 0xFFFFFF if OK, 0 if out-of range */
-		dst[j] = (map[@3_IDX(src[i],@2,mask0)] << REMAP_PAGE_BITS) | (src[i] & REMAP_PAGE_MASK);
-		ok &= mask0;
-	}
-	if (!ok) return 0;
-}
-@c
-static int
-swizzle(oid *__r dst, oid *__r src, oid *__r map, size_t lo, size_t n, size_t m, size_t delta, size_t shift)
+int 
+swizzle(oid max, int htpe, oid tbase, size_t cnt, size_t delta,
+        oid *__r dst, oid *__r map, oid *__r head, oid *__r tail) 
 {
-	size_t i, j, k;
+	size_t i, n = cnt*delta;
+	int ok = -1;
 
-	if (delta == 0 && n) {
-		/* in case of a dense tail in b, we can check for overflow in advance */ 
-		size_t base, p = (n+lo) >> REMAP_PAGE_BITS;
-		if (p >= m) return 0; /* here it goes */ 
-
-                /* the rest of the code is also faster as the index i in map[] stays constant per page */
-		shift = REMAP_PAGE_BITS - shift;
-                p <<= shift;
-
-		/* first do the partial first page */
-		j = lo & REMAP_PAGE_MASK;
-		k = (j+n < REMAP_PAGE_SIZE)?j+n:REMAP_PAGE_SIZE;
-		i = (lo >> REMAP_PAGE_BITS) << shift;
-		for (base = map[i] << REMAP_PAGE_BITS; j < k; j++) { 
-			*dst++ = base + j;
+	if (tbase != oid_nil) {
+		if (tbase + cnt > max) {
+			ok = 0;
+		} else if (htpe) {
+			for(i=0; i<n; i+= delta, tbase++) {
+				*dst++ = head[i];
+				*dst++ = SWIZZLE(tbase);
+			}
+		} else {
+			for(i=0; i<n; i+= delta, tbase++) {
+				*dst++ = SWIZZLE(tbase);
+			}
 		}
-		if (j < REMAP_PAGE_SIZE) return 1;
-
-		/* do all full pages as fast as possible */
-		for (i+= 1<<shift; i < p; i += 1<<shift) {
-			k = i << (REMAP_PAGE_BITS-shift);
-			for (base = map[i] << REMAP_PAGE_BITS, j = 0; j < REMAP_PAGE_SIZE; j++) 
-				*dst++ = base + j;
-		}
-		/* finally do the partial last page */
-		k = p << (REMAP_PAGE_BITS-shift);
-		for (base = map[p] << REMAP_PAGE_BITS, j = 0; j < lo + n - k; j++) 
-			*dst++ = base + j;
-	} else if (delta == 1 && shift == REMAP_PAGE_BITS) {
-		@:swizzle(1,REMAP_PAGE_BITS,FAST)@ /* help register poor ISAs */
-	} else if (delta == 2 && shift == REMAP_PAGE_BITS) {
-		@:swizzle(2,REMAP_PAGE_BITS,FAST)@ /* help register poor ISAs */
-	} else if (delta == 1 && shift == REMAP_PAGE_BITS-1) {
-		@:swizzle(1,(REMAP_PAGE_BITS-1),GET)@ /* help register poor ISAs */
-	} else if (delta == 2 && shift == REMAP_PAGE_BITS-1) {
-		@:swizzle(2,(REMAP_PAGE_BITS-1),GET)@ /* help register poor ISAs */
 	} else {
-		@:swizzle(delta,shift,GET)@
+		if (htpe) {
+			for(i=0; i<n; i+= delta) {
+				*dst++ = head[i];
+				*dst++ = SWIZZLE_CHECK(tail[i]);
+			}
+		} else {
+			for(i=0; i<n; i+= delta) {
+				*dst++ = SWIZZLE_CHECK(tail[i]);
+			}
+		}
 	}
-	return 1;
+	return ok;
 }
 
 int
 CMDswizzle(BAT **res, BAT *b, BAT *map)
 {
 	BAT *bn = *res = b;
+	size_t xx, yy=0, n = BATcount(b), max = BATcount(map);
+	oid *pid = (oid*) BUNtail(map, BUNfirst(map));
+	BUN p, q;
 
 	if (map->hseqbase) {
 		GDKerror("[swizzle]: map %s should be a void column starting at 0@0.\n", 
@@ -2044,31 +2005,40 @@ CMDswizzle(BAT **res, BAT *b, BAT *map)
 		BBPfix(b->batCacheid);
 		return GDK_SUCCEED;
 	} 
-	*res = bn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
-	if (bn) {
-		int i = BUNsize(map)/sizeof(oid), shift = 0;
-		while(i>>=1) shift++;
-	    	if (swizzle(
-			(oid *) BUNfirst(bn), 
-			(oid *) BUNtloc(b, BUNfirst(b)), 
-			(oid *) BUNtloc(map, BUNfirst(map)), 
-			*(oid *) BUNtail(b, BUNfirst(b)), 
-			BATcount(b),
-			BATcount(map),
-			BATtdense(b) ? 0 : BUNsize(b) / sizeof(oid),
-			REMAP_PAGE_BITS - shift))
-		{
-			bn->batBuns->free = sizeof(oid) * BATcount(b);
-			bn->tsorted = 0;
-			BATsetcount(bn, BATcount(b));
-			BATseqbase(bn, b->hseqbase);
-			return GDK_SUCCEED;
-		} else {
-			GDKerror("[swizzle]: %s contains illegal offsets.\n", BBP_logical(b->batCacheid)); 
-			BBPreclaim(bn);
-		}
+	if (max && BUNsize(map) != sizeof(oid)) {
+		pid = (oid*) GDKmalloc(max*sizeof(oid));
+		if (pid == NULL) return GDK_FAIL;
+		BATloopFast(map, p, q, xx)
+			pid[yy++] = *(oid*) BUNtail(map,p);
 	}
-	return GDK_FAIL;
+
+	*res = bn = BATnew(BAThdense(b)?TYPE_void:TYPE_oid, TYPE_oid, n);
+	if (bn == NULL) return GDK_FAIL;
+	BATsetcount(bn, n);
+	bn->batBuns->free = n*BUNsize(bn);
+	BATseqbase(bn, b->hseqbase);
+
+	/* have to generate a head oid */
+        xx = BUNsize(b) / sizeof(oid);
+	xx = swizzle(max << REMAP_PAGE_BITS, 
+	             bn->htype, 
+	             BATtdense(b)?b->tseqbase:oid_nil, 
+	             n,
+	             xx?xx:1,
+	             (oid*) BUNfirst(bn), 
+	             pid, 
+		     (oid*) BUNhloc(b,BUNfirst(b)), 
+	             (oid*) BUNtloc(b,BUNfirst(b))) == 0;
+
+	if (yy) {
+		GDKfree(pid);
+	}
+	if (xx) {
+		GDKerror("[swizzle]: %s contains illegal offsets.\n", BBP_logical(b->batCacheid)); 
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
 }
 @}
 @}
