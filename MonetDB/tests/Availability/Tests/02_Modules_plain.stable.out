@@ -777,7 +777,7 @@ Module: "monettime"
 [ "date_sub_sec_interval",	  "PROC:      ",  "date_sub_sec_interval(date, lng) : date",										  "not available"											  ]
 [ "day",			  "COMMAND:   ",  "day(date) : int",													  "extracts day from date (value between 1 and 31)"							  ]
 [ "day",			  "COMMAND:   ",  "day(rule) : int",													  "extract day from rule (!DS2.2)."									  ]
-[ "day",			  "PROC:      ",  "day(lng) : int",													  "not available"											  ]
+[ "day",			  "PROC:      ",  "day(lng) : lng",													  "not available"											  ]
 [ "day",			  "PROC:      ",  "day(timestamp) : int",												  "not available"											  ]
 [ "dayname",			  "COMMAND:   ",  "dayname(int) : str",													  "Returns day name from a number between [1-7], str(nil) otherwise (!DS2.2)."				  ]
 [ "daynum",			  "COMMAND:   ",  "daynum(str) : int",													  "Returns number of day [1-7] from a string; or nil if does not match any (!DS2.2)."			  ]
