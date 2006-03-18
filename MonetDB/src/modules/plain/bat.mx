@@ -1908,7 +1908,7 @@ retry:		if (!mmap) failure = (HEAPalloc(bn->batBuns, n, 1) < 0);
 	}
 	if (xx < cnt || !copy_segment(mmap, bn, b, pid[zz], zz, cnt-zz)) {
 		HEAPfree(bn->batBuns);
-		failure = 1; mmap = (char*) (((lng) mmap) ^ ((lng) path));
+		failure = 1; mmap = (char*) (((size_t) mmap) ^ ((size_t) path));
 		goto retry;
 	}
 
