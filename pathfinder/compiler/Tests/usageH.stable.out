@@ -1,14 +1,14 @@
 stdout of test 'usageH` in directory 'compiler` itself:
 
 
-# 15:32:19 >  
-# 15:32:19 >  Mtimeout -timeout 120 ./usage usage 
-# 15:32:19 >  
+# 16:22:08 >  
+# 16:22:08 >  Mtimeout -timeout 120 ./usageH usageH 
+# 16:22:08 >  
 
 
-# 15:32:19 >  
-# 15:32:19 >  Mtimeout -timeout 60 pf -h
-# 15:32:19 >  
+# 16:22:08 >  
+# 16:22:08 >  Mtimeout -timeout 60 pf -H
+# 16:22:08 >  
 
 Pathfinder XQuery Compiler ($Revision$, $Date$)
 (c) University of Konstanz, DBIS group
@@ -46,12 +46,11 @@ Usage: pf [OPTION] [FILE]
         12  after type inference and checking
         13  after XQuery Core optimization
         14  after the Core tree has been translated to the logical algebra
-        15  after the logical algebra has been annotated with properties
-        16  after the logical algebra tree has been rewritten/optimized
-        17  after the CSE on the logical algebra tree
-        18  after compiling logical into the physical algebra
-        19  after compiling the physical algebra into MIL code
-        20  after the MIL program has been serialized
+        15  after the logical algebra tree has been rewritten/optimized
+        16  after the CSE on the logical algebra tree
+        17  after compiling logical into the physical algebra
+        18  after compiling the physical algebra into MIL code
+        19  after the MIL program has been serialized
 = -a, --print-abstract-syntax-tree: print abstract syntax tree
 = -c, --print-core-tree: print internal Core language
 = -l, --print-logical-algebra: print logical algebra tree
@@ -62,10 +61,24 @@ Usage: pf [OPTION] [FILE]
          i  print icols property (logical/physical algebra)
          o  print orderings (physical algebra)
          +  print all available properties (logical/physical algebra)
+= -o options, --optimize-algebra=options: optimize algebra according to options:
+         O  apply optimization based on constant property
+         I  apply optimization based on icols property
+         K  apply optimization based on key property
+         D  apply optimization based on domain property
+         C  apply optimization using multiple properties (complex)
+            - icols based optimization will be applied afterwards.
+         G  apply general optimization (without properties)
+         V  apply optimization based on required values property
+         P  infer all properties
+            (used for debug output and physical algebra
+         N  skip the following optimizations
+            (used for avoiding all property analysis and optimization phases
+         (default is: '-o OIKDCGV OIKDCGP')
 
 Enjoy.
 
-# 15:32:19 >  
-# 15:32:19 >  Done.
-# 15:32:19 >  
+# 16:22:08 >  
+# 16:22:08 >  Done.
+# 16:22:08 >  
 
