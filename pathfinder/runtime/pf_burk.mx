@@ -99,7 +99,7 @@ without much effort.
 
 @- non loop-lifted Burkowski joins
 @= burkowski_join_sigs
-   .COMMAND @1_@2_join_sort(BAT[void, @3], BAT[void,@3], BAT[void,@3], BAT[void,@3]) :
+   .COMMAND @1_@2_join_sort(BAT[oid, @3], BAT[oid,@3], BAT[oid,@3], BAT[oid,@3]) :
 	BAT[void,oid] = CMD@1_@2_join_sort_@3; "@1 @2 join (on @3s), using inputs sorted on start"
 @
 @m
@@ -173,7 +173,7 @@ loop-lifted-"select"-join and calculate per iter the inverse of the result.
 @:ll_burkowski_join_sigs(reject,wide,lng)@
 
 @= ll_burkowski_join_sigs
-   .COMMAND ll_@1_@2_join_sort(BAT[oid, @3], BAT[oid,@3], BAT[void,@3], BAT[void,@3]) :
+   .COMMAND ll_@1_@2_join_sort(BAT[oid, @3], BAT[oid,@3], BAT[oid,@3], BAT[oid,@3]) :
 	BAT[oid,oid] = CMDll_@1_@2_join_sort_@3; "loop lifted @1 @2 join (on @3s), using inputs sorted on start"
 @
 
@@ -674,7 +674,7 @@ int remove_from_stack_@1(BURKstack_@1 stack[], int size, int index) {
 @= ffb
 int 
 CMDfetch_standoff_data_@1(BAT ** result, BAT * region_start, BAT * region_end, char * blobname) {
-    // fetches strings from the blob for the regions (start, end) found in two [void, @1] bats
+    // fetches strings from the blob for the regions (start, end) found in two [oid, @1] bats
     // regions should be sorted by start
     // non-loop-lifted
     // result is BAT[VOID,STR]
@@ -777,7 +777,7 @@ CMDfetch_standoff_data_@1(BAT ** result, BAT * region_start, BAT * region_end, c
 @
 
 @= burk_step
-PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid cont, BAT[void,bat] ws, int order, bat[oid,oid] cands) : BAT[oid,oid]
+PROC @1(BAT[oid,oid] iter, BAT[oid,oid] ctx, oid cont, BAT[oid,bat] ws, int order, bat[void,oid] cands) : BAT[oid,oid]
 {
     # TODO: "order" is not (yet?) used, here.
 
@@ -826,10 +826,11 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid cont, BAT[void,bat] ws, int o
 }
 ADDHELP("@1", "wouter", "Oct 2005",
 "PARAMETERS:\n\
-BAT[void,any] iter (grouping relation)\n\
-BAT[void,any] ctx (context set)\n\
+BAT[oid,any] iter (grouping relation)\n\
+BAT[oid,any] ctx (context set)\n\
 oid cont (the current container of the ws)\n\
-BAT[void,bat] ws (working set)\n\
+BAT[oid,bat] ws (working set)\n\
+BAT[void,oid] cands (candidate set)\n\
 DESCRIPITON:\n\
 returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.",
 "pf_burk");
@@ -839,12 +840,12 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 ################################################
 # Loop Lifted version of the @1-@2 Burkowski Step 
 # invoked by burk_step
-PROC ll_burkowski_@1_@2(BAT[void,oid] region_pre, 
-                             BAT[void,any] region_start,
-                             BAT[void,any] region_end,
-                             BAT[oid,oid] cands,
-                             BAT[void,oid] iter,
-                             BAT[void,oid] ctx) : BAT[oid,oid]
+PROC ll_burkowski_@1_@2(BAT[oid,oid] region_pre, 
+                             BAT[oid,any] region_start,
+                             BAT[oid,any] region_end,
+                             BAT[void,oid] cands,
+                             BAT[oid,oid] iter,
+                             BAT[oid,oid] ctx) : BAT[oid,oid]
 {
   # prepare all the regions
   var max_iter := iter.max();
@@ -856,7 +857,7 @@ PROC ll_burkowski_@1_@2(BAT[void,oid] region_pre,
   #  try to get a iter_start...
   var source_start := source_region.leftjoin(region_start).reverse().mark(0@0).reverse(); 
   var iter_start := source_iter.[oid]().reverse().leftjoin(source_start);
-  var source_end := source_region.leftjoin(region_end).reverse().project(nil).reverse();     
+  var source_end := source_region.leftjoin(region_end).reverse().mark(0@0).reverse();     
 
   var sel_region := cands.reverse().mirror().leftjoin(region_pre.reverse()).reverse().mirror();
   var sel_region2 := sel_region.leftjoin(region_start).sort().mark(0@0).reverse();
@@ -875,10 +876,10 @@ PROC ll_burkowski_@1_@2(BAT[void,oid] region_pre,
 @
 @= burkowski
 # actual step (non-loop-lifted)
-PROC burkowski_@1_@2(BAT[void,oid] region_pre, 
-                             BAT[void,any] region_start,
-                             BAT[void,any] region_end,
-                             BAT[oid,oid] cands,
+PROC burkowski_@1_@2(BAT[oid,oid] region_pre, 
+                             BAT[oid,any] region_start,
+                             BAT[oid,any] region_end,
+                             BAT[void,oid] cands,
                              BAT[oid,void] ctx) : BAT[void,oid]
 {
   # prepare all the regions
@@ -1044,20 +1045,20 @@ PROC burkowski_@1_@2(BAT[void,oid] region_pre,
 @
 
 @= loop_lifted_scj_step_burk2
-proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] cont, bat[void, bat] ws @3 ) : bat[void,bat]
+proc loop_lifted_@1_step@2 (bat[oid, oid] iter, bat[oid, oid] item, bat[void, oid] cont, bat[oid, bat] ws @3 ) : bat[oid,bat]
 {
     var result := loop_lifted_@1_step@2 (iter, item, cont, ws, 0 @4);
     return result;
 }
-proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] cont, bat[void, bat] ws, int order @3 ) : bat[void,bat]
+proc loop_lifted_@1_step@2 (bat[oid, oid] iter, bat[oid, oid] item, bat[void, oid] cont, bat[oid, bat] ws, int order @3 ) : bat[oid,bat]
 {
     # handle empty results correctly
     if (iter.count() = 0) {
 	var empty := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
 	return bat(void,bat,3).seqbase(0@0)
-			    .append_bat(empty)
-			    .append_bat(empty)
-			    .append_bat(empty)
+			    .append(empty)
+			    .append(empty)
+			    .append(empty)
 			    .access(BAT_READ);
     }
     var result;
@@ -1070,7 +1071,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
     var uniqueFrag := cont.tunique().sort();
     var theFrag := uniqueFrag.reverse().fetch(0);
     if (uniqueFrag.count() = 1) {
-        var result_part_cont := oid(nil);
+        var result_part_cont := nil;
         var result_part_iter := iter;
         var result_part_item := item;
 
@@ -1122,9 +1123,9 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
     result_item.access(BAT_READ);
     result_cont.access(BAT_READ);
     var result_scj := bat(void,bat,3).seqbase(0@0);
-    result_scj.append_bat(result_iter);
-    result_scj.append_bat(result_item);
-    result_scj.append_bat(result_cont);
+    result_scj.append(result_iter);
+    result_scj.append(result_item);
+    result_scj.append(result_cont);
 
     return result_scj.access(BAT_READ);
 }
@@ -1132,7 +1133,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 @= loop_lifted_scj_per_cont
 	result_part_iter := result_part_iter.chk_order();
 	result_part_item := result_part_item.chk_order();
-        result_part_cont := oid(nil);
+        result_part_cont := nil;
 
 	# pre-test
 	@4
@@ -1183,7 +1184,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 @:burk_step(reject_wide,reject-wide,burkowski_reject_wide,       true)@
 
 
-PROC region_extract(BAT[void, BAT] my_ws, oid i, str tpe) : bat[str,BAT] {
+PROC region_extract(BAT[oid, BAT] my_ws, oid i, str tpe) : bat[oid,BAT] {
   # how-to: this region extract is used for the BURKOWSKI steps
   # if your regions are stored in different attributes than "start" and "end",
   # than modify the variables below
