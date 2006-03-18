@@ -2260,7 +2260,174 @@ CRKcrackZero_MK_@1 (int *res, int *bid, @1 *mid)
 }
 
 str
-CRKOrderedpieceOne_MK_@1( BAT *b, @1 mval, size_t first, size_t last, size_t *start, size_t *end){
+CRKOrderedpieceOne_MK_@1( BAT *b, const @1 mval, size_t first, size_t last, size_t *start, size_t *end){
+	char *tc, *hc, *tv, *hv;
+	char *tp, *hp, *tq, *hq;
+	const int xx= BUNsize(b);
+	int i,j,k,l,n;
+	oid *hdummy, *hequal;
+	@1  *tdummy, *tequal;
+	
+	/* set bounds for the two-way iterator */
+	tc = BUNtloc(b, BUNptr(b,first));
+	tp = BUNtloc(b, BUNptr(b,last));
+
+	/* set the bounds for the scratch areas */
+	hdummy= (ptr) GDKmalloc((last-first+1) *sizeof(oid));
+	tdummy= (ptr) GDKmalloc((last-first+1) *sizeof(@1));
+	i= 0;
+	j= last-first;
+	hequal= (ptr) GDKmalloc((last-first+1) *sizeof(oid));
+	tequal= (ptr) GDKmalloc((last-first+1) *sizeof(@1));
+	k= 0;
+	l= last-first;
+
+	/* ignore non-moveable bounds*/
+	while( *(@1*)tc < mval && tc<=tp){
+		i++;
+		tc += xx; 
+	}
+	/* probe */
+	hc= hv= tc;
+	hv += (last-first)/50*xx;
+	while(hc<hv){
+		if( *(@1*)hc <= mval )
+			i++;
+		if( *(@1*)hc >= mval )
+			k++;
+		hc+= xx;
+	}
+	n= i>k;
+/* printf("probe %d %d\n",i,k);*/
+
+	tv=tc; hc= hv= tc-b->tloc;
+	while( *(@1*)tp > mval && tp>=tc){
+		k++;
+		tp -= xx; 
+	}
+	tq=tp; hp= hq= tq-b->tloc;
+/*printf("left %d right %d\n", i,k);*/
+	i=0; k=0;
+/* printf("i=%d j=%d\n",i,j);  BATprint(b);*/
+	/* move elements out of the way */
+	/* use Stratos's insight to move only upon need */
+	/* first case is based on left kept in place */
+	if(n){
+		while( tc <= tp){
+			/* skip to next candidate to move*/
+			if( *(@1*)tc >= mval ){
+				if( *(@1*) tc == mval){
+					hequal[k]= *(oid*)hc;
+					tequal[k]= *(@1*) tc;
+					k++;
+				} 
+				tc += xx;  hc += xx;
+				continue;
+			}
+			if( *(@1*) tv > mval){
+					hdummy[i] = *(oid*)hv; 
+					tdummy[i] = *(@1*)tv; 
+					i++;
+			}
+			*(oid*)hv= *(oid*)hc;
+			*(@1*)tv = *(@1*)tc;
+			tv += xx; hv += xx;
+			tc += xx; hc += xx;
+		}
+		/* squeeze the tail */
+			tc -=xx;
+		while(tc>= tv){
+			if( *(@1*)tc> mval){
+				*(oid*)(tq-b->tloc)= *(oid*)hc;
+				*(@1*)tq= *(@1*)tc;
+				tq -= xx; 
+			}
+			tc -= xx; hc -= xx;
+		}
+	/* printf("equals left=%d equals right=%d larger=%d\n",k,(int)(last-first-l),i); */
+	/*BATprint(b);*/
+		/* move left equals */
+	/* printf("move left equals 0- %d\n",k-1);*/
+		*start= BUNindex(b, hv);
+		for(n=0;n<k;n++){
+			*(oid*) hv = hequal[n]; hv += xx;
+			*(@1*)  tv = tequal[n]; tv += xx;
+		}
+	/* BATprint(b); printf("move right equals %d-%d\n",l, (int) last- (int) first); */
+		/* move right equals */
+		for(l++, n=last-first; l<=n; l++){
+			*(oid*) tv = hequal[l]; hv += xx;
+			*(@1*)  tv = tequal[l]; tv += xx;
+		}
+		*end= BUNindex(b, tv);
+			
+	/*printf("equals done\n"); BATprint(b);*/
+		/* move left surplus */
+		for(n=0;n<i;n++){
+			*(oid*) hv = hdummy[n]; hv += xx;
+			*(@1*)  tv = tdummy[n]; tv += xx;
+		}
+	} else {
+		/* reverse the process */
+		tc= tp;
+		hc= hp;
+		while( tc >= tv){
+			/* skip to next candidate to move*/
+			if( *(@1*)tc <= mval ){
+				if( *(@1*) tc == mval){
+					hequal[l]= *(oid*)hc;
+					tequal[l]= *(@1*) tc;
+					l--;
+				} 
+				tc -= xx;  hc -= xx;
+				continue;
+			}
+			if( *(@1*) tp < mval){
+					hdummy[j] = *(oid*)hp; 
+					tdummy[j] = *(@1*)tp; 
+					j--;
+			}
+			*(oid*)hp= *(oid*)hc;
+			*(@1*)tp = *(@1*)tc;
+			tp -= xx; hp -= xx;
+			tc -= xx; hc -= xx;
+		}
+		/* squeeze the head */
+		tc +=xx;
+		hv= tv-b->tloc;
+		while(tc<= tp){
+			if( *(@1*)tc< mval){
+				*(oid*)hv= *(oid*)hc;
+				*(@1*)tv= *(@1*)tc;
+				tv += xx;  hv += xx;
+			}
+			tc += xx; hc += xx;
+		}
+	/* printf("equals left=%d equals right=%d larger=%d\n",k,(int)(last-first-l),i); */
+	/*BATprint(b);*/
+		*end= BUNindex(b, hp);
+		/* move right equals */
+		for(n=last-first; n>l; n--){
+			*(oid*) hp = hequal[n]; hp -= xx;
+			*(@1*)  tp = tequal[n]; tp -= xx;
+		}
+		*start= BUNindex(b, tp);
+			
+	/*printf("equals done\n"); BATprint(b);*/
+		/* move left surplus */
+		for(n=last-first;n>j;n--){
+			*(oid*) hp = hdummy[n]; hp -= xx;
+			*(@1*)  tp = tdummy[n]; tp -= xx;
+		}
+	}
+/* printf("done\n"); BATprint(b);*/
+	GDKfree(hdummy); GDKfree(tdummy);
+	return MAL_SUCCEED;
+
+}
+
+str
+CRKOrderedpieceThree_MK_@1( BAT *b, @1 low, @1 hgh, size_t first, size_t last, int *start, int *end){
 	char *tc, *hc, *hv,*tv, *vtop;
 	const int xx= BUNsize(b);
 	oid *hdummy, *hd, *he;
@@ -2272,26 +2439,28 @@ CRKOrderedpieceOne_MK_@1( BAT *b, @1 mval, size_t first, size_t last, size_t *st
 	hc = BUNhloc(b, BUNptr(b,first));
 	vtop= BUNtloc(b,BUNptr(b,mid));
 	for(; tc< vtop && lt <m2; tc += xx)
-		lt += *(@1*) tc <mval;
+		lt += *(@1*) tc <= low;
 
+	if( last)
+		return MAL_SUCCEED;
 	/* move the smallest portion to the scratch area */
 	if( lt >= mid/2 ){
-		hd= hdummy= (ptr) GDKmalloc((last-first+1-lt) *sizeof(oid));
-		td= tdummy= (ptr) GDKmalloc((last-first+1-lt) *sizeof(@1));
-		he= hdummy+last-first-lt;
-		te= tdummy+last-first-lt;
+		hd= hdummy= (ptr) GDKmalloc((last-first+1) *sizeof(oid));
+		td= tdummy= (ptr) GDKmalloc((last-first+1) *sizeof(@1));
+		he= hdummy+last-first;
+		te= tdummy+last-first;
 
 		tc = BUNtloc(b, BUNptr(b,first));
 		hc = BUNhloc(b, BUNptr(b,first));
 		vtop= BUNtloc(b,BUNptr(b,last));
-		while( *(@1*) vtop > mval) vtop -= xx;
+		while( *(@1*) vtop > hgh) vtop -= xx;
 
 		hv= hc;
 		tv= tc;
 
 		for( ; tc<=vtop; tc += xx, hc += xx) {
-			if (*(@1 *) tc <= mval){
-				if (*(@1 *) tc == mval){
+			if (*(@1 *) tc <= hgh){
+				if (*(@1 *) tc > low){
 					*(oid*) he-- = *(oid*)hc; 
 					*(@1*) te-- = *(@1*)tc; 
 				} else {
@@ -2305,8 +2474,8 @@ CRKOrderedpieceOne_MK_@1( BAT *b, @1 mval, size_t first, size_t last, size_t *st
 		} 
 		/* group the equals */
 		vtop= (char *) he;
-		he= hdummy+(last-first-lt);
-		te= tdummy+(last-first-lt);
+		he= hdummy+(last-first);
+		te= tdummy+(last-first);
 		for(; (ptr) he > (ptr) vtop;  te--, he--){
 				 *(oid*) hv = *he; hv += xx;
 				 *(@1*) tv = *te;  tv += xx;
@@ -2324,10 +2493,10 @@ CRKOrderedpieceOne_MK_@1( BAT *b, @1 mval, size_t first, size_t last, size_t *st
 				 *(@1*) tv = *td;  tv += xx;
 		}
 	} else {
-		hd= hdummy= (ptr) GDKmalloc((last-first+2-mid/2) *sizeof(oid));
-		td= tdummy= (ptr) GDKmalloc((last-first+2-mid/2) *sizeof(@1));
-		he= hdummy+last-first+1-mid/2;
-		te= tdummy+last-first+1-mid/2;
+		hd= hdummy= (ptr) GDKmalloc((last-first+1) *sizeof(oid));
+		td= tdummy= (ptr) GDKmalloc((last-first+1) *sizeof(@1));
+		he= hdummy+last-first+1;
+		te= tdummy+last-first+1;
 
 /* printf("run back %d\n",lt);
 BATprint(b);*/
@@ -2335,13 +2504,13 @@ BATprint(b);*/
 		tc = BUNtloc(b, BUNptr(b,last));
 		hc = BUNhloc(b, BUNptr(b,last));
 		vtop= BUNtloc(b,BUNptr(b,first));
-		while( *(@1*) vtop < mval) vtop += xx;
+		while( *(@1*) vtop <= low) vtop += xx;
 		hv= hc;
 		tv= tc;
 
 		for( ; tc>=vtop; tc -= xx, hc -= xx) {
-			if (*(@1 *) tc >= mval){
-				if (*(@1 *) tc == mval){
+			if (*(@1 *) tc > low){
+				if (*(@1 *) tc <= hgh){
 					*(oid*) he-- = *(oid*)hc; 
 					*(@1*) te-- = *(@1*)tc; 
 				} else {
@@ -2353,12 +2522,11 @@ BATprint(b);*/
 				 *td++ = *(@1*)tc; 
 			} 
 		} 
-/* printf("group the equals\n");
-BATprint(b);*/
+/* printf("group the equals\n"); BATprint(b);*/
 		/* group the equals */
 		vtop= (char *) he;
-		he= hdummy+(last-first+1-mid/2);
-		te= tdummy+(last-first+1-mid/2);
+		he= hdummy+(last-first+1);
+		te= tdummy+(last-first+1);
 
 		for( ; (ptr) he > (ptr) vtop;  te--, he--){
 				 *(oid*) hv = *he; hv -= xx;
@@ -2378,64 +2546,6 @@ BATprint(b);*/
 				 *(oid*) hv = *hd; hv -= xx;
 				 *(@1*) tv = *td;  tv -= xx;
 		}
-	}
-	GDKfree(hdummy); GDKfree(tdummy);
-	return MAL_SUCCEED;
-
-}
-
-str
-CRKOrderedpieceThree_MK_@1( BAT *b, @1 low, @1 hgh, size_t first, size_t last, size_t *start, size_t *end){
-	ptr tc, hc, hv,tv, vtop;
-	int xx;
-	oid *hdummy, *hd, *he;
-	@1  *tdummy, *td, *te;
-	hd= hdummy= (ptr) GDKmalloc((last-first+1) *sizeof(oid));
-	he= hd+(last-first);
-	td= tdummy= (ptr) GDKmalloc((last-first+1) *sizeof(@1));
-	te= td+(last-first);
-
-	/* set bounds for the iterator */
-	xx = BUNsize(b);
-	tc = BUNtloc(b, BUNptr(b,first));
-	hc = BUNhloc(b, BUNptr(b,first));
-	vtop= BUNtloc(b,BUNptr(b,last));
-
-	hv= hc;
-	tv= tc;
-
-	for( ; tc<=vtop; tc = (ptr) ((char *) tc + xx), hc = (ptr) ((char *) hc + xx)) {
-		if (*(@1 *) tc <= low){
-			 *(oid*) hv = *(oid*)hc; hv= (ptr)((char*)hv+xx);
-			 *(@1*) tv = *(@1*)tc; tv= (ptr)((char*)tv+xx);
-		} else if (*(@1 *) tc > hgh){
-			 *hd++ = *(oid*)hc; 
-			 *td++ = *(@1*)tc; 
-		} else {
-			 *(oid*) he-- = *(oid*)hc; 
-			 *(@1*) te-- = *(@1*)tc; 
-		} 
-	} 
-	
-	/* group the equals */
-	*start= BUNindex(b, hv);
-
-	vtop= he;
-	he= hdummy+(last-first);
-	te= tdummy+(last-first);
-	for(; (ptr) he > (ptr) vtop;  te--, he--){
-			 *(oid*) hv = *he; hv= (ptr)((char*)hv+xx);
-			 *(@1*) tv = *te; tv= (ptr)((char*)tv+xx);
-	}
-
-	*end= BUNindex(b, hv);
-	/* collect rest */
-	vtop= hd;
-	td= tdummy;
-	hd= hdummy;
-	for( ; (ptr) hd < (ptr) vtop;  td ++,hd++){
-			 *(oid*) hv = *hd; hv= (ptr)((char*)hv+xx);
-			 *(@1*) tv = *td; tv= (ptr)((char*)tv+xx);
 	}
 	GDKfree(hdummy); GDKfree(tdummy);
 	return MAL_SUCCEED;
@@ -2576,7 +2686,7 @@ CRKcrackOrderedThree_MK_@1 (int *res, size_t *bid, @1 *low, @1 *hgh)
 {
 	BAT *b;
 	str msg= MAL_SUCCEED;
-	size_t start, size;
+	int start, size;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
@@ -3362,8 +3472,7 @@ CRKcrack@5@3_@2_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	return msg;
 }
 @
-
-
+Stratos's masterpiece
 @= move
         while( @6 *(@1*)@2 @5 ){
                 @3	
@@ -4416,6 +4525,7 @@ CRKcrackOrderedThree_is_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	return msg;
 }
 
+@
 @
 
 @= validate_operations
