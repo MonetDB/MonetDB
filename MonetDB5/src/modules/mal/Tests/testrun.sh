@@ -36,7 +36,7 @@ mserver5 --set monet_prompt='' <fastcrack_Three_ms.mal |egrep -v '^[# ]|, true\]
 mserver5 --set monet_prompt='' <fastcrack_Three_SM.mal |egrep -v '^[# ]|, true\]$|^\[ "" \]$'
 mserver5 --set monet_prompt='' <fastcrack_ThreeOrdered_ms.mal |egrep -v '^[# ]|, true\]$|^\[ "" \]$'
 mserver5 --set monet_prompt='' <fastcrack_ThreeOrdered_SM.mal |egrep -v '^[# ]|, true\]$|^\[ "" \]$'
-mserver5 --set monet_prompt='' <fastcrack_ThreeOrdered_MK.mal |egrep -v '^[# ]|, true\]$|^\[ "" \]$'
+#mserver5 --set monet_prompt='' <fastcrack_ThreeOrdered_MK.mal |egrep -v '^[# ]|, true\]$|^\[ "" \]$'
 mserver5 --set monet_prompt='' <fastcrack_ThreeOrdered_SI.mal |egrep -v '^[# ]|, true\]$|^\[ "" \]$'
 mserver5 --set monet_prompt='' <fastcrack_ThreeOrdered_is.mal |egrep -v '^[# ]|, true\]$|^\[ "" \]$'
 echo 'tail<LOW , tail==LOW , LOW<tail<HGH , tail==HGH , tail>HGH'
