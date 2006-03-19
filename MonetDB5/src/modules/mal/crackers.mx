@@ -2460,7 +2460,7 @@ CRKOrderedpieceThree_MK_@1( BAT *b, @1 low, @1 hgh, size_t first, size_t last, i
 	while(hc<hv){
 		if( *(@1*)hc <= low )
 			i++;
-		if( *(@1*)hc >= low )
+		if( *(@1*)hc > hgh )
 			k++;
 		hc+= xx;
 	}
@@ -2852,175 +2852,16 @@ CRKcrackOne_MK_@1 (int *res, size_t *bid, size_t *mid)
 	return msg;
 }
 
-/* assume that the [first,last] are inclusive bounds */
 str
 CRKpieceTwo_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
-	ptr vm, vl, vmin, hmax, base= 0;
-	int xx;
-	oid hdummy;
-	@1 tdummy;
-
-	/* set bounds for the iterator */
-	xx = BUNsize(b);
-
-	vm = BUNtloc(b, BUNptr(b,first));
-	hmax = BUNtloc(b,BUNptr(b,last));
-	while( *(@1 *) hmax > hgh && hmax>vm)
-		hmax= (ptr)((char*) hmax - xx);
-	vl =hmax;
-	while( *(@1 *) vl > low && vl>vm){
-		/* move all high values into their final place */
-		if( *(@1 *) vl > hgh){
-			tdummy= *(@1*)vl;
-			*(@1*)vl= *(@1*)hmax;
-			*(@1*)hmax= tdummy;
-
-			hdummy= *(oid*)((char*)vl - b->tloc);
-			*(oid*)((char*)vl - b->tloc) = *(oid*)((char*)hmax - b->tloc);
-			*(oid*)((char*)hmax - b->tloc) = hdummy;
-			hmax= (ptr)((char*) hmax - xx);
-		}
-		vl= (ptr)((char*) vl - xx);
-	}
-	/* vl point to the first <=low, all values >hg are beyond hmax */
-
-	/* perform Zero crack first */
-	while(vm<=vl) {
-		if (*(@1 *) vm <= low){
-			if (*(@1 *) vm == low)
-				base =vm;
-			vm = (ptr) ((char *) vm + xx);
-		} else {
-			@:shuffleMK(@1,vm,vl)@
-			while( *(@1 *) vl > low && vl>vm){
-				if( *(@1*) vl > hgh ){
-					@:shuffleMK(@1,vl,hmax)@
-					hmax= (ptr)((char*) hmax - xx);
-				}
-				vl = (ptr) ((char *) vl - xx);
-			}
-		} 
-	} 
-
-	/* reshuffle left part using same algorithm */
-	if( base)
-		vm = base;
-	else vm = vl;
-	base = BUNtloc(b, BUNptr(b,first));
-	while(vm >= base) {
-		if (*(@1 *) vm == low){
-			@:shuffleMK(@1,vm,vl)@
-			do {
-				vl = (ptr) ((char *) vl - xx);
-			} while( *(@1 *) vl == low && vl>vm);
-		} 
-		vm = (ptr) ((char *) vm - xx);
-	}
-	vmin= vl;
-
-	/* perform the same operation on low<V< infinite */
-	vm = hmax;
-	vl= hmax;
-	hmax= (ptr)((char*) hmax + xx);
-
-	/* reshuffle low<V<=hgh  part */
-	while(vm >= vmin) {
-		if (*(@1 *) vm == hgh){
-			@:shuffleMK(@1,vm,vl)@
-			vl = (ptr) ((char *) vl - xx);
-		} 
-		vm = (ptr) ((char *) vm - xx);
-	}
-#ifdef MK_DEBUG
-	printf("indices %d %d %d %d\n",(int) BUNindex(b,lmin)+1, (int) BUNindex(b,lmax),
-		(int) BUNindex(b,vl)+1, (int) BUNindex(b,hmax));
-#endif
-	return MAL_SUCCEED;
-}
-str
-CRKpieceTwoA_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
-	ptr vm, vl, vmin, vmax;
-	ptr *base, *bf, *bl;
-	int xx;
-	oid hdummy;
-	@1 tdummy;
 	size_t start,end;
 
-	if( low == hgh )
-		return CRKpieceOneA_MK_@1(b,low,first,last, &start, &end);
+	CRKpieceOneA_MK_@1(b,low,first,last, &start, &end);
+/* printf("start %d end %d\n",(int)start, (int)end);*/
+	CRKpieceOneA_MK_@1(b,hgh,(int)(end+1),last, &start, &end);
+/* printf("phase2 start %d end %d\n",(int)start, (int)end);*/
 
-	/* set bounds for the iterator */
-	xx = BUNsize(b);
-	bf= base = (ptr*) GDKmalloc((last-first+1)*sizeof(ptr));
-	bl= base+last-first;
-
-	vm= vmin = BUNtloc(b, BUNptr(b,first));
-	vl= vmax = BUNtloc(b, BUNptr(b,last));
-	while( *(@1 *) vmax >= hgh && vmax>=vmin){
-		if( *(@1*) vmax == hgh)
-			*bl-- = vmax;
-		vmax= (ptr)((char*) vmax - xx);
-	}
-	while( *(@1 *) vmin <= low && vmax>=vmin){
-		if( *(@1*) vmin == low)
-			*bf++ = vmin;
-		vmin= (ptr)((char*) vmin + xx);
-	}
-
-	/* now a one-way scan to swap elements */
-	vm = vmin; 
-	
-	while( vm <= vmax){
-		/* move all high values into their final place */
-		if( *(@1 *) vm>= hgh){
-			tdummy =  *(@1*)vm;
-			*(@1*)vm= *(@1*)vmax;
-			*(@1*)vmax= tdummy;
-
-			hdummy= *(oid*)((char*)vm - b->tloc);
-			*(oid*)((char*)vm - b->tloc) = *(oid*)((char*)vmax - b->tloc);
-			*(oid*)((char*)vmax - b->tloc) = hdummy;
-			if( *(@1*) vmax == hgh)
-				*bl-- = vmax;
-			vmax= (ptr)((char*) vmax - xx);
-		} else
-		if( *(@1 *) vm<= low){
-			tdummy =  *(@1*)vm;
-			*(@1*)vm= *(@1*)vmin;
-			*(@1*)vmin= tdummy;
-
-			hdummy= *(oid*)((char*)vm - b->tloc);
-			*(oid*)((char*)vm - b->tloc) = *(oid*)((char*)vmin - b->tloc);
-			*(oid*)((char*)vmin - b->tloc) = hdummy;
-			if( *(@1*) vmin == low)
-				*bf++ = vmin;
-			vmin= (ptr)((char*) vmin + xx);
-			vm= (ptr)((char*) vm + xx);
-		} else
-			vm= (ptr)((char*) vm + xx);
-	}
-
-	/* and now move the equals into place */
-	vmin= (ptr)((char*) vmin - xx);
-	vmax= (ptr)((char*) vmax + xx);
-	vl = base+last-first;
-
-	for( bl++; bl<= (ptr*)vl; bl++)
-	if( vmax < *bl ){
-		@:shuffleMK(@1,vmax,(*bl))@
-		vmax= (ptr)((char*) vmax + xx);
-	}
-
-	for( bf--; bf>=base; bf--)
-	if( vmin > *bf ){
-		@:shuffleMK(@1,vmin,*bf)@
-		vmin= (ptr)((char*) vmin - xx);
-	}
 	/* BATprint(b);*/
-#ifdef MK_DEBUG
-	printf("indices %d %d %d %d\n",(int) BUNindex(b,lmin)+1, (int) BUNindex(b,lmax),
-		(int) BUNindex(b,vl)+1, (int) BUNindex(b,hmax));
-#endif
 	return MAL_SUCCEED;
 }
 
@@ -3040,7 +2881,7 @@ CRKcrackTwo_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
-	msg= CRKpieceTwoA_MK_@1( b, *low, *hgh, 0, BATcount(b)-1);
+	msg= CRKpieceTwo_MK_@1( b, *low, *hgh, 0, BATcount(b)-1);
 
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
