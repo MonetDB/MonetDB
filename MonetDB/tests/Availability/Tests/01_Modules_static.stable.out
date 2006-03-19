@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 752 ]
+[ 753 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 752 ]
+[ 753 ]
 
 var All:=0;
 
@@ -581,7 +581,7 @@ Module: "arith"
 
 Module: "bat"
 
-[ 75 ]
+[ 76 ]
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																																																																					  # name
 # str		str		str													str																																					  # type
@@ -590,6 +590,7 @@ Module: "bat"
 [ "BAT",	  "COMMAND:   ",  "BAT(int, int, int) : BAT[any,any]",							  "Creates a new empty BAT, directly allocating for 'size' elements."																																																					  ]
 [ "BAT",	  "COMMAND:   ",  "BAT(int, int, lng) : BAT[any,any]",							  "Creates a new empty BAT, directly allocating for 'size' elements."																																																					  ]
 [ "[swizzle]",	  "COMMAND:   ",  "[swizzle](BAT[oid,oid], BAT[void,oid]) : BAT[oid,oid]",				  "swizzle re-mapped oids (translate from logical to physical using a page-id map)"																																																																																							  ]
+[ "[swizzle]",	  "COMMAND:   ",  "[swizzle](BAT[void,oid], BAT[void,oid]) : BAT[oid,oid]",				  "swizzle re-mapped oids (translate from logical to physical using a page-id map)"																																																																																							  ]
 [ "accbuild",	  "COMMAND:   ",  "accbuild(BAT[any,any], str) : void",									  "Build an accelerator on the head column of b. The builtin accelerator\n types index and hash will be created as transient accelerators. They\n will not be saved on disk. User-defined accelerators must always be\n persistent."									  ]
 [ "access",	  "COMMAND:   ",  "access(BAT[any::1,any::2]) : int",							  "Return the update access privilige of a BAT."																																																							  ]
 [ "access",	  "COMMAND:   ",  "access(BAT[any::1,any::2], int) : BAT[any::1,any::2]",					  "Try to change the update access priviliges to this BAT. Mode:\n BAT_READ   - allow only read access.\n BAT_APPEND - allow reads and insertions of new elements.\n BAT_WRITE  - allow reads, insertions, and updates.\n BATs are updateable by default. On making a BAT readonly, all\n subsequent updates fail with an error message.\n Returns the BAT itself."  ]
@@ -897,7 +898,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 752 ]
+[ 753 ]
 
 quit();
 
