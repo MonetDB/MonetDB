@@ -2451,7 +2451,6 @@ CRKOrderedpieceThree_MK_@1( BAT *b, @1 low, @1 hgh, size_t first, size_t last, i
 
 	/* ignore non-moveable bounds*/
 	while( *(@1*)tc < low && tc<=tp){
-		i++;
 		tc += xx; 
 	}
 	/* probe */
@@ -2465,11 +2464,15 @@ CRKOrderedpieceThree_MK_@1( BAT *b, @1 low, @1 hgh, size_t first, size_t last, i
 		hc+= xx;
 	}
 	n= i>k;
-/* printf("probe %d %d\n",i,k);*/
+	n= (last-first)/50 -i-k;
+/* printf("probe %d %d %d\n",i,k,n);*/
+	if(n> i+k) n=2; else	/* use middle out */
+	if(k> i) n=1; 	/* use reverse walk */
+	else n=0;	/* use default */
+/* printf("strategy %d\n",n);*/
 
 	tv=tc; hc= hv= tc-b->tloc;
 	while( *(@1*)tp > hgh && tp>=tc){
-		k++;
 		tp -= xx; 
 	}
 	tq=tp; hp= hq= tq-b->tloc;
@@ -2479,7 +2482,54 @@ CRKOrderedpieceThree_MK_@1( BAT *b, @1 low, @1 hgh, size_t first, size_t last, i
 	/* move elements out of the way */
 	/* use Stratos's insight to move only upon need */
 	/* first case is based on left kept in place */
-	if(n){
+	if(n==2){
+		/* in the middle out case we keep low<t<=hgh in the buffer */
+		/* and shift low and high to the scratch partition */
+/*printf("middleout shuffle\n"); BATprint(b);*/
+		tq= tc; hq=hc;
+		while( tc <= tp){
+			if( *(@1*) tc <= low){
+				hequal[i]= *(oid*)hc;
+				tequal[i]= *(@1*) tc;
+				i++;
+				tc += xx;  hc += xx;
+				continue;
+			}
+			if( *(@1*) tc > hgh){
+				hdummy[k]= *(oid*)hc;
+				tdummy[k]= *(@1*) tc;
+				k++;
+				tc += xx;  hc += xx;
+				continue;
+			}
+			*(oid*)hv= *(oid*)hc;
+			*(@1*)tv = *(@1*)tc;
+			tv += xx; hv += xx;
+			tc += xx; hc += xx;
+		}
+/*printf("shuffe done %d %d\n",i,k); BATprint(b);*/
+		/* now we have space in the back to put highs
+		   back in place */
+		for(k--;k>=0;k--){
+			*(oid*) hp = hdummy[k]; hp -= xx;
+			*(@1*)  tp = tdummy[k]; tp -= xx;
+		}
+/*printf("highs in place \n"); BATprint(b);*/
+		/* shift the middle part into place */
+		tc= tq; hc= hq;
+		for( tv-=xx, hv -=xx; tv>= tc; tv -= xx, hv -= xx){
+			*(oid*) hp = *(oid*)hv; hp -= xx;
+			*(@1*)  tp = *(@1*) tv; tp -= xx;
+		}
+/*printf("middle shift \n"); BATprint(b);*/
+		/* put the low one's into place */
+		for(i--;i>=0;i--){
+			*(oid*) hp = hequal[i]; hp -= xx;
+			*(@1*)  tp = tequal[i]; tp -= xx;
+		}
+/*printf("done shift \n"); BATprint(b);*/
+	} else
+	if(n==0){
 		while( tc <= tp){
 			/* skip to next candidate to move*/
 			if( *(@1*)tc > low ){
