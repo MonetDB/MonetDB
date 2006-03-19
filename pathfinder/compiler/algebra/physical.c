@@ -1669,8 +1669,10 @@ PFpa_op_t *PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n, PFalg_att_t res,
 {
     PFpa_op_t *ret = wire1 (kind, n);
     unsigned int  i;
+#ifndef NDEBUG
     bool          c1 = false;
     bool          c2 = false;
+#endif
 
     ret->sem.aggr.res  = res;
     ret->sem.aggr.att = att;
@@ -1691,11 +1693,15 @@ PFpa_op_t *PFpa_aggr (PFpa_op_kind_t kind, const PFpa_op_t *n, PFalg_att_t res,
         if (att == n->schema.items[i].name) {
             ret->schema.items[0] = n->schema.items[i];
             ret->schema.items[0].name = res;
+#ifndef NDEBUG
             c1 = true;
+#endif
         }
         if (part && part == n->schema.items[i].name) {
             ret->schema.items[1] = n->schema.items[i];
+#ifndef NDEBUG
             c2 = true;
+#endif
         }
     }
 
