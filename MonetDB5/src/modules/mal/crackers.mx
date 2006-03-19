@@ -4009,39 +4009,33 @@ CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_firs
 str
 CRKcrackOrderedZERO_is_@2_@1(BAT *b, @1 mid, int idx_first, int idx_last)
 {
-
-	BUN lh, lt, hh, ht, fhh, fht, tmpt, tmph;/* fh, llh, llt;*/
+	BUN hh, ht, tmpt, tmph;
 	oid *scr_h;
 	@1  *scr_t;
-	int scr_size = idx_last - idx_first +1;
 	int hghShrinked = 0, lowShrinked = 0;
 	int xx = BUNsize(b);
 
-	(void) fhh; (void) fht; /* silence compilers */
-
-	lh = BUNhloc(b, BUNptr(b, idx_first));
-	lt = BUNtloc(b, BUNptr(b, idx_first));
+	tmph = BUNhloc(b, BUNptr(b, idx_first));
+	tmpt = BUNtloc(b, BUNptr(b, idx_first));
 	ht = BUNtloc(b, BUNptr(b, idx_last));
 	hh = BUNhloc(b, BUNptr(b, idx_last));
 
-	@:moveOrdered(*(@1*)lt @3 mid,lh,lt,+,lowShrinked++;)@
+	@:moveOrdered(*(@1*)tmpt @3 mid,tmph,tmpt,+,lowShrinked++;)@
 	@:moveOrdered(*(@1*)ht @4 mid,hh,ht,-,hghShrinked++;)@
 
 	if (lowShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
 	if (hghShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
-	tmph = fhh = lh;
-	tmpt = fht = lt;	
 	
-	int hghPos = 0, hil = 0;
-	BUN ch = lh, ct = lt; 
+	int hil = 0;
+	BUN ch = tmph, ct = tmpt; 
+	int scr_size = (idx_last - idx_first +1 -lowShrinked -hghShrinked)/2;
 	scr_h = (oid*) GDKmalloc(scr_size * sizeof(oid));
 	scr_t = (@1 *) GDKmalloc(scr_size * sizeof(@1 ));
-	while (tmpt <= ht && (*(@1*)tmpt @4 mid)){
-		tmpt+=xx;
-		tmph+=xx;
-	}
 	while (tmpt <= ht){ 
-		hghPos++;
+		while (*(@1*)tmpt @4 mid){
+			tmpt+=xx;
+			tmph+=xx;
+		}
 		if (*(@1*)ct @4 mid){
 			scr_h[hil] = *(oid*)ch;
 			scr_t[hil] = *(@1* )ct;				
@@ -4054,13 +4048,9 @@ CRKcrackOrderedZERO_is_@2_@1(BAT *b, @1 mid, int idx_first, int idx_last)
 		
 		tmpt+=xx;
 		tmph+=xx;
-		while (tmpt <= ht && (*(@1*)tmpt @4 mid)){
-			tmpt+=xx;
-			tmph+=xx;
-		}
 	}
-	tmph = hh;
-	tmpt = ht;
+	tmph -=2*xx;
+	tmpt -=2*xx;
 	ct += xx*hil;
 	for(; tmpt >= ct; tmph-=xx, tmpt-=xx){
 		if (*(@1*)tmpt @4 mid){
@@ -4085,7 +4075,6 @@ CRKcrackOrderedZERO_is_@2_@1(BAT *b, @1 mid, int idx_first, int idx_last)
 	
 	GDKfree(scr_h);
 	GDKfree(scr_t);
-	
 	return MAL_SUCCEED;
 }
 @
