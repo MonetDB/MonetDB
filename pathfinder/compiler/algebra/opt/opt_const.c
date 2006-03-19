@@ -375,6 +375,7 @@ opt_const (PFla_op_t *p, bool no_attach)
             /* as this rule does not cope with empty sequences
                correctly it is disabled */
             break;
+#if 0
         {   /**
              * difference can be pruned if all columns of both operands
              * are constant and the comparison between the single
@@ -429,6 +430,7 @@ opt_const (PFla_op_t *p, bool no_attach)
                 }
             }
         }   break;
+#endif
 
         case la_distinct:
         {
@@ -470,6 +472,7 @@ opt_const (PFla_op_t *p, bool no_attach)
                    correctly it is disabled */
                 break;
 
+#if 0
                 /* as all columns are constant, the distinct operator
                    can be replaced by lit_tbl of the current schema
                    whose single row contains the constant values */
@@ -489,6 +492,7 @@ opt_const (PFla_op_t *p, bool no_attach)
 
                 *p = *ret;
                 SEEN(p) = true;
+#endif
             }
         } break;
 
