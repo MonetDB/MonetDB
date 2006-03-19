@@ -2762,7 +2762,9 @@ CRKcrackOrderedTwo_MK_@1 (int *res, size_t *bid, size_t *mid)
 {
 	BAT *b;
 	str msg= MAL_SUCCEED;
+/*
 	size_t start=0, size=0;
+*/
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
@@ -2771,7 +2773,6 @@ CRKcrackOrderedTwo_MK_@1 (int *res, size_t *bid, size_t *mid)
 	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
 		return throwMessage("crackers.crack_MK", "Need more clever mapping ");
 
-	(void) start; (void) size;
 	(void) mid;
 /*
 	msg= CRKOrderedpieceOne_MK_@1( b, *mid, 0, BATcount(b)-1, &start, &size);
@@ -2948,7 +2949,6 @@ CRKcrackTwo_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 		return throwMessage("crackers.crack_MK", "illegal range");
 	if ((b = BATdescriptor(*bid)) == NULL)
 		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
-	(void) *res;
 
 	/* set bounds for the iterator */
 	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
@@ -3016,7 +3016,6 @@ CRKcrackThree_MK_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 		return throwMessage("crackers.crack_MK", "illegal range");
 	if ((b = BATdescriptor(*bid)) == NULL)
 		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
-	(void) *res;
 
 	/* set bounds for the iterator */
 	if( sizeof(struct SCRATCH{ oid hdummy; @1 tdummy; } ) != BUNsize(b) )
@@ -3446,7 +3445,6 @@ Stratos's masterpiece
 @
 
 @= exchangeTest
-	(void) buf;
 	hdummy= *(oid*) @4;
 	tdummy= *(@1*) @2;
 	*(oid*) @4 = *(oid*) @5;
@@ -3454,7 +3452,6 @@ Stratos's masterpiece
 	*(oid*) @4= hdummy;
 	*(@1*) @3= tdummy;
 @= exchange2Test
-        (void) buf;
         hdummy= *(oid*) @5;
         tdummy= *(@1*) @2;
         *(oid*) @5 = *(oid*) @7;
@@ -3474,7 +3471,6 @@ CRKcrackONE_SI_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 {
 
 	BUN vmax, nmin, vm, bls, bh;
-	char buf[128];	  /* scratch space */
 	BUN tmpTmax, tmpTmid, hl, hm, hh;
 	@1 tmpVmax,tmpVmid;
 	int xx = BUNsize(b);
@@ -3800,7 +3796,7 @@ finishLowMiddle:;
 str
 CRKcrackOrderedTHREE_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 {
-	BUN lh, lt, hh, ht, fhh, fht, tmpt, tmph;/* fh, llh, llt;*/
+	BUN lh, lt, hh, ht, tmpt, tmph;
 	oid *scr_h;
 	@1  *scr_t;
 	int scr_size = idx_last - idx_first +1;
@@ -3817,8 +3813,8 @@ CRKcrackOrderedTHREE_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_
 
 	if (lowShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
 	if (hghShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
-	tmph = fhh = lh;
-	tmpt = fht = lt;	
+	tmph = lh;
+	tmpt = lt;	
 	int scrH = scr_size-1;	
 	int hil = 0, mids = scrH;
 	BUN ch = lh, ct = lt; 
@@ -3902,14 +3898,13 @@ CRKcrackOrderedTHREE_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_
 str
 CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 {
-	BUN lh, lt, hh, ht, fhh, fht, tmpt, tmph;/* fh, llh, llt;*/
+	BUN lh, lt, hh, ht, tmpt, tmph;
 	oid *scr_h,*mscr_h;
 	@1  *scr_t,*mscr_t;
 	int scr_size = idx_last - idx_first +1;
 	int hghShrinked = 0, lowShrinked = 0;
 	int xx = BUNsize(b);
 
-	(void) fhh; (void) fht; /* silence compilers */
 	lh = BUNhloc(b, BUNptr(b, idx_first));
 	lt = BUNtloc(b, BUNptr(b, idx_first));
 	ht = BUNtloc(b, BUNptr(b, idx_last));
@@ -3920,8 +3915,8 @@ CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_firs
 
 	if (lowShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
 	if (hghShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
-	tmph = fhh = lh;
-	tmpt = fht = lt;	
+	tmph = lh;
+	tmpt = lt;	
 	int scrH = scr_size-1;	
 	int hp = 0, hil = 0, mids = scrH, mmids = 0;
 	scr_h = (oid*) GDKmalloc(scr_size * sizeof(oid));
@@ -4139,7 +4134,6 @@ CRKcrackOrderedZERO_SI_@2_@1(BAT *b, @1 mid, int idx_first, int idx_last)
 	int hghShrinked = 0, lowShrinked = 0;
 	int xx = BUNsize(b);
 
-	(void) fhh; (void) fht; /* silence compilers */
 	lh = BUNhloc(b, BUNptr(b, idx_first));
 	lt = BUNtloc(b, BUNptr(b, idx_first));
 	ht = BUNtloc(b, BUNptr(b, idx_last));
