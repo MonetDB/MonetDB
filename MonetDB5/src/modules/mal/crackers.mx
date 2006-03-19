@@ -2338,9 +2338,9 @@ CRKOrderedpieceOne_MK_@1( BAT *b, const @1 mval, size_t first, size_t last, size
 			tc -=xx;
 		while(tc>= tv){
 			if( *(@1*)tc> mval){
-				*(oid*)(tq-b->tloc)= *(oid*)hc;
+				*(oid*)hq= *(oid*)hc;
 				*(@1*)tq= *(@1*)tc;
-				tq -= xx; 
+				tq -= xx; hq -= xx;
 			}
 			tc -= xx; hc -= xx;
 		}
@@ -2505,9 +2505,9 @@ CRKOrderedpieceThree_MK_@1( BAT *b, @1 low, @1 hgh, size_t first, size_t last, i
 			tc -=xx;
 		while(tc>= tv){
 			if( *(@1*)tc> hgh){
-				*(oid*)(tq-b->tloc)= *(oid*)hc;
+				*(oid*)hq= *(oid*)hc;
 				*(@1*)tq= *(@1*)tc;
-				tq -= xx; 
+				tq -= xx;  hq -= xx;
 			}
 			tc -= xx; hc -= xx;
 		}
@@ -2712,7 +2712,7 @@ CRKcrackOrderedTwo_MK_@1 (int *res, size_t *bid, size_t *mid)
 {
 	BAT *b;
 	str msg= MAL_SUCCEED;
-	size_t start, size;
+	size_t start=0, size=0;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("crackers.crack_MK", "Cannot access descriptor");
@@ -2854,12 +2854,35 @@ CRKcrackOne_MK_@1 (int *res, size_t *bid, size_t *mid)
 
 str
 CRKpieceTwo_MK_@1( BAT *b, @1 low, @1 hgh, int first, int last){
+	char *tc, *hc, *hv;
+	const int xx= BUNsize(b);
+	int i=0,k=0;
 	size_t start,end;
 
-	CRKpieceOneA_MK_@1(b,low,first,last, &start, &end);
-/* printf("start %d end %d\n",(int)start, (int)end);*/
-	CRKpieceOneA_MK_@1(b,hgh,(int)(end+1),last, &start, &end);
-/* printf("phase2 start %d end %d\n",(int)start, (int)end);*/
+	/* set bounds for the iterator */
+	tc = BUNtloc(b, BUNptr(b,first));
+	/* probe */
+	hc= hv= tc;
+	hv += (last-first)/50*xx;
+	while(hc<hv){
+		if( *(@1*)hc <= low )
+			i++;
+		if( *(@1*)hc > hgh )
+			k++;
+		hc+= xx;
+	}
+
+	if( i>k){
+		CRKpieceOneA_MK_@1(b,low,first,last, &start, &end);
+		/* printf("start %d end %d\n",(int)start, (int)end);*/
+		CRKpieceOneA_MK_@1(b,hgh,(int)(end+1),last, &start, &end);
+		/* printf("phase2 start %d end %d\n",(int)start, (int)end);*/
+	} else {
+		CRKpieceOneA_MK_@1(b,hgh,first,last, &start, &end);
+		/* printf("start %d end %d\n",(int)start, (int)end);*/
+		CRKpieceOneA_MK_@1(b,low, first,(int)end, &start, &end);
+		/* printf("phase2 start %d end %d\n",(int)start, (int)end);*/
+	}
 
 	/* BATprint(b);*/
 	return MAL_SUCCEED;
@@ -3836,6 +3859,7 @@ CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_firs
 	int hghShrinked = 0, lowShrinked = 0;
 	int xx = BUNsize(b);
 
+	(void) fhh; (void) fht; /* silence compilers */
 	lh = BUNhloc(b, BUNptr(b, idx_first));
 	lt = BUNtloc(b, BUNptr(b, idx_first));
 	ht = BUNtloc(b, BUNptr(b, idx_last));
@@ -3993,6 +4017,8 @@ CRKcrackOrderedZERO_is_@2_@1(BAT *b, @1 mid, int idx_first, int idx_last)
 	int hghShrinked = 0, lowShrinked = 0;
 	int xx = BUNsize(b);
 
+	(void) fhh; (void) fht; /* silence compilers */
+
 	lh = BUNhloc(b, BUNptr(b, idx_first));
 	lt = BUNtloc(b, BUNptr(b, idx_first));
 	ht = BUNtloc(b, BUNptr(b, idx_last));
@@ -4074,6 +4100,7 @@ CRKcrackOrderedZERO_SI_@2_@1(BAT *b, @1 mid, int idx_first, int idx_last)
 	int hghShrinked = 0, lowShrinked = 0;
 	int xx = BUNsize(b);
 
+	(void) fhh; (void) fht; /* silence compilers */
 	lh = BUNhloc(b, BUNptr(b, idx_first));
 	lt = BUNtloc(b, BUNptr(b, idx_first));
 	ht = BUNtloc(b, BUNptr(b, idx_last));
