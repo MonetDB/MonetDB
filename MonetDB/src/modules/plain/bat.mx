@@ -465,6 +465,9 @@ documentation.
 .COMMAND [swizzle](BAT[oid,oid] b, BAT[void,oid] map) : BAT[oid,oid] = CMDswizzle;
 "swizzle re-mapped oids (translate from logical to physical using a page-id map)"
 
+.COMMAND [swizzle](BAT[void,oid] b, BAT[void,oid] map) : BAT[oid,oid] = CMDswizzle;
+"swizzle re-mapped oids (translate from logical to physical using a page-id map)"
+
 @- BAT Accelerators
 @m
 .COMMAND accbuild(BAT[any,any] b, str acctype) = CMDaccbuild;
@@ -1981,58 +1984,58 @@ swizzle(oid max, int htpe, oid tbase, size_t cnt, size_t delta,
 int
 CMDswizzle(BAT **res, BAT *b, BAT *map)
 {
-	BAT *bn = *res = b;
 	size_t xx, yy=0, n = BATcount(b), max = BATcount(map);
 	oid *pid = (oid*) BUNtail(map, BUNfirst(map));
 	BUN p, q;
+	BAT *bn;
 
 	if (map->hseqbase) {
 		GDKerror("[swizzle]: map %s should be a void column starting at 0@0.\n", 
 			BBP_logical(map->batCacheid));
 		return GDK_FAIL;
 	}
-	if (BATcount(map) == 0) {
-		/* special semantics: empty bat => no remapping */
-		BBPfix(b->batCacheid);
-		return GDK_SUCCEED;
-	}
-	if (BATtdense(map)) { 
-		if (map->tseqbase) {
+
+	/* sometimes we can just return the input bat (idempotent swizzle) */
+	if (max == 0 || (BATtdense(map) && map->tseqbase == 0)) { 
+		/* special semantics: empty bat (max == 0) => no remapping */
+		/* or if map-tdense with base 0 => do not check for out-of-range oids (HACK) */
+		if (max && map->tseqbase) {
 			GDKerror("[swizzle]: map %s is a void view.\n", BBP_logical(map->batCacheid)); 
 			return GDK_FAIL;
 		}
-		/* HACK does not check for out-of-range oids */
-		BBPfix(b->batCacheid);
+		*res = VIEWcreate(b); /* used in the fast, read-only XML case */
 		return GDK_SUCCEED;
 	} 
-	if (max && BUNsize(map) != sizeof(oid)) {
+
+	/* for efficiency, we ensure the map to be a simple array (copy if necessary) */
+	if (BUNsize(map) != sizeof(oid) || map->ttype == TYPE_void) {
 		pid = (oid*) GDKmalloc(max*sizeof(oid));
 		if (pid == NULL) return GDK_FAIL;
 		BATloopFast(map, p, q, xx)
 			pid[yy++] = *(oid*) BUNtail(map,p);
 	}
 
-	*res = bn = BATnew(BAThdense(b)?TYPE_void:TYPE_oid, TYPE_oid, n);
+	/* create the result bat and set its final size */
+	*res = bn = BATnew(BAThdense(b)?TYPE_void:b->htype, TYPE_oid, n);
 	if (bn == NULL) return GDK_FAIL;
 	BATsetcount(bn, n);
 	bn->batBuns->free = n*BUNsize(bn);
 	BATseqbase(bn, b->hseqbase);
 
-	/* have to generate a head oid */
-        xx = BUNsize(b) / sizeof(oid);
-	xx = swizzle(max << REMAP_PAGE_BITS, 
-	             bn->htype, 
-	             BATtdense(b)?b->tseqbase:oid_nil, 
-	             n,
-	             xx?xx:1,
-	             (oid*) BUNfirst(bn), 
-	             pid, 
-		     (oid*) BUNhloc(b,BUNfirst(b)), 
-	             (oid*) BUNtloc(b,BUNfirst(b))) == 0;
+	/* do the work in a fast function */
+        xx = BUNsize(b) / sizeof(oid); /* beware: xx may be 0 in bat[void,void] */
+	xx = swizzle(max << REMAP_PAGE_BITS,            /* maximum offset (for range check) */
+	             bn->htype,                         /* generate a head column? */
+	             BATtdense(b)?b->tseqbase:oid_nil,  /* input tail is dense? */
+	             n,                                 /* number of input tuples */
+	             xx?xx:1,                           /* stride in oid-s to use in input arrays */
+	             (oid*) BUNfirst(bn),               /* result array */
+	             pid,                               /* page-id lookup array */
+		     (oid*) BUNhloc(b,BUNfirst(b)),     /* head input array */
+	             (oid*) BUNtloc(b,BUNfirst(b))      /* tail input array */
+                     ) == 0;
 
-	if (yy) {
-		GDKfree(pid);
-	}
+	if (yy) GDKfree(pid);
 	if (xx) {
 		GDKerror("[swizzle]: %s contains illegal offsets.\n", BBP_logical(b->batCacheid)); 
 		BBPreclaim(bn);
