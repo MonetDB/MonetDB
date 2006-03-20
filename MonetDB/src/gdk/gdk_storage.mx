@@ -677,7 +677,9 @@ BATdelete(BAT *b)
 		}
 	}
 	if (b->batCopiedtodisk || (b->batBuns->storage & STORE_MMAP)) {
-		if (HEAPdelete(b->batBuns, o, "buns") && b->batCopiedtodisk)
+		if ((b->htype != TYPE_void || b->ttype != TYPE_void) &&
+		    HEAPdelete(b->batBuns, o, "buns") &&
+		    b->batCopiedtodisk)
 			GDKwarning("BATdelete(%s): bun heap\n", BATgetId(b));
 	} else if (b->batBuns->base) {
 		HEAPfree(b->batBuns);
