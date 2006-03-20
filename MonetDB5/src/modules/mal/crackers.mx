@@ -4050,6 +4050,49 @@ CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_firs
 	return MAL_SUCCEED;
 }
 @
+@= OrderedZero
+		while (tmpt @3 ht){ 
+			while (*(@1*)tmpt @4 mid){
+				tmpt @2=xx;
+				tmph @2=xx;
+			}
+			if (*(@1*)ct @4 mid){
+				scr_h[hil] = *(oid*)ch;
+				scr_t[hil] = *(@1* )ct;				
+				hil++;	
+			}
+			*(oid*)ch = *(oid*)tmph;
+			*(@1 *)ct = *(@1 *)tmpt;
+			ch @2= xx;
+			ct @2= xx;
+			
+			tmpt @2= xx;
+			tmph @2= xx;
+		}
+		tmph @5= 2*xx;
+		tmpt @5= 2*xx;
+		ct   @2= xx*hil;
+		for(; tmpt @6 ct; tmph @5=xx, tmpt @5=xx){
+			if (*(@1*)tmpt @4 mid){
+				*(oid*)hh = *(oid*)tmph;
+				*(@1 *)ht = *(@1 *)tmpt;
+				hh @5= xx;
+				ht @5= xx;
+			}
+		}
+		for (int i=hil-1; i >=0 ; i--){
+			if (*(@1*)tmpt @4 mid){
+				*(oid*)hh = *(oid*)tmph;
+				*(@1 *)ht = *(@1 *)tmpt;
+				hh @5= xx;
+				ht @5= xx;
+			}	
+			*(oid*)tmph = scr_h[i];
+			*(@1 *)tmpt = scr_t[i];
+			tmpt @5= xx;
+			tmph @5= xx;
+		}
+@
 @= crackInTwoOrderedPiecesII
 str
 CRKcrackOrderedZERO_is_@2_@1(BAT *b, @1 mid, int idx_first, int idx_last)
@@ -4072,52 +4115,27 @@ CRKcrackOrderedZERO_is_@2_@1(BAT *b, @1 mid, int idx_first, int idx_last)
 	if (hghShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
 	
 	int hil = 0;
-	BUN ch = tmph, ct = tmpt; 
+	BUN ch, ct; 
 	int scr_size = (idx_last - idx_first +1 -lowShrinked -hghShrinked)/2;
 	scr_h = (oid*) GDKmalloc(scr_size * sizeof(oid));
 	scr_t = (@1 *) GDKmalloc(scr_size * sizeof(@1 ));
-	while (tmpt <= ht){ 
-		while (*(@1*)tmpt @4 mid){
-			tmpt+=xx;
-			tmph+=xx;
-		}
-		if (*(@1*)ct @4 mid){
-			scr_h[hil] = *(oid*)ch;
-			scr_t[hil] = *(@1* )ct;				
-			hil++;	
-		}
-		*(oid*)ch = *(oid*)tmph;
-		*(@1 *)ct = *(@1 *)tmpt;
-		ch += xx;
-		ct += xx;
-		
-		tmpt+=xx;
-		tmph+=xx;
-	}
-	tmph -=2*xx;
-	tmpt -=2*xx;
-	ct += xx*hil;
-	for(; tmpt >= ct; tmph-=xx, tmpt-=xx){
-		if (*(@1*)tmpt @4 mid){
-			*(oid*)hh = *(oid*)tmph;
-			*(@1 *)ht = *(@1 *)tmpt;
-			hh -= xx;
-			ht -= xx;
-		}
-	}
-	for (int i=hil-1; i >=0 ; i--){
-		if (*(@1*)tmpt @4 mid){
-			*(oid*)hh = *(oid*)tmph;
-			*(@1 *)ht = *(@1 *)tmpt;
-			hh -= xx;
-			ht -= xx;
-		}	
-		*(oid*)tmph = scr_h[i];
-		*(@1 *)tmpt = scr_t[i];
-		tmpt-=xx;
-		tmph-=xx;
-	}
+	int probe = 25;
+	BUN t = tmpt, s = tmpt+(2*probe*xx);
+	int j=0;
+	for (;t<s;t+=xx)
+		j+=*(@1*)t @3 mid;
 	
+	if (j > probe){
+		ch = tmph; ct = tmpt; 
+		@:OrderedZero(@1,+,<=,@4,-,>=)@
+	}
+	else{
+		ch =hh; ct = ht; 
+		BUN fh = tmph, ft = tmpt;
+		tmph =hh; tmpt = ht;
+		hh = fh; ht = ft;
+		@:OrderedZero(@1,-,>=,@3,+,<=)@
+	}
 	GDKfree(scr_h);
 	GDKfree(scr_t);
 	return MAL_SUCCEED;
