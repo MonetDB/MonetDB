@@ -10,8 +10,8 @@ user=monetdb
 password=monetdb
 EOF
 
-LANG="en_US.UTF-8"
-export LANG
+LC_ALL="`locale -a | grep -i en_us | grep -i utf`"
+export LC_ALL
 
 Mlog   "$MTIMEOUT java -jar \"$JAR\" -h $HOST -p $MAPIPORT -d ${TSTDB} -f $RELSRCDIR/../bug-sf-1041324_weird-char.sql"
 	$MTIMEOUT java -jar  "$JAR"  -h $HOST -p $MAPIPORT -d ${TSTDB} -f $RELSRCDIR/../unicode_varchar-bug-sf-1041324.sql 
