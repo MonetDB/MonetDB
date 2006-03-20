@@ -3442,104 +3442,121 @@ Stratos's masterpiece
 		@5
 	}
 @
-@= crackInThreeOrderedPiecesII
-str
-CRKcrackOrderedTHREE_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
-{
-	BUN lh, lt, hh, ht, fhh, fht, tmpt, tmph;/* fh, llh, llt;*/
-	oid *scr_h;
-	@1  *scr_t;
-	int scr_size = idx_last - idx_first +1;
-	int hghShrinked = 0, lowShrinked = 0;
-	int xx = BUNsize(b);
 
-	lh = BUNhloc(b, BUNptr(b, idx_first));
-	lt = BUNtloc(b, BUNptr(b, idx_first));
-	ht = BUNtloc(b, BUNptr(b, idx_last));
-	hh = BUNhloc(b, BUNptr(b, idx_last));
-
-	@:moveOrdered(*(@1*)lt @4 low,lh,lt,+,lowShrinked++;)@
-	@:moveOrdered(*(@1*)ht @7 hgh ,hh,ht,-,hghShrinked++;)@
-
-	if (lowShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
-	if (hghShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
-	tmph = fhh = lh;
-	tmpt = fht = lt;	
-	int scrH = scr_size-1;	
-	int hil = 0, mids = scrH;
-	BUN ch = lh, ct = lt; 
-	scr_h = (oid*) GDKmalloc(scr_size * sizeof(oid));
-	scr_t = (@1 *) GDKmalloc(scr_size * sizeof(@1 ));
-	while (*(@1*)tmpt @7 hgh){
-		tmpt += xx;
-		tmph += xx;
+@= OThree
+	while (*(@1*)tmpt @5){
+		tmpt @2= xx;
+		tmph @2= xx;
 	}
-	while (tmpt <= ht){/*; tmpt+=xx,tmph+=xx){*/
-		if ( *(@1*)tmpt @4 low){
-			if (*(@1*)ct @7 hgh){
+	
+	while (tmpt @3 ht){
+		if ( *(@1*)tmpt @4){
+			if (*(@1*)ct @5){
 				scr_h[hil] = *(oid*)ch;
 				scr_t[hil] = *(@1* )ct;				
 				hil++;	
 			}
-			ch += xx;
-			ct += xx;
+			*(oid*)ch = *(oid*)tmph;
+			*(@1 *)ct = *(@1 *)tmpt;
+			ch @2= xx;
+			ct @2= xx;
 		
-			*(oid*)lh = *(oid*)tmph;
-			*(@1 *)lt = *(@1 *)tmpt;
-			lh += xx;
-			lt += xx;
 		}
 		else{
 			scr_h[mids] = *(oid*)tmph;
 			scr_t[mids] = *(@1* )tmpt;				
 			mids--;	
 		}
-		tmpt += xx;
-		tmph += xx;
-		while ((*(@1*)tmpt @7 hgh)){
-			tmpt += xx;
-			tmph += xx;
+		tmpt @2= xx;
+		tmph @2= xx;
+		while (tmpt @3 ht && *(@1*)tmpt @5){
+			tmpt @2= xx;
+			tmph @2= xx;
 		}
 	}
-
 	tmph = hh;
 	tmpt = ht;
-	ct += xx*((scrH-mids)+hil);
-	for(; tmpt >= ct; tmph-=xx, tmpt-=xx){
-		if (*(@1*)tmpt @7 hgh ){
+	ct @2= xx*((scrH-mids)+hil);
+	for(; tmpt @7 ct; tmph @6=xx, tmpt @6=xx){
+		if (*(@1*)tmpt @5){
 			*(oid*)hh = *(oid*)tmph;
 			*(@1 *)ht = *(@1 *)tmpt;
-			hh -= xx;
-			ht -= xx;
+			hh @6= xx;
+			ht @6= xx;
 		}
 	}
 	int i;
 	for (i= hil-1; i >= 0; i--){
-		if (*(@1*)tmpt @7 hgh){
+		if (*(@1*)tmpt @5){
 			*(oid*)hh = *(oid*)tmph;
 			*(@1 *)ht = *(@1 *)tmpt;
-			hh -= xx;
-			ht -= xx;
+			hh @6= xx;
+			ht @6= xx;
 		}	
 		*(oid*)tmph = scr_h[i];
 		*(@1 *)tmpt = scr_t[i];
-		tmpt -= xx;
-		tmph -= xx;
+		tmpt @6= xx;
+		tmph @6= xx;
 	}
 	i = mids + 1;
 	for (; i <= scrH; i++){
-		 if (*(@1*)tmpt @7 hgh ){
+		 if (*(@1*)tmpt @5){
                         *(oid*)hh = *(oid*)tmph;
                         *(@1 *)ht = *(@1 *)tmpt;
-                        hh -= xx;
-                        ht -= xx;
+                        hh @6= xx;
+                        ht @6= xx;
                 }
 		*(oid*)tmph = scr_h[i];
 		*(@1 *)tmpt = scr_t[i];
-		tmph -= xx;
-		tmpt -= xx;
+		tmph @6= xx;
+		tmpt @6= xx;
 	}
-	
+@
+
+@= crackInThreeOrderedPiecesII
+str
+CRKcrackOrderedTHREE_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
+{
+
+	BUN hh, ht, tmpt, tmph;
+	oid *scr_h;
+	@1  *scr_t;
+	int scr_size = idx_last - idx_first +1;
+	int hghShrinked = 0, lowShrinked = 0;
+	int xx = BUNsize(b);
+
+	tmph = BUNhloc(b, BUNptr(b, idx_first));
+	tmpt = BUNtloc(b, BUNptr(b, idx_first));
+	ht = BUNtloc(b, BUNptr(b, idx_last));
+	hh = BUNhloc(b, BUNptr(b, idx_last));
+
+	@:moveOrdered(*(@1*)tmpt @4 low,tmph,tmpt,+,lowShrinked++;)@
+	@:moveOrdered(*(@1*)ht @7 hgh ,hh,ht,-,hghShrinked++;)@
+
+	if (lowShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
+	if (hghShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
+	int scrH = scr_size-1;	
+	int hil = 0, mids = scrH;
+	BUN ch = tmph, ct = tmpt; 
+	scr_h = (oid*) GDKmalloc(scr_size * sizeof(oid));
+	scr_t = (@1 *) GDKmalloc(scr_size * sizeof(@1 ));
+	int probe = 25;
+	BUN t = tmpt, s = tmpt+(2*probe*xx);
+	int j=0;
+	for (;t<s;t+=xx)
+		j += *(@1*)t @4 low;
+
+	if (j > probe){
+		ch = tmph; ct = tmpt; 
+		@:OThree(@1,+,<=,@4 low,@7 hgh,-,>=)@
+	}
+	else{  
+		ch = hh; ct = ht; 
+		BUN fh = tmph, ft = tmpt;
+		tmph = hh; tmpt = ht;
+		hh = fh; ht = ft;
+		@:OThree(@1,-,>=,@7 hgh,@4 low,+,<=)@
+	}
 	GDKfree(scr_h);
 	GDKfree(scr_t);
 	
@@ -3578,7 +3595,7 @@ CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_firs
 		tmph += xx;
 	}
 	BUN tmp1 = lt, tmp2;
-	while (tmpt <= ht){/*; tmpt+=xx,tmph+=xx){*/
+	while (tmpt <= ht){
 		if ( *(@1*)tmpt @4 low){
 			if (*(@1*)lt @7 hgh){
 				scr_h[hil] = *(oid*)lh;
