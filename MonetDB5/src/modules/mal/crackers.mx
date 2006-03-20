@@ -3582,56 +3582,80 @@ CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_firs
 
 	if (lowShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
 	if (hghShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
-	tmph = lh;
-	tmpt = lt;	
 	int scrH = scr_size-1;	
 	int hp = 0, hil = 0, mids = scrH, mmids = 0;
 	scr_h = (oid*) GDKmalloc(scr_size * sizeof(oid));
 	scr_t = (@1 *) GDKmalloc(scr_size * sizeof(@1 ));
 	mscr_h = (oid*) GDKmalloc(scr_size * sizeof(oid));
 	mscr_t = (@1 *) GDKmalloc(scr_size * sizeof(@1 ));
-	while (*(@1*)tmpt @7 hgh){
-		tmpt += xx;
-		tmph += xx;
+	int probe = 100;
+	BUN t = lt, s = lt+(2*probe*xx);
+	int j=0;
+	for (;t<s;t+=xx)
+		j += *(@1*)t @4 low;
+
+	if (j > probe){
+	tmph = lh;
+	tmpt = lt;	
+		@:OThreeLateCopying(@1,+,<=,@4 low,@7 hgh,-,>=,@5,@6)@
+	}
+	else{  
+	tmph = hh;
+	tmpt = ht;	
+		BUN fh = lh, ft = lt;
+		lh = hh; lt = ht;
+		hh = fh; ht = ft;
+		@:OThreeLateCopying(@1,-,>=,@7 hgh,@4 low,+,<=,@5,@6)@
+	}
+	
+	GDKfree(scr_h);
+	GDKfree(scr_t);
+	return MAL_SUCCEED;
+}
+@
+@= OThreeLateCopying
+	while (*(@1*)tmpt @5){
+		tmpt @2= xx;
+		tmph @2= xx;
 	}
 	BUN tmp1 = lt, tmp2;
-	while (tmpt <= ht){
-		if ( *(@1*)tmpt @4 low){
-			if (*(@1*)lt @7 hgh){
+	while (tmpt @3 ht){
+		if ( *(@1*)tmpt @4){
+			if (*(@1*)lt @5){
 				scr_h[hil] = *(oid*)lh;
 				scr_t[hil] = *(@1* )lt;				
 				hil++;	
 			}
-			if (*(@1*)lt @5 low && *(@1*)lt @6 hgh){
+			if (*(@1*)lt @8 low && *(@1*)lt @9 hgh){
 				scr_h[mids] = *(oid*)lh;
 				scr_t[mids] = *(@1* )lt;				
 				mids--;	
 			}
 			*(oid*)lh = *(oid*)tmph;
 			*(@1 *)lt = *(@1 *)tmpt;
-			lh += xx;
-			lt += xx;
+			lh @2= xx;
+			lt @2= xx;
 		}
 		hp++;
-		tmpt += xx;
-		tmph += xx;
-		while ((*(@1*)tmpt @7 hgh)){
-			tmpt += xx;
-			tmph += xx;
+		tmpt @2= xx;
+		tmph @2= xx;
+		while (*(@1*)tmpt @5){
+			tmpt @2= xx;
+			tmph @2= xx;
 		}
 	}
 	tmph = hh;
 	tmpt = ht;
 	tmp2 = lt;
-	tmp1 += xx*(hp+hil);
-	for(; tmpt >= tmp1; tmph-=xx, tmpt-=xx){
-		if (*(@1*)tmpt @7 hgh ){
+	tmp1 @2= xx*(hp+hil);
+	for(; tmpt @7 tmp1; tmph @6=xx, tmpt @6=xx){
+		if (*(@1*)tmpt @5 ){
 			*(oid*)hh = *(oid*)tmph;
 			*(@1 *)ht = *(@1 *)tmpt;
-			hh -= xx;
-			ht -= xx;
+			hh @6= xx;
+			ht @6= xx;
 		}
-		if (*(@1*)tmpt @5 low && *(@1*)tmpt @6 hgh){
+		if (*(@1*)tmpt @8 low && *(@1*)tmpt @9 hgh){
 			mscr_h[mmids] = *(oid*)tmph;
 			mscr_t[mmids] = *(@1* )tmpt;				
 			mmids++;	
@@ -3639,83 +3663,78 @@ CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_firs
 	}
 	int i;
 	for (i= hil-1; i >= 0; i--){
-		if (*(@1*)tmpt @7 hgh){
+		if (*(@1*)tmpt @5){
 			*(oid*)hh = *(oid*)tmph;
 			*(@1 *)ht = *(@1 *)tmpt;
-			hh -= xx;
-			ht -= xx;
+			hh @6= xx;
+			ht @6= xx;
 		}	
-		if (*(@1*)tmpt @5 low && *(@1*)tmpt @6 hgh){
+		if (*(@1*)tmpt @8 low && *(@1*)tmpt @9 hgh){
 			mscr_h[mmids] = *(oid*)tmph;
 			mscr_t[mmids] = *(@1* )tmpt;				
 			mmids++;	
 		}
 		*(oid*)tmph = scr_h[i];
 		*(@1 *)tmpt = scr_t[i];
-		tmpt -= xx;
-		tmph -= xx;
+		tmpt @6= xx;
+		tmph @6= xx;
 	}
 	i = 0;
 	for (; i < mmids; i++){
-		 if (*(@1*)tmpt @7 hgh ){
+		 if (*(@1*)tmpt @5 ){
                         *(oid*)hh = *(oid*)tmph;
                         *(@1 *)ht = *(@1 *)tmpt;
-                        hh -= xx;
-                        ht -= xx;
+                        hh @6= xx;
+                        ht @6= xx;
                 }
-		if (*(@1*)tmpt @5 low && *(@1*)tmpt @6 hgh){
+		if (*(@1*)tmpt @8 low && *(@1*)tmpt @9 hgh){
 			mscr_h[mmids] = *(oid*)tmph;
 			mscr_t[mmids] = *(@1* )tmpt;				
 			mmids++;	
 		}
 		*(oid*)tmph = mscr_h[i];
 		*(@1 *)tmpt = mscr_t[i];
-		tmph -= xx;
-		tmpt -= xx;
+		tmph @6= xx;
+		tmpt @6= xx;
 	}
-	tmp2 += xx*(scrH-mids);
+	tmp2 @2= xx*(scrH-mids);
 	BUN mh= tmph, mt = tmpt;
-	for(; tmpt >= tmp2; tmph-=xx, tmpt-=xx){
-		if (*(@1*)tmpt @7 hgh ){
+	for(; tmpt @7 tmp2; tmph @6=xx, tmpt @6=xx){
+		if (*(@1*)tmpt @5 ){
                         *(oid*)hh = *(oid*)tmph;
                         *(@1 *)ht = *(@1 *)tmpt;
-                        hh -= xx;
-                        ht -= xx;
+                        hh @6= xx;
+                        ht @6= xx;
                 }
-		if (*(@1*)tmpt @5 low && *(@1*)tmpt @6 hgh){
+		if (*(@1*)tmpt @8 low && *(@1*)tmpt @9 hgh){
 			if (mt != tmpt){
 				*(oid*)mh = *(oid*)tmph;
                         	*(@1 *)mt = *(@1 *)tmpt;
 			}
-                        mh -= xx;
-                        mt -= xx;
+                        mh @6= xx;
+                        mt @6= xx;
 		}
 	}
 
         i = mids+1;
         for (; i <= scrH; i++){
-                 if (*(@1*)tmpt @7 hgh ){
+                 if (*(@1*)tmpt @5 ){
                         *(oid*)hh = *(oid*)tmph;
                         *(@1 *)ht = *(@1 *)tmpt;
-                        hh -= xx;
-                        ht -= xx;
+                        hh @6= xx;
+                        ht @6= xx;
                 }
-                if (*(@1*)tmpt @5 low && *(@1*)tmpt @6 hgh){
+                if (*(@1*)tmpt @8 low && *(@1*)tmpt @9 hgh){
 	        	*(oid*)mh = *(oid*)tmph;
                         *(@1 *)mt = *(@1 *)tmpt;
-                        mh -= xx;
-                        mt -= xx;
+                        mh @6= xx;
+                        mt @6= xx;
                 }
                 *(oid*)tmph = scr_h[i];
                 *(@1 *)tmpt = scr_t[i];
-                tmph -= xx;
-                tmpt -= xx;
+                tmph @6= xx;
+                tmpt @6= xx;
         }
-	
-	GDKfree(scr_h);
-	GDKfree(scr_t);
-	return MAL_SUCCEED;
-}
 @
 @= OrderedZero
 		while (tmpt @3 ht){ 
