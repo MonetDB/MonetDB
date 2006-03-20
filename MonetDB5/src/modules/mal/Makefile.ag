@@ -1,7 +1,7 @@
 
 INCLUDES = -I../atoms -I../kernel \
         -I../../mal $(MONETDB_INCS) \
-        $(Z_CFLAGS) $(BZ_CFLAGS) $(PCRE_CFLAGS)
+        $(Z_CFLAGS) $(BZ_CFLAGS) $(PCRE_CFLAGS) $(READLINE_INCS)
 
 MTSAFE
 
@@ -12,7 +12,7 @@ LIBS = {
 		chopper.mx language.mx box.mx \
 		profiler.mx const.mx print.mx \
 		inspect.mx manual.mx crackers.mx \
-		clients.mx factory.mx mdb.mx  pbm.mx \
+		factory.mx mdb.mx  pbm.mx \
 		rsbox.mx urlbox.mx multitable.mx
 		#datacell.mx 
 
@@ -21,6 +21,17 @@ LIBS = {
 	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+}
+
+lib__clients = {
+	DIR = pkglibdir
+	SOURCES = clients.mx
+
+	HEADERS = h 
+	#SCRIPTS = mal mil ""
+	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream \
+                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(READLINE_LIBS) 
 }
 
 lib__pcre = {
