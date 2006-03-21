@@ -462,9 +462,19 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_avg:
+        case la_sum:
+            add_dom (n->prop, n->sem.aggr.res, id++);
+            if (n->sem.aggr.part)
+                add_dom (n->prop, 
+                         n->sem.aggr.part,
+                         PFprop_dom (L(n)->prop, n->sem.aggr.part));
+            break;
+
 	case la_max:
 	case la_min:
-        case la_sum:
+            add_dom_rel (n->prop,
+                         PFprop_dom (L(n)->prop, n->sem.aggr.part),
+                         id);
             add_dom (n->prop, n->sem.aggr.res, id++);
             if (n->sem.aggr.part)
                 add_dom (n->prop, 
