@@ -1424,7 +1424,7 @@ PFla_op_t * PFla_type_assert (const PFla_op_t *n, PFalg_att_t att,
         if (att == n->schema.items[i].name)
         {
             if (pos)
-                assert_ty = ty;
+                assert_ty = n->schema.items[i].type & ty;
             else
                 /* the restricted type assert_ty is the original
                    type without type ty */
