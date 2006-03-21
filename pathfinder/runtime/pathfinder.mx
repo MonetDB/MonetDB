@@ -138,7 +138,9 @@ PROC xquery_server_start() : void {
 # - ATTR_CONT  : BAT[void,BAT[void,oid]] list of bats with containers
 #                oids for each attr value (copied in element/attribute 
 #                construction)
-# - DOC_LOADED : BAT[void,str] containers ID / name of document 
+# - DOC_LOADED : BAT[void,str] container-ID / name of document 
+#                (starts with 1@0 because WS is first 'loaded' document
+# - DOC_OID :    BAT[void,oid] container-ID / doc_oid (if persistent; else nil)
 #                (starts with 1@0 because WS is first 'loaded' document
 # - CONT       : BAT[void,oid] 0@0 / oid of the newest added containers
 # - WS_FRAG    : BAT[void,oid] enumeration / root-pre values of
@@ -147,47 +149,6 @@ PROC xquery_server_start() : void {
 #                depth of the container (starts with 0@0 - WS)
 
 module(pf_support); 
-
-# get a handle to the global lock
-var pf_lock := pflock(); 
-
-# note that these variables may not be shared by parallel MIL clients
-var doc_query; # bat[oid,int] active working-sets (queries) that use a particular document 
-var doc_sema;  # bat[oid,sema] used by delete_doc to wait until all doc users have gone
-
-# initialize doc_query and doc_sema (use BBP as global mechanism to discover initialization)
-lock_set(pf_lock);
-if (not(isnil(CATCH(bat("doc_name").count())))) {
-    # create doc_name table in case it does not exist
-    new(oid,str).persists(true).bbpname("doc_name");
-    new(oid,str).persists(true).bbpname("doc_location");
-    new(oid,timestamp).persists(true).bbpname("doc_timestamp");
-    new(oid,int).persists(true).bbpname("doc_height");
-    new(oid,lng).persists(true).bbpname("doc_size");
-    new(str,lng).persists(true).bbpname("uri_lifetime");
-}
-if (isnil(CATCH(bat("doc_query").count()))) {
-    doc_query := bat("doc_query"); 
-    doc_sema := bat("doc_sema"); 
-} else {
-    (doc_query := new(oid,int)).bbpname("doc_query"); 
-    (doc_sema := new(oid,monet_atomtbl.find("sema"))).bbpname("doc_sema"); 
-}
-lock_unset(pf_lock);
-
-# insert 25% free space per 64k tuples
-const PAGESIZE := 4;	#64 * 1024;
-const PAGEFILL := 3;	#48 * 1024;
-const PAGEFREE := PAGESIZE - PAGEFILL;
-
-# DEFINITION of constants concerning the data model
-const PRE_BASE := 0@0;
-const ELEMENT := chr(0);
-const TEXT := chr(1);
-const COMMENT := chr(2);
-const PI := chr(3);
-const DOCUMENT := chr(4);
-const WS := 0@0;
 
 @- ws definition
 
@@ -207,14 +168,14 @@ EXCEPT when (child-T == void)
         name       number  tpe  col[H,T]    col-seqbase 
         ========   ======  ===  ==========  ===========
 @= ws
-@:@1_ws(MAP_PID,        0, bat, void,  oid, PRE_BASE)@
-@:@1_ws(PRE_SIZE,       1, bat, void,  int, PRE_BASE)@
-@:@1_ws(PRE_LEVEL,      2, bat, void,  chr, PRE_BASE)@
-@:@1_ws(PRE_PROP,       3, bat, void,  oid, PRE_BASE)@
-@:@1_ws(PRE_KIND,       4, bat, void,  chr, PRE_BASE)@
-@:@1_ws(PRE_CONT,       5, void,void,  oid, PRE_BASE)@
-@:@1_ws(PRE_NID,        6, bat, void,  oid, PRE_BASE)@
-@:@1_ws(NID_RID,        7, bat, void,  oid, PRE_BASE)@
+@:@1_ws(PRE_SIZE,       0, bat, void,  int, PRE_BASE)@
+@:@1_ws(PRE_LEVEL,      1, bat, void,  chr, PRE_BASE)@
+@:@1_ws(PRE_PROP,       2, bat, void,  oid, PRE_BASE)@
+@:@1_ws(PRE_KIND,       3, bat, void,  chr, PRE_BASE)@
+@:@1_ws(PRE_CONT,       4, void,void,  oid, PRE_BASE)@
+@:@1_ws(PRE_NID,        5, bat, void,  oid, PRE_BASE)@
+@:@1_ws(NID_RID,        6, bat, void,  oid, PRE_BASE)@
+@:@1_ws(MAP_PID,        7, bat, void,  oid, PRE_BASE)@
 @:@1_ws(QN_URI,         8, bat, void,  str, PRE_BASE)@
 @:@1_ws(QN_PREFIX,      9, bat, void,  str, PRE_BASE)@
 @:@1_ws(QN_LOC,        10, bat, void,  str, PRE_BASE)@
@@ -231,26 +192,33 @@ EXCEPT when (child-T == void)
 @:@1_ws(PROP_VAL,      21, bat, void,  str, PRE_BASE)@
 @:@1_ws(WS_FRAG,       22, bat, void,  oid, PRE_BASE)@
 @:@1_ws(DOC_LOADED,    23, str, void, void, oid(nil))@
-@:@1_ws(CONT,          24, oid, void, void, oid(nil))@
-@:@1_ws(HEIGHT,        25, int, void, void, oid(nil))@
-@:@1_ws(QN_PREFIX_URI, 26, bat, void,  str, PRE_BASE)@
-@:@1_ws(QN_LOC_URI,    27, bat, void,  str, PRE_BASE)@
-@:@1_ws(KND_NID_0,     28, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_PROP_0,    29, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_NID_1,     30, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_NID_2,     31, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_NID_3,     32, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_PROP_3,    33, bat, void,  oid, PRE_BASE)@
-@:@1_ws(KND_NID_4,     34, bat, void,  oid, PRE_BASE)@
-@:@1_ws(REGION_PRE,    35, bat, void,  oid, oid(nil))@
-@:@1_ws(REGION_START,  36, bat, void,  lng, oid(nil))@
-@:@1_ws(REGION_END,    37, bat, void,  lng, oid(nil))@
+@:@1_ws(DOC_OID,       24, oid, void, void, oid(nil))@
+@:@1_ws(CONT,          25, oid, void, void, oid(nil))@
+@:@1_ws(HEIGHT,        26, int, void, void, oid(nil))@
+@:@1_ws(QN_PREFIX_URI, 27, bat, void,  str, PRE_BASE)@
+@:@1_ws(QN_LOC_URI,    28, bat, void,  str, PRE_BASE)@
+@:@1_ws(KND_NID_0,     29, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_PROP_0,    30, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_NID_1,     31, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_NID_2,     32, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_NID_3,     33, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_PROP_3,    34, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_NID_4,     35, bat, void,  oid, PRE_BASE)@
+@:@1_ws(REGION_PRE,    36, bat, void,  oid, oid(nil))@
+@:@1_ws(REGION_START,  37, bat, void,  lng, oid(nil))@
+@:@1_ws(REGION_END,    38, bat, void,  lng, oid(nil))@
+@:@1_ws(RID_SIZE,      39, bat, void, void, PRE_BASE)@
+@:@1_ws(RID_LEVEL,     40, bat, void, void, PRE_BASE)@
+@:@1_ws(RID_PROP,      41, bat, void, void, PRE_BASE)@
+@:@1_ws(RID_KIND,      42, bat, void, void, PRE_BASE)@
+@:@1_ws(RID_CONT,      43, void,void, void, PRE_BASE)@
+@:@1_ws(RID_NID,       44, bat, void, void, PRE_BASE)@
 
 @-
 BEWARE: WS_SIZE (below) should *always* be the size of ws (above)
 
 @= decl
-@:@1_decl_ws(WS_SIZE, 37)@
+@:@1_decl_ws(WS_SIZE, 44)@
 @:@1_decl_ws(QNAME,    2)@
 @:@1_decl_ws(BOOL,     3)@
 @:@1_decl_ws(INT,      4)@
@@ -266,9 +234,17 @@ BEWARE: WS_SIZE (below) should *always* be the size of ws (above)
 @= mil_decl_ws
 const @1 := @2;
 @mil
-
 @:ws(mil_decl)@
 @:decl(mil)@
+
+# DEFINITION of constants concerning the data model
+const PRE_BASE := 0@0;
+const ELEMENT := chr(0);
+const TEXT := chr(1);
+const COMMENT := chr(2);
+const PI := chr(3);
+const DOCUMENT := chr(4);
+const WS := 0@0;
 
 const KND_NID  := new(chr,int,5);
 const KND_PROP := new(chr,int,2);
@@ -294,28 +270,117 @@ KND_PROP.access(BAT_READ);
 # NODE is not a type but all node types
 # can be retrieved with 'select(NODE,int(nil))'
 
+
+@- shared BATs
+
+Note that MIL variables are not shared between concurrent MIL sessions. Therefore, we need the pflock()
+command to get a global lock handle for synchronization. However, BATs are global objects and may be
+shared. This mechanism is used to share the global data structures (each XQuery session has its own
+MIL variables, but these point to the same global BATs).
+
 @= create_ws
-    ws_nme.append(toLower("@1").substitute("pre_","rid_",false));
+    ws_nme.append(toLower("@1"));
     ws_oid.append(oid(@1));
     ws_tpe.append(@3);
     ws_htp.append(@4);
     ws_ttp.append(@5);
     ws_seq.append(@6);
 @mil
+# get a handle to the global lock
+var pf_lock := pflock(); 
+
+# the main metadata
+var doc_query; # bat[oid,int] active working-sets (queries) that use a particular document 
+var doc_sema;  # bat[oid,sema] used by delete_doc to wait until all doc users have gone
+var doc_lock;  # bat[oid,lock] used by append_page() to ensure unique pages are given out size
+var doc_free;  # bat[oid,bat]  per document a list with all free pages smaller than the master size
+
+# empty pages to append onto rid_* master bats
+var empty_page;  # bat[void,int] of size REMAP_PAGE size counting down from REMAP_PAGE_SIZE-1
+
 # the ws_* bats contain a recipe for creating a new ws
-var ws_nme := bat(void,str,WS_SIZE); 
-var ws_oid := bat(void,oid,WS_SIZE); 
-var ws_tpe := bat(void,int,WS_SIZE); 
-var ws_htp := bat(void,int,WS_SIZE); 
-var ws_ttp := bat(void,int,WS_SIZE); 
-var ws_seq := bat(void,oid,WS_SIZE); 
-@:ws(create)@
-ws_nme.access(BAT_READ).seqbase(0@0);
-ws_oid.access(BAT_READ).seqbase(0@0);
-ws_tpe.access(BAT_READ).seqbase(0@0);
-ws_htp.access(BAT_READ).seqbase(0@0);
-ws_ttp.access(BAT_READ).seqbase(0@0);
-ws_seq.access(BAT_READ).seqbase(0@0);
+var ws_nme; # name (prefix) of ws entry as persistent bat
+var ws_oid; # id of ws entry
+var ws_tpe; # type of ws entry (often bat)
+var ws_htp; # (if tpe=bat) head-type of nested bat
+var ws_ttp; # (if tpe=bat) tail-type of nested bat
+var ws_seq; # (if tpe=bat) seqbase of nested bat
+
+# some handy bat[oid,str] shortcuts
+var ws_col; # all ws entries that are real bats
+var ws_dsk; # of those, all persistent bats on disk for a document container 
+var ws_rid; # of those, all rid_* bats 
+var ws_shr; # all bats delivered by shredder
+
+# initialize doc_query and doc_sema (use BBP as global mechanism to discover initialization)
+# note that this is required for concurrent MapiClient MIL sessions to share each other's variables.
+lock_set(pf_lock);
+if (not(isnil(CATCH(bat("doc_name").count())))) {
+    # create doc_name table in case it does not exist
+    new(oid,str).persists(true).bbpname("doc_name");
+    new(oid,str).persists(true).bbpname("doc_location");
+    new(oid,timestamp).persists(true).bbpname("doc_timestamp");
+    new(oid,int).persists(true).bbpname("doc_height");
+    new(oid,lng).persists(true).bbpname("doc_size");
+    new(str,lng).persists(true).bbpname("uri_lifetime");
+}
+if (isnil(CATCH(bat("doc_query").count()))) {
+    doc_query  := bat("doc_query"); 
+    doc_sema   := bat("doc_sema"); 
+    doc_lock   := bat("doc_lock"); 
+    doc_free   := bat("doc_free"); 
+    empty_page := bat("empty_page"); 
+    ws_nme     := bat("ws_bat");
+    ws_oid     := bat("ws_oid");
+    ws_tpe     := bat("ws_tpe"); 
+    ws_htp     := bat("ws_htp");
+    ws_ttp     := bat("ws_ttp");
+    ws_seq     := bat("ws_seq");
+    ws_col     := bat("ws_col");
+    ws_dsk     := bat("ws_dsk");
+    ws_rid     := bat("ws_rid");
+    ws_shr     := bat("ws_shr");
+} else {
+    (doc_query := new(oid,int)).bbpname("doc_query"); 
+    (doc_sema  := new(oid,monet_atomtbl.find("sema"))).bbpname("doc_sema"); 
+    (doc_lock  := new(oid,monet_atomtbl.find("lock"))).bbpname("doc_lock"); 
+    (doc_free  := new(oid,bat)).bbpname("doc_free"); 
+    (empty_page:= new(void,int,REMAP_PAGE_SIZE)).bbpname("empty_page"); 
+
+    var m := 1LL << 31, i := REMAP_PAGE_SIZE;
+    var bak := debugmask();
+    debugmask(0);
+    while((i :-= 1LL) >= 0LL) {
+        empty_page.append(int(and(m,i)));
+    }
+    debugmask(bak);
+    empty_page.seqbase(0@0).access(BAT_READ);
+
+    ws_nme := bat(void,str,WS_SIZE);
+    ws_oid := bat(void,oid,WS_SIZE);
+    ws_tpe := bat(void,int,WS_SIZE);
+    ws_htp := bat(void,int,WS_SIZE);
+    ws_ttp := bat(void,int,WS_SIZE);
+    ws_seq := bat(void,oid,WS_SIZE);
+    @:ws(create)@
+    ws_nme.seqbase(0@0).access(BAT_READ).bbpname("ws_nme");
+    ws_oid.seqbase(0@0).access(BAT_READ).bbpname("ws_oid");
+    ws_tpe.seqbase(0@0).access(BAT_READ).bbpname("ws_tpe");
+    ws_htp.seqbase(0@0).access(BAT_READ).bbpname("ws_htp");
+    ws_ttp.seqbase(0@0).access(BAT_READ).bbpname("ws_ttp");
+    ws_seq.seqbase(0@0).access(BAT_READ).bbpname("ws_seq");
+
+    ws_col := ws_tpe.ord_uselect(bat).mirror().leftfetchjoin(ws_nme);
+    ws_col.bbpname("ws_col");
+    ws_dsk := ws_col.reverse().ord_select(oid(NID_RID), oid(RID_NID)).reverse();
+    ws_dsk.bbpname("ws_rid");
+    ws_rid := [int](ws_dsk.mirror()).ord_select(RID_SIZE, RID_NID).[-](RID_SIZE - PRE_SIZE).[oid]().reverse();
+    ws_rid.bbpname("ws_rid");
+    ws_shr := ws_nme.reverse().ord_select(oid(PRE_SIZE), oid(-(DOC_LOADED,1))).reverse().[substitute]("pre_", "rid_", false);
+    ws_shr.bbpname("ws_shr");
+}
+lock_unset(pf_lock);
+
 
 PROC ws_bat(int tpe, int htp, int ttp, oid seq) : BAT[void,any]
 {
@@ -330,9 +395,15 @@ PROC ws_bat(int tpe, int htp, int ttp, oid seq) : BAT[void,any]
 PROC create_ws () : BAT[void,bat]
 {
     var ws := [ws_bat](ws_tpe, ws_htp, ws_ttp, ws_seq);
+    ws.fetch(RID_SIZE).append(ws.fetch(PRE_SIZE).fetch(0));
+    ws.fetch(RID_LEVEL).append(ws.fetch(PRE_LEVEL).fetch(0));
+    ws.fetch(RID_PROP).append(ws.fetch(PRE_PROP).fetch(0));
+    ws.fetch(RID_KIND).append(ws.fetch(PRE_KIND).fetch(0));
+    ws.fetch(RID_NID).append(ws.fetch(PRE_SIZE).fetch(0));
 
     # fill the constant bats with initial values
     ws.fetch(DOC_LOADED).seqbase(1@0);
+    ws.fetch(DOC_OID).seqbase(1@0);
     ws.fetch(CONT).seqbase(0@0).append(oid(nil));
     ws.fetch(HEIGHT).seqbase(0@0).append(0);
     return ws.access(BAT_READ);
@@ -344,6 +415,10 @@ PROC destroy_ws_locked(BAT[void,bat] ws) : void
         var doc_oid := $h;
         doc_query.delete(doc_oid, int(ws));
         if (not(doc_query.exist(doc_oid))) {
+            doc_lock.find(doc_oid).lock_destroy();
+            doc_lock.delete(doc_oid);
+            doc_free.delete(doc_oid);
+            
             if (doc_sema.exist(doc_oid)) {
                 sema_up(doc_sema.find(doc_oid));
             }
@@ -371,6 +446,59 @@ PROC destroy_ws(BAT[void,bat] ws) : void
 
     if (not(isnil(err))) { ERROR(err); }
 }
+
+PROC ws_newpage_locked(BAT[void,bat] ws, oid doc_oid, oid cont) : oid {
+    var rid_size  := ws.fetch(RID_SIZE).find(cont);
+    var rid_level := ws.fetch(RID_LEVEL).find(cont);
+    var rid_prop  := ws.fetch(RID_PROP).find(cont);
+    var rid_kind  := ws.fetch(RID_KIND).find(cont);
+    var rid_nid   := ws.fetch(RID_NID).find(cont);
+    var free_pages, i := 0;
+    var last_pid := count(rid_size);
+    last_pid := 1 + (last_pid = 0).ifthenelse(0, (last_pid - 1) >> REMAP_PAGE_BITS);
+
+    if (doc_free.exist(doc_oid)) {
+        free_pages := doc_free.find(doc_oid);
+    } else {
+        # antijoin: need all ids from the dense range [0..npages> that are *not* in used_pages
+        var used_pages := ws.fetch(MAP_PID).find(cont).reverse().project(nil).reverse().[int]().reverse().access(BAT_WRITE).order();
+        free_pages := bat(void,oid,last_pid);
+        used_pages@batloop() {
+            while(i < $h) { free_pages.append(oid(i)); i :+= 1; }
+            i :+= 1;
+        }
+        while(i < last_pid) { free_pages.append(oid(i)); i :+= 1; }
+        doc_free.insert(doc_oid, free_pages);
+    }
+    i := count(free_pages);
+    if (i > 0) {
+        last_pid := free_pages.fetch(i - 1);
+        free_pages.reverse().delete(last_pid);
+    } else {
+        # make sure the new page exists by adding it to the master rid_* table
+        var empty_page_chr := empty_page.project(chr(nil));
+        var empty_page_oid := empty_page.project(oid(nil));
+        rid_size.append(empty_page, true);
+        rid_level.append(empty_page_chr, true);
+        rid_kind.append(empty_page_chr, true);
+        rid_prop.append(empty_page_oid, true);
+        rid_nid.append(empty_page_oid, true);
+    }
+    return oid(last_pid);
+}
+
+PROC ws_newpage(BAT[void,bat] ws, oid cont) : oid {
+    var doc_oid := ws.fetch(DOC_OID).find(cont);
+    var page_lock := doc_lock.find(doc_oid);
+    var page_id;
+
+    lock_set(page_lock);
+    var err := CATCH(page_id := ws_newpage_locked(ws, doc_oid, cont));
+    lock_unset(page_lock);
+
+    if (not(isnil(err))) ERROR("ws_newpage: " + err);
+    return page_id;
+} 
 
 PROC shred_doc_locked(BAT[str,bat] docBAT, str location, str name, timestamp ts, int ws, int height) : void 
 {
@@ -409,8 +537,7 @@ PROC shred_doc_locked(BAT[str,bat] docBAT, str location, str name, timestamp ts,
 PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
 {
     # insert all bats from shredBAT in docBAT
-    var ins := ws_tpe.ord_uselect(bat).mirror().ord_select(oid(nil),oid(-(DOC_LOADED,1))).mirror();
-    [insert](const docBAT, ins.leftfetchjoin(ws_nme), ins.leftfetchjoin(ws_oid).leftjoin(shredBAT));
+    [insert](const docBAT, ws_shr, ws_shr.mirror().leftfetchjoin(ws_oid).leftjoin(shredBAT));
 
     # these are simple concatenations (to accelerate combined lookup)
     docBAT.insert("qn_prefix_uri", docBAT.find("qn_prefix").[+](str('\1')).[+](docBAT.find("qn_uri")));
@@ -426,14 +553,14 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
         var knd_pre := docBAT.find("rid_kind").ord_uselect(knd).hmark(PRE_BASE).chk_order();
         var knd_nid := knd_pre.leftfetchjoin(pre_nid).chk_order();
         if ((htype(knd_nid) != 0) or (head(knd_nid) != "void")) {
-            ERROR("pathfinder.mx: shred_doc_impl(): htype(knd_nid) = %d, head(knd_nid) = %s !\n",
+            ERROR("pathfinder.mx: index_doc(): htype(knd_nid) = %d, head(knd_nid) = %s !\n",
                   htype(knd_nid), head(knd_nid));
         }
         docBAT.insert("knd_nid_" + knd_no, knd_nid);
         if ( (knd = ELEMENT) or (knd = PI) ) {
             var knd_prop := knd_pre.leftfetchjoin(docBAT.find("rid_prop")).chk_order();
             if ((htype(knd_prop) != 0) or (head(knd_prop) != "void")) {
-                ERROR("pathfinder.mx: shred_doc_impl(): htype(knd_prop) = %d, head(knd_prop) = %s !\n",
+                ERROR("pathfinder.mx: index_doc(): htype(knd_prop) = %d, head(knd_prop) = %s !\n",
                       htype(knd_prop), head(knd_prop));
             }
             docBAT.insert("knd_prop_" + knd_no, knd_prop);
@@ -444,80 +571,6 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
     return shredBAT.fetch(PRE_LEVEL).max().int() + 1;
 }
 
-@-
-disabled code: hole creation
-
-{ # TODO/FIXME: Slack-space creation should be done in the shredder.
-
-    docBAT.replace("attr_own", docBAT.find("attr_own").leftfetchjoin(pre_nid));
-
-    var pre_size := docBAT.find("pre_size");
-    var seq_0 := seqbase(pre_size);
-    var len_0 := count(pre_size);
-    var pages := int(ceil(dbl(len_0) / dbl(PAGEFILL)));
-    var len_1 := pages * PAGESIZE;
-    pre_size  := nil;
-
-    var pre := new(str,bat,5);
-    pre.insert("pre_size" , docBAT.find("pre_size" ));
-    pre.insert("pre_level", docBAT.find("pre_level"));
-    pre.insert("pre_prop" , docBAT.find("pre_prop" ));
-    pre.insert("pre_kind" , docBAT.find("pre_kind" ));
-    pre.insert("pre_nid"  , docBAT.find("pre_nid"  ));
-    pre.access(BAT_READ);
-    
-    pre@batloop() {
-        var nme := $h;
-        var org := $t;
-        var stretch;
-        if (PAGEFREE > 0) {
-            var tpe := ttype(org);
-            if (tpe = void) tpe := oid;
-            var empty;
-            if (nme = "pre_size" ) {
-                empty := slice(org, 0, PAGEFREE - 1).number();
-                empty := (count(empty)-1).[-](empty).[xor](not(0)).[xor](INT_MAX);
-            } else {
-                empty := slice(org, 0, PAGEFREE - 1).project(cast(nil,tpe));
-            }
-            stretch := new(void, tpe, len_1).seqbase(seq_0);
-            var fst := 0;
-            var seq := oid(nil);
-            while (fst < len_0) {
-                var lst := fst + PAGEFILL - 1;
-                seq := oid(int(seq_0) + count(stretch));
-                var full := slice(org, fst, lst);
-                if (nme = "pre_size") {
-                    var p0 := [int](slice(pre_nid, fst, lst));
-                    var p1 := [+](p0, full);
-                    var x0 := [/](p0, PAGEFILL); p0 := nil;
-                    var x1 := [/](p1, PAGEFILL); p1 := nil;
-                    var x  := [-](x1, x0); x0 := nil; x1 := nil;
-                    var y  := [*](PAGEFREE, x); x := nil;
-                    var z  := [+](full, y); y := nil;
-                    full := [ifthenelse]([<=](full, 0), full, z); z:= nil;
-                }
-                stretch.insert(full.seqbase(seq));
-                fst :+= PAGEFILL;
-                if (fst < len_0) {
-                   seq := oid(int(seq_0) + count(stretch));
-                   stretch.insert(empty.seqbase(seq));
-                }
-            }
-            stretch.access(BAT_READ);
-        } else {
-            stretch := org;
-        }
-        docBAT.replace(nme, stretch);
-    }
-    pre_nid := nil;
-    pre := nil;
-
-    docBAT.replace("nid_rid", docBAT.find("rid_nid").select(oid(nil),oid(nil)).tsort().hmark(seq_0).copy());
-
-} # TODO/FIXME: Slack-space creation should be done in the shredder.
-
-@mil
 var burkowski := false;
 if (monet_environment.exist("burkowski"))
     burkowski := =(monet_environment.find("burkowski"),"enabled"); 
@@ -559,7 +612,7 @@ PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, bit doCommit, s
 
         # add doc to the database locked
         lock_set(pf_lock);
-        err := CATCH(shred_doc_locked(docBAT, location, name, ts, ws, height));
+        err := CATCH(shred_doc_locked(reverse(ws_dsk).mirror().leftjoin(docBAT), location, name, ts, ws, height));
         lock_unset(pf_lock);
 
         if (not(isnil(err))) ERROR(err);
@@ -584,9 +637,9 @@ PROC shred_doc(str location, str name) : void
     shred_doc_base(location, name, true, "0");
 }
 
-PROC shred_doc(str location, str name, bit writable) : void
+PROC shred_doc(str location, str name, int perc) : void
 {
-    shred_doc_base(location, name, true, writable.ifthen(str(nil),str()));
+    shred_doc_base(location, name, true, str(perc));
 }
 ADDHELP("shred_doc", "flokstra", "Dec 2004",
 "PARAMETERS:\n\
@@ -623,7 +676,7 @@ PROC delete_doc_locked(oid doc_oid) : bit
     }
 
     # docBAT becomes [name,bat]
-    docBAT := [bat]([+](ws_tpe.uselect(bat).mirror().join(ws_nme), str(int(doc_oid))).reverse().mirror());
+    docBAT := [bat]([+](ws_dsk, str(int(doc_oid))).reverse().mirror());
 
     # rename the bats so even in case of failure they don't bother us directly anymore
     [rename](docBAT, [+]([+]("rm_", mirror(docBAT)), +("_" , str(lng(current_timestamp()))))).access(BAT_WRITE);
@@ -704,6 +757,9 @@ PROC pin_doc(oid doc_oid, int ws) : void
 {
     # pin the document on this working set (must hold lock!)
     doc_query.insert(doc_oid, int(ws));
+    if (not(doc_lock.exist(doc_oid))) {
+          doc_lock.insert(doc_oid, lock_create());
+    }
 }
 
 
@@ -740,22 +796,18 @@ PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, str docid, int 
         cont := oid(ws.fetch(DOC_LOADED).count());
 
         # use the ws_* bats to add all bats to the working set in a multiplex
-        var src := ws_tpe.ord_uselect(bat).mirror().leftfetchjoin(ws_nme);
-        var dst := src.mirror().leftfetchjoin(ws);
+        var pre, rid, dst := ws_col.mirror().leftfetchjoin(ws);
         if (docid = "") { 
-            # the temporary document has just been shredded into docBAT
-            src := src.leftjoin(docBAT);
+            rid := ws_col.leftjoin(docBAT);  # doc has just been shredded into docBAT
+            pre := ws_rid.leftjoin(rid);     # pre_*'s are just copies of rid_*
+            ws.fetch(DOC_OID).append(oid(nil));
         } else {
-            # if docid holds the str(id) of the persistent doc
-            src := [bat]([+](src, docid));
-
-            # get stable, remapped, copies of the persistent bats here
-            var map_pid := src.find(oid(MAP_PID));
-            var rid_bats := reverse(reverse(src).select(oid(PRE_SIZE),oid(PRE_NID)));
-            rid_bats := [remap](rid_bats,const map_pid);
-            src.access(BAT_WRITE).replace(rid_bats);
+            # docid holds the str(id) of the persistent doc; pre_*'s are remapped rid_*'s
+            rid := [bat]([+](ws_dsk, docid));
+            pre := [remap](ws_rid.leftjoin(rid), const rid.find(oid(MAP_PID)), false);
+            ws.fetch(DOC_OID).append(oid(docid));
         }
-        [append](dst, src);
+        [append](dst, pre.access(BAT_WRITE).insert(rid));
 
         # create views
         ws.fetch(PRE_CONT).append(constant2bat(cont));
@@ -1472,7 +1524,7 @@ xquery_resolve(xquery_client *ctx, char *ns, char *method, int argc, int *mincnt
     if (BUNins(ctx->@1, @2, @3) == NULL) return "xquery_method: allocation error while inserting in @1";
     if (debug) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.append(" @5 @6 ");\n", @4 @3);
 @= bunappend
-    if (BUNappend(ctx->@1, @2) == NULL) return "xquery_method: allocation error while inserting in @1";
+    if (BUNappend(ctx->@1, @2, FALSE) == NULL) return "xquery_method: allocation error while inserting in @1";
     if (debug) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.append(" @4 @5 ");\n", @3 @2);
 @c
 /*
@@ -2053,7 +2105,7 @@ xquery_client_end(xquery_client *ctx, char *err)
     BATclear(ctx->dbl_values);
     BATclear(ctx->int_values);
     BATclear(ctx->str_values);
-    BUNappend(ctx->str_values, (ptr)str_nil);
+    BUNappend(ctx->str_values, (ptr)str_nil, FALSE);
     *ctx->shredBAT = int_nil; 
 
     MT_set_lock(pf_cache_lock, "xquery_client_end");

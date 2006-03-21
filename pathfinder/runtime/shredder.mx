@@ -214,7 +214,6 @@ typedef struct shredBATdef {
 
 /* values of the static properties of a result BAT */
 static shredBATdef shredbatdef[SHRED_BATS] = {
-    { MAP_PID,  "MAP_PID",  TYPE_void, TYPE_oid,  1.0/REMAP_PAGE_SIZE, 0},
     { PRE_SIZE, "PRE_SIZE", TYPE_void, TYPE_int,  1.0, 0},
     { PRE_LEVEL,"PRE_LEVEL",TYPE_void, TYPE_chr,  1.0, 0},
     { PRE_PROP, "PRE_PROP", TYPE_void, TYPE_oid,  1.0, 0},
@@ -222,6 +221,7 @@ static shredBATdef shredbatdef[SHRED_BATS] = {
     { PRE_CONT, "PRE_CONT", TYPE_void, TYPE_oid,  1.0, 0},
     { PRE_NID, "PRE_NID",   TYPE_void, TYPE_void, 1.0, 0},
     { NID_RID, "NID_RID",   TYPE_void, TYPE_void, 1.0, 0},
+    { MAP_PID,  "MAP_PID",  TYPE_void, TYPE_oid,  1.0/REMAP_PAGE_SIZE, 0},
     { QN_URI,   "QN_URI",   TYPE_void, TYPE_str,  0.0, 0},
     { QN_PREFIX,"QN_PREFIX",TYPE_void, TYPE_str,  0.0, 0},
     { QN_LOC,   "QN_LOC",   TYPE_void, TYPE_str,  0.0, 0},
@@ -359,7 +359,7 @@ static shredCtxStruct *createShredCtx(char* location, off_t  fileSize, off_t pag
         sb->bat  = BATnew(ht,tt,sb->size);
         /*
         if (i == WS_FRAG){
-            sb->bat = BATseqbase(BUNappend(sb->bat, (ptr)&cont), 0);
+            sb->bat = BATseqbase(BUNappend(sb->bat, (ptr)&cont, FALSE), 0);
         }
         */
 
@@ -526,6 +526,7 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
     }
     shredCtx->dstBAT[MAP_PID].bat->tsorted = GDK_SORTED;
     shredCtx->dstBAT[MAP_PID].bat->tdense = 1;
+    BATkey(BATmirror(shredCtx->dstBAT[MAP_PID].bat), 1);
 
     if (i > p)
         res = BATnew(TYPE_oid,TYPE_bat,SHRED_BATS); /* create result BAT */
@@ -835,7 +836,7 @@ static INLINE nat append_str2bat(shredCtxStruct* shredCtx, int idx, str v) {
 #ifdef VERBOSE
     stream_printf(GDKout,"APPEND-STR[%s](%s)\n",sb->def->name,v);
 #endif
-    if ( !BUNappend(sb->bat, (ptr)v) ) {
+    if ( !BUNappend(sb->bat, (ptr)v, FALSE) ) {
         GDKerror("shredder.mx:append_str2bat: APPEND-STR[%s](%s), BUNappend fails\n",sb->def->name,v);
         return NATNIL;
     }

@@ -626,10 +626,10 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
                     }
                     snprintf(argval[argval_nr], 32, OIDFMT, vnode_pre);
 
-                    ws_frag = BUNappend(ws_frag, (ptr)&vnode_pre);
+                    ws_frag = BUNappend(ws_frag, (ptr)&vnode_pre, FALSE);
                     next_frag = vnode_pre + pre_size[vnode_pre] + 1;
                     if (next_frag < total_size){
-                        ws_frag = BUNappend(ws_frag, (ptr)&next_frag);
+                        ws_frag = BUNappend(ws_frag, (ptr)&next_frag, FALSE);
                     }
                     for (l = start_invalidate; l < vnode_pre; l++) {
                         pre_level[l] = pre_level[0];

@@ -786,8 +786,6 @@ proc ll_htordered_unique_thetajoin( int mode,
 # interface provides...
 # 
 
-var doc_pre_dummy := bat(void,oid).seqbase(0@0).append(1@0).access(BAT_READ);
-
 @(
 @:step(descendant,descendant,scj_desc,,@:sizes_code@,,)@
 @:step(descendant_or_self,descendant-or-self,scj_descorself,,@:sizes_code@,,)@
@@ -1015,7 +1013,7 @@ pre_levels
     # dirty code to make possible, that old scj still works
     var doc_pre := ws.fetch(WS_FRAG).fetch(cont);
     if (doc_pre.count() = 0)
-        { doc_pre := doc_pre_dummy; }
+        { doc_pre := bat(void,oid,1).seqbase(0@0).append(1@0).access(BAT_READ); }
 
 @
 @= doc_pre
@@ -2980,7 +2978,7 @@ CMDfakeProject(BAT **res, ptr val, int tpe)
 	}
 	*res = BATnew(TYPE_void, tpe, 1);
 	if (*res) {
-		if (BUNappend(*res, val)) return GDK_SUCCEED;
+		if (BUNappend(*res, val, FALSE)) return GDK_SUCCEED;
 		BBPreclaim(*res);
 	}
 	return GDK_FAIL;
@@ -3060,7 +3058,7 @@ CMDappendConvert(BAT** res, BAT *b, ptr t, int tpe)
 		return GDK_FAIL;
 	assert(t);
 	if (CMDfakeProject(&bn, t, tpe) == GDK_SUCCEED) {
-		if (BUNappend(*res = b, &bn->batCacheid)) {
+		if (BUNappend(*res = b, &bn->batCacheid, FALSE)) {
 			BBPfix(b->batCacheid);
 			ret = GDK_SUCCEED;
 		}
