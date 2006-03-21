@@ -112,7 +112,7 @@
 #define doc_access(a,b,c,d,e) PFpa_doc_access ((a), (b), (c), (d), (e))
 
 #define element(a,b,c)    PFpa_element ((a),(b),(c))
-#define attribute(a,b,c,d,e) PFpa_attribute ((a),(b),(c),(d),(e))
+#define attribute(a,b,c,d) PFpa_attribute ((a),(b),(c),(d))
 #define textnode(a,b,c)  PFpa_textnode ((a),(b),(c))
 #define merge_adjacent(a,b) PFpa_merge_adjacent ((a),(b))
 

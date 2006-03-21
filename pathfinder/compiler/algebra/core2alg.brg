@@ -1564,8 +1564,14 @@ reduce (PFcnode_t * p, int goalnt)
              * frag:       proj_pre,size,level,kind,prop,frag (n)
              */
 
-            PFla_op_t *attr = attribute (A(L(p)).rel, A(R(p)).rel,
-                                         att_res, att_item, att_item);
+            PFla_op_t *attr = attribute (
+                                  eqjoin (
+                                      A(L(p)).rel,
+                                      project (A(R(p)).rel,
+                                               proj (att_iter1, att_iter),
+                                               proj (att_item1, att_item)),
+                                      att_iter, att_iter1),
+                                  att_res, att_item, att_item1);
 
             A(p) = (struct  PFla_pair_t) {
                      .rel = project(roots (attr),

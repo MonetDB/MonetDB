@@ -730,19 +730,14 @@ PFpa_op_t * PFpa_element (const PFpa_op_t *,
 
 /**
  * Attribute constructor
- *
- * Requires iter | item schemas as its input.
  */
 PFpa_op_t * PFpa_attribute (const PFpa_op_t *,
-                           const PFpa_op_t *,
-                           PFalg_att_t,
-                           PFalg_att_t,
-                           PFalg_att_t);
+                            PFalg_att_t,
+                            PFalg_att_t,
+                            PFalg_att_t);
 
 /**
  * Text constructor
- *
- * Requires an iter | item schema as its input.
  */
 PFpa_op_t * PFpa_textnode (const PFpa_op_t *,
                            PFalg_att_t, PFalg_att_t);

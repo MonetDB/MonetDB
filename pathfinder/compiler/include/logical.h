@@ -565,8 +565,7 @@ PFla_op_t * PFla_element (const PFla_op_t *doc,
                           const PFla_op_t *cont);
 
 /** Constructor for attribute operators. */
-PFla_op_t * PFla_attribute (const PFla_op_t *qn_rel,
-                            const PFla_op_t *val_rel,
+PFla_op_t * PFla_attribute (const PFla_op_t *rel,
                             PFalg_att_t res,
                             PFalg_att_t qn,
                             PFalg_att_t val);

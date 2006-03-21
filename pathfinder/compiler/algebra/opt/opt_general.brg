@@ -180,7 +180,7 @@ Rel:    doc_access (Frag, Rel)                    =  63 (10);
 Rel:    roots_ (doc_tbl (Rel))                    =  70 (10);
 Rel:    roots_ (element (Frag,                       
                          element_tag (Rel, Rel))) =  71 (10);
-Rel:    roots_ (attribute (Rel, Rel))             =  72 (10);
+Rel:    roots_ (attribute (Rel))                  =  72 (10);
 Rel:    roots_ (textnode (Rel))                   =  73 (10);
 Rel:    roots_ (docnode (Frag, Rel))              =  74 (10);
 Rel:    roots_ (comment (Rel))                    =  75 (10);
@@ -199,7 +199,7 @@ Frag:    fragment (doc_tbl (Rel))                 = 100 (10);
 Frag:    fragment (element (Frag, 
                             element_tag (Rel,
                                          Rel)))   = 101 (10);
-Frag:    fragment (attribute (Rel, Rel))          = 102 (10);
+Frag:    fragment (attribute (Rel))               = 102 (10);
 Frag:    fragment (textnode (Rel))                = 103 (10);
 Frag:    fragment (docnode (Frag, Rel))           = 104 (10);
 Frag:    fragment (comment (Rel))                 = 105 (10);
@@ -252,8 +252,7 @@ EmptyRel:    doc_access (Frag, EmptyRel)          = 171  (0);
 EmptyRel:    roots_ (element (Frag, 
                               element_tag (EmptyRel,
                                           Rel)))  = 180  (0);
-EmptyRel:    roots_ (attribute (EmptyRel, Rel))   = 182  (0);
-EmptyRel:    roots_ (attribute (Rel, EmptyRel))   = 183  (0);
+EmptyRel:    roots_ (attribute (EmptyRel))        = 182  (0);
 EmptyRel:    roots_ (textnode (EmptyRel))         = 184  (0);
 EmptyRel:    roots_ (comment (EmptyRel))          = 185  (0);
 EmptyRel:    roots_ (processi (EmptyRel))         = 186  (0);
@@ -693,10 +692,8 @@ reduce (PFla_op_t *p, int goalnt)
         case 171:
         /* EmptyRel:    roots_ (element (Frag, element_tag (EmptyRel, Rel))) */
         case 180:
-        /* EmptyRel:    roots_ (attribute (EmptyRel, Rel)) */
+        /* EmptyRel:    roots_ (attribute (EmptyRel)) */
         case 182:
-        /* EmptyRel:    roots_ (attribute (Rel, EmptyRel)) */
-        case 183:
         /* EmptyRel:    roots_ (textnode (EmptyRel)) */
         case 184:
         /* EmptyRel:    roots_ (comment (EmptyRel)) */

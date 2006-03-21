@@ -222,7 +222,7 @@ FragRel:  doc_tbl (Rel)                                            = 100 (10);
 Rel:      doc_access (FragList, Rel)                               = 101 (10);
 FragRel:  element (FragList, element_tag (Rel, empty_tbl))         = 102 (10);
 FragRel:  element (FragList, element_tag (Rel, Rel))               = 103 (10);
-FragRel:  attribute (Rel, Rel)                                     = 104 (10);
+FragRel:  attribute (Rel)                                          = 104 (10);
 FragRel:  textnode (Rel)                                           = 105 (10);
 FragRel:  docnode (FragList, Rel)                                  = 106 (10);
 FragRel:  comment (Rel)                                            = 107 (10);
@@ -2962,7 +2962,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
         } break;
 
-        /* FragRel: attribute (Rel, Rel) */
+        /* FragRel: attribute (Rel) */
         case 104:
         {
             /* temporary variable */
@@ -2977,7 +2977,7 @@ reduce (PFpa_op_t * p, int goalnt)
             execute (
                 assgn (var (v->name),
                        attribute (VAR (L(p)->env, p->sem.attr.qn, aat_qname),
-                                  VAR (R(p)->env, p->sem.attr.val, aat_str),
+                                  VAR (L(p)->env, p->sem.attr.val, aat_str),
                                   var ("ws"))),
                 assgn (var ("ws"), fetch (var (v->name), lit_int (0))),
                 assgn (var (attr->name), fetch (var (v->name), lit_int (1))),

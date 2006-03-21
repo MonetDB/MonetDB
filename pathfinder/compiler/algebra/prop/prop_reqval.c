@@ -299,10 +299,6 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             rv.name = diff (rv.name, n->sem.attr.res);
             rv.val = diff (rv.val, n->sem.attr.res);
             prop_infer_reqvals (L(n), rv);
-
-            rv.name = 0;
-            rv.val = 0;
-            prop_infer_reqvals (R(n), rv);
             break;
 
         case la_textnode:

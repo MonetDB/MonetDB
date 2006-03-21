@@ -139,7 +139,7 @@
 #define element(a,b,c)    PFla_element ((a),(b),(c))
 
 /* attribute-constructing operator */
-#define attribute(a,b,c,d,e) PFla_attribute ((a),(b),(c),(d),(e))
+#define attribute(a,b,c,d) PFla_attribute ((a),(b),(c),(d))
 
 /* text node-constructing operator */
 #define textnode(a,b,c)   PFla_textnode ((a),(b),(c))

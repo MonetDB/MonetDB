@@ -1265,40 +1265,17 @@ plan_element (const PFla_op_t *n)
 static PFplanlist_t *
 plan_attribute (const PFla_op_t *n)
 {
-    PFplanlist_t  *ret               = new_planlist ();
-    PFplanlist_t  *ordered_qn        = new_planlist ();
-    PFplanlist_t  *ordered_str       = new_planlist ();
-    plan_t        *cheapest_qn_plan  = NULL;
-    plan_t        *cheapest_str_plan = NULL;
+    PFplanlist_t  *ret           = new_planlist ();
+    plan_t        *cheapest_plan = NULL;
 
-    /* find the cheapest plan for the qnames */
+    /* find the cheapest plan */
     for (unsigned int i = 0; i < PFarray_last (L(n)->plans); i++)
-        add_plans (ordered_qn,
-                   ensure_ordering (
-                       *(plan_t **) PFarray_at (L(n)->plans, i),
-                       PFord_refine (PFordering (), att_iter)));
+        if (!cheapest_plan
+            || costless (*(plan_t **) PFarray_at (L(n)->plans, i),
+                         cheapest_plan))
+            cheapest_plan = *(plan_t **) PFarray_at (L(n)->plans, i);
 
-    for (unsigned int i = 0; i < PFarray_last (ordered_qn); i++)
-        if (!cheapest_qn_plan
-            || costless (*(plan_t **) PFarray_at (ordered_qn, i),
-                         cheapest_qn_plan))
-            cheapest_qn_plan = *(plan_t **) PFarray_at (ordered_qn, i);
-
-    /* find the cheapest plan for the strings */
-    for (unsigned int i = 0; i < PFarray_last (R(n)->plans); i++)
-        add_plans (ordered_str,
-                   ensure_ordering (
-                       *(plan_t **) PFarray_at (R(n)->plans, i),
-                       PFord_refine (PFordering (), att_iter)));
-
-    for (unsigned int i = 0; i < PFarray_last (ordered_str); i++)
-        if (!cheapest_str_plan
-            || costless (*(plan_t **) PFarray_at (ordered_str, i),
-                         cheapest_str_plan))
-            cheapest_str_plan = *(plan_t **) PFarray_at (ordered_str, i);
-
-    add_plan (ret, attribute (cheapest_qn_plan,
-                              cheapest_str_plan,
+    add_plan (ret, attribute (cheapest_plan,
                               n->sem.attr.qn,
                               n->sem.attr.val,
                               n->sem.attr.res));

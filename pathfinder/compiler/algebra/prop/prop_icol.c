@@ -472,19 +472,17 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
         case la_attribute:
             /* whenever the attribute itself is not needed column item
-               is missing and therefore the name expression can be
-               used as replacement (introduce projection res:qn instead) */
+               is missing and therefore the input expression can be
+               used as replacement. */
 
             /* do only infer input columns if operator is required */
             if ((n->prop->icols & n->sem.attr.res))
             {
                 n->prop->l_icols = diff (n->prop->icols, n->sem.attr.res);
                 n->prop->l_icols = union_ (n->prop->l_icols, n->sem.attr.qn);
-
-                n->prop->r_icols = union_ (att_iter, n->sem.attr.val);
+                n->prop->l_icols = union_ (n->prop->l_icols, n->sem.attr.val);
             } else {
                 n->prop->l_icols = diff (n->prop->icols, n->sem.attr.res);
-                n->prop->r_icols = 0;
             }
             break;
 

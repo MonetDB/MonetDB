@@ -337,6 +337,7 @@ infer_const (PFla_op_t *n)
         case la_type_assert:
         case la_cast:
         case la_doc_access:
+        case la_attribute:
         case la_textnode:
         case la_roots:
         case la_concat:
@@ -445,7 +446,6 @@ infer_const (PFla_op_t *n)
             break;
 
         case la_difference:
-        case la_attribute:
         case la_cond_err:
             /* propagate information from the first input operator */
                 for (unsigned int j = 0;
@@ -675,6 +675,7 @@ infer_const (PFla_op_t *n)
         case la_type_assert:
         case la_doc_access:
         case la_element_tag:
+        case la_attribute:
         case la_textnode:
         case la_docnode:
         case la_comment:

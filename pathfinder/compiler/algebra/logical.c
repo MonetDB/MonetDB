@@ -1814,24 +1814,24 @@ PFla_op_t * PFla_element (const PFla_op_t *doc,
 /**
  * Constructor for attribute operators.
  *
- * @a qn_rel stores the name of the attribute, and @a val is the value of
+ * @a rel stores the name of the attribute, and @a val is the value of
  * the attribute. @a res is the column that stores the resulting attribute
  * references. @a qn and @a val reference the respective input columns.
  */
-PFla_op_t * PFla_attribute (const PFla_op_t *qn_rel, const PFla_op_t *val_rel,
+PFla_op_t * PFla_attribute (const PFla_op_t *rel,
                             PFalg_att_t res, PFalg_att_t qn, PFalg_att_t val)
 {
-    PFla_op_t *ret = la_op_wire2 (la_attribute, qn_rel, val_rel);
+    PFla_op_t *ret = la_op_wire1 (la_attribute, rel);
 
     /* allocate memory for the result schema; it's the qname schema
        plus an additional column with the attribute references */
-    ret->schema.count = qn_rel->schema.count + 1;
+    ret->schema.count = rel->schema.count + 1;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    /* copy schema from argument 'qn_rel' ... */
-    for (unsigned int i = 0; i < qn_rel->schema.count; i++)
-        ret->schema.items[i] = qn_rel->schema.items[i];
+    /* copy schema from argument 'rel' ... */
+    for (unsigned int i = 0; i < rel->schema.count; i++)
+        ret->schema.items[i] = rel->schema.items[i];
 
     /* ... and add the result column */
     ret->schema.items[ret->schema.count - 1]

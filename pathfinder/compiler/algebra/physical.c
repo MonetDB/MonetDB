@@ -2768,7 +2768,7 @@ PFpa_element (const PFpa_op_t *fragment,
  * Returns a (frag, result) pair.
  */
 PFpa_op_t *
-PFpa_attribute (const PFpa_op_t *qn_rel, const PFpa_op_t *val_rel,
+PFpa_attribute (const PFpa_op_t *rel,
                 PFalg_att_t qn, PFalg_att_t val, PFalg_att_t res)
 {
     PFpa_op_t         *ret;
@@ -2776,40 +2776,28 @@ PFpa_attribute (const PFpa_op_t *qn_rel, const PFpa_op_t *val_rel,
 #ifndef NDEBUG
     unsigned short found = 0;
 
-    for (unsigned int i = 0; i < qn_rel->schema.count; i++)
-        if (qn_rel->schema.items[i].name == att_iter
-            || qn_rel->schema.items[i].name == qn)
+    for (unsigned int i = 0; i < rel->schema.count; i++)
+        if (rel->schema.items[i].name == val
+            || rel->schema.items[i].name == qn)
             found++;
 
     if (found != 2)
         PFoops (OOPS_FATAL,
-                "Attribute constructor requires iter|%s schema for qnames.",
-                PFatt_str (qn));
-
-    found = 0;
-
-    for (unsigned int i = 0; i < val_rel->schema.count; i++)
-        if (val_rel->schema.items[i].name == att_iter
-            || val_rel->schema.items[i].name == val)
-            found++;
-
-    if (found != 2)
-        PFoops (OOPS_FATAL,
-                "Attribute constructor requires iter|%s schema for "
-                "attribute content.", PFatt_str (val));
+                "Attribute constructor requires columns %s and %s.",
+                PFatt_str (qn), PFatt_str (val));
 #endif
 
-    ret = wire2 (pa_attribute, qn_rel, val_rel);
+    ret = wire1 (pa_attribute, rel);
 
     /* allocate memory for the result schema; it's the qname schema
        plus an additional column with the attribute references */
-    ret->schema.count = qn_rel->schema.count + 1;
+    ret->schema.count = rel->schema.count + 1;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    /* copy schema from argument 'qn_rel' ... */
-    for (unsigned int i = 0; i < qn_rel->schema.count; i++)
-        ret->schema.items[i] = qn_rel->schema.items[i];
+    /* copy schema from argument 'rel' ... */
+    for (unsigned int i = 0; i < rel->schema.count; i++)
+        ret->schema.items[i] = rel->schema.items[i];
 
     /* ... and add the result column */
     ret->schema.items[ret->schema.count - 1]
@@ -2820,20 +2808,12 @@ PFpa_attribute (const PFpa_op_t *qn_rel, const PFpa_op_t *val_rel,
     ret->sem.attr.res = res;
 
     /* ---- attribute: orderings ---- */
-
-    /* the input is sorted by `iter', therefore the output will be as well. */
-    PFord_set_add (ret->orderings,
-                   PFord_refine (PFordering (), att_iter));
-    /* additionally as we return only one value per iteration the output
-       is refined by the item order */
-    PFord_set_add (ret->orderings,
-                   PFord_refine (PFord_refine (PFordering (),
-                                               att_iter),
-                                 res));
+    for (unsigned int i = 0; i < PFord_set_count (rel->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (rel->orderings, i));
 
     /* ---- attribute: costs ---- */
     /* dummy costs as we have only this version */
-    ret->cost = 1 + qn_rel->cost + val_rel->cost;
+    ret->cost = 1 + rel->cost;
 
     return ret;
 }
