@@ -49,6 +49,7 @@
 #define PATH_SEP ';'
 #define PATH_SEP_STR ";"
 #define SO_EXT ".dll"
+#define SO_PREFIX "lib"
 
 #define isatty _isatty
 
