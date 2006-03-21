@@ -212,7 +212,7 @@ BATins(BAT *b, BAT *n)
 }
 
 BAT*
-BATappend(BAT *b, BAT *n)
+BATappend(BAT *b, BAT *n, bit force)
 {
 	ssize_t sz = BATcount(n);
 	ssize_t needed = 0;
@@ -221,7 +221,7 @@ BATappend(BAT *b, BAT *n)
 	if (b == NULL || n == NULL || sz == 0) {
 		return b;
 	}
-	ALIGNins(b, "BATappend");
+	ALIGNapp(b, "BATappend", force);
 	BATcompatible(b, n);
 
 	b->batDirty = 1;

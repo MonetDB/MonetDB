@@ -904,7 +904,7 @@ The BUNappend function can be used to add a single value to void and oid
 headed bats. The new head value will be a unique number, (max(bat)+1). 
 @c
 BAT *
-BUNappend(BAT *b, ptr t)
+BUNappend(BAT *b, ptr t, bit force)
 {
 	size_t i;
 	BUN p;
@@ -916,11 +916,11 @@ BUNappend(BAT *b, ptr t)
 	bm = BBP_cache(-b->batCacheid);
 
 	if (b->htype != TYPE_void && b->htype != TYPE_oid) {
-		GDKerror("BATappend: can only append to void and oid bats\n");
+		GDKerror("BUNappend: can only append to void and oid bats\n");
 		return NULL;
 	}
 
-	ALIGNins(b, "BUNins");
+	ALIGNapp(b, "BUNins", force);
 	b->batDirty = 1;
 	p = BUNlast(b);	/* insert at end */
 	i = BUNindex(b, p);

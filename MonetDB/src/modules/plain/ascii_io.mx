@@ -646,7 +646,7 @@ insert_val(ascii_io *fmt, char *s, char *e, char quote)
 		return 1;
 	}
 
-	BUNappend(fmt->c, adt);
+	BUNappend(fmt->c, adt, FALSE);
 	if (fmt->data != adt)
 		GDKfree(adt);
 	return 0;

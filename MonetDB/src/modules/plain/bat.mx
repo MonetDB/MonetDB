@@ -136,19 +136,25 @@ The append set of commands lets you append values (or bats) with unique
 head values which start at the maximum head value before inserting plus one.
 The appended bats tail can not be set key-ed. 
 @m
-	.COMMAND append( BAT[oid,any::1] i, BAT[oid,any::1] u ) : BAT[oid,any::1] = BATappend_wrap; "append the content of u to i (renumbers u-oids' to unique numbers, starting at i.max()+1)"
+.COMMAND append( BAT[oid,any::1] i, BAT[oid,any::1] u ) : BAT[oid,any::1] = BATappend_wrap; "append the content of u to i (renumbers u-oids' to unique numbers, starting at i.max()+1)"
+.COMMAND append( BAT[oid,any::1] i, BAT[oid,any::1] u, bit force ) : BAT[oid,any::1] = BATappend_force; "append the content of u to i (renumbers u-oids' to unique numbers, starting at i.max()+1)"
 
-	.COMMAND append( BAT[void,any::1] i, BAT[void,any::1] u ) : BAT[void,any::1] = BATappend_wrap; "append the content of u to i"
 
-	.COMMAND append( BAT[void,any::1] i, BAT[oid,any::1] u ) : BAT[void,any::1] = BATappend_wrap; "append the content of u to i"
+.COMMAND append( BAT[void,any::1] i, BAT[void,any::1] u ) : BAT[void,any::1] = BATappend_wrap; "append the content of u to i"
+.COMMAND append( BAT[void,any::1] i, BAT[void,any::1] u, bit force ) : BAT[void,any::1] = BATappend_force; "append the content of u to i"
 
-	.COMMAND append( BAT[oid,any::1] i, any::1 u ) : BAT[oid,any::1] = BUNappend_wrap; "append the value u to i"
+.COMMAND append( BAT[void,any::1] i, BAT[oid,any::1] u ) : BAT[void,any::1] = BATappend_wrap; "append the content of u to i"
+.COMMAND append( BAT[void,any::1] i, BAT[oid,any::1] u, bit force ) : BAT[void,any::1] = BATappend_force; "append the content of u to i"
 
-	.COMMAND append( BAT[void,any::1] i, any::1 u ) : BAT[void,any::1] = BUNappend_wrap; "append the value u to i"
+.COMMAND append( BAT[oid,any::1] i, any::1 u ) : BAT[oid,any::1] = BUNappend_wrap; "append the value u to i"
+.COMMAND append( BAT[oid,any::1] i, any::1 u, bit force ) : BAT[oid,any::1] = BUNappend_force; "append the value u to i"
 
-	.COMMAND inplace( BAT[void,any::1] o, oid id, any::1 val ) : BAT[void,any::1] = bat_inplace; "inplace replace values on the given locations"
+.COMMAND append( BAT[void,any::1] i, any::1 u ) : BAT[void,any::1] = BUNappend_wrap; "append the value u to i"
+.COMMAND append( BAT[void,any::1] i, any::1 u, bit force ) : BAT[void,any::1] = BUNappend_force; "append the value u to i"
 
-	.COMMAND inplace( BAT[void,any::1] o, BAT[oid,any::1] d ) : BAT[void,any::1] = bat_replace_oid_bat_wrap; "inplace replace values on the given locations"
+.COMMAND inplace( BAT[void,any::1] o, oid id, any::1 val ) : BAT[void,any::1] = bat_inplace; "inplace replace values on the given locations"
+
+.COMMAND inplace( BAT[void,any::1] o, BAT[oid,any::1] d ) : BAT[void,any::1] = bat_replace_oid_bat_wrap; "inplace replace values on the given locations"
 
 @- BAT properties
 @T
@@ -447,7 +453,7 @@ documentation.
  These buffer management modes are not persistent.
  Returns the BAT operated upon."
 
-.COMMAND remap(BAT[void,any::1] b, BAT[void,oid] map) : BAT[void,any::1] = CMDremap;
+.COMMAND remap(BAT[void,any::1] b, BAT[void,oid] map, bit force) : BAT[void,any::1] = CMDremap;
 "create a page-wise access(BAT_WRITE) copy of the first parameter input BAT[void,X]. 
 
  The second parameter map BAT[void,oid] (seqbase 0@00) indicates the order
@@ -854,9 +860,9 @@ void_replace_bat(BAT *b, BAT *u)
 }
 
 int
-BATappend_wrap(BAT **res, BAT *i, BAT *u)
+BATappend_force(BAT **res, BAT *i, BAT *u, bit *force)
 {
-	if (!BATappend(i, u))
+	if (!BATappend(i, u, *force))
 		return GDK_FAIL;
 	*res = i;
 	BBPfix(i->batCacheid);
@@ -864,15 +870,28 @@ BATappend_wrap(BAT **res, BAT *i, BAT *u)
 }
 
 int
-BUNappend_wrap(BAT **res, BAT *i, ptr t)
+BATappend_wrap(BAT **res, BAT *i, BAT *u)
 {
-	*res = BUNappend(i, @:batconvert(i,t)@
-	    );
+	bit force = FALSE;
+        return BATappend_force(res, i, u, &force);
+}
+
+int
+BUNappend_force(BAT **res, BAT *i, ptr t, bit *force)
+{
+	*res = BUNappend(i, @:batconvert(i,t)@, *force);
 	if (*res) {
 		BBPfix((*res)->batCacheid);
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
+}
+
+int
+BUNappend_wrap(BAT **res, BAT *i, ptr t)
+{
+	bit force = FALSE;
+        return BUNappend_force(res, i, t, &force);
 }
 
 int
@@ -1745,7 +1764,7 @@ Making such bats persistent or appendable/writable, will force a true copy of th
 copy-on-write mmap heap to be made.
 @c
 static int
-copy_segment(char* mmap, BAT *bn, BAT *b, int src, int dst, int cnt) {
+copy_segment(char* mmap, BAT *bn, BAT *b, int src, int dst, int cnt, int mode) {
 	int ret = 0;
 	if (cnt) {
 	        size_t xx = REMAP_PAGE_SIZE * BUNsize(b);
@@ -1758,7 +1777,8 @@ copy_segment(char* mmap, BAT *bn, BAT *b, int src, int dst, int cnt) {
 			memcpy(BUNfirst(bn) + dst_off, BUNfirst(b) + src_off, (partial < nbytes)?partial:nbytes);
 		} else if (src_off != dst_off) { /* otherwise it is already mapped so */
 			void *fixed = (bn->batBuns->base + dst_off);
-                        if (GDKmmap(mmap, MMAP_READ|MMAP_SEQUENTIAL|MMAP_COPY, src_off, nbytes, fixed) != fixed) {
+                        if (GDKmmap(mmap, mode
+, src_off, nbytes, fixed) != fixed) {
 				return 0;
 			}
 		}
@@ -1778,10 +1798,11 @@ bunins_failed:
 }
 
 int
-CMDremap(BAT **res, BAT *b, BAT *map)
+CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 {
 	size_t cnt = BATcount(map), n = BATcount(b), max = (((ssize_t) n) - 1) / REMAP_PAGE_SIZE;
 	int (*fix) (ptr) = BATatoms[b->ttype].atomFix;
+        int mode = (MMAP_READ|MMAP_SEQUENTIAL) + (*force)?MMAP_WRITE:MMAP_COPY;
 	oid* pid = (oid*) alloca(cnt*sizeof(oid));
         size_t xx, yy = 0, zz = 0;
 	char path[MAXPATHLEN];
@@ -1829,7 +1850,7 @@ CMDremap(BAT **res, BAT *b, BAT *map)
 		oid id = *(oid*) BUNtail(map, p);
 		size_t idx = id >> 3;  
 		size_t mask = 1 << (id & 7);  
-		if (id > max) {
+ 		if (id > max) {
 			GDKerror("remap: map index " SZFMT "@0 out of range [0@0," SZFMT "@0]\n", id, max);
 			GDKfree(chk);
 			return GDK_FAIL;
@@ -1837,7 +1858,7 @@ CMDremap(BAT **res, BAT *b, BAT *map)
 			GDKerror("remap: map index " SZFMT "@0 occurs twice.\n", id);
 			GDKfree(chk);
 			return GDK_FAIL;
-		}
+                }
 		pid[yy++] = id;
 		chk[idx] |= mask;
 	}
@@ -1873,11 +1894,12 @@ CMDremap(BAT **res, BAT *b, BAT *map)
                 GDKfilepath(mmap, BATDIR, bn->batBuns->filename, NULL);
 	}
 	if (failure == 0 && mmap) {
-		bn->batBuns->base = GDKmmap(mmap, MMAP_READ|MMAP_SEQUENTIAL|MMAP_COPY, 0, n, NULL);
+		bn->batBuns->base = GDKmmap(mmap, mode, 0, n, NULL);
 
 		if ((bn->batBuns->base != NULL) & (bn->batBuns->base != (BUN) -1)) {
 			bn->batBuns->size = bn->batBuns->maxsize = n; 
-			bn->batBuns->storage = STORE_MMAP | STORE_PRIV;
+			bn->batBuns->storage = STORE_MMAP;
+			if (!*force) bn->batBuns->storage |= STORE_PRIV; 
 			bn->batBuns->copied = 1;
 		} else {
 			mmap = NULL; /* fall back on heap memory */
@@ -1905,11 +1927,11 @@ retry:		if (!mmap) failure = (HEAPalloc(bn->batBuns, n, 1) < 0);
 	/* go over all pages and copy them in segments that unite consecutively mapped pages */
 	for(xx=1; xx<cnt; xx++) {
 		if (pid[xx]-1 != pid[xx-1]) {
-			if (!copy_segment(mmap, bn, b, pid[zz], zz, xx-zz)) break;
+			if (!copy_segment(mmap, bn, b, pid[zz], zz, xx-zz, mode)) break;
 			zz = xx;
 		}
 	}
-	if (xx < cnt || !copy_segment(mmap, bn, b, pid[zz], zz, cnt-zz)) {
+	if (xx < cnt || !copy_segment(mmap, bn, b, pid[zz], zz, cnt-zz, mode)) {
 		HEAPfree(bn->batBuns);
 		failure = 1; mmap = (char*) (((size_t) mmap) ^ ((size_t) path));
 		goto retry;
@@ -1921,12 +1943,10 @@ retry:		if (!mmap) failure = (HEAPalloc(bn->batBuns, n, 1) < 0);
 			fix(BUNtail(bn, p));
 		}
 	}
-	/* more safety: make mmap-ed remaps  a view to ensure the parent stays alive */
-	if (mmap) {
-		bn->batParentid = VIEWparent(b);
-		if (bn->batParentid == 0) bn->batParentid = b->batCacheid;
-		BBPshare(ABS(bn->batParentid));
-	}
+	/* more safety: make a view to ensure the parent stays alive */
+	bn->batParentid = VIEWparent(b);
+	if (bn->batParentid == 0) bn->batParentid = b->batCacheid;
+	BBPshare(ABS(bn->batParentid));
 	BBPcacheit(bn);
 	return GDK_SUCCEED;
 }

@@ -114,7 +114,7 @@ bitvector_allocate(BAT **b_dst, int *nbits, bit *initial)
 
 	v = (*initial) ? -1 : 0;
 	for (n = 0; n != nentries; n++)
-		BUNappend(*b_dst, (ptr) &v);
+		BUNappend(*b_dst, (ptr) &v, FALSE);
 	return GDK_SUCCEED;
 }
 
@@ -212,13 +212,13 @@ bitvector_encode(BAT **b_dst, BAT *b_src)
 		entry = *bnum / ((int) sizeof(lng) * 8);
 		while (lastentry + 1 < entry) {
 			lastentry++;
-			BUNappend(*b_dst, (ptr) &bf);
+			BUNappend(*b_dst, (ptr) &bf, FALSE);
 			bf = 0;
 		}
 		bf |= ((lng) 1 << (*bnum % (sizeof(lng) * 8)));
 	}
 	lastentry++;
-	BUNappend(*b_dst, (ptr) &bf);
+	BUNappend(*b_dst, (ptr) &bf, FALSE);
 
 	return GDK_SUCCEED;
 }
@@ -297,7 +297,7 @@ bitvector_and(BAT **b_dst, BAT *b_src1, BAT *b_src2)
 		v1 = (lng *) BUNtail(b_src1, p1);
 		v2 = (lng *) BUNtail(b_src2, p2);
 		*v1 &= *v2;
-		BUNappend(*b_dst, (ptr) v1);
+		BUNappend(*b_dst, (ptr) v1, FALSE);
 	}
 
 	/* No need to copy the tail */
@@ -328,7 +328,7 @@ bitvector_or(BAT **b_dst, BAT *b_src1, BAT *b_src2)
 		v1 = (lng *) BUNtail(b_src1, p1);
 		v2 = (lng *) BUNtail(b_src2, p2);
 		*v1 |= *v2;
-		BUNappend(*b_dst, (ptr) v1);
+		BUNappend(*b_dst, (ptr) v1, FALSE);
 	}
 
 	/* Copy the tail, when required */
@@ -349,7 +349,7 @@ bitvector_or(BAT **b_dst, BAT *b_src1, BAT *b_src2)
 		}
 
 		for (; p < q; p += sizeof(lng))
-			BUNappend(*b_dst, BUNtail(b_src, p));
+			BUNappend(*b_dst, BUNtail(b_src, p), FALSE);
 	}
 
 	return GDK_SUCCEED;

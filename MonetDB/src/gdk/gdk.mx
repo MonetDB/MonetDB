@@ -1144,13 +1144,13 @@ gdk_export int BBPreclaim(BAT *b);
 @item BAT*
 @tab BATins (BAT *b, ptr *c)
 @item BAT*
-@tab BATappend (BAT *b, ptr *c)
+@tab BATappend (BAT *b, ptr *c, bit force)
 @item BAT*
 @tab BATdel (BAT *b, ptr *c)
 @item BAT*
 @tab BUNins (BAT *b, ptr left, ptr right)
 @item BAT*
-@tab BUNappend (BAT *b, ptr right)
+@tab BUNappend (BAT *b, ptr right, bit force)
 @item BAT*
 @tab BUNreplace (BAT *b, ptr left, ptr right, bit force)
 @item int
@@ -1253,9 +1253,9 @@ in advance that the head-atom resp. tail-atom of a BAT is variable sized.
 
 gdk_export BAT *BUNfastins(BAT *b, ptr left, ptr right);
 gdk_export BAT *BUNins(BAT *b, ptr left, ptr right);
-gdk_export BAT *BUNappend(BAT *b, ptr right);
+gdk_export BAT *BUNappend(BAT *b, ptr right, bit force);
 gdk_export BAT *BATins(BAT *b, BAT *c);
-gdk_export BAT *BATappend(BAT *b, BAT *c);
+gdk_export BAT *BATappend(BAT *b, BAT *c, bit force);
 gdk_export BAT *BUNdel(BAT *b, ptr left, ptr right);
 gdk_export BAT *BUNdelHead(BAT *b, ptr left);
 gdk_export BUN BUNdelete(BAT *b, BUN p);
@@ -2627,6 +2627,7 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 #define ALIGNins(x,y)	{VIEWchk(x,y,BAT_READ);(x)->halign=(x)->talign=0; }
 #define ALIGNdel(x,y)	{VIEWchk(x,y,BAT_READ|BAT_APPEND);(x)->halign=(x)->talign=0; }
 #define ALIGNinp(x,y,f) {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND);(x)->talign=0; }
+#define ALIGNapp(x,y,f) {if (!(f)) VIEWchk(x,y,BAT_READ);(x)->talign=0; }
 
 #define BATrestricted(b) (VIEWparent(b)?BBP_cache(VIEWparent(b))->batRestricted:(b)->batRestricted)
 
