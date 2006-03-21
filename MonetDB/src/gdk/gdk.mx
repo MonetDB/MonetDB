@@ -440,7 +440,7 @@ extern "C" {
 #ifdef MAXPATHLEN
 #define PATHLENGTH 	MAXPATHLEN
 #else
-#define PATHLENGTH	256	/* maximum file pathname length */
+#define PATHLENGTH	1024	/* maximum file pathname length */
 #endif
 
 @

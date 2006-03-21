@@ -1805,7 +1805,7 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
         int mode = (MMAP_READ|MMAP_SEQUENTIAL) + (*force)?MMAP_WRITE:MMAP_COPY;
 	oid* pid = (oid*) alloca(cnt*sizeof(oid));
         size_t xx, yy = 0, zz = 0;
-	char path[MAXPATHLEN];
+	char path[PATHLENGTH];
         char *chk;
 	BUN p, q;
 	BAT *bn;

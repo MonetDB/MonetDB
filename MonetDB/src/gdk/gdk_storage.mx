@@ -40,10 +40,6 @@ system start.
 extern void DESCclean(BAT *);
 extern void DESCsetmodes(BAT *b, BAT *img);
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN 1024
-#endif
-
 #endif /* _GDK_STORAGE_H_ */
 @c
 #include "gdk.h"
@@ -71,7 +67,7 @@ GDKfilepath(str path, str dir, str name, str ext)
 int
 GDKcreatedir(char *dir)
 {
-	char path[MAXPATHLEN];
+	char path[PATHLENGTH];
 	char *r;
 	int ret = TRUE;
 
@@ -100,7 +96,7 @@ int
 GDKremovedir(str dirname)
 {
 	DIR *dirp = opendir(dirname);
-	char path[MAXPATHLEN];
+	char path[PATHLENGTH];
 	struct dirent *dent;
 	int ret;
 
@@ -202,7 +198,7 @@ int
 GDKunlink(str dir, str nme, str ext)
 {
 	if (nme && *nme) {
-		char path[MAXPATHLEN];
+		char path[PATHLENGTH];
 		struct stat st;
 
 		GDKfilepath(path, dir, nme, ext);
@@ -343,7 +339,7 @@ GDKload(str nme, str ext, size_t size, size_t chunk, int mode)
 		}
 	} else {
 		if ((fp = GDKfilelocate(nme, "mrb+", ext)) != NULL) {
-			char path[MAXPATHLEN];
+			char path[PATHLENGTH];
 			int tpe = 0;
 			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC;
 
