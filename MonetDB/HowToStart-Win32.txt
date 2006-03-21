@@ -62,11 +62,11 @@ Pthreads for Win32
 	(ftp://sources.redhat.com/pub/pthreads-win32/)
 	Download the archive (the latest version we have tried is
 	pthreads-w32-2-7-0-release.exe) and extract it.  Pthreads
-	should be installed to C:\Pthreads, so copy the contents of
+	should be installed to ``C:\Pthreads``, so copy the contents of
 	the prebuilt or Pre-built.2 folder from the extracted archive
-	to C:\Pthreads (so that you end up with folders
-	C:\Pthreads\lib and C:\Pthreads\include).  Otherwise you will
-	need to edit the definition of PTHREAD in NT\rules.msc.  The
+	to ``C:\Pthreads`` (so that you end up with folders
+	``C:\Pthreads\lib`` and ``C:\Pthreads\include``).  Otherwise you will
+	need to edit the definition of PTHREAD in ``NT\rules.msc``.  The
 	value should be the name of the folder that contains the lib
 	and include folders.
 
@@ -232,16 +232,16 @@ Give the command
 
  nmake install
 
-By default this will install MonetDB to <sourcedir>\NT\ where
-<sourcedir> is the top-level directory of MonetDB source tree.  The
+By default this will install MonetDB to ``<sourcedir>\NT\`` where
+``<sourcedir>`` is the top-level directory of MonetDB source tree.  The
 current version does not provide any means to change this default.
 
 
 Testing the Installation
 ------------------------
 
-Make sure that <sourcedir>\NT\bin, <sourcedir>\NT\lib, and
-<sourcedir>\NT\lib\MonetDB are in your PATH.
+Make sure that ``<sourcedir>\NT\bin``, ``<sourcedir>\NT\lib``, and
+``<sourcedir>\NT\lib\MonetDB`` are in your PATH.
 
 In the MonetDB top-level directory issue the command
 
@@ -299,7 +299,7 @@ for details.
 Documentation
 -------------
 
-The documentation starts in <sourcedir>\NT\doc\MonetDB.html
+The documentation starts in ``<sourcedir>\NT\doc\MonetDB.html``
 
 NOTE: the current ``nmake install`` does not yet generate this
 documentation.  To do this manually, in the top-level directory of the
