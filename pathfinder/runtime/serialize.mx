@@ -1300,10 +1300,12 @@ static int  seqEnd(XqueryCtx* ctx) {
         stream_printf(GDKout, "\n");
     } else if (ctx->mapiMode) {
         stream_write(GDKout,"\n=", 2, 1);
-        if (!ctx->norootMode) stream_printf(GDKout,"</%s>\n", ctx->restag);
+        if (!ctx->norootMode) stream_printf(GDKout,"</%s>", ctx->restag);
+        stream_write(GDKout,"\n", 1, 1);
     } else {
         stream_write(GDKout,"\n", 1, 1);
-        if (!ctx->norootMode) stream_printf(GDKout, "</%s>\n", ctx->restag);
+        if (!ctx->norootMode) stream_printf(GDKout, "</%s>", ctx->restag);
+        stream_write(GDKout,"\n", 1, 1);
     }
     return 1;
 }
