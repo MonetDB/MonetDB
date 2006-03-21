@@ -330,7 +330,7 @@ static char *
 sep_dup(char *sep)
 {
 	size_t len = strlen(sep);
-	char *res = GDKmalloc(len + 1), *result = res;
+	char *res = GDKmalloc(len*2 + 1), *result = res;
 	char *end = sep + len;
 
 	while (sep < end) {
@@ -347,6 +347,11 @@ sep_dup(char *sep)
 				*res++ = '\t';
 				break;
 			}
+#ifdef __CYGWIN__
+		} else if (*sep == '\n') {
+			*res++ = '\r';
+			*res++ = *sep++;
+#endif
 		} else {
 			*res++ = *sep++;
 		}
