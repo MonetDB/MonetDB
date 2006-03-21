@@ -54,8 +54,8 @@ called atomHeap.
 #include "gdk.h"
 
 gdk_export BAT *batcopy(BAT *b, int ht, int tt, int writeable);
+gdk_export void BATinit_idents(BAT *bn);
 extern int default_ident( char *s ); 
-extern void BATinit_idents(BAT *bn);
 extern oid MAXoid(BAT *i);
 
 #endif /* _GDK_BAT_H_ */
