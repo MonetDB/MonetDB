@@ -62,3 +62,5 @@ identifiers
 seq-default
 alter-sequence
 restart-sequence
+
+null-byte-hang
