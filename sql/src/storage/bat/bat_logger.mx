@@ -242,7 +242,7 @@ log_read_updates(logger *logger, logformat *l, char *name)
 				void *t = rt(tv, logger->log, 1);
 
 				if (l->flag == SQL_LOG_INSERT)
-					BUNappend(b, t);
+					BUNappend(b, t, TRUE);
 				if (t != tv)
 					_DELETE(t);
 			}
