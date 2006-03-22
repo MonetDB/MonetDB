@@ -472,8 +472,8 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
     int **argcnt = NULL;    /* #items eash param/iter contains */
     str *argval = NULL;     /* Stores all actual values sequetially. */
     str *argtpe = NULL;     /* XQuery type of each argval */
-    int argval_nr = 0;      /* #values arg_val currently contains */
-    int argval_size = 0;    /* max #items in "argval", doubled if necessary */
+    int nr_args = 0;      /* #values arg_val currently contains */
+    int max_args = 0;    /* max #items in "argval", doubled if necessary */
 
     THRnew(MT_getpid(), "rpc_req_handler");
 
@@ -567,9 +567,9 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
             goto FINISH_HANDLE_RPC_REQUEST;
         }
     }
-    argval_size = iterc * MAXPARAMS;
-    argval = GDKmalloc(argval_size * sizeof(char *));
-    argtpe = GDKmalloc(argval_size * sizeof(char *));
+    max_args = iterc * MAXPARAMS;
+    argval = GDKmalloc(max_args * sizeof(char *));
+    argtpe = GDKmalloc(max_args * sizeof(char *));
     if (!argval || !argtpe) {
         snprintf(errstr, 1024, "Receiver internal error: not enough memory");
         send_error(out, 1, "404 Bad Request", "env:Receiver", errstr);
@@ -601,7 +601,7 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
                     goto FINISH_HANDLE_RPC_REQUEST;
                 }
 
-                if (argval_nr == argval_size) {
+                if (nr_args == max_args) {
                     snprintf(errstr, 1024, 
                             "XQuery RPC request [%s:%s]: too many parameters, "
                             "maximum number of parameters is %d.\n",
@@ -610,21 +610,21 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
                     goto FINISH_HANDLE_RPC_REQUEST;
                 }
 
-                if ((argtpe[argval_nr] = get_type(out, shredBAT, tnode_pre)) == NULL) {
+                if ((argtpe[nr_args] = get_type(out, shredBAT, tnode_pre)) == NULL) {
                     /* Error message is already sent by 'get_type' */
                     goto FINISH_HANDLE_RPC_REQUEST;
                 }
 
                 vnode_pre = tnode_pre + 1;
-                if (strcmp(argtpe[argval_nr], "xs:anyNode") == 0) {
+                if (strcmp(argtpe[nr_args], "xs:anyNode") == 0) {
                     vnode_pre = get_elem_pre(shredBAT, vnode_pre, (tnode_pre + tnode_size));
-                    argval[argval_nr] = GDKmalloc(32);
-                    if (!argval[argval_nr]) {
+                    argval[nr_args] = GDKmalloc(32);
+                    if (!argval[nr_args]) {
                         snprintf(errstr, 1024, "Receiver internal error: not enough memory");
                         send_error(out, 1, "404 Bad Request", "env:Receiver", errstr);
                         goto FINISH_HANDLE_RPC_REQUEST;
                     }
-                    snprintf(argval[argval_nr], 32, OIDFMT, vnode_pre);
+                    snprintf(argval[nr_args], 32, OIDFMT, vnode_pre);
 
                     ws_frag = BUNappend(ws_frag, (ptr)&vnode_pre, FALSE);
                     next_frag = vnode_pre + pre_size[vnode_pre] + 1;
@@ -645,15 +645,15 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
                         snprintf(errstr, 1024, "XQuery RPC request [%s:%s]: "
                                 "iteration[%d]->parameter[%d]->value[\"%d\"] "
                                 "of type[\"%s\"] is expected to have a simple value.\n",
-                                module, method, (i + 1), (j + 1), k, argtpe[argval_nr]);
+                                module, method, (i + 1), (j + 1), k, argtpe[nr_args]);
                         send_error(out, 1, "404 Bad Request", "env:Sender", errstr);
                         goto FINISH_HANDLE_RPC_REQUEST;
                     }
-                    argval[argval_nr] = GDKstrdup(text_base + prop_text[pre_prop[vnode_pre]]);
+                    argval[nr_args] = GDKstrdup(text_base + prop_text[pre_prop[vnode_pre]]);
                 }
                 tnode_pre += (tnode_size + 1); /* skip all children of tnode and go to the next possible tnode */
                 argcnt[i][j]++;
-                argval_nr++;
+                nr_args++;
                 k++;
             } /* end WHILE 'tnode_pre' */
         } /* end FOR 'argc' */
@@ -690,8 +690,7 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
         argc %= 1000;
 
         if (err) {
-            snprintf(errstr, 1024, "[%s:%s]: %s", module, method, err);
-            send_error(out, 0, "", "env:Sender", errstr);
+            send_error(out, 0, "", "env:Sender", err);
             goto FINISH_HANDLE_RPC_REQUEST;
         }
         stream_printf(out, "</XQueryRpcResults>\n</env:Body>\n</env:Envelope>\n");
@@ -703,7 +702,7 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
 FINISH_HANDLE_RPC_REQUEST:
     cleanup(out,0);
     myfree(argcnt, i, iterc);
-    myfree(argtpe, i, argval_nr)
+    myfree(argtpe, i, nr_args)
     if (argval) GDKfree(argval);
     return retval;
 }
@@ -736,9 +735,9 @@ int CMDhttp_post(BAT **res,
     int argc = 0, argc_base = 0, my_argc = 0;
     int iterc = 0, iter_base = 0, my_iter = 0;
     int itemc = 0, arg_offset = 0;
-    int **argcnt = NULL;    /* #items eash iter/param contains */
-    int argval_nr = 0;      /* #values arg_val currently contains */
-    int argval_size = 0;    /* max #items in "argval" */
+    int **argcnt = NULL;    /* #items eash [iter][param] contains */
+    int nr_args = 0;
+    int max_args = 0;
 
     if ((strptr = strchr(location, (int)':')) != NULL) {
         strptr[0] = '\0'; strptr++;
@@ -779,15 +778,17 @@ int CMDhttp_post(BAT **res,
     /* Find the number of parameters and iterations. */
     argc  = *(int*)BUNtail(fun_vid, BUNprev(fun_vid, BUNlast(fun_vid)) ) - *(int*)BUNtail(fun_vid,BUNfirst(fun_vid)) + 1;
     iterc = *(int*)BUNtail(fun_iter,BUNprev(fun_iter,BUNlast(fun_iter)));
+    /*
+    argc  = BATcount(BATkunique(BATmirror(fun_vid)));
+    iterc = BATcount(BATkunique(BATmirror(fun_iter)));
+    */
 
-    argcnt = GDKmalloc(iterc * sizeof(int *));
-    if (!argcnt) {
+    if (!(argcnt = GDKmalloc(iterc * sizeof(int *)))) {
         GDKerror("CMDhttp_post: failed to malloc argcnt\n");
         goto FINISH_HTTP_POST;
     }
     for (i = 0; i < iterc; i++) {
-        argcnt[i] = GDKmalloc(argc * sizeof(int));
-        if (!argcnt[i]) {
+        if (!(argcnt[i] = GDKmalloc(argc * sizeof(int)))) {
             GDKerror("CMDhttp_post: failed to malloc argcnt[%d]\n", i);
             goto FINISH_HTTP_POST;
         }
@@ -795,7 +796,7 @@ int CMDhttp_post(BAT **res,
             argcnt[i][a] = 0;
         }
     }
-    argval_size = iterc * MAXPARAMS;
+    max_args = iterc * MAXPARAMS;
 
     /* Calculate the number of items contained by every parameter of
      * every iteration. */
@@ -813,7 +814,7 @@ int CMDhttp_post(BAT **res,
          p_item = BUNnext(fun_item, p_item),
          p_kind = BUNnext(fun_kind, p_kind)) {
 
-        if (argval_nr == argval_size) {
+        if (nr_args == max_args) {
             GDKerror("CMDhttp_post: too many parameters.\n");
             goto FINISH_HTTP_POST;
         }
@@ -821,87 +822,89 @@ int CMDhttp_post(BAT **res,
         i = *(int*) BUNtail(fun_iter, p_iter);
         a = *(int*) BUNtail(fun_vid, p_vid);
         argcnt[i - iter_base][a - argc_base]++;
-        argval_nr++;
+        nr_args++;
     }
-    argval_size = argval_nr; /* actual number of argval-s */
-    argval_nr = 0;
+    max_args = nr_args; /* actual number of argval-s */
+    nr_args = 0;
 
     for (my_iter = 0; my_iter < iterc; my_iter++) {
-        /* Enlarge the buffer is it is filled more than 80%.
-         * FIXME: is this really necessary? Or should we just return an
-         * error?
-         */
-        if (b->pos > (b->len * 0.8)) {
-            b->len *= 2;
-            b->buf = realloc(b->buf, b->len);
-        }
+        if (argcnt[my_iter][0] > 0) {
+            /* Enlarge the buffer is it is filled more than 80%.
+             * FIXME: is this really necessary? Or should we just return an
+             * error?
+             */
+            if (b->pos > (b->len * 0.8)) {
+                b->len *= 2;
+                b->buf = realloc(b->buf, b->len);
+            }
 
-        str2buf(b, "<iter>\n");
+            str2buf(b, "<iter>\n");
 
-        for (my_argc = 0; my_argc < argc; my_argc++) {
-            str2buf(b, "<param>\n");
+            for (my_argc = 0; my_argc < argc; my_argc++) {
+                str2buf(b, "<param>\n");
 
-            arg_offset = 0;
-            /* add the 'argcnt' of all arg-s before 'me': */
-            for (a = 0; a < my_argc; a++) {
-                for (i = 0; i < iterc; i++) {
-                    arg_offset += argcnt[i][a];
+                arg_offset = 0;
+                /* add the 'argcnt' of all arg-s before 'me': */
+                for (a = 0; a < my_argc; a++) {
+                    for (i = 0; i < iterc; i++) {
+                        arg_offset += argcnt[i][a];
+                    }
                 }
-            }
-            /* add the 'argcnt' of iter-s before 'me': */
-            for (i = 0; i < my_iter; i++) {
-                arg_offset += argcnt[i][my_argc];
-            }
-            /* now 'arg_offset' contains the index of the values and the
-             * types of MY iter and My argc in argval and argtpe */
+                /* add the 'argcnt' of iter-s before 'me': */
+                for (i = 0; i < my_iter; i++) {
+                    arg_offset += argcnt[i][my_argc];
+                }
+                /* now 'arg_offset' contains the index of the values and the
+                 * types of MY iter and My argc in argval and argtpe */
 
-            for (itemc = 0; itemc < argcnt[my_iter][my_argc]; itemc++) {
-                /* index into fun_item|fun_kind */
-                a = arg_offset + itemc;
-                type = *(int*)BUNtail(fun_kind, BUNptr(fun_kind, a));
-                if (type > WS_SIZE) {
-                    str2buf(b, "<xs:anyNode>\n");
+                for (itemc = 0; itemc < argcnt[my_iter][my_argc]; itemc++) {
+                    /* index into fun_item|fun_kind */
+                    a = arg_offset + itemc;
+                    type = *(int*)BUNtail(fun_kind, BUNptr(fun_kind, a));
+                    if (type > WS_SIZE) {
+                        str2buf(b, "<xs:anyNode>\n");
 
-                    node_item = BUNins(BATnew(TYPE_void, TYPE_oid, 1),
-                            BUNhead(fun_item, BUNptr(fun_item, a)),
-                            BUNtail(fun_item, BUNptr(fun_item, a)) );
-                    node_kind = BUNins(BATnew(TYPE_void, TYPE_int, 1),
-                            BUNhead(fun_kind, BUNptr(fun_kind, a)),
-                            BUNtail(fun_kind, BUNptr(fun_kind, a)) );
-                    if (!(bs = buffer_wastream(b, "shred_node_param"))) {
-                        GDKerror("CMDhttp_post: failed to create buffer_wastream"
-                                 " to shred node parameter\n");
+                        node_item = BUNins(BATnew(TYPE_void, TYPE_oid, 1),
+                                BUNhead(fun_item, BUNptr(fun_item, a)),
+                                BUNtail(fun_item, BUNptr(fun_item, a)) );
+                        node_kind = BUNins(BATnew(TYPE_void, TYPE_int, 1),
+                                BUNhead(fun_kind, BUNptr(fun_kind, a)),
+                                BUNtail(fun_kind, BUNptr(fun_kind, a)) );
+                        if (!(bs = buffer_wastream(b, "shred_node_param"))) {
+                            GDKerror("CMDhttp_post: failed to create buffer_wastream"
+                                    " to shred node parameter\n");
+                            goto FINISH_HTTP_POST;
+                        }
+                        THRsetdata(0, bs);
+                        xquery_print_result_main("xml-noheader-noroot", ws,
+                                node_item, node_kind, int_values,
+                                dbl_values, dec_values, str_values);
+                        THRsetdata(0, bak);
+
+                        str2buf(b, "</xs:anyNode>\n");
+                    } else if (type == BOOL) {
+                        value2buf(b, len, strptr, fun_item, a, i, TYPE_bit, int_values, "<xs:bool>", "</xs:bool>\n");
+                    } else if (type == INT) {
+                        value2buf(b, len, strptr, fun_item, a, i, TYPE_int, int_values, "<xs:integer>", "</xs:integer>\n");
+                    } else if (type == DEC) {
+                        value2buf(b, len, strptr, fun_item, a, i, TYPE_dbl, dbl_values, "<xs:decimal>", "</xs:decimal>\n");
+                    } else if (type == DBL) {
+                        value2buf(b, len, strptr, fun_item, a, i, TYPE_dbl, dbl_values, "<xs:double>", "</xs:double>\n");
+                    } else if (type == STR || type == U_A) {
+                        i = *(int*)BUNtail(fun_item, BUNptr(fun_item, a));
+                        str_val = BUNtail(str_values, BUNptr(str_values, i));
+                        b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
+                                "<xs:string>\"%s\"</xs:string>\n", str_val);
+                    } else {
+                        GDKerror("CMDhttp_post: iter%d/param%d/item%d  has invalid type %d\n",
+                                my_iter, my_argc, i);
                         goto FINISH_HTTP_POST;
                     }
-                    THRsetdata(0, bs);
-                    xquery_print_result_main("xml-noheader-noroot", ws,
-                            node_item, node_kind, int_values,
-                            dbl_values, dec_values, str_values);
-                    THRsetdata(0, bak);
-
-                    str2buf(b, "</xs:anyNode>\n");
-                } else if (type == BOOL) {
-                    value2buf(b, len, strptr, fun_item, a, i, TYPE_bit, int_values, "<xs:bool>", "</xs:bool>\n");
-                } else if (type == INT) {
-                    value2buf(b, len, strptr, fun_item, a, i, TYPE_int, int_values, "<xs:integer>", "</xs:integer>\n");
-                } else if (type == DEC) {
-                    value2buf(b, len, strptr, fun_item, a, i, TYPE_dbl, dbl_values, "<xs:decimal>", "</xs:decimal>\n");
-                } else if (type == DBL) {
-                    value2buf(b, len, strptr, fun_item, a, i, TYPE_dbl, dbl_values, "<xs:double>", "</xs:double>\n");
-                } else if (type == STR || type == U_A) {
-                    i = *(int*)BUNtail(fun_item, BUNptr(fun_item, a));
-                    str_val = BUNtail(str_values, BUNptr(str_values, i));
-                    b->pos += snprintf((b->buf + b->pos), (b->len - b->pos),
-                            "<xs:string>\"%s\"</xs:string>\n", str_val);
-                } else {
-                    GDKerror("CMDhttp_post: iter%d/param%d/item%d  has invalid type %d\n",
-                            my_iter, my_argc, i);
-                    goto FINISH_HTTP_POST;
                 }
+                str2buf(b, "</param>\n");
             }
-            str2buf(b, "</param>\n");
+            str2buf(b, "</iter>\n");
         }
-        str2buf(b, "</iter>\n");
     }
 
     str2buf(b, "</XQueryRpcRequest>\n</env:Body>\n</env:Envelope>\n");
