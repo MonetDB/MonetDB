@@ -1,3 +1,5 @@
+/* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
+
 /**
  * @file
  *
@@ -644,6 +646,31 @@ int PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
 
     assert(0); /* never reached due to "exit" in PFoops */
     return 0; /* pacify picky compilers */
+}
+
+/**
+ * Print simple type name
+ */
+char * PFsimple_type_str (PFalg_simple_type_t type) {
+    switch (type) {
+        case aat_nat:   return "nat";
+        case aat_int:   return "int";
+        case aat_str:   return "str";
+        case aat_dec:   return "dec";
+        case aat_dbl:   return "dbl";
+        case aat_bln:   return "bln";
+        case aat_qname: return "qname";
+        case aat_node:  return "node";
+        case aat_anode: return "anode";
+        case aat_attr:  return "attr";
+        case aat_afrag: return "afrag";
+        case aat_pnode: return "pnode";
+        case aat_pre:   return "pre";
+        case aat_pfrag: return "pfrag";
+        default:
+            PFoops (OOPS_FATAL, "unknown attribute simple type (%i)", type);
+    }
+    return NULL;
 }
 
 /**

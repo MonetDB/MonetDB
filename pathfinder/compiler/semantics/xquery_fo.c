@@ -72,10 +72,77 @@
  *    conversion (XQuery WD 3.1.5) rule to apply.
  */
 #define XQUERY_FO                                                        \
-{ /* fn:data (item*) as atomic*    (F&O 2.4) */                          \
+{ /* fn:data ((atomic|attribute)*) as atomic* */                         \
+  /* (F&O 2.4) */                                                        \
+  { .ns = PFns_fn, .loc = "data",                                        \
+    .arity = 1,                                                          \
+    .par_ty = { PFty_star (                                              \
+                    PFty_choice (                                        \
+                        PFty_atomic (), PFty_xs_anyAttribute ())) },     \
+    .ret_ty = PFty_star (PFty_atomic ()),                                \
+    .alg = PFbui_fn_data_attr }                                          \
+, /* fn:data ((atomic|text)*) as atomic* */                              \
+  /* (F&O 2.4) */                                                        \
+  { .ns = PFns_fn, .loc = "data",                                        \
+    .arity = 1,                                                          \
+    .par_ty = { PFty_star (                                              \
+                    PFty_choice (                                        \
+                        PFty_atomic (), PFty_text ())) },                \
+    .ret_ty = PFty_star (PFty_atomic ()),                                \
+    .alg = PFbui_fn_data_text }                                          \
+, /* fn:data ((atomic|processing-instruction)*) as atomic* */            \
+  /* (F&O 2.4) */                                                        \
+  { .ns = PFns_fn, .loc = "data",                                        \
+    .arity = 1,                                                          \
+    .par_ty = { PFty_star (                                              \
+                    PFty_choice (                                        \
+                        PFty_atomic (), PFty_pi (NULL))) },              \
+    .ret_ty = PFty_star (PFty_atomic ()),                                \
+    .alg = PFbui_fn_data_pi }                                            \
+, /* fn:data ((atomic|comment)*) as atomic* */                           \
+  /* (F&O 2.4) */                                                        \
+  { .ns = PFns_fn, .loc = "data",                                        \
+    .arity = 1,                                                          \
+    .par_ty = { PFty_star (                                              \
+                    PFty_choice (                                        \
+                        PFty_atomic (), PFty_text ())) },                \
+    .ret_ty = PFty_star (PFty_atomic ()),                                \
+    .alg = PFbui_fn_data_comm }                                          \
+, /* fn:data ((element)*) as atomic* */                                  \
+  /* (F&O 2.4) */                                                        \
+  { .ns = PFns_fn, .loc = "data",                                        \
+    .arity = 1,                                                          \
+    .par_ty = { PFty_star (                                              \
+                    PFty_choice (                                        \
+                        PFty_atomic (),                                  \
+                        PFty_choice (                                    \
+                            PFty_xs_anyElement (),                       \
+                            PFty_choice (                                \
+                                PFty_text (),                            \
+                                PFty_doc (PFty_xs_anyType ()))))) },     \
+    .ret_ty = PFty_star (PFty_atomic ()),                                \
+    .alg = PFbui_fn_data_elem }                                          \
+, /* fn:data ((atomic|element|doc|text|attribute)*) as atomic* */        \
+  /* (F&O 2.4) */                                                        \
+  { .ns = PFns_fn, .loc = "data",                                        \
+    .arity = 1,                                                          \
+    .par_ty = { PFty_star (                                              \
+                    PFty_choice (                                        \
+                        PFty_atomic (),                                  \
+                        PFty_choice (                                    \
+                            PFty_xs_anyElement (),                       \
+                            PFty_choice (                                \
+                                PFty_doc (PFty_xs_anyType ()),           \
+                                PFty_choice (                            \
+                                    PFty_text (),                        \
+                                    PFty_xs_anyAttribute ()))))) },      \
+    .ret_ty = PFty_star (PFty_atomic ()),                                \
+    .alg = PFbui_fn_data_elem_attr }                                     \
+, /* fn:data (item*) as atomic*    (F&O 2.4) */                          \
   { .ns = PFns_fn, .loc = "data",                                        \
     .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
-    .ret_ty = PFty_star (PFty_atomic ()) }                               \
+    .ret_ty = PFty_star (PFty_atomic ()),                                \
+    .alg = PFbui_fn_data }                                               \
 , /* fn:number () as double */                                           \
   { .ns = PFns_fn, .loc = "number",                                      \
     .arity = 0,                                                          \

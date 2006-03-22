@@ -10,6 +10,7 @@
    statements    : statements statements                    <m_seq>
                  | 'if (' Expr ') {' stmts '} else {' stmts '}' <m_if>
                  | <nothing>                                <m_nop>
+                 | '#' c                                    <m_comment> 
                  | statement ';'                            <otherwise>
 
    statement     : Variable ':=' expression                 <m_assgn>
@@ -447,6 +448,12 @@ print_statements (PFmil_t * n)
 
         case m_nop:
             break;
+
+        case m_comment:
+	    milprintf ("# ");
+	    /* FIXME: What if c contains \n's? */
+	    milprintf ("%s\n", n->sem.s);
+	    break;
 
         /* statements : statement ';' */
         default:

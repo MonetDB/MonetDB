@@ -369,6 +369,34 @@ struct PFla_pair_t PFbui_pf_string_value (const PFla_op_t *loop,
                                           bool ordering,
                                           struct PFla_pair_t *args);
 
+struct PFla_pair_t PFbui_fn_data_attr (const PFla_op_t *loop,
+                                       bool ordering,
+                                       struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_data_text (const PFla_op_t *loop,
+                                       bool ordering,
+                                       struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_data_pi (const PFla_op_t *loop,
+                                     bool ordering,
+                                     struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_data_comm (const PFla_op_t *loop,
+                                       bool ordering,
+                                       struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_data_elem (const PFla_op_t *loop,
+                                       bool ordering,
+                                       struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_data_elem_attr (const PFla_op_t *loop,
+                                            bool ordering,
+                                            struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_data (const PFla_op_t *loop,
+                                  bool ordering,
+                                  struct PFla_pair_t *args);
+
 struct PFla_pair_t PFbui_pf_typed_value (const PFla_op_t *loop,
                                          bool ordering,
                                          struct PFla_pair_t *args);

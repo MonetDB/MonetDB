@@ -2346,7 +2346,10 @@ PFbui_pf_string_value_elem_attr (const PFla_op_t *loop __attribute__((unused)),
                     proj (att_item, att_res)),
                 project (
                     attach (
-                        attach (loop, att_pos, lit_nat (1)),
+                            project (
+                                     sel_node, 
+                                     proj(att_iter, att_iter),
+                                     proj(att_pos, att_pos)),
                         att_item, lit_str ("")),
                     proj (att_iter, att_iter),
                     proj (att_item, att_item)));
@@ -2386,6 +2389,157 @@ PFbui_pf_string_value (const PFla_op_t *loop __attribute__((unused)),
                          "__attribute__((unused))" */
 
     return args[0];
+}
+
+/**
+ * Build operator tree for built-in function 'fn:data'.
+ * It uses pf:string-value() for atomizating nodes.
+ */
+static struct PFla_pair_t
+fn_data (struct PFla_pair_t (*str_val) 
+             (const PFla_op_t *, bool, struct PFla_pair_t *),
+         PFalg_simple_type_t node_type,
+         const PFla_op_t *loop __attribute__((unused)),
+         bool ordering,
+         struct PFla_pair_t *args)
+{
+    (void) loop;      /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+
+    /*
+     * carry out specific type test on type
+     */
+    PFla_op_t *type = type (args[0].rel, att_res, att_item, node_type);
+
+    /* select those rows that have type "node" */
+    PFla_op_t *nodes = project (
+                                type_assert_pos (
+                                                 select_ (type, att_res),
+                                                 att_item, node_type),
+                                proj (att_iter, att_iter),
+                                proj (att_pos, att_pos),
+                                proj (att_item, att_item));
+
+    /* select the remaining rows */
+    PFla_op_t *atomics = project (
+                                  type_assert_neg (
+                                                   select_ (not (type, att_res1, att_res),
+                                                            att_res1),
+                                                   att_item, node_type),
+                                  proj (att_iter, att_iter),
+                                  proj (att_pos, att_pos),
+                                  proj (att_item, att_item));
+    
+    /* renumber */
+    PFla_op_t *q = number (nodes, att_inner, att_NULL);
+    
+    PFla_op_t *map = project (q, 
+                              proj (att_outer, att_iter), 
+                              proj (att_inner, att_inner),
+                              proj (att_pos1, att_pos));
+
+    struct  PFla_pair_t str_args = {
+        .rel = attach (
+                       project (
+                                q, 
+                                proj (att_iter, att_inner), 
+                                proj (att_item, att_item)),
+                       att_pos, lit_nat(1)),
+        .frag = args[0].frag };
+
+    PFla_op_t *res = project(
+                             eqjoin(
+                                    str_val (
+                                             project (
+                                                      q, 
+                                                      proj (att_iter, att_inner)), 
+                                             ordering, 
+                                             &str_args).rel, 
+                                    map, att_iter, att_inner),
+                             proj(att_iter, att_outer),
+                             proj(att_pos, att_pos1),
+                             proj(att_item, att_item));
+    
+    return (struct  PFla_pair_t) {
+        .rel  = disjunion(atomics, res),
+        .frag = PFla_empty_set () };
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:data'.
+ */
+struct PFla_pair_t
+PFbui_fn_data_attr (const PFla_op_t *loop,
+                    bool ordering,
+                    struct PFla_pair_t *args)
+{
+    return fn_data(PFbui_pf_string_value_attr, aat_anode, loop, ordering, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:data'.
+ */
+struct PFla_pair_t
+PFbui_fn_data_text (const PFla_op_t *loop,
+                    bool ordering,
+                    struct PFla_pair_t *args)
+{
+    return fn_data(PFbui_pf_string_value_text, aat_pnode, loop, ordering, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:data'.
+ */
+struct PFla_pair_t
+PFbui_fn_data_pi (const PFla_op_t *loop,
+                  bool ordering,
+                  struct PFla_pair_t *args)
+{
+    return fn_data(PFbui_pf_string_value_pi, aat_pnode, loop, ordering, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:data'.
+ */
+struct PFla_pair_t
+PFbui_fn_data_comm (const PFla_op_t *loop,
+                    bool ordering,
+                    struct PFla_pair_t *args)
+{
+    return fn_data(PFbui_pf_string_value_comm, aat_pnode, loop, ordering, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:data'.
+ */
+struct PFla_pair_t
+PFbui_fn_data_elem (const PFla_op_t *loop,
+                    bool ordering,
+                    struct PFla_pair_t *args)
+{
+    return fn_data(PFbui_pf_string_value_elem, aat_pnode, loop, ordering, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:data'.
+ */
+struct PFla_pair_t
+PFbui_fn_data_elem_attr (const PFla_op_t *loop,
+                         bool ordering,
+                         struct PFla_pair_t *args)
+{
+    return fn_data(PFbui_pf_string_value_elem_attr, aat_node, loop, ordering, args);
+}
+
+/**
+ * Build up operator tree for built-in function 'fn:data'.
+ */
+struct PFla_pair_t
+PFbui_fn_data (const PFla_op_t *loop,
+               bool ordering,
+               struct PFla_pair_t *args)
+{
+    return fn_data(PFbui_pf_string_value, aat_node, loop, ordering, args);
 }
 
 /**

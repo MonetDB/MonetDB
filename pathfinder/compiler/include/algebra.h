@@ -334,6 +334,11 @@ int PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b);
  */
 char * PFatt_str (PFalg_att_t att);
 
+/**
+ * Print simple type name
+ */
+char * PFsimple_type_str (PFalg_simple_type_t att);
+
 #endif  /* ALGEBRA_H */
 
 /* vim:set shiftwidth=4 expandtab: */

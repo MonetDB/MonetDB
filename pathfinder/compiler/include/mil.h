@@ -288,6 +288,8 @@ enum PFmil_kind_t {
     
     , m_col_name     /**< assign BAT column name (for debugging only) */
 
+    , m_comment      /**< MIL comment (for debugging only) */ 
+
     , m_serialize    /**< serialization function.
                           The serialization function must be provided by the
                           pathfinder extension module. For now we just have
@@ -1099,6 +1101,8 @@ PFmil_t * PFmil_declare (const PFmil_t *);
 
 PFmil_t * PFmil_print (const PFmil_t *);
 PFmil_t * PFmil_col_name (const PFmil_t *, const PFmil_t *);
+PFmil_t * PFmil_comment (const char *, ...)
+      __attribute__ ((format (printf, 1, 2)));
 
 PFmil_t *
 PFmil_ser (const PFmil_t *);

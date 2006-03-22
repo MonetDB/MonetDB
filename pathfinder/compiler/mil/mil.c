@@ -1,3 +1,5 @@
+/* -*- c-basic-offset:4; c-indentation-style:"k&r"; indent-tabs-mode:nil -*- */
+
 /**
  * @file
  *
@@ -27,6 +29,7 @@
  */
 
 #include <assert.h>
+#include <stdarg.h>
 
 #include "pathfinder.h"
 
@@ -34,6 +37,7 @@
 
 #include "mem.h"
 
+#include "array.h"
 /**
  * Construct a MIL tree leaf node with given node kind.
  *
@@ -1912,6 +1916,22 @@ PFmil_t *
 PFmil_col_name (const PFmil_t *bat, const PFmil_t *name)
 {
     return wire2 (m_col_name, bat, name);
+}
+
+PFmil_t *
+PFmil_comment (const char *fmt, ...)
+{
+    PFmil_t *ret = leaf (m_comment);
+    PFarray_t *a = PFarray(sizeof (char));    
+    va_list args;
+
+    va_start (args, fmt);
+    PFarray_vprintf (a, fmt, args);
+    va_end (args);
+
+    ret->sem.s = PFarray_at(a, 0);
+
+    return ret;
 }
 
 PFmil_t *

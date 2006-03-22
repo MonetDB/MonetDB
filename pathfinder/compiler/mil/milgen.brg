@@ -390,6 +390,9 @@ env_add (PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty, mvar_t *v)
 
     *(env_t *) PFarray_add (env)
         = (env_t) { .att = att, .ty = ty, .mvar = v };
+#ifndef NDEBUG
+    execute ( comment ("%s: %s(%s)", v->name, PFatt_str (att), PFsimple_type_str(ty)));
+#endif
 }
 
 /**
@@ -617,6 +620,10 @@ reduce (PFpa_op_t * p, int goalnt)
         return;
 
     p->env = new_env ();
+
+#ifndef NDEBUG
+    execute (comment ("Begin rule %d", rule));
+#endif
 
     switch (rule) {
 
@@ -3210,6 +3217,7 @@ reduce (PFpa_op_t * p, int goalnt)
             unpin (((env_t *) PFarray_at (kids[c]->env, i))->mvar, 1);
 
 #ifndef NDEBUG
+    execute (comment ("End rule %d", rule));
     for (unsigned int i = 0; i < PFarray_last (p->env); i++)
         assert (((env_t *) PFarray_at (p->env, i))->mvar->pins);
 #endif

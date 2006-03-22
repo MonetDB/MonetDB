@@ -485,5 +485,6 @@
 #define serialize(a) PFmil_ser (a)
 #define print(a) PFmil_print (a)
 #define col_name(a,b) PFmil_col_name ((a), (b))
+#define comment(...) PFmil_comment (__VA_ARGS__)
 
 /* vim:set shiftwidth=4 expandtab: */
