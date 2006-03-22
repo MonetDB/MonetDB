@@ -2117,7 +2117,7 @@ need to do anything with heap modes yet at this point.
 		return NULL;
 	}
 @= check_copied
-	if (b->batBuns->copied) {
+	if (b->batBuns->copied && b->batBuns->storage == STORE_MMAP) {
 		Heap hp;
 		if (HEAPcopy(&hp, b->batBuns) < 0) {
 			GDKerror("@1: remapped bun heap of %s could not be copied.\n", BATgetId(b));
@@ -2126,6 +2126,7 @@ need to do anything with heap modes yet at this point.
 		HEAPfree(b->batBuns);
 		*(b->batBuns) = hp;
 	}
+	b->batBuns->copied = 0;
 @c
 BAT *
 BATmode(BAT *b, int mode)
