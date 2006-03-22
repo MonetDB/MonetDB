@@ -289,14 +289,24 @@ MIL variables, but these point to the same global BATs).
 # get a handle to the global lock
 var pf_lock := pflock(); 
 
-# the main metadata
+# the document location
+var doc_name;     # document name
+var doc_location; # document URI
+var doc_height;   # height of document
+var doc_size;     # document size in bytes
+var doc_timestamp;# caching limit (nil if none)
+
+# caching rules
+var uri_lifetime; 
+
+# non-persistent metadata (transactions)
 var doc_query; # bat[oid,int] active working-sets (queries) that use a particular document 
 var doc_sema;  # bat[oid,sema] used by delete_doc to wait until all doc users have gone
 var doc_lock;  # bat[oid,lock] used by append_page() to ensure unique pages are given out size
 var doc_free;  # bat[oid,bat]  per document a list with all free pages smaller than the master size
 
 # empty pages to append onto rid_* master bats
-var empty_page;  # bat[void,int] of size REMAP_PAGE size counting down from REMAP_PAGE_SIZE-1
+var empty_page;  # bat[void,int] of size REMAP_PAGE_SIZE counting down from REMAP_PAGE_SIZE-1
 
 # the ws_* bats contain a recipe for creating a new ws
 var ws_nme; # name (prefix) of ws entry as persistent bat
@@ -312,17 +322,32 @@ var ws_dsk; # of those, all persistent bats on disk for a document container
 var ws_rid; # of those, all rid_* bats 
 var ws_shr; # all bats delivered by shredder
 
+# standoff extensions
+var burkowski := false;
+if (monet_environment.exist("burkowski"))
+    burkowski := =(monet_environment.find("burkowski"),"enabled"); 
+
 # initialize doc_query and doc_sema (use BBP as global mechanism to discover initialization)
 # note that this is required for concurrent MapiClient MIL sessions to share each other's variables.
 lock_set(pf_lock);
 if (not(isnil(CATCH(bat("doc_name").count())))) {
     # create doc_name table in case it does not exist
-    new(oid,str).persists(true).bbpname("doc_name");
-    new(oid,str).persists(true).bbpname("doc_location");
-    new(oid,timestamp).persists(true).bbpname("doc_timestamp");
-    new(oid,int).persists(true).bbpname("doc_height");
-    new(oid,lng).persists(true).bbpname("doc_size");
-    new(str,lng).persists(true).bbpname("uri_lifetime");
+    (doc_name := new(oid,str).persists(true)).bbpname("doc_name");
+    (doc_location := new(oid,str).persists(true)).bbpname("doc_location");
+    (doc_timestamp := new(oid,timestamp).persists(true)).bbpname("doc_timestamp");
+    (doc_height := new(oid,int).persists(true)).bbpname("doc_height");
+    (doc_size := new(oid,lng).persists(true)).bbpname("doc_size");
+    (uri_lifetime := new(str,lng).persists(true)).bbpname("uri_lifetime");
+} else {
+    doc_name := bat("doc_name");
+    doc_location := bat("doc_location");
+    doc_timestamp := bat("doc_timestamp");
+    doc_height := bat("doc_height");
+    doc_size := bat("doc_size");
+    uri_lifetime := bat("uri_lifetime");
+}
+if (not(doc_height.exist(oid(nil)))) {
+    doc_height.insert(oid(nil), 100000); # next doc_id
 }
 if (isnil(CATCH(bat("doc_query").count()))) {
     doc_query  := bat("doc_query"); 
@@ -425,7 +450,7 @@ PROC destroy_ws_locked(BAT[void,bat] ws) : void
         }
     }
     # determine whether a cache flush is desired (only count cached bats, those with a timestamp)
-    var cursize := sum(bat("doc_timestamp").select(timestamp(nil),timestamp(nil)).mirror().join(bat("doc_size")));
+    var cursize := sum(doc_timestamp.select(timestamp(nil),timestamp(nil)).mirror().join(doc_size));
     var maxsize := (1024LL * 1024LL) * lng(monet_environment.find("xquery_cacheMB"));
 
     if (cursize > maxsize) {
@@ -454,9 +479,10 @@ PROC ws_newpage_locked(BAT[void,bat] ws, oid doc_oid, oid cont) : oid {
     var rid_kind  := ws.fetch(RID_KIND).find(cont);
     var rid_nid   := ws.fetch(RID_NID).find(cont);
     var free_pages, i := 0;
-    var last_pid := count(rid_size);
-    last_pid := 1 + (last_pid = 0).ifthenelse(0, (last_pid - 1) >> REMAP_PAGE_BITS);
-
+    var rid_cnt := count(rid_size);
+    var last_pid := 1 + (rid_cnt = 0).ifthenelse(0, (rid_cnt - 1) >> REMAP_PAGE_BITS);
+    
+    # obtain a free-list of pages
     if (doc_free.exist(doc_oid)) {
         free_pages := doc_free.find(doc_oid);
     } else {
@@ -470,14 +496,26 @@ PROC ws_newpage_locked(BAT[void,bat] ws, oid doc_oid, oid cont) : oid {
         while(i < last_pid) { free_pages.append(oid(i)); i :+= 1; }
         doc_free.insert(doc_oid, free_pages);
     }
+
+    # re-use a page from the list; or -if empty- append a new page
     i := count(free_pages);
     if (i > 0) {
         last_pid := free_pages.fetch(i - 1);
         free_pages.reverse().delete(last_pid);
     } else {
-        # make sure the new page exists by adding it to the master rid_* table
+        # append a page to the master rid_* table
         var empty_page_chr := empty_page.project(chr(nil));
         var empty_page_oid := empty_page.project(oid(nil));
+        var lastpage_size := REMAP_PAGE_SIZE - and(rid_cnt,REMAP_PAGE_MASK);
+        if (lastpage_size < REMAP_PAGE_SIZE) {
+            # take care to fill out the last page (if not yet full)
+            rid_size.append(empty_page.slice(lastpage_size,REMAP_PAGE_SIZE), true);
+            rid_level.append(empty_page_chr.slice(lastpage_size,REMAP_PAGE_SIZE), true);
+            rid_kind.append(empty_page_chr.slice(lastpage_size,REMAP_PAGE_SIZE), true);
+            rid_prop.append(empty_page_oid.slice(lastpage_size,REMAP_PAGE_SIZE), true);
+            rid_nid.append(empty_page_oid.slice(lastpage_size,REMAP_PAGE_SIZE), true);
+        }
+        # append the new page
         rid_size.append(empty_page, true);
         rid_level.append(empty_page_chr, true);
         rid_kind.append(empty_page_chr, true);
@@ -503,29 +541,30 @@ PROC ws_newpage(BAT[void,bat] ws, oid cont) : oid {
 PROC shred_doc_locked(BAT[str,bat] docBAT, str location, str name, timestamp ts, int ws, int height) : void 
 {
     # get a new persistent doc id
-    var doc_oid := 0@0;
-    if (bat("doc_name").count() > 0) 
-        doc_oid := oid(int(bat("doc_name").reverse().max()) + 1); 
+    var doc_id := doc_height.find(oid(nil));
 
     # rename all new bats with the doc id as suffix
-    [rename](docBAT, [+](mirror(docBAT), str(int(doc_oid))));
+    [rename](docBAT, [+](str(doc_id) + "_", mirror(docBAT)));
     var totsize := sum([batsize](docBAT));
 
+    var doc_oid := oid(doc_id);
+    doc_height.replace(oid(nil), doc_id+1);
+
     # add to meta table
-    bat("doc_name").insert(doc_oid, name);
-    bat("doc_location").insert(doc_oid, location);
-    bat("doc_timestamp").insert(doc_oid, ts);
-    bat("doc_height").insert(doc_oid, height);
-    bat("doc_size").insert(doc_oid, totsize);
+    doc_name.insert(doc_oid, name);
+    doc_location.insert(doc_oid, location);
+    doc_timestamp.insert(doc_oid, ts);
+    doc_height.insert(doc_oid, height);
+    doc_size.insert(doc_oid, totsize);
 
     [persists](docBAT, true);
 
     # add the meta table to the commit set 
-    #docBAT.insert(str(nil),bat("doc_name"));
-    #docBAT.insert(str(nil),bat("doc_location"));
-    #docBAT.insert(str(nil),bat("doc_timestamp"));
-    #docBAT.insert(str(nil),bat("doc_height"));
-    #docBAT.insert(str(nil),bat("doc_size"));
+    #docBAT.insert(str(nil),doc_name);
+    #docBAT.insert(str(nil),doc_location);
+    #docBAT.insert(str(nil),doc_timestamp);
+    #docBAT.insert(str(nil),doc_height);
+    #docBAT.insert(str(nil),doc_size);
     #if (not(subcommit(docBAT))) 
     if (not(commit())) ERROR("shred_doc(%s) : commit failed\n", name);
 
@@ -571,9 +610,6 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
     return shredBAT.fetch(PRE_LEVEL).max().int() + 1;
 }
 
-var burkowski := false;
-if (monet_environment.exist("burkowski"))
-    burkowski := =(monet_environment.find("burkowski"),"enabled"); 
 
 PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, bit doCommit, str opt, timestamp ts, int ws) : int
 {
@@ -582,7 +618,7 @@ PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, bit doCommit, s
 
     # always make sure not to cause errors while holding the lock
     lock_set(pf_lock);
-    err := CATCH(exists := bat("doc_name").texist(name));
+    err := CATCH(exists := doc_name.texist(name));
     lock_unset(pf_lock);
 
     if (not(isnil(err))) ERROR(err);
@@ -596,9 +632,10 @@ PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, bit doCommit, s
         print("# extracting regions...\n");
         docBAT := region_extract(docBAT, "lng");
     } else {
-       var r_pre := bat(void, oid).seqbase(0@0).bbpname("region_pre");
-       var r_start := bat(void, lng).seqbase(0@0).bbpname("region_start");
-       var r_end := bat(void, lng).seqbase(0@0).bbpname("region_end");
+       var r_pre, r_start, r_end;
+       (r_pre := bat(void, oid).seqbase(0@0)).bbpname("region_pre");
+       (r_start := bat(void, lng).seqbase(0@0)).bbpname("region_start");
+       (r_end := bat(void, lng).seqbase(0@0)).bbpname("region_end");
        docBAT.access(BAT_WRITE).insert("region_pre",r_pre); 
        docBAT.access(BAT_WRITE).insert("region_start",r_start); 
        docBAT.access(BAT_WRITE).insert("region_end",r_end); 
@@ -676,7 +713,7 @@ PROC delete_doc_locked(oid doc_oid) : bit
     }
 
     # docBAT becomes [name,bat]
-    docBAT := [bat]([+](ws_dsk, str(int(doc_oid))).reverse().mirror());
+    docBAT := [bat]([+](str(int(doc_oid)) + "_", ws_dsk).reverse().mirror());
 
     # rename the bats so even in case of failure they don't bother us directly anymore
     [rename](docBAT, [+]([+]("rm_", mirror(docBAT)), +("_" , str(lng(current_timestamp()))))).access(BAT_WRITE);
@@ -684,18 +721,18 @@ PROC delete_doc_locked(oid doc_oid) : bit
     # remove them from the repository
     [persists](docBAT, false);
 
-    bat("doc_name").delete(doc_oid);
-    bat("doc_location").delete(doc_oid);
-    bat("doc_timestamp").delete(doc_oid);
-    bat("doc_height").delete(doc_oid);
-    bat("doc_size").delete(doc_oid);
+    doc_name.delete(doc_oid);
+    doc_location.delete(doc_oid);
+    doc_timestamp.delete(doc_oid);
+    doc_height.delete(doc_oid);
+    doc_size.delete(doc_oid);
 
     # also commit the meta bats
-    #docBAT.insert(str(nil), bat("doc_name"));
-    #docBAT.insert(str(nil), bat("doc_location"));
-    #docBAT.insert(str(nil), bat("doc_timestamp"));
-    #docBAT.insert(str(nil), bat("doc_height"));
-    #docBAT.insert(str(nil), bat("doc_size"));
+    #docBAT.insert(str(nil), doc_name);
+    #docBAT.insert(str(nil), doc_location);
+    #docBAT.insert(str(nil), doc_timestamp);
+    #docBAT.insert(str(nil), doc_height);
+    #docBAT.insert(str(nil), doc_size);
     #return subcommit(docBAT);
     return commit();
 }
@@ -706,7 +743,7 @@ PROC delete_doc(str name) : void
 
     # always make sure not to cause errors while holding the lock
     lock_set(pf_lock);
-    err := CATCH(exists := bat("doc_name").texist(name));
+    err := CATCH(exists := doc_name.texist(name));
     lock_unset(pf_lock);
 
     if (not(isnil(err))) ERROR(err);
@@ -714,7 +751,7 @@ PROC delete_doc(str name) : void
 
     # always make sure not to cause errors while holding the lock
     lock_set(pf_lock);
-    err := CATCH(delete_doc_locked(bat("doc_name").reverse().find(name)));
+    err := CATCH(delete_doc_locked(doc_name.reverse().find(name)));
     lock_unset(pf_lock);
 
     if (not(isnil(err))) ERROR(err);
@@ -728,7 +765,7 @@ delete the persistent BATS that store the document.",
 
 PROC delete_all_docs_locked(bit cachedOnly) : void
 {
-    bat("doc_timestamp").copy()@batloop() {
+    doc_timestamp.copy()@batloop() {
         if (not(and(cachedOnly, isnil($t))))
             delete_doc_locked($h);
     }
@@ -803,7 +840,7 @@ PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, str docid, int 
             ws.fetch(DOC_OID).append(oid(nil));
         } else {
             # docid holds the str(id) of the persistent doc; pre_*'s are remapped rid_*'s
-            rid := [bat]([+](ws_dsk, docid));
+            rid := [bat]([+](docid + "_", ws_dsk));
             pre := [remap](ws_rid.leftjoin(rid), const rid.find(oid(MAP_PID)), false);
             ws.fetch(DOC_OID).append(oid(docid));
         }
@@ -830,14 +867,14 @@ PROC add_doc_locked(str name, timestamp ts, int ws) : oid
 {
     var doc_oid := oid(nil);
     # check if the document already existed
-    if (bat("doc_name").texist(name)) {
-        doc_oid := bat("doc_name").reverse().find(name);
-    } else if (bat("doc_location").texist(name)) {
+    if (doc_name.texist(name)) {
+        doc_oid := doc_name.reverse().find(name);
+    } else if (doc_location.texist(name)) {
         # existed as cached location (URI): must check timestamp
-        doc_oid := bat("doc_location").reverse().find(name);
+        doc_oid := doc_location.reverse().find(name);
     }
     if (not(isnil(doc_oid))) {
-        var lim := bat("doc_timestamp").find(doc_oid);
+        var lim := doc_timestamp.find(doc_oid);
         if (not(isnil(lim))) { # a nil limit means the doc never expires
             if  (ts > lim) {
                 delete_doc_locked(doc_oid); # remove outdated document from the cache
@@ -853,7 +890,6 @@ PROC lifetime_doc_locked(str name, str filename, oid doc_oid, timestamp ts) : ti
 {
     if (isnil(doc_oid) and isnil(filename)) {
         # for not-yet-cached URIs: get lifetime from uri_lifetime BAT
-        var uri_lifetime := bat("uri_lifetime");
         var b := [startsWith](name, mirror(uri_lifetime)).uselect(true);
         var lifetime := lng(nil);
         if (b.count() > 0) {
@@ -896,8 +932,8 @@ PROC add_doc(BAT[void,bat] ws, str name) : int
         time_shred :+= time() - t;
     }
     if (isnil(docid)) {
-        doc_oid := bat("doc_name").reverse().find(name);
-        height := bat("doc_height").find(doc_oid);
+        doc_oid := doc_name.reverse().find(name);
+        height := doc_height.find(doc_oid);
         docid := str(int(doc_oid));
     }
     add_docbat(ws, docBAT, name, docid, height);
@@ -937,7 +973,7 @@ PROC xmlcache_add_rule(str uri, any lifetime) : void {
 }
 PROC xmlcache_add_rule(str uri, lng lifetime) : void {
     lock_set(pf_lock);
-    var err := CATCH({ bat("uri_lifetime").delete(uri); bat("uri_lifetime").insert(uri, lifetime); });
+    var err := CATCH({ uri_lifetime.delete(uri); uri_lifetime.insert(uri, lifetime); });
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
 }
@@ -946,7 +982,7 @@ ADDHELP("xmlcache_add_rule", "boncz", "May 2005",
 
 PROC xmlcache_del_rule(str uri) : void {
     lock_set(pf_lock);
-    var err := CATCH({ bat("uri_lifetime").delete(uri);});
+    var err := CATCH({ uri_lifetime.delete(uri);});
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
 }
@@ -955,7 +991,7 @@ ADDHELP("xmlcache_del_rule", "boncz", "May 2005",
 
 PROC xmlcache_print_rules() : void {
     lock_set(pf_lock);
-    var err := CATCH({  table(bat("uri_lifetime").hmark(0@0).col_name("URI-prefix"), bat("uri_lifetime").tmark(0@0).col_name("liftime-secs")); });
+    var err := CATCH({  table(uri_lifetime.hmark(0@0).col_name("URI-prefix"), uri_lifetime.tmark(0@0).col_name("liftime-secs")); });
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
 }
@@ -964,7 +1000,7 @@ ADDHELP("xmlcache_print_rules", "boncz", "May 2005",
 
 PROC xmlcache_print() : void {
     lock_set(pf_lock);
-    var err := CATCH({  table(bat("doc_name").col_name("alias"), bat("doc_location").col_name("URI"), bat("doc_size").col_name("size"), bat("doc_timestamp").select(timestamp(nil),timestamp(nil)).col_name("valid-thru")); });
+    var err := CATCH({  table(doc_name.col_name("alias"), doc_location.col_name("URI"), doc_size.col_name("size"), doc_timestamp.select(timestamp(nil),timestamp(nil)).col_name("valid-thru")); });
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
 }
@@ -973,7 +1009,7 @@ ADDHELP("xmlcache_print", "boncz", "May 2005",
 
 PROC xmldb_print() : void {
     lock_set(pf_lock);
-    var err := CATCH({  table(mirror(bat("doc_timestamp").uselect(timestamp(nil))).join(bat("doc_name")).col_name("alias"), bat("doc_location").col_name("URI"), bat("doc_size").col_name("size")); });
+    var err := CATCH({  table(mirror(doc_timestamp.uselect(timestamp(nil))).join(doc_name).col_name("alias"), doc_location.col_name("URI"), doc_size.col_name("size")); });
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
 }
