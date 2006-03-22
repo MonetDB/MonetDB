@@ -2633,7 +2633,7 @@ ALGmarkHead(int *result, int *bid, oid *base)
 		BATseqbase(BATmirror(bn), 0);
 	BATseqbase(bn, *base);
 	BATloop(b, p, q) {
-		BUNappend(bn, BUNtail(b, p));
+		BUNappend(bn, BUNtail(b, p), FALSE);
 	}
 
 	*result = bn->batCacheid;

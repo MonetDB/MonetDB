@@ -1737,7 +1737,7 @@ BKCinsert_void_bun(int *r, int *bid, ptr t)
 	}
 	@:derefStr(b,t,t)@
 	BUNappend(b, @:batconvert(b,t)@
-	    );
+	    , FALSE);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2034,7 +2034,7 @@ void_insert_delta(BAT *b, BAT *u)
 	BUN r;
 
 	for (r = u->batInserted; r < BUNlast(u); r = BUNnext(u, r)) {
-		BUNappend(b, BUNtail(u, r));
+		BUNappend(b, BUNtail(u, r), FALSE);
 		nr++;
 	}
 	return nr;
@@ -2069,7 +2069,7 @@ BKCappend_wrap(int *r, int *bid, int *uid)
 		BBPreleaseref(i->batCacheid);
 		return throwMessage("bat.append", "Cannot access descriptor");
 	}
-	BATappend(i, u);
+	BATappend(i, u, FALSE);
 	BBPreleaseref(i->batCacheid);
 	BBPreleaseref(u->batCacheid);
 	return MAL_SUCCEED;
@@ -2086,7 +2086,7 @@ BKCappend_val_wrap(int *r, int *bid, ptr u)
 	}
 
 	@:derefStr(i,t,u)@
-	BUNappend(i, u);
+	BUNappend(i, u, FALSE);
 	BBPreleaseref(i->batCacheid);
 	return MAL_SUCCEED;
 }
