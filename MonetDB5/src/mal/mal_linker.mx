@@ -491,11 +491,11 @@ MSP_locate_script(const char *mod_name)
 char *
 MSP_locate_module(const char *mod_name)
 {
-	char *lib_name = GDKmalloc(strlen(mod_name) + 4);
+	char *lib_name = GDKmalloc(strlen(mod_name) + strlen(SO_PREFIX) + 1);
 	char *fullname;
 
-	strcpy(lib_name, "lib");
-	strcpy(lib_name + 3, mod_name);
+	strcpy(lib_name, SO_PREFIX);
+	strcpy(lib_name + strlen(SO_PREFIX), mod_name);
 
 	fullname = locate_file(lib_name, SO_EXT);
 #ifdef _AIX
