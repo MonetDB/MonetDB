@@ -6226,35 +6226,41 @@ translateUDF (opt_t *f, int cur_level, int counter,
          * fun->params[], so translate it separately. */
         milprintf(f, 
                 "\n# begin of translate the 'dst' param of RPC call\n"
-                "var rpc_iter := new(void,oid).seqbase(0@0);\n"
-                "var rpc_dsts := new(void,str).seqbase(1@0);\n");
+                "var rpc_vid  := bat(void,oid);\n"
+                "var rpc_iter := bat(void,oid);\n"
+                "var rpc_item := bat(void,oid);\n"
+                "var rpc_dsts := bat(void,str);\n");
 
         dst_args = L(args);
         while (dst_args && dst_args->kind != c_nil){
             if (translate2MIL (f, NORMAL, cur_level, counter, L(args)) == NORMAL)
             {
                 milprintf(f, 
-                        "rpc_iter.append(%d@0);\n"
-                        "rpc_dsts.append(item%s);\n", 
-                        i, val_join(STR));
-                if (i == 0)
-                    milprintf(f, "var dst_addr := item%s; \n", val_join(STR));
+                        "item     := item.materialize(ipik);\n"
+                        "rpc_vid  := rpc_vid.append(iter.project(oid(%iLL)));\n"
+                        "rpc_iter := rpc_iter.append(iter);\n"
+                        "rpc_item := rpc_item.append(item);\n",
+                        i);
+
             }
             i++;
             dst_args = R(dst_args);
         }
-        milprintf(f, "\n# end of translate the 'dst' param of RPC call\n");
-
-        /*
-        counter++;
-        saveResult_ (f, counter, STR);
-        */
+        milprintf(f, 
+                "rpc_vid  := rpc_vid.tmark(0@0);\n"
+                "rpc_iter := rpc_iter.tmark(0@0);\n"
+                "rpc_item := rpc_item.tmark(0@0);\n"
+                "rpc_dsts := rpc_item%s;\n"
+                "rpc_dsts := rpc_iter.reverse().join(rpc_dsts);\n"
+                "# end of translate the 'dst' param of RPC call\n",
+                val_join(STR));
         args = R(args);
         i = 0;
     }
 
     counter++;
     milprintf(f,
+            "# begin of add args in UDF function call\n"
             "var fun_base%03u := proc_vid.find(\"%s\");\n"
             "var fun_vid%03u  := bat(void,oid);\n"
             "var fun_iter%03u := bat(void,oid);\n"
@@ -6262,7 +6268,6 @@ translateUDF (opt_t *f, int cur_level, int counter,
             "var fun_kind%03u := bat(void,int);\n",
             counter, apply.fun->sig, counter, counter, counter, counter);
 
-    milprintf(f, "\n# begin of add args in UDF function call\n");
     while ((args->kind != c_nil) && (apply.fun->params[i]))
     {
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
@@ -6328,15 +6333,41 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "\n"
                 "{ # begin of RPC call\n"
                 "  module(\"xquery_rpc\");\n"
-                /* FIXME: need a better way of name giving. */
-                "  var local_name := \"rpc_res\";\n"
-                "  var rpc_oid := rpc_client(local_name, dst_addr, \"%s\", \"%s\", \"%s\", ws,"
-                                    "fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u,"
-                                    "int_values, dbl_values, dec_values, str_values);\n"
-                "  var proc_res := get_rpc_res(ws, rpc_oid, int_values, dbl_values, dec_values, str_values);\n"
-                "  iter := proc_res.fetch(0);\n"
-                "  item := proc_res.fetch(1);\n"
-                "  kind := proc_res.fetch(2);\n"
+                "  var rpc_unq_dsts := rpc_dsts.tunique().hmark(0@0);\n"
+                "  var steps := rpc_unq_dsts.count();\n"
+                "  iter := bat(oid,oid);\n"
+                "  item := bat(oid,oid);\n"
+                "  kind := bat(oid,int);\n"
+                "  rpc_unq_dsts@[steps]batloop(){\n"
+                "    # get iteration numbers for this destination\n"
+                "    var iter_dst := rpc_dsts.ord_uselect($t).mirror();\n"
+                "    var fun_iter_dst := fun_iter001.join(iter_dst);\n"
+                "    var indices := fun_iter_dst.mirror().hmark(0@0);\n"
+                "    # retrieve the frag of fun_vid, fun_iter, fun_item\n"
+                "    # and fun_kind for this iteration.\n"
+                "    var fun_vid_dst  := indices.fetchjoin(fun_vid001);\n"
+                "        fun_iter_dst := fun_iter_dst.tmark(0@0);\n"
+                "    var fun_item_dst := indices.fetchjoin(fun_item001);\n"
+                "    var fun_kind_dst := indices.fetchjoin(fun_kind001);\n"
+                "    var local_name := \"rpc_res_00\" + str(int($h)+1);\n"
+                "    var rpc_oid := rpc_client(local_name, $t, \"%s\", \"%s\", \"%s\", ws,\n"
+                "                     fun_vid_dst, fun_iter_dst, fun_item_dst, fun_kind_dst,\n"
+                "                     int_values, dbl_values, dec_values, str_values);\n"
+                "    var proc_res := get_rpc_res(ws,rpc_oid,int_values,dbl_values,dec_values,str_values);\n"
+                "    # retrieve results for this destination, and map\n"
+                "    # the results back to the original iteration number\n"
+                "        iter_dst := iter_dst.hmark(1@0);\n"
+                "    var res_iter := proc_res.fetch(0).join(iter_dst);\n"
+                "    var res_item := res_iter.reverse().join(proc_res.fetch(1));\n"
+                "    var res_kind := res_iter.reverse().join(proc_res.fetch(2));\n"
+                "    # save the intermediate results in final iter|item|kind\n"
+                "    iter.insert(res_iter);\n"
+                "    item.insert(res_item);\n"
+                "    kind.insert(res_kind);\n"
+                "  } # end BATLOOP\n"
+                "  iter := iter.sort_ht().tmark(0@0);\n"
+                "  item := item.sort_ht().tmark(0@0);\n"
+                "  kind := kind.sort_ht().tmark(0@0);\n"
                 "  if (type(iter) = bat) {\n"
                 "    ipik := iter;\n"
                 "  } else {\n"
@@ -6349,7 +6380,6 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "} # end of RPC call\n",
                 apply.fun->qname.ns.uri, apply.rpc_uri, apply.fun->qname.loc,
                 counter, counter, counter, counter);
-    /*    deleteResult_ (f, counter, STR); */
     } else {
         /* call the proc */
         milprintf(f, PFudfMIL(),
