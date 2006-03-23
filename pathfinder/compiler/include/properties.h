@@ -234,7 +234,7 @@ void PFprop_write_domain (PFarray_t *f, dom_t domain);
 
 /**
  * Write domain-subdomain relationships of property container @a prop
- * to character array @a f.
+ * to in AT&T dot notation to character array @a f.
  */
 void PFprop_write_dom_rel (PFarray_t *f, const PFprop_t *prop);
 

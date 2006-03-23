@@ -188,33 +188,33 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
           [la_serialize]      = "\"#C0C0C0\""
         , [la_lit_tbl]        = "\"#C0C0C0\""
         , [la_empty_tbl]      = "\"#C0C0C0\""
-        , [la_attach]         = "\"#D0D0D0\""
-        , [la_cross]          = "\"#00FFFF\""
+        , [la_attach]         = "\"#EEEEEE\""
+        , [la_cross]          = "\"#990000\""
         , [la_eqjoin]         = "\"#00FF00\""
-        , [la_project]        = "\"#D0D0D0\""
-        , [la_select]         = "\"#C0C0C0\""
-        , [la_disjunion]      = "\"#C0C0C0\""
-        , [la_intersect]      = "\"#C0C0C0\""
+        , [la_project]        = "\"#EEEEEE\""
+        , [la_select]         = "\"#00DDDD\""
+        , [la_disjunion]      = "\"#909090\""
+        , [la_intersect]      = "\"#909090\""
         , [la_difference]     = "\"#FFA500\""
-        , [la_distinct]       = "\"#CD5C5C\""
+        , [la_distinct]       = "\"#FFA500\""
         , [la_num_add]        = "\"#C0C0C0\""
         , [la_num_subtract]   = "\"#C0C0C0\""
         , [la_num_multiply]   = "\"#C0C0C0\""
         , [la_num_divide]     = "\"#C0C0C0\""
         , [la_num_modulo]     = "\"#C0C0C0\""
-        , [la_num_eq]         = "\"#C0C0C0\""
-        , [la_num_gt]         = "\"#C0C0C0\""
+        , [la_num_eq]         = "\"#00DDDD\""
+        , [la_num_gt]         = "\"#00DDDD\""
         , [la_num_neg]        = "\"#C0C0C0\""
         , [la_bool_and ]      = "\"#C0C0C0\""
         , [la_bool_or ]       = "\"#C0C0C0\""
         , [la_bool_not]       = "\"#C0C0C0\""
-        , [la_avg]            = "\"#C0C0C0\""
-        , [la_max]            = "\"#C0C0C0\""
-        , [la_min]            = "\"#C0C0C0\""
-        , [la_sum]            = "\"#C0C0C0\""
-        , [la_count]          = "\"#C0C0C0\""
+        , [la_avg]            = "\"#A0A0A0\""
+        , [la_max]            = "\"#A0A0A0\""
+        , [la_min]            = "\"#A0A0A0\""
+        , [la_sum]            = "\"#A0A0A0\""
+        , [la_count]          = "\"#A0A0A0\""
         , [la_rownum]         = "\"#FF0000\""
-        , [la_number]         = "\"#FF0000\""
+        , [la_number]         = "\"#FF9999\""
         , [la_type]           = "\"#C0C0C0\""
         , [la_type_assert]    = "\"#C0C0C0\""
         , [la_cast]           = "\"#C0C0C0\""
@@ -222,14 +222,14 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
         , [la_all]            = "\"#C0C0C0\""
         , [la_scjoin]         = "\"#1E90FF\""
         , [la_doc_tbl]        = "\"#C0C0C0\""
-        , [la_doc_access]     = "\"#C0C0C0\""
-        , [la_element]        = "\"#00FC59\""
-        , [la_element_tag]    = "\"#00FC59\""
-        , [la_attribute]      = "\"#00FC59\""
-        , [la_textnode]       = "\"#00FC59\""
-        , [la_docnode]        = "\"#00FC59\""
-        , [la_comment]        = "\"#00FC59\""
-        , [la_processi]       = "\"#00FC59\""
+        , [la_doc_access]     = "\"#CCCCFF\""
+        , [la_element]        = "\"#00CC59\""
+        , [la_element_tag]    = "\"#00CC59\""
+        , [la_attribute]      = "\"#00CC59\""
+        , [la_textnode]       = "\"#00CC59\""
+        , [la_docnode]        = "\"#00CC59\""
+        , [la_comment]        = "\"#00CC59\""
+        , [la_processi]       = "\"#00CC59\""
         , [la_merge_adjacent] = "\"#00D000\""
         , [la_roots]          = "\"#E0E0E0\""
         , [la_fragment]       = "\"#E0E0E0\""
@@ -252,14 +252,14 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
     {
         case la_lit_tbl:
             /* list the attributes of this table */
-            PFarray_printf (dot, "%s: <%s", a_id[n->kind],
+            PFarray_printf (dot, "%s: (%s", a_id[n->kind],
                             PFatt_str (n->schema.items[0].name));
 
             for (c = 1; c < n->schema.count;c++)
                 PFarray_printf (dot, " | %s",
                                 PFatt_str (n->schema.items[c].name));
 
-            PFarray_printf (dot, ">");
+            PFarray_printf (dot, ")");
 
             /* print out tuples in table, if table is not empty */
             for (unsigned int i = 0; i < n->sem.lit_tbl.count; i++) {
@@ -308,18 +308,18 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
 
         case la_empty_tbl:
             /* list the attributes of this table */
-            PFarray_printf (dot, "%s: <%s", a_id[n->kind],
+            PFarray_printf (dot, "%s: (%s", a_id[n->kind],
                             PFatt_str (n->schema.items[0].name));
 
             for (c = 1; c < n->schema.count;c++)
                 PFarray_printf (dot, " | %s", 
                                 PFatt_str (n->schema.items[c].name));
 
-            PFarray_printf (dot, ">");
+            PFarray_printf (dot, ")");
             break;
 
         case la_attach:
-            PFarray_printf (dot, "%s <%s> (val: ", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s), val: ", a_id[n->kind],
                             PFatt_str (n->sem.attach.attname));
 
             if (n->sem.attach.value.special == amm_min)
@@ -353,11 +353,10 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
             else
                 PFarray_printf (dot, "<NODE>");
 
-            PFarray_printf (dot, ")");
             break;
 
         case la_eqjoin:
-            PFarray_printf (dot, "%s (%s=%s)",
+            PFarray_printf (dot, "%s (%s = %s)",
                             a_id[n->kind], 
                             PFatt_str (n->sem.eqjoin.att1),
                             PFatt_str (n->sem.eqjoin.att2));
@@ -374,11 +373,11 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
 
             for (c = 1; c < n->sem.proj.count; c++)
                 if (n->sem.proj.items[c].new != n->sem.proj.items[c].old)
-                    PFarray_printf (dot, ",%s:%s",
+                    PFarray_printf (dot, ", %s:%s",
                                     PFatt_str (n->sem.proj.items[c].new),
                                     PFatt_str (n->sem.proj.items[c].old));
                 else
-                    PFarray_printf (dot, ",%s", 
+                    PFarray_printf (dot, ", %s", 
                                     PFatt_str (n->sem.proj.items[c].old));
 
             PFarray_printf (dot, ")");
@@ -400,7 +399,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
         case la_bool_or:
         case la_concat:
         case la_contains:
-            PFarray_printf (dot, "%s %s:(%s, %s)", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s:<%s, %s>)", a_id[n->kind],
                             PFatt_str (n->sem.binary.res),
                             PFatt_str (n->sem.binary.att1),
                             PFatt_str (n->sem.binary.att2));
@@ -408,7 +407,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
 
         case la_num_neg:
         case la_bool_not:
-            PFarray_printf (dot, "%s %s:(%s)", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s:<%s>)", a_id[n->kind],
                             PFatt_str (n->sem.unary.res),
                             PFatt_str (n->sem.unary.att));
 	    break;
@@ -418,11 +417,11 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
         case la_min:
         case la_sum:
             if (n->sem.aggr.part == att_NULL)
-                PFarray_printf (dot, "%s %s:(%s)", a_id[n->kind],
+                PFarray_printf (dot, "%s (%s:<%s>)", a_id[n->kind],
                                 PFatt_str (n->sem.aggr.res),
                                 PFatt_str (n->sem.aggr.att));
             else
-                PFarray_printf (dot, "%s %s:(%s)/%s", a_id[n->kind],
+                PFarray_printf (dot, "%s (%s:<%s>/%s)", a_id[n->kind],
                                 PFatt_str (n->sem.aggr.res),
                                 PFatt_str (n->sem.aggr.att),
                                 PFatt_str (n->sem.aggr.part));
@@ -430,10 +429,10 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
 
         case la_count:
             if (n->sem.count.part == att_NULL)
-                PFarray_printf (dot, "%s %s", a_id[n->kind],
+                PFarray_printf (dot, "%s (%s)", a_id[n->kind],
                                 PFatt_str (n->sem.count.res));
             else
-                PFarray_printf (dot, "%s %s/%s", a_id[n->kind],
+                PFarray_printf (dot, "%s (%s:/%s)", a_id[n->kind],
                                 PFatt_str (n->sem.count.res),
                                 PFatt_str (n->sem.count.part));
             break;
@@ -447,7 +446,7 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
                                 PFatt_str (n->sem.rownum.sortby.atts[0]));
 
             for (c = 1; c < n->sem.rownum.sortby.count; c++)
-                PFarray_printf (dot, ",%s", 
+                PFarray_printf (dot, ", %s", 
                                 PFatt_str (n->sem.rownum.sortby.atts[c]));
 
             PFarray_printf (dot, ">");
@@ -471,12 +470,12 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
 
         case la_type:
             if (atomtype[n->sem.type.ty])
-                PFarray_printf (dot, "%s (%s:%s,%s)", a_id[n->kind],
+                PFarray_printf (dot, "%s (%s:<%s>), type: %s", a_id[n->kind],
                                 PFatt_str (n->sem.type.res),
                                 PFatt_str (n->sem.type.att),
                                 atomtype[n->sem.type.ty]);
             else
-                PFarray_printf (dot, "%s (%s:%s,%i)", a_id[n->kind],
+                PFarray_printf (dot, "%s (%s:<%s>), type: %i", a_id[n->kind],
                                 PFatt_str (n->sem.type.res),
                                 PFatt_str (n->sem.type.att),
                                 n->sem.type.ty);
@@ -484,27 +483,28 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
 
         case la_type_assert:
             if (atomtype[n->sem.type_a.ty])
-                PFarray_printf (dot, "%s (%s,%s)", a_id[n->kind],
+                PFarray_printf (dot, "%s (%s), type: %s", a_id[n->kind],
                                 PFatt_str (n->sem.type_a.att),
                                 atomtype[n->sem.type_a.ty]);
             else
-                PFarray_printf (dot, "%s (%s,%i)", a_id[n->kind],
+                PFarray_printf (dot, "%s (%s), type: %i", a_id[n->kind],
                                 PFatt_str (n->sem.type_a.att),
                                 n->sem.type_a.ty);
                 
             break;
 
         case la_cast:
-            PFarray_printf (dot, "%s (%s%s%s,%s)", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s%s%s%s), type: %s", a_id[n->kind],
                             n->sem.cast.res?PFatt_str(n->sem.cast.res):"",
-                            n->sem.cast.res?":":"",
+                            n->sem.cast.res?":<":"",
                             PFatt_str (n->sem.cast.att),
+                            n->sem.cast.res?">":"",
                             atomtype[n->sem.cast.ty]);
             break;
 
         case la_seqty1:
         case la_all:
-            PFarray_printf (dot, "%s (%s:%s/%s)", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s:<%s>/%s)", a_id[n->kind],
                             PFatt_str (n->sem.blngroup.res),
                             PFatt_str (n->sem.blngroup.att),
                             PFatt_str (n->sem.blngroup.part));
@@ -581,20 +581,20 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
                         "unknown document access in dot output");
             }
 
-            PFarray_printf (dot, "\\%s (%s)",
+            PFarray_printf (dot, " (%s:<%s>)",
                             PFatt_str (n->sem.doc_access.res),
                             PFatt_str (n->sem.doc_access.att));
             break;
 
         case la_attribute:
-            PFarray_printf (dot, "%s (%s:%s,%s)", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s:<%s, %s>)", a_id[n->kind],
                             PFatt_str (n->sem.attr.res),
                             PFatt_str (n->sem.attr.qn),
                             PFatt_str (n->sem.attr.val));
             break;
 
         case la_textnode:
-            PFarray_printf (dot, "%s (%s:%s)", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s:<%s>)", a_id[n->kind],
                             PFatt_str (n->sem.textnode.res),
                             PFatt_str (n->sem.textnode.item));
             break;
@@ -680,10 +680,6 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
                             PFprop_dom (n->prop, n->schema.items[i].name));
                     }
 
-                /* list domain - subdomain relationships */
-                if (n->kind == la_serialize) {
-                    PFprop_write_dom_rel (dot, n->prop);
-                }
                 all = true;
             }
             fmt++;
@@ -1094,7 +1090,7 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *node)
                             "        <annotation>argument"
                                     "</annotation>\n"
                             "      </column>\n"
-                            "    <content>\n",
+                            "    </content>\n",
                             PFatt_str (n->sem.unary.res),
                             PFatt_str (n->sem.unary.att));
             break;
@@ -1506,8 +1502,21 @@ PFla_dot (FILE *f, PFla_op_t *root)
                              "node [fontsize=10];\n");
 
         la_dot (dot, root, "node1");
-        /* put content of array into file */
+
+        /* add domain subdomain relationships if required */
+        if (PFstate.format) {
+            char *fmt = PFstate.format;
+            while (*fmt) { 
+                if (*fmt == '+') {
+                        PFprop_write_dom_rel (dot, root->prop);
+                        break;
+                }
+                fmt++;
+            }
+        }
+
         PFarray_printf (dot, "}\n");
+        /* put content of array into file */
         fprintf (f, "%s", (char *) dot->base);
     }
 }

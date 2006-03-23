@@ -106,23 +106,59 @@ PFprop_write_domain (PFarray_t *f, dom_t domain)
 }
 
 /**
+ * Helper function for PFprop_write_dom_rel
+ *
+ * Checks if domain at position @a pos is already printed.
+ */
+static bool
+check_occurrence (PFarray_t *dom_rel, unsigned int pos)
+{
+    dom_t dom = ((dom_rel_t *) PFarray_at (dom_rel, pos))->dom;
+
+    for (unsigned int i = 0; i < PFarray_last (dom_rel); i++)
+        if (dom == ((dom_rel_t *) PFarray_at (dom_rel, i))->subdom)
+            return true;
+
+    for (unsigned int i = 0; i < pos; i++)
+        if (dom == ((dom_rel_t *) PFarray_at (dom_rel, i))->dom)
+            return true;
+
+    return false;
+}
+
+/**
  * Write domain-subdomain relationships of property container @a prop
- * to character array @a f.
+ * to in AT&T dot notation to character array @a f.
  */
 void
 PFprop_write_dom_rel (PFarray_t *f, const PFprop_t *prop)
 {
+    dom_t dom, subdom;
+
     assert (prop);
     if (prop->dom_rel) {
         PFarray_printf (f,
-                        "\\n\\ndomain -> subdomain\\nrelationships (# = %i):",
+                        "dr_header [label=\"domain -> "
+                        "subdomain\\nrelationships (# = %i)\"];\n"
+                        "node1 -> dr_header;\n",
                         PFarray_last (prop->dom_rel));
+
         for (unsigned int i = 0; i < PFarray_last (prop->dom_rel); i++) {
+            dom = ((dom_rel_t *) PFarray_at (prop->dom_rel, i))->dom;
+            subdom = ((dom_rel_t *) PFarray_at (prop->dom_rel, i))->subdom;
+
+            if (!check_occurrence (prop->dom_rel, i))
+                PFarray_printf (
+                    f,
+                    "dom_rel%i [label=\"%i\"];\n"
+                    "dr_header -> dom_rel%i;\n",
+                    dom, dom, dom);
+
             PFarray_printf (
                 f,
-                "\\n%i -> %i",
-                ((dom_rel_t *) PFarray_at (prop->dom_rel, i))->dom,
-                ((dom_rel_t *) PFarray_at (prop->dom_rel, i))->subdom);
+                "dom_rel%i [label=\"%i\"];\n"
+                "dom_rel%i -> dom_rel%i;\n",
+                subdom, subdom, dom, subdom);
         }
     }
 }
