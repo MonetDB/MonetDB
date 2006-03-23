@@ -9,16 +9,33 @@ stdout of test 'tcpip2` in directory 'src/modules/plain` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
+
+module(tcpip);
+VAR mapiport := monet_environment.find("mapi_port");
+fork(listen(int(mapiport)));
+
+var test2 := import("test1", true);
+test2.kunique().count().print();
+[ 2018 ]
+quit();
+# Monet Database Server V4.11.3
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+module(tcpip);
+module(unix);
+module(ascii_io);
+VAR mapiport := monet_environment.find("mapi_port");
+VAR c := open("localhost:"+mapiport);
+VAR TSTTRGDIR := getenv("TSTTRGDIR");
+
 var test1 := bat(oid, oid);
 test1.import(TSTTRGDIR + "/tcpip2.init.bat");
 test1.kunique().count().print();
 [ 2018 ]
 c.export(test1, "test1");
-
-var test2 := import("test1", true);
-test2.kunique().count().print();
-[ 2018 ]
-
+conn_waiter: lost connection, exiting.
 quit();
 
 # 16:46:13 >  

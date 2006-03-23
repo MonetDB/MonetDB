@@ -9,27 +9,40 @@ stdout of test 'tcpip1` in directory 'src/modules/plain` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-var x := bat(oid, oid);
-x.insert(0@0, 0@0);
-x.insert(1@0, 0@0);
-x.sort().print();
+
+module(tcpip);
+VAR mapiport := monet_environment.find("mapi_port");
+fork(listen(int(mapiport)));
+
+var y := import("x", true);
+y.print();
 #-----------------#
 # BAT:	  tmp_38  #
 # (void)  (oid)	  #
 #-----------------#
 [ 0@0,	  0@0	  ]
 [ 1@0,	  0@0	  ]
-c.export(x, "x");
+quit();
+# Monet Database Server V4.11.3
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
  
-var y := import("x", true);
-y.print();
+module(tcpip);
+VAR mapiport := monet_environment.find("mapi_port");
+VAR c := open("localhost:"+mapiport);
+
+var x := bat(oid, oid);
+x.insert(0@0, 0@0);
+x.insert(1@0, 0@0);
+x.sort().print();
 #-----------------#
 # BAT:	  tmp_38  #
 # (oid)	  (oid)	  #
 #-----------------#
 [ 0@0,	  0@0	  ]
 [ 1@0,	  0@0	  ]
-
+c.export(x, "x");
 quit();
 
 # 16:46:06 >  
