@@ -484,6 +484,7 @@ main(int argc, char *argv[])
 	return 0;
 }
 @L 
+%option never-interactive
 %{
 #include <mel_config.h>
 #include "mel.h"
