@@ -281,6 +281,10 @@ AC_SUBST(LIBXML2_LIBS, $LIBXML2_LIBS)
 AC_SUBST(LIBXML2_LDADD, $LIBXML2_LDADD)
 AM_CONDITIONAL(HAVE_LIBXML2, test x"$have_libxml2" != xno)
 
+# have_pftijah=no
+# AM_CONDITIONAL(HAVE_PFTIJAH, test "x$have_pftijah" != xno)
+AM_CONDITIONAL(HAVE_PFTIJAH, test "x$have_pftijah" == xyes)
+
 dnl Check for Burkowski Axis Steps support
 dnl --enable-burk
 AC_ARG_ENABLE(burk,

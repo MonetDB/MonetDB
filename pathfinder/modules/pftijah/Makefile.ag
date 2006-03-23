@@ -1,3 +1,4 @@
+
 # Copyright Notice:
 # -----------------
 #
@@ -19,15 +20,22 @@
 # 2000-2006 University of Konstanz.  All Rights Reserved.
 #
 
-SUBDIRS = conf compiler runtime src modules
+INCLUDES = $(MONETDB_INCS) $(LIBXML2_CFLAGS) ../../compiler/include
+PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 
-EXTRA_DIST = rules.mk extra.mk RunMtest.in RunMtest.bat.in \
-		RunMapprove.in RunMapprove.bat.in \
-		MonetDB-XQuery.spec.in MonetDB-XQuery.spec rpm.mk.in \
-		HowToStart-PF HowToStart-MinGW.txt
-EXTRA_DIST_DIR = NT tests
+lib__pftijah = {
+	DIR = libdir/MonetDB
+	SOURCES = \
+		pftijah.mx 
 
-EXTRA_HEADERS = pf_config.h
+	LIBS = \
+		$(PF_LIBS) $(MONETDB_LIBS) \
+		-lbat -lmonet -lstream \
+		-l_streams -l_builtin -l_ascii_io -l_algebra -l_constant
+}
 
-TESTS = RunMtest
-TESTS_ENVIRONMENT = $(SHELL)
+scripts_mil = {
+	DIR = libdir/MonetDB
+	SOURCES = pftijah.mx
+}
+

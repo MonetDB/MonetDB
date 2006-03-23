@@ -1,0 +1,56 @@
+@' The contents of this file are subject to the Pathfinder Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License.  You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/PathfinderLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.  See
+@' the License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the Pathfinder system.
+@'
+@' The Initial Developer of the Original Code is the Database &
+@' Information Systems Group at the University of Konstanz, Germany.
+@' Portions created by the University of Konstanz are Copyright (C)
+@' 2000-2006 University of Konstanz.  All Rights Reserved.
+
+@f pftijah
+@a Jan Flokstra
+@a Henning Rode
+
+@t DUMMY Pathfinder tijah implementation
+
+@m
+.MODULE pftijah;
+
+.COMMAND pftijah_testc() : void = CMDpftijah_test;
+ "dummy test of C call"
+
+.PRELUDE = pf_support_prelude;
+.EPILOGUE = pf_support_epilogue;
+
+.END pftijah;
+@mil
+module("pathfinder");
+
+proc pftijah_testmil() : void
+{
+    printf("HELLO WORLD.\n");
+}
+
+@c
+#include <gdk.h>
+
+int CMDpftijah_test() {
+    stream_printf(GDKout,"Hello World.\n");
+    return GDK_SUCCEED;
+}
+
+bat* pftijah_prelude() {
+    return NULL;
+}
+
+void pftijah_epilogue() {
+}
+@
