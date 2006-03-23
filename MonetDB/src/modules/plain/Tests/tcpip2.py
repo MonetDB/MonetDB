@@ -46,20 +46,14 @@ def main():
     x += 1; srv2 = server_start(x, "db" + str(x))
 
     srv1.stdin.write(prelude_1)
-    srv1.stdin.flush()
     time.sleep(1)                      # give server 1 time to start
     srv2.stdin.write(prelude_2)
-    srv2.stdin.flush()
    
     srv2.stdin.write(script_2)
-    srv2.stdin.flush()
     srv1.stdin.write(script_1)
-    srv1.stdin.flush()
  
     srv1.stdin.write("quit();\n");
-    srv1.stdin.flush()
     srv2.stdin.write("quit();\n");
-    srv2.stdin.flush()
 
     server_stop(srv1);
     server_stop(srv2);
