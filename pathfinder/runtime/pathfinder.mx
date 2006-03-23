@@ -289,24 +289,14 @@ MIL variables, but these point to the same global BATs).
 # get a handle to the global lock
 var pf_lock := pflock(); 
 
-# the document location
-var doc_name;     # document name
-var doc_location; # document URI
-var doc_height;   # height of document
-var doc_size;     # document size in bytes
-var doc_timestamp;# caching limit (nil if none)
-
-# caching rules
-var uri_lifetime; 
-
-# non-persistent metadata (transactions)
+# the main metadata
 var doc_query; # bat[oid,int] active working-sets (queries) that use a particular document 
 var doc_sema;  # bat[oid,sema] used by delete_doc to wait until all doc users have gone
 var doc_lock;  # bat[oid,lock] used by append_page() to ensure unique pages are given out size
 var doc_free;  # bat[oid,bat]  per document a list with all free pages smaller than the master size
 
 # empty pages to append onto rid_* master bats
-var empty_page;  # bat[void,int] of size REMAP_PAGE_SIZE counting down from REMAP_PAGE_SIZE-1
+var empty_page;  # bat[void,int] of size REMAP_PAGE size counting down from REMAP_PAGE_SIZE-1
 
 # the ws_* bats contain a recipe for creating a new ws
 var ws_nme; # name (prefix) of ws entry as persistent bat
@@ -322,32 +312,17 @@ var ws_dsk; # of those, all persistent bats on disk for a document container
 var ws_rid; # of those, all rid_* bats 
 var ws_shr; # all bats delivered by shredder
 
-# standoff extensions
-var burkowski := false;
-if (monet_environment.exist("burkowski"))
-    burkowski := =(monet_environment.find("burkowski"),"enabled"); 
-
 # initialize doc_query and doc_sema (use BBP as global mechanism to discover initialization)
 # note that this is required for concurrent MapiClient MIL sessions to share each other's variables.
 lock_set(pf_lock);
 if (not(isnil(CATCH(bat("doc_name").count())))) {
     # create doc_name table in case it does not exist
-    (doc_name := new(oid,str).persists(true)).bbpname("doc_name");
-    (doc_location := new(oid,str).persists(true)).bbpname("doc_location");
-    (doc_timestamp := new(oid,timestamp).persists(true)).bbpname("doc_timestamp");
-    (doc_height := new(oid,int).persists(true)).bbpname("doc_height");
-    (doc_size := new(oid,lng).persists(true)).bbpname("doc_size");
-    (uri_lifetime := new(str,lng).persists(true)).bbpname("uri_lifetime");
-} else {
-    doc_name := bat("doc_name");
-    doc_location := bat("doc_location");
-    doc_timestamp := bat("doc_timestamp");
-    doc_height := bat("doc_height");
-    doc_size := bat("doc_size");
-    uri_lifetime := bat("uri_lifetime");
-}
-if (not(doc_height.exist(oid(nil)))) {
-    doc_height.insert(oid(nil), 100000); # next doc_id
+    new(oid,str).persists(true).bbpname("doc_name");
+    new(oid,str).persists(true).bbpname("doc_location");
+    new(oid,timestamp).persists(true).bbpname("doc_timestamp");
+    new(oid,int).persists(true).bbpname("doc_height");
+    new(oid,lng).persists(true).bbpname("doc_size");
+    new(str,lng).persists(true).bbpname("uri_lifetime");
 }
 if (isnil(CATCH(bat("doc_query").count()))) {
     doc_query  := bat("doc_query"); 
@@ -450,7 +425,7 @@ PROC destroy_ws_locked(BAT[void,bat] ws) : void
         }
     }
     # determine whether a cache flush is desired (only count cached bats, those with a timestamp)
-    var cursize := sum(doc_timestamp.select(timestamp(nil),timestamp(nil)).mirror().join(doc_size));
+    var cursize := sum(bat("doc_timestamp").select(timestamp(nil),timestamp(nil)).mirror().join(bat("doc_size")));
     var maxsize := (1024LL * 1024LL) * lng(monet_environment.find("xquery_cacheMB"));
 
     if (cursize > maxsize) {
@@ -479,10 +454,9 @@ PROC ws_newpage_locked(BAT[void,bat] ws, oid doc_oid, oid cont) : oid {
     var rid_kind  := ws.fetch(RID_KIND).find(cont);
     var rid_nid   := ws.fetch(RID_NID).find(cont);
     var free_pages, i := 0;
-    var rid_cnt := count(rid_size);
-    var last_pid := 1 + (rid_cnt = 0).ifthenelse(0, (rid_cnt - 1) >> REMAP_PAGE_BITS);
-    
-    # obtain a free-list of pages
+    var last_pid := count(rid_size);
+    last_pid := 1 + (last_pid = 0).ifthenelse(0, (last_pid - 1) >> REMAP_PAGE_BITS);
+
     if (doc_free.exist(doc_oid)) {
         free_pages := doc_free.find(doc_oid);
     } else {
@@ -496,26 +470,14 @@ PROC ws_newpage_locked(BAT[void,bat] ws, oid doc_oid, oid cont) : oid {
         while(i < last_pid) { free_pages.append(oid(i)); i :+= 1; }
         doc_free.insert(doc_oid, free_pages);
     }
-
-    # re-use a page from the list; or -if empty- append a new page
     i := count(free_pages);
     if (i > 0) {
         last_pid := free_pages.fetch(i - 1);
         free_pages.reverse().delete(last_pid);
     } else {
-        # append a page to the master rid_* table
+        # make sure the new page exists by adding it to the master rid_* table
         var empty_page_chr := empty_page.project(chr(nil));
         var empty_page_oid := empty_page.project(oid(nil));
-        var lastpage_size := REMAP_PAGE_SIZE - and(rid_cnt,REMAP_PAGE_MASK);
-        if (lastpage_size < REMAP_PAGE_SIZE) {
-            # take care to fill out the last page (if not yet full)
-            rid_size.append(empty_page.slice(lastpage_size,REMAP_PAGE_SIZE), true);
-            rid_level.append(empty_page_chr.slice(lastpage_size,REMAP_PAGE_SIZE), true);
-            rid_kind.append(empty_page_chr.slice(lastpage_size,REMAP_PAGE_SIZE), true);
-            rid_prop.append(empty_page_oid.slice(lastpage_size,REMAP_PAGE_SIZE), true);
-            rid_nid.append(empty_page_oid.slice(lastpage_size,REMAP_PAGE_SIZE), true);
-        }
-        # append the new page
         rid_size.append(empty_page, true);
         rid_level.append(empty_page_chr, true);
         rid_kind.append(empty_page_chr, true);
@@ -541,30 +503,29 @@ PROC ws_newpage(BAT[void,bat] ws, oid cont) : oid {
 PROC shred_doc_locked(BAT[str,bat] docBAT, str location, str name, timestamp ts, int ws, int height) : void 
 {
     # get a new persistent doc id
-    var doc_id := doc_height.find(oid(nil));
+    var doc_oid := 0@0;
+    if (bat("doc_name").count() > 0) 
+        doc_oid := oid(int(bat("doc_name").reverse().max()) + 1); 
 
     # rename all new bats with the doc id as suffix
-    [rename](docBAT, [+](str(doc_id) + "_", mirror(docBAT)));
+    [rename](docBAT, [+](mirror(docBAT), str(int(doc_oid))));
     var totsize := sum([batsize](docBAT));
 
-    var doc_oid := oid(doc_id);
-    doc_height.replace(oid(nil), doc_id+1);
-
     # add to meta table
-    doc_name.insert(doc_oid, name);
-    doc_location.insert(doc_oid, location);
-    doc_timestamp.insert(doc_oid, ts);
-    doc_height.insert(doc_oid, height);
-    doc_size.insert(doc_oid, totsize);
+    bat("doc_name").insert(doc_oid, name);
+    bat("doc_location").insert(doc_oid, location);
+    bat("doc_timestamp").insert(doc_oid, ts);
+    bat("doc_height").insert(doc_oid, height);
+    bat("doc_size").insert(doc_oid, totsize);
 
     [persists](docBAT, true);
 
     # add the meta table to the commit set 
-    #docBAT.insert(str(nil),doc_name);
-    #docBAT.insert(str(nil),doc_location);
-    #docBAT.insert(str(nil),doc_timestamp);
-    #docBAT.insert(str(nil),doc_height);
-    #docBAT.insert(str(nil),doc_size);
+    #docBAT.insert(str(nil),bat("doc_name"));
+    #docBAT.insert(str(nil),bat("doc_location"));
+    #docBAT.insert(str(nil),bat("doc_timestamp"));
+    #docBAT.insert(str(nil),bat("doc_height"));
+    #docBAT.insert(str(nil),bat("doc_size"));
     #if (not(subcommit(docBAT))) 
     if (not(commit())) ERROR("shred_doc(%s) : commit failed\n", name);
 
@@ -610,6 +571,9 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
     return shredBAT.fetch(PRE_LEVEL).max().int() + 1;
 }
 
+var burkowski := false;
+if (monet_environment.exist("burkowski"))
+    burkowski := =(monet_environment.find("burkowski"),"enabled"); 
 
 PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, bit doCommit, str opt, timestamp ts, int ws) : int
 {
@@ -618,7 +582,7 @@ PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, bit doCommit, s
 
     # always make sure not to cause errors while holding the lock
     lock_set(pf_lock);
-    err := CATCH(exists := doc_name.texist(name));
+    err := CATCH(exists := bat("doc_name").texist(name));
     lock_unset(pf_lock);
 
     if (not(isnil(err))) ERROR(err);
@@ -632,10 +596,9 @@ PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, bit doCommit, s
         print("# extracting regions...\n");
         docBAT := region_extract(docBAT, "lng");
     } else {
-       var r_pre, r_start, r_end;
-       (r_pre := bat(void, oid).seqbase(0@0)).bbpname("region_pre");
-       (r_start := bat(void, lng).seqbase(0@0)).bbpname("region_start");
-       (r_end := bat(void, lng).seqbase(0@0)).bbpname("region_end");
+       var r_pre := bat(void, oid).seqbase(0@0).bbpname("region_pre");
+       var r_start := bat(void, lng).seqbase(0@0).bbpname("region_start");
+       var r_end := bat(void, lng).seqbase(0@0).bbpname("region_end");
        docBAT.access(BAT_WRITE).insert("region_pre",r_pre); 
        docBAT.access(BAT_WRITE).insert("region_start",r_start); 
        docBAT.access(BAT_WRITE).insert("region_end",r_end); 
@@ -713,7 +676,7 @@ PROC delete_doc_locked(oid doc_oid) : bit
     }
 
     # docBAT becomes [name,bat]
-    docBAT := [bat]([+](str(int(doc_oid)) + "_", ws_dsk).reverse().mirror());
+    docBAT := [bat]([+](ws_dsk, str(int(doc_oid))).reverse().mirror());
 
     # rename the bats so even in case of failure they don't bother us directly anymore
     [rename](docBAT, [+]([+]("rm_", mirror(docBAT)), +("_" , str(lng(current_timestamp()))))).access(BAT_WRITE);
@@ -721,18 +684,18 @@ PROC delete_doc_locked(oid doc_oid) : bit
     # remove them from the repository
     [persists](docBAT, false);
 
-    doc_name.delete(doc_oid);
-    doc_location.delete(doc_oid);
-    doc_timestamp.delete(doc_oid);
-    doc_height.delete(doc_oid);
-    doc_size.delete(doc_oid);
+    bat("doc_name").delete(doc_oid);
+    bat("doc_location").delete(doc_oid);
+    bat("doc_timestamp").delete(doc_oid);
+    bat("doc_height").delete(doc_oid);
+    bat("doc_size").delete(doc_oid);
 
     # also commit the meta bats
-    #docBAT.insert(str(nil), doc_name);
-    #docBAT.insert(str(nil), doc_location);
-    #docBAT.insert(str(nil), doc_timestamp);
-    #docBAT.insert(str(nil), doc_height);
-    #docBAT.insert(str(nil), doc_size);
+    #docBAT.insert(str(nil), bat("doc_name"));
+    #docBAT.insert(str(nil), bat("doc_location"));
+    #docBAT.insert(str(nil), bat("doc_timestamp"));
+    #docBAT.insert(str(nil), bat("doc_height"));
+    #docBAT.insert(str(nil), bat("doc_size"));
     #return subcommit(docBAT);
     return commit();
 }
@@ -743,7 +706,7 @@ PROC delete_doc(str name) : void
 
     # always make sure not to cause errors while holding the lock
     lock_set(pf_lock);
-    err := CATCH(exists := doc_name.texist(name));
+    err := CATCH(exists := bat("doc_name").texist(name));
     lock_unset(pf_lock);
 
     if (not(isnil(err))) ERROR(err);
@@ -751,7 +714,7 @@ PROC delete_doc(str name) : void
 
     # always make sure not to cause errors while holding the lock
     lock_set(pf_lock);
-    err := CATCH(delete_doc_locked(doc_name.reverse().find(name)));
+    err := CATCH(delete_doc_locked(bat("doc_name").reverse().find(name)));
     lock_unset(pf_lock);
 
     if (not(isnil(err))) ERROR(err);
@@ -765,7 +728,7 @@ delete the persistent BATS that store the document.",
 
 PROC delete_all_docs_locked(bit cachedOnly) : void
 {
-    doc_timestamp.copy()@batloop() {
+    bat("doc_timestamp").copy()@batloop() {
         if (not(and(cachedOnly, isnil($t))))
             delete_doc_locked($h);
     }
@@ -840,7 +803,7 @@ PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, str docid, int 
             ws.fetch(DOC_OID).append(oid(nil));
         } else {
             # docid holds the str(id) of the persistent doc; pre_*'s are remapped rid_*'s
-            rid := [bat]([+](docid + "_", ws_dsk));
+            rid := [bat]([+](ws_dsk, docid));
             pre := [remap](ws_rid.leftjoin(rid), const rid.find(oid(MAP_PID)), false);
             ws.fetch(DOC_OID).append(oid(docid));
         }
@@ -867,14 +830,14 @@ PROC add_doc_locked(str name, timestamp ts, int ws) : oid
 {
     var doc_oid := oid(nil);
     # check if the document already existed
-    if (doc_name.texist(name)) {
-        doc_oid := doc_name.reverse().find(name);
-    } else if (doc_location.texist(name)) {
+    if (bat("doc_name").texist(name)) {
+        doc_oid := bat("doc_name").reverse().find(name);
+    } else if (bat("doc_location").texist(name)) {
         # existed as cached location (URI): must check timestamp
-        doc_oid := doc_location.reverse().find(name);
+        doc_oid := bat("doc_location").reverse().find(name);
     }
     if (not(isnil(doc_oid))) {
-        var lim := doc_timestamp.find(doc_oid);
+        var lim := bat("doc_timestamp").find(doc_oid);
         if (not(isnil(lim))) { # a nil limit means the doc never expires
             if  (ts > lim) {
                 delete_doc_locked(doc_oid); # remove outdated document from the cache
@@ -890,6 +853,7 @@ PROC lifetime_doc_locked(str name, str filename, oid doc_oid, timestamp ts) : ti
 {
     if (isnil(doc_oid) and isnil(filename)) {
         # for not-yet-cached URIs: get lifetime from uri_lifetime BAT
+        var uri_lifetime := bat("uri_lifetime");
         var b := [startsWith](name, mirror(uri_lifetime)).uselect(true);
         var lifetime := lng(nil);
         if (b.count() > 0) {
@@ -932,8 +896,8 @@ PROC add_doc(BAT[void,bat] ws, str name) : int
         time_shred :+= time() - t;
     }
     if (isnil(docid)) {
-        doc_oid := doc_name.reverse().find(name);
-        height := doc_height.find(doc_oid);
+        doc_oid := bat("doc_name").reverse().find(name);
+        height := bat("doc_height").find(doc_oid);
         docid := str(int(doc_oid));
     }
     add_docbat(ws, docBAT, name, docid, height);
@@ -973,7 +937,7 @@ PROC xmlcache_add_rule(str uri, any lifetime) : void {
 }
 PROC xmlcache_add_rule(str uri, lng lifetime) : void {
     lock_set(pf_lock);
-    var err := CATCH({ uri_lifetime.delete(uri); uri_lifetime.insert(uri, lifetime); });
+    var err := CATCH({ bat("uri_lifetime").delete(uri); bat("uri_lifetime").insert(uri, lifetime); });
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
 }
@@ -982,7 +946,7 @@ ADDHELP("xmlcache_add_rule", "boncz", "May 2005",
 
 PROC xmlcache_del_rule(str uri) : void {
     lock_set(pf_lock);
-    var err := CATCH({ uri_lifetime.delete(uri);});
+    var err := CATCH({ bat("uri_lifetime").delete(uri);});
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
 }
@@ -991,7 +955,7 @@ ADDHELP("xmlcache_del_rule", "boncz", "May 2005",
 
 PROC xmlcache_print_rules() : void {
     lock_set(pf_lock);
-    var err := CATCH({  table(uri_lifetime.hmark(0@0).col_name("URI-prefix"), uri_lifetime.tmark(0@0).col_name("liftime-secs")); });
+    var err := CATCH({  table(bat("uri_lifetime").hmark(0@0).col_name("URI-prefix"), bat("uri_lifetime").tmark(0@0).col_name("liftime-secs")); });
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
 }
@@ -1000,7 +964,7 @@ ADDHELP("xmlcache_print_rules", "boncz", "May 2005",
 
 PROC xmlcache_print() : void {
     lock_set(pf_lock);
-    var err := CATCH({  table(doc_name.col_name("alias"), doc_location.col_name("URI"), doc_size.col_name("size"), doc_timestamp.select(timestamp(nil),timestamp(nil)).col_name("valid-thru")); });
+    var err := CATCH({  table(bat("doc_name").col_name("alias"), bat("doc_location").col_name("URI"), bat("doc_size").col_name("size"), bat("doc_timestamp").select(timestamp(nil),timestamp(nil)).col_name("valid-thru")); });
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
 }
@@ -1009,7 +973,7 @@ ADDHELP("xmlcache_print", "boncz", "May 2005",
 
 PROC xmldb_print() : void {
     lock_set(pf_lock);
-    var err := CATCH({  table(mirror(doc_timestamp.uselect(timestamp(nil))).join(doc_name).col_name("alias"), doc_location.col_name("URI"), doc_size.col_name("size")); });
+    var err := CATCH({  table(mirror(bat("doc_timestamp").uselect(timestamp(nil))).join(bat("doc_name")).col_name("alias"), bat("doc_location").col_name("URI"), bat("doc_size").col_name("size")); });
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
 }
@@ -1155,7 +1119,8 @@ typedef struct _xquery_module {
     char* prologue;               /* MIL procs defined in this module */
     char* epilogue;               /* MIL procs undefs for this module */
     xquery_function *functions;   /* functions declared in this module */
-    char url[1];                  /* module url */
+    char *nsurl;                  /* module namespace definition */
+    char *url;                    /* module url */
 } xquery_module;
 
 /* global list of known modules and their function declarations */
@@ -1244,7 +1209,7 @@ MT_Lock pf_cache_lock;
  *
  * int
  * xquery_compile_exec(xquery_client *ctx, char *mode, char* xquery, int is_url, 
- *                     char** prologue, char** query, char** epilogue) 
+ *                     char** prologue, char** query, char** epilogue, char* nsurl) 
  * - translate xquery to MIL and execute
  *
  * all int-returning functions return error(0)/ok(1)
@@ -1336,11 +1301,12 @@ xquery_compile_exec(xquery_client *ctx,
                     int is_url, 
                     char** prologue, 
                     char** query, 
-                    char** epilogue)
+                    char** epilogue,
+                    char* nsurl)
 {
     int is_mil = 0, len=0, ret = 0, debug = strstr(mode,"debug") != NULL;
     char *mapi = strstr(mode, "mapi")?"=":"";
-    char *err = NULL;
+    char *err = NULL, *p1 = NULL, *p2 = NULL;
 
     MT_set_lock(pf_compiler_lock, "xquery_compile_exec");
     if (is_url) {
@@ -1354,6 +1320,16 @@ xquery_compile_exec(xquery_client *ctx,
             *prologue = xquery; *epilogue = NULL;
         } else {
             err = PFcompile_MonetDB(xquery, mode, prologue, &del, epilogue);
+            if (err == NULL && nsurl != NULL){
+                /* retrive the module namespace URL, we assume that
+                 * 'xquery' contains a valid XQuery module. */
+                p1 = strchr(xquery, (int)'\"');
+                p1++;
+                p2 = strchr(p1, (int)'\"');
+                len = p2 - p1;
+                strncpy(nsurl, p1, len);
+                nsurl[len] = 0;
+            }
         }
         if (err == NULL || (prologue && *prologue) || (del && *del)) {
             ret = 1; /* no errors, or some MIL script came out still */
@@ -1774,6 +1750,11 @@ xquery_function_call(xquery_client *ctx,
  * xquery_module_free(xquery_module *mod)
  * - free module structure 
  *
+ * char*
+ * match_module_ns(char *module_ns, char *import_ns)
+ * - check if two module namespace match
+ * - return error msg on error, NULL otherwise
+ *
  * xquery_module* 
  * xquery_module_compile(xquery_client *ctx, char* mode, char *url)
  * - get an xquery module, compile it and cache it (return NULL on error)
@@ -1799,7 +1780,36 @@ xquery_module_free(xquery_module *mod)
     }
     if (mod->epilogue) free(mod->epilogue);
     if (mod->prologue) free(mod->prologue);
+  //  GDKfree(mod->nsurl);
+   // GDKfree(mod->url);
     GDKfree(mod);
+}
+
+/*
+ * check if two module namespace match
+ * return error msg on error, NULL otherwise
+ * 'module_ns': module namespace as specified in the module decleration
+ * 'import_ns': module namespace as specified in the import module
+ *              statement.
+ */
+static char*
+match_module_ns(char *module_ns , char *import_ns)
+{
+    char *errstr = NULL;
+    int errlen = 0;
+
+    if (strcmp(module_ns, import_ns) != 0) {
+        errlen = strlen(module_ns) + strlen(import_ns) + 256;
+        if (!(errstr = GDKmalloc(errlen))) {
+            return "xquery_module_load: could not allocate.\n";
+        }
+        snprintf(errstr, errlen, 
+                "xquery_module_load: import module statement (\"%s\")"
+                "does not match module namespace decleration (\"%s\")",
+                import_ns, module_ns);
+        return errstr;
+    }
+    return NULL;
 }
 
 /*
@@ -1810,16 +1820,33 @@ xquery_module_compile(xquery_client *ctx,
                       char* mode, 
                       char *url) 
 {
-    xquery_module *mod = GDKmalloc(sizeof(xquery_module)+strlen(url));
+    xquery_module *mod = NULL;
     BAT *b = ctx->proc_vid;
     int xx = BUNsize(b);
     int cnt = BUNindex(b, BUNlast(b));
+    int url_len = strlen(url), nsurl_len;
     BUN p, q;
 
-    if (mod == NULL) return NULL;
-    memset(mod, 0, sizeof(xquery_module));
+    mod = GDKmalloc(sizeof(xquery_module));
+    if (mod == NULL)
+        return NULL;
+    nsurl_len = url_len > 1024 ? url_len : 1024;
+    mod->nsurl = GDKmalloc(nsurl_len);
+    if (mod->nsurl == NULL) {
+        GDKfree(mod);
+        return NULL;
+    }
+    mod->url = GDKmalloc(url_len);
+    if (mod->url == NULL) {
+        GDKfree(mod->nsurl); GDKfree(mod);
+        return NULL;
+    }
+
+    memset(mod, 0, (sizeof(xquery_module)- sizeof(char*) - sizeof(char*)) );
+    memset(mod->nsurl, 0, nsurl_len);
+    memset(mod->url, 0, url_len);
     strcpy(mod->url, url);
-    if (!xquery_compile_exec(ctx, mode, url, 1, &mod->prologue, NULL, &mod->epilogue)) {
+    if (!xquery_compile_exec(ctx, mode, url, 1, &mod->prologue, NULL, &mod->epilogue, mod->nsurl)) {
         xquery_module_free(mod);
         return NULL;
     } 
@@ -1855,14 +1882,20 @@ static char*
 xquery_module_load(xquery_client *ctx, 
                    char* mode, 
                    char *ns, 
+                   char *module,
                    char *url) 
 {
     xquery_loaded_module *mod, *prev = NULL;
+    char *err = NULL;
     int nslen = strlen(ns);
 
     /* check whether it was already loaded in this query */
     for(mod = ctx->loaded_modules; mod; prev = mod, mod = mod->next) {
         if (strcmp(mod->def->url, url) == 0) {
+            err = match_module_ns(mod->def->nsurl, module);
+            if (err != NULL){
+                return err;
+            }
             if (mod->nslen == 0) {
                 if (prev) prev->next = mod->next;
                 else ctx->loaded_modules = NULL;
@@ -1884,9 +1917,22 @@ xquery_module_load(xquery_client *ctx,
 
         MT_set_lock(pf_module_lock, "xquery_module_load");
         for(def = xquery_compiled_modules; def; def = def->next) 
-            if (strcmp(def->url, url) == 0) break;
-        if (def == NULL)
+            if (strcmp(def->url, url) == 0) {
+                err = match_module_ns(def->nsurl, module);
+                if (err != NULL){
+                    MT_unset_lock(pf_module_lock, "xquery_module_load");
+                    return err;
+                }
+                break;
+            }
+        if (def == NULL){
             mod->def = xquery_module_compile(ctx, mode, url);
+            err = match_module_ns(mod->def->nsurl, module);
+            if (err != NULL){
+                MT_unset_lock(pf_module_lock, "xquery_module_load");
+                return err;
+            }
+        }
         MT_unset_lock(pf_module_lock, "xquery_module_load");
 
         /* if a compiled module was found, we still need to execute it */
@@ -2358,7 +2404,8 @@ xquery_prepare(xquery_client *ctx,
         if (strncmp(p, "import", 6) || !ISSPACE(p[6])) {
             break;
         } else {
-            /* e.g. import module namespace xmark = "/cygwin/tmp/" at "/cygwin/tmp/mod1.xq"; */ 
+            /* e.g. import module namespace xmark = "/cygwin/tmp/" at "/cygwin/tmp/mod1.xq";
+             * or:  import rpc-module namespace xmark = "/cygwin/tmp/" at "/cygwin/tmp/mod1.xq"; */ 
             p = xquery_parse_space(p+6);
             if ( (strncmp(p, "module", 6) == 0 && ISSPACE(p[6])) ||
                  (strncmp(p, "rpc-module", 10) == 0 && ISSPACE(p[10])) ){
@@ -2384,7 +2431,7 @@ xquery_prepare(xquery_client *ctx,
 
                     /* cut off module import from the query, and load it here (to have it cached later) */
                     *nsend = 0; 
-                    err = xquery_module_load(ctx, mode, ns, url2);
+                    err = xquery_module_load(ctx, mode, ns, url1, url2);
                     if (err) return err;
                     *nsend = bak; 
                 } while (*p == ',');
@@ -2484,7 +2531,7 @@ xquery_prepare(xquery_client *ctx,
         char *sec2 = NULL;
         char *sec3 = NULL;
         /* compile and execute the query (minus module imports) */
-        if (xquery_compile_exec(ctx, mode, query, 0, &sec1, &sec2, &sec3)) 
+        if (xquery_compile_exec(ctx, mode, query, 0, &sec1, &sec2, &sec3, NULL)) 
                 err = NULL; /* in case of execution err, it stays -1 */
         if (sec1) free(sec1);
         if (sec2) free(sec2);
@@ -2732,16 +2779,12 @@ xquery_method(stream *out,
             ctx->fderr = s;
             mode = "xml-debug-noheader-typed-root-iter";
         }
-        /* This 'stream_write' is _only_ used to pacify the compiler.
-         * It should be removed when sanity check of module namespace is
-         * implemented in 'xquery_module_load'. */
-        stream_write(ctx->fderr, module, strlen(module), 1);
         stream_write(ctx->fderr, prologue, strlen(prologue), 1);
         argc = argc % 1000;
     }
 
     if (err == NULL && module)
-        err = xquery_module_load(ctx, mode, ns="xquery_rpc", uri); 
+        err = xquery_module_load(ctx, mode, ns="xquery_rpc", module, uri); 
 
     if (err == NULL) { 
         err = xquery_function_call(ctx, msec, mode, ns, method, argc, itercnt, argcnt, argtpe, argval, shredBAT);
