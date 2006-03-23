@@ -9578,9 +9578,7 @@ static int test_join_pattern(PFcnode_t *for_node,
             snd_inner_cast = DL(apply_node);
             switched_args = true;
         }
-        else mps_error ("can't find variable occurrence "
-                        "of variable '%s' in join pattern testing.",
-                        PFqname_str((LLL(fst_inner)->sem.var)->qname));
+        else return join_found;
         
         if (snd_inner)
         {
@@ -9595,9 +9593,7 @@ static int test_join_pattern(PFcnode_t *for_node,
                )
             {
             }
-            else mps_error ("can't find variable occurrence "
-                            "of variable '%s' in join pattern testing.",
-                            PFqname_str((LLL(snd_inner)->sem.var)->qname));
+            else return join_found;
         }
         else
         {
