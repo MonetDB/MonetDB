@@ -860,7 +860,7 @@ stmt_bat(sql_column *c, stmt *basetable, int access )
 {
 	stmt *s = stmt_bat_(c, basetable, access );
 	
-	if (c->base.flag != TR_NEW && 
+	if (c->base.flag != TR_NEW && c->t->table &&
 	    access == RDONLY && c->t->persists && !c->t->clear) {
 		stmt *i = stmt_bat_(c, stmt_dup(basetable), INS );
 		stmt *u = stmt_bat_(c, stmt_dup(basetable), UPD );
@@ -870,7 +870,7 @@ stmt_bat(sql_column *c, stmt *basetable, int access )
 		s = stmt_union(s, stmt_dup(u));
 	} 
 	/* even temp tables have deletes because we like to keep void heads */
-	if (access == RDONLY) {
+	if (access == RDONLY && c->t->table) {
 		stmt *d = stmt_tbat(c->t, RDONLY);
 		s = stmt_diff(s, stmt_reverse(d));
 	}
@@ -904,7 +904,7 @@ stmt_idxbat(sql_idx * idx, int access)
 {
 	stmt *s = stmt_idxbat_(idx, access);
 
-	if (idx->base.flag != TR_NEW && 
+	if (idx->base.flag != TR_NEW && idx->t->table &&
 	    access == RDONLY && idx->t->persists && !idx->t->clear) {
 		stmt *i = stmt_idxbat_(idx, INS);
 		stmt *u = stmt_idxbat_(idx, UPD);
@@ -914,7 +914,7 @@ stmt_idxbat(sql_idx * idx, int access)
 		s = stmt_union(s, stmt_dup(u));
 	} 
 	/* even temp tables have deletes because we like to keep void heads */
-	if (access == RDONLY) {
+	if (access == RDONLY && idx->t->table) {
 		stmt *d = stmt_tbat(idx->t, RDONLY);
 		s = stmt_diff(s, stmt_reverse(d));
 	}

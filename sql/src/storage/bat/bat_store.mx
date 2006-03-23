@@ -2298,7 +2298,9 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 	c->bat.bid = oc->bat.bid;
 	c->bat.name = c->bat.uname = NULL;
 
-	if (c->t->clear) {
+	if (!c->t->table) {
+		temp_dup(c->bat.ibid); 
+	} else if (c->t->clear) {
 		c->bat.ibid = temp_copy(c->bat.ibid, c->t->clear);
 	/* created in the first transaction */
 	} else if (isNew(oc)) { 
@@ -2326,7 +2328,7 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 	}
 
 	c->bat.ubid = oc->bat.ubid;
-	if (!c->t->clear) { /* new ubid */
+	if (!c->t->clear && c->t->table) { /* new ubid */
 		if (c->bat.ubid) {
 			c->bat.ubid = temp_copy(c->bat.ubid, 0);
 		} else {
@@ -2798,7 +2800,7 @@ rollforward_use_bat(sql_trans *tr, sql_column *c)
 	BAT *b;
 
 	/* only log on toplevel */
-	b = temp_descriptor(c->bat.bid);
+	b = temp_descriptor(c->bat.ibid);
 
 	snprintf(bname, BUFSIZ, "%s_%s", c->t->base.name, c->base.name);
 	c->bat.name = _strdup(bname);
