@@ -49,10 +49,15 @@ b.print();
 a.append(b).print();
 !ERROR: interpret: no matching MIL operator to 'append(BAT[oid,void], BAT[oid,oid])'.
 !MAYBE YOU MEAN:
+!	append(BAT[void,any::1], any::1, bit) : BAT[void,any::1]
 !	append(BAT[void,any::1], any::1) : BAT[void,any::1]
+!	append(BAT[oid,any::1], any::1, bit) : BAT[oid,any::1]
 !	append(BAT[oid,any::1], any::1) : BAT[oid,any::1]
+!	append(BAT[void,any::1], BAT[oid,any::1], bit) : BAT[void,any::1]
 !	append(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]
+!	append(BAT[void,any::1], BAT[void,any::1], bit) : BAT[void,any::1]
 !	append(BAT[void,any::1], BAT[void,any::1]) : BAT[void,any::1]
+!	append(BAT[oid,any::1], BAT[oid,any::1], bit) : BAT[oid,any::1]
 !	append(BAT[oid,any::1], BAT[oid,any::1]) : BAT[oid,any::1]
 !ERROR: interpret_params: print(param 1): evaluation error.
 
