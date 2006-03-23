@@ -206,7 +206,9 @@ socket_open(str host, int port, str fcn)
 static int
 socket_close(int sock)
 {
-	return shutdown(sock, 2);
+	int r = shutdown(sock, 2);
+	close(sock);
+	return r;
 }
 
 static int
@@ -1056,7 +1058,8 @@ hostname(void)
 	return TCPhostname;
 }
 
-static int listeners = 0, ports[256] = { 0 };
+#define MAX_LISTENERS 256
+static int listeners = 0, ports[MAX_LISTENERS] = { 0 };
 
 static int
 conn_insert(str host, int port, int me, int sock)
@@ -1228,9 +1231,9 @@ TCPlisten(int *port)
 Register ourselves
 @c
 	MT_set_lock(TCPlock, "TCPlisten");
-	while (port_no < 256 && ports[port_no])
+	while (port_no < MAX_LISTENERS && ports[port_no])
 		port_no++;
-	if (port_no == 256) {
+	if (port_no == MAX_LISTENERS) {
 		GDKsyserror("TCPlisten: too many listners\n");
 		return GDK_FAIL;
 	}
@@ -1367,6 +1370,16 @@ TCPopen(int *retval, str address)
 	} else {
 		/* we know it'll fit */
 		strcpy(host, address);
+	}
+
+	if (strcmp(host,"localhost") == 0 || strcmp(host,hostname()) == 0) {
+		int i;
+		for (i = 0; i < MAX_LISTENERS; i++) {
+			if (ports[i] == port) {
+				GDKerror("There is no support for loopback communication\n");
+				return GDK_FAIL;
+			}
+		}
 	}
 
 	MT_set_lock(TCPlock, "TCPopen");
