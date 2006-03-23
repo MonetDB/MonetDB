@@ -9,19 +9,35 @@ stdout of test 'tcpip_rpc_crash_bat.SF-1049942` in directory 'tests/BugDay_2005-
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-module(tcpip);module(radix);
+
+module(tcpip);
+module(radix);
+module(alarm);
+VAR mapiport := monet_environment.find("mapi_port");
 
 PROC g(): bat[void, dbl] {
 	var a := uniform(100000).[dbl]().copy();
-	printf("done...\n");
+	printf("done...
+");
 	RETURN a;
 } 
 
-fork(listen());
+fork(listen(int(mapiport)));
 
-var cid := open("localhost");
-var res := rpc(cid, "g();"); # caused crash
+sleep(2);
 done...
+conn_waiter: lost connection, exiting.
+quit();
+# Monet Database Server V4.11.3
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+module(tcpip);
+VAR mapiport := monet_environment.find("mapi_port");
+VAR c := open("localhost:"+mapiport);
+
+var res := rpc(c, "g();"); # caused crash
 print(count(res));
 [ 100000 ]
 print(mark(slice(res, 0, 10), 0@0)); # mark to avoid random output

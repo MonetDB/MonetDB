@@ -9,21 +9,24 @@ stdout of test 'tcpip_close_crash.SF-1042370` in directory 'tests/BugDay_2005-11
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-module(mapi);
-module("tcpip");module("alarm");
 
-VAR tcpip_port := get_mapi_port();
-
-fork(listen(tcpip_port));
+module(tcpip);
+module(alarm);
+VAR mapiport := monet_environment.find("mapi_port");
+fork(listen(int(mapiport)));
 sleep(2);
+conn_waiter: lost connection, exiting.
+quit();
+# Monet Database Server V4.11.3
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
 
-VAR c := open("localhost:"+str(tcpip_port));
-sleep(2);
+module(tcpip);
+VAR mapiport := monet_environment.find("mapi_port");
+VAR c := open("localhost:"+mapiport);
 
 close(c);
-conn_waiter: lost connection, exiting.
-!ERROR: socket_gets: 
-conn_waiter: lost connection, exiting.
 quit();
 
 # 12:35:59 >  

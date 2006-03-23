@@ -10,18 +10,31 @@ stdout of test 'tcpip_rpc_hang.SF-1042381` in directory 'tests/BugDay_2005-11-09
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 module(tcpip);
+module(alarm);
+VAR mapiport := monet_environment.find("mapi_port");
 
 PROC f(): int {
 print(10);
 RETURN 10;
 }
 
-fork(listen());
+fork(listen(int(mapiport)));
 
-var cid := open("localhost");
-var res := rpc(cid, "f();");
+sleep(2);
 [ 10 ]
-print(res); # it never gets here
+conn_waiter: lost connection, exiting.
+quit();
+# Monet Database Server V4.11.3
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+module(tcpip);
+VAR mapiport := monet_environment.find("mapi_port");
+VAR c := open("localhost:"+mapiport);
+
+var res := rpc(c, "f();"); # caused crash
+print(res);
 [ 10 ]
 quit();
 
