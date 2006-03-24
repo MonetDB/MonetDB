@@ -20,13 +20,28 @@
 # 2000-2006 University of Konstanz.  All Rights Reserved.
 #
 
-INCLUDES = $(MONETDB_INCS) $(LIBXML2_CFLAGS) ../../compiler/include
+INCLUDES = ../../runtime $(MONETDB_INCS) $(LIBXML2_CFLAGS) ../../compiler/include
 PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
+
+LFLAGS = -Ptok -olex.yy.c
 
 lib__pftijah = {
 	DIR = libdir/MonetDB
 	SOURCES = \
-		pftijah.mx 
+		pftijah.mx \
+		pftijah_stem.mx \
+		snb_header.h \
+		snb_utilities.c \
+		snb_api.h \
+		snb_api.c \
+		stem_UTF_8_dutch.h \
+		stem_UTF_8_dutch.c \
+		stem_UTF_8_english.h \
+		stem_UTF_8_english.c \
+		stem_UTF_8_porter.h \
+		stem_UTF_8_porter.c \
+		pftijah_tokenize.l \
+		serialize_pftijah.mx
 
 	LIBS = \
 		$(PF_LIBS) $(MONETDB_LIBS) \
