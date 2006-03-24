@@ -370,7 +370,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
                 if ((cur_dom = PFprop_dom (
                                    R(n)->prop,
                                    R(n)->schema.items[i].name)) 
-                    == att1_dom)
+                    == att2_dom)
                     add_dom (n->prop, R(n)->schema.items[i].name, join_dom);
                 else if (join_dom == att2_dom)
                     add_dom (n->prop, R(n)->schema.items[i].name, cur_dom);
