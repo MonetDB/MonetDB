@@ -6338,6 +6338,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "  iter := bat(oid,oid);\n"
                 "  item := bat(oid,oid);\n"
                 "  kind := bat(oid,int);\n"
+                "  var time_ll_rpc := time();\n"
                 "  rpc_unq_dsts@[steps]batloop(){\n"
                 "    var iter_dst := rpc_dsts.ord_uselect($t).mirror(); # get iteration numbers for this destination\n"
                 "    var fun_iter_dst := fun_iter001.join(iter_dst);\n"
@@ -6364,6 +6365,8 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "      kind.insert(res_kind);\n"
                 "    } # end IF_ISNIL_RPC-ERR\n"
                 "  } # end BATLOOP\n"
+                "  time_ll_rpc := time() - time_ll_rpc;\n"
+                "  printf(\"\\nLoop-Lifted RPC time: %% 7d.000 msec\\n\\n\", time_ll_rpc);\n"
                 "  iter := iter.sort_ht().tmark(0@0);\n"
                 "  item := item.sort_ht().tmark(0@0);\n"
                 "  kind := kind.sort_ht().tmark(0@0);\n"
@@ -6377,8 +6380,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "    }\n"
                 "  }\n"
                 "} # end of RPC call\n",
-                apply.fun->qname.ns.uri, apply.rpc_uri, apply.fun->qname.loc,
-                counter, counter, counter, counter);
+                apply.fun->qname.ns.uri, apply.rpc_uri, apply.fun->qname.loc);
     } else {
         /* call the proc */
         milprintf(f, PFudfMIL(),
