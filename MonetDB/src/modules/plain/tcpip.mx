@@ -1036,7 +1036,6 @@ Mark the value as totally ready in the cache.
 			GDKsetbuf(errbuf_bak);
 			GDKfree(line);
 			closeClient(monetClient, 1);
-			stream_printf(GDKout, "conn_waiter: lost connection, exiting.\n");
 		}
 		THRdel(thr);
 	}
@@ -1291,7 +1290,6 @@ the listener heard something...
 @-
 This is the special command to shut down the listener.
 @c
-				GDKwarning("TCPlisten(%d): stopped.\n", *port);
 				close(msgsock);
 				break;
 			} else if ((p = strchr(line, '\n')) != NULL) {

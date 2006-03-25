@@ -15,7 +15,6 @@ module(alarm);
 VAR mapiport := monet_environment.find("mapi_port");
 fork(listen(int(mapiport)));
 sleep(2);
-conn_waiter: lost connection, exiting.
 quit();
 # Monet Database Server V4.11.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.

@@ -27,8 +27,6 @@ terminate(int(mapiport));
 module(tcpip);
 VAR mapiport := monet_environment.find("mapi_port");
 fork(listen(int(mapiport)));
-!WARNING: TCPlisten(30462): stopped.
-conn_waiter: lost connection, exiting.
 
 var y := import("x", true);
 y.print();
@@ -43,8 +41,6 @@ terminate(int(mapiport));
 module(tcpip);
 VAR mapiport := monet_environment.find("mapi_port");
 fork(listen(int(mapiport)));
-!WARNING: TCPlisten(30462): stopped.
-conn_waiter: lost connection, exiting.
 
 var y := import("x", true);
 y.print();
@@ -59,8 +55,6 @@ terminate(int(mapiport));
 module(tcpip);
 VAR mapiport := monet_environment.find("mapi_port");
 fork(listen(int(mapiport)));
-!WARNING: TCPlisten(30462): stopped.
-conn_waiter: lost connection, exiting.
 
 var y := import("x", true);
 y.print();
@@ -78,7 +72,9 @@ quit();
 # Visit http://monetdb.cwi.nl/ for further information.
 
 module(tcpip);
+module(alarm);
 VAR mapiport := monet_environment.find("mapi_port");
+sleep(2);	# waiting for first server to start listening
 VAR c := open("localhost:"+mapiport);
 
 var x := bat(oid, oid);
@@ -93,10 +89,11 @@ x.sort().print();
 [ 1@0,	  0@0	  ]
 c.export(x, "x");
 close(c);
-conn_waiter: lost connection, exiting.
 
 module(tcpip);
+module(alarm);
 VAR mapiport := monet_environment.find("mapi_port");
+sleep(2);	# waiting for first server to start listening
 VAR c := open("localhost:"+mapiport);
 
 var x := bat(oid, oid);
@@ -111,10 +108,11 @@ x.sort().print();
 [ 1@0,	  0@0	  ]
 c.export(x, "x");
 close(c);
-conn_waiter: lost connection, exiting.
 
 module(tcpip);
+module(alarm);
 VAR mapiport := monet_environment.find("mapi_port");
+sleep(2);	# waiting for first server to start listening
 VAR c := open("localhost:"+mapiport);
 
 var x := bat(oid, oid);
@@ -129,10 +127,11 @@ x.sort().print();
 [ 1@0,	  0@0	  ]
 c.export(x, "x");
 close(c);
-conn_waiter: lost connection, exiting.
 
 module(tcpip);
+module(alarm);
 VAR mapiport := monet_environment.find("mapi_port");
+sleep(2);	# waiting for first server to start listening
 VAR c := open("localhost:"+mapiport);
 
 var x := bat(oid, oid);

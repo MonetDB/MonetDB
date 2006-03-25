@@ -21,7 +21,9 @@ fork(listen(int(mapiport)));
 
 prelude_2 = '''
 module(tcpip);
+module(alarm);
 VAR mapiport := monet_environment.find("mapi_port");
+sleep(2);	# waiting for first server to start listening
 VAR c := open("localhost:"+mapiport);
 '''
 
@@ -44,11 +46,11 @@ def main():
     x = 0
     x += 1; srv1 = server_start(x, "db" + str(x))
     x += 1; srv2 = server_start(x, "db" + str(x))
+    time.sleep(1)                      # give servers time to start
 
     i = 0
     while i < 4:
     	srv1.stdin.write(prelude_1)
-    	time.sleep(1)                      # give server 1 time to start
     	srv2.stdin.write(prelude_2)
    
     	srv2.stdin.write(script_2)
