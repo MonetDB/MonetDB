@@ -1,11 +1,13 @@
 
-import os, time, sys, subprocess 
+import os, time, sys
 
-PIPE = subprocess.PIPE
+class Popen:
+	def __init__(self, cmd):
+		self.stdin,self.stdout = os.popen2(cmd, bufsize=0, mode='t'); 
 
 def server_start(x,dbname):
     srvcmd = '%s --dbname "%s"' % (os.getenv('MSERVER'),dbname)
-    return subprocess.Popen(srvcmd, shell=True, bufsize=0, stdin=PIPE, stdout=PIPE);
+    return Popen(srvcmd);
 
 def server_stop(srv):
     r = srv.stdout.read()
