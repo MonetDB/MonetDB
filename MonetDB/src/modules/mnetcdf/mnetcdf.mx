@@ -190,7 +190,7 @@ _nc_list(BAT **out, int *ncid)
 	for (i = 0; i < nvars; i++) {
 		nc_status = nc_inq_varname(*ncid, i, var_name);
 		ASSERT_STATUS_out;
-		BUNappend(*out, var_name);
+		BUNappend(*out, var_name, 0);
 	}
 	return GDK_SUCCEED;
 }
