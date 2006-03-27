@@ -2760,6 +2760,7 @@ xquery_method(stream *out,
     xquery_client *ctx; 
     char *err = NULL, *ns = "fn", *mode = "xml-noheader-typed-root-iter";
     Client c;
+    stream *s = NULL;
     
     c = initClient("xquery_rpc", "xquery_rpc", FALSE);
 	TBL_initclient(c, monet_clients);
@@ -2773,7 +2774,7 @@ xquery_method(stream *out,
     monetSetChannel(XQthread, GDKin, out);
     if (argc > 1000) {
         /* hack: pass argc+1000 and you get debug output */
-        stream *s = open_wstream("/tmp/xquery_rpc.mil");
+        s = open_wstream("/tmp/xquery_rpc.mil");
         char *prologue = (char*) PFinitMIL();
         if (s) {
             ctx->fderr = s;
@@ -2791,7 +2792,7 @@ xquery_method(stream *out,
         if (err == (char*) -1) err = "xquery_method: function could not be resolved.\n";
     }
 
-    if (ctx->fderr != GDKerr) {
+    if (s) {
         stream_close(ctx->fderr);
         stream_destroy(ctx->fderr);
     }
