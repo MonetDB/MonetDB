@@ -2796,8 +2796,10 @@ xquery_method(stream *out,
         stream_close(ctx->fderr);
         stream_destroy(ctx->fderr);
     }
-    xquery_client_end(ctx, NULL);
     monetSetChannel(XQthread, GDKin, GDKout);
+
+    xquery_client_end(ctx, NULL);
+    closeClient(c, FALSE);
     return err;
 }
 
