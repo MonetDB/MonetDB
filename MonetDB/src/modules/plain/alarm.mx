@@ -211,7 +211,15 @@ CMDsleep(int *secs)
 		GDKerror("CMDsleep: negative delay\n");
 		return GDK_FAIL;
 	} else {
+#ifdef __CYGWIN__
+		/* CYGWIN cannot handle SIGALRM with sleep */
+		lng t = GDKusec() + (*secs)*1000000;
+		
+		while (GDKusec() < t)
+			;
+#else
 		MT_sleep_ms(*secs * 1000);
+#endif
 	}
 	return GDK_SUCCEED;
 }

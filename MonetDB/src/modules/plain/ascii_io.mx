@@ -347,11 +347,6 @@ sep_dup(char *sep)
 				*res++ = '\t';
 				break;
 			}
-#ifdef __CYGWIN__
-		} else if (*sep == '\n') {
-			*res++ = '\r';
-			*res++ = *sep++;
-#endif
 		} else {
 			*res++ = *sep++;
 		}

@@ -350,8 +350,8 @@ def mFilter (FILE, IGNORE) :
                         warn(THISFILE, "Writing to output file '%s' failed with #%d: '%s'." % (fout.name, IOerrNo, IOerrStr))
         fout.flush()
     fout.close()
-    if os.name == "nt":
-        time.sleep(1)
+    #if os.name == "nt":
+        #time.sleep(1)
 ### mFilter (FILE, IGNORE) #
 
 #############################################################################
