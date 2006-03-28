@@ -1693,199 +1693,6 @@ proc strconcat(bat[void,str] a, bat[void,str] b) : bat[void,str]
   return [+](a,b);
 }
 
-# Move data starting at "from" of length "size" by "delta".  The
-# destination *must* be a hole (XXX check this).
-# Delta can be positive (move data down) or negative (move data up).
-# This function returns the modified replacements BAT (in
-# fact, the BATs that are in the tail of the replacements BAT may be
-# modified by this function).
-proc movedata(bat[bat,bat] replacements, bat[void,bat] ws, oid cont, oid from, int size, int delta): bat[bat,bat]
-{
-  if (delta = 0)
-    return replacements;        # not moving, so nothing to do
-
-  # some helpful values
-  var holefirst;                # ID of start of new hole
-  var holelast;                 # ID of end of new hole
-  var before;                   # ID of last node before area being moved and hole
-  var last;                     # ID of last node being moved
-  var after;                    # ID of first node after area being moved and hole
-  var newholefirst;             # ID if start of to-be-created hole
-  var newholelast;              # ID if end of to-be-created hole
-  last := oid((lng(from) + size) - 1);
-  if (delta < 0) {
-    holefirst := oid(lng(from) + delta);
-    holelast := oid(lng(from) - 1);
-    before := oid(lng(holefirst) - 1);
-    after := oid(lng(last) + 1);
-    newholefirst := oid(lng(holefirst) + size);
-    newholelast := oid(lng(holelast) + size);
-  } else {
-    holefirst := oid(lng(from) + size);
-    after := oid(lng(holefirst) + delta);
-    holelast := oid(lng(after) - 1);
-    before := oid(lng(from) - 1);
-    newholefirst := from;
-    newholelast := oid(lng(from) + delta - 1);
-  }
-
-  var pre_size := ws.fetch(PRE_SIZE).fetch(cont);
-  var pre_level := ws.fetch(PRE_LEVEL).fetch(cont);
-  var pre_prop := ws.fetch(PRE_PROP).fetch(cont);
-  var pre_kind := ws.fetch(PRE_KIND).fetch(cont);
-  var pre_nid := ws.fetch(PRE_NID).fetch(cont);
-  var nid_pre := ws.fetch(NID_RID).fetch(cont);
-
-  var repl_pre_size := replacements.replacementsfetch(pre_size);
-  var repl_pre_level := replacements.replacementsfetch(pre_level);
-  var repl_pre_prop := replacements.replacementsfetch(pre_prop);
-  var repl_pre_kind := replacements.replacementsfetch(pre_kind);
-  var repl_pre_nid := replacements.replacementsfetch(pre_nid);
-  var repl_nid_pre := replacements.replacementsfetch(nid_pre);
-
-  var fix_pre_size := pre_size;
-  if (repl_pre_size.count() > 0) {
-    fix_pre_size := pre_size.copy().key(true).access(BAT_WRITE);
-    fix_pre_size := fix_pre_size.myinsert(repl_pre_size);
-  }
-  var fix_pre_level := pre_level;
-  if (repl_pre_level.count() > 0) {
-    fix_pre_level := pre_level.copy().key(true).access(BAT_WRITE);
-    fix_pre_level := fix_pre_level.myinsert(repl_pre_level);
-  }
-  var fix_pre_prop := pre_prop;
-  if (repl_pre_prop.count() > 0) {
-    fix_pre_prop := pre_prop.copy().key(true).access(BAT_WRITE);
-    fix_pre_prop := fix_pre_prop.myinsert(repl_pre_prop);
-  }
-  var fix_pre_kind := pre_kind;
-  if (repl_pre_kind.count() > 0) {
-    fix_pre_kind := pre_kind.copy().key(true).access(BAT_WRITE);
-    fix_pre_kind := fix_pre_kind.myinsert(repl_pre_kind);
-  }
-  var fix_pre_nid := pre_nid;
-  if (repl_pre_nid.count() > 0) {
-    fix_pre_nid := pre_nid.copy().key(true).access(BAT_WRITE);
-    fix_pre_nid := fix_pre_nid.myinsert(repl_pre_nid);
-  }
-  var fix_nid_pre := nid_pre;
-  if (repl_nid_pre.count() > 0) {
-    fix_nid_pre := nid_pre.copy().key(true).access(BAT_WRITE);
-    fix_nid_pre := fix_nid_pre.myinsert(repl_nid_pre);
-  }
-
-  var ishole := [niland](fix_pre_size, int(nil));
-  # list of pre-ids of nodes that start before and end inside the data
-  # being moved
-  # note that this is basically the ancestors of those nodes, except
-  # we include holes as well
-  # first get a list of nodes before the data being moved
-  var beforelist := fix_pre_size.reverse().select(oid(nil), before).reverse();
-  # then figure out where these nodes end
-  beforelist := [+]([lng](beforelist.mirror()),
-                    ([lng]([niland](beforelist, INT_MAX))));
-  # select those that end inside the data being moved
-  var intodata := beforelist.uselect(lng(from), lng(last));
-  # calculate adjusted sizes
-  var newsizes := [nilplus](join(intodata.mirror(), fix_pre_size), delta);
-
-  # select nodes that end inside the hole
-  var intohole := beforelist.uselect(lng(holefirst), lng(holelast));
-  # newsizes1 refers to nodes that are not moved
-  var newsizes1;
-  if (delta < 0) {
-    newsizes1 := [int]([-](lng(before), [lng](intohole.mirror())));
-  } else {
-    newsizes1 := [int]([-](lng(last), [lng](intohole.mirror())));
-  }
-  # make sure holes stay holes
-  newsizes1 := [nilor](ishole, newsizes1);
-
-  # similarly, find the nodes inside the data being moved that extend
-  # beyond the end
-  var data := fix_pre_size.reverse().select(from, last).reverse();
-  data := [+]([lng](data.mirror()), [lng]([niland](data, INT_MAX)));
-  # find the nodes that end inside the hole that is to disappear
-  # newsizes2 refers to nodes that *are* moved
-  var newsizes2;
-  if (delta > 0) {
-    var holeend := data.uselect(lng(holefirst), lng(holelast));
-    newsizes2 := [int]([-](lng(last), [lng](holeend.mirror())));
-    newsizes2 := [nilor](ishole, newsizes2);
-  } else {
-    # if moving backward (delta < 0) no nodes that are to be moved end
-    # in the hole
-    newsizes2 := new(void, int, 0).seqbase(0@0);
-  }
-  # find the nodes that end past the hole
-  var pastend := data.uselect(lng(after), lng(nil));
-  # newsizes3 refers to nodes that *are* moved
-  var newsizes3 := [-](pastend.mirror().join(fix_pre_size), delta);
-  var replacesizes := fix_pre_size.reverse().select(from, last).reverse();
-  replacesizes.access(BAT_WRITE);
-  replacesizes := replacesizes.replace(newsizes2);
-  replacesizes := replacesizes.replace(newsizes3);
-  # fix up IDs of the nodes
-  replacesizes := [oid]([+]([lng](replacesizes.reverse()), delta)).reverse();
-  replacesizes.access(BAT_WRITE);
-  replacesizes := replacesizes.insert(newsizes);
-  replacesizes := replacesizes.insert(newsizes1);
-  # XXX adjust size according to whether there is a consecutive hole
-  var i := abs(delta);
-  var newhole := new(void, int, i).seqbase(newholefirst);
-  var new_pre_level := new(void, pre_level.ttype(), i).seqbase(newholefirst);
-  var new_pre_prop := new(void, oid, i).seqbase(newholefirst); # in case pre_prop.ttype() = void
-  var new_pre_kind := new(void, pre_kind.ttype(), i).seqbase(newholefirst);
-  var new_pre_nid := new(void, oid, i).seqbase(newholefirst); # pre_nid.ttype() can be void
-  var level_nil := cast(nil, pre_level.ttype());
-  var prop_nil := cast(nil, oid); # in case pre_prop.ttype() = void
-  var kind_nil := cast(nil, pre_kind.ttype());
-  var nid_nil := cast(nil, oid); # pre_nid.ttype() can be void
-  while ((i :-= 1) >= 0) {
-    newhole := newhole.append((-(INT_MAX) + i) - 1);
-    new_pre_level := new_pre_level.append(level_nil);
-    new_pre_prop := new_pre_prop.append(prop_nil);
-    new_pre_kind := new_pre_kind.append(kind_nil);
-    new_pre_nid := new_pre_nid.append(nid_nil);
-  }
-
-  replacesizes.insert(newhole);
-  replacesizes := replacesizes.sort();
-  repl_pre_size := repl_pre_size.myinsert(replacesizes);
-
-  new_pre_level.insert([oid]([+]([lng](fix_pre_level.reverse().select(from,last)), delta)).reverse());
-  new_pre_level := new_pre_level.sort();
-  repl_pre_level := repl_pre_level.myinsert(new_pre_level);
-
-  new_pre_prop.insert([oid]([+]([lng](fix_pre_prop.reverse().select(from,last)), delta)).reverse());
-  new_pre_prop := new_pre_prop.sort();
-  repl_pre_prop := repl_pre_prop.myinsert(new_pre_prop);
-
-  new_pre_kind.insert([oid]([+]([lng](fix_pre_kind.reverse().select(from,last)), delta)).reverse());
-  new_pre_kind := new_pre_kind.sort();
-  repl_pre_kind := repl_pre_kind.myinsert(new_pre_kind);
-
-  var new_nid_pre := [oid]([+]([lng](fix_pre_nid.reverse().select(from,last)), delta));
-  new_pre_nid := new_pre_nid.insert(new_nid_pre.reverse());
-  new_pre_nid := new_pre_nid.sort();
-  repl_pre_nid := repl_pre_nid.myinsert(new_pre_nid);
-  new_nid_pre := new_nid_pre := new_nid_pre.sort();
-  repl_nid_pre := repl_nid_pre.myinsert(new_nid_pre);
-
-  replacements := replacements.replace(pre_size, repl_pre_size);
-  replacements := replacements.replace(pre_level, repl_pre_level);
-  replacements := replacements.replace(pre_prop, repl_pre_prop);
-  replacements := replacements.replace(pre_kind, repl_pre_kind);
-  replacements := replacements.replace(pre_nid, repl_pre_nid);
-  replacements := replacements.replace(nid_pre, repl_nid_pre);
-
-  return replacements;
-}
-
-ADDHELP("movedata", "sjoerd", "Oct 4 2005",
-	"Move data starting in WS for document FRAG, starting at FROM of size SIZE by DELTA.\nDelta may be positive (move data down) or negative.\nData should only be moved over an existing hole (not currently checked).\nReturns a BAT detailing the changes made to the work space without actually making them.",
-	"pf_support");
-
 # expensive way to AND two INTs, treating NIL as just another bit pattern
 proc niland(int v1, int v2) : int
 {
@@ -1938,18 +1745,18 @@ proc nilor(int v1, int v2) : int
     return v1 or v2;
 }
 
-proc replacedvalue(BAT[any::1, any::2] oldbat, BAT[any::1, any::2] newbat, any::1 key): any::2
-{
-  if (not(isnil(newbat)) and newbat.exist(key)) {
-    return newbat.find(key);
-  } else {
-    return oldbat.find(key);
-  }
-}
 proc replacementvalue(BAT[bat,bat] replacements, BAT[any::1,any::2] oldbat, any::1 key): any::2
 {
   if (replacements.exist(oldbat)) {
-    return replacedvalue(oldbat, replacements.find(oldbat), key);
+    var newbat := replacements.find(oldbat);
+    if (isnil(newbat)) {
+      return oldbat.find(key);
+    }
+    if (newbat.exist(key)) {
+      return newbat.find(key);
+    } else {
+      return oldbat.find(key);
+    }
   } else {
     return oldbat.find(key);
   }
@@ -1958,12 +1765,11 @@ proc replacementvalue(BAT[bat,bat] replacements, BAT[void,BAT] ws, int prop, oid
 {
   return replacementvalue(replacements, ws.fetch(prop).fetch(cont), key);
 }
-# do a "fetch" on replacements, except that the second arg, though a BAT, is actually the key to be fetched
-proc replacementsfetch(BAT[BAT,BAT] replacements, BAT[any::1,any::2] oldbat): BAT[any::1,any::2]
+# do a "find" on replacements, creating a tuple if it didn't already occur in replacements
+proc replacementsfind(BAT[BAT,BAT] replacements, BAT[any::1,any::2] oldbat): BAT[any::1,any::2]
 {
   if (replacements.exist(oldbat)) {
     return replacements.find(oldbat);
-#     return [lng](replacements.reverse()).uselect(lng(oldbat)).reverse().fetch(0);
   } else {
     var htype := oldbat.htype();
     if (htype = void)
@@ -1971,8 +1777,7 @@ proc replacementsfetch(BAT[BAT,BAT] replacements, BAT[any::1,any::2] oldbat): BA
     var ttype := oldbat.ttype();
     if (ttype = void)
       ttype := oid;
-    var newbat := new(htype, ttype);
-    newbat.key(true);
+    var newbat := new(htype, ttype).key(true);
     replacements := replacements.insert(oldbat, newbat);
     return newbat;
   }
@@ -1981,13 +1786,317 @@ proc replacementsfetch(BAT[BAT,BAT] replacements, BAT[any::1,any::2] oldbat): BA
 proc replace(bat[bat,bat] replacements, bat[void,bat] ws, int prop, oid cont, bat[oid,any] newval): bat[bat,bat]
 {
   var propbat := ws.fetch(prop).fetch(cont);
-  var newpropbat := replacements.replacementsfetch(propbat);
+  var newpropbat := replacements.replacementsfind(propbat);
   var insval := kdiff(newval, newpropbat);
   var replval := kdiff(newval, insval);
   newpropbat := newpropbat.replace(replval);
   newpropbat := newpropbat.insert(insval);
   return replacements.replace(propbat, newpropbat);
 }
+
+# convert a PRE value to a RID value using the given map
+proc antiswizzle(oid o, BAT[oid,oid] map) : oid {
+  var pid := oid(lng(o) >> REMAP_PAGE_BITS);
+  map := map.reverse();
+  if (map.exist(pid))
+    return oid(<<(lng(map.find(pid)),REMAP_PAGE_BITS) + and(lng(o),REMAP_PAGE_MASK));
+  return o;
+}
+
+# Move data starting at "from" of length "size" by "delta".  The
+# destination *must* be a hole (XXX check this).
+# Delta can be positive (move data down) or negative (move data up).
+# This function returns the modified replacements BAT (in
+# fact, the BATs that are in the tail of the replacements BAT may be
+# modified by this function).
+proc movedata(bat[bat,bat] replacements, bat[void,bat] ws, oid cont, oid from, int size, int delta): bat[bat,bat]
+{
+  if (delta = 0)
+    return replacements;        # not moving, so nothing to do
+
+# The picture shows the layout of the tables and what the important
+# variables represent.  When delta > 0, data the data is moved down (and
+# thus the hole is moved up).
+#
+#       delta > 0 (moving down)                delta < 0 (moving up)
+#             |         |                            |         |
+#             |         |                            |         |
+# before ---->|         |                before ---->|         |
+#             |---------|                            |---------|
+# from ------>| ^       |<- newholefirst holefirst ->| ^       |
+#             | |       |                            | |       |
+#             | | size  |                            | | delta |
+#             | |       |<- newholelast  holelast -->| |       |
+#             | | - - - |                            |---------|
+# last ------>| v       |                from ------>| ^       |
+#             |---------|                            | | - - - |
+# holefirst ->| |       |                            | |       |<- newholefirst
+#             | | delta |                            | | size  |
+#             | |       |                            | |       |
+# holelast -->| v       |                last ------>| v       |<- newholelast
+#             |---------|                            |---------|
+# after ----->|         |                after ----->|         |
+#             |         |                            |         |
+#             |         |                            |         |
+#
+# The following areas are of interest:
+# - data to be moved, this is the data with PRE values "from" to "last"
+#   and given by the parameters "from" and "size";
+# - hole to be overwritten, this is the hole after (if delta > 0) or
+#   before (if delta < 0) the data to be moved with PRE values
+#   "holefirst" to "holelast" and size "abs(delta)";
+# - affected area, this is the combination of the above two areas;
+# - the area before the affected area;
+# - the area after the affected area.
+#
+# We distinguish the following nodes that each get their own treatment:
+# - nodes in the area before the affected area that end inside the data
+#   to be moved;
+# - nodes in the area before the affected area that end inside the hole
+#   to be overwritten;
+# - nodes in the data to be moved that end in the hole to be overwritten
+#   (only applicable if delta > 0);
+# - nodes in the data to be moved that end in the area after the
+#   affected area.
+
+  var map_pid := ws.fetch(MAP_PID).fetch(cont);
+  var map_pid_update := map_pid;
+  if (replacements.exist(map_pid)) {
+    map_pid_update := replacements.find(map_pid);
+  }
+
+  # some helpful values
+  var pageno := oid(lng(from) >> REMAP_PAGE_BITS); # page number where all this takes place
+  var pageid := map_pid_update.reverse().find(pageno);
+  var isoldpage := false;
+  if (map_pid.exist(pageid)) {
+    isoldpage := not(isnil(map_pid.find(pageid)));
+  }
+  # we're using RID values exclusively in this function
+  from := antiswizzle(from, map_pid_update);
+
+# var delta;                    # displacement (< 0: up, > 0: down) (parameter)
+  var holefirst;                # ID of start of hole
+  var holelast;                 # ID of end of hole
+  var before;                   # ID of last node before area being moved and hole
+# var from;                     # ID of first node being moved (parameter)
+  var last;                     # ID of last node being moved
+# var size;                     # size of area being moved (parameter)
+  var after;                    # ID of first node after area being moved and hole
+  var newholefirst;             # ID if start of to-be-created hole
+  var newholelast;              # ID if end of to-be-created hole
+
+  last := oid((lng(from) + size) - 1);
+  if (delta < 0) {
+    holefirst := oid(lng(from) + delta);
+    holelast := oid(lng(from) - 1);
+    before := oid(lng(holefirst) - 1);
+    after := oid(lng(last) + 1);
+    newholefirst := oid(lng(holefirst) + size);
+    newholelast := oid(lng(holelast) + size);
+  } else {
+    holefirst := oid(lng(from) + size);
+    after := oid(lng(holefirst) + delta);
+    holelast := oid(lng(after) - 1);
+    before := oid(lng(from) - 1);
+    newholefirst := from;
+    newholelast := oid(lng(from) + delta - 1);
+  }
+
+  var rid_size := ws.fetch(RID_SIZE).find(cont);
+  var rid_size_update := replacements.replacementsfind(rid_size);
+  var rid_level := ws.fetch(RID_LEVEL).find(cont);
+  var rid_level_update := replacements.replacementsfind(rid_level);
+  var rid_kind := ws.fetch(RID_KIND).find(cont);
+  var rid_kind_update := replacements.replacementsfind(rid_kind);
+  var rid_prop := ws.fetch(RID_PROP).find(cont);
+  var rid_prop_update := replacements.replacementsfind(rid_prop);
+  var rid_nid := ws.fetch(RID_NID).find(cont);
+  var rid_nid_update := replacements.replacementsfind(rid_nid);
+
+  # for each page prior to the one we're actually moving in, and for
+  # all nodes in the page we're moving in before the affected area,
+  # find the nodes (holes or real nodes) that end inside the affected
+  # area (i.e. inside the data being moved or the hole that is going
+  # to be overwritten) and fix up the size
+  var i := 0@0;
+  while (i <= pageno) {
+    var pgid := map_pid_update.reverse().find(i);
+    var isoldpg := map_pid.exist(pgid);
+    var off := int(pgid) << REMAP_PAGE_BITS;
+    var pg := rid_size.slice(off, int(off + REMAP_PAGE_MASK)); # updated page
+    var pgold; # original page (only valid when no update page exists)
+    if (isoldpg) {
+      pgold := pg;
+      if (i = pageno) {
+        pgold := pgold.reverse().select(oid(nil), before).reverse();
+      }
+      var rid_size_update_page := rid_size_update.reverse().select(oid(off), oid(off + REMAP_PAGE_MASK)).reverse();
+      pg := pg.access(BAT_WRITE).key(true).replace(rid_size_update_page);
+    }
+    if (i = pageno) {
+      pg := pg.reverse().select(oid(nil), before).reverse();
+    }
+
+    # remember where the holes are
+    var ishole := [niland](pg, int(nil));
+    # figure out where each element in the page ends
+    var pgend := [oid]([+]([int](pg.mirror()), [niland](pg, INT_MAX)));
+    # select those that end in the data being moved
+    var pgdata := pgend.uselect(from, last);
+    # calculate new values
+    if (pgdata.count() > 0) {
+      var pg_update := [nilplus](pgdata.mirror().join(pg), delta);
+      # apply update
+      if (isoldpg) {
+        rid_size_update := rid_size_update.myinsert(pg_update);
+      } else {
+        rid_size := rid_size.replace(pg_update, true);
+      }
+    }
+    # select those that end in the hole being overwritten
+    var pghole := pgend.uselect(holefirst, holelast);
+    if (pghole.count() > 0) {
+      # clamp to edge
+      if (delta < 0) {
+        pghole := [int]([-](int(before), [int](pghole.mirror())));
+      } else {
+        pghole := [int]([-](int(last), [int](pghole.mirror())));
+      }
+      # add hole back in and replace values on page
+      var pg_update := [nilplus](pghole, pghole.mirror().join(ishole));
+      if (isoldpg) {
+        rid_size_update := rid_size_update.myinsert(pg_update);
+      } else {
+        rid_size := rid_size.replace(pg_update, true);
+      }
+    }
+    i := oid(lng(i) + 1);
+  }
+
+  # the PRE_SIZE table has the correct sizes, but we now need to
+  # actually move the data in all PRE tables
+  var update_hole;
+
+  {
+    var data := rid_size.reverse().select(from, last).reverse().access(BAT_WRITE).key(true);
+    if (isoldpage) {
+      data := data.myinsert(rid_size_update.reverse().select(from, last).reverse());
+    }
+
+    # update the sizes of the moved data
+
+    # table with int(nil) for all RID values that represent holes and 0 otherwise
+    var ishole := [niland](data, int(nil));
+    var end_data := [oid]([+]([int](data.mirror()), [niland](data, INT_MAX)));
+    # find the nodes that end inside the hole that is to disappear
+    if (delta > 0) {
+      var holeend := end_data.uselect(holefirst, holelast);
+      var newsizes := [-](int(last), [int](holeend.mirror()));
+      newsizes := [nilor](newsizes.mirror().join(ishole), newsizes);
+      data := data.replace(newsizes);
+    } # else
+      # if moving backward (delta < 0) no nodes that are to be moved end
+      # in the hole
+    # find the nodes that end past the hole and compensate for the move
+    var pastend := end_data.uselect(after, oid(nil));
+    if (pastend.count() > 0) {
+      var newsizes := [-](pastend.mirror().join(data), delta);
+      data := data.replace(newsizes);
+    }
+
+    # now fix the head values (i.e. move the data)
+    var update_data := data.reverse().mark(oid(lng(from) + delta)).reverse();
+    update_hole := rid_size.reverse().select(newholefirst, newholelast).reverse();
+    if (update_hole.count() < delta) {
+      var i := update_hole.count();
+      update_hole := update_hole.access(BAT_WRITE).key(true);
+      while (i < delta) {
+        update_hole := update_hole.append(int(nil));
+        i :+= 1;
+      }
+    }
+    update_hole := [nilor]([-](update_hole.project(int(newholelast)), [int](update_hole.mirror())), int(nil));
+
+    if (isoldpage) {
+      rid_size_update := rid_size_update.myinsert(update_hole).myinsert(update_data);
+      replacements := replacements.myinsert(rid_size, rid_size_update);
+    } else {
+      rid_size := rid_size.replace(update_hole, true).replace(update_data, true);
+    }
+  }
+
+  {
+    var update_data := rid_level.reverse().select(from, last).reverse();
+    if (isoldpage) {
+      update_data := update_data.access(BAT_WRITE).key(true).myinsert(rid_level_update.reverse().select(from, last).reverse());
+    }
+    update_data := update_data.reverse().mark(oid(lng(from) + delta)).reverse();
+    update_hole := update_hole.project(cast(nil, rid_level.ttype()));
+    if (isoldpage) {
+      rid_level_update := rid_level_update.myinsert(update_hole).myinsert(update_data);
+      replacements := replacements.myinsert(rid_level, rid_level_update);
+    } else {
+      rid_level := rid_level.replace(update_hole, true).replace(update_data, true);
+    }
+  }
+
+  {
+    var update_data := rid_kind.reverse().select(from, last).reverse();
+    if (isoldpage) {
+      update_data := update_data.access(BAT_WRITE).key(true).myinsert(rid_kind_update.reverse().select(from, last).reverse());
+    }
+    update_data := update_data.reverse().mark(oid(lng(from) + delta)).reverse();
+    update_hole := update_hole.project(cast(nil, rid_kind.ttype()));
+    if (isoldpage) {
+      rid_kind_update := rid_kind_update.myinsert(update_hole).myinsert(update_data);
+      replacements := replacements.myinsert(rid_kind, rid_kind_update);
+    } else {
+      rid_kind := rid_kind.replace(update_hole, true).replace(update_data, true);
+    }
+  }
+
+  {
+    var update_data := rid_prop.reverse().select(from, last).reverse();
+    if (isoldpage) {
+      update_data := update_data.access(BAT_WRITE).key(true).myinsert(rid_prop_update.reverse().select(from, last).reverse());
+    }
+    update_data := update_data.reverse().mark(oid(lng(from) + delta)).reverse();
+    update_hole := update_hole.project(oid(nil));
+    if (isoldpage) {
+      rid_prop_update := rid_prop_update.myinsert(update_hole).myinsert(update_data);
+      replacements := replacements.myinsert(rid_prop, rid_prop_update);
+    } else {
+      rid_prop := rid_prop.replace(update_hole, true).replace(update_data, true);
+    }
+  }
+
+  {
+    var update_data := rid_nid.reverse().select(from, last).reverse();
+    if (isoldpage) {
+      update_data := update_data.access(BAT_WRITE).key(true).myinsert(rid_nid_update.reverse().select(from, last).reverse());
+    }
+    update_data := update_data.reverse().mark(oid(lng(from) + delta)).reverse();
+    update_hole := update_hole.project(oid(nil));
+    if (isoldpage) {
+      rid_nid_update := rid_nid_update.myinsert(update_hole).myinsert(update_data);
+      replacements := replacements.myinsert(rid_nid, rid_nid_update);
+    } else {
+      rid_nid := rid_nid.replace(update_hole, true).replace(update_data, true);
+    }
+    var update_nid := update_data.select(oid(nil), oid(nil)).reverse();
+    var nid_rid := ws.fetch(NID_RID).fetch(cont);
+    var nid_rid_update := replacements.replacementsfind(nid_rid);
+    nid_rid_update := nid_rid_update.myinsert(update_nid);
+    replacements := replacements.myinsert(nid_rid, nid_rid_update);
+  }
+
+  return replacements;
+}
+
+ADDHELP("movedata", "sjoerd", "Oct 4 2005",
+        "Move data starting in WS for document CONT, starting at FROM of size SIZE by DELTA.\nDelta may be positive (move data down) or negative.\nData should only be moved over an existing hole (not currently checked).\nReturns a BAT detailing the changes made to the work space without actually making them.",
+        "pf_support");
 
 # implicit args:
 # bat[void,lng] int_values
@@ -2004,200 +2113,219 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
   # [void,oid] list of all conts of affected documents
   var affected_conts := [and]([lng](item.mirror()), 3LL).uselect(1LL).mirror().leftfetchjoin(kind).get_container().reverse().kunique().mark(0@0).reverse();
 
-  var text_update := update_cmd.uselect(UPDATE_SETTEXT);
-  if (text_update.count() > 0) {
-    var update_node_item := [oid]([+]([lng](text_update.mirror()), 1)).leftfetchjoin(item);
-    var update_node_kind := [oid]([+]([lng](text_update.mirror()), 1)).leftfetchjoin(kind);
-    var update_text := [oid]([+]([lng](text_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
+  {
+    var text_update := update_cmd.uselect(UPDATE_SETTEXT);
+    if (text_update.count() > 0) {
+      var update_node_item := [oid]([+]([lng](text_update.mirror()), 1)).leftfetchjoin(item);
+      var update_node_kind := [oid]([+]([lng](text_update.mirror()), 1)).leftfetchjoin(kind);
+      var update_text := [oid]([+]([lng](text_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
 
-    # now select all the unique nodes (both item and container-id must be
-    # the same), and when there are multiple occurences, select the
-    # *last*.
-    if (update_node_item.count() > 1) {
-      var update_node_cont := update_node_kind.get_container();
-      var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_cont.access(BAT_WRITE).revert()).CTmap();
-      update_node_item := update_node_unique.leftjoin(update_node_item);
-      update_node_kind := update_node_unique.leftjoin(update_node_kind);
-      update_text := update_node_unique.leftjoin(update_text);
+      # now select all the unique nodes (both item and container must be
+      # the same), and when there are multiple occurences, select the
+      # *last*.
+      if (update_node_item.count() > 1) {
+        var update_node_cont := update_node_kind.get_container();
+        var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_cont.access(BAT_WRITE).revert()).CTmap();
+        update_node_item := update_node_unique.leftjoin(update_node_item);
+        update_node_kind := update_node_unique.leftjoin(update_node_kind);
+        update_text := update_node_unique.leftjoin(update_text);
+      }
+
+      # now make the three BATs void-headed
+      update_node_item := update_node_item.reverse().mark(0@0).reverse();
+      update_node_kind := update_node_kind.reverse().mark(0@0).reverse();
+      update_text := update_text.reverse().mark(0@0).reverse();
+
+      # do the work
+      replacements := do_update_text(replacements, ws, PROP_TEXT, update_node_item, update_node_kind, update_text);
     }
-
-    # now make the three BATs void-headed
-    update_node_item := update_node_item.reverse().mark(0@0).reverse();
-    update_node_kind := update_node_kind.reverse().mark(0@0).reverse();
-    update_text := update_text.reverse().mark(0@0).reverse();
-
-    # do the work
-    replacements := do_update_text(replacements, ws, PROP_TEXT, update_node_item, update_node_kind, update_text);
   }
 
-  var pi_update := update_cmd.uselect(UPDATE_SETPI);
-  if (pi_update.count() > 0) {
-    var update_node_item := [oid]([+]([lng](pi_update.mirror()), 1)).leftfetchjoin(item);
-    var update_node_kind := [oid]([+]([lng](pi_update.mirror()), 1)).leftfetchjoin(kind);
-    var update_ins := [oid]([+]([lng](pi_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
-    var update_tgt := [oid]([+]([lng](pi_update.mirror()), 3)).leftfetchjoin(item).leftfetchjoin(str_values);
+  {
+    var pi_update := update_cmd.uselect(UPDATE_SETPI);
+    if (pi_update.count() > 0) {
+      var update_node_item := [oid]([+]([lng](pi_update.mirror()), 1)).leftfetchjoin(item);
+      var update_node_kind := [oid]([+]([lng](pi_update.mirror()), 1)).leftfetchjoin(kind);
+      var update_ins := [oid]([+]([lng](pi_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
+      var update_tgt := [oid]([+]([lng](pi_update.mirror()), 3)).leftfetchjoin(item).leftfetchjoin(str_values);
 
-    # now select all the unique nodes (both item and container-id must be
-    # the same), and when there are multiple occurences, select the
-    # *last*.
-    if (update_node_item.count() > 1) {
-      var update_node_cont := update_node_kind.get_container();
-      var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_cont.access(BAT_WRITE).revert()).CTmap();
-      update_node_item := update_node_unique.leftjoin(update_node_item);
-      update_node_kind := update_node_unique.leftjoin(update_node_kind);
-      update_ins := update_node_unique.leftjoin(update_ins);
-      update_tgt := update_node_unique.leftjoin(update_tgt);
+      # now select all the unique nodes (both item and container must be
+      # the same), and when there are multiple occurences, select the
+      # *last*.
+      if (update_node_item.count() > 1) {
+        var update_node_cont := update_node_kind.get_container();
+        var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_cont.access(BAT_WRITE).revert()).CTmap();
+        update_node_item := update_node_unique.leftjoin(update_node_item);
+        update_node_kind := update_node_unique.leftjoin(update_node_kind);
+        update_ins := update_node_unique.leftjoin(update_ins);
+        update_tgt := update_node_unique.leftjoin(update_tgt);
+      }
+
+      # now make the four BATs void-headed
+      update_node_item := update_node_item.reverse().mark(0@0).reverse();
+      update_node_kind := update_node_kind.reverse().mark(0@0).reverse();
+      update_ins := update_ins.reverse().mark(0@0).reverse();
+      update_tgt := update_tgt.reverse().mark(0@0).reverse();
+
+      # do the work
+      replacements := do_update_pi(replacements, ws, update_node_item, update_node_kind, update_ins, update_tgt);
     }
-
-    # now make the four BATs void-headed
-    update_node_item := update_node_item.reverse().mark(0@0).reverse();
-    update_node_kind := update_node_kind.reverse().mark(0@0).reverse();
-    update_ins := update_ins.reverse().mark(0@0).reverse();
-    update_tgt := update_tgt.reverse().mark(0@0).reverse();
-
-    # do the work
-    replacements := do_update_pi(replacements, ws, update_node_item, update_node_kind, update_ins, update_tgt);
   }
 
-  var comment_update := update_cmd.uselect(UPDATE_SETCOMMENT);
-  if (comment_update.count() > 0) {
-    var update_node_item := [oid]([+]([lng](comment_update.mirror()), 1)).leftfetchjoin(item);
-    var update_node_kind := [oid]([+]([lng](comment_update.mirror()), 1)).leftfetchjoin(kind);
-    var update_comment := [oid]([+]([lng](comment_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
+  {
+    var comment_update := update_cmd.uselect(UPDATE_SETCOMMENT);
+    if (comment_update.count() > 0) {
+      var update_node_item := [oid]([+]([lng](comment_update.mirror()), 1)).leftfetchjoin(item);
+      var update_node_kind := [oid]([+]([lng](comment_update.mirror()), 1)).leftfetchjoin(kind);
+      var update_comment := [oid]([+]([lng](comment_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
 
-    # now select all the unique nodes (both item and container-id must be
-    # the same), and when there are multiple occurences, select the
-    # *last*.
-    if (update_node_item.count() > 1) {
-      var update_node_cont := update_node_kind.get_container();
-      var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_cont.access(BAT_WRITE).revert()).CTmap();
-      update_node_item := update_node_unique.leftjoin(update_node_item);
-      update_node_kind := update_node_unique.leftjoin(update_node_kind);
-      update_comment := update_node_unique.leftjoin(update_comment);
+      # now select all the unique nodes (both item and container must be
+      # the same), and when there are multiple occurences, select the
+      # *last*.
+      if (update_node_item.count() > 1) {
+        var update_node_cont := update_node_kind.get_container();
+        var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_cont.access(BAT_WRITE).revert()).CTmap();
+        update_node_item := update_node_unique.leftjoin(update_node_item);
+        update_node_kind := update_node_unique.leftjoin(update_node_kind);
+        update_comment := update_node_unique.leftjoin(update_comment);
+      }
+
+      # now make the three BATs void-headed
+      update_node_item := update_node_item.reverse().mark(0@0).reverse();
+      update_node_kind := update_node_kind.reverse().mark(0@0).reverse();
+      update_comment := update_comment.reverse().mark(0@0).reverse();
+
+      # do the work
+      replacements := do_update_text(replacements, ws, PROP_COM, update_node_item, update_node_kind, update_comment);
     }
-
-    # now make the three BATs void-headed
-    update_node_item := update_node_item.reverse().mark(0@0).reverse();
-    update_node_kind := update_node_kind.reverse().mark(0@0).reverse();
-    update_comment := update_comment.reverse().mark(0@0).reverse();
-
-    # do the work
-    replacements := do_update_text(replacements, ws, PROP_COM, update_node_item, update_node_kind, update_comment);
   }
 
-  var attr_update := update_cmd.uselect(UPDATE_SETATTR);
-  if (attr_update.count() > 0) {
-    var update_node_item := [oid]([+]([lng](attr_update.mirror()), 1)).leftfetchjoin(item);
-    var update_node_kind := [oid]([+]([lng](attr_update.mirror()), 1)).leftfetchjoin(kind);
-    var update_qn := [oid]([+]([lng](attr_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
-    var update_val := [oid]([+]([lng](attr_update.mirror()), 3)).leftfetchjoin(item).leftfetchjoin(str_values);
+  {
+    var attr_update := update_cmd.uselect(UPDATE_SETATTR);
+    if (attr_update.count() > 0) {
+      var update_node_item := [oid]([+]([lng](attr_update.mirror()), 1)).leftfetchjoin(item);
+      var update_node_kind := [oid]([+]([lng](attr_update.mirror()), 1)).leftfetchjoin(kind);
+      var update_qn := [oid]([+]([lng](attr_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
+      var update_val := [oid]([+]([lng](attr_update.mirror()), 3)).leftfetchjoin(item).outerjoin(str_values);
 
-    # now select all the unique nodes (item, container-id, and qn must all
-    # be the same), and when there are multiple occurences, select the
-    # *last*.
-    if (update_node_item.count() > 1) {
-      var update_node_cont := update_node_kind.get_container();
-      var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_cont.access(BAT_WRITE).revert()).CTgroup(update_qn.access(BAT_WRITE).revert()).CTmap();
-      update_node_item := update_node_unique.leftjoin(update_node_item);
-      update_node_kind := update_node_unique.leftjoin(update_node_kind);
-      update_qn := update_node_unique.leftjoin(update_qn);
-      update_val := update_node_unique.leftjoin(update_val);
+      # now select all the unique nodes (item, container, and qn must all
+      # be the same), and when there are multiple occurences, select the
+      # *last*.
+      if (update_node_item.count() > 1) {
+        var update_node_cont := update_node_kind.get_container();
+        var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_cont.access(BAT_WRITE).revert()).CTgroup(update_qn.access(BAT_WRITE).revert()).CTmap();
+        update_node_item := update_node_unique.leftjoin(update_node_item);
+        update_node_kind := update_node_unique.leftjoin(update_node_kind);
+        update_qn := update_node_unique.leftjoin(update_qn);
+        update_val := update_node_unique.leftjoin(update_val);
+      }
+
+      # now make the four BATs void-headed
+      update_node_item := update_node_item.reverse().mark(0@0).reverse();
+      update_node_kind := update_node_kind.reverse().mark(0@0).reverse();
+      update_qn := update_qn.reverse().mark(0@0).reverse();
+      update_val := update_val.reverse().mark(0@0).reverse();
+
+      # do the work
+      replacements := do_update_attr(replacements, ws, update_node_item, update_node_kind, update_qn, update_val);
     }
-
-    # now make the four BATs void-headed
-    update_node_item := update_node_item.reverse().mark(0@0).reverse();
-    update_node_kind := update_node_kind.reverse().mark(0@0).reverse();
-    update_qn := update_qn.reverse().mark(0@0).reverse();
-    update_val := update_val.reverse().mark(0@0).reverse();
-
-    # do the work
-    replacements := do_update_attr(replacements, ws, update_node_item, update_node_kind, update_qn, update_val);
   }
 
-  var insert_update := update_cmd.uselect(UPDATE_INSERT);
-  if (insert_update.count() > 0) {
-    var update_node_item := [oid]([+]([lng](insert_update.mirror()), 1)).leftfetchjoin(item);
-    var update_node_kind := [oid]([+]([lng](insert_update.mirror()), 1)).leftfetchjoin(kind);
-    var update_level := [oid]([+]([lng](insert_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(int_values);
-    var update_insert_node_item := [oid]([+]([lng](insert_update.mirror()), 3)).leftfetchjoin(item);
-    var update_insert_node_kind := [oid]([+]([lng](insert_update.mirror()), 3)).leftfetchjoin(kind);
+  {
+    var insert_update := update_cmd.uselect(UPDATE_INSERT);
+    if (insert_update.count() > 0) {
+      var update_node_item := [oid]([+]([lng](insert_update.mirror()), 1)).leftfetchjoin(item);
+      var update_node_kind := [oid]([+]([lng](insert_update.mirror()), 1)).leftfetchjoin(kind);
+      var update_level := [oid]([+]([lng](insert_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(int_values);
+      var update_insert_node_item := [oid]([+]([lng](insert_update.mirror()), 3)).leftfetchjoin(item);
+      var update_insert_node_kind := [oid]([+]([lng](insert_update.mirror()), 3)).leftfetchjoin(kind);
 
-    # unlike the cases above no double elimination here
+      # unlike the cases above no double elimination here
 
-    # now make the five BATs void-headed
-    update_node_item := update_node_item.reverse().mark(0@0).reverse();
-    update_node_kind := update_node_kind.reverse().mark(0@0).reverse();
-    update_level := update_level.reverse().mark(0@0).reverse();
-    update_insert_node_item := update_insert_node_item.reverse().mark(0@0).reverse();
-    update_insert_node_kind := update_insert_node_kind.reverse().mark(0@0).reverse();
+      # now make the five BATs void-headed
+      update_node_item := update_node_item.reverse().mark(0@0).reverse();
+      update_node_kind := update_node_kind.reverse().mark(0@0).reverse();
+      update_level := update_level.reverse().mark(0@0).reverse();
+      update_insert_node_item := update_insert_node_item.reverse().mark(0@0).reverse();
+      update_insert_node_kind := update_insert_node_kind.reverse().mark(0@0).reverse();
 
-    # do the work
-    replacements := do_update_insert(replacements, ws, update_node_item, update_node_kind, update_level, update_insert_node_item, update_insert_node_kind);
-  }
-
-  var delete_update := update_cmd.uselect(UPDATE_DELETE);
-  if (delete_update.count() > 0) {
-    var update_node_item := [oid]([+]([lng](delete_update.mirror()), 1)).leftfetchjoin(item);
-    var update_node_kind := [oid]([+]([lng](delete_update.mirror()), 1)).leftfetchjoin(kind);
-    
-    # now select all the unique nodes (both item and container-id must be
-    # the same).
-    if (update_node_item.count() > 1) {
-      var update_node_cont := update_node_kind.get_container();
-      var update_node_unique := update_node_item.access(BAT_WRITE).CTgroup().CTderive(update_node_cont.access(BAT_WRITE)).CTmap();
-      update_node_item := update_node_unique.leftjoin(update_node_item);
-      update_node_kind := update_node_unique.leftjoin(update_node_kind);
+      # do the work
+      replacements := do_update_insert(replacements, ws, update_node_item, update_node_kind, update_level, update_insert_node_item, update_insert_node_kind);
     }
-
-    # now make the two BATs void-headed
-    update_node_item := update_node_item.reverse().mark(0@0).reverse();
-    update_node_kind := update_node_kind.reverse().mark(0@0).reverse();
-
-    # do the work
-    replacements := do_update_delete(replacements, ws, update_node_item, update_node_kind);
   }
+
+  {
+    var delete_update := update_cmd.uselect(UPDATE_DELETE);
+    if (delete_update.count() > 0) {
+      var update_node_item := [oid]([+]([lng](delete_update.mirror()), 1)).leftfetchjoin(item);
+      var update_node_kind := [oid]([+]([lng](delete_update.mirror()), 1)).leftfetchjoin(kind);
+
+      # now select all the unique nodes (both item and container must be
+      # the same).
+      if (update_node_item.count() > 1) {
+        var update_node_cont := update_node_kind.get_container();
+        var update_node_unique := update_node_item.access(BAT_WRITE).CTgroup().CTderive(update_node_cont.access(BAT_WRITE)).CTmap();
+        update_node_item := update_node_unique.leftjoin(update_node_item);
+        update_node_kind := update_node_unique.leftjoin(update_node_kind);
+      }
+
+      # now make the two BATs void-headed
+      update_node_item := update_node_item.reverse().mark(0@0).reverse();
+      update_node_kind := update_node_kind.reverse().mark(0@0).reverse();
+
+      # do the work
+      replacements := do_update_delete(replacements, ws, update_node_item, update_node_kind);
+    }
+  }
+
   if (replacements.count() > 0) { # we had an update
+    [fix_consecutive_texts](const replacements, const ws, affected_conts);
     replacements@batloop() {
       var a := $h.access();
-      $h.access(BAT_WRITE);
       var newvals := kdiff($t, $h).sort();
       var replvals := kdiff($t, newvals).sort();
       $h.replace(replvals, true);
-      $h.append(newvals);
-      $h.access(a);
+      $h.append(newvals, true);
     }
-    [fix_consecutive_texts](const ws, affected_conts);
     [build_indices](const ws, affected_conts);
   }
 
   commit();
 }
 
+# due to the order in which updates are executed, do_update_text,
+# do_update_pi, and do_update_attr don't have to contend with inserted
+# pages or with nodes having changed their PRE value
 proc do_update_text(bat[bat,bat] replacements, bat[void,bat] ws, int tableid, bat [void,oid] itembat, bat[void,int] kindbat, bat[void,str] textbat) : bat[bat,bat]
 {
   var elemtype;
+  var msg;
   if (tableid = PROP_TEXT) {
     elemtype := TEXT;
+    msg := "node must be of type TEXT\n";
   } else {
     elemtype := COMMENT;
+    msg := "node must be of type COMMENT\n";
   }
   var contbat := kindbat.get_container();
   itembat@batloop() {
     var cont := contbat.find($h);
-    if (ws.fetch(PRE_KIND).find(cont).find($t) != elemtype) {
-      if (elemtype = TEXT) {
-        ERROR("node must be of type TEXT\n");
-      } else {
-        ERROR("node must be of type COMMENT\n");
-      }
+    var map_pid := ws.fetch(MAP_PID).fetch(cont);
+    var pageno := oid(lng($t) >> REMAP_PAGE_BITS);
+    var pageid := map_pid.reverse().find(pageno);
+    var rid := oid((lng($t) and REMAP_PAGE_MASK) or (lng(pageid) << REMAP_PAGE_BITS));
+    if (replacementvalue(replacements, ws, RID_KIND, cont, rid) != elemtype) {
+      ERROR(msg);
     }
     var id := add_string_unique_inplace(ws, cont, tableid, textbat.find($h));
-    var b := replacementsfetch(replacements, ws.fetch(PRE_PROP).find(cont));
-    if (b.exist($t)) {
-      b.replace($t, id);
+    var rid_prop := ws.fetch(RID_PROP).fetch(cont);
+    var rid_prop_updates := replacements.replacementsfind(rid_prop);
+    if (rid_prop_updates.exist(rid)) {
+      rid_prop_updates := rid_prop_updates.replace(rid, id);
     } else {
-      b.insert($t, id);
+      rid_prop_updates := rid_prop_updates.insert(rid, id);
     }
+    replacements := replacements.replace(rid_prop, rid_prop_updates);
   }
   return replacements;
 }
@@ -2207,16 +2335,22 @@ proc do_update_pi(bat[bat,bat] replacements, bat[void,bat] ws, bat [void,oid] it
   var contbat := kindbat.get_container();
   itembat@batloop() {
     var cont := contbat.find($h);
-    if (ws.fetch(PRE_KIND).find(cont).find($t) != PI) {
+    var map_pid := ws.fetch(MAP_PID).fetch(cont);
+    var pageno := oid(lng($t) >> REMAP_PAGE_BITS);
+    var pageid := map_pid.reverse().find(pageno);
+    var rid := oid((lng($t) and REMAP_PAGE_MASK) or (lng(pageid) << REMAP_PAGE_BITS));
+    if (replacementvalue(replacements, ws, RID_KIND, cont, rid) != PI) {
       ERROR("node must be of type PI\n");
     }
     var id := add_pi_inplace(ws, cont, insbat.find($h), tgtbat.find($h));
-    var b := replacementsfetch(replacements, ws.fetch(PRE_PROP).find(cont));
-    if (b.exist($t)) {
-      b.replace($t, id);
+    var rid_prop := ws.fetch(RID_PROP).fetch(cont);
+    var rid_prop_updates := replacements.replacementsfind(rid_prop);
+    if (rid_prop_updates.exist(rid)) {
+      rid_prop_updates := rid_prop_updates.replace(rid, id);
     } else {
-      b.insert($t, id);
+      rid_prop_updates := rid_prop_updates.insert(rid, id);
     }
+    replacements := replacements.replace(rid_prop, rid_prop_updates);
   }
   return replacements;
 }
@@ -2226,11 +2360,14 @@ proc do_update_attr(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid] i
   var contbat := kindbat.get_container();
   itembat@batloop() {
     var cont := contbat.find($h);
-    var node := $t;
-    if (ws.fetch(PRE_KIND).find(cont).find(node) != ELEMENT) {
+    var map_pid := ws.fetch(MAP_PID).fetch(cont);
+    var pageno := oid(lng($t) >> REMAP_PAGE_BITS);
+    var pageid := map_pid.reverse().find(pageno);
+    var rid := oid((lng($t) and REMAP_PAGE_MASK) or (lng(pageid) << REMAP_PAGE_BITS));
+    if (replacementvalue(replacements, ws, RID_KIND, cont, rid) != ELEMENT) {
       ERROR("node must be of type ELEMENT\n");
     }
-    var nid := ws.fetch(PRE_NID).find(cont).find(node);
+    var nid := replacementvalue(replacements, ws, RID_NID, cont, rid);
     var qn := qnbat.find($h);
     var val;
     if (valbat.exist($h)) {
@@ -2251,47 +2388,56 @@ proc do_update_attr(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid] i
       qnid := ids.fetch(0);
       atid := ids.fetch(1);
     }
-    var attr_prop_bat := replacements.replacementsfetch(ws.fetch(ATTR_PROP).fetch(cont));
-    var attr_own_bat := replacements.replacementsfetch(ws.fetch(ATTR_OWN).fetch(cont));
-    var attr_qn_bat := replacements.replacementsfetch(ws.fetch(ATTR_QN).fetch(cont));
+    var attr_prop := ws.fetch(ATTR_PROP).fetch(cont);
+    var attr_own := ws.fetch(ATTR_OWN).fetch(cont);
+    var attr_qn := ws.fetch(ATTR_QN).fetch(cont);
+    var attr_prop_updates := replacements.replacementsfind(attr_prop);
+    var attr_own_updates := replacements.replacementsfind(attr_own);
+    var attr_qn_updates := replacements.replacementsfind(attr_qn);
     if (isnil(val)) {
       # unset-attr
       if (isnil(atid) and not(isnil(qnid))) {
         # attribute does not occur in original document, but maybe it
         # has been added since
-        var aq := attr_qn_bat.uselect(qnid);
+        var aq := attr_own_updates.uselect(nid).mirror().join(attr_qn_updates).uselect(qnid);
         if (aq.count() > 0) {
           atid := aq.mirror().fetch(0);
         }
       }
       if (not(isnil(atid))) {
-        if (attr_prop_bat.exist(atid)) {
-          attr_prop_bat.replace(atid, oid(nil));
-          attr_own_bat.replace(atid, oid(nil));
-          attr_qn_bat.replace(atid, oid(nil));
+        if (attr_prop_updates.exist(atid)) {
+          attr_prop_updates := attr_prop_updates.replace(atid, oid(nil));
+          attr_own_updates := attr_own_updates.replace(atid, oid(nil));
+          attr_qn_updates := attr_qn_updates.replace(atid, oid(nil));
         } else {
-          attr_prop_bat.insert(atid, oid(nil));
-          attr_own_bat.insert(atid, oid(nil));
-          attr_qn_bat.insert(atid, oid(nil));
+          attr_prop_updates := attr_prop_updates.insert(atid, oid(nil));
+          attr_own_updates := attr_own_updates.insert(atid, oid(nil));
+          attr_qn_updates := attr_qn_updates.insert(atid, oid(nil));
         }
+        replacements := replacements.replace(attr_prop, attr_prop_updates);
+        replacements := replacements.replace(attr_own, attr_own_updates);
+        replacements := replacements.replace(attr_qn, attr_qn_updates);
       }
     } else {
       # set-attr
       var valid := add_string_unique_inplace(ws, cont, PROP_VAL, val);
       if (isnil(atid)) {
         # add attribute to node
-        atid := oid(ws.fetch(ATTR_PROP).fetch(cont).count() + attr_prop_bat.count());
-        attr_prop_bat.insert(atid, valid);
-        attr_own_bat.insert(atid, nid);
-        attr_qn_bat.insert(atid, qnid);
+        atid := oid(attr_prop.count() + attr_prop_updates.count());
+        attr_prop_updates := attr_prop_updates.insert(atid, valid);
+        attr_own_updates := attr_own_updates.insert(atid, nid);
+        attr_qn_updates := attr_qn_updates.insert(atid, qnid);
+        replacements := replacements.replace(attr_own, attr_own_updates);
+        replacements := replacements.replace(attr_qn, attr_qn_updates);
       } else {
         # replace attribute value
-        if (attr_prop_bat.exist(atid)) {
-          attr_prop_bat.replace(atid, valid);
+        if (attr_prop_updates.exist(atid)) {
+          attr_prop_updates := attr_prop_updates.replace(atid, valid);
         } else {
-          attr_prop_bat.insert(atid, valid);
+          attr_prop_updates := attr_prop_updates.insert(atid, valid);
         }
       }
+      replacements := replacements.replace(attr_prop, attr_prop_updates);
     }
   }
   return replacements;
@@ -2307,302 +2453,536 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
 #     if (debug) printf("\nstart of loop for argument %%d\n", int($h));
     var insertcont := batcont.fetch($h);
     var insertitem := $t;
-    var insertsize := lng(ws.fetch(PRE_SIZE).fetch(insertcont).fetch(insertitem)) + 1;
+    var insertsize := ws.fetch(PRE_SIZE).fetch(insertcont).find(insertitem) + 1;
 
-    var doccont := batdoccont.fetch($h);
-    var docheightbat := ws.fetch(HEIGHT);
-    var docheight := docheightbat.fetch(doccont);
-    if (replacements.exist(docheightbat)) {
-      if (replacements.find(docheightbat).exist(doccont)) {
-        docheight := replacements.find(docheightbat).fetch(doccont);
+    if (not(isnil(niland(insertsize, int(nil))))) { # don't insert holes
+      var doccont := batdoccont.fetch($h);
+      var map_pid := ws.fetch(MAP_PID).fetch(doccont);
+      var map_pid_update := map_pid;
+      if (replacements.exist(map_pid)) {
+        map_pid_update := replacements.find(map_pid);
       }
-    }
-
-    # figure out where to insert the new element
-    # the position is identified using two values: the ID of the node
-    # *after* which the element is to be inserted, and the level at which
-    # it is to be inserted.
-    var docinsertafter := batdocitem.fetch($h);
-    var docinsertlevel := batdoclevel.fetch($h);
-
-    var docsizebat := ws.fetch(PRE_SIZE).fetch(doccont);
-    var doclevelbat := ws.fetch(PRE_LEVEL).fetch(doccont);
-    var docsize := doclevelbat.count(); # size of current document
-
-    # docinsertafter may point to a hole, so back track to a non-hole item
-    while (isnil(doclevelbat.find(docinsertafter))) {
-      docinsertafter := oid(lng(docinsertafter) - 1);
-    }
-
-    # docinsertafter uses the "old" numbering scheme (i.e. the unmodified
-    # document), translate to the modified document numbering
-    docinsertafter := replacementvalue(replacements, ws, NID_PRE, doccont, ws.fetch(PRE_NID).find(doccont).find(docinsertafter));
-
-    # fix docsize with value from replacements
-    var doclevelupdatebat := replacements.replacementsfetch(doclevelbat);
-    if (doclevelupdatebat.count() > 0) {
-      var doclevelupdatemax := doclevelupdatebat.reverse().max().int() + 1;
-      if (doclevelupdatemax > docsize) {
-	docsize := doclevelupdatemax;
-      }
-    }
-
-    # holesize is the size of the hole after the node where we have to insert
-    var holesize;
-    {
-      var i := lng(docinsertafter) + 1;
-      var s;
-      var c := (i < lng(docsize));
-      if (c) {
-        s := replacementvalue(replacements, docsizebat, oid(i));
-        c := isnil(niland(s, int(nil)));
-      }
-      while (c) {
-        i :+= niland(s, INT_MAX) + 1;
-        c := (i < lng(docsize));
-        if (c) {
-          s := replacementvalue(replacements, docsizebat, oid(i));
-          c := isnil(niland(s, int(nil)));
+      var docheightbat := ws.fetch(HEIGHT);
+      var docheight := docheightbat.fetch(doccont);
+      if (replacements.exist(docheightbat)) {
+        var docheight_update := replacements.find(docheightbat);
+        if (docheight_update.exist(doccont)) {
+          docheight := docheight_update.find(doccont);
         }
       }
-      holesize := (i - lng(docinsertafter)) - 1;
-    }
-    if (holesize < insertsize) {
-      # not enough space in the right place
-      var holeneeded := insertsize - holesize;
-      var i := 1;                 # slowly widen search
-      while (holeneeded > 0LL) {
-        # hole below?
-        var j := ((lng(docinsertafter) + holesize) + i) + 1;
-        if (j >= lng(docsize)) {
-          # big gaping hole after the document
-          var hs := int(holeneeded);
-#           if (debug) printf("movedata %%d %%d %%d\n", int(lng(docinsertafter) + holesize + 1), int(i), hs);
-          movedata(replacements, ws, doccont, oid(lng(docinsertafter) + holesize + 1), i, hs);
-          holeneeded :-= hs;
-          holesize :+= hs;
-          docsize :+= hs;
-        } else {
-          # looking at hole?
-          var s := replacementvalue(replacements, docsizebat, oid(j));
-          if (isnil(niland(s, int(nil)))) {
-            var hs := niland(s, INT_MAX) + 1;
-            if (lng(hs) > holeneeded) {
-              hs := holeneeded;
+
+      # figure out where to insert the new element
+      # the position is identified using two values: the ID of the node
+      # *after* which the element is to be inserted, and the level at which
+      # it is to be inserted.
+      var docinsertafter := batdocitem.fetch($h);
+      var docinsertlevel := batdoclevel.fetch($h);
+
+      var rid_size := ws.fetch(RID_SIZE).find(doccont);
+      var rid_size_update := replacements.replacementsfind(rid_size);
+      var rid_level := ws.fetch(RID_LEVEL).find(doccont);
+      var rid_level_update := replacements.replacementsfind(rid_level);
+      var rid_kind := ws.fetch(RID_KIND).find(doccont);
+      var rid_kind_update := replacements.replacementsfind(rid_kind);
+      var rid_prop := ws.fetch(RID_PROP).find(doccont);
+      var rid_prop_update := replacements.replacementsfind(rid_prop);
+      var rid_nid := ws.fetch(RID_NID).find(doccont);
+      var rid_nid_update := replacements.replacementsfind(rid_nid);
+
+      var docsize := replacementvalue(replacements, rid_size, oid(lng(map_pid_update.reverse().find(0@0)) << REMAP_PAGE_BITS)) + 1;
+
+      {
+        # docinsertafter may point to a hole, so back track to a non-hole
+        # item; this uses the original (unmodified) document
+        # note that this terminates since the document node (0@0) is not a hole
+        var pre_level := ws.fetch(PRE_LEVEL).find(doccont);
+        while (isnil(pre_level.find(docinsertafter))) {
+          docinsertafter := oid(lng(docinsertafter) - 1);
+        }
+      }
+
+      # docinsertafter uses the "old" numbering scheme (i.e. the unmodified
+      # document), translate to the modified document numbering
+      var docinsertafter_rid := replacementvalue(replacements, ws, NID_RID, doccont, ws.fetch(PRE_NID).find(doccont).find(docinsertafter));
+      docinsertafter := swizzle(docinsertafter_rid, map_pid_update);
+
+      # the start of the page on which the new element is to be inserted
+      var pageno := oid((lng(docinsertafter) + 1) >> REMAP_PAGE_BITS);
+      # the physical page id
+      var pageid := map_pid_update.reverse().find(pageno);
+      # the rid of the first element on the page
+      var pagebase := oid(lng(pageid) << REMAP_PAGE_BITS);
+      var isoldpage := false;
+      if (map_pid.exist(pageid)) {
+        isoldpage := not(isnil(map_pid.find(pageid)));
+      }
+
+      # figure out the number of holes on the page on which the new
+      # element is to be inserted (we use the PRE_LEVEL table for this,
+      # holes are indicated with NIL)
+      var docpagefreespace;
+      var rid_level_page := rid_level.reverse().select(pagebase, oid(lng(pagebase) + REMAP_PAGE_MASK)).reverse();
+      {
+        var rid_level_page_update := rid_level_update.reverse().select(pagebase, oid(lng(pagebase) + REMAP_PAGE_MASK)).reverse();
+        rid_level_page := rid_level_page.access(BAT_WRITE).key(true).myinsert(rid_level_page_update);
+        docpagefreespace := int((REMAP_PAGE_SIZE - rid_level_page.count()) + rid_level_page.uselect(chr(nil)).count());
+      }
+
+      if (insertsize > docpagefreespace) {
+        # not enough space on the current page
+
+        # size of hole at end of page
+        var holeatend := int(rid_level_page.reverse().max()) - int(rid_level_page.uselect(chr(nil), chr(nil)).reverse().max());
+        # datasize is the size of the data after the insertpoint and before the hole at the end
+        var datasize := int((REMAP_PAGE_SIZE - ((lng(docinsertafter) + 1) and REMAP_PAGE_MASK)) - holeatend);
+
+        # number of new pages needed (we need to insert insertsize, we
+        # have holeatend available; round up to whole number of pages)
+        var npages := ((insertsize - holeatend) + int(REMAP_PAGE_MASK)) >> REMAP_PAGE_BITS;
+        # the size of the hole we're going to insert
+        # we move the bit after the insert point to the end of the last inserted page
+        var shiftsize := (npages << REMAP_PAGE_BITS) + holeatend;
+
+        var newpages := new(void, oid, npages).seqbase(oid(lng(pageno) + 1));
+        var lastpage;
+        var i := 0;
+        while (i < npages) {
+          lastpage := ws_newpage(ws, cont);
+          newpages.append(lastpage);
+          i :+= 1;
+        }
+        map_pid_update := map_pid_update.replace([oid]([+]([int](map_pid_update.select(pageno, oid(nil), false, true)), npages)));
+        map_pid_update := map_pid_update.myinsert(newpages.reverse());
+        replacements := replacements.myinsert(map_pid, map_pid_update);
+
+        # move data after insert point to end of last inserted page
+        var newrid := oid(((lng(lastpage) << REMAP_PAGE_BITS) + REMAP_PAGE_SIZE) - datasize);
+        var rid_size_data := rid_size.reverse().select(docinsertafter_rid, oid(lng(docinsertafter_rid) + datasize), false, true).reverse();
+        var rid_level_data := rid_level.reverse().select(docinsertafter_rid, oid(lng(docinsertafter_rid) + datasize), false, true).reverse();
+        var rid_kind_data := rid_kind.reverse().select(docinsertafter_rid, oid(lng(docinsertafter_rid) + datasize), false, true).reverse();
+        var rid_prop_data := rid_prop.reverse().select(docinsertafter_rid, oid(lng(docinsertafter_rid) + datasize), false, true).reverse();
+        var rid_nid_data := rid_nid.reverse().select(docinsertafter_rid, oid(lng(docinsertafter_rid) + datasize), false, true).reverse();
+        if (isoldpage) {
+          # update slice with replacement values
+          var rid_level_update_data := rid_level_update.reverse().select(docinsertafter_rid, oid(lng(docinsertafter_rid) + datasize), false, true).reverse();
+          var rid_kind_update_data := rid_kind_update.reverse().select(docinsertafter_rid, oid(lng(docinsertafter_rid) + datasize), false, true).reverse();
+          var rid_prop_update_data := rid_prop_update.reverse().select(docinsertafter_rid, oid(lng(docinsertafter_rid) + datasize), false, true).reverse();
+          var rid_nid_update_data := rid_nid_update.reverse().select(docinsertafter_rid, oid(lng(docinsertafter_rid) + datasize), false, true).reverse();
+          rid_level_data := rid_level_data.access(BAT_WRITE).key(true).myinsert(rid_level_update_data);
+          rid_kind_data := rid_kind_data.access(BAT_WRITE).key(true).myinsert(rid_kind_update_data);
+          rid_prop_data := rid_prop_data.access(BAT_WRITE).key(true).myinsert(rid_prop_update_data);
+          rid_nid_data := rid_nid_data.access(BAT_WRITE).key(true).myinsert(rid_nid_update_data);
+          rid_size_data := rid_size_data.access(BAT_WRITE).key(true).myinsert(rid_nid_data.join(nid_size));
+        }
+        if (holeatend > 0) {
+          # adjust sizes of moved data that point beyond the end of it
+          # there cannot be any sizes that end inside the hole, since
+          # they necessarily have to start in the same hole, so they're
+          # going to be overwritten
+          var rid_end_data := [+]([int](rid_size_data.mirror()), [niland](rid_size_data, INT_MAX));
+          var past_hole := rid_end_data.uselect(oid(lng(docinsertafter_rid) + datasize + holeatend), oid(nil), false, true);
+          rid_size_data := rid_size_data.replace([nilplus](past_hole, -(datasize)));
+        }
+        rid_size := rid_size.replace(rid_size_data.reverse().mark(newrid).reverse(), true);
+        rid_level := rid_level.replace(rid_level_data.reverse().mark(newrid).reverse(), true);
+        rid_kind := rid_kind.replace(rid_kind_data.reverse().mark(newrid).reverse(), true);
+        rid_prop := rid_prop.replace(rid_prop_data.reverse().mark(newrid).reverse(), true);
+        rid_nid := rid_nid.replace(rid_nid_data.reverse().mark(newrid).reverse(), true);
+
+        # We've inserted new pages and copied the data on the rest of the
+        # page to the end of the last inserted page.  Now increase the
+        # sizes of all ancestors.  Note that no holes can cross the
+        # insert point (docinsertafter points to a non-hole element)
+        i := 0@0;
+        while (i <= pageno) {
+          var pgid := map_pid_update.reverse().find(i);
+          # add this value to a RID for this page to get a PRE
+          var rid2pre := (int(i) - int(pgid)) << REMAP_PAGE_BITS;
+          var pgbase := oid(lng(pgid) << REMAP_PAGE_BITS);
+          var pglast := oid(lng(pgbase) + REMAP_PAGE_MASK);
+          var pg := rid_size.reverse().select(pgbase, pglast).reverse();
+          var pgold; # original page (only valid when no update page exists)
+          var isoldpg := map_pid.exist(pgid);
+          if (isoldpg) {
+            pgold := pg;
+            if (i = pageno) {
+              pgold := pgold.reverse().select(oid(nil), docinsertafter_rid).reverse();
             }
-            # move the hole to just below the hole already at docinsertafter
-#             if (debug) printf("movedata %%d %%d %%d\n", int(lng(docinsertafter) + holesize + 1), int(i), int(hs));
-            movedata(replacements, ws, doccont, oid(lng(docinsertafter) + holesize + 1), i, int(hs));
-            holeneeded :-= hs;
-            holesize :+= hs;
+            var rid_size_update_page := rid_size_update.reverse().select(pgbase, pglast).reverse();
+            pg := pg.access(BAT_WRITE).key(true).replace(rid_size_update_page);
+          }
+          if (i = pageno) {
+            pg := pg.reverse().select(oid(nil), docinsertafter_rid).reverse();
+          }
+
+          # figure out where each element in the page ends (make [RID,PRE] bat)
+          var pgend := [+]([+]([int](pg.mirror()), rid2pre), [int](pg));
+          # select those that start before and end after the insertpoint
+          var pgdata := pgend.uselect(int(docinsertafter), int(nil), false, true);
+          if (pgdata.count() > 0) {
+            var pg_update := [+](pgdata.mirror().join(pg), shiftsize);
+            # effectively insert the big hole
+            if (isoldpg) {
+              rid_size_update := rid_size_update.myinsert(pg_update);
+              replacements := replacements.myinsert(rid_size, nid_size);
+            } else {
+              # we can write directly to the page
+              rid_size := rid_size.replace(pg_update, true);
+            }
+          }
+          i := oid(lng(i) + 1);
+        }
+      } else {
+        # the inserted data fits on the current page but we may have to
+        # move data around to make a hole big ineough in the right place
+
+        # holesize is the size of the hole after the node where we have to insert
+        var holesize := 0;
+        {
+          var rid := oid(lng(docinsertafter_rid) + 1);
+          var pre := oid(lng(docinsertafter) + 1);
+          while (int(pre) < docsize) {
+            var s := 0;
+            if (isoldpage) {
+              s := replacementvalue(replacements, rid_size, rid);
+            } else if (rid_size.exist(rid)) {
+              s := rid_size.find(rid);
+            }
+            if (isnil(niland(s, int(nil)))) {
+              # we're looking at a hole
+              var h := niland(s, INT_MAX) + 1;
+              holesize :+= h;
+              pre := oid(lng(pre) + h);
+              rid := oid(lng(rid) + h);
+            } else {
+              # not a hole, terminate loop
+              pre := oid(docsize);
+            }
           }
         }
-        if (((lng(docinsertafter) - i) >= 0LL) and (holeneeded > 0LL)) {
-          # hole above?
-          if (isnil(replacementvalue(replacements, doclevelbat, oid(lng(docinsertafter) - i)))) {
-            # yes, find out how large, but stop when we have a hole
-            # that is big enough
-            var hs := 1;
-            var cont := (((lng(docinsertafter) - i) - hs) >= 0LL);
-            if (cont) {
-              cont := (lng(hs) < holeneeded);
-            }
-            if (cont) {
-              cont := isnil(replacementvalue(replacements, docsizebat, oid((lng(docinsertafter) - i) - hs)));
-            }
-            while (cont) {
-              hs :+= 1;
-              cont := (((lng(docinsertafter) - i) - hs) >= 0LL);
-              if (cont) {
-                cont := (lng(hs) < holeneeded);
+        if (holesize < insertsize) {
+          # not enough space in the right place
+          var holeneeded := insertsize - holesize;
+          var i := 1;                 # slowly widen search
+          while (holeneeded > 0) {
+            # hole below?
+            var rid := ((int(docinsertafter_rid) + holesize) + i) + 1;
+            var pre := ((int(docinsertafter) + holesize) + i) + 1;
+            # still on same page?
+            if (rid < (int(pagebase) + int(REMAP_PAGE_SIZE))) {
+              # yes
+              if (pre >= docsize) {
+                # big gaping hole after the document
+                var hs := (((pre >> REMAP_PAGE_BITS) << REMAP_PAGE_BITS) + int(REMAP_PAGE_SIZE)) - docsize;
+                if (hs > holeneeded) {
+                  hs := holeneeded;
+                }
+    #             if (debug) printf("movedata %%d %%d %%d\n", int(docinsertafter) + holesize + 1, i, hs);
+                replacements := movedata(replacements, ws, doccont, oid(lng(docinsertafter) + holesize + 1), i, hs);
+                rid_size_update := replacements.replacementsfind(rid_size);
+                rid_level_update := replacements.replacementsfind(rid_level);
+                rid_kind_update := replacements.replacementsfind(rid_kind);
+                rid_prop_update := replacements.replacementsfind(rid_prop);
+                rid_nid_update := replacements.replacementsfind(rid_nid);
+                holeneeded :-= hs;
+                holesize :+= hs;
+                docsize :+= hs;
+              } else {
+                # looking at hole?
+                var s := 0;
+                if (isoldpage) {
+                  s := replacementvalue(replacements, rid_size, oid(rid));
+                } else if (rid_size.exist(rid)) {
+                  s := rid_size.find(rid);
+                }
+                if (isnil(niland(s, int(nil)))) {
+                  var hs := niland(s, INT_MAX) + 1;
+                  if (hs > holeneeded) {
+                    hs := holeneeded;
+                  }
+                  # move the hole to just below the hole already at docinsertafter
+    #               if (debug) printf("movedata %%d %%d %%d\n", int(docinsertafter) + holesize + 1, i, hs);
+                  replacements := movedata(replacements, ws, doccont, oid(lng(docinsertafter) + holesize + 1), i, hs);
+                  rid_size_update := replacements.replacementsfind(rid_size);
+                  rid_level_update := replacements.replacementsfind(rid_level);
+                  rid_kind_update := replacements.replacementsfind(rid_kind);
+                  rid_prop_update := replacements.replacementsfind(rid_prop);
+                  rid_nid_update := replacements.replacementsfind(rid_nid);
+                  holeneeded :-= hs;
+                  holesize :+= hs;
+                }
               }
-              if (cont) {
-                cont := isnil(replacementvalue(replacements, docsizebat, oid((lng(docinsertafter) - i) - hs)));
+            }
+            rid := int(docinsertafter_rid) - i; # must be int/lng because can become negative
+            if ((rid >= int(pagebase)) and (holeneeded > 0)) {
+              # hole above?
+              if (isnil(replacementvalue(replacements, rid_level, oid(rid)))) {
+                # yes, find out how large, but stop when we have a hole
+                # that is big enough (and stay on the page)
+                var hs := 1;
+                rid := oid(rid - 1);
+                var flag := (hs < holeneeded) and (rid >= pagebase);
+                if (flag) {
+                  flag := isnil(replacementvalue(replacements, rid_level, oid(rid)));
+                }
+                while (flag) {
+                  hs :+= 1;
+                  rid := oid(rid - 1);
+                  flag := (hs < holeneeded) and (rid >= pagebase);
+                  if (flag) {
+                    flag := isnil(replacementvalue(replacements, rid_level, rid));
+                  }
+                }
+  #               if (debug) printf("movedata %%d %%d %%d\n", int(docinsertafter) - i, i, -(hs));
+                replacements := movedata(replacements, ws, doccont, oid((lng(docinsertafter) - i) + 1), i, -(hs));
+                rid_size_update := replacements.replacementsfind(rid_size);
+                rid_level_update := replacements.replacementsfind(rid_level);
+                rid_kind_update := replacements.replacementsfind(rid_kind);
+                rid_prop_update := replacements.replacementsfind(rid_prop);
+                rid_nid_update := replacements.replacementsfind(rid_nid);
+                docinsertafter := oid(lng(docinsertafter) - hs);
+                docinsertafter_rid := oid(lng(docinsertafter_rid) - hs);
+                holeneeded :-= hs;
+                holesize :+= hs;
               }
             }
-#             if (debug) printf("movedata %%d %%d %%d\n", int(lng(docinsertafter) - i), int(i), -(int(hs)));
-            movedata(replacements, ws, doccont, oid((lng(docinsertafter) - i) + 1), i, -(int(hs)));
-            docinsertafter := oid(lng(docinsertafter) - hs);
-            holeneeded :-= hs;
-            holesize :+= hs;
+            i :+= 1;
           }
         }
-        i :+= 1;
       }
-    }
 
-    # we now have a hole that is big enough below docinsertafter
+      # we now have a hole that is big enough below docinsertafter
 
-    var docsizeupdatebat := replacements.replacementsfetch(docsizebat);
-    # We must adjust the sizes of all ancestors of the new element;
-    # this means all elements that currently end at the newly created
-    # hole and whose level is less than the level of the new element
-    {
-      # first figure out the updated PRE_SIZE table
-      var docsizefixbat := docsizebat;
-      if (docsizeupdatebat.count() > 0) {
-        docsizefixbat := docsizefixbat.copy().key(true).access(BAT_WRITE).myinsert(docsizeupdatebat);
-      }
-      # "slice" the table to keep only up to docinsertafter
-      docsizefixbat := docsizefixbat.reverse().select(oid(nil), docinsertafter).reverse();
-      # calculate end positions (we do not care about holes)
-      var docendsizebat := [+]([lng](docsizefixbat.mirror()), [lng](docsizefixbat));
-      # select those elements that end at docinsertafter
-      docendsizebat := docendsizebat.uselect(lng(docinsertafter)).mirror();
+      # We must adjust the sizes of all ancestors of the new element;
+      # this means all elements that currently end at the newly created
+      # hole and whose level is less than the level of the new element
+      {
+        var i := 0@0;
+        while (i <= pageno) {
+          var pgid := map_pid_update.reverse().find(i);
+          # add this value to a RID for this page to get a PRE
+          var rid2pre := (int(i) - int(pgid)) << REMAP_PAGE_BITS;
+          var pgbase := oid(lng(pgid) << REMAP_PAGE_BITS);
+          var pglast := oid(lng(pgbase) + REMAP_PAGE_MASK);
+          var szpg := rid_size.reverse().select(pagebase, pglast).reverse();
+          var szpgold; # original page (only valid when no update page exists)
+          var lvpg := rid_level.reverse().select(pagebase, pglast).reverse();
+          var isoldpg := map_pid.exist(pgid);
+          if (isoldpg) {
+            szpgold := szpg;
+            if (i = pageno) {
+              szpgold := szpgold.reverse().select(oid(nil), docinsertafter_rid).reverse();
+            }
+            szpg := szpg.access(BAT_WRITE).key(true).replace(rid_size_update.reverse().select(pgbase, pglast).reverse());
+            lvpg := lvpg.access(BAT_WRITE).key(true).replace(rid_level_update.reverse().select(pgbase, pglast).reverse());
+          }
+          if (i = pageno) {
+            szpg := szpg.reverse().select(oid(nil), docinsertafter).reverse();
+          }
 
-      if (docendsizebat.count() > 0) {
-        # figure out updated PRE_LEVEL table
-        var doclevelfixbat := doclevelbat;
-        if (doclevelupdatebat.count() > 0) {
-          doclevelfixbat := doclevelfixbat.copy().key(true).access(BAT_WRITE).myinsert(doclevelupdatebat);
+          # figure out where each element in the page ends
+          var szpgend := [+]([+]([int](szpg.mirror()), rid2pre), szpg);
+          # select those that start before and end at the insertpoint
+          szpgend := szpgend.reverse().select(oid(nil), docinsertafter).reverse();
+          var szpgdata := szpgend.uselect(int(docinsertafter));
+          if (szpgdata.count() > 0) {
+            # subselect those elements with level < docinsertlevel
+            # these are the elements whose size we have to adjust
+            szpgdata := szpgdata.mirror().join(lvpg).uselect(chr(nil), chr(docinsertlevel - 1));
+            var szpg_update := [+](szpgdata.mirror().join(szpg), insertsize);
+            # effectively insert the big hole
+            if (isoldpg) {
+              rid_size_update := rid_size_update.myinsert(szpg_update);
+              replacements := replacements.replace(rid_size, rid_size_update);
+            } else {
+              # we can write directly to the page
+              rid_size := rid_size.replace(szpg_update, true);
+            }
+          }
+          i := oid(lng(i) + 1);
         }
-        # select those elements that we found in the previous step, and
-        # subselect those with level < docinsertlevel
-        # these are the elements whose size we have to adjust
-        docendsizebat := docendsizebat.leftfetchjoin(doclevelfixbat).uselect(chr(nil), chr(docinsertlevel - 1)).mirror();
-        # caculate new size by adding insertsize
-        docendsizebat := [int]([+](docendsizebat.leftfetchjoin(docsizefixbat), insertsize));
-        # and update the document
-        docsizeupdatebat.myinsert(docendsizebat);
       }
-    }
 
-    # copy the new element to the hole and do all the other work
-    # only look at unedited version of to-be-inserted document
-    # (required semantics)
+      # copy the new element to the hole and do all the other work
+      # only look at unedited version of to-be-inserted document
+      # (required semantics)
 
-    # find NID value for new node (highest existing plus one)
-    var docnidbat := ws.fetch(NID_PRE).fetch(doccont);
-    var docnidnew := nil;
-    if (docnidbat.count() > 0) {
-      docnidnew := docnidbat.reverse().max();
-    }
-    if (replacements.exist(docnidbat)) {
-      var docnidbat_update := replacements.replacementsfetch(docnidbat);
-      if (docnidbat_update.count() > 0) {
-        var tmp := docnidbat_update.reverse().max();
+      # find NID value for new node (highest existing plus one)
+      var nid_rid := ws.fetch(NID_RID).fetch(doccont);
+      var nid_rid_update := replacements.replacementsfind(nid_rid);
+      var docnidnew := oid(nil);
+      if (nid_rid.count() > 0) {
+        docnidnew := nid_rid.reverse().max();
+      }
+      if (nid_rid_update.count() > 0) {
+        var tmp := nid_rid_update.reverse().max();
         if (isnil(docnidnew)) {
-          docnidnew := docnidbat_update;
+          docnidnew := tmp;
         } else if (docnidnew < tmp) {
           docnidnew := tmp;
         }
       }
-    }
-    if (isnil(docnidnew)) {
-      docnidnew := 0@0;           # should not happen: no NIDs used
-    } else {
-      docnidnew := oid(lng(docnidnew) + 1);
-    }
-
-    # retrieve (or create) the update BATs for all BATs that we need to update
-    var docpropupdatebat := replacements.replacementsfetch(ws.fetch(PRE_PROP).fetch(doccont));
-    var dockindupdatebat := replacements.replacementsfetch(ws.fetch(PRE_KIND).fetch(doccont));
-    var docprenidupdatebat := replacements.replacementsfetch(ws.fetch(PRE_NID).fetch(doccont));
-    var docnidpreupdatebat := replacements.replacementsfetch(docnidbat);
-
-    var leveldiff := int(docinsertlevel) - int(ws.fetch(PRE_LEVEL).fetch(insertcont).find(insertitem));
-#     if (debug) printf("leveldiff %%d\n", leveldiff);
-
-    while (insertsize > 0LL) {
-      # for each to-be-inserted element
-
-      var insertprop := ws.fetch(PRE_PROP).fetch(insertcont).find(insertitem);
-      var insertkind := ws.fetch(PRE_KIND).fetch(insertcont).find(insertitem);
-      var insertnode := ws.fetch(PRE_NID).fetch(insertcont).find(insertitem);
-      if (isnil(insertkind)) {
-      } else if (insertkind = ELEMENT) {
-        var insertcontbat := ws.fetch(PRE_CONT).fetch(insertcont);
-        var elemcont;
-        if (is_constant(insertcontbat)) {
-          elemcont := bat2constant(insertcontbat);
-        } else {
-          elemcont := insertcontbat.find(insertitem);
-        }
-        var loc := ws.fetch(QN_LOC).fetch(elemcont).find(insertprop);
-        var prefix := ws.fetch(QN_PREFIX).fetch(elemcont).find(insertprop);
-        var uri := ws.fetch(QN_URI).fetch(elemcont).find(insertprop);
-        insertprop := find_qn(ws, doccont, loc, prefix, uri, true);
-#         if (debug) printf("find_qn \"%%s\" \"%%s\" \"%%s\" %%d\n", loc, prefix, uri, int(insertprop));
-
-        # deal with the attributes
-        # [void,oid] list of ATTR table IDs for current element
-        var insertattrbat := ws.fetch(ATTR_OWN).fetch(insertcont).uselect(insertnode).reverse();
-        if (insertattrbat.count() > 0) { # do not bother if there are no attrs on inserted element
-          # figure out next OID in ATTR table of doc, store in attr_id
-          var docattrownbat := ws.fetch(ATTR_OWN).fetch(doccont);
-          var docattrownupdatebat := replacements.replacementsfetch(docattrownbat);
-          var attr_id;
-          if (docattrownupdatebat.count() > 0) {
-            attr_id := oid(lng(docattrownupdatebat.reverse().max()) + 1);
-          } else if (docattrownbat.count() > 0) {
-            attr_id := oid(lng(docattrownbat.reverse().max()) + 1);
-          } else {
-            attr_id := 0@0;
-          }
-          insertattrbat.seqbase(attr_id);
-          # [void,oid] list of QN table indices for "our" attributes
-          var insertattrqnbat := insertattrbat.leftfetchjoin(ws.fetch(ATTR_QN).fetch(insertcont));
-          var attr_cont := ws.fetch(ATTR_CONT).find(insertcont);
-          var insertattrcontbat;
-          if (is_constant(attr_cont)) {
-            insertattrcontbat := bat2constant(attr_cont);
-          } else {
-            insertattrcontbat := insertattrbat.leftfetchjoin(attr_cont);
-          }
-# original failing: var insertattrcontbat := insertattrbat.leftfetchjoin(ws.fetch(ATTR_CONT).find(insertcont));
-          # in one fell swoop, add the qualified names of the attributes to the document
-          var newinsertattrpropbat := [find_qn](const ws, doccont,
-                                                mposjoin(insertattrqnbat, insertattrcontbat, ws.fetch(QN_LOC)),
-                                                mposjoin(insertattrqnbat, insertattrcontbat, ws.fetch(QN_PREFIX)),
-                                                mposjoin(insertattrqnbat, insertattrcontbat, ws.fetch(QN_URI)),
-                                                true);
-          # and the same for the attribute values
-          var insertattrpropbat := insertattrbat.leftfetchjoin(ws.fetch(ATTR_PROP).fetch(insertcont));
-          var newinsertattrvalbat := [add_string_unique_inplace](const ws, doccont, PROP_VAL,
-                                                                  mposjoin(insertattrpropbat, insertattrcontbat, ws.fetch(PROP_VAL)));
-          # add to the ATTR table
-          docattrownupdatebat := docattrownupdatebat.insert(insertattrbat.project(docnidnew));
-          replacements.replacementsfetch(ws.fetch(ATTR_QN).fetch(doccont)).insert(newinsertattrpropbat);
-          replacements.replacementsfetch(ws.fetch(ATTR_PROP).fetch(doccont)).insert(newinsertattrvalbat);
-        }
-      } else if (insertkind = TEXT) {
-        var text := ws.fetch(PROP_TEXT).fetch(insertcont).find(insertprop);
-        insertprop := add_string_unique_inplace(ws, doccont, PROP_TEXT, text);
-      } else if (insertkind = COMMENT) {
-        var text := ws.fetch(PROP_COM).fetch(insertcont).find(insertprop);
-        insertprop := add_string_unique_inplace(ws, doccont, PROP_COM, text);
-      } else if (insertkind = PI) {
-        var ins := ws.fetch(PROP_INS).fetch(insertcont).find(insertprop);
-        var tgt := ws.fetch(PROP_TGT).fetch(insertcont).find(insertprop);
-        insertprop := add_pi(ws, doccont, ins, tgt);
-      } else if (insertkind = DOCUMENT) {
-        ERROR("attempt to insert a complete document foiled\n");
+      if (isnil(docnidnew)) {
+        docnidnew := 0@0;           # should not happen: no NIDs used
       } else {
-        ERROR("unknown element type\n");
-      }
-
-      docinsertafter := oid(lng(docinsertafter) + 1);
-
-      docsizeupdatebat.myinsert(docinsertafter, ws.fetch(PRE_SIZE).fetch(insertcont).find(insertitem));
-      docpropupdatebat.myinsert(docinsertafter, insertprop);
-      dockindupdatebat.myinsert(docinsertafter, insertkind);
-      if (isnil(insertkind)) {        # inserting a hole
-        doclevelupdatebat.myinsert(docinsertafter, chr(nil));
-        docprenidupdatebat.myinsert(docinsertafter, oid(nil));
-      } else {
-        docnidpreupdatebat.myinsert(docnidnew, docinsertafter);
-        var newlevel := int(ws.fetch(PRE_LEVEL).fetch(insertcont).find(insertitem)) + leveldiff;
-        doclevelupdatebat.myinsert(docinsertafter, chr(newlevel));
-        if (newlevel >= docheight) {
-          docheight := newlevel + 1;
-          replacements.replacementsfetch(docheightbat).insert(doccont, docheight);
-        }
-        docprenidupdatebat.myinsert(docinsertafter, docnidnew);
         docnidnew := oid(lng(docnidnew) + 1);
       }
 
-      insertsize :-= 1;
-      insertitem := oid(lng(insertitem) + 1);
+      # the difference in level for inserted elements between original
+      # document and updated document
+      var leveldiff := int(docinsertlevel) - int(ws.fetch(PRE_LEVEL).fetch(insertcont).find(insertitem));
+  #     if (debug) printf("leveldiff %%d\n", leveldiff);
+
+      var insert_pre_size := ws.fetch(PRE_SIZE).fetch(insertcont);
+      var insert_pre_level := ws.fetch(PRE_LEVEL).fetch(insertcont);
+      var insert_pre_prop := ws.fetch(PRE_PROP).fetch(insertcont);
+      var insert_pre_kind := ws.fetch(PRE_KIND).fetch(insertcont);
+      var insert_pre_nid := ws.fetch(PRE_NID).fetch(insertcont);
+      var insert_pre_cont := ws.fetch(PRE_CONT).fetch(insertcont);
+      var insert_attr_own := ws.fetch(ATTR_OWN).fetch(insertcont);
+      var insert_attr_qn := ws.fetch(ATTR_QN).fetch(insertcont);
+      var insert_attr_cont := ws.fetch(ATTR_CONT).fetch(insertcont);
+      var insert_attr_prop := ws.fetch(ATTR_PROP).fetch(insertcont);
+
+      var attr_own := ws.fetch(ATTR_OWN).fetch(doccont);
+      var attr_own_update := replacements.replacementsfind(attr_own);
+      var attr_qn := ws.fetch(ATTR_QN).fetch(doccont);
+      var attr_qn_update := replacements.replacementsfind(attr_qn);
+      var attr_prop := ws.fetch(ATTR_PROP).fetch(doccont);
+      var attr_prop_update := replacements.replacementsfind(attr_prop);
+
+      while (insertsize > 0) {
+        # for each to-be-inserted element
+
+        var insertprop := insert_pre_prop.find(insertitem);
+        var insertkind := insert_pre_kind.find(insertitem);
+        var elemcont;
+        if (is_constant(insert_pre_cont)) {
+          elemcont := bat2constant(insert_pre_cont);
+        } else {
+          elemcont := insert_pre_cont.find(insertitem);
+        }
+        if (isnil(insertkind)) {
+          # hole
+        } else if (insertkind = ELEMENT) {
+          var loc := ws.fetch(QN_LOC).fetch(elemcont).find(insertprop);
+          var prefix := ws.fetch(QN_PREFIX).fetch(elemcont).find(insertprop);
+          var uri := ws.fetch(QN_URI).fetch(elemcont).find(insertprop);
+          insertprop := find_qn(ws, doccont, loc, prefix, uri, true);
+  #         if (debug) printf("find_qn \"%%s\" \"%%s\" \"%%s\" %%d\n", loc, prefix, uri, int(insertprop));
+
+          # deal with the attributes
+          # [void,oid] list of ATTR table IDs for current element
+          var insertnid := insert_pre_nid.find(insertitem);
+          var insertattrbat := insert_attr_own.uselect(insertnid);
+          if (insertattrbat.count() > 0) { # do not bother if there are no attrs on inserted element
+            # figure out next OID in ATTR table of doc, store in attr_id
+            var attr_id;
+            if (attr_own_update.count() > 0) {
+              attr_id := oid(lng(attr_own_update.reverse().max()) + 1);
+            } else {
+              attr_id := oid(attr_own.count());
+            }
+            insertattrbat := insertattrbat.mark(attr_id).reverse();
+            # [void,oid] list of QN table indices for "our" attributes
+            var insertattrqnbat := insertattrbat.leftfetchjoin(insert_attr_qn);
+            var insertattrcontbat;
+            if (is_constant(insert_attr_cont)) {
+              insertattrcontbat := bat2constant(insert_attr_cont);
+            } else {
+              insertattrcontbat := insertattrbat.leftfetchjoin(insert_attr_cont);
+            }
+  # original failing: var insertattrcontbat := insertattrbat.leftfetchjoin(ws.fetch(ATTR_CONT).find(insertcont));
+            # in one fell swoop, add the qualified names of the attributes to the document
+            var newinsertattrpropbat := [find_qn](const ws, doccont,
+                                                  mposjoin(insertattrqnbat, insertattrcontbat, ws.fetch(QN_LOC)),
+                                                  mposjoin(insertattrqnbat, insertattrcontbat, ws.fetch(QN_PREFIX)),
+                                                  mposjoin(insertattrqnbat, insertattrcontbat, ws.fetch(QN_URI)),
+                                                  true);
+            # and the same for the attribute values
+            var insertattrpropbat := insertattrbat.leftfetchjoin(insert_attr_prop);
+            var newinsertattrvalbat := [add_string_unique_inplace](const ws, doccont, PROP_VAL,
+                                                                    mposjoin(insertattrpropbat, insertattrcontbat, ws.fetch(PROP_VAL)));
+            # add to the ATTR table
+            attr_own_update := attr_own_update.insert(insertattrbat.project(docnidnew));
+            attr_qn_update := attr_qn_update.insert(newinsertattrpropbat);
+            attr_prop_update := attr_prop_update.insert(newinsertattrvalbat);
+          }
+        } else if (insertkind = TEXT) {
+          var text := ws.fetch(PROP_TEXT).fetch(elemcont).find(insertprop);
+          insertprop := add_string_unique_inplace(ws, doccont, PROP_TEXT, text);
+        } else if (insertkind = COMMENT) {
+          var text := ws.fetch(PROP_COM).fetch(elemcont).find(insertprop);
+          insertprop := add_string_unique_inplace(ws, doccont, PROP_COM, text);
+        } else if (insertkind = PI) {
+          var ins := ws.fetch(PROP_INS).fetch(elemcont).find(insertprop);
+          var tgt := ws.fetch(PROP_TGT).fetch(elemcont).find(insertprop);
+          insertprop := add_pi(ws, doccont, ins, tgt);
+        } else if (insertkind = DOCUMENT) {
+          ERROR("attempt to insert a complete document foiled\n");
+        } else {
+          ERROR("unknown element type\n");
+        }
+
+        docinsertafter := oid(lng(docinsertafter) + 1);
+        docinsertafter_rid := antiswizzle(docinsertafter, map_pid_update);
+
+        if (isoldpage) {
+          rid_size_update := rid_size_update.myinsert(docinsertafter_rid, insert_pre_size.find(insertitem));
+          rid_prop_update := rid_prop_update.myinsert(docinsertafter_rid, insertprop);
+          rid_kind_update := rid_kind_update.myinsert(docinsertafter_rid, insertkind);
+        } else {
+          rid_size := rid_size.replace(docinsertafter_rid, insert_pre_size.find(insertitem), true);
+          rid_prop := rid_prop.replace(docinsertafter_rid, insertprop, true);
+          rid_kind := rid_kind.replace(docinsertafter_rid, insertkind, true);
+        }
+        if (isnil(insertkind)) {        # inserting a hole
+          if (isoldpage) {
+            rid_level_update := rid_level_update.myinsert(docinsertafter_rid, chr(nil));
+            rid_nid_update := rid_nid_update.myinsert(docinsertafter_rid, oid(nil));
+          } else {
+            rid_level := rid_level.replace(docinsertafter_rid, chr(nil), true);
+            rid_nid := rid_nid.replace(docinsertafter_rid, oid(nil), true);
+          }
+        } else {
+          var newlevel := chr(int(insert_pre_level.find(insertitem)) + leveldiff);
+          nid_rid_update := nid_rid_update.myinsert(docnidnew, docinsertafter_rid);
+          replacements := replacements.replace(nid_rid, nid_rid_update);
+          if (isoldpage) {
+            rid_level_update := rid_level_update.myinsert(docinsertafter_rid, newlevel);
+            rid_nid_update := rid_nid_update.myinsert(docinsertafter_rid, docnidnew);
+          } else {
+            rid_level := rid_level.replace(docinsertafter_rid, newlevel, true);
+            rid_nid := rid_nid.replace(docinsertafter_rid, docnidnew, true);
+          }
+          docnidnew := oid(lng(docnidnew) + 1);
+          if (cast(newlevel, docheight.type()) >= docheight) {
+            docheight := cast(newlevel, docheight.type()) + 1;
+            var docheightbat_update := replacements.replacementsfind(docheightbat).myinsert(doccont, docheight);
+            replacements := replacements.replace(docheightbat, docheightbat_update);
+          }
+        }
+        insertsize :-= 1;
+        insertitem := oid(lng(insertitem) + 1);
+        if ((lng(docinsertafter) and REMAP_PAGE_MASK) = 0LL) {
+          # we're on a new page now
+          pageno := oid((lng(docinsertafter) + 1) >> REMAP_PAGE_BITS);
+          pageid := map_pid_update.reverse().find(pageno);
+          isoldpage := false;
+          if (map_pid.exist(pageid)) {
+            isoldpage := not(isnil(map_pid.find(pageid)));
+          }
+        }
+      }
+      replacements := replacements.replace(attr_own, attr_own_update);
+      replacements := replacements.replace(attr_qn, attr_qn_update);
+      replacements := replacements.replace(attr_prop, attr_prop_update);
+
+      replacements := replacements.replace(rid_size, rid_size_update);
+      replacements := replacements.replace(rid_level, rid_level_update);
+      replacements := replacements.replace(rid_kind, rid_kind_update);
+      replacements := replacements.replace(rid_prop, rid_prop_update);
+      replacements := replacements.replace(rid_nid, rid_nid_update);
     }
   }
 
@@ -2613,45 +2993,138 @@ proc do_update_delete(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
 {
   var conts := kind.get_container();
 
-  # XXX need to do this while the "item" parameter contains PRE values instead of NID values
+  # XXX need to do this while the "item" parameter contains PRE values
+  # instead of NID values; the PRE values refer to the unmodified
+  # document, translate to NID values which are also valid in the
+  # modified document
   var nidbat := mposjoin(item, conts, ws.fetch(PRE_NID));
 
   nidbat@batloop() {
+    var nid := $t;
     var cont := conts.fetch($h);
-    var itemval := replacementvalue(replacements, ws, NID_RID, cont, $t);
-    if (not(isnil(itemval))) {
-      var pre_size := ws.fetch(PRE_SIZE).find(cont);
-      var size := replacementvalue(replacements, pre_size, itemval);
+    var map_pid := ws.fetch(MAP_PID).fetch(cont);
+    var map_pid_update := map_pid;
+    if (replacements.exist(map_pid)) {
+      map_pid_update := replacements.find(map_pid);
+    }
+    var nid_rid := ws.fetch(NID_RID).find(cont);
+    var rid := replacementvalue(replacements, nid_rid, nid);
+    # if (isnil(rid)) the element is already gone, so nothing more to do
+    if (not(isnil(rid))) {
+      var pre := swizzle(rid, map_pid_update);
+      var rid_size := ws.fetch(RID_SIZE).find(cont);
+      var rid_size_update := replacements.replacementsfind(rid_size);
+      var pageno := oid(lng(pre) >> REMAP_PAGE_BITS);
+      var pageid := map_pid_update.reverse().find(pageno);
+      var isoldpage := false;
+      if (map_pid.exist(pageid)) {
+        isoldpage := not(isnil(map_pid.find(pageid)));
+      }
+
+      var size := replacementvalue(replacements, rid_size, rid);
+
       if (not(isnil(niland(size, int(nil))))) { # result of niland(size, int(nil)) is either 0 or int(nil)
-        # coalesce with potential consecutive hole
-        var nsize := replacementvalue(replacements, pre_size, oid((lng(itemval) + size) + 1));
-        if (isnil(niland(nsize, int(nil)))) { # result of niland(nsize, int(nil)) is either 0 or int(nil)
-          # there is a following hole
-          nsize := niland(nsize, INT_MAX) + 1;
-        } else {
-          # no following hole
-          nsize := 0;
-        }
-        var pre_nid := ws.fetch(PRE_NID).find(cont);
-        var new_size := new(void, int, size).seqbase(itemval).key(true);
-        var nidlist := new(oid, oid, size).key(true);
-        var i := 0;
-        while (i <= size) {
-          new_size := new_size.append(nilor((size + nsize) - i, int(nil)));
-          var nid := replacementvalue(replacements, pre_nid, oid(lng(itemval) + i));
-          if (not(isnil(nid))) {
-            nidlist := nidlist.insert(nid, oid(nil));
+        var next_pagebase := oid((lng(pageno) + 1) << REMAP_PAGE_BITS);
+        var nid_rid_update := replacements.replacementsfind(nid_rid);
+        var rid_kind_update := replacements.replacementsfind(rid_kind);
+        var rid_level_update := replacements.replacementsfind(rid_level);
+        var rid_prop_update := replacements.replacementsfind(rid_prop);
+        var rid_nid_update := replacements.replacementsfind(rid_nid);
+
+        while (size >= 0) {
+          var nsize; # new size we're going to write
+          var pgsize; # size of hole we're dealing with this iteration
+          if (oid(lng(pre) + size) >= next_pagebase) {
+            # new hole extends into next page
+            nsize := (int(next_pagebase) - int(pre)) - 1;
+            pgsize := nsize;
+          } else {
+            # new hole wholly contained on this page
+            pgsize := size;
+            if (oid((lng(pre) + size) + 1) >= next_pagebase) {
+              # new hole ends at page boundary
+              nsize := size;
+            } else {
+              # room to spare after new hole, maybe coalesce with consecutive hole
+              var next_rid := oid((lng(rid) + size) + 1);
+              if (isoldpage) {
+                nsize := replacementvalue(replacements, rid_size, next_rid);
+              } else {
+                nsize := rid_size.find(next_rid);
+              }
+              if (isnil(niland(nsize, int(nil)))) { # result of niland(nsize, int(nil)) is either 0 or int(nil)
+                # there is a following hole
+                nsize := (size + niland(nsize, INT_MAX)) + 1;
+              } else {
+                # no following hole
+                nsize := size;
+              }
+            }
           }
-          i :+= 1;
+
+          var update_data := rid_size.reverse().select(rid, oid(lng(rid) + pgsize)).reverse();
+          update_data := [nilor]([-](update_data.project(nsize + 1), [int](update_data.mark(0@0))), int(nil));
+          if (isoldpage) {
+            rid_size_update := rid_size_update.myinsert(update_data);
+          } else {
+            rid_size := rid_size.replace(update_data, true);
+          }
+
+          update_data := update_data.project(cast(nil, rid_level_update_page.ttype()));
+          if (isoldpage) {
+            rid_level_update := rid_level_update.myinsert(update_data);
+          } else {
+            rid_level_new := rid_level.replace(update_data, true);
+          }
+
+          update_data := update_data.project(cast(nil, rid_kind_update_page.ttype()));
+          if (isoldpage) {
+            rid_kind_update := rid_kind_update.myinsert(update_data);
+          } else {
+            rid_kind := rid_kind.replace(update_data, true);
+          }
+
+          update_data := update_data.project(oid(nil));
+          if (isoldpage) {
+            rid_prop_update := rid_prop_update.myinsert(update_data);
+          } else {
+            rid_prop := rid_prop.replace(update_data, true);
+          }
+
+          update_data := update_data.project(oid(nil));
+          if (isoldpage) {
+            rid_nid_update := rid_nid_update.myinsert(update_data);
+          } else {
+            rid_nid := rid_nid.replace(update_data, true);
+          }
+          var rid_nid_page := rid_nid.reverse().select(rid, oid(lng(rid) + pgsize)).reverse();
+          if (isoldpage) {
+            var rid_nid_page_update := rid_nid_update.reverse().select(rid, oid(lng(rid) + pgsize));
+            rid_nid_page := rid_nid_page.access(BAT_WRITE).key(true).replace(rid_nid_page_update);
+          }
+          var nid_rid_updates := rid_nid_page.select(oid(nil), oid(nil)).reverse().project(oid(nil));
+          nid_rid_update := myinsert(nid_rid_update, nid_rid_updates);
+
+          size :-= pgsize + 1;
+          pre := oid((lng(pre) + pgsize) + 1);
+          if (pre >= next_pagebase) {
+            # per page house keeping
+            pageno := oid(lng(pre) >> REMAP_PAGE_BITS);
+            pageid := map_pid_update.reverse().find(pageno);
+            next_pagebase := oid((lng(pageno) + 1) << REMAP_PAGE_BITS);
+            isoldpage := false;
+            if (map_pid.exist(pageid)) {
+              isoldpage := not(isnil(map_pid.find(pageid)));
+            }
+          }
+          rid := oid((lng(pre) and REMAP_PAGE_MASK) or (lng(pageid) << REMAP_PAGE_BITS));
         }
-        replacements := replace(replacements, ws, PRE_SIZE, cont, new_size);
-        replacements := replace(replacements, ws, NID_RID, cont, nidlist);
-        var oidlist := new_size.project(oid(nil));
-        replacements := replace(replacements, ws, PRE_PROP, cont, oidlist);
-        replacements := replace(replacements, ws, PRE_NID, cont, oidlist);
-        var chrlist := oidlist.[chr]();
-        replacements := replace(replacements, ws, PRE_KIND, cont, chrlist);
-        replacements := replace(replacements, ws, PRE_LEVEL, cont, chrlist);
+        replacements := replacements.replace(nid_rid, nid_rid_update);
+        replacements := replacements.replace(rid_kind, rid_kind_update);
+        replacements := replacements.replace(rid_level, rid_level_update);
+        replacements := replacements.replace(rid_prop, rid_prop_update);
+        replacements := replacements.replace(rid_nid, rid_nid_update);
+        replacements := replacements.replace(rid_size, rid_size_udpate);
       }
     }
   }
@@ -2774,43 +3247,81 @@ proc find_qn(bat[void,bat] ws, oid cont, str loc, str prefix, str uri, bit add) 
   return find_qn(ws, cont, oid(nil), loc, prefix, uri, add).fetch(0);
 }
 
-proc build_indices(bat[void,bat] ws, oid cont) : void
+proc fix_consecutive_texts(bat[bat,bat] replacements, bat[void,bat] ws, oid cont) : void
 {
-  var pre_kind_bat := ws.fetch(PRE_KIND).fetch(cont);
-  var pre_nid_bat := ws.fetch(PRE_NID).fetch(cont);
-  var pre_prop_bat := ws.fetch(PRE_PROP).fetch(cont);
-  var i := 0;
-  while (i < 5) {
-    var k := pre_kind_bat.uselect(chr(i)).mirror();
-    var n := k.leftfetchjoin(pre_nid_bat).reverse().mark(0@0).reverse();
-    var b := ws.fetch(KND_NID.find(chr(i))).fetch(cont);
-    b := b.access(BAT_WRITE).delete().insert(n);
-    if ((i = 0) or (i = 3)) {
-      var p := k.leftfetchjoin(pre_prop_bat).reverse().mark(0@0).reverse();
-      var b := ws.fetch(KND_PROP.find(chr(i))).fetch(cont);
-      b := b.access(BAT_WRITE).delete().insert(p);
-    }
-    i :+= 1;
+  # there is nothing to do if there were no structural updates (as
+  # indicated by the presence of RID_SIZE changes)
+  var rid_size := ws.fetch(RID_SIZE).find(cont);
+  if (not(replacements.exist(rid_size))) {
+    return;
   }
-}
+  var rid_size_update := replacements.replacementsfind(rid_size);
+  if (rid_size_update.count() = 0) {
+    return;
+  }
 
-proc fix_consecutive_texts(bat[void,bat] ws, oid cont) : void
-{
-  # select all non-hole entries for both level and kind tables
-  var l := ws.fetch(PRE_LEVEL).fetch(cont).ord_select(chr(0),chr(nil)); # [PRE,level]
-  var k := l.mirror().leftfetchjoin(ws.fetch(PRE_KIND).fetch(cont)); # [PRE,kind]
-  # combine them into a single table
-  var x := [+]([<<]([sht](l),8),[sht](k)); # [PRE,(level<<8)|kind]
+  var map_pid := ws.fetch(MAP_PID).fetch(cont);
+  var map_pid_update := map_pid;
+  if (replacements.exist(map_pid)) {
+    map_pid_update := replacements.find(map_pid);
+  }
+
+  var rid_size := ws.fetch(RID_SIZE).find(cont);
+  var rid_size_update := replacements.replacementsfind(rid_size);
+  var rid_level := ws.fetch(RID_LEVEL).find(cont);
+  var rid_level_update := replacements.replacementsfind(rid_level);
+  var rid_kind := ws.fetch(RID_KIND).find(cont);
+  var rid_kind_update := replacements.replacementsfind(rid_kind);
+  var rid_prop := ws.fetch(RID_PROP).find(cont);
+  var rid_prop_update := replacements.replacementsfind(rid_prop);
+  var rid_nid := ws.fetch(RID_NID).find(cont);
+  var rid_nid_update := replacements.replacementsfind(rid_nid);
+
+  var lvkd := new(oid, sht, rid_size.count()); # [PRE,(level<<8)|kind]
+
+  map_pid_update.select(oid(nil), oid(nil)).reverse().sort()@batloop() {
+    var pageno := $h;
+    var pageid := $t;
+
+    var isoldpage := false;
+    if (map_pid.exist(pageid)) {
+      isoldpage := not(isnil(map_pid.find(pageid)));
+    }
+
+    var pagestart := oid(lng(pageno) << REMAP_PAGE_BITS);
+    var pagelast := oid(lng(pagestart) + REMAP_PAGE_MASK);
+
+    var lvpg := rid_level.reverse().select(pagestart, pagelast).reverse();
+    if (isoldpage) {
+      var lvpgup := rid_level_update.reverse().select(pagestart, pagelast).reverse();
+      lvpg := lvpg.access(BAT_WRITE).key(true).replace(lvpgup);
+    }
+    var kdpg := rid_kind.reverse().select(pagestart, pagelast).reverse();
+    if (isoldpage) {
+      var kdpgup := rid_kind_update.reverse().select(pagestart, pagelast).reverse();
+      kdpg := kdpg.access(BAT_WRITE).key(true).replace(kdpgup);
+    }
+
+    # select all non-hole entries for both level and kind tables
+    var l := lvpg.ord_select(chr(nil),chr(nil)); # [RID,level]
+    var k := l.mirror().leftfetchjoin(kdpg); # [RID,kind]
+    # combine them into a single table
+    var x := [+]([<<]([sht](l),8),[sht](k)); # [RID,(level<<8)|kind]
+    lvkd.insert([sht]([swizzle]([oid](x).reverse(), map_pid_update).reverse()));
+  }
+
+  lvkd := [sht]([swizzle]([oid](lvkd).reverse(), map_pid_update).reverse()); # [PRE,(level<<8)|kind]] 
+
   # use an undocumented feature of CTrefine: it does not check whether
   # the lhs is sorted
   # we now get unique OIDs for each stretch of consecutive elements
   # with the same value
-  var r := CTrefine(x,x.project(nil)); # [PRE,GRP] tsorted
+  var r := CTrefine(lvkd, lvkd.project(nil)); # [PRE,GRP] tsorted
   # s is a list of nodes where there are more than one consecutive
   # nodes of the same type at the same level, the rhs is the per-group OID
-  var s := r.leftjoin(r.reverse().{count}().ord_uselect(2,int(nil)).mirror()); # [PRE,GRP] tsorted subselection of r
+  var s := r.leftjoin(r.reverse().{count}().ord_uselect(2, int(nil)).mirror()); # [PRE,GRP] tsorted subselection of r
   # and now select the text elements from there
-  var t := k.ord_uselect(TEXT).mirror().leftjoin(s).chk_order(); # [PRE,GRP] hsorted,tsorted subselection of s
+  var t := [and](lvkd, sht(255)).ord_uselect(sht(TEXT)).mirror().leftjoin(s).chk_order(); # [PRE,GRP] hsorted,tsorted subselection of s
   # at this point we must do the real merging and deleting of text
   # nodes, but at least we know where they are
   if (t.count() = 0) {
@@ -2818,20 +3329,80 @@ proc fix_consecutive_texts(bat[void,bat] ws, oid cont) : void
     # more to do
     return;
   }
-  var c := t.reverse().leftfetchjoin(ws.fetch(PRE_PROP).fetch(cont)).leftfetchjoin(ws.fetch(PROP_TEXT).fetch(cont)); # [GRP,content] hsorted
+
+  var pid_map_update := map_pid_update.select(oid(nil), oid(nil)).reverse().sort().tmark(0@0);
+  var t1 := [swizzle](t.reverse(), pid_map_update).reverse(); # [RID,GRP]
+
+  var rp := t1.mirror().join(rid_prop).access(BAT_WRITE).key(true).myinsert(t1.mirror().join(rid_prop_update)); # [RID,PROP]
+  var gp := ti.reverse().leftfetchjoin(rp); # [GRP,PROP]
+  var c := gp.leftfetchjoin(ws.fetch(PROP_TEXT).fetch(cont)); # [GRP,content] hsorted
   var v := string_join(c, c.kunique().project("")); # [GRP,content] combined content with unique GRP values
   var i := [add_string_unique_inplace](const ws, cont, PROP_TEXT, v); # [GRP,SID] OID into PROP_TEXT table
   var p := t.reverse().kunique().reverse(); # [PRE,GRP] one representative from t per group
-  var pre_prop := ws.fetch(PRE_PROP).fetch(cont);
-  pre_prop.replace(p.leftjoin(i), true);
-  var h := kdiff(t, p).project(oid(nil));
-  pre_prop.replace(h, true);
-  ws.fetch(PRE_SIZE).fetch(cont).replace(h.project(int(nil)), true);
-  ws.fetch(NID_RID).fetch(cont).replace(h.mirror().leftfetchjoin(ws.fetch(PRE_NID).fetch(cont)).reverse().project(oid(nil)), true);
-  ws.fetch(PRE_NID).fetch(cont).replace(h, true);
-  h := h.project(chr(nil));
-  ws.fetch(PRE_KIND).fetch(cont).replace(h, true);
-  ws.fetch(PRE_LEVEL).fetch(cont).replace(h, true);
+  var p1 := [swizzle](p.reverse(), pid_map_update).reverse(); # [RID,GRP]
+  var h1 := kdiff(t1, p1).project(oid(nil)); # [RID,nil] the other RIDs
+
+  p1.leftjoin(i)@batloop() {
+    var pageid := oid(lng($h) >> REMAP_PAGE_BITS);
+    var isoldpage := false;
+    if (map_pid.exist(pageid)) {
+      isoldpage := not(isnil(map_pid.find(pageid)));
+    }
+    if (isoldpage) {
+      rid_prop_update.myinsert($h, $t);
+    } else {
+      rid_prop.replace($h, $t, true);
+    }
+  }
+  h1@batloop() {
+    var pageid := oid(lng($h) >> REMAP_PAGE_BITS);
+    var isoldpage := false;
+    if (map_pid.exist(pageid)) {
+      isoldpage := not(isnil(map_pid.find(pageid)));
+    }
+    var nid;
+    if (rid_nid.exist($h)) {
+      nid := rid_nid.find($h);
+    }
+    if (isoldpage) {
+      if (rid_nid_update.exist($h)) {
+        nid := rid_nid_update.find($h);
+      }
+      rid_prop_update.myinsert($h, $t);
+      rid_size_update.myinsert($h, int(nil));
+      rid_nid_update.myinsert($h, $t);
+      rid_kind_update.myinsert($h, chr(nil));
+      rid_level_update.myinsert($h, chr(nil));
+    } else {
+      rid_prop.replace($h, $t, true);
+      rid_size.replace($h, int(nil), true);
+      rid_nid.replace($h, $t, true);
+      rid_kind.replace($h, chr(nil), true);
+      rid_level.replace($h, chr(nil), true);
+    }
+    nid_rid_update.myinsert(nid, oid(nil));
+  }
+}
+
+proc build_indices(bat[void,bat] ws, oid cont) : void
+{
+  var map_pid := ws.fetch(MAP_PID).fetch(cont);
+  var pre_kind := remap(ws.fetch(RID_KIND).fetch(cont), map_pid, false);
+  var pre_nid := remap(ws.fetch(RID_NID).fetch(cont), map_pid, false);
+  var pre_prop := remap(ws.fetch(RID_PROP).fetch(cont), map_pid, false);
+  var i := 0;
+  while (i < 5) {
+    var k := pre_kind.uselect(chr(i)).mirror();
+    var n := k.leftfetchjoin(pre_nid).reverse().mark(0@0).reverse();
+    var b := ws.fetch(KND_NID.find(chr(i))).fetch(cont);
+    b := b.access(BAT_WRITE).delete().insert(n);
+    if ((i = 0) or (i = 3)) {
+      var p := k.leftfetchjoin(pre_prop).reverse().mark(0@0).reverse();
+      var b := ws.fetch(KND_PROP.find(chr(i))).fetch(cont);
+      b := b.access(BAT_WRITE).delete().insert(p);
+    }
+    i :+= 1;
+  }
 }
 @* Module Implementation
 @h
