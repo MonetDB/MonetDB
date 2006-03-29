@@ -457,7 +457,7 @@ PROC ws_bat(oid id, int tpe, int htp, int ttp, oid seq) : BAT[void,any]
 
 PROC create_ws () : BAT[void,bat]
 {
-    # only instantiates the default vies of the ws-bats (not the master bats)
+    # only instantiates the default views of the ws-bats (not the master bats)
     var ws := [ws_bat](mirror(ws_tpe), ws_tpe, ws_htp, ws_ttp, ws_seq);
 
     # fill the constant bats with initial values
@@ -465,8 +465,8 @@ PROC create_ws () : BAT[void,bat]
     ws.fetch(HEIGHT).seqbase(0@0).append(0);
 
     # add identical bat references as 'master' bats just to make the transient container complete  
-    [append](mirror(ws_rid).leftfetchjoin(ws), [fetch](mirror(reverse(ws_rid)).leftfetchjoin(ws), 0));
-    [append](mirror(ws_mem).leftfetchjoin(ws), [fetch](mirror(reverse(ws_mem)).leftfetchjoin(ws), 0));
+    [append](mirror(ws_rid).leftfetchjoin(ws), [fetch](ws_rid.leftfetchjoin(ws), 0));
+    [append](mirror(ws_mem).leftfetchjoin(ws), [fetch](ws_mem.leftfetchjoin(ws), 0));
 
     return ws.access(BAT_READ);
 }
