@@ -1326,7 +1326,7 @@
 /* #undef TM_IN_SYS_TIME */
 
 /* Version number of package */
-#define VERSION "4.11.3"
+#define VERSION "@VERSION@"
 
 /* Define on MS Windows (also under Cygwin) */
 /* #undef WIN32 */
