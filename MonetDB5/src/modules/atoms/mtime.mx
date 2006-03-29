@@ -3519,7 +3519,8 @@ MTIMEepoch(timestamp *ret)
 	str e;
 
 	/* convert number of seconds into a timestamp */
-	(e = MTIMEunix_epoch(&ts)) == MAL_SUCCEED && (e = MTIMEtimestamp_add(ret, &ts, &t)) == MAL_SUCCEED;
+	if ((e = MTIMEunix_epoch(&ts)) == MAL_SUCCEED)
+			e = MTIMEtimestamp_add(ret, &ts, &t);
 	return (e);
 }
 
