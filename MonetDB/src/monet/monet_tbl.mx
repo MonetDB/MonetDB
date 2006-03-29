@@ -620,29 +620,29 @@ TBL_M_lock(Client c)
 {
 	dlPRINT("  -->TBL_M_lock\n");
 	TBL_set_writelock();
-	BATfakeAbort(TBL_fcn_nme);
-	BATfakeAbort(TBL_fcn_fcn);
-	BATfakeAbort(TBL_fcn_mid);
-	BATfakeAbort(TBL_fcn_imp);
-	BATfakeAbort(TBL_fcn_tpe);
-	BATfakeAbort(TBL_fcn_sig);
-	BATfakeAbort(TBL_fcn_dsc);
-	BATfakeAbort(TBL_fcn_aut);
-	BATfakeAbort(TBL_fcn_dat);
-	BATfakeAbort(TBL_fcn_pro);
-	BATfakeAbort(TBL_fcn_cnt);
-	BATfakeAbort(TBL_mod_nme);
-	BATfakeAbort(TBL_mod_cnt);
-	BATfakeAbort(TBL_mod_hdl);
-	BATfakeAbort(TBL_mod_atm);
-	BATfakeAbort(TBL_mod_dep);
-	BATfakeAbort(TBL_mod_use);
-	BATfakeAbort(TBL_mod_load);
-	BATfakeAbort(TBL_mod_drop);
-	BATfakeAbort(TBL_mod_proc);
-	BATfakeAbort(TBL_mod_var);
+	(void) BATfakeAbort(TBL_fcn_nme);
+	(void) BATfakeAbort(TBL_fcn_fcn);
+	(void) BATfakeAbort(TBL_fcn_mid);
+	(void) BATfakeAbort(TBL_fcn_imp);
+	(void) BATfakeAbort(TBL_fcn_tpe);
+	(void) BATfakeAbort(TBL_fcn_sig);
+	(void) BATfakeAbort(TBL_fcn_dsc);
+	(void) BATfakeAbort(TBL_fcn_aut);
+	(void) BATfakeAbort(TBL_fcn_dat);
+	(void) BATfakeAbort(TBL_fcn_pro);
+	(void) BATfakeAbort(TBL_fcn_cnt);
+	(void) BATfakeAbort(TBL_mod_nme);
+	(void) BATfakeAbort(TBL_mod_cnt);
+	(void) BATfakeAbort(TBL_mod_hdl);
+	(void) BATfakeAbort(TBL_mod_atm);
+	(void) BATfakeAbort(TBL_mod_dep);
+	(void) BATfakeAbort(TBL_mod_use);
+	(void) BATfakeAbort(TBL_mod_load);
+	(void) BATfakeAbort(TBL_mod_drop);
+	(void) BATfakeAbort(TBL_mod_proc);
+	(void) BATfakeAbort(TBL_mod_var);
 	if (c && c->atomtbl) 
-		BATfakeAbort(c->atomtbl);
+		(void) BATfakeAbort(c->atomtbl);
 	dlPRINT("  <--TBL_M_lock\n");
 	return 1;
 }
@@ -1420,8 +1420,8 @@ TBL_create(Client client, str nme, int cnt, int htpe, int ttpe, int hmode, int t
 		v->binding.vtype = TYPE_bat;
 		v->binding.len = 0;
 		BBPincref(b->batCacheid, TRUE);
-		VARfreeze(v);
-		VARfixate(v);
+		(void) VARfreeze(v);
+		(void) VARfixate(v);
 	}
 	return b;
 }

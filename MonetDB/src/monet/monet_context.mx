@@ -89,9 +89,8 @@ m_export Variable VARnew(Cntxt stk, str name);
 m_export str VARfindinstance(Cntxt *foundstk, int *foundatom, int natoms, int *atoms);
 m_export void VARdel(Cntxt stk, Variable del);
 
-/* "==TRUE" below to keep compilers happy */
-#define VARfreeze(X)	((X) && ((X)->frozen=TRUE)==TRUE)
-#define VARfixate(X)	((X) && ((X)->constant=(X)->frozen=TRUE)==TRUE)
+#define VARfreeze(X)	((X) && ((X)->frozen=TRUE))
+#define VARfixate(X)	((X) && ((X)->constant=(X)->frozen=TRUE))
 
 m_export Cntxt monet_cntxtmax;
 m_export Cntxt monet_cntxtlim;

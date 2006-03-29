@@ -420,8 +420,8 @@ provided to make inclusion of new modules a piece of cake.
 {	Variable v = VARnew(0, "@1");
 	v->binding.vtype = TYPE_int;
 	v->binding.val.ival = @1;
-	VARfreeze(v);
-	VARfixate(v);
+	(void) VARfreeze(v);
+	(void) VARfixate(v);
 }
 
 @c
