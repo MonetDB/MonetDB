@@ -1322,9 +1322,9 @@ PROC region_extract(BAT[str, BAT] my_ws, str tpe) : bat[str,BAT] {
         region_end := bat(void,monet_atomtbl.find(tpe));
     }
     printf("# extracted %d regions\n",region_pre.count());
-    my_ws.insert("region_pre",region_pre);
-    my_ws.insert("region_start",region_start);
-    my_ws.insert("region_end",region_end);
+    my_ws.insert("_region_pre",region_pre);
+    my_ws.insert("_region_start",region_start);
+    my_ws.insert("_region_end",region_end);
     return my_ws;
 }
 ADDHELP("region_extract", "wouter", "Oct 2005",

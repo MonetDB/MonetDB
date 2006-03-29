@@ -105,7 +105,7 @@ PROC rpc_client(
 
     var docBAT := bat(str,bat,WS_SIZE);
     var height := index_doc(rpcres,docBAT);
-    return add_docbat(ws, docBAT, local_name, "", height);
+    return add_docbat(ws, docBAT, local_name, TEMP_DOC, oid(nil), height);
 }
 ADDHELP("rpc_client", "zhang", "November 2005",
 "DESCRIPTION:\n\

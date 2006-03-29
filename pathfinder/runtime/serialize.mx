@@ -1040,7 +1040,7 @@ static int MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_cont, 
  */
 
 static int ws_documentIndex(BAT* ws, str docName) {
-    oid doc_loaded_idx = (oid)DOC_LOADED;
+    oid doc_loaded_idx = (oid)DOCID_NAME;
 
     BUN b = BUNfnd(ws,&doc_loaded_idx);
 

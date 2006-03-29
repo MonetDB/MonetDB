@@ -200,7 +200,7 @@ static int disposeAttrDB(specAttrDbStr* adb) {
 }
 
 /* define the number of BATs in the requuired result set */
-#define SHRED_BATS (WS_FRAG + 1)
+#define SHRED_BATS (ATTR_PROP + 1)
 
 /* description of the static properties of a result BAT */
 typedef struct shredBATdef {
@@ -218,10 +218,10 @@ static shredBATdef shredbatdef[SHRED_BATS] = {
     { PRE_LEVEL,"PRE_LEVEL",TYPE_void, TYPE_chr,  1.0, 0},
     { PRE_PROP, "PRE_PROP", TYPE_void, TYPE_oid,  1.0, 0},
     { PRE_KIND, "PRE_KIND", TYPE_void, TYPE_chr,  1.0, 0},
-    { PRE_CONT, "PRE_CONT", TYPE_void, TYPE_oid,  1.0, 0},
     { PRE_NID, "PRE_NID",   TYPE_void, TYPE_void, 1.0, 0},
-    { NID_RID, "NID_RID",   TYPE_void, TYPE_void, 1.0, 0},
+    { WS_FRAG, "WS_FRAG",   TYPE_void, TYPE_oid,  1.0, 0},
     { MAP_PID,  "MAP_PID",  TYPE_void, TYPE_oid,  1.0/REMAP_PAGE_SIZE, 0},
+    { NID_RID, "NID_RID",   TYPE_void, TYPE_void, 1.0, 0},
     { QN_URI,   "QN_URI",   TYPE_void, TYPE_str,  0.0, 0},
     { QN_PREFIX,"QN_PREFIX",TYPE_void, TYPE_str,  0.0, 0},
     { QN_LOC,   "QN_LOC",   TYPE_void, TYPE_str,  0.0, 0},
@@ -229,14 +229,12 @@ static shredBATdef shredbatdef[SHRED_BATS] = {
     { PROP_COM, "PROP_COM", TYPE_void, TYPE_str,  0.0, 1},
     { PROP_INS, "PROP_INS", TYPE_void, TYPE_str,  0.0, 0},
     { PROP_TGT, "PROP_TGT", TYPE_void, TYPE_str,  0.0, 0},
+    { PROP_VAL, "PROP_VAL", TYPE_void, TYPE_str,  0.0, 0},
     { ID_NID,   "ID_NID",   TYPE_str,  TYPE_oid,  0.0, 0},
     { IDREF_NID,"IDREF_NID",TYPE_str,  TYPE_oid,  0.0, 0},
     { ATTR_OWN, "ATTR_OWN", TYPE_void, TYPE_oid,  0.5, 0},
     { ATTR_QN,  "ATTR_QN",  TYPE_void, TYPE_oid,  0.5, 0},
-    { ATTR_PROP,"ATTR_PROP",TYPE_void, TYPE_oid,  0.5, 0},
-    { ATTR_CONT,"ATTR_CONT",TYPE_void, TYPE_oid,  0.0, 0},
-    { PROP_VAL, "PROP_VAL", TYPE_void, TYPE_str,  0.0, 0},
-    { WS_FRAG, "WS_FRAG",   TYPE_void, TYPE_oid,  1.0, 0}
+    { ATTR_PROP,"ATTR_PROP",TYPE_void, TYPE_oid,  0.5, 0}
 };
 
 /* description of the dynamic properties of a result BAT */
@@ -357,11 +355,6 @@ static shredCtxStruct *createShredCtx(char* location, off_t  fileSize, off_t pag
 	}
 #endif
         sb->bat  = BATnew(ht,tt,sb->size);
-        /*
-        if (i == WS_FRAG){
-            sb->bat = BATseqbase(BUNappend(sb->bat, (ptr)&cont, FALSE), 0);
-        }
-        */
 
         if ( !sb->bat ) {
             GDKerror("shredder.mx:createShredCtx: BATnew(%d) for %s fails, disk full?\n",sb->size,sb->def->name);
@@ -623,7 +616,9 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
         if ( sb->def->headType==TYPE_void && !BAThdense(sb->bat) )
             stream_printf(GDKout,"WARNING: BAT[%s] not dense\n",sb->def->name);
         if ( i == WS_FRAG ) {
-            sb->bat = BATsetaccess(sb->bat, BAT_APPEND);
+            oid zero = 0;
+            BUNappend(sb->bat, &zero, FALSE);
+            sb->bat = BATsetaccess(sb->bat, BAT_READ);
             sb->bat = BATseqbase(sb->bat,  0);
         } else {
             sb->bat = BATsetaccess( sb->bat, BAT_READ );

@@ -6419,11 +6419,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         /* expects strings otherwise something stupid happens */
         milprintf(f,
                 "{ # translate fn:doc (string?) as document?\n"
-                "item%s.tunique().hmark(0@0)%s.tdiff(ws.fetch(DOC_LOADED))@batloop () {\n"
+                "item%s.tunique().hmark(0@0)%s.tdiff(ws.fetch(DOCID_NAME))@batloop () {\n"
                 "    time_shred :+= add_doc(ws, $t);\n"
                 "}\n"
-                "kind := set_kind(item%s.leftjoin(ws.fetch(DOC_LOADED).reverse()).tmark(0@0), ELEM);\n"
-                "item := 0@0;\n"
+                "item := item%s.leftjoin(reverse(ws.fetch(DOCID_NAME))).tmark(0@0); # get doc-oids first\n"
+                "kind := set_kind(item.leftjoin(reverse(ws.fetch(CONT_DOCID))), ELEM);\n"
+                "item := item.leftjoin(doc_root);\n"
                 "} # end of translate fn:doc (string?) as document?\n",
                 item_ext,
                 (rc)?"":val_join(STR),

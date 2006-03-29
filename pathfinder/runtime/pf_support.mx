@@ -546,7 +546,7 @@ PROC get_rpc_res ( BAT[void, bat] ws, oid cont,
                     # and((level=nodev_level), (kind=ELEM)) => a node value
                     res_iter.append(oid(itercnt));
                     res_item.append(pre_nid.fetch($h));
-                    i := set_kind(local_name.leftjoin(ws.fetch(DOC_LOADED).reverse()).tmark(0@0), ELEM);
+                    i := set_kind(local_name.leftjoin(reverse(ws.fetch(DOCID_NAME))).leftjoin(reverse(ws.fetch(CONT_DOCID))).tmark(0@0), ELEM);
                     res_kind.append(i);
                 }
             } else if (k = '\001') { # TEXT node
@@ -5563,35 +5563,33 @@ void pf_support_epilogue() {
 PROC doc_tbl (BAT[void, BAT] ws, BAT[void, str] item) : BAT[void,BAT]
 {
     # consider each document only once
-    var docs := item.tunique().mark (0@0).reverse ();
+    var docs := item.tunique().hmark(0@0);
 
     # throw out documents we already have in the working set
-    docs := docs.reverse ()
-                .kdiff (ws.fetch (DOC_LOADED).reverse ())
-                .mark (0@0)
-                .reverse ();
+    docs := docs.reverse()
+                .kdiff(reverse(ws.fetch(DOCID_NAME)))
+                .hmark(0@0);
 
     # load all remaining documents into the working set
-    docs@batloop () {
-        add_doc (ws, $t);
+    docs@batloop() {
+        add_doc(ws, $t);
     }
 
     # The working set now contains all documents we need.
 
     # pick the according cont value for each document requested
-    var ret_cont := item.leftjoin (ws.fetch (DOC_LOADED).reverse ())
-                        .reverse ()
-                        .mark (0@0)
-                        .reverse ();
+    var ret_cont := item.leftjoin(reverse(ws.fetch(DOCID_NAME)))
+                        .leftjoin(reverse(ws.fetch(CONT_DOCID)))
+                        .tmark(0@0);
 
     # pre values will all be zero
-    var ret_item := ret_cont.project (0@0);
+    var ret_item := ret_cont.project(0@0);
 
     # return result as a BAT of BATs
-    return new (void, BAT).append (ws)
-                          .append (ret_item)
-                          .append (ret_cont)
-                          .seqbase (0@0);
+    return new (void, BAT).append(ws)
+                          .append(ret_item)
+                          .append(ret_cont)
+                          .seqbase(0@0);
 }
 
 ADDHELP("doc_tbl", "teubner", "Aug 2005",
