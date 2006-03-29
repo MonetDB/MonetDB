@@ -21,12 +21,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_02CC04613FE54E6594ABB11D9043345B"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_08BCF21084AC4A54A52E0DE5BD6C4C12"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -921,26 +915,6 @@
             "TargetName" = "8:malalgebra.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_02CC04613FE54E6594ABB11D9043345B"
-            {
-            "SourcePath" = "8:..\\..\\..\\mknife\\Mknife.jar"
-            "TargetName" = "8:Mknife.jar"
-            "Tag" = "8:"
-            "Folder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -3873,20 +3847,6 @@
         }
         "Shortcut"
         {
-            "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_54CC45041C0249D980C0B7DFB72B6933"
-            {
-            "Name" = "8:Mknife"
-            "Arguments" = "8:"
-            "Description" = "8:"
-            "ShowCmd" = "3:1"
-            "IconIndex" = "3:0"
-            "Transitive" = "11:FALSE"
-            "Target" = "8:_02CC04613FE54E6594ABB11D9043345B"
-            "Folder" = "8:_38127E40D5154983A56ED4DED9B77213"
-            "WorkingFolder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
-            "Icon" = "8:"
-            "Feature" = "8:"
-            }
             "{478F747B-8505-45D1-9AAE-8C3B645C26E3}:_77897AF72E944B5F9D93AE10E5046633"
             {
             "Name" = "8:MonetDB SQL Client"
