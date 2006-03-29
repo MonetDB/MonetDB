@@ -549,7 +549,7 @@
 #define MONETDB_LOCALSTATEDIR "${prefix}\\var"
 
 /* architecture-independent files */
-#define MONETDB_PREFIX "C:\\Program Files\\CWI\\MonetDB"
+#define MONETDB_PREFIX "@Xprefix@"
 
 /* read-only single-machine data */
 #define MONETDB_SYSCONFDIR "${prefix}\\etc"

@@ -23,12 +23,12 @@ install: targetdirs monetdb_config.h all
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
 
 $(SRCDIR)\Makefile.msc:
-	$(CD) "$(SRCDIR)" && autogen.py
+        $(CD) "$(SRCDIR)" && autogen.py
 
 all-msc: monetdb_config.h
 
-monetdb_config.h: winconfig.h
-	$(INSTALL) winconfig.h monetdb_config.h
+monetdb_config.h: monetdb_config.h.in
+	$(CONFIGURE) monetdb_config.h.in > monetdb_config.h
 
 unistd.h:
 	$(ECHO) #ifndef UNISTD_H > unistd.h
