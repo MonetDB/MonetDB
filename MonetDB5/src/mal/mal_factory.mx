@@ -337,7 +337,9 @@ Let's call it as a synchronous action, without concern on parallelism.
 	pl->pci = pci;
 	pl->inuse = 1;
 	/* inherit debugging */
-	cmd = pl->stk->cmd = stk->cmd;
+	cmd = stk->cmd;
+	if( pl->stk)
+		pl->stk->cmd= cmd;
 
 	/* copy the calling arguments onto the stack 
 	   of the factory */
@@ -361,7 +363,7 @@ Let's call it as a synchronous action, without concern on parallelism.
 		msg = reenterMAL(cntxt, mb, pl->pc, -1, pl->stk, 0, 0);
 	}
 	/* propagate change in debugging status */
-	if (cmd && pl->stk->cmd != cmd && cmd != 'x')
+	if (cmd && pl->stk && pl->stk->cmd != cmd && cmd != 'x')
 		for (; stk; stk = stk->up)
 			stk->cmd = pl->stk->cmd;
 	return msg;
