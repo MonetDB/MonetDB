@@ -793,7 +793,7 @@ getContext(mvc **c, backend **b )
 
 		(void)be;
 		printf("#Re-establish context for client not expected\n");
-		_client->state[OPTIMIZE] == mvc_create(0,0,NULL,GDKout);
+		_client->state[OPTIMIZE] = mvc_create(0,0,NULL,GDKout);
 		schema = mvc_login( _client->state[OPTIMIZE], 
 				GDKstrdup("monetdb"), GDKstrdup("monetdb") );
 		if( !schema)
