@@ -1,0 +1,6 @@
+include armada;
+
+b:=bat.new(:str, :str);
+bat.insert(b, "func1", "site1");
+bat.insert(b, "func2", "site2");
+armada.addTrail(b);

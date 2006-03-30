@@ -31,17 +31,25 @@ administration in the box.
 @mal
 module armada;
 
-pattern open():void
-address ARMADAopen
-comment "Locate and open the Armada box";
+#pattern open():void
+#address ARMADAopen
+#comment "Locate and open the Armada box";
+#
+#pattern close():void
+#address ARMADAclose
+#comment "Close the Armada box";
+#
+#pattern destroy():void
+#address ARMADAdestroy
+#comment "Destroy the Armada box (irreversible, use with caution!)";
 
-pattern close():void
-address ARMADAclose
-comment "Close the Armada box";
+command prelude()
+address ARMADAprelude
+comment "Initialise the armada module";
 
-pattern destroy():void
-address ARMADAdestroy
-comment "Destroy the statistics box";
+command epilogue()
+address ARMADAepilogue
+comment "Release the resources held by the armada module";
 
 
 command addStep(func:str, site:str):int
@@ -59,6 +67,8 @@ comment "Adds a new trail based on the pre trail and step step, and returns the 
 command addTrail(steps:bat[:str,:str]):int
 address ARMADAaddTrailBAT
 comment "Adds the steps stored in the given BAT as trail and returns the internal id";
+
+armada.prelude();
 
 @- Implementation
 
@@ -78,10 +88,36 @@ comment "Adds the steps stored in the given BAT as trail and returns the interna
 #include "armada.h"
 #include "mal_exception.h"
 
+mal_export str ARMADAprelude(int *ret);
+mal_export str ARMADAepilogue(int *ret);
+
 mal_export str ARMADAaddStep(int *ret, str *func, str *site);
 mal_export str ARMADAfindStep(int *ret, str *func, str *site);
 mal_export str ARMADAaddTrail(int *ret, int *pre, int *step);
 mal_export str ARMADAaddTrailBAT(int *ret, int *steps);
+
+static void ARMADAinit();
+static void ARMADAexit();
+
+
+str
+ARMADAprelude(int *ret)
+{
+	(void)ret;
+	ARMADAinit();
+
+	return MAL_SUCCEED;
+}
+
+str
+ARMADAepilogue(int *ret)
+{
+	(void)ret;
+	ARMADAexit();
+
+	return MAL_SUCCEED;
+}
+
 
 BAT *ARMADA_func_site;
 BAT *ARMADA_step_pre;
