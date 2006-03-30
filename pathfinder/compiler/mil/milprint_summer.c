@@ -6422,9 +6422,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "item%s.tunique().hmark(0@0)%s.tdiff(ws.fetch(DOCID_NAME))@batloop () {\n"
                 "    time_shred :+= add_doc(ws, $t);\n"
                 "}\n"
-                "item := item%s.leftjoin(reverse(ws.fetch(DOCID_NAME))).tmark(0@0); # get doc-oids first\n"
-                "kind := set_kind(item.leftjoin(reverse(ws.fetch(CONT_DOCID))), ELEM);\n"
-                "item := item.leftjoin(doc_root);\n"
+                "item := item%s.leftjoin(reverse(ws.fetch(DOCID_NAME))); # get doc-oids first\n"
+                "kind := set_kind(item.leftjoin(reverse(ws.fetch(CONT_DOCID))).tmark(0@0), ELEM);\n"
+                "item := item.leftjoin(doc_root).tmark(0@0);\n"
                 "} # end of translate fn:doc (string?) as document?\n",
                 item_ext,
                 (rc)?"":val_join(STR),

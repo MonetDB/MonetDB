@@ -1230,7 +1230,7 @@ typedef struct _xquery_module {
     char* epilogue;               /* MIL procs undefs for this module */
     xquery_function *functions;   /* functions declared in this module */
     char *nsurl;                  /* module namespace definition */
-    char *url;                    /* module url */
+    char url[1];                  /* module url */
 } xquery_module;
 
 /* global list of known modules and their function declarations */
@@ -1392,6 +1392,10 @@ xquery_mil_exec(xquery_client *ctx,
     return ret;
 }
 
+static char* xquery_parse_ident(char* p); 
+static char* xquery_parse_space(char* p); 
+static char* xquery_parse_string(char* p, char *buf, int len); 
+
 /*
  * translate xquery to MIL and execute, return error(0)/ok(1)
  * We collect the MIL scripts in three sections (prologue,query,epilogue).
@@ -1416,7 +1420,7 @@ xquery_compile_exec(xquery_client *ctx,
 {
     int is_mil = 0, len=0, ret = 0, debug = strstr(mode,"debug") != NULL;
     char *mapi = strstr(mode, "mapi")?"=":"";
-    char *err = NULL, *p1 = NULL, *p2 = NULL;
+    char *err = NULL;
 
     MT_set_lock(pf_compiler_lock, "xquery_compile_exec");
     if (is_url) {
@@ -1431,14 +1435,27 @@ xquery_compile_exec(xquery_client *ctx,
         } else {
             err = PFcompile_MonetDB(xquery, mode, prologue, &del, epilogue);
             if (err == NULL && nsurl != NULL){
-                /* retrive the module namespace URL, we assume that
-                 * 'xquery' contains a valid XQuery module. */
-                p1 = strchr(xquery, (int)'\"');
-                p1++;
-                p2 = strchr(p1, (int)'\"');
-                len = p2 - p1;
-                strncpy(nsurl, p1, len);
-                nsurl[len] = 0;
+                /* get the module namespace URL Y from pattern: "module namespace X = Y" */
+                char *p0 = xquery_parse_space(xquery); 
+                err = "xquery_compile_exec: cannot parse module namespace.\n";
+                if (strncmp(p0, "module", 6) == 0) {
+                    char *p1 = xquery_parse_space(p0+=6); 
+                    if (p1 > p0 && strncmp(p1, "namespace", 9) == 0) {
+                        char *p2 = xquery_parse_space(p1+=9); 
+                        if (p2 > p1) {
+                            char* p3 = xquery_parse_ident(p2);
+                            if (p3 > p2) {
+                                char *p4 = xquery_parse_space(p3); 
+                                if (p4 > p3 && *p4++ == '=') {
+                                    char *p5 = xquery_parse_space(p4); 
+                                    if (p5 > p4 && xquery_parse_string(p5, nsurl, 1024) > p5) {
+                                        err = NULL; /* success! */
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         if (err == NULL || (prologue && *prologue) || (del && *del)) {
@@ -1491,7 +1508,7 @@ xquery_compile_exec(xquery_client *ctx,
         if (ret && *epilogue && **epilogue)
             ret = xquery_mil_exec(ctx, *epilogue, 0);
     }
-    return ret;
+    return ret?ret+is_mil:0;
 }
 
 /*
@@ -1860,14 +1877,14 @@ xquery_function_call(xquery_client *ctx,
  * xquery_module_free(xquery_module *mod)
  * - free module structure 
  *
- * char*
- * match_module_ns(char *module_ns, char *import_ns)
- * - check if two module namespace match
- * - return error msg on error, NULL otherwise
- *
  * xquery_module* 
  * xquery_module_compile(xquery_client *ctx, char* mode, char *url)
  * - get an xquery module, compile it and cache it (return NULL on error)
+ *
+ * char*
+ * xquery_match_ns(char *module_ns, char *import_ns)
+ * - check if two module namespace match
+ * - return error msg on error, NULL otherwise
  *
  * char*
  * xquery_module_load(xquery_client *ctx, char* mode, char *ns, char *url)
@@ -1890,36 +1907,7 @@ xquery_module_free(xquery_module *mod)
     }
     if (mod->epilogue) free(mod->epilogue);
     if (mod->prologue) free(mod->prologue);
-  //  GDKfree(mod->nsurl);
-   // GDKfree(mod->url);
     GDKfree(mod);
-}
-
-/*
- * check if two module namespace match
- * return error msg on error, NULL otherwise
- * 'module_ns': module namespace as specified in the module decleration
- * 'import_ns': module namespace as specified in the import module
- *              statement.
- */
-static char*
-match_module_ns(char *module_ns , char *import_ns)
-{
-    char *errstr = NULL;
-    int errlen = 0;
-
-    if (strcmp(module_ns, import_ns) != 0) {
-        errlen = strlen(module_ns) + strlen(import_ns) + 256;
-        if (!(errstr = GDKmalloc(errlen))) {
-            return "xquery_module_load: could not allocate.\n";
-        }
-        snprintf(errstr, errlen, 
-                "xquery_module_load: import module statement (\"%s\")"
-                "does not match module namespace decleration (\"%s\")",
-                import_ns, module_ns);
-        return errstr;
-    }
-    return NULL;
 }
 
 /*
@@ -1934,32 +1922,22 @@ xquery_module_compile(xquery_client *ctx,
     BAT *b = ctx->proc_vid;
     int xx = BUNsize(b);
     int cnt = BUNindex(b, BUNlast(b));
-    int url_len = strlen(url), nsurl_len;
+    int ret, url_len = strlen(url)+1;
     BUN p, q;
 
-    mod = GDKmalloc(sizeof(xquery_module));
-    if (mod == NULL)
-        return NULL;
-    nsurl_len = url_len > 1024 ? url_len : 1024;
-    mod->nsurl = GDKmalloc(nsurl_len);
-    if (mod->nsurl == NULL) {
-        GDKfree(mod);
-        return NULL;
-    }
-    mod->url = GDKmalloc(url_len);
-    if (mod->url == NULL) {
-        GDKfree(mod->nsurl); GDKfree(mod);
-        return NULL;
-    }
-
-    memset(mod, 0, (sizeof(xquery_module)- sizeof(char*) - sizeof(char*)) );
-    memset(mod->nsurl, 0, nsurl_len);
-    memset(mod->url, 0, url_len);
+    mod = GDKmalloc(sizeof(xquery_module)+url_len+1024);
+    if (mod == NULL) return NULL;
+    memset(mod, 0, sizeof(xquery_module)+url_len+1024);
     strcpy(mod->url, url);
-    if (!xquery_compile_exec(ctx, mode, url, 1, &mod->prologue, NULL, &mod->epilogue, mod->nsurl)) {
+    mod->nsurl = mod->url + url_len;
+
+    ret = xquery_compile_exec(ctx, mode, url, 1, &mod->prologue, NULL, &mod->epilogue, mod->nsurl);
+    if (!ret) {
         xquery_module_free(mod);
         return NULL;
     } 
+    if (ret == 2) mod->nsurl = NULL; /* for MIL modules (ret == 2), mod->nsurl == NULL (we don't know it :-( )*/
+
     for(p = BUNptr(b,cnt), q = BUNlast(b); p < q; p += xx) {
         char *proc = (char*) BUNhead(b,p);
         xquery_function *fun = (xquery_function*) GDKmalloc(sizeof(xquery_function)+strlen(proc));
@@ -1985,6 +1963,20 @@ xquery_module_compile(xquery_client *ctx,
 }
 
 /*
+ * check if two module namespace match (check only if both non-NULL)
+ * return error msg on error, NULL otherwise
+ * 'module_ns': module namespace as specified in the module decleration
+ * 'import_ns': module namespace as specified in the import module statement.
+ */
+static char*
+xquery_match_ns(char *module_ns , char *import_ns)
+{
+    if (module_ns && import_ns && strcmp(module_ns, import_ns)) 
+        return "xquery_module_load: import module statement does not match module namespace declaration.\n";
+    return NULL;
+}
+
+/*
  * check whether we already loaded the module, or if we already have it cached. 
  * If not, fetch&compile. Returns error string or NULL if ok.
  */
@@ -1996,26 +1988,17 @@ xquery_module_load(xquery_client *ctx,
                    char *url) 
 {
     xquery_loaded_module *mod, *prev = NULL;
-    char *err = NULL;
     int nslen = strlen(ns);
 
     /* check whether it was already loaded in this query */
     for(mod = ctx->loaded_modules; mod; prev = mod, mod = mod->next) {
         if (strcmp(mod->def->url, url) == 0) {
-            err = match_module_ns(mod->def->nsurl, module);
-            if (err != NULL){
-                return err;
-            }
             if (mod->nslen == 0) {
                 if (prev) prev->next = mod->next;
                 else ctx->loaded_modules = NULL;
                 break; /* put module at front of list */
-/* pf itself does not enforce this
-            } else if (mod->nslen == nslen && strncmp(mod->ns, ns, nslen)) {
-                return "xquery_module_load: module already loaded under different namespace.\n";
- */
             }
-            return NULL;
+            return xquery_match_ns(mod->def->nsurl, module);
         }
     }
     if (mod == NULL) {
@@ -2027,21 +2010,10 @@ xquery_module_load(xquery_client *ctx,
 
         MT_set_lock(pf_module_lock, "xquery_module_load");
         for(def = xquery_compiled_modules; def; def = def->next) 
-            if (strcmp(def->url, url) == 0) {
-                err = match_module_ns(def->nsurl, module);
-                if (err != NULL){
-                    MT_unset_lock(pf_module_lock, "xquery_module_load");
-                    return err;
-                }
-                break;
-            }
+            if (strcmp(def->url, url) == 0) break;
+
         if (def == NULL){
             mod->def = xquery_module_compile(ctx, mode, url);
-            err = match_module_ns(mod->def->nsurl, module);
-            if (err != NULL){
-                MT_unset_lock(pf_module_lock, "xquery_module_load");
-                return err;
-            }
         }
         MT_unset_lock(pf_module_lock, "xquery_module_load");
 
@@ -2062,7 +2034,7 @@ xquery_module_load(xquery_client *ctx,
     mod->nslen = nslen;
     mod->next = ctx->loaded_modules;
     ctx->loaded_modules = mod;
-    return NULL;
+    return xquery_match_ns(mod->def->nsurl, module);
 }
 
 
@@ -2349,7 +2321,7 @@ xquery_client_end(xquery_client *ctx, char *err)
 /* 
  * parse an identifier; accept any UTF-8 characters in it (is that correct?)
  */
-static inline char* 
+static char* 
 xquery_parse_ident(char* p) 
 {
     if ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || *(unsigned char*) p >= 128) {
@@ -2363,7 +2335,7 @@ xquery_parse_ident(char* p)
 /* 
  * parse an xquery (: .. :)  comment. Note it may be nested.
  */
-static inline char* 
+static char* 
 xquery_parse_comment(char* p) 
 {
     int nesting;
@@ -2378,7 +2350,7 @@ xquery_parse_comment(char* p)
  * parse xquery space, which may include comments 
  */
 #define ISSPACE(c) ((c) == ' ' || (c) == '\t' || (c) == 10 || (c) == 13) 
-static inline char* 
+static char* 
 xquery_parse_space(char* p) 
 {
     while(*p) {
@@ -2392,7 +2364,7 @@ xquery_parse_space(char* p)
 /* 
  * parse an XML datamodel string. Deliver an unescaped version as a result 
  */
-static inline char* 
+static char* 
 xquery_parse_string(char* p, 
                     char *buf, 
                     int len) 
@@ -2463,7 +2435,7 @@ xquery_parse_string(char* p,
 /* 
  * parse an XML datamodel numeric, and determine its minimal type (xs:integer, xs:decimal or xs:double) 
  */
-static inline char* 
+static char* 
 xquery_parse_numeric(char* p, 
                      char **tpe) 
 {
