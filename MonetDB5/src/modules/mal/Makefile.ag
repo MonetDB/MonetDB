@@ -13,7 +13,8 @@ LIBS = {
 		profiler.mx const.mx print.mx \
 		inspect.mx manual.mx crackers.mx \
 		factory.mx mdb.mx  pbm.mx \
-		rsbox.mx urlbox.mx multitable.mx
+		rsbox.mx urlbox.mx multitable.mx \
+		armada.mx
 		#datacell.mx 
 
 	HEADERS = h 
@@ -110,7 +111,8 @@ scripts_mal = {
 		inspect.mx manual.mx crackers.mx print.mal \
 		chopper.mx clients.mx \
 		factory.mx mdb.mx pcre.mx  tablet.mx multitable.mx \
-		rsbox.mx urlbox.mx statistics.mx transaction.mx partitions.mx pbm.mx
+		rsbox.mx urlbox.mx statistics.mx transaction.mx \
+		partitions.mx pbm.mx armada.mx
 	#datacell.mx 
 }
 
