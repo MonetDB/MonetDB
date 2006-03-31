@@ -98,6 +98,7 @@ mal_export str ARMADAaddTrailBAT(int *ret, int *steps);
 
 static void ARMADAinit();
 static void ARMADAexit();
+static void ARMADAcommit();
 
 
 str
@@ -113,6 +114,7 @@ str
 ARMADAepilogue(int *ret)
 {
 	(void)ret;
+	ARMADAcommit();
 	ARMADAexit();
 
 	return MAL_SUCCEED;
@@ -157,7 +159,7 @@ ARMADAinit()
 {
 	mal_set_lock(mal_contextLock, "armada");
 	ARMADA_func_site = ARMADA_create("func", "site", TYPE_str, TYPE_str);
-	ARMADA_step_pre  = ARMADA_create("step", "pre", TYPE_oid, TYPE_oid);
+	ARMADA_step_pre  = ARMADA_create("step", "pre", TYPE_int, TYPE_int);
 	ARMADA_loaded    = 1;	/* yes, we have the BATs loaded */
 	mal_unset_lock(mal_contextLock, "armada");
 }
@@ -221,12 +223,12 @@ ARMADAaddStep(int *ret, str *func, str *site) {
 	assert (ARMADA_func_site != NULL);
 
 	/* see if the func/site already exists */
-	p = BUNlocate(ARMADA_func_site, func, site);
+	p = BUNlocate(ARMADA_func_site, *func, *site);
 	if (!p) {
 		/* apparently not, so let's add it */
-		BUNins(ARMADA_func_site, func, site);
+		BUNins(ARMADA_func_site, *func, *site);
 		/* and look up the just added BUN */
-		p = BUNlocate(ARMADA_func_site, func, site);
+		p = BUNlocate(ARMADA_func_site, *func, *site);
 	}
 	*ret = BUNgetpos(ARMADA_func_site, p);
 
@@ -247,7 +249,7 @@ ARMADAfindStep(int *ret, str *func, str *site) {
 	assert (ARMADA_func_site != NULL);
 
 	/* lookup func/site and set retval appropriately */
-	p = BUNlocate(ARMADA_func_site, func, site);
+	p = BUNlocate(ARMADA_func_site, *func, *site);
 	if (!p) {
 		*ret = -1;
 	} else {
@@ -278,7 +280,7 @@ ARMADAaddTrail(int *ret, int *pre, int *step) {
 		if (*pre != int_nil) {
 			/* TODO: find out if this is not a leak; I suspect it is
 			 *       somehow */
-			p = BUNfnd(BATmirror(ARMADA_step_pre), pre);
+			p = BUNfnd(ARMADA_step_pre, pre);
 			if (!p)
 				throw("ArmadaException", "addTrail", "pointing to non-existant predecessor step");
 		}
@@ -305,7 +307,9 @@ str
 ARMADAaddTrailBAT(int *ret, int *bat) {
 	BAT *steps;
 	BUN p, q;
-	str *func, *site, tmp;
+	str func;
+	str site;
+	str tmp;
 	int idx, lastStep;
 
 	if (ARMADA_loaded == 0)
@@ -319,14 +323,14 @@ ARMADAaddTrailBAT(int *ret, int *bat) {
 	 */
 	lastStep = int_nil;
 	BATloop(steps, p, q) {
-		func = (str*)BUNhead(steps, p);
-		site = (str*)BUNtail(steps, p);
-		rethrow("addTrail", tmp, ARMADAaddStep(&idx, func, site));
+		func = (str)BUNhead(steps, p);
+		site = (str)BUNtail(steps, p);
+		rethrow("addTrail", tmp, ARMADAaddStep(&idx, &func, &site));
 		/* Now we have the id of the step, we can check whether it
 		 * already is in the step/pre BAT, and add it otherwise.
 		 * Failure here indicates an Armada inconsistency.
 		 */
-		rethrow("addTrail", tmp, ARMADAaddTrail(&idx, &idx, &lastStep));
+		rethrow("addTrail", tmp, ARMADAaddTrail(&idx, &lastStep, &idx));
 		
 		lastStep = idx;
 	}
