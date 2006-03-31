@@ -42,6 +42,7 @@ opt_export str PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
 
 @c
+#include "mal_prelude.h"
 #include "mal_peephole.h"
 #include "mal_namespace.h"
 #include "mal_interpreter.h"	/* for showErrors() */
@@ -129,7 +130,7 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* INVALID FOR THE TIME
 			} else if (getVar(mb, getArg(p, 0))->endLifespan == i + 1 && 
 						match(p, "algebra", "markT") && 
-						match(q, "bat", "reverse")
+						match(q, batRef, reverseRef)
 			) {
 #ifdef DEBUG_MAL_PEEPHOLE
 				printf("PEEPHOLE 1\n");
@@ -164,7 +165,10 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				} else
 					pushInstruction(mb, p);
 */
-			} else if (q && match(p, "bat", "reverse") && match(q, "bat", "reverse") && getArg(p, 0) == getArg(q, 1) && getVar(mb, getArg(p, 0))->endLifespan == i + 1) {
+			} else if (q && match(p, batRef, reverseRef) && 
+						match(q, batRef, reverseRef) && 
+						getArg(p, 0) == getArg(q, 1) && 
+						getVar(mb, getArg(p, 0))->endLifespan == i + 1) {
 #ifdef DEBUG_MAL_PEEPHOLE
 				printf("PEEPHOLE reverse-reverse\n");
 				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
