@@ -2282,12 +2282,11 @@ CRKOrderedpieceOne_MK_@1( BAT *b, const @1 mval, size_t first, size_t last, size
 
 	/* ignore non-moveable bounds*/
 	while( *(@1*)tc < mval && tc<=tp){
-		i++;
 		tc += xx; 
 	}
 	/* probe */
 	hc= hv= tc;
-	hv += (last-first)/50*xx;
+	hv += 50*xx;
 	while(hc<hv){
 		if( *(@1*)hc <= mval )
 			i++;
@@ -2300,7 +2299,6 @@ CRKOrderedpieceOne_MK_@1( BAT *b, const @1 mval, size_t first, size_t last, size
 
 	tv=tc; hc= hv= tc-b->tloc;
 	while( *(@1*)tp > mval && tp>=tc){
-		k++;
 		tp -= xx; 
 	}
 	tq=tp; hp= hq= tq-b->tloc;
