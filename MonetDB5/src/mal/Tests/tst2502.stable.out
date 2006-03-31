@@ -22,8 +22,9 @@ stdout of test 'tst2502` in directory 'src/mal` itself:
 #	yield i;
 #	redo always;
 #exit always;
-#end;
-function user.random(seed:int):int;	# 0  (random:int)<-(seed:int)
+#	return random:= 0;
+#end random;
+factory user.random(seed:int):int;	# 0  (random:int)<-(seed:int)
     i := seed;	# 1  (i:int)<-(seed:int)
 barrier always := true;	# 2  (always:bit)<-(_4:bit) jump 7
     i := calc.*(125,i);	# 3 CALCbinaryMULintint (i:int)<-(_5:int)(i:int)
@@ -31,9 +32,8 @@ barrier always := true;	# 2  (always:bit)<-(_4:bit) jump 7
     yield i;	# 5  (i:int)
     redo always;	# 6  (always:bit) jump 3
 exit always;	# 7  (always:bit)
-end random;	# 8  
-!ERROR: yield misplaced
-!
+    return random := 0;	# 8  (random:int)<-(_7:int)
+end random;	# 9  
 #
 #r1:= random(0);
 #print(r1);
@@ -47,8 +47,8 @@ function user.main():void;	# 0  (main:void)
     r2 := user.random(0);	# 4  (r2:int)<-(_3:int)
     io.print(r2);	# 5 IOprint_val (_6:int)<-(r2:int)
 end main;	# 6  
-!ERROR: SyntaxError:user.random[0]:'user.random' contains errors
-#
+[ 0 ]
+[ 0 ]
 
 # 08:01:05 >  
 # 08:01:05 >  Done.

@@ -31,7 +31,8 @@ barrier always := true;	# 2  (always:bit)<-(_4:bit) jump 7
     yield i;	# 5  (i:int)
     redo always;	# 6  (always:bit) jump 3
 exit always;	# 7  (always:bit)
-end random;	# 8  
+    return random := 0;	# 8  (random:int)<-(_7:int)
+end random;	# 9  
 #
 #r1:= random(1);
 #print(r1);

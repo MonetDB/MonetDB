@@ -63,12 +63,7 @@ end main;	# 17
 [ 4,	  "users",		  1,	  1		  ]
 [ 5,	  "password",		  1,	  1		  ]
 [ 6,	  "b",			  0,	  1		  ]
-[ 7,	  "trace_id_time",	  0,	  1		  ]
-[ 8,	  "trace_id_ticks",	  0,	  1		  ]
-[ 9,	  "trace_id_pc",	  0,	  1		  ]
-[ 10,	  "trace_id_modfcn",	  0,	  1		  ]
-[ 11,	  "trace_id_statement",	  0,	  1		  ]
-[ 12,	  "tmp_14",		  0,	  1		  ]
+[ 7,	  "tmp_7",		  0,	  1		  ]
 
 # 08:01:32 >  
 # 08:01:32 >  Done.

@@ -8,6 +8,7 @@ barrier always:= true;
 	yield i;
 	redo always;
 exit always;
+	return random:= 0;
 end;
 
 r1:= user.random(1);

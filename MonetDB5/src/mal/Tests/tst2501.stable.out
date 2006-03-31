@@ -29,7 +29,8 @@ barrier always := true;	# 2  (always:bit)<-(_4:bit) jump 6
     yield i := calc.%(i,32767);	# 4 CALCbinaryMODintint (i:int)<-(i:int)(_6:int)
     redo always;	# 5  (always:bit) jump 3
 exit always;	# 6  (always:bit)
-end random;	# 7  
+    return random := 0;	# 7  (random:int)<-(_7:int)
+end random;	# 8  
 #
 #r1:= random(1);
 #print(r1);
