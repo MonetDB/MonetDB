@@ -1634,9 +1634,15 @@ convertConstant(malType type, ValPtr vr)
 
 			snprintf(buf, BUFSIZ, "%d", vr->val.ival);
 			(*BATatoms[type].atomFromStr) (buf, &ll, &d);
-			VALset(vr, type, d);
-			if (ATOMextern(type) == 0 && d)
-				GDKfree(d);
+			if( d==0 ){
+				VALset(vr, type, BATatoms[type].atomNull);
+				return 1;
+			} else
+			if( d ){
+				VALset(vr, type, d);
+				if (ATOMextern(type) == 0 )
+					GDKfree(d);
+			}
 		}
 		return vr->vtype != type;
 	case TYPE_str:
@@ -1676,16 +1682,28 @@ end.
 
 			ATOMformat(vr->vtype, VALptr(vr), &w);
 			(*BATatoms[type].atomFromStr) (w, &ll, &d);
-			VALset(vr, type, d);
-			if (ATOMextern(type) == 0 && d)
-				GDKfree(d);
+			if( d==0 ){
+				VALset(vr, type, BATatoms[type].atomNull);
+				GDKerror("newConstant:coercion error\n");
+			} else
+			if( d ){
+				VALset(vr, type, d);
+				if (ATOMextern(type) == 0 )
+					GDKfree(d);
+			}
 			GDKfree(w);
 		} else {
 #ifdef STRUCT_ALIGNED
 			(*BATatoms[type].atomFromStr) (vr->val.sval, &ll, &d);
-			VALset(vr, type, d);
-			if (ATOMextern(type) == 0 && d)
-				GDKfree(d);
+			if( d==0 ){
+				VALset(vr, type, BATatoms[type].atomNull);
+				GDKerror("newConstant:coercion error\n");
+			} else
+			if( d ){
+				VALset(vr, type, d);
+				if (ATOMextern(type) == 0 )
+					GDKfree(d);
+			}
 #else
 			GDKerror("newConstants:missing implementation\n");
 #endif
@@ -1733,8 +1751,10 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 	ValPtr vr;
 	ptr vcst = VALget(cst);
 
-	if (cst->vtype != type)
-		convertConstant(type, cst);
+	if (cst->vtype != type){
+		i= convertConstant(type, cst);
+		if( i ) mb->errors++;
+	}
 	k = mb->vtop - MAL_VAR_WINDOW;
 	if (k < 0)
 		k = 0;
