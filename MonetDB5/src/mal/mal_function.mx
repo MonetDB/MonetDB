@@ -360,8 +360,7 @@ void chkFlow(MalBlkPtr mb)
 	if( retseen == 0){
 		if( getArgType(mb,p,0)!= TYPE_void &&
 			(p->token==FUNCTIONsymbol || p->token==FACTORYsymbol)){
-			GDKerror("%s missing in %s.%s\n", 
-				(p->token== FUNCTIONsymbol?"return":"yield"),
+			GDKerror("RETURN missing in %s.%s\n", 
 				getModuleId(p), getFunctionId(p));
 			mb->errors++;
 		}

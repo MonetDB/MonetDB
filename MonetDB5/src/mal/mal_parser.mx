@@ -1351,14 +1351,16 @@ parseAssign(Client cntxt, int cntrl)
 				cntrl == RETURNsymbol || cntrl == EXITsymbol ){	
  				curInstr->argv[0]= getBarrierEnvelop(curBlk);
 				pushInstruction(curBlk,curInstr);
+				if( currChar(cntxt) != ';')
+					parseError(cntxt,"<identifier> expected\n"); 
 				skipToEnd(cntxt);
 				return;
 				 }
 			getArg(curInstr,0)= newTmpVariable(curBlk,TYPE_any);
 			pushInstruction(curBlk,curInstr);
 			parseError(cntxt,"<identifier> expected\n"); 
-		   		return;
-			}  
+			return;
+		}  
 		/* Check if we are dealing with module.fcn call*/
 		if( CURRENT(cntxt)[l]=='.') {
 			curInstr->argv[0]= newTmpVariable(curBlk,TYPE_any);
