@@ -6,6 +6,8 @@ stdout of test 'armada02` in directory 'src/modules/mal` itself:
 # 11:47:00 >  
 
 
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
@@ -48,7 +50,7 @@ end main;	# 17
 [ 1 ]
 [ "[func2, site2]" ]
 [ 2 ]
-!ERROR: ArmadaException:getStep: 368 step id out of range: 2
+!ERROR: ArmadaException:getStep: 370 step id out of range: 2
 
 # 11:47:00 >  
 # 11:47:00 >  Done.

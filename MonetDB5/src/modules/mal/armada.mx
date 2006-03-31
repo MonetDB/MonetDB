@@ -54,11 +54,11 @@ address ARMADAepilogue
 comment "Release the resources held by the armada module";
 
 
-command addStep(func:str, site:str):int
+command addStep(func:str, site:inet):int
 address ARMADAaddStep
 comment "Adds a new step with func and site and returns its internal id";
 
-command findStep(func:str, site:str):int
+command findStep(func:str, site:inet):int
 address ARMADAfindStep
 comment "Returns the internal step id for the given func and site or -1 if not found";
 
@@ -97,12 +97,13 @@ armada.prelude();
 @c
 #include "armada.h"
 #include "mal_exception.h"
+#include <inet.h>
 
 mal_export str ARMADAprelude(int *ret);
 mal_export str ARMADAepilogue(int *ret);
 
-mal_export str ARMADAaddStep(int *ret, str *func, str *site);
-mal_export str ARMADAfindStep(int *ret, str *func, str *site);
+mal_export str ARMADAaddStep(int *ret, str *func, inet *site);
+mal_export str ARMADAfindStep(int *ret, str *func, inet *site);
 mal_export str ARMADAaddTrail(int *ret, int *pre, int *step);
 mal_export str ARMADAaddTrailBAT(int *ret, int *steps);
 mal_export str ARMADAgetStep(str *ret, int *step);
@@ -170,7 +171,8 @@ static void
 ARMADAinit()
 {
 	mal_set_lock(mal_contextLock, "armada");
-	ARMADA_func_site = ARMADA_create("func", "site", TYPE_str, TYPE_str);
+	/* TODO: TYPE_lng -> TYPE_inet ??? */
+	ARMADA_func_site = ARMADA_create("func", "site", TYPE_str, TYPE_lng);
 	ARMADA_step_pre  = ARMADA_create("step", "pre", TYPE_int, TYPE_int);
 	ARMADA_loaded    = 1;	/* yes, we have the BATs loaded */
 	mal_unset_lock(mal_contextLock, "armada");
@@ -226,7 +228,7 @@ ARMADAcommit()
  * existing step is returned.
  */
 str
-ARMADAaddStep(int *ret, str *func, str *site) {
+ARMADAaddStep(int *ret, str *func, inet *site) {
 	BUN p;
 
 	if (ARMADA_loaded == 0)
@@ -235,12 +237,12 @@ ARMADAaddStep(int *ret, str *func, str *site) {
 	assert (ARMADA_func_site != NULL);
 
 	/* see if the func/site already exists */
-	p = BUNlocate(ARMADA_func_site, *func, *site);
+	p = BUNlocate(ARMADA_func_site, *func, site);
 	if (!p) {
 		/* apparently not, so let's add it */
-		BUNins(ARMADA_func_site, *func, *site);
+		BUNins(ARMADA_func_site, *func, site);
 		/* and look up the just added BUN */
-		p = BUNlocate(ARMADA_func_site, *func, *site);
+		p = BUNlocate(ARMADA_func_site, *func, site);
 	}
 	*ret = BUNgetpos(ARMADA_func_site, p);
 
@@ -252,7 +254,7 @@ ARMADAaddStep(int *ret, str *func, str *site) {
  * site, if it exists.  Otherwise, -1 is returned.
  */
 str
-ARMADAfindStep(int *ret, str *func, str *site) {
+ARMADAfindStep(int *ret, str *func, inet *site) {
 	BUN p;
 
 	if (ARMADA_loaded == 0)
@@ -261,7 +263,7 @@ ARMADAfindStep(int *ret, str *func, str *site) {
 	assert (ARMADA_func_site != NULL);
 
 	/* lookup func/site and set retval appropriately */
-	p = BUNlocate(ARMADA_func_site, *func, *site);
+	p = BUNlocate(ARMADA_func_site, *func, site);
 	if (!p) {
 		*ret = -1;
 	} else {
@@ -288,7 +290,7 @@ ARMADAaddTrail(int *ret, int *pre, int *step) {
 	p = BUNfnd(ARMADA_step_pre, step);
 	if (!p) {
 		/* apparently not, so let's add it if the pre step is indeed
-		 * existant */
+		 * existent */
 		if (*pre != int_nil) {
 			/* TODO: find out if this is not a leak; I suspect it is
 			 *       somehow */
@@ -320,7 +322,7 @@ ARMADAaddTrailBAT(int *ret, int *bat) {
 	BAT *steps;
 	BUN p, q;
 	str func;
-	str site;
+	inet site;
 	str tmp;
 	int idx, lastStep;
 
@@ -336,7 +338,7 @@ ARMADAaddTrailBAT(int *ret, int *bat) {
 	lastStep = int_nil;
 	BATloop(steps, p, q) {
 		func = (str)BUNhead(steps, p);
-		site = (str)BUNtail(steps, p);
+		site = *(inet*)BUNtail(steps, p);
 		rethrow("addTrail", tmp, ARMADAaddStep(&idx, &func, &site));
 		/* Now we have the id of the step, we can check whether it
 		 * already is in the step/pre BAT, and add it otherwise.
@@ -359,7 +361,9 @@ ARMADAgetStep(str *ret, int *step)
 {
 	BUN p;
 	str func;
-	str site;
+	inet site;
+	int slen;
+	str sstr;
 
 	if (ARMADA_loaded == 0)
 		throw("ArmadaException", "getStep", "Armada BATs not loaded");
@@ -371,10 +375,12 @@ ARMADAgetStep(str *ret, int *step)
 
 	p = BUNfirst(ARMADA_func_site) + (BUNsize(ARMADA_func_site) * *step);
 	func = (str)BUNhead(ARMADA_func_site, p);
-	site = (str)BUNtail(ARMADA_func_site, p);
+	site = *(inet*)BUNtail(ARMADA_func_site, p);
 
 	if (strNil(func)) func = "%";
-	if (strNil(site)) site = "(nil)";
+	slen = 0;
+	sstr = NULL;
+	slen = INETtoString(&sstr, &slen, &site);
 
 	/* What's the contract of ret here?  Should it contain enough space?
 	 * Then we don't know how much (missing len).  Should it always be
@@ -382,8 +388,8 @@ ARMADAgetStep(str *ret, int *step)
 	 * here for now.
 	 */
 	*ret = GDKmalloc(sizeof(str) *
-			(1 + strlen(func) + 2 + strlen(site) + 1 + 1));
-	sprintf(*ret, "[%s, %s]", func, site);
+			(1 + strlen(func) + 2 + slen + 1 + 1));
+	sprintf(*ret, "[%s, %s]", func, sstr);
 	return(MAL_SUCCEED);
 }
 
