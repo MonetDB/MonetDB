@@ -1,0 +1,9 @@
+include armada;
+
+b := bat.new(:str, :str);
+bat.insert(b, nil:str, "site1");
+bat.insert(b, "func2", "site2");
+t := armada.addTrail(b);
+
+p := armada.getTrail(t);
+io.print(p);

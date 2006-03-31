@@ -6,7 +6,6 @@ stdout of test 'armada02` in directory 'src/modules/mal` itself:
 # 11:47:00 >  
 
 
-
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
@@ -35,9 +34,21 @@ function user.main():void;	# 0  (main:void)
     io.print(s);	# 6 IOprint_val (_11:int)<-(s:int)
     p := armada.getStep(s);	# 7 ARMADAgetStep (p:str)<-(s:int)
     io.print(p);	# 8 IOprint_val (_13:int)<-(p:str)
-end main;	# 9  
+    s := calc.+(s,1);	# 9 CALCbinaryADDintint (s:int)<-(s:int)(_14:int)
+    io.print(s);	# 10 IOprint_val (_15:int)<-(s:int)
+    p := armada.getStep(s);	# 11 ARMADAgetStep (p:str)<-(s:int)
+    io.print(p);	# 12 IOprint_val (_16:int)<-(p:str)
+    s := calc.+(s,1);	# 13 CALCbinaryADDintint (s:int)<-(s:int)(_14:int)
+    io.print(s);	# 14 IOprint_val (_17:int)<-(s:int)
+    p := armada.getStep(s);	# 15 ARMADAgetStep (p:str)<-(s:int)
+    io.print(p);	# 16 IOprint_val (_18:int)<-(p:str)
+end main;	# 17  
 [ 0 ]
 [ "[func1, site1]" ]
+[ 1 ]
+[ "[func2, site2]" ]
+[ 2 ]
+!ERROR: ArmadaException:getStep: 368 step id out of range: 2
 
 # 11:47:00 >  
 # 11:47:00 >  Done.

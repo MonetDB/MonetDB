@@ -72,6 +72,10 @@ command getStep(step:int):str
 address ARMADAgetStep
 comment "Returns the string representation of the step with the given id";
 
+command getTrail(trail:int):str
+address ARMADAgetTrail
+comment "Returns the string representation of the trail with the given id";
+
 armada.prelude();
 
 @- Implementation
@@ -100,6 +104,7 @@ mal_export str ARMADAfindStep(int *ret, str *func, str *site);
 mal_export str ARMADAaddTrail(int *ret, int *pre, int *step);
 mal_export str ARMADAaddTrailBAT(int *ret, int *steps);
 mal_export str ARMADAgetStep(str *ret, int *step);
+mal_export str ARMADAgetTrail(str *ret, int *trail);
 
 static void ARMADAinit();
 static void ARMADAexit();
@@ -362,11 +367,11 @@ ARMADAgetStep(str *ret, int *step)
 	if (*step < 0 || *step >= BATcount(ARMADA_func_site))
 		throwf("ArmadaException", "getStep", "step id out of range: %d", *step);
 
-	p = BUNfirst(ARMADA_func_site) + *step;
-	func = BUNhead(ARMADA_func_site, p);
-	site = BUNtail(ARMADA_func_site, p);
+	p = BUNfirst(ARMADA_func_site) + (BUNsize(ARMADA_func_site) * *step);
+	func = (str)BUNhead(ARMADA_func_site, p);
+	site = (str)BUNtail(ARMADA_func_site, p);
 
-	if (strNil(func)) func = "(nil)";
+	if (strNil(func)) func = "%";
 	if (strNil(site)) site = "(nil)";
 
 	/* What's the contract of ret here?  Should it contain enough space?
@@ -377,5 +382,56 @@ ARMADAgetStep(str *ret, int *step)
 	*ret = GDKmalloc(sizeof(str) *
 			(1 + strlen(func) + 2 + strlen(site) + 1 + 1));
 	sprintf(*ret, "[%s, %s]", func, site);
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Returns a string containing a serialised version of the trail id.
+ */
+str
+ARMADAgetTrail(str *ret, int *trail)
+{
+	BUN p;
+	int idx;
+	str tmp;
+	str buf;
+	str stepBuf;
+
+	if (ARMADA_loaded == 0)
+		throw("ArmadaException", "getTrail", "Armada BATs not loaded");
+
+	assert (ARMADA_step_pre != NULL);
+
+	if (*trail < 0 || *trail >= BATcount(ARMADA_step_pre))
+		throwf("ArmadaException", "getTrail", "trail id out of range: %d", *trail);
+
+	/* The step_pre BAT is actually representing a tree, where the pre
+	 * is just a pointer to the id of the predecessor trail, which
+	 * itself is just formed of a step and it's predecessor trail again.
+	 * We go chasing pointers this way as long as we don't encounter a
+	 * predecessor that is nil.
+	 */
+
+	idx = *trail;
+	buf = NULL;
+	do {
+		p = BUNfirst(ARMADA_step_pre) + (BUNsize(ARMADA_step_pre) * idx);
+		rethrow("getTrail", tmp, ARMADAgetStep(&stepBuf, &idx));
+		/* ok, hopelessly inefficient implementation here, but who cares
+		 * (for now, hopefully) */
+		if (buf == NULL) {
+			buf = stepBuf;
+		} else {
+			str oldBuf = buf;
+			buf = GDKmalloc(sizeof(str) *
+					(strlen(stepBuf) + 1 + strlen(oldBuf) + 1));
+			sprintf(buf, "%s.%s", stepBuf, oldBuf);
+			GDKfree(stepBuf);
+			GDKfree(oldBuf);
+		}
+		idx = *(int*)BUNtail(ARMADA_step_pre, p);
+	} while (idx != int_nil);
+
+	*ret = buf;
 	return(MAL_SUCCEED);
 }
