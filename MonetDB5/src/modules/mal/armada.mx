@@ -68,6 +68,10 @@ command addTrail(steps:bat[:str,:str]):int
 address ARMADAaddTrailBAT
 comment "Adds the steps stored in the given BAT as trail and returns the internal id";
 
+command getStep(step:int):str
+address ARMADAgetStep
+comment "Returns the string representation of the step with the given id";
+
 armada.prelude();
 
 @- Implementation
@@ -95,6 +99,7 @@ mal_export str ARMADAaddStep(int *ret, str *func, str *site);
 mal_export str ARMADAfindStep(int *ret, str *func, str *site);
 mal_export str ARMADAaddTrail(int *ret, int *pre, int *step);
 mal_export str ARMADAaddTrailBAT(int *ret, int *steps);
+mal_export str ARMADAgetStep(str *ret, int *step);
 
 static void ARMADAinit();
 static void ARMADAexit();
@@ -336,5 +341,41 @@ ARMADAaddTrailBAT(int *ret, int *bat) {
 	}
 
 	*ret = lastStep;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Returns a string containing a serialised version of the step id.
+ */
+str
+ARMADAgetStep(str *ret, int *step)
+{
+	BUN p;
+	str func;
+	str site;
+
+	if (ARMADA_loaded == 0)
+		throw("ArmadaException", "getStep", "Armada BATs not loaded");
+
+	assert (ARMADA_func_site != NULL);
+
+	if (*step < 0 || *step >= BATcount(ARMADA_func_site))
+		throwf("ArmadaException", "getStep", "step id out of range: %d", *step);
+
+	p = BUNfirst(ARMADA_func_site) + *step;
+	func = BUNhead(ARMADA_func_site, p);
+	site = BUNtail(ARMADA_func_site, p);
+
+	if (strNil(func)) func = "(nil)";
+	if (strNil(site)) site = "(nil)";
+
+	/* What's the contract of ret here?  Should it contain enough space?
+	 * Then we don't know how much (missing len).  Should it always be
+	 * malloced?  Should it be freed when not NULL?  Always mallocing
+	 * here for now.
+	 */
+	*ret = GDKmalloc(sizeof(str) *
+			(1 + strlen(func) + 2 + strlen(site) + 1 + 1));
+	sprintf(*ret, "[%s, %s]", func, site);
 	return(MAL_SUCCEED);
 }
