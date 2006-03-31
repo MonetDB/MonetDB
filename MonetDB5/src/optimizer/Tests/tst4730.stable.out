@@ -179,7 +179,8 @@ barrier always := true;	# 9  (always:bit)<-(_25:bit) jump 72
     yield always;	# 70  (always:bit)
     redo always;	# 71  (always:bit) jump 10
 exit always;	# 72  (always:bit)
-end qry1;	# 73  
+    return always;	# 73  (always:bit)
+end qry1;	# 74  
 #
 #optimizer.costEstimation("user","qry1");
 #mdb.list("user","qry1");
@@ -252,6 +253,7 @@ barrier always := true;
     yield always;
     redo always;
 exit always;
+    return always;
 end qry1;
 
 # 23:52:59 >  

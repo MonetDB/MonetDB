@@ -83,6 +83,7 @@ barrier always := true;
     yield always;
     redo always;
 exit always;
+	return always;
 end qry1;
 
 optimizer.costEstimation("user","qry1");
