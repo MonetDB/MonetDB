@@ -15,7 +15,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f multitable
+@f mat
 @a Martin Kersten
 @v 1
 @* Multiple association tables

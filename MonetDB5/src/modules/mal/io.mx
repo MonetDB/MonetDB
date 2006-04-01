@@ -15,7 +15,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f print
+@f io
 @a N.J. Nes, M.L. Kersten
 @d 01/07/1996, 31/01/2002
 
@@ -39,10 +39,10 @@ module io;
 command stdin():bstream
 address io_stdin
 comment "return the input stream to the database client";
-command stderr():stream
+command stderr():streams
 address io_stderr
 comment "return the error stream for the database console";
-command stdout():stream
+command stdout():streams
 address io_stdout
 comment "return the output stream for the database client";
 
@@ -60,7 +60,7 @@ comment "BATs are printed with '#' for legend
 	print() performs an implicit natural 
 	join, producing a multi attribute table.";
 
-pattern ftable{unsafe}( filep:stream, b1:bat[:any_1,:any], b:bat[:any_1,:any]... ):int
+pattern ftable{unsafe}( filep:streams, b1:bat[:any_1,:any], b:bat[:any_1,:any]... ):int
 address IOftable 
 comment "Print an n-ary table to a file.";
 
@@ -77,7 +77,7 @@ comment "Print an n-ary table. Like print, but does not print oid column";
 pattern table{unsafe}(order:int, b1:bat[:any_1,:any], b2:bat[:any_1,:any]...):int 
 address IOtotable
 comment "Print an n-ary table.";
-pattern ftable{unsafe}(fp:stream, order:int, b1:bat[:any_1,:any], b:bat[:any_1,:any]...)
+pattern ftable{unsafe}(fp:streams, order:int, b1:bat[:any_1,:any], b:bat[:any_1,:any]...)
 address IOfotable 
 comment "Print an n-ary table to a file.";
 
@@ -208,7 +208,7 @@ Beware, the types of the objects to be printed should be
 obtained from the stack, because the symbol table may actually
 allow for any type to be assigned.
 @c
-#include "print.h"
+#include "io.h"
 
 str
 io_stdin(bstream **ret)

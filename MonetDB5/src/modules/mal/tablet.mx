@@ -245,7 +245,7 @@ address CMDtablet_load
 comment "Load a bat using specific format.";
 
 command input( names:bat[:void,:str], seps:bat[:void,:str], 
-		types:bat[:void,:str], s:stream, nr:int ) :bat[:str,:bat] 
+		types:bat[:void,:str], s:streams, nr:int ) :bat[:str,:bat] 
 address CMDtablet_input
 comment "Load a bat using specific format.";
 
@@ -255,7 +255,7 @@ address CMDtablet_dump
 comment "Dump the bat in ASCII format";
 
 command output(order:bat[:any_1,:any_2], seps:bat[:void,:str], 
-		bats:bat[:void,:bat], s:stream) :void 
+		bats:bat[:void,:bat], s:streams) :void 
 address CMDtablet_output 
 comment "Send the bat to an output stream.";
 
@@ -275,7 +275,7 @@ comment "Display the minimal header for the table";
 command setProperties(prop:str):int 
 address TABsetProperties
 comment "Define the set of properties";
-pattern dump(s:stream,b:bat[:any,:any]...):int 
+pattern dump(s:streams,b:bat[:any,:any]...):int 
 address TABdump
 comment "Print all pages with header to a stream";
 
@@ -285,7 +285,7 @@ comment "Initialize a new reporting structure.";
 command finish():void 
 address TABfinishReport
 comment "Free the storage space of the report descriptor";
-command setStream(s:stream):void 
+command setStream(s:streams):void 
 address TABsetStream
 comment "Redirect the output to a stream.";
 command setPivot(b:bat[:void,:oid]) :void

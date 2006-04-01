@@ -6,11 +6,11 @@ bat.setSequenceBase(a2,10@0);
 a3:= bat.new(:void,:int);
 bat.setSequenceBase(a3,20@0);
 
-barrier (go,i):= mal.newRange(0);
+barrier (go,i):= language.newRange(0);
 	bat.append(a1,i);
 	bat.append(a2,i);
 	bat.append(a3,i);
-	redo (go,i):= mal.nextElement(1,10);
+	redo (go,i):= language.nextElement(1,10);
 exit (go,i);
 io.print(a1);
 io.print(a2);

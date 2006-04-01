@@ -44,11 +44,11 @@ function user.main():void;	# 0  (main:void)
     bat.setSequenceBase(a2,10@0);	# 6 BKCsetSequenceBase (_9:bat[:void,:int])<-(a2:bat[:void,:int])(_10:oid)
     a3 := bat.new(:void,:int);	# 7 CMDBATnew (a3:bat[:void,:int])<-(_4:void)(_5:int)
     bat.setSequenceBase(a3,20@0);	# 8 BKCsetSequenceBase (_12:bat[:void,:int])<-(a3:bat[:void,:int])(_13:oid)
-barrier (go,i):= mal.newRange(0);	# 9 RNGnewRange_int (go:bit)(i:int)<-(_16:int) jump 14
+barrier (go,i):= language.newRange(0);	# 9 RNGnewRange_int (go:bit)(i:int)<-(_16:int) jump 14
     bat.append(a1,i);	# 10 BKCappend_val_wrap (_17:void)<-(a1:bat[:void,:int])(i:int)
     bat.append(a2,i);	# 11 BKCappend_val_wrap (_18:void)<-(a2:bat[:void,:int])(i:int)
     bat.append(a3,i);	# 12 BKCappend_val_wrap (_19:void)<-(a3:bat[:void,:int])(i:int)
-    redo (go,i):= mal.nextElement(1,10);	# 13 RNGnextElement_int (go:bit)(i:int)<-(_20:int)(_21:int) jump 10
+    redo (go,i):= language.nextElement(1,10);	# 13 RNGnextElement_int (go:bit)(i:int)<-(_20:int)(_21:int) jump 10
 exit (go,i);	# 14  (go:bit)(i:int)
 # now really add it 	# 15  (_22:str)
     partitions.deposit(a1);	# 16 BPTdeposit (_23:void)<-(a1:bat[:void,:int])

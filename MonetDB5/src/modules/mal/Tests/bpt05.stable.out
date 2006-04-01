@@ -39,9 +39,9 @@ function user.main():void;	# 0  (main:void)
     bat.setSequenceBase(a1,0@0);	# 3 BKCsetSequenceBase (_5:bat[:void,:int])<-(a1:bat[:void,:int])(_6:oid)
     partitions.deposit(a1);	# 4 BPTdeposit (_7:void)<-(a1:bat[:void,:int])
     partitions.setCapacity(a1,3);	# 5 BPTsetCapacity (_8:void)<-(a1:bat[:void,:int])(_9:int)
-barrier (go,i):= mal.newRange(0);	# 6 RNGnewRange_int (go:bit)(i:int)<-(_12:int) jump 9
+barrier (go,i):= language.newRange(0);	# 6 RNGnewRange_int (go:bit)(i:int)<-(_12:int) jump 9
     partitions.insert(a1,i);	# 7 BPTinsert_void_bun (_13:bat[:void,:int])<-(a1:bat[:void,:int])(i:int)
-    redo (go,i):= mal.nextElement(1,10);	# 8 RNGnextElement_int (go:bit)(i:int)<-(_14:int)(_15:int) jump 7
+    redo (go,i):= language.nextElement(1,10);	# 8 RNGnextElement_int (go:bit)(i:int)<-(_14:int)(_15:int) jump 7
 exit (go,i);	# 9  (go:bit)(i:int)
     partitions.dump();	# 10 BPTdump (_16:void)
 barrier (k,b):= partitions.newIterator(a1);	# 11 BPTnewIterator (k:int)(b:bat[:void,:int])<-(a1:bat[:void,:int]) jump 14

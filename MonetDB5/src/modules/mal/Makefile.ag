@@ -10,10 +10,10 @@ LIBS = {
 	SEP = _
 	SOURCES = \
 		chopper.mx language.mx box.mx \
-		profiler.mx const.mx print.mx \
+		profiler.mx const.mx io.mx \
 		inspect.mx manual.mx crackers.mx \
 		factory.mx mdb.mx  pbm.mx \
-		rsbox.mx urlbox.mx multitable.mx \
+		rsbox.mx urlbox.mx mat.mx \
 		armada.mx
 		#datacell.mx 
 
@@ -108,9 +108,9 @@ scripts_mal = {
 	DIR = pkglibdir
 	SOURCES = language.mx mal_init.mx box.mx bbp.mx \
 		profiler.mx const.mx \
-		inspect.mx manual.mx crackers.mx print.mal \
+		inspect.mx manual.mx crackers.mx io.mal \
 		chopper.mx clients.mx \
-		factory.mx mdb.mx pcre.mx  tablet.mx multitable.mx \
+		factory.mx mdb.mx pcre.mx  tablet.mx mat.mx \
 		rsbox.mx urlbox.mx statistics.mx transaction.mx \
 		partitions.mx pbm.mx armada.mx
 	#datacell.mx 

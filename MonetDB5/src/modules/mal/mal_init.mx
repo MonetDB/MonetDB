@@ -57,7 +57,7 @@ include algebra;
 include calc;
 include status;
 include group;
-include aggrX3;
+include aggr;
 include array;
 include mapi;
 include pqueue;
@@ -72,7 +72,7 @@ include batcolor;
 # MAL related extensions
 include clients;
 include tablet;
-include print;
+include io;
 include factory;
 include const; 
 include bbp;
@@ -84,7 +84,7 @@ include language;
 include profiler;
 include statistics;
 
-include multitable;
+include mat;
 include optimizer;
 include chopper;
 #include logger;

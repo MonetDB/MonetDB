@@ -35,7 +35,7 @@ call by recognizing that the control variable lies outside the intended
 collection.
 
 @mal
-module mal;
+module language;
 
 command newRange(v:oid)(:bit,:oid)
 address RNGnewRange_oid; 
