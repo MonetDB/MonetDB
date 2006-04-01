@@ -29,8 +29,6 @@ that describe the current state of the local mserver.  A few utility
 functions allow for inspection, modification and querying of the trail
 administration in the box.
 @mal
-include inet;
-
 module armada;
 
 #pattern open():void
