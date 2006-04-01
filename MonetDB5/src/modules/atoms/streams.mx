@@ -25,69 +25,69 @@ It encapsulates the corresponding library managed in
 .../stream.
 
 @mal
-atom stream:ptr;
+atom streams:ptr;
 
-command openReadBytes{unsafe}( filename:str ) :stream
+command openReadBytes{unsafe}( filename:str ) :streams
 address stream_open_rstreamwrap
 comment "open a file stream for reading";
-command openWriteBytes{unsafe}( filename:str ) :stream
+command openWriteBytes{unsafe}( filename:str ) :streams
 address stream_open_wstreamwrap
 comment "open a file stream for writing";
 
-command openRead{unsafe}( filename:str ) :stream
+command openRead{unsafe}( filename:str ) :streams
 address stream_open_rastreamwrap
 comment "open ascii file stream for reading";
-command openWrite{unsafe}( filename:str ) :stream
+command openWrite{unsafe}( filename:str ) :streams
 address stream_open_wastreamwrap
 comment "open ascii file stream for writing";
 
-command openRead{unsafe}(s:stream):stream
+command openRead{unsafe}(s:streams):streams
 address stream_stream_rstreamwrap
 comment "convert an ascii stream to binary";
-command openWrite{unsafe}(s:stream):stream
+command openWrite{unsafe}(s:streams):streams
 address stream_stream_wstreamwrap
 comment "convert an ascii stream to binary";
 
-command socketReadBytes{unsafe}(skt:int,name:str):stream
+command socketReadBytes{unsafe}(skt:int,name:str):streams
 address stream_socket_rstreamwrap
 comment "open a socket stream for reading";
-command socketWriteBytes{unsafe}(skt:int,name:str):stream
+command socketWriteBytes{unsafe}(skt:int,name:str):streams
 address stream_socket_wstreamwrap
 comment "open a socket stream for writing";
-command socketRead{unsafe}(skt:int,name:str):stream
+command socketRead{unsafe}(skt:int,name:str):streams
 address stream_socket_rastreamwrap
 comment "open ascii socket stream for reading";
-command socketWrite{unsafe}(skt:int,name:str):stream
+command socketWrite{unsafe}(skt:int,name:str):streams
 address stream_socket_wastreamwrap
 comment "open ascii socket stream for writing";
 
-command blocked{unsafe}( s:stream ) :stream
+command blocked{unsafe}( s:streams ) :streams
 address open_block_streamwrap
 comment "open a block based stream";
 
-command writeStr{unsafe}( s:stream, data:str ):void
+command writeStr{unsafe}( s:streams, data:str ):void
 address stream_write_stringwrap
 comment "write data on the stream";
-command writeInt{unsafe}( s:stream, data:int ):void
+command writeInt{unsafe}( s:streams, data:int ):void
 address stream_writeIntwrap
 comment "write data on the stream";
-command readStr{unsafe}( s:stream):str
+command readStr{unsafe}( s:streams):str
 address stream_read_stringwrap
 comment "read string data from the stream";
-command readInt{unsafe}( s:stream):int
+command readInt{unsafe}( s:streams):int
 address stream_readIntwrap
 comment "read integer data from the stream";
 
-command flush{unsafe}( s:stream )
+command flush{unsafe}( s:streams )
 address stream_flush_streamwrap
 comment "flush the stream";
 
-command close{unsafe}( s:stream )
+command close{unsafe}( s:streams )
 address stream_close_streamwrap
 comment "close and destroy the stream s";
 
 atom bstream:ptr;
-command create{unsafe}(s:stream, bufsize:int):bstream
+command create{unsafe}(s:streams, bufsize:int):bstream
 address bstream_create_wrapwrap
 comment "create a buffered stream";
 

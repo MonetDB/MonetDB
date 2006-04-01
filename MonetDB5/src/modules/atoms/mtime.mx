@@ -354,18 +354,18 @@ address MTIMEtimestamp
 comment "Utility function to create a timestamp from a number of seconds since the Unix epoch";
 
 
-atom rule :int;
-command fromstr():rule 
+atom zrule :int;
+command fromstr():zrule 
 address rule_fromstr;
 command tostr():str 
 address rule_tostr;
-command define(m:int,d:int,w:int,h:int,min:int):rule 
+command define(m:int,d:int,w:int,h:int,min:int):zrule 
 address MTIMEruleDef0
 comment "Introduce a synomym timezone rule.";
-command define(m:int,d:str,w:int,h:int,min:int):rule 
+command define(m:int,d:str,w:int,h:int,min:int):zrule 
 address MTIMEruleDef1
 comment "Introduce a synomym timezone rule.";
-command define(m:int,d:str,w:int,min:int):rule 
+command define(m:int,d:str,w:int,min:int):zrule 
 address MTIMEruleDef2
 comment "Introduce a synomym timezone rule.";
 
@@ -412,7 +412,7 @@ comment "Add months to a date";
 #command int(d:daytime):int = MTIMEdaytime_2int;
 #command lng(d:timestamp):int = MTIMEtimestamp_2lng;
 #command lng(d:tzone):lng = MTIMEtzone_2lng;
-#command int(d:rule):int = MTIMErule_2int;
+#command int(d:zrule):int = MTIMErule_2int;
 
 command date(:date):date
 address MTIMEdate2date
@@ -462,10 +462,10 @@ command timestamp(d:date,dt:daytime) :timestamp
 address MTIMEtimestamp_create_default 
 comment "creates a timestamp from (d,dt) parameters (in the local timezone).";
 
-command rule(s:str):rule
+command rule(s:str):zrule
 address MTIMErule_fromstr
 comment "create a rule from a  string.";
-command rule (mo:int,d:int,wkday:int,mi:int) :rule 
+command rule (mo:int,d:int,wkday:int,mi:int) :zrule 
 address MTIMErule_create 
 comment "create a DST start/end date rule.";
 
@@ -478,7 +478,7 @@ comment "Convert the int to a tzone.";
 command tzone(s:lng):tzone 
 address MTIMEtzone_create
 comment "Convert the int to a tzone.";
-command tzone(mi:int,s:rule,erule:rule):tzone 
+command tzone(mi:int,s:zrule,erule:zrule):tzone 
 address MTIMEtzone_create_dst 
 comment "create a tzone as an hour difference 
 	from GMT and a DST.";
@@ -559,11 +559,11 @@ command timezone(name:str):tzone
 address MTIMEtimezone
 comment "Test and set the timezone.";
 
-command start_dst(t:tzone) :rule 
+command start_dst(t:tzone) :zrule 
 address MTIMEtzone_extract_start 
 comment "extract rule that determines 
 	start of DST from tzone.";
-command end_dst(t:tzone) :rule 
+command end_dst(t:tzone) :zrule 
 address MTIMEtzone_extract_end 
 comment "extract rule that determines 
 	end of DST from tzone.";
@@ -573,16 +573,16 @@ comment "extract number of minutes that
 	time zone is offset wrt GMT.";
 
 # rule
-command month(t:rule) :int 
+command month(t:zrule) :int 
 address MTIMErule_extract_month 
 comment "extract month from rule.";
-command day(t:rule) :int 
+command day(t:zrule) :int 
 address MTIMErule_extract_day 
 comment "extract day from rule.";
-command weekday(t:rule) :int 
+command weekday(t:zrule) :int 
 address MTIMErule_extract_weekday 
 comment "extract weekday from rule.";
-command minutes(t:rule) :int 
+command minutes(t:zrule) :int 
 address MTIMErule_extract_minutes 
 comment "extract minutes from rule.";
 
@@ -640,7 +640,7 @@ address MTIMEtimestamp_inside_dst
 comment "return whether DST holds in the 
 	timezone at a certain point of time.";
 
-command compute(r:rule, year:int) :date 
+command compute(r:zrule, year:int) :date 
 address MTIMEcompute_rule_foryear 
 comment "compute the date from a rule in a given year";
 

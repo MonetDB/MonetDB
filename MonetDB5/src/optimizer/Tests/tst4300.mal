@@ -2,9 +2,9 @@
 
 #mdb.start();
 b:= bat.new(:lng,:lng);
-barrier (k,v):= mal.newRange(0:lng);
+barrier (k,v):= language.newRange(0:lng);
         bat.insert(b,v,v);
-        redo (k,v):= mal.nextElement(1:lng,100:lng);
+        redo (k,v):= language.nextElement(1:lng,100:lng);
 exit (k,v);
 
 i:= aggr.count(b);

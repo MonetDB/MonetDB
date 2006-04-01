@@ -49,9 +49,9 @@ end joinPath;	# 4
 function user.main():void;	# 0  (main:void)
 #some join operations 	# 1  (_1:str)
     b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_3:int)(_3:int)
-barrier (k,v):= mal.newRange(0:int);	# 3 RNGnewRange_int (k:bit)(v:int)<-(_6:int) jump 6
+barrier (k,v):= language.newRange(0:int);	# 3 RNGnewRange_int (k:bit)(v:int)<-(_6:int) jump 6
     bat.insert(b,v,v);	# 4 BKCinsert_bun_int_int (_7:void)<-(b:bat[:int,:int])(v:int)(v:int)
-    redo (k,v):= mal.nextElement(1:int,100:int);	# 5 RNGnextElement_int (k:bit)(v:int)<-(_8:int)(_9:int) jump 4
+    redo (k,v):= language.nextElement(1:int,100:int);	# 5 RNGnextElement_int (k:bit)(v:int)<-(_8:int)(_9:int) jump 4
 exit (k,v);	# 6  (k:bit)(v:int)
     i := aggr.count(b);	# 7 ALGcount_bat (i:int)<-(b:bat[:int,:int])
     io.print(i);	# 8 IOprint_val (_11:int)<-(i:int)
@@ -73,9 +73,9 @@ exit (k,v);	# 6  (k:bit)(v:int)
 function user.main():void;
 #some join operations 
     b := bat.new(:int,:int);
-barrier (k,v):= mal.newRange(0:int);
+barrier (k,v):= language.newRange(0:int);
     bat.insert(b,v,v);
-    redo (k,v):= mal.nextElement(1:int,100:int);
+    redo (k,v):= language.nextElement(1:int,100:int);
 exit (k,v);
     i := aggr.count(b);
     io.print(i);

@@ -13,14 +13,14 @@ bat.setSequenceBase(b2,10@0);
 b3:= bat.new(:void,:int);
 bat.setSequenceBase(b3,20@0);
 
-barrier (go,i):= mal.newRange(0);
+barrier (go,i):= language.newRange(0);
 	bat.append(a1,i);
 	bat.append(a2,i);
 	bat.append(a3,i);
 	bat.append(b1,i);
 	bat.append(b2,i);
 	bat.append(b3,i);
-	redo (go,i):= mal.nextElement(1,10);
+	redo (go,i):= language.nextElement(1,10);
 exit (go,i);
 #print(a1);
 #print(a2);

@@ -86,7 +86,7 @@ command resume():void
 address MAPIresume
 comment "Resume connection listeners";
 
-command malclient(in:stream, out:stream):void
+command malclient(in:streams, out:streams):void
 address MAPIclient
 comment "Start a Mapi client.";
 
