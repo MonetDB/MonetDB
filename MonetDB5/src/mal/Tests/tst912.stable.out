@@ -27,10 +27,10 @@ stdout of test 'tst912` in directory 'src/mal` itself:
 #    return (bb,c):= (false,c);
 #end getChunk;
 factory user.getChunk(b:bat[:void,:lng],size:lng) (bb:bit,c:bat[:void,:lng]);	# 0  (bb:bit)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng)
-    (chk,c):= chop.newIterator(b,size);	# 1 CHPnewChunkIterator (chk:lng)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng)
+    (chk,c):= chopper.newIterator(b,size);	# 1 CHPnewChunkIterator (chk:lng)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng)
 barrier allways := calc.>=(chk,0);	# 2 CALCcompGElngint (allways:bit)<-(chk:lng)(_7:int) jump 6
     yield (bb,c):= (true,c);	# 3  (bb:bit)(c:bat[:void,:lng])<-(_8:bit)(c:bat[:void,:lng])
-    (chk,c):= chop.hasMoreElements(b,size);	# 4 CHPhasMoreChunks (chk:lng)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng)
+    (chk,c):= chopper.hasMoreElements(b,size);	# 4 CHPhasMoreChunks (chk:lng)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng)
     redo allways := calc.>=(chk,0);	# 5 CALCcompGElngint (allways:bit)<-(chk:lng)(_7:int) jump 3
 exit allways;	# 6  (allways:bit)
     io.print("#factory done\n");	# 7 IOprint_val (_9:int)<-(_10:str)
@@ -97,11 +97,11 @@ function user.main():void;	# 0  (main:void)
 # analyse the overhead of chopping a table 	# 1  (_1:str)
 # the multiplex code blocks. 	# 2  (_2:str)
     b := bat.new(:void,:lng);	# 3 CMDBATnew (b:bat[:void,:lng])<-(_4:void)(_5:lng)
-barrier (go,i):= mal.newRange(0:lng);	# 4 RNGnewRange_lng (go:bit)(i:lng)<-(_8:lng) jump 9
+barrier (go,i):= language.newRange(0:lng);	# 4 RNGnewRange_lng (go:bit)(i:lng)<-(_8:lng) jump 9
     k := mmath.rand();	# 5 MATHrandint (k:int)
     l := calc.lng(k);	# 6 CALCint2lng (l:lng)<-(k:int)
     bat.insert(b,nil,l);	# 7 BKCinsert_bun (_11:void)<-(b:bat[:void,:lng])(_12:void)(l:lng)
-    redo (go,i):= mal.nextElement(1:lng,1000000:lng);	# 8 RNGnextElement_lng (go:bit)(i:lng)<-(_13:lng)(_14:lng) jump 5
+    redo (go,i):= language.nextElement(1:lng,1000000:lng);	# 8 RNGnextElement_lng (go:bit)(i:lng)<-(_13:lng)(_14:lng) jump 5
 exit (go,i);	# 9  (go:bit)(i:lng)
     t0 := alarm.usec();	# 10 ALARMusec (t0:lng)
 barrier doit := true;	# 11  (doit:bit)<-(_17:bit) jump 13

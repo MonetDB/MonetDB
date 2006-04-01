@@ -51,7 +51,7 @@ function user.tst(A2:bat[:void,:int],A3:bat[:void,:int]):bat[:void,:int];	# 0  (
     lim := aggr.count(A2);	# 4 ALGcount_bat (lim:int)<-(A2:bat[:void,:int])
     io.printf("count %d\n",lim);	# 5 IOprint_formatted_int (_10:int)<-(_11:str)(lim:int)
     l := calc.lng(lim);	# 6 CALCint2lng (l:lng)<-(lim:int)
-barrier (mloop,m):= mal.newRange(0:lng);	# 7 RNGnewRange_lng (mloop:bit)(m:lng)<-(_15:lng) jump 18
+barrier (mloop,m):= language.newRange(0:lng);	# 7 RNGnewRange_lng (mloop:bit)(m:lng)<-(_15:lng) jump 18
     io.printf("loopindex %d\n",m);	# 8 IOprint_formatted_lng (_16:int)<-(_17:str)(m:lng)
     B2 := algebra.fetch(A2,m);	# 9 ALGfetch (B2:int)<-(A2:bat[:void,:int])(m:lng)
     io.printf("B2 value %d\n",B2);	# 10 IOprint_formatted_int (_19:int)<-(_20:str)(B2:int)
@@ -59,7 +59,7 @@ barrier (mloop,m):= mal.newRange(0:lng);	# 7 RNGnewRange_lng (mloop:bit)(m:lng)<
     io.printf("B3 value %d\n",B3);	# 12 IOprint_formatted_int (_22:int)<-(_23:str)(B3:int)
     cr := user.pow(B2,B3);	# 13  (cr:int)<-(B2:int)(B3:int)
     bat.append(resB,cr);	# 14 BKCappend_val_wrap (_25:void)<-(resB:bat[:void,:int])(cr:int)
-    redo (mloop,m):= mal.nextElement(1:lng,l);	# 15 RNGnextElement_lng (mloop:bit)(m:lng)<-(_26:lng)(l:lng) jump 8
+    redo (mloop,m):= language.nextElement(1:lng,l);	# 15 RNGnextElement_lng (mloop:bit)(m:lng)<-(_26:lng)(l:lng) jump 8
 catch MALexception;	# 16  (MALexception:any) jump 17
 exit MALexception;	# 17  (MALexception:any)
 exit (mloop,m);	# 18  (mloop:bit)(m:lng)

@@ -3,9 +3,9 @@
 
 function choptest(b:bat[:void,:lng], size:lng, base:lng);
     t0:= alarm.usec();
-    barrier (chk,c):= chop.newIterator(b,size);
+    barrier (chk,c):= chopper.newIterator(b,size);
         t:= algebra.select(c, 256000:lng,266000:lng);
-        redo (chk,c):= chop.hasMoreElements(b,size);
+        redo (chk,c):= chopper.hasMoreElements(b,size);
     exit (chk,c);
     t1:= alarm.usec();
     d0:= t1-t0;
@@ -21,11 +21,11 @@ function choptest(b:bat[:void,:lng], size:lng, base:lng);
 end choptest;
 
 b:= bat.new(:void,:lng);
-barrier (go,i):= mal.newRange(0:lng);
+barrier (go,i):= language.newRange(0:lng);
 	k:= mmath.rand();
 	l:= calc.lng(k);
 	bat.insert(b,nil,l);
-	redo (go,i):= mal.nextElement(1:lng,1000000:lng);
+	redo (go,i):= language.nextElement(1:lng,1000000:lng);
 exit (go,i);
 t0:= alarm.usec();
 barrier doit:= true;

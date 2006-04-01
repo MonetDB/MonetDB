@@ -31,9 +31,9 @@ function user.main():void;	# 0  (main:void)
     base := "hello  ";	# 3  (base:str)<-(_4:str)
     s := str.insert(base,6,6,"world");	# 4 STRinsert (s:str)<-(base:str)(_6:int)(_6:int)(_7:str)
     io.print(s);	# 5 IOprint_val (_8:int)<-(s:str)
-barrier (go,i):= mal.newRange(0:lng);	# 6 RNGnewRange_lng (go:bit)(i:lng)<-(_11:lng) jump 9
+barrier (go,i):= language.newRange(0:lng);	# 6 RNGnewRange_lng (go:bit)(i:lng)<-(_11:lng) jump 9
     s := str.insert(base,6,6,"world");	# 7 STRinsert (s:str)<-(base:str)(_6:int)(_6:int)(_7:str)
-    redo (go,i):= mal.nextElement(1:lng,200:lng);	# 8 RNGnextElement_lng (go:bit)(i:lng)<-(_12:lng)(_13:lng) jump 7
+    redo (go,i):= language.nextElement(1:lng,200:lng);	# 8 RNGnextElement_lng (go:bit)(i:lng)<-(_12:lng)(_13:lng) jump 7
 exit (go,i);	# 9  (go:bit)(i:lng)
 end main;	# 10  
 [ "hello world" ]

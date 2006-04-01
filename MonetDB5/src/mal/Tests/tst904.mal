@@ -2,9 +2,9 @@
 clients.setListing(15);
 b:= bat.new(:lng,:lng);
 i:= -1:lng;
-barrier (v,i):= mal.newRange(0:lng);
+barrier (v,i):= language.newRange(0:lng);
 	bat.insert(b,i,i);
-	redo (v,i):= mal.nextElement(1:lng,10:lng);
+	redo (v,i):= language.nextElement(1:lng,10:lng);
 exit (v,i);
 io.print(b);
 c:= 1;

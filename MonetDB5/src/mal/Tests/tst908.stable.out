@@ -39,9 +39,9 @@ end perftst;	# 5
 function user.main():void;	# 0  (main:void)
 # the multiplex code blocks. 	# 1  (_1:str)
     b := bat.new(:lng,:lng);	# 2 CMDBATnew (b:bat[:lng,:lng])<-(_3:lng)(_3:lng)
-barrier (v,i):= mal.newRange(0:lng);	# 3 RNGnewRange_lng (v:bit)(i:lng)<-(_6:lng) jump 6
+barrier (v,i):= language.newRange(0:lng);	# 3 RNGnewRange_lng (v:bit)(i:lng)<-(_6:lng) jump 6
     bat.insert(b,i,i);	# 4 BKCinsert_bun (_7:void)<-(b:bat[:lng,:lng])(i:lng)(i:lng)
-    redo (v,i):= mal.nextElement(1:lng,10:lng);	# 5 RNGnextElement_lng (v:bit)(i:lng)<-(_8:lng)(_9:lng) jump 4
+    redo (v,i):= language.nextElement(1:lng,10:lng);	# 5 RNGnextElement_lng (v:bit)(i:lng)<-(_8:lng)(_9:lng) jump 4
 exit (v,i);	# 6  (v:bit)(i:lng)
     user.perftst(b,1:lng);	# 7  (_10:void)<-(b:bat[:lng,:lng])(_8:lng)
 end main;	# 8  

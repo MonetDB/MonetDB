@@ -42,9 +42,9 @@ function user.main():void;	# 0  (main:void)
 # the multiplex code blocks. 	# 1  (_1:str)
 # check detection of the underlying fast implementations 	# 2  (_2:str)
     b := bat.new(:lng,:lng);	# 3 CMDBATnew (b:bat[:lng,:lng])<-(_4:lng)(_4:lng)
-barrier (v,i):= mal.newRange(0:lng);	# 4 RNGnewRange_lng (v:bit)(i:lng)<-(_7:lng) jump 7
+barrier (v,i):= language.newRange(0:lng);	# 4 RNGnewRange_lng (v:bit)(i:lng)<-(_7:lng) jump 7
     bat.insert(b,i,i);	# 5 BKCinsert_bun (_8:void)<-(b:bat[:lng,:lng])(i:lng)(i:lng)
-    redo (v,i):= mal.nextElement(1:lng,10:lng);	# 6 RNGnextElement_lng (v:bit)(i:lng)<-(_9:lng)(_10:lng) jump 5
+    redo (v,i):= language.nextElement(1:lng,10:lng);	# 6 RNGnextElement_lng (v:bit)(i:lng)<-(_9:lng)(_10:lng) jump 5
 exit (v,i);	# 7  (v:bit)(i:lng)
     c := algebra.copy(b);	# 8 ALGcopy (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])
     io.print(c);	# 9 IOprint_val (_12:int)<-(c:bat[:lng,:lng])

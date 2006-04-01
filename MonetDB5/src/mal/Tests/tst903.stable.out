@@ -132,11 +132,11 @@ function user.main():void;	# 0  (main:void)
 # the multiplex code blocks. 	# 1  (_2:str)
     t0 := alarm.usec();	# 2 ALARMusec (t0:lng)
     b := bat.new(:void,:lng);	# 3 CMDBATnew (b:bat[:void,:lng])<-(_4:void)(_5:lng)
-barrier (go,i):= mal.newRange(0:lng);	# 4 RNGnewRange_lng (go:bit)(i:lng)<-(_8:lng) jump 9
+barrier (go,i):= language.newRange(0:lng);	# 4 RNGnewRange_lng (go:bit)(i:lng)<-(_8:lng) jump 9
     k := mmath.rand();	# 5 MATHrandint (k:int)
     l := calc.lng(k);	# 6 CALCint2lng (l:lng)<-(k:int)
     bat.insert(b,nil,l);	# 7 BKCinsert_bun (_11:void)<-(b:bat[:void,:lng])(_12:void)(l:lng)
-    redo (go,i):= mal.nextElement(1:lng,1000000:lng);	# 8 RNGnextElement_lng (go:bit)(i:lng)<-(_13:lng)(_14:lng) jump 5
+    redo (go,i):= language.nextElement(1:lng,1000000:lng);	# 8 RNGnextElement_lng (go:bit)(i:lng)<-(_13:lng)(_14:lng) jump 5
 exit (go,i);	# 9  (go:bit)(i:lng)
     t1 := alarm.usec();	# 10 ALARMusec (t1:lng)
     d0 := calc.-(t1,t0);	# 11 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
@@ -240,13 +240,13 @@ exit (go,i);	# 9  (go:bit)(i:lng)
     _86 := bat.new(:void,:lng);	# 109 CMDBATnew (_86:bat[:void,:lng])<-(_4:void)(_5:lng)
     _88 := bat.getSequenceBase(b);	# 110 BKCgetSequenceBase (_88:oid)<-(b:bat[:void,:lng])
     _89 := bat.setSequenceBase(_86,_88);	# 111 BKCsetSequenceBase (_89:bat[:void,:lng])<-(_86:bat[:void,:lng])(_88:oid)
-barrier (_91,_92,_93):= chop.newIterator(b);	# 112 CHPbunIterator (_91:lng)(_92:oid)(_93:lng)<-(b:bat[:void,:lng]) jump 119
+barrier (_91,_92,_93):= chopper.newIterator(b);	# 112 CHPbunIterator (_91:lng)(_92:oid)(_93:lng)<-(b:bat[:void,:lng]) jump 119
     _95 := algebra.find(c,_92);	# 113 ALGfind (_95:lng)<-(c:bat[:void,:lng])(_92:oid)
     _97 := calc.+(_93,_95);	# 114 CALCbinaryADDlnglng (_97:lng)<-(_93:lng)(_95:lng)
     bat.insert(_89,_92,_97);	# 115 BKCinsert_bun_oid_any (_98:void)<-(_89:bat[:void,:lng])(_92:oid)(_97:lng)
 catch MALexception;	# 116  (MALexception:str) jump 117
 exit MALexception;	# 117  (MALexception:str)
-    redo (_91,_92,_93):= chop.hasMoreElements(b);	# 118 CHPbunHasMoreElements (_91:lng)(_92:oid)(_93:lng)<-(b:bat[:void,:lng]) jump 113
+    redo (_91,_92,_93):= chopper.hasMoreElements(b);	# 118 CHPbunHasMoreElements (_91:lng)(_92:oid)(_93:lng)<-(b:bat[:void,:lng]) jump 113
 exit (_91,_92,_93);	# 119  (_91:lng)(_92:oid)(_93:lng)
     x:bat[:void,:lng]  := _89;	# 120  (x:bat[:void,:lng])<-(_89:bat[:void,:lng])
     t1 := alarm.usec();	# 121 ALARMusec (t1:lng)
