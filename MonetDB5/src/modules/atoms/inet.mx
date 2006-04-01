@@ -51,7 +51,7 @@ typedef struct _inet {
 #define in_isnil(i) (i->q1 == 0 && i->q2 == 0 && i->q3 == 0 && i->q4 == 0 && i->mask == 0 && i->isnil != 0)
 
 mal_export str INETfromString(str *src, int *len, inet * retval);
-mal_export int INETtoString(str *retval, int *len, ptr handle);
+mal_export int INETtoString(str *retval, int *len, inet *handle);
 mal_export str INETnew(inet * retval, str *in);
 mal_export str INET_isnil(bit *retval, inet * val);
 mal_export str INET_comp_EQ(bit *retval, inet * val1, inet * val2);
@@ -178,7 +178,7 @@ comment "Convert inet to string equivalent";
  * Warning: returns the length, instead of an exception string!
  */
 int
-INETtoString(str *retval, int *len, ptr handle)
+INETtoString(str *retval, int *len, inet *handle)
 {
 	inet *value = (inet *) handle;
 
