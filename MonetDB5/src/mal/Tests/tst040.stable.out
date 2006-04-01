@@ -21,14 +21,25 @@ stdout of test 'tst040` in directory 'src/mal` itself:
 #i   := true;
 #
 #
-function user.main():void;	# 0  (main:void)
-# Variables names may be identical to type names, but 	# 1  (_1:str)
-# then they also have to bear the same value  	# 2  (_2:str)
-    str := "hello";	# 3  (str:str)<-(_4:str)
-    int := 1:sht;	# 4  (int:sht)<-(_6:sht)
-    flt := "wrong";	# 5  (flt:str)<-(_8:str)
-    i := true;	# 6  (i:bit)<-(_10:bit)
-end main;	# 7  
+#
+!ERROR: parser:constant coercion error from str to int
+!ERROR: parser:constant coercion error from flt to int
+!ERROR: parser:constant coercion error from int to str
+function user.main():void;	# 0  unknown (main:void)
+# Variables names may be identical to type names, but 	# 1  unknown (_1:str)
+# then they also have to bear the same value  	# 2  unknown (_2:str)
+    str := "hello";	# 3  unknown (str:any)<-(_4:str)
+    int := 1:sht;	# 4  unknown (int:any)<-(_6:sht)
+    flt := "wrong";	# 5  unknown (flt:any)<-(_8:str)
+    i := true;	# 6  unknown (i:any)<-(_10:bit)
+# test for coercion errors 	# 7  unknown (_11:str)
+    x0 := "1":int;	# 8  unknown (x0:any)<-(_13:int)
+    io.print(x0);	# 9  unknown (_14:any)<-(x0:any)
+    x1 := 3.20000005:int;	# 10  unknown (x1:any)<-(_16:int)
+    io.print(x1);	# 11  unknown (_17:any)<-(x1:any)
+    x2 := 3:str;	# 12  unknown (x2:any)<-(_19:str)
+    io.print(x2);	# 13  unknown (_20:any)<-(x2:any)
+end main;	# 14  unknown 
 
 # 07:58:44 >  
 # 07:58:44 >  Done.

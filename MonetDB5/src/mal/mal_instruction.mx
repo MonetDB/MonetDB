@@ -1460,42 +1460,31 @@ MAL interpretation.
 
 The constant values are linked together to improve searching them.
 This start of the constant list is kept in the MalBlk.
+
+Conversion of a constant to another type is limited to
+well-known coercion rules. Errors are reported and the
+nil value is set.
 @c
 int
 convertConstant(malType type, ValPtr vr)
 {
-
 	switch (type) {
 	case TYPE_bit:
-		if (vr->vtype == TYPE_void) {
-			vr->vtype = type;
-			vr->val.cval[0] = bit_nil;
-			vr->val.cval[1] = 0;
-			vr->val.cval[2] = 0;
-			vr->val.cval[3] = 0;
-		} else
-		if( vr->vtype == TYPE_int){
+		if( vr->vtype == TYPE_int)
 			vr->val.cval[0] = vr->val.ival != 0;
-			vr->val.cval[1] = 0;
-			vr->val.cval[2] = 0;
-			vr->val.cval[3] = 0;
-			vr->vtype= TYPE_bit;
-		} else
-		if( vr->vtype == TYPE_lng){
+		else
+		if( vr->vtype == TYPE_lng)
 			vr->val.cval[0] = vr->val.lval != 0;
-			vr->val.cval[1] = 0;
-			vr->val.cval[2] = 0;
-			vr->val.cval[3] = 0;
-			vr->vtype= TYPE_bit;
-		} else
-		if( vr->vtype == TYPE_sht){
+		else
+		if( vr->vtype == TYPE_sht)
 			vr->val.cval[0] = vr->val.shval != 0;
-			vr->val.cval[1] = 0;
-			vr->val.cval[2] = 0;
-			vr->val.cval[3] = 0;
-			vr->vtype= TYPE_bit;
-		}
-		return vr->vtype != TYPE_bit;
+		else
+			vr->val.cval[0] = bit_nil;
+		vr->val.cval[1] = 0;
+		vr->val.cval[2] = 0;
+		vr->val.cval[3] = 0;
+		vr->vtype= TYPE_bit;
+		return  0;
 	case TYPE_chr:
 		if (vr->vtype == TYPE_void) {
 			vr->val.cval[0] = chr_nil;
@@ -1503,7 +1492,11 @@ convertConstant(malType type, ValPtr vr)
 			vr->val.cval[2] = 0;
 			vr->val.cval[3] = 0;
 			vr->vtype = TYPE_chr;
-		}
+		} else
+		if( vr->vtype== TYPE_int || 
+			vr->vtype== TYPE_sht || 
+			vr->vtype== TYPE_lng)
+			vr->vtype= TYPE_chr;
 		return vr->vtype != TYPE_chr;
 	case TYPE_sht:
 		if (vr->vtype == TYPE_void) {
@@ -1514,6 +1507,7 @@ convertConstant(malType type, ValPtr vr)
 		if (vr->vtype == TYPE_int && vr->val.ival > -(1 << 16) && vr->val.ival < (1 << 16)) {
 			vr->vtype = TYPE_sht;
 			vr->val.shval = vr->val.ival;
+			return 0;
 		}
 		if (vr->vtype == TYPE_lng && vr->val.lval > -(1 << 16) && vr->val.lval < (1 << 16)) {
 			vr->vtype = TYPE_sht;
@@ -1525,7 +1519,7 @@ convertConstant(malType type, ValPtr vr)
 			vr->vtype = type;
 			vr->val.ival = int_nil;
 			vr->len = sizeof(int);
-			break;
+			return 0;
 		}
 		if (vr->vtype == TYPE_lng && vr->val.lval >= INT_MIN && vr->val.lval < INT_MAX) {
 			vr->vtype = TYPE_int;
@@ -1602,7 +1596,7 @@ convertConstant(malType type, ValPtr vr)
 			vr->val.dval = vr->val.lval;
 			vr->vtype = type;
 		}
-		return vr->vtype == type;
+		return type != vr->vtype;
 	case TYPE_lng:
 		if (vr->vtype == TYPE_void) {
 			vr->val.lval = lng_nil;
@@ -1615,7 +1609,7 @@ convertConstant(malType type, ValPtr vr)
 			vr->val.lval = vr->val.ival;
 			vr->len = sizeof(lng);
 		}
-		return vr->vtype == type;
+		return type != vr->vtype;
 	case TYPE_bat:
 		/* BAT variables can only be set to nil */
 		vr->vtype = type;
@@ -1637,12 +1631,10 @@ convertConstant(malType type, ValPtr vr)
 			if( d==0 ){
 				VALset(vr, type, BATatoms[type].atomNull);
 				return 1;
-			} else
-			if( d ){
-				VALset(vr, type, d);
-				if (ATOMextern(type) == 0 )
-					GDKfree(d);
-			}
+			} 
+			VALset(vr, type, d);
+			if (ATOMextern(type) == 0 )
+				GDKfree(d);
 		}
 		return vr->vtype != type;
 	case TYPE_str:
@@ -1655,7 +1647,6 @@ convertConstant(malType type, ValPtr vr)
 			vr->val.sval = GDKstrdup(str_nil);
 			vr->vtype = type;
 			vr->len = strlen(vr->val.sval);
-			return 0;
 		}
 		return vr->vtype != type;
 @-
@@ -1684,33 +1675,30 @@ end.
 			(*BATatoms[type].atomFromStr) (w, &ll, &d);
 			if( d==0 ){
 				VALset(vr, type, BATatoms[type].atomNull);
-				GDKerror("newConstant:coercion error\n");
-			} else
-			if( d ){
-				VALset(vr, type, d);
-				if (ATOMextern(type) == 0 )
-					GDKfree(d);
-			}
+				GDKfree(w);
+				return 1;
+			} 
+			VALset(vr, type, d);
+			if (ATOMextern(type) == 0 )
+				GDKfree(d);
 			GDKfree(w);
 		} else {
 #ifdef STRUCT_ALIGNED
 			(*BATatoms[type].atomFromStr) (vr->val.sval, &ll, &d);
 			if( d==0 ){
 				VALset(vr, type, BATatoms[type].atomNull);
-				GDKerror("newConstant:coercion error\n");
-			} else
-			if( d ){
-				VALset(vr, type, d);
-				if (ATOMextern(type) == 0 )
-					GDKfree(d);
-			}
+				return 1;
+			} 
+			VALset(vr, type, d);
+			if (ATOMextern(type) == 0 )
+				GDKfree(d);
 #else
 			GDKerror("newConstants:missing implementation\n");
 #endif
 		}
 	}
 	}
-	return vr->vtype == type;
+	return vr->vtype != type;
 }
 
 #define MAL_VAR_WINDOW  4*MAXARG
@@ -1752,8 +1740,17 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 	ptr vcst = VALget(cst);
 
 	if (cst->vtype != type){
+		int otype= cst->vtype;
 		i= convertConstant(type, cst);
-		if( i ) mb->errors++;
+		if( i ) {
+			str ft,tt;
+			ft= getTypeName(otype);
+			tt= getTypeName(type);
+			GDKerror("parser:constant coercion error from %s to %s\n", ft,tt);
+			GDKfree(ft);
+			GDKfree(tt);
+			mb->errors++;
+		}
 	}
 	k = mb->vtop - MAL_VAR_WINDOW;
 	if (k < 0)

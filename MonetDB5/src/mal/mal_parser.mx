@@ -592,7 +592,7 @@ simpleTypeId(Client cntxt)
 	tpe = getTypeIndex(CURRENT(cntxt), l, -1);
 	if (tpe < 0) {
 		parseError(cntxt, "Type identifier expected\n");
-		return -1;
+		return TYPE_void;
 	}
 	advance(cntxt, l);
 	return tpe;

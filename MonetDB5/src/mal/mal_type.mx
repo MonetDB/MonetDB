@@ -325,7 +325,7 @@ getTypeIndex(str nme, int len, int deftype)
 		strcmp(nme,BATatoms[i].name)==0) break;
 	nme[k]=old;
 	/*stream_printf(GDKout,"getTypeIndex %s %d %d\n",nme,i, GDKatomcnt); */
-	if (i == -GDKatomcnt)
+	if (i == GDKatomcnt)
 		i = deftype;
 	return i;
 }
