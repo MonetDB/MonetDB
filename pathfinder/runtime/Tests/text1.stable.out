@@ -46,6 +46,14 @@ xquery("xml-mapi", "<a>2</a>/text()").printf();
 =<XQueryResult>
 =2
 =</XQueryResult>
+
+xquery("xml-noroot", "<a>aap</a>/text()").printf();
+aap
+
+xquery("xml-noroot", "<a>2</a>/text()").printf();
+2
+
+
 quit();
 
 # 14:00:36 >  
