@@ -1465,6 +1465,11 @@ Conversion of a constant to another type is limited to
 well-known coercion rules. Errors are reported and the
 nil value is set.
 @c
+/**
+ * Converts the constant in vr to the MAL type type.  Conversion is done
+ * in the vr struct.
+ * Returns 0 on success, non-zero otherwise.
+ */
 int
 convertConstant(malType type, ValPtr vr)
 {
@@ -1661,17 +1666,29 @@ end.
 		ptr d = NULL;
 		str s;
 
+		/* see if an atomFromStr() function is available */
 		if (BATatoms[type].atomFromStr == 0) {
 			s = getTypeName(type);
 			GDKerror("newConstant:no string coercion for '%s'\n", s);
 			GDKfree(s);
 			break;
 		}
+
+		/* if the value we're converting from is nil, the to
+		 * convert to value will also be nil */
+		if (ATOMcmp(vr->vtype, ATOMnilptr(vr->vtype), VALptr(vr)) == 0) {
+			VALset(vr, type, BATatoms[type].atomNull);
+			return 0;
+		}
+
+		/* if what we're converting from is not a string */
 		if (vr->vtype != TYPE_str) {
 			/* an extern type */
 			str w = 0;
 
+			/* dump the non-string atom as string in w */
 			ATOMformat(vr->vtype, VALptr(vr), &w);
+			/* and try to parse it from string as the desired type */
 			(*BATatoms[type].atomFromStr) (w, &ll, &d);
 			if( d==0 ){
 				VALset(vr, type, BATatoms[type].atomNull);
