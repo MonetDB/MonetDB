@@ -514,11 +514,11 @@ PROC destroy_ws(BAT[void,bat] ws) : void
 
 PROC ws_newpage_locked(BAT[void,bat] ws, oid cont) : oid {
     var coll_oid := ws.fetch(CONT_COLL).find(cont);
-    var rid_size  := ws.fetch(RID_SIZE).find(cont);
-    var rid_level := ws.fetch(RID_LEVEL).find(cont);
-    var rid_prop  := ws.fetch(RID_PROP).find(cont);
-    var rid_kind  := ws.fetch(RID_KIND).find(cont);
-    var rid_nid   := ws.fetch(RID_NID).find(cont);
+    var rid_size  := ws.fetch(_RID_SIZE).find(cont);
+    var rid_level := ws.fetch(_RID_LEVEL).find(cont);
+    var rid_prop  := ws.fetch(_RID_PROP).find(cont);
+    var rid_kind  := ws.fetch(_RID_KIND).find(cont);
+    var rid_nid   := ws.fetch(_RID_NID).find(cont);
     var free_pages, i := 0;
     var rid_cnt := count(rid_size);
     var last_pid := 1 + (rid_cnt = 0).ifthenelse(0, (rid_cnt - 1) >> REMAP_PAGE_BITS);
@@ -527,7 +527,7 @@ PROC ws_newpage_locked(BAT[void,bat] ws, oid cont) : oid {
     if (coll_free.exist(coll_oid)) {
         free_pages := coll_free.find(coll_oid);
     } else {
-        free_pages := reverse(ws.fetch(MAP_PID).uselect(oid(nil))).access(BAT_WRITE);
+        free_pages := reverse(ws.fetch(MAP_PID).find(cont).uselect(oid(nil))).access(BAT_WRITE);
         coll_free.insert(coll_oid, free_pages);
     }
 
@@ -540,7 +540,7 @@ PROC ws_newpage_locked(BAT[void,bat] ws, oid cont) : oid {
         # append a page to the master rid_* table
         var empty_page_chr := empty_page.project(chr(nil));
         var empty_page_oid := empty_page.project(oid(nil));
-        var lastpage_size := REMAP_PAGE_SIZE - and(rid_cnt,REMAP_PAGE_MASK);
+        var lastpage_size := REMAP_PAGE_SIZE - and(rid_cnt,int(REMAP_PAGE_MASK));
         if (lastpage_size < REMAP_PAGE_SIZE) {
             # take care to fill out the last page (if not yet full)
             rid_size.append(empty_page.slice(lastpage_size,REMAP_PAGE_SIZE), true);
@@ -910,7 +910,8 @@ PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, oid doc_oid, oi
         } else {
             # here we get transaction isolation: pre's are remapped views, and mem are normal views
             dsk := [bat]([+](str(int(coll_oid)), ws_dsk));
-            pre := [remap](reverse(ws_rid).leftjoin(dsk), const dsk.find(oid(_MAP_PID)), false);
+            var map_pid := dsk.find(oid(_MAP_PID)).select(oid(nil),oid(nil)).reverse().sort().tmark(0@0);
+            pre := [remap](reverse(ws_rid).leftjoin(dsk), const map_pid, false);
             mem := [copy](reverse(ws_mem).leftjoin(dsk));
         }
         # use the ws_* bats to add all bats to the working set in a multiplex
