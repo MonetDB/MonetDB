@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 753 ]
+[ 758 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 753 ]
+[ 758 ]
 
 var All:=0;
 
@@ -581,8 +581,8 @@ Module: "arith"
 
 Module: "bat"
 
-[ 76 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 81 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																																																																					  # name
 # str		str		str													str																																					  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -595,10 +595,15 @@ Module: "bat"
 [ "access",	  "COMMAND:   ",  "access(BAT[any::1,any::2]) : int",							  "Return the update access privilige of a BAT."																																																							  ]
 [ "access",	  "COMMAND:   ",  "access(BAT[any::1,any::2], int) : BAT[any::1,any::2]",					  "Try to change the update access priviliges to this BAT. Mode:\n BAT_READ   - allow only read access.\n BAT_APPEND - allow reads and insertions of new elements.\n BAT_WRITE  - allow reads, insertions, and updates.\n BATs are updateable by default. On making a BAT readonly, all\n subsequent updates fail with an error message.\n Returns the BAT itself."  ]
 [ "append",	  "COMMAND:   ",  "append(BAT[oid,any::1], BAT[oid,any::1]) : BAT[oid,any::1]",					  "append the content of u to i (renumbers u-oids' to unique numbers, starting at i.max()+1)"																																																																										  ]
+[ "append",	  "COMMAND:   ",  "append(BAT[oid,any::1], BAT[oid,any::1], bit) : BAT[oid,any::1]",		  "append the content of u to i (renumbers u-oids' to unique numbers, starting at i.max()+1)"																																																	  ]
 [ "append",	  "COMMAND:   ",  "append(BAT[oid,any::1], any::1) : BAT[oid,any::1]",							  "append the value u to i"																																		  ]
+[ "append",	  "COMMAND:   ",  "append(BAT[oid,any::1], any::1, bit) : BAT[oid,any::1]",			  "append the value u to i"																																																									  ]
 [ "append",	  "COMMAND:   ",  "append(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]",					  "append the content of u to i"																																	  ]
+[ "append",	  "COMMAND:   ",  "append(BAT[void,any::1], BAT[oid,any::1], bit) : BAT[void,any::1]",		  "append the content of u to i"																																																								  ]
 [ "append",	  "COMMAND:   ",  "append(BAT[void,any::1], BAT[void,any::1]) : BAT[void,any::1]",					  "append the content of u to i"																																	  ]
+[ "append",	  "COMMAND:   ",  "append(BAT[void,any::1], BAT[void,any::1], bit) : BAT[void,any::1]",		  "append the content of u to i"																																																								  ]
 [ "append",	  "COMMAND:   ",  "append(BAT[void,any::1], any::1) : BAT[void,any::1]",						  "append the value u to i"																																		  ]
+[ "append",	  "COMMAND:   ",  "append(BAT[void,any::1], any::1, bit) : BAT[void,any::1]",			  "append the value u to i"																																																									  ]
 [ "batloop",	  "ITERATOR:  ",  "batloop(BAT[any,any], ptr) : void",							  "Iterators are special MIL constructs:\n  <bat-expression> @ <iterator>(<parameters>) <MIL-statement>\n 'b@batloop()..' iterates over all BUNs [$h,$t] of BAT b."																																									  ]
 [ "batloop",	  "ITERATOR:  ",  "batloop(BAT[any,any], ptr, int, int) : void",					  "Iterators are special MIL constructs:\n  <bat-expression> @ <iterator>(<parameters>) <MIL-statement>\n 'b@batloop(low,high)..' iterates over all BUNs of b.slice(low,high)"																																								  ]
 [ "batsize",	  "COMMAND:   ",  "batsize(BAT[any,any]) : lng",							  "A version of BATsize that does not require loading the BAT."																																	  ]
@@ -643,7 +648,7 @@ Module: "bat"
 [ "ordered",	  "COMMAND:   ",  "ordered(BAT[any,any]) : bit",							  "Returns whether a BAT is ordered on head or not."																																																							  ]
 [ "ordered_rev",  "COMMAND:   ",  "ordered_rev(BAT[any,any]) : bit",							  "Returns whether a BAT is ordered on head or not."																																																							  ]
 [ "persists",	  "COMMAND:   ",  "persists(BAT[any::1,any::2], bit) : BAT[any::1,any::2]",				  "Make the BAT persistent (mode = TRUE), transient (mode = FALSE).\n or session (mode = bit(nil)). Returns the BAT itself."																																														  ]
-[ "remap",	  "COMMAND:   ",  "remap(BAT[void,any::1], BAT[void,oid]) : BAT[void,any::1]",				  "create a page-wise access(BAT_WRITE) copy of the first parameter input BAT[void,X]. \n\n The second parameter map BAT[void,oid] (seqbase 0@00) indicates the order\n in which the 65536-tuple logical pages must appear in the result. It may not \n contain illegal nor duplicate page-ids in the tail (page-ids start at 0).\n\n If the last page of the input BAT is requested in the map, and the input bat is \n not an exact multiple of 65536 (hence the last page is incomplete), the missing \n tuples appear as NILs in the result. \n\n Finally, note that this operation is optimized for the case where the input\n BAT is memory-mapped directly (not: privately mapped). In that case, you get\n a fast copy-on-write copy of the BUN heap. Otherwise, an im-memory copy is made."	  ]
+[ "remap",	  "COMMAND:   ",  "remap(BAT[void,any::1], BAT[void,oid], bit) : BAT[void,any::1]",		  "create a page-wise access(BAT_WRITE) copy of the first parameter input BAT[void,X]. \n\n The second parameter map BAT[void,oid] (seqbase 0@00) indicates the order\n in which the 65536-tuple logical pages must appear in the result. It may not \n contain illegal nor duplicate page-ids in the tail (page-ids start at 0).\n\n If the last page of the input BAT is requested in the map, and the input bat is \n not an exact multiple of 65536 (hence the last page is incomplete), the missing \n tuples appear as NILs in the result. \n\n Finally, note that this operation is optimized for the case where the input\n BAT is memory-mapped directly (not: privately mapped). In that case, you get\n a fast copy-on-write copy of the BUN heap. Otherwise, an im-memory copy is made."  ]
 [ "replace",	  "COMMAND:   ",  "replace(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",		  "Perform replace for all BUNs of the second BAT into the first.\n Returns the modified BAT."																																																		  ]
 [ "replace",	  "COMMAND:   ",  "replace(BAT[any::1,any::2], BAT[any::1,any::2], bit) : BAT[any::1,any::2]",			  "Perform replace for all BUNs of the second BAT into the first.\n Returns the modified BAT."																																																																	  ]
 [ "replace",	  "COMMAND:   ",  "replace(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]",				  "Replace the tail value of one BUN that has some head value.\n Returns the modified BAT."																										  ]
@@ -898,7 +903,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 753 ]
+[ 758 ]
 
 quit();
 
