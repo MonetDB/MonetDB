@@ -1,15 +1,15 @@
-stdout of test 'bat` in directory 'src/modules/plain` itself:
+stdout of test 'bat2` in directory 'src/modules/plain` itself:
 
-#> Mtest (13:31:42):	other bat 1200
-#> Mtest (13:31:42):	Mtimeout -timeout 1200 ./bat bat
-#> Mlog (13:31:42):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain bat.mil
+#> Mtest (13:31:42):	other bat2 1200
+#> Mtest (13:31:42):	Mtimeout -timeout 1200 ./bat2 bat2
+#> Mlog (13:31:42):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db src_modules_plain bat2.mil
 # Monet Database Server V4.2
 # Copyright (c) 1993-1999, CWI & SION. All rights reserved.
 # compiled for i686-pc-linux-gnu/32bit.
-#script:bat.mil
+#script:bat2.mil
 
 # 13:35:55 >  
-# 13:35:55 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/Linux-i686/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --set "gdk_dbfarm=/ufs/niels/data/Linux-i686/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/data/Linux-i686/var/MonetDB/log" --set mapi_port=41065 --set sql_port=55025 --set monet_prompt= --trace --dbname=mTests_src_modules_plain  < bat.milM
+# 13:35:55 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/data/Linux-i686/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/data/Linux-i686/lib/MonetDB" --set "gdk_dbfarm=/ufs/niels/data/Linux-i686/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/data/Linux-i686/var/MonetDB/log" --set mapi_port=41065 --set sql_port=55025 --set monet_prompt= --trace --dbname=mTests_src_modules_plain  < bat2.milM
 # 13:35:55 >  
 
 # Monet Database Server V4.3.19
@@ -143,7 +143,7 @@ var mmap_lng := b.mk("lng",true);
 var mmap_str := b.mk("str",true);
 
 
-var b0 := file_int.remap(map,FALSE);
+var b0 := file_int.remap(map,TRUE);
 
 b0.count().print();
 [ 196608 ]
@@ -164,7 +164,7 @@ b0.slice(149995,150005).print();
 [ 150004@0,	  nil	  ]
 [ 150005@0,	  nil	  ]
 
-var b1 := file_oid.remap(map,FALSE); 
+var b1 := file_oid.remap(map,TRUE); 
     [equal](b0,[int](b1)).uselect(false).count().print(); 
 [ 0 ]
     sample.print(b0,b1);
@@ -209,7 +209,7 @@ var b1 := file_oid.remap(map,FALSE);
 [ 143360@0,	  143360@0,	  143360, 143360@0	  ]
 [ 147456@0,	  147456@0,	  147456, 147456@0	  ]
 
-var b2 := file_lng.remap(map,FALSE); 
+var b2 := file_lng.remap(map,TRUE); 
     [equal](b0,[int](b2)).uselect(false).count().print(); 
 [ 0 ]
     sample.print(b0,b2);
@@ -254,7 +254,7 @@ var b2 := file_lng.remap(map,FALSE);
 [ 143360@0,	  143360@0,	  143360, 143360  ]
 [ 147456@0,	  147456@0,	  147456, 147456  ]
 
-var b3 := file_str.remap(map,FALSE); 
+var b3 := file_str.remap(map,TRUE); 
     [equal](b0,[int](b3)).uselect(false).count().print(); 
 [ 0 ]
     sample.print(b0,b3);
@@ -299,7 +299,7 @@ var b3 := file_str.remap(map,FALSE);
 [ 143360@0,	  143360@0,	  143360, "143360"	  ]
 [ 147456@0,	  147456@0,	  147456, "147456"	  ]
 
-var b4 := mmap_int.remap(map,FALSE); 
+var b4 := mmap_int.remap(map,TRUE); 
     [equal](b0,[int](b4)).uselect(false).count().print(); 
 [ 0 ]
     sample.print(b0,b4);
@@ -344,7 +344,7 @@ var b4 := mmap_int.remap(map,FALSE);
 [ 143360@0,	  143360@0,	  143360, 143360  ]
 [ 147456@0,	  147456@0,	  147456, 147456  ]
 
-var b5 := mmap_oid.remap(map,FALSE); 
+var b5 := mmap_oid.remap(map,TRUE); 
     [equal](b0,[int](b5)).uselect(false).count().print(); 
 [ 0 ]
     sample.print(b0,b5);
@@ -389,7 +389,7 @@ var b5 := mmap_oid.remap(map,FALSE);
 [ 143360@0,	  143360@0,	  143360, 143360@0	  ]
 [ 147456@0,	  147456@0,	  147456, 147456@0	  ]
 
-var b6 := mmap_lng.remap(map,FALSE); 
+var b6 := mmap_lng.remap(map,TRUE); 
     [equal](b0,[int](b6)).uselect(false).count().print(); 
 [ 0 ]
     sample.print(b0,b6);
@@ -434,7 +434,7 @@ var b6 := mmap_lng.remap(map,FALSE);
 [ 143360@0,	  143360@0,	  143360, 143360  ]
 [ 147456@0,	  147456@0,	  147456, 147456  ]
 
-var b7 := mmap_str.remap(map,FALSE); 
+var b7 := mmap_str.remap(map,TRUE); 
     [equal](b0,[int](b7)).uselect(false).count().print(); 
 [ 0 ]
     sample.print(b0,b7);
