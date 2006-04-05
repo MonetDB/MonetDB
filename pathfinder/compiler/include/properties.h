@@ -236,7 +236,13 @@ void PFprop_write_domain (PFarray_t *f, dom_t domain);
  * Write domain-subdomain relationships of property container @a prop
  * to in AT&T dot notation to character array @a f.
  */
-void PFprop_write_dom_rel (PFarray_t *f, const PFprop_t *prop);
+void PFprop_write_dom_rel_dot (PFarray_t *f, const PFprop_t *prop);
+
+/**
+ * Write domain-subdomain relationships of property container @a prop
+ * to in XML notation to character array @a f.
+ */
+void PFprop_write_dom_rel_xml (PFarray_t *f, const PFprop_t *prop);
 
 /* ------------------------ icol property accessors ------------------------ */
 

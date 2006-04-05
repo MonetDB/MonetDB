@@ -599,10 +599,6 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
                                 *(PFord_ordering_t *)
                                         PFarray_at (n->orderings,i)));
 
-                /* list domain - subdomain relationships */
-                if (n->kind == pa_serialize) {
-                    PFprop_write_dom_rel (dot, n->prop);
-                }
                 all = true;
             }
             fmt++;
@@ -745,6 +741,19 @@ PFpa_dot (FILE *f, PFpa_op_t *root)
                              "node [fontsize=10];\n");
 
         pa_dot (dot, root, "node1");
+
+        /* add domain subdomain relationships if required */
+        if (PFstate.format) {
+            char *fmt = PFstate.format;
+            while (*fmt) { 
+                if (*fmt == '+') {
+                        PFprop_write_dom_rel_dot (dot, root->prop);
+                        break;
+                }
+                fmt++;
+            }
+        }
+
         /* put content of array into file */
         PFarray_printf (dot, "}\n");
         fprintf (f, "%s", (char *) dot->base);

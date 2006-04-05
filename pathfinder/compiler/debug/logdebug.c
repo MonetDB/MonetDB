@@ -713,8 +713,13 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
     /* close up label */
     PFarray_printf (dot, "\", color=%s ];\n", color[n->kind]);
 
-    for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c] != 0; c++) {      
+    for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c] != 0; c++) {
         char *child = (char *) PFmalloc (sizeof ("node4294967296"));
+
+        /* FIXME: the next line is only used to make
+           the printed graph more readable. */
+        if (n->child[c]->kind == la_frag_union ||
+            n->child[c]->kind == la_empty_frag) continue;
 
         /*
          * Label for child node has already been built, such that
@@ -740,16 +745,19 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
  * @param node Name of the parent node.
  */
 static void 
-la_xml (PFarray_t *xml, PFla_op_t *n, char *node)
+la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
 {
     unsigned int c;
-    static int node_id = 1;
 
-    n->node_id = node_id;
-    node_id++;
+    /* enable DAG traversal */
+    n->bit_dag = true;
+    assert(n->node_id);
 
     /* open up label */
-    PFarray_printf (xml, "  <%s kind=\"%s\">\n", node, xml_id[n->kind]);
+    PFarray_printf (xml,
+                    "  <node id=\"%i\" kind=\"%s\">\n",
+                    n->node_id,
+                    xml_id[n->kind]);
 
     if (PFstate.format) {
 
@@ -807,13 +815,6 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *node)
                             PFprop_dom (n->prop, n->schema.items[i].name));
                         PFarray_printf (xml, "\"/>\n");
                     }
-
-                /* list domain - subdomain relationships */
-                if (n->kind == la_serialize) {
-                    PFarray_printf (xml, "      <![CDATA[");
-                    PFprop_write_dom_rel (xml, n->prop);
-                    PFarray_printf (xml, "]]>\n");
-                }
 
                 all = true;
             }
@@ -925,13 +926,14 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *node)
             break;
 
         case la_empty_tbl:
+            PFarray_printf (xml, "    <content>\n"); 
             /* list the attributes of this table */
             for (c = 0; c < n->schema.count;c++)
                 PFarray_printf (xml, 
-                                "        <column name=\"%s\" new=\"true\">\n",
+                                "      <column name=\"%s\" new=\"true\"/>\n",
                                 PFatt_str (n->schema.items[c].name));
 
-            PFarray_printf (xml, "</content>\n");
+            PFarray_printf (xml, "    </content>\n");
             break;
 
         case la_attach:
@@ -991,8 +993,11 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *node)
                        "true" : "false");
             else if (n->sem.attach.value.type 
                      == aat_qname)
-                PFarray_printf (xml, "%s",
-                        PFqname_str (n->sem.attach.value.val.qname));
+                PFarray_printf (
+                    xml,
+                    "<value type=\"%s\">%s</value>",
+                    atomtype[n->sem.attach.value.type],
+                    PFqname_str (n->sem.attach.value.val.qname));
             else
                 PFarray_printf (xml, "<value type=\"node\"/>");
 
@@ -1446,29 +1451,26 @@ la_xml (PFarray_t *xml, PFla_op_t *n, char *node)
             break;
     }
 
-    /* close up label */
-    PFarray_printf (xml, "  </%s>\n", node);
-
     for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c] != 0; c++) {      
-        char *child = (char *) PFmalloc (sizeof ("node4294967296"));
 
         /*
          * Label for child node has already been built, such that
          * only the edge between parent and child must be created
          */
-        if (n->child[c]->node_id != 0) {
-            sprintf (child, "node%i", n->child[c]->node_id);
-            PFarray_printf (xml,
-                            "  <edge from=\"%s\" to=\"%s\"/>\n",
-                            node, child);
-        }
-        else {
-            sprintf (child, "node%i", node_id);
-            PFarray_printf (xml,
-                            "  <edge from=\"%s\" to=\"%s\"/>\n",
-                            node, child);
+        if (n->child[c]->node_id == 0)
+            n->child[c]->node_id =  node_id++;
 
-            la_xml (xml, n->child[c], child);
+        PFarray_printf (xml,
+                        "    <edge to=\"%i\"/>\n", 
+                        n->child[c]->node_id);
+    }
+
+    /* close up label */
+    PFarray_printf (xml, "  </node>\n");
+
+    for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c] != 0; c++) {      
+        if (!n->child[c]->bit_dag) {
+            la_xml (xml, n->child[c], node_id);
         }
     }
 }
@@ -1508,7 +1510,7 @@ PFla_dot (FILE *f, PFla_op_t *root)
             char *fmt = PFstate.format;
             while (*fmt) { 
                 if (*fmt == '+') {
-                        PFprop_write_dom_rel (dot, root->prop);
+                        PFprop_write_dom_rel_dot (dot, root->prop);
                         break;
                 }
                 fmt++;
@@ -1540,8 +1542,21 @@ PFla_xml (FILE *f, PFla_op_t *root)
         PFarray_t *xml = PFarray (sizeof (char));
 
         PFarray_printf (xml, "<logical_query_plan>\n");
+        /* add domain subdomain relationships if required */
+        if (PFstate.format) {
+            char *fmt = PFstate.format;
+            while (*fmt) { 
+                if (*fmt == '+') {
+                        PFprop_write_dom_rel_xml (xml, root->prop);
+                        break;
+                }
+                fmt++;
+            }
+        }
 
-        la_xml (xml, root, "node1");
+
+        root->node_id = 1;
+        la_xml (xml, root, root->node_id + 1);
         PFarray_printf (xml, "</logical_query_plan>\n");
         /* put content of array into file */
         fprintf (f, "%s", (char *) xml->base);
