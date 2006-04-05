@@ -698,7 +698,17 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* LocationStep:       attribute (SequenceType) */
         case 21:
-            TY(p) = PFty_star (TY(L(p)));
+            /*
+             * For attribute steps that do not contain any wildcards,
+             * we know that there can be at most one match for each
+             * context node.
+             */
+            assert (TY(L(p)).type == ty_attr);
+            if (! (PFQNAME_NS_WILDCARD (TY(L(p)).name)
+                   || PFQNAME_LOC_WILDCARD (TY(L(p)).name)))
+                TY(p) = PFty_opt (TY(L(p)));
+            else
+                TY(p) = PFty_star (TY(L(p)));
             break;
 
         /* LocationStep:       child (SequenceType) */
