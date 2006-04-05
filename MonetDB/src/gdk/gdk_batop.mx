@@ -225,7 +225,7 @@ BATappend(BAT *b, BAT *n, bit force)
 	BATcompatible(b, n);
 
 	b->batDirty = 1;
-	if (b->thash == NULL && b->batSet == 0 && (b->tkey & BOUND2BTRUE) == 0 && (b->hhash == NULL || ATOMstorage(b->htype) == TYPE_int)) 
+	if (b->thash == NULL && b->batSet == 0 && (b->tkey & BOUND2BTRUE) == 0 && (b->hhash == NULL || ATOMstorage(b->htype) == ATOMstorage(TYPE_oid))) 
 		fastpath = 1;
 
 	needed = sz - (((b)->batBuns->size - (b)->batBuns->free) / BUNsize(b));
@@ -350,8 +350,7 @@ BATappend(BAT *b, BAT *n, bit force)
 				BATloopFast(n, p, q, xx) {
 					ptr t = BUNtail(n, p);
 					if (!BUNfnd(bm, t)) { 
-						if (BUNins(b ,&h, t) == NULL) 
-							return NULL;
+						bunfastins(b ,&h, t);
 						h++;
 					}
 				}
@@ -361,26 +360,33 @@ BATappend(BAT *b, BAT *n, bit force)
 				BATloopFast(n, p, q, xx) {
 					ptr t = BUNtail(n, p);
 					if (!BUNfnd(bm, t)) 
-						if (BUNins(b ,&on, t) == NULL) 
-							return NULL;
+						bunfastins(b ,&on, t);
 				}
+				BATkey(b, FALSE);
+				b->hdense = b->hsorted = 0;
 			}
+			b->tdense = b->tsorted = 0;
 		} else if (b->hseqbase != oid_nil) {
 			oid h = b->hseqbase + BATcount(b);
 
 			BATloopFast(n, p, q, xx) {
-				if (BUNins(b ,&h, BUNtail(n, p)) == NULL) 
-					return NULL;
+				bunfastins(b ,&h, BUNtail(n, p));
 				h++;
 			}
+			BATkey(BATmirror(b), FALSE);
+			b->tdense = b->tsorted = 0;
 		} else {
 			oid on = oid_nil;
 
 			BATloopFast(n, p, q, xx) {
-				if (BUNins(b ,&on, BUNtail(n, p)) == NULL) 
-					return NULL;
+				bunfastins(b ,&on, BUNtail(n, p));
 			}
+			BATkey(b, FALSE);
+			BATkey(BATmirror(b), FALSE);
+			b->hdense = b->hsorted = 0;
+			b->tdense = b->tsorted = 0;
 		}
+		
 	}
 	return b;
 bunins_failed:
