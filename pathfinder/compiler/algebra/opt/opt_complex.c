@@ -47,6 +47,7 @@
 #define L(p) ((p)->child[0])
 /** starting from p, make a step right */
 #define R(p) ((p)->child[1])
+#define LL(p) (L(L(p)))
 
 #define SEEN(p) ((p)->bit_dag)
 
@@ -109,6 +110,12 @@ opt_complex (PFla_op_t *p)
                 res = PFla_project_ (res, p->schema.count, proj);
                 *p = *res;
             }
+            /* prune unnecessary attach-project operators */
+            if (p->sem.attach.attname == att_iter &&
+                L(p)->kind == la_project &&
+                L(p)->schema.count == 1 &&
+                LL(p)->kind == la_scjoin)
+                *p = *(LL(p));
             break;
             
         case la_eqjoin:

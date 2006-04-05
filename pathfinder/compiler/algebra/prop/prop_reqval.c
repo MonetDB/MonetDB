@@ -215,8 +215,6 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
         case la_num_modulo:
         case la_num_eq:
         case la_num_gt:
-        case la_bool_and:
-        case la_bool_or:
         case la_concat:
         case la_contains:
             rv.name = diff (rv.name, n->sem.binary.res);
@@ -224,7 +222,27 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             prop_infer_reqvals (L(n), rv);
             break;
 
-            break;
+        case la_bool_and:
+            if (PFprop_reqval (n->prop, n->sem.binary.res) &&
+                PFprop_reqval_val (n->prop, n->sem.binary.res)) {
+                rv.name = union_ (rv.name, n->sem.binary.att1);
+                rv.val = union_ (rv.val, n->sem.binary.att1);
+                rv.name = union_ (rv.name, n->sem.binary.att2);
+                rv.val = union_ (rv.val, n->sem.binary.att2);
+                prop_infer_reqvals (L(n), rv);
+                break;
+            }
+
+        case la_bool_or:
+            if (PFprop_reqval (n->prop, n->sem.binary.res) &&
+                !PFprop_reqval_val (n->prop, n->sem.binary.res)) {
+                rv.name = union_ (rv.name, n->sem.binary.att1);
+                rv.val = diff (rv.val, n->sem.binary.att1);
+                rv.name = union_ (rv.name, n->sem.binary.att2);
+                rv.val = diff (rv.val, n->sem.binary.att2);
+                prop_infer_reqvals (L(n), rv);
+                break;
+            }
 
         case la_bool_not:
             /* if res is a required value column also add att 

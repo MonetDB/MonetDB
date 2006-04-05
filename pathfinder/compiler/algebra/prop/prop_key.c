@@ -388,7 +388,7 @@ infer_key (PFla_op_t *n)
             break;
             
         case la_scjoin:
-            if (PFprop_card (R(n)->prop) == 1)
+            if (PFprop_const (n->prop, att_iter))
                 n->prop->keys = att_item;
             else
                 n->prop->keys = 0;
@@ -464,9 +464,10 @@ prop_infer (PFla_op_t *n)
  */
 void
 PFprop_infer_key (PFla_op_t *root) {
-    /* infer cardinalities to
+    /* infer cardinalities and constant column to
        discover more key columns */
     PFprop_infer_card (root);
+    PFprop_infer_const (root);
 
     prop_infer (root);
     PFla_dag_reset (root);
