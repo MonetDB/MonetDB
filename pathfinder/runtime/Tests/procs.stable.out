@@ -119,6 +119,7 @@ procs();
 [ "extend(grp) : BAT[any,int]"																  ]
 [ "fclose(Stream) : void"																  ]
 [ "fflush(Stream) : void"																  ]
+[ "find_qn(BAT[void,BAT], oid, oid, str, bit) : BAT[void,oid]"												  ]
 [ "find_qn(BAT[void,BAT], oid, oid, str, str, str, bit) : BAT[void,oid]"										  ]
 [ "find_qn(BAT[void,BAT], oid, str, str, str, bit) : oid"												  ]
 [ "find_unescaped_occurrence(str, str, str) : int"													  ]
