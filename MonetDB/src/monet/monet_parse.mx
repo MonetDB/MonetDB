@@ -1744,7 +1744,7 @@ CMDconstant(Cntxt stk, YYSTREE lt, ValPtr res)
 					GDKerror("CMDconstant: cannot assign to constant '%s'.\n", nme);
 					return -1;
 				}
-				(void) VARfixate(act);
+				VARfixate(act);
 			} else {
 				GDKerror("CMDconstant: CONST works on variable names only.\n");
 				return -1;

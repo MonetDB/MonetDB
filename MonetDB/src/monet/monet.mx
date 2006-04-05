@@ -421,7 +421,7 @@ provided to make inclusion of new modules a piece of cake.
 	v->binding.vtype = TYPE_int;
 	v->binding.val.ival = @1;
 	VARfreeze(v);
-	(void) VARfixate(v);
+	VARfixate(v);
 }
 
 @c

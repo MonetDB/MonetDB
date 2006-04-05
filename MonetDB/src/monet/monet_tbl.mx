@@ -1420,8 +1420,8 @@ TBL_create(Client client, str nme, int cnt, int htpe, int ttpe, int hmode, int t
 		v->binding.vtype = TYPE_bat;
 		v->binding.len = 0;
 		BBPincref(b->batCacheid, TRUE);
-		(void) VARfreeze(v);
-		(void) VARfixate(v);
+		VARfreeze(v);
+		VARfixate(v);
 	}
 	return b;
 }
