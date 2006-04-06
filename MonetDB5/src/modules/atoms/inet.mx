@@ -50,29 +50,29 @@ typedef struct _inet {
 
 #define in_isnil(i) (i->q1 == 0 && i->q2 == 0 && i->q3 == 0 && i->q4 == 0 && i->mask == 0 && i->isnil != 0)
 
-mal_export str INETfromString(str *src, int *len, inet * retval);
+mal_export int INETfromString(str src, int *len, inet **retval);
 mal_export int INETtoString(str *retval, int *len, inet *handle);
 mal_export str INETnew(inet * retval, str *in);
 mal_export str INET_isnil(bit *retval, inet * val);
-mal_export str INET_comp_EQ(bit *retval, inet * val1, inet * val2);
-mal_export str INET_comp_NEQ(bit *retval, inet * val1, inet * val2);
-mal_export str INET_comp_LT(bit *retval, inet * val1, inet * val2);
-mal_export str INET_comp_GT(bit *retval, inet * val1, inet * val2);
-mal_export str INET_comp_LE(bit *retval, inet * val1, inet * val2);
-mal_export str INET_comp_GE(bit *retval, inet * val1, inet * val2);
-mal_export str INET_comp_CW(bit *retval, inet * val1, inet * val2);
-mal_export str INET_comp_CWE(bit *retval, inet * val1, inet * val2);
-mal_export str INET_comp_CS(bit *retval, inet * val1, inet * val2);
-mal_export str INET_comp_CSE(bit *retval, inet * val1, inet * val2);
-mal_export str INETbroadcast(inet * retval, inet * val);
-mal_export str INEThost(str *retval, inet * val);
-mal_export str INETmasklen(int *retval, inet * val);
-mal_export str INETsetmasklen(inet * retval, inet * val, int *mask);
-mal_export str INETnetmask(inet * retval, inet * val);
-mal_export str INEThostmask(inet * retval, inet * val);
-mal_export str INETnetwork(inet * retval, inet * val);
-mal_export str INETtext(str *retval, inet * val);
-mal_export str INETabbrev(str *retval, inet * val);
+mal_export str INET_comp_EQ(bit *retval, inet * val1, inet *val2);
+mal_export str INET_comp_NEQ(bit *retval, inet * val1, inet *val2);
+mal_export str INET_comp_LT(bit *retval, inet * val1, inet *val2);
+mal_export str INET_comp_GT(bit *retval, inet * val1, inet *val2);
+mal_export str INET_comp_LE(bit *retval, inet * val1, inet *val2);
+mal_export str INET_comp_GE(bit *retval, inet * val1, inet *val2);
+mal_export str INET_comp_CW(bit *retval, inet * val1, inet *val2);
+mal_export str INET_comp_CWE(bit *retval, inet * val1, inet *val2);
+mal_export str INET_comp_CS(bit *retval, inet * val1, inet *val2);
+mal_export str INET_comp_CSE(bit *retval, inet * val1, inet *val2);
+mal_export str INETbroadcast(inet * retval, inet *val);
+mal_export str INEThost(str *retval, inet *val);
+mal_export str INETmasklen(int *retval, inet *val);
+mal_export str INETsetmasklen(inet *retval, inet *val, int *mask);
+mal_export str INETnetmask(inet *retval, inet *val);
+mal_export str INEThostmask(inet *retval, inet *val);
+mal_export str INETnetwork(inet *retval, inet *val);
+mal_export str INETtext(str *retval, inet *val);
+mal_export str INETabbrev(str *retval, inet *val);
 
 @c
 #include <gdk.h>
@@ -87,9 +87,12 @@ comment "Convert a string to an inet";
 @c
 /**
  * Creates a new inet from the given string.
+ * Warning: GDK function, does NOT pass a string by reference, and wants
+ * a pointer to a pointer for the retval!
+ * Returns the number of chars read
  */
-str
-INETfromString(str *src, int *len, inet * retval)
+int
+INETfromString(str src, int *len, inet **retval)
 {
 	int i, last, type;
 	lng parse;
@@ -100,40 +103,56 @@ INETfromString(str *src, int *len, inet * retval)
 	last = 0;
 	type = 0;
 
+	if (*retval != NULL)
+		GDKfree(*retval);
+	*retval = GDKmalloc(sizeof(inet));
+
 	/* use the DIY technique to guarantee maximum cross-platform
 	 * portability */
 	for (i = 0; i < *len; i++) {
-		if (type < 4 && ((*src)[i] == '.' || (*src)[i] == '/')) {
-			sep = (*src)[i];
-			(*src)[i] = '\0';
-			parse = strtol((*src) + last, &endptr, 10);
+		if (src[i] == '.' || src[i] == '/') {
+			sep = src[i];
+			src[i] = '\0';
+			parse = strtol(src + last, &endptr, 10);
 			if (*endptr != '\0') {
+				/* this is for the cat his violin
 				throwMalf("inet.fromStr", "Error while parsing, unexpected string '%s'", endptr);
+				*/
+				goto error;	/* yeah, I know, but I'm just simulating try-catch stuff in C now */
 			}
 			if (parse > 255 || parse < 0) {
+				/* this is for the cat his violin
 				throwMalf("inet.fromStr", "Illegal quad value: %d", parse);
+				*/
+				goto error;	/* yeah, I know, but I'm just simulating try-catch stuff in C now */
 			}
-			if (type == 0) {
-				retval->q1 = (unsigned char) parse;
-			} else if (type == 1) {
-				retval->q2 = (unsigned char) parse;
-			} else if (type == 2) {
-				retval->q3 = (unsigned char) parse;
-			} else if (type == 3) {
-				retval->q4 = (unsigned char) parse;
+			switch (type) {
+				case 0:
+					(*retval)->q1 = (unsigned char) parse;
+				break;
+				case 1:
+					(*retval)->q2 = (unsigned char) parse;
+				break;
+				case 2:
+					(*retval)->q3 = (unsigned char) parse;
+				break;
+				case 3:
+					(*retval)->q4 = (unsigned char) parse;
+				break;
 			}
 
 			last = i + 1;
 			type++;
 
 			if (sep == '/') {
+				/* zero out (default) unused bytes */
 				switch (type) {
-				case 1:
-					retval->q2 = (unsigned char) 0;
-				case 2:
-					retval->q3 = (unsigned char) 0;
-				case 3:
-					retval->q4 = (unsigned char) 0;
+					case 1:
+						(*retval)->q2 = (unsigned char) 0;
+					case 2:
+						(*retval)->q3 = (unsigned char) 0;
+					case 3:
+						(*retval)->q4 = (unsigned char) 0;
 					break;
 				}
 				/* force evaluation of the mask below when we break
@@ -143,29 +162,54 @@ INETfromString(str *src, int *len, inet * retval)
 			}
 		}
 	}
-	/* we cannot trust the caller that the input string is properly null
+	/* parse the last quad
+	 * we cannot trust the caller that the input string is properly null
 	 * terminated here */
 	tmp[0] = tmp[1] = tmp[2] = tmp[3] = '\0';
-	strncpy(tmp, (*src) + last, *len - last > 3 ? 3 : *len - last);
+	strncpy(tmp, src + last, *len - last > 3 ? 3 : *len - last);
 	parse = strtol(tmp, &endptr, 10);
 	if (*endptr != '\0') {
+		/* this is for the cat his violin
 		throwMalf("inet.fromStr", "Error while parsing, unexpected string '%s'", endptr);
+		*/
+		goto error;	/* yeah, I know, but I'm just simulating try-catch stuff in C now */
 	}
 	if (type == 3) {
 		if (parse > 255 || parse < 0) {
+			/* this is for the cat his violin
 			throwMalf("inet.fromStr", "Illegal quad value: %d", parse);
+			*/
+			goto error;	/* yeah, I know, but I'm just simulating try-catch stuff in C now */
 		}
-		retval->q4 = (unsigned char) parse;
+		(*retval)->q4 = (unsigned char) parse;
 		/* default to an exact match (all bits) */
-		retval->mask = (unsigned char) 32;
+		(*retval)->mask = (unsigned char) 32;
 	} else if (type == 4) {
 		if (parse < 0 || parse > 32) {
+			/* this is for the cat his violin
 			throwMalf("inet.fromStr", "Illegal mask value: %d", parse);
+			*/
+			goto error;	/* yeah, I know, but I'm just simulating try-catch stuff in C now */
 		}
-		retval->mask = (unsigned char) parse;
+		(*retval)->mask = (unsigned char) parse;
+	} else {
+		/* this is for the cat his violin
+		   throwMalf("inet.fromStr", "Error while parsing, unexpected string '%s'", endptr);
+		   */
+		goto error;	/* yeah, I know, but I'm just simulating try-catch stuff in C now */
 	}
 
-	return (MAL_SUCCEED);
+	return(i);
+error: /* catch exception: return nil */
+	(*retval)->q1 = 0;
+	(*retval)->q2 = 0;
+	(*retval)->q3 = 0;
+	(*retval)->q4 = 0;
+	(*retval)->mask = 0;
+	(*retval)->filler1 = 0;
+	(*retval)->filler2 = 0;
+	(*retval)->isnil = 1;
+	return(i - 1);
 }
 
 @mal
@@ -175,7 +219,8 @@ comment "Convert inet to string equivalent";
 @c
 /**
  * Returns the string representation of the given inet value.
- * Warning: returns the length, instead of an exception string!
+ * Warning: GDK function
+ * Returns the length of the string
  */
 int
 INETtoString(str *retval, int *len, inet *handle)
@@ -195,7 +240,7 @@ INETtoString(str *retval, int *len, inet *handle)
 		*len = snprintf(*retval, *len, "%d.%d.%d.%d/%d", value->q1, value->q2, value->q3, value->q4, value->mask);
 	}
 
-	return (*len);
+	return(*len);
 }
 
 @mal
@@ -208,12 +253,14 @@ comment "Create an inet from a string literal";
  * to parse the string.
  */
 str
-INETnew(inet * retval, str *in)
+INETnew(inet *retval, str *in)
 {
-	str tmp;
 	int len = strlen(*in);
+	int pos;
 
-	rethrow("inet.new", tmp, INETfromString(in, &len, retval));
+	if ((pos = INETfromString(*in, &len, &retval)) != len)
+		throwMalf("inet.new", "Error while parsing at char %d", pos + 1);
+
 	return (MAL_SUCCEED);
 }
 
