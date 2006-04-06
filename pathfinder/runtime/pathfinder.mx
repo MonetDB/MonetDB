@@ -139,10 +139,12 @@ PROC xquery_server_start() : void {
 #                  oids for each attr value (copied in element/attribute construction)
 # - CONT_COLL      BAT[void,oid] container-ID / collection-ID
 #                  (starts with 1@0 because WS is first 'loaded' document
-# - CONT_DOCID     BAT[oid,oid] container-ID / doc_oid (if persistent; else nil)
-# - DOCID_NAME     BAT[oid,str] container-ID / document name
 # - HEIGTH         BAT[void,int] enumeration of the containers / maximal
 #                  depth of the container (starts with 0@0 - WS)
+# - CONT_DOCID     BAT[oid,oid] container-ID / docid (this is local to ws, NOT a key to doc_* tables) 
+#
+# - DOCID_OID      BAT[void,oid] docid / persistent document-ID (the key to the doc_* tables)
+# - DOCID_NAME     BAT[void,str] docid / document name
 
 module(pf_support); 
 
@@ -205,42 +207,43 @@ concurrent updates.
 @:@1_ws(PRE_CONT,      33, void, void,void,  oid, PRE_BASE)@
 @:@1_ws(ATTR_CONT,     34, void, void,void,  oid, PRE_BASE)@
 @:@1_ws(HEIGHT,        35, void, int, void, void, oid(nil))@
-@:@1_ws(DOCID_NAME,    36, oid,  str, void, void, oid(nil))@
-@:@1_ws(CONT_DOCID,    37, oid,  oid, void, void, oid(nil))@
-@:@1_ws(CONT_COLL,     38, void, oid, void, void, oid(nil))@
-@:@1_ws(_RID_SIZE,     39, void, bat, void,  int, PRE_BASE)@
-@:@1_ws(_RID_LEVEL,    40, void, bat, void,  chr, PRE_BASE)@
-@:@1_ws(_RID_PROP,     41, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_RID_KIND,     42, void, bat, void,  chr, PRE_BASE)@
-@:@1_ws(_RID_NID,      43, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_WS_FRAG,      44, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_MAP_PID,      45, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_NID_RID,      46, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_QN_URI,       47, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_QN_PREFIX,    48, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_QN_LOC,       49, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_PROP_TEXT,    50, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_PROP_COM,     51, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_PROP_INS,     52, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_PROP_TGT,     53, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_PROP_VAL,     54, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_ID_NID,       55, void, bat,  str,  oid, oid(nil))@
-@:@1_ws(_IDREF_NID,    56, void, bat,  str,  oid, oid(nil))@
-@:@1_ws(_ATTR_OWN,     57, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_ATTR_QN,      58, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_ATTR_PROP,    59, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_QN_PREFIX_URI,60, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_QN_LOC_URI,   61, void, bat, void,  str, PRE_BASE)@
-@:@1_ws(_KND_NID_0,    62, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_KND_PROP_0,   63, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_KND_NID_1,    64, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_KND_NID_2,    65, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_KND_NID_3,    66, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_KND_PROP_3,   67, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_KND_NID_4,    68, void, bat, void,  oid, PRE_BASE)@
-@:@1_ws(_REGION_PRE,   69, void, bat, void,  oid, oid(nil))@
-@:@1_ws(_REGION_START, 70, void, bat, void,  lng, oid(nil))@
-@:@1_ws(_REGION_END,   71, void, bat, void,  lng, oid(nil))@
+@:@1_ws(DOCID_NAME,    36, void, str, void, void, oid(nil))@
+@:@1_ws(DOCID_OID,     37, void, oid, void, void, oid(nil))@
+@:@1_ws(CONT_DOCID,    38, oid,  oid, void, void, oid(nil))@
+@:@1_ws(CONT_COLL,     39, void, oid, void, void, oid(nil))@
+@:@1_ws(_RID_SIZE,     40, void, bat, void,  int, PRE_BASE)@
+@:@1_ws(_RID_LEVEL,    41, void, bat, void,  chr, PRE_BASE)@
+@:@1_ws(_RID_PROP,     42, void, bat, void,  oid, PRE_BASE)@
+@:@1_ws(_RID_KIND,     43, void, bat, void,  chr, PRE_BASE)@
+@:@1_ws(_RID_NID,      44, void, bat, void,  oid, PRE_BASE)@
+@:@1_ws(_WS_FRAG,      45, void, bat, void,  oid, PRE_BASE)@
+@:@1_ws(_MAP_PID,      46, void, bat, void,  oid, PRE_BASE)@
+@:@1_ws(_NID_RID,      47, void, bat, void,  oid, PRE_BASE)@
+@:@1_ws(_QN_URI,       48, void, bat, void,  str, PRE_BASE)@
+@:@1_ws(_QN_PREFIX,    49, void, bat, void,  str, PRE_BASE)@
+@:@1_ws(_QN_LOC,       50, void, bat, void,  str, PRE_BASE)@
+@:@1_ws(_PROP_TEXT,    51, void, bat, void,  str, PRE_BASE)@
+@:@1_ws(_PROP_COM,     52, void, bat, void,  str, PRE_BASE)@
+@:@1_ws(_PROP_INS,     53, void, bat, void,  str, PRE_BASE)@
+@:@1_ws(_PROP_TGT,     54, void, bat, void,  str, PRE_BASE)@
+@:@1_ws(_PROP_VAL,     55, void, bat, void,  str, PRE_BASE)@
+@:@1_ws(_ID_NID,       56, void, bat,  str,  oid, oid(nil))@
+@:@1_ws(_IDREF_NID,    57, void, bat,  str,  oid, oid(nil))@
+@:@1_ws(_ATTR_OWN,     58, void, bat, void,  oid, PRE_BASE)@
+@:@1_ws(_ATTR_QN,      59, void, bat, void,  oid, PRE_BASE)@
+@:@1_ws(_ATTR_PROP,    60, void, bat, void,  oid, PRE_BASE)@
+@:@1_ws(_QN_PREFIX_URI,61, void, bat, void,  str, PRE_BASE)@
+@:@1_ws(_QN_LOC_URI,   62, void, bat, void,  str, PRE_BASE)@
+@:@1_ws(_KND_NID_0,    63, void, bat, void,  oid, PRE_BASE)@
+@:@1_ws(_KND_PROP_0,   64, void, bat, void,  oid, PRE_BASE)@
+@:@1_ws(_KND_NID_1,    65, void, bat, void,  oid, PRE_BASE)@
+@:@1_ws(_KND_NID_2,    66, void, bat, void,  oid, PRE_BASE)@
+@:@1_ws(_KND_NID_3,    67, void, bat, void,  oid, PRE_BASE)@
+@:@1_ws(_KND_PROP_3,   68, void, bat, void,  oid, PRE_BASE)@
+@:@1_ws(_KND_NID_4,    69, void, bat, void,  oid, PRE_BASE)@
+@:@1_ws(_REGION_PRE,   70, void, bat, void,  oid, oid(nil))@
+@:@1_ws(_REGION_START, 71, void, bat, void,  lng, oid(nil))@
+@:@1_ws(_REGION_END,   72, void, bat, void,  lng, oid(nil))@
 
 @-
 BEWARE: WS_SIZE (below) should *always* be the size of ws (above)
@@ -894,13 +897,15 @@ PROC doc_curtime(str filename) : timestamp {
 
 PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, oid doc_oid, oid coll_oid, int height) : oid
 {
-    var cont;
+    var cont, docid := oid(count(ws.fetch(DOCID_OID)));
+
     if (ws.fetch(CONT_COLL).texist(coll_oid)) {
         # collection is already part of the working set
         cont := reverse(ws.fetch(CONT_COLL)).find(coll_oid);
     } else {
         # add the collection to the working set
         var pre, mem, dsk, dst := ws_col.mirror().leftfetchjoin(ws);
+
         if (doc_oid = TEMP_DOC) { 
             # temporary shredded (read-only) doc; no isolation needed 
             coll_oid := TEMP_DOC;                     # must pass oid(nil) for TEMP_DOCs!!
@@ -931,8 +936,9 @@ PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, oid doc_oid, oi
     }
     if (not(ws.fetch(DOCID_NAME).texist(name))) {
         # add the document to the working set
-        ws.fetch(DOCID_NAME).insert(doc_oid, name);            
-        ws.fetch(CONT_DOCID).insert(cont, doc_oid);            
+        ws.fetch(DOCID_OID).append(doc_oid);
+        ws.fetch(DOCID_NAME).insert(docid, name);            
+        ws.fetch(CONT_DOCID).insert(cont, docid);            
     }
     return cont;
 }
@@ -993,7 +999,6 @@ PROC add_doc(BAT[void,bat] ws, str name) : int
     if (isnil(err)) err := CATCH(ts := lifetime_doc_locked(name,filename,doc_oid,ts));
     lock_unset(pf_lock);
     if (not(isnil(err))) ERROR(err);
-
     var docBAT := new(str,bat,WS_SIZE);
     var doCommit := true;
     var height;

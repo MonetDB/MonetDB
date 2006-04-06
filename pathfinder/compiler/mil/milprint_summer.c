@@ -6424,7 +6424,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "}\n"
                 "item := item%s.leftjoin(reverse(ws.fetch(DOCID_NAME))); # get doc-oids first\n"
                 "kind := set_kind(item.leftjoin(reverse(ws.fetch(CONT_DOCID))).tmark(0@0), ELEM);\n"
-                "item := item.leftjoin(doc_root).tmark(0@0);\n"
+                "item := item.leftfetchjoin(ws.fetch(DOCID_OID)).leftjoin(doc_root).tmark(0@0);\n"
                 "} # end of translate fn:doc (string?) as document?\n",
                 item_ext,
                 (rc)?"":val_join(STR),
