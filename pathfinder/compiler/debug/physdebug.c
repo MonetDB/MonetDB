@@ -249,14 +249,14 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
     {
         case pa_lit_tbl:
             /* list the attributes of this table */
-            PFarray_printf (dot, "%s: <%s", a_id[n->kind],
+            PFarray_printf (dot, "%s: (%s", a_id[n->kind],
                             PFatt_str (n->schema.items[0].name));
 
             for (c = 1; c < n->schema.count;c++)
                 PFarray_printf (dot, " | %s", 
                                 PFatt_str (n->schema.items[c].name));
 
-            PFarray_printf (dot, ">");
+            PFarray_printf (dot, ")");
 
             /* print out tuples in table, if table is not empty */
             for (unsigned int d = 0; d < n->sem.lit_tbl.count; d++) {
@@ -273,25 +273,25 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
 
         case pa_empty_tbl:
             /* list the attributes of this table */
-            PFarray_printf (dot, "%s: <%s", a_id[n->kind],
+            PFarray_printf (dot, "%s: (%s", a_id[n->kind],
                             PFatt_str (n->schema.items[0].name));
 
             for (c = 1; c < n->schema.count;c++)
                 PFarray_printf (dot, " | %s", 
                                 PFatt_str (n->schema.items[c].name));
 
-            PFarray_printf (dot, ">");
+            PFarray_printf (dot, ")");
             break;
 
         case pa_attach:
-            PFarray_printf (dot, "%s: <%s,%s>", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s), val: %s", a_id[n->kind],
                             PFatt_str (n->sem.attach.attname),
                             literal (n->sem.attach.value));
             break;
 
         case pa_leftjoin:
         case pa_eqjoin:
-            PFarray_printf (dot, "%s: (%s=%s)", a_id[n->kind],
+            PFarray_printf (dot, "%s: (%s= %s)", a_id[n->kind],
                             PFatt_str (n->sem.eqjoin.att1),
                             PFatt_str (n->sem.eqjoin.att2));
             break;
@@ -323,18 +323,18 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
             break;
 
         case pa_merge_union:
-            PFarray_printf (dot, "%s: %s", a_id[n->kind],
+            PFarray_printf (dot, "%s: (%s)", a_id[n->kind],
                             PFord_str (n->sem.merge_union.ord));
             break;
 
         case pa_sort_distinct:
-            PFarray_printf (dot, "%s: %s", a_id[n->kind],
+            PFarray_printf (dot, "%s: (%s)", a_id[n->kind],
                             PFord_str (n->sem.sort_distinct.ord));
             break;
 
         case pa_std_sort:
         case pa_refine_sort:
-            PFarray_printf (dot, "%s: %s", a_id[n->kind],
+            PFarray_printf (dot, "%s: (%s)", a_id[n->kind],
                             PFord_str (n->sem.sortby.required));
             break;
 
@@ -349,7 +349,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         case pa_bool_or:
         case pa_concat:
         case pa_contains:
-            PFarray_printf (dot, "%s\\n%s:(%s,%s)", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s:<%s, %s>)", a_id[n->kind],
                             PFatt_str (n->sem.binary.res),
                             PFatt_str (n->sem.binary.att1),
                             PFatt_str (n->sem.binary.att2));
@@ -364,7 +364,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         case pa_gt_atom:
         case pa_bool_and_atom:
         case pa_bool_or_atom:
-            PFarray_printf (dot, "%s\\n%s:(%s,%s)", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s:<%s, %s>)", a_id[n->kind],
                             PFatt_str (n->sem.bin_atom.res),
                             PFatt_str (n->sem.bin_atom.att1),
                             literal (n->sem.bin_atom.att2));
@@ -372,19 +372,19 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
 
         case pa_num_neg:
         case pa_bool_not:
-            PFarray_printf (dot, "%s\\n%s:%s", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s:<%s>)", a_id[n->kind],
                             PFatt_str (n->sem.unary.res),
                             PFatt_str (n->sem.unary.att));
             break;
 
         case pa_hash_count:
-            if (n->sem.count.part != att_NULL)
-                PFarray_printf (dot, "%s\\n%s:_/%s", a_id[n->kind],
+            if (n->sem.count.part == att_NULL)
+                PFarray_printf (dot, "%s (%s)", a_id[n->kind],
+                                PFatt_str (n->sem.count.res));
+            else
+                PFarray_printf (dot, "%s (%s:/%s)", a_id[n->kind],
                                 PFatt_str (n->sem.count.res),
                                 PFatt_str (n->sem.count.part));
-            else
-                PFarray_printf (dot, "%s\\n%s", a_id[n->kind],
-                                PFatt_str (n->sem.count.res));
             break;
 
         case pa_avg:
@@ -392,11 +392,11 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         case pa_min:
         case pa_sum:
             if (n->sem.aggr.part == att_NULL)
-                PFarray_printf (dot, "%s\\n%s:(%s)", a_id[n->kind],
+                PFarray_printf (dot, "%s (%s:<%s>)", a_id[n->kind],
                                 PFatt_str (n->sem.aggr.res),
                                 PFatt_str (n->sem.aggr.att));
             else
-                PFarray_printf (dot, "%s\\n%s:(%s)/%s", a_id[n->kind],
+                PFarray_printf (dot, "%s (%s:<%s>/%s)", a_id[n->kind],
                                 PFatt_str (n->sem.aggr.res),
                                 PFatt_str (n->sem.aggr.att),
                                 PFatt_str (n->sem.aggr.part));
@@ -405,11 +405,11 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         case pa_hash_rownum:
         case pa_merge_rownum:
             if (n->sem.count.part != att_NULL)
-                PFarray_printf (dot, "%s\\n%s:_/%s", a_id[n->kind],
+                PFarray_printf (dot, "%s (%s:/%s)", a_id[n->kind],
                                 PFatt_str (n->sem.rownum.attname),
                                 PFatt_str (n->sem.rownum.part));
             else
-                PFarray_printf (dot, "%s\\n%s", a_id[n->kind],
+                PFarray_printf (dot, "%s (%s)", a_id[n->kind],
                                 PFatt_str (n->sem.rownum.attname));
             break;
 
@@ -425,12 +425,12 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
 
         case pa_type:
             if (atomtype[n->sem.type.ty])
-                PFarray_printf (dot, "%s (%s:%s,%s)", a_id[n->kind],
+                PFarray_printf (dot, "%s (%s:<%s>), type: %s", a_id[n->kind],
                                 PFatt_str (n->sem.type.res),
                                 PFatt_str (n->sem.type.att),
                                 atomtype[n->sem.type.ty]);
             else
-                PFarray_printf (dot, "%s (%s:%s,%i)", a_id[n->kind],
+                PFarray_printf (dot, "%s (%s:<%s>), type: %i", a_id[n->kind],
                                 PFatt_str (n->sem.type.res),
                                 PFatt_str (n->sem.type.att),
                                 n->sem.type.ty);
@@ -438,21 +438,22 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
 
         case pa_type_assert:
             if (atomtype[n->sem.type_a.ty])
-                PFarray_printf (dot, "%s (%s,%s)", a_id[n->kind],
+                PFarray_printf (dot, "%s (%s), type: %s", a_id[n->kind],
                                 PFatt_str (n->sem.type_a.att),
                                 atomtype[n->sem.type_a.ty]);
             else
-                PFarray_printf (dot, "%s (%s,%i)", a_id[n->kind],
+                PFarray_printf (dot, "%s (%s), type: %i", a_id[n->kind],
                                 PFatt_str (n->sem.type_a.att),
                                 n->sem.type_a.ty);
                 
             break;
 
         case pa_cast:
-            PFarray_printf (dot, "%s (%s%s%s,%s)", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s%s%s%s), type: %s", a_id[n->kind],
                             n->sem.cast.res?PFatt_str(n->sem.cast.res):"",
-                            n->sem.cast.res?":":"",
+                            n->sem.cast.res?":<":"",
                             PFatt_str (n->sem.cast.att),
+                            n->sem.cast.res?">":"",
                             atomtype[n->sem.cast.ty]);
             break;
 
@@ -492,20 +493,20 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
                         "unknown document access in dot output");
             }
 
-            PFarray_printf (dot, "\\%s (%s)",
+            PFarray_printf (dot, " (%s:<%s>)",
                             PFatt_str (n->sem.doc_access.res),
                             PFatt_str (n->sem.doc_access.att));
             break;
 
         case pa_attribute:
-            PFarray_printf (dot, "%s (%s:%s,%s)", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s:<%s, %s>)", a_id[n->kind],
                             PFatt_str (n->sem.attr.res),
                             PFatt_str (n->sem.attr.qn),
                             PFatt_str (n->sem.attr.val));
             break;
 
         case pa_textnode:
-            PFarray_printf (dot, "%s (%s:%s)", a_id[n->kind],
+            PFarray_printf (dot, "%s (%s:<%s>)", a_id[n->kind],
                             PFatt_str (n->sem.textnode.res),
                             PFatt_str (n->sem.textnode.item));
             break;
