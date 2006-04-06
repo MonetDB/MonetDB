@@ -106,9 +106,12 @@ opt_icol (PFla_op_t *p)
                 for (unsigned int i = 0; i < p->sem.lit_tbl.count; i++)
                     tuples[i].count = count;
 
-                res = PFla_lit_tbl_ (PFalg_attlist_ (count, atts),
-                                     p->sem.lit_tbl.count,
-                                     tuples);
+                if (p->kind == la_empty_tbl)
+                    res = PFla_empty_tbl (PFalg_attlist_ (count, atts));
+                else
+                    res = PFla_lit_tbl_ (PFalg_attlist_ (count, atts),
+                                         p->sem.lit_tbl.count,
+                                         tuples);
                 *p = *res;
                 PFprop_update_ocol (p);
                 SEEN(p) = true;
@@ -133,7 +136,10 @@ opt_icol (PFla_op_t *p)
                     tuples[j].count = 1;
                 }
 
-                res = PFla_lit_tbl_ (PFalg_attlist_ (1, atts), 1, tuples);
+                if (p->kind == la_empty_tbl)
+                    res = PFla_empty_tbl (PFalg_attlist_ (1, atts));
+                else
+                    res = PFla_lit_tbl_ (PFalg_attlist_ (1, atts), 1, tuples);
                 *p = *res;
                 PFprop_update_ocol (p);
                 SEEN(p) = true;
