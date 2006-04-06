@@ -200,15 +200,9 @@ INETfromString(str src, int *len, inet **retval)
 	}
 
 	return(i);
-error: /* catch exception: return nil */
-	(*retval)->q1 = 0;
-	(*retval)->q2 = 0;
-	(*retval)->q3 = 0;
-	(*retval)->q4 = 0;
-	(*retval)->mask = 0;
-	(*retval)->filler1 = 0;
-	(*retval)->filler2 = 0;
-	(*retval)->isnil = 1;
+error: /* catch exception: return NULL */
+	GDKfree(*retval);
+	*retval = NULL;
 	return(i - 1);
 }
 
