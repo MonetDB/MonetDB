@@ -1,0 +1,44 @@
+# The first reference case for fast cracking
+
+include microbenchmark;
+include crackers;
+
+tuples:=500;
+values:= tuples;
+
+
+	b:= microbenchmark.uniform(0@0,tuples,values);
+	io.print(b);
+	c:=crackers.range(b,390,440,true,false,true);
+	io.print(c);
+	io.print(b);
+	crackers.printIndex(b);	
+	c:=crackers.range(b,10,40,true,false,true);
+	io.print(c);
+	io.print(b);
+	crackers.printIndex(b);
+	c:=crackers.range(b,5,440,true,false,true);
+	io.print(c);
+	io.print(b);
+	crackers.printIndex(b);
+	c:=crackers.range(b,470,490,true,false,true);
+	io.print(c);
+	io.print(b);
+	crackers.printIndex(b);
+	c:=crackers.range(b,5,100,false,false,true);
+	io.print(c);
+	io.print(b);
+	crackers.printIndex(b);
+	c:=crackers.range(b,410,480,false,false,true);
+	io.print(c);
+	io.print(b);
+	crackers.printIndex(b);
+	c:=crackers.range(b,5,10,false,false,true);
+	io.print(c);
+	io.print(b);
+	crackers.printIndex(b);
+	c:=crackers.range(b,5,10,true,true,true);
+	io.print(c);
+	io.print(b);
+	crackers.printIndex(b);
+
