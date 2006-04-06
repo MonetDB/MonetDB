@@ -194,17 +194,19 @@
     .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
     .ret_ty = PFty_star (PFty_node ()),                                  \
     .alg = PFbui_pf_distinct_doc_order }                                 \
-    /* FIXME: the W3C defined exact-one not so strict, but otherwise
-              the typeswich doesn't work anymore */                      \
-, /* fn:exactly-one (node *) as node */                                  \
+, /* fn:exactly-one (item *) as item */                                  \
+     /* Note that typecheck.brg implements a specific typing rule */     \
+     /* replacing the occurrence indicator! */                           \
   { .ns = PFns_fn, .loc = "exactly-one",                                 \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_node (),                                              \
+    .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
+    .ret_ty = PFty_item (),                                              \
     .alg = PFbui_fn_exactly_one }                                        \
-, /* fn:zero-or-one (node *) as node */                                  \
+, /* fn:zero-or-one (item *) as item? */                                 \
+     /* Note that typecheck.brg implements a specific typing rule */     \
+     /* replacing the occurrence indicator! */                           \
   { .ns = PFns_fn, .loc = "zero-or-one",                                 \
-    .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_opt (PFty_node ()),                                   \
+    .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
+    .ret_ty = PFty_opt (PFty_item ()),                                   \
     .alg = PFbui_fn_zero_or_one }                                        \
 , /* fn:unordered (item *) as item */                                    \
   { .ns = PFns_fn, .loc = "unordered",                                   \
@@ -1321,16 +1323,6 @@
                             PFty_string (),                              \
                             PFty_string () },                            \
     .ret_ty = PFty_opt( PFty_string ()) }                                \
-, /* pf:node-name-eq (xs:string, xs:string,                          */  \
-  /*                  (xs:anyElement | xs:anyAttribute) *)           */  \
-  /*     as xs:boolean                                               */  \
-  { .ns = PFns_pf, .loc = "node-name-eq",                                \
-    .arity = 3, .par_ty = { PFty_xs_string (),                           \
-                            PFty_xs_string (),                           \
-                            PFty_star (                                  \
-                                PFty_choice (PFty_xs_anyElement (),      \
-                                             PFty_xs_anyAttribute ()))}, \
-    .ret_ty = PFty_xs_boolean () }                                       \
 , /* fn:subsequence(item*, double) as item* */                           \
   /* Note that typecheck.brg implements a specific typing rule! */       \
   { .ns = PFns_fn, .loc = "subsequence",                                 \
