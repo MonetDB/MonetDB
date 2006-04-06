@@ -147,6 +147,28 @@ comment "Retrieve a piece of a cracked BAT into a known BAT view.";
 command selectPieces( b:bat[:oid,:@1], low:@1, hgh:@1) :bat[:oid,:@1]
 address CRKselectPieces
 comment "Retrieve identities of all pieces that qualify the selection criterion.";
+
+
+
+command newIndex(b:bat[:oid,:@1]):void
+address CRKnewIndex
+comment "Create the index for a cracked table.";
+
+command printIndex(b:bat[:oid,:@1]):void
+address CRKprintIndex
+comment "Print the index for a cracked table.";
+
+command addOne(b:bat[:oid,:@1], value:int, index:lng):void
+address CRKaddOne
+comment "Add one element in the index of a cracked table.";
+
+command addTwo(b:bat[:oid,:@1], valueA:int, indexA:lng, valueB:int, indexB:lng):void
+address CRKaddTwo
+comment "Add two elements in the index of a cracked table.";
+
+command range(b:bat[:oid,:@1],l:@1,h:@1,li:bit,hi:bit, tail:bit):bat[:oid,:@1]
+address CRKRange_@1
+comment "Range select.";
 @mal
 module crackers;
 
@@ -308,6 +330,11 @@ typedef struct {
 	Piece *pieces;
 } CrackMap;
 
+typedef struct {
+	int bid;   /* the cracked bat */
+	int cid;   /* the index for this cracked bat */
+} CrackIndex;
+
 mal_export str CRKnew(int *cret, int *bid);
 mal_export str CRKdestroy(int *cret, int *bid);
 mal_export str CRKsetGranule(int *cret, int *bid, int *gran);
@@ -333,6 +360,12 @@ mal_export str CRKuselect(int *vid, int *bid, int *low, int *hgh);
 mal_export str CRKuselectBounds(int *vid, int *bid, int *low, int *hgh, bit *inclusiveLow, bit *inclusiveHgh);
 mal_export str CRKuselectValue(int *vid, int *bid, int *value);
 
+mal_export str CRKnewIndex(int *k, int *bid);
+mal_export str CRKprintIndex(int *k, int *bid);
+mal_export str CRKaddOne(int *k, int *bid, int *value, lng *index);
+mal_export str CRKaddTwo(int *k, int *bid, int *valueA, lng *indexA,int *valueB, lng *indexB);
+mal_export str CRKRange_int(int *vid, int *bid, int *low, int *hgh, bit *inclusiveLow, bit *inclusiveHgh, bit *tail);
+
 #endif /* _CRACKERS_H */
 @-
 During initialization of the crackers structure we already
@@ -352,6 +385,218 @@ The granularity can be used to limit the number of pieces.
 static CrackMap *crackMap;
 static int maxCrackMap = 0;
 
+static CrackIndex *Index;
+
+int     
+existsIndex(int bid)
+{       
+	int i;
+	
+	for (i = 0; i < maxCrackMap; i++)
+		if (Index[i].bid == bid)
+			return i;
+	return -1;
+}
+@= CreateNewIndex
+int     
+newIndex_@1(int bid)
+{       
+	int i, freemap = -1, units = 1024;
+	
+	for (i = 0; i < maxCrackMap; i++)
+		if (Index[i].bid == -1)
+			freemap = i;
+
+	if (freemap != -1) {
+		Index[freemap].bid = bid;
+		return freemap;
+	}
+
+	if (i == maxCrackMap) {
+		CrackIndex *x;
+        
+		if (maxCrackMap > 0)
+			units = (int) (1.2 * maxCrackMap);
+		x = (CrackIndex *) GDKmalloc(sizeof(CrackIndex) * units);
+		memset(x, 0, sizeof(CrackIndex) * units);
+		if (Index) { 
+			fprintf(stderr, "reallocate index \n");
+			memcpy(x, Index, sizeof(CrackIndex) * i);
+			GDKfree(Index);
+		}
+		Index = x;
+		maxCrackMap = units;
+	}
+
+	Index[i].bid = bid;
+	BAT *b = BATnew(TYPE_lng, TYPE_@1, 1000);	/*todo: size*/
+	BBPfix(b->batCacheid);
+	Index[i].cid = b->batCacheid; 
+	return i;
+}
+@
+
+@c
+@:CreateNewIndex(int)@
+
+void
+printCrackIndex(int bid)
+{
+	int i = existsIndex(bid);
+	if (i == -1)
+		fprintf(stderr, " the crack index does not exist \n");
+	BATprint(BATdescriptor(Index[i].cid));
+}
+
+str
+CRKprintIndex(int *k, int *bid)
+{
+	(void)k;
+	printCrackIndex(*bid);
+	return MAL_SUCCEED;
+}
+
+str
+CRKnewIndex(int *k, int *bid)
+{
+	(void)k;
+	newIndex_int(*bid);
+	return MAL_SUCCEED;
+}
+
+@= insertIndexElement
+	*(lng*) @2 = @4;	
+	*(@1 *) @3 = @5;	
+	(b)->batBuns->free += xx;
+        (b)->batCount ++; 
+@
+@= InsertIndexElements
+void 
+addOne_@1(int bid, @1 *value, lng index)
+{
+	int i;
+	for (i = 0; i < maxCrackMap; i++)
+		if (Index[i].bid == bid)
+			break;
+	BAT *b;
+        if ((b = BATdescriptor(Index[i].cid)) == NULL) {
+                fprintf(stderr,"crackers.AddIndex: Cannot access crack index");
+		return;
+        }
+
+	int xx = BUNsize(b);
+	if (BATcount(b) == 0){
+		@:insertIndexElement(@1,BUNhloc(b, BUNfirst(b)), BUNtloc(b, BUNfirst(b)), index, *value)@
+		return; 		
+	}
+	/*todo: check BAT size*/
+	BUN p = SORTfndfirst_@1(b,value);  /*todo: avoid calls to find since these positions can be known while searching the indexing for cracking*/
+	BUN ph = BUNhloc(b, p);
+	BUN pt = BUNtloc(b, p);
+	if (p == BUNlast(b)){ /*Insert at the end if everything is smaller than the new value*/
+		@:insertIndexElement(@1, ph, pt, index, *value)@
+		return;
+	}
+
+	/*Else we have to sift some buns to put the new one to the right position*/
+	BUN wh = BUNhloc(b, BUNlast(b));
+	BUN wt = BUNtloc(b, BUNlast(b));
+	BUN rh = wh - xx, rt = wt - xx;
+	if (*(@1*)pt == *value && index > 0){ /*negative index values inidicate non inclusive bounds so they should be always first*/
+		ph += xx;
+		pt += xx;
+	} 
+	for (;rt>=pt;rh-=xx,wh-=xx,rt-=xx,wt-=xx){
+		*(lng*)wh = *(lng*)rh;
+		*(@1 *)wt = *(@1 *)rt;
+	}
+	@:insertIndexElement(@1, ph, pt, index, *value)@
+}	
+
+void 
+addTwo_@1(int bid, @1 *valueA, lng indexA, @1 *valueB, lng indexB)
+{
+	int i;
+	for (i = 0; i < maxCrackMap; i++)
+		if (Index[i].bid == bid)
+			break;
+	BAT *b;
+        if ((b = BATdescriptor(Index[i].cid)) == NULL) {
+                fprintf(stderr,"crackers.AddIndex: Cannot access crack index");
+		return;
+        }
+
+	/*todo: check BAT size*/
+	int xx = BUNsize(b);
+	if (BATcount(b) == 0){
+		BUN ph = BUNhloc(b, BUNfirst(b));
+		BUN pt = BUNtloc(b, BUNfirst(b));
+		@:insertIndexElement(@1, ph, pt, indexA, *valueA)@
+		ph += xx;
+		pt += xx;
+		@:insertIndexElement(@1, ph, pt, indexB, *valueB)@
+		return; 		
+	}
+
+	BUN p = SORTfndfirst_@1(b,valueB);
+	BUN ph = BUNhloc(b, p);
+	BUN pt = BUNtloc(b, p);
+	BUN wh = BUNhloc(b, BUNlast(b)+xx);
+	BUN wt = BUNtloc(b, BUNlast(b)+xx);
+	BUN rh = wh - 2*xx, rt = wt - 2*xx;
+        BUN p2 = SORTfndfirst_@1(b,valueA);
+        BUN p2h = BUNhloc(b, p2);
+        BUN p2t = BUNtloc(b, p2);
+	if (p == BUNlast(b)){
+		ph += xx; /* sift one more position to make room for pair A too*/
+		pt += xx;
+		@:insertIndexElement(@1, ph, pt, indexB, *valueB)@
+	}
+	else{   /*Else we have to sift some buns to put the new one to the right position*/
+		if (*(@1*)pt == *valueB && indexB > 0){
+			ph += xx;
+			pt += xx;
+		} 
+		for (;rt>=pt;rh-=xx,wh-=xx,rt-=xx,wt-=xx){
+			*(lng*)wh = *(lng*)rh;
+			*(@1 *)wt = *(@1 *)rt;
+		}
+		ph += xx; /* sift one more position to make room for pair A too*/
+		pt += xx;
+		@:insertIndexElement(@1, ph, pt, indexB, *valueB)@
+	}
+        wh -= xx;
+        wt -= xx;
+        if (*(@1*)p2t == *valueA && indexA > 0){
+                p2h += xx;
+                p2t += xx;
+        }
+        for (;rt>=p2t;rh-=xx,wh-=xx,rt-=xx,wt-=xx){
+                *(lng*)wh = *(lng*)rh;
+                *(@1 *)wt = *(@1 *)rt;
+        }
+        @:insertIndexElement(@1, p2h, p2t, indexA, *valueA)@
+}	
+@
+
+@c
+@:InsertIndexElements(int)@
+
+str
+CRKaddOne(int *k, int *bid,int *value,lng *index)
+{
+	(void)k;
+	addOne_int(*bid,value,*index);
+	return MAL_SUCCEED;
+}
+
+str
+CRKaddTwo(int *k, int *bid,int *valueA,lng *indexA,int *valueB,lng *indexB)
+{
+	(void)k;
+	addTwo_int(*bid,valueA,*indexA,valueB,*indexB);
+	return MAL_SUCCEED;
+}
 
 int     
 existsCrackMap(int bid)
@@ -1714,7 +1959,6 @@ the ranges of the outer partitions as well.
         BBPunfix(b->batCacheid);
         return MAL_SUCCEED;
 }                               
-
 
 str
 CRKselect(int *vid, int *bid, int *low, int *hgh)
@@ -3515,7 +3759,6 @@ Stratos's masterpiece
 str
 CRKcrackOrderedTHREE_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
 {
-
 	BUN hh, ht, tmpt, tmph;
 	oid *scr_h;
 	@1  *scr_t;
@@ -3533,11 +3776,13 @@ CRKcrackOrderedTHREE_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_
 
 	if (lowShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
 	if (hghShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
+
 	int scrH = scr_size-1;	
 	int hil = 0, mids = scrH;
 	BUN ch = tmph, ct = tmpt; 
 	scr_h = (oid*) GDKmalloc(scr_size * sizeof(oid));
 	scr_t = (@1 *) GDKmalloc(scr_size * sizeof(@1 ));
+
 	int probe = 25;
 	BUN t = tmpt, s = tmpt+(2*probe*xx);
 	int j=0;
@@ -3561,7 +3806,7 @@ CRKcrackOrderedTHREE_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_
 	return MAL_SUCCEED;
 }
 str
-CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_last)
+CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, lng idx_last, lng *posl, lng *posh)
 {
 	BUN lh, lt, hh, ht, tmpt, tmph;
 	oid *scr_h,*mscr_h;
@@ -3586,24 +3831,29 @@ CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_firs
 	scr_t = (@1 *) GDKmalloc(scr_size * sizeof(@1 ));
 	mscr_h = (oid*) GDKmalloc(scr_size * sizeof(oid));
 	mscr_t = (@1 *) GDKmalloc(scr_size * sizeof(@1 ));
+
 	int probe = 100;
 	BUN t = lt, s = lt+(2*probe*xx);
 	int j=0;
 	for (;t<s;t+=xx)
 		j += *(@1*)t @4 low;
-
+	lng pos1, pos2;
 	if (j > probe){
-	tmph = lh;
-	tmpt = lt;	
+		tmph = lh;
+		tmpt = lt;	
 		@:OThreeLateCopying(@1,+,<=,@4 low,@7 hgh,-,>=,@5,@6)@
+		*posl = pos1;
+		*posh = pos2;
 	}
 	else{  
-	tmph = hh;
-	tmpt = ht;	
+		tmph = hh;
+		tmpt = ht;	
 		BUN fh = lh, ft = lt;
 		lh = hh; lt = ht;
 		hh = fh; ht = ft;
 		@:OThreeLateCopying(@1,-,>=,@7 hgh,@4 low,+,<=,@5,@6)@
+		*posl = pos2;
+		*posh = pos1;
 	}
 	
 	GDKfree(scr_h);
@@ -3642,6 +3892,10 @@ CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_firs
 			tmph @2= xx;
 		}
 	}
+	
+	/* the position of lt (-xx if moving from left to right) is the first one we need for the index*/
+	pos1 = BUNindex(b,lt);
+
 	tmph = hh;
 	tmpt = ht;
 	tmp2 = lt;
@@ -3677,6 +3931,10 @@ CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_firs
 		tmpt @6= xx;
 		tmph @6= xx;
 	}
+
+	/* the position of tmpt (-xx if moving from left to right) is the second one we need for the index*/
+	pos2 = BUNindex(b,tmpt);
+
 	i = 0;
 	for (; i < mmids; i++){
 		 if (*(@1*)tmpt @5 ){
@@ -3696,6 +3954,7 @@ CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_firs
 		tmpt @6= xx;
 	}
 	tmp2 @2= xx*(scrH-mids);
+	/*todo check as in the zero case*/
 	BUN mh= tmph, mt = tmpt;
 	for(; tmpt @7 tmp2; tmph @6=xx, tmpt @6=xx){
 		if (*(@1*)tmpt @5 ){
@@ -3755,7 +4014,22 @@ CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_firs
 		}
 		tmph @5= 2*xx;
 		tmpt @5= 2*xx;
-		ct   @2= xx*hil;
+	
+		/* Take the position where the last BUN of the left piece is. */
+		*pos = BUNindex(b,ct @7);
+
+		ct  @2= xx*hil;
+		/*Extreme case that all lows where in the hgh partition (or opposite depending how we move) */
+		if (ct @6 tmpt @2 xx){
+			for (int i=hil-1; i >=0 ; i--){
+				*(oid*)hh = scr_h[i];
+				*(@1 *)ht = scr_t[i];
+				ht @5= xx;
+				hh @5= xx;
+			}
+			return MAL_SUCCEED;
+		}
+
 		for(; tmpt @6 ct; tmph @5=xx, tmpt @5=xx){
 			if (*(@1*)tmpt @4 mid){
 				*(oid*)hh = *(oid*)tmph;
@@ -3779,7 +4053,7 @@ CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_firs
 @
 @= crackInTwoOrderedPiecesII
 str
-CRKcrackOrderedZERO_is_@2_@1(BAT *b, @1 mid, int idx_first, int idx_last)
+CRKcrackOrderedZERO_is_@2_@1(BAT *b, @1 mid, lng idx_first, lng idx_last, lng *pos)
 {
 	BUN hh, ht, tmpt, tmph;
 	oid *scr_h;
@@ -3795,9 +4069,29 @@ CRKcrackOrderedZERO_is_@2_@1(BAT *b, @1 mid, int idx_first, int idx_last)
 	@:moveOrdered(*(@1*)tmpt @3 mid,tmph,tmpt,+,lowShrinked++;)@
 	@:moveOrdered(*(@1*)ht @4 mid,hh,ht,-,hghShrinked++;)@
 
-	if (lowShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
-	if (hghShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
+	if (lowShrinked == idx_last - idx_first +1) {
+			*pos = idx_last;
+			return MAL_SUCCEED;
+	}
+	if (hghShrinked == idx_last - idx_first +1){
+			*pos = idx_first;
+			return MAL_SUCCEED;
+	}
 	
+	if (ht == tmpt + xx){
+		oid dh = *(oid*)tmph;
+		@1  dt = *(@1 *)tmpt;
+		*(oid*)tmph = *(oid*)hh;
+		*(@1 *)tmpt = *(@1 *)ht;
+
+		*pos = BUNindex(b,tmpt);
+
+		*(oid*)hh = dh;
+		*(@1 *)ht = dt;
+
+		return MAL_SUCCEED;
+	}	
+
 	int hil = 0;
 	BUN ch, ct; 
 	int scr_size = (idx_last - idx_first +1 -lowShrinked -hghShrinked)/2;
@@ -3811,7 +4105,7 @@ CRKcrackOrderedZERO_is_@2_@1(BAT *b, @1 mid, int idx_first, int idx_last)
 	
 	if (j > probe){
 		ch = tmph; ct = tmpt; 
-		@:OrderedZero(@1,+,<=,@4,-,>=)@
+		@:OrderedZero(@1,+,<=,@4,-,>=, -xx)@
 	}
 	else{
 		ch =hh; ct = ht; 
@@ -3830,6 +4124,8 @@ CRKcrackOrderedZERO_is_@2_@1(BAT *b, @1 mid, int idx_first, int idx_last)
 @:crackInTwoOrderedPiecesII(@1,RE,<,>=)@
 @:crackInThreeOrderedPiecesII(@1,LO,RE,<=,>,<=,>)@
 @:crackInThreeOrderedPiecesII(@1,LE,RE,<,>=,<=,>)@
+@:crackInThreeOrderedPiecesII(@1,LO,RO,<=,>,<,>=)@
+@:crackInThreeOrderedPiecesII(@1,LE,RO,<,>=,<,>=)@
 
 str             
 CRKcrackOrderedZero_is_@1 (int *res, int *bid, @1 *mid)
@@ -3840,7 +4136,8 @@ CRKcrackOrderedZero_is_@1 (int *res, int *bid, @1 *mid)
         if ((b = BATdescriptor(*bid)) == NULL) {
                 return throwMessage("crackers.crack_SI", "Cannot access descriptor");
         }
-        msg= CRKcrackOrderedZERO_is_LE_@1(b,*mid, 0, BATcount(b)-1);
+	lng pos;
+        msg= CRKcrackOrderedZERO_is_LE_@1(b,*mid, 0, BATcount(b)-1,&pos);
 
         BBPkeepref(b->batCacheid);
         *res = *bid;    
@@ -3887,7 +4184,8 @@ CRKcrackOrderedThree_is_@1 (int *res, int *bid, @1 *low, @1 *hgh)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("crackers.crack_SI", "Cannot access descriptor");
 	}
-        msg= CRKcrackOrderedTHREELateCopying_is_LO_RE_@1(b,*low,*hgh, 0, BATcount(b)-1);
+	lng posl,posh;
+        msg= CRKcrackOrderedTHREELateCopying_is_LO_RE_@1(b,*low,*hgh, 0, BATcount(b)-1,&posl, &posh);
 	BBPkeepref(b->batCacheid);
 	*res = *bid;
 	return msg;
@@ -4047,3 +4345,385 @@ CRKcrack@1Three_validate_@2 (bit *res, int *bid, @2 *_low, @2 *_hgh)
 @:SMsm_operations(int,sm,TAIL)@
 @:SI_operations(int)@
 @}
+@= crackOperations
+
+/* This function takes a range and returns a view with the result. To do that, we first search the index to determine which parts
+   of the result we already know and which parts we have to crack. Then we crack, if necessary, the appropriate pieces, 
+   update the index and return the result */
+str
+CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, bit *tail)
+{
+        BAT *b;
+	BAT *view, *uview;
+        int  m;
+        lng vl=-1, vh=-1; /* vl and vh are the low and high index values to create the view with the result */
+        lng cl=-1, ch1=-1, cl2=-1, ch=-1; /* index values in the case we have to crack 
+					 |cl...........ch1|.....................|cl2.........ch|
+					if we have to crack only one piece, i.e., if our range falls in one piece 
+					only then we crack from cl to ch otherwise we use the other indices as it is shown */
+	
+        if (low >  hgh)
+                return throwMessage("crackers.crack", "illegal range");
+        if ((b = BATdescriptor(*bid)) == NULL) 
+                return throwMessage("crackers.crackRange", "Cannot access descriptor");
+        
+        m = existsIndex(*bid);
+	/* if this is the first time we select something from this bat, we have to create the crack indx for it and 
+	   if necessary materialize the head of the bat */
+        if (m == -1){
+		if (b->htype ==TYPE_void) {
+			 b = BATmaterializeh(b,BATcount(b));
+			 b->hsorted = FALSE;
+			 b->tsorted = FALSE;
+			 b->hdense = FALSE; 
+		 	 b->hdense = FALSE;	
+		}
+                m = newIndex_@1(*bid);
+		BAT *c;
+        	c = BATdescriptor(Index[m].cid); 
+
+		/*Since the index is empty we know we have to crack anyway so crack in three pieces cl-ch */
+		lng i1=-1,i2=-1;
+		lng posl = BUNindex(b,BUNfirst(b));
+		lng posh = BUNindex(b,BUNlast(b)-BUNsize(b));
+		/*call the crack function with the appropriate bounds*/
+		if (*inclusiveLow == TRUE && *inclusiveHgh == TRUE){
+			CRKcrackOrderedTHREELateCopying_is_LE_RE_@1(b,*low,*hgh, posl, posh, &vl, &vh);
+			i1 = -(vl-1); i2 = vh;
+		}
+		if (*inclusiveLow == TRUE && *inclusiveHgh == FALSE){
+			CRKcrackOrderedTHREELateCopying_is_LE_RO_@1(b,*low,*hgh, posl, posh, &vl, &vh);
+			i1 = -(vl-1); i2 = -vh;
+		}
+		if (*inclusiveLow == FALSE && *inclusiveHgh == TRUE){
+			CRKcrackOrderedTHREELateCopying_is_LO_RE_@1(b,*low,*hgh, posl, posh, &vl, &vh);
+			i1 = vl-1; i2 = vh;
+		}
+		if (*inclusiveLow == FALSE && *inclusiveHgh == FALSE){
+			CRKcrackOrderedTHREELateCopying_is_LO_RO_@1(b,*low,*hgh, posl, posh, &vl, &vh);
+			i1 = vl-1; i2 = -vh;
+		}
+		
+		/* Update the index*/
+		addTwo_int(*bid,low,i1,hgh,i2);
+ 
+		goto createView;
+        }
+	
+	/*If an index exists for this bat (so it has been cracked before) we search the index to find where our range falls
+          after this search if we have a match on the low range vl will hold the index value, otherwise it will be -1. The same for hgh and vh
+	  if there is no match for low then cl will hold the index that frim there on we have to crack. The same from hgh and ch
+	  Note that in the case of the low range  we always have to increment by one since we want the values that are after this index 
+	  (because of the way the crack index is created).
+	  Also after the search l and h should point to the low and hgh indices (in the crack index) found either as a match or to crack. 
+          This is used later on to determine which pieces we have to crack*/
+	BAT *c;
+        if ((c = BATdescriptor(Index[m].cid)) == NULL) 
+                return throwMessage("crackers.crackRange", "Cannot access crack index");
+	
+	/* find out where in the index the low falls */
+	BUN l = SORTfndfirst_@1(c,low);
+	BUN lt = BUNtloc(c, l);
+	BUN lh = BUNhloc(c, l);
+	int xx = BUNsize(c);
+
+	/* if all indices contain values smaller than low, crack the area between the last index and the last BUN of the cracked bat */
+	if (l == BUNlast(c)){
+		l -= xx; lt -= xx; lh -= xx; 
+		if  (*(lng*)lh > 0)
+                	cl = *(lng*)lh;
+                else
+                        cl = *(lng*)lh - 2*(*(lng*)lh);
+		cl++;
+	}
+	else{
+		if (*(@1*)lt == *low){
+			/* The first two cases are when the low bound already exists in the index */
+			if  (*(lng*)lh < 0 && *inclusiveLow == TRUE)
+				vl = (*(lng*)lh - 2*(*(lng*)lh))+1;
+			else
+			if  (*(lng*)lh > 0 && *inclusiveLow == FALSE) 		
+				vl = *(lng*)lh+1;
+
+			/* We want values that the previous index has; special case when there is no previous index */
+			else
+			if  (*(lng*)lh > 0 && *inclusiveLow == TRUE){
+				if (l == BUNfirst(c)){
+					l  -= xx; 
+					cl = BUNindex(b, BUNfirst(b));
+				}
+				else{
+					l  -= xx; lh -= xx; lt -= xx;
+					if  (*(lng*)lh > 0)
+						cl = *(lng*)lh;
+					else
+						cl = *(lng*)lh - 2*(*(lng*)lh);
+					cl++;
+				}
+			}
+			/*  This index contains values that we do not want (the equals to low) so we check the next one
+			    If it is equal to low then this is an exact match, otherwise we have to crack. 
+			    Also if this was the last index we have to crack anyway. */
+			else
+			if  (*(lng*)lh < 0 && *inclusiveLow == FALSE){
+				lt += xx;
+				l  +=xx;
+				if (*(@1*)lt == *low && l != BUNlast(c)){
+					lh += xx;
+					vl = *(lng*)lh+1;
+				}
+				else{
+					lt -= xx;
+					l  -= xx;
+					cl = (*(lng*)lh - 2*(*(lng*)lh))+1;
+				}
+			}
+		}else{ 
+			/* No exact match was found so we have to crack. Take the previous index because this one is higher than low.
+			   If there is no previous index, crack the bat from the beginning. */
+			if (l == BUNfirst(c)){
+				l  -= xx;
+				cl = BUNindex(b, BUNfirst(b));
+			}
+			else{
+				l  -= xx; lh -= xx; lt -= xx;
+				if  (*(lng*)lh > 0)
+					cl = *(lng*)lh;
+				else
+					cl = *(lng*)lh - 2*(*(lng*)lh);
+				cl++;
+			}
+		}	
+	
+	}
+	
+
+	/* find out where in the index the high falls */
+	BUN h = SORTfndfirst_@1(c,hgh);
+	BUN ht = BUNtloc(c, h);
+	BUN hh = BUNhloc(c, h);
+	if (h == BUNlast(c))
+		ch = BUNindex(b, BUNlast(b) - BUNsize(b));		
+	else{
+		if (*(@1*)ht == *hgh){
+			/* The first two cases are when the low bound already exists in the index */
+			if  (*(lng*)hh > 0 && *inclusiveHgh == TRUE)
+				vh = *(lng*)hh;
+			else
+			if  (*(lng*)hh < 0 && *inclusiveHgh == FALSE) 		
+				vh = *(lng*)hh - 2*(*(lng*)hh);
+
+			/* We want values that the next index has; special case when there is no next index */
+			else
+			if  (*(lng*)hh < 0 && *inclusiveHgh == TRUE){
+				ht += xx; h  += xx; hh += xx;
+				if (h == BUNlast(c)){
+					ch = BUNindex(b, BUNlast(b)-BUNsize(b)); /*todo this might be the same with current index*/
+				}else
+				if (*(@1*)ht == *hgh)
+					vh = *(lng*)hh;
+				else{
+					ch= *(lng*)hh;
+					if (ch < 0) ch = *(lng*)hh - 2*(*(lng*)hh);
+				}
+			}
+			/*  This index contains values that we do not want (the equals to hgh) so we have to crack up to this one 
+			    We know that there is no previous index that excludes only the values we do not want (the hghs)
+			    Also we cannot check for hgh-1 */
+			else
+			if  (*(lng*)hh > 0 && *inclusiveHgh == FALSE)
+				ch = *(lng*)hh;
+			
+		}else{ 
+			/* No exact match was found so we have to crack. */
+			if  (*(lng*)hh > 0)
+				ch = *(lng*)hh;
+			else
+				ch = *(lng*)hh - 2*(*(lng*)hh);
+		}
+	}
+/*	
+printf("lh: %lld, lt:%d \n",*(lng*)lh,*(int*)lt);
+printf("hh: %lld, ht:%d \n",*(lng*)hh,*(int*)ht);
+printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
+*/
+	/* If one or both of the result view bounds were not found using the index then we have to crack */
+	if (vl == -1 || vh == -1){
+		if (vl == -1 && vh == -1){
+			/* If ch is right after cl in the index then we split this piece in three pieces*/
+			if (h == l + xx){
+				/*CRACK in three pieces cl-ch */
+				lng i1=-1,i2=-1;
+				if (*inclusiveLow == TRUE && *inclusiveHgh == TRUE){
+					CRKcrackOrderedTHREELateCopying_is_LE_RE_@1(b,*low,*hgh, cl, ch,&vl, &vh);
+					i1 = -(vl-1); i2 = vh;
+				}
+				if (*inclusiveLow == TRUE && *inclusiveHgh == FALSE){
+					CRKcrackOrderedTHREELateCopying_is_LE_RO_@1(b,*low,*hgh, cl, ch,&vl, &vh);
+					i1 = -(vl-1); i2 = -vh;
+				}
+				if (*inclusiveLow == FALSE && *inclusiveHgh == TRUE){
+					CRKcrackOrderedTHREELateCopying_is_LO_RE_@1(b,*low,*hgh, cl, ch,&vl, &vh);
+					i1 = vl-1; i2 = vh;
+				}
+				if (*inclusiveLow == FALSE && *inclusiveHgh == FALSE){
+					CRKcrackOrderedTHREELateCopying_is_LO_RO_@1(b,*low,*hgh, cl, ch,&vl, &vh);
+					i1 = vl-1; i2 = -vh;
+				}
+			
+				/*todo Check for empty result add add gap in the index. 
+				  crack three function should be changed to provide this information*/
+
+				addTwo_int(*bid,low,i1,hgh,i2);
+			}	
+			/* Else we have to do two cracks separatelly */
+			else{
+				/* For the cl bound and the next one in the index*/
+				BUN h1 = l + xx;
+				lng i1,i2;
+				if (h1 == BUNlast(c)){
+					h1 = BUNlast(b) - BUNsize(b);
+					ch1 = BUNindex (b, h1);	
+				}
+				else{ 
+					ch1 = *(lng*)BUNhloc(c, h1);
+					if (ch1 < 0) ch1 = ch1 - 2*ch1;
+				}
+				/*CRACK in two pieces cl-ch1 using >incLow bound*/
+				if (*inclusiveLow == TRUE) {
+					CRKcrackOrderedZERO_is_RE_@1(b,*low, cl, ch1,&vl);
+					i1 = - vl;
+				}
+				else {
+					CRKcrackOrderedZERO_is_LE_@1(b,*low, cl, ch1,&vl);
+					i1 = vl;
+				}
+
+				/* If we find a gap we should add this information in the index
+				   Then we should also adapt the way we look into the index to take advantage of that*/
+				if (vl == cl){
+					/*then the left piece is empty*/
+					vl--; /*because we increase it later but in this case we want exactly this bun*/
+				}
+				if (vl == ch1){
+					/*then the right piece is empty*/
+				}
+
+				vl++; /* We need to take next position because the crack function always returns the last bun of the left piece.
+					Instead we want the first bun of the right piece*/
+
+				/* For the ch bound and the previous one in the index*/
+				if (h == BUNfirst(c))
+					cl2 = BUNindex(b,  BUNfirst(b));	
+				else{
+					cl2 = *(lng*)BUNhloc(c, h-xx);
+                                        if (cl2 < 0) cl2 = cl2 - 2*cl2;
+					cl2++;
+				}
+				/*CRACK in two pieces cl2-ch using <incHgh bound*/
+				if (*inclusiveHgh == TRUE){ 
+					CRKcrackOrderedZERO_is_LE_@1(b,*hgh, cl2, ch,&vh);
+					i2 = vh;
+				}
+				else{ 
+					CRKcrackOrderedZERO_is_RE_@1(b,*hgh, cl2, ch,&vh);
+					i2 = -vh;
+				}
+
+				/*check for gaps*/
+				if (vh == cl2){
+					/*then the left piece is empty*/
+					vh--; /*we want the buns from the previous index*/
+				}
+				if (vh == ch){
+					/*then the right piece is empty*/
+				}
+				
+				/* we should check what we are going to add. There are four cases, 
+				(1) no gaps which is what we have now, (2) one gap ...*/
+			
+				addTwo_int(*bid,low,i1,hgh,i2);
+			}
+		}else
+		if (vl == -1){
+			BUN h1 = l + xx;
+                        if (h1 == BUNlast(c)){
+	                        h1  = BUNlast(b) - BUNsize(b);
+                                ch1 = BUNindex (b, h1);
+                        }
+                        else{
+                        	ch1 = *(lng*)BUNhloc(c, h1);
+                                if (ch1 < 0) ch1 = ch1 - 2*ch1;
+                        }
+			/*CRACK in two pieces cl-ch1 using >incLow bound*/
+			if (*inclusiveLow == TRUE){ 
+				CRKcrackOrderedZERO_is_RE_@1(b,*low, cl, ch1,&vl);
+				addOne_int(*bid,low,-vl);
+			}
+			else{ 
+				CRKcrackOrderedZERO_is_LE_@1(b,*low, cl, ch1,&vl);
+				addOne_int(*bid,low,vl);
+			}
+
+			/*check for gaps, !insertions to the index should be done after this check!*/
+			if (vl == cl){
+				/*then the left piece is empty*/
+				vl--; 
+			}
+			if (vl == ch1){
+				/*then the right piece is empty*/
+			}
+
+			vl++; 
+		}else
+		if (vh == -1){
+			if (h == BUNfirst(c))
+				cl2 = BUNindex(b, BUNfirst(b));	
+			else{
+				cl2 = *(lng*) BUNhloc(c, h-xx);
+                                if (cl2 < 0) cl2 = cl2 - 2*cl2;
+				cl2++;
+			}
+			/*CRACK in two pieces cl2-ch using <incHgh bound*/
+			if (*inclusiveHgh == TRUE){ 
+				CRKcrackOrderedZERO_is_LE_@1(b,*hgh, cl2, ch,&vh);
+				addOne_int(*bid,hgh,vh);
+			}
+			else{ 
+				CRKcrackOrderedZERO_is_RE_@1(b,*hgh, cl2, ch,&vh);
+				addOne_int(*bid,hgh,-vh);
+			}
+
+			/*check for gaps, !insertions to the index should be done after this check!*/
+			if (vh == cl2){
+				/*then the left piece is empty*/
+				vh--;
+			}
+			if (vh == ch){
+				/*then the right piece is empty*/
+			}
+
+		} 	
+	}
+/*
+printf("Index from ptr:"SZFMT", tail:"SZFMT", head:"SZFMT"\n",BUNindex(c,l), BUNindex(c,lt), BUNindex(c,lh));
+printf("Index from ptr:"SZFMT", tail:"SZFMT", head:"SZFMT"\n",BUNindex(c,h), BUNindex(c,ht), BUNindex(c,hh));
+printf("vl: %lld, vh:%lld, cl:%lld, ch1:%lld, cl2:%lld, ch:%lld \n",vl,vh,cl,ch1,cl2,ch);
+*/	
+	
+createView:
+	printf("vl: %lld, vh:%lld \n",vl,vh);
+	view = BATslice(b, vl, vh+1);
+        if (!tail) {
+                uview = BATconst(view,TYPE_void,ATOMnilptr(TYPE_void));
+                *vid = uview->batCacheid;		
+        }
+        else *vid = view->batCacheid;
+	BBPfix(*vid);
+        BBPunfix(b->batCacheid);
+        return MAL_SUCCEED;
+}       
+@
+@c
+@:crackOperations(int)@
+                        
