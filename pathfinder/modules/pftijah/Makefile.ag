@@ -23,7 +23,8 @@
 INCLUDES = ../../runtime $(MONETDB_INCS) $(LIBXML2_CFLAGS) ../../compiler/include
 PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 
-LFLAGS = -Ptok -olex.yy.c
+LFLAGS = -P$(<:.l=) -olex.yy.c
+YFLAGS = -d -p nexi
 
 lib__pftijah = {
 	DIR = libdir/MonetDB
@@ -41,7 +42,14 @@ lib__pftijah = {
 		stem_UTF_8_porter.h \
 		stem_UTF_8_porter.c \
 		pftijah_tokenize.l \
-		serialize_pftijah.mx
+		serialize_pftijah.mx \
+		nexi.c \
+		nexi.y \
+		nexi.l \
+		nexi_preprocessor.c \
+		nexi_rewriter.c \
+		nexi_generate_mil.c \
+		nexi_generate_plan.c
 
 	LIBS = \
 		$(PF_LIBS) $(MONETDB_LIBS) \

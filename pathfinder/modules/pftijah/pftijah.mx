@@ -27,11 +27,15 @@
 @m
 .MODULE pftijah;
 
+.COMMAND run_tijah_command(str s) : bit = CMDtijah_command;
+ "INCOMPLETE"
+
 .COMMAND tj_add2collection(BAT[oid,bat],BAT[oid,bat],str,str) : void = CMDtj_add2collection;
  "INCOMPLETE"
 
 .COMMAND offsetindex( BAT[void,oid] offset_tid, int res_size)
 		: BAT[void,oid] = CMDoffsetindex;
+
 "PARAMETERS:
 BAT[void,oid] - the offset index 
 ressize       - the result size, equals number of different tids + 1
@@ -1113,7 +1117,30 @@ PROC align_frag() : void :=
 
 /* empty */
 @c
+#include <monet.h>
 #include <gdk.h>
+
+int executeMIL(char* str) {
+	Cntxt stk = 0; /* OK??? */
+	ValRecord res;
+
+	if ( 1 ) stream_printf(GDKout,"# executeMIL(\"%s\")\n",str);
+	int ret = interpret_str(stk,str,&res);
+	if ( ret==-TOK_RETURN ) {
+	    VALclear(&res);
+	    ret = 1;
+	} else if (ret >= 0) {
+	    ret = 1;
+	} else {
+	    ret = 0;
+	}
+	return ret;
+}
+
+int CMDtijah_command(bit* res, str command) {
+	*res = executeMIL(command); /* OK */
+	return GDK_SUCCEED;
+}
 
 int CMDoffsetindex ( BAT** result, BAT* tid, int* res_size )
 {
@@ -1258,5 +1285,3 @@ void pftijah_epilogue() {
 @
 
 /* vim:set shiftwidth=4 expandtab: */
-
-

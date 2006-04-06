@@ -7,7 +7,6 @@
 #include <serialize.h>
 #include "serialize_pftijah.h"
 
-// extern char *toktext;
 static char *c, *e;
 
 %}
@@ -48,8 +47,8 @@ S                                   {WhiteSpaceChar}+
 {Letter}{1,2}[-]{Word}              { /* case e-mail, e-government, on-line 
                                          problem: make-up */ 
                                       // strip hyphen
-                                      e = toktext;
-                                      for (c = toktext; *c != '\0'; c++) 
+                                      e = pftijah_tokenizetext;
+                                      for (c = pftijah_tokenizetext; *c != '\0'; c++) 
                                         if (*c != '-') 
                                           *(e++) = *c;
                                       *e = '\0';
@@ -61,8 +60,8 @@ S                                   {WhiteSpaceChar}+
 				    }
 
 {Capital}[\.]({Capital}[\.])+       { /* case ACRONYM */ 
-                                      e = toktext;
-                                      for (c = toktext; *c != '\0'; c++) 
+                                      e = pftijah_tokenizetext;
+                                      for (c = pftijah_tokenizetext; *c != '\0'; c++) 
                                         if (*c != '.') 
                                           *(e++) = *c;
                                       *e = '\0';
@@ -75,8 +74,8 @@ S                                   {WhiteSpaceChar}+
 
 int useFlexScanner(char* buf, int len, struct tijahContextStruct* tjCtx) {
   YY_BUFFER_STATE myBuf = yy_scan_bytes(buf, len);
-  while (toklex())
-      if ( !handleTijahTerm(tjCtx, toktext) )
+  while (pftijah_tokenizelex())
+      if ( !handleTijahTerm(tjCtx, pftijah_tokenizetext) )
           return 0;
   yy_delete_buffer(myBuf);
   return 1;
@@ -86,8 +85,8 @@ char* parseOneTerm(char* buf, int len) {
   char* res;
 
   YY_BUFFER_STATE myBuf = yy_scan_bytes(buf, len);
-  if ( toklex() )
-      res = toktext;
+  if ( pftijah_tokenizelex() )
+      res = pftijah_tokenizetext;
   else
       res = NULL;
   yy_delete_buffer(myBuf);

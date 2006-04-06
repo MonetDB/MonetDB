@@ -8011,7 +8011,68 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         }
         return NORMAL;
     }
+#ifdef HAVE_PFTIJAH
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"tijah-command")))
+    {
+        char *item_ext = kind_str(STR);
 
+        int rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        if (rc == NORMAL)
+            milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
+        add_empty_strings (f, STR, cur_level);
+        counter++;
+        saveResult_ (f, counter, STR);
+    
+        milprintf(f,
+            "{ # fn:tijah-command\n"
+            "var strings := item%s%03u;\n"
+            "item := [run_tijah_command](strings).[oid]();\n"
+            "iter := loop%03u;\n"
+            "ipik := iter;\n"
+            "pos := 1@0;\n"
+            "kind := BOOL;\n"
+            "} # end of fn:starts-with\n",
+            item_ext, counter,
+            cur_level);
+        deleteResult_ (f, counter, STR);
+        return NORMAL;
+    }
+    else if (!PFqname_eq(fnQname,
+                         PFqname (PFns_fn,"tijah-query")))
+    {
+        /* get offset */
+        translate2MIL (f, VALUES, cur_level, counter, RL(args));
+        saveResult_ (f, ++counter, STR);
+
+        /* get main table */
+        rc = translate2MIL (f, code, cur_level, ++counter, L(args));
+               
+        milprintf(f, 
+                "{ # translate fn:subsequence\n"
+                "if (loop%03u.count() = 1) {\n"
+                "    var lo := 2.0LL;\n"
+		"    # the query string argument is tqarg "
+                "    var tqarg := item_str_%03d.fetch(0);\n"
+                "    if (lo < 1.0LL) lo := 0.0;\n", cur_level, counter-1);
+        milprintf(f, "    var hi := INT_MAX;\n");
+
+        milprintf(f, "\n"
+                "    # select a slice\n"
+                "    ipik := ipik.slice(int(lo),hi);\n"
+                "    iter := iter.slice(int(lo),hi);\n"
+                "    kind := kind.slice(int(lo),hi);\n"
+                "    item%s := item%s.slice(int(lo), hi);\n"
+                "    pos := ipik.mark(1@0);\n"
+                "} else {\n"
+                "    error(\"tijah_query(count problem)\");\n"
+                "}\n", kind_str(code), kind_str(code));
+
+        deleteResult_ (f, --counter, STR);
+
+        milprintf(f, "} # end of translate fn:tijah_query\n");
+        return rc;
+    }
+#endif
     PFoops(OOPS_FATAL,"function %s is not supported.", PFqname_str (fnQname));
     milprintf(f,
                 "# empty intermediate result "
@@ -10535,6 +10596,9 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
 const char* PFinitMIL(void) {
     return 
         "module(\"pathfinder\");\n"
+#ifdef HAVE_PFTIJAH
+        "module(\"pftijah\");\n"
+#endif
         "\n"
         "# value containers for literal values\n"
         "var int_values := bat(lng,void).key(true).reverse().seqbase(0@0);\n"

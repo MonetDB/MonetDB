@@ -339,6 +339,7 @@ static int fatal_err(XqueryCtx* ctx, const char *msg, ...) {
  * initializes all other data structures.
  */
 
+#define CHECKWSMI(CTX,F,B) if (((F)>=CTX->wsFrags)||((B)>=WS_BATS)) { fatal_err(CTX,"WSbat [%d,%d] out of range.",F,B); return 0; }
 #define WSMI(F,B) ((F)*WS_BATS+B)
 
 static int initWsMatrix(XqueryCtx* ctx) {
@@ -361,6 +362,7 @@ static int initWsMatrix(XqueryCtx* ctx) {
     }
     for(int i=0; i<ctx->wsFrags; i++) {
         for(int j=0; j<WS_BATS; j++) {
+	    CHECKWSMI(ctx,i,j);
 	    wsBatDescr* bd = &ctx->wsMatrix[WSMI(i,j)];
 
 	    bd->bat = NULL;
@@ -376,6 +378,7 @@ static int initWsMatrix(XqueryCtx* ctx) {
 static int disposeWsMatrix(XqueryCtx* ctx) {
     for(int i=0; i<ctx->wsFrags; i++) {
         for(int j=0; j<WS_BATS; j++) {
+	    CHECKWSMI(ctx,i,j);
 	    wsBatDescr* bd = &ctx->wsMatrix[WSMI(i,j)];
 
 	    if ( bd->bat ) {
@@ -429,8 +432,10 @@ static BAT* fetchWsContextBAT(XqueryCtx* ctx, BAT* ws, int contID, int batID) {
 }
 
 static wsBatDescr* getMatrixBATrecord(XqueryCtx* ctx, int contID, int batID) {
-    wsBatDescr* bd = &ctx->wsMatrix[WSMI(contID,batID)];
+    wsBatDescr* bd;
 
+    CHECKWSMI(ctx,contID,batID);
+    bd = &ctx->wsMatrix[WSMI(contID,batID)];
     if ( !bd->bat ) {
         if ( !(bd->bat = fetchWsContextBAT(ctx,ctx->ws,contID,batID)) ) {
 #ifdef DEBUGWS
@@ -1124,7 +1129,8 @@ int xquery_print_doc_DRIVER(
     if ( docIndex < 0 ) {
         GDKwarning("serialize.mx:xquery_print_doc_main: unable to find document \"%s\" in working set!\n",docName);
         return GDK_SUCCEED;
-    }
+    } 
+    if ( 0 ) stream_printf(GDKout,"*** docIndex=%d.\n",docIndex);
     /* */
     XqueryCtx  ctx_struct, *ctx = &ctx_struct;
     if ( !createWsContext(ctx,ws,docIndex,mode,driverFun,driverArg) )

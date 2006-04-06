@@ -54,6 +54,21 @@
  */
 #define XQUERY_FO_MAX_ARITY 5
 
+#ifdef HAVE_PFTIJAH
+#define TIJAH_FUNCTION_DEF						 \
+, /* fn:tijah-command(string?) as boolean */  	                         \
+  { .ns = PFns_fn, .loc = "tijah-command",                               \
+    .arity = 1, .par_ty = { PFty_star (PFty_string ()) },                \
+    .ret_ty = PFty_boolean () }						 \
+, /* fn:tijah-query(item*, string) as item* */                           \
+  { .ns = PFns_fn, .loc = "tijah-query",                                 \
+    .arity = 2, .par_ty = { PFty_star (PFty_item ()),                    \
+                            PFty_string () },                            \
+    .ret_ty = PFty_star (PFty_item ()) }
+#else
+#define TIJAH_FUNCTION_DEF /* NO FUN */
+#endif
+
 /**
  * List all XQuery built-in functions here.
  *
@@ -1389,7 +1404,7 @@
                             PFty_string (),                              \
                             PFty_string () },                            \
     .ret_ty = PFty_stmt () }                                             \
-                                                                         \
+TIJAH_FUNCTION_DEF							 \
 , { .loc = 0 }                                                           \
 }
 

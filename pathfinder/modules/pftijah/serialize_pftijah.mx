@@ -34,7 +34,7 @@ extern int useFlexScanner(char* buf, int len, struct tijahContextStruct* tjCtx);
 
 @c
 
-/* #define TJ_TRACE 1 */
+#define TJ_TRACE 1
 
 /*******************************************
  * serialize_pftijah.c : XML serialization
@@ -645,6 +645,9 @@ static int pftijah_init(XqueryCtx* ctx, char* args) {
  */
 static int pftijah_handle_startDocument(XqueryCtx* ctx) {
     (void)ctx;
+#ifdef TJ_TRACE
+    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:startDocument()\n");
+#endif
     return 1;
 }
 
@@ -749,16 +752,23 @@ static int pftijah_handle_reference(XqueryCtx* ctx, str name) {
  */
 static int pftijah_handle_characters(XqueryCtx* ctx, str ch, str top) {
     (void)top;
+    int res = 1;
     tjCtx* tjctx = (tjCtx*)ctx->driverWs;
+
+#ifdef TJ_TRACE
+    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:handle_characters(%s) start\n",(char*)ch);
+#endif
 
     if ( DOEMIT(tjctx) )
 #ifdef USE_FLEX
-        return useFlexScanner((char*)ch,strlen((char*)ch),tjctx);
+        res = useFlexScanner((char*)ch,strlen((char*)ch),tjctx);
 #else
-        return useStrtokScanner(tjctx,(char*)ch);
+        res = useStrtokScanner(tjctx,(char*)ch);
 #endif
-    else
-    	return 1;
+#ifdef TJ_TRACE
+    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:handle_characters() end\n");
+#endif
+    return res;
 }
 
 /**
