@@ -1669,7 +1669,7 @@ end.
 		/* see if an atomFromStr() function is available */
 		if (BATatoms[type].atomFromStr == 0) {
 			s = getTypeName(type);
-			GDKerror("newConstant:no string coercion for '%s'\n", s);
+			GDKerror("newConstant:no string coercion for '%s'", s);
 			GDKfree(s);
 			break;
 		}
@@ -1677,8 +1677,8 @@ end.
 		/* if the value we're converting from is nil, the to
 		 * convert to value will also be nil */
 		if (ATOMcmp(vr->vtype, ATOMnilptr(vr->vtype), VALptr(vr)) == 0) {
-			VALset(vr, type, BATatoms[type].atomNull);
-			return 0;
+			VALset(vr, type, ATOMnilptr(type));
+			break;
 		}
 
 		/* if what we're converting from is not a string */
@@ -1687,27 +1687,30 @@ end.
 			str w = 0;
 
 			/* dump the non-string atom as string in w */
-			ATOMformat(vr->vtype, VALptr(vr), &w);
+			ll = ATOMformat(vr->vtype, VALptr(vr), &w);
 			/* and try to parse it from string as the desired type */
-			(*BATatoms[type].atomFromStr) (w, &ll, &d);
-			if( d==0 ){
-				VALset(vr, type, BATatoms[type].atomNull);
+			ATOMfromstr(type, &d, &ll, w);
+			if (d == 0) {
+				GDKerror("newConstant:Parse error in '%s'", w);
+				VALset(vr, type, ATOMnilptr(type));
 				GDKfree(w);
 				return 1;
 			} 
 			VALset(vr, type, d);
-			if (ATOMextern(type) == 0 )
+			if (ATOMextern(type) == 0)
 				GDKfree(d);
 			GDKfree(w);
-		} else {
+		} else { /* what we're converting from is a string */
 #ifdef STRUCT_ALIGNED
-			(*BATatoms[type].atomFromStr) (vr->val.sval, &ll, &d);
-			if( d==0 ){
-				VALset(vr, type, BATatoms[type].atomNull);
+			ll = strlen(vr->val.sval);
+			ATOMfromstr(type, &d, &ll, vr->val.sval);
+			if (d == NULL) {
+				GDKerror("newConstant:Parse error in '%s'", vr->val.sval);
+				VALset(vr, type, ATOMnilptr(type));
 				return 1;
-			} 
+			}
 			VALset(vr, type, d);
-			if (ATOMextern(type) == 0 )
+			if (ATOMextern(type) == 0)
 				GDKfree(d);
 #else
 			GDKerror("newConstants:missing implementation\n");
