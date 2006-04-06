@@ -87,7 +87,8 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
                     mismatch = true;
                 break;
             /* if type is str, compare str member of union */
-            case aat_str:
+            case aat_uA:
+	    case aat_str:
                 if (strcmp (a.atoms[i].val.str, b.atoms[i].val.str))
                     mismatch = true;
                 break;

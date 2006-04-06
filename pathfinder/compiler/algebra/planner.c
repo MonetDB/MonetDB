@@ -577,7 +577,7 @@ plan_disjunion (const PFla_op_t *n)
 
                 if (tyR == tyS
                     && (tyR == aat_nat || tyR == aat_int || tyR == aat_str
-                        || tyR == aat_dec || tyR == aat_dbl))
+                        || tyR == aat_dec || tyR == aat_dbl || tyR == aat_uA))
 
                     PFord_set_add (prefixes, PFord_refine (PFordering (), att));
             }

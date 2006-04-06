@@ -37,8 +37,33 @@
 /** MIL oid's are unsigned integers */
 typedef unsigned int oid;
 
-/** MIL identifiers are strings */
-typedef char * PFmil_ident_t;
+/** MIL identifiers are ints */
+typedef unsigned int PFmil_ident_t;
+
+/* reserved identifiers. */
+#define PF_MIL_VAR_UNUSED     0
+#define PF_MIL_VAR_WS         1
+#define PF_MIL_VAR_ATTR       2
+#define PF_MIL_VAR_ELEM       3
+#define PF_MIL_VAR_STR        4
+#define PF_MIL_VAR_INT        5
+#define PF_MIL_VAR_DBL        6
+#define PF_MIL_VAR_DEC        7
+#define PF_MIL_VAR_BOOL       8
+#define PF_MIL_VAR_ATTR_OWN   9
+#define PF_MIL_VAR_ATTR_QN   10
+#define PF_MIL_VAR_ATTR_CONT 11
+#define PF_MIL_VAR_QN_LOC    12
+#define PF_MIL_VAR_QN_URI    13
+#define PF_MIL_VAR_ATTR_PROP 14
+#define PF_MIL_VAR_PROP_VAL  15
+#define PF_MIL_VAR_PRE_PROP  16
+#define PF_MIL_VAR_PRE_CONT  17
+#define PF_MIL_VAR_PROP_TEXT 18
+#define PF_MIL_VAR_PROP_COM  19
+#define PF_MIL_VAR_PROP_INS  20
+
+#define PF_MIL_RES_VAR_COUNT (PF_MIL_VAR_PROP_INS + 1)
 
 /** Node kinds for MIL tree representation */
 enum PFmil_kind_t {
@@ -329,7 +354,7 @@ union PFmil_sem_t {
     bool          b;       /**< literal boolean */
 
     PFmil_type_t  t;       /**< MIL type (for #m_type nodes) */
-    PFmil_ident_t ident;   /**< MIL identifier (a string) */
+    PFmil_ident_t ident;   /**< MIL identifier */
     PFmil_access_t access; /**< BAT access specifier, only for #m_access nodes*/
 
     struct {
@@ -384,7 +409,10 @@ PFmil_t * PFmil_lit_dbl (double d);
 PFmil_t * PFmil_lit_bit (bool b);
 
 /** a MIL variable */
-PFmil_t * PFmil_var (const PFmil_ident_t name);
+PFmil_t * PFmil_var (PFmil_ident_t name);
+
+/** return the variable name as string */
+char * PFmil_var_str (PFmil_ident_t name);
 
 /** MIL type */
 PFmil_t * PFmil_type (PFmil_type_t);
@@ -396,7 +424,7 @@ PFmil_t * PFmil_nop (void);
 PFmil_t * PFmil_nil (void);
 
 /** shortcut for MIL variable `unused' */
-#define PFmil_unused() PFmil_var ("unused")
+#define PFmil_unused() PFmil_var (PF_MIL_VAR_UNUSED)
 
 /** MIL new() statement */
 PFmil_t * PFmil_new (const PFmil_t *, const PFmil_t *);

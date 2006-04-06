@@ -299,7 +299,7 @@ PFarray_t *mvars = NULL;
 static mvar_t *
 new_var (unsigned int pins)
 {
-    static unsigned int   varno = 0;
+    static unsigned int   varno = PF_MIL_RES_VAR_COUNT;
     mvar_t               *var   = NULL;
 
     assert (mvars);
@@ -314,9 +314,7 @@ new_var (unsigned int pins)
     /* If we were not successful, create a new entry */
     var = (mvar_t *) PFarray_add (mvars);
 
-    var->name = PFmalloc (sizeof ("a0000"));
-    sprintf ((char *) var->name, "a%04u", varno++);
-
+    var->name = varno++;
     var->pins = pins;
 
     return var;
@@ -345,7 +343,6 @@ unpin (mvar_t *v, unsigned int count)
         v->pins = 0;
     } else
         v->pins -= count;
-
     if (!v->pins)
         execute (assgn (var (v->name), unused ()));
 }
@@ -384,14 +381,17 @@ void
 env_add (PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty, mvar_t *v)
 {
     assert (ty == aat_nat || ty == aat_int || ty == aat_str || ty == aat_dec
-            || ty == aat_dbl || ty == aat_bln || ty == aat_qname
-            || ty == aat_pre || ty == aat_attr
+            || ty == aat_dbl || ty == aat_bln || ty == aat_qname 
+            || ty == aat_uA || ty == aat_pre || ty == aat_attr
             || ty == aat_pfrag || ty == aat_afrag);
 
     *(env_t *) PFarray_add (env)
         = (env_t) { .att = att, .ty = ty, .mvar = v };
 #ifndef NDEBUG
-    execute ( comment ("%s: %s(%s)", v->name, PFatt_str (att), PFsimple_type_str(ty)));
+    execute ( comment ("%s: %s(%s)", 
+		       PFmil_var_str (v->name), 
+		       PFatt_str (att), 
+		       PFsimple_type_str(ty)));
 #endif
 }
 
@@ -443,17 +443,18 @@ env_mvar (const PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty)
         return mvar;
 
     /* FIXME: DEBUGGING ONLY */
-    fprintf (stderr, "looking for att: %s, ty: %u\n", PFatt_str (att), ty);
+    fprintf (stderr, "looking for att: %s, ty: 0x%X\n", PFatt_str (att), ty);
     fprintf (stderr, "environment looks like:\n");
     for (unsigned int i = 0; i < PFarray_last (env); i++) {
         env_t entry = *(env_t *) PFarray_at ((PFarray_t *) env, i);
 
-        fprintf (stderr, "  att: %s, type: %u, mvar->name: %s\n",
-                         PFatt_str (entry.att), entry.ty, entry.mvar->name);
+        fprintf (stderr, "  att: %s, type: 0x%X, mvar->name: %s\n",
+                 PFatt_str (entry.att), entry.ty, 
+		 PFmil_var_str (entry.mvar->name));
     }
 
     PFoops (OOPS_FATAL,
-            "attribute '%s' with type '%u' not found in environment",
+            "attribute '%s' with type '0x%X' not found in environment",
             PFatt_str (att), ty);
     /* we don't ever get here */
     return NULL;
@@ -535,14 +536,12 @@ static void unary_op (PFmil_t * (*op) (const PFmil_t *), PFpa_op_t *p);
 static void aggr_function(PFmil_t * (*op) (const PFmil_t *), PFmil_t * (*gop) (const PFmil_t *),
 			  PFpa_op_t *p);
 
-/* check if attribute @a attr is required */
-static bool attr_req (PFprop_t *prop, PFalg_att_t attr);
-
 /** MIL implementation types for algebra types */
 static PFmil_type_t impl_types[] = {
       [aat_nat]   = m_oid
     , [aat_int]   = m_lng
     , [aat_str]   = m_str
+    , [aat_uA]    = m_str
     , [aat_dec]   = m_dbl
     , [aat_dbl]   = m_dbl
     , [aat_bln]   = m_bit
@@ -641,7 +640,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
             execute (
                 assgn (unused (), nil ()),
-                assgn (var ("ws"), new_ws ()));
+                assgn (var (PF_MIL_VAR_WS), new_ws ()));
             reduce (kids[0], nts[0]);
             reduce (kids[1], nts[1]);
 
@@ -699,7 +698,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                VAR (R(p)->env, att_item, aat_attr)),
                         assgn (var (kind->name),
                                set_kind (VAR (R(p)->env, att_item, aat_afrag),
-                                         var ("ATTR")))
+                                         var (PF_MIL_VAR_ATTR)))
                         );
                     sorted = true;
                 }
@@ -716,7 +715,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                      set_kind (VAR (R(p)->env, 
                                                     att_item,
                                                     aat_afrag),
-                                               var ("ATTR")),
+                                               var (PF_MIL_VAR_ATTR)),
                                      cast (type (m_int), nil ()),
                                      cast (type (m_int), nil ())))
                         );
@@ -731,7 +730,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                VAR (R(p)->env, att_item, aat_pre)),
                         assgn (var (kind->name),
                                set_kind (VAR (R(p)->env, att_item, aat_pfrag),
-                                         var ("ELEM")))
+                                         var (PF_MIL_VAR_ELEM)))
                         );
                     sorted = true;
                 }
@@ -748,7 +747,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                      set_kind (VAR (R(p)->env, 
                                                     att_item,
                                                     aat_pfrag),
-                                               var ("ELEM")),
+                                               var (PF_MIL_VAR_ELEM)),
                                      cast (type (m_int), nil ()),
                                      cast (type (m_int), nil ())))
                         );
@@ -777,7 +776,7 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (
                             var (kind->name),
                             project (VAR (R(p)->env, att_item, aat_str),
-                                     var ("STR")))
+                                     var (PF_MIL_VAR_STR)))
                         );
                     sorted = true;
                 }
@@ -792,7 +791,49 @@ reduce (PFpa_op_t * p, int goalnt)
                             project (select2 (VAR (R(p)->env, att_item, aat_str),
                                               cast (type (m_str), nil ()),
                                               cast (type (m_str), nil ())),
-                                     var ("STR")))
+                                     var (PF_MIL_VAR_STR)))
+                    );
+                }
+            }
+
+            /* consider untyped results */
+            if (ty & aat_uA) {
+                execute (
+                    bappend (var (strVAL->name),
+                             reverse (
+                                 kunique (
+                                     reverse (
+                                         select2 (VAR (R(p)->env,
+                                                       att_item,
+                                                       aat_uA),
+                                                  cast (type (m_str), nil ()),
+                                                  cast (type (m_str), nil ()))
+                                         )))));
+                if (ty == aat_uA) {
+                    execute (
+                        assgn (
+                            var (item->name),
+                            leftjoin (VAR (R(p)->env, att_item, aat_uA),
+                                      reverse (var (strVAL->name)))),
+                        assgn (
+                            var (kind->name),
+                            project (VAR (R(p)->env, att_item, aat_uA),
+                                     var (PF_MIL_VAR_STR)))
+                        );
+                    sorted = true;
+                }
+                else {
+                    execute (
+                        binsert (
+                            var (item->name),
+                            join (VAR (R(p)->env, att_item, aat_uA),
+                                  reverse (var (strVAL->name)))),
+                        binsert (
+                            var (kind->name),
+                            project (select2 (VAR (R(p)->env, att_item, aat_uA),
+                                              cast (type (m_str), nil ()),
+                                              cast (type (m_str), nil ())),
+                                     var (PF_MIL_VAR_STR)))
                     );
                 }
             }
@@ -819,7 +860,7 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (
                             var (kind->name),
                             project (VAR (R(p)->env, att_item, aat_int),
-                                     var ("INT")))
+                                     var (PF_MIL_VAR_INT)))
                         );
                     sorted = true;
                 }
@@ -834,7 +875,7 @@ reduce (PFpa_op_t * p, int goalnt)
                             project (select2 (VAR (R(p)->env, att_item, aat_int),
                                               cast (type (m_lng), nil ()),
                                               cast (type (m_lng), nil ())),
-                                     var ("INT")))
+                                     var (PF_MIL_VAR_INT)))
                     );
                 }
             }
@@ -861,7 +902,7 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (
                             var (kind->name),
                             project (VAR (R(p)->env, att_item, aat_dbl),
-                                     var ("DBL")))
+                                     var (PF_MIL_VAR_DBL)))
                         );
                     sorted = true;
                 }
@@ -876,7 +917,7 @@ reduce (PFpa_op_t * p, int goalnt)
                             project (select2 (VAR (R(p)->env, att_item, aat_dbl),
                                               cast (type (m_dbl), nil ()),
                                               cast (type (m_dbl), nil ())),
-                                     var ("DBL")))
+                                     var (PF_MIL_VAR_DBL)))
                     );
                 }
             }
@@ -903,7 +944,7 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (
                             var (kind->name),
                             project (VAR (R(p)->env, att_item, aat_dec),
-                                     var ("DEC")))
+                                     var (PF_MIL_VAR_DEC)))
                         );
                     sorted = true;
                 }
@@ -918,7 +959,7 @@ reduce (PFpa_op_t * p, int goalnt)
                             project (select2 (VAR (R(p)->env, att_item, aat_dec),
                                               cast (type (m_dbl), nil ()),
                                               cast (type (m_dbl), nil ())),
-                                     var ("DEC")))
+                                     var (PF_MIL_VAR_DEC)))
                     );
                 }
             }
@@ -934,7 +975,7 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (
                             var (kind->name),
                             project (VAR (R(p)->env, att_item, aat_bln),
-                                     var ("BOOL")))
+                                     var (PF_MIL_VAR_BOOL)))
                         );
                     sorted = true;
                 }
@@ -949,7 +990,7 @@ reduce (PFpa_op_t * p, int goalnt)
                             project (select2 (VAR (R(p)->env, att_item, aat_bln),
                                               cast (type (m_bit), nil ()),
                                               cast (type (m_bit), nil ())),
-                                     var ("BOOL")))
+                                     var (PF_MIL_VAR_BOOL)))
                     );
                 }
             }
@@ -970,7 +1011,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
                 serialize (
                     arg (lit_str ("xml"),
-                        arg (var ("ws"),
+                        arg (var (PF_MIL_VAR_WS),
                             arg (var (item->name),
                                 arg (var (kind->name),
                                     arg (var (intVAL->name),
@@ -1015,7 +1056,7 @@ reduce (PFpa_op_t * p, int goalnt)
             kind = new_var (1);
 
             execute (
-                assgn (var ("ws"), new_ws ()),
+                assgn (var (PF_MIL_VAR_WS), new_ws ()),
                 assgn (var (intVAL->name),
                        seqbase (new (type (m_void), type (m_lng)), lit_oid (0))),
                 assgn (var (dblVAL->name),                
@@ -1030,7 +1071,7 @@ reduce (PFpa_op_t * p, int goalnt)
                        seqbase (new (type (m_void), type (m_int)), lit_oid (0))),
                 serialize (
                     arg (lit_str ("xml"),
-                        arg (var ("ws"),
+                        arg (var (PF_MIL_VAR_WS),
                             arg (var (item->name),
                                 arg (var (kind->name),
                                     arg (var (intVAL->name),
@@ -1075,7 +1116,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                     append (
                                         var (v->name),
                                         /* add_qname changes the working set 
-                                           in 'var ("ws")' as side effect */
+                                           in 'var (PF_MIL_VAR_WS)' as side effect */
                                         add_qname (lit_str (
                                                        PFqname_ns (
                                                            p->sem.lit_tbl
@@ -1094,7 +1135,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                                                  .tuples[row]
                                                                  .atoms[col]
                                                                  .val.qname)),
-                                                   var ("ws"))));
+                                                   var (PF_MIL_VAR_WS))));
 
                             execute (access (var (v->name), BAT_READ));
                         } else {
@@ -1265,31 +1306,32 @@ reduce (PFpa_op_t * p, int goalnt)
 
             unpin (tmp1, 1);
 
-            for (unsigned short c = 0; c < 2; c++)
+            for (unsigned short c = 0; c < 2; c++) {
                 for (unsigned int i = 0; i < env_count (p->child[c]->env); i++)
-                    if (attr_req (p->prop, env_at (p->child[c]->env, i).att)) {
+                {
 
-                        mvar_t *v = new_var (p->refctr);
+                     mvar_t *v = new_var (p->refctr);
 
-                        execute (
-                            assgn (var (v->name),
-                                leftjoin (
-                                    var (tmp[c]->name),
-                                    var (env_at (p->child[c]->env,
-                                                 i).mvar->name))),
-                            /* because leftjoin does not know that we have 
-                               exactly one match for each tuple in v,
-                               we need to make the heads void ourselves */
-                            assgn (var (v->name),
-                                   reverse (mark (reverse (var (v->name)),
-                                                  lit_oid (0))))
-                            );
+                     execute (
+                          assgn (var (v->name),
+                                 leftjoin (
+                                      var (tmp[c]->name),
+                                      var (env_at (p->child[c]->env,
+                                                   i).mvar->name))),
+                          /* because leftjoin does not know that we have 
+                             exactly one match for each tuple in v,
+                             we need to make the heads void ourselves */
+                          assgn (var (v->name),
+                                 reverse (mark (reverse (var (v->name)),
+                                                lit_oid (0))))
+                          );
 
-                        env_add (p->env,
-                                 env_at (p->child[c]->env, i).att,
-                                 env_at (p->child[c]->env, i).ty,
-                                 v);
-                    }
+                     env_add (p->env,
+                              env_at (p->child[c]->env, i).att,
+                              env_at (p->child[c]->env, i).ty,
+                              v);
+                }
+            }
 
             unpin (tmp[0], 1);
             unpin (tmp[1], 1);
@@ -1303,18 +1345,17 @@ reduce (PFpa_op_t * p, int goalnt)
              * environment in node p appropriately.
              */
             for (unsigned int i = 0; i < p->sem.proj.count; i++)
-              if (attr_req (p->prop, p->sem.proj.items[i].new))
-                for (PFalg_simple_type_t t = 1; t; t <<= 1)
-                    if (t & type_of (L(p), p->sem.proj.items[i].old)) {
+                 for (PFalg_simple_type_t t = 1; t; t <<= 1)
+                      if (t & type_of (L(p), p->sem.proj.items[i].old)) {
 
-                        mvar_t *v = env_mvar (L(p)->env,
-                                              p->sem.proj.items[i].old,
-                                              t);
+                           mvar_t *v = env_mvar (L(p)->env,
+                                                 p->sem.proj.items[i].old,
+                                                 t);
 
-                        env_add (p->env, p->sem.proj.items[i].new, t, v);
-                        pin (v, p->refctr);
+                           env_add (p->env, p->sem.proj.items[i].new, t, v);
+                           pin (v, p->refctr);
 
-                    }
+                      }
 
             break;
 
@@ -1783,28 +1824,26 @@ reduce (PFpa_op_t * p, int goalnt)
              *
              * out := v.join (in);
              */
-            for (unsigned int i = 0; i < env_count (rel->env); i++)
-                if (attr_req (p->prop, env_at (rel->env, i).att)) {
+            for (unsigned int i = 0; i < env_count (rel->env); i++) {
+                 mvar_t *out = new_var (p->refctr);
 
-                    mvar_t *out = new_var (p->refctr);
+                 execute (
+                      assgn (var (out->name),
+                             leftjoin (var (v->name),
+                                       var (env_at (rel->env,
+                                                    i).mvar->name))),
+                      /* because leftjoin does not know that we have 
+                         exactly one match for each tuple in v,
+                         we need to make the heads void ourselves */
+                      assgn (var (out->name),
+                             reverse (mark (reverse (var (out->name)),
+                                            lit_oid (0)))));
 
-                    execute (
-                        assgn (var (out->name),
-                               leftjoin (var (v->name),
-                                         var (env_at (rel->env,
-                                                      i).mvar->name))),
-                        /* because leftjoin does not know that we have 
-                           exactly one match for each tuple in v,
-                           we need to make the heads void ourselves */
-                        assgn (var (out->name),
-                               reverse (mark (reverse (var (out->name)),
-                                              lit_oid (0)))));
-
-                    env_add (p->env,
-                             env_at (rel->env, i).att,
-                             env_at (rel->env, i).ty,
-                             out);
-                }
+                 env_add (p->env,
+                          env_at (rel->env, i).att,
+                          env_at (rel->env, i).ty,
+                          out);
+            }
 
             /* release our temporary variable */
             unpin (v, 1);
@@ -1852,28 +1891,26 @@ reduce (PFpa_op_t * p, int goalnt)
                 execute (assgn (var (v->name),
                                 reverse (mark (var (v->name), lit_oid (0)))));
 
-                for (unsigned int i = 0; i < env_count (L(p)->env); i++)
-                    if (attr_req (p->prop, env_at (L(p)->env, i).att)) {
+                for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
+                     mvar_t *a = new_var (p->refctr);
 
-                        mvar_t *a = new_var (p->refctr);
+                     execute (
+                          assgn (var (a->name),
+                                 leftjoin (
+                                      var (v->name),
+                                      var (env_at (L(p)->env, i).mvar->name))),
+                          /* because leftjoin does not know that we have 
+                             exactly one match for each tuple in v,
+                             we need to make the heads void ourselves */
+                          assgn (var (a->name),
+                                 reverse (mark (reverse (var (a->name)),
+                                                lit_oid (0)))));
 
-                        execute (
-                            assgn (var (a->name),
-                                   leftjoin (
-                                       var (v->name),
-                                       var (env_at (L(p)->env, i).mvar->name))),
-                            /* because leftjoin does not know that we have 
-                               exactly one match for each tuple in v,
-                               we need to make the heads void ourselves */
-                            assgn (var (a->name),
-                                   reverse (mark (reverse (var (a->name)),
-                                                  lit_oid (0)))));
-
-                        env_add (p->env,
-                                 env_at (L(p)->env, i).att,
-                                 env_at (L(p)->env, i).ty,
-                                 a);
-                    }
+                     env_add (p->env,
+                              env_at (L(p)->env, i).att,
+                              env_at (L(p)->env, i).ty,
+                              a);
+                }
 
                 unpin (v, 1);
             }
@@ -1967,29 +2004,27 @@ reduce (PFpa_op_t * p, int goalnt)
                 assgn (var (v->name),
                        reverse (mark (var (v->name), lit_oid (0)))));
 
-            for (unsigned int i = 0; i < env_count (L(p)->env); i++)
-                if (attr_req (p->prop, env_at (L(p)->env, i).att)) {
+            for (unsigned int i = 0; i < env_count (L(p)->env); i++) {
+                 mvar_t *a = new_var (p->refctr);
 
-                    mvar_t *a = new_var (p->refctr);
+                 execute (
+                      assgn (var (a->name),
+                             leftjoin (
+                                  var (v->name),
+                                  var (env_at (L(p)->env, i).mvar->name))),
+                      /* because leftjoin does not know that we have 
+                         exactly one match for each tuple in v,
+                         we need to make the heads void ourselves */
+                      assgn (var (a->name),
+                             reverse (mark (reverse (var (a->name)),
+                                            lit_oid (0))))
+                      );
 
-                    execute (
-                        assgn (var (a->name),
-                            leftjoin (
-                                var (v->name),
-                                var (env_at (L(p)->env, i).mvar->name))),
-                        /* because leftjoin does not know that we have 
-                           exactly one match for each tuple in v,
-                           we need to make the heads void ourselves */
-                        assgn (var (a->name),
-                               reverse (mark (reverse (var (a->name)),
-                                              lit_oid (0))))
-                        );
-
-                    env_add (p->env,
-                             env_at (L(p)->env, i).att,
-                             env_at (L(p)->env, i).ty,
-                             a);
-                }
+                 env_add (p->env,
+                          env_at (L(p)->env, i).att,
+                          env_at (L(p)->env, i).ty,
+                          a);
+            }
 
             unpin (v, 1);
 
@@ -2344,7 +2379,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
                         if ((t & L(p)->schema.items[i].type) &&
-                            (t != aat_str && t != aat_qname))
+                            (t != aat_str && t != aat_uA && t != aat_qname))
                             PFoops (OOPS_FATAL,
                                     "cast to type QName is only possible "
                                     "for type QName and type string.%i", t);
@@ -2360,7 +2395,8 @@ reduce (PFpa_op_t * p, int goalnt)
                         qn = true;
                     }
 
-                    if (L(p)->schema.items[i].type & aat_str)
+                    if (L(p)->schema.items[i].type & aat_str
+                         || L(p)->schema.items[i].type & aat_uA)
                     {
                         PFmil_t *str = NULL;
                         mvar_t  *offset = new_var (1);
@@ -2386,13 +2422,13 @@ reduce (PFpa_op_t * p, int goalnt)
                                                   var (offset->name)))));
 
                         /* add_qnames changes the working set 
-                           in 'var ("ws")' as side effect */
+                           in 'var (PF_MIL_VAR_WS)' as side effect */
                         str = add_qnames (
                                   var (prefix->name),
                                   project (var (prefix->name),
                                            lit_str ("")),
                                   var (local->name),
-                                  var ("ws"));
+                                  var (PF_MIL_VAR_WS));
 
                         if (qn) /* combine both qname tables */
                             execute (assgn (var (v->name),
@@ -2447,8 +2483,7 @@ reduce (PFpa_op_t * p, int goalnt)
                     env_add (p->env, p->sem.cast.att, p->sem.cast.ty, v);
                 }
 
-                if (att_needed &&
-                    (attr_req (p->prop, L(p)->schema.items[i].name))) {
+                if (att_needed) {
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
                         if (t & L(p)->schema.items[i].type) {
 
@@ -2504,8 +2539,8 @@ reduce (PFpa_op_t * p, int goalnt)
             /* first get all attribute nodes... */
             execute (
                 assgn (var (tmp->name), 
-                       mvaljoin (pre, frag, fetch (var("ws"),
-                                                    var("ATTR_OWN")))),
+                       mvaljoin (pre, frag, fetch (var (PF_MIL_VAR_WS),
+                                                    var (PF_MIL_VAR_ATTR_OWN)))),
                 assgn (var (ret_attr->name),
                        reverse (mark (reverse (var (tmp->name)), lit_oid (0)))),
                 assgn (var (ret_frag->name),
@@ -2532,13 +2567,13 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (var (tmp->name),
                                mposjoin (mposjoin (var (ret_attr->name),
                                                    var (ret_frag->name),
-                                                   fetch (var("ws"),
-                                                          var("ATTR_QN"))),
+                                                   fetch (var (PF_MIL_VAR_WS),
+                                                          var (PF_MIL_VAR_ATTR_QN))),
                                          mposjoin (var (ret_attr->name),
                                                    var (ret_frag->name),
-                                                   fetch (var("ws"),
-                                                          var("ATTR_CONT"))),
-                                         fetch (var("ws"), var("QN_LOC")))),
+                                                   fetch (var (PF_MIL_VAR_WS),
+                                                          var (PF_MIL_VAR_ATTR_CONT))),
+                                         fetch (var (PF_MIL_VAR_WS), var (PF_MIL_VAR_QN_LOC)))),
                         assgn (var (tmp->name),
                                uselect (var (tmp->name),
                                         lit_str (
@@ -2564,13 +2599,13 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (var (tmp->name),
                                mposjoin (mposjoin (var (ret_attr->name),
                                                    var (ret_frag->name),
-                                                   fetch (var("ws"),
-                                                          var("ATTR_QN"))),
+                                                   fetch (var (PF_MIL_VAR_WS),
+                                                          var (PF_MIL_VAR_ATTR_QN))),
                                          mposjoin (var (ret_attr->name),
                                                    var (ret_frag->name),
-                                                   fetch (var("ws"),
-                                                          var("ATTR_CONT"))),
-                                         fetch (var("ws"), var("QN_URI")))),
+                                                   fetch (var (PF_MIL_VAR_WS),
+                                                          var (PF_MIL_VAR_ATTR_CONT))),
+                                         fetch (var (PF_MIL_VAR_WS), var (PF_MIL_VAR_QN_URI)))),
                         assgn (var (tmp->name),
                                uselect (var (tmp->name),
                                         lit_str (
@@ -2595,13 +2630,13 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (var (tmp->name),
                                mposjoin (mposjoin (var (ret_attr->name),
                                                    var (ret_frag->name),
-                                                   fetch (var("ws"),
-                                                          var("ATTR_QN"))),
+                                                   fetch (var (PF_MIL_VAR_WS),
+                                                          var (PF_MIL_VAR_ATTR_QN))),
                                          mposjoin (var (ret_attr->name),
                                                    var (ret_frag->name),
-                                                   fetch (var("ws"),
-                                                          var("ATTR_CONT"))),
-                                         fetch (var("ws"), var("QN_LOC")))),
+                                                   fetch (var (PF_MIL_VAR_WS),
+                                                          var (PF_MIL_VAR_ATTR_CONT))),
+                                         fetch (var (PF_MIL_VAR_WS), var (PF_MIL_VAR_QN_LOC)))),
                         assgn (var (tmp->name),
                                uselect (var (tmp->name),
                                         lit_str (
@@ -2619,13 +2654,13 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (var (tmp->name),
                                mposjoin (mposjoin (var (ret_attr->name),
                                                    var (ret_frag->name),
-                                                   fetch (var("ws"),
-                                                          var("ATTR_QN"))),
+                                                   fetch (var (PF_MIL_VAR_WS),
+                                                          var (PF_MIL_VAR_ATTR_QN))),
                                          mposjoin (var (ret_attr->name),
                                                    var (ret_frag->name),
-                                                   fetch (var("ws"),
-                                                          var("ATTR_CONT"))),
-                                         fetch (var("ws"), var("QN_URI")))),
+                                                   fetch (var (PF_MIL_VAR_WS),
+                                                          var (PF_MIL_VAR_ATTR_CONT))),
+                                         fetch (var (PF_MIL_VAR_WS), var (PF_MIL_VAR_QN_URI)))),
                         assgn (var (tmp->name),
                                uselect (var (tmp->name),
                                         lit_str (
@@ -2673,18 +2708,11 @@ reduce (PFpa_op_t * p, int goalnt)
                        reverse (mark (reverse (var (ret_iter->name)),
                                       lit_oid (0)))));
 
-            if (attr_req (p->prop, att_iter))
-                env_add (p->env, att_iter, aat_nat, ret_iter);
-            else
-                unpin (ret_iter, p->refctr);
 
-            if (attr_req (p->prop, att_item)) {
-                env_add (p->env, att_item, aat_attr, ret_attr);
-                env_add (p->env, att_item, aat_afrag, ret_frag);
-            } else {
-                unpin (ret_attr, p->refctr);
-                unpin (ret_frag, p->refctr);
-            }
+            env_add (p->env, att_iter, aat_nat, ret_iter);
+
+            env_add (p->env, att_item, aat_attr, ret_attr);
+            env_add (p->env, att_item, aat_afrag, ret_frag);
 
             unpin (tmp, 1);
         }
@@ -2733,33 +2761,30 @@ reduce (PFpa_op_t * p, int goalnt)
         /* FragRel:  doc_tbl (Rel) */
         case 100:
         {
-            if (attr_req (p->prop, att_iter)) {
-                /* copy the iter BAT */
-                mvar_t *iter = env_mvar (L(p)->env, att_iter, aat_nat);
+             /* copy the iter BAT */
+             mvar_t *iter = env_mvar (L(p)->env, att_iter, aat_nat);
 
-                env_add (p->env, att_iter, aat_nat, iter);
-                pin (iter, p->refctr);
-            }
+             env_add (p->env, att_iter, aat_nat, iter);
+             pin (iter, p->refctr);
 
-            if (attr_req (p->prop, att_item)) {
-                /* temporary variable */
-                mvar_t *v = new_var (1);
-                /* result BATs */
-                mvar_t *frag = new_var (p->refctr);
-                mvar_t *pre  = new_var (p->refctr);
+             /* temporary variable */
+             mvar_t *v = new_var (1);
+             /* result BATs */
+             mvar_t *frag = new_var (p->refctr);
+             mvar_t *pre  = new_var (p->refctr);
 
-                env_add (p->env, att_item, aat_pre, pre);
-                env_add (p->env, att_item, aat_pfrag, frag);
+             env_add (p->env, att_item, aat_pre, pre);
+             env_add (p->env, att_item, aat_pfrag, frag);
 
-                execute (
-                    assgn (var (v->name),
-                           doc_tbl (var ("ws"),
-                                    VAR (L(p)->env, att_item, aat_str))),
-                    assgn (var ("ws"), fetch (var (v->name), lit_int (0))),
-                    assgn (var (pre->name), fetch (var (v->name), lit_int (1))),
-                    assgn (var (frag->name), fetch (var (v->name), lit_int (2)))
-                    );
-            }
+             execute (
+                  assgn (var (v->name),
+                         doc_tbl (var (PF_MIL_VAR_WS),
+                                  VAR (L(p)->env, att_item, aat_str))),
+                  assgn (var (PF_MIL_VAR_WS), 
+                         fetch (var (v->name), lit_int (0))),
+                  assgn (var (pre->name), fetch (var (v->name), lit_int (1))),
+                  assgn (var (frag->name), fetch (var (v->name), lit_int (2)))
+                  );
         } break;
 
         /* Rel:      doc_access (FragList, Rel) */
@@ -2792,13 +2817,13 @@ reduce (PFpa_op_t * p, int goalnt)
                             assgn (var (str->name),
                                    mposjoin (mposjoin (attr,
                                                        afrag,
-                                                       fetch (var("ws"),
-                                                              var("ATTR_PROP"))),
+                                                       fetch (var (PF_MIL_VAR_WS),
+                                                              var (PF_MIL_VAR_ATTR_PROP))),
                                              mposjoin (attr,
                                                        afrag,
-                                                       fetch (var("ws"),
-                                                              var("ATTR_CONT"))),
-                                             fetch (var("ws"), var("PROP_VAL")))));
+                                                       fetch (var (PF_MIL_VAR_WS),
+                                                              var (PF_MIL_VAR_ATTR_CONT))),
+                                             fetch (var (PF_MIL_VAR_WS), var (PF_MIL_VAR_PROP_VAL)))));
                     }
                     break;
                 case (doc_text):
@@ -2813,13 +2838,13 @@ reduce (PFpa_op_t * p, int goalnt)
                             assgn (var (str->name),
                                    mposjoin (mposjoin (pre,
                                                        pfrag,
-                                                       fetch (var("ws"),
-                                                              var("PRE_PROP"))),
+                                                       fetch (var (PF_MIL_VAR_WS),
+                                                              var (PF_MIL_VAR_PRE_PROP))),
                                              mposjoin (pre,
                                                        pfrag,
-                                                       fetch (var("ws"),
-                                                              var("PRE_CONT"))),
-                                             fetch (var("ws"), var("PROP_TEXT")))));
+                                                       fetch (var (PF_MIL_VAR_WS),
+                                                              var (PF_MIL_VAR_PRE_CONT))),
+                                             fetch (var (PF_MIL_VAR_WS), var (PF_MIL_VAR_PROP_TEXT)))));
                     }
                     break;
                 case (doc_comm):
@@ -2834,13 +2859,13 @@ reduce (PFpa_op_t * p, int goalnt)
                             assgn (var (str->name),
                                    mposjoin (mposjoin (pre,
                                                        pfrag,
-                                                       fetch (var("ws"),
-                                                              var("PRE_PROP"))),
+                                                       fetch (var (PF_MIL_VAR_WS),
+                                                              var (PF_MIL_VAR_PRE_PROP))),
                                              mposjoin (pre,
                                                        pfrag,
-                                                       fetch (var("ws"),
-                                                              var("PRE_CONT"))),
-                                             fetch (var("ws"), var("PROP_COM")))));
+                                                       fetch (var (PF_MIL_VAR_WS),
+                                                              var (PF_MIL_VAR_PRE_CONT))),
+                                             fetch (var (PF_MIL_VAR_WS), var (PF_MIL_VAR_PROP_COM)))));
                     }
                     break;
                 case (doc_pi_text):
@@ -2855,13 +2880,13 @@ reduce (PFpa_op_t * p, int goalnt)
                             assgn (var (str->name),
                                    mposjoin (mposjoin (pre,
                                                        pfrag,
-                                                       fetch (var("ws"),
-                                                              var("PRE_PROP"))),
+                                                       fetch (var (PF_MIL_VAR_WS),
+                                                              var (PF_MIL_VAR_PRE_PROP))),
                                              mposjoin (pre,
                                                        pfrag,
-                                                       fetch (var("ws"),
-                                                              var("PRE_CONT"))),
-                                             fetch (var("ws"), var("PROP_INS")))));
+                                                       fetch (var (PF_MIL_VAR_WS),
+                                                              var (PF_MIL_VAR_PRE_CONT))),
+                                             fetch (var (PF_MIL_VAR_WS), var (PF_MIL_VAR_PROP_INS)))));
                     }
                     break;
                 default:
@@ -2878,94 +2903,87 @@ reduce (PFpa_op_t * p, int goalnt)
         case 102:
         {
             /* copy the iter BAT */
-            if (attr_req (p->prop, att_iter)) {
-                mvar_t *iter = env_mvar (L(R(p))->env, att_iter, aat_nat);
-                env_add (p->env, att_iter, aat_nat, iter);
-                pin (iter, p->refctr);
-            }
 
-            if (attr_req (p->prop, att_item)) {
-                /* temporary variable */
-                mvar_t *v = new_var (1);
-                /* result BATs */
-                mvar_t *pre  = new_var (p->refctr);
-                mvar_t *frag = new_var (p->refctr);
-                env_add (p->env, att_item, aat_pre, pre);
-                env_add (p->env, att_item, aat_pfrag, frag);
+             mvar_t *iter = env_mvar (L(R(p))->env, att_iter, aat_nat);
+             env_add (p->env, att_iter, aat_nat, iter);
+             pin (iter, p->refctr);
 
-                execute (
-                    assgn (var (v->name),
-                           empty_element (VAR (L(R(p))->env, 
-                                               att_item, aat_qname),
-                                          var ("ws"))),
-                    assgn (var ("ws"), fetch (var (v->name), lit_int (0))),
-                    assgn (var (pre->name), fetch (var (v->name), 
-                                                   lit_int (1))),
-                    assgn (var (frag->name), fetch (var (v->name),
-                                                    lit_int (2)))
-                    );
-            }
+
+             /* temporary variable */
+             mvar_t *v = new_var (1);
+             /* result BATs */
+             mvar_t *pre  = new_var (p->refctr);
+             mvar_t *frag = new_var (p->refctr);
+             env_add (p->env, att_item, aat_pre, pre);
+             env_add (p->env, att_item, aat_pfrag, frag);
+
+             execute (
+                  assgn (var (v->name),
+                         empty_element (VAR (L(R(p))->env, 
+                                             att_item, aat_qname),
+                                        var (PF_MIL_VAR_WS))),
+                  assgn (var (PF_MIL_VAR_WS), fetch (var (v->name), lit_int (0))),
+                  assgn (var (pre->name), fetch (var (v->name), 
+                                                 lit_int (1))),
+                  assgn (var (frag->name), fetch (var (v->name),
+                                                  lit_int (2)))
+                  );
         } break;
 
         /* FragRel: element (FragList, element_tag (Rel, Rel)) */
         case 103:
         {
             /* copy the iter BAT */
-            if (attr_req (p->prop, att_iter)) {
-                mvar_t *iter = env_mvar (L(R(p))->env, att_iter, aat_nat);
-                env_add (p->env, att_iter, aat_nat, iter);
-                pin (iter, p->refctr);
-            }
+             mvar_t *iter = env_mvar (L(R(p))->env, att_iter, aat_nat);
+             env_add (p->env, att_iter, aat_nat, iter);
+             pin (iter, p->refctr);
+             PFmil_t *pre, *pfrag, *attr, *afrag;
+             mvar_t *tmp;
 
-            if (attr_req (p->prop, att_item)) {
-                PFmil_t *pre, *pfrag, *attr, *afrag;
-                mvar_t *tmp;
+             /* temporary variable */
+             mvar_t *v = new_var (1);
+             /* result BATs */
+             mvar_t *res_pre = new_var (p->refctr);
+             mvar_t *res_frag = new_var (p->refctr);
 
-                /* temporary variable */
-                mvar_t *v = new_var (1);
-                /* result BATs */
-                mvar_t *res_pre = new_var (p->refctr);
-                mvar_t *res_frag = new_var (p->refctr);
+             env_add (p->env, att_item, aat_pre, res_pre);
+             env_add (p->env, att_item, aat_pfrag, res_frag);
 
-                env_add (p->env, att_item, aat_pre, res_pre);
-                env_add (p->env, att_item, aat_pfrag, res_frag);
-
-                /* check occurrence of attributes and other nodes
-                   and react accordingly */ 
-                if ((tmp = env_mvar_worker (R(R(p))->env, att_item, aat_pre)))
-                {
-                    pre = var (tmp->name);
-                    pfrag = VAR (R(R(p))->env, att_item, aat_pfrag);
-                } else {
-                    pre = seqbase (new (type (m_void), type (m_oid)),
-                                   lit_oid (0));
-                    pfrag = pre;
-                }
+             /* check occurrence of attributes and other nodes
+                and react accordingly */ 
+             if ((tmp = env_mvar_worker (R(R(p))->env, att_item, aat_pre)))
+             {
+                  pre = var (tmp->name);
+                  pfrag = VAR (R(R(p))->env, att_item, aat_pfrag);
+             } else {
+                  pre = seqbase (new (type (m_void), type (m_oid)),
+                                 lit_oid (0));
+                  pfrag = pre;
+             }
                 
-                if ((tmp = env_mvar_worker (R(R(p))->env, att_item, aat_attr)))
-                {
-                    attr = var (tmp->name);
-                    afrag = VAR (R(R(p))->env, att_item, aat_afrag);
-                } else {
-                    attr = seqbase (new (type (m_void), type (m_oid)),
-                                   lit_oid (0));
-                    afrag = attr;
-                }
+             if ((tmp = env_mvar_worker (R(R(p))->env, att_item, aat_attr)))
+             {
+                  attr = var (tmp->name);
+                  afrag = VAR (R(R(p))->env, att_item, aat_afrag);
+             } else {
+                  attr = seqbase (new (type (m_void), type (m_oid)),
+                                  lit_oid (0));
+                  afrag = attr;
+             }
 
-                execute (
-                    assgn (var (v->name),
-                           element (VAR (L(R(p))->env, att_iter, aat_nat),
-                                    VAR (L(R(p))->env, att_item, aat_qname),
-                                    VAR (R(R(p))->env, att_iter, aat_nat),
-                                    pre, pfrag, attr, afrag,
-                                    var ("ws"))),
-                    assgn (var ("ws"), fetch (var (v->name), lit_int (0))),
-                    assgn (var (res_pre->name), 
-                           fetch (var (v->name), lit_int (1))),
-                    assgn (var (res_frag->name),
-                           fetch (var (v->name), lit_int (2)))
-                    );
-            }
+             execute (
+                  assgn (var (v->name),
+                         element (VAR (L(R(p))->env, att_iter, aat_nat),
+                                  VAR (L(R(p))->env, att_item, aat_qname),
+                                  VAR (R(R(p))->env, att_iter, aat_nat),
+                                  pre, pfrag, attr, afrag,
+                                  var (PF_MIL_VAR_WS))),
+                  assgn (var (PF_MIL_VAR_WS), fetch (var (v->name), lit_int (0))),
+                  assgn (var (res_pre->name), 
+                         fetch (var (v->name), lit_int (1))),
+                  assgn (var (res_frag->name),
+                         fetch (var (v->name), lit_int (2)))
+                  );
 
         } break;
 
@@ -2985,8 +3003,8 @@ reduce (PFpa_op_t * p, int goalnt)
                 assgn (var (v->name),
                        attribute (VAR (L(p)->env, p->sem.attr.qn, aat_qname),
                                   VAR (L(p)->env, p->sem.attr.val, aat_str),
-                                  var ("ws"))),
-                assgn (var ("ws"), fetch (var (v->name), lit_int (0))),
+                                  var (PF_MIL_VAR_WS))),
+                assgn (var (PF_MIL_VAR_WS), fetch (var (v->name), lit_int (0))),
                 assgn (var (attr->name), fetch (var (v->name), lit_int (1))),
                 assgn (var (frag->name), fetch (var (v->name), lit_int (2)))
                 );
@@ -3017,8 +3035,8 @@ reduce (PFpa_op_t * p, int goalnt)
             execute (
                 assgn (var (v->name),
                        textnode (VAR (L(p)->env, p->sem.textnode.item, aat_str),
-                                 var ("ws"))),
-                assgn (var ("ws"), fetch (var (v->name), lit_int (0))),
+                                 var (PF_MIL_VAR_WS))),
+                assgn (var (PF_MIL_VAR_WS), fetch (var (v->name), lit_int (0))),
                 assgn (var (pre->name), fetch (var (v->name), lit_int (1))),
                 assgn (var (frag->name), fetch (var (v->name), lit_int (2)))
                 );
@@ -3084,8 +3102,8 @@ reduce (PFpa_op_t * p, int goalnt)
 
             execute (
                 assgn (var (v->name),
-                       merge_adjacent (iter, pre, pfrag, var ("ws"))),
-                assgn (var ("ws"), 
+                       merge_adjacent (iter, pre, pfrag, var (PF_MIL_VAR_WS))),
+                assgn (var (PF_MIL_VAR_WS), 
                        fetch (var (v->name), lit_oid (0))),
                 assgn (var (res_pre->name), 
                        fetch (var (v->name), lit_oid (1))),
@@ -3259,6 +3277,7 @@ literal (PFalg_atom_t atom)
     if (atom.special == amm_min)
         switch (atom.type) {
             case aat_int:  return lit_min (m_lng);
+            case aat_uA:
             case aat_str:  return lit_min (m_str);
             case aat_dec:  return lit_min (m_dbl);
             case aat_dbl:  return lit_min (m_dbl);
@@ -3269,6 +3288,7 @@ literal (PFalg_atom_t atom)
     else if (atom.special == amm_max)
         switch (atom.type) {
             case aat_int:  return lit_max (m_lng);
+            case aat_uA:
             case aat_str:  return lit_max (m_str);
             case aat_dec:  return lit_max (m_dbl);
             case aat_dbl:  return lit_max (m_dbl);
@@ -3281,6 +3301,7 @@ literal (PFalg_atom_t atom)
 
             case aat_nat:  return lit_oid (atom.val.nat);
             case aat_int:  return lit_lng (atom.val.int_);
+            case aat_uA:
             case aat_str:  return lit_str (atom.val.str);
             case aat_dec:  return lit_dbl (atom.val.dec);
             case aat_dbl:  return lit_dbl (atom.val.dbl);
@@ -3289,7 +3310,7 @@ literal (PFalg_atom_t atom)
                 return add_qname (lit_str (PFqname_ns (atom.val.qname)),
                                   lit_str (PFqname_uri (atom.val.qname)),
                                   lit_str (PFqname_loc (atom.val.qname)),
-                                  var ("ws"));
+                                  var (PF_MIL_VAR_WS));
             default:
                 break;
         }
@@ -3677,7 +3698,7 @@ llscj (enum axis_t axis, const PFpa_op_t *p)
         /* Is it just a generic element kind test? (e.g. .../element()) */
         if (PFty_subtype (PFty_xs_anyElement (), ty))
 
-            scj = llscj_elem (axis, iter, item, frag, var ("ws"), order);
+            scj = llscj_elem (axis, iter, item, frag, var (PF_MIL_VAR_WS), order);
 
         /* Is it a test on element kind and local name only? */
         else if (PFty_subtype (
@@ -3685,7 +3706,7 @@ llscj (enum axis_t axis, const PFpa_op_t *p)
                                         PFty_qname (PFty_defn (ty)).loc),
                                PFty_xs_anyType ()),
                     ty))
-            scj = llscj_elem_loc (axis, iter, item, frag, var ("ws"), order,
+            scj = llscj_elem_loc (axis, iter, item, frag, var (PF_MIL_VAR_WS), order,
                                   lit_str (PFqname_loc (
                                                PFty_qname (PFty_defn (ty)))));
 
@@ -3695,7 +3716,7 @@ llscj (enum axis_t axis, const PFpa_op_t *p)
                                         NULL),
                                PFty_xs_anyType ()),
                     ty))
-            scj = llscj_elem_ns (axis, iter, item, frag, var ("ws"), order,
+            scj = llscj_elem_ns (axis, iter, item, frag, var (PF_MIL_VAR_WS), order,
                                  lit_str (PFqname_uri (
                                               PFty_qname (PFty_defn (ty)))));
 
@@ -3705,7 +3726,7 @@ llscj (enum axis_t axis, const PFpa_op_t *p)
                                PFty_xs_anyType ()),
                     ty))
             scj = llscj_elem_nsloc (
-                    axis, iter, item, frag, var ("ws"), order,
+                    axis, iter, item, frag, var (PF_MIL_VAR_WS), order,
                     lit_str (PFqname_uri (PFty_qname (PFty_defn (ty)))),
                     lit_str (PFqname_loc (PFty_qname (PFty_defn (ty)))));
         /*
@@ -3723,26 +3744,26 @@ llscj (enum axis_t axis, const PFpa_op_t *p)
     }
     /* If the node test wasn't some element test, maybe it is a text() test? */
     else if (PFty_subtype (ty, PFty_text ())) {
-        scj = llscj_text (axis, iter, item, frag, var ("ws"), order);
+        scj = llscj_text (axis, iter, item, frag, var (PF_MIL_VAR_WS), order);
     }
     /* or a comment() test? */
     else if (PFty_subtype (ty, PFty_comm ())) {
-        scj = llscj_comm (axis, iter, item, frag, var ("ws"), order);
+        scj = llscj_comm (axis, iter, item, frag, var (PF_MIL_VAR_WS), order);
     }
     /* some test for processing-instructions? */
     else if (PFty_subtype (ty, PFty_pi (NULL))) {
         /* maybe we look for _any_ pi, regardless of its target? */
         if (PFty_subtype (PFty_pi (NULL), ty))
-            scj = llscj_pi (axis, iter, item, frag, var ("ws"), order);
+            scj = llscj_pi (axis, iter, item, frag, var (PF_MIL_VAR_WS), order);
         /* or was there a target specified? */
         else
             scj = llscj_pi_targ (
-                    axis, iter, item, frag, var ("ws"), order,
+                    axis, iter, item, frag, var (PF_MIL_VAR_WS), order,
                     lit_str (PFqname_loc (PFty_qname (PFty_defn (ty)))));
     }
     /* If all these cases did not apply, it is probably a node() test. */
     else if (PFty_subtype (PFty_xs_anyNode (), ty)) {
-        scj = llscj_node (axis, iter, item, frag, var ("ws"), order);
+        scj = llscj_node (axis, iter, item, frag, var (PF_MIL_VAR_WS), order);
     }
     /* If we still couldn't find out, we probably need to give up. */
     else
@@ -3775,28 +3796,22 @@ llscj (enum axis_t axis, const PFpa_op_t *p)
      */
     execute (assgn (var (tmp->name), scj));
 
-    if (attr_req (p->prop, att_item)) {
-        ret_pre  = new_var (p->refctr);
-        ret_frag = new_var (p->refctr);
-        execute (
-            assgn (var (ret_pre->name), fetch (var (tmp->name), lit_int (1))),
-            assgn (var (ret_frag->name), 
-                   materialize (fetch (var (tmp->name), lit_int (2)),
-                                var (ret_pre->name))));
-        env_add (p->env, att_item, aat_pre, ret_pre);
-        env_add (p->env, att_item, aat_pfrag, ret_frag);
-    }
+    ret_pre  = new_var (p->refctr);
+    ret_frag = new_var (p->refctr);
+    execute (
+         assgn (var (ret_pre->name), fetch (var (tmp->name), lit_int (1))),
+         assgn (var (ret_frag->name), 
+                materialize (fetch (var (tmp->name), lit_int (2)),
+                             var (ret_pre->name))));
+    env_add (p->env, att_item, aat_pre, ret_pre);
+    env_add (p->env, att_item, aat_pfrag, ret_frag);
 
-    if (attr_req (p->prop, att_iter)) {
-        ret_iter = new_var (p->refctr);
-        execute (
-            assgn (var (ret_iter->name), 
-                   materialize (fetch (var (tmp->name), lit_int (0)),
-                                fetch (var (tmp->name), lit_int (1)))));
-        env_add (p->env, att_iter, aat_nat, ret_iter);
-    }
-
-
+    ret_iter = new_var (p->refctr);
+    execute (
+         assgn (var (ret_iter->name), 
+                materialize (fetch (var (tmp->name), lit_int (0)),
+                             fetch (var (tmp->name), lit_int (1)))));
+    env_add (p->env, att_iter, aat_nat, ret_iter);
 
     unpin (tmp, 1);
 
@@ -4177,18 +4192,6 @@ aggr_function(PFmil_t * (*op) (const PFmil_t *), PFmil_t * (*gop) (const PFmil_t
      }
 }
 
-/**
- * check if attribute @a attr is required.
- * The icols property is used to decide wether an attribute
- * is needed. If however no icols attributes are present all
- * attributes are added (!PFprop_icols_count()).
- */
-static bool
-attr_req (PFprop_t *prop, PFalg_att_t attr)
-{
-    return PFprop_icol (prop, attr) || !PFprop_icols_count (prop);
-}
-
 static void
 inc_refctr (PFpa_op_t *n)
 {
@@ -4255,7 +4258,7 @@ PFmilgen (PFpa_op_t *n)
     /* we start with an empty MIL program */
     milprog = declare (unused ());
 
-    execute (declare (var ("ws")));
+    execute (declare (var (PF_MIL_VAR_WS)));
 
     /* start compilation */
     reduce (n, 1);

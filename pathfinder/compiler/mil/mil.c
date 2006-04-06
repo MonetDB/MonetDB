@@ -30,6 +30,7 @@
 
 #include <assert.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 #include "pathfinder.h"
 
@@ -309,6 +310,43 @@ PFmil_var (const PFmil_ident_t name)
     PFmil_t *ret = leaf (m_var);
     ret->sem.ident = name;
     return ret;
+}
+
+/** return the variable name as string */
+char * PFmil_var_str (PFmil_ident_t name) {
+    switch (name) {
+        case PF_MIL_VAR_UNUSED: return "unused";
+        case PF_MIL_VAR_WS: return "ws";     
+        case PF_MIL_VAR_ATTR: return "ATTR";   
+        case PF_MIL_VAR_ELEM: return "ELEM";   
+        case PF_MIL_VAR_STR: return "STR";    
+        case PF_MIL_VAR_INT: return "INT";    
+        case PF_MIL_VAR_DBL: return "DBL";    
+        case PF_MIL_VAR_DEC: return "DEC";    
+        case PF_MIL_VAR_BOOL: return "BOOL";
+        case PF_MIL_VAR_ATTR_OWN: return "ATTR_OWN";
+        case PF_MIL_VAR_ATTR_QN: return "ATTR_QN";  
+        case PF_MIL_VAR_ATTR_CONT: return "ATTR_CONT";
+        case PF_MIL_VAR_QN_LOC: return "QN_LOC";   
+        case PF_MIL_VAR_QN_URI: return "QN_URI";   
+        case PF_MIL_VAR_ATTR_PROP: return "ATTR_PROP";
+        case PF_MIL_VAR_PROP_VAL: return "PROP_VAL"; 
+        case PF_MIL_VAR_PRE_PROP: return "PRE_PROP"; 
+        case PF_MIL_VAR_PRE_CONT: return "PRE_CONT"; 
+        case PF_MIL_VAR_PROP_TEXT: return "PROP_TEXT";
+        case PF_MIL_VAR_PROP_COM: return "PROP_COM"; 
+        case PF_MIL_VAR_PROP_INS: return "PROP_INS";    
+        default:
+        {
+            assert (name >= PF_MIL_RES_VAR_COUNT);
+            name -= PF_MIL_RES_VAR_COUNT; 
+            assert (name < 10000);
+            size_t len = sizeof ("a0000");
+            char *res = PFmalloc (len);
+            snprintf (res, len, "a%04u", name);
+            return res;
+        }
+    }
 }
 
 /**

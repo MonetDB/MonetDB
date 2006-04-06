@@ -28,6 +28,7 @@ EXTRA_DIST = \
 	algebra_mnemonic.h \
 	algopt.h \
 	array.h \
+	bitset.h \
 	builtins.h \
 	compile.h \
 	compile_interface.h \

@@ -79,7 +79,6 @@
  * @param s size (in bytes) of array elements
  * @return fresh dynamic array (or 0 in case of errors)
  */
-
 PFarray_t *
 PFarray (size_t s)
 {

@@ -63,6 +63,7 @@ enum PFalg_simple_type_t {
     , aat_dbl   = 0x0010  /**< algebra simple atomic type double  */
     , aat_bln   = 0x0020  /**< algebra simple atomic type boolean  */
     , aat_qname = 0x0040  /**< algebra simple atomic type QName  */
+    , aat_uA    = 0x0080  /**< algebra simple atomic type untypedAtomic  */
     , aat_node  = 0x0F00  /**< algebra simple atomic type node */ 
     , aat_anode = 0x0C00  /**< algebra simple atomic type attribute */ 
     , aat_attr  = 0x0800  /**< an attribute is represented 
@@ -78,8 +79,8 @@ typedef enum PFalg_simple_type_t PFalg_simple_type_t;
 
 #define monomorphic(a) ((a) == aat_nat || (a) == aat_int || (a) == aat_str \
                         || (a) == aat_dec || (a) == aat_dbl || (a) == aat_bln \
-                        || (a) == aat_qname || (a) == aat_anode \
-                        || (a) == aat_pnode \
+                        || (a) == aat_qname || (a) == aat_uA \
+                        || (a) == aat_anode || (a) == aat_pnode \
                         || ((a) == aat_pre || (a) == aat_pfrag) \
                         || ((a) == aat_attr || (a) == aat_afrag) \
                         || ((a) == 0))
@@ -98,7 +99,7 @@ typedef unsigned short PFalg_type_t;
 union PFalg_atom_val_t {
     nat        nat;     /**< value for natural number atoms (#aat_nat) */
     int        int_;    /**< value for integer atoms (#aat_int) */
-    char      *str;     /**< value for string atoms (#aat_str)  */
+    char      *str;     /**< value for string and untyped atoms (#aat_str)  */
     float      dec;     /**< value for decimal atoms (#aat_dec) */
     double     dbl;     /**< value for double atoms (#aat_dbl) */
     bool       bln;     /**< value for boolean atoms (#aat_bln) */

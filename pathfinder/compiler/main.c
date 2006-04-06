@@ -459,6 +459,7 @@ static struct option long_options[] = {
     { "print-abstract-syntax-tree",   no_argument,    NULL, 'a' },
     { "print-core-tree",              no_argument,    NULL, 'c' },
     { "debug",                     optional_argument, NULL, 'd' },
+    { "dead-code-elimination",     required_argument, NULL, 'e' },
     { "format",                    required_argument, NULL, 'f' },
     { "help",                         no_argument,    NULL, 'h' },
     { "print-logical-algebra",        no_argument,    NULL, 'l' },
@@ -593,10 +594,10 @@ main (int argc, char *argv[])
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
-        c = getopt_long (argc, argv, "ADHMO::PTXacd::f:hlo:pqrs:t", 
+        c = getopt_long (argc, argv, "ADHMO::PTXacd::e:f:hlo:pqrs:t", 
                          long_options, &option_index);
 #else
-        c = getopt (argc, argv, "ADHMO::PTXacd::f:hlo:pqrs:t");
+        c = getopt (argc, argv, "ADHMO::PTXacd::e:f:hlo:pqrs:t");
 #endif
 
         if (c == -1)
@@ -709,6 +710,10 @@ main (int argc, char *argv[])
                                             "and optimization phases\n");
                 printf ("         (default is: '-o OIKDCGV OIKDCGP')\n");
 
+                printf ("  -e[0|1]%s: dead code elimination:\n"
+                        "         0 disable dead code elimination\n"
+                        "         1 enable dead code elimination (default)\n",
+                        long_option (opt_buf, ", --%s=[0|1]", 'e'));
                 printf ("\n");
                 printf ("Enjoy.\n");
                 exit (0);
@@ -743,6 +748,10 @@ main (int argc, char *argv[])
 
             case 'd':
                 status->debug = optarg ? atoi(optarg) : 1;
+                break;
+
+            case 'e':
+                status->dead_code_el = optarg ? atoi(optarg) == 1: true;
                 break;
 
             case 'f':

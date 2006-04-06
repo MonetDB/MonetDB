@@ -75,6 +75,7 @@ struct PFstate_t {
     bool print_la_tree;       /**< command line switch: -l */
     bool print_pa_tree;       /**< command line switch: -a */
     bool summer_branch;       /**< command line switch: -M */
+    bool dead_code_el;        /**< command line switch: -e */
 
     char *opt_alg;            /**< list of algebraic optimizations 
                                    (command line switch -o) */

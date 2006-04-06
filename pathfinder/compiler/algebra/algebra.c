@@ -627,6 +627,7 @@ int PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
         case aat_nat:   return (a.val.nat == b.val.nat ? 0
                                 : (a.val.nat < b.val.nat ? -1 : 1));
         case aat_int:   return a.val.int_ - b.val.int_;
+        case aat_uA:
         case aat_str:   return strcmp (a.val.str, b.val.str);
         case aat_dec:   return a.val.dec - b.val.dec;
         case aat_dbl:   return a.val.dbl - b.val.dbl;
@@ -659,6 +660,7 @@ char * PFsimple_type_str (PFalg_simple_type_t type) {
         case aat_dec:   return "dec";
         case aat_dbl:   return "dbl";
         case aat_bln:   return "bln";
+        case aat_uA:    return "uA";
         case aat_qname: return "qname";
         case aat_node:  return "node";
         case aat_anode: return "anode";

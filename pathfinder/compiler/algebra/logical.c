@@ -1404,7 +1404,6 @@ PFla_type (const PFla_op_t *n,
     return ret;
 }
 
-
 /**
  * Constructor for type assertion check. The result is the
  * input relation n where the type of attribute att is replaced
@@ -1517,6 +1516,66 @@ PFla_cast (const PFla_op_t *n, PFalg_att_t res,
         = (PFalg_schm_item_t) { .name = res, .type = ty };
     
     return ret;
+}
+
+/** 
+ * Returns a iter/pos/items schema where the items have the type
+ * @a ty
+ */
+static PFla_op_t *
+sel_type (const PFla_op_t *n, PFalg_simple_type_t ty)
+{
+    return project (
+               type_assert_pos (
+                    select_ (
+                           type (n, 
+                                 att_res,
+                                 att_item, ty), 
+                           att_res),
+                    att_item, ty),
+               proj (att_iter, att_iter),
+               proj (att_pos, att_pos),
+               proj (att_item, att_item));
+}
+
+/**
+ * Constructs a typeswitch subtree based on the 
+ * algebra type of the item column.
+ */
+PFla_op_t *
+PFla_typeswitch (PFla_op_t *n, unsigned int count, 
+                 const PFla_typeswitch_case_t *cases)
+{
+    PFla_op_t *res = NULL;
+    PFalg_type_t item_types = 0;
+    bool found = false;
+    for (unsigned int i = 0; i < n->schema.count; i++) {
+        if (n->schema.items[i].name == att_item) {
+            found = true;
+            item_types = n->schema.items[i].type;
+            break;
+        }
+    }
+    if (!found)
+        PFoops (OOPS_FATAL,
+                "attribute `%s' referenced in type switch not found",
+                PFatt_str (att_item));
+    
+    for (unsigned int i = 0; i < count; i++) {
+        PFalg_type_t ty = item_types & cases[i].type;        
+        if (ty == item_types) {
+            res = cases[i].cnst (&cases[i], n);
+            break;
+        }
+        else if (ty != 0) {
+            PFla_op_t *tsw = cases[i].cnst (&cases[i] ,sel_type (n, ty));
+            if (res != NULL)
+                res = disjunion (res, tsw);
+            else
+                res = tsw;
+        }
+    }
+    return res;
 }
 
 

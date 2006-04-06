@@ -1564,38 +1564,129 @@ PFbui_fn_boolean_optbln (const PFla_op_t *loop __attribute__((unused)),
     	.frag = PFla_empty_set () };
 }
 
+/** 
+ * Helper function for PFbui_fn_boolean_item.
+ * Used when fn:boolean is called with an argument
+ * of type boolean. Return n.
+ */
+static PFla_op_t *
+fn_boolean_boolean (const PFla_typeswitch_case_t *case_, PFla_op_t *n)
+{
+    (void) case_;
+    return n;
+}
+
+/** 
+ * Helper function for PFbui_fn_boolean_item
+ * Returns those rows with att_item != case_->params.
+ */
+static PFla_op_t *
+fn_boolean_atomic (const PFla_typeswitch_case_t *case_, PFla_op_t *n)
+{
+    PFalg_atom_t literal = *((PFalg_atom_t *)case_->params);
+    return project (
+                    not (
+                         eq (
+                             attach (
+                                     n,
+                                     att_item1, literal),
+                             att_res, att_item, att_item1),
+                         att_res1, att_res),
+                    proj (att_iter, att_iter),
+                    proj (att_item, att_res1),
+                    proj (att_pos, att_pos));
+}
+
+/** 
+ * Helper function for PFbui_fn_boolean_item.
+ * Returns true for every iteration (fn:boolean () is
+ * always true when called with a non empty sequence of
+ * nodes).
+ */
+static 
+PFla_op_t *
+fn_boolean_node (const PFla_typeswitch_case_t *case_, PFla_op_t *n)
+{
+    (void) case_;
+    return attach (
+                   attach (
+                           distinct (
+                                     project (
+                                              n,
+                                              proj (att_iter, att_iter))),
+                           att_pos, lit_nat (1)),
+                   att_item, lit_bln (true));
+}
+
 /**
- * @bug FIXME: This needs to be changed. It's just to far off the XQuery
- *      semantics.
+ * Algebra implementation for <code>fn:boolean (node()*|xs:boolean
+ * xs:boolean|xs:integer|xs:decimal|xs:double|xs:string)</code>.
  */
 struct PFla_pair_t
 PFbui_fn_boolean_item (const PFla_op_t *loop __attribute__((unused)),
                        bool ordering,
                        struct PFla_pair_t *args)
 {
-    PFoops (OOPS_FATAL,
-            "Algebra implementation for function "
-            "`fn:boolean' is missing.");
+    (void) ordering;
 
-    (void) loop;      /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
+    /* Typeswitch, for helper function see above. */ 
+    PFla_op_t *res  = PFla_typeswitch (
+                                        args[0].rel, 
+                                        7,
+                                        (PFla_typeswitch_case_t [7])
+                                        {
+                                            {
+                                                .type = aat_node,
+                                                .cnst = fn_boolean_node
+                                            },
+                                            {
+                                                .type = aat_bln,
+                                                .cnst = fn_boolean_boolean,
+                                            },
+                                            {
+                                                .type = aat_nat,
+                                                .cnst = fn_boolean_atomic,
+                                                .params = (PFalg_atom_t [])
+                                                    { lit_nat (0) }
+                                            },
+                                            {
+                                                .type = aat_int,
+                                                .cnst = fn_boolean_atomic,
+                                                .params = (PFalg_atom_t [])
+                                                    { lit_int (0) }
+                                            },
+                                            {
+                                                .type = aat_dbl,
+                                                .cnst = fn_boolean_atomic,
+                                                .params = (PFalg_atom_t [])
+                                                    { lit_dbl (0) }
+                                            },
+                                            {
+                                                .type = aat_dec,
+                                                .cnst = fn_boolean_atomic,
+                                                .params = (PFalg_atom_t [])
+                                                    { lit_dec (0) }
+                                            },
+                                            {
+                                                .type = aat_str,
+                                                .cnst = fn_boolean_atomic,
+                                                .params = (PFalg_atom_t [])
+                                                    { lit_str ("") }
+                                            }
+                                        });
 
+    /* handle empty sequences. */
     return (struct PFla_pair_t) {
-        .rel = attach (
-                   disjunion (
-                       attach (
-                           distinct (project (args[0].rel,
-                              proj (att_iter, att_iter))),
-                           att_item, lit_bln (true)),
+        .rel = disjunion (res, 
+                   attach (
                        attach (
                            difference (
                                loop,
-                               project (args[0].rel,
-                                        proj (att_iter, att_iter))),
-                           att_item, lit_bln (false))),
-                   att_pos, lit_nat (1)),
+                               project (
+                                   args[0].rel,
+                                   proj (att_iter,att_iter))),
+                           att_item, lit_bln (false)),
+                       att_pos, lit_nat (1))),
         .frag = PFla_empty_set ()};
 }
 
@@ -2449,16 +2540,18 @@ fn_data (struct PFla_pair_t (*str_val)
 
     PFla_op_t *res = project(
                              eqjoin(
-                                    str_val (
-                                             project (
-                                                      q, 
-                                                      proj (att_iter, att_inner)), 
-                                             ordering, 
-                                             &str_args).rel, 
-                                    map, att_iter, att_inner),
+                                    cast(
+                                         str_val (
+                                                  project (
+                                                           q, 
+                                                           proj (att_iter, att_inner)), 
+                                                  ordering, 
+                                                  &str_args).rel, 
+                                         att_cast, att_item, aat_uA), 
+                                         map, att_iter, att_inner),
                              proj(att_iter, att_outer),
                              proj(att_pos, att_pos1),
-                             proj(att_item, att_item));
+                             proj(att_item, att_cast));
     
     return (struct  PFla_pair_t) {
         .rel  = disjunion(atomics, res),

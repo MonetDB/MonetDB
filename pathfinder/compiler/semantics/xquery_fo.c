@@ -274,9 +274,20 @@
     .arity = 1, .par_ty = { PFty_opt (PFty_boolean ()) },                \
     .ret_ty = PFty_boolean (),                                           \
     .alg = PFbui_fn_boolean_optbln }                                     \
-, /* fn:boolean (item*) as boolean */                                    \
+, /* fn:boolean ( */                                                     \
+  /*      node*|boolean|string|integer|decimal|double) as boolean */     \
   { .ns = PFns_fn, .loc = "boolean",                                     \
-    .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
+    .arity = 1, .par_ty = { PFty_choice (                                \
+                                PFty_star (PFty_node ()),                \
+                                PFty_choice (                            \
+                                    PFty_boolean (),                     \
+                                    PFty_choice (                        \
+                                        PFty_string (),                  \
+                                        PFty_choice (                    \
+                                            PFty_integer (),             \
+                                            PFty_choice (                \
+                                                PFty_decimal (),         \
+                                                PFty_double ()))))) },   \
     .ret_ty = PFty_boolean (),                                           \
     .alg = PFbui_fn_boolean_item }                                       \
 , /* fn:contains (string, string) as boolean */                          \

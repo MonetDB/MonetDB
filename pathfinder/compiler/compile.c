@@ -64,6 +64,7 @@
 #include "planner.h"
 #include "physdebug.h"
 #include "milgen.h"       /* MIL command tree generation */
+#include "mil_dce.h"      /* dead MIL code elimination */
 #include "milprint.h"     /* create string representation of MIL tree */
 #include "milprint_summer.h" /* create MILcode directly from the Core tree */
 #include "oops.h"
@@ -115,6 +116,7 @@ PFstate_t PFstate = {
     .print_la_tree       = false,
     .print_pa_tree       = false,
     .summer_branch       = true,
+    .dead_code_el        = true,
 
     .opt_alg             = "OIKDCGVOIKDCGP",
     .format              = NULL,
@@ -460,6 +462,16 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
 
     if (status->timing)
         PFlog ("MIL code generation:\t\t %s", PFtimer_str (tm));
+
+    if (status->dead_code_el) {
+        tm = PFtimer_start ();
+
+        mroot = PFmil_dce (mroot);
+   
+        tm = PFtimer_stop (tm);
+        if (status->timing)
+            PFlog ("dead code elimination:\t\t %s", PFtimer_str (tm));
+    }
 
     STOP_POINT(18);
 

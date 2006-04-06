@@ -1151,7 +1151,7 @@ print_variable (PFmil_t * n)
 {
     assert (n->kind == m_var);
 
-    milprintf ("%s", n->sem.ident);
+    milprintf ("%s", PFmil_var_str (n->sem.ident));
 }
 
 /**

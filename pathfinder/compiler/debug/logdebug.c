@@ -163,6 +163,7 @@ static char *atomtype[] = {
       [aat_nat]   = "nat"
     , [aat_int]   = "int"
     , [aat_str]   = "str"
+    , [aat_uA]    = "uA"
     , [aat_node]  = "node"
     , [aat_anode] = "attr"
     , [aat_pnode] = "pnode"
@@ -280,7 +281,9 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
                     else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_int)
                         PFarray_printf (dot, "%i",
                                 n->sem.lit_tbl.tuples[i].atoms[c].val.int_);
-                    else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_str)
+                    else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_str
+                             || n->sem.lit_tbl.tuples[i].atoms[c].type 
+                             == aat_uA)
                         PFarray_printf (dot, "\\\"%s\\\"",
                                 n->sem.lit_tbl.tuples[i].atoms[c].val.str);
                     else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_dec)
@@ -333,7 +336,8 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
             else if (n->sem.attach.value.type == aat_int)
                 PFarray_printf (dot, "%i",
                         n->sem.attach.value.val.int_);
-            else if (n->sem.attach.value.type == aat_str)
+            else if (n->sem.attach.value.type == aat_str
+                     || n->sem.attach.value.type == aat_uA)
                 PFarray_printf (dot, "\\\"%s\\\"",
                         n->sem.attach.value.val.str);
             else if (n->sem.attach.value.type == aat_dec)
@@ -886,7 +890,9 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                            "<value type=\"%s\">%i</value>",
                            atomtype[n->sem.lit_tbl.tuples[i].atoms[c].type],
                            n->sem.lit_tbl.tuples[i].atoms[c].val.int_);
-                    else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_str)
+                    else if (n->sem.lit_tbl.tuples[i].atoms[c].type == aat_str
+                             || n->sem.lit_tbl.tuples[i].atoms[c].type 
+                             == aat_uA)
                         PFarray_printf (
                            xml, 
                            "<value type=\"%s\">%s</value>",
@@ -966,7 +972,8 @@ la_xml (PFarray_t *xml, PFla_op_t *n, unsigned int node_id)
                    "<value type=\"%s\">%i</value>",
                    atomtype[n->sem.attach.value.type],
                    n->sem.attach.value.val.int_);
-            else if (n->sem.attach.value.type == aat_str)
+            else if (n->sem.attach.value.type == aat_str
+                     || n->sem.attach.value.type == aat_uA)
                 PFarray_printf (
                    xml, 
                    "<value type=\"%s\">%s</value>",

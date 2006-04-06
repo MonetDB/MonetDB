@@ -1185,6 +1185,8 @@ reduce (PFcnode_t * p, int goalnt)
                     algty = atom.type = aat_dbl;
                 else if (PFty_equality (t, PFty_xs_boolean ()))
                     algty = atom.type = aat_bln;
+                else if (PFty_equality (t, PFty_untypedAtomic ()))
+                    algty = atom.type = aat_uA;
                 else
                     PFoops (OOPS_FATAL,
                             "don't know the algebra equivalent of type %s",
@@ -1415,6 +1417,8 @@ reduce (PFcnode_t * p, int goalnt)
              */
             if (PFty_equality (t, PFty_xs_string ()))
                 algty = aat_str;
+            else if (PFty_equality (t, PFty_untypedAtomic ()))
+                algty = aat_uA;
             else if (PFty_equality (t, PFty_xs_integer ()))
                 algty = aat_int;
             else if (PFty_equality (t, PFty_xs_decimal ()))
@@ -1933,6 +1937,11 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
                           proj (att_itemty, att_itemty));
     else if (PFty_subtype (ty, PFty_star (PFty_xs_string ())))
         itemty = project (type (e.rel, att_itemty, att_item, aat_str),
+                          proj (att_iter, att_iter),
+                          proj (att_pos, att_pos),
+                          proj (att_itemty, att_itemty));
+    else if (PFty_subtype (ty, PFty_star (PFty_untypedAtomic ())))
+        itemty = project (type (e.rel, att_itemty, att_item, aat_uA),
                           proj (att_iter, att_iter),
                           proj (att_pos, att_pos),
                           proj (att_itemty, att_itemty));
