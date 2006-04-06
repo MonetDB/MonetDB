@@ -749,8 +749,8 @@ reduce (PFcnode_t * p, int goalnt)
                 c->sem.apply.fun = function (PFqname (PFns_pf, "string-value"));
 
                 *p = *flwr (let (letbind (var (v), c), nil ()),
-                            seqcast (seqtype (PFty_untypedAtomic ()), 
-                                     var (v)));
+                            cast (seqtype (PFty_untypedAtomic ()), 
+                                  var (v)));
 
                 /* type-check what we just created */
                 PFty_check (p);
