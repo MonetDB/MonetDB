@@ -1044,27 +1044,64 @@ static int MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_cont, 
  * Main XML document printing routine
  */
 
+static BAT* wsADMbat(BAT* ws, oid o) {
+    BAT* res = NULL;
+    BUN b = BUNfnd(ws,&o);
+
+    if ( !b ) {
+        fatal_err(0,"wsADMbat: unable to find bat[%d@0] in WS",o);
+    
+    } else {
+        res = BATdescriptor(*(bat*)b);
+    }
+    return res;
+}
+
 static int ws_documentIndex(BAT* ws, str docName) {
-    oid doc_loaded_idx = (oid)DOCID_NAME;
+    /* INCOMPLETE, updated algorith for the extra CONT_DOCID indirection.
+     * but am not really sure if all is ok now. PeterB ?????
+     */
+    
+    BAT* docid_name;
+    if ( !(docid_name=wsADMbat(ws,DOCID_NAME)) )
+        return fatal_err(0,"ws_documentIndex: unable to find DOCID_NAME in WS");
+    if ( 0 ) BATprintf(GDKout,docid_name);
 
-    BUN b = BUNfnd(ws,&doc_loaded_idx);
-
-    if ( !b )
-        return fatal_err(0,"ws_documentIndex: unable to find docbat in WS");
-
-    BAT* doc_loaded = BATdescriptor(*(bat*)b);
+    BAT* cont_docid;
+    if ( !(cont_docid=wsADMbat(ws,CONT_DOCID)) )
+        return fatal_err(0,"ws_documentIndex: unable to find CONT_DOCID in WS");
+    if ( 0 ) BATprintf(GDKout,cont_docid);
+   
+    /* 
+     * BAT* cont_coll;
+     * if ( !(cont_coll=wsADMbat(ws,CONT_COLL)) )
+     *   return fatal_err(0,"ws_documentIndex: unable to find CONT_COLL in WS");
+     * if ( 1 ) BATprintf(GDKout,cont_coll);
+     */
 
     BUN p, q;
-    BATloop(doc_loaded, p, q) {
-        oid docId = *(oid*)BUNhead(doc_loaded, p);
-        str docNm = (str)BUNtail(doc_loaded, p);
+    BATloop(docid_name, p, q) {
+        str docNm = (str)BUNtail(docid_name, p);
 
         if ( strcmp(docName,docNm) == 0 ) {
-            BBPunfix( BBPcacheid( doc_loaded ) );
-            return docId;
+	    int res;
+            BUN b;
+            oid docId = *(oid*)BUNhead(docid_name, p);
+	    BAT* mcd  = BATmirror(cont_docid);
+
+	    if ( (b=BUNfnd(mcd,&docId)) ) {
+	       res = *(oid*)BUNtail(mcd,b);
+	    } else {
+               fatal_err(0,"ws_documentIndex: unable to find %d@0 in CONT_DOCID",docId);
+	       res = 0;
+	    }
+            BBPunfix( BBPcacheid( docid_name ) );
+            BBPunfix( BBPcacheid( cont_docid ) );
+            return res;
         }
     }
-    BBPunfix( BBPcacheid( doc_loaded ) );
+    BBPunfix( BBPcacheid( docid_name ) );
+    BBPunfix( BBPcacheid( cont_docid ) );
     return -1;
 }
 
