@@ -689,6 +689,10 @@ prop_infer (PFla_op_t *n, PFarray_t *dr, unsigned int cur_dom_id)
 
     /* assign all nodes the same domain relation */
     n->prop->dom_rel = dr;
+    /* reset the domain information */
+    n->prop->domains   = PFarray (sizeof (dom_pair_t));
+    n->prop->l_domains = PFarray (sizeof (dom_pair_t));
+    n->prop->r_domains = PFarray (sizeof (dom_pair_t));
     
     /* copy all children domains */
     copy_child_domains (n);
