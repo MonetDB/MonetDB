@@ -345,6 +345,7 @@ BATappend(BAT *b, BAT *n, bit force)
 		if (b->tkey & BOUND2BTRUE) {
 			BAT *bm = BBP_cache(-b->batCacheid);
 
+			b->tdense = b->tsorted = 0;
 			if (b->hseqbase != oid_nil) {
 				oid h = b->hseqbase + i;
 
@@ -375,7 +376,6 @@ BATappend(BAT *b, BAT *n, bit force)
 				BATkey(b, FALSE);
 				b->hdense = b->hsorted = 0;
 			}
-			b->tdense = b->tsorted = 0;
 		} else if (b->hseqbase != oid_nil) {
 			oid h = b->hseqbase + BATcount(b);
 
