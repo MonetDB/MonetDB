@@ -1,8 +1,0 @@
-b:= bat.new(:int,:int);
-bat.insert(b,1,2);
-#many more inserts
-c{singleton}:= algebra.select(b,0,4);
-d:= algebra.markH(c);
-io.print(d);
-optimizer.singleton();
-mdb.list();
