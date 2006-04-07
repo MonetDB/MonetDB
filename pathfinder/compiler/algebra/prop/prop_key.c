@@ -436,6 +436,11 @@ infer_key (PFla_op_t *n)
                tuple. Iterations iter are thus key. */
             n->prop->keys = att_iter;
             break;
+
+        case la_cross_dup:
+            PFoops (OOPS_FATAL,
+                    "duplicate aware cross product operator is "
+                    "only allowed inside mvd optimization!");
     }
 }
 

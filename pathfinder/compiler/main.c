@@ -708,7 +708,10 @@ main (int argc, char *argv[])
                 printf ("         N  skip the following optimizations\n");
                 printf ("            (used for avoiding all property analysis "
                                             "and optimization phases\n");
-                printf ("         (default is: '-o OIKDCGV OIKDCGP')\n");
+                printf ("         _  does nothing (used for structuring "
+                                            "the options)\n");
+                printf ("         (default is: "
+                                            "'-o OIKDCG_VOIG_MOIGC_KDCGP')\n");
 
                 printf ("  -e[0|1]%s: dead code elimination:\n"
                         "         0 disable dead code elimination\n"

@@ -74,7 +74,11 @@ Usage: pf [OPTION] [FILE]
             (used for debug output and physical algebra
          N  skip the following optimizations
             (used for avoiding all property analysis and optimization phases
-         (default is: '-o OIKDCGV OIKDCGP')
+         _  does nothing (used for structuring the options)
+         (default is: '-o OIKDCG_VOIG_MOIGC_KDCGP')
+= -e[0|1], --dead-code-elimination=[0|1]: dead code elimination:
+         0 disable dead code elimination
+         1 enable dead code elimination (default)
 
 Enjoy.
 

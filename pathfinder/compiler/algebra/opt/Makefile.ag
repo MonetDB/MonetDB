@@ -36,5 +36,6 @@ lib_opt = {
                 opt_general.brg \
                 opt_icol.c \
                 opt_key.c \
+                opt_mvd.c \
                 opt_reqval.c
 }

@@ -110,6 +110,7 @@ enum PFla_op_kind_t {
     , la_empty_frag     = 73 /**< representation of an empty fragment */
                             
     , la_cond_err       = 80 /**< facility to trigger runtime errors */
+    , la_cross_dup      = 99 /**< cross product (Cartesian product) */
                             
     /* builtin support for XQuery functions */
     , la_concat         =100 /**< fn:concat */
@@ -360,6 +361,12 @@ PFla_op_t *PFla_attach (const PFla_op_t *n,
  * No duplicate attribute names allowed.
  */
 PFla_op_t * PFla_cross (const PFla_op_t *n1, const PFla_op_t *n2);
+
+/**
+ * Cross product (Cartesian product) of two relations.
+ * Duplicate attribute names allowed.
+ */
+PFla_op_t * PFla_cross_duplicate (const PFla_op_t *n1, const PFla_op_t *n2);
 
 
 /**

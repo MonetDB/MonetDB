@@ -629,6 +629,11 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
         case la_string_join:
             PFarray_printf (dot, "%s", a_id[n->kind]);
             break;
+
+        case la_cross_dup:
+            PFoops (OOPS_FATAL,
+                    "duplicate aware cross product operator is "
+                    "only allowed inside mvd optimization!");
     }
 
     if (PFstate.format) {

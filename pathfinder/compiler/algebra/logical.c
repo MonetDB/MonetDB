@@ -351,6 +351,47 @@ PFla_cross (const PFla_op_t *n1, const PFla_op_t *n2)
 
     return ret;
 }
+/**
+ * Cross product (Cartesian product) between two algebra expressions.
+ * Arguments @a n1 and @a n2 may have equally named attributes.
+ */
+PFla_op_t *
+PFla_cross_duplicate (const PFla_op_t *n1, const PFla_op_t *n2)
+{
+    PFla_op_t   *ret = la_op_wire2 (la_cross_dup, n1, n2);
+    unsigned int i;
+    unsigned int j;
+    unsigned int count;
+
+    assert (n1); assert (n2);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n1->schema.count + n2->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from argument 1 */
+    for (i = 0; i < n1->schema.count; i++)
+        ret->schema.items[i] = n1->schema.items[i];
+
+    count = n1->schema.count;
+
+    /* copy schema from argument 2, check for duplicate attribute names
+       and discard if present */
+    for (j = 0; j < n2->schema.count; j++) {
+        for (i = 0; i < n1->schema.count; i++)
+            if (n1->schema.items[i].name == n2->schema.items[j].name)
+                break;
+
+        /* no duplicate found */
+        if (i == n1->schema.count)
+            ret->schema.items[count++] = n2->schema.items[j];
+    }
+    /* fix size of the schema */
+    ret->schema.count = count;
+
+    return ret;
+}
 
 
 /**

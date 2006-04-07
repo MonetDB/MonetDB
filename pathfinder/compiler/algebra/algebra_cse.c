@@ -359,6 +359,11 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
              */
             return false;
             break;
+
+        case la_cross_dup:
+            PFoops (OOPS_FATAL,
+                    "duplicate aware cross product operator is "
+                    "only allowed inside mvd optimization!");
     }
 
     /* pacify compilers */

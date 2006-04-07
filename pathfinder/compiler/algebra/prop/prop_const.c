@@ -297,6 +297,11 @@ copy_child_constants (PFla_op_t *n)
             assert(R(n));
             n->prop->r_constants = PFarray_copy (R(n)->prop->constants);
             break;
+
+        case la_cross_dup:
+            PFoops (OOPS_FATAL,
+                    "duplicate aware cross product operator is "
+                    "only allowed inside mvd optimization!");
     }
 }
 
@@ -688,6 +693,11 @@ infer_const (PFla_op_t *n)
         case la_concat:
         case la_contains:
             break;
+
+        case la_cross_dup:
+            PFoops (OOPS_FATAL,
+                    "duplicate aware cross product operator is "
+                    "only allowed inside mvd optimization!");
     }
 }
 

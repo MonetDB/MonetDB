@@ -132,6 +132,19 @@ PFalgopt (PFla_op_t *root, bool timing)
                            PFtimer_str (tm));
                 break;
 
+            case 'M':
+                tm = PFtimer_start ();
+
+                /* give up rewriting after 20 noneffective
+                   cross product - cross product rewrites. */
+                root = PFalgopt_mvd (root, 20);
+                
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("\tmvd optimization:\t\t %s",
+                           PFtimer_str (tm));
+                break;
+
             case 'V':
                 tm = PFtimer_start ();
                 
@@ -161,6 +174,7 @@ PFalgopt (PFla_op_t *root, bool timing)
                 return root;
 
             case ' ':
+            case '_':
                 break;
 
             default:

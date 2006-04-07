@@ -508,6 +508,11 @@ infer_ocol (PFla_op_t *n)
                 = (PFalg_schm_item_t) { .name = att_item, .type = aat_str };
             break;
 
+
+        case la_cross_dup:
+            PFoops (OOPS_FATAL,
+                    "duplicate aware cross product operator is "
+                    "only allowed inside mvd optimization!");
     }
 }
 

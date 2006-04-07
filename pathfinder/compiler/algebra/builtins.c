@@ -1978,11 +1978,11 @@ PFbui_op_union (const PFla_op_t *loop __attribute__((unused)),
     if (ordering)
         return (struct  PFla_pair_t) {
             .rel = rownum (distinct,
-                           att_pos, sortby (att_item), att_NULL),
+                           att_pos, sortby (att_item), att_iter),
             .frag = PFla_set_union (args[0].frag, args[1].frag) };
     else
         return (struct  PFla_pair_t) {
-            .rel = number (distinct, att_pos, att_NULL),
+            .rel = number (distinct, att_pos, att_iter),
             .frag = PFla_set_union (args[0].frag, args[1].frag) };
 }
 
@@ -2016,11 +2016,11 @@ PFbui_op_intersect (const PFla_op_t *loop __attribute__((unused)),
     if (ordering)
         return (struct  PFla_pair_t) {
             .rel = rownum (distinct,
-                           att_pos, sortby (att_item), att_NULL),
+                           att_pos, sortby (att_item), att_iter),
             .frag = PFla_set_union (args[0].frag, args[1].frag) };
     else
         return (struct  PFla_pair_t) {
-            .rel = number (distinct, att_pos, att_NULL),
+            .rel = number (distinct, att_pos, att_iter),
             .frag = PFla_set_union (args[0].frag, args[1].frag) };
 }
 
@@ -2056,12 +2056,12 @@ PFbui_op_except (const PFla_op_t *loop __attribute__((unused)),
     if (ordering)
         return (struct  PFla_pair_t) {
             .rel = rownum (distinct,
-                           att_pos, sortby (att_item), att_NULL),
+                           att_pos, sortby (att_item), att_iter),
             /* result nodes can only originate from first argument */
             .frag = args[0].frag };
     else
         return (struct  PFla_pair_t) {
-            .rel = number (distinct, att_pos, att_NULL),
+            .rel = number (distinct, att_pos, att_iter),
             /* result nodes can only originate from first argument */
             .frag = args[0].frag };
 }
@@ -2186,11 +2186,11 @@ PFbui_pf_distinct_doc_order (const PFla_op_t *loop __attribute__((unused)),
     if (ordering)
         return (struct  PFla_pair_t) {
             .rel = rownum (distinct,
-                           att_pos, sortby (att_item), att_NULL),
+                           att_pos, sortby (att_item), att_iter),
             .frag = args[0].frag };
     else
         return (struct  PFla_pair_t) {
-            .rel = number (distinct, att_pos, att_NULL),
+            .rel = number (distinct, att_pos, att_iter),
             .frag = args[0].frag };
 }
 
@@ -3059,7 +3059,7 @@ PFbui_fn_unordered (const PFla_op_t *loop __attribute__((unused)),
                     project (args[0].rel,
                              proj (att_iter, att_iter),
                              proj (att_item, att_item)),
-                    att_pos, att_NULL),
+                    att_pos, att_iter),
         .frag = PFla_empty_set () };
 }
 /* vim:set shiftwidth=4 expandtab: */

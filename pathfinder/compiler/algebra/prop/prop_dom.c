@@ -662,6 +662,11 @@ infer_dom (PFla_op_t *n, unsigned int id)
             /* create new domain for attribute item */
             add_dom (n->prop, att_item, id++);
             break;
+
+        case la_cross_dup:
+            PFoops (OOPS_FATAL,
+                    "duplicate aware cross product operator is "
+                    "only allowed inside mvd optimization!");
     }
     return id;
 }

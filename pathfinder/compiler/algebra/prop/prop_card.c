@@ -105,7 +105,6 @@ infer_card (PFla_op_t *n)
         case la_attribute:
         case la_textnode:
         case la_roots:
-        case la_cond_err:
         case la_concat:
         case la_contains:
             /* cardinality stays the same */
@@ -168,6 +167,19 @@ infer_card (PFla_op_t *n)
                     "no solution yet for cardinality "
                     "of remaining constructors");
             break;
+
+        case la_cond_err:
+            /* Optimizations are allowed to prune errors
+               as long as the cardinality stays the same.
+               Therefore we do not infer the cardinality to
+               avoid optimizations based on the cardinality. */
+            n->prop->card = 0;
+            break;
+
+        case la_cross_dup:
+            PFoops (OOPS_FATAL,
+                    "duplicate aware cross product operator is "
+                    "only allowed inside mvd optimization!");
     }
 }
 
