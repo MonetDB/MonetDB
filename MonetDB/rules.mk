@@ -242,3 +242,6 @@ $(patsubst %.c,%.lo,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.lo: %.c
 
 SUFFIXES-local: $(BUILT_SOURCES)
 
+distdir: check_dist
+check_dist:
+	@if [ "$(SWIG)" = "no" -o "$(NETCDF)" = "no" ]; then $(ECHO) "Cannot create distribution because one of the necessary programs or libraries is missing"; echo "swig	= $(SWIG)"; echo "netcdf	= $(NETCDF)"; exit 1; fi
