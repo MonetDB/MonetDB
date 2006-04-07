@@ -6366,7 +6366,6 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "    } # end IF_ISNIL_RPC-ERR\n"
                 "  } # end BATLOOP\n"
                 "  time_ll_rpc := time() - time_ll_rpc;\n"
-                "  printf(\"\\nLoop-Lifted RPC time: %% 7d.000 msec\\n\\n\", time_ll_rpc);\n"
                 "  iter := iter.sort_ht().tmark(0@0);\n"
                 "  item := item.sort_ht().tmark(0@0);\n"
                 "  kind := kind.sort_ht().tmark(0@0);\n"

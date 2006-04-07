@@ -100,7 +100,8 @@ module 'pathfinder'
 [ "xmlcache_print_rules() : void"		  ]
 [ "xmldb_print() : void"			  ]
 [ "xquery(mode str, xquery str, is_url bit) : str "													  ]
-[ "xquery_frontend(lng) : ptr"				  ]
+[ "xquery_frontend() : ptr"				  ]
+[ "xquery_start_query_cache(lng) : void"		  ]
 module 'xquery_rpc'
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # signature																						  # name

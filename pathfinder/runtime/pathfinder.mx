@@ -34,6 +34,7 @@
 @a Stefan Manegold
 @a Peter Boncz 
 @a Ying Zhang
+@a Niels Nes
 
 @t Runtime Support for the Pathfinder XQuery Compiler
 
@@ -42,13 +43,16 @@
 
 .USE streams;
 
-.COMMAND xquery_frontend(lng maxsize) : ptr = xquery_frontend;
- "create/return the xquery_frontend callback interface to pass to mapi register to let it use the query plan cache, if nonzero, the parameter is a per-connection size limit to the plan cache in bytes"
+.COMMAND xquery_frontend() : ptr = xquery_frontend;
+ "create/return the xquery_frontend callback interface to pass to mapi register. "
 
 .BUILTIN xquery(mode str, xquery str, is_url bit) : str = CMDxquery;
  "xquery execution. parameters: mode, query, is_url (optional)
  usage:  var result := xquery(\"xml\", \"1+1\", false); printf(result);
  or:  printf(xquery(\"xml\", \"1+1\"));"
+
+.COMMAND xquery_start_query_cache(lng maxsize) : void = CMDxquery_start_query_cache; 
+ "Cached xquery clients use the query plan cache (also flushes the cache when called). if nonzero, the parameter is a per-connection size limit to the plan cache in bytes"
 
 .PRELUDE = xquery_prelude;
 .EPILOGUE = xquery_epilogue;
@@ -59,7 +63,8 @@ module(mapi);       # remote client access
 module(monettime); 
 
 PROC pfstart(bit open, lng sz) : void {
-	mapi_register(xquery_frontend(sz));
+        xquery_start_query_cache(sz);
+	mapi_register(xquery_frontend());
         if (not(mapi_running())) {
                 mapi_listen(
                         int(monet_environment.find("mapi_port")), 
@@ -1275,6 +1280,7 @@ typedef struct {
     /* query buffer reuse */
     size_t buflen;
     char *buf;
+    int cacheid;        /* only reuse from the same cache */
         
     /* error stream (normally fderr=GDKerr=GDKout) */
     stream *fderr;
@@ -1301,6 +1307,7 @@ typedef struct {
 } xquery_client;
 
 size_t xquery_client_bytes = 64<<20; /* 64MB of procs should be enough for anyone */
+int xquery_cacheid = 0;
 
 MT_Lock pf_compiler_lock;
 MT_Lock pf_module_lock;
@@ -2043,6 +2050,47 @@ xquery_module_load(xquery_client *ctx,
     return xquery_match_ns(mod->def->nsurl, module);
 }
 
+/*
+ * wait for all queries to finish; free all clients; clear PF url cache
+ */
+static void
+xquery_client_flushall()
+{
+    int i, wait = 100;
+    while(wait) {
+        MT_set_lock(pf_cache_lock, "xquery_client_flushall");
+        i = active_clients("xquery");
+        if (i == 0) {
+            /* ok, no xquery clients are active */
+            xquery_module *mod = xquery_compiled_modules;
+
+            while(mod) {
+                xquery_module *del = mod;
+                mod = mod->next;
+                xquery_module_free(del);
+            }
+            xquery_compiled_modules = NULL;
+            xquery_cacheid++;
+            PFurlcache_flush();
+            wait = 0;
+        }
+        MT_unset_lock(pf_cache_lock, "xquery_client_flushall");
+        MT_sleep_ms(wait);
+    }
+}
+
+/*
+ * flush the cache. 
+ */
+int
+CMDxquery_start_query_cache(lng *maxsize)
+{
+    xquery_client_flushall();
+    if (*maxsize > 0) xquery_client_bytes = *maxsize;
+    xquery_cacheid++; /* old clients need to clean up their resources */
+    return GDK_SUCCEED;
+}
+
 
 /*
  * =================== client session management ================================
@@ -2128,6 +2176,7 @@ xquery_client_alloc_(xquery_client *ctx)
     ctx->loaded_modules = NULL;
     ctx->prepared_functions = NULL;
     ctx->buflen = XQUERY_BUFSIZE;
+    ctx->cacheid = xquery_cacheid;
     ctx->buf = GDKmalloc(ctx->buflen+1);
     ctx->val = GDKmalloc(ctx->vallen = 128);
     if (ctx->val == NULL || ctx->buf == NULL) {
@@ -2171,28 +2220,8 @@ xquery_client_init_(xquery_client *ctx )
     return NULL;
 }
 
-static char* 
-xquery_client_init(mapi_client *fc) 
-{ 
-    xquery_client *ctx = fc->fc;
-    char *err = xquery_client_init_(ctx);
-
-    ctx->fderr = fc->c->fdout;
-    if (err)
-        fprintf(stderr, "xquery_client_init: client %d %s\n", fc->stk, err);
-    return err;
-}
-
-
-@= unfix
-    if (ctx->@1) BBPunfix(ctx->@1->batCacheid);
-    ctx->@1 = NULL;
-@c
-/* 
- * free a xquery cache context (terminate).
- */
-static void
-xquery_client_free_(xquery_client *ctx)
+void
+xquery_client_free_cached_queries(xquery_client *ctx)
 {
     xquery_prepared_function *fun= ctx->prepared_functions; 
     xquery_loaded_module *mod= ctx->loaded_modules; 
@@ -2213,12 +2242,52 @@ xquery_client_free_(xquery_client *ctx)
     }
     ctx->loaded_modules = NULL;
     ctx->prepared_functions = NULL;
-    ctx->shredBAT = NULL;
 
     /* free the query buffer */
     if (ctx->buf) GDKfree(ctx->buf);
     ctx->buf = NULL;
     ctx->buflen = 0;
+}
+
+static char* 
+xquery_client_init(mapi_client *fc) 
+{ 
+    xquery_client *ctx = fc->fc;
+    char *err = xquery_client_init_(ctx);
+
+    ctx->fderr = fc->c->fdout;
+
+    if (!err && ctx->cacheid != xquery_cacheid) {
+        xquery_client_free_cached_queries(ctx);
+
+        ctx->buflen = XQUERY_BUFSIZE;
+        ctx->cacheid = xquery_cacheid;
+        ctx->buf = GDKmalloc(ctx->buflen+1);
+        if (ctx->buf == NULL) {
+            if (ctx->buf) GDKfree(ctx->buf);
+            ctx->buflen = 0;
+            err = "xquery_client_init: failed to allocate.\n";
+        }
+    }
+    if (err)
+        fprintf(stderr, "xquery_client_init: client %d %s\n", fc->stk, err);
+    return err;
+}
+
+
+@= unfix
+    if (ctx->@1) BBPunfix(ctx->@1->batCacheid);
+    ctx->@1 = NULL;
+@c
+/* 
+ * free a xquery cache context (terminate).
+ */
+static void
+xquery_client_free_(xquery_client *ctx)
+{
+    xquery_client_free_cached_queries(ctx);
+
+    ctx->shredBAT = NULL;
 
     /* free the value buffer */
     if (ctx->val) GDKfree(ctx->val);
@@ -2728,13 +2797,12 @@ xquery_client_engine(mapi_client *fc )
 }
 
 int
-xquery_frontend( ptr *F, lng *maxsize )
+xquery_frontend( ptr *F)
 {
 	char *m_clients = GDKgetenv("mapi_clients"); 
 	int nr = (m_clients)?strtol(m_clients, NULL, 10):1;
 	mapi_frontend *f = (mapi_frontend*)GDKmalloc(sizeof(mapi_frontend));
 	*F = f;
-        if (*maxsize > 0) xquery_client_bytes = *maxsize;
 	f->name = GDKstrdup("xquery");
 	f->cache_limit = nr;
 	f->f_alloc = xquery_client_alloc;
@@ -2844,21 +2912,20 @@ xquery_method(stream *out,
               BAT* shredBAT)
 {
     int msec = GDKms();
-    Thread XQthread = THRget(THRgettid());
-    xquery_client *ctx; 
+    MT_Id XQthread_id = THRgettid();
+    Thread XQthread = THRget(XQthread_id);
     char *err = NULL, *ns = "fn", *mode = "xml-noheader-typed-root-iter";
-    Client c;
     stream *s = NULL;
-    
-    c = initClient("xquery_rpc", "xquery_rpc", FALSE);
-	TBL_initclient(c, monet_clients);
-    ctx = xquery_client_new(c-monet_clients);
-    if (ctx == NULL) 
-        return "xquery_method: out of client slots.\n";
-    if ((err = xquery_client_alloc_(ctx)) != NULL || 
-        (err = xquery_client_init_(ctx)) != NULL )
-        return err;
+    mapi_client *mc = MAPIclient(GDKin, out, "xquery" );
+    xquery_client *ctx;
 
+    if (mc == NULL) 
+        return "xquery_method: out of client slots.\n";
+
+    ctx = mc->fc; 
+    ctx->fderr = GDKerr;
+    mc->t = XQthread_id;
+    mc->thread = XQthread;
     monetSetChannel(XQthread, GDKin, out);
     if (argc > 1000) {
         /* hack: pass argc+1000 and you get debug output */
@@ -2887,7 +2954,8 @@ xquery_method(stream *out,
     monetSetChannel(XQthread, GDKin, GDKout);
 
     xquery_client_end(ctx, NULL);
-    closeClient(c, FALSE);
+    mc->inuse = 0;
+    mc->t = ~(MT_Id)0;
     return err;
 }
 
@@ -2914,7 +2982,7 @@ xquery_prelude()
 void
 xquery_epilogue()
 {
-    PFurlcache_flush();
+    xquery_client_flushall();
     MT_destroy_lock(pf_compiler_lock);
     MT_destroy_lock(pf_cache_lock);
 }
