@@ -48,6 +48,7 @@
 /** starting from p, make a step right */
 #define R(p) ((p)->child[1])
 #define LL(p) (L(L(p)))
+#define LLL(p) (L(LL(p)))
 
 #define SEEN(p) ((p)->bit_dag)
 
@@ -114,7 +115,9 @@ opt_complex (PFla_op_t *p)
             if (p->sem.attach.attname == att_iter &&
                 L(p)->kind == la_project &&
                 L(p)->schema.count == 1 &&
-                LL(p)->kind == la_scjoin)
+                (LL(p)->kind == la_scjoin || 
+                 (LL(p)->kind == la_roots &&
+                  LLL(p)->kind == la_doc_tbl)))
                 *p = *(LL(p));
             break;
             
