@@ -50,15 +50,15 @@ using HTTP connection on top of MonetDB within the "Pathfinder" project.
         str rpc_module,
         str rpc_uri,
         str rpc_method,
-        BAT[void, bat] ws,
-        BAT[void, oid] fun_vid,
-        BAT[void, oid] fun_iter,
-        BAT[void, oid] fun_item,
-        BAT[void, int] fun_kind,
-        BAT[void, lng] int_values,
-        BAT[void, dbl] dbl_values,
-        BAT[void, dbl] dec_values,
-        BAT[void, str] str_values) : BAT[oid, bat] = CMDhttp_post;
+        BAT[oid, bat] ws,
+        BAT[oid, oid] fun_vid,
+        BAT[oid, oid] fun_iter,
+        BAT[oid, oid] fun_item,
+        BAT[oid, int] fun_kind,
+        BAT[oid, lng] int_values,
+        BAT[oid, dbl] dbl_values,
+        BAT[oid, dbl] dec_values,
+        BAT[oid, str] str_values) : BAT[oid, bat] = CMDhttp_post;
 "Create and send a RPC request message to the specified destination"
 
 .PRELUDE = xquery_rpc_prelude;
@@ -89,15 +89,15 @@ PROC rpc_client(
         str rpc_module,
         str rpc_uri,
         str rpc_method,
-        BAT[void, bat] ws,
-        BAT[void, oid] fun_vid,
-        BAT[void, oid] fun_iter,
-        BAT[void, oid] fun_item,
-        BAT[void, int] fun_kind,
-        BAT[void, lng] int_values,
-        BAT[void, dbl] dbl_values,
-        BAT[void, dbl] dec_values,
-        BAT[void, str] str_values) : oid {
+        BAT[oid, bat] ws,
+        BAT[oid, oid] fun_vid,
+        BAT[oid, oid] fun_iter,
+        BAT[oid, oid] fun_item,
+        BAT[oid, int] fun_kind,
+        BAT[oid, lng] int_values,
+        BAT[oid, dbl] dbl_values,
+        BAT[oid, dbl] dec_values,
+        BAT[oid, str] str_values) : oid {
 
     var rpcres := http_post(location, rpc_module, rpc_uri, rpc_method, ws, 
                             fun_vid,    fun_iter,   fun_item,   fun_kind,
@@ -738,6 +738,25 @@ int CMDhttp_post(BAT **res,
     int **argcnt = NULL;    /* #items eash [iter][param] contains */
     int nr_args = 0;
     int max_args = 0;
+
+    ERRORcheck(!BAThdense(ws),
+               "http_post: head of BAT ws must be dense.\n");
+    ERRORcheck(!BAThdense(fun_vid),
+               "http_post: head of BAT fun_vid must be dense.\n");
+    ERRORcheck(!BAThdense(fun_iter),
+               "http_post: head of BAT fun_iter must be dense.\n");
+    ERRORcheck(!BAThdense(fun_item),
+               "http_post: head of BAT fun_item must be dense.\n");
+    ERRORcheck(!BAThdense(fun_kind),
+               "http_post: head of BAT fun_kind must be dense.\n");
+    ERRORcheck(!BAThdense(int_values),
+               "http_post: head of BAT int_values must be dense.\n");
+    ERRORcheck(!BAThdense(dbl_values),
+               "http_post: head of BAT dbl_values must be dense.\n");
+    ERRORcheck(!BAThdense(dec_values),
+               "http_post: head of BAT dec_values must be dense.\n");
+    ERRORcheck(!BAThdense(str_values),
+               "http_post: head of BAT str_values must be dense.\n");
 
     if ((strptr = strchr(location, (int)':')) != NULL) {
         strptr[0] = '\0'; strptr++;
