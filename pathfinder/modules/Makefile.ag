@@ -14,7 +14,4 @@
 # Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
-# if conditional compilation of pftijah does not work make the
-# SUBDIRS variable empty again
-# SUBDIRS = 
 SUBDIRS = HAVE_PFTIJAH?pftijah
