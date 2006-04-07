@@ -147,13 +147,13 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int topic_type, str
   int result;
 
   /* operator count */
-  unsigned int op_num;
+  int op_num;
 
   /* adjacent term count */
   int t_count;
 
   /* stack pointers */
-  unsigned int com_sp;
+  int com_sp;
 
   /* operator number count */
   unsigned int com_num;
