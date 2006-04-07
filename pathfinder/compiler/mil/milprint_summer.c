@@ -6363,6 +6363,8 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "      iter.insert(res_iter); # save the intermediate results in final iter|item|kind\n"
                 "      item.insert(res_item);\n"
                 "      kind.insert(res_kind);\n"
+                "    } else { # layman's error handling simplifies debugging; better solution is more than welcome!\n"
+                "      ERROR(\"RPC call: rpc_client:\\n\" + rpc_err);\n"
                 "    } # end IF_ISNIL_RPC-ERR\n"
                 "  } # end BATLOOP\n"
                 "  time_ll_rpc := time() - time_ll_rpc;\n"
