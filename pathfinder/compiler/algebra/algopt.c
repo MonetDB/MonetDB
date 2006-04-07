@@ -162,7 +162,8 @@ PFalgopt (PFla_op_t *root, bool timing)
                 PFprop_infer (true /* card */, true /* const */,
                               true /* dom */, true /* icols */,
                               true /* key */, true /* ocols */, 
-                              true /* reqval */, root);
+                              true /* reqval */, true /* unique names */,
+                              root);
                 
                 tm = PFtimer_stop (tm);
                 if (timing)

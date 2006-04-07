@@ -63,6 +63,8 @@ struct PFprop_t {
                                   unique values. */
     reqval_t     reqvals;    /**< List of attributes with their corresponding
                                   required values. */
+    PFarray_t   *name_pairs; /**< List of attributes with their corresponding
+                                  unique names. */
 
     /* to allow peep-hole optimizations we also store property
        information of the children (left child 'l_', right child 'r_' */
@@ -107,6 +109,13 @@ struct dom_rel_t {
 };
 typedef struct dom_rel_t dom_rel_t;
 
+/* unique name item */
+struct name_pair_t {
+    PFalg_att_t ori;
+    PFalg_att_t unq;
+};
+typedef struct name_pair_t name_pair_t;
+
 /**
  * Create new property container.
  */
@@ -117,7 +126,8 @@ PFprop_t *PFprop (void);
  * rooted in root whose flag is set.
  */
 void PFprop_infer (bool card, bool const_, bool dom, bool icols,
-                   bool key, bool ocols, bool reqval, PFla_op_t *root);
+                   bool key, bool ocols, bool reqval, bool unq_names,
+                   PFla_op_t *root);
 
 /**
  * Create new property fields for a DAG rooted in @a root
@@ -136,6 +146,7 @@ void PFprop_infer_icol (PFla_op_t *root);
 void PFprop_infer_key (PFla_op_t *root);
 void PFprop_infer_ocol (PFla_op_t *root);
 void PFprop_infer_reqval (PFla_op_t *root);
+void PFprop_infer_unq_names (PFla_op_t *root);
 
 /* --------------------- cardinality propery accessors --------------------- */
 
@@ -328,6 +339,25 @@ bool PFprop_reqval (const PFprop_t *prop, PFalg_att_t attr);
  * in container @a prop
  */
 bool PFprop_reqval_val (const PFprop_t *prop, PFalg_att_t attr);
+
+/* --------------------- unique names property accessors ------------------- */
+
+/**
+ * Return unique name of attribute @a attr stored
+ * in property container @a prop.
+ */
+PFalg_att_t PFprop_unq_name (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
+ * Return original name of unique attribute @a attr stored
+ * in property container @a prop.
+ */
+PFalg_att_t PFprop_ori_name (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
+ * Returns the textual representation of an unique attribute @a attr.
+ */
+char * PFunq_att_str (PFalg_att_t attr);
 
 #endif  /* PROPERTIES_H */
 

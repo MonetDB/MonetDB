@@ -78,6 +78,9 @@ PFprop (void)
     ret->l_domains = PFarray (sizeof (dom_pair_t));
     ret->r_domains = PFarray (sizeof (dom_pair_t));
 
+    /* initialize unique name information */
+    ret->unq_names = PFarray (sizeof (name_pair_t));
+
     return ret;
 }
 
@@ -86,8 +89,8 @@ PFprop (void)
  * rooted in root whose flag is set.
  */
 void
-PFprop_infer (bool card, bool const_, bool dom,
-              bool icols, bool key, bool ocols, bool reqval,
+PFprop_infer (bool card, bool const_, bool dom, bool icols,
+              bool key, bool ocols, bool reqval, bool unq_names,
               PFla_op_t *root)
 {
     PFprop_create_prop (root);
@@ -108,6 +111,8 @@ PFprop_infer (bool card, bool const_, bool dom,
         PFprop_infer_ocol (root);
     if (reqval)
         PFprop_infer_reqval (root);
+    if (unq_names)
+        PFprop_infer_unq_names (root);
 }
 
 /* worker for PFprop_create_prop () */

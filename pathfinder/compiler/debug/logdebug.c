@@ -689,6 +689,16 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
                             PFprop_dom (n->prop, n->schema.items[i].name));
                     }
 
+                /* list attributes and their corresponding domains */
+                for (unsigned int i = 0; i < n->schema.count; i++)
+                    PFarray_printf (dot, i ?
+                                         ", %s=%s " :
+                                         "\\nnames: %s=%s ",
+                                    PFatt_str (n->schema.items[i].name),
+                                    PFunq_att_str (
+                                        PFprop_unq_name (
+                                            n->prop,
+                                            n->schema.items[i].name)));
                 all = true;
             }
             fmt++;
