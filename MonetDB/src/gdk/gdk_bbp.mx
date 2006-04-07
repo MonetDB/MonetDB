@@ -1257,6 +1257,8 @@ BBPaddtobin(BAT *b){
 
 	/* pre-filter the BATs */
 	if(b->batCacheid < 0 ||
+		(b->htype == TYPE_void && !b->hvarsized) ||
+		(b->ttype == TYPE_void && !b->tvarsized) ||
 		b->htype >= TYPE_str || b->ttype >= TYPE_str ||
 		BATcount(b)> 16*1024 || b->batCopiedtodisk){
 		BATdelete(b);
