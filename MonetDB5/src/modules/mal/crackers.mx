@@ -4345,47 +4345,57 @@ CRKcrack@1Three_validate_@2 (bit *res, int *bid, @2 *_low, @2 *_hgh)
 @:SMsm_operations(int,sm,TAIL)@
 @:SI_operations(int)@
 @}
-@= crackOperations
+@-
+This function takes a range and returns a view with the result. To do that, we first search the index to determine which parts of the result we already 
+know and which parts we have to crack. Then we crack, if necessary, 
+the appropriate pieces, update the index and return the result.
 
-/* This function takes a range and returns a view with the result. To do that, we first search the index to determine which parts
-   of the result we already know and which parts we have to crack. Then we crack, if necessary, the appropriate pieces, 
-   update the index and return the result */
+@= crackOperations
 str
 CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, bit *tail)
 {
-        BAT *b;
+	BAT *b,*c;
 	BAT *view, *uview;
-        int  m;
-        lng vl=-1, vh=-1; /* vl and vh are the low and high index values to create the view with the result */
-        lng cl=-1, ch1=-1, cl2=-1, ch=-1; /* index values in the case we have to crack 
-					 |cl...........ch1|.....................|cl2.........ch|
-					if we have to crack only one piece, i.e., if our range falls in one piece 
-					only then we crack from cl to ch otherwise we use the other indices as it is shown */
+	int  m;
+	lng vl=-1, vh=-1; 
+	/* vl and vh are the low and high index values to create the view with the result */
+	lng cl=-1, ch1=-1, cl2=-1, ch=-1; 
+	/* index values in the case we have to crack 
+		|cl...........ch1|.....................|cl2.........ch|
+		if we have to crack only one piece, i.e., if our range falls 
+		in one piece only then we crack from cl to ch otherwise we use 
+		the other indices as it is shown */
+	lng i1,i2, posl, posh;
+	BUN l,lt,ht; int xx;
+	BUN h,lh,hh;
 	
-        if (low >  hgh)
-                return throwMessage("crackers.crack", "illegal range");
-        if ((b = BATdescriptor(*bid)) == NULL) 
-                return throwMessage("crackers.crackRange", "Cannot access descriptor");
+	if (low >  hgh)
+		return throwMessage("crackers.crack", "illegal range");
+	if ((b = BATdescriptor(*bid)) == NULL) 
+		return throwMessage("crackers.crackRange", "Cannot access descriptor");
         
-        m = existsIndex(*bid);
-	/* if this is the first time we select something from this bat, we have to create the crack indx for it and 
+	m = existsIndex(*bid);
+	/* if this is the first time we select something from this bat, 
+		we have to create the crack indx for it and 
 	   if necessary materialize the head of the bat */
-        if (m == -1){
+	if (m == -1){
 		if (b->htype ==TYPE_void) {
 			 b = BATmaterializeh(b,BATcount(b));
 			 b->hsorted = FALSE;
 			 b->tsorted = FALSE;
 			 b->hdense = FALSE; 
-		 	 b->hdense = FALSE;	
+			 b->hdense = FALSE;
 		}
-                m = newIndex_@1(*bid);
-		BAT *c;
-        	c = BATdescriptor(Index[m].cid); 
+		m = newIndex_@1(*bid);
+		
+		c = BATdescriptor(Index[m].cid); 
 
-		/*Since the index is empty we know we have to crack anyway so crack in three pieces cl-ch */
-		lng i1=-1,i2=-1;
-		lng posl = BUNindex(b,BUNfirst(b));
-		lng posh = BUNindex(b,BUNlast(b)-BUNsize(b));
+		/* Since the index is empty we know we have to crack 
+		   anyway so crack in three pieces cl-ch */
+		i1=-1;
+		i2=-1;
+		posl = BUNindex(b,BUNfirst(b));
+		posh = BUNindex(b,BUNlast(b)-BUNsize(b));
 		/*call the crack function with the appropriate bounds*/
 		if (*inclusiveLow == TRUE && *inclusiveHgh == TRUE){
 			CRKcrackOrderedTHREELateCopying_is_LE_RE_@1(b,*low,*hgh, posl, posh, &vl, &vh);
@@ -4408,84 +4418,56 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 		addTwo_int(*bid,low,i1,hgh,i2);
  
 		goto createView;
-        }
+	}
 	
-	/*If an index exists for this bat (so it has been cracked before) we search the index to find where our range falls
-          after this search if we have a match on the low range vl will hold the index value, otherwise it will be -1. The same for hgh and vh
-	  if there is no match for low then cl will hold the index that frim there on we have to crack. The same from hgh and ch
-	  Note that in the case of the low range  we always have to increment by one since we want the values that are after this index 
-	  (because of the way the crack index is created).
-	  Also after the search l and h should point to the low and hgh indices (in the crack index) found either as a match or to crack. 
-          This is used later on to determine which pieces we have to crack*/
-	BAT *c;
-        if ((c = BATdescriptor(Index[m].cid)) == NULL) 
-                return throwMessage("crackers.crackRange", "Cannot access crack index");
-	
-	/* find out where in the index the low falls */
-	BUN l = SORTfndfirst_@1(c,low);
-	BUN lt = BUNtloc(c, l);
-	BUN lh = BUNhloc(c, l);
-	int xx = BUNsize(c);
+	/* If an index exists for this bat (so it has been cracked before) 
+		we search the index to find where our range falls after this 
+		search if we have a match on the low range vl will hold the 
+		index value, otherwise it will be -1. The same for hgh and vh
+		if there is no match for low then cl will hold the index that 
+		from there on we have to crack. The same from hgh and ch
+		Note that in the case of the low range  we always have to increment 
+		by one since we want the values that are after this index 
+		(because of the way the crack index is created).
+		Also after the search l and h should point to the low and hgh indices 
+		(in the crack index) found either as a match or to crack. 
+		This is used later on to determine which pieces we have to crack*/
 
-	/* if all indices contain values smaller than low, crack the area between the last index and the last BUN of the cracked bat */
+	if ((c = BATdescriptor(Index[m].cid)) == NULL) 
+		return throwMessage("crackers.crackRange", "Cannot access crack index");
+	/* find out where in the index the low falls */
+	l = SORTfndfirst_@1(c,low);
+	lt = BUNtloc(c, l);
+	lh = BUNhloc(c, l);
+	xx = BUNsize(c);
+
+	/* if all indices contain values smaller than low, crack the area 
+		between the last index and the last BUN of the cracked bat */
 	if (l == BUNlast(c)){
 		l -= xx; lt -= xx; lh -= xx; 
 		if  (*(lng*)lh > 0)
-                	cl = *(lng*)lh;
-                else
-                        cl = *(lng*)lh - 2*(*(lng*)lh);
+			cl = *(lng*)lh;
+		else
+			cl = *(lng*)lh - 2*(*(lng*)lh);
 		cl++;
-	}
-	else{
-		if (*(@1*)lt == *low){
-			/* The first two cases are when the low bound already exists in the index */
-			if  (*(lng*)lh < 0 && *inclusiveLow == TRUE)
-				vl = (*(lng*)lh - 2*(*(lng*)lh))+1;
-			else
-			if  (*(lng*)lh > 0 && *inclusiveLow == FALSE) 		
-				vl = *(lng*)lh+1;
+	} else
+	if (*(@1*)lt == *low){
+		/* The first two cases are when the low bound already 
+			exists in the index */
+		if  (*(lng*)lh < 0 && *inclusiveLow == TRUE)
+			vl = (*(lng*)lh - 2*(*(lng*)lh))+1;
+		else
+		if  (*(lng*)lh > 0 && *inclusiveLow == FALSE)
+			vl = *(lng*)lh+1;
 
-			/* We want values that the previous index has; special case when there is no previous index */
+		/* We want values that the previous index has; 
+		  special case when there is no previous index */
 			else
-			if  (*(lng*)lh > 0 && *inclusiveLow == TRUE){
-				if (l == BUNfirst(c)){
-					l  -= xx; 
-					cl = BUNindex(b, BUNfirst(b));
-				}
-				else{
-					l  -= xx; lh -= xx; lt -= xx;
-					if  (*(lng*)lh > 0)
-						cl = *(lng*)lh;
-					else
-						cl = *(lng*)lh - 2*(*(lng*)lh);
-					cl++;
-				}
-			}
-			/*  This index contains values that we do not want (the equals to low) so we check the next one
-			    If it is equal to low then this is an exact match, otherwise we have to crack. 
-			    Also if this was the last index we have to crack anyway. */
-			else
-			if  (*(lng*)lh < 0 && *inclusiveLow == FALSE){
-				lt += xx;
-				l  +=xx;
-				if (*(@1*)lt == *low && l != BUNlast(c)){
-					lh += xx;
-					vl = *(lng*)lh+1;
-				}
-				else{
-					lt -= xx;
-					l  -= xx;
-					cl = (*(lng*)lh - 2*(*(lng*)lh))+1;
-				}
-			}
-		}else{ 
-			/* No exact match was found so we have to crack. Take the previous index because this one is higher than low.
-			   If there is no previous index, crack the bat from the beginning. */
+		if  (*(lng*)lh > 0 && *inclusiveLow == TRUE){
 			if (l == BUNfirst(c)){
-				l  -= xx;
+				l  -= xx; 
 				cl = BUNindex(b, BUNfirst(b));
-			}
-			else{
+			} else{
 				l  -= xx; lh -= xx; lt -= xx;
 				if  (*(lng*)lh > 0)
 					cl = *(lng*)lh;
@@ -4493,61 +4475,86 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 					cl = *(lng*)lh - 2*(*(lng*)lh);
 				cl++;
 			}
-		}	
-	
-	}
-	
+		} else
+		if  (*(lng*)lh < 0 && *inclusiveLow == FALSE){
+		/*  This index contains values that we do not want (the equals to 
+			low) so we check the next one. If it is equal to low then 
+			this is an exact match, otherwise we have to crack. 
+			Also if this was the last index we have to crack anyway. */
+			lt += xx;
+			l  +=xx;
+			if (*(@1*)lt == *low && l != BUNlast(c)){
+				lh += xx;
+				vl = *(lng*)lh+1;
+			} else{
+				lt -= xx;
+				l  -= xx;
+				cl = (*(lng*)lh - 2*(*(lng*)lh))+1;
+			}
+		}
+	}else{ 
+		/* No exact match was found so we have to crack. Take the 
+		   previous index because this one is higher than low.
+		   If there is no previous index, crack the bat from the beginning. */
+		if (l == BUNfirst(c)){
+			l  -= xx;
+			cl = BUNindex(b, BUNfirst(b));
+		} else{
+			l  -= xx; lh -= xx; lt -= xx;
+			if  (*(lng*)lh > 0)
+				cl = *(lng*)lh;
+			else
+				cl = *(lng*)lh - 2*(*(lng*)lh);
+			cl++;
+		}
+	}	
 
 	/* find out where in the index the high falls */
-	BUN h = SORTfndfirst_@1(c,hgh);
-	BUN ht = BUNtloc(c, h);
-	BUN hh = BUNhloc(c, h);
+	h = SORTfndfirst_@1(c,hgh);
+	ht = BUNtloc(c, h);
+	hh = BUNhloc(c, h);
 	if (h == BUNlast(c))
-		ch = BUNindex(b, BUNlast(b) - BUNsize(b));		
-	else{
-		if (*(@1*)ht == *hgh){
-			/* The first two cases are when the low bound already exists in the index */
-			if  (*(lng*)hh > 0 && *inclusiveHgh == TRUE)
-				vh = *(lng*)hh;
-			else
-			if  (*(lng*)hh < 0 && *inclusiveHgh == FALSE) 		
-				vh = *(lng*)hh - 2*(*(lng*)hh);
+		ch = BUNindex(b, BUNlast(b) - BUNsize(b));
+	else
+	if (*(@1*)ht == *hgh){
+		/* The first two cases are when the low bound already exists in the index */
+		if  (*(lng*)hh > 0 && *inclusiveHgh == TRUE)
+			vh = *(lng*)hh;
+		else if  (*(lng*)hh < 0 && *inclusiveHgh == FALSE)
+			vh = *(lng*)hh - 2*(*(lng*)hh);
 
-			/* We want values that the next index has; special case when there is no next index */
-			else
-			if  (*(lng*)hh < 0 && *inclusiveHgh == TRUE){
-				ht += xx; h  += xx; hh += xx;
-				if (h == BUNlast(c)){
-					ch = BUNindex(b, BUNlast(b)-BUNsize(b)); /*todo this might be the same with current index*/
-				}else
-				if (*(@1*)ht == *hgh)
-					vh = *(lng*)hh;
-				else{
-					ch= *(lng*)hh;
-					if (ch < 0) ch = *(lng*)hh - 2*(*(lng*)hh);
-				}
+		/* We want values that the next index has; special case when there is no next index */
+		else if  (*(lng*)hh < 0 && *inclusiveHgh == TRUE){
+			ht += xx; h  += xx; hh += xx;
+			if (h == BUNlast(c)){
+				ch = BUNindex(b, BUNlast(b)-BUNsize(b)); /*todo this might be the same with current index*/
+			} else if (*(@1*)ht == *hgh)
+				vh = *(lng*)hh;
+			else {
+				ch= *(lng*)hh;
+				if (ch < 0) ch = *(lng*)hh - 2*(*(lng*)hh);
 			}
-			/*  This index contains values that we do not want (the equals to hgh) so we have to crack up to this one 
-			    We know that there is no previous index that excludes only the values we do not want (the hghs)
-			    Also we cannot check for hgh-1 */
-			else
-			if  (*(lng*)hh > 0 && *inclusiveHgh == FALSE)
-				ch = *(lng*)hh;
-			
-		}else{ 
-			/* No exact match was found so we have to crack. */
-			if  (*(lng*)hh > 0)
-				ch = *(lng*)hh;
-			else
-				ch = *(lng*)hh - 2*(*(lng*)hh);
 		}
+		/*  This index contains values that we do not want (the equals to hgh) 
+			so we have to crack up to this one. We know that there is no 
+			previous index that excludes only the values we do not want (the 
+			hghs) Also we cannot check for hgh-1 */
+		else if  (*(lng*)hh > 0 && *inclusiveHgh == FALSE)
+			ch = *(lng*)hh;
+	} else { 
+		/* No exact match was found so we have to crack. */
+		if  (*(lng*)hh > 0)
+			ch = *(lng*)hh;
+		else
+			ch = *(lng*)hh - 2*(*(lng*)hh);
 	}
 /*	
 printf("lh: %lld, lt:%d \n",*(lng*)lh,*(int*)lt);
 printf("hh: %lld, ht:%d \n",*(lng*)hh,*(int*)ht);
 printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
 */
-	/* If one or both of the result view bounds were not found using the index then we have to crack */
+	/* If one or both of the result view bounds were not found using the 
+	index then we have to crack */
 	if (vl == -1 || vh == -1){
 		if (vl == -1 && vh == -1){
 			/* If ch is right after cl in the index then we split this piece in three pieces*/
@@ -4575,9 +4582,8 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
 				  crack three function should be changed to provide this information*/
 
 				addTwo_int(*bid,low,i1,hgh,i2);
-			}	
+			} else{
 			/* Else we have to do two cracks separatelly */
-			else{
 				/* For the cl bound and the next one in the index*/
 				BUN h1 = l + xx;
 				lng i1,i2;
@@ -4617,7 +4623,7 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
 					cl2 = BUNindex(b,  BUNfirst(b));	
 				else{
 					cl2 = *(lng*)BUNhloc(c, h-xx);
-                                        if (cl2 < 0) cl2 = cl2 - 2*cl2;
+				                        if (cl2 < 0) cl2 = cl2 - 2*cl2;
 					cl2++;
 				}
 				/*CRACK in two pieces cl2-ch using <incHgh bound*/
@@ -4647,7 +4653,7 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
 		}else
 		if (vl == -1){
 			BUN h1 = l + xx;
-                        if (h1 == BUNlast(c)){
+				        if (h1 == BUNlast(c)){
 	                        h1  = BUNlast(b) - BUNsize(b);
                                 ch1 = BUNindex (b, h1);
                         }
@@ -4714,14 +4720,13 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch1:%lld, cl2:%lld, ch:%lld \n",vl,vh,cl,ch1
 createView:
 	printf("vl: %lld, vh:%lld \n",vl,vh);
 	view = BATslice(b, vl, vh+1);
-        if (!tail) {
-                uview = BATconst(view,TYPE_void,ATOMnilptr(TYPE_void));
-                *vid = uview->batCacheid;		
-        }
-        else *vid = view->batCacheid;
+	if (!tail) {
+		uview = BATconst(view,TYPE_void,ATOMnilptr(TYPE_void));
+		*vid = uview->batCacheid;		
+	} else *vid = view->batCacheid;
 	BBPfix(*vid);
-        BBPunfix(b->batCacheid);
-        return MAL_SUCCEED;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }       
 @
 @c
