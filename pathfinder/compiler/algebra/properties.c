@@ -79,7 +79,7 @@ PFprop (void)
     ret->r_domains = PFarray (sizeof (dom_pair_t));
 
     /* initialize unique name information */
-    ret->unq_names = PFarray (sizeof (name_pair_t));
+    ret->name_pairs = PFarray (sizeof (name_pair_t));
 
     return ret;
 }
