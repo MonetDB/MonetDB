@@ -920,7 +920,7 @@ BUNappend(BAT *b, ptr t, bit force)
 		return NULL;
 	}
 
-	ALIGNapp(b, "BUNins", force);
+	ALIGNapp(b, "BUNappend", force);
 	b->batDirty = 1;
 	p = BUNlast(b);	/* insert at end */
 	i = BUNindex(b, p);
