@@ -83,6 +83,7 @@ module 'pf_support'
 [ "scj_desc(BAT[void,int], BAT[oid,any], int, int) : BAT[oid,void]"			  ]
 [ "scj_descorself(BAT[void,int], BAT[oid,any], int, int) : BAT[oid,void]"		  ]
 [ "shred2bats(str, str, str) : BAT[oid,BAT]"												  ]
+[ "splitbat(BAT[oid,str], str) : BAT[oid,BAT]"														  ]
 [ "string_join(BAT[oid,str], BAT[oid,str]) : BAT[oid,str]"										  ]
 [ "text_constr(BAT[void,str], BAT[void,BAT]) : BAT[void,BAT]"												  ]
 module 'pathfinder'

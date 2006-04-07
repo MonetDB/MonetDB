@@ -7717,8 +7717,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "} else {\n"
                   "  loc := str_values.find(loc);\n"
                   "}\n"
-                  "# qn := loc + \"\\001\" + prefix + \"\\001\" + uri + \"\\001\";\n"
-                  "var qn := loc.strconcat(\"\\001\").strconcat(prefix).strconcat(\"\\001\").strconcat(uri).strconcat(\"\\001\");\n"
+                  "# qn := prefix + \"\\001\" + uri + \"\\001\" + loc;\n"
+                  "var qn := prefix.strconcat(\"\\001\").strconcat(uri).strconcat(\"\\001\").strconcat(loc);\n"
                   "str_values := str_values.append(qn);\n"
                   "qn := constant2bat(qn).leftjoin(str_values.reverse());\n"
                   "int_values := int_values.append(UPDATE_SETATTR);\n"
@@ -7803,8 +7803,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                       counter - 1, counter);
         }
         milprintf(f,
-                  "# qn := loc + \"\\001\" + prefix + \"\\001\" + uri + \"\\001\";\n"
-                  "var qn := loc.strconcat(\"\\001\").strconcat(prefix).strconcat(\"\\001\").strconcat(uri).strconcat(\"\\001\");\n"
+                  "# qn := prefix + \"\\001\" + uri + \"\\001\" + loc;\n"
+                  "var qn := prefix.strconcat(\"\\001\").strconcat(uri).strconcat(\"\\001\").strconcat(loc);\n"
                   "str_values := str_values.append(qn);\n"
                   "qn := constant2bat(qn).leftjoin(str_values.reverse());\n"
                   "int_values := int_values.append(UPDATE_SETATTR);\n"

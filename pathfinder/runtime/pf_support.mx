@@ -344,6 +344,14 @@ DESCRIPTION:
  Calculates new 'fake-sizes' of nodes to be deleted;
  optimizes 'holes' in pre_size."
 
+@- string primitives
+@m
+.COMMAND splitbat(BAT[oid,str], str sep) : BAT[oid,BAT] = CMDSplitBat;
+"Split the strings in the BAT on the separator sep which may not be empty.
+Returns a BAT with as many BATs as the maximum number of substrings.
+Each of those BATs is the same size as the input BAT and contains either
+the next substring or str(nil) if there are no more substrings."
+
 @- bootstrap
 @m
 .COMMAND pflock() : lock = CMDpflock;
@@ -2311,13 +2319,13 @@ proc do_update_text(bat[bat,bat] replacements, bat[void,bat] ws, int tableid, ba
   if (mposjoin(itembat, contbat, ws.fetch(PRE_KIND)).uselect(elemtype).count() != itembat.count()) {
     ERROR(msg);
   }
-  var idbat := [add_string_unique_inplace](const ws, contbat, tableid, textbat);
   contbat.tunique()@batloop() {
     var cont := $h;
     var map_pid := ws.fetch(_MAP_PID).find(cont).select(oid(nil),oid(nil)).reverse().sort().tmark(0@0);
     var list := contbat.ord_uselect(cont).mirror();
     var rids := list.leftjoin(itembat).[swizzle](map_pid);
-    var ids := list.leftjoin(idbat);
+    var texts := list.leftjoin(textbat);
+    var ids := add_string_bulk(ws, cont, tableid, texts);
     var rid_prop := ws.fetch(_RID_PROP).find(cont);
     var rid_prop_updates := replacements.replacementsfind(rid_prop);
     rid_prop_updates := rid_prop_updates.insert(rids.reverse().join(ids));
@@ -2332,13 +2340,14 @@ proc do_update_pi(bat[bat,bat] replacements, bat[void,bat] ws, bat [void,oid] it
   if (mposjoin(itembat, contbat, ws.fetch(PRE_KIND)).uselect(PI).count() != itembat.count()) {
     ERROR("node must be of type PI\n");
   }
-  var idbat := [add_pi_inplace](const ws, contbat, insbat, tgtbat);
   contbat.tunique()@batloop() {
     var cont := $h;
     var map_pid := ws.fetch(_MAP_PID).find(cont).select(oid(nil),oid(nil)).reverse().sort().tmark(0@0);
     var list := contbat.ord_uselect(cont).mirror();
     var rids := list.leftjoin(itembat).[swizzle](map_pid);
-    var ids := list.leftjoin(idbat);
+    var inslist := list.leftjoin(insbat);
+    var tgtlist := list.leftjoin(tgtbat);
+    var ids := add_pi_bulk(ws, cont, inslist, tgtlist);
     var rid_prop := ws.fetch(_RID_PROP).find(cont);
     var rid_prop_updates := replacements.replacementsfind(rid_prop);
     rid_prop_updates := rid_prop_updates.insert(rids.reverse().join(ids));
@@ -2354,74 +2363,84 @@ proc do_update_attr(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid] i
     ERROR("node must be of type ELEMENT\n");
   }
   var nidbat := mposjoin(itembat, contbat, ws.fetch(PRE_NID));
-  var idbat := [find_qn](const ws, contbat, nidbat, qnbat, [not]([isnil](valbat)));
-#   contbat.tunique()@batloop() {
-#     var cont := $h;
-#     var list := contbat.ord_uselect(cont).mirror();
-    
 
-  itembat@batloop() {
-    var cont := contbat.find($h);
-    var nid := nidbat.find($h);
-    var qn := qnbat.find($h);
-    var val := valbat.find($h);
-    var qnid := idbat.find($h).fetch(0), atid := idbat.find($h).fetch(1);
-#     {
-#       var ids := find_qn(ws, cont, nid, qn, not(isnil(val)));
-#       qnid := ids.fetch(0);
-#       atid := ids.fetch(1);
-#     }
-    var attr_prop := ws.fetch(_ATTR_PROP).find(cont);
-    var attr_own := ws.fetch(_ATTR_OWN).find(cont);
-    var attr_qn := ws.fetch(_ATTR_QN).find(cont);
-    var attr_prop_updates := replacements.replacementsfind(attr_prop);
-    var attr_own_updates := replacements.replacementsfind(attr_own);
-    var attr_qn_updates := replacements.replacementsfind(attr_qn);
-    if (isnil(val)) {
-      # unset-attr
-      if (isnil(atid) and not(isnil(qnid))) {
-        # attribute does not occur in original document, but maybe it
-        # has been added since
-        var aq := attr_own_updates.uselect(nid).mirror().join(attr_qn_updates).uselect(qnid);
-        if (aq.count() > 0) {
-          atid := aq.mirror().fetch(0);
-        }
-      }
-      if (not(isnil(atid))) {
-        if (attr_prop_updates.exist(atid)) {
-          attr_prop_updates := attr_prop_updates.replace(atid, oid(nil));
-          attr_own_updates := attr_own_updates.replace(atid, oid(nil));
-          attr_qn_updates := attr_qn_updates.replace(atid, oid(nil));
-        } else {
-          attr_prop_updates := attr_prop_updates.insert(atid, oid(nil));
-          attr_own_updates := attr_own_updates.insert(atid, oid(nil));
-          attr_qn_updates := attr_qn_updates.insert(atid, oid(nil));
-        }
-        replacements := replacements.replace(attr_prop, attr_prop_updates);
-        replacements := replacements.replace(attr_own, attr_own_updates);
-        replacements := replacements.replace(attr_qn, attr_qn_updates);
-      }
-    } else {
-      # set-attr
-      var valid := add_string_unique_inplace(ws, cont, _PROP_VAL, val);
-      if (isnil(atid)) {
-        # add attribute to node
-        atid := oid(attr_prop.count() + attr_prop_updates.count());
-        attr_prop_updates := attr_prop_updates.insert(atid, valid);
-        attr_own_updates := attr_own_updates.insert(atid, nid);
-        attr_qn_updates := attr_qn_updates.insert(atid, qnid);
-        replacements := replacements.replace(attr_own, attr_own_updates);
-        replacements := replacements.replace(attr_qn, attr_qn_updates);
-      } else {
-        # replace attribute value
-        if (attr_prop_updates.exist(atid)) {
-          attr_prop_updates := attr_prop_updates.replace(atid, valid);
-        } else {
-          attr_prop_updates := attr_prop_updates.insert(atid, valid);
-        }
-      }
-      replacements := replacements.replace(attr_prop, attr_prop_updates);
+  contbat.tunique()@batloop() {
+    var cont := $h;
+    var list := contbat.ord_uselect(cont).mirror();
+    var attr_own := ws.fetch(ATTR_OWN).find(cont);
+    var attr_qn := ws.fetch(ATTR_QN).find(cont);
+    # combine NIDs and QNIDs into a single value; this fails when NIDs
+    # or QNs are larger than 32 bits
+    var attr_ownqnid := [or]([<<]([lng](attr_own), 32), [lng](attr_qn));
+
+    var vallist := list.leftjoin(valbat);
+    var dellist := vallist.ord_uselect(str(nil));
+    vallist := vallist.kdiff(dellist);
+
+    var _attr_prop := ws.fetch(_ATTR_PROP).find(cont);
+    var _attr_own := ws.fetch(_ATTR_OWN).find(cont);
+    var _attr_qn := ws.fetch(_ATTR_QN).find(cont);
+    var attr_prop_updates := replacements.replacementsfind(_attr_prop);
+    var attr_own_updates := replacements.replacementsfind(_attr_own);
+    var attr_qn_updates := replacements.replacementsfind(_attr_qn);
+
+    if (dellist.count() > 0) {
+      # delete attributes
+      dellist := dellist.mirror();
+      # list of NIDs from which to delete attributes
+      var nidlist := dellist.leftjoin(nidbat);
+      # list of qualified names of the to-be-deleted attributes
+      var qnlist := dellist.leftjoin(qnbat);
+      # list of QN IDs of the to-be-deleted attributes, with non-existing ones removed
+      var qnidlist := find_qn_bulk(ws, cont, qnlist, false).select(oid(nil), oid(nil));
+      # remove list items where we have nothing to do
+      dellist := qnidlist.mirror().leftjoin(dellist);
+      # combine NIDs and QNIDs into a single value; this fails when NIDs or
+      # QNs are larger than 32 bits
+      var nidqnidlist := [or]([<<]([lng](nidlist), 32), [lng](qnidlist));
+      # list of attribute IDs that need to get squashed
+      var attrlist := attr_ownqnid.join(nidqnidlist.reverse()).project(oid(nil));
+      # do the deletions
+      # note, since this is loop-lifted and we have filtered out
+      # duplicate NID/QN combinations, we're not overwriting any
+      # previous changes
+      attr_prop_updates := attr_prop_updates.insert(attrlist);
+      attr_qn_updates := attr_qn_updates.insert(attrlist);
+      attr_own_updates := attr_own_updates.insert(attrlist);
     }
+    if (vallist.count() > 0) {
+      # insert or change attributes
+      var inslist := vallist.mirror();
+      # list of NIDs where we have to make changes
+      var nidlist := inslist.leftjoin(nidbat);
+      # list of qualified names of the changed attributes
+      var qnlist := inslist.leftjoin(qnbat);
+      # insert the names into the QN tables and get their IDs
+      var qnidlist := find_qn_bulk(ws, cont, qnlist, true);
+      # combine NIDs and QNIDs into a single value; this fails when NIDs or
+      # QNs are larger than 32 bits
+      var nidqnidlist := [or]([<<]([lng](nidlist), 32), [lng](qnidlist));
+      # list of attr ids (if existing attribute) or nil (if new attribute) of attrs we're changing
+      var attrlist := nidqnidlist.outerjoin(attr_ownqnid.reverse());
+      # insert the new values into the tables and get the IDs
+      var validlist := add_string_bulk(ws, cont, _PROP_VAL, vallist);
+      # select the new attributes
+      var attrnewlist := attrlist.uselect(oid(nil)).mark(oid(attr_own.count()));
+      # select the already existing (to-be-changed) attributes
+      attrlist := attrlist.kdiff(attrnewlist);
+      # update the tables
+      attrnewlist := attrnewlist.reverse();
+      # note, since this is loop-lifted and we have filtered out
+      # duplicate NID/QN combinations, we're not overwriting any
+      # previous changes
+      attr_own_updates := attr_own_updates.insert(attrnewlist.join(nidlist));
+      attr_qn_updates := attr_qn_updates.insert(attrnewlist.join(qnidlist));
+      attr_prop_updates := attr_prop_updates.insert(attrnewlist.join(validlist));
+      attr_prop_updates := attr_prop_updates.insert(attrlist.reverse().join(validlist));
+    }
+    replacements := replacements.replace(_attr_prop, attr_prop_updates);
+    replacements := replacements.replace(_attr_own, attr_own_updates);
+    replacements := replacements.replace(_attr_qn, attr_qn_updates);
   }
   return replacements;
 }
@@ -2939,8 +2958,8 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
                                                   true);
             # and the same for the attribute values
             var insertattrpropbat := insertattrbat.leftfetchjoin(insert_attr_prop);
-            var newinsertattrvalbat := [add_string_unique_inplace](const ws, doccont, _PROP_VAL,
-                                                                    mposjoin(insertattrpropbat, insertattrcontbat, ws.fetch(_PROP_VAL)));
+            var newinsertattrvalbat := add_string_bulk(ws, doccont, _PROP_VAL,
+                                                       mposjoin(insertattrpropbat, insertattrcontbat, ws.fetch(_PROP_VAL)));
             # add to the ATTR table
             attr_own_update := attr_own_update.insert(insertattrbat.project(docnidnew));
             attr_qn_update := attr_qn_update.insert(newinsertattrpropbat);
@@ -3213,7 +3232,7 @@ proc add_pi(bat[void,bat] ws, oid cont, str ins, str tgt) : oid
   return pi_id;
 }
 
-proc find_qn(bat[void,bat] ws, oid cont, oid nid, str loc, str prefix, str uri, bit add) : bat[void,oid]
+proc find_qn(bat[void,bat] ws, oid cont, str loc, str prefix, str uri, bit add) : oid
 {
   # shortcuts
   var loc_uri := loc + "\001" + uri;
@@ -3224,27 +3243,6 @@ proc find_qn(bat[void,bat] ws, oid cont, oid nid, str loc, str prefix, str uri, 
   var loc_uri_list := qn_loc_uri.ord_uselect(loc_uri);
   # [oid,nil] list of QN names with correct prefix as well (should be 0 or 1)
   var qn_list := loc_uri_list.mirror().fetchjoin(qn_prefix).uselect(prefix);
-
-  var attr_node_list;
-  if (not(isnil(nid))) {
-    # check that the attribute/URI does not occur already with a
-    # different prefix
-    var attr_own := ws.fetch(_ATTR_OWN).find(cont);
-    var attr_qn := ws.fetch(_ATTR_QN).find(cont);
-    # [oid,nil] list of ATTR indexes for current node
-    var attr_list := attr_own.uselect(nid);
-    # [oid,oid] list of ATTR indexes/ATTR QN IDs for current node
-    var attr_qn_list := attr_list.mirror().fetchjoin(attr_qn);
-
-    # [oid,nil] list of attributes for current node with correct FQ name (0 or 1 matches)
-    attr_node_list := attr_qn_list.join(qn_list);
-
-    # check that there are not already attributes with the same local name
-    # and same namespace but a different prefix on this node
-    if (attr_node_list.count() != attr_qn_list.join(loc_uri_list).count()) {
-      ERROR("duplicate attribute with differing prefixes.");
-    }
-  }
 
   # if name is not known yet, create an entry for it
   var qn_id;
@@ -3270,26 +3268,72 @@ proc find_qn(bat[void,bat] ws, oid cont, oid nid, str loc, str prefix, str uri, 
   } else {
     ERROR("qualified name occurs multiple times in table.");
   }
-  var result := new(void,oid,2).seqbase(0@0);
-  result := result.append(qn_id);
-  if (not(isnil(nid))) {
-    if (attr_node_list.count() = 0)
-      result := result.append(oid(nil));
-    else
-      result := result.append(attr_node_list.reverse().fetch(0));
+  return qn_id;
+}
+
+proc add_string_bulk(bat[void,bat] ws, oid cont, int tableid, bat[oid,str] valbat) : bat[oid,oid]
+{
+  var table := ws.fetch(tableid).find(cont);
+  var validbat := valbat.outerjoin(table.reverse());
+  var newvallist := validbat.uselect(oid(nil));
+  if (newvallist.count() > 0) {
+    # insert missing strings
+    table.append(newvallist.mirror().join(valbat), true);
+    # try finding the IDs again (they should now all be found)
+    validbat := valbat.outerjoin(table.reverse());
   }
-  return result;
+  return validbat;
 }
 
-proc find_qn(bat[void,bat] ws, oid cont, oid nid, str locprefixuri, bit add) : bat[void,oid]
+proc add_pi_bulk(bat[void,bat] ws, oid cont, bat[oid,str] insbat, bat[oid,str] tgtbat) : bat[oid,oid]
 {
-  var qnconts := locprefixuri.split("\001");
-  return find_qn(ws, cont,  nid, qnconts.fetch(0), qnconts.fetch(1), qnconts.fetch(2), add);
+  var prop_ins := ws.fetch(_PROP_INS).find(cont);
+  var prop_tgt := ws.fetch(_PROP_TGT).find(cont);
+  var prop_ins_tgt := [+]([+](prop_ins, "\001"), prop_tgt);
+  var instgtbat := [+]([+](insbat, "\001"), tgtbat);
+  var idbat := instgtbat.outerjoin(prop_ins_tgt.reverse());
+  var newidlist := idbat.uselect(oid(nil));
+  if (newidlist.count() > 0) {
+    # insert missing strings
+    newidlist := newidlist.mirror();
+    prop_ins.append(newidlist.leftjoin(insbat), true);
+    prop_tgt.append(newidlist.leftjoin(tgtbat), true);
+    prop_ins_tgt := [+]([+](prop_ins, "\001"), prop_tgt);
+    idbat := instgtbat.outerjoin(prop_ins_tgt.reverse());
+  }
+  return idbat;
 }
 
-proc find_qn(bat[void,bat] ws, oid cont, str loc, str prefix, str uri, bit add) : oid
+proc find_qn_bulk(bat[void,bat] ws, oid cont, bat[oid,str] prefurilocbat, bit add) : bat[oid,oid]
 {
-  return find_qn(ws, cont, oid(nil), loc, prefix, uri, add).fetch(0);
+  var qn_loc := ws.fetch(_QN_LOC).find(cont);
+  var qn_prefix_uri := ws.fetch(_QN_PREFIX_URI).find(cont);
+  var qn_prefix_uri_loc := [+]([+](qn_prefix_uri, "\001"), qn_loc);
+  var qnbat := prefurilocbat.outerjoin(qn_prefix_uri_loc.reverse());
+  if (add) {
+    var missing := qnbat.uselect(oid(nil));
+    if (missing.count() > 0) {
+      # get the unique missing strings and number them
+      missing := missing.reverse().join(prefurilocbat).tunique().mark(0@0).reverse();
+      var missingsplit := splitbat(missing, "\001");
+      var preflist := missingsplit.fetch(0);
+      var urilist := missingsplit.fetch(1);
+      var loclist := missingsplit.fetch(2);
+      var qn_uri := ws.fetch(_QN_URI).find(cont);
+      var qn_prefix := ws.fetch(_QN_PREFIX).find(cont);
+      var qn_loc_uri := ws.fetch(_QN_LOC_URI).find(cont);
+      qn_loc := qn_loc.append(loclist, true);
+      qn_prefix := qn_prefix.append(preflist, true);
+      qn_uri := qn_uri.append(urilist, true);
+      qn_loc_uri := qn_loc_uri.append([+]([+](loclist, "\001"), urilist), true);
+      qn_prefix_uri := qn_prefix_uri.append([+]([+](preflist, "\001"), urilist), true);
+
+      # recalculate these after having inserted the strings
+      qn_prefix_uri_loc := [+]([+](qn_prefix_uri, "\001"), qn_loc);
+      qnbat := prefurilocbat.outerjoin(qn_prefix_uri_loc.reverse());
+    }
+  }
+  return qnbat;
 }
 
 proc fix_consecutive_texts(bat[bat,bat] replacements, bat[void,bat] ws, oid cont) : void
@@ -3382,7 +3426,7 @@ proc fix_consecutive_texts(bat[bat,bat] replacements, bat[void,bat] ws, oid cont
   var gp := ti.reverse().leftfetchjoin(rp); # [GRP,PROP]
   var c := gp.leftfetchjoin(ws.fetch(_PROP_TEXT).find(cont)); # [GRP,content] hsorted
   var v := string_join(c, c.kunique().project("")); # [GRP,content] combined content with unique GRP values
-  var i := [add_string_unique_inplace](const ws, cont, _PROP_TEXT, v); # [GRP,SID] OID into _PROP_TEXT table
+  var i := add_string_bulk(ws, cont, _PROP_TEXT, v); # [GRP,SID] OID into _PROP_TEXT table
   var p := t.reverse().kunique().reverse(); # [PRE,GRP] one representative from t per group
   var p1 := [swizzle](p.reverse(), pid_map_update).reverse(); # [RID,GRP]
   var h1 := kdiff(t1, p1).project(oid(nil)); # [RID,nil] the other RIDs
@@ -5593,6 +5637,101 @@ CMDcorrect_sizes(BAT **ret, BAT *bat_iter, BAT *bat_item, BAT *bat_size) {
 	return GDK_SUCCEED;
 }
 
+
+int
+CMDSplitBat(BAT **res, BAT *b, str sep)
+{
+	BAT **bn;
+	size_t nbats = 0;
+	size_t maxbats = 16;
+	BUN p, q, r;
+	str s, e;
+	size_t seplen = strlen(sep);
+	char *buf = GDKmalloc(BUFSIZ);
+	size_t buflen = BUFSIZ;
+	size_t l;
+	size_t i;
+	size_t bs = BATcount(b);
+	oid base, o;
+
+	if (buf == NULL)
+		return GDK_FAIL;
+
+	ERRORcheck(seplen == 0, "strSplitBat: separator must not be empty.\n");
+
+	o = base = b->hseqbase;
+	bn = GDKmalloc(maxbats * sizeof(BAT *));
+	if (bn == NULL)
+		goto bunins_failed;
+	memset(bn, 0, maxbats * sizeof(BAT *));
+	BATloop(b, p, q) {
+		s = (str) BUNtail(b, p);
+		l = strlen(s);
+		if (l >= buflen) {
+			while (l >= (buflen += BUFSIZ))
+				;
+			buf = GDKrealloc(buf, buflen);
+			if (buf == NULL)
+				goto bunins_failed;
+		}
+		strcpy(buf, s);
+		s = buf;
+		i = 0;
+		while (s) {
+			if ((e = strstr(s, sep)) != NULL)
+				*e = 0;
+			if (i >= nbats) {
+				size_t j;
+
+				if (nbats >= maxbats) {
+					bn = GDKrealloc(bn, maxbats + 16);
+					if (bn == NULL)
+						goto bunins_failed;
+					memset(&bn[maxbats], 0, 16 * sizeof(BAT *));
+					maxbats += 16;
+				}
+				bn[i] = BATnew(TYPE_void, TYPE_str, bs);
+				if (bn[i] == NULL)
+					goto bunins_failed;
+				bn[i] = BATseqbase(bn[i], base);
+				BATkey(BATmirror(bn[i]), FALSE);
+				bn[i]->tsorted = 0;
+				for (j = 0; j < bs; j++)
+					bunfastins(bn[i], NULL, str_nil);
+				nbats++;
+			}
+			BUNfndVOID(r, bn[i], &o);
+			ATOMreplace(TYPE_str, bn[i]->theap, BUNtloc(bn[i], r), s);
+			i++;
+			s = e ? e + seplen : NULL;
+		}
+		o++;
+	}
+	GDKfree(buf);
+	*res = BATnew(TYPE_void, TYPE_bat, nbats);
+	if (*res == NULL)
+		goto bunins_failed;
+	*res = BATseqbase(*res, 0);
+	BATkey(BATmirror(*res), FALSE);
+	(*res)->tsorted = 0;
+	for (i = 0; i < nbats; i++) {
+		bunfastins(*res, NULL, &bn[i]->batCacheid);
+		BBPunfix(bn[i]->batCacheid);
+	}
+	GDKfree(bn);
+	return GDK_SUCCEED;
+
+  bunins_failed:
+	if (bn) {
+		for (i = 0; i < nbats; i++)
+			if (bn[i])
+				BATfree(bn[i]);
+		GDKfree(bn);
+	}
+	if (buf)
+		GDKfree(buf);
+	return GDK_FAIL;
+}
 
 bat* pf_support_prelude() {
     pf_runtime_lock = MT_create_lock();
