@@ -1,8 +1,0 @@
-# simple renaming of a bat;
-
-b:= bat.new(:int,:int);
-bat.insert(b,1,1);
-io.print(b);
-bat.setName(b,"myhome");
-bat.setColumn(b,"first","last");
-io.print(b);

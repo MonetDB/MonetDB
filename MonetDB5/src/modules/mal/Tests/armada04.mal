@@ -1,7 +1,0 @@
-include inet;
-include armada;
-ip := inet.new("127.0.0.1");
-io.print(ip);
-armada.addStep(nil:str, ip);
-p := armada.getStep(0);
-io.print(p);

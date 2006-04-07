@@ -1,5 +1,0 @@
-#testing some optimizer constructions
-
-optimizer.aliasRemoval();
-z:= "nil";
-d:= mtime.date(z);

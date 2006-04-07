@@ -1,8 +1,0 @@
-x := bat.new(:oid,:int);
-(ht,tt):= inspect.getType(x); io.print(ht); io.print(tt);
-
-hi:= inspect.getTypeIndex(ht); io.print(hi);
-hs:= inspect.getTypeName(hi); io.print(hs);
-
-s:= "hello";
-st:= inspect.getType(s); io.print(st);
