@@ -184,6 +184,9 @@ typedef struct frontend
 
 } mapi_frontend;
 
+mapi_export mapi_client *MAPIclient(stream *fdin, stream *fdout, char *lang);
+mapi_export int active_clients(char *lang);
+
 #endif /* MAPI_H */
 @c
 #include <monet.h>
@@ -456,7 +459,7 @@ mapi_client_find(mapi_frontend *f )
 	for (i=1; i<MAXCLIENTS; i++) {
 		mapi_client *mc = mapi_clients+i;
 		
-		if (mc->inuse == 0 && mc->frontend == f->nr && mc->frontend != MAX_FRONTENDS) {
+		if (mc->inuse == 0 && mc->frontend == f->nr) {
 			mc->inuse = 1;
 			res = mc;
 			break;
@@ -525,6 +528,60 @@ prompt(stream *fdout, int blocked)
 		stream_write(fdout, PROMPT1, sizeof(PROMPT1) - 1, 1);
 	else
 		stream_flush(fdout);
+}
+
+
+mapi_client *MAPIclient(stream *fdin, stream *fdout, char *lang ) 
+{
+	mapi_client *fc = NULL;
+	mapi_frontend *f = NULL;
+	Client c;
+
+	f = find_frontend(lang);
+
+	if (!f) 
+		return NULL;
+
+	fc = mapi_client_find(f);
+	if (!fc) {
+		if (!(fc = mapi_client_alloc(f, monet_clients, 0, fdin, fdout))) 
+			return NULL;
+	}
+
+	c = fc->c;
+	c->fdin = fdin;
+	c->fdout = fdout;
+	c->blocked = 0;
+	if (c->user)
+		GDKfree(c->user);
+	if (c->passwd)
+		GDKfree(c->passwd);
+	c->user = GDKstrdup("mapi_client");
+	c->passwd = GDKstrdup("mapi_client");
+
+	if (f->f_init(fc) != NULL) {
+		fc->inuse = 0; 
+		return NULL;
+	}
+	return fc;
+	
+}
+
+int active_clients(char *lang)
+{
+	int i, nr = 0;
+	mapi_frontend *f = find_frontend(lang);
+
+	if (!f)
+		return 0;
+
+	for (i=1; i<MAXCLIENTS; i++) {
+		mapi_client *mc = mapi_clients+i;
+
+		if (mc->inuse == 1 && mc->frontend == f->nr) 
+			nr ++;
+	}
+	return nr;
 }
 
 static mapi_client*
