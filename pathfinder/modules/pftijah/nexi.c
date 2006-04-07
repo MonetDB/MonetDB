@@ -8,19 +8,23 @@
      Main module for generating logical query plans and MIL query plans from NEXI queries
 
 */
-
+#include <monet.h>
+#include <gdk.h>
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
-#include <string.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <string.h>
 
 #include "nexi.h"
 
-#define LOGFILE   parserCtx->logFILE
-#define LOGPRINTF if ( parserCtx->logFILE ) fprintf
+/*
+ * #define LOGFILE   parserCtx->logFILE
+ * #define LOGPRINTF if ( parserCtx->logFILE ) fprintf
+ */
+#define LOGFILE   GDKout
+#define LOGPRINTF if ( 0 ) stream_printf
 
 static TijahParserContext parserCtxStruct;
 
@@ -32,11 +36,22 @@ extern int old_main(int argc, char * const argv[]);
 
 static char *dummy[] = {};
 
-int tijahParse() {
+char* tijahParse(char* pfx, char* query, char** errBUFF) {
+  (void)pfx;
   /* setup TijahParserContext structure */
-  parserCtx->logFILE = NULL;
-  parserCtx->queryText = "//sec[about(.//st,conclusions) AND about(.,web) AND about(.,distance) AND about (.,learning)]\n";
-  return old_main(0,dummy);
+  if ( 1 ) stream_printf(GDKout,"- tijahParse([%s])\n",query);
+  parserCtx->logFILE   = NULL;
+  parserCtx->queryText = query;
+  /* parserCtx->queryText = "//sec[about(.//st,conclusions) AND about(.,web) AND about(.,distance) AND about (.,learning)]\n"; */
+  if ( !old_main(0,dummy) )  {
+      if ( errBUFF ) {
+          /* *errBUFF = &parserCtx->errBUFF[0] */
+          *errBUFF = "tijahParse: parse error";
+      }
+      return NULL;
+  }
+  else 
+      return &parserCtx->milBUFF[0];
 }
 
 int old_main(int argc, char * const argv[])
@@ -1034,7 +1049,7 @@ int old_main(int argc, char * const argv[])
   rel_feedback = NULL;
   free(rel_feedback);
 
-  return 0;
+  return 1;
 }
 
 /*

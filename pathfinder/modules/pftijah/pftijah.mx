@@ -30,6 +30,9 @@
 .COMMAND run_tijah_command(str s) : bit = CMDtijah_command;
  "INCOMPLETE"
 
+.COMMAND run_tijah_query(str p, str q) : BAT[oid,int] = CMDtijah_query;
+ "INCOMPLETE"
+
 .COMMAND tj_add2collection(BAT[oid,bat],BAT[oid,bat],str,str) : void = CMDtj_add2collection;
  "INCOMPLETE"
 
@@ -1138,7 +1141,29 @@ int executeMIL(char* str) {
 }
 
 int CMDtijah_command(bit* res, str command) {
+	if ( 1 ) stream_printf(GDKout,"# tijah_command(%s)\n",(char*)command);
 	*res = executeMIL(command); /* OK */
+	return GDK_SUCCEED;
+}
+
+extern char* tijahParse(char* pfx, char* query, char** errBUFF);
+
+int CMDtijah_query(BAT** res, str pfx, str q) {
+	if ( 1 ) stream_printf(GDKout,"# tijah_	query(\"%s\",\"%s\")\n",pfx,q);
+	/* */
+	char* err;
+	char* mil;
+
+	if ( !(mil=tijahParse(pfx,q,&err)) ) {
+            GDKerror("CMDtijah_query: %s.\n", err);
+	    return GDK_FAIL;
+	}
+	if ( 1 && !executeMIL(mil) ) {
+            GDKerror("CMDtijah_query: execute MIL failed.\n");
+	    return GDK_FAIL;
+	}
+	/* */
+	*res = BATnew(TYPE_oid, TYPE_int, 0);
 	return GDK_SUCCEED;
 }
 

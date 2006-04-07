@@ -297,12 +297,13 @@ typedef struct TijahParserContext {
     FILE*	tokenFILE;
     /* */
     const char* queryText;
+    char	errBUFF[QUERY_SIZE];
     char        milBUFF[MAXMILSIZE];
 } TijahParserContext;
 
 extern TijahParserContext* parserCtx;
 
-#define WORKDIR	"./tmp/"
+#define WORKDIR	"/tmp/"
 
 extern char* myfileName(char* dirName, char* fileName);
 

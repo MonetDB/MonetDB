@@ -34,7 +34,7 @@ extern int useFlexScanner(char* buf, int len, struct tijahContextStruct* tjCtx);
 
 @c
 
-#define TJ_TRACE 1
+/* #define TJ_TRACE 1 */
 
 /*******************************************
  * serialize_pftijah.c : XML serialization
