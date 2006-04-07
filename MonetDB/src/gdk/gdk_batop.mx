@@ -340,18 +340,23 @@ BATappend(BAT *b, BAT *n, bit force)
 	} else {
 		BUN p, q;
 		int xx;
+		size_t i = BATcount(b);
 
 		if (b->tkey & BOUND2BTRUE) {
 			BAT *bm = BBP_cache(-b->batCacheid);
 
 			if (b->hseqbase != oid_nil) {
-				oid h = b->hseqbase + BATcount(b);
+				oid h = b->hseqbase + i;
 
 				BATloopFast(n, p, q, xx) {
 					ptr t = BUNtail(n, p);
 					if (!BUNfnd(bm, t)) { 
 						bunfastins(b ,&h, t);
+						if (b->thash) {
+							HASHins(b->thash, (hash_t) i, t);
+						}
 						h++;
+						i++;
 					}
 				}
 			} else {
@@ -359,8 +364,13 @@ BATappend(BAT *b, BAT *n, bit force)
 	
 				BATloopFast(n, p, q, xx) {
 					ptr t = BUNtail(n, p);
-					if (!BUNfnd(bm, t)) 
+					if (!BUNfnd(bm, t)) {
 						bunfastins(b ,&on, t);
+						if (b->thash) {
+							HASHins(b->thash, (hash_t) i, t);
+						}
+						i++;
+					}
 				}
 				BATkey(b, FALSE);
 				b->hdense = b->hsorted = 0;
@@ -370,7 +380,13 @@ BATappend(BAT *b, BAT *n, bit force)
 			oid h = b->hseqbase + BATcount(b);
 
 			BATloopFast(n, p, q, xx) {
-				bunfastins(b ,&h, BUNtail(n, p));
+				ptr t = BUNtail(n, p);
+
+				bunfastins(b ,&h, t);
+				if (b->thash) {
+					HASHins(b->thash, (hash_t) i, t);
+				}
+				i++;
 				h++;
 			}
 			BATkey(BATmirror(b), FALSE);
@@ -379,14 +395,19 @@ BATappend(BAT *b, BAT *n, bit force)
 			oid on = oid_nil;
 
 			BATloopFast(n, p, q, xx) {
-				bunfastins(b ,&on, BUNtail(n, p));
+				ptr t = BUNtail(n, p);
+
+				bunfastins(b ,&on, t);
+				if (b->thash) {
+					HASHins(b->thash, (hash_t) i, t);
+				}
+				i++;
 			}
 			BATkey(b, FALSE);
 			BATkey(BATmirror(b), FALSE);
 			b->hdense = b->hsorted = 0;
 			b->tdense = b->tsorted = 0;
 		}
-		
 	}
 	return b;
 bunins_failed:
