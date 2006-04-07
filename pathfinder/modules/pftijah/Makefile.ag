@@ -23,7 +23,7 @@
 INCLUDES = ../../runtime $(MONETDB_INCS) $(LIBXML2_CFLAGS) ../../compiler/include
 PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 
-LFLAGS = -P$(<:.l=) -olex.yy.c
+LFLAGS = -olex.yy.c
 YFLAGS = -d -p nexi
 
 lib__pftijah = {

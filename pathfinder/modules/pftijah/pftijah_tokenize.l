@@ -1,5 +1,6 @@
 %option noyywrap
 %option never-interactive
+%option prefix="pftijah_tokenize"
 %{
 
 #include <ctype.h>
@@ -46,7 +47,7 @@ S                                   {WhiteSpaceChar}+
 
 {Letter}{1,2}[-]{Word}              { /* case e-mail, e-government, on-line 
                                          problem: make-up */ 
-                                      // strip hyphen
+                                      /* strip hyphen */
                                       e = pftijah_tokenizetext;
                                       for (c = pftijah_tokenizetext; *c != '\0'; c++) 
                                         if (*c != '-') 

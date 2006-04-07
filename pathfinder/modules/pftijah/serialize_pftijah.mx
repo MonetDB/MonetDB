@@ -313,7 +313,7 @@ tj_tagOid(tjCtx* tjctx, str t) {
 }
 
 static oid
-tj_termOid(tjCtx* tjctx, str t) {
+tj_termOid(tjCtx* tjctx, char *t) {
     BUN bun;
 
     if ( (bun = BUNfnd(tjctx->hm_globalTerm,t)) )
@@ -345,7 +345,7 @@ handleTijahTerm(struct tijahContextStruct *tjctx, char* term) {
     /* is this DOEMIT here really necessary ??? */
     if ( DOEMIT(tjctx) ) {
         if ( tjctx->stemCtx->stem) {
-    	    if ( !(term = tjctx->stemCtx->stem(tjctx->stemCtx,term)) ) {
+    	    if ( !(term = (char*)tjctx->stemCtx->stem(tjctx->stemCtx,(unsigned char*)term)) ) {
 	        /* must be a stopword */
 	        return 1;
 	    }
