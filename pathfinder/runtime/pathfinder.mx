@@ -1016,7 +1016,7 @@ PROC add_doc(BAT[void,bat] ws, str name) : int
         height := shred_doc_impl(docBAT, name, name, name, doCommit, "0", ts, int(ws));
         time_shred :+= time() - t;
     }
-    if (doc_oid != TEMP_DOC) {
+    if (isnil(doc_oid) or (doc_oid != TEMP_DOC)) {
         doc_oid := doc_name.reverse().find(name);
         coll_oid := doc_collection.find(doc_oid);
         height := doc_height.find(doc_oid);
