@@ -217,13 +217,12 @@ to keep track of critical elements.
 
 mal_export ClientRec mal_clients[MAL_MAXCLIENTS+1];
 
-mal_export Client   initClient(str nme, str passwd, bstream *fin, stream *fout);
-mal_export Client   forkClient     (Client c);
 mal_export Client   getClient   ();
+mal_export Client   initClient(str nme, str passwd, bstream *fin, stream *fout);
 mal_export void     initClientThread(Client c);
 mal_export void     closeClient    (Client c);
+mal_export Client   forkClient     (Client c);
 mal_export void     killClient     (Client c);
-mal_export void     freeClient  (Client c);
 mal_export int		countClients();
 mal_export void     appendInput(Client c, str msg);
 mal_export int      readClient  (Client c);
@@ -273,10 +272,12 @@ actions to obtain client records.
  * src/mal/mal.c; however, it cannot, as "Client" isn't known there ... |-( 
  * For now, we move the prototype here, as it it only used here.
  * Maybe, we should concider also moving the implementation here...
- */
 
 int streamClient(Client c, str prompt);
 int bstreamClient(Client c, str prompt);
+ */
+
+static void     freeClient  (Client c);
 
 ClientRec   mal_clients[MAL_MAXCLIENTS+1];
 

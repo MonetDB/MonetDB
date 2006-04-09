@@ -836,8 +836,12 @@ parseInclude(Client cntxt)
 		return 0;
 	nxt= CURRENT(cntxt);
 
-	if ( (x = idLength(cntxt)) >0 ||  (x = stringLength(cntxt))>0){
+	if ( (x = idLength(cntxt)) >0 ){
 		modnme= putName(nxt,x);
+		advance(cntxt,x);
+	} else
+	if ( (x = stringLength(cntxt))>0){
+		modnme= putName(nxt+1,x-1);
 		advance(cntxt,x);
 	} else
 		return parseError(cntxt,"<module name> expected\n");
