@@ -27,7 +27,7 @@ function user.main():void;	# 0  (main:void)
     bat.insert(b,1,2);	# 2 BKCinsert_bun_int_int (_3:void)<-(b:bat[:int,:int])(_4:int)(_5:int)
 #many more inserts 	# 3  (_6:str)
     c{singleton} := algebra.select(b,0,4);	# 4 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(_8:int)(_9:int)
-    d := algebra.markH(c{singleton});	# 5 ALGmarkHead_default (d:bat[:void,:int])<-(c:bat[:int,:int])
+    d := algebra.markH(c);	# 5 ALGmarkHead_default (d:bat[:void,:int])<-(c:bat[:int,:int])
     io.print(d);	# 6 IOprint_val (_11:int)<-(d:bat[:void,:int])
     mdb.list();	# 7 MDBlist (_13:void)
 end main;	# 8  
@@ -37,7 +37,7 @@ function user.main():void;	# 0  (main:void)
     bat.insert(b,1,2);	# 2 BKCinsert_bun_int_int (_3:void)<-(b:bat[:int,:int])(_4:int)(_5:int)
 #many more inserts 	# 3  (_6:str)
     c{singleton} := algebra.select(b,0,4);	# 4 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(_8:int)(_9:int)
-    (_14,_15):= bat.unpack(c{singleton});	# 5  unknown (_14:int)(_15:int)<-(c:bat[:int,:int])
+    (_14,_15):= bat.unpack(c);	# 5  unknown (_14:int)(_15:int)<-(c:bat[:int,:int])
     (_18,_19):= (nil,_15);	# 6 ALGmarkHead_default (_18:oid)(_19:int)<-(_17:void)(_15:int)
     d := bat.pack(_18,_19);	# 7  unknown (d:bat[:void,:int])<-(_18:oid)(_19:int)
     io.print(d);	# 8 IOprint_val (_11:int)<-(d:bat[:void,:int])
@@ -50,7 +50,7 @@ function user.main():void;	# 0  (main:void)
     bat.insert(b,1,2);	# 2 BKCinsert_bun_int_int (_3:void)<-(b:bat[:int,:int])(_4:int)(_5:int)
 #many more inserts 	# 3  (_6:str)
     c{singleton} := algebra.select(b,0,4);	# 4 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(_8:int)(_9:int)
-    (_14,_15):= bat.unpack(c{singleton});	# 5 CMDbatunpack (_14:int)(_15:int)<-(c:bat[:int,:int])
+    (_14,_15):= bat.unpack(c);	# 5 CMDbatunpack (_14:int)(_15:int)<-(c:bat[:int,:int])
     d := bat.pack(nil,_15);	# 6 CMDbatpack (d:bat[:void,:int])<-(_17:void)(_15:int)
     io.print(d);	# 7 IOprint_val (_11:int)<-(d:bat[:void,:int])
     mdb.list();	# 8 MDBlist (_13:void)
@@ -60,7 +60,7 @@ function user.main():void;	# 0  (main:void)
     bat.insert(b,1,2);	# 2 BKCinsert_bun_int_int (_3:void)<-(b:bat[:int,:int])(_4:int)(_5:int)
 #many more inserts 	# 3  (_6:str)
     c{singleton} := algebra.select(b,0,4);	# 4 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(_8:int)(_9:int)
-    (_14,_15):= bat.unpack(c{singleton});	# 5 CMDbatunpack (_14:int)(_15:int)<-(c:bat[:int,:int])
+    (_14,_15):= bat.unpack(c);	# 5 CMDbatunpack (_14:int)(_15:int)<-(c:bat[:int,:int])
     d := bat.pack(nil,_15);	# 6 CMDbatpack (d:bat[:void,:int])<-(_17:void)(_15:int)
     io.print(d);	# 7 IOprint_val (_11:int)<-(d:bat[:void,:int])
     mdb.list();	# 8 MDBlist (_13:void)
@@ -75,7 +75,7 @@ function user.main():void;
     bat.insert(b,1,2);
 #many more inserts 
     c{singleton} := algebra.select(b,0,4);
-    (_14,_15):= bat.unpack(c{singleton});
+    (_14,_15):= bat.unpack(c);
     d := bat.pack(nil,_15);
     io.print(d);
     mdb.list();
