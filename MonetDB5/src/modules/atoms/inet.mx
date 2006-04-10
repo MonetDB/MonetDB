@@ -97,19 +97,20 @@ INETfromString(str src, int *len, inet **retval)
 	int i, last, type;
 	lng parse;
 	char *endptr;
-	char tmp[4];
 	char sep;
 
 	last = 0;
 	type = 0;
 
-	if (*retval != NULL)
-		GDKfree(*retval);
-	*retval = GDKmalloc(sizeof(inet));
+	if (*len < (int)sizeof(inet)) {
+		if (*retval != NULL)
+			GDKfree(*retval);
+		*retval = GDKmalloc(sizeof(inet));
+	}
 
 	/* use the DIY technique to guarantee maximum cross-platform
 	 * portability */
-	for (i = 0; i < *len; i++) {
+	for (i = 0; src[i] != '\0'; i++) {
 		if (src[i] == '.' || src[i] == '/') {
 			sep = src[i];
 			src[i] = '\0';
@@ -163,11 +164,9 @@ INETfromString(str src, int *len, inet **retval)
 		}
 	}
 	/* parse the last quad
-	 * we cannot trust the caller that the input string is properly null
-	 * terminated here */
-	tmp[0] = tmp[1] = tmp[2] = tmp[3] = '\0';
-	strncpy(tmp, src + last, *len - last > 3 ? 3 : *len - last);
-	parse = strtol(tmp, &endptr, 10);
+	 * the contract is that the caller makes sure the string is
+	 * null-terminated here */
+	parse = strtol(src + last, &endptr, 10);
 	if (*endptr != '\0') {
 		/* this is for the cat his violin
 		throwMalf("inet.fromStr", "Error while parsing, unexpected string '%s'", endptr);
