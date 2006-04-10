@@ -314,15 +314,15 @@ address MTIMEtimestamp_extract_date;
 command calc.local_timezone() :lng address MTIMElocal_timezone;
 command calc.timezone(name:str):tzone address MTIMEtimezone;
 
-command calc.start_dst(t:tzone) :rule address MTIMEtzone_extract_start;
-command calc.end_dst(t:tzone) :rule address MTIMEtzone_extract_end;
+command calc.start_dst(t:tzone) :zrule address MTIMEtzone_extract_start;
+command calc.end_dst(t:tzone) :zrule address MTIMEtzone_extract_end;
 command calc.minutes(t:tzone) :int address MTIMEtzone_extract_minutes;
 
-# rule
-command calc.month(t:rule) :int address MTIMErule_extract_month;
-command calc.day(t:rule) :int	address MTIMErule_extract_day;
-command calc.weekday(t:rule) :int address MTIMErule_extract_weekday;
-command calc.minutes(t:rule) :int address MTIMErule_extract_minutes;
+# zrule
+command calc.month(t:zrule) :int address MTIMErule_extract_month;
+command calc.day(t:zrule) :int	address MTIMErule_extract_day;
+command calc.weekday(t:zrule) :int address MTIMErule_extract_weekday;
+command calc.minutes(t:zrule) :int address MTIMErule_extract_minutes;
 
 #SQL specific time support functions
 command calc.current_timestamp() :timestamp address MTIMEcurrent_timestamp;
