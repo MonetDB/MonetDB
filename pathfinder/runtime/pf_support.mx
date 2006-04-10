@@ -1771,10 +1771,6 @@ proc replacementvalue(BAT[bat,bat] replacements, BAT[any::1,any::2] oldbat, any:
     return oldbat.find(key);
   }
 }
-proc replacementvalue(BAT[bat,bat] replacements, BAT[void,BAT] ws, int prop, oid cont, any::1 key) : any::2
-{
-  return replacementvalue(replacements, ws.fetch(prop).find(cont), key);
-}
 # do a "find" on replacements, creating a tuple if it didn't already occur in replacements
 proc replacementsfind(BAT[BAT,BAT] replacements, BAT[any::1,any::2] oldbat): BAT[any::1,any::2]
 {
@@ -1793,19 +1789,9 @@ proc replacementsfind(BAT[BAT,BAT] replacements, BAT[any::1,any::2] oldbat): BAT
   }
 }
 
-proc replace(bat[bat,bat] replacements, bat[void,bat] ws, int prop, oid cont, bat[oid,any] newval): bat[bat,bat]
-{
-  var propbat := ws.fetch(prop).find(cont);
-  var newpropbat := replacements.replacementsfind(propbat);
-  var insval := kdiff(newval, newpropbat);
-  var replval := kdiff(newval, insval);
-  newpropbat := newpropbat.replace(replval);
-  newpropbat := newpropbat.insert(insval);
-  return replacements.replace(propbat, newpropbat);
-}
-
 # convert a PRE value to a RID value using the given map
-proc antiswizzle(oid o, BAT[oid,oid] map) : oid {
+proc antiswizzle(oid o, BAT[oid,oid] map) : oid
+{
   var pid := oid(lng(o) >> REMAP_PAGE_BITS);
   map := map.reverse();
   if (map.exist(pid))
