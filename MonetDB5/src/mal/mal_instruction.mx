@@ -1687,7 +1687,7 @@ end.
 			str w = 0;
 
 			/* dump the non-string atom as string in w */
-			ll = ATOMformat(vr->vtype, VALptr(vr), &w);
+			ATOMformat(vr->vtype, VALptr(vr), &w);
 			/* and try to parse it from string as the desired type */
 			ATOMfromstr(type, &d, &ll, w);
 			if (d == 0) {
@@ -1702,7 +1702,6 @@ end.
 			GDKfree(w);
 		} else { /* what we're converting from is a string */
 #ifdef STRUCT_ALIGNED
-			ll = strlen(vr->val.sval);
 			ATOMfromstr(type, &d, &ll, vr->val.sval);
 			if (d == NULL) {
 				GDKerror("newConstant:Parse error in '%s'", vr->val.sval);
