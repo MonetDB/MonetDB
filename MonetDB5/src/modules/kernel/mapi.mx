@@ -987,28 +987,84 @@ MAPIexit(){
 @-
 The remainder of the file contains the wrapper around
 the MAPI library used by application programmers.
+
+Sessions have a lifetime different from dynamic scopes.
+This means the  user should use a session identifier
+to select the correct handle.
+For the time being we use the index in the global
+session table. The client pointer is retained to
+perform access control. 
+
+A few extra routines should be defined to
+dump and inspect the sessions table.
 @c
-str
-MAPIconnect(int *ret, str *host, int *port, str *username, str *password, str *lang){
+#define MAXSESSIONS 32
+struct{
+	int key;
+	Client c;
 	Mapi mid;
+} MAPIsessions[MAXSESSIONS];
+
+static int sessionkey=0;
+str
+MAPIconnect(int *key, str *host, int *port, str *username, str *password, str *lang){
+	Mapi mid;
+	int i;
+
+	mal_set_lock(mal_contextLock,"MAPIconnect");
+	for(i=0; i< MAXSESSIONS; i++)
+	if( MAPIsessions[i].c ==0 ) break;
+
+	if( i==MAXSESSIONS){
+		mal_unset_lock(mal_contextLock,"MAPIconnect");
+		return throwMessage("mapi.connect","Too many sessions");
+	}
+	MAPIsessions[i].c= getClient();
+	MAPIsessions[i].key= ++sessionkey;
+	mal_unset_lock(mal_contextLock,"MAPIconnect");
 
 	mid= mapi_connect(*host, *port, *username, *password, *lang);
-	if( mapi_error(mid) )
+	if( mapi_error(mid) ){
+		MAPIsessions[i].c = NULL;
 		return throwMessage("mapi.connect","Could not connect");
-	*ret = 0;
+	}
+
+	stream_printf(GDKout,"Succeeded to establish session\n");
+	MAPIsessions[i].mid= mid;
+	*key = MAPIsessions[i].key;
 	return MAL_SUCCEED;
 }
+@-
+@= accessTest
+ for(i=0; i< MAXSESSIONS; i++)
+ if( MAXsessions[i].c && MAXsessions[i].key== @1 &&
+     MAXsessions[i].c == getClient()) break;
+ if( i== MAXSESSIONS)
+	return throwMessage("mapi.@2","Access violation");
+@-
 str
-MAPIerror(bit *ret, int *idx){
-	(void)idx;
-	(void) ret;
+MAPIerror(int *ret, int *key){
+	int i;
+	@:accessTest(key,"error")@
+	*ret= mapi_error(MAXsessions[i].mid);
 	return MAL_SUCCEED;
 }
 
 str 
-MAPIexplain(str *ret, int *idx){
-	(void) idx;
-	*ret= GDKstrdup("no errors");
+MAPIexplain(str *ret, int *key){
+	int i;
+
+	@:accessTest(key,"explain")@
+	*ret= GDKstrdup(mapi_error_str(MAXsessions[i].mid));
 	return MAL_SUCCEED;
 }
+@-
+The remainder should contain the wrapping of 
+relevant MAPI functions. Furthermore, we 
+should analyse the return value and update 
+the stack trace.
+
+Two special routines should be 
+mapi.rpc("malfunction", arguments) and
+mapi.apc("malfunction", arguments.
 @}

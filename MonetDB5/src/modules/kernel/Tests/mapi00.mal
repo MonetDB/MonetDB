@@ -1,0 +1,15 @@
+# Attempt to establish a client connection to yourself.
+
+z:= inspect.getEnvironment();
+ps:= algebra.find(z,"mapi_port");
+port:= calc.int(ps);
+hs:= algebra.find(z,"host");
+
+u:= clients.getInfo();
+usr:= algebra.find(u,"user");
+pwd:= algebra.find(u,"password");
+lang:= algebra.find(u,"scenario");
+
+# setup the session
+i:= mapi.connect(hs,port,usr,pwd,lang);
+io.print(i);
