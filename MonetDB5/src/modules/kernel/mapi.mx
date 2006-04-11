@@ -90,6 +90,24 @@ command malclient(in:streams, out:streams):void
 address MAPIclient
 comment "Start a Mapi client.";
 
+@-
+The complete MAPI library is also available to setup
+communication with another Mserver.
+This library uses pointer handles, which we replace with
+an index in a locally maintained table. It provides a handle
+to easily detect havoq clients.
+@mal
+command connect(host:str, port:int, usr:str, passwd:str,lang:str):int
+address MAPIconnect
+comment "Establish connection with a remote mserver";
+
+command error(mid:int):int
+address MAPIerror
+comment "Check for an error in the communication");
+
+command explain(mid:int):str
+address MAPIexplain
+comment "Turn the error seen into a string";
 mapi.listen();
 @{
 command prelude()
@@ -105,6 +123,7 @@ address mapi_epilogue;
 #include "mal_client.h"
 #include "mal_session.h"
 #include "mal_exception.h"
+#include "Mapi.h"
 
 #define NEW_ARRAY( type, size )	(type*)GDKmalloc((size)*sizeof(type))
 #define STREQ(a, b) 		(strcmp(a, b)==0)
@@ -126,6 +145,10 @@ mal_export str MAPIstop(int *ret);
 mal_export str MAPIsuspend(int *ret);
 mal_export str MAPIresume(int *ret);
 mal_export void MAPIexit();
+
+mal_export str MAPIconnect(int *ret, str *host, int *port, str *username, str *password, str *lang);
+mapi_export str MAPIerror(bit *ret, int *idx);
+mapi_export str MAPIexplain(str *ret, int *idx);
 
 #endif /* MAPI_H */
 @c
@@ -960,5 +983,32 @@ MAPIexit(){
 	MAPIstop(&ret);
 	/* remove any port identity file */
 	system("rm -rf .*_port");
+}
+@-
+The remainder of the file contains the wrapper around
+the MAPI library used by application programmers.
+@c
+str
+MAPIconnect(int *ret, str *host, int *port, str *username, str *password, str *lang){
+	Mapi mid;
+
+	mid= mapi_connect(*host, *port, *username, *password, *lang);
+	if( mapi_error(mid) )
+		return throwMessage("mapi.connect","Could not connect");
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+str
+MAPIerror(bit *ret, int *idx){
+	(void)idx;
+	(void) ret;
+	return MAL_SUCCEED;
+}
+
+str 
+MAPIexplain(str *ret, int *idx){
+	(void) idx;
+	*ret= GDKstrdup("no errors");
+	return MAL_SUCCEED;
 }
 @}
