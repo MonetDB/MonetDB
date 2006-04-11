@@ -48,7 +48,8 @@ typedef struct _inet {
 	unsigned char isnil;
 } inet;
 
-#define in_isnil(i) (i->q1 == 0 && i->q2 == 0 && i->q3 == 0 && i->q4 == 0 && i->mask == 0 && i->isnil != 0)
+#define in_isnil(i) ((i)->q1 == 0 && (i)->q2 == 0 && (i)->q3 == 0 && (i)->q4 == 0 && (i)->mask == 0 && (i)->isnil != 0)
+#define in_setnil(i) (i)->q1 = (i)->q2 = (i)->q3 = (i)->q4 = (i)->mask = (i)->filler1 = (i)->filler2 = 0; (i)->isnil = 1
 
 mal_export int INETfromString(str src, int *len, inet **retval);
 mal_export int INETtoString(str *retval, int *len, inet *handle);
@@ -110,14 +111,7 @@ INETfromString(str src, int *len, inet **retval)
 
 	/* handle the nil string */
 	if (strNil(src)) {
-		(**retval).q1 = 0;
-		(**retval).q2 = 0;
-		(**retval).q3 = 0;
-		(**retval).q4 = 0;
-		(**retval).mask = 0;
-		(**retval).filler1 = 0;
-		(**retval).filler2 = 0;
-		(**retval).isnil = 1;
+		in_setnil(*retval);
 		return(0);
 	}
 
@@ -213,8 +207,8 @@ INETfromString(str src, int *len, inet **retval)
 
 	return(i);
 error: /* catch exception: return NULL */
-	GDKfree(*retval);
-	*retval = NULL;
+	in_setnil(*retval);
+	*len = 0;	/* signal INETnew something went wrong */
 	return(i - 1);
 }
 
@@ -265,7 +259,7 @@ INETnew(inet *retval, str *in)
 	int len = sizeof(inet);
 
 	pos = INETfromString(*in, &len, &retval);
-	if (!retval)
+	if (len == 0)
 		throwMalf("inet.new", "Error while parsing at char %d", pos + 1);
 
 	return (MAL_SUCCEED);
