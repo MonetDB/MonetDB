@@ -74,7 +74,7 @@ The tutorial database can be initialized using either @code{mjclient} and
 @code{mclient} as follows, provided the sql-dump file has already been
 downloaded:
 @example
-shell> mjclient -uvoc -f voc_dump.sql -Xbatching=400
+shell> mjclient -uvoc -f voc_dump.sql -Xbatching
 password: ***
 @end example
 Or using a remotely living dump.
