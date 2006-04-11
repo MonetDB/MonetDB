@@ -208,8 +208,12 @@ SQLinitClient(Client c)
 	if ((backend *) c->state[PARSER] == 0) {
 		m = mvc_create((c-mal_clients), 0, c->fdin, c->fdout);
 		m->cache = 1;
-		/* pass through credentials of the user */
-		schema = mvc_login(m, c->user, c->password);
+		/* pass through credentials of the user if not console */
+		if (isAdministrator(c)) {
+			schema = mvc_login(m, "monetdb", "monetdb");
+		} else {
+			schema = mvc_login(m, c->user, c->password);
+		}
 		if (!schema) {
 			_DELETE(schema);
 			return throwMessage("SQLinitClient", "Schema authorization error\n");
