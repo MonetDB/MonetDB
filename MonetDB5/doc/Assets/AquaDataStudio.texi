@@ -24,11 +24,11 @@ It requires the following additional field settings:
 @item Driver:
 @tab nl.cwi.monetdb.jdbc.MonetDriver
 @item Driver Location:
-@tab C:\Program Files\MonetDB\share\MonetDB\lib\MonetDB_JDBC.jar
+@tab C:\Program Files\CWI\MonetDB\share\MonetDB\lib\monetdb-1.3-jdbc.jar
 @end multitable
 
 The location of the JDBC driver under Linux and OSX is
-by default /usr/share/MonetDB/lib/MonetDB_JDBC.jar.
+by default /usr/share/MonetDB/lib/monetdb-1.3-jdbc.jar.
 
 Once the settings has been completed, start the MonetDB server
 and try to connect.

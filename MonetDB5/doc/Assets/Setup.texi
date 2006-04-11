@@ -30,7 +30,7 @@ your current working directory, which hold the sources.
 See the readme file to install the buildtools.
 MonetDB developers should use @code{ext} instead of @code{pserver}, e.g.
 @verbatim
-cvs -d:ext:dev@monetdb.sf.net:/cvsroot/monetdb checkout MonetDB5 sql
+cvs -d :ext:<username>@cvs.sf.net:/cvsroot/monetdb checkout MonetDB5 sql
 @end verbatim
 Also see @url{http://sourceforge.net/cvs/?group_id=56967,SourceForge documentation} for more information on using cvs.
 
