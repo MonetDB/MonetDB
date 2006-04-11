@@ -1,0 +1,53 @@
+stdout of test 'mapi00` in directory 'src/modules/kernel` itself:
+
+
+# 23:07:54 >  
+# 23:07:54 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=37461 --set monet_prompt= --trace --dbname=mTests_src_modules_kernel  mapi00.mal < /dev/null
+# 23:07:54 >  
+
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_modules_kernel
+# Visit http://monetdb.cwi.nl/ for further information.
+## Attempt to establish a client connection to yourself.
+#
+#z:= inspect.getEnvironment();
+#ps:= algebra.find(z,"mapi_port");
+#port:= calc.int(ps);
+#hs:= algebra.find(z,"host");
+#
+#u:= clients.getInfo();
+#usr:= algebra.find(u,"user");
+#pwd:= algebra.find(u,"password");
+#lang:= algebra.find(u,"scenario");
+#
+## setup the session
+#i:= mapi.connect(hs,port,usr,pwd,lang);
+#io.print(i);
+#
+function user.main():void;	# 0  (main:void)
+# Attempt to establish a client connection to yourself. 	# 1  (_1:str)
+    z := inspect.getEnvironment();	# 2 INSPECTgetEnvironment (z:bat[:str,:str])
+    ps := algebra.find(z,"mapi_port");	# 3 ALGfind (ps:str)<-(z:bat[:str,:str])(_4:str)
+    port := calc.int(ps);	# 4 CALCstr2int (port:int)<-(ps:str)
+    hs := algebra.find(z,"host");	# 5 ALGfind (hs:str)<-(z:bat[:str,:str])(_7:str)
+    u := clients.getInfo();	# 6 CLTInfo (u:bat[:str,:str])
+    usr := algebra.find(u,"user");	# 7 ALGfind (usr:str)<-(u:bat[:str,:str])(_10:str)
+    pwd := algebra.find(u,"password");	# 8 ALGfind (pwd:str)<-(u:bat[:str,:str])(_12:str)
+    lang := algebra.find(u,"scenario");	# 9 ALGfind (lang:str)<-(u:bat[:str,:str])(_14:str)
+# setup the session 	# 10  (_15:str)
+    i := mapi.connect(hs,port,usr,pwd,lang);	# 11 MAPIconnect (i:int)<-(hs:str)(port:int)(usr:str)(pwd:str)(lang:str)
+    io.print(i);	# 12 IOprint_val (_17:int)<-(i:int)
+end main;	# 13  
+Succeeded to establish session
+[ 1 ]
+
+# 23:07:54 >  
+# 23:07:54 >  Done.
+# 23:07:54 >  
+

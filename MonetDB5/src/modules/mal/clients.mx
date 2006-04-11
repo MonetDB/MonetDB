@@ -55,7 +55,7 @@ comment "Pseudo bat of client login time";
 command getId():int
 address CLTgetClientId
 comment "return a number that unique represents the current client";
-command getInfo( ):bat[:int,:str] 
+command getInfo( ):bat[:str,:str] 
 address CLTInfo
 comment "Pseudo bat with client attributes";
 
