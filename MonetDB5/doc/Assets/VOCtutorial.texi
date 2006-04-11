@@ -79,7 +79,7 @@ password: ***
 @end example
 Or using a remotely living dump.
 @example
-shell> mjclient -uvoc -f http://monetdb.cwi.nl/Assets/VOC/voc_dump.sql.gz -Xbatching=400
+shell> mjclient -uvoc -f http://monetdb.cwi.nl/Assets/VOC/voc_dump.sql.gz -Xbatching
 password:***
 shell>mclient -lsql -uvoc <voc_dump.sql
 @end example
