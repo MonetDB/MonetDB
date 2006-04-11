@@ -115,13 +115,34 @@ public class CmdLineOpts {
 				if (args[i].charAt(1) == '-') {
 					// we have a long argument
 					// since we don't accept inline values we can take
-					// everything left in the string as argument
-					option = (OptionContainer)(opts.get(args[i].substring(2)));
-					moreData = false;
+					// everything left in the string as argument, unless
+					// there is a = in there...
+					String tmp = args[i].substring(2);
+					int pos = tmp.indexOf('=');
+					if (pos == -1) {
+						option = (OptionContainer)(opts.get(tmp));
+						moreData = false;
+					} else {
+						option = (OptionContainer)(opts.get(tmp.substring(0, pos)));
+						// modify the option a bit so the code below
+						// handles the moreData correctly
+						args[i] = "-?" + tmp.substring(pos + 1);
+						moreData = true;
+					}
 				} else if (args[i].charAt(1) == 'X') {
 					// extra argument, same as long argument
-					option = (OptionContainer)(opts.get(args[i].substring(1)));
-					moreData = false;
+					String tmp = args[i].substring(1);
+					int pos = tmp.indexOf('=');
+					if (pos == -1) {
+						option = (OptionContainer)(opts.get(tmp));
+						moreData = false;
+					} else {
+						option = (OptionContainer)(opts.get(tmp.substring(0, pos)));
+						// modify the option a bit so the code below
+						// handles the moreData correctly
+						args[i] = "-?" + tmp.substring(pos + 1);
+						moreData = true;
+					}
 				} else {
 					// single char argument
 					option = (OptionContainer)(opts.get("" + args[i].charAt(1)));
@@ -191,7 +212,7 @@ public class CmdLineOpts {
 			String longa = oc.getLong();
 			int len = 0;
 			if (shorta != null) len += shorta.length() + 1 + 1;
-			if (longa != null) len += longa.length() + 2 + 1;
+			if (longa != null) len += longa.length() + 1 + (longa.charAt(0) == 'X' ? 0 : 1) + 1;
 			// yes, we don't care about branch mispredictions here ;)
 			if (maxlen < len) maxlen = len;
 		}
@@ -224,7 +245,7 @@ public class CmdLineOpts {
 		String longa = oc.getLong();
 		int optwidth = 0;
 		if (shorta != null) optwidth += shorta.length() + 1 + 1;
-		if (longa != null) optwidth += longa.length() + 2 + 1;
+		if (longa != null) optwidth += longa.length() + 1 + (longa.charAt(0) == 'X' ? 0 : 1) + 1;
 		int descwidth = 80 - indentwidth;
 
 		// default to with of command line flags if no width given
@@ -234,7 +255,12 @@ public class CmdLineOpts {
 
 		// add the command line flags
 		if (shorta != null) ret.append('-').append(shorta).append(' ');
-		if (longa != null) ret.append('-').append('-').append(longa).append(' ');
+		if (longa != null) {
+			ret.append('-');
+			if (longa.charAt(0) != 'X') ret.append('-');
+			ret.append(longa).append(' ');
+		}
+
 		for (int i = optwidth; i < indentwidth; i++) ret.append(' ');
 		// add the description, wrap around words
 		int pos = 0, lastpos = 0;
