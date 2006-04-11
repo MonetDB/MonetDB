@@ -600,7 +600,6 @@ include sql_cache;
 #include <tablet.h>
 #include <streams.h>
 #include <mtime.h>
-#include <mapi.h>
 #include "sql_privileges.h"
 #include "sql_semantic.h"
 #include "sql_optimize.h"
