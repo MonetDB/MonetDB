@@ -1041,7 +1041,7 @@ MAPIconnect(int *key, str *host, int *port, str *username, str *password, str *l
      MAXsessions[i].c == getClient()) break;
  if( i== MAXSESSIONS)
 	return throwMessage("mapi.@2","Access violation");
-@-
+@c
 str
 MAPIerror(int *ret, int *key){
 	int i;
