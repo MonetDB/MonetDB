@@ -108,6 +108,19 @@ INETfromString(str src, int *len, inet **retval)
 		*retval = GDKmalloc(sizeof(inet));
 	}
 
+	/* handle the nil string */
+	if (strNil(src)) {
+		(**retval).q1 = 0;
+		(**retval).q2 = 0;
+		(**retval).q3 = 0;
+		(**retval).q4 = 0;
+		(**retval).mask = 0;
+		(**retval).filler1 = 0;
+		(**retval).filler2 = 0;
+		(**retval).isnil = 1;
+		return(0);
+	}
+
 	/* use the DIY technique to guarantee maximum cross-platform
 	 * portability */
 	for (i = 0; src[i] != '\0'; i++) {
@@ -218,7 +231,7 @@ comment "Convert inet to string equivalent";
 int
 INETtoString(str *retval, int *len, inet *handle)
 {
-	inet *value = (inet *) handle;
+	inet *value = (inet *)handle;
 
 	if (*len < 19) {
 		if (*retval != NULL)
@@ -248,10 +261,11 @@ comment "Create an inet from a string literal";
 str
 INETnew(inet *retval, str *in)
 {
-	int len = strlen(*in);
 	int pos;
+	int len = sizeof(inet);
 
-	if ((pos = INETfromString(*in, &len, &retval)) != len)
+	pos = INETfromString(*in, &len, &retval);
+	if (!retval)
 		throwMalf("inet.new", "Error while parsing at char %d", pos + 1);
 
 	return (MAL_SUCCEED);
