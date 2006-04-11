@@ -147,7 +147,7 @@ mal_export str MAPIresume(int *ret);
 mal_export void MAPIexit();
 
 mal_export str MAPIconnect(int *ret, str *host, int *port, str *username, str *password, str *lang);
-mapi_export str MAPIerror(bit *ret, int *idx);
+mapi_export str MAPIerror(int *ret, int *idx);
 mapi_export str MAPIexplain(str *ret, int *idx);
 
 #endif /* MAPI_H */
@@ -1037,16 +1037,17 @@ MAPIconnect(int *key, str *host, int *port, str *username, str *password, str *l
 @-
 @= accessTest
  for(i=0; i< MAXSESSIONS; i++)
- if( MAXsessions[i].c && MAXsessions[i].key== @1 &&
-     MAXsessions[i].c == getClient()) break;
+ if( MAPIsessions[i].c && 
+     MAPIsessions[i].key== @1 &&
+     MAPIsessions[i].c == getClient()) break;
  if( i== MAXSESSIONS)
 	return throwMessage("mapi.@2","Access violation");
 @c
 str
 MAPIerror(int *ret, int *key){
 	int i;
-	@:accessTest(key,"error")@
-	*ret= mapi_error(MAXsessions[i].mid);
+	@:accessTest(*key,error)@
+	*ret= mapi_error(MAPIsessions[i].mid);
 	return MAL_SUCCEED;
 }
 
@@ -1054,8 +1055,8 @@ str
 MAPIexplain(str *ret, int *key){
 	int i;
 
-	@:accessTest(key,"explain")@
-	*ret= GDKstrdup(mapi_error_str(MAXsessions[i].mid));
+	@:accessTest(*key,explain)@
+	*ret= GDKstrdup(mapi_error_str(MAPIsessions[i].mid));
 	return MAL_SUCCEED;
 }
 @-
