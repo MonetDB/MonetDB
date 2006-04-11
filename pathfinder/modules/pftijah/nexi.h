@@ -296,6 +296,7 @@ typedef struct TijahParserContext {
     FILE*	commandFILE;
     FILE*	tokenFILE;
     /* */
+    const char* collection;
     const char* queryText;
     char	errBUFF[QUERY_SIZE];
     char        milBUFF[MAXMILSIZE];

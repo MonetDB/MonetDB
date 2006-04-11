@@ -11,6 +11,8 @@
 
 /* #define YYDEBUG 1 */
 
+#include <pf_config.h>
+
 #include <math.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -21,7 +23,6 @@
 
 int line_number = 1;
 int char_number = 1;
-extern char *yytext;
 
 int CO_number = 0;
 int CAS_number = 0;
@@ -29,16 +30,17 @@ int CAS_number = 0;
 bool rep_err = FALSE;
 unsigned int query_type = 0;
 
-void yyerror(char *err) /* called by yyparse in error */
-{
+extern int nexilex(void);
+extern char *nexitext;
+#define yylex nexilex
 
-  printf("Query (line) number %d (char %d): %s at %s\n", line_number, char_number, err, yytext);
-  rep_err = 1;
+void nexierror(char *err) /* 'yyerror()' called by yyparse in error */
+{
+  sprintf(&parserCtx->errBUFF[0],"NEXI error: line[%d], pos[%d]: %s at token {%s}\n", line_number, char_number, err, nexitext);
+  rep_err = TRUE;
 
 }
 
-extern int nexilex(void);
-#define yylex nexilex
 
 %}
 
@@ -57,7 +59,7 @@ input: /* empty */
        ;
 
 line: '\n'
-      | co '\n' { query_type = CO; CO_number++; }
+      | co '\n'  { query_type = CO; CO_number++; }
       | cas '\n' { query_type = CAS; CAS_number++; }
 ;
 
@@ -125,8 +127,6 @@ loc_step: '\\' word | '\\' word '.' word; */
 
 /* img_name: '\\' word '.' word; */
 
-
-
 %%
 
 /* parsing function */
@@ -135,11 +135,11 @@ loc_step: '\\' word | '\\' word '.' word; */
 int parseNEXI(TijahParserContext* parserCtx, int *query_end_num)
 {
   if ( !(parserCtx->commandFILE = fopen(myfileName(WORKDIR,"file_command_pre.nxi"),"a")) ) {
-      fprintf(stderr,"Error: cannot create command file for writing.\n");
+      sprintf(&parserCtx->errBUFF[0],"Error: cannot create command file for writing.\n");
       return FALSE;
   }
   if ( !(parserCtx->tokenFILE = fopen(myfileName(WORKDIR,"file_token_pre.nxi"),"a")) ) {
-      fprintf(stderr,"Error: cannot create token file for writing.\n");
+      sprintf(&parserCtx->errBUFF[0],"Error: cannot create token file for writing.\n");
       return FALSE;
   }
   /* */
@@ -151,7 +151,7 @@ int parseNEXI(TijahParserContext* parserCtx, int *query_end_num)
 
   if ((query_type == CO && CAS_number == 0) || (query_type == CAS && CO_number == 0)) {
     if (rep_err) {
-      printf("Cannot generate query plans.\n");
+      sprintf(&parserCtx->errBUFF[0],"Cannot generate query plans.\n");
       return (!rep_err);
     }
     else {

@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <strings.h>
 #include <assert.h>
 
 #include "nexi.h"
@@ -196,6 +197,20 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int topic_type, str
 
   /* formating the mil header */
 
+  MILPRINTF(MILOUT, "#\n# Generated NEXI MIL by Pathfinder PFTIJAH package \n#\n");
+  MILPRINTF(MILOUT, "# COLLECTION: \"%s\"\n",parserCtx->collection);
+  MILPRINTF(MILOUT, "# NEXI-QUERY:\n");
+  char *np;
+  char *p = (char*)parserCtx->queryText;
+  while( (np=index(p,'\n')) ) {
+	*np = 0;
+        MILPRINTF(MILOUT, "# %s\n",p);
+	*np = '\n';
+	p = ++np;
+  }
+  MILPRINTF(MILOUT, "# %s\n",p);
+  MILPRINTF(MILOUT, "module(pathfinder);\n");
+  MILPRINTF(MILOUT, "module(pftijah);\n");
   MILPRINTF(MILOUT, "\tVAR ");
 
   if (optimize == 0) {

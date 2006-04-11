@@ -40,13 +40,16 @@ char* tijahParse(char* pfx, char* query, char** errBUFF) {
   (void)pfx;
   /* setup TijahParserContext structure */
   if ( 1 ) stream_printf(GDKout,"- tijahParse([%s])\n",query);
-  parserCtx->logFILE   = NULL;
+  parserCtx->collection= pfx;
   parserCtx->queryText = query;
-  /* parserCtx->queryText = "//sec[about(.//st,conclusions) AND about(.,web) AND about(.,distance) AND about (.,learning)]\n"; */
+  parserCtx->logFILE   = NULL;
+  parserCtx->errBUFF[0]= 0;
   if ( !old_main(0,dummy) )  {
       if ( errBUFF ) {
-          /* *errBUFF = &parserCtx->errBUFF[0] */
-          *errBUFF = "tijahParse: parse error";
+	  if ( parserCtx->errBUFF[0] ) /* a nexi error message is generated */
+              *errBUFF = &parserCtx->errBUFF[0];
+	  else
+              *errBUFF = "tijahParse: parse error";
       }
       return NULL;
   }

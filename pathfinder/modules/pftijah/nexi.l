@@ -1,3 +1,6 @@
+%option noyywrap
+%option never-interactive
+%option prefix="nexi"
 %{
 /*
 
@@ -8,6 +11,7 @@
 
      Flex script to tokenize NEXI queries and to build logical and physical query plan
 */
+#include <pf_config.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -275,10 +279,4 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
 
 %%
 
-int yywrap(void) {
-  return 1;
-}
-
-void setNEXIscanstring(const char *s) {
-  yy_scan_string(s);
-}
+void setNEXIscanstring(const char *s) { yy_scan_string(s); }

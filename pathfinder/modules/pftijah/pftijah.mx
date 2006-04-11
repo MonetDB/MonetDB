@@ -1149,7 +1149,7 @@ int CMDtijah_command(bit* res, str command) {
 extern char* tijahParse(char* pfx, char* query, char** errBUFF);
 
 int CMDtijah_query(BAT** res, str pfx, str q) {
-	if ( 1 ) stream_printf(GDKout,"# tijah_	query(\"%s\",\"%s\")\n",pfx,q);
+	if ( 0 ) stream_printf(GDKout,"# tijah_	query(\"%s\",\"%s\")\n",pfx,q);
 	/* */
 	char* err;
 	char* mil;
