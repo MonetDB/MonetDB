@@ -3823,8 +3823,25 @@ CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_firs
 	@:moveOrdered(*(@1*)lt @4 low,lh,lt,+,lowShrinked++;)@
 	@:moveOrdered(*(@1*)ht @7 hgh ,hh,ht,-,hghShrinked++;)@
 
-	if (lowShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
-	if (hghShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
+	/*These are different cases. For now just make sure that the result will be empty.
+		todo: when the index will learn from empty results return the appropriate information*/
+	
+	if (lowShrinked == scr_size) {
+		*posl =  1;
+		*posh = -1;
+		return MAL_SUCCEED;
+	}
+	if (hghShrinked == scr_size){
+		*posl =  1;
+		*posh = -1;
+		return MAL_SUCCEED;
+	}
+	if (lowShrinked + hghShrinked == scr_size){
+		*posl =  1;
+		*posh = -1;
+		return MAL_SUCCEED;
+	}
+
 	int scrH = scr_size-1;	
 	int hp = 0, hil = 0, mids = scrH, mmids = 0;
 	scr_h = (oid*) GDKmalloc(scr_size * sizeof(oid));
@@ -4070,11 +4087,11 @@ CRKcrackOrderedZERO_is_@2_@1(BAT *b, @1 mid, lng idx_first, lng idx_last, lng *p
 	@:moveOrdered(*(@1*)ht @4 mid,hh,ht,-,hghShrinked++;)@
 
 	if (lowShrinked == idx_last - idx_first +1) {
-			*pos = idx_last;
+			*pos = idx_last+1;
 			return MAL_SUCCEED;
 	}
 	if (hghShrinked == idx_last - idx_first +1){
-			*pos = idx_first;
+			*pos = idx_first-1;
 			return MAL_SUCCEED;
 	}
 	
@@ -4368,6 +4385,7 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 	lng i1,i2, posl, posh;
 	BUN l,lt,ht; int xx;
 	BUN h,lh,hh;
+	bit gp1=0, gp2=0;
 	
 	if (low >  hgh)
 		return throwMessage("crackers.crack", "illegal range");
@@ -4578,10 +4596,9 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
 					i1 = vl-1; i2 = -vh;
 				}
 			
-				/*todo Check for empty result add add gap in the index. 
-				  crack three function should be changed to provide this information*/
+				/*todo: add gap in the index*/
 
-				addTwo_int(*bid,low,i1,hgh,i2);
+				if (vl <= vh) addTwo_int(*bid,low,i1,hgh,i2);
 			} else{
 			/* Else we have to do two cracks separatelly */
 				/* For the cl bound and the next one in the index*/
@@ -4607,12 +4624,14 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
 
 				/* If we find a gap we should add this information in the index
 				   Then we should also adapt the way we look into the index to take advantage of that*/
-				if (vl == cl){
+				if (vl < cl){
 					/*then the left piece is empty*/
-					vl--; /*because we increase it later but in this case we want exactly this bun*/
+					gp1 = 1;
 				}
-				if (vl == ch1){
+				if (vl > ch1){
 					/*then the right piece is empty*/
+					vl--;
+					gp1 = 1;
 				}
 
 				vl++; /* We need to take next position because the crack function always returns the last bun of the left piece.
@@ -4637,18 +4656,24 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
 				}
 
 				/*check for gaps*/
-				if (vh == cl2){
+				if (vh < cl2){
 					/*then the left piece is empty*/
 					vh--; /*we want the buns from the previous index*/
+					gp2 = 1;
 				}
-				if (vh == ch){
+				if (vh > ch){
 					/*then the right piece is empty*/
+					vh--;
+					gp2 = 1;
 				}
 				
 				/* we should check what we are going to add. There are four cases, 
 				(1) no gaps which is what we have now, (2) one gap ...*/
-			
-				addTwo_int(*bid,low,i1,hgh,i2);
+				/*todo add the gap information too*/	
+				if (gp1 ==0 && gp2 == 0) 
+					addTwo_int(*bid,low,i1,hgh,i2);
+				else if (gp1 == 0) addOne_int(*bid,low,i1);
+				else if (gp2 == 0) addOne_int(*bid,hgh,i2);
 			}
 		}else
 		if (vl == -1){
@@ -4664,23 +4689,25 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
 			/*CRACK in two pieces cl-ch1 using >incLow bound*/
 			if (*inclusiveLow == TRUE){ 
 				CRKcrackOrderedZERO_is_RE_@1(b,*low, cl, ch1,&vl);
-				addOne_int(*bid,low,-vl);
+				i1 = - vl;
 			}
 			else{ 
 				CRKcrackOrderedZERO_is_LE_@1(b,*low, cl, ch1,&vl);
-				addOne_int(*bid,low,vl);
+				i1 =  vl;
 			}
 
 			/*check for gaps, !insertions to the index should be done after this check!*/
-			if (vl == cl){
+			if (vl < cl){
 				/*then the left piece is empty*/
-				vl--; 
+				gp1 = 1;
 			}
-			if (vl == ch1){
+			if (vl > ch1){
 				/*then the right piece is empty*/
+				vl--;
+				gp1 = 1;
 			}
-
 			vl++; 
+			if (gp1 == 0) addOne_int(*bid,low,i1);
 		}else
 		if (vh == -1){
 			if (h == BUNfirst(c))
@@ -4693,22 +4720,25 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
 			/*CRACK in two pieces cl2-ch using <incHgh bound*/
 			if (*inclusiveHgh == TRUE){ 
 				CRKcrackOrderedZERO_is_LE_@1(b,*hgh, cl2, ch,&vh);
-				addOne_int(*bid,hgh,vh);
+				i2 = vh;
 			}
 			else{ 
 				CRKcrackOrderedZERO_is_RE_@1(b,*hgh, cl2, ch,&vh);
-				addOne_int(*bid,hgh,-vh);
+				i2 = -vh;
 			}
 
 			/*check for gaps, !insertions to the index should be done after this check!*/
-			if (vh == cl2){
+			if (vh < cl2){
 				/*then the left piece is empty*/
 				vh--;
+				gp2 = 1;
 			}
-			if (vh == ch){
+			if (vh > ch){
 				/*then the right piece is empty*/
+				vh--;
+				gp2 = 1;
 			}
-
+			if (gp2 == 0) addOne_int(*bid,hgh,i2);
 		} 	
 	}
 /*
@@ -4718,7 +4748,7 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch1:%lld, cl2:%lld, ch:%lld \n",vl,vh,cl,ch1
 */	
 	
 createView:
-	printf("vl: %lld, vh:%lld \n",vl,vh);
+/*	printf("vl: %lld, vh:%lld \n",vl,vh);*/
 	view = BATslice(b, vl, vh+1);
 	if (!tail) {
 		uview = BATconst(view,TYPE_void,ATOMnilptr(TYPE_void));
