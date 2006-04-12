@@ -59,7 +59,6 @@ include status;
 include group;
 include aggr;
 include array;
-include mapi;
 include pqueue;
 include mkey;
 
@@ -80,6 +79,7 @@ include box;
 include pbm;
 include inspect;
 include language;
+include mserver;
 
 include profiler;
 include statistics;

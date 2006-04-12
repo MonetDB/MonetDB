@@ -14,12 +14,12 @@ LIBS = {
 		inspect.mx manual.mx crackers.mx \
 		factory.mx mdb.mx  pbm.mx \
 		rsbox.mx urlbox.mx mat.mx \
-		armada.mx
+		armada.mx mserver.mx
 		#datacell.mx 
 
 	HEADERS = h 
 	#SCRIPTS = mal mil ""
-	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream \
+	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream -lMapi \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
@@ -112,7 +112,7 @@ scripts_mal = {
 		chopper.mx clients.mx \
 		factory.mx mdb.mx pcre.mx  tablet.mx mat.mx \
 		rsbox.mx urlbox.mx statistics.mx transaction.mx \
-		partitions.mx pbm.mx armada.mx
+		partitions.mx pbm.mx armada.mx mserver.mx
 	#datacell.mx 
 }
 

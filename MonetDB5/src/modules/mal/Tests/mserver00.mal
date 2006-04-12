@@ -11,5 +11,5 @@ pwd:= algebra.find(u,"password");
 lang:= algebra.find(u,"scenario");
 
 # setup the session
-i:= mapi.connect(hs,port,usr,pwd,lang);
+i:= mserver.connect(hs,port,usr,pwd,lang);
 io.print(i);

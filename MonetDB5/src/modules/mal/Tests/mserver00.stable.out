@@ -1,12 +1,10 @@
-stdout of test 'mapi00` in directory 'src/modules/kernel` itself:
+stdout of test 'mserver00` in directory 'src/modules/mal` itself:
 
 
 # 23:07:54 >  
 # 23:07:54 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=37461 --set monet_prompt= --trace --dbname=mTests_src_modules_kernel  mapi00.mal < /dev/null
 # 23:07:54 >  
 
-!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
-!WARNING: BBPdir: initializing BBP.
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2006, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
@@ -41,7 +39,7 @@ function user.main():void;	# 0  (main:void)
     pwd := algebra.find(u,"password");	# 8 ALGfind (pwd:str)<-(u:bat[:str,:str])(_12:str)
     lang := algebra.find(u,"scenario");	# 9 ALGfind (lang:str)<-(u:bat[:str,:str])(_14:str)
 # setup the session 	# 10  (_15:str)
-    i := mapi.connect(hs,port,usr,pwd,lang);	# 11 MAPIconnect (i:int)<-(hs:str)(port:int)(usr:str)(pwd:str)(lang:str)
+    i := mserver.connect(hs,port,usr,pwd,lang);	# 11 SERVERconnect (i:int)<-(hs:str)(port:int)(usr:str)(pwd:str)(lang:str)
     io.print(i);	# 12 IOprint_val (_17:int)<-(i:int)
 end main;	# 13  
 Succeeded to establish session

@@ -55,13 +55,13 @@ LIBS = {
 	SEP = _
 	SOURCES = \
 		calc.mx bat.mx algebra.mx status.mx unix.mx \
-		mapi.mx mmath.mx lock.mx sema.mx alarm.mx  \
+		mmath.mx lock.mx sema.mx alarm.mx  \
 		batcalc.mx batmath.mx aggr.mx counters.mx \
 		pqueue.mx mkey.mx microbenchmark.mx
 
 	HEADERS = h 
 	#SCRIPTS = mal mil ""
-	LIBS = $(MONETDB_LIBS) -lbat -lstream -lMapi \
+	LIBS = $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmal
 	LDFLAGS = -lm

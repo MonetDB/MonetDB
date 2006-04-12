@@ -15,7 +15,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2006 CWI.
 @' All Rights Reserved.
 
-@f mapi
+@f mserver
 @a N.J. Nes P. Boncz, S. Mullender
 @v 1.1
 @+ MonetDB's Internet Interface
@@ -44,30 +44,30 @@ the authentiaction string  "<username>:<password>:lang:blocked".
 An unblocked stream is obtained using "<username>:<password>:lang",
 which is also backward compatible for older applications.
 @mal
-module mapi;
+module mserver;
 
 command listen():int
-address MAPIlisten_default
+address SERVERlisten_default
 comment "Start a Mapi server with the default settings.";
 command listen(port:int):int
-address MAPIlisten_port
+address SERVERlisten_port
 comment "Start a Mapi server on the given port";
 #command listen(open:bit):int
-#address MAPIlisten_open
+#address SERVERlisten_open
 #comment "Start a Mapi server on the default port global bound or not";
 command listen(port:int, maxusers:int):int
-address MAPIlisten2
+address SERVERlisten2
 comment "Start a Mapi server.";
 
 command listen(port:int, maxusers:int, cmd:str):int
-address MAPIlisten3
+address SERVERlisten3
 comment "Start the Mapi listener on <port> for <maxusers>. 
 	For a new client connection MAL procedure <cmd>(Stream s_in, Stream s_out)
 	is called.If no <cmd> is specified a new client thread is forked.";
 
 command listen_ssl(port:int, maxusers:int,
 	keyfile:str,certfile:str, cmd:str):int
-address MAPIlistenSSL
+address SERVERlistenSSL
 comment "Start the Mapi listener on <port> for <maxusers> using SSL. 
 	<keyfile> and <certfile> give the path names for files with the 
 	server key and certificates in PEM format. For a new client connection 
@@ -75,50 +75,50 @@ comment "Start the Mapi listener on <port> for <maxusers> using SSL.
 	If no <cmd> is specified a new client thread is forked.";
 
 command stop():void
-address MAPIstop
+address SERVERstop
 comment "Terminate connection listeners"; 
 
 command suspend():void
-address MAPIsuspend
+address SERVERsuspend
 comment "Suspend accepting connections";
 
 command resume():void
-address MAPIresume
+address SERVERresume
 comment "Resume connection listeners";
 
 command malclient(in:streams, out:streams):void
-address MAPIclient
+address SERVERclient
 comment "Start a Mapi client.";
 
 @-
-The complete MAPI library is also available to setup
+The complete SERVER library is also available to setup
 communication with another Mserver.
 This library uses pointer handles, which we replace with
 an index in a locally maintained table. It provides a handle
 to easily detect havoq clients.
 @mal
 command connect(host:str, port:int, usr:str, passwd:str,lang:str):int
-address MAPIconnect
+address SERVERconnect
 comment "Establish connection with a remote mserver";
 
 command error(mid:int):int
-address MAPIerror
+address SERVERerror
 comment "Check for an error in the communication");
 
 command explain(mid:int):str
-address MAPIexplain
+address SERVERexplain
 comment "Turn the error seen into a string";
-mapi.listen();
+mserver.listen();
 @{
 command prelude()
-address mapi_prelude;
+address SERVERprelude;
 command epilogue()
-address mapi_epilogue;
+address SERVERepilogue;
 
 @h
-#ifndef MAPI_H
-#define MAPI_H
-/* #define DEBUG_MAPI */
+#ifndef SERVER_H
+#define SERVER_H
+/* #define DEBUG_SERVER */
 
 #include "mal_client.h"
 #include "mal_session.h"
@@ -128,31 +128,31 @@ address mapi_epilogue;
 #define NEW_ARRAY( type, size )	(type*)GDKmalloc((size)*sizeof(type))
 #define STREQ(a, b) 		(strcmp(a, b)==0)
 
-#define MAPIPORT		50000
-#define MAPISSLPORT		40000
-#define MAPIMAXUSERS 		5
+#define SERVERPORT		50000
+#define SERVERSSLPORT		40000
+#define SERVERMAXUSERS 		5
 
-mal_export str MAPIlistenThread(int *Sock);
-mal_export str MAPIlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd);
-mal_export bat * mapi_prelude(void);
-mal_export void mapi_epilogue(void);
-mal_export str MAPIlistenSSL(int *Port, int *Maxusers, str keyfile, str certfile, str cmd);
-mal_export str MAPIlisten_default(int *ret);
-mal_export str MAPIlisten2(int *ret, int *port, int *maxusers);
-mal_export str MAPIlisten3(int *ret, int *port, int *maxusers, str *cmd);
-mal_export str MAPIlisten_port(int *ret, int *pid);
-mal_export str MAPIstop(int *ret);
-mal_export str MAPIsuspend(int *ret);
-mal_export str MAPIresume(int *ret);
-mal_export void MAPIexit();
+mal_export str SERVERlistenThread(int *Sock);
+mal_export str SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd);
+mal_export bat * SERVERprelude(void);
+mal_export void SERVERepilogue(void);
+mal_export str SERVERlistenSSL(int *Port, int *Maxusers, str keyfile, str certfile, str cmd);
+mal_export str SERVERlisten_default(int *ret);
+mal_export str SERVERlisten2(int *ret, int *port, int *maxusers);
+mal_export str SERVERlisten3(int *ret, int *port, int *maxusers, str *cmd);
+mal_export str SERVERlisten_port(int *ret, int *pid);
+mal_export str SERVERstop(int *ret);
+mal_export str SERVERsuspend(int *ret);
+mal_export str SERVERresume(int *ret);
+mal_export void SERVERexit();
 
-mal_export str MAPIconnect(int *ret, str *host, int *port, str *username, str *password, str *lang);
-mapi_export str MAPIerror(int *ret, int *idx);
-mapi_export str MAPIexplain(str *ret, int *idx);
+mal_export str SERVERconnect(int *ret, str *host, int *port, str *username, str *password, str *lang);
+mal_export str SERVERerror(int *ret, int *idx);
+mal_export str SERVERexplain(str *ret, int *idx);
 
-#endif /* MAPI_H */
+#endif /* SERVER_H */
 @c
-#include "mapi.h"
+#include "mserver.h"
 
 #include  <sys/types.h>
 #ifdef HAVE_SYS_SOCKET_H
@@ -188,10 +188,10 @@ static char *threadcommand;
 static int usock = -1;
 static MT_Id listener[8]; 
 static int lastlistener=0;
-static int mapiactive=TRUE;
+static int serveractive=TRUE;
 
 str
-MAPIlistenThread(int *Sock)
+SERVERlistenThread(int *Sock)
 {
 	char *msg = 0;
 	char *cmd = threadcommand;
@@ -237,7 +237,7 @@ MAPIlistenThread(int *Sock)
 		}
 		if (sock >= 0 && FD_ISSET(sock, &fds)) {
 			if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
-				if (MT_geterrno() != EINTR || mapiactive==FALSE) {
+				if (MT_geterrno() != EINTR || serveractive==FALSE) {
 					msg = "accept failed\n";
 					goto error;
 				}
@@ -255,8 +255,8 @@ MAPIlistenThread(int *Sock)
 #endif
 		} else
 			continue;
-#ifdef DEBUG_MAPI
-		printf("mapi:accepted\n");
+#ifdef DEBUG_SERVER
+		printf("server:accepted\n");
 		fflush(stdout);
 #endif
 		if (cmd == NULL) {
@@ -264,14 +264,14 @@ MAPIlistenThread(int *Sock)
 			char *name = (char *) GDKmalloc(BLOCK), *user = name, *s;
 			char *challenge;
 			int blocked = 0;
-			stream *fdin = socket_rastream(msgsock, "Server mapi read");
-			stream *fdout = socket_wastream(msgsock, "Server mapi write");
+			stream *fdin = socket_rastream(msgsock, "Server read");
+			stream *fdout = socket_wastream(msgsock, "Server write");
 			bstream *bs;
 
 			assert(name);
 			memset(name, 0, BLOCK);
 			if (fdin == 0 || stream_errnr(fdin)) {
-				GDKsyserror("MAPIlisten:fdin problems\n");
+				GDKsyserror("SERVERlisten:fdin problems\n");
 				continue;
 			}
 			/* write challenge string, the challenge is currently empty
@@ -288,7 +288,7 @@ MAPIlistenThread(int *Sock)
 				stream_read(fdin, user, 1, 1);
 			}
 			if (stream_errnr(fdin)) {
-				GDKsyserror("MAPIlisten: fdin problems\n");
+				GDKsyserror("SERVERlisten: fdin problems\n");
 				stream_close(fdin);
 				stream_destroy(fdin);
 				continue;
@@ -301,8 +301,8 @@ MAPIlistenThread(int *Sock)
 				stream_destroy(fdin);
 				continue;
 			}
-#ifdef DEBUG_MAPI
-			printf("mapi:Client accepted %s\n", name);
+#ifdef DEBUG_SERVER
+			printf("mserver:Client accepted %s\n", name);
 			fflush(stdout);
 #endif
 			s = strchr(name, ':'); /* user */
@@ -310,20 +310,20 @@ MAPIlistenThread(int *Sock)
 			if (s) s = strchr(s + 1, ':'); /* language */
 			blocked = s && strncmp(s, ":blocked", 8) == 0;
 			if (blocked) {
-				/* printf("mapi:use blocked mode\n");fflush(stdout); */
+				/* printf("mserver:use blocked mode\n");fflush(stdout); */
 				fdin = block_stream(stream_rstream(fdin));
-				fdout = block_stream(socket_wstream(msgsock, "Server mapi write"));
+				fdout = block_stream(socket_wstream(msgsock, "Server write"));
 			} else {
-				fdout = socket_wastream(msgsock, "Server mapi write");
+				fdout = socket_wastream(msgsock, "Server write");
 			}
 
 			if (fdout == 0) {
-				GDKsyserror("MAPIlisten:fdout problems\n");
+				GDKsyserror("SERVERlisten:fdout problems\n");
 				continue;
 			}
-#ifdef DEBUG_MAPI
-			THRprintf(GDKerr, "MAPIlisten:client accepted %d\n", msgsock);
-			THRprintf(GDKerr, "MAPIlisten:client string %s\n", name);
+#ifdef DEBUG_SERVER
+			THRprintf(GDKerr, "SERVERlisten:client accepted %d\n", msgsock);
+			THRprintf(GDKerr, "SERVERlisten:client string %s\n", name);
 #endif
 			bs = bstream_create(fdin, blocked ? 128 * BLOCK : 0);
 
@@ -335,11 +335,11 @@ MAPIlistenThread(int *Sock)
 		}
 	} while (1);
 error:
-	return throwMessage("mapi.listen", msg);
+	return throwMessage("mserver.listen", msg);
 }
 
 str
-MAPIlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
+SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 {
 	struct sockaddr_in server;
 	int sock = -1;
@@ -364,22 +364,22 @@ MAPIlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 		usockfile = GDKstrdup(*Usockfile);
 #else
 		usockfile = NULL;
-		GDKwarning("MAPIlisten: Unix domain sockets are not supported\n");
+		GDKwarning("SERVERlisten: Unix domain sockets are not supported\n");
 #endif
 	}
 	maxusers = *Maxusers;
 	cmd = Cmd ? GDKstrdup(*Cmd) : NULL;
 
-	port = (port ? port : MAPIPORT);
-	maxusers = (maxusers ? maxusers : MAPIMAXUSERS);
+	port = (port ? port : SERVERPORT);
+	maxusers = (maxusers ? maxusers : SERVERMAXUSERS);
 
 	if (port <= 0 && usockfile == NULL)
-		return throwMessage("mapi.listen", "no port or socket file specified\n");
+		return throwMessage("mserver.listen", "no port or socket file specified\n");
 
 	if (port > 0) {
 		sock = socket(AF_INET, SOCK_STREAM, 0);
 		if (sock < 0)
-			return throwMessage("mapi.listen", "creation of stream socket failed\n");
+			return throwMessage("mserver.listen", "creation of stream socket failed\n");
 @-
 Set server port and allow network connections from any workstation.
 Bind the socket to the server port.
@@ -395,12 +395,12 @@ The port id should be obtained from the Homes file.
 
 		length = (SOCKLEN) sizeof(server);
 		if (bind(sock, (SOCKPTR) & server, length) < 0)
-			return throwMessage("mapi.listen", "binding to stream socket failed\n");
+			return throwMessage("mserver.listen", "binding to stream socket failed\n");
 @-
 Get the new information for the server socket and start listening.
 @c
 		if (getsockname(sock, (SOCKPTR) & server, &length) < 0)
-			return throwMessage("mapi.listen", "Failed getting socket name\n");
+			return throwMessage("mserver.listen", "Failed getting socket name\n");
 		listen(sock, maxusers);
 	}
 #ifdef HAVE_SYS_UN_H
@@ -408,7 +408,7 @@ Get the new information for the server socket and start listening.
 		usock = socket(AF_UNIX, SOCK_STREAM, 0);
 		if (usock < 0) {
 			unlink(usockfile);
-			return throwMessage("mapi.listen", "creation of Unix socket failed\n");
+			return throwMessage("mserver.listen", "creation of Unix socket failed\n");
 		}
 		userver.sun_family = AF_UNIX;
 		strncpy(userver.sun_path, usockfile, sizeof(userver.sun_path));
@@ -416,20 +416,20 @@ Get the new information for the server socket and start listening.
 		length = (SOCKLEN) sizeof(userver);
 		if (bind(usock, (SOCKPTR) & userver, length) < 0) {
 			unlink(usockfile);
-			return throwMessage("mapi.listen", "binding to Unix socket file failed\n");
+			return throwMessage("mserver.listen", "binding to Unix socket file failed\n");
 		}
 		listen(usock, maxusers);
 	}
 #endif
 
-#ifdef DEBUG_MAPI
-	THRprintf(GDKerr, "MAPIlisten:Network started at %d\n", port);
+#ifdef DEBUG_SERVER
+	THRprintf(GDKerr, "SERVERlisten:Network started at %d\n", port);
 #endif
 	threadcommand = cmd;
 	*Sock = sock;
 
-	if (MT_create_thread(pidp, (void (*)(void *)) MAPIlistenThread, Sock) < 0) {
-		return throwMessage("mapi.listen", "starting thread failed");
+	if (MT_create_thread(pidp, (void (*)(void *)) SERVERlistenThread, Sock) < 0) {
+		return throwMessage("mserver.listen", "starting thread failed");
 	}
 #ifdef HAVE_SYS_UN_H
 	if (usockfile)
@@ -437,7 +437,7 @@ Get the new information for the server socket and start listening.
 #endif
 	gethostname(host, (int) 512);
 	(void) msg;
-#ifdef DEBUG_MAPI
+#ifdef DEBUG_SERVER
 	snprintf(msg, (int) 512, "#Ready to accept connections on %s:%d\n", host, port);
 	stream_printf(GDKout, "%s", msg);
 #endif
@@ -520,7 +520,7 @@ id_function(void)
 #endif /* HAVE_OPENSSL */
 
 bat *
-mapi_prelude(void)
+SERVERprelude(void)
 {
 #ifdef HAVE_OPENSSL
 	int i, nlocks;
@@ -528,7 +528,7 @@ mapi_prelude(void)
 	nlocks = CRYPTO_num_locks();
 	mutex_buf = GDKmalloc(nlocks * sizeof(*mutex_buf));
 	if (mutex_buf == NULL) {
-		GDKsyserror("mapi_prelude: failed to allocate %d mutexes\n", nlocks);
+		GDKsyserror("SERVERprelude: failed to allocate %d mutexes\n", nlocks);
 		return NULL;
 	}
 	for (i = 0; i < nlocks; i++)
@@ -540,7 +540,7 @@ mapi_prelude(void)
 }
 
 void
-mapi_epilogue(void)
+SERVERepilogue(void)
 {
 #ifdef HAVE_OPENSSL
 	if (mutex_buf) {
@@ -558,7 +558,7 @@ mapi_epilogue(void)
 }
 
 str
-MAPIlistenSSL(int *Port, int *Maxusers, str keyfile, str certfile, str cmd)
+SERVERlistenSSL(int *Port, int *Maxusers, str keyfile, str certfile, str cmd)
 {
 #ifdef HAVE_OPENSSL
 	struct sockaddr_in server;
@@ -575,9 +575,9 @@ MAPIlistenSSL(int *Port, int *Maxusers, str keyfile, str certfile, str cmd)
 	char *msg;
 
 	if (!port)
-		port = MAPISSLPORT;
+		port = SERVERSSLPORT;
 	if (!maxusers)
-		maxusers = MAPIMAXUSERS;
+		maxusers = SERVERMAXUSERS;
 
 	ctx = SSL_CTX_new(SSLv23_method());
 	if (ctx == NULL) {
@@ -607,7 +607,7 @@ MAPIlistenSSL(int *Port, int *Maxusers, str keyfile, str certfile, str cmd)
 
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock < 0) {
-		GDKsyserror("MAPIlistenSSL:creation of stream socket failed\n");
+		GDKsyserror("SERVERlistenSSL:creation of stream socket failed\n");
 		goto fail;
 	}
 @-
@@ -625,7 +625,7 @@ The port id should be obtained from the Homes file.
 
 	length = (SOCKLEN) sizeof(server);
 	if (bind(sock, (SOCKPTR) & server, length) < 0) {
-		GDKsyserror("MAPIlistenSSL:binding to stream socket (%d) failed\n", port);
+		GDKsyserror("SERVERlistenSSL:binding to stream socket (%d) failed\n", port);
 		goto fail;
 	}
 @-
@@ -637,8 +637,8 @@ Get the new information for the server socket and start listening.
 	}
 	listen(sock, maxusers);
 
-#ifdef DEBUG_MAPI
-	THRprintf(GDKerr, "MAPIlistenSSL:Network started at %d\n", port);
+#ifdef DEBUG_SERVER
+	THRprintf(GDKerr, "SERVERlistenSSL:Network started at %d\n", port);
 #endif
 	do {
 		int retval;
@@ -657,7 +657,7 @@ Get the new information for the server socket and start listening.
 			continue;
 		}
 		if (retval < 0) {
-			GDKsyserror("MAPIlistenSSL:select failed\n");
+			GDKsyserror("SERVERlistenSSL:select failed\n");
 			goto fail;
 		}
 		if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
@@ -696,7 +696,7 @@ Get the new information for the server socket and start listening.
 			case SSL_ERROR_WANT_X509_LOOKUP:
 			default:
 				/* some error occurred */
-				errstr = ssl_error("MAPIlistenSSL", err, ret);
+				errstr = ssl_error("SERVERlistenSSL", err, ret);
 				GDKsyserror(errstr);
 				GDKfree(errstr);
 				SSL_free(ssl);
@@ -711,14 +711,14 @@ Get the new information for the server socket and start listening.
 			char *name = (char *) GDKmalloc(BLOCK), *user = name, *s;
 			char *mp;
 			int blocked = 0;
-			stream *fdin = ssl_rastream(ssl, "Server mapi read");
+			stream *fdin = ssl_rastream(ssl, "Server read");
 			stream *fdout = NULL;
 			Client c;
 
 			assert(name);
 			memset(name, 0, BLOCK);
 			if (fdin == 0 || stream_errnr(fdin)) {
-				GDKsyserror("MAPIlistenSSL:fdin problems\n");
+				GDKsyserror("SERVERlistenSSL:fdin problems\n");
 				if (fdin)
 					stream_destroy(fdin);
 				continue;
@@ -730,34 +730,34 @@ Get the new information for the server socket and start listening.
 				stream_read(fdin, user, 1, 1);
 			}
 			if (stream_errnr(fdin)) {
-				GDKsyserror("MAPIlistenSSL: fdin problems\n");
+				GDKsyserror("SERVERlistenSSL: fdin problems\n");
 				stream_close(fdin);
 				stream_destroy(fdin);
 				continue;
 			}
 			*user = 0;
-#ifdef DEBUG_MAPI
-			THRprintf(GDKerr, "mapi:Client accepted %s\n", name);
+#ifdef DEBUG_SERVER
+			THRprintf(GDKerr, "mserver:Client accepted %s\n", name);
 			fflush(stdout);
 #endif
 			s = strrchr(name, ':');
 			blocked = s && strncmp(s, ":blocked", 8) == 0;
 			if (blocked) {
-				/* printf("mapi:use blocked mode\n");fflush(stdout); */
+				/* printf("mserver:use blocked mode\n");fflush(stdout); */
 				*s = 0;
 				fdin = block_stream(stream_rstream(fdin));
-				fdout = block_stream(ssl_wstream(SSL_dup(ssl), "Server mapi write"));
+				fdout = block_stream(ssl_wstream(SSL_dup(ssl), "Server write"));
 			} else {
-				fdout = ssl_wastream(SSL_dup(ssl), "Server mapi write");
+				fdout = ssl_wastream(SSL_dup(ssl), "Server write");
 			}
 
 			if (fdout == 0) {
-				GDKsyserror("MAPIlistenSSL:fdout problems\n");
+				GDKsyserror("SERVERlistenSSL:fdout problems\n");
 				continue;
 			}
 			*user = 0;
-#ifdef DEBUG_MAPI
-			THRprintf(GDKerr, "MAPIlisten:client accepted %d\n", msgsock);
+#ifdef DEBUG_SERVER
+			THRprintf(GDKerr, "SERVERlisten:client accepted %d\n", msgsock);
 #endif
 			bs = bstream_create(fdin, blocked ? 128 * BLOCK : 0);
 
@@ -779,14 +779,14 @@ end_loop:;
 		SSL_CTX_free(ctx);
 	if (cmd)
 		GDKfree(cmd);
-	return throwMessage("MAPIlistenSSL", msg);
+	return throwMessage("SERVERlistenSSL", msg);
 #else
 	(void) Port;
 	(void) Maxusers;
 	(void) keyfile;
 	(void) certfile;
 	(void) cmd;
-	return throwMessage("MAPIlistenSSL", "No SSL support\n");
+	return throwMessage("SERVERlistenSSL", "No SSL support\n");
 #endif /* HAVE_OPENSSL */
 }
 
@@ -830,7 +830,7 @@ The latest port known to gain access is stored
 in the database, so that others can more easily
 be notified.
 @c
-void MAPIannounce(str lang, int port){
+void SERVERannounce(str lang, int port){
 	FILE *f;
 	char buf[PATHLENGTH];
 	snprintf(buf,PATHLENGTH,".%s.port",lang);
@@ -841,47 +841,47 @@ void MAPIannounce(str lang, int port){
 	}
 }
 str
-MAPIlisten_default(int *ret)
+SERVERlisten_default(int *ret)
 {
-	int port = MAPIPORT;
+	int port = SERVERPORT;
 	str p;
-	int maxusers = MAPIMAXUSERS;
+	int maxusers = SERVERMAXUSERS;
 
 	(void) ret;
 	p = GDKgetenv("mapi_port");
 	if( p )
 		port = (int) strtol(p,NULL,10);
 	if( port == 0)
-		return throwMessage("mapi.listen","Illegal port");
-	MAPIannounce("mal",port);
-	return MAPIlisten(&port, 0, &maxusers, 0);
+		return throwMessage("mserver.listen","Illegal port");
+	SERVERannounce("mal",port);
+	return SERVERlisten(&port, 0, &maxusers, 0);
 }
 
 str
-MAPIlisten2(int *ret, int *port, int *maxusers)
+SERVERlisten2(int *ret, int *port, int *maxusers)
 {
 	(void) ret;
-	MAPIannounce("mal",*port);
-	return MAPIlisten(port, 0, maxusers, 0);
+	SERVERannounce("mal",*port);
+	return SERVERlisten(port, 0, maxusers, 0);
 }
 
 str
-MAPIlisten3(int *ret, int *port, int *maxusers, str *cmd)
+SERVERlisten3(int *ret, int *port, int *maxusers, str *cmd)
 {
 	(void) ret;
-	MAPIannounce("mal",*port);
-	return MAPIlisten(port, 0, maxusers, cmd);
+	SERVERannounce("mal",*port);
+	return SERVERlisten(port, 0, maxusers, cmd);
 }
 
 str
-MAPIlisten_port(int *ret, int *pid)
+SERVERlisten_port(int *ret, int *pid)
 {
 	int port = *pid;
-	int maxusers = MAPIMAXUSERS;
+	int maxusers = SERVERMAXUSERS;
 
 	(void) ret;
-	MAPIannounce("mal",port);
-	return MAPIlisten(&port, 0, &maxusers, 0);
+	SERVERannounce("mal",port);
+	return SERVERlisten(&port, 0, &maxusers, 0);
 }
 @-
 The internet connection listener may be terminated from the server console,
@@ -893,7 +893,7 @@ field in the client record.
 @c
 
 str
-MAPIstop(int *ret)
+SERVERstop(int *ret)
 {
 	int i;
 	for( i=0; i< lastlistener; i++)
@@ -905,23 +905,23 @@ MAPIstop(int *ret)
 
 
 str
-MAPIsuspend(int *res)
+SERVERsuspend(int *res)
 {
 	(void) res;
-	mapiactive= FALSE;
+	serveractive= FALSE;
 	return MAL_SUCCEED;
 }
 
 str
-MAPIresume(int *res)
+SERVERresume(int *res)
 {
-	mapiactive= TRUE;
+	serveractive= TRUE;
 	(void) res;
 	return MAL_SUCCEED;
 }
 
 str
-MAPIclient(int *res, stream **In, stream **Out) 
+SERVERclient(int *res, stream **In, stream **Out) 
 {
 	int i = 0;
 	char *name = (char *) GDKmalloc(BLOCK), *user = name, *s;
@@ -948,26 +948,26 @@ MAPIclient(int *res, stream **In, stream **Out)
 		stream_read(fdin, user, 1, 1);
 	}
 	if (stream_errnr(fdin)) {
-		return throwException(MALEXCEPTION, "MAPIclient",
+		return throwException(MALEXCEPTION, "SERVERclient",
 			"fdin write problems\n");
 	}
 	*user = 0;
 	/* in embedded mode we allow just one client */
-#ifdef DEBUG_MAPI
-	printf("mapi:Client accepted %s\n", name);
+#ifdef DEBUG_SERVER
+	printf("mserver:Client accepted %s\n", name);
 	fflush(stdout);
 #endif
 	s = strrchr(name, ':');
 	blocked = s && strncmp(s, ":blocked", 8) == 0;
 	if (blocked) {
-		/* printf("mapi:use blocked mode\n");fflush(stdout); */
+		/* printf("mserver:use blocked mode\n");fflush(stdout); */
 		*s = 0;
 		fdin = block_stream(stream_rstream(fdin));
 		fdout = block_stream(stream_wstream(fdout));
 	}
-#ifdef DEBUG_MAPI
-	THRprintf(GDKerr, "MAPIlisten:client accepted %d\n", msgsock);
-	THRprintf(GDKerr, "MAPIlisten:client string %s\n", name);
+#ifdef DEBUG_SERVER
+	THRprintf(GDKerr, "SERVERlisten:client accepted %d\n", msgsock);
+	THRprintf(GDKerr, "SERVERlisten:client string %s\n", name);
 #endif
 	bs = bstream_create(fdin, blocked ? 128 * BLOCK : 0);
 
@@ -978,15 +978,15 @@ MAPIclient(int *res, stream **In, stream **Out)
 }
 
 void
-MAPIexit(){
+SERVERexit(){
 	int ret;
-	MAPIstop(&ret);
+	SERVERstop(&ret);
 	/* remove any port identity file */
 	system("rm -rf .*_port");
 }
 @-
 The remainder of the file contains the wrapper around
-the MAPI library used by application programmers.
+the SERVER library used by application programmers.
 
 Sessions have a lifetime different from dynamic scopes.
 This means the  user should use a session identifier
@@ -1003,69 +1003,70 @@ struct{
 	int key;
 	Client c;
 	Mapi mid;
-} MAPIsessions[MAXSESSIONS];
+} SERVERsessions[MAXSESSIONS];
 
 static int sessionkey=0;
 str
-MAPIconnect(int *key, str *host, int *port, str *username, str *password, str *lang){
+SERVERconnect(int *key, str *host, int *port, str *username, str *password, str *lang){
 	Mapi mid;
 	int i;
 
-	mal_set_lock(mal_contextLock,"MAPIconnect");
+	mal_set_lock(mal_contextLock,"SERVERconnect");
 	for(i=0; i< MAXSESSIONS; i++)
-	if( MAPIsessions[i].c ==0 ) break;
+	if( SERVERsessions[i].c ==0 ) break;
 
 	if( i==MAXSESSIONS){
-		mal_unset_lock(mal_contextLock,"MAPIconnect");
-		return throwMessage("mapi.connect","Too many sessions");
+		mal_unset_lock(mal_contextLock,"SERVERconnect");
+		return throwMessage("mserver.connect","Too many sessions");
 	}
-	MAPIsessions[i].c= getClient();
-	MAPIsessions[i].key= ++sessionkey;
-	mal_unset_lock(mal_contextLock,"MAPIconnect");
+	SERVERsessions[i].c= getClient();
+	SERVERsessions[i].key= ++sessionkey;
+	mal_unset_lock(mal_contextLock,"SERVERconnect");
 
 	mid= mapi_connect(*host, *port, *username, *password, *lang);
 	if( mapi_error(mid) ){
-		MAPIsessions[i].c = NULL;
-		return throwMessage("mapi.connect","Could not connect");
+		SERVERsessions[i].c = NULL;
+		return throwMessage("mserver.connect","Could not connect");
 	}
 
 	stream_printf(GDKout,"Succeeded to establish session\n");
-	MAPIsessions[i].mid= mid;
-	*key = MAPIsessions[i].key;
+	SERVERsessions[i].mid= mid;
+	*key = SERVERsessions[i].key;
 	return MAL_SUCCEED;
 }
+
 @-
 @= accessTest
  for(i=0; i< MAXSESSIONS; i++)
- if( MAPIsessions[i].c && 
-     MAPIsessions[i].key== @1 &&
-     MAPIsessions[i].c == getClient()) break;
+ if( SERVERsessions[i].c && 
+     SERVERsessions[i].key== @1 &&
+     SERVERsessions[i].c == getClient()) break;
  if( i== MAXSESSIONS)
-	return throwMessage("mapi.@2","Access violation");
+	return throwMessage("mserver.@2","Access violation");
 @c
 str
-MAPIerror(int *ret, int *key){
+SERVERerror(int *ret, int *key){
 	int i;
 	@:accessTest(*key,error)@
-	*ret= mapi_error(MAPIsessions[i].mid);
+	*ret= mapi_error(SERVERsessions[i].mid);
 	return MAL_SUCCEED;
 }
 
 str 
-MAPIexplain(str *ret, int *key){
+SERVERexplain(str *ret, int *key){
 	int i;
 
 	@:accessTest(*key,explain)@
-	*ret= GDKstrdup(mapi_error_str(MAPIsessions[i].mid));
+	*ret= GDKstrdup(mapi_error_str(SERVERsessions[i].mid));
 	return MAL_SUCCEED;
 }
 @-
 The remainder should contain the wrapping of 
-relevant MAPI functions. Furthermore, we 
+relevant SERVER functions. Furthermore, we 
 should analyse the return value and update 
 the stack trace.
 
-Two special routines should be 
-mapi.rpc("malfunction", arguments) and
-mapi.apc("malfunction", arguments.
+Two routines should be 
+mserver.rpc("malfunction", arguments) and
+mserver.apc("malfunction", arguments.
 @}
