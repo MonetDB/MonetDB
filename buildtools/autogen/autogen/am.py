@@ -264,9 +264,10 @@ def am_deps(fd, deps, objext, am):
                 am_dep(fd, t, deplist, am)
     am['DEPS'].append("DONE")
 
-def is_mil_module(script):
+def is_mil_module(script, deps):
     if script[-4:] == '.mil':
-        return 1
+        if deps.has_key(script):
+            return 1
     return None
 
 # list of scripts to install
@@ -320,7 +321,7 @@ def am_scripts(fd, var, scripts, am):
             am['BUILT_SOURCES'].append(script)
 
         # add dependency on library for mil modules
-        if (is_mil_module(script)): # a bit of a hack ....
+        if (is_mil_module(script, scripts['DEPS'])): # a bit of a hack ....
             fd.write("script_%s: %s lib_%s.la\n" % (script, script, script[:-4]))
         else:
             fd.write("script_%s: %s\n" % (script, script))
