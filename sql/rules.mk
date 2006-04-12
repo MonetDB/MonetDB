@@ -94,36 +94,15 @@ ifdef NEED_MX
 %.m: %.mx
 	$(MX) $(MXFLAGS) -x m $<
 
-# Dependency "lib_%.la" prevents the %.mil script of a module from being
-# linked to the .libs/ directory in case the C-code of the module failed to
-# compile; thus, "make check" can recognize that the module is not
-# available, and will properly skip the tests that require it.
-%.mil: %.m %.tmpmil $(MEL) lib_%.la
-	$(MEL) $(INCLUDES) -mil $*.m > $@
-	cat $*.tmpmil >> $@
-	test -e .libs || mkdir -p .libs
-	test -e .libs/$@ || $(LN_S) ../$@ .libs/$@
-
 %.tmpmil: %.mx
 	$(MX) $(MXFLAGS) -l -x mil $<
 	$(MV) $*.mil $*.tmpmil
-
-# Dependency "lib_%.la" prevents the %.mil script of a module from being
-# linked to the .libs/ directory in case the C-code of the module failed to
-# compile; thus, "make check" can recognize that the module is not
-# available, and will properly skip the tests that require it.
-%.mil: %.m $(MEL) lib_%.la
-	$(MEL) $(INCLUDES) -mil $*.m > $@
-	test -e .libs || mkdir -p .libs
-	test -e .libs/$@ || $(LN_S) ../$@ .libs/$@
 
 %.mil: %.mx
 	$(MX) $(MXFLAGS) -x mil $<
 
 %.mal: %.mx
 	$(MX) $(MXFLAGS) -x mal $<
-	test -e .libs || mkdir -p .libs
-	test -e .libs/$@ || $(LN_S) ../$@ .libs/$@
 
 %: %.mx 
 	$(MX) $(MXFLAGS) -x sh $<
@@ -134,22 +113,6 @@ ifdef NEED_MX
 
 %.glue.c: %.m $(MEL)
 	$(MEL) $(INCLUDES) -glue $< > $@
-
-else # NEED_MX
-
-# Dependency "lib_%.la" prevents the %.mil script of a module from being
-# linked to the .libs/ directory in case the C-code of the module failed to
-# compile; thus, "make check" can recognize that the module is not
-# available, and will properly skip the tests that require it.
-%.mil: lib_%.la
-	test -e $@ || $(LN_S) $(srcdir)/$@ $@
-	test -e .libs || mkdir -p .libs
-	test -e .libs/$@ || $(LN_S) ../$@ .libs/$@
-
-%.mal:
-	test -e $@ || $(LN_S) $(srcdir)/$@ $@
-	test -e .libs || mkdir -p .libs
-	test -e .libs/$@ || $(LN_S) ../$@ .libs/$@
 
 endif # NEED_MX
 
@@ -241,4 +204,3 @@ $(patsubst %.c,%.lo,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.lo: %.c
 	$(LTCOMPILE) -c -o $@ -O0 $<
 
 SUFFIXES-local: $(BUILT_SOURCES)
-
