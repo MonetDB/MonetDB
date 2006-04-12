@@ -65,14 +65,14 @@ between 25-50%.
 #endif
 
 #include <streams.h>
-#include <Mapi.h>
+#include <mserver.h>
 
 embeddedclient_export Mapi embedded_sql(opt *set, int len);
 
 #endif /* _EMBEDDEDCLIENT_H_ */
 @c
 #include "embeddedclient.h"
-#include "Mapi.h"
+#include "mserver.h"
 
 static void
 Monet_init(opt *set, int setlen)
