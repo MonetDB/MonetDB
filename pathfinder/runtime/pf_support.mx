@@ -2238,6 +2238,14 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
 
   if (replacements.count() > 0) { # we had an update
     [fix_consecutive_texts](const replacements, const ws, affected_conts);
+    var heightbat := ws.fetch(HEIGHT);
+    if (replacements.exist(heightbat)) {
+      var heightbat_udpate := replacements.find(heightbat);
+      var cont_coll := ws.fetch(CONT_COLL);
+      heightbat_udpate@batloop() {
+        doc_height := doc_height.replace(cont_coll.find($h), $t, true);
+      }
+    }
     replacements@batloop() {
       var a := $h.access();
       var newvals := kdiff($t, $h).sort();
@@ -2880,6 +2888,15 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
         var inslevel := insert_pre_level.reverse().select(insertitem, oid(lng(insertitem) + batchsize), true, false).reverse();
         var insnid := insert_pre_nid.reverse().select(insertitem, oid(lng(insertitem) + batchsize), true, false).reverse();
         inslevel := [chr]([+]([int](inslevel), leveldiff));
+        {
+          var maxlevel := int(inslevel.max()) + 1;
+          if (maxlevel > docheight) {
+            docheight := maxlevel;
+            var docheight_update := replacements.replacementsfind(docheightbat);
+            docheight_update := docheight_update.myinsert(doccont, docheight);
+            replacements := replacements.replace(docheightbat, docheight_update);
+          }
+        }
 	var texts, comments, pis, elems;
         var lastdata := insertitem;
 	{
