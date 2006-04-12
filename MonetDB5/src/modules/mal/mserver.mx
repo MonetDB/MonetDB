@@ -115,6 +115,9 @@ to be known to enable proper parsing of the result
 command rpc(key:int,qry:str):@1
 address SERVERmapi_rpc_@1
 comment "Sent a simple query for execution and fetch result";
+
+command rpc(key:int,qry:str):bat[:oid,:@1]
+address SERVERmapi_rpc_oid_@1;
 @mal
 	@:typedRPC(int)@
 mserver.listen();
@@ -159,6 +162,7 @@ mal_export str SERVERconnect(int *ret, str *host, int *port, str *username, str 
 mal_export str SERVERerror(int *ret, int *idx);
 mal_export str SERVERexplain(str *ret, int *idx);
 mal_export str SERVERmapi_rpc_int(int *ret, int *key, str *qry);
+mal_export str SERVERmapi_rpc_oid_int(int *ret, int *key, str *qry);
 
 #endif /* SERVER_H */
 @c
@@ -1121,4 +1125,42 @@ SERVERmapi_rpc_@1(@1 *ret, int *key, str *qry){
 
 @-
 Transport of the BATs is only slightly more complicated.
+The generic implementation based on a pattern is the next
+step. 
+@= mapi_rpc_bat
+str
+SERVERmapi_rpc_oid_@1(int *ret, int *key, str *qry){
+	int i;
+	Mapi dbh;
+	MapiHdl hdl;
+	char *fld1, *fld2;
+	oid o; 
+	BAT *b;
+
+	@:accessTest(*key,rpc)@
+	b= BATnew(TYPE_oid,TYPE_@1,256);
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
+
+#ifdef MAPI_TEST
+	stream_printf(GDKout,"about to sent: %s\n",*qry);
+#endif
+	hdl= mapi_query(dbh, *qry);
+	if( mapi_error(dbh) )
+		return throwMessage("MapiException",mapi_error_str(dbh));
+	i= 0;
+	while( mapi_fetch_row(hdl)){
+		fld1= mapi_fetch_field(hdl,0);
+		fld2= mapi_fetch_field(hdl,1);
+#ifdef MAPI_TEST
+		stream_printf(GDKout,"Got: %s %s \n",fld1,fld2);
+#endif
+		o= (oid) atol(fld1);
+		i= (@1)atol(fld2);
+		BUNins(b,&o,&i);
+	}
+	return MAL_SUCCEED;
+}
+@c
+@:mapi_rpc_bat(int)@
 @}

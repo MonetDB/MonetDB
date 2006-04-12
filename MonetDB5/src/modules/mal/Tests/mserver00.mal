@@ -24,6 +24,16 @@ io.print(k);
 t1:= t1-t0;
 io.print(t1);
 
+t0:= alarm.usec();
+mserver.rpc(mid,"r:= bat.new(:oid,:int);");
+mserver.rpc(mid,"bat.insert(r, 1@0,311);");
+mserver.rpc(mid,"bat.insert(r,2@0,433);");
+b:bat[:oid,:int]:= mserver.rpc(mid,"io.print(r);");
+t1:= alarm.usec();
+t1:= t1-t0;
+io.print(b);
+io.print(t1);
+
 # the remainder should be tested 
 #catch MapiException;
 #	io.printf("foutje:%s\n",MapiException);
