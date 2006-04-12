@@ -15,4 +15,3 @@
 # All Rights Reserved.
 
 SUBDIRS = plain contrib NOT_WIN32?calibrator HAVE_NETCDF?mnetcdf
-#geometry 
