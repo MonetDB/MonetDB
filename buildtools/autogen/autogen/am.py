@@ -663,6 +663,9 @@ def am_library(fd, var, libmap, am):
         if ext not in automake_ext:
             am['EXTRA_DIST'].append(src)
 
+    if cond:
+        fd.write("endif\n")
+
     fullpref = pref+sep+libname+'_la'
     nsrcs = "nodist_"+fullpref+"_SOURCES ="
     srcs = "dist_"+fullpref+"_SOURCES ="
@@ -683,9 +686,6 @@ def am_library(fd, var, libmap, am):
                 fd.write('\t$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(%s_CFLAGS) $(CFLAGS) -c -o %s-%s.lo `test -f \'%s.c\' || echo \'$(srcdir)/\'`%s.c\n' % (fullpref, fullpref, basename, basename, basename))
     fd.write(nsrcs + "\n")
     fd.write(srcs + "\n")
-
-    if cond:
-        fd.write("endif\n")
 
     if len(SCRIPTS) > 0:
         fd.write("%s_scripts = %s\n" % (libname, am_list2string(SCRIPTS, " ", "")))
