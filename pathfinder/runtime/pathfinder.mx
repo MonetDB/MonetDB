@@ -646,9 +646,10 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
 
     # create our indices
     var knd := ELEMENT;
+    var kinds := docBAT.find("_rid_kind").splitkind();
     while ( knd <= DOCUMENT ) {
         var knd_no  := str(chr(48 + knd));
-        var knd_pre := docBAT.find("_rid_kind").ord_uselect(knd).hmark(PRE_BASE).chk_order();
+        var knd_pre := kinds.fetch(int(knd)).hmark(PRE_BASE).chk_order();
         var knd_nid := knd_pre.leftfetchjoin(pre_nid).chk_order();
         if ((htype(knd_nid) != 0) or (head(knd_nid) != "void")) {
             ERROR("pathfinder.mx: index_doc(): htype(knd_nid) = %d, head(knd_nid) = %s !\n",
