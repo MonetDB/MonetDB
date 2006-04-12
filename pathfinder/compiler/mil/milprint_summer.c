@@ -8052,8 +8052,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "{ # translate fn:subsequence\n"
                 "if (loop%03u.count() = 1) {\n"
                 "    var lo := 2.0LL;\n"
-		"    # the query string argument is tqarg "
+		"    # the query string argument is tqarg\n"
                 "    var tqarg := item_str_%03d.fetch(0);\n"
+                "    run_tijah_query(\"PFX\",tqarg);\n"
                 "    if (lo < 1.0LL) lo := 0.0;\n", cur_level, counter-1);
         milprintf(f, "    var hi := INT_MAX;\n");
 

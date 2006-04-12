@@ -56,7 +56,7 @@
 
 #ifdef HAVE_PFTIJAH
 #define TIJAH_FUNCTION_DEF						 \
-, /* fn:tijah-command(string?) as boolean */  	                         \
+, /* fn:tijah-command(string*) as boolean */  	                         \
   { .ns = PFns_fn, .loc = "tijah-command",                               \
     .arity = 1, .par_ty = { PFty_star (PFty_string ()) },                \
     .ret_ty = PFty_boolean () }						 \
