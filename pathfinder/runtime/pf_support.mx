@@ -2645,6 +2645,9 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
         {
           var rid := oid(lng(docinsertafter_rid) + 1);
           var pre := oid(lng(docinsertafter) + 1);
+          if (int(pre) >= docsize) {
+            holesize := int(REMAP_PAGE_SIZE - (lng(docsize) and REMAP_PAGE_MASK));
+          }
           while (int(pre) < docsize) {
             var s := 0;
             if (isoldpage) {
@@ -2878,7 +2881,7 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
         var insnid := insert_pre_nid.reverse().select(insertitem, oid(lng(insertitem) + batchsize), true, false).reverse();
         inslevel := [chr]([+]([int](inslevel), leveldiff));
 	var texts, comments, pis, elems;
-        var lastdata := oid(lng(insertitem) - 1);
+        var lastdata := insertitem;
 	{
           var kindbats := inskind.splitkind();
           texts := kindbats.fetch(int(TEXT));
@@ -2940,7 +2943,7 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
           } else {
             attr_id := oid(attr_own.count());
           }
-          {
+          if (attrattrs.count() > 0) {
             var nattrattrs := attrattrs.tmark(attr_id); # New ATID-ATID
             var nattrnqnids := nattrattrs.join(attrnqnids); # New ATID-New QNID
             var nattrnids := nattrattrs.join(preattrs.reverse()).join(insnnids); # New ATID-New NID
@@ -2974,11 +2977,11 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
         inslevel := inslevel.tmark(docinsertafter_rid);
         inskind := inskind.tmark(docinsertafter_rid);
         if (isoldpage) {
-          rid_size_update := rid_size_update.insert(inssize);
-          rid_level_update := rid_level_update.insert(inslevel);
-          rid_kind_update := rid_kind_update.insert(inskind);
-          rid_prop_update := rid_prop_update.insert(insprop);
-          rid_nid_update := rid_nid_update.insert(insnid);
+          rid_size_update := rid_size_update.myinsert(inssize);
+          rid_level_update := rid_level_update.myinsert(inslevel);
+          rid_kind_update := rid_kind_update.myinsert(inskind);
+          rid_prop_update := rid_prop_update.myinsert(insprop);
+          rid_nid_update := rid_nid_update.myinsert(insnid);
         } else {
           rid_size := rid_size.replace(inssize, true);
           rid_level := rid_level.replace(inslevel, true);
