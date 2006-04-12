@@ -767,7 +767,7 @@ CMDreplace_bat_force(BAT **r, BAT *b, BAT *s, bit *force)
 int
 CMDdelete_bun(BAT **r, BAT *b, ptr h, ptr t)
 {
-	if (BUNdel(*r = b, h, t) == NULL)
+	if (BUNdel(*r = b, @:batconvert(b,h)@, @:batconvert(b,t)@) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
