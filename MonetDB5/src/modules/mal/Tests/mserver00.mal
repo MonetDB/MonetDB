@@ -10,6 +10,21 @@ usr:= algebra.find(u,"user");
 pwd:= algebra.find(u,"password");
 lang:= algebra.find(u,"scenario");
 
+# initialize exception handler
+MapiException:= nil:str;
 # setup the session
-i:= mserver.connect(hs,port,usr,pwd,lang);
-io.print(i);
+mid:= mserver.connect(hs,port,usr,pwd,lang);
+io.print(mid);
+# retrieve data from the 'remote' site
+# testing t:=1+3;
+t0:= alarm.usec();
+k:int := mserver.rpc(mid, "t:= 1+3; io.print(t);");
+t1:= alarm.usec();
+io.print(k);
+t1:= t1-t0;
+io.print(t1);
+
+# the remainder should be tested 
+#catch MapiException;
+#	io.printf("foutje:%s\n",MapiException);
+#exit MapiException;

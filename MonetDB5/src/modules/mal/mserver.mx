@@ -108,6 +108,15 @@ comment "Check for an error in the communication");
 command explain(mid:int):str
 address SERVERexplain
 comment "Turn the error seen into a string";
+@-
+The remote procedure calls require the target type
+to be known to enable proper parsing of the result
+@= typedRPC
+command rpc(key:int,qry:str):@1
+address SERVERmapi_rpc_@1
+comment "Sent a simple query for execution and fetch result";
+@mal
+	@:typedRPC(int)@
 mserver.listen();
 @{
 command prelude()
@@ -149,6 +158,7 @@ mal_export void SERVERexit();
 mal_export str SERVERconnect(int *ret, str *host, int *port, str *username, str *password, str *lang);
 mal_export str SERVERerror(int *ret, int *idx);
 mal_export str SERVERexplain(str *ret, int *idx);
+mal_export str SERVERmapi_rpc_int(int *ret, int *key, str *qry);
 
 #endif /* SERVER_H */
 @c
@@ -1006,6 +1016,9 @@ struct{
 } SERVERsessions[MAXSESSIONS];
 
 static int sessionkey=0;
+
+#define MAPI_TEST
+
 str
 SERVERconnect(int *key, str *host, int *port, str *username, str *password, str *lang){
 	Mapi mid;
@@ -1029,7 +1042,9 @@ SERVERconnect(int *key, str *host, int *port, str *username, str *password, str 
 		return throwMessage("mserver.connect","Could not connect");
 	}
 
+#ifdef MAPI_TEST
 	stream_printf(GDKout,"Succeeded to establish session\n");
+#endif
 	SERVERsessions[i].mid= mid;
 	*key = SERVERsessions[i].key;
 	return MAL_SUCCEED;
@@ -1043,21 +1058,24 @@ SERVERconnect(int *key, str *host, int *port, str *username, str *password, str 
      SERVERsessions[i].c == getClient()) break;
  if( i== MAXSESSIONS)
 	return throwMessage("mserver.@2","Access violation");
+  dbh= SERVERsessions[i].mid;
 @c
 str
 SERVERerror(int *ret, int *key){
+	Mapi dbh;
 	int i;
 	@:accessTest(*key,error)@
-	*ret= mapi_error(SERVERsessions[i].mid);
+	*ret= mapi_error(dbh);
 	return MAL_SUCCEED;
 }
 
 str 
 SERVERexplain(str *ret, int *key){
+	Mapi dbh;
 	int i;
 
 	@:accessTest(*key,explain)@
-	*ret= GDKstrdup(mapi_error_str(SERVERsessions[i].mid));
+	*ret= GDKstrdup(mapi_error_str(dbh));
 	return MAL_SUCCEED;
 }
 @-
@@ -1069,4 +1087,38 @@ the stack trace.
 Two routines should be 
 mserver.rpc("malfunction", arguments) and
 mserver.apc("malfunction", arguments.
+@= mapirpc
+str
+SERVERmapi_rpc_@1(@1 *ret, int *key, str *qry){
+	int i;
+	Mapi dbh;
+	MapiHdl hdl;
+	char *fld;
+
+	@:accessTest(*key,rpc)@
+	*ret = 0;
+#ifdef MAPI_TEST
+	stream_printf(GDKout,"about to sent: %s\n",*qry);
+#endif
+	hdl= mapi_query(dbh, *qry);
+	if( mapi_error(dbh) )
+		return throwMessage("MapiException",mapi_error_str(dbh));
+	i= 0;
+	while( mapi_fetch_row(hdl)){
+		fld= mapi_fetch_field(hdl,0);
+#ifdef MAPI_TEST
+		stream_printf(GDKout,"Got: %s\n",fld);
+#endif
+		*ret= (int)  atoi(fld);
+		i++;
+	}
+	if( i>1)
+		return throwMessage("MapiException","failed to analyse response");
+	return MAL_SUCCEED;
+}
+@c
+	@:mapirpc(int)@
+
+@-
+Transport of the BATs is only slightly more complicated.
 @}
