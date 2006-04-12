@@ -475,6 +475,12 @@ if [ "${what}" != "BUILDTOOLS" ] ; then
 		libpath="${WHAT_PREFIX}/lib:${modpath}:${libpath}"
 		mtest_modpath="--monet_mod_path=${modpath}:`${MONETDB_PREFIX}/bin/monetdb-config --modpath`"
 	fi
+	if [ "${os}" = "CYGWIN" ] ; then
+		# CYGWIN finds dlls using the PATH variable 
+		if [ "${what}" = "MONETDB" ] ; then
+			binpath="${WHAT_PREFIX}/lib/bin:${binpath}"
+		fi
+	fi
 	if [ "${os}" = "IRIX64" ] ; then
 		# IRIX64 requires this to find dependend modules
 		if [ "${what}" = "MONETDB" ] ; then
