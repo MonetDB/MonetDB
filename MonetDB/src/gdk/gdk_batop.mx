@@ -91,7 +91,7 @@ BATins(BAT *b, BAT *n)
 				return NULL;
 		}
 	}
-	if (b->thash == NULL && b->batSet == 0 && (b->tkey & BOUND2BTRUE) == 0 && (b->hhash == NULL || ATOMstorage(b->htype) == TYPE_int)) {
+	if (b->thash == NULL && b->batSet == 0 && (b->tkey & BOUND2BTRUE) == 0 && ((b->hkey & BOUND2BTRUE) == 0 || n->hkey) && (b->hhash == NULL || ATOMstorage(b->htype) == TYPE_int)) {
 		if ((b->hkey & BOUND2BTRUE)) {
 			tmp = n = BATkdiff(n, b);
 			if (n == NULL)
@@ -148,9 +148,8 @@ BATins(BAT *b, BAT *n)
 				b->hsorted = FALSE;
 				b->H->nosorted_rev = idx;
 			}
-			if ((BAThordered(b) & 1) == 0 || n->hkey == 0 || xx == 0) {	/* StM: GDK_SORTED_REV ? */
-				if (b->hkey)
-					BATkey(b, FALSE);
+			if (b->hkey && (b->hkey & BOUND2BTRUE) == 0 && ((BAThordered(b) & 1) == 0 || n->hkey == 0 || xx == 0)) {	 /* StM: GDK_SORTED_REV ? */
+				BATkey(b, FALSE);
 			}
 			if (b->htype != TYPE_void && (b->hsorted & b->hdense & 1) && (BAThdense(n) == 0 || *(oid *) BUNhloc(b, last) != 1 + *(oid *) BUNhead(n, BUNfirst(n)))) {
 				b->hdense = FALSE;
