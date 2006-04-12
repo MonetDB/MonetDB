@@ -314,12 +314,19 @@ lw_diff2wc_diff(int mindiff, int doChar, char *lw_diff_fn, char *wc_diff_fn)
 					alpha_ = isalpha_((int) (line[1]));
 					digit = isdigit((int) (line[1]));
 					for (i = 1; i < strlen(line) - 1; i++) {
-						if (((space) && (!isspace((int) (line[i])))) || ((!space) && (isspace((int) (line[i])))) || ((alpha_) && (!isalpha_((int) (line[i])))) || ((!alpha_) && (isalpha_((int) (line[i])))) ||
-						    ((digit) && (!isdigit((int) (line[i])))) || ((!digit) && (isdigit((int) (line[i])))) || ((!isspace((int) (line[i]))) && (!isalpha_((int) (line[i]))) && (!isdigit((int) (line[i]))))) {
+						if ((space && !isspace((int) line[i])) ||
+						    (!space && isspace((int) line[i])) ||
+						    (alpha_ && !isalpha_((int) line[i])) ||
+						    (!alpha_ && isalpha_((int) line[i])) ||
+						    (digit && !isdigit((int) line[i])) ||
+						    (!digit && isdigit((int) line[i])) ||
+						    (!isspace((int) line[i]) &&
+						     !isalpha_((int) line[i]) &&
+						     !isdigit((int) line[i]))) {
 							fprintf(fp[j], "\n");
-							space = isspace((int) (line[i]));
-							alpha_ = isalpha_((int) (line[i]));
-							digit = isdigit((int) (line[i]));
+							space = isspace((int) line[i]);
+							alpha_ = isalpha_((int) line[i]);
+							digit = isdigit((int) line[i]);
 							l[j]++;
 						}
 						fprintf(fp[j], "%c", line[i]);
@@ -366,7 +373,12 @@ lw_diff2wc_diff(int mindiff, int doChar, char *lw_diff_fn, char *wc_diff_fn)
 		pipe_fp = Rfopen(pipe_fn);
 		wc_diff_fp = Afopen(wc_diff_fn);
 		while (fgets(pipe_ln, BUFLEN, pipe_fp)) {
-			if (strncmp(pipe_ln, "@@ -", 4) && strncmp(pipe_ln, "+++ ", 4) && strncmp(pipe_ln, "--- ", 4) && strncmp(pipe_ln, " @+-", 4) && strncmp(pipe_ln, "+@+-", 4) && strncmp(pipe_ln, "-@+-", 4)) {
+			if (strncmp(pipe_ln, "@@ -", 4) &&
+			    strncmp(pipe_ln, "+++ ", 4) &&
+			    strncmp(pipe_ln, "--- ", 4) &&
+			    strncmp(pipe_ln, " @+-", 4) &&
+			    strncmp(pipe_ln, "+@+-", 4) &&
+			    strncmp(pipe_ln, "-@+-", 4)) {
 				fprintf(wc_diff_fp, "%s", pipe_ln);
 			}
 		}
@@ -580,11 +592,11 @@ oldnew2lwc_diff(int mindiff, int LWC, int context, char *ignore, char *old_fn, c
 
 	switch (LWC) {
 	case 0:
-		return (oldnew2l_diff(mindiff, context, ignore, old_fn, new_fn, lwc_diff_fn));
+		return oldnew2l_diff(mindiff, context, ignore, old_fn, new_fn, lwc_diff_fn);
 	case 1:
-		return (oldnew2w_diff(mindiff, context, ignore, old_fn, new_fn, lwc_diff_fn));
+		return oldnew2w_diff(mindiff, context, ignore, old_fn, new_fn, lwc_diff_fn);
 	case 2:
-		return (oldnew2c_diff(mindiff, context, ignore, old_fn, new_fn, lwc_diff_fn));
+		return oldnew2c_diff(mindiff, context, ignore, old_fn, new_fn, lwc_diff_fn);
 	default:
 		ErrXit("oldnew2lwc_diff called with wrong LWC", "", 1);
 	}
@@ -699,7 +711,7 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 		newline_ = 1;
 		newline = 1;
 		sprintf(c, "  ");
-		while ((ok = fgets(line, BUFLEN, lwc_diff_fp)) && strchr(" -+", line[0]))
+		while ((ok = fgets(line, BUFLEN, lwc_diff_fp)) && strchr(" -+", line[0])) {
 			if (line[1] != '\3') {
 				if (newline_ || newline)
 					Minor |= (minor = (strchr("#=\n\2", line[1]) ? 1 : 0));
@@ -794,6 +806,7 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 				newline_ = newline;
 				newline = (line[1] == '\1');
 			}
+		}
 
 		if (nrn < orn) {
 			SETBLUE(1, minor);
