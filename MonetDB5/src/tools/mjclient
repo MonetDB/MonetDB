@@ -15,8 +15,10 @@
 # Portions created by CWI are Copyright (C) 1997-2006 CWI.
 # All Rights Reserved.
 
-# The JdbcClient program searches the latest Java .jar file
-# and starts the program.
+# The JdbcClient program searches the latest Java .jar file and starts
+# the program.  Searching is done with the assumption that SQL is
+# installed with the same prefix as MonetDB.  If this is not the case,
+# searching will fail.
 # Future versions might inspect a database of eligible servers
 # to direct the interaction to the proper ports.
 
