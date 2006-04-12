@@ -457,6 +457,7 @@ create_dumpformat(ascii *as, BAT *names, BAT *seps, BAT *bats)
 		fmt[p].extra = fmt+p;
 		fmt[p].data = NULL;
 		fmt[p].len = 0;
+		BBPunfix(b->batCacheid);
 	}
 	return as->nr_attrs;
 }
