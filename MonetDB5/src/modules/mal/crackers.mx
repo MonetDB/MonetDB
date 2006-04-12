@@ -3827,7 +3827,7 @@ CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_firs
 		todo: when the index will learn from empty results return the appropriate information*/
 	
 	if (lowShrinked == scr_size) {
-		*posl =  1;
+		*posl = -1;
 		*posh = -1;
 		return MAL_SUCCEED;
 	}
@@ -3836,9 +3836,10 @@ CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_firs
 		*posh = -1;
 		return MAL_SUCCEED;
 	}
+	/*Middle piece is empty and lt = ht + 1*/
 	if (lowShrinked + hghShrinked == scr_size){
-		*posl =  1;
-		*posh = -1;
+		*posl =  BUNindex(b,lt);
+		*posh =  BUNindex(b,ht);
 		return MAL_SUCCEED;
 	}
 
@@ -3910,7 +3911,6 @@ CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_firs
 		}
 	}
 	
-	/* the position of lt (-xx if moving from left to right) is the first one we need for the index*/
 	pos1 = BUNindex(b,lt);
 
 	tmph = hh;
@@ -3949,7 +3949,6 @@ CRKcrackOrderedTHREELateCopying_is_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_firs
 		tmph @6= xx;
 	}
 
-	/* the position of tmpt (-xx if moving from left to right) is the second one we need for the index*/
 	pos2 = BUNindex(b,tmpt);
 
 	i = 0;
@@ -4385,8 +4384,8 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 	lng i1,i2, posl, posh;
 	BUN l,lt,ht; int xx;
 	BUN h,lh,hh;
-	bit gp1=0, gp2=0;
-	
+	BUN lhnext, hhprev;
+	bit gf;
 	if (low >  hgh)
 		return throwMessage("crackers.crack", "illegal range");
 	if ((b = BATdescriptor(*bid)) == NULL) 
@@ -4432,8 +4431,20 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 			i1 = vl-1; i2 = -vh;
 		}
 		
-		/* Update the index*/
-		addTwo_int(*bid,low,i1,hgh,i2);
+		if (vl == -1){ /*middle and right pieces are empty*/
+			if (*inclusiveLow == TRUE) i1 = -posh;
+			else i1 = posh;
+			addOne_@1(*bid,low,i1);
+		}else
+		if (vh == -1){ /*left and middle pieces are empty*/
+			if (*inclusiveHgh == TRUE) i2 = posl;
+			else i2 = -posl;
+			addOne_@1(*bid,hgh,i2);
+		}else
+			/*The following adds also gaps in the index in the cases where epmty piece
+				is the right, the left or the middle. In the latter case vl is always vh+1
+				and the index we want for both is vh*/
+			addTwo_@1(*bid,low,i1,hgh,i2);
  
 		goto createView;
 	}
@@ -4453,11 +4464,13 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 
 	if ((c = BATdescriptor(Index[m].cid)) == NULL) 
 		return throwMessage("crackers.crackRange", "Cannot access crack index");
+
 	/* find out where in the index the low falls */
 	l = SORTfndfirst_@1(c,low);
 	lt = BUNtloc(c, l);
 	lh = BUNhloc(c, l);
 	xx = BUNsize(c);
+	
 
 	/* if all indices contain values smaller than low, crack the area 
 		between the last index and the last BUN of the cracked bat */
@@ -4479,13 +4492,13 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 			vl = *(lng*)lh+1;
 
 		/* We want values that the previous index has; 
-		  special case when there is no previous index */
-			else
+		   special case when there is no previous index */
+		else
 		if  (*(lng*)lh > 0 && *inclusiveLow == TRUE){
 			if (l == BUNfirst(c)){
 				l  -= xx; 
 				cl = BUNindex(b, BUNfirst(b));
-			} else{
+			}else{
 				l  -= xx; lh -= xx; lt -= xx;
 				if  (*(lng*)lh > 0)
 					cl = *(lng*)lh;
@@ -4493,7 +4506,7 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 					cl = *(lng*)lh - 2*(*(lng*)lh);
 				cl++;
 			}
-		} else
+		}else
 		if  (*(lng*)lh < 0 && *inclusiveLow == FALSE){
 		/*  This index contains values that we do not want (the equals to 
 			low) so we check the next one. If it is equal to low then 
@@ -4504,7 +4517,7 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 			if (*(@1*)lt == *low && l != BUNlast(c)){
 				lh += xx;
 				vl = *(lng*)lh+1;
-			} else{
+			}else{
 				lt -= xx;
 				l  -= xx;
 				cl = (*(lng*)lh - 2*(*(lng*)lh))+1;
@@ -4515,9 +4528,9 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 		   previous index because this one is higher than low.
 		   If there is no previous index, crack the bat from the beginning. */
 		if (l == BUNfirst(c)){
-			l  -= xx;
+			l  -= xx; lh -= xx; lt -= xx;
 			cl = BUNindex(b, BUNfirst(b));
-		} else{
+		}else{
 			l  -= xx; lh -= xx; lt -= xx;
 			if  (*(lng*)lh > 0)
 				cl = *(lng*)lh;
@@ -4526,6 +4539,39 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 			cl++;
 		}
 	}	
+
+	/*check for empty pieces after l*/	
+	lhnext = lh + xx;
+	gf = 0;	
+	while(1){
+		
+		if ( *(lng*)lhnext == cl || 
+			( *(lng*)lhnext < 0 && *(lng*)lhnext - 2*(*(lng*)lhnext) == cl ) ){ 
+			gf = 1;
+			l += xx; lt += xx; lh += xx;
+			lhnext += xx;
+		}
+		else break;
+	}
+	if (gf == 1){
+		if (*(@1*)lt > *hgh){
+			vl =  1;
+			vh = -1;
+			goto createView;
+		}
+		else
+		if (*(@1*)lt == *hgh){
+			if  (*(lng*)lh < 0) vl = *(lng*)lh - 2*(*(lng*)lh);
+			else vl = *(lng*)lh;
+			vh =  vl;
+			goto createView;
+		}
+		else{
+			if  (*(lng*)lh < 0) vl = *(lng*)lh - 2*(*(lng*)lh);
+			else vl = *(lng*)lh;
+			cl = -1;
+		}
+	}
 
 	/* find out where in the index the high falls */
 	h = SORTfndfirst_@1(c,hgh);
@@ -4566,11 +4612,43 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 		else
 			ch = *(lng*)hh - 2*(*(lng*)hh);
 	}
-/*	
+
+	/*check for empty pieces before h*/	
+	hhprev = hh - xx;
+	gf = 0;	
+	while(1){
+		if ( *(lng*)hhprev == ch || 
+			( *(lng*)hhprev < 0 && *(lng*)hhprev - 2*(*(lng*)hhprev) == ch ) ){ 
+			gf = 1;
+			h -= xx; ht -= xx; hh -= xx;
+			hhprev -= xx;
+		}
+		else break;
+	}
+	if (gf == 1){
+		if (*(@1*)ht < *low){
+			vl =  1;
+			vh = -1;
+			goto createView;
+		}
+		else
+		if (*(@1*)ht == *low){
+			if  (*(lng*)hh < 0) vl = *(lng*)hh - 2*(*(lng*)hh);
+			else vl = *(lng*)hh;
+			vh =  vl;
+			goto createView;
+		}
+		else{
+			if  (*(lng*)hh < 0) vh = *(lng*)hh - 2*(*(lng*)hh);
+			else vh = *(lng*)hh;
+			ch = -1;
+		}
+	}
+	
 printf("lh: %lld, lt:%d \n",*(lng*)lh,*(int*)lt);
 printf("hh: %lld, ht:%d \n",*(lng*)hh,*(int*)ht);
 printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
-*/
+
 	/* If one or both of the result view bounds were not found using the 
 	index then we have to crack */
 	if (vl == -1 || vh == -1){
@@ -4595,10 +4673,21 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
 					CRKcrackOrderedTHREELateCopying_is_LO_RO_@1(b,*low,*hgh, cl, ch,&vl, &vh);
 					i1 = vl-1; i2 = -vh;
 				}
-			
-				/*todo: add gap in the index*/
-
-				if (vl <= vh) addTwo_int(*bid,low,i1,hgh,i2);
+				
+				if (vl == -1){ /*middle and right pieces are empty*/
+					if (*inclusiveLow == TRUE) i1 = -ch;
+					else i1 = ch;
+					addOne_@1(*bid,low,i1);
+				}else
+				if (vh == -1){ /*left and middle pieces are empty*/
+					if (*inclusiveHgh == TRUE) i2 = cl;
+					else i2 = -cl;
+					addOne_@1(*bid,hgh,i2);
+				}else
+					/*The following adds also gaps in the index in the cases where epmty piece
+						is the right, the left or the middle. In the latter case vl is always vh+1
+						and the index we want for both is vh*/
+					addTwo_@1(*bid,low,i1,hgh,i2);
 			} else{
 			/* Else we have to do two cracks separatelly */
 				/* For the cl bound and the next one in the index*/
@@ -4626,12 +4715,14 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
 				   Then we should also adapt the way we look into the index to take advantage of that*/
 				if (vl < cl){
 					/*then the left piece is empty*/
-					gp1 = 1;
+					if (*inclusiveLow == TRUE) i1 = -cl;
+					else i1 = cl;
 				}
 				if (vl > ch1){
 					/*then the right piece is empty*/
 					vl--;
-					gp1 = 1;
+					if (*inclusiveLow == TRUE) i1 = -ch1;
+					else i1 = ch1;
 				}
 
 				vl++; /* We need to take next position because the crack function always returns the last bun of the left piece.
@@ -4658,22 +4749,17 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
 				/*check for gaps*/
 				if (vh < cl2){
 					/*then the left piece is empty*/
-					vh--; /*we want the buns from the previous index*/
-					gp2 = 1;
+					if (*inclusiveHgh == TRUE) i2 = cl2;
+					else i2 = -cl2;
 				}
 				if (vh > ch){
 					/*then the right piece is empty*/
 					vh--;
-					gp2 = 1;
+					if (*inclusiveHgh == TRUE) i2 = ch;
+					else i2 = -ch;
 				}
 				
-				/* we should check what we are going to add. There are four cases, 
-				(1) no gaps which is what we have now, (2) one gap ...*/
-				/*todo add the gap information too*/	
-				if (gp1 ==0 && gp2 == 0) 
-					addTwo_int(*bid,low,i1,hgh,i2);
-				else if (gp1 == 0) addOne_int(*bid,low,i1);
-				else if (gp2 == 0) addOne_int(*bid,hgh,i2);
+				addTwo_@1(*bid,low,i1,hgh,i2);
 			}
 		}else
 		if (vl == -1){
@@ -4699,15 +4785,17 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
 			/*check for gaps, !insertions to the index should be done after this check!*/
 			if (vl < cl){
 				/*then the left piece is empty*/
-				gp1 = 1;
+				if (*inclusiveLow == TRUE) i1 = -cl;
+				else i1 = cl;
 			}
 			if (vl > ch1){
 				/*then the right piece is empty*/
 				vl--;
-				gp1 = 1;
+				if (*inclusiveLow == TRUE) i1 = -ch1;
+				else i1 = ch1;
 			}
 			vl++; 
-			if (gp1 == 0) addOne_int(*bid,low,i1);
+			addOne_@1(*bid,low,i1);
 		}else
 		if (vh == -1){
 			if (h == BUNfirst(c))
@@ -4730,25 +4818,26 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
 			/*check for gaps, !insertions to the index should be done after this check!*/
 			if (vh < cl2){
 				/*then the left piece is empty*/
-				vh--;
-				gp2 = 1;
+				if (*inclusiveHgh == TRUE) i2 = cl2;
+				else i2 = -cl2;
 			}
 			if (vh > ch){
 				/*then the right piece is empty*/
 				vh--;
-				gp2 = 1;
+				if (*inclusiveHgh == TRUE) i2 = ch;
+				else i2 = -ch;
 			}
-			if (gp2 == 0) addOne_int(*bid,hgh,i2);
+			addOne_@1(*bid,hgh,i2);
 		} 	
 	}
-/*
+
 printf("Index from ptr:"SZFMT", tail:"SZFMT", head:"SZFMT"\n",BUNindex(c,l), BUNindex(c,lt), BUNindex(c,lh));
 printf("Index from ptr:"SZFMT", tail:"SZFMT", head:"SZFMT"\n",BUNindex(c,h), BUNindex(c,ht), BUNindex(c,hh));
 printf("vl: %lld, vh:%lld, cl:%lld, ch1:%lld, cl2:%lld, ch:%lld \n",vl,vh,cl,ch1,cl2,ch);
-*/	
+	
 	
 createView:
-/*	printf("vl: %lld, vh:%lld \n",vl,vh);*/
+	printf("vl: %lld, vh:%lld \n",vl,vh);
 	view = BATslice(b, vl, vh+1);
 	if (!tail) {
 		uview = BATconst(view,TYPE_void,ATOMnilptr(TYPE_void));
