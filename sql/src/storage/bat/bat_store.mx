@@ -3351,8 +3351,6 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 				if (bs_debug)
 					fprintf(stderr, "append inserts %d to %d (%s)\n", (int)ins->batCacheid, (int)cur->batCacheid, (ttr==gtrans)?"G":"S");
-				//void_append_inserted(cur, ins);
-				// append full table
 				BATappend(cur,ins,TRUE);
 				BATclear(ins);
 				BATseqbase(ins,BATcount(cur));
