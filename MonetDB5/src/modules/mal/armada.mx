@@ -64,7 +64,7 @@ command addTrail(pre:int, step:int):int
 address ARMADAaddTrail
 comment "Adds a new trail based on the pre trail and step step, and returns the internal id";
 
-command addTrail(steps:bat[:str,:str]):int
+command addTrail(steps:bat[:str,:inet]):int
 address ARMADAaddTrailBAT
 comment "Adds the steps stored in the given BAT as trail and returns the internal id";
 
@@ -170,7 +170,7 @@ ARMADAinit()
 {
 	mal_set_lock(mal_contextLock, "armada");
 	/* TODO: TYPE_lng -> TYPE_inet ??? */
-	ARMADA_func_site = ARMADA_create("func", "site", TYPE_str, TYPE_lng);
+	ARMADA_func_site = ARMADA_create("func", "site", TYPE_str, ATOMindex("inet"));
 	ARMADA_step_pre  = ARMADA_create("step", "pre", TYPE_int, TYPE_int);
 	ARMADA_loaded    = 1;	/* yes, we have the BATs loaded */
 	mal_unset_lock(mal_contextLock, "armada");
