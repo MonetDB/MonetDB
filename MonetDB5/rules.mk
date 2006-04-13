@@ -94,9 +94,16 @@ ifdef NEED_MX
 %.m: %.mx
 	$(MX) $(MXFLAGS) -x m $<
 
+%.mil: %.m %.tmpmil $(MEL)
+	$(MEL) $(INCLUDES) -mil $*.m > $@
+	cat $*.tmpmil >> $@
+
 %.tmpmil: %.mx
 	$(MX) $(MXFLAGS) -l -x mil $<
 	$(MV) $*.mil $*.tmpmil
+
+%.mil: %.m $(MEL) 
+	$(MEL) $(INCLUDES) -mil $*.m > $@
 
 %.mil: %.mx
 	$(MX) $(MXFLAGS) -x mil $<
@@ -113,10 +120,6 @@ ifdef NEED_MX
 
 %.glue.c: %.m $(MEL)
 	$(MEL) $(INCLUDES) -glue $< > $@
-
-endif # NEED_MX
-
-ifdef NEED_MX
 
 # The following rules generate two files using swig, the .xx.c and the
 # .xx file.  There may be a race condition here when using a parallel
@@ -204,3 +207,7 @@ $(patsubst %.c,%.lo,$(filter %.c,$(NO_OPTIMIZE_FILES))): %.lo: %.c
 	$(LTCOMPILE) -c -o $@ -O0 $<
 
 SUFFIXES-local: $(BUILT_SOURCES)
+
+distdir: check_dist
+check_dist:
+	@if [ "$(SWIG)" = "no" ]; then $(ECHO) "Cannot create distribution because one of the necessary programs or libraries is missing"; echo "swig	= $(SWIG)"; exit 1; fi
