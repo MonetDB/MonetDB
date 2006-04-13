@@ -45,8 +45,8 @@ extern BAT *temp_descriptor(oid b);
 #include "sql_backend.h"
 #include "bat_sequence.h"
 
-/* version 02.00.00 of catalog */
-#define CATALOG_VERSION 20001
+/* version 03.00.00 of catalog */
+#define CATALOG_VERSION 30000
 
 static struct logger *logger = NULL;
 static MT_Lock bs_lock = NULL;
@@ -308,6 +308,23 @@ idx_destroy(sql_idx * i)
 }
 
 void
+trigger_destroy(sql_trigger *tr)
+{
+
+	if (tr->old_name)
+		_DELETE(tr->old_name);
+	if (tr->new_name)
+		_DELETE(tr->new_name);
+	if (tr->condition)
+		_DELETE(tr->condition);
+	_DELETE(tr->statement);
+	if (tr->columns)
+		list_destroy(tr->columns);
+	base_destroy(&tr->base);
+	_DELETE(tr);
+}
+
+void
 column_destroy(sql_column *c)
 {
 	if (c->bat.name)
@@ -340,6 +357,7 @@ table_destroy(sql_table *t)
 		_DELETE(t->query);
 	cs_destroy(&t->keys);
 	cs_destroy(&t->idxs);
+	cs_destroy(&t->triggers);
 	cs_destroy(&t->columns);
 	_DELETE(t);
 }
@@ -350,6 +368,7 @@ schema_destroy(sql_schema *s)
 	base_destroy(&s->base);
 	list_destroy(s->keys);
 	list_destroy(s->idxs);
+	list_destroy(s->triggers);
 
 	cs_destroy(&s->tables);
 	_DELETE(s);
@@ -677,6 +696,100 @@ load_idx(sql_trans *tr, BAT *idxs, BUN j, sql_table *t)
 	return ni;
 }
 
+static void
+load_triggercolumn(sql_trans *tr, BAT *columns, BUN j, sql_trigger * i)
+{
+	sql_kc *kc = NEW(sql_kc);
+	BAT *kc_col = sys_bat(bm, "keycolumns_column");
+	BAT *kc_trunc = sys_bat(bm, "keycolumns_trunc");
+	ptr lid = BUNhead(columns, j);
+	char *name = bun_find(kc_col, lid);
+	int trunc = *(int *) bun_find(kc_trunc, lid);
+	sql_column *c = find_sql_column(i->t, name);
+
+	assert(c);
+
+	(void)tr;
+	kc->c = c;
+	kc->trunc = trunc;
+	list_append(i->columns, kc);
+
+	bat_destroy(kc_col);
+	bat_destroy(kc_trunc);
+}
+
+static sql_trigger *
+load_trigger(sql_trans *tr, BAT *triggers, BUN j, sql_table *t)
+{
+	int ccnt;
+	BAT *cols, *rcols;
+	BAT *trigger_id = sys_bat(bm, "triggers_id");
+	BAT *trigger_name = sys_bat(bm, "triggers_name");
+	BAT *trigger_time = sys_bat(bm, "triggers_time");
+	BAT *trigger_orientation = sys_bat(bm, "triggers_orientation");
+	BAT *trigger_event = sys_bat(bm, "triggers_event");
+	BAT *trigger_old_name = sys_bat(bm, "triggers_old_name");
+	BAT *trigger_new_name = sys_bat(bm, "triggers_new_name");
+	BAT *trigger_condition = sys_bat(bm, "triggers_condition");
+	BAT *trigger_statement = sys_bat(bm, "triggers_statement");
+	BAT *kc_id = sys_bat(bm, "keycolumns_id");
+	BAT *kc_nr = sys_bat(bm, "keycolumns_nr");
+	BAT *D_keycolumns = sys_bat(bm, "D_keycolumns");
+	ptr lid = BUNhead(triggers, j);
+	char *name = (char *) bun_find(trigger_name, lid);
+	char *old_name = (char *) bun_find(trigger_old_name, lid);
+	char *new_name = (char *) bun_find(trigger_new_name, lid);
+	char *condition = (char*)bun_find(trigger_condition, lid);
+	char *statement = (char*)bun_find(trigger_statement, lid);
+	sql_trigger *nt = NEW(sql_trigger);
+	BUN p, q;
+
+	base_init(&nt->base, *(sqlid *) bun_find(trigger_id, lid), TR_OLD, name);
+	nt->columns = list_create((fdestroy) &kc_destroy);
+	nt->t = t;
+	nt->time = *(sht*)bun_find(trigger_time, lid);
+	nt->orientation = *(sht*)bun_find(trigger_orientation, lid);
+	nt->event = *(sht*)bun_find(trigger_event, lid);
+
+	nt->old_name = (old_name)?_strdup(old_name):NULL;
+	nt->new_name = (new_name)?_strdup(new_name):NULL;
+	nt->condition = (condition)?_strdup(condition):NULL;
+	nt->statement = _strdup(statement);
+
+	cols = BATselect(kc_id, (ptr) &nt->base.id, (ptr) &nt->base.id);
+	rcols = BATkdiff(cols, BATmirror(D_keycolumns));
+	bat_destroy(cols);
+	cols = rcols;
+
+	rcols = BATsemijoin(kc_nr, cols);
+	bat_destroy(cols);
+	cols = BATmirror(rcols);
+	rcols = BATsort(cols);
+	bat_destroy(cols);
+	cols = BATmirror(rcols);
+
+	ccnt = BATcount(cols);
+	if (ccnt) {
+		BATloop(cols, p, q)
+		    load_triggercolumn(tr, cols, p, nt);
+	}
+	bat_destroy(cols);
+
+	bat_destroy(trigger_id);
+	bat_destroy(trigger_name);
+	bat_destroy(trigger_time);
+	bat_destroy(trigger_orientation);
+	bat_destroy(trigger_event);
+	bat_destroy(trigger_old_name);
+	bat_destroy(trigger_new_name);
+	bat_destroy(trigger_condition);
+	bat_destroy(trigger_statement);
+	bat_destroy(kc_id);
+	bat_destroy(kc_nr);
+	bat_destroy(D_keycolumns);
+	return nt;
+}
+
 static sql_column *
 load_column(sql_trans *tr, sql_table *t, BAT *columns, BUN j)
 {
@@ -780,13 +893,14 @@ load_table(sql_trans *tr, sql_schema *s, BAT *tables, BUN j)
 	char name[BUFSIZ], *query;
 	sql_table *t = NEW(sql_table);
 	ptr lid = BUNhead(tables, j);
-	BAT *cols, *rcols, *keys, *rkeys, *idxs, *ridxs;
+	BAT *cols, *rcols, *keys, *rkeys, *idxs, *ridxs, *triggers, *rtriggers;
 	BUN p, q;
 	int ccnt;
 	BAT *column_table = sys_bat(bm, "pcolumns_table_id");
 	BAT *column_number = sys_bat(bm, "pcolumns_number");
 	BAT *key_table = sys_bat(bm, "keys_table_id");
 	BAT *idx_table = sys_bat(bm, "idxs_table_id");
+	BAT *trigger_table = sys_bat(bm, "triggers_table_id");
 	BAT *table_id = sys_bat(bm, "ptables_id");
 	BAT *table_names = sys_bat(bm, "ptables_name");
 	BAT *table_queries = sys_bat(bm, "ptables_query");
@@ -796,6 +910,7 @@ load_table(sql_trans *tr, sql_schema *s, BAT *tables, BUN j)
 	BAT *D_columns = sys_bat(bm, "D_pcolumns");
 	BAT *D_keys = sys_bat(bm, "D_keys");
 	BAT *D_idxs = sys_bat(bm, "D_idxs");
+	BAT *D_triggers = sys_bat(bm, "D_triggers");
 
 	base_init(&t->base, *(sqlid *) bun_find(table_id, lid), TR_OLD, bun_find(table_names, lid));
 	query = (char *) bun_find(table_queries, lid);
@@ -816,6 +931,7 @@ load_table(sql_trans *tr, sql_schema *s, BAT *tables, BUN j)
 	cs_init(&t->columns, (fdestroy) &column_destroy);
 	cs_init(&t->idxs, (fdestroy) &idx_destroy);
 	cs_init(&t->keys, (fdestroy) &key_destroy);
+	cs_init(&t->triggers, (fdestroy) &trigger_destroy);
 
 	snprintf(name, BUFSIZ, "D_%s", t->base.name);
 	t->dname = _strdup(name);
@@ -883,6 +999,21 @@ load_table(sql_trans *tr, sql_schema *s, BAT *tables, BUN j)
 		}
 	}
 	bat_destroy(rkeys);
+
+	triggers = BATselect(trigger_table, (ptr) &t->base.id, (ptr) &t->base.id);
+	rtriggers = BATkdiff(triggers, BATmirror(D_triggers));
+	bat_destroy(triggers);
+
+	ccnt = BATcount(rtriggers);
+	if (t->table && ccnt) {
+		BATloop(rtriggers, p, q) {
+			sql_trigger *k;
+
+			cs_add(&t->triggers, k = load_trigger(tr, rtriggers, p, t), TR_OLD);
+			list_append(s->triggers, k);
+		}
+	}
+	bat_destroy(rtriggers);
 
 	bat_destroy(idx_table);
 	bat_destroy(key_table);
@@ -1036,6 +1167,7 @@ load_schema(sql_trans *tr, BAT *schemas, BUN j)
 	s->auth_id = *(sqlid *) bun_find(schema_auths, lid);
 	s->keys = list_create((fdestroy) NULL);
 	s->idxs = list_create((fdestroy) NULL);
+	s->triggers = list_create((fdestroy) NULL);
 	cs_init(&s->tables, (fdestroy) &table_destroy);
 
 	if (bs_debug)
@@ -1471,6 +1603,91 @@ bs_init_idx(struct bm *bm)
 }
 
 static void
+bs_init_trigger(struct bm *bm)
+{
+	BAT *trigger_id = mvc_bat(bm, "triggers_id", TYPE_int);
+	BAT *trigger_name = mvc_bat(bm, "triggers_name", TYPE_str);
+	BAT *trigger_table = mvc_bat(bm, "triggers_table_id", TYPE_int);
+	BAT *trigger_time = mvc_bat(bm, "triggers_time", TYPE_sht);
+	BAT *trigger_orientation = mvc_bat(bm, "triggers_orientation", TYPE_sht);
+	BAT *trigger_event = mvc_bat(bm, "triggers_event", TYPE_sht);
+	BAT *trigger_old_name = mvc_bat(bm, "triggers_old_name", TYPE_str);
+	BAT *trigger_new_name = mvc_bat(bm, "triggers_new_name", TYPE_str);
+	BAT *trigger_condition = mvc_bat(bm, "triggers_condition", TYPE_str);
+	BAT *trigger_statement = mvc_bat(bm, "triggers_statement", TYPE_str);
+
+	BAT *U_trigger_id = mvc_bat(bm, "U_triggers_id", TYPE_int);
+	BAT *U_trigger_name = mvc_bat(bm, "U_triggers_name", TYPE_str);
+	BAT *U_trigger_table = mvc_bat(bm, "U_triggers_table_id", TYPE_int);
+	BAT *U_trigger_time = mvc_bat(bm, "U_triggers_time", TYPE_sht);
+	BAT *U_trigger_orientation = mvc_bat(bm, "U_triggers_orientation", TYPE_sht);
+	BAT *U_trigger_event = mvc_bat(bm, "U_triggers_event", TYPE_sht);
+	BAT *U_trigger_old_name = mvc_bat(bm, "U_triggers_old_name", TYPE_str);
+	BAT *U_trigger_new_name = mvc_bat(bm, "U_triggers_new_name", TYPE_str);
+	BAT *U_trigger_condition = mvc_bat(bm, "U_triggers_condition", TYPE_str);
+	BAT *U_trigger_statement = mvc_bat(bm, "U_triggers_statement", TYPE_str);
+	BAT *D_trigger = mvc_bat(bm, "D_triggers", TYPE_oid);
+
+	BAT *kc_id = mvc_bat(bm, "keycolumns_id", TYPE_int);
+	BAT *kc_col = mvc_bat(bm, "keycolumns_column", TYPE_str);
+	BAT *kc_trunc = mvc_bat(bm, "keycolumns_trunc", TYPE_int);
+	BAT *kc_nr = mvc_bat(bm, "keycolumns_nr", TYPE_int);
+	BAT *U_kc_id = mvc_bat(bm, "U_keycolumns_id", TYPE_int);
+	BAT *U_kc_col = mvc_bat(bm, "U_keycolumns_column", TYPE_str);
+	BAT *U_kc_trunc = mvc_bat(bm, "U_keycolumns_trunc", TYPE_int);
+	BAT *U_kc_nr = mvc_bat(bm, "U_keycolumns_nr", TYPE_int);
+	BAT *D_kc = mvc_bat(bm, "D_keycolumns", TYPE_oid);
+
+	update_table_bat(trigger_id, U_trigger_id, D_trigger);
+	update_table_bat(trigger_name, U_trigger_name, D_trigger);
+	update_table_bat(trigger_table, U_trigger_table, D_trigger);
+	update_table_bat(trigger_time, U_trigger_time, D_trigger);
+	update_table_bat(trigger_orientation, U_trigger_orientation, D_trigger);
+	update_table_bat(trigger_event, U_trigger_event, D_trigger);
+	update_table_bat(trigger_old_name, U_trigger_old_name, D_trigger);
+	update_table_bat(trigger_new_name, U_trigger_new_name, D_trigger);
+	update_table_bat(trigger_condition, U_trigger_condition, D_trigger);
+	update_table_bat(trigger_statement, U_trigger_statement, D_trigger);
+
+	update_table_bat(kc_id, U_kc_id, D_kc);
+	update_table_bat(kc_col, U_kc_col, D_kc);
+	update_table_bat(kc_trunc, U_kc_trunc, D_kc);
+	update_table_bat(kc_nr, U_kc_nr, D_kc);
+
+	bat_destroy(trigger_id);
+	bat_destroy(trigger_name);
+	bat_destroy(trigger_table);
+	bat_destroy(trigger_time);
+	bat_destroy(trigger_orientation);
+	bat_destroy(trigger_event);
+	bat_destroy(trigger_old_name);
+	bat_destroy(trigger_new_name);
+	bat_destroy(trigger_condition);
+	bat_destroy(trigger_statement);
+	bat_destroy(U_trigger_id);
+	bat_destroy(U_trigger_name);
+	bat_destroy(U_trigger_table);
+	bat_destroy(U_trigger_time);
+	bat_destroy(U_trigger_orientation);
+	bat_destroy(U_trigger_event);
+	bat_destroy(U_trigger_old_name);
+	bat_destroy(U_trigger_new_name);
+	bat_destroy(U_trigger_condition);
+	bat_destroy(U_trigger_statement);
+	bat_destroy(D_trigger);
+
+	bat_destroy(kc_id);
+	bat_destroy(kc_col);
+	bat_destroy(kc_trunc);
+	bat_destroy(kc_nr);
+	bat_destroy(U_kc_id);
+	bat_destroy(U_kc_col);
+	bat_destroy(U_kc_trunc);
+	bat_destroy(U_kc_nr);
+	bat_destroy(D_kc);
+}
+
+static void
 bs_init_type(struct bm *bm)
 {
 	int zero = 0;
@@ -1780,6 +1997,7 @@ create_table_intern(char *name, bit table, bit system, bit persists, bit clear)
 	cs_init(&t->columns, (fdestroy) &column_destroy);
 	cs_init(&t->idxs, (fdestroy) &idx_destroy);
 	cs_init(&t->keys, (fdestroy) &key_destroy);
+	cs_init(&t->triggers, (fdestroy) &trigger_destroy);
 	t->pkey = NULL;
 	t->dname = NULL;
 	t->dbid = 0;
@@ -1866,6 +2084,7 @@ bootstrap_create_schema(sql_trans *tr, char *name, int auth_id)
 	cs_init(&s->tables, (fdestroy) &table_destroy);
 	s->keys = list_create((fdestroy) NULL);
 	s->idxs = list_create((fdestroy) NULL);
+	s->triggers = list_create((fdestroy) NULL);
 
 	cs_add(&tr->schemas, s, TR_NEW);
 
@@ -1918,6 +2137,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 	bs_init_column(bm);
 	bs_init_key(bm);
 	bs_init_idx(bm);
+	bs_init_trigger(bm);
 	bs_init_type(bm);
 	bs_init_func(bm);
 	sequences_init();
@@ -1975,6 +2195,18 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "table_id", "int", 9);
 		bootstrap_create_column(tr, t, "type", "int", 9);
 		bootstrap_create_column(tr, t, "name", "varchar", 1024);
+
+		t = bootstrap_create_table(tr, s, "triggers", 0);
+		bootstrap_create_column(tr, t, "id", "int", 9);
+		bootstrap_create_column(tr, t, "name", "varchar", 1024);
+		bootstrap_create_column(tr, t, "table_id", "int", 9);
+		bootstrap_create_column(tr, t, "time", "smallint", 1);
+		bootstrap_create_column(tr, t, "orientation", "smallint", 1);
+		bootstrap_create_column(tr, t, "event", "smallint", 1);
+		bootstrap_create_column(tr, t, "old_name", "varchar", 1024);
+		bootstrap_create_column(tr, t, "new_name", "varchar", 1024);
+		bootstrap_create_column(tr, t, "condition", "varchar", 2048);
+		bootstrap_create_column(tr, t, "statement", "varchar", 2048);
 
 		t = bootstrap_create_table(tr, s, "keycolumns", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
@@ -2276,6 +2508,37 @@ idx_dup(sql_trans *tr, int flag, sql_idx * i, sql_table *t)
 	return ni;
 }
 
+static sql_trigger *
+trigger_dup(sql_trans *tr, int flag, sql_trigger * i, sql_table *t)
+{
+	sql_trigger *nt = NEW(sql_trigger);
+	node *n;
+
+	base_init(&nt->base, i->base.id, tr_flag(&i->base, flag), i->base.name);
+
+	nt->columns = list_create((fdestroy) &kc_destroy);
+	nt->t = t;
+	nt->time = i->time;
+	nt->orientation = i->orientation;
+	nt->event = i->event;
+	nt->old_name = nt->new_name = nt->condition = NULL;
+	if (i->old_name)
+		nt->old_name = _strdup(i->old_name);
+	if (i->new_name)
+		nt->new_name = _strdup(i->new_name);
+	if (i->condition)
+		nt->condition = _strdup(i->condition);
+	nt->statement = _strdup(i->statement);
+
+	for (n = i->columns->h; n; n = n->next) {
+		sql_kc *okc = n->data;
+
+		list_append(nt->columns, kc_dup(tr, flag, okc, t));
+	}
+	list_append(t->s->triggers, nt);
+	return nt;
+}
+
 static sql_column *
 column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 {
@@ -2374,6 +2637,7 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	cs_init(&t->columns, (fdestroy) &column_destroy);
 	cs_init(&t->keys, (fdestroy) &key_destroy);
 	cs_init(&t->idxs, (fdestroy) &idx_destroy);
+	cs_init(&t->triggers, (fdestroy) &trigger_destroy);
 
 	t->pkey = NULL;
 
@@ -2410,6 +2674,12 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 
 			cs_add(&t->keys, key_dup(tr, flag, k, t), tr_flag(&k->base, flag));
 		}
+	if (ot->triggers.set)
+		for (n = ot->triggers.set->h; n; n = n->next) {
+			sql_trigger *k = n->data;
+
+			cs_add(&t->triggers, trigger_dup(tr, flag, k, t), tr_flag(&k->base, flag));
+		}
 	return t;
 }
 
@@ -2426,6 +2696,7 @@ schema_dup(sql_trans *tr, int flag, sql_schema *os, sql_trans *o)
 	cs_init(&s->tables, (fdestroy) &table_destroy);
 	s->keys = list_create((fdestroy) NULL);
 	s->idxs = list_create((fdestroy) NULL);
+	s->triggers = list_create((fdestroy) NULL);
 
 	if (os->tables.set)
 		for (n = os->tables.set->h; n; n = n->next) {
@@ -2741,6 +3012,13 @@ rollforward_create_key(sql_trans *tr, sql_key *k)
 	return k;
 }
 
+static sql_trigger *
+rollforward_create_trigger(sql_trans *tr, sql_trigger *k)
+{
+	(void) tr;
+	return k;
+}
+
 static sql_column *
 rollforward_create_column(sql_trans *tr, sql_column *c)
 {
@@ -2922,6 +3200,14 @@ rollforward_drop_key(sql_trans *tr, sql_key *k)
 }
 
 static int
+rollforward_drop_trigger(sql_trans *tr, sql_trigger * i)
+{
+	(void)tr;
+	list_remove_data(i->t->s->triggers, i);
+	return SQL_OK;
+}
+
+static int
 rollforward_drop_table(sql_trans *tr, sql_table *t)
 {
 	int ok = SQL_OK;
@@ -2944,6 +3230,8 @@ rollforward_drop_table(sql_trans *tr, sql_table *t)
 		ok = rollforward_changeset_deletes(tr, &t->idxs, (rfdfunc) &rollforward_drop_idx);
 	if (ok == SQL_OK)
 		ok = rollforward_changeset_deletes(tr, &t->keys, (rfdfunc) &rollforward_drop_key);
+	if (ok == SQL_OK)
+		ok = rollforward_changeset_deletes(tr, &t->triggers, (rfdfunc) &rollforward_drop_trigger);
 	return ok;
 }
 
@@ -2984,6 +3272,8 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		ok = rollforward_changeset_updates(tr, &ft->idxs, &tt->idxs, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_idx, (rfdfunc) &rollforward_drop_idx, (dupfunc) &idx_dup);
 	if (ok == SQL_OK)
 		ok = rollforward_changeset_updates(tr, &ft->keys, &tt->keys, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_key, (rfdfunc) &rollforward_drop_key, (dupfunc) &key_dup);
+	if (ok == SQL_OK)
+		ok = rollforward_changeset_updates(tr, &ft->triggers, &tt->triggers, &tt->base, (rfufunc) NULL, (rfcfunc) &rollforward_create_trigger, (rfdfunc) &rollforward_drop_trigger, (dupfunc) &trigger_dup);
 
 	assert(cs_size(&tt->columns) == cs_size(&ft->columns));
 
@@ -3061,7 +3351,9 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 				if (bs_debug)
 					fprintf(stderr, "append inserts %d to %d (%s)\n", (int)ins->batCacheid, (int)cur->batCacheid, (ttr==gtrans)?"G":"S");
-				void_append_inserted(cur, ins);
+				//void_append_inserted(cur, ins);
+				// append full table
+				BATappend(cur,ins,TRUE);
 				BATclear(ins);
 				BATseqbase(ins,BATcount(cur));
 				BATcommit(ins);
@@ -3518,6 +3810,40 @@ sys_drop_idx(sql_trans *tr, sql_idx * i)
 }
 
 static void
+sys_drop_tc(sql_trans *tr, sql_trigger * i, sql_kc *kc)
+{
+	sql_table *syskc = find_sql_table(find_sql_schema(tr, "sys"), "keycolumns");
+	oid rid = column_find_row(tr, find_sql_column(syskc, "id"), &i->base.id, NULL);
+
+	(void) kc;		/* Stefan: unused!? */
+
+	table_delete(tr, syskc, rid);
+
+	syskc->base.wtime = syskc->s->base.wtime = tr->wtime = tr->stime;
+	tr->schema_updates ++;
+}
+
+static void
+sys_drop_trigger(sql_trans *tr, sql_trigger * i)
+{
+	node *n;
+	sql_table *systrigger = find_sql_table(find_sql_schema(tr, "sys"), "triggers");
+	oid rid = column_find_row(tr, find_sql_column(systrigger, "id"), &i->base.id, NULL);
+
+	table_delete(tr, systrigger, rid);
+
+	for (n = i->columns->h; n; n = n->next) {
+		sql_kc *tc = n->data;
+
+		sys_drop_tc(tr, i, tc);
+	}
+
+	systrigger->base.wtime = systrigger->s->base.wtime = tr->wtime = tr->stime;
+	list_remove_data(i->t->s->triggers, i);
+	tr->schema_updates ++;
+}
+
+static void
 sys_drop_column(sql_trans *tr, sql_column *col)
 {
 	sql_table *syscolumn = find_sql_table(find_sql_schema(tr, "sys"), "pcolumns");
@@ -3712,6 +4038,7 @@ sql_trans_create_schema(sql_trans *tr, char *name, int auth_id)
 	cs_init(&s->tables, (fdestroy) &table_destroy);
 	s->keys = list_create((fdestroy) NULL);
 	s->idxs = list_create((fdestroy) NULL);
+	s->triggers = list_create((fdestroy) NULL);
 
 	cs_add(&tr->schemas, s, TR_NEW);
 	/* switch to the new schema */
@@ -4248,4 +4575,78 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, char *name)
 	n = cs_find_name(&i->t->idxs, name);
 	if (n)
 		cs_del(&i->t->idxs, n, i->base.flag);
+}
+
+sql_trigger *
+sql_trans_create_trigger(sql_trans *tr, sql_table *t, char *name, 
+	sht time, sht orientation, sht event, char *old_name, char *new_name,
+	char *condition, char *statement )
+{
+	/* can only have triggers between persistent tables */
+	sql_trigger *ni = NEW(sql_trigger);
+	sql_table *systrigger = find_sql_table(find_sql_schema(tr, "sys"), "triggers");
+	str nilptr = ATOMnilptr(TYPE_str);
+
+	if (!t->persists || t->clear)
+		return NULL;
+
+	assert(name);
+	base_init(&ni->base, next_oid(), TR_NEW, name);
+	ni->columns = list_create((fdestroy) &kc_destroy);
+	ni->t = t;
+	ni->time = time;
+	ni->orientation = orientation;
+	ni->event = event;
+	ni->old_name = ni->new_name = ni->condition = NULL; 
+	if (old_name)
+		ni->old_name = _strdup(old_name);
+	if (new_name)
+		ni->new_name = _strdup(new_name);
+	if (condition)
+		ni->condition = _strdup(condition);
+	ni->statement = _strdup(statement);
+
+	cs_add(&t->triggers, ni, TR_NEW);
+	list_append(t->s->triggers, ni);
+
+	table_insert(tr, systrigger, &ni->base.id, ni->base.name, &t->base.id, &ni->time, &ni->orientation, &ni->event, (ni->old_name)?ni->old_name:nilptr, (ni->new_name)?ni->new_name:nilptr, (ni->condition)?ni->condition:nilptr, ni->statement);
+
+	systrigger->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
+	tr->schema_updates ++;
+	return ni;
+}
+
+sql_trigger *
+sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_column *c /*, extra options such as trunc */ )
+{
+	sql_kc *ic = NEW(sql_kc);
+	int nr = list_length(i->columns);
+	sql_table *sysic = find_sql_table(find_sql_schema(tr, "sys"), "keycolumns");
+
+	assert(c);
+	ic->c = c;
+	ic->trunc = 0;
+	list_append(i->columns, ic);
+
+	table_insert(tr, sysic, &i->base.id, ic->c->base.name, &ic->trunc, &nr);
+
+	sysic->base.wtime = sysic->s->base.wtime = tr->wtime = tr->stime;
+	tr->schema_updates ++;
+	return i;
+}
+
+void
+sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, char *name)
+{
+	node *n = list_find_name(s->triggers, name);
+	sql_trigger *i = n->data;
+
+	if (i->t->persists && !i->t->clear)
+		sys_drop_trigger(tr, i);
+
+	i->base.wtime = i->t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
+	tr->schema_updates ++;
+	n = cs_find_name(&i->t->triggers, name);
+	if (n)
+		cs_del(&i->t->triggers, n, i->base.flag);
 }

@@ -24,9 +24,9 @@ Over..
 # t # table_name
 # x # name
 # int # type
-# 10 # length
-[ 20	]
-# t # table_name
+# 2 # length
+[ 21	]
+# sys.t # table_name
 # x # name
 # varchar # type
 # 10 # length
@@ -36,6 +36,7 @@ Over..
 [ "pcolumns"	]
 [ "keys"	]
 [ "idxs"	]
+[ "triggers"	]
 [ "keycolumns"	]
 [ "types"	]
 [ "functions"	]

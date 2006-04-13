@@ -36,6 +36,7 @@ Over..
 [ "pcolumns"	]
 [ "keys"	]
 [ "idxs"	]
+[ "triggers"	]
 [ "keycolumns"	]
 [ "types"	]
 [ "functions"	]

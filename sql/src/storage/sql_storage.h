@@ -88,4 +88,8 @@ extern sql_idx *sql_trans_create_idx(sql_trans *tr, sql_table *t, char *name, id
 extern sql_idx *sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c /*, extra options such as trunc */ );
 extern void sql_trans_drop_idx(sql_trans *tr, sql_schema *s, char *name);
 
+extern sql_trigger * sql_trans_create_trigger(sql_trans *tr, sql_table *t, char *name, sht time, sht orientation, sht event, char *old_name, char *new_name, char *condition, char *statement );
+extern sql_trigger * sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_column *c /*, extra options such as trunc */ );
+extern void sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, char *name);
+
 #endif /*SQL_STORAGE_H */

@@ -574,6 +574,53 @@ create_func(mvc *sql, dlist *qname, dlist *params, sql_subtype *res, char *impl,
 	return stmt_none();
 }
 
+static stmt *
+create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, 
+	char *table_name, dlist *opt_ref, dlist *triggered_action)
+{
+	char *tname = qname_table(qname);
+	sql_schema *ss = cur_schema(sql);
+	sql_table *t = NULL;
+	int event = (trigger_event->token == SQL_INSERT)?0:
+			  (trigger_event->token == SQL_DELETE)?1:2;
+	dlist *columns = trigger_event->data.lval;
+	char *old_name = NULL, *new_name = NULL; 
+	int orientation = triggered_action->h->data.ival;
+	char *condition = triggered_action->h->next->data.sval;
+	char *statement = triggered_action->h->next->next->data.sval;
+
+	if (opt_ref) {
+		old_name = opt_ref->h->data.sval;
+		new_name = opt_ref->h->next->data.sval;
+	}
+	if (!schema_privs(sql->role_id, ss)) 
+		return sql_error(sql, 02, "CREATE TRIGGER: access denied for %s to schema ;'%s'", sql->user, ss->base.name);
+	if (mvc_bind_trigger(sql, ss, tname ))
+		return sql_error(sql, 02, "CREATE TRIGGER: name '%s' already in use", tname);
+	if (!(t = mvc_bind_table(sql, ss, table_name)))
+		return sql_error(sql, 02, "CREATE TRIGGER: unknown table '%s'", table_name);
+
+	mvc_create_trigger(sql, t, tname, time, orientation, event, old_name,
+			new_name, condition, statement);
+	/* todo trigger_columns */
+	(void)columns;
+	return stmt_none();
+}
+
+static stmt *
+drop_trigger(mvc *sql, dlist *qname)
+{
+	char *tname = qname_table(qname);
+	sql_schema *ss = cur_schema(sql);
+
+	if (!schema_privs(sql->role_id, ss)) 
+		return sql_error(sql, 02, "DROP TRIGGER: access denied for %s to schema ;'%s'", sql->user, ss->base.name);
+	if (mvc_bind_trigger(sql, ss, tname ) == NULL)
+		return sql_error(sql, 02, "DROP TRIGGER: unknown trigger %s\n", tname);
+	mvc_drop_trigger(sql, ss, tname);
+	return stmt_none();
+}
+
 static void
 as_subquery( mvc *sql, sql_table *t, stmt *sq, dlist *column_spec )
 {
@@ -676,6 +723,8 @@ drop_view(mvc *sql, dlist *qname)
 	char *tname = qname_table(qname);
 	sql_table *t = mvc_bind_table(sql, ss, tname);
 
+	if (!schema_privs(sql->role_id, ss)) 
+		return sql_error(sql, 02, "DROP VIEW: access denied for %s to schema ;'%s'", sql->user, ss->base.name);
 	if (!t) {
 		return sql_error(sql, 02, "DROP VIEW: unknown view '%s'", tname);
 	} else if (!t->table) {
@@ -732,6 +781,8 @@ drop_index(mvc *sql, dlist *qname)
 
 	sql_idx *i = mvc_bind_idx(sql, ss, iname);
 
+	if (!schema_privs(sql->role_id, ss)) 
+		return sql_error(sql, 02, "DROP INDEX: access denied for %s to schema ;'%s'", sql->user, ss->base.name);
 	if (!i) {
 		return sql_error(sql, 02, "DROP INDEX: no such index '%s'", iname);
 	} else {
@@ -1370,6 +1421,8 @@ drop_table(mvc *sql, dlist *qname, int drop_action)
 	char *tname = qname_table(qname);
 	sql_table *t = mvc_bind_table(sql, ss, tname);
 
+	if (!schema_privs(sql->role_id, ss)) 
+		return sql_error(sql, 02, "DROP TABLE: access denied for %s to schema ;'%s'", sql->user, ss->base.name);
 	if (!t) {
 		return sql_error(sql, 02, "DROP TABLE: no such table '%s'", tname);
 	} else if (t->keys.set) {
@@ -1504,6 +1557,9 @@ drop_schema(mvc *sql, dlist *qname, int dropaction)
 {
 	char *name = get_schema_name(qname);
 	sql_schema *s = mvc_bind_schema(sql, name);
+
+	if (!schema_privs(sql->role_id, s)) 
+		return sql_error(sql, 02, "DROP SCHEMA: access denied for %s to schema ;'%s'", sql->user, s->base.name);
 
 	(void) dropaction;
 	if (!s) {
@@ -1706,6 +1762,24 @@ schemas(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = create_func(sql, l->h->data.lval, l->h->next->data.lval, &l->h->next->next->data.typeval, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.sym);
+		sql->type = Q_SCHEMA;
+	}
+		break;
+
+	case SQL_CREATE_TRIGGER:
+	{
+		dlist *l = s->data.lval;
+
+		ret = create_trigger(sql, l->h->data.lval, l->h->next->data.ival, l->h->next->next->data.sym, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval);
+		sql->type = Q_SCHEMA;
+	}
+		break;
+
+	case SQL_DROP_TRIGGER:
+	{
+		dlist *l = s->data.lval;
+
+		ret = drop_trigger(sql, l);
 		sql->type = Q_SCHEMA;
 	}
 		break;

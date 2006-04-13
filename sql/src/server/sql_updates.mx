@@ -29,13 +29,7 @@
 #include "sql_scope.h"
 #include "sql_statement.h"
 
-/*
- * TODO change result of the update statements into  
- *	insert(mvc, table t, rel_query q)
- *	update(mvc, table t, rel_query newvalues, rel_query q)
- *	delete(mvc, table t, rel_query q)
- */
-extern stmt *updates(mvc *sql, symbol *sym);
+extern stmt *updates(mvc *sql, scope *scp, symbol *sym);
 
 extern void cleanup_stmts(stmt **stmts, int cnt);
 extern stmt *sql_insert(mvc *sql, sql_table *t, stmt **inserts, int len, int output);
@@ -390,6 +384,54 @@ sql_insert_idxs(mvc *sql, sql_table *t, stmt **inserts, list *l)
 	return res;
 }
 
+void
+scope_add_inserted( scope *scp, stmt **inserts, sql_table *t, char *name) 
+{
+	node *n;
+	tvar *tv = scope_add_table(scp, NULL, name, NULL); 
+
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		char *cn = _strdup(c->base.name);
+		stmt *inserted = stmt_dup(inserts[c->colnr]->op2.stval);
+
+		inserted = stmt_alias(inserted, _strdup(name), cn);
+		table_add_column(tv, inserted, NULL, c->base.name);
+	}
+}
+
+static int
+sql_insert_triggers(mvc *sql, sql_table *t, stmt **inserts, list *l)
+{
+	node *n;
+	int res = 1;
+
+	if (!t->triggers.set)
+		return res;
+
+	for (n = t->triggers.set->h; n; n = n->next) {
+		sql_trigger *trigger = n->data;
+
+		if (trigger->event == 0) { 
+			scope *scp = scope_open(NULL);
+			stmt *s = NULL;
+
+			/* add name for the 'inserted' to the scope */
+			char *n = trigger->new_name;
+
+			if (!n) n = "new"; 
+
+			scope_add_inserted(scp, inserts, t, n);
+			s = scope_sqlparse(sql, scp, trigger->statement);
+			if (!s) 
+				return 0;
+			list_append(l, s);
+			scope_close(scp);
+		}
+	}
+	return res;
+}
+
 stmt *
 sql_insert_add_idx(mvc *sql, sql_table *t, sql_idx * idx, list *l)
 {
@@ -714,6 +756,69 @@ sql_update_idxs(mvc *sql, sql_table *t, stmt **updates, list *l)
 	return res;
 }
 
+void
+scope_add_updated( scope *scp, stmt **updates, sql_table *t, char *on, char *nn)
+{
+	node *n;
+	tvar *tv = scope_add_table(scp, NULL, on, NULL); 
+
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		char *cn = _strdup(c->base.name);
+		stmt *h = stmt_dup(updates[c->colnr]->op2.stval);
+		stmt *updated = stmt_dup(updates[c->colnr]->op1.stval);
+
+		updated = stmt_semijoin(updated, h);
+		updated = stmt_alias(updated, _strdup(on), cn);
+		table_add_column(tv, updated, NULL, c->base.name);
+	}
+	tv = scope_add_table(scp, NULL, nn, NULL); 
+
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		char *cn = _strdup(c->base.name);
+		stmt *updated = stmt_dup(updates[c->colnr]->op2.stval);
+
+		updated = stmt_alias(updated, _strdup(nn), cn);
+		table_add_column(tv, updated, NULL, c->base.name);
+	}
+}
+
+
+static int
+sql_update_triggers(mvc *sql, sql_table *t, stmt **inserts, list *l)
+{
+	node *n;
+	int res = 1;
+
+	if (!t->triggers.set)
+		return res;
+
+	for (n = t->triggers.set->h; n; n = n->next) {
+		sql_trigger *trigger = n->data;
+
+		if (trigger->event == 2) { 
+			scope *scp = scope_open(NULL);
+			stmt *s = NULL;
+
+			/* add name for the 'inserted' to the scope */
+			char *n = trigger->new_name;
+			char *o = trigger->old_name;
+
+			if (!n) n = "new"; 
+			if (!o) o = "old"; 
+
+			scope_add_updated(scp, inserts, t, o, n);
+			s = scope_sqlparse(sql, scp, trigger->statement);
+			if (!s) 
+				return 0;
+			list_append(l, s);
+			scope_close(scp);
+		}
+	}
+	return res;
+}
+
 stmt *
 sql_insert(mvc *sql, sql_table *t, stmt **inserts, int len, int output)
 {
@@ -724,6 +829,10 @@ sql_insert(mvc *sql, sql_table *t, stmt **inserts, int len, int output)
 	sql_subaggr *cnt;
 	stmt *s = NULL;
 
+	if (!sql_insert_triggers(sql, t, inserts, l)) {
+		list_destroy(l);
+		return sql_error(sql, 02, "INSERT INTO: triggers failed for table '%s'", t->base.name);
+	}
 	if (!sql_insert_idxs(sql, t, inserts, l)) {
 		list_destroy(l);
 		return sql_error(sql, 02, "INSERT INTO: failed to update indexes for table '%s'", t->base.name);
@@ -773,10 +882,9 @@ sql_insert(mvc *sql, sql_table *t, stmt **inserts, int len, int output)
 }
 
 static stmt *
-insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
+insert_into(mvc *sql, scope *scp, dlist *qname, dlist *columns, symbol *val_or_q)
 {
 	int inscol = 0;
-	scope *scp;
 	tvar *tv = NULL;
 
 	sql_schema *s = qname_schema(sql, qname);
@@ -817,7 +925,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	for (i = 0; i < len; i++)
 		inserts[i] = NULL;
 
-	scp = scope_open(NULL);
+	scp = scope_open(scp);
 	tv = scope_add_table_columns(sql, scp, t, t->base.name, INS);
 
 	if (val_or_q->token == SQL_VALUES) {
@@ -956,17 +1064,17 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 }
 
 static stmt *
-sql_bulkinsert(mvc *sql, sql_table *t, char *tsep, char *rsep, char *filename, int nr)
+sql_bulkinsert(mvc *sql, scope *scp, sql_table *t, char *tsep, char *rsep, char *filename, int nr)
 {
 	stmt *bats = NULL;
 	stmt *fname = (filename) ? stmt_atom_string(_strdup(filename)) : NULL;
 	node *n;
 	int i, len = 0;
 	stmt **inserts, *res = NULL;
+	tvar *tv;
 
-	scope *scp = scope_open(NULL);
-	tvar *tv = scope_add_table_columns(sql, scp, t, t->base.name, INS);
-
+	scp = scope_open(scp);
+	tv = scope_add_table_columns(sql, scp, t, t->base.name, INS);
 	bats = stmt_bulkinsert(stmt_basetable(t, t->base.name), _strdup(tsep), _strdup(rsep), fname, nr);
 	len = list_length(t->columns.set);
 	inserts = NEW_ARRAY(stmt *, len);
@@ -984,7 +1092,7 @@ sql_bulkinsert(mvc *sql, sql_table *t, char *tsep, char *rsep, char *filename, i
 }
 
 static stmt *
-copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, int nr)
+copyfrom(mvc *sql, scope *scp, dlist *qname, dlist *files, dlist *seps, int nr)
 {
 	char *tname = qname_table(qname);
 	sql_table *t = mvc_bind_table(sql, cur_schema(sql), tname);
@@ -1000,12 +1108,12 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, int nr)
 		for (slist = create_stmt_list(); n; n = n->next) {
 			char *fname = n->data.sval;
 
-			list_append(slist, sql_bulkinsert(sql, t, tsep, rsep, fname, nr));
+			list_append(slist, sql_bulkinsert(sql, scp, t, tsep, rsep, fname, nr));
 		}
 		return stmt_list(slist);
 	}
 	slist = create_stmt_list();
-	list_append(slist, sql_bulkinsert(sql, t, tsep, rsep, NULL, nr));
+	list_append(slist, sql_bulkinsert(sql, scp, t, tsep, rsep, NULL, nr));
 	return stmt_list(slist);
 }
 
@@ -1015,13 +1123,18 @@ sql_update(mvc *sql, sql_table *t, stmt **updates, list *l)
 {
 	char buf[BUFSIZ];
 	node *n;
-	sql_subaggr *cnt = sql_bind_aggr(sql->trans->module, "count", NULL);
+	sql_subaggr *cnt;
 
+	if (!sql_update_triggers(sql, t, updates, l)) {
+		list_destroy(l);
+		return sql_error(sql, 02, "UPDATE: triggers failed for table '%s'", t->base.name);
+	}
 	if (!sql_update_idxs(sql, t, updates, l)) {
-		sql_subaggr_destroy(cnt);
+		list_destroy(l);
 		return sql_error(sql, 02, "UPDATE: failed to update indexes for table '%s'", t->base.name);
 	}
 
+ 	cnt = sql_bind_aggr(sql->trans->module, "count", NULL);
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 
@@ -1048,7 +1161,7 @@ sql_update(mvc *sql, sql_table *t, stmt **updates, list *l)
 }
 
 static stmt *
-sql_update_table(mvc *sql, sql_schema *schema, char *tname, dlist *assignmentlist, symbol *opt_where)
+sql_update_table(mvc *sql, scope *scp, sql_schema *schema, char *tname, dlist *assignmentlist, symbol *opt_where)
 {
 	stmt *s = NULL;
 	sql_table *t = mvc_bind_table(sql, schema, tname);
@@ -1062,10 +1175,9 @@ sql_update_table(mvc *sql, sql_schema *schema, char *tname, dlist *assignmentlis
 		tvar *tv = NULL;
 		dnode *n;
 		list *l;
-		scope *scp;
 		stmt **updates;
 
-		scp = scope_open(NULL);
+		scp = scope_open(scp);
 		tv = scope_add_table_columns(sql, scp, t, t->base.name, RDONLY);
 
 		if (opt_where) {
@@ -1174,14 +1286,65 @@ sql_update_table(mvc *sql, sql_schema *schema, char *tname, dlist *assignmentlis
 }
 
 static stmt *
-update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
+update_table(mvc *sql, scope *scp, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 {
 	sql_schema *s = qname_schema(sql, qname);
 	char *tname = qname_table(qname);
 
-	return sql_update_table(sql, s, tname, assignmentlist, opt_where);
+	return sql_update_table(sql, scp, s, tname, assignmentlist, opt_where);
 }
 
+
+void
+scope_add_deleted( scope *scp, stmt *deletes, sql_table *t, char *name)
+{
+	node *n;
+	tvar *tv = scope_add_table(scp, NULL, name, NULL); 
+	stmt *ts = stmt_basetable(t, t->base.name);
+
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+		char *cn = _strdup(c->base.name);
+		stmt *deleted = stmt_bat(c, stmt_dup(ts), RDONLY);
+
+		deleted = stmt_semijoin(deleted, stmt_dup(deletes));
+		deleted = stmt_alias(deleted, _strdup(name), cn);
+		table_add_column(tv, deleted, NULL, c->base.name);
+	}
+}
+
+
+static int
+sql_delete_triggers(mvc *sql, sql_table *t, stmt *deletes, list *l)
+{
+	node *n;
+	int res = 1;
+
+	if (!t->triggers.set)
+		return res;
+
+	for (n = t->triggers.set->h; n; n = n->next) {
+		sql_trigger *trigger = n->data;
+
+		if (trigger->event == 1) { 
+			scope *scp = scope_open(NULL);
+			stmt *s = NULL;
+
+			/* add name for the 'deleted' to the scope */
+			char *o = trigger->old_name;
+
+			if (!o) o = "old"; 
+
+			scope_add_deleted(scp, deletes, t, o);
+			s = scope_sqlparse(sql, scp, trigger->statement);
+			if (!s) 
+				return 0;
+			list_append(l, s);
+			scope_close(scp);
+		}
+	}
+	return res;
+}
 
 stmt *
 sql_delete(mvc *sql, tvar *tv, sql_table *t, stmt *s, int output)
@@ -1200,6 +1363,11 @@ sql_delete(mvc *sql, tvar *tv, sql_table *t, stmt *s, int output)
 	v = stmt_const(stmt_reverse(subset), stmt_atom(atom_general(&to, NULL, 0)));
 	list_append(l, stmt_append(stmt_tbat(basetable_table(tv->s), INS), stmt_reverse(v)));
 
+	if (!sql_delete_triggers(sql, t, v, l)) {
+		list_destroy(l);
+		return sql_error(sql, 02, "DELETE: triggers failed for table '%s'", t->base.name);
+	}
+
 	if (output) {
 		stmt *t = stmt_aggr(stmt_dup(subset), NULL,
 				    sql_bind_aggr(sql->trans->module, "count", NULL));
@@ -1210,7 +1378,7 @@ sql_delete(mvc *sql, tvar *tv, sql_table *t, stmt *s, int output)
 }
 
 static stmt *
-delete_table(mvc *sql, dlist *qname, symbol *opt_where)
+delete_table(mvc *sql, scope *scp, dlist *qname, symbol *opt_where)
 {
 	char *tname = qname_table(qname);
 	sql_table *t = mvc_bind_table(sql, cur_schema(sql), tname);
@@ -1225,10 +1393,9 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 	} else {
 		tvar *tv = NULL;
 		stmt *s = NULL;
-		scope *scp = scope_open(NULL);
 
+		scp = scope_open(scp);
 		tv = scope_add_table_columns(sql, scp, t, t->base.name, RDONLY);
-
 		if (opt_where) {
 			stmt *subset = NULL;
 			s = sql_logical_exp(sql, scp, opt_where, NULL, NULL, sql_where);
@@ -1267,7 +1434,7 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 }
 
 stmt *
-updates(mvc *sql, symbol *s)
+updates(mvc *sql, scope *scp, symbol *s)
 {
 	stmt *ret = NULL;
 
@@ -1276,7 +1443,7 @@ updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = copyfrom(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.ival);
+		ret = copyfrom(sql, scp, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.ival);
 		sql->type = Q_UPDATE;
 	}
 		break;
@@ -1284,7 +1451,7 @@ updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = insert_into(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym);
+		ret = insert_into(sql, scp, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym);
 		sql->type = Q_UPDATE;
 	}
 		break;
@@ -1292,7 +1459,7 @@ updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = update_table(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym);
+		ret = update_table(sql, scp, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym);
 		sql->type = Q_UPDATE;
 	}
 		break;
@@ -1300,7 +1467,7 @@ updates(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = delete_table(sql, l->h->data.lval, l->h->next->data.sym);
+		ret = delete_table(sql, scp, l->h->data.lval, l->h->next->data.sym);
 		sql->type = Q_UPDATE;
 	}
 		break;

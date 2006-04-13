@@ -24,8 +24,8 @@ Over..
 # s,	,	s # table_name
 # name,	char_length_name,	count_name # name
 # varchar,	int,	int # type
-# 3,	10,	10 # length
-[ "sys",	3,	23	]
+# 3,	1,	2 # length
+[ "sys",	3,	24	]
 
 # 12:48:35 >  
 # 12:48:35 >  Done.

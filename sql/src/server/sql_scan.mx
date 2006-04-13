@@ -315,6 +315,19 @@ scanner_init_keywords()
 	keywords_insert("SERIAL", SERIAL);
 	keywords_insert("AUTO_INCREMENT", AUTO_INCREMENT);
 
+	keywords_insert("TRIGGER", TRIGGER);
+	keywords_insert("ATOMIC", ATOMIC);
+	keywords_insert("BEGIN", BEGIN);
+	keywords_insert("OF", OF);
+	keywords_insert("BEFORE", BEFORE);
+	keywords_insert("AFTER", AFTER);
+	keywords_insert("ROW", ROW);
+	keywords_insert("STATEMENT", STATEMENT);
+	keywords_insert("NEW", sqlNEW);
+	keywords_insert("OLD", OLD);
+	keywords_insert("EACH", EACH);
+	keywords_insert("REFERENCING", REFERENCING);
+
 	keywords_insert(";", SCOLON);
 }
 

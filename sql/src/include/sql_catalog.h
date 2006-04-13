@@ -248,6 +248,22 @@ typedef struct sql_fkey {	/* fkey */
 	struct sql_ukey *rkey;	/* only set for fkey and rkey */
 } sql_fkey;
 
+typedef struct sql_trigger {
+	sql_base base;
+	sht time;		/* before or after */
+	sht orientation; 	/* row or statement */
+	sht event;		/* insert, delete, update */
+	/* int action_order;	 TODO, order within the set of triggers */
+	struct list *columns;	/* update trigger on list of (sql_kc) columns */
+
+	struct sql_table *t;
+	char *old_name;		/* name referencing the old values */
+	char *new_name;		/* name referencing the new values */
+	
+	char *condition; 	/* when search condition, ie query */
+	char *statement;	/* action, ie list of sql statements */
+} sql_trigger;
+
 /* histogram types */
 typedef enum sql_histype {
        X_EXACT,
@@ -307,10 +323,11 @@ typedef struct sql_table {
 	int  sz;
 	lng  cnt;		/* number of tuples */
 
+	sql_ukey *pkey;
 	changeset columns;
 	changeset idxs;
 	changeset keys;
-	sql_ukey *pkey;
+	changeset triggers;
 
 	int cleared;		/* cleared in the current transaction */
 	char *dname;		/* name of the persistent deletes bat */
@@ -324,8 +341,9 @@ typedef struct sql_schema {
 	int auth_id;
 
 	changeset tables;
-	list *keys;		/* the names for keys and idxs are global, but */
-	list *idxs;		/* these objects are only useful within a table */
+	list *keys;		/* Names for keys, idxs and triggers are */
+	list *idxs;		/* global, but these objects are only */
+	list *triggers;		/* useful within a table */
 } sql_schema;
 
 typedef struct res_col {

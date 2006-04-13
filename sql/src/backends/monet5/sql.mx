@@ -716,13 +716,29 @@ sql_symbol2stmt(mvc *c)
 		printf("# semantic relational algebra\n");
 		r = rel_semantic(c, c->sym);
 		if (!r) {
-			printf("# falling back to direct mode \n");
-			s = semantic(c, c->sym);
-		} else 
+			if (c->errstr[0]) {
+				printf("# %s\n", c->errstr);
+				return NULL;
+			} else {
+				c->status = 0;
+				printf("# falling back to direct mode \n");
+				s = semantic(c, NULL, c->sym);
+			}
+		} else {
 			s = rel_bin(c, r);
+			if (s){
+				stmt *opt;
+
+				opt = optimize(c, s);
+				stmt_destroy(s);
+				s = rel2bin(c, opt);
+				stmt_destroy(opt);
+				return opt;
+			}
+		}
 	}  else {
 		/*printf("# semantic binary algebra\n");*/
-		s = semantic(c, c->sym);
+		s = semantic(c, NULL, c->sym);
 	}
 
 	if (s){

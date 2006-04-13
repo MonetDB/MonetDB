@@ -31,6 +31,7 @@ Over..
 [ "pcolumns",	NULL,	true,	true,	false,	0	]
 [ "keys",	NULL,	true,	true,	false,	0	]
 [ "idxs",	NULL,	true,	true,	false,	0	]
+[ "triggers",	NULL,	true,	true,	false,	0	]
 [ "keycolumns",	NULL,	true,	true,	false,	0	]
 [ "types",	NULL,	true,	true,	false,	0	]
 [ "functions",	NULL,	true,	true,	false,	0	]

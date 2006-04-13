@@ -128,6 +128,7 @@ extern sql_column *mvc_first_column(mvc *c, sql_table *t);
 extern sql_idx *mvc_bind_idx(mvc *c, sql_schema *s, char *iname);
 extern sql_key *mvc_bind_key(mvc *c, sql_schema *s, char *kname);
 extern sql_key *mvc_bind_ukey(sql_table *t, list *cols);
+extern sql_trigger *mvc_bind_trigger(mvc *c, sql_schema *s, char *tname);
 
 extern void mvc_drop_module(mvc *c, char *name);
 extern sql_module *mvc_create_module(mvc *c, char *name, char *opt_iname);
@@ -155,6 +156,10 @@ extern void mvc_drop_key(mvc *c, sql_schema *s, char *kname);
 extern sql_idx *mvc_create_idx(mvc *m, sql_table *t, char *iname, idx_type it);
 extern sql_idx *mvc_create_ic(mvc *m, sql_idx * i, sql_column *c);
 extern void mvc_drop_idx(mvc *c, sql_schema *s, char *iname);
+
+extern sql_trigger * mvc_create_trigger(mvc *m, sql_table *t, char *name, sht time, sht orientation, sht event, char *old_name, char *new_name, char *condition, char *statement );
+extern sql_trigger * mvc_create_tc(mvc *m, sql_trigger * i, sql_column *c /*, extra options such as trunc */ );
+extern void mvc_drop_trigger(mvc *m, sql_schema *s, char *name);
 
 #endif /*_SQL_MVC_H*/
 @c
@@ -925,6 +930,26 @@ mvc_bind_ukey(sql_table *t, list *colnames)
 	return res;
 }
 
+sql_trigger *
+mvc_bind_trigger(mvc *m, sql_schema *s, char *tname)
+{
+	node *n = list_find_name(s->triggers, tname);
+	sql_trigger *trigger;
+
+	(void) m;
+	if (!n)
+		return NULL;
+	trigger = n->data;
+	/*
+	   k->base.rtime = k->t->base.rtime = s->base.rtime;
+	 */
+
+	if (mvc_debug)
+		fprintf(stderr, "mvc_bind_trigger %s.%s\n", s->base.name, tname);
+
+	return trigger;
+}
+
 sql_module *
 mvc_create_module(mvc *m, char *name, char *opt_internal_name)
 {
@@ -1053,6 +1078,38 @@ mvc_drop_idx(mvc *m, sql_schema *s, char *name)
 
 	m->type = Q_SCHEMA;
 	sql_trans_drop_idx(m->trans, s, name);
+}
+
+sql_trigger * 
+mvc_create_trigger(mvc *m, sql_table *t, char *name, sht time, sht orientation, sht event, char *old_name, char *new_name, char *condition, char *statement )
+{
+	sql_trigger *i;
+
+	if (mvc_debug)
+		fprintf(stderr, "mvc_create_trigger %s %d %d %d\n", t->base.name, time, orientation, event);
+
+	i = sql_trans_create_trigger(m->trans, t, name, time, orientation, 
+			event, old_name, new_name, condition, statement);
+	m->type = Q_SCHEMA;
+	return i;
+}
+
+sql_trigger *
+mvc_create_tc(mvc *m, sql_trigger * i, sql_column *c /*, extra options such as trunc */ )
+{
+	sql_trans_create_tc(m->trans, i, c);
+	m->type = Q_SCHEMA;
+	return i;
+}
+
+void
+mvc_drop_trigger(mvc *m, sql_schema *s, char *name)
+{
+	if (mvc_debug)
+		fprintf(stderr, "mvc_drop_trigger %s %s\n", s->base.name, name);
+
+	m->type = Q_SCHEMA;
+	sql_trans_drop_trigger(m->trans, s, name);
 }
 
 sql_table *

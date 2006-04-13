@@ -184,7 +184,8 @@ log_read_string(logger *l)
 	int len, nr;
 	char *buf;
 
-	stream_readInt(l->log, &len);
+	if (!stream_readInt(l->log, &len))
+		return NULL;
 	buf = NEW_ARRAY(char, len);
 
 	if ((nr = stream_read(l->log, buf, 1, len)) != (ssize_t)len) {
@@ -241,6 +242,8 @@ log_read_updates(logger *logger, logformat *l, char *name)
 			for (; l->nr > 0; l->nr--) {
 				void *t = rt(tv, logger->log, 1);
 
+				if (!t)
+					break;
 				if (l->flag == SQL_LOG_INSERT)
 					BUNappend(b, t, TRUE);
 				if (t != tv)
@@ -254,6 +257,8 @@ log_read_updates(logger *logger, logformat *l, char *name)
 				void *h = rh(hv, logger->log, 1);
 				void *t = rt(tv, logger->log, 1);
 
+				if (!h && !t)
+					break;
 				if (l->flag == SQL_LOG_INSERT)
 					BUNins(b, h, t);
 				else if (l->flag == SQL_LOG_DELETE)
@@ -271,22 +276,18 @@ log_read_updates(logger *logger, logformat *l, char *name)
 }
 
 static void
-log_read_destroy(logger *logger, logformat *l, char *name)
+log_read_destroy(logger *logger, char *name)
 {
 	oid bid = bm_find_bat(logger->bm, name);
-
-	(void) l;		/* Stefan: unused!? */
 
 	if (bid)
 		bm_del_bat(logger->bm, bid);
 }
 
 static void
-log_read_create(logger *logger, logformat *l, char *name)
+log_read_create(logger *logger, char *name)
 {
 	char *buf = log_read_string(logger);
-
-	(void) l;		/* Stefan: unused!? */
 
 	if (logger->debug & 1)
 		fprintf(stderr, "log_read_create %s\n", name);
@@ -441,11 +442,11 @@ logger_readlog(logger *logger, char *filename)
 
 			break;
 		case SQL_LOG_CREATE:
-			log_read_create(logger, &l, name);
+			log_read_create(logger, name);
 
 			break;
 		case SQL_LOG_DESTROY:
-			log_read_destroy(logger, &l, name);
+			log_read_destroy(logger, name);
 
 			break;
 		case SQL_LOG_CLEAR:

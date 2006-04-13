@@ -35,7 +35,7 @@
 #define sql_search 2
 #define sql_sel   3
 
-extern stmt *selects(mvc *sql, symbol *sym);
+extern stmt *selects(mvc *sql, scope *scp, symbol *sym);
 
 extern stmt *sql_subquery(mvc *sql, scope *scp, symbol *sq, int toplevel);
 extern stmt *scope_subquery(mvc *sql, scope *scp, symbol *sq);
@@ -1716,7 +1716,7 @@ sql_intersect(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols, int distinct )
 }
 
 static stmt *
-sql_setop(mvc *sql, scope *scp, symbol *q)
+sql_setop_(mvc *sql, scope *scp, symbol *q)
 {
 	stmt *res = NULL;
 	dnode *n = q->data.lval->h;
@@ -1753,10 +1753,10 @@ sql_setop(mvc *sql, scope *scp, symbol *q)
 }
 
 static stmt *
-scope_setop(mvc *sql, symbol *q)
+sql_setop(mvc *sql, scope *scp, symbol *q)
 {
-	scope *nscp = scope_open(NULL);
-	stmt *tq = sql_setop(sql, nscp, q);
+	scope *nscp = scope_open(scp);
+	stmt *tq = sql_setop_(sql, nscp, q);
 
 	if (!tq)
 		return NULL;
@@ -1765,7 +1765,7 @@ scope_setop(mvc *sql, symbol *q)
 }
 
 static stmt *
-sql_cross(mvc *sql, scope *scp, symbol *q)
+sql_cross_(mvc *sql, scope *scp, symbol *q)
 {
 
 	dnode *n = q->data.lval->h;
@@ -1813,10 +1813,10 @@ sql_cross(mvc *sql, scope *scp, symbol *q)
 }
 
 static stmt *
-scope_cross(mvc *sql, symbol *q)
+sql_cross(mvc *sql, scope *scp, symbol *q)
 {
-	scope *nscp = scope_open(NULL);
-	stmt *tq = sql_cross(sql, nscp, q);
+	scope *nscp = scope_open(scp);
+	stmt *tq = sql_cross_(sql, nscp, q);
 
 	if (!tq)
 		return NULL;
@@ -1835,7 +1835,7 @@ query_exp_optname(mvc *sql, scope *scp, symbol *q)
 	case SQL_INTERSECT:
 	{
 		scope *nscp = scope_open(scp);
-		stmt *tq = sql_setop(sql, nscp, q);
+		stmt *tq = sql_setop_(sql, nscp, q);
 
 		if (!tq)
 			return NULL;
@@ -1857,7 +1857,7 @@ query_exp_optname(mvc *sql, scope *scp, symbol *q)
 	case SQL_CROSS:
 	{
 		scope *nscp = scope_open(scp);
-		stmt *tq = sql_cross(sql, nscp, q);
+		stmt *tq = sql_cross_(sql, nscp, q);
 
 		if (!tq)
 			return NULL;
@@ -2757,8 +2757,8 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 	case SQL_EXCEPT:
 	case SQL_INTERSECT: {
 		/* todo handle outer refs, ie requires full implementations of
-		   scope_setop */
-		stmt *r, *s = scope_setop(sql, sc);
+		   sql_setop */
+		stmt *r, *s = sql_setop(sql, NULL, sc);
 		if (s->type != st_list || list_length(s->op1.lval) != 1) {
 			char *op = "UNION";
 			if (sc->token == SQL_EXCEPT)
@@ -3470,38 +3470,38 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 
 
 stmt *
-selects(mvc *sql, symbol *s)
+selects(mvc *sql, scope *scp, symbol *s)
 {
 	stmt *ret = NULL;
 
 	switch (s->token) {
 	case SQL_SELECT:
-		ret = scope_subquery(sql, NULL, s);
+		ret = scope_subquery(sql, scp, s);
 		/* add output stmt */
-		if (ret)
+		if (!scp && ret)
 			ret = stmt_output(ret);
 		sql->type = Q_TABLE;
 		break;
 	case SQL_JOIN:
-		ret = sql_join(sql, NULL, s);
+		ret = sql_join(sql, scp, s);
 		/* add output stmt */
-		if (ret)
+		if (!scp && ret)
 			ret = stmt_output(ret);
 		sql->type = Q_TABLE;
 		break;
 	case SQL_CROSS:
-		ret = scope_cross(sql, s);
+		ret = sql_cross(sql, scp, s);
 		/* add output stmt */
-		if (ret)
+		if (!scp && ret)
 			ret = stmt_output(ret);
 		sql->type = Q_TABLE;
 		break;
 	case SQL_UNION:
 	case SQL_EXCEPT:
 	case SQL_INTERSECT:
-		ret = scope_setop(sql, s);
+		ret = sql_setop(sql, scp, s);
 		/* add output stmt */
-		if (ret)
+		if (!scp && ret)
 			ret = stmt_output(ret);
 		sql->type = Q_TABLE;
 		break;
