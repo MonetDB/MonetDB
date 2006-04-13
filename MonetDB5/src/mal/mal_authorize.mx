@@ -78,15 +78,15 @@ mal_export void loadPermissions();
 @c
 #include "mal_authorize.h"
 
-static str owner=0;
-static str passw=0;
+static str owner = NULL;
+static str passw = NULL;
 
 void
-setServerOwner(str o, str p){
-	if( owner || passw)
-		GDKfatal("Attempt to reset server owner identity\n");
-	owner= o ?o: "user";
-	passw = p?p:"";
+setServerOwner(str o, str p) {
+	if (owner || passw)
+		GDKfatal("Attempt to reset server owner identity");
+	owner = o ? o : "user";
+	passw = p ? p : "";
 #ifdef _DEBUG_AUTH_
 	printf("serverOwner=%s\n",owner);
 #endif
@@ -106,9 +106,11 @@ void
 loadPermissions(){
     BAT *b;
 
-	if( auth ) return;
+	if (auth)
+		return;
+
     b = BATdescriptor(BBPindex("users"));
-    if (b== NULL){
+    if (b == NULL){
 		b = BATnew(TYPE_str, TYPE_str, 256);
 		if (b == NULL)
 			GDKfatal("mal: could not allocate user table.");
@@ -118,21 +120,21 @@ loadPermissions(){
 		BATmode(b, PERSISTENT);
 		BATcommit(b);
 	}
-	auth= b;
-	authrev= BATmirror(b);
+	auth = b;
+	authrev = BATmirror(b);
     b = BATdescriptor(BBPindex("password"));
-    if (b== NULL){
+    if (b == NULL){
 		b = BATnew(TYPE_str, TYPE_str, 256);
 		if (b == NULL)
-			GDKfatal("mal: could not allocate user table.");
+			GDKfatal("mal: could not allocate password table.");
 
 		BATkey(b, TRUE);
 		BBPrename(b->batCacheid, "password");
 		BATmode(b, PERSISTENT);
 		BATcommit(b);
 	}
-	pass= b;
-	passrev= BATmirror(b);
+	pass = b;
+	passrev = BATmirror(b);
 }
 
 str
@@ -140,12 +142,19 @@ MALinitClient(Client c){
 #ifdef _DEBUG_AUTH_
 	printf("authorize %s:%s %s\n", c->user, c->password, c->scenario);
 #endif
-	if( owner == NULL || c->user==NULL )
+	/* don't do authorisation right now, because it doesn't work at all
+	 * but for a hard-coded user "user" with password "" */
+	if (1 == 1) return MAL_SUCCEED;
+	
+	if (owner == NULL || c->user == NULL)
 		return MAL_SUCCEED; /* avoid missing info */
-	if( strcmp(c->user,owner) == 0 &&
-		(passw==NULL|| strcmp( (c->password?c->password:""),passw) == 0 ))
+
+	if (strcmp(c->user, owner) == 0 &&
+		(passw == NULL ||
+		 strcmp((c->password ? c->password : ""), passw) == 0))
 		return MAL_SUCCEED;
-	return throwMessage("mal.authorize","Access denied");
+
+	return throwMessage("mal.authorize", "Access denied");
 }
 
 str 
@@ -217,7 +226,7 @@ checkAuthorization(str nme, str passwd, str scen )
 int
 isServerOwner(Client c){
 #ifdef _DEBUG_AUTH_
-	printf("isServerOwner? %s/%s\n",c->user,c->password));
+	printf("isServerOwner? %s/%s\n",c->user,c->password);
 #endif
 	return strcmp(c->user, "user") == 0;
 }
