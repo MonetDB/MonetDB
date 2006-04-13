@@ -169,7 +169,6 @@ static void
 ARMADAinit()
 {
 	mal_set_lock(mal_contextLock, "armada");
-	/* TODO: TYPE_lng -> TYPE_inet ??? */
 	ARMADA_func_site = ARMADA_create("func", "site", TYPE_str, ATOMindex("inet"));
 	ARMADA_step_pre  = ARMADA_create("step", "pre", TYPE_int, TYPE_int);
 	ARMADA_loaded    = 1;	/* yes, we have the BATs loaded */
