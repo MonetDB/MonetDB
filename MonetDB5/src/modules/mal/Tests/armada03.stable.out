@@ -25,14 +25,14 @@ stdout of test 'armada03` in directory 'src/modules/mal` itself:
 #io.print(p);
 #
 function user.main():void;	# 0  (main:void)
-    b := bat.new(:str,:str);	# 1 CMDBATnew (b:bat[:str,:str])<-(_2:str)(_2:str)
-    bat.insert(b,nil:str,"site1");	# 2 BKCinsert_bun (_3:void)<-(b:bat[:str,:str])(_4:str)(_5:str)
-    bat.insert(b,"func2","site2");	# 3 BKCinsert_bun (_6:void)<-(b:bat[:str,:str])(_7:str)(_8:str)
-    t := armada.addTrail(b);	# 4 ARMADAaddTrailBAT (t:int)<-(b:bat[:str,:str])
+    b := bat.new(:str,:inet);	# 1 CMDBATnew (b:bat[:str,:inet])<-(_2:str)(_3:inet)
+    bat.insert(b,nil:str,127.0.0.2:inet);	# 2 BKCinsert_bun (_4:void)<-(b:bat[:str,:inet])(_5:str)(_6:inet)
+    bat.insert(b,"func2",127.0.0.3:inet);	# 3 BKCinsert_bun (_7:void)<-(b:bat[:str,:inet])(_8:str)(_9:inet)
+    t := armada.addTrail(b);	# 4 ARMADAaddTrailBAT (t:int)<-(b:bat[:str,:inet])
     p := armada.getTrail(t);	# 5 ARMADAgetTrail (p:str)<-(t:int)
-    io.print(p);	# 6 IOprint_val (_11:int)<-(p:str)
+    io.print(p);	# 6 IOprint_val (_12:int)<-(p:str)
 end main;	# 7  
-[ "[%, site1].[func2, site2]" ]
+[ "[%, 127.0.0.2].[func2, 127.0.0.3]" ]
 
 # 13:04:37 >  
 # 13:04:37 >  Done.
