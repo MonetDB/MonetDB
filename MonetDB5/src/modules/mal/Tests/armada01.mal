@@ -1,8 +1,8 @@
 include armada;
 
-b := bat.new(:str, :str);
-bat.insert(b, "func1", "site1");
-bat.insert(b, "func2", "site2");
+b := bat.new(:str, :inet);
+bat.insert(b, "func1", "127.0.0.1":inet);
+bat.insert(b, "func2", "10.0.0.10":inet);
 armada.addTrail(b);
 
 f := bbp.bind("armada_func_site");
