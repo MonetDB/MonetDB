@@ -16,7 +16,7 @@
 @' All Rights Reserved.
 
 @f mserver
-@a N.J. Nes P. Boncz, S. Mullender
+@a N.J. Nes P. Boncz, S. Mullender, M. Kersten
 @v 1.1
 @+ MonetDB's Internet Interface
 This module contains a simple interface for setting up
@@ -111,15 +111,14 @@ comment "Turn the error seen into a string";
 @-
 The remote procedure calls require the target type
 to be known to enable proper parsing of the result
-@= typedRPC
-command rpc(key:int,qry:str):@1
-address SERVERmapi_rpc_@1
+@mal
+pattern rpc(key:int,qry:str):any
+address SERVERmapi_rpc_single_row
 comment "Sent a simple query for execution and fetch result";
 
-command rpc(key:int,qry:str):bat[:oid,:@1]
-address SERVERmapi_rpc_oid_@1;
-@mal
-	@:typedRPC(int)@
+command rpc(key:int,qry:str):bat[:oid,:int]
+address SERVERmapi_rpc_oid_int;
+
 mserver.listen();
 @{
 command prelude()
@@ -135,6 +134,7 @@ address SERVERepilogue;
 #include "mal_client.h"
 #include "mal_session.h"
 #include "mal_exception.h"
+#include "mal_interpreter.h"
 #include "Mapi.h"
 
 #define NEW_ARRAY( type, size )	(type*)GDKmalloc((size)*sizeof(type))
@@ -163,6 +163,7 @@ mal_export str SERVERerror(int *ret, int *idx);
 mal_export str SERVERexplain(str *ret, int *idx);
 mal_export str SERVERmapi_rpc_int(int *ret, int *key, str *qry);
 mal_export str SERVERmapi_rpc_oid_int(int *ret, int *key, str *qry);
+mal_export str SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* SERVER_H */
 @c
@@ -1091,38 +1092,112 @@ the stack trace.
 Two routines should be 
 mserver.rpc("malfunction", arguments) and
 mserver.apc("malfunction", arguments.
-@= mapirpc
+@-
+The generic scheme for handling a remote MAL
+procedure call with a single row answer.
+@c
 str
-SERVERmapi_rpc_@1(@1 *ret, int *key, str *qry){
-	int i;
+SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int key,i,j,cnt;
 	Mapi dbh;
 	MapiHdl hdl;
-	char *fld;
+	char *fld, *qry;
+	ptr val;
 
-	@:accessTest(*key,rpc)@
-	*ret = 0;
+	key= * (int*) getArgReference(stk,pci,pci->retc);
+	qry= * (str*) getArgReference(stk,pci,pci->retc+1);
+	@:accessTest(key,rpc)@
 #ifdef MAPI_TEST
-	stream_printf(GDKout,"about to sent: %s\n",*qry);
+	stream_printf(GDKout,"about to sent: %s\n",qry);
 #endif
-	hdl= mapi_query(dbh, *qry);
+	hdl= mapi_query(dbh, qry);
 	if( mapi_error(dbh) )
-		return throwMessage("MapiException",mapi_error_str(dbh));
+		return throwMessage("mapi.rpc",mapi_error_str(dbh));
 	i= 0;
+	if( (cnt= mapi_get_field_count(hdl)) != pci->retc)
+		return throwMessage("mapi.rpc","Incompatible return value");
 	while( mapi_fetch_row(hdl)){
-		fld= mapi_fetch_field(hdl,0);
+		for(j=0; j<pci->retc; j++){
+			fld= mapi_fetch_field(hdl,j);
 #ifdef MAPI_TEST
-		stream_printf(GDKout,"Got: %s\n",fld);
+			stream_printf(GDKout,"Got: %s\n",fld);
 #endif
-		*ret= (int)  atoi(fld);
+			val= (ptr) getArgReference(stk,pci,i);
+			switch(getVarType(mb,getArg(pci,j)) ){
+			case TYPE_void:
+				*(oid*) val= void_nil;
+				break;
+			case TYPE_oid:
+				if(fld==0 || strcmp(fld,"nil")==0)
+					*(oid*) val= void_nil;
+				else *(oid*) val = (oid) atol(fld);
+				break;
+			case TYPE_bit:
+				if(fld== 0 || strcmp(fld,"nil")==0)
+					stk->stk[getArg(pci,j)].val.cval[0]= bit_nil;
+				else
+				if(strcmp(fld,"true")==0)
+					stk->stk[getArg(pci,j)].val.cval[0]= TRUE;
+				if(strcmp(fld,"false")==0)
+					stk->stk[getArg(pci,j)].val.cval[0]= FALSE;
+				stk->stk[getArg(pci,j)].val.cval[1]= 0;
+				stk->stk[getArg(pci,j)].val.cval[2]= 0;
+				stk->stk[getArg(pci,j)].val.cval[3]= 0;
+				break;
+			case TYPE_chr:
+				if(fld==0 || strcmp(fld,"nil")==0)
+					stk->stk[getArg(pci,j)].val.cval[0]= chr_nil;
+				else
+					stk->stk[getArg(pci,j)].val.cval[0]= *fld;
+				stk->stk[getArg(pci,j)].val.cval[1]= 0;
+				stk->stk[getArg(pci,j)].val.cval[2]= 0;
+				stk->stk[getArg(pci,j)].val.cval[3]= 0;
+				break;
+			case TYPE_sht:
+				if(fld==0 || strcmp(fld,"nil")==0)
+					*(sht*) val= (sht)  sht_nil;
+				else *(sht*) val= (sht)  atol(fld);
+				break;
+			case TYPE_int:
+				if(fld==0 || strcmp(fld,"nil")==0)
+					*(int*) val= (int)  int_nil;
+				else *(int*) val= (int)  atol(fld);
+				break;
+			case TYPE_lng:
+				if(fld==0 || strcmp(fld,"nil")==0)
+					*(lng*) val= (lng)  lng_nil;
+				else *(lng*) val= (lng)  atol(fld);
+				break;
+			case TYPE_flt:
+				if(fld==0 || strcmp(fld,"nil")==0)
+					*(flt*) val= (flt)  flt_nil;
+				else *(flt*) val= (flt)  atof(fld);
+				break;
+			case TYPE_dbl:
+				if(fld==0 || strcmp(fld,"nil")==0)
+					*(dbl*) val= (dbl)  dbl_nil;
+				else *(dbl*) val= (dbl)  atof(fld);
+				break;
+			case TYPE_str:
+				if(fld==0 || strcmp(fld,"nil")==0){
+					stk->stk[getArg(pci,j)].val.sval= GDKstrdup(str_nil);
+					stk->stk[getArg(pci,j)].len= strlen(str_nil);
+				} else {
+					stk->stk[getArg(pci,j)].val.sval= GDKstrdup(fld);
+					stk->stk[getArg(pci,j)].len= strlen(fld);
+				}
+				break;
+				return throwMessage("mapi.rpc","Missing type implementation ");
+			/* all the other basic types come here */
+			}
+		}
 		i++;
 	}
 	if( i>1)
-		return throwMessage("MapiException","failed to analyse response");
+		return throwMessage("mapi.rpc","Too many answers");
 	return MAL_SUCCEED;
 }
-@c
-	@:mapirpc(int)@
-
 @-
 Transport of the BATs is only slightly more complicated.
 The generic implementation based on a pattern is the next
@@ -1147,7 +1222,7 @@ SERVERmapi_rpc_oid_@1(int *ret, int *key, str *qry){
 #endif
 	hdl= mapi_query(dbh, *qry);
 	if( mapi_error(dbh) )
-		return throwMessage("MapiException",mapi_error_str(dbh));
+		return throwMessage("mapi.rpc",mapi_error_str(dbh));
 	i= 0;
 	while( mapi_fetch_row(hdl)){
 		fld1= mapi_fetch_field(hdl,0);

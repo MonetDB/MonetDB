@@ -34,6 +34,18 @@ t1:= t1-t0;
 io.print(b);
 io.print(t1);
 
+
+msg:str := mserver.rpc(mid,"io.print(\"hello world\");");
+io.print(msg);
+o:oid := mserver.rpc(mid,"io.print(34@0);");
+io.print(o);
+o:oid := mserver.rpc(mid,"io.print(nil:oid);");
+io.print(o);
+
+#needs type checks
+#(k:int,s:str):= mserver.rpc(mid,"io.print(nil:int,\"done\");");
+#io.print(k,s);
+
 # the remainder should be tested 
 #catch MapiException;
 #	io.printf("foutje:%s\n",MapiException);
