@@ -28,29 +28,31 @@ stdout of test 'armada02` in directory 'src/modules/mal` itself:
 #io.print(p);
 #
 function user.main():void;	# 0  (main:void)
-    b := bat.new(:str,:str);	# 1 CMDBATnew (b:bat[:str,:str])<-(_2:str)(_2:str)
-    bat.insert(b,"func1","site1");	# 2 BKCinsert_bun (_3:void)<-(b:bat[:str,:str])(_4:str)(_5:str)
-    bat.insert(b,"func2","site2");	# 3 BKCinsert_bun (_6:void)<-(b:bat[:str,:str])(_7:str)(_8:str)
-    armada.addTrail(b);	# 4 ARMADAaddTrailBAT (_9:int)<-(b:bat[:str,:str])
-    s := armada.findStep("func1","site1");	# 5 ARMADAfindStep (s:int)<-(_4:str)(_5:str)
-    io.print(s);	# 6 IOprint_val (_11:int)<-(s:int)
-    p := armada.getStep(s);	# 7 ARMADAgetStep (p:str)<-(s:int)
-    io.print(p);	# 8 IOprint_val (_13:int)<-(p:str)
-    s := calc.+(s,1);	# 9 CALCbinaryADDintint (s:int)<-(s:int)(_14:int)
-    io.print(s);	# 10 IOprint_val (_15:int)<-(s:int)
-    p := armada.getStep(s);	# 11 ARMADAgetStep (p:str)<-(s:int)
-    io.print(p);	# 12 IOprint_val (_16:int)<-(p:str)
-    s := calc.+(s,1);	# 13 CALCbinaryADDintint (s:int)<-(s:int)(_14:int)
-    io.print(s);	# 14 IOprint_val (_17:int)<-(s:int)
-    p := armada.getStep(s);	# 15 ARMADAgetStep (p:str)<-(s:int)
-    io.print(p);	# 16 IOprint_val (_18:int)<-(p:str)
-end main;	# 17  
+    b := bat.new(:str,:inet);	# 1 CMDBATnew (b:bat[:str,:inet])<-(_2:str)(_3:inet)
+    bat.insert(b,"func1",127.0.0.8:inet);	# 2 BKCinsert_bun (_4:void)<-(b:bat[:str,:inet])(_5:str)(_6:inet)
+# tricky one... should probably bail out on this one later 	# 3  (_7:str)
+    bat.insert(b,"func2",127.0.0.0/24:inet);	# 4 BKCinsert_bun (_8:void)<-(b:bat[:str,:inet])(_9:str)(_10:inet)
+    armada.addTrail(b);	# 5 ARMADAaddTrailBAT (_11:int)<-(b:bat[:str,:inet])
+    s := armada.findStep("func1",127.0.0.8:inet);	# 6 ARMADAfindStep (s:int)<-(_5:str)(_13:inet)
+    io.print(s);	# 7 IOprint_val (_14:int)<-(s:int)
+    p := armada.getStep(s);	# 8 ARMADAgetStep (p:str)<-(s:int)
+    io.print(p);	# 9 IOprint_val (_16:int)<-(p:str)
+    s := calc.+(s,1);	# 10 CALCbinaryADDintint (s:int)<-(s:int)(_17:int)
+    io.print(s);	# 11 IOprint_val (_18:int)<-(s:int)
+    p := armada.getStep(s);	# 12 ARMADAgetStep (p:str)<-(s:int)
+    io.print(p);	# 13 IOprint_val (_19:int)<-(p:str)
+    s := calc.+(s,1);	# 14 CALCbinaryADDintint (s:int)<-(s:int)(_17:int)
+    io.print(s);	# 15 IOprint_val (_20:int)<-(s:int)
+    p := armada.getStep(s);	# 16 ARMADAgetStep (p:str)<-(s:int)
+    io.print(p);	# 17 IOprint_val (_21:int)<-(p:str)
+end main;	# 18  
 [ 0 ]
-[ "[func1, site1]" ]
+[ "[func1, 127.0.0.8]" ]
 [ 1 ]
-[ "[func2, site2]" ]
+[ "[func2, 127.0.0.0/24]" ]
 [ 2 ]
-!ERROR: ArmadaException:getStep: 370 step id out of range: 2
+!ERROR: ArmadaException:getStep: 372 step id out of range: 2
+
 
 # 11:47:00 >  
 # 11:47:00 >  Done.

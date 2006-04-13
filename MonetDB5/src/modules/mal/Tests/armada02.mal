@@ -1,11 +1,12 @@
 include armada;
 
-b := bat.new(:str, :str);
-bat.insert(b, "func1", "site1");
-bat.insert(b, "func2", "site2");
+b := bat.new(:str, :inet);
+bat.insert(b, "func1", "127.0.0.8":inet);
+# tricky one... should probably bail out on this one later
+bat.insert(b, "func2", "127.0.0.0/24":inet);
 armada.addTrail(b);
 
-s := armada.findStep("func1", "site1");
+s := armada.findStep("func1", "127.0.0.8":inet);
 io.print(s);
 p := armada.getStep(s);
 io.print(p);
