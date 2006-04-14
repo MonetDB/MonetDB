@@ -212,7 +212,7 @@ SQLinitClient(Client c)
 		if (isAdministrator(c)) {
 			schema = mvc_login(m, "monetdb", "monetdb");
 		} else {
-			schema = mvc_login(m, c->user, c->password);
+			schema = mvc_login(m, c->user, NULL);
 		}
 		if (!schema) {
 			_DELETE(schema);
