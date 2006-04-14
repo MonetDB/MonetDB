@@ -217,33 +217,6 @@ scheduleClient(str command, bstream *fin, stream *fout)
 		database = NULL;
 	}
 
-	/* access control: verify the credentials supplied by the user */
-	/*
-	str err = authorizeClient(user, passwd, lang, database);
-	=> checkAuthorization
-	if (err) {
-		stream_printf(fout, "!%s\n", err);
-		stream_flush(fout);
-		return;
-	}
-	*/
-    if (findScenario(lang) && findScenario(lang)->initSystemCmd == NULL) {
-@-
-Check if we have loaded already the language library.
-The naming convention is to use the language name as an
-alias for the include file
-@c
-        Client cn = initClient(GDKstrdup(user), passwd, 0, 0);
-        defaultScenario(cn);
-        initScenario(cn, findScenario(lang));
-        killClient(cn);
-    }
-
-	c = initClient(GDKstrdup(user), passwd, fin, fout);
-	c->nspace = newModule(NULL, putName("user", 4));
-	c->nspace->outer = mal_scope;
-	c->sessionkey = key;
-
 	if (database && strcmp(database, GDKgetenv("gdk_dbname")) != 0) {
 		BAT *b = NULL;
 		BUN p, q;
@@ -315,18 +288,50 @@ alias for the include file
 			}
 			if (port != int_nil) {
 				/* hostname currently hardcoded... */
-				stream_printf(c->fdout, "^mapi:monetdb://%s:%d/%s?lang=%s&user=%s\n", "localhost", port, database, lang, user);
+				stream_printf(fout, "^mapi:monetdb://%s:%d/%s?lang=%s&user=%s\n", "localhost", port, database, lang, user);
 			} else {
-				stream_printf(c->fdout, "!database '%s' appears not to be ready\n", database);
+				stream_printf(fout, "!database '%s' appears not to be ready\n", database);
 			}
 		}
 
 		/* the BBP can have it back, we don't want it any more */
 		BBPunfix(b->batCacheid);
 
-		stream_flush(c->fdout);
-		c->mode = FINISHING;
+		/* flush the error to the client, and abort further execution */
+		stream_flush(fout);
+		GDKfree(command);
+		return;
 	} else {
+		if (findScenario(lang) && findScenario(lang)->initSystemCmd == NULL) {
+@-
+Check if we have loaded already the language library.
+The naming convention is to use the language name as an
+alias for the include file
+@c
+			Client cn = initClient(GDKstrdup(user), passwd, 0, 0);
+			defaultScenario(cn);
+			initScenario(cn, findScenario(lang));
+			killClient(cn);
+		}
+
+		/* access control: verify the credentials supplied by the user,
+		 * no need to check for database stuff, because that is done per
+		 * database itself (one gets a redirect) */
+		/*
+		str err = authorizeClient(user, passwd, lang);
+		=> checkAuthorization
+		if (err) {
+			stream_printf(fout, "!%s\n", err);
+			stream_flush(fout);
+			return;
+		}
+		*/
+
+		c = initClient(GDKstrdup(user), passwd, fin, fout);
+		c->nspace = newModule(NULL, putName("user", 4));
+		c->nspace->outer = mal_scope;
+		c->sessionkey = key;
+
 		if (!lang) {
 			if ((s = defaultScenario(c))) {
 				stream_printf(c->fdout, "!%s\n", s);
