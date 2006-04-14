@@ -1044,7 +1044,7 @@ SERVERconnect(int *key, str *host, int *port, str *username, str *password, str 
 	mid= mapi_connect(*host, *port, *username, *password, *lang);
 	if( mapi_error(mid) ){
 		SERVERsessions[i].c = NULL;
-		return throwMessage("mserver.connect","Could not connect");
+		throwMalf("mserver.connect","Could not connect: %s", mapi_error_str(mid));
 	}
 
 #ifdef MAPI_TEST

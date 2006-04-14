@@ -5,10 +5,14 @@ ps:= algebra.find(z,"mapi_port");
 port:= calc.int(ps);
 hs:= algebra.find(z,"host");
 
-u:= clients.getInfo();
-usr:= algebra.find(u,"user");
-pwd:= algebra.find(u,"password");
-lang:= algebra.find(u,"scenario");
+# hardcoded, as access control currently works, and client.getInfo # doesn't
+#u:= clients.getInfo();
+#usr:= algebra.find(u,"user");
+#pwd:= algebra.find(u,"password");
+#lang:= algebra.find(u,"scenario");
+usr := "monetdb";
+pwd := "monetdb";
+lang := "mal";
 
 # initialize exception handler
 MapiException:= nil:str;
