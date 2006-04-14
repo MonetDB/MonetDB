@@ -302,6 +302,8 @@ scheduleClient(str command, bstream *fin, stream *fout)
 		GDKfree(command);
 		return;
 	} else {
+		str err;
+
 		if (findScenario(lang) && findScenario(lang)->initSystemCmd == NULL) {
 @-
 Check if we have loaded already the language library.
@@ -317,15 +319,13 @@ alias for the include file
 		/* access control: verify the credentials supplied by the user,
 		 * no need to check for database stuff, because that is done per
 		 * database itself (one gets a redirect) */
-		/*
-		str err = authorizeClient(user, passwd, lang);
-		=> checkAuthorization
-		if (err) {
+		err = AUTHcheckCredentials(&user, &passwd, &lang);
+		if (err != MAL_SUCCEED) {
 			stream_printf(fout, "!%s\n", err);
 			stream_flush(fout);
+			GDKfree(command);
 			return;
 		}
-		*/
 
 		c = initClient(user, fin, fout);
 		c->nspace = newModule(NULL, putName("user", 4));

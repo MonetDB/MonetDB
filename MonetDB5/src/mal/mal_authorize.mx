@@ -61,6 +61,7 @@ The identity of the server owner is not copied into this table purposely.
 #include "mal_instruction.h"
 #include "mal_client.h"
 
+mal_export str AUTHcheckCredentials(str *user, str *passwd, str *language);
 mal_export str MALinitClient(Client cntxt);
 mal_export str introduceUser(str nme, str passwd, str scen );
 mal_export str dropAllFromUser(str nme);
@@ -73,6 +74,11 @@ mal_export bat getAllPasswords();
 
 mal_export void setServerOwner(str o, str p);
 mal_export void initAuthTables();
+
+/* convenience macros */
+#define throwIC(X, Y) throw("InvalidCredentialsException", X, Y);
+#define throwICf(X, Y, A) throwf("InvalidCredentialsException", X, Y, A);
+
 #endif /* _MAL_AUTHORIZE_H */
 @-
 @c
@@ -101,20 +107,21 @@ If the BATs do not exist, they are created.  Initializing the
 authorization tables can only be done after the GDK kernel has been
 initialized.
 @c
-static BAT *auth = NULL, *authrev;
+static BAT *user = NULL, *userrev;
 static BAT *pass = NULL, *passrev;
 static BAT *lang = NULL, *langrev;
 
 void
 initAuthTables() {
 	BAT *b;
+	int isNew = 1;
 
 	/* skip loading if already loaded */
-	if (auth != NULL && pass != NULL && lang != NULL)
+	if (user != NULL && pass != NULL && lang != NULL)
 		return;
 
 	/* if one is not NULL here, something is seriously screwed up */
-	assert (auth == NULL);
+	assert (user == NULL);
 	assert (pass == NULL);
 	assert (lang == NULL);
 
@@ -129,9 +136,11 @@ initAuthTables() {
 		BBPrename(b->batCacheid, "M5system_auth_user");
 		BATmode(b, PERSISTENT);
 		BATcommit(b);
+	} else {
+		isNew = 0;
 	}
-	auth = b;
-	authrev = BATmirror(b);
+	user = b;
+	userrev = BATmirror(b);
 
 	/* load/create password BAT */
 	b = BATdescriptor(BBPindex("M5system_auth_passwd"));
@@ -144,6 +153,8 @@ initAuthTables() {
 		BBPrename(b->batCacheid, "M5system_auth_passwd");
 		BATmode(b, PERSISTENT);
 		BATcommit(b);
+	} else {
+		isNew = 0;
 	}
 	pass = b;
 	passrev = BATmirror(b);
@@ -159,9 +170,92 @@ initAuthTables() {
 		BBPrename(b->batCacheid, "M5system_auth_lang");
 		BATmode(b, PERSISTENT);
 		BATcommit(b);
+	} else {
+		isNew = 0;
 	}
 	lang = b;
 	langrev = BATmirror(b);
+
+	if (isNew == 1) {
+		/* insert the monetdb/monetdb administrator account on a
+		 * complete fresh and new auth tables system */
+		BUNappend(user, "monetdb", 0);
+		BUNappend(pass, "monetdb", 0);
+		BATcommit(user);
+		BATcommit(pass);
+	}
+}
+
+/**
+ * Checks the credentials supplied and returns an exception if invalid.
+ */
+str
+AUTHcheckCredentials(str *user, str *passwd, str *language) {
+	str tmp;
+	BAT *b;
+	BUN p, q;
+	
+	initAuthTables();
+
+	if (*user == NULL)
+		throwIC("checkCredentials", "Invalid credentials for unknown user");
+
+	p = BUNfnd(userrev, *user);
+	if (p == NULL) {
+		/* DO NOT reveal that the user doesn't exist here! */
+		throwICf("checkCredentials", "Invalid credentials for user '%s'",
+				*user);
+	}
+
+	/* a NULL password is impossible (since we should be dealing with
+	 * hashes here) so we can bail out immediately
+	 */
+	if (*passwd == NULL) {
+		/* DO NOT reveal that the password is NULL here! */
+		throwICf("checkCredentials", "Invalid credentials for user '%s'",
+				*user);
+	}
+
+	/* find the corresponding password to the user */
+	q = BUNfnd(pass, BUNtail(userrev, p));
+	assert (q != NULL);
+	tmp = (str)BUNtail(pass, q);
+	assert (tmp != NULL);
+	/* and now we have it, compare it to what was given to us */
+	if (strcmp(*passwd, tmp) != 0) {
+		/* of course we DO NOT print the password here */
+		throwICf("checkCredentials", "Invalid credentials for user '%s'",
+				*user);
+	}
+
+	/* now see if the language is permitted (if restrictions for that
+	 * apply)
+	 */
+	b = BATselect(lang, BUNtail(userrev, p), BUNtail(userrev, p));
+	if (BATcount(b) > 0) {
+		if (*language == NULL) {
+			/* of course we DO NOT tell the exact reason here again */
+			throwICf("checkCredentials", "Invalid credentials for user '%s'",
+					*user);
+		}
+
+		/* ok, there are some tuples that we have to consider */
+		BATloop(b, p, q) {
+			tmp = (str)BUNtail(b, p);
+			assert (tmp != NULL);
+			if (strcmp(*language, tmp) == 0) {
+				/* YAY!  fun!  party!  We are granted access! */
+				return(MAL_SUCCEED);
+			}
+		}
+
+		/* uh oh... that we made it till here means it's wrong */
+		throwICf("checkCredentials", "Invalid credentials for user '%s'",
+				*user);
+	} else {
+		/* no language restriction applies, so everything is good */
+		return(MAL_SUCCEED);
+	}
 }
 
 str
@@ -194,9 +288,9 @@ introduceUser(str nme, str passwd, str scen )
 #endif
 	initAuthTables();
 	BUNins(pass, nme, passwd);
-	BUNins(auth, nme, scen);
+	BUNins(user, nme, scen);
 	BATcommit(pass);
-	BATcommit(auth);
+	BATcommit(user);
 	return MAL_SUCCEED;
 }
 
@@ -207,10 +301,10 @@ dropUser(str nme, str scen )
 #ifdef _DEBUG_AUTH_
 	printf("del user %s %s\n", nme,scen);
 #endif
-	b= BATselect(BATmirror(auth),nme,nme);
+	b= BATselect(BATmirror(user),nme,nme);
 	b= BATselect(BATmirror(b),scen,scen);
-	BATdel(auth,b);
-	b= BATselect(BATmirror(auth),nme,nme);
+	BATdel(user,b);
+	b= BATselect(BATmirror(user),nme,nme);
 	if( BATcount(b) == 0){
 		b= BATselect(passrev,nme,nme);
 		BATdel(passrev,b);
@@ -226,12 +320,12 @@ dropAllFromUser(str nme)
 #ifdef _DEBUG_AUTH_
 	printf("del user %s \n", nme);
 #endif
-	b= BATselect(authrev,nme,nme);
-	BATdel(authrev,b);
+	b= BATselect(userrev,nme,nme);
+	BATdel(userrev,b);
 	b= BATselect(passrev,nme,nme);
 	BATdel(passrev,b);
 	BATcommit(pass);
-	BATcommit(auth);
+	BATcommit(user);
 	return MAL_SUCCEED;
 }
 
@@ -242,7 +336,7 @@ checkAuthorization(str nme, str passwd, str scen )
 #ifdef _DEBUG_AUTH_
 	printf("check user %s %s %s\n", nme,passwd,scen);
 #endif
-	b= BATselect(authrev,nme,nme);
+	b= BATselect(userrev,nme,nme);
 	b= BATselect(BATmirror(b),scen,scen);
 	if( BATcount(b) == 0) return FALSE;
 
@@ -288,8 +382,8 @@ getAllPermissions()
 #ifdef _DEBUG_AUTH_
 	printf("get authorizations \n");
 #endif
-	if( auth ){
-		b= BATcopy(auth);
+	if( user ){
+		b= BATcopy(user);
 		BBPkeepref(b->batCacheid);
 		return b->batCacheid;
 	}
@@ -302,7 +396,7 @@ getAllPasswords()
 #ifdef _DEBUG_AUTH_
 	printf("get authorizations \n");
 #endif
-	if( auth ){
+	if( user ){
 		b= BATcopy(pass);
 		BBPkeepref(b->batCacheid);
 		return b->batCacheid;
