@@ -96,7 +96,7 @@ mil_export str CMDMILsession(str *ret);
 str
 MILinit(Client cntxt)
 {
-	Client cn= initClient(GDKstrdup("milStartup"),0,0,0);
+	Client cn= initClient("milStartup",0,0);
 #ifdef _MIL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#MILinit MonetDB V5\n");
 #endif

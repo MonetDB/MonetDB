@@ -101,7 +101,6 @@ typedef struct CLIENT_INPUT {
 typedef struct CLIENT {
 	int idx;        /* entry in mal_clients */
 	str user;       /* user name. */
-	str language;   /* current language in use */
 	int sessionkey; /* unique key addressed to session */
 	int permission; /* access mode */
 @-
@@ -115,6 +114,7 @@ information should be dealt with separately.[TODO]
 @h
 	str     scenario;  /* scenario management references */
 	str     oldscenario;
+	str     language;   /* language from scenario */
 	void    *state[7], *oldstate[7];
 	MALfcn  phase[7], oldphase[7];
 	char    itrace;     /* trace execution using interactive mdb */
@@ -219,7 +219,7 @@ to keep track of critical elements.
 mal_export ClientRec mal_clients[MAL_MAXCLIENTS+1];
 
 mal_export Client   getClient   ();
-mal_export Client   initClient(str nme, str passwd, bstream *fin, stream *fout);
+mal_export Client   initClient(str nme, bstream *fin, stream *fout);
 mal_export void     initClientThread(Client c);
 mal_export void     closeClient    (Client c);
 mal_export Client   forkClient     (Client c);
@@ -391,10 +391,10 @@ Client getClient()
 }
 
 @-
-The username and language are copied, and should be garbage collected
+The username is copied, and should be garbage collected
 upon return;
 @c
-Client initClient(str nme, str lang, bstream *fin, stream *fout) {
+Client initClient(str nme, bstream *fin, stream *fout) {
 	Client c;
 	str prompt;
 
@@ -402,7 +402,7 @@ Client initClient(str nme, str lang, bstream *fin, stream *fout) {
 		return NULL;
 
 	c->user = nme ? GDKstrdup(nme) : NULL; 
-	c->language = GDKstrdup(lang ? lang : "mal");
+	c->language = NULL;
 	c->scenario = NULL;
 	c->oldscenario = NULL;
 	c->sessionkey = 0;
@@ -509,8 +509,7 @@ Client forkClient(Client father){
 	Client son = NULL;
 	if( father == NULL) return NULL;
 	if (father->father != NULL) father = father->father;
-	if ((son = initClient( father->user,
-					father->language, father->fdin, father->fdout))){
+	if ((son = initClient( father->user, father->fdin, father->fdout))) {
 		son->fdin= NULL;
 		son->bak= NULL;
 		son->yycur=0;
@@ -597,10 +596,7 @@ The threads may not be removed, but should become dormant
 		GDKfree(c->user); 
 		c->user = NULL;
 	}
-	if (c->language) {
-		GDKfree(c->language); 
-		c->language = NULL;
-	}
+	c->language = NULL;
 	c->mode = FREECLIENT;
 }
 
@@ -705,20 +701,17 @@ void cleanupClients(){
 		/* if( c->nspace){ freeModuleList(c->nspace); c->nspace=0;}*/
 		if( c->cwd){ 
 			GDKfree(c->cwd); 
-			c->cwd=0;
+			c->cwd = NULL;
 		}
 		if( c->prompt){ 
 			GDKfree(c->prompt); 
-			c->prompt=0;
+			c->prompt = NULL;
 		}
 		if( c->user){ 
 			GDKfree(c->user); 
-			c->user=0;
+			c->user = NULL;
 		}
-		if( c->language){ 
-			GDKfree(c->language); 
-			c->language=0;
-		}
+		c->language = NULL;
 		assert(c->bak==NULL);
 		if( c->fdin){
 			(void) stream_close(c->fdin->s);

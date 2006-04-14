@@ -72,7 +72,7 @@ malBootstrap()
 	Client c;
 	str bootfile = "mal_init", bf;
 
-	c = initClient(GDKstrdup("user"), NULL, 0, 0);
+	c = initClient("user", 0, 0);
 	c->nspace = newModule(NULL, putName("user", 4));
 	initLibraries();
 	if (defaultScenario(c)) {
@@ -308,7 +308,7 @@ Check if we have loaded already the language library.
 The naming convention is to use the language name as an
 alias for the include file
 @c
-			Client cn = initClient(GDKstrdup(user), passwd, 0, 0);
+			Client cn = initClient(user, 0, 0);
 			defaultScenario(cn);
 			initScenario(cn, findScenario(lang));
 			killClient(cn);
@@ -327,7 +327,7 @@ alias for the include file
 		}
 		*/
 
-		c = initClient(GDKstrdup(user), passwd, fin, fout);
+		c = initClient(user, fin, fout);
 		c->nspace = newModule(NULL, putName("user", 4));
 		c->nspace->outer = mal_scope;
 		c->sessionkey = key;
