@@ -66,8 +66,6 @@ mal_export str AUTHaddUser(str *user, str *pass, bat *langs);
 mal_export str AUTHremoveUser(str *username);
 
 mal_export str MALinitClient(Client cntxt);
-mal_export str dropAllFromUser(str nme);
-mal_export str dropUser(str nme, str scen );
 mal_export int checkAuthorization(str nme, str passwd, str scen );
 mal_export int isServerOwner(Client c);
 mal_export str setNewPassword(str nme, str passwd, str newpasswd);
