@@ -249,9 +249,9 @@ scheduleClient(str command, bstream *fin, stream *fout)
 		}
 
 		if (!found) {
-			stream_printf(c->fdout, "!database '%s' does not exist\n", database);
+			stream_printf(fout, "!database '%s' does not exist\n", database);
 		} else if (found && strcmp(state, "running") != 0) {
-			stream_printf(c->fdout, "!database '%s' currently unavailable\n", database);
+			stream_printf(fout, "!database '%s' currently unavailable\n", database);
 		} else {
 			/* ok, it appears to be running, now let's see if it also is
 			   serving on a port */
