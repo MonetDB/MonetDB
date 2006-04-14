@@ -81,7 +81,7 @@ comment "Terminate the session for this client"';
 @+ User administration
 These commands (except newPassword) can only be executed by the server owner.
 @mal
-command addUser(nme:str, pw:str, sc:str):void
+command addUser(nme:str, pw:str, lang:bat[:str,:any]):void
 address CLTaddUser
 comment "Give a user permission to access a scenario";
 command delUser(nme:str):void
@@ -138,7 +138,7 @@ mal_export str CLTstop(int *ret, str *nme);
 mal_export str CLTsuspend(int *ret, int *skey, int *timeout);
 mal_export str CLTresume(int *ret, int *skey);
 
-mal_export str CLTaddUser(int *ret, str *usr, str *pw, str *sc);
+mal_export str CLTaddUser(int *ret, str *usr, str *pw, bat *sc);
 mal_export str CLTdelUserAll(int *ret, str *usr);
 mal_export str CLTdelUser(int *ret, str *usr, str *sc);
 mal_export str CLTnewPassword(int *ret, str *old, str *new);
@@ -394,9 +394,9 @@ CLTresume(int *ret, int *skey)
 
 
 
-str CLTaddUser(int *ret, str *usr, str *pw, str *sc){
+str CLTaddUser(int *ret, str *usr, str *pw, bat *sc){
 	(void) ret;
-	return introduceUser(*usr,*pw,*sc);
+	return AUTHaddUser(usr,pw,sc);
 }
 str CLTdelUserAll(int *ret, str *usr){
 	(void) ret;

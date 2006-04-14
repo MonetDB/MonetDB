@@ -62,8 +62,10 @@ The identity of the server owner is not copied into this table purposely.
 #include "mal_client.h"
 
 mal_export str AUTHcheckCredentials(str *user, str *passwd, str *language);
+mal_export str AUTHaddUser(str *user, str *pass, bat *langs);
+mal_export str AUTHremoveUser(str *username);
+
 mal_export str MALinitClient(Client cntxt);
-mal_export str introduceUser(str nme, str passwd, str scen );
 mal_export str dropAllFromUser(str nme);
 mal_export str dropUser(str nme, str scen );
 mal_export int checkAuthorization(str nme, str passwd, str scen );
@@ -103,9 +105,9 @@ setServerOwner(str o, str p) {
 Localize the authorization tables in the database.  The authorization
 tables are a set of aligned BATs that store username, password (hashed)
 and language permissions.
-If the BATs do not exist, they are created.  Initializing the
-authorization tables can only be done after the GDK kernel has been
-initialized.
+If the BATs do not exist, they are created, and the monetdb/monetdb
+administrator account is added.  Initializing the authorization tables
+can only be done after the GDK kernel has been initialized.
 @c
 static BAT *user = NULL, *userrev;
 static BAT *pass = NULL, *passrev;
@@ -130,9 +132,9 @@ initAuthTables() {
 	if (b == NULL) {
 		b = BATnew(TYPE_void, TYPE_str, 256);
 		if (b == NULL)
-			GDKfatal("mal_authorize: could not allocate user table.");
+			GDKfatal("mal_authorize: could not allocate user table");
 
-		BATkey(b, TRUE);
+		BATkey(BATmirror(b), TRUE);
 		BBPrename(b->batCacheid, "M5system_auth_user");
 		BATmode(b, PERSISTENT);
 		BATcommit(b);
@@ -147,9 +149,8 @@ initAuthTables() {
 	if (b == NULL) {
 		b = BATnew(TYPE_void, TYPE_str, 256);
 		if (b == NULL)
-			GDKfatal("mal_authorize: could not allocate password table.");
+			GDKfatal("mal_authorize: could not allocate password table");
 
-		BATkey(b, TRUE);
 		BBPrename(b->batCacheid, "M5system_auth_passwd");
 		BATmode(b, PERSISTENT);
 		BATcommit(b);
@@ -164,7 +165,7 @@ initAuthTables() {
 	if (b == NULL) {
 		b = BATnew(TYPE_oid, TYPE_str, 256);
 		if (b == NULL)
-			GDKfatal("mal_authorize: could not allocate language table.");
+			GDKfatal("mal_authorize: could not allocate language table");
 
 		BATkey(b, TRUE);
 		BBPrename(b->batCacheid, "M5system_auth_lang");
@@ -179,10 +180,14 @@ initAuthTables() {
 	if (isNew == 1) {
 		/* insert the monetdb/monetdb administrator account on a
 		 * complete fresh and new auth tables system */
-		BUNappend(user, "monetdb", 0);
-		BUNappend(pass, "monetdb", 0);
-		BATcommit(user);
-		BATcommit(pass);
+		str user = "monetdb";
+		str pass = "monetdb";
+		bat b = bat_nil;
+		str tmp;
+
+		tmp = AUTHaddUser(&user, &pass, &b);
+		if (tmp != MAL_SUCCEED)
+			GDKfatal(tmp);
 	}
 }
 
@@ -258,6 +263,101 @@ AUTHcheckCredentials(str *user, str *passwd, str *language) {
 	}
 }
 
+/**
+ * Adds the given user with password to the administration.  The langs
+ * BAT contains all languages allowed for the user.  If NULL or empty,
+ * no restrictions for a language applies.
+ */
+str
+AUTHaddUser(str *username, str *passwd, bat *langs) {
+	BUN p, q;
+	BAT *b;
+	
+	/* some pre-condition checks */
+	if (*username == NULL)
+		throwIllArg("addUser", "username cannot be nil");
+	if (*passwd == NULL)
+		throwIllArg("addUser", "password cannot be nil");
+
+	/* ensure that the username is not already there */
+	p = BUNfnd(userrev, *username);
+	if (p != NULL)
+		throwMalf("addUser", "user '%s' already exists", *username);
+	
+	/* we assume the BATs are still aligned */
+	BUNappend(user, *username, 0);
+	BUNappend(pass, *passwd, 0);
+
+	if (*langs != bat_nil) {
+		b = BATdescriptor(*langs);
+		if (b == NULL) {
+			BATundo(user);
+			BATundo(pass);
+			throwIllArg("addUser", "invalid BAT!");
+		}
+		if (b->htype != TYPE_str) {
+			BATundo(user);
+			BATundo(pass);
+			throwIllArg("addUser", "BAT should have str head");
+		}
+
+		/* associate langs given in the BAT with the user */
+		if (BATcount(b) > 0) {
+			oid *id;
+
+			p = BUNfnd(userrev, *username);
+			assert (p != NULL);
+			id = (oid*)(BUNtail(userrev, p));
+			BATloop(b, p, q) {
+				BUNins(lang, id, BUNhead(b, p));
+			}
+		}
+	}
+
+	/* make the stuff persistent */
+	BATcommit(user);
+	BATcommit(pass);
+	BATcommit(lang);
+
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Removes the given user from the administration.  All languages (if
+ * any) and the password are removed as well.
+ */
+str
+AUTHremoveUser(str *username) {
+	BUN p;
+	BAT *b;
+	oid *id;
+	
+	/* pre-condition check */
+	if (*username == NULL)
+		throwIllArg("addUser", "username cannot be nil");
+
+	/* ensure that the username exists */
+	p = BUNfnd(userrev, *username);
+	if (p == NULL)
+		throwMalf("addUser", "no such user: '%s'", *username);
+	id = (oid*)(BUNtail(userrev, p));
+
+	/* now, we got the oid, start removing the related tuples */
+	b = BATselect(user, id, id);
+	BATdel(user, b);
+	b = BATselect(pass, id, id);
+	BATdel(pass, b);
+	b = BATselect(lang, id, id);
+	BATdel(lang, b);
+
+	/* make the stuff persistent */
+	BATcommit(user);
+	BATcommit(pass);
+	BATcommit(lang);
+
+	return(MAL_SUCCEED);
+}
+
 str
 MALinitClient(Client c) {
 #ifdef _DEBUG_AUTH_
@@ -278,55 +378,6 @@ MALinitClient(Client c) {
 	*/
 
 	return throwMessage("mal.authorize", "Access denied");
-}
-
-str 
-introduceUser(str nme, str passwd, str scen )
-{
-#ifdef _DEBUG_AUTH_
-	printf("add user %s %s %s\n", nme,passwd,scen);
-#endif
-	initAuthTables();
-	BUNins(pass, nme, passwd);
-	BUNins(user, nme, scen);
-	BATcommit(pass);
-	BATcommit(user);
-	return MAL_SUCCEED;
-}
-
-str
-dropUser(str nme, str scen )
-{
-	BAT *b;
-#ifdef _DEBUG_AUTH_
-	printf("del user %s %s\n", nme,scen);
-#endif
-	b= BATselect(BATmirror(user),nme,nme);
-	b= BATselect(BATmirror(b),scen,scen);
-	BATdel(user,b);
-	b= BATselect(BATmirror(user),nme,nme);
-	if( BATcount(b) == 0){
-		b= BATselect(passrev,nme,nme);
-		BATdel(passrev,b);
-		BATcommit(pass);
-	}
-	return MAL_SUCCEED;
-}
-
-str
-dropAllFromUser(str nme)
-{
-	BAT *b;
-#ifdef _DEBUG_AUTH_
-	printf("del user %s \n", nme);
-#endif
-	b= BATselect(userrev,nme,nme);
-	BATdel(userrev,b);
-	b= BATselect(passrev,nme,nme);
-	BATdel(passrev,b);
-	BATcommit(pass);
-	BATcommit(user);
-	return MAL_SUCCEED;
 }
 
 int
