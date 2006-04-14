@@ -84,9 +84,6 @@ These commands (except newPassword) can only be executed by the server owner.
 command addUser(nme:str, pw:str, lang:bat[:str,:any]):void
 address CLTaddUser
 comment "Give a user permission to access a scenario";
-command delUser(nme:str):void
-address CLTdelUserAll
-comment "Retract a user any permission ";
 command delUser(nme:str,sc:str):void
 address CLTdelUser
 comment "Retract a user permission to access a scenario";
@@ -139,7 +136,6 @@ mal_export str CLTsuspend(int *ret, int *skey, int *timeout);
 mal_export str CLTresume(int *ret, int *skey);
 
 mal_export str CLTaddUser(int *ret, str *usr, str *pw, bat *sc);
-mal_export str CLTdelUserAll(int *ret, str *usr);
 mal_export str CLTdelUser(int *ret, str *usr, str *sc);
 mal_export str CLTnewPassword(int *ret, str *old, str *new);
 mal_export str CLTnewPasswordRoot(int *ret, str *usr, str *old, str *new);
@@ -398,13 +394,10 @@ str CLTaddUser(int *ret, str *usr, str *pw, bat *sc){
 	(void) ret;
 	return AUTHaddUser(usr,pw,sc);
 }
-str CLTdelUserAll(int *ret, str *usr){
-	(void) ret;
-	return dropAllFromUser(*usr);
-}
 str CLTdelUser(int *ret, str *usr, str *sc){
 	(void) ret;
-	return dropUser(*usr,*sc);
+	(void) sc;
+	return AUTHremoveUser(usr);
 }
 str CLTnewPassword(int *ret, str *old, str *new){
 	Client c = getClient();
@@ -440,7 +433,13 @@ str CLTgetPasswords(int *ret){
 str CLTcheckAuthorization(bit *ret,str *usr, str *pw, str *sc){
 	Client c = getClient();
 	if( strcmp(c->user, "user")== 0){
-		*ret = checkAuthorization(*usr, *pw ,*sc);
+		str err = AUTHcheckCredentials(usr, pw,sc);
+		if (err != MAL_SUCCEED) {
+			GDKfree(err);
+			*ret = 0;
+		} else {
+			*ret = 1;
+		}
 		return MAL_SUCCEED;
 	}
 	return throwMessage("clients.checkAuthorizations","Not allowed");
