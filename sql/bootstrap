@@ -39,7 +39,7 @@ else
 		if [ $? -eq 0 ]; then
 			MONETDB_PREFIX="`monetdb-config --prefix`"
 		else
-			echo "!ERROR: requires MONETDB_PREFIX to be set or monetdb-config in your PATH"
+			echo "!ERROR: requires MONETDB_PREFIX to be set or monetdb-config in your PATH" >&2
 			exit 1
 		fi
 	fi
@@ -62,7 +62,7 @@ elif [ -x src/utils/autogen/autogen.py ] ; then
 else
 	AUTOGEN=$MONETDB_PREFIX/lib/autogen/autogen.py
 	if [ ! -x "$AUTOGEN" ]; then
-		echo "!ERROR: requires autogen.py to be available"
+		echo "!ERROR: requires autogen.py to be available" >&2
 		exit 1
 	fi
 fi
@@ -91,9 +91,9 @@ EOF
 REQ_AM_VERSION="1.5"
 NEW_AM_VERSION="1.7"
 if [ ! "`type -p automake`" ]; then
-	echo "no automake found."
-	echo "We require (at least) automake $REQ_AM_VERSION."
-	echo "Please get it at eg. http://www.gnu.org/software/automake/."
+	echo "no automake found." >&2
+	echo "We require (at least) automake $REQ_AM_VERSION." >&2
+	echo "Please get it at eg. http://www.gnu.org/software/automake/." >&2
 	exit 1
 fi
 AM_VERSION=`automake --version 2>/dev/null | sed -n -e '/^automake/{s/.* //g;s/-.*//g;p;q;}'`
@@ -104,18 +104,18 @@ _NEW_AM_VERSION=`echo $NEW_AM_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", 
 if [ "$_AM_VERSION" -ge "$_REQ_AM_VERSION" ]; then
 	echo "automake $AM_VERSION is $REQ_AM_VERSION or newer. Good."
 elif [ "$_AM_VERSION" -lt "$_REQ_AM_VERSION" ]; then
-	echo "automake $AM_VERSION is older than $REQ_AM_VERSION."
-	echo "We require (at least) automake $REQ_AM_VERSION."
-	echo "Please get a newer version (cf. http://www.gnu.org/software/automake/)."
+	echo "automake $AM_VERSION is older than $REQ_AM_VERSION." >&2
+	echo "We require (at least) automake $REQ_AM_VERSION." >&2
+	echo "Please get a newer version (cf. http://www.gnu.org/software/automake/)." >&2
 	exit 1
 fi
 
 
 REQ_AC_VERSION="2.57"
 if [ ! "`type -p autoconf`" ]; then
-	echo "no autoconf found."
-	echo "We require (at least) autoconf $REQ_AC_VERSION."
-	echo "Please get it at eg. http://www.gnu.org/software/autoconf/."
+	echo "no autoconf found." >&2
+	echo "We require (at least) autoconf $REQ_AC_VERSION." >&2
+	echo "Please get it at eg. http://www.gnu.org/software/autoconf/." >&2
 	exit 1
 fi
 AC_VERSION=`autoconf --version 2>/dev/null | sed -n -e '/^[Aa]utoconf/{s/.* //g;s/-.*//g;p;q;}'`
@@ -125,18 +125,18 @@ _REQ_AC_VERSION=`echo $REQ_AC_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", 
 if [ "$_AC_VERSION" -ge "$_REQ_AC_VERSION" ]; then
 	echo "autoconf $AC_VERSION is $REQ_AC_VERSION or newer. Good."
 elif [ "$_AC_VERSION" -lt "$_REQ_AC_VERSION" ]; then
-	echo "autoconf $AC_VERSION is older than $REQ_AC_VERSION."
-	echo "We require (at least) autoconf $REQ_AC_VERSION."
-	echo "Please get a newer version (cf. http://www.gnu.org/software/autoconf/)."
+	echo "autoconf $AC_VERSION is older than $REQ_AC_VERSION." >&2
+	echo "We require (at least) autoconf $REQ_AC_VERSION." >&2
+	echo "Please get a newer version (cf. http://www.gnu.org/software/autoconf/)." >&2
 	exit 1
 fi
 
 
 REQ_LT_VERSION="1.4"
 if [ ! "`type -p $LIBTOOL`" ]; then
-	echo "no libtool found."
-	echo "We require (at least) libtool $REQ_LT_VERSION."
-	echo "Please get it at eg. http://www.gnu.org/software/libtool/."
+	echo "no libtool found." >&2
+	echo "We require (at least) libtool $REQ_LT_VERSION." >&2
+	echo "Please get it at eg. http://www.gnu.org/software/libtool/." >&2
 	exit 1
 fi
 LT_VERSION=`$LIBTOOL --version 2>/dev/null | sed -n '/^ltmain\.sh/{s/([^)]*)//g;s/ltmain.sh//g;s/ //g;p;q;}'`
@@ -146,18 +146,18 @@ _REQ_LT_VERSION=`echo $REQ_LT_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", 
 if [ "$_LT_VERSION" -ge "$_REQ_LT_VERSION" ]; then
 	echo "libtool $LT_VERSION is $REQ_LT_VERSION or newer. Good."
 elif [ "$_LT_VERSION" -lt "$_REQ_LT_VERSION" ]; then
-	echo "libtool $LT_VERSION is older than $REQ_LT_VERSION."
-	echo "We require (at least) libtool $REQ_LT_VERSION."
-	echo "Please get a newer version (cf. http://www.gnu.org/software/libtool/)."
+	echo "libtool $LT_VERSION is older than $REQ_LT_VERSION." >&2
+	echo "We require (at least) libtool $REQ_LT_VERSION." >&2
+	echo "Please get a newer version (cf. http://www.gnu.org/software/libtool/)." >&2
 	exit 1
 fi
 
 
 REQ_PY_VERSION="2.0.0"
 if [ ! "`type -p python`" ]; then
-	echo "no python found."
-	echo "We require (at least) Python $REQ_PY_VERSION."
-	echo "Please get a newer version (cf. http://www.python.org/)."
+	echo "no python found." >&2
+	echo "We require (at least) Python $REQ_PY_VERSION." >&2
+	echo "Please get a newer version (cf. http://www.python.org/)." >&2
 	exit 1
 fi
 PY_VERSION=`python -V 2>&1 | sed -n -e '/^[Pp]ython/{s/.* //g;s/-.*//g;p;q;}'`
@@ -167,9 +167,9 @@ _REQ_PY_VERSION=`echo $REQ_PY_VERSION | awk 'BEGIN { FS = "."; } { printf "%d", 
 if [ "$_PY_VERSION" -ge "$_REQ_PY_VERSION" ]; then
 	echo "Python $PY_VERSION is $REQ_PY_VERSION or newer. Good."
 elif [ "$_PY_VERSION" -lt "$_REQ_PY_VERSION" ]; then
-	echo "Python $PY_VERSION is older than $REQ_PY_VERSION."
-	echo "We require (at least) Python $REQ_PY_VERSION."
-	echo "Please get a newer version (cf. http://www.python.org/)."
+	echo "Python $PY_VERSION is older than $REQ_PY_VERSION." >&2
+	echo "We require (at least) Python $REQ_PY_VERSION." >&2
+	echo "Please get a newer version (cf. http://www.python.org/)." >&2
 	exit 1
 fi
 
