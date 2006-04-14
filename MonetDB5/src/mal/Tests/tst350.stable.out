@@ -115,23 +115,24 @@ end main;	# 9
 # bbp	t			htype	ttype		count	heat	dirty		status		kind		refcnt	  # name
 # int	str			str	str		lng	int	str		str		str		int	  # type
 #---------------------------------------------------------------------------------------------------------------------------------#
-[ 1,	  "monet_environment",	  "str",  "str",	  33,	  151,	  "dirty",	  "dirty",	  "transient",	  1	  ]
+[ 1,	  "monet_environment",	  "str",  "str",	  32,	  151,	  "dirty",	  "dirty",	  "transient",	  1	  ]
 [ 2,	  "monet_unicode_case",	  "int",  "int",	  732,	  152,	  "dirty",	  "dirty",	  "transient",	  1	  ]
 [ 3,	  "timezones",		  "str",  "tzone",	  24,	  153,	  "dirty",	  "dirty",	  "transient",	  1	  ]
-[ 4,	  "users",		  "str",  "str",	  0,	  154,	  "dirty",	  "dirty",	  "persistent",	  1	  ]
-[ 5,	  "password",		  "str",  "str",	  0,	  155,	  "dirty",	  "dirty",	  "persistent",	  1	  ]
-[ 6,	  "simplemind",		  "int",  "int",	  0,	  156,	  "dirty",	  "dirty",	  "transient",	  0	  ]
+[ 4,	  "M5system_auth_user",	  "void", "str",	  0,	  154,	  "dirty",	  "dirty",	  "persistent",	  1	  ]
+[ 5,	  "M5system_auth_passwd", "void", "str",	  0,	  155,	  "dirty",	  "dirty",	  "persistent",	  1	  ]
+[ 6,	  "M5system_auth_lang",	  "oid",  "str",	  0,	  156,	  "dirty",	  "dirty",	  "persistent",	  1	  ]
+[ 7,	  "simplemind",		  "int",  "int",	  0,	  157,	  "dirty",	  "dirty",	  "transient",	  0	  ]
 [ "Search directory by name" ]
 #-------------------------#
 # h	t		  # name
 # int	str		  # type
 #-------------------------#
-[ 6,	  "simplemind"	  ]
+[ 7,	  "simplemind"	  ]
 #-----------------------------------------------------------------------------------------------------------------#
 # h	t		htype	ttype	count	heat	dirty		status		kind		refcnt	  # name
 # int	str		str	str	lng	int	str		str		str		int	  # type
 #-----------------------------------------------------------------------------------------------------------------#
-[ 6,	  "simplemind",	  "int",  "int",  0,	  156,	  "dirty",	  "dirty",	  "transient",	  0	  ]
+[ 7,	  "simplemind",	  "int",  "int",  0,	  157,	  "dirty",	  "dirty",	  "transient",	  0	  ]
 
 # 18:09:04 >  
 # 18:09:04 >  Done.

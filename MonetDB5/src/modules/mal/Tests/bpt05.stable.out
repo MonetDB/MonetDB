@@ -51,10 +51,10 @@ exit (k,b);	# 14  (k:int)(b:bat[:void,:int])
 # add it 	# 15  (_22:str)
 end main;	# 16  
 ptop=4 plimit=1024
-[0] bid=6 pid=6 f=0, l=3 prv=-1 nxt=1 cap=3
-[1] bid=6 pid=7 f=3, l=6 prv=-1 nxt=2 cap=3
-[2] bid=6 pid=8 f=6, l=9 prv=-1 nxt=3 cap=3
-[3] bid=6 pid=9 f=9, l=10 prv=-1 nxt=-1 cap=3
+[0] bid=7 pid=7 f=0, l=3 prv=-1 nxt=1 cap=3
+[1] bid=7 pid=8 f=3, l=6 prv=-1 nxt=2 cap=3
+[2] bid=7 pid=9 f=6, l=9 prv=-1 nxt=3 cap=3
+[3] bid=7 pid=10 f=9, l=10 prv=-1 nxt=-1 cap=3
 #-----------------#
 # h	t	  # name
 # void	int	  # type

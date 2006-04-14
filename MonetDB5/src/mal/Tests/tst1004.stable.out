@@ -84,7 +84,7 @@ end main;	# 29
 # bbp	objects		  # name
 # int	str		  # type
 #-------------------------#
-[ 6,	  "myfirstbat"	  ]
+[ 7,	  "myfirstbat"	  ]
 [ "got myfirstbat?" ]
 #-----------------#
 # h	tmp_4	  # name
@@ -98,10 +98,11 @@ end main;	# 29
 [ 1,	  "monet_environment"	  ]
 [ 2,	  "monet_unicode_case"	  ]
 [ 3,	  "timezones"		  ]
-[ 4,	  "users"		  ]
-[ 5,	  "password"		  ]
-[ 6,	  "tmp_6"		  ]
+[ 4,	  "M5system_auth_user"	  ]
+[ 5,	  "M5system_auth_passwd"  ]
+[ 6,	  "M5system_auth_lang"	  ]
 [ 7,	  "tmp_7"		  ]
+[ 8,	  "tmp_10"		  ]
 
 # 07:58:53 >  
 # 07:58:53 >  Done.

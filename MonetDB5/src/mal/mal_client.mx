@@ -98,10 +98,10 @@ typedef struct CLIENT_INPUT {
 	struct CLIENT_INPUT *next;    
 } ClientInput;
 
-typedef struct CLIENT{
+typedef struct CLIENT {
 	int idx;        /* entry in mal_clients */
 	str user;       /* user name. */
-	str password;   /* of user */
+	str language;   /* current language in use */
 	int sessionkey; /* unique key addressed to session */
 	int permission; /* access mode */
 @-
@@ -391,34 +391,31 @@ Client getClient()
 }
 
 @-
-The arguments are private copies, which should be garbage collected
+The username and language are copied, and should be garbage collected
 upon return;
 @c
-Client initClient(str nme, str passwd, bstream *fin, stream *fout){
-	Client  c;
+Client initClient(str nme, str lang, bstream *fin, stream *fout) {
+	Client c;
 	str prompt;
 
-	if( ( c= newClient()) == NULL) {
-		if( nme != 0) GDKfree(nme);
-		if( passwd != 0) GDKfree(passwd);
+	if ((c = newClient()) == NULL)
 		return NULL;
-	}
 
-	c->user = nme; 
-	c->password = passwd? GDKstrdup(passwd): NULL; /* copy needed for mapi */
-	c->scenario= NULL;
+	c->user = nme ? GDKstrdup(nme) : NULL; 
+	c->language = GDKstrdup(lang ? lang : "mal");
+	c->scenario = NULL;
 	c->oldscenario = NULL;
 	c->sessionkey = 0;
 	c->blkmode = 0;
 
-	c->fdin = fin? fin : bstream_create(GDKin,0);
+	c->fdin = fin ? fin : bstream_create(GDKin,0);
 	c->console = c->fdin;
 	c->yycur = 0;
 	c->bak = NULL;
 
 	c->listing = 0;
-	c->fdout = fout?fout: GDKstdout;
-	c->sysmon = mal_clients[0].sysmon?mal_clients[0].fdout:0;
+	c->fdout = fout ? fout : GDKstdout;
+	c->sysmon = mal_clients[0].sysmon ? mal_clients[0].fdout : 0;
 	c->journal = NULL;
 	c->history = 0;
 @-
@@ -512,8 +509,8 @@ Client forkClient(Client father){
 	Client son = NULL;
 	if( father == NULL) return NULL;
 	if (father->father != NULL) father = father->father;
-	if ((son = initClient( GDKstrdup(father->user),
-					father->password, father->fdin, father->fdout))){
+	if ((son = initClient( father->user,
+					father->language, father->fdin, father->fdout))){
 		son->fdin= NULL;
 		son->bak= NULL;
 		son->yycur=0;
@@ -600,9 +597,9 @@ The threads may not be removed, but should become dormant
 		GDKfree(c->user); 
 		c->user = NULL;
 	}
-	if (c->password) {
-		GDKfree(c->password); 
-		c->password = NULL;
+	if (c->language) {
+		GDKfree(c->language); 
+		c->language = NULL;
 	}
 	c->mode = FREECLIENT;
 }
@@ -718,9 +715,9 @@ void cleanupClients(){
 			GDKfree(c->user); 
 			c->user=0;
 		}
-		if( c->password){ 
-			GDKfree(c->password); 
-			c->password=0;
+		if( c->language){ 
+			GDKfree(c->language); 
+			c->language=0;
 		}
 		assert(c->bak==NULL);
 		if( c->fdin){

@@ -44,9 +44,10 @@ end main;	# 9
 [ 1,	  "monet_environment"	  ]
 [ 2,	  "monet_unicode_case"	  ]
 [ 3,	  "timezones"		  ]
-[ 4,	  "users"		  ]
-[ 5,	  "password"		  ]
-[ 6,	  "mybat"		  ]
+[ 4,	  "M5system_auth_user"	  ]
+[ 5,	  "M5system_auth_passwd"  ]
+[ 6,	  "M5system_auth_lang"	  ]
+[ 7,	  "mybat"		  ]
 
 # 07:58:52 >  
 # 07:58:52 >  Done.

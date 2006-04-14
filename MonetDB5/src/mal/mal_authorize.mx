@@ -16,7 +16,7 @@
 @' All Rights Reserved.
 
 @f mal_authorize
-@a M. Kersten
+@a M. Kersten, F. Groffen
 @+ User authorization
 The inner core of the system provides a basic authorization scheme. 
 Authorization is coupled with running a scenario
@@ -72,7 +72,7 @@ mal_export bat getAllPermissions();
 mal_export bat getAllPasswords();
 
 mal_export void setServerOwner(str o, str p);
-mal_export void loadPermissions();
+mal_export void initAuthTables();
 #endif /* _MAL_AUTHORIZE_H */
 @-
 @c
@@ -94,51 +94,78 @@ setServerOwner(str o, str p) {
 }
 
 @-
-Localize the authorization table in the database.
-If it does not exist, it is prepared.
-Loading the users table can only start after the
-GDK kernel has been initialized.
+Localize the authorization tables in the database.  The authorization
+tables are a set of aligned BATs that store username, password (hashed)
+and language permissions.
+If the BATs do not exist, they are created.  Initializing the
+authorization tables can only be done after the GDK kernel has been
+initialized.
 @c
-static BAT *auth, *authrev;
-static BAT *pass, *passrev;
+static BAT *auth = NULL, *authrev;
+static BAT *pass = NULL, *passrev;
+static BAT *lang = NULL, *langrev;
 
 void
-loadPermissions(){
-    BAT *b;
+initAuthTables() {
+	BAT *b;
 
-	if (auth)
+	/* skip loading if already loaded */
+	if (auth != NULL && pass != NULL && lang != NULL)
 		return;
 
-    b = BATdescriptor(BBPindex("users"));
-    if (b == NULL){
-		b = BATnew(TYPE_str, TYPE_str, 256);
+	/* if one is not NULL here, something is seriously screwed up */
+	assert (auth == NULL);
+	assert (pass == NULL);
+	assert (lang == NULL);
+
+	/* load/create users BAT */
+	b = BATdescriptor(BBPindex("M5system_auth_user"));
+	if (b == NULL) {
+		b = BATnew(TYPE_void, TYPE_str, 256);
 		if (b == NULL)
-			GDKfatal("mal: could not allocate user table.");
+			GDKfatal("mal_authorize: could not allocate user table.");
 
 		BATkey(b, TRUE);
-		BBPrename(b->batCacheid, "users");
+		BBPrename(b->batCacheid, "M5system_auth_user");
 		BATmode(b, PERSISTENT);
 		BATcommit(b);
 	}
 	auth = b;
 	authrev = BATmirror(b);
-    b = BATdescriptor(BBPindex("password"));
-    if (b == NULL){
-		b = BATnew(TYPE_str, TYPE_str, 256);
+
+	/* load/create password BAT */
+	b = BATdescriptor(BBPindex("M5system_auth_passwd"));
+	if (b == NULL) {
+		b = BATnew(TYPE_void, TYPE_str, 256);
 		if (b == NULL)
-			GDKfatal("mal: could not allocate password table.");
+			GDKfatal("mal_authorize: could not allocate password table.");
 
 		BATkey(b, TRUE);
-		BBPrename(b->batCacheid, "password");
+		BBPrename(b->batCacheid, "M5system_auth_passwd");
 		BATmode(b, PERSISTENT);
 		BATcommit(b);
 	}
 	pass = b;
 	passrev = BATmirror(b);
+
+	/* load/create language BAT */
+	b = BATdescriptor(BBPindex("M5system_auth_lang"));
+	if (b == NULL) {
+		b = BATnew(TYPE_oid, TYPE_str, 256);
+		if (b == NULL)
+			GDKfatal("mal_authorize: could not allocate language table.");
+
+		BATkey(b, TRUE);
+		BBPrename(b->batCacheid, "M5system_auth_lang");
+		BATmode(b, PERSISTENT);
+		BATcommit(b);
+	}
+	lang = b;
+	langrev = BATmirror(b);
 }
 
 str
-MALinitClient(Client c){
+MALinitClient(Client c) {
 #ifdef _DEBUG_AUTH_
 	printf("authorize %s:%s %s\n", c->user, c->password, c->scenario);
 #endif
@@ -149,10 +176,12 @@ MALinitClient(Client c){
 	if (owner == NULL || c->user == NULL)
 		return MAL_SUCCEED; /* avoid missing info */
 
+	/*
 	if (strcmp(c->user, owner) == 0 &&
 		(passw == NULL ||
 		 strcmp((c->password ? c->password : ""), passw) == 0))
 		return MAL_SUCCEED;
+	*/
 
 	return throwMessage("mal.authorize", "Access denied");
 }
@@ -163,7 +192,7 @@ introduceUser(str nme, str passwd, str scen )
 #ifdef _DEBUG_AUTH_
 	printf("add user %s %s %s\n", nme,passwd,scen);
 #endif
-	loadPermissions();
+	initAuthTables();
 	BUNins(pass, nme, passwd);
 	BUNins(auth, nme, scen);
 	BATcommit(pass);

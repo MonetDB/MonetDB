@@ -75,9 +75,9 @@ exit (go,i);	# 13  (go:bit)(i:int)
     user.qry(a1);	# 21  (_32:void)<-(a1:bat[:void,:int])
 end main;	# 22  
 ptop=3 plimit=1024
-[0] bid=6 pid=6 f=0, l=10 prv=-1 nxt=1 cap=-1
-[1] bid=6 pid=7 f=10, l=20 prv=0 nxt=2 cap=-1
-[2] bid=6 pid=8 f=20, l=30 prv=1 nxt=-1 cap=-1
+[0] bid=7 pid=7 f=0, l=10 prv=-1 nxt=1 cap=-1
+[1] bid=7 pid=8 f=10, l=20 prv=0 nxt=2 cap=-1
+[2] bid=7 pid=9 f=20, l=30 prv=1 nxt=-1 cap=-1
 function user.qry(a:bat[:void,:int]):void;
     io.print("hello");
 barrier (_5,_6):= partitions.newIterator(a);
