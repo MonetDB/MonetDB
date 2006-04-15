@@ -22,9 +22,12 @@ tst021
 tst023
 tst024
 tst027
+tst029
 tst030
 tst031
+tst032
 tst033
+tst034
 tst035
 HAVE_PCRE?tst037
 tst038
@@ -133,6 +136,7 @@ tst304
 tst305
 tst3050
 tst307
+tst308
 HAVE_PCRE?tst350
 tst380
 tst400

@@ -65,6 +65,7 @@ exit MALexception;	# 17  (MALexception:any)
 exit (mloop,m);	# 18  (mloop:bit)(m:lng)
     return resB;	# 19  (resB:bat[:void,:int])
 end tst;	# 20  
+!ERROR: barrier 'MALexception' should be of type bit, str or number in tst[16]
 #
 #	b := new(:void,:int);
 #	setSequenceBase(b,0@0);
