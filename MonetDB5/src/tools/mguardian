@@ -140,7 +140,7 @@ server is left unattended.
 			# (the *2 each time is not enough, imho, it should stop
 			# trying and send a message that the database is down and
 			# stays down)
-			mailtrigger=`expr $mailtrigger * 2`
+			mailtrigger=`expr $mailtrigger + $mailtrigger`
 		fi
 		restartcount=`expr $restartcount + 1 `
 	fi
