@@ -309,6 +309,10 @@ typedef struct VARRECORD {
 
 #define QUICKCLEANUP 1
 #define GARBAGECONTROL 2
+
+#define VARARGS 1	/* deal with variable arguments */
+#define VARRETS 2
+
 /* all functions return a string */
 typedef str (*MALfcn) ();
 
@@ -319,7 +323,7 @@ typedef struct {
 	bit typechk;		/* type check status */
 	bit gc;			/* garbage control flags */
 	bit polymorphic;	/* complex type analysis */
-	bit varargs;		/* variable number of arguments */
+	bit varargs;		/* variable number of arguments or targets */
 	MALfcn fcn;		/* resolved function address */
 	struct MALBLK *blk;	/* resolved MAL function address */
 	int jump;		/* controlflow program counter */
@@ -2184,7 +2188,7 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg)
 	for (i = p->retc; i < p->argc; i++) {
 	@:showParam(argc)@}
 	advance(t);
-	if (p->varargs)
+	if (p->varargs & VARARGS)
 		sprintf(t, "...");
 	advance(t);
 	if (p->retc == 1) {
@@ -2197,6 +2201,9 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str s, int flg)
 		t += 3;
 		for (i = 0; i < p->retc; i++) {
 		@:showParam(retc)@}
+		if (p->varargs & VARRETS)
+			sprintf(t, "...");
+		advance(t);
 		*t++ = ')';
 	}
 	if (mb->binding)
@@ -2458,7 +2465,7 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 
 	for (i = low; i < high; i++) {
 		advance(t);
-		if (i + 1 == high && p->varargs) {
+		if (i + 1 == high && p->varargs & VARARGS) {
 			sprintf(t, "...");
 			break;
 		}

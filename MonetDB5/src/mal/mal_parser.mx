@@ -935,7 +935,7 @@ the function definition in a particular module instead of the current one.
 		@:binding(1)@
 		/* the last argument may be variable length */
 		if( MALkeyword(cntxt,"...",3) ){
-			curInstr->varargs++;
+			curInstr->varargs |= VARARGS;
 			setPolymorphic(curInstr,TYPE_any,FALSE);
 			break;
 		}
@@ -962,6 +962,12 @@ during the final phase reshuffle the return values to the beginning (?)
 		type = typeElm(cntxt, TYPE_void);
 		setPolymorphic(curInstr,type,TRUE);
 		setVarType(curBlk,curInstr->argv[0],type);
+		/* we may be confronted by a variable target type list */
+		if( MALkeyword(cntxt,"...",3) ){
+			curInstr->varargs |= VARRETS;
+			setPolymorphic(curInstr,TYPE_any,FALSE);
+		}
+		
 		@:propList(curInstr->argv[0])@
 	} else 
 	if( keyphrase1(cntxt,"(")){ /* deal with compound return */

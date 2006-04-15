@@ -236,7 +236,7 @@ void chkFlow(MalBlkPtr mb)
 			}
 
 			if( getVarType(mb,v) != TYPE_bit && 
-			    getVarType(mb,v)!= TYPE_any &&
+			 /*   getVarType(mb,v)!= TYPE_any &&*/
 			    getVarType(mb,v) != TYPE_sht && 
 			    getVarType(mb,v)!= TYPE_oid && 
 			    !isaBatType(getVarType(mb,v)) &&
@@ -244,7 +244,7 @@ void chkFlow(MalBlkPtr mb)
 			    getVarType(mb,v)!= TYPE_lng && 
 			    getVarType(mb,v) != TYPE_int &&
 			    getVarType(mb,v) != TYPE_str ){
-			    GDKerror("barrier '%s' should be of type bit or number in %s[%d]\n",
+			    GDKerror("barrier '%s' should be of type bit, str or number in %s[%d]\n",
 			    getVarName(mb, v), getFcnName(mb), i);
 			}
 			btop++;

@@ -58,9 +58,6 @@ the function and returns control to the enclosing environment.
 
 The argument to the catch statement is a target list,
 which holds the exception variables you are interested in.
-[??An expression evaluated with the catch statement is executed
-after the block has been entered only. It could be used to
-initialize the exception variables further.]
 
 The snippet below illustrates how an exception raised
 in the function @code{io.read} is catched using the exception variable IOerror.
@@ -70,7 +67,7 @@ for the enclosing call.
 @example
 	io.write("Welcome");
 	...
-catch IOerror;
+catch IOerror:str;
 	print("input error on reading password");
 raise FATALerror:= "Can't handle it";
 exit IOerror;

@@ -195,7 +195,8 @@ Note, each function returns at least one value.
 	if( sig->polymorphic ){
 	int limit = sig->polymorphic;
 	if( ! (sig->argc== p->argc ||
-		(sig->argc<p->argc && sig->varargs)) ){
+		(sig->argc<p->argc && sig->varargs & (VARARGS | VARRETS) )) 
+	){
 		s= s->peer; continue;
 	}
 	if( sig->retc != p->retc) {
