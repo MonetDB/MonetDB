@@ -14,30 +14,29 @@ usr := "monetdb";
 pwd := "monetdb";
 lang := "mal";
 
-# initialize exception handler
-MapiException:= nil:str;
 # setup the session
 mid:= mserver.connect(hs,port,usr,pwd,lang);
 io.print(mid);
 # retrieve data from the 'remote' site
 # testing t:=1+3;
 t0:= alarm.usec();
-k:int := mserver.rpc(mid, "t:= 1+3; io.print(t);");
+mserver.query(mid, "t:= 1+3; io.print(t);");
 t1:= alarm.usec();
-io.print(k);
 t1:= t1-t0;
 io.print(t1);
 
 t0:= alarm.usec();
-mserver.rpc(mid,"r:= bat.new(:oid,:int);");
-mserver.rpc(mid,"bat.insert(r, 1@0,311);");
-mserver.rpc(mid,"bat.insert(r,2@0,433);");
+mserver.query(mid,"r:= bat.new(:oid,:int);");
+mserver.query(mid,"bat.insert(r, 1@0,311);");
+mserver.query(mid,"bat.insert(r,2@0,433);");
 b:bat[:oid,:int]:= mserver.rpc(mid,"io.print(r);");
 t1:= alarm.usec();
 t1:= t1-t0;
-io.print(b);
+#io.print(b);
 io.print(t1);
 
+# use the BAT fetch operation
+#b:bat[:oid,:int]:= mserver.receive(mid,"remotename");
 
 msg:str := mserver.rpc(mid,"io.print(\"hello world\");");
 io.print(msg);
@@ -50,7 +49,26 @@ io.print(o);
 #(k:int,s:str):= mserver.rpc(mid,"io.print(nil:int,\"done\");");
 #io.print(k,s);
 
+# what is the relationship between local/remote namespace
+# mserver.send(key,"a",a);
+# c:= mserver.join(key,a,b);
+# mserver.rpc(key,"z:=algebra.join(a,b);");
+# c:= mserver.receive(key,"c")
+
+#patterns
+#pat:= "a:= algebra.select(b,?,?);");
+#qry:=  str.replace(pat,"?",i,j);
+#mserver.query(key,pat,i,j);
+
+#how to ship a routine
+#fcn:= manual.definition(manual,help);
+
+# how to remote MAL execution
+# remotedb:= mserver.connect(...)
+# algebra.join@remotedb(a,b) using remote objects
+# c:= mserver.rpc(remotedb,algebra,join,a,b)
+
 # the remainder should be tested 
-#catch MapiException;
-#	io.printf("foutje:%s\n",MapiException);
-#exit MapiException;
+catch MapiException:str;
+	io.printf("foutje:%s\n",MapiException);
+exit MapiException;
