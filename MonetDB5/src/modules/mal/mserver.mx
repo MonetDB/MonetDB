@@ -186,9 +186,21 @@ command fetch_line(hdl:int):str
 address SERVERfetch_line
 comment "Retrieve a complete line";
 
+command fetch_reset(hdl:int):int
+address SERVERfetch_reset
+comment "Reset the cache read line.";
+
+command next_result(hdl:int):int
+address SERVERnext_result
+comment "Go to next result set";
+
 command error(mid:int):int
 address SERVERerror
 comment "Check for an error in the communication");
+
+command getError(mid:int):str
+address SERVERgetError
+comment "Get error message";
 
 command explain(mid:int):str
 address SERVERexplain
@@ -273,8 +285,11 @@ mal_export str SERVERfetch_field_int(int *ret, int *idx, int *fnr);
 mal_export str SERVERfetch_field_lng(lng *ret, int *idx, int *fnr);
 mal_export str SERVERfetch_field_sht(sht *ret, int *idx, int *fnr);
 mal_export str SERVERfetch_line(str *ret, int *key);
+mal_export str SERVERnext_result(int *ret, int *key);
+mal_export str SERVERfetch_reset(int *ret, int *key);
 mal_export str SERVERfetch_field_bat(int *bid, int *idx);
 mal_export str SERVERerror(int *ret, int *idx);
+mal_export str SERVERgetError(str *ret, int *idx);
 mal_export str SERVERexplain(str *ret, int *idx);
 mal_export str SERVERmapi_rpc_int(int *ret, int *key, str *qry);
 mal_export str SERVERmapi_rpc_oid_int(int *ret, int *key, str *qry);
@@ -1369,6 +1384,24 @@ SERVERfetch_line(str *ret, int *key){
 	*ret= GDKstrdup(fld? fld:str_nil);
 	return MAL_SUCCEED;
 }
+str 
+SERVERnext_result(int *ret, int *key){
+	Mapi mid;
+	int i;
+	@:accessTest(*key,error)@
+	mapi_next_result(SERVERsessions[i].hdl);
+	*ret= *key;
+	return MAL_SUCCEED;
+}
+str 
+SERVERfetch_reset(int *ret, int *key){
+	Mapi mid;
+	int i;
+	@:accessTest(*key,error)@
+	mapi_fetch_reset(SERVERsessions[i].hdl);
+	*ret= *key;
+	return MAL_SUCCEED;
+}
 str
 SERVERfetch_field_bat(int *bid, int *key){
 	int i,j,cnt;
@@ -1395,6 +1428,14 @@ SERVERerror(int *ret, int *key){
 	int i;
 	@:accessTest(*key,error)@
 	*ret= mapi_error(mid);
+	return MAL_SUCCEED;
+}
+str
+SERVERgetError(str *ret, int *key){
+	Mapi mid;
+	int i;
+	@:accessTest(*key,error)@
+	*ret= GDKstrdup(mapi_error_str(mid));
 	return MAL_SUCCEED;
 }
 
