@@ -177,6 +177,7 @@ initAuthTables() {
 	}
 	lang = b;
 	langrev = BATmirror(b);
+	(void) langrev; /* silence compiler */
 
 	if (isNew == 1) {
 		/* insert the monetdb/monetdb administrator account on a
