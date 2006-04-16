@@ -178,6 +178,18 @@ command fetch_field(hdl:int,fnr:int):sht
 address SERVERfetch_field_sht
 comment "Retrieve a single sht field";
 
+command fetch_field(hdl:int,fnr:int):void
+address SERVERfetch_field_void
+comment "Retrieve a single void field";
+
+command fetch_field(hdl:int,fnr:int):oid
+address SERVERfetch_field_oid
+comment "Retrieve a single void field";
+
+command fetch_field(hdl:int,fnr:int):chr
+address SERVERfetch_field_chr
+comment "Retrieve a single chr field";
+
 command fetch_field_array(hdl:int):bat[:int,:str]
 address SERVERfetch_field_bat
 comment "Retrieve all fields for a row";
@@ -213,8 +225,8 @@ pattern rpc(key:int,qry:str):any
 address SERVERmapi_rpc_single_row
 comment "Sent a simple query for execution and fetch result";
 
-command rpc(key:int,qry:str):bat[:oid,:any]
-address SERVERmapi_rpc_oid_int;
+pattern rpc(key:int,qry:str):bat[:any_1,:any_2]
+address SERVERmapi_rpc_bat;
 
 #command receive(key:int,nme:str):bat[:any_1,:any_2]
 #address SERVERreceive
@@ -284,6 +296,9 @@ mal_export str SERVERfetch_field_str(str *ret, int *idx, int *fnr);
 mal_export str SERVERfetch_field_int(int *ret, int *idx, int *fnr);
 mal_export str SERVERfetch_field_lng(lng *ret, int *idx, int *fnr);
 mal_export str SERVERfetch_field_sht(sht *ret, int *idx, int *fnr);
+mal_export str SERVERfetch_field_void(oid *ret, int *idx, int *fnr);
+mal_export str SERVERfetch_field_oid(oid *ret, int *idx, int *fnr);
+mal_export str SERVERfetch_field_chr(chr *ret, int *idx, int *fnr);
 mal_export str SERVERfetch_line(str *ret, int *key);
 mal_export str SERVERnext_result(int *ret, int *key);
 mal_export str SERVERfetch_reset(int *ret, int *key);
@@ -1129,9 +1144,10 @@ SERVERexit(){
 	/* remove any port identity file */
 	system("rm -rf .*_port");
 }
-@+ Distributed Processing
-The remainder of the file contains the wrapper around
-the SERVER library used by application programmers.
+@+ Remote Processing
+The remainder of the file contains the wrappers around
+the Mapi library used by application programmers.
+Details on the functions can be found there.
 
 Sessions have a lifetime different from dynamic scopes.
 This means the  user should use a session identifier
@@ -1139,6 +1155,9 @@ to select the correct handle.
 For the time being we use the index in the global
 session table. The client pointer is retained to
 perform access control. 
+
+We use a single result set handle. All data should be
+consumed before continueing.
 
 A few extra routines should be defined to
 dump and inspect the sessions table.
@@ -1375,6 +1394,39 @@ SERVERfetch_field_sht(sht *ret, int *key, int *fnr){
 	return MAL_SUCCEED;
 }
 str 
+SERVERfetch_field_void(oid *ret, int *key, int *fnr){
+	Mapi mid;
+	int i;
+	@:accessTest(*key,error)@
+	(void) fnr;
+	*ret = oid_nil;
+	return MAL_SUCCEED;
+}
+str 
+SERVERfetch_field_oid(oid *ret, int *key, int *fnr){
+	Mapi mid;
+	int i;
+	str fld;
+	@:accessTest(*key,error)@
+	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
+	if(fld==0 || strcmp(fld,"nil")==0)
+		*(oid*) ret= void_nil;
+	else *(oid*) ret = (oid) atol(fld);
+	return MAL_SUCCEED;
+}
+str 
+SERVERfetch_field_chr(chr *ret, int *key, int *fnr){
+	Mapi mid;
+	int i;
+	str fld;
+	@:accessTest(*key,error)@
+	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
+	if(fld==0 || strcmp(fld,"nil")==0)
+		*(chr*) ret= chr_nil;
+	else *(chr*) ret = *fld;
+	return MAL_SUCCEED;
+}
+str 
 SERVERfetch_line(str *ret, int *key){
 	Mapi mid;
 	int i;
@@ -1460,6 +1512,74 @@ mserver.rpc(key,"query")
 The generic scheme for handling a remote MAL
 procedure call with a single row answer.
 @c
+void SERVERfieldAnalysis(str fld, int tpe, ValPtr v){
+	v->vtype= tpe;
+	switch(tpe){
+	case TYPE_void:
+		v->val.oval = void_nil;
+		break;
+	case TYPE_oid:
+		if(fld==0 || strcmp(fld,"nil")==0)
+			v->val.oval= void_nil;
+		else v->val.oval = (oid) atol(fld);
+		break;
+	case TYPE_bit:
+		if(fld== 0 || strcmp(fld,"nil")==0)
+			v->val.cval[0]= bit_nil;
+		else
+		if(strcmp(fld,"true")==0)
+			v->val.cval[0]= TRUE;
+		if(strcmp(fld,"false")==0)
+			v->val.cval[0]= FALSE;
+		v->val.cval[1]= 0;
+		v->val.cval[2]= 0;
+		v->val.cval[3]= 0;
+		break;
+	case TYPE_chr:
+		if(fld==0 || strcmp(fld,"nil")==0)
+			v->val.cval[0]= chr_nil;
+		else
+			v->val.cval[0]= *fld;
+		v->val.cval[1]= 0;
+		v->val.cval[2]= 0;
+		v->val.cval[3]= 0;
+		break;
+	case TYPE_sht:
+		if(fld==0 || strcmp(fld,"nil")==0)
+			v->val.shval = sht_nil;
+		else v->val.shval= (sht)  atol(fld);
+		break;
+	case TYPE_int:
+		if(fld==0 || strcmp(fld,"nil")==0)
+			v->val.ival = int_nil;
+		else v->val.ival= (int)  atol(fld);
+		break;
+	case TYPE_lng:
+		if(fld==0 || strcmp(fld,"nil")==0)
+			v->val.lval= lng_nil;
+		else v->val.lval= (lng)  atol(fld);
+		break;
+	case TYPE_flt:
+		if(fld==0 || strcmp(fld,"nil")==0)
+			v->val.fval= flt_nil;
+		else v->val.fval= (flt)  atof(fld);
+		break;
+	case TYPE_dbl:
+		if(fld==0 || strcmp(fld,"nil")==0)
+			v->val.dval= dbl_nil;
+		else v->val.dval= (dbl)  atof(fld);
+		break;
+	case TYPE_str:
+		if(fld==0 || strcmp(fld,"nil")==0){
+			v->val.sval= GDKstrdup(str_nil);
+			v->len= strlen(str_nil);
+		} else {
+			v->val.sval= GDKstrdup(fld);
+			v->len= strlen(fld);
+		}
+		break;
+	}
+}
 str
 SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -1467,7 +1587,6 @@ SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Mapi mid;
 	MapiHdl hdl;
 	char *fld, *qry;
-	ptr val;
 
 	key= * (int*) getArgReference(stk,pci,pci->retc);
 	qry= * (str*) getArgReference(stk,pci,pci->retc+1);
@@ -1487,72 +1606,24 @@ SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef MAPI_TEST
 			stream_printf(GDKout,"Got: %s\n",fld);
 #endif
-			val= (ptr) getArgReference(stk,pci,i);
 			switch(getVarType(mb,getArg(pci,j)) ){
 			case TYPE_void:
-				*(oid*) val= void_nil;
-				break;
 			case TYPE_oid:
-				if(fld==0 || strcmp(fld,"nil")==0)
-					*(oid*) val= void_nil;
-				else *(oid*) val = (oid) atol(fld);
-				break;
 			case TYPE_bit:
-				if(fld== 0 || strcmp(fld,"nil")==0)
-					stk->stk[getArg(pci,j)].val.cval[0]= bit_nil;
-				else
-				if(strcmp(fld,"true")==0)
-					stk->stk[getArg(pci,j)].val.cval[0]= TRUE;
-				if(strcmp(fld,"false")==0)
-					stk->stk[getArg(pci,j)].val.cval[0]= FALSE;
-				stk->stk[getArg(pci,j)].val.cval[1]= 0;
-				stk->stk[getArg(pci,j)].val.cval[2]= 0;
-				stk->stk[getArg(pci,j)].val.cval[3]= 0;
-				break;
 			case TYPE_chr:
-				if(fld==0 || strcmp(fld,"nil")==0)
-					stk->stk[getArg(pci,j)].val.cval[0]= chr_nil;
-				else
-					stk->stk[getArg(pci,j)].val.cval[0]= *fld;
-				stk->stk[getArg(pci,j)].val.cval[1]= 0;
-				stk->stk[getArg(pci,j)].val.cval[2]= 0;
-				stk->stk[getArg(pci,j)].val.cval[3]= 0;
-				break;
 			case TYPE_sht:
-				if(fld==0 || strcmp(fld,"nil")==0)
-					*(sht*) val= (sht)  sht_nil;
-				else *(sht*) val= (sht)  atol(fld);
-				break;
 			case TYPE_int:
-				if(fld==0 || strcmp(fld,"nil")==0)
-					*(int*) val= (int)  int_nil;
-				else *(int*) val= (int)  atol(fld);
-				break;
 			case TYPE_lng:
-				if(fld==0 || strcmp(fld,"nil")==0)
-					*(lng*) val= (lng)  lng_nil;
-				else *(lng*) val= (lng)  atol(fld);
-				break;
 			case TYPE_flt:
-				if(fld==0 || strcmp(fld,"nil")==0)
-					*(flt*) val= (flt)  flt_nil;
-				else *(flt*) val= (flt)  atof(fld);
-				break;
 			case TYPE_dbl:
-				if(fld==0 || strcmp(fld,"nil")==0)
-					*(dbl*) val= (dbl)  dbl_nil;
-				else *(dbl*) val= (dbl)  atof(fld);
-				break;
 			case TYPE_str:
-				if(fld==0 || strcmp(fld,"nil")==0){
-					stk->stk[getArg(pci,j)].val.sval= GDKstrdup(str_nil);
-					stk->stk[getArg(pci,j)].len= strlen(str_nil);
-				} else {
-					stk->stk[getArg(pci,j)].val.sval= GDKstrdup(fld);
-					stk->stk[getArg(pci,j)].len= strlen(fld);
-				}
+				SERVERfieldAnalysis(fld, 
+					getVarType(mb,getArg(pci,j)),
+					&stk->stk[getArg(pci,j)]);
 				break;
-				return throwMessage("mapi.rpc","Missing type implementation ");
+			default:
+				return throwMessage("mapi.rpc",
+						"Missing type implementation ");
 			/* all the other basic types come here */
 			}
 		}
@@ -1566,24 +1637,31 @@ SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 Transport of the BATs is only slightly more complicated.
 The generic implementation based on a pattern is the next
 step. 
-@= mapi_rpc_bat
+@c
 str
-SERVERmapi_rpc_oid_@1(int *ret, int *key, str *qry){
+SERVERmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int *ret;
+	int *key;
+	str *qry;
 	int i;
 	Mapi mid;
 	MapiHdl hdl;
 	char *fld1, *fld2;
-	oid o; 
 	BAT *b;
+	ValRecord hval,tval;
+	int ht,tt;
 
+	ret= (int*) getArgReference(stk,pci,0);
+	key= (int*) getArgReference(stk,pci,pci->retc);
+	qry= (str*) getArgReference(stk,pci,pci->retc+1);
 	@:accessTest(*key,rpc)@
-	b= BATnew(TYPE_oid,TYPE_@1,256);
+	ht= getHeadType(getVarType(mb,getArg(pci,0)));
+	tt= getTailType(getVarType(mb,getArg(pci,0)));
+	
+	b= BATnew(ht,tt,256);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 
-#ifdef MAPI_TEST
-	stream_printf(GDKout,"about to sent: %s\n",*qry);
-#endif
 	hdl= mapi_query(mid, *qry);
 	if( mapi_error(mid) )
 		return throwMessage("mapi.rpc",mapi_error_str(mid));
@@ -1591,15 +1669,10 @@ SERVERmapi_rpc_oid_@1(int *ret, int *key, str *qry){
 	while( mapi_fetch_row(hdl)){
 		fld1= mapi_fetch_field(hdl,0);
 		fld2= mapi_fetch_field(hdl,1);
-#ifdef MAPI_TEST
-		stream_printf(GDKout,"Got: %s %s \n",fld1,fld2);
-#endif
-		o= (oid) atol(fld1);
-		i= (@1)atol(fld2);
-		BUNins(b,&o,&i);
+		SERVERfieldAnalysis(fld1, ht, &hval);
+		SERVERfieldAnalysis(fld2, tt, &tval);
+		BUNins(b,VALget(&hval),VALget(&tval));
 	}
 	return MAL_SUCCEED;
 }
-@c
-@:mapi_rpc_bat(int)@
 @}
