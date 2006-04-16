@@ -1206,41 +1206,42 @@ checkPiece(int m, BAT *b, int xx, int i, int low, int hgh, bit inclusiveLow, bit
 str
 CRKcrackRangeWithTwoScans(int *vid, int *bid, int low, int hgh, bit tail)
 {
-        BAT *b, *view, *uview;
-        int xx;
-        int  m;
-        size_t vl=0, vh=0;
+	BAT *b, *view, *uview;
+	int  m;
+	int mode;
+	size_t vl=0, vh=0;
 	bit firstCrack = FALSE;
-        if (low >  hgh)
-                return throwMessage("crackers.crack", "illegal range");
-        if ((b = BATdescriptor(*bid)) == NULL) {
-                return throwMessage("crackers.crackRange", "Cannot access descriptor");
-        }
-        m = existsCrackMap(*bid);
-        if (m == -1){
+	if (low >  hgh)
+		return throwMessage("crackers.crack", "Illegal range");
+	if ((b = BATdescriptor(*bid)) == NULL)
+		return throwMessage("crackers.crack", "Cannot access descriptor");
+
+	m = existsCrackMap(*bid);
+	if (m == -1){
 		if (b->htype ==TYPE_void) {
-			 b = BATmaterializeh(b,BATcount(b));
-			 b->hsorted = FALSE;
-			 b->tsorted = FALSE;
-			 b->hdense = FALSE; 
-		 	 b->hdense = FALSE;	
+			b = BATmaterializeh(b,BATcount(b));
+			b->hsorted = FALSE;
+			b->tsorted = FALSE;
+			b->hdense = FALSE; 
+			b->hdense = FALSE;	
 		}
-                m = newCrackMap(*bid);
-                initCrackMap(crackMap + m, bid);
+		m = newCrackMap(*bid);
+		initCrackMap(crackMap + m, bid);
 		firstCrack = TRUE;
-        }
-        xx = BUNsize(b);
+	}
 
+	mode= b->batRestricted;
+	b->batRestricted= BAT_READ;
 	view = BATslice(b, vl, vh+1);
+	b->batRestricted= mode;
 
-        if (!tail) {
-                uview = BATconst(view,TYPE_void,ATOMnilptr(TYPE_void));
-                *vid = uview->batCacheid;		
-        }
-        else *vid = view->batCacheid;
+	if (!tail) {
+		uview = BATconst(view,TYPE_void,ATOMnilptr(TYPE_void));
+		*vid = uview->batCacheid;		
+	} else *vid = view->batCacheid;
 	BBPfix(*vid);
-        BBPunfix(b->batCacheid);
-        return MAL_SUCCEED;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }                               
 
 str
@@ -4002,7 +4003,12 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch1:%lld, cl2:%lld, ch:%lld \n",vl,vh,cl,ch1
 	
 createView:
 /*	printf("vl: %lld, vh:%lld \n",vl,vh);*/
-	view = BATslice(b, vl, vh+1);
+	{ int mode;
+		mode= b->batRestricted;
+		b->batRestricted= BAT_READ;
+		view = BATslice(b, vl, vh+1);
+		b->batRestricted= mode;
+	}
 	if (!tail) {
 		uview = BATconst(view,TYPE_void,ATOMnilptr(TYPE_void));
 		*vid = uview->batCacheid;		
