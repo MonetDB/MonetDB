@@ -65,10 +65,10 @@ function user.main():void;	# 0  (main:void)
     mserver.query(mid,"r:= bat.new(:oid,:int);");	# 34 SERVERquery (_41:int)<-(mid:int)(_42:str)
     mserver.query(mid,"bat.insert(r, 1@0,311);");	# 35 SERVERquery (_43:int)<-(mid:int)(_44:str)
     mserver.query(mid,"bat.insert(r,2@0,433);");	# 36 SERVERquery (_45:int)<-(mid:int)(_46:str)
-    b:bat[:oid,:int]  := mserver.rpc(mid,"io.print(r);");	# 37 SERVERmapi_rpc_oid_int (b:bat[:oid,:int])<-(mid:int)(_48:str)
+    b:bat[:oid,:int]  := mserver.rpc(mid,"io.print(r);");	# 37 SERVERmapi_rpc_bat (b:bat[:oid,:int])<-(mid:int)(_48:str)
     t1 := alarm.usec();	# 38 ALARMusec (t1:lng)
     t1 := calc.-(t1,t0);	# 39 CALCbinarySUBlnglng (t1:lng)<-(t1:lng)(t0:lng)
-#io.print(b); 	# 40  (_49:str)
+    io.print(b);	# 40 IOprint_val (_49:int)<-(b:bat[:oid,:int])
     io.print(t1);	# 41 IOprint_val (_50:int)<-(t1:lng)
 # use the BAT fetch operation 	# 42  (_51:str)
 #b:bat[:oid,:int]:= mserver.receive(mid,"remotename"); 	# 43  (_52:str)
@@ -103,15 +103,18 @@ exit MapiException;	# 71  (MapiException:str)
 end main;	# 72  
 Succeeded to establish session
 [ 1 ]
-[ 156 ]
+[ 158 ]
 rowcount 1
 fieldcount 2
 field 0 4
 field 1 hello
-about to sent: io.print(r);
-Got: 1@0 311 
-Got: 2@0 433 
-[ 314 ]
+#-----------------#
+# h	t	  # name
+# oid	int	  # type
+#-----------------#
+[ 1@0,	  311	  ]
+[ 2@0,	  433	  ]
+[ 319 ]
 about to sent: io.print("hello world");
 Got: hello world
 [ "hello world" ]

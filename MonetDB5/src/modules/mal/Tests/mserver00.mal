@@ -41,7 +41,7 @@ mserver.query(mid,"bat.insert(r,2@0,433);");
 b:bat[:oid,:int]:= mserver.rpc(mid,"io.print(r);");
 t1:= alarm.usec();
 t1:= t1-t0;
-#io.print(b);
+io.print(b);
 io.print(t1);
 
 # use the BAT fetch operation

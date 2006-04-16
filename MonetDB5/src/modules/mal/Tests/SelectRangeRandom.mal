@@ -6,6 +6,7 @@ include crackers;
 tuples:= 10000000;
 values:= tuples;
 b:= microbenchmark.uniform(0@0,tuples,values);
+bat.setReadMode(b);
 tf:=0:lng;
 n:=50;
 barrier (go,i):= (true,0);
