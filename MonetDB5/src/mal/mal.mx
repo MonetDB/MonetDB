@@ -375,8 +375,6 @@ void mal_exit(Client cntxt){
 	mal_scope = 0;
 	unloadModuleLibraries(); 
 	finishNamespace();
-	if( cntxt->user)
-		GDKfree(cntxt->user);
 	if( cntxt->cwd)
 		GDKfree(cntxt->cwd);
 	if( cntxt->prompt)

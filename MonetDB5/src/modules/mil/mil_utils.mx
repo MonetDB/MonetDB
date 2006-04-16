@@ -238,12 +238,16 @@ The content of this box my only be changed by the Administrator.
 int
 isAuthorized(str nme)
 {
+	(void) nme;
+	/*
 	Client c;
 
 	if (nme == 0)
 		return 1;
 	c = getClient();
 	return idcmp(c->user, nme) == 0;
+	*/
+	return 1;
 }
 
 str

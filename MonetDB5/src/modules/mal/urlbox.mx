@@ -122,8 +122,10 @@ mal_export str URLBOXhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @- Module initializaton
 The content of this box my only be changed by the Administrator.
 @= authorize
-	if( !isServerOwner(getClient()) )
-		return throwMessage("urlBox.@1","unauthorized access to 'urlBox' box");
+	{
+		str tmp = NULL;
+		rethrow("urlBox.@1", tmp, AUTHrequireAdmin());
+	}
 @c
 #include "urlbox.h"
 #include "mal_linker.h"

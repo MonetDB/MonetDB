@@ -100,7 +100,7 @@ end main;	# 29
 [ 3,	  "timezones"		  ]
 [ 4,	  "M5system_auth_user"	  ]
 [ 5,	  "M5system_auth_passwd"  ]
-[ 6,	  "M5system_auth_lang"	  ]
+[ 6,	  "M5system_auth_scen"	  ]
 [ 7,	  "tmp_7"		  ]
 [ 8,	  "tmp_10"		  ]
 

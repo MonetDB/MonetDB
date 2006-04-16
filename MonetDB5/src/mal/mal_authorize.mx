@@ -17,39 +17,15 @@
 
 @f mal_authorize
 @a M. Kersten, F. Groffen
-@+ User authorization
-The inner core of the system provides a basic authorization scheme. 
-Authorization is coupled with running a scenario
-or accessing the content of variable boxes.
-A user may only use those resources if it is explicitly permitted.
+@v 0.2
+@+ Authorisation adminstration management
+Authorisation of users is a key concept in protecting the server from
+malicious and unauthorised users.  This file contains a number of
+functions that administrate a set of BATs backing the authorisation
+tables.
 
-The authorization scheme can be used by routines as a first
-line of defense against unauthorized access. They could 
-augment it with their own persistent information for further
-control.
-
-The owner of the server and database is he who was able to
-start the server in the first place. It puts him in a special
-position. He may change the authorization information and view
-the permission tables. He is also the owner of system provided
-boxes, e.g. @code{const} and @code{statistics}.
-All other users are only allowed to change their password.
-
-The implementation is straight forward.
-It keeps a persistent BAT @code{user} around, which associates a
-user id with a corresponding (encoded) password to their 
-permissible scenarios. These tables can be inspected by the
-system owner and any linked in code to refine the scheme.
-
-@{
-
-The implementation is straightforward. A persistent memory mapped
-BAT keeps the information for fast access. 
-The guest accounts 'user' without password 
-and monetdb/monetdb are  being added upon creation of this BAT.
-This allows all known functionality to work.
-
-The identity of the server owner is not copied into this table purposely.
+The implementation is based on three persistent BATs, which keep the
+usernames, passwords and allowed scenarios for users of the server.
 
 @h
 #ifndef _MAL_AUTHORIZE_H
@@ -61,22 +37,20 @@ The identity of the server owner is not copied into this table purposely.
 #include "mal_instruction.h"
 #include "mal_client.h"
 
-mal_export str AUTHcheckCredentials(str *user, str *passwd, str *language);
-mal_export str AUTHaddUser(str *user, str *pass, bat *langs);
+mal_export str AUTHcheckCredentials(oid *uid, str *user, str *passwd, str *scenario);
+mal_export str AUTHaddUser(oid *uid, str *user, str *pass, bat *scenarios);
 mal_export str AUTHremoveUser(str *username);
 mal_export str AUTHchangeUsername(str *olduser, str *newuser);
-mal_export str AUTHchangePassword(str *username, str *passwd);
-mal_export str AUTHaddLanguage(str *username, str *language);
-mal_export str AUTHremoveLanguage(str *username, str *language);
+mal_export str AUTHchangePassword(str *oldpass, str *passwd);
+mal_export str AUTHsetPassword(str *username, str *passwd);
+mal_export str AUTHaddLanguage(str *username, str *scenario);
+mal_export str AUTHremoveLanguage(str *username, str *scenario);
+mal_export str AUTHresolveUser(str *username, oid *uid);
+mal_export str AUTHgetUsername(str *username);
 
-mal_export str MALinitClient(Client cntxt);
-mal_export int isServerOwner(Client c);
-mal_export str setNewPassword(str nme, str passwd, str newpasswd);
-mal_export bat getAllPermissions();
-mal_export bat getAllPasswords();
-
-mal_export void setServerOwner(str o, str p);
-mal_export void initAuthTables();
+mal_export str AUTHrequireAdmin();
+mal_export str AUTHrequirteAdminOrUser(str *username);
+mal_export str AUTHinitTables();
 
 /* convenience macros */
 #define throwIC(X, Y) throw("InvalidCredentialsException", X, Y);
@@ -87,53 +61,81 @@ mal_export void initAuthTables();
 @c
 #include "mal_authorize.h"
 
-static str owner = NULL;
-static str passw = NULL;
+/**
+ * Requires the current client to be the admin user.  If not the case,
+ * this function returns an InvalidCredentialsException.
+ */
+str
+AUTHrequireAdmin() {
+	oid id = getClient()->user;
 
-void
-setServerOwner(str o, str p) {
-	if (owner || passw)
-		GDKfatal("Attempt to reset server owner identity");
-	owner = o ? o : "user";
-	passw = p ? p : "";
-#ifdef _DEBUG_AUTH_
-	printf("serverOwner=%s\n",owner);
-#endif
-	assert(owner != NULL);
+	if (id != 0) {
+		char u[BUFSIZ];
+		str user = u;
+		str tmp;
+		
+		rethrow("requireAdmin", tmp, AUTHresolveUser(&user, &id));
+		throwICf("requireAdmin", "Access denied for user '%s'", user)
+	}
+
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Requires the current client to be the admin user, or the user with
+ * the given username.  If not the case, this function returns an
+ * InvalidCredentialsException.
+ */
+str
+AUTHrequireAdminOrUser(str *username) {
+	oid id = getClient()->user;
+	char u[BUFSIZ];
+	str user = u;
+	str tmp;
+
+	/* root?  then all is well */
+	if (id == 0) return(MAL_SUCCEED);
+
+	rethrow("requireAdminOrUser", tmp, AUTHresolveUser(&user, &id));
+	if (username == NULL || *username == NULL || strcmp(*username, user) != 0) {
+		throwICf("requireAdminOrUser", "Access denied for user '%s'", user);
+	}
+
+	return(MAL_SUCCEED);
 }
 
 @-
 Localize the authorization tables in the database.  The authorization
 tables are a set of aligned BATs that store username, password (hashed)
-and language permissions.
+and scenario permissions.
 If the BATs do not exist, they are created, and the monetdb/monetdb
-administrator account is added.  Initializing the authorization tables
+administrator account is added.  Initialising the authorization tables
 can only be done after the GDK kernel has been initialized.
 @c
-static BAT *user = NULL, *userrev;
-static BAT *pass = NULL, *passrev;
-static BAT *lang = NULL, *langrev;
+static BAT *user = NULL, *userrev = NULL;
+static BAT *pass = NULL;
+static BAT *scen = NULL;
 
-void
-initAuthTables() {
+str
+AUTHinitTables() {
 	BAT *b;
 	int isNew = 1;
 
 	/* skip loading if already loaded */
-	if (user != NULL && pass != NULL && lang != NULL)
-		return;
+	if (user != NULL && pass != NULL && scen != NULL)
+		return(MAL_SUCCEED);
 
 	/* if one is not NULL here, something is seriously screwed up */
 	assert (user == NULL);
 	assert (pass == NULL);
-	assert (lang == NULL);
+	assert (scen == NULL);
 
 	/* load/create users BAT */
 	b = BATdescriptor(BBPindex("M5system_auth_user"));
 	if (b == NULL) {
-		b = BATnew(TYPE_void, TYPE_str, 256);
+		b = BATnew(TYPE_oid, TYPE_str, 256);
 		if (b == NULL)
-			GDKfatal("mal_authorize: could not allocate user table");
+			throwMal("initTables", "could not allocate user table");
 
 		BATkey(BATmirror(b), TRUE);
 		BBPrename(b->batCacheid, "M5system_auth_user");
@@ -148,9 +150,9 @@ initAuthTables() {
 	/* load/create password BAT */
 	b = BATdescriptor(BBPindex("M5system_auth_passwd"));
 	if (b == NULL) {
-		b = BATnew(TYPE_void, TYPE_str, 256);
+		b = BATnew(TYPE_oid, TYPE_str, 256);
 		if (b == NULL)
-			GDKfatal("mal_authorize: could not allocate password table");
+			throwMal("initTables", "could not allocate password table");
 
 		BBPrename(b->batCacheid, "M5system_auth_passwd");
 		BATmode(b, PERSISTENT);
@@ -159,25 +161,22 @@ initAuthTables() {
 		isNew = 0;
 	}
 	pass = b;
-	passrev = BATmirror(b);
 
-	/* load/create language BAT */
-	b = BATdescriptor(BBPindex("M5system_auth_lang"));
+	/* load/create scenario BAT */
+	b = BATdescriptor(BBPindex("M5system_auth_scen"));
 	if (b == NULL) {
 		b = BATnew(TYPE_oid, TYPE_str, 256);
 		if (b == NULL)
-			GDKfatal("mal_authorize: could not allocate language table");
+			throwMal("initTables", "could not allocate scenario table");
 
 		BATkey(b, TRUE);
-		BBPrename(b->batCacheid, "M5system_auth_lang");
+		BBPrename(b->batCacheid, "M5system_auth_scen");
 		BATmode(b, PERSISTENT);
 		BATcommit(b);
 	} else {
 		isNew = 0;
 	}
-	lang = b;
-	langrev = BATmirror(b);
-	(void) langrev; /* silence compiler */
+	scen = b;
 
 	if (isNew == 1) {
 		/* insert the monetdb/monetdb administrator account on a
@@ -186,23 +185,28 @@ initAuthTables() {
 		str pass = "monetdb";
 		bat b = bat_nil;
 		str tmp;
+		oid uid;
 
-		tmp = AUTHaddUser(&user, &pass, &b);
-		if (tmp != MAL_SUCCEED)
-			GDKfatal(tmp);
+		rethrow("initTables", tmp, AUTHaddUser(&uid, &user, &pass, &b));
+		if (uid != 0)
+			throwMal("initTables", "authorisation BATs not empty, but they were just created !?!?!?");
 	}
+
+	return(MAL_SUCCEED);
 }
 
 /**
- * Checks the credentials supplied and returns an exception if invalid.
+ * Checks the credentials supplied and throws an exception if invalid.
+ * The user id of the authenticated user is returned upon success.
  */
 str
-AUTHcheckCredentials(str *username, str *passwd, str *language) {
+AUTHcheckCredentials(oid *uid, str *username, str *passwd, str *scenario) {
 	str tmp;
 	BAT *b;
 	BUN p, q;
-	
-	initAuthTables();
+	oid *id;
+
+	rethrow("checkCredentials", tmp, AUTHrequireAdminOrUser(username));
 
 	if (*username == NULL || strNil(*username))
 		throwIC("checkCredentials", "Invalid credentials for unknown user");
@@ -213,6 +217,7 @@ AUTHcheckCredentials(str *username, str *passwd, str *language) {
 		throwICf("checkCredentials", "Invalid credentials for user '%s'",
 				*username);
 	}
+	id = (oid*)(BUNtail(userrev, p));
 
 	/* a NULL password is impossible (since we should be dealing with
 	 * hashes here) so we can bail out immediately
@@ -224,7 +229,7 @@ AUTHcheckCredentials(str *username, str *passwd, str *language) {
 	}
 
 	/* find the corresponding password to the user */
-	q = BUNfnd(pass, BUNtail(userrev, p));
+	q = BUNfnd(pass, id);
 	assert (q != NULL);
 	tmp = (str)BUNtail(pass, q);
 	assert (tmp != NULL);
@@ -235,12 +240,12 @@ AUTHcheckCredentials(str *username, str *passwd, str *language) {
 				*username);
 	}
 
-	/* now see if the language is permitted (if restrictions for that
+	/* now see if the scenario is permitted (if restrictions for that
 	 * apply)
 	 */
-	b = BATselect(lang, BUNtail(userrev, p), BUNtail(userrev, p));
+	b = BATselect(scen, id, id);
 	if (BATcount(b) > 0) {
-		if (*language == NULL || strNil(*language)) {
+		if (*scenario == NULL || strNil(*scenario)) {
 			/* of course we DO NOT tell the exact reason here again */
 			throwICf("checkCredentials", "Invalid credentials for user '%s'",
 					*username);
@@ -250,8 +255,9 @@ AUTHcheckCredentials(str *username, str *passwd, str *language) {
 		BATloop(b, p, q) {
 			tmp = (str)BUNtail(b, p);
 			assert (tmp != NULL);
-			if (strcmp(*language, tmp) == 0) {
+			if (strcmp(*scenario, tmp) == 0) {
 				/* YAY!  fun!  party!  We are granted access! */
+				*uid = *id;
 				return(MAL_SUCCEED);
 			}
 		}
@@ -260,20 +266,26 @@ AUTHcheckCredentials(str *username, str *passwd, str *language) {
 		throwICf("checkCredentials", "Invalid credentials for user '%s'",
 				*username);
 	} else {
-		/* no language restriction applies, so everything is good */
+		/* no scenario restriction applies, so everything is good */
+		*uid = *id;
 		return(MAL_SUCCEED);
 	}
 }
 
 /**
- * Adds the given user with password to the administration.  The langs
- * BAT contains all languages allowed for the user.  If NULL or empty,
- * no restrictions for a language applies.
+ * Adds the given user with password to the administration.  The scens
+ * BAT contains all scenarios allowed for the user.  If NULL or empty,
+ * no restrictions for a scenario applies.  The return value of this
+ * function is the user id of the added user.
  */
 str
-AUTHaddUser(str *username, str *passwd, bat *langs) {
+AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 	BUN p, q;
 	BAT *b;
+	oid *id;
+	str tmp;
+
+	rethrow("addUser", tmp, AUTHrequireAdmin());
 	
 	/* some pre-condition checks */
 	if (*username == NULL || strNil(*username))
@@ -289,9 +301,13 @@ AUTHaddUser(str *username, str *passwd, bat *langs) {
 	/* we assume the BATs are still aligned */
 	BUNappend(user, *username, 0);
 	BUNappend(pass, *passwd, 0);
+	/* retrieve the oid of the just inserted user */
+	p = BUNfnd(userrev, *username);
+	assert (p != NULL);
+	id = (oid*)(BUNtail(userrev, p));
 
-	if (*langs != bat_nil) {
-		b = BATdescriptor(*langs);
+	if (*scenarios != bat_nil) {
+		b = BATdescriptor(*scenarios);
 		if (b == NULL) {
 			BATundo(user);
 			BATundo(pass);
@@ -303,15 +319,10 @@ AUTHaddUser(str *username, str *passwd, bat *langs) {
 			throwIllArg("addUser", "BAT should have str head");
 		}
 
-		/* associate langs given in the BAT with the user */
+		/* associate scenarios given in the BAT with the user */
 		if (BATcount(b) > 0) {
-			oid *id;
-
-			p = BUNfnd(userrev, *username);
-			assert (p != NULL);
-			id = (oid*)(BUNtail(userrev, p));
 			BATloop(b, p, q) {
-				BUNins(lang, id, BUNhead(b, p));
+				BUNins(scen, id, BUNhead(b, p));
 			}
 		}
 	}
@@ -319,13 +330,14 @@ AUTHaddUser(str *username, str *passwd, bat *langs) {
 	/* make the stuff persistent */
 	BATcommit(user);
 	BATcommit(pass);
-	BATcommit(lang);
+	BATcommit(scen);
 
+	*uid = *id;
 	return(MAL_SUCCEED);
 }
 
 /**
- * Removes the given user from the administration.  All languages (if
+ * Removes the given user from the administration.  All scenarios (if
  * any) and the password are removed as well.
  */
 str
@@ -333,7 +345,10 @@ AUTHremoveUser(str *username) {
 	BUN p;
 	BAT *b;
 	oid *id;
-	
+	str tmp;
+
+	rethrow("addUser", tmp, AUTHrequireAdmin());
+
 	/* pre-condition check */
 	if (*username == NULL || strNil(*username))
 		throwIllArg("addUser", "username cannot be nil");
@@ -349,13 +364,13 @@ AUTHremoveUser(str *username) {
 	BATdel(user, b);
 	b = BATselect(pass, id, id);
 	BATdel(pass, b);
-	b = BATselect(lang, id, id);
-	BATdel(lang, b);
+	b = BATselect(scen, id, id);
+	BATdel(scen, b);
 
 	/* make the stuff persistent */
 	BATcommit(user);
 	BATcommit(pass);
-	BATcommit(lang);
+	BATcommit(scen);
 
 	return(MAL_SUCCEED);
 }
@@ -368,6 +383,9 @@ AUTHremoveUser(str *username) {
 str
 AUTHchangeUsername(str *olduser, str *newuser) {
 	BUN p, q;
+	str tmp;
+
+	rethrow("addUser", tmp, AUTHrequireAdminOrUser(olduser));
 
 	/* precondition checks */
 	if (*olduser == NULL || strNil(*olduser))
@@ -392,19 +410,19 @@ AUTHchangeUsername(str *olduser, str *newuser) {
 }
 
 /**
- * Changes the password of the given user to the given password.  Note
- * that no check is being performed, and the password is just
- * overwritten with the new value.  Recall that determining whether this
- * is legal from the user point of view is up to the caller of this
- * function.
+ * Changes the password of the current user to the given password.  The
+ * old password must match the one stored before the new password is
+ * set.
  */
 str
-AUTHchangePassword(str *username, str *passwd) {
-	BUN p, q;
+AUTHchangePassword(str *oldpass, str *passwd) {
+	BUN p;
+	str tmp;
+	oid id;
 
 	/* precondition checks */
-	if (*username == NULL || strNil(*username))
-		throwIllArg("changePassword", "username should not be nil");
+	if (*oldpass == NULL || strNil(*oldpass))
+		throwIllArg("changePassword", "old password should not be nil");
 	if (*passwd == NULL || strNil(*passwd))
 		throwIllArg("changePassword", "password should not be nil");
 
@@ -412,161 +430,182 @@ AUTHchangePassword(str *username, str *passwd) {
 	 * valid hash.  Using an invalid hash (like prepending a ! in front
 	 * of it) could be used to 'disable' accounts. */
 
+	/* check the old password */
+	id = getClient()->user;
+	p = BUNfnd(pass, &id);
+	tmp = BUNtail(pass, p);
+	assert (tmp != NULL);
+	if (strcmp(tmp, *oldpass) != 0)
+		throwIC("changePassword", "Access denied");
+
+	/* ok, just overwrite the password field for this user */
+	BUNinplace(pass, p, BUNhead(pass, p), *passwd, 0);
+	BATcommit(pass);
+
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Changes the password of the given user to the given password.  This
+ * function can be used by the administrator to reset the password for a
+ * user.  Note that for the administrator to change its own password, it
+ * cannot use this function for obvious reasons.
+ */
+str
+AUTHsetPassword(str *username, str *passwd) {
+	BUN p;
+	str tmp;
+	oid id;
+
+	rethrow("setPassword", tmp, AUTHrequireAdmin());
+
+	/* precondition checks */
+	if (*username == NULL || strNil(*username))
+		throwIllArg("setPassword", "username should not be nil");
+	if (*passwd == NULL || strNil(*passwd))
+		throwIllArg("setPassword", "password should not be nil");
+
+	/* In the future a check could be here to see if the password is a
+	 * valid hash.  Using an invalid hash (like prepending a ! in front
+	 * of it) could be used to 'disable' accounts. */
+
+	id = getClient()->user;
+	/* find the name of the administrator and see if it equals username */
+	p = BUNfnd(user, &id);
+	assert (p != NULL);
+	tmp = BUNtail(user, p);
+	assert (tmp != NULL);
+	if (strcmp(tmp, *username) == 0)
+		throwIC("setPassword", "The administrator cannot set its own password, use changePassword instead");
+	
 	/* see if the user is valid */
 	p = BUNfnd(userrev, *username);
 	if (p == NULL)
 		throwMalf("changePassword", "user '%s' does not exist", *username);
 
 	/* ok, just overwrite the password field for this user */
-	q = BUNfnd(pass, BUNtail(userrev, p));
-	assert (q != NULL);
-	BUNinplace(pass, q, BUNhead(pass, p), *passwd, 0);
+	p = BUNfnd(pass, &id);
+	assert (p != NULL);
+	BUNinplace(pass, p, BUNhead(pass, p), *passwd, 0);
 	BATcommit(pass);
 
 	return(MAL_SUCCEED);
 }
 
 /**
- * Adds the given language to the list of allowed languages for the
+ * Adds the given scenario to the list of allowed scenarios for the
  * given user.  Note that this can result in unexpected behaviour when
- * there where previously no languages defined for the user (which means
- * all languages are permitted).
+ * there where previously no scenarios defined for the user (which means
+ * all scenarios are permitted).
  */
 str
-AUTHaddLanguage(str *username, str *language) {
+AUTHaddLanguage(str *username, str *scenario) {
 	BUN p;
+	str tmp;
+
+	rethrow("addUser", tmp, AUTHrequireAdmin());
 
 	/* precondition checks */
 	if (*username == NULL || strNil(*username))
 		throwIllArg("addLanguage", "username should not be nil");
-	if (*language == NULL || strNil(*language))
-		throwIllArg("addLanguage", "language should not be nil");
+	if (*scenario == NULL || strNil(*scenario))
+		throwIllArg("addLanguage", "scenario should not be nil");
 
 	/* see if the user is valid */
 	p = BUNfnd(userrev, *username);
 	if (p == NULL)
 		throwMalf("addLanguage", "user '%s' does not exist", *username);
 
-	/* add the language for this user */
-	BUNins(lang, BUNtail(userrev, p), *language);
-	BATcommit(lang);
+	/* add the scenario for this user */
+	BUNins(scen, BUNtail(userrev, p), *scenario);
+	BATcommit(scen);
 
 	return(MAL_SUCCEED);
 }
 
 /**
- * Removes the given language from the list of allowed languages for the
- * given user.  Note that removing the last allowed language results in
- * the opposite effect: it will allow any language to be used.
+ * Removes the given scenario from the list of allowed scenarios for the
+ * given user.  Note that removing the last allowed scenario results in
+ * the opposite effect: it will allow any scenario to be used.
  */
 str
-AUTHremoveLanguage(str *username, str *language) {
+AUTHremoveLanguage(str *username, str *scenario) {
 	BUN p;
 	BAT *b;
+	str tmp;
+
+	rethrow("addUser", tmp, AUTHrequireAdmin());
 
 	/* precondition checks */
 	if (*username == NULL || strNil(*username))
 		throwIllArg("addLanguage", "username should not be nil");
-	if (*language == NULL || strNil(*language))
-		throwIllArg("addLanguage", "language should not be nil");
+	if (*scenario == NULL || strNil(*scenario))
+		throwIllArg("addLanguage", "scenario should not be nil");
 
 	/* see if the user is valid */
 	p = BUNfnd(userrev, *username);
 	if (p == NULL)
 		throwMalf("addLanguage", "user '%s' does not exist", *username);
 
-	/* see if the language is valid for this user */
-	b = BATselect(lang, BUNtail(userrev, p), BUNtail(userrev, p));
-	b = BATselect(BATmirror(b), *language, *language);
+	/* see if the scenario is valid for this user */
+	b = BATselect(scen, BUNtail(userrev, p), BUNtail(userrev, p));
+	b = BATselect(BATmirror(b), *scenario, *scenario);
 	if (BATcount(b) == 0)
-		throwMalf("removeLanguage", "language '%s' not found for user", *language);
+		throwMalf("removeLanguage", "scenario '%s' not found for user", *scenario);
 	if (BATcount(b) > 1)
-		throwMalf("removeLanguage", "inconsistent authorisation administration, language '%s' multiple times defined", *language);
+		throwMalf("removeLanguage", "inconsistent authorisation administration, scenario '%s' multiple times defined", *scenario);
 
 	/* ok, remove it */
-	BATdel(lang, BATmirror(b));
-	BATcommit(lang);
+	BATdel(scen, BATmirror(b));
+	BATcommit(scen);
 
 	return(MAL_SUCCEED);
 }
 
+/**
+ * Resolves the given user id and returns the associated username.  If
+ * the id is invalid, an exception is thrown.  The given pointer to the
+ * username char buffer should be NULL if this function is supposed to
+ * allocate memory for it.  If the pointer is pointing to an already
+ * allocated buffer, it is supposed to be of size BUFSIZ.
+ */
 str
-MALinitClient(Client c) {
-#ifdef _DEBUG_AUTH_
-	printf("authorize %s:%s %s\n", c->user, c->password, c->scenario);
-#endif
-	/* don't do authorisation right now, because it doesn't work at all
-	 * but for a hard-coded user "user" with password "" */
-	if (1 == 1) return MAL_SUCCEED;
+AUTHresolveUser(str *username, oid *uid) {
+	BUN p;
+
+	if (uid == NULL || *uid == oid_nil)
+		throwIllArg("resolveUser", "userid should not be nil");
 	
-	if (owner == NULL || c->user == NULL)
-		return MAL_SUCCEED; /* avoid missing info */
+	p = BUNfnd(user, uid);
+	if (p == NULL)
+		throwMalf("resolveUser", "No such user with id: " SZFMT, *uid);
 
-	/*
-	if (strcmp(c->user, owner) == 0 &&
-		(passw == NULL ||
-		 strcmp((c->password ? c->password : ""), passw) == 0))
-		return MAL_SUCCEED;
-	*/
+	assert (username != NULL);
 
-	return throwMessage("mal.authorize", "Access denied");
+	if (*username == NULL) {
+		*username = GDKstrdup((str)(BUNtail(user, p)));
+	} else {
+		snprintf(*username, BUFSIZ, "%s", (str)(BUNtail(user, p)));
+	}
+
+	return(MAL_SUCCEED);
 }
 
-int
-isServerOwner(Client c){
-#ifdef _DEBUG_AUTH_
-	printf("isServerOwner? %s/%s\n",c->user,c->password);
-#endif
-	return strcmp(c->user, "user") == 0;
-}
-
+/**
+ * Returns the username of the current user.
+ */
 str
-setNewPassword(str nme, str passwd, str newpasswd)
-{
-	BAT *b;
-	printf("new password %s %s %s\n", nme,passwd,newpasswd);
-#ifdef _DEBUG_AUTH_
-#endif
-	b= BATselect(passrev,nme,nme);
-	b= BATselect(BATmirror(b),passwd,passwd);
-	if( BATcount(b) == 0) 
-		return throwMessage("clients.newPassword","Permission denied");
+AUTHgetUsername(str *username) {
+	BUN p;
+	oid id;
 
-	BATdel(passrev,b);
-	BUNins(pass,nme,newpasswd);
-	BATcommit(pass);
-	return MAL_SUCCEED;
-}
+	id = getClient()->user;
+	p = BUNfnd(user, &id);
+	if (p == NULL) {
+		GDKfatal("Internal error: user id that doesn't exist: " SZFMT, getClient()->user);
+	}
 
-@-
-The information can be obtained by the dba for inspection
-@c
-bat
-getAllPermissions()
-{
-	BAT *b;
-#ifdef _DEBUG_AUTH_
-	printf("get authorizations \n");
-#endif
-	if( user ){
-		b= BATcopy(user);
-		BBPkeepref(b->batCacheid);
-		return b->batCacheid;
-	}
-	return 0;
-}
-bat
-getAllPasswords()
-{
-	BAT *b;
-#ifdef _DEBUG_AUTH_
-	printf("get authorizations \n");
-#endif
-	if( user ){
-		b= BATcopy(pass);
-		BBPkeepref(b->batCacheid);
-		return b->batCacheid;
-	}
-	return 0;
+	*username = BUNtail(user, p);
+	return(MAL_SUCCEED);
 }
 @}

@@ -62,7 +62,7 @@ end main;	# 17
 [ 3,	  "timezones",		  1,	  0		  ]
 [ 4,	  "M5system_auth_user",	  1,	  1		  ]
 [ 5,	  "M5system_auth_passwd", 1,	  1		  ]
-[ 6,	  "M5system_auth_lang",	  1,	  1		  ]
+[ 6,	  "M5system_auth_scen",	  1,	  1		  ]
 [ 7,	  "b",			  0,	  1		  ]
 [ 8,	  "tmp_10",		  0,	  1		  ]
 

@@ -345,7 +345,7 @@ end main;	# 151
 [ 1 ]
 [ 4 ]
 [ nil ]
-[ "MALexception:user.main[56]:algebra.find: can not find element\n" ]
+[ "MALexception:user.main[56]:algebra.find:can not find element\n" ]
 #-------------------------#
 # h		tmp_4	  # name
 # str		int	  # type

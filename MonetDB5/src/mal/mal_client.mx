@@ -100,7 +100,7 @@ typedef struct CLIENT_INPUT {
 
 typedef struct CLIENT {
 	int idx;        /* entry in mal_clients */
-	str user;       /* user name. */
+	oid user;       /* user id in the auth administration */
 	int sessionkey; /* unique key addressed to session */
 	int permission; /* access mode */
 @-
@@ -114,7 +114,6 @@ information should be dealt with separately.[TODO]
 @h
 	str     scenario;  /* scenario management references */
 	str     oldscenario;
-	str     language;   /* language from scenario */
 	void    *state[7], *oldstate[7];
 	MALfcn  phase[7], oldphase[7];
 	char    itrace;     /* trace execution using interactive mdb */
@@ -219,7 +218,7 @@ to keep track of critical elements.
 mal_export ClientRec mal_clients[MAL_MAXCLIENTS+1];
 
 mal_export Client   getClient   ();
-mal_export Client   initClient(str nme, bstream *fin, stream *fout);
+mal_export Client   initClient(oid user, bstream *fin, stream *fout);
 mal_export void     initClientThread(Client c);
 mal_export void     closeClient    (Client c);
 mal_export Client   forkClient     (Client c);
@@ -228,13 +227,13 @@ mal_export int		countClients();
 mal_export void     appendInput(Client c, str msg);
 mal_export int      readClient  (Client c);
 mal_export void     setClientTrace(Client c, int flag);
-mal_export str      stopClient(Client c, str nme);
+mal_export str      stopClient(Client c, oid which);
 mal_export str      stopClientIndex(Client c, int id);
 mal_export str      resumeClient(Client c, int sessionkey);
 mal_export str      suspendClient(Client c, int sessionkey, int timeout);
 mal_export void     cleanupClients();
 mal_export void     traceAllClients(int flag);
-mal_export void     traceClient(str nme, int flag);
+mal_export void     traceClient(oid which, int flag);
 
 mal_export bstream *getConsole(Client c);
 mal_export void     pushClientInput(Client c, bstream *new_input, int listing, char *prompt);
@@ -366,7 +365,7 @@ Client newClient(){
 @-
 You can always retrieve a client record using the thread identifier,
 because we maintain a 1-1 mapping between client and thread of control.
-Therefore, we don;t need locks either.
+Therefore, we don't need locks either.
 If the number of clients becomes too large, we have to change the 
 allocation and lookup scheme.
 @c
@@ -390,19 +389,14 @@ Client getClient()
 	return NULL;
 }
 
-@-
-The username is copied, and should be garbage collected
-upon return;
-@c
-Client initClient(str nme, bstream *fin, stream *fout) {
+Client initClient(oid user, bstream *fin, stream *fout) {
 	Client c;
 	str prompt;
 
 	if ((c = newClient()) == NULL)
 		return NULL;
 
-	c->user = nme ? GDKstrdup(nme) : NULL; 
-	c->language = NULL;
+	c->user = user; 
 	c->scenario = NULL;
 	c->oldscenario = NULL;
 	c->sessionkey = 0;
@@ -442,8 +436,20 @@ collect the buffer when in use.
 
 	c->cwd= GDKstrdup(monet_cwd);
 	if (!fin) {
-		prompt= GDKgetenv("monet_prompt");
-		if( prompt== 0) prompt= ">";
+		/* there is always a prompt, as it is in the default options of
+		 * monet */
+		prompt = GDKgetenv("monet_prompt");
+		if (c->user == 0) {
+			str t = prompt;
+			/* replace > with # to indicate "root" access */
+			while (*t != '\0') {
+				if (*t == '>') {
+					*t = '#';
+					break;
+				}
+				t++;
+			}
+		}
 	} else {
 		prompt= PROMPT1;
 	}
@@ -460,12 +466,15 @@ it starts serviceing statements
 void initClientThread(Client c)
 {
 	Thread t;
+	char cname[11 + 1];
 /*	still unsafe, race conditions, garbage left over??
 	if( c->mythread){
 		t= c->mythread;
 	} else
 */
-		c->mythread = t=  THRnew(c->mypid=MT_getpid(),c->user);
+		snprintf(cname, 11, SZFMT, (size_t)(c->user));
+		cname[11] = '\0';
+		c->mythread = t=  THRnew(c->mypid=MT_getpid(),cname);
 	c->errbuf = GDKerrbuf;
 	if (c->errbuf == NULL) {
 		GDKsetbuf( GDKmalloc(GDKMAXERRLEN));
@@ -592,11 +601,7 @@ The threads may not be removed, but should become dormant
 	c->mythread= 0;
 	c->mypid= 0;
 	/* THRsuspend(c->mythread); still unsafe */
-	if (c->user) {
-		GDKfree(c->user); 
-		c->user = NULL;
-	}
-	c->language = NULL;
+	c->user = oid_nil;
 	c->mode = FREECLIENT;
 }
 
@@ -635,7 +640,7 @@ void closeClient(Client c) {
 
 	for (k = mal_clients+1; k < mal_clients+MAL_MAXCLIENTS; k++) 
 		if ((k->mode > FINISHING) ){
-			GDKerror("closeClient:client '%s' is still active\n", k->user);
+			GDKerror("closeClient:client '%d' is still active\n", k->user);
 			killClient(k);
 		}
 	killClient(CONSOLE);
@@ -662,7 +667,7 @@ work by closing them.
 void
 killClient(Client c)
 {
-	if (c && c->user ) {
+	if (c && c->user != oid_nil ) {
 
 #ifdef MAL_DEBUG_CLIENT
 		printf("killClient %d\n", c - mal_clients);
@@ -707,11 +712,7 @@ void cleanupClients(){
 			GDKfree(c->prompt); 
 			c->prompt = NULL;
 		}
-		if( c->user){ 
-			GDKfree(c->user); 
-			c->user = NULL;
-		}
-		c->language = NULL;
+		c->user = oid_nil;
 		assert(c->bak==NULL);
 		if( c->fdin){
 			(void) stream_close(c->fdin->s);
@@ -739,13 +740,13 @@ str stopClientIndex(Client c, int id)
 	killClient(mal_clients+id);
 	return MAL_SUCCEED;
 }
-str stopClient(Client c, str nme){
+str stopClient(Client c, oid which){
 	if( ! isAdministrator(c))
 		return throwMessage("stop","Only permitted from server console");
 
 	mal_set_lock(mal_contextLock, "stopClient");
 	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) {
-		if (c->mode > FREECLIENT && strcmp(nme,c->user)==0) {
+		if (c->mode > FREECLIENT && c->user == which) {
 			killClient(c);
 			mal_unset_lock(mal_contextLock, "stopClient");
 			return MAL_SUCCEED;
@@ -803,16 +804,16 @@ to the system console.
 @{
 @= sysTrace
 	if( c->sysmon){
-		stream_printf(c->sysmon,"#[%s]",c->user);
+		stream_printf(c->sysmon,"#[%d]",c->user);
 		stream_printf(c->sysmon, @1);
 		stream_printf(c->sysmon,"\n");
 	}
 @-
 @c
-void traceClient(str nme, int flag){
+void traceClient(oid which, int flag){
 	Client c;
 	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
-		if( c->user && strcmp(c->user,nme)==0){
+		if( c->user == which ){
 #ifdef MAL_CLIENT_DEBUG
 			printf("trace client %d\n",c-mal_clients);
 #endif
@@ -823,7 +824,7 @@ void traceClient(str nme, int flag){
 void traceAllClients(int flag){
 	Client c;
 	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
-		if( c->user){
+		if( c->user != oid_nil ){
 			if( flag) c->sysmon= mal_clients[0].fdout;
 			else c->sysmon= NULL;
 		}

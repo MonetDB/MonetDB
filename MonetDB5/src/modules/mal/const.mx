@@ -122,8 +122,10 @@ mal_export str CSThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @- Module initializaton
 The content of this box my only be changed by the Administrator.
 @= authorize
-	if( ! isServerOwner(getClient()) )
-		return throwMessage("const.@1", "unauthorized access to 'const' box");
+	{
+		str tmp = NULL;
+		rethrow("const.@1", tmp, AUTHrequireAdmin());
+	}
 @-
 @= insertBox
 	msg = @2;
@@ -147,7 +149,10 @@ CSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return throwMessage("const.prelude", "failed to open box");
 	/* if the box was already filled we can skip initialization */
 	if (box->sym->vtop == 0) {
-		insertToBox(box, "user", getClient()->user);
+		char u[11 + 1];
+		snprintf(u, 11, SZFMT, getClient()->user);
+		u[11] = '\0';
+		insertToBox(box, "user", u);
 		insertToBox(box, "dbname", GDKgetenv("gdk_dbname"));
 		insertToBox(box, "dbfarm", GDKgetenv("gdk_dbfarm"));
 		insertToBox(box, "version", GDKgetenv("gdk_version"));

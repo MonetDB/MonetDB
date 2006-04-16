@@ -16,13 +16,16 @@
 @' All Rights Reserved.
 
 @f clients
-@a Martin Kersten
-@v 0.1
+@a Martin Kersten, Fabian Groffen
+@v 0.2
 @* Client management
 
 This module contains the primitives to inspect and adjust
 the client records maintained during a session.
-A rudimentary authorization scheme should be provided[todo].
+
+The administrator has full rights to change everything, while users are
+only allowed to change their password or username.
+
 @mal
 module clients;
 
@@ -36,10 +39,6 @@ comment "Turn on/off echo of MAL instructions:
 command setDebug(flg:int):void
 address CLTsetDebug
 comment "Set the debugging bitset. See configuration file and documentation";
-
-#command setPassword(s:str)
-#address CLTsetPassword
-#comment "Change the password for the client";
 
 command setHistory(s:str)
 address CLTsetHistory
@@ -78,32 +77,6 @@ command quit():void
 address CLTquit
 comment "Terminate the session for this client"';
 
-@+ User administration
-These commands (except newPassword) can only be executed by the server owner.
-@mal
-command addUser(nme:str, pw:str, lang:bat[:str,:any]):void
-address CLTaddUser
-comment "Give a user permission to access a scenario";
-command delUser(nme:str,sc:str):void
-address CLTdelUser
-comment "Retract a user permission to access a scenario";
-
-command newPassword(old:str,new:str)
-address CLTnewPassword
-comment "Change the password for the current user";
-command newPassword(usr:str, old:str,new:str)
-address CLTnewPasswordRoot
-comment "Change the password for a user";
-
-command checkPermission(usr:str,pw:str,sc:str):bit
-address CLTcheckAuthorization
-comment "Check permission for a user";
-command getPasswords():bat[:str,:str]
-address CLTgetPasswords
-comment "Retrieve the complete password table";
-command getPermissions():bat[:str,:str]
-address CLTgetPermissions
-comment "Return the table with external users";
 
 @-
 @{
@@ -135,23 +108,13 @@ mal_export str CLTstop(int *ret, str *nme);
 mal_export str CLTsuspend(int *ret, int *skey, int *timeout);
 mal_export str CLTresume(int *ret, int *skey);
 
-mal_export str CLTaddUser(int *ret, str *usr, str *pw, bat *sc);
-mal_export str CLTdelUser(int *ret, str *usr, str *sc);
-mal_export str CLTnewPassword(int *ret, str *old, str *new);
-mal_export str CLTnewPasswordRoot(int *ret, str *usr, str *old, str *new);
-mal_export str CLTgetPermissions(int *ret);
-mal_export str CLTgetPasswords(int *ret);
-mal_export str CLTgetAuthorization(int *ret, str *usr);
-mal_export str CLTcheckAuthorization(bit *ret,str *usr, str *pw, str *sc);
+mal_export str CLTaddUser(oid *ret, str *usr, str *pw, bat *sc);
+mal_export str CLTremoveUser(int *ret, str *usr);
+mal_export str CLTchangePassword(int *ret, str *old, str *new);
+mal_export str CLTsetPassword(int *ret, str *usr, str *new);
+mal_export str CLTcheckPermission(int *ret, str *usr, str *pw, str *sc);
 
 #endif /* _CLIENTS_H */
-@- Module initializaton
-The content of this clients table my only be changed by the Administrator
-or the client himself
-@= authorize
-	if (!isServerOwner(getClient())
-		return throwMessage("clients.@1", "unauthorized access to 'clients' box");
-@-
 @c
 #include "clients.h"
 #include "mal_scenario.h"
@@ -228,7 +191,7 @@ CLTInfo(int *ret)
 	if (b == 0)
 		return throwMessage("catalog.clientInfo", "failed to create BAT");
 
-	BUNins(b, "user", c->user);
+	BUNins(b, "user", local_itoa((int)c->user));
 	BUNins(b, "password", ""); /* TODO: load from system tables */
 	BUNins(b, "permission", local_itoa(c->permission));
 	BUNins(b, "scenario", c->scenario);
@@ -297,7 +260,7 @@ CLTusers(int *ret)
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
 		if (c->mode >= CLAIMED && c->user)
-			b = BUNins(b, &i, c->user);
+			b = BUNins(b, &i, local_itoa((int)c->user));
 	}
 	@:Pseudo(client,users,)@
 	return MAL_SUCCEED;
@@ -355,7 +318,9 @@ str
 CLTtrace2(int *ret, str *nme, int *flg)
 {
     (void) ret;     /* fool compiler */
-    (void) traceClient(*nme, *flg);
+	(void) nme;
+	(void) flg;
+/*    (void) traceClient(*nme, *flg); */
     return MAL_SUCCEED;
 }
 
@@ -371,7 +336,9 @@ str
 CLTstop(int *ret, str *nme)
 {
     (void) ret;     /* fool compiler */
-    return stopClient(getClient(), *nme);
+	(void) nme;
+/*    return stopClient(getClient(), *nme);*/
+	return MAL_SUCCEED;
 }
 
 str
@@ -389,60 +356,86 @@ CLTresume(int *ret, int *skey)
 }
 
 
+@+ User administration
+These commands (except changePassword, changeUsername and
+checkPermission) can only be executed by the administrator.
 
-str CLTaddUser(int *ret, str *usr, str *pw, bat *sc){
-	(void) ret;
-	return AUTHaddUser(usr,pw,sc);
-}
-str CLTdelUser(int *ret, str *usr, str *sc){
-	(void) ret;
-	(void) sc;
-	return AUTHremoveUser(usr);
-}
-str CLTnewPassword(int *ret, str *old, str *new){
-	Client c = getClient();
-	(void) ret;
-	return setNewPassword(c->user, *old, *new);
-}
-str CLTnewPasswordRoot(int *ret, str *usr, str *old, str *new){
-	Client c = getClient();
-	(void) ret;
-	if( strcmp(c->user, "user")== 0)
-		return setNewPassword(*usr, *old, *new);
-	return throwMessage("clients.newpassword","Not allowed");
-}
-str CLTgetPermissions(int *ret){
-	Client c = getClient();
-	if( strcmp(c->user, "user")== 0){
-		*ret = getAllPermissions();
-		return MAL_SUCCEED;
-	}
-	printf("user %s owner %s\n",c->user, "user");
-	return throwMessage("clients.getAuthorizations","Not allowed");
-}
-str CLTgetPasswords(int *ret){
-	Client c = getClient();
-	if( strcmp(c->user, "user")== 0){
-		*ret = getAllPasswords();
-		return MAL_SUCCEED;
-	}
-	printf("user %s owner %s\n",c->user, "user");
-	return throwMessage("clients.getAuthorizations","Not allowed");
+@mal
+command addUser(nme:str, pw:str, scen:bat[:str,:any_1]):oid
+address CLTaddUser
+comment "Allow user with password access to the given scenarios";
+@c
+str CLTaddUser(oid *ret, str *usr, str *pw, bat *sc) {
+	str tmp;
+	
+	rethrow("addUser", tmp, AUTHaddUser(ret, usr, pw, sc));
+	return(MAL_SUCCEED);
 }
 
-str CLTcheckAuthorization(bit *ret,str *usr, str *pw, str *sc){
-	Client c = getClient();
-	if( strcmp(c->user, "user")== 0){
-		str err = AUTHcheckCredentials(usr, pw,sc);
-		if (err != MAL_SUCCEED) {
-			GDKfree(err);
-			*ret = 0;
-		} else {
-			*ret = 1;
-		}
-		return MAL_SUCCEED;
-	}
-	return throwMessage("clients.checkAuthorizations","Not allowed");
+@mal
+command removeUser(nme:str):void
+address CLTremoveUser
+comment "Remove the given user from the system";
+@c
+str CLTremoveUser(int *ret, str *usr) {
+	str tmp;
+	(void) ret;
+
+	rethrow("removeUser", tmp, AUTHremoveUser(usr));
+	return(MAL_SUCCEED);
+}
+
+@mal
+command changeUsername(old:str, new:str):void
+address CLTchangeUsername
+comment "Change the username of the user into the new string";
+@c
+str CLTchangeUsername(int *ret, str *old, str *new) {
+	str tmp;
+	(void) ret;
+
+	rethrow("changeUsername", tmp, AUTHchangeUsername(old, new));
+	return(MAL_SUCCEED);
+}
+
+@mal
+command changePassword(old:str, new:str):void
+address CLTchangePassword
+comment "Change the password for the current user";
+@c
+str CLTchangePassword(int *ret, str *old, str *new) {
+	str tmp;
+	(void) ret;
+
+	rethrow("changePassword", tmp, AUTHchangePassword(old, new));
+	return(MAL_SUCCEED);
+}
+
+@mal
+command setPassword(user:str, pass:str):void
+address CLTsetPassword
+comment "Set the password for the given user";
+@c
+str CLTsetPassword(int *ret, str *usr, str *new) {
+	str tmp;
+	(void) ret;
+
+	rethrow("setPassword", tmp, AUTHsetPassword(usr, new));
+	return(MAL_SUCCEED);
+}
+
+@mal
+command checkPermission(usr:str, pw:str, sc:str):void
+address CLTcheckPermission
+comment "Check permission for a user";
+@c
+str CLTcheckPermission(int *ret, str *usr, str *pw, str *sc) {
+	str tmp;
+	oid id;
+	(void) ret;
+
+	rethrow("checkPermission", tmp, AUTHcheckCredentials(&id, usr, pw, sc));
+	return(MAL_SUCCEED);
 }
 
 @}

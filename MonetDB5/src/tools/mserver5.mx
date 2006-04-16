@@ -153,14 +153,13 @@ monet_hello(opt *set, int setlen)
 	char *msg = mo_find_option(set, setlen, "monet_welcome");
 
 	if (msg && strcmp(msg, "yes") == 0) {
-		printf("# Monet Database Server V%s\n", GDKgetenv("gdk_version"));
-		printf("# Copyright (c) 1993-2006, CWI. ");
-		printf("All rights reserved.\n");
-		printf("# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs; %s linked.\n", HOST, (size_t) (sizeof(ptr) * 8), (size_t) (sizeof(oid) * 8), linkinfo);
+		printf("# MonetDB Server v%s\n", GDKgetenv("gdk_version"));
+		printf("# Copyright (c) 1993-2006 CWI, all rights reserved\n");
+		printf("# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs %s linked\n", HOST, (size_t) (sizeof(ptr) * 8), (size_t) (sizeof(oid) * 8), linkinfo);
 		printf("# config:%s\n", GDKgetenv("config"));
 		printf("# dbfarm:%s\n", GDKgetenv("gdk_dbfarm"));
 		printf("# dbname:%s\n", GDKgetenv("gdk_dbname"));
-		printf("# Visit http://monetdb.cwi.nl/ for further information.\n");
+		printf("# Visit http://monetdb.cwi.nl/ for further information\n");
 	}
 }
 
@@ -271,7 +270,7 @@ monet_options.mx.in
 
 
 	monet_hello(set, setlen);
-	/* you don;t need the commandline arguments anymore */
+	/* you don't need the commandline arguments anymore */
 	mo_free_options(set, setlen);
 }
 
@@ -282,7 +281,7 @@ main(int argc, char **argv)
 	opt *set = NULL;
 	int i, ac=argc, debug = 0, setlen = 0, listing = 0;
 	str dbinit = NULL;
-	str user=NULL, password=NULL;
+	str err = NULL;
 
 	static struct option long_options[12] = {
 		{"config", 1, 0, 'c'},
@@ -448,12 +447,14 @@ faster system start.
 	else
 		mo_print_options(set, setlen);
 #endif
-	setServerOwner(user,password);
 	monet_init(set, setlen);
 	if (mal_init())
 		return 0;
 	/* make sure the authorisation BATs are loaded */
-	initAuthTables();
+	err = AUTHinitTables();
+	if (err != MAL_SUCCEED)
+		GDKfatal(err);
+
 @-
 Time to execute the script files. 
 Start with the init command[todo], which may be defined in

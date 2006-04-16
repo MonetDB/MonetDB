@@ -68,7 +68,7 @@ exit c;
     io.print("finished");
 end main;
 [ "start" ]
-!ERROR: MALexception:pbm.newIterator: Could not find PBAT
+!ERROR: MALexception:pbm.newIterator:Could not find PBAT
 
 # 11:05:44 >  
 # 11:05:44 >  Done.

@@ -210,7 +210,7 @@ str throwException(str nme, str fcn, char *format, ...){
 	int len = strlen(MALexception)+1;
 	va_list ap;
 
-	sprintf(message,"%s:%s: ",nme,fcn);
+	sprintf(message,"%s:%s:",nme,fcn);
 	len= strlen(message);
 	va_start(ap, format);
 	vsnprintf(message + len, GDKMAXERRLEN-(len+2), format, ap);

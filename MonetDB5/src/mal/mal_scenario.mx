@@ -439,7 +439,6 @@ str
 fillScenario(Client c, Scenario scen)
 {
 	c->scenario = scen->name;
-	c->language = scen->language;
 
 	c->phase[READER] = scen->readerCmd;
 	c->phase[PARSER] = scen->parserCmd;
