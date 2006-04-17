@@ -149,9 +149,9 @@ CSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return throwMessage("const.prelude", "failed to open box");
 	/* if the box was already filled we can skip initialization */
 	if (box->sym->vtop == 0) {
-		char u[11 + 1];
-		snprintf(u, 11, SZFMT, getClient()->user);
-		u[11] = '\0';
+		char u[24 + 1];
+		snprintf(u, 24, OIDFMT, getClient()->user);
+		u[24] = '\0';
 		insertToBox(box, "user", u);
 		insertToBox(box, "dbname", GDKgetenv("gdk_dbname"));
 		insertToBox(box, "dbfarm", GDKgetenv("gdk_dbfarm"));

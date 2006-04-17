@@ -578,7 +578,7 @@ AUTHresolveUser(str *username, oid *uid) {
 	
 	p = BUNfnd(user, uid);
 	if (p == NULL)
-		throwMalf("resolveUser", "No such user with id: " SZFMT, *uid);
+		throwMalf("resolveUser", "No such user with id: " OIDFMT, *uid);
 
 	assert (username != NULL);
 
@@ -602,7 +602,7 @@ AUTHgetUsername(str *username) {
 	id = getClient()->user;
 	p = BUNfnd(user, &id);
 	if (p == NULL) {
-		GDKfatal("Internal error: user id that doesn't exist: " SZFMT, getClient()->user);
+		GDKfatal("Internal error: user id that doesn't exist: " OIDFMT, getClient()->user);
 	}
 
 	*username = BUNtail(user, p);
