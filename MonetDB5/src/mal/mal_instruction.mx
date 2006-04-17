@@ -1670,6 +1670,10 @@ end.
 		ptr d = NULL;
 		str s;
 
+		if( isaBatType(type)){
+			VALset(vr, TYPE_bat, ATOMnilptr(TYPE_bat));
+			break;
+		}
 		/* see if an atomFromStr() function is available */
 		if (BATatoms[type].atomFromStr == 0) {
 			s = getTypeName(type);
