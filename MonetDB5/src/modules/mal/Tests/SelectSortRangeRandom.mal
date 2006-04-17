@@ -3,7 +3,7 @@
 include microbenchmark;
 include crackers;
 
-tuples:= 100000000;
+tuples:= 10000000;
 values:= tuples;
 tf:=0:lng;
 
@@ -16,7 +16,7 @@ tf:=tf+m;
 io.print(m);
 bat.setReadMode(b);
 
-n:=350;
+n:=50;
 barrier (go,i):= (true,0);
 	low:int:= mmath.rand();
 	low := low % values;

@@ -3,11 +3,11 @@
 include microbenchmark;
 include crackers;
 
-tuples:= 100000000;
+tuples:= 10000000;
 values:= tuples;
 b:= microbenchmark.uniform(0@0,tuples,values);
 tf:=0:lng;
-n:=350;
+n:=50;
 barrier (go,i):= (true,0);
 	low:int:= mmath.rand();
 	low := low % values;
