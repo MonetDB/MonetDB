@@ -110,6 +110,7 @@ Compatibility code wrappers
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
+#include "mal_authorize.h"
 
 #ifdef _MIL_UTILS_H
 #define _MIL_UTILS_H
@@ -226,29 +227,16 @@ mil_utils.deposit("M_SQRT1_2",M_SQRT1_2);
 @- Module initializaton
 The content of this box my only be changed by the Administrator.
 @= authorize
-	if( !isAuthorized("user") && !isAdministrator(getClient()))
-		return throwMessage("const.@1","unauthorized access to 'mil' box");
+	{
+		str tmp = NULL;
+		rethrow("mil_utils.@1", tmp, AUTHrequireAdmin());
+	}
 @-
 @= insertBox
 	msg = @2;
 	insertToBox(box,@1,msg);
 	GDKfree(msg);
 @c
-
-int
-isAuthorized(str nme)
-{
-	(void) nme;
-	/*
-	Client c;
-
-	if (nme == 0)
-		return 1;
-	c = getClient();
-	return idcmp(c->user, nme) == 0;
-	*/
-	return 1;
-}
 
 str
 MILprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
