@@ -536,6 +536,7 @@ discardBox(Box box, str name)
 	}
 	box->sym->vtop--;
 	box->val->stktop--;
+	box->dirty= TRUE;
 	return 0;
 }
 
@@ -648,8 +649,8 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 		stream_printf(GDKout, "saveBox:can not rename %s\n", boxfile);
 #endif
 		GDKerror("saveBox:can not rename backup\n");
-		GDKfree(*boxfile);
-		GDKfree(*boxfilebak);
+		GDKfree(*boxfile); *boxfile = NULL;
+		GDKfree(*boxfilebak); *boxfilebak = NULL;
 		return 0;
 		}
 
@@ -663,8 +664,8 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 	else
 		GDKerror("saveBox:can not create box file\n");
 	if (f == NULL) {
-		GDKfree(*boxfile);
-		GDKfree(*boxfilebak);
+		GDKfree(*boxfile); *boxfile= NULL;
+		GDKfree(*boxfilebak); *boxfilebak= NULL;
 	}
 	return f;
 }
@@ -692,21 +693,21 @@ saveBox(Box box, int flag)
 		if (v->vtype == TYPE_bat) {
 			BAT *b = (BAT *) BBPgetdesc(v->val.br.id);
 
-			if (b && b->batPersistence & PERSISTENT)
-				stream_printf(f, "%s.bind(\"%s\",\"%s\");\n", box->name, getVarName(box->sym, i), BBPname(v->val.br.id));
+			if (b && b->batPersistence & PERSISTENT){
+				stream_printf(f, "%s.bind(\"%s\",\"%s\");\n", 
+					box->name, getVarName(box->sym, i), 
+					BBPname(v->val.br.id));
+				BATcommit(b);
+			}
 		} else {
 			stream_printf(f, "%s := ", getVarName(box->sym, i));
 			ATOMprint(v->vtype, VALptr(v), f);
 			stream_printf(f, ":%s;\n", getTypeName(v->vtype));
-			stream_printf(f, "%s.deposit(\"%s\",%s);\n", box->name, getVarName(box->sym, i), getVarName(box->sym, i));
+			stream_printf(f, "%s.deposit(\"%s\",%s);\n", 
+				box->name, getVarName(box->sym, i), getVarName(box->sym, i));
 		}
 	}
 	close_stream(f);
-	if (rename(boxfilebak, boxfile)) {
-		GDKfree(boxfile);
-		GDKfree(boxfilebak);
-		return -1;
-	}
 	GDKfree(boxfile);
 	GDKfree(boxfilebak);
 	return 0;
