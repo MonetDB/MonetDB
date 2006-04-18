@@ -1,8 +1,0 @@
-module("radix");
-var Bu := uniform(99);
-Bu.project(nil).print();
-Bu.reverse().project(nil).sort().reverse().print();
-var Bn := normal(99);
-Bn.project(nil).print();
-Bn.reverse().project(nil).sort().reverse().print();
-quit();

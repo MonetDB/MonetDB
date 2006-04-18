@@ -1,8 +1,0 @@
-#!/bin/bash
-for f in  `ls tst*.mal`
-do
-	echo ""
-	echo ""
-	echo "---->" $f "<-----"
-	cat $f
-done
