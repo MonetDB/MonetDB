@@ -1245,6 +1245,7 @@ int xquery_print_result_DRIVER(
         BAT*			dblVAL,
         BAT*			strVAL)
 {
+    /* { FILE* x=fopen("/tmp/x","w+"); fprintf(x,"HERE-1\n");fclose(x); } */
     TIMER_START();
     size_t xx, yy, curcnt = 0, maxcnt = BATcount(item), buncnt;
     XqueryCtx ctx_struct, *ctx = &ctx_struct;

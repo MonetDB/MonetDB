@@ -8049,32 +8049,65 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         rc = translate2MIL (f, code, cur_level, ++counter, L(args));
                
         milprintf(f, 
-                "{ # translate fn:subsequence\n"
+                "{ # translate fn:tijah-query\n"
                 "if (loop%03u.count() = 1) {\n"
                 "    var lo := 2.0LL;\n"
-		"    # the query string argument is tqarg\n"
+		"    var tjpfx := \"PFX\";\n"
                 "    var tqarg := item_str_%03d.fetch(0);\n"
-                "    run_tijah_query(\"PFX\",tqarg);\n"
+                "    run_tijah_query(tjpfx,tqarg);\n"
+		"    var pre_score := bat(\"nexi_result\");\n"
+		"    pre_score.persists(false);\n"
                 "    if (lo < 1.0LL) lo := 0.0;\n", cur_level, counter-1);
         milprintf(f, "    var hi := INT_MAX;\n");
 
-        milprintf(f, "\n"
-                "    # select a slice\n"
-                "    ipik := ipik.slice(int(lo),hi);\n"
-                "    iter := iter.slice(int(lo),hi);\n"
-                "    kind := kind.slice(int(lo),hi);\n"
-                "    item%s := item%s.slice(int(lo), hi);\n"
-                "    pos := ipik.mark(1@0);\n"
-                "} else {\n"
-                "    error(\"tijah_query(count problem)\");\n"
-                "}\n", kind_str(code), kind_str(code));
+	/* PROC tijah2pf(BAT[oid,dbl] pre_score) : BAT := */
+	milprintf(f,
+          "var docpre := bat(\"tj_\" + tjpfx + \"_doc_firstpre\").[oid]();\n"
+          "var pfpre :=  bat(\"tj_\" + tjpfx + \"_pfpre\");\n"
+          "var score := pre_score.tmark(0@0);\n"
+          "item  := pre_score.hmark(0@0);\n"
+          "iter  := item.mirror();\n"
+          "var frag := [find_lower](const docpre.reverse().mark(0@0), item);\n"
+          "item := item.join(pfpre).sort().tmark(0@0);\n"
+	  );
+
+	/* PROC align_frag() : void := */
+	milprintf(f,
+          "var needed_docs := bat(\"tj_\" + tjpfx + \"_doc_name\").semijoin(frag.tunique());\n"
+          "var loaded_docs := ws.fetch(DOCID_NAME).reverse();\n"
+          "needed_docs@batloop()\n"
+          "{\n"
+          "      if (not(loaded_docs.exist($t))) {\n"
+          "              ws.add_doc($t); }\n"
+          "}\n"
+          "var doc_loaded := ws.fetch(CONT_DOCID).join(ws.fetch(DOCID_NAME));\n"
+          "var fid_pffid := needed_docs.join(doc_loaded.reverse());\n"
+          "frag := frag.join(fid_pffid).sort().tmark(0@0);\n"
+          "kind := set_kind(frag, ELEM);\n"
+          "# ipik := iter;\n"
+          "# pos  := ipik.mark(1@0);\n"
+	  "}\n"
+	  );
+
+	/*
+         * milprintf(f, 
+         *      "    # select a slice\n"
+         *      "    ipik := ipik.slice(int(lo),hi);\n"
+         *      "    kind := kind.slice(int(lo),hi);\n"
+         *      "    iter := iter.slice(int(lo),hi);\n"
+         *      "    item%s := item%s.slice(int(lo), hi);\n"
+         *      "    pos := ipik.mark(1@0);\n"
+         *      "} else {\n"
+         *      "    error(\"tijah_query(count problem)\");\n"
+         *      "}\n", kind_str(code), kind_str(code));
+	 */
 
         deleteResult_ (f, --counter, STR);
 
         milprintf(f, "} # end of translate fn:tijah_query\n");
         return rc;
     }
-#endif
+#endif /* PFTIJAH */
     PFoops(OOPS_FATAL,"function %s is not supported.", PFqname_str (fnQname));
     milprintf(f,
                 "# empty intermediate result "

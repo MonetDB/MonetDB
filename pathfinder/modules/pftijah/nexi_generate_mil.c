@@ -129,6 +129,10 @@ char *split_terms(char *adj_term){
   return term_cut;
 
 }
+
+#define GEN_TOPICS  0
+#define GEN_TIMINGS 0
+
 #ifdef GENMILSTRING
 #define MILPRINTF sprintf
 #define MILOUT    &parserCtx->milBUFF[strlen(parserCtx->milBUFF)]
@@ -228,24 +232,27 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int topic_type, str
 
 
 
-  MILPRINTF(MILOUT, "\tVAR ");
+  if ( GEN_TOPICS ) {
+    MILPRINTF(MILOUT, "\tVAR ");
 
-  for (var_num = query_num; var_num < query_num + MAX_QUERIES-1; var_num++) {
-    MILPRINTF(MILOUT, "topic_%d, ", var_num);
+    for (var_num = query_num; var_num < query_num + MAX_QUERIES-1; var_num++) {
+      MILPRINTF(MILOUT, "topic_%d, ", var_num);
+    }
+  
+    MILPRINTF(MILOUT, "topic_%d;\n\n", query_num + MAX_QUERIES-1);
   }
 
-  MILPRINTF(MILOUT, "topic_%d;\n\n", query_num + MAX_QUERIES-1);
-
-
-  /* command array initialization */
+    /* command array initialization */
   p_com_array = p_command_array;
   p1_command = *p_com_array;
 
-  /* default region score setup */
-  if (base == ZERO)
-     MILPRINTF(MILOUT, "var base := ZERO;\n\n");
-  else if (base == ONE)
-     MILPRINTF(MILOUT, "var base := ONE;\n\n");
+  if ( GEN_TOPICS ) {
+    /* default region score setup */
+    if (base == ZERO)
+       MILPRINTF(MILOUT, "var base := ZERO;\n\n");
+    else if (base == ONE)
+       MILPRINTF(MILOUT, "var base := ONE;\n\n");
+  }
 
   /*   printf("%d\n",p_com_array); */
   /*   printf("%d\n",p1_command); */
@@ -253,10 +260,23 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int topic_type, str
   /* for number initialization */
   topic_num = query_num - 1;
 
-  MILPRINTF(MILOUT, "var topics := new(int,str);\n\n");
-
-  MILPRINTF(MILOUT, "var exe_time;\nvar start_exe_time;\nvar stop_exe_time;\nvar topic_time;\nvar start_topic_time;\nvar stop_topic_time;\n\n");
-  MILPRINTF(MILOUT, "start_exe_time := time();\n\n\n");
+  if ( GEN_TOPICS ) {
+    MILPRINTF(MILOUT, "var topics := new(int,str);\n");
+  }
+  MILPRINTF(MILOUT, "\n");
+  if ( GEN_TIMINGS ) {
+    MILPRINTF(MILOUT, "var exe_time;\n");
+    MILPRINTF(MILOUT, "var start_exe_time;\n");
+    MILPRINTF(MILOUT, "var stop_exe_time;\n");
+  }
+  if ( GEN_TOPICS ) {
+    MILPRINTF(MILOUT, "var topic_time;\n");
+    MILPRINTF(MILOUT, "var start_topic_time;\n");
+    MILPRINTF(MILOUT, "var stop_topic_time;\n\n");
+  }
+  if ( GEN_TIMINGS ) {
+    MILPRINTF(MILOUT, "start_exe_time := time();\n\n\n");
+  }
 
   if (optimize == 0) {
 
@@ -288,10 +308,12 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int topic_type, str
         topic_num+=3;
 
 
-      MILPRINTF(MILOUT, "printf(\"Executing topic number %d...\\n\");\n", topic_num);
-      MILPRINTF(MILOUT, "topics.insert(%d,\"%s%d_probab\");\n",topic_num, result_name, topic_num);
+      if ( GEN_TOPICS ) {
+        MILPRINTF(MILOUT, "printf(\"Executing topic number %d...\\n\");\n", topic_num);
+        MILPRINTF(MILOUT, "topics.insert(%d,\"%s%d_probab\");\n",topic_num, result_name, topic_num);
 
-      MILPRINTF(MILOUT, "start_topic_time := time();\n\n");
+        MILPRINTF(MILOUT, "start_topic_time := time();\n\n");
+      }
 
       /* performing tree traversal of SRA query plan */
       result = tree_traverse_count(p1_command, com_lifo, &com_sp, op_number, &op_num, topic_num);
@@ -1065,16 +1087,21 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int topic_type, str
 
       }
 
-      MILPRINTF(MILOUT, "%s_%d := R%d;\n",  result_name, topic_num, com_num);
-      MILPRINTF(MILOUT, "R%d := nil;\n", com_num);
+      /* 
+       *MILPRINTF(MILOUT, "%s_%d := R%d;\n",  result_name, topic_num, com_num);
+       *MILPRINTF(MILOUT, "R%d := nil;\n", com_num);
+       */
+      MILPRINTF(MILOUT, "R%d.persists(true).rename(\"%s\");\n", com_num, NEXI_RESULT_BAT);
 
-      MILPRINTF(MILOUT, "%s_%d.persists(true).rename(\"%s%d_probab\");\n", result_name, topic_num, result_name, topic_num);
-      MILPRINTF(MILOUT, "unload(\"%s%d_probab\");\n\n", result_name, topic_num);
+      if ( GEN_TOPICS ) {
+        MILPRINTF(MILOUT, "%s_%d.persists(true).rename(\"%s%d_probab\");\n", result_name, topic_num, result_name, topic_num);
+        MILPRINTF(MILOUT, "unload(\"%s%d_probab\");\n\n", result_name, topic_num);
 
-      MILPRINTF(MILOUT, "stop_topic_time := time();\n");
-      MILPRINTF(MILOUT, "topic_time := flt(stop_topic_time - start_topic_time)/1000;\n");
+        MILPRINTF(MILOUT, "stop_topic_time := time();\n");
+        MILPRINTF(MILOUT, "topic_time := flt(stop_topic_time - start_topic_time)/1000;\n");
 
-      MILPRINTF(MILOUT, "printf(\"\\t\\tTopic %d finished in %%f seconds.\\n\",topic_time);\n\n\n", topic_num);
+        MILPRINTF(MILOUT, "printf(\"\\t\\tTopic %d finished in %%f seconds.\\n\",topic_time);\n\n\n", topic_num);
+      }
 
       p_com_array++;
       p1_command = *p_com_array;
@@ -1119,11 +1146,13 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int topic_type, str
         topic_num+=3;
 
 
-      MILPRINTF(MILOUT, "printf(\"Executing topic number %d...\\n\");\n", topic_num);
+      if ( GEN_TOPICS ) {
+        MILPRINTF(MILOUT, "printf(\"Executing topic number %d...\\n\");\n", topic_num);
 
-      MILPRINTF(MILOUT, "topics.insert(%d,\"%s%d_probab\");\n",topic_num, result_name, topic_num);
+        MILPRINTF(MILOUT, "topics.insert(%d,\"%s%d_probab\");\n",topic_num, result_name, topic_num);
 
-      MILPRINTF(MILOUT, "start_topic_time := time();\n\n");
+        MILPRINTF(MILOUT, "start_topic_time := time();\n\n");
+      }
 
       /* performing tree traversal with optimization of SRA query plan */
       result = tree_traverse_opt(p1_command, com_lifo, &com_sp, op_number, &op_num, topic_num);
@@ -1864,16 +1893,21 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int topic_type, str
       }
 
       
-      MILPRINTF(MILOUT, "%s_%d := R%d;\n",  result_name, topic_num, com_num);
-      MILPRINTF(MILOUT, "R%d := nil;\n", com_num);
+      /*
+       *MILPRINTF(MILOUT, "%s_%d := R%d;\n",  result_name, topic_num, com_num);
+       *MILPRINTF(MILOUT, "R%d := nil;\n", com_num);
+       */
+      MILPRINTF(MILOUT, "R%d.persists(true).rename(\"%s\");\n", com_num, NEXI_RESULT_BAT);
       
-      MILPRINTF(MILOUT, "%s_%d.persists(true).rename(\"%s%d_probab\");\n", result_name, topic_num, result_name, topic_num);
-      MILPRINTF(MILOUT, "unload(\"%s%d_probab\");\n\n", result_name, topic_num);
+      if ( GEN_TOPICS ) {
+        MILPRINTF(MILOUT, "%s_%d.persists(true).rename(\"%s%d_probab\");\n", result_name, topic_num, result_name, topic_num);
+        MILPRINTF(MILOUT, "unload(\"%s%d_probab\");\n\n", result_name, topic_num);
 
-      MILPRINTF(MILOUT, "stop_topic_time := time();\n");
-      MILPRINTF(MILOUT, "topic_time := flt(stop_topic_time - start_topic_time)/1000;\n");
+        MILPRINTF(MILOUT, "stop_topic_time := time();\n");
+        MILPRINTF(MILOUT, "topic_time := flt(stop_topic_time - start_topic_time)/1000;\n");
 
-      MILPRINTF(MILOUT, "printf(\"\\t\\tTopic %d finished in %%f seconds.\\n\",topic_time);\n\n\n", topic_num);
+        MILPRINTF(MILOUT, "printf(\"\\t\\tTopic %d finished in %%f seconds.\\n\",topic_time);\n\n\n", topic_num);
+      }
 
       p_com_array++;
       p1_command = *p_com_array;
@@ -1888,12 +1922,17 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int topic_type, str
 
   }
 
-  MILPRINTF(MILOUT, "topics.persists(true).rename(\"topics\");\n");
-  MILPRINTF(MILOUT, "unload(\"topics\");\n");
-  MILPRINTF(MILOUT, "stop_exe_time := time();\n");
-  MILPRINTF(MILOUT, "exe_time := flt(stop_exe_time - start_exe_time)/1000;\n");
+  if ( GEN_TOPICS ) {
+    MILPRINTF(MILOUT, "topics.persists(true).rename(\"topics\");\n");
+    MILPRINTF(MILOUT, "unload(\"topics\");\n");
+  }
+  if ( GEN_TIMINGS ) {
+    MILPRINTF(MILOUT, "\n");
+    MILPRINTF(MILOUT, "stop_exe_time := time();\n");
+    MILPRINTF(MILOUT, "exe_time := flt(stop_exe_time - start_exe_time)/1000;\n");
 
-  MILPRINTF(MILOUT, "printf(\"Topics finished in %%d minutes and %%d seconds.\\n\", int(floor(dbl(exe_time)/dbl(60))), int(floor(dbl(exe_time).fmod(dbl(60)))));\n");
+    MILPRINTF(MILOUT, "printf(\"PFtijah script finished in %%d minutes and %%d seconds.\\n\", int(floor(dbl(exe_time)/dbl(60))), int(floor(dbl(exe_time).fmod(dbl(60)))));\n");
+  }
 
   free(term_cut);
   free(unq_term);

@@ -39,7 +39,7 @@ static char *dummy[] = {};
 char* tijahParse(char* pfx, char* query, char** errBUFF) {
   (void)pfx;
   /* setup TijahParserContext structure */
-  if ( 1 ) stream_printf(GDKout,"- tijahParse([%s])\n",query);
+  if ( 0 ) stream_printf(GDKout,"- tijahParse([%s])\n",query);
   parserCtx->collection= pfx;
   parserCtx->queryText = query;
   parserCtx->logFILE   = NULL;

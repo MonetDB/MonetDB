@@ -30,7 +30,7 @@
 .COMMAND run_tijah_command(str s) : bit = CMDtijah_command;
  "INCOMPLETE"
 
-.COMMAND run_tijah_query(str p, str q) : BAT[oid,int] = CMDtijah_query;
+.COMMAND run_tijah_query(str p, str q) : BAT[oid,dbl] = CMDtijah_query;
  "INCOMPLETE"
 
 .COMMAND tj_add2collection(BAT[oid,bat],BAT[oid,bat],str,str) : void = CMDtj_add2collection;
@@ -68,6 +68,8 @@ module("pathfinder");
 # to run on the TIJAH Light index.
 #
 # Based on code by the TIJAH team (Vojkan, Thijs)
+#
+# Additional retrieval models by Henning Rode 
 #
 # Authors: Roel van Os <roel.van.os@glacimonto.nl>
 #          Henning Rode <h.rode@cs.utwente.nl>
@@ -122,6 +124,10 @@ PROC tj_setScoreBase(int default) : void :=
 const virtRoot := 0@0;
 
 
+################################################################################
+# SELECTION
+################################################################################
+
 PROC select_root() : bat :=
 {
     # Because TIJAH expects all documents in a collection to be contained by one 
@@ -132,7 +138,6 @@ PROC select_root() : bat :=
     root_reg.insert( virtRoot, dbl(scoreBase) );
     return root_reg;
 }
-
 
 PROC select_node(str name) : bat :=
 {
@@ -151,12 +156,70 @@ PROC select_node(str name) : bat :=
     return result;
 }
 
-
 PROC select_node(str name, bit e_class) : bat :=
 {
     if ( e_class ) printf( "WARNING: equivalences are not yet supported!\n" );
     return select_node(name);
 }
+
+PROC select_term(str name) : bat :=
+{
+    var start_time := time();
+    # Select the term positions from the global term dictionary. 
+   
+    var tid := bat("tj_globalTerms").reverse().find(name);
+    var result := indexfetchjoin( new(int,oid).insert(0,tid),
+    				  bat("tj_" + collName + "_TermIndex"),
+    				  bat("tj_" + collName + "_Terms") );
+    result := result.reverse().sort().project(dbl(1)); 
+    
+    var end_time := time();
+    printf( "select_term: \t\t%d ms\n", end_time - start_time );
+    return result;
+}
+
+PROC select_term(str name, int stemming) : bat := 
+{
+    # perform stemming
+    
+    if ( stemming = STEM_ON ) printf( "WARNING: stemming is not yet supported!\n" );
+    
+    return select_term( name );
+}
+
+PROC select_phrase(bat[void,oid] terms) : bat[oid,dbl] :=
+{
+    var start_time := time();
+    # Select the term positions from the global term dictionary. 
+   
+    var tid := terms.fetch(0);
+    var tmp := indexfetchjoin( new(int,oid).insert(0,tid),
+    				  bat("tj_" + collName + "_TermIndex"),
+    				  bat("tj_" + collName + "_Terms") );
+    var res := tmp.reverse();
+    var j := terms.count();
+    var i := 1; 
+    while (i < j)
+    {
+        tid := terms.fetch(i);
+        tmp := indexfetchjoin( new(int,oid).insert(0,tid),
+    				  bat("tj_" + collName + "_TermIndex"),
+    				  bat("tj_" + collName + "_Terms") );
+        res := res.semijoin(tmp.[int]().[-](i).[oid]().reverse());   
+	i :+= 1;
+    }	
+    
+    res := res.sort().project(dbl(1)); 
+    
+    var end_time := time();
+    printf( "select_phrase: \t\t%d ms\n", end_time - start_time );
+    return res;
+}
+
+
+################################################################################
+# CONTAINMENT
+################################################################################
 
 
 #####################################
@@ -258,63 +321,10 @@ PROC containing(bat left, bat right) : bat :=
     return result;
 }
 
-PROC select_phrase(bat[void,oid] terms) : bat[oid,dbl] :=
-{
-    var start_time := time();
-    # Select the term positions from the global term dictionary. 
-   
-    var tid := terms.fetch(0);
-    var tmp := indexfetchjoin( new(int,oid).insert(0,tid),
-    				  bat("tj_" + collName + "_TermIndex"),
-    				  bat("tj_" + collName + "_Terms") );
-    var res := tmp.reverse();
-    var j := terms.count();
-    var i := 1; 
-    while (i < j)
-    {
-        tid := terms.fetch(i);
-        tmp := indexfetchjoin( new(int,oid).insert(0,tid),
-    				  bat("tj_" + collName + "_TermIndex"),
-    				  bat("tj_" + collName + "_Terms") );
-        res := res.semijoin(tmp.[int]().[-](i).[oid]().reverse());   
-	i :+= 1;
-    }	
-    
-    res := res.sort().project(dbl(1)); 
-    
-    var end_time := time();
-    printf( "select_term: \t\t%d ms\n", end_time - start_time );
-    return res;
-}
 
-PROC select_term(str name) : bat :=
-{
-    var start_time := time();
-    # Select the term positions from the global term dictionary. 
-   
-    var tid := bat("tj_globalTerms").reverse().find(name);
-    var result := indexfetchjoin( new(int,oid).insert(0,tid),
-    				  bat("tj_" + collName + "_TermIndex"),
-    				  bat("tj_" + collName + "_Terms") );
-    result := result.reverse().sort().project(dbl(1)); 
-    
-    var end_time := time();
-    printf( "select_term: \t\t%d ms\n", end_time - start_time );
-    return result;
-}
-
-#ADDHELP("select_term", "vojkan", "March 15, 2005",
-#"Finds the positions of terms in a collection and assigns to them score 1.0.",
-#"TIJAH");
-
-PROC select_term(str name, int stemming) : bat := 
-{
-    # perform stemming
-    
-    if ( stemming = STEM_ON ) printf( "WARNING: stemming is not yet supported!\n" );
-    
-    return select_term( name );
-}
+################################################################################
+# PROBABILISTIC CONTAINMENT
+################################################################################
 
 PROC p_containing_q_NLLR_batloop_anc(bat[oid,dbl] left, bat[void,oid] terms, flt lmbd) : bat[oid,dbl] :=
 {
@@ -653,13 +663,8 @@ PROC p_containing_t_LMs(bat left, bat right, flt lmbd, int size_type) : bat :=
     if (bckgnd_prob = dbl(0)) {
         printf( "Minimum collection frequency has not been computed yet!\n" );
         # Assign minimum collection frequency
-        #: var col_freq := new(oid,dbl,ENTITY_NUM);
-        #: col_freq := load(collName+"col_freq");
         
-        #: bckgnd_prob := min(col_freq);
-
-        #: col_freq := nil;
-
+        bckgnd_prob := min(col_freq());
     }
 
     # Precompute lambda values
@@ -677,11 +682,35 @@ PROC p_containing_t_LMs(bat left, bat right, flt lmbd, int size_type) : bat :=
     return res_reg;
 }
 
+# Returns the collection frequency table (should be precomputed, but is calculated for now)
+PROC col_freq() : bat :=
+{
+    var start_time := time();
+    var allterms := bat("tj_globalTerms").sort().mark(0@0).reverse();
+    var alltermpos := indexfetchjoin(allterms, bat("tj_PFX_TermIndex"), bat("tj_PFX_Terms"));
+    var col_freqs := [dbl]({count}(alltermpos));
 
+    printf( "col_freq: \t\t%d ms\n", time() - start_time );
+    return col_freqs;
+}
+
+
+# Returns the collection frequency of the term with the indicated tid
+PROC col_freq(oid tid) : dbl :=
+{
+    var start_time := time();
+    var alltermpos := indexfetchjoin(new(int,oid).insert(0,tid), bat("tj_PFX_TermIndex"), bat("tj_PFX_Terms"));
+    var col_freqs := {count}(alltermpos);
+    var result := dbl(col_freqs.fetch(0));
+    printf( "col_freq: \t\t%d ms\n", time() - start_time );
+    return result;
+}
+
+# For each region in left, count the number of regions in right it contains.
 PROC reg_freq(bat left, bat right, int size_type) : bat    :=    
 {
     var start_time := time();
-    # For each region in left, count the number of regions in right it contains.
+    
     var reg_size;
     var ctx_tmp := new(oid,dbl,ENTITY_NUM);
     var ctx_tmp2 := new( oid, int, ENTITY_NUM );
@@ -717,22 +746,21 @@ PROC reg_freq(bat left, bat right, int size_type) : bat    :=
         
 }
 
-
+# Calculate the term size of the region: how many terms does it contain?
 PROC size_term( bat region ) : bat := 
 {
     var start_time := time();
-    # Calculate the term size of the region
-    # This should be read from a table that was computed at indexing time!
-    
-    # Workaround for now, just to get things to work: count all term descendants of each region
     
     # all terms:
     var pre_tid   := bat("tj_" + collName + "_tid");
     var pre_pfpre := bat("tj_" + collName + "_pfpre");
     var terms     := pre_tid.mirror().kdiff( pre_pfpre.mirror() );
-
+    
     var items      := region.mirror().mark(0@0).reverse();
     var candidates := terms.mirror().mark(0@0).reverse();
+    
+    # Alternative:
+    #var candidates      := bat("tj_" + collName + "_Terms" ).reverse().sort().mark(0@0).reverse();
     
     var pre_size := load( "tj_" + collName + "_size");
    
@@ -748,15 +776,13 @@ PROC size_term( bat region ) : bat :=
     return result;
 }
 
+# Calculate the entity size of the region: how many entities does it contain?
 PROC size_entity( bat region ) : bat :=
 {
     var start_time := time();
-    # Calculate the entity size of the region
-    # This should be read from a table that was computed at indexing time!
     
-    # Workaround for now, just to get things to work: count all entity descendants of each region
     
-    # all terms:
+    # All entities:
     var pre_pfpre := bat("tj_" + collName + "_pfpre");
 
     var items      := region.mirror().mark(0@0).reverse();
@@ -778,6 +804,32 @@ PROC size_entity( bat region ) : bat :=
 
 # The following functions have been copied without change from algebra_procs.mil
 
+
+################################################################################
+# SET OPERATORS
+################################################################################
+
+### UNION
+PROC union(bat left, bat right) : bat :=
+{
+
+	return left.kunion(right);
+
+}
+
+### INTERSECTION
+PROC intersect(bat left, bat right) : bat := 
+{
+
+	return left.kintersect(right);
+
+}
+
+
+################################################################################
+# SCALING
+################################################################################
+
 PROC scale(bat region, flt importance) : bat := 
 {
 
@@ -786,10 +838,62 @@ PROC scale(bat region, flt importance) : bat :=
 	return res_reg;
 
 }
-#ADDHELP("scale", "vojkan", "March 16, 2005",
-#"Scales down/up score values for regions.",
-#"TIJAH");
 
+
+################################################################################
+# PROBABILISTIC SET OPERATORS
+################################################################################
+
+PROC or_sum(bat left, bat right) : bat :=
+{
+
+	return [+](left,right);
+
+}
+
+PROC or_max(bat left, bat right) : bat :=
+{
+
+	return [max](left,right);
+
+}
+
+PROC or_prob(bat left, bat right) : bat :=
+{
+
+	return [-](dbl(1),[*]([-](dbl(1),left),[-](dbl(1),right)));
+
+}
+
+PROC or_exp(bat left, bat right, int A) : bat := 
+{
+
+	var paramA := dbl(A-1);
+	var eq_regions := new(oid,dbl,ENTITY_NUM);
+
+	var res_reg := new(oid,dbl,ENTITY_NUM);
+
+	eq_regions := [*](paramA, [+](left.mirror().join(right), right.mirror().join(left)));
+
+	res_reg := {sum}(eq_regions.sunion(left).sunion(right));
+
+	return res_reg;
+
+}
+
+PROC or_min(bat left, bat right) : bat :=
+{
+
+	return [min](left,right);
+
+}
+
+PROC or_prod(bat left, bat right) : bat :=
+{
+
+	return [*](left,right);
+
+}
 
 PROC and_prod(bat left, bat right) : bat :=
 {
@@ -797,9 +901,54 @@ PROC and_prod(bat left, bat right) : bat :=
 	return [*](left,right);
 
 }
-#ADDHELP("and_prod", "vojkan", "March 16, 2005",
-#"Combine scores in an AND expression using product.",
-#"TIJAH");
+
+PROC and_min(bat left, bat right) : bat :=
+{
+
+	return [min](left,right);
+
+}
+
+PROC and_sum(bat left, bat right) : bat :=
+{
+
+	return [+](left,right);
+
+}
+
+PROC and_exp(bat left, bat right, int A) : bat :=
+{
+
+	var paramA := dbl(A-1);
+	var eq_regions := new(oid,dbl,ENTITY_NUM);
+
+	var res_reg := new(oid,dbl,ENTITY_NUM);
+
+	eq_regions := [*](paramA, [+](left.mirror().join(right), right.mirror().join(left)));
+
+	res_reg := {sum}(eq_regions.sunion(left).sunion(right));
+
+	return res_reg;
+
+}
+
+PROC and_max(bat left, bat right) : bat :=
+{
+
+	return [max](left,right);
+
+}
+
+PROC and_prob(bat left, bat right) : bat :=
+{
+
+	return [-](dbl(1),[*]([-](dbl(1),left),[-](dbl(1),right)));
+
+}
+
+################################################################################
+# PRIOR
+################################################################################
 
 PROC prior_ls(bat region, int size_type) : bat := 
 {
@@ -844,6 +993,27 @@ PROC prior_ls(bat region, int size_type) : bat :=
 #ADDHELP("prior_ls", "vojkan", "March 16, 2005",
 #"Adds element prior based on element length to the region score.",
 #"TIJAH");
+
+
+
+################################################################################
+# ORDER
+################################################################################
+
+PROC order_regions(bat region) : bat :=
+{
+
+	region := region.reverse().sort_rev().reverse();
+
+	return region;
+
+}
+#ADDHELP("order_regions", "vojkan", "March 29, 2005",
+#"Order regions in descending order based on their score values.",
+#"TIJAH");
+
+
+
 PROC tj_global_init() : void 
 {
 	printf("# Initializing Pathfinder-Tijah integration package.\n");
@@ -1127,7 +1297,7 @@ int executeMIL(char* str) {
 	Cntxt stk = 0; /* OK??? */
 	ValRecord res;
 
-	if ( 1 ) stream_printf(GDKout,"# executeMIL(\"%s\")\n",str);
+	if ( 0 ) stream_printf(GDKout,"# executeMIL(\"%s\")\n",str);
 	int ret = interpret_str(stk,str,&res);
 	if ( ret==-TOK_RETURN ) {
 	    VALclear(&res);
@@ -1141,7 +1311,7 @@ int executeMIL(char* str) {
 }
 
 int CMDtijah_command(bit* res, str command) {
-	if ( 1 ) stream_printf(GDKout,"# tijah_command(%s)\n",(char*)command);
+	if ( 0 ) stream_printf(GDKout,"# tijah_command(%s)\n",(char*)command);
 	*res = executeMIL(command); /* OK */
 	return GDK_SUCCEED;
 }
@@ -1163,7 +1333,7 @@ int CMDtijah_query(BAT** res, str pfx, str q) {
 	    return GDK_FAIL;
 	}
 	/* */
-	*res = BATnew(TYPE_oid, TYPE_int, 0);
+	*res = BATnew(TYPE_oid, TYPE_dbl, 0);
 	return GDK_SUCCEED;
 }
 

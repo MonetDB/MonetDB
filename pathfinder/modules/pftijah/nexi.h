@@ -306,6 +306,8 @@ extern TijahParserContext* parserCtx;
 
 #define WORKDIR	"/tmp/"
 
+#define NEXI_RESULT_BAT "nexi_result"
+
 extern char* myfileName(char* dirName, char* fileName);
 
 /*

@@ -2893,9 +2893,9 @@ CMDxquery(Cntxt stk,
 	VALclear(res);
         return GDK_FAIL;
     } 
+    /* stream_printf(GDKout,"RES = %s\n",res->val.sval); */
     return GDK_SUCCEED;
 }
-
 
 /*
  * call a method in a temporary xquery client context
