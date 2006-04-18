@@ -5,11 +5,13 @@ stdout of test 'tst830` in directory 'src/mal` itself:
 # 20:34:17 >  Mtimeout -timeout 60 mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=36259 --set sql_port=40419 --set xquery_port=52492 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst830.mal < /dev/null
 # 20:34:17 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
-# config:/ufs/mk/monet5/src/mal/Tests/All.conf
-# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+
+
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf
+# dbfarm:/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/monetdb/dbfarm
 # dbname:mTests_src_mal
 # Visit http://monetdb.cwi.nl/ for further information.
 ## a simple functional test for the access control table
@@ -46,65 +48,97 @@ stdout of test 'tst830` in directory 'src/mal` itself:
 #
 function user.main():void;	# 0  (main:void)
 # a simple functional test for the access control table 	# 1  (_1:str)
-    u := clients.getPermissions();	# 2 CLTgetPermissions (u:bat[:str,:str])
-    io.print(u);	# 3 IOprint_val (_3:int)<-(u:bat[:str,:str])
-    clients.addUser("monetdb","Pmonetdb","sql");	# 4 CLTaddUser (_4:void)<-(_5:str)(_6:str)(_7:str)
-    clients.addUser("monetdb","Pmonetdb","mal");	# 5 CLTaddUser (_8:void)<-(_5:str)(_6:str)(_9:str)
-    clients.addUser("checkpoint","Pcheckpoint","mal");	# 6 CLTaddUser (_10:void)<-(_11:str)(_12:str)(_9:str)
-    clients.addUser("legacy","Plegacy","mil");	# 7 CLTaddUser (_13:void)<-(_14:str)(_15:str)(_16:str)
-    u := clients.getPermissions();	# 8 CLTgetPermissions (u:bat[:str,:str])
-    p := clients.getPasswords();	# 9 CLTgetPasswords (p:bat[:str,:str])
-    io.print(u,p);	# 10 IOtable (_18:int)<-(u:bat[:str,:str])(p:bat[:str,:str])
-    clients.delUser("checkpoint");	# 11 CLTdelUserAll (_19:void)<-(_11:str)
-    clients.delUser("monetdb","mal");	# 12 CLTdelUser (_20:void)<-(_5:str)(_9:str)
-    u := clients.getPermissions();	# 13 CLTgetPermissions (u:bat[:str,:str])
-    io.print(u);	# 14 IOprint_val (_21:int)<-(u:bat[:str,:str])
-    t := clients.checkPermission("monetdb","Pmonetdb","sql");	# 15 CLTcheckAuthorization (t:bit)<-(_5:str)(_6:str)(_7:str)
-    io.print(t);	# 16 IOprint_val (_23:int)<-(t:bit)
-    t := clients.checkPermission("monetdb","x","sql");	# 17 CLTcheckAuthorization (t:bit)<-(_5:str)(_24:str)(_7:str)
-    io.print(t);	# 18 IOprint_val (_25:int)<-(t:bit)
-    t := clients.checkPermission("monetdb","Pmonetdb","x");	# 19 CLTcheckAuthorization (t:bit)<-(_5:str)(_6:str)(_24:str)
-    io.print(t);	# 20 IOprint_val (_26:int)<-(t:bit)
-    t := clients.checkPermission("x","Pmonetdb","sql");	# 21 CLTcheckAuthorization (t:bit)<-(_24:str)(_6:str)(_7:str)
-    io.print(t);	# 22 IOprint_val (_27:int)<-(t:bit)
-    clients.newPassword("legacy","Plegacy","modern");	# 23 CLTnewPasswordRoot (_28:void)<-(_14:str)(_15:str)(_29:str)
-    u := clients.getPermissions();	# 24 CLTgetPermissions (u:bat[:str,:str])
-    p := clients.getPasswords();	# 25 CLTgetPasswords (p:bat[:str,:str])
-    io.print(u,p);	# 26 IOtable (_30:int)<-(u:bat[:str,:str])(p:bat[:str,:str])
-end main;	# 27  
-#-----------------#
-# h	t	  # name
-# str	str	  # type
-#-----------------#
-#-----------------------------------------#
-# h		t	t		  # name
-# str		str	str		  # type
-#-----------------------------------------#
-[ "monetdb",	  "sql",  "Pmonetdb"	  ]
-[ "monetdb",	  "sql",  "Pmonetdb"	  ]
-[ "monetdb",	  "mal",  "Pmonetdb"	  ]
-[ "monetdb",	  "mal",  "Pmonetdb"	  ]
-[ "checkpoint",	  "mal",  "Pcheckpoint"	  ]
-[ "legacy",	  "mil",  "Plegacy"	  ]
-#-------------------------#
-# h		t	  # name
-# str		str	  # type
-#-------------------------#
-[ "monetdb",	  "sql"	  ]
-[ "legacy",	  "mil"	  ]
-[ true ]
-[ false ]
-[ false ]
-[ false ]
-new password legacy Plegacy modern
-#-----------------------------------------#
-# h		t	t		  # name
-# str		str	str		  # type
-#-----------------------------------------#
-[ "monetdb",	  "sql",  "Pmonetdb"	  ]
-[ "monetdb",	  "sql",  "Pmonetdb"	  ]
-[ "legacy",	  "mil",  "modern"	  ]
-[ "legacy",	  "mil",  "Plegacy"	  ]
+    scens := bat.new(:str,:void);	# 2 CMDBATnew (scens:bat[:str,:void])<-(_3:str)(_4:void)
+    bat.insert(scens,"sql",nil:void);	# 3 BKCinsert_bun (_5:void)<-(scens:bat[:str,:void])(_6:str)(_7:void)
+    bat.insert(scens,"mal",nil:void);	# 4 BKCinsert_bun (_8:void)<-(scens:bat[:str,:void])(_9:str)(_7:void)
+# this should fail, the monetdb user is already there 	# 5  (_10:str)
+    id := clients.addUser("monetdb","Pmonetdb",scens);	# 6 CLTaddUser (id:oid)<-(_12:str)(_13:str)(scens:bat[:str,:void])
+catch MALException;	# 7  (MALException:str) jump 9
+    io.printf(MALException);	# 8 IOprint_str (_15:int)<-(MALException:str)
+exit MALException;	# 9  (MALException:str)
+# should print 0@1 or something 	# 10  (_16:str)
+    id := clients.addUser("test","test",scens);	# 11 CLTaddUser (id:oid)<-(_17:str)(_17:str)(scens:bat[:str,:void])
+    io.print(id);	# 12 IOprint_val (_18:int)<-(id:oid)
+# this should work also 	# 13  (_19:str)
+# don't use nil:bat[:str, :void] here, it results in a crash 	# 14  (_20:str)
+    t := bat.new(:str,:void);	# 15 CMDBATnew (t:bat[:str,:void])<-(_22:str)(_4:void)
+    id := clients.addUser("checkpoint","Pcheckpoint",t);	# 16 CLTaddUser (id:oid)<-(_23:str)(_24:str)(t:bat[:str,:void])
+    io.print(id);	# 17 IOprint_val (_25:int)<-(id:oid)
+# should work, we're the admin here 	# 18  (_26:str)
+    clients.removeUser("checkpoint");	# 19 CLTremoveUser (_27:void)<-(_23:str)
+# just remove the scenarios one by one, should work 	# 20  (_28:str)
+    clients.removeScenario("test","mal");	# 21 CLTremoveScenario (_29:void)<-(_17:str)(_9:str)
+    clients.removeScenario("test","sql");	# 22 CLTremoveScenario (_30:void)<-(_17:str)(_6:str)
+# this one should fail: it's not there 	# 23  (_31:str)
+    clients.removeScenario("test","mil");	# 24 CLTremoveScenario (_32:void)<-(_17:str)(_33:str)
+catch MALException;	# 25  (MALException:str) jump 27
+    io.printf(MALException);	# 26 IOprint_str (_34:int)<-(MALException:str)
+exit MALException;	# 27  (MALException:str)
+# and add a scenario again 	# 28  (_35:str)
+    clients.addScenario("test","mal");	# 29 CLTaddScenario (_36:void)<-(_17:str)(_9:str)
+# do it again, see what happens (should fail) 	# 30  (_37:str)
+    clients.addScenario("test","mal");	# 31 CLTaddScenario (_38:void)<-(_17:str)(_9:str)
+catch MALException;	# 32  (MALException:str) jump 34
+    io.printf(MALException);	# 33 IOprint_str (_39:int)<-(MALException:str)
+exit MALException;	# 34  (MALException:str)
+# forcefully set the password of the user test 	# 35  (_40:str)
+    clients.setPassword("test","newpass");	# 36 CLTsetPassword (_41:void)<-(_17:str)(_42:str)
+# now try to set the password for ourself, should fail 	# 37  (_43:str)
+    clients.setPassword("monetdb","badpass");	# 38 CLTsetPassword (_44:void)<-(_12:str)(_45:str)
+catch InvalidCredentialsException;	# 39  (InvalidCredentialsException:str) jump 41
+    io.printf(InvalidCredentialsException);	# 40 IOprint_str (_47:int)<-(InvalidCredentialsException:str)
+exit InvalidCredentialsException;	# 41  (InvalidCredentialsException:str)
+# change our own password 	# 42  (_48:str)
+    clients.changePassword("monetdb","newdb");	# 43 CLTchangePassword (_49:void)<-(_50:str)(_51:str)
+# try it again, should fail... 	# 44  (_52:str)
+    clients.changePassword("monetdb","newdb");	# 45 CLTchangePassword (_53:void)<-(_50:str)(_51:str)
+catch InvalidCredentialsException;	# 46  (InvalidCredentialsException:str) jump 48
+    io.printf(InvalidCredentialsException);	# 47 IOprint_str (_54:int)<-(InvalidCredentialsException:str)
+exit InvalidCredentialsException;	# 48  (InvalidCredentialsException:str)
+# all should fail 	# 49  (_55:str)
+    clients.checkPermission("monetdb","Pmonetdb","sql");	# 50 CLTcheckPermission (_56:void)<-(_50:str)(_57:str)(_58:str)
+catch InvalidCredentialsException;	# 51  (InvalidCredentialsException:str) jump 53
+    io.printf(InvalidCredentialsException);	# 52 IOprint_str (_59:int)<-(InvalidCredentialsException:str)
+exit InvalidCredentialsException;	# 53  (InvalidCredentialsException:str)
+    clients.checkPermission("monetdb","x","sql");	# 54 CLTcheckPermission (_60:void)<-(_50:str)(_61:str)(_58:str)
+catch InvalidCredentialsException;	# 55  (InvalidCredentialsException:str) jump 57
+    io.printf(InvalidCredentialsException);	# 56 IOprint_str (_62:int)<-(InvalidCredentialsException:str)
+exit InvalidCredentialsException;	# 57  (InvalidCredentialsException:str)
+    clients.checkPermission("monetdb","Pmonetdb","x");	# 58 CLTcheckPermission (_63:void)<-(_50:str)(_57:str)(_61:str)
+catch InvalidCredentialsException;	# 59  (InvalidCredentialsException:str) jump 61
+    io.printf(InvalidCredentialsException);	# 60 IOprint_str (_64:int)<-(InvalidCredentialsException:str)
+exit InvalidCredentialsException;	# 61  (InvalidCredentialsException:str)
+    clients.checkPermission("x","Pmonetdb","sql");	# 62 CLTcheckPermission (_65:void)<-(_61:str)(_57:str)(_58:str)
+catch InvalidCredentialsException;	# 63  (InvalidCredentialsException:str) jump 65
+    io.printf(InvalidCredentialsException);	# 64 IOprint_str (_66:int)<-(InvalidCredentialsException:str)
+exit InvalidCredentialsException;	# 65  (InvalidCredentialsException:str)
+end main;	# 66  
+MALException:user.main[6]: user 'monetdb' already exists
+    at addUser(clients.mx:373)
+    at addUser(mal_authorize.mx:299)
+[ 1@0 ]
+[ 2@0 ]
+MALException:user.main[21]: scenario 'mal' not found for user
+    at removeScenario(clients.mx:465)
+    at removeScenario(mal_authorize.mx:554)
+InvalidCredentialsException:user.main[38]: The administrator cannot set its own password, use changePassword instead
+    at setPassword(clients.mx:425)
+    at setPassword(mal_authorize.mx:479)
+InvalidCredentialsException:user.main[43]: Access denied
+    at changePassword(clients.mx:412)
+    at changePassword(mal_authorize.mx:439)
+InvalidCredentialsException:user.main[50]: Invalid credentials for user 'monetdb'
+    at checkPermission(clients.mx:439)
+    at checkCredentials(mal_authorize.mx:240)
+InvalidCredentialsException:user.main[54]: Invalid credentials for user 'monetdb'
+    at checkPermission(clients.mx:439)
+    at checkCredentials(mal_authorize.mx:240)
+InvalidCredentialsException:user.main[58]: Invalid credentials for user 'monetdb'
+    at checkPermission(clients.mx:439)
+    at checkCredentials(mal_authorize.mx:240)
+InvalidCredentialsException:user.main[62]: Invalid credentials for user 'x'
+    at checkPermission(clients.mx:439)
+    at checkCredentials(mal_authorize.mx:218)
 
 # 20:34:17 >  
 # 20:34:17 >  Done.

@@ -247,11 +247,16 @@ str createException(str name, str func, str file, int line, char *format, ...) {
  */
 str stackException(str prev, str func, str file, int line) {
 	char message[GDKMAXERRLEN];
+	char *bt;
 
 	/* don't do anything if the previous message was no Exception */
 	if (prev == MAL_SUCCEED) return(prev);
 
-	sprintf(message, "%s\n    at %s(%s:%d)", prev, func, file, line);
+	/* find the point where the backtrace starts */
+	bt = strstr(prev, "\n    at");
+	if (bt == NULL) bt = "";
+	*bt++ = '\0';
+	sprintf(message, "%s\n    at %s(%s:%d)\n%s", prev, func, file, line, bt);
 
 	return(GDKstrdup(message));
 }
