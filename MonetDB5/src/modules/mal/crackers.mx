@@ -1178,6 +1178,8 @@ CRKcrackRangeWithTwoScans(int *vid, int *bid, int low, int hgh, bit tail)
 	int mode;
 	size_t vl=0, vh=0;
 	bit firstCrack = FALSE;
+
+	(void) firstCrack;
 	if (low >  hgh)
 		return throwMessage("crackers.crack", "Illegal range");
 	if ((b = BATdescriptor(*bid)) == NULL)
