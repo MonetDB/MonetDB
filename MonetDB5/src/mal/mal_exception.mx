@@ -126,7 +126,7 @@ mal_export str	locateException(MalBlkPtr mb, int pc, str oldmsg);
 mal_export void	showException(MalBlkPtr mb, int pc, str name, str msg);
 
 #define MALEXCEPTION "MALexception"
-#define throwMessage(Fcn,Msg)   throwException(MALEXCEPTION,Fcn,"%s",Msg)
+#define throwMessage(Fcn,Msg)   createException(MALEXCEPTION,Fcn,getBasename(__FILE__),__LINE__,"%s",Msg)
 /* Fabian's convenience `tools' */
 mal_export str  createException(str name, str func, str file, int line, char *format, ...);
 mal_export str  stackException(str prev, str func, str file, int line);

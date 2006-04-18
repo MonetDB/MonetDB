@@ -5,11 +5,13 @@ stdout of test 'tst1005` in directory 'src/mal` itself:
 # 07:58:53 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst1005.mal </dev/null
 # 07:58:53 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+
+
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/fabian/scratch/monetdb/five/program-x86_64/etc/MonetDB5.conf
+# dbfarm:/net/pegasus.ins.cwi.nl/export/scratch0/fabian/vtmp/mtest-five-monetdb-pegasus.ins.cwi.nl/monetdb/dbfarm
 # dbname:mTests_src_mal
 # Visit http://monetdb.cwi.nl/ for further information.
 ## the first of a series of BBP test cases
@@ -54,9 +56,9 @@ function user.main():void;	# 0  (main:void)
 # the temporary bats of the user 	# 11  (_16:str)
     bbp.open();	# 12 CMDbbpopen (_17:void)
     v := bbp.take("myfirstbat");	# 13 CMDbbptake (v:bat[:any,:any])<-(_12:str)
-catch MALexception;	# 14  (MALexception:any) jump 16
-    io.print(MALexception);	# 15 IOprint_val (_20:int)<-(MALexception:any)
-exit MALexception;	# 16  (MALexception:any)
+catch MALexception;	# 14  (MALexception:str) jump 16
+    io.printf(MALexception);	# 15 IOprint_str (_20:int)<-(MALexception:str)
+exit MALexception;	# 16  (MALexception:str)
     io.print("v");	# 17 IOprint_val (_21:int)<-(_22:str)
     io.print(v);	# 18 IOprint_val (_23:int)<-(v:bat[:any,:any])
     x := bbp.getObjects();	# 19 CMDbbpGetObjects (x:bat[:int,:str])
@@ -68,7 +70,8 @@ exit MALexception;	# 16  (MALexception:any)
 #exit MALexception; 	# 25  (_31:str)
 #io.print("done"); 	# 26  (_32:str)
 end main;	# 27  
-[ "MALexception:user.main[7]:bbp.bind:failed to locate object in box\n" ]
+MALexception:user.main[7]: failed to locate object in box
+    at bbp.bind(bbp.mx:431)
 [ "v" ]
 [ nil ]
 [ "getObjects" ]
