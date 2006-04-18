@@ -70,8 +70,7 @@ exit MALexception;	# 16  (MALexception:str)
 #exit MALexception; 	# 25  (_31:str)
 #io.print("done"); 	# 26  (_32:str)
 end main;	# 27  
-MALexception:user.main[7]: failed to locate object in box
-    at bbp.bind(bbp.mx:431)
+MALexception:user.main[7]:bbp.bind:failed to locate object in box
 [ "v" ]
 [ nil ]
 [ "getObjects" ]

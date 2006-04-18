@@ -36,8 +36,7 @@ catch MALexception;	# 7  (MALexception:str) jump 9
     io.printf(MALexception);	# 8 IOprint_str (_9:int)<-(MALexception:str)
 exit MALexception;	# 9  (MALexception:str)
 end main;	# 10  
-MALexception:user.main[4]: failed to take object from box
-    at bbp.take(bbp.mx:493)
+MALexception:user.main[4]:bbp.take:failed to take object from box
 
 # 07:58:52 >  
 # 07:58:52 >  Done.
