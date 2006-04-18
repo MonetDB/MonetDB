@@ -333,6 +333,10 @@ typedef struct sql_table {
 	char *dname;		/* name of the persistent deletes bat */
 	oid dbid;		/* bat with deletes */
 
+	int location;		/*Location of the table. If it is local -1 otherwise the 'hostid' from Hosts table*/
+	
+	int replication_id;	/*Key to access to replication table, if -1 no replication scenario for this table*/
+
 	struct sql_schema *s;
 } sql_table;
 
