@@ -158,14 +158,6 @@ command printIndex(b:bat[:oid,:@1]):void
 address CRKprintIndex
 comment "Print the index for a cracked table.";
 
-command addOne(b:bat[:oid,:@1], value:int, index:lng):void
-address CRKaddOne
-comment "Add one element in the index of a cracked table.";
-
-command addTwo(b:bat[:oid,:@1], valueA:int, indexA:lng, valueB:int, indexB:lng):void
-address CRKaddTwo
-comment "Add two elements in the index of a cracked table.";
-
 @mal
 module crackers;
 
@@ -358,8 +350,6 @@ mal_export str CRKuselectValue(int *vid, int *bid, int *value);
 
 mal_export str CRKnewIndex(int *k, int *bid);
 mal_export str CRKprintIndex(int *k, int *bid);
-mal_export str CRKaddOne(int *k, int *bid, int *value, lng *index);
-mal_export str CRKaddTwo(int *k, int *bid, int *valueA, lng *indexA,int *valueB, lng *indexB);
 
 #endif /* _CRACKERS_H */
 @-
@@ -425,7 +415,7 @@ newIndex_@1(int bid)
 
 	Index[i].bid = bid;
 	BAT *b = BATnew(TYPE_lng, TYPE_@1, 1000);	/*todo: size*/
-	BBPfix(b->batCacheid);
+	BBPkeepref(b->batCacheid);
 	Index[i].cid = b->batCacheid; 
 	return i;
 }
@@ -467,7 +457,7 @@ CRKnewIndex(int *k, int *bid)
 @
 @= InsertIndexElements
 void 
-addOne_@1(int i, @1 *value, lng index)
+addOne_@1(int i, @1 *value, lng index, BUN p)
 {
 	BAT *b;
         if ((b = BATdescriptor(Index[i].cid)) == NULL) {
@@ -481,9 +471,10 @@ addOne_@1(int i, @1 *value, lng index)
 		return; 		
 	}
 	/*todo: check BAT size*/
-	BUN p = SORTfndfirst_@1(b,value);  /*todo: avoid calls to find since these positions can be known while searching the indexing for cracking*/
+
 	BUN ph = BUNhloc(b, p);
 	BUN pt = BUNtloc(b, p);
+	
 	if (p == BUNlast(b)){ /*Insert at the end if everything is smaller than the new value*/
 		@:insertIndexElement(@1, ph, pt, index, *value)@
 		return;
@@ -502,10 +493,11 @@ addOne_@1(int i, @1 *value, lng index)
 		*(@1 *)wt = *(@1 *)rt;
 	}
 	@:insertIndexElement(@1, ph, pt, index, *value)@
+	BBPunfix(b->batCacheid);
 }	
 
 void 
-addTwo_@1(int i, @1 *valueA, lng indexA, @1 *valueB, lng indexB)
+addTwo_@1(int i, @1 *valueA, lng indexA, BUN p2, @1 *valueB, lng indexB, BUN p)
 {
 	BAT *b;
         if ((b = BATdescriptor(Index[i].cid)) == NULL) {
@@ -525,13 +517,11 @@ addTwo_@1(int i, @1 *valueA, lng indexA, @1 *valueB, lng indexB)
 		return; 		
 	}
 
-	BUN p = SORTfndfirst_@1(b,valueB);
 	BUN ph = BUNhloc(b, p);
 	BUN pt = BUNtloc(b, p);
 	BUN wh = BUNhloc(b, BUNlast(b)+xx);
 	BUN wt = BUNtloc(b, BUNlast(b)+xx);
 	BUN rh = wh - 2*xx, rt = wt - 2*xx;
-        BUN p2 = SORTfndfirst_@1(b,valueA);
         BUN p2h = BUNhloc(b, p2);
         BUN p2t = BUNtloc(b, p2);
 	if (p == BUNlast(b)){
@@ -563,27 +553,12 @@ addTwo_@1(int i, @1 *valueA, lng indexA, @1 *valueB, lng indexB)
                 *(@1 *)wt = *(@1 *)rt;
         }
         @:insertIndexElement(@1, p2h, p2t, indexA, *valueA)@
+	BBPunfix(b->batCacheid);
 }	
 @
 
 @c
 @:InsertIndexElements(int)@
-
-str
-CRKaddOne(int *k, int *bid,int *value,lng *index)
-{
-	(void)k;
-	addOne_int(*bid,value,*index);
-	return MAL_SUCCEED;
-}
-
-str
-CRKaddTwo(int *k, int *bid,int *valueA,lng *indexA,int *valueB,lng *indexB)
-{
-	(void)k;
-	addTwo_int(*bid,valueA,*indexA,valueB,*indexB);
-	return MAL_SUCCEED;
-}
 
 int     
 existsCrackMap(int bid)
@@ -3633,17 +3608,17 @@ the appropriate pieces, update the index and return the result.
 	if (vl == -1){ /*middle and right pieces are empty*/
 		if (*inclusiveLow == TRUE) i1 = -@3;
 		else i1 = @3;
-		addOne_@1(m,low,i1);
+		addOne_@1(m,low,i1,posA);
 	}else
 	if (vh == -1){ /*left and middle pieces are empty*/
 		if (*inclusiveHgh == TRUE) i2 = @2;
 		else i2 = -@2;
-		addOne_@1(m,hgh,i2);
+		addOne_@1(m,hgh,i2,posB);
 	}else
 		/*The following adds also gaps in the index in the cases where epmty piece
 		is the right, the left or the middle. In the latter case vl is always vh+1
 		and the index we want for both is vh*/
-		addTwo_@1(m,low,i1,hgh,i2);
+		addTwo_@1(m,low,i1,posA,hgh,i2,posB);
 
 @= crkTwoL
 /*printf("crack in two pieces\n");*/
@@ -3719,7 +3694,7 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 	BAT *b,*c;
 	BAT *view, *uview;
 	int  m;
-	lng vl=-1, vh=-1; 
+	lng vl=-1, vh=-1, posl, posh; 
 	/* vl and vh are the low and high index values to create the view with the result */
 	lng cl=-1, ch1=-1, cl2=-1, ch=-1; 
 	/* index values in the case we have to crack 
@@ -3727,9 +3702,9 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 		if we have to crack only one piece, i.e., if our range falls 
 		in one piece only then we crack from cl to ch otherwise we use 
 		the other indices as it is shown */
-	lng i1=-1,i2=-1, posl, posh;
+	lng i1=-1,i2=-1;
 	BUN l,lt,ht; int xx;
-	BUN h,lh,hh,h1;
+	BUN h,lh,hh,h1, posA, posB;
 	BUN lhnext, hhprev;
 	bit gf;
 	if (low > hgh)
@@ -3755,6 +3730,8 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 		   anyway so crack in three pieces cl-ch */
 		posl = BUNindex(b,BUNfirst(b));
 		posh = BUNindex(b,BUNlast(b)-BUNsize(b));
+		posA = BUNfirst(b);
+		posB = posA+BUNsize(b);
 		@:crkThree(@1,posl,posh)@
 		goto createView;
 	}
@@ -3780,7 +3757,7 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 	lt = BUNtloc(c, l);
 	lh = BUNhloc(c, l);
 	xx = BUNsize(c);
-	
+	posA = l;	
 
 	/* if all indices contain values smaller than low, crack the area 
 		between the last index and the last BUN of the cracked bat */
@@ -3887,6 +3864,8 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 	h = SORTfndfirst_@1(c,hgh);
 	ht = BUNtloc(c, h);
 	hh = BUNhloc(c, h);
+	posB = h;	
+
 	if (h == BUNlast(c))
 		ch = BUNindex(b, BUNlast(b) - BUNsize(b));
 	else
@@ -3976,16 +3955,16 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch:%lld \n",vl,vh,cl,ch);
 				/* For the ch bound and the previous one in the index*/
 				@:crkTwoR(@1)@
 				
-				addTwo_@1(m,low,i1,hgh,i2);
+				addTwo_@1(m,low,i1,posA,hgh,i2,posB);
 			}
 		}else
 		if (vl == -1){
 			@:crkTwoL(@1)@
-			addOne_@1(m,low,i1);
+			addOne_@1(m,low,i1,posA);
 		}else
 		if (vh == -1){
 			@:crkTwoR(@1)@
-			addOne_@1(m,hgh,i2);
+			addOne_@1(m,hgh,i2,posB);
 		} 	
 	}
 /*
@@ -4006,7 +3985,7 @@ createView:
 		uview = BATconst(view,TYPE_void,ATOMnilptr(TYPE_void));
 		*vid = uview->batCacheid;		
 	}else *vid = view->batCacheid;
-	BBPfix(*vid);
+	BBPkeepref(*vid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }       
