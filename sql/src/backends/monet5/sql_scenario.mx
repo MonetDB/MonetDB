@@ -68,6 +68,7 @@ we update its context descriptor to denote an SQL scenario.
 #include <mtime.h>
 /* include mal optimizer */
 #include "optimizer.h"
+#include "mal_authorize.h"
 
 static void pushCatchDefault(MalBlkPtr mb, str nme, int autocommit);
 
@@ -206,17 +207,19 @@ SQLinitClient(Client c)
 		return msg;
 	
 	if ((backend *) c->state[PARSER] == 0) {
+		char u[BUFSIZ];
+		str user = u;
+		str tmp;
+
 		m = mvc_create((c-mal_clients), 0, c->fdin, c->fdout);
 		m->cache = 1;
 		/* pass through credentials of the user if not console */
-		if (isAdministrator(c)) {
-			schema = mvc_login(m, "monetdb", "monetdb");
-		} else {
-			schema = mvc_login(m, c->user, NULL);
-		}
+		
+		rethrow("SQLinitClient", tmp, AUTHresolveUser(&user, &(c->user)));
+		schema = mvc_login(m, user, NULL);
 		if (!schema) {
 			_DELETE(schema);
-			return throwMessage("SQLinitClient", "Schema authorization error\n");
+			throwMal("SQLinitClient", "Schema authorization error");
 		}
 		_DELETE(schema);
 		c->state[PARSER] = (void *) backend_create(0 /*debug */ , m, c);
