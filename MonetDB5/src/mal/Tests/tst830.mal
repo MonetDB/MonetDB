@@ -1,36 +1,75 @@
 # a simple functional test for the access control table
 
-u:= clients.getPermissions();
-io.print(u);
+	scens := bat.new(:str, :void);
+	bat.insert(scens, "sql", nil:void);
+	bat.insert(scens, "mal", nil:void);
 
-clients.addUser("monetdb","Pmonetdb","sql");
-clients.addUser("monetdb","Pmonetdb","mal");
-clients.addUser("checkpoint","Pcheckpoint","mal");
-clients.addUser("legacy","Plegacy","mil");
+	# this should fail, the monetdb user is already there
+	id := clients.addUser("monetdb", "Pmonetdb", scens);
+catch MALexception;
+	io.print(MALexception);
+exit MALexception;
 
-u:= clients.getPermissions();
-p:= clients.getPasswords();
-io.print(u,p);
+	# should print 0@1 or something
+	id := clients.addUser("test", "test", scens);
+	io.print(id);
 
-clients.delUser("checkpoint");
-clients.delUser("monetdb","mal");
-u:= clients.getPermissions();
-io.print(u);
+	# this should work also
+	# don't use nil:bat[:str, :void] here, it results in a crash
+	t := bat.new(:str, :void);
+	id := clients.addUser("checkpoint", "Pcheckpoint", t);
+	io.print(id);
 
-t:= clients.checkPermission("monetdb","Pmonetdb","sql");
-io.print(t);
+	# should work, we're the admin here
+	clients.removeUser("checkpoint");
 
-t:= clients.checkPermission("monetdb","x","sql");
-io.print(t);
+	# just remove the scenarios one by one, should work
+	clients.removeScenario("test", "mal");
+	clients.removeScenario("test", "sql");
+	# this one should fail: it's not there
+	clients.removeScenario("test", "mil");
+catch MALexception:str;
+	io.print(MALexception);
+exit MALexception;
 
-t:= clients.checkPermission("monetdb","Pmonetdb","x");
-io.print(t);
+	# and add a scenario again
+	clients.addScenario("test", "mal");
+	# do it again, see what happens (should fail)
+	clients.addScenario("test", "mal");
+catch MALexception:str;
+	io.print("got MALexception");
+exit MALexception;
 
-t:= clients.checkPermission("x","Pmonetdb","sql");
-io.print(t);
+	# forcefully set the password of the user test
+	clients.setPassword("test", "newpass");
+	# now try to set the password for ourself, should fail
+	clients.setPassword("monetdb", "badpass");
+catch InvalidCredentialsException:str;
+	io.print("got InvalidCredentialsException");
+exit InvalidCredentialsException;
 
-clients.newPassword("legacy","Plegacy","modern");
+	# change our own password
+	clients.changePassword("monetdb", "newdb");
+	# try it again, should fail...
+	clients.changePassword("monetdb", "newdb");
+catch InvalidCredentialsException:str;
+	io.print("got InvalidCredentialsException");
+exit InvalidCredentialsException;
 
-u:= clients.getPermissions();
-p:= clients.getPasswords();
-io.print(u,p);
+	# all should fail
+	clients.checkPermission("monetdb","Pmonetdb","sql");
+catch InvalidCredentialsException:str;
+	io.print("got InvalidCredentialsException");
+exit InvalidCredentialsException;
+	clients.checkPermission("monetdb","x","sql");
+catch InvalidCredentialsException:str;
+	io.print("got InvalidCredentialsException");
+exit InvalidCredentialsException;
+	clients.checkPermission("monetdb","Pmonetdb","x");
+catch InvalidCredentialsException:str;
+	io.print("got InvalidCredentialsException");
+exit InvalidCredentialsException;
+	clients.checkPermission("x","Pmonetdb","sql");
+catch InvalidCredentialsException:str;
+	io.print("got InvalidCredentialsException");
+exit InvalidCredentialsException;

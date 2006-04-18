@@ -113,6 +113,8 @@ mal_export str CLTremoveUser(int *ret, str *usr);
 mal_export str CLTchangePassword(int *ret, str *old, str *new);
 mal_export str CLTsetPassword(int *ret, str *usr, str *new);
 mal_export str CLTcheckPermission(int *ret, str *usr, str *pw, str *sc);
+mal_export str CLTaddScenario(int *ret, str *usr, str *sc);
+mal_export str CLTremoveScenario(int *ret, str *usr, str *sc);
 
 #endif /* _CLIENTS_H */
 @c
@@ -438,4 +440,29 @@ str CLTcheckPermission(int *ret, str *usr, str *pw, str *sc) {
 	return(MAL_SUCCEED);
 }
 
+@mal
+command addScenario(usr:str, sc:str):void
+address CLTaddScenario
+comment "add the given scenario to the allowed scenarios for the given user";
+@c
+str CLTaddScenario(int *ret, str *usr, str *sc) {
+	str tmp;
+	(void) ret;
+
+	rethrow("addScenario", tmp, AUTHaddScenario(usr, sc));
+	return(MAL_SUCCEED);
+}
+
+@mal
+command removeScenario(usr:str, sc:str):void
+address CLTremoveScenario
+comment "remove the given scenario from the allowed scenatios for the given user";
+@c
+str CLTremoveScenario(int *ret, str *usr, str *sc) {
+	str tmp;
+	(void) ret;
+
+	rethrow("removeScenario", tmp, AUTHremoveScenario(usr, sc));
+	return(MAL_SUCCEED);
+}
 @}

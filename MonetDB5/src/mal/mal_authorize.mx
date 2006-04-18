@@ -43,8 +43,8 @@ mal_export str AUTHremoveUser(str *username);
 mal_export str AUTHchangeUsername(str *olduser, str *newuser);
 mal_export str AUTHchangePassword(str *oldpass, str *passwd);
 mal_export str AUTHsetPassword(str *username, str *passwd);
-mal_export str AUTHaddLanguage(str *username, str *scenario);
-mal_export str AUTHremoveLanguage(str *username, str *scenario);
+mal_export str AUTHaddScenario(str *username, str *scenario);
+mal_export str AUTHremoveScenario(str *username, str *scenario);
 mal_export str AUTHresolveUser(str *username, oid *uid);
 mal_export str AUTHgetUsername(str *username);
 
@@ -499,7 +499,7 @@ AUTHsetPassword(str *username, str *passwd) {
  * all scenarios are permitted).
  */
 str
-AUTHaddLanguage(str *username, str *scenario) {
+AUTHaddScenario(str *username, str *scenario) {
 	BUN p;
 	str tmp;
 
@@ -507,14 +507,14 @@ AUTHaddLanguage(str *username, str *scenario) {
 
 	/* precondition checks */
 	if (*username == NULL || strNil(*username))
-		throwIllArg("addLanguage", "username should not be nil");
+		throwIllArg("addScenario", "username should not be nil");
 	if (*scenario == NULL || strNil(*scenario))
-		throwIllArg("addLanguage", "scenario should not be nil");
+		throwIllArg("addScenario", "scenario should not be nil");
 
 	/* see if the user is valid */
 	p = BUNfnd(userrev, *username);
 	if (p == NULL)
-		throwMalf("addLanguage", "user '%s' does not exist", *username);
+		throwMalf("addScenario", "user '%s' does not exist", *username);
 
 	/* add the scenario for this user */
 	BUNins(scen, BUNtail(userrev, p), *scenario);
@@ -529,7 +529,7 @@ AUTHaddLanguage(str *username, str *scenario) {
  * the opposite effect: it will allow any scenario to be used.
  */
 str
-AUTHremoveLanguage(str *username, str *scenario) {
+AUTHremoveScenario(str *username, str *scenario) {
 	BUN p;
 	BAT *b;
 	str tmp;
@@ -538,22 +538,22 @@ AUTHremoveLanguage(str *username, str *scenario) {
 
 	/* precondition checks */
 	if (*username == NULL || strNil(*username))
-		throwIllArg("addLanguage", "username should not be nil");
+		throwIllArg("removeScenario", "username should not be nil");
 	if (*scenario == NULL || strNil(*scenario))
-		throwIllArg("addLanguage", "scenario should not be nil");
+		throwIllArg("removeScenario", "scenario should not be nil");
 
 	/* see if the user is valid */
 	p = BUNfnd(userrev, *username);
 	if (p == NULL)
-		throwMalf("addLanguage", "user '%s' does not exist", *username);
+		throwMalf("removeScenario", "user '%s' does not exist", *username);
 
 	/* see if the scenario is valid for this user */
 	b = BATselect(scen, BUNtail(userrev, p), BUNtail(userrev, p));
 	b = BATselect(BATmirror(b), *scenario, *scenario);
 	if (BATcount(b) == 0)
-		throwMalf("removeLanguage", "scenario '%s' not found for user", *scenario);
+		throwMalf("removeScenario", "scenario '%s' not found for user", *scenario);
 	if (BATcount(b) > 1)
-		throwMalf("removeLanguage", "inconsistent authorisation administration, scenario '%s' multiple times defined", *scenario);
+		throwMalf("removeScenario", "inconsistent authorisation administration, scenario '%s' multiple times defined", *scenario);
 
 	/* ok, remove it */
 	BATdel(scen, BATmirror(b));
