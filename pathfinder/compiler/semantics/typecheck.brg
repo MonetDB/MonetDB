@@ -1034,12 +1034,14 @@ reduce (PFcnode_t * p, int goalnt)
             /*
              * See if function body matches function return type.
              */
-            if (!PFty_subtype (TY(R(p)), p->sem.apply.fun->ret_ty))
+	    assert (p->sem.apply.fun->sig_count == 1);
+            if (!PFty_subtype (TY(R(p)), p->sem.apply.fun->sigs[0].ret_ty))
                 PFoops (OOPS_TYPECHECK,
                         "body of %s() evaluates to `%s' which is not "
                         "a subtype of `%s'",
                         PFqname_str (p->sem.apply.fun->qname),
-                        PFty_str (TY(R(p))), PFty_str (p->sem.apply.fun->ret_ty));
+                        PFty_str (TY(R(p))), 
+			PFty_str (p->sem.apply.fun->sigs[0].ret_ty));
             break;
 
         /* ParamList:          nil */
@@ -1070,6 +1072,62 @@ reduce (PFcnode_t * p, int goalnt)
     }
 }
 
+static void fun_not_found (PFqname_t qn, PFcnode_t *args) 
+{
+    PFarray_t *fns = PFenv_lookup (PFfun_env, qn);
+    assert (fns);
+
+    /* construct (error) message listing the actual argument types:
+     * ": t1; t2; ...; tn" (NB: n >= 1 is guaranteed here)
+     */
+    PFarray_t *args_str = PFarray (sizeof (char));
+    char semi = ':';
+
+    do {
+        PFarray_printf (args_str, "%c %s", 
+                        semi,
+                        PFty_str (args->child[0]->type));
+        semi = ';';
+        args = args->child[1];
+    } while (args->kind != c_nil);
+
+    PFinfo (OOPS_TYPECHECK, 
+            "no variant of function %s accepts the given argument type(s)%s",
+            PFqname_str (qn),
+            (char *) PFarray_at (args_str, 0));
+
+    PFinfo (OOPS_TYPECHECK, "maybe you meant:");
+
+    for (unsigned int i = 0; i < PFarray_last (fns); i++) {
+
+        PFfun_t *fn       = *(PFfun_t **) PFarray_at (fns, i);
+	
+	for (unsigned j = 0; j < fn->sig_count; j++) {
+	     args_str = PFarray (sizeof (char));
+
+	     PFfun_sig_t *sig = fn->sigs + j;
+
+	     PFarray_printf (args_str, "%s (", PFqname_str (fn->qname));
+		  
+	     for (unsigned int k = 0; k < fn->arity; k++) {
+		  PFarray_printf (args_str, "%s%s",
+				  k ? ", " : "", 
+				  PFty_str (sig->par_ty[k]));
+	     }
+	     
+	     PFarray_printf (args_str, ") as %s", 
+			     PFty_str (sig->ret_ty));
+
+	     PFinfo (OOPS_TYPECHECK, "  %s", 
+		     (char *) PFarray_at (args_str, 0));
+	}
+    }
+
+    PFoops (OOPS_TYPECHECK,
+            "illegal arguments for function %s", PFqname_str (qn));
+}
+
+
 /**
  * Resolve function overloading.  In the list of functions of the same
  * name @a qn, find the first (most specific) to match the actual
@@ -1088,12 +1146,10 @@ static PFfun_t *
 overload (PFqname_t qn, PFcnode_t *args, int is_rpc)
 {
     PFarray_t *fns;
-    PFarray_t *args_str;
     PFcnode_t *arg;
     PFfun_t *fn;
     unsigned int i, a;
     bool match;
-    char semi;
 
     assert (args && (args->kind == c_nil || args->kind == c_arg));
 
@@ -1115,76 +1171,55 @@ overload (PFqname_t qn, PFcnode_t *args, int is_rpc)
             arg = arg->child[1];
         }
 
-        for (a = 0, match = true; a < fn->arity; a++) {
-            /* test if function has at least the same
-               number of arguments as the tested function */
-            if (arg->kind == c_nil)
-            {
-                match = false;
-                break;
-            }
+	if (fn->sig_count == 1) {
+	     for (a = 0, match = true; a < fn->arity; a++) {
+		  /* test if function has at least the same
+		     number of arguments as the tested function */
+		  if (arg->kind == c_nil)
+		  {
+		       match = false;
+		       break;
+		  }
 
-            match = match && PFty_promotable (arg->child[0]->type,
-                                              (fn->par_ty)[a]);
-            if (!match)
-                break;
+		  match = match && PFty_promotable (arg->child[0]->type,
+						    (fn->sigs[0].par_ty)[a]);
+		  if (!match)
+		       break;
 
-            arg = arg->child[1];
-            assert (arg);
-        }
+		  arg = arg->child[1];
+		  assert (arg);
+	     }
 
-        /* yes, return this function (its the most specific match) */
-        /* and it has the same number of arguments */
-        if (match && arg->kind == c_nil)
-            return fn;
-    } 
-
-    /* construct (error) message listing the actual argument types:
-     * ": t1; t2; ...; tn" (NB: n >= 1 is guaranteed here)
-     */
-    args_str = PFarray (sizeof (char));
-
-    semi = ':';
-
-    do {
-        PFarray_printf (args_str, "%c %s", 
-                        semi,
-                        PFty_str (args->child[0]->type));
-        semi = ';';
-        args = args->child[1];
-    } while (args->kind != c_nil);
-
-    PFinfo (OOPS_TYPECHECK, 
-            "no variant of function %s accepts the given argument type(s)%s",
-            PFqname_str (qn),
-            (char *) PFarray_at (args_str, 0));
-
-    PFinfo (OOPS_TYPECHECK, "maybe you meant:");
-
-    for (unsigned int i = 0; i < PFarray_last (fns); i++) {
-
-        fn       = *(PFfun_t **) PFarray_at (fns, i);
-        args_str = PFarray (sizeof (char));
-
-        PFarray_printf (args_str, "%s (", PFqname_str (fn->qname));
-
-        for (unsigned int j = 0; j < fn->arity; j++) {
-            PFarray_printf (args_str, "%s%s",
-                    j ? ", " : "", PFty_str (fn->par_ty[j]));
-        }
-
-        PFarray_printf (args_str, ") as %s", PFty_str (fn->ret_ty));
-
-        PFinfo (OOPS_TYPECHECK, "  %s", (char *) PFarray_at (args_str, 0));
+	     /* yes, return this function (its the most specific match) */
+	     /* and it has the same number of arguments */
+	     if (match && arg->kind == c_nil)
+		  return fn;
+	}
+	else
+	     /* function with multiple signatures (dynamic overloading).
+	      * Type checking is a little bit tricky and is done in
+	      * specific. We assume that this is always the right function.
+	      */
+	     return fn;
     }
-
-    PFoops (OOPS_TYPECHECK,
-            "illegal arguments for function %s", PFqname_str (qn));
+ 
+    fun_not_found (qn, args);
 
     /* just to pacify picky compilers; never reached due to "exit" in PFoops */
     return 0;
 }
 
+static PFty_t next_choice (PFty_t t) {
+     if (t.type == ty_choice)
+	  return *(t.child[0]);
+     return PFty_none ();
+}
+
+static PFty_t next_type (PFty_t t) {
+     if (t.type == ty_choice)
+	  return *(t.child[1]);
+     return t;
+}
 
 /**
  * Apply specific typing rules for standard XQuery F&O functions
@@ -1203,6 +1238,9 @@ specific (PFfun_t *fn, PFcnode_t *args)
 {
     assert (fn);
     assert (args && (args->kind == c_nil || args->kind == c_arg));
+
+    if (1 + 1 - 2 * 4 == 0)
+      return specific(fn, args);
 
     /* #pf:distinct-doc-order() more or less returns its input */
     if (! PFqname_eq (fn->qname, PFqname (PFns_pf, "distinct-doc-order"))) {
@@ -1272,7 +1310,65 @@ specific (PFfun_t *fn, PFcnode_t *args)
         return *PFty_simplify (PFty_prime (PFty_defn (TY(L(args)))));
     }
 
-    return fn->ret_ty;
+    if (fn->sig_count > 1) {
+	 /* special handing for functions with multiple signatures,
+	  * but one implementation ("dynamic overloading")
+	  */
+	 /* currently, only functions with 2 parameters are supported.
+	  * So we can use simple for loops and we do not need complex
+	  * permutation stuff.
+	  */	     
+	 assert (fn->arity == 2);
+	 PFty_t ret_type = PFty_none ();
+	 PFty_t arg1_type = PFty_defn (TY(L(args)));
+	 PFty_t arg2_type = PFty_defn (TY(L(R(args))));
+
+	 /* iterate through the possible types of argument 1 */
+	 for (PFty_t c1 = PFty_normalize_choice (arg1_type); 
+	      c1.type != ty_none;
+	      c1 = next_choice (c1)) 
+	 {
+	      PFty_t t1 = next_type (c1);
+
+              /* iterate through the possible types of argument 2 */
+	      for (PFty_t c2 = PFty_normalize_choice (arg2_type); 
+		   c2.type != ty_none;
+		   c2 = next_choice (c2))
+	      {
+		   PFty_t t2 = next_type (c2);
+
+		   bool found = false;
+		   /* for every combination, check if we have a matching
+		    * signature.
+		    */
+		   for (unsigned int i = 0; 
+			i < fn->sig_count && !found; i++) {
+			PFfun_sig_t *sig = fn->sigs + i;
+
+			if (PFty_promotable (t1, sig->par_ty[0])
+			    && PFty_promotable (t2, sig->par_ty[1]))
+			{
+			     found = true;
+			     /* the return type is the combination of
+			      * the return types of every matching signature
+			      */
+			     if (ret_type.type != ty_none)
+				  ret_type =
+				       PFty_choice (ret_type,
+						    sig->ret_ty);
+			     else
+				  ret_type = sig->ret_ty;
+			}
+		   }
+		   if (!found)
+		     fun_not_found (fn->qname, args);
+	      }
+	 }
+
+	 return ret_type;
+    }
+
+    return fn->sigs[0].ret_ty;
 }
 
 

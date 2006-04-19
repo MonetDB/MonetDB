@@ -387,12 +387,15 @@ print_fun (PFfun_t ** funs)
 
     fprintf (stderr, "function name: %s\n", PFqname_str (fun->qname));
     if (fun->builtin) {
-        fprintf (stderr, "\treturn type  : %s\n", PFty_str (fun->ret_ty));
+        for (unsigned int s = 0; s < fun->sig_count; s++) {
+            PFfun_sig_t *sig = fun->sigs + s;
+            fprintf (stderr, "\treturn type  : %s\n", PFty_str (sig->ret_ty));
   
-        for (i = 0; i < fun->arity; i++)
-            fprintf (stderr, "\t%2i. parameter: %s\n", 
-                     i + 1, 
-                     PFty_str (*(fun->par_ty + i)));
+            for (i = 0; i < fun->arity; i++)
+                fprintf (stderr, "\t%2i. parameter: %s\n", 
+                         i + 1, 
+                         PFty_str (*(sig->par_ty + i)));
+        }
     }
 }
 
@@ -427,7 +430,7 @@ fun_add_user (PFqname_t      qn,
               unsigned int   arity,
               PFvar_t      **params)
 {
-    PFfun_t      *fun = PFfun_new (qn, arity, false, NULL, NULL, NULL, params);
+    PFfun_t      *fun = PFfun_new (qn, arity, false, 1, NULL, NULL, params);
     PFarray_t    *funs = NULL;
     unsigned int  i;
 
@@ -470,6 +473,7 @@ fun_add_user (PFqname_t      qn,
  *                are not known yet, pass @c NULL.
  * @param ret_ty  Pointer to return type. If return type is not known
  *                yet, pass @c NULL.
+ * @param overload Informations for dynamic function overloading.
  * @param alg     In case of built-in functions, pointer to the
  *                routine that creates the algebra representation
  *                of the function. 
@@ -479,8 +483,8 @@ PFfun_t *
 PFfun_new (PFqname_t      qn,
            unsigned int   arity,
            bool           builtin,
-           PFty_t        *par_tys,
-           PFty_t        *ret_ty,
+           unsigned int sig_count,
+           PFfun_sig_t   *sigs,
            struct PFla_pair_t (*alg) (const struct PFla_op_t *,
                                       bool,
                                       struct PFla_pair_t *),
@@ -497,19 +501,25 @@ PFfun_new (PFqname_t      qn,
     n->params  = params;
     n->core    = NULL;      /* initialize Core equivalent with NULL */
     n->fid     = 0;         /* needed for summer branch */
+    n->sigs   = NULL;
 
-    /* copy array of formal parameter types (if present) */
-    if (arity > 0 && par_tys) {
-        n->par_ty = (PFty_t *) PFmalloc (arity * sizeof (PFty_t));
-        memcpy (n->par_ty, par_tys, arity * sizeof (PFty_t));
+    n->sig_count = sig_count;
+    assert (sig_count);
+    n->sigs =  (PFfun_sig_t *) PFmalloc (sig_count * sizeof (PFfun_sig_t));
+    for (unsigned int i = 0; i < sig_count; i++) {
+        /* copy array of formal parameter types (if present) */
+        if (arity > 0 && sigs) {
+            n->sigs[i].par_ty = (PFty_t *) PFmalloc (arity * sizeof (PFty_t));
+            memcpy (n->sigs[i].par_ty, sigs[i].par_ty, 
+                    arity * sizeof (PFty_t));
+        }
+        else
+            n->sigs[i].par_ty = NULL;
+        if (sigs)
+            n->sigs[i].ret_ty  = sigs[i].ret_ty;
+        else
+            n->sigs[i].ret_ty = PFty_star (PFty_item ());
     }
-    else
-        n->par_ty = NULL;
-
-    if (ret_ty)
-        n->ret_ty  = *ret_ty;
-    else
-        n->ret_ty = PFty_star (PFty_item ());
 
     return n;
 }

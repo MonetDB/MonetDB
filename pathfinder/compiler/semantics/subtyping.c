@@ -1870,6 +1870,73 @@ PFty_prime (PFty_t t)
 }
 
 /**
+ * Normalizes the type choices.
+ * e.g.: normalize (a|(b|c)?) = (a|b?|c?)  
+ *
+ * - normalize ((a|b)) = (normalize (a)|normalize (b))
+ * - normalize ((a|b)*) = (normalize (a*)|normalize (b*))
+ * - normalize ((a|b)?) = (normalize (a?)|normalize (b?))
+ * - normalize ((a|b)+) = (normalize (a+)|normalize (b+))
+ * - normalize (t)       = t
+ */
+PFty_t
+PFty_normalize_choice (PFty_t t)
+{
+    switch (t.type) {
+    case ty_choice: {
+        PFty_t c = PFty_choice (PFty_prime (*(t.child[0])),
+                                PFty_prime (*(t.child[1])));
+        return *right_deep (ty_choice, &c);
+    }
+    
+    case ty_opt: {
+        PFty_t *v = t.child[0];
+        if (v->type == ty_choice) {
+            PFty_t c = PFty_choice (
+                PFty_normalize_choice (
+                    PFty_opt (*(v->child[0]))),
+                PFty_normalize_choice (
+                    PFty_opt (*(v->child[1]))));
+            return *right_deep (ty_choice, &c);
+            
+        }
+        else
+            return t;
+    }
+    case ty_star: {
+        PFty_t *v = t.child[0];
+        if (v->type == ty_choice) {
+            PFty_t c = PFty_choice (
+                PFty_normalize_choice (
+                    PFty_star (*(v->child[0]))),
+                PFty_normalize_choice (
+                    PFty_star (*(v->child[1]))));
+            return *right_deep (ty_choice, &c);
+            
+        }
+        else
+            return t;
+    }
+    case ty_plus: {
+        PFty_t *v = t.child[0];
+        if (v->type == ty_choice) {
+            PFty_t c = PFty_choice (
+                PFty_normalize_choice (
+                    PFty_plus (*(v->child[0]))),
+                PFty_normalize_choice (
+                    PFty_plus (*(v->child[1]))));
+            return *right_deep (ty_choice, &c);
+            
+        }
+        else
+            return t;
+    }
+    default:
+        return t;
+    }
+}
+
+/**
  * Worker for #PFty_data_on().
  */
 static PFty_t
