@@ -761,8 +761,12 @@ process_fun_sigs (PFpnode_t *p, int goalnt)
             reduce (kids[0], nts[0]);
             reduce (kids[1], nts[1]);
 
-            L(p)->sem.apply.fun->par_ty = parameter_types (LLL(p));
-            L(p)->sem.apply.fun->ret_ty = C(LLR(p))->sem.type;
+	    L(p)->sem.apply.fun->sig_count = 1;
+	    L(p)->sem.apply.fun->sigs =  
+	        (PFfun_sig_t *) PFmalloc (sizeof (PFfun_sig_t));
+	    
+            L(p)->sem.apply.fun->sigs[0].par_ty = parameter_types (LLL(p));
+            L(p)->sem.apply.fun->sigs[0].ret_ty = C(LLR(p))->sem.type;
 
             /* Look out for more function declarations */
             process_fun_sigs (kids[3], nts[3]);
@@ -2869,6 +2873,9 @@ reduce (PFpnode_t * p, int goalnt)
             /* What function are we actually talking about? */
             fun = (*(PFapply_t **) PFarray_top (funs))->fun;
 
+	    /* no dynamic overloading here */
+	    assert (fun->sig_count == 1);
+
             /*
              * There's exactly one function that allows an arbitrary
              * number of arguments: fn:concat(). Looking at the
@@ -2880,7 +2887,7 @@ reduce (PFpnode_t * p, int goalnt)
                 expected = PFty_opt (PFty_atomic ());
             else
                 /* look up expected argument type */
-                expected = fun->par_ty[param_num];
+                expected = fun->sigs[0].par_ty[param_num];
 
             /*
              * Apply function conversion rules (XQuery 3.1.5.)

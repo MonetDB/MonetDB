@@ -42,6 +42,131 @@
 #include "logical.h"
 #include "logical_mnemonic.h"
 
+/** 
+ * Returns a iter/pos/items schema where the items have the type
+ * @a ty
+ */
+static PFla_op_t *
+sel_type (const PFla_op_t *n, PFalg_simple_type_t ty)
+{
+    return project (
+               type_assert_pos (
+                    select_ (
+                           type (n, 
+                                 att_res,
+                                 att_item, ty), 
+                           att_res),
+                    att_item, ty),
+               proj (att_iter, att_iter),
+               proj (att_pos, att_pos),
+               proj (att_item, att_item));
+}
+
+/**
+ * Constructs a typeswitch subtree based on the 
+ * algebra type of the item column.
+ * @param n The relation used as input for the typeswitch.
+ * @param count The number of types in the types array
+ * @param types The types to distinguish
+ * @param cnst  A callback function, called for each type encounterd
+ *              in the relation
+ * @param params Optional parameters, passed to the callback function.
+ */
+PFla_op_t *
+PFla_typeswitch (PFla_op_t *n, unsigned int count, 
+                 const PFalg_type_t *types, 
+		 PFla_op_t *(*cnst) (PFla_op_t *n, PFalg_type_t, void *),
+		 void *params)
+{
+    PFla_op_t *res = NULL;
+    PFalg_type_t item_types = 0;
+    bool found = false;
+    for (unsigned int i = 0; i < n->schema.count; i++) {
+        if (n->schema.items[i].name == att_item) {
+            found = true;
+            item_types = n->schema.items[i].type;
+            break;
+        }
+    }
+    if (!found)
+        PFoops (OOPS_FATAL,
+                "attribute `%s' referenced in type switch not found",
+                PFatt_str (att_item));
+    
+    for (unsigned int i = 0; i < count; i++) {
+        PFalg_type_t ty = item_types & types[i];        
+        if (ty == item_types) {
+            res = cnst (n, types[i], params);
+            break;
+        }
+        else if (ty != 0) {
+            PFla_op_t *tsw = cnst (sel_type (n, ty), types[i], params);
+            if (res != NULL)
+                res = disjunion (res, tsw);
+            else
+                res = tsw;
+        }
+    }
+    return res;
+}
+
+struct typeswitch2_params {
+    PFla_op_t *n;
+    PFalg_type_t t;
+    int count;
+    const PFalg_type_t *types;
+    void *params;
+    PFla_op_t *(*cnst) (PFla_op_t *n1, PFla_op_t *n2,
+                        PFalg_type_t, PFalg_type_t, void *);
+};
+
+static PFla_op_t *
+typeswitch2_helper2 (PFla_op_t *n2, PFalg_type_t t2, void *params) {
+    struct typeswitch2_params *p = (struct typeswitch2_params *)params;
+    return p->cnst (p->n, n2, p->t, t2, p->params);    
+}
+
+static PFla_op_t *
+typeswitch2_helper (PFla_op_t *n1, PFalg_type_t t1, void *params) {
+    struct typeswitch2_params *p = (struct typeswitch2_params *)params;
+    return PFla_typeswitch (p->n, p->count, p->types, typeswitch2_helper2,
+                            (struct typeswitch2_params[]) {{
+                                .n = n1,
+                                .t = t1,
+                                .params = p->params,
+                                .cnst = p->cnst
+                            }});    
+}
+
+/**
+ * Constructs a typeswitch subtree based on the 
+ * algebra type of the item column.
+ * Variant with two input relations.
+ * @param n1 The first relation used as input for the typeswitch.
+ * @param n2 The second relation used as input for the typeswitch.
+ * @param count The number of types in the types array
+ * @param types The types to distinguish
+ * @param cnst  A callback function, called for each type combination 
+ *              encounterd in the relations
+ * @param params Optional parameters, passed to the callback function.
+ */
+PFla_op_t *
+PFla_typeswitch2 (PFla_op_t *n1, PFla_op_t *n2, unsigned int count, 
+                 const PFalg_type_t *types, 
+		 PFla_op_t *(*cnst) (PFla_op_t *n1, PFla_op_t *n2,
+                                     PFalg_type_t, PFalg_type_t, void *),
+		 void *params)
+{
+    return PFla_typeswitch (n1, count, types, typeswitch2_helper,
+                            (struct typeswitch2_params[]) {{
+                                .n = n2,
+                                .count = count,
+                                .types = types,
+                                .params = params,
+                                .cnst = cnst
+                            }});
+}
+
 /**
  * Worker function to construct algebra implementation of binary
  * functions (e.g., arithmetic functions: op:numeric-add(),
@@ -150,164 +275,136 @@ un_func (PFalg_simple_type_t t,
 	.frag = PFla_empty_set () };
 }
 
+/** 
+ * Callback function for the typeswitch in bin_arith_typeswitch.
+ */
+static PFla_op_t *
+bin_arith_helper (PFla_op_t *n1, PFla_op_t *n2,
+                PFalg_type_t t1, PFalg_type_t t2, void *params)
+{
+    PFalg_type_t t;
+    if (t1 == t2)
+        t = t1;
+    else if (t1 == aat_dec || t2 == aat_dec) 
+        t = aat_dec;
+    else if (t1 == aat_dbl || t2 == aat_dbl)
+        t = aat_dbl;
+    return bin_arith (t, (PFla_op_t *(*) (const PFla_op_t *, PFalg_att_t,
+                                         PFalg_att_t, PFalg_att_t))params,
+                     (struct PFla_pair_t[]) {
+                         { .rel = n1, .frag = NULL },
+                         { .rel = n2, .frag = NULL },
+                     }).rel;
+}
+
 /**
- * Algebra implementation for op:numeric-add(integer?,integer?)
+ * Helper function for binary arithmetics with a typeswitch.
+ * For every possible combination of input types, bin_arith is
+ * called with the appropriate parameters.
  * @see bin_arith()
  */
-struct PFla_pair_t
-PFbui_op_numeric_add_int (const PFla_op_t *loop __attribute__((unused)),
-                          bool ordering,
-                          struct PFla_pair_t *args)
+static struct PFla_pair_t
+bin_arith_typeswitch (struct PFla_pair_t *args, 
+                      PFla_op_t *(*OP) (const PFla_op_t *, PFalg_att_t,
+                                        PFalg_att_t, PFalg_att_t))
+{
+    PFla_op_t *res = PFla_typeswitch2 (args[0].rel, args[1].rel,
+                                       3,
+                                       (PFalg_type_t [3])
+                                       {
+                                           aat_int,
+                                           aat_dbl,
+                                           aat_dec,
+                                       }, bin_arith_helper, OP);
+    return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set () };
+}
+
+/**
+ * Algebra implementation for op:numeric-add ()
+ * @see bin_arith_typeswitch()
+ */
+struct PFla_pair_t 
+PFbui_op_numeric_add (const PFla_op_t *loop,
+                      bool ordering,
+                      struct PFla_pair_t *args)
 {
     (void) loop;      /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    return bin_arith (aat_int, PFla_add, args);
+
+    return bin_arith_typeswitch (args, PFla_add);
 }
 
 /**
- * Algebra implementation for op:numeric-add(decimal?,decimal?)
- * @see bin_arith()
+ * Algebra implementation for op:numeric-subtract ()
+ * @see bin_arith_typeswitch()
  */
 struct PFla_pair_t
-PFbui_op_numeric_add_dec (const PFla_op_t *loop __attribute__((unused)),
-                          bool ordering,
-                          struct PFla_pair_t *args)
+PFbui_op_numeric_subtract (const PFla_op_t *loop __attribute__((unused)),
+                           bool ordering,
+                           struct PFla_pair_t *args)
 {
     (void) loop;      /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    return bin_arith (aat_dec, PFla_add, args);
+
+    return bin_arith_typeswitch (args, PFla_subtract);
 }
 
+
 /**
- * Algebra implementation for op:numeric-add(double?,double?)
- * @see bin_arith()
+ * Algebra implementation for op:numeric-multiply ()
+ * @see bin_arith_typeswitch()
  */
 struct PFla_pair_t
-PFbui_op_numeric_add_dbl (const PFla_op_t *loop __attribute__((unused)),
-                          bool ordering,
-                          struct PFla_pair_t *args)
+PFbui_op_numeric_multiply (const PFla_op_t *loop __attribute__((unused)),
+                           bool ordering,
+                           struct PFla_pair_t *args)
 {
     (void) loop;      /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    return bin_arith (aat_dbl, PFla_add, args);
+
+    return bin_arith_typeswitch (args, PFla_multiply);
 }
 
-
 /**
- * Algebra implementation for op:numeric-subtract(integer?,integer?)
- * @see bin_arith()
+ * Special typeswitch-callback function for divison.
+ * If both types are integer, they are cast to decimal.
  */
-struct PFla_pair_t
-PFbui_op_numeric_subtract_int (const PFla_op_t *loop __attribute__((unused)),
-                               bool ordering,
-                               struct PFla_pair_t *args)
+static PFla_op_t *
+divide_helper (PFla_op_t *n1, PFla_op_t *n2,
+                PFalg_type_t t1, PFalg_type_t t2, void *params)
 {
-    (void) loop;      /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return bin_arith (aat_int, PFla_subtract, args);
+    (void) params;
+
+    PFalg_type_t t;
+    if (t1 == t2 && t1 == aat_int)
+        t = aat_dec;
+    else if (t1 == aat_dec || t2 == aat_dec) 
+        t = aat_dec;
+    else if (t1 == aat_dbl || t2 == aat_dbl)
+        t = aat_dbl;
+    return bin_arith (t, PFla_divide,
+                     (struct PFla_pair_t[]) {
+                         { .rel = n1, .frag = NULL },
+                         { .rel = n2, .frag = NULL },
+                     }).rel;
 }
 
 /**
- * Algebra implementation for op:numeric-subtract(decimal?,decimal?)
- * @see bin_arith()
- */
-struct PFla_pair_t
-PFbui_op_numeric_subtract_dec (const PFla_op_t *loop __attribute__((unused)),
-                               bool ordering,
-                               struct PFla_pair_t *args)
-{
-    (void) loop;      /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return bin_arith (aat_dec, PFla_subtract, args);
-}
-
-/**
- * Algebra implementation for op:numeric-subtract(double?,double?)
- * @see bin_arith()
- */
-struct PFla_pair_t
-PFbui_op_numeric_subtract_dbl (const PFla_op_t *loop __attribute__((unused)),
-                               bool ordering,
-                               struct PFla_pair_t *args)
-{
-    (void) loop;      /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return bin_arith (aat_dbl, PFla_subtract, args);
-}
-
-
-/**
- * Algebra implementation for op:numeric-multiply(integer?,integer?)
- * @see bin_arith()
- */
-struct PFla_pair_t
-PFbui_op_numeric_multiply_int (const PFla_op_t *loop __attribute__((unused)),
-                               bool ordering,
-                               struct PFla_pair_t *args)
-{
-    (void) loop;      /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return bin_arith (aat_int, PFla_multiply, args);
-}
-
-/**
- * Algebra implementation for op:numeric-multiply(decimal?,decimal?)
- * @see bin_arith()
- */
-struct PFla_pair_t
-PFbui_op_numeric_multiply_dec (const PFla_op_t *loop __attribute__((unused)),
-                               bool ordering,
-                               struct PFla_pair_t *args)
-{
-    (void) loop;      /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return bin_arith (aat_dec, PFla_multiply, args);
-}
-
-/**
- * Algebra implementation for op:numeric-multiply(double?,double?)
- * @see bin_arith()
- */
-struct PFla_pair_t
-PFbui_op_numeric_multiply_dbl (const PFla_op_t *loop __attribute__((unused)),
-                               bool ordering,
-                               struct PFla_pair_t *args)
-{
-    (void) loop;      /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return bin_arith (aat_dbl, PFla_multiply, args);
-}
-
-
-/**
- * Algebra implementation for op:numeric-divide(decimal?,decimal?)
+ * Algebra implementation for op:numeric-divide ()
  * @see bin_arith()
  *
- * NB: A function for the division of two integer operators is required
- * because, according to the XQuery specifications, the division of two
+ * NB: According to the XQuery specifications, the division of two
  * integers returns a decimal number, i.e. we let the two operands be
- * promoted to decimal and use "PFbui_op_numeric_divide_dec".     
+ * promoted to decimal (see special helper function above).     
  */
 struct PFla_pair_t
-PFbui_op_numeric_divide_dec (const PFla_op_t *loop __attribute__((unused)),
+PFbui_op_numeric_divide (const PFla_op_t *loop __attribute__((unused)),
                              bool ordering,
                              struct PFla_pair_t *args)
 {
@@ -315,34 +412,27 @@ PFbui_op_numeric_divide_dec (const PFla_op_t *loop __attribute__((unused)),
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    return bin_arith (aat_dec, PFla_divide, args);
-}
 
-/**
- * Algebra implementation for op:numeric-divide(double?,double?)
- * @see bin_arith()
- */
-struct PFla_pair_t
-PFbui_op_numeric_divide_dbl (const PFla_op_t *loop __attribute__((unused)),
-                             bool ordering,
-                             struct PFla_pair_t *args)
-{
-    (void) loop;      /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return bin_arith (aat_dbl, PFla_divide, args);
+    PFla_op_t *res = PFla_typeswitch2 (args[0].rel, args[1].rel,
+                                       3,
+                                       (PFalg_type_t [3])
+                                       {
+                                           aat_int,
+                                           aat_dbl,
+                                           aat_dec,
+                                       }, divide_helper, NULL);
+    return (struct PFla_pair_t) { .rel = res, .frag = PFla_empty_set () };
 }
 
 
 /**
- * Algebra implementation for op:numeric-integer-divide(integer?,integer?)
- * @see bin_arith()
+ * Algebra implementation for op:numeric-integer-divide ()
+ * @see bin_arith_typeswitch()
  *
  * NB: ($a idiv $b) <=> ($a div $b) cast as xs:integer
  */
 struct PFla_pair_t
-PFbui_op_numeric_idivide_int (const PFla_op_t *loop __attribute__((unused)),
+PFbui_op_numeric_idivide (const PFla_op_t *loop __attribute__((unused)),
                               bool ordering,
                               struct PFla_pair_t *args)
 {
@@ -351,7 +441,7 @@ PFbui_op_numeric_idivide_int (const PFla_op_t *loop __attribute__((unused)),
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
     return (struct PFla_pair_t) {
-	.rel = project (cast (bin_arith (aat_int, PFla_divide, args).rel,
+	.rel = project (cast (bin_arith_typeswitch (args, PFla_divide).rel,
 		                  att_cast, att_item, aat_int),
                     proj (att_iter, att_iter),
                     proj (att_pos, att_pos),
@@ -360,56 +450,11 @@ PFbui_op_numeric_idivide_int (const PFla_op_t *loop __attribute__((unused)),
 }
 
 /**
- * Algebra implementation for op:numeric-integer-divide(decimal?,decimal?)
- * @see bin_arith()
+ * Algebra implementation for op:numeric-mod ()
+ * @see bin_arith_typeswitch()
  */
 struct PFla_pair_t
-PFbui_op_numeric_idivide_dec (const PFla_op_t *loop __attribute__((unused)),
-                              bool ordering,
-                              struct PFla_pair_t *args)
-{
-    (void) loop;      /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return (struct PFla_pair_t) {
-	.rel = project (cast (bin_arith (aat_dec, PFla_divide, args).rel,
-		                  att_cast, att_item, aat_int),
-                    proj (att_iter, att_iter),
-                    proj (att_pos, att_pos),
-                    proj (att_item, att_cast)),
-	.frag = PFla_empty_set () };
-}
-
-/**
- * Algebra implementation for op:numeric-integer-divide(double?,double?)
- * @see bin_arith()
- */
-struct PFla_pair_t
-PFbui_op_numeric_idivide_dbl (const PFla_op_t *loop __attribute__((unused)),
-                              bool ordering,
-                              struct PFla_pair_t *args)
-{
-    (void) loop;      /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return (struct PFla_pair_t) {
-	.rel = project (cast (bin_arith (aat_dbl, PFla_divide, args).rel,
-		                  att_cast, att_item, aat_int),
-                    proj (att_iter, att_iter),
-                    proj (att_pos, att_pos),
-                    proj (att_item, att_cast)),
-	.frag = PFla_empty_set () };
-}
-
-
-/**
- * Algebra implementation for op:numeric-mod(integer?,integer?)
- * @see bin_arith()
- */
-struct PFla_pair_t
-PFbui_op_numeric_modulo_int (const PFla_op_t *loop __attribute__((unused)),
+PFbui_op_numeric_modulo (const PFla_op_t *loop __attribute__((unused)),
                              bool ordering,
                              struct PFla_pair_t *args)
 {
@@ -417,39 +462,8 @@ PFbui_op_numeric_modulo_int (const PFla_op_t *loop __attribute__((unused)),
                          "__attribute__((unused))" */
     (void) ordering;  /* pacify picky compilers that do not understand
                          "__attribute__((unused))" */
-    return bin_arith (aat_int, PFla_modulo, args);
-}
 
-/**
- * Algebra implementation for op:numeric-mod(decimal?,decimal?)
- * @see bin_arith()
- */
-struct PFla_pair_t
-PFbui_op_numeric_modulo_dec (const PFla_op_t *loop __attribute__((unused)),
-                             bool ordering,
-                             struct PFla_pair_t *args)
-{
-    (void) loop;      /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return bin_arith (aat_dec, PFla_modulo, args);
-}
-
-/**
- * Algebra implementation for op:numeric-mod(double?,double?)
- * @see bin_arith()
- */
-struct PFla_pair_t
-PFbui_op_numeric_modulo_dbl (const PFla_op_t *loop __attribute__((unused)),
-                             bool ordering,
-                             struct PFla_pair_t *args)
-{
-    (void) loop;      /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    (void) ordering;  /* pacify picky compilers that do not understand
-                         "__attribute__((unused))" */
-    return bin_arith (aat_dbl, PFla_modulo, args);
+    return bin_arith_typeswitch (args, PFla_modulo);
 }
 
 /**
@@ -1565,25 +1579,12 @@ PFbui_fn_boolean_optbln (const PFla_op_t *loop __attribute__((unused)),
 }
 
 /** 
- * Helper function for PFbui_fn_boolean_item.
- * Used when fn:boolean is called with an argument
- * of type boolean. Return n.
- */
-static PFla_op_t *
-fn_boolean_boolean (const PFla_typeswitch_case_t *case_, PFla_op_t *n)
-{
-    (void) case_;
-    return n;
-}
-
-/** 
  * Helper function for PFbui_fn_boolean_item
  * Returns those rows with att_item != case_->params.
  */
 static PFla_op_t *
-fn_boolean_atomic (const PFla_typeswitch_case_t *case_, PFla_op_t *n)
+fn_boolean_atomic (PFla_op_t *n, PFalg_atom_t literal)
 {
-    PFalg_atom_t literal = *((PFalg_atom_t *)case_->params);
     return project (
                     not (
                          eq (
@@ -1603,11 +1604,9 @@ fn_boolean_atomic (const PFla_typeswitch_case_t *case_, PFla_op_t *n)
  * always true when called with a non empty sequence of
  * nodes).
  */
-static 
-PFla_op_t *
-fn_boolean_node (const PFla_typeswitch_case_t *case_, PFla_op_t *n)
+static PFla_op_t *
+fn_boolean_node (PFla_op_t *n)
 {
-    (void) case_;
     return attach (
                    attach (
                            distinct (
@@ -1618,6 +1617,38 @@ fn_boolean_node (const PFla_typeswitch_case_t *case_, PFla_op_t *n)
                    att_item, lit_bln (true));
 }
 
+static PFla_op_t *
+fn_boolean_switch (PFla_op_t *n, PFalg_type_t type, void *params) {
+    (void) params;
+
+    switch (type) {
+    case aat_node:
+        return fn_boolean_node (n);
+    case aat_bln:
+        return n;
+    case aat_nat:
+        return fn_boolean_atomic (n, lit_nat (0));
+    case aat_int:
+        return fn_boolean_atomic (n, lit_int (0));
+    case aat_dbl:
+        return fn_boolean_atomic (n, lit_dbl (0));
+    case aat_dec:
+        return fn_boolean_atomic (n, lit_dec (0));
+    case aat_uA:
+        return fn_boolean_atomic (project (
+                                      cast (n, att_cast, att_item, aat_str),
+                                      proj (att_iter, att_iter),
+                                      proj (att_pos, att_pos),
+                                      proj (att_item, att_cast)),
+                                  lit_str (""));
+    case aat_str:
+        return fn_boolean_atomic (n, lit_str (""));
+    default:
+        assert (false);
+    }
+    return NULL;
+}
+ 
 /**
  * Algebra implementation for <code>fn:boolean (node()*|xs:boolean
  * xs:boolean|xs:integer|xs:decimal|xs:double|xs:string)</code>.
@@ -1632,48 +1663,18 @@ PFbui_fn_boolean_item (const PFla_op_t *loop __attribute__((unused)),
     /* Typeswitch, for helper function see above. */ 
     PFla_op_t *res  = PFla_typeswitch (
                                         args[0].rel, 
-                                        7,
-                                        (PFla_typeswitch_case_t [7])
+                                        8,
+                                        (PFalg_type_t [8])
                                         {
-                                            {
-                                                .type = aat_node,
-                                                .cnst = fn_boolean_node
-                                            },
-                                            {
-                                                .type = aat_bln,
-                                                .cnst = fn_boolean_boolean,
-                                            },
-                                            {
-                                                .type = aat_nat,
-                                                .cnst = fn_boolean_atomic,
-                                                .params = (PFalg_atom_t [])
-                                                    { lit_nat (0) }
-                                            },
-                                            {
-                                                .type = aat_int,
-                                                .cnst = fn_boolean_atomic,
-                                                .params = (PFalg_atom_t [])
-                                                    { lit_int (0) }
-                                            },
-                                            {
-                                                .type = aat_dbl,
-                                                .cnst = fn_boolean_atomic,
-                                                .params = (PFalg_atom_t [])
-                                                    { lit_dbl (0) }
-                                            },
-                                            {
-                                                .type = aat_dec,
-                                                .cnst = fn_boolean_atomic,
-                                                .params = (PFalg_atom_t [])
-                                                    { lit_dec (0) }
-                                            },
-                                            {
-                                                .type = aat_str,
-                                                .cnst = fn_boolean_atomic,
-                                                .params = (PFalg_atom_t [])
-                                                    { lit_str ("") }
-                                            }
-                                        });
+                                            aat_node,
+                                            aat_bln,
+                                            aat_nat,
+                                            aat_int,
+                                            aat_dbl,
+                                            aat_dec,
+                                            aat_uA,
+                                            aat_str,
+                                        }, fn_boolean_switch, NULL);
 
     /* handle empty sequences. */
     return (struct PFla_pair_t) {

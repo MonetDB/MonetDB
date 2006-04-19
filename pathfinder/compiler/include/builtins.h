@@ -42,60 +42,27 @@
 #include "core2alg.h"
 
 /* ----- arithmetic operators for various implementation types ----- */
-struct PFla_pair_t PFbui_op_numeric_add_int (const PFla_op_t *loop,
+struct PFla_pair_t PFbui_op_numeric_add (const PFla_op_t *loop,
+                                         bool ordering,
+                                         struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_op_numeric_subtract (const PFla_op_t *loop,
+                                               bool ordering,
+                                               struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_op_numeric_multiply (const PFla_op_t *loop,
+                                              bool ordering,
+                                              struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_op_numeric_divide (const PFla_op_t *loop,
+                                            bool ordering,
+                                            struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_op_numeric_idivide (const PFla_op_t *loop,
                                              bool ordering,
                                              struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_op_numeric_add_dec (const PFla_op_t *loop,
-                                             bool ordering,
-                                             struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_op_numeric_add_dbl (const PFla_op_t *loop,
-                                             bool ordering,
-                                             struct PFla_pair_t *args);
 
-struct PFla_pair_t PFbui_op_numeric_subtract_int (const PFla_op_t *loop,
-                                                  bool ordering,
-                                                  struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_op_numeric_subtract_dec (const PFla_op_t *loop,
-                                                  bool ordering,
-                                                  struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_op_numeric_subtract_dbl (const PFla_op_t *loop,
-                                                  bool ordering,
-                                                  struct PFla_pair_t *args);
-
-struct PFla_pair_t PFbui_op_numeric_multiply_int (const PFla_op_t *loop,
-                                                  bool ordering,
-                                                  struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_op_numeric_multiply_dec (const PFla_op_t *loop,
-                                                  bool ordering,
-                                                  struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_op_numeric_multiply_dbl (const PFla_op_t *loop,
-                                                  bool ordering,
-                                                  struct PFla_pair_t *args);
-
-struct PFla_pair_t PFbui_op_numeric_divide_dec (const PFla_op_t *loop,
-                                                bool ordering,
-                                                struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_op_numeric_divide_dbl (const PFla_op_t *loop,
-                                                bool ordering,
-                                                struct PFla_pair_t *args);
-
-struct PFla_pair_t PFbui_op_numeric_idivide_int (const PFla_op_t *loop,
-                                                 bool ordering,
-                                                 struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_op_numeric_idivide_dec (const PFla_op_t *loop,
-                                                 bool ordering,
-                                                 struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_op_numeric_idivide_dbl (const PFla_op_t *loop,
-                                                 bool ordering,
-                                                 struct PFla_pair_t *args);
-
-struct PFla_pair_t PFbui_op_numeric_modulo_int (const PFla_op_t *loop,
-                                                bool ordering,
-                                                struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_op_numeric_modulo_dec (const PFla_op_t *loop,
-                                                bool ordering,
-                                                struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_op_numeric_modulo_dbl (const PFla_op_t *loop,
+struct PFla_pair_t PFbui_op_numeric_modulo (const PFla_op_t *loop,
                                                 bool ordering,
                                                 struct PFla_pair_t *args);
 

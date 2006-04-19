@@ -304,19 +304,6 @@ struct PFla_pair_t {
 };
 typedef struct PFla_pair_t PFla_pair_t;
 
-/**
- * Structure defining a special case of a algebra typeswitch.
- */
-struct PFla_typeswitch_case_t {
-    /** the algebra type for this case. */
-    PFalg_type_t type;
-    /** Function, that creates the algebra subtree for this case. */
-    PFla_op_t *(*cnst) (const struct PFla_typeswitch_case_t *, PFla_op_t *n);
-    /** Optional params for the function. */
-    void *params;
-};
-typedef struct PFla_typeswitch_case_t PFla_typeswitch_case_t;
-
 /* ***************** Constructors ******************* */
 
 /**
@@ -507,13 +494,6 @@ PFla_op_t * PFla_type_assert (const PFla_op_t *n, PFalg_att_t att,
  */
 PFla_op_t * PFla_cast (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t att,
                        PFalg_simple_type_t ty);
-/**
- * Constructs a typeswitch subtree based on the 
- * algebra types.
- */
-PFla_op_t *
-PFla_typeswitch (PFla_op_t *n, unsigned int count, 
-                 const PFla_typeswitch_case_t *);
 
 /** Constructor for sequence type matching operator for `1' occurrence */
 PFla_op_t * PFla_seqty1 (const PFla_op_t *n,

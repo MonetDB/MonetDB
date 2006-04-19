@@ -1148,6 +1148,7 @@ apply_function_conversion (const PFcnode_t *c)
 
     assert (c);
     fun = c->sem.apply.fun;
+    assert (fun->sig_count == 1);
     args = c->child[0];
     result = (PFcnode_t *) c;
 
@@ -1156,7 +1157,7 @@ apply_function_conversion (const PFcnode_t *c)
         /* the function conversion has only to be applied for
            arguments which are a subtype of atomic and perhaps
            have a quantifying type */
-        expected = PFty_prime((fun->par_ty)[i]);
+        expected = PFty_prime((fun->sigs[0].par_ty)[i]);
 
         if (PFty_subtype (expected, PFty_atomic ()))
         {
@@ -1427,6 +1428,29 @@ PFcore_fs_convert_op_by_type (const PFcnode_t *e, PFty_t t)
 }
 
 /**
+ * Helper function for PFcore_fs_convert_op_by_expr()
+ * Creates the following expression subtree.
+ * typeswitch ($var1)
+ *     case type return $var2 cast as type
+ *     default default_
+ */
+static PFcnode_t *
+add_conversion_case (const PFcnode_t *default_, PFvar_t *var1, PFvar_t *var2, 
+                     PFty_t type) 
+{
+    return 
+        PFcore_typeswitch (
+            PFcore_var (var1),
+            PFcore_cases (
+                PFcore_case (
+                    PFcore_seqtype (type),
+                    PFcore_cast (
+                        PFcore_seqtype (type),
+                        PFcore_var (var2))),
+                PFcore_default (default_)));
+}
+
+/**
  * Represent the formal semantics function fs:convert-operand
  * as an equivalent core expression. If both, @a e1 and @a e2
  * have type @c untypedAtomic then @a e1 is casted to type string.
@@ -1460,14 +1484,27 @@ PFcore_fs_convert_op_by_expr (const PFcnode_t *e1, const PFcnode_t *e2)
      *         case xdt:untypedAtomic return
      *           typeswitch ($v2)              // $v2 is e2
      *             case xdt:untypedAtomic return cast $v3 as xs:string
-     *             default return cast $v3 as <type of $v2>
+     *             case xs:string return cast $v3 as xs:string
+     *             case xs:boolean return cast $v3 as xs:boolean
+     *             case xs:integer return cast $v3 as xs:integer
+     *             case xs:double return cast $v3 as xs:double
+     *             case xs:decimal return cast $v3 as xs:decimal
+     *             default return $v3 // should not happen
      *         default return $v3
-     *
-     * <type of $v2> is inserted into the core tree by means of a
-     * stattype node (the static type of $v2). stattype nodes are
-     * replaced by seqtype nodes (actual types) as soon as the
-     * type information is available during type checking.
      */
+    PFcnode_t *type_conv = 
+        add_conversion_case (
+            add_conversion_case (
+                add_conversion_case (
+                    add_conversion_case (
+                        add_conversion_case (
+                            PFcore_var (v3),
+                            v2, v3, PFty_xs_decimal ()),
+                        v2, v3, PFty_xs_double ()),
+                    v2, v3, PFty_xs_integer ()),
+                v2, v3, PFty_xs_boolean ()),
+            v2, v3, PFty_xs_string ());
+
     return PFcore_flwr (
                PFcore_let (PFcore_letbind (PFcore_var (v1), e1),
                            PFcore_nil ()),
@@ -1495,11 +1532,7 @@ PFcore_fs_convert_op_by_expr (const PFcnode_t *e1, const PFcnode_t *e2)
                                                    (PFcore_seqtype
                                                        (PFty_xs_string ()),
                                                     PFcore_var (v3))),
-                                            PFcore_default (
-                                                PFcore_cast (
-                                                    PFcore_stattype (
-                                                        PFcore_var(v2)),
-                                                    PFcore_var (v3)))))),
+                                            PFcore_default (type_conv)))),
                                 PFcore_default (PFcore_var (v3)))))));
 }
 

@@ -4842,8 +4842,9 @@ static int
 translateAggregates (opt_t *f, int code, int rc,
                      PFfun_t *fun, PFcnode_t *args, char *op, int cur_level)
 {
+    assert (fun->sig_count == 1);
     int ic = get_kind(PFty_prime(PFty_defn(TY(L(args)))));
-    int rcode = get_kind(fun->ret_ty);
+    int rcode = get_kind(fun->sigs[0].ret_ty);
     char *item_ext = (code)?kind_str(rcode):"";
     type_co t_co = kind_container(rcode);
 
@@ -6000,7 +6001,8 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
     /* retrieves the join input arguments 'join_item1' and 'join_item2'
        from its value containers as well as covers the special cases
        (attribute step and text() test) */
-    PFty_t input_type = (fun->par_ty)[0];
+    assert (fun->sig_count == 1);
+    PFty_t input_type = (fun->sigs[0].par_ty)[0];
     if (PFty_subtype (PFty_decimal (), input_type))
     {
         eval_join_helper (f, rc1, 1, fst, cast_fst, fst_res, dec_container());
@@ -7149,7 +7151,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"sum")))
     {
-        int rcode = get_kind(fun->ret_ty);
+        assert (fun->sig_count == 1);
+        int rcode = get_kind(fun->sigs[0].ret_ty);
         type_co t_co = kind_container(rcode);
         item_ext = kind_str(rcode);
 
@@ -7240,7 +7243,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
         if (rc == NORMAL)
         {
-            rc = get_kind(fun->ret_ty);
+            assert (fun->sig_count == 1); 
+            rc = get_kind(fun->sigs[0].ret_ty);
             milprintf(f, "item%s := item%s;\n", kind_str(rc), val_join(rc));
         }
         fn_abs (f, code, rc, "abs");
@@ -7251,7 +7255,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
         if (rc == NORMAL)
         {
-            rc = get_kind(fun->ret_ty);
+            assert (fun->sig_count == 1); 
+            rc = get_kind(fun->sigs[0].ret_ty);
             milprintf(f, "item%s := item%s;\n", kind_str(rc), val_join(rc));
         }
         fn_abs (f, code, rc, "ceil");
@@ -7262,7 +7267,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
         if (rc == NORMAL)
         {
-            rc = get_kind(fun->ret_ty);
+            assert (fun->sig_count == 1); 
+            rc = get_kind(fun->sigs[0].ret_ty);
             milprintf(f, "item%s := item%s;\n", kind_str(rc), val_join(rc));
         }
         fn_abs (f, code, rc, "floor");
@@ -7273,7 +7279,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
         if (rc == NORMAL)
         {
-            rc = get_kind(fun->ret_ty);
+            assert (fun->sig_count == 1); 
+            rc = get_kind(fun->sigs[0].ret_ty);
             milprintf(f, "item%s := item%s;\n", kind_str(rc), val_join(rc));
         }
         fn_abs (f, code, rc, "round_up");
@@ -8781,6 +8788,49 @@ var_is_used (PFvar_t *v, PFcnode_t *e)
   return usage;
 }
 
+static bool 
+assert_exp (bool ex)
+{
+     assert (ex);
+     return ex;
+}
+
+static void 
+cast_to_expected (PFcnode_t *c, PFty_t expected) 
+{
+     PFty_t opt_expected;
+     if (expected.type == ty_opt ||
+         expected.type == ty_star ||
+         expected.type == ty_plus)
+          opt_expected = PFty_child (expected);
+     else
+          opt_expected = expected;
+ 
+     if (PFty_subtype (opt_expected, PFty_atomic ()) &&
+         !TY_EQ (TY(L(c)), expected) &&
+         !TY_EQ (TY(L(c)), opt_expected))
+     {
+          if (TY_EQ (opt_expected, PFty_atomic ()))
+               /* avoid dummy casts */ ;
+          else if (L(c)->kind == c_seqcast
+                   || L(c)->kind == c_cast)
+          {
+               TY(L(c))  =
+                    TY(LL(c)) =
+                    LL(c)->sem.type = expected;
+          }
+          else
+          {
+               L(c) = PFcore_seqcast (
+                    PFcore_seqtype (expected), L(c));
+               /* type new code, to avoid multiple casts */
+               TY(c)     =
+                    TY(L(c))  =
+                    TY(LL(c)) = expected;
+          }
+     }
+}
+
 /**
  * simplifyCoreTree walks over a given tree and simplifies
  * some core nodes and appends extra information (e.g.
@@ -8795,7 +8845,7 @@ simplifyCoreTree (PFcnode_t *c)
     unsigned int i;
     PFfun_t *fun;
     PFcnode_t *new_node;
-    PFty_t expected, opt_expected;
+    PFty_t expected;
     PFty_t cast_type, input_type, opt_cast_type;
     int is_rpc;
 
@@ -9038,12 +9088,12 @@ simplifyCoreTree (PFcnode_t *c)
                     i++;
                 }
             }
-
-            if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"boolean")) && 
-                PFty_subtype(TY(DL(c)), fun->ret_ty))
+            if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"boolean")) 
+                && assert_exp (fun->sig_count == 1)
+                && PFty_subtype(TY(DL(c)), fun->sigs[0].ret_ty)) 
             {
-                /* don't use function - omit apply and arg node */
-                *c = *(DL(c));
+                 /* don't use function - omit apply and arg node */
+                 *c = *(DL(c));
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"data")) && 
                      PFty_subtype(TY(DL(c)), PFty_star (PFty_atomic ())))
@@ -9099,7 +9149,8 @@ simplifyCoreTree (PFcnode_t *c)
                 *c = *new_node;
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"item-sequence-to-untypedAtomic")) &&
-                     PFty_subtype (TY(DL(c)), fun->ret_ty))
+                     assert_exp (fun->sig_count == 1) &&
+                     PFty_subtype (TY(DL(c)), fun->sigs[0].ret_ty))
             {
                 /* don't use function - omit apply and arg node */
                 *c = *(DL(c));
@@ -9208,46 +9259,44 @@ simplifyCoreTree (PFcnode_t *c)
             else
             {
                 c = D(c);
-                for (i = 0; i < fun->arity + is_rpc; i++, c = R(c))
-                {
-                    if (is_rpc && i == 0)
-                    {
-                        expected = PFty_plus( PFty_string() );
-                    }
-                    else
-                    {
-                        expected = PFty_defn((fun->par_ty)[i]);
-                    }
- 
-                    if (expected.type == ty_opt ||
-                        expected.type == ty_star ||
-                        expected.type == ty_plus)
-                        opt_expected = PFty_child (expected);
-                    else
-                        opt_expected = expected;
- 
-                    if (PFty_subtype (opt_expected, PFty_atomic ()) &&
-                        !TY_EQ (TY(L(c)), expected) &&
-                        !TY_EQ (TY(L(c)), opt_expected))
-                    {
-                        if (TY_EQ (opt_expected, PFty_atomic ()))
-                            /* avoid dummy casts */ ;
-                        else if (L(c)->kind == c_seqcast
-                                 || L(c)->kind == c_cast)
-                        {
-                            TY(L(c))  =
-                            TY(LL(c)) =
-                            LL(c)->sem.type = expected;
-                        }
-                        else
-                        {
-                            L(c) = PFcore_seqcast (PFcore_seqtype (expected), L(c));
-                            /* type new code, to avoid multiple casts */
-                            TY(c)     =
-                            TY(L(c))  =
-                            TY(LL(c)) = expected;
-                        }
-                    }
+                if (fun->sig_count == 1) {
+                     for (i = 0; i < fun->arity + is_rpc; i++, c = R(c))
+                     {
+                          if (is_rpc && i == 0)
+                          {
+                               expected = PFty_plus( PFty_string() );
+                          }
+                          else
+                          {
+                               assert (fun->sig_count == 1);
+                               expected = PFty_defn((fun->sigs[0].par_ty)[i]);
+                          }
+                          
+                          cast_to_expected (c, expected);
+                     }
+                }
+                else {
+                     /* quick and dirty hack to support dynamic overloading */
+                     assert (!is_rpc);
+                     assert (fun->arity == 2);
+                     bool found = false;
+                     /* choose one implementation. */
+                     for (unsigned int i = 0; i < fun->sig_count && !found; i++) {
+                          if (PFty_promotable (TY(L(c)), 
+                                               fun->sigs[i].par_ty[0]) &&
+                              PFty_promotable (TY(RL(c)), 
+                                               fun->sigs[i].par_ty[1]))
+                          {
+                               cast_to_expected (c, fun->sigs[i].par_ty[0]);
+                               cast_to_expected (R(c), fun->sigs[i].par_ty[0]);
+                               found = true;
+                          }
+                     }
+                     if (!found)
+                          PFoops (OOPS_TYPECHECK,
+                                  "no common implementation found for "
+                                  "dynamically overloaded function %s",
+                                  PFqname_str (fun->qname));
                 }
             }
             break;
