@@ -140,7 +140,6 @@ AUTHinitTables() {
 		BATkey(BATmirror(b), TRUE);
 		BBPrename(b->batCacheid, "M5system_auth_user");
 		BATmode(b, PERSISTENT);
-		BATcommit(b);
 	} else {
 		isNew = 0;
 	}
@@ -156,7 +155,6 @@ AUTHinitTables() {
 
 		BBPrename(b->batCacheid, "M5system_auth_passwd");
 		BATmode(b, PERSISTENT);
-		BATcommit(b);
 	} else {
 		isNew = 0;
 	}
@@ -172,7 +170,6 @@ AUTHinitTables() {
 		BATkey(b, TRUE);
 		BBPrename(b->batCacheid, "M5system_auth_scen");
 		BATmode(b, PERSISTENT);
-		BATcommit(b);
 	} else {
 		isNew = 0;
 	}
@@ -328,9 +325,7 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 	}
 
 	/* make the stuff persistent */
-	BATcommit(user);
-	BATcommit(pass);
-	BATcommit(scen);
+	TMcommit();
 
 	*uid = *id;
 	return(MAL_SUCCEED);
@@ -368,9 +363,7 @@ AUTHremoveUser(str *username) {
 	BATdel(scen, b);
 
 	/* make the stuff persistent */
-	BATcommit(user);
-	BATcommit(pass);
-	BATcommit(scen);
+	TMcommit();
 
 	return(MAL_SUCCEED);
 }
@@ -404,7 +397,7 @@ AUTHchangeUsername(str *olduser, str *newuser) {
 
 	/* ok, just do it! */
 	BUNinplace(userrev, p, *newuser, BUNtail(userrev, p), 0);
-	BATcommit(user);
+	TMcommit();
 
 	return(MAL_SUCCEED);
 }
@@ -440,7 +433,7 @@ AUTHchangePassword(str *oldpass, str *passwd) {
 
 	/* ok, just overwrite the password field for this user */
 	BUNinplace(pass, p, BUNhead(pass, p), *passwd, 0);
-	BATcommit(pass);
+	TMcommit();
 
 	return(MAL_SUCCEED);
 }
@@ -487,7 +480,7 @@ AUTHsetPassword(str *username, str *passwd) {
 	p = BUNfnd(pass, &id);
 	assert (p != NULL);
 	BUNinplace(pass, p, BUNhead(pass, p), *passwd, 0);
-	BATcommit(pass);
+	TMcommit();
 
 	return(MAL_SUCCEED);
 }
@@ -518,7 +511,7 @@ AUTHaddScenario(str *username, str *scenario) {
 
 	/* add the scenario for this user */
 	BUNins(scen, BUNtail(userrev, p), *scenario);
-	BATcommit(scen);
+	TMcommit();
 
 	return(MAL_SUCCEED);
 }
@@ -557,7 +550,7 @@ AUTHremoveScenario(str *username, str *scenario) {
 
 	/* ok, remove it */
 	BATdel(scen, BATmirror(b));
-	BATcommit(scen);
+	TMcommit();
 
 	return(MAL_SUCCEED);
 }
