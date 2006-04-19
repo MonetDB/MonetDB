@@ -1,0 +1,82 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' All Rights Reserved.
+
+@f bat_replication
+@a R.A. Goncalves
+
+@h
+#ifndef BAT_REPLIC_H
+#define BAT_REPLIC_H
+
+#include "sql_storage.h"
+#include "sql_types.h"
+
+extern sql_column* create_column(sql_trans *tr, sql_table* t, char* table, char* type, int digits);
+extern int create_host_table(sql_trans *tr, sql_schema *s);
+extern int create_replication_table(sql_trans *tr, sql_schema *s);
+
+#endif /*BAT_REPLIC_H */
+
+
+@c
+
+#include "bat_replication.h"
+
+/*This funciton was created to convert a string to a subtype, internal function*/
+sql_column*
+create_column(sql_trans *tr, sql_table* t, char* table, char* type, int digits)
+{
+	sql_subtype tpe;
+        if (!sql_find_subtype(&tpe, type, digits, 0))
+                return NULL;
+	return sql_trans_create_column(tr, t, table, &tpe);
+}
+
+/*Function to create the table that contais all the information about the hosts*/
+int
+create_host_table(sql_trans *tr, sql_schema *s)
+{
+        sql_table *t;
+        t = sql_trans_create_table(tr, s, "hosts", 1, 1, 0, -1);
+        
+	create_column(tr, t, "host_id", "int",9);
+	create_column(tr, t, "ip", "varchar",1024);
+	create_column(tr, t, "port", "varchar",1024);
+	create_column(tr, t, "user", "varchar",1024);
+	create_column(tr, t, "password", "varchar",1024);
+        return 0;
+}
+
+
+/*Function to create the table for the replication metadata*/
+int
+create_replication_table(sql_trans *tr, sql_schema *s)
+{
+        sql_table *t;
+        t = sql_trans_create_table(tr, s, "metdatrep", 1, 1, 0, -1);
+        
+	create_column(tr, t, "replication_id", "int",9); 	
+	create_column(tr, t, "scenario_id", "int",9); 	/*the id for each replication scenario for the table*/
+        create_column(tr, t, "push", "boolean",0);		/*updates in the table need to be push*/
+        create_column(tr, t, "refresh_time", "int",9);		/*time for cycle refresh, -1 no cycle refresh*/
+        create_column(tr, t, "rep_columns", "varchar",2048);	/*columns for replication*/
+        create_column(tr, t, "t_rev_plus", "int",9);		/*t revision for +deltas*/
+        create_column(tr, t, "t_rev_min", "int",9);		/*t revision for -deltas*/
+        create_column(tr, t, "host_id", "int",9);		/*for who the updates need to be send*/
+	return 0;
+}
+
+

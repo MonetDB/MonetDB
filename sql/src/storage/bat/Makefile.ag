@@ -22,10 +22,10 @@ lib_batstore = {
 	NOINST
 	DIR = libdir
 	SOURCES = \
-		bat_store.mx bat_table.mx bat_logger.mx bat_bm.mx \
+		bat_replication.mx bat_store.mx bat_table.mx bat_logger.mx bat_bm.mx \
 		bat_sequence.mx \
 		sql_catalog.mx \
-		res_table.mx
+		res_table.mx 
 
 	WINLIBS = ../../common/libsqlcommon -lbat -lmonet -lstream -l_streams -l_bat -l_builtin -l_ascii_io -l_algebra 
 	LIBS = $(MONETDB_LIBS)

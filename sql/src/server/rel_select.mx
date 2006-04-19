@@ -1522,9 +1522,9 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 
 	(void)rel;
 	if (tableref->token == SQL_NAME) {
-		sql_schema *s = qname_schema(sql, tableref->data.lval->h->data.lval);
+		sql_schema *s = qname_schema(sql, tableref->data.lval->h->data.sym);
 
-		tname = qname_table(tableref->data.lval->h->data.lval);
+		tname = qname_table(tableref->data.lval->h->data.sym);
 
 		if (!s) 
 			return sql_error(sql, 02, "SELECT: no such schema");

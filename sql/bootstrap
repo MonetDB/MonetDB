@@ -25,7 +25,6 @@
 # requires GNU autoconf, automake and libtool
 # this is not meant to go into the distributions
 
-
 if [ -f conf/monet.m4 ]; then
 	# we're bootstrapping MonetDB itself
 	CONFDIR=

@@ -79,7 +79,7 @@ stmt *
 sql_create_seq(
 		mvc *sql,
 		sql_schema *ss,
-		dlist *qname,
+		symbol *qname,
 		sql_subtype *tpe,
 		dlist* start_list,
 		lng inc,
@@ -161,7 +161,7 @@ static stmt *
 sql_alter_seq(
 		mvc *sql,
 		sql_schema *ss,
-		dlist *qname,
+		symbol *qname,
 		sql_subtype *tpe,
 		dlist* start_list,
 		lng inc,
@@ -309,7 +309,7 @@ sql_alter_seq(
 }
 
 static stmt *
-sql_drop_seq(mvc *sql, sql_schema *ss, dlist *qname)
+sql_drop_seq(mvc *sql, sql_schema *ss, symbol *qname)
 {
 	int ok = 0;
 	char buf[BUFSIZ];
@@ -359,7 +359,7 @@ sequences(mvc *sql, symbol *s)
 			res = sql_create_seq(
 /* mvc* sql */		sql,
 /* sql_schema* s */	cur_schema(sql), 
-/* dlist* qname */	l->h->data.lval, 
+/* dlist* qname */	l->h->data.sym, 
 /* sql_subtype* t*/	&l->h->next->data.typeval, 
 /* dlist start */	h->h->data.lval, 
 /* lng inc */		h->h->next->data.ival, 
@@ -377,7 +377,7 @@ sequences(mvc *sql, symbol *s)
 			res = sql_alter_seq(
 /* mvc* sql */		sql,
 /* sql_schema* s */	cur_schema(sql), 
-/* dlist* qname */	l->h->data.lval, 
+/* dlist* qname */	l->h->data.sym, 
 /* sql_subtype* t*/	&l->h->next->data.typeval, 
 /* dlist start */	h->h->data.lval, 
 /* lng inc */		h->h->next->data.ival, 
@@ -390,7 +390,7 @@ sequences(mvc *sql, symbol *s)
 		case SQL_DROP_SEQ:
 		{
 			dlist *l = s->data.lval;
-			res = sql_drop_seq(sql, cur_schema(sql), l->h->data.lval);
+			res = sql_drop_seq(sql, cur_schema(sql), l->h->data.sym);
 		}
 		break;
 		default:

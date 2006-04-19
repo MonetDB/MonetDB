@@ -21,6 +21,7 @@
 #define BATSTORE_H
 
 #include "sql_storage.h"
+#include "bat_replication.h"
 
 #include <gdk.h>
 
@@ -910,6 +911,11 @@ load_table(sql_trans *tr, sql_schema *s, BAT *tables, BUN j)
 	BAT *D_columns = sys_bat(bm, "D_pcolumns");
 	BAT *D_keys = sys_bat(bm, "D_keys");
 	BAT *D_idxs = sys_bat(bm, "D_idxs");
+	
+	/*next two lines were insert to handle with replication*/
+	BAT *table_replication = sys_bat(bm, "table_replication");
+	BAT *table_location = sys_bat(bm, "table_location");	
+	
 	BAT *D_triggers = sys_bat(bm, "D_triggers");
 
 	base_init(&t->base, *(sqlid *) bun_find(table_id, lid), TR_OLD, bun_find(table_names, lid));
@@ -922,7 +928,11 @@ load_table(sql_trans *tr, sql_schema *s, BAT *tables, BUN j)
 	t->clear = *(bit *) bun_find(table_clear, lid);
 	t->persists = 1;
 	t->cleared = 0;
-
+	
+	/*next two lines were insert to handle with replication*/
+	t->replication_id = *(bit *) bun_find(table_replication, lid);	
+	t->location = *(bit *) bun_find(table_location, lid);		
+	
 	t->pkey = NULL;
 	t->s = s;
 	t->sz = BUFSIZ;
@@ -2004,6 +2014,9 @@ create_table_intern(char *name, bit table, bit system, bit persists, bit clear)
 	t->sz = BUFSIZ;
 	t->cnt = 0;
 	t->cleared = 0;
+	/*next two lines were insert to handle with replication*/
+	t->replication_id = -1;
+	t->location =-1;
 	return t;
 }
 
@@ -2171,6 +2184,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "istable", "boolean", 0);
 		bootstrap_create_column(tr, t, "system", "boolean", 0);
 		bootstrap_create_column(tr, t, "clear", "boolean", 0);
+		bootstrap_create_column(tr, t, "metdatrep_id", "int", 9);
 
 		t = bootstrap_create_table(tr, s, "pcolumns", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
@@ -2242,7 +2256,11 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "type_digits", "int", 9);
 		bootstrap_create_column(tr, t, "type_scale", "int", 9);
 		bootstrap_create_column(tr, t, "number", "int", 9);
-
+		
+		/*functions for the replication service*/
+		create_host_table(tr, s);
+		create_replication_table(tr, s);
+		
 		if (sql_trans_commit(tr) != SQL_OK)
 			fprintf(stderr, "cannot commit initial transaction\n");
 		sql_trans_destroy(tr);
@@ -2633,7 +2651,6 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	t->persists = ot->persists;
 	t->clear = ot->clear;
 	t->query = (ot->query) ? _strdup(ot->query) : NULL;
-
 	cs_init(&t->columns, (fdestroy) &column_destroy);
 	cs_init(&t->keys, (fdestroy) &key_destroy);
 	cs_init(&t->idxs, (fdestroy) &idx_destroy);
@@ -2655,6 +2672,9 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	t->sz = ot->sz;
 	t->cnt = ot->cnt;
 	t->cleared = 0;
+	/*The next two lines were insert to handle with replication*/
+	t->location = ot->location;
+	t->replication_id = ot->replication_id;
 
 	if (ot->columns.set)
 		for (n = ot->columns.set->h; n; n = n->next) {

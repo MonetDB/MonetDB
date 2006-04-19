@@ -506,36 +506,36 @@ revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int grant
 
 
 static stmt *
-create_module(mvc *sql, dlist *qname, char *opt_internal_name)
+create_module(mvc *sql, symbol *symb, char *opt_internal_name)
 {
-	char *mname = qname_table(qname);
+	char *mname = qname_table(symb);
 
 	sql->trans->module = mvc_create_module(sql, mname, opt_internal_name);
 	return stmt_none();
 }
 
 static stmt *
-drop_module(mvc *sql, dlist *qname)
+drop_module(mvc *sql, symbol *symb)
 {
-	char *mname = qname_table(qname);
+	char *mname = qname_table(symb);
 
 	mvc_drop_module(sql, mname);
 	return stmt_none();
 }
 
 static stmt *
-create_type(mvc *sql, dlist *qname, char *impl)
+create_type(mvc *sql, symbol *symb, char *impl)
 {
-	char *tname = qname_table(qname);
+	char *tname = qname_table(symb);
 
 	mvc_create_type(sql, sql->trans->module, tname, 0, 0, 0, impl);
 	return stmt_none();
 }
 
 static stmt *
-create_func(mvc *sql, dlist *qname, dlist *params, sql_subtype *res, char *impl, symbol *body)
+create_func(mvc *sql, symbol *symb, dlist *params, sql_subtype *res, char *impl, symbol *body)
 {
-	char *fname = qname_table(qname);
+	char *fname = qname_table(symb);
 	dnode *n;
 	list *l = list_create((fdestroy) &arg_destroy);
 
@@ -575,10 +575,10 @@ create_func(mvc *sql, dlist *qname, dlist *params, sql_subtype *res, char *impl,
 }
 
 static stmt *
-create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, 
+create_trigger(mvc *sql, symbol *symb, int time, symbol *trigger_event, 
 	char *table_name, dlist *opt_ref, dlist *triggered_action)
 {
-	char *tname = qname_table(qname);
+	char *tname = qname_table(symb);
 	sql_schema *ss = cur_schema(sql);
 	sql_table *t = NULL;
 	int event = (trigger_event->token == SQL_INSERT)?0:
@@ -608,9 +608,9 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event,
 }
 
 static stmt *
-drop_trigger(mvc *sql, dlist *qname)
+drop_trigger(mvc *sql, symbol *symb)
 {
-	char *tname = qname_table(qname);
+	char *tname = qname_table(symb);
 	sql_schema *ss = cur_schema(sql);
 
 	if (!schema_privs(sql->role_id, ss)) 
@@ -650,10 +650,10 @@ as_subquery( mvc *sql, sql_table *t, stmt *sq, dlist *column_spec )
 }
 
 static stmt *
-create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *query, int check)
+create_view(mvc *sql, sql_schema *ss, symbol *symb, dlist *column_spec, symbol *query, int check)
 {
 
-	char *name = qname_table(qname);
+	char *name = qname_table(symb);
 
 	(void) check;		/* Stefan: unused!? */
 
@@ -717,10 +717,10 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 }
 
 static stmt *
-drop_view(mvc *sql, dlist *qname)
+drop_view(mvc *sql, symbol *symb)
 {
 	sql_schema *ss = cur_schema(sql);
-	char *tname = qname_table(qname);
+	char *tname = qname_table(symb);
 	sql_table *t = mvc_bind_table(sql, ss, tname);
 
 	if (!schema_privs(sql->role_id, ss)) 
@@ -736,10 +736,10 @@ drop_view(mvc *sql, dlist *qname)
 }
 
 static stmt *
-create_index(mvc *sql, sql_schema *ss, char *iname, int itype, dlist *qname, dlist *column_list)
+create_index(mvc *sql, sql_schema *ss, char *iname, int itype, symbol *symb, dlist *column_list)
 {
 
-	char *name = qname_table(qname);
+	char *name = qname_table(symb);
 	sql_idx *i = mvc_bind_idx(sql, ss, iname);
 
 	sql_table *t = mvc_bind_table(sql, ss, name);
@@ -773,10 +773,10 @@ create_index(mvc *sql, sql_schema *ss, char *iname, int itype, dlist *qname, dli
 }
 
 static stmt *
-drop_index(mvc *sql, dlist *qname)
+drop_index(mvc *sql, symbol *symb)
 {
 	stmt *res = NULL;
-	char *iname = qname_table(qname);
+	char *iname = qname_table(symb);
 	sql_schema *ss = cur_schema(sql);
 
 	sql_idx *i = mvc_bind_idx(sql, ss, iname);
@@ -840,25 +840,37 @@ alter_user(mvc *sql, char *user, char *passwd, char *schema)
 	return stmt_none();
 }
 
-
+/*Function modified to support replication*/
 static stmt *
-create_role(mvc *sql, dlist *qname, int grantor)
+create_role(mvc *sql, symbol *symb, int grantor)
 {
-	char *role_name = qname->t->data.sval;
-
-	if (dlist_length(qname) > 2) {
+	int length = 0;
+	dlist* qname = symb->data.lval;
+	char *role_name = qname->h->next->data.sval;
+	if(symb->token == SQL_REP_NAME)
+		length = 3;
+	if(symb->token == SQL_NAME)
+		length = 2;
+	if (dlist_length(qname) > length) {
 		return sql_error(sql, 02, "CREATE ROLE: qualified role can only have a schema and a role\n");
 	}
 	sql_create_role(sql, role_name, grantor);
 	return stmt_none();
 }
 
+/*Function modified to support replication*/
 static stmt *
-drop_role(mvc *sql, dlist *qname)
+drop_role(mvc *sql, symbol *symb)
 {
-	char *role_name = qname->t->data.sval;
+	int length = 0;
+	dlist* qname = symb->data.lval;
+	char *role_name = qname->h->next->data.sval;
 
-	if (dlist_length(qname) > 2) {
+	if(symb->token == SQL_REP_NAME)
+		length = 3;
+	if(symb->token == SQL_NAME)
+		length = 2;
+	if (dlist_length(qname) > length) {
 		return sql_error(sql, 02, "DROP ROLE: qualified role can only have a schema and a role\n");
 	}
 	sql_drop_role(sql, role_name);
@@ -899,7 +911,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 		case SQL_FOREIGN_KEY:
 			{
 				dnode *n = s->data.lval->h;
-				char *rtname = qname_table(n->data.lval);
+				char *rtname = qname_table(n->data.sym);
 				char *rcname = n->next->data.lval->h->data.sval;
 				int ref_actions = n->next->next->next->data.ival; 
 				sql_fkey *fk;
@@ -1155,7 +1167,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t,
 {
 	stmt *res = NULL;
 	dnode *n = s->data.lval->h;
-	char *rtname = qname_table(n->data.lval);
+	char *rtname = qname_table(n->data.sym);
 	sql_table *ft = mvc_bind_table(sql, ss, rtname);
 
 	if (!ft) {
@@ -1307,7 +1319,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		break;
 	case SQL_LIKE:
 	{
-		char *name = qname_table(s->data.lval);
+		char *name = qname_table(s->data.sym);
 		sql_table *ot = mvc_bind_table(sql, ss, name);
 		node *n;
 
@@ -1352,9 +1364,9 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 }
 
 static stmt *
-create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table_elements_or_subquery, int size)
+create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_elements_or_subquery, int size)
 {
-	char *name = qname_table(qname);
+	char *name = qname_table(symb);
 
 	if (mvc_bind_table(sql, ss, name)) {
 		return sql_error(sql, 02, "CREATE TABLE: name '%s' already in use", name);
@@ -1415,10 +1427,10 @@ create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table_ele
 }
 
 static stmt *
-drop_table(mvc *sql, dlist *qname, int drop_action)
+drop_table(mvc *sql, symbol *symb, int drop_action)
 {
 	sql_schema *ss = cur_schema(sql);
-	char *tname = qname_table(qname);
+	char *tname = qname_table(symb);
 	sql_table *t = mvc_bind_table(sql, ss, tname);
 
 	if (!schema_privs(sql->role_id, ss)) 
@@ -1480,9 +1492,9 @@ drop_table(mvc *sql, dlist *qname, int drop_action)
 }
 
 static stmt *
-alter_table(mvc *sql, sql_schema *ss, dlist *qname, symbol *te)
+alter_table(mvc *sql, sql_schema *ss, symbol *symb, symbol *te)
 {
-	char *name = qname_table(qname);
+	char *name = qname_table(symb);
 	sql_table *t = NULL;
 
 	if ((t = mvc_bind_table(sql, ss, name)) == NULL) {
@@ -1493,7 +1505,7 @@ alter_table(mvc *sql, sql_schema *ss, dlist *qname, symbol *te)
 }
 
 static char *
-get_schema_name(dlist *name_auth)
+get_schema_name(dlist* name_auth)
 {
 	assert(name_auth && name_auth->h);
 
@@ -1535,11 +1547,11 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 			if (n->data.sym->token == SQL_CREATE_TABLE) {
 				dlist *l = n->data.sym->data.lval;
 
-				res = create_table(sql, ss, l->h->data.ival, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.ival);
+				res = create_table(sql, ss, l->h->data.ival, l->h->next->data.sym, l->h->next->next->data.sym, l->h->next->next->next->data.ival);
 			} else if (n->data.sym->token == SQL_CREATE_VIEW) {
 				dlist *l = n->data.sym->data.lval;
 
-				res = create_view(sql, ss, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.ival);
+				res = create_view(sql, ss, l->h->data.sym, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.ival);
 			}
 			if (!res) {
 				list_destroy(table_elements);
@@ -1553,9 +1565,9 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 }
 
 static stmt *
-drop_schema(mvc *sql, dlist *qname, int dropaction)
+drop_schema(mvc *sql, symbol *symb, int dropaction)
 {
-	char *name = get_schema_name(qname);
+	char *name = get_schema_name(symb->data.lval);
 	sql_schema *s = mvc_bind_schema(sql, name);
 
 	if (!schema_privs(sql->role_id, s)) 
@@ -1581,7 +1593,7 @@ schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = create_schema(sql, l->h->data.lval,	/* qname (name.authid) */
+		ret = create_schema(sql, l->h->data.sym->data.lval,	/* qname (name.authid) */
 				    l->h->next->next->next->data.lval /* schema_elements */ );
 		sql->type = Q_SCHEMA;
 	}
@@ -1590,7 +1602,7 @@ schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = drop_schema(sql, l->h->data.lval,	/* qname */
+		ret = drop_schema(sql, l->h->data.sym->data.sym,	/* qname */
 				  l->h->next->data.ival);	/* drop_action */
 		sql->type = Q_SCHEMA;
 	}
@@ -1599,13 +1611,13 @@ schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = drop_table(sql, l->h->data.lval, l->h->next->data.ival);
+		ret = drop_table(sql, l->h->data.sym, l->h->next->data.ival);
 		sql->type = Q_SCHEMA;
 	}
 		break;
 	case SQL_DROP_VIEW:
 	{
-		dlist *l = s->data.lval;
+		symbol *l = s->data.sym;
 
 		ret = drop_view(sql, l);
 		sql->type = Q_SCHEMA;
@@ -1616,7 +1628,7 @@ schemas(mvc *sql, symbol *s)
 
 		dlist *l = s->data.lval;
 
-		ret = create_table(sql, cur_schema(sql), l->h->data.ival, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.ival);
+		ret = create_table(sql, cur_schema(sql), l->h->data.ival, l->h->next->data.sym, l->h->next->next->data.sym, l->h->next->next->next->data.ival);
 		sql->type = Q_SCHEMA;
 	}
 		break;
@@ -1624,7 +1636,7 @@ schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = create_view(sql, cur_schema(sql), l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.ival);
+		ret = create_view(sql, cur_schema(sql), l->h->data.sym, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.ival);
 		sql->type = Q_SCHEMA;
 	}
 		break;
@@ -1632,13 +1644,13 @@ schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = create_index(sql, cur_schema(sql), l->h->data.sval, l->h->next->data.ival, l->h->next->next->data.lval, l->h->next->next->next->data.lval);
+		ret = create_index(sql, cur_schema(sql), l->h->data.sval, l->h->next->data.ival, l->h->next->next->data.sym, l->h->next->next->next->data.lval);
 		sql->type = Q_SCHEMA;
 	}
 		break;
 	case SQL_DROP_INDEX:
 	{
-		dlist *l = s->data.lval;
+		symbol *l = s->data.sym;
 
 		ret = drop_index(sql, l);	/* index name */
 		sql->type = Q_SCHEMA;
@@ -1674,14 +1686,14 @@ schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = create_role(sql, l->h->data.lval,	/* role name */
+		ret = create_role(sql, l->h->data.sym,	/* role name */
 				  l->h->next->data.ival);	/* role grantor */
 		sql->type = Q_SCHEMA;
 	}
 		break;
 	case SQL_DROP_ROLE:
 	{
-		dlist *l = s->data.lval;
+		symbol *l = s->data.sym;
 
 		ret = drop_role(sql, l);	/* role name */
 		sql->type = Q_SCHEMA;
@@ -1691,7 +1703,7 @@ schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = alter_table(sql, cur_schema(sql), l->h->data.lval,	/* table name */
+		ret = alter_table(sql, cur_schema(sql), l->h->data.sym,	/* table name */
 				  l->h->next->data.sym);	/* table element */
 		sql->type = Q_SCHEMA;
 	}
@@ -1734,14 +1746,14 @@ schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = create_module(sql, l->h->data.lval, l->h->next->data.sval);
+		ret = create_module(sql, l->h->data.sym, l->h->next->data.sval);
 		sql->type = Q_SCHEMA;
 	}
 		break;
 
 	case SQL_DROP_MODULE:
 	{
-		dlist *l = s->data.lval;
+		symbol *l = s->data.sym;
 
 		ret = drop_module(sql, l);
 		sql->type = Q_SCHEMA;
@@ -1752,7 +1764,7 @@ schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = create_type(sql, l->h->data.lval, l->h->next->data.sval);
+		ret = create_type(sql, l->h->data.sym, l->h->next->data.sval);
 		sql->type = Q_SCHEMA;
 	}
 		break;
@@ -1761,7 +1773,7 @@ schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = create_func(sql, l->h->data.lval, l->h->next->data.lval, &l->h->next->next->data.typeval, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.sym);
+		ret = create_func(sql, l->h->data.sym, l->h->next->data.lval, &l->h->next->next->data.typeval, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.sym);
 		sql->type = Q_SCHEMA;
 	}
 		break;
@@ -1770,14 +1782,14 @@ schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = create_trigger(sql, l->h->data.lval, l->h->next->data.ival, l->h->next->next->data.sym, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval);
+		ret = create_trigger(sql, l->h->data.sym, l->h->next->data.ival, l->h->next->next->data.sym, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval);
 		sql->type = Q_SCHEMA;
 	}
 		break;
 
 	case SQL_DROP_TRIGGER:
 	{
-		dlist *l = s->data.lval;
+		symbol *l = s->data.sym;
 
 		ret = drop_trigger(sql, l);
 		sql->type = Q_SCHEMA;
