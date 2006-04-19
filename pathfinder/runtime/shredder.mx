@@ -291,6 +291,7 @@ typedef struct shredCtxStruct {
     nat         nnode_attr;	    /* number of attributes counter */
     nat         level;		    /* current level */
     nat         depth;		    /* current max depth */
+    nat		doc_pre;	    /* document pre of current doc */
     /* the xml node stack */
     node_t      *lifo;          /* the stack */
     nat         sp;             /* the stackpointer */
@@ -304,10 +305,7 @@ typedef struct shredCtxStruct {
     BAT*        pfxlocBAT;      /* the BAT to compress NS and LOC */
     int         pfxlocDUPL;     /* the number of duplicates pfxlocs */
     off_t       pageFree;       /* number of tuples per page to leave empty */
-    int         shredWords;     /* store all words in text seperate,
-                                 * this is something the Tijah 
-                                 * people were asking for
-                                 */
+    				/* */
     specAttrDbStr	specAttrDb;	/* the database containing the 
                                  * ID|IDREF|IDREFS attributes
                                  */
@@ -383,7 +381,13 @@ static shredCtxStruct *createShredCtx(char* location, off_t  fileSize, off_t pag
     }
     res->pfxlocDUPL= 0;
 #endif
-    res->shredWords = 0; /* do not shred words by default */
+    /* initialize the main pre number and the parameter administration
+     * counter. In the future these number must be initialized to the 
+     * size of the reloaded bat's
+     */
+    res->nnode_pre  = 0;   /* next ``node ID'' */
+    res->nnode_attr = 0;   /* attribute value property ID */
+
     /* and finally init the special attribute database */
     initAttrDB(&res->specAttrDb);
     return res;
@@ -509,7 +513,7 @@ static void printStat(shredCtxStruct* shredCtx) {
     }
 }
 
-static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
+static BAT* finalizeShredCtx(shredCtxStruct* shredCtx, BAT* doc_pre_BAT) {
     oid i, p = shredCtx->nnode_pre >> REMAP_PAGE_BITS;
     BAT* res = NULL;
 
@@ -630,6 +634,16 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
         }
         BBPunfix( bbb );
     }
+    if ( doc_pre_BAT != NULL ) {
+        int last = SHRED_BATS;
+        doc_pre_BAT = BATsetaccess(doc_pre_BAT, BAT_READ);
+        bat bbbb = BBPcacheid( doc_pre_BAT );
+        if ( ! BUNins(res, &last, &bbbb) ) {
+            GDKerror("shredder.mx:finalizeShredCtx: saving doc_pre_BAT fails\n");
+            return NULL;
+        }
+	BBPunfix(bbbb);
+    }
     if ( PRINT_STAT )
         printStat(shredCtx);
 #ifdef USE_COMPRESSION
@@ -637,11 +651,12 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
 #endif
     disposeAttrDB(&shredCtx->specAttrDb);
     free( shredCtx );
-    return BATsetaccess( res, BAT_READ );
+    return BATsetaccess(res, BAT_READ);
 }
 
 
 static int mainSHREDDER(shredCtxStruct* shredCtx, char* location, char* buffer);
+
 static char *timer_str (long elapsed);
 
 /* simplistic check whether location is an URL:
@@ -658,6 +673,8 @@ int isURL(char* location) {
     return i > 1 && *location == ':';
 }
 
+#define DEFAULT_ESTIMATE	1048576
+
 off_t  fileSize(char* location) {
     /* buffer for file I/O status */
     struct stat statbuf;
@@ -671,27 +688,13 @@ off_t  fileSize(char* location) {
             return statbuf.st_size;
     } else {
         /* INCOMPLETE, return an estimate of the size of the XML file */
-        return ~(off_t)100000;
+        return ~(off_t)DEFAULT_ESTIMATE;
     }
 }
 
-int
-CMDshred2bats(BAT **res2mil, str location, str buffer, str opt)
+static int
+shred_doc_or_docseq(BAT **res2mil, str location, str buffer, BAT* docseq, str opt)
 {
-    /* detect NULL strings from MIL */
-    if ( strlen(location)==0 && strlen(buffer) == 0 ) {
-        GDKerror("shredder.mx:CMDshred2bats: nothing to shred!\n");
-        return GDK_FAIL;
-    }
-
-    if ( strlen(location)!=0 && strlen(buffer)!= 0 ) {
-        GDKerror("shredder.mx:CMDshred2bats: \"location\" and \"buffer\" may not contain values at the same time!\n");
-        return GDK_FAIL;
-    }
-
-    /* shred context */
-    shredCtxStruct* shredCtx;
-
     /* timing */
     struct timeval now;
     long start, stop;
@@ -699,12 +702,6 @@ CMDshred2bats(BAT **res2mil, str location, str buffer, str opt)
     /* start timer */
     (void) gettimeofday (&now, 0);
     start = now.tv_sec * 1000000 + now.tv_usec;
-
-    off_t xmlFileSize;
-    if (strcmp(buffer, str_nil) != 0)
-        xmlFileSize = strlen(buffer);
-    else if ( (xmlFileSize = fileSize(location)) == ~(off_t)0 )
-        return GDK_FAIL;
 
 #ifdef SHRED_HOLES
     int pageFree;
@@ -720,18 +717,65 @@ CMDshred2bats(BAT **res2mil, str location, str buffer, str opt)
     int pageFree = 0;
 #endif
 
-    if ( !(shredCtx = createShredCtx(location,xmlFileSize,pageFree)) )
-        return GDK_FAIL;
-    if (strcmp(opt,"tijah")==0) {
-        shredCtx->shredWords = 1; 
+    /* shred context */
+    shredCtxStruct* shredCtx;
+
+    if ( docseq != NULL ) {
+        if ( strlen(location)!=0 || strlen(buffer)!= 0 ) {
+          GDKerror("shredder.mx:CMDshred2bats: if docseq BAT used location and buffer must be empty\n");
+          return GDK_FAIL;
+        }
     } else {
-        shredCtx->shredWords = 0; 
+        /* detect NULL strings from MIL */
+        if ( strlen(location)==0 && strlen(buffer) == 0 ) {
+            GDKerror("shredder.mx:CMDshred2bats: nothing to shred!\n");
+            return GDK_FAIL;
+        }
+
+        /* check if file and buffer spec mutually exclusive */
+        if ( strlen(location)!=0 && strlen(buffer)!= 0 ) {
+            GDKerror("shredder.mx:CMDshred2bats: \"location\" and \"buffer\" may not contain values at the same time!\n");
+            return GDK_FAIL;
+        }
     }
 
-    if ( mainSHREDDER(shredCtx, location, buffer) < 0 )
+    off_t estimatedSize;
+    BAT* doc_pre_BAT = BATnew(TYPE_void,TYPE_oid,16);
+
+    if ( docseq == NULL ) {
+        if (strcmp(buffer, str_nil) != 0)
+            estimatedSize = strlen(buffer);
+        else if ( (estimatedSize = fileSize(location)) == ~(off_t)0 )
+            return GDK_FAIL;
+    } else {
+        estimatedSize = (off_t)DEFAULT_ESTIMATE;
+    }
+
+    if ( !(shredCtx = createShredCtx(location,estimatedSize,pageFree)) )
         return GDK_FAIL;
 
-    if ( !(*res2mil = finalizeShredCtx( shredCtx )) )
+    int doc_pre;
+
+    if ( docseq == NULL ) {
+        if ( (doc_pre=mainSHREDDER(shredCtx, location, buffer)) < 0 )
+            return GDK_FAIL;
+    } else {
+        BUN p,q;
+        BATloop(docseq,p,q) {
+            str ds_loc = (str)BUNhead(docseq, p);
+            str ds_buf = (str)BUNtail(docseq, p);
+
+            if ( (doc_pre=mainSHREDDER(shredCtx,ds_loc,ds_buf)) < 0 )
+                return GDK_FAIL;
+	    if ( 0 ) stream_printf(GDKout,"# shredded doc: doc_pre = %d.\n",doc_pre);
+	    oid doc_pre_oid = (oid)doc_pre;
+	    if ( BUNappend(doc_pre_BAT, (ptr)(&doc_pre_oid), FALSE) == NULL) {
+                GDKerror("shred_doc_or_docseq: saving doc_pre fails!\n");
+                return GDK_FAIL;
+	    }
+        }
+    }
+    if ( !(*res2mil = finalizeShredCtx(shredCtx, doc_pre_BAT)) )
         return GDK_FAIL;
 
     /* read elapsed time */
@@ -744,6 +788,16 @@ CMDshred2bats(BAT **res2mil, str location, str buffer, str opt)
                 timer_str (abs (stop - start) / shredCtx->nnode_pre));
     }
     return GDK_SUCCEED;
+}
+
+int
+CMDshred2bats(BAT **res2mil, str location, str buffer, str opt) {
+    return shred_doc_or_docseq(res2mil,location,buffer,NULL,opt);
+}
+
+int
+CMDshred2collection(BAT **res2mil, BAT* docseq, str opt) {
+    return shred_doc_or_docseq(res2mil,"","",docseq,opt);
 }
 
 #define CHECK_BAT_SIZE(SB,I)    if ( ((off_t)(I)>=(SB)->size) && incrBATsize(SB,I)<0) return NATNIL; 
@@ -988,14 +1042,20 @@ shred_start_document (void *xmlCtx)
 #ifdef DEBUG
     stream_printf(GDKout,"start_document()\n");
 #endif
-    shredCtx->nnode_pre  = 0;   /* next ``node ID'' */
-    shredCtx->nnode_attr = 0;   /* attribute value property ID */
+    /* initialize some pre-post plane parameters. The nnode_pre and nnode_attr
+     * parameters are initizalized in the createShredCtx() initialization 
+     * function.
+     */
     shredCtx->level      = 0;
     shredCtx->depth      = 0;
     shredCtx->content    = 0;
 
+    /* set document pre */
+    shredCtx->doc_pre = shredCtx->nnode_pre;
+
     /* push document node */
-    PUSH (shredCtx,((node_t) { .pre   = 0, 
+    PUSH (shredCtx,((node_t) { 
+                .pre   = shredCtx->doc_pre,
 #ifdef OLDSIZE
                 .size  = 0, 
 #endif
@@ -1050,20 +1110,6 @@ emitString(shredCtxStruct* shredCtx, char* s)
     return 1;
 }
 
-const char* del = " \t\n\r";
-
-static int 
-emitShreddedString(shredCtxStruct* shredCtx, char* s)
-{
-    char *t;
-
-    if ( (t = strtok(s,del)) ) do {
-        if ( emitString(shredCtx,t) < 0 )
-            return -1;
-    } while ( (t=strtok(NULL,del)) );
-    return 1;
-}
-
 static int 
 handleXmlCharacters (shredCtxStruct* shredCtx)
 {
@@ -1071,14 +1117,8 @@ handleXmlCharacters (shredCtxStruct* shredCtx)
     if (shredCtx->content) {
         shredCtx->content_buf[shredCtx->content] = 0; /* properly terminate string content_buf */
 
-        if ( !shredCtx->shredWords ) {
-            if ( emitString(shredCtx,shredCtx->content_buf) < 0 )
-                return -1;
-        } else {
-            /* do the Tijah support thing */
-            if ( emitShreddedString(shredCtx,shredCtx->content_buf) < 0 )
-                return -1;
-        }
+        if ( emitString(shredCtx,shredCtx->content_buf) < 0 )
+            return -1;
     }
     shredCtx->content = 0;
     return 1;
@@ -1810,7 +1850,7 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* location, char* buffer)
     /* free the TEXT buffer */
     free(shredCtx->content_buf);
 
-    /* Check if something has gone wrong durin shred */
+    /* Check if something has gone wrong during shred */
     if ( shredCtx->err ) {
         return -1;
     }
@@ -1818,8 +1858,7 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* location, char* buffer)
         GDKerror("shredder.mx:mainSHREDDER: XML input not well-formed.\n");
         return -1;
     }
-    return 1;
+    return (int)shredCtx->doc_pre; /* return document pre number */
 }
-
 @c
 /* vim:set shiftwidth=4 expandtab: */

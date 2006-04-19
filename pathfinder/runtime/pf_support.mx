@@ -42,6 +42,20 @@ opt - options
 DESCRIPTION:
 C implementation of the document shredder"
 
+.COMMAND shred2collection(BAT[str,str] docseq, str opt) : BAT[oid, bat] = CMDshred2collection;
+"PARAMETERS:
+The function to shred multiple documents into one collection. The docseq 
+BAT contains the [location,buffer] pairs as in the shred2bats() function.
+location - if this parameter contains some value, the document locates at this location is shredded. The content of the seconde parameter \"buffer\", if any, is discarded.
+buffer - if the first parameter \"location\" doesn't contain any value, this parameter should point to a character array, which will then be shredded.
+opt - options
+DESCRIPTION:
+C implementation of the multiple document into one collection shredder"
+
+@- XML print functions (serialize.mx)
+@m
+
+
 @- XML print functions (serialize.mx)
 @m
 .COMMAND print_doc(str,BAT[void,bat], str) : void = xquery_print_doc_main;
