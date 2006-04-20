@@ -254,7 +254,6 @@ STAT_create(str hnme, str tnme, int ht, int tt)
 	BATkey(b, TRUE);
 	BBPrename(b->batCacheid, buf);
 	BATmode(b, PERSISTENT);
-	BATcommit(b);
 #ifdef DEBUG_STATISTICS
 	printf("created %s\n", buf);
 #endif
@@ -275,6 +274,7 @@ STATinit()
 	STAT_id_max_lng = STAT_create("id", "max_lng", TYPE_int, TYPE_lng);
 	STAT_id_histogram = STAT_create("id", "histogram", TYPE_int, TYPE_str);
 	mal_unset_lock(mal_contextLock, "statistics");
+	TMcommit();
 }
 
 static void
@@ -531,7 +531,8 @@ STATprelude(int *ret)
 
 	box = openBox("statistics");
 	if (box == 0)
-		return throwMessage("statistics.prelude", "failed to open box");
+		return throwMessage("statistics.prelude", "Failed to open box");
+	STATinit();
 	STATupdate(ret);
 	return MAL_SUCCEED;
 }
@@ -554,7 +555,7 @@ STATopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	authorize("open");
 	if (openBox("statistics") != 0)
 		return MAL_SUCCEED;
-	return throwMessage("statistics.open", "failed to open statistics box");
+	return throwMessage("statistics.open", "Failed to open statistics box");
 }
 
 str
@@ -566,7 +567,7 @@ STATclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	authorize("close");
 	if (closeBox("statistics", TRUE) == 0)
 		return MAL_SUCCEED;
-	return throwMessage("statistics.close", "failed to close box");
+	return throwMessage("statistics.close", "Failed to close box");
 }
 
 str
@@ -602,7 +603,7 @@ STATdepositStr(int *ret, str *nme)
 	val.val.bval = idx;
 	val.vtype = TYPE_bat;
 	if (depositBox(box, *nme, &val))
-		return throwMessage("statistics.deposit", "failed to deposit object  into box");
+		return throwMessage("statistics.deposit", "Failed to deposit object  into box");
 	bnme = BATgetId(b);
 	return STATenroll(ret, &bnme);
 }
@@ -636,7 +637,7 @@ STATtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = (str) getArgName(mb, pci, 1);
 	v = &stk->stk[getArg(pci, 0)];
 	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0)))
-		return throwMessage("statistics.take", "failed to take object from box");
+		return throwMessage("statistics.take", "Failed to take object from box");
 	return MAL_SUCCEED;
 }
 
@@ -666,7 +667,7 @@ STATreleaseStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	OpenBox("release");
 	name = (str) getArgName(mb, pci, 1);
 	if (releaseBox(box, name))
-		return throwMessage("statistics.release", "failed to release object from box");
+		return throwMessage("statistics.release", "Failed to release object from box");
 	return MAL_SUCCEED;
 }
 
@@ -733,7 +734,7 @@ STATtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	nme = (str) getArgValue(stk, pci, 1);
 	i = findVariable(box->sym, nme);
 	if (i < 0)
-		return throwMessage("statistics.toString", "failed to take object from box");
+		return throwMessage("statistics.toString", "Failed to take object from box");
 
 	v = &box->val->stk[i];
 	if (v->vtype == TYPE_str)
