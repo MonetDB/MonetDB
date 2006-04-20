@@ -289,6 +289,12 @@ bin_arith_helper (PFla_op_t *n1, PFla_op_t *n2,
         t = aat_dec;
     else if (t1 == aat_dbl || t2 == aat_dbl)
         t = aat_dbl;
+    else {
+        PFoops (OOPS_FATAL,
+                "invalid type combination in binary arithmetic function");
+        return NULL; /* never reached. */
+    }
+
     return bin_arith (t, (PFla_op_t *(*) (const PFla_op_t *, PFalg_att_t,
                                          PFalg_att_t, PFalg_att_t))params,
                      (struct PFla_pair_t[]) {
@@ -388,6 +394,11 @@ divide_helper (PFla_op_t *n1, PFla_op_t *n2,
         t = aat_dec;
     else if (t1 == aat_dbl || t2 == aat_dbl)
         t = aat_dbl;
+    else {
+        PFoops (OOPS_FATAL,
+                "invalid type combination in binary arithmetic function");
+        return NULL; /* never reached. */
+    }
     return bin_arith (t, PFla_divide,
                      (struct PFla_pair_t[]) {
                          { .rel = n1, .frag = NULL },
