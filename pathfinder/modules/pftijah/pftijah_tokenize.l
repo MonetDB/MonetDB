@@ -5,6 +5,8 @@
 
 #include <ctype.h>
 #include <gdk.h>
+#include <pathfinder.h>
+#include <pf_support.h>
 #include <serialize.h>
 #include "serialize_pftijah.h"
 

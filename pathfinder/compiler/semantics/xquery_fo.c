@@ -1506,17 +1506,18 @@ PFfun_xquery_fo ()
                                 PFty_string () },
             .ret_ty = PFty_stmt () } } }
 #ifdef HAVE_PFTIJAH
-, /* fn:tijah-command(string*) as boolean */
-  { .ns = PFns_fn, .loc = "tijah-command",
-
-        .par_ty = (PFty_t[]) { PFty_star (PFty_string ()) },
-        .ret_ty = PFty_boolean () }	} }
-, /* fn:tijah-query(item*, string) as item* */
-  { .ns = PFns_fn, .loc = "tijah-query",
-    .arity = 2, .sig_count = 1, .sigs = { {
-        .par_ty = (PFty_t[]) { PFty_star (PFty_item ()),
-                            PFty_string () },
-        .ret_ty = PFty_star (PFty_item ()) } } }
+    , /* fn:tijah-command(string*) as boolean */
+      { .ns = PFns_fn, .loc = "tijah-command",
+        .arity = 1, .sig_count = 1, .sigs = { {
+	     .par_ty = (PFty_t[]) { PFty_star (PFty_string ()) },
+             .ret_ty = PFty_boolean () } } }
+    , /* fn:tijah-query(item*, string) as item* */
+      { .ns = PFns_fn, .loc = "tijah-query",
+        .arity = 2, .sig_count = 1, .sigs = { {
+	     .par_ty = (PFty_t[]) { PFty_star (PFty_item ()),
+                                PFty_string () },
+             .ret_ty = PFty_star (PFty_item ()) } } }
+#else
 #endif
     , { .loc = 0 }
     };

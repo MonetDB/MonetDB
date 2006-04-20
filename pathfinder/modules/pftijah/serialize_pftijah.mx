@@ -47,6 +47,7 @@ extern int useFlexScanner(char* buf, int len, struct tijahContextStruct* tjCtx);
 #include <pf_config.h>
 
 #include <pathfinder.h>
+#include <pf_support.h>
 #include <serialize.h>
 
 #include "serialize_pftijah.h"
