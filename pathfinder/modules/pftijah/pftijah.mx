@@ -27,6 +27,8 @@
 @m
 .MODULE pftijah;
 
+.USE pathfinder;
+
 .COMMAND run_tijah_command(str s) : bit = CMDtijah_command;
  "INCOMPLETE"
 
