@@ -413,7 +413,7 @@ extern node *find_sql_column_node(sql_table *t, char *cname);
 extern sql_column *find_sql_column(sql_table *t, char *cname);
 
 extern node *find_sql_table_node(sql_schema *s, char *tname);
-extern sql_table *find_sql_table(sql_schema *s, char *tname);
+extern sql_table *find_sql_table(sql_schema *s, char *tname, int location);
 
 extern node *find_sql_schema_node(sql_trans *t, char *sname);
 extern sql_schema *find_sql_schema(sql_trans *t, char *sname);

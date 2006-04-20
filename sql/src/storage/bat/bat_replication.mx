@@ -50,9 +50,10 @@ int
 create_host_table(sql_trans *tr, sql_schema *s)
 {
         sql_table *t;
-        t = sql_trans_create_table(tr, s, "hosts", 1, 1, 0, -1);
+        t = sql_trans_create_table(tr, s, "hosts", 1, 1, 0, -1,-1);
         
 	create_column(tr, t, "host_id", "int",9);
+	create_column(tr, t, "name", "varchar",1024);
 	create_column(tr, t, "ip", "varchar",1024);
 	create_column(tr, t, "port", "varchar",1024);
 	create_column(tr, t, "user", "varchar",1024);
@@ -66,7 +67,7 @@ int
 create_replication_table(sql_trans *tr, sql_schema *s)
 {
         sql_table *t;
-        t = sql_trans_create_table(tr, s, "metdatrep", 1, 1, 0, -1);
+        t = sql_trans_create_table(tr, s, "metdatrep", 1, 1, 0, -1,-1);
         
 	create_column(tr, t, "replication_id", "int",9); 	
 	create_column(tr, t, "scenario_id", "int",9); 	/*the id for each replication scenario for the table*/

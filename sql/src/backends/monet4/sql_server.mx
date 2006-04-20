@@ -74,11 +74,11 @@ BATs until transaction commit.
 The code produced by the SQL->MIL compiler uses it to propagate
 the updates to the persistent versions.
 @m
-	.COMMAND mvc_bind( mvc c, str sname, str tname, str cname, int access ) : 
+	.COMMAND mvc_bind(mvc c, str sname, str tname, str cname, int access, int location ) : 
 		BAT[any::1,any::2] = 
 		mvc_bind_wrap; "Bind the bat, tname.cname"
 
-	.COMMAND mvc_bind_dbat( mvc c, str sname, str tname, int access ) : 
+	.COMMAND mvc_bind_dbat(mvc c, str sname, str tname, int access, int location ) : 
 		BAT[any::1,any::2] = mvc_bind_dbat_wrap; 
 		"Bind the table deletes bat, tname.deletes"
 
@@ -88,7 +88,7 @@ the updates to the persistent versions.
 @-
 A special clear table function is required for an efficient DELETE ALL implementation. A table clear requires global table knowledge. 
 @m
-	.COMMAND mvc_clear_table( mvc c, str sname, str tname ) :
+	.COMMAND mvc_clear_table( mvc c, str sname, str tname, int location ) :
 		lng = mvc_clear_table_wrap;
 		"Clear table" 
 @-
@@ -119,7 +119,7 @@ stream.
 		mvc_export_value_wrap; "export a single value onto the stream s"
 
 	.COMMAND mvc_import_table( mvc c, Bstream s, str tname, 
-					str sep, str rsep, int nr) : 
+					str sep, str rsep, int nr, int location) : 
 		BAT[str,BAT] = mvc_import_table_wrap; 
 		"import a table from stream s with the given tuple and record seperators (sep/rsep)"
 
@@ -345,12 +345,12 @@ mvc_next_value(lng *res, mvc *c, str seq)
 }
 
 static BAT *
-mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
+mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access, int location)
 {
 	sql_trans *tr = m->trans;
 	BAT *b = NULL;
 	sql_schema *s = mvc_bind_schema(m, sname);
-	sql_table *t = mvc_bind_table(m, s, tname);
+	sql_table *t = mvc_bind_table(m, s, tname,location);
 	sql_column *c = mvc_bind_column(m, t, cname);
 
 	if (access == UPD)
@@ -361,12 +361,12 @@ mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 }
 
 static BAT *
-mvc_bind_dbat(mvc *m, char *sname, char *tname, int access)
+mvc_bind_dbat(mvc *m, char *sname, char *tname, int access, int location)
 {
 	sql_trans *tr = m->trans;
 	BAT *b = NULL;
 	sql_schema *s = mvc_bind_schema(m, sname);
-	sql_table *t = mvc_bind_table(m, s, tname);
+	sql_table *t = mvc_bind_table(m, s, tname,location);
 
 	b = bind_dbat(tr, t, access);
 	return b;
@@ -390,9 +390,9 @@ mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access)
 
 
 int
-mvc_bind_wrap(BAT **res, mvc *c, str sname, str tname, str cname, int *access)
+mvc_bind_wrap(BAT **res, mvc *c, str sname, str tname, str cname, int *access, int* location)
 {
-	*res = mvc_bind(*(mvc **) c, sname, tname, cname, *access);
+	*res = mvc_bind(*(mvc **) c, sname, tname, cname, *access,*location);
 	if (*res) {
 		return GDK_SUCCEED;
 	}
@@ -400,9 +400,9 @@ mvc_bind_wrap(BAT **res, mvc *c, str sname, str tname, str cname, int *access)
 }
 
 int
-mvc_bind_dbat_wrap(BAT **res, mvc *c, str sname, str tname, int *access)
+mvc_bind_dbat_wrap(BAT **res, mvc *c, str sname, str tname, int *access, int* location)
 {
-	*res = mvc_bind_dbat(*(mvc **) c, sname, tname, *access);
+	*res = mvc_bind_dbat(*(mvc **) c, sname, tname, *access, *location);
 	if (*res) {
 		return GDK_SUCCEED;
 	}
@@ -420,11 +420,11 @@ mvc_bind_idxbat_wrap(BAT **res, mvc *c, str sname, str tname, str iname, int *ac
 }
 
 int
-mvc_clear_table_wrap(lng *res, mvc *c, str sname, str tname)
+mvc_clear_table_wrap(lng *res, mvc *c, str sname, str tname, int *location)
 {
 	mvc *m = *(mvc **) c;
 	sql_schema *s = mvc_bind_schema(m, sname);
-	sql_table *t = mvc_bind_table(m, s, tname);
+	sql_table *t = mvc_bind_table(m, s, tname,*location);
 
 	*res = mvc_clear_table(m, t);
 	return GDK_SUCCEED;
@@ -476,9 +476,9 @@ mvc_result_value_wrap(mvc *M, str tn, str name, str type, int *digits, int *scal
 }
 
 int
-mvc_import_table_wrap(BAT **res, mvc *c, Bstream *s, str tname, str sep, str rsep, int *sz)
+mvc_import_table_wrap(BAT **res, mvc *c, Bstream *s, str tname, str sep, str rsep, int *sz, int* location)
 {
-	*res = mvc_import_table(*(mvc **) c, *(bstream **) s, tname, sep, rsep, *sz);
+	*res = mvc_import_table(*(mvc **) c, *(bstream **) s, tname, sep, rsep, *sz, *location);
 	if (*res == NULL)
 		return GDK_FAIL;
 	return GDK_SUCCEED;

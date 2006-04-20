@@ -28,6 +28,7 @@
 #include "sql_symbol.h"
 #include "sql_scope.h"
 #include "sql_statement.h"
+#include "sql_schema.h"
 
 extern stmt *updates(mvc *sql, scope *scp, symbol *sym);
 
@@ -893,8 +894,12 @@ insert_into(mvc *sql, scope *scp, symbol *symb, dlist *columns, symbol *val_or_q
 	list *collist = NULL;
 	int i, len = 0;
 	stmt **inserts, *res = NULL;
+	char *host = qname_host(symb);
+	int location = -1;
+	if(!host)
+		location =  (int) find_table_value(sql,"hosts","host_id","name",host,-1);
 
-	if (!s || (t = mvc_bind_table(sql, s, tname)) == NULL) {
+	if (!s || (t = mvc_bind_table(sql, s, tname,location)) == NULL) {
 		return sql_error(sql, 02, "INSERT INTO: no such table '%s'", tname);
 	} else if (!t->table) {
 		return sql_error(sql, 02, "INSERT INTO: cannot insert into view '%s'", tname);
@@ -1095,7 +1100,11 @@ static stmt *
 copyfrom(mvc *sql, scope *scp, symbol *symb, dlist *files, dlist *seps, int nr)
 {
 	char *tname = qname_table(symb);
-	sql_table *t = mvc_bind_table(sql, cur_schema(sql), tname);
+	char *host = qname_host(symb);
+	int location = -1;
+	if(!host)
+		location =  (int) find_table_value(sql,"hosts","host_id","name",host,-1);
+	sql_table *t = mvc_bind_table(sql, cur_schema(sql), tname,location);
 	char *tsep = seps->h->data.sval;
 	char *rsep = seps->h->next->data.sval;
 	list *slist;
@@ -1161,10 +1170,10 @@ sql_update(mvc *sql, sql_table *t, stmt **updates, list *l)
 }
 
 static stmt *
-sql_update_table(mvc *sql, scope *scp, sql_schema *schema, char *tname, dlist *assignmentlist, symbol *opt_where)
+sql_update_table(mvc *sql, scope *scp, sql_schema *schema, char *tname, dlist *assignmentlist, symbol *opt_where,int location)
 {
 	stmt *s = NULL;
-	sql_table *t = mvc_bind_table(sql, schema, tname);
+	sql_table *t = mvc_bind_table(sql, schema, tname,location);
 
 	if (!t) {
 		return sql_error(sql, 02, "UPDATE: no such table '%s'", tname);
@@ -1290,8 +1299,12 @@ update_table(mvc *sql, scope *scp, symbol *symb, dlist *assignmentlist, symbol *
 {
 	sql_schema *s = qname_schema(sql, symb);
 	char *tname = qname_table(symb);
+	char *host = qname_host(symb);
+	int location = -1;
+	if(!host)
+		location =  (int) find_table_value(sql,"hosts","host_id","name",host,-1);
 
-	return sql_update_table(sql, scp, s, tname, assignmentlist, opt_where);
+	return sql_update_table(sql, scp, s, tname, assignmentlist, opt_where,location);
 }
 
 
@@ -1381,7 +1394,11 @@ static stmt *
 delete_table(mvc *sql, scope *scp, symbol *symb, symbol *opt_where)
 {
 	char *tname = qname_table(symb);
-	sql_table *t = mvc_bind_table(sql, cur_schema(sql), tname);
+	char *host = qname_host(symb);
+	int location = -1;
+	if(!host)
+		location =  (int) find_table_value(sql,"hosts","host_id","name",host,-1);
+	sql_table *t = mvc_bind_table(sql, cur_schema(sql), tname, location);
 
 	if (!t) {
 		return sql_error(sql, 02, "DELETE FROM: no such table '%s'", tname);

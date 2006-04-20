@@ -36,6 +36,7 @@ extern stmt *semantic(mvc *sql, scope *scp, symbol *sym);
 extern sql_schema *cur_schema(mvc *sql);
 extern sql_schema *qname_schema(mvc *sql, symbol *symb);
 extern char *qname_table(symbol *symb);
+extern char *qname_host(symbol *symb);
 extern tvar *scope_add_table_columns(mvc *sql, scope *scp, sql_table *t, char *tname, int access);
 
 extern sql_subtype *supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i);
@@ -230,21 +231,53 @@ char *
 qname_table(symbol *symb)
 {
 	int length = 0;
+	char* host = NULL;
 	dlist* qname = symb->data.lval;
 	assert(qname && qname->h);
 	
 	if(symb->token == SQL_REP_NAME)
-		length = 3;
-	if(symb->token == SQL_NAME)
-		length = 2;
+	{
+		host = qname->t->data.sval;
+		length = 1;
+	}
+	else if(symb->token == SQL_NAME)
+	{
+		host = "localhost";
+		length = 0;
+	}
 
-	if (dlist_length(qname) == 1) {
+	if ((dlist_length(qname)-length) == 1) {
 		return qname->h->data.sval;
-	} else if (dlist_length(qname) == 2) {
+	} else if ((dlist_length(qname)-length) == 2) {
 		return qname->h->next->data.sval;
 	}
 	return "unknown";
 }
+
+/*this function was created to support replication*/
+char *
+qname_host(symbol *symb)
+{
+        int length = 0;
+        char* host = NULL;
+        dlist* qname = symb->data.lval;
+        assert(qname && qname->h);
+
+        if(symb->token == SQL_REP_NAME)
+        {
+                host = qname->t->data.sval;
+                length = 1;
+        }
+        else if(symb->token == SQL_NAME)
+        {
+                host = "localhost";
+                length = 0;
+        }
+        return "unknown";
+}
+
+
+
 
 stmt *
 scope_sqlparse(mvc *m, scope *scp, char *query)

@@ -23,6 +23,7 @@
 #define _REL_SELECT_H_
 
 #include "rel_semantic.h"
+#include "sql_schema.h"
 
 #define sql_from 0
 #define sql_where 1
@@ -1525,10 +1526,14 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 		sql_schema *s = qname_schema(sql, tableref->data.lval->h->data.sym);
 
 		tname = qname_table(tableref->data.lval->h->data.sym);
+		char *host = qname_host(tableref->data.lval->h->data.sym);
+		int location = -1;
+		if(!host)
+			location =  (int) find_table_value(sql,"hosts","host_id","name",host,-1);
 
 		if (!s) 
 			return sql_error(sql, 02, "SELECT: no such schema");
-		t = mvc_bind_table(sql, s, tname);
+		t = mvc_bind_table(sql, s, tname,location);
 		if (!t) {
 			return sql_error(sql, 02, "SELECT: no such table '%s'", tname);
 		} else if (!table_privs(sql, t, PRIV_SELECT)) {
