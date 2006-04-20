@@ -132,6 +132,7 @@ Send a RPC request to the destination \"location\", save the reults in the Worki
     #ifndef __MINGW32__
         #pragma comment(lib, "ws2_32")
     #endif
+    #define sleep(s) Sleep(1000*(s))
 #else           /* UNIX specific */
     #include <sys/select.h>
     #include <sys/types.h>	/* used by socket */
@@ -150,12 +151,14 @@ Send a RPC request to the destination \"location\", save the reults in the Worki
 
 /* CMDshred2bats() and xquery_print_result_main() */
 #include "pf_support.proto.h"
+#include "shredder.h"
+#include "serialize.h"
 #include "shttpd.h"
 
 #define MXQ_SIGNATURE "signature\01http://monetdb.cwi.nl/xquery/rpc"
 #define MXQ_TYPE "type\01http://monetdb.cwi.nl/xquery/rpc"
 
-#define TEXT        1
+#define PFTEXT      1
 #define ELEMENT     0
 #define MAXPARAMS   32
 #define HTTP_PORT   8080
@@ -207,7 +210,7 @@ int rpc_receiver_running = 0;
  */
 static int setup_connection(str location, int port, int nr_retries) {
     int i, ret, sock;
-    in_addr_t addr;
+    struct in_addr addr;
     struct sockaddr_in sockaddr;
     struct hostent *resolv = NULL;
 
@@ -218,19 +221,19 @@ static int setup_connection(str location, int port, int nr_retries) {
             if (errno) GDKerror("setup_connection: %s\n", strerror(errno));
             return -1;
         }
-        addr = (in_addr_t) i;
+        addr.s_addr = (unsigned) i;
     } else {
         if (!(resolv = gethostbyname(location))) {
             GDKerror("setup_connection: invalid IP address \"%s\"\n", location);
             if (errno) GDKerror("setup_connection: %s\n", strerror(errno));
             return -1;
         }
-        addr = ((struct in_addr *)resolv->h_addr_list[0])->s_addr;
+        addr.s_addr = ((struct in_addr *)resolv->h_addr_list[0])->s_addr;
     }
 
     sockaddr.sin_family = AF_INET;
     sockaddr.sin_port   = htons(port);
-    sockaddr.sin_addr.s_addr = addr;
+    sockaddr.sin_addr.s_addr = addr.s_addr;
     memset(&(sockaddr.sin_zero), '\0', 8);
 
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -641,7 +644,7 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
                     }
                     start_invalidate = vnode_pre + pre_size[vnode_pre] + 1;
                 } else {
-                    if (pre_kind[vnode_pre] != TEXT) {
+                    if (pre_kind[vnode_pre] != PFTEXT) {
                         snprintf(errstr, 1024, "XQuery RPC request [%s:%s]: "
                                 "iteration[%d]->parameter[%d]->value[\"%d\"] "
                                 "of type[\"%s\"] is expected to have a simple value.\n",

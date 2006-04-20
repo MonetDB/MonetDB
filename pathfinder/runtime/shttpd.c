@@ -89,7 +89,7 @@ typedef	DWORD			pthread_t;
 #define	vsnprintf		_vsnprintf
 #define	getcwd(x,y)		_getcwd(x,y)
 #define	mkdir(x,y)		_mkdir(x)
-#define	fstat(x,y)		_fstat(x,y)
+/* #define	fstat(x,y)		_fstat(x,y) */
 #define	pthread_create(a,b,c,d)	CreateThread(0, 0, c, d, 0, a)
 #define	pthread_exit(x)		ExitThread(x)
 #define	pthread_detach(x)	0
@@ -504,14 +504,12 @@ struct thrarg {
 static void * WINAPI
 do_thread(struct thrarg *p)
 {
-	int	flags;
-
 	/* Put client socket to blocking mode */
 #ifdef _WIN32
-	flags = 0;
+	u_long flags = 0;
 	(void) ioctlsocket(p->arg.connection->sock, FIONBIO, &flags);
 #else
-	flags = fcntl(p->arg.connection->sock, F_GETFL);
+	int flags = fcntl(p->arg.connection->sock, F_GETFL);
 	flags &= ~O_NONBLOCK;
 	(void) fcntl(p->arg.connection->sock, F_SETFL, flags);
 	(void) signal(SIGPIPE, SIG_IGN);
@@ -1107,12 +1105,12 @@ readremote(struct conn *c, char *buf, size_t len)
 static int
 nonblock(int fd)
 {
-	int	ret = -1;
 #ifdef	_WIN32
 	unsigned long	on = 1;
 
 	return (ioctlsocket(fd, FIONBIO, &on));
 #else
+	int	ret = -1;
 	int	flags;
 
 	if ((flags = fcntl(fd, F_GETFL, 0)) == -1)

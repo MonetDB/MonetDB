@@ -1154,7 +1154,7 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
  *
  * we return an error string, or NULL iff everything went A-OK  
  */
-char*
+pathfinder_export char *
 xquery_method(stream *out, 
               char* module, 
               char* uri, 

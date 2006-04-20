@@ -88,7 +88,7 @@ lib__xquery_rpc = {
 		xquery_rpc.mx
 
 	LIBS = \
-		   $(MONETDB_LIBS) $(PF_LIBS) \
+		   $(MONETDB_LIBS) $(PF_LIBS) $(SOCKET_LIBS) ./lib_pf_support ./lib_pathfinder \
 		   -lbat -lmonet -lstream -lpthread \
 		   -l_streams -l_builtin -l_ascii_io
 }

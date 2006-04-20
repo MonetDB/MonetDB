@@ -34,7 +34,7 @@
 #include <gdk.h>
 
 #include "pathfinder.h"
-
+#include "pf_support.proto.h"
 #include "serialize.h"
 
 /**
