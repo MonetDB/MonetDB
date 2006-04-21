@@ -418,11 +418,11 @@ if (isnil(CATCH(bat("doc_query").count()))) {
     (coll_free := new(oid,bat)).bbpname("coll_free"); 
     (empty_page:= new(void,int,REMAP_PAGE_SIZE)).bbpname("empty_page"); 
 
-    var m := 1LL << 31, i := REMAP_PAGE_SIZE;
+    var m := int(nil), i := int(REMAP_PAGE_SIZE);
     var bak := debugmask();
     debugmask(0);
-    while((i :-= 1LL) >= 0LL) {
-        empty_page.append(int(and(m,i)));
+    while((i :-= 1) >= 0) {
+        empty_page.append(nilor(i, m));
     }
     debugmask(bak);
     empty_page.seqbase(0@0).access(BAT_READ);
@@ -548,8 +548,8 @@ PROC ws_newpage_locked(BAT[void,bat] ws, oid cont) : oid {
         # append a page to the master rid_* table
         var empty_page_chr := empty_page.project(chr(nil));
         var empty_page_oid := empty_page.project(oid(nil));
-        var lastpage_size := REMAP_PAGE_SIZE - and(rid_cnt,int(REMAP_PAGE_MASK));
-        if (lastpage_size < REMAP_PAGE_SIZE) {
+        var lastpage_size := and(lng(rid_cnt),REMAP_PAGE_MASK);
+        if (lastpage_size > 0LL) {
             # take care to fill out the last page (if not yet full)
             rid_size.append(empty_page.slice(lastpage_size,REMAP_PAGE_SIZE), true);
             rid_level.append(empty_page_chr.slice(lastpage_size,REMAP_PAGE_SIZE), true);
