@@ -167,7 +167,6 @@ command getHistogram(nme:str):bat[:any_1,:any_2]
 address STATgetHistogram
 comment "Return the latest histogram");
 
-statistics.prelude();
 @- Implementation
 The implementation is based on the assumption that in
 most cases front-ends deal with BAT names as opposed to
@@ -801,12 +800,14 @@ mal_export str STATget@1(lng *ret, str *nme);
 str
 STATget@1(lng *ret, str *nme){
 	ptr p;
+	int i;
 	p= BUNfnd(BATmirror(STAT_id_nme),*nme);
 	if( p == NULL)
-		return throwMessage("statistics.get@1","BAT not known");
-	p= BUNfnd(STAT_id_@2, (int *) p);
+		return throwMessage("statistics.get@1","Object not known");
+	i= *(int*) BUNhead(STAT_id_nme,p);
+	p= BUNfnd(STAT_id_@2, &i );
 	if( p == NULL)
-		return throwMessage("statistics.get@1","@1 not known");
+		return throwMessage("statistics.get@1","Not known");
 	*ret = *(lng*)BUNtail(STAT_id_@2,p);
 	return MAL_SUCCEED;
 }
