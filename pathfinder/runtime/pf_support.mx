@@ -2287,7 +2287,11 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
   }
 
   if (replacements.count() > 0) { # we had an update
-    [fix_consecutive_texts](const replacements, const ws, affected_conts);
+    if (replacements.exist(replacements)) {
+      var texts := replacements.find(replacements);
+      replacements := replacements.delete(replacements, texts);
+      fix_consecutive_texts(replacements, ws, texts);
+    }
     var heightbat := ws.fetch(HEIGHT);
     if (replacements.exist(heightbat)) {
       var heightbat_udpate := replacements.find(heightbat);
@@ -2938,11 +2942,6 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
         docnidnew := oid(lng(docnidnew) + 1);
       }
 
-      # the difference in level for inserted elements between original
-      # document and updated document
-      var leveldiff := int(docinsertlevel) - int(ws.fetch(PRE_LEVEL).find(insertcont).find(insertitem));
-#       if (debug) printf("leveldiff %%d\n", leveldiff);
-
       var insert_pre_size := ws.fetch(PRE_SIZE).find(insertcont);
       var insert_pre_level := ws.fetch(PRE_LEVEL).find(insertcont);
       var insert_pre_prop := ws.fetch(PRE_PROP).find(insertcont);
@@ -2974,6 +2973,25 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
       var attr_qn_update := replacements.replacementsfind(attr_qn);
       var attr_prop := ws.fetch(_ATTR_PROP).find(doccont);
       var attr_prop_update := replacements.replacementsfind(attr_prop);
+
+      # the difference in level for inserted elements between original
+      # document and updated document
+      var leveldiff := int(docinsertlevel) - int(insert_pre_level.find(insertitem));
+#       if (debug) printf("leveldiff %%d\n", leveldiff);
+
+      if (insert_pre_kind.find(insertitem) = TEXT) {
+        # if we're inserting a text node, we may have to merge
+        # consecutive text nodes
+        # we remember the position in a hacky place
+        var texts;
+        if (replacements.exist(replacements)) {
+          texts := replacements.find(replacements);
+        } else {
+          texts := new(oid, oid);
+          replacements := replacements.insert(replacements, texts);
+        }
+        texts.insert(doccont, docnidnew);
+      }
 
       # do the actual insert: copy the data from the source document
       # into the prepared hole
@@ -3016,6 +3034,7 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
           }
         }
         var insnnids := inskind.uselect(chr(nil), chr(nil)).mark(docnidnew); # PRE-New NID
+        docnidnew := oid(lng(docnidnew) + insnnids.count());
 	if (not(samedoc)) {
           insprop := insprop.copy().access(BAT_WRITE);
           if (texts.count() > 0) {
@@ -3120,6 +3139,7 @@ proc do_update_insert(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
 
         insertsize :-= int(batchsize);
         docinsertpoint := oid(lng(docinsertpoint) + batchsize);
+        insertitem := oid(lng(insertitem) + batchsize);
       }
 
       replacements := replacements.replace(attr_own, attr_own_update);
@@ -3175,10 +3195,46 @@ proc do_update_delete(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
       if (not(isnil(niland(size, int(nil))))) { # result of niland(size, int(nil)) is either 0 or int(nil)
         var next_pagebase := oid((lng(pageno) + 1) << REMAP_PAGE_BITS);
         var nid_rid_update := replacements.replacementsfind(nid_rid);
+        var rid_kind := ws.fetch(_RID_KIND).find(cont);
         var rid_kind_update := replacements.replacementsfind(rid_kind);
+        var rid_level := ws.fetch(_RID_LEVEL).find(cont);
         var rid_level_update := replacements.replacementsfind(rid_level);
+        var rid_prop := ws.fetch(_RID_PROP).find(cont);
         var rid_prop_update := replacements.replacementsfind(rid_prop);
+        var rid_nid := ws.fetch(_RID_NID).find(cont);
         var rid_nid_update := replacements.replacementsfind(rid_nid);
+
+        # record where we're deleting a node
+        {
+          var docsize := replacementvalue(replacements, rid_size, oid(lng(map_pid_update.reverse().find(0@0)) << REMAP_PAGE_BITS)) + 1;
+          var texts;
+          if (replacements.exist(replacements)) {
+            texts := replacements.find(replacements);
+          } else {
+            texts := new(oid, oid);
+            replacements := replacements.insert(replacements, texts);
+          }
+          var nxtpre := oid(lng(pre) + size + 1), nxtrid, nxtsiz := 0;
+          if (nxtpre < docsize) {
+            nxtrid := antiswizzle(nxtpre, map_pid_update);
+            nxtsiz := replacementvalue(replacements, rid_size, nxtrid);
+          }
+          while ((nxtpre < docsize) and isnil(niland(nxtsiz, int(nil)))) {
+            nxtpre := oid(lng(nxtpre) + niland(nxtsiz, INT_MAX) + 1);
+            if (nxtpre < docsize) {
+              nxtrid := antiswizzle(nxtpre, map_pid_update);
+              nxtsiz := replacementvalue(replacements, rid_size, nxtrid);
+            }
+          }
+          # only record spot if next node is a TEXT since only then do
+          # we have to worry about coalescing text nodes
+          if (nxtpre < docsize) {
+            if (replacementvalue(replacements, rid_kind, nxtrid) = TEXT) {
+              texts := texts.insert(cont, replacementvalue(replacements, rid_nid, antiswizzle(nxtpre, map_pid_update)));
+              replacements := replacements.replace(replacements, texts);
+            }
+          }
+        }
 
         while (size >= 0) {
           var nsize; # new size we're going to write
@@ -3219,14 +3275,14 @@ proc do_update_delete(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
             rid_size := rid_size.replace(update_data, true);
           }
 
-          update_data := update_data.project(cast(nil, rid_level_update_page.ttype()));
+          update_data := update_data.project(cast(nil, rid_level_update.ttype()));
           if (isoldpage) {
             rid_level_update := rid_level_update.myinsert(update_data);
           } else {
             rid_level_new := rid_level.replace(update_data, true);
           }
 
-          update_data := update_data.project(cast(nil, rid_kind_update_page.ttype()));
+          update_data := update_data.project(cast(nil, rid_kind_update.ttype()));
           if (isoldpage) {
             rid_kind_update := rid_kind_update.myinsert(update_data);
           } else {
@@ -3273,7 +3329,7 @@ proc do_update_delete(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
         replacements := replacements.replace(rid_level, rid_level_update);
         replacements := replacements.replace(rid_prop, rid_prop_update);
         replacements := replacements.replace(rid_nid, rid_nid_update);
-        replacements := replacements.replace(rid_size, rid_size_udpate);
+        replacements := replacements.replace(rid_size, rid_size_update);
       }
     }
   }
@@ -3345,140 +3401,130 @@ proc find_qn_bulk(bat[void,bat] ws, oid cont, bat[oid,str] prefurilocbat, bit ad
   return qnbat;
 }
 
-proc fix_consecutive_texts(bat[bat,bat] replacements, bat[void,bat] ws, oid cont) : void
+proc fix_consecutive_texts(bat[bat,bat] replacements, bat[void,bat] ws, bat[oid,oid] contnid) : void
 {
-  # there is nothing to do if there were no structural updates (as
-  # indicated by the presence of _RID_SIZE changes)
-  var rid_size := ws.fetch(_RID_SIZE).find(cont);
-  if (not(replacements.exist(rid_size))) {
-    return;
-  }
-  var rid_size_update := replacements.replacementsfind(rid_size);
-  if (rid_size_update.count() = 0) {
-    return;
-  }
+  # for now ignore position information
+  contnid.reverse().tunique()@batloop() {
+    var cont := $h;
 
-  var map_pid := ws.fetch(_MAP_PID).find(cont);
-  var map_pid_update := map_pid;
-  if (replacements.exist(map_pid)) {
-    map_pid_update := replacements.find(map_pid);
-  }
-
-  var rid_size := ws.fetch(_RID_SIZE).find(cont);
-  var rid_size_update := replacements.replacementsfind(rid_size);
-  var rid_level := ws.fetch(_RID_LEVEL).find(cont);
-  var rid_level_update := replacements.replacementsfind(rid_level);
-  var rid_kind := ws.fetch(_RID_KIND).find(cont);
-  var rid_kind_update := replacements.replacementsfind(rid_kind);
-  var rid_prop := ws.fetch(_RID_PROP).find(cont);
-  var rid_prop_update := replacements.replacementsfind(rid_prop);
-  var rid_nid := ws.fetch(_RID_NID).find(cont);
-  var rid_nid_update := replacements.replacementsfind(rid_nid);
-
-  var lvkd := new(oid, sht, rid_size.count()); # [PRE,(level<<8)|kind]
-
-  map_pid_update.select(oid(nil), oid(nil)).reverse().sort()@batloop() {
-    var pageno := $h;
-    var pageid := $t;
-
-    var isoldpage := false;
-    if (map_pid.exist(pageid)) {
-      isoldpage := not(isnil(map_pid.find(pageid)));
+    var map_pid := ws.fetch(_MAP_PID).find(cont);
+    var map_pid_update := map_pid;
+    if (replacements.exist(map_pid)) {
+      map_pid_update := replacements.find(map_pid);
     }
 
-    var pagestart := oid(lng(pageno) << REMAP_PAGE_BITS);
-    var pagelast := oid(lng(pagestart) + REMAP_PAGE_MASK);
+    var rid_size := ws.fetch(_RID_SIZE).find(cont);
+    var rid_size_update := replacements.replacementsfind(rid_size);
+    var rid_level := ws.fetch(_RID_LEVEL).find(cont);
+    var rid_level_update := replacements.replacementsfind(rid_level);
+    var rid_kind := ws.fetch(_RID_KIND).find(cont);
+    var rid_kind_update := replacements.replacementsfind(rid_kind);
+    var rid_prop := ws.fetch(_RID_PROP).find(cont);
+    var rid_prop_update := replacements.replacementsfind(rid_prop);
+    var rid_nid := ws.fetch(_RID_NID).find(cont);
+    var rid_nid_update := replacements.replacementsfind(rid_nid);
 
-    var lvpg := rid_level.reverse().select(pagestart, pagelast).reverse();
-    if (isoldpage) {
-      var lvpgup := rid_level_update.reverse().select(pagestart, pagelast).reverse();
-      lvpg := lvpg.access(BAT_WRITE).key(true).replace(lvpgup);
-    }
-    var kdpg := rid_kind.reverse().select(pagestart, pagelast).reverse();
-    if (isoldpage) {
-      var kdpgup := rid_kind_update.reverse().select(pagestart, pagelast).reverse();
-      kdpg := kdpg.access(BAT_WRITE).key(true).replace(kdpgup);
-    }
+    var lvkd := new(oid, sht, rid_size.count()); # [PRE,(level<<8)|kind]
 
-    # select all non-hole entries for both level and kind tables
-    var l := lvpg.ord_select(chr(nil),chr(nil)); # [RID,level]
-    var k := l.mirror().leftfetchjoin(kdpg); # [RID,kind]
-    # combine them into a single table
-    var x := [+]([<<]([sht](l),8),[sht](k)); # [RID,(level<<8)|kind]
-    lvkd.insert([sht]([swizzle]([oid](x).reverse(), map_pid_update).reverse()));
-  }
+    map_pid_update.select(oid(nil), oid(nil)).reverse().sort()@batloop() {
+      var pageno := $h;
+      var pageid := $t;
 
-  lvkd := [sht]([swizzle]([oid](lvkd).reverse(), map_pid_update).reverse()); # [PRE,(level<<8)|kind]] 
-
-  # use an undocumented feature of CTrefine: it does not check whether
-  # the lhs is sorted
-  # we now get unique OIDs for each stretch of consecutive elements
-  # with the same value
-  var r := CTrefine(lvkd, lvkd.project(nil)); # [PRE,GRP] tsorted
-  # s is a list of nodes where there are more than one consecutive
-  # nodes of the same type at the same level, the rhs is the per-group OID
-  var s := r.leftjoin(r.reverse().{count}().ord_uselect(2, int(nil)).mirror()); # [PRE,GRP] tsorted subselection of r
-  # and now select the text elements from there
-  var t := [and](lvkd, sht(255)).ord_uselect(sht(TEXT)).mirror().leftjoin(s).chk_order(); # [PRE,GRP] hsorted,tsorted subselection of s
-  # at this point we must do the real merging and deleting of text
-  # nodes, but at least we know where they are
-  if (t.count() = 0) {
-    # the list is empty, i.e. no consecutive text elements: nothing
-    # more to do
-    return;
-  }
-
-  var pid_map_update := map_pid_update.select(oid(nil), oid(nil)).reverse().sort().tmark(0@0);
-  var t1 := [swizzle](t.reverse(), pid_map_update).reverse(); # [RID,GRP]
-
-  var rp := t1.mirror().join(rid_prop).access(BAT_WRITE).key(true).myinsert(t1.mirror().join(rid_prop_update)); # [RID,PROP]
-  var gp := ti.reverse().leftfetchjoin(rp); # [GRP,PROP]
-  var c := gp.leftfetchjoin(ws.fetch(_PROP_TEXT).find(cont)); # [GRP,content] hsorted
-  var v := string_join(c, c.kunique().project("")); # [GRP,content] combined content with unique GRP values
-  var i := add_string_bulk(ws, cont, _PROP_TEXT, v); # [GRP,SID] OID into _PROP_TEXT table
-  var p := t.reverse().kunique().reverse(); # [PRE,GRP] one representative from t per group
-  var p1 := [swizzle](p.reverse(), pid_map_update).reverse(); # [RID,GRP]
-  var h1 := kdiff(t1, p1).project(oid(nil)); # [RID,nil] the other RIDs
-
-  p1.leftjoin(i)@batloop() {
-    var pageid := oid(lng($h) >> REMAP_PAGE_BITS);
-    var isoldpage := false;
-    if (map_pid.exist(pageid)) {
-      isoldpage := not(isnil(map_pid.find(pageid)));
-    }
-    if (isoldpage) {
-      rid_prop_update.myinsert($h, $t);
-    } else {
-      rid_prop.replace($h, $t, true);
-    }
-  }
-  h1@batloop() {
-    var pageid := oid(lng($h) >> REMAP_PAGE_BITS);
-    var isoldpage := false;
-    if (map_pid.exist(pageid)) {
-      isoldpage := not(isnil(map_pid.find(pageid)));
-    }
-    var nid;
-    if (rid_nid.exist($h)) {
-      nid := rid_nid.find($h);
-    }
-    if (isoldpage) {
-      if (rid_nid_update.exist($h)) {
-        nid := rid_nid_update.find($h);
+      var isoldpage := false;
+      if (map_pid.exist(pageid)) {
+        isoldpage := not(isnil(map_pid.find(pageid)));
       }
-      rid_prop_update.myinsert($h, $t);
-      rid_size_update.myinsert($h, int(nil));
-      rid_nid_update.myinsert($h, $t);
-      rid_kind_update.myinsert($h, chr(nil));
-      rid_level_update.myinsert($h, chr(nil));
-    } else {
-      rid_prop.replace($h, $t, true);
-      rid_size.replace($h, int(nil), true);
-      rid_nid.replace($h, $t, true);
-      rid_kind.replace($h, chr(nil), true);
-      rid_level.replace($h, chr(nil), true);
+
+      var pagestart := oid(lng(pageno) << REMAP_PAGE_BITS);
+      var pagelast := oid(lng(pagestart) + REMAP_PAGE_MASK);
+
+      var lvpg := rid_level.reverse().select(pagestart, pagelast).reverse();
+      if (isoldpage) {
+        var lvpgup := rid_level_update.reverse().select(pagestart, pagelast).reverse();
+        lvpg := lvpg.access(BAT_WRITE).key(true).replace(lvpgup);
+      }
+      var kdpg := rid_kind.reverse().select(pagestart, pagelast).reverse();
+      if (isoldpage) {
+        var kdpgup := rid_kind_update.reverse().select(pagestart, pagelast).reverse();
+        kdpg := kdpg.access(BAT_WRITE).key(true).replace(kdpgup);
+      }
+
+      # select all non-hole entries for both level and kind tables
+      var l := lvpg.ord_select(chr(nil),chr(nil)); # [RID,level]
+      var k := l.mirror().leftfetchjoin(kdpg); # [RID,kind]
+      # combine them into a single table
+      var x := [+]([<<]([sht](l),8),[sht](k)); # [RID,(level<<8)|kind]
+      lvkd.insert([sht]([swizzle]([oid](x).reverse(), map_pid_update).reverse()));
     }
-    nid_rid_update.myinsert(nid, oid(nil));
+
+    lvkd := [sht]([swizzle]([oid](lvkd).reverse(), map_pid_update).reverse()); # [PRE,(level<<8)|kind]] 
+
+    # use an undocumented feature of CTrefine: it does not check whether
+    # the lhs is sorted
+    # we now get unique OIDs for each stretch of consecutive elements
+    # with the same value
+    var r := CTrefine(lvkd, lvkd.project(nil)); # [PRE,GRP] tsorted
+    # s is a list of nodes where there are more than one consecutive
+    # nodes of the same type at the same level, the rhs is the per-group OID
+    var s := r.leftjoin(r.reverse().{count}().ord_uselect(2, int(nil)).mirror()); # [PRE,GRP] tsorted subselection of r
+    # and now select the text elements from there
+    var t := [and](lvkd, sht(255)).ord_uselect(sht(TEXT)).mirror().leftjoin(s).chk_order(); # [PRE,GRP] hsorted,tsorted subselection of s
+    # at this point we must do the real merging and deleting of text
+    # nodes, but at least we know where they are
+    if (t.count() > 0) {
+      var pid_map_update := map_pid_update.select(oid(nil), oid(nil)).reverse().sort().tmark(0@0);
+      var t1 := [swizzle](t.reverse(), pid_map_update).reverse(); # [RID,GRP]
+
+      var rp := t1.mirror().join(rid_prop).access(BAT_WRITE).key(true).myinsert(t1.mirror().join(rid_prop_update)); # [RID,PROP]
+      var gp := ti.reverse().leftfetchjoin(rp); # [GRP,PROP]
+      var c := gp.leftfetchjoin(ws.fetch(_PROP_TEXT).find(cont)); # [GRP,content] hsorted
+      var v := string_join(c, c.kunique().project("")); # [GRP,content] combined content with unique GRP values
+      var i := add_string_bulk(ws, cont, _PROP_TEXT, v); # [GRP,SID] OID into _PROP_TEXT table
+      var p := t.reverse().kunique().reverse(); # [PRE,GRP] one representative from t per group
+      var p1 := [swizzle](p.reverse(), pid_map_update).reverse(); # [RID,GRP]
+      var h1 := kdiff(t1, p1).project(oid(nil)); # [RID,nil] the other RIDs
+
+      p1.leftjoin(i)@batloop() {
+        var pageid := oid(lng($h) >> REMAP_PAGE_BITS);
+        var isoldpage := false;
+        if (map_pid.exist(pageid)) {
+          isoldpage := not(isnil(map_pid.find(pageid)));
+        }
+        if (isoldpage) {
+          rid_prop_update.myinsert($h, $t);
+        } else {
+          rid_prop.replace($h, $t, true);
+        }
+      }
+      h1@batloop() {
+        var pageid := oid(lng($h) >> REMAP_PAGE_BITS);
+        var isoldpage := false;
+        if (map_pid.exist(pageid)) {
+          isoldpage := not(isnil(map_pid.find(pageid)));
+        }
+        var nid;
+        if (rid_nid.exist($h)) {
+          nid := rid_nid.find($h);
+        }
+        if (isoldpage) {
+          if (rid_nid_update.exist($h)) {
+            nid := rid_nid_update.find($h);
+          }
+          rid_prop_update.myinsert($h, $t);
+          rid_size_update.myinsert($h, int(nil));
+          rid_nid_update.myinsert($h, $t);
+          rid_kind_update.myinsert($h, chr(nil));
+          rid_level_update.myinsert($h, chr(nil));
+        } else {
+          rid_prop.replace($h, $t, true);
+          rid_size.replace($h, int(nil), true);
+          rid_nid.replace($h, $t, true);
+          rid_kind.replace($h, chr(nil), true);
+          rid_level.replace($h, chr(nil), true);
+        }
+        nid_rid_update.myinsert(nid, oid(nil));
+      }
+    }
   }
 }
 
