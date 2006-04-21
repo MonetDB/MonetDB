@@ -3215,20 +3215,20 @@ proc do_update_delete(bat[bat,bat] replacements, bat[void,bat] ws, bat[void,oid]
             replacements := replacements.insert(replacements, texts);
           }
           var nxtpre := oid(lng(pre) + size + 1), nxtrid, nxtsiz := 0;
-          if (nxtpre < docsize) {
+          if (int(nxtpre) < docsize) {
             nxtrid := antiswizzle(nxtpre, map_pid_update);
             nxtsiz := replacementvalue(replacements, rid_size, nxtrid);
           }
-          while ((nxtpre < docsize) and isnil(niland(nxtsiz, int(nil)))) {
+          while ((int(nxtpre) < docsize) and isnil(niland(nxtsiz, int(nil)))) {
             nxtpre := oid(lng(nxtpre) + niland(nxtsiz, INT_MAX) + 1);
-            if (nxtpre < docsize) {
+            if (int(nxtpre) < docsize) {
               nxtrid := antiswizzle(nxtpre, map_pid_update);
               nxtsiz := replacementvalue(replacements, rid_size, nxtrid);
             }
           }
           # only record spot if next node is a TEXT since only then do
           # we have to worry about coalescing text nodes
-          if (nxtpre < docsize) {
+          if (int(nxtpre) < docsize) {
             if (replacementvalue(replacements, rid_kind, nxtrid) = TEXT) {
               texts := texts.insert(cont, replacementvalue(replacements, rid_nid, antiswizzle(nxtpre, map_pid_update)));
               replacements := replacements.replace(replacements, texts);
