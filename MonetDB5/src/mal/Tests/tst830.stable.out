@@ -115,30 +115,30 @@ exit InvalidCredentialsException;	# 65  (InvalidCredentialsException:str)
 end main;	# 66  
 MALException:user.main[6]: user 'monetdb' already exists
     at addUser(clients.mx:373)
-    at addUser(mal_authorize.mx:299)
+    at addUser(mal_authorize.mx:296)
 [ 1@0 ]
 [ 2@0 ]
 MALException:user.main[21]: scenario 'mal' not found for user
     at removeScenario(clients.mx:465)
-    at removeScenario(mal_authorize.mx:554)
+    at removeScenario(mal_authorize.mx:547)
 InvalidCredentialsException:user.main[38]: The administrator cannot set its own password, use changePassword instead
     at setPassword(clients.mx:425)
-    at setPassword(mal_authorize.mx:479)
+    at setPassword(mal_authorize.mx:472)
 InvalidCredentialsException:user.main[43]: Access denied
     at changePassword(clients.mx:412)
-    at changePassword(mal_authorize.mx:439)
+    at changePassword(mal_authorize.mx:432)
 InvalidCredentialsException:user.main[50]: Invalid credentials for user 'monetdb'
     at checkPermission(clients.mx:439)
-    at checkCredentials(mal_authorize.mx:240)
+    at checkCredentials(mal_authorize.mx:237)
 InvalidCredentialsException:user.main[54]: Invalid credentials for user 'monetdb'
     at checkPermission(clients.mx:439)
-    at checkCredentials(mal_authorize.mx:240)
+    at checkCredentials(mal_authorize.mx:237)
 InvalidCredentialsException:user.main[58]: Invalid credentials for user 'monetdb'
     at checkPermission(clients.mx:439)
-    at checkCredentials(mal_authorize.mx:240)
+    at checkCredentials(mal_authorize.mx:237)
 InvalidCredentialsException:user.main[62]: Invalid credentials for user 'x'
     at checkPermission(clients.mx:439)
-    at checkCredentials(mal_authorize.mx:218)
+    at checkCredentials(mal_authorize.mx:215)
 
 # 20:34:17 >  
 # 20:34:17 >  Done.
