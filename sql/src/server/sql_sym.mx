@@ -22,40 +22,5 @@
 #ifndef SQL_SYM_H
 #define SQL_SYM_H
 
-#include <sql_mem.h>
-#include <sql_types.h>
-
-typedef enum symtype {
-	type_int,
-	type_string,
-	type_list,
-	type_atom,
-	type_symbol,
-	type_stmt,
-	type_column,
-	type_table,
-	type_schema,
-	type_type,
-	type_aggr,
-	type_func
-} symtype;
-
-typedef union symdata {
-	int ival;
-	char *sval;
-	struct atom *aval;
-	struct list *lval;
-	struct stmt *stval;
-	struct group *gval;
-	struct sql_column *cval;
-	struct sql_key *kval;
-	struct sql_idx *idxval;
-	struct sql_table *tval;
-	struct sql_schema *schema;
-	sql_subtype typeval;
-	struct sql_subaggr *aggrval;
-	struct sql_subfunc *funcval;
-} symdata;
-
 
 #endif /* SQL_SYM_H */

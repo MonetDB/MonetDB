@@ -22,12 +22,30 @@
 #ifndef _SQL_STATEMENT_H_
 #define _SQL_STATEMENT_H_
 
-#include "sql_sym.h"
+#include "sql_mem.h"
+#include "sql_types.h"
 #include "sql_atom.h"
 #include "sql_string.h"
 #include "sql_mvc.h"
 
 #define create_stmt_list() list_create((fdestroy)&stmt_destroy)
+
+typedef union stmtdata {
+	int ival;
+	char *sval;
+	struct atom *aval;
+	struct list *lval;
+	struct stmt *stval;
+	struct group *gval;
+	struct sql_column *cval;
+	struct sql_key *kval;
+	struct sql_idx *idxval;
+	struct sql_table *tval;
+	struct sql_schema *schema;
+	sql_subtype typeval;
+	struct sql_subaggr *aggrval;
+	struct sql_subfunc *funcval;
+} stmtdata;
 
 typedef enum stmt_type {
 	st_none,
@@ -120,10 +138,10 @@ typedef struct stmt {
 	sql_ref ref;
 
 	st_type type;
-	symdata op1;
-	symdata op2;
-	symdata op3;
-	symdata op4;		/* only op4 will hold other types */
+	stmtdata op1;
+	stmtdata op2;
+	stmtdata op3;
+	stmtdata op4;		/* only op4 will hold other types */
 
 	char nrcols;
 	char key;		/* key (aka all values are unique) */

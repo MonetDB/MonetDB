@@ -30,6 +30,10 @@ command start():void
 address SQLsession
 comment "Switch to processing SQL statements";
 
+command trace():void 
+address SQLtrace
+comment "enable/disable saving the sql statement traces (per client)";
+
 command init():void
 address SQLinitEnvironment
 comment "Initialize the environment for MAL";
@@ -621,8 +625,6 @@ freeing the stack and code segment.
 @h
 typedef struct backend {
 	int console;
-	int debug;
-	int trace;
 	char language;		/* 'S' or 's' or 'X' */
 	mvc *mvc;
 	buffer *outbuf;
@@ -644,7 +646,7 @@ query has been successfully executed.
 	str qry;
 } backend;
 
-extern backend *backend_create(int trace, mvc *m, Client c);
+extern backend *backend_create(mvc *m, Client c);
 extern void backend_destroy(backend *b);
 
 extern int sqlcleanup(mvc *c, int err);
@@ -669,15 +671,13 @@ First introduce the routines to be called by the front-end.
 #include <rel_bin.h>
 
 backend *
-backend_create(int trace, mvc *m, Client c)
+backend_create(mvc *m, Client c)
 {
 	backend *b = NEW(backend);
 
 	b->console = isAdministrator(c);
-	b->debug = 0;
 	b->outbuf = NULL;
 	b->out = c->fdout;
-	b->trace = trace;
 	b->language = 0;
 	b->mvc = m;
 

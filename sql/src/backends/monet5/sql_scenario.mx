@@ -41,6 +41,7 @@ sql_export str SQLinitEnvironment(int *ret);
 sql_export str SQLcompile(str *ret, str *expr);
 sql_export str SQLstatement(str *ret, str *expr);
 sql_export str SQLepilogue();
+sql_export str SQLtrace(int *ret);
 
 sql_export str SQLparser(Client c);
 sql_export str SQLengine(Client c);
@@ -157,6 +158,16 @@ SQLepilogue()
 	return MAL_SUCCEED;
 }
 
+static int keep_trace = 0;
+
+str
+SQLtrace(int *ret)
+{
+	(void)ret;
+	keep_trace = !keep_trace;
+	return MAL_SUCCEED;
+}
+
 @-
 It should become possible to initialize the SQL
 from a MAL program to setup an environment to
@@ -183,7 +194,7 @@ SQLinitAdmin(Client c)
 			return throwMessage("SQLparser", "No schema defined\n");
 		}
 		_DELETE(schema);
-		c->state[PARSER] = (void *) backend_create(0 /*debug */ , m, c);
+		c->state[PARSER] = (void *) backend_create(m, c);
 		((backend*)c->state[PARSER])->language = 'S';	/*expect SQL text first */
 		c->state[OPTIMIZE] = m;
 	} else {
@@ -222,7 +233,14 @@ SQLinitClient(Client c)
 			throwMal("SQLinitClient", "Schema authorization error");
 		}
 		_DELETE(schema);
-		c->state[PARSER] = (void *) backend_create(0 /*debug */ , m, c);
+
+		if (keep_trace && !m->scanner.log) {
+			char fn[BUFSIZ];
+
+			snprintf(fn, BUFSIZ, "sql.%d", (int)(c - mal_clients));
+			m->scanner.log = open_wastream(fn);
+		}
+		c->state[PARSER] = (void *) backend_create(m, c);
 		((backend*)c->state[PARSER])->language = 'S';	/*expect SQL text first */
 		c->state[OPTIMIZE] = m;
 	} else {
@@ -348,7 +366,7 @@ SQLcompileInternal(str *ret, str *expr, int flag)
 		m->sa = sa_create();
 	o = *m;
 	m->type= Q_PARSE;
-	sql = backend_create(0, m, c);
+	sql = backend_create(m, c);
 	m->qc = NULL;
 	m->cache = 0;
 

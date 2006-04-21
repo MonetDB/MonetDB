@@ -22,8 +22,16 @@
 #ifndef SQL_SYMBOL_H
 #define SQL_SYMBOL_H
 
-#include "sql_sym.h"
+#include "sql_types.h"
 #include "sql_atom.h"
+
+typedef enum symtype {
+	type_int,
+	type_string,
+	type_list,
+	type_symbol,
+	type_type
+} symtype;
 
 typedef union symbdata {
 	int ival;

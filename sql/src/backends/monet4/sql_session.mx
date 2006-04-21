@@ -35,7 +35,6 @@ This code strongly depends on the front-end/back-end setup.
 
 typedef struct backend {
 	int console;
-	int trace;
 	mvc *mvc;
 
 	buffer *outbuf;
@@ -67,6 +66,15 @@ extern ptr sql_frontend(void);
 #include <bat/res_table.h>
 #include <mapi.h>
 
+static int keep_trace = 0;
+
+int
+sql_trace()
+{
+	keep_trace = !keep_trace;
+	return GDK_SUCCEED;
+}
+
 @= builtin_operand
 {
 	int _k = interpret(stk, arg(lt, @1), res);
@@ -81,7 +89,7 @@ extern ptr sql_frontend(void);
 @c
 
 static backend *
-backend_create(int trace, mvc *c, int console)
+backend_create(mvc *c, int console)
 {
 	backend *b = NEW(backend);
 
@@ -89,7 +97,6 @@ backend_create(int trace, mvc *c, int console)
 
 	b->outbuf = buffer_create(BUFSIZ);
 	b->out = buffer_wastream(b->outbuf, "SQLserver");
-	b->trace = trace;
 	b->console = console;
 	return b;
 }
@@ -542,7 +549,7 @@ sqlstatement(char *cmd, Cntxt stk)
 	m->trans->schema = mvc_bind_schema(m, "sys");
 	m->scanner.mode = LINE_1; 
 	bstream_next(m->scanner.rs);
-	sql = backend_create(0, m, 1);
+	sql = backend_create(m, 1);
 
 	/* add myc and Output, Input to the stack */
 	v = VARnew(stk, "myc");
@@ -574,35 +581,35 @@ mvc_sql(mvc *m, char *cmd)
 
 	int err = 0;
 	backend *sql;
-	Variable MVC, OUTPUT;
+	Variable mvc, output;
 	buffer *b;
 	char *n;
 	int len = strlen(cmd);
 
-	sql = backend_create(0, m, 1);
+	sql = backend_create(m, 1);
 
 	/* shouldn't be needed to reset the myc variable ! */ 
-        MVC = VARfind(&stk, "myc");
-        if (MVC == NULL) {
+        mvc = VARfind(&stk, "myc");
+        if (mvc == NULL) {
             GDKerror("sql_client_init: failed to lookup myc variable.\n"); 
 	    return GDK_FAIL;
 	}
-        if (MVC->binding.vtype != TYPE_mvc) {
+        if (mvc->binding.vtype != TYPE_mvc) {
             GDKerror("sql_client_init: myc variable has wrong type != mvc.\n"); 
 	    return GDK_FAIL;
 	}
-        MVC->binding.val.pval = m; 
+        mvc->binding.val.pval = m; 
 
-        OUTPUT = VARfind(&stk, "Output");
-        if (OUTPUT == NULL) {
+        output = VARfind(&stk, "Output");
+        if (output == NULL) {
             GDKerror("sql_client_init: failed to lookup Output variable.\n"); 
 	    return GDK_FAIL;
 	}
-        if (OUTPUT->binding.vtype != TYPE_Stream) {
+        if (output->binding.vtype != TYPE_Stream) {
             GDKerror("sql_client_init: Output variable has wrong type != stream.\n"); 
 	    return GDK_FAIL;
 	}
-        OUTPUT->binding.val.pval = NULL;
+        output->binding.val.pval = NULL;
 
 	m->qc = NULL;
 	m->cache = 0;
@@ -637,7 +644,7 @@ mvc_sql(mvc *m, char *cmd)
 
 	GDKfree(m->user);
 	*m = o;
-        OUTPUT->binding.val.pval = m->scanner.ws;
+        output->binding.val.pval = m->scanner.ws;
 	if (err)
 		return GDK_FAIL;
 	else
@@ -690,7 +697,7 @@ sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 	v->binding.vtype = TYPE_Bstream;
 	v->binding.val.pval = rs;
 
-	sql = backend_create(0, m, 1);
+	sql = backend_create(m, 1);
 	ret = sqlclient(sql, rs, out);
 	bstream_destroy(rs);
 	res_tables_destroy(m->results);
@@ -704,7 +711,7 @@ static char *
 sql_client_alloc(mapi_client *fc)
 {
 	mvc *m = mvc_create(0, (backend_stack)fc->stk, NULL, NULL);
-	backend *be = backend_create(0, m, 0);
+	backend *be = backend_create(m, 0);
 	Variable v;
 
 	if (!m) 
@@ -748,6 +755,13 @@ sql_client_init(mapi_client *fc)
 	}
 	GDKfree(schema);
 
+	if (keep_trace && !m->scanner.log) {
+		char fn[BUFSIZ];
+
+		snprintf(fn, BUFSIZ, "sql.%d", (int)(fc->c - monet_clients)); 
+		m->scanner.log = open_wastream(fn);
+	}
+
 	/* shouldn't be needed to reset the myc variable ! */ 
         v = VARfind(&fc->stk, "myc");
         if (v == NULL) 
@@ -789,6 +803,9 @@ sql_client_engine(mapi_client *fc )
 	bstream_destroy(be->mvc->scanner.rs);
 	res_tables_destroy(be->mvc->results);
 	be->mvc->results = NULL;
+
+	if (keep_trace && be->mvc->scanner.log) 
+		stream_flush(be->mvc->scanner.log);
 }
 
 static void  
@@ -848,13 +865,14 @@ mvc_new(Cntxt stk, YYSTREE lt, ValPtr res)
 }
 
 int
-mvc_destroy_wrap(mvc *m, int *commit)
+mvc_destroy_wrap(mvc *M, int *commit)
 {
+	mvc *m = *(mvc**)M;
 	if (*commit)
-		mvc_commit(*(mvc **) m, 0, NULL);
+		mvc_commit(m, 0, NULL);
 	else
-		mvc_rollback(*(mvc **) m, 0, NULL);
+		mvc_rollback(m, 0, NULL);
 	res_tables_destroy(m->results);
-	mvc_destroy(*(mvc **) m);
+	mvc_destroy(m);
 	return GDK_SUCCEED;
 }
