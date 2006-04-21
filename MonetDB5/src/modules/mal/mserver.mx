@@ -343,6 +343,31 @@ mal_export str SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 #include <openssl/err.h>
 #endif
 
+static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+	'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
+	'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
+	'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+	'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
+
+
+static void generateChallenge(str *trg, int min, int max) {
+	size_t size;
+	size_t chr;
+	int i;
+	char *buf = *trg;
+
+	/* don't seed the randomiser, or you get the same challenge during
+	 * the same second */
+	/* srand(time(NULL)); */
+	size = rand();
+	size = (size % (max - min)) + min;
+	for (i = 0; i < size; i++) {
+		chr = rand();
+		chr %= 62;
+		buf[i] = seedChars[chr];
+	}
+	buf[i] = '\0';
+}
 
 static char *threadcommand;
 static int usock = -1;
@@ -434,11 +459,12 @@ SERVERlistenThread(int *Sock)
 				GDKsyserror("SERVERlisten:fdin problems\n");
 				continue;
 			}
-			/* write challenge string, the challenge is currently empty
-			  (disabled), note that we claim to speak proto 5 here */
-			challenge = "::mserver:5\n";
-			/* temporarily misuse name */
-			snprintf(name, BLOCK, "%2d%s", (unsigned int) strlen(challenge), challenge);
+			/* generate the challenge string */
+			challenge = alloca(sizeof(char) * (12 + 1));
+			generateChallenge(&challenge, 6, 12);
+			/* temporarily misuse name
+			   note that we claim to speak proto 5 here */
+			snprintf(name, BLOCK, "%2d%s:mserver:5\n", (unsigned int) strlen(challenge) + 11, challenge);
 			stream_write(fdout, name, strlen(name), 1);
 			/* get user name */
 			*user = 0;
