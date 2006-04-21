@@ -37,6 +37,9 @@ for the time being.
 	.BUILTIN sql_frontend() : ptr = sql_frontend_wrap;
 		"create/return the sql_frontend"
 
+	.COMMAND sql_trace() : void = sql_trace;
+		"enable/disable saving the sql statement traces (per client)" 
+
 @+ extra low level interface 
 @m
 	.BUILTIN mvc_new() : mvc = mvc_new;
@@ -77,6 +80,10 @@ the updates to the persistent versions.
 	.COMMAND mvc_bind( mvc c, str sname, str tname, str cname, int access ) : 
 		BAT[any::1,any::2] = 
 		mvc_bind_wrap; "Bind the bat, tname.cname"
+
+	.COMMAND mvc_append( mvc c, str sname, str tname, str cname, int access, BAT[oid,any::1] b ) : 
+		BAT[void,any::1] = 
+		mvc_append; "Append b to the column, tname.cname (possibly optimized to a replace the insert bat of tname.cname"
 
 	.COMMAND mvc_bind_dbat( mvc c, str sname, str tname, int access ) : 
 		BAT[any::1,any::2] = mvc_bind_dbat_wrap; 
@@ -359,6 +366,23 @@ mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 		b = bind_bat(tr, c, access);
 	return b;
 }
+
+int 
+mvc_append(BAT **b, mvc *M, str sname, str tname, str cname, int *access, BAT *i)
+{
+	mvc *m = *(mvc**)M;
+	sql_trans *tr = m->trans;
+	sql_schema *s = mvc_bind_schema(m, sname);
+	sql_table *t = mvc_bind_table(m, s, tname);
+	sql_column *c = mvc_bind_column(m, t, cname);
+
+	if (*access == UPD)
+		*b = append_ubat(tr, c, *access, i);
+	else
+		*b = append_bat(tr, c, *access, i);
+	return GDK_SUCCEED;
+}
+
 
 static BAT *
 mvc_bind_dbat(mvc *m, char *sname, char *tname, int access)

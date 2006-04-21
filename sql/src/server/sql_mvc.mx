@@ -83,6 +83,7 @@ typedef struct mvc {
 	int debug;
 	int reply_size;
 
+	/* TODO sql_trans -> sql_session (they should also last a session) */
 	sql_trans *trans;
 
 	int type;
@@ -675,6 +676,9 @@ mvc_destroy(mvc *m)
 			tr = sql_trans_destroy(tr);
 		store_unlock();
 	}
+
+	if (m->scanner.log) /* close and destroy stream */
+		close_stream(m->scanner.log);
 
 	m->trans = NULL;
 

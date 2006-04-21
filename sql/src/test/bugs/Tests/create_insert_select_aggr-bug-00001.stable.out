@@ -73,7 +73,7 @@ Over..
 [ "user_role",	NULL,	true,	true,	false	]
 [ "auths",	NULL,	true,	true,	false	]
 [ "privileges",	NULL,	true,	true,	false	]
-[ "users",	"select name, fullname, default_schema from sys.db_users;",	false,	true,	false	]
+[ "users",	"SELECT \"name\", \"fullname\", \"default_schema\" FROM \"sys\".\"db_users\";",	false,	true,	false	]
 [ 1	]
 [ 1	]
 # r # table_name
@@ -120,7 +120,7 @@ Over..
 [ "user_role",	NULL,	true,	true,	false	]
 [ "auths",	NULL,	true,	true,	false	]
 [ "privileges",	NULL,	true,	true,	false	]
-[ "users",	"select name, fullname, default_schema from sys.db_users;",	false,	true,	false	]
+[ "users",	"SELECT \"name\", \"fullname\", \"default_schema\" FROM \"sys\".\"db_users\";",	false,	true,	false	]
 [ "r",	NULL,	true,	false,	false	]
 [ 1	]
 [ 1	]

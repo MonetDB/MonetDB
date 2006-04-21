@@ -33,6 +33,7 @@ typedef enum { LINE_1, LINE_N, BLOCKED } prot;
 struct scanner {
 	bstream *rs;
 	stream *ws;
+	stream *log;
 
 	int yynext;		/* next token, lr(1) isn't powerful enough for sql */
 	int yylast;		/* previous token, to detect superfluous semi-colons */
@@ -338,6 +339,7 @@ scanner_init(struct scanner *s, bstream *rs, stream *ws)
 {
 	s->rs = rs;
 	s->ws = ws;
+	s->log = NULL;
 
 	s->yynext = 0;
 	s->yylast = 0;
@@ -912,6 +914,9 @@ sqllex(YYSTYPE * yylval, void *parm)
 	} else if (token == WITH) {
 		lc->view_end = pos;
 	}
+
+	if (lc->log) 
+		stream_write(lc->log, lc->rs->buf+pos, lc->rs->pos + lc->yycur - pos, 1);
 
 	/* Don't include literals in the calculation of the key */
 	if (token != STRING && token != sqlINT && token != INTNUM && token != APPROXNUM && token != NULLX)

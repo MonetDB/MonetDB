@@ -119,7 +119,7 @@ void initSQLreferences(){
 @-
 Instructions are encapsulated with time code.
 @= SQLprelude
-	if (sql->debug&2) {
+	if (mvc_debug_on(sql->mvc, 2)) {
 		/* t0:= time(); printf(" %d ",t0); */
 		q = newStmtId(mb, "t0","alarm","usec");
 		q = newStmt(mb,"io","printf");
@@ -128,7 +128,7 @@ Instructions are encapsulated with time code.
 	}
 
 @= SQLpostlude
-	if (sql->debug&2) {
+	if (mvc_debug_on(sql->mvc, 2)) {
 		/* t1 := time();t1:= t1-t0; 
 		   stream_printf(GDKout," %d ",t1);
 		   stream_printf(GDKout,"%d\n",nr);*/
