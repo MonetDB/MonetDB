@@ -194,8 +194,8 @@ address CRKuselectValue
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command uselect(b:bat[:oid,:@1],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:void]
-address CRKuselectBounds
+command uselect(b:bat[:any_1,:@1],l:@1,h:@1,li:bit,hi:bit):bat[:oid,:void]
+address CRKuselectBounds_@1
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
@@ -345,7 +345,6 @@ mal_export str CRKselect(int *vid, int *bid, int *low, int *hgh);
 mal_export str CRKselectBounds(int *vid, int *bid, int *low, int *hgh, bit *inclusiveLow, bit *inclusiveHgh);
 mal_export str CRKselectValue(int *vid, int *bid, int *value);
 mal_export str CRKuselect(int *vid, int *bid, int *low, int *hgh);
-mal_export str CRKuselectBounds(int *vid, int *bid, int *low, int *hgh, bit *inclusiveLow, bit *inclusiveHgh);
 mal_export str CRKuselectValue(int *vid, int *bid, int *value);
 
 mal_export str CRKnewIndex(int *k, int *bid);
@@ -414,7 +413,7 @@ newIndex_@1(int bid)
 	}
 
 	Index[i].bid = bid;
-	BAT *b = BATnew(TYPE_lng, TYPE_@1, 1000);	/*todo: size*/
+	BAT *b = BATnew(TYPE_lng, TYPE_@1, 100000);	/*todo: size*/
 	BBPkeepref(b->batCacheid);
 	Index[i].cid = b->batCacheid; 
 	return i;
@@ -1259,37 +1258,7 @@ CRKuselect(int *vid, int *bid, int *low, int *hgh)
         else CRKcrackRangeWithTwoScans(vid, bid, l, h, FALSE);
         return MAL_SUCCEED;     
 }                               
-                        
                 
-str                     
-CRKuselectBounds(int *vid, int *bid, int *low, int *hgh, bit *inclusiveLow, bit *inclusiveHgh)
-{                       
-        int l = *(int*) low;
-        int h = *(int*) hgh;
-
-	if (l == int_nil)
-		l = INT_MIN;
-	if (h == int_nil)
-		h = INT_MAX;
-
-	if (*(bit*)inclusiveLow == FALSE && *(bit*)inclusiveHgh == FALSE) {
-		l=l+1;
-		h=h-1;
-		CRKcrackRangeWithTwoScans(vid, bid, l, h, FALSE);
-	}
-	else if (*(bit*)inclusiveLow == FALSE && *(bit*)inclusiveHgh  == TRUE) {		
-		l=l+1;		
-		CRKcrackRangeWithTwoScans(vid, bid,  l, h, FALSE);
-	}
-	else if (*(bit*)inclusiveLow == TRUE && *(bit*)inclusiveHgh == FALSE){		
-		 h=h-1;
-		 CRKcrackRangeWithTwoScans(vid, bid, l, h, FALSE);
-	}
-	else
-		 CRKcrackRangeWithTwoScans(vid, bid, l, h, FALSE);
-        return MAL_SUCCEED;
-}                       
-
 str
 CRKuselectValue(int *vid, int *bid, int *value)
 {
@@ -3694,8 +3663,9 @@ str
 CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, bit tail)
 {
 	BAT *b,*c;
-	BAT *view, *uview;
+	BAT *view;
 	int  m;
+	int mode;
 	lng vl=-1, vh=-1, posl, posh; 
 	/* vl and vh are the low and high index values to create the view with the result */
 	lng cl=-1, ch1=-1, cl2=-1, ch=-1; 
@@ -3977,16 +3947,15 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch1:%lld, cl2:%lld, ch:%lld \n",vl,vh,cl,ch1
 	
 createView:
 /*	printf("vl: %lld, vh:%lld \n",vl,vh);*/
-	{ int mode;
-		mode= b->batRestricted;
-		b->batRestricted= BAT_READ;
-		view = BATslice(b, vl, vh+1);
-		b->batRestricted= mode;
-	}
-	if (!tail) {
-		uview = BATconst(view,TYPE_void,ATOMnilptr(TYPE_void));
-		*vid = uview->batCacheid;		
-	}else *vid = view->batCacheid;
+	mode= b->batRestricted;
+	b->batRestricted= BAT_READ;
+	view = BATslice(b, vl, vh+1);
+	
+	if (!tail) 
+		view = BATslice(VIEWhead_(b, BAT_READ), vl, vh+1);
+	
+	b->batRestricted= mode;
+	*vid = view->batCacheid;
 	BBPkeepref(*vid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -4007,6 +3976,23 @@ CRKselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit 
 		h = INT_MAX;
 	else 
 		CRKRange_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, TRUE);
+
+	return MAL_SUCCEED;
+}
+
+mal_export str CRKuselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh);
+str
+CRKuselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh)
+{		
+        int l = *(int*) low;
+        int h = *(int*) hgh;
+
+	if (l == int_nil)
+		l = INT_MIN;
+	else if (h == int_nil)
+		h = INT_MAX;
+	else 
+		CRKRange_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);
 
 	return MAL_SUCCEED;
 }
