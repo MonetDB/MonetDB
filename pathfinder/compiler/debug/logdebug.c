@@ -3,7 +3,7 @@
 /**
  * @file
  * 
- * Debugging: dump logical algebra tree in AY&T dot format.
+ * Debugging: dump logical algebra tree in AT&T dot format.
  *
  * Copyright Notice:
  * -----------------
@@ -736,9 +736,10 @@ la_dot (PFarray_t *dot, PFla_op_t *n, char *node)
         char *child = (char *) PFmalloc (sizeof ("node4294967296"));
 
         /* FIXME: the next line is only used to make
-           the printed graph more readable. */
+           the printed graph more readable. 
         if (n->child[c]->kind == la_frag_union ||
             n->child[c]->kind == la_empty_frag) continue;
+        */
 
         /*
          * Label for child node has already been built, such that
