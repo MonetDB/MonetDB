@@ -1392,7 +1392,7 @@ main(int argc, char **argv)
 
 	if (strcmp(language, "xquery") == 0 && command == NULL) {
 		command = mo_find_option(set, setlen, "xquery_output");
-        }
+	}
 
 	if (host == NULL) {
 		host = mo_find_option(set, setlen, "host");

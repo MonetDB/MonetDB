@@ -2041,6 +2041,10 @@ mapi_start_talking(Mapi mid)
 	size_t len;
 	MapiHdl hdl;
 	int pversion = 0;
+	char *chal;
+	char *server;
+	char *protover;
+	char *rest;
 
 	/* consume server challenge */
 	len = stream_read(mid->from, buf, 1, 2);
@@ -2051,35 +2055,45 @@ mapi_start_talking(Mapi mid)
 	stream_read(mid->from, buf, 1, len);
 	check_stream(mid, mid->from, "Connection terminated", "mapi_start_talking", (mid->blk.eos = 1, mid->error));
 	buf[len] = 0;
-	/* buf at this point looks like ":challenge:servertype:protover" */
-	{
-		char *chal;
-		char *server;
-		char *protover;
 
-		chal = buf + 1;
-		server = strchr(chal, ':');
-		if (server == NULL) {
-			mapi_setError(mid, "Challenge string is not valid", "mapi_start_talking", MERROR);
-			return mid->error;
-		}
-		*server++ = '\0';
-		protover = strchr(server, ':');
-		if (protover == NULL) {
-			mapi_setError(mid, "Challenge string is not valid", "mapi_start_talking", MERROR);
-			return mid->error;
-		}
-		*protover++ = '\0';
-		pversion = atoi(protover);
-
-		/* just don't do anything with the challenge */
+	/* buf at this point looks like ":challenge:servertype:protover[:.*]" */
+	chal = alloca(sizeof(char) * (strlen(buf + 1) + 1));
+	strcpy(chal, buf + 1);
+	server = strchr(chal, ':');
+	if (server == NULL) {
+		mapi_setError(mid, "Challenge string is not valid", "mapi_start_talking", MERROR);
+		return mid->error;
 	}
+	*server++ = '\0';
+	protover = strchr(server, ':');
+	if (protover == NULL) {
+		mapi_setError(mid, "Challenge string is not valid", "mapi_start_talking", MERROR);
+		return mid->error;
+	}
+	*protover++ = '\0';
+	rest = strchr(protover, ':');
+	if (rest != NULL) {
+		*rest++ = '\0';
+	}
+	pversion = atoi(protover);
 
 	if (pversion == 5) {
 		/* note, database can be appended here (:database), but since
 		MapiClient doesn't have a switch for it, we omit it so we get
 		the default (and don't have to implement redirect support) */
 		snprintf(buf, BLOCK, "%s:%s:%s:%s\n", mid->username, mid->password, mid->language, (mid->blocked ? "blocked" : "linemode"));
+	} else if (pversion == 6) {
+		/* the database has sent a list of supported hashes to us, it's
+		 * in the form of a comma separated list and in the variable
+		 * rest.  We only do plain text for now, so we just check
+		 * whether the server supports that */
+		if (strstr(rest, "plain") == NULL) {
+			snprintf(buf, BLOCK, "unsupported hash algorithms: %s", rest);
+			close_connection(mid);
+			return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
+		}
+		/* so, we send a plain text password response */
+		snprintf(buf, BLOCK, "%s:{plain}%s%s:%s:%s\n", mid->username, mid->password, chal, mid->language, (mid->blocked ? "blocked" : "linemode"));
 	} else {
 		snprintf(buf, BLOCK, "unsupported protocol version: %d", pversion);
 		close_connection(mid);
