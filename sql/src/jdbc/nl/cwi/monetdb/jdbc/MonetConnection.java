@@ -360,7 +360,7 @@ public class MonetConnection implements Connection {
 		
 		// parse the challenge string, split it on ':'
 		String[] chaltok = chalstr.split(":");
-		if (chaltok.length != 4) throw
+		if (chaltok.length < 4) throw
 			new SQLException("Server challenge string unusable!");
 
 		// challenge string use as salt/key in future
@@ -372,20 +372,33 @@ public class MonetConnection implements Connection {
 			throw new SQLException("Protocol version unparseable: " + chaltok[3]);
 		}
 
-		/**
-		 * do something with the challenge to salt the password hash here!!!
-		 */
-		response = username + ":" + password + ":" + language;
-		if (blocked) {
-			response += ":blocked";
-		} else if (version >= 5) {
-			response += ":line";
-		}
-		if (version < 5) {
-			// don't use database
-			addWarning("database specifier not supported on this server (" + chaltok[2].trim() + "), protocol version " + chaltok[3].trim());
-		} else {
-			response += ":" + database;
+		// handle the challenge according to the version it is
+		switch (version) {
+			default:
+				throw new SQLException("Unsupported protocol version: " + version);
+			case 4:
+				response = username + ":" + password + ":" + language;
+				if (blocked) response += ":blocked";
+				// don't use database
+				addWarning("database specifier not supported on this server (" + chaltok[2].trim() + "), protocol version " + version);
+			break;
+			case 5:
+				response = username + ":" + password + ":" + language;
+				response += blocked ? ":blocked" : ":line";
+				response += ":" + database;
+			break;
+			case 6:
+				// proto 5 (finally) uses the challenge and works with a
+				// password hash.  The supported implementations come
+				// from the server challenge.  Currently we "just" use
+				// plain text passwords.
+				String hashes = chaltok[4];
+				if (hashes.indexOf("plain") == -1)
+					throw new SQLException("no supported password hashes in " + hashes);
+				response = username + ":{plain}" + password + challenge + ":" + language;
+				response += blocked ? ":blocked" : ":line";
+				response += ":" + database;
+			break;
 		}
 
 		return(response);
