@@ -37,7 +37,7 @@ usernames, passwords and allowed scenarios for users of the server.
 #include "mal_instruction.h"
 #include "mal_client.h"
 
-mal_export str AUTHcheckCredentials(oid *uid, str *user, str *passwd, str *scenario);
+mal_export str AUTHcheckCredentials(oid *uid, str *user, str *passwd, str *challenge, str *algo, str *scenario);
 mal_export str AUTHaddUser(oid *uid, str *user, str *pass, bat *scenarios);
 mal_export str AUTHremoveUser(str *username);
 mal_export str AUTHchangeUsername(str *olduser, str *newuser);
@@ -51,6 +51,33 @@ mal_export str AUTHgetUsername(str *username);
 mal_export str AUTHrequireAdmin();
 mal_export str AUTHrequirteAdminOrUser(str *username);
 mal_export str AUTHinitTables();
+
+@-
+Authorisation is based on a password.  The passwords are stored cyphered
+in a BAT.  Access to this BAT should be prohibited from the MAL level,
+but still, the passwords in it are to be stored cyphered with an
+algorithm that has a decypher.  The database administrator can unlock
+the BAT that stores the password (the vault) by supplying the master
+password which is the key for the cypher algorithm.  The BAT will never
+contain decyphered passwords, as they will be decyphered on the fly when
+needed.  A locked vault means noone can log into the system, hence, the
+vault needs to be unlocked as part of the server startup ritual.
+@h
+mal_export str AUTHunlockVault(str *password);
+static str AUTHdecypherValue(str *ret, str *value);
+static str AUTHcypherValue(str *ret, str *value);
+
+@-
+To avoid the passwords from being sent over the wire in plain text
+format, MAPI starts with sending a challenge with salt.  This salt
+should be appended to the plain text password before it is hashed in
+order to make the password unreadable for eavesdroppers.  The hash
+algorithm used is specified by the client, and can be chosen from a
+comma separated list offered by the server through the challenge
+(protocol >=6).
+@h
+mal_export str AUTHgetHashAlgorithms(str *ret);
+static str AUTHhashPassword(str *ret, str *algo, str *passwd, str *challenge);
 
 /* convenience macros */
 #define throwIC(X, Y) throw("InvalidCredentialsException", X, Y);
@@ -197,8 +224,17 @@ AUTHinitTables() {
  * The user id of the authenticated user is returned upon success.
  */
 str
-AUTHcheckCredentials(oid *uid, str *username, str *passwd, str *scenario) {
+AUTHcheckCredentials(
+		oid *uid,
+		str *username,
+		str *passwd,
+		str *challenge,
+		str *algo,
+		str *scenario)
+{
 	str tmp;
+	str pwd;
+	str hash;
 	BAT *b;
 	BUN p, q;
 	oid *id;
@@ -230,8 +266,12 @@ AUTHcheckCredentials(oid *uid, str *username, str *passwd, str *scenario) {
 	assert (q != NULL);
 	tmp = (str)BUNtail(pass, q);
 	assert (tmp != NULL);
+	/* decypher the password (we lose the original tmp here) */
+	rethrow("checkCredentials", tmp, AUTHdecypherValue(&pwd, &tmp));
+	/* generate the hash as the client should have done */
+	rethrow("checkCredentials", tmp, AUTHhashPassword(&hash, algo, &pwd, challenge));
 	/* and now we have it, compare it to what was given to us */
-	if (strcmp(*passwd, tmp) != 0) {
+	if (strcmp(*passwd, hash) != 0) {
 		/* of course we DO NOT print the password here */
 		throwICf("checkCredentials", "Invalid credentials for user '%s'",
 				*username);
@@ -281,6 +321,7 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 	BAT *b;
 	oid *id;
 	str tmp;
+	str hash;
 
 	rethrow("addUser", tmp, AUTHrequireAdmin());
 	
@@ -297,7 +338,8 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 	
 	/* we assume the BATs are still aligned */
 	BUNappend(user, *username, 0);
-	BUNappend(pass, *passwd, 0);
+	rethrow("addUser", tmp, AUTHcypherValue(&hash, passwd));
+	BUNappend(pass, hash, 0);
 	/* retrieve the oid of the just inserted user */
 	p = BUNfnd(userrev, *username);
 	assert (p != NULL);
@@ -600,5 +642,190 @@ AUTHgetUsername(str *username) {
 
 	*username = BUNtail(user, p);
 	return(MAL_SUCCEED);
+}
+
+
+/*=== the vault ===*/
+
+/* yep, the vault key is just stored in memory */
+static str vaultKey = NULL;
+
+/**
+ * Unlocks the vault with the given password.  Since the password is
+ * just the decypher key, it is not possible to directly check whether
+ * the given password is correct.  If incorrect, however, all decypher
+ * operations will probably fail or return an incorrect decyphered
+ * value.
+ */
+str
+AUTHunlockVault(str *password) {
+	str tmp;
+
+	rethrow("unlockVault", tmp, AUTHrequireAdmin());
+
+	if (password == NULL || strNil(*password))
+		throwIllArg("unlockVault", "password should not be nil");
+
+	/* even though I think this function should be called only once, it
+	 * is not of real extra efforts to avoid a mem-leak if it is used
+	 * multiple times
+	 */
+	if (vaultKey != NULL) GDKfree(vaultKey);
+
+	vaultKey = GDKstrdup(*password);
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Decyphers a given value, using the vaultKey.  The returned value
+ * might be incorrect if the vaultKey is incorrect or unset.  If the
+ * cypher algorithm fails or detects an invalid password, it might throw
+ * an exception.  The ret string is GDKmalloced, and should be GDKfreed
+ * by the caller.
+ */
+static str
+AUTHdecypherValue(str *ret, str *value) {
+	/* Cyphering and decyphering can be done using many algorithms.
+	 * Future requirements might want a stronger cypher than the XOR
+	 * cypher chosen here.  It is left up to the implementor how to do
+	 * that once those algoritms become available.  It could be
+	 * #ifdef-ed or on if-basis depending on whether the cypher
+	 * algorithm is a compile, or runtime option.  When necessary, this
+	 * function could be extended with an extra argument that indicates
+	 * the cypher algorithm.
+	 */
+	
+	/* this is the XOR decypher implementation */
+	str r = GDKmalloc(sizeof(char) * (strlen(*value) + 1));
+	str w = r;
+	str s = *value;
+	int escaped = 0;
+	/* we default to some garbage key, just to make password unreadable
+	 * (a space would only uppercase the password) */
+	str key = vaultKey == NULL ? "Xas632jsi2whjds8" : vaultKey;
+	int keylen = strlen(key);
+
+	/* XOR all characters.  If we encounter a 'one' char after the XOR
+	 * operation, it is an escape, so replace it with the next char. */
+	for (; *s != '\0'; *s++) {
+		*w = *s ^ key[(s - *value) % keylen];
+		if (*w == '\1' && escaped == 0) {
+			escaped = 1;
+			continue;
+		} else if (escaped != 0) {
+			*w -= 1;
+			escaped = 0;
+		}
+		*w++;
+	}
+	*w = '\0';
+
+	*ret = r;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Cyphers the given string using the vaultKey.  If the cypher algorithm
+ * fails or detects an invalid password, it might throw an exception.
+ * The ret string is GDKmalloced, and should be GDKfreed by the caller.
+ */
+static str
+AUTHcypherValue(str *ret, str *value) {
+	/* this is the XOR cypher implementation */
+	str r = GDKmalloc(sizeof(char) * (strlen(*value) * 2 + 1));
+	str w = r;
+	str s = *value;
+	/* we default to some garbage key, just to make password unreadable
+	 * (a space would only uppercase the password) */
+	str key = vaultKey == NULL ? "Xas632jsi2whjds8" : vaultKey;
+	int keylen = strlen(key);
+
+	/* XOR all characters.  If we encounter a 'zero' char after the XOR
+	 * operation, escape it with an 'one' char. */
+	for (; *s != '\0'; *s++) {
+		*w = *s ^ key[(s - *value) % keylen];
+		if (*w == '\0') {
+			*w++ = '\1';
+			*w = '\1';
+		} else if (*w == '\1') {
+			*w++ = '\1';
+			*w = '\2';
+		}
+		*w++;
+	}
+	*w = '\0';
+
+	*ret = r;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Returns a comma separated list of supported hash algorithms.  The
+ * returned string is GDKmalloced and should be GDKfreed.
+ */
+str
+AUTHgetHashAlgorithms(str *ret) {
+	/* currently, two "hashes" are available, crypt and plain.  The
+	 * former is the UNIX crypt implementation, the latter is no hash at
+	 * all, as the name already suggests.  Future implementations could
+	 * include better hashes such as MD5, SHA-1, etc.
+	 * The return string should in such case more dynamically be built,
+	 * instead of hardcoded like here.
+	 */
+	*ret = GDKstrdup("crypt,plain");
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Returns the hash for the given password, challenge and algorithm.
+ * The hash calculated using the given algorithm over the password
+ * concatenated with the challenge.
+ */
+static str
+AUTHhashPassword(str *ret, str *algo, str *password, str *challenge) {
+	if (strcmp(*algo, "plain") == 0) {
+		/* The plain text algorithm, doesn't really hash at all.  It's
+		 * the easiest algorithm, as it just appends the challenge to
+		 * the password and returns it.
+		 */
+		*ret = GDKmalloc(sizeof(char) * (strlen(*password) + strlen(*challenge) + 1));
+		sprintf(*ret, "%s%s", *password, *challenge);
+		return(MAL_SUCCEED);
+	} else if (strcmp(*algo, "crypt") == 0) {
+		/* The crypt hash algorithm uses UNIX crypt, a modification of
+		 * DES which uses a 2-char wide salt.  Because crypt only cares
+		 * about the first eight characters of the given password, the
+		 * challenge may not be taken into account at all.  As salt, the
+		 * last two characters of the challenge are used.
+		 */
+		char key[8]; /* NULL termination is not necessary */
+		char salt[3]; /* NULL termination is a necessity! */
+		str hash;
+		int len;
+
+		/* prepare the key */
+		len = strlen(*password);
+		if (len >= 8) {
+			strncpy(key, *password, 8);
+		} else {
+			/* pad with the challenge, we know it is always 8+ chars */
+			strncpy(key, *password, len);
+			strncpy(key + len, *challenge, 8 - len);
+		}
+
+		/* prepare the salt */
+		len = strlen(*challenge);
+		salt[0] = *challenge[len - 2];
+		salt[1] = *challenge[len - 1];
+		salt[2] = '\0';
+
+		/* call crypt to do the work */
+		hash = crypt(key, salt);
+		assert (hash != NULL);
+		*ret = GDKstrdup(hash);
+		return(MAL_SUCCEED);
+	} else {
+		throwMalf("hashPassword", "unsupported hash type: '%s'", algo);
+	}
 }
 @}

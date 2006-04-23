@@ -252,6 +252,7 @@ address SERVERepilogue;
 #include "mal_session.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"
+#include "mal_authorize.h"
 #include "Mapi.h"
 
 #define NEW_ARRAY( type, size )	(type*)GDKmalloc((size)*sizeof(type))
@@ -350,11 +351,10 @@ static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 	'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
 
 
-static void generateChallenge(str *trg, int min, int max) {
+static void generateChallenge(str buf, int min, int max) {
 	size_t size;
 	size_t chr;
 	int i;
-	char *buf = *trg;
 
 	/* don't seed the randomiser, or you get the same challenge during
 	 * the same second */
@@ -448,6 +448,7 @@ SERVERlistenThread(int *Sock)
 			int i = 0;
 			char *name = (char *) GDKmalloc(BLOCK), *user = name, *s;
 			char *challenge;
+			char *algos;
 			int blocked = 0;
 			stream *fdin = socket_rastream(msgsock, "Server read");
 			stream *fdout = socket_wastream(msgsock, "Server write");
@@ -461,10 +462,13 @@ SERVERlistenThread(int *Sock)
 			}
 			/* generate the challenge string */
 			challenge = alloca(sizeof(char) * (12 + 1));
-			generateChallenge(&challenge, 6, 12);
+			generateChallenge(challenge, 8, 12);
+			if (AUTHgetHashAlgorithms(&algos) != MAL_SUCCEED) assert (0);
 			/* temporarily misuse name
-			   note that we claim to speak proto 5 here */
-			snprintf(name, BLOCK, "%2d%s:mserver:5\n", (unsigned int) strlen(challenge) + 11, challenge);
+			   note that we claim to speak proto 6 here */
+			snprintf(name, BLOCK, "%2d:%s:mserver:6:%s\n",
+					(unsigned int) (strlen(challenge) + 13 + strlen(algos)),
+					challenge, algos);
 			stream_write(fdout, name, strlen(name), 1);
 			/* get user name */
 			*user = 0;
@@ -515,7 +519,7 @@ SERVERlistenThread(int *Sock)
 
 			if (blocked)
 				bs->eof = 1;
-			scheduleClient(name, bs, fdout);
+			scheduleClient(name, challenge, bs, fdout);
 		} else {
 			/* in M4 it is possible to execute a command directly */
 		}
@@ -949,7 +953,7 @@ Get the new information for the server socket and start listening.
 
 			if (blocked)
 				bs->eof = 1;
-			scheduleClient(name, bs, fdout);
+			scheduleClient(name, challenge, bs, fdout);
 		}
 end_loop:;
 	} while (1);
@@ -1159,7 +1163,7 @@ SERVERclient(int *res, stream **In, stream **Out)
 
 	if (blocked)
 		bs->eof = 1;
-	scheduleClient(name, bs, fdout);
+	scheduleClient(name, challenge, bs, fdout);
 	return MAL_SUCCEED;
 }
 

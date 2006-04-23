@@ -38,7 +38,7 @@ It may overwritten using a command line argument.
 mal_export int malBootstrap();
 mal_export void serveClient(void *dummy);
 mal_export void initClientPrg(Client cntxt, str nme);
-mal_export void scheduleClient(str command, bstream *fin, stream *fout);
+mal_export void scheduleClient(str command, str challenge, bstream *fin, stream *fout);
 
 mal_export str MALreader(Client c);
 mal_export str MALexitClient(Client c);
@@ -161,9 +161,10 @@ The scheduleClient receives a challenge response consisting of
 user:password:lang:blocked:database.
 @c
 void
-scheduleClient(str command, bstream *fin, stream *fout)
+scheduleClient(str command, str challenge, bstream *fin, stream *fout)
 {
-	char *user = command, *passwd = NULL, *lang = NULL, *database = NULL, *s;
+	char *user = command, *algo = NULL, *passwd = NULL, *lang = NULL;
+	char *database = NULL, *s;
 	int key = 0;
 	Client c;
 	MT_Id p;
@@ -176,6 +177,21 @@ scheduleClient(str command, bstream *fin, stream *fout)
 	/* passwd */
 	s = strchr(user, ':');
 	if (s) {
+		*s = 0;
+		passwd = s + 1;
+		/* decode algorithm, i.e. {plain}mypasswordchallenge */
+		if (*passwd != '{') {
+			stream_printf(fout, "!invalid password entry\n");
+			stream_flush(fout);
+			return;
+		}
+		algo = passwd + 1;
+		s = strchr(algo, '}');
+		if (!s) {
+			stream_printf(fout, "!invalid password entry\n");
+			stream_flush(fout);
+			return;
+		}
 		*s = 0;
 		passwd = s + 1;
 	} else {
@@ -320,7 +336,7 @@ alias for the include file
 		/* access control: verify the credentials supplied by the user,
 		 * no need to check for database stuff, because that is done per
 		 * database itself (one gets a redirect) */
-		err = AUTHcheckCredentials(&uid, &user, &passwd, &lang);
+		err = AUTHcheckCredentials(&uid, &user, &passwd, &challenge, &algo, &lang);
 		if (err != MAL_SUCCEED) {
 			stream_printf(fout, "!%s\n", err);
 			stream_flush(fout);

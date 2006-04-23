@@ -480,6 +480,8 @@ CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = (str) getArgValue(stk, pci, 1);
 	if (isIdentifier(name)< 0)
 		return throwMessage("bbp.take", "identifier expected");
+	if (strstr(name, "M5system_auth") == name)
+		return throwMessage("bbp.take", "access denied");
 	v = &stk->stk[getArg(pci, 0)];
 	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0))) {
 		int bid = BBPindex(name);

@@ -433,10 +433,12 @@ comment "Check permission for a user";
 @c
 str CLTcheckPermission(int *ret, str *usr, str *pw, str *sc) {
 	str tmp;
+	str ch = "";
+	str algo = "plain";
 	oid id;
 	(void) ret;
 
-	rethrow("checkPermission", tmp, AUTHcheckCredentials(&id, usr, pw, sc));
+	rethrow("checkPermission", tmp, AUTHcheckCredentials(&id, usr, pw, &ch, &algo, sc));
 	return(MAL_SUCCEED);
 }
 
