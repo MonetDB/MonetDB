@@ -131,7 +131,7 @@ procs();
 [ "get_container(BAT[void,int]) : BAT[void,oid]"													  ]
 [ "get_container(int) : oid"																  ]
 [ "get_mapi_port() : int"																  ]
-[ "get_rpc_res(BAT[void,BAT], oid, BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : BAT[void,BAT]"						  ]
+[ "get_rpc_res(BAT[void,BAT], oid, str, BAT[void,lng], BAT[void,dbl], BAT[void,dbl], BAT[void,str]) : BAT[void,BAT]"						  ]
 [ "get_type(BAT[void,int], int) : BAT[oid,void]"													  ]
 [ "get_type_atomic(BAT[void,int]) : BAT[oid,void]"													  ]
 [ "get_type_node(BAT[void,int]) : BAT[oid,void]"													  ]
