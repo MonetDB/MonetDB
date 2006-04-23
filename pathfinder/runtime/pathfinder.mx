@@ -918,52 +918,49 @@ PROC doc_curtime(str filename) : timestamp {
 
 PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, oid doc_oid, oid coll_oid, int height) : oid
 {
-    var cont, docid := oid(count(ws.fetch(DOCID_OID)));
-
+    var cont;
     if (ws.fetch(CONT_COLL).texist(coll_oid)) {
         # collection is already part of the working set
         cont := reverse(ws.fetch(CONT_COLL)).find(coll_oid);
+        doc_oid := ws.fetch(CONT_DOCID).find(cont);
     } else {
         # add the collection to the working set
         var pre, mem, dsk, dst := ws_col.mirror().leftfetchjoin(ws);
-
-        if (doc_oid = TEMP_DOC) { 
-            # temporary shredded (read-only) doc; no isolation needed 
-            coll_oid := TEMP_DOC;                     # must pass oid(nil) for TEMP_DOCs!!
+        cont := oid(1 + count(ws.fetch(CONT_COLL)));
+        if (doc_oid = TEMP_DOC) {
+            # temporary shredded (read-only) doc; no isolation needed
+            coll_oid := cont;                         # must pass oid(nil) for TEMP_DOCs!!
+            doc_oid := cont;                          # low docids (< 1000000) are transient query-specific
             dsk := ws_dsk.leftjoin(docBAT);           # doc has just been shredded into docBAT
             pre := reverse(ws_rid).leftjoin(dsk);     # pre_*'s are identical to rid_*
             mem := reverse(ws_mem).leftjoin(dsk);     # other bats are also just the same bats
-        } else {
-            # here we get transaction isolation: pre's are remapped views, and mem are normal views
-            dsk := [bat]([+](str(int(coll_oid)), ws_dsk));
-            var map_pid := dsk.find(oid(_MAP_PID)).select(oid(nil),oid(nil)).reverse().sort().tmark(0@0);
-            pre := [remap](reverse(ws_rid).leftjoin(dsk), const map_pid, false);
-            mem := [copy](reverse(ws_mem).leftjoin(dsk));
-        }
-        # use the ws_* bats to add all bats to the working set in a multiplex
-        [append](dst, pre.access(BAT_WRITE).insert(mem).insert(dsk));
+    } else {
+        # here we get transaction isolation: pre's are remapped views, and mem are normal views
+        dsk := [bat]([+](str(int(coll_oid)), ws_dsk));
+        pre := [remap](reverse(ws_rid).leftjoin(dsk), const dsk.find(oid(_MAP_PID)), false);
+        mem := [copy](reverse(ws_mem).leftjoin(dsk));
+    }
+    # use the ws_* bats to add all bats to the working set in a multiplex
+    [append](dst, pre.access(BAT_WRITE).insert(mem).insert(dsk));
 
-        # create views for the container-id (which is constant within a doc)
-        ws.fetch(CONT_COLL).append(coll_oid);
-        cont := oid(count(ws.fetch(CONT_COLL)));
+    # create views for the container-id (which is constant within a doc)
+    ws.fetch(CONT_COLL).append(coll_oid);
 
-        var cont_bat := constant2bat(cont);
-        ws.fetch(PRE_CONT).append(cont_bat);
-        ws.fetch(ATTR_CONT).append(cont_bat);
+    var cont_bat := constant2bat(cont);
+    ws.fetch(PRE_CONT).append(cont_bat);
+    ws.fetch(ATTR_CONT).append(cont_bat);
 
-        if (isnil(height))
-            height := ws.fetch(PRE_LEVEL).max().int() + 1;
+    if (isnil(height))
+        height := ws.fetch(PRE_LEVEL).max().int() + 1;
         ws.fetch(HEIGHT).append(height);
     }
     if (not(ws.fetch(DOCID_NAME).texist(name))) {
         # add the document to the working set
-        ws.fetch(DOCID_OID).append(doc_oid);
-        ws.fetch(DOCID_NAME).insert(docid, name);            
-        ws.fetch(CONT_DOCID).insert(cont, docid);            
+        ws.fetch(DOCID_NAME).insert(doc_oid, name);
+        ws.fetch(CONT_DOCID).insert(cont, doc_oid);
     }
     return cont;
 }
-
 
 PROC add_doc_locked(str name, timestamp ts, int ws) : oid 
 {
@@ -1156,6 +1153,7 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
  */
 pathfinder_export char *
 xquery_method(stream *out, 
+              int rpctiming,
               char* module, 
               char* uri, 
               char *method, 
@@ -1556,7 +1554,7 @@ xquery_compile_exec(xquery_client *ctx,
  * - resolve a method call in the current xquery context (return NULL if not resolved)
  *
  * char*
- * xquery_function_call(xquery_client *ctx, int msec, char* mode, char *ns, char *method, 
+ * xquery_function_call(xquery_client *ctx, int msec, int rpctiming, char* mode, char *ns, char *method, 
  *                      int argc, int itercnt, int** argcnt, char** argtpe, char** argval, BAT *shredBAT)
  * - call a function ns:method(). try to use the function cache (ie re-use a cached MIL tree).
  *   otherwise generate MIL yourself, interpret it (and cache it). Returns error string (NULL if ok).
@@ -1703,6 +1701,7 @@ static char xquery_function_error[80] = "xquery_method: error during execution.\
 static char* 
 xquery_function_call(xquery_client *ctx, 
                      int msec, 
+                     int rpctiming,
                      char *mode, 
                      char *ns, 
                      char *method, 
@@ -1872,6 +1871,8 @@ xquery_function_call(xquery_client *ctx,
     }
 
     *(ctx->time_compile) = GDKms() - msec;
+    
+    int time_execMilTree = GDKms();
 
     /* Done preparing the query. Time to (re-)execute the MIL tree */
     prepfun->lru = xquery_lru++;
@@ -1893,6 +1894,12 @@ xquery_function_call(xquery_client *ctx,
                  ctx->cachesize -= kill->def->size; 
              }
         }
+
+        time_execMilTree = GDKms() - time_execMilTree;
+        if (rpctiming) {
+            printf("\nXQUERY_FUNCTION_CALL prepareFunCache msec %d.000 execMilTree %d.000\n", *(ctx->time_compile), time_execMilTree);
+        }
+
         return NULL;
     }
     return xquery_function_error;
@@ -1909,11 +1916,6 @@ xquery_function_call(xquery_client *ctx,
  * xquery_module* 
  * xquery_module_compile(xquery_client *ctx, char* mode, char *url)
  * - get an xquery module, compile it and cache it (return NULL on error)
- *
- * char*
- * xquery_match_ns(char *module_ns, char *import_ns)
- * - check if two module namespace match
- * - return error msg on error, NULL otherwise
  *
  * char*
  * xquery_module_load(xquery_client *ctx, char* mode, char *ns, char *url)
@@ -1992,20 +1994,6 @@ xquery_module_compile(xquery_client *ctx,
 }
 
 /*
- * check if two module namespace match (check only if both non-NULL)
- * return error msg on error, NULL otherwise
- * 'module_ns': module namespace as specified in the module decleration
- * 'import_ns': module namespace as specified in the import module statement.
- */
-static char*
-xquery_match_ns(char *module_ns , char *import_ns)
-{
-    if (module_ns && import_ns && strcmp(module_ns, import_ns)) 
-        return "xquery_module_load: import module statement does not match module namespace declaration.\n";
-    return NULL;
-}
-
-/*
  * check whether we already loaded the module, or if we already have it cached. 
  * If not, fetch&compile. Returns error string or NULL if ok.
  */
@@ -2027,7 +2015,8 @@ xquery_module_load(xquery_client *ctx,
                 else ctx->loaded_modules = NULL;
                 break; /* put module at front of list */
             }
-            return xquery_match_ns(mod->def->nsurl, module);
+            if (mod->def->nsurl && module && strcmp(mod->def->nsurl, module)) 
+                return "xquery_module_load: import module statement does not match module namespace declaration.\n";
         }
     }
     if (mod == NULL) {
@@ -2063,7 +2052,10 @@ xquery_module_load(xquery_client *ctx,
     mod->nslen = nslen;
     mod->next = ctx->loaded_modules;
     ctx->loaded_modules = mod;
-    return xquery_match_ns(mod->def->nsurl, module);
+
+    if (mod->def->nsurl && module && strcmp(mod->def->nsurl, module)) 
+        return "xquery_module_load: import module statement does not match module namespace declaration.\n";
+    return NULL;
 }
 
 /*
@@ -2079,14 +2071,18 @@ xquery_client_flushall()
         if (i == 0) {
             /* ok, no xquery clients are active */
             xquery_module *mod = xquery_compiled_modules;
-
+                /* todo destroy xquery client buffers? ? 
+            for(i=0; i<=MAXCLIENTS; i++) {
+                if (xquery_clients[i].buflen)
+                    xquery_client_free(xquery_clients+i, 1);
+            }
+                */
             while(mod) {
                 xquery_module *del = mod;
                 mod = mod->next;
                 xquery_module_free(del);
             }
             xquery_compiled_modules = NULL;
-            xquery_cacheid++;
             PFurlcache_flush();
             wait = 0;
         }
@@ -2564,6 +2560,7 @@ xquery_prepare(xquery_client *ctx,
     char *ns = (char*)&nsbuf, *nsend = ns, *locend, *loc = NULL, *p = query;
     char val[256], url1[256], url2[256];
     char *err = NULL;
+    int rpctiming = strstr(mode, "rpctiming") != NULL ? 1 : 0;
 
     if (strstr(mode,"debug") != NULL) {
         /* for debugging purposes, we simulate a full MIL on the log; even if parts are cached */
@@ -2603,8 +2600,17 @@ xquery_prepare(xquery_client *ctx,
                     p = xquery_parse_space(locend);
 
                     /* cut off module import from the query, and load it here (to have it cached later) */
-                    *nsend = 0; 
+                    *nsend = 0;
+
+                    int time_modLoadPrepare = GDKms();
+
                     err = xquery_module_load(ctx, mode, ns, url1, url2);
+
+                    time_modLoadPrepare = GDKms() - time_modLoadPrepare;
+                    if (rpctiming) {
+                        printf("\nXQUERY_PREPARE modLoadPrepare %d.000\n", time_modLoadPrepare);
+                    }
+
                     if (err) return err;
                     *nsend = bak; 
                 } while (*p == ',');
@@ -2691,7 +2697,7 @@ xquery_prepare(xquery_client *ctx,
                     int* cnt_ptr = cnt;    
                     char nsbak = *nsend, locbak = *locend;
                     *nsend = 0; *locend = 0;
-                    err = xquery_function_call(ctx, msec, mode, ns, loc, argc, 1, &cnt_ptr, tpe, param, NULL);
+                    err = xquery_function_call(ctx, msec, rpctiming, mode, ns, loc, argc, 1, &cnt_ptr, tpe, param, NULL);
                     *nsend = nsbak; *locend = locbak;
                 }
             }
@@ -2917,6 +2923,7 @@ CMDxquery(Cntxt stk,
  */  
 char*
 xquery_method(stream *out, 
+              int rpctiming,
               char* module, 
               char* uri, 
               char *method, 
@@ -2934,6 +2941,9 @@ xquery_method(stream *out,
     stream *s = NULL;
     mapi_client *mc = MAPIclient(GDKin, out, "xquery" );
     xquery_client *ctx;
+
+    int time_modLoadXQMethod = 0;
+    int time_xqMethodPrepare = GDKms();
 
     if (mc == NULL) 
         return "xquery_method: out of client slots.\n";
@@ -2955,11 +2965,23 @@ xquery_method(stream *out,
         argc = argc % 1000;
     }
 
-    if (err == NULL && module)
+    time_xqMethodPrepare = GDKms() - time_xqMethodPrepare;
+
+    if (err == NULL && module){
+        time_modLoadXQMethod = GDKms();
+
         err = xquery_module_load(ctx, mode, ns="xquery_rpc", module, uri); 
 
+        time_modLoadXQMethod = GDKms() - time_modLoadXQMethod;
+    }
+
+    if (rpctiming) {
+        printf("\nXQUERY_METHOD xqMethodPrepare %d.000 modLoadXQMethod %d.000\n", 
+                time_xqMethodPrepare, time_modLoadXQMethod);
+    }
+
     if (err == NULL) { 
-        err = xquery_function_call(ctx, msec, mode, ns, method, argc, itercnt, argcnt, argtpe, argval, shredBAT);
+        err = xquery_function_call(ctx, msec, rpctiming, mode, ns, method, argc, itercnt, argcnt, argtpe, argval, shredBAT);
         if (err == (char*) -1) err = "xquery_method: function could not be resolved.\n";
     }
 

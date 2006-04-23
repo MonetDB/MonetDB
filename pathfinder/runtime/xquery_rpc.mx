@@ -40,12 +40,13 @@ using HTTP connection on top of MonetDB within the "Pathfinder" project.
 
 @- HTTP server function(s)
 @m
-.COMMAND httpd_start(int port) : void = CMDhttpd_start;
+.COMMAND httpd_start(int port, str option) : void = CMDhttpd_start;
 "Start the HTTP server for RPC calls on the specified port."
 
 @- HTTP client function(s)
 @m
 .COMMAND http_post(
+        str mode,
         str location,
         str rpc_module,
         str rpc_uri,
@@ -67,8 +68,19 @@ using HTTP connection on top of MonetDB within the "Pathfinder" project.
 .END xquery_rpc;
 
 @mil
+PROC rpc_receiver_start(int port, str option) : void {
+    fork(httpd_start(port, option));
+}
+ADDHELP("rpc_receiver_start", "zhang", "November 2005",
+"PARAMETER:\n\
+int: port number\n\
+str: option, currently, only \"rpctiming\"\n\
+DESCRIPTION:\n\
+Start receiver for RPC calls on the specified port",
+"xquery_rpc");
+
 PROC rpc_receiver_start(int port) : void {
-    fork(httpd_start(port));
+    fork(httpd_start(port, ""));
 }
 ADDHELP("rpc_receiver_start", "zhang", "November 2005",
 "DESCRIPTION:\n\
@@ -76,7 +88,7 @@ Start receiver for RPC calls on the specified port",
 "xquery_rpc");
 
 PROC rpc_receiver_start() : void {
-    rpc_receiver_start( int(monet_environment.find("pf_httpd_port")) );
+    rpc_receiver_start( int(monet_environment.find("pf_httpd_port")), "");
 }
 ADDHELP("rpc_receiver_start", "zhang", "November 2005",
 "DESCRIPTION:\n\
@@ -85,6 +97,7 @@ Start receiver for RPC calls on the default port 8080",
 
 PROC rpc_client(
         str local_name,
+        str mode,
         str location,
         str rpc_module,
         str rpc_uri,
@@ -99,13 +112,21 @@ PROC rpc_client(
         BAT[oid, dbl] dec_values,
         BAT[oid, str] str_values) : oid {
 
-    var rpcres := http_post(location, rpc_module, rpc_uri, rpc_method, ws, 
+    var rpcres := http_post(mode, location, rpc_module, rpc_uri, rpc_method, ws, 
                             fun_vid,    fun_iter,   fun_item,   fun_kind,
                             int_values, dbl_values, dec_values, str_values);
 
+    var time_addDoc := msec();
+
     var docBAT := bat(str,bat,WS_SIZE);
     var height := index_doc(rpcres,docBAT);
-    return add_docbat(ws, docBAT, local_name, TEMP_DOC, oid(nil), height);
+    var cntoid := add_docbat(ws, docBAT, local_name, TEMP_DOC, oid(nil), height);
+
+    time_addDoc := msec() - time_addDoc;
+    if (mode.search("rpctiming") >= 0)
+        printf("\nmil2 addDoc %lld.000\n", time_addDoc);
+
+    return cntoid;
 }
 ADDHELP("rpc_client", "zhang", "November 2005",
 "DESCRIPTION:\n\
@@ -199,6 +220,7 @@ Send a RPC request to the destination \"location\", save the reults in the Worki
 
 /* To prevent start the HTTP server twice */
 int rpc_receiver_running = 0;
+int servertiming = 0;
 
 #endif /* XQUERY_RPC_H */
 
@@ -475,12 +497,15 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
     int **argcnt = NULL;    /* #items eash param/iter contains */
     str *argval = NULL;     /* Stores all actual values sequetially. */
     str *argtpe = NULL;     /* XQuery type of each argval */
-    int nr_args = 0;      /* #values arg_val currently contains */
-    int max_args = 0;    /* max #items in "argval", doubled if necessary */
+    int nr_args = 0;        /* #values arg_val currently contains */
+    int max_args = 0;       /* max #items in "argval", doubled if necessary */
+
+    int time_translateReqMsg = 0, time_execQueryAndSendResults = 0;
 
     THRnew(MT_getpid(), "rpc_req_handler");
 
     /* Create our own output stream for further data transfer. */
+    time_translateReqMsg = GDKms();
     sock = shttpd_get_socket(arg);
     if (!(out = socket_wastream(sock, "rpc_response"))) {
         GDKerror("handle_rpc_request: failed to create socket_wastream for socket %d", sock);
@@ -491,6 +516,7 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
     /* Retrieve the whole received RPC request message, and remove the
      * first line of the message, so that the messgae we pass to
      * CMDshred2bats starts directly with the envelope tag. */
+
     req_msg = shttpd_get_msg(arg);
     strptr = req_msg + strlen("<?xml"); /* skip "<?xml" */
     if ((strstr(req_msg, "<?xml") != req_msg) ||
@@ -498,10 +524,7 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
         send_error(out, 1, "404 Bad Request", "env:Sender",
                 "XQuery RPC request: bad XML structure\n");
     }
-/*
-printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
-       "=== END DEBUG MSG: RPC request RECEIVED ===\n\n", strptr);
-*/
+
     if ((CMDshred2bats(&shredBAT, "", strptr, "")  == GDK_FAIL)) {
         send_error(out, 1, "404 Bad Request", "env:Sender",
                 "XQuery RPC request: bad XML structure, could not shred\n");
@@ -516,11 +539,12 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
     prop_text = (var_t*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PROP_TEXT))));
     text_base = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT, off+PROP_TEXT)))->theap->base;
     ws_frag   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+WS_FRAG)));
+    ws_frag   = BATsetaccess(ws_frag, BAT_APPEND);
     total_size = BATcount(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PRE_SIZE))));
 
-    /* There are at least two nodes before "SoapRpcRequest", namely
+    /* There are at least two nodes before "XQueryRpcRequest", namely
      * "Envelope" and "Body" (a "Header" node is optional). There are at
-     * least two nodes after "SoapRpcRequest", namely "iter" and
+     * least two nodes after "XQueryRpcRequest", namely "iter" and
      * "param". */
     if (!(pre = get_node_pre(shredBAT, "XQueryRpcRequest", 2, (pre_size[0] - 2)))) {
         send_error(out, 1, "404 Bad Request", "env:Sender",
@@ -672,7 +696,10 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
         }
     }
 
+    time_translateReqMsg = GDKms() - time_translateReqMsg;
+
     /* write out our response */
+    time_execQueryAndSendResults = GDKms();
     if (stream_printf(out,
                 "HTTP/1.1 200 OK\r\n"
                 "Content-Type: application/soap+xml; charset=\"utf-8\"\r\n\r\n"
@@ -688,15 +715,21 @@ printf("\n=== DEBUG MSG: RPC request RECEIVED ======\n%s"
                 "    method=\"%s\">\n",
                 module, uri, method) >= 0)
     {
-        argc += 1000; /* debug */
-        char *err = xquery_method(out, module, uri, method, argc, iterc, argcnt, argtpe, argval, shredBAT);
-        argc %= 1000;
+        /* argc += 1000; */ /* debug */
+        char *err = xquery_method(out, servertiming, module, uri, method, argc, iterc, argcnt, argtpe, argval, shredBAT);
+        /* argc %= 1000; */
 
         if (err) {
             send_error(out, 0, "", "env:Sender", err);
             goto FINISH_HANDLE_RPC_REQUEST;
         }
         stream_printf(out, "</XQueryRpcResults>\n</env:Body>\n</env:Envelope>\n");
+    }
+
+    time_execQueryAndSendResults = GDKms() - time_execQueryAndSendResults;
+    if (servertiming) {
+        printf("\nreceiver translateReqMsg %d.000 execQueryAndSendResults %d.000\n",
+                time_translateReqMsg, time_execQueryAndSendResults);
     }
    
     retval = GDK_SUCCEED;
@@ -711,6 +744,7 @@ FINISH_HANDLE_RPC_REQUEST:
 }
 
 int CMDhttp_post(BAT **res,
+                 str mode,
                  str location,
                  str rpc_module,
                  str rpc_uri,
@@ -741,6 +775,10 @@ int CMDhttp_post(BAT **res,
     int **argcnt = NULL;    /* #items eash [iter][param] contains */
     int nr_args = 0;
     int max_args = 0;
+
+    int time_generateReqMsg = 0, time_sendReqmsg = 0;
+    int time_waitForRespMsg = 0, time_shredRespMsg = 0;
+    int bytes_sent = 0, bytes_received = 0;
 
     ERRORcheck(!BAThdense(ws),
                "http_post: head of BAT ws must be dense.\n");
@@ -778,6 +816,7 @@ int CMDhttp_post(BAT **res,
     }
 
     /* Create buffer for the RPC request message */
+    time_generateReqMsg = GDKms();
     b = buffer_create(MAX_BUF_SIZE);
     if (!b || b->len == 0) {
         GDKerror("CMDhttp_post: failed to create outgoing buffer\n");
@@ -800,10 +839,6 @@ int CMDhttp_post(BAT **res,
     /* Find the number of parameters and iterations. */
     argc  = *(int*)BUNtail(fun_vid, BUNprev(fun_vid, BUNlast(fun_vid)) ) - *(int*)BUNtail(fun_vid,BUNfirst(fun_vid)) + 1;
     iterc = *(int*)BUNtail(fun_iter,BUNprev(fun_iter,BUNlast(fun_iter)));
-    /*
-    argc  = BATcount(BATkunique(BATmirror(fun_vid)));
-    iterc = BATcount(BATkunique(BATmirror(fun_iter)));
-    */
 
     if (!(argcnt = GDKmalloc(iterc * sizeof(int *)))) {
         GDKerror("CMDhttp_post: failed to malloc argcnt\n");
@@ -928,15 +963,13 @@ int CMDhttp_post(BAT **res,
             str2buf(b, "</iter>\n");
         }
     }
-
     str2buf(b, "</XQueryRpcRequest>\n</env:Body>\n</env:Envelope>\n");
     b->buf[b->pos] = 0;
-/*
-printf("\n=== DEBUG MSG: RPC request to send: (msglen = %ld) ===\n%s"
-       "=== END DEBUG MSG: RPC request to send ===============\n\n",
-        b->pos, b->buf);
-*/
-    if (stream_printf(out,
+
+    time_generateReqMsg = GDKms() - time_generateReqMsg;
+
+    time_sendReqmsg = GDKms();
+    bytes_sent = stream_printf(out,
             "POST %s HTTP/1.1\r\n"
             "Host: %s\r\n"
             "Accept: text/html, text/xml, application/soap+xml\r\n"
@@ -944,11 +977,13 @@ printf("\n=== DEBUG MSG: RPC request to send: (msglen = %ld) ===\n%s"
             "Content-Type: text/html; charset=\"utf-8\"\r\n"
             "Content-Length: %d\r\n\r\n"
             "%s",
-            HTTPD_FUNC, location, b->pos, b->buf) < (int)b->pos) {
+            HTTPD_FUNC, location, b->pos, b->buf);
+    time_sendReqmsg = GDKms() - time_sendReqmsg;
+    time_waitForRespMsg = GDKms();
+    if (bytes_sent < (int)b->pos) {
         GDKerror("CMDhttp_post: failed to send XQuery RPC request.");
         goto FINISH_HTTP_POST;
     }
-
 
     /*** Receive all response data ***/
     b->pos = b->buf[0] = 0;
@@ -960,7 +995,12 @@ printf("\n=== DEBUG MSG: RPC request to send: (msglen = %ld) ===\n%s"
             b->buf = realloc(b->buf, b->len);
         }
     } while (ret > 0);
+    time_waitForRespMsg = GDKms() - time_waitForRespMsg;
+
     b->buf[b->pos] = 0;
+    bytes_received = b->pos;
+
+    time_shredRespMsg = GDKms();
 
     if (b->pos < MIN_RESPONSE_SIZE || !strstr((b->buf + b->pos - 16), "</env:Envelope>")) {	
         GDKerror("CMDhttp_post: failed to get response: %s\n",
@@ -973,10 +1013,7 @@ printf("\n=== DEBUG MSG: RPC request to send: (msglen = %ld) ===\n%s"
         GDKerror("\nDump of received data:\n%s\n", b->buf);
         goto FINISH_HTTP_POST;
     }
-/*
-printf("\n=== DEBUG MSG: received RPC response message ======\n%s"
-       "=== END DEBUG MSG: received RPC response message ===\n\n", b->buf);
-*/
+    
     b->len = b->pos;
     b->buf = realloc(b->buf, b->len); /* release unused memory */
     strptr = strchr(b->buf, (int)' ') + 1; /* the HTTP return code */
@@ -1006,6 +1043,16 @@ printf("\n=== DEBUG MSG: received RPC response message ======\n%s"
     }
 
     *res = shredBAT;
+
+    time_shredRespMsg = GDKms() - time_shredRespMsg;
+    if (strstr(mode, "rpctiming") != NULL) {
+        printf("\nsender generateReqMsg %d.000 sendReqmsg %d.000 "
+                "waitForRespMsg %d.000 shredRespMsg %d.000 "
+                "bytes_sent %d bytes_received %d\n",
+                time_generateReqMsg, time_sendReqmsg, time_waitForRespMsg,
+                time_shredRespMsg, bytes_sent, bytes_received);
+    }
+
     retval = GDK_SUCCEED;
     goto FINISH_HTTP_POST;
 
@@ -1022,7 +1069,7 @@ FINISH_HTTP_POST:
     return retval;
 }
 
-int CMDhttpd_start(int* port) {
+int CMDhttpd_start(int* port, str option) {
     int sock;
        
     if (rpc_receiver_running) {
@@ -1030,6 +1077,12 @@ int CMDhttpd_start(int* port) {
         return GDK_FAIL;
     }
     rpc_receiver_running = 1;
+
+    if (option && strstr(option, "rpctiming") != NULL){
+        servertiming = 1;
+    } else {
+        servertiming = 0;
+    }
 
     /* Initialize with specific config file, pass NULL to use default values */
     shttpd_init(NULL);

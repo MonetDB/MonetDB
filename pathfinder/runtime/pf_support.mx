@@ -510,7 +510,7 @@ PROC correct_sizes (oid iter, bat[void,oid] item, bat[void,int] size) : bat[void
 #   1. retrieve the right values
 #   2. build the iter|item|kind BATs
 #   3. fill in the value containers
-PROC get_rpc_res ( BAT[void, bat] ws, oid cont,
+PROC get_rpc_res ( BAT[void, bat] ws, oid cont, str local_name,
         BAT[void, lng] int_values,
         BAT[void, dbl] dbl_values, 
         BAT[void, dbl] dec_values,
