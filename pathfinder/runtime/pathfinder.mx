@@ -641,7 +641,7 @@ PROC index_doc(BAT[oid,bat] shredBAT, BAT[str,bat] docBAT) : int
     # the replace is because we use this slot for transferring the docseq_pre
     # bat from the shredder to the MIL routines. This is very ugly but I tried
     # to delete the tail of ths shredBAT bat and this did not work. JF
-    docBAT.replace("_qn_prefix_uri", docBAT.find("_qn_prefix").[+](str('\1')).[+](docBAT.find("_qn_uri")));
+    docBAT.insert("_qn_prefix_uri", docBAT.find("_qn_prefix").[+](str('\1')).[+](docBAT.find("_qn_uri")));
     docBAT.insert("_qn_loc_uri",    docBAT.find("_qn_loc").[+](str('\1')).[+](docBAT.find("_qn_uri")));
 
     # mapping between immutable node-id's and pre-order ranks (pre==rid, just after shredding)

@@ -778,7 +778,8 @@ shred_doc_or_docseq(BAT **res2mil, str location, str buffer, BAT* docseq, str op
 	    }
         }
     }
-    if ( !(*res2mil = finalizeShredCtx(shredCtx, doc_pre_BAT)) )
+    /* if ( !(*res2mil = finalizeShredCtx(shredCtx, doc_pre_BAT)) ) */
+    if ( !(*res2mil = finalizeShredCtx(shredCtx, NULL)) )
         return GDK_FAIL;
 
     /* read elapsed time */
