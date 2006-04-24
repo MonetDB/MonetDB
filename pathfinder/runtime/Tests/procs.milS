@@ -1,3 +1,4 @@
 module(pathfinder);
+module(xquery_rpc);
 procs();
 quit();
