@@ -843,8 +843,9 @@ proc cache_join(BAT[void,oid] left, BAT[void,any::1] right) : BAT[void,any::1] {
 }
 
 
-@f radix_examples
-@mil
+@(
+ @f radix_examples
+ @mil
 
 module("alarm");
 
@@ -1067,6 +1068,7 @@ b3.info().find("tsorted").print();
 var b4 := radix_cluster(b2, cnt.bbpname(), 1.0, 1, 7);
 b4.info().find("tsorted").print();
 radix_cluster(attr_int,
+@)
 
 @-
 @{
