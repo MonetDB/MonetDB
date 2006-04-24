@@ -918,49 +918,52 @@ PROC doc_curtime(str filename) : timestamp {
 
 PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, oid doc_oid, oid coll_oid, int height) : oid
 {
-    var cont;
+    var cont, docid := oid(count(ws.fetch(DOCID_OID)));
+
     if (ws.fetch(CONT_COLL).texist(coll_oid)) {
         # collection is already part of the working set
         cont := reverse(ws.fetch(CONT_COLL)).find(coll_oid);
-        doc_oid := ws.fetch(CONT_DOCID).find(cont);
     } else {
         # add the collection to the working set
         var pre, mem, dsk, dst := ws_col.mirror().leftfetchjoin(ws);
-        cont := oid(1 + count(ws.fetch(CONT_COLL)));
-        if (doc_oid = TEMP_DOC) {
-            # temporary shredded (read-only) doc; no isolation needed
-            coll_oid := cont;                         # must pass oid(nil) for TEMP_DOCs!!
-            doc_oid := cont;                          # low docids (< 1000000) are transient query-specific
+
+        if (doc_oid = TEMP_DOC) { 
+            # temporary shredded (read-only) doc; no isolation needed 
+            coll_oid := TEMP_DOC;                     # must pass oid(nil) for TEMP_DOCs!!
             dsk := ws_dsk.leftjoin(docBAT);           # doc has just been shredded into docBAT
             pre := reverse(ws_rid).leftjoin(dsk);     # pre_*'s are identical to rid_*
             mem := reverse(ws_mem).leftjoin(dsk);     # other bats are also just the same bats
-    } else {
-        # here we get transaction isolation: pre's are remapped views, and mem are normal views
-        dsk := [bat]([+](str(int(coll_oid)), ws_dsk));
-        pre := [remap](reverse(ws_rid).leftjoin(dsk), const dsk.find(oid(_MAP_PID)), false);
-        mem := [copy](reverse(ws_mem).leftjoin(dsk));
-    }
-    # use the ws_* bats to add all bats to the working set in a multiplex
-    [append](dst, pre.access(BAT_WRITE).insert(mem).insert(dsk));
+        } else {
+            # here we get transaction isolation: pre's are remapped views, and mem are normal views
+            dsk := [bat]([+](str(int(coll_oid)), ws_dsk));
+            var map_pid := dsk.find(oid(_MAP_PID)).select(oid(nil),oid(nil)).reverse().sort().tmark(0@0);
+            pre := [remap](reverse(ws_rid).leftjoin(dsk), const map_pid, false);
+            mem := [copy](reverse(ws_mem).leftjoin(dsk));
+        }
+        # use the ws_* bats to add all bats to the working set in a multiplex
+        [append](dst, pre.access(BAT_WRITE).insert(mem).insert(dsk));
 
-    # create views for the container-id (which is constant within a doc)
-    ws.fetch(CONT_COLL).append(coll_oid);
+        # create views for the container-id (which is constant within a doc)
+        ws.fetch(CONT_COLL).append(coll_oid);
+        cont := oid(count(ws.fetch(CONT_COLL)));
 
-    var cont_bat := constant2bat(cont);
-    ws.fetch(PRE_CONT).append(cont_bat);
-    ws.fetch(ATTR_CONT).append(cont_bat);
+        var cont_bat := constant2bat(cont);
+        ws.fetch(PRE_CONT).append(cont_bat);
+        ws.fetch(ATTR_CONT).append(cont_bat);
 
-    if (isnil(height))
-        height := ws.fetch(PRE_LEVEL).max().int() + 1;
+        if (isnil(height))
+            height := ws.fetch(PRE_LEVEL).max().int() + 1;
         ws.fetch(HEIGHT).append(height);
     }
     if (not(ws.fetch(DOCID_NAME).texist(name))) {
         # add the document to the working set
-        ws.fetch(DOCID_NAME).insert(doc_oid, name);
-        ws.fetch(CONT_DOCID).insert(cont, doc_oid);
+        ws.fetch(DOCID_OID).append(doc_oid);
+        ws.fetch(DOCID_NAME).insert(docid, name);            
+        ws.fetch(CONT_DOCID).insert(cont, docid);            
     }
     return cont;
 }
+
 
 PROC add_doc_locked(str name, timestamp ts, int ws) : oid 
 {
@@ -1872,11 +1875,18 @@ xquery_function_call(xquery_client *ctx,
 
     *(ctx->time_compile) = GDKms() - msec;
     
-    int time_execMilTree = GDKms();
-
     /* Done preparing the query. Time to (re-)execute the MIL tree */
     prepfun->lru = xquery_lru++;
+    int time_serverApp_serverSerialisation_networkReceive = GDKms();
     if (xquery_tree_exec(ctx, prepfun->lt, 1)) {
+        time_serverApp_serverSerialisation_networkReceive = GDKms() - time_serverApp_serverSerialisation_networkReceive;
+        if (rpctiming) {
+            /* printf("\nXQUERY_FUNCTION_CALL prepareFunCache msec %d.000 execMilTree %d.000\n", 
+                    *(ctx->time_compile), time_serverApp_serverSerialisation_networkReceive); */
+            printf("\nServer-(Application + Serialisation + SendResults):  %d.000\n", 
+                    time_serverApp_serverSerialisation_networkReceive);
+        }
+
         size_t dummy;
         if (fun->size == 0)
             fun->size = Myysize(prepfun->lt, &dummy);
@@ -1893,11 +1903,6 @@ xquery_function_call(xquery_client *ctx,
                  kill->lt = NULL;
                  ctx->cachesize -= kill->def->size; 
              }
-        }
-
-        time_execMilTree = GDKms() - time_execMilTree;
-        if (rpctiming) {
-            printf("\nXQUERY_FUNCTION_CALL prepareFunCache msec %d.000 execMilTree %d.000\n", *(ctx->time_compile), time_execMilTree);
         }
 
         return NULL;
