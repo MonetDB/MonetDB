@@ -256,6 +256,13 @@ PROC get_rpc_res ( BAT[void, bat] ws, oid cont, str local_name,
     res_kind.seqbase(0@0);
     return bat(void,bat,4).append(res_iter).append(res_item).append(res_kind).access(BAT_READ);
 }
+ADDHELP("get_rpc_res", "zhang", "April 2006",
+"DESCRIPTION:\n\
+This proc is used to retrieve the return values of RPC call(s), which are temporarily stored in the WS. It\n\
+1. retrieves the right values\n\
+2. builds temporary iter|item|kind BATs\n\
+3. fill in the value containers",
+"xquery_rpc");
 
 @h
 #ifndef XQUERY_RPC_H
