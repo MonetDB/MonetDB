@@ -93,7 +93,7 @@ int sequence_exit(char* seq) {
 	store_lock();
  	ntr = sql_trans_create(0, NULL, NULL);
  	sys = find_sql_schema(ntr, "sys");
- 	seqs = find_sql_table(sys, "sequences",-1);
+ 	seqs = find_sql_table(sys, "sequences",LOCATION);
  	seq_name = find_sql_column(seqs, "name");
  	seq_cached = find_sql_column(seqs, "cached");
 
@@ -140,7 +140,7 @@ void sequences_exit(void)
 	node *n;
 	sql_trans *ntr = sql_trans_create(0, NULL, NULL);
 	sql_schema *sys = find_sql_schema(ntr, "sys");
-	sql_table *seqs = find_sql_table(sys, "sequences",-1);
+	sql_table *seqs = find_sql_table(sys, "sequences",LOCATION);
 	sql_column *seq_name = find_sql_column(seqs, "name");
 	sql_column *seq_cached = find_sql_column(seqs, "cached");
 
@@ -173,7 +173,7 @@ sql_update_sequence_cache(sql_trans *tr, char *seq, lng cached, bit called)
 	store_lock();
  	ntr = sql_trans_create(0, NULL, NULL);
  	sys = find_sql_schema(ntr, "sys");
- 	seqs = find_sql_table(sys, "sequences",-1);
+ 	seqs = find_sql_table(sys, "sequences",LOCATION);
  	seq_name = find_sql_column(seqs, "name");
  	seq_cached = find_sql_column(seqs, "cached");
  	seq_called = find_sql_column(seqs, "called");
@@ -181,7 +181,7 @@ sql_update_sequence_cache(sql_trans *tr, char *seq, lng cached, bit called)
 	if ((id = column_find_row(ntr, seq_name, seq, NULL)) < 0) {
 		/* a new sequence needs to be updated in the current transaction */
 		sys = find_sql_schema(tr, "sys");
-		seqs = find_sql_table(sys, "sequences",-1);
+		seqs = find_sql_table(sys, "sequences",LOCATION);
 		seq_name = find_sql_column(seqs, "name");
 		seq_cached = find_sql_column(seqs, "cached");
 		seq_called = find_sql_column(seqs, "called");
@@ -209,7 +209,7 @@ sql_create_sequence(sql_trans *tr, char *seq )
 	ssize_t id;
 	sql_sequence *s = NULL;
 	sql_schema *sys = find_sql_schema(tr, "sys");
-	sql_table *seqs = find_sql_table(sys, "sequences",-1);
+	sql_table *seqs = find_sql_table(sys, "sequences",LOCATION);
 	sql_column *seq_name = find_sql_column(seqs, "name");
 	sql_column *seq_start = find_sql_column(seqs, "start");
 	sql_column *seq_inc = find_sql_column(seqs, "increment");
@@ -242,7 +242,7 @@ sql_create_sequence(sql_trans *tr, char *seq )
 		tr = tr->parent;
 
 	sys = find_sql_schema(tr, "sys");
-	seqs = find_sql_table(sys, "sequences",-1);
+	seqs = find_sql_table(sys, "sequences",LOCATION);
 	seq_name = find_sql_column(seqs, "name");
 	seq_cached = find_sql_column(seqs, "cached");
 

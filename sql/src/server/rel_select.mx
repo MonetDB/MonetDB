@@ -1527,9 +1527,9 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 
 		tname = qname_table(tableref->data.lval->h->data.sym);
 		char *host = qname_host(tableref->data.lval->h->data.sym);
-		int location = -1;
+		int location = LOCATION;
 		if(!host)
-			location =  (int) find_table_value(sql,"hosts","host_id","name",host,-1);
+			location =  (int) find_table_value(sql,"location","location","name",host,LOCATION);
 
 		if (!s) 
 			return sql_error(sql, 02, "SELECT: no such schema");

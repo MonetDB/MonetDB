@@ -425,7 +425,7 @@ sql_create_sessions(mvc *m, sql_schema *s)
 	BUN p, q;
 	sql_table *t;
 
-	t = mvc_create_table(m, s, "sessions", 1, 1, 1, -1,-1);
+	t = mvc_create_table(m, s, "sessions", 1, 1, 1,1, -1,-1);
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "value", "varchar", 2048);
 	mvc_create_column_(m, t, "type", "varchar", 1024);
@@ -437,7 +437,7 @@ sql_create_sessions(mvc *m, sql_schema *s)
 	   2    read only
 	 */
 
-	t = mvc_create_table(m, s, "env", 1, 1, 0, -1,-1);
+	t = mvc_create_table(m, s, "env", 1, 1, 0,1, -1,-1);
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "value", "varchar", 2048);
 
@@ -459,7 +459,7 @@ the MonetDB kernel profiler, e.g. using Mknife
 int
 sql_create_profile(mvc *m, sql_schema *s)
 {
-	sql_table *t = mvc_create_table(m, s, "profile", 1, 1, 0, -1,-1);
+	sql_table *t = mvc_create_table(m, s, "profile", 1, 1, 0,1, -1,-1);
 
 	mvc_create_column_(m, t, "start", "timestamp", 0);
 	mvc_create_column_(m, t, "query", "varchar", 2048);

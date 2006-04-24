@@ -664,7 +664,7 @@ number(mvc * c, int cur)
 			utf8_putchar(lc, cur);
 		return scanner_token(lc, token);
 	} else {
-		(void)sql_error( c, 2, "unexpected symbol %c", cur);
+		(void)sql_error( c, 2, "unexpected symbol here %c", cur);
 		return LEX_ERROR;
 	}
 }
@@ -750,7 +750,7 @@ int scanner_symbol(mvc * c, int cur)
 			return scanner_token(lc, CONCATSTRING);
 		}
 	}
-	(void)sql_error( c, 3, "unexpected symbol (%c)", cur);
+	(void)sql_error( c, 3, "unexpected symbol here(%c)", cur);
 	return LEX_ERROR;
 }
 
