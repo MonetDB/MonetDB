@@ -30,7 +30,7 @@ then
 fi
 
 # where compiled modules are to be found
-MOD_PATH="${builddir}/src/.libs:${MONETDB_PREFIX}/lib/MonetDB"
+MOD_PATH="${builddir}/src/.libs:${builddir}/src:${MONETDB_PREFIX}/lib/MonetDB"
 
 if [ "${LD_LIBRARY_PATH}" ] ; then
 	LD_LIBRARY_PATH=":${LD_LIBRARY_PATH}"
