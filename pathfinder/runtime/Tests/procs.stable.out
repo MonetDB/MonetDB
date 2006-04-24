@@ -122,7 +122,7 @@ procs();
 [ "fflush(Stream) : void"																  ]
 [ "find_qn_bulk(BAT[void,BAT], oid, BAT[oid,str], bit) : BAT[oid,oid]"											  ]
 [ "find_unescaped_occurrence(str, str, str) : int"													  ]
-[ "fix_consecutive_texts(BAT[BAT,BAT], BAT[void,BAT], oid) : void"										  ]
+[ "fix_consecutive_texts(BAT[BAT,BAT], BAT[void,BAT], BAT[oid,oid]) : void"										  ]
 [ "floor(flt) : flt"																	  ]
 [ "following(BAT[void,oid], BAT[void,oid], oid, BAT[void,BAT], int) : BAT[void,BAT]"									  ]
 [ "following_sibling(BAT[void,oid], BAT[void,oid], oid, BAT[void,BAT], int) : BAT[void,BAT]"								  ]
