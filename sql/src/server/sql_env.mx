@@ -106,7 +106,7 @@ sql_get_var(mvc *m, char *name)
 	if (!tr)
 		return NULL;
 	sys = mvc_bind_schema(m, "sys");
-	sessions = mvc_bind_table(m, sys, "sessions",-1);
+	sessions = mvc_bind_table(m, sys, "sessions", LOCATION);
 	s_name = mvc_bind_column(m, sessions, "name");
 	rid = column_find_row(tr, s_name, name, NULL);
 
@@ -123,7 +123,7 @@ sql_get_type(mvc *m, char *name)
 {
 	sql_trans *tr = m->trans;
 	sql_schema *sys = mvc_bind_schema(m, "sys");
-	sql_table *sessions = mvc_bind_table(m, sys, "sessions",-1);
+	sql_table *sessions = mvc_bind_table(m, sys, "sessions", LOCATION);
 	sql_column *s_name = mvc_bind_column(m, sessions, "name");
 	ssize_t rid = column_find_row(tr, s_name, name, NULL);
 	char *type = NULL;
@@ -141,7 +141,7 @@ sql_get_access(mvc *m, char *name)
 {
 	sql_trans *tr = m->trans;
 	sql_schema *sys = mvc_bind_schema(m, "sys");
-	sql_table *sessions = mvc_bind_table(m, sys, "sessions",-1);
+	sql_table *sessions = mvc_bind_table(m, sys, "sessions", LOCATION);
 	sql_column *s_name = mvc_bind_column(m, sessions, "name");
 	ssize_t rid = column_find_row(tr, s_name, name, NULL);
 	int access = -1;
@@ -213,7 +213,7 @@ set_var(mvc *sql, char *name, symbol *val, char *typename)
 	sql_subtype ctype;
 	scope *scp = scope_open(NULL);
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
-	sql_table *sessions = mvc_bind_table(sql, sys, "sessions",-1);
+	sql_table *sessions = mvc_bind_table(sql, sys, "sessions", LOCATION);
 	/* sessions bat is a temp ie use INS instead of UPD */
 	tvar *tv = scope_add_table_columns(sql, scp, sessions, sessions->base.name, INS);
 	stmt *st, *v = sql_value_exp(sql, scp, val, NULL, NULL, sql_sel);
@@ -274,7 +274,7 @@ sql_set_var_value(mvc *m, char *name, char *value)
 
 	sql_trans *tr = m->trans;
 	sql_schema *sys = mvc_bind_schema(m, "sys");
-	sql_table *sessions = mvc_bind_table(m, sys, "sessions",-1);
+	sql_table *sessions = mvc_bind_table(m, sys, "sessions", LOCATION);
 	sql_column *s_name = mvc_bind_column(m, sessions, "name");
 	ssize_t rid = column_find_row(tr, s_name, name, NULL);
 
@@ -354,7 +354,7 @@ sql_declare_var(mvc *m, symbol *s)
 		int rw = SESSION_RW;
 		sql_trans *tr = m->trans;
 		sql_schema *sys = mvc_bind_schema(m, "sys");
-		sql_table *sessions = mvc_bind_table(m, sys, "sessions",-1);
+		sql_table *sessions = mvc_bind_table(m, sys, "sessions", LOCATION);
 		sql_column *s_name = mvc_bind_column(m, sessions, "name");
 		dlist *l = s->data.lval;
 		char *name = l->h->data.sval;
@@ -383,7 +383,7 @@ sql_session(mvc *m)
 	char buf[BUFSIZ];
 	sql_trans *tr = m->trans;
 	sql_schema *sys = mvc_bind_schema(m, "sys");
-	sql_table *s = mvc_bind_table(m, sys, "sessions",-1);
+	sql_table *s = mvc_bind_table(m, sys, "sessions", LOCATION);
 	int rw = SESSION_RW, ro = SESSION_RO;
 
 	snprintf(buf, BUFSIZ, "%d", m->debug);
@@ -425,7 +425,7 @@ sql_create_sessions(mvc *m, sql_schema *s)
 	BUN p, q;
 	sql_table *t;
 
-	t = mvc_create_table(m, s, "sessions", 1, 1, 1,1, -1,-1);
+	t = mvc_create_table(m, s, "sessions", 1, 1, 1,1, LOCATION, REPLICATION);
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "value", "varchar", 2048);
 	mvc_create_column_(m, t, "type", "varchar", 1024);
@@ -437,7 +437,7 @@ sql_create_sessions(mvc *m, sql_schema *s)
 	   2    read only
 	 */
 
-	t = mvc_create_table(m, s, "env", 1, 1, 0,1, -1,-1);
+	t = mvc_create_table(m, s, "env", 1, 1, 0,1, LOCATION, REPLICATION);
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "value", "varchar", 2048);
 
@@ -459,7 +459,7 @@ the MonetDB kernel profiler, e.g. using Mknife
 int
 sql_create_profile(mvc *m, sql_schema *s)
 {
-	sql_table *t = mvc_create_table(m, s, "profile", 1, 1, 0,1, -1,-1);
+	sql_table *t = mvc_create_table(m, s, "profile", 1, 1, 0,1, LOCATION, REPLICATION);
 
 	mvc_create_column_(m, t, "start", "timestamp", 0);
 	mvc_create_column_(m, t, "query", "varchar", 2048);

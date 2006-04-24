@@ -2140,10 +2140,10 @@ create_table_intern(char *name, bit table, bit system, bit persists, bit clear, 
 }
 
 static sql_table *
-bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name, bit clear,int location, int replication_id)
+bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name, bit clear)
 {
 	char bname[BUFSIZ];
-	sql_table *t = create_table_intern(name, 1, 1, 1, clear,location,replication_id);
+	sql_table *t = create_table_intern(name, 1, 1, 1, clear, LOCATION, REPLICATION);
 
 	BAT *b;
 	oid rid;
@@ -2164,34 +2164,32 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name, bit clear,int l
 	assert(t->dbid);
 
 	b = sys_bat(bm, "ptables_id");
-
 	rid = BATcount(b);
 	BUNins(b, (ptr) &rid, (ptr) &t->base.id);
-
 	bat_destroy(b);
 	b = sys_bat(bm, "ptables_schema_id");
 	BUNins(b, (ptr) &rid, (ptr) &s->base.id);
-
 	bat_destroy(b);
 	b = sys_bat(bm, "ptables_name");
-
 	BUNins(b, (ptr) &rid, (ptr) t->base.name);
 	bat_destroy(b);
+	b = sys_bat(bm, "ptables_query");
+	BUNins(b, (ptr) &rid, (ptr) ATOMnilptr(TYPE_str));
+	bat_destroy(b);
 	b = sys_bat(bm, "ptables_istable");
-
 	BUNins(b, (ptr) &rid, (ptr) &t->table);
 	bat_destroy(b);
 	b = sys_bat(bm, "ptables_system");
-
 	BUNins(b, (ptr) &rid, (ptr) &t->system);
 	bat_destroy(b);
 	b = sys_bat(bm, "ptables_clear");
-
 	BUNins(b, (ptr) &rid, (ptr) &t->clear);
 	bat_destroy(b);
-	b = sys_bat(bm, "ptables_query");
-
-	BUNins(b, (ptr) &rid, (ptr) ATOMnilptr(TYPE_str));
+	b = sys_bat(bm, "ptables_replication_id");
+	BUNins(b, (ptr) &rid, (ptr) &t->replication_id);
+	bat_destroy(b);
+	b = sys_bat(bm, "ptables_location");
+	BUNins(b, (ptr) &rid, (ptr) &t->location);
 	bat_destroy(b);
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
@@ -2285,17 +2283,17 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		first = 1;
 
 		s = bootstrap_create_schema(tr, "sys", ROLE_SYSADMIN);
-		t = bootstrap_create_table(tr, s, "modules", 0,LOCATION,REPLICATION);
+		t = bootstrap_create_table(tr, s, "modules", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 		bootstrap_create_column(tr, t, "internal", "varchar", 1024);
 
-		t = bootstrap_create_table(tr, s, "schemas", 0,LOCATION,REPLICATION);
+		t = bootstrap_create_table(tr, s, "schemas", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 		bootstrap_create_column(tr, t, "authorization", "int", 9);
 
-		t = bootstrap_create_table(tr, s, "ptables", 0,LOCATION,REPLICATION);
+		t = bootstrap_create_table(tr, s, "ptables", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 		bootstrap_create_column(tr, t, "schema_id", "int", 9);
@@ -2306,7 +2304,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "replication_id", "int", 9);
 		bootstrap_create_column(tr, t, "location", "int", 9);
 
-		t = bootstrap_create_table(tr, s, "pcolumns", 0,LOCATION,REPLICATION);
+		t = bootstrap_create_table(tr, s, "pcolumns", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 		bootstrap_create_column(tr, t, "type", "varchar", 1024);
@@ -2317,20 +2315,20 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "null", "boolean", 0);
 		bootstrap_create_column(tr, t, "number", "int", 9);
 
-		t = bootstrap_create_table(tr, s, "keys", 0,LOCATION,REPLICATION);
+		t = bootstrap_create_table(tr, s, "keys", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "table_id", "int", 9);
 		bootstrap_create_column(tr, t, "type", "int", 9);
 		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 		bootstrap_create_column(tr, t, "rkey", "int", 9);
 
-		t = bootstrap_create_table(tr, s, "idxs", 0,LOCATION,REPLICATION);
+		t = bootstrap_create_table(tr, s, "idxs", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "table_id", "int", 9);
 		bootstrap_create_column(tr, t, "type", "int", 9);
 		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 
-		t = bootstrap_create_table(tr, s, "triggers", 0,LOCATION,REPLICATION);
+		t = bootstrap_create_table(tr, s, "triggers", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 		bootstrap_create_column(tr, t, "table_id", "int", 9);
@@ -2342,13 +2340,13 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "condition", "varchar", 2048);
 		bootstrap_create_column(tr, t, "statement", "varchar", 2048);
 
-		t = bootstrap_create_table(tr, s, "keycolumns", 0,LOCATION,REPLICATION);
+		t = bootstrap_create_table(tr, s, "keycolumns", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "column", "varchar", 1024);
 		bootstrap_create_column(tr, t, "trunc", "int", 9);
 		bootstrap_create_column(tr, t, "nr", "int", 9);
 
-		t = bootstrap_create_table(tr, s, "types", 0,LOCATION,REPLICATION);
+		t = bootstrap_create_table(tr, s, "types", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "systemname", "varchar", 256);
 		bootstrap_create_column(tr, t, "sqlname", "varchar", 1024);
@@ -2358,7 +2356,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "eclass", "int", 9);
 		bootstrap_create_column(tr, t, "module_id", "int", 9);
 
-		t = bootstrap_create_table(tr, s, "functions", 0,LOCATION,REPLICATION);
+		t = bootstrap_create_table(tr, s, "functions", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "name", "varchar", 256);
 		bootstrap_create_column(tr, t, "func", "varchar", 8196);
@@ -2368,7 +2366,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "aggr", "boolean", 9);
 		bootstrap_create_column(tr, t, "module_id", "int", 9);
 
-		t = bootstrap_create_table(tr, s, "args", 0,LOCATION,REPLICATION);
+		t = bootstrap_create_table(tr, s, "args", 0);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "func_id", "int", 9);
 		bootstrap_create_column(tr, t, "name", "varchar", 256);
@@ -3631,7 +3629,7 @@ validate_tables(sql_schema *s, sql_schema *os)
 	if (cs_size(&s->tables))
 		for (n = s->tables.set->h; n; n = n->next) {
 			sql_table *t = n->data;
-			sql_table *ot = find_sql_table(os, t->base.name,t->location);
+			sql_table *ot = find_sql_table(os, t->base.name, t->location);
 
 			if (ot && ot->table && t->table) {
 				for (o = t->columns.set->h, p = ot->columns.set->h; o && p; o = o->next, p = p->next) {
@@ -3931,7 +3929,7 @@ static void
 sys_drop_idx(sql_trans *tr, sql_idx * i)
 {
 	node *n;
-	sql_table *sysidx = find_sql_table(find_sql_schema(tr, "sys"), "idxs",LOCATION);
+	sql_table *sysidx = find_sql_table(find_sql_schema(tr, "sys"), "idxs", LOCATION);
 	oid rid = column_find_row(tr, find_sql_column(sysidx, "id"), &i->base.id, NULL);
 
 	table_delete(tr, sysidx, rid);
@@ -3950,7 +3948,7 @@ sys_drop_idx(sql_trans *tr, sql_idx * i)
 static void
 sys_drop_tc(sql_trans *tr, sql_trigger * i, sql_kc *kc)
 {
-	sql_table *syskc = find_sql_table(find_sql_schema(tr, "sys"), "keycolumns",LOCATION);
+	sql_table *syskc = find_sql_table(find_sql_schema(tr, "sys"), "keycolumns", LOCATION);
 	oid rid = column_find_row(tr, find_sql_column(syskc, "id"), &i->base.id, NULL);
 
 	(void) kc;		/* Stefan: unused!? */
@@ -3965,7 +3963,7 @@ static void
 sys_drop_trigger(sql_trans *tr, sql_trigger * i)
 {
 	node *n;
-	sql_table *systrigger = find_sql_table(find_sql_schema(tr, "sys"), "triggers",LOCATION);
+	sql_table *systrigger = find_sql_table(find_sql_schema(tr, "sys"), "triggers", LOCATION);
 	oid rid = column_find_row(tr, find_sql_column(systrigger, "id"), &i->base.id, NULL);
 
 	table_delete(tr, systrigger, rid);
@@ -3984,7 +3982,7 @@ sys_drop_trigger(sql_trans *tr, sql_trigger * i)
 static void
 sys_drop_column(sql_trans *tr, sql_column *col)
 {
-	sql_table *syscolumn = find_sql_table(find_sql_schema(tr, "sys"), "pcolumns",LOCATION);
+	sql_table *syscolumn = find_sql_table(find_sql_schema(tr, "sys"), "pcolumns", LOCATION);
 	oid rid = column_find_row(tr, find_sql_column(syscolumn, "id"),
 				  &col->base.id, NULL);
 
@@ -4037,7 +4035,7 @@ sys_drop_table(sql_trans *tr, sql_table *t)
 {
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *systable = find_sql_table(syss,
-					 t->persists ? "ptables" : "ttables",LOCATION);
+					 t->persists ? "ptables" : "ttables", LOCATION);
 	oid rid = column_find_row(tr, find_sql_column(systable, "id"), &t->base.id, NULL);
 
 	table_delete(tr, systable, rid);
@@ -4068,7 +4066,7 @@ sql_module *
 sql_trans_create_module(sql_trans *tr, char *name, char *opt_mod)
 {
 	sql_module *m = NEW(sql_module);
-	sql_table *sysmodule = find_sql_table(find_sql_schema(tr, "sys"), "modules",LOCATION);
+	sql_table *sysmodule = find_sql_table(find_sql_schema(tr, "sys"), "modules", LOCATION);
 
 	base_init(&m->base, next_oid(), TR_NEW, name);
 	cs_init(&m->types, (fdestroy) &type_destroy);
@@ -4094,7 +4092,7 @@ sql_trans_drop_module(sql_trans *tr, char *name)
 	node *n = find_sql_module_node(tr, name);
 	sql_module *m = n->data;
 
-	sql_table *sysmodule = find_sql_table(find_sql_schema(tr, "sys"), "modules",LOCATION);
+	sql_table *sysmodule = find_sql_table(find_sql_schema(tr, "sys"), "modules", LOCATION);
 	oid rid = column_find_row(tr, find_sql_column(sysmodule, "id"), &m->base.id, NULL);
 
 	table_delete(tr, sysmodule, rid);
@@ -4107,7 +4105,7 @@ sql_type *
 sql_trans_create_type(sql_trans *tr, sql_module * m, char *sqlname, int digits, int scale, int radix, char *impl)
 {
 	sql_type *t = NEW(sql_type);
-	sql_table *systype = find_sql_table(find_sql_schema(tr, "sys"), "types",LOCATION);
+	sql_table *systype = find_sql_table(find_sql_schema(tr, "sys"), "types", LOCATION);
 
 	base_init(&t->base, next_oid(), TR_NEW, impl);
 	t->sqlname = _strdup(sqlname);
@@ -4131,8 +4129,8 @@ sql_func *
 sql_trans_create_func(sql_trans *tr, sql_module * m, char *func, list *args, bit sql, bit aggr, char *impl)
 {
 	sql_func *t = NEW(sql_func);
-	sql_table *sysfunc = find_sql_table(find_sql_schema(tr, "sys"), "functions",LOCATION);
-	sql_table *sysarg = find_sql_table(find_sql_schema(tr, "sys"), "args",LOCATION);
+	sql_table *sysfunc = find_sql_table(find_sql_schema(tr, "sys"), "functions", LOCATION);
+	sql_table *sysarg = find_sql_table(find_sql_schema(tr, "sys"), "args", LOCATION);
 	node *n;
 	int number = 0;
 
@@ -4169,7 +4167,7 @@ sql_schema *
 sql_trans_create_schema(sql_trans *tr, char *name, int auth_id)
 {
 	sql_schema *s = NEW(sql_schema);
-	sql_table *sysschema = find_sql_table(find_sql_schema(tr, "sys"), "schemas",LOCATION);
+	sql_table *sysschema = find_sql_table(find_sql_schema(tr, "sys"), "schemas", LOCATION);
 
 	base_init(&s->base, next_oid(), TR_NEW, name);
 	s->auth_id = auth_id;
@@ -4194,7 +4192,7 @@ sql_trans_drop_schema(sql_trans *tr, char *sname)
 {
 	node *n = find_sql_schema_node(tr, sname);
 	sql_schema *s = n->data;
-	sql_table *sysschema = find_sql_table(find_sql_schema(tr, "sys"), "schemas",LOCATION);
+	sql_table *sysschema = find_sql_table(find_sql_schema(tr, "sys"), "schemas", LOCATION);
 	oid rid = column_find_row(tr, find_sql_column(sysschema, "id"), &s->base.id, NULL);
 
 	table_delete(tr, sysschema, rid);
@@ -4211,7 +4209,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, bit
 	BAT *b;
 	sql_table *t = create_table_intern(name, 1, system, persists, clear, location, replication_id);
 	sql_schema *syss = find_sql_schema(tr, "sys");
-	sql_table *systable = find_sql_table(syss, persists ? "ptables" : "ttables",LOCATION);
+	sql_table *systable = find_sql_table(syss, persists ? "ptables" : "ttables", LOCATION);
 
 	t->dbid = 0;
 	t->query = NULL;
@@ -4227,13 +4225,11 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, bit
 
 	systable->base.wtime = tr->stime;
 
-	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, ATOMnilptr(TYPE_str), &t->table, &t->system, &t->clear);
+	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, ATOMnilptr(TYPE_str), &t->table, &t->system, &t->clear, &t->replication_id, &t->location);
 
 	if (t->persists)
 		t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	tr->schema_updates ++;
-	t->location = location;
-	t->replication_id = replication_id;
 	return t;
 }
 
@@ -4241,9 +4237,9 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, bit
 sql_table *
 sql_trans_create_view(sql_trans *tr, sql_schema *s, char *name, char *sql, bit system, bit persists, int location, int replication_id)
 {
-	sql_table *t = create_table_intern(name, 0, system, persists, 0,location,replication_id);
+	sql_table *t = create_table_intern(name, 0, system, persists, 0, location, replication_id);
 	sql_schema *syss = find_sql_schema(tr, "sys");
-	sql_table *systable = find_sql_table(syss, persists ? "ptables" : "ttables",LOCATION);
+	sql_table *systable = find_sql_table(syss, persists ? "ptables" : "ttables", LOCATION);
 
 	t->query = NULL;
 	if (sql)
@@ -4251,7 +4247,7 @@ sql_trans_create_view(sql_trans *tr, sql_schema *s, char *name, char *sql, bit s
 	t->s = s;
 	cs_add(&s->tables, t, TR_NEW);
 
-	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, (t->query) ? t->query : ATOMnilptr(TYPE_str), &t->table, &t->system, &t->clear);
+	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, (t->query) ? t->query : ATOMnilptr(TYPE_str), &t->table, &t->system, &t->clear, &t->replication_id, &t->location);
 
 	if (t->persists)
 		systable->base.wtime = t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
@@ -4265,7 +4261,7 @@ create_column_bat(sql_trans *tr, sql_table *t, char *name, sql_subtype *tpe, BAT
 {
 	sql_column *col = NEW(sql_column);
 	sql_schema *syss = find_sql_schema(tr, "sys");
-	sql_table *syscolumn = find_sql_table(syss, t->persists ? "pcolumns" : "tcolumns",LOCATION);
+	sql_table *syscolumn = find_sql_table(syss, t->persists ? "pcolumns" : "tcolumns", LOCATION);
 
 	base_init(&col->base, next_oid(), TR_NEW, name);
 	col->type = *tpe;
@@ -4498,7 +4494,7 @@ sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 {
 	if (col->null != isnull) {
 		sql_table *syscolumn = find_sql_table(find_sql_schema(tr, "sys"),
-						  col->t->persists ? "pcolumns" : "tcolumns",LOCATION);
+						  col->t->persists ? "pcolumns" : "tcolumns", LOCATION);
 		oid rid = column_find_row(tr, find_sql_column(syscolumn, "id"),
 					  &col->base.id, NULL);
 
@@ -4520,7 +4516,7 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 	if (!col->def || !val || strcmp(col->def, val) != 0) {
 		void *p = val ? val : ATOMnilptr(TYPE_str);
 		sql_table *syscolumn = find_sql_table(find_sql_schema(tr, "sys"),
-						  col->t->persists ? "pcolumns" : "tcolumns",LOCATION);
+						  col->t->persists ? "pcolumns" : "tcolumns", LOCATION);
 		ssize_t rid = column_find_row(tr, find_sql_column(syscolumn, "id"),
 					  &col->base.id, NULL);
 
@@ -4544,7 +4540,7 @@ sql_trans_create_key(sql_trans *tr, sql_table *t, char *name, key_type kt, sql_k
 /* can only have keys between persistent tables */
 	int neg = -1;
 	sql_key *nk;
-	sql_table *syskey = find_sql_table(find_sql_schema(tr, "sys"), "keys",LOCATION);
+	sql_table *syskey = find_sql_table(find_sql_schema(tr, "sys"), "keys", LOCATION);
 
 	if (!t->persists || t->clear)
 		return NULL;
@@ -4593,7 +4589,7 @@ sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c /*, extra options s
 {
 	sql_kc *kc = NEW(sql_kc);
 	int nr = list_length(k->columns);
-	sql_table *syskc = find_sql_table(find_sql_schema(tr, "sys"), "keycolumns",LOCATION);
+	sql_table *syskc = find_sql_table(find_sql_schema(tr, "sys"), "keycolumns", LOCATION);
 
 	assert(c);
 	kc->c = c;
@@ -4633,7 +4629,7 @@ sql_trans_create_idx(sql_trans *tr, sql_table *t, char *name, idx_type it)
 {
 	/* can only have idxs between persistent tables */
 	sql_idx *ni = NEW(sql_idx);
-	sql_table *sysidx = find_sql_table(find_sql_schema(tr, "sys"), "idxs",LOCATION);
+	sql_table *sysidx = find_sql_table(find_sql_schema(tr, "sys"), "idxs", LOCATION);
 
 	if (!t->persists || t->clear)
 		return NULL;
@@ -4672,7 +4668,7 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c /*, extra options 
 {
 	sql_kc *ic = NEW(sql_kc);
 	int nr = list_length(i->columns);
-	sql_table *sysic = find_sql_table(find_sql_schema(tr, "sys"), "keycolumns",LOCATION);
+	sql_table *sysic = find_sql_table(find_sql_schema(tr, "sys"), "keycolumns", LOCATION);
 
 	assert(c);
 	ic->c = c;
@@ -4724,7 +4720,7 @@ sql_trans_create_trigger(sql_trans *tr, sql_table *t, char *name,
 {
 	/* can only have triggers between persistent tables */
 	sql_trigger *ni = NEW(sql_trigger);
-	sql_table *systrigger = find_sql_table(find_sql_schema(tr, "sys"), "triggers",LOCATION);
+	sql_table *systrigger = find_sql_table(find_sql_schema(tr, "sys"), "triggers", LOCATION);
 	str nilptr = ATOMnilptr(TYPE_str);
 
 	if (!t->persists || t->clear)
@@ -4761,7 +4757,7 @@ sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_column *c /*, extra opti
 {
 	sql_kc *ic = NEW(sql_kc);
 	int nr = list_length(i->columns);
-	sql_table *sysic = find_sql_table(find_sql_schema(tr, "sys"), "keycolumns",LOCATION);
+	sql_table *sysic = find_sql_table(find_sql_schema(tr, "sys"), "keycolumns", LOCATION);
 
 	assert(c);
 	ic->c = c;

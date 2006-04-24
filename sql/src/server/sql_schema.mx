@@ -127,7 +127,7 @@ static stmt *
 sql_insert_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, int grantable)
 {
 	sql_schema *ss = mvc_bind_schema(sql, "sys");
-	sql_table *pt = mvc_bind_table(sql, ss, "privileges",LOCATION);
+	sql_table *pt = mvc_bind_table(sql, ss, "privileges", LOCATION);
 	node *n = pt->columns.set->h;
 	stmt *res, **inserts = NEW_ARRAY(stmt *, 5);
 	stmt *pts = stmt_basetable(pt, pt->base.name);
@@ -349,7 +349,7 @@ static stmt *
 sql_delete_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, int grantable)
 {
 	sql_schema *ss = mvc_bind_schema(sql, "sys");
-	sql_table *pt = mvc_bind_table(sql, ss, "privileges",LOCATION);
+	sql_table *pt = mvc_bind_table(sql, ss, "privileges", LOCATION);
 	node *n = pt->columns.set->h;
 
 	stmt *pts = stmt_basetable(pt, pt->base.name);
@@ -1852,7 +1852,7 @@ schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = create_trigger(sql, l->h->data.sym, l->h->next->data.ival, l->h->next->next->data.sym, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval,LOCATION);
+		ret = create_trigger(sql, l->h->data.sym, l->h->next->data.ival, l->h->next->next->data.sym, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval, LOCATION);
 		sql->type = Q_SCHEMA;
 	}
 		break;
