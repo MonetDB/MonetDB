@@ -516,7 +516,7 @@ static void printStat(shredCtxStruct* shredCtx) {
     }
 }
 
-static BAT* finalizeShredCtx(shredCtxStruct* shredCtx, BAT* doc_pre_BAT) {
+static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
     oid i, p = shredCtx->nnode_pre >> REMAP_PAGE_BITS;
     BAT* res = NULL;
 
@@ -623,8 +623,6 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx, BAT* doc_pre_BAT) {
         if ( sb->def->headType==TYPE_void && !BAThdense(sb->bat) )
             stream_printf(GDKout,"WARNING: BAT[%s] not dense\n",sb->def->name);
         if ( i == WS_FRAG ) {
-            oid zero = 0;
-            BUNappend(sb->bat, &zero, FALSE);
             sb->bat = BATsetaccess(sb->bat, BAT_READ);
             sb->bat = BATseqbase(sb->bat,  0);
         } else {
@@ -636,16 +634,6 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx, BAT* doc_pre_BAT) {
             return NULL;
         }
         BBPunfix( bbb );
-    }
-    if ( doc_pre_BAT != NULL ) {
-        int last = SHRED_BATS;
-        doc_pre_BAT = BATsetaccess(doc_pre_BAT, BAT_READ);
-        bat bbbb = BBPcacheid( doc_pre_BAT );
-        if ( ! BUNins(res, &last, &bbbb) ) {
-            GDKerror("shredder.mx:finalizeShredCtx: saving doc_pre_BAT fails\n");
-            return NULL;
-        }
-	BBPunfix(bbbb);
     }
     if ( PRINT_STAT )
         printStat(shredCtx);
@@ -743,7 +731,6 @@ shred_doc_or_docseq(BAT **res2mil, str location, str buffer, BAT* docseq, str op
     }
 
     off_t estimatedSize;
-    BAT* doc_pre_BAT = BATnew(TYPE_void,TYPE_oid,16);
 
     if ( docseq == NULL ) {
         if (strcmp(buffer, str_nil) != 0)
@@ -762,6 +749,12 @@ shred_doc_or_docseq(BAT **res2mil, str location, str buffer, BAT* docseq, str op
     if ( docseq == NULL ) {
         if ( (doc_pre=mainSHREDDER(shredCtx, location, buffer)) < 0 )
             return GDK_FAIL;
+	oid doc_pre_oid = PRE2NID((oid)doc_pre, shredCtx->pageFree);
+
+	if ( BUNappend(shredCtx->dstBAT[WS_FRAG].bat, (ptr)(&doc_pre_oid), FALSE) == NULL) {
+            GDKerror("shred_doc_or_docseq: saving doc_pre fails!\n");
+            return GDK_FAIL;
+	}
     } else {
         BUN p,q;
         BATloop(docseq,p,q) {
@@ -770,16 +763,15 @@ shred_doc_or_docseq(BAT **res2mil, str location, str buffer, BAT* docseq, str op
 
             if ( (doc_pre=mainSHREDDER(shredCtx,ds_loc,ds_buf)) < 0 )
                 return GDK_FAIL;
-	    if ( 0 ) stream_printf(GDKout,"# shredded doc: doc_pre = %d.\n",doc_pre);
-	    oid doc_pre_oid = (oid)doc_pre;
-	    if ( BUNappend(doc_pre_BAT, (ptr)(&doc_pre_oid), FALSE) == NULL) {
+	    oid doc_pre_oid = PRE2NID((oid)doc_pre, shredCtx->pageFree);
+
+	    if ( BUNappend(shredCtx->dstBAT[WS_FRAG].bat, (ptr)(&doc_pre_oid), FALSE) == NULL) {
                 GDKerror("shred_doc_or_docseq: saving doc_pre fails!\n");
                 return GDK_FAIL;
 	    }
         }
     }
-    /* if ( !(*res2mil = finalizeShredCtx(shredCtx, doc_pre_BAT)) ) */
-    if ( !(*res2mil = finalizeShredCtx(shredCtx, NULL)) )
+    if ( !(*res2mil = finalizeShredCtx(shredCtx)) )
         return GDK_FAIL;
 
     /* read elapsed time */
