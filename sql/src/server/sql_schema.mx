@@ -328,7 +328,7 @@ grant_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int grant,
 	char *host = qname_host(obj);
 	int location = LOCATION;
 	if(!host)
-		location = (int) find_table_value(sql,"location","location","name",host,LOCATION);
+		location = *(int*) find_table_value(sql,"location","location","name",host,LOCATION);
 
 	if (token == SQL_NAME)
 		if (mvc_bind_table(sql, cur,tname, location) != NULL)
@@ -498,7 +498,7 @@ revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int grant
 	char *host = qname_host(obj);
 	int location = LOCATION;
 	if(!host)
-		location =  (int) find_table_value(sql,"location","location","name",host,LOCATION);
+		location =  *(int*) find_table_value(sql,"location","location","name",host,LOCATION);
 
 	if (token == SQL_NAME)
 		if (mvc_bind_table(sql, cur, tname, location) != NULL)
@@ -669,7 +669,7 @@ create_view(mvc *sql, sql_schema *ss, symbol *symb, dlist *column_spec, symbol *
 	int location = LOCATION;
 	int replication_id = LOCATION;
 	if(!host)
-		location =  (int) find_table_value(sql,"location","location","name",host,LOCATION);
+		location =  *(int*) find_table_value(sql,"location","location","name",host,LOCATION);
 
 	(void) check;		/* Stefan: unused!? */
 
@@ -740,7 +740,7 @@ drop_view(mvc *sql, symbol *symb)
 	char *host = qname_host(symb);
 	int location = LOCATION;
 	if(!host)
-		location =  (int) find_table_value(sql,"location","location","name",host,LOCATION);
+		location =  *(int*) find_table_value(sql,"location","location","name",host,LOCATION);
 	sql_table *t = mvc_bind_table(sql, ss, tname, location);
 
 	if (!schema_privs(sql->role_id, ss)) 
@@ -764,7 +764,7 @@ create_index(mvc *sql, sql_schema *ss, char *iname, int itype, symbol *symb, dli
 	char *host = qname_host(symb);
 	int location = LOCATION;
 	if(!host)
-		location =  (int) find_table_value(sql,"location","location","name",host,LOCATION);
+		location =  *(int*) find_table_value(sql,"location","location","name",host,LOCATION);
 
 	sql_table *t = mvc_bind_table(sql, ss, name,location);
 
@@ -939,7 +939,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 				char *host = qname_host(n->data.sym);
 				int location = LOCATION;
 				if(!host)
-					location =  (int) find_table_value(sql,"loocation","location","name",host,LOCATION);
+					location =  *(int*) find_table_value(sql,"loocation","location","name",host,LOCATION);
 				char *rcname = n->next->data.lval->h->data.sval;
 				int ref_actions = n->next->next->next->data.ival; 
 				sql_fkey *fk;
@@ -1199,7 +1199,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t,
 	char *host = qname_host(n->data.sym);
 	int location = LOCATION;
 	if(!host)
-		location =  (int) find_table_value(sql,"location","location","name",host,LOCATION);
+		location =  *(int*) find_table_value(sql,"location","location","name",host,LOCATION);
 	sql_table *ft = mvc_bind_table(sql, ss, rtname,location);
 
 	if (!ft) {
@@ -1355,7 +1355,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		char *host = qname_host(s->data.sym);
 		int location = LOCATION;
 		if(!host)
-			location =  (int) find_table_value(sql,"location","location","name",host,LOCATION);
+			location =  *(int*) find_table_value(sql,"location","location","name",host,LOCATION);
 		sql_table *ot = mvc_bind_table(sql, ss, name, location);
 		node *n;
 
@@ -1426,7 +1426,7 @@ create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_ele
 	int location = LOCATION;
 	int replication_id = REPLICATION;
 	if(!host)
-		location =  (int) find_table_value(sql,"location","location","name",host,LOCATION);
+		location =  *(int*) find_table_value(sql,"location","location","name",host,LOCATION);
 	
 	extern void *column_find_value(sql_trans *tr, sql_column *c, oid rid);
 
@@ -1496,7 +1496,7 @@ drop_table(mvc *sql, symbol *symb, int drop_action)
 	char *host = qname_host(symb);
 	int location = LOCATION;
 	if(!host)
-		location =  (int) find_table_value(sql,"location","location","name",host,LOCATION);
+		location =  *(int*) find_table_value(sql,"location","location","name",host,LOCATION);
 	sql_table *t = mvc_bind_table(sql, ss, tname, location);
 
 	if (!schema_privs(sql->role_id, ss)) 
@@ -1564,7 +1564,7 @@ alter_table(mvc *sql, sql_schema *ss, symbol *symb, symbol *te)
 	char *host = qname_host(symb);
 	int location = LOCATION;
 	if(!host)
-		location =  (int) find_table_value(sql,"location","location","name",host,LOCATION);
+		location =  *(int*) find_table_value(sql,"location","location","name",host,LOCATION);
 	sql_table *t = NULL;
 
 	if ((t = mvc_bind_table(sql, ss, name, location)) == NULL) {
