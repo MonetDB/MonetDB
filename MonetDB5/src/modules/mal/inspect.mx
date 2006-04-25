@@ -50,6 +50,9 @@ comment "Returns the function signature(s)";
 command getComment(mod:str,fcn:str) :bat[:str,:str]
 address INSPECTgetComment
 comment "Returns the function help information.";
+command getSource(mod:str,fcn:str):str
+address INSPECTgetSource
+comment "Return the original input for a function";
 
 @-
 The symbol table can be accessed as if it was a relational
@@ -188,6 +191,7 @@ mal_export str INSPECTgetDefinition(int *ret, str *nme, str *fcn);
 mal_export str INSPECTgetSignature(int *ret, str *mod, str *fcn);
 mal_export str INSPECTgetAddress(int *ret, str *mod, str *fcn);
 mal_export str INSPECTgetComment(int *ret, str *mod, str *fcn);
+mal_export str INSPECTgetSource(str *ret, str *mod, str *fcn);
 mal_export str INSPECTgetModuleSize(int *ret, str *mod);
 mal_export str INSPECTgetFunctionSize(lng *ret, str *mod, str *fcn);
 mal_export str INSPECTgetSize(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -549,7 +553,7 @@ INSPECTgetSignature(int *ret, str *mod, str *fcn)
 			tail= strstr(c,"address");
 			if( tail)
 				*tail = 0;
-			if (strchr(tail, ';'))
+			if (tail && strchr(tail, ';'))
 				*strchr(tail, ';') = 0;
 			BUNins(b, buf, c);
 			GDKfree(ps);
@@ -589,7 +593,7 @@ INSPECTgetAddress(int *ret, str *mod, str *fcn)
 				*tail = 0;
 				for( tail=tail+7; isspace((int) *tail); tail++)  ;
 			}
-			if (strchr(tail, ';'))
+			if (tail && strchr(tail, ';'))
 				*strchr(tail, ';') = 0;
 			BUNins(b, buf, (tail? tail: "nil"));
 			GDKfree(ps);
@@ -623,6 +627,51 @@ INSPECTgetComment(int *ret, str *mod, str *fcn)
 	}
 
 	@:Pseudo(view,input,result)@
+	return MAL_SUCCEED;
+}
+str
+INSPECTgetSource(str *ret, str *mod, str *fcn)
+{
+	Symbol s;
+	char *buf;
+	int len,lim;
+
+	s = findMALSymbol(putName(*mod, strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	if (s == 0)
+		return throwMessage("inspect.getSignature", 
+			"Failed to find <module>.<function>");
+
+	buf= (char*) GDKmalloc(BUFSIZ);
+	snprintf(buf,BUFSIZ,"%s.%s",*mod,*fcn);
+	s = findMALSymbol(putName(*mod, strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	buf[0]=0;
+	len= 0;
+	lim= BUFSIZ;
+
+	while (s) {
+		int i;
+		str ps;
+
+		for (i = 0; i < s->def->stop; i++) {
+			ps = instruction2str(s->def, getInstrPtr(s->def, i), 0);
+			if( strlen(ps) >= lim-len){
+				/* expand the buffer */
+				char *bn;
+				bn= GDKmalloc(lim+BUFSIZ);
+				strcpy(bn,buf);
+				GDKfree(buf);
+				buf=bn;
+				lim+= BUFSIZ;
+			}
+			strcat(buf+len,ps+1);
+			len+= strlen(ps)-1;
+			buf[len++]='\n';
+			buf[len]=0;
+			GDKfree(ps);
+		}
+		s = s->peer;
+	}
+	*ret= buf;
 	return MAL_SUCCEED;
 }
 
