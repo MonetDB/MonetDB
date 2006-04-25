@@ -87,7 +87,7 @@ static int snb_porter_init(void* ctx, char* s) {
 static unsigned char* snb_porter_stem(void* ctx, unsigned char* s) {
 	struct SN_env *env = (struct SN_env *)((tjStemCtx*)ctx)->udf;
 
-	SN_set_current(env,strlen((char*)s),s);
+	SN_set_current(env,strlen(s),s);
 	if ( !porter_UTF_8_stem(env) ) {
 		fprintf(stderr,"english_stem(\"%s\") FAILS \n",s);
 		return NULL;
@@ -96,7 +96,7 @@ static unsigned char* snb_porter_stem(void* ctx, unsigned char* s) {
 #ifdef STEMMING_DEBUG
 	stream_printf(GDKout,"+ stem-snowball-porter(%s)=\"%s\"\n",s,env->p);
 #endif
-	return env->p;
+	return (unsigned char*)env->p;
 }
 
 static int snb_porter_clear(void* ctx) {
@@ -127,7 +127,7 @@ static int snb_english_init(void* ctx, char* s) {
 static unsigned char* snb_english_stem(void* ctx, unsigned char* s) {
 	struct SN_env *env = (struct SN_env *)((tjStemCtx*)ctx)->udf;
 
-	SN_set_current(env,strlen((char*)s),s);
+	SN_set_current(env,strlen(s),s);
 	if ( !english_UTF_8_stem(env) ) {
 		fprintf(stderr,"english_stem(\"%s\") FAILS \n",s);
 		return NULL;
@@ -136,7 +136,7 @@ static unsigned char* snb_english_stem(void* ctx, unsigned char* s) {
 #ifdef STEMMING_DEBUG
 	stream_printf(GDKout,"+ stem-snowball-english(%s)=\"%s\"\n",s,env->p);
 #endif
-	return env->p;
+	return (unsigned char*)env->p;
 }
 
 static int snb_english_clear(void* ctx) {
@@ -167,7 +167,7 @@ static int snb_dutch_init(void* ctx, char* s) {
 static unsigned char* snb_dutch_stem(void* ctx, unsigned char* s) {
 	struct SN_env *env = (struct SN_env *)((tjStemCtx*)ctx)->udf;
 
-	SN_set_current(env,strlen((char*)s),s);
+	SN_set_current(env,strlen(s),s);
 	if ( !dutch_UTF_8_stem(env) ) {
 		fprintf(stderr,"dutch_stem(\"%s\") FAILS \n",s);
 		return NULL;
@@ -176,7 +176,7 @@ static unsigned char* snb_dutch_stem(void* ctx, unsigned char* s) {
 #ifdef STEMMING_DEBUG
 	stream_printf(GDKout,"+ stem-snowball-dutch(%s)=\"%s\"\n",s,env->p);
 #endif
-	return env->p;
+	return (unsigned char*)env->p;
 }
 
 static int snb_dutch_clear(void* ctx) {

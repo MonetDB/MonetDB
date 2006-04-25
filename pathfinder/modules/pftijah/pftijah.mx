@@ -1349,7 +1349,7 @@ int CMDtijah_query(BAT** res, str pfx, str q) {
             GDKerror("CMDtijah_query: fail to rename score bat: \"%s\".\n", &buff[0]);
 	    return GDK_FAIL;
 	}
-	BATmode(scoreBAT,SESSION);
+	BATmode(scoreBAT,TRANSIENT);
 
 	*res = scoreBAT;
 
