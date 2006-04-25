@@ -3219,7 +3219,7 @@ proc add_string_bulk(bat[void,bat] ws, oid cont, int tableid, bat[oid,str] valba
   var newvallist := validbat.uselect(oid(nil));
   if (newvallist.count() > 0) {
     # insert missing strings
-    table.append(newvallist.mirror().join(valbat), true);
+    table.append(newvallist.mirror().join(valbat).tunique().reverse(), true);
     # try finding the IDs again (they should now all be found)
     validbat := valbat.outerjoin(table.reverse());
   }
@@ -3235,10 +3235,13 @@ proc add_pi_bulk(bat[void,bat] ws, oid cont, bat[oid,str] insbat, bat[oid,str] t
   var idbat := instgtbat.outerjoin(prop_ins_tgt.reverse());
   var newidlist := idbat.uselect(oid(nil));
   if (newidlist.count() > 0) {
-    # insert missing strings
-    newidlist := newidlist.mirror();
-    prop_ins.append(newidlist.leftjoin(insbat), true);
-    prop_tgt.append(newidlist.leftjoin(tgtbat), true);
+    # insert missing strings, first figure out unique combinations
+    var instgtunique := newidlist.mirror().join(instgtbat).tunique();
+    # then extract instruction and target
+    var instgtuniquesplit := instgtunique.splitbat("\001");
+    # and finally add them to respective BATs
+    prop_ins.append(instgtuniquesplit.fetch(0), true);
+    prop_tgt.append(instgtuniquesplit.fetch(1), true);
     prop_ins_tgt := [+]([+](prop_ins, "\001"), prop_tgt);
     idbat := instgtbat.outerjoin(prop_ins_tgt.reverse());
   }
