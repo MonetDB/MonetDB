@@ -1514,9 +1514,9 @@ PFfun_xquery_fo ()
     , /* fn:tijah-query(item*, string) as item* */
       { .ns = PFns_fn, .loc = "tijah-query",
         .arity = 2, .sig_count = 1, .sigs = { {
-	     .par_ty = (PFty_t[]) { PFty_star (PFty_item ()),
+	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
                                 PFty_string () },
-             .ret_ty = PFty_star (PFty_item ()) } } }
+             .ret_ty = PFty_star (PFty_xs_anyNode ()) } } }
 #else
 #endif
     , { .loc = 0 }

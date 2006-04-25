@@ -1320,6 +1320,8 @@ int CMDtijah_command(bit* res, str command) {
 
 extern char* tijahParse(char* pfx, char* query, char** errBUFF);
 
+static int oldScoreCounter = 0;
+
 int CMDtijah_query(BAT** res, str pfx, str q) {
 	if ( 0 ) stream_printf(GDKout,"# tijah_	query(\"%s\",\"%s\")\n",pfx,q);
 	/* */
@@ -1335,7 +1337,22 @@ int CMDtijah_query(BAT** res, str pfx, str q) {
 	    return GDK_FAIL;
 	}
 	/* */
-	*res = BATnew(TYPE_oid, TYPE_dbl, 0);
+	BAT* scoreBAT = BATdescriptor( BBPindex("nexi_result") );
+
+	if ( ! scoreBAT ) {
+            GDKerror("CMDtijah_query: fail to load score bat: \"%s\".\n", "nexi_result");
+	    return GDK_FAIL;
+        }
+	char buff[32];
+	sprintf(&buff[0],"%s_del%d","nexi_result",oldScoreCounter++);
+	if ( BATrename(scoreBAT,(str)&buff[0]) == str_nil ) {
+            GDKerror("CMDtijah_query: fail to rename score bat: \"%s\".\n", &buff[0]);
+	    return GDK_FAIL;
+	}
+	BATmode(scoreBAT,SESSION);
+
+	*res = scoreBAT;
+
 	return GDK_SUCCEED;
 }
 

@@ -8044,9 +8044,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "    var lo := 2.0LL;\n"
 		"    var tjpfx := \"PFX\";\n"
                 "    var tqarg := item_str_%03d.fetch(0);\n"
-                "    run_tijah_query(tjpfx,tqarg);\n"
-		"    var pre_score := bat(\"nexi_result\");\n"
-		"    pre_score.persists(false);\n"
+                "    var pre_score := run_tijah_query(tjpfx,tqarg);\n"
                 "    if (lo < 1.0LL) lo := 0.0;\n", cur_level, counter-1);
         milprintf(f, "    var hi := INT_MAX;\n");
 
