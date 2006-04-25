@@ -925,8 +925,13 @@ Convert all parameter values to integers.
 		if (ATOMsize(tpe) == sizeof(int)) {
 			v[j++] = argv[i].val.ival;
 		} else {
-			v[j++] = ((int *) &argv[i].val.lval)[0];
-			v[j++] = ((int *) &argv[i].val.lval)[1];
+#ifdef WORDS_BIGENDIAN
+			v[j++] = (ssize_t) (argv[i].val.lval & LL_CONSTANT(0xFFFFFFFF));
+			v[j++] = (ssize_t) (argv[i].val.lval >> 32);
+#else
+			v[j++] = (ssize_t) (argv[i].val.lval >> 32);
+			v[j++] = (ssize_t) (argv[i].val.lval & LL_CONSTANT(0xFFFFFFFF));
+#endif
 		}
 #endif
 	}
