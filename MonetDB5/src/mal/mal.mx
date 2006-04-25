@@ -16,7 +16,7 @@
 @' All Rights Reserved.
 
 @f mal
-@* Introduction to MonetDB 
+@* Introduction to MonetDB Version 5
 The MonetDB product family consists of a large number of components
 developed within our group over the last decade. Some components have
 already been shipped to happy customers, some are still in the making,
@@ -28,8 +28,7 @@ a variety of query transformation schemes, and
 different execution platforms (interpreted materialized or
 pipelined, dynamic compilation).
 
-Version 5 expands the MonetDB software infrastructure, available
-in the open source community for several years already. 
+MonetDB Version 5 is a major release of our software infrastructure.
 The most notable differences are its greatly
 improved software stack and a new interface language,
 which turns the database server back-end into an
@@ -38,8 +37,8 @@ It supports backward compatibility of interfaces, tools, and
 source sharing where feasible within the limited scope of resources available.
 
 In the remainder of this section we shortly introduce the
-MonetDB design considerations and
-a quick overview of the MonetDB Version 5 architecture.
+MonetDB Version 5 design considerations and
+a quick overview of the its architecture.
 
 @menu
 * Design considerations::
@@ -55,9 +54,9 @@ a quick overview of the MonetDB Version 5 architecture.
 @+ Design considerations
 Redesign of the MonetDB software stack was driven by the need to
 reduce the effort to extend the system into novel directions
-and to reduce the Total Execution Cost (TEC) for query execution.
-The TEC is what an end-user or application program will
-notice. The TEC is composed on several cost factors:
+and to reduce the Total Execution Cost (TEC).
+The TEC is what an end-user or application program will notice. 
+The TEC is composed on several cost factors:
 @itemize 
 @item  A)
 API message handling
@@ -70,7 +69,7 @@ Data access to the persistent store
 @item  E)
 Execution of the query terms
 @item R)
- Result delivery to the application
+Result delivery to the application
 @end itemize
 
 Choosing an architecture for processing database operations pre-supposes an
@@ -83,14 +82,14 @@ Such a simple characterization ignores the wide-spread
 differences that can be experienced at each level. To illustrate,
 in D) and R) it makes a big difference whether the data is already in the
 cache or still on disk. With E) it makes a big difference whether you
-are comparing two integers, performing a math function such as Gaussian, or
-a regular expression evaluation on a string.
+are comparing two integers, evaluation of a mathematical function,
+e.g. Gaussian, or a regular expression evaluation on a string.
 As a result, intense optimization in one area may become completely invisible
 due to being overshadowed by other cost factors.
 
 The Version 5 infrastructure is designed to ease addressing each
-of these cost factors in a well-defined way, while retaining an
-option to combine the components needed for a particular situation.
+of these cost factors in a well-defined way, while retaining the
+flexibility to combine the components needed for a particular situation.
 This results in an architecture to assemble the components
 for a particular application domain and hardware platform.
 
@@ -106,50 +105,46 @@ effort otherwise needed to develop test and application programs.
 
 @node Architecture overview, MAL synopsis, Design considerations, MonetDB Overview
 @+ Architecture overview
-The software stack for Version 5 is shown in Figure
- @c image{architecture}
-The top layer illustrates the applications written in any of
-the known languages. They provide both specific functionality
+The architecture is built around three independent components:
+the MonetDB server, the MonetDB guardian, and the client application.
+The MonetDB server is the heart of the system, it manages a single
+physical database on one machine for all (concurrent) applications.
+The guardian program works along side a single server, keeping
+an eye on its behavior. If the server accidently crashes, it is this program
+that will attempt an automatic restart.
+Server and guardian are managed with the @code{monetdb} script,
+introduced in @ref{Start and Stop the Server}.
+
+The top layer consists of applications written in your favorite
+language.
+They provide both specific functionality
 for a particular product, e.g. Proximity,
 and generic functionality, e.g. the Aquabrowser.
-The applications communicate with the query processor
+The applications communicate with the server 
 using a de-facto standard interface packaged as a library
-e.g. Jdbc, ODBC, Perl, PHP, etc..
+e.g. JDBC, ODBC, Perl, PHP, etc..
 
-The query processors available in the MonetDB family are
+The prime query language processors available in the MonetDB family are
 SQL and XQuery. The former supports the core functionality
 of SQL:1999 and extends into SQL:2003. The latter is based on
 the W3C standard and includes the XUpdate functionality.
-The queries are parsed by the query language processors 
-each using private catalog structure.
-A strategic optimizer uses query language semantics and
-generic heuristics, such as pushing down selections through
-joins, to derive a MAL program understood by the kernel.
+The query language processors each manage their own private catalog structure.
+Software bridges, e.g. import/export routines, are used to
+share data between language paradigms.
 
-The @code{monetdb} shell program relies on two programs @code{mserver5}
-and @code{mguardian}. The former actually represents the server
-process and waits for client connections. One @code{mserver5} process
-may be active in each physical database container or directory.
-
-The @code{mguardian} program works along side a single @code{mserver5}, keeping
-an eye on its behavior. If the server accidently crashes, it is this program
-that will attempt an automatic restart. The delay between each check for
-liveness can be set at any time e.g. as follows:
-@example
-mguardian --delay=20 --dbname=voc
-@end example
-
-The @code{mserver5} shell program also provides commands to inspect
-the status of all servers and to shut down one or all
-guardian processes. For further details see @ref{Start and Stop the Server}.
+For each a language specific, strategic optimizer is included. 
+It uses knowledge on the language semantics and general
+heuristics, such as pushing down selections through
+joins, to derive better programs.
 
 @node MAL synopsis, MAL execution, Architecture overview,  MonetDB Overview
 @+ MonetDB Assembler Language (MAL)
-The target language for Version 5 is an assembler-like language,
-derived as a subset of the Monet Interface Language introduced
-previously. The language provides the textual interface to
-the back-end, the communication between (independent) family components,
-and the API.
+The target language for the query compilers is an assembler-like language,
+called the MonetDB Assembler Language (MAL).
+It is a simplified subset of the Monet Interface Language introduced
+previously. The language provides a direct the textual interface to
+the server back-end, i.e. MAL is a language available to applications
+as well.
 
 Its design is geared to provide a controlled setting for the
 query processors. They can produce algebraic representations
