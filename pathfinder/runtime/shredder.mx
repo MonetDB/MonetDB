@@ -37,6 +37,11 @@ pf_support_export int CMDshred2bats(BAT **res2mil, str location, str buffer, str
  *        generates a lot of extra confusing 'noise'
  */
 
+/* Set the SUPER_ROOT define to create and maintain a document-root which
+ * contains all documents in the conatainer.
+ */
+/* #define SUPER_ROOT */
+
 #define SHRED_HOLES
 
 #ifdef SHRED_HOLES
@@ -72,6 +77,15 @@ typedef unsigned int posint;
 #define OIDFMT "%13" NATFMT 
 
 static char emptyString[1] = "";
+
+/**
+ * XML node kinds
+ */
+#define ELEMENT   0
+#define PFTEXT    1
+#define COMMENT   2
+#define PI        3
+#define DOCUMENT  4
 
 /*******
  *
@@ -319,6 +333,7 @@ typedef struct shredCtxStruct {
 /* the minimal incremental size of a BAT during estimation process */
 #define MINCHUNK        1024
 
+
 static shredCtxStruct *createShredCtx(char* location, off_t  fileSize, off_t pageFree) {
     int i;
     //oid cont = 1;
@@ -393,6 +408,14 @@ static shredCtxStruct *createShredCtx(char* location, off_t  fileSize, off_t pag
 
     /* and finally init the special attribute database */
     initAttrDB(&res->specAttrDb);
+
+#ifdef SUPER_ROOT
+    static int emit_super_root(shredCtxStruct* shredCtx);
+
+    if ( emit_super_root(res) < 0 )
+        return NULL;
+#endif
+
     return res;
 }
 
@@ -686,6 +709,9 @@ off_t  fileSize(char* location) {
 static int
 shred_doc_or_docseq(BAT **res2mil, str location, str buffer, BAT* docseq, str opt)
 {
+#ifdef SUPER_ROOT
+    static int adjust_super_root(shredCtxStruct* shredCtx);
+#endif
     /* timing */
     struct timeval now;
     long start, stop;
@@ -755,6 +781,9 @@ shred_doc_or_docseq(BAT **res2mil, str location, str buffer, BAT* docseq, str op
             GDKerror("shred_doc_or_docseq: saving doc_pre fails!\n");
             return GDK_FAIL;
 	}
+#ifdef SUPER_ROOT
+        adjust_super_root(shredCtx);
+#endif
     } else {
         BUN p,q;
         BATloop(docseq,p,q) {
@@ -769,6 +798,9 @@ shred_doc_or_docseq(BAT **res2mil, str location, str buffer, BAT* docseq, str op
                 GDKerror("shred_doc_or_docseq: saving doc_pre fails!\n");
                 return GDK_FAIL;
 	    }
+#ifdef SUPER_ROOT
+            adjust_super_root(shredCtx);
+#endif
         }
     }
     if ( !(*res2mil = finalizeShredCtx(shredCtx)) )
@@ -904,15 +936,6 @@ static INLINE nat append_str_oid2bat(shredCtxStruct* shredCtx, int idx, str s, o
  */
 
 /**
- * XML node kinds
- */
-#define ELEMENT   0
-#define PFTEXT    1
-#define COMMENT   2
-#define PI        3
-#define DOCUMENT  4
-
-/**
  * maximum length of a string
  */
 #define PFSHRED_STRLEN_MAX (1 << 23)
@@ -1029,6 +1052,29 @@ emitnode (shredCtxStruct* shredCtx, node_t* node)
 
     return emitPreTuple(shredCtx,node->pre,nodeSize,node->level,node->prop,node->kind,nidPre);
 }
+
+#ifdef SUPER_ROOT
+int emit_super_root(shredCtxStruct* shredCtx) {
+    if ( emitnode(shredCtx,&((node_t) {
+               .pre   = shredCtx->nnode_pre,
+               .level = -1,
+               .prop  = NATNIL,
+               .kind  = DOCUMENT
+               })) < 0)
+        return -1;
+    NEXT_PRE(shredCtx);
+    return 1; /* OK */
+}
+
+int adjust_super_root(shredCtxStruct* shredCtx) {
+    nat super_size = shredCtx->nnode_pre-1;
+
+    if ( direct_nat2bat(shredCtx,PRE_SIZE, 0,super_size) == NATNIL ) {
+        return -1;
+    } else
+        return 1;
+}
+#endif
 
 void 
 shred_start_document (void *xmlCtx)
