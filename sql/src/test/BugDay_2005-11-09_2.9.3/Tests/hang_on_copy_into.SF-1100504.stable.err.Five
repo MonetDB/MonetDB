@@ -71,7 +71,7 @@ stderr of test 'hang_on_copy_into.SF-1100504` in directory 'src/test/BugDay_2005
 MAPI  = monetdb@localhost:48804
 QUERY = COPY 1 RECORDS INTO "news" FROM stdin USING DELIMITERS '\t';
 ERROR = !ERROR: value 1	'dwerg.net word volwassen, er is eindelijk content not inserted
-        !ERROR: MALexception:sql.importTable: failed
+        !ERROR: sql.importTable: failed
 MAPI  = monetdb@localhost:48804
 QUERY = en het voicemail archief begint al aardig vol te lopen.
 ERROR = !syntax error, unexpected IDENT in: "en"
