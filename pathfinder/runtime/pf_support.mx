@@ -1992,13 +1992,13 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
   var replacements := new(bat, bat);
 
   # extract the commands from the update tape 
-  var update_cmd := [and]([lng](item.mirror()), 3LL).uselect(0LL).mirror().leftfetchjoin(item).leftfetchjoin(int_values);
+  var update_cmd := [and]([lng](item.mirror()), 3LL).ord_uselect(0LL).mirror().leftfetchjoin(item).leftfetchjoin(int_values);
 
   # [void,oid] list of all conts of affected documents
-  var affected_conts := [and]([lng](item.mirror()), 3LL).uselect(1LL).mirror().leftfetchjoin(kind).get_container().reverse().kunique().mark(0@0).reverse();
+  var affected_conts := [and]([lng](item.mirror()), 3LL).ord_uselect(1LL).mirror().leftfetchjoin(kind).get_container().reverse().kunique().mark(0@0).reverse();
 
   {
-    var text_update := update_cmd.uselect(UPDATE_SETTEXT);
+    var text_update := update_cmd.ord_uselect(UPDATE_SETTEXT);
     if (text_update.count() > 0) {
       var update_node_item := [oid]([+]([lng](text_update.mirror()), 1)).leftfetchjoin(item);
       var update_node_kind := [oid]([+]([lng](text_update.mirror()), 1)).leftfetchjoin(kind);
@@ -2026,12 +2026,12 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
   }
 
   {
-    var pi_update := update_cmd.uselect(UPDATE_SETPI);
+    var pi_update := update_cmd.ord_uselect(UPDATE_SETPI);
     if (pi_update.count() > 0) {
       var update_node_item := [oid]([+]([lng](pi_update.mirror()), 1)).leftfetchjoin(item);
       var update_node_kind := [oid]([+]([lng](pi_update.mirror()), 1)).leftfetchjoin(kind);
-      var update_ins := [oid]([+]([lng](pi_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
-      var update_tgt := [oid]([+]([lng](pi_update.mirror()), 3)).leftfetchjoin(item).leftfetchjoin(str_values);
+      var update_tgt := [oid]([+]([lng](pi_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(str_values);
+      var update_ins := [oid]([+]([lng](pi_update.mirror()), 3)).leftfetchjoin(item).leftfetchjoin(str_values);
 
       # now select all the unique nodes (both item and container must be
       # the same), and when there are multiple occurences, select the
@@ -2041,23 +2041,23 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
         var update_node_unique := update_node_item.access(BAT_WRITE).revert().CTgroup().CTderive(update_node_cont.access(BAT_WRITE).revert()).CTmap().tunique().mirror();
         update_node_item := update_node_unique.leftjoin(update_node_item);
         update_node_kind := update_node_unique.leftjoin(update_node_kind);
-        update_ins := update_node_unique.leftjoin(update_ins);
         update_tgt := update_node_unique.leftjoin(update_tgt);
+        update_ins := update_node_unique.leftjoin(update_ins);
       }
 
       # now make the four BATs void-headed
       update_node_item := update_node_item.tmark(0@0);
       update_node_kind := update_node_kind.tmark(0@0);
-      update_ins := update_ins.tmark(0@0);
       update_tgt := update_tgt.tmark(0@0);
+      update_ins := update_ins.tmark(0@0);
 
       # do the work
-      replacements := do_update_pi(replacements, ws, update_node_item, update_node_kind, update_ins, update_tgt);
+      replacements := do_update_pi(replacements, ws, update_node_item, update_node_kind, update_tgt, update_ins);
     }
   }
 
   {
-    var comment_update := update_cmd.uselect(UPDATE_SETCOMMENT);
+    var comment_update := update_cmd.ord_uselect(UPDATE_SETCOMMENT);
     if (comment_update.count() > 0) {
       var update_node_item := [oid]([+]([lng](comment_update.mirror()), 1)).leftfetchjoin(item);
       var update_node_kind := [oid]([+]([lng](comment_update.mirror()), 1)).leftfetchjoin(kind);
@@ -2085,7 +2085,7 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
   }
 
   {
-    var attr_update := update_cmd.uselect(UPDATE_SETATTR);
+    var attr_update := update_cmd.ord_uselect(UPDATE_SETATTR);
     if (attr_update.count() > 0) {
       var update_node_item := [oid]([+]([lng](attr_update.mirror()), 1)).leftfetchjoin(item);
       var update_node_kind := [oid]([+]([lng](attr_update.mirror()), 1)).leftfetchjoin(kind);
@@ -2116,7 +2116,7 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
   }
 
   {
-    var insert_update := update_cmd.uselect(UPDATE_INSERT);
+    var insert_update := update_cmd.ord_uselect(UPDATE_INSERT);
     if (insert_update.count() > 0) {
       var update_node_item := [oid]([+]([lng](insert_update.mirror()), 1)).leftfetchjoin(item);
       var update_node_kind := [oid]([+]([lng](insert_update.mirror()), 1)).leftfetchjoin(kind);
@@ -2139,7 +2139,7 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
   }
 
   {
-    var delete_update := update_cmd.uselect(UPDATE_DELETE);
+    var delete_update := update_cmd.ord_uselect(UPDATE_DELETE);
     if (delete_update.count() > 0) {
       var update_node_item := [oid]([+]([lng](delete_update.mirror()), 1)).leftfetchjoin(item);
       var update_node_kind := [oid]([+]([lng](delete_update.mirror()), 1)).leftfetchjoin(kind);
@@ -2222,7 +2222,7 @@ proc do_update_text(bat[bat,bat] replacements, bat[void,bat] ws, int tableid, ba
   return replacements;
 }
 
-proc do_update_pi(bat[bat,bat] replacements, bat[void,bat] ws, bat [void,oid] itembat, bat[void,int] kindbat, bat[void,str] insbat, bat[void,str] tgtbat) : bat[bat,bat]
+proc do_update_pi(bat[bat,bat] replacements, bat[void,bat] ws, bat [void,oid] itembat, bat[void,int] kindbat, bat[void,str] tgtbat, bat[void,str] insbat) : bat[bat,bat]
 {
   var contbat := kindbat.get_container();
   if (mposjoin(itembat, contbat, ws.fetch(PRE_KIND)).uselect(PI).count() != itembat.count()) {
@@ -3236,7 +3236,7 @@ proc add_pi_bulk(bat[void,bat] ws, oid cont, bat[oid,str] insbat, bat[oid,str] t
   var newidlist := idbat.uselect(oid(nil));
   if (newidlist.count() > 0) {
     # insert missing strings, first figure out unique combinations
-    var instgtunique := newidlist.mirror().join(instgtbat).tunique();
+    var instgtunique := newidlist.mirror().join(instgtbat).tunique().reverse();
     # then extract instruction and target
     var instgtuniquesplit := instgtunique.splitbat("\001");
     # and finally add them to respective BATs
@@ -3292,18 +3292,12 @@ proc fix_consecutive_texts(bat[bat,bat] replacements, bat[void,bat] ws, bat[oid,
       map_pid_update := replacements.find(map_pid);
     }
 
-    var rid_size := ws.fetch(_RID_SIZE).find(cont);
-    var rid_size_update := replacements.replacementsfind(rid_size);
     var rid_level := ws.fetch(_RID_LEVEL).find(cont);
     var rid_level_update := replacements.replacementsfind(rid_level);
     var rid_kind := ws.fetch(_RID_KIND).find(cont);
     var rid_kind_update := replacements.replacementsfind(rid_kind);
-    var rid_prop := ws.fetch(_RID_PROP).find(cont);
-    var rid_prop_update := replacements.replacementsfind(rid_prop);
-    var rid_nid := ws.fetch(_RID_NID).find(cont);
-    var rid_nid_update := replacements.replacementsfind(rid_nid);
 
-    var lvkd := new(oid, sht, rid_size.count()); # [PRE,(level<<8)|kind]
+    var lvkd := new(oid, sht, rid_level.count()); # [PRE,(level<<8)|kind]
 
     map_pid_update.select(oid(nil), oid(nil)).reverse().sort()@batloop() {
       var pageno := $h;
@@ -3351,11 +3345,17 @@ proc fix_consecutive_texts(bat[bat,bat] replacements, bat[void,bat] ws, bat[oid,
     # at this point we must do the real merging and deleting of text
     # nodes, but at least we know where they are
     if (t.count() > 0) {
+      var rid_size := ws.fetch(_RID_SIZE).find(cont);
+      var rid_size_update := replacements.replacementsfind(rid_size);
+      var rid_prop := ws.fetch(_RID_PROP).find(cont);
+      var rid_prop_update := replacements.replacementsfind(rid_prop);
+      var rid_nid := ws.fetch(_RID_NID).find(cont);
+      var rid_nid_update := replacements.replacementsfind(rid_nid);
       var pid_map_update := map_pid_update.select(oid(nil), oid(nil)).reverse().sort().tmark(0@0);
       var t1 := [swizzle](t.reverse(), pid_map_update).reverse(); # [RID,GRP]
 
       var rp := t1.mirror().join(rid_prop).access(BAT_WRITE).key(true).myinsert(t1.mirror().join(rid_prop_update)); # [RID,PROP]
-      var gp := ti.reverse().leftfetchjoin(rp); # [GRP,PROP]
+      var gp := t1.reverse().leftjoin(rp); # [GRP,PROP]
       var c := gp.leftfetchjoin(ws.fetch(_PROP_TEXT).find(cont)); # [GRP,content] hsorted
       var v := string_join(c, c.kunique().project("")); # [GRP,content] combined content with unique GRP values
       var i := add_string_bulk(ws, cont, _PROP_TEXT, v); # [GRP,SID] OID into _PROP_TEXT table
@@ -3375,6 +3375,8 @@ proc fix_consecutive_texts(bat[bat,bat] replacements, bat[void,bat] ws, bat[oid,
           rid_prop.replace($h, $t, true);
         }
       }
+      var nid_rid := ws.fetch(_NID_RID).find(cont);
+      var nid_rid_update := replacements.replacementsfind(nid_rid);
       h1@batloop() {
         var pageid := oid(lng($h) >> REMAP_PAGE_BITS);
         var isoldpage := false;
@@ -3389,20 +3391,26 @@ proc fix_consecutive_texts(bat[bat,bat] replacements, bat[void,bat] ws, bat[oid,
           if (rid_nid_update.exist($h)) {
             nid := rid_nid_update.find($h);
           }
-          rid_prop_update.myinsert($h, $t);
-          rid_size_update.myinsert($h, int(nil));
-          rid_nid_update.myinsert($h, $t);
-          rid_kind_update.myinsert($h, chr(nil));
-          rid_level_update.myinsert($h, chr(nil));
+          rid_prop_update := rid_prop_update.myinsert($h, $t);
+          rid_size_update := rid_size_update.myinsert($h, int(nil));
+          rid_nid_update := rid_nid_update.myinsert($h, $t);
+          rid_kind_update := rid_kind_update.myinsert($h, chr(nil));
+          rid_level_update := rid_level_update.myinsert($h, chr(nil));
         } else {
-          rid_prop.replace($h, $t, true);
-          rid_size.replace($h, int(nil), true);
-          rid_nid.replace($h, $t, true);
-          rid_kind.replace($h, chr(nil), true);
-          rid_level.replace($h, chr(nil), true);
+          rid_prop := rid_prop.replace($h, $t, true);
+          rid_size := rid_size.replace($h, int(nil), true);
+          rid_nid := rid_nid.replace($h, $t, true);
+          rid_kind := rid_kind.replace($h, chr(nil), true);
+          rid_level := rid_level.replace($h, chr(nil), true);
         }
-        nid_rid_update.myinsert(nid, oid(nil));
+        nid_rid_update := nid_rid_update.myinsert(nid, oid(nil));
       }
+      replacements := replacements.replace(nid_rid, nid_rid_update);
+      replacements := replacements.replace(rid_kind, rid_kind_update);
+      replacements := replacements.replace(rid_level, rid_level_update);
+      replacements := replacements.replace(rid_prop, rid_prop_update);
+      replacements := replacements.replace(rid_nid, rid_nid_update);
+      replacements := replacements.replace(rid_size, rid_size_update);
     }
   }
 }
