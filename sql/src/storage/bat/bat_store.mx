@@ -39,6 +39,7 @@ extern BAT *append_ubat(sql_trans *tr, sql_column *c, int access, BAT *b);
 extern BAT *append_idx(sql_trans *tr, sql_idx * i, int access, BAT *b);
 extern BAT *append_uidx(sql_trans *tr, sql_idx * i, int access, BAT *b);
 
+
 extern BAT *temp_descriptor(oid b);
 
 #endif /*BATSTORE_H */
@@ -75,6 +76,9 @@ key_cmp(sql_key *k, sqlid *id)
 		return 0;
 	return 1;
 }
+
+
+
 
 static int stamp = 1;
 
@@ -1142,6 +1146,8 @@ load_table(sql_trans *tr, sql_schema *s, BAT *tables, BUN j)
 	bat_destroy(table_names);
 	bat_destroy(table_queries);
 	bat_destroy(table_istable);
+	bat_destroy(table_location);
+	bat_destroy(table_replication);
 	bat_destroy(D_columns);
 	bat_destroy(D_idxs);
 	bat_destroy(D_keys);
@@ -1504,6 +1510,40 @@ bs_init_schema(struct bm *bm)
 	bat_destroy(U_schema_auth);
 	bat_destroy(D_sql_schema);
 }
+
+
+static void
+bs_init_hosts(struct bm *bm)
+{
+	BAT *sql_location = mvc_bat(bm, "hosts_location", TYPE_int);
+	BAT *sql_host_name = mvc_bat(bm, "hosts_name", TYPE_str);
+	BAT *sql_host_ip = mvc_bat(bm, "hosts_ip", TYPE_str);
+	BAT *sql_host_user = mvc_bat(bm, "hosts_user", TYPE_str);
+	BAT *sql_host_password = mvc_bat(bm, "hosts_password", TYPE_str);
+	BAT *D_hosts = mvc_bat(bm, "D_hosts", TYPE_oid);
+	bat_destroy(sql_location);
+	bat_destroy(sql_host_name);
+	bat_destroy(sql_host_ip);
+	bat_destroy(sql_host_user);
+	bat_destroy(sql_host_password);
+	bat_destroy(D_hosts);
+}
+
+static void
+bs_init_replication(struct bm *bm)
+{
+	BAT *sql_replication_id = mvc_bat(bm, "replication_replication_id", TYPE_int);
+	BAT *sql_replication_refresh = mvc_bat(bm, "replication_refresh", TYPE_str);
+	BAT *sql_replication_columns = mvc_bat(bm, "replication_columns", TYPE_str);
+	BAT *sql_replication_type = mvc_bat(bm, "replication_type", TYPE_str);
+	BAT *D_replication = mvc_bat(bm, "D_replication", TYPE_oid);
+	bat_destroy(sql_replication_id);
+	bat_destroy(sql_replication_refresh);
+	bat_destroy(sql_replication_columns);
+	bat_destroy(sql_replication_type);
+	bat_destroy(D_replication);
+}
+
 
 static void
 bs_init_table(struct bm *bm)
@@ -2140,10 +2180,10 @@ create_table_intern(char *name, bit table, bit system, bit persists, bit clear, 
 }
 
 static sql_table *
-bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name, bit clear)
+bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name, bit clear, int location, int replication_id)
 {
 	char bname[BUFSIZ];
-	sql_table *t = create_table_intern(name, 1, 1, 1, clear, LOCATION, REPLICATION);
+	sql_table *t = create_table_intern(name, 1, 1, 1, clear, location, replication_id);
 
 	BAT *b;
 	oid rid;
@@ -2182,14 +2222,17 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name, bit clear)
 	b = sys_bat(bm, "ptables_system");
 	BUNins(b, (ptr) &rid, (ptr) &t->system);
 	bat_destroy(b);
-	b = sys_bat(bm, "ptables_clear");
-	BUNins(b, (ptr) &rid, (ptr) &t->clear);
+
+	b = sys_bat(bm, "ptables_location");
+	BUNins(b, (ptr) &rid, (ptr) &t->location);
 	bat_destroy(b);
+	
 	b = sys_bat(bm, "ptables_replication_id");
 	BUNins(b, (ptr) &rid, (ptr) &t->replication_id);
 	bat_destroy(b);
-	b = sys_bat(bm, "ptables_location");
-	BUNins(b, (ptr) &rid, (ptr) &t->location);
+
+	b = sys_bat(bm, "ptables_clear");
+	BUNins(b, (ptr) &rid, (ptr) &t->clear);
 	bat_destroy(b);
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
@@ -2270,6 +2313,8 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 	bs_init_trigger(bm);
 	bs_init_type(bm);
 	bs_init_func(bm);
+	bs_init_hosts(bm);
+	bs_init_replication(bm);
 	sequences_init();
 
 	gtrans = load_trans(bm, stk);
@@ -2283,17 +2328,17 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		first = 1;
 
 		s = bootstrap_create_schema(tr, "sys", ROLE_SYSADMIN);
-		t = bootstrap_create_table(tr, s, "modules", 0);
+		t = bootstrap_create_table(tr, s, "modules", 0,LOCATION,REPLICATION);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 		bootstrap_create_column(tr, t, "internal", "varchar", 1024);
 
-		t = bootstrap_create_table(tr, s, "schemas", 0);
+		t = bootstrap_create_table(tr, s, "schemas", 0,LOCATION, REPLICATION);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 		bootstrap_create_column(tr, t, "authorization", "int", 9);
 
-		t = bootstrap_create_table(tr, s, "ptables", 0);
+		t = bootstrap_create_table(tr, s, "ptables", 0, LOCATION, REPLICATION);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 		bootstrap_create_column(tr, t, "schema_id", "int", 9);
@@ -2304,7 +2349,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "replication_id", "int", 9);
 		bootstrap_create_column(tr, t, "location", "int", 9);
 
-		t = bootstrap_create_table(tr, s, "pcolumns", 0);
+		t = bootstrap_create_table(tr, s, "pcolumns", 0, LOCATION, REPLICATION);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 		bootstrap_create_column(tr, t, "type", "varchar", 1024);
@@ -2315,20 +2360,20 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "null", "boolean", 0);
 		bootstrap_create_column(tr, t, "number", "int", 9);
 
-		t = bootstrap_create_table(tr, s, "keys", 0);
+		t = bootstrap_create_table(tr, s, "keys", 0, LOCATION, REPLICATION);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "table_id", "int", 9);
 		bootstrap_create_column(tr, t, "type", "int", 9);
 		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 		bootstrap_create_column(tr, t, "rkey", "int", 9);
 
-		t = bootstrap_create_table(tr, s, "idxs", 0);
+		t = bootstrap_create_table(tr, s, "idxs", 0, LOCATION, REPLICATION);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "table_id", "int", 9);
 		bootstrap_create_column(tr, t, "type", "int", 9);
 		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 
-		t = bootstrap_create_table(tr, s, "triggers", 0);
+		t = bootstrap_create_table(tr, s, "triggers", 0, LOCATION, REPLICATION);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 		bootstrap_create_column(tr, t, "table_id", "int", 9);
@@ -2340,13 +2385,13 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "condition", "varchar", 2048);
 		bootstrap_create_column(tr, t, "statement", "varchar", 2048);
 
-		t = bootstrap_create_table(tr, s, "keycolumns", 0);
+		t = bootstrap_create_table(tr, s, "keycolumns", 0, LOCATION, REPLICATION);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "column", "varchar", 1024);
 		bootstrap_create_column(tr, t, "trunc", "int", 9);
 		bootstrap_create_column(tr, t, "nr", "int", 9);
 
-		t = bootstrap_create_table(tr, s, "types", 0);
+		t = bootstrap_create_table(tr, s, "types", 0,LOCATION, REPLICATION);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "systemname", "varchar", 256);
 		bootstrap_create_column(tr, t, "sqlname", "varchar", 1024);
@@ -2356,7 +2401,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "eclass", "int", 9);
 		bootstrap_create_column(tr, t, "module_id", "int", 9);
 
-		t = bootstrap_create_table(tr, s, "functions", 0);
+		t = bootstrap_create_table(tr, s, "functions", 0,LOCATION, REPLICATION);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "name", "varchar", 256);
 		bootstrap_create_column(tr, t, "func", "varchar", 8196);
@@ -2366,7 +2411,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "aggr", "boolean", 9);
 		bootstrap_create_column(tr, t, "module_id", "int", 9);
 
-		t = bootstrap_create_table(tr, s, "args", 0);
+		t = bootstrap_create_table(tr, s, "args", 0,LOCATION, REPLICATION);
 		bootstrap_create_column(tr, t, "id", "int", 9);
 		bootstrap_create_column(tr, t, "func_id", "int", 9);
 		bootstrap_create_column(tr, t, "name", "varchar", 256);
@@ -2376,8 +2421,21 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "number", "int", 9);
 		
 		/*functions for the replication service*/
-		create_host_table(tr, s);
-		create_replication_table(tr, s);
+		t = bootstrap_create_table(tr, s, "hosts", 0,LOCATION,REPLICATION);
+		bootstrap_create_column(tr, t, "location", "int", 9);
+		bootstrap_create_column(tr, t, "name", "varchar", 1024);
+		bootstrap_create_column(tr, t, "ip", "varchar", 256);
+		bootstrap_create_column(tr, t, "user", "varchar", 1024);
+		bootstrap_create_column(tr, t, "password", "varchar", 1024);
+//		table_insert(tr, t, LOCATION,"localhost" , "127.0.0.1", "monetdb", "monetdb");
+		
+		//create_host_table(tr, s);
+		t = bootstrap_create_table(tr, s, "replication", 0,LOCATION,REPLICATION);
+		bootstrap_create_column(tr, t, "replication_id", "int", 9);
+		bootstrap_create_column(tr, t, "refresh", "int", 9);
+		bootstrap_create_column(tr, t, "columns", "varchar", 256);
+		bootstrap_create_column(tr, t, "type", "varchar", 1024);
+		//create_replication_table(tr, s);
 		
 		if (sql_trans_commit(tr) != SQL_OK)
 			fprintf(stderr, "cannot commit initial transaction\n");
@@ -4225,7 +4283,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, bit
 
 	systable->base.wtime = tr->stime;
 
-	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, ATOMnilptr(TYPE_str), &t->table, &t->system, &t->clear, &t->replication_id, &t->location);
+	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, ATOMnilptr(TYPE_str), &t->table, &t->system, &t->clear, &t->location, &t->replication_id);
 
 	if (t->persists)
 		t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
@@ -4247,7 +4305,7 @@ sql_trans_create_view(sql_trans *tr, sql_schema *s, char *name, char *sql, bit s
 	t->s = s;
 	cs_add(&s->tables, t, TR_NEW);
 
-	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, (t->query) ? t->query : ATOMnilptr(TYPE_str), &t->table, &t->system, &t->clear, &t->replication_id, &t->location);
+	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, (t->query) ? t->query : ATOMnilptr(TYPE_str), &t->table, &t->system, &t->clear,&t->location, &t->replication_id);
 
 	if (t->persists)
 		systable->base.wtime = t->base.wtime = s->base.wtime = tr->wtime = tr->stime;

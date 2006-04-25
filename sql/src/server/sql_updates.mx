@@ -895,9 +895,7 @@ insert_into(mvc *sql, scope *scp, symbol *symb, dlist *columns, symbol *val_or_q
 	int i, len = 0;
 	stmt **inserts, *res = NULL;
 	char *host = qname_host(symb);
-	int location = LOCATION;
-	if(!host)
-		location =  *(int*) find_table_value(sql,"location","location","name",host,LOCATION);
+	int location = table_location(sql,host);
 
 	if (!s || (t = mvc_bind_table(sql, s, tname,location)) == NULL) {
 		return sql_error(sql, 02, "INSERT INTO: no such table '%s'", tname);
@@ -1101,9 +1099,7 @@ copyfrom(mvc *sql, scope *scp, symbol *symb, dlist *files, dlist *seps, int nr)
 {
 	char *tname = qname_table(symb);
 	char *host = qname_host(symb);
-	int location = LOCATION;
-	if(!host)
-		location =  *(int*) find_table_value(sql,"location","location","name",host,LOCATION);
+	int location = table_location(sql,host);
 	sql_table *t = mvc_bind_table(sql, cur_schema(sql), tname,location);
 	char *tsep = seps->h->data.sval;
 	char *rsep = seps->h->next->data.sval;
@@ -1300,9 +1296,7 @@ update_table(mvc *sql, scope *scp, symbol *symb, dlist *assignmentlist, symbol *
 	sql_schema *s = qname_schema(sql, symb);
 	char *tname = qname_table(symb);
 	char *host = qname_host(symb);
-	int location = LOCATION;
-	if(!host)
-		location =  *(int*) find_table_value(sql,"location","location","name",host,LOCATION);
+	int location = table_location(sql,host);
 
 	return sql_update_table(sql, scp, s, tname, assignmentlist, opt_where,location);
 }
@@ -1395,9 +1389,7 @@ delete_table(mvc *sql, scope *scp, symbol *symb, symbol *opt_where)
 {
 	char *tname = qname_table(symb);
 	char *host = qname_host(symb);
-	int location = LOCATION;
-	if(!host)
-		location =  *(int*) find_table_value(sql,"location","location","name",host,LOCATION);
+	int location = table_location(sql,host);
 	sql_table *t = mvc_bind_table(sql, cur_schema(sql), tname, location);
 
 	if (!t) {

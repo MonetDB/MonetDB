@@ -101,9 +101,7 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 		/*tname = qname_table(tableref->data.lval->h->data.lval);*/
 		tname = qname_table(tableref->data.lval->h->data.sym);			/*Changed to support replication*/
 		char *host = qname_host(tableref->data.lval->h->data.sym);
-		int location = LOCATION;
-		if(!host)
-			location =  *(int*) find_table_value(sql,"location","location","name",host,LOCATION);
+		int location = table_location(sql,host);
 
 		if (!s) {
 			(void) sql_error(sql, 02, "SELECT: no such schema");
@@ -296,15 +294,17 @@ table_optname(mvc *sql, scope *scp, stmt *sq, symbol *optname)
 {
 	node *m;
 	char *tname = NULL;
-	char *hname = NULL;
+//	char *hname = NULL;
 	dlist *columnrefs = NULL;
 	tvar *tv;
 
 	if (optname && optname->token == SQL_NAME) {
-		/*tname = optname->data.lval->h->data.sval;*/ 
-		tname = optname->data.lval->h->data.sym->data.lval->h->data.sval; /*changed to support replication*/
+		tname = optname->data.lval->h->data.sval; 
+/*
+		tname = optname->data.lval->h->data.sym->data.lval->h->data.sval; changed to support replication
 		if(optname->data.sym->token == SQL_REP_NAME)
-			hname = optname->data.lval->h->data.sym->data.lval->t->data.sval; /*the host_id to identify the remote site*/
+			hname = optname->data.lval->h->data.sym->data.lval->t->data.sval; the host_id to identify the remote site
+*/
 		columnrefs = optname->data.lval->h->next->data.lval;
 	}
 	tv = scope_add_table(scp, sq, tname, NULL);

@@ -81,6 +81,9 @@ extern char *dlist2string(mvc *sql, dlist *s);
 
 extern char * toUpper(char *dest, const char *src); 
 
+extern int find_table_value(mvc * sql, char* table, char* column, char* key_column, char* key,int location);
+extern int table_location(mvc *sql, char* host);
+
 #endif /*_SQL_SEMANTIC_H_*/
 
 @c
@@ -199,6 +202,31 @@ sql_destroy_args(mvc *sql)
 }
 
 
+int
+find_table_value(mvc* sql, char* table, char* column, char* key_column, char* key, int location)
+{
+        sql_schema *sch = find_sql_schema(sql->trans, "sys");
+        sql_table *tab = find_sql_table(sch, table,location);
+        sql_column *key_col = find_sql_column(tab, column);
+        sql_column *col = find_sql_column(tab, key_column);
+        ssize_t rid = column_find_row(sql->trans, key_col, key, NULL);
+        if (rid >= 0)
+        {
+                 return (int) column_find_value(sql->trans,col,rid);
+        }
+        return -1;
+}
+
+
+int
+table_location(mvc* sql,char* host)
+{
+	int location = -1;
+        if(host)
+                location = (int) find_table_value(sql,"hosts","location","name",host,LOCATION);
+     	return location;
+}
+
 sql_schema *
 cur_schema(mvc *sql)
 {
@@ -231,21 +259,13 @@ char *
 qname_table(symbol *symb)
 {
 	int length = 0;
-	char* host = NULL;
 	dlist* qname = symb->data.lval;
 	assert(qname && qname->h);
 	
 	if(symb->token == SQL_REP_NAME)
-	{
-		host = qname->t->data.sval;
 		length = 1;
-	}
 	else if(symb->token == SQL_NAME)
-	{
-		host = "localhost";
 		length = 0;
-	}
-
 	if ((dlist_length(qname)-length) == 1) {
 		return qname->h->data.sval;
 	} else if ((dlist_length(qname)-length) == 2) {
@@ -258,21 +278,13 @@ qname_table(symbol *symb)
 char *
 qname_host(symbol *symb)
 {
-        int length = 0;
-        char* host = NULL;
         dlist* qname = symb->data.lval;
         assert(qname && qname->h);
 
         if(symb->token == SQL_REP_NAME)
-        {
-                host = qname->t->data.sval;
-                length = 1;
-        }
+                return qname->t->data.sval;
         else if(symb->token == SQL_NAME)
-        {
-                host = "localhost";
-                length = 0;
-        }
+                return "localhost";
         return "unknown";
 }
 

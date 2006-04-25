@@ -27,7 +27,6 @@
 extern sql_column* create_column(sql_trans *tr, sql_table* t, char* table, char* type, int digits);
 extern int create_host_table(sql_trans *tr, sql_schema *s);
 extern int create_replication_table(sql_trans *tr, sql_schema *s);
-
 #endif /*BAT_REPLIC_H */
 
 
@@ -79,5 +78,4 @@ create_replication_table(sql_trans *tr, sql_schema *s)
         create_column(tr, t, "host_id", "int",9);		/*for who the updates need to be send*/
 	return 0;
 }
-
 
