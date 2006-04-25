@@ -133,27 +133,20 @@ ADDHELP("rpc_client", "zhang", "November 2005",
 Send a RPC request to the destination \"location\", save the reults in the WorkingSet and return the fragment-id of the new added document",
 "xquery_rpc");
 
-# Moved from translateUDF of milprint_summer.c to here.
-# Main reason: the MIL script simplifier does not recognize batloop, so
-#              it incorrectly removes some code.  By moving the code
-#              into a PROC, we can prevent useful code from being
-#              removed.
-# This proc is used by SOAP-MXQ to retrieve the return values of RPC
-# call(s), which are temporarily stored in the WS:
-#   1. retrieve the right values
-#   2. build the iter|item|kind BATs
-#   3. fill in the value containers
-PROC get_rpc_res ( BAT[void, bat] ws, oid cont, str local_name,
-        BAT[void, lng] int_values,
-        BAT[void, dbl] dbl_values, 
-        BAT[void, dbl] dec_values,
-        BAT[void, str] str_values) : BAT[void, bat]
+PROC get_rpc_res ( 
+        oid cont, 
+        str local_name, 
+        int nr_iters,
+        BAT[oid, bat] ws, 
+        BAT[oid, lng] int_values,
+        BAT[oid, dbl] dbl_values, 
+        BAT[oid, dbl] dec_values,
+        BAT[oid, str] str_values) : BAT[void, bat]
 {
-    # return BATs
-    var res_iter := new(void,oid);
-    var res_item := new(void,oid);
-    var res_kind := new(void,int);
-
+    var res_iter := new(oid,oid,nr_iters);
+    var res_item := new(oid,oid,nr_iters);
+    var res_kind := new(oid,int,nr_iters);
+    
     # get values out of WS for later use
     var pre_size  := ws.fetch(PRE_SIZE).fetch(cont);
     var pre_level := ws.fetch(PRE_LEVEL).fetch(cont);
@@ -174,9 +167,8 @@ PROC get_rpc_res ( BAT[void, bat] ws, oid cont, str local_name,
     var a;
     var error := CATCH ({ a := qn_loc.reverse().find("iter"); });
     # If we can not find "iter", then the result is empty, so return empty BATs
-    if (not(isnil(error))) 
-        return bat(void,bat,4).append(res_iter).append(res_item).append(res_kind).access(BAT_READ);
-
+    if (not(isnil(error)))
+        return bat(void,bat,3).append(res_iter).append(res_item).append(res_kind);
 
     # Fetch the position of the "pre_prop" value.  Must use 'ord_select'
     # and 'fetch', since the the "pre_prop" value can appear more than
@@ -212,7 +204,7 @@ PROC get_rpc_res ( BAT[void, bat] ws, oid cont, str local_name,
                     # A new iteration starts
                     itercnt :+= 1;
                 } else if (int(pre_level.fetch($h)) = nodev_level) {
-                    # and((level=nodev_level), (kind=ELEM)) => a node value
+                    # and((kind=ELEM), (level=nodev_level)) => a node value
                     res_iter.append(oid(itercnt));
                     res_item.append(pre_nid.fetch($h));
                     i := set_kind(local_name.leftjoin(reverse(ws.fetch(DOCID_NAME))).leftjoin(reverse(ws.fetch(CONT_DOCID))).tmark(0@0), ELEM);
@@ -250,11 +242,7 @@ PROC get_rpc_res ( BAT[void, bat] ws, oid cont, str local_name,
             }
         }
     }
-
-    res_iter.seqbase(0@0);
-    res_item.seqbase(0@0);
-    res_kind.seqbase(0@0);
-    return bat(void,bat,4).append(res_iter).append(res_item).append(res_kind).access(BAT_READ);
+    return bat(void,bat,3).append(res_iter).append(res_item).append(res_kind);
 }
 ADDHELP("get_rpc_res", "zhang", "April 2006",
 "DESCRIPTION:\n\
@@ -262,6 +250,154 @@ This proc is used to retrieve the return values of RPC call(s), which are tempor
 1. retrieves the right values\n\
 2. builds temporary iter|item|kind BATs\n\
 3. fill in the value containers",
+"xquery_rpc");
+
+PROC doIterativeRPC(
+        int nr_iters,
+        str options,
+        str rpc_module,
+        str rpc_uri,
+        str rpc_method,
+        BAT[oid,bat] ws,
+        BAT[oid,str] rpc_dsts,
+        BAT[oid,oid] rpc_iter,
+        BAT[oid,oid] fun_vid,
+        BAT[oid,oid] fun_iter,
+        BAT[oid,oid] fun_item,
+        BAT[oid,int] fun_kind,
+        BAT[oid,lng] int_values,
+        BAT[oid,dbl] dbl_values,
+        BAT[oid,dbl] dec_values,
+        BAT[oid,str] str_values) : BAT[void,bat]
+{
+    var rpc_timing := str(nil);
+    if (options.search("rpctiming") >= 0) {
+        rpc_timing := "rpctiming";
+    } else {
+        rpc_timing := "";
+    }
+
+    var res_bats := nil;
+    rpc_iter@batloop(){
+        var dst := rpc_dsts.fetch(int($h)); # get iteration numbers for this destination
+
+        var fun_iter_1iter := fun_iter.select($t);
+        var fun_vid_1iter  := fun_vid.fetch(fun_iter_1iter.mirror()).tmark(0@0);
+        var fun_item_1iter := fun_item.fetch(fun_iter_1iter.mirror()).tmark(0@0);
+        var fun_kind_1iter := fun_kind.fetch(fun_iter_1iter.mirror()).tmark(0@0);
+            fun_iter_1iter := fun_iter_1iter.tmark(0@0);
+
+        var local_name := "rpc_res_00" + str(int($h)+1);
+        var rpc_oid := oid(nil);
+        var rpc_err := CATCH(
+        {
+            rpc_oid := rpc_client(local_name, rpc_timing, dst, 
+                        rpc_module, rpc_uri, rpc_method, ws,
+                        fun_vid_1iter, fun_iter_1iter, fun_item_1iter, fun_kind_1iter,
+                        int_values, dbl_values, dec_values, str_values);
+        });
+
+        if (isnil(rpc_err)) {
+            var res := get_rpc_res(rpc_oid, local_name, nr_iters, ws,
+                                   int_values, dbl_values, dec_values, str_values);
+            if (isnil(res_bats)){
+                res_bats := res;
+            } else {
+                # merge results of this iteration into existing results.
+                res_bats := merged_union(res_bats.fetch(0), res.fetch(0), 
+                                         res_bats.fetch(1), res.fetch(1), 
+                                         res_bats.fetch(2), res.fetch(2));
+            }
+        } else {
+            # layman's error handling simplifies debugging; better solution is more than welcome!
+            ERROR("RPC call: rpc_client:\n" + rpc_err);
+        }
+    }
+    return res_bats;
+}
+ADDHELP("doIterativeRPC", "zhang", "April 2006",
+"DESCRIPTION: make a separate RPC call for ever iteration",
+"xquery_rpc");
+
+PROC doLoopLiftedRPC(
+        int nr_iters,
+        str options,
+        str rpc_module,
+        str rpc_uri,
+        str rpc_method,
+        BAT[oid,bat] ws,
+        BAT[oid,str] rpc_dsts,
+        BAT[oid,oid] fun_vid,
+        BAT[oid,oid] fun_iter,
+        BAT[oid,oid] fun_item,
+        BAT[oid,int] fun_kind,
+        BAT[oid,lng] int_values,
+        BAT[oid,dbl] dbl_values,
+        BAT[oid,dbl] dec_values,
+        BAT[oid,str] str_values) : BAT[void,bat]
+{
+    var rpc_timing := str(nil);
+    if (options.search("rpctiming") >= 0) {
+        rpc_timing := "rpctiming";
+    } else {
+        rpc_timing := "";
+    }
+
+    module("lock");
+    var mylock := lock_create();
+
+    var rpc_unq_dsts := rpc_dsts.tunique().hmark(0@0);
+    var steps := min(rpc_unq_dsts.count(), (64 - threadcnt(0)));
+    var res_bats := nil;
+    rpc_unq_dsts @ [steps] batloop(){
+        # get iteration numbers for this destination
+        var iter_dst := rpc_dsts.ord_uselect($t).mirror();
+
+        # retrieve the frag of fun_vid, fun_iter, fun_item and fun_kind for this iteration.
+        var fun_iter_dst := fun_iter.join(iter_dst);
+        var indices      := fun_iter_dst.mirror().hmark(0@0);
+        var fun_vid_dst  := indices.fetchjoin(fun_vid).tmark(0@0);
+            fun_iter_dst := fun_iter_dst.tmark(0@0);
+        var fun_item_dst := indices.fetchjoin(fun_item).tmark(0@0);
+        var fun_kind_dst := indices.fetchjoin(fun_kind).tmark(0@0);
+
+        var local_name := "rpc_res_00" + str(int($h)+1);
+        var rpc_oid := oid(nil);
+        var rpc_err := CATCH(
+        {
+            rpc_oid := rpc_client(local_name, rpc_timing, $t,
+                            rpc_module, rpc_uri, rpc_method, ws,
+                            fun_vid_dst, fun_iter_dst, fun_item_dst, fun_kind_dst, 
+                            int_values, dbl_values, dec_values, str_values);
+        });
+
+        if (isnil(rpc_err)) {
+            # retrieve results for this destination, and map the results back to the original iteration number
+            var proc_res := get_rpc_res(rpc_oid, local_name, nr_iters, ws,
+                                        int_values,dbl_values,dec_values,str_values);
+            iter_dst := iter_dst.hmark(1@0);
+            var res_iter := proc_res.fetch(0).join(iter_dst);
+            var res_item := res_iter.reverse().join(proc_res.fetch(1)).tmark(0@0);
+            var res_kind := res_iter.reverse().join(proc_res.fetch(2)).tmark(0@0);
+
+            lock_set(mylock);
+            if (isnil(res_bats)) {
+                res_bats := new(void,bat,3).append(res_iter).append(res_item).append(res_kind);
+            } else {
+                res_bats := merged_union(res_bats.fetch(0), res_iter, 
+                                         res_bats.fetch(1), res_item, 
+                                         res_bats.fetch(2), res_kind);
+            }
+            lock_unset(mylock);
+        } else { # layman's error handling simplifies debugging; better solution is more than welcome!
+            ERROR("RPC call: rpc_client:\n" + rpc_err);
+        }
+    }
+    lock_destroy(mylock);
+    return res_bats;
+}
+ADDHELP("doLoopLiftedRPC", "zhang", "April 2006",
+"DESCRIPTION: implementation of the loop-lifted RPC",
 "xquery_rpc");
 
 @h
@@ -907,7 +1043,7 @@ int CMDhttp_post(BAT **res,
     int nr_args = 0;
     int max_args = 0;
 
-    int time_generateReqMsg = 0, time_sendReqmsg = 0;
+    int time_generateReqMsg = 0, time_networkSend = 0;
     int time_waitForRespMsg = 0, time_shredRespMsg = 0;
     int bytes_sent = 0, bytes_received = 0;
 
@@ -1099,7 +1235,7 @@ int CMDhttp_post(BAT **res,
 
     time_generateReqMsg = GDKms() - time_generateReqMsg;
 
-    time_sendReqmsg = GDKms();
+    time_networkSend = GDKms();
     bytes_sent = stream_printf(out,
             "POST %s HTTP/1.1\r\n"
             "Host: %s\r\n"
@@ -1109,7 +1245,7 @@ int CMDhttp_post(BAT **res,
             "Content-Length: %d\r\n\r\n"
             "%s",
             HTTPD_FUNC, location, b->pos, b->buf);
-    time_sendReqmsg = GDKms() - time_sendReqmsg;
+    time_networkSend= GDKms() - time_networkSend;
     time_waitForRespMsg = GDKms();
     if (bytes_sent < (int)b->pos) {
         GDKerror("CMDhttp_post: failed to send XQuery RPC request.");
@@ -1177,11 +1313,13 @@ int CMDhttp_post(BAT **res,
 
     time_shredRespMsg = GDKms() - time_shredRespMsg;
     if (strstr(mode, "rpctiming") != NULL) {
-        printf("\nsender generateReqMsg %d.000 sendReqmsg %d.000 "
-                "waitForRespMsg %d.000 shredRespMsg %d.000 "
-                "bytes_sent %d bytes_received %d\n",
-                time_generateReqMsg, time_sendReqmsg, time_waitForRespMsg,
-                time_shredRespMsg, bytes_sent, bytes_received);
+        printf("\nsender generateReqMsg %d.000 "
+                "waitForRespMsg %d.000 shredRespMsg %d.000\n",
+                time_generateReqMsg, time_waitForRespMsg, time_shredRespMsg);
+
+        printf("Network send: %d\n", time_networkSend);
+        printf("Bytes sent: %d\n", bytes_sent);
+        printf("Bytes received: %d\n", bytes_received);
     }
 
     retval = GDK_SUCCEED;

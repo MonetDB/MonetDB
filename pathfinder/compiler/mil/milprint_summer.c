@@ -6228,10 +6228,10 @@ translateUDF (opt_t *f, int cur_level, int counter,
          * fun->params[], so translate it separately. */
         milprintf(f, 
                 "\n# begin of translate the 'dst' param of RPC call\n"
-                "var rpc_vid  := bat(void,oid);\n"
-                "var rpc_iter := bat(void,oid);\n"
-                "var rpc_item := bat(void,oid);\n"
-                "var rpc_dsts := bat(void,str);\n");
+                "var rpc_vid  := bat(oid,oid);\n"
+                "var rpc_iter := bat(oid,oid);\n"
+                "var rpc_item := bat(oid,oid);\n"
+                "var rpc_dsts := bat(oid,str);\n");
 
         dst_args = L(args);
         while (dst_args && dst_args->kind != c_nil){
@@ -6249,9 +6249,6 @@ translateUDF (opt_t *f, int cur_level, int counter,
             dst_args = R(dst_args);
         }
         milprintf(f, 
-                "rpc_vid  := rpc_vid.tmark(0@0);\n"
-                "rpc_iter := rpc_iter.tmark(0@0);\n"
-                "rpc_item := rpc_item.tmark(0@0);\n"
                 "rpc_dsts := rpc_item%s;\n"
                 "rpc_dsts := rpc_iter.reverse().join(rpc_dsts);\n"
                 "# end of translate the 'dst' param of RPC call\n",
@@ -6339,119 +6336,23 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "  var time_extractAndSaveResults := 0;\n"
 
                 "  module(\"xquery_rpc\");\n"
-                "  var nr_iters := count(rpc_iter); # this is only a simple estimation\n"
-                "  iter := new(void,oid,nr_iters).tmark(0@0);\n"
-                "  item := new(void,oid,nr_iters).tmark(0@0);\n"
-                "  kind := new(void,int,nr_iters).tmark(0@0);\n"
-
+                "  var nr_iters := count(rpc_iter); # a simple estimation\n"
                 "  var time_totalRPC := msec();\n"
 
+                "  var res := nil;\n"
                 "  if (genType.search(\"iterrpc\") >= 0) {\n"
-                "    var last_iter := rpc_iter.fetch(nr_iters - 1);\n"
-                "    var time_totalRPC := msec();\n"
-                "    rpc_iter@batloop(){\n"
-                "      var dst := rpc_dsts.fetch(int($h)); # get iteration numbers for this destination\n"
-                "      var fun_iter_1iter := fun_iter%03u.select($t);\n"
-                "      var fun_vid_1iter  := fun_vid%03u.fetch(fun_iter_1iter.mirror()).tmark(0@0);\n"
-                "      var fun_item_1iter := fun_item%03u.fetch(fun_iter_1iter.mirror()).tmark(0@0);\n"
-                "      var fun_kind_1iter := fun_kind%03u.fetch(fun_iter_1iter.mirror()).tmark(0@0);\n"
-                "      fun_iter_1iter := fun_iter_1iter.tmark(0@0);\n"
-                "      #var is_last := ($t = last_iter);\n"
-
-                "      var rpc_timing := str(nil);\n"
-                "      if (genType.search(\"rpctiming\") >= 0) {\n"
-                "        rpc_timing := \"rpctiming\";\n"
-                "      } else {\n"
-                "        rpc_timing := \"\";\n"
-                "      }\n"
-
-                "      var time_start := msec();\n"
-                "      var local_name := \"rpc_res_00\" + str(int($h)+1);\n"
-                "      var rpc_oid := oid(nil);\n"
-                "      var rpc_err := CATCH({rpc_oid := rpc_client(local_name, rpc_timing, dst, \"%s\", \"%s\", \"%s\", ws,\n"
-                "                                         fun_vid_1iter, fun_iter_1iter, fun_item_1iter, fun_kind_1iter,\n"
-                "                                         int_values, dbl_values, dec_values, str_values);});\n"
-                "      time_doRPC :+= (msec() - time_start);\n"
-
-                "      time_start := msec();\n"
-                "      if (isnil(rpc_err)) {\n"
-                "        # retrieve results for this destination, and map the results back to the original iteration number\n"
-                "        var proc_res := get_rpc_res(ws,rpc_oid,local_name,int_values,dbl_values,dec_values,str_values);\n"
-                "        # save the intermediate results in final iter|item|kind\n"
-                "        var mu := merged_union(iter, proc_res.fetch(0), item, proc_res.fetch(1), kind, proc_res.fetch(2));\n"
-                "        iter := mu.fetch(0);\n"
-                "        item := mu.fetch(1);\n"
-                "        kind := mu.fetch(2);\n"
-                "      } else { # layman's error handling simplifies debugging; better solution is more than welcome!\n"
-                "        ERROR(\"RPC call: rpc_client:\\n\" + rpc_err);\n"
-                "      } # end IF_ISNIL_RPC-ERR\n"
-                "      time_extractAndSaveResults :+= (msec() - time_start);\n"
-
-                "    } # end BATLOOP\n"
-
-                "    time_totalRPC := msec() - time_totalRPC;\n"
-                "    printf(\"\\nmil totalRPC %%lld.000 doRPC %%lld.000 extractAndSaveResults %%lld.000\\n\", time_totalRPC, time_doRPC, time_extractAndSaveResults); \n"
-
+                "    res := doIterativeRPC(nr_iters, genType, \"%s\", \"%s\", \"%s\", ws, rpc_dsts, rpc_iter,\n"
+                "                   fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u,\n"
+                "                   int_values, dbl_values, dec_values, str_values);\n"
                 "  } else {\n"
-                "    var rpc_unq_dsts := rpc_dsts.tunique().hmark(0@0);\n"
-                "    var steps := rpc_unq_dsts.count();\n"
-                "    rpc_unq_dsts@[steps]batloop(){\n"
-
-                "      time_retrieveParamPerDst := msec();\n"
-                "      var iter_dst := rpc_dsts.ord_uselect($t).mirror(); # get iteration numbers for this destination\n"
-                "      var fun_iter_dst := fun_iter%03u.join(iter_dst);\n"
-                "      var indices := fun_iter_dst.mirror().hmark(0@0);\n"
-                "      # retrieve the frag of fun_vid, fun_iter, fun_item and fun_kind for this iteration.\n"
-                "      var fun_vid_dst  := indices.fetchjoin(fun_vid%03u).tmark(0@0);\n"
-                "          fun_iter_dst := fun_iter_dst.tmark(0@0);\n"
-                "      var fun_item_dst := indices.fetchjoin(fun_item%03u).tmark(0@0);\n"
-                "      var fun_kind_dst := indices.fetchjoin(fun_kind%03u).tmark(0@0);\n"
-                "      time_retrieveParamPerDst := msec() - time_retrieveParamPerDst;\n"
-
-                "      var rpc_timing := str(nil);\n"
-                "      if (genType.search(\"rpctiming\") >= 0) {\n"
-                "        rpc_timing := \"rpctiming\";\n"
-                "      } else {\n"
-                "        rpc_timing := \"\";\n"
-                "      }\n"
-
-                "      time_doRPC := msec();\n"
-                "      var local_name := \"rpc_res_00\" + str(int($h)+1);\n"
-                "      var rpc_oid := oid(nil);\n"
-                "      var rpc_err := CATCH({rpc_oid := rpc_client(local_name, rpc_timing, $t, \"%s\", \"%s\", \"%s\", ws,\n"
-                "                                         fun_vid_dst, fun_iter_dst, fun_item_dst, fun_kind_dst,\n"
-                "                                         int_values, dbl_values, dec_values, str_values);});\n"
-                "      time_doRPC := msec() - time_doRPC;\n"
-
-                "      time_extractAndSaveResults := msec();\n"
-                "      if (isnil(rpc_err)) {\n"
-                "        # retrieve results for this destination, and map the results back to the original iteration number\n"
-                "        var proc_res := get_rpc_res(ws,rpc_oid,local_name,int_values,dbl_values,dec_values,str_values);\n"
-
-                "            iter_dst := iter_dst.hmark(1@0);\n"
-                "        var res_iter := proc_res.fetch(0).join(iter_dst);\n"
-                "        var res_item := res_iter.reverse().join(proc_res.fetch(1)).tmark(0@0);\n"
-                "        var res_kind := res_iter.reverse().join(proc_res.fetch(2)).tmark(0@0);\n"
-
-                "        # save the intermediate results in final iter|item|kind\n"
-                "        var mu := merged_union(iter, res_iter, item, res_item, kind, res_kind);\n"
-                "        iter := mu.fetch(0);\n"
-                "        item := mu.fetch(1);\n"
-                "        kind := mu.fetch(2);\n"
-                "      } else { # layman's error handling simplifies debugging; better solution is more than welcome!\n"
-                "        ERROR(\"RPC call: rpc_client:\\n\" + rpc_err);\n"
-                "      } # end IF_ISNIL_RPC-ERR\n"
-
-                "      time_extractAndSaveResults := msec() - time_extractAndSaveResults;\n"
-
-                "    } # end BATLOOP\n"
-
-                "    time_totalRPC := msec() - time_totalRPC;\n"
-                "    if (genType.search(\"rpctiming\") >= 0) {\n"
-                "      printf(\"\\nmil totalRPC %% lld.000 retrieveParamPerDst %% lld.000 doRPC %% lld.000 extractAndSaveResults %% lld.000\\n\\n\", time_totalRPC, time_retrieveParamPerDst, time_doRPC, time_extractAndSaveResults);\n"
-                "    }\n"
+                "    res := doLoopLiftedRPC(nr_iters, genType, \"%s\", \"%s\", \"%s\", ws, rpc_dsts,\n"
+                "                   fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u,\n"
+                "                   int_values, dbl_values, dec_values, str_values);\n"
                 "  }\n"
 
+                "  iter := res.fetch(0);\n"
+                "  item := res.fetch(1);\n"
+                "  kind := res.fetch(2);\n"
                 "  if (type(iter) = bat) {\n"
                 "    ipik := iter;\n"
                 "  } else {\n"
@@ -6462,10 +6363,10 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "    }\n"
                 "  }\n"
                 "} # end of RPC call\n",
-                counter, counter, counter, counter,
                 apply.fun->qname.ns.uri, apply.rpc_uri, apply.fun->qname.loc,
                 counter, counter, counter, counter,
-                apply.fun->qname.ns.uri, apply.rpc_uri, apply.fun->qname.loc);
+                apply.fun->qname.ns.uri, apply.rpc_uri, apply.fun->qname.loc,
+                counter, counter, counter, counter);
     } else {
         /* call the proc */
         milprintf(f, PFudfMIL(),
