@@ -97,7 +97,12 @@ comment "Print the index for a cracked table.";
 @mal
 module crackers;
 
+@:crackfcn(chr)@
+@:crackfcn(sht)@
 @:crackfcn(int)@
+@:crackfcn(lng)@
+@:crackfcn(flt)@
+@:crackfcn(dbl)@
 @-
 A limited set of relational operators is overloaded to deal with
 cracked BATs. The relational select collects the pieces
@@ -137,7 +142,12 @@ comment "Retrieve the subset using a cracker
 
 @-
 @mal
+@:crackAlgebra(chr)@
+@:crackAlgebra(sht)@
 @:crackAlgebra(int)@
+@:crackAlgebra(lng)@
+@:crackAlgebra(flt)@
+@:crackAlgebra(dbl)@
 
 @-
 Direct access to the core cracking routines for cracking a complete BAT;
@@ -195,8 +205,18 @@ comment "Validate whether a BAT is correctly broken into three pieces with
 	 respectively; maintaining the head-oid order within each piece.";
 @
 @mal
+@:crack(chr)@
+@:crack(sht)@
 @:crack(int)@
+@:crack(lng)@
+@:crack(flt)@
+@:crack(dbl)@
+@:crack_validate(chr)@
+@:crack_validate(sht)@
 @:crack_validate(int)@
+@:crack_validate(lng)@
+@:crack_validate(flt)@
+@:crack_validate(dbl)@
 @-
 @{
 @- include prelude.mx
@@ -287,7 +307,12 @@ newIndex_@1(int bid)
 @
 
 @c
+@:CreateNewIndex(chr)@
+@:CreateNewIndex(sht)@
 @:CreateNewIndex(int)@
+@:CreateNewIndex(lng)@
+@:CreateNewIndex(flt)@
+@:CreateNewIndex(dbl)@
 
 void
 printCrackIndex(int bid)
@@ -423,7 +448,12 @@ addTwo_@1(int i, @1 *valueA, lng indexA, BUN p2, @1 *valueB, lng indexB, BUN p)
 @
 
 @c
+@:InsertIndexElements(chr)@
+@:InsertIndexElements(sht)@
 @:InsertIndexElements(int)@
+@:InsertIndexElements(lng)@
+@:InsertIndexElements(flt)@
+@:InsertIndexElements(dbl)@
 
 
 @-
@@ -1036,8 +1066,8 @@ CRKcrackOrderedZero_validate_@1 (bit *res, int *bid, @1 *_mid)
 	@:validate_check_1(@1,2,> ,mid)@
 
 	@:validate_end(@1,z,\
-		printf("|b|="SZFMT" ; |tail<=%d|="SZFMT", |tail>%d|="SZFMT" !\n",\
-		       count[0], mid, count[1], mid, count[2]);\
+		printf("|b|="SZFMT" ; |tail<=%f|="SZFMT", |tail>%f|="SZFMT" !\n",\
+		       count[0], (dbl)mid, count[1], (dbl)mid, count[2]);\
 	)@
 }
 @
@@ -1053,8 +1083,8 @@ CRKcrackOrderedOne_validate_@1 (int *res, int *bid, @1 *_mid)
 	@:validate_check_1(@1,3,> ,mid)@
 	
 	@:validate_end(@1,,\
-		printf("|b|="SZFMT" ; |tail<%d|="SZFMT", |tail==%d|="SZFMT", |tail>%d|="SZFMT" !\n",\
-		       count[0], mid, count[1], mid, count[2], mid, count[3]);\
+		printf("|b|="SZFMT" ; |tail<%f|="SZFMT", |tail==%f|="SZFMT", |tail>%f|="SZFMT" !\n",\
+		       count[0], (dbl)mid, count[1], (dbl)mid, count[2], (dbl)mid, count[3]);\
 	)@
 }
 @
@@ -1073,8 +1103,8 @@ CRKcrackOrderedTwo_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
 	@:validate_check_1(@1,5,> ,hgh)@
 
 	@:validate_end(@1,,\
-		printf("|b|="SZFMT" ; |tail<%d|="SZFMT", |tail==%d|="SZFMT", |%d<tail<%d|="SZFMT", |tail==%d|="SZFMT", |tail>%d|="SZFMT" !\n",\
-		       count[0], low, count[1], low, count[2], low, hgh, count[3], hgh, count[4], hgh, count[5]);\
+		printf("|b|="SZFMT" ; |tail<%f|="SZFMT", |tail==%f|="SZFMT", |%f<tail<%f|="SZFMT", |tail==%f|="SZFMT", |tail>%f|="SZFMT" !\n",\
+		       count[0], (dbl)low, count[1], (dbl)low, count[2], (dbl)low, (dbl)hgh, count[3], (dbl)hgh, count[4], (dbl)hgh, count[5]);\
 	)@
 }
 @
@@ -1091,15 +1121,25 @@ CRKcrackOrderedThree_validate_@1 (bit *res, int *bid, @1 *_low, @1 *_hgh)
 	@:validate_check_1(@1,3,> ,hgh)@
 
 	@:validate_end(@1,z,\
-		printf("|b|="SZFMT" ; |tail<=%d|="SZFMT", |%d<tail<=%d|="SZFMT", |tail>%d|="SZFMT" !\n",\
-		       count[0], low, count[1], low, hgh, count[2], hgh, count[3]);\
+		printf("|b|="SZFMT" ; |tail<=%f|="SZFMT", |%f<tail<=%f|="SZFMT", |tail>%f|="SZFMT" !\n",\
+		       count[0], (dbl)low, count[1], (dbl)low, (dbl)hgh, count[2], (dbl)hgh, count[3]);\
 	)@
 }
 @
 
 @c
+@:validate_operations(chr)@
+@:validate_operations(sht)@
 @:validate_operations(int)@
+@:validate_operations(lng)@
+@:validate_operations(flt)@
+@:validate_operations(dbl)@
+@:SI_operations(chr)@
+@:SI_operations(sht)@
 @:SI_operations(int)@
+@:SI_operations(lng)@
+@:SI_operations(flt)@
+@:SI_operations(dbl)@
 @}
 @-
 This function takes a range and returns a view with the result. To do that, we first search the index to determine which parts of the result we already 
@@ -1740,33 +1780,43 @@ CRKuselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit
 }
 
 str                             
-CRKselectValue_@1(int *vid, int *bid, int *value)
+CRKselectValue_@1(int *vid, int *bid, @1 *value)
 {                                       
 	bit inclusive = TRUE;
 	return CRKuselectBounds_@1(vid, bid, value, value, &inclusive, &inclusive);
 } 
                 
 str
-CRKuselectValue_@1(int *vid, int *bid, int *value)
+CRKuselectValue_@1(int *vid, int *bid, @1 *value)
 {
 	bit inclusive = TRUE;
 	return CRKuselectBounds_@1(vid, bid, value, value, &inclusive, &inclusive);
 }
 
 str
-CRKselect_@1(int *vid, int *bid, int *low, int *hgh)
+CRKselect_@1(int *vid, int *bid, @1 *low, @1 *hgh)
 {
 	bit inclusive = TRUE;
 	return CRKselectBounds_@1(vid, bid, low, hgh, &inclusive, &inclusive);
 }
 
 str                             
-CRKuselect_@1(int *vid, int *bid, int *low, int *hgh)
+CRKuselect_@1(int *vid, int *bid, @1 *low, @1 *hgh)
 {                               
 	bit inclusive = TRUE;
 	return CRKuselectBounds_@1(vid, bid, low, hgh, &inclusive, &inclusive);
 }                               
 @c
+@:crackOperations(chr)@
+@:crackOperations(sht)@
 @:crackOperations(int)@
+@:crackOperations(lng)@
+@:crackOperations(flt)@
+@:crackOperations(dbl)@
+@:SelectFunctions(chr)@
+@:SelectFunctions(sht)@
 @:SelectFunctions(int)@
+@:SelectFunctions(lng)@
+@:SelectFunctions(flt)@
+@:SelectFunctions(dbl)@
                         
