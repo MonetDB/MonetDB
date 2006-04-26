@@ -35,7 +35,7 @@ t1:= alarm.usec();
 	values:= values % tuples;
 	values:= values + 1;
 
-	redo (go,i):= mal.nextElement(1,n);
+	redo (go,i):= language.nextElement(1,n);
 exit (go,i);
 
 io.print("");

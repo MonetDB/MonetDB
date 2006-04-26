@@ -21,7 +21,7 @@ stdout of test 'bpt05` in directory 'src/modules/mal` itself:
 #
 #barrier (go,i):= mal.newRange(0);
 #	partitions.insert(a1,i);
-#	redo (go,i):= mal.nextElement(1,10);
+#	redo (go,i):= language.nextElement(1,10);
 #exit (go,i);
 #partitions.dump();
 #barrier (k,b):= partitions.newIterator(a1);

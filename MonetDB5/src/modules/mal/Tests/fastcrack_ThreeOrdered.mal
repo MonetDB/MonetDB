@@ -16,24 +16,27 @@ n:=30;
 t:=0:lng;
 barrier (go,i):= (true,0);
 	b:= microbenchmark.uniform(0@0,tuples,values);
-	mid:int:= mmath.rand();
-	mid := mid % values;
+	low:int:= mmath.rand();
+	low := low % values;
+	hgh:int:= mmath.rand();
+	hgh := hgh % values;
+	redo go := low>hgh;
 
 t0:= alarm.usec();
-	c:=crackers.zcrackOrdered_MK(b,mid);
+	c:=crackers.zcrackOrdered(b,low,hgh);
 t1:= alarm.usec();
 	time:= t1 - t0;
 	t := t + time;
-	v := crackers.zcrackOrdered_validate(c,mid);
-	io.print(values,mid,time,v);
+	v := crackers.zcrackOrdered_validate(c,low,hgh);
+	io.print(values,low,hgh,time,v);
 
 	values:int:= mmath.rand();
 	values:= values % tuples;
 	values:= values + 1;
 
-	redo (go,i):= mal.nextElement(1,n);
+	redo (go,i):= language.nextElement(1,n);
 exit (go,i);
 
 io.print("");
 t := t / n;
-io.print("ZeroOrdered_MK",t);
+io.print("ThreeOrdered",t);

@@ -5,5 +5,5 @@ if [ ! "$1" ] ; then
 	exit 1
 fi
 
-perl -i -p -e 's|^tuples:=[0-9]+;$|tuples:='"$1"';|' fastcrack_*_*.mal
-grep '^tuples:=' fastcrack_*_*.mal
+perl -i -p -e 's|^tuples:=[0-9]+;$|tuples:='"$1"';|' fastcrack_*.mal
+grep '^tuples:=' fastcrack_*.mal

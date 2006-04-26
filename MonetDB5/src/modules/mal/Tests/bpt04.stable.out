@@ -24,7 +24,7 @@ stdout of test 'bpt04` in directory 'src/modules/mal` itself:
 #	bat.insert(a1,nil,i);
 #	bat.insert(a2,nil,i);
 #	bat.insert(a3,nil,i);
-#	redo (go,i):= mal.nextElement(1,10);
+#	redo (go,i):= language.nextElement(1,10);
 #exit (go,i);
 #
 ## now really add it

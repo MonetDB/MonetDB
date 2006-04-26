@@ -20,7 +20,7 @@ barrier (go,i):= (true,0);
 	mid := mid % values;
 
 t0:= alarm.usec();
-	c:=crackers.crackOrdered_sm(b,mid);
+	c:=crackers.crackOrdered(b,mid);
 t1:= alarm.usec();
 	time:= t1 - t0;
 	t := t + time;
@@ -31,9 +31,9 @@ t1:= alarm.usec();
 	values:= values % tuples;
 	values:= values + 1;
 
-	redo (go,i):= mal.nextElement(1,n);
+	redo (go,i):= language.nextElement(1,n);
 exit (go,i);
 
 io.print("");
 t := t / n;
-io.print("OneOrdered_sm",t);
+io.print("OneOrdered",t);

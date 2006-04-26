@@ -11,7 +11,7 @@ bat.insert(b,7@0,64);
 bat.insert(b,8@0,1);
 bat.insert(b,9@0,81);
 io.print(b);
-crackers.crack_SI(b,25);
+crackers.crack(b,25);
 io.print("split on 25");
 io.print(b);
 
@@ -25,7 +25,7 @@ bat.insert(c,6@0,49);
 bat.insert(c,7@0,64);
 bat.insert(c,8@0,1);
 bat.insert(c,9@0,81);
-crackers.crack_SI(c,27);
+crackers.crack(c,27);
 io.print("split on 27");
 io.print(c);
 
@@ -39,7 +39,7 @@ bat.insert(d,6@0,49);
 bat.insert(d,7@0,64);
 bat.insert(d,8@0,1);
 bat.insert(d,9@0,81);
-crackers.crack_SI(d,81);
+crackers.crack(d,81);
 io.print("split on 81");
 io.print(d);
 
@@ -53,6 +53,6 @@ bat.insert(e,6@0,49);
 bat.insert(e,7@0,64);
 bat.insert(e,8@0,1);
 bat.insert(e,9@0,81);
-crackers.crack_SI(e,1);
+crackers.crack(e,1);
 io.print("split on 1");
 io.print(e);

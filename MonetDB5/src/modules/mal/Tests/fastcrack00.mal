@@ -19,12 +19,12 @@ barrier (go,i):= (true,0);
 	hgh := hgh % tuples;
 	redo go := low>hgh;
 t0:= alarm.usec();
-	crackers.crack_MK(b,low);
+	crackers.crack(b,low);
 t1:= alarm.usec();
 	time:= t1 - t0;
 	total:= total+time;
 	io.print(low,hgh,time);
-    redo (go,i):= mal.nextElement(1,n);
+    redo (go,i):= language.nextElement(1,n);
 exit (go,i);
 
 m:= calc.lng(n);
