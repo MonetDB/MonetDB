@@ -1772,7 +1772,7 @@ CRKuselectBounds_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit
 	if (*(@1*)low == int_nil)
 		CRKRange_LeftNil_@1(vid, bid, hgh, inclusiveHgh, FALSE);
 	else if (*(@1*)hgh == int_nil)
-		CRKRange_RightNil_@1(vid, bid, low, inclusiveLow, TRUE);
+		CRKRange_RightNil_@1(vid, bid, low, inclusiveLow, FALSE);
 	else 
 		CRKRange_@1(vid, bid, low, hgh, inclusiveLow, inclusiveHgh, FALSE);
 
