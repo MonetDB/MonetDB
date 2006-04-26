@@ -33,10 +33,9 @@ list_find_name(list *l, char *name)
 	if (l)
 		for (n = l->h; n; n = n->next) {
 			sql_base *b = n->data;
-
 			/* check if names match */
 			if (name[0] == b->name[0] && strcmp(name, b->name) == 0) {
-				return n;
+					return n;
 			}
 		}
 	return NULL;
@@ -101,14 +100,19 @@ find_sql_table_node(sql_schema *s, char *tname)
 sql_table *
 find_sql_table(sql_schema *s, char *tname, int location)
 {
-	node *n = find_sql_table_node(s, tname);
+	list* l = s->tables.set;	
+	node *n;
+        if (l)
+                for (n = l->h; n; n = n->next) {
+                        sql_table *b = n->data;
+                        /* check if names match */
+                        if (tname[0] == b->base.name[0] && strcmp(tname, b->base.name) == 0) {
 
-	if (n) {
-		sql_table* t = n->data;
-		if(t->location == location)
-			return n->data;
-	}
-	return NULL;
+                                if(b->location == location)
+                                        return b;
+                        }
+                }
+        return NULL;
 }
 
 node *
