@@ -896,9 +896,12 @@ insert_into(mvc *sql, scope *scp, symbol *symb, dlist *columns, symbol *val_or_q
 	stmt **inserts, *res = NULL;
 	char *host = qname_host(symb);
 	int location = table_location(sql,host);
+	if(location ==-1){
+		return sql_error(sql, 02, "INSERT INTO: no such location '%s'", host);
+	}
 
 	if (!s || (t = mvc_bind_table(sql, s, tname,location)) == NULL) {
-		return sql_error(sql, 02, "INSERT INTO: no such table '%s'", tname);
+		return sql_error(sql, 02, "INSERT INTO: no such table '%s' for location '%s'", tname,host);
 	} else if (!t->table) {
 		return sql_error(sql, 02, "INSERT INTO: cannot insert into view '%s'", tname);
 	}
@@ -1100,13 +1103,16 @@ copyfrom(mvc *sql, scope *scp, symbol *symb, dlist *files, dlist *seps, int nr)
 	char *tname = qname_table(symb);
 	char *host = qname_host(symb);
 	int location = table_location(sql,host);
-	sql_table *t = mvc_bind_table(sql, cur_schema(sql), tname,location);
 	char *tsep = seps->h->data.sval;
 	char *rsep = seps->h->next->data.sval;
 	list *slist;
+	sql_table *t = mvc_bind_table(sql, cur_schema(sql), tname,location);
+	if(location ==-1){
+		return sql_error(sql, 02, "COPY INTO: no such location '%s'", host);
+	}
 
 	if (!t) {
-		return sql_error(sql, 02, "COPY INTO: no such table '%s'", tname);
+		return sql_error(sql, 02, "COPY INTO: no such table '%s' for location '%s'", tname, host);
 	} else if (files) {
 		dnode *n = files->h;
 
@@ -1297,6 +1303,9 @@ update_table(mvc *sql, scope *scp, symbol *symb, dlist *assignmentlist, symbol *
 	char *tname = qname_table(symb);
 	char *host = qname_host(symb);
 	int location = table_location(sql,host);
+	if(location ==-1){
+		return sql_error(sql, 02, "UPDATE: no such location '%s'", host);
+	}
 
 	return sql_update_table(sql, scp, s, tname, assignmentlist, opt_where,location);
 }
@@ -1391,9 +1400,12 @@ delete_table(mvc *sql, scope *scp, symbol *symb, symbol *opt_where)
 	char *host = qname_host(symb);
 	int location = table_location(sql,host);
 	sql_table *t = mvc_bind_table(sql, cur_schema(sql), tname, location);
+	if(location ==-1){
+		return sql_error(sql, 02, "DELETE FROM: no such location '%s'", host);
+	}
 
 	if (!t) {
-		return sql_error(sql, 02, "DELETE FROM: no such table '%s'", tname);
+		return sql_error(sql, 02, "DELETE FROM: no such table '%s' for location '%s'", tname,host);
 	} else if (!t->table) {
 		return sql_error(sql, 02, "DELETE FROM: cannot delete from view '%s'", tname);
 	}

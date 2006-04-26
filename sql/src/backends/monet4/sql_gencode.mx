@@ -389,7 +389,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 
 			buf = NEW_ARRAY(char, buflen + 1);
 
-			len = snprintf(buf, buflen, "var s%d := mvc_bind(myc, \"%s\", \"%s\", \"%s\", %d);\n", -s->nr, s->op1.cval->t->s->base.name, s->op1.cval->t->base.name, s->op1.cval->base.name, s->flag);
+			len = snprintf(buf, buflen, "var s%d := mvc_bind(myc, \"%s\", \"%s\", \"%s\", %d, %d);\n", -s->nr, s->op1.cval->t->s->base.name, s->op1.cval->t->base.name, s->op1.cval->base.name, s->op1.cval->t->location, s->flag);
 			assert(len <= buflen);
 
 			dump(sql, buf, len, -s->nr); 

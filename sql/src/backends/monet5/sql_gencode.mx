@@ -375,6 +375,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushStr(mb, q, s->op1.cval->t->s->base.name);
 			q = pushStr(mb, q, s->op1.cval->t->base.name);
 			q = pushStr(mb, q, s->op1.cval->base.name);
+			q = pushInt(mb, q, s->op1.cval->t->location);
 			q = pushInt(mb, q, s->flag);
 			k = getDestVar(q);
 
@@ -397,6 +398,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			q = pushStr(mb, q, s->op1.tval->s->base.name);
 			q = pushStr(mb, q, s->op1.tval->base.name);
+			q = pushInt(mb, q, s->op1.tval->location);
 			q = pushInt(mb, q, s->flag);
 			k = getDestVar(q);
 

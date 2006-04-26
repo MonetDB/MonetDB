@@ -1026,8 +1026,8 @@ load_table(sql_trans *tr, sql_schema *s, BAT *tables, BUN j)
 	BAT *D_idxs = sys_bat(bm, "D_idxs");
 	
 	/*next two lines were insert to handle with replication*/
-	BAT *table_replication = sys_bat(bm, "ptables_replication_id");
 	BAT *table_location = sys_bat(bm, "ptables_location");	
+	BAT *table_replication = sys_bat(bm, "ptables_replication_id");
 	
 	BAT *D_triggers = sys_bat(bm, "D_triggers");
 
@@ -1513,39 +1513,6 @@ bs_init_schema(struct bm *bm)
 
 
 static void
-bs_init_hosts(struct bm *bm)
-{
-	BAT *sql_location = mvc_bat(bm, "hosts_location", TYPE_int);
-	BAT *sql_host_name = mvc_bat(bm, "hosts_name", TYPE_str);
-	BAT *sql_host_ip = mvc_bat(bm, "hosts_ip", TYPE_str);
-	BAT *sql_host_user = mvc_bat(bm, "hosts_user", TYPE_str);
-	BAT *sql_host_password = mvc_bat(bm, "hosts_password", TYPE_str);
-	BAT *D_hosts = mvc_bat(bm, "D_hosts", TYPE_oid);
-	bat_destroy(sql_location);
-	bat_destroy(sql_host_name);
-	bat_destroy(sql_host_ip);
-	bat_destroy(sql_host_user);
-	bat_destroy(sql_host_password);
-	bat_destroy(D_hosts);
-}
-
-static void
-bs_init_replication(struct bm *bm)
-{
-	BAT *sql_replication_id = mvc_bat(bm, "replication_replication_id", TYPE_int);
-	BAT *sql_replication_refresh = mvc_bat(bm, "replication_refresh", TYPE_str);
-	BAT *sql_replication_columns = mvc_bat(bm, "replication_columns", TYPE_str);
-	BAT *sql_replication_type = mvc_bat(bm, "replication_type", TYPE_str);
-	BAT *D_replication = mvc_bat(bm, "D_replication", TYPE_oid);
-	bat_destroy(sql_replication_id);
-	bat_destroy(sql_replication_refresh);
-	bat_destroy(sql_replication_columns);
-	bat_destroy(sql_replication_type);
-	bat_destroy(D_replication);
-}
-
-
-static void
 bs_init_table(struct bm *bm)
 {
 	BAT *sql_table_id = mvc_bat(bm, "ptables_id", TYPE_int);
@@ -1555,8 +1522,8 @@ bs_init_table(struct bm *bm)
 	BAT *sql_table_istable = mvc_bat(bm, "ptables_istable", TYPE_bit);
 	BAT *sql_table_system = mvc_bat(bm, "ptables_system", TYPE_bit);
 	BAT *sql_table_clear = mvc_bat(bm, "ptables_clear", TYPE_bit);
-	BAT *sql_table_replication_id = mvc_bat(bm, "ptables_replication_id", TYPE_int);
 	BAT *sql_table_location = mvc_bat(bm, "ptables_location", TYPE_int);
+	BAT *sql_table_replication_id = mvc_bat(bm, "ptables_replication_id", TYPE_int);
 	BAT *U_table_id = mvc_bat(bm, "U_ptables_id", TYPE_int);
 	BAT *U_table_name = mvc_bat(bm, "U_ptables_name", TYPE_str);
 	BAT *U_table_schema = mvc_bat(bm, "U_ptables_schema_id", TYPE_int);
@@ -1564,8 +1531,8 @@ bs_init_table(struct bm *bm)
 	BAT *U_table_istable = mvc_bat(bm, "U_ptables_istable", TYPE_bit);
 	BAT *U_table_system = mvc_bat(bm, "U_ptables_system", TYPE_bit);
 	BAT *U_table_clear = mvc_bat(bm, "U_ptables_clear", TYPE_bit);
-	BAT *U_table_replication_id = mvc_bat(bm, "U_ptables_replication_id", TYPE_int);
 	BAT *U_table_location = mvc_bat(bm, "U_ptables_location", TYPE_int);
+	BAT *U_table_replication_id = mvc_bat(bm, "U_ptables_replication_id", TYPE_int);
 	BAT *D_sql_table = mvc_bat(bm, "D_ptables", TYPE_oid);
 
 	update_table_bat(sql_table_id, U_table_id, D_sql_table);
@@ -1573,8 +1540,8 @@ bs_init_table(struct bm *bm)
 	update_table_bat(sql_table_schema, U_table_schema, D_sql_table);
 	update_table_bat(sql_table_query, U_table_query, D_sql_table);
 	update_table_bat(sql_table_istable, U_table_istable, D_sql_table);
-	update_table_bat(sql_table_replication_id, U_table_replication_id, D_sql_table);
 	update_table_bat(sql_table_location, U_table_location, D_sql_table);
+	update_table_bat(sql_table_replication_id, U_table_replication_id, D_sql_table);
 
 	bat_destroy(sql_table_id);
 	bat_destroy(sql_table_name);
@@ -1583,8 +1550,8 @@ bs_init_table(struct bm *bm)
 	bat_destroy(sql_table_istable);
 	bat_destroy(sql_table_system);
 	bat_destroy(sql_table_clear);
-	bat_destroy(sql_table_replication_id);
 	bat_destroy(sql_table_location);
+	bat_destroy(sql_table_replication_id);
 	bat_destroy(U_table_id);
 	bat_destroy(U_table_name);
 	bat_destroy(U_table_schema);
@@ -1592,8 +1559,8 @@ bs_init_table(struct bm *bm)
 	bat_destroy(U_table_istable);
 	bat_destroy(U_table_system);
 	bat_destroy(U_table_clear);
-	bat_destroy(U_table_replication_id);
 	bat_destroy(U_table_location);
+	bat_destroy(U_table_replication_id);
 	bat_destroy(D_sql_table);
 }
 
@@ -2223,6 +2190,10 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name, bit clear, int 
 	BUNins(b, (ptr) &rid, (ptr) &t->system);
 	bat_destroy(b);
 
+	b = sys_bat(bm, "ptables_clear");
+	BUNins(b, (ptr) &rid, (ptr) &t->clear);
+	bat_destroy(b);
+
 	b = sys_bat(bm, "ptables_location");
 	BUNins(b, (ptr) &rid, (ptr) &t->location);
 	bat_destroy(b);
@@ -2231,9 +2202,6 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name, bit clear, int 
 	BUNins(b, (ptr) &rid, (ptr) &t->replication_id);
 	bat_destroy(b);
 
-	b = sys_bat(bm, "ptables_clear");
-	BUNins(b, (ptr) &rid, (ptr) &t->clear);
-	bat_destroy(b);
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	tr->schema_updates ++;
@@ -2291,6 +2259,12 @@ int
 store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 {
 	int first = 0;
+	int loc = LOCATION;
+	char *host = "localhost";
+	char *ip = "127.0.0.1";
+	int port = 50000;
+	char *user = "monetdb";
+	char *passwd = "monetdb";
 
 	bs_debug = debug;
 	bm = bm_create(debug);
@@ -2313,8 +2287,6 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 	bs_init_trigger(bm);
 	bs_init_type(bm);
 	bs_init_func(bm);
-	bs_init_hosts(bm);
-	bs_init_replication(bm);
 	sequences_init();
 
 	gtrans = load_trans(bm, stk);
@@ -2346,8 +2318,8 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "istable", "boolean", 0);
 		bootstrap_create_column(tr, t, "system", "boolean", 0);
 		bootstrap_create_column(tr, t, "clear", "boolean", 0);
-		bootstrap_create_column(tr, t, "replication_id", "int", 9);
 		bootstrap_create_column(tr, t, "location", "int", 9);
+		bootstrap_create_column(tr, t, "replication_id", "int", 9);
 
 		t = bootstrap_create_table(tr, s, "pcolumns", 0, LOCATION, REPLICATION);
 		bootstrap_create_column(tr, t, "id", "int", 9);
@@ -2421,21 +2393,12 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "number", "int", 9);
 		
 		/*functions for the replication service*/
-		t = bootstrap_create_table(tr, s, "hosts", 0,LOCATION,REPLICATION);
-		bootstrap_create_column(tr, t, "location", "int", 9);
-		bootstrap_create_column(tr, t, "name", "varchar", 1024);
-		bootstrap_create_column(tr, t, "ip", "varchar", 256);
-		bootstrap_create_column(tr, t, "user", "varchar", 1024);
-		bootstrap_create_column(tr, t, "password", "varchar", 1024);
-//		table_insert(tr, t, LOCATION,"localhost" , "127.0.0.1", "monetdb", "monetdb");
 		
-		//create_host_table(tr, s);
-		t = bootstrap_create_table(tr, s, "replication", 0,LOCATION,REPLICATION);
-		bootstrap_create_column(tr, t, "replication_id", "int", 9);
-		bootstrap_create_column(tr, t, "refresh", "int", 9);
-		bootstrap_create_column(tr, t, "columns", "varchar", 256);
-		bootstrap_create_column(tr, t, "type", "varchar", 1024);
-		//create_replication_table(tr, s);
+		create_host_table(tr, s);
+		create_replication_table(tr, s);
+
+		t = find_sql_table(s,"hosts",LOCATION);
+		table_insert(tr, t, &loc, host , ip, &port, user, passwd);
 		
 		if (sql_trans_commit(tr) != SQL_OK)
 			fprintf(stderr, "cannot commit initial transaction\n");

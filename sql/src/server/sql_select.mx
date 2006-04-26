@@ -102,14 +102,18 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 		tname = qname_table(tableref->data.lval->h->data.sym);			/*Changed to support replication*/
 		char *host = qname_host(tableref->data.lval->h->data.sym);
 		int location = table_location(sql,host);
-
+		if(location == -1){
+			(void) sql_error(sql, 02, "SELECT: no such location '%s'", host);
+			return NULL;
+		}		
 		if (!s) {
 			(void) sql_error(sql, 02, "SELECT: no such schema");
 			return NULL;
 		}
 		t = mvc_bind_table(sql, s, tname,location);
 		if (!t) {
-			(void) sql_error(sql, 02, "SELECT: no such table '%s'", tname);
+			(void) sql_error(sql, 02, "SELECT: no such table '%s' fro location %s", tname,host);
+
 			return NULL;
 		} else if (!table_privs(sql, t, PRIV_SELECT)) {
 			(void) sql_error(sql, 02, "SELECT: access denied for %s to table '%s.%s'", sql->user, s->base.name, tname);

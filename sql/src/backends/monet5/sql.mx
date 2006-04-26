@@ -87,7 +87,7 @@ command nextValue( sequence:str ):lng
 address mvc_next_value
 comment "return the next value of the sequence";
 
-command bind_dbat(sname:str, tname:str, access:int, location:int):bat[:any_1,:any_2]
+command bind_dbat(sname:str, tname:str, location:int, access:int):bat[:any_1,:any_2]
 address mvc_bind_dbat_wrap
 comment "Bind the table deletes bat, tname.delete 
 	with specific access modes";
@@ -101,7 +101,7 @@ command clear_table(sname:str, tname:str) :lng
 address mvc_clear_table_wrap
 comment "Clear table";
 
-command bind(sname:str, tname:str, cname:str, access:int, location:int ):bat[:any_1,:any_2]
+command bind(sname:str, tname:str, cname:str, location:int, access:int ):bat[:any_1,:any_2]
 address mvc_bind_wrap
 comment "Bind the bat tname.cname into the focus with specific access mode";
 
@@ -652,7 +652,7 @@ extern void backend_destroy(backend *b);
 extern int sqlcleanup(mvc *c, int err);
 extern stmt *sql_symbol2stmt(mvc *c);
 
-extern BAT *mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access, int location);
+extern BAT *mvc_bind(mvc *m, char *sname, char *tname, char *cname, int location, int access);
 extern BAT *mvc_bind_dbat(mvc *m, char *sname, char *tname, int access, int locaion);
 extern BAT *mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access);
 
@@ -873,7 +873,7 @@ mvc_next_value(lng *res, str *seq)
 
 
 BAT *
-mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access, int location)
+mvc_bind(mvc *m, char *sname, char *tname, char *cname, int location, int access)
 {
 	sql_trans *tr = m->trans;
 	BAT *b = NULL;
@@ -890,7 +890,7 @@ mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access, int location
 
 
 BAT *
-mvc_bind_dbat(mvc *m, char *sname, char *tname, int access, int location)
+mvc_bind_dbat(mvc *m, char *sname, char *tname, int location, int access)
 {
 	sql_trans *tr = m->trans;
 	BAT *b = NULL;
@@ -918,7 +918,7 @@ mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access)
 }
 
 str
-mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access, int *location)
+mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *location, int *access)
 {
 	BAT *b;
 	mvc *m;
@@ -926,7 +926,7 @@ mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access, int *lo
 
 	if (msg)
 		return msg;
-	b = mvc_bind(m, *sname, *tname, *cname, *access, *location);
+	b = mvc_bind(m, *sname, *tname, *cname, *location, *access);
 	if (b) {
 		BBPincref( *bid = b->batCacheid, TRUE);
 		BBPunfix( *bid);
@@ -976,7 +976,7 @@ mvc_bind_single_wrap(int *ret, int *bid, str *name)
 }
 
 str
-mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access, int *location)
+mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *location, int *access)
 {
 	BAT *b;
 	mvc *m;
@@ -984,7 +984,7 @@ mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access, int *location)
 
 	if (msg)
 		return msg;
-	b = mvc_bind_dbat(m, *sname, *tname, *access, *location);
+	b = mvc_bind_dbat(m, *sname, *tname, *location, *access);
 	if (b) {
 		BBPincref( *ret = b->batCacheid, TRUE);
 		BBPunfix(*ret);

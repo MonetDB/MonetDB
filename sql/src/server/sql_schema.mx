@@ -754,13 +754,16 @@ create_index(mvc *sql, sql_schema *ss, char *iname, int itype, symbol *symb, dli
 	sql_idx *i = mvc_bind_idx(sql, ss, iname);
 	char *host = qname_host(symb);
 	int location = table_location(sql,host);
+	if(location ==-1){
+		return sql_error(sql, 02, "CREATE INDEX: no such location '%s'", host);
+	}
 
 	sql_table *t = mvc_bind_table(sql, ss, name,location);
 
 	if (i) {
 		return sql_error(sql, 02, "CREATE INDEX: name '%s' already in use", iname);
 	} else if (!t) {
-		return sql_error(sql, 02, "CREATE INDEX: no such table '%s'", name);
+		return sql_error(sql, 02, "CREATE INDEX: no such table '%s' for location '%s'", name, host);
 	} else {
 		dnode *n = column_list->h;
 		sql_idx *i = mvc_create_idx(sql, t, iname, (idx_type) itype);
@@ -927,6 +930,10 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 				char *rtname = qname_table(n->data.sym);
 				char *host = qname_host(n->data.sym);
 				int location = table_location(sql,host);
+				if(location ==-1){
+					sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: no such location '%s'", host);
+				return SQL_ERR;
+	}
 				char *rcname = n->next->data.lval->h->data.sval;
 				int ref_actions = n->next->next->next->data.ival; 
 				sql_fkey *fk;
@@ -935,7 +942,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 				sql_key *k, *rk;
 
 				if (!rt) {
-					(void) sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: no such table table '%s'\n", rtname);
+					(void) sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: no such table table '%s' for location '%s'\n", rtname,host);
 					return res;
 				}
 				if (name && mvc_bind_key(sql, ss, name)) {
@@ -1185,10 +1192,13 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t,
 	char *rtname = qname_table(n->data.sym);
 	char *host = qname_host(n->data.sym);
 	int location = table_location(sql,host);
+	if(location ==-1){
+		return sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: no such location '%s'", host);
+	}
 	sql_table *ft = mvc_bind_table(sql, ss, rtname,location);
 
 	if (!ft) {
-		return sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
+		return sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: no such table '%s' for location '%s'\n", rtname, host);
 	} else {
 		sql_key *k, *rk = NULL;
 		sql_fkey *fk;
@@ -1389,9 +1399,7 @@ create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_ele
 {
 	char *name = qname_table(symb);
 	char *host = qname_host(symb);
-	printf("%s",host);
 	int location = table_location(sql,host);
-	printf("%d",location);
 	int replication_id = REPLICATION;
 	sql_table* t1;
 	
@@ -1465,11 +1473,14 @@ drop_table(mvc *sql, symbol *symb, int drop_action)
 	char *host = qname_host(symb);
 	int location = table_location(sql,host);
 	sql_table *t = mvc_bind_table(sql, ss, tname, location);
+	if(location ==-1){
+		return sql_error(sql, 02, "DROP TABLE: no such location '%s'", host);
+	}
 
 	if (!schema_privs(sql->role_id, ss)) 
 		return sql_error(sql, 02, "DROP TABLE: access denied for %s to schema ;'%s'", sql->user, ss->base.name);
 	if (!t) {
-		return sql_error(sql, 02, "DROP TABLE: no such table '%s'", tname);
+		return sql_error(sql, 02, "DROP TABLE: no such table '%s' for location '%s'", tname, host);
 	} else if (t->keys.set) {
 		node *n;
 
@@ -1531,9 +1542,12 @@ alter_table(mvc *sql, sql_schema *ss, symbol *symb, symbol *te)
 	char *host = qname_host(symb);
 	int location = table_location(sql,host);
 	sql_table *t = NULL;
+	if(location ==-1){
+		return sql_error(sql, 02, "ALTER TABLE: no such location '%s'", host);
+	}
 
 	if ((t = mvc_bind_table(sql, ss, name, location)) == NULL) {
-		return sql_error(sql, 02, "ALTER TABLE: no such table '%s'", name);
+		return sql_error(sql, 02, "ALTER TABLE: no such table '%s' for location '%s'", name, host);
 	} else {
 		return table_element(sql, te, ss, t, 1);
 	}

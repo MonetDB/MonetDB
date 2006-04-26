@@ -207,8 +207,8 @@ find_table_value(mvc* sql, char* table, char* column, char* key_column, char* ke
 {
         sql_schema *sch = find_sql_schema(sql->trans, "sys");
         sql_table *tab = find_sql_table(sch, table,location);
-        sql_column *key_col = find_sql_column(tab, column);
-        sql_column *col = find_sql_column(tab, key_column);
+        sql_column *key_col = find_sql_column(tab, key_column);
+        sql_column *col = find_sql_column(tab, column);
         ssize_t rid = column_find_row(sql->trans, key_col, key, NULL);
         if (rid >= 0)
                  return *(int*) column_find_value(sql->trans,col,rid);

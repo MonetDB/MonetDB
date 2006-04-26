@@ -123,7 +123,7 @@ extern sql_func *mvc_bind_func(mvc *sql, char *name);
 extern sql_func *mod_bind_func(mvc *sql, sql_module * m, char *name);
 
 extern sql_schema *mvc_bind_schema(mvc *c, char *sname);
-extern sql_table *mvc_bind_table(mvc *c, sql_schema *s, char *tname, int location);
+extern sql_table *mvc_bind_table(mvc *c, sql_schema *s, char *tname,int location);
 extern sql_column *mvc_bind_column(mvc *c, sql_table *t, char *cname);
 extern sql_column *mvc_first_column(mvc *c, sql_table *t);
 extern sql_idx *mvc_bind_idx(mvc *c, sql_schema *s, char *iname);
