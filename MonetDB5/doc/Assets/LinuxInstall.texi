@@ -6,13 +6,13 @@ on a Unix platform (e.g., Linux, MacOS X/Darwin, or CYGWIN).
 @item @emph{CVS}
 You only need this if you are building from CVS. 
 If you start with the source distribution from SourceForge you don't need CVS.
-Otherwise, you need to have a working CVS.  For instructions, see
+For instructions, see
 @url{http://sourceforge.net/docman/?group_id=1,docman}
 and look under the heading CVS Instructions.
 @item @emph{Python}
 MonetDB uses Python (version 2.0.0 or better) during
-configuration of the software.  See <a href="http://www.python.org/">
-python.org</a> for more information.
+configuration of the software.  
+See @url{http://www.python.org/, python.org} for more information.
 @item @emph{autoconf/automake/libtool}
 MonetDB uses GNU 
 @url{http://www.gnu.org/software/autoconf/,autoconf} (>= 2.53), 

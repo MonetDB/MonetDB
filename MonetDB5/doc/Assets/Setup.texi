@@ -1,4 +1,4 @@
-@subsection Source Development Distribution
+@subsection Source Distribution
 
 The source distribution is needed if you intend to inspect or extend 
 the code base. The source distribution comes
@@ -22,11 +22,12 @@ cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb login
 Just type RETURN when asked for the password.
 Then get the MonetDB and SQL module sources by using the command:
 @verbatim
-cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb checkout MonetDB5 sql
+cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb co buildtools MonetDB5 sql
 @end verbatim
 
-This will create the directories buildtools and MonetDB5 in 
-your current working directory, which hold the sources. 
+This will create the directories buildtools, MonetDB5 and sql in 
+your current working directory, which hold the sources for all three
+project packages. 
 See the readme file to install the buildtools.
 MonetDB developers should use @code{ext} instead of @code{pserver}, e.g.
 @verbatim
@@ -125,7 +126,7 @@ access to the results.
 Though Fedora Linux on AMD Athlon PC's is our main development platform 
 at CWI, we do not limit our attention to this single platform. 
 Supporting a broad range of hardware and software platform is an important 
-concern of MonetDB.
+concern.
 
 Using standard configuration tools like automake, autoconf, and libtool, 
 we have the same code base compiling not only on various flavors of 
