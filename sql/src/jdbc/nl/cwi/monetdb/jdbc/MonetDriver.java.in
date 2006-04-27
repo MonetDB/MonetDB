@@ -140,7 +140,7 @@ final public class MonetDriver implements Driver {
 			if (uri.getPort() > 0) info.put("port", "" + uri.getPort());
 
 			// check the database
-			if (uri.getPath() == null ||
+			if (uri.getPath() == null || uri.getPath().length() == 0 ||
 					uri.getPath().substring(1).trim().equals(""))
 				throw new SQLException("Invalid URL: A database is " +
 						"required in '" +  url + "'");
