@@ -113,7 +113,7 @@ sql_logdir=@Xlocalstatedir@@DIRSEP@@PACKAGE@@DIRSEP@log
 #=========================
 
 # default port to address the HTTP server for pathfinder
-pf_httpd_port=8080
+pf_httpd_port=48080
 
 #output mode "dm" = pretty printed, 
 #            "xml" = enforce XML with enclosing <XQueryResult> tags
