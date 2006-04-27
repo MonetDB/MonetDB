@@ -74,7 +74,7 @@ PROC rpc_receiver_start(int port, str option) : void {
 ADDHELP("rpc_receiver_start", "zhang", "November 2005",
 "PARAMETER:\n\
 int: port number\n\
-str: option, currently, only \"rpctiming\"\n\
+str: option, currently, only \"rpctime\"\n\
 DESCRIPTION:\n\
 Start receiver for RPC calls on the specified port",
 "xquery_rpc");
@@ -92,7 +92,7 @@ PROC rpc_receiver_start() : void {
 }
 ADDHELP("rpc_receiver_start", "zhang", "November 2005",
 "DESCRIPTION:\n\
-Start receiver for RPC calls on the default port 8080",
+Start receiver for RPC calls on the default port as specified in \"monet_environment\" by \"pf_httpd_port\"",
 "xquery_rpc");
 
 PROC rpc_client(
@@ -116,16 +116,14 @@ PROC rpc_client(
                             fun_vid,    fun_iter,   fun_item,   fun_kind,
                             int_values, dbl_values, dec_values, str_values);
 
-    var time_addDoc := msec();
+    var time_milClntDeSeriaStart := msec();
+    if (options.search("rpctime") >= 0) {
+        printf("\nMIL_Client_DeSerialisation_Start: %lld msec\n", time_milClntDeSeriaStart);
+    }
 
     var docBAT := bat(str,bat,WS_SIZE);
     var height := index_doc(rpcres,docBAT);
     var cntoid := add_docbat(ws, docBAT, local_name, TEMP_DOC, oid(nil), height);
-
-    time_addDoc := msec() - time_addDoc;
-    if (mode.search("rpctiming") >= 0)
-        printf("\nmil2 addDoc %lld.000\n", time_addDoc);
-
     return cntoid;
 }
 ADDHELP("rpc_client", "zhang", "November 2005",
@@ -271,8 +269,8 @@ PROC doIterativeRPC(
         BAT[oid,str] str_values) : BAT[void,bat]
 {
     var rpc_timing := str(nil);
-    if (options.search("rpctiming") >= 0) {
-        rpc_timing := "rpctiming";
+    if (options.search("rpctime") >= 0) {
+        rpc_timing := "rpctime";
     } else {
         rpc_timing := "";
     }
@@ -297,6 +295,7 @@ PROC doIterativeRPC(
                         int_values, dbl_values, dec_values, str_values);
         });
 
+        var time_clntDeSeria := msec();
         if (isnil(rpc_err)) {
             var res := get_rpc_res(rpc_oid, local_name, nr_iters, ws,
                                    int_values, dbl_values, dec_values, str_values);
@@ -311,6 +310,10 @@ PROC doIterativeRPC(
         } else {
             # layman's error handling simplifies debugging; better solution is more than welcome!
             ERROR("RPC call: rpc_client:\n" + rpc_err);
+        }
+        time_clntDeSeria := msec() - time_clntDeSeria;
+        if (options.search("rpctime") >= 0) {
+            printf("Client_DeSerialisation: %lld msec\n", time_clntDeSeria);
         }
     }
     return res_bats;
@@ -337,8 +340,8 @@ PROC doLoopLiftedRPC(
         BAT[oid,str] str_values) : BAT[void,bat]
 {
     var rpc_timing := str(nil);
-    if (options.search("rpctiming") >= 0) {
-        rpc_timing := "rpctiming";
+    if (options.search("rpctime") >= 0) {
+        rpc_timing := "rpctime";
     } else {
         rpc_timing := "";
     }
@@ -350,6 +353,8 @@ PROC doLoopLiftedRPC(
     var steps := min(rpc_unq_dsts.count(), (64 - threadcnt(0)));
     var res_bats := nil;
     rpc_unq_dsts @ [steps] batloop(){
+        var time_milClntSeria := msec();
+
         # get iteration numbers for this destination
         var iter_dst := rpc_dsts.ord_uselect($t).mirror();
 
@@ -363,6 +368,12 @@ PROC doLoopLiftedRPC(
 
         var local_name := "rpc_res_00" + str(int($h)+1);
         var rpc_oid := oid(nil);
+
+        time_milClntSeria := msec() - time_milClntSeria;
+        if (options.search("rpctime") >= 0) {
+            printf("\nMIL_Client_Serialisation: %lld msec\n", time_milClntSeria);
+        }
+
         var rpc_err := CATCH(
         {
             rpc_oid := rpc_client(local_name, rpc_timing, $t,
@@ -391,6 +402,10 @@ PROC doLoopLiftedRPC(
             lock_unset(mylock);
         } else { # layman's error handling simplifies debugging; better solution is more than welcome!
             ERROR("RPC call: rpc_client:\n" + rpc_err);
+        }
+        var time_milClntDeSeriaEnd := msec();
+        if (options.search("rpctime") >= 0) {
+            printf("MIL_Client_DeSerialisation_End: %lld msec\n\n", time_milClntDeSeriaEnd);
         }
     }
     lock_destroy(mylock);
@@ -766,13 +781,12 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
     str *argtpe = NULL;     /* XQuery type of each argval */
     int nr_args = 0;        /* #values arg_val currently contains */
     int max_args = 0;       /* max #items in "argval", doubled if necessary */
-
-    int time_translateReqMsg = 0, time_execQueryAndSendResults = 0;
-
+    
+    int time_servDeSeria = 0;
+    
     THRnew(MT_getpid(), "rpc_req_handler");
 
     /* Create our own output stream for further data transfer. */
-    time_translateReqMsg = GDKms();
     sock = shttpd_get_socket(arg);
     if (!(out = socket_wastream(sock, "rpc_response"))) {
         GDKerror("handle_rpc_request: failed to create socket_wastream for socket %d", sock);
@@ -783,8 +797,10 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
     /* Retrieve the whole received RPC request message, and remove the
      * first line of the message, so that the messgae we pass to
      * CMDshred2bats starts directly with the envelope tag. */
-
     req_msg = shttpd_get_msg(arg);
+
+    /* Start timing Server DeSerialisation */
+    time_servDeSeria = GDKms();
     strptr = req_msg + strlen("<?xml"); /* skip "<?xml" */
     if ((strstr(req_msg, "<?xml") != req_msg) ||
         (strptr = strchr(strptr, (int)'<')) == NULL) {
@@ -962,11 +978,10 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
             pre_size[l] = 0;
         }
     }
-
-    time_translateReqMsg = GDKms() - time_translateReqMsg;
+    /* Stop timing Server DeSerialisation */
+    time_servDeSeria = GDKms() - time_servDeSeria;
 
     /* write out our response */
-    time_execQueryAndSendResults = GDKms();
     if (stream_printf(out,
                 "HTTP/1.1 200 OK\r\n"
                 "Content-Type: application/soap+xml; charset=\"utf-8\"\r\n\r\n"
@@ -982,9 +997,9 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
                 "    method=\"%s\">\n",
                 module, uri, method) >= 0)
     {
-        /* argc += 1000; */ /* debug */
+        /* Start timing Server Application */
         char *err = xquery_method(out, servertiming, module, uri, method, argc, iterc, argcnt, argtpe, argval, shredBAT);
-        /* argc %= 1000; */
+        /* Start timing Server Application */
 
         if (err) {
             send_error(out, 0, "", "env:Sender", err);
@@ -993,12 +1008,10 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
         stream_printf(out, "</XQueryRpcResults>\n</env:Body>\n</env:Envelope>\n");
     }
 
-    time_execQueryAndSendResults = GDKms() - time_execQueryAndSendResults;
-    if (servertiming) {
-        printf("\nreceiver translateReqMsg %d.000 execQueryAndSendResults %d.000\n",
-                time_translateReqMsg, time_execQueryAndSendResults);
+    if (servertiming){
+        printf("Server_DeSerialisation: %d msec\n", time_servDeSeria);
     }
-   
+
     retval = GDK_SUCCEED;
     goto FINISH_HANDLE_RPC_REQUEST;
 
@@ -1043,8 +1056,9 @@ int CMDhttp_post(BAT **res,
     int nr_args = 0;
     int max_args = 0;
 
-    int time_generateReqMsg = 0, time_networkSend = 0;
-    int time_waitForRespMsg = 0, time_shredRespMsg = 0;
+    int time_clntSeria = 0;
+    int time_clnt2Serv = 0;
+    int time_clntDeSeria = 0;
     int bytes_sent = 0, bytes_received = 0;
 
     ERRORcheck(!BAThdense(ws),
@@ -1082,8 +1096,10 @@ int CMDhttp_post(BAT **res,
         goto FINISH_HTTP_POST;
     }
 
+    /* Start timing Client Serialisation */
+    time_clntSeria = GDKms();
+
     /* Create buffer for the RPC request message */
-    time_generateReqMsg = GDKms();
     b = buffer_create(MAX_BUF_SIZE);
     if (!b || b->len == 0) {
         GDKerror("CMDhttp_post: failed to create outgoing buffer\n");
@@ -1232,10 +1248,11 @@ int CMDhttp_post(BAT **res,
     }
     str2buf(b, "</XQueryRpcRequest>\n</env:Body>\n</env:Envelope>\n");
     b->buf[b->pos] = 0;
+    /* Stop timing Client Serialisation */
+    time_clntSeria = GDKms() - time_clntSeria;
 
-    time_generateReqMsg = GDKms() - time_generateReqMsg;
-
-    time_networkSend = GDKms();
+    /* Start timing Network Send Client2Server */
+    time_clnt2Serv = GDKms();
     bytes_sent = stream_printf(out,
             "POST %s HTTP/1.1\r\n"
             "Host: %s\r\n"
@@ -1245,12 +1262,12 @@ int CMDhttp_post(BAT **res,
             "Content-Length: %d\r\n\r\n"
             "%s",
             HTTPD_FUNC, location, b->pos, b->buf);
-    time_networkSend= GDKms() - time_networkSend;
-    time_waitForRespMsg = GDKms();
     if (bytes_sent < (int)b->pos) {
         GDKerror("CMDhttp_post: failed to send XQuery RPC request.");
         goto FINISH_HTTP_POST;
     }
+    /* Stop timing Network Send Client2Server */
+    time_clnt2Serv= GDKms() - time_clnt2Serv;
 
     /*** Receive all response data ***/
     b->pos = b->buf[0] = 0;
@@ -1262,13 +1279,12 @@ int CMDhttp_post(BAT **res,
             b->buf = realloc(b->buf, b->len);
         }
     } while (ret > 0);
-    time_waitForRespMsg = GDKms() - time_waitForRespMsg;
 
     b->buf[b->pos] = 0;
     bytes_received = b->pos;
 
-    time_shredRespMsg = GDKms();
-
+    /* Start timing Client DeSerialisation */
+    time_clntDeSeria = GDKms();
     if (b->pos < MIN_RESPONSE_SIZE || !strstr((b->buf + b->pos - 16), "</env:Envelope>")) {	
         GDKerror("CMDhttp_post: failed to get response: %s\n",
                 errno?strerror(errno):"no errno available");
@@ -1285,11 +1301,6 @@ int CMDhttp_post(BAT **res,
     b->buf = realloc(b->buf, b->len); /* release unused memory */
     strptr = strchr(b->buf, (int)' ') + 1; /* the HTTP return code */
     if (strptr[0] != '2' || strptr[1] != '0' || strptr[2] != '0' ) {
-        /* Find the end of the first HTTP header line
-         * and print the HTTP error code + message */
-        i = 0;
-        while (strptr[i] != '\r') i++;
-        strptr[i] = '\0';
         GDKerror("CMDhttp_post: %s\n\n", b->buf);
         goto FINISH_HTTP_POST;
     } else if (strstr(strptr, "<env:Fault")) {
@@ -1311,17 +1322,6 @@ int CMDhttp_post(BAT **res,
 
     *res = shredBAT;
 
-    time_shredRespMsg = GDKms() - time_shredRespMsg;
-    if (strstr(mode, "rpctiming") != NULL) {
-        printf("\nsender generateReqMsg %d.000 "
-                "waitForRespMsg %d.000 shredRespMsg %d.000\n",
-                time_generateReqMsg, time_waitForRespMsg, time_shredRespMsg);
-
-        printf("Network send: %d\n", time_networkSend);
-        printf("Bytes sent: %d\n", bytes_sent);
-        printf("Bytes received: %d\n", bytes_received);
-    }
-
     retval = GDK_SUCCEED;
     goto FINISH_HTTP_POST;
 
@@ -1335,6 +1335,18 @@ FINISH_HTTP_POST:
         if (b->len > 0) buffer_destroy(b);
         else            free(b);
     }
+
+    time_clntDeSeria = GDKms() - time_clntDeSeria;
+    if ((strstr(mode, "rpctime") != NULL) && (retval == GDK_SUCCEED)) {
+        printf("\n");
+        printf("Client_Serialisation: %d msec\n", time_clntSeria);
+        printf("Network_Client_2_Server: %d msec\n", time_clnt2Serv);
+        printf("Client_DeSerialisation: %d msec\n", time_clntDeSeria);
+        printf("\n");
+        printf("Data_Sent: %d bytes\n", bytes_sent);
+        printf("Data_Received: %d bytes\n", bytes_received);
+    }
+
     return retval;
 }
 
@@ -1347,7 +1359,7 @@ int CMDhttpd_start(int* port, str option) {
     }
     rpc_receiver_running = 1;
 
-    if (option && strstr(option, "rpctiming") != NULL){
+    if (option && strstr(option, "rpcservertime") != NULL){
         servertiming = 1;
     } else {
         servertiming = 0;

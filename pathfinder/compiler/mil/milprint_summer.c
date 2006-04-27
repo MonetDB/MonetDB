@@ -6331,14 +6331,8 @@ translateUDF (opt_t *f, int cur_level, int counter,
         milprintf(f, 
                 "\n"
                 "{ # begin of RPC call\n"
-                "  var time_retrieveParamPerDst := 0;\n"
-                "  var time_doRPC := 0;\n"
-                "  var time_extractAndSaveResults := 0;\n"
-
                 "  module(\"xquery_rpc\");\n"
                 "  var nr_iters := count(rpc_iter); # a simple estimation\n"
-                "  var time_totalRPC := msec();\n"
-
                 "  var res := nil;\n"
                 "  if (genType.search(\"iterrpc\") >= 0) {\n"
                 "    res := doIterativeRPC(nr_iters, genType, \"%s\", \"%s\", \"%s\", ws, rpc_dsts, rpc_iter,\n"
@@ -6353,6 +6347,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
                 "  iter := res.fetch(0);\n"
                 "  item := res.fetch(1);\n"
                 "  kind := res.fetch(2);\n"
+
                 "  if (type(iter) = bat) {\n"
                 "    ipik := iter;\n"
                 "  } else {\n"
@@ -10793,6 +10788,8 @@ static const char* _PFstopMIL(bool is_update) {
            "destroy_ws(ws);\n"
            "if (not(isnil(err))) ERROR(err);\n"
            "time_print := time() - time_print;\n"
+           "if (genType.search(\"rpcservertime\") >= 0)\n"
+           "  genType := \"\\nServer_Application: \" + str(time_compile+time_exec) + \".000 msec\\n\tTrans \" + str(time_compile) + \".000 msec\\n\tShred \" + str(time_shred) + \".000 msec\\n\tQuery \" + str(time_exec-time_shred) + \".000 msec\\nServer_Serialisation + Network_Server_2_Client: \" + str(time_print) + \".000 msec\\n\";\n"
            "if (genType.search(\"timing\") >= 0)\n"
            "   printf(\"\\nTrans %% 7d.000 msec\\nShred %% 7d.000 msec\\nQuery %% 7d.000 msec\\nPrint %% 7d.000 msec\\n\","
            "       time_compile, time_shred, time_exec - time_shred, time_print);\n"

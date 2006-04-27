@@ -1557,7 +1557,7 @@ xquery_compile_exec(xquery_client *ctx,
  * - resolve a method call in the current xquery context (return NULL if not resolved)
  *
  * char*
- * xquery_function_call(xquery_client *ctx, int msec, int rpctiming, char* mode, char *ns, char *method, 
+ * xquery_function_call(xquery_client *ctx, int msec, char* mode, char *ns, char *method, 
  *                      int argc, int itercnt, int** argcnt, char** argtpe, char** argval, BAT *shredBAT)
  * - call a function ns:method(). try to use the function cache (ie re-use a cached MIL tree).
  *   otherwise generate MIL yourself, interpret it (and cache it). Returns error string (NULL if ok).
@@ -1704,7 +1704,6 @@ static char xquery_function_error[80] = "xquery_method: error during execution.\
 static char* 
 xquery_function_call(xquery_client *ctx, 
                      int msec, 
-                     int rpctiming,
                      char *mode, 
                      char *ns, 
                      char *method, 
@@ -1877,14 +1876,9 @@ xquery_function_call(xquery_client *ctx,
     
     /* Done preparing the query. Time to (re-)execute the MIL tree */
     prepfun->lru = xquery_lru++;
-    int time_serverApp_serverSerialisation_networkReceive = GDKms();
     if (xquery_tree_exec(ctx, prepfun->lt, 1)) {
-        time_serverApp_serverSerialisation_networkReceive = GDKms() - time_serverApp_serverSerialisation_networkReceive;
-        if (rpctiming) {
-            /* printf("\nXQUERY_FUNCTION_CALL prepareFunCache msec %d.000 execMilTree %d.000\n", 
-                    *(ctx->time_compile), time_serverApp_serverSerialisation_networkReceive); */
-            printf("\nServer-(Application + Serialisation + SendResults):  %d.000\n", 
-                    time_serverApp_serverSerialisation_networkReceive);
+        if (strstr(mode, "rpcservertime") != NULL) {
+            printf("%s", *ctx->genType);
         }
 
         size_t dummy;
@@ -2565,7 +2559,6 @@ xquery_prepare(xquery_client *ctx,
     char *ns = (char*)&nsbuf, *nsend = ns, *locend, *loc = NULL, *p = query;
     char val[256], url1[256], url2[256];
     char *err = NULL;
-    int rpctiming = strstr(mode, "rpctiming") != NULL ? 1 : 0;
 
     if (strstr(mode,"debug") != NULL) {
         /* for debugging purposes, we simulate a full MIL on the log; even if parts are cached */
@@ -2607,15 +2600,7 @@ xquery_prepare(xquery_client *ctx,
                     /* cut off module import from the query, and load it here (to have it cached later) */
                     *nsend = 0;
 
-                    int time_modLoadPrepare = GDKms();
-
                     err = xquery_module_load(ctx, mode, ns, url1, url2);
-
-                    time_modLoadPrepare = GDKms() - time_modLoadPrepare;
-                    if (rpctiming) {
-                        printf("\nXQUERY_PREPARE modLoadPrepare %d.000\n", time_modLoadPrepare);
-                    }
-
                     if (err) return err;
                     *nsend = bak; 
                 } while (*p == ',');
@@ -2702,7 +2687,7 @@ xquery_prepare(xquery_client *ctx,
                     int* cnt_ptr = cnt;    
                     char nsbak = *nsend, locbak = *locend;
                     *nsend = 0; *locend = 0;
-                    err = xquery_function_call(ctx, msec, rpctiming, mode, ns, loc, argc, 1, &cnt_ptr, tpe, param, NULL);
+                    err = xquery_function_call(ctx, msec, mode, ns, loc, argc, 1, &cnt_ptr, tpe, param, NULL);
                     *nsend = nsbak; *locend = locbak;
                 }
             }
@@ -2947,12 +2932,13 @@ xquery_method(stream *out,
     mapi_client *mc = MAPIclient(GDKin, out, "xquery" );
     xquery_client *ctx;
 
-    int time_modLoadXQMethod = 0;
-    int time_xqMethodPrepare = GDKms();
-
     if (mc == NULL) 
         return "xquery_method: out of client slots.\n";
 
+    if (rpctiming){
+        mode = "xml-rpcservertime-timing-noheader-typed-root-iter";
+    }
+    
     ctx = mc->fc; 
     ctx->fderr = GDKerr;
     mc->t = XQthread_id;
@@ -2964,29 +2950,22 @@ xquery_method(stream *out,
         char *prologue = (char*) PFinitMIL();
         if (s) {
             ctx->fderr = s;
-            mode = "xml-debug-noheader-typed-root-iter";
+            if (rpctiming){
+                mode = "xml-rpcservertime-timing-debug-noheader-typed-root-iter";
+            } else {
+                mode = "xml-debug-noheader-typed-root-iter";
+            }
         }
         stream_write(ctx->fderr, prologue, strlen(prologue), 1);
         argc = argc % 1000;
     }
 
-    time_xqMethodPrepare = GDKms() - time_xqMethodPrepare;
-
     if (err == NULL && module){
-        time_modLoadXQMethod = GDKms();
-
         err = xquery_module_load(ctx, mode, ns="xquery_rpc", module, uri); 
-
-        time_modLoadXQMethod = GDKms() - time_modLoadXQMethod;
-    }
-
-    if (rpctiming) {
-        printf("\nXQUERY_METHOD xqMethodPrepare %d.000 modLoadXQMethod %d.000\n", 
-                time_xqMethodPrepare, time_modLoadXQMethod);
     }
 
     if (err == NULL) { 
-        err = xquery_function_call(ctx, msec, rpctiming, mode, ns, method, argc, itercnt, argcnt, argtpe, argval, shredBAT);
+        err = xquery_function_call(ctx, msec, mode, ns, method, argc, itercnt, argcnt, argtpe, argval, shredBAT);
         if (err == (char*) -1) err = "xquery_method: function could not be resolved.\n";
     }
 
