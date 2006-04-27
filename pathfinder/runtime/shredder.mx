@@ -1333,6 +1333,8 @@ tokenize_IDREFS( shredCtxStruct *shredCtx,
     return 1;
 }
 
+
+
 /**
  * SAX callback, invoked whenever `<t ...>' is seen
  */
@@ -1347,6 +1349,7 @@ shred_start_element(void *xmlCtx,
     node_t node;
     nat qn_id, val_id;
     shredCtxStruct* shredCtx = SHREDCTX(xmlCtx);
+
 
     if ( handleXmlCharacters (shredCtx) < 0 ) {
         BAILOUT(xmlCtx);
@@ -1436,6 +1439,7 @@ shred_start_element(void *xmlCtx,
         shredCtx->nnode_attr++;
     }
 }
+
 
 void 
 shred_start_element4SAX1(void *xmlCtx, const xmlChar *t, const xmlChar **atts)
@@ -1763,9 +1767,10 @@ static void my_startElementNsSAX2Func(
         int nb_attributes, 
         int nb_defaulted, 
         const xmlChar ** attributes) {
+    (void)nb_defaulted;
     (void)nb_namespaces; 
     (void)namespaces; 
-    shred_start_element(ctx,URI,prefix,localname,nb_attributes+nb_defaulted,attributes);
+    shred_start_element(ctx,URI,prefix,localname,nb_attributes,attributes);
 }
 
 /* libxml2 SAX2 version for the endElement construction */
