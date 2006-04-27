@@ -41,7 +41,8 @@ specific to relational algebra are performed.
 There are bindings for SQL with JDBC, ODBC, PHP and C,
 (see @ref{User Interfaces}) to integrate seamlessly in existing
 developments environments.
-Client utilities like @ref{Aqua Data Studio} and @ref{iSQL-Viewer}
+Client utilities like @ref{Aqua Data Studio},
+@ref{DbVisualiser} and @ref{iSQL-Viewer}
 work flawlessly with the MonetDB SQL implementation and make
 your experience with even better!
 

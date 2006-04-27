@@ -6,6 +6,7 @@ For all systems considered, make sure you have Mserver installed
 on your system and that you can access the server using the ref(JDBC client).
 @menu
 * Aqua Data Studio::
+* DbVisualiser::
 * iSQL-Viewer::
 @end menu
 

@@ -151,10 +151,13 @@ Last updated: @value{UPDATED}
 @node Data Management Tools, Aqua Data Studio, Jdbc Client , User Interfaces
 @include Assets/DBA-GUIs.texi
 
-@node Aqua Data Studio, iSQL-Viewer, Data Management Tools, Data Management Tools
+@node Aqua Data Studio, DbVisualiser, Data Management Tools, Data Management Tools
 @include Assets/AquaDataStudio.texi
 
-@node iSQL-Viewer, Programming Interfaces, Aqua Data Studio, Data Management Tools
+@node DbVisualiser, iSQL-Viewer, Aqua Data Studio, Data Management Tools
+@include Assets/DbVisualiser.texi
+
+@node iSQL-Viewer, Programming Interfaces, DbVisualiser, Data Management Tools
 @include Assets/iSQL-Viewer.texi
 
 
