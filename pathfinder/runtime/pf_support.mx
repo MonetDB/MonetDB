@@ -5668,7 +5668,7 @@ CMDSplitBat(BAT **res, BAT *b, str sep)
 	if (bn) {
 		for (i = 0; i < nbats; i++)
 			if (bn[i])
-				BATfree(bn[i]);
+				BBPreclaim(bn[i]);
 		GDKfree(bn);
 	}
 	if (buf)
@@ -5720,7 +5720,7 @@ CMDSplitKind(BAT **res, BAT *b)
   bunins_failed:
 	for (i = 0; i < MAXKIND; i++)
 		if (bn[i])
-			BATfree(bn[i]);
+			BBPreclaim(bn[i]);
 	return GDK_FAIL;
 }
 
