@@ -179,19 +179,23 @@ public class MonetConnection implements Connection {
 
 			// we're debugging here... uhm, should be off in real life
 			if (debug) {
-				String fname = props.getProperty("logfile", "monet_" +
-					System.currentTimeMillis() + ".log");
-				File f = new File(fname);
-				int ext = fname.lastIndexOf(".");
-				if (ext < 0) ext = fname.length();
-				String pre = fname.substring(0, ext);
-				String suf = fname.substring(ext);
+				try {
+					String fname = props.getProperty("logfile", "monet_" +
+						System.currentTimeMillis() + ".log");
+					File f = new File(fname);
+					int ext = fname.lastIndexOf(".");
+					if (ext < 0) ext = fname.length();
+					String pre = fname.substring(0, ext);
+					String suf = fname.substring(ext);
 
-				for (int i = 1; f.exists(); i++) {
-					f = new File(pre + "-" + i + suf);
+					for (int i = 1; f.exists(); i++) {
+						f = new File(pre + "-" + i + suf);
+					}
+
+					monet.debug(f.getAbsolutePath());
+				} catch (IOException ex) {
+					throw new SQLException("Opening logfile failed: " + ex.getMessage());
 				}
-
-				monet.debug(f.getAbsolutePath());
 			}
 
 			// log in
