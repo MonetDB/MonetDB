@@ -1256,7 +1256,9 @@ BBPaddtobin(BAT *b){
 	BAT *bn;
 
 	/* pre-filter the BATs */
-	if(b->batCacheid < 0 ||
+	assert(BBP_refs(ABS(b->batCacheid)) == 0);
+	assert(BBP_lrefs(ABS(b->batCacheid)) == 0);
+	if(/*temporary hack*/i == ABS(b->batCacheid) || b->batCacheid < 0 ||
 		(b->htype == TYPE_void && !b->hvarsized) ||
 		(b->ttype == TYPE_void && !b->tvarsized) ||
 		b->htype >= TYPE_str || b->ttype >= TYPE_str ||
