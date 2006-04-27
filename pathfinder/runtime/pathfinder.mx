@@ -1310,6 +1310,9 @@ typedef struct {
     /* pointers into MIL variable records (to set values) */
     int *shredBAT; 
     int *time_compile; 
+    int *time_shred; 
+    int *time_exec; 
+    int *time_print; 
     char **genType;
 
     /* counts used to remove query (non-module) procs and stacks after execution */
@@ -1878,7 +1881,11 @@ xquery_function_call(xquery_client *ctx,
     prepfun->lru = xquery_lru++;
     if (xquery_tree_exec(ctx, prepfun->lt, 1)) {
         if (strstr(mode, "rpcservertime") != NULL) {
-            printf("%s", *ctx->genType);
+           printf("\nServer_Application: %d msec\n", (*ctx->time_compile + *ctx->time_exec) );
+           printf("\tTrans: %d msec\n", (*ctx->time_compile) );
+           printf("\tShred: %d msec\n", (*ctx->time_shred) );
+           printf("\tQuery: %d msec\n", (*ctx->time_exec - *ctx->time_shred) );
+           printf("Server_Serialisation + Network_Server_2_Client: %d msec\n", (*ctx->time_print) );
         }
 
         size_t dummy;
@@ -2169,6 +2176,27 @@ xquery_client_alloc_(xquery_client *ctx)
     if (v->binding.vtype != TYPE_int) 
         return "xquery_client_init: time_compile variable has wrong type != int.\n"; 
     ctx->time_compile = &v->binding.val.ival; 
+
+    v = VARfind(&ctx->stk, "time_shred");
+    if (v == NULL) 
+        return "xquery_client_init: failed to lookup time_shred variable.\n"; 
+    if (v->binding.vtype != TYPE_int) 
+        return "xquery_client_init: time_shred variable has wrong type != int.\n"; 
+    ctx->time_shred = &v->binding.val.ival; 
+
+    v = VARfind(&ctx->stk, "time_exec");
+    if (v == NULL) 
+        return "xquery_client_init: failed to lookup time_exec variable.\n"; 
+    if (v->binding.vtype != TYPE_int) 
+        return "xquery_client_init: time_exec variable has wrong type != int.\n"; 
+    ctx->time_exec = &v->binding.val.ival; 
+
+    v = VARfind(&ctx->stk, "time_print");
+    if (v == NULL) 
+        return "xquery_client_init: failed to lookup time_print variable.\n"; 
+    if (v->binding.vtype != TYPE_int) 
+        return "xquery_client_init: time_print variable has wrong type != int.\n"; 
+    ctx->time_print = &v->binding.val.ival; 
 
     @:find_bat(proc_vid)@
     @:find_bat(var_usage)@

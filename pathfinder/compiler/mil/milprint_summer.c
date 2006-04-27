@@ -10679,6 +10679,10 @@ const char* PFinitMIL(void) {
         "# variable that holds bat-id (int) of a shredded document that may be added to the ws\n"
         "var shredBAT := int(nil); # make sure that shredBAT is of type int; non-initialized MIL variables are void(nil)!\n"
         "var time_compile := 0;\n"
+        "var time_read := 0;\n"
+        "var time_shred := 0;\n"
+        "var time_print := 0;\n"
+        "var time_exec := 0;\n"
         "var genType := \"xml\";";
 }
 
@@ -10736,10 +10740,10 @@ const char* PFvarMIL(void) {
 const char* PFstartMIL(void) {
     return  
         "{\n"
-        "var time_read := 0;\n"
-        "var time_shred := 0;\n"
-        "var time_print := 0;\n"
-        "var time_exec := time();\n"
+        "time_read := 0;\n"
+        "time_shred := 0;\n"
+        "time_print := 0;\n"
+        "time_exec := time();\n"
         "\n"
         "var err := CATCH({\n"
         "  ws := create_ws();\n"
@@ -10788,8 +10792,6 @@ static const char* _PFstopMIL(bool is_update) {
            "destroy_ws(ws);\n"
            "if (not(isnil(err))) ERROR(err);\n"
            "time_print := time() - time_print;\n"
-           "if (genType.search(\"rpcservertime\") >= 0)\n"
-           "  genType := \"\\nServer_Application: \" + str(time_compile+time_exec) + \".000 msec\\n\tTrans \" + str(time_compile) + \".000 msec\\n\tShred \" + str(time_shred) + \".000 msec\\n\tQuery \" + str(time_exec-time_shred) + \".000 msec\\nServer_Serialisation + Network_Server_2_Client: \" + str(time_print) + \".000 msec\\n\";\n"
            "if (genType.search(\"timing\") >= 0)\n"
            "   printf(\"\\nTrans %% 7d.000 msec\\nShred %% 7d.000 msec\\nQuery %% 7d.000 msec\\nPrint %% 7d.000 msec\\n\","
            "       time_compile, time_shred, time_exec - time_shred, time_print);\n"
