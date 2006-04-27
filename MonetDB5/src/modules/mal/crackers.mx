@@ -460,7 +460,7 @@ addTwo_@1(int i, @1 *valueA, lng indexA, BUN p2, @1 *valueB, lng indexB, BUN p)
 The core cracking routines.
 
 @= moveOrdered
-	while (@1){
+	while (@1 @6 ){
 		@2 @4= xx;
 		@3 @4= xx;
 		@5
@@ -553,8 +553,8 @@ CRKcrackOrderedTHREE_@2_@3_@1(BAT *b, @1 low, @1 hgh, int idx_first, int idx_las
 	ht = BUNtloc(b, BUNptr(b, idx_last));
 	hh = BUNhloc(b, BUNptr(b, idx_last));
 
-	@:moveOrdered(*(@1*)tmpt @4 low,tmph,tmpt,+,lowShrinked++;)@
-	@:moveOrdered(*(@1*)ht @7 hgh ,hh,ht,-,hghShrinked++;)@
+	@:moveOrdered(*(@1*)tmpt @4 low,tmph,tmpt,+,lowShrinked++;,&& tmpt<=ht)@
+	@:moveOrdered(*(@1*)ht @7 hgh ,hh,ht,-,hghShrinked++;,&& ht<=tmpt)@
 
 	if (lowShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
 	if (hghShrinked == idx_last - idx_first +1) return MAL_SUCCEED;
@@ -602,8 +602,8 @@ CRKcrackOrderedTHREELateCopying_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, 
 	ht = BUNtloc(b, BUNptr(b, idx_last));
 	hh = BUNhloc(b, BUNptr(b, idx_last));
 
-	@:moveOrdered(*(@1*)lt @4 low,lh,lt,+,lowShrinked++;)@
-	@:moveOrdered(*(@1*)ht @7 hgh ,hh,ht,-,hghShrinked++;)@
+	@:moveOrdered(*(@1*)lt @4 low,lh,lt,+,lowShrinked++;,&& lt<=ht)@
+	@:moveOrdered(*(@1*)ht @7 hgh ,hh,ht,-,hghShrinked++;,&& ht>=lt)@
 
 	/*These are different cases. For now just make sure that the result will be empty.
 		todo: when the index will learn from empty results return the appropriate information*/
@@ -817,13 +817,34 @@ CRKcrackOrderedTHREELateCopying_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, 
 		*pos = BUNindex(b,ct @7);
 
 		ct  @2= xx*hil;
-		/*Extreme case that all lows where in the hgh partition (or opposite depending how we move) */
-		if (ct @6 tmpt @2 xx){
-			for (int i=hil-1; i >=0 ; i--){
-				*(oid*)hh = scr_h[i];
-				*(@1 *)ht = scr_t[i];
-				ht @5= xx;
-				hh @5= xx;
+		/*Extreme case where all lows(or all but one, or all but two) where in the hgh partition (or opposite depending how we move) */
+		if (ct @6 tmpt ){
+			if (ct == tmpt || ct == tmpt @2 xx) {
+				for (int i=hil; i >=0 ; i--){
+					if (*(@1*)tmpt @4 mid){
+						*(oid*)hh = *(oid*)tmph;
+						*(@1 *)ht = *(@1 *)tmpt;
+						hh @5= xx;
+						ht @5= xx;
+					}	
+					tmpt @5= xx;
+					tmph @5= xx;
+				}
+				for (int i=hil-1; i >=0 ; i--){
+					*(oid*)hh = scr_h[i];
+					*(@1 *)ht = scr_t[i];
+					ht @5= xx;
+					hh @5= xx;
+				}
+
+			}
+			else{
+				for (int i=hil-1; i >=0 ; i--){
+					*(oid*)hh = scr_h[i];
+					*(@1 *)ht = scr_t[i];
+					ht @5= xx;
+					hh @5= xx;
+				}
 			}
 			return MAL_SUCCEED;
 		}
@@ -864,9 +885,8 @@ CRKcrackOrderedZERO_@2_@1(BAT *b, @1 mid, lng idx_first, lng idx_last, lng *pos)
 	ht = BUNtloc(b, BUNptr(b, idx_last));
 	hh = BUNhloc(b, BUNptr(b, idx_last));
 
-	@:moveOrdered(*(@1*)tmpt @3 mid,tmph,tmpt,+,lowShrinked++;)@
-	@:moveOrdered(*(@1*)ht @4 mid,hh,ht,-,hghShrinked++;)@
-
+	@:moveOrdered(*(@1*)tmpt @3 mid,tmph,tmpt,+,lowShrinked++;,&& tmpt<=ht)@
+	@:moveOrdered(*(@1*)ht @4 mid,hh,ht,-,hghShrinked++;,&& ht>=tmpt)@
 	if (lowShrinked == idx_last - idx_first +1) {
 			*pos = idx_last+1;
 			return MAL_SUCCEED;
@@ -888,11 +908,17 @@ CRKcrackOrderedZERO_@2_@1(BAT *b, @1 mid, lng idx_first, lng idx_last, lng *pos)
 		*(@1 *)ht = dt;
 
 		return MAL_SUCCEED;
+	}
+
+	if (ht == tmpt - xx){
+		*pos = BUNindex(b,ht);
+		return MAL_SUCCEED;
 	}	
 
 	int hil = 0;
 	BUN ch, ct; 
-	int scr_size = (idx_last - idx_first +1 -lowShrinked -hghShrinked)/2;
+	int scr_size = (idx_last - idx_first +1 -lowShrinked -hghShrinked);
+	if (scr_size >=2) scr_size = scr_size/2;
 	scr_h = (oid*) GDKmalloc(scr_size * sizeof(oid));
 	scr_t = (@1 *) GDKmalloc(scr_size * sizeof(@1 ));
 	int probe = 25;
