@@ -548,12 +548,17 @@ STATepilogue(int *ret)
 str
 STATopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int ret;
+	str msg=MAL_SUCCEED;
+
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
+	if(STAT_id_inuse ==0) msg= STATprelude(&ret);
+	if( msg != MAL_SUCCEED) return msg;
 	authorize("open");
 	if (openBox("statistics") != 0)
-		return MAL_SUCCEED;
+		return msg;
 	return throwMessage("statistics.open", "Failed to open statistics box");
 }
 
