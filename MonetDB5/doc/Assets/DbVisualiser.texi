@@ -1,4 +1,4 @@
-@subsection DbVisualiser
+@subsection DbVisualizer
 DbVisualizer is a platform independent tool aimed to simplify database 
 development and management for database administrators and developers.
 It's a very cool tool (can even draw dependency graphs based 
@@ -50,3 +50,9 @@ and the JDBC driver in use.  In the left pane the monetdb database
 now becomes available from browsing.
 
 Explore the application and have fun!
+
+A caveat of the free-version system is its performance on SQL
+scripts. They are sent as a single string to the server for
+execution. This is not the most optimal situation for MonetDB.
+Running a batch script is better started from the MonetDB
+SQL client.
