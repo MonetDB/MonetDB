@@ -464,7 +464,7 @@ ADDHELP("doLoopLiftedRPC", "zhang", "April 2006",
 #define PFTEXT      1
 #define ELEMENT     0
 #define MAXPARAMS   32
-#define HTTP_PORT   8080
+#define HTTP_PORT   48080
 #define HTTPD_FUNC  "/xquery_rpc"
 
 /* Used by the http_post client */
