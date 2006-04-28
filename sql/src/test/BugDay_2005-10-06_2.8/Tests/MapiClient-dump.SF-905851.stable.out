@@ -1,19 +1,19 @@
 stdout of test 'MapiClient-dump.SF-905851` in directory 'src/test/BugDay_2005-10-06_2.8` itself:
 
 
-# 15:55:37 >  
-# 15:55:37 >  Mtimeout -timeout 360 Mserver "--config=/home/sjoerd/src/stable/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/home/sjoerd/src/stable/lib/MonetDB:/home/sjoerd/src/stable/lib/bin" --set "gdk_dbfarm=/home/sjoerd/src/stable/var/MonetDB/dbfarm" --set "sql_logdir=/home/sjoerd/src/stable/var/MonetDB/log" --set mapi_port=33509 --set sql_port=49307 --set xquery_port=52284 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.8" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 15:55:37 >  
+# 08:17:46 >  
+# 08:17:46 >  Mtimeout -timeout 360 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/opensource/sql/Linux/lib/MonetDB5:/ufs/mk/monet5/Linux/lib/MonetDB5" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=34859 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.8" --dbinit="include sql;" ; echo ; echo Over..
+# 08:17:46 >  
 
-# Monet Database Server V4.8.3
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit with 32bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_test_BugDay_2005-10-06_2.8
+# Visit http://monetdb.cwi.nl/ for further information
 
 Ready.
-quit();
 
 Over..
 
