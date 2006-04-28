@@ -87,6 +87,10 @@ static str AUTHhashPassword(str *ret, str *algo, str *passwd, str *challenge);
 @-
 @c
 #include "mal_authorize.h"
+#ifdef HAVE_OPENSSL
+#include <openssl/sha.h>
+#include <openssl/md5.h>
+#endif
 
 /**
  * Requires the current client to be the admin user.  If not the case,
@@ -772,7 +776,17 @@ AUTHgetHashAlgorithms(str *ret) {
 	 * The return string should in such case more dynamically be built,
 	 * instead of hardcoded like here.
 	 */
-	*ret = GDKstrdup("crypt,plain");
+	str t = alloca(sizeof(char) * BUFSIZ);
+	*t = '\0';
+#ifdef HAVE_OPENSSL
+	strcat(t, "SHA1,MD5,");
+#endif
+#ifdef HAVE_CRYPT
+	strcat(t, "crypt,");
+#endif
+	strcat(t, "plain");
+
+	*ret = GDKstrdup(t);
 	return(MAL_SUCCEED);
 }
 
@@ -791,6 +805,49 @@ AUTHhashPassword(str *ret, str *algo, str *password, str *challenge) {
 		*ret = GDKmalloc(sizeof(char) * (strlen(*password) + strlen(*challenge) + 1));
 		sprintf(*ret, "%s%s", *password, *challenge);
 		return(MAL_SUCCEED);
+#ifdef HAVE_OPENSSL
+	} else if (strcmp(*algo, "SHA1") == 0) {
+		/* The SHA-1 RSA hash algorithm is a 160 bit hash.  In order to
+		 * use in a string, a hexadecimal representation of the bit
+		 * sequence is used.
+		 */
+		unsigned char md[20]; /* should be SHA_DIGEST_LENGTH */
+		int len = strlen(*password) + strlen(*challenge);
+		char key[len];
+		strcpy(key, *password);
+		strncat(key, *challenge, strlen(*challenge));
+		SHA1((unsigned char*)key, len, md);
+		*ret = GDKmalloc(sizeof(char) * (20 * 2 + 1));
+		sprintf(*ret, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+				"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+				md[0], md[1], md[2], md[3], md[4],
+				md[5], md[6], md[7], md[8], md[9],
+				md[10], md[11], md[12], md[13], md[14],
+				md[15], md[16], md[17], md[18], md[19]
+			);
+		return(MAL_SUCCEED);
+	} else if (strcmp(*algo, "MD5") == 0) {
+		/* The MD5 hash algorithm is a 128 bit hash.  In order to
+		 * use in a string, a hexadecimal representation of the bit
+		 * sequence is used.
+		 */
+		unsigned char md[16]; /* should be MD5_DIGEST_LENGTH */
+		int len = strlen(*password) + strlen(*challenge);
+		char key[len];
+		strcpy(key, *password);
+		strncat(key, *challenge, strlen(*challenge));
+		MD5((unsigned char*)key, len, md);
+		*ret = GDKmalloc(sizeof(char) * (16 * 2 + 1));
+		sprintf(*ret, "%02x%02x%02x%02x%02x%02x%02x%02x"
+				"%02x%02x%02x%02x%02x%02x%02x%02x",
+				md[0], md[1], md[2], md[3],
+				md[4], md[5], md[6], md[7],
+				md[8], md[9], md[10], md[11],
+				md[12], md[13], md[14], md[15]
+			);
+		return(MAL_SUCCEED);
+#endif
+#ifdef HAVE_CRYPT
 	} else if (strcmp(*algo, "crypt") == 0) {
 		/* The crypt hash algorithm uses UNIX crypt, a modification of
 		 * DES which uses a 2-char wide salt.  Because crypt only cares
@@ -824,6 +881,7 @@ AUTHhashPassword(str *ret, str *algo, str *password, str *challenge) {
 		assert (hash != NULL);
 		*ret = GDKstrdup(hash);
 		return(MAL_SUCCEED);
+#endif
 	} else {
 		throwMalf("hashPassword", "unsupported hash type: '%s'", algo);
 	}

@@ -31,6 +31,8 @@ AM_MONETDB_UTILS()
 
 AC_CHECK_FUNCS(strtoll)
 AC_CHECK_DECLS([strtoll])
+dnl Check if crypt() exists in libc or libcrypt, sets LIBS if needed
+AC_SEARCH_LIBS(crypt, crypt, AC_DEFINE(HAVE_CRYPT, 1, [crypt]))
 
 dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
 CFLAGS="$CFLAGS \$(X_CFLAGS)"
