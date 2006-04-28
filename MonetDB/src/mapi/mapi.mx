@@ -1054,8 +1054,6 @@ MAPIlistenSSL(Cntxt stk, YYSTREE lt, ValPtr res)
 	Client father;
 	SSL_CTX *ctx = NULL;
 	SSL *ssl = NULL;
-	Client (*get_client)(stream*, stream*) = NULL; 
-	ptr *Get_client;
 
 	mapi_active = 1;
 	CNTXTclient(stk, &father);
