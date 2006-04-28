@@ -3,6 +3,7 @@
 #inclusion in the MonetDB5 website
 
 all:
+	-mkdir -p ${MONET5_PREFIX}/doc
 	make pdf
 	make web
 	make xml
@@ -14,8 +15,8 @@ pdf:
 	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
 	pdftex manual.texi \
 	)
-	cp ${MONET5_PREFIX}/share/MonetDB5/manual.pdf ..
-	(cd ..; pdfnup manual.pdf)
+	cp ${MONET5_PREFIX}/share/MonetDB5/manual.pdf $(MONET5_PREFIX)/doc/manual.pdf 
+	(cd $(MONET5_PREFIX)/doc/; pdfnup manual.pdf)
 	echo "Manual created" 
 
 web:
@@ -26,7 +27,7 @@ web:
 	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
 	makeinfo --force --html manual.texi --css-include=manual.css \
 	)
-	cp -r ${MONET5_PREFIX}/share/MonetDB5/MonetDB ../web
+	cp -r ${MONET5_PREFIX}/share/MonetDB5/MonetDB $(MONET5_PREFIX)/doc/
 	echo "Web version created"
 
 web2:
@@ -36,7 +37,7 @@ web2:
 	cp -r ../Assets ${MONET5_PREFIX}/share/MonetDB5
 	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
 	texi2html --split=node  --css-include=manual.css manual.texi; )
-	cp -r $(MONET5_PREFIX)/share/MonetDB5/MonetDB ../web/MonetDB_split
+	cp -r $(MONET5_PREFIX)/share/MonetDB5/MonetDB $(MONET5_PREFIX)/web/MonetDB_split
 	echo "Web created"
 
 xml:
@@ -54,7 +55,7 @@ xml:
 		-e "s/&eosperiod;/<eosperiod\/>/g" \
 		-e "s/&space;/<space\/>/g" \
 			${MONET5_PREFIX}/share/MonetDB5/MonetDB.xml
-	cp ${MONET5_PREFIX}/share/MonetDB5/MonetDB.xml ../manual.xml
+	cp ${MONET5_PREFIX}/share/MonetDB5/MonetDB.xml $(MONET5_PREFIX)/doc/manual.xml
 	echo "XML file created"
 
 gdkpdf: 
@@ -64,9 +65,10 @@ gdkpdf:
 	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
 	pdftex gdkmanual.texi \
 	)
-	cp ${MONET5_PREFIX}/share/MonetDB5/gdkmanual.pdf ..
-	(cd ..; pdfnup gdkmanual.pdf)
+	cp ${MONET5_PREFIX}/share/MonetDB5/gdkmanual.pdf $(MONET5_PREFIX)/doc
+	(cd $(MONET5_PREFIX)/doc; pdfnup gdkmanual.pdf)
 	echo "GDK manual created" 
+
 modpdf: 
 	-mkdir -p ${MONET5_PREFIX}/share/MonetDB5
 	mkbdy; cp modulesmanual.texi ${MONET5_PREFIX}/share/MonetDB5
@@ -75,6 +77,6 @@ modpdf:
 	pdftex modulesmanual.texi \
 	makeinfo --force --html modulesmanual.texi \
 	)
-	cp ${MONET5_PREFIX}/share/MonetDB5/modulesmanual.pdf ../modules.pdf
-	(cd ..; pdfnup modules.pdf)
+	cp ${MONET5_PREFIX}/share/MonetDB5/modulesmanual.pdf $(MONET5_PREFIX)/doc/modules.pdf
+	(cd $(MONET5_PREFIX)/doc; pdfnup modules.pdf)
 	echo "Modules manual created" 
