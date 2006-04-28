@@ -17,10 +17,10 @@ Usage: pf [OPTION] [FILE]
 
   Reads from standard input if FILE is omitted.
 
-
-
-
-
+= -h, --help: print this help message
+= -H, --fullhelp: print help message for advanced options
+= -T, --timing: print elapsed times for compiler phases
+= -O[0-3], --optimize: select optimization level (default=1)
 
 Enjoy.
 
