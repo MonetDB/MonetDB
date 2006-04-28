@@ -1255,30 +1255,19 @@ BBPaddtobin(BAT *b){
 	int i = ABS(b->batCacheid);
 	BAT *bn;
 
+#ifdef BBPBINTST
+	printf("addtobin %d\n", b->batCacheid);
+#endif
 	/* pre-filter the BATs */
-	assert(BBP_refs(ABS(b->batCacheid)) == 0);
-	assert(BBP_lrefs(ABS(b->batCacheid)) == 0);
-	if(/*temporary hack*/i == ABS(b->batCacheid) || b->batCacheid < 0 ||
+	assert(BBP_refs(i) == 0);
+	assert(BBP_lrefs(i) == 0);
+	if(b->batCacheid < 0 ||
 		(b->htype == TYPE_void && !b->hvarsized) ||
 		(b->ttype == TYPE_void && !b->tvarsized) ||
 		b->htype >= TYPE_str || b->ttype >= TYPE_str ||
 		BATcount(b)> 16*1024 || b->batCopiedtodisk){
 		BATdelete(b);
 		return 1;
-	}
-	gdk_set_lock(GDKcacheLock, "BBPaddtobin");
-	if( (bn = batbin[bintop])){
-		batbin[bintop]=b;
-		bintop = (bintop+1) % MAXBIN;
-#ifdef BBPBINTST
-		printf("delete from bin %d\n",bn->batCacheid);
-#endif
-		gdk_unset_lock(GDKcacheLock, "BBPaddtobin");
-		BATfree(bn);
-	} else {
-		batbin[bintop]=b;
-		bintop = (bintop+1) % MAXBIN;
-		gdk_unset_lock(GDKcacheLock, "BBPaddtobin");
 	}
 	HASHdestroy(b);
 	GDKfree(BATmirror(b));
@@ -1287,6 +1276,19 @@ BBPaddtobin(BAT *b){
 	BBP_status_off(i, BBPLOADED, "BBPuncacheit");
 	BBP_desc(i) = NULL;
 	BBPclear(i);
+
+	gdk_set_lock(GDKcacheLock, "BBPaddtobin");
+	bn = batbin[bintop];
+	batbin[bintop]=b;
+	bintop = (bintop+1) % MAXBIN;
+	gdk_unset_lock(GDKcacheLock, "BBPaddtobin");
+
+	if (bn) {
+#ifdef BBPBINTST
+		printf("delete from bin %d\n",bn->batCacheid);
+#endif
+		BATfree(bn);
+	}
 #ifdef BBPBINTST
 	printf("add to bin %d %d\n",b->batCacheid, (int)BATcapacity(b));
 #endif
@@ -1298,15 +1300,18 @@ BBPrecycle(int ht, int tt, size_t cap){
 	int i;
 	BAT *b;
 
+#ifdef BBPBINTST
+	printf("BBPrecycle\n");
+#endif
 	gdk_set_lock(GDKcacheLock, "BBPrecycle");
 	for(i=0; i<MAXBIN; i++)
 		if( (b = batbin[i]) && b->htype == ht && b->ttype == tt && 
 		     BATcapacity(b) >= cap){
 #ifdef BBPBINTST
-	printf("try from bin %d \n",b->batCacheid);
+			printf("try from bin %d \n",b->batCacheid);
 #endif
 #ifdef BBPBINTST
-	printf("get from bin %d %d %d \n",b->batCacheid,(int) cap, (int) BATcapacity(b));
+			printf("get from bin %d %d %d \n",b->batCacheid,(int) cap, (int) BATcapacity(b));
 #endif
 
 			batbin[i] = NULL;
