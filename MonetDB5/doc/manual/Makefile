@@ -2,6 +2,11 @@
 #for off-line printing and creates a webstructure for
 #inclusion in the MonetDB5 website
 
+all:
+	make pdf
+	make web
+	make xml
+
 pdf: 
 	-mkdir -p ${MONET5_PREFIX}/share/MonetDB5
 	mkbdy; cp manual.texi ${MONET5_PREFIX}/share/MonetDB5
@@ -9,7 +14,8 @@ pdf:
 	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
 	pdftex manual.texi \
 	)
-	cp ${MONET5_PREFIX}/share/MonetDB5/manual.pdf /ufs/mk/cwi/public_html 
+	cp ${MONET5_PREFIX}/share/MonetDB5/manual.pdf ..
+	(cd ..; pdfnup manual.pdf)
 	echo "Manual created" 
 
 web:
@@ -20,8 +26,8 @@ web:
 	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
 	makeinfo --force --html manual.texi --css-include=manual.css \
 	)
-	cp -r ${MONET5_PREFIX}/share/MonetDB5/MonetDB /ufs/mk/cwi/public_html 
-	echo "Web created"
+	cp -r ${MONET5_PREFIX}/share/MonetDB5/MonetDB ../web
+	echo "Web version created"
 
 web2:
 	-mkdir -p ${MONET5_PREFIX}/share/MonetDB5
@@ -29,9 +35,8 @@ web2:
 	cp manual.css ${MONET5_PREFIX}/share/MonetDB5
 	cp -r ../Assets ${MONET5_PREFIX}/share/MonetDB5
 	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
-	texi2html --split=node  --css-include=manual.css manual.texi; \
-	cp -r manual /ufs/mk/cwi/public_html/MonetDB \
-	)
+	texi2html --split=node  --css-include=manual.css manual.texi; )
+	cp -r $(MONET5_PREFIX)/share/MonetDB5/MonetDB ../web/MonetDB_split
 	echo "Web created"
 
 xml:
@@ -49,7 +54,7 @@ xml:
 		-e "s/&eosperiod;/<eosperiod\/>/g" \
 		-e "s/&space;/<space\/>/g" \
 			${MONET5_PREFIX}/share/MonetDB5/MonetDB.xml
-	cp ${MONET5_PREFIX}/share/MonetDB5/MonetDB.xml /ufs/mk/cwi/public_html 
+	cp ${MONET5_PREFIX}/share/MonetDB5/MonetDB.xml ../manual.xml
 	echo "XML file created"
 
 gdkpdf: 
@@ -59,8 +64,9 @@ gdkpdf:
 	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
 	pdftex gdkmanual.texi \
 	)
-	cp ${MONET5_PREFIX}/share/MonetDB5/gdkmanual.pdf /ufs/mk/cwi/public_html 
-	echo "Manual created" 
+	cp ${MONET5_PREFIX}/share/MonetDB5/gdkmanual.pdf ..
+	(cd ..; pdfnup gdkmanual.pdf)
+	echo "GDK manual created" 
 modpdf: 
 	-mkdir -p ${MONET5_PREFIX}/share/MonetDB5
 	mkbdy; cp modulesmanual.texi ${MONET5_PREFIX}/share/MonetDB5
@@ -69,5 +75,6 @@ modpdf:
 	pdftex modulesmanual.texi \
 	makeinfo --force --html modulesmanual.texi \
 	)
-	cp ${MONET5_PREFIX}/share/MonetDB5/modulesmanual.pdf /ufs/mk/cwi/public_html 
-	echo "Manual created" 
+	cp ${MONET5_PREFIX}/share/MonetDB5/modulesmanual.pdf ../modules.pdf
+	(cd ..; pdfnup modules.pdf)
+	echo "Modules manual created" 

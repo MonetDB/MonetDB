@@ -5,7 +5,7 @@
 
 @c environment
 @set VERSION 5.0
-@set UPDATED March 5, 2006
+@set UPDATED April 27, 2006
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual
@@ -151,13 +151,13 @@ Last updated: @value{UPDATED}
 @node Data Management Tools, Aqua Data Studio, Jdbc Client , User Interfaces
 @include Assets/DBA-GUIs.texi
 
-@node Aqua Data Studio, DbVisualiser, Data Management Tools, Data Management Tools
+@node Aqua Data Studio, DbVisualizer, Data Management Tools, Data Management Tools
 @include Assets/AquaDataStudio.texi
 
-@node DbVisualiser, iSQL-Viewer, Aqua Data Studio, Data Management Tools
+@node DbVisualizer, iSQL-Viewer, Aqua Data Studio, Data Management Tools
 @include Assets/DbVisualiser.texi
 
-@node iSQL-Viewer, Programming Interfaces, DbVisualiser, Data Management Tools
+@node iSQL-Viewer, Programming Interfaces, DbVisualizer, Data Management Tools
 @include Assets/iSQL-Viewer.texi
 
 
