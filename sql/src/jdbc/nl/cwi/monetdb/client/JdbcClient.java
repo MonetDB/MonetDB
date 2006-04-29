@@ -96,6 +96,9 @@ public class JdbcClient {
 				"Uses an \"embedded\" Mserver instance.  The argument to " +
 				"this option should be in the form of path/to/mserver:dbname" +
 				"[:dbfarm[:dbinit]].");
+		copts.addOption(null, "Xhash", CmdLineOpts.CAR_ONE, null,
+				"Use the given hash algorithm during challenge response.  " +
+				"Supported algorithm names: SHA1, MD5, plain.");
 		// arguments which can have zero or one argument(s)
 		copts.addOption(null, "Xdebug", CmdLineOpts.CAR_ZERO_ONE, null,
 				"Writes a transmission log to disk for debugging purposes.  " +
@@ -218,6 +221,9 @@ copts.produceHelpMessage()
 			if (oc.getArgumentCount() == 1)
 				attr += "logfile=" + oc.getArgument() + "&";
 		}
+		oc = copts.getOption("Xhash");
+		if (oc.isPresent())
+			attr += "hash=" + oc.getArgument() + "&";
 
 		// request a connection suitable for MonetDB from the driver
 		// manager note that the database specifier is only used when

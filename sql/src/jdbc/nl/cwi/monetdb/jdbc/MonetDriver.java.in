@@ -251,6 +251,11 @@ final public class MonetDriver implements Driver {
 		prop.description = "What language to use for MonetDB conversations (sql/xquery)";
 		props.add(prop);
 
+		prop = new DriverPropertyInfo("hash", "");
+		prop.required = false;
+		prop.description = "Force the use of the given hash algorithm during challenge response (one of SHA1, MD5, plain)";
+		props.add(prop);
+
 		DriverPropertyInfo[] dpi = new DriverPropertyInfo[props.size()];
 		return((DriverPropertyInfo[])props.toArray(dpi));
 	}
