@@ -460,7 +460,6 @@ str runMALsequence( malTask *task)
 	int backup[MAXARG];
 	str sbackup[MAXARG];
 	lng oldtimer=0;
-	int first= TRUE;
 	@:performanceVariables@
 
 	if( (oldtimer= cntxt->timer) )
@@ -472,11 +471,14 @@ MALrestart:
 	while(stkpc < mb->stop && stkpc != task->stoppc ){
 	    pci = getInstrPtr(mb,stkpc);
 	    if( stk->cmd  ) {
+			lng t=0;
+			if( oldtimer) t= GDKusec();
 			mdbStep(cntxt,mb,stk,stkpc);
 	        if( stk->cmd == 'x') goto MALevalExit;
-			if( first && oldtimer ) { /* ignore debugger interaction*/
-				cntxt->timer= GDKusec();
-				first= FALSE;
+			if( oldtimer )  {
+				/* ignore debugger waiting time*/
+				t= GDKusec()-t;
+				oldtimer += t;
 			}
 	    }
 
@@ -575,7 +577,7 @@ elements in the value stack.
 	    if( getInstrPtr(mb,0)->token == FACTORYsymbol)
 	        ret= shutdownFactory(mb);
 		if( oldtimer)
-			cntxt->timer= GDKusec()-oldtimer;
+			cntxt->timer= oldtimer;
 		if( pcicaller && garbageControl(getInstrPtr(mb,0)) )
 			garbageCollectAll(mb, stk);
 	    @:endProfile@
@@ -662,7 +664,7 @@ possible change in the control flow.
 	    break;
 	case YIELDsymbol: /* to be defined */
 		if( oldtimer)
-			cntxt->timer= GDKusec()-oldtimer;
+			cntxt->timer= oldtimer;
 	    return yieldFactory( mb, pci, stkpc);
 	case RETURNsymbol:
 	    /* Return from factory involves cleanup */
@@ -697,7 +699,7 @@ possible change in the control flow.
 	            garbageCollectAll(mb, stk);
 			/* reset the clock */
 			if( oldtimer)
-				cntxt->timer= GDKusec()- oldtimer;
+				cntxt->timer= oldtimer;
 	        goto MALevalExit;
 	    } 
 	    @:endProfile@
@@ -907,7 +909,6 @@ non-returned values.
 	stk->pcup = stkpc;
 	@:safeTarget@
 	ret= runMAL(cntxt,pci->blk,1,mb,stk,pci);
-	if( oldtimer) oldtimer -= cntxt->timer;
 	@:restoreTarget@
 	@:resultParameter@
 }
@@ -921,7 +922,6 @@ Factory calls should deal with the reference counting.
 	        "reference to MAL function missing\n");
 	else
 	    ret= runFactory(cntxt,pci->blk,mb,stk,pci);
-	if( oldtimer) oldtimer -= cntxt->timer;
 	@:resultParameter@
 @-
 The type dispatching table in getArgValue can be removed if we 
