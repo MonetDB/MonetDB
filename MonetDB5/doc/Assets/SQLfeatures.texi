@@ -24,6 +24,7 @@ supported in the released version.
 * SET Statement::
 * EXPLAIN Statement::
 * DEBUG Statement::
+* TRACE Statement::
 * Optimizer Control::
 * Overlaying the BAT storage::
 @end menu
@@ -49,10 +50,17 @@ Auto-increment keys (SQL 2003).
 
 
 @node SET Statement, EXPLAIN Statement, Feature List, MonetDB/SQL Features
-@subsection SET Statement
+@subsection DECLARE Statement
+The user can declare local variables to hold scalar values.
+@example
+DECLARE myvar integer;
+SET myvar=21;
+@end example
+This area requires further extension to make it more usefull.
 
+@subsection SET Statement
 MonetDB/SQL comes with a limited variable scheme.
-Globel, session based variables can be introduced using the
+Globel, session based variables can be set using the
 construct:
 @example
 SET <variable>=<string>
@@ -68,27 +76,12 @@ The @code{debug} variable takes an integer and sets the server global
 debug flag. (See MonetDB documentation) It also activates the
 debugger when the query is being executed.
 @item
-The @code{explain} variable currently takes the values 'plan' or
-'performance'. The 'plan' qualifier produces a relational table with
-the plan derived for execution using the applicable back end and
-optimizer schemes. The 'performance' qualifier produces a performance
-trace of the SQL queries for post analysis. It is available in
-the system table called @code{history}. Omission of either qualifier merely
-results in a straight execution of the query.
-@item
-
-The @code{auto_commit} variable takes a boolean and controls automatic commit
-after a successful SQL execution, or conversely an automatic rollback.
-
-@item
-The @code{reply_size} limits the number of tuples sent to the front end.
-[It is unclear how the remainder can be obtained within the SQL language
-framework. The reply_size should be replaced by the @code{limit} language
-construct]
-
-@item
-The @code{history} variable is a boolean flag which leads to 
-capturing execution information of any SQL query in a table for post-analysis.
+The @code{explain} variable takes a string value and when set 
+to 'plan' shows the MAL plan before it is being executed.
+When set to 'trace' it produces the execution trace information
+for each query.
+When set to 'profile', it keep track of the SQL global performance
+in a table called @code{profile}.
 @end itemize
 
 By default all remaining variables are stored as strings and
@@ -105,14 +98,14 @@ called 'sessions'. Its default content is shown below:
 # str                   str                 str             int       # type
 #---------------------------------------------------------------------#
 [ "debug",                "0",                "int",          0       ]
-[ "reply_size",           "-1",               "int",          0       ]
 [ "explain",              "",                 "varchar",      0       ]
-[ "auto_commit",          "false",            "boolean",      0       ]
 [ "current_schema",       "sys",              "varchar",      1       ]
 [ "current_user",         "monetdb",          "varchar",      1       ]
 [ "current_role",         "monetdb",          "varchar",      0       ]
 [ "current_timezone",     "0",                "sec_interval", 0       ]
-[ "optimizer",            "yes",              "varchar",      0       ]
+[ "cache",                "true",             "boolean",      0       ]
+[ "trace",                "false",            "boolean",      0       ]
+[ "optimizer",            "sql.optimizer();", "varchar",      0       ]
 @end example
 
 @node EXPLAIN Statement, DEBUG Statement, SET Statement, MonetDB/SQL Features
@@ -189,7 +182,7 @@ The query cache disappears when the server is brought to a halt.
 When/how is the cache cleared? Can you list elements in the
 cache directly, e.g @code{explain;} or @code{explain sqlcache} or @code{explain sqlcache.sql0;}
 
-@node DEBUG Statement, Optimizer Control, EXPLAIN Statement, MonetDB/SQL Features
+@node DEBUG Statement, TRACE Statement, EXPLAIN Statement, MonetDB/SQL Features
 @subsection DEBUG Statement
 
 The SQL statements are translated into MAL programs, which
@@ -199,62 +192,71 @@ It provides a simple mechanism to trace the execution, hunting
 for possible errors and detect performance bottlenecks
 (@ref{Runtime Inspection}).
 
-The example below, illustrates how you can easily obtain a quick 
-overview of the cost components of the query using the debugger timer
-flag and @code{continuation} command for the debugger.
-
-[ERROR: the 'start transaction' is needed now]
+The example below, illustrates the start of such a session:
 @verbatim
->start transaction;
-&4 f
 >debug select count(*) from tables;
-#mdb #    mdb.start();
+#    mdb.start()
 mdb>next
-#mdb #    sql_cache.s0_0();
-mdb>timer
-mdb>continue
-#    13 usec#    _2:bat[:void,:int]  := sql.bind(_3="sys", _4="ptables", _5="id", _6=0)
-#     2 usec#    _8:bat[:void,:int]  := sql.bind(_3="sys", _4="ptables", _5="id", _9=1)
-#     3 usec#    _11 := bat.setWriteMode(_8=<tmp_515>)
-#     2 usec#    _15:bat[:oid,:int]  := sql.bind(_3="sys", _4="ptables", _5="id", _16=3)
-#     1 usec#    _18 := bat.setWriteMode(_15=<tmp_516>)
-#     2 usec#    _24:bat[:void,:oid]  := sql.bind_dbat(_3="sys", _4="ptables", _6=0)
-#     4 usec#    _39:bat[:void,:int]  := sql.bind(_40="sys", _41="ttables", _42="id", _43=0)
-#     1 usec#    _45:bat[:void,:oid]  := sql.bind_dbat(_40="sys", _41="ttables", _43=0)
-#    17 usec#    _13 := algebra.kunion(_2=<tmp_26>, _11=<tmp_515>)
-#     7 usec#    _20 := algebra.kdifference(_13=<tmp_1372>, _18=<tmp_516>)
-#     3 usec#    _22 := algebra.kunion(_20=<tmp_1374>, _18=<tmp_516>)
-#     1 usec#    _26 := bat.reverse(_24=<tmp_514>)
-#     3 usec#    _28 := algebra.kdifference(_22=<tmp_1375>, _26=<~tmp_514>)
-#     4 usec#    _33 := algebra.markT(_28=<tmp_1376>, _31=0@0)
-#     0 usec#    _35 := bat.reverse(_33=<tmp_1377>)
-#    22 usec#    _37 := algebra.join(_35=<~tmp_1377>, _22=<tmp_1375>)
-#     1 usec#    _47 := bat.reverse(_45=<tmp_731>)
-#     4 usec#    _49 := algebra.kdifference(_39=<tmp_732>, _47=<~tmp_731>)
-#     2 usec#    _53 := algebra.markT(_49=<tmp_1400>, _31=0@0)
-#     0 usec#    _55 := bat.reverse(_53=<tmp_1402>)
-#     4 usec#    _57 := algebra.join(_55=<~tmp_1402>, _39=<tmp_732>)
-#    12 usec#    _59 := bat.setWriteMode(_37=<tmp_1401>)
-#     2 usec#    bat.append(_59=<tmp_1401>, _57=<tmp_1403>)
-#     8 usec#    _65 := algebra.markT(_59=<tmp_1401>, _31=0@0)
-#     0 usec#    _67 := bat.reverse(_65=<tmp_1405>)
-#     9 usec#    _69 := algebra.join(_67=<~tmp_1405>, _59=<tmp_1401>)
-#     2 usec#    _74 := algebra.markT(_69=<tmp_1406>, _72=0@0)
-#     1 usec#    _76 := bat.reverse(_74=<tmp_1404>)
-#     7 usec#    _78 := algebra.join(_76=<~tmp_1404>, _69=<tmp_1406>)
-#     1 usec#    _80 := aggr.count(_78=<tmp_1410>)
+#    sql_cache.s1_0()
+mdb>next
+#    _2:bat[:void,:int]  := sql.bind(_3="sys", _4="ptables", _5="id", _6=0)
+mdb>next
+#    _8:bat[:void,:int]  := sql.bind(_3="sys", _4="ptables", _5="id", _9=1)
+mdb>
+@end verbatim
+
+@node TRACE Statement, Optimizer Control, DEBUG Statement, MonetDB/SQL Features
+@subsection TRACE Statement
+Inspection of the execution time of the query plan uses the debugger
+facilities to time each request. The statement below illustrates
+the @code{trace} statement modifier to obtain a first glimpse
+on the expensive components of the query plan.
+
+@verbatim
+>trace select count(*) from tables;
+#     7 usec#    mdb.setTimer(_2=true)
+#    10 usec#    _2:bat[:void,:int]  := sql.bind(_3="sys", _4="ptables", _5="id", _6=0)
+#     6 usec#    _8:bat[:void,:int]  := sql.bind(_3="sys", _4="ptables", _5="id", _9=1)
+#    12 usec#    _11 := bat.setWriteMode(_8=<tmp_1255>bat[:void,:int]{0})
+#     5 usec#    _15:bat[:oid,:int]  := sql.bind(_3="sys", _4="ptables", _5="id", _16=3)
+#     3 usec#    _18 := bat.setWriteMode(_15=<tmp_1256>bat[:oid,:int]{0})
+#     5 usec#    _24:bat[:void,:oid]  := sql.bind_dbat(_3="sys", _4="ptables", _6=0)
+#     6 usec#    _39:bat[:void,:int]  := sql.bind(_40="sys", _41="ttables", _42="id", _43=0)
+#     5 usec#    _45:bat[:void,:oid]  := sql.bind_dbat(_40="sys", _41="ttables", _43=0)
+#    23 usec#    _13 := algebra.kunion(_2=<tmp_27>bat[:void,:int]{32}, _11=<tmp_1255>bat[:void,:int]{0})
+#    19 usec#    _20 := algebra.kdifference(_13=<tmp_2141>bat[:void,:int]{32}, _18=<tmp_1256>bat[:oid,:int]{0})
+#     7 usec#    _22 := algebra.kunion(_20=<tmp_2142>bat[:oid,:int]{32}, _18=<tmp_1256>bat[:oid,:int]{0})
+#     8 usec#    _26 := bat.reverse(_24=<tmp_1254>bat[:void,:oid]{0})
+#     5 usec#    _28 := algebra.kdifference(_22=<tmp_2143>bat[:oid,:int]{32}, _26=<~tmp_1254>bat[:oid,:void]{0})
+#    16 usec#    _33 := algebra.markT(_28=<tmp_2144>bat[:oid,:int]{32}, _31=0@0)
+#     4 usec#    _35 := bat.reverse(_33=<tmp_2145>bat[:oid,:void]{32})
+#    47 usec#    _37 := algebra.join(_35=<~tmp_2145>bat[:void,:oid]{32}, _22=<tmp_2143>bat[:oid,:int]{32})
+#     4 usec#    _47 := bat.reverse(_45=<tmp_1455>bat[:void,:oid]{0})
+#     6 usec#    _49 := algebra.kdifference(_39=<tmp_1456>bat[:void,:int]{0}, _47=<~tmp_1455>bat[:oid,:void]{0})
+#     5 usec#    _53 := algebra.markT(_49=<tmp_2146>bat[:oid,:int]{0}, _31=0@0)
+#     4 usec#    _55 := bat.reverse(_53=<tmp_2150>bat[:oid,:void]{0})
+#     8 usec#    _57 := algebra.join(_55=<~tmp_2150>bat[:void,:oid]{0}, _39=<tmp_1456>bat[:void,:int]{0})
+#    26 usec#    _59 := bat.setWriteMode(_37=<tmp_2147>bat[:void,:int]{32})
+#     9 usec#    bat.append(_59=<tmp_2147>bat[:void,:int]{32}, _57=<tmp_2151>bat[:void,:int]{0})
+#    14 usec#    _65 := algebra.markT(_59=<tmp_2147>bat[:void,:int]{32}, _31=0@0)
+#     4 usec#    _67 := bat.reverse(_65=<tmp_2153>bat[:oid,:void]{32})
+#    11 usec#    _69 := algebra.join(_67=<~tmp_2153>bat[:void,:oid]{32}, _59=<tmp_2147>bat[:void,:int]{32})
+#     5 usec#    _74 := algebra.markT(_69=<tmp_2154>bat[:void,:int]{32}, _72=0@0)
+#     3 usec#    _76 := bat.reverse(_74=<tmp_2152>bat[:oid,:void]{32})
+#    10 usec#    _78 := algebra.join(_76=<~tmp_2152>bat[:void,:oid]{32}, _69=<tmp_2154>bat[:void,:int]{32})
+#     4 usec#    _80 := aggr.count(_78=<tmp_2156>bat[:void,:int]{32})
 &1 0 1 1 1
 # sys.tables # table_name
 # count_id # name
 # int # type
 # 2 # length
-[ 27    ]
-#    20 usec#    sql.exportValue(_83=1, _84="sys.tables", _85="count_id", _86="int", _87=32, _88=0, _89=6, _80=27)
-#     2 usec#    sql_cache.s3_0()
->
+[ 32    ]
+#    36 usec#    sql.exportValue(_83=1, _84="sys.tables", _85="count_id", _86="int", _87=32, _88=0, _89=6, _80=32)
+#   911 usec#    sql_cache.s0_0()
+
 @end verbatim
 
-@node Optimizer Control, Overlaying the BAT storage, DEBUG Statement,  MonetDB/SQL Features
+@node Optimizer Control, Overlaying the BAT storage, TRACE Statement,  MonetDB/SQL Features
 @section Optimizer Control
 The code produced by MonetDB/SQL is massaged by several code optimizers
 to arrive at the best possible plan for evaluation.
