@@ -3,49 +3,50 @@
 #inclusion in the MonetDB5 website
 
 all:
-	-mkdir -p ${MONET5_PREFIX}/doc
+	-mkdir -p ${MONET5_PREFIX}/share/doc
 	make pdf
 	make web
 	make xml
+	make clean
 
 pdf: 
-	-mkdir -p ${MONET5_PREFIX}/share/MonetDB5
-	mkbdy; cp manual.texi ${MONET5_PREFIX}/share/MonetDB5
-	cp -r ../Assets ${MONET5_PREFIX}/share/MonetDB5
-	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
+	-mkdir -p ${MONET5_PREFIX}/share/tmp
+	mkbdy; cp manual.texi ${MONET5_PREFIX}/share/tmp
+	cp -r ../Assets ${MONET5_PREFIX}/share/tmp
+	(cd ${MONET5_PREFIX}/share/tmp/; \
 	pdftex manual.texi \
 	)
-	cp ${MONET5_PREFIX}/share/MonetDB5/manual.pdf $(MONET5_PREFIX)/doc/manual.pdf 
-	(cd $(MONET5_PREFIX)/doc/; pdfnup manual.pdf)
+	cp ${MONET5_PREFIX}/share/tmp/manual.pdf $(MONET5_PREFIX)/share/doc/manual.pdf 
+	(cd $(MONET5_PREFIX)/share/doc/; pdfnup manual.pdf)
 	echo "Manual created" 
 
 web:
-	-mkdir -p ${MONET5_PREFIX}/share/MonetDB5
-	mkbdy; cp manual.texi ${MONET5_PREFIX}/share/MonetDB5
-	cp manual.css ${MONET5_PREFIX}/share/MonetDB5
-	cp -r ../Assets ${MONET5_PREFIX}/share/MonetDB5
-	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
+	-mkdir -p ${MONET5_PREFIX}/share/tmp
+	mkbdy; cp manual.texi ${MONET5_PREFIX}/share/tmp
+	cp manual.css ${MONET5_PREFIX}/share/tmp
+	cp -r ../Assets ${MONET5_PREFIX}/share/tmp
+	(cd ${MONET5_PREFIX}/share/tmp/; \
 	makeinfo --force --html manual.texi --css-include=manual.css \
 	)
-	cp -r ${MONET5_PREFIX}/share/MonetDB5/MonetDB $(MONET5_PREFIX)/doc/
+	cp -r ${MONET5_PREFIX}/share/tmp/MonetDB $(MONET5_PREFIX)/share/doc/
 	echo "Web version created"
 
 web2:
-	-mkdir -p ${MONET5_PREFIX}/share/MonetDB5
-	mkbdy; cp manual.texi ${MONET5_PREFIX}/share/MonetDB5
-	cp manual.css ${MONET5_PREFIX}/share/MonetDB5
-	cp -r ../Assets ${MONET5_PREFIX}/share/MonetDB5
-	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
+	-mkdir -p ${MONET5_PREFIX}/share/tmp
+	mkbdy; cp manual.texi ${MONET5_PREFIX}/share/tmp
+	cp manual.css ${MONET5_PREFIX}/share/tmp
+	cp -r ../Assets ${MONET5_PREFIX}/share/tmp
+	(cd ${MONET5_PREFIX}/share/tmp/; \
 	texi2html --split=node  --css-include=manual.css manual.texi; )
-	cp -r $(MONET5_PREFIX)/share/MonetDB5/MonetDB $(MONET5_PREFIX)/web/MonetDB_split
+	cp -r $(MONET5_PREFIX)/share/tmp/MonetDB $(MONET5_PREFIX)/share/doc/MonetDB
 	echo "Web created"
 
 xml:
-	-mkdir -p ${MONET5_PREFIX}/share/MonetDB5
-	mkbdy; cp manual.texi ${MONET5_PREFIX}/share/MonetDB5
-	cp -r ../Assets ${MONET5_PREFIX}/share/MonetDB5
-	cp paperclip.xsl ${MONET5_PREFIX}/share/MonetDB5
-	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
+	-mkdir -p ${MONET5_PREFIX}/share/tmp
+	mkbdy; cp manual.texi ${MONET5_PREFIX}/share/tmp
+	cp -r ../Assets ${MONET5_PREFIX}/share/tmp
+	cp paperclip.xsl ${MONET5_PREFIX}/share/tmp
+	(cd ${MONET5_PREFIX}/share/tmp/; \
 	makeinfo --force --xml manual.texi \
 	)
 	sed -i -e "s/&bullet;/<bullet\/>/g" \
@@ -54,29 +55,32 @@ xml:
 		-e "s/&dots;/<dots\/>/g" \
 		-e "s/&eosperiod;/<eosperiod\/>/g" \
 		-e "s/&space;/<space\/>/g" \
-			${MONET5_PREFIX}/share/MonetDB5/MonetDB.xml
-	cp ${MONET5_PREFIX}/share/MonetDB5/MonetDB.xml $(MONET5_PREFIX)/doc/manual.xml
+			${MONET5_PREFIX}/share/tmp/MonetDB.xml
+	cp ${MONET5_PREFIX}/share/tmp/MonetDB.xml $(MONET5_PREFIX)/share/doc/manual.xml
 	echo "XML file created"
 
 gdkpdf: 
-	-mkdir -p ${MONET5_PREFIX}/share/MonetDB5
-	mkbdy; cp gdkmanual.texi ${MONET5_PREFIX}/share/MonetDB5
-	cp -r ../Assets ${MONET5_PREFIX}/share/MonetDB5
-	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
+	-mkdir -p ${MONET5_PREFIX}/share/tmp
+	mkbdy; cp gdkmanual.texi ${MONET5_PREFIX}/share/tmp
+	cp -r ../Assets ${MONET5_PREFIX}/share/tmp
+	(cd ${MONET5_PREFIX}/share/tmp/; \
 	pdftex gdkmanual.texi \
 	)
-	cp ${MONET5_PREFIX}/share/MonetDB5/gdkmanual.pdf $(MONET5_PREFIX)/doc
-	(cd $(MONET5_PREFIX)/doc; pdfnup gdkmanual.pdf)
+	cp ${MONET5_PREFIX}/share/tmp/gdkmanual.pdf $(MONET5_PREFIX)/share/doc
+	(cd $(MONET5_PREFIX)/share/doc; pdfnup gdkmanual.pdf)
 	echo "GDK manual created" 
 
 modpdf: 
-	-mkdir -p ${MONET5_PREFIX}/share/MonetDB5
-	mkbdy; cp modulesmanual.texi ${MONET5_PREFIX}/share/MonetDB5
-	cp -r ../Assets ${MONET5_PREFIX}/share/MonetDB5
-	(cd ${MONET5_PREFIX}/share/MonetDB5/; \
+	-mkdir -p ${MONET5_PREFIX}/share/tmp
+	mkbdy; cp modulesmanual.texi ${MONET5_PREFIX}/share/tmp
+	cp -r ../Assets ${MONET5_PREFIX}/share/tmp
+	(cd ${MONET5_PREFIX}/share/tmp/; \
 	pdftex modulesmanual.texi \
 	makeinfo --force --html modulesmanual.texi \
 	)
-	cp ${MONET5_PREFIX}/share/MonetDB5/modulesmanual.pdf $(MONET5_PREFIX)/doc/modules.pdf
-	(cd $(MONET5_PREFIX)/doc; pdfnup modules.pdf)
+	cp ${MONET5_PREFIX}/share/tmp/modulesmanual.pdf $(MONET5_PREFIX)/share/doc/modules.pdf
+	(cd $(MONET5_PREFIX)/share/doc; pdfnup modules.pdf)
 	echo "Modules manual created" 
+
+clean:
+	rm -rf $(MONET5_PREFIX)/share/tmp
