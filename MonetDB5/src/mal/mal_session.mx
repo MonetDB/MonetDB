@@ -36,17 +36,17 @@ It may overwritten using a command line argument.
 #include "mal_scenario.h"
 
 mal_export int malBootstrap();
-mal_export void serveClient(void *dummy);
-mal_export void initClientPrg(Client cntxt, str nme);
-mal_export void scheduleClient(str command, str challenge, bstream *fin, stream *fout);
+mal_export void MSserveClient(void *dummy);
+mal_export void MSinitClientPrg(Client cntxt, str nme);
+mal_export void MSscheduleClient(str command, str challenge, bstream *fin, stream *fout);
 
 mal_export str MALreader(Client c);
 mal_export str MALexitClient(Client c);
 mal_export void MALexit(Client c);
 mal_export str MALparser(Client c);
 mal_export str MALengine(Client c);
-mal_export void resetInstructions(MalBlkPtr mb, int start);
-mal_export void resetVariables(MalBlkPtr mb, MalStkPtr glb, int start);
+mal_export void MSresetInstructions(MalBlkPtr mb, int start);
+mal_export void MSresetVariables(MalBlkPtr mb, MalStkPtr glb, int start);
 mal_export int MALcommentsOnly(MalBlkPtr mb);
 
 #endif /*  _MAL_SESSION_H */
@@ -72,7 +72,7 @@ malBootstrap()
 	Client c;
 	str bootfile = "mal_init", bf;
 
-	c = initClient((oid)0, 0, 0);
+	c = MCinitClient((oid)0, 0, 0);
 	c->nspace = newModule(NULL, putName("user", 4));
 	initLibraries();
 	if (defaultScenario(c)) {
@@ -111,7 +111,7 @@ introduced.
 @c
 
 void
-initClientPrg(Client cntxt, str nme)
+MSinitClientPrg(Client cntxt, str nme)
 {
 	InstrPtr p;
 	MalBlkPtr mb;
@@ -161,7 +161,7 @@ The scheduleClient receives a challenge response consisting of
 user:password:lang:blocked:database.
 @c
 void
-scheduleClient(str command, str challenge, bstream *fin, stream *fout)
+MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 {
 	char *user = command, *algo = NULL, *passwd = NULL, *lang = NULL;
 	char *database = NULL, *s;
@@ -327,10 +327,10 @@ Check if we have loaded already the language library.
 The naming convention is to use the language name as an
 alias for the include file
 @c
-			Client cn = initClient(0, 0, 0);
+			Client cn = MCinitClient(0, 0, 0);
 			defaultScenario(cn);
 			initScenario(cn, findScenario(lang));
-			killClient(cn);
+			MCkillClient(cn);
 		}
 
 		/* access control: verify the credentials supplied by the user,
@@ -344,7 +344,7 @@ alias for the include file
 			return;
 		}
 
-		c = initClient(uid, fin, fout);
+		c = MCinitClient(uid, fin, fout);
 		c->nspace = newModule(NULL, putName("user", 4));
 		c->nspace->outer = mal_scope;
 		c->sessionkey = key;
@@ -362,10 +362,10 @@ alias for the include file
 		}
 	}
 
-	initClientPrg(c, "main");
+	MSinitClientPrg(c, "main");
 
 	GDKfree(command);
-	if (MT_create_thread(&p, serveClient, (void *) c) < 0) {
+	if (MT_create_thread(&p, MSserveClient, (void *) c) < 0) {
 		GDKerror("initClient: can not fork new client\n");
 		return;
 	}
@@ -394,7 +394,7 @@ However, this action is only required after a successful execution.
 Otherwise, garbage collection is not needed.
 @c
 void
-resetInstructions(MalBlkPtr mb, int start)
+MSresetInstructions(MalBlkPtr mb, int start)
 {
 	int i;
 	InstrPtr p;
@@ -409,7 +409,7 @@ resetInstructions(MalBlkPtr mb, int start)
 }
 
 void
-resetVariables(MalBlkPtr mb, MalStkPtr glb, int start)
+MSresetVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 {
 	int i, j;
 
@@ -453,14 +453,14 @@ global variables. Thereafter it is up to the scenario
 interpreter to process input.
 @c
 void
-serveClient(void *dummy)
+MSserveClient(void *dummy)
 {
 	MalBlkPtr mb;
 	Client c = (Client) dummy;
 	str msg = 0;
 
 	if (!isAdministrator(c))
-		initClientThread(c);
+		MCinitClientThread(c);
 @-
 A stack frame is initialized to keep track of global variables.
 The scenarios are run until we finally close the last one.
@@ -498,7 +498,7 @@ At this stage we should clean out the MAL block
 		}
 	}
 	if (!isAdministrator(c))
-		closeClient(c);
+		MCcloseClient(c);
 }
 
 @+ MAL scenario components
@@ -517,9 +517,9 @@ table may have grown in size.
 		printFunction(c->fdout,c->curprg->def, c->listing);
 	resetMalBlk(c->curprg->def,oldstate.stop);
 /*
-	resetInstructions(c->curprg->def, oldstate.stop);
+	MSresetInstructions(c->curprg->def, oldstate.stop);
 */
-	resetVariables(c->curprg->def, 0, oldstate.vtop);
+	MSresetVariables(c->curprg->def, 0, oldstate.vtop);
 @c
 str
 MALexitClient(Client c)
@@ -544,11 +544,11 @@ MALreader(Client c)
 	if( c == mal_clients){
 		r= readConsole(c);
 		if (r <0 && c->fdin->eof == 0 )
-			r= readClient(c);
+			r= MCreadClient(c);
 		if( r > 0)
 			return 0;
 	} else
-	if (readClient(c) > 0)
+	if (MCreadClient(c) > 0)
 		return 0;
 	c->mode = FINISHING;
 	if (c->fdin)
@@ -657,7 +657,7 @@ MALengine(Client c)
 		showErrors();
 	}
 	resetMalBlk(prg->def,1);
-	resetVariables(prg->def, c->glb, 0);
+	MSresetVariables(prg->def, c->glb, 0);
 	prg->def->errors = 0;
 	return msg;
 }

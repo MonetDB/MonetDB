@@ -532,7 +532,7 @@ shutdownFactory(MalBlkPtr mb)
 	plim = plants + lastPlant;
 	for (pl = plants; pl < plim; pl++)
 		if (pl->factory == mb) {
-			/* resetVariables(mb, pl->stk, 0);*/
+			/* MSresetVariables(mb, pl->stk, 0);*/
 			/* freeStack(pl->stk); there may be a reference?*/
 			/* we are inside the body of the factory and about to return */
 			pl->factory = 0;
@@ -574,7 +574,7 @@ shutdownFactoryByName(Module m, str nme){
 					"internal error, sql_cache entry missing\n");
 			}
 			stk = pl->stk;
-			resetVariables(pl->factory, stk, 0);
+			MSresetVariables(pl->factory, stk, 0);
 			shutdownFactory(pl->factory);
 			freeStack(stk);
 			deleteSymbol(m,s);

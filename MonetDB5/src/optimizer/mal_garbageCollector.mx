@@ -109,7 +109,7 @@ GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i, j, k, limit, done;
 	InstrPtr p, q, *stmt;
 	VarPtr v;
-	Client cntxt = getClient();
+	Client cntxt = MCgetClient();
 	Module s = cntxt->nspace;
 	int top = 0, blk = 1, actions = 0;
 	lng clk = GDKusec();

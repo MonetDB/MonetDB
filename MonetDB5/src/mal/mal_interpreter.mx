@@ -161,7 +161,7 @@ ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 #endif
 } 
 void showErrors(){
-	Client cntxt= getClient();
+	Client cntxt= MCgetClient();
 	int i;
 	if( cntxt->errbuf==0 ) return;
 	if( *cntxt->errbuf){

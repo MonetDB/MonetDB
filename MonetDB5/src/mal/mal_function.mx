@@ -131,7 +131,7 @@ void renameFunction(str oldmod, str oldfcn, str modnme, str name){
 	Module root,scope;
 	Symbol s,prev;
 	InstrPtr p;
-	root= scope= getClient()->nspace;
+	root= scope= MCgetClient()->nspace;
 	while( scope != NULL){
 		if( oldmod && strcmp(oldmod, scope->name) ){
 			scope= scope->outer;

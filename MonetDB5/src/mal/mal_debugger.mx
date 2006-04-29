@@ -1138,7 +1138,7 @@ creation of a minimal execution environment first.
 str
 runMALDebugger(Symbol s)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 
 	c->itrace = 'n';
 	runMAL(c, s->def, 1, 0, 0, 0);
@@ -1498,7 +1498,7 @@ int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
 str
 debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client cntxt = getClient();
+	Client cntxt = MCgetClient();
 
 	(void) stk;
 

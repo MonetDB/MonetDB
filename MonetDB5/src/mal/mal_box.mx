@@ -262,7 +262,7 @@ only.
 @c
 #include "mal_box.h"
 #include "mal_interpreter.h"	/* for garbageCollector() & garbageElement() */
-#include "mal_client.h"		/* for getClient() */
+#include "mal_client.h"		/* for MCgetClient() */
 #include "mal_debugger.h"	/* for printStack() */
 #include "mal_import.h"		/* for malInclude() */
 
@@ -735,10 +735,10 @@ loadBox(str name)
 	stream_printf(GDKout, "loadBox:start loading the file %s\n", boxfile);
 #endif
 	if (access(boxfile, R_OK) == 0) {
-		Client child= forkClient(getClient());
+		Client child= MCforkClient(MCgetClient());
 		defaultScenario(child);
 		malInclude(child, boxfile, 0, 0);
-		killClient(child);
+		MCkillClient(child);
 #ifdef DEBUG_MAL_BOX
 		stream_printf(GDKout, "loadBox:loaded the file %s\n", boxfile);
 #endif

@@ -507,7 +507,7 @@ This to simplify error handling
 @= printFormatted
 mal_export str IOprint_formatted_@1(int *ret, ptr fmt, @1 *s);
 str IOprint_formatted_@1(int *ret, ptr fmt, @1 *s){
-	stream *fd = getClient()->fdout;
+	stream *fd = MCgetClient()->fdout;
 	char *format;
 	str c;
 	(void) ret;
@@ -565,7 +565,7 @@ str
 IOprint_formatted_lng(int *ret, str *format, lng *val)
 {
 	str c;
-	stream *fd= getClient()->fdout;
+	stream *fd= MCgetClient()->fdout;
 	(void) ret;
 
 	for (c = *format; *c; c++) {
@@ -609,7 +609,7 @@ IOprint_formatted_lng(int *ret, str *format, lng *val)
 str
 IOprint_formatted_str(int *ret, ptr fmt, str *s)
 {
-	stream *fd = getClient()->fdout;
+	stream *fd = MCgetClient()->fdout;
 	char *format;
 	str c;
 	(void) ret;
@@ -630,7 +630,7 @@ IOprint_formatted_str(int *ret, ptr fmt, str *s)
 str
 IOprint_oid(int *ret, ptr fmt, oid *s)
 {
-	stream *fd = getClient()->fdout;
+	stream *fd = MCgetClient()->fdout;
 	char *format;
 	str msg, c;
 	int len = 50;
@@ -658,7 +658,7 @@ IOprint_oid(int *ret, ptr fmt, oid *s)
 str
 IOprint_formatted_bit(int *ret, ptr fmt, bit *s)
 {
-	stream *fd = getClient()->fdout;
+	stream *fd = MCgetClient()->fdout;
 	char *format;
 	str msg;
 	str c;

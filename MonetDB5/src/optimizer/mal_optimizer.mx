@@ -533,7 +533,7 @@ optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec)
 {
 	Client cntxt;
 	if( actions > 0){
-		cntxt= getClient();
+		cntxt= MCgetClient();
 		chkFlow(mb);
 		chkTypes(cntxt->nspace, mb);
 		chkDeclarations(mb, TRUE);
@@ -554,7 +554,7 @@ optimizerCheckFlow(MalBlkPtr mb, str name, int actions, lng usec)
 {
 	Client cntxt;
 	if( actions > 0){
-		cntxt= getClient();
+		cntxt= MCgetClient();
 		chkFlow(mb);
 		if( cntxt->debugOptimizer)
 			optimizerDebug(mb, name, actions, usec);
@@ -605,7 +605,7 @@ optimizeMALBlock(MalBlkPtr mb)
 		}
 	} while (qot && cnt++ < 64);
 #ifdef DEBUG_MAL_OPTIMIZER
-	if (getClient()->debugOptimizer && oldstop != mb->stop) {
+	if (MCgetClient()->debugOptimizer && oldstop != mb->stop) {
 		stream_printf(GDKout, "Optimizer effect %d -> %d instructions\n", oldstop, mb->stop);
 	}
 #endif
@@ -783,7 +783,7 @@ safetyBarrier(InstrPtr p, InstrPtr q)
 			for (j = q->retc; j < q->argc; j++)
 				if (p->argv[i] == q->argv[j]) {
 #ifdef DEBUG_MAL_OPTIMIZER
-					if (getClient()->debugOptimizer) {
+					if (MCgetClient()->debugOptimizer) {
 						stream_printf(GDKout, "Found overlapping assignment barrier for \n");
 						printInstruction(GDKout, mb, q, LIST_MAL_ALL);
 					}
@@ -1172,7 +1172,7 @@ ARoptimizerStep(MalBlkPtr mb, int pc)
 			ARreplaceAlias(mb, pc + 1, m, p->argv[k], p->argv[p->retc + k]);
 			kn++;
 #ifdef DEBUG_MAL_OPTIMIZER
-			if (getClient()->debugOptimizer) {
+			if (MCgetClient()->debugOptimizer) {
 				stream_printf(GDKout, "Delete alias assignment\n");
 				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 			}
@@ -1202,7 +1202,7 @@ ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 	}
 #ifdef DEBUG_MAL_OPTIMIZER
-	if (getClient()->debugOptimizer) {
+	if (MCgetClient()->debugOptimizer) {
 		stream_printf(GDKout, "start alias removal\n");
 		printFunction(GDKout, mb, LIST_MAL_ALL);
 	}
@@ -1323,7 +1323,7 @@ DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				varused[p->argv[k]] = 1;
 			break;
 		case EXITsymbol:
-			/*     stream_printf(getClient()->fdout,"#Handle DCR in iterator\n"); */
+			/*     stream_printf(MCgetClient()->fdout,"#Handle DCR in iterator\n"); */
 		case RETURNsymbol:
 			pcused[i] = 1;
 			for (k = 0; k < p->retc; k++)
@@ -1345,13 +1345,13 @@ DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 #ifdef DEBUG_MAL_OPTIMIZER
 	{
-		Client cntxt = getClient();
+		Client cntxt = MCgetClient();
 
 		stream_printf(GDKout, "Dead code variables \n");
 		for (i = 0; i < mb->vtop; i++)
 			if (varused[i] == 0)
 				stream_printf(cntxt->fdout, "%s,", getVarName(mb, i));
-		stream_printf(getClient()->fdout, "\nDead code instructions \n");
+		stream_printf(MCgetClient()->fdout, "\nDead code instructions \n");
 		for (i = 1; i < mb->stop; i++)
 			if (pcused[i] == 0)
 				printInstruction(cntxt->fdout, mb, getInstrPtr(mb, i), LIST_MAL_ALL);
@@ -1518,7 +1518,7 @@ AEoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, a, b, valid;
 	InstrPtr p;
-	Client cntxt = getClient();
+	Client cntxt = MCgetClient();
 	Module scope = cntxt->nspace;
 	char *olderr;
 	int errlen, actions = 0;
@@ -1760,7 +1760,7 @@ HRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (k = i + 1; k < mb->stop && isAlife(mb, p->argv[0], k); k++)
 			if (SPcombi000(mb, i, k)) {
 #ifdef DEBUG_MAL_OPTIMIZER
-				if (getClient()->debugOptimizer) {
+				if (MCgetClient()->debugOptimizer) {
 					stream_printf(GDKout, "Combinator found\n");
 					printInstruction(GDKout, mb, getInstrPtr(mb, i), LIST_MAL_ALL);
 				}
@@ -1776,7 +1776,7 @@ HRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (k = i + 1; k < mb->stop && isAlife(mb, p->argv[0], k); k++)
 			if (SPsqueezer000(mb, i, k)) {
 #ifdef DEBUG_MAL_OPTIMIZER
-				if (getClient()->debugOptimizer) {
+				if (MCgetClient()->debugOptimizer) {
 					stream_printf(GDKout, "Squeezer found\n");
 					printInstruction(GDKout, mb, getInstrPtr(mb, i), LIST_MAL_ALL);
 				}

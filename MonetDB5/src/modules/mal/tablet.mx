@@ -541,7 +541,7 @@ static Tablet *tableReports[MAL_MAXCLIENTS];
 static void
 TABformatPrepare(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 	Tablet *t;
 	int anr = 0, i, tpe, k=0;
@@ -578,7 +578,7 @@ TABsetFormat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 TABheader(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
 	TABformatPrepare(mb, stk, pci);
@@ -589,7 +589,7 @@ TABheader(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 TABdisplayTable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 	Tablet *t;
 
@@ -608,7 +608,7 @@ TABdisplayTable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 TABdisplayRow(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 	Tablet *t;
 
@@ -628,7 +628,7 @@ TABdisplayRow(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 TABpage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 	Tablet *t;
 
@@ -651,7 +651,7 @@ TABpage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 TABsetProperties(int *ret, str *prop)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
 	(void) ret;		/* fool compiler */
@@ -674,7 +674,7 @@ TABdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 TABfinishReport(int *ret)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
 	(void) ret;		/* fool compiler */
@@ -690,7 +690,7 @@ TABfinishReport(int *ret)
 str
 TABsetStream(int *ret, stream **s)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
 	(void) ret;		/* fool compiler */
@@ -703,7 +703,7 @@ TABsetStream(int *ret, stream **s)
 str
 TABsetPivot(int *ret, int *bid)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 	BAT *b;
 
@@ -720,7 +720,7 @@ TABsetPivot(int *ret, int *bid)
 str
 TABsetDelimiter(int *ret, str *sep)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
 	(void) ret;		/* fool compiler */
@@ -742,7 +742,7 @@ TABsetColumn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 TABsetColumnName(int *ret, int *idx, str *s)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
 	(void) ret;		/* fool compiler */
@@ -754,7 +754,7 @@ TABsetColumnName(int *ret, int *idx, str *s)
 str
 TABsetTableBracket(int *ret, str *lbrk, str *rbrk)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
 	(void) ret;		/* fool compiler */
@@ -767,7 +767,7 @@ TABsetTableBracket(int *ret, str *lbrk, str *rbrk)
 str
 TABsetRowBracket(int *ret, str *lbrk, str *rbrk)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
 	(void) ret;		/* fool compiler */
@@ -780,7 +780,7 @@ TABsetRowBracket(int *ret, str *lbrk, str *rbrk)
 str
 TABsetColumnBracket(int *ret, int *idx, str *lbrk, str *rbrk)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
 	(void) ret;		/* fool compiler */
@@ -793,7 +793,7 @@ TABsetColumnBracket(int *ret, int *idx, str *lbrk, str *rbrk)
 str
 TABsetColumnNull(int *ret, int *idx, str *nullstr)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
 	(void) ret;		/* fool compiler */
@@ -805,7 +805,7 @@ TABsetColumnNull(int *ret, int *idx, str *nullstr)
 str
 TABsetColumnWidth(int *ret, int *idx, int *width)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
 	(void) ret;		/* fool compiler */
@@ -817,7 +817,7 @@ TABsetColumnWidth(int *ret, int *idx, int *width)
 str
 TABsetColumnPosition(int *ret, int *idx, int *first, int *width)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
 	(void) ret;
@@ -831,7 +831,7 @@ TABsetColumnPosition(int *ret, int *idx, int *first, int *width)
 str
 TABsetColumnDecimal(int *ret, int *idx, int *scale, int *prec)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 	int rnr = c - mal_clients;
 
 	(void) ret;		/* fool compiler */

@@ -290,7 +290,7 @@ URLBOXdepositFile(int *r, str *fnme){
 	char *s,*t;
 	int len=0;
 	char buf[PATHLENGTH];
-	Client c= getClient();
+	Client c= MCgetClient();
 
 	(void) r; 
 	if( **fnme == '/')

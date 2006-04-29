@@ -347,7 +347,7 @@ CMDbbpdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;		/* fool compiler */
 	OpenBox("destroy");
-	if (getClient() != mal_clients)
+	if (MCgetClient() != mal_clients)
 		return throwMessage("bbp.destroy", "not allowed to destroy 'bbp' box");
 	destroyBox("bbp");
 	return MAL_SUCCEED;

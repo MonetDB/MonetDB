@@ -196,7 +196,7 @@ The primary debugger controls
 str
 MDBtoggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	Client cntxt = getClient();
+	Client cntxt = MCgetClient();
 	int b = 0;
 
 	(void) mb;		/* still unused */
@@ -227,7 +227,7 @@ MDBtoggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 MDBstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	Client cntxt = getClient();
+	Client cntxt = MCgetClient();
 
 	stk->cmd = 'n';
 	cntxt->itrace = 'n';
@@ -240,7 +240,7 @@ MDBstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 MDBstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	Client cntxt = getClient();
+	Client cntxt = MCgetClient();
 
 	stk->cmd = 0;
 	cntxt->itrace = 0;
@@ -271,7 +271,7 @@ MDBsetTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) mb;		/* still unused */
 	b = *(chr *) getArgReference(stk, p, 1);
-	MDBtraceFlag(getClient(), stk, (b? (int) 't':0));
+	MDBtraceFlag(MCgetClient(), stk, (b? (int) 't':0));
 	return MAL_SUCCEED;
 }
 
@@ -279,7 +279,7 @@ str
 MDBsetCatch(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int b;
-	Client cntxt= getClient();
+	Client cntxt= MCgetClient();
 
 	(void) mb;		/* still unused */
 	b = *(chr *) getArgReference(stk, p, 1);
@@ -290,7 +290,7 @@ MDBsetCatch(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 MDBsetTimer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	Client cntxt = getClient();
+	Client cntxt = MCgetClient();
 	int b;
 
 	(void) mb;		/* still unused */
@@ -306,7 +306,7 @@ MDBinspect(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme;
 	Module scope = NULL;
 	Symbol s = NULL;
-	Client c = getClient();
+	Client c = MCgetClient();
 
 	if (stk != 0) {
 		modnme = (str) getArgValue(stk, p, 1);
@@ -430,7 +430,7 @@ MDBStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 str
 MDBlist(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 
 	(void) p;
 	(void) stk;
@@ -444,7 +444,7 @@ MDBlist3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str modnme = (str) getArgValue(stk, p, 1);
 	str fcnnme = (str) getArgValue(stk, p, 2);
 	Symbol s = NULL;
-	Client c = getClient();
+	Client c = MCgetClient();
 
 	s = findMALSymbol(putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 	if (s == NULL)
@@ -458,7 +458,7 @@ MDBlist3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 MDBlistDetail(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 
 	(void) p;
 	(void) stk;
@@ -472,7 +472,7 @@ MDBlist3Detail(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str modnme = (str) getArgValue(stk, p, 1);
 	str fcnnme = (str) getArgValue(stk, p, 2);
 	Symbol s = NULL;
-	Client c = getClient();
+	Client c = MCgetClient();
 
 	s = findMALSymbol(putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 	if (s == NULL)
@@ -486,7 +486,7 @@ MDBlist3Detail(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 MDBvar(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 
 	(void) p;
 	(void) stk;
@@ -500,7 +500,7 @@ MDBvar3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str modnme = (str) getArgValue(stk, p, 1);
 	str fcnnme = (str) getArgValue(stk, p, 2);
 	Symbol s = NULL;
-	Client c = getClient();
+	Client c = MCgetClient();
 
 	s = findMALSymbol(putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 	if (s == NULL)

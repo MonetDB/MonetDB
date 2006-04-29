@@ -96,7 +96,7 @@ mil_export str CMDMILsession(str *ret);
 str
 MILinit(Client cntxt)
 {
-	Client cn= initClient(oid_nil,0,0);
+	Client cn= MCinitClient(oid_nil,0,0);
 #ifdef _MIL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#MILinit MonetDB V5\n");
 #endif
@@ -105,7 +105,7 @@ MILinit(Client cntxt)
 	malInclude(cn, "mil_algebra_procs", "mil_algebra_procs", 0);
 	malInclude(cn, "mil_system_procs", "mil_system_procs", 0);
 	(void) cntxt;
-	killClient(cn);
+	MCkillClient(cn);
 	return MAL_SUCCEED;
 }
 
@@ -187,7 +187,7 @@ Continue processing any left-over input from the previous round.
 			ssize_t rd;
 
 			if (c->bak) {
-				popClientInput(c);
+				MCpopClientInput(c);
 				in = c->fdin;
 				c->fdin->pos += c->yycur;
 				c->yycur = 0;
@@ -375,8 +375,8 @@ MILengine(Client c)
 			printFunction(c->fdout, c->curprg->def, c->listing);
 		showErrors();
 	}
-	resetInstructions(c->curprg->def, 1);
-	resetVariables(c->curprg->def, c->glb, 0);
+	MSresetInstructions(c->curprg->def, 1);
+	MSresetVariables(c->curprg->def, c->glb, 0);
 	c->curprg->def->errors = 0;
 	c->glb = oldglb;
 	be->exectime = (long) (GDKusec() - T0);
@@ -389,7 +389,7 @@ CMDMILsession(str *ret)
 	str msg = MAL_SUCCEED;
 
 	stream_printf(GDKout, "#Continue as MIL session\n");
-	msg = setScenario(getClient(), "mil");
+	msg = setScenario(MCgetClient(), "mil");
 	*ret = 0;
 	return msg;
 }
@@ -398,7 +398,7 @@ str
 CMDMILcompile(int *ret, str *fname)
 {
 	str msg = MAL_SUCCEED;
-	Client c = getClient();
+	Client c = MCgetClient();
 	char buf[1024];
 
 	(void) ret;
@@ -412,7 +412,7 @@ Prescan the input to make processing easier
 	malInclude(c, buf, NULL, LIST_MAL_INSTR);
 	showErrors();
 	resetScenario(c);
-	initClientPrg(c, "main");
+	MSinitClientPrg(c, "main");
 	return msg;
 }
 
@@ -422,7 +422,7 @@ CMDMILcompileOnly(int *ret)
 	Client c;
 
 	(void) ret;
-	c = getClient();
+	c = MCgetClient();
 	c->listing = LIST_MAL_INSTR;
 	stream_printf(GDKout, "#Continue as MIL session\n");
 	setScenario(c, "milCompiler");

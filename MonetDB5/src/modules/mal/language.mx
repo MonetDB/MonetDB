@@ -225,7 +225,7 @@ CMDcallString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = (str *) getArgReference(stk, pci, 1);
 	if (strlen(*s) == 0)
 		return MAL_SUCCEED;
-	callString(getClient(), *s, FALSE);
+	callString(MCgetClient(), *s, FALSE);
 	return MAL_SUCCEED;
 }
 
@@ -240,7 +240,7 @@ CMDregisterFunction(int *ret, str *m, str *f, str *code, str *help){
 	str msg;
 	(void) m; (void) f;
 
-	c= getClient();
+	c= MCgetClient();
 	msg= compileString(&sym, c,*code);
 	if( sym) {
 		stream_printf(GDKout,"REGISTER FUNCTIOn %s.%s\n",
@@ -262,7 +262,7 @@ str
 CMDevalFile(int *ret, str *fnme)
 {
 	str s = *fnme;
-	Client c = getClient();
+	Client c = MCgetClient();
 	char buffer[1024];
 
 	(void) ret;		/* fool compiler */
@@ -279,7 +279,7 @@ CMDevalFile(int *ret, str *fnme)
 		strcat(buffer, "/");
 	}
 	strcat(buffer, s);
-	malInclude(getClient(), buffer, 0, FALSE);
+	malInclude(MCgetClient(), buffer, 0, FALSE);
 
 	return MAL_SUCCEED;
 }
@@ -317,7 +317,7 @@ CMDdebug(int *ret, int *flg)
 str
 CMDsetCwd(str *ret, str *fnme)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 
 	*ret = c->cwd;
 	c->cwd = GDKstrdup(*fnme);

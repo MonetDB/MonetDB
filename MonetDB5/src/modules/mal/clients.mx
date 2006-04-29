@@ -135,7 +135,7 @@ CLTsetListing(int *ret, int *flag)
 	Client c;
 
 	(void) ret;		/*fool compiler */
-	c = getClient();
+	c = MCgetClient();
 	*ret = c->listing;
 	c->listing = *flag;
 	return MAL_SUCCEED;
@@ -144,7 +144,7 @@ CLTsetListing(int *ret, int *flag)
 str
 CLTgetClientId(int *ret)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 
 	*ret = c - mal_clients;
 	return MAL_SUCCEED;
@@ -153,7 +153,7 @@ CLTgetClientId(int *ret)
 str
 CLTgetScenario(str *ret)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 
 	if (c->scenario)
 		*ret = GDKstrdup(c->scenario);
@@ -165,7 +165,7 @@ CLTgetScenario(str *ret)
 str
 CLTsetScenario(str *ret, str *nme)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 	str msg = MAL_SUCCEED;
 
 	msg = setScenario(c, *nme);
@@ -187,7 +187,7 @@ local_itoa(int i)
 str
 CLTInfo(int *ret)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
 
 	if (b == 0)
@@ -279,7 +279,7 @@ CLTsetDebug(int *ret, int *flg)
 str
 CLTsetHistory(int *ret, str *fname)
 {
-	Client c= getClient();
+	Client c= MCgetClient();
 	(void) ret;
 	if( c->history){
 #ifdef HAVE_LIBREADLINE
@@ -309,7 +309,7 @@ CLTclearDebug(int *ret, int *flg)
 str
 CLTquit(int *ret)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 
 	(void) ret;		/* fool compiler */
 	c->mode = FINISHING;
@@ -330,7 +330,7 @@ str
 CLTtrace(int *res, int *flg)
 {
     (void) res;     /* fool compiler */
-    (void) traceAllClients(*flg);
+    (void) MCtraceAllClients(*flg);
     return MAL_SUCCEED;
 }
 
@@ -339,7 +339,7 @@ CLTstop(int *ret, str *nme)
 {
     (void) ret;     /* fool compiler */
 	(void) nme;
-/*    return stopClient(getClient(), *nme);*/
+/*    return stopClient(MCgetClient(), *nme);*/
 	return MAL_SUCCEED;
 }
 
@@ -347,14 +347,14 @@ str
 CLTsuspend(int *ret, int *skey, int *timeout)
 {
     (void) ret;     /* fool compiler */
-    return suspendClient(getClient(), *skey, *timeout);
+    return MCsuspendClient(MCgetClient(), *skey, *timeout);
 }
 
 str
 CLTresume(int *ret, int *skey)
 {
     (void) ret;     /* fool compiler */
-    return resumeClient(getClient(), *skey);
+    return MCresumeClient(MCgetClient(), *skey);
 }
 
 

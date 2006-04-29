@@ -235,7 +235,7 @@ CMDsetFilterProfiler(int *res, str *mod, str *fcn)
 {
 	(void) res;		/* fool compiler */
 	checkProfiler("setFilter");
-	setFilter(getClient()->nspace, *mod, *fcn);
+	setFilter(MCgetClient()->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
 }
 
@@ -267,7 +267,7 @@ CMDclrFilterProfiler(int *res, str *mod, str *fcn)
 {
 	(void) res;		/* fool compiler */
 	checkProfiler("clrFilter");
-	resetFilter(getClient()->nspace, *mod, *fcn);
+	resetFilter(MCgetClient()->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
 }
 
@@ -286,7 +286,7 @@ CMDsetProfilerStream(int *res, str *fnme)
 {
 	(void) res;		/* fool compiler */
 	checkProfiler("setProfiler");
-	setLogFile(getClient()->nspace, *fnme);
+	setLogFile(MCgetClient()->nspace, *fnme);
 	return MAL_SUCCEED;
 }
 
@@ -295,7 +295,7 @@ CMDstartPointProfiler(int *res, str *mod, str *fcn)
 {
 	(void) res;		/* fool compiler */
 	checkProfiler("startPoint");
-	setStartPoint(getClient()->nspace, *mod, *fcn);
+	setStartPoint(MCgetClient()->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
 }
 
@@ -304,14 +304,14 @@ CMDendPointProfiler(int *res, str *mod, str *fcn)
 {
 	(void) res;		/* fool compiler */
 	checkProfiler("endPoint");
-	setStartPoint(getClient()->nspace, *mod, *fcn);
+	setStartPoint(MCgetClient()->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
 }
 
 str
 CMDstopProfiler(int *res)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 
 	(void) res;		/* fool compiler */
 	checkProfiler("stop");
@@ -323,7 +323,7 @@ CMDstopProfiler(int *res)
 str
 CMDstartProfiler(int *res)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 
 	(void) res;		/* fool compiler */
 	checkProfiler("start");

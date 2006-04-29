@@ -240,7 +240,7 @@ newMILbackend()
 
 	be = GDKmalloc(sizeof(*be));
 	memset(be, 0, sizeof(*be));
-	be->console= isAdministrator(getClient());
+	be->console= isAdministrator(MCgetClient());
 	be->language= 'M';
 	return be;
 }

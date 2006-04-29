@@ -301,7 +301,7 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str	fcnnme;
 	Module  scope=NULL;
 	Symbol s= NULL;
-	Client c= getClient();
+	Client c= MCgetClient();
 	lng clk= GDKusec();
 	char cmd= 0;
 
@@ -389,7 +389,7 @@ QOTshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme;
 	Module scope = NULL;
 	Symbol s = NULL;
-	Client c = getClient();
+	Client c = MCgetClient();
 
 	if (stk != 0) {
 		modnme = (str) getArgValue(stk, p, 1);
@@ -422,7 +422,7 @@ QOTshowPlan(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme;
 	Module scope = NULL;
 	Symbol s = NULL;
-	Client c = getClient();
+	Client c = MCgetClient();
 
 	if (stk != 0) {
 		modnme = (str) getArgValue(stk, p, 1);

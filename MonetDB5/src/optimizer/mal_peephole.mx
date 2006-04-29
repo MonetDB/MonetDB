@@ -190,7 +190,7 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		GDKfree(old);
 		if (aropt) {
-			chkProgram(getClient()->nspace, mb);
+			chkProgram(MCgetClient()->nspace, mb);
 			setLifespan(mb);
 			ARoptimizer(mb, 0, 0);
 		}

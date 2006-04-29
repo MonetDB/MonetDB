@@ -172,7 +172,7 @@ static int mal_help(int a, int b){
         c--;
     while( c > rl_line_buffer && !isspace(*c))
         c--;
-	msg= getHelp(getClient()->nspace,c,0);
+	msg= getHelp(MCgetClient()->nspace,c,0);
 	stream_printf(GDKout,"\n");
 	for(i=0; msg[i]; i++){
 		stream_printf(GDKout,"%s\n",msg[i]);
@@ -235,7 +235,7 @@ mal_command_generator(const char *text, int state)
 				return strdup(name);
 	}
 	if( msg == 0){
-		msg= getHelp(getClient()->nspace,(str)(text),1);
+		msg= getHelp(MCgetClient()->nspace,(str)(text),1);
 		last =0;
 	}
 	if( msg[last]){
@@ -274,7 +274,7 @@ continue_completion(rl_completion_func_t * func)
 void
 init_readline(void)
 {
-	str history = getClient()->history;
+	str history = MCgetClient()->history;
 
 	/* Allow conditional parsing of the ~/.inputrc file. */
 	rl_readline_name = "MonetDB";
@@ -292,7 +292,7 @@ init_readline(void)
 void
 deinit_readline(void)
 {
-	str history = getClient()->history;
+	str history = MCgetClient()->history;
 	if (history) {
 		write_history(history);
 	}
@@ -404,7 +404,7 @@ getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 				if (line[length - 1] == '\r')
 					line[--length] = 0;
 
-				c = getClient();
+				c = MCgetClient();
 				if (c->fdout != GDKout && c->fdout != GDKerr)
 					close_stream(c->fdout);
 				if (length == 0 || strcmp(line, "stdout") == 0)
@@ -433,7 +433,7 @@ getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 				break;
 			case '!':
 				{ char *nl;
-				  Client c= getClient();
+				  Client c= MCgetClient();
 				  int i;
 					if(line[1]=='\n') {
 						for(i=0; i< history_length; i++){
@@ -451,7 +451,7 @@ getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 				continue;
 			case '?':
 				if( !isspace( (int) line[1]) )
-					showHelp( getClient()->nspace,line+1, getClient()->fdout);
+					showHelp( MCgetClient()->nspace,line+1, MCgetClient()->fdout);
 				else
 					showCommands();
 				line= NULL;

@@ -413,7 +413,7 @@ doChallenge(str cmd, int msgsock) {
 		*user = 0;
 
 		/* in embedded mode we allow just one client */
-		if (GDKembedded && countClients() > 1) {
+		if (GDKembedded && MCcountClients() > 1) {
 			stream_close(fdin);
 			stream_destroy(fdin);
 			return;
@@ -446,7 +446,7 @@ doChallenge(str cmd, int msgsock) {
 
 		if (blocked)
 			bs->eof = 1;
-		scheduleClient(name, challenge, bs, fdout);
+		MSscheduleClient(name, challenge, bs, fdout);
 	} else {
 		/* in M4 it is possible to execute a command directly */
 	}
@@ -1111,7 +1111,7 @@ SERVERclient(int *res, stream **In, stream **Out)
 
 	if (blocked)
 		bs->eof = 1;
-	scheduleClient(name, challenge, bs, fdout);
+	MSscheduleClient(name, challenge, bs, fdout);
 	return MAL_SUCCEED;
 }
 
@@ -1165,7 +1165,7 @@ SERVERconnectAll(int *key, str *host, int *port, str *username, str *password, s
 		mal_unset_lock(mal_contextLock,"SERVERconnect");
 		return throwMessage("mserver.connect","Too many sessions");
 	}
-	SERVERsessions[i].c= getClient();
+	SERVERsessions[i].c= MCgetClient();
 	SERVERsessions[i].key= ++sessionkey;
 	mal_unset_lock(mal_contextLock,"SERVERconnect");
 
@@ -1199,7 +1199,7 @@ SERVERconnectssl(int *key, str *host, int *port, str *username, str *password, s
  for(i=0; i< MAXSESSIONS; i++)
  if( SERVERsessions[i].c && 
      SERVERsessions[i].key== @1 &&
-     SERVERsessions[i].c == getClient()) break;
+     SERVERsessions[i].c == MCgetClient()) break;
  if( i== MAXSESSIONS)
 	return throwMessage("mserver.@2","Access violation");
   mid= SERVERsessions[i].mid;

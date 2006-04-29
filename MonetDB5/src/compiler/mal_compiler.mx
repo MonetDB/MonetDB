@@ -385,7 +385,7 @@ mccMultiplex(stream *f, MalBlkPtr mb, InstrPtr p)
 	setModuleId(pn, NULL);
 	setFunctionId(pn, GDKstrdup(getVarConstant(mb, pn->argv[pn->retc]).val.sval));
 	delArgument(pn, pn->retc);
-	typeChecker(getClient()->nspace, mb, pn, TRUE);
+	typeChecker(MCgetClient()->nspace, mb, pn, TRUE);
 
 	stream_printf(f, "{\tlng mloop;\n\tptr h,t;\n");
 	stream_printf(f, "init todo\n");

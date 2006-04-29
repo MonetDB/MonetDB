@@ -441,7 +441,7 @@ ORCAMprocessor(MalBlkPtr mb, Symbol t)
 			else
 				break;
 		}
-	chkProgram(getClient()->nspace, mb);
+	chkProgram(MCgetClient()->nspace, mb);
 	return msg;
 }
 
@@ -459,7 +459,7 @@ MCoptimizerCommand(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, str mod, str fcn)
 	(void) p;
 	(void) stk;
 
-	s = findModule(getClient()->nspace, putName(mod, strlen(mod)));
+	s = findModule(MCgetClient()->nspace, putName(mod, strlen(mod)));
 	if (s == 0)
 		return throwException(MALEXCEPTION, "optimizer.@1optimizer", "module '%s' not found\n", fcn);
 	if (s->subscope) {

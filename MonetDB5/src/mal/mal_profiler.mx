@@ -197,7 +197,7 @@ mal_export void setFilter(Module cntxt, str mod, str fcn);
 mal_export void resetFilter(Module cntxt, str mod, str fcn);
 
 mal_export void profileReport(Module cntxt, int outer, stream *out);
-mal_export void resetProfiler(stream *fdout);
+mal_export void MPresetProfiler(stream *fdout);
 
 mal_export int malProfileMode;
 
@@ -353,7 +353,7 @@ produce a correct tuple format for the front-end.
 
 #ifdef MALprofiler
 
-void
+static void
 onlineProfilerHeader(void)
 {
 	@:getEventStream()@	/* profilerEvent -> void */
@@ -897,7 +897,7 @@ setLogFile(Module cntxt, str fname)
 str
 openProfilerStream(void)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 
 	malProfileMode = TRUE;
 	eventstream = c->fdout;
@@ -908,7 +908,7 @@ openProfilerStream(void)
 str
 closeProfilerStream(void)
 {
-	Client c = getClient();
+	Client c = MCgetClient();
 
 	if (offlineProfiling)
 		log0("</MonetProfile>\n");
@@ -979,7 +979,7 @@ The resetProfiler is called when the owner of the event stream
 leaves the scene. (Unclear if parallelism may cause errors)
 @c
 void
-resetProfiler(stream *fdout)
+MPresetProfiler(stream *fdout)
 {
 	if (fdout != eventstream)
 		return;

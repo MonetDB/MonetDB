@@ -182,7 +182,7 @@ sched_export str debugScheduler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str
 debugScheduler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	Client cntxt = getClient();
+	Client cntxt = MCgetClient();
 
 	(void) stk;
 
@@ -233,7 +233,7 @@ schedulerMALBlock(MalBlkPtr mb)
 	if (callMALinterpreter)
 		return MAL_SUCCEED;
 #ifdef DEBUG_MAL_SCHEDULER
-	if (getClient()->debugScheduler && oldstop != mb->stop) {
+	if (MCgetClient()->debugScheduler && oldstop != mb->stop) {
 		stream_printf(GDKout, "Scheduler effect %d -> %d instructions\n", oldstop, mb->stop);
 	}
 #endif
@@ -271,7 +271,7 @@ function main();
 str
 RUNisolate(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	Client cntxt = getClient();
+	Client cntxt = MCgetClient();
 
 	(void) stk;
 	if (cntxt->backup)
@@ -339,7 +339,7 @@ RUNsqlbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i;
 	str msg = MAL_SUCCEED;
-	Client cntxt = getClient();
+	Client cntxt = MCgetClient();
 	Symbol sqlbind = findMALSymbol("sql", "bind");
 	MALfcn f = getSignature(sqlbind)->fcn;
 
