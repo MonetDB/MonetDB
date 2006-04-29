@@ -73,7 +73,7 @@ SQLCacheExists(bit *res, str *nme)
 {
 	Module scope;
 	Symbol s;
-	Client c = getClient();
+	Client c = MCgetClient();
 
 	scope = findModule(c->nspace, putName("sql_cache",9));
 
@@ -89,7 +89,7 @@ SQLCacheGetDefinition(int *ret, str *nme)
 {
 	Module scope;
 	Symbol s;
-	Client c = getClient();
+	Client c = MCgetClient();
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
 
 	if (b == 0)
@@ -122,7 +122,7 @@ SQLCacheRemove(int *ret, str *nme)
 {
 	Module scope;
 	Symbol s;
-	Client c = getClient();
+	Client c = MCgetClient();
 
 	(void) ret;
 #ifdef _SQL_CACHE_DEBUG

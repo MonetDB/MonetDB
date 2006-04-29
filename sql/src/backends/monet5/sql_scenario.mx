@@ -284,7 +284,7 @@ SQLsession(str *ret)
 {
 	str msg = MAL_SUCCEED;
 
-	msg = setScenario(getClient(), "sql");
+	msg = setScenario(MCgetClient(), "sql");
 	*ret = 0;
 	return msg;
 }
@@ -297,7 +297,7 @@ str
 SQLinitEnvironment(int *ret)
 {
 	(void) ret;
-	return SQLinitAdmin(getClient());
+	return SQLinitAdmin(MCgetClient());
 }
 @-
 The SQLcompile operation can be used by separate
@@ -336,7 +336,7 @@ SQLcompileInternal(str *ret, str *expr, int flag)
 	buffer *b;
 	char *n;
 	str msg= MAL_SUCCEED;
-	Client c= getClient();
+	Client c= MCgetClient();
 	backend *sql = ((backend *) c->state[PARSER]);
 	int len = strlen(*expr);
 
@@ -445,7 +445,7 @@ We don;t search the cache for a previous incarnation.
 				msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
 				c->state[PARSER] = be;
 			}
-			resetInstructions(c->curprg->def, 1);
+			MSresetInstructions(c->curprg->def, 1);
 			freeVariables(c->curprg->def, c->glb, vtop);
 		} else
 			*ret= GDKstrdup(getFunctionId(getInstrPtr(c->curprg->def,0)));
@@ -603,7 +603,7 @@ The former comes with readline functionality.
 		ssize_t rd;
 
 		if (c->bak) {
-			popClientInput(c);
+			MCpopClientInput(c);
 			in = c->fdin;
 			m->scanner.rs = c->fdin;
 			c->fdin->pos += c->yycur;

@@ -794,7 +794,7 @@ Failure to find the state descriptor aborts the session.
 str 
 getContext(mvc **c, backend **b )
 {
-	Client _client = getClient();
+	Client _client = MCgetClient();
 
 	if (_client == NULL ) {
 		return throwMessage("mvc","Can not access client record");
