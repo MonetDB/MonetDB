@@ -666,7 +666,6 @@ The most important one is to prepare code to be handled by the debugger.
 The current analysis is simple and fulfills our short-term needs.
 A future version may analyze the parameter settings in more detail.
 @c
-
 void
 SQLsetDebugger(Client c, mvc *m, int onoff)
 {
@@ -689,18 +688,29 @@ SQLsetDebugger(Client c, mvc *m, int onoff)
 }
 
 void
-SQLsetTrace(Client c, int on)
+SQLsetTrace(Client c, int onoff)
 {
-	if (on)
-		c->listing = (c->listing & LIST_INPUT) | LIST_MAL_INSTR;
-	else
-		c->listing &= LIST_INPUT;
+	InstrPtr q;
+
+	c->itrace='c';
+	q = newInstruction(c->curprg->def,ASSIGNsymbol);
+	getArg(q,0)= newTmpVariable(c->curprg->def,TYPE_any);
+	getModuleId(q) = putName("mdb",3);
+	getFunctionId(q) = putName("setTimer",8);
+	pushBit(c->curprg->def,q,onoff);
+	pushInstruction(c->curprg->def, q);
 }
 
 void
-SQLsetExplain(Client c)
+SQLshowPlan(Client c)
 {
-	c->listing = (c->listing & LIST_INPUT) | LIST_MAL_ALL;
+	InstrPtr q;
+
+	q = newInstruction(c->curprg->def,ASSIGNsymbol);
+	getArg(q,0)= newTmpVariable(c->curprg->def,TYPE_any);
+	getModuleId(q) = putName("inspect",7);
+	getFunctionId(q) = putName("showSource",10);
+	pushInstruction(c->curprg->def, q);
 }
 
 @-
@@ -772,21 +782,23 @@ SQLparser(Client c)
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
 		}
+/* these are obsolete
 		if( strncmp(in->buf+in->pos,"auto_commit ", 12)==0 ){
 			id= (int) strtol(in->buf+in->pos+12,NULL,10);
 			m->auto_commit = (id)?1:0;
 			m->ac_on_commit = m->auto_commit;
 			if (mvc_rollback(m, 0, NULL) < 0)
 				return throwMessage("SQLparser", "Xauto_commit failed\n");
-			in->pos = in->len;	/* HACK: should use parsed lenght */
+			in->pos = in->len;	HACK: should use parsed lenght 
 			return NULL;
 		}
 		if( strncmp(in->buf+in->pos,"reply_size ", 11)==0 ){
 			id= (int) strtol(in->buf+in->pos+11,NULL,10);
 			m->reply_size = id;
-			in->pos = in->len;	/* HACK: should use parsed lenght */
+			in->pos = in->len;	HACK: should use parsed lenght 
 			return NULL;
 		}
+*/
 		if( strncmp(in->buf + in->pos,"quit",4)==0 ) {
 			c->mode = FINISHING;
 			return NULL;
@@ -856,6 +868,10 @@ produce code.
 		if (m->mode != m_prepare &&
 		   (msg = sql_get_var(m,"optimizer")) == NULL) {
 */
+		if( m->explain== m_explain)
+			SQLshowPlan(c);
+		if( m->mode == m_trace || m->explain == m_trace)
+			SQLsetTrace(c, TRUE);
 		if( m->mode == m_debug)
 			SQLsetDebugger(c, m, m->mode == m_debug); 
 		if (m->mode != m_prepare && !m->cache && m->mode!= m_explain ){
@@ -888,9 +904,7 @@ produce code.
 		stream_printf(GDKout, "#parse result %d\n", err);
 #endif
 	if( be->q ){
-		if (m->mode == m_explain)
-			printFunction(c->fdout, ((Symbol) be->q->code)->def, c->listing);
-		else if (m->mode == m_prepare)
+		if (m->mode == m_prepare)
 			err = mvc_export_prepare(m, c->fdout, be->q);
 		else if (m->mode == m_inplace ){
 			/* everything ready for a fast call */
@@ -904,6 +918,8 @@ In the final phase we add any debugging control
 	/* turn off debugger */
 	if( m->mode == m_debug )
 		SQLsetDebugger(c, m, FALSE);
+	if( m->mode == m_trace || m->explain== m_trace)
+		SQLsetTrace(c, FALSE);
 
 	if (be->mvc->mode == m_profile ) {
 		be->qry = sql_escape_str(QUERY(m->scanner));
@@ -946,7 +962,12 @@ query block.
 			msg = throwMessage("SQLparser", "Semantic errors\n");
 		}
 	}
+@-
+Inspect the variables for post code-generation actions.
+@c
 finalize:
+	if(m->mode== m_explain )
+		printFunction(GDKout, ((Symbol)(be->q->code))->def, LIST_MAL_INSTR);
 	m->scanner.mode = oldmode;
 @-
 Gather the statistics for post analysis. It should preferably
