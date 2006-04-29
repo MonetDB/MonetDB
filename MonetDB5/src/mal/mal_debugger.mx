@@ -344,7 +344,7 @@ mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s, int lifespan);
 mal_export void printBatInfo(stream *f, VarPtr n, ValPtr v);
 mal_export void printBatProperties(stream *f, VarPtr n, ValPtr v, str props);
 mal_export void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
-mal_export str call2str(MalBlkPtr mb, MalStkPtr stk, int pc);
+mal_export str call2str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
 
 mal_export str runMALDebugger(Symbol s);
 mal_export void printBBPinfo(stream *out);
@@ -561,7 +561,7 @@ Prepare a string for an instruction call.
 We rely on the buffersize of instruction2str.
 @c
 str
-call2str(MalBlkPtr mb, MalStkPtr stk, int pc)
+call2str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	int k,len;
 	str msg,w;
@@ -589,7 +589,8 @@ call2str(MalBlkPtr mb, MalStkPtr stk, int pc)
 			w = 0;
 			ATOMformat(val->vtype, VALptr(val), &w);
 			strcat(msg,w);
-			if( isaBatType(v->type)){
+			/* in timer mode we show more details */
+			if( cntxt->timer && isaBatType(v->type)){
 				str tpe= getTypeName(v->type);
 				BAT *b;
 				strcat(msg,tpe);
@@ -615,7 +616,7 @@ void
 printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	str msg;
-	msg = call2str(mb, stk, pc);
+	msg = call2str(cntxt,mb, stk, pc);
 	stream_printf(cntxt->fdout, "%s at %s.%s[%d]\n", msg, 
 		getModuleId(getInstrPtr(mb,0)),
 		getFunctionId(getInstrPtr(mb,0)),pc);
@@ -630,7 +631,7 @@ void
 printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	str msg;
-	msg= call2str(mb,stk,pc);
+	msg= call2str(cntxt,mb,stk,pc);
 	stream_printf(cntxt->fdout, "%s\n", msg);
 	GDKfree(msg);
 }

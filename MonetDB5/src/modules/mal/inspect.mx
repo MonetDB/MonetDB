@@ -54,6 +54,12 @@ command getSource(mod:str,fcn:str):str
 address INSPECTgetSource
 comment "Return the original input for a function";
 
+pattern showSource():void
+address INSPECTshowFunction
+comment "Display the current function";
+command showSource(mod:str,fcn:str):str
+address INSPECTshowFunction3
+comment "Display a function";
 @-
 The symbol table can be accessed as if it was a relational
 table.
