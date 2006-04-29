@@ -97,6 +97,10 @@ This library internally uses pointer handles, which we replace with
 an index in a locally maintained table. It provides a handle
 to easily detect havoc clients.
 @mal
+command reconnect(dbalias:str, host:str, port:int, usr:str, passwd:str,lang:str):int
+address SERVERreconnectAlias
+comment "Re-establish connection with a remote mserver";
+
 command connect(host:str, port:int, usr:str, passwd:str,lang:str):int
 address SERVERconnect
 comment "Establish connection with a remote mserver";
@@ -105,6 +109,14 @@ command connect_ssl(host:str, port:int, usr:str, passwd:str,lang:str):int
 address SERVERconnectssl
 comment "Establish connection with a remote mserver using the
 secure socket layer";
+
+command setAlias(dbalias:str)
+address SERVERsetAlias
+comment "Give the channel a logical name";
+
+command lookup(dbalias:str):int
+address SERVERlookup
+comment "Retrieve the connection identifier";
 
 command disconnect(mid:int):void
 address SERVERdisconnect
@@ -221,12 +233,24 @@ comment "Turn the error seen into a string";
 The remote procedure calls require the target type
 to be known to enable proper parsing of the result
 @mal
+pattern put(mid:int, nme:str, val:any_1):void
+address SERVERput
+comment "Sent a value to the remote site";
+
 pattern rpc(key:int,qry:str):any
 address SERVERmapi_rpc_single_row
 comment "Sent a simple query for execution and fetch result";
 
 pattern rpc(key:int,qry:str):bat[:any_1,:any_2]
 address SERVERmapi_rpc_bat;
+
+command rpc(key:int,qry:str):void
+address SERVERquery
+comment "Sent a simple query for execution";
+
+pattern bind(key:int,nme:str):bat[:any_1,:any_2]
+address SERVERbind
+comment "Bind a remote variable to a local one";
 
 #command receive(key:int,nme:str):bat[:any_1,:any_2]
 #address SERVERreceive
@@ -277,8 +301,11 @@ mal_export str SERVERresume(int *ret);
 mal_export void SERVERexit();
 
 mal_export str SERVERconnect(int *ret, str *host, int *port, str *username, str *password, str *lang);
+mal_export str SERVERreconnectAlias(int *ret, str *dbalias, str *host, int *port, str *username, str *password, str *lang);
 mal_export str SERVERconnectssl(int *ret, str *host, int *port, str *username, str *password, str *lang);
 mal_export str SERVERdisconnect(int *ret, int *mid);
+mal_export str SERVERsetAlias(int *ret, int *mid, str *dbalias);
+mal_export str SERVERlookup(int *ret, str *dbalias);
 mal_export str SERVERdestroy(int *ret, int *mid);
 mal_export str SERVERreconnect(int *ret, int *mid);
 mal_export str SERVERping(int *ret, int *mid);
@@ -307,9 +334,9 @@ mal_export str SERVERfetch_field_bat(int *bid, int *idx);
 mal_export str SERVERerror(int *ret, int *idx);
 mal_export str SERVERgetError(str *ret, int *idx);
 mal_export str SERVERexplain(str *ret, int *idx);
-mal_export str SERVERmapi_rpc_int(int *ret, int *key, str *qry);
-mal_export str SERVERmapi_rpc_oid_int(int *ret, int *key, str *qry);
 mal_export str SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str SERVERput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str SERVERbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* SERVER_H */
 @c
@@ -1139,10 +1166,12 @@ consumed before continueing.
 
 A few extra routines should be defined to
 dump and inspect the sessions table.
+	
 @c
 #define MAXSESSIONS 32
 struct{
 	int key;
+	str dbalias;	/* logical name of the session */
 	Client c;
 	Mapi mid;		/* communication channel */
 	MapiHdl hdl;	/* result set handle */
@@ -1194,23 +1223,64 @@ SERVERconnectssl(int *key, str *host, int *port, str *username, str *password, s
 	return SERVERconnectAll(key,host,port,username,password,lang, TRUE);
 }
 
+str
+SERVERreconnectAlias(int *key,str *dbalias, str *host, int *port, str *username, str *password, str *lang){
+	int i;
+	str msg=MAL_SUCCEED;
+
+	for(i=0; i<MAXSESSIONS; i++)
+	 if( SERVERsessions[i].key && 
+		 SERVERsessions[i].dbalias &&
+		 strcmp(SERVERsessions[i].dbalias, *dbalias)==0){
+			*key = SERVERsessions[i].key;
+			return msg;
+	}
+
+	msg= SERVERconnectAll(key,host,port,username,password,lang, FALSE);
+	if( msg == MAL_SUCCEED)
+		msg = SERVERsetAlias(&i, key, dbalias);
+	return msg;
+}
 @-
 @= accessTest
  for(i=0; i< MAXSESSIONS; i++)
  if( SERVERsessions[i].c && 
-     SERVERsessions[i].key== @1 &&
-     SERVERsessions[i].c == MCgetClient()) break;
+     SERVERsessions[i].key== @1 ) break;
  if( i== MAXSESSIONS)
 	return throwMessage("mserver.@2","Access violation");
   mid= SERVERsessions[i].mid;
   (void) mid; /* silence compilers */
 @c
 str
+SERVERsetAlias(int *ret, int *key, str *dbalias){
+	int i;
+	Mapi mid;
+	@:accessTest(*key,setAlias)@
+    SERVERsessions[i].dbalias= GDKstrdup(*dbalias);
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+str
+SERVERlookup(int *ret, str *dbalias)
+{
+	int i;
+	for(i=0; i< MAXSESSIONS; i++)
+	if( SERVERsessions[i].dbalias &&
+		strcmp(SERVERsessions[i].dbalias, *dbalias)==0){
+		*ret= SERVERsessions[i].key; 
+		return MAL_SUCCEED;
+	}
+	return throwMessage("mserver.lookup","Could not find database connection");
+}
+str
 SERVERdisconnect(int *ret, int *key){
 	int i;
 	Mapi mid;
 	@:accessTest(*key,disconnect)@
 	mapi_disconnect(mid);
+	if( SERVERsessions[i].dbalias)
+		GDKfree(SERVERsessions[i].dbalias);
+	SERVERsessions[i].dbalias= 0;
 	*ret = 0;
 	return MAL_SUCCEED;
 }
@@ -1221,6 +1291,9 @@ SERVERdestroy(int *ret, int *key){
 	@:accessTest(*key,destroy)@
 	mapi_destroy(mid);
 	SERVERsessions[i].c= 0;
+	if( SERVERsessions[i].dbalias)
+		GDKfree(SERVERsessions[i].dbalias);
+	SERVERsessions[i].dbalias= 0;
 	*ret = 0;
 	return MAL_SUCCEED;
 }
@@ -1246,7 +1319,9 @@ str
 SERVERquery(int *ret, int *key, str *qry){
 	Mapi mid;
 	int i;
-	@:accessTest(*key,error)@
+	@:accessTest(*key,query)@
+	if( SERVERsessions[i].hdl)
+		mapi_close_handle(SERVERsessions[i].hdl);
 	SERVERsessions[i].hdl= mapi_query(mid, *qry);
 	*ret = *key;
 	return MAL_SUCCEED;
@@ -1255,7 +1330,7 @@ str
 SERVERquery_handle(int *ret, int *key, str *qry){
 	Mapi mid;
 	int i;
-	@:accessTest(*key,error)@
+	@:accessTest(*key,query_handle)@
 	mapi_query_handle(SERVERsessions[i].hdl, *qry);
 	*ret = *key;
 	return MAL_SUCCEED;
@@ -1269,7 +1344,9 @@ str
 SERVERprepare(int *ret, int *key, str *qry){
 	Mapi mid;
 	int i;
-	@:accessTest(*key,error)@
+	@:accessTest(*key,prepare)@
+	if( SERVERsessions[i].hdl)
+		mapi_close_handle(SERVERsessions[i].hdl);
 	SERVERsessions[i].hdl= mapi_prepare(mid, *qry);
 	*ret = *key;
 	return MAL_SUCCEED;
@@ -1278,7 +1355,7 @@ str
 SERVERexecute(int *ret, int *key){
 	Mapi mid;
 	int i;
-	@:accessTest(*key,error)@
+	@:accessTest(*key,execute)@
 	mapi_execute(SERVERsessions[i].hdl);
 	*ret = *key;
 	return MAL_SUCCEED;
@@ -1287,7 +1364,7 @@ str
 SERVERfinish(int *ret, int *key){
 	Mapi mid;
 	int i;
-	@:accessTest(*key,error)@
+	@:accessTest(*key,finish)@
 	mapi_finish(SERVERsessions[i].hdl);
 	*ret = *key;
 	return MAL_SUCCEED;
@@ -1296,7 +1373,7 @@ str
 SERVERget_row_count(int *ret, int *key){
 	Mapi mid;
 	int i;
-	@:accessTest(*key,error)@
+	@:accessTest(*key,get_row_count)@
 	*ret= mapi_get_row_count(SERVERsessions[i].hdl);
 	return MAL_SUCCEED;
 }
@@ -1304,7 +1381,7 @@ str
 SERVERget_field_count(int *ret, int *key){
 	Mapi mid;
 	int i;
-	@:accessTest(*key,error)@
+	@:accessTest(*key,get_field_count)@
 	*ret= mapi_get_field_count(SERVERsessions[i].hdl);
 	return MAL_SUCCEED;
 }
@@ -1312,7 +1389,7 @@ str
 SERVERrows_affected(int *ret, int *key){
 	Mapi mid;
 	int i;
-	@:accessTest(*key,error)@
+	@:accessTest(*key,rows_affected)@
 	*ret= mapi_rows_affected(SERVERsessions[i].hdl);
 	return MAL_SUCCEED;
 }
@@ -1320,7 +1397,7 @@ str
 SERVERfetch_row(int *ret, int *key){
 	Mapi mid;
 	int i;
-	@:accessTest(*key,error)@
+	@:accessTest(*key,fetch_row)@
 	*ret= mapi_fetch_row(SERVERsessions[i].hdl);
 	return MAL_SUCCEED;
 }
@@ -1328,7 +1405,7 @@ str
 SERVERfetch_all_rows(int *ret, int *key){
 	Mapi mid;
 	int i;
-	@:accessTest(*key,error)@
+	@:accessTest(*key,fetch_all_rows)@
 	*ret= mapi_fetch_all_rows(SERVERsessions[i].hdl);
 	return MAL_SUCCEED;
 }
@@ -1337,7 +1414,7 @@ SERVERfetch_field_str(str *ret, int *key, int *fnr){
 	Mapi mid;
 	int i;
 	str fld;
-	@:accessTest(*key,error)@
+	@:accessTest(*key,fetch_field)@
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	*ret= GDKstrdup(fld? fld: str_nil);
 	return MAL_SUCCEED;
@@ -1347,7 +1424,7 @@ SERVERfetch_field_int(int *ret, int *key, int *fnr){
 	Mapi mid;
 	int i;
 	str fld;
-	@:accessTest(*key,error)@
+	@:accessTest(*key,fetch_field)@
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	*ret= fld? (int) atol(fld): int_nil;
 	return MAL_SUCCEED;
@@ -1357,7 +1434,7 @@ SERVERfetch_field_lng(lng *ret, int *key, int *fnr){
 	Mapi mid;
 	int i;
 	str fld;
-	@:accessTest(*key,error)@
+	@:accessTest(*key,fetch_field)@
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	*ret= fld? atol(fld): lng_nil;
 	return MAL_SUCCEED;
@@ -1367,7 +1444,7 @@ SERVERfetch_field_sht(sht *ret, int *key, int *fnr){
 	Mapi mid;
 	int i;
 	str fld;
-	@:accessTest(*key,error)@
+	@:accessTest(*key,fetch_field)@
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	*ret= fld? (sht) atol(fld): sht_nil;
 	return MAL_SUCCEED;
@@ -1376,7 +1453,7 @@ str
 SERVERfetch_field_void(oid *ret, int *key, int *fnr){
 	Mapi mid;
 	int i;
-	@:accessTest(*key,error)@
+	@:accessTest(*key,fetch_field)@
 	(void) fnr;
 	*ret = oid_nil;
 	return MAL_SUCCEED;
@@ -1386,7 +1463,7 @@ SERVERfetch_field_oid(oid *ret, int *key, int *fnr){
 	Mapi mid;
 	int i;
 	str fld;
-	@:accessTest(*key,error)@
+	@:accessTest(*key,fetch_field)@
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	if(fld==0 || strcmp(fld,"nil")==0)
 		*(oid*) ret= void_nil;
@@ -1398,7 +1475,7 @@ SERVERfetch_field_chr(chr *ret, int *key, int *fnr){
 	Mapi mid;
 	int i;
 	str fld;
-	@:accessTest(*key,error)@
+	@:accessTest(*key,fetch_field)@
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	if(fld==0 || strcmp(fld,"nil")==0)
 		*(chr*) ret= chr_nil;
@@ -1410,7 +1487,7 @@ SERVERfetch_line(str *ret, int *key){
 	Mapi mid;
 	int i;
 	str fld;
-	@:accessTest(*key,error)@
+	@:accessTest(*key,fetch_line)@
 	fld= mapi_fetch_line(SERVERsessions[i].hdl);
 	*ret= GDKstrdup(fld? fld:str_nil);
 	return MAL_SUCCEED;
@@ -1419,7 +1496,7 @@ str
 SERVERnext_result(int *ret, int *key){
 	Mapi mid;
 	int i;
-	@:accessTest(*key,error)@
+	@:accessTest(*key,next_result)@
 	mapi_next_result(SERVERsessions[i].hdl);
 	*ret= *key;
 	return MAL_SUCCEED;
@@ -1428,7 +1505,7 @@ str
 SERVERfetch_reset(int *ret, int *key){
 	Mapi mid;
 	int i;
-	@:accessTest(*key,error)@
+	@:accessTest(*key,fetch_reset)@
 	mapi_fetch_reset(SERVERsessions[i].hdl);
 	*ret= *key;
 	return MAL_SUCCEED;
@@ -1465,7 +1542,7 @@ str
 SERVERgetError(str *ret, int *key){
 	Mapi mid;
 	int i;
-	@:accessTest(*key,error)@
+	@:accessTest(*key,getError)@
 	*ret= GDKstrdup(mapi_error_str(mid));
 	return MAL_SUCCEED;
 }
@@ -1652,6 +1729,58 @@ SERVERmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		SERVERfieldAnalysis(fld2, tt, &tval);
 		BUNins(b,VALget(&hval),VALget(&tval));
 	}
+	return MAL_SUCCEED;
+}
+str
+SERVERput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int *key;
+	str *nme;
+	ptr val;
+	int i,tpe;
+	Mapi mid;
+	char *w=0, buf[BUFSIZ];
+
+	key= (int*) getArgReference(stk,pci,pci->retc);
+	nme= (str*) getArgReference(stk,pci,pci->retc+1);
+	val= (ptr) getArgReference(stk,pci,pci->retc+2);
+	@:accessTest(*key,put)@
+	switch( (tpe=getArgType(mb,pci, pci->retc+2)) ){
+	case TYPE_void:
+	case TYPE_bit:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+	case TYPE_flt:
+	case TYPE_dbl:
+	case TYPE_chr:
+	case TYPE_str:
+		ATOMformat(tpe,val,&w);
+		snprintf(buf,BUFSIZ,"%s:=%s;\n",*nme,w);
+		GDKfree(w);
+		break;
+	default:
+		return throwMessage("mserver.put","Unsupported type");
+	}
+	if( SERVERsessions[i].hdl)
+		mapi_close_handle(SERVERsessions[i].hdl);
+	SERVERsessions[i].hdl= mapi_query(mid, buf);
+	return MAL_SUCCEED;
+}
+str 
+SERVERbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int *key;
+	str *nme;
+	int i;
+	Mapi mid;
+	char buf[BUFSIZ];
+	key= (int*) getArgReference(stk,pci,pci->retc);
+	nme= (str*) getArgReference(stk,pci,pci->retc+1);
+	@:accessTest(*key,bind)@
+	snprintf(buf,BUFSIZ,"%s:=bbp.bind(\"%s\");",
+		getVarName(mb,getDestVar(pci)),*nme);
+	if( SERVERsessions[i].hdl)
+		mapi_close_handle(SERVERsessions[i].hdl);
+	SERVERsessions[i].hdl= mapi_query(mid, buf);
 	return MAL_SUCCEED;
 }
 @}
