@@ -23,7 +23,7 @@ A repetition is marked with either '+' or '*' to
 indicate at least once and many times, respectively.
 Lexical tokens are illustrated in small capitals.
 
-@multitable @columnfractions .15 .8 @verb @verb
+@multitable @columnfractions .15 .8 
 @item program		
 @tab : (statement ';') *
 @item statement

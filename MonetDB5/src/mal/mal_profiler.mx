@@ -478,7 +478,7 @@ onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	if (profileCounter[PROFstmt].status) {
 		/* generate actual call statement */
 		stmt = call2str(mb, stk, getPC(mb, pci));
-		c = stmt;
+		c = stmt+1;
 
 		while (c && *c && isspace((int) *c))
 			c++;
@@ -647,7 +647,7 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		if (c)
 			c++;
 		else
-			c = stmt;
+			c = stmt+1;
 
 		while (c && *c && isspace((int) *c))
 			c++;
