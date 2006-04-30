@@ -166,7 +166,6 @@ MToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	stream_printf(GDKout,"Start MAT optimizer\n");
 	printFunction(GDKout, mb, 0);
 #endif
-	optInit();
 
 	if(p)
 		removeInstruction(mb,p);

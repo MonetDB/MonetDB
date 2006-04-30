@@ -157,7 +157,6 @@ BGoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	stream_printf(GDKout,"Start generators optimizer\n");
 	printFunction(GDKout, mb, 0);
 #endif
-	optInit();
 
 	if(p)
 		removeInstruction(mb,p);

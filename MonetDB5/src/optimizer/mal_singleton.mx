@@ -352,7 +352,6 @@ SToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	vars = (int *) alloca(mb->vtop);
 
-	optInit();
 	removeInstruction(mb, p);
 	for (i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);

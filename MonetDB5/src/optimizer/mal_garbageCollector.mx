@@ -117,7 +117,6 @@ GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 
-	optInit();
 	if( mb->errors) {
 		if (pci)
 			removeInstruction(mb, pci);

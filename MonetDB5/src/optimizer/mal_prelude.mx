@@ -42,6 +42,7 @@ opt_export  str expandRef;
 opt_export  str finishRef;
 opt_export  str generatorRef;
 opt_export  str groupRef;
+opt_export  str getRef;
 opt_export  str ioRef;
 opt_export  str insertRef;
 opt_export  str joinRef;
@@ -53,12 +54,15 @@ opt_export  str matRef;
 opt_export  str maxRef;
 opt_export  str minRef;
 opt_export  str mirrorRef;
+opt_export  str mserverRef;
 opt_export  str newRef;
 opt_export  str packRef;
 opt_export  str pbmRef;
 opt_export  str plusRef;
 opt_export  str printRef;
+opt_export  str putRef;
 opt_export  str reverseRef;
+opt_export  str rpcRef;
 opt_export  str selectRef;
 opt_export  str semijoinRef;
 opt_export  str setAccessRef;
@@ -70,7 +74,7 @@ opt_export  str uselectRef;
 opt_export  str unpackRef;
 opt_export  str unsafeRef;
 
-opt_export void optInit();
+opt_export void optimizerInit();
 #endif
 @c
 #include "mal_prelude.h"
@@ -94,6 +98,7 @@ str expandRef;
 str finishRef;
 str generatorRef;
 str groupRef;
+str getRef;
 str insertRef;
 str ioRef;
 str joinRef;
@@ -105,12 +110,15 @@ str matRef;
 str maxRef;
 str minRef;
 str mirrorRef;
+str mserverRef;
 str newRef;
 str packRef;
 str pbmRef;
 str plusRef;
 str printRef;
+str putRef;
 str reverseRef;
+str rpcRef;
 str selectRef;
 str semijoinRef;
 str setAccessRef;
@@ -123,7 +131,7 @@ str unpackRef;
 str unsafeRef;
 
 
-void optInit(){
+void optimizerInit(){
 	if(batRef == NULL){
 		aggrRef = putName("aggr",4);
 		algebraRef = putName("algebra",7);
@@ -143,6 +151,7 @@ void optInit(){
 		finishRef = putName("finish",6);
 		expandRef = putName("expand",6);
 		groupRef = putName("group",5);
+		getRef = putName("get",3);
 		generatorRef = putName("generator",9);
 		insertRef = putName("insert",6);
 		ioRef = putName("io",2);
@@ -155,12 +164,15 @@ void optInit(){
 		maxRef = putName("max",3);
 		minRef = putName("min",3);
 		mirrorRef = putName("mirror",6);
+		mserverRef = putName("mserver",7);
 		newRef = putName("new",3);
 		packRef = putName("pack",4);
 		pbmRef = putName("pbm",3);
 		plusRef = putName("+",1);
 		printRef = putName("print",5);
+		putRef = putName("put",3);
 		reverseRef = putName("reverse",7);
+		rpcRef = putName("rpc",3);
 		selectRef = putName("select",6);
 		semijoinRef = putName("semijoin",8);
 		setAccessRef = putName("setAccess",9);

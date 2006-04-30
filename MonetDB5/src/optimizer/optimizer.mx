@@ -138,6 +138,12 @@ pattern multitable(mod:str, fcn:str):str
 address QOTMToptimizerCALL
 comment "Resolve the multi-table definitions";
 
+pattern remoteQueries():str 
+address QOTRQoptimizer;
+pattern remoteQueries(mod:str, fcn:str):str 
+address QOTRQoptimizerCALL
+comment "Resolve the multi-table definitions";
+
 pattern generators():str 
 address QOTBGoptimizer;
 pattern generators(mod:str, fcn:str):str 
@@ -234,6 +240,7 @@ optimizer.prelude();
 #include "mal_multitable.h"
 #include "mal_generators.h"
 #include "mal_crack.h"
+#include "mal_remoteQueries.h"
 
 opt_export str QOTMEoptimizerSymbol(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 opt_export str QOTMEoptimizerModule(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -324,7 +331,7 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	
 	if(debugOpt) { cmd= c->itrace; c->itrace='n';}
 	if( s->def->errors == 0){
-		optInit();
+		optimizerInit();
 		@1optimizer(s->def,0,0);
 		optimizerCheck(s->def,@2 "",1,GDKusec()-clk);
 		if(debugOpt) { c->itrace= cmd;}
@@ -335,7 +342,7 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 mal_export str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	setLifespan(mb);
-	optInit();
+	optimizerInit();
 	@1optimizer(mb, stk, pci);
 	return MAL_SUCCEED;
 }
@@ -358,6 +365,7 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 @:QOTC(MR, "reduce")@
 @:QOTC(CO, "coercions")@
 @:QOTC(CRK, "crack")@
+@:QOTC(RQ, "remoteQueries")@
 
 str
 QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

@@ -1,0 +1,260 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' All Rights Reserved.
+
+@f mal_remoteQueries
+@a M. Kersten
+@-
+@+ Remote Query Execution
+MAL variables may live at a different site from where they are used.
+In particular, the SQL front-end uses portions of remote
+BATs as replication views. Each time such a view is needed,
+the corresponding BAT is fetched and added to the local cache.
+
+Consider the following snippet produced by a query compiler,
+@verbatim
+mid:= mserver.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
+b:bat[:void,:int] := mserver.bind(mid,"rvar");
+c:=algebra.select(b,0,12);
+io.print(c);
+d:=algebra.select(b,5,10);
+low:= 5+1;
+e:=algebra.select(d,low,7);
+i:=aggr.count(e);
+io.printf(" count %d\n",i);
+io.print(d);
+@end verbatim
+which uses a BAT @code{rvar} stored at the remote site @code{db1}.
+
+There are several options to execute this query.
+The remote BAT can be fetched as soon as the bind operation is executed,
+or a portion can be fetched after a remote select,
+or the output for the user could be retrieved.
+An optimal solution depends on the actual resources 
+available at both ends and the time to ship the BAT. 
+
+The remote query optimizer @code{RQoptimizer} 
+assumes that the remote site has sufficient
+resources to handle the instructions.
+For each remote query it creates a private connection.
+It is re-used in subsequent calls .
+
+The remote environment is used to execute
+the statements. The objects are retrieved
+just before they are locally needed.
+
+@verbatim
+mid:= mserver.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
+mserver.rpc(mid,"b:=bbp.bind(\"rvar\");");
+mserver.rpc(mid,"c:=algebra.select(b,0,12);");
+c:bat[:void,:int]:= mserver.rpc(mid, "io.print(c);");
+io.print(c);
+mserver.rpc(mid,"d:=algebra.select(b,5,10);");
+low:= 5+1;
+mserver.put(mid,"low",low);
+mserver.rpc(mid,"e:=algebra.select(d,low,7);");
+mserver.rpc(mid,"i:=aggr.count(d);");
+i:= mserver.rpc(mid,"io.print(i);");
+io.printf(" count %d\n",i);
+io.print(d);
+@end verbatim
+
+To reduce the number of interprocess communications
+this code can be further improved by glueing
+the instructions together when until the first
+result is needed. 
+@{
+@h
+#ifndef _MAL_REMOTE_
+#define _MAL_REMOTE_
+#include "mal_optimizer.h"
+
+#define DEBUG_MAL_REMOTE     /* show partial result */
+
+opt_export str RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+#define match(X,M,F) ( (X) && getFunctionId(X) && strcmp(getFunctionId(X),F)==0 && \
+	getModuleId(X) && strcmp(getModuleId(X),M)==0)
+#endif
+
+@c
+#include "mal_prelude.h"
+#include "mal_remoteQueries.h"
+#include "mal_namespace.h"
+#include "mal_interpreter.h"	/* for showErrors() */
+#include "mal_builder.h"
+@-
+The instruction sent is produced with a variation of call2str
+from the debugger.
+@c
+str
+RQcall2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int k,len;
+	str msg,w;
+	str s;
+
+	msg = instruction2str(mb, p, FALSE);
+	s = strchr(msg, '(');
+	if (p->retc > 1 && s) {
+		s = strchr(s + 1, '(');
+	}
+	if (s) {
+		s++;
+		*s = 0;
+		len = strlen(msg);
+		for (k = p->retc; k < p->argc; k++) {
+			VarPtr v = getVar(mb, getArg(p, k));
+			ValPtr val = &stk->stk[getArg(p, k)];
+
+			w = 0;
+			ATOMformat(val->vtype, VALptr(val), &w);
+			if( isaBatType(v->type)){
+				if (v->tmpindex == 0)
+					sprintf(msg+len, "%s", v->name);
+				else
+					sprintf(msg+len, "%c%d=", TMPMARKER, v->tmpindex);
+			} else
+				strcat(msg,w);
+			GDKfree(w);
+			if (k < p->argc - 1)
+				strcat(msg,", ");
+			len= strlen(msg);
+		}
+		strcat(msg,");");
+	} 
+	return msg;
+}
+@- 
+The algorithm follows the common scheme used so far.
+Instructions are taken out one-by-one and copied
+to the new block.
+@c
+str
+RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	InstrPtr p, q,*old;
+	int i, j,cnt, limit, doit=0;
+	int remoteSite,collectFirst;
+	lng clk = GDKusec();
+	int *location;
+	char buf[BUFSIZ],*s;
+
+	if( mb->errors) 
+		return MAL_SUCCEED;
+#ifdef DEBUG_MAL_REMOTE
+	stream_printf(GDKout, "RemoteQueries optimizer started\n");
+#endif
+	(void) stk;
+	(void) pci;
+
+	setLifespan(mb);
+	limit = mb->stop;
+	old = mb->stmt;
+
+	location= alloca(mb->vtop * sizeof(int));
+	memset((char*) location, sizeof(int), mb->vtop * sizeof(int));
+
+	newMalBlkStmt(mb, mb->stop);
+	for (i = 0; i < limit; i++) {
+		p = old[i];
+
+		/* detect remote instructions */
+		cnt=0;
+		for(j=0;j<p->argc; j++)
+		if( location[getArg(p,j)]) cnt++;
+
+		/* detect remote variable binding */
+		if( getModuleId(p)== mserverRef && getFunctionId(p)==bindRef){
+			location[getArg(p,0)]= getArg(p,2);
+			pushInstruction(mb,p);
+			doit++;
+#ifdef DEBUG_MAL_REMOTE
+			printf("found remote variable %s ad %d\n", 
+				getVarName(mb,getArg(p,0)), location[getArg(p,0)]);
+#endif
+		} else
+		if( getModuleId(p) && strcmp(getModuleId(p),"optimizer")==0 &&
+		    getFunctionId(p) && strcmp(getFunctionId(p),"remoteQueries")==0 )
+			freeInstruction(p);
+		else if( cnt == 0)
+			pushInstruction(mb,p);
+		else {
+@-
+The hard part is to decide what to do with instructions that
+contain a reference to a remote variables.
+If there are multiple sites involved, all arguments are
+moved local for processing. Moreover, all local arguments
+to be shipped should be simple.
+@c
+			remoteSite=0;
+			collectFirst= FALSE;
+			for(j=0; j<p->argc; j++)
+			if( location[getArg(p,j)]){
+				if( remoteSite== 0)
+					remoteSite= location[getArg(p,j)];
+				else if( remoteSite != location[getArg(p,j)])
+					collectFirst= TRUE;
+			}
+
+			/* local BATs are not shipped */
+			if( remoteSite)
+				for(j=p->retc; j<p->argc; j++)
+				if( location[getArg(p,j)] == 0 &&
+					isaBatType(getVarType(mb,getArg(p,j))) ) 
+						collectFirst= TRUE;
+
+			if( collectFirst){
+				/* perform locally */
+				for(j=p->retc; j<p->argc; j++)
+				if( location[getArg(p,j)]){
+					q= newStmt(mb,mserverRef,rpcRef);
+					getArg(q,0)= getArg(p,j);
+					pushArgument(mb,q,location[getArg(p,j)]);
+					snprintf(buf,BUFSIZ,"io.print(%s);",
+						getVarName(mb,getArg(p,j)) );
+					pushStr(mb,q,buf);
+				}
+				pushInstruction(mb,p);
+				/* as of now all the targets are also local */
+				for(j=0; j<p->retc; j++)
+					location[getArg(p,j)]= 0;
+			} else
+			if( remoteSite){
+				/* single remote site involved */
+				q= newStmt(mb,mserverRef,rpcRef);
+				getArg(q,0)= newTmpVariable(mb, TYPE_void);
+				pushArgument(mb, q,remoteSite);
+				s= RQcall2str(mb,stk,p);
+				pushStr(mb,q,s);
+				if( s) GDKfree(s);
+				pushInstruction(mb,p);
+			} else
+				pushInstruction(mb,p);
+		}
+	}
+	GDKfree(old);
+#ifdef DEBUG_MAL_REMOTE
+	if (doit) {
+		stream_printf(GDKout, "remoteQueries %d\n", doit);
+		printFunction(GDKout, mb, LIST_MAL_ALL);
+	}
+#endif
+	optimizerCheck(mb, "mal.remoteQueries", doit, GDKusec() - clk);
+	return MAL_SUCCEED;
+}
+
+@}
