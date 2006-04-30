@@ -48,6 +48,7 @@ typedef int malType;
 
 #define malVARG " malVARG"
 #define TMPMARKER '_'
+#define REFMARKER 'X'
 
 #define newBatType(H,T)  (1<<16 | (((H & 0377) <<8) | (T & 0377) ))
 #define newColType(T)  (1<<25 | (((TYPE_void & 0377) <<8) | (T & 0377) ))
