@@ -105,7 +105,7 @@ static str sql_cacheRef;
 
 void initSQLreferences(){
 	if( resultSetRef != 0) return;
-	optInit();
+	optimizerInit();
 	exportValueRef = putName("exportValue",11);
 	resultSetRef= putName("resultSet",9);
 	exportResultRef= putName("exportResult",12);

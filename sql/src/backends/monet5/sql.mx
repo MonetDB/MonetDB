@@ -928,8 +928,7 @@ mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access)
 		return msg;
 	b = mvc_bind(m, *sname, *tname, *cname, *access);
 	if (b) {
-		BBPincref( *bid = b->batCacheid, TRUE);
-		BBPunfix( *bid);
+		BBPkeepref( *bid = b->batCacheid);
 		return MAL_SUCCEED;
 	}
 	return throwException(MALEXCEPTION, "mvc_bind_wrap", "error");
@@ -969,8 +968,7 @@ mvc_bind_single_wrap(int *ret, int *bid, str *name)
 	r = *(int *) BUNtail(bn, p);
 	if( (b= BATdescriptor(r)) == NULL)
 		return throwMessage("sql.bind","Cannot access descriptor");
-	BBPincref(*ret= b->batCacheid, TRUE);
-	BBPunfix( *ret = b->batCacheid);
+	BBPkeepref(*ret= b->batCacheid);
 	BBPunfix( bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -986,8 +984,7 @@ mvc_bind_dbat_wrap(int *ret, str *sname, str *tname, int *access)
 		return msg;
 	b = mvc_bind_dbat(m, *sname, *tname, *access);
 	if (b) {
-		BBPincref( *ret = b->batCacheid, TRUE);
-		BBPunfix(*ret);
+		BBPkeepref( *ret = b->batCacheid);
 		return MAL_SUCCEED;
 	}
 	return throwException(MALEXCEPTION, "mvc_bind_dbat_wrap", "error");
@@ -1004,8 +1001,7 @@ mvc_bind_idxbat_wrap(int *ret, str *sname, str *tname, str *iname, int *access)
 		return msg;
 	b = mvc_bind_idxbat(m, *sname, *tname, *iname, *access);
 	if (b) {
-		BBPincref( *ret = b->batCacheid, TRUE);
-		BBPunfix(*ret);
+		BBPkeepref( *ret = b->batCacheid);
 		return MAL_SUCCEED;
 	}
 	return throwException(MALEXCEPTION, "mvc_bind_idxbat_wrap", "error");
@@ -1281,8 +1277,7 @@ voidbathash_wrap(int *res, int *bid )
 	BATkey(BATmirror(dst), 0);
 	dst->tsorted = 0;
 
-	BBPincref( *res = dst->batCacheid, TRUE);
-	BBPunfix(*res);
+	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1324,8 +1319,7 @@ bathash_wrap(int *res, int *bid )
 		}
 	}
 
-	BBPincref( *res = dst->batCacheid, TRUE);
-	BBPunfix(*res);
+	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
