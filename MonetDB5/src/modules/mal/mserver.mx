@@ -239,8 +239,8 @@ command rpc(key:int,qry:str):void
 address SERVERquery
 comment "Sent a simple query for execution";
 
-pattern bind(key:int,nme:str):bat[:any_1,:any_2]
-address SERVERbind
+pattern bind(key:int,remoteName:str):bat[:any_1,:any_2]
+address SERVERbindBAT
 comment "Bind a remote variable to a local one";
 
 #command receive(key:int,nme:str):bat[:any_1,:any_2]
@@ -327,7 +327,7 @@ mal_export str SERVERgetError(str *ret, int *idx);
 mal_export str SERVERexplain(str *ret, int *idx);
 mal_export str SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str SERVERput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str SERVERbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str SERVERbindBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* SERVER_H */
 @c
@@ -1758,7 +1758,7 @@ SERVERput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return MAL_SUCCEED;
 }
 str 
-SERVERbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+SERVERbindBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *key;
 	str *nme;
 	int i;
@@ -1772,6 +1772,8 @@ SERVERbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	if( SERVERsessions[i].hdl)
 		mapi_close_handle(SERVERsessions[i].hdl);
 	SERVERsessions[i].hdl= mapi_query(mid, buf);
+	if( mapi_error(mid) )
+		return throwMessage("mapi.bind",mapi_error_str(mid));
 	return MAL_SUCCEED;
 }
 @}
