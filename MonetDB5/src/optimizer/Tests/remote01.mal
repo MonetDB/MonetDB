@@ -1,0 +1,19 @@
+# First test of the remoteQueries optimizer
+# we create a remote bat and fake a bind operation.
+
+mid:= mserver.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
+mserver.rpc(mid,"rb:= bat.new(:int,:int); bat.setName(rb,\"rbat\"); bat.insert(rb,1,1);");
+
+b:bat[:int,:int]:= mserver.bind(mid,"rbat");
+mserver.rpc(mid,"c:=algebra.select(b,0,12);");
+c:bat[:int,:int]:= mserver.rpc(mid, "io.print(c);");
+io.print(c);
+mserver.rpc(mid,"d:=algebra.select(b,5,10);");
+low:= 5+1;
+mserver.put(mid,"low",low);
+mserver.rpc(mid,"e:=algebra.select(d,low,7);");
+mserver.rpc(mid,"i:=aggr.count(d);");
+i:lng:= mserver.rpc(mid,"io.print(i);");
+io.printf(" count %d\n",i);
+d:bat[:int,:int]:= mserver.rpc(mid,"io.print(d);");
+io.print(d);

@@ -82,7 +82,7 @@ result is needed.
 #define _MAL_REMOTE_
 #include "mal_optimizer.h"
 
-#define DEBUG_MAL_REMOTE     /* show partial result */
+/* #define DEBUG_MAL_REMOTE     show partial result */
 
 opt_export str RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
@@ -101,10 +101,10 @@ The instruction sent is produced with a variation of call2str
 from the debugger.
 @c
 str
-RQcall2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+RQcall2str(MalBlkPtr mb, InstrPtr p)
 {
 	int k,len;
-	str msg,w;
+	str msg;
 	str s;
 
 	msg = instruction2str(mb, p, FALSE);
@@ -118,20 +118,12 @@ RQcall2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		len = strlen(msg);
 		for (k = p->retc; k < p->argc; k++) {
 			VarPtr v = getVar(mb, getArg(p, k));
-			ValPtr val = &stk->stk[getArg(p, k)];
-
-			w = 0;
-			ATOMformat(val->vtype, VALptr(val), &w);
-			if( isaBatType(v->type)){
-				if (v->tmpindex == 0)
-					sprintf(msg+len, "%s", v->name);
-				else
-					sprintf(msg+len, "%c%d=", TMPMARKER, v->tmpindex);
-			} else
-				strcat(msg,w);
-			GDKfree(w);
+			if (v->tmpindex == 0)
+				sprintf(msg+len, "%s", v->name);
+			else
+				sprintf(msg+len, "%c%d", REFMARKER, v->tmpindex);
 			if (k < p->argc - 1)
-				strcat(msg,", ");
+				strcat(msg,",");
 			len= strlen(msg);
 		}
 		strcat(msg,");");
@@ -166,7 +158,7 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	old = mb->stmt;
 
 	location= alloca(mb->vtop * sizeof(int));
-	memset((char*) location, sizeof(int), mb->vtop * sizeof(int));
+	memset((char*) location, 0, mb->vtop * sizeof(int));
 
 	newMalBlkStmt(mb, mb->stop);
 	for (i = 0; i < limit; i++) {
@@ -179,7 +171,7 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		/* detect remote variable binding */
 		if( getModuleId(p)== mserverRef && getFunctionId(p)==bindRef){
-			location[getArg(p,0)]= getArg(p,2);
+			location[getArg(p,0)]= getArg(p,1);
 			pushInstruction(mb,p);
 			doit++;
 #ifdef DEBUG_MAL_REMOTE
@@ -195,7 +187,8 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else {
 @-
 The hard part is to decide what to do with instructions that
-contain a reference to a remote variables.
+contain a reference to a remote variable.
+In the first implementation we use the following policy.
 If there are multiple sites involved, all arguments are
 moved local for processing. Moreover, all local arguments
 to be shipped should be simple.
@@ -209,9 +202,10 @@ to be shipped should be simple.
 				else if( remoteSite != location[getArg(p,j)])
 					collectFirst= TRUE;
 			}
+			if( getModuleId(p)== ioRef) collectFirst= TRUE;
 
 			/* local BATs are not shipped */
-			if( remoteSite)
+			if( remoteSite && collectFirst== FALSE)
 				for(j=p->retc; j<p->argc; j++)
 				if( location[getArg(p,j)] == 0 &&
 					isaBatType(getVarType(mb,getArg(p,j))) ) 
@@ -225,7 +219,7 @@ to be shipped should be simple.
 					getArg(q,0)= getArg(p,j);
 					pushArgument(mb,q,location[getArg(p,j)]);
 					snprintf(buf,BUFSIZ,"io.print(%s);",
-						getVarName(mb,getArg(p,j)) );
+						getRefName(mb,getArg(p,j)) );
 					pushStr(mb,q,buf);
 				}
 				pushInstruction(mb,p);
@@ -235,25 +229,38 @@ to be shipped should be simple.
 			} else
 			if( remoteSite){
 				/* single remote site involved */
+				for(j=p->retc; j<p->argc; j++)
+				if( location[getArg(p,j)] == 0){
+					q= newStmt(mb,mserverRef,putRef);
+					getArg(q,0)= newTmpVariable(mb, TYPE_void);
+					pushArgument(mb, q,remoteSite);
+					pushStr(mb,q, getRefName(mb,getArg(p,j)));
+					pushArgument(mb,q,getArg(p,j));
+				}
+				s= RQcall2str(mb, p);
+#ifdef DEBUG_MAL_REMOTE
+				printf("#stmt: %s\n",s);
+#endif
 				q= newStmt(mb,mserverRef,rpcRef);
 				getArg(q,0)= newTmpVariable(mb, TYPE_void);
 				pushArgument(mb, q,remoteSite);
-				s= RQcall2str(mb,stk,p);
-				pushStr(mb,q,s);
-				if( s) GDKfree(s);
-				pushInstruction(mb,p);
+				pushStr(mb,q,s+1);
+				GDKfree(s);
+				for(j=0; j<p->retc; j++)
+					location[getArg(p,j)]= remoteSite;
+				freeInstruction(p);
 			} else
 				pushInstruction(mb,p);
 		}
 	}
 	GDKfree(old);
+	optimizerCheck(mb, "mal.remoteQueries", doit, GDKusec() - clk);
 #ifdef DEBUG_MAL_REMOTE
 	if (doit) {
 		stream_printf(GDKout, "remoteQueries %d\n", doit);
 		printFunction(GDKout, mb, LIST_MAL_ALL);
 	}
 #endif
-	optimizerCheck(mb, "mal.remoteQueries", doit, GDKusec() - clk);
 	return MAL_SUCCEED;
 }
 
