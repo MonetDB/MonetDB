@@ -782,23 +782,21 @@ SQLparser(Client c)
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
 		}
-/* these are obsolete
 		if( strncmp(in->buf+in->pos,"auto_commit ", 12)==0 ){
 			id= (int) strtol(in->buf+in->pos+12,NULL,10);
 			m->auto_commit = (id)?1:0;
 			m->ac_on_commit = m->auto_commit;
 			if (mvc_rollback(m, 0, NULL) < 0)
 				return throwMessage("SQLparser", "Xauto_commit failed\n");
-			in->pos = in->len;	HACK: should use parsed lenght 
+			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
 		}
 		if( strncmp(in->buf+in->pos,"reply_size ", 11)==0 ){
 			id= (int) strtol(in->buf+in->pos+11,NULL,10);
 			m->reply_size = id;
-			in->pos = in->len;	HACK: should use parsed lenght 
+			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
 		}
-*/
 		if( strncmp(in->buf + in->pos,"quit",4)==0 ) {
 			c->mode = FINISHING;
 			return NULL;
