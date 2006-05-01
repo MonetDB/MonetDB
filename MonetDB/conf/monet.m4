@@ -1339,8 +1339,7 @@ AC_SUBST(READLINE_LIBS)
 AC_SUBST(READLINE_INCS)
 
 dnl OpenSSL
-dnl change "auto" in the next line to "no" to get disable OpenSSL by
-dnl default
+dnl change "auto" in the next line to "no" to disable OpenSSL by default
 have_openssl=auto
 OPENSSL_LIBS=""
 OPENSSL_INCS=""
