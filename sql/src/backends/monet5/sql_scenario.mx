@@ -920,7 +920,7 @@ In the final phase we add any debugging control
 	/* turn off debugger */
 	if( m->mode == m_debug )
 		SQLsetDebugger(c, m, FALSE);
-	if( m->mode == m_trace || m->explain== m_trace)
+	if( m->mode == m_trace )
 		SQLsetTrace(c, FALSE);
 
 	if (be->mvc->mode == m_profile ) {
