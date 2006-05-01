@@ -226,9 +226,13 @@ to be known to enable proper parsing of the result
 @mal
 pattern put(mid:int, nme:str, val:any_1):void
 address SERVERput
-comment "Sent a value to the remote site";
+comment "Send a value to a remote site";
 
-pattern rpc(key:int,qry:str):any
+pattern put(nme:str, val:any_1):str
+address SERVERputLocal
+comment "Prepare sending a value to a remote site";
+
+pattern rpc(key:int,qry:str...):any
 address SERVERmapi_rpc_single_row
 comment "Sent a simple query for execution and fetch result";
 
@@ -326,7 +330,9 @@ mal_export str SERVERerror(int *ret, int *idx);
 mal_export str SERVERgetError(str *ret, int *idx);
 mal_export str SERVERexplain(str *ret, int *idx);
 mal_export str SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str SERVERmapi_rpc_single_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str SERVERput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str SERVERputLocal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str SERVERbindBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* SERVER_H */
@@ -1170,7 +1176,7 @@ struct{
 
 static int sessionkey=0;
 
-#define MAPI_TEST
+/* #define MAPI_TEST*/
 
 str
 SERVERconnectAll(int *key, str *host, int *port, str *username, str *password, str *lang, int ssl){
@@ -1633,20 +1639,32 @@ SERVERmapi_rpc_single_row(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int key,i,j;
 	Mapi mid;
 	MapiHdl hdl;
-	char *fld, *qry;
+	char *s,*fld, *qry=0;
 
 	key= * (int*) getArgReference(stk,pci,pci->retc);
-	qry= * (str*) getArgReference(stk,pci,pci->retc+1);
 	@:accessTest(key,rpc)@
 #ifdef MAPI_TEST
 	stream_printf(GDKout,"about to sent: %s\n",qry);
 #endif
+	/* glue all strings together */
+	for(i= pci->retc+1; i<pci->argc; i++){
+		fld= * (str*) getArgReference(stk,pci,i);
+		if( qry == 0)
+			qry= GDKstrdup(fld);
+		else {	
+			s= (char*) GDKmalloc(strlen(qry)+strlen(fld)+1);
+			strcpy(s,qry);
+			strcat(s,fld);
+			GDKfree(qry);
+			qry= s;
+		}
+	}
 	hdl= mapi_query(mid, qry);
 	if( mapi_error(mid) )
 		return throwMessage("mapi.rpc",mapi_error_str(mid));
+	GDKfree(qry);
+
 	i= 0;
-	if( mapi_get_field_count(hdl) != pci->retc)
-		return throwMessage("mapi.rpc","Incompatible return value");
 	while( mapi_fetch_row(hdl)){
 		for(j=0; j<pci->retc; j++){
 			fld= mapi_fetch_field(hdl,j);
@@ -1736,27 +1754,43 @@ SERVERput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	val= (ptr) getArgReference(stk,pci,pci->retc+2);
 	@:accessTest(*key,put)@
 	switch( (tpe=getArgType(mb,pci, pci->retc+2)) ){
-	case TYPE_void:
-	case TYPE_bit:
-	case TYPE_sht:
-	case TYPE_int:
-	case TYPE_lng:
-	case TYPE_flt:
-	case TYPE_dbl:
-	case TYPE_chr:
-	case TYPE_str:
+	case TYPE_bat:
+	case TYPE_ptr:
+		return throwMessage("mserver.glue","Unsupported type");
+	default:
 		ATOMformat(tpe,val,&w);
 		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,w);
 		GDKfree(w);
 		break;
-	default:
-		return throwMessage("mserver.put","Unsupported type");
 	}
 	if( SERVERsessions[i].hdl)
 		mapi_close_handle(SERVERsessions[i].hdl);
 	SERVERsessions[i].hdl= mapi_query(mid, buf);
 	if( mapi_error(mid) )
 		return throwMessage("mapi.put",mapi_error_str(mid));
+	return MAL_SUCCEED;
+}
+str
+SERVERputLocal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str *ret, *nme;
+	ptr val;
+	int tpe;
+	char *w=0, buf[BUFSIZ];
+
+	ret= (str*) getArgReference(stk,pci,0);
+	nme= (str*) getArgReference(stk,pci,pci->retc);
+	val= (ptr) getArgReference(stk,pci,pci->retc+1);
+	switch( (tpe=getArgType(mb,pci, pci->retc+1)) ){
+	case TYPE_bat:
+	case TYPE_ptr:
+		return throwMessage("mserver.glue","Unsupported type");
+	default:
+		ATOMformat(tpe,val,&w);
+		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,w);
+		GDKfree(w);
+		break;
+	}
+	*ret= GDKstrdup(buf);
 	return MAL_SUCCEED;
 }
 str 
