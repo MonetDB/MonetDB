@@ -499,6 +499,7 @@ PBMgetComponents(int *ret, str *grp)
 		return throwMessage("pbm.getComponents", "Could not create BAT");
 	for( i= PBMfindPBAT(*grp); i>=0;  i= partitions[i].next)
 		BUNins(b,grp, partitions[i].elm);
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -514,6 +515,7 @@ PBMgetNames(int *ret)
 	for( i= 0; i<ptop;  i++)
 	if( partitions[i].grp )
 		BUNins(b,partitions[i].grp, partitions[i].elm);
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;

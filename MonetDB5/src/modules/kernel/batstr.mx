@@ -206,6 +206,7 @@ comment "Perform SQL like operation against a string bat";
 		return throwMessage("batstr." Z, "no space available "); \
 	}
 #define finalizeResult(X,Y,Z) \
+	if (!((Y)->batDirty&2)) (Y) = BATsetaccess((Y), BAT_READ); \
 	*X = (Y)->batCacheid; \
 	BBPkeepref(*(X));\
 	BBPreleaseref(Z->batCacheid);
@@ -637,6 +638,7 @@ STRbatmatchCst(int *ret, int *bid, str *pat)
 		}
 	}
 bunins_failed:
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
@@ -672,6 +674,7 @@ STRbatlike(int *ret, int *bid, str *pat, str *esc){
 			bunfastins(bn, h,&o);
 	}
 bunins_failed:
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPreleaseref(b->batCacheid);

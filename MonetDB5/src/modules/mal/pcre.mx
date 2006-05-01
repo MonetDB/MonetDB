@@ -310,6 +310,7 @@ pcre_select(BAT **res, str pattern, BAT *strs)
 			BUNins(r, BUNhead(strs, p), s);
 		}
 	}
+	if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ);
 	my_pcre_free(re);
 	*res = r;
 	return GDK_SUCCEED;
@@ -341,6 +342,7 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 		}
 	}
 	my_pcre_free(re);
+	if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ);
 	*res = r;
 	return GDK_SUCCEED;
 }
@@ -832,6 +834,7 @@ PCREselect(int *res, str *pattern, int *bid)
 		}
 	}
 	my_pcre_free(re);
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	*res = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPunfix(strs->batCacheid);
@@ -876,6 +879,7 @@ PCREuselect(int *res, str *pattern, int *bid)
 		}
 	}
 	my_pcre_free(re);
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	*res = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPunfix(strs->batCacheid);

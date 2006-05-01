@@ -448,6 +448,7 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
 	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	bn->tsorted = 0;
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	ALIGNsetH(bn,b);
 	return m ? NULL : map2histo(map);
 bunins_failed:
@@ -532,6 +533,7 @@ CTgroup_custom(BAT **retval,	/* put pointer to BAT[oid,oid] record here. */
 	}
 	bn->tsorted = 0;
 	ALIGNsetH(bn, b);
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	*retval = bn;
 	*hbat = histo;
 	return grp_new(bn, histo);
@@ -634,6 +636,7 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 	}
 	bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
 	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	return m?NULL:map2histo(map);
 bunins_failed:
 	BBPreclaim(bn);
@@ -782,6 +785,7 @@ CThistosum(BAT **retval,	/* put pointer to BAT[oid,int] record here. */
 		}
 	}
 	res->hsorted = res->tsorted = 0;
+	if (!(res->batDirty&2)) res = BATsetaccess(res, BAT_READ);
 	*retval = res;
 	return GDK_SUCCEED;
 }
@@ -854,6 +858,7 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 
 	}
 	GDKfree(hash);
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	*ret = bn;
 	return GDK_SUCCEED;
 }

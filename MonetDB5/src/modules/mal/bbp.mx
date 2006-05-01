@@ -889,6 +889,7 @@ CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	ret = (int *) getArgReference(stk, pci, 0);
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo2(bbp,objects)@
 	return MAL_SUCCEED;
 }
@@ -916,6 +917,7 @@ CMDbbpNames(int *ret)
 			}
 		}
 	BBPunlock("CMDbbpNames");
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo2(bbp,name)@
 	return MAL_SUCCEED;
 }
@@ -946,6 +948,7 @@ CMDbbpRNames(int *ret)
 				BUNins(b, &i, BBP_logical(i));
 		}
 	BBPunlock("CMDbbpRNames");
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo2(bbp,revname)@
 	return MAL_SUCCEED;
 }
@@ -972,6 +975,7 @@ CMDbbpCount(int *ret)
 				}
 			}
 		}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo2(bbp,count)@
 	return MAL_SUCCEED;
 }
@@ -995,6 +999,7 @@ CMDbbpLocation(int *ret)
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)))
 				BUNins(b, &i, BBP_physical(i));
 		}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpLocation");
 	@:Pseudo2(bbp,location)@
 	return MAL_SUCCEED;
@@ -1027,6 +1032,7 @@ CMDbbpHeat(int *ret)
 				BUNins(b, &i, &zero);
 			}
 		}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpHeat");
 	@:Pseudo2(bbp,heat)@
 	return MAL_SUCCEED;
@@ -1053,6 +1059,7 @@ CMDbbpDirty(int *ret)
 
 				BUNins(b, &i, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean");
 			}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpDirty");
 	@:Pseudo2(bbp,status)@
 	return MAL_SUCCEED;
@@ -1079,6 +1086,7 @@ CMDbbpStatus(int *ret)
 
 				BUNins(b, &i, loc);
 			}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpStatus");
 	@:Pseudo2(bbp,status)@
 	return MAL_SUCCEED;
@@ -1107,6 +1115,7 @@ CMDbbpKind(int *ret)
 				if (mode)
 					BUNins(b, &i, mode);
 			}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpKind");
 	@:Pseudo2(bbp,kind)@
 	return MAL_SUCCEED;
@@ -1129,6 +1138,7 @@ CMDbbpRefCount(int *ret)
 
 			BUNins(b, &i, &refs);
 		}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpRefCount");
 	@:Pseudo2(bbp,refcnt)@
 	return MAL_SUCCEED;
@@ -1151,6 +1161,7 @@ CMDbbpLRefCount(int *ret)
 
 			BUNins(b, &i, &refs);
 		}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpLRefCount");
 	@:Pseudo2(bbp,lrefcnt)@
 	return MAL_SUCCEED;
@@ -1200,6 +1211,7 @@ str CMDbbp@2( int *ret){
 		if(bn) BUNins(b, &i, BATatoms[BAT@1(bn)].name);
 		BBPunfix(bn->batCacheid);
 	}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo2(bbp,@2)@
 	return MAL_SUCCEED;
 }
@@ -1254,6 +1266,7 @@ CMDbatpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tt = TYPE_bat;
 	b = BATnew(ht, tt, cap);
 	BUNins(b, (ptr) getArgValue(stk, pci, 1), getArgValue(stk, pci, 2));
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;

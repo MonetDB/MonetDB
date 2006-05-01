@@ -204,9 +204,10 @@ MBMuniform(int *ret, oid *base, int *size, int *domain){
 	BAT *bn;
 	
 	BATuniform(&bn, base, size, domain);
-	if( bn )
+	if( bn ){
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 		BBPkeepref(*ret= bn->batCacheid);
-	else throwMessage("microbenchmark","uniform");
+	} else throwMessage("microbenchmark","uniform");
 	return MAL_SUCCEED;
 }
 
@@ -214,8 +215,9 @@ str
 MBMnormal(int *ret, oid *base, int *size, int *domain, int *stddev, int *mean){
 	BAT *bn;
 	BATnormal(&bn, base, size, domain, stddev, mean);
-	if( bn )
+	if( bn ){
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 		BBPkeepref(*ret= bn->batCacheid);
-	else throwMessage("microbenchmark","uniform");
+	} else throwMessage("microbenchmark","uniform");
 	return MAL_SUCCEED;
 }

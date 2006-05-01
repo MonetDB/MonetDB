@@ -2115,6 +2115,7 @@ str AX3aggrX3_sum_@1_@3(int *retid, int *bid, int *eid){
 	if( CMDaggrX3_sum_@1_@3(&bn,b,e) == GDK_SUCCEED){
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(e->batCacheid);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 		*retid = bn->batCacheid;
 		BBPkeepref(*retid);
 		return MAL_SUCCEED;
@@ -2140,6 +2141,7 @@ str AX3aggrX3_prod_@1_@3(int *retid, int *bid, int *eid){
 	if( CMDaggrX3_prod_@1_@3(&bn,b,e) == GDK_SUCCEED){
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(e->batCacheid);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 		*retid = bn->batCacheid;
 		BBPkeepref(*retid);
 		return MAL_SUCCEED;
@@ -2182,6 +2184,7 @@ str AX3aggrX3_avg_@1(int *retid, int *bid, int *eid){
 	if( CMDaggrX3_avg_@1(&bn,b,e) == GDK_SUCCEED){
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(e->batCacheid);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 		*retid = bn->batCacheid;
 		BBPkeepref(*retid);
 		return MAL_SUCCEED;
@@ -2214,6 +2217,7 @@ str AX3aggrX3_@1(int *ret, int *bid, int *eid){
 	if( CMDaggrX3_@1(&bn,b,e) == GDK_SUCCEED){
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(e->batCacheid);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 		*ret = bn->batCacheid;
 		BBPkeepref(*ret);
 		return MAL_SUCCEED;
@@ -2243,6 +2247,7 @@ AX3aggrX3_count(int *retid, int *bid, int *eid, bit *ignore_nils)
 	}
 
 	if (CMDaggrX3_count(&bn, b, e, ignore_nils) == GDK_SUCCEED) {
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 		*retid = bn->batCacheid;
 		BBPkeepref(*retid);
 		BBPreleaseref(b->batCacheid);
@@ -2273,6 +2278,7 @@ AX3aggrX3_size(int *retid, int *bid, int *eid)
 	if (CMDaggrX3_size(&bn, b, e) == GDK_SUCCEED) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(e->batCacheid);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 		*retid = bn->batCacheid;
 		BBPkeepref(*retid);
 		return MAL_SUCCEED;
@@ -2305,6 +2311,7 @@ str AX3aggrX3_sum3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(e->batCacheid);
 		BBPreleaseref(g->batCacheid);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 		*retid = bn->batCacheid;
 		BBPkeepref(*retid);
 		return MAL_SUCCEED;
@@ -2337,6 +2344,7 @@ str AX3aggrX3_prod3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(e->batCacheid);
 		BBPreleaseref(g->batCacheid);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 		*retid = bn->batCacheid;
 		BBPkeepref(*retid);
 		return MAL_SUCCEED;
@@ -2385,6 +2393,7 @@ str AX3aggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(e->batCacheid);
 		BBPreleaseref(g->batCacheid);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 		*retid = bn->batCacheid;
 		BBPkeepref(*retid);
 		return MAL_SUCCEED;
@@ -2424,6 +2433,7 @@ str AX3aggrX3_@13(int *ret,int *bid, int *gid, int *eid){
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(e->batCacheid);
 		BBPreleaseref(g->batCacheid);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 		*ret = bn->batCacheid;
 		BBPkeepref(*ret);
 		return MAL_SUCCEED;
@@ -2460,6 +2470,7 @@ AX3aggrX3_count3(int *retid, int *bid, int *gid, int *eid, bit *ignore_nils)
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(e->batCacheid);
 		BBPreleaseref(g->batCacheid);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 		*retid = bn->batCacheid;
 		BBPkeepref(*retid);
 		return MAL_SUCCEED;

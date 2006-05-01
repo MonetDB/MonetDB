@@ -421,6 +421,7 @@ MDBStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		BUNins(b, &k, buf);
 		GDKfree(msg);
 	}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(view,stk,trace)@
 	return MAL_SUCCEED;
 }
@@ -530,6 +531,7 @@ MDBcodeDump(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 		BUNins(b, &i, ps);
 		GDKfree(ps);
 	}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(view,fcn,stmt)@
 
 	return MAL_SUCCEED;

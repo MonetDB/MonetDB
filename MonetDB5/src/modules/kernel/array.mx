@@ -206,6 +206,7 @@ ARRAYgrid_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
 
 	if (grid_@1(&bn, groups, groupsize, clustersize, offset) == GDK_FAIL)
 		return throwMessage("array.grid", "Failed to create the grid\n");
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -218,6 +219,7 @@ ARRAYgridShift_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offse
 
 	if (gridShift_@1(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
 		return throwMessage("array.grid", "Failed to create the grid\n");
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -235,6 +237,7 @@ ARRAYgridBAT_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersize, @1
 
 	if (fillgrid_@1(&bn, groups, groupsize, clustersize, offset, &shift) == GDK_FAIL)
 		return throwMessage("array.grid", "Failed to create the grid\n");
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -250,6 +253,7 @@ ARRAYgridBATshift_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersiz
 	}
 	if (fillgrid_@1(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
 		return throwMessage("array.grid", "Failed to create the grid\n");
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -285,6 +289,7 @@ ARRAYmultiply_@1_@2(int *ret, int *bid, int *rid){
 			BUNfastins(bn,&o,&val);
 		}
 	}
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret= bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(b->batCacheid);
@@ -326,6 +331,7 @@ ARRAYproduct(int *ret, int *bid, int *rid)
 		}
 		s -= x2;
 	}
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(b->batCacheid);
@@ -351,6 +357,7 @@ ARRAYproject(int *ret, int *bid, int *cst)
 
 	while (i-- > 0)
 		(*(ptr ++)) = *cst;
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;

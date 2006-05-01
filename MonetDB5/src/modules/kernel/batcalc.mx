@@ -579,6 +579,7 @@ str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r)
 	BBPreleaseref(left->batCacheid);
 	BBPreleaseref(right->batCacheid);
 	dst->tsorted = 0;
+	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
 	BBPkeepref(*ret);
 	return res;
@@ -607,6 +608,7 @@ str CMDbataccum@2_@3_@4_@5(int *ret, int *d, int *l, int *r)
 
 	@:loopImpl(@1,@2,@3,@4,@5)@
 	dst->tsorted = 0;
+	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
 	BBPkeepref(dst->batCacheid);
 	BBPreleaseref(left->batCacheid);
@@ -642,6 +644,7 @@ str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 	} else {
 		@:accumCst(@3,@1,@4,@5)@ 
 	}
+	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
 	BBPkeepref(dst->batCacheid);
 	BBPreleaseref(left->batCacheid);
@@ -671,6 +674,7 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
 	} else {
 		@:accumCstLeft(@3,@1,@4,@5)@ 
 	}
+	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
 	BBPkeepref(dst->batCacheid);
 	BBPreleaseref(left->batCacheid);
@@ -712,6 +716,7 @@ str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst)
 	BATsetcount(dst, BATcount(left));
 	dst->hsorted = BAThordered(left);
 	dst->tsorted = 0;
+	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
 	BBPkeepref(dst->batCacheid);
 	BBPreleaseref(left->batCacheid);
@@ -748,6 +753,7 @@ str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 	BATsetcount(dst, BATcount(left));
 	dst->hsorted = BAThordered(left);
 	dst->tsorted = 0;
+	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
 	BBPkeepref(dst->batCacheid);
 	BBPreleaseref(left->batCacheid);
@@ -789,6 +795,7 @@ str CMDbat@1init(int *ret, int *l, @1 *cst) {
 	BATseqbase(dst,0);
 	bat@1filler(dst,*cst, (size_t) BATcount(left));
 	BBPreleaseref(left->batCacheid);
+	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
 	return MAL_SUCCEED;
 }
@@ -802,6 +809,7 @@ str CMD@1init_int(int *ret, int *size, @1 *cst) {
 	}
 	BATseqbase(dst,0);
 	bat@1filler(dst,*cst,s);
+	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
 	return MAL_SUCCEED;
 }
@@ -815,6 +823,7 @@ str CMD@1init_lng(int *ret, lng *size, @1 *cst) {
 	}
 	BATseqbase(dst,0);
 	bat@1filler(dst,*cst,s);
+	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
 	return MAL_SUCCEED;
 }
@@ -828,6 +837,7 @@ str CMD@1init_sht(int *ret, sht *size, @1 *cst){
 	}
 	BATseqbase(dst,0);
 	bat@1filler(dst,*cst,s);
+	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
 	return MAL_SUCCEED;
 }
@@ -983,6 +993,7 @@ str CMDbat@1_@3_@4_@5(int *ret, int *l, int *r)
 	}
 	dst->tsorted = 0;
 	msg= bataccum@1_@3_@4_@5(dst,left,right);
+	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(left->batCacheid);
@@ -1013,6 +1024,7 @@ str CMDbataccum@1_@3_@4_@5(int *ret, int *d, int *l, int *r)
 
 	msg= bataccum@1_@3_@4_@5(dst,left,right);
 	dst->tsorted = 0;
+	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
 	BBPkeepref(dst->batCacheid);
 	BBPreleaseref(left->batCacheid);
@@ -1044,6 +1056,7 @@ str CMDbataccum@1cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 	case TYPE_lng: @:accumCst(lng,@2,lng,lng)@ break;
 	default : return throwMessage("batcalc.@1", "unexpected type");
 	}
+	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
 	BBPkeepref(dst->batCacheid);
 	BBPreleaseref(left->batCacheid);
@@ -1075,6 +1088,7 @@ str CMDbataccum@1cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
 	case TYPE_lng: @:accumCstLeft(lng,@2,lng,lng)@ break;
 	default : return throwMessage("batcalc.@1", "unexpected type");
 	}
+	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
 	BBPkeepref(dst->batCacheid);
 	BBPreleaseref(left->batCacheid);
@@ -1114,6 +1128,7 @@ str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst)
 	BATsetcount(dst, BATcount(left));
 	dst->hsorted = BAThordered(left);
 	dst->tsorted = 0;
+	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
 	BBPkeepref(dst->batCacheid);
 	BBPreleaseref(left->batCacheid);
@@ -1149,6 +1164,7 @@ str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
 	BATsetcount(dst, BATcount(left));
 	dst->hsorted = BAThordered(left);
 	dst->tsorted = 0;
+	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
 	BBPkeepref(dst->batCacheid);
 	BBPreleaseref(left->batCacheid);
@@ -1206,6 +1222,7 @@ str CMDunaryAccum@1(int *ret,int *did, int *bid){
 	case TYPE_dbl: @:accumUnary(dbl,@2)@ break;
 	default: return throwMessage("batcalc.MIN", "unexpected type");
 	}
+	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret= dst->batCacheid;
 	BBPkeepref(dst->batCacheid);
 	BBPreleaseref(b->batCacheid);
@@ -1317,6 +1334,7 @@ bunins_failed:
 	dst->hsorted= BAThordered(left);
 	dst->tsorted= (BATtordered(left)&BATtordered(right))?GDK_SORTED_REV:0;
 	msg = compareaccum@1(dst,left,right);
+	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(left->batCacheid);
@@ -1346,6 +1364,7 @@ str CMDcmpaccum@1(int *ret, int *d, int *l, int *r)
 	@:chkSize(dst,right,CMDcompareaccum@1)@
 
 	msg= compareaccum@1(dst,left,right);
+	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
 	BBPkeepref(dst->batCacheid);
 	BBPreleaseref(left->batCacheid);
@@ -1381,6 +1400,7 @@ str CMDcmpaccum@1cst(int *ret, int *r, int *l, void *cst)
 	case TYPE_lng: @:cmpLoopCst(lng,@2)@ break;
 	default :return throwMessage("batcalc.@1","unexpected type");
 	}
+	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;
 	BBPkeepref(dst->batCacheid);
 	BBPreleaseref(left->batCacheid);
@@ -1507,6 +1527,7 @@ CMDbitbatNOT(int *ret, int *l)
 	}
 	  bunins_failed:
 	dst->hsorted = BAThordered(left);
+	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	d = dst->batCacheid;
 	BBPreleaseref(left->batCacheid);
 	res = CMDbitbataccumNOT(ret, &d, l);
@@ -1534,6 +1555,7 @@ str CMDconvert@1_@1(int *ret, int *bid){
 
 	bn= BATcopy(b);
 	@:tstBat(CMDconvert@1_@1)@
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret= bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(b->batCacheid);
@@ -1570,6 +1592,7 @@ str CMDconvert@1_@2Enlarge(int *ret, int *bid){
 	}
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = BATtordered(b);
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	 *ret= bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(b->batCacheid);
@@ -1600,6 +1623,7 @@ str CMDconvert@1_@2(int *ret, int *bid){
 bunins_failed:
 	bn->hsorted = BAThordered(b);
 	bn->tsorted = 0;
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret= bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(b->batCacheid);
@@ -1691,6 +1715,7 @@ CMDconvertstr_int(int *ret, int *bid)
 		bunfastins(bn, h, &y);
 	}
 	  bunins_failed:
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(b->batCacheid);
@@ -1706,6 +1731,7 @@ CMDconvertOIDclass(int *ret, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("batcalc.convert", "Cannot access descriptor");
 	}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ); \
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -1722,6 +1748,7 @@ CMDconvertvoid_oid_oid(int *ret, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("batcalc.convert", "Cannot access descriptor");
 	}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ); \
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -1740,6 +1767,7 @@ CMDconvertvoid_int_oid(int *ret, int *bid)
 	bn = BATcopy(b);
 	bn->ttype = TYPE_oid;
 	/* simply recast the BAT  without doing anything */
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(b->batCacheid);
@@ -1765,6 +1793,7 @@ CMDconvertvoid_int_oid(int *ret, int *bid)
 		x++;
 	}
 	  bunins_failed:
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(b->batCacheid);
@@ -1809,6 +1838,7 @@ CMDifThen(int *ret, int *iid, int *tid)
 		}
 	}
 	  bunins_failed:
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(ib->batCacheid);
@@ -1844,6 +1874,7 @@ str CMDifThenCst_@1(int *ret, int *iid, ptr *eid){
 		} 
 	}
 bunins_failed:
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret= bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPreleaseref(ib->batCacheid);
@@ -1876,6 +1907,7 @@ str CMDifThenElseCst_@1(int *ret, int *iid, ptr *tid, ptr *eid){
 		} 
 	}
 bunins_failed:
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret= bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPreleaseref(ib->batCacheid);
@@ -1898,6 +1930,7 @@ str CMDprojecthead_@1(int *ret,ptr *val, int *iid){
 		bunfastins(bn, val,v);
 	}
 bunins_failed:
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret= bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPreleaseref(ib->batCacheid);
@@ -1920,6 +1953,7 @@ str CMDprojecttail_@1(int *ret,int *iid, ptr *val){
 		bunfastins(bn,v, val);
 	}
 bunins_failed:
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret= bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPreleaseref(ib->batCacheid);
@@ -1980,6 +2014,7 @@ CMDifThenElse(int *ret, int *iid, int *tid, int *eid)
 		}
 	}
 	  bunins_failed:
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPreleaseref(ib->batCacheid);
@@ -2026,6 +2061,7 @@ CMDifThenElseCst1(int *ret, int *iid, ptr *val, int *eid)
 		}
 	}
 	  bunins_failed:
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPreleaseref(ib->batCacheid);
@@ -2071,6 +2107,7 @@ CMDifThenElseCst2(int *ret, int *iid, int *tid, ptr *val)
 		}
 	}
 	  bunins_failed:
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPreleaseref(ib->batCacheid);

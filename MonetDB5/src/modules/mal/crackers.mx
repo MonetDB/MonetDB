@@ -272,6 +272,7 @@ int
 newIndex_@1(int bid)
 {       
 	int i, freemap = -1, units = 1024;
+	BAT *b;
 	
 	for (i = 0; i < maxCrackMap; i++)
 		if (Index[i].bid == -1)
@@ -299,7 +300,7 @@ newIndex_@1(int bid)
 	}
 
 	Index[i].bid = bid;
-	BAT *b = BATnew(TYPE_lng, TYPE_@1, 100000);	/*todo: size*/
+	b = BATnew(TYPE_lng, TYPE_@1, 100000);	/*todo: size*/
 	BBPkeepref(b->batCacheid);
 	Index[i].cid = b->batCacheid; 
 	return i;
@@ -1524,6 +1525,7 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 			 b->tsorted = FALSE;
 			 b->hdense = FALSE; 
 			 b->hdense = FALSE;
+			 b = BATsetaccess(b, BAT_READ);
 		}
 		m = newIndex_@1(*bid);
 

@@ -294,6 +294,7 @@ SYScpuStatistics(int *ret)
 	b = BUNins(b, "system", &i);
 	b = BUNins(b, "elapsystem", &i);
 #endif
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(gdk,cpu)@
 	return MAL_SUCCEED;
 }
@@ -342,6 +343,7 @@ SYSmemStatistics(int *ret)
 	b = BUNins(b, "uordblks", &i);
 	i = m.fordblks;
 	b = BUNins(b, "fordblks", &i);
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(gdk,mem)@
 	return MAL_SUCCEED;
 }
@@ -556,6 +558,7 @@ SYSmem_usage(int *ret, lng *minsize)
 	BUNins(bn, "_tot/swapmem", &tot);
 
 	BBPunlock("SYSmem_usage");
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	*ret = bn->batCacheid;
 	return MAL_SUCCEED;
 }
@@ -615,6 +618,7 @@ SYSvm_usage(int *ret, lng *minsize)
 	BUNins(bn, "_tot/vm", &sz);
 
 	BBPunlock("SYSvm_usage");
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	*ret = bn->batCacheid;
 	return MAL_SUCCEED;
 }
@@ -705,6 +709,7 @@ SYSioStatistics(int *ret)
 	BUNins(b, "ninvcsw", &i);
 #endif
 
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(gdk,io)@
 	return MAL_SUCCEED;
 }
@@ -744,6 +749,7 @@ SYSgdkEnv(int *ret)
 	b = BUNins(b, "ondisk", &pdisk);
 	b = BUNins(b, "todisk", &BBPout);
 	b = BUNins(b, "fromdisk", &BBPin);
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(gdk,env)@
 	return MAL_SUCCEED;
 }
@@ -763,6 +769,7 @@ SYSgdkThread(int *ret)
 		if (GDKthreads[i].pid) {
 			BUNins(b, &GDKthreads[i].tid, GDKthreads[i].name);
 		}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(gdk,thread)@
 	return MAL_SUCCEED;
 }
@@ -803,6 +810,7 @@ str SYSgetDatabases(int *ret)
 		} 
 	}
 	(void) closedir(d);
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(databases,mode)@
 	return MAL_SUCCEED;
 }
@@ -838,6 +846,7 @@ str SYSgetPorts(int *ret, str *lang)
 		} 
 	}
 	(void) closedir(d);
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(databases,port)@
 	return MAL_SUCCEED;
 }

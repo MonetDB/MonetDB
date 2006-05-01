@@ -139,6 +139,7 @@ str CMDsciencevoid_@1(int *ret, int *bid){
 		o++;
 	}
 bunins_failed:
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 	*ret= bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(b->batCacheid);
@@ -165,6 +166,7 @@ str CMDscience_@1(int *ret, int *bid, @2 *d){
 		bunfastins(bn, h, &x);
 	}
 bunins_failed:
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 	*ret= bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(b->batCacheid);

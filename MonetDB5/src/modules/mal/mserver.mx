@@ -1517,14 +1517,15 @@ SERVERfetch_field_bat(int *bid, int *key){
 
 	@:accessTest(*key,rpc)@
 	b= BATnew(TYPE_oid,TYPE_str,256);
-	*bid = b->batCacheid;
-	BBPkeepref(*bid);
 	cnt= mapi_get_field_count(SERVERsessions[i].hdl);
 	for(j=0; j< cnt; j++){
 		fld= mapi_fetch_field(SERVERsessions[i].hdl,j);
 		BUNins(b,&o,fld);
 		o++;
 	}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	*bid = b->batCacheid;
+	BBPkeepref(*bid);
 	return MAL_SUCCEED;
 }
 str
@@ -1722,14 +1723,12 @@ SERVERmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:accessTest(*key,rpc)@
 	ht= getHeadType(getVarType(mb,getArg(pci,0)));
 	tt= getTailType(getVarType(mb,getArg(pci,0)));
-	
-	b= BATnew(ht,tt,256);
-	*ret = b->batCacheid;
-	BBPkeepref(*ret);
 
 	hdl= mapi_query(mid, *qry);
 	if( mapi_error(mid) )
 		return throwMessage("mapi.rpc",mapi_error_str(mid));
+	
+	b= BATnew(ht,tt,256);
 	i= 0;
 	while( mapi_fetch_row(hdl)){
 		fld1= mapi_fetch_field(hdl,0);
@@ -1738,6 +1737,10 @@ SERVERmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		SERVERfieldAnalysis(fld2, tt, &tval);
 		BUNins(b,VALget(&hval),VALget(&tval));
 	}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
+
 	return MAL_SUCCEED;
 }
 str

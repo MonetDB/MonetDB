@@ -141,6 +141,7 @@ comment	"Extracts Cb(blue color) component from a color atom";
 		return throwMessage("batstr." Z, "no space available "); \
 	}
 #define finalizeResult(X,Y,Z) \
+	if (!((Y)->batDirty&2)) (Y) = BATsetaccess((Y), BAT_READ); \
 	*X = (Y)->batCacheid; \
 	BBPkeepref(*(X));\
 	BBPreleaseref(Z->batCacheid);

@@ -199,6 +199,7 @@ CLTInfo(int *ret)
 	BUNins(b, "scenario", c->scenario);
 	BUNins(b, "timer", local_itoa((int) c->timer));
 	BUNins(b, "trace", local_itoa(c->itrace));
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(client,info,)@
 	return MAL_SUCCEED;
 }
@@ -244,6 +245,7 @@ CLTLogin(int *ret)
 			BUNins(b, &i, s);
 		}
 	}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(client,login,)@
 	return MAL_SUCCEED;
 }
@@ -264,6 +266,7 @@ CLTusers(int *ret)
 		if (c->mode >= CLAIMED && c->user)
 			b = BUNins(b, &i, local_itoa((int)c->user));
 	}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(client,users,)@
 	return MAL_SUCCEED;
 }

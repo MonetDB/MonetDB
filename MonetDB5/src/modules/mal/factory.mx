@@ -93,8 +93,9 @@ FCTgetPlants(int *ret)
 	BAT *b;
 
 	b = BATnew(TYPE_str, TYPE_str, 256);
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(factory,name,plant)@
-	return MAL_SUCCEED;
+	return throwMessage("factory.getPlants", "not yet implemented");
 }
 
 str
@@ -111,6 +112,7 @@ FCTgetOwners(int *ret)
 
 	(void) ret;
 	b = BATnew(TYPE_int, TYPE_str, 256);
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(factory,plantid,location)@
 	return throwMessage("factory.getOwner", "not yet implemented");
 }
@@ -144,8 +146,9 @@ FCTgetLocations(int *ret)
 
 	(void) ret;
 	b = BATnew(TYPE_int, TYPE_str, 256);
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(factory,plantid,location)@
-	return MAL_SUCCEED;
+	return throwMessage("factory.getLocations", "not yet implemented");
 }
 
 str
