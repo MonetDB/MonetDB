@@ -1,0 +1,97 @@
+stdout of test 'remote00` in directory 'src/optimizer` itself:
+
+
+# 23:06:19 >  
+# 23:06:19 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=30126 --set monet_prompt= --trace --dbname=mTests_src_optimizer  remote00.mal < /dev/null
+# 23:06:19 >  
+
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_optimizer
+# Visit http://monetdb.cwi.nl/ for further information
+#mid:= mserver.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
+#mserver.rpc(mid,"rb:= bat.new(:int,:int); bat.setName(rb,\"rbat\"); bat.insert(rb,1,1);");
+#
+#b:bat[:int,:int] := mserver.bind(mid,"rbat");
+#c:=algebra.select(b,0,12);
+#io.print(c);
+#d:=algebra.select(b,5,10);
+#low:= 5+1;
+#e:=algebra.select(d,low,7);
+#i:=aggr.count(e);
+#io.printf(" count %d\n",i);
+#io.print(d);
+#optimizer.remoteQueries();
+#
+RemoteQueries optimizer started
+found remote variable b ad 1
+#stmt: #    c := algebra.select(b,X12,X13);
+#stmt: #    d := algebra.select(b,X16,X17);
+#stmt: #    e := algebra.select(d,low,X21);
+#stmt: #    i := aggr.count(e);
+remoteQueries 1
+function user.main():void;	# 0  (main:void)
+    mid := mserver.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");	# 1 SERVERreconnectAlias (mid:int)<-(_2:str)(_3:str)(_4:int)(_5:str)(_5:str)(_6:str)
+    mserver.rpc(mid,"rb:= bat.new(:int,:int); bat.setName(rb,\"rbat\"); bat.insert(rb,1,1);");	# 2 SERVERquery (_7:void)<-(mid:int)(_8:str)
+    b:bat[:int,:int]  := mserver.bind(mid,"rbat");	# 3 SERVERbindBAT (b:bat[:int,:int])<-(mid:int)(_10:str)
+    mserver.put(mid,"X12",0);	# 4 SERVERput (_29:void)<-(mid:int)(_30:str)(_12:int)
+    mserver.put(mid,"X13",12);	# 5 SERVERput (_33:void)<-(mid:int)(_34:str)(_13:int)
+    mserver.rpc(mid,"    c := algebra.select(b,X12,X13);");	# 6 SERVERquery (_37:void)<-(mid:int)(_38:str)
+    c := mserver.rpc(mid,"io.print(c);");	# 7 SERVERmapi_rpc_bat (c:bat[:int,:int])<-(mid:int)(_41:str)
+    io.print(c);	# 8 IOprint_val (_14:int)<-(c:bat[:int,:int])
+    mserver.put(mid,"X16",5);	# 9 SERVERput (_44:void)<-(mid:int)(_45:str)(_16:int)
+    mserver.put(mid,"X17",10);	# 10 SERVERput (_48:void)<-(mid:int)(_49:str)(_17:int)
+    mserver.rpc(mid,"    d := algebra.select(b,X16,X17);");	# 11 SERVERquery (_52:void)<-(mid:int)(_53:str)
+    low := calc.+(5,1);	# 12 CALCbinaryADDintint (low:int)<-(_16:int)(_19:int)
+    mserver.put(mid,"low",low);	# 13 SERVERput (_56:void)<-(mid:int)(_57:str)(low:int)
+    mserver.put(mid,"X21",7);	# 14 SERVERput (_60:void)<-(mid:int)(_61:str)(_21:int)
+    mserver.rpc(mid,"    e := algebra.select(d,low,X21);");	# 15 SERVERquery (_64:void)<-(mid:int)(_65:str)
+    mserver.rpc(mid,"    i := aggr.count(e);");	# 16 SERVERquery (_68:void)<-(mid:int)(_69:str)
+    i := mserver.rpc(mid,"io.print(i);");	# 17 SERVERmapi_rpc_single_row (i:int)<-(mid:int)(_72:str)
+    io.printf(" count %d\n",i);	# 18 IOprint_formatted_int (_23:int)<-(_24:str)(i:int)
+    d := mserver.rpc(mid,"io.print(d);");	# 19 SERVERmapi_rpc_bat (d:bat[:int,:int])<-(mid:int)(_75:str)
+    io.print(d);	# 20 IOprint_val (_25:int)<-(d:bat[:int,:int])
+end main;	# 21  
+function user.main():void;	# 0  (main:void)
+    mid := mserver.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");	# 1 SERVERreconnectAlias (mid:int)<-(_2:str)(_3:str)(_4:int)(_5:str)(_5:str)(_6:str)
+    mserver.rpc(mid,"rb:= bat.new(:int,:int); bat.setName(rb,\"rbat\"); bat.insert(rb,1,1);");	# 2 SERVERquery (_7:void)<-(mid:int)(_8:str)
+    b:bat[:int,:int]  := mserver.bind(mid,"rbat");	# 3 SERVERbindBAT (b:bat[:int,:int])<-(mid:int)(_10:str)
+    mserver.put(mid,"X12",0);	# 4 SERVERput (_29:void)<-(mid:int)(_30:str)(_12:int)
+    mserver.put(mid,"X13",12);	# 5 SERVERput (_33:void)<-(mid:int)(_34:str)(_13:int)
+    mserver.rpc(mid,"    c := algebra.select(b,X12,X13);");	# 6 SERVERquery (_37:void)<-(mid:int)(_38:str)
+    c := mserver.rpc(mid,"io.print(c);");	# 7 SERVERmapi_rpc_bat (c:bat[:int,:int])<-(mid:int)(_41:str)
+    io.print(c);	# 8 IOprint_val (_14:int)<-(c:bat[:int,:int])
+    mserver.put(mid,"X16",5);	# 9 SERVERput (_44:void)<-(mid:int)(_45:str)(_16:int)
+    mserver.put(mid,"X17",10);	# 10 SERVERput (_48:void)<-(mid:int)(_49:str)(_17:int)
+    mserver.rpc(mid,"    d := algebra.select(b,X16,X17);");	# 11 SERVERquery (_52:void)<-(mid:int)(_53:str)
+    low := calc.+(5,1);	# 12 CALCbinaryADDintint (low:int)<-(_16:int)(_19:int)
+    mserver.put(mid,"low",low);	# 13 SERVERput (_56:void)<-(mid:int)(_57:str)(low:int)
+    mserver.put(mid,"X21",7);	# 14 SERVERput (_60:void)<-(mid:int)(_61:str)(_21:int)
+    mserver.rpc(mid,"    e := algebra.select(d,low,X21);");	# 15 SERVERquery (_64:void)<-(mid:int)(_65:str)
+    mserver.rpc(mid,"    i := aggr.count(e);");	# 16 SERVERquery (_68:void)<-(mid:int)(_69:str)
+    i := mserver.rpc(mid,"io.print(i);");	# 17 SERVERmapi_rpc_single_row (i:int)<-(mid:int)(_72:str)
+    io.printf(" count %d\n",i);	# 18 IOprint_formatted_int (_23:int)<-(_24:str)(i:int)
+    d := mserver.rpc(mid,"io.print(d);");	# 19 SERVERmapi_rpc_bat (d:bat[:int,:int])<-(mid:int)(_75:str)
+    io.print(d);	# 20 IOprint_val (_25:int)<-(d:bat[:int,:int])
+end main;	# 21  
+Succeeded to establish session
+#-----------------#
+# h	t	  # name
+# int	int	  # type
+#-----------------#
+[ 1,	  1	  ]
+about to sent: io.print(i);
+Got: 0
+ count 0
+#-----------------#
+# h	t	  # name
+# int	int	  # type
+#-----------------#
+
+# 23:06:19 >  
+# 23:06:19 >  Done.
+# 23:06:19 >  
+
