@@ -1,5 +1,5 @@
 mid:= mserver.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
-mserver.rpc(mid,"rb:= bat.new(:int,:int); bat.setName(rb,\"rbat\"); bat.insert(rb,1,1);");
+mserver.rpc(mid,"rb:= bat.new(:int,:int); bat.setName(rb,\"rbat\"); bat.insert(rb,1,1);bat.insert(rb,2,7);");
 
 b:bat[:int,:int] := mserver.bind(mid,"rbat");
 c:=algebra.select(b,0,12);

@@ -61,6 +61,7 @@ stderr of test 'remote00` in directory 'src/optimizer` itself:
 # cmdline opt 	mapi_port = 30126
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_optimizer
+!ERROR mapi_reconnect: connect: Connection refused
 
 # 23:06:19 >  
 # 23:06:19 >  Done.

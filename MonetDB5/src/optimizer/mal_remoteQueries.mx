@@ -138,7 +138,7 @@ to the new block.
 str
 RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	InstrPtr p, q,*old;
+	InstrPtr p, q, r, *old;
 	int i, j,cnt, limit, doit=0;
 	int remoteSite,collectFirst;
 	lng clk = GDKusec();
@@ -229,22 +229,23 @@ to be shipped should be simple.
 			} else
 			if( remoteSite){
 				/* single remote site involved */
+				r= newInstruction(mb,ASSIGNsymbol);
+				getModuleId(r)= mserverRef;
+				getFunctionId(r)= rpcRef;
+				getArg(r,0)= newTmpVariable(mb, TYPE_void);
+				pushArgument(mb, r, remoteSite);
+
 				for(j=p->retc; j<p->argc; j++)
 				if( location[getArg(p,j)] == 0){
 					q= newStmt(mb,mserverRef,putRef);
-					getArg(q,0)= newTmpVariable(mb, TYPE_void);
-					pushArgument(mb, q,remoteSite);
+					getArg(q,0)= newTmpVariable(mb, TYPE_str);
 					pushStr(mb,q, getRefName(mb,getArg(p,j)));
 					pushArgument(mb,q,getArg(p,j));
+					pushArgument(mb,r, getArg(q,0));
 				}
 				s= RQcall2str(mb, p);
-#ifdef DEBUG_MAL_REMOTE
-				printf("#stmt: %s\n",s);
-#endif
-				q= newStmt(mb,mserverRef,rpcRef);
-				getArg(q,0)= newTmpVariable(mb, TYPE_void);
-				pushArgument(mb, q,remoteSite);
-				pushStr(mb,q,s+1);
+				pushInstruction(mb,r);
+				pushStr(mb,r,s+1);
 				GDKfree(s);
 				for(j=0; j<p->retc; j++)
 					location[getArg(p,j)]= remoteSite;

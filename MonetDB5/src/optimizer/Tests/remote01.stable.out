@@ -51,19 +51,8 @@ function user.main():void;	# 0  (main:void)
     d:bat[:int,:int]  := mserver.rpc(mid,"io.print(d);");	# 16 SERVERmapi_rpc_bat (d:bat[:int,:int])<-(mid:int)(_34:str)
     io.print(d);	# 17 IOprint_val (_35:int)<-(d:bat[:int,:int])
 end main;	# 18  
-Succeeded to establish session
-#-----------------#
-# h	t	  # name
-# int	int	  # type
-#-----------------#
-[ 1,	  1	  ]
-about to sent: io.print(i);
-Got: 0
- count 0
-#-----------------#
-# h	t	  # name
-# int	int	  # type
-#-----------------#
+!ERROR: MALException: Could not connect: Setup connection failed
+!ERROR:     at mserver.connect(mserver.mx:1204)
 
 # 23:06:19 >  
 # 23:06:19 >  Done.
