@@ -30,6 +30,7 @@
 #define PRIV_EXECUTE 16
 #define PRIV_GRANT 32
 
+
 #define LOCATION 0	/*Default value*/
 #define REPLICATION 0	/*Default value*/
 

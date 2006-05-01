@@ -103,7 +103,7 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 		char *host = qname_host(tableref->data.lval->h->data.sym);
 		int location = table_location(sql,host);
 		if(location == -1){
-			(void) sql_error(sql, 02, "SELECT: no such location '%s'", host);
+			(void) sql_error(sql, 02, "SELECT: no such database '%s'", host);
 			return NULL;
 		}		
 		if (!s) {
@@ -112,7 +112,7 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 		}
 		t = mvc_bind_table(sql, s, tname,location);
 		if (!t) {
-			(void) sql_error(sql, 02, "SELECT: no such table '%s' for location %s", tname,host);
+			(void) sql_error(sql, 02, "SELECT: no such table '%s' for database %s", tname,host);
 
 			return NULL;
 		} else if (!table_privs(sql, t, PRIV_SELECT)) {

@@ -1529,14 +1529,14 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 		char *host = qname_host(tableref->data.lval->h->data.sym);
 		int location = table_location(sql,host);
 		if(location ==-1){
-			return sql_error(sql, 02, "SELECT: no such location '%s'", host);
+			return sql_error(sql, 02, "SELECT: no such database '%s'", host);
 		}
 
 		if (!s) 
 			return sql_error(sql, 02, "SELECT: no such schema");
 		t = mvc_bind_table(sql, s, tname,location);
 		if (!t) {
-			return sql_error(sql, 02, "SELECT: no such table '%s' for location '%s'", tname,host);
+			return sql_error(sql, 02, "SELECT: no such table '%s' for the database  '%s'", tname,host);
 		} else if (!table_privs(sql, t, PRIV_SELECT)) {
 			return sql_error(sql, 02, "User is not allowed to select from table %s", tname);
 		}

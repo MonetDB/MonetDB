@@ -897,11 +897,14 @@ insert_into(mvc *sql, scope *scp, symbol *symb, dlist *columns, symbol *val_or_q
 	char *host = qname_host(symb);
 	int location = table_location(sql,host);
 	if(location ==-1){
-		return sql_error(sql, 02, "INSERT INTO: no such location '%s'", host);
+		return sql_error(sql, 02, "INSERT INTO: no such database '%s'", host);
+	}
+	if(location>0){
+		return sql_error(sql, 02, "INSERT INTO: no permission to modify the table %s for database '%s'", tname, host);
 	}
 
 	if (!s || (t = mvc_bind_table(sql, s, tname,location)) == NULL) {
-		return sql_error(sql, 02, "INSERT INTO: no such table '%s' for location '%s'", tname,host);
+		return sql_error(sql, 02, "INSERT INTO: no such table '%s' for database '%s'", tname,host);
 	} else if (!t->table) {
 		return sql_error(sql, 02, "INSERT INTO: cannot insert into view '%s'", tname);
 	}
@@ -910,7 +913,7 @@ insert_into(mvc *sql, scope *scp, symbol *symb, dlist *columns, symbol *val_or_q
 	}
 	if (columns) {
 		dnode *n;
-
+		printf("%d and the location is %d\n",t->location, location);
 		collist = list_create((fdestroy) NULL);
 		for (n = columns->h; n; n = n->next) {
 			sql_column *c = mvc_bind_column(sql, t, n->data.sval);
@@ -1108,11 +1111,14 @@ copyfrom(mvc *sql, scope *scp, symbol *symb, dlist *files, dlist *seps, int nr)
 	list *slist;
 	sql_table *t = mvc_bind_table(sql, cur_schema(sql), tname,location);
 	if(location ==-1){
-		return sql_error(sql, 02, "COPY INTO: no such location '%s'", host);
+		return sql_error(sql, 02, "COPY INTO: no such database '%s'", host);
+	}
+	if(location>0){
+		return sql_error(sql, 02, "COPY INTO: no permission to modify the table %s for database '%s'", tname, host);
 	}
 
 	if (!t) {
-		return sql_error(sql, 02, "COPY INTO: no such table '%s' for location '%s'", tname, host);
+		return sql_error(sql, 02, "COPY INTO: no such table '%s' for database '%s'", tname, host);
 	} else if (files) {
 		dnode *n = files->h;
 
@@ -1304,7 +1310,10 @@ update_table(mvc *sql, scope *scp, symbol *symb, dlist *assignmentlist, symbol *
 	char *host = qname_host(symb);
 	int location = table_location(sql,host);
 	if(location ==-1){
-		return sql_error(sql, 02, "UPDATE: no such location '%s'", host);
+		return sql_error(sql, 02, "UPDATE: no such database '%s'", host);
+	}
+	if(location>0){
+		return sql_error(sql, 02, "UPDATE: no permission to modify the table %s for database '%s'", tname, host);
 	}
 
 	return sql_update_table(sql, scp, s, tname, assignmentlist, opt_where,location);
@@ -1401,11 +1410,14 @@ delete_table(mvc *sql, scope *scp, symbol *symb, symbol *opt_where)
 	int location = table_location(sql,host);
 	sql_table *t = mvc_bind_table(sql, cur_schema(sql), tname, location);
 	if(location ==-1){
-		return sql_error(sql, 02, "DELETE FROM: no such location '%s'", host);
+		return sql_error(sql, 02, "DELETE FROM: no such database '%s'", host);
+	}
+	if(location>0){
+		return sql_error(sql, 02, "DELETE FROM: no permission to modify the table %s for database '%s'", tname, host);
 	}
 
 	if (!t) {
-		return sql_error(sql, 02, "DELETE FROM: no such table '%s' for location '%s'", tname,host);
+		return sql_error(sql, 02, "DELETE FROM: no such table '%s' for database '%s'", tname,host);
 	} else if (!t->table) {
 		return sql_error(sql, 02, "DELETE FROM: cannot delete from view '%s'", tname);
 	}

@@ -221,7 +221,7 @@ table_location(mvc* sql,char* host)
 {
 	int location = -1;
         if(host)
-                location = (int) find_table_value(sql,"hosts","location","name",host,LOCATION);
+                location = (int) find_table_value(sql,"hosts","location","dbname",host,LOCATION);
      	return location;
 }
 
@@ -282,7 +282,10 @@ qname_host(symbol *symb)
         if(symb->token == SQL_REP_NAME)
                 return qname->t->data.sval;
         else if(symb->token == SQL_NAME)
-                return "localhost";
+	{
+		//append_string(qname,"localhost");
+                return GDKgetenv("gdk_dbname");
+	}
         return "unknown";
 }
 

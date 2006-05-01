@@ -19,6 +19,7 @@
 #ifndef BAT_SEQ_H
 #define BAT_SEQ_H
 
+
 extern void sequences_init(void);
 extern void sequences_exit(void);
 

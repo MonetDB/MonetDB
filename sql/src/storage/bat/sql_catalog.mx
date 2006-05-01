@@ -35,7 +35,7 @@ list_find_name(list *l, char *name)
 			sql_base *b = n->data;
 			/* check if names match */
 			if (name[0] == b->name[0] && strcmp(name, b->name) == 0) {
-					return n;
+				return n;
 			}
 		}
 	return NULL;

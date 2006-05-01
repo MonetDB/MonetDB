@@ -21,12 +21,16 @@
 #ifndef BAT_REPLIC_H
 #define BAT_REPLIC_H
 
-#include "bat_store.h"
 #include "sql_types.h"
+#include "bat_sequence.h"
+#include "bat_logger.h"
+#include "bat_store.h"
+
 
 extern sql_column* create_column(sql_trans *tr, sql_table* t, char* table, char* type, int digits);
 extern int create_host_table(sql_trans *tr, sql_schema *s);
 extern int create_replication_table(sql_trans *tr, sql_schema *s);
+extern void table_insert_location(sql_trans* tr,sql_schema* s,int loc,char *host, char* ip, int port, char* user,char* passwd);
 #endif /*BAT_REPLIC_H */
 
 
@@ -34,7 +38,10 @@ extern int create_replication_table(sql_trans *tr, sql_schema *s);
 
 #include "bat_replication.h"
 
-/*This funciton was created to convert a string to a subtype, internal function*/
+/*This fiunciton was created to convert a string to a subtype, internal function*/
+
+
+
 sql_column*
 create_column(sql_trans *tr, sql_table* t, char* table, char* type, int digits)
 {
@@ -46,13 +53,12 @@ create_column(sql_trans *tr, sql_table* t, char* table, char* type, int digits)
 
 /*Function to create the table that contais all the information about the hosts*/
 int
-create_host_table(sql_trans *tr, sql_schema *s)
-{
+create_host_table(sql_trans *tr, sql_schema *s){
         sql_table *t;
         t = sql_trans_create_table(tr, s, "hosts", 1, 1, 0, 1, LOCATION, REPLICATION);
         
 	create_column(tr, t, "location", "int",32);
-	create_column(tr, t, "name", "varchar",1024);
+	create_column(tr, t, "dbname", "varchar",1024);
 	create_column(tr, t, "ip", "varchar",1024);
 	create_column(tr, t, "port", "int",32);
 	create_column(tr, t, "user", "varchar",1024);
@@ -63,19 +69,25 @@ create_host_table(sql_trans *tr, sql_schema *s)
 
 /*Function to create the table for the replication metadata*/
 int
-create_replication_table(sql_trans *tr, sql_schema *s)
-{
+create_replication_table(sql_trans *tr, sql_schema *s){
         sql_table *t;
         t = sql_trans_create_table(tr, s, "replication", 1, 1, 0, 1, LOCATION, REPLICATION);
         
-	create_column(tr, t, "replication_id", "int",9); 	
-	create_column(tr, t, "scenario_id", "int",9); 	/*the id for each replication scenario for the table*/
-        create_column(tr, t, "push", "boolean",0);		/*updates in the table need to be push*/
-        create_column(tr, t, "refresh_time", "int",9);		/*time for cycle refresh, -1 no cycle refresh*/
-        create_column(tr, t, "rep_columns", "varchar",2048);	/*columns for replication*/
-        create_column(tr, t, "t_rev_plus", "int",9);		/*t revision for +deltas*/
-        create_column(tr, t, "t_rev_min", "int",9);		/*t revision for -deltas*/
-        create_column(tr, t, "location", "int",9);		/*for who the updates need to be send*/
+	create_column(tr, t, "replication_id", "int",32); 	
+	create_column(tr, t, "IN/OUT", "int",9); 		/*If the table is used for a remote view(OUT-1) or use a remote table(IN-0)*/
+        create_column(tr, t, "table_name", "varchar",1024);		/*remotetable name or the view that uses tehe local table*/
+	create_column(tr, t, "PUSH/PULL", "int",9); 		/*The kind of refresh*/
+        create_column(tr, t, "refresh_time", "int",32);		/*time for cycle refresh, -1 no cycle refresh*/
+        create_column(tr, t, "t_rev_plus", "int",32);		/*t revision for +deltas*/
+        create_column(tr, t, "t_rev_min", "int",32);		/*t revision for -deltas*/
 	return 0;
 }
+
+/*Function to help the insertion of new locations*/
+void
+table_insert_location(sql_trans* tr,sql_schema* s,int loc,char *host, char* ip, int port, char* user,char* passwd){
+	sql_table* t = find_sql_table(s,"hosts",LOCATION);
+	table_insert(tr, t, &loc, host , ip, &port, user, passwd);
+}
+
 
