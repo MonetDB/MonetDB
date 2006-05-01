@@ -411,8 +411,9 @@ faster system start.
 			}
 		}
 			break;
-		case 't':	/* trace option, currently ignored */
+		case 't':	/* trace option, ignored to reduce testweb complaints
 			fprintf(stderr, "#warning: trace option not yet supported\n");
+			*/
 			break;
 		case 'h':
 			if(strcmp(long_options[option_index].name, "help") == 0) {
