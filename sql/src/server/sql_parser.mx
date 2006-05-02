@@ -1569,7 +1569,10 @@ opt_with_check_option:
 
 
 opt_replication_using_list:
-    USING push_pull_replication				{dlist *l= L();
+    /*empty*/						{dlist *l= L();
+							append_int(l,0);
+							$$ = l;}
+ |  USING push_pull_replication				{dlist *l= L();
 							append_int(l,$2);
 							$$ = l;}
  |  USING push_pull_replication ',' R_TIME posint	{dlist* l = L();
