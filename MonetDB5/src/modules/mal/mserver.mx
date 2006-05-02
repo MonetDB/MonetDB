@@ -792,7 +792,7 @@ SERVERlistenSSL(int *Port, int *Maxusers, str keyfile, str certfile, str cmd)
 	int maxusers = *Maxusers;
 	SSL_CTX *ctx = NULL;
 	SSL *ssl = NULL;
-	char *msg;
+	char *msg = NULL;
 
 	if (!port)
 		port = SERVERSSLPORT;
