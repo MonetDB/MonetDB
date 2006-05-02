@@ -213,7 +213,7 @@ BATundo(BAT *b)
 		void (*hatmdel) (Heap *, var_t *) = BATatoms[b->htype].atomDel;
 		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 
-		if (hunfix || tunfix || hatmdel || tatmdel) {
+		if (hunfix || tunfix || hatmdel || tatmdel || b->hhash || b->thash) {
 			for (p = bunfirst; p <= bunlast; p += bunsize, i++) {
 				ptr h = BUNhead(b, p);
 				ptr t = BUNtail(b, p);
