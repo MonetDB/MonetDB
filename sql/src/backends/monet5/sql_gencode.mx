@@ -105,7 +105,7 @@ static str sql_cacheRef;
 
 void initSQLreferences(){
 	if( resultSetRef != 0) return;
-	optInit();
+	optimizerInit();
 	exportValueRef = putName("exportValue",11);
 	resultSetRef= putName("resultSet",9);
 	exportResultRef= putName("exportResult",12);
@@ -1355,7 +1355,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushStr(mb, q, "UTF-8");
 				q = pushArgument(mb, q, codeset);
 
-				q = newStmt(mb, "stream", "openRead");
+				q = newStmt(mb, "streams", "openRead");
 				q = pushArgument(mb, q, file);
 				file = getDestVar(q);
 
@@ -1372,7 +1372,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushInt(mb, q, s->flag);
 				s->nr = getDestVar(q);
 
-				q = newStmt(mb, "stream", "close");
+				q = newStmt(mb, "streams", "close");
 				q = pushArgument(mb, q, file);
 
 				q = newStmt(mb, "bstream", "destroy");

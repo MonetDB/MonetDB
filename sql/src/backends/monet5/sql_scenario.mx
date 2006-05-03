@@ -284,7 +284,7 @@ SQLsession(str *ret)
 {
 	str msg = MAL_SUCCEED;
 
-	msg = setScenario(getClient(), "sql");
+	msg = setScenario(MCgetClient(), "sql");
 	*ret = 0;
 	return msg;
 }
@@ -297,7 +297,7 @@ str
 SQLinitEnvironment(int *ret)
 {
 	(void) ret;
-	return SQLinitAdmin(getClient());
+	return SQLinitAdmin(MCgetClient());
 }
 @-
 The SQLcompile operation can be used by separate
@@ -336,7 +336,7 @@ SQLcompileInternal(str *ret, str *expr, int flag)
 	buffer *b;
 	char *n;
 	str msg= MAL_SUCCEED;
-	Client c= getClient();
+	Client c= MCgetClient();
 	backend *sql = ((backend *) c->state[PARSER]);
 	int len = strlen(*expr);
 
@@ -445,7 +445,7 @@ We don;t search the cache for a previous incarnation.
 				msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
 				c->state[PARSER] = be;
 			}
-			resetInstructions(c->curprg->def, 1);
+			MSresetInstructions(c->curprg->def, 1);
 			freeVariables(c->curprg->def, c->glb, vtop);
 		} else
 			*ret= GDKstrdup(getFunctionId(getInstrPtr(c->curprg->def,0)));
@@ -603,7 +603,7 @@ The former comes with readline functionality.
 		ssize_t rd;
 
 		if (c->bak) {
-			popClientInput(c);
+			MCpopClientInput(c);
 			in = c->fdin;
 			m->scanner.rs = c->fdin;
 			c->fdin->pos += c->yycur;
@@ -666,7 +666,6 @@ The most important one is to prepare code to be handled by the debugger.
 The current analysis is simple and fulfills our short-term needs.
 A future version may analyze the parameter settings in more detail.
 @c
-
 void
 SQLsetDebugger(Client c, mvc *m, int onoff)
 {
@@ -689,18 +688,29 @@ SQLsetDebugger(Client c, mvc *m, int onoff)
 }
 
 void
-SQLsetTrace(Client c, int on)
+SQLsetTrace(Client c, int onoff)
 {
-	if (on)
-		c->listing = (c->listing & LIST_INPUT) | LIST_MAL_INSTR;
-	else
-		c->listing &= LIST_INPUT;
+	InstrPtr q;
+
+	c->itrace='c';
+	q = newInstruction(c->curprg->def,ASSIGNsymbol);
+	getArg(q,0)= newTmpVariable(c->curprg->def,TYPE_any);
+	getModuleId(q) = putName("mdb",3);
+	getFunctionId(q) = putName("setTimer",8);
+	pushBit(c->curprg->def,q,onoff);
+	pushInstruction(c->curprg->def, q);
 }
 
 void
-SQLsetExplain(Client c)
+SQLshowPlan(Client c)
 {
-	c->listing = (c->listing & LIST_INPUT) | LIST_MAL_ALL;
+	InstrPtr q;
+
+	q = newInstruction(c->curprg->def,ASSIGNsymbol);
+	getArg(q,0)= newTmpVariable(c->curprg->def,TYPE_any);
+	getModuleId(q) = putName("inspect",7);
+	getFunctionId(q) = putName("showSource",10);
+	pushInstruction(c->curprg->def, q);
 }
 
 @-
@@ -837,7 +847,11 @@ produce code.
 		m->mode = m_inplace;
 	} else 
 	if( (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key))){
-		if( m->mode != m_debug  && m->mode!= m_explain)
+		if( m->mode == m_trace || m->explain == m_trace)
+			SQLsetTrace(c, TRUE);
+		if( m->mode == m_debug)
+			SQLsetDebugger(c, m, m->mode == m_debug); 
+		if( m->mode != m_debug  && m->mode!= m_explain && m->mode!= m_trace)
 			m->mode = m_inplace;
 	} else {
 		stmt *s;
@@ -856,6 +870,10 @@ produce code.
 		if (m->mode != m_prepare &&
 		   (msg = sql_get_var(m,"optimizer")) == NULL) {
 */
+		if( m->explain== m_explain)
+			SQLshowPlan(c);
+		if( m->mode == m_trace || m->explain == m_trace)
+			SQLsetTrace(c, TRUE);
 		if( m->mode == m_debug)
 			SQLsetDebugger(c, m, m->mode == m_debug); 
 		if (m->mode != m_prepare && !m->cache && m->mode!= m_explain ){
@@ -888,9 +906,7 @@ produce code.
 		stream_printf(GDKout, "#parse result %d\n", err);
 #endif
 	if( be->q ){
-		if (m->mode == m_explain)
-			printFunction(c->fdout, ((Symbol) be->q->code)->def, c->listing);
-		else if (m->mode == m_prepare)
+		if (m->mode == m_prepare)
 			err = mvc_export_prepare(m, c->fdout, be->q);
 		else if (m->mode == m_inplace ){
 			/* everything ready for a fast call */
@@ -904,6 +920,8 @@ In the final phase we add any debugging control
 	/* turn off debugger */
 	if( m->mode == m_debug )
 		SQLsetDebugger(c, m, FALSE);
+	if( m->mode == m_trace )
+		SQLsetTrace(c, FALSE);
 
 	if (be->mvc->mode == m_profile ) {
 		be->qry = sql_escape_str(QUERY(m->scanner));
@@ -946,7 +964,12 @@ query block.
 			msg = throwMessage("SQLparser", "Semantic errors\n");
 		}
 	}
+@-
+Inspect the variables for post code-generation actions.
+@c
 finalize:
+	if(m->mode== m_explain )
+		printFunction(GDKout, ((Symbol)(be->q->code))->def, LIST_MAL_INSTR);
 	m->scanner.mode = oldmode;
 @-
 Gather the statistics for post analysis. It should preferably

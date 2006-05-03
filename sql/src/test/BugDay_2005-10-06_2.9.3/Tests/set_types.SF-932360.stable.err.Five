@@ -70,10 +70,10 @@ stderr of test 'set_types.SF-932360` in directory 'src/test/BugDay_2005-10-06_2.
 
 MAPI  = monetdb@localhost:45029
 QUERY = set current_timezone = 60;
-ERROR = !ERROR: MALexception:calc.month_interval: illegal argument
+ERROR = !ERROR: calc.month_interval: illegal argument
 MAPI  = monetdb@localhost:45029
 QUERY = set current_timezone = 0;
-ERROR = !ERROR: MALexception:calc.month_interval: illegal argument
+ERROR = !ERROR: calc.month_interval: illegal argument
 
 # 14:30:12 >  
 # 14:30:12 >  Done.

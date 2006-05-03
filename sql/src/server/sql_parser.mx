@@ -879,11 +879,6 @@ operation:
  |  SELECT opt_column_commalist	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
  |  REFERENCES opt_column_commalist { $$ = _symbol_create_list(SQL_SELECT,$2); }
  |  EXECUTE			    { $$ = _symbol_create(SQL_EXECUTE,NULL); }
- |  TRIGGER
-
-/* | UNDER
-   | USAGE
-*/
  ;
 
 grantee_commalist:

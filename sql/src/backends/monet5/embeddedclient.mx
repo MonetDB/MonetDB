@@ -170,7 +170,7 @@ start_sql_server(void *arg)
 		mo_free_options(embedded_set, embedded_len);
 		if (mal_init())
 			return 0;
-		initClientPrg(mal_clients, "main");
+		MSinitClientPrg(mal_clients, "main");
 		initialized = 1;
 	}
 

@@ -391,7 +391,6 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 
 			len = snprintf(buf, buflen, "var s%d := mvc_bind(myc, \"%s\", \"%s\", \"%s\", %d, %d);\n", -s->nr, s->op1.cval->t->s->base.name, s->op1.cval->t->base.name, s->op1.cval->base.name, s->op1.cval->t->location, s->flag);
 			assert(len <= buflen);
-
 			dump(sql, buf, len, -s->nr); 
 			_DELETE(buf);
 			break;
@@ -400,10 +399,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			size_t buflen = 128 + strlen(s->op1.tval->s->base.name) + strlen(s->op1.tval->base.name);
 			buf = NEW_ARRAY(char, buflen + 1);
 
-			len = snprintf(buf, buflen, "var s%d := mvc_bind_dbat(myc, \"%s\", \"%s\", %d)", -s->nr, s->op1.tval->s->base.name, s->op1.tval->base.name, s->flag);
-			assert(len <= buflen);
-
-			len += snprintf(buf + len, buflen - len, ";\n");
+			len = snprintf(buf, buflen, "var s%d := mvc_bind_dbat(myc, \"%s\", \"%s\", %d);\n", -s->nr, s->op1.tval->s->base.name, s->op1.tval->base.name, s->flag);
 			assert(len <= buflen);
 			dump(sql, buf, len, -s->nr);
 			_DELETE(buf);
@@ -413,10 +409,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			size_t buflen = 128 + strlen(s->op1.idxval->t->s->base.name) + strlen(s->op1.idxval->t->base.name) + strlen(s->op1.idxval->base.name);
 			buf = NEW_ARRAY(char, buflen + 1);
 
-			len = snprintf(buf, buflen, "var s%d := mvc_bind_idxbat(myc, \"%s\", \"%s\", \"%s\", %d)", -s->nr, s->op1.idxval->t->s->base.name, s->op1.idxval->t->base.name, s->op1.idxval->base.name, s->flag);
-			assert(len <= buflen);
-
-			len += snprintf(buf + len, buflen - len, ";\n");
+			len = snprintf(buf, buflen, "var s%d := mvc_bind_idxbat(myc, \"%s\", \"%s\", \"%s\", %d);\n", -s->nr, s->op1.idxval->t->s->base.name, s->op1.idxval->t->base.name, s->op1.idxval->base.name, s->flag);
 			assert(len <= buflen);
 			dump(sql, buf, len, -s->nr);
 			_DELETE(buf);
@@ -994,23 +987,27 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		case st_append:{
 			int l, r = backend_dumpstmt_(s->op2.stval, nr, sql);
 
+			/* special cases try to simply replace the insert bat */
 			if (s->op1.stval->type == st_bat && 
 			    s->op2.stval->nrcols) {
 				stmt *c = s->op1.stval; 
-				/* special case try to simply replace the
-				   insert bat */
 
 				size_t buflen = 128 + strlen(c->op1.cval->t->s->base.name) + strlen(c->op1.cval->t->base.name) + strlen(c->op1.cval->base.name);
 
 				buf = NEW_ARRAY(char, buflen + 1);
-
 				len = snprintf(buf, buflen, "var s%d := mvc_append(myc, \"%s\", \"%s\", \"%s\", %d, s%d);\n", -s->nr, c->op1.cval->t->s->base.name, c->op1.cval->t->base.name, c->op1.cval->base.name, c->flag, r);
 				assert(len <= buflen);
 				dump(sql, buf, len, -s->nr);
-			/* todo 
 			} else if (s->op1.stval->type == st_idxbat && 
 			    	   s->op2.stval->nrcols) {
-			*/
+				stmt *c = s->op1.stval; 
+
+				size_t buflen = 128 + strlen(c->op1.idxval->t->s->base.name) + strlen(c->op1.idxval->t->base.name) + strlen(c->op1.idxval->base.name);
+
+				buf = NEW_ARRAY(char, buflen + 1);
+				len = snprintf(buf, buflen, "var s%d := mvc_append_idxbat(myc, \"%s\", \"%s\", \"%s\", %d, s%d);\n", -s->nr, c->op1.idxval->t->s->base.name, c->op1.idxval->t->base.name, c->op1.idxval->base.name, c->flag, r);
+				assert(len <= buflen);
+				dump(sql, buf, len, -s->nr);
 			} else {
 				l = backend_dumpstmt_(s->op1.stval, nr, sql);
 				buf = NEW_ARRAY(char, BUFSIZ + 1);

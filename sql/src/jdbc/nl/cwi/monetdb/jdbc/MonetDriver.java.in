@@ -140,7 +140,7 @@ final public class MonetDriver implements Driver {
 			if (uri.getPort() > 0) info.put("port", "" + uri.getPort());
 
 			// check the database
-			if (uri.getPath() == null ||
+			if (uri.getPath() == null || uri.getPath().length() == 0 ||
 					uri.getPath().substring(1).trim().equals(""))
 				throw new SQLException("Invalid URL: A database is " +
 						"required in '" +  url + "'");
@@ -249,6 +249,11 @@ final public class MonetDriver implements Driver {
 		prop = new DriverPropertyInfo("language", "sql");
 		prop.required = false;
 		prop.description = "What language to use for MonetDB conversations (sql/xquery)";
+		props.add(prop);
+
+		prop = new DriverPropertyInfo("hash", "");
+		prop.required = false;
+		prop.description = "Force the use of the given hash algorithm during challenge response (one of SHA1, MD5, plain)";
 		props.add(prop);
 
 		DriverPropertyInfo[] dpi = new DriverPropertyInfo[props.size()];

@@ -92,6 +92,10 @@ the updates to the persistent versions.
 	.COMMAND mvc_bind_idxbat( mvc c, str sname, str tname, str iname, int access ) : 
 		BAT[any::1,any::2] = mvc_bind_idxbat_wrap; 
 		"Bind the idx table"
+
+	.COMMAND mvc_append_idxbat( mvc c, str sname, str tname, str iname, int access, BAT[oid,any::1] b ) : 
+		BAT[void,any::1] = mvc_append_idxbat; 
+		"Bind the idx table"
 @-
 A special clear table function is required for an efficient DELETE ALL implementation. A table clear requires global table knowledge. 
 @m
@@ -411,6 +415,23 @@ mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access)
 		b = bind_idx(tr, i, access);
 	return b;
 }
+
+int
+mvc_append_idxbat(BAT **b, mvc *M, char *sname, char *tname, char *iname, int *access, BAT *ib)
+{
+	mvc *m = *(mvc**)M;
+	sql_trans *tr = m->trans;
+	sql_schema *s = mvc_bind_schema(m, sname);
+	sql_idx *i = mvc_bind_idx(m, s, iname);
+
+	(void) tname;
+	if (*access == UPD)
+		*b = append_uidx(tr, i, *access, ib);
+	else
+		*b = append_idx(tr, i, *access, ib);
+	return GDK_SUCCEED;
+}
+
 
 
 int

@@ -126,7 +126,7 @@ sql_completion(const char *text, int start, int end)
 void
 init_sql_readline(void)
 {
-	str history = getClient()->history;
+	str history = MCgetClient()->history;
 
 	/* Allow conditional parsing of the ~/.inputrc file. */
 	rl_readline_name = "MonetDB";
@@ -138,7 +138,7 @@ init_sql_readline(void)
 void
 deinit_sql_readline(void)
 {
-	str history = getClient()->history;
+	str history = MCgetClient()->history;
 	if (history) {
 		write_history(history);
 	}

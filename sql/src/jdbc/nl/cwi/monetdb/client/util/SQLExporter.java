@@ -395,7 +395,11 @@ public class SQLExporter extends Exporter {
 		// find the widths of the columns
 		int[] width = new int[md.getColumnCount()];
 		for (int j = 0; j < md.getColumnCount(); j++) {
-			width[j] = Math.max(md.getColumnDisplaySize(j + 1), md.getColumnLabel(j + 1).length());
+			if (md.getColumnDisplaySize(j + 1) == 0) {
+				width[j] = "<NULL>".length();
+			} else {
+				width[j] = Math.max(md.getColumnDisplaySize(j + 1), md.getColumnLabel(j + 1).length());
+			}
 		}
 
 		out.print("+");

@@ -162,7 +162,7 @@ bind_bat(sql_trans *tr, sql_column *c, int access)
 BAT *
 append_bat(sql_trans *tr, sql_column *c, int access, BAT *i)
 {
-	BAT *b;
+	BAT *b = NULL;
 
 	if (c->base.flag == TR_NEW || !c->t->persists || c->t->clear ||
 	    access == INS || !c->bat.bid) 
@@ -180,13 +180,13 @@ append_bat(sql_trans *tr, sql_column *c, int access, BAT *i)
 	} else {
 		assert(0); /* RDONLY appends ???? */
 	}
+	assert(b != NULL);
 	b->batDirty |= 2;
 	if (access) {
 		BATsetaccess(b, BAT_WRITE);
 		c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->stime;
 	}
 	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
-	assert(b);
 	return b;
 }
 

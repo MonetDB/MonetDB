@@ -96,6 +96,7 @@ module 'sql_server'
 [ "mvc_affected_rows(mvc, Stream, int) : void"				  ]
 [ "mvc_affected_rows(mvc, Stream, lng) : void"					  ]
 [ "mvc_append(mvc, str, str, str, int, BAT[oid,any::1]) : BAT[void,any::1]"	  ]
+[ "mvc_append_idxbat(mvc, str, str, str, int, BAT[oid,any::1]) : BAT[void,any::1]"	  ]
 [ "mvc_bind(mvc, str, str, str, int) : BAT[any::1,any::2]"		  ]
 [ "mvc_bind_dbat(mvc, str, str, int) : BAT[any::1,any::2]"		  ]
 [ "mvc_bind_idxbat(mvc, str, str, str, int) : BAT[any::1,any::2]"	  ]

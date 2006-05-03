@@ -22,6 +22,7 @@ import java.sql.*;
 import java.util.*;
 import java.io.*;
 import java.nio.*;
+import java.security.*;
 import nl.cwi.monetdb.jdbc.util.*;
 
 /**
@@ -146,6 +147,7 @@ public class MonetConnection implements Connection {
 
 		String language = props.getProperty("language");
 		boolean debug = Boolean.valueOf(props.getProperty("debug")).booleanValue();
+		String hash = props.getProperty("hash");
 
 		// check input arguments
 		if (hostname == null || hostname.trim().equals(""))
@@ -179,19 +181,23 @@ public class MonetConnection implements Connection {
 
 			// we're debugging here... uhm, should be off in real life
 			if (debug) {
-				String fname = props.getProperty("logfile", "monet_" +
-					System.currentTimeMillis() + ".log");
-				File f = new File(fname);
-				int ext = fname.lastIndexOf(".");
-				if (ext < 0) ext = fname.length();
-				String pre = fname.substring(0, ext);
-				String suf = fname.substring(ext);
+				try {
+					String fname = props.getProperty("logfile", "monet_" +
+						System.currentTimeMillis() + ".log");
+					File f = new File(fname);
+					int ext = fname.lastIndexOf(".");
+					if (ext < 0) ext = fname.length();
+					String pre = fname.substring(0, ext);
+					String suf = fname.substring(ext);
 
-				for (int i = 1; f.exists(); i++) {
-					f = new File(pre + "-" + i + suf);
+					for (int i = 1; f.exists(); i++) {
+						f = new File(pre + "-" + i + suf);
+					}
+
+					monet.debug(f.getAbsolutePath());
+				} catch (IOException ex) {
+					throw new SQLException("Opening logfile failed: " + ex.getMessage());
 				}
-
-				monet.debug(f.getAbsolutePath());
 			}
 
 			// log in
@@ -220,7 +226,8 @@ public class MonetConnection implements Connection {
 						password,
 						language,
 						true,
-						database
+						database,
+						hash
 						) + "\n");
 
 			// We need to send the server our byte order.  Java by
@@ -246,6 +253,17 @@ public class MonetConnection implements Connection {
 			} else if (byteorder[0] == (byte)0xD2) {
 				// set our connection to litte-endian mode
 				monet.setByteOrder(ByteOrder.LITTLE_ENDIAN);
+			} else if (byteorder[0] == '!') {
+				// we have an error message, try to read a reasonable
+				// chunk and spit it out
+				byte[] buf = new byte[1024];
+				len = monet.read(buf);
+				monet.disconnect();
+				throw new SQLException(new String(byteorder, 1, 1, "UTF-8") +
+						new String(buf, 0, len, "UTF-8"));
+			} else {
+				// we have something else then a handshake here
+				throw new SQLException("The server sent an invalid byte-order sequence");
 			}
 
 			// read monet response till prompt
@@ -353,14 +371,15 @@ public class MonetConnection implements Connection {
 		String password,
 		String language,
 		boolean blocked,
-		String database
+		String database,
+		String hash
 	) throws SQLException {
 		int version = 0;
 		String response;
 		
 		// parse the challenge string, split it on ':'
 		String[] chaltok = chalstr.split(":");
-		if (chaltok.length != 4) throw
+		if (chaltok.length < 4) throw
 			new SQLException("Server challenge string unusable!");
 
 		// challenge string use as salt/key in future
@@ -372,23 +391,82 @@ public class MonetConnection implements Connection {
 			throw new SQLException("Protocol version unparseable: " + chaltok[3]);
 		}
 
-		/**
-		 * do something with the challenge to salt the password hash here!!!
-		 */
-		response = username + ":" + password + ":" + language;
-		if (blocked) {
-			response += ":blocked";
-		} else if (version >= 5) {
-			response += ":line";
-		}
-		if (version < 5) {
-			// don't use database
-			addWarning("database specifier not supported on this server (" + chaltok[2].trim() + "), protocol version " + chaltok[3].trim());
-		} else {
-			response += ":" + database;
+		// handle the challenge according to the version it is
+		switch (version) {
+			default:
+				throw new SQLException("Unsupported protocol version: " + version);
+			case 4:
+				response = username + ":" + password + ":" + language;
+				if (blocked) response += ":blocked";
+				// don't use database
+				addWarning("database specifier not supported on this server (" + chaltok[2].trim() + "), protocol version " + version);
+			break;
+			case 5:
+				response = username + ":" + password + ":" + language;
+				response += blocked ? ":blocked" : ":line";
+				response += ":" + database;
+			break;
+			case 6:
+				// proto 6 (finally) uses the challenge and works with a
+				// password hash.  The supported implementations come
+				// from the server challenge.  We chose the best hash
+				// we can find, in the order SHA1, MD5, plain.
+				String hashes = (hash == null ? chaltok[4] : hash);
+				String pwhash;
+				if (hashes.indexOf("SHA1") != -1) {
+					try {
+						MessageDigest md = MessageDigest.getInstance("SHA-1");
+						md.update(password.getBytes("UTF-8"));
+						md.update(challenge.getBytes("UTF-8"));
+						byte[] digest = md.digest();
+						pwhash = "{SHA1}" + toHex(digest);
+					} catch (NoSuchAlgorithmException e) {
+						throw new AssertionError("internal error: " + e.toString());
+					} catch (UnsupportedEncodingException e) {
+						throw new AssertionError("internal error: " + e.toString());
+					}
+				} else if (hashes.indexOf("MD5") != -1) {
+					try {
+						MessageDigest md = MessageDigest.getInstance("MD5");
+						md.update(password.getBytes("UTF-8"));
+						md.update(challenge.getBytes("UTF-8"));
+						byte[] digest = md.digest();
+						pwhash = "{MD5}" + toHex(digest);
+					} catch (NoSuchAlgorithmException e) {
+						throw new AssertionError("internal error: " + e.toString());
+					} catch (UnsupportedEncodingException e) {
+						throw new AssertionError("internal error: " + e.toString());
+					}
+				} else if (hashes.indexOf("plain") != -1) {
+					pwhash = "{plain}" + password + challenge;
+				} else {
+					throw new SQLException("no supported password hashes in " + hashes);
+				}
+				response = username + ":" + pwhash + ":" + language;
+				response += blocked ? ":blocked" : ":line";
+				response += ":" + database;
+			break;
 		}
 
 		return(response);
+	}
+
+	/**
+	 * Small helper method to convert a byte string to a hexadecimal
+	 * string representation.
+	 *
+	 * @param digest the byte array to convert
+	 * @return the byte array as hexadecimal string
+	 */
+	private static String toHex(byte[] digest) {
+		StringBuffer r = new StringBuffer(digest.length * 2);
+		for (int i = 0; i < digest.length; i++) {
+			// zero out higher bits to get unsigned conversion
+			int b = digest[i] << 24 >>> 24;
+			if (b < 16) r.append("0");
+			r.append(Integer.toHexString(b));
+		}
+		return(r.toString());
 	}
 
 	//== methods of interface Connection

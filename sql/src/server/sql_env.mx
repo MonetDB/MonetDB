@@ -331,6 +331,8 @@ sql_update_var(mvc *m, char *name)
 			m->explain = m_explain;
 		else if (strcmp(explain, "profile") == 0)
 			m->explain = m_profile;
+		else if (strcmp(explain, "trace") == 0)
+			m->explain = m_trace;
 		else {
 			GDKwarning("Session variable explain can only be set to 'plan', 'profile' or to the empty string\n");
 			if (explain)
@@ -342,7 +344,7 @@ sql_update_var(mvc *m, char *name)
 		m->mode = m_explain;
 	} else if (strcmp(name, "cache") == 0) {
 		m->cache = sql_get_bit_var(m, "cache");
-	}
+	} 
 	return GDK_SUCCEED;
 }
 
@@ -408,10 +410,7 @@ sql_session(mvc *m)
 	snprintf(buf, BUFSIZ, "%d", m->timezone * 60);
 	table_insert(tr, s, "current_timezone", buf, "sec_interval", &rw, NULL);
 
-	if (m->cache)
-		table_insert(tr, s, "cache", "true", "boolean", &rw, NULL);
-	else
-		table_insert(tr, s, "cache", "true", "boolean", &rw, NULL);
+	table_insert(tr, s, "cache", "true", "boolean", &rw, NULL);
 
 /* Actually 'factory' and 'cache' are optimizer decisions too
 	table_insert(tr, s, "optimizer", "sql.optimizer();", "varchar", &rw, NULL);
