@@ -8023,9 +8023,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         deleteResult_ (f, counter, STR);
         return NORMAL;
     }
-    else if (!PFqname_eq(fnQname,
-                         PFqname (PFns_fn,"tijah-query")))
+    else if (
+           !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-query")) ||
+           !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-score"))
+         )
     {
+	int is_node_query = !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-query"));
         /* get offset */
         translate2MIL (f, VALUES, cur_level, counter, RL(args));
         saveResult_ (f, ++counter, STR);
@@ -8034,43 +8037,57 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         rc = translate2MIL (f, code, cur_level, ++counter, L(args));
                
         milprintf(f, 
-                "{ # translate fn:tijah-query\n"
+                "{ # translate fn:tijah-%s\n"
                 "if (loop%03u.count() = 1) {\n"
                 "    var lo := 2.0LL;\n"
 		"    var tjpfx := \"PFX\";\n"
                 "    var tqarg := item_str_%03d.fetch(0);\n"
-                "    var pre_score := run_tijah_query(tjpfx,tqarg);\n"
-                "    if (lo < 1.0LL) lo := 0.0;\n", cur_level, counter-1);
+		"    if ( tqarg != tijah_qstring ) {\n"
+		"      tijah_qstring := tqarg;\n"
+                "      tijah_qscore := run_tijah_query(tjpfx,tijah_qstring);\n"
+		"    } else {\n"
+		"      if ( false ) printf(\"# tijah_qscore cached!!!\");\n"
+		"    }\n"
+                "    if (lo < 1.0LL) lo := 0.0;\n", (is_node_query?"query":"score"),cur_level, counter-1);
         milprintf(f, "    var hi := INT_MAX;\n");
 
-	/* PROC tijah2pf(BAT[oid,dbl] pre_score) : BAT := */
+	/* PROC tijah2pf(BAT[oid,dbl] tijah_qscore) : BAT := */
 	milprintf(f,
           "var docpre := bat(\"tj_\" + tjpfx + \"_doc_firstpre\").[oid]();\n"
           "var pfpre :=  bat(\"tj_\" + tjpfx + \"_pfpre\");\n"
-          "var score := pre_score.tmark(0@0);\n"
-          "item  := pre_score.hmark(0@0);\n"
+          "var score := tijah_qscore.tmark(0@0);\n"
+          "item  := tijah_qscore.hmark(0@0);\n"
           "iter  := item.mirror();\n"
           "var frag := [find_lower](const docpre.reverse().mark(0@0), item);\n"
           "item := item.join(pfpre).sort().tmark(0@0);\n"
 	  );
 
 	/* PROC align_frag() : void := */
-	milprintf(f,
-          "var needed_docs := bat(\"tj_\" + tjpfx + \"_doc_name\").semijoin(frag.tunique());\n"
-          "var loaded_docs := ws.fetch(DOCID_NAME).reverse();\n"
-          "needed_docs@batloop()\n"
-          "{\n"
-          "      if (not(loaded_docs.exist($t))) {\n"
-          "              ws.add_doc($t); }\n"
-          "}\n"
-          "var doc_loaded := ws.fetch(CONT_DOCID).join(ws.fetch(DOCID_NAME));\n"
-          "var fid_pffid := needed_docs.join(doc_loaded.reverse());\n"
-          "frag := frag.join(fid_pffid).sort().tmark(0@0);\n"
-          "kind := set_kind(frag, ELEM);\n"
-          "# ipik := iter;\n"
-          "# pos  := ipik.mark(1@0);\n"
-	  "}\n"
+	if ( is_node_query ) {
+	  milprintf(f,
+            "var needed_docs := bat(\"tj_\" + tjpfx + \"_doc_name\").semijoin(frag.tunique());\n"
+            "var loaded_docs := ws.fetch(DOCID_NAME).reverse();\n"
+            "needed_docs@batloop()\n"
+            "{\n"
+            "      if (not(loaded_docs.exist($t))) {\n"
+            "              ws.add_doc($t); }\n"
+            "}\n"
+            "var doc_loaded := ws.fetch(CONT_DOCID).join(ws.fetch(DOCID_NAME));\n"
+            "var fid_pffid := needed_docs.join(doc_loaded.reverse());\n"
+            "frag := frag.join(fid_pffid).sort().tmark(0@0);\n"
+            "kind := set_kind(frag, ELEM);\n"
+            "ipik := iter;\n"
+            "# pos  := ipik.mark(1@0);\n"
+	    "}\n"
+	    );
+        } else {
+	  milprintf(f,
+	    "item := dbl_values.addValues(tijah_qscore).tmark(0@0);\n"
+	    "kind := DBL;\n"
+	    "ipik := iter;\n"
+	    "}\n"
 	  );
+	}
 
 	/*
          * milprintf(f, 
@@ -10658,6 +10675,10 @@ const char* PFinitMIL(void) {
         "module(\"pathfinder\");\n"
 #ifdef HAVE_PFTIJAH
         "module(\"pftijah\");\n"
+	"\n"
+	"var tijah_qstring := \"\";\n"
+	"var tijah_qscore  := bat(oid,dbl);\n"
+	"var tijah_qnodes  := bat(void,oid);\n"
 #endif
         "\n"
         "# value containers for literal values\n"

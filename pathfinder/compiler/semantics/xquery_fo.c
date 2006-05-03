@@ -1517,6 +1517,12 @@ PFfun_xquery_fo ()
 	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
                                 PFty_string () },
              .ret_ty = PFty_star (PFty_xs_anyNode ()) } } }
+    , /* fn:tijah-score(item*, string) as dbl* */
+      { .ns = PFns_fn, .loc = "tijah-score",
+        .arity = 2, .sig_count = 1, .sigs = { {
+	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
+                                PFty_string () },
+             .ret_ty = PFty_star (PFty_double ()) } } }
 #else
 #endif
     , { .loc = 0 }
