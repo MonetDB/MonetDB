@@ -531,16 +531,15 @@ If one of the optimizers fails, we should not attempt others.
 int
 optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec)
 {
-	Client cntxt;
+	Client cntxt = MCgetClient();
 	if( actions > 0){
-		cntxt= MCgetClient();
 		chkFlow(mb);
 		chkTypes(cntxt->nspace, mb);
 		chkDeclarations(mb, TRUE);
 		setLifespan(mb);
-		if( cntxt->debugOptimizer)
-			optimizerDebug(mb, name, actions, usec);
 	}
+	if( cntxt->debugOptimizer)
+		optimizerDebug(mb, name, actions, usec);
 	if (mb->errors) {
 		showErrors();
 		stream_printf(GDKout, "Optimizer %s failed\n", name);
@@ -1273,6 +1272,10 @@ hasSideEffects(InstrPtr p, int strict)
 		getFunctionId(p) == appendRef ||
 		getFunctionId(p) == deleteRef)
 		return TRUE;
+	if( getModuleId(p)== sqlRef){
+		if (getFunctionId(p) == getName("rsColumn",8) )
+			return TRUE;
+	}
 	if (idcmp("destroy", getFunctionId(p)) == 0)
 		return TRUE;
 	if (idcmp("prelude", getFunctionId(p)) == 0)
