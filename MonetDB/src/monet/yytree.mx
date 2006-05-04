@@ -485,7 +485,7 @@ Myycopy(YYSTREE t)
 	/* make a memory-tight copy of the tree constructed by the parser, and steal the pointers */ 
 	char *t_next = NULL, *t_size = NULL;
 
-	return yycopy(t, 1, 0, &t_next, &t_size);
+	return yycopy(t, 0, 0, &t_next, &t_size);
 }
 
 
