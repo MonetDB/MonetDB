@@ -1264,7 +1264,7 @@ int xquery_print_result_DRIVER(
         return GDK_FAIL;
 
     /* loop over the iterations (usually only 1) */
-    for(yy=0; yy<niters; yy++, curcnt += buncnt) {
+    for(yy=0; yy<niters; yy++, curcnt += buncnt, maxcnt -= buncnt) {
         oid it = *(oid*) BUNhead(loop, BUNptr(loop, BUNindex(loop, BUNfirst(loop))+yy));
         BUN p, q;
         ptr res;
