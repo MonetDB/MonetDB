@@ -138,12 +138,11 @@ PROC get_rpc_res (
         BAT[oid, bat] ws, 
         BAT[oid, lng] int_values,
         BAT[oid, dbl] dbl_values, 
-        BAT[oid, dbl] dec_values,
         BAT[oid, str] str_values) : BAT[void, bat]
 {
-    var res_iter := new(oid,oid,nr_iters);
-    var res_item := new(oid,oid,nr_iters);
-    var res_kind := new(oid,int,nr_iters);
+    var res_iter := bat(void,oid,nr_iters).seqbase(0@0);
+    var res_item := bat(void,oid,nr_iters).seqbase(0@0);
+    var res_kind := bat(void,int,nr_iters).seqbase(0@0);
     
     # get values out of WS for later use
     var pre_size  := ws.fetch(PRE_SIZE).fetch(cont);
@@ -298,7 +297,7 @@ PROC doIterativeRPC(
         var time_clntDeSeria := msec();
         if (isnil(rpc_err)) {
             var res := get_rpc_res(rpc_oid, local_name, nr_iters, ws,
-                                   int_values, dbl_values, dec_values, str_values);
+                                   int_values, dbl_values, str_values);
             if (isnil(res_bats)){
                 res_bats := res;
             } else {
@@ -345,13 +344,13 @@ PROC doLoopLiftedRPC(
     } else {
         rpc_timing := "";
     }
-
-    module("lock");
     var mylock := lock_create();
 
     var rpc_unq_dsts := rpc_dsts.tunique().hmark(0@0);
-    var steps := min(rpc_unq_dsts.count(), (64 - threadcnt(0)));
-    var res_bats := nil;
+    var steps := rpc_unq_dsts.count();
+    var rpc_results := bat(str,oid);
+    var rpc_iter := bat(void,bat).seqbase(0@0);
+
     rpc_unq_dsts @ [steps] batloop(){
         var time_milClntSeria := msec();
 
@@ -367,7 +366,7 @@ PROC doLoopLiftedRPC(
         var fun_kind_dst := indices.fetchjoin(fun_kind).tmark(0@0);
 
         var local_name := "rpc_res_00" + str(int($h)+1);
-        var rpc_oid := oid(nil);
+        var rpc_oid;
 
         time_milClntSeria := msec() - time_milClntSeria;
         if (options.search("rpctime") >= 0) {
@@ -383,22 +382,9 @@ PROC doLoopLiftedRPC(
         });
 
         if (isnil(rpc_err)) {
-            # retrieve results for this destination, and map the results back to the original iteration number
-            var proc_res := get_rpc_res(rpc_oid, local_name, nr_iters, ws,
-                                        int_values,dbl_values,dec_values,str_values);
-            iter_dst := iter_dst.hmark(1@0);
-            var res_iter := proc_res.fetch(0).join(iter_dst);
-            var res_item := res_iter.reverse().join(proc_res.fetch(1)).tmark(0@0);
-            var res_kind := res_iter.reverse().join(proc_res.fetch(2)).tmark(0@0);
-
             lock_set(mylock);
-            if (isnil(res_bats)) {
-                res_bats := new(void,bat,3).append(res_iter).append(res_item).append(res_kind);
-            } else {
-                res_bats := merged_union(res_bats.fetch(0), res_iter, 
-                                         res_bats.fetch(1), res_item, 
-                                         res_bats.fetch(2), res_kind);
-            }
+            rpc_results.insert(local_name,rpc_oid);
+            rpc_iter.append(iter_dst.hmark(1@0));
             lock_unset(mylock);
         } else { # layman's error handling simplifies debugging; better solution is more than welcome!
             ERROR("RPC call: rpc_client:\n" + rpc_err);
@@ -409,6 +395,28 @@ PROC doLoopLiftedRPC(
         }
     }
     lock_destroy(mylock);
+
+    # retrieve results for this destination, and map the results back to the original iteration number
+    var proc_res := [get_rpc_res](rpc_results.tmark(0@0), rpc_results.hmark(0@0), nr_iters, const ws,
+                                  const int_values, const dbl_values, const str_values);
+    var res_iter := proc_res.[fetch](0).[leftfetchjoin](rpc_iter);
+    var res_item := proc_res.[fetch](1);
+    var res_kind := proc_res.[fetch](2);
+
+    # initialize res_bat with the results for the first destination 
+    var res_bats := bat(void,bat,3).seqbase(0@0);
+    res_bats.append(res_iter.fetch(0));
+    res_bats.append(res_item.fetch(0));
+    res_bats.append(res_kind.fetch(0));
+
+    # if there were more destinations, merge the result tables 
+    var i := 0;
+    while ((i :+= 1) < steps) {
+        # initialize res_bat with the results for the first destination 
+        res_bats := merged_union(res_bats.fetch(0), res_iter.fetch(i), 
+                                 res_bats.fetch(1), res_item.fetch(i), 
+                                 res_bats.fetch(2), res_kind.fetch(i));
+    }
     return res_bats;
 }
 ADDHELP("doLoopLiftedRPC", "zhang", "April 2006",
@@ -594,25 +602,13 @@ static void send_error(stream *out, bit p_body, char* http_err, char *soapcodev,
 
 /* Calculate the number of nodes which has the name "node_name", within
  * the range 'start_pre' and 'end_pre' (incl.). */
-static int count_node(BAT *shredBAT, char *node_name, int start_pre, int end_pre){
-    static int first;       /* Since the values of these variables are always */
-    static oid *pre_prop;   /* the same, we use 'static' here to prevent the  */
-    static char *pre_kind;  /* values of these variables being retrieved at   */
-    static BAT *qn_loc;     /* every call to this function */
-
+static int count_node(char *node_name, int start_pre, int end_pre, oid* pre_prop, char* pre_kind, BAT* qn_loc){
     int i, nr = 0;
-    char *qname;
 
     assert(start_pre > 0);
-   
-    first    = BUNindex(shredBAT, BUNfirst(shredBAT));
-    pre_prop = (oid*) BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+PRE_PROP))));
-    pre_kind = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+PRE_KIND))));
-    qn_loc   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+QN_LOC)));
-
     for (i = start_pre; i <= end_pre; i++) {
         if (pre_kind[i] == ELEMENT) {
-            qname = BUNtail(qn_loc, BUNfnd(qn_loc, &(pre_prop[i])));
+            char *qname = BUNtail(qn_loc, BUNfnd(qn_loc, &(pre_prop[i])));
             if (strcmp(qname, node_name) == 0)
                 nr++;
         }
@@ -624,16 +620,10 @@ static int count_node(BAT *shredBAT, char *node_name, int start_pre, int end_pre
  * kind is 'ELEMENT'.
  * Return the 'pre' value of this node.
  * Return 0 if such node can not be found. */
-static oid get_elem_pre(BAT *shredBAT, int start_pre, int end_pre){
-    static int first;   /* values of 'first' and 'kind' are stable */
-    static char *pre_kind;
+static oid get_elem_pre(int start_pre, int end_pre, char* pre_kind){
     int i;
 
     assert(start_pre > 0 && end_pre >= start_pre);
-   
-    first    = BUNindex(shredBAT, BUNfirst(shredBAT));
-    pre_kind = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+PRE_KIND))));
-
     for (i = start_pre; i <= end_pre; i++) {
         if (pre_kind[i] == ELEMENT)
             return i;
@@ -644,22 +634,11 @@ static oid get_elem_pre(BAT *shredBAT, int start_pre, int end_pre){
 /* Given a node name, find the 'pre' value of the node given within the range
  * 'start_pre' and 'end_pre' (incl.).
  * Return 0 if such node can not be found. */
-static oid get_node_pre(BAT *shredBAT, char *node_name, int start_pre, int end_pre){
-    static int first;   /* Since the values of these variables are always */
-    static oid *pre_prop;   /* the same, we use 'static' here to prevent the  */
-    static char *pre_kind;  /* values of these variables being retrieved at   */
-    static BAT *qn_loc; /* every call to this function */
-
+static oid get_node_pre(char *node_name, int start_pre, int end_pre, oid* pre_prop, char* pre_kind, BAT* qn_loc){
     int i;
     char *qname;
 
     assert(start_pre > 0 && end_pre >= start_pre);
-   
-    first    = BUNindex(shredBAT, BUNfirst(shredBAT));
-    pre_prop = (oid*) BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+PRE_PROP))));
-    pre_kind = (char*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+PRE_KIND))));
-    qn_loc   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+QN_LOC)));
-
     for (i = start_pre; i <= end_pre; i++) {
         if (pre_kind[i] == ELEMENT) {
             qname = BUNtail(qn_loc, BUNfnd(qn_loc, &(pre_prop[i])));
@@ -674,23 +653,10 @@ static oid get_node_pre(BAT *shredBAT, char *node_name, int start_pre, int end_p
  * node with the given 'pre' value.
  * NB: DO NOT free the string returned by this function!!!
  */
-static char* find_attribute(BAT *shredBAT, char* attrname, oid pre){
-    static size_t nattrs;
-    static int first;
-    static oid *attr_own, *attr_qn, *attr_prop;
-    static BAT *qn_loc, *prop_val;
-
+static char* find_attribute(char* attrname, oid pre, size_t nattrs, oid *attr_own, oid *attr_qn, oid *attr_prop, BAT *qn_loc, BAT *prop_val) {
     oid qn = oid_nil;
     size_t i;
     BUN p;
-
-    first    = BUNindex(shredBAT, BUNfirst(shredBAT));
-    qn_loc   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+QN_LOC))   );
-    prop_val = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+PROP_VAL)) );
-
-    attr_own  = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+ATTR_OWN) )));
-    attr_qn   = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+ATTR_QN)  )));
-    attr_prop = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+ATTR_PROP))));
 
     /* Find 'attrname' in the tail of 'qn_loc' */
     p = BUNfnd(BATmirror(qn_loc), attrname);
@@ -699,11 +665,10 @@ static char* find_attribute(BAT *shredBAT, char* attrname, oid pre){
     else return NULL;
 
     /* try to find the attribute value */
-    nattrs = BATcount(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+ATTR_PROP))));
     for (i = 0; i < nattrs; i++) {
         if (attr_own[i] > pre) return NULL;
         if (attr_own[i] == pre && attr_qn[i] == qn) {
-                first = BUNindex(prop_val, BUNfirst(prop_val)) + attr_prop[i];
+                int first = BUNindex(prop_val, BUNfirst(prop_val)) + attr_prop[i];
                 return (char*) BUNtail(prop_val, BUNptr(prop_val, first));
         }
     }
@@ -712,34 +677,13 @@ static char* find_attribute(BAT *shredBAT, char* attrname, oid pre){
 
 /* Given the pre value of a type node, return the name of the type node as a
  * string in the form "prefix:loc" */
-static char* get_type(stream *out, BAT *shredBAT, oid tnode_pre){
-    static int first;
-    static BAT *qn_loc, *qn_prefix;
-    static oid *pre_prop;
+static char* get_type(oid tnode_pre, oid *pre_prop, BAT *qn_loc, BAT* qn_prefix){
+    char* prefix = (char*) BUNtail(qn_prefix, BUNptr(qn_prefix, pre_prop[tnode_pre]));
+    char* loc    = (char*) BUNtail(qn_loc, BUNptr(qn_loc, pre_prop[tnode_pre]));
+    int l = strlen(loc), p = strlen(prefix);
+    char* res = GDKmalloc(p + l + 2);
+    if (!res) return NULL;
 
-    char *prefix, *loc, *res;
-    char errstr[1024];
-    int l, p;
-    
-    first = BUNindex(shredBAT, BUNfirst(shredBAT));
-    pre_prop = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+PRE_PROP))));
-
-    qn_prefix = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+QN_PREFIX)));
-    qn_loc    = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,first+QN_LOC))   );
-
-    first  = BUNindex(qn_prefix, BUNfirst(qn_prefix)) + tnode_pre;
-    prefix = (char*) BUNtail(qn_prefix, BUNptr(qn_prefix, pre_prop[tnode_pre]));
-    first  = BUNindex(qn_loc, BUNfirst(qn_loc)) + tnode_pre;
-    loc    = (char*) BUNtail(qn_loc, BUNptr(qn_loc, pre_prop[tnode_pre]));
-
-    l = strlen(loc);
-    p = strlen(prefix);
-    res = GDKmalloc(p + l + 2);
-    if (!res) {
-        snprintf(errstr, 1024, "Receiver internal error: not enough memory");
-        send_error(out, 1, "404 Bad Request", "env:Receiver", errstr);
-        return NULL;
-    }
     strncpy(res, prefix, p);
     res[p]=':';
     strncpy((res + p + 1), loc, l);
@@ -756,11 +700,12 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
 
     /* pointers to the temporarily shredded BATs and to the values in
      * shredBAT */
-    BAT *shredBAT = NULL, *ws_frag = NULL;
-    int *pre_size = NULL;
+    BAT *shredBAT = NULL, *ws_frag = NULL, *qn_loc = NULL, *qn_prefix = NULL, *prop_val = NULL;
+    int nattrs = 0, *pre_size = NULL;
     char *pre_level = NULL, *pre_kind = NULL, *text_base = NULL;
     oid *pre_prop = NULL;
     var_t *prop_text = NULL;
+    oid *attr_own = NULL, *attr_qn = NULL, *attr_prop = NULL;
 
     /* indecates from which node we should start with invalidate the
      * pre_level and the pre_size values */
@@ -820,38 +765,45 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
     pre_prop  = (oid *) BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PRE_PROP))));
     pre_kind  = (char *)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PRE_KIND))));
     prop_text = (var_t*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PROP_TEXT))));
+    prop_val = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PROP_VAL)) );
+    qn_loc   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+QN_LOC))   );
+    qn_prefix = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+QN_PREFIX)));
     text_base = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT, off+PROP_TEXT)))->theap->base;
     ws_frag   = BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+WS_FRAG)));
     ws_frag   = BATsetaccess(ws_frag, BAT_APPEND);
     total_size = BATcount(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+PRE_SIZE))));
+    attr_own  = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+ATTR_OWN) )));
+    attr_qn   = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+ATTR_QN)  )));
+    attr_prop = (oid*)BUNfirst(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+ATTR_PROP))));
+    nattrs = BATcount(BBP_cache(*(bat*)BUNtail(shredBAT,BUNptr(shredBAT,off+ATTR_PROP))));
 
     /* There are at least two nodes before "XQueryRpcRequest", namely
      * "Envelope" and "Body" (a "Header" node is optional). There are at
      * least two nodes after "XQueryRpcRequest", namely "iter" and
      * "param". */
-    if (!(pre = get_node_pre(shredBAT, "XQueryRpcRequest", 2, (pre_size[0] - 2)))) {
+    if (!(pre = get_node_pre("XQueryRpcRequest", 2, (pre_size[0] - 2), pre_prop, pre_kind, qn_loc))) {
         send_error(out, 1, "404 Bad Request", "env:Sender",
                 "XQuery RPC request must have a \"XQueryRpcRequest\" tag\n");
         goto FINISH_HANDLE_RPC_REQUEST;
     }
-    if ((module = find_attribute(shredBAT, "module", pre)) == NULL) {
+    if ((module = find_attribute("module", pre, nattrs, attr_own, attr_qn, attr_prop, qn_loc, prop_val)) == NULL) {
         send_error(out, 1, "404 Bad Request", "env:Sender",
             "XQuery RPC request: \"XQueryRpcRquest\" tag does not have a \"module\" attribute.\n");
         goto FINISH_HANDLE_RPC_REQUEST;
     }
-    if ((uri = find_attribute(shredBAT, "uri", pre)) == NULL) {
+    if ((uri = find_attribute("uri", pre, nattrs, attr_own, attr_qn, attr_prop, qn_loc, prop_val)) == NULL) {
         send_error(out, 1, "404 Bad Request", "env:Sender",
             "XQuery RPC request: \"XQueryRpcRquest\" tag does not have a \"uri\" attribute.\n");
         goto FINISH_HANDLE_RPC_REQUEST;
     }
-    if ((method = find_attribute(shredBAT, "method", pre)) == NULL) {
+    if ((method = find_attribute("method", pre, nattrs, attr_own, attr_qn, attr_prop, qn_loc, prop_val)) == NULL) {
         send_error(out, 1, "404 Bad Request", "env:Sender",
             "XQuery RPC request: \"SoapRpcRquest\" tag does not have a \"method\" attribute.\n");
         goto FINISH_HANDLE_RPC_REQUEST;
     }
 
     /* Calculate the number of iterations */
-    iterc = count_node(shredBAT, "iter", (pre+1), pre_size[0]);
+    iterc = count_node("iter", (pre+1), pre_size[0], pre_prop, pre_kind, qn_loc);
     if (iterc == 0) {
         snprintf(errstr, 1024, "XQuery RPC request [%s:%s]: should have at "
                 "least one <iter> tag.\n", module, method);
@@ -861,7 +813,7 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
     /* Calculate the number of parameters */
     /* FIXME: we now just assume each iteration contains the same number
      *        of parameters, but this is not checked! */
-    argc = count_node(shredBAT, "param", (pre + 2), pre_size[0]) / iterc;
+    argc = count_node("param", (pre + 2), pre_size[0], pre_prop, pre_kind, qn_loc) / iterc;
 
     argcnt = GDKmalloc(iterc * sizeof(int *));
     if (!argcnt) {
@@ -890,17 +842,17 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
     inode_pre = pre;
     root_size = pre_size[0];
     for (i = 0; i < iterc; i++) {
-        inode_pre  = get_node_pre(shredBAT, "iter", (inode_pre + 1), root_size);
+        inode_pre  = get_node_pre("iter", (inode_pre + 1), root_size, pre_prop, pre_kind, qn_loc);
         inode_size = pre_size[inode_pre];
 
         pnode_pre = inode_pre;
         for (j = 0; j < argc; j++) {
-            pnode_pre  = get_node_pre(shredBAT, "param", (pnode_pre + 1), (inode_pre + inode_size));
+            pnode_pre  = get_node_pre("param", (pnode_pre + 1), (inode_pre + inode_size), pre_prop, pre_kind, qn_loc);
             pnode_size = pre_size[pnode_pre];
        
             tnode_pre = pnode_pre + 1; argcnt[i][j] = 0; k = 1;
             while(tnode_pre < (pnode_pre + pnode_size) && 
-                    (tnode_pre = get_elem_pre(shredBAT, tnode_pre, (pnode_pre + pnode_size))) > 0){
+                    (tnode_pre = get_elem_pre(tnode_pre, (pnode_pre + pnode_size), pre_kind)) > 0){
                 tnode_size = pre_size[tnode_pre];
 
                 if (tnode_size <= 0) {
@@ -920,14 +872,15 @@ static int handle_rpc_request(struct shttpd_callback_arg *arg) {
                     goto FINISH_HANDLE_RPC_REQUEST;
                 }
 
-                if ((argtpe[nr_args] = get_type(out, shredBAT, tnode_pre)) == NULL) {
-                    /* Error message is already sent by 'get_type' */
+                if ((argtpe[nr_args] = get_type(tnode_pre, pre_prop, qn_loc, qn_prefix)) == NULL) {
+                    snprintf(errstr, 1024, "Receiver internal error: not enough memory");
+                    send_error(out, 1, "404 Bad Request", "env:Receiver", errstr);
                     goto FINISH_HANDLE_RPC_REQUEST;
                 }
 
                 vnode_pre = tnode_pre + 1;
                 if (strcmp(argtpe[nr_args], "xs:anyNode") == 0) {
-                    vnode_pre = get_elem_pre(shredBAT, vnode_pre, (tnode_pre + tnode_size));
+                    vnode_pre = get_elem_pre(vnode_pre, (tnode_pre + tnode_size), pre_kind);
                     argval[nr_args] = GDKmalloc(32);
                     if (!argval[nr_args]) {
                         snprintf(errstr, 1024, "Receiver internal error: not enough memory");
@@ -1351,32 +1304,36 @@ FINISH_HTTP_POST:
 }
 
 int CMDhttpd_start(int* port, str option) {
-    int sock;
+    shttpd_socket ctx;
        
+    /*
     if (rpc_receiver_running) {
         GDKerror("CMDhttpd_start: RPC receiver already running\n");
         return GDK_FAIL;
     }
-    rpc_receiver_running = 1;
-
+    */
     if (option && strstr(option, "rpcservertime") != NULL){
         servertiming = 1;
     } else {
         servertiming = 0;
     }
 
-    /* Initialize with specific config file, pass NULL to use default values */
-    shttpd_init(NULL);
+    if (!rpc_receiver_running) {
+        rpc_receiver_running = 1;
 
-    /* Register call back function */
-    shttpd_register_url(HTTPD_FUNC, &handle_rpc_request, NULL);
+        /* Initialize with specific config file, pass NULL to use default values */
+        shttpd_init(NULL);
+
+        /* Register call back function */
+        shttpd_register_url(HTTPD_FUNC, &handle_rpc_request, NULL);
+    }
 
     /* Open listening socket */
-    sock = shttpd_open_port(*port);
+    ctx = shttpd_open_port(*port);
 
     /* Serve connections infinitely until someone kills us */
     for (;rpc_receiver_running;) {
-        shttpd_poll(sock, 200);
+        shttpd_poll(&ctx, 200);
     }
     return GDK_SUCCEED;
 }

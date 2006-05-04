@@ -37,8 +37,6 @@
  *    Override max request size	-DIO_MAX=xxxx
  *    Default config file:	-DCONFIG=\"/etc/shttpd.conf\"
  *    Typedef socklen_t		-DNO_SOCKLEN_T
- *    Use embedded:		-DEMBEDDED
- *    Use multithreading:	-DMT
  */
 
 #define	VERSION		"1.28"			/* Version */
@@ -217,8 +215,11 @@ struct io {
 #define	IO_SPACELEN(io)		(sizeof((io)->buf) - (io)->nread)
 #define	IO_DATALEN(io)		((io)->nread - (io)->nwritten)
 
+#include "shttpd.h"
+
 /* Connection descriptor */
 struct conn {
+    shttpd_socket *ctx;
 	struct conn	*next;		/* Connections chain */
 	struct usa	sa;		/* Remote socket address */
 	time_t		birth;		/* Creation time */
@@ -375,18 +376,14 @@ enum {
 #define	INTOPT(x)	(options[x].value.value_int)
 
 /*
- * Globals variables
+ * Global variables
  */
-static int		exit_flag;		/* Exit flag */
-static FILE		*accesslog;		/* Access log stream */
-static FILE		*errorlog;		/* Error log stream */
+static int exit_flag;		/* Exit flag */
+FILE		*accesslog;		/* Access log stream */
+FILE		*errorlog;		/* Error log stream */
+
 static time_t		now;			/* Current time */
-static unsigned int	nconns_max;		/* Max parallel connections */
-static unsigned int	nconns;			/* # of connections now */
-static unsigned int	nrequests;		/* Requests made */
-static unsigned int	kb_in, kb_out;		/* IN/OUT traffic counters */
 static struct mimetype	*mimetypes;		/* Known mime types */
-static struct conn	*connections;		/* List of connections */
 
 #ifdef WITH_SSL
 static SSL_CTX		*ctx;			/* SSL context */
@@ -409,7 +406,7 @@ static void	disconnect(struct conn *c, struct conn *prev);
 static int	writeremote(struct conn *c, const char *buf, size_t len);
 static int	readremote(struct conn *c, char *buf, size_t len);
 static int	nonblock(int fd);
-static void	newconnection(int sock, struct usa *);
+static void	newconnection(shttpd_socket* ctx, int sock, struct usa *);
 static int	getreqlen(const char *buf, size_t buflen);
 static void	log_access(const struct conn *c);
 static void	senderr(struct conn *c, int status, const char *descr,
@@ -433,8 +430,6 @@ static void	serve(struct conn *c, fd_set *rset, fd_set *wset);
 static void	mystrlcpy(register char *, register const char *, size_t);
 static void	setopt(struct opt *o, const char *value, int set);
 
-#ifdef EMBEDDED
-#include "shttpd.h"
 
 /* List of registered URLs */
 struct userurl {
@@ -486,7 +481,6 @@ ismountpoint(const char *url)
 	return (NULL);
 }
 
-#ifdef MT
 #ifndef _WIN32
 #include <pthread.h>
 #endif /* _WIN32 */
@@ -526,7 +520,6 @@ do_thread(struct thrarg *p)
 
 	return (NULL);
 }
-#endif /* MT */
 
 /*
  * The URI should be handled is user-registered callback function.
@@ -542,10 +535,8 @@ do_embedded(struct conn *c)
 	struct shttpd_callback_arg	arg;
 	const struct userurl		*p = c->userurl;
 	unsigned long			n;
-#ifdef MT
 	pthread_t			thr;
 	struct thrarg			*param;
-#endif /* MT */
 
 	arg.connection		= c;
 	arg.callback_data	= p->data;
@@ -589,8 +580,6 @@ do_embedded(struct conn *c)
 		/* Null-terminate query data */
 		c->query[c->cclength] = '\0';
 	}
-
-#ifdef MT
 	/* Multi-Threaded scenario. Run dedicated thread for connection. */
 	if ((param = malloc(sizeof(*param))) == NULL)
 		return;
@@ -601,18 +590,7 @@ do_embedded(struct conn *c)
 	c->flags |= FLAG_THREADED;
 	(void) pthread_create(&thr, 0,(LPTHREAD_START_ROUTINE)do_thread, param);
 	(void) pthread_detach(thr);
-#else
-
-	/* Single-Threaded scenario. Run function and mark IO as done. */
-	c->local.nread += p->func(&arg);
-	if (c->local.nread > sizeof(c->local.buf))
-		c->local.nread = sizeof(c->local.buf);
-	c->local.done++;
-	c->io = NULL;
-#endif /* MT */
 }
-
-#endif /* EMBEDDED */
 
 /*
  * strncpy() variant, that always nul-terminates destination.
@@ -777,8 +755,10 @@ elog(enum err_level level, const char *fmt, ...)
 	char		msg[512];
 	size_t		n;
 
+#ifndef PETER 
 	if (INTOPT(OPT_DEBUG) == 0 && level == ERR_DEBUG)
 		return;
+#endif
 
 	n = strftime(msg, sizeof(msg),"%d/%b/%Y %H:%M:%S ", localtime(&now));
 
@@ -968,8 +948,8 @@ disconnect(struct conn *c, struct conn *prev)
 
 	/* Remove connection from the connections list */
 	prev->next = c->next;
-	if (c == connections)
-		connections = c->next;
+	if (c == c->ctx->connections)
+		c->ctx->connections = c->next;
 
 	if (accesslog != NULL)
 		log_access(c);
@@ -998,7 +978,7 @@ disconnect(struct conn *c, struct conn *prev)
 	if (c->ssl)		SSL_free(c->ssl);
 #endif /* WITH_SSL */
 
-	(void) closesocket(c->sock);
+	if (c->sock >= 0) closesocket(c->sock);
 	free(c);
 
 	/* In inetd mode, exit if request is finished. */
@@ -1052,7 +1032,7 @@ writeremote(struct conn *c, const char *buf, size_t len)
 		c->nsent += n;
 		out += n;
 		if (out > 1024) {
-			kb_out += out / 1024;
+			c->ctx->kb_out += out / 1024;
 			out %= 1024;
 		}
 	} else if (n  == 0 || (n < 0 && ERRNO != EWOULDBLOCK) ||
@@ -1086,7 +1066,7 @@ readremote(struct conn *c, char *buf, size_t len)
 	if (n > 0) {
 		in += n;
 		if (in > 1024) {
-			kb_in += in / 1024;
+			c->ctx->kb_in += in / 1024;
 			in %= 1024;
 		}
 	}
@@ -1127,11 +1107,14 @@ nonblock(int fd)
 /*
  * Setup listening socket on given port, return socket
  */
-int
+shttpd_socket
 shttpd_open_port(int port)
 {
+    shttpd_socket ret;
 	int		sock, on = 1;
 	struct usa	sa;
+
+    memset(&ret, 0, sizeof(shttpd_socket));
 
 	if (port == 0)
 		port = INTOPT(OPT_LISTENPORT);
@@ -1157,14 +1140,15 @@ shttpd_open_port(int port)
 	(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif /* !_WIN32 */
 
-	return (sock);
+	ret.sock = sock;
+    return ret;
 }
 
 /*
  * newconnection new connection
  */
 static void
-newconnection(int sock, struct usa *usa) {
+newconnection(shttpd_socket *ctx, int sock, struct usa *usa) {
 	struct conn	*c;
 
 #ifdef WITH_SSL
@@ -1187,8 +1171,9 @@ newconnection(int sock, struct usa *usa) {
 		(void) close(sock);
 		elog(ERR_INFO, "newconnection: calloc: %s", strerror(ERRNO));
 	} else {
-		c->next = connections;
-		connections = c;
+		c->next = ctx->connections;
+		ctx->connections = c;
+        c->ctx = ctx;
 		c->sa = *usa;
 		c->sock = sock;
 		c->cgisock = c->rfd = c->wfd = c->dummy[0] = c->dummy[1] = -1;
@@ -1202,7 +1187,7 @@ newconnection(int sock, struct usa *usa) {
 			handshake(c);
 #endif /* WITH_SSL */
 
-		nrequests++;		/* Statistics, number of requests */
+		ctx->nrequests++;		/* Statistics, number of requests */
 		c->birth = now;
 		c->expire = now + EXPIRE_TIME;
 		elog(ERR_DEBUG, "%p %d connected.", c, sock);
@@ -2891,8 +2876,8 @@ serve(struct conn *c, fd_set *rset, fd_set *wset)
 		elog(ERR_DEBUG, "serve: calling local io");
 		c->io(c);
 		c->expire += EXPIRE_TIME;
+        return;
 	}
-
 	if ((len = IO_DATALEN(&c->local)) > 0 && FD_ISSET(c->sock, wset)) {
 		n = writeremote(c, c->local.buf + c->local.nwritten, len);
 		if (n > 0)
@@ -2915,17 +2900,15 @@ serve(struct conn *c, fd_set *rset, fd_set *wset)
  * file descriptors set. Bump up the maxfd.
  */
 void
-shttpd_merge_fds(fd_set *rfds, fd_set *wfds, int *maxfd)
+shttpd_merge_fds(shttpd_socket *ctx, fd_set *rfds, fd_set *wfds, int *maxfd)
 {
 	struct conn	*c;
 
 #define	MERGEFD(fd,set)	\
 	do {FD_SET(fd, set); if (fd > *maxfd) *maxfd=fd; } while (0)
 
-	nconns = 0;	/* Number of active connections */
-
-	for (c = connections; c != NULL; c = c->next) {
-		nconns++;
+	for (c = ctx->connections; c != NULL; c = c->next) {
+        if (c->sock < 0) continue;
 
 		/* Remote socket always in read set */
 		MERGEFD(c->sock, rfds); 
@@ -2949,19 +2932,17 @@ shttpd_merge_fds(fd_set *rfds, fd_set *wfds, int *maxfd)
 		else if (IO_DATALEN(&c->remote) && c->wfd != -1)
 			MERGEFD(c->wfd, wfds);
 	}
-
-	if (nconns_max < nconns)
-		nconns_max = nconns;	/* Maximum active connections handled */
 }
 
 /*
  * One iteration of server loop.
  */
 void
-shttpd_poll(int listen_socket, unsigned milliseconds)
+shttpd_poll(shttpd_socket* ctx, unsigned milliseconds)
 {
 	struct usa	sa;
 	struct conn	*c, *pc, *nc;
+    int listen_socket = ctx->sock;
 	int		sock, maxfd = listen_socket;
 	struct timeval	tv;			/* Timeout for select() */
 	fd_set		rset, wset;
@@ -2975,7 +2956,7 @@ shttpd_poll(int listen_socket, unsigned milliseconds)
 	if (listen_socket != -1)
 		FD_SET(listen_socket, &rset);
 
-	shttpd_merge_fds(&rset, &wset, &maxfd);
+	shttpd_merge_fds(ctx, &rset, &wset, &maxfd);
 	tv.tv_sec = milliseconds / 1000;
 	tv.tv_usec = milliseconds % 1000;
 
@@ -2986,10 +2967,10 @@ shttpd_poll(int listen_socket, unsigned milliseconds)
 		/* If listening socket is ready, accept new connection */
 		if (listen_socket != -1 && FD_ISSET(listen_socket, &rset) &&
 		    (sock = accept(listen_socket, &sa.u.sa, &sa.len)) != 0)
-			newconnection(sock, &sa);
+			newconnection(ctx, sock, &sa);
 
 		/* Loop through all connections, handle if needed */
-		for (c = pc = connections; c != NULL; c = nc) {
+		for (c = pc = ctx->connections; c != NULL; c = nc) {
 			nc = c->next;
 
 			/* Do not process threaded connection */
@@ -3037,6 +3018,7 @@ shttpd_init(const char *fname)
 	char		line[FILENAME_MAX],var[sizeof(line)],val[sizeof(line)];
 	struct opt	*opt;
 	FILE 		*fp;
+
 
 	/* If config file is there, read it */
 	if (fname != NULL && (fp = fopen(fname, "r")) != NULL) {
@@ -3133,6 +3115,10 @@ shttpd_init(const char *fname)
 			elog(ERR_FATAL, "cannot open %s", STROPT(OPT_SSLCERT));
 	}
 #endif /* WITH_SSL */
+
+#ifdef PETER
+    errorlog = fopen("/tmp/t", "w");
+#endif
 }
 
 /*
@@ -3169,7 +3155,6 @@ shttpd_fini(void)
 	accesslog = errorlog = NULL;
 }
 
-#ifdef EMBEDDED
 void
 shttpd_register_url(const char *url, shttpd_callback_t cb, void *data)
 {
@@ -3340,7 +3325,6 @@ shttpd_template(struct conn *conn, const char *headers, const char *file, ...)
 	return (n);
 }
 
-#ifdef MT
 int
 shttpd_push(struct conn *conn, const void *buf, size_t len)
 {
@@ -3376,210 +3360,4 @@ shttpd_printf(struct conn *conn, const char *fmt, ...)
 
 	return (shttpd_push(conn, buf, len));
 }
-#endif /* MT */
 
-#else
-
-/*
- * Stand-alone configuration. Define signal handlers, usage() and main()
- */
-
-/*
- * SIGTERM, SIGINT signal handler
- */
-static void
-sigterm(int signo)
-{
-	exit_flag = signo;
-}
-
-/*
- * Grim reaper of innocent children: SIGCHLD signal handler
- */
-static void
-sigchild(int signo)
-{
-	while (waitpid(-1, &signo, WNOHANG) > 0) ;
-}
-
-
-/*
- * Show usage string and exit.
- */
-static void
-usage(const char *prog)
-{
-	(void) fprintf(stderr,
-    "shttpd version %s (c) Sergey Lyubka\n"
-    "usage: %s [OPTIONS]\n"
-    "-d <directory>	web root directory (default: current directory)\n"
-    "-p <port>	listening port\n"
-    "-l <logfile> 	access log file\n"
-    "-e <errorlog>	error log file\n"
-    "-C <config> 	configuration file (default: %s)\n"
-    "-D 		disable directory listing\n"
-    "-I 		work in inetd mode\n"
-    "-i <files> 	index files (default: %s)\n"
-    ,VERSION, prog, CONFIG, options[OPT_INDEX].dflt);
-
-(void) fprintf(stderr,
-#ifndef NO_CGI
-    "-c <cgi_ext>	CGI file pattern (default: %s)\n"
-#endif /* NO_CGI */
-#ifndef NO_AUTH
-    "-P <passfile>	global auth file\n"
-    "-A <passfile> <realm> <user> <password> edit .htpasswd file\n"
-#endif /* NO_AUTH */
-    "-u <login>	switch privileges\n"
-    "-N <domain>	authentication realm (default: %s)\n"
-    "-m <mimefile>	mime types file\n"
-    "-v 		debug mode\n"
-#ifdef WITH_SSL
-    "-s <pem_file>	switch to SSL, use <pem_file> as certificate\n"
-#endif /* WITH_SSL */
-#ifndef NO_CGI
-	    , options[OPT_CGIEXT].dflt
-#endif /* NO_CGI */
-	    , options[OPT_REALM].dflt
-	    );
-
-	exit(EXIT_FAILURE);
-}
-
-static void
-print_status(time_t start_time)
-{
-	static int	nchars;		/* Number of chars printed last time */
-	int		i, up = now - start_time;
-
-	/* Erase previous status message */
-	for (i = 0; i < nchars; i++)
-		(void) fputc('\b', stdout);
-
-	/* Print the status message */
-	nchars = printf("%3dH %2dM %2dS| %4u(%4u) | %8u | %.2fMb/%.2fMb",
-	    up / 3600, up / 60 % 60, up % 60,
-	    nconns, nconns_max, nrequests,
-	    (double) kb_in / 1024, (double) kb_out / 1024);
-
-	fflush(stdout);
-}
-
-/*
- * Convert command line switch to the option structure
- */
-static struct opt *
-swtoopt(int sw)
-{
-	struct opt	*opt;
-
-	for (opt = options; opt->sw != 0; opt++)
-		if (sw == opt->sw)
-			return (opt);
-
-	return (NULL);
-}
-
-int
-main(int argc, char *argv[])
-{
-	struct opt	*opt;
-	struct usa	usa;
-	int		i, lsn;
-	time_t		start_time, t = 0;
-
-	/*
-	 * Parse command-line options. Not every system has getopt()
-	 * function, so we use the good old method.
-	 */
-	for (i = 1; i < argc && argv[i][0] == '-'; i++)
-#ifndef NO_AUTH
-		if (argv[i][1] == 'A') {
-			/* Option 'A' require special handling */
-			if (argc != 6)
-				usage(argv[0]);
-			exit(editpass(argv[2], argv[3], argv[4], argv[5]));
-		} else
-#endif /* NO_AUTH */
-		if ((opt = swtoopt(argv[i][1])) != NULL) {
-			if (opt->type == OPT_STR || opt->type == OPT_INT) {
-				/* For int or string options, set the flag */
-				opt->flag = argv[i][2]?&argv[i][2]:argv[++i];
-				if (opt->flag == NULL)
-					usage(argv[0]);
-			} else {
-				/* For BOOL options, toggle the default */
-				opt->flag = opt->dflt[0] == '0' ? "1" : "0";
-			}
-		} else {
-			usage(argv[0]);
-		}
-
-	now = start_time = time(NULL);
-	shttpd_init(options[OPT_CONFFILE].dflt);
-
-	if (INTOPT(OPT_INETD)) {
-		/* In inetd mode, stdin is the connected socket. */
-		if (getpeername(fileno(stdin), &usa.u.sa, &usa.len) != 0)
-			elog(ERR_FATAL, "getpeername: %s", strerror(errno));
-		newconnection(fileno(stdin), &usa);
-		lsn = -1;
-	} else {
-		lsn = shttpd_open_port(INTOPT(OPT_LISTENPORT));
-	}
-
-	/* Switch to alternate UID, it is safe now, after shttpd_open_port() */
-#ifndef _WIN32
-	if (STROPT(OPT_UID)) {
-		const char	*uid = STROPT(OPT_UID);
-		struct passwd	*pw;
-
-		if ((pw = getpwnam(uid)) == NULL)
-			elog(ERR_FATAL, "main: unknown user [%s]", uid);
-		else if (setgid(pw->pw_gid) == -1)
-			elog(ERR_FATAL, "main: setgid(%s): %s",
-			    uid, strerror(errno));
-		else if (setuid(pw->pw_uid) == -1)
-			elog(ERR_FATAL, "main: setuid(%s): %s",
-			    uid, strerror(errno));
-	}
-#endif /* _WIN32 */
-
-	(void) signal(SIGTERM, sigterm);
-	(void) signal(SIGINT, sigterm);
-#ifndef _WIN32
-	(void) signal(SIGCHLD, sigchild);
-	(void) signal(SIGPIPE, SIG_IGN);
-#endif /* _WIN32 */
-
-	if (INTOPT(OPT_INETD) == 0)
-		(void) printf("shttpd %s started on port %lu, "
-		    "serving %s\n", 
-		    VERSION, INTOPT(OPT_LISTENPORT), STROPT(OPT_DOCROOT));
-	if (INTOPT(OPT_INETD) == 0 && INTOPT(OPT_STATS))
-		(void) printf("%s",
-		    "\nUp          | Conns(max) | Requests | IN/OUT\n"
-		    "------------+------------+----------+---------------\n");
-
-	while (exit_flag == 0) {
-		shttpd_poll(lsn, 1000);
-
-		/* Print statistics on terminal every second */
-		if (INTOPT(OPT_INETD) == 0 && t != now && INTOPT(OPT_STATS)) {
-			print_status(start_time);
-			t = now;
-		}
-	}
-
-	/* Close listening socket */
-	if (lsn != -1)
-		(void) close(lsn);
-
-	if (INTOPT(OPT_INETD) == 0)
-		(void) printf("\ngot signal %d, exiting\n", exit_flag);
-
-	shttpd_fini();
-
-	return (EXIT_SUCCESS);
-}
-#endif /* !EMBEDDED */
