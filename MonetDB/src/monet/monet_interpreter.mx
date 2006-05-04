@@ -1906,12 +1906,6 @@ immediately.
 	barrier->ev_prev = q;
 	barrier->ev_process = tid;
 @-
-If the current request should wakeup another event upon termination
-then the barrier event is made a prerequisite as well. This involves
-increasing the status and setting the wakeup flag.
-@c
-	q = thisRequest();
-@-
 Insert the string of independent requests in the execution queue.
 Use the first request for immediate execution.
 @c
