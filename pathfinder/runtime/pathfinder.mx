@@ -1286,6 +1286,8 @@ typedef struct _xquery_loaded_module {
 
 /* cached MIL client + Xquery specific context */
 typedef struct {
+    bit initialized;
+
     Cntxt stk; /* stack to execute module prologues and non-cacheable queries in */  
     /* MIL child context of ctx->stk; it is marked as a reusable stack frame so variable records are kept */
     Cntxt repeat_stk; /* stk to execute the prepared function trees in  for fast reuse */ 
@@ -2066,6 +2068,8 @@ xquery_module_load(xquery_client *ctx,
 
 /*
  * wait for all queries to finish; free all clients; clear PF url cache
+ * freeing the cached YYTREEs in the xquery clients is done lazily 
+ * (postponed to the next initialization of the record)
  */
 static void
 xquery_client_flushall()
@@ -2077,12 +2081,6 @@ xquery_client_flushall()
         if (i == 0) {
             /* ok, no xquery clients are active */
             xquery_module *mod = xquery_compiled_modules;
-                /* todo destroy xquery client buffers? ? 
-            for(i=0; i<=MAXCLIENTS; i++) {
-                if (xquery_clients[i].buflen)
-                    xquery_client_free(xquery_clients+i, 1);
-            }
-                */
             while(mod) {
                 xquery_module *del = mod;
                 mod = mod->next;
@@ -2130,6 +2128,14 @@ CMDxquery_start_query_cache(lng *maxsize)
  * - end of xquery execution (struct stays alive for reuse). 
  */
 
+@= find_var
+    v = VARfind(&ctx->stk, "@1");
+    if (v == NULL) 
+        return "xquery_client_alloc_: failed to lookup @1 variable.\n"; 
+    if (v->binding.vtype != TYPE_@2) 
+        return "xquery_client_alloc_: @1 variable has wrong type != int.\n"; 
+    ctx->@1 = &v->binding.val.@3; 
+
 @= find_bat
 {   Variable v = VARfind(&ctx->stk, "@1");
     ctx->@1 =  NULL;
@@ -2156,47 +2162,12 @@ xquery_client_alloc_(xquery_client *ctx)
     if (!xquery_mil_exec(ctx, (char*) PFinitMIL(), 0))
         return "xquery_client_alloc: failed to execute init script.\n"; 
 
-    v = VARfind(&ctx->stk, "shredBAT");
-    if (v == NULL) 
-        return "xquery_client_init: failed to lookup shredBAT variable.\n"; 
-    if (v->binding.vtype != TYPE_int) 
-        return "xquery_client_init: shredBAT variable has wrong type != int.\n"; 
-    ctx->shredBAT = &v->binding.val.ival; 
-
-    v = VARfind(&ctx->stk, "genType");
-    if (v == NULL) 
-        return "xquery_client_init: failed to lookup genType variable.\n"; 
-    if (v->binding.vtype != TYPE_str) 
-        return "xquery_client_init: genType variable has wrong type != str.\n"; 
-    ctx->genType = &v->binding.val.sval; 
-
-    v = VARfind(&ctx->stk, "time_compile");
-    if (v == NULL) 
-        return "xquery_client_init: failed to lookup time_compile variable.\n"; 
-    if (v->binding.vtype != TYPE_int) 
-        return "xquery_client_init: time_compile variable has wrong type != int.\n"; 
-    ctx->time_compile = &v->binding.val.ival; 
-
-    v = VARfind(&ctx->stk, "time_shred");
-    if (v == NULL) 
-        return "xquery_client_init: failed to lookup time_shred variable.\n"; 
-    if (v->binding.vtype != TYPE_int) 
-        return "xquery_client_init: time_shred variable has wrong type != int.\n"; 
-    ctx->time_shred = &v->binding.val.ival; 
-
-    v = VARfind(&ctx->stk, "time_exec");
-    if (v == NULL) 
-        return "xquery_client_init: failed to lookup time_exec variable.\n"; 
-    if (v->binding.vtype != TYPE_int) 
-        return "xquery_client_init: time_exec variable has wrong type != int.\n"; 
-    ctx->time_exec = &v->binding.val.ival; 
-
-    v = VARfind(&ctx->stk, "time_print");
-    if (v == NULL) 
-        return "xquery_client_init: failed to lookup time_print variable.\n"; 
-    if (v->binding.vtype != TYPE_int) 
-        return "xquery_client_init: time_print variable has wrong type != int.\n"; 
-    ctx->time_print = &v->binding.val.ival; 
+    @:find_var(shredBAT,int,ival)@
+    @:find_var(genType,str,sval)@
+    @:find_var(time_compile,int,ival)@
+    @:find_var(time_exec,int,ival)@
+    @:find_var(time_print,int,ival)@
+    @:find_var(time_shred,int,ival)@
 
     @:find_bat(proc_vid)@
     @:find_bat(var_usage)@
@@ -2225,8 +2196,10 @@ xquery_client_alloc_(xquery_client *ctx)
             return "xquery_client_alloc: failed to allocate.\n";
     }
     ctx->repeat_stk = CNTXTnew(ctx->stk);
+    ctx->initialized = 0;
     CNTXTuse(ctx->repeat_stk);
     monet_cntxt[ctx->repeat_stk].reuse = TRUE;
+
     return NULL;
 }
 
@@ -2252,19 +2225,30 @@ xquery_client_alloc(mapi_client *fc)
 static char *
 xquery_client_init_(xquery_client *ctx )
 {
-    ctx->fderr = GDKerr;
-
-    if (!xquery_mil_exec(ctx, (char*) PFvarMIL(), 0))
-        return "xquery_client_init: failed to execute variable declarations.\n"; 
+    if (!ctx->initialized) {
+        ctx->initialized = 1;
+        if (!xquery_mil_exec(ctx, (char*) PFvarMIL(), 0))
+            return "xquery_client_init: failed to execute variable declarations.\n"; 
+    }
     return NULL;
 }
 
+/*
+ * free all cached subtrees and all proc definitions for all xquery modules
+ * (the epilogue contains UNDEF procs) 
+ */ 
 void
-xquery_client_free_cached_queries(xquery_client *ctx)
+xquery_client_free_cached_modules(xquery_client *ctx)
 {
     xquery_prepared_function *fun= ctx->prepared_functions; 
     xquery_loaded_module *mod= ctx->loaded_modules; 
 
+    while(fun) {
+        xquery_prepared_function *del = fun;
+        fun = fun->next;
+        if (del->lt) Myyfree(del->lt);
+        GDKfree(del);
+    }
     while(mod) {
         xquery_loaded_module *del = mod;
         mod = mod->next;
@@ -2272,12 +2256,6 @@ xquery_client_free_cached_queries(xquery_client *ctx)
         if (del->def->epilogue && !xquery_mil_exec(ctx, del->def->epilogue, 0))
             fprintf(stderr, "xquery_client_free: client %d error dropping %s\n", ctx->stk, del->def->url);
         GDKfree(mod);
-    }
-    while(fun) {
-        xquery_prepared_function *del = fun;
-        fun = fun->next;
-        if (del->lt) Myyfree(del->lt);
-        GDKfree(del);
     }
     ctx->loaded_modules = NULL;
     ctx->prepared_functions = NULL;
@@ -2292,12 +2270,12 @@ static char*
 xquery_client_init(mapi_client *fc) 
 { 
     xquery_client *ctx = fc->fc;
-    char *err = xquery_client_init_(ctx);
+    char* err = xquery_client_init_(ctx);
 
     ctx->fderr = fc->c->fdout;
 
     if (!err && ctx->cacheid != xquery_cacheid) {
-        xquery_client_free_cached_queries(ctx);
+        xquery_client_free_cached_modules(ctx);
 
         ctx->buflen = XQUERY_BUFSIZE;
         ctx->cacheid = xquery_cacheid;
@@ -2324,7 +2302,7 @@ xquery_client_init(mapi_client *fc)
 static void
 xquery_client_free_(xquery_client *ctx)
 {
-    xquery_client_free_cached_queries(ctx);
+    xquery_client_free_cached_modules(ctx);
 
     ctx->shredBAT = NULL;
 
@@ -2372,7 +2350,7 @@ xquery_client_end(xquery_client *ctx, char *err)
     BATsetcount(ctx->proc_vid, ctx->proc_vid_size);
     ctx->proc_vid->batBuns->free -= delta_proc_vid*BUNsize(ctx->proc_vid);
 
-    /* empty all bats (static varibales) */
+    /* empty all bats (static variables) */
     BATclear(ctx->loop000);
     BUNins(ctx->loop000, &zero, &one);
 
@@ -2882,6 +2860,7 @@ CMDxquery(Cntxt stk,
     }
     CNTXTclient(stk, &c);
     ctx = xquery_client_new(c->stk);
+    ctx->fderr = GDKerr;
     MT_set_lock(pf_cache_lock, "CMDxquery");
     err = xquery_client_alloc_(ctx);
     if (!err)
