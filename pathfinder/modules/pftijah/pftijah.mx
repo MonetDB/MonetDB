@@ -1323,6 +1323,7 @@ extern char* tijahParse(char* pfx, char* query, char** errBUFF);
 static int oldScoreCounter = 0;
 
 int CMDtijah_query(BAT** res, str pfx, str q) {
+	/* INCOMPLETE, complete Collection BAT should be parameter here */
 	if ( 0 ) stream_printf(GDKout,"# tijah_	query(\"%s\",\"%s\")\n",pfx,q);
 	/* */
 	char* err;

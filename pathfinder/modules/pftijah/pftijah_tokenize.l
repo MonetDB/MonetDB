@@ -84,7 +84,7 @@ int useFlexScanner(char* buf, int len, struct tijahContextStruct* tjCtx) {
   return 1;
 }
 
-char* parseOneTerm(char* buf, int len) {
+char* flexScanOneTerm(char* buf, int len) {
   char* res;
 
   YY_BUFFER_STATE myBuf = yy_scan_bytes(buf, len);

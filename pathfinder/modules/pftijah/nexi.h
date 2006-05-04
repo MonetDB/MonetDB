@@ -300,6 +300,8 @@ typedef struct TijahParserContext {
     const char* queryText;
     char	errBUFF[QUERY_SIZE];
     char        milBUFF[MAXMILSIZE];
+    /* */
+    struct tijahContextStruct* tjCtx;
 } TijahParserContext;
 
 extern TijahParserContext* parserCtx;

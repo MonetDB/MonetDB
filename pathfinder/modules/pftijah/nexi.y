@@ -61,6 +61,8 @@ input: /* empty */
 line: '\n'
       | co '\n'  { query_type = CO; CO_number++; }
       | cas '\n' { query_type = CAS; CAS_number++; }
+      | co ';'  { query_type = CO; CO_number++; }
+      | cas ';' { query_type = CAS; CAS_number++; }
 ;
 
 cas: path cas_filter | path cas_filter path | path cas_filter path cas_filter;
@@ -134,6 +136,8 @@ loc_step: '\\' word | '\\' word '.' word; */
 
 int parseNEXI(TijahParserContext* parserCtx, int *query_end_num)
 {
+  rep_err = FALSE;
+
   if ( !(parserCtx->commandFILE = fopen(myfileName(WORKDIR,"file_command_pre.nxi"),"a")) ) {
       sprintf(&parserCtx->errBUFF[0],"Error: cannot create command file for writing.\n");
       return FALSE;

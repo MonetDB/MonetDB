@@ -31,6 +31,9 @@ struct tijahContextStruct;
 extern int handleTijahTerm(struct tijahContextStruct *ctx, char* term);
 
 extern int useFlexScanner(char* buf, int len, struct tijahContextStruct* tjCtx); /* FLEX */
+extern char* flexScanOneTerm(char* buf, int len);
+
+extern char* normalizeTerm(struct tijahContextStruct *ctx, char* term );
 
 @c
 
@@ -372,7 +375,7 @@ handleTijahTerm(struct tijahContextStruct *tjctx, char* term) {
  * by Hennings fancy flex scanner or Jan's simple strtok() scanner.
  */
 
-const char* delchars = " \t\n\r,:;&*%$#!@=";
+const char* obsoleteNexiChars = " \t\n\r,:;&*%$#!@=";
 
 static int 
 useStrtokScanner(tjCtx* tjctx, char* s)
@@ -383,12 +386,12 @@ useStrtokScanner(tjCtx* tjctx, char* s)
 #ifdef TJ_TRACE
     if (TJ_TRACE) stream_printf(GDKout,"C[%s]:CHARACTERS:\n",tjctx->name);
 #endif
-    if ( (t = strtok(s,delchars)) ) do {
+    if ( (t = strtok(s,obsoleteNexiChars)) ) do {
 	/* not the empty string here */
         if ( handleTijahTerm(tjctx,t) < 0 )
              return -1;
     	sz++;
-    } while ( (t=strtok(NULL,delchars)) );
+    } while ( (t=strtok(NULL,obsoleteNexiChars)) );
     return 1;
 }
 
@@ -770,6 +773,23 @@ static int pftijah_handle_characters(XqueryCtx* ctx, str ch, str top) {
     if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:handle_characters() end\n");
 #endif
     return res;
+}
+
+char* normalizeTerm(struct tijahContextStruct *tjctx, char* term ) {
+	char *res;
+#ifdef USE_FLEX
+        res = flexScanOneTerm((char*)term,strlen((char*)term));
+#else
+	res = strtok(term,obsoleteNexiChars);
+#endif
+	/* INCOMPLETE, should make shure tijahContext is always avail. here */
+        if ( res && tjctx && tjctx->stemCtx->stem) {
+    	    if ( !(res = (char*)tjctx->stemCtx->stem(tjctx->stemCtx,(unsigned char*)res)) ) {
+	        /* must be a stopword */
+	        return NULL;
+	    }
+        }
+	return res;
 }
 
 /**

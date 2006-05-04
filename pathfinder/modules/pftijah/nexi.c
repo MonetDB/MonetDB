@@ -44,6 +44,7 @@ char* tijahParse(char* pfx, char* query, char** errBUFF) {
   parserCtx->queryText = query;
   parserCtx->logFILE   = NULL;
   parserCtx->errBUFF[0]= 0;
+  parserCtx->tjCtx     = NULL; /* INCOMPLETE, should be filled here */
   if ( !old_main(0,dummy) )  {
       if ( errBUFF ) {
 	  if ( parserCtx->errBUFF[0] ) /* a nexi error message is generated */

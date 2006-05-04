@@ -17,6 +17,9 @@
 #include <string.h>
 #include "nexi.h"
 #include "nexi.tab.h"
+#include "serialize_pftijah.h"
+
+/* #define NORMALIZE_TERMS */
 
 int c;
 extern int yylval;
@@ -155,9 +158,14 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
 
 {LETTER}{LETTERDIGITEXTRAS}* {
           char_number += strlen(yytext);
+	  char* token = (char*)yytext;
           yylval = yytext[0];
 	  WRITE_COMMAND(SELECT_NODE);
-	  WRITE_TOKEN(yytext);
+#ifdef NORMALIZE_TERMS
+	  /* INCOMPLETE, what to do with 0 or >1 tokens? */
+	  token = normalizeTerm(parserCtx->tjCtx,token);
+#endif
+	  WRITE_TOKEN(token);
           return ALPHANUMERIC;
         }
 
