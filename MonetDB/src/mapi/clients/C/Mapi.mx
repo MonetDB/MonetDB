@@ -1094,10 +1094,6 @@ static int unquote(const char *msg, char **start, const char **next, int endchar
 static int mapi_slice_row(struct MapiResultSet *result, int cr);
 static void mapi_store_bind(struct MapiResultSet *result, int cr);
 
-#ifndef HAVE_GETLOGIN
-#define getlogin() "win32"
-#endif
-
 #ifdef HAVE_OPENSSL
 static SSL_CTX *mapi_ssl_ctx = 0;
 #endif
@@ -1719,8 +1715,8 @@ mapi_new(void)
 	mid->noexplain = NULL;
 	mid->motd = NULL;
 	mid->mapiversion = "mapi 1.0";
-	mid->username = strdup("anonymous");
-	mid->password = strdup("unknown");
+	mid->username = NULL;
+	mid->password = NULL;
 
 	mid->cachelimit = 100;
 	mid->tracelog = NULL;
@@ -1763,19 +1759,19 @@ mapi_mapi(const char *host, int port, const char *username, const char *password
 		if ((def = getenv("MAPIPORT")) != NULL)
 			port = atoi(def);
 	}
-	if (port == 0) {
+	if (port == 0)
 		port = 50000;	/* hardwired default */
-	}
-	if (username) {
-		free(mid->username);
-		mid->username = strdup(username);
-	}
-	if (password == 0)
-		password = getlogin();
-	if (password) {
-		free(mid->password);
-		mid->password = strdup(password);
-	}
+
+	/* fill some defaults for user/pass, this should actually never happen */
+	if (username == NULL)
+		username = "guest";
+	if (mid->username != NULL) free(mid->username);
+	mid->username = strdup(username);
+
+	if (password == NULL)
+		password = "guest";
+	if (mid->password) free(mid->password);
+	mid->password = strdup(password);
 
 	mid->port = port;
 #ifdef HAVE_OPENSSL

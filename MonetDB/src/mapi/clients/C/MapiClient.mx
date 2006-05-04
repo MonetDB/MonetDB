@@ -94,6 +94,10 @@ extern int chdir(const char *);
 #endif
 #endif
 
+#ifndef HAVE_GETLOGIN
+#define getlogin() "win32"
+#endif
+
 static FILE *toConsole;
 static char *language = "mil";
 
@@ -1400,16 +1404,18 @@ main(int argc, char **argv)
 			host = "localhost";
 	}
 
-	if (strcmp(language, "sql") == 0) {
-		if (guest)
-			user = "monetdb";
-		else if (user == NULL)
-			user = simple_prompt("User ", BUFSIZ, 1, "monetdb");
-		if (guest)
-			passwd = "monetdb";
-		else if (passwd == NULL)
-			passwd = simple_prompt("Password ", BUFSIZ, 0, "monetdb");
+	/* default to administrator account (eeks) when being called without
+	 * any arguments, default to the current user if -u flag is given */
+	if (guest) {
+		user = "monetdb";
+		passwd = "monetdb";
+	} else {
+		if (user == NULL)
+			user = simple_prompt("User ", BUFSIZ, 1, getlogin());
+		if (passwd == NULL)
+			passwd = simple_prompt("Password ", BUFSIZ, 0, "");
 	}
+
 	mid = mapi_connect(host, port, user, passwd, language);
 	if (mid == NULL) {
 		fprintf(stderr, "failed to allocate Mapi structure\n");
