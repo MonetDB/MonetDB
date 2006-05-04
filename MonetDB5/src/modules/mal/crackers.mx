@@ -85,10 +85,6 @@ overhead on a 1M bat during the first crack operation.
 (Athlon 1400, 1Gb)
 
 @= crackfcn
-command newIndex(b:bat[:oid,:@1]):void
-address CRKnewIndex
-comment "Create the index for a cracked table.";
-
 command printIndex(b:bat[:oid,:@1]):void
 address CRKprintIndex
 comment "Print the index for a cracked table.";
@@ -110,32 +106,32 @@ into a single BAT. Preferably using a BATview, otherwise
 the pieces are combined to form a new BAT.
 
 @= crackAlgebra
-command select(b:bat[:oid,:@1],l:@1,h:@1):bat[:oid,:@1]
+command select(b:bat[:any_1,:@1],l:@1,h:@1):bat[:any_2,:@1]
 address CRKselect_@1
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command select(b:bat[:oid,:@1],l:@1):bat[:oid,:@1]
+command select(b:bat[:any_1,:@1],l:@1):bat[:any_2,:@1]
 address CRKselectValue_@1
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command select(b:bat[:any_1,:@1],l:any_2,h:any_3,li:any_4,hi:any_5):bat[:oid,:@1]
+command select(b:bat[:any_1,:@1],l:any_2,h:any_3,li:any_4,hi:any_5):bat[:any_6,:@1]
 address CRKselectBounds_@1
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command uselect(b:bat[:oid,:@1],l:@1,h:@1):bat[:oid,:void]
+command uselect(b:bat[:any_1,:@1],l:@1,h:@1):bat[:any_2,:void]
 address CRKuselect_@1
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command uselect(b:bat[:oid,:@1],l:@1):bat[:oid,:void]
+command uselect(b:bat[:any_1,:@1],l:@1):bat[:any_2,:void]
 address CRKuselectValue_@1
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command uselect(b:bat[:any_1,:@1],l:any_2,h:any_3,li:any_4,hi:any_5):bat[:oid,:void]
+command uselect(b:bat[:any_1,:@1],l:any_2,h:any_3,li:any_4,hi:any_5):bat[:any_6,:void]
 address CRKuselectBounds_@1
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
@@ -233,6 +229,7 @@ ultra fast.
 
 typedef struct {
 	int bid;   /* the cracked bat */
+	int cbid;   /* the copy on which we actually crack */
 	int cid;   /* the index for this cracked bat */
 } CrackIndex;
 
@@ -241,7 +238,6 @@ mal_export str CRKselectValue(int *vid, int *bid, int *value);
 mal_export str CRKuselect(int *vid, int *bid, int *low, int *hgh);
 mal_export str CRKuselectValue(int *vid, int *bid, int *value);
 
-mal_export str CRKnewIndex(int *k, int *bid);
 mal_export str CRKprintIndex(int *k, int *bid);
 
 #endif /* _CRACKERS_H */
@@ -269,7 +265,7 @@ existsIndex(int bid)
 }
 @= CreateNewIndex
 int     
-newIndex_@1(int bid)
+newIndex_@1(int bid, int cbid)
 {       
 	int i, freemap = -1, units = 1024;
 	BAT *b;
@@ -300,6 +296,7 @@ newIndex_@1(int bid)
 	}
 
 	Index[i].bid = bid;
+	Index[i].cbid = cbid;
 	b = BATnew(TYPE_lng, TYPE_@1, 100000);	/*todo: size*/
 	BBPkeepref(b->batCacheid);
 	Index[i].cid = b->batCacheid; 
@@ -332,13 +329,6 @@ CRKprintIndex(int *k, int *bid)
 	return MAL_SUCCEED;
 }
 
-str
-CRKnewIndex(int *k, int *bid)
-{
-	(void)k;
-	newIndex_int(*bid);
-	return MAL_SUCCEED;
-}
 
 @= insertIndexElement
 	*(lng*) @2 = @4;	
@@ -688,7 +678,7 @@ CRKcrackOrderedTHREELateCopying_@2_@3_@1(BAT *b, @1 low, @1 hgh, lng idx_first, 
 		hp++;
 		tmpt @2= xx;
 		tmph @2= xx;
-		while (*(@1*)tmpt @5){
+		while (*(@1*)tmpt @5 && tmpt @3 ht){
 			tmpt @2= xx;
 			tmph @2= xx;
 		}
@@ -1475,14 +1465,11 @@ the appropriate pieces, update the index and return the result.
 @= CreateResult
 createView:
 /*	printf("vl: %lld, vh:%lld \n",vl,vh);*/
-	mode= b->batRestricted;
-	b->batRestricted= BAT_READ;
 	view = BATslice(b, vl, vh+1);
 	
 	if (!tail) 
 		view = BATslice(VIEWhead_(b, BAT_READ), vl, vh+1);
 	
-	b->batRestricted= mode;
 	*vid = view->batCacheid;
 	BBPkeepref(*vid);
 	BBPunfix(b->batCacheid);
@@ -1491,10 +1478,9 @@ createView:
 str
 CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, bit tail)
 {
-	BAT *b,*c;
+	BAT *b,*c,*bo;
 	BAT *view;
 	int  m;
-	int mode;
 	lng vl=-1, vh=-1, posl, posh; 
 	/* vl and vh are the low and high index values to create the view with the result */
 	lng cl=-1, ch1=-1, cl2=-1, ch=-1; 
@@ -1511,23 +1497,25 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 	bit gf;
 	if (low > hgh)
 		return throwMessage("crackers.crack", "illegal range");
-	if ((b = BATdescriptor(*bid)) == NULL) 
-		return throwMessage("crackers.crackRange", "Cannot access descriptor");
         
 	m = existsIndex(*bid);
 	/* if this is the first time we select something from this bat, 
 		we have to create the crack indx for it and 
 	   if necessary materialize the head of the bat */
 	if (m == -1){
-		if (b->htype ==TYPE_void) {
-			 b = BATmaterializeh(b,BATcount(b));
-			 b->hsorted = FALSE;
-			 b->tsorted = FALSE;
-			 b->hdense = FALSE; 
-			 b->hdense = FALSE;
-			 b = BATsetaccess(b, BAT_READ);
-		}
-		m = newIndex_@1(*bid);
+		if ((bo = BATdescriptor(*bid)) == NULL) 
+			return throwMessage("crackers.crackRange", "Cannot access descriptor");
+		b = BATcopy(bo);
+		b = BATmaterializeh(b,BATcount(b));
+		b->hsorted = FALSE;
+		b->tsorted = FALSE;
+		b->hdense = FALSE; 
+		b->tdense = FALSE;
+		b->batRestricted= BAT_READ;
+		BATmode(b,PERSISTENT);
+		bo->batRestricted= BAT_READ;
+		
+		m = newIndex_@1(*bid,b->batCacheid);
 
 		if ((c = BATdescriptor(Index[m].cid)) == NULL) 
 			return throwMessage("crackers.crackRange", "Cannot access crack index");
@@ -1539,6 +1527,8 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 		posA = BUNfirst(c);
 		posB = posA + BUNsize(c);
 		@:crkThree(@1,posl,posh)@
+		BBPincref(b->batCacheid,TRUE);
+		BBPunfix(bo->batCacheid);
 		goto createView;
 	}
 	
@@ -1555,7 +1545,12 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 		(in the crack index) found either as a match or to crack. 
 		This is used later on to determine which pieces we have to crack*/
 
+	/* Take the index of the bat */
 	if ((c = BATdescriptor(Index[m].cid)) == NULL) 
+		return throwMessage("crackers.crackRange", "Cannot access crack index");
+
+	/* Take the copy of the bat for which we maintain the index */
+	if ((b = BATdescriptor(Index[m].cbid)) == NULL) 
 		return throwMessage("crackers.crackRange", "Cannot access crack index");
 
 	xx = BUNsize(c);
@@ -1613,10 +1608,9 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch1:%lld, cl2:%lld, ch:%lld \n",vl,vh,cl,ch1
 str
 CRKRange_LeftNil_@1(int *vid, int *bid, @1 *hgh, bit *inclusiveHgh, bit tail)
 {
-	BAT *b,*c;
+	BAT *b, *c, *bo;
 	BAT *view;
 	int  m;
-	int mode;
 	lng vl=-1, vh=-1; 
 	/* vl and vh are the low and high index values to create the view with the result */
 	lng cl2=-1, ch=-1; 
@@ -1629,22 +1623,25 @@ CRKRange_LeftNil_@1(int *vid, int *bid, @1 *hgh, bit *inclusiveHgh, bit tail)
 	BUN ht; 
 	int xx;
 	BUN h,hh,posB;
-	if ((b = BATdescriptor(*bid)) == NULL) 
-		return throwMessage("crackers.crackRange", "Cannot access descriptor");
         
 	m = existsIndex(*bid);
 	/* if this is the first time we select something from this bat, 
 	   we have to create the crack index for it and 
 	   if necessary materialize the head of the bat */
 	if (m == -1){
-		if (b->htype ==TYPE_void) {
-			 b = BATmaterializeh(b,BATcount(b));
-			 b->hsorted = FALSE;
-			 b->tsorted = FALSE;
-			 b->hdense = FALSE; 
-			 b->hdense = FALSE;
-		}
-		m = newIndex_@1(*bid);
+		if ((bo = BATdescriptor(*bid)) == NULL) 
+			return throwMessage("crackers.crackRange", "Cannot access descriptor");
+		b = BATcopy(bo);
+		b = BATmaterializeh(b,BATcount(b));
+		b->hsorted = FALSE;
+		b->tsorted = FALSE;
+		b->hdense = FALSE; 
+		b->tdense = FALSE;
+		b->batRestricted= BAT_READ;
+		BATmode(b,PERSISTENT);
+		bo->batRestricted= BAT_READ;
+		
+		m = newIndex_@1(*bid,b->batCacheid);
 
 		if ((c = BATdescriptor(Index[m].cid)) == NULL) 
 			return throwMessage("crackers.crackRange", "Cannot access crack index");
@@ -1656,6 +1653,8 @@ CRKRange_LeftNil_@1(int *vid, int *bid, @1 *hgh, bit *inclusiveHgh, bit tail)
 		addOne_@1(m,hgh,i2,posB);
 
 		vl = BUNindex(b,BUNfirst(b));
+		BBPincref(b->batCacheid,TRUE);
+		BBPunfix(bo->batCacheid);
 		goto createView;
 	}
 	
@@ -1663,6 +1662,10 @@ CRKRange_LeftNil_@1(int *vid, int *bid, @1 *hgh, bit *inclusiveHgh, bit tail)
 		we search the index to find where the high falls */
 
 	if ((c = BATdescriptor(Index[m].cid)) == NULL) 
+		return throwMessage("crackers.crackRange", "Cannot access crack index");
+
+	/* Take the copy of the bat for which we maintain the index */
+	if ((b = BATdescriptor(Index[m].cbid)) == NULL) 
 		return throwMessage("crackers.crackRange", "Cannot access crack index");
 
 	xx = BUNsize(c);
@@ -1696,10 +1699,9 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch1:%lld, cl2:%lld, ch:%lld \n",vl,vh,cl,ch1
 str
 CRKRange_RightNil_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail)
 {
-	BAT *b,*c;
+	BAT *b, *c, *bo;
 	BAT *view;
 	int  m;
-	int mode;
 	lng vl=-1, vh=-1; 
 	/* vl and vh are the low and high index values to create the view with the result */
 	lng ch1=-1, cl=-1; 
@@ -1712,22 +1714,25 @@ CRKRange_RightNil_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail)
 	BUN lt; 
 	int xx;
 	BUN l, lh, h1, posA;
-	if ((b = BATdescriptor(*bid)) == NULL) 
-		return throwMessage("crackers.crackRange", "Cannot access descriptor");
         
 	m = existsIndex(*bid);
 	/* if this is the first time we select something from this bat, 
 	   we have to create the crack index for it and 
 	   if necessary materialize the head of the bat */
 	if (m == -1){
-		if (b->htype ==TYPE_void) {
-			 b = BATmaterializeh(b,BATcount(b));
-			 b->hsorted = FALSE;
-			 b->tsorted = FALSE;
-			 b->hdense = FALSE; 
-			 b->hdense = FALSE;
-		}
-		m = newIndex_@1(*bid);
+		if ((bo = BATdescriptor(*bid)) == NULL) 
+			return throwMessage("crackers.crackRange", "Cannot access descriptor");
+		b = BATcopy(bo);
+		b = BATmaterializeh(b,BATcount(b));
+		b->hsorted = FALSE;
+		b->tsorted = FALSE;
+		b->hdense = FALSE; 
+		b->tdense = FALSE;
+		b->batRestricted= BAT_READ;
+		BATmode(b,PERSISTENT);
+		bo->batRestricted= BAT_READ;
+		
+		m = newIndex_@1(*bid,b->batCacheid);
 
 		if ((c = BATdescriptor(Index[m].cid)) == NULL) 
 			return throwMessage("crackers.crackRange", "Cannot access crack index");
@@ -1739,6 +1744,8 @@ CRKRange_RightNil_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail)
 		addOne_@1(m,low,i1,posA);
 
 		vh = BUNindex(b,BUNlast(b)-BUNsize(b));
+		BBPincref(b->batCacheid,TRUE);
+		BBPunfix(bo->batCacheid);
 		goto createView;
 	}
 	
@@ -1746,6 +1753,10 @@ CRKRange_RightNil_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail)
 		we search the index to find where the high falls */
 
 	if ((c = BATdescriptor(Index[m].cid)) == NULL) 
+		return throwMessage("crackers.crackRange", "Cannot access crack index");
+
+	/* Take the copy of the bat for which we maintain the index */
+	if ((b = BATdescriptor(Index[m].cbid)) == NULL) 
 		return throwMessage("crackers.crackRange", "Cannot access crack index");
 
 	xx = BUNsize(c);
