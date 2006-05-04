@@ -1413,7 +1413,7 @@ main(int argc, char **argv)
 		if (user == NULL)
 			user = simple_prompt("User ", BUFSIZ, 1, getlogin());
 		if (passwd == NULL)
-			passwd = simple_prompt("Password ", BUFSIZ, 0, NULL);
+			passwd = simple_prompt("Password", BUFSIZ, 0, NULL);
 	}
 
 	mid = mapi_connect(host, port, user, passwd, language);
