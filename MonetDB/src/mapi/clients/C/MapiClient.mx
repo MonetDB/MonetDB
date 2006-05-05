@@ -1268,13 +1268,13 @@ main(int argc, char **argv)
 		{"interactive", 0, 0, 'i'},
 		{"host", 1, 0, 'h'},
 		{"language", 1, 0, 'l'},
-		{"passwd", 1, 0, 'P'},
+		{"passwd", 2, 0, 'P'},
 		{"port", 1, 0, 'p'},
 		{"set", 1, 0, 'S'},
 		{"statement", 1, 0, 's'},
 		{"time", 0, 0, 'T'},
 		{"trace", 0, 0, 't'},
-		{"user", 1, 0, 'u'},
+		{"user", 2, 0, 'u'},
 		{"history", 0, 0, 'H'},
 		{"quiet", 0, 0, 'q'},
 		{"help", 0, 0, '?'},
@@ -1288,7 +1288,7 @@ main(int argc, char **argv)
 	if ((setlen = mo_builtin_settings(&set)) == 0)
 		usage(argv[0]);
 
-	while ((c = getopt_long(argc, argv, "b:c:eil:u:p:P:qHh:s:DtT?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "b:c:eil:u::p:P::qHh:s:DtT?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'b':
 			if (*optarg == 't' || *optarg == 'T' || *optarg == '1')
@@ -1330,11 +1330,11 @@ main(int argc, char **argv)
 			break;
 		case 'u':
 			guest = 0;
-			user = optarg;
+			user = optarg; /* can be NULL */
 			break;
 		case 'P':
 			guest = 0;
-			passwd = optarg;
+			passwd = optarg; /* can be NULL */
 			break;
 		case 'i':
 			interactive = 1;
