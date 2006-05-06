@@ -231,7 +231,7 @@ var region_end_attr_tag := "end";
 #define MIN_lng LLONG_MIN
 
 /* maximum size of stack for loop-lifted burkowski join */ 
-#define max_burk_stack_size 20
+#define abs_max_stack_size 65536
 
 #endif 
 @
@@ -485,6 +485,7 @@ CMDll_@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *
         nearest_end = MIN_@3, nearest_next_start = MAX_@3, nearest_start = MAX_@3; 
 
     BURKstack_@3 *stack;
+    int max_stack_size = 16;
     int stack_size = 0, i;
     oid index;
     oid *outer_iter_iter, *outer_iter_iter_next;
@@ -525,7 +526,7 @@ CMDll_@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *
     // we could allocate a lot less space:
     // probably log(|iter|) would be more than enough in most cases
     // counting iters is probably expensive, for now we only reserve for a fixed amount.. 
-    if ((stack = (BURKstack_@3 *)GDKmalloc(sizeof(BURKstack_@3) * max_burk_stack_size)) == NULL) {
+    if ((stack = (BURKstack_@3 *)GDKmalloc(sizeof(BURKstack_@3) * max_stack_size)) == NULL) {
         GDKerror("ll_@1_@2_join_sort_@3: could not allocate memory for stack.\n"); 
         return(GDK_FAIL);
     }
@@ -605,14 +606,28 @@ endofskipping:
                     *outer_iter_iter,
                     *outer_iter_start,
                     *outer_iter_end);
-            if (stack_size >= max_burk_stack_size) {
-                GDKerror("ll_@1_@2_join_sort_@3: (stack overflow) "
-                         "Houston, please contact 911 (or increase "
-                         "the max_stack_size = %d)\n", 
-                         (int)max_burk_stack_size );
-                GDKfree(stack);
-                BBPreclaim(bn);
-                return(GDK_FAIL);
+            if (stack_size >= max_stack_size) {
+                if (max_stack_size < abs_max_stack_size) {
+                    max_stack_size *= 2;
+                    GDKwarning("ll_@1_@2_join_sort_@3: (stack overflow) "
+                            "the stack capacity will be doubled and will hold %d items\n", 
+                            (int)max_stack_size );
+                    GDKfree(stack);
+                    if ((stack = (BURKstack_@3 *)GDKmalloc(sizeof(BURKstack_@3) * 
+                                    max_stack_size)) == NULL) {
+                        GDKerror("ll_@1_@2_join_sort_@3: could not allocate memory for stack.\n"); 
+                        BBPreclaim(bn);
+                        return(GDK_FAIL);
+                    }
+                } else {
+                    GDKerror("ll_@1_@2_join_sort_@3: (stack overflow) "
+                            "Houston, please contact 911 (or increase "
+                            "the max_stack_size = %d)\n", 
+                            (int)max_stack_size );
+                    GDKfree(stack);
+                    BBPreclaim(bn);
+                    return(GDK_FAIL);
+                }
             }
             if (*outer_iter_end < nearest_end)  
                 nearest_end=*outer_iter_end;
@@ -1363,3 +1378,5 @@ int CMD_burk_enabled(bit * result) {
 @c
 @:ffb(int, int)@
 @:ffb(lng, long long)@
+
+/* vim:set shiftwidth=4 expandtab: */
