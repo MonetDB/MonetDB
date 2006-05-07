@@ -243,7 +243,7 @@ List *dirs = NULL;
 
 language *l = NULL;
 
-#if defined(__MINGW32_VERSION) || HAVE_DECL_STRDUP==0
+#if defined(__MINGW32_VERSION) || !defined(HAVE_STRDUP)
 char *
 strdup(const char *s)
 {
