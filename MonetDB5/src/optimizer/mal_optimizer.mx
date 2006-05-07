@@ -793,7 +793,11 @@ safetyBarrier(InstrPtr p, InstrPtr q)
 	}
 	return FALSE;
 }
-
+@-
+Variables can be changed later in the program and, thus, may
+not be simply replaced by an alias.
+Variables could also be changed by functions with side effects.
+@c
 int
 isUpdated(MalBlkPtr mb, int pc)
 {
@@ -823,8 +827,17 @@ isUpdated(MalBlkPtr mb, int pc)
 		/* result is used in an unsafe function */
 		for (j = 0; j < p->retc; j++)
 			for (k = q->retc; k < q->argc; k++)
-				if (p->argv[j] == q->argv[k] && hasSideEffects(q, TRUE))
+				if (p->argv[j] == q->argv[k] ){
+@-
+If the operation involves an update of the operand it should told.
+@c
+				if (getFunctionId(q) == insertRef ||
+					getFunctionId(q) == appendRef ||
+					getFunctionId(q) == deleteRef)
 					return TRUE;
+				if (idcmp("destroy", getFunctionId(q)) == 0)
+					return TRUE;
+			}
 	}
 	return FALSE;
 }
@@ -1274,6 +1287,7 @@ hasSideEffects(InstrPtr p, int strict)
 		return TRUE;
 	if( getModuleId(p)== sqlRef){
 		if( getFunctionId(p) == bindRef) return FALSE;
+		if( getFunctionId(p) == getName("resultSet",9)) return FALSE;
 		return TRUE;
 	}
 	if (idcmp("destroy", getFunctionId(p)) == 0)

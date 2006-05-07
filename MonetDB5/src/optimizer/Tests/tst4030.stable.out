@@ -40,11 +40,10 @@ function user.main():void;	# 0  (main:void)
     io.print(s);	# 9 IOprint_val (_19:int)<-(s:bat[:int,:int])
     t := algebra.select(r,0,3);	# 10 ALGselect (t:bat[:int,:int])<-(r:bat[:int,:int])(_17:int)(_12:int)
 #print(t); 	# 11  (_21:str)
-    u := algebra.select(r,0,3);	# 12 ALGselect (u:bat[:int,:int])<-(r:bat[:int,:int])(_17:int)(_12:int)
-# reuse t 	# 13  (_23:str)
-    io.print(u);	# 14 IOprint_val (_24:int)<-(u:bat[:int,:int])
-    io.print("done");	# 15 IOprint_val (_25:int)<-(_26:str)
-end main;	# 16  
+# reuse t 	# 12  (_23:str)
+    io.print(t);	# 13 IOprint_val (_24:int)<-(t:bat[:int,:int])
+    io.print("done");	# 14 IOprint_val (_25:int)<-(_26:str)
+end main;	# 15  
 #-----------------#
 # h	t	  # name
 # int	int	  # type

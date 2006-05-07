@@ -1,0 +1,19 @@
+#An example for the SQL front-end
+#The remote table is located
+
+mid:= mserver.reconnect("s0_0","localhost",50000,"monetdb","monetdb","mal");
+mserver.rpc(mid,"include sql;sql.init();");
+io.print("ready for remote SQL interaction");
+
+b:bat[:int,:int] := mserver.bind(mid,"sys","ptables","schema_id",0);
+c:=algebra.select(b,0,6000);
+io.print(c);
+d:=algebra.select(b,5,6000);
+low:= 5+1;
+io.print("kk");
+e:=algebra.select(d,low,7);
+io.print("k2");
+i:=aggr.count(e);
+io.printf(" count %d\n",i);
+io.print(d);
+optimizer.remoteQueries();

@@ -112,8 +112,14 @@ CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (safetyBarrier(p, q = getInstrPtr(mb, j)))
 					goto nxtCommonSubExpression;
 #ifdef DEBUG_MAL_OPTIMIZER
+				printInstruction(GDKout, mb, q, LIST_MAL_INSTR);
+				printInstruction(GDKout, mb, p, LIST_MAL_INSTR);
 				printf("%d, %d  %d %d ", i, j, hasSameSignature(p, q), hasSameArguments(mb, p, q));
-				printf(" :%d %d %d \n", !isUpdated(mb, i), !hasCommonResults(p, q), !hasSideEffects(p, TRUE));
+				printf(" :%d %d %d %d\n", 
+					!isUpdated(mb, i), 
+					!hasCommonResults(p, q), 
+					!hasSideEffects(p, TRUE),
+					!hasSideEffects(q, TRUE));
 
 #endif
 				if (hasSameSignature(p, q) && 
@@ -124,7 +130,7 @@ CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					allArgumentsVisible(mb,j,i)
 					) {
 #ifdef DEBUG_MAL_OPTIMIZER
-					if (getClient()->debugOptimizer) {
+					if (MCgetClient()->debugOptimizer) {
 						stream_printf(GDKout, "Found a common expression " "%d <-> %d\n", j, i);
 						printInstruction(GDKout, mb, q, LIST_MAL_ALL);
 						printInstruction(GDKout, mb, p, LIST_MAL_ALL);
@@ -136,7 +142,7 @@ CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					for (k = 0; k < q->retc; k++)
 						p->argv[p->retc + k] = q->argv[k];
 #ifdef DEBUG_MAL_OPTIMIZER
-					if (getClient()->debugOptimizer) {
+					if (MCgetClient()->debugOptimizer) {
 						stream_printf(GDKout, "common expression");
 						printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 					}
