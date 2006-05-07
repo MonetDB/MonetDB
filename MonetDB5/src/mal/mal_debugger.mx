@@ -1537,7 +1537,8 @@ optimizerDebug(MalBlkPtr mb, str name, int actions, lng usec)
 	optimizerHistory[optTop].title = GDKstrdup(name);
 	optimizerHistory[optTop].actions = actions;
 	optimizerHistory[optTop].usec = usec;
-	optimizerHistory[optTop].mb = copyMalBlk(mb);
+	if( actions)
+		optimizerHistory[optTop].mb = copyMalBlk(mb);
 	optTop++;
 }
 
@@ -1559,7 +1560,7 @@ resetOptimizerDebugger()
 void
 showOptimizerStep(int i, int flg)
 {
-	if (i < optTop) {
+	if (i < optTop && optimizerHistory[i].mb) {
 		stream_printf(GDKout, "%s\n", optimizerHistory[i].title);
 		printFunction(GDKout, optimizerHistory[i].mb, flg);
 	}
@@ -1571,12 +1572,18 @@ showOptimizerHistory()
 	stream *fd = GDKout;
 
 	for (i = 0; i < optTop; i++)
-		stream_printf(fd, "[%d] %s  %s.%s\tactions=%2d time " LLFMT " usec\n",
-			i, optimizerHistory[i].title,
-			getModuleId(getInstrPtr(optimizerHistory[i].mb,0)),
-			getFunctionId(getInstrPtr(optimizerHistory[i].mb,0)),
-			optimizerHistory[i].actions, 
-			optimizerHistory[i].usec);
+		if( optimizerHistory[i].mb)
+			stream_printf(fd, "[%d] %s  %s.%s\tactions=%2d time " LLFMT " usec\n",
+				i, optimizerHistory[i].title,
+				getModuleId(getInstrPtr(optimizerHistory[i].mb,0)),
+				getFunctionId(getInstrPtr(optimizerHistory[i].mb,0)),
+				optimizerHistory[i].actions, 
+				optimizerHistory[i].usec);
+		else
+			stream_printf(fd, "[%d] %s  \t\tactions=%2d time " LLFMT " usec\n",
+				i, optimizerHistory[i].title,
+				optimizerHistory[i].actions, 
+				optimizerHistory[i].usec);
 }
 
 @}
