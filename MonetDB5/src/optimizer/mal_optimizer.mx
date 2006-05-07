@@ -1273,8 +1273,8 @@ hasSideEffects(InstrPtr p, int strict)
 		getFunctionId(p) == deleteRef)
 		return TRUE;
 	if( getModuleId(p)== sqlRef){
-		if (getFunctionId(p) == getName("rsColumn",8) )
-			return TRUE;
+		if( getFunctionId(p) == bindRef) return FALSE;
+		return TRUE;
 	}
 	if (idcmp("destroy", getFunctionId(p)) == 0)
 		return TRUE;
