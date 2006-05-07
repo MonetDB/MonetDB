@@ -72,7 +72,7 @@ malOpenSource(str fname)
 	char path[PATHLENGTH];
 	str fullname;
 
-	strncpy(path, fname, PATHLENGTH);
+	snprintf(path,PATHLENGTH,"%s",fname);
 	slash_2_dir_sep(path);
 	fullname = MSP_locate_script(path);
 

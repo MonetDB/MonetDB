@@ -787,9 +787,10 @@ prepareMalBlk(MalBlkPtr mb, str s)
 {
 	int cnt = 0;
 
-	for (; *s; s++)
-		if (*s == '\n')
-			cnt++;
+	while(s){
+		s= strchr(s,'\n');
+		if(s) { s++; cnt++;}
+	}
 	expandMalBlk(mb, cnt);
 }
 

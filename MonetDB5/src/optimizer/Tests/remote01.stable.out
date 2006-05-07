@@ -52,7 +52,7 @@ function user.main():void;	# 0  (main:void)
     io.print(d);	# 17 IOprint_val (_35:int)<-(d:bat[:int,:int])
 end main;	# 18  
 !ERROR: MALException: Could not connect: Setup connection failed
-!ERROR:     at mserver.connect(mserver.mx:1204)
+!ERROR:     at mserver.connect(mserver.mx:1208)
 
 # 23:06:19 >  
 # 23:06:19 >  Done.
