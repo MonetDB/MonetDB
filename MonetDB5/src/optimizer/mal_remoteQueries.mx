@@ -180,7 +180,8 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( location[getArg(p,j)]) cnt++;
 
 		/* detect remote variable binding */
-		if( getModuleId(p)== mserverRef && getFunctionId(p)==bindRef){
+		if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef) ||
+			(getModuleId(p)== mserverRef && getFunctionId(p)==bindRef) ){
 			location[getArg(p,0)]= getArg(p,1);
 
 			if( p->argc== 6) {
@@ -189,6 +190,41 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				delArgument(p,1);
 				getModuleId(p)= sqlRef;
 				getFunctionId(p)= bindRef;
+
+				r= newInstruction(mb,ASSIGNsymbol);
+				getModuleId(r)= mserverRef;
+				getFunctionId(r)= rpcRef;
+				getArg(r,0)= newTmpVariable(mb, TYPE_void);
+				pushArgument(mb,r,j);
+
+				for(j=p->retc; j<p->argc; j++)
+				if( location[getArg(p,j)] == 0 && !isConstant(mb,getArg(p,j)) ){
+					q= newStmt(mb,mserverRef,putRef);
+					getArg(q,0)= newTmpVariable(mb, TYPE_str);
+					pushStr(mb,q, getRefName(mb,getArg(p,j)));
+					pushArgument(mb,q,getArg(p,j));
+					pushArgument(mb,r, getArg(q,0));
+				}
+
+				s= RQcall2str(mb,p);
+				pushStr(mb,r,s+1);
+				GDKfree(s);
+				pushInstruction(mb,r);
+				freeInstruction(p);
+			} else
+				pushInstruction(mb,p);
+			doit++;
+		} else
+		if( (getModuleId(p)== sqlRef && getFunctionId(p)== binddbatRef) ||
+			(getModuleId(p)== mserverRef && getFunctionId(p)== binddbatRef) ){
+			location[getArg(p,0)]= getArg(p,1);
+
+			if( p->argc== 5) {
+				/* a remote sql bind is sometimes needed */
+				j= getArg(p,1);
+				delArgument(p,1);
+				getModuleId(p)= sqlRef;
+				getFunctionId(p)= binddbatRef;
 
 				r= newInstruction(mb,ASSIGNsymbol);
 				getModuleId(r)= mserverRef;
