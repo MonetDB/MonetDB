@@ -9,7 +9,6 @@ statistics.dump();
 # add the bat to the statistics table
 statistics.deposit(b);
 statistics.update();
-statistics.discard("dummy");
 
 m:= statistics.getMin("dummy");
 io.print(m);
@@ -25,5 +24,5 @@ catch MALexception:str;
 	io.print("could not get maximum from dummy");
 exit MALexception;
 
-
+statistics.discard("dummy");
 statistics.dump();

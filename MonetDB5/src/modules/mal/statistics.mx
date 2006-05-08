@@ -599,11 +599,14 @@ STATdepositStr(int *ret, str *nme)
 	ValRecord val;
 	int idx;
 	str bnme;
+	ptr p;
 
 	b = BATdescriptor(idx = BBPindex(*nme));
 	if (b == NULL)
 		return throwMessage("statistics.deposit", "BAT unknown");
 	OpenBox("deposit");
+	p= BUNfnd(BATmirror(STAT_id_nme),*nme);
+	if( p) return MAL_SUCCEED;
 	val.val.bval = idx;
 	val.vtype = TYPE_bat;
 	if (depositBox(box, *nme, &val))

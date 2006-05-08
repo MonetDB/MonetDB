@@ -52,19 +52,19 @@ function user.main():void;	# 0  (main:void)
 # add the bat to the statistics table 	# 7  (_11:str)
     statistics.deposit(b);	# 8 STATdeposit (_12:void)<-(b:bat[:int,:int])
     statistics.update();	# 9 STATupdate (_13:void)
-    statistics.discard("dummy");	# 10 STATdiscard (_14:void)<-(_8:str)
-    m := statistics.getMin("dummy");	# 11 STATgetMin (m:lng)<-(_8:str)
-    io.print(m);	# 12 IOprint_val (_16:int)<-(m:lng)
-catch MALexception;	# 13  (MALexception:str) jump 16
-    io.print(MALexception);	# 14 IOprint_val (_18:int)<-(MALexception:str)
-    io.print("could not get minimum from dummy");	# 15 IOprint_val (_19:int)<-(_20:str)
-exit MALexception;	# 16  (MALexception:str)
-    mx := statistics.getMax("dummy");	# 17 STATgetMax (mx:lng)<-(_8:str)
-    io.print(mx);	# 18 IOprint_val (_22:int)<-(mx:lng)
-catch MALexception;	# 19  (MALexception:str) jump 22
-    io.print(MALexception);	# 20 IOprint_val (_23:int)<-(MALexception:str)
-    io.print("could not get maximum from dummy");	# 21 IOprint_val (_24:int)<-(_25:str)
-exit MALexception;	# 22  (MALexception:str)
+    m := statistics.getMin("dummy");	# 10 STATgetMin (m:lng)<-(_8:str)
+    io.print(m);	# 11 IOprint_val (_15:int)<-(m:lng)
+catch MALexception;	# 12  (MALexception:str) jump 15
+    io.print(MALexception);	# 13 IOprint_val (_17:int)<-(MALexception:str)
+    io.print("could not get minimum from dummy");	# 14 IOprint_val (_18:int)<-(_19:str)
+exit MALexception;	# 15  (MALexception:str)
+    mx := statistics.getMax("dummy");	# 16 STATgetMax (mx:lng)<-(_8:str)
+    io.print(mx);	# 17 IOprint_val (_21:int)<-(mx:lng)
+catch MALexception;	# 18  (MALexception:str) jump 21
+    io.print(MALexception);	# 19 IOprint_val (_22:int)<-(MALexception:str)
+    io.print("could not get maximum from dummy");	# 20 IOprint_val (_23:int)<-(_24:str)
+exit MALexception;	# 21  (MALexception:str)
+    statistics.discard("dummy");	# 22 STATdiscard (_25:void)<-(_8:str)
     statistics.dump();	# 23 STATdump (_26:void)
 end main;	# 24  
 #-------------------------------------------------#
