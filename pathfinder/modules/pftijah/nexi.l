@@ -19,8 +19,6 @@
 #include "nexi.tab.h"
 #include "serialize_pftijah.h"
 
-/* #define NORMALIZE_TERMS */
-
 int c;
 extern int yylval;
 extern int line_number;
@@ -161,10 +159,8 @@ IMAGE_PATH [a-zA-Z0-9/_.\-]
 	  char* token = (char*)yytext;
           yylval = yytext[0];
 	  WRITE_COMMAND(SELECT_NODE);
-#ifdef NORMALIZE_TERMS
 	  /* INCOMPLETE, what to do with 0 or >1 tokens? */
 	  token = normalizeTerm(parserCtx->tjCtx,token);
-#endif
 	  WRITE_TOKEN(token);
           return ALPHANUMERIC;
         }

@@ -85,14 +85,15 @@ int useFlexScanner(char* buf, int len, struct tijahContextStruct* tjCtx) {
 }
 
 char* flexScanOneTerm(char* buf, int len) {
-  char* res;
+  char *res;
+  char resBUFF[256];
 
   YY_BUFFER_STATE myBuf = yy_scan_bytes(buf, len);
-  if ( pftijah_tokenizelex() )
-      res = pftijah_tokenizetext;
-  else
+  if ( pftijah_tokenizelex() ) {
+      res = &resBUFF[0];
+      strncpy(res,pftijah_tokenizetext,256);
+  } else
       res = NULL;
   yy_delete_buffer(myBuf);
   return res;
 }
-

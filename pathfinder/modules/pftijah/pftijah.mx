@@ -78,6 +78,8 @@ module("pathfinder");
 #
 ###
 
+const DEBUG := false;
+
 # Stemming setup
 const STEM_OFF := 1;
 const STEM_ON := 2;
@@ -114,8 +116,10 @@ PROC tj_setCollName(str name) : void :=
 	}
 	collName := name;
 	collHeight := bat("tj_" + collName + "_param").find("height").int();
-	printf("Work collection is set to %s (with height %d)\n", collName, collHeight);
-	fflush(stdout());
+	if ( DEBUG ) {
+        printf("Work collection is set to %s (with height %d)\n", collName, collHeight);
+        fflush(stdout());
+    }
 }
 
 PROC tj_setScoreBase(int default) : void :=
@@ -154,7 +158,7 @@ PROC select_node(str name) : bat :=
     result := result.reverse().sort().project(dbl(scoreBase)); 
 
     var end_time := time();
-    #printf( "select_node: \t\t%d ms\n", end_time - start_time );
+    if (DEBUG) printf( "select_node: \t\t%d ms\n", end_time - start_time );
     return result;
 }
 
@@ -169,14 +173,15 @@ PROC select_term(str name) : bat :=
     var start_time := time();
     # Select the term positions from the global term dictionary. 
    
-    var tid := bat("tj_globalTerms").reverse().find(name);
-    var result := indexfetchjoin( new(int,oid).insert(0,tid),
+    var tids := bat("tj_globalTerms").select(name).mark(0@0).sort().reverse();
+    
+    var result := indexfetchjoin( tids,
     				  bat("tj_" + collName + "_TermIndex"),
     				  bat("tj_" + collName + "_Terms") );
     result := result.reverse().sort().project(dbl(1)); 
     
     var end_time := time();
-    printf( "select_term: \t\t%d ms\n", end_time - start_time );
+    if (DEBUG) printf( "select_term: \t\t%d ms\n", end_time - start_time );
     return result;
 }
 
@@ -214,7 +219,7 @@ PROC select_phrase(bat[void,oid] terms) : bat[oid,dbl] :=
     res := res.sort().project(dbl(1)); 
     
     var end_time := time();
-    printf( "select_phrase: \t\t%d ms\n", end_time - start_time );
+    if (DEBUG) printf( "select_phrase: \t\t%d ms\n", end_time - start_time );
     return res;
 }
 
@@ -269,7 +274,7 @@ PROC contained_by(bat left, bat right) : bat :=
     var result := res.reverse().mirror().join(left);
     
     var end_time := time();
-    printf( "contained_by: \t\t%d ms\n", end_time - start_time );
+    if (DEBUG) printf( "contained_by: \t\t%d ms\n", end_time - start_time );
     return result;
 }
 
@@ -319,7 +324,7 @@ PROC containing(bat left, bat right) : bat :=
     var result := res.mirror().kunique().join(left);
     
     var end_time := time();
-    printf( "containing: \t\t%d ms\n", end_time - start_time );
+    if (DEBUG) printf( "containing: \t\t%d ms\n", end_time - start_time );
     return result;
 }
 
@@ -380,7 +385,7 @@ PROC p_containing_q_NLLR_batloop_anc(bat[oid,dbl] left, bat[void,oid] terms, flt
 	       var t8 := time();
 	       doc_prob.insert(tmp);
 	       var t9 := time();
-     printf("inside loop: ll_desc (%d), insert (%d), total (%d)\n", t7 - t6, t9 - t8, t9 - t5);
+     if (DEBUG) printf("inside loop: ll_desc (%d), insert (%d), total (%d)\n", t7 - t6, t9 - t8, t9 - t5);
      fflush(stdout());
 	       
           }
@@ -390,7 +395,7 @@ PROC p_containing_q_NLLR_batloop_anc(bat[oid,dbl] left, bat[void,oid] terms, flt
      res := res.[/](terms.count()).[+](left);
      var t4 := time();
      
-     printf("p_containing_q: loop (%d), total (%d)\n", t3 - t2, t4 - t1);
+     if (DEBUG) printf("p_containing_q: loop (%d), total (%d)\n", t3 - t2, t4 - t1);
      fflush(stdout());
      return res;
 }
@@ -421,7 +426,7 @@ PROC p_containing_q_NLLR_batloop(bat[oid,dbl] left, bat[void,oid] terms, flt lmb
 	  {
 	       fac := _lmbd / fac;
 	       var t6 := time();
-               printf("ll_desc: #loops/items: %d, #cands: %d, #pre_size: %d\n", elems.count(), cands.count(), bat("tj_" + collName + "_size").count());
+               if (DEBUG) printf("ll_desc: #loops/items: %d, #cands: %d, #pre_size: %d\n", elems.count(), cands.count(), bat("tj_" + collName + "_size").count());
 	       fflush(stdout());
 	       var elem_termpre := ll_descendant(iter, 
      						 elems, 
@@ -444,7 +449,7 @@ PROC p_containing_q_NLLR_batloop(bat[oid,dbl] left, bat[void,oid] terms, flt lmb
 	       var t8 := time();
 	       doc_prob.insert(tmp);
 	       var t9 := time();
-     printf("inside loop: ll_desc (%d), insert (%d), total (%d)\n", t7 - t6, t9 - t8, t9 - t5);
+     if (DEBUG) printf("inside loop: ll_desc (%d), insert (%d), total (%d)\n", t7 - t6, t9 - t8, t9 - t5);
      fflush(stdout());
 	       
           }
@@ -454,7 +459,7 @@ PROC p_containing_q_NLLR_batloop(bat[oid,dbl] left, bat[void,oid] terms, flt lmb
      res := res.[/](terms.count()).[+](left);
      var t4 := time();
      
-     printf("p_containing_q: loop (%d), total (%d)\n", t3 - t2, t4 - t1);
+     if (DEBUG) printf("p_containing_q: loop (%d), total (%d)\n", t3 - t2, t4 - t1);
      fflush(stdout());
      return res;
 }
@@ -478,7 +483,7 @@ PROC p_containing_q_NLLR_batloop_aggregation(bat[oid,dbl] left, bat[void,oid] te
      elems := elems.mark(0@0).reverse();
      var cands := tid_pre.reverse().sort().mark(0@0).reverse();
      var iter := elems.mirror();
-     printf("ll_desc: #loops/items: %d, #cands: %d, #pre_size: %d\n", elems.count(), cands.count(), bat("tj_" + collName + "_size").count());
+     if (DEBUG) printf("ll_desc: #loops/items: %d, #cands: %d, #pre_size: %d\n", elems.count(), cands.count(), bat("tj_" + collName + "_size").count());
 	       fflush(stdout());
      var t4 := time();
      var elem_termpre := ll_descendant(	iter, 
@@ -512,7 +517,7 @@ PROC p_containing_q_NLLR_batloop_aggregation(bat[oid,dbl] left, bat[void,oid] te
      
      var t6 := time();
     
-     printf("p_containing_q: indexfetchjoin (%d), ll_descendant (%d), total (%d)\n", t3 - t2, t5 - t4, t6 - t1);
+     if (DEBUG) printf("p_containing_q: indexfetchjoin (%d), ll_descendant (%d), total (%d)\n", t3 - t2, t5 - t4, t6 - t1);
      fflush(stdout());
      return res;
 }
@@ -542,7 +547,7 @@ PROC p_containing_q_NLLR_batloop_aggregation_anc(bat[oid,dbl] left, bat[void,oid
      var elem_frq := bat("tj_" + collName + "_size").semijoin(elems);
      elems := elems.mark(0@0).reverse();
      var iter := elems.mirror();
-     printf("ll_desc: #loops/items: %d, #cands: %d, #pre_size: %d\n", elems.count(), cands.count(), bat("tj_" + collName + "_size").count());
+     if (DEBUG) printf("ll_desc: #loops/items: %d, #cands: %d, #pre_size: %d\n", elems.count(), cands.count(), bat("tj_" + collName + "_size").count());
 	       fflush(stdout());
      var t4 := time();
      var elem_termpre := ll_descendant(	iter, 
@@ -576,7 +581,7 @@ PROC p_containing_q_NLLR_batloop_aggregation_anc(bat[oid,dbl] left, bat[void,oid
      
      var t6 := time();
     
-     printf("p_containing_q: indexfetchjoin (%d), scj_anc (%d), ll_descendant (%d), total (%d)\n", t3 - t2, t8 - t7, t5 - t4, t6 - t1);
+     if (DEBUG) printf("p_containing_q: indexfetchjoin (%d), scj_anc (%d), ll_descendant (%d), total (%d)\n", t3 - t2, t8 - t7, t5 - t4, t6 - t1);
      fflush(stdout());
      return res;
 }
@@ -622,7 +627,7 @@ PROC p_containing_q_NLLR(bat[oid,dbl] left, bat[void,oid] terms, flt lmbd) : bat
      res := res.[/](terms.count()).[+](left);
      var t6 := time();
     
-     printf("p_containing_q: indexfetchjoin (%d), ll_descendant (%d), total (%d)\n", t3 - t2, t5 - t4, t6 - t1);
+     if (DEBUG) printf("p_containing_q: indexfetchjoin (%d), ll_descendant (%d), total (%d)\n", t3 - t2, t5 - t4, t6 - t1);
      fflush(stdout());
      return res;
 }
@@ -663,7 +668,7 @@ PROC p_containing_t_LMs(bat left, bat right, flt lmbd, int size_type) : bat :=
     }
 
     if (bckgnd_prob = dbl(0)) {
-        printf( "Minimum collection frequency has not been computed yet!\n" );
+        if (DEBUG) printf( "Minimum collection frequency has not been computed yet!\n" );
         # Assign minimum collection frequency
         
         bckgnd_prob := min(col_freq());
@@ -680,7 +685,7 @@ PROC p_containing_t_LMs(bat left, bat right, flt lmbd, int size_type) : bat :=
     
     
     var end_time := time();
-    printf( "p_containing_t_LMs: \t%d ms\n", end_time - start_time );
+    if (DEBUG) printf( "p_containing_t_LMs: \t%d ms\n", end_time - start_time );
     return res_reg;
 }
 
@@ -692,7 +697,7 @@ PROC col_freq() : bat :=
     var alltermpos := indexfetchjoin(allterms, bat("tj_PFX_TermIndex"), bat("tj_PFX_Terms"));
     var col_freqs := [dbl]({count}(alltermpos));
 
-    printf( "col_freq: \t\t%d ms\n", time() - start_time );
+    if (DEBUG) printf( "col_freq: \t\t%d ms\n", time() - start_time );
     return col_freqs;
 }
 
@@ -704,7 +709,7 @@ PROC col_freq(oid tid) : dbl :=
     var alltermpos := indexfetchjoin(new(int,oid).insert(0,tid), bat("tj_PFX_TermIndex"), bat("tj_PFX_Terms"));
     var col_freqs := {count}(alltermpos);
     var result := dbl(col_freqs.fetch(0));
-    printf( "col_freq: \t\t%d ms\n", time() - start_time );
+    if (DEBUG) printf( "col_freq: \t\t%d ms\n", time() - start_time );
     return result;
 }
 
@@ -743,7 +748,7 @@ PROC reg_freq(bat left, bat right, int size_type) : bat    :=
     prob_tmp := {sum}(prob_tmp.sunion(ctx_tmp));
 
     var end_time := time();
-    printf( "reg_freq: \t\t%d ms\n", end_time - start_time );
+    if (DEBUG) printf( "reg_freq: \t\t%d ms\n", end_time - start_time );
     return prob_tmp;
         
 }
@@ -774,7 +779,7 @@ PROC size_term( bat region ) : bat :=
     var result := [dbl]({count}(res));
    
     var end_time := time();
-    printf( "size_term: \t\t%d ms\n", end_time - start_time );
+    if (DEBUG) printf( "size_term: \t\t%d ms\n", end_time - start_time );
     return result;
 }
 
@@ -800,8 +805,242 @@ PROC size_entity( bat region ) : bat :=
     var result := {count}(res);
 
     var end_time := time();
-    printf( "size_entity: \t\t%d ms\n", end_time - start_time );
+    if (DEBUG) printf( "size_entity: \t\t%d ms\n", end_time - start_time );
     return result;
+}
+
+
+################################################################################
+# PROBABILISTIC CONTAINMENT
+################################################################################
+
+
+PROC p_contained_by_sum(bat left, bat right) : bat := 
+{
+
+    # Items contains the context nodes for the descendant step: this is the right side argument to contained_by.
+    # The table must be [void,oid], so:
+    var items := right.mirror().mark(0@0).reverse();
+    
+    # Candidates contains the left side argument. This must also be [void,oid]:
+    var candidates := left.mirror().mark(0@0).reverse();
+    
+    var pre_size := load( "tj_" + collName + "_size");
+            
+    # Check the order of the items:
+    items.chk_order();
+    
+    # Call the descendant algorithm: it returns [ancestor, descendant] pairs!
+    var ctx_res := ll_descendant(items, items, pre_size, candidates, collHeight, false, false, min(items), max(items), false);
+    
+    # Attach the scores to the resulting nodes again:
+    #var result := res.reverse().mirror().join(left);
+    
+    
+
+	#: var ctx_res := new(oid,oid,ENTITY_NUM);
+	#: var ctx := new(oid,oid,ENTITY_NUM);
+	#: var reg_score := new(oid,dbl,ENTITY_NUM);
+	#: var entity_pre := new(oid,oid,ENTITY_NUM);
+	#: entity_pre := load(col_name+"entity_pre");
+	#: var entity_post := new(oid,oid,ENTITY_NUM);
+	#: entity_post := load(col_name+"entity_post");
+
+	#: var res_reg := new(oid,dbl,ENTITY_NUM);
+
+    # Get preorder indices for left (de) and right (an)
+    #: var de := left.mirror().join(entity_pre).reverse().join(entity_post).sort();
+    #: var an := right.mirror().join(entity_pre).reverse().join(entity_post).sort();
+
+    #: entity_post := nil;
+
+    var reg_score;
+    var res_reg;
+	var ctx := left.project(dbl(0));
+
+    # use optimized interval inclusion join
+    #: ctx_res:=treemergejoin_sort(an,de,1);
+
+    # ctx_res contains an=>de pairs: their preorder indices!
+    
+
+    # calculating the score for each region
+    # Get the preorder indexes for the right region
+    #: reg_score := {sum}(ctx_res.reverse().join(right.reverse().join(entity_pre).reverse()));
+    #: reg_score := {sum}(kunion(entity_pre.join(reg_score),ctx));
+
+    reg_score := {sum}(ctx_res.reverse().join(right));
+    reg_score := {sum}(kunion(reg_score, ctx));
+
+
+	#: entity_pre :=nil;
+
+	if (scoreBase = 0)
+		res_reg := [+](left, reg_score);
+	else if (scoreBase = 1)
+		res_reg := [*](left, reg_score);
+
+	return res_reg;
+
+}
+
+
+PROC p_containing_wsumd(bat region, int size_type) : bat :=
+{
+
+	#: var ctx_res := new(oid,oid,ENTITY_NUM);
+	#: var ctx := new(oid,dbl,ENTITY_NUM);
+	#: var size_reg := new(oid,dbl,ENTITY_NUM);
+	#: var norm_reg := new(oid,dbl,ENTITY_NUM);
+	#: var reg_score := new(oid,dbl,ENTITY_NUM);
+	#: var entity_pre := new(oid,oid,ENTITY_NUM);
+	#: entity_pre := load(col_name+"entity_pre");
+	#: var entity_post := new(oid,oid,ENTITY_NUM);
+	#: entity_post := load(col_name+"entity_post");
+	#: var entity_type := new(oid,chr,ENTITY_NUM);
+	#: entity_type := load(col_name+"entity_type");
+
+	#: var res_reg := new(oid,dbl,ENTITY_NUM);
+
+    #: var an := entity_type.uselect('n').mirror().join(entity_pre).reverse().join(entity_post).sort();
+    #: var de := region.mirror().join(entity_pre).reverse().join(entity_post).sort();
+
+    #: entity_post := nil;
+	#: entity_type := nil;
+
+    # use optimized interval inclusion join
+    #: ctx_res:=treemergejoin_sort(an,de,1);
+
+
+    # Items contains the context nodes for the descendant step: this is the right side argument to contained_by.
+    # The table must be [void,oid], so:
+    var items := right.mirror().mark(0@0).reverse();
+    
+    # Candidates contains the left side argument. This must also be [void,oid]:
+    var candidates := left.mirror().mark(0@0).sort().reverse();
+    
+    var pre_size := load( "tj_" + collName + "_size");
+            
+    # Check the order of the items:
+    items.chk_order();
+    
+    # Call the descendant algorithm: it returns [ancestor, descendant] pairs!
+    var ctx_res := ll_descendant(items, items, pre_size, candidates, collHeight, false, false, min(items), max(items), false);
+    
+    var size_reg;
+    var ctx;
+    var reg_score;
+    var res_ref;
+    var norm_reg;
+    
+	if (size_type = SIZE_ENTITY) {
+		size_reg := size_entity(region);
+	}
+	else if (size_type = SIZE_TERM) {
+		size_reg := size_term(region);
+	}
+
+    # Find the node id's again: not necessary for us
+	#: ctx_res := ctx_res.join(entity_pre.reverse());
+
+    # calculating the score for each region
+    reg_score := {sum}(ctx_res.join([*](size_reg,region)));
+
+	ctx := {sum}(ctx_res.join(size_reg));
+
+	norm_reg := ctx.select(dbl(0),dbl(nil),false,true);
+
+	reg_score := norm_reg.mirror().join(reg_score);
+
+	#: res_reg := [/](entity_pre.join(reg_score),entity_pre.join(norm_reg));
+    res_reg := [/](reg_score,norm_reg);
+
+	entity_pre :=nil;
+
+	return res_reg;
+
+}
+#ADDHELP("p_containing_wsumd", "vojkan", "March 29, 2005",
+#"Assings score after score propagation to containing regions in the colection.",
+#"TIJAH");
+
+
+PROC p_containing_wsumd(bat left, bat right, int size_type) : bat :=
+{
+    
+	#: var ctx_res := new(oid,oid,ENTITY_NUM);
+	#: var ctx := new(oid,oid,ENTITY_NUM);
+	#: var size_reg := new(oid,dbl,ENTITY_NUM);
+	#: var norm_reg := new(oid,dbl,ENTITY_NUM);
+	#: var reg_score := new(oid,dbl,ENTITY_NUM);
+	#: var entity_pre := new(oid,oid,ENTITY_NUM);
+	#: entity_pre := load(col_name+"entity_pre");
+	#: var entity_post := new(oid,oid,ENTITY_NUM);
+	#: entity_post := load(col_name+"entity_post");
+
+	#: var res_reg := new(oid,dbl,ENTITY_NUM);
+
+    #: var an := left.mirror().join(entity_pre).reverse().join(entity_post).sort();
+    #: var de := right.mirror().join(entity_pre).reverse().join(entity_post).sort();
+
+    #: entity_post := nil;
+
+	var ctx := left.project(dbl(0));
+    var size_reg;
+    var reg_score;
+    var norm_reg;
+    var res_reg;
+    
+    if (size_type = SIZE_ENTITY) {
+		size_reg := size_entity(right);
+	}
+	else if (size_type = SIZE_TERM) {
+		size_reg := size_term(right);
+	}
+
+    # use optimized interval inclusion join
+    #: ctx_res:=treemergejoin_sort(an,de,1);
+
+    # Items contains the context nodes for the descendant step: this is the right side argument to contained_by.
+    # The table must be [void,oid], so:
+    var items := left.mirror().mark(0@0).reverse();
+    
+    # Candidates contains the left side argument. This must also be [void,oid]:
+    var candidates := right.mirror().mark(0@0).reverse();
+    
+    var pre_size := load( "tj_" + collName + "_size");
+            
+    # Check the order of the items:
+    items.chk_order();
+    
+    # Call the descendant algorithm: it returns [ancestor, descendant] pairs!
+    var ctx_res := ll_descendant(items, items, pre_size, candidates, collHeight, false, false, min(items), max(items), false);
+    	
+
+    # Find the node id's again: not necessary here
+	#: ctx_res := ctx_res.join(entity_pre.reverse());
+
+    # calculating the score for each region
+    reg_score := {sum}(ctx_res.join([*](size_reg,right)));
+
+	norm_reg := {sum}(ctx_res.join(size_reg));
+
+	norm_reg := norm_reg.select(dbl(0),dbl(nil),false,true);
+
+	reg_score := norm_reg.mirror().join(reg_score);
+
+	#: reg_score := [/](entity_pre.join(reg_score),entity_pre.join(norm_reg));
+    reg_score := [/](reg_score,norm_reg);
+
+	reg_score := {sum}(sunion(reg_score,ctx));
+
+	if (scoreBase = 0)
+		res_reg := [+](left, reg_score);
+	else if (scoreBase = 1)
+		res_reg := [*](left, reg_score);
+
+	return res_reg;
+
 }
 
 # The following functions have been copied without change from algebra_procs.mil
@@ -1018,7 +1257,7 @@ PROC order_regions(bat region) : bat :=
 
 PROC tj_global_init() : void 
 {
-	printf("# Initializing Pathfinder-Tijah integration package.\n");
+	if (DEBUG) printf("# Initializing Pathfinder-Tijah integration package.\n");
 	new(oid,str).persists(true).bbpname("tj_globalTerms");
 	new(oid,str).persists(true).bbpname("tj_globalTags");
 	new(oid,str).persists(true).bbpname("tj_collName");

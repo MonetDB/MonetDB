@@ -29,7 +29,7 @@
 typedef struct tijahStemmingStruct {
 	const char* name;
 	int (*init)(void* ctx, char* s);
-	unsigned char* (*stem)(void* ctx, unsigned char* s);
+	const char* (*stem)(void* ctx, const char* s);
 	int (*clear)(void* ctx);
 	void* udf;
 } tjStemCtx;
@@ -52,7 +52,7 @@ extern tjStemCtx* getStemmingContext(char* name);
 #include "snb_api.h"
 
 
-unsigned char* debugStem(void* ctx, unsigned char* s) {
+const char* debugStem(void* ctx, const char* s) {
 	tjStemCtx* sctx = (tjStemCtx*)ctx;
 
 	stream_printf(GDKout,"stemmer(%s): stem(\"%s\")\n",sctx->name,s);
@@ -84,7 +84,7 @@ static int snb_porter_init(void* ctx, char* s) {
 	return 1;
 }
 
-static unsigned char* snb_porter_stem(void* ctx, unsigned char* s) {
+static const char* snb_porter_stem(void* ctx, const char* s) {
 	struct SN_env *env = (struct SN_env *)((tjStemCtx*)ctx)->udf;
 
 	SN_set_current(env,strlen(s),s);
@@ -96,7 +96,7 @@ static unsigned char* snb_porter_stem(void* ctx, unsigned char* s) {
 #ifdef STEMMING_DEBUG
 	stream_printf(GDKout,"+ stem-snowball-porter(%s)=\"%s\"\n",s,env->p);
 #endif
-	return (unsigned char*)env->p;
+	return (const char*)env->p;
 }
 
 static int snb_porter_clear(void* ctx) {
@@ -124,7 +124,7 @@ static int snb_english_init(void* ctx, char* s) {
 	return 1;
 }
 
-static unsigned char* snb_english_stem(void* ctx, unsigned char* s) {
+static const char* snb_english_stem(void* ctx, const char* s) {
 	struct SN_env *env = (struct SN_env *)((tjStemCtx*)ctx)->udf;
 
 	SN_set_current(env,strlen(s),s);
@@ -136,7 +136,7 @@ static unsigned char* snb_english_stem(void* ctx, unsigned char* s) {
 #ifdef STEMMING_DEBUG
 	stream_printf(GDKout,"+ stem-snowball-english(%s)=\"%s\"\n",s,env->p);
 #endif
-	return (unsigned char*)env->p;
+	return (const char*)env->p;
 }
 
 static int snb_english_clear(void* ctx) {
@@ -164,7 +164,7 @@ static int snb_dutch_init(void* ctx, char* s) {
 	return 1;
 }
 
-static unsigned char* snb_dutch_stem(void* ctx, unsigned char* s) {
+static const char* snb_dutch_stem(void* ctx, const char* s) {
 	struct SN_env *env = (struct SN_env *)((tjStemCtx*)ctx)->udf;
 
 	SN_set_current(env,strlen(s),s);
@@ -176,7 +176,7 @@ static unsigned char* snb_dutch_stem(void* ctx, unsigned char* s) {
 #ifdef STEMMING_DEBUG
 	stream_printf(GDKout,"+ stem-snowball-dutch(%s)=\"%s\"\n",s,env->p);
 #endif
-	return (unsigned char*)env->p;
+	return (const char*)env->p;
 }
 
 static int snb_dutch_clear(void* ctx) {
