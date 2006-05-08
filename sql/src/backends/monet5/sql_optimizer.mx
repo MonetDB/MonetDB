@@ -295,7 +295,7 @@ to allow inspection.
 			optimizerCheck(c->curprg->def,"sql.baseline",-1,0);
 		COoptimizer(c->curprg->def,0,0);
 		ARoptimizer(c->curprg->def, 0, 0);
-		/* CXoptimizer(c->curprg->def,0,0);*/
+		CXoptimizer(c->curprg->def,0,0);
 		FXoptimizer(c->curprg->def, 0, 0);
 		OPTmultiplex(c->curprg->def, 0, 0);
 		MRoptimizer(c->curprg->def,0,0);
