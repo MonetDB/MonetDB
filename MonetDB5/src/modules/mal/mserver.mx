@@ -92,6 +92,10 @@ command reconnect(dbalias:str, host:str, port:int, usr:str, passwd:str,lang:str)
 address SERVERreconnectAlias
 comment "Re-establish connection with a remote mserver";
 
+command reconnect(host:str, port:int, usr:str, passwd:str,lang:str):int
+address SERVERreconnectWithoutAlias
+comment "Re-establish connection with a remote mserver";
+
 command connect(host:str, port:int, usr:str, passwd:str,lang:str):int
 address SERVERconnect
 comment "Establish connection with a remote mserver";
@@ -301,6 +305,7 @@ mal_export void SERVERexit();
 
 mal_export str SERVERconnect(int *ret, str *host, int *port, str *username, str *password, str *lang);
 mal_export str SERVERreconnectAlias(int *ret, str *dbalias, str *host, int *port, str *username, str *password, str *lang);
+mal_export str SERVERreconnectWithoutAlias(int *ret, str *host, int *port, str *username, str *password, str *lang);
 mal_export str SERVERconnectssl(int *ret, str *host, int *port, str *username, str *password, str *lang);
 mal_export str SERVERdisconnect(int *ret, int *mid);
 mal_export str SERVERsetAlias(int *ret, int *mid, str *dbalias);
@@ -1237,9 +1242,25 @@ SERVERreconnectAlias(int *key,str *dbalias, str *host, int *port, str *username,
 			return msg;
 	}
 
-	msg= SERVERconnectAll(key,host,port,username,password,lang, FALSE);
+	msg= SERVERconnectAll(key, host, port, username, password, lang, FALSE);
 	if( msg == MAL_SUCCEED)
 		msg = SERVERsetAlias(&i, key, dbalias);
+	return msg;
+}
+str
+SERVERreconnectWithoutAlias(int *key,str *host, int *port, str *username, str *password, str *lang){
+	int i;
+	str msg=MAL_SUCCEED, nme= "anonymous";
+
+	for(i=0; i<MAXSESSIONS; i++)
+	 if( SERVERsessions[i].key ){
+			*key = SERVERsessions[i].key;
+			return msg;
+	}
+
+	msg= SERVERconnectAll(key, host, port, username, password, lang, FALSE);
+	if( msg == MAL_SUCCEED)
+		msg = SERVERsetAlias(&i, key, &nme);
 	return msg;
 }
 @-
