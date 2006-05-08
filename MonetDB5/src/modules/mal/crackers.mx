@@ -997,7 +997,7 @@ CRKcrackUnorderedZero_@2_@1( BAT *b, @1 mval, lng first, lng last, lng *pos){
 
 	if (vl == vm) {
 		if (*(@1*)vl @4 mval)
-			*pos = BUNindex(b,vl-xx); /*works for empty left piece also*/
+			*pos = BUNindex(b,(ptr) ((char *) vl - xx)); /*works for empty left piece also*/
 		else{
 			*pos = BUNindex(b,vl);
 			if (BUNindex(b,vl)==last) /*empty right piece*/
@@ -1037,7 +1037,7 @@ CRKcrackUnorderedThree_@2_@3_@1( BAT *b, @1 low, @1 hgh, lng first, lng last, ln
 			*posl = *posh = BUNindex(b,hmax);
 		}
 		else{
-			*posl = BUNindex(b,hmax+xx);
+			*posl = BUNindex(b,(ptr) ((char *) hmax + xx));
 			*posh = BUNindex(b,hmax);
 		}
 		return MAL_SUCCEED;
@@ -1062,7 +1062,7 @@ CRKcrackUnorderedThree_@2_@3_@1( BAT *b, @1 low, @1 hgh, lng first, lng last, ln
 
 		}
 		else{
-			*posl = BUNindex(b,vl+xx);
+			*posl = BUNindex(b,(ptr) ((char *) vl + xx));
 			
 		}
 		*posh = BUNindex(b,hmax);
@@ -1085,13 +1085,13 @@ CRKcrackUnorderedThree_@2_@3_@1( BAT *b, @1 low, @1 hgh, lng first, lng last, ln
                         }
                 }
         }
-	if (vm ==  BUNtloc(b,BUNptr(b,last+xx))){ /*right and middle are empty*/
+	if (vm ==  BUNtloc(b,BUNptr(b,last+1))){ /*right and middle are empty*/
 		*posl = -1;
 		*posh = -1;
 		return MAL_SUCCEED;
 	}	
 	if (hmax == vl){ /*then middle piece is empty*/
-		*posl = BUNindex(b,vl+xx);
+		*posl = BUNindex(b,(ptr) ((char *) vl + xx));
 		*posh = BUNindex(b,hmax);
 		return MAL_SUCCEED;
 	}
