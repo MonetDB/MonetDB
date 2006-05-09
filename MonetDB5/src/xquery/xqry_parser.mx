@@ -1,0 +1,1321 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' All Rights Reserved.
+
+@f xqry_parser
+@a M. L. Kersten
+@v 0.1
+@+ XQuery Compilation
+MonetDB supports several front-ends. One of those is XQuery
+as defined by W3C. 
+The version shipped with MonetDB Version 4 is based on the seminal
+work at Konstanz and Munich, which use an schema agnostic scheme
+to prepresent the document and derive query plans.
+
+The older method designed and used in conjunction with the Xmark
+benchmark works on path summaries. This provides an extreme
+partitioning scheme of the database.
+
+The sample compilation shown below has been designed as a proof
+of concept that compilation of valid xqueries of the complexity
+of the Xmark benchmark can indeed be processed.
+
+@{
+@+ Implementation notes
+The XQuery parser is a recursive-descend implementation.
+The parser produced follows the structure of the MAL parser
+and produces a MAL block for direct execution.
+@}
+@+ Conversion Pitfalls
+In this section we summarize the pitfalls and limitations encountered
+in using the XQuery to MAL compiler.
+
+@{
+@+ The lexical analyzer
+It uses the features offered by the MAL parser.
+The key structured is a XML context descriptor,
+which keeps track of all retrictics made sofar
+on the document tree.
+@h
+#ifndef _XQRY_PARSER_H
+#define _XQRY_PARSER_H
+
+#include "mal_builder.h"
+#include "mal_parser.h"
+
+#ifdef _MSC_VER
+#ifndef LIBXQRY
+#define xqry_export extern __declspec(dllimport)
+#else
+#define xqry_export extern __declspec(dllexport)
+#endif
+#else
+#define xqry_export extern
+#endif
+
+#undef currChar
+#define MAXXVARS 64
+#define MAXSCOPES 32
+
+#define PARSE_OK 0
+#define PARSE_ERR -1
+
+typedef struct IDS {
+	str nme;
+	int tmpid;	/* MAL equivalent */
+	str path;	/* dataguide entry */
+} Xvariable;
+
+typedef struct {
+	Xvariable vars[MAXXVARS];
+	short vtop;
+	int scopes[MAXSCOPES];	/* keep track of the depth */
+	int stop;
+	MalBlkPtr mb;	/* compiled program */
+} *Xbackend;
+
+
+xqry_export str XQRYcompile(str qry);
+xqry_export str XQRYexec(int ret, str qry);
+
+#define _XQRY_DEBUG	/* debugging option */
+
+#endif /* _XQRY_PARSER_H */
+@c
+#include "mal_interpreter.h"
+#include "mal_builder.h"
+#include "mal_parser.h"
+#include "xqry_parser.h"
+
+#define BE(X) ((Xbackend)(X->state[PARSER]))
+#define needMore(X)  currChar(X)	/* need at least one more character */
+#define advanceMore(X,Y) {advance(X,Y); needMore(X);}
+
+#define XPATHLENGTH 1024
+
+extern str parseWarning(Client cntxt, str msg);
+
+@-
+The XQuery parser may request for more information to 
+complete a parsing request.
+@c
+char
+currChar(Client c)
+{
+	if (*CURRENT(c) == 0) {
+		MALreader(c);
+		c->yycur = 0;
+	}
+	return *CURRENT(c);
+}
+
+@+ The Parser
+Unlike MonetDB V4.3 the client is responsible to collect the
+input for parsing in a single string before calling the parser.
+Once the input is available parsing runs in a critial section for
+a single client thread.
+
+@= restoreState
+    if( c->listing)
+		printFunction(c->fdout,c->curprg->def, c->listing);
+	resetInstructions(c->curprg->def, oldstate.stop);
+	resetVariables(c->curprg->def, @1, oldstate.vtop);
+
+@+ Symbol table
+The XQuery name space is a collection of nested scopes.
+This means we have to keep track on the identifiers
+introduced in a block and issue a bind operation before using them.
+@c
+static int
+XfindId(Xbackend be, str nme)
+{
+	int i;
+	for(i=0; i< be->vtop; i++)
+		if (strcmp(be->vars[i].nme, nme) == 0)
+			return be->vars[i].tmpid;
+	return 0;
+
+}
+
+Xbackend
+newXbackend(MalBlkPtr mb){
+	Xbackend xb;
+	xb = (Xbackend) GDKmalloc( sizeof(Xbackend *));
+	memset((char*) xb, 0, sizeof(Xbackend*));
+	xb->mb= mb;
+	return xb;
+}
+
+@-
+@c
+str typeNames[] = { "void", "bit", "chr", "sht", "bat", "int", "oid", "ptr",
+	"flt", "dbl", "lng", "str", "url", "lock", "sema", "blob", "fstream",
+	"decimal", "bipipe", "tzone", "date", "daytime", "rule", "timestamp", 0
+};
+
+str multiplexOp[] = { " ", "+", "++", "-", "--", "/", "*", "%", ">", "<", "<=", ">=", "==", "!=", "and",
+	"or", "not", "void", "bit", "chr", "sht", "bat", "int", "oid", "ptr",
+	"flt", "dbl", "lng", "str", "asin", "acos", "atan", "cos", "sin",
+	"tan", "cosh", "sinh", "tanh", "exp", "log", "log10", "sqrt",
+	"ceil", "fabs", "floor", "round", "fmod", "atan2", "pow",
+	"ifthen", "ifthenelse", 0
+};
+
+int
+isMultiplexOp(str nme)
+{
+	int i;
+
+	for (i = 0; multiplexOp[i]; i++)
+		if (idcmp(nme, multiplexOp[i]) == 0)
+			return i;
+	return 0;
+}
+
+@+ The parser
+The Xquery parser uses the recursive descent method,
+producing MAL code on the fly as needed.
+Given the FLWR expression this might not be optimal,
+but further tuning is left to the backend.
+@c
+static int parseIfExpr(Client cntxt, Xbackend xb);
+static int parseReturnExpr(Client cntxt, Xbackend xb);
+static int parseFLWRExpr(Client cntxt, Xbackend xb);
+static int parseTypeswitchExpr(Client cntxt, Xbackend xb);
+static int parseExpr(Client cntxt, Xbackend xb);
+static int parseExprSingle(Client cntxt, Xbackend xb);
+
+static int
+parseQName(Client cntxt, Xbackend xb){
+	int l;
+	str s;
+
+	l= idLength(cntxt);
+	if( l == 0)
+		return PARSE_ERR;
+	s= idCopy(cntxt,l);
+	for(l=0; l <xb->vtop; l++)
+		if( strcmp(s, xb->vars[l].nme)==0 ){
+			GDKfree(s);
+			return PARSE_OK;
+		}
+	if( xb->vtop == MAXXVARS){
+		parseWarning(cntxt,"Too many variables");
+		xb->vtop --;
+	}
+	xb->vars[xb->vtop++].nme = s;
+	return PARSE_OK;
+}
+@-
+The key of the problem is to deal with path expressions.
+@c
+#define CHILD 1
+#define DESCENDANT 2
+#define ATTRIBUTE 3
+#define SELF 4
+#define DESCENDANT_OR_SELF 5
+#define FOLLOWING 6
+#define FOLLOWING_SIBLING 7
+
+#define PARENT 8
+#define ANCESTOR 9
+#define PRECEDING 10
+#define ANCESTOR_OR_SELF  11
+#define PRECEDING_SIBLING 12
+
+#define ITEM_TEST 19
+#define NODE_TEST	20
+#define TEXT_TEST 	21
+#define COMMENT_TEST 22
+#define EMPTY_SEQUENCE_TEST 23
+
+static int
+parseKindTest(Client cntxt, Xbackend xb){
+	int kind=0;
+
+	(void) xb; (void) kind;
+	skipSpace(cntxt);
+	if( MALkeyword(cntxt,"node",4) ) kind= NODE_TEST; else
+	if( MALkeyword(cntxt,"text",4) ) kind= TEXT_TEST; else
+	if( MALkeyword(cntxt,"comment",4) ) kind= COMMENT_TEST; 
+		else return PARSE_ERR;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"(",1) ) return PARSE_OK;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,")",1) ) return PARSE_OK;
+	return PARSE_ERR;
+}
+
+static int
+parseItemType(Client cntxt, Xbackend xb){
+	int i;
+	if( parseKindTest(cntxt,xb) == PARSE_OK) return PARSE_OK;
+	if( MALkeyword(cntxt,"item",4) ) {
+		skipSpace(cntxt);
+		if( !MALkeyword(cntxt,"(",1) ) return PARSE_ERR;
+		skipSpace(cntxt);
+		if( !MALkeyword(cntxt,")",1) ) return PARSE_ERR;
+		i = ITEM_TEST; 
+		return PARSE_OK;
+	}
+	/* AtomicType */
+	i = idLength(cntxt);
+	(void) i;
+	return PARSE_OK;
+}
+
+static int
+parseSequenceType(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( MALkeyword(cntxt,"empty-sequence",13) ) {
+		skipSpace(cntxt);
+		if( !MALkeyword(cntxt,"(",1) ) return PARSE_ERR;
+		skipSpace(cntxt);
+		if( !MALkeyword(cntxt,")",1) ) return PARSE_ERR;
+		return PARSE_OK;
+	}
+	if( parseItemType(cntxt,xb) == PARSE_ERR)
+		return PARSE_ERR;
+	/* ItemType OccurrenceIndicator */
+	switch(currChar(cntxt)){
+	case '?':
+	case '+':
+	case '*':
+		nextChar(cntxt);
+	default:
+		;
+	}
+	return PARSE_OK;
+}
+
+static int
+parseTypeDeclaration(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"as",2) )
+		return PARSE_ERR;
+	return parseSequenceType(cntxt,xb);
+}
+
+static int
+parseComputedConstructor(Client cntxt, Xbackend xb){
+	(void) cntxt; (void) xb;
+	return PARSE_OK;
+}
+
+static int
+parseDirPIConstructor(Client cntxt, Xbackend xb){
+	int i;
+	(void) xb;
+
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"<?",2) )
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	/* PItarget */
+	i= idLength(cntxt);
+	if(i== 0)
+		return PARSE_ERR;
+	idCopy(cntxt,i);
+
+	while( currChar(cntxt) != '?' && currChar(cntxt))
+		nextChar(cntxt);
+	if( !MALkeyword(cntxt,"?>",2) )
+		return PARSE_ERR;
+	return PARSE_OK;
+}
+
+static int
+parseDirCommentConstructor(Client cntxt, Xbackend xb){
+	int i =0;
+	(void) xb;
+
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"<!--",4) )
+		return PARSE_ERR;
+	do{
+		if(currChar(cntxt)=='-' && i) break;
+		if(currChar(cntxt)=='-') i++; else i= 0;
+		nextChar(cntxt);
+	} while(currChar(cntxt));
+	if( !MALkeyword(cntxt,">",1) )
+		return PARSE_ERR;
+	return PARSE_OK;
+}
+
+static int
+parseDirAttributeList(Client cntxt,Xbackend xb){
+	int i;
+
+	(void) xb;
+	skipSpace(cntxt);
+	do{
+		i= idLength(cntxt);
+		if( i== 0) break;
+		idCopy(cntxt,i);
+		skipSpace(cntxt);
+		/* parseDirAttributeValue */
+	} while(currChar(cntxt));
+	return PARSE_OK;
+}
+
+static int
+parseDirElementContent(Client cntxt, Xbackend xb){
+	(void) cntxt; (void) xb;
+	return PARSE_OK;
+}
+
+static int
+parseDirElementConstructor(Client cntxt, Xbackend xb){
+	int i;
+
+	skipSpace(cntxt);
+	if(currChar(cntxt) != '<')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	skipSpace(cntxt);
+	i= idLength(cntxt);
+	if( i == 0)
+		return PARSE_ERR;
+	idCopy(cntxt,i);
+	parseDirAttributeList(cntxt,xb);
+
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"/>",2))
+		return PARSE_OK;
+
+	if( currChar(cntxt)!= '>')
+		return PARSE_ERR;
+
+	parseDirElementContent(cntxt,xb);
+
+	if( !MALkeyword(cntxt,"</",2))
+		return PARSE_ERR;
+	
+	i= idLength(cntxt);
+	if( i == 0)
+		return PARSE_ERR;
+	idCopy(cntxt,i);
+
+	if( currChar(cntxt)!= '>')
+		return PARSE_ERR;
+	nextChar(cntxt);
+
+	return PARSE_OK;
+}
+
+static int
+parseDirectConstructor(Client cntxt, Xbackend xb){
+	if( parseDirElementConstructor(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
+	if( parseDirCommentConstructor(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
+	return parseDirPIConstructor(cntxt,xb);
+}
+
+static int
+parseConstructor(Client cntxt, Xbackend xb){
+	if( parseDirectConstructor(cntxt,xb) == PARSE_OK)
+		return PARSE_OK;
+	return parseComputedConstructor(cntxt,xb);
+}
+
+static int 
+parseNameTest(Client cntxt, Xbackend xb){
+	int i;
+	str nme;
+	(void)xb;
+
+	i= idLength(cntxt);
+	if( i> 0){
+		if(i) nme= idCopy(cntxt,i);
+		if( currChar(cntxt)== ':'){
+			nextChar(cntxt);
+			if( currChar(cntxt) =='*'){
+			}
+		}
+	}
+	if( currChar(cntxt)== '*'){
+		nextChar(cntxt);
+		if( currChar(cntxt) ==':'){
+			nextChar(cntxt);
+			i= idLength(cntxt);
+			if(i) nme= idCopy(cntxt,i);
+		}
+	}
+	return PARSE_OK;
+}
+
+static int
+parseFunctionCall(Client cntxt, Xbackend xb){
+	int i;
+	i= idLength(cntxt);
+	if( i==0)
+		return PARSE_ERR;
+	idCopy(cntxt,i);
+	skipSpace(cntxt);
+	if(currChar(cntxt)!= '(')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	parseExprSingle(cntxt,xb);
+	do{
+		skipSpace(cntxt);
+		if( currChar(cntxt) != ',') 
+			return PARSE_OK;
+		nextChar(cntxt);
+	} while( parseExprSingle(cntxt,xb));
+	if(currChar(cntxt)!= ')')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	return PARSE_OK;
+}
+	
+
+static int
+parsePrimaryExpr(Client cntxt, Xbackend xb){
+	int i;
+	ValRecord val;
+
+	skipSpace(cntxt);
+	if( cstToken(cntxt,&val) == 0){
+		return PARSE_OK;
+	}
+	if( currChar(cntxt) =='$'){
+		nextChar(cntxt);
+		skipSpace(cntxt);
+		i= idLength(cntxt);
+		if( i )
+			idCopy(cntxt,i);
+		else return PARSE_ERR;
+		return PARSE_OK;
+	}
+	/* ParenthesizedExpr */
+	if( currChar(cntxt) == '('){
+		parseExpr(cntxt,xb);
+		if( currChar(cntxt) == ')')
+			return PARSE_OK;
+	} else
+	/* ContextItemExpr */
+	if(currChar(cntxt)== '.'){
+		nextChar(cntxt);
+		skipSpace(cntxt);
+	} else
+	/* OrderedExpr */
+	if( MALkeyword(cntxt,"ordered",7)){
+		skipSpace(cntxt);
+		if( currChar(cntxt)!='{')
+			return PARSE_ERR;
+		nextChar(cntxt); 
+		if( parseExpr(cntxt,xb)== PARSE_ERR)
+			return PARSE_ERR;
+		skipSpace(cntxt);
+		if( currChar(cntxt)!='}')
+			return PARSE_ERR;
+	} else
+	/* UnorderedExpr */
+	if( MALkeyword(cntxt,"unordered",9)){
+		skipSpace(cntxt);
+		if( currChar(cntxt)!='{')
+			return PARSE_ERR;
+		nextChar(cntxt); 
+		if( parseExpr(cntxt,xb)== PARSE_ERR)
+			return PARSE_ERR;
+		skipSpace(cntxt);
+		if( currChar(cntxt)!='}')
+			return PARSE_ERR;
+	}
+	return PARSE_ERR;
+}
+
+static int
+parsePredicate(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( currChar(cntxt) !='[')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	skipSpace(cntxt);
+	if( parseExpr(cntxt,xb) == PARSE_ERR)
+		return PARSE_ERR;
+	if( currChar(cntxt) !=']')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	return PARSE_OK;
+	
+}
+static int
+parsePredicateList(Client cntxt, Xbackend xb){
+	do{
+		skipSpace(cntxt);
+	} while(parsePredicate(cntxt, xb)== PARSE_OK);
+	return PARSE_OK;
+}
+
+static int
+parseFilterExpr(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( parsePrimaryExpr(cntxt,xb) == PARSE_ERR)
+		return PARSE_ERR;
+	return parsePredicateList(cntxt,xb);
+}
+
+static int
+parseNodeTest(Client cntxt, Xbackend xb){
+	if(parseKindTest(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
+	return parseNameTest(cntxt,xb);
+}
+
+static int
+parseAbbrevReverseStep(Client cntxt,Xbackend xb){
+	(void) xb;
+	skipSpace(cntxt);
+	if( MALkeyword(cntxt,"..",2)){
+	}
+	return PARSE_OK;
+}
+
+static int
+parseReverseAxis(Client cntxt, Xbackend xb){
+	int ret;
+
+	(void) xb;
+	skipSpace(cntxt);
+	if( MALkeyword(cntxt,"parent",6) ) ret= PARENT; else
+	if( MALkeyword(cntxt,"ancestor",8) ) ret= ANCESTOR; else
+	if( MALkeyword(cntxt,"preceding",9) ) ret= PRECEDING; else
+	if( MALkeyword(cntxt,"preceding-sibling",17) ) ret= PRECEDING_SIBLING; else
+	if( MALkeyword(cntxt,"ancestor-or-self",16) ) ret= ANCESTOR_OR_SELF; else
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"::",2) ) return PARSE_ERR;
+	(void) ret;
+	return PARSE_OK;
+}
+
+static int
+parseReverseStep(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( parseReverseAxis(cntxt,xb) == PARSE_OK){
+		parseNodeTest(cntxt,xb);
+	} 
+	return parseAbbrevReverseStep(cntxt,xb);
+}
+
+static int
+parseAbbrevForwardStep(Client cntxt,Xbackend xb){
+	(void) xb;
+	skipSpace(cntxt);
+	if( currChar(cntxt)== '@'){
+		nextChar(cntxt);
+		skipSpace(cntxt);
+	}
+	return parseNodeTest(cntxt,xb);
+}
+
+static int
+parseForwardAxis(Client cntxt, Xbackend xb){
+	int ret;
+
+	(void) xb;
+	skipSpace(cntxt);
+	if( MALkeyword(cntxt,"child",5) ) ret= CHILD; else
+	if( MALkeyword(cntxt,"descendant",10) ) ret= DESCENDANT; else
+	if( MALkeyword(cntxt,"attribute",9) ) ret= ATTRIBUTE; else
+	if( MALkeyword(cntxt,"following",9) ) ret= FOLLOWING; else
+	if( MALkeyword(cntxt,"following-sibling",17) ) ret= FOLLOWING; else
+	if( MALkeyword(cntxt,"self",4) ) ret= SELF; else
+	if( MALkeyword(cntxt,"descendant-or-self",18) ) ret= DESCENDANT_OR_SELF; else
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"::",2) ) return PARSE_ERR;
+	(void) ret;
+	return PARSE_OK;
+}
+
+static int
+parseForwardStep(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( parseForwardAxis(cntxt,xb) == PARSE_OK){
+		parseNodeTest(cntxt,xb);
+	} 
+	return parseAbbrevForwardStep(cntxt,xb);
+}
+
+static int
+parseAxisStep(Client cntxt, Xbackend xb){
+	if( parseReverseStep(cntxt,xb) == PARSE_OK ){
+	} else
+	if( parseForwardStep(cntxt,xb) == PARSE_OK){
+	} else
+		return PARSE_ERR;
+	return parsePredicateList(cntxt,xb);
+}
+
+static int
+parseStepExpr(Client cntxt, Xbackend xb){
+	if( parseFilterExpr(cntxt,xb) )
+		return PARSE_OK;
+	return parseAxisStep(cntxt,xb);
+}
+
+int
+parseRelativePathExpr(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	parseStepExpr(cntxt,xb);
+	while( currChar(cntxt)== '/'){
+		nextChar(cntxt);
+		if(currChar(cntxt)== '/')
+			nextChar(cntxt);
+		skipSpace(cntxt);
+		parseStepExpr(cntxt,xb);
+		skipSpace(cntxt);
+	} 
+	return PARSE_OK;
+}
+
+static int 
+parsePathExpr(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( currChar(cntxt)== '/'){
+		nextChar(cntxt);
+		if(currChar(cntxt)== '/')
+			nextChar(cntxt);
+	}
+	parseRelativePathExpr(cntxt, xb);
+	return PARSE_OK;
+}
+
+@-
+Variables are declared and stored on the top
+of the variable stack. 
+@c
+static int parseVarName(Client cntxt, Xbackend xb);
+
+static int
+parsePositionalVar(Client cntxt, Xbackend xb){
+	int i= xb->vtop-1; /* last defined one */
+	(void) i;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"at",2))
+		return PARSE_ERR;
+	parseVarName(cntxt,xb);
+	return PARSE_OK;
+}
+
+int
+parseVarName(Client cntxt, Xbackend xb){
+	int i;
+	
+	skipSpace(cntxt);
+	if( currChar(cntxt) != '$')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	skipSpace(cntxt);
+	i= parseQName(cntxt,xb);
+	if( i == 0)
+		return PARSE_ERR;
+	/* has optional type? */
+	return PARSE_OK;
+}
+
+static int
+parsePragma(Client cntxt, Xbackend xb){
+	int i;
+	(void) xb;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"(#",2))
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	i= idLength(cntxt);
+	if(i)
+		idCopy(cntxt,i);
+	else return PARSE_ERR;
+	i= 0;
+	
+	do{
+		if( currChar(cntxt)==')' && i) break;
+		if( currChar(cntxt)=='#') i++; else i=0;
+		nextChar(cntxt);
+	}while(currChar(cntxt));
+	return PARSE_OK;
+}
+
+static int
+parseExtensionExpr(Client cntxt, Xbackend xb){
+	do{
+		skipSpace(cntxt);
+	} while ( parsePragma(cntxt,xb)== PARSE_OK);
+	if( currChar(cntxt)!= '(')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	skipSpace(cntxt);
+	parseExpr(cntxt,xb);
+	if( currChar(cntxt)!= ')')
+		return PARSE_ERR;
+	nextChar(cntxt); 
+	return PARSE_OK;
+}
+
+static int
+parseValidateExpr(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"validate",8))
+		return PARSE_ERR;
+	if( MALkeyword(cntxt,"lax",3)){
+	} else
+	if( MALkeyword(cntxt,"strict",6)){
+	} 
+	skipSpace(cntxt);
+	if( currChar(cntxt)!= '(')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	skipSpace(cntxt);
+	if( parseExpr(cntxt,xb)== PARSE_ERR)
+		return PARSE_ERR;
+	if( currChar(cntxt)!= ')')
+		return PARSE_ERR;
+	nextChar(cntxt); 
+	return PARSE_OK;
+}
+
+static int
+parseSingleType(Client cntxt, Xbackend xb){
+	int i;
+
+	(void) xb;
+	i= idLength(cntxt);
+	if(i)
+		idCopy(cntxt,i);
+	else return PARSE_ERR;
+	if( currChar(cntxt)=='?')
+		nextChar(cntxt);
+	return PARSE_OK;
+}
+
+static int
+parseValueExpr(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( parseValidateExpr(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
+	if( parseExtensionExpr(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
+	return parsePathExpr(cntxt,xb);
+}
+
+static int
+parseUnaryExpr(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( currChar(cntxt)=='+' || currChar(cntxt)=='-')
+		nextChar(cntxt);
+	skipSpace(cntxt);
+	return parseValueExpr(cntxt,xb);
+}
+
+static int
+parseCastExpr(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( parseUnaryExpr(cntxt,xb)== PARSE_ERR)
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"cast",4))
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"as",2))
+		return PARSE_ERR;
+	return parseSingleType(cntxt,xb);
+}
+
+static int
+parseCastableExpr(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( parseCastExpr(cntxt,xb)== PARSE_ERR)
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"castable",8))
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"as",2))
+		return PARSE_ERR;
+	return parseSingleType(cntxt,xb);
+}
+
+static int
+parseTreatExpr(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( parseCastableExpr(cntxt,xb)== PARSE_ERR)
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"treat",5))
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"as",2))
+		return PARSE_ERR;
+	return parseSequenceType(cntxt,xb);
+}
+
+static int
+parseInstanceOfExpr(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( parseTreatExpr(cntxt,xb)== PARSE_ERR)
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"instance",7))
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"of",2))
+		return PARSE_ERR;
+	return parseSequenceType(cntxt,xb);
+}
+
+static int
+parseIntersectExceptExpr(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( parseInstanceOfExpr(cntxt,xb)== PARSE_ERR)
+		return PARSE_ERR;
+	do{
+		skipSpace(cntxt);
+		if( MALkeyword(cntxt,"intersect",9)){
+		} else
+		if( MALkeyword(cntxt,"except",6)){
+		} else break;
+	} while(parseInstanceOfExpr(cntxt,xb)==PARSE_OK);
+	return PARSE_OK;
+}
+
+static int
+parseUnionExpr(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( parseIntersectExceptExpr(cntxt,xb)== PARSE_ERR)
+		return PARSE_ERR;
+	do{
+		skipSpace(cntxt);
+		if(currChar(cntxt)=='|')	
+			nextChar(cntxt);
+		else
+		if( MALkeyword(cntxt,"union",5)){
+		} else break;
+	} while( parseIntersectExceptExpr(cntxt,xb)==PARSE_OK);
+	return PARSE_OK;
+}
+
+static int
+parseMultiplicativeExpr(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( parseUnionExpr(cntxt,xb) == PARSE_ERR)
+		return PARSE_ERR;
+	do{
+		skipSpace(cntxt);
+		if( currChar(cntxt)=='*' )
+			nextChar(cntxt);
+		else
+		if( MALkeyword(cntxt,"div",3)){
+		} else
+		if( MALkeyword(cntxt,"idiv",4)){
+		} else
+		if( MALkeyword(cntxt,"mod",3)){
+		} else return PARSE_ERR;
+	} while( parseUnionExpr(cntxt,xb) == PARSE_OK);
+	return PARSE_OK;
+}
+
+static int
+parseAdditiveExpr(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( parseMultiplicativeExpr(cntxt,xb) == PARSE_ERR)
+		return PARSE_ERR;
+	do{
+		skipSpace(cntxt);
+		if( currChar(cntxt)=='+' || currChar(cntxt)=='-')
+			nextChar(cntxt);
+		else break;
+	} while( parseMultiplicativeExpr(cntxt,xb)==PARSE_OK);
+	return PARSE_OK;
+}
+static int
+parseRangeExpr(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( parseAdditiveExpr(cntxt,xb) == PARSE_ERR)
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( MALkeyword(cntxt,"to",2)) 
+		return parseAdditiveExpr(cntxt,xb);
+	return PARSE_OK;
+}
+static int
+parseComparisonExpr(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( parseRangeExpr(cntxt,xb)== PARSE_OK){
+		/* ValueComp | GeneralComp | NodeComp) RangeExpr)? */
+		skipSpace(cntxt);
+		if( MALkeyword(cntxt,"!=",2) ){
+		} else
+		if( MALkeyword(cntxt,"<=",2) ){
+		} else
+		if( MALkeyword(cntxt,">=",2) ){
+		} else
+		if( MALkeyword(cntxt,">",1) ){
+		} else
+		if( MALkeyword(cntxt,"<",1) ){
+		} else
+
+		/* ValueComp */
+		if( MALkeyword(cntxt,"eq",2) ){
+		} else
+		if( MALkeyword(cntxt,"ne",2) ){
+		} else
+		if( MALkeyword(cntxt,"lt",2) ){
+		} else
+		if( MALkeyword(cntxt,"le",2) ){
+		} else
+		if( MALkeyword(cntxt,"gt",2) ){
+		} else
+		if( MALkeyword(cntxt,"ge",2) ){
+		} else
+
+		/* NodeComp */
+		if( MALkeyword(cntxt,"<<",2) ){
+		} else
+		if( MALkeyword(cntxt,">>",2) ){
+		} else
+		if( MALkeyword(cntxt,"is",2) ){
+		}  else return PARSE_ERR;
+
+		return parseRangeExpr(cntxt,xb);
+	}
+	return PARSE_ERR;
+}
+
+static int
+parseAndExpr(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( parseComparisonExpr(cntxt,xb) == PARSE_ERR)
+		return PARSE_ERR;
+	if( !MALkeyword(cntxt, "and",3)){
+		return PARSE_OK;
+	}
+	return parseComparisonExpr(cntxt,xb);
+}
+
+static int
+parseOrExpr(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( parseAndExpr(cntxt,xb) == PARSE_ERR)
+		return PARSE_ERR;
+	if( !MALkeyword(cntxt, "or",2)){
+		return PARSE_OK;
+	}
+	return parseAndExpr(cntxt,xb);
+}
+
+int
+parseExprSingle(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( parseFLWRExpr(cntxt, xb)== PARSE_OK)
+		return PARSE_OK;
+	if( parseIfExpr(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
+	if( parseTypeswitchExpr(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
+
+	/* Quantified expression*/
+	if( MALkeyword(cntxt,"some",4)){
+		skipSpace(cntxt);
+		return parseVarName(cntxt,xb);
+	}
+	if( MALkeyword(cntxt,"every",5)){
+		skipSpace(cntxt);
+		return parseVarName(cntxt,xb);
+	}
+
+	return parseOrExpr(cntxt,xb);
+}
+
+int
+parseExpr(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	do{
+		if(currChar(cntxt)== ',') nextChar(cntxt);
+		skipSpace(cntxt);
+		if( parseExprSingle(cntxt,xb)== PARSE_ERR)
+			return PARSE_ERR;
+	} while( currChar(cntxt)==',');
+	return PARSE_OK;
+}
+
+static int
+parseCaseClause(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"case",4) )
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( parseVarName(cntxt,xb)== PARSE_ERR){
+		if( !MALkeyword(cntxt,"as",2) )
+			return PARSE_ERR;
+	} 
+	if( parseSequenceType(cntxt,xb)==PARSE_ERR)
+		return PARSE_ERR;
+	return parseReturnExpr(cntxt,xb);
+}
+
+int
+parseTypeswitchExpr(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"typeswitch",10))
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( currChar(cntxt)=='('){
+		nextChar(cntxt);
+		skipSpace(cntxt);
+	} else return PARSE_ERR;
+	if( parseExpr(cntxt, xb)== PARSE_ERR)
+		return PARSE_ERR;
+	if( currChar(cntxt)==')'){
+		nextChar(cntxt);
+		skipSpace(cntxt);
+	} else return PARSE_ERR;
+	while( parseCaseClause(cntxt,xb) == PARSE_OK) 
+		;
+	if( !MALkeyword(cntxt,"default",7))
+		return PARSE_ERR;
+	return parseReturnExpr(cntxt,xb);
+}
+
+int
+parseIfExpr(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"if",2))
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( currChar(cntxt)=='('){
+		nextChar(cntxt);
+		skipSpace(cntxt);
+	}
+	if( parseExpr(cntxt,xb)== PARSE_ERR)
+		return PARSE_ERR;
+	if( currChar(cntxt)==')'){
+		nextChar(cntxt);
+		skipSpace(cntxt);
+	}
+	if( !MALkeyword(cntxt,"then",4))
+		return PARSE_ERR;
+	if( parseExprSingle(cntxt,xb) == PARSE_ERR)
+		return PARSE_ERR;
+	if( !MALkeyword(cntxt,"else",4))
+		return PARSE_ERR;
+	return parseExprSingle(cntxt,xb);
+}
+
+int
+parseReturnExpr(Client cntxt, Xbackend xb){
+	(void) xb;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"return",6))
+		return PARSE_ERR;
+	return PARSE_OK;
+}
+
+static int
+parseOrderByClause(Client cntxt, Xbackend xb){
+	skipSpace(cntxt);
+	MALkeyword(cntxt,"stable",6);
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"order",5) )
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"by",2) )
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	do{
+		if(currChar(cntxt)== ',') nextChar(cntxt);
+		skipSpace(cntxt);
+		if( parseExprSingle(cntxt,xb) == PARSE_OK){
+			/* check order modifier */
+			skipSpace(cntxt);
+			if( MALkeyword(cntxt,"ascending",9) ) ; else
+			if( MALkeyword(cntxt,"descending",10) ) ; else
+			if( MALkeyword(cntxt,"empty",5) ) ; else
+			if( MALkeyword(cntxt,"greatest",8) ) ; else
+			if( MALkeyword(cntxt,"least",5) ) ; else
+			if( MALkeyword(cntxt,"collation",5) ) {
+				/* parse URILiteral */
+			} else
+				return PARSE_ERR;
+		} else 
+			return PARSE_ERR;
+	} while (currChar(cntxt)==',');
+	return PARSE_OK;
+}
+
+static int
+parseWhereClause(Client cntxt, Xbackend xb){
+	if( !MALkeyword(cntxt,"where",5) )
+		return PARSE_ERR;
+	return parseExprSingle(cntxt,xb);
+}
+
+static int 
+parseForClause(Client cntxt, Xbackend xb){
+#ifdef _XQRY_DEBUG
+	stream_printf(cntxt->fdout,"parseForClause\n");
+#endif
+	(void) xb;
+	if( !MALkeyword(cntxt,"for",3) )
+		return PARSE_ERR;
+	do{
+		if(currChar(cntxt)== ',') nextChar(cntxt);
+		skipSpace(cntxt);
+		if( parseVarName(cntxt,xb)== PARSE_ERR)
+			return PARSE_ERR;
+		skipSpace(cntxt);
+		parseTypeDeclaration(cntxt,xb);
+		if( parsePositionalVar(cntxt, xb) == PARSE_ERR)
+			return PARSE_ERR;
+		skipSpace(cntxt);
+		if( !MALkeyword(cntxt,"in",2) )
+			return PARSE_ERR;
+		skipSpace(cntxt);
+		if( parseExprSingle(cntxt,xb)== PARSE_ERR)
+			return PARSE_ERR;
+	} while( currChar(cntxt)==',');
+	return PARSE_OK;
+}
+
+static int 
+parseLetClause(Client cntxt, Xbackend xb){
+#ifdef _XQRY_DEBUG
+	stream_printf(cntxt->fdout,"parseLetClause\n");
+#endif
+	(void) xb;
+	if( !MALkeyword(cntxt,"let",3) )
+		return PARSE_ERR;
+	do{
+		if(currChar(cntxt)== ',') nextChar(cntxt);
+		skipSpace(cntxt);
+		if( parseVarName(cntxt,xb)== PARSE_ERR)
+			return PARSE_ERR;
+		skipSpace(cntxt);
+		if( !MALkeyword(cntxt,":=",2) )
+			return PARSE_ERR;
+		skipSpace(cntxt);
+		if( parseExprSingle(cntxt,xb)== PARSE_ERR) 
+			return PARSE_ERR;
+		skipSpace(cntxt);
+	} while( currChar(cntxt)==',');
+	parseWhereClause(cntxt,xb);
+	return PARSE_OK;
+}
+
+int 
+parseFLWRExpr(Client cntxt, Xbackend xb){
+	int ret=PARSE_OK;
+	do{
+		skipSpace(cntxt);
+		if( MALkeyword(cntxt,"for",3)){
+			ret= parseForClause(cntxt,xb);
+		} else
+		if( MALkeyword(cntxt,"let",3)){
+			ret= parseLetClause(cntxt,xb);
+		} else break;
+	} while(ret == PARSE_OK);
+	if( PARSE_ERR) 
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( MALkeyword(cntxt, "where",5)){
+		if( parseExprSingle(cntxt,xb)== PARSE_ERR)
+			return PARSE_ERR;
+	}
+	skipSpace(cntxt);
+	if( MALkeyword(cntxt, "order",5))
+		return parseOrderByClause(cntxt,xb);
+	
+	skipSpace(cntxt);
+	return parseReturnExpr(cntxt,xb);
+}
+
+int
+parseXQuery(Client cntxt)
+{
+	char c;
+	MalBlkPtr mb= newMalBlk(128,64);
+	Xbackend xb= newXbackend(mb);
+	int ret= PARSE_OK;
+
+	while ((c = *CURRENT(cntxt))) {
+		switch (c) {
+		case '#':
+			while (currChar(cntxt) && currChar(cntxt) != '\n')
+				nextChar(cntxt);
+			continue;
+		case '\n': case '\r': case '\f':
+		case ';': case '\t': case ' ':
+			nextChar(cntxt);
+			break;
+		case 0:
+			return cntxt->curprg->def->errors;
+		case 'f':
+		case 'l':
+			ret= parseFLWRExpr(cntxt, xb);
+		}
+	}
+	return cntxt->curprg->def->errors;
+}
+@-
+Display the error information for the current client.
+An arrow and state number is printed at the "appropriate" place. 
+If no lookahead character is a used and the next character is a newline,
+we should also copy the input .
+This code fragment is largely copied from the MAL parser, which also
+included an automatic skiptoend not required here.
+@c
+int
+XQRYparseError(Client cntxt, str msg)
+{
+	Symbol curPrg;
+	MalBlkPtr curBlk;
+	char buf[10 * 1024];
+	char *s = buf, *t, *l = lastline(cntxt);
+	long i;
+
+	curPrg = cntxt->curprg;
+	curBlk = curPrg->def;
+	if (curBlk)
+		curBlk->errors++;
+
+	/* accidental %s directives in the lastline can
+	   crash the vfsprintf later => escape them */
+	for (t = l; *t && *t != '\n'; t++) {
+		if (*t == '%')
+			*s++ = '%';
+		*s++ = *t;
+	}
+	*s++ = '\n';
+	*s++ = '!';
+	/* produce the position marker */
+	i = position(cntxt) + strlen(GDKERROR) - 1;
+	for (; i > 0; i--) {
+		*s++ = ((l && *(l + 1) && *l++ != '\t')) ? ' ' : '\t';
+	}
+	*s++ = '^';
+	*s = 0;
+
+	if (msg == 0)
+		msg = "can't help you here, sorry.\n";
+	if (strlen(msg) + strlen(buf) < 1020)
+		snprintf(s, 1020, "%s", msg);
+	GDKerror(buf);
+	return PARSE_ERR;
+}
+
+@}

@@ -1,0 +1,21 @@
+INCLUDES = ../mal $(MONETDB_INCS)
+
+#YFLAGS = -v -p mil -d
+
+lib_xqry = {
+	DIR = pkglibdir
+	SEP = _
+	NAME = xqry
+	SOURCES = xqry_parser.mx 
+
+	HEADERS = h
+	#SCRIPTS = mal mil ""
+	LIBS = $(MONETDB_LIBS) -lbat -lstream \
+                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../mal/libmal
+}
+
+scripts_mal = {
+	DIR = pkglibdir
+	SOURCES = xqry_parser.mx 
+}
