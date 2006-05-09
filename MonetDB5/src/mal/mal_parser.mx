@@ -60,7 +60,9 @@ mal_export void advance(Client cntxt, int length);
 mal_export void skipSpace(Client cntxt);
 mal_export void skipToEnd(Client cntxt);
 mal_export int idLength(Client cntxt);
+mal_export int stringLength(Client cntxt);
 mal_export str idCopy(Client cntxt, int len);
+mal_export str strCopy(Client cntxt, int len);
 mal_export int cstToken(Client cntxt, ValPtr val);
 mal_export int charCst(Client cntxt, ValPtr val);
 mal_export int operatorLength(Client cntxt);
@@ -263,7 +265,7 @@ brackets and escapes. They are eaten away in strCopy.
 We should provide the C-method to split strings and
 concatenate them upon retrieval[todo]
 @c
-static int 
+int 
 stringLength(Client cntxt)
 {
 	int l=0;
