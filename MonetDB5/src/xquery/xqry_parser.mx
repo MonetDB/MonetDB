@@ -505,7 +505,8 @@ parsePrimaryExpr(Client cntxt, Xbackend xb){
 
 	@:ptrace(parsePrimaryExpr)@
 	skipSpace(cntxt);
-	if( cstToken(cntxt,&val) != 0){
+	if( (i=cstToken(cntxt,&val)) != 0){
+		cntxt->yycur+=i+1; /*TODO fix this +1 hack for \" */
 		return PARSE_OK;
 	}
 	if( currChar(cntxt) == '$'){
@@ -1327,7 +1328,8 @@ parseXQuery(Client cntxt)
 			ret= parseFLWRExpr(cntxt, xb);
 		}
 	}
-	return cntxt->curprg->def->errors;
+	/*return cntxt->curprg->def->errors;*/
+	return ret;
 }
 @-
 Display the error information for the current client.
