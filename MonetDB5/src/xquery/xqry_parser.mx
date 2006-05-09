@@ -197,6 +197,7 @@ static int parseFLWRExpr(Client cntxt, Xbackend xb);
 static int parseTypeswitchExpr(Client cntxt, Xbackend xb);
 static int parseExpr(Client cntxt, Xbackend xb);
 static int parseExprSingle(Client cntxt, Xbackend xb);
+static int parseDirectConstructor(Client cntxt, Xbackend xb);
 
 static int
 parseQName(Client cntxt, Xbackend xb){
@@ -243,12 +244,220 @@ The key of the problem is to deal with path expressions.
 #define EMPTY_SEQUENCE_TEST 23
 
 static int
+parseElementName(Client cntxt, Xbackend xb){
+	int i;
+	@:ptrace(parseElementName)@
+	(void) xb;
+	i= idLength(cntxt);
+	if( i>0)
+		idCopy(cntxt,i);
+	else return PARSE_ERR;
+	return PARSE_OK;
+}
+
+static int
+parseTypeName(Client cntxt, Xbackend xb){
+	int i;
+	@:ptrace(parseTypeName)@
+	(void) xb;
+	i= idLength(cntxt);
+	if( i>0)
+		idCopy(cntxt,i);
+	else return PARSE_ERR;
+	return PARSE_OK;
+}
+
+static int
+parseAttributeName(Client cntxt, Xbackend xb){
+	int i;
+	@:ptrace(parseAttributeName)@
+	(void) xb;
+	i= idLength(cntxt);
+	if( i>0)
+		idCopy(cntxt,i);
+	else return PARSE_ERR;
+	return PARSE_OK;
+}
+
+static int 
+parseSchemaElementTest(Client cntxt, Xbackend xb){
+	int i;
+	@:ptrace(parseSchemaElementTest)@
+	(void) xb;
+
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"schema-element",14))
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( currChar(cntxt) != '(')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	skipSpace(cntxt);
+	i= idLength(cntxt);
+	if( i>0)
+		idCopy(cntxt,i);
+	else return PARSE_ERR;
+
+	return PARSE_OK;
+}
+
+static int 
+parseElementTest(Client cntxt, Xbackend xb){
+	@:ptrace(parseElementTest)@
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"element",7))
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( currChar(cntxt) != '(')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	skipSpace(cntxt);
+
+	if( currChar(cntxt) == '*'){
+		nextChar(cntxt);
+	} else
+		parseElementName(cntxt,xb);
+	
+	skipSpace(cntxt);
+	
+	if( currChar(cntxt) != ','){
+		if( parseTypeName(cntxt,xb)== PARSE_ERR )
+			return PARSE_ERR;
+		skipSpace(cntxt);
+		if( currChar(cntxt)== '?')
+			nextChar(cntxt);
+	}
+
+	if( currChar(cntxt) != ')')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	return PARSE_OK;
+}
+
+
+static int 
+parseSchemaAttributeTest(Client cntxt, Xbackend xb){
+	@:ptrace(parseSchemaAttributeTest)@
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"schema-attribute",16))
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( currChar(cntxt) != '(')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	skipSpace(cntxt);
+
+	if( parseAttributeName(cntxt,xb)== PARSE_ERR )
+		return PARSE_ERR;
+	skipSpace(cntxt);
+
+	if( currChar(cntxt) != ')')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	return PARSE_OK;
+}
+
+
+static int 
+parseAttributeTest(Client cntxt, Xbackend xb){
+	@:ptrace(parseAttributeTest)@
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"attribute",9))
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( currChar(cntxt) != '(')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	skipSpace(cntxt);
+
+	if( currChar(cntxt) == '*'){
+		nextChar(cntxt);
+	} else
+		parseElementName(cntxt,xb);
+	
+	skipSpace(cntxt);
+	
+	if( currChar(cntxt) != ','){
+		if( parseTypeName(cntxt,xb)== PARSE_ERR )
+			return PARSE_ERR;
+		skipSpace(cntxt);
+	}
+
+	if( currChar(cntxt) != ')')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	return PARSE_OK;
+}
+
+static int
+parseDocumentTest(Client cntxt, Xbackend xb){
+	@:ptrace(parseDocumentTest)@
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"document-node",13))
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( currChar(cntxt) != '(')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	skipSpace(cntxt);
+	if( parseElementTest(cntxt,xb) == PARSE_ERR ||
+		parseSchemaElementTest(cntxt,xb) ){
+	}
+	if( currChar(cntxt) != ')')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	return PARSE_OK;
+}
+
+static int
+parsePITest(Client cntxt, Xbackend xb){
+	int i;
+
+	(void) xb;
+	@:ptrace(parsePITest)@
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"processing-instruction",13))
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( currChar(cntxt) != '(')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	skipSpace(cntxt);
+	i= idLength(cntxt);
+	if(i)
+		idCopy(cntxt,i);
+	else {
+		i= stringLength(cntxt);
+		if( i>0)
+			strCopy(cntxt,i);
+	}
+
+	skipSpace(cntxt);
+	if( currChar(cntxt) != ')')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	return PARSE_OK;
+}
+
+static int
 parseKindTest(Client cntxt, Xbackend xb){
 	int kind=0;
 
 	@:ptrace(parseKindTest)@
 	(void) xb; (void) kind;
 	skipSpace(cntxt);
+	if( parseSchemaElementTest(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
+	if( parseAttributeTest(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
+	if( parseSchemaAttributeTest(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
+	if( parseElementTest(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
+	if( parseDocumentTest(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
+	if( parsePITest(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
 	if( MALkeyword(cntxt,"node",4) ) kind= NODE_TEST; else
 	if( MALkeyword(cntxt,"text",4) ) kind= TEXT_TEST; else
 	if( MALkeyword(cntxt,"comment",4) ) kind= COMMENT_TEST; 
@@ -312,12 +521,179 @@ parseTypeDeclaration(Client cntxt, Xbackend xb){
 		return PARSE_ERR;
 	return parseSequenceType(cntxt,xb);
 }
+static int
+parseCompPIConstructor(Client cntxt, Xbackend xb){
+	int i;
+
+	@:ptrace(parseCompPIConstructor)@
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"processing-instruction",22))
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	i= idLength(cntxt);
+	if( i > 0){
+		idCopy(cntxt,i);
+		skipSpace(cntxt);
+	} else{
+		if( currChar(cntxt) != '{')
+			return PARSE_ERR;
+		nextChar(cntxt);
+		parseExpr(cntxt,xb);
+		skipSpace(cntxt);
+		if( currChar(cntxt) != '}')
+			return PARSE_ERR;
+		nextChar(cntxt);
+	}
+
+	if( currChar(cntxt) != '{')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	parseExpr(cntxt,xb);
+	skipSpace(cntxt);
+	if( currChar(cntxt) != '}')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	return PARSE_OK;
+}
+
+
+static int
+parseCompCommentConstructor(Client cntxt, Xbackend xb){
+	@:ptrace(parseCompCommentConstructor)@
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"comment",7) )
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( currChar(cntxt) != '{')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	parseExpr(cntxt,xb);
+	skipSpace(cntxt);
+	if( currChar(cntxt) != '}')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	return PARSE_OK;
+}
+
+static int
+parseCompTextConstructor(Client cntxt, Xbackend xb){
+	@:ptrace(parseCompTextConstructor)@
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"text",4) )
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( currChar(cntxt) != '{')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	parseExpr(cntxt,xb);
+	skipSpace(cntxt);
+	if( currChar(cntxt) != '}')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	return PARSE_OK;
+}
+
+static int
+parseCompAttrConstructor(Client cntxt, Xbackend xb){
+	int i;
+	@:ptrace(parseCompAttrConstructor)@
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"attribute",9))
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	i= idLength(cntxt);
+	if( i > 0){
+		idCopy(cntxt,i);
+		skipSpace(cntxt);
+	} else{
+		if( currChar(cntxt) != '{')
+			return PARSE_ERR;
+		nextChar(cntxt);
+		parseExpr(cntxt,xb);
+		skipSpace(cntxt);
+		if( currChar(cntxt) != '}')
+			return PARSE_ERR;
+		nextChar(cntxt);
+	}
+
+	if( currChar(cntxt) != '{')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	parseExpr(cntxt,xb);
+	skipSpace(cntxt);
+	if( currChar(cntxt) != '}')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	return PARSE_OK;
+}
+
+static int
+parseCompElemConstructor(Client cntxt, Xbackend xb){
+	int i;
+	@:ptrace(parseCompElemConstructor)@
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"element",7))
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	i= idLength(cntxt);
+	if( i > 0){
+		idCopy(cntxt,i);
+		skipSpace(cntxt);
+	} else{
+		if( currChar(cntxt) != '{')
+			return PARSE_ERR;
+		nextChar(cntxt);
+		parseExpr(cntxt,xb);
+		skipSpace(cntxt);
+		if( currChar(cntxt) != '}')
+			return PARSE_ERR;
+		nextChar(cntxt);
+	}
+
+	if( currChar(cntxt) != '{')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	parseExpr(cntxt,xb);
+	skipSpace(cntxt);
+	if( currChar(cntxt) != '}')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	return PARSE_OK;
+}
+
+static int
+parseCompDocConstructor(Client cntxt, Xbackend xb){
+	@:ptrace(parseCompDocConstructor)@
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"document",8))
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( currChar(cntxt) != '{')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	parseExpr(cntxt,xb);
+	skipSpace(cntxt);
+	if( currChar(cntxt) != '}')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	return PARSE_OK;
+}
 
 static int
 parseComputedConstructor(Client cntxt, Xbackend xb){
 	@:ptrace(parseComputedConstructor)@
 	(void) cntxt; (void) xb;
-	return PARSE_OK;
+	if( parseCompDocConstructor(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
+	if( parseCompElemConstructor(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
+	if( parseCompAttrConstructor(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
+	if( parseCompTextConstructor(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
+	if( parseCompCommentConstructor(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
+	return parseCompPIConstructor(cntxt,xb);
 }
 
 static int
@@ -363,6 +739,40 @@ parseDirCommentConstructor(Client cntxt, Xbackend xb){
 }
 
 static int
+parseDirAttributeValue(Client cntxt, Xbackend xb){
+	int i=0;
+	(void) xb;
+	@:ptrace(parseDirAttributeValue)@
+	if( currChar(cntxt)== '"'){
+		nextChar(cntxt);
+		while( currChar(cntxt) && currChar(cntxt)!= '"')
+		if( currChar(cntxt)=='"' && i){
+			nextChar(cntxt); i=0;
+		} else
+		if( currChar(cntxt)=='"'){
+			nextChar(cntxt); i=1;
+		} else{
+			nextChar(cntxt); i=0;
+		}
+		if( currChar(cntxt)== '"') nextChar(cntxt);
+	} else
+	if( currChar(cntxt)== '\''){
+		nextChar(cntxt);
+		while( currChar(cntxt) && currChar(cntxt)!= '\'')
+		if( currChar(cntxt)=='\'' && i){
+			nextChar(cntxt); i=0;
+		} else
+		if( currChar(cntxt)=='\''){
+			nextChar(cntxt); i=1;
+		} else{
+			nextChar(cntxt); i=0;
+		}
+		if( currChar(cntxt)== '\'') nextChar(cntxt);
+	} else return PARSE_ERR;
+	return PARSE_OK;
+}
+
+static int
 parseDirAttributeList(Client cntxt,Xbackend xb){
 	int i;
 
@@ -380,10 +790,93 @@ parseDirAttributeList(Client cntxt,Xbackend xb){
 }
 
 static int
+parseCDataSection(Client cntxt, Xbackend xb){
+	(void) xb;
+	@:ptrace(parseCDataSection)@
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"<![CDATA[",9))
+		return PARSE_ERR;
+	while( !MALkeyword(cntxt,"]]>",3))
+		nextChar(cntxt);
+	return PARSE_OK;
+}
+
+static int
+parseCommonContent(Client cntxt, Xbackend xb){
+	ValRecord val;
+	skipSpace(cntxt);
+	if( MALkeyword(cntxt,"{{",2) )
+		return PARSE_OK;
+	if( !MALkeyword(cntxt,"}}",2))
+		return PARSE_OK;
+	if( currChar(cntxt) == '{'){
+		nextChar(cntxt);
+		if( parseExpr(cntxt,xb)== PARSE_ERR)
+			return PARSE_ERR;
+		skipSpace(cntxt);
+		if( currChar(cntxt) != '}')
+			return PARSE_ERR;
+		nextChar(cntxt);
+		return PARSE_OK;
+	}
+	/* check PredefinedEntityRef */
+	/* and the rest */
+	cstToken(cntxt,&val);
+	if( val.vtype != TYPE_chr)
+		return PARSE_ERR;
+	return PARSE_OK;
+}
+
+static int
+parseElementContentChar(Client cntxt, Xbackend xb){
+	(void) xb;
+	@:ptrace(parseElementContentChar)@
+	switch( currChar(cntxt)){
+	case '{': case '}': case '<': case '&':
+		return PARSE_ERR;
+	}
+	return PARSE_OK;
+}
+
+static int
+parsePredefinedEntityRef(Client cntxt, Xbackend xb){
+	(void) xb;
+	@:ptrace(parsePredefinedEntityRef)@
+	if( currChar(cntxt) != '&')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	if( MALkeyword(cntxt,"gt",2)) 
+		;
+	else
+	if( MALkeyword(cntxt,"lt",2)) 
+		;
+	else
+	if( MALkeyword(cntxt,"amp",3)) 
+		;
+	else
+	if( MALkeyword(cntxt,"quot",4)) 
+		;
+	else
+	if( MALkeyword(cntxt,"apos",4)) 
+		;
+	else
+		return PARSE_ERR;
+	if( currChar(cntxt) != ';')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	return PARSE_OK;
+}
+
+static int
 parseDirElementContent(Client cntxt, Xbackend xb){
 	@:ptrace(parseDirElementComment)@
-	(void) cntxt; (void) xb;
-	return PARSE_OK;
+	if(parseDirectConstructor(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
+	if(parseCDataSection(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
+	if(parseCommonContent(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
+	return parseElementContentChar(cntxt,xb);
 }
 
 static int
@@ -426,7 +919,7 @@ parseDirElementConstructor(Client cntxt, Xbackend xb){
 	return PARSE_OK;
 }
 
-static int
+int
 parseDirectConstructor(Client cntxt, Xbackend xb){
 	@:ptrace(parseDirectConstructor)@
 	if( parseDirElementConstructor(cntxt,xb)== PARSE_OK)
@@ -1328,6 +1821,7 @@ parseXQuery(Client cntxt)
 			ret= parseFLWRExpr(cntxt, xb);
 		}
 	}
+	chkProgram(cntxt->nspace, cntxt->curprg->def);
 	/*return cntxt->curprg->def->errors;*/
 	return ret;
 }
