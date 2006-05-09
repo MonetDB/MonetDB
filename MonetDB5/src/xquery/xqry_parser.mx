@@ -53,18 +53,9 @@ on the document tree.
 #ifndef _XQRY_PARSER_H
 #define _XQRY_PARSER_H
 
+#include "xqry.h"
 #include "mal_builder.h"
 #include "mal_parser.h"
-
-#ifdef _MSC_VER
-#ifndef LIBXQRY
-#define xqry_export extern __declspec(dllimport)
-#else
-#define xqry_export extern __declspec(dllexport)
-#endif
-#else
-#define xqry_export extern
-#endif
 
 #undef currChar
 #define MAXXVARS 64
@@ -87,18 +78,19 @@ typedef struct {
 	MalBlkPtr mb;	/* compiled program */
 } *Xbackend;
 
+xqry_export Xbackend newXbackend(MalBlkPtr mb);
 
 xqry_export str XQRYcompile(str qry);
 xqry_export str XQRYexec(int ret, str qry);
 
-#define _XQRY_DEBUG	/* debugging option */
+xqry_export int parseXQuery(Client cntxt);
+
+#define _XQRY_DEBUG 1	/* debugging option */
 
 #endif /* _XQRY_PARSER_H */
 @c
-#include "mal_interpreter.h"
-#include "mal_builder.h"
-#include "mal_parser.h"
 #include "xqry_parser.h"
+#include "mal_interpreter.h"
 
 #define BE(X) ((Xbackend)(X->state[PARSER]))
 #define needMore(X)  currChar(X)	/* need at least one more character */
@@ -112,6 +104,7 @@ extern str parseWarning(Client cntxt, str msg);
 The XQuery parser may request for more information to 
 complete a parsing request.
 @c
+
 char
 currChar(Client c)
 {
@@ -192,7 +185,7 @@ Given the FLWR expression this might not be optimal,
 but further tuning is left to the backend.
 @c
 static int parseIfExpr(Client cntxt, Xbackend xb);
-static int parseReturnExpr(Client cntxt, Xbackend xb);
+static int parseReturnExprSingle(Client cntxt, Xbackend xb);
 static int parseFLWRExpr(Client cntxt, Xbackend xb);
 static int parseTypeswitchExpr(Client cntxt, Xbackend xb);
 static int parseExpr(Client cntxt, Xbackend xb);
@@ -461,6 +454,10 @@ parseNameTest(Client cntxt, Xbackend xb){
 static int
 parseFunctionCall(Client cntxt, Xbackend xb){
 	int i;
+
+#ifdef _XQRY_DEBUG
+	stream_printf(cntxt->fdout,"parseFunctionCall\n" );
+#endif
 	i= idLength(cntxt);
 	if( i==0)
 		return PARSE_ERR;
@@ -489,10 +486,10 @@ parsePrimaryExpr(Client cntxt, Xbackend xb){
 	ValRecord val;
 
 	skipSpace(cntxt);
-	if( cstToken(cntxt,&val) == 0){
+	if( cstToken(cntxt,&val) != 0){
 		return PARSE_OK;
 	}
-	if( currChar(cntxt) =='$'){
+	if( currChar(cntxt) == '$'){
 		nextChar(cntxt);
 		skipSpace(cntxt);
 		i= idLength(cntxt);
@@ -536,7 +533,7 @@ parsePrimaryExpr(Client cntxt, Xbackend xb){
 		if( currChar(cntxt)!='}')
 			return PARSE_ERR;
 	}
-	return PARSE_ERR;
+	return parseFunctionCall(cntxt, xb);
 }
 
 static int
@@ -715,18 +712,20 @@ parsePositionalVar(Client cntxt, Xbackend xb){
 }
 
 int
-parseVarName(Client cntxt, Xbackend xb){
-	int i;
-	
+parseVarName(Client cntxt, Xbackend xb)
+{
 	skipSpace(cntxt);
 	if( currChar(cntxt) != '$')
 		return PARSE_ERR;
 	nextChar(cntxt);
 	skipSpace(cntxt);
-	i= parseQName(cntxt,xb);
-	if( i == 0)
+	if (parseQName(cntxt,xb) == PARSE_ERR)
 		return PARSE_ERR;
 	/* has optional type? */
+
+#ifdef _XQRY_DEBUG
+	stream_printf(cntxt->fdout,"parseVarName %s\n", xb->vars[xb->vtop-1].nme );
+#endif
 	return PARSE_OK;
 }
 
@@ -950,7 +949,7 @@ parseRangeExpr(Client cntxt, Xbackend xb){
 		return PARSE_ERR;
 	skipSpace(cntxt);
 	if( MALkeyword(cntxt,"to",2)) 
-		return parseAdditiveExpr(cntxt,xb);
+		return parseRangeExpr(cntxt,xb);
 	return PARSE_OK;
 }
 static int
@@ -1005,7 +1004,7 @@ parseAndExpr(Client cntxt, Xbackend xb){
 	if( !MALkeyword(cntxt, "and",3)){
 		return PARSE_OK;
 	}
-	return parseComparisonExpr(cntxt,xb);
+	return parseAndExpr(cntxt,xb);
 }
 
 static int
@@ -1016,14 +1015,19 @@ parseOrExpr(Client cntxt, Xbackend xb){
 	if( !MALkeyword(cntxt, "or",2)){
 		return PARSE_OK;
 	}
-	return parseAndExpr(cntxt,xb);
+	return parseOrExpr(cntxt,xb);
 }
 
-int
-parseExprSingle(Client cntxt, Xbackend xb){
+static int
+parseExprSingle(Client cntxt, Xbackend xb)
+{
+#ifdef _XQRY_DEBUG
+	stream_printf(cntxt->fdout,"parseExprSingle\n");
+#endif
 	skipSpace(cntxt);
-	if( parseFLWRExpr(cntxt, xb)== PARSE_OK)
-		return PARSE_OK;
+	if (strcmp(CURRENT(cntxt),"let") == 0 ||
+            strcmp(CURRENT(cntxt),"for") == 0)
+		return parseFLWRExpr(cntxt, xb);
 	if( parseIfExpr(cntxt,xb)== PARSE_OK)
 		return PARSE_OK;
 	if( parseTypeswitchExpr(cntxt,xb)== PARSE_OK)
@@ -1066,11 +1070,12 @@ parseCaseClause(Client cntxt, Xbackend xb){
 	} 
 	if( parseSequenceType(cntxt,xb)==PARSE_ERR)
 		return PARSE_ERR;
-	return parseReturnExpr(cntxt,xb);
+	return parseReturnExprSingle(cntxt,xb);
 }
 
-int
-parseTypeswitchExpr(Client cntxt, Xbackend xb){
+static int
+parseTypeswitchExpr(Client cntxt, Xbackend xb)
+{
 	skipSpace(cntxt);
 	if( !MALkeyword(cntxt,"typeswitch",10))
 		return PARSE_ERR;
@@ -1089,11 +1094,12 @@ parseTypeswitchExpr(Client cntxt, Xbackend xb){
 		;
 	if( !MALkeyword(cntxt,"default",7))
 		return PARSE_ERR;
-	return parseReturnExpr(cntxt,xb);
+	return parseReturnExprSingle(cntxt,xb);
 }
 
-int
-parseIfExpr(Client cntxt, Xbackend xb){
+static int
+parseIfExpr(Client cntxt, Xbackend xb)
+{
 	skipSpace(cntxt);
 	if( !MALkeyword(cntxt,"if",2))
 		return PARSE_ERR;
@@ -1118,12 +1124,15 @@ parseIfExpr(Client cntxt, Xbackend xb){
 }
 
 int
-parseReturnExpr(Client cntxt, Xbackend xb){
+parseReturnExprSingle(Client cntxt, Xbackend xb){
 	(void) xb;
 	skipSpace(cntxt);
 	if( !MALkeyword(cntxt,"return",6))
 		return PARSE_ERR;
-	return PARSE_OK;
+#ifdef _XQRY_DEBUG
+	stream_printf(cntxt->fdout,"parseReturnExprSingle\n");
+#endif
+	return parseExprSingle(cntxt, xb);
 }
 
 static int
@@ -1170,9 +1179,6 @@ parseForClause(Client cntxt, Xbackend xb){
 #ifdef _XQRY_DEBUG
 	stream_printf(cntxt->fdout,"parseForClause\n");
 #endif
-	(void) xb;
-	if( !MALkeyword(cntxt,"for",3) )
-		return PARSE_ERR;
 	do{
 		if(currChar(cntxt)== ',') nextChar(cntxt);
 		skipSpace(cntxt);
@@ -1189,18 +1195,19 @@ parseForClause(Client cntxt, Xbackend xb){
 		if( parseExprSingle(cntxt,xb)== PARSE_ERR)
 			return PARSE_ERR;
 	} while( currChar(cntxt)==',');
+#ifdef _XQRY_DEBUG
+	stream_printf(cntxt->fdout,"parseForClause done\n");
+#endif
 	return PARSE_OK;
 }
 
 static int 
-parseLetClause(Client cntxt, Xbackend xb){
+parseLetClause(Client cntxt, Xbackend xb)
+{
 #ifdef _XQRY_DEBUG
 	stream_printf(cntxt->fdout,"parseLetClause\n");
 #endif
-	(void) xb;
-	if( !MALkeyword(cntxt,"let",3) )
-		return PARSE_ERR;
-	do{
+	do {
 		if(currChar(cntxt)== ',') nextChar(cntxt);
 		skipSpace(cntxt);
 		if( parseVarName(cntxt,xb)== PARSE_ERR)
@@ -1213,21 +1220,24 @@ parseLetClause(Client cntxt, Xbackend xb){
 			return PARSE_ERR;
 		skipSpace(cntxt);
 	} while( currChar(cntxt)==',');
-	parseWhereClause(cntxt,xb);
+#ifdef _XQRY_DEBUG
+	stream_printf(cntxt->fdout,"parseLetClause done\n");
+#endif
 	return PARSE_OK;
 }
 
 int 
 parseFLWRExpr(Client cntxt, Xbackend xb){
 	int ret=PARSE_OK;
-	do{
+	do{ 
 		skipSpace(cntxt);
 		if( MALkeyword(cntxt,"for",3)){
-			ret= parseForClause(cntxt,xb);
-		} else
-		if( MALkeyword(cntxt,"let",3)){
-			ret= parseLetClause(cntxt,xb);
-		} else break;
+			ret = parseForClause(cntxt,xb);
+		} else if( MALkeyword(cntxt,"let",3)){
+			ret = parseLetClause(cntxt,xb);
+		} else {
+			break;
+		}
 	} while(ret == PARSE_OK);
 	if( PARSE_ERR) 
 		return PARSE_ERR;
@@ -1241,18 +1251,17 @@ parseFLWRExpr(Client cntxt, Xbackend xb){
 		return parseOrderByClause(cntxt,xb);
 	
 	skipSpace(cntxt);
-	return parseReturnExpr(cntxt,xb);
+	return parseReturnExprSingle(cntxt,xb);
 }
 
 int
 parseXQuery(Client cntxt)
 {
 	char c;
-	MalBlkPtr mb= newMalBlk(128,64);
-	Xbackend xb= newXbackend(mb);
-	int ret= PARSE_OK;
+	Xbackend xb = BE(cntxt);
+	int ret = PARSE_OK;
 
-	while ((c = *CURRENT(cntxt))) {
+	while (ret != PARSE_ERR && (c = *CURRENT(cntxt))) {
 		switch (c) {
 		case '#':
 			while (currChar(cntxt) && currChar(cntxt) != '\n')
@@ -1316,6 +1325,45 @@ XQRYparseError(Client cntxt, str msg)
 		snprintf(s, 1020, "%s", msg);
 	GDKerror(buf);
 	return PARSE_ERR;
+}
+
+str
+parseWarning(Client cntxt, str msg)
+{
+	Symbol curPrg;
+	MalBlkPtr curBlk;
+	char buf[10 * 1024];
+	char *s = buf, *t, *l = lastline(cntxt);
+	long i;
+
+	curPrg = cntxt->curprg;
+	curBlk = curPrg->def;
+	if (curBlk)
+		curBlk->errors++;
+
+	/* accidental %s directives in the lastline can
+	   crash the vfsprintf later => escape them */
+	for (t = l; *t && *t != '\n'; t++) {
+		if (*t == '%')
+			*s++ = '%';
+		*s++ = *t;
+	}
+	*s++ = '\n';
+	*s++ = '!';
+	/* produce the position marker */
+	i = position(cntxt) + strlen(GDKERROR) - 1;
+	for (; i > 0; i--) {
+		*s++ = ((l && *(l + 1) && *l++ != '\t')) ? ' ' : '\t';
+	}
+	*s++ = '^';
+	*s = 0;
+
+	if (msg == 0)
+		msg = "can't help you here, sorry.\n";
+	if (strlen(msg) + strlen(buf) < 1020)
+		snprintf(s, 1020, "%s", msg);
+	GDKerror(buf);
+	return 0;
 }
 
 @}
