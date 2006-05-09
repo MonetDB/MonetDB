@@ -38,6 +38,8 @@ of the Xmark benchmark can indeed be processed.
 The XQuery parser is a recursive-descend implementation.
 The parser produced follows the structure of the MAL parser
 and produces a MAL block for direct execution.
+
+The grammar is taken from W3C website.
 @}
 @+ Conversion Pitfalls
 In this section we summarize the pitfalls and limitations encountered
@@ -105,7 +107,7 @@ It can be extended with relevant Xbackend dumps.
 
 #define XPATHLENGTH 1024
 
-extern str parseWarning(Client cntxt, str msg);
+extern int XQRYparseError(Client cntxt, str msg);
 
 @-
 The XQuery parser may request for more information to 
@@ -214,7 +216,7 @@ parseQName(Client cntxt, Xbackend xb){
 			return PARSE_OK;
 		}
 	if( xb->vtop == MAXXVARS){
-		parseWarning(cntxt,"Too many variables");
+		XQRYparseError(cntxt,"Too many variables");
 		xb->vtop --;
 	}
 	xb->vars[xb->vtop++].nme = s;
@@ -1567,6 +1569,35 @@ parseOrExpr(Client cntxt, Xbackend xb){
 }
 
 static int
+parseQuantifiedExpr(Client cntxt,Xbackend xb){
+	@:ptrace(parseQuantifiedExpr)@
+	do{
+		if(currChar(cntxt)== ',') nextChar(cntxt);
+		skipSpace(cntxt);
+		if( MALkeyword(cntxt,"some",4)!= PARSE_OK &&
+			MALkeyword(cntxt,"every",5)!= PARSE_OK)
+			return PARSE_ERR;
+		if( parseVarName(cntxt,xb)== PARSE_ERR)
+			return PARSE_ERR;
+		skipSpace(cntxt);
+		parseTypeDeclaration(cntxt,xb);
+		if( parsePositionalVar(cntxt, xb) == PARSE_ERR)
+			return PARSE_ERR;
+		skipSpace(cntxt);
+		if( !MALkeyword(cntxt,"in",2) )
+			return PARSE_ERR;
+		skipSpace(cntxt);
+		if( parseExprSingle(cntxt,xb)== PARSE_ERR)
+			return PARSE_ERR;
+	} while( currChar(cntxt)==',');
+	skipSpace(cntxt);
+	if( MALkeyword(cntxt,"satisfies",9)== PARSE_ERR)
+		return PARSE_ERR;
+	if( parseExprSingle(cntxt,xb)== PARSE_ERR)
+		return PARSE_ERR;
+	return PARSE_OK;
+}
+static int
 parseExprSingle(Client cntxt, Xbackend xb)
 {
 	@:ptrace(parseExprSingle)@
@@ -1579,15 +1610,8 @@ parseExprSingle(Client cntxt, Xbackend xb)
 	if( parseTypeswitchExpr(cntxt,xb)== PARSE_OK)
 		return PARSE_OK;
 
-	/* Quantified expression*/
-	if( MALkeyword(cntxt,"some",4)){
-		skipSpace(cntxt);
-		return parseVarName(cntxt,xb);
-	}
-	if( MALkeyword(cntxt,"every",5)){
-		skipSpace(cntxt);
-		return parseVarName(cntxt,xb);
-	}
+	if( parseQuantifiedExpr(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
 
 	return parseOrExpr(cntxt,xb);
 }
@@ -1797,6 +1821,528 @@ parseFLWRExpr(Client cntxt, Xbackend xb){
 	return parseReturnExprSingle(cntxt,xb);
 }
 
+static int
+parseParam(Client cntxt, Xbackend xb){
+	int i;
+	@:ptrace(parseParam)@
+	skipSpace(cntxt);
+	if( currChar(cntxt) != '$')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	skipSpace(cntxt);
+	i= idLength(cntxt);
+	if( i)
+		idCopy(cntxt,i);
+	parseTypeDeclaration(cntxt, xb);
+	return PARSE_OK;
+}
+
+static int
+parseParamList(Client cntxt, Xbackend xb){
+	@:ptrace(parseParamList)@
+	if( parseParam(cntxt,xb)== PARSE_OK)
+	do{
+		skipSpace(cntxt);
+		if( currChar(cntxt) != ',') 
+			return PARSE_OK;
+		nextChar(cntxt);
+	} while(parseParam(cntxt,xb));
+	return PARSE_ERR;
+}
+
+static int
+parseFunctionDecl(Client cntxt, Xbackend xb){
+	int i;
+	@:ptrace(parseFunctionDecl)@
+	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR;*/
+	if( !MALkeyword(cntxt,"function",8) ) return PARSE_ERR;
+	skipSpace(cntxt);
+	i= idLength(cntxt);
+	if( i>0)
+		idCopy(cntxt,i);
+	else return PARSE_ERR;
+	skipSpace(cntxt);
+	if( currChar(cntxt) != '(')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	parseParamList(cntxt,xb);
+	skipSpace(cntxt);
+	if( currChar(cntxt) != ')')
+		return PARSE_ERR;
+	nextChar(cntxt);
+
+	skipSpace(cntxt);
+	if( MALkeyword(cntxt,"as",2) )
+		parseSequenceType(cntxt,xb);
+	if( MALkeyword(cntxt,"external",8))
+		return PARSE_OK;
+	
+	if( currChar(cntxt) != '{')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	parseExpr(cntxt,xb);
+	skipSpace(cntxt);
+	if( currChar(cntxt) != '}')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	return PARSE_OK;
+}
+
+static int
+parseConstructionDecl(Client cntxt, Xbackend xb){
+	@:ptrace(parseConstructionDecl)@
+	(void) xb;
+	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR;*/
+	if( MALkeyword(cntxt,"construction",12) )
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( MALkeyword(cntxt,"strict",6) || MALkeyword(cntxt,"preserve",8))
+		return PARSE_OK;
+	return PARSE_ERR;
+}
+
+static int
+parseVarDecl(Client cntxt, Xbackend xb){
+	int i;
+	@:ptrace(parseVarDecl)@
+	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR;*/
+	if( !MALkeyword(cntxt,"variable",8) ) return PARSE_ERR;
+	skipSpace(cntxt);
+	if( currChar(cntxt) != '$')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	i= idLength(cntxt);
+	if( i>0)
+		idCopy(cntxt,i);
+	else return PARSE_ERR;
+	skipSpace(cntxt);
+	if( parseTypeDeclaration(cntxt,xb)== PARSE_ERR)
+		return PARSE_ERR;
+
+	skipSpace(cntxt);
+	if( MALkeyword(cntxt,"external",8))
+		return PARSE_OK;
+	if( MALkeyword(cntxt,":=",2) ){
+		skipSpace(cntxt);
+		return parseSequenceType(cntxt,xb);
+	}
+	return PARSE_ERR;
+}
+
+static int
+parseModuleImport(Client cntxt, Xbackend xb){
+	int i;
+	@:ptrace(parseModuleImport)@
+	(void) xb;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"import",6))
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"module",6))
+		return PARSE_ERR;
+	skipSpace(cntxt);
+
+	if( MALkeyword(cntxt,"namespace",9)){
+		skipSpace(cntxt);
+		if(currChar(cntxt) != '=')
+			return PARSE_ERR;
+	}
+	i= stringLength(cntxt);
+	if(i)
+		strCopy(cntxt,i);
+	else return PARSE_ERR;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"at",2))
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if(i)
+		strCopy(cntxt,i);
+	else return PARSE_ERR;
+
+	skipSpace(cntxt);
+	while( currChar(cntxt)==','){
+		nextChar(cntxt);
+		skipSpace(cntxt);
+		if(i)
+			strCopy(cntxt,i);
+		else return PARSE_ERR;
+		skipSpace(cntxt);
+	}
+	return PARSE_OK;
+}
+
+static int
+parseSchemaPrefix(Client cntxt, Xbackend xb){
+	@:ptrace(parseSchemaPrefix)@
+	(void) xb;
+	skipSpace(cntxt);
+	if( MALkeyword(cntxt,"namespace",9) ){
+		skipSpace(cntxt);
+		if( currChar(cntxt) != '=')
+			return PARSE_ERR;
+		nextChar(cntxt);
+		return PARSE_OK;
+	} else
+	if( MALkeyword(cntxt,"default",7) ){
+		skipSpace(cntxt);
+		if( MALkeyword(cntxt,"element",7) ){
+			skipSpace(cntxt);
+			if( MALkeyword(cntxt,"namespace",9) ){
+				return PARSE_OK;
+			} 
+		} 
+	} 
+	return PARSE_ERR;
+}
+
+static int 
+parseSchemaImport(Client cntxt, Xbackend xb){
+	int i;
+	@:ptrace(parseSchemaImport)@
+	if( !MALkeyword(cntxt,"import",6) )
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"schema",6) )
+		return PARSE_ERR;
+	parseSchemaPrefix(cntxt,xb);
+	i= stringLength(cntxt);
+	if( i )
+		strCopy(cntxt,i);
+	skipSpace(cntxt);
+
+	if( !MALkeyword(cntxt,"at",2))
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if(i)
+		strCopy(cntxt,i);
+	else return PARSE_ERR;
+
+	skipSpace(cntxt);
+	while( currChar(cntxt)==','){
+		nextChar(cntxt);
+		skipSpace(cntxt);
+		if(i)
+			strCopy(cntxt,i);
+		else return PARSE_ERR;
+		skipSpace(cntxt);
+	}
+	return PARSE_OK;
+}
+
+static int
+parseBaseURIDecl(Client cntxt, Xbackend xb){
+	int i;
+	@:ptrace(parseBaseURIDecl)@
+	(void) xb;
+	skipSpace(cntxt);
+	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR; */
+	if( !MALkeyword(cntxt,"base-url",8) ) return PARSE_ERR; 
+	skipSpace(cntxt);
+	i= stringLength(cntxt);
+	if(i)
+		strCopy(cntxt,i);
+	else return PARSE_ERR;
+	return PARSE_OK;
+}
+
+static int
+parseDefaultCollationDecl(Client cntxt, Xbackend xb){
+	int i;
+	@:ptrace(parseeDefaultCollationDecl)@
+	(void) xb;
+	skipSpace(cntxt);
+	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR; */
+	if( !MALkeyword(cntxt,"default",7) ) return PARSE_ERR; 
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"collation",9) ) return PARSE_ERR; 
+	skipSpace(cntxt);
+	i= stringLength(cntxt);
+	if(i)
+		strCopy(cntxt,i);
+	else return PARSE_ERR;
+	return PARSE_OK;
+}
+
+static int
+parseCopyNamespacesDecl(Client cntxt, Xbackend xb){
+	@:ptrace(parseCopyNamespacesDecl)@
+	(void) xb;
+	skipSpace(cntxt);
+	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR; */
+	if( !MALkeyword(cntxt,"copy-namespaces",15) ) return PARSE_ERR; 
+	skipSpace(cntxt);
+	if( MALkeyword(cntxt,"preserve",8)!= PARSE_OK &&
+		MALkeyword(cntxt,"no-preserve",11)!= PARSE_OK )
+		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( currChar(cntxt) != ',')
+		return PARSE_ERR;
+	if( MALkeyword(cntxt,"inherit",7)!= PARSE_OK &&
+		MALkeyword(cntxt,"no-inherit",10)!= PARSE_OK )
+		return PARSE_ERR;
+	return PARSE_OK;
+}
+
+static int
+parseEmptyOrderDecl(Client cntxt, Xbackend xb){
+	@:ptrace(parseEmptyOrderDecl)@
+	(void) xb;
+	skipSpace(cntxt);
+	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR; */
+	if( !MALkeyword(cntxt,"default",7) ) return PARSE_ERR; 
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"order",5) ) return PARSE_ERR; 
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"empty",5) ) return PARSE_ERR; 
+	skipSpace(cntxt);
+	if( MALkeyword(cntxt,"greatest",8) != PARSE_OK &&
+		MALkeyword(cntxt,"least",5) != PARSE_OK 
+	 ) return PARSE_ERR; 
+	return PARSE_OK;
+}
+
+static int
+parseOrderingModeDecl(Client cntxt, Xbackend xb){
+	@:ptrace(parseOrderingModeDecl)@
+	(void) xb;
+	skipSpace(cntxt);
+	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR; */
+	if( !MALkeyword(cntxt,"ordening",8) ) return PARSE_ERR; 
+	skipSpace(cntxt);
+	if( MALkeyword(cntxt,"ordered",7) != PARSE_OK &&
+		MALkeyword(cntxt,"unordered",9) != PARSE_OK 
+	 ) return PARSE_ERR; 
+	return PARSE_OK;
+}
+
+static int
+parseOptionDecl(Client cntxt, Xbackend xb){
+	int i;
+	@:ptrace(parseOptionDecl)@
+	(void) xb;
+	skipSpace(cntxt);
+	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR; */
+	if( !MALkeyword(cntxt,"option",6) ) return PARSE_ERR; 
+	skipSpace(cntxt);
+	i= idLength(cntxt);
+	if( i>0)
+		idCopy(cntxt,i);
+	else return PARSE_ERR;
+	skipSpace(cntxt);
+	i= stringLength(cntxt);
+	if( i>0)
+		strCopy(cntxt,i);
+	else return PARSE_ERR;
+	return PARSE_OK;
+}
+
+static int
+parseDefaultNamespaceDecl(Client cntxt, Xbackend xb){
+	int i;
+	@:ptrace(parseDefaultNamespaceDecl)@
+	(void) xb;
+	skipSpace(cntxt);
+	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR; */
+	if( !MALkeyword(cntxt,"default",7) ) return PARSE_ERR; 
+	skipSpace(cntxt);
+	if( MALkeyword(cntxt,"element",7) != PARSE_OK &&
+		MALkeyword(cntxt,"function",8) != PARSE_OK 
+	 ) return PARSE_ERR; 
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"namespace",9) ) return PARSE_ERR; 
+	skipSpace(cntxt);
+	i= stringLength(cntxt);
+	if( i>0)
+		strCopy(cntxt,i);
+	else return PARSE_ERR;
+	return PARSE_OK;
+}
+
+static int
+parseNamespaceDecl(Client cntxt, Xbackend xb){
+	int i;
+	@:ptrace(parseNamespaceDecl)@
+	(void) xb;
+	skipSpace(cntxt);
+	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR; */
+	if( !MALkeyword(cntxt,"namespace",9) ) return PARSE_ERR; 
+	skipSpace(cntxt);
+	i= idLength(cntxt);
+	if( i>0)
+		idCopy(cntxt,i);
+	else return PARSE_ERR;
+	skipSpace(cntxt);
+	if( currChar(cntxt) != '=')
+		return PARSE_ERR;
+	nextChar(cntxt);
+	skipSpace(cntxt);
+	i= stringLength(cntxt);
+	if( i>0)
+		strCopy(cntxt,i);
+	else return PARSE_ERR;
+	return PARSE_OK;
+}
+
+static int
+parseBoundarySpaceDecl(Client cntxt, Xbackend xb){
+	@:ptrace(parseBoundarySpaceDecl)@
+	(void) xb;
+	skipSpace(cntxt);
+	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR; */
+	if( !MALkeyword(cntxt,"boundary-space",14) ) return PARSE_ERR; 
+	skipSpace(cntxt);
+	if( MALkeyword(cntxt,"preserve",8) != PARSE_OK &&
+		MALkeyword(cntxt,"split",5) != PARSE_OK 
+	 ) return PARSE_ERR; 
+	return PARSE_OK;
+}
+
+static int
+parseImport(Client cntxt, Xbackend xb){
+	@:ptrace(parseImport)@
+	(void) xb;
+	skipSpace(cntxt);
+	if( parseSchemaImport(cntxt,xb)!= PARSE_OK &&
+		parseModuleImport(cntxt,xb)!= PARSE_OK)
+		return PARSE_ERR;
+	return PARSE_OK;
+}
+
+static int
+parseSetter(Client cntxt, Xbackend xb){
+	@:ptrace(parseSetter)@
+	skipSpace(cntxt);
+	if( parseBoundarySpaceDecl(cntxt,xb) != PARSE_OK &&
+		parseDefaultCollationDecl(cntxt,xb) != PARSE_OK &&
+		parseBaseURIDecl(cntxt,xb) != PARSE_OK &&
+		parseConstructionDecl(cntxt,xb) != PARSE_OK &&
+		parseOrderingModeDecl(cntxt,xb) != PARSE_OK &&
+		parseEmptyOrderDecl(cntxt,xb) != PARSE_OK &&
+		parseCopyNamespacesDecl(cntxt,xb) != PARSE_OK )
+			return PARSE_ERR;
+	return PARSE_OK;
+}
+
+static int
+parseProlog(Client cntxt, Xbackend xb){
+	@:ptrace(parseProlog)@
+	skipSpace(cntxt);
+	do{
+		if( MALkeyword(cntxt,"declare",7)){
+			skipSpace(cntxt);
+			if( parseDefaultNamespaceDecl(cntxt,xb)!= PARSE_OK &&
+				parseSetter(cntxt,xb) != PARSE_OK &&
+				parseNamespaceDecl(cntxt,xb) != PARSE_OK)
+				break;
+		} else
+		if( parseImport(cntxt,xb) == PARSE_ERR)
+			break;
+		skipSpace(cntxt);
+		if( currChar(cntxt)!=';') break;
+		nextChar(cntxt);
+	} while(1); 
+
+	do{
+		skipSpace(cntxt);
+		if( parseVarDecl(cntxt,xb)!= PARSE_OK &&
+			parseFunctionDecl(cntxt,xb) != PARSE_OK &&
+			parseOptionDecl(cntxt,xb) != PARSE_OK)
+			break;
+		skipSpace(cntxt);
+		if( currChar(cntxt)!=';') break;
+		nextChar(cntxt);
+	} while(1); 
+	return PARSE_OK;
+}
+
+static int
+parseModuleDecl(Client cntxt, Xbackend xb){
+	int i;
+	@:ptrace(parseModuleDecl)@
+	(void) xb;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"module",6)) return PARSE_ERR;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"namespace",9)) return PARSE_ERR;
+
+	i= idLength(cntxt);
+	if( i> 0)
+		idCopy(cntxt,i);
+	else return PARSE_ERR;
+	skipSpace(cntxt);
+	if( currChar(cntxt)!= '=') return PARSE_ERR;
+	nextChar(cntxt);
+	skipSpace(cntxt);
+
+	i= stringLength(cntxt);
+	if( i> 0)
+		strCopy(cntxt,i);
+	else return PARSE_ERR;
+	skipSpace(cntxt);
+	if( currChar(cntxt)!= ';') return PARSE_ERR;
+	nextChar(cntxt);
+	return PARSE_OK;
+}
+
+static int
+parseLibraryModule(Client cntxt, Xbackend xb){
+	@:ptrace(parseLibraryModule)@
+	skipSpace(cntxt);
+	if( parseModuleDecl(cntxt,xb)!= PARSE_OK &&
+		parseProlog(cntxt,xb)!= PARSE_OK )
+			return PARSE_ERR;
+	return PARSE_OK;
+}
+
+static int
+parseMainModule(Client cntxt, Xbackend xb){
+	@:ptrace(parseMainModule)@
+	skipSpace(cntxt);
+	if( parseProlog(cntxt,xb)== PARSE_ERR)
+			return PARSE_ERR;
+	skipSpace(cntxt);
+	if( parseExpr(cntxt,xb)== PARSE_ERR)
+		return PARSE_ERR;
+	return PARSE_OK;
+}
+
+static int
+parseVersionDecl(Client cntxt, Xbackend xb){
+	int i;
+	@:ptrace(parseVersionDecl)@
+	(void) xb;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"xquery",6)) return PARSE_ERR;
+	skipSpace(cntxt);
+	if( !MALkeyword(cntxt,"version",7)) return PARSE_ERR;
+	skipSpace(cntxt);
+
+	i= stringLength(cntxt);
+	if( i >0 )
+		strCopy(cntxt,i);
+	else return PARSE_ERR;
+	skipSpace(cntxt);
+
+	if( MALkeyword(cntxt,"encoding",7)) {
+		skipSpace(cntxt);
+		i= stringLength(cntxt);
+		if( i >0 )
+			strCopy(cntxt,i);
+		else return PARSE_ERR;
+	}
+	return PARSE_OK;
+}
+
+static int
+parseModule(Client cntxt, Xbackend xb){
+	@:ptrace(parseModule)@
+	skipSpace(cntxt);
+	parseVersionDecl(cntxt,xb);
+	if( parseLibraryModule(cntxt,xb) != PARSE_OK &&
+		parseMainModule(cntxt,xb) != PARSE_OK )
+		return PARSE_ERR;
+	return PARSE_OK;
+}
 int
 parseXQuery(Client cntxt)
 {
@@ -1872,43 +2418,5 @@ XQRYparseError(Client cntxt, str msg)
 	return PARSE_ERR;
 }
 
-str
-parseWarning(Client cntxt, str msg)
-{
-	Symbol curPrg;
-	MalBlkPtr curBlk;
-	char buf[10 * 1024];
-	char *s = buf, *t, *l = lastline(cntxt);
-	long i;
-
-	curPrg = cntxt->curprg;
-	curBlk = curPrg->def;
-	if (curBlk)
-		curBlk->errors++;
-
-	/* accidental %s directives in the lastline can
-	   crash the vfsprintf later => escape them */
-	for (t = l; *t && *t != '\n'; t++) {
-		if (*t == '%')
-			*s++ = '%';
-		*s++ = *t;
-	}
-	*s++ = '\n';
-	*s++ = '!';
-	/* produce the position marker */
-	i = position(cntxt) + strlen(GDKERROR) - 1;
-	for (; i > 0; i--) {
-		*s++ = ((l && *(l + 1) && *l++ != '\t')) ? ' ' : '\t';
-	}
-	*s++ = '^';
-	*s = 0;
-
-	if (msg == 0)
-		msg = "can't help you here, sorry.\n";
-	if (strlen(msg) + strlen(buf) < 1020)
-		snprintf(s, 1020, "%s", msg);
-	GDKerror(buf);
-	return 0;
-}
 
 @}
