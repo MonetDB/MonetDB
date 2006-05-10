@@ -177,7 +177,10 @@ initParser()
 int 
 idLength(Client cntxt)
 {
-	str s = CURRENT(cntxt),t=s;
+	str s,t;
+	skipSpace(cntxt);
+	s = CURRENT(cntxt);
+	t=s;
 
 	if (!idCharacter[(int) (*s)])
 		return 0;
@@ -193,7 +196,9 @@ int
 typeidLength(Client cntxt)
 {
 	int l;
-	str s = CURRENT(cntxt);
+	str s;
+	skipSpace(cntxt);
+	s = CURRENT(cntxt);
 
 	if (!idCharacter[(int) (*s)])
 		return 0;
@@ -218,6 +223,7 @@ str idCopy(Client cntxt, int length){
 int 
 MALkeyword(Client cntxt, str kw, int length)
 {
+	skipSpace(cntxt);
 	if (MALlookahead(cntxt, kw, length)) {
 		advance(cntxt, length);
 		return 1;
@@ -230,6 +236,7 @@ MALlookahead(Client cntxt, str kw, int length)
 {
 	int i;
 
+	skipSpace(cntxt);
 	/* avoid double test or use lowercase only. */
 	if (currChar(cntxt) == *kw &&
 		strncmp(CURRENT(cntxt), kw, length) == 0 &&
@@ -255,6 +262,7 @@ inline macros.
 INLINE int 
 keyphrase1(Client cntxt, str kw)
 {
+	skipSpace(cntxt);
 	if (currChar(cntxt) == *kw) {
 		advance(cntxt,1);
 		return 1;
@@ -265,6 +273,7 @@ keyphrase1(Client cntxt, str kw)
 INLINE int 
 keyphrase2(Client cntxt, str kw)
 {
+	skipSpace(cntxt);
 	if (CURRENT(cntxt)[0] == kw[0] && CURRENT(cntxt)[1] == kw[1]) {
 		advance(cntxt,2);
 		return 1;
@@ -274,6 +283,7 @@ keyphrase2(Client cntxt, str kw)
 INLINE int 
 keyphrase(Client cntxt, str kw,int length)
 {
+	skipSpace(cntxt);
 	if( strncmp(CURRENT(cntxt),kw,length)== 0){
 		advance(cntxt,length);
 		return 1;
@@ -292,7 +302,9 @@ stringLength(Client cntxt)
 {
 	int l=0;
 	int quote =0;
-	str s = CURRENT(cntxt);
+	str s;
+	skipSpace(cntxt);
+	s = CURRENT(cntxt);
 
 	if( *s != '"') 
 		return 0;
@@ -339,6 +351,7 @@ operatorLength(Client cntxt)
 	int l=0;
 	str s;
 
+	skipSpace(cntxt);
 	for (s = CURRENT(cntxt); *s; s++) {
 		if( opCharacter[(int)(*s)] ) 
 			l++; 
@@ -1129,7 +1142,6 @@ optimizers to make decisions. (See the section on properties).
 				setVarProperty(curBlk,@1, pname, NULL, NULL);
 			GDKfree(pname); 
 			GDKfree(opname); 
-			skipSpace(cntxt);
 		} while( keyphrase1(cntxt,","));
 		if( !keyphrase1(cntxt,"}") )
 			/* return (MalBlkPtr) */
@@ -1149,7 +1161,6 @@ The external commands and rules come with a short
 help information.
 
 @= helpInfo
-	skipSpace(cntxt);
 	if( MALkeyword(cntxt,"comment",7)){
 		if( (l= stringLength(cntxt))){
 			@1 = strCopy(cntxt,l);
@@ -1185,7 +1196,6 @@ MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 		cntxt->curprg = cntxt->backup;
 		cntxt->backup = 0;
 	}
-	skipSpace(cntxt);
 @- Short-cut function calls
 Most functions are (dynamically) linked with the kernel as
 commands or pattern definitions.  This enables for fast execution.
@@ -1240,11 +1250,9 @@ MalBlkPtr parseFunction(Client cntxt, int kind){
 	int type= TYPE_any;
 
 	@:fcnHeader@
-	skipSpace(cntxt);
 	if( MALkeyword(cntxt,"address",7)){
 		str nme;
 		int i;
-		skipSpace(cntxt);
 		i = idLength(cntxt);
 		if( i==0){
 			parseError(cntxt,"<identifier> expected\n");
