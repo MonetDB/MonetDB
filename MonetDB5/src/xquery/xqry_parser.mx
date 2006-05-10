@@ -973,11 +973,11 @@ static int
 parseFunctionCall(Client cntxt, Xbackend xb){
 	int i;
 
+	@:ptrace(parseFunctionCall)@
 	skipSpace(cntxt);
 	i= idLength(cntxt);
 	if( i==0)
 		return PARSE_ERR;
-	@:ptrace(parseFunctionCall)@
 	idCopy(cntxt,i);
 	skipSpace(cntxt);
 	if(currChar(cntxt)!= '(')
@@ -1005,6 +1005,11 @@ parsePrimaryExpr(Client cntxt, Xbackend xb){
 
 	@:ptrace(parsePrimaryExpr)@
 	skipSpace(cntxt);
+	i= stringLength(cntxt);
+	if( i > 0){
+		strCopy(cntxt,i);
+		return PARSE_OK;
+	}
 	if( (i=cstToken(cntxt,&val)) != 0){
 		advance(cntxt,i);
 		return PARSE_OK;
@@ -1058,10 +1063,10 @@ parsePrimaryExpr(Client cntxt, Xbackend xb){
 
 static int
 parsePredicate(Client cntxt, Xbackend xb){
-	@:ptrace(parsePredicate)@
 	skipSpace(cntxt);
 	if( currChar(cntxt) !='[')
 		return PARSE_ERR;
+	@:ptrace(parsePredicate)@
 	nextChar(cntxt);
 	skipSpace(cntxt);
 	if( parseExpr(cntxt,xb) == PARSE_ERR)
@@ -1115,8 +1120,8 @@ parseReverseAxis(Client cntxt, Xbackend xb){
 	@:ptrace(parseReverseAxis)@
 	(void) xb;
 	skipSpace(cntxt);
-	if( MALkeyword(cntxt,"parent",6) ) ret= PARENT; else
-	if( MALkeyword(cntxt,"ancestor",8) ) ret= ANCESTOR; else
+	if( MALkeyword(cntxt,"parent",6) ) ret= PARENT; 
+	else if( MALkeyword(cntxt,"ancestor",8) ) ret= ANCESTOR; else
 	if( MALkeyword(cntxt,"preceding",9) ) ret= PRECEDING; else
 	if( MALkeyword(cntxt,"preceding-sibling",17) ) ret= PRECEDING_SIBLING; else
 	if( MALkeyword(cntxt,"ancestor-or-self",16) ) ret= ANCESTOR_OR_SELF; else
@@ -2376,6 +2381,7 @@ parseXQuery(Client cntxt)
 			ret= parseFLWORExpr(cntxt, xb);
 #ifdef _XQRYDEBUG
 	stream_printf(cntxt->fdout,"PARSE %s", ret==PARSE_OK?"OK":"ERR");
+	stream_flush(cntxt->fdout);
 #endif
 		}
 	}
