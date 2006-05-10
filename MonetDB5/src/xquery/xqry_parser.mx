@@ -745,6 +745,7 @@ parseDirAttributeValue(Client cntxt, Xbackend xb){
 
 static int parseDirAttributeList(Client cntxt, Xbackend xb) {
 	int i;
+	int res = PARSE_OK;
 
 	@:ptrace(parseDirAttributeList)@
 	(void) xb;
@@ -754,9 +755,12 @@ static int parseDirAttributeList(Client cntxt, Xbackend xb) {
 			break;
 		idCopy(cntxt, i);
 		skipSpace(cntxt);
-		/* parseDirAttributeValue */
-	} while (currChar(cntxt));
-	return PARSE_OK;
+		if (currChar(cntxt) != '=')
+			return PARSE_ERR;
+		nextChar(cntxt);
+		skipSpace(cntxt);
+	} while ((res = parseDirAttributeValue(cntxt,xb)) == PARSE_OK);
+	return res;
 }
 
 static int parseCDataSection(Client cntxt, Xbackend xb) {
