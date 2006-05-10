@@ -321,10 +321,10 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 		/* initialize a new plant using the owner policy */
 		pl = newPlant(mb);
 		if (pl == NULL)
-			return throwMessage("factoryMgr", "No factory space left\n");
+			return throwMessage("factory.new", "No factory space left\n");
 	}
 	if (pl->location)
-		return throwMessage("factoryMgr", "No remote access allowed\n");
+		return throwMessage("factory.new", "No remote access allowed\n");
 
 @-
 We have found a factory to process the request.
@@ -387,7 +387,7 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 		/* first call? prepare the factory */
 		pl = newPlant(mb);
 		if (pl == NULL)
-			return throwMessage("factoryMgr", "No factory space left\n");
+			return throwMessage("factory.call", "No factory space left\n");
 		/* remember context, which does not exist. */
 		pl->client = cntxt;
 		pl->caller = 0;
@@ -511,7 +511,7 @@ yieldFactory(MalBlkPtr mb, InstrPtr p, int pc)
 		pl->env = NULL;
 		return MAL_SUCCEED;
 	}
-	return throwMessage("yieldFactory", "No factory found\n");
+	return throwMessage("factory.yield", "No factory found\n");
 }
 
 @-
@@ -570,7 +570,7 @@ shutdownFactoryByName(Module m, str nme){
 			if( strcmp(nme, getFunctionId(p)) != 0) continue;
 			s = findSymbolInModule(m, getName(nme,strlen(nme)) );
 			if (s == NULL){
-				return throwMessage("sql_cache.remove", 
+				return throwMessage("factory.remove", 
 					"internal error, sql_cache entry missing\n");
 			}
 			stk = pl->stk;

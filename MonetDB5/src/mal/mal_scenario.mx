@@ -300,7 +300,9 @@ alias for the include file
 		if (s->initSystemCmd) {
 			msg = (*s->initSystemCmd) (c);
 		} else {
-			msg = throwMessage(s->language,"Scenario not initialized"); 
+			char buf[BUFSIZ];
+			snprintf(buf,BUFSIZ,"%s.init",s->language);
+			msg = throwMessage(buf,"Scenario not initialized"); 
 		}
 		mal_unset_lock(mal_contextLock, "Scenario");
 	}

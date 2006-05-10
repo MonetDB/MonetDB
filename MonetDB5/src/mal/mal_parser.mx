@@ -67,6 +67,7 @@ mal_export int cstToken(Client cntxt, ValPtr val);
 mal_export int charCst(Client cntxt, ValPtr val);
 mal_export int operatorLength(Client cntxt);
 mal_export str operatorCopy(Client cntxt, int length);
+mal_export int keyphrase(Client cntxt, str kw, int length);
 mal_export int keyphrase1(Client cntxt, str kw);
 mal_export int keyphrase2(Client cntxt, str kw);
 mal_export int MALkeyword(Client cntxt, str kw, int length);
@@ -254,6 +255,15 @@ keyphrase2(Client cntxt, str kw)
 {
 	if (CURRENT(cntxt)[0] == kw[0] && CURRENT(cntxt)[1] == kw[1]) {
 		advance(cntxt,2);
+		return 1;
+	}
+	return 0;
+}
+INLINE int 
+keyphrase(Client cntxt, str kw,int length)
+{
+	if( strncmp(CURRENT(cntxt),kw,length)== 0){
+		advance(cntxt,length);
 		return 1;
 	}
 	return 0;
