@@ -21,16 +21,17 @@
 MonetDB supports several front-ends. One of those is XQuery
 as defined by W3C. 
 The version shipped with MonetDB Version 4 is based on the seminal
-work at Konstanz and Munich, which use an schema agnostic scheme
+work at Konstanz and Munich, which use a schema agnostic approach
 to prepresent the document and derive query plans.
 
-The older method designed and used in conjunction with the Xmark
-benchmark works on path summaries. This provides an extreme
+The 'older' method designed and used in conjunction with the XMark
+benchmark worked with path summaries. This provides an extreme
 partitioning scheme of the database.
 
 The sample compilation shown below has been designed as a proof
 of concept that compilation of valid xqueries of the complexity
-of the Xmark benchmark can indeed be processed.
+of the XMark benchmark can indeed be processed using the MonetDB
+guide.
 
 @{
 @+ Implementation notes
@@ -43,7 +44,8 @@ The grammar is taken from W3C website.
 @+ Conversion Pitfalls
 In this section we summarize the pitfalls and limitations encountered
 in using the XQuery to MAL compiler.
-
+The grammar is spread over a large code base, but the naming is kept
+close to its use in the W3C documents.
 @{
 @+ The lexical analyzer
 It uses the features offered by the MAL parser.
@@ -94,7 +96,11 @@ It helps during development to trace the parser actions.
 It can be extended with relevant Xbackend dumps.
 @= ptrace
 #ifdef _XQRY_DEBUG
-	stream_printf(cntxt->fdout,"@1:%s",CURRENT(cntxt));
+{ str dummy= GDKstrdup(CURRENT(cntxt));
+	if( strlen(dummy) >25) strcpy(dummy+25,"...");
+	stream_printf(cntxt->fdout,"@1:%s",dummy);
+	GDKfree(dummy);
+}
 #endif
 @c
 #include "xqry_parser.h"
@@ -106,7 +112,7 @@ It can be extended with relevant Xbackend dumps.
 
 #define XPATHLENGTH 1024
 
-extern int XQRYparseError(Client cntxt, str msg);
+extern int xqryError(Client cntxt, str msg);
 
 @-
 The XQuery parser may request for more information to 
@@ -189,7 +195,7 @@ parseQName(Client cntxt, Xbackend xb){
 			return PARSE_OK;
 		}
 	if( xb->vtop == MAXXVARS){
-		XQRYparseError(cntxt,"Too many variables");
+		xqryError(cntxt,"Too many variables");
 		xb->vtop --;
 	}
 	xb->vars[xb->vtop++].nme = s;
@@ -260,31 +266,30 @@ parseSchemaElementTest(Client cntxt, Xbackend xb){
 	@:ptrace(parseSchemaElementTest)@
 	(void) xb;
 
-	skipSpace(cntxt);
 	if( !MALkeyword(cntxt,"schema-element",14))
 		return PARSE_ERR;
 	skipSpace(cntxt);
 	if( currChar(cntxt) != '(')
-		return PARSE_ERR;
+		return xqryError(cntxt,"'(' expected\n");
 	nextChar(cntxt);
-	skipSpace(cntxt);
 	i= idLength(cntxt);
 	if( i>0)
 		idCopy(cntxt,i);
-	else return PARSE_ERR;
-
+	else return xqryError(cntxt,"<ElementName> expected\n");
+	skipSpace(cntxt);
+	if( currChar(cntxt) != ')')
+		return xqryError(cntxt,"')' expected\n");
 	return PARSE_OK;
 }
 
 static int 
 parseElementTest(Client cntxt, Xbackend xb){
-	skipSpace(cntxt);
 	if( !MALkeyword(cntxt,"element",7))
 		return PARSE_ERR;
 	@:ptrace(parseElementTest)@
 	skipSpace(cntxt);
 	if( currChar(cntxt) != '(')
-		return PARSE_ERR;
+		return xqryError(cntxt,"'(' expected\n");
 	nextChar(cntxt);
 	skipSpace(cntxt);
 
@@ -297,14 +302,14 @@ parseElementTest(Client cntxt, Xbackend xb){
 	
 	if( currChar(cntxt) != ','){
 		if( parseTypeName(cntxt,xb)== PARSE_ERR )
-			return PARSE_ERR;
+			return xqryError(cntxt,"<TypeName> expected\n");
 		skipSpace(cntxt);
 		if( currChar(cntxt)== '?')
 			nextChar(cntxt);
 	}
 
 	if( currChar(cntxt) != ')')
-		return PARSE_ERR;
+		return xqryError(cntxt,"')' expected\n");
 	nextChar(cntxt);
 	return PARSE_OK;
 }
@@ -312,13 +317,12 @@ parseElementTest(Client cntxt, Xbackend xb){
 
 static int 
 parseSchemaAttributeTest(Client cntxt, Xbackend xb){
-	skipSpace(cntxt);
 	if( !MALkeyword(cntxt,"schema-attribute",16))
 		return PARSE_ERR;
 	@:ptrace(parseSchemaAttributeTest)@
 	skipSpace(cntxt);
 	if( currChar(cntxt) != '(')
-		return PARSE_ERR;
+		return xqryError(cntxt,"'(' expected\n");
 	nextChar(cntxt);
 	skipSpace(cntxt);
 
@@ -327,7 +331,7 @@ parseSchemaAttributeTest(Client cntxt, Xbackend xb){
 	skipSpace(cntxt);
 
 	if( currChar(cntxt) != ')')
-		return PARSE_ERR;
+		return xqryError(cntxt,"')' expected\n");
 	nextChar(cntxt);
 	return PARSE_OK;
 }
@@ -335,13 +339,12 @@ parseSchemaAttributeTest(Client cntxt, Xbackend xb){
 
 static int 
 parseAttributeTest(Client cntxt, Xbackend xb){
-	skipSpace(cntxt);
 	if( !MALkeyword(cntxt,"attribute",9))
 		return PARSE_ERR;
 	@:ptrace(parseAttributeTest)@
 	skipSpace(cntxt);
 	if( currChar(cntxt) != '(')
-		return PARSE_ERR;
+		return xqryError(cntxt,"'(' expected\n");
 	nextChar(cntxt);
 	skipSpace(cntxt);
 
@@ -359,27 +362,26 @@ parseAttributeTest(Client cntxt, Xbackend xb){
 	}
 
 	if( currChar(cntxt) != ')')
-		return PARSE_ERR;
+		return xqryError(cntxt,"')' expected\n");
 	nextChar(cntxt);
 	return PARSE_OK;
 }
 
 static int
 parseDocumentTest(Client cntxt, Xbackend xb){
-	skipSpace(cntxt);
 	if( !MALkeyword(cntxt,"document-node",13))
 		return PARSE_ERR;
 	@:ptrace(parseDocumentTest)@
 	skipSpace(cntxt);
 	if( currChar(cntxt) != '(')
-		return PARSE_ERR;
+		return xqryError(cntxt,"'(' expected\n");
 	nextChar(cntxt);
 	skipSpace(cntxt);
 	if( parseElementTest(cntxt,xb) == PARSE_ERR ||
 		parseSchemaElementTest(cntxt,xb) ){
 	}
 	if( currChar(cntxt) != ')')
-		return PARSE_ERR;
+		return xqryError(cntxt,"')' expected\n");
 	nextChar(cntxt);
 	return PARSE_OK;
 }
@@ -389,13 +391,12 @@ parsePITest(Client cntxt, Xbackend xb){
 	int i;
 
 	(void) xb;
-	skipSpace(cntxt);
 	if( !MALkeyword(cntxt,"processing-instruction",13))
 		return PARSE_ERR;
 	@:ptrace(parsePITest)@
 	skipSpace(cntxt);
 	if( currChar(cntxt) != '(')
-		return PARSE_ERR;
+		return xqryError(cntxt,"'(' expected\n");
 	nextChar(cntxt);
 	skipSpace(cntxt);
 	i= idLength(cntxt);
@@ -409,7 +410,7 @@ parsePITest(Client cntxt, Xbackend xb){
 
 	skipSpace(cntxt);
 	if( currChar(cntxt) != ')')
-		return PARSE_ERR;
+		return xqryError(cntxt,"')' expected\n");
 	nextChar(cntxt);
 	return PARSE_OK;
 }
@@ -420,7 +421,6 @@ parseKindTest(Client cntxt, Xbackend xb){
 
 	@:ptrace(parseKindTest)@
 	(void) xb; (void) kind;
-	skipSpace(cntxt);
 	if( parseSchemaElementTest(cntxt,xb)== PARSE_OK)
 		return PARSE_OK;
 	if( parseAttributeTest(cntxt,xb)== PARSE_OK)
@@ -433,15 +433,16 @@ parseKindTest(Client cntxt, Xbackend xb){
 		return PARSE_OK;
 	if( parsePITest(cntxt,xb)== PARSE_OK)
 		return PARSE_OK;
+
 	if( MALkeyword(cntxt,"node",4) ) kind= NODE_TEST; else
 	if( MALkeyword(cntxt,"text",4) ) kind= TEXT_TEST; else
 	if( MALkeyword(cntxt,"comment",7) ) kind= COMMENT_TEST; 
 		else return PARSE_ERR;
-	skipSpace(cntxt);
-	if( !keyphrase1(cntxt,"(") ) return PARSE_OK;
-	skipSpace(cntxt);
-	if( !keyphrase1(cntxt,") ") ) return PARSE_OK;
-	return PARSE_ERR;
+	if( !keyphrase1(cntxt,"(") ) 
+		return xqryError(cntxt,"'(' expected\n");
+	if( !keyphrase1(cntxt,")") ) 
+		return xqryError(cntxt,"')' expected\n");
+	return PARSE_OK;
 }
 
 static int
@@ -450,28 +451,29 @@ parseItemType(Client cntxt, Xbackend xb){
 	@:ptrace(parseItemType)@
 	if( parseKindTest(cntxt,xb) == PARSE_OK) return PARSE_OK;
 	if( MALkeyword(cntxt,"item",4) ) {
-		skipSpace(cntxt);
-		if( !keyphrase1(cntxt,"(") ) return PARSE_ERR;
-		skipSpace(cntxt);
-		if( !keyphrase1(cntxt,") ") ) return PARSE_ERR;
+		if( !keyphrase1(cntxt,"(") )
+			return xqryError(cntxt,"'(' expected\n");
+		if( !keyphrase1(cntxt,")") ) 
+			return xqryError(cntxt,"')' expected\n");
 		i = ITEM_TEST; 
 		return PARSE_OK;
 	}
 	/* AtomicType */
 	i = idLength(cntxt);
 	(void) i;
+	if( i== 0)
+			return xqryError(cntxt,"<AtomicType> expected\n");
 	return PARSE_OK;
 }
 
 static int
 parseSequenceType(Client cntxt, Xbackend xb){
 	@:ptrace(parseSequenceType)@
-	skipSpace(cntxt);
 	if( MALkeyword(cntxt,"empty-sequence",13) ) {
-		skipSpace(cntxt);
-		if( !keyphrase1(cntxt,"(") ) return PARSE_ERR;
-		skipSpace(cntxt);
-		if( !keyphrase1(cntxt,") ") ) return PARSE_ERR;
+		if( !keyphrase1(cntxt,"(") ) 
+			return xqryError(cntxt,"'(' expected\n");
+		if( !keyphrase1(cntxt,")") )
+			return xqryError(cntxt,"')' expected\n");
 		return PARSE_OK;
 	}
 	if( parseItemType(cntxt,xb) == PARSE_ERR)
@@ -483,7 +485,7 @@ parseSequenceType(Client cntxt, Xbackend xb){
 	case '*':
 		nextChar(cntxt);
 	default:
-		;
+		xqryError(cntxt,"'?', '+', '*' expected\n");
 	}
 	return PARSE_OK;
 }
@@ -2373,7 +2375,7 @@ This code fragment is largely copied from the MAL parser, which also
 included an automatic skiptoend not required here.
 @c
 int
-XQRYparseError(Client cntxt, str msg)
+xqryError(Client cntxt, str msg)
 {
 	Symbol curPrg;
 	MalBlkPtr curBlk;
