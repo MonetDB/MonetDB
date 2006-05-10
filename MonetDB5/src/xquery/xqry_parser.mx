@@ -465,9 +465,9 @@ parseKindTest(Client cntxt, Xbackend xb){
 	if( MALkeyword(cntxt,"comment",4) ) kind= COMMENT_TEST; 
 		else return PARSE_ERR;
 	skipSpace(cntxt);
-	if( !MALkeyword(cntxt,"(",1) ) return PARSE_OK;
+	if( !keyphrase1(cntxt,"(") ) return PARSE_OK;
 	skipSpace(cntxt);
-	if( !MALkeyword(cntxt,")",1) ) return PARSE_OK;
+	if( !keyphrase1(cntxt,")") ) return PARSE_OK;
 	return PARSE_ERR;
 }
 
@@ -478,9 +478,9 @@ parseItemType(Client cntxt, Xbackend xb){
 	if( parseKindTest(cntxt,xb) == PARSE_OK) return PARSE_OK;
 	if( MALkeyword(cntxt,"item",4) ) {
 		skipSpace(cntxt);
-		if( !MALkeyword(cntxt,"(",1) ) return PARSE_ERR;
+		if( !keyphrase1(cntxt,"(") ) return PARSE_ERR;
 		skipSpace(cntxt);
-		if( !MALkeyword(cntxt,")",1) ) return PARSE_ERR;
+		if( !keyphrase1(cntxt,")") ) return PARSE_ERR;
 		i = ITEM_TEST; 
 		return PARSE_OK;
 	}
@@ -496,9 +496,9 @@ parseSequenceType(Client cntxt, Xbackend xb){
 	skipSpace(cntxt);
 	if( MALkeyword(cntxt,"empty-sequence",13) ) {
 		skipSpace(cntxt);
-		if( !MALkeyword(cntxt,"(",1) ) return PARSE_ERR;
+		if( !keyphrase1(cntxt,"(") ) return PARSE_ERR;
 		skipSpace(cntxt);
-		if( !MALkeyword(cntxt,")",1) ) return PARSE_ERR;
+		if( !keyphrase1(cntxt,")") ) return PARSE_ERR;
 		return PARSE_OK;
 	}
 	if( parseItemType(cntxt,xb) == PARSE_ERR)
@@ -704,7 +704,7 @@ parseDirPIConstructor(Client cntxt, Xbackend xb){
 	(void) xb;
 
 	skipSpace(cntxt);
-	if( !MALkeyword(cntxt,"<?",2) )
+	if( !keyphrase2(cntxt,"<?") )
 		return PARSE_ERR;
 	@:ptrace(parseDirPIConstructor)@
 	skipSpace(cntxt);
@@ -716,7 +716,7 @@ parseDirPIConstructor(Client cntxt, Xbackend xb){
 
 	while( currChar(cntxt) != '?' && currChar(cntxt))
 		nextChar(cntxt);
-	if( !MALkeyword(cntxt,"?>",2) )
+	if( !keyphrase2(cntxt,"?>") )
 		return PARSE_ERR;
 	return PARSE_OK;
 }
@@ -727,7 +727,7 @@ parseDirCommentConstructor(Client cntxt, Xbackend xb){
 
 	(void) xb;
 	skipSpace(cntxt);
-	if( !MALkeyword(cntxt,"<!--",4) )
+	if( !keyphrase(cntxt,"<!--",4) )
 		return PARSE_ERR;
 	@:ptrace(parseCommentConstructor)@
 	do{
@@ -735,7 +735,7 @@ parseDirCommentConstructor(Client cntxt, Xbackend xb){
 		if(currChar(cntxt)=='-') i++; else i= 0;
 		nextChar(cntxt);
 	} while(currChar(cntxt));
-	if( !MALkeyword(cntxt,">",1) )
+	if( !keyphrase1(cntxt,">") )
 		return PARSE_ERR;
 	return PARSE_OK;
 }
@@ -795,10 +795,10 @@ static int
 parseCDataSection(Client cntxt, Xbackend xb){
 	(void) xb;
 	skipSpace(cntxt);
-	if( !MALkeyword(cntxt,"<![CDATA[",9))
+	if( !keyphrase(cntxt,"<![CDATA[",9))
 		return PARSE_ERR;
 	@:ptrace(parseCDataSection)@
-	while( !MALkeyword(cntxt,"]]>",3))
+	while( !keyphrase(cntxt,"]]>",3))
 		nextChar(cntxt);
 	return PARSE_OK;
 }
@@ -806,10 +806,12 @@ parseCDataSection(Client cntxt, Xbackend xb){
 static int
 parseCommonContent(Client cntxt, Xbackend xb){
 	ValRecord val;
+	int i;
+
 	skipSpace(cntxt);
-	if( MALkeyword(cntxt,"{{",2) )
+	if( keyphrase2(cntxt,"{{") )
 		return PARSE_OK;
-	if( !MALkeyword(cntxt,"}}",2))
+	if( !keyphrase2(cntxt,"}}"))
 		return PARSE_OK;
 	if( currChar(cntxt) == '{'){
 		nextChar(cntxt);
@@ -823,9 +825,10 @@ parseCommonContent(Client cntxt, Xbackend xb){
 	}
 	/* check PredefinedEntityRef */
 	/* and the rest */
-	cstToken(cntxt,&val);
-	if( val.vtype != TYPE_chr)
+	i= cstToken(cntxt,&val);
+	if(i==0 || val.vtype != TYPE_chr)
 		return PARSE_ERR;
+	advance(cntxt,i);
 	return PARSE_OK;
 }
 
@@ -898,7 +901,7 @@ parseDirElementConstructor(Client cntxt, Xbackend xb){
 	parseDirAttributeList(cntxt,xb);
 
 	skipSpace(cntxt);
-	if( !MALkeyword(cntxt,"/>",2))
+	if( !keyphrase2(cntxt,"/>"))
 		return PARSE_OK;
 
 	if( currChar(cntxt)!= '>')
@@ -906,7 +909,7 @@ parseDirElementConstructor(Client cntxt, Xbackend xb){
 
 	parseDirElementContent(cntxt,xb);
 
-	if( !MALkeyword(cntxt,"</",2))
+	if( !keyphrase2(cntxt,"</"))
 		return PARSE_ERR;
 	
 	i= idLength(cntxt);
@@ -945,7 +948,7 @@ parseNameTest(Client cntxt, Xbackend xb){
 	str nme;
 	@:ptrace(parseNameTest)@
 
-	(void)xb;
+	(void)xb; (void)nme;
 	i= idLength(cntxt);
 	if( i> 0){
 		if(i) nme= idCopy(cntxt,i);
@@ -970,6 +973,7 @@ static int
 parseFunctionCall(Client cntxt, Xbackend xb){
 	int i;
 
+	skipSpace(cntxt);
 	i= idLength(cntxt);
 	if( i==0)
 		return PARSE_ERR;
@@ -979,12 +983,13 @@ parseFunctionCall(Client cntxt, Xbackend xb){
 	if(currChar(cntxt)!= '(')
 		return PARSE_ERR;
 	nextChar(cntxt);
-	parseExprSingle(cntxt,xb);
+	if( parseExprSingle(cntxt,xb)== PARSE_OK)
 	do{
 		skipSpace(cntxt);
 		if( currChar(cntxt) != ',') 
 			return PARSE_OK;
-		nextChar(cntxt);
+		if( currChar(cntxt) == ')')
+			break;
 	} while( parseExprSingle(cntxt,xb));
 	if(currChar(cntxt)!= ')')
 		return PARSE_ERR;
@@ -1001,7 +1006,7 @@ parsePrimaryExpr(Client cntxt, Xbackend xb){
 	@:ptrace(parsePrimaryExpr)@
 	skipSpace(cntxt);
 	if( (i=cstToken(cntxt,&val)) != 0){
-		cntxt->yycur+=i+1; /*TODO fix this +1 hack for \" */
+		advance(cntxt,i);
 		return PARSE_OK;
 	}
 	if( currChar(cntxt) == '$'){
@@ -1117,7 +1122,7 @@ parseReverseAxis(Client cntxt, Xbackend xb){
 	if( MALkeyword(cntxt,"ancestor-or-self",16) ) ret= ANCESTOR_OR_SELF; else
 		return PARSE_ERR;
 	skipSpace(cntxt);
-	if( !MALkeyword(cntxt,"::",2) ) return PARSE_ERR;
+	if( !keyphrase2(cntxt,"::") ) return PARSE_ERR;
 	(void) ret;
 	return PARSE_OK;
 }
@@ -1160,7 +1165,7 @@ parseForwardAxis(Client cntxt, Xbackend xb){
 	if( MALkeyword(cntxt,"descendant-or-self",18) ) ret= DESCENDANT_OR_SELF; else
 		return PARSE_ERR;
 	skipSpace(cntxt);
-	if( !MALkeyword(cntxt,"::",2) ) return PARSE_ERR;
+	if( !keyphrase2(cntxt,"::") ) return PARSE_ERR;
 	(void) ret;
 	return PARSE_OK;
 }
@@ -1265,7 +1270,7 @@ parsePragma(Client cntxt, Xbackend xb){
 	int i;
 	(void) xb;
 	skipSpace(cntxt);
-	if( !MALkeyword(cntxt,"(#",2))
+	if( !keyphrase2(cntxt,"(#"))
 		return PARSE_ERR;
 	@:ptrace(parsePragma)@
 	skipSpace(cntxt);
@@ -1342,11 +1347,13 @@ static int
 parseValueExpr(Client cntxt, Xbackend xb){
 	@:ptrace(parseValueExpr)@
 	skipSpace(cntxt);
+	if( parsePathExpr(cntxt,xb)== PARSE_OK)
+		return PARSE_OK;
 	if( parseValidateExpr(cntxt,xb)== PARSE_OK)
 		return PARSE_OK;
 	if( parseExtensionExpr(cntxt,xb)== PARSE_OK)
 		return PARSE_OK;
-	return parsePathExpr(cntxt,xb);
+	return PARSE_ERR;
 }
 
 static int
@@ -1506,15 +1513,15 @@ parseComparisonExpr(Client cntxt, Xbackend xb){
 	if( parseRangeExpr(cntxt,xb)== PARSE_OK){
 		/* ValueComp | GeneralComp | NodeComp) RangeExpr)? */
 		skipSpace(cntxt);
-		if( MALkeyword(cntxt,"!=",2) ){
+		if( keyphrase2(cntxt,"!=") ){
 		} else
-		if( MALkeyword(cntxt,"<=",2) ){
+		if( keyphrase2(cntxt,"<=") ){
 		} else
-		if( MALkeyword(cntxt,">=",2) ){
+		if( keyphrase2(cntxt,">=") ){
 		} else
-		if( MALkeyword(cntxt,">",1) ){
+		if( keyphrase1(cntxt,">") ){
 		} else
-		if( MALkeyword(cntxt,"<",1) ){
+		if( keyphrase1(cntxt,"<") ){
 		} else
 
 		/* ValueComp */
@@ -1532,9 +1539,9 @@ parseComparisonExpr(Client cntxt, Xbackend xb){
 		} else
 
 		/* NodeComp */
-		if( MALkeyword(cntxt,"<<",2) ){
+		if( keyphrase2(cntxt,"<<") ){
 		} else
-		if( MALkeyword(cntxt,">>",2) ){
+		if( keyphrase2(cntxt,">>") ){
 		} else
 		if( MALkeyword(cntxt,"is",2) ){
 		}  else return PARSE_ERR;
@@ -1783,7 +1790,7 @@ parseLetClause(Client cntxt, Xbackend xb)
 		skipSpace(cntxt);
 		parseTypeDeclaration(cntxt,xb) ;
 		skipSpace(cntxt);
-		if( !MALkeyword(cntxt,":=",2) )
+		if( !keyphrase2(cntxt,":=") )
 			return PARSE_ERR;
 		skipSpace(cntxt);
 		if( parseExprSingle(cntxt,xb)== PARSE_ERR) 
@@ -1924,7 +1931,8 @@ parseVarDecl(Client cntxt, Xbackend xb){
 	skipSpace(cntxt);
 	if( MALkeyword(cntxt,"external",8))
 		return PARSE_OK;
-	if( MALkeyword(cntxt,":=",2) ){
+	skipSpace(cntxt);
+	if( keyphrase2(cntxt,":=") ){
 		skipSpace(cntxt);
 		return parseSequenceType(cntxt,xb);
 	}
@@ -2366,6 +2374,9 @@ parseXQuery(Client cntxt)
 		case 'f':
 		case 'l':
 			ret= parseFLWORExpr(cntxt, xb);
+#ifdef _XQRYDEBUG
+	stream_printf(cntxt->fdout,"PARSE %s", ret==PARSE_OK?"OK":"ERR");
+#endif
 		}
 	}
 	chkProgram(cntxt->nspace, cntxt->curprg->def);
