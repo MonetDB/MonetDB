@@ -954,7 +954,7 @@ static int parseFunctionCall(Client cntxt, Xbackend xb) {
 
 	@:ptrace(parseFunctionCall)@
 	skipSpace(cntxt);
-	i = idLength(cntxt);
+	i = idLength(cntxt); /* need special version as a '-' may be in here */ 
 	if (i == 0)
 		return PARSE_ERR;
 	idCopy(cntxt, i);
@@ -1078,7 +1078,7 @@ static int parseFilterExpr(Client cntxt, Xbackend xb) {
 
 static int parseNodeTest(Client cntxt, Xbackend xb) {
 	@:ptrace(parseNodeTest)@
-	    if (parseKindTest(cntxt, xb) == PARSE_OK)
+	if (parseKindTest(cntxt, xb) == PARSE_OK)
 		return PARSE_OK;
 	return parseNameTest(cntxt, xb);
 }
@@ -1494,6 +1494,11 @@ static int parseComparisonExpr(Client cntxt, Xbackend xb) {
 	skipSpace(cntxt);
 	if (parseRangeExpr(cntxt, xb) == PARSE_OK) {
 		assert(cntxt->yycur != before);
+			/* NodeComp */
+		if (keyphrase2(cntxt, "<<")) {
+		} else if (keyphrase2(cntxt, ">>")) {
+		} else if (MALkeyword(cntxt, "is", 2)) {
+		} else
 		/* ValueComp | GeneralComp | NodeComp) RangeExpr)? */
 		skipSpace(cntxt);
 		if (keyphrase1(cntxt, "=")) {
@@ -1510,11 +1515,6 @@ static int parseComparisonExpr(Client cntxt, Xbackend xb) {
 		} else if (MALkeyword(cntxt, "le", 2)) {
 		} else if (MALkeyword(cntxt, "gt", 2)) {
 		} else if (MALkeyword(cntxt, "ge", 2)) {
-		} else
-			/* NodeComp */
-		if (keyphrase2(cntxt, "<<")) {
-		} else if (keyphrase2(cntxt, ">>")) {
-		} else if (MALkeyword(cntxt, "is", 2)) {
 		} else
 			return PARSE_OK;
 
@@ -1547,8 +1547,8 @@ static int parseOrExpr(Client cntxt, Xbackend xb) {
 
 static int parseQuantifiedExpr(Client cntxt, Xbackend xb) {
 	@:ptrace(parseQuantifiedExpr)@
-	if (MALkeyword(cntxt, "some", 4) != PARSE_OK &&
-	    MALkeyword(cntxt, "every", 5) != PARSE_OK)
+	if (!MALkeyword(cntxt, "some", 4) &&
+	    !MALkeyword(cntxt, "every", 5))
 		return PARSE_ERR;
 	do {
 		if (currChar(cntxt) == ',')
@@ -1558,8 +1558,6 @@ static int parseQuantifiedExpr(Client cntxt, Xbackend xb) {
 			return PARSE_ERR;
 		skipSpace(cntxt);
 		parseTypeDeclaration(cntxt, xb);
-		if (parsePositionalVar(cntxt, xb) == PARSE_ERR)
-			return PARSE_ERR;
 		skipSpace(cntxt);
 		if (!MALkeyword(cntxt, "in", 2))
 			return PARSE_ERR;
@@ -1568,7 +1566,7 @@ static int parseQuantifiedExpr(Client cntxt, Xbackend xb) {
 			return PARSE_ERR;
 	} while (currChar(cntxt) == ',');
 	skipSpace(cntxt);
-	if (MALkeyword(cntxt, "satisfies", 9) == PARSE_ERR)
+	if (!MALkeyword(cntxt, "satisfies", 9))
 		return PARSE_ERR;
 	if (parseExprSingle(cntxt, xb) == PARSE_ERR)
 		return PARSE_ERR;
