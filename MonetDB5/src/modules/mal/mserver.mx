@@ -251,6 +251,10 @@ pattern bind(key:int,rschema:str,rtable:str,rcolumn:str,i:int):bat[:any_1,:any_2
 address SERVERbindBAT
 comment "Bind a remote variable to a local one";
 
+pattern bind(key:int,rschema:str,rtable:str,i:int):bat[:any_1,:any_2]
+address SERVERbindBAT
+comment "Bind a remote variable to a local one";
+
 pattern bind(key:int,remoteName:str):bat[:any_1,:any_2]
 address SERVERbindBAT
 comment "Bind a remote variable to a local one";
@@ -1831,12 +1835,17 @@ SERVERbindBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	key= (int*) getArgReference(stk,pci,pci->retc);
 	nme= (str*) getArgReference(stk,pci,pci->retc+1);
 	@:accessTest(*key,bind)@
-	if( pci->argc == 6){
+	if( pci->argc == 5) {
 		tab= (str*) getArgReference(stk,pci,pci->retc+2);
 		col= (str*) getArgReference(stk,pci,pci->retc+3);
 		i= *(int*) getArgReference(stk,pci,pci->retc+4);
 		snprintf(buf,BUFSIZ,"%s:=bbp.bind(\"%s\",\"%s\",\"%s\",%d);",
 			getVarName(mb,getDestVar(pci)),*nme, *tab,*col,i);
+	} else if( pci->argc == 4) {
+		tab= (str*) getArgReference(stk,pci,pci->retc+2);
+		i= *(int*) getArgReference(stk,pci,pci->retc+3);
+		snprintf(buf,BUFSIZ,"%s:=bbp.bind(\"%s\",\"%s\",%d);",
+			getVarName(mb,getDestVar(pci)),*nme, *tab,i);
 	} else 
 		snprintf(buf,BUFSIZ,"%s:=bbp.bind(\"%s\");",
 			getVarName(mb,getDestVar(pci)),*nme);
