@@ -96,8 +96,8 @@ It helps during development to trace the parser actions.
 It can be extended with relevant Xbackend dumps.
 @= ptrace
 #ifdef _XQRY_DEBUG
-{ str dummy= GDKstrdup(CURRENT(cntxt));
-	if( strlen(dummy) >25) strcpy(dummy+25,"...");
+{ 	str dummy = GDKstrdup(CURRENT(cntxt));
+	if( strlen(dummy) >25) strcpy(dummy+25,"...\n");
 	stream_printf(cntxt->fdout,"@1:%s",dummy);
 	GDKfree(dummy);
 }
@@ -1495,12 +1495,12 @@ static int parseComparisonExpr(Client cntxt, Xbackend xb) {
 	if (parseRangeExpr(cntxt, xb) == PARSE_OK) {
 		assert(cntxt->yycur != before);
 			/* NodeComp */
+		skipSpace(cntxt);
 		if (keyphrase2(cntxt, "<<")) {
 		} else if (keyphrase2(cntxt, ">>")) {
 		} else if (MALkeyword(cntxt, "is", 2)) {
 		} else
 		/* ValueComp | GeneralComp | NodeComp) RangeExpr)? */
-		skipSpace(cntxt);
 		if (keyphrase1(cntxt, "=")) {
 		} else if (keyphrase2(cntxt, "!=")) {
 		} else if (keyphrase2(cntxt, "<=")) {
