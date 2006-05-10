@@ -788,7 +788,7 @@ static int parseCommonContent(Client cntxt, Xbackend xb) {
 	skipSpace(cntxt);
 	if (keyphrase2(cntxt, "{{"))
 		return PARSE_OK;
-	if (!keyphrase2(cntxt, "}}"))
+	if (keyphrase2(cntxt, "}}"))
 		return PARSE_OK;
 	if (currChar(cntxt) == '{') {
 		nextChar(cntxt);
@@ -842,8 +842,8 @@ static int parsePredefinedEntityRef(Client cntxt, Xbackend xb) {
 }
 
 static int parseDirElementContent(Client cntxt, Xbackend xb) {
-	@:ptrace(parseDirElementComment)@
-	    if (parseDirectConstructor(cntxt, xb) == PARSE_OK)
+	@:ptrace(parseDirElementContent)@
+	if (parseDirectConstructor(cntxt, xb) == PARSE_OK)
 		return PARSE_OK;
 	if (parseCDataSection(cntxt, xb) == PARSE_OK)
 		return PARSE_OK;
@@ -855,10 +855,11 @@ static int parseDirElementContent(Client cntxt, Xbackend xb) {
 static int parseDirElementConstructor(Client cntxt, Xbackend xb) {
 	int i;
 
+	@:ptrace(parseDirElementConstructor)@
+
 	skipSpace(cntxt);
 	if (currChar(cntxt) != '<')
 		return PARSE_ERR;
-	@:ptrace(parseDirElementConstructor)@
 	nextChar(cntxt);
 	skipSpace(cntxt);
 	i = idLength(cntxt);
@@ -893,7 +894,7 @@ static int parseDirElementConstructor(Client cntxt, Xbackend xb) {
 }
 
 int parseDirectConstructor(Client cntxt, Xbackend xb) {
-	@:ptrace(parseDirectConstructor)@
+	@:ptrace(parseDirConstructor)@
 	    if (parseDirElementConstructor(cntxt, xb) == PARSE_OK)
 		return PARSE_OK;
 	if (parseDirCommentConstructor(cntxt, xb) == PARSE_OK)
