@@ -148,11 +148,15 @@ str
 RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p, q, r, *old;
-	int i, j,cnt, limit, doit=0;
+	int i, j, cnt, limit, doit=0;
 	int remoteSite,collectFirst;
 	lng clk = GDKusec();
 	int *location;
 	char buf[BUFSIZ],*s;
+	ValRecord cst;
+	cst.vtype= TYPE_int;
+	cst.val.ival= 0;
+
 
 	if( mb->errors) 
 		return MAL_SUCCEED;
@@ -179,13 +183,21 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( location[getArg(p,j)]) cnt++;
 
 		/* detect remote variable binding */
-		if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef) ||
-			(getModuleId(p)== mserverRef && getFunctionId(p)==bindRef) ){
+		if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef) ){
 			location[getArg(p,0)]= getArg(p,1);
 
-			if( p->argc== 6) {
-				/* a remote sql bind is sometimes needed */
-				j= getArg(p,1);
+			if( p->argc== 6 && getArgType(mb,p,4)== TYPE_str ) {
+				/* a remote sql bind is needed */
+				/* lookup the server connection */
+				r= newInstruction(mb,ASSIGNsymbol);
+				getModuleId(r)= mserverRef;
+				getFunctionId(r)= lookupRef;
+				j= getArg(r,0)= newTmpVariable(mb, TYPE_any);
+				pushArgument(mb,r, getArg(p,4));
+				pushInstruction(mb,r);
+
+				/* turn the instruction into a local one */
+				getArg(p,4)= defConstant(mb, TYPE_int, &cst);
 				delArgument(p,1);
 				getModuleId(p)= sqlRef;
 				getFunctionId(p)= bindRef;
@@ -214,12 +226,21 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				pushInstruction(mb,p);
 			doit++;
 		} else
-		if( (getModuleId(p)== sqlRef && getFunctionId(p)== binddbatRef) ||
-			(getModuleId(p)== mserverRef && getFunctionId(p)== binddbatRef) ){
+		if(getModuleId(p)== sqlRef && getFunctionId(p)== binddbatRef) {
 			location[getArg(p,0)]= getArg(p,1);
 
 			if( p->argc== 5) {
+				/* a remote sql bind is needed */
+				/* lookup the server connection */
+				r= newInstruction(mb,ASSIGNsymbol);
+				getModuleId(r)= mserverRef;
+				getFunctionId(r)= lookupRef;
+				j= getArg(r,0)= newTmpVariable(mb, TYPE_any);
+				pushArgument(mb,r, getArg(p,3));
+				pushInstruction(mb,r);
+
 				/* a remote sql bind is sometimes needed */
+				getArg(p,3)= defConstant(mb, TYPE_int, &cst);
 				j= getArg(p,1);
 				delArgument(p,1);
 				getModuleId(p)= sqlRef;
