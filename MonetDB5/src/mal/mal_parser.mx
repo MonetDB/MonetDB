@@ -74,6 +74,7 @@ mal_export int keyphrase(Client cntxt, str kw, int length);
 mal_export int keyphrase1(Client cntxt, str kw);
 mal_export int keyphrase2(Client cntxt, str kw);
 mal_export int MALkeyword(Client cntxt, str kw, int length);
+mal_export int MALlookahead(Client cntxt, str kw, int length);
 mal_export str lastline(Client cntxt);
 mal_export long position(Client cntxt);
 
@@ -217,6 +218,16 @@ str idCopy(Client cntxt, int length){
 int 
 MALkeyword(Client cntxt, str kw, int length)
 {
+	if (MALlookahead(cntxt, kw, length)) {
+		advance(cntxt, length);
+		return 1;
+	}
+	return 0;
+}
+
+int 
+MALlookahead(Client cntxt, str kw, int length)
+{
 	int i;
 
 	/* avoid double test or use lowercase only. */
@@ -224,7 +235,6 @@ MALkeyword(Client cntxt, str kw, int length)
 		strncmp(CURRENT(cntxt), kw, length) == 0 &&
 		!idCharacter[(int) (CURRENT(cntxt)[length])] &&
 		!isdigit((int) (CURRENT(cntxt)[length])) ) {
-		advance(cntxt, length);
 		return 1;
 	}
 	 /* check for captialized versions */
@@ -233,7 +243,6 @@ MALkeyword(Client cntxt, str kw, int length)
 			return 0;
 	if (!idCharacter[(int) (CURRENT(cntxt)[length])] &&
 		!isdigit((int) (CURRENT(cntxt)[length])) ) {
-		advance(cntxt,length);
 		return 1;
 	}
 	return 0;
