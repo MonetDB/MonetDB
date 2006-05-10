@@ -1451,7 +1451,7 @@ static int parseAdditiveExpr(Client cntxt, Xbackend xb) {
 	int res = PARSE_OK;
 	@:ptrace(parseAdditiveExpr)@
 	skipSpace(cntxt);
-	if ((res = parseMultiplicativeExpr(cntxt, xb)) == PARSE_OK)
+	if ((res = parseMultiplicativeExpr(cntxt, xb)) != PARSE_OK)
 		return res;
 	do {
 		skipSpace(cntxt);
