@@ -492,7 +492,6 @@ parseSequenceType(Client cntxt, Xbackend xb){
 
 static int
 parseTypeDeclaration(Client cntxt, Xbackend xb){
-	skipSpace(cntxt);
 	if( !MALkeyword(cntxt,"as",2) )
 		return PARSE_ERR;
 	@:ptrace(parseTypeDeclaration)@
@@ -502,33 +501,31 @@ static int
 parseCompPIConstructor(Client cntxt, Xbackend xb){
 	int i;
 
-	skipSpace(cntxt);
 	if( !MALkeyword(cntxt,"processing-instruction",22))
 		return PARSE_ERR;
 	@:ptrace(parseCompPIConstructor)@
-	skipSpace(cntxt);
 	i= idLength(cntxt);
 	if( i > 0){
 		idCopy(cntxt,i);
 		skipSpace(cntxt);
 	} else{
 		if( currChar(cntxt) != '{')
-			return PARSE_ERR;
+			return xqryError(cntxt,"'{' expected\n");
 		nextChar(cntxt);
 		parseExpr(cntxt,xb);
 		skipSpace(cntxt);
 		if( currChar(cntxt) != '}')
-			return PARSE_ERR;
+			return xqryError(cntxt,"'}' expected\n");
 		nextChar(cntxt);
 	}
 
 	if( currChar(cntxt) != '{')
-		return PARSE_ERR;
+		return xqryError(cntxt,"'{' expected\n");
 	nextChar(cntxt);
 	parseExpr(cntxt,xb);
 	skipSpace(cntxt);
 	if( currChar(cntxt) != '}')
-		return PARSE_ERR;
+		return xqryError(cntxt,"'}' expected\n");
 	nextChar(cntxt);
 	return PARSE_OK;
 }
@@ -536,36 +533,34 @@ parseCompPIConstructor(Client cntxt, Xbackend xb){
 
 static int
 parseCompCommentConstructor(Client cntxt, Xbackend xb){
-	skipSpace(cntxt);
 	if( !MALkeyword(cntxt,"comment",7) )
 		return PARSE_ERR;
 	@:ptrace(parseCompCommentConstructor)@
 	skipSpace(cntxt);
 	if( currChar(cntxt) != '{')
-		return PARSE_ERR;
+		return xqryError(cntxt,"'{' expected\n");
 	nextChar(cntxt);
 	parseExpr(cntxt,xb);
 	skipSpace(cntxt);
 	if( currChar(cntxt) != '}')
-		return PARSE_ERR;
+		return xqryError(cntxt,"'}' expected\n");
 	nextChar(cntxt);
 	return PARSE_OK;
 }
 
 static int
 parseCompTextConstructor(Client cntxt, Xbackend xb){
-	skipSpace(cntxt);
 	if( !MALkeyword(cntxt,"text",4) )
 		return PARSE_ERR;
 	@:ptrace(parseCompTextConstructor)@
 	skipSpace(cntxt);
 	if( currChar(cntxt) != '{')
-		return PARSE_ERR;
+		return xqryError(cntxt,"'{' expected\n");
 	nextChar(cntxt);
 	parseExpr(cntxt,xb);
 	skipSpace(cntxt);
 	if( currChar(cntxt) != '}')
-		return PARSE_ERR;
+		return xqryError(cntxt,"'}' expected\n");
 	nextChar(cntxt);
 	return PARSE_OK;
 }
@@ -573,33 +568,31 @@ parseCompTextConstructor(Client cntxt, Xbackend xb){
 static int
 parseCompAttrConstructor(Client cntxt, Xbackend xb){
 	int i;
-	skipSpace(cntxt);
 	if( !MALkeyword(cntxt,"attribute",9))
 		return PARSE_ERR;
 	@:ptrace(parseCompAttrConstructor)@
-	skipSpace(cntxt);
 	i= idLength(cntxt);
 	if( i > 0){
 		idCopy(cntxt,i);
 		skipSpace(cntxt);
 	} else{
 		if( currChar(cntxt) != '{')
-			return PARSE_ERR;
+			return xqryError(cntxt,"'{' expected\n");
 		nextChar(cntxt);
 		parseExpr(cntxt,xb);
 		skipSpace(cntxt);
 		if( currChar(cntxt) != '}')
-			return PARSE_ERR;
+			return xqryError(cntxt,"'}' expected\n");
 		nextChar(cntxt);
 	}
 
 	if( currChar(cntxt) != '{')
-		return PARSE_ERR;
+		return xqryError(cntxt,"'{' expected\n");
 	nextChar(cntxt);
 	parseExpr(cntxt,xb);
 	skipSpace(cntxt);
 	if( currChar(cntxt) != '}')
-		return PARSE_ERR;
+		return xqryError(cntxt,"'}' expected\n");
 	nextChar(cntxt);
 	return PARSE_OK;
 }
@@ -607,51 +600,48 @@ parseCompAttrConstructor(Client cntxt, Xbackend xb){
 static int
 parseCompElemConstructor(Client cntxt, Xbackend xb){
 	int i;
-	skipSpace(cntxt);
 	if( !MALkeyword(cntxt,"element",7))
 		return PARSE_ERR;
 	@:ptrace(parseCompElemConstructor)@
-	skipSpace(cntxt);
 	i= idLength(cntxt);
 	if( i > 0){
 		idCopy(cntxt,i);
-		skipSpace(cntxt);
 	} else{
 		if( currChar(cntxt) != '{')
-			return PARSE_ERR;
+			return xqryError(cntxt,"'{' expected\n");
 		nextChar(cntxt);
 		parseExpr(cntxt,xb);
 		skipSpace(cntxt);
 		if( currChar(cntxt) != '}')
-			return PARSE_ERR;
+			return xqryError(cntxt,"'}' expected\n");
 		nextChar(cntxt);
 	}
+	skipSpace(cntxt);
 
 	if( currChar(cntxt) != '{')
-		return PARSE_ERR;
+		return xqryError(cntxt,"'{' expected\n");
 	nextChar(cntxt);
 	parseExpr(cntxt,xb);
 	skipSpace(cntxt);
 	if( currChar(cntxt) != '}')
-		return PARSE_ERR;
+		return xqryError(cntxt,"'}' expected\n");
 	nextChar(cntxt);
 	return PARSE_OK;
 }
 
 static int
 parseCompDocConstructor(Client cntxt, Xbackend xb){
-	skipSpace(cntxt);
 	if( !MALkeyword(cntxt,"document",8))
 		return PARSE_ERR;
 	@:ptrace(parseCompDocConstructor)@
 	skipSpace(cntxt);
 	if( currChar(cntxt) != '{')
-		return PARSE_ERR;
+		return xqryError(cntxt,"'{' expected\n");
 	nextChar(cntxt);
 	parseExpr(cntxt,xb);
 	skipSpace(cntxt);
 	if( currChar(cntxt) != '}')
-		return PARSE_ERR;
+		return xqryError(cntxt,"'}' expected\n");
 	nextChar(cntxt);
 	return PARSE_OK;
 }
@@ -682,17 +672,17 @@ parseDirPIConstructor(Client cntxt, Xbackend xb){
 	if( !keyphrase2(cntxt,"<?") )
 		return PARSE_ERR;
 	@:ptrace(parseDirPIConstructor)@
-	skipSpace(cntxt);
 	/* PItarget */
 	i= idLength(cntxt);
 	if(i== 0)
 		return PARSE_ERR;
+		return xqryError(cntxt,"<PITarget> expected\n");
 	idCopy(cntxt,i);
 
 	while( currChar(cntxt) != '?' && currChar(cntxt))
 		nextChar(cntxt);
 	if( !keyphrase2(cntxt,"?>") )
-		return PARSE_ERR;
+		return xqryError(cntxt,"'?>' expected\n");
 	return PARSE_OK;
 }
 
@@ -701,7 +691,6 @@ parseDirCommentConstructor(Client cntxt, Xbackend xb){
 	int i =0;
 
 	(void) xb;
-	skipSpace(cntxt);
 	if( !keyphrase(cntxt,"<!--",4) )
 		return PARSE_ERR;
 	@:ptrace(parseCommentConstructor)@
@@ -711,7 +700,7 @@ parseDirCommentConstructor(Client cntxt, Xbackend xb){
 		nextChar(cntxt);
 	} while(currChar(cntxt));
 	if( !keyphrase1(cntxt,">") )
-		return PARSE_ERR;
+		return xqryError(cntxt,"'>' expected\n");
 	return PARSE_OK;
 }
 
@@ -734,25 +723,24 @@ parseDirAttributeValue(Client cntxt, Xbackend xb){
 		if( currChar(cntxt)== '"') nextChar(cntxt);
 	} else
 	if( currChar(cntxt)== '\'') {
-	nextChar(cntxt);
-	while (currChar(cntxt) && currChar(cntxt) != '\'')
-		if (currChar(cntxt) == '\'' && i) {
-			nextChar(cntxt);
-			i = 0;
-		} else if (currChar(cntxt) == '\'') {
-			nextChar(cntxt);
-			i = 1;
-		} else {
-			nextChar(cntxt);
-			i = 0;
-		}
-	if (currChar(cntxt) == '\'')
 		nextChar(cntxt);
-}
+		while (currChar(cntxt) && currChar(cntxt) != '\'')
+			if (currChar(cntxt) == '\'' && i) {
+				nextChar(cntxt);
+				i = 0;
+			} else if (currChar(cntxt) == '\'') {
+				nextChar(cntxt);
+				i = 1;
+			} else {
+				nextChar(cntxt);
+				i = 0;
+			}
+		if (currChar(cntxt) == '\'')
+			nextChar(cntxt);
+	}
+	else return PARSE_ERR;
 
-else
-return PARSE_ERR;
-return PARSE_OK;
+	return PARSE_OK;
 }
 
 static int parseDirAttributeList(Client cntxt, Xbackend xb) {
@@ -760,7 +748,6 @@ static int parseDirAttributeList(Client cntxt, Xbackend xb) {
 
 	@:ptrace(parseDirAttributeList)@
 	(void) xb;
-	skipSpace(cntxt);
 	do {
 		i = idLength(cntxt);
 		if (i == 0)
@@ -774,11 +761,10 @@ static int parseDirAttributeList(Client cntxt, Xbackend xb) {
 
 static int parseCDataSection(Client cntxt, Xbackend xb) {
 	(void) xb;
-	skipSpace(cntxt);
 	if (!keyphrase(cntxt, "<![CDATA[", 9))
 		return PARSE_ERR;
 	@:ptrace(parseCDataSection)@
-	    while (!keyphrase(cntxt, "]]>", 3))
+	while (!keyphrase(cntxt, "]]>", 3))
 		nextChar(cntxt);
 	return PARSE_OK;
 }
@@ -787,7 +773,6 @@ static int parseCommonContent(Client cntxt, Xbackend xb) {
 	ValRecord val;
 	int i;
 
-	skipSpace(cntxt);
 	if (keyphrase2(cntxt, "{{"))
 		return PARSE_OK;
 	if (keyphrase2(cntxt, "}}"))
@@ -798,7 +783,7 @@ static int parseCommonContent(Client cntxt, Xbackend xb) {
 			return PARSE_ERR;
 		skipSpace(cntxt);
 		if (currChar(cntxt) != '}')
-			return PARSE_ERR;
+			return xqryError(cntxt,"'}' expected\n");
 		nextChar(cntxt);
 		return PARSE_OK;
 	}
