@@ -1472,7 +1472,8 @@ static int parseComparisonExpr(Client cntxt, Xbackend xb) {
 	if (parseRangeExpr(cntxt, xb) == PARSE_OK) {
 		/* ValueComp | GeneralComp | NodeComp) RangeExpr)? */
 		skipSpace(cntxt);
-		if (keyphrase2(cntxt, "!=")) {
+		if (keyphrase1(cntxt, "=")) {
+		} else if (keyphrase2(cntxt, "!=")) {
 		} else if (keyphrase2(cntxt, "<=")) {
 		} else if (keyphrase2(cntxt, ">=")) {
 		} else if (keyphrase1(cntxt, ">")) {
