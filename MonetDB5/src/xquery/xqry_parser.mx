@@ -868,11 +868,12 @@ static int parseDirElementConstructor(Client cntxt, Xbackend xb) {
 	parseDirAttributeList(cntxt, xb);
 
 	skipSpace(cntxt);
-	if (!keyphrase2(cntxt, "/>"))
+	if (keyphrase2(cntxt, "/>"))
 		return PARSE_OK;
 
 	if (currChar(cntxt) != '>')
 		return PARSE_ERR;
+	nextChar(cntxt);
 
 	parseDirElementContent(cntxt, xb);
 
@@ -907,8 +908,9 @@ static int parseConstructor(Client cntxt, Xbackend xb) {
 	return parseComputedConstructor(cntxt, xb);
 }
 
+/* todo QName is [{prefix}':']?(name) */
 static int parseNameTest(Client cntxt, Xbackend xb) {
-	int i;
+	int i = 0;
 	str nme;
 	@:ptrace(parseNameTest)@
 	(void) xb;
@@ -919,9 +921,11 @@ static int parseNameTest(Client cntxt, Xbackend xb) {
 			nme = idCopy(cntxt, i);
 		if (currChar(cntxt) == ':') {
 			nextChar(cntxt);
-			if (currChar(cntxt) == '*') {
+			if (currChar(cntxt) != '*') {
+				return PARSE_ERR;
 			}
 		}
+		return PARSE_OK;
 	}
 	if (currChar(cntxt) == '*') {
 		nextChar(cntxt);
@@ -930,13 +934,20 @@ static int parseNameTest(Client cntxt, Xbackend xb) {
 			i = idLength(cntxt);
 			if (i)
 				nme = idCopy(cntxt, i);
+			else
+				return PARSE_ERR;
 		}
+	} else {
+		return PARSE_ERR;
 	}
 	return PARSE_OK;
 }
 
+/* we need readahead here */
 static int parseFunctionCall(Client cntxt, Xbackend xb) {
+	int before = cntxt->yycur;
 	int i;
+	int argc = 0;
 
 	@:ptrace(parseFunctionCall)@
 	skipSpace(cntxt);
@@ -945,18 +956,20 @@ static int parseFunctionCall(Client cntxt, Xbackend xb) {
 		return PARSE_ERR;
 	idCopy(cntxt, i);
 	skipSpace(cntxt);
-	if (currChar(cntxt) != '(')
+	if (currChar(cntxt) != '(') {
+		cntxt->yycur = before; /* hackkk */
 		return PARSE_ERR;
+	}
 	nextChar(cntxt);
-	if (parseExprSingle(cntxt, xb) == PARSE_OK)
-		do {
-			skipSpace(cntxt);
-			if (currChar(cntxt) == ')')
-				break;
-			if (currChar(cntxt) != ',')
-				return PARSE_ERR;
-		} while (parseExprSingle(cntxt, xb) == PARSE_OK);
-	if (currChar(cntxt) != ')')
+	do {
+		skipSpace(cntxt);
+		if (currChar(cntxt) == ')')
+			break;
+		if (argc && currChar(cntxt) != ',') 
+			return PARSE_ERR;
+		argc++;
+	} while (parseExprSingle(cntxt, xb) == PARSE_OK);
+	if (currChar(cntxt) != ')') 
 		return PARSE_ERR;
 	nextChar(cntxt);
 	return PARSE_OK;
@@ -1024,6 +1037,8 @@ static int parsePrimaryExpr(Client cntxt, Xbackend xb) {
 		if (currChar(cntxt) != '}')
 			return PARSE_ERR;
 	}
+	if (parseConstructor(cntxt, xb) == PARSE_OK)
+		return PARSE_OK;
 	return parseFunctionCall(cntxt, xb);
 }
 
@@ -1176,18 +1191,19 @@ static int parseStepExpr(Client cntxt, Xbackend xb) {
 }
 
 int parseRelativePathExpr(Client cntxt, Xbackend xb) {
+	int res = PARSE_OK;
 	@:ptrace(parseRelativePathExpr)@
 	skipSpace(cntxt);
-	parseStepExpr(cntxt, xb);
-	while (currChar(cntxt) == '/') {
+	res = parseStepExpr(cntxt, xb);
+	while (res == PARSE_OK && currChar(cntxt) == '/') {
 		nextChar(cntxt);
 		if (currChar(cntxt) == '/')
 			nextChar(cntxt);
 		skipSpace(cntxt);
-		parseStepExpr(cntxt, xb);
+		res = parseStepExpr(cntxt, xb);
 		skipSpace(cntxt);
 	}
-	return PARSE_OK;
+	return res;
 }
 
 static int parsePathExpr(Client cntxt, Xbackend xb) {
@@ -1198,8 +1214,7 @@ static int parsePathExpr(Client cntxt, Xbackend xb) {
 		if (currChar(cntxt) == '/')
 			nextChar(cntxt);
 	}
-	parseRelativePathExpr(cntxt, xb);
-	return PARSE_OK;
+	return parseRelativePathExpr(cntxt, xb);
 }
 
 @-
@@ -1393,25 +1408,27 @@ static int parseInstanceOfExpr(Client cntxt, Xbackend xb) {
 }
 
 static int parseIntersectExceptExpr(Client cntxt, Xbackend xb) {
+	int res = PARSE_OK;
 	@:ptrace(parseIntersectExceptExpr)@
 	skipSpace(cntxt);
-	if (parseInstanceOfExpr(cntxt, xb) == PARSE_OK)
-		return PARSE_OK;
+	if ((res = parseInstanceOfExpr(cntxt, xb)) == PARSE_OK)
+		return res;
 	do {
 		skipSpace(cntxt);
 		if (MALkeyword(cntxt, "intersect", 9)) {
 		} else if (MALkeyword(cntxt, "except", 6)) {
-		} else
+		} else 
 			break;
-	} while (parseInstanceOfExpr(cntxt, xb) == PARSE_OK);
-	return PARSE_OK;
+	} while ((res = parseInstanceOfExpr(cntxt, xb)) == PARSE_OK);
+	return res;
 }
 
 static int parseUnionExpr(Client cntxt, Xbackend xb) {
+	int res = PARSE_OK;
 	@:ptrace(parseUnion)@
 	skipSpace(cntxt);
-	if (parseIntersectExceptExpr(cntxt, xb) == PARSE_OK)
-		return PARSE_OK;
+	if ((res = parseIntersectExceptExpr(cntxt, xb)) == PARSE_OK)
+		return res;
 	do {
 		skipSpace(cntxt);
 		if (currChar(cntxt) == '|')
@@ -1419,15 +1436,16 @@ static int parseUnionExpr(Client cntxt, Xbackend xb) {
 		else if (MALkeyword(cntxt, "union", 5)) {
 		} else
 			break;
-	} while (parseIntersectExceptExpr(cntxt, xb) == PARSE_OK);
-	return PARSE_OK;
+	} while ((res = parseIntersectExceptExpr(cntxt, xb)) == PARSE_OK);
+	return res;
 }
 
 static int parseMultiplicativeExpr(Client cntxt, Xbackend xb) {
+	int res = PARSE_OK;
 	@:ptrace(parseMultiplicativeExpr)@
 	skipSpace(cntxt);
-	if (parseUnionExpr(cntxt, xb) == PARSE_OK)
-		return PARSE_OK;
+	if ((res = parseUnionExpr(cntxt, xb)) == PARSE_OK)
+		return res;
 	do {
 		skipSpace(cntxt);
 		if (currChar(cntxt) == '*')
@@ -1437,23 +1455,24 @@ static int parseMultiplicativeExpr(Client cntxt, Xbackend xb) {
 		} else if (MALkeyword(cntxt, "mod", 3)) {
 		} else
 			return PARSE_ERR;
-	} while (parseUnionExpr(cntxt, xb) == PARSE_OK);
-	return PARSE_OK;
+	} while ((res = parseUnionExpr(cntxt, xb)) == PARSE_OK);
+	return res;
 }
 
 static int parseAdditiveExpr(Client cntxt, Xbackend xb) {
+	int res = PARSE_OK;
 	@:ptrace(parseAdditiveExpr)@
 	skipSpace(cntxt);
-	if (parseMultiplicativeExpr(cntxt, xb) == PARSE_OK)
-		return PARSE_OK;
+	if ((res = parseMultiplicativeExpr(cntxt, xb)) == PARSE_OK)
+		return res;
 	do {
 		skipSpace(cntxt);
 		if (currChar(cntxt) == '+' || currChar(cntxt) == '-')
 			nextChar(cntxt);
 		else
 			break;
-	} while (parseMultiplicativeExpr(cntxt, xb) == PARSE_OK);
-	return PARSE_OK;
+	} while ((res = parseMultiplicativeExpr(cntxt, xb)) == PARSE_OK);
+	return res;
 }
 static int parseRangeExpr(Client cntxt, Xbackend xb) {
 	@:ptrace(parseRangeExpr)@
@@ -1463,13 +1482,15 @@ static int parseRangeExpr(Client cntxt, Xbackend xb) {
 	skipSpace(cntxt);
 	if (MALkeyword(cntxt, "to", 2))
 		return parseRangeExpr(cntxt, xb);
-	return PARSE_OK;
+	return PARSE_ERR;
 }
 
 static int parseComparisonExpr(Client cntxt, Xbackend xb) {
+	int before = cntxt->yycur;
 	@:ptrace(parseComparisonExpr)@
 	skipSpace(cntxt);
 	if (parseRangeExpr(cntxt, xb) == PARSE_OK) {
+		assert(cntxt->yycur != before);
 		/* ValueComp | GeneralComp | NodeComp) RangeExpr)? */
 		skipSpace(cntxt);
 		if (keyphrase1(cntxt, "=")) {
@@ -1523,13 +1544,13 @@ static int parseOrExpr(Client cntxt, Xbackend xb) {
 
 static int parseQuantifiedExpr(Client cntxt, Xbackend xb) {
 	@:ptrace(parseQuantifiedExpr)@
+	if (MALkeyword(cntxt, "some", 4) != PARSE_OK &&
+	    MALkeyword(cntxt, "every", 5) != PARSE_OK)
+		return PARSE_ERR;
 	do {
 		if (currChar(cntxt) == ',')
 			nextChar(cntxt);
 		skipSpace(cntxt);
-		if (MALkeyword(cntxt, "some", 4) != PARSE_OK &&
-		    MALkeyword(cntxt, "every", 5) != PARSE_OK)
-			return PARSE_ERR;
 		if (parseVarName(cntxt, xb) == PARSE_ERR)
 			return PARSE_ERR;
 		skipSpace(cntxt);
