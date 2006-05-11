@@ -184,7 +184,6 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		/* detect remote variable binding */
 		if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef) ){
-			location[getArg(p,0)]= getArg(p,1);
 
 			if( p->argc== 6 && getArgType(mb,p,4)== TYPE_str ) {
 				/* a remote sql bind is needed */
@@ -193,6 +192,7 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				getModuleId(r)= mserverRef;
 				getFunctionId(r)= lookupRef;
 				j= getArg(r,0)= newTmpVariable(mb, TYPE_any);
+				location[getArg(p,0)]= j;
 				pushArgument(mb,r, getArg(p,4));
 				pushInstruction(mb,r);
 
@@ -205,7 +205,7 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				r= newInstruction(mb,ASSIGNsymbol);
 				getModuleId(r)= mserverRef;
 				getFunctionId(r)= rpcRef;
-				getArg(r,0)= newTmpVariable(mb, TYPE_void);
+				getArg(r,0)= newTmpVariable(mb, TYPE_any);
 				pushArgument(mb,r,j);
 
 				for(j=p->retc; j<p->argc; j++)
@@ -222,20 +222,23 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				GDKfree(s);
 				pushInstruction(mb,r);
 				freeInstruction(p);
-			} else
+			} else{
+				location[getArg(p,0)]= getArg(p,1);
 				pushInstruction(mb,p);
+			}
 			doit++;
 		} else
 		if(getModuleId(p)== sqlRef && getFunctionId(p)== binddbatRef) {
-			location[getArg(p,0)]= getArg(p,1);
 
 			if( p->argc== 5) {
+				location[getArg(p,0)]= getArg(p,0);
 				/* a remote sql bind is needed */
 				/* lookup the server connection */
 				r= newInstruction(mb,ASSIGNsymbol);
 				getModuleId(r)= mserverRef;
 				getFunctionId(r)= lookupRef;
 				j= getArg(r,0)= newTmpVariable(mb, TYPE_any);
+				location[getArg(p,0)]= j;
 				pushArgument(mb,r, getArg(p,3));
 				pushInstruction(mb,r);
 
@@ -266,8 +269,10 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				GDKfree(s);
 				pushInstruction(mb,r);
 				freeInstruction(p);
-			} else
+			} else {
+				location[getArg(p,0)]= getArg(p,1);
 				pushInstruction(mb,p);
+			}
 			doit++;
 #ifdef DEBUG_MAL_REMOTE
 			printf("found remote variable %s ad %d\n", 
