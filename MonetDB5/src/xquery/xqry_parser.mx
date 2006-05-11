@@ -2200,45 +2200,23 @@ static int parseXqueryModule(Client cntxt, Xbackend xb) {
 }
 
 int parseXQuery(Client cntxt) {
-	char c;
 	Xbackend xb = BE(cntxt);
 	int ret = PARSE_OK;
 
-	while (ret != PARSE_ERR && (c = *CURRENT(cntxt))) {
-		if( MALkeyword(cntxt,"explain",7))
-			xb->mode= xqry_explain;
-		else
-		if( MALkeyword(cntxt,"debug",5))
-			xb->mode= xqry_debug;
-		else
-		if( MALkeyword(cntxt,"trace",5))
-			xb->mode= xqry_trace;
-		else
-		switch (c) {
-		case '#':
-			while (currChar(cntxt) && currChar(cntxt) != '\n')
-				nextChar(cntxt);
-			continue;
-		case '\n':
-		case '\r':
-		case '\f':
-		case ';':
-		case '\t':
-		case ' ':
-			nextChar(cntxt);
-			break;
-		case 0:
-			return PARSE_ERR;
-		default:
-			ret = parseXqueryModule(cntxt, xb);
-#ifdef _XQRYDEBUG
-			stream_printf(cntxt->fdout, "PARSE %s",
-				      ret == PARSE_OK ? "OK" : "ERR");
-			stream_flush(cntxt->fdout);
+	if( MALkeyword(cntxt,"explain",7))
+		xb->mode= xqry_explain;
+	else
+	if( MALkeyword(cntxt,"debug",5))
+		xb->mode= xqry_debug;
+	else
+	if( MALkeyword(cntxt,"trace",5))
+		xb->mode= xqry_trace;
+	ret = parseXqueryModule(cntxt, xb);
+#ifdef _XQRY_DEBUG
+		stream_printf(cntxt->fdout, "PARSE %s",
+				  ret == PARSE_OK ? "OK" : "ERR");
+		stream_flush(cntxt->fdout);
 #endif
-			return ret;
-		}
-	}
 	return ret;
 }
 
