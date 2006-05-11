@@ -135,6 +135,10 @@ address CRKuselectBounds_@1
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
+command joinselect(left:bat[:any_1,:oid], right:bat[:any_2,:@1],l:any_3,h:any_4,li:any_5,hi:any_6):bat[:void,:oid]
+address CRKjoinSelectBounds_@1
+comment "Join left and right on oids. From right only bun that satisfy the 
+	restriction qualify. Result is a new bat.";
 @-
 @mal
 @:crackAlgebra(chr)@
@@ -2016,7 +2020,7 @@ printf("vl: %lld, vh:%lld, cl:%lld, ch1:%lld, cl2:%lld, ch:%lld \n",vl,vh,cl,ch1
 */	
 	@:CreateResult()@
 	return MAL_SUCCEED;
-}       
+}      
 @
 
 @= SelectFunctions
@@ -2075,7 +2079,91 @@ CRKuselect_@1(int *vid, int *bid, @1 *low, @1 *hgh)
 {                               
 	bit inclusive = TRUE;
 	return CRKuselectBounds_@1(vid, bid, low, hgh, &inclusive, &inclusive);
-}                               
+}
+
+@= JoinSelect
+/* joins a left=[void, oid] bat with a right=[void, any_type] bat on oids. 
+From the right bat only BUNs that pass the range restriction qualify. 
+The result is [void,oid] bat */
+str
+JoinSelectRange_@2_@3_@1(int *res, int *left, int *right, @1 *low, @1 *hgh)
+{
+	BAT *l, *r, *d;
+	BUN lt, rt, rbase, dt;
+	BUN llast;
+	int xx, zz, dd;
+
+	if ((l = BATdescriptor(*left)) == NULL)
+        	return throwMessage("crackers.crackJoinSelect", "Cannot access descriptor");
+	if ((r = BATdescriptor(*right)) == NULL)
+        	return throwMessage("crackers.crackJoinSelect", "Cannot access descriptor");
+
+	lt = BUNtloc(l, BUNfirst(l));
+	llast = BUNtloc(l, BUNlast(l)-1);
+	xx = BUNsize(l);
+
+	rbase = BUNtloc(r, BUNfirst(r));
+	zz = BUNsize(r);
+
+	d = BATnew(TYPE_void, TYPE_oid, BATcount(l));
+	dt = BUNtloc(d, BUNfirst(d));
+	dd =BUNsize(d);
+
+	/* For each BUN of the left bat check if the corresponding BUN in the right bat satisfies the restriction.
+	   If yes the respective oid is added to the result */
+	while(lt <= llast){
+		rt = rbase + (*(oid*)lt)*zz;
+		if (*(@1*)rt @4 *low && *(@1*)rt @5 *hgh){
+			*(oid*)dt = *(oid*)lt; 
+			dt += dd;	
+		}		
+		lt += xx;
+	}
+
+	d->batBuns->free = dt - d->batBuns->base;
+        BATsetcount(d, d->batBuns->free/dd);
+
+	*res=d->batCacheid;
+
+	BBPkeepref(d->batCacheid);
+	BBPunfix(l->batCacheid);
+	BBPunfix(r->batCacheid);
+	
+	return MAL_SUCCEED;
+}         
+@
+
+@= JoinSelectOperations
+@:JoinSelect(@1,LO,RE,>,<=)@
+@:JoinSelect(@1,LE,RE,>=,<=)@
+@:JoinSelect(@1,LO,RO,>,<)@
+@:JoinSelect(@1,LE,RO,>=,<)@
+@
+
+@= JoinSelectFunctions
+str
+CRKjoinSelectBounds_@1(int *res, int *left, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh)
+{
+        if (*(@1*)low == int_nil);
+        else if (*(@1*)hgh == int_nil);
+        else{
+		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
+                	JoinSelectRange_LE_RE_@1(res, left, right, low, hgh);
+		else 
+		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==FALSE))
+                	JoinSelectRange_LE_RO_@1(res, left, right, low, hgh);
+		else 
+		if ((*inclusiveLow==FALSE) && (*inclusiveHgh==FALSE))
+                	JoinSelectRange_LO_RO_@1(res, left, right, low, hgh);
+		else 
+		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
+                	JoinSelectRange_LE_RE_@1(res, left, right, low, hgh);
+	}
+        return MAL_SUCCEED;
+}
+
+@
+         
 @c
 @:crackOperations(chr)@
 @:crackOperations(sht)@
@@ -2083,10 +2171,24 @@ CRKuselect_@1(int *vid, int *bid, @1 *low, @1 *hgh)
 @:crackOperations(lng)@
 @:crackOperations(flt)@
 @:crackOperations(dbl)@
+
 @:SelectFunctions(chr)@
 @:SelectFunctions(sht)@
 @:SelectFunctions(int)@
 @:SelectFunctions(lng)@
 @:SelectFunctions(flt)@
 @:SelectFunctions(dbl)@
-                        
+
+@:JoinSelectOperations(chr)@                        
+@:JoinSelectOperations(sht)@                        
+@:JoinSelectOperations(int)@                        
+@:JoinSelectOperations(lng)@                        
+@:JoinSelectOperations(flt)@                        
+@:JoinSelectOperations(dbl)@                        
+
+@:JoinSelectFunctions(chr)@
+@:JoinSelectFunctions(sht)@
+@:JoinSelectFunctions(int)@
+@:JoinSelectFunctions(lng)@
+@:JoinSelectFunctions(flt)@
+@:JoinSelectFunctions(dbl)@
