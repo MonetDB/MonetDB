@@ -1,0 +1,67 @@
+
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' All Rights Reserved.
+
+@f xqry_gencode
+@t XQuery code generation
+@a N. Nes, M.L. Kersten
+@+ XQUERY scenario
+This module contains the MAL code generation support routines
+for XQuery plans.
+
+@h
+#ifndef _XQUERY_GENCODE_H_
+#define _XQUERY_GENCODE_H_
+#include "xqry.h"
+
+xqry_export Xbackend newXbackend(MalBlkPtr mb);
+xqry_export int XfindId(Xbackend be, str nme);
+
+#endif /* _XQUERY_GENCODE_H_ */
+
+@+ Symbol table
+The XQuery name space is a collection of nested scopes.
+This means we have to keep track on the identifiers
+introduced in a block and issue a bind operation before using them.
+
+@c
+#include "xqry_gencode.h"
+#include "xqry_parser.h"
+
+int
+XfindId(Xbackend be, str nme)
+{
+    int i;
+    for(i=0; i< be->vtop; i++)
+        if (strcmp(be->vars[i].nme, nme) == 0)
+            return be->vars[i].tmpid;
+    return 0;
+
+}
+
+@+
+The backend structure contains the state description
+for the code generator.
+@c
+Xbackend
+newXbackend(MalBlkPtr mb){
+    Xbackend xb;
+    xb = (Xbackend) GDKmalloc( sizeof(XbackendRec));
+    memset((char*) xb, 0, sizeof(XbackendRec));
+    xb->mb= mb;
+    return xb;
+}
+

@@ -57,32 +57,15 @@ on the document tree.
 #define _XQRY_PARSER_H
 
 #include "xqry.h"
+#include "xqry_gencode.h"
+
 #include "mal_builder.h"
 #include "mal_parser.h"
 
 #undef currChar
-#define MAXXVARS 64
-#define MAXSCOPES 32
 
 #define PARSE_OK 0
 #define PARSE_ERR -1
-
-typedef struct IDS {
-	str nme;
-	int tmpid;	/* MAL equivalent */
-	str path;	/* dataguide entry */
-} Xvariable;
-
-typedef struct {
-	Xvariable vars[MAXXVARS];
-	short vtop;
-	int scopes[MAXSCOPES];	/* keep track of the depth */
-	int stop;
-	int mode;
-	MalBlkPtr mb;	/* compiled program */
-} *Xbackend, XbackendRec;
-
-xqry_export Xbackend newXbackend(MalBlkPtr mb);
 
 xqry_export str XQRYcompile(str qry);
 xqry_export str XQRYexec(int ret, str qry);
@@ -141,31 +124,6 @@ a single client thread.
 		printFunction(c->fdout,c->curprg->def, c->listing);
 	resetInstructions(c->curprg->def, oldstate.stop);
 	resetVariables(c->curprg->def,@1, oldstate.vtop);
-
-@+ Symbol table
-The XQuery name space is a collection of nested scopes.
-This means we have to keep track on the identifiers
-introduced in a block and issue a bind operation before using them.
-@c
-static int
-XfindId(Xbackend be, str nme)
-{
-	int i;
-	for(i=0; i< be->vtop; i++)
-		if (strcmp(be->vars[i].nme, nme) == 0)
-			return be->vars[i].tmpid;
-	return 0;
-
-}
-
-Xbackend
-newXbackend(MalBlkPtr mb){
-	Xbackend xb;
-	xb = (Xbackend) GDKmalloc( sizeof(XbackendRec));
-	memset((char*) xb, 0, sizeof(XbackendRec));
-	xb->mb= mb;
-	return xb;
-}
 
 @+ The parser
 The Xquery parser uses the recursive descent method,
@@ -956,8 +914,9 @@ static int parseFunctionCall(Client cntxt, Xbackend xb) {
 		if (currChar(cntxt) == ')')
 			break;
 		if (argc && currChar(cntxt) != ',') 
-			return PARSE_ERR;
+			return xqryError(cntxt,"',' expected\n");
 		argc++;
+		skipSpace(cntxt);
 	} while (parseExprSingle(cntxt, xb) == PARSE_OK);
 	if (currChar(cntxt) != ')') 
 		return xqryError(cntxt,"')' expected\n");
@@ -2261,10 +2220,6 @@ static int parseModule(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-#define XQRY_EXPLAIN 1
-#define XQRY_DEBUG 2
-#define XQRY_TRACE 3
-
 int parseXQuery(Client cntxt) {
 	char c;
 	Xbackend xb = BE(cntxt);
@@ -2272,13 +2227,13 @@ int parseXQuery(Client cntxt) {
 
 	while (ret != PARSE_ERR && (c = *CURRENT(cntxt))) {
 		if( MALkeyword(cntxt,"explain",7))
-			xb->mode= XQRY_EXPLAIN;
+			xb->mode= xqry_explain;
 		else
 		if( MALkeyword(cntxt,"debug",5))
-			xb->mode= XQRY_DEBUG;
+			xb->mode= xqry_debug;
 		else
 		if( MALkeyword(cntxt,"trace",5))
-			xb->mode= XQRY_TRACE;
+			xb->mode= xqry_trace;
 		else
 		switch (c) {
 		case '#':
@@ -2295,7 +2250,7 @@ int parseXQuery(Client cntxt) {
 			break;
 		case 0:
 			return cntxt->curprg->def->errors;
-		case 'f':
+		case 'f':	/* start with a subset of the language */
 		case 'l':
 			ret = parseFLWORExpr(cntxt, xb);
 #ifdef _XQRYDEBUG
@@ -2303,10 +2258,9 @@ int parseXQuery(Client cntxt) {
 				      ret == PARSE_OK ? "OK" : "ERR");
 			stream_flush(cntxt->fdout);
 #endif
+			return ret;
 		}
 	}
-	chkProgram(cntxt->nspace, cntxt->curprg->def);
-	/*return cntxt->curprg->def->errors; */
 	return ret;
 }
 

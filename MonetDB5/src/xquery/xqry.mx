@@ -15,11 +15,12 @@
 @' All Rights Reserved.
 
 @f xqry
-@t XQUERY implemenation
-@a N J Nes 
+@t XQuery implemenation
+@a N J Nes , M L Kersten
 @v 0
 @* 
-
+This module contains the MAL wrappers for interaction
+with the XQuery parser and runtime system.
 @mal
 module xqry;
 
@@ -34,6 +35,81 @@ command epilogue()
 address XQUERYepilogue;
 
 xqry.prelude();
+
+@-
+The runtime library is based on code initially
+developed by A. Schmidt. It implements a 'dataguide'
+approach to represent the documents.
+
+This code should be activated later.
+
+command schredder(file:str):void
+address QXRYload
+comment "Load the XML file into MonetDB";
+
+command schredder(file:str, ordered:bit):void
+address QXRYload2
+comment "Load the xml file into Monet using order";
+
+command child(father:str, child:str):str
+address QXRYchild
+comment "Produces father/child (both arguments
+should be normalised)";
+
+command attribute(path:str, att:str):str
+address QXRYattribute
+comment "Produces path[attribute]";
+
+command forward(father:str, child:str):str
+address QXRYforward
+comment "Produces father//child";
+
+command forward_attribute (father:str, child:str, att:str) :str
+address QXRYforward_child
+comment "Produces father//child[att]";
+
+command prefix(path:str):str
+address QXRYpathprefix
+comment "Chops off the last element of a path"  ;
+
+command common_prefix (path1:str, path2:str) :str
+address QXRYcommonprefix
+comment "Return the longest common path prefix of path1 and path2";
+
+command length(path:str):int
+address QXRYpathlength
+comment "Return the number of elements in a path";
+
+command is_forward(path:str):bit
+address QXRYis_forward
+comment "Returns true is the path contains a forward reference";
+
+command elements(path:str):bat[:str,:str]
+address QXRYelements
+comment "Returns a bat containing the elements of a path";
+
+command has_attribute(path:str):bit
+address QXRYhas_attribute
+comment "Returns true if path ends in an attribute";
+
+command matches_regexp(s:str, r:str):bit
+address QXRYmatches_regexp
+comment "Returns true if the string s matches the pcre r";
+
+command normalise(path:str):str
+address QXRYnormalise
+comment "Normalises the path expressions path, i.e.
+    adds a trailing slash if necessary";
+
+command exml(file:str):void
+address QXRYexml
+comment "Stores the contents of the XML document in
+file in extent format";
+
+command rxml(file:str) :void
+address QXRYrxml
+comment "Stores the contents of the XML document in
+file in reconstruction format";
 
 @h
 #ifndef _XQUERY_H
@@ -52,5 +128,34 @@ xqry.prelude();
 #define xqry_export extern
 #endif
 
+typedef enum modes_xqry {
+    xqry_normal = 0,
+    xqry_prepare = 1,
+    xqry_execute = 2,
+    xqry_explain = 3,
+    xqry_profile = 4,
+    xqry_debug = 5,
+    xqry_trace = 6,
+    xqry_inplace = 7
+} modes_xqry;
+
+#define MAXXVARS 64
+#define MAXSCOPES 32
+
+
+typedef struct IDS {
+    str nme;
+    int tmpid;  /* MAL equivalent */
+    str path;   /* dataguide entry */
+} Xvariable;
+
+typedef struct {
+    Xvariable vars[MAXXVARS];
+    short vtop;
+    int scopes[MAXSCOPES];  /* keep track of the depth */
+    int stop;
+    int mode;
+    MalBlkPtr mb;   /* compiled program */
+} *Xbackend, XbackendRec;
 
 #endif /* _XQUERY_H */

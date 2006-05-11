@@ -25,7 +25,7 @@ The XQUERY scenario implementation is a derivative of the MAL session scenario.
 #define _XQUERY_SCENARIO_H_
 #include "xqry.h"
 
-/* #define _XQUERY_SCENARIO_DEBUG */
+#define _XQUERY_SCENARIO_DEBUG 
 /* #define _XQUERY_READER_DEBUG */
 /* #define _XQUERY_PARSER_DEBUG */
 
@@ -175,15 +175,34 @@ XQUERYreader(Client c)
 str
 XQUERYparser(Client c)
 {
-	if (parseXQuery(c) != PARSE_OK){
-		return NULL; /* todo error */
-	}
+	Xbackend xb;
+	int err;
+#ifdef _XQRY_SCENARIO
+	stream_printf(c->fdout,"#start the xquery parser\n");
+#endif
+
+	xb= (Xbackend) c->state[PARSER];
+	if(xb == NULL || xb->mb== NULL) 
+		return throwMessage("xquery.parser","No context available\n");
+
+	err=parseXQuery(c);
+
+	if(err) 
+		return throwMessage("xquery_parser","Syntax errors\n");
+
+	chkProgram(c->nspace, xb->mb);
+	if( xb->mb->errors)
+		return throwMessage("xquery_parser","Type errors\n");
+
 	return MAL_SUCCEED;
 }
 
 str
 XQUERYoptimizer(Client c)
 {	
+#ifdef _XQRY_SCENARIO
+	stream_printf(c->fdout,"#start the xquery optimizer\n");
+#endif
 	(void)c;
 	return MAL_SUCCEED;
 }
@@ -191,6 +210,15 @@ XQUERYoptimizer(Client c)
 str
 XQUERYengine(Client c)
 {
-	(void)c;
+	Xbackend xb;
+#ifdef _XQRY_SCENARIO
+	stream_printf(c->fdout,"#start the xquery engine\n");
+#endif
+	xb= (Xbackend) c->state[PARSER];
+	if(xb == NULL || xb->mb== NULL|| xb->mb->errors)
+		return MAL_SUCCEED;
+
+	if( xb->mode == xqry_explain)
+		printFunction(c->fdout, xb->mb,0);
 	return MAL_SUCCEED;
 }
