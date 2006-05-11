@@ -74,6 +74,7 @@ XQUERYprelude()
 	s->optimizer = "XQUERYoptimizer";
 	/* s->tactics = .. */
 	s->engine = "XQUERYengine";
+	XQRYinit();
 	return MAL_SUCCEED;
 }
 str
