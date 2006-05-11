@@ -2141,8 +2141,9 @@ static int parseModuleDecl(Client cntxt, Xbackend xb) {
 static int parseLibraryModule(Client cntxt, Xbackend xb) {
 	@:ptrace(parseLibraryModule)@
 	skipSpace(cntxt);
-	if (parseModuleDecl(cntxt, xb) != PARSE_OK &&
-	    parseProlog(cntxt, xb) != PARSE_OK)
+	if (parseModuleDecl(cntxt, xb) != PARSE_OK) 
+		return PARSE_ERR;
+	if (parseProlog(cntxt, xb) != PARSE_OK)
 		return PARSE_ERR;
 	return PARSE_OK;
 }
