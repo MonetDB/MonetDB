@@ -155,7 +155,6 @@ typedef struct {
     int scopes[MAXSCOPES];  /* keep track of the depth */
     int stop;
     int mode;
-    MalBlkPtr mb;   /* compiled program */
 } *Xbackend, XbackendRec;
 
 #endif /* _XQUERY_H */

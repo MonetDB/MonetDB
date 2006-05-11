@@ -1974,11 +1974,9 @@ static int parseEmptyOrderDecl(Client cntxt, Xbackend xb) {
 static int parseOrderingModeDecl(Client cntxt, Xbackend xb) {
 	@:ptrace(parseOrderingModeDecl)@
 	(void) xb;
-	skipSpace(cntxt);
 	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR; */
 	if (!MALkeyword(cntxt, "ordening", 8))
 		return PARSE_ERR;
-	skipSpace(cntxt);
 	if (MALkeyword(cntxt, "ordered", 7) != PARSE_OK &&
 	    MALkeyword(cntxt, "unordered", 9) != PARSE_OK)
 		return xqryError(cntxt,"'orderedd' or 'unordered' expected\n");
@@ -1989,7 +1987,6 @@ static int parseOptionDecl(Client cntxt, Xbackend xb) {
 	int i;
 	@:ptrace(parseOptionDecl)@
 	(void) xb;
-	skipSpace(cntxt);
 	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR; */
 	if (!MALkeyword(cntxt, "option", 6))
 		return PARSE_ERR;
@@ -2012,7 +2009,6 @@ static int parseDefaultNamespaceDecl(Client cntxt, Xbackend xb) {
 	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR; */
 	if (!MALkeyword(cntxt, "default", 7))
 		return PARSE_ERR;
-	skipSpace(cntxt);
 	if (MALkeyword(cntxt, "element", 7) != PARSE_OK &&
 	    MALkeyword(cntxt, "function", 8) != PARSE_OK)
 		return xqryError(cntxt,"'element' or 'function' expected\n");
@@ -2051,11 +2047,9 @@ static int parseNamespaceDecl(Client cntxt, Xbackend xb) {
 static int parseBoundarySpaceDecl(Client cntxt, Xbackend xb) {
 	@:ptrace(parseBoundarySpaceDecl)@
 	(void) xb;
-	skipSpace(cntxt);
 	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR; */
 	if (!MALkeyword(cntxt, "boundary-space", 14))
 		return PARSE_ERR;
-	skipSpace(cntxt);
 	if (MALkeyword(cntxt, "preserve", 8) != PARSE_OK &&
 	    MALkeyword(cntxt, "split", 5) != PARSE_OK)
 		return xqryError(cntxt,"'preserve' or 'split' expected\n");
@@ -2088,13 +2082,12 @@ static int parseSetter(Client cntxt, Xbackend xb) {
 
 static int parseProlog(Client cntxt, Xbackend xb) {
 	@:ptrace(parseProlog)@
-	skipSpace(cntxt);
 	do {
 		if (MALkeyword(cntxt, "declare", 7)) {
 			skipSpace(cntxt);
-			if (parseDefaultNamespaceDecl(cntxt, xb) !=
-			    PARSE_OK && parseSetter(cntxt, xb) != PARSE_OK
-			    && parseNamespaceDecl(cntxt, xb) != PARSE_OK)
+			if (parseDefaultNamespaceDecl(cntxt, xb) != PARSE_OK && 
+				parseSetter(cntxt, xb) != PARSE_OK &&
+			    parseNamespaceDecl(cntxt, xb) != PARSE_OK)
 				break;
 		} else if (parseImport(cntxt, xb) == PARSE_ERR)
 			break;
@@ -2159,6 +2152,7 @@ static int parseMainModule(Client cntxt, Xbackend xb) {
 	skipSpace(cntxt);
 	parseProlog(cntxt, xb);
 	skipSpace(cntxt);
+	/* QueryBody */
 	if (parseExpr(cntxt, xb) == PARSE_ERR)
 		return PARSE_ERR;
 	return PARSE_OK;
@@ -2194,7 +2188,7 @@ static int parseVersionDecl(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseModule(Client cntxt, Xbackend xb) {
+static int parseXqueryModule(Client cntxt, Xbackend xb) {
 	@:ptrace(parseModule)@
 	skipSpace(cntxt);
 	parseVersionDecl(cntxt, xb);
@@ -2233,10 +2227,9 @@ int parseXQuery(Client cntxt) {
 			nextChar(cntxt);
 			break;
 		case 0:
-			return cntxt->curprg->def->errors;
-		case 'f':	/* start with a subset of the language */
-		case 'l':
-			ret = parseFLWORExpr(cntxt, xb);
+			return PARSE_ERR;
+		default:
+			ret = parseXqueryModule(cntxt, xb);
 #ifdef _XQRYDEBUG
 			stream_printf(cntxt->fdout, "PARSE %s",
 				      ret == PARSE_OK ? "OK" : "ERR");

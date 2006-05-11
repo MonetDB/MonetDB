@@ -27,7 +27,7 @@ for XQuery plans.
 #define _XQUERY_GENCODE_H_
 #include "xqry.h"
 
-xqry_export Xbackend newXbackend(MalBlkPtr mb);
+xqry_export Xbackend newXbackend();
 xqry_export int XfindId(Xbackend be, str nme);
 
 #endif /* _XQUERY_GENCODE_H_ */
@@ -57,11 +57,10 @@ The backend structure contains the state description
 for the code generator.
 @c
 Xbackend
-newXbackend(MalBlkPtr mb){
+newXbackend(){
     Xbackend xb;
     xb = (Xbackend) GDKmalloc( sizeof(XbackendRec));
     memset((char*) xb, 0, sizeof(XbackendRec));
-    xb->mb= mb;
     return xb;
 }
 
