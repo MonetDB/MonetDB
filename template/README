@@ -15,7 +15,7 @@ See http://monetdb.cwi.nl/ for details.
 Further, make sure that you also have the "buildtools" installed, and
 "autogen.py", "Mx" and "mel" are reachable via your $PATH.
 You can get the "buildtools" via
-	cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb checkout -P -rMonetDB_4-10 buildtools
+	cvs -d:pserver:anonymous@monetdb.cvs.sourceforge.net:/cvsroot/monetdb checkout -P -rMonetDB_4-10 buildtools
 See the buildtools' README file for more details.
 
 
