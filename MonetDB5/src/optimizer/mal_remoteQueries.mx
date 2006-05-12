@@ -222,10 +222,8 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				GDKfree(s);
 				pushInstruction(mb,r);
 				freeInstruction(p);
-			} else{
-				location[getArg(p,0)]= getArg(p,1);
+			} else
 				pushInstruction(mb,p);
-			}
 			doit++;
 		} else
 		if(getModuleId(p)== sqlRef && getFunctionId(p)== binddbatRef) {
