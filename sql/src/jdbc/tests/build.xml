@@ -93,6 +93,7 @@ All Rights Reserved.
     <antcall target="Test_Sbatching" />
     <antcall target="Test_PStimedate" />
     <antcall target="Test_PStimezone" />
+    <antcall target="Test_PStypes" />
     <antcall target="Test_Rbooleans" />
     <antcall target="Test_Rpositioning" />
     <antcall target="Test_Rtimedate" />
@@ -158,6 +159,12 @@ All Rights Reserved.
   <target name="Test_PStimezone">
     <antcall target="test_class">
       <param name="test.class" value="Test_PStimezone" />
+    </antcall>
+  </target>
+
+  <target name="Test_PStypes">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_PStypes" />
     </antcall>
   </target>
 
