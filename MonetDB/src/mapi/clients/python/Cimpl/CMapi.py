@@ -236,6 +236,21 @@ class Mapi:
             raise IOError(self.error_str())
         return ret
 
+class Embedded(Mapi):
+    def __init__(self, dbfarm = None, dbname = "demo", lang = "sql"):
+	try:
+		import monetdb
+		if lang == "sql":
+        		self._Mapi__mid = monetdb.monetdb_sql(dbfarm, dbname)
+	except:
+            e, value
+	    print(e)
+
+        if not self._Mapi__mid:
+            raise IOError("Creating connection structure failed")
+        if self.error():
+            raise IOError(self.error_str())
+	
 class MapiQuery:
     def __init__(self, hdl, mid):
         self.__hdl = hdl
@@ -448,3 +463,4 @@ class MapiQuery:
         if self.__mid.error():
             raise IOError(self.__mid.error_str())
         return ret
+
