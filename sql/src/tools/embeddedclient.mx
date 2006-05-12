@@ -49,6 +49,7 @@ between 25-50%.
 
 #include <Mapi.h>
 
+embeddedclient_export Mapi monetdb_sql(char *dbfarm, char *dbname);
 embeddedclient_export Mapi embedded_sql(opt *set, int len);
 
 #endif /* _EMBEDDEDCLIENT_H_ */
@@ -173,7 +174,6 @@ start_sql_server(void *arg)
 	free(arg);
 	snprintf(buf, sizeof(buf), "client(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));", PTRFMTCAST in, PTRFMTCAST out);
 	monet_exec("module(sql_server);mapi_register(sql_frontend());");
-	monet_exec("mvc_init(int(monet_environment.find(\"sql_debug\")));");
 	monet_exec(buf);
 	return NULL;
 }
@@ -189,6 +189,27 @@ embedded_sql(opt *set, int len)
 		embedded_set = set;
 		embedded_len = len;
 	}
+	server = mapi_embedded_init(&mid,"sql");
+
+	pthread_create(&sqlthread, NULL, start_sql_server, (void *) server);
+
+	mapi_start_talking(mid);
+
+	return mid;
+}
+
+Mapi
+monetdb_sql(char *dbfarm, char *dbname)
+{
+	Mapi mid;
+	pthread_t sqlthread;
+	stream **server;
+
+	int len = mo_builtin_settings(&embedded_set);
+	embedded_len = mo_system_config(&embedded_set, len);
+	embedded_len = mo_add_option(&embedded_set, embedded_len, opt_cmdline, "gdk_dbfarm", dbfarm);
+	embedded_len = mo_add_option(&embedded_set, embedded_len, opt_cmdline, "gdk_dbname", dbname);
+
 	server = mapi_embedded_init(&mid,"sql");
 
 	pthread_create(&sqlthread, NULL, start_sql_server, (void *) server);
