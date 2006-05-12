@@ -261,6 +261,10 @@ typedef struct tijahContextStruct {
 	BAT* b_collSize;	/* Tijah PRE-size BAT */
 	dbat dbat_collSize;	/* Direct access struct for b_collSize */
 	BAT* b_collPfPre;	/* Tijah PRE-PF BAT for Pathinder link */
+	/*
+	 */
+	int		doc_height;
+	int		max_doc_height;
 	/* The BAT's for the tag selection and associated counters
 	 */
 	BAT* b_selectTags;	/* [void,str] BAT containing select tags */
@@ -578,6 +582,23 @@ freeTijahContext(tjCtx* tjctx) {
 	return GDK_SUCCEED;
 }
 
+static int
+handle_doc_height(tjCtx* tjctx) {
+	str oldval = readCollParam(tjctx,"height");
+
+	if ( oldval == str_nil)
+	    return 0;
+	if ( tjctx->max_doc_height > atoi( (char*)oldval) ) {
+	   char buff[8];
+
+	   sprintf(&buff[0],"%d",tjctx->max_doc_height);
+	   if ( ! replaceCollParam(tjctx,"height",(str)&buff[0]))
+	       return 0;
+	}
+	stream_printf(GDKout,"# **** SET MAX DOC HEIGHT TO: %d\n",tjctx->max_doc_height);
+	return 1;
+}
+
 static oid
 tijahDocIndex(tjCtx* ctx, str docName) {
         BAT* mb = BATmirror(ctx->b_docName);
@@ -641,6 +662,9 @@ static int pftijah_init(XqueryCtx* ctx, char* args) {
     (void) ctx;
     (void) args;
     ctx->driverWs = GLOBAL_TJCTX;
+#ifdef TJ_TRACE
+    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:pftijah_init()\n",GLOBAL_TJCTX->name);
+#endif
     return 1;
 }
 
@@ -648,18 +672,12 @@ static int pftijah_init(XqueryCtx* ctx, char* args) {
  * Output generation handler. Handles equivalent of * SAX startDocument() event.
  */
 static int pftijah_handle_startDocument(XqueryCtx* ctx) {
-    (void)ctx;
-#ifdef TJ_TRACE
-    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:startDocument()\n");
-#endif
-    return 1;
-}
+    tjCtx* tjctx = (tjCtx*)ctx->driverWs;
 
-/**
- * Output generation handler. Handles equivalent of * SAX endDocument() event.
- */
-static int pftijah_handle_endDocument(XqueryCtx* ctx) {
-    (void)ctx;
+    tjctx->doc_height = tjctx->max_doc_height = 0;
+#ifdef TJ_TRACE
+    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:startDocument()\n",tjctx->name);
+#endif
     return 1;
 }
 
@@ -673,16 +691,6 @@ static int pftijah_handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc
     (void)value;
     if ( !checkNsChange(ctx,uri,prefix,top) )
         return 0;
-    return 1;
-}
-
-/**
- * Output generation handler. This one of my own invented event indicating
- * there will be no more attribute events for this node.
- */
-static int pftijah_handle_attributeEnd(XqueryCtx* ctx, int emptyNode) {
-    (void)ctx;
-    (void)emptyNode;
     return 1;
 }
 
@@ -706,6 +714,8 @@ static int pftijah_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre
     tjCtx* tjctx = (tjCtx*)ctx->driverWs;
     oid termOid, tjPre;
 
+    if ( ++tjctx->doc_height > tjctx->max_doc_height )
+        tjctx->max_doc_height = tjctx->doc_height;
     if ( !checkSelectTag(tjctx,name,1) ) return 0;
     /* if ( DOEMIT(tjctx) ) { */
         if ( (termOid = tj_tagOid(tjctx, name)) == oid_nil )
@@ -725,10 +735,11 @@ static int pftijah_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre
  * Output generation handler. Handles equivalent of * SAX endElement() event.
  */
 static int pftijah_handle_endElement(XqueryCtx* ctx, str ns, str name, int emptyNode) {
-    tjCtx* tjctx = (tjCtx*)ctx->driverWs;
     (void)ns;
     (void)name;
     (void)emptyNode;
+    tjCtx* tjctx = (tjCtx*)ctx->driverWs;
+    --tjctx->doc_height;
     /* if ( DOEMIT(tjctx) ) { */
         oid start = tj_popTag(tjctx); /* oid of the first node of the element */
         int size  = tjctx->tijahPre - start - 1; /* the Tijah element size */
@@ -736,16 +747,6 @@ static int pftijah_handle_endElement(XqueryCtx* ctx, str ns, str name, int empty
 	    return 0;
     /* } */
     if ( !checkSelectTag(tjctx,name,-1) ) return 0;
-    return 1;
-}
-
-/**
- * Output generation handler. One on my own again. This one should handle a
- * reference. Don't know wat to to about it now.
- */
-static int pftijah_handle_reference(XqueryCtx* ctx, str name) {
-    (void)ctx;
-    (void)name;
     return 1;
 }
 
@@ -760,7 +761,7 @@ static int pftijah_handle_characters(XqueryCtx* ctx, str ch, str top) {
     tjCtx* tjctx = (tjCtx*)ctx->driverWs;
 
 #ifdef TJ_TRACE
-    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:handle_characters(%s) start\n",(char*)ch);
+    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:handle_characters(%s) start\n",tjctx->name, (char*)ch);
 #endif
 
     if ( DOEMIT(tjctx) )
@@ -802,117 +803,6 @@ static int pftijah_handle_ignorableWhitespace(XqueryCtx* ctx, str ch) {
 }
 
 /**
- * Output generation handler. Again an own event. But this one should be
- * used I think because the comments are used and stored by  Pathfinder.
- */
-static int pftijah_handle_comment(XqueryCtx* ctx, str comm) {
-    /* incomplete */
-    (void)ctx;
-    (void)comm;
-    return 1;
-}
-
-/**
- * Output generation handler. Handles equivalent of * SAX
- * processingInstruction() event.
- */
-static int pftijah_handle_processingInstruction(XqueryCtx* ctx, str target, str data) {
-    /* incomplete */
-    (void)ctx;
-    (void)target;
-    (void)data;
-    return 1;
-}
-
-/*
- *
- * Second the sequence emitting functions are defined
- *
- */
-
-/**
- * Handle the start() of an XQUERY/Pathfinder result sequence.
- */
-static int pftijah_seqStart(XqueryCtx* ctx, BAT* item) {
-    (void)ctx;
-    (void)item;
-    return 1;
-}
-
-static int pftijah_seqDmAttrStart(XqueryCtx* ctx) {
-    (void)ctx;
-    return 1;
-}
-
-static int pftijah_seqDmAttrEnd(XqueryCtx* ctx) {
-    (void)ctx;
-    return 1;
-}
-
-/**
- * Handle the end() of an XQUERY/Pathfinder result sequence
- */
-static int  pftijah_seqEnd(XqueryCtx* ctx) {
-    (void)ctx;
-    return 1;
-}
-
-
-/**
- * Emit a Boolean element of an XQUERY/Pathfinder result sequence
- */
-static int  pftijah_seqEmitBool(XqueryCtx* ctx, int bv, int lastVal) {
-    (void)ctx;
-    (void)bv;
-    (void)lastVal;
-    return 1;
-}
-
-/**
- * Emit a Integer element of an XQUERY/Pathfinder result sequence
- */
-static int  pftijah_seqEmitInt(XqueryCtx* ctx, lng iv, int lastVal) {
-    (void)ctx;
-    (void)iv;
-    (void)lastVal;
-    return 1;
-}
-
-/**
- * Emit a Double element of an XQUERY/Pathfinder result sequence
- */
-static int  pftijah_seqEmitDbl(XqueryCtx* ctx, dbl dv, int lastVal) {
-    (void)ctx;
-    (void)dv;
-    (void)lastVal;
-    /* ignore event */
-    return 1;
-}
-
-static int  pftijah_seqElementStart(XqueryCtx* ctx, int cnt) {
-    (void)ctx;
-    (void)cnt;
-    /* ignore event */
-    return 1;
-}
-
-static int  pftijah_seqElementEnd(XqueryCtx* ctx, int cnt) {
-    (void)ctx;
-    (void)cnt;
-    /* ignore event */
-    return 1;
-}
-
-/**
- * Emit a String element of an XQUERY/Pathfinder result sequence
- */
-static int  pftijah_seqEmitStr(XqueryCtx* ctx, str sv, int lastVal) {
-    (void)lastVal;
-    return ctx->driverFun->handle_characters(ctx,sv,"text");
-}
-
-
-/**
  *
  * Definition of the structure containing the functions
  */
@@ -921,26 +811,26 @@ struct serializeFunStruct pftijahSerializeFun = {
 	"pftijah",
 	pftijah_init,
 	pftijah_handle_startDocument,
-	pftijah_handle_endDocument,
+	null_handle_endDocument,
 	pftijah_handle_attribute,
-	pftijah_handle_attributeEnd,
+	null_handle_attributeEnd,
 	pftijah_handle_startElement,
 	pftijah_handle_endElement,
 	pftijah_handle_characters,
 	pftijah_handle_ignorableWhitespace,
-	pftijah_handle_comment,
-	pftijah_handle_processingInstruction,
+	null_handle_comment,
+	null_handle_processingInstruction,
 	/* */
-	pftijah_seqStart,
-	pftijah_seqDmAttrStart,
-	pftijah_seqDmAttrEnd,
-	pftijah_seqElementStart,
-	pftijah_seqElementEnd,
-	pftijah_seqEnd,
-	pftijah_seqEmitBool,
-	pftijah_seqEmitInt,
-	pftijah_seqEmitDbl,
-	pftijah_seqEmitStr
+	null_seqStart,
+	null_seqDmAttrStart,
+	null_seqDmAttrEnd,
+	null_seqElementStart,
+	null_seqElementEnd,
+	null_seqEnd,
+	null_seqEmitBool,
+	null_seqEmitInt,
+	null_seqEmitDbl,
+	null_seqEmitStr
 };
 
 /*
@@ -948,8 +838,10 @@ struct serializeFunStruct pftijahSerializeFun = {
  *
  */
 
-int
-CMDtj_add2collection(BAT* tjCtx_BAT, BAT* ws, str docName, str selTagList) {
+extern int EXTshred_and_index_doc(str location, str opt, struct serializeFunStruct* serFun, void* serCtx);
+
+static int
+MAINtj_add2collection(int justIndex, BAT* tjCtx_BAT, BAT* ws, str docName, str selTagList) {
 	tjCtx* tjctx;
 
 #ifdef TJ_TRACE
@@ -976,12 +868,6 @@ CMDtj_add2collection(BAT* tjCtx_BAT, BAT* ws, str docName, str selTagList) {
 	}
 	oid start_oid = tjctx->tijahPre;
 
-	/* 
-	 * oid my_oid_nil = oid_nil;
-	 * if ( !BUNins(tjctx->b_docName, &my_oid_nil, docName) ||
-	 *    !BUNins(tjctx->b_docFirstPre,&my_oid_nil,&start_oid) )
-	 *  stream_printf(GDKerr,"Error writing Tijah document record\n");
-	 */
 	if ( !BUNappend(tjctx->b_docName, docName, 0) ||
 	     !BUNappend(tjctx->b_docFirstPre, &start_oid, 0) )
 	   stream_printf(GDKerr,"Error writing Tijah document record\n");;
@@ -990,8 +876,20 @@ CMDtj_add2collection(BAT* tjCtx_BAT, BAT* ws, str docName, str selTagList) {
 #endif
 
 	GLOBAL_TJCTX = tjctx;
-	if ( xquery_print_doc_DRIVER("",&pftijahSerializeFun,NULL,ws,docName) == GDK_FAIL)
+	if ( justIndex ) {
+#ifdef TJ_TRACE
+	    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:CALL INDEXING SHREDDER\n",tjctx->name);
+#endif
+
+            if ( EXTshred_and_index_doc(docName, (str)"", &pftijahSerializeFun, tjctx) == GDK_FAIL)
+	    	 return GDK_FAIL;
+	} else {
+#ifdef TJ_TRACE
+	    if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:CALL INDEXING SERIALIZER\n",tjctx->name);
+#endif
+	    if ( xquery_print_doc_DRIVER("",&pftijahSerializeFun,NULL,ws,docName) == GDK_FAIL)
 	        return GDK_FAIL;
+	}
 	/* 
 	 * if ( tijah_print_doc_main(tjctx,ws,docName) == GDK_FAIL )
 	 *	return GDK_FAIL;
@@ -1005,7 +903,9 @@ CMDtj_add2collection(BAT* tjCtx_BAT, BAT* ws, str docName, str selTagList) {
 #ifdef TJ_TRACE
 	if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:FINALIZED DIRECT BATS\n",tjctx->name);
 #endif
-
+	/* finally do the maximum doc height administration */
+	if ( 0 && !handle_doc_height(tjctx) )
+	    return GDK_FAIL;
 	/* read elapsed time */
 	gettimeofday (&now, 0);
 	stop = now.tv_sec * 1000000 + now.tv_usec;
@@ -1024,6 +924,16 @@ CMDtj_add2collection(BAT* tjCtx_BAT, BAT* ws, str docName, str selTagList) {
 	}
 #endif
 	return freeTijahContext(tjctx);
+}
+
+int
+CMDtj_add2collection(BAT* tjCtx_BAT, BAT* ws, str docName, str selTagList) {
+    return  MAINtj_add2collection(0,tjCtx_BAT,ws,docName,selTagList);
+}
+
+int
+CMDtj_add2collection_index(BAT* tjCtx_BAT, str locName) {
+    return  MAINtj_add2collection(1,tjCtx_BAT,NULL,locName,"");
 }
 
 /* vim:set shiftwidth=4 expandtab: */

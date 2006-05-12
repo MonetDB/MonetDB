@@ -61,7 +61,8 @@ pf_support_export int CMDshred2bats(BAT **res2mil, str location, str buffer, str
 #include "pathfinder.h"
 #include <pf_config.h>
 #include "pf_support.proto.h"
-#include <shredder.h>
+#include "serialize.h"
+#include "shredder.h"
 
 typedef int nat;
 /* typedef oid nat; this works too but I I think it is not correct */
@@ -328,21 +329,28 @@ typedef struct shredCtxStruct {
                                  */
     char        workSpace[1024];/* temporary workspace for this session */
     int         err;		    /* error during shred */
+    /* The next two variables are used to immediately serialize
+     * the shredded xml stuff. Can be used for on the fly indexing of 
+     * the serialized data.
+     */
+    struct serializeFunStruct* serFun; /* the functions */
+    struct XqueryCtx* serCtx; /* the runtime data */
 } shredCtxStruct;
 
 /* the minimal incremental size of a BAT during estimation process */
 #define MINCHUNK        1024
 
 
-static shredCtxStruct *createShredCtx(char* location, off_t  fileSize, off_t pageFree) {
+static shredCtxStruct *createShredCtx(char* location, off_t  fileSize, off_t pageFree, struct serializeFunStruct* serFun, struct XqueryCtx* serCtx) {
     int i;
-    //oid cont = 1;
 
     shredCtxStruct *res = (shredCtxStruct*)malloc( sizeof(shredCtxStruct) );
     res->location = location;
     res->fileSize = fileSize;
     res->estSize  = MIN(MAX(MINCHUNK,fileSize/20),INT_MAX);
     res->pageFree = pageFree;
+    res->serFun = serFun;
+    res->serCtx = serCtx;
     for(i=0; i<SHRED_BATS; i++) {
         shredBAT* sb = &res->dstBAT[i];
 
@@ -707,7 +715,15 @@ off_t  fileSize(char* location) {
 }
 
 static int
-shred_doc_or_docseq(BAT **res2mil, str location, str buffer, BAT* docseq, str opt)
+shred_doc_or_docseq(
+	BAT **res2mil,
+	str location,
+	str buffer,
+	BAT* docseq,
+	str opt,
+	struct serializeFunStruct* serFun,
+	void* serCtx
+	)
 {
 #ifdef SUPER_ROOT
     static int adjust_super_root(shredCtxStruct* shredCtx);
@@ -767,7 +783,7 @@ shred_doc_or_docseq(BAT **res2mil, str location, str buffer, BAT* docseq, str op
         estimatedSize = (off_t)DEFAULT_ESTIMATE;
     }
 
-    if ( !(shredCtx = createShredCtx(location,estimatedSize,pageFree)) )
+    if ( !(shredCtx = createShredCtx(location,estimatedSize,pageFree,serFun,serCtx)) )
         return GDK_FAIL;
 
     int doc_pre;
@@ -803,8 +819,14 @@ shred_doc_or_docseq(BAT **res2mil, str location, str buffer, BAT* docseq, str op
 #endif
         }
     }
-    if ( !(*res2mil = finalizeShredCtx(shredCtx)) )
+    BAT* resbat;
+    if ( !(resbat = finalizeShredCtx(shredCtx)) )
         return GDK_FAIL;
+    if ( res2mil ) {
+        *res2mil = resbat;
+    } else {
+        BBPunfix(BBPcacheid(resbat)); /* throw away res :( */
+    }
 
     /* read elapsed time */
     gettimeofday (&now, 0);
@@ -820,12 +842,17 @@ shred_doc_or_docseq(BAT **res2mil, str location, str buffer, BAT* docseq, str op
 
 int
 CMDshred2bats(BAT **res2mil, str location, str buffer, str opt) {
-    return shred_doc_or_docseq(res2mil,location,buffer,NULL,opt);
+    return shred_doc_or_docseq(res2mil,location,buffer,NULL,opt,NULL,NULL);
 }
 
 int
 CMDshred2collection(BAT **res2mil, BAT* docseq, str opt) {
-    return shred_doc_or_docseq(res2mil,"","",docseq,opt);
+    return shred_doc_or_docseq(res2mil,"","",docseq,opt,NULL,NULL);
+}
+
+int
+EXTshred_and_index_doc(str location, str opt, struct serializeFunStruct* serFun, void* serCtx) {
+    return shred_doc_or_docseq(NULL,location,"",NULL,opt,serFun,serCtx);
 }
 
 #define CHECK_BAT_SIZE(SB,I)    if ( ((off_t)(I)>=(SB)->size) && incrBATsize(SB,I)<0) return NATNIL; 
@@ -1106,6 +1133,14 @@ shred_start_document (void *xmlCtx)
                 .kind  = DOCUMENT
                 }));
     NEXT_PRE(shredCtx);
+
+    if ( shredCtx->serFun ) {
+#ifdef DEBUG
+        stream_printf(GDKout,"CALL %s:start_document()\n",shredCtx->serFun->name);
+#endif
+    	shredCtx->serFun->init(shredCtx->serCtx,"");
+    	shredCtx->serFun->handle_startDocument(shredCtx->serCtx);
+    }
 }
 
 void 
@@ -1117,6 +1152,8 @@ shred_end_document (void *xmlCtx)
     if ( emitnode (shredCtx,&POP(shredCtx)) < 0 ) {
         BAILOUT(xmlCtx);
     }
+    if ( shredCtx->serFun )
+    	shredCtx->serFun->handle_endDocument(shredCtx->serCtx);
 #ifdef DEBUG
     stream_printf(GDKout,"end_document()\n");
 #endif
@@ -1161,6 +1198,9 @@ handleXmlCharacters (shredCtxStruct* shredCtx)
 
         if ( emitString(shredCtx,shredCtx->content_buf) < 0 )
             return -1;
+        if ( shredCtx->serFun ) {
+    	    shredCtx->serFun->handle_characters(shredCtx->serCtx,(str)shredCtx->content_buf,0);
+        }
     }
     shredCtx->content = 0;
     return 1;
@@ -1384,6 +1424,10 @@ shred_start_element(void *xmlCtx,
     if ( (node.prop = store_PfxLocNEW(shredCtx,e_uri,e_pfx,e_loc)) == NATNIL ) {
         BAILOUT(xmlCtx);
     }
+    if ( shredCtx->serFun ) {
+        /* INCOMPLETE, should handle ns better here (uri+pfx) */
+    	shredCtx->serFun->handle_startElement(shredCtx->serCtx,(str)e_pfx,(str)e_loc,(oid)node.pre);
+    }
 
     /* push node onto node stack: size to be determined later */
     PUSH (shredCtx,node);
@@ -1437,6 +1481,13 @@ shred_start_element(void *xmlCtx,
         *(xmlChar*)a_end = qiChar;	      /* restore the quote */
         /* process next attribute */
         shredCtx->nnode_attr++;
+        if ( shredCtx->serFun ) {
+    	    shredCtx->serFun->handle_attribute(shredCtx->serCtx,(str)a_uri,(str)a_pfx,(str)a_tag,(str)a_val,0);
+        }
+    }
+    if ( shredCtx->serFun ) {
+	/* INCOMPLETE, should handle this emptyNode better */
+        shredCtx->serFun->handle_attributeEnd(shredCtx->serCtx,0);
     }
 }
 
@@ -1468,6 +1519,11 @@ shred_start_element4SAX1(void *xmlCtx, const xmlChar *t, const xmlChar **atts)
         shredCtx->depth = shredCtx->level;
 
     if ( (node.prop = store_PfxLoc4SAX1(shredCtx, (char*) t)) == NATNIL ) {
+        BAILOUT(xmlCtx);
+    }
+
+    if ( shredCtx->serFun ) {
+	GDKerror("use of serialization during shred not supported with SAX1\n");
         BAILOUT(xmlCtx);
     }
 
@@ -1517,8 +1573,6 @@ shred_end_element (void *xmlCtx, const xmlChar *tag)
     node_t node;
     shredCtxStruct* shredCtx = SHREDCTX(xmlCtx);
 
-    (void) tag;
-
     if ( handleXmlCharacters (shredCtx) < 0 ) {
         BAILOUT(xmlCtx);
     }
@@ -1538,6 +1592,9 @@ shred_end_element (void *xmlCtx, const xmlChar *tag)
     /* enter element node into pre|size|level|prop|kind relation */
     if ( emitnode (shredCtx,&node) < 0 ) {
         BAILOUT(xmlCtx);
+    }
+    if ( shredCtx->serFun ) {
+    	shredCtx->serFun->handle_endElement(shredCtx->serCtx,(str)"",(str)tag,0);
     }
 #ifdef DEBUG
     stream_printf(GDKout," end_element(%s)\n",tag);
@@ -1614,6 +1671,8 @@ shred_pi (void *xmlCtx, const xmlChar *tgt, const xmlChar *ins)
     if ( emitnode (shredCtx,&node) < 0 ) {
         BAILOUT(xmlCtx);
     }
+    if ( shredCtx->serFun )
+    	shredCtx->serFun->handle_processingInstruction(shredCtx->serCtx,(str)tgt,(str)ins);
 }
 
 void 
@@ -1645,6 +1704,8 @@ shred_comment (void *xmlCtx, const xmlChar *c)
     if ( emitnode (shredCtx,&node) < 0 ) {
         BAILOUT(xmlCtx);
     }
+    if ( shredCtx->serFun )
+    	shredCtx->serFun->handle_comment(shredCtx->serCtx,(str)c);
 }
 
 static void 

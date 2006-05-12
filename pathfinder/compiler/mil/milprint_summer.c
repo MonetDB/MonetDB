@@ -8040,11 +8040,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "{ # translate fn:tijah-%s\n"
                 "if (loop%03u.count() = 1) {\n"
                 "    var lo := 2.0LL;\n"
-		"    var tjpfx := \"PFX\";\n"
                 "    var tqarg := item_str_%03d.fetch(0);\n"
 		"    if ( tqarg != tijah_qstring ) {\n"
 		"      tijah_qstring := tqarg;\n"
-                "      tijah_qscore := run_tijah_query(tjpfx,tijah_qstring);\n"
+                "      tijah_qscore := run_tijah_query(collName,tijah_qstring);\n"
+		"      if ( true) tijah_qscore := tijah_qscore.tsort_rev();\n"
 		"    } else {\n"
 		"      if ( false ) printf(\"# tijah_qscore cached!!!\");\n"
 		"    }\n"
@@ -8053,8 +8053,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 
 	/* PROC tijah2pf(BAT[oid,dbl] tijah_qscore) : BAT := */
 	milprintf(f,
-          "var docpre := bat(\"tj_\" + tjpfx + \"_doc_firstpre\").[oid]();\n"
-          "var pfpre :=  bat(\"tj_\" + tjpfx + \"_pfpre\");\n"
+          "var docpre := bat(\"tj_\" + collName + \"_doc_firstpre\").[oid]();\n"
+          "var pfpre :=  bat(\"tj_\" + collName + \"_pfpre\");\n"
           "var score := tijah_qscore.tmark(0@0);\n"
           "item  := tijah_qscore.hmark(0@0);\n"
           "iter  := item.mirror();\n"
@@ -8065,7 +8065,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	/* PROC align_frag() : void := */
 	if ( is_node_query ) {
 	  milprintf(f,
-            "var needed_docs := bat(\"tj_\" + tjpfx + \"_doc_name\").semijoin(frag.tunique());\n"
+            "var needed_docs := bat(\"tj_\" + collName + \"_doc_name\").semijoin(frag.tunique());\n"
             "var loaded_docs := ws.fetch(DOCID_NAME).reverse();\n"
             "needed_docs@batloop()\n"
             "{\n"
@@ -8076,16 +8076,19 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             "var fid_pffid := needed_docs.join(doc_loaded.reverse());\n"
             "frag := frag.join(fid_pffid).sort().tmark(0@0);\n"
             "kind := set_kind(frag, ELEM);\n"
+	    "iter := iter.cross(loop%03u);\n"
             "ipik := iter;\n"
-            "# pos  := ipik.mark(1@0);\n"
 	    "}\n"
+	    , cur_level
 	    );
         } else {
 	  milprintf(f,
 	    "item := dbl_values.addValues(tijah_qscore).tmark(0@0);\n"
 	    "kind := DBL;\n"
+	    "iter := iter.cross(loop%03u);\n"
 	    "ipik := iter;\n"
 	    "}\n"
+	    , cur_level
 	  );
 	}
 

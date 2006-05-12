@@ -84,12 +84,13 @@ typedef struct wsBatDescr {
 } wsBatDescr;
 
 struct serializeFunStruct; /* forward */
+struct XqueryCtx; /* forward */
 
 /**
  * The serialization context structure. All context/runtime data is
  * accessed through this function.
  */
-typedef struct {
+typedef struct XqueryCtx {
     int     dmMode;         /* Data model flag, true if printing in
                              * data-model mode, eg. look like GALAX */
     int     saxMode;        /* true if printing a Sax-O-Phone stream */
@@ -153,7 +154,33 @@ typedef struct serializeFunStruct {
 	int (*seqEmitStr)(XqueryCtx* ctx, str sv, int lastVal);
 } serializeFunStruct;
 
-extern struct serializeFunStruct dfltSerializeFun, saxSerializeFun;
+extern struct serializeFunStruct
+	nullSerializeFun,
+	dfltSerializeFun,
+	saxSerializeFun;
+
+extern int null_init(XqueryCtx* ctx, char* args);
+extern int null_handle_startDocument(XqueryCtx* ctx);
+extern int null_handle_endDocument(XqueryCtx* ctx);
+extern int null_handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, str value, int top);
+extern int null_handle_attributeEnd(XqueryCtx* ctx, int emptyNode);
+extern int null_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre);
+extern int null_handle_endElement(XqueryCtx* ctx, str ns, str name, int emptyNode);
+extern int null_handle_reference(XqueryCtx* ctx, str name);
+extern int null_handle_characters(XqueryCtx* ctx, str ch, str top);
+extern int null_handle_ignorableWhitespace(XqueryCtx* ctx, str ch);
+extern int null_handle_comment(XqueryCtx* ctx, str comm);
+extern int null_handle_processingInstruction(XqueryCtx* ctx, str target, str data);
+extern int null_seqStart(XqueryCtx* ctx, BAT* item);
+extern int null_seqDmAttrStart(XqueryCtx* ctx);
+extern int null_seqDmAttrEnd(XqueryCtx* ctx);
+extern int null_seqEnd(XqueryCtx* ctx);
+extern int null_seqEmitBool(XqueryCtx* ctx, int bv, int lastVal);
+extern int null_seqEmitInt(XqueryCtx* ctx, lng iv, int lastVal);
+extern int null_seqEmitDbl(XqueryCtx* ctx, dbl dv, int lastVal);
+extern int null_seqElementStart(XqueryCtx* ctx, int cnt);
+extern int null_seqElementEnd(XqueryCtx* ctx, int cnt);
+extern int null_seqEmitStr(XqueryCtx* ctx, str sv, int lastVal);
 
 extern int xquery_print_doc_DRIVER(
 	str			mode, 
@@ -1256,7 +1283,6 @@ int xquery_print_result_DRIVER(
         BAT*			dblVAL,
         BAT*			strVAL)
 {
-    /* { FILE* x=fopen("/tmp/x","w+"); fprintf(x,"HERE-1\n");fclose(x); } */
     TIMER_START();
     size_t xx, yy, curcnt = 0, maxcnt = BATcount(item), buncnt;
     XqueryCtx ctx_struct, *ctx = &ctx_struct;
@@ -1309,6 +1335,7 @@ int xquery_print_result_DRIVER(
             return GDK_FAIL;
         /* */
         int cnt = 0; /* loopcounter, used for checking when to print commas. */
+        /* stream_printf(GDKerr,"!!! HERE ITEM.SIZE=%d !!!\n",BATcount(iter)); */
         BATloop_off(item,p,q,xx,curcnt,buncnt) {
             oid pre = *(oid*)BUNhead(item, p);
             oid valoid = *(oid*)BUNtail(item, p);
@@ -1412,3 +1439,249 @@ int xquery_print_result_main(
     (void) decVAL;
     return xquery_print_result_DRIVER(mode, NULL, NULL, ws, 1, item, item, item, kind, intVAL, dblVAL, strVAL);
 }
+
+/* 
+ * For convenience a NULL driver is defined here
+ */
+
+/**
+ * NULL driver initialization function
+ */
+int null_init(XqueryCtx* ctx, char* args) {
+    (void) ctx;
+    (void) args;
+    ctx->driverWs = NULL; /* driverWs not used */
+    return 1;
+}
+
+/**
+ * Output generation handler. Handles equivalent of * SAX startDocument() event.
+ */
+int null_handle_startDocument(XqueryCtx* ctx) {
+    (void) ctx;
+    return 1;
+}
+
+/**
+ * Output generation handler. Handles equivalent of * SAX endDocument() event.
+ */
+int null_handle_endDocument(XqueryCtx* ctx) {
+    (void)ctx;
+    return 1;
+}
+
+/**
+ * Output generation handler. This one of my own invented event describing
+ * the usage of an attribute. A sequence of these events will be ended
+ * by a handle_attributeEnd() call.
+ */
+int null_handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, str value, int top) {
+    (void) ctx;
+    (void)uri;
+    (void)prefix;
+    (void)loc;
+    (void)value;
+    (void)top;
+    return 1;
+}
+
+/**
+ * Output generation handler. This one of my own invented event indicating
+ * there will be no more attribute events for this node.
+ */
+int null_handle_attributeEnd(XqueryCtx* ctx, int emptyNode) {
+    (void)ctx;
+    (void)emptyNode;
+    return 1;
+}
+
+/**
+ * Output generation handler. Handles equivalent of * SAX startElement() event.
+ */
+int null_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
+    (void)ctx;
+    (void)ns;
+    (void)name;
+    (void)pre; /* the Pathfinder PRE number is not used by this fun */
+    return 1;
+}
+
+/**
+ * Output generation handler. Handles equivalent of * SAX endElement() event.
+ */
+int null_handle_endElement(XqueryCtx* ctx, str ns, str name, int emptyNode) {
+    (void)ctx;
+    (void)ns;
+    (void)name;
+    (void)emptyNode;
+    return 1;
+}
+
+/**
+ * Output generation handler. One on my own again. This one should handle a
+ * reference. Don't know wat to to about it now.
+ */
+int null_handle_reference(XqueryCtx* ctx, str name) {
+    (void)ctx;
+    (void)name;
+    return 1;
+}
+
+/**
+ * Output generation handler. Handles equivalent of * SAX characters() event.
+ */
+int null_handle_characters(XqueryCtx* ctx, str ch, str top) {
+    (void)ctx;
+    (void)ch;
+    (void)top;
+    return 1;
+}
+
+/**
+ * Output generation handler. Handles equivalent of * SAX ignorableWhitespace()
+ * event. I see no reason why it should be used here but I include it for
+ * completeness.
+ */
+int null_handle_ignorableWhitespace(XqueryCtx* ctx, str ch) {
+    (void)ctx;
+    (void)ch;
+    return 1;
+}
+
+/**
+ * Output generation handler. Again an own event. But this one should be
+ * used I think because the comments are used and stored by  Pathfinder.
+ */
+int null_handle_comment(XqueryCtx* ctx, str comm) {
+    (void)ctx;
+    (void)comm;
+    return 1;
+}
+
+/**
+ * Output generation handler. Handles equivalent of * SAX
+ * processingInstruction() event.
+ */
+int null_handle_processingInstruction(XqueryCtx* ctx, str target, str data) {
+    (void)ctx;
+    (void)target;
+    (void)data;
+    return 1;
+}
+
+/*
+ *
+ * Second the sequence emitting functions are defined
+ *
+ */
+
+/**
+ * Handle the start() of an XQUERY/Pathfinder result sequence.
+ */
+int null_seqStart(XqueryCtx* ctx, BAT* item) {
+    (void)ctx;
+    (void)item;
+    return 1;
+}
+
+int null_seqDmAttrStart(XqueryCtx* ctx) {
+    (void)ctx;
+    return 1;
+}
+
+int null_seqDmAttrEnd(XqueryCtx* ctx) {
+    (void)ctx;
+    return 1;
+}
+
+/**
+ * Handle the end() of an XQUERY/Pathfinder result sequence
+ */
+int  null_seqEnd(XqueryCtx* ctx) {
+    (void)ctx;
+    return 1;
+}
+
+
+/**
+ * Emit a Boolean element of an XQUERY/Pathfinder result sequence
+ */
+int  null_seqEmitBool(XqueryCtx* ctx, int bv, int lastVal) {
+    (void)ctx;
+    (void)bv;
+    (void)lastVal;
+    return 1;
+}
+
+/**
+ * Emit a Integer element of an XQUERY/Pathfinder result sequence
+ */
+int  null_seqEmitInt(XqueryCtx* ctx, lng iv, int lastVal) {
+    (void)ctx;
+    (void)iv;
+    (void)lastVal;
+    return 1;
+}
+
+/**
+ * Emit a Double element of an XQUERY/Pathfinder result sequence
+ */
+int  null_seqEmitDbl(XqueryCtx* ctx, dbl dv, int lastVal) {
+    (void)ctx;
+    (void)dv;
+    (void)lastVal;
+    return 1;
+}
+
+int  null_seqElementStart(XqueryCtx* ctx, int cnt) {
+    (void)ctx;
+    (void)cnt;
+    return 1;
+}
+
+int  null_seqElementEnd(XqueryCtx* ctx, int cnt) {
+    (void)ctx;
+    (void)cnt;
+    return 1;
+}
+
+/**
+ * Emit a String element of an XQUERY/Pathfinder result sequence
+ */
+int  null_seqEmitStr(XqueryCtx* ctx, str sv, int lastVal) {
+    (void)ctx;
+    (void)sv;
+    (void)lastVal;
+    return 1;
+}
+
+/**
+ *
+ * Definition of the structure containing the functions
+ */
+
+struct serializeFunStruct nullSerializeFun = {
+	"null",
+	null_init,
+	null_handle_startDocument,
+	null_handle_endDocument,
+	null_handle_attribute,
+	null_handle_attributeEnd,
+	null_handle_startElement,
+	null_handle_endElement,
+	null_handle_characters,
+	null_handle_ignorableWhitespace,
+	null_handle_comment,
+	null_handle_processingInstruction,
+	/* */
+	null_seqStart,
+	null_seqDmAttrStart,
+	null_seqDmAttrEnd,
+	null_seqElementStart,
+	null_seqElementEnd,
+	null_seqEnd,
+	null_seqEmitBool,
+	null_seqEmitInt,
+	null_seqEmitDbl,
+	null_seqEmitStr
+};

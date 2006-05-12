@@ -38,6 +38,9 @@
 .COMMAND tj_add2collection(BAT[oid,bat],BAT[oid,bat],str,str) : void = CMDtj_add2collection;
  "INCOMPLETE"
 
+.COMMAND tj_add2collection_index(BAT[oid,bat],str) : void = CMDtj_add2collection_index;
+ "INCOMPLETE"
+
 .COMMAND offsetindex( BAT[void,oid] offset_tid, int res_size)
 		: BAT[void,oid] = CMDoffsetindex;
 
@@ -694,7 +697,7 @@ PROC col_freq() : bat :=
 {
     var start_time := time();
     var allterms := bat("tj_globalTerms").sort().mark(0@0).reverse();
-    var alltermpos := indexfetchjoin(allterms, bat("tj_PFX_TermIndex"), bat("tj_PFX_Terms"));
+    var alltermpos := indexfetchjoin(allterms, bat("tj_"+collName+"_TermIndex"), bat("tj_"+collName+"_Terms"));
     var col_freqs := [dbl]({count}(alltermpos));
 
     if (DEBUG) printf( "col_freq: \t\t%d ms\n", time() - start_time );
@@ -706,7 +709,7 @@ PROC col_freq() : bat :=
 PROC col_freq(oid tid) : dbl :=
 {
     var start_time := time();
-    var alltermpos := indexfetchjoin(new(int,oid).insert(0,tid), bat("tj_PFX_TermIndex"), bat("tj_PFX_Terms"));
+    var alltermpos := indexfetchjoin(new(int,oid).insert(0,tid), bat("tj_"+collName+"_TermIndex"), bat("tj_"+collName+"_Terms"));
     var col_freqs := {count}(alltermpos);
     var result := dbl(col_freqs.fetch(0));
     if (DEBUG) printf( "col_freq: \t\t%d ms\n", time() - start_time );
@@ -1397,6 +1400,17 @@ PROC tj_url2Collection(str collName, str doc, str url, str selTagList) : void
         var coll_oid := bat("tj_collName").reverse().find(collName);
 	var height2 := bat("tj_" + collName + "_param").find("height").int();
 	bat("tj_" + collName + "_param").replace("height", max(height1,height2).str());
+	bat("tj_" + collName + "_param").replace("status","building");
+        commit();	
+}
+
+PROC tj_url2Collection_index(str collName, str url, str selTagList) : void
+{
+	bat("tj_globalTerms").access(BAT_WRITE);
+	bat("tj_globalTags").access(BAT_WRITE);
+        
+	tj_add2collection_index(tj_collection(collName),url);
+
 	bat("tj_" + collName + "_param").replace("status","building");
         commit();	
 }
