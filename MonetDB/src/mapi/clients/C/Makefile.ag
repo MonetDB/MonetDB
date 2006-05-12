@@ -15,9 +15,9 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = ../../../common $(READLINE_INCS)
+INCLUDES = ../../../common $(READLINE_INCS) $(OPENSSL_INCS)
 
-MAPI_LIBS = $(SOCKET_LIBS) 
+MAPI_LIBS = $(SOCKET_LIBS) $(OPENSSL_LIBS)
 
 lib_Mapi = {
 	SOURCES = Mapi.mx

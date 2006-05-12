@@ -15,7 +15,8 @@
 # All Rights Reserved.
 
 INCLUDES = -I../common -I../gdk -I../monet \
-	   -I../modules/plain -I../modules/plain/stream
+	   -I../modules/plain -I../modules/plain/stream \
+	   $(OPENSSL_INCS)
 
 SUBDIRS = clients examples
 
@@ -29,7 +30,9 @@ lib__mapi = {
 	#SCRIPTS = mil ""
 	LIBS =  ../common/libmutils ../common/libstream \
 		../gdk/libbat ../monet/libmonet \
-		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+		$(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) \
+		$(DL_LIBS) $(OPENSSL_LIBS)
+
 }
 
 scripts_mil = {
