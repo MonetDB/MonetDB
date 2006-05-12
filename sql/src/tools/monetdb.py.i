@@ -19,9 +19,9 @@
 %include "exception.i"
 
 %{
-#include "Mapi.h"
+#include "C/Mapi.h"
 %}
 
 extern Mapi monetdb_sql(char *dbfarm, char *dbname);
 
-%include "Mapi.h"
+%include "C/Mapi.h"
