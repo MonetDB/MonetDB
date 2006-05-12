@@ -872,8 +872,6 @@ malType getPolyType(malType t,int *polytype){
 		return newBatType(head,tail);
 	}
 
-	/* if( t== TYPE_bat) 
-		return newBatType(TYPE_any,TYPE_any); */
 	if( isaColType(t))
 		return newColType(tail);
 	return tail;

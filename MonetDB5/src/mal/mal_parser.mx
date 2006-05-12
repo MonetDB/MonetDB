@@ -689,7 +689,8 @@ parseTypeId(Client cntxt, int defaultType)
 		skipSpace(cntxt);
 		return i;
 	}  
-	if( strncmp(s,":bat",4)==0 && !idCharacter[(int) s[4]]) {
+	if( (strncmp(s,":bat",4)==0 ||
+		 strncmp(s,":BAT",4)==0 )  && !idCharacter[(int) s[4]]) {
 		advance(cntxt,4);
 		return TYPE_bat;
 	} 
