@@ -63,6 +63,7 @@ on the document tree.
 
 #include "mal_builder.h"
 #include "mal_parser.h"
+#include <mal_prelude.h>
 
 #undef currChar
 
@@ -940,11 +941,10 @@ STATIC int parseFunctionCall(Client cntxt, Xbackend xb) {
 	nextChar(cntxt);
 	return PARSE_OK;
 }
-
-
 STATIC int parsePrimaryExpr(Client cntxt, Xbackend xb) {
 	int i;
 	ValRecord val;
+	InstrPtr p;
 
 	@:ptrace(parsePrimaryExpr)@
 	skipSpace(cntxt);
@@ -955,6 +955,9 @@ STATIC int parsePrimaryExpr(Client cntxt, Xbackend xb) {
 		return PARSE_OK;
 	}
 	if ((i = cstToken(cntxt, &val)) != 0) {
+		p= newAssignment(xb->mb);
+		getArg(p,0)= newXvar(xb);
+		pushArgument(xb->mb,p, defConstant(xb->mb, val.vtype,&val));
 		advance(cntxt, i);
 		return PARSE_OK;
 	}
@@ -1291,12 +1294,16 @@ STATIC int parseValueExpr(Client cntxt, Xbackend xb) {
 }
 
 STATIC int parseUnaryExpr(Client cntxt, Xbackend xb) {
+	char op;
 	@:ptrace(parseUnaryExpr)@
 	skipSpace(cntxt);
-	if (currChar(cntxt) == '+' || currChar(cntxt) == '-')
+	op= currChar(cntxt);
+	if (op == '+' || op == '-')
 		nextChar(cntxt);
 	skipSpace(cntxt);
-	return parseValueExpr(cntxt, xb);
+	if( parseValueExpr(cntxt, xb) == PARSE_ERR)
+		return PARSE_ERR;
+	return PARSE_OK;
 }
 
 STATIC int parseCastExpr(Client cntxt, Xbackend xb) {
@@ -1400,18 +1407,32 @@ STATIC int parseMultiplicativeExpr(Client cntxt, Xbackend xb) {
 }
 
 STATIC int parseAdditiveExpr(Client cntxt, Xbackend xb) {
-	int res = PARSE_OK;
+	int res = PARSE_OK, lhs, r1,r2;
+	char op;
+	InstrPtr p;
 	@:ptrace(parseAdditiveExpr)@
 	skipSpace(cntxt);
 	if ((res = parseMultiplicativeExpr(cntxt, xb)) != PARSE_OK)
 		return res;
 	do {
 		skipSpace(cntxt);
-		if (currChar(cntxt) == '+' || currChar(cntxt) == '-')
+		op= currChar(cntxt);
+		if (op == '+' || op == '-')
 			nextChar(cntxt);
 		else
 			break;
-	} while ((res = parseMultiplicativeExpr(cntxt, xb)) == PARSE_OK);
+		res = parseMultiplicativeExpr(cntxt, xb);
+		if( res== PARSE_OK){
+			/* we have two variables on the stack */
+			r2= popXvar(xb);
+			r1= popXvar(xb);
+			lhs= newXvar(xb);
+			p= newStmt(xb->mb, calcRef,putName((str)&op,1) );
+			getArg(p,0)= lhs;
+			pushArgument(xb->mb,p,r1);
+			pushArgument(xb->mb,p,r2);
+		}
+	} while(res == PARSE_OK);
 	return res;
 }
 STATIC int parseRangeExpr(Client cntxt, Xbackend xb) {

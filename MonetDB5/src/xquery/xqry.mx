@@ -116,6 +116,7 @@ file in reconstruction format";
 #define _XQUERY_H
 
 #include <mal.h>
+#include <mal_prelude.h>
 #include <mal_session.h>
 
 #ifdef _MSC_VER
@@ -155,6 +156,7 @@ typedef struct {
     int scopes[MAXSCOPES];  /* keep track of the depth */
     int stop;
     int mode;
+	MalBlkPtr mb;
 } *Xbackend, XbackendRec;
 
 #endif /* _XQUERY_H */

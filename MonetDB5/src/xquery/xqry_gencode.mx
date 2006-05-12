@@ -27,8 +27,10 @@ for XQuery plans.
 #define _XQUERY_GENCODE_H_
 #include "xqry.h"
 
-xqry_export Xbackend newXbackend();
-xqry_export int XfindId(Xbackend be, str nme);
+xqry_export Xbackend newXbackend(MalBlkPtr mb);
+xqry_export int XfindId(Xbackend xb, str nme);
+xqry_export int newXvar(Xbackend xb);
+xqry_export int popXvar(Xbackend xb);
 
 #endif /* _XQUERY_GENCODE_H_ */
 
@@ -40,14 +42,15 @@ introduced in a block and issue a bind operation before using them.
 @c
 #include "xqry_gencode.h"
 #include "xqry_parser.h"
+#include "mal_instruction.h"
 
 int
-XfindId(Xbackend be, str nme)
+XfindId(Xbackend xb, str nme)
 {
     int i;
-    for(i=0; i< be->vtop; i++)
-        if (strcmp(be->vars[i].nme, nme) == 0)
-            return be->vars[i].tmpid;
+    for(i=0; i< xb->vtop; i++)
+        if (strcmp(xb->vars[i].nme, nme) == 0)
+            return xb->vars[i].tmpid;
     return 0;
 
 }
@@ -57,10 +60,37 @@ The backend structure contains the state description
 for the code generator.
 @c
 Xbackend
-newXbackend(){
+newXbackend(MalBlkPtr mb){
     Xbackend xb;
     xb = (Xbackend) GDKmalloc( sizeof(XbackendRec));
     memset((char*) xb, 0, sizeof(XbackendRec));
+	xb->mb= mb;
     return xb;
 }
 
+@+
+The result of statements are represented as variables
+on the Xbackend variable stack. The parser can remove
+them upon need.
+@c
+int
+newXvar(Xbackend xb){
+	static int varid=0;
+	if( xb->vtop == MAXXVARS){
+		stream_printf(GDKout,"OUT OF XBACKEND VARIABLES\n");
+		xb->vtop--;
+	} 
+	/* initialize the variable further */
+	xb->vars[xb->vtop].tmpid= 
+		newVariable(xb->mb, newTmpName('X',varid++),TYPE_any);
+	return xb->vars[xb->vtop++].tmpid;
+}
+
+int 
+popXvar(Xbackend xb){
+	if( xb->vtop == 0){
+		stream_printf(GDKout,"OUT OF XBACKEND VARIABLES to pop\n");
+		return 0;
+	}
+	return xb->vars[--xb->vtop].tmpid;
+}

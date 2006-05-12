@@ -1,4 +1,4 @@
-INCLUDES = ../mal $(MONETDB_INCS)
+INCLUDES = ../mal ../optimizer $(MONETDB_INCS)
 
 #YFLAGS = -v -p mil -d
 

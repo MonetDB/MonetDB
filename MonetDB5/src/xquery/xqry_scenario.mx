@@ -92,6 +92,7 @@ str
 XQUERYinit(Client c)
 {
 	(void) c;		/* not used */
+	optimizerInit();
 	return MAL_SUCCEED;
 }
 
@@ -106,7 +107,7 @@ str
 XQUERYinitClient(Client c)
 {
 	if (c->state[PARSER] == NULL) {
-		Xbackend  xb = newXbackend();
+		Xbackend  xb = newXbackend(c->curprg->def);
 		c->state[PARSER] = (void*)xb;
 	}
 
