@@ -102,15 +102,28 @@ from the debugger.
 str
 RQcall2str(MalBlkPtr mb, InstrPtr p)
 {
-	int k,len;
+	int k,len=1;
 	str msg;
 	str s,cv= NULL;
 
-	msg = instruction2str(mb, p, FALSE);
-	s = strchr(msg, '(');
-	if (p->retc > 1 && s) {
-		s = strchr(s + 1, '(');
+	msg = (str) GDKmalloc(BUFSIZ);
+	msg[0]='#';
+	msg[1]=0;
+	if( p->retc > 1) strcat(msg,"(");
+	len= strlen(msg);
+	for (k = 0; k < p->retc; k++) {
+		VarPtr v = getVar(mb, getArg(p, k));
+		if (v->tmpindex == 0)
+			sprintf(msg+len, "%s", v->name);
+		else
+			sprintf(msg+len, "%c%d", REFMARKER, v->tmpindex);
+		if (k < p->retc - 1)
+			strcat(msg,",");
+		len= strlen(msg);
 	}
+	if( p->retc > 1) strcat(msg,")");
+	sprintf(msg+len,":= %s.%s(",getModuleId(p),getFunctionId(p));
+	s = strchr(msg, '(');
 	if (s) {
 		s++;
 		*s = 0;
@@ -137,6 +150,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 		}
 		strcat(msg,");");
 	} 
+printf("#RQcall:%s\n",msg);
 	return msg;
 }
 @- 
