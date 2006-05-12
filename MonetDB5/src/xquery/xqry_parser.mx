@@ -56,6 +56,8 @@ on the document tree.
 #ifndef _XQRY_PARSER_H
 #define _XQRY_PARSER_H
 
+#define STATIC static
+
 #include "xqry.h"
 #include "xqry_gencode.h"
 
@@ -136,16 +138,16 @@ producing MAL code on the fly as needed.
 Given the FLWOR expression this might not be optimal,
 but further tuning is left to the backend.
 @c
-static int parseIfExpr(Client cntxt, Xbackend xb);
-static int parseReturnExprSingle(Client cntxt, Xbackend xb);
-static int parseFLWORExpr(Client cntxt, Xbackend xb);
-static int parseTypeswitchExpr(Client cntxt, Xbackend xb);
-static int parseExpr(Client cntxt, Xbackend xb);
-static int parseExprSingle(Client cntxt, Xbackend xb);
-static int parseDirectConstructor(Client cntxt, Xbackend xb);
+STATIC int parseIfExpr(Client cntxt, Xbackend xb);
+STATIC int parseReturnExprSingle(Client cntxt, Xbackend xb);
+STATIC int parseFLWORExpr(Client cntxt, Xbackend xb);
+STATIC int parseTypeswitchExpr(Client cntxt, Xbackend xb);
+STATIC int parseExpr(Client cntxt, Xbackend xb);
+STATIC int parseExprSingle(Client cntxt, Xbackend xb);
+STATIC int parseDirectConstructor(Client cntxt, Xbackend xb);
 
-static short idCharacter[256];
-static short idCharacter2[256];
+STATIC short idCharacter[256];
+STATIC short idCharacter2[256];
 
 void 
 XQRYinit()
@@ -163,7 +165,7 @@ XQRYinit()
 }
 
 /* todo QName is [{prefix}':']?(name) */
-static int
+STATIC int
 parseQName_(Client cntxt, Xbackend xb, str *S){
 	int l;
 	str s,t;
@@ -187,14 +189,14 @@ parseQName_(Client cntxt, Xbackend xb, str *S){
 
 /* lazy implementation ;-))) */
 #define parseNCName parseQName
-static int
+STATIC int
 parseQName(Client cntxt, Xbackend xb)
 {
 	str s;
 	return parseQName_(cntxt, xb, &s);
 }
 
-static int
+STATIC int
 parseVarQName(Client cntxt, Xbackend xb){
 	int l;
 	str s;
@@ -235,7 +237,7 @@ The key of the problem is to deal with path expressions.
 #define COMMENT_TEST 22
 #define EMPTY_SEQUENCE_TEST 23
 
-static int
+STATIC int
 parseElementName(Client cntxt, Xbackend xb){
 	int i;
 	@:ptrace(parseElementName)@
@@ -244,7 +246,7 @@ parseElementName(Client cntxt, Xbackend xb){
 	return PARSE_OK;
 }
 
-static int
+STATIC int
 parseTypeName(Client cntxt, Xbackend xb){
 	int i;
 	@:ptrace(parseTypeName)@
@@ -253,7 +255,7 @@ parseTypeName(Client cntxt, Xbackend xb){
 	return PARSE_OK;
 }
 
-static int
+STATIC int
 parseAttributeName(Client cntxt, Xbackend xb){
 	int i;
 	@:ptrace(parseAttributeName)@
@@ -262,7 +264,7 @@ parseAttributeName(Client cntxt, Xbackend xb){
 	return PARSE_OK;
 }
 
-static int 
+STATIC int 
 parseSchemaElementTest(Client cntxt, Xbackend xb){
 	int i;
 	@:ptrace(parseSchemaElementTest)@
@@ -281,7 +283,7 @@ parseSchemaElementTest(Client cntxt, Xbackend xb){
 	return PARSE_OK;
 }
 
-static int 
+STATIC int 
 parseElementTest(Client cntxt, Xbackend xb){
 	if( !MALkeyword(cntxt,"element",7))
 		return PARSE_ERR;
@@ -314,7 +316,7 @@ parseElementTest(Client cntxt, Xbackend xb){
 }
 
 
-static int 
+STATIC int 
 parseSchemaAttributeTest(Client cntxt, Xbackend xb){
 	if( !MALkeyword(cntxt,"schema-attribute",16))
 		return PARSE_ERR;
@@ -336,7 +338,7 @@ parseSchemaAttributeTest(Client cntxt, Xbackend xb){
 }
 
 
-static int 
+STATIC int 
 parseAttributeTest(Client cntxt, Xbackend xb){
 	if( !MALkeyword(cntxt,"attribute",9))
 		return PARSE_ERR;
@@ -366,7 +368,7 @@ parseAttributeTest(Client cntxt, Xbackend xb){
 	return PARSE_OK;
 }
 
-static int
+STATIC int
 parseDocumentTest(Client cntxt, Xbackend xb){
 	if( !MALkeyword(cntxt,"document-node",13))
 		return PARSE_ERR;
@@ -385,7 +387,7 @@ parseDocumentTest(Client cntxt, Xbackend xb){
 	return PARSE_OK;
 }
 
-static int
+STATIC int
 parsePITest(Client cntxt, Xbackend xb){
 	int i;
 
@@ -410,7 +412,7 @@ parsePITest(Client cntxt, Xbackend xb){
 	return PARSE_OK;
 }
 
-static int
+STATIC int
 parseKindTest(Client cntxt, Xbackend xb){
 	int kind=0;
 
@@ -440,7 +442,7 @@ parseKindTest(Client cntxt, Xbackend xb){
 	return PARSE_OK;
 }
 
-static int
+STATIC int
 parseItemType(Client cntxt, Xbackend xb){
 	int i;
 	@:ptrace(parseItemType)@
@@ -461,7 +463,7 @@ parseItemType(Client cntxt, Xbackend xb){
 	return PARSE_OK;
 }
 
-static int
+STATIC int
 parseSequenceType(Client cntxt, Xbackend xb){
 	@:ptrace(parseSequenceType)@
 	if( MALkeyword(cntxt,"empty-sequence",13) ) {
@@ -485,14 +487,14 @@ parseSequenceType(Client cntxt, Xbackend xb){
 	return PARSE_OK;
 }
 
-static int
+STATIC int
 parseTypeDeclaration(Client cntxt, Xbackend xb){
 	if( !MALkeyword(cntxt,"as",2) )
 		return PARSE_ERR;
 	@:ptrace(parseTypeDeclaration)@
 	return parseSequenceType(cntxt,xb);
 }
-static int
+STATIC int
 parseCompPIConstructor(Client cntxt, Xbackend xb){
 	int i;
 
@@ -524,7 +526,7 @@ parseCompPIConstructor(Client cntxt, Xbackend xb){
 }
 
 
-static int
+STATIC int
 parseCompCommentConstructor(Client cntxt, Xbackend xb){
 	if( !MALkeyword(cntxt,"comment",7) )
 		return PARSE_ERR;
@@ -541,7 +543,7 @@ parseCompCommentConstructor(Client cntxt, Xbackend xb){
 	return PARSE_OK;
 }
 
-static int
+STATIC int
 parseCompTextConstructor(Client cntxt, Xbackend xb){
 	int before = cntxt->yycur;
 	if( !MALkeyword(cntxt,"text",4) )
@@ -561,7 +563,7 @@ parseCompTextConstructor(Client cntxt, Xbackend xb){
 	return PARSE_OK;
 }
 
-static int
+STATIC int
 parseCompAttrConstructor(Client cntxt, Xbackend xb){
 	int i;
 	if( !MALkeyword(cntxt,"attribute",9))
@@ -591,7 +593,7 @@ parseCompAttrConstructor(Client cntxt, Xbackend xb){
 	return PARSE_OK;
 }
 
-static int
+STATIC int
 parseCompElemConstructor(Client cntxt, Xbackend xb){
 	int i;
 	if( !MALkeyword(cntxt,"element",7))
@@ -620,7 +622,7 @@ parseCompElemConstructor(Client cntxt, Xbackend xb){
 	return PARSE_OK;
 }
 
-static int
+STATIC int
 parseCompDocConstructor(Client cntxt, Xbackend xb){
 	if( !MALkeyword(cntxt,"document",8))
 		return PARSE_ERR;
@@ -637,7 +639,7 @@ parseCompDocConstructor(Client cntxt, Xbackend xb){
 	return PARSE_OK;
 }
 
-static int
+STATIC int
 parseComputedConstructor(Client cntxt, Xbackend xb){
 	@:ptrace(parseComputedConstructor)@
 	if( parseCompDocConstructor(cntxt,xb)== PARSE_OK)
@@ -653,7 +655,7 @@ parseComputedConstructor(Client cntxt, Xbackend xb){
 	return parseCompPIConstructor(cntxt,xb);
 }
 
-static int
+STATIC int
 parseDirPIConstructor(Client cntxt, Xbackend xb){
 	int i;
 	(void) xb;
@@ -676,7 +678,7 @@ parseDirPIConstructor(Client cntxt, Xbackend xb){
 	return PARSE_OK;
 }
 
-static int
+STATIC int
 parseDirCommentConstructor(Client cntxt, Xbackend xb){
 	int i =0;
 
@@ -694,7 +696,7 @@ parseDirCommentConstructor(Client cntxt, Xbackend xb){
 	return PARSE_OK;
 }
 
-static int
+STATIC int
 parseDirAttributeValue(Client cntxt, Xbackend xb){
 	int i=0;
 	(void) xb;
@@ -733,7 +735,7 @@ parseDirAttributeValue(Client cntxt, Xbackend xb){
 	return PARSE_OK;
 }
 
-static int parseDirAttributeList(Client cntxt, Xbackend xb) {
+STATIC int parseDirAttributeList(Client cntxt, Xbackend xb) {
 	int i;
 	int res = PARSE_OK;
 
@@ -751,7 +753,7 @@ static int parseDirAttributeList(Client cntxt, Xbackend xb) {
 	return res;
 }
 
-static int parseCDataSection(Client cntxt, Xbackend xb) {
+STATIC int parseCDataSection(Client cntxt, Xbackend xb) {
 	(void) xb;
 	if (!keyphrase(cntxt, "<![CDATA[", 9))
 		return PARSE_ERR;
@@ -761,7 +763,7 @@ static int parseCDataSection(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseCommonContent(Client cntxt, Xbackend xb) {
+STATIC int parseCommonContent(Client cntxt, Xbackend xb) {
 	ValRecord val;
 	int i;
 
@@ -788,7 +790,7 @@ static int parseCommonContent(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseElementContentChar(Client cntxt, Xbackend xb) {
+STATIC int parseElementContentChar(Client cntxt, Xbackend xb) {
 	(void) xb;
 	@:ptrace(parseElementContentChar)@
 	switch (currChar(cntxt)) {
@@ -801,7 +803,7 @@ static int parseElementContentChar(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parsePredefinedEntityRef(Client cntxt, Xbackend xb) {
+STATIC int parsePredefinedEntityRef(Client cntxt, Xbackend xb) {
 	(void) xb;
 	if (currChar(cntxt) != '&')
 		return PARSE_ERR;
@@ -820,7 +822,7 @@ static int parsePredefinedEntityRef(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseDirElementContent(Client cntxt, Xbackend xb) {
+STATIC int parseDirElementContent(Client cntxt, Xbackend xb) {
 	@:ptrace(parseDirElementContent)@
 	if (parseDirectConstructor(cntxt, xb) == PARSE_OK)
 		return PARSE_OK;
@@ -831,7 +833,7 @@ static int parseDirElementContent(Client cntxt, Xbackend xb) {
 	return parseElementContentChar(cntxt, xb);
 }
 
-static int parseDirElementConstructor(Client cntxt, Xbackend xb) {
+STATIC int parseDirElementConstructor(Client cntxt, Xbackend xb) {
 	int i;
 
 	@:ptrace(parseDirElementConstructor)@
@@ -875,14 +877,14 @@ int parseDirectConstructor(Client cntxt, Xbackend xb) {
 	return parseDirPIConstructor(cntxt, xb);
 }
 
-static int parseConstructor(Client cntxt, Xbackend xb) {
+STATIC int parseConstructor(Client cntxt, Xbackend xb) {
 	@:ptrace(parseConstructor)@
 	    if (parseDirectConstructor(cntxt, xb) == PARSE_OK)
 		return PARSE_OK;
 	return parseComputedConstructor(cntxt, xb);
 }
 
-static int parseNameTest(Client cntxt, Xbackend xb) {
+STATIC int parseNameTest(Client cntxt, Xbackend xb) {
 	int i = 0;
 	@:ptrace(parseNameTest)@
 	(void) xb;
@@ -910,7 +912,7 @@ static int parseNameTest(Client cntxt, Xbackend xb) {
 }
 
 /* we need readahead here */
-static int parseFunctionCall(Client cntxt, Xbackend xb) {
+STATIC int parseFunctionCall(Client cntxt, Xbackend xb) {
 	int before = cntxt->yycur;
 	int i;
 	int argc = 0;
@@ -940,7 +942,7 @@ static int parseFunctionCall(Client cntxt, Xbackend xb) {
 }
 
 
-static int parsePrimaryExpr(Client cntxt, Xbackend xb) {
+STATIC int parsePrimaryExpr(Client cntxt, Xbackend xb) {
 	int i;
 	ValRecord val;
 
@@ -1005,7 +1007,7 @@ static int parsePrimaryExpr(Client cntxt, Xbackend xb) {
 	return parseFunctionCall(cntxt, xb);
 }
 
-static int parsePredicate(Client cntxt, Xbackend xb) {
+STATIC int parsePredicate(Client cntxt, Xbackend xb) {
 	skipSpace(cntxt);
 	if (currChar(cntxt) != '[')
 		return PARSE_ERR;
@@ -1020,7 +1022,7 @@ static int parsePredicate(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 
 }
-static int parsePredicateList(Client cntxt, Xbackend xb) {
+STATIC int parsePredicateList(Client cntxt, Xbackend xb) {
 	@:ptrace(parsePredicateList)@
 	do {
 		skipSpace(cntxt);
@@ -1028,7 +1030,7 @@ static int parsePredicateList(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseFilterExpr(Client cntxt, Xbackend xb) {
+STATIC int parseFilterExpr(Client cntxt, Xbackend xb) {
 	@:ptrace(parseFilter)@
 	skipSpace(cntxt);
 	if (parsePrimaryExpr(cntxt, xb) == PARSE_ERR)
@@ -1036,14 +1038,14 @@ static int parseFilterExpr(Client cntxt, Xbackend xb) {
 	return parsePredicateList(cntxt, xb);
 }
 
-static int parseNodeTest(Client cntxt, Xbackend xb) {
+STATIC int parseNodeTest(Client cntxt, Xbackend xb) {
 	@:ptrace(parseNodeTest)@
 	if (parseKindTest(cntxt, xb) == PARSE_OK)
 		return PARSE_OK;
 	return parseNameTest(cntxt, xb);
 }
 
-static int parseAbbrevReverseStep(Client cntxt, Xbackend xb) {
+STATIC int parseAbbrevReverseStep(Client cntxt, Xbackend xb) {
 	@:ptrace(parseAbbrevReverseStep)@
 	(void) xb;
 	if (MALkeyword(cntxt, "..", 2)) {
@@ -1052,7 +1054,7 @@ static int parseAbbrevReverseStep(Client cntxt, Xbackend xb) {
 	return xqryError(cntxt,"'..' expected\n");
 }
 
-static int parseReverseAxis(Client cntxt, Xbackend xb) {
+STATIC int parseReverseAxis(Client cntxt, Xbackend xb) {
 	int ret;
 
 	@:ptrace(parseReverseAxis)@
@@ -1075,7 +1077,7 @@ static int parseReverseAxis(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseReverseStep(Client cntxt, Xbackend xb) {
+STATIC int parseReverseStep(Client cntxt, Xbackend xb) {
 	@:ptrace(parseReverseStep)@
 	skipSpace(cntxt);
 	if (parseReverseAxis(cntxt, xb) == PARSE_OK) {
@@ -1084,7 +1086,7 @@ static int parseReverseStep(Client cntxt, Xbackend xb) {
 	return parseAbbrevReverseStep(cntxt, xb);
 }
 
-static int parseAbbrevForwardStep(Client cntxt, Xbackend xb) {
+STATIC int parseAbbrevForwardStep(Client cntxt, Xbackend xb) {
 	@:ptrace(parseAbbrevForwardStep)@
 	(void) xb;
 	skipSpace(cntxt);
@@ -1095,7 +1097,7 @@ static int parseAbbrevForwardStep(Client cntxt, Xbackend xb) {
 	return parseNodeTest(cntxt, xb);
 }
 
-static int parseForwardAxis(Client cntxt, Xbackend xb) {
+STATIC int parseForwardAxis(Client cntxt, Xbackend xb) {
 	int ret;
 
 	@:ptrace(parseForwardAxis)@
@@ -1122,7 +1124,7 @@ static int parseForwardAxis(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseForwardStep(Client cntxt, Xbackend xb) {
+STATIC int parseForwardStep(Client cntxt, Xbackend xb) {
 	@:ptrace(parseForwardStep)@
 	skipSpace(cntxt);
 	if (parseForwardAxis(cntxt, xb) == PARSE_OK) {
@@ -1131,7 +1133,7 @@ static int parseForwardStep(Client cntxt, Xbackend xb) {
 	return parseAbbrevForwardStep(cntxt, xb);
 }
 
-static int parseAxisStep(Client cntxt, Xbackend xb) 
+STATIC int parseAxisStep(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseAxisStep)@
 	if (parseReverseStep(cntxt, xb) == PARSE_OK) {
@@ -1141,7 +1143,7 @@ static int parseAxisStep(Client cntxt, Xbackend xb)
 	return parsePredicateList(cntxt, xb);
 }
 
-static int parseStepExpr(Client cntxt, Xbackend xb) {
+STATIC int parseStepExpr(Client cntxt, Xbackend xb) {
 	@:ptrace(parseStepExpr)@
 	if (parseFilterExpr(cntxt, xb) == PARSE_OK)
 		return PARSE_OK;
@@ -1164,7 +1166,7 @@ int parseRelativePathExpr(Client cntxt, Xbackend xb) {
 	return res;
 }
 
-static int parsePathExpr(Client cntxt, Xbackend xb) {
+STATIC int parsePathExpr(Client cntxt, Xbackend xb) {
 	@:ptrace(parsePathExpr)@
 	skipSpace(cntxt);
 	if (currChar(cntxt) == '/') {
@@ -1179,9 +1181,9 @@ static int parsePathExpr(Client cntxt, Xbackend xb) {
 Variables are declared and stored on the top
 of the variable stack.
 @c 
-static int parseVarName(Client cntxt, Xbackend xb);
+STATIC int parseVarName(Client cntxt, Xbackend xb);
 
-static int parsePositionalVar(Client cntxt, Xbackend xb) {
+STATIC int parsePositionalVar(Client cntxt, Xbackend xb) {
 	int i = xb->vtop - 1;	/* last defined one */
 	(void) i;
 	if (!MALkeyword(cntxt, "at", 2))
@@ -1209,7 +1211,7 @@ int parseVarName(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parsePragma(Client cntxt, Xbackend xb) {
+STATIC int parsePragma(Client cntxt, Xbackend xb) {
 	int i;
 	(void) xb;
 	if (!keyphrase2(cntxt, "(#"))
@@ -1230,7 +1232,7 @@ static int parsePragma(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseExtensionExpr(Client cntxt, Xbackend xb) {
+STATIC int parseExtensionExpr(Client cntxt, Xbackend xb) {
 	@:ptrace(parseExtensionExpr)@
 	do {
 		skipSpace(cntxt);
@@ -1246,7 +1248,7 @@ static int parseExtensionExpr(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseValidateExpr(Client cntxt, Xbackend xb) {
+STATIC int parseValidateExpr(Client cntxt, Xbackend xb) {
 	if (!MALkeyword(cntxt, "validate", 8))
 		return PARSE_ERR;
 	@:ptrace(parseValidateExpr)@
@@ -1266,7 +1268,7 @@ static int parseValidateExpr(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseSingleType(Client cntxt, Xbackend xb) {
+STATIC int parseSingleType(Client cntxt, Xbackend xb) {
 	int i;
 	@:ptrace(parseSingleType)@
 	if ( (i=parseQName(cntxt,xb)) <= 0)
@@ -1276,7 +1278,7 @@ static int parseSingleType(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseValueExpr(Client cntxt, Xbackend xb) {
+STATIC int parseValueExpr(Client cntxt, Xbackend xb) {
 	@:ptrace(parseValueExpr)@
 	skipSpace(cntxt);
 	if (parsePathExpr(cntxt, xb) == PARSE_OK)
@@ -1288,7 +1290,7 @@ static int parseValueExpr(Client cntxt, Xbackend xb) {
 	return xqryError(cntxt,"<ValidateExpr>, <PathExpr>, or <ExtensionExpr> expected\n");
 }
 
-static int parseUnaryExpr(Client cntxt, Xbackend xb) {
+STATIC int parseUnaryExpr(Client cntxt, Xbackend xb) {
 	@:ptrace(parseUnaryExpr)@
 	skipSpace(cntxt);
 	if (currChar(cntxt) == '+' || currChar(cntxt) == '-')
@@ -1297,7 +1299,7 @@ static int parseUnaryExpr(Client cntxt, Xbackend xb) {
 	return parseValueExpr(cntxt, xb);
 }
 
-static int parseCastExpr(Client cntxt, Xbackend xb) {
+STATIC int parseCastExpr(Client cntxt, Xbackend xb) {
 	@:ptrace(parseCastExpr)@
 	skipSpace(cntxt);
 	if (parseUnaryExpr(cntxt, xb) == PARSE_OK)
@@ -1309,7 +1311,7 @@ static int parseCastExpr(Client cntxt, Xbackend xb) {
 	return parseSingleType(cntxt, xb);
 }
 
-static int parseCastableExpr(Client cntxt, Xbackend xb) {
+STATIC int parseCastableExpr(Client cntxt, Xbackend xb) {
 	@:ptrace(parseCastableExpr)@
 	skipSpace(cntxt);
 	if (parseCastExpr(cntxt, xb) == PARSE_OK)
@@ -1321,7 +1323,7 @@ static int parseCastableExpr(Client cntxt, Xbackend xb) {
 	return parseSingleType(cntxt, xb);
 }
 
-static int parseTreatExpr(Client cntxt, Xbackend xb) {
+STATIC int parseTreatExpr(Client cntxt, Xbackend xb) {
 	@:ptrace(parseTreatExpr)@
 	skipSpace(cntxt);
 	if (parseCastableExpr(cntxt, xb) == PARSE_OK)
@@ -1333,7 +1335,7 @@ static int parseTreatExpr(Client cntxt, Xbackend xb) {
 	return parseSequenceType(cntxt, xb);
 }
 
-static int parseInstanceOfExpr(Client cntxt, Xbackend xb) {
+STATIC int parseInstanceOfExpr(Client cntxt, Xbackend xb) {
 	@:ptrace(parseInstanceOfExpr)@
 	skipSpace(cntxt);
 	if (parseTreatExpr(cntxt, xb) == PARSE_OK)
@@ -1345,7 +1347,7 @@ static int parseInstanceOfExpr(Client cntxt, Xbackend xb) {
 	return parseSequenceType(cntxt, xb);
 }
 
-static int parseIntersectExceptExpr(Client cntxt, Xbackend xb) {
+STATIC int parseIntersectExceptExpr(Client cntxt, Xbackend xb) {
 	int res = PARSE_OK;
 	@:ptrace(parseIntersectExceptExpr)@
 	skipSpace(cntxt);
@@ -1361,7 +1363,7 @@ static int parseIntersectExceptExpr(Client cntxt, Xbackend xb) {
 	return res;
 }
 
-static int parseUnionExpr(Client cntxt, Xbackend xb) {
+STATIC int parseUnionExpr(Client cntxt, Xbackend xb) {
 	int res = PARSE_OK;
 	@:ptrace(parseUnion)@
 	skipSpace(cntxt);
@@ -1378,7 +1380,7 @@ static int parseUnionExpr(Client cntxt, Xbackend xb) {
 	return res;
 }
 
-static int parseMultiplicativeExpr(Client cntxt, Xbackend xb) {
+STATIC int parseMultiplicativeExpr(Client cntxt, Xbackend xb) {
 	int res = PARSE_OK;
 	@:ptrace(parseMultiplicativeExpr)@
 	skipSpace(cntxt);
@@ -1397,7 +1399,7 @@ static int parseMultiplicativeExpr(Client cntxt, Xbackend xb) {
 	return res;
 }
 
-static int parseAdditiveExpr(Client cntxt, Xbackend xb) {
+STATIC int parseAdditiveExpr(Client cntxt, Xbackend xb) {
 	int res = PARSE_OK;
 	@:ptrace(parseAdditiveExpr)@
 	skipSpace(cntxt);
@@ -1412,18 +1414,17 @@ static int parseAdditiveExpr(Client cntxt, Xbackend xb) {
 	} while ((res = parseMultiplicativeExpr(cntxt, xb)) == PARSE_OK);
 	return res;
 }
-static int parseRangeExpr(Client cntxt, Xbackend xb) {
+STATIC int parseRangeExpr(Client cntxt, Xbackend xb) {
 	@:ptrace(parseRangeExpr)@
 	skipSpace(cntxt);
 	if (parseAdditiveExpr(cntxt, xb) == PARSE_OK)
 		return PARSE_OK;
-	skipSpace(cntxt);
 	if (MALkeyword(cntxt, "to", 2))
 		return parseRangeExpr(cntxt, xb);
 	return xqryError(cntxt,"'to' expected\n");
 }
 
-static int parseComparisonExpr(Client cntxt, Xbackend xb) {
+STATIC int parseComparisonExpr(Client cntxt, Xbackend xb) {
 	int before = cntxt->yycur;
 	@:ptrace(parseComparisonExpr)@
 	skipSpace(cntxt);
@@ -1458,7 +1459,7 @@ static int parseComparisonExpr(Client cntxt, Xbackend xb) {
 	return xqryError(cntxt,"<ComparisonOperator> expected\n");
 }
 
-static int parseAndExpr(Client cntxt, Xbackend xb) {
+STATIC int parseAndExpr(Client cntxt, Xbackend xb) {
 	@:ptrace(parseAndExpr)@
 	skipSpace(cntxt);
 	if (parseComparisonExpr(cntxt, xb) == PARSE_ERR)
@@ -1469,7 +1470,7 @@ static int parseAndExpr(Client cntxt, Xbackend xb) {
 	return parseAndExpr(cntxt, xb);
 }
 
-static int parseOrExpr(Client cntxt, Xbackend xb) {
+STATIC int parseOrExpr(Client cntxt, Xbackend xb) {
 	@:ptrace(parseOrExpr)@
 	skipSpace(cntxt);
 	if (parseAndExpr(cntxt, xb) == PARSE_ERR)
@@ -1480,7 +1481,7 @@ static int parseOrExpr(Client cntxt, Xbackend xb) {
 	return parseOrExpr(cntxt, xb);
 }
 
-static int parseQuantifiedExpr(Client cntxt, Xbackend xb) {
+STATIC int parseQuantifiedExpr(Client cntxt, Xbackend xb) {
 	@:ptrace(parseQuantifiedExpr)@
 	if (!MALkeyword(cntxt, "some", 4) &&
 	    !MALkeyword(cntxt, "every", 5))
@@ -1505,7 +1506,7 @@ static int parseQuantifiedExpr(Client cntxt, Xbackend xb) {
 		return PARSE_ERR;
 	return PARSE_OK;
 }
-static int parseExprSingle(Client cntxt, Xbackend xb) {
+STATIC int parseExprSingle(Client cntxt, Xbackend xb) {
 	@:ptrace(parseExprSingle)@
 	if (MALlookahead(cntxt, "for", 3) || 
 	    MALlookahead(cntxt, "let", 3)) 
@@ -1534,7 +1535,7 @@ int parseExpr(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseCaseClause(Client cntxt, Xbackend xb) {
+STATIC int parseCaseClause(Client cntxt, Xbackend xb) {
 	@:ptrace(parseCaseClause)@
 	skipSpace(cntxt);
 	if (!MALkeyword(cntxt, "case", 4))
@@ -1549,7 +1550,7 @@ static int parseCaseClause(Client cntxt, Xbackend xb) {
 	return parseReturnExprSingle(cntxt, xb);
 }
 
-static int parseTypeswitchExpr(Client cntxt, Xbackend xb) {
+STATIC int parseTypeswitchExpr(Client cntxt, Xbackend xb) {
 	@:ptrace(parseTypeSwitch)@
 	skipSpace(cntxt);
 	if (!MALkeyword(cntxt, "typeswitch", 10))
@@ -1572,7 +1573,7 @@ static int parseTypeswitchExpr(Client cntxt, Xbackend xb) {
 	return parseReturnExprSingle(cntxt, xb);
 }
 
-static int parseIfExpr(Client cntxt, Xbackend xb) {
+STATIC int parseIfExpr(Client cntxt, Xbackend xb) {
 	@:ptrace(parseIfExpr)@
 	if (!MALkeyword(cntxt, "if", 2))
 		return PARSE_ERR;
@@ -1604,7 +1605,7 @@ int parseReturnExprSingle(Client cntxt, Xbackend xb) {
 	return parseExprSingle(cntxt, xb);
 }
 
-static int parseOrderByClause(Client cntxt, Xbackend xb) {
+STATIC int parseOrderByClause(Client cntxt, Xbackend xb) {
 	@:ptrace(parseOrderByClause)@
 	MALkeyword(cntxt, "stable", 6);
 	if (!MALkeyword(cntxt, "order", 5))
@@ -1633,14 +1634,14 @@ static int parseOrderByClause(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseWhereClause(Client cntxt, Xbackend xb) {
+STATIC int parseWhereClause(Client cntxt, Xbackend xb) {
 	@:ptrace(parseWhereClause)@
 	    if (!MALkeyword(cntxt, "where", 5))
 		return PARSE_ERR;
 	return parseExprSingle(cntxt, xb);
 }
 
-static int parseForClause(Client cntxt, Xbackend xb) {
+STATIC int parseForClause(Client cntxt, Xbackend xb) {
 	@:ptrace(parseForClause)@
 	do {
 		if (currChar(cntxt) == ',')
@@ -1665,7 +1666,7 @@ static int parseForClause(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseLetClause(Client cntxt, Xbackend xb) {
+STATIC int parseLetClause(Client cntxt, Xbackend xb) {
 	@:ptrace(parseLetClause)@
 	do {
 		if (currChar(cntxt) == ',')
@@ -1712,7 +1713,7 @@ int parseFLWORExpr(Client cntxt, Xbackend xb) {
 	return parseReturnExprSingle(cntxt, xb);
 }
 
-static int parseParam(Client cntxt, Xbackend xb) {
+STATIC int parseParam(Client cntxt, Xbackend xb) {
 	int i;
 	@:ptrace(parseParam)@
 	skipSpace(cntxt);
@@ -1726,7 +1727,7 @@ static int parseParam(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseParamList(Client cntxt, Xbackend xb) {
+STATIC int parseParamList(Client cntxt, Xbackend xb) {
 	@:ptrace(parseParamList)@
 	    if (parseParam(cntxt, xb) == PARSE_OK)
 		do {
@@ -1738,7 +1739,7 @@ static int parseParamList(Client cntxt, Xbackend xb) {
 	return PARSE_ERR;
 }
 
-static int parseFunctionDecl(Client cntxt, Xbackend xb) {
+STATIC int parseFunctionDecl(Client cntxt, Xbackend xb) {
 	int i;
 	@:ptrace(parseFunctionDecl)@
 	    /* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR; */
@@ -1773,7 +1774,7 @@ static int parseFunctionDecl(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseConstructionDecl(Client cntxt, Xbackend xb) {
+STATIC int parseConstructionDecl(Client cntxt, Xbackend xb) {
 	@:ptrace(parseConstructionDecl)@
 	(void) xb;
 	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR; */
@@ -1786,7 +1787,7 @@ static int parseConstructionDecl(Client cntxt, Xbackend xb) {
 	return xqryError(cntxt,"'strict' or 'preserve' expected\n");
 }
 
-static int parseVarDecl(Client cntxt, Xbackend xb) {
+STATIC int parseVarDecl(Client cntxt, Xbackend xb) {
 	int i;
 	@:ptrace(parseVarDecl)@
 	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR; */
@@ -1812,7 +1813,7 @@ static int parseVarDecl(Client cntxt, Xbackend xb) {
 	return xqryError(cntxt,"'external' or ':=' expected\n");
 }
 
-static int parseModuleImport(Client cntxt, Xbackend xb) {
+STATIC int parseModuleImport(Client cntxt, Xbackend xb) {
 	int i;
 	@:ptrace(parseModuleImport)@
 	(void) xb;
@@ -1853,7 +1854,7 @@ static int parseModuleImport(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseSchemaPrefix(Client cntxt, Xbackend xb) {
+STATIC int parseSchemaPrefix(Client cntxt, Xbackend xb) {
 	@:ptrace(parseSchemaPrefix)@
 	(void) xb;
 	if (MALkeyword(cntxt, "namespace", 9)) {
@@ -1872,7 +1873,7 @@ static int parseSchemaPrefix(Client cntxt, Xbackend xb) {
 	return xqryError(cntxt,"'element' 'namespace' expected\n");
 }
 
-static int parseSchemaImport(Client cntxt, Xbackend xb) {
+STATIC int parseSchemaImport(Client cntxt, Xbackend xb) {
 	int i;
 	@:ptrace(parseSchemaImport)@
 	    if (!MALkeyword(cntxt, "import", 6))
@@ -1905,7 +1906,7 @@ static int parseSchemaImport(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseBaseURIDecl(Client cntxt, Xbackend xb) {
+STATIC int parseBaseURIDecl(Client cntxt, Xbackend xb) {
 	int i;
 	@:ptrace(parseBaseURIDecl)@
 	(void) xb;
@@ -1920,7 +1921,7 @@ static int parseBaseURIDecl(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseDefaultCollationDecl(Client cntxt, Xbackend xb) {
+STATIC int parseDefaultCollationDecl(Client cntxt, Xbackend xb) {
 	int i;
 	@:ptrace(parseeDefaultCollationDecl)@
 	(void) xb;
@@ -1937,7 +1938,7 @@ static int parseDefaultCollationDecl(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseCopyNamespacesDecl(Client cntxt, Xbackend xb) {
+STATIC int parseCopyNamespacesDecl(Client cntxt, Xbackend xb) {
 	@:ptrace(parseCopyNamespacesDecl)@
 	(void) xb;
 	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR; */
@@ -1955,7 +1956,7 @@ static int parseCopyNamespacesDecl(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseEmptyOrderDecl(Client cntxt, Xbackend xb) {
+STATIC int parseEmptyOrderDecl(Client cntxt, Xbackend xb) {
 	@:ptrace(parseEmptyOrderDecl)@
 	(void) xb;
 	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR; */
@@ -1971,7 +1972,7 @@ static int parseEmptyOrderDecl(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseOrderingModeDecl(Client cntxt, Xbackend xb) {
+STATIC int parseOrderingModeDecl(Client cntxt, Xbackend xb) {
 	@:ptrace(parseOrderingModeDecl)@
 	(void) xb;
 	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR; */
@@ -1983,7 +1984,7 @@ static int parseOrderingModeDecl(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseOptionDecl(Client cntxt, Xbackend xb) {
+STATIC int parseOptionDecl(Client cntxt, Xbackend xb) {
 	int i;
 	@:ptrace(parseOptionDecl)@
 	(void) xb;
@@ -2002,7 +2003,7 @@ static int parseOptionDecl(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseDefaultNamespaceDecl(Client cntxt, Xbackend xb) {
+STATIC int parseDefaultNamespaceDecl(Client cntxt, Xbackend xb) {
 	int i;
 	@:ptrace(parseDefaultNamespaceDecl)@
 	(void) xb;
@@ -2023,7 +2024,7 @@ static int parseDefaultNamespaceDecl(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseNamespaceDecl(Client cntxt, Xbackend xb) {
+STATIC int parseNamespaceDecl(Client cntxt, Xbackend xb) {
 	int i;
 	@:ptrace(parseNamespaceDecl)@
 	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR; */
@@ -2044,7 +2045,7 @@ static int parseNamespaceDecl(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseBoundarySpaceDecl(Client cntxt, Xbackend xb) {
+STATIC int parseBoundarySpaceDecl(Client cntxt, Xbackend xb) {
 	@:ptrace(parseBoundarySpaceDecl)@
 	(void) xb;
 	/* if( !MALkeyword(cntxt,"declare",7) ) return PARSE_ERR; */
@@ -2056,7 +2057,7 @@ static int parseBoundarySpaceDecl(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseImport(Client cntxt, Xbackend xb) {
+STATIC int parseImport(Client cntxt, Xbackend xb) {
 	@:ptrace(parseImport)@
 	(void) xb;
 	skipSpace(cntxt);
@@ -2066,7 +2067,7 @@ static int parseImport(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseSetter(Client cntxt, Xbackend xb) {
+STATIC int parseSetter(Client cntxt, Xbackend xb) {
 	@:ptrace(parseSetter)@
 	skipSpace(cntxt);
 	if (parseBoundarySpaceDecl(cntxt, xb) != PARSE_OK &&
@@ -2080,7 +2081,7 @@ static int parseSetter(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseProlog(Client cntxt, Xbackend xb) {
+STATIC int parseProlog(Client cntxt, Xbackend xb) {
 	@:ptrace(parseProlog)@
 	do {
 		if (MALkeyword(cntxt, "declare", 7)) {
@@ -2111,7 +2112,7 @@ static int parseProlog(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseModuleDecl(Client cntxt, Xbackend xb) {
+STATIC int parseModuleDecl(Client cntxt, Xbackend xb) {
 	int i;
 	@:ptrace(parseModuleDecl)@
 	if (!MALkeyword(cntxt, "module", 6))
@@ -2138,7 +2139,7 @@ static int parseModuleDecl(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseLibraryModule(Client cntxt, Xbackend xb) {
+STATIC int parseLibraryModule(Client cntxt, Xbackend xb) {
 	@:ptrace(parseLibraryModule)@
 	skipSpace(cntxt);
 	if (parseModuleDecl(cntxt, xb) != PARSE_OK) 
@@ -2148,7 +2149,7 @@ static int parseLibraryModule(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseMainModule(Client cntxt, Xbackend xb) {
+STATIC int parseMainModule(Client cntxt, Xbackend xb) {
 	@:ptrace(parseMainModule)@
 	skipSpace(cntxt);
 	parseProlog(cntxt, xb);
@@ -2156,10 +2157,13 @@ static int parseMainModule(Client cntxt, Xbackend xb) {
 	/* QueryBody */
 	if (parseExpr(cntxt, xb) == PARSE_ERR)
 		return PARSE_ERR;
+	skipSpace(cntxt);
+	if( currChar(cntxt)== ';')
+		nextChar(cntxt);
 	return PARSE_OK;
 }
 
-static int parseVersionDecl(Client cntxt, Xbackend xb) {
+STATIC int parseVersionDecl(Client cntxt, Xbackend xb) {
 	int i;
 	@:ptrace(parseVersionDecl)@
 	(void) xb;
@@ -2189,7 +2193,7 @@ static int parseVersionDecl(Client cntxt, Xbackend xb) {
 	return PARSE_OK;
 }
 
-static int parseXqueryModule(Client cntxt, Xbackend xb) {
+STATIC int parseXqueryModule(Client cntxt, Xbackend xb) {
 	@:ptrace(parseModule)@
 	skipSpace(cntxt);
 	parseVersionDecl(cntxt, xb);
@@ -2213,7 +2217,7 @@ int parseXQuery(Client cntxt) {
 		xb->mode= xqry_trace;
 	ret = parseXqueryModule(cntxt, xb);
 #ifdef _XQRY_DEBUG
-		stream_printf(cntxt->fdout, "PARSE %s",
+		stream_printf(cntxt->fdout, "PARSE %s\n",
 				  ret == PARSE_OK ? "OK" : "ERR");
 		stream_flush(cntxt->fdout);
 #endif

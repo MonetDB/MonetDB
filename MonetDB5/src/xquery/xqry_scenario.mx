@@ -168,7 +168,7 @@ XQUERYreader(Client c)
 		}
 	    }
 	}
-	if (!go || (strncmp(CURRENT(c), "quit", 4) == 0)) {
+	if ( !go || (strncmp(CURRENT(c), "quit", 4) == 0)) {
 		in->pos = in->len;	/* skip rest of the input */
 		c->mode = FINISHING;
 		return NULL;
@@ -193,17 +193,11 @@ XQUERYparser(Client c)
     oldstop = c->curprg->def->stop;
 
 	err=parseXQuery(c);
-	pushEndInstruction(c->curprg->def);
 
-	/* hack: if there is an error, reset the input buffer */
-	if( err) {
-		c->yycur = 0;
-		c->fdin->pos= 0;
-		c->fdin->buf[0]=0;
-	}
-
-	if( err == 0)
+	if( err == 0){
+		pushEndInstruction(c->curprg->def);
 		chkProgram(c->nspace, c->curprg->def);
+	}
 	if( c->curprg->def->errors || err){
 		showErrors();
 		/* restore the state */
