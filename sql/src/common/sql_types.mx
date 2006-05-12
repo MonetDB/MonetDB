@@ -19,7 +19,7 @@
 @*
 The typing scheme of SQL is quite elaborate. The standard introduces
 several basic types with a plethora of functions.
-As long as we haven;t implemented a scheme to accept the
+As long as we haven't implemented a scheme to accept the
 function type signature and relate it to a C-function linked
 with the system, we have to patch the code below.
 
