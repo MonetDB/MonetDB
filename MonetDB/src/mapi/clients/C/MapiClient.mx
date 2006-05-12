@@ -699,10 +699,9 @@ dump_table(Mapi mid, char *tname)
 static int
 dump_tables(Mapi mid)
 {
-	const char *tables = "SELECT \"name\" FROM \"ptables\" WHERE "
-		"\"istable\" = TRUE AND \"system\" = FALSE AND "
-		"\"name\" NOT LIKE 'history'";
-	const char *views = "SELECT \"name\",\"query\" FROM \"ptables\" WHERE "
+	const char *tables = "SELECT \"name\" FROM \"_tables\" WHERE "
+		"\"istable\" = TRUE AND \"system\" = FALSE";
+	const char *views = "SELECT \"name\",\"query\" FROM \"_tables\" WHERE "
 		"\"istable\" = FALSE AND \"system\" = FALSE";
 	MapiHdl hdl;
 	int rc = 0;
