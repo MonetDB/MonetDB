@@ -267,7 +267,7 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 BAT *
 append_idx(sql_trans *tr, sql_idx * i, int access, BAT *ib)
 {
-	BAT *b;
+	BAT *b = NULL;
 
 	if (isTemp(i) || access == INS || !i->bat.bid) {
 		assert(i->bat.ibid);
