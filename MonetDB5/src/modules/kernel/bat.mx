@@ -1735,8 +1735,7 @@ BKCinsert_void_bun(int *r, int *bid, ptr t)
 		return throwMessage("bat.insert", "Cannot access descriptor");
 	}
 	@:derefStr(b,t,t)@
-	BUNappend(b, @:batconvert(b,t)@
-	    , FALSE);
+	BUNappend(b, t, FALSE);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1752,7 +1751,7 @@ BKCinsert_bun(int *r, int *bid, ptr h, ptr t)
 	}
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
-	BUNins(b, @:batconvert(b,h)@, @:batconvert(b,t)@);
+	BUNins(b, h, t);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1766,7 +1765,7 @@ BKCinsert_bun_oid_any(int *r, int *bid, ptr h, ptr t)
 		return throwMessage("bat.insert", "Cannot access descriptor");
 	}
 	/* tail is not(!) a string */
-	BUNins(b, h, @:batconvert(b,t)@);
+	BUNins(b, h, t);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1793,7 +1792,7 @@ BKCinsert_bun_oid_str(int *r, int *bid, ptr h, ptr t)
 		return throwMessage("bat.insert", "Cannot access descriptor");
 	}
 	@:derefStr(b,t,t)@
-	BUNins(b, h, @:batconvert(b,t)@);
+	BUNins(b, h, t);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1832,7 +1831,7 @@ BKCreplace_bun(int *r, int *bid, ptr h, ptr t)
 	}
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
-	if (BUNreplace(b, @:batconvert(b,h)@, @:batconvert(b,t)@, 0) == NULL) {
+	if (BUNreplace(b, h, t, 0) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		return throwMessage("bat.replace", "BUNreplace Failed");
 	}

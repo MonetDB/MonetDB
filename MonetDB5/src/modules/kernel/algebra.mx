@@ -2845,8 +2845,9 @@ doALGfetch(ptr ret, BAT *b, lng *pos)
 	if ((i < 0) || (i >= BATcount(b)))
 		return throwMessage("algebra.fetch", " idx out of range");
 	i += BUNindex(b, BUNfirst(b));
-	@:putTail(BUNptr(b,i))@
-@= putTail
+	@:putTailALG(BUNptr(b,i))@
+
+@= putTailALG
 		if (b->theap) {
 			ptr _src = BUNtvar(b,@1); /*b->theap->base + *(var_t*) BUNtloc(b,@1);*/
 			int _len = ATOMlen(b->ttype, _src);
@@ -2858,7 +2859,7 @@ doALGfetch(ptr ret, BAT *b, lng *pos)
 			if (ATOMvarsized(b->ttype)) {
 				memcpy(*(ptr*) ret=GDKmalloc(_s), BUNtloc(b, @1), _s);
 			} else if (b->ttype == TYPE_bat) {
-				bat bid = *(bat*) BUNtloc(b, @1);
+				bat bid = *(bat*) BUNtail(b, @1);
 				*(bat*) ret = bid;
 				BBPincref(bid,TRUE);
 			} else if (_s == 4) {

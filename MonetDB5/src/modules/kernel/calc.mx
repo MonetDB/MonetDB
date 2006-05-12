@@ -413,6 +413,7 @@ Those accessible at the MAL command level are introduced below.
 @:convertCmd(oid)@
 @:convertCmd(sht)@
 @:convertCmd(int)@
+@:convertCmd(bat)@
 @:convertCmd(lng)@
 @:convertCmd(flt)@
 @:convertCmd(dbl)@
@@ -426,6 +427,11 @@ command str(v:bat[:any_1,:any_2]):str
 address CALCbat2str;
 command bat(v:void) :bat[:any_1,:any_2] 
 address CALCnil2bat;
+
+command bat(b:bat[:any_1,:any_2]):bat
+address CALCbat2BAT;
+command bat(b:bat):bat[:any_1,:any_2]
+address CALCBAT2bat;
 
 command str(v:void) :str 
 address CALCnil2str;
@@ -1343,6 +1349,17 @@ str CALC@22@1(@1 *res, @2 *a)
 @:mal_coercion_impl(chr,lng)@
 
 
+mal_export str CALCbat2BAT(int *res, bat *bid);
+str CALCbat2BAT(int *res, bat *bid){
+	*res= *bid;
+	return MAL_SUCCEED;
+}
+mal_export str CALCBAT2bat(bat *res, int *bid);
+str CALCBAT2bat(int *res, bat *bid){
+	*res= *bid;
+	return MAL_SUCCEED;
+}
+
 mal_export str CALClng2ptr(ptr *res, lng *a);
 str
 CALClng2ptr(ptr *res, lng *a)
@@ -1496,13 +1513,13 @@ oidFromvoidImpl(oid *ret, void *val)
 
 mal_export str CALCbat2batid(int *ret, int *bid);
 str
-CALCbat2batid(int *ret, int *bid)
+CALCbat2batid(bat *ret, int *bid)
 {
 	BAT *b;
 
 	b = BATdescriptor(*bid);
 	if (b == 0)
-		throwMessage("calc.:bat", "Bat does not exist");
+		throwMessage("calc.getBAT", "Bat does not exist");
 	*ret = b->batCacheid;
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
@@ -1516,7 +1533,7 @@ CALCbatid2bat(int *bid, int *ret)
 
 	b = BATdescriptor(*ret);
 	if (b == 0)
-		throwMessage("calc.:bat", "Bat does not exist");
+		return throwMessage("calc.:bat", "Bat does not exist");
 	*bid = b->batCacheid;
 	BBPkeepref(*bid);
 	return MAL_SUCCEED;
@@ -1638,5 +1655,4 @@ CALCsetoidInc(oid *res, oid *inc)
 	*res = OIDbase(*inc);
 	return MAL_SUCCEED;
 }
-
 @}
