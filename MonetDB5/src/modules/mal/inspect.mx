@@ -53,12 +53,6 @@ command getSource(mod:str,fcn:str):str
 address INSPECTgetSource
 comment "Return the original input for a function";
 
-pattern showSource():void
-address INSPECTshowFunction
-comment "Display the current function";
-pattern showSource(mod:str,fcn:str):str
-address INSPECTshowFunction3
-comment "Display a function";
 @-
 The symbol table can be accessed as if it was a relational
 table.
@@ -885,12 +879,14 @@ INSPECTshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (scope)
 		s = findSymbolInModule(scope, putName(fcnnme, strlen(fcnnme)));
 
-	if (s == NULL)
-		GDKerror("@1:Could not find %s.%s\n", modnme, fcnnme);
-	else
+	if (s == NULL){
+		char buf[BUFSIZ];
+		snprintf(buf,BUFSIZ,"Could not find %s.%s\n", modnme, fcnnme);
+		return throwMessage("inspect.showSource",buf);
+	} else
 		printFunction(c->fdout, s->def, LIST_INPUT);
 	(void) stk;		/* fool compiler */
-	return NULL;
+	return MAL_SUCCEED;
 }
 
 str

@@ -87,13 +87,18 @@ This library internally uses pointer handles, which we replace with
 an index in a locally maintained table. It provides a handle
 to easily detect havoc clients.
 @mal
-command reconnect(dbalias:str, host:str, port:int, usr:str, passwd:str,lang:str):int
+
+command reconnect(alias:str, host:str, port:int, usr:str, passwd:str,lang:str):int
 address SERVERreconnectAlias
 comment "Re-establish connection with a remote mserver";
 
 command reconnect(host:str, port:int, usr:str, passwd:str,lang:str):int
 address SERVERreconnectWithoutAlias
 comment "Re-establish connection with a remote mserver";
+
+command reconnect(mid:int):void
+address SERVERreconnect
+comment "Re-establish a connection";
 
 command connect(host:str, port:int, usr:str, passwd:str,lang:str):int
 address SERVERconnect
@@ -119,10 +124,6 @@ comment "Terminate the session";
 command destroy(mid:int):void
 address SERVERdestroy
 comment "Destroy the handle";
-
-command reconnect(mid:int):void
-address SERVERreconnect
-comment "Re-establish a connection";
 
 command ping(mid:int):int
 address SERVERping
@@ -1827,23 +1828,25 @@ SERVERputLocal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str 
 SERVERbindBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *key;
-	str *nme,*tab,*col,err;
+	str *nme,*tab,*col;
 	int i;
 	Mapi mid;
 	char buf[BUFSIZ];
 	key= (int*) getArgReference(stk,pci,pci->retc);
 	nme= (str*) getArgReference(stk,pci,pci->retc+1);
 	@:accessTest(*key,bind)@
-	if( pci->argc == 5) {
+	if( pci->argc == 6) {
 		tab= (str*) getArgReference(stk,pci,pci->retc+2);
 		col= (str*) getArgReference(stk,pci,pci->retc+3);
 		i= *(int*) getArgReference(stk,pci,pci->retc+4);
-		snprintf(buf,BUFSIZ,"%s:=bbp.bind(\"%s\",\"%s\",\"%s\",%d);",
-			getVarName(mb,getDestVar(pci)),*nme, *tab,*col,i);
-	} else if( pci->argc == 4) {
+		snprintf(buf,BUFSIZ,"%s:bat[:void,:%s]:=sql.bind(\"%s\",\"%s\",\"%s\",0,%d);",
+			getVarName(mb,getDestVar(pci)),
+			getTypeName(getTailType(getVarType(mb,getDestVar(pci)))),
+			*nme, *tab,*col,i);
+	} else if( pci->argc == 5) {
 		tab= (str*) getArgReference(stk,pci,pci->retc+2);
 		i= *(int*) getArgReference(stk,pci,pci->retc+3);
-		snprintf(buf,BUFSIZ,"%s:=bbp.bind(\"%s\",\"%s\",%d);",
+		snprintf(buf,BUFSIZ,"%s:bat[:void,:oid]:=sql.bind(\"%s\",\"%s\",0,%d);",
 			getVarName(mb,getDestVar(pci)),*nme, *tab,i);
 	} else 
 		snprintf(buf,BUFSIZ,"%s:=bbp.bind(\"%s\");",
@@ -1851,9 +1854,10 @@ SERVERbindBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	if( SERVERsessions[i].hdl)
 		mapi_close_handle(SERVERsessions[i].hdl);
 	SERVERsessions[i].hdl= mapi_query(mid, buf);
-	err= mapi_error_str(mid);
-	if( mapi_error(mid) )
-		return throwMessage("mapi.bind",err);
+	if( mapi_error(mid) ) {
+		char *err = mapi_error_str(mid);
+		return throwMessage("mserver.bind",err);
+	}
 	return MAL_SUCCEED;
 }
 @}
