@@ -1180,7 +1180,7 @@ GDKreallocmax(void *blk, size_t size, size_t * maxsize, int emergency)
 		if (s == NULL && !emergency)
 			return NULL;
 		s[0] = newmax;
-		s[1] = -((ssize_t) size);
+		s[1] = -((ssize_t) newsize);
 		*maxsize = newmax - (sizeof(size_t) + sizeof(size_t));
 		return (ptr) (s + 2);
 	}
@@ -2180,19 +2180,14 @@ THRprintf(stream *s, const char *format, ...)
 	}
 	m = p-bf;
 	va_start(ap, format);
-	/* this could actually fail (return -1) for reasons other than
-	   not enough buffer space; the code does not deal with this fact
-	   (one reason for failure could be non-UTF-8 strings being
-	   printed in a UTF-8 locale) */
 	n = vsnprintf(p, bfsz-m, format, ap);
 	va_end(ap);
 @c
 	@:THRprintf_va_vsnprintf@
-	while (n < 0 || (size_t) n >= bfsz - m) {
-		if (n >= 0)	/* glibc 2.1 */
-			bfsz = m + n + 1;	/* precisely what is needed */
-		else		/* glibc 2.0 */
-			bfsz *= 2;	/* twice the old size */
+	if (n < 0) 
+		goto cleanup;
+	if ((size_t) n >= bfsz - m) {
+		bfsz = m + n + 1;	/* precisely what is needed */
 		if (bf != THRprintbuf)
 			free(bf);
 		bf = (str) malloc(bfsz);
@@ -2204,6 +2199,7 @@ THRprintf(stream *s, const char *format, ...)
 	n = 0;
 	if (stream_write(s, bf, p - bf, 1) != 1)
 		n = -1;
+cleanup:
 	if (bf != THRprintbuf)
 		free(bf);
 	if (MT_system_lock) {
