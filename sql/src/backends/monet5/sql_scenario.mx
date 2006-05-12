@@ -968,7 +968,7 @@ query block.
 Inspect the variables for post code-generation actions.
 @c
 finalize:
-	if(m->mode== m_explain  && be->q && be->q->code)
+	if(m->mode== m_explain && be->q && be->q->code )
 		printFunction(GDKout, ((Symbol)(be->q->code))->def, LIST_MAL_INSTR);
 	m->scanner.mode = oldmode;
 @-

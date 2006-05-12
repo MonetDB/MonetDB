@@ -81,8 +81,10 @@ extern char *dlist2string(mvc *sql, dlist *s);
 
 extern char * toUpper(char *dest, const char *src); 
 
-extern int find_table_value(mvc * sql, char* table, char* column, char* key_column, char* key,int location);
+extern void* find_table_value(mvc * sql, char* table, char* column, char* key_column, void* key,int location);
 extern int table_location(mvc *sql, char* host);
+extern void table_location_info(mvc* sql,int location,char **dbalias,char** ip,int* port,char** user,char** password);
+extern char* table_bat_name(mvc* sql,char* schema,char* table,char* column);
 
 #endif /*_SQL_SEMANTIC_H_*/
 
@@ -202,27 +204,58 @@ sql_destroy_args(mvc *sql)
 }
 
 
-int
-find_table_value(mvc* sql, char* table, char* column, char* key_column, char* key, int location)
+void*
+find_table_value(mvc* sql, char* table, char* column, char* key_column, void* key, int location)
 {
         sql_schema *sch = find_sql_schema(sql->trans, "sys");
         sql_table *tab = find_sql_table(sch, table,location);
         sql_column *key_col = find_sql_column(tab, key_column);
         sql_column *col = find_sql_column(tab, column);
-        ssize_t rid = column_find_row(sql->trans, key_col, key, NULL);
+	ssize_t rid = -1;
+	rid = column_find_row(sql->trans, key_col, key, NULL);
         if (rid >= 0)
-                 return *(int*) column_find_value(sql->trans,col,rid);
-        return -1;
+                 return (int*) column_find_value(sql->trans,col,rid);
+        return NULL;
 }
 
 
 int
 table_location(mvc* sql,char* host)
 {
-	int location = -1;
-        if(host)
-                location = (int) find_table_value(sql,"hosts","location","dbname",host,LOCATION);
-     	return location;
+	int* location = NULL;
+        if(host){
+               	location = (int*) find_table_value(sql,"hosts","location","dbname",host,LOCATION);
+		if(location)
+			return *location;
+	}
+     	return -1;
+}
+
+void
+table_location_info(mvc* sql, int location, char **dbalias, char** ip,int* port,char** user,char** password){
+        sql_schema *sch = find_sql_schema(sql->trans, "sys");
+        sql_table *tab = find_sql_table(sch,"hosts" ,LOCATION);
+        sql_column *location_col = find_sql_column(tab, "location");
+        sql_column *ip_col = find_sql_column(tab, "ip");
+        sql_column *dbals_col = find_sql_column(tab, "dbname");
+        sql_column *port_col = find_sql_column(tab, "port");
+        sql_column *user_col = find_sql_column(tab, "user");
+        sql_column *password_col = find_sql_column(tab, "password");
+	int rid = -1;
+	rid = column_find_row(sql->trans, location_col, &location, NULL);
+	*ip = (char*) column_find_value(sql->trans,ip_col,rid);
+	*dbalias = (char*) column_find_value(sql->trans,dbals_col,rid);
+	*user = (char*) column_find_value(sql->trans,user_col,rid);
+	*password = (char*) column_find_value(sql->trans,password_col,rid);
+	*port = *(int*) column_find_value(sql->trans,port_col,rid);
+}
+
+char*
+table_bat_name(mvc* sql,char* schema,char* table, char* column){
+	sql_schema *sch = find_sql_schema(sql->trans, schema);
+        sql_table *tab = find_sql_table(sch, table,LOCATION);
+        sql_column *col = find_sql_column(tab, column);
+	return col->bat.name;
 }
 
 sql_schema *

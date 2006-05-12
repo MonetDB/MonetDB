@@ -92,6 +92,10 @@ address mvc_bind_dbat_wrap
 comment "Bind the table deletes bat, tname.delete 
 	with specific access modes";
 
+command bind_dbat(sname:str, tname:str, location:str, access:int):bat[:any_1,:any_2]
+address mvc_bind_dbat_wrap
+comment "only needed for type checking";
+
 command bind_idxbat(sname:str, tname:str, iname:str, access:int):bat[:any_1,:any_2]
 address mvc_bind_idxbat_wrap
 comment "Bind the idx bat, tname.idx
@@ -104,6 +108,11 @@ comment "Clear table";
 command bind(sname:str, tname:str, cname:str, location:int, access:int ):bat[:any_1,:any_2]
 address mvc_bind_wrap
 comment "Bind the bat tname.cname into the focus with specific access mode";
+
+command bind(sname:str, tname:str, cname:str, location:str, access:int ):bat[:any_1,:any_2]
+address mvc_bind_wrap
+comment "only needed for type checking";
+
 
 command columnBind(b:bat[:str,:bat], nme:str) :bat[:any_1,:any_2]
 address mvc_bind_single_wrap

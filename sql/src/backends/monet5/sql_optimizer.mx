@@ -104,7 +104,7 @@ factory structures.
 @c
 #include "mal_macro.h"
 #include "mal_prelude.h"
-#include "mal_optimizer.h"
+#include "mal_remoteQueries.h"
 #include "mal_peephole.h"
 #include "mal_debugger.h"
 #include "mal_namespace.h"
@@ -168,6 +168,10 @@ Double bind operations should also be eliminated.
 			getModuleId(p)== sqlRef) {
 			ns[k++] = p;
 		}
+		if ( (getFunctionId(p)== reconnectRef) && 
+			getModuleId(p)== mserverRef) {
+			ns[k++] = p;
+		}
 @-
 Check if the relation is already made write-enabled in the plan.
 It uses the knowledge that at this stage the plan is still a linear
@@ -203,6 +207,10 @@ instructions, producing a syntactic correct MAL program again.
 		if (!( (getFunctionId(p)== bindRef || getFunctionId(p)==binddbatRef) && 
 			  getModuleId(p)== sqlRef))
 			doit = 1;
+
+		if (doit && getFunctionId(p)== reconnectRef && 
+			  getModuleId(p)== mserverRef)
+			doit = 0;
 @-
 Skip it if the writeMode relates to a base table
 @c
@@ -295,10 +303,11 @@ to allow inspection.
 			optimizerCheck(c->curprg->def,"sql.baseline",-1,0);
 		COoptimizer(c->curprg->def,0,0);
 		ARoptimizer(c->curprg->def, 0, 0);
-		CXoptimizer(c->curprg->def,0,0);
+		//CXoptimizer(c->curprg->def,0,0);
 		FXoptimizer(c->curprg->def, 0, 0);
 		OPTmultiplex(c->curprg->def, 0, 0);
 		MRoptimizer(c->curprg->def,0,0);
+		RQoptimizer(c->curprg->def,0,0);
 	} else if( optimizer ){
 		/* interpret the optimizer control statement */
 	}

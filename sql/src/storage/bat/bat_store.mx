@@ -2390,8 +2390,8 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		
 		create_host_table(tr, s);
 		create_replication_table(tr, s);
-		table_insert_location(tr,s,LOCATION,"demo","127.0.0.1",50000,"monetdb","monetdb");
-		table_insert_location(tr,s,store_next_oid(),"test1","127.0.0.1",40000,"monetdb","monetdb");
+		table_insert_location(tr,s,"demo","127.0.0.1",50000,"monetdb","monetdb");
+		table_insert_location(tr,s,"test1","127.0.0.1",40000,"monetdb","monetdb");
 		
 		if (sql_trans_commit(tr) != SQL_OK)
 			fprintf(stderr, "cannot commit initial transaction\n");

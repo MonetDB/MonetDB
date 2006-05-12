@@ -1440,7 +1440,7 @@ create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_ele
 	sql_table* t1;
 	
 	if(location ==-1) 
-		return sql_error(sql, 02, "CREATE TABLE: location %s not exist",host);
+		return sql_error(sql, 02, "CREATE TABLE: database '%s' not exist",host);
 	
 	t1 = mvc_bind_table(sql, ss, name,location);
 	if(t1 && (t1->location == location)){ 
@@ -1512,9 +1512,10 @@ drop_table(mvc *sql, symbol *symb, int drop_action)
 	if(location ==-1){
 		return sql_error(sql, 02, "DROP TABLE: no such database '%s'", host);
 	}
-	if(location>0){
+	/*The table can be removed from the catalog!*/
+	/*if(location>0){
 		return sql_error(sql, 02, "DROP TABLE: no permission to modify the table %s for database '%s'", tname, host);
-	}
+	}*/
 
 	if (!schema_privs(sql->role_id, ss)) 
 		return sql_error(sql, 02, "DROP TABLE: access denied for %s to schema ;'%s'", sql->user, ss->base.name);
