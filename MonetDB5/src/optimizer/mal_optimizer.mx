@@ -1289,6 +1289,10 @@ hasSideEffects(InstrPtr p, int strict)
 		if( getFunctionId(p) == getName("resultSet",9)) return FALSE;
 		return TRUE;
 	}
+	if( getModuleId(p)== mserverRef){
+		if( getFunctionId(p)== rpcRef)
+			return TRUE;
+	}
 	if (idcmp("destroy", getFunctionId(p)) == 0)
 		return TRUE;
 	if (idcmp("prelude", getFunctionId(p)) == 0)
