@@ -13,8 +13,11 @@ stdout of test 'tcpip_close_crash.SF-1042370` in directory 'tests/BugDay_2005-11
 module(tcpip);
 module(alarm);
 VAR mapiport := monet_environment.find("mapi_port");
+
+{
 fork(listen(int(mapiport)));
-sleep(2);
+sleep(4);
+}
 quit();
 # Monet Database Server V4.11.3
 # Copyright (c) 1993-2006, CWI. All rights reserved.
@@ -22,10 +25,14 @@ quit();
 # Visit http://monetdb.cwi.nl/ for further information.
 
 module(tcpip);
+module(alarm);
 VAR mapiport := monet_environment.find("mapi_port");
-VAR c := open("localhost:"+mapiport);
 
+{
+sleep(2);
+VAR c := open("localhost:"+mapiport);
 close(c);
+}
 quit();
 
 # 12:35:59 >  

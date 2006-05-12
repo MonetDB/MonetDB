@@ -18,31 +18,36 @@ def server_stop(srv):
 
 prelude_1 = '''
 module(tcpip);
+module(alarm);
 VAR mapiport := monet_environment.find("mapi_port");
-fork(listen(int(mapiport)));
 '''
+
+script_1 = '''
+{
+fork(listen(int(mapiport)+%d));
+var y := import("x", true);
+y.print();
+}
+'''
+#terminate(int(mapiport)+1);
 
 prelude_2 = '''
 module(tcpip);
 module(alarm);
 VAR mapiport := monet_environment.find("mapi_port");
-sleep(2);	# waiting for first server to start listening
-VAR c := open("localhost:"+mapiport);
 '''
 
 script_2 = '''
+{
+sleep(2); # waiting for first server to start listening
+VAR c := open("localhost:"+(int(mapiport)+%d));
 var x := bat(oid, oid);
 x.insert(0@0, 0@0);
 x.insert(1@0, 0@0);
 x.sort().print();
 c.export(x, "x");
 close(c);
-'''
-
-script_1 = '''
-var y := import("x", true);
-y.print();
-terminate(int(mapiport));
+}
 '''
 
 def main():
@@ -51,13 +56,12 @@ def main():
     x += 1; srv2 = server_start(x, "db" + str(x))
     time.sleep(1)                      # give servers time to start
 
+    srv1.stdin.write(prelude_1)
+    srv2.stdin.write(prelude_2)
     i = 0
     while i < 4:
-    	srv1.stdin.write(prelude_1)
-    	srv2.stdin.write(prelude_2)
-   
-    	srv2.stdin.write(script_2)
-    	srv1.stdin.write(script_1)
+    	srv1.stdin.write(script_1 % (i))
+    	srv2.stdin.write(script_2 % (i))
 	i += 1
  
     srv1.stdin.write("quit();\n");

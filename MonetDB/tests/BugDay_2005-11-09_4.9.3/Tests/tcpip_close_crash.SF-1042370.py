@@ -6,7 +6,7 @@ class Popen:
 		self.stdin,self.stdout = os.popen2(cmd, bufsize=0, mode='t'); 
 
 def server_start(x,dbname):
-    srvcmd = '%s --dbname "%s"' % (os.getenv('MSERVER'),dbname)
+    srvcmd = 'catchsegv %s --dbname "%s"' % (os.getenv('MSERVER'),dbname)
     return Popen(srvcmd);
 
 def server_stop(srv):
@@ -19,18 +19,27 @@ prelude_1 = '''
 module(tcpip);
 module(alarm);
 VAR mapiport := monet_environment.find("mapi_port");
+'''
+
+script_1 = '''
+{
 fork(listen(int(mapiport)));
-sleep(2);
+sleep(4);
+}
 '''
 
 prelude_2 = '''
 module(tcpip);
+module(alarm);
 VAR mapiport := monet_environment.find("mapi_port");
-VAR c := open("localhost:"+mapiport);
 '''
 
 script_2 = '''
+{
+sleep(2);
+VAR c := open("localhost:"+mapiport);
 close(c);
+}
 '''
 
 def main():
@@ -39,9 +48,9 @@ def main():
     x += 1; srv2 = server_start(x, "db" + str(x))
 
     srv1.stdin.write(prelude_1)
-    time.sleep(1)                      # give server 1 time to start
     srv2.stdin.write(prelude_2)
    
+    srv1.stdin.write(script_1)
     srv2.stdin.write(script_2)
  
     srv1.stdin.write("quit();\n");
