@@ -34,7 +34,8 @@
 extern stmt *semantic(mvc *sql, scope *scp, symbol *sym);
 
 extern sql_schema *cur_schema(mvc *sql);
-extern sql_schema *qname_schema(mvc *sql, dlist *qname);
+extern sql_schema *tmp_schema(mvc *sql);
+extern char *qname_schema(dlist *qname);
 extern char *qname_table(dlist *qname);
 extern tvar *scope_add_table_columns(mvc *sql, scope *scp, sql_table *t, char *tname, int access);
 
@@ -201,22 +202,26 @@ sql_destroy_args(mvc *sql)
 sql_schema *
 cur_schema(mvc *sql)
 {
-	return sql->trans->schema;
+	return sql->session->schema;
 }
 
 sql_schema *
-qname_schema(mvc *sql, dlist *qname)
+tmp_schema(mvc *sql)
 {
-	sql_schema *s = cur_schema(sql);
+	return mvc_bind_schema(sql, "tmp");
+}
 
+char *
+qname_schema(dlist *qname)
+{
 	assert(qname && qname->h);
 
 	if (dlist_length(qname) == 2) {
 		char *name = qname->h->data.sval;
 
-		s = mvc_bind_schema(sql, name);
+		return name;
 	}
-	return s;
+	return NULL;
 }
 
 char *
@@ -264,7 +269,6 @@ scope_sqlparse(mvc *m, scope *scp, char *query)
 	m->sym = NULL;
 	m->errstr[0] = '\0';
 	m->errstr[ERRSIZE-1] = '\0';
-	m->status = 0;
 
 	(void) sqlparse(m);	/* blindly ignore errors */
 	sq = semantic(m, scp, m->sym);
@@ -275,13 +279,13 @@ scope_sqlparse(mvc *m, scope *scp, char *query)
 	stream_destroy(buf);
 
 	m->sym = NULL;
-	if (m->status || m->errstr[0]) {
-		int status = m->status;
+	if (m->session->status || m->errstr[0]) {
+		int status = m->session->status;
 		char errstr[ERRSIZE];
 
 		strcpy(errstr, m->errstr);
 		*m = o;
-		m->status = status;
+		m->session->status = status;
 		strcpy(m->errstr, errstr);
 	} else {
 		*m = o;
@@ -321,7 +325,6 @@ sqlparse_intern(mvc *m, char *query)
 	m->sym = NULL;
 	m->errstr[0] = '\0';
 	m->errstr[ERRSIZE-1] = '\0';
-	m->status = 0;
 	/* via views we give access to protected objects */
 	m->user_id = USER_MONETDB;
 
@@ -339,13 +342,13 @@ sqlparse_intern(mvc *m, char *query)
 	stream_destroy(buf);
 
 	m->sym = NULL;
-	if (m->status || m->errstr[0]) {
-		int status = m->status;
+	if (m->session->status || m->errstr[0]) {
+		int status = m->session->status;
 		char errstr[ERRSIZE];
 
 		strcpy(errstr, m->errstr);
 		*m = o;
-		m->status = status;
+		m->session->status = status;
 		strcpy(m->errstr, errstr);
 	} else {
 		*m = o;
@@ -500,9 +503,9 @@ fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always)
 			if (scale_diff < 0) {
 				if (!both)
 					return s;
-				c = sql_bind_func(sql->trans->module, "scale_down", st, it);
+				c = sql_bind_func(sql->session->module, "scale_down", st, it);
 			} else {
-				c = sql_bind_func(sql->trans->module, "scale_up", st, it);
+				c = sql_bind_func(sql->session->module, "scale_up", st, it);
 			}
 			if (c) {
 				lng val = scale2value(scale_diff);
@@ -515,7 +518,7 @@ fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always)
 	} else if (always && st->scale) {	/* scale down */
 		int scale_diff = -(int) st->scale;
 		sql_subtype *it = sql_bind_localtype(st->type->base.name);
-		sql_subfunc *c = sql_bind_func(sql->trans->module, "scale_down", st, it);
+		sql_subfunc *c = sql_bind_func(sql->session->module, "scale_down", st, it);
 
 		if (c) {
 			lng val = scale2value(scale_diff);

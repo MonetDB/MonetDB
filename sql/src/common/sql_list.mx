@@ -89,6 +89,18 @@ list_append(list *l, void *data)
 }
 
 list *
+list_append_before(list *l, node *m, void *data)
+{
+	node *n = node_create(data);
+
+	m->next = n->next;
+	if (l->t == n)
+		l->t = n;
+	l->cnt++;
+	return l;
+}
+
+list *
 list_prepend(list *l, void *data)
 {
 	node *n = node_create(data);

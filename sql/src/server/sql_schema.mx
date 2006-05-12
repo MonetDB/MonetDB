@@ -510,7 +510,7 @@ create_module(mvc *sql, dlist *qname, char *opt_internal_name)
 {
 	char *mname = qname_table(qname);
 
-	sql->trans->module = mvc_create_module(sql, mname, opt_internal_name);
+	sql->session->module = mvc_create_module(sql, mname, opt_internal_name);
 	return stmt_none();
 }
 
@@ -528,7 +528,7 @@ create_type(mvc *sql, dlist *qname, char *impl)
 {
 	char *tname = qname_table(qname);
 
-	mvc_create_type(sql, sql->trans->module, tname, 0, 0, 0, impl);
+	mvc_create_type(sql, sql->session->module, tname, 0, 0, 0, impl);
 	return stmt_none();
 }
 
@@ -569,7 +569,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, sql_subtype *res, char *impl,
 		r->name = _strdup("result");
 		r->type = *res;
 		list_prepend(l, r);
-		mvc_create_func(sql, sql->trans->module, fname, l, FALSE, FALSE, impl);
+		mvc_create_func(sql, sql->session->module, fname, l, FALSE, FALSE, impl);
 	}
 	return stmt_none();
 }
@@ -684,7 +684,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 			subquery[sql->scanner.view_end - sql->scanner.as+1] = 0;
 		}
 
-		t = mvc_create_view(sql, ss, name, subquery, 0, 1);
+		t = mvc_create_view(sql, ss, name, subquery, 0);
 		as_subquery( sql, t, sq, column_spec );
 		_DELETE(subquery);
 		stmt_destroy(sq);
@@ -694,7 +694,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 		return sql_error(sql, 02, "CREATE VIEW AS BATS: insufficient privileges for user %s", sql->user);
 	} else {
 		char *err = NULL;
-		sql_table *t = mvc_create_view(sql, ss, name, NULL, 0, 1);
+		sql_table *t = mvc_create_view(sql, ss, name, NULL, 0);
 		dnode *n = column_spec->h;
 		int nr = 0, i = 0;
 		char **names = NULL;
@@ -705,10 +705,10 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 		for (n = column_spec->h; n; n = n->next, i++ )
 			names[i] = n->data.sval;
 
-		if ((err = sql_view_on_bats(sql->trans, t, names, nr)) != NULL){
+		if ((err = sql_view_on_bats(sql->session->tr, t, names, nr)) != NULL){
 			sql_error(sql, 02, err);
 			GDKfree(err);
-			sql_trans_drop_table(sql->trans, t->s, t->base.name, 0);
+			sql_trans_drop_table(sql->session->tr, t->s, t->base.name, 0);
 			return NULL;
 		}
 		return stmt_none();
@@ -1352,9 +1352,12 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 }
 
 static stmt *
-create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table_elements_or_subquery, int size)
+create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table_elements_or_subquery, int commit_action)
 {
 	char *name = qname_table(qname);
+	
+	if (temp != SQL_PERSIST)
+		ss = mvc_bind_schema(sql, "tmp");
 
 	if (mvc_bind_table(sql, ss, name)) {
 		return sql_error(sql, 02, "CREATE TABLE: name '%s' already in use", name);
@@ -1362,7 +1365,7 @@ create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table_ele
 		return sql_error(sql, 02, "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", sql->user, ss->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) { 
 		/* table element list */
-		sql_table *t = mvc_create_table(sql, ss, name, 0, !temp, 0, size);
+		sql_table *t = mvc_create_table(sql, ss, name, 0, temp, commit_action, -1);
 		list *new_columns = create_stmt_list();
 		dnode *n;
 		dlist *columns = table_elements_or_subquery->data.lval;
@@ -1390,7 +1393,7 @@ create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table_ele
 		if (!sq)
 			return NULL;
 		/* create table */
-		t = mvc_create_table(sql, ss, name, 0, !temp, 0, size);
+		t = mvc_create_table(sql, ss, name, 0, temp, commit_action, -1);
 		as_subquery( sql, t, sq, column_spec);
 
 		/* insert query result into this table */
@@ -1417,15 +1420,27 @@ create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, symbol *table_ele
 static stmt *
 drop_table(mvc *sql, dlist *qname, int drop_action)
 {
-	sql_schema *ss = cur_schema(sql);
+	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-	sql_table *t = mvc_bind_table(sql, ss, tname);
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
 
-	if (!schema_privs(sql->role_id, ss)) 
-		return sql_error(sql, 02, "DROP TABLE: access denied for %s to schema ;'%s'", sql->user, ss->base.name);
-	if (!t) {
+	if (sname && !(s=mvc_bind_schema(sql, sname))) {
+		(void) sql_error(sql, 02, "DROP TABLE: no such schema '%s'", sname);
+		return NULL;
+	}
+	if (!s)
+		s = cur_schema(sql);
+	t = mvc_bind_table(sql, s, tname);
+	if (!t && !sname) {
+		s = tmp_schema(sql);
+		t = mvc_bind_table(sql, s, tname);
+	}
+	if (!t) 
 		return sql_error(sql, 02, "DROP TABLE: no such table '%s'", tname);
-	} else if (t->keys.set) {
+	if (!schema_privs(sql->role_id, s)) 
+		return sql_error(sql, 02, "DROP TABLE: access denied for %s to schema ;'%s'", sql->user, s->base.name);
+	if (t->keys.set) {
 		node *n;
 
 		for (n = t->keys.set->h; n; n = n->next) {
@@ -1472,7 +1487,7 @@ drop_table(mvc *sql, dlist *qname, int drop_action)
 				scope_close(scp);
 			}
 		}
-		mvc_drop_table(sql, ss, t->base.name, drop_action);
+		mvc_drop_table(sql, s, t->base.name, drop_action);
 		return stmt_none();
 	} else {
 		return sql_error(sql, 02, "DROP TABLE: cannot drop VIEW '%s'", tname);

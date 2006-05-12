@@ -43,7 +43,7 @@ AND "tables"."istable" = false UNION ALL SELECT 'demo' AS "TABLE_CAT",
 '' AS "REMARKS", null AS "TYPE_CAT", null AS
 "TYPE_SCHEM", null AS "TYPE_NAME", 'rowid' AS
 "SELF_REFERENCING_COL_NAME", 'SYSTEM' AS
-"REF_GENERATION" FROM "ttables" AS "tables",
+"REF_GENERATION" FROM tmp."_tables" AS "tables",
 "schemas" WHERE "tables"."schema_id" = "schemas"."id"
 AND "tables"."system" = true AND "tables"."istable" =
 true UNION ALL SELECT 'demo' AS "TABLE_CAT",
@@ -52,7 +52,7 @@ true UNION ALL SELECT 'demo' AS "TABLE_CAT",
 "REMARKS", null AS "TYPE_CAT", null AS "TYPE_SCHEM",
 null AS "TYPE_NAME", 'rowid' AS
 "SELF_REFERENCING_COL_NAME", 'SYSTEM' AS
-"REF_GENERATION" FROM "ttables" AS "tables",
+"REF_GENERATION" FROM tmp."_tables" AS "tables",
 "schemas" WHERE "tables"."schema_id" = "schemas"."id"
 AND "tables"."system" = false AND "tables".name = 'test'
 AND "tables"."istable" = true UNION ALL SELECT 'demo' AS "TABLE_CAT",
@@ -61,7 +61,7 @@ AND "tables"."istable" = true UNION ALL SELECT 'demo' AS "TABLE_CAT",
 AS "REMARKS", null AS "TYPE_CAT", null AS "TYPE_SCHEM",
 null AS "TYPE_NAME", 'rowid' AS
 "SELF_REFERENCING_COL_NAME", 'SYSTEM' AS
-"REF_GENERATION" FROM "ttables" AS "tables",
+"REF_GENERATION" FROM tmp."_tables" AS "tables",
 "schemas" WHERE "tables"."schema_id" = "schemas"."id"
 AND "tables"."system" = true AND "tables"."istable" =
 false UNION ALL SELECT 'demo' AS "TABLE_CAT",
@@ -70,7 +70,7 @@ false UNION ALL SELECT 'demo' AS "TABLE_CAT",
 "REMARKS", null AS "TYPE_CAT", null AS "TYPE_SCHEM",
 null AS "TYPE_NAME", 'rowid' AS
 "SELF_REFERENCING_COL_NAME", 'SYSTEM' AS
-"REF_GENERATION" FROM "ttables" AS "tables",
+"REF_GENERATION" FROM tmp."_tables" AS "tables",
 "schemas" WHERE "tables"."schema_id" = "schemas"."id"
 AND "tables"."system" = false AND "tables".name = 'test' 
 AND "tables"."istable" = false ) AS "tables" WHERE 1 = 1 AND ("TABLE_TYPE" LIKE

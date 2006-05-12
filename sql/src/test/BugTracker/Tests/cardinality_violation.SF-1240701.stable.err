@@ -68,11 +68,11 @@ stderr of test 'cardinality_violation.SF-1240701` in directory 'src/test/BugTrac
 # 23:24:25 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45948  < cardinality_violation.SF-1240701.sql
 # 23:24:25 >  
 
-MAPI  = monetdb@localhost:35520
+MAPI  = monetdb@localhost:30977
 QUERY = select * from env where name = ( select 'prefix' from env );
 ERROR = !ERROR: SELECT: subquery returned more than one row
-MAPI  = monetdb@localhost:35520
-QUERY = select * from columns where name = (select columns.name from ptables, columns where ptables.id = columns.table_id);
+MAPI  = monetdb@localhost:30977
+QUERY = select * from columns where name = (select columns.name from _tables, columns where _tables.id = columns.table_id);
 ERROR = !ERROR: SELECT: subquery returned more than one row
 
 # 23:24:25 >  

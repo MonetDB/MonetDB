@@ -25,32 +25,36 @@ Over..
 # x # name
 # int # type
 # 2 # length
-[ 21	]
+[ 25	]
 # sys.t # table_name
 # x # name
 # varchar # type
 # 10 # length
 [ "modules"	]
 [ "schemas"	]
-[ "ptables"	]
-[ "pcolumns"	]
+[ "types"	]
+[ "functions"	]
+[ "args"	]
+[ "_tables"	]
+[ "_columns"	]
 [ "keys"	]
 [ "idxs"	]
 [ "triggers"	]
 [ "keycolumns"	]
-[ "types"	]
-[ "functions"	]
-[ "args"	]
-[ "ttables"	]
-[ "tcolumns"	]
-[ "profile"	]
-[ "sessions"	]
-[ "env"	]
+[ "_tables"	]
+[ "_columns"	]
+[ "keys"	]
+[ "idxs"	]
+[ "triggers"	]
+[ "keycolumns"	]
 [ "sequences"	]
 [ "db_users"	]
 [ "user_role"	]
 [ "auths"	]
 [ "privileges"	]
+[ "env"	]
+[ "profile"	]
+[ "sessions"	]
 
 # 12:49:16 >  
 # 12:49:16 >  Done.

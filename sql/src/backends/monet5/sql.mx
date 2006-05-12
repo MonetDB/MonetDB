@@ -570,6 +570,8 @@ address PCRElike2;
 command batstr.like(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:bit] 
 address PCRElike_uselect_pcre;
 
+command prelude()
+address SQLprelude;
 
 command epilogue()
 address SQLepilogue;
@@ -577,6 +579,7 @@ address SQLepilogue;
 include sql_cache;
 #include mil_algebra_procs;
 
+sql.prelude();
 @h
 #ifndef _SQL_H
 #define _SQL_H
@@ -720,7 +723,7 @@ sql_symbol2stmt(mvc *c)
 				printf("# %s\n", c->errstr);
 				return NULL;
 			} else {
-				c->status = 0;
+				c->session->status = 0;
 				printf("# falling back to direct mode \n");
 				s = semantic(c, NULL, c->sym);
 			}
@@ -770,7 +773,7 @@ sqlcleanup(mvc *c, int err)
 	if (c->sa) 
 		c->sa = sa_reset(c->sa);
 	if (err)
-		c->status = err;
+		c->session->status = err;
 	scanner_query_processed(&(c->scanner));
 
 	/*
@@ -866,7 +869,7 @@ mvc_next_value(lng *res, str *seq)
 
 	if (msg)
 		return msg;
-	if (sql_next_value(m->trans, *seq, res))
+	if (sql_next_value(m->session->tr, *seq, res))
 		return MAL_SUCCEED;
 	return throwException(MALEXCEPTION, "sql.nextValue", "error");
 }
@@ -875,13 +878,13 @@ mvc_next_value(lng *res, str *seq)
 BAT *
 mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 {
-	sql_trans *tr = m->trans;
+	sql_trans *tr = m->session->tr;
 	BAT *b = NULL;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_table *t = mvc_bind_table(m, s, tname);
 	sql_column *c = mvc_bind_column(m, t, cname);
 
-	if (access == UPD)
+	if (access == UPD || access == RD_UPD)
 		b = bind_ubat(tr, c, access);
 	else
 		b = bind_bat(tr, c, access);
@@ -892,7 +895,7 @@ mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 BAT *
 mvc_bind_dbat(mvc *m, char *sname, char *tname, int access)
 {
-	sql_trans *tr = m->trans;
+	sql_trans *tr = m->session->tr;
 	BAT *b = NULL;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_table *t = mvc_bind_table(m, s, tname);
@@ -904,13 +907,13 @@ mvc_bind_dbat(mvc *m, char *sname, char *tname, int access)
 BAT *
 mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access)
 {
-	sql_trans *tr = m->trans;
+	sql_trans *tr = m->session->tr;
 	BAT *b = NULL;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_idx *i = mvc_bind_idx(m, s, iname);
 
 	(void) tname;
-	if (access == UPD)
+	if (access == UPD || access == RD_UPD)
 		b = bind_uidx(tr, i, access);
 	else
 		b = bind_idx(tr, i, access);
@@ -1026,7 +1029,7 @@ mvc_clear_table_wrap(lng *res, str *sname, str *tname)
 static int
 mvc_result_row(mvc *m, int nr_cols, int qtype)
 {
-	m->results = res_table_create(m->trans, m->result_id++, nr_cols, qtype, m->results);
+	m->results = res_table_create(m->session->tr, m->result_id++, nr_cols, qtype, m->results);
 	return m->results->id;
 }
 

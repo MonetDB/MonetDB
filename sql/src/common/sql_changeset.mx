@@ -48,6 +48,12 @@ cs_add(changeset * cs, void *elm, int flag)
 }
 
 void
+cs_add_before(changeset * cs, node *n, void *elm)
+{
+	list_append_before(cs->set, n, elm);
+}
+
+void
 cs_del(changeset * cs, node *elm, int flag)
 {
 	if (flag == TR_NEW) {	/* remove just added */

@@ -32,7 +32,11 @@ Over..
 #  # table_name
 # single_value # name
 # smallint # type
-# 6 # length
+# 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 [ 1	]
 [ 1	]
 [ 1	]
@@ -93,7 +97,11 @@ Over..
 [ 1	]
 [ 1	]
 [ 1	]
-#  # table_name
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+# . # table_name
 # single_value # name
 # smallint # type
 # 6 # length
@@ -106,8 +114,8 @@ Over..
 # single_value,	count_id # name
 # smallint,	int # type
 # 1,	2 # length
-[ 1,	26	]
-# .,	sys.ptables # table_name
+[ 1,	30	]
+# .,	sys._tables # table_name
 # single_value,	count_id # name
 # smallint,	int # type
 # 6,	10 # length

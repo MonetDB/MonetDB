@@ -51,21 +51,21 @@ transactions(mvc *sql, symbol *s)
 
 	switch (s->token) {
 	case TR_RELEASE:
-		if (sql->auto_commit == 1) 
+		if (sql->session->auto_commit == 1) 
 			return sql_error(sql, 01, "RELEASE SAVEPOINT: not allowed in auto commit mode");
 		ret = mvc_release(sql, s->data.sval);
 		if (ret < 0)
 			return sql_error(sql, 01, "RELEASE SAVEPOINT: (%s) failed", s->data.sval);
 		break;
 	case TR_COMMIT:
-		if (sql->auto_commit == 1) 
+		if (sql->session->auto_commit == 1) 
 			return sql_error(sql, 01, "COMMIT: not allowed in auto commit mode");
 		ret = mvc_commit(sql, s->data.ival, NULL);
 		if (ret < 0)
 			return sql_error(sql, 01, "COMMIT: failed");
 		break;
 	case TR_SAVEPOINT:
-		if (sql->auto_commit == 1) 
+		if (sql->session->auto_commit == 1) 
 			return sql_error(sql, 01, "SAVEPOINT: not allowed in auto commit mode");
 		ret = mvc_commit(sql, 0, s->data.sval);
 		if (ret < 0)
@@ -74,7 +74,7 @@ transactions(mvc *sql, symbol *s)
 	case TR_ROLLBACK:{
 		dlist *l = s->data.lval;
 
-		if (sql->auto_commit == 1) 
+		if (sql->session->auto_commit == 1) 
 			return sql_error(sql, 01, "ROLLBACK: not allowed in auto commit mode");
 		ret = mvc_rollback(sql, l->h->data.ival, l->h->next->data.sval);
 		if (ret < 0 && l->h->next->data.sval)
@@ -83,14 +83,14 @@ transactions(mvc *sql, symbol *s)
 		break;
 	case TR_START:
 	case TR_MODE:{
-		if (sql->auto_commit == 0) 
+		if (sql->session->auto_commit == 0) 
 			return sql_error(sql, 01, "START TRANSACTION: cannot start a transaction within a transaction");
-		if (sql->trans)
+		if (sql->session->active)
 			mvc_rollback(sql, 0, NULL);
-		sql->auto_commit = 0;
-		sql->ac_on_commit = 1;
+		sql->session->auto_commit = 0;
+		sql->session->ac_on_commit = 1;
+		sql->session->level = s->data.ival;
 		(void) mvc_trans(sql);
-		sql->trans->level = s->data.ival;
 	} break;
 	default:
 		return sql_error(sql, 01, "transaction unknown Symbol(%ld)->token = %s", (long) s, token2string(s->token));

@@ -36,8 +36,8 @@ Over..
 # count_id # name
 # int # type
 # 2 # length
-[ 24	]
-# sys.profile,	. # table_name
+[ 28	]
+# tmp.profile,	. # table_name
 # query,	single_value # name
 # varchar,	char # type
 # 51,	7 # length

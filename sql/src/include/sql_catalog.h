@@ -52,14 +52,32 @@
 #define TR_NEW 1
 
 #define RDONLY 0
-#define INS 1
-#define DEL 2
-#define UPD 3
+#define RD_INS 1
+#define RD_DEL 2
+#define RD_UPD 3
+#define INS 4
+#define DEL 5
+#define UPD 6
 
 #define cur_user 1
 #define cur_role 2
 
 #define sql_max(i1,i2) ((i1)<(i2))?(i2):(i1)
+
+
+typedef enum temp_t { 
+	SQL_PERSIST,
+	SQL_LOCAL_TEMP,
+	SQL_GLOBAL_TEMP
+} temp_t;
+
+typedef enum commit_action_t { 
+	CA_COMMIT, 	/* commit rows, only for persistent tables */
+	CA_DELETE, 	/* delete rows */
+	CA_PRESERVE,	/* preserve rows */
+	CA_DROP,	/* drop table */
+	CA_ABORT	/* abort changes, internal only */
+} ca_t;
 
 typedef int sqlid;
 
@@ -85,6 +103,7 @@ typedef struct changeset {
 extern void cs_init(changeset * cs, fdestroy destroy);
 extern void cs_destroy(changeset * cs);
 extern void cs_add(changeset * cs, void *elm, int flag);
+extern void cs_add_before(changeset * cs, node *n, void *elm);
 extern void cs_del(changeset * cs, node *elm, int flag);
 extern int cs_size(changeset * cs);
 extern node *cs_find_name(changeset * cs, char *name);
@@ -316,9 +335,8 @@ typedef struct sql_table {
 	sql_base base;
 	bit table;		/* table or view */
 	bit system;		/* system or user table */
-	bit persists;		/* persistent or temporary table */
-	bit clear;		/* clear on transaction boundaries ? */
-	/* clear on a temp table == session table! */
+	temp_t persistence;	/* persistent, global or local temporary */
+	ca_t commit_action;  	/* on commit action */
 	char *query;
 	int  sz;
 	lng  cnt;		/* number of tuples */
@@ -375,19 +393,30 @@ typedef struct sql_trans {
 	int wtime;
 	int schema_updates;	/* set on schema changes */
 	int status;		/* status of the last query */
-	int level;		/* TRANSACTION isolation level */
 
-	sql_schema *schema;
 	changeset schemas;
-	/* TODO add temp tables, ttables, tcolumns, sessions etc */
 	changeset modules;
-	/* also need a current module, normaly main but during create module
-	 * different */
-	sql_module *module;
-	backend_stack stk;
 
 	struct sql_trans *parent;	/* multilevel transaction support */
+	backend_stack stk;		
 } sql_trans;
+
+typedef struct sql_session {
+	sql_trans *tr; 	/* active transaction */	
+
+	char *schema_name;
+	sql_schema *schema;
+	sql_module *module; 	/* also need a current module, normaly 
+			       main but during create module different */
+
+	char ac_on_commit;	/* if 1, auto_commit should be enabled on
+	                       commit, rollback, etc. */
+	char auto_commit;
+	int level;		/* TRANSACTION isolation level */
+	int active;		/* active transaction */
+	int status;		/* status, ok/error */
+	backend_stack stk;
+} sql_session;
 
 extern void module_destroy(sql_module * m);
 extern void schema_destroy(sql_schema *s);

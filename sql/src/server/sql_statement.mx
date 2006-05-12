@@ -879,9 +879,9 @@ stmt_bat(sql_column *c, stmt *basetable, int access )
 	stmt *s = stmt_bat_(c, basetable, access );
 	
 	if (c->base.flag != TR_NEW && c->t->table &&
-	    access == RDONLY && c->t->persists && !c->t->clear) {
-		stmt *i = stmt_bat_(c, stmt_dup(basetable), INS );
-		stmt *u = stmt_bat_(c, stmt_dup(basetable), UPD );
+	    access == RDONLY && c->t->persistence == SQL_PERSIST && !c->t->commit_action) {
+		stmt *i = stmt_bat_(c, stmt_dup(basetable), RD_INS );
+		stmt *u = stmt_bat_(c, stmt_dup(basetable), RD_UPD );
 
 		s = stmt_union(s, i);
 		s = stmt_diff(s, u);
@@ -923,9 +923,9 @@ stmt_idxbat(sql_idx * idx, int access)
 	stmt *s = stmt_idxbat_(idx, access);
 
 	if (idx->base.flag != TR_NEW && idx->t->table &&
-	    access == RDONLY && idx->t->persists && !idx->t->clear) {
-		stmt *i = stmt_idxbat_(idx, INS);
-		stmt *u = stmt_idxbat_(idx, UPD);
+	    access == RDONLY && idx->t->persistence == SQL_PERSIST && !idx->t->commit_action) {
+		stmt *i = stmt_idxbat_(idx, RD_INS);
+		stmt *u = stmt_idxbat_(idx, RD_UPD);
 
 		s = stmt_union(s, i);
 		s = stmt_diff(s, u);

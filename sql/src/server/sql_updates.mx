@@ -94,7 +94,7 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts)
 
 	sql_subtype *it = sql_bind_localtype("int");
 	sql_subtype *lt = sql_bind_localtype("lng");
-	sql_subaggr *cnt = sql_bind_aggr(sql->trans->module, "count", NULL);
+	sql_subaggr *cnt = sql_bind_aggr(sql->session->module, "count", NULL);
 	sql_subtype *bt = sql_bind_localtype("bit");
 	stmt *ts = stmt_basetable(k->t, k->t->base.name);
 
@@ -103,7 +103,7 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts)
 		stmt *s = inserts[0]->op2.stval;
 		sql_subaggr *sum;
 		stmt *count_sum = NULL;
-		sql_subfunc *ne = sql_bind_func_result(sql->trans->module, "<>", it, it, bt);
+		sql_subfunc *ne = sql_bind_func_result(sql->session->module, "<>", it, it, bt);
 
 		/* 1st stage: find out if original contains same values */
 		if (s->key && s->nrcols == 0) {
@@ -129,7 +129,7 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts)
 		if (idx_inserts->nrcols) {	/* insert columns not atoms */
 			group *g = NULL;
 			stmt *ss;
-			sql_subfunc *or = sql_bind_func_result(sql->trans->module, "or", bt, bt, bt);
+			sql_subfunc *or = sql_bind_func_result(sql->session->module, "or", bt, bt, bt);
 
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
@@ -139,7 +139,7 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts)
 			ss = stmt_aggr(stmt_dup(g->grp), grp_dup(g), sql_dup_aggr(cnt));
 			grp_destroy(g);
 			/* (count(ss) <> sum(ss)) */
-			sum = sql_bind_aggr(sql->trans->module, "sum", tail_type(ss));
+			sum = sql_bind_aggr(sql->session->module, "sum", tail_type(ss));
 			count_sum = stmt_binop(check_types(sql, lt, stmt_aggr(stmt_dup(ss), NULL, sql_dup_aggr(cnt)), type_equal), check_types(sql, lt, stmt_aggr(ss, NULL, sum), type_equal), sql_dup_func(ne));
 
 			/* combine results */
@@ -183,9 +183,9 @@ insert_check_fkey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts)
 	char buf[BUFSIZ];
 	stmt *s = inserts[0]->op2.stval;
 	sql_subtype *it = sql_bind_localtype("int");
-	sql_subaggr *cnt = sql_bind_aggr(sql->trans->module, "count", NULL);
+	sql_subaggr *cnt = sql_bind_aggr(sql->session->module, "count", NULL);
 	sql_subtype *bt = sql_bind_localtype("bit");
-	sql_subfunc *ne = sql_bind_func_result(sql->trans->module, "<>", it, it, bt);
+	sql_subfunc *ne = sql_bind_func_result(sql->session->module, "<>", it, it, bt);
 
 	(void) sql;		/* unused! */
 
@@ -241,7 +241,7 @@ hash_insert(mvc *sql, sql_idx * i, stmt **inserts)
 		sql_kc *c = m->data;
 
 		if (h) {
-			sql_subfunc *xor = sql_bind_func_result3(sql->trans->module, "rotate_xor_hash", it, it, &c->c->type, it);
+			sql_subfunc *xor = sql_bind_func_result3(sql->session->module, "rotate_xor_hash", it, it, &c->c->type, it);
 
 			h = stmt_Nop(stmt_list( list_append( list_append(
 				list_append(create_stmt_list(), h), 
@@ -250,7 +250,7 @@ hash_insert(mvc *sql, sql_idx * i, stmt **inserts)
 				xor);
 			bits += 8;
 		} else {
-			sql_subfunc *hf = sql_bind_func_result(sql->trans->module, "hash", &c->c->type, NULL, it);
+			sql_subfunc *hf = sql_bind_func_result(sql->session->module, "hash", &c->c->type, NULL, it);
 			h = stmt_unop(stmt_dup(inserts[c->c->colnr]->op2.stval), hf);
 		}
 	}
@@ -267,7 +267,7 @@ join_idx_insert(mvc *sql, sql_idx * i, stmt **inserts)
 
 	if (s->key && s->nrcols == 0) {
 		sql_subtype *bt = sql_bind_localtype("bit");
-		sql_subfunc *or = sql_bind_func_result(sql->trans->module, "or", bt, bt, bt);
+		sql_subfunc *or = sql_bind_func_result(sql->session->module, "or", bt, bt, bt);
 		stmt *cond = NULL;
 
 		s = stmt_relselect_init();
@@ -278,7 +278,7 @@ join_idx_insert(mvc *sql, sql_idx * i, stmt **inserts)
 			stmt_relselect_fill(s, stmt_uselect(stmt_bat(rc->c, stmt_dup(rts), RDONLY), stmt_dup(inserts[c->c->colnr]->op2.stval), cmp_equal));
 
 			if (c->c->null) {
-				sql_subfunc *isnil = sql_bind_func(sql->trans->module, "isnull", &c->c->type, NULL);
+				sql_subfunc *isnil = sql_bind_func(sql->session->module, "isnull", &c->c->type, NULL);
 				stmt *ins = stmt_dup(inserts[c->c->colnr]->op2.stval);
 
 				ins = stmt_unop(ins, isnil);
@@ -324,7 +324,7 @@ join_idx_insert(mvc *sql, sql_idx * i, stmt **inserts)
 			for (m = i->columns->h; m; m = m->next) {
 
 				sql_kc *c = m->data;
-				sql_subfunc *isnil = sql_bind_func(sql->trans->module, "isnull",
+				sql_subfunc *isnil = sql_bind_func(sql->session->module, "isnull",
 								   &c->c->type, NULL);
 
 				stmt *n;
@@ -491,14 +491,14 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 	stmt *res = NULL;
 
 	sql_subtype *it = sql_bind_localtype("int");
-	sql_subaggr *cnt = sql_bind_aggr(sql->trans->module, "count", NULL);
+	sql_subaggr *cnt = sql_bind_aggr(sql->session->module, "count", NULL);
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *ne;
 
 	if (list_length(k->columns) > 1 && !idx_updates)
 		return NULL;
 
-	ne = sql_bind_func_result(sql->trans->module, "<>", it, it, bt);
+	ne = sql_bind_func_result(sql->session->module, "<>", it, it, bt);
 	if (list_length(k->columns) > 1) {
 		stmt *ts = stmt_basetable(k->t, k->t->base.name);
 		node *m;
@@ -529,7 +529,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 			stmt *count_sum = NULL;
 			group *g = NULL;
 			stmt *ss;
-			sql_subfunc *or = sql_bind_func_result(sql->trans->module, "or", bt, bt, bt);
+			sql_subfunc *or = sql_bind_func_result(sql->session->module, "or", bt, bt, bt);
 
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
@@ -546,7 +546,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 			ss = stmt_aggr(stmt_dup(g->grp), grp_dup(g), sql_dup_aggr(cnt));
 			grp_destroy(g);
 			/* (count(ss) <> sum(ss)) */
-			sum = sql_bind_aggr(sql->trans->module, "sum", tail_type(ss));
+			sum = sql_bind_aggr(sql->session->module, "sum", tail_type(ss));
 			count_sum = stmt_binop(stmt_aggr(stmt_dup(ss), NULL, sql_dup_aggr(cnt)), check_types(sql, it, stmt_aggr(ss, NULL, sum), type_equal), sql_dup_func(ne));
 
 			/* combine results */
@@ -572,7 +572,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 		if (h->nrcols) {	/* update columns not atoms */
 			sql_subaggr *sum;
 			stmt *count_sum = NULL;
-			sql_subfunc *or = sql_bind_func_result(sql->trans->module, "or", bt, bt, bt);
+			sql_subfunc *or = sql_bind_func_result(sql->session->module, "or", bt, bt, bt);
 			stmt *ssum;
 
 			stmt *upd = stmt_dup(updates[c->c->colnr]->op2.stval);
@@ -580,7 +580,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 			stmt *ss = stmt_aggr(stmt_dup(g->grp), g, sql_dup_aggr(cnt));
 
 			/* (count(ss) <> sum(ss)) */
-			sum = sql_bind_aggr(sql->trans->module, "sum", tail_type(ss));
+			sum = sql_bind_aggr(sql->session->module, "sum", tail_type(ss));
 			ssum = stmt_aggr(ss, NULL, sum);
 			count_sum = stmt_binop(check_types(sql, tail_type(ssum), stmt_aggr(stmt_dup(ss), NULL, sql_dup_aggr(cnt)), type_equal), ssum, sql_dup_func(ne));
 
@@ -604,9 +604,9 @@ update_check_fkey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 	char buf[BUFSIZ];
 	stmt *s;
 	sql_subtype *it = sql_bind_localtype("int");
-	sql_subaggr *cnt = sql_bind_aggr(sql->trans->module, "count", NULL);
+	sql_subaggr *cnt = sql_bind_aggr(sql->session->module, "count", NULL);
 	sql_subtype *bt = sql_bind_localtype("bit");
-	sql_subfunc *ne = sql_bind_func_result(sql->trans->module, "<>", it, it, bt);
+	sql_subfunc *ne = sql_bind_func_result(sql->session->module, "<>", it, it, bt);
 	stmt *cur;
 
 	if (!idx_updates)
@@ -657,7 +657,7 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 		}
 
 		if (h) {
-			sql_subfunc *xor = sql_bind_func_result3(sql->trans->module, "rotate_xor_hash", it, it, &c->c->type, it);
+			sql_subfunc *xor = sql_bind_func_result3(sql->session->module, "rotate_xor_hash", it, it, &c->c->type, it);
 
 			h = stmt_Nop(stmt_list( list_append( list_append(
 				list_append(create_stmt_list(), h), 
@@ -666,7 +666,7 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 				xor);
 			bits += 8;
 		} else {
-			sql_subfunc *hf = sql_bind_func_result(sql->trans->module, "hash", &c->c->type, NULL, it);
+			sql_subfunc *hf = sql_bind_func_result(sql->session->module, "hash", &c->c->type, NULL, it);
 			h = stmt_unop(upd, hf);
 		}
 	}
@@ -838,7 +838,7 @@ sql_insert(mvc *sql, sql_table *t, stmt **inserts, int len, int output)
 		return sql_error(sql, 02, "INSERT INTO: failed to update indexes for table '%s'", t->base.name);
 	}
 
- 	cnt = sql_bind_aggr(sql->trans->module, "count", NULL);
+ 	cnt = sql_bind_aggr(sql->session->module, "count", NULL);
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 
@@ -855,7 +855,7 @@ sql_insert(mvc *sql, sql_table *t, stmt **inserts, int len, int output)
 				s = stmt_uselect(stmt_dup(inserts[c->colnr]->op2.stval), s, cmp_equal);
 				s = stmt_aggr(s, NULL, sql_dup_aggr(cnt));
 			} else {
-				sql_subfunc *isnil = sql_bind_func(sql->trans->module, "isnull", &c->type, NULL);
+				sql_subfunc *isnil = sql_bind_func(sql->session->module, "isnull", &c->type, NULL);
 
 				s = stmt_unop(stmt_dup(inserts[c->colnr]->op2.stval), isnil);
 			}
@@ -874,7 +874,7 @@ sql_insert(mvc *sql, sql_table *t, stmt **inserts, int len, int output)
 		if (inserts[0]->op2.stval->nrcols == 0) {
 			s = stmt_atom_int(1);
 		} else {
-			s = stmt_aggr(stmt_dup(inserts[0]->op2.stval), NULL, sql_bind_aggr(sql->trans->module, "count", NULL));
+			s = stmt_aggr(stmt_dup(inserts[0]->op2.stval), NULL, sql_bind_aggr(sql->session->module, "count", NULL));
 		}
 		list_append(l, stmt_affected_rows(s));
 	}
@@ -887,14 +887,27 @@ insert_into(mvc *sql, scope *scp, dlist *qname, dlist *columns, symbol *val_or_q
 	int inscol = 0;
 	tvar *tv = NULL;
 
-	sql_schema *s = qname_schema(sql, qname);
+	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-	sql_table *t;
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
 	list *collist = NULL;
 	int i, len = 0;
 	stmt **inserts, *res = NULL;
 
-	if (!s || (t = mvc_bind_table(sql, s, tname)) == NULL) {
+	
+	if (sname && !(s=mvc_bind_schema(sql, sname))) {
+		(void) sql_error(sql, 02, "INSERT INTO: no such schema '%s'", sname);
+		return NULL;
+	}
+	if (!s)
+		s = cur_schema(sql);
+	t = mvc_bind_table(sql, s, tname);
+	if (!t && !sname) {
+		s = tmp_schema(sql);
+		t = mvc_bind_table(sql, s, tname);
+	}
+	if (!t) {
 		return sql_error(sql, 02, "INSERT INTO: no such table '%s'", tname);
 	} else if (!t->table) {
 		return sql_error(sql, 02, "INSERT INTO: cannot insert into view '%s'", tname);
@@ -1094,12 +1107,25 @@ sql_bulkinsert(mvc *sql, scope *scp, sql_table *t, char *tsep, char *rsep, char 
 static stmt *
 copyfrom(mvc *sql, scope *scp, dlist *qname, dlist *files, dlist *seps, int nr)
 {
+	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-	sql_table *t = mvc_bind_table(sql, cur_schema(sql), tname);
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
 	char *tsep = seps->h->data.sval;
 	char *rsep = seps->h->next->data.sval;
 	list *slist;
 
+	if (sname && !(s=mvc_bind_schema(sql, sname))) {
+		(void) sql_error(sql, 02, "COPY INTO: no such schema '%s'", sname);
+		return NULL;
+	}
+	if (!s)
+		s = cur_schema(sql);
+	t = mvc_bind_table(sql, s, tname);
+	if (!t && !sname) {
+		s = tmp_schema(sql);
+		t = mvc_bind_table(sql, s, tname);
+	}
 	if (!t) {
 		return sql_error(sql, 02, "COPY INTO: no such table '%s'", tname);
 	} else if (files) {
@@ -1134,7 +1160,7 @@ sql_update(mvc *sql, sql_table *t, stmt **updates, list *l)
 		return sql_error(sql, 02, "UPDATE: failed to update indexes for table '%s'", t->base.name);
 	}
 
- 	cnt = sql_bind_aggr(sql->trans->module, "count", NULL);
+ 	cnt = sql_bind_aggr(sql->session->module, "count", NULL);
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 
@@ -1146,7 +1172,7 @@ sql_update(mvc *sql, sql_table *t, stmt **updates, list *l)
 				s = stmt_uselect(stmt_dup(updates[c->colnr]->op2.stval), s, cmp_equal);
 				s = stmt_aggr(s, NULL, sql_dup_aggr(cnt));
 			} else {
-				sql_subfunc *isnil = sql_bind_func(sql->trans->module, "isnull", &c->type, NULL);
+				sql_subfunc *isnil = sql_bind_func(sql->session->module, "isnull", &c->type, NULL);
 
 				s = stmt_unop(stmt_dup(updates[c->colnr]->op2.stval), isnil);
 			}
@@ -1270,7 +1296,7 @@ sql_update_table(mvc *sql, scope *scp, sql_schema *schema, char *tname, dlist *a
 				updates[c->colnr] = stmt_insert(stmt_bat(c, stmt_dup(tv->s), UPD), stmt_dup(v));
 			list_append(l, stmt_dup(updates[c->colnr]));
 		}
-		list_append(l, stmt_affected_rows(stmt_aggr(first_subset(s), NULL, sql_bind_aggr(sql->trans->module, "count", NULL))));
+		list_append(l, stmt_affected_rows(stmt_aggr(first_subset(s), NULL, sql_bind_aggr(sql->session->module, "count", NULL))));
 		stmt_destroy(s);
 
 		if ((s = sql_update(sql, t, updates, l)) == NULL) {
@@ -1288,9 +1314,20 @@ sql_update_table(mvc *sql, scope *scp, sql_schema *schema, char *tname, dlist *a
 static stmt *
 update_table(mvc *sql, scope *scp, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 {
-	sql_schema *s = qname_schema(sql, qname);
+	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
 
+	if (sname && !(s=mvc_bind_schema(sql,sname))) {
+		(void) sql_error(sql, 02, "UPDATE: no such schema '%s'", sname);
+		return NULL;
+	}
+	if (!s)
+		s = cur_schema(sql);
+	t = mvc_bind_table(sql, s, tname);
+	if (!t && !sname) 
+		s = tmp_schema(sql);
 	return sql_update_table(sql, scp, s, tname, assignmentlist, opt_where);
 }
 
@@ -1370,7 +1407,7 @@ sql_delete(mvc *sql, tvar *tv, sql_table *t, stmt *s, int output)
 
 	if (output) {
 		stmt *t = stmt_aggr(stmt_dup(subset), NULL,
-				    sql_bind_aggr(sql->trans->module, "count", NULL));
+				    sql_bind_aggr(sql->session->module, "count", NULL));
 
 		list_append(l, stmt_affected_rows(t));
 	}
@@ -1380,9 +1417,22 @@ sql_delete(mvc *sql, tvar *tv, sql_table *t, stmt *s, int output)
 static stmt *
 delete_table(mvc *sql, scope *scp, dlist *qname, symbol *opt_where)
 {
+	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-	sql_table *t = mvc_bind_table(sql, cur_schema(sql), tname);
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
 
+	if (sname && !(s=mvc_bind_schema(sql, sname))) {
+		(void) sql_error(sql, 02, "DELETE FROM: no such schema '%s'", sname);
+		return NULL;
+	}
+	if (!s)
+		s = cur_schema(sql);
+	t = mvc_bind_table(sql, s, tname);
+	if (!t && !sname) {
+		s = tmp_schema(sql);
+		t = mvc_bind_table(sql, s, tname);
+	}
 	if (!t) {
 		return sql_error(sql, 02, "DELETE FROM: no such table '%s'", tname);
 	} else if (!t->table) {

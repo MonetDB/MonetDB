@@ -350,7 +350,7 @@ mvc_update_var_wrap(mvc *c, str varname)
 int
 mvc_next_value(lng *res, mvc *c, str seq)
 {
-	if (sql_next_value((*(mvc **) c)->trans, seq, res))
+	if (sql_next_value((*(mvc **) c)->session->tr, seq, res))
 		return GDK_SUCCEED;
 	return GDK_FAIL;
 }
@@ -358,13 +358,13 @@ mvc_next_value(lng *res, mvc *c, str seq)
 static BAT *
 mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access)
 {
-	sql_trans *tr = m->trans;
+	sql_trans *tr = m->session->tr;
 	BAT *b = NULL;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_table *t = mvc_bind_table(m, s, tname);
 	sql_column *c = mvc_bind_column(m, t, cname);
 
-	if (access == UPD)
+	if (access == UPD || access == RD_UPD)
 		b = bind_ubat(tr, c, access);
 	else
 		b = bind_bat(tr, c, access);
@@ -375,12 +375,12 @@ int
 mvc_append(BAT **b, mvc *M, str sname, str tname, str cname, int *access, BAT *i)
 {
 	mvc *m = *(mvc**)M;
-	sql_trans *tr = m->trans;
+	sql_trans *tr = m->session->tr;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_table *t = mvc_bind_table(m, s, tname);
 	sql_column *c = mvc_bind_column(m, t, cname);
 
-	if (*access == UPD)
+	if (*access == UPD || *access == RD_UPD)
 		*b = append_ubat(tr, c, *access, i);
 	else
 		*b = append_bat(tr, c, *access, i);
@@ -391,7 +391,7 @@ mvc_append(BAT **b, mvc *M, str sname, str tname, str cname, int *access, BAT *i
 static BAT *
 mvc_bind_dbat(mvc *m, char *sname, char *tname, int access)
 {
-	sql_trans *tr = m->trans;
+	sql_trans *tr = m->session->tr;
 	BAT *b = NULL;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_table *t = mvc_bind_table(m, s, tname);
@@ -403,13 +403,13 @@ mvc_bind_dbat(mvc *m, char *sname, char *tname, int access)
 static BAT *
 mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access)
 {
-	sql_trans *tr = m->trans;
+	sql_trans *tr = m->session->tr;
 	BAT *b = NULL;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_idx *i = mvc_bind_idx(m, s, iname);
 
 	(void) tname;
-	if (access == UPD)
+	if (access == UPD || access == RD_UPD)
 		b = bind_uidx(tr, i, access);
 	else
 		b = bind_idx(tr, i, access);
@@ -420,12 +420,12 @@ int
 mvc_append_idxbat(BAT **b, mvc *M, char *sname, char *tname, char *iname, int *access, BAT *ib)
 {
 	mvc *m = *(mvc**)M;
-	sql_trans *tr = m->trans;
+	sql_trans *tr = m->session->tr;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	sql_idx *i = mvc_bind_idx(m, s, iname);
 
 	(void) tname;
-	if (*access == UPD)
+	if (*access == UPD || *access == RD_UPD)
 		*b = append_uidx(tr, i, *access, ib);
 	else
 		*b = append_idx(tr, i, *access, ib);
@@ -478,7 +478,7 @@ mvc_clear_table_wrap(lng *res, mvc *c, str sname, str tname)
 static int
 mvc_result_row(mvc *m, int nr_cols, int qtype)
 {
-	m->results = res_table_create(m->trans, m->result_id++, nr_cols, qtype, m->results);
+	m->results = res_table_create(m->session->tr, m->result_id++, nr_cols, qtype, m->results);
 	return m->results->id;
 }
 

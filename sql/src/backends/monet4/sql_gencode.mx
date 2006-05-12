@@ -1433,7 +1433,7 @@ monet4_interpret(Cntxt procstk, mvc *c, char *name, int *err)
 int backend_call( backend *be, mvc *c, cq *q ) 
 {
 	int err = 0;
-	Cntxt procstk = backend_newstack(be->mvc->stk);
+	Cntxt procstk = backend_newstack(be->mvc->session->stk);
 	YYSTREE callnode;
 
 	be->mvc->type = q->type;
@@ -1443,7 +1443,7 @@ int backend_call( backend *be, mvc *c, cq *q )
 		q->code = (backend_code) callnode;
 		q->stk = (backend_stack) (ptrdiff_t) procstk;
 	} else {
-		be->mvc->status = err;
+		be->mvc->session->status = err;
 		monet4_freecode(callnode, (backend_stack) (ptrdiff_t) procstk, q->id, q->name);
 
 		backend_freestack((backend_stack) (ptrdiff_t) procstk);
@@ -1531,7 +1531,7 @@ int backend_dump(backend *be, cq *q, stmt *s)
 	cmd = buffer_get_buf(be->outbuf);
 	stream_flush(be->out);
 
-	err = backend_parse(c->stk, cmd);
+	err = backend_parse(c->session->stk, cmd);
 
 	/* beware to use free instead of _DELETE
 	 * as the stream library is built without

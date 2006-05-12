@@ -61,7 +61,7 @@ full_column(sql_column *c, BAT *d, BAT *s )
 	*/
 	BAT *r, *b, *u, *i = temp_descriptor(c->bat.ibid);
 	r = i; 
-	if (c->t->base.flag == TR_NEW || !c->t->persists || c->t->clear) {
+	if (isTemp(c)) {
 		if (s) {
 			r = BATsemijoin(i,s);
 			bat_destroy(i);
@@ -100,7 +100,7 @@ column_find_row(sql_trans *tr, sql_column *c, void *value, ...)
 	void *nv;
 
 	if (c->t->dbid) 
-		d = bind_dbat(tr, c->t, DEL);
+		d = bind_dbat(tr, c->t, RD_DEL);
 	va_start(va, value);
 	while ((nc = va_arg(va, sql_column *)) != NULL) {
 		nv = va_arg(va, void *);
@@ -135,7 +135,7 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 	void *res = NULL;
 
 	if (c->t->dbid) 
-		d = bind_dbat(tr, c->t, DEL);
+		d = bind_dbat(tr, c->t, RD_DEL);
 	b = full_column(c, d, NULL);
 	if (d)
 		bat_destroy(d);
@@ -202,9 +202,10 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 		bat_destroy(b);
 		c->base.wtime = tr->stime;
 	}
-	t->cnt += cnt;
+	t->cnt ++;
 	if (n) {
 		fprintf(stderr, "called table_insert(%s) with wrong number of args (%d,%d)\n", t->base.name, list_length(t->columns.set), cnt);
+		assert(0);
 		return -1;
 	}
 	t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;

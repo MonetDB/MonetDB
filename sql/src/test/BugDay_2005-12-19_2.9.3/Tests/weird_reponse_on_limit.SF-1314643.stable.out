@@ -17,23 +17,23 @@ quit();
 
 Over..
 
-# 16:41:22 >  
-# 16:41:22 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=43223  < weird_reponse_on_limit.SF-1314643.sql
-# 16:41:22 >  
+# 08:04:03 >  
+# 08:04:03 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=38783  < weird_reponse_on_limit.SF-1314643.sql
+# 08:04:03 >  
 
-# tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables # table_name
-# id,	name,	schema_id,	query,	istable,	system,	clear,	temporary # name
-# int,	varchar,	int,	varchar,	boolean,	boolean,	boolean,	smallint # type
-# 4,	7,	4,	1,	5,	5,	5,	1 # length
-[ 4458,	"modules",	4457,	NULL,	true,	true,	false,	0	]
 # sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
-# id,	name,	schema_id,	query,	istable,	system,	clear,	temporary # name
-# int,	varchar,	int,	varchar,	boolean,	boolean,	boolean,	smallint # type
-# 4,	7,	4,	1,	5,	5,	5,	1 # length
-[ 4458,	"modules",	4457,	NULL,	true,	true,	false,	0	]
-[ 4462,	"schemas",	4457,	NULL,	true,	true,	false,	0	]
+# id,	name,	schema_id,	query,	istable,	system,	commit_action,	temporary # name
+# int,	varchar,	int,	varchar,	boolean,	boolean,	smallint,	smallint # type
+# 4,	7,	4,	1,	5,	5,	1,	1 # length
+[ 4458,	"modules",	4457,	NULL,	true,	true,	0,	0	]
+# sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
+# id,	name,	schema_id,	query,	istable,	system,	commit_action,	temporary # name
+# int,	varchar,	int,	varchar,	boolean,	boolean,	smallint,	smallint # type
+# 4,	7,	4,	1,	5,	5,	1,	1 # length
+[ 4458,	"modules",	4457,	NULL,	true,	true,	0,	0	]
+[ 4462,	"schemas",	4457,	NULL,	true,	true,	0,	0	]
 
-# 22:09:56 >  
-# 22:09:56 >  Done.
-# 22:09:56 >  
+# 08:04:03 >  
+# 08:04:03 >  Done.
+# 08:04:03 >  
 
