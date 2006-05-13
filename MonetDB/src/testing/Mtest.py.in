@@ -971,13 +971,13 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
                 t = "%7.3f" % tt
             else:
                 t = '-.---'
-            TIMES.append([TSTDIR,TST,t,FtOut,FtErr])
+            TIMES.append([TSTDIR,TST,t,tt,FtOut,FtErr])
             td = td + tt
             FdOut = max(FdOut,FtOut)
             FdErr = max(FdErr,FtErr)
             if bodyline is not None:
                 body.append(bodyline)
-        TIMES.append([TSTDIR,'',"%7.3f" % td,FdOut,FdErr])
+        TIMES.append([TSTDIR,'',"%7.3f" % td,td,FdOut,FdErr])
 
         if THISFILE in ["Mtest.py", "Mprofile.py"]:
             CreateHtmlIndex(env, *body)
@@ -3157,13 +3157,36 @@ def main(argv) :
         fn = os.path.join(env['TSTTRGBASE'],TSTPREF,"times.")
         fl = open(fn+"lst","w")
         Failure = [0,0,0,0]
-        for TSTDIR,TST,tt,FtOut,FtErr in TIMES:
+        for TSTDIR,TST,tt,ms,FtOut,FtErr in TIMES:
             fl.write(url(os.path.join(TSTDIR,TST))+":\t"+tt+
                         "\t"+FAILURES[FtOut]+
                         "\t"+FAILURES[FtErr]+"\n")
             if TST != '':
                 Failure[max(FtOut,FtErr)] += 1
         fl.write(":\t%7.3f\n" % t_)
+        fl.close()
+
+    if THISFILE in ["Mtest.py", "Mprofile.py"]:
+        fn = os.path.join(env['TSTTRGBASE'],TSTPREF,"times.")
+        fl = open(fn+"sql","w")
+	host = socket.gethostname()
+	product = os.path.split(env['TSTSRCBASE'])[-1]
+	if product == 'sql':
+		product += env['TST_FIVE']
+	compiler = 'NTV'
+	if os.name != 'nt':
+		f = os.path.join(env['TSTBLDBASE'],'Makefile')
+    		r = re.compile("^CC = (.*)$", re.MULTILINE)
+        	for l in fileinput.input(f):
+			mt = r.match(l)
+			if mt:
+				compiler = mt.group(1)
+		
+        for TSTDIR,TST,tt,ms,FtOut,FtErr in TIMES:
+            if TST != '':
+		# target is a platform and compilation options etc
+		sql = "INSERT INTO mtest (\"date\", \"machine\", \"os\", \"release\", \"compiler\", \"bits\", \"oid\", \"static\", \"product\", \"dir\", \"test\", \"time\", \"stdout\", \"stderr\") VALUES (now(), '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', %d, %d, %d);\n" %(host, env['OS'], env['RELEASE'], compiler, env['TST_BITS'], env['TST_OIDS'], env['TST_STATIC'],product,TSTDIR,TST,ms,FtOut,FtErr)
+            	fl.write(sql);
         fl.close()
 
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
