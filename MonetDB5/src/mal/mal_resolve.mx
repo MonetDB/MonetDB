@@ -662,7 +662,7 @@ In those cases, the detailed analysis is performed upon an actual call.
 				recognizedCall(mb,p,errsig);
 				snprintf(errmsg,BUFSIZ,"'%s%s%s' undefined in %s.%s[%d] %s\n", 
 					(getModuleId(p)?getModuleId(p):""), (getModuleId(p)?".":""),
-					getFunctionId(p), scope->name,
+					getFunctionId(p), (scope?scope->name:"<unknown>"),
 					getFunctionId(getInstrPtr(mb,0)),getPC(mb,p), errsig);
 				GDKerror(errmsg);
 			}
