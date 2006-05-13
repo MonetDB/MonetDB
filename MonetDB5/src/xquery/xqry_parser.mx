@@ -194,7 +194,7 @@ parseQName(Client cntxt, Xbackend xb)
 	if( ret == PARSE_ERR) 
 		return ret;
 	for(l=0; l <xb->vtop; l++)
-		if( strcmp(s, xb->vars[l].nme)==0 ){
+		if( xb->vars[l].nme && strcmp(s, xb->vars[l].nme)==0 ){
 			id= l; 
 			break;
 		}
@@ -216,7 +216,7 @@ parseVarQName(Client cntxt, Xbackend xb){
 
 	l = parseQName_(cntxt, xb, &s);
 	for(l=0; l <xb->vtop; l++)
-		if( strcmp(s, xb->vars[l].nme)==0 ){
+		if(xb->vars[l].nme && strcmp(s, xb->vars[l].nme)==0 ){
 			GDKfree(s);
 			return PARSE_OK;
 		}
@@ -565,7 +565,7 @@ parseCompTextConstructor(Client cntxt, Xbackend xb){
 	skipSpace(cntxt);
 	if( currChar(cntxt) != '{') {
 		cntxt->yycur = before; /* HACK */
-		return xqryError(cntxt,"'{' expected\n");
+		return PARSE_ERR;
 	}
 	nextChar(cntxt);
 	parseExpr(cntxt,xb);
@@ -909,7 +909,7 @@ STATIC int parseNameTest(Client cntxt, Xbackend xb) {
 				return xqryError(cntxt,"'*' expected\n");
 			}
 			nextChar(cntxt);
-		} else xqryError(cntxt,"':' expected\n");
+		} /* else xqryError(cntxt,"':' expected\n");*/
 		return PARSE_OK;
 	}
 	if (currChar(cntxt) == '*') {
@@ -918,7 +918,7 @@ STATIC int parseNameTest(Client cntxt, Xbackend xb) {
 			nextChar(cntxt);
 			if ( (i=parseNCName(cntxt,xb)) <= 0) 
 				return xqryError(cntxt,"<NCname> expected\n");
-		} else xqryError(cntxt,"':' expected\n");
+		}/* else xqryError(cntxt,"':' expected\n");*/
 	} else 
 		return xqryError(cntxt,"<NCname> or <Wildcard> expected\n");
 	return PARSE_OK;
@@ -932,11 +932,12 @@ STATIC int parseFunctionCall(Client cntxt, Xbackend xb) {
 
 	@:ptrace(parseFunctionCall)@
 	if ( (i=parseQName(cntxt,xb)) <= 0) 
-		return xqryError(cntxt,"<Qname> expected\n");
+		return PARSE_ERR;
+		/* return xqryError(cntxt,"<Qname> expected\n"); */
 	skipSpace(cntxt);
 	if (currChar(cntxt) != '(') {
 		cntxt->yycur = before; /* HACK */
-		return xqryError(cntxt,"'(' expected\n");
+		return PARSE_ERR;
 	}
 	nextChar(cntxt);
 	do {
@@ -1062,7 +1063,8 @@ STATIC int parseAbbrevReverseStep(Client cntxt, Xbackend xb) {
 	if (MALkeyword(cntxt, "..", 2)) {
 		return PARSE_OK;
 	}
-	return xqryError(cntxt,"'..' expected\n");
+	return PARSE_ERR;
+	/* return xqryError(cntxt,"'..' expected\n");*/
 }
 
 STATIC int parseReverseAxis(Client cntxt, Xbackend xb) {
@@ -1081,7 +1083,8 @@ STATIC int parseReverseAxis(Client cntxt, Xbackend xb) {
 	else if (MALkeyword(cntxt, "ancestor-or-self", 16))
 		ret = ANCESTOR_OR_SELF;
 	else
-		return xqryError(cntxt,"'ancestor', 'preceding', preceding-sibling', 'ancestor-or-self' expected\n");
+		return PARSE_ERR;
+		/* return xqryError(cntxt,"'ancestor', 'preceding', preceding-sibling', 'ancestor-or-self' expected\n"); */
 	if (!keyphrase2(cntxt, "::"))
 		return xqryError(cntxt,"'::' expected\n");
 	(void) ret;
@@ -1128,7 +1131,8 @@ STATIC int parseForwardAxis(Client cntxt, Xbackend xb) {
 	else if (MALkeyword(cntxt, "descendant-or-self", 18))
 		ret = DESCENDANT_OR_SELF;
 	else
-		return xqryError(cntxt,"'descendant', 'attribute', 'following', 'following-sibling', or 'self' expected\n");
+		return PARSE_ERR;
+		/* return xqryError(cntxt,"'descendant', 'attribute', 'following', 'following-sibling', or 'self' expected\n");*/
 	if (!keyphrase2(cntxt, "::"))
 		return xqryError(cntxt,"'::' expected\n");
 	(void) ret;
@@ -1178,12 +1182,16 @@ int parseRelativePathExpr(Client cntxt, Xbackend xb) {
 }
 
 STATIC int parsePathExpr(Client cntxt, Xbackend xb) {
+	str op="/";
+	(void) op;
 	@:ptrace(parsePathExpr)@
 	skipSpace(cntxt);
 	if (currChar(cntxt) == '/') {
 		nextChar(cntxt);
-		if (currChar(cntxt) == '/')
+		if (currChar(cntxt) == '/'){
+			op="//";
 			nextChar(cntxt);
+		}
 	}
 	return parseRelativePathExpr(cntxt, xb);
 }
@@ -1478,36 +1486,57 @@ STATIC int parseRangeExpr(Client cntxt, Xbackend xb) {
 }
 
 STATIC int parseComparisonExpr(Client cntxt, Xbackend xb) {
+	str op="unknown", mod="calc";
+	int ret;
 	/* int before = cntxt->yycur;*/
 	@:ptrace(parseComparisonExpr)@
 	skipSpace(cntxt);
 	if (parseRangeExpr(cntxt, xb) == PARSE_OK) {
-		/* assert(cntxt->yycur != before);*/
-			/* NodeComp */
+		/* NodeComp */
 		skipSpace(cntxt);
 		if (keyphrase2(cntxt, "<<")) {
+			op= "<<"; mod="mguide";
 		} else if (keyphrase2(cntxt, ">>")) {
+			op= ">>"; mod="mguide";
 		} else if (MALkeyword(cntxt, "is", 2)) {
+			op= "is"; mod="mguide";
 		} else
 		/* ValueComp | GeneralComp | NodeComp) RangeExpr)? */
 		if (keyphrase1(cntxt, "=")) {
+			op= "=="; mod="batcalc";
 		} else if (keyphrase2(cntxt, "!=")) {
+			op= "!="; mod="batcalc";
 		} else if (keyphrase2(cntxt, "<=")) {
+			op= "<="; mod="batcalc";
 		} else if (keyphrase2(cntxt, ">=")) {
+			op= ">="; mod="batcalc";
 		} else if (keyphrase1(cntxt, ">")) {
+			op= ">"; mod="batcalc";
 		} else if (keyphrase1(cntxt, "<")) {
+			op= "<"; mod="batcalc";
 		} else
 			/* ValueComp */
 		if (MALkeyword(cntxt, "eq", 2)) {
+			op= "==";
 		} else if (MALkeyword(cntxt, "ne", 2)) {
+			op= "!=";
 		} else if (MALkeyword(cntxt, "lt", 2)) {
+			op= "<";
 		} else if (MALkeyword(cntxt, "le", 2)) {
+			op= "<=";
 		} else if (MALkeyword(cntxt, "gt", 2)) {
+			op= ">";
 		} else if (MALkeyword(cntxt, "ge", 2)) {
+			op= ">=";
 		} else
 			return PARSE_OK;
 
-		return parseRangeExpr(cntxt, xb);
+		ret= parseRangeExpr(cntxt, xb);
+		if( ret == PARSE_OK){
+			xqryCoercion(xb);
+			xqryStatement(xb,calcRef,op,2);
+		}
+		return ret;
 	}
 	return xqryError(cntxt,"<ComparisonOperator> expected\n");
 }

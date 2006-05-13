@@ -163,6 +163,6 @@ xqryStatement(Xbackend xb, str mod, str fcn, int argc){
 	xb->vtop -= argc; /* don't forget garbage collection */
 	getArg(p,0)= pushXvar(xb);
 	err= xb->mb->errors; /* ignore if type check fails */
-	typeChecker(0,xb->mb,p,FALSE);
+	typeChecker(0,xb->mb,p,TRUE);
 	xb->mb->errors= err;
 }
