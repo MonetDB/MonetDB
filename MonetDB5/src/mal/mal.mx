@@ -205,7 +205,7 @@ as well as in user defined module implementations.
 #include <gdk_utils.h>
 #include <stream.h>
 
-#ifdef _MSC_VER
+#ifdef NATIVE_WIN32
 #ifndef LIBMAL
 #define mal_export extern __declspec(dllimport)
 #else
