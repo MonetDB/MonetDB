@@ -206,9 +206,20 @@ The internal data structure is used as a cache for improved access.
 @h
 #ifndef _MAL_PBM
 #define _MAL_PBM
-#include "mal.h"
-#include "mal_client.h"
-#include "mal_interpreter.h"
+
+#include <mal.h>
+#include <mal_client.h>
+#include <mal_interpreter.h>
+
+#ifdef NATIVE_WIN32
+#ifndef LIBPBM
+#define pbm_export extern __declspec(dllimport)
+#else
+#define pbm_export extern __declspec(dllexport)
+#endif
+#else
+#define pbm_export extern
+#endif
 
 typedef struct {
 	str grp;		/* group name */
@@ -226,41 +237,41 @@ around for fast matching.
 	int prev;		/* previous one in the PBAT list */
 } PBATrecord, *PBAT;
 
-mal_export PBAT partitions ;
-mal_export int ptop, plimit;
+pbm_export PBAT partitions ;
+pbm_export int ptop, plimit;
 
 
-mal_export void PBMresize(int size);
-mal_export str PBMdump();
-mal_export str PBMprelude(int *ret);
-mal_export str PBMepilogue(int *ret);
-mal_export str PBMopen(int *ret);
-mal_export str PBMclose(int *ret);
-mal_export str PBMdestroy(int *ret);
-mal_export str PBMtakePBAT(int *ret, str *grp);
-mal_export str PBMtake(int *ret, str *grp, str *elm);
-mal_export str PBMtakeIndexed(int *ret, str *grp, int *bid);
-mal_export str PBMgetComponents(int *ret, str *grp);
-mal_export str PBMgetAllComponents(int *ret);
-mal_export int PBMfindGrp(int bid);
-mal_export int PBMfindPBAT(str grp);
-mal_export int PBMfindPBATcomponent(str grp, str elm);
-mal_export str PBMdeposit(int *ret, str *grp, str *elm, int *bid);
-mal_export str PBMdepositIndexed(int *ret, str *grp, int *idx);
-mal_export str PBMdepositByName(int *ret, str *grp, str *elm, str *nme);
-mal_export str PBMgetRange(oid *first, oid *last, int *bid);
-mal_export str PBMgetLast(int *ret, str *grp);
-mal_export str PBMdiscard(int *ret, str *grp);
-mal_export str PBMdiscardAll(int *ret);
-mal_export str PBMreleaseAll(int *ret, int *bid);
-mal_export str PBMdiscardComponent(int *ret, str *grp, int *bid);
-mal_export str PBMnewIteratorBase(int *ret, str *grp, str *elm);
-mal_export str PBMnewIterator(int *res, str *grp);
-mal_export str PBMnewIteratorRng(int *res, str *grp, oid *first, oid *last);
-mal_export str PBMgetNextElement(int *res, str *grp );
-mal_export str PBMgetNextElementRng(int *res, str *grp, oid *first, oid *last);
-mal_export str PBMcompress(int *ret, str *grp);
-mal_export str PBMgetNextName(int *ret, str *nme, str *elm);
+pbm_export void PBMresize(int size);
+pbm_export str PBMdump();
+pbm_export str PBMprelude(int *ret);
+pbm_export str PBMepilogue(int *ret);
+pbm_export str PBMopen(int *ret);
+pbm_export str PBMclose(int *ret);
+pbm_export str PBMdestroy(int *ret);
+pbm_export str PBMtakePBAT(int *ret, str *grp);
+pbm_export str PBMtake(int *ret, str *grp, str *elm);
+pbm_export str PBMtakeIndexed(int *ret, str *grp, int *bid);
+pbm_export str PBMgetComponents(int *ret, str *grp);
+pbm_export str PBMgetAllComponents(int *ret);
+pbm_export int PBMfindGrp(int bid);
+pbm_export int PBMfindPBAT(str grp);
+pbm_export int PBMfindPBATcomponent(str grp, str elm);
+pbm_export str PBMdeposit(int *ret, str *grp, str *elm, int *bid);
+pbm_export str PBMdepositIndexed(int *ret, str *grp, int *idx);
+pbm_export str PBMdepositByName(int *ret, str *grp, str *elm, str *nme);
+pbm_export str PBMgetRange(oid *first, oid *last, int *bid);
+pbm_export str PBMgetLast(int *ret, str *grp);
+pbm_export str PBMdiscard(int *ret, str *grp);
+pbm_export str PBMdiscardAll(int *ret);
+pbm_export str PBMreleaseAll(int *ret, int *bid);
+pbm_export str PBMdiscardComponent(int *ret, str *grp, int *bid);
+pbm_export str PBMnewIteratorBase(int *ret, str *grp, str *elm);
+pbm_export str PBMnewIterator(int *res, str *grp);
+pbm_export str PBMnewIteratorRng(int *res, str *grp, oid *first, oid *last);
+pbm_export str PBMgetNextElement(int *res, str *grp );
+pbm_export str PBMgetNextElementRng(int *res, str *grp, oid *first, oid *last);
+pbm_export str PBMcompress(int *ret, str *grp);
+pbm_export str PBMgetNextName(int *ret, str *nme, str *elm);
 #endif
 @c
 #include "pbm.h"
