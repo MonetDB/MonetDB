@@ -127,12 +127,6 @@ input for parsing in a single string before calling the parser.
 Once the input is available parsing runs in a critial section for
 a single client thread.
 
-@= restoreState
-    if( c->listing)
-		printFunction(c->fdout,c->curprg->def, c->listing);
-	resetInstructions(c->curprg->def, oldstate.stop);
-	resetVariables(c->curprg->def,@1, oldstate.vtop);
-
 @+ The parser
 The Xquery parser uses the recursive descent method,
 producing MAL code on the fly as needed.
@@ -194,7 +188,25 @@ STATIC int
 parseQName(Client cntxt, Xbackend xb)
 {
 	str s;
-	return parseQName_(cntxt, xb, &s);
+	int ret, id = -1, l;
+
+	ret = parseQName_(cntxt, xb, &s);
+	if( ret == PARSE_ERR) 
+		return ret;
+	for(l=0; l <xb->vtop; l++)
+		if( strcmp(s, xb->vars[l].nme)==0 ){
+			id= l; 
+			break;
+		}
+	if( xb->vtop == MAXXVARS){
+		xqryError(cntxt,"Too many variables");
+		xb->vtop --;
+	}
+	xb->vars[xb->vtop].nme = s;
+	if( id < 0)
+		id= newVariable(xb->mb,s,TYPE_any);
+	xb->vars[xb->vtop++].tmpid = id;
+	return ret;
 }
 
 STATIC int
@@ -948,12 +960,6 @@ STATIC int parsePrimaryExpr(Client cntxt, Xbackend xb) {
 
 	@:ptrace(parsePrimaryExpr)@
 	skipSpace(cntxt);
-	i = stringLength(cntxt);
-	if (i > 0) {
-		strCopy(cntxt, i);
-		advance(cntxt, i);
-		return PARSE_OK;
-	}
 	if ((i = cstToken(cntxt, &val)) != 0) {
 		p= newAssignment(xb->mb);
 		getArg(p,0)= pushXvar(xb);
@@ -968,20 +974,22 @@ STATIC int parsePrimaryExpr(Client cntxt, Xbackend xb) {
 			return xqryError(cntxt,"<VarRef> expected\n");
 		return PARSE_OK;
 	}
+	/* ContextItemExpr */
+	if (currChar(cntxt) == '.') {
+		nextChar(cntxt);
+		skipSpace(cntxt);
+	} else
 	/* ParenthesizedExpr */
 	if (currChar(cntxt) == '(') {
+		nextChar(cntxt);
+		skipSpace(cntxt);
 		parseExpr(cntxt, xb);
 		if (currChar(cntxt) != ')')
 			return xqryError(cntxt,"')' expected\n");
 		nextChar(cntxt);
 		return PARSE_OK;
 	} else
-		/* ContextItemExpr */
-	if (currChar(cntxt) == '.') {
-		nextChar(cntxt);
-		skipSpace(cntxt);
-	} else
-		/* OrderedExpr */
+	/* OrderedExpr */
 	if (MALkeyword(cntxt, "ordered", 7)) {
 		skipSpace(cntxt);
 		if (currChar(cntxt) != '{')
@@ -993,7 +1001,7 @@ STATIC int parsePrimaryExpr(Client cntxt, Xbackend xb) {
 		if (currChar(cntxt) != '}')
 			return xqryError(cntxt,"'}' expected\n");
 	} else
-		/* UnorderedExpr */
+	/* UnorderedExpr */
 	if (MALkeyword(cntxt, "unordered", 9)) {
 		skipSpace(cntxt);
 		if (currChar(cntxt) != '{')
@@ -1294,15 +1302,33 @@ STATIC int parseValueExpr(Client cntxt, Xbackend xb) {
 }
 
 STATIC int parseUnaryExpr(Client cntxt, Xbackend xb) {
-	char op;
+	str op="+";
+	int r1;
+	ValRecord cst;
+	InstrPtr p;
+
 	@:ptrace(parseUnaryExpr)@
 	skipSpace(cntxt);
-	op= currChar(cntxt);
-	if (op == '+' || op == '-')
+	if (currChar(cntxt) == '+' ){
+		op= "+";
 		nextChar(cntxt);
-	skipSpace(cntxt);
+		skipSpace(cntxt);
+	} else if (currChar(cntxt) == '-'){
+		op= "-";
+		nextChar(cntxt);
+		skipSpace(cntxt);
+	}
 	if( parseValueExpr(cntxt, xb) == PARSE_ERR)
 		return PARSE_ERR;
+	if( *op== '-'){
+		r1=popXvar(xb);
+		cst.vtype= TYPE_int;
+		cst.val.ival= 0;
+		p= newStmt(xb->mb,calcRef, putName("-",1));
+		pushArgument(xb->mb,p, defConstant(xb->mb, cst.vtype,&cst));
+		pushArgument(xb->mb,p, r1);
+		getArg(p,0)= pushXvar(xb);
+	}
 	return PARSE_OK;
 }
 
@@ -1389,6 +1415,7 @@ STATIC int parseUnionExpr(Client cntxt, Xbackend xb) {
 
 STATIC int parseMultiplicativeExpr(Client cntxt, Xbackend xb) {
 	int res = PARSE_OK;
+	str op;
 	@:ptrace(parseMultiplicativeExpr)@
 	skipSpace(cntxt);
 	if ((res = parseUnionExpr(cntxt, xb)) != PARSE_OK)
@@ -1397,12 +1424,22 @@ STATIC int parseMultiplicativeExpr(Client cntxt, Xbackend xb) {
 		skipSpace(cntxt);
 		if (currChar(cntxt) == '*') {
 			nextChar(cntxt);
+			op="*";
 		} else if (MALkeyword(cntxt, "div", 3)) {
+			op= "/";
 		} else if (MALkeyword(cntxt, "idiv", 4)) {
+			op= "/";
 		} else if (MALkeyword(cntxt, "mod", 3)) {
+			op= "%";
 		} else
 			break;
-	} while ((res = parseUnionExpr(cntxt, xb)) == PARSE_OK);
+		skipSpace(cntxt);
+		res= parseUnionExpr(cntxt, xb);
+		if( res == PARSE_OK){
+			xqryCoercion(xb);
+			xqryStatement(xb,"calc",op,2);
+		}
+	} while (res == PARSE_OK);
 	return res;
 }
 
@@ -1441,11 +1478,11 @@ STATIC int parseRangeExpr(Client cntxt, Xbackend xb) {
 }
 
 STATIC int parseComparisonExpr(Client cntxt, Xbackend xb) {
-	int before = cntxt->yycur;
+	/* int before = cntxt->yycur;*/
 	@:ptrace(parseComparisonExpr)@
 	skipSpace(cntxt);
 	if (parseRangeExpr(cntxt, xb) == PARSE_OK) {
-		assert(cntxt->yycur != before);
+		/* assert(cntxt->yycur != before);*/
 			/* NodeComp */
 		skipSpace(cntxt);
 		if (keyphrase2(cntxt, "<<")) {

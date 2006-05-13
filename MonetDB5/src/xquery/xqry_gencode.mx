@@ -68,6 +68,7 @@ newXbackend(MalBlkPtr mb){
     xb = (Xbackend) GDKmalloc( sizeof(XbackendRec));
     memset((char*) xb, 0, sizeof(XbackendRec));
 	xb->mb= mb;
+	xb->mode = xqry_explain; /* until we have a runtime library */
     return xb;
 }
 

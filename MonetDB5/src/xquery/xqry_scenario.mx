@@ -235,6 +235,9 @@ XQUERYengine(Client c)
 
 	if( xb->mode == xqry_explain)
 		printFunction(c->fdout, c->curprg->def,0);
+	/* restore the initial state */
+	resetMalBlk(c->curprg->def, 1);
+	xqryfreeVariables(c->curprg->def, c->glb, 1);
 	return MAL_SUCCEED;
 }
 
