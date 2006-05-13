@@ -29,8 +29,11 @@ for XQuery plans.
 
 xqry_export Xbackend newXbackend(MalBlkPtr mb);
 xqry_export int XfindId(Xbackend xb, str nme);
-xqry_export int newXvar(Xbackend xb);
+xqry_export int pushXvar(Xbackend xb);
 xqry_export int popXvar(Xbackend xb);
+xqry_export void xqryCoercion(Xbackend xb);
+xqry_export void xqryStatement(Xbackend xb, str mod, str fcn, int argc);
+xqry_export void xqryDefConstant(Xbackend xb, ValPtr val);
 
 #endif /* _XQUERY_GENCODE_H_ */
 
@@ -73,9 +76,10 @@ The result of statements are represented as variables
 on the Xbackend variable stack. The parser can remove
 them upon need.
 @c
+static int varid=0;
+
 int
-newXvar(Xbackend xb){
-	static int varid=0;
+pushXvar(Xbackend xb){
 	if( xb->vtop == MAXXVARS){
 		stream_printf(GDKout,"OUT OF XBACKEND VARIABLES\n");
 		xb->vtop--;
@@ -93,4 +97,71 @@ popXvar(Xbackend xb){
 		return 0;
 	}
 	return xb->vars[--xb->vtop].tmpid;
+}
+void
+xqryDefConstant(Xbackend xb, ValPtr val){
+	int i;
+	i= pushXvar(xb);
+	xb->vars[i].tmpid= defConstant(xb->mb, val->vtype,val);
+}
+@-
+The remainder of this document contains supportive routines
+for code generation.
+
+XQuery needs an elaborate coercion scheme, because many
+expressions are polymorphic. The underlying engine requires
+strong types and in most cases operations should even have
+identical types. An explicit coercion is required.
+
+The xqryCoercion produces the coercion code and relies on
+the MAL compiler to generate error messages.
+@c
+void
+xqryCoercion(Xbackend xb){
+	int lt, rt, ct;
+	InstrPtr p;
+	str tpe;
+
+	if( xb->vtop <2) return;
+	lt= getVarType(xb->mb, xb->vars[xb->vtop-2].tmpid);
+	rt= getVarType(xb->mb, xb->vars[xb->vtop-1].tmpid);
+	ct= coercion(lt,rt);
+	if( isaBatType(ct) )
+		return;
+	if( lt!= ct){
+		tpe= getTypeName(ct);
+		p= newStmt(xb->mb, calcRef, putName(tpe,strlen(tpe)));
+		getArg(p,0)= newVariable(xb->mb, newTmpName('X',varid++),ct);
+		pushArgument(xb->mb,p,xb->vars[xb->vtop-2].tmpid);
+		xb->vars[xb->vtop-2].tmpid= getArg(p,0);
+		GDKfree(tpe);
+	}
+	if( rt!= ct){
+		tpe= getTypeName(ct);
+		p= newStmt(xb->mb, calcRef, putName(tpe,strlen(tpe)));
+		getArg(p,0)= newVariable(xb->mb, newTmpName('X',varid++),ct);
+		pushArgument(xb->mb,p,xb->vars[xb->vtop-1].tmpid);
+		xb->vars[xb->vtop-1].tmpid= getArg(p,0);
+		GDKfree(tpe);
+	}
+}
+@-
+The xqry parser prepares the arguments for calls on the stack
+which are translated in the end by a MAL function call.
+We attempt to type check the instruction to ease
+subsequent code generation.
+@c
+void
+xqryStatement(Xbackend xb, str mod, str fcn, int argc){
+	InstrPtr p;
+	int i,err;
+	
+	p= newStmt(xb->mb, putName(mod,strlen(mod)), putName(fcn,strlen(fcn)) );
+	for(i= xb->vtop-argc; i< xb->vtop; i++)
+		pushArgument(xb->mb,p,xb->vars[i].tmpid);
+	xb->vtop -= argc; /* don't forget garbage collection */
+	getArg(p,0)= pushXvar(xb);
+	err= xb->mb->errors; /* ignore if type check fails */
+	typeChecker(0,xb->mb,p,FALSE);
+	xb->mb->errors= err;
 }

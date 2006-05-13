@@ -956,7 +956,7 @@ STATIC int parsePrimaryExpr(Client cntxt, Xbackend xb) {
 	}
 	if ((i = cstToken(cntxt, &val)) != 0) {
 		p= newAssignment(xb->mb);
-		getArg(p,0)= newXvar(xb);
+		getArg(p,0)= pushXvar(xb);
 		pushArgument(xb->mb,p, defConstant(xb->mb, val.vtype,&val));
 		advance(cntxt, i);
 		return PARSE_OK;
@@ -1407,30 +1407,25 @@ STATIC int parseMultiplicativeExpr(Client cntxt, Xbackend xb) {
 }
 
 STATIC int parseAdditiveExpr(Client cntxt, Xbackend xb) {
-	int res = PARSE_OK, lhs, r1,r2;
-	char op;
-	InstrPtr p;
+	int res = PARSE_OK;
+	char op[2]={0,0};
+
 	@:ptrace(parseAdditiveExpr)@
 	skipSpace(cntxt);
 	if ((res = parseMultiplicativeExpr(cntxt, xb)) != PARSE_OK)
 		return res;
 	do {
 		skipSpace(cntxt);
-		op= currChar(cntxt);
-		if (op == '+' || op == '-')
+		op[0]= currChar(cntxt);
+		if (op[0] == '+' || op[0] == '-')
 			nextChar(cntxt);
 		else
 			break;
 		res = parseMultiplicativeExpr(cntxt, xb);
 		if( res== PARSE_OK){
 			/* we have two variables on the stack */
-			r2= popXvar(xb);
-			r1= popXvar(xb);
-			lhs= newXvar(xb);
-			p= newStmt(xb->mb, calcRef,putName((str)&op,1) );
-			getArg(p,0)= lhs;
-			pushArgument(xb->mb,p,r1);
-			pushArgument(xb->mb,p,r2);
+			xqryCoercion(xb);
+			xqryStatement(xb,"calc",(str)op,2);
 		}
 	} while(res == PARSE_OK);
 	return res;

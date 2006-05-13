@@ -201,6 +201,8 @@ XQUERYparser(Client c)
 	}
 	if( c->curprg->def->errors || err){
 		showErrors();
+		if( xb->mode == xqry_explain)
+			printFunction(c->fdout, c->curprg->def,LIST_MAL_ALL);
 		/* restore the state */
 		resetMalBlk(c->curprg->def, oldstop);
 		xqryfreeVariables(c->curprg->def, c->glb, oldvtop);
