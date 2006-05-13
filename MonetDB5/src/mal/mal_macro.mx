@@ -293,7 +293,7 @@ MACROvalidate(MalBlkPtr mb)
 	InstrPtr p = 0;
 
 	if (getArgType(mb, getInstrPtr(mb, 0), 0) == TYPE_void)
-		return 0;
+		return MAL_SUCCEED;
 
 	for (i = 1; retseen == 0 && i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);

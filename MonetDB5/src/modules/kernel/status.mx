@@ -265,7 +265,7 @@ SYScpuStatistics(int *ret)
 
 	b = BATnew(TYPE_str, TYPE_int, 32);
 	if (b == 0)
-		return throwMessage("catalog.gdkCpu", "failed to create BAT");
+		return throwMessage("catalog.gdkCpu", "Failed to create BAT");
 #ifndef NATIVE_WIN32
 	if (clk == 0) {
 		clk = time(0);
@@ -314,7 +314,7 @@ SYSmemStatistics(int *ret)
 
 	b = BATnew(TYPE_str, TYPE_int, 32);
 	if (b == 0)
-		return throwMessage("catalog.memStatistics", "failed to create BAT");
+		return throwMessage("catalog.memStatistics", "Failed to create BAT");
 
 	/* store counters, ignore errors */
 	if (memincr == NULL) {
@@ -480,7 +480,7 @@ SYSmem_usage(int *ret, lng *minsize)
 	bat i;
 
 	if (bn == NULL)
-		return throwMessage("status.memort","Could not create BAT");
+		return throwMessage("status.memory","Could not create BAT");
 	BBPlock("SYSmem_usage");
 	for (i = 1; i < BBPsize; i++) {
 		BAT *b = BBP_cache(i);
@@ -676,7 +676,7 @@ SYSioStatistics(int *ret)
 #endif
 	b = BATnew(TYPE_str, TYPE_int, 32);
 	if (b == 0)
-		return throwMessage("catalog.ioStatistics", "failed to create BAT");
+		return throwMessage("catalog.ioStatistics", "Failed to create BAT");
 
 #ifndef NATIVE_WIN32
 	/* store counters, ignore errors */
@@ -762,7 +762,7 @@ SYSgdkThread(int *ret)
 
 	b = BATnew(TYPE_int, TYPE_str, THREADS);
 	if (b == 0)
-		return throwMessage("catalog.gdkThread", "failed to create BAT");
+		return throwMessage("catalog.gdkThread", "Failed to create BAT");
 
 	for (i = 0; i < THREADS; i++)
 		if (GDKthreads[i].pid) {

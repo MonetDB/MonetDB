@@ -291,7 +291,7 @@ BPTprelude(int *ret)
 	(void) ret;
 	box = openBox("partitions");
 	if (box == 0)
-		return throwMessage("partitions.prelude", "failed to open box");
+		return throwMessage("partitions.prelude", "Failed to open box");
 	BPTresize(INCREMENT);
 	return MAL_SUCCEED;
 }
@@ -302,7 +302,7 @@ BPTepilogue(int *ret)
 	*ret = closeBox("partitions", 0);
 	BPTfree();
 	if (*ret != 0)
-		return throwMessage("partitions.prelude", "failed to open box");
+		return throwMessage("partitions.prelude", "Failed to open box");
 	return MAL_SUCCEED;
 }
 
@@ -312,7 +312,7 @@ BPTopen()
 {
 	if (openBox("partitions") != 0)
 		return MAL_SUCCEED;
-	return throwMessage("partitions.open", "failed to open partitions box");
+	return throwMessage("partitions.open", "Failed to open partitions box");
 }
 
 str

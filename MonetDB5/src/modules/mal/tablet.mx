@@ -677,7 +677,7 @@ TABdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
-	return throwMessage("tablet.report", "not yet implemented");
+	return throwMessage("tablet.report", "Not yet implemented");
 }
 
 str
@@ -745,7 +745,7 @@ TABsetColumn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
-	return throwMessage("tablet.setColumn", "not yet implemented");
+	return throwMessage("tablet.setColumn", "Not yet implemented");
 }
 
 str
@@ -846,7 +846,7 @@ TABsetColumnDecimal(int *ret, int *idx, int *scale, int *prec)
 	(void) ret;		/* fool compiler */
 	makeTableSpace(rnr, (*idx >= MAXARG ? *idx : MAXARG));
 	if (*prec > *scale)
-		return throwMessage("tablet.setColumnDecimal", "illegal range");
+		return throwMessage("tablet.setColumnDecimal", "Illegal range");
 	tableReports[rnr]->columns[*idx].precision = *prec;
 	tableReports[rnr]->columns[*idx].scale = *scale;
 	return MAL_SUCCEED;
@@ -856,28 +856,28 @@ str
 TABfirstPage(int *ret)
 {
 	(void) ret;		/* fool compiler */
-	return throwMessage("tablet.firstPage", "not yet implemented");
+	return throwMessage("tablet.firstPage", "Not yet implemented");
 }
 
 str
 TABlastPage(int *ret)
 {
 	(void) ret;		/* fool compiler */
-	return throwMessage("tablet.lastPage", "not yet implemented");
+	return throwMessage("tablet.lastPage", "Not yet implemented");
 }
 
 str
 TABnextPage(int *ret)
 {
 	(void) ret;		/* fool compiler */
-	return throwMessage("tablet.nextPage", "not yet implemented");
+	return throwMessage("tablet.nextPage", "Not yet implemented");
 }
 
 str
 TABprevPage(int *ret)
 {
 	(void) ret;		/* fool compiler */
-	return throwMessage("tablet.prevPage", "not yet implemented");
+	return throwMessage("tablet.prevPage", "Not yet implemented");
 }
 
 str
@@ -885,14 +885,14 @@ TABgetPage(int *ret, int *pnr)
 {
 	(void) ret;
 	(void) pnr;		/* fool compiler */
-	return throwMessage("tablet.getPage", "not yet implemented");
+	return throwMessage("tablet.getPage", "Not yet implemented");
 }
 
 str
 TABgetPageCnt(int *ret)
 {
 	(void) ret;		/* fool compiler */
-	return throwMessage("tablet.getPageCnt", "not yet implemented");
+	return throwMessage("tablet.getPageCnt", "Not yet implemented");
 }
 
 static ptr
@@ -1847,7 +1847,7 @@ CMDtablet_load(int *ret, int *nameid, int *sepid, int *typeid, str *filename, in
 
 	tablet_load(&bn, names, seps, types, *filename, nr);
 	if (bn == NULL)
-		return throwMessage("tablet.load", "failed to load");
+		return throwMessage("tablet.load", "Failed to load");
 	BBPincref(*ret, TRUE);
 	*ret = bn->batCacheid;
 	BBPunfix(names->batCacheid);
@@ -1906,7 +1906,7 @@ CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid, stream *s, int *
 		BBPunfix(names->batCacheid);
 		BBPunfix(seps->batCacheid);
 		BBPunfix(types->batCacheid);
-		return throwMessage("tablet.load", "failed to load");
+		return throwMessage("tablet.load", "Failed to load");
 	}
 	BBPincref(*ret, TRUE);
 	*ret = bn->batCacheid;

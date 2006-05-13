@@ -324,7 +324,7 @@ Use the search path provided in the configuration file
 	mode |= RTLD_MEMBER;
 #endif
 	if (fullname == NULL) 
-		return 0;
+		return MAL_SUCCEED;
 	handle = dlopen(fullname, mode);
 #ifdef DEBUG_MAL_LINKER2
 	stream_printf(GDKout, "load[%d]:%s %s:%s\n", lastmodule, modulename, fullname, 
@@ -350,7 +350,7 @@ Use the search path provided in the configuration file
 	}
 	mal_unset_lock(mal_contextLock, "loadModule");
 
-	return 0;
+	return MAL_SUCCEED;
 }
 
 @-

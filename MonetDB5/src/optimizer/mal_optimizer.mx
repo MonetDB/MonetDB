@@ -426,7 +426,6 @@ that arise from optimizer interference are very hard to debug.
 One of the easiest pitfalls is to derive an optimized
 version of a MAL function while it is already referenced by or
 when polymorphic typechecking is required afterwards.
-For example,
 @{
 @h
 #include "mal.h"
@@ -574,7 +573,7 @@ optimizeMALBlock(MalBlkPtr mb)
 {
 	InstrPtr p;
 	int pc, qot = 0;
-	str msg = NULL;
+	str msg = MAL_SUCCEED;
 	int cnt = 0;
 
 #ifdef DEBUG_MAL_OPTIMIZER

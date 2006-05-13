@@ -193,7 +193,7 @@ FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(first);
 		GDKfree(second);
 		/* remove the FToptimizer request */
-		return NULL;
+		return MAL_SUCCEED;
 	}
 
 	first[0]->token = FACTORYsymbol;
@@ -241,7 +241,7 @@ FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(second);
 	optimizerCheck(mb, "optimizer.factorize", 1, GDKusec() - clk);
 	/* remove the FToptimizer request */
-	return NULL;
+	return MAL_SUCCEED;
 }
 
 @}

@@ -1171,7 +1171,7 @@ strEpilogue(int *ret)
 		BBPreclaim(UTF8_toupperBat);
 		BBPreclaim(UTF8_tolowerBat);
 	}
-	return NULL;
+	return MAL_SUCCEED;
 }
 
 @= UTF8_CONV

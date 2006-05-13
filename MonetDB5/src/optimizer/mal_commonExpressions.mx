@@ -113,7 +113,9 @@ CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef DEBUG_MAL_OPTIMIZER
 				printInstruction(GDKout, mb, q, LIST_MAL_INSTR);
 				printInstruction(GDKout, mb, p, LIST_MAL_INSTR);
-				printf("%d, %d  %d %d ", i, j, hasSameSignature(p, q), hasSameArguments(mb, p, q));
+				printf("%d, %d  %d %d ", i, j, 
+					hasSameSignature(p, q), 
+					hasSameArguments(mb, p, q));
 				printf(" :%d %d %d %d\n", 
 					!isUpdated(mb, i), 
 					!hasCommonResults(p, q), 

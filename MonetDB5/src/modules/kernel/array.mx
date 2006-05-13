@@ -205,7 +205,7 @@ ARRAYgrid_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
 	BAT *bn;
 
 	if (grid_@1(&bn, groups, groupsize, clustersize, offset) == GDK_FAIL)
-		return throwMessage("array.grid", "Failed to create the grid\n");
+		return throwMessage("array.grid", "Failed to create the grid");
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
@@ -218,7 +218,7 @@ ARRAYgridShift_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offse
 	BAT *bn;
 
 	if (gridShift_@1(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
-		return throwMessage("array.grid", "Failed to create the grid\n");
+		return throwMessage("array.grid", "Failed to create the grid");
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
@@ -236,7 +236,7 @@ ARRAYgridBAT_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersize, @1
 	}
 
 	if (fillgrid_@1(&bn, groups, groupsize, clustersize, offset, &shift) == GDK_FAIL)
-		return throwMessage("array.grid", "Failed to create the grid\n");
+		return throwMessage("array.grid", "Failed to create the grid");
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
@@ -252,7 +252,7 @@ ARRAYgridBATshift_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersiz
 		return throwMessage("array.grid", "Cannot access descriptor");
 	}
 	if (fillgrid_@1(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
-		return throwMessage("array.grid", "Failed to create the grid\n");
+		return throwMessage("array.grid", "Failed to create the grid");
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);

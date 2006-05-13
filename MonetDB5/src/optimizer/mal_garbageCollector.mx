@@ -177,7 +177,7 @@ GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci)
 		removeInstruction(mb, pci);
 	optimizerCheck(mb, "garbageCollector", actions, GDKusec() - clk);
-	return NULL;
+	return MAL_SUCCEED;
 }
 
 @}

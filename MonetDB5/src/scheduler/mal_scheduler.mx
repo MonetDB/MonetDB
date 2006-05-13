@@ -238,7 +238,7 @@ schedulerMALBlock(MalBlkPtr mb)
 #endif
 	if (cnt >= 64)
 		return throwMessage("scheduler.MALscheduler", "too many optimization cycles\n");
-	return 0;
+	return MAL_SUCCEED;
 }
 
 str

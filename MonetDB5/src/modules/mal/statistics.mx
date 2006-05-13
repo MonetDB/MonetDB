@@ -440,7 +440,7 @@ STATforceUpdate(int *ret, str *nme)
 	if(STAT_id_inuse ==0) return MAL_SUCCEED;
 	b = BATdescriptor(idx = BBPindex(*nme));
 	if (b == 0)
-		return throwMessage("statistics.forceUpdate", "Could not find BAT\n");
+		return throwMessage("statistics.forceUpdate", "Could not find BAT");
 	p = BUNfnd(STAT_id_nme, &idx);
 	if (p)
 		BUNdelete(STAT_id_nme, p);
@@ -531,7 +531,7 @@ The content of this box my only be changed by the Administrator.
 	authorize(X); \
 	box= findBox("statistics"); \
 	if( box ==0) \
-	return throwMessage("statistics."X,"box is not open");
+	return throwMessage("statistics."X,"Box is not open");
 
 str
 STATprelude(int *ret)
@@ -759,7 +759,7 @@ STATtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		(*BATatoms[v->vtype].atomToStr) (&s, &len, v);
 	if (s == NULL)
-		return throwMessage("statistics.toString", "illegal value");
+		return throwMessage("statistics.toString", "Illegal value");
 	VALset(&stk->stk[getArg(pci, 0)], TYPE_str, s);
 	return MAL_SUCCEED;
 }

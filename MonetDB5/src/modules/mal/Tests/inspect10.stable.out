@@ -21,7 +21,7 @@ stdout of test 'inspect10` in directory 'src/modules/mal` itself:
 #end dummy;
 function user.dummy(i:int):void;	# 0  (dummy:void)<-(i:int)
     io.print(i);	# 1 IOprint_val (_2:int)<-(i:int)
-    b := mdb.getDefinition();	# 2 MDBcodeDump (b:bat[:void,:str])
+    b := mdb.getDefinition();	# 2 MDBgetDefinition (b:bat[:void,:str])
     io.print(b);	# 3 IOprint_val (_4:int)<-(b:bat[:void,:str])
     mdb.showFunction();	# 4  unknown (_5:any)
 end dummy;	# 5  

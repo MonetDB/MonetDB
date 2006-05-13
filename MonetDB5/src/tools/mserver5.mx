@@ -280,7 +280,7 @@ main(int argc, char **argv)
 	opt *set = NULL;
 	int i, ac=argc, debug = 0, setlen = 0, listing = 0;
 	str dbinit = NULL;
-	str err = NULL;
+	str err = MAL_SUCCEED;
 
 	static struct option long_options[12] = {
 		{"config", 1, 0, 'c'},

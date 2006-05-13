@@ -250,7 +250,7 @@ after the loop, because then you may not simple move an expression.
 		removeInstruction(mb, pci);
 	optimizerCheck(mb, "mal.strengthReduction", actions, GDKusec() - clk);
 	/* remove the SRoptimizer request */
-	return NULL;
+	return MAL_SUCCEED;
 }
 
 @}

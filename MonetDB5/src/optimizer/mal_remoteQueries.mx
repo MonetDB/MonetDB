@@ -109,6 +109,9 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 	msg = (str) GDKmalloc(BUFSIZ);
 	msg[0]='#';
 	msg[1]=0;
+	if( p->barrier)
+		strcat(msg, operatorName(p->barrier));
+	
 	if( p->retc > 1) strcat(msg,"(");
 	len= strlen(msg);
 	for (k = 0; k < p->retc; k++) {
@@ -184,8 +187,8 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	limit = mb->stop;
 	old = mb->stmt;
 
-	location= alloca(mb->vtop * sizeof(int));
-	memset((char*) location, 0, mb->vtop * sizeof(int));
+	location= alloca(mb->vsize * sizeof(int));
+	memset((char*) location, 0, mb->vsize * sizeof(int));
 
 	newMalBlkStmt(mb, mb->stop);
 	for (i = 0; i < limit; i++) {

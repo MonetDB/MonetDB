@@ -122,15 +122,15 @@ address MDBStkDepth
 comment "Return the depth of the calling stack.";
 
 pattern getStackFrame(i:int):bat[:str,:str] 
-address MDBStkFrameN;
+address MDBgetStackFrameN;
 pattern getStackFrame():bat[:str,:str] 
-address MDBStkFrame
+address MDBgetStackFrame
 comment "Collect variable binding of current (n-th) stack frame.";
 pattern getStackTrace():bat[:void,:str]
 address MDBStkTrace;
 
 pattern getDefinition():bat[:void,:str] 
-address MDBcodeDump
+address MDBgetDefinition
 comment "Returns a string representation of the current function 
 	with typing information attached";
 
@@ -178,10 +178,10 @@ mdb_export str MDBlist3Detail(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBvar(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBvar3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBStkDepth(MalBlkPtr mb, MalStkPtr s, InstrPtr p);
-mdb_export str MDBStkFrameN(MalBlkPtr m, MalStkPtr s, InstrPtr p);
-mdb_export str MDBStkFrame(MalBlkPtr m, MalStkPtr s, InstrPtr p);
+mdb_export str MDBgetStackFrameN(MalBlkPtr m, MalStkPtr s, InstrPtr p);
+mdb_export str MDBgetStackFrame(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 mdb_export str MDBStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p);
-mdb_export str MDBcodeDump(MalBlkPtr m, MalStkPtr stk, InstrPtr p);
+mdb_export str MDBgetDefinition(MalBlkPtr m, MalStkPtr stk, InstrPtr p);
 
 @-
 The primary debugger controls
@@ -321,7 +321,7 @@ MDBinspect(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		s = findSymbolInModule(scope, putName(fcnnme, strlen(fcnnme)));
 
 	if (s == NULL)
-		return throwMessage("mdb.inspect", "Could not find function\n");
+		return throwMessage("mdb.inspect", "Could not find function");
 	return runMALDebugger(s);
 }
 
@@ -370,28 +370,26 @@ MDBgetFrame(BAT *b, MalBlkPtr mb, MalStkPtr s, int depth)
 }
 
 str
-MDBStkFrame(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+MDBgetStackFrame(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	int *ret = (int *) getArgReference(s, p, 0);
 	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
 
 	if (b == 0)
-		return throwMessage("inspect.stkFrame", "failed to create BAT");
+		return throwMessage("mdb.getStackFrame", "Failed to create BAT");
 	@:Pseudo(view,stk,frame)@
 	return MDBgetFrame(b, m, s, 0);
 }
 
 str
-MDBStkFrameN(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+MDBgetStackFrameN(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	int n, *ret = (int *) getArgReference(s, p, 0);
 	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
 
 	n = *(int *) getArgReference(s, p, 1);
-	if (n < 0)
-		return throwMessage("inspect.stkFrame", "illegal depth.");
-	if (n >= getStkDepth(s))
-		return throwMessage("inspect.stkFrame", "illegal depth.");
+	if (n < 0 || n >= getStkDepth(s))
+		return throwMessage("mdb.getStackFrame", "Illegal depth.");
 	@:Pseudo(view,stk,frame)@
 	return MDBgetFrame(b, m, s, n);
 }
@@ -516,14 +514,14 @@ It is illustrative to dump the code when you
 have encountered an error.
 @c
 str
-MDBcodeDump(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
+MDBgetDefinition(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 {
 	int i, *ret = (int *) getArgReference(stk, p, 0);
 	str ps;
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
 
 	if (b == 0)
-		return throwMessage("inspect.codeDump", "failed to create BAT");
+		return throwMessage("mdb.getDefinition", "Failed to create BAT");
 
 	for (i = 0; i < m->stop; i++) {
 		ps = instruction2str(m, getInstrPtr(m, i), 1);
@@ -543,7 +541,7 @@ MDBgetExceptionVariable(str *ret, str *msg)
 
 	tail = strchr(*msg, ':');
 	if (tail == 0)
-		return throwMessage("inspect.getExceptionVariable", "Could not find it\n");
+		return throwMessage("mdb.getExceptionVariable", "Could not find it");
 
 	*tail = 0;
 	*ret = GDKstrdup(*msg);
@@ -558,10 +556,10 @@ MDBgetExceptionContext(str *ret, str *msg)
 
 	tail = strchr(*msg, ':');
 	if (tail == 0)
-		return throwMessage("inspect.getExceptionContext", "Could not find it\n");
+		return throwMessage("mdb.getExceptionContext", "Could not find it");
 	tail2 = strchr(tail + 1, ':');
 	if (tail2 == 0)
-		return throwMessage("inspect.getExceptionContext", "Could not find it\n");
+		return throwMessage("mdb.getExceptionContext", "Could not find it");
 
 	*tail2 = 0;
 	*ret = GDKstrdup(tail + 1);
@@ -576,10 +574,10 @@ MDBgetExceptionReason(str *ret, str *msg)
 
 	tail = strchr(*msg, ':');
 	if (tail == 0)
-		return throwMessage("inspect.getExceptionReason", "Could not find it\n");
+		return throwMessage("mdb.getExceptionReason", "Could not find it");
 	tail = strchr(tail + 1, ':');
 	if (tail == 0)
-		return throwMessage("inspect.getExceptionReason", "Could not find it\n");
+		return throwMessage("mdb.getExceptionReason", "Could not find it");
 
 	*ret = GDKstrdup(tail + 1);
 	return MAL_SUCCEED;

@@ -546,7 +546,7 @@ SERVERlistenThread(int *Sock)
 		}
 		if (retval < 0) {
 			if (MT_geterrno() != EINTR) {
-				msg = "select failed\n";
+				msg = "select failed";
 				goto error;
 			}
 			continue;
@@ -618,12 +618,12 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 	maxusers = (maxusers ? maxusers : SERVERMAXUSERS);
 
 	if (port <= 0 && usockfile == NULL)
-		return throwMessage("mserver.listen", "no port or socket file specified\n");
+		return throwMessage("mserver.listen", "No port or socket file specified");
 
 	if (port > 0) {
 		sock = socket(AF_INET, SOCK_STREAM, 0);
 		if (sock < 0)
-			return throwMessage("mserver.listen", "creation of stream socket failed\n");
+			return throwMessage("mserver.listen", "Creation of stream socket failed");
 @-
 Set server port and allow network connections from any workstation.
 Bind the socket to the server port.
@@ -639,12 +639,12 @@ The port id should be obtained from the Homes file.
 
 		length = (SOCKLEN) sizeof(server);
 		if (bind(sock, (SOCKPTR) & server, length) < 0)
-			return throwMessage("mserver.listen", "binding to stream socket failed\n");
+			return throwMessage("mserver.listen", "Binding to stream socket failed");
 @-
 Get the new information for the server socket and start listening.
 @c
 		if (getsockname(sock, (SOCKPTR) & server, &length) < 0)
-			return throwMessage("mserver.listen", "Failed getting socket name\n");
+			return throwMessage("mserver.listen", "Failed getting socket name");
 		listen(sock, maxusers);
 	}
 #ifdef HAVE_SYS_UN_H
@@ -652,7 +652,7 @@ Get the new information for the server socket and start listening.
 		usock = socket(AF_UNIX, SOCK_STREAM, 0);
 		if (usock < 0) {
 			unlink(usockfile);
-			return throwMessage("mserver.listen", "creation of Unix socket failed\n");
+			return throwMessage("mserver.listen", "Creation of Unix socket failed");
 		}
 		userver.sun_family = AF_UNIX;
 		strncpy(userver.sun_path, usockfile, sizeof(userver.sun_path));
@@ -660,7 +660,7 @@ Get the new information for the server socket and start listening.
 		length = (SOCKLEN) sizeof(userver);
 		if (bind(usock, (SOCKPTR) & userver, length) < 0) {
 			unlink(usockfile);
-			return throwMessage("mserver.listen", "binding to Unix socket file failed\n");
+			return throwMessage("mserver.listen", "Binding to Unix socket file failed");
 		}
 		listen(usock, maxusers);
 	}
@@ -673,7 +673,7 @@ Get the new information for the server socket and start listening.
 	*Sock = sock;
 
 	if (MT_create_thread(pidp, (void (*)(void *)) SERVERlistenThread, Sock) < 0) {
-		return throwMessage("mserver.listen", "starting thread failed");
+		return throwMessage("mserver.listen", "Starting thread failed");
 	}
 #ifdef HAVE_SYS_UN_H
 	if (usockfile)
@@ -906,18 +906,18 @@ Get the new information for the server socket and start listening.
 		}
 		if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
 			if (MT_geterrno() != EINTR) {
-				msg = "accept failed\n";
+				msg = "Accept failed";
 				goto fail;
 			}
 			continue;
 		}
 		if ((ssl = SSL_new(ctx)) == 0) {
-			msg = "SSL_new failed\n";
+			msg = "SSL_new failed";
 			goto fail;
 		}
 
 		if (!SSL_set_fd(ssl, msgsock)) {
-			msg = "SSL_set_fd failed\n";
+			msg = "SSL_set_fd failed";
 			goto fail;
 		}
 
@@ -965,14 +965,14 @@ end_loop:;
 		SSL_CTX_free(ctx);
 	if (cmd)
 		GDKfree(cmd);
-	return throwMessage("SERVERlistenSSL", msg);
+	return throwMessage("mserver.listenSSL", msg);
 #else
 	(void) Port;
 	(void) Maxusers;
 	(void) keyfile;
 	(void) certfile;
 	(void) cmd;
-	return throwMessage("SERVERlistenSSL", "No SSL support\n");
+	return throwMessage("mserver.listenSSL", "No SSL support\n");
 #endif /* HAVE_OPENSSL */
 }
 

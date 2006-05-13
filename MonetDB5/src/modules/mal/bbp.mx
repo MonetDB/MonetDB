@@ -720,7 +720,7 @@ CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	res = (int *) getArgReference(s, p, 0);
 
 	if (ht == TYPE_any || tt == TYPE_any)
-		return throwMessage("bbp.new", "Explicit type required\n");
+		return throwMessage("bbp.new", "Explicit type required");
 	if (isaBatType(ht))
 		ht = TYPE_bat;
 	if (isaBatType(tt))
@@ -828,7 +828,7 @@ CMDBBPproject(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPkeepref(bn->batCacheid);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("mal.project", "GDKerror");
+	return throwMessage("bbp.project", "Cannot create the constant BAT");
 }
 
 str
@@ -847,7 +847,7 @@ CMDBBPprojectNil(int *ret, int *bid)
 		BBPkeepref(bn->batCacheid);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("mal.project", "GDKerror");
+	return throwMessage("bbp.project", "Cannot create the constant BAT");
 }
 
 @+ BBP status
@@ -881,7 +881,7 @@ CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	OpenBox("getObjects");
 	b = BATnew(TYPE_int, TYPE_str, BBPsize);
 	if (b == 0)
-		return throwMessage("bbp.getObjects", "GDKerror");
+		return throwMessage("bbp.getObjects", "Cannot create BAT");
 	for (i = 0; i < box->sym->vtop; i++) {
 		v = &box->val->stk[i];
 		BUNins(b, &v->val.bval, getVarName(box->sym, i));
@@ -1258,7 +1258,7 @@ CMDbatpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ret = (int *) getArgReference(stk, pci, 0);
 
 	if (ht == TYPE_any || tt == TYPE_any)
-		return throwMessage("bbp.new", "Explicit type required\n");
+		return throwMessage("bbp.new", "Explicit type required");
 	if (isaBatType(ht))
 		ht = TYPE_bat;
 	if (isaBatType(tt))

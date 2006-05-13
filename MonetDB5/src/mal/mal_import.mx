@@ -100,7 +100,7 @@ malLoadScript(str name, bstream **fdin)
 		return throwException(MALEXCEPTION, "malInclude", "could not open file: %s\n", name);
 	}
 	*fdin = bstream_create(fd, 128 * BLOCK);
-	return NULL;
+	return MAL_SUCCEED;
 }
 
 @-
@@ -132,7 +132,7 @@ It should be reset before continuing.
 	if(msg== MAL_SUCCEED && c->phase[@1] && (msg= (str) (*c->phase[@1])(c)) ){
 		/* error occurred  and ignored */
 		/* stream_printf(GDKout,"%s",msg);*/
-		GDKfree(msg); msg=0;
+		GDKfree(msg); msg=MAL_SUCCEED;
 		@:@2()@
 		return;
 	}

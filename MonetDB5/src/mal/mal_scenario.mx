@@ -279,7 +279,7 @@ call once the routine default scenario for each client first.
 str
 initScenario(Client c, Scenario s)
 {
-	str msg = NULL;
+	str msg = MAL_SUCCEED;
 
 	if (s->initSystem && s->initSystemCmd == 0) {
 		/* prepare for conclicts */
