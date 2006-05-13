@@ -70,7 +70,7 @@ include batcolor;
 # MAL related extensions
 include clients;
 include tablet;
-include io;
+include mal_io;
 include factory;
 include const; 
 include bbp;

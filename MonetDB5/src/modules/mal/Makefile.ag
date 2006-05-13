@@ -10,7 +10,7 @@ LIBS = {
 	SEP = _
 	SOURCES = \
 		chopper.mx language.mx box.mx \
-		profiler.mx const.mx io.mx \
+		profiler.mx const.mx \
 		inspect.mx manual.mx crackers.mx \
 		factory.mx mdb.mx  pbm.mx \
 		rsbox.mx urlbox.mx mat.mx \
@@ -20,6 +20,17 @@ LIBS = {
 	HEADERS = h 
 	#SCRIPTS = mal mil ""
 	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream -lMapi \
+                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+}
+
+lib_io = {
+	DIR = pkglibdir
+	SEP = _
+	SOURCES = mal_io.mx 
+	HEADERS = h 
+	#SCRIPTS = mal mil ""
+	LIBS = ../../mal/libmal $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
@@ -108,7 +119,7 @@ scripts_mal = {
 	DIR = pkglibdir
 	SOURCES = language.mx mal_init.mx box.mx bbp.mx \
 		profiler.mx const.mx \
-		inspect.mx manual.mx crackers.mx io.mal \
+		inspect.mx manual.mx crackers.mx mal_io.mx \
 		chopper.mx clients.mx \
 		factory.mx mdb.mx pcre.mx  tablet.mx mat.mx \
 		rsbox.mx urlbox.mx statistics.mx transaction.mx \

@@ -85,16 +85,16 @@ armada.prelude();
 #ifndef _ARMADA_DEF
 #define _ARMADA_DEF
 
-#include "mal.h"
-#include "mal_client.h"
-#include "mal_interpreter.h"
+#include <mal.h>
+#include <mal_client.h>
+#include <mal_interpreter.h>
 
 #endif
 @-
 
 @c
 #include "armada.h"
-#include "mal_exception.h"
+#include <mal_exception.h>
 #include <inet.h>
 
 mal_export str ARMADAprelude(int *ret);
