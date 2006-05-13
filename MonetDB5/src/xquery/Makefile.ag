@@ -12,7 +12,7 @@ lib_xqry = {
 	#SCRIPTS = mal mil ""
 	LIBS = $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../mal/libmal
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../mal/libmal ../optimizer/lib_optimizer
 }
 
 scripts_mal = {
