@@ -204,7 +204,7 @@ parseQName(Client cntxt, Xbackend xb)
 	}
 	xb->vars[xb->vtop].nme = s;
 	if( id < 0)
-		id= newVariable(xb->mb,s,TYPE_any);
+		id= newVariable(xb->mb,GDKstrdup(s),TYPE_any);
 	xb->vars[xb->vtop++].tmpid = id;
 	return ret;
 }
@@ -224,6 +224,7 @@ parseVarQName(Client cntxt, Xbackend xb){
 		xqryError(cntxt,"Too many variables");
 		xb->vtop --;
 	}
+	xb->vars[xb->vtop].tmpid = -1;
 	xb->vars[xb->vtop++].nme = s;
 	return PARSE_OK;
 }
