@@ -826,9 +826,11 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 							getVarName(mb,l), nme,pc);
 						mb->errors++;
 			}
+			assert( isTmpVar(mb,l) < mb->vtop);
 		}
 		for(k=0; k<p->retc; k++){
 			l= getArg(p,k);
+			assert( isTmpVar(mb,l) < mb->vtop);
 			if( getVarScope(mb, l) == 0){
 				if( (p->barrier== RETURNsymbol || p->barrier== YIELDsymbol) &&
 					getVarType(mb,l) != TYPE_void  && p->retc==p->argc){
