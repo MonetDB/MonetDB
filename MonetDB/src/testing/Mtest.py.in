@@ -3166,8 +3166,6 @@ def main(argv) :
         fl.write(":\t%7.3f\n" % t_)
         fl.close()
 
-    if THISFILE in ["Mtest.py", "Mprofile.py"]:
-        fn = os.path.join(env['TSTTRGBASE'],TSTPREF,"times.")
         fl = open(fn+"sql","w")
 	host = socket.gethostname()
 	product = os.path.split(env['TSTSRCBASE'])[-1]
@@ -3181,11 +3179,16 @@ def main(argv) :
 			mt = r.match(l)
 			if mt:
 				compiler = mt.group(1)
+	try:
+    		from mx import DateTime
+		now = "TimeStamp '" + str(DateTime.now()) + "'"
+	except ImportError:
+		now = 'now()'
 		
         for TSTDIR,TST,tt,ms,FtOut,FtErr in TIMES:
             if TST != '':
 		# target is a platform and compilation options etc
-		sql = "INSERT INTO mtest (\"date\", \"machine\", \"os\", \"release\", \"compiler\", \"bits\", \"oid\", \"static\", \"product\", \"dir\", \"test\", \"time\", \"stdout\", \"stderr\") VALUES (now(), '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', %d, %d, %d);\n" %(host, env['OS'], env['RELEASE'], compiler, env['TST_BITS'], env['TST_OIDS'], env['TST_STATIC'],product,TSTDIR,TST,ms,FtOut,FtErr)
+		sql = "INSERT INTO mtest (\"date\", \"machine\", \"os\", \"release\", \"compiler\", \"bits\", \"oid\", \"static\", \"product\", \"dir\", \"test\", \"time\", \"stdout\", \"stderr\") VALUES (%s, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', %d, %d, %d);\n" %(now, host, env['OS'], env['RELEASE'], compiler, env['TST_BITS'], env['TST_OIDS'], env['TST_STATIC'],product,TSTDIR,TST,ms,FtOut,FtErr)
             	fl.write(sql);
         fl.close()
 
