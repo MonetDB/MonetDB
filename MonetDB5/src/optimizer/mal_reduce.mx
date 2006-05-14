@@ -88,7 +88,14 @@ nxtReduce:;
 		for (j = 0; j < q->argc; j++)
 			getArg(q, j) = vars[getArg(q, j)];
 	}
+@-
+The temporary variables should also be remapped to avoid
+illegal calls.
+@c
 	mb->vtop = cnt;
+	for (i = 0; i < mb->vtop; i++)
+		if ( isTmpVar(mb,i) )
+			isTmpVar(mb,i) = vars[i];
 	(void)stk;
 	if(p)
 		removeInstruction(mb,p); 
