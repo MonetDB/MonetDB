@@ -140,7 +140,7 @@ typedef enum modes_xqry {
     xqry_inplace = 7
 } modes_xqry;
 
-#define MAXXVARS 64
+#define MAXXVARS 256
 #define MAXSCOPES 32
 
 
