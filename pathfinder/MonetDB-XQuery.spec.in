@@ -69,6 +69,7 @@ rm -rf $RPM_BUILD_ROOT
 	--with-gcc="%{comp_cc}" \
 	--with-gxx="%{comp_cxx}" \
 	--prefix=%{prefix} \
+	--libdir=%{_libdir} \
 	--with-monet=%{prefix}
 
 make
@@ -90,10 +91,10 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,monetdb,monetdb) 
 %{prefix}/bin/pf
-%{prefix}/lib/MonetDB/lib_*
-%{prefix}/lib/MonetDB/*.mil
+%{_libdir}/MonetDB/lib_*
+%{_libdir}/MonetDB/*.mil
 %{prefix}/bin/Mbeddedxq
-%{prefix}/lib/libembeddedxq.*
+%{_libdir}/libembeddedxq.*
 
 %files devel
 %defattr(-,monetdb,monetdb) 
