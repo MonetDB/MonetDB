@@ -209,10 +209,9 @@ fi
 
 aclocal -I . -I conf $LT_M4_DIR $PKG_M4_DIR $CONFDIR || exit 1
 
-# patch aclocal.m4 to "de-force" Unix V7 tar format with `make dist`,
-# since we do have filenames/-paths longer than 99 characters, go into
-# posix mode as we have weird chars in some of our filenames
-perl -i -p -e 's| chof | --format posix -chf |g' aclocal.m4
+# patch aclocal.m4 to "de-force" Uninx V7 tar format with `make dist`,
+# since we do have filenames/-paths longer than 99 characters.
+perl -i -p -e 's| chof | chf |g' aclocal.m4
 
 # patch aclocal.m4 to call the linker with "-IPA" on IRIX (medusa)
 # (just adding -IPA to LDFLAGS somehow doesn't help ...)
