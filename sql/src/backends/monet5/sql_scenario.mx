@@ -64,7 +64,7 @@ we update its context descriptor to denote an SQL scenario.
 #include "sql_cache.h"
 #include "sql_env.h"
 #include "sql_readline.h"
-#include "io.h"
+#include "mal_io.h"
 #include "mal_parser.h"
 #include <bat/res_table.h>
 #include "mal_namespace.h"
