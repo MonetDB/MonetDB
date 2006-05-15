@@ -1,0 +1,149 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' All Rights Reserved.
+
+@f xqry_mem
+@a N.J. Nes
+@* 
+@h
+#ifndef _XQRY_MEM_H_
+#define _XQRY_MEM_H_
+
+#include <xqry.h>
+#include <gdk.h>
+#include <stdio.h>
+#include <assert.h>
+
+#define NEW( type ) (type*)GDKmalloc(sizeof(type) )
+#define NEW_ARRAY( type, size ) (type*)GDKmalloc((size)*sizeof(type))
+#define RENEW_ARRAY( type,ptr,size) (type*)GDKrealloc((void*)ptr,(size)*sizeof(type))
+
+#define NEWADT( size ) (adt*)GDKmalloc(size)
+#define _DELETE( ptr )	{ GDKfree(ptr); ptr = NULL; }
+#define _strdup( ptr )	GDKstrdup((char*)ptr)
+
+typedef struct xqry_allocator {
+	size_t size;
+	size_t nr;
+	char **blks;
+	size_t used; 	/* memory used in last block */
+} xqry_allocator;
+
+extern xqry_allocator *xa_create();
+extern xqry_allocator *xa_reset( xqry_allocator *xa );
+extern char *xa_alloc( xqry_allocator *xa,  size_t sz );
+extern void xa_destroy( xqry_allocator *xa );
+extern char *xa_strndup( xqry_allocator *xa, const char *s, int l);
+extern char *xa_strdup( xqry_allocator *xa, const char *s);
+
+#define XA_NEW( xa, type ) ((type*)xa_alloc( xa, sizeof(type)) )
+#define XA_NEW_ARRAY( xa, type, size ) (type*)xa_alloc( xa, ((size)*sizeof(type)))
+
+#endif /*_XQRY_MEM_H_*/
+
+@c
+
+#include <xqry_mem.h>
+
+#define XA_BLOCK (64*1024)
+
+xqry_allocator *xa_create()
+{
+	xqry_allocator *xa = NEW(xqry_allocator);
+	
+	xa->size = 64;
+	xa->nr = 1;
+	xa->blks = NEW_ARRAY(char*,xa->size);
+	xa->blks[0] = NEW_ARRAY(char,XA_BLOCK);
+	if (!xa->blks[0]) {
+		_DELETE(xa);
+		return NULL;
+	}
+	xa->used = 0;
+	return xa;
+}
+
+xqry_allocator *xa_reset( xqry_allocator *xa )
+{
+	size_t i ;
+
+	for (i = 1; i<xa->nr; i++) {
+		_DELETE(xa->blks[i]);
+	}
+	xa->nr = 1;
+	xa->used = 0;
+	return xa;
+}
+
+#define round16(sz) ((sz+15)&~15)
+char *xa_alloc( xqry_allocator *xa, size_t sz )
+{
+	char *r;
+	sz = round16(sz);
+	if (sz > XA_BLOCK) {
+		char *t;
+		char *r = GDKmalloc(sz);
+		if (xa->nr >= xa->size) {
+			xa->size *=2;
+			xa->blks = RENEW_ARRAY(char*,xa->blks,xa->size);
+		}
+		t = xa->blks[xa->nr-1];
+		xa->blks[xa->nr-1] = r;
+		xa->blks[xa->nr] = t;
+		xa->nr ++;
+		return r;
+	}
+	if (sz > (XA_BLOCK-xa->used)) {
+		char *r = GDKmalloc(XA_BLOCK);
+		if (xa->nr >= xa->size) {
+			xa->size *=2;
+			xa->blks = RENEW_ARRAY(char*,xa->blks,xa->size);
+		}
+		xa->blks[xa->nr] = r;
+		xa->nr ++;
+		xa->used = sz;
+		return r;
+	}
+	r = xa->blks[xa->nr-1] + xa->used;
+	xa->used += sz;
+	return r;
+}
+
+void xa_destroy( xqry_allocator *xa ) 
+{
+	size_t i ;
+
+	for (i = 0; i<xa->nr; i++) {
+		GDKfree(xa->blks[i]);
+	}
+	GDKfree(xa->blks);
+	GDKfree(xa);
+}
+
+char *xa_strndup( xqry_allocator *xa, const char *s, int l) 
+{ 
+	char *r = xa_alloc(xa, l+1); 
+
+	if (r) {
+		memcpy(r, s, l); 
+		r[l] = 0; 
+	}
+	return r; 
+}
+
+char *xa_strdup( xqry_allocator *xa, const char *s ) 
+{ 
+	return xa_strndup( xa, s, strlen(s));
+}

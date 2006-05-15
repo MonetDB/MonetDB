@@ -1,0 +1,950 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' All Rights Reserved.
+
+@f xqry_scanner
+@a N.J. Nes
+@* 
+
+@h
+#ifndef _XQRY_SCANNER_H_
+#define _XQRY_SCANNER_H_
+
+#include <stream.h>
+#include "xqry_mem.h"
+
+#define LEX_ERROR -1
+
+typedef enum { LINE_1, LINE_N, BLOCKED } prot;
+
+typedef struct scanner {
+	Client c;
+	stream *log;
+
+	int yynext;		/* next token, lr(1) isn't powerful enough for xquery */
+	int yylast;		/* previous token, to detect superfluous statement seperators */
+	int yysval;		/* start of current token */
+	int yyval;		/* current token */
+	int yycur;		/* next char in the queue */
+	char yybak;		/* sometimes its needed to write an EOS marker */
+	int key;		/* query hash */
+	int started;		/* found at least one token */
+	prot mode;		/* which mode (line (1,N), blocked) */
+	xqry_allocator *xa;	/* allocator */
+} xscanner;
+
+typedef struct YYSTYPE {
+	char *sval;
+	lng  ival;
+	double  dval;
+} YYSTYPE;
+
+enum xquery_tokens {
+	XT_STR = 256,
+	XT_INT,
+	XT_DBL,
+	XT_IDENT,
+	XT_CMP,
+	XT_AGGR,
+	XT_CONCATSTRING,
+	XT_ASSIGN,
+	XT_xquery,
+	XT_version,
+	XT_module,
+	XT_namespace,
+	XT_declare,
+	XT_xmlspace,
+	XT_preserve,
+	XT_strip,
+	XT_default,
+	XT_element,
+	XT_function,
+	XT_ordering,
+	XT_ordered,
+	XT_unordered,
+	XT_order,
+	XT_inherit_namespaces,
+	XT_empty,
+	XT_greatest,
+	XT_least,
+	XT_collation,
+	XT_base_uri,
+	XT_import,
+	XT_schema,
+	XT_at,
+	XT_variable,
+	XT_construction,
+	XT_as,
+	XT_for,
+	XT_let,
+	XT_some,
+	XT_every,
+	XT_typeswitch,
+	XT_if,
+	XT_validate,
+	XT_lax,
+
+	XT_child,
+	XT_descendant,
+	XT_attribute,
+	XT_self,
+	XT_descendant_or_self,
+	XT_following_sibling,
+	XT_following,
+	XT_parent,
+	XT_ancestor,
+	XT_preceding_sibling,
+	XT_preceding,
+	XT_ancestor_or_self,
+	XT_select_narrow,
+	XT_select_wide,
+	XT_reject_narrow,
+	XT_reject_wide,
+	
+	XT_document_node,
+	XT_text,
+	XT_comment,
+	XT_pi,
+	XT_schema_attribute,
+	XT_schema_element,
+	XT_node,
+	XT_item,
+	XT_document,
+	XT_cdata,
+	XT_encoding,
+	XT_external,
+	XT_in,
+	XT_return,
+	XT_where,
+	XT_by,
+	XT_stable,
+	XT_ascending,
+	XT_descending,
+	XT_satisfies,
+	XT_case,
+	XT_then,
+	XT_else,
+	XT_or,
+	XT_and,
+	XT_to,
+	XT_union,
+	XT_intersect,
+	XT_except,
+	XT_div,
+	XT_idiv,
+	XT_mod,
+	XT_instance,
+	XT_of,
+	XT_treat,
+	XT_castable,
+	XT_eq,
+	XT_ne,
+	XT_lt,
+	XT_le,
+	XT_gt,
+	XT_ge,
+	XT_is,
+} xtoken;
+
+
+extern void xscanner_init_keywords();
+
+extern xscanner *xscanner_new(Client c);
+extern int xscanner_lex(xscanner *xs, YYSTYPE *yysval);
+extern void xscanner_query_processed(xscanner *s);
+
+extern char *XT2string(int token);
+
+#endif /* _XQRY_SCANNER_H_ */
+
+@c
+
+#include "xqry_scanner.h"
+#include "xqry_parser.h"
+
+#include <unistd.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <xqry_keyword.h>
+
+void
+xqry_error(xscanner *lc, int errcode, char *fmt, ... )
+{
+#define ERRSIZE 8096
+	char msg[ERRSIZE];
+	va_list	ap;
+
+	va_start (ap,fmt);
+	vsnprintf(msg, ERRSIZE-1, fmt, ap);
+	va_end (ap);
+	stream_printf(lc->c->fdout, "!ERROR: (%d) %s\n", errcode, msg);
+}
+
+char *
+XT2string(int token)
+{
+	switch(token) {
+#define XT(s) case XT_##s: return #s;
+	XT(STR);
+	XT(INT);
+	XT(DBL);
+	XT(IDENT);
+	XT(CMP);
+	XT(AGGR);
+	XT(CONCATSTRING);
+	XT(ASSIGN);
+	XT(xquery);
+	XT(version);
+	XT(module);
+	XT(namespace);
+	XT(declare);
+	XT(xmlspace);
+	XT(preserve);
+	XT(strip);
+	XT(default);
+	XT(element);
+	XT(function);
+	XT(ordering);
+	XT(ordered);
+	XT(unordered);
+	XT(order);
+	XT(inherit_namespaces);
+	XT(empty);
+	XT(greatest);
+	XT(least);
+	XT(collation);
+	XT(base_uri);
+	XT(import);
+	XT(schema);
+	XT(at);
+	XT(variable);
+	XT(construction);
+	XT(as);
+	XT(for);
+	XT(let);
+	XT(some);
+	XT(every);
+	XT(typeswitch);
+	XT(if);
+	XT(validate);
+	XT(lax);
+
+	XT(child);
+	XT(descendant);
+	XT(attribute);
+	XT(self);
+	XT(descendant_or_self);
+	XT(following_sibling);
+	XT(following);
+	XT(parent);
+	XT(ancestor);
+	XT(preceding_sibling);
+	XT(preceding);
+	XT(ancestor_or_self);
+	XT(select_narrow);
+	XT(select_wide);
+	XT(reject_narrow);
+	XT(reject_wide);
+	
+	XT(document_node);
+	XT(text);
+	XT(comment);
+	XT(pi);
+	XT(schema_attribute);
+	XT(schema_element);
+	XT(node);
+	XT(item);
+	XT(document);
+	XT(cdata);
+	XT(encoding);
+	XT(external);
+	XT(in);
+	XT(return);
+	XT(where);
+	XT(by);
+	XT(stable);
+	XT(ascending);
+	XT(descending);
+	XT(satisfies);
+	XT(case);
+	XT(then);
+	XT(else);
+	XT(or);
+	XT(and);
+	XT(to);
+	XT(union);
+	XT(intersect);
+	XT(except);
+	XT(div);
+	XT(idiv);
+	XT(mod);
+	XT(instance);
+	XT(of);
+	XT(treat);
+	XT(castable);
+	XT(eq);
+	XT(ne);
+	XT(lt);
+	XT(le);
+	XT(gt);
+	XT(ge);
+	XT(is);
+	}
+	return "unknown";
+}
+
+void
+xscanner_init_keywords()
+{
+printf("init\n");
+	keyword_init();
+	keywords_insert("xquery", XT_xquery);
+	keywords_insert("version", XT_version);
+	keywords_insert("module", XT_module);
+	keywords_insert("namespace", XT_namespace);
+	keywords_insert("declare", XT_declare);
+	keywords_insert("xmlspace", XT_xmlspace);
+	keywords_insert("preserve", XT_preserve);
+	keywords_insert("strip", XT_strip);
+	keywords_insert("default", XT_default);
+	keywords_insert("element", XT_element);
+	keywords_insert("function", XT_function);
+	keywords_insert("ordering", XT_ordering);
+	keywords_insert("ordered", XT_ordered);
+	keywords_insert("unordered", XT_unordered);
+	keywords_insert("order", XT_order);
+	keywords_insert("inherit-namespaces", XT_inherit_namespaces);
+	keywords_insert("empty", XT_empty);
+	keywords_insert("greatest", XT_greatest);
+	keywords_insert("least", XT_least);
+	keywords_insert("collation", XT_collation);
+	keywords_insert("base-uri", XT_base_uri);
+	keywords_insert("import", XT_import);
+	keywords_insert("schema", XT_schema);
+	keywords_insert("at", XT_at);
+	keywords_insert("variable", XT_variable);
+	keywords_insert("construction", XT_construction);
+	keywords_insert("as", XT_as);
+	keywords_insert("for", XT_for);
+	keywords_insert("let", XT_let);
+	keywords_insert("some", XT_some);
+	keywords_insert("every", XT_every);
+	keywords_insert("typeswitch", XT_typeswitch);
+	keywords_insert("if", XT_if);
+	keywords_insert("validate", XT_validate);
+	keywords_insert("lax", XT_lax);
+
+	keywords_insert("child", XT_child);
+	keywords_insert("descendant", XT_descendant);
+	keywords_insert("attribute", XT_attribute);
+	keywords_insert("self", XT_self);
+	keywords_insert("descendant-or-self", XT_descendant_or_self);
+	keywords_insert("following-sibling", XT_following_sibling);
+	keywords_insert("following", XT_following);
+	keywords_insert("parent", XT_parent);
+	keywords_insert("ancestor", XT_ancestor);
+	keywords_insert("preceding-sibling", XT_preceding_sibling);
+	keywords_insert("preceding", XT_preceding);
+	keywords_insert("ancestor-or-self", XT_ancestor_or_self);
+	keywords_insert("select-narrow", XT_select_narrow);
+	keywords_insert("select-wide", XT_select_wide);
+	keywords_insert("reject-narrow", XT_reject_narrow);
+	keywords_insert("reject-wide", XT_reject_wide);
+
+	keywords_insert("document-node", XT_document_node);
+	keywords_insert("text", XT_text);
+	keywords_insert("comment", XT_comment);
+	keywords_insert("processing-instruction", XT_pi);
+	keywords_insert("schema-attribute", XT_schema_attribute);
+	keywords_insert("schema-element", XT_schema_element);
+	keywords_insert("node", XT_node);
+	keywords_insert("item", XT_item);
+	keywords_insert("document", XT_document);
+	keywords_insert("CDATA", XT_cdata);
+	keywords_insert("encoding", XT_encoding);
+	keywords_insert("external", XT_external);
+	keywords_insert("in", XT_in);
+	keywords_insert("return", XT_return);
+	keywords_insert("where", XT_where);
+	keywords_insert("by", XT_by);
+	keywords_insert("stable", XT_stable);
+	keywords_insert("ascending", XT_ascending);
+	keywords_insert("descending", XT_descending);
+	keywords_insert("satisfies", XT_satisfies);
+	keywords_insert("case", XT_case);
+	keywords_insert("then", XT_then);
+	keywords_insert("else", XT_else);
+	keywords_insert("or", XT_or);
+	keywords_insert("and", XT_and);
+	keywords_insert("to", XT_to);
+	keywords_insert("union", XT_union);
+	keywords_insert("intersect", XT_intersect);
+	keywords_insert("except", XT_except);
+	keywords_insert("div", XT_div);
+	keywords_insert("idiv", XT_idiv);
+	keywords_insert("mod", XT_mod);
+	keywords_insert("instance", XT_instance);
+	keywords_insert("of", XT_of);
+	keywords_insert("treat", XT_treat);
+	keywords_insert("castable", XT_castable);
+	keywords_insert("eq", XT_eq);
+	keywords_insert("ne", XT_ne);
+	keywords_insert("lt", XT_lt);
+	keywords_insert("le", XT_le);
+	keywords_insert("gt", XT_gt);
+	keywords_insert("ge", XT_ge);
+	keywords_insert("is", XT_is);
+}
+
+#define find_keyword_bs(lc, s) find_keyword(lc->c->fdin->buf+lc->c->fdin->pos+s)
+
+xscanner *
+xscanner_new(Client c)
+{
+	xscanner *s = NEW(xscanner);
+
+	s->c = c;
+	s->log = NULL;
+
+	s->yynext = 0;
+	s->yylast = 0;
+	s->yyval = 0;
+	s->yybak = 0;		/* keep backup of char replaced by EOS */
+	s->yycur = 0;
+
+	s->key = 0;		/* keep a hash key of the query */
+	s->started = 0;
+
+	s->mode = LINE_N;
+	s->xa = xa_create();
+	return s;
+}
+
+void
+xscanner_query_processed(xscanner *s)
+{
+	int cur;
+
+	if (s->yybak) {
+		s->c->fdin->buf[s->c->fdin->pos + s->yycur] = s->yybak;
+		s->yybak = 0;
+	}
+
+	s->c->fdin->pos += s->yycur;
+	/* completely eat the query including white space after the ; */
+	cur = s->c->fdin->buf[s->c->fdin->pos];
+	while (isspace(cur)) {
+		s->c->fdin->pos++;
+		cur = s->c->fdin->buf[s->c->fdin->pos];
+	}
+	assert(s->c->fdin->pos <= s->c->fdin->len);
+	s->yycur = 0;
+	s->key = 0;		/* keep a hash key of the query */
+	s->started = 0;
+}
+
+static int
+xscanner_error(xscanner *lc, int cur)
+{
+	switch (cur) {
+	case EOF:
+		xqry_error(lc, 1, "unexpected end of input");
+		return -1;	/* EOF needs -1 result */
+	default:
+		xqry_error(lc, 1, "unexpected control character (%d)", cur);
+	}
+	return LEX_ERROR;
+}
+
+
+/*
+   UTF-8 encoding is as follows:
+U-00000000 - U-0000007F: 0xxxxxxx
+U-00000080 - U-000007FF: 110xxxxx 10xxxxxx
+U-00000800 - U-0000FFFF: 1110xxxx 10xxxxxx 10xxxxxx
+U-00010000 - U-001FFFFF: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+U-00200000 - U-03FFFFFF: 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+U-04000000 - U-7FFFFFFF: 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+*/
+/* To be correctly coded UTF-8, the sequence should be the shortest
+   possible encoding of the value being encoded.  This means that for
+   an encoding of length n+1 (1 <= n <= 5), at least one of the bits in
+   utf8chkmsk[n] should be non-zero (else the encoding could be
+   shorter).
+*/
+static int utf8chkmsk[] = {
+	0x0000007f,
+	0x00000780,
+	0x0000f800,
+	0x001f0000,
+	0x03e00000,
+	0x7c000000
+};
+
+static void
+utf8_putchar(xscanner *lc, int ch)
+{
+	if ((ch) < 0x80) {
+		lc->yycur--;
+	} else if ((ch) < 0x800) {
+		lc->yycur -= 2;
+	} else if ((ch) < 0x10000) {
+		lc->yycur -= 3;
+	} else {
+		lc->yycur -= 4;
+	}
+}
+
+static INLINE int
+xscanner_read_more(xscanner *lc, int n)
+{
+	bstream *b = lc->c->fdin;
+	int more = 0;
+
+
+	while (b->len < b->pos + lc->yycur + n) {
+
+		if (lc->mode == LINE_1 || !lc->started)
+			return EOF;
+
+		/* query is not finished ask for more */
+		if (b->eof || !isa_block_stream(b->s)) {
+			if (stream_write(lc->c->fdout, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1)
+				stream_flush(lc->c->fdout);
+			b->eof = 0;
+			more = 1;
+		}
+		/* we need more query text */
+		if (bstream_next(b) < 0 ||
+		    /* we asked for more data but didn't get any */
+		    (more && b->eof && b->len < b->pos + lc->yycur + n))
+			return EOF;
+	}
+	return 1;
+}
+
+static INLINE int
+xscanner_getc(xscanner *lc)
+{
+	bstream *b = lc->c->fdin;
+	unsigned char *s = NULL;
+	int c;
+	int n, m, mask;
+
+	if (xscanner_read_more(lc, 1) == EOF)
+		return EOF;
+
+	s = (unsigned char *) b->buf + b->pos + lc->yycur++;
+	if (((c = *s) & 0x80) == 0) {
+		/* 7-bit char */
+		return c;
+	}
+	for (n = 0, m = 0x40; c & m; n++, m >>= 1)
+		;
+	/* n now is number of 10xxxxxx bytes that should follow */
+	if (n == 0 || n >= 6 || (b->pos + n) > b->len) {
+		/* incorrect UTF-8 sequence */
+		/* n==0: c == 10xxxxxx */
+		/* n>=6: c == 1111111x */
+		goto error;
+	}
+
+	if (xscanner_read_more(lc, n) == EOF)
+		return EOF;
+	s = (unsigned char *) b->buf + b->pos + lc->yycur;
+
+	mask = utf8chkmsk[n];
+	c &= ~(0xFFC0 >> n);	/* remove non-x bits */
+	while (--n >= 0) {
+		c <<= 6;
+		lc->yycur++;
+		if (((m = *s++) & 0xC0) != 0x80) {
+			/* incorrect UTF-8 sequence: byte is not 10xxxxxx */
+			/* this includes end-of-string (m == 0) */
+			goto error;
+		}
+		c |= m & 0x3F;
+	}
+	if ((c & mask) == 0) {
+		/* incorrect UTF-8 sequence: not shortest possible */
+		goto error;
+	}
+	return c;
+
+error:
+	if (b->pos + lc->yycur < b->len)	/* skip bogus char */
+		lc->yycur++;
+	return EOF;
+}
+
+static int
+xscanner_token(xscanner *lc, int token)
+{
+	lc->yybak = lc->c->fdin->buf[lc->c->fdin->pos + lc->yycur];
+	lc->c->fdin->buf[lc->c->fdin->pos + lc->yycur] = 0;
+	lc->yyval = token;
+	return lc->yyval;
+}
+
+static int
+xscanner_string(xscanner *lc, int quote)
+{
+	bstream *rs = lc->c->fdin;
+	int cur = quote;
+	int escape = 0;
+
+	lc->started = 1;
+	while (cur != EOF) {
+		unsigned int pos = rs->pos + lc->yycur;
+
+		while ((((cur = rs->buf[pos++]) & 0x80) == 0) && cur && (cur != quote || escape)) {
+			if (cur != '\\')
+				escape = 0;
+			else
+				escape = !escape;
+		}
+		lc->yycur = pos - rs->pos;
+		/* check for quote escaped quote: Obscure SQL Rule */
+		if (cur == quote && rs->buf[pos] == quote) {
+			rs->buf[pos - 1] = '\\';
+			lc->yycur++;
+			continue;
+		}
+		assert(pos <= rs->len + 1);
+		if (cur == quote && !escape) {
+			return xscanner_token(lc, XT_STR);
+		}
+		lc->yycur--;	/* go back to current (possibly invalid) char */
+		/* long utf8, if correct isn't the quote */
+		if (!cur) {
+			if (lc->c->fdin->len >= lc->c->fdin->pos + lc->yycur + 1) {
+				xqry_error(lc, 2, "NULL byte in string");
+				return LEX_ERROR;
+			}
+			cur = xscanner_read_more(lc, 1);
+		} else {
+			cur = xscanner_getc(lc);
+		}
+	}
+	xqry_error(lc, 2, "unexpected end of input");
+	return LEX_ERROR;
+}
+
+static int 
+keyword_or_ident(xscanner * lc, int cur)
+{
+	keyword *k = NULL;
+	int s;
+
+	lc->started = 1;
+	utf8_putchar(lc, cur);
+	s = lc->yycur;
+	lc->yyval = XT_IDENT;
+	while ((cur = xscanner_getc(lc)) != EOF) {
+		if ((isascii(cur) && !isalnum(cur)) && cur != '_') {
+			utf8_putchar(lc, cur);
+			(void)xscanner_token(lc, XT_IDENT);
+			k = find_keyword_bs(lc,s);
+			if (k) 
+				lc->yyval = k->token;
+			return lc->yyval;
+		}
+	}
+	(void)xscanner_token(lc, XT_IDENT);
+	k = find_keyword_bs(lc,s);
+	if (k) 
+		lc->yyval = k->token;
+	return lc->yyval;
+}
+
+static int 
+skip_white_space(xscanner * lc)
+{
+	int cur;
+
+	lc->yysval = lc->yycur;
+	while ((cur = xscanner_getc(lc)) != EOF && isspace(cur))
+		lc->yysval = lc->yycur;
+	return cur;
+}
+
+static int 
+skip_c_comment(xscanner * lc)
+{
+	int cur;
+	int prev = 0;
+
+	while ((cur = xscanner_getc(lc)) != EOF && 
+	       !(cur == '/' && prev == '*')) 
+		prev = cur;
+	lc->yysval = lc->yycur;
+	if (cur == '/')
+		cur = xscanner_getc(lc);
+	return cur;
+}
+
+static int 
+skip_xqry_comment(xscanner * lc)
+{
+	int cur;
+
+	while ((cur = xscanner_getc(lc)) != EOF && (cur != '\n'))
+		;
+	lc->yysval = lc->yycur;
+	if (cur == '\n')
+		cur = xscanner_getc(lc);
+	return cur;
+}
+
+static int tokenize(xscanner * lc, int cur);
+
+static int 
+number(xscanner * lc, int cur)
+{
+	int token = XT_INT;
+
+	lc->started = 1;
+	/* TODO start with . */
+	while ((cur = xscanner_getc(lc)) != EOF && isdigit(cur)) 
+		;
+	if (cur == '.') {
+		token = XT_DBL;
+
+		while ((cur = xscanner_getc(lc)) != EOF && isdigit(cur)) 
+			;
+	}
+	if (cur == 'e' || cur == 'E') {
+		token = XT_DBL;
+		cur = xscanner_getc(lc);
+		if (cur == '-' || cur == '+') 
+			token = 0;
+		while ((cur = xscanner_getc(lc)) != EOF && isdigit(cur)) 
+			token = XT_DBL;
+	}
+	if (token) {
+		if (cur != EOF)
+			utf8_putchar(lc, cur);
+		return xscanner_token(lc, token);
+	} else {
+		xqry_error( lc, 2, "unexpected symbol %c", cur);
+		return LEX_ERROR;
+	}
+}
+
+static
+int xscanner_symbol(xscanner * lc, int cur)
+{
+	int next = 0;
+
+	if (cur == '/') {
+		next = xscanner_getc(lc);
+		if (next == '*') {
+			cur = skip_c_comment(lc);
+			return tokenize(lc, cur);
+		} else {
+			lc->started = 1;
+			utf8_putchar(lc, next); 
+			return xscanner_token(lc, cur);
+		}
+	} else if (isdigit(cur)) {
+		return number(lc, cur);
+	} else if (cur == '#') {
+		if ((cur = skip_xqry_comment(lc)) == EOF)
+			return cur;
+		return tokenize(lc, cur);
+	} else if (cur == '\'' || cur == '"') {
+		return xscanner_string(lc, cur);
+	}
+	switch (cur) {
+	case '-':
+	case '+':
+	case '?':
+	case '@':
+	/* TODO expression comments */
+	case '(':
+	case ')':
+	case ',':
+	case '=':
+	case '{':
+	case '}':
+	case '[':
+	case ']':
+		lc->started = 1;
+		return xscanner_token(lc, cur);
+	case ';':
+		lc->started = 0;
+		return xscanner_token(lc, ';');
+	case '<': /* lexer stack of modes */
+		lc->started = 1;
+		cur = xscanner_getc(lc);
+		if (cur != '!') { /* todo XML-comments */
+		} else if (cur == '<') {
+			return xscanner_token( lc, XT_lt);
+		} else if (cur == '=') {
+			return xscanner_token( lc, XT_CMP);
+		} else if (cur == '>') {
+			return xscanner_token( lc, XT_CMP);
+		} else {
+			utf8_putchar(lc, cur); 
+			return xscanner_token( lc, XT_CMP);
+		}
+	case '>':
+		lc->started = 1;
+		cur = xscanner_getc(lc);
+		if (cur == '>') {
+			return xscanner_token( lc, XT_gt);
+		} else if (cur != '=') {
+			utf8_putchar(lc, cur); 
+			return xscanner_token( lc, XT_CMP);
+		} else {
+			return xscanner_token( lc, XT_CMP);
+		}
+	case '|':
+		lc->started = 1;
+		cur = xscanner_getc(lc);
+		if (cur == '|') {
+			return xscanner_token(lc, XT_CONCATSTRING);
+		}
+	case ':':
+		lc->started = 1;
+		cur = xscanner_getc(lc);
+		if (cur == '=') {
+			return xscanner_token(lc, XT_ASSIGN);
+		}
+	case '$':
+		lc->started = 1;
+		return xscanner_token(lc, cur);
+	}
+	xqry_error( lc, 3, "unexpected symbol (%c)", cur);
+	return LEX_ERROR;
+}
+
+static int 
+tokenize(xscanner * lc, int cur)
+{
+	while (1) {
+		if (isspace(cur)) {
+			if ((cur = skip_white_space(lc)) == EOF)
+				return cur;
+		} else if (isdigit(cur)) {
+			return number(lc, cur);
+		} else if (isalpha(cur) || cur == '_') {
+			return keyword_or_ident(lc, cur);
+		} else if (ispunct(cur)) {
+			return xscanner_symbol(lc, cur);
+		}
+		if (cur == EOF) {
+			if (lc->mode == LINE_1 || !lc->started )
+				return cur;
+			return xscanner_error(lc, cur);
+		}
+		if (iscntrl(cur))
+			return xscanner_error(lc, cur);
+	}
+}
+
+int
+valid_ident(char *s, char *dst)
+{
+	int escaped = 0;
+	int p = 0;
+	
+	if (*s != '_' && !isalpha((int) *s) && *s != ' ')
+		return 0;
+	/* do unescaping in the loop */
+	while (*s && (*s != '"' || escaped)) {
+		if (*s == '\\') {
+			escaped = !escaped;
+			if (!escaped) {
+				dst[p++] = *s;
+			}
+		} else if (*s == '"' && escaped) {
+			escaped = 0;
+			dst[p++] = *s;
+		} else if (*s != '_' && !isalnum((int) *s) && *s != ' ') {
+			return 0;
+		} else {
+			escaped = 0;
+			dst[p++] = *s;
+		}
+		s++;
+		if (p >= 1024)
+			return 0;
+	}
+	dst[p] = '\0';
+	return 1;
+}
+
+static INLINE int
+xqry_get_next_token(xscanner *lc, YYSTYPE *yylval) {
+	int token = 0;
+
+	if (lc->yynext) {
+		int next = lc->yynext;
+
+		lc->yynext = 0;
+		return(next);
+	}
+
+	if (lc->yybak) {
+		lc->c->fdin->buf[lc->c->fdin->pos + lc->yycur] = lc->yybak;
+		lc->yybak = 0;
+	}
+	
+	lc->yysval = lc->yycur;
+	lc->yylast = lc->yyval;
+	token = tokenize(lc, xscanner_getc(lc));
+
+	yylval->sval = (lc->c->fdin->buf + lc->c->fdin->pos + lc->yysval);
+
+	if (token == XT_IDENT || token == XT_CMP || token == XT_AGGR)
+		yylval->sval = xa_strndup(lc->xa, yylval->sval, lc->yycur-lc->yysval);
+	if (token == XT_STR) {
+		char quote = *yylval->sval;
+		char *str = xa_alloc( lc->xa, (lc->yycur-lc->yysval-2)*2 +1 );
+		assert(quote == '"' || quote == '\'');
+
+		lc->c->fdin->buf[lc->c->fdin->pos+lc->yycur- 1] = 0; 
+		memcpy(str, yylval->sval+1, lc->yycur-lc->yysval - 1);
+		yylval->sval = str;
+
+		/* reset original */
+		lc->c->fdin->buf[lc->c->fdin->pos+lc->yycur- 1] = quote; 
+	}
+
+	return(token);
+}
+
+int
+xscanner_lex(xscanner *lc, YYSTYPE * yylval)
+{
+	int token;
+	int pos;
+
+	/* store position for when view's query ends */
+	pos = lc->c->fdin->pos + lc->yycur;
+
+	token = xqry_get_next_token(lc, yylval);
+
+	if (lc->log) 
+		stream_write(lc->log, lc->c->fdin->buf+pos, lc->c->fdin->pos + lc->yycur - pos, 1);
+
+	/* Don't include literals in the calculation of the key */
+	if (token != XT_STR && token != XT_INT && token != XT_DBL)
+		lc->key ^= token;
+	lc->started += (token != EOF);
+	return token;
+}
