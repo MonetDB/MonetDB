@@ -22,11 +22,12 @@
 EXTRA_DIST = \
 	abssyn.h \
 	abssynprint.h \
-    alg_dag.h \
+	alg_dag.h \
 	algebra_cse.h \
 	algebra.h \
 	algebra_mnemonic.h \
 	algopt.h \
+	apply.h \
 	array.h \
 	bitset.h \
 	builtins.h \
@@ -47,6 +48,7 @@ EXTRA_DIST = \
 	logical.h \
 	logical_mnemonic.h \
 	mem.h \
+	mil_dce.h \
 	mildebug.h \
 	milgen.h \
 	mil.h \
@@ -69,6 +71,7 @@ EXTRA_DIST = \
 	prettyp.h \
 	properties.h \
 	qname.h \
+	scanner.h \
 	scope.h \
 	simplify.h \
 	subtyping.h \
@@ -77,5 +80,4 @@ EXTRA_DIST = \
 	types.h \
 	variable.h \
 	varscope.h \
-	xquery_fo.h \
-	scanner.h
+	xquery_fo.h 
