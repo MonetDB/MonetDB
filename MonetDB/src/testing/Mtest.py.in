@@ -3185,14 +3185,28 @@ def main(argv) :
         except ImportError:
             now = 'now()'
 
+        if env['TST_STATIC'] != '':
+            isStatic = "true"
+        else:
+            isStatic = "false"
+
+        # ok, we're not prepared for the 128 bits world yet
+        bits = env['TST_BITS'][:2]
+        oids = env['TST_OIDS'][-2:]
+
         for TSTDIR,TST,tt,ms,FtOut,FtErr in TIMES:
             if TST != '':
                 # target is a platform and compilation options etc
-                if env['TST_STATIC'] != '':
-                    isStatic = "true"
-                else:
-                    isStatic = "false"
-                sql = "INSERT INTO mtest (\"date\", \"machine\", \"os\", \"release\", \"compiler\", \"bits\", \"oid\", \"static\", \"product\", \"dir\", \"test\", \"time\", \"stdout\", \"stderr\") VALUES (%s, '%s', '%s', '%s', '%s', '%s', '%s', %s, '%s', '%s', '%s', %d, %d, %d);\n" %(now, host, env['OS'], env['RELEASE'], compiler, env['TST_BITS'], env['TST_OIDS'], isStatic, product, TSTDIR, TST, ms, FtOut, FtErr)
+                sql = """
+INSERT INTO mtest (\"date\", \"machine\", \"os\", \"release\",
+    \"compiler\", \"bits\", \"oid\", \"static\", \"product\",
+    \"dir\", \"test\", \"time\", \"stdout\", \"stderr\")
+VALUES (%s, '%s', '%s', '%s',
+    '%s', %s, %s, %s, '%s',
+    '%s', '%s', %d, %d, %d);
+""" %(now, host, env['OS'], env['RELEASE'],
+        compiler, bits, oids, isStatic, product,
+        TSTDIR, TST, ms, FtOut, FtErr)
                 fl.write(sql);
         fl.close()
 
