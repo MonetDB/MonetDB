@@ -27,6 +27,8 @@ for XQuery plans.
 #define _XQUERY_GENCODE_H_
 #include "xqry.h"
 
+#define _XQRY_GENCODE_DEBUG   1 /* trace it use */
+
 xqry_export Xbackend newXbackend(MalBlkPtr mb);
 xqry_export int XfindId(Xbackend xb, str nme);
 xqry_export int pushXvar(Xbackend xb);
@@ -51,6 +53,9 @@ int
 XfindId(Xbackend xb, str nme)
 {
     int i;
+#ifdef _XQRY_GENCODE_DEBUG
+	stream_printf(GDKout,"#DEBUG XfindId %s\n",nme);
+#endif
     for(i=0; i< xb->vtop; i++)
         if (strcmp(xb->vars[i].nme, nme) == 0)
             return xb->vars[i].tmpid;
@@ -65,6 +70,9 @@ for the code generator.
 Xbackend
 newXbackend(MalBlkPtr mb){
     Xbackend xb;
+#ifdef _XQRY_GENCODE_DEBUG
+	stream_printf(GDKout,"#DEBUG newXbackend\n");
+#endif
     xb = (Xbackend) GDKmalloc( sizeof(XbackendRec));
     memset((char*) xb, 0, sizeof(XbackendRec));
 	xb->mb= mb;
@@ -88,7 +96,11 @@ pushXvar(Xbackend xb){
 	/* initialize the variable further */
 	xb->vars[xb->vtop].tmpid= 
 		newVariable(xb->mb, newTmpName('X',varid++),TYPE_any);
-	return xb->vars[xb->vtop++].tmpid;
+#ifdef _XQRY_GENCODE_DEBUG
+	stream_printf(GDKout,"#DEBUG pushXvar %d\n",xb->vars[xb->vtop].tmpid);
+#endif
+	xb->vtop++;
+	return xb->vars[xb->vtop-1].tmpid;
 }
 
 int 
@@ -97,6 +109,9 @@ popXvar(Xbackend xb){
 		stream_printf(GDKout,"OUT OF XBACKEND VARIABLES to pop\n");
 		return 0;
 	}
+#ifdef _XQRY_GENCODE_DEBUG
+	stream_printf(GDKout,"#DEBUG popXvar %d\n",xb->vars[xb->vtop-1].tmpid);
+#endif
 	return xb->vars[--xb->vtop].tmpid;
 }
 void
@@ -104,6 +119,9 @@ xqryDefConstant(Xbackend xb, ValPtr val){
 	int i;
 	i= pushXvar(xb);
 	xb->vars[i].tmpid= defConstant(xb->mb, val->vtype,val);
+#ifdef _XQRY_GENCODE_DEBUG
+	stream_printf(GDKout,"#DEBUG xqryDefConstant %d %d\n",i, xb->vars[i].tmpid);
+#endif
 }
 @-
 The remainder of this document contains supportive routines
@@ -124,6 +142,10 @@ xqryCoercion(Xbackend xb){
 	str tpe;
 
 	if( xb->vtop <2) return;
+#ifdef _XQRY_GENCODE_DEBUG
+	stream_printf(GDKout,"#DEBUG xqryCoercion %d %d %d\n",xb->vtop,
+		xb->vars[xb->vtop-1].tmpid,xb->vars[xb->vtop-2].tmpid);
+#endif
 	lt= getVarType(xb->mb, xb->vars[xb->vtop-2].tmpid);
 	rt= getVarType(xb->mb, xb->vars[xb->vtop-1].tmpid);
 	ct= coercion(lt,rt);

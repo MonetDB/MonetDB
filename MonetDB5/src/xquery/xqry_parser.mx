@@ -299,7 +299,7 @@ parseQName(Client cntxt, Xbackend xb)
 		return ret;
 	for(l=0; l <xb->vtop; l++)
 		if( xb->vars[l].nme && strcmp(s, xb->vars[l].nme)==0 ){
-			id= l; 
+			id= xb->vars[l].tmpid; 
 			break;
 		}
 	if( xb->vtop == MAXXVARS){
@@ -309,6 +309,9 @@ parseQName(Client cntxt, Xbackend xb)
 	xb->vars[xb->vtop].nme = s;
 	if( id < 0)
 		id= newVariable(xb->mb,GDKstrdup(s),TYPE_any);
+#ifdef _XQRY_DEBUG
+		stream_printf(GDKout,"#NCName %d %d %s\n", xb->vtop, id,s);
+#endif
 	xb->vars[xb->vtop++].tmpid = id;
 	return ret;
 }
@@ -328,6 +331,9 @@ parseVarQName(Client cntxt, Xbackend xb){
 		xqryError(cntxt,"Too many variables");
 		xb->vtop --;
 	}
+#ifdef _XQRY_DEBUG
+		stream_printf(GDKout,"#QName %d -1 %s\n", xb->vtop, s);
+#endif
 	xb->vars[xb->vtop].tmpid = -1;
 	xb->vars[xb->vtop++].nme = s;
 	return PARSE_OK;
@@ -345,7 +351,7 @@ parseEnclosedExpr(Client cntxt, Xbackend xb){
 	parseExpr(cntxt,xb);
 	xqrySkipSpace(cntxt);
 	if( currChar(cntxt) != '}')
-		return xqryError(cntxt,"'}' expected\n");
+		return xqryError(cntxt,"'}' expected in EnclosedExpr\n");
 	nextChar(cntxt);
 	@:etrace(parseEnclosedExpr)@
 	return PARSE_OK;
@@ -437,13 +443,13 @@ parseSchemaElementTest(Client cntxt, Xbackend xb){
 	@:ptrace(parseSchemaElementTest)@
 	xqrySkipSpace(cntxt);
 	if( currChar(cntxt) != '(')
-		return xqryError(cntxt,"'(' expected\n");
+		return xqryError(cntxt,"'(' expected in SchemaElementTest\n");
 	nextChar(cntxt);
 	if ( (i=parseQName(cntxt,xb)) <= 0)
-		return xqryError(cntxt,"<ElementName> expected\n");
+		return xqryError(cntxt,"<ElementName> expected in SchemaElementTest\n");
 	xqrySkipSpace(cntxt);
 	if( currChar(cntxt) != ')')
-		return xqryError(cntxt,"')' expected\n");
+		return xqryError(cntxt,"')' expected in SchemaElementTest\n");
 	@:etrace(parseSchemaElementTest)@
 	return PARSE_OK;
 }
@@ -455,7 +461,7 @@ parseElementTest(Client cntxt, Xbackend xb){
 	@:ptrace(parseElementTest)@
 	xqrySkipSpace(cntxt);
 	if( currChar(cntxt) != '(')
-		return xqryError(cntxt,"'(' expected\n");
+		return xqryError(cntxt,"'(' expected in ElementTest\n");
 	nextChar(cntxt);
 	xqrySkipSpace(cntxt);
 
@@ -468,14 +474,14 @@ parseElementTest(Client cntxt, Xbackend xb){
 	
 	if( currChar(cntxt) != ','){
 		if( parseTypeName(cntxt,xb)== PARSE_ERR )
-			return xqryError(cntxt,"<TypeName> expected\n");
+			return xqryError(cntxt,"<TypeName> expected in ElementTest\n");
 		xqrySkipSpace(cntxt);
 		if( currChar(cntxt)== '?')
 			nextChar(cntxt);
 	}
 
 	if( currChar(cntxt) != ')')
-		return xqryError(cntxt,"')' expected\n");
+		return xqryError(cntxt,"')' expected in ElementTest\n");
 	nextChar(cntxt);
 	@:etrace(parseElementTest)@
 	return PARSE_OK;
@@ -489,7 +495,7 @@ parseSchemaAttributeTest(Client cntxt, Xbackend xb){
 	@:ptrace(parseSchemaAttributeTest)@
 	xqrySkipSpace(cntxt);
 	if( currChar(cntxt) != '(')
-		return xqryError(cntxt,"'(' expected\n");
+		return xqryError(cntxt,"'(' expected in SchemaAttributeTest\n");
 	nextChar(cntxt);
 	xqrySkipSpace(cntxt);
 
@@ -498,7 +504,7 @@ parseSchemaAttributeTest(Client cntxt, Xbackend xb){
 	xqrySkipSpace(cntxt);
 
 	if( currChar(cntxt) != ')')
-		return xqryError(cntxt,"')' expected\n");
+		return xqryError(cntxt,"')' expecteSchemaAttributeTest\n");
 	nextChar(cntxt);
 	@:etrace(parseSchemaAttributeTest)@
 	return PARSE_OK;
@@ -512,7 +518,7 @@ parseAttributeTest(Client cntxt, Xbackend xb){
 	@:ptrace(parseAttributeTest)@
 	xqrySkipSpace(cntxt);
 	if( currChar(cntxt) != '(')
-		return xqryError(cntxt,"'(' expected\n");
+		return xqryError(cntxt,"'(' expecte AttributeTest\n");
 	nextChar(cntxt);
 	xqrySkipSpace(cntxt);
 
@@ -530,7 +536,7 @@ parseAttributeTest(Client cntxt, Xbackend xb){
 	}
 
 	if( currChar(cntxt) != ')')
-		return xqryError(cntxt,"')' expected\n");
+		return xqryError(cntxt,"')' expected in AttributeTest\n");
 	nextChar(cntxt);
 	@:etrace(parseAttributeTest)@
 	return PARSE_OK;
@@ -543,14 +549,14 @@ parseDocumentTest(Client cntxt, Xbackend xb){
 	@:ptrace(parseDocumentTest)@
 	xqrySkipSpace(cntxt);
 	if( currChar(cntxt) != '(')
-		return xqryError(cntxt,"'(' expected\n");
+		return xqryError(cntxt,"'(' expected in DocumentTest\n");
 	nextChar(cntxt);
 	xqrySkipSpace(cntxt);
 	if( parseElementTest(cntxt,xb) == PARSE_ERR ||
 		parseSchemaElementTest(cntxt,xb) ){
 	}
 	if( currChar(cntxt) != ')')
-		return xqryError(cntxt,"')' expected\n");
+		return xqryError(cntxt,"')' expected in DocumentTest\n");
 	nextChar(cntxt);
 	@:etrace(parseDocumentTest)@
 	return PARSE_OK;
@@ -565,7 +571,7 @@ parsePITest(Client cntxt, Xbackend xb){
 	@:ptrace(parsePITest)@
 	xqrySkipSpace(cntxt);
 	if( currChar(cntxt) != '(')
-		return xqryError(cntxt,"'(' expected\n");
+		return xqryError(cntxt,"'(' expected in PITest\n");
 	nextChar(cntxt);
 	xqrySkipSpace(cntxt);
 	if ((i=parseNCName(cntxt,xb)) <= 0) {
@@ -576,7 +582,7 @@ parsePITest(Client cntxt, Xbackend xb){
 
 	xqrySkipSpace(cntxt);
 	if( currChar(cntxt) != ')')
-		return xqryError(cntxt,"')' expected\n");
+		return xqryError(cntxt,"')' expected in PITest\n");
 	nextChar(cntxt);
 	@:etrace(parsePITest)@
 	return PARSE_OK;
@@ -603,9 +609,9 @@ parseKindTest(Client cntxt, Xbackend xb){
 	if( xqryKeyword(cntxt,"comment",7) ) kind= COMMENT_TEST; 
 		else return PARSE_ERR;
 	if( !xqryKeyphrase1(cntxt,"(") ) 
-		return xqryError(cntxt,"'(' expected\n");
+		return xqryError(cntxt,"'(' expected in KindTest\n");
 	if( !xqryKeyphrase1(cntxt,")") ) 
-		return xqryError(cntxt,"')' expected\n");
+		return xqryError(cntxt,"')' expected in KindTest\n");
 	@:etrace(parseKindTest)@
 	return PARSE_OK;
 }
@@ -617,9 +623,9 @@ parseItemType(Client cntxt, Xbackend xb){
 	if( parseKindTest(cntxt,xb) == PARSE_OK) return PARSE_OK;
 	if( xqryKeyword(cntxt,"item",4) ) {
 		if( !xqryKeyphrase1(cntxt,"(") )
-			return xqryError(cntxt,"'(' expected\n");
+			return xqryError(cntxt,"'(' expected in ItemType\n");
 		if( !xqryKeyphrase1(cntxt,")") ) 
-			return xqryError(cntxt,"')' expected\n");
+			return xqryError(cntxt,"')' expected in ItemType\n");
 		i = ITEM_TEST; 
 		@:etrace(parseItemType)@
 		return PARSE_OK;
@@ -628,7 +634,7 @@ parseItemType(Client cntxt, Xbackend xb){
 	i = idLength(cntxt);
 	(void) i;
 	if( i== 0)
-			return xqryError(cntxt,"<AtomicType> expected\n");
+			return xqryError(cntxt,"<AtomicType> expected in ItemType\n");
 	@:etrace(parseItemType)@
 	return PARSE_OK;
 }
@@ -638,9 +644,9 @@ parseSequenceType(Client cntxt, Xbackend xb){
 	@:ptrace(parseSequenceType)@
 	if( xqryKeyword(cntxt,"empty-sequence",13) ) {
 		if( !xqryKeyphrase1(cntxt,"(") ) 
-			return xqryError(cntxt,"'(' expected\n");
+			return xqryError(cntxt,"'(' expected in SequenceType\n");
 		if( !xqryKeyphrase1(cntxt,")") )
-			return xqryError(cntxt,"')' expected\n");
+			return xqryError(cntxt,"')' expected in SequenceType\n");
 		@:etrace(parseSequenceType)@
 		return PARSE_OK;
 	}
@@ -653,7 +659,7 @@ parseSequenceType(Client cntxt, Xbackend xb){
 	case '*':
 		nextChar(cntxt);
 	default:
-		xqryError(cntxt,"'?', '+', '*' expected\n");
+		xqryError(cntxt,"'?', '+', '*' expected in SequenceType\n");
 	}
 	@:etrace(parseSequenceType)@
 	return PARSE_OK;
@@ -677,22 +683,22 @@ parseCompPIConstructor(Client cntxt, Xbackend xb){
 		xqrySkipSpace(cntxt);
 	} else{
 		if( currChar(cntxt) != '{')
-			return xqryError(cntxt,"'{' expected\n");
+			return xqryError(cntxt,"'{' expected in PIConstructor\n");
 		nextChar(cntxt);
 		parseExpr(cntxt,xb);
 		xqrySkipSpace(cntxt);
 		if( currChar(cntxt) != '}')
-			return xqryError(cntxt,"'}' expected\n");
+			return xqryError(cntxt,"'}' expected in PIConstructor\n");
 		nextChar(cntxt);
 	}
 
 	if( currChar(cntxt) != '{')
-		return xqryError(cntxt,"'{' expected\n");
+		return xqryError(cntxt,"'{' expected in PIConstructor\n");
 	nextChar(cntxt);
 	parseExpr(cntxt,xb);
 	xqrySkipSpace(cntxt);
 	if( currChar(cntxt) != '}')
-		return xqryError(cntxt,"'}' expected\n");
+		return xqryError(cntxt,"'}' expected in PIConstructor\n");
 	nextChar(cntxt);
 	@:etrace(parseCompPIConstructor)@
 	return PARSE_OK;
@@ -706,12 +712,12 @@ parseCompCommentConstructor(Client cntxt, Xbackend xb){
 	@:ptrace(parseCompCommentConstructor)@
 	xqrySkipSpace(cntxt);
 	if( currChar(cntxt) != '{')
-		return xqryError(cntxt,"'{' expected\n");
+		return xqryError(cntxt,"'{' expected in CompCommentConstructor\n");
 	nextChar(cntxt);
 	parseExpr(cntxt,xb);
 	xqrySkipSpace(cntxt);
 	if( currChar(cntxt) != '}')
-		return xqryError(cntxt,"'}' expected\n");
+		return xqryError(cntxt,"'}' expected in CompCommentConstructor\n");
 	nextChar(cntxt);
 	@:etrace(parseCompCommentConstructor)@
 	return PARSE_OK;
@@ -732,7 +738,7 @@ parseCompTextConstructor(Client cntxt, Xbackend xb){
 	parseExpr(cntxt,xb);
 	xqrySkipSpace(cntxt);
 	if( currChar(cntxt) != '}')
-		return xqryError(cntxt,"'}' expected\n");
+		return xqryError(cntxt,"'}' expected in CompTextConstructor\n");
 	nextChar(cntxt);
 	@:etrace(parseCompTextConstructor)@
 	return PARSE_OK;
@@ -748,22 +754,22 @@ parseCompAttrConstructor(Client cntxt, Xbackend xb){
 		xqrySkipSpace(cntxt);
 	} else{
 		if( currChar(cntxt) != '{')
-			return xqryError(cntxt,"'{' expected\n");
+			return xqryError(cntxt,"'{' expected in CompAttrConstructor\n");
 		nextChar(cntxt);
 		parseExpr(cntxt,xb);
 		xqrySkipSpace(cntxt);
 		if( currChar(cntxt) != '}')
-			return xqryError(cntxt,"'}' expected\n");
+			return xqryError(cntxt,"'}' expected in CompAttrConstructor\n");
 		nextChar(cntxt);
 	}
 
 	if( currChar(cntxt) != '{')
-		return xqryError(cntxt,"'{' expected\n");
+		return xqryError(cntxt,"'{' expected in CompAttrConstructor\n");
 	nextChar(cntxt);
 	parseExpr(cntxt,xb);
 	xqrySkipSpace(cntxt);
 	if( currChar(cntxt) != '}')
-		return xqryError(cntxt,"'}' expected\n");
+		return xqryError(cntxt,"'}' expected in CompAttrConstructor\n");
 	nextChar(cntxt);
 	@:etrace(parseCompAttrConstructor)@
 	return PARSE_OK;
@@ -777,23 +783,23 @@ parseCompElemConstructor(Client cntxt, Xbackend xb){
 	@:ptrace(parseCompElemConstructor)@
 	if ( (i=parseQName(cntxt,xb)) <= 0) {
 		if( currChar(cntxt) != '{')
-			return xqryError(cntxt,"'{' expected\n");
+			return xqryError(cntxt,"'{' expected in CompElemConstructor\n");
 		nextChar(cntxt);
 		parseExpr(cntxt,xb);
 		xqrySkipSpace(cntxt);
 		if( currChar(cntxt) != '}')
-			return xqryError(cntxt,"'}' expected\n");
+			return xqryError(cntxt,"'}' expected in CompElemConstructor\n");
 		nextChar(cntxt);
 	}
 	xqrySkipSpace(cntxt);
 
 	if( currChar(cntxt) != '{')
-		return xqryError(cntxt,"'{' expected\n");
+		return xqryError(cntxt,"'{' expected in CompElemConstructor\n");
 	nextChar(cntxt);
 	parseExpr(cntxt,xb);
 	xqrySkipSpace(cntxt);
 	if( currChar(cntxt) != '}')
-		return xqryError(cntxt,"'}' expected\n");
+		return xqryError(cntxt,"'}' expected in CompElemConstructor\n");
 	nextChar(cntxt);
 	@:etrace(parseCompElemConstructor)@
 	return PARSE_OK;
@@ -806,12 +812,12 @@ parseCompDocConstructor(Client cntxt, Xbackend xb){
 	@:ptrace(parseCompDocConstructor)@
 	xqrySkipSpace(cntxt);
 	if( currChar(cntxt) != '{')
-		return xqryError(cntxt,"'{' expected\n");
+		return xqryError(cntxt,"'{' expected in CompDocConstructor\n");
 	nextChar(cntxt);
 	parseExpr(cntxt,xb);
 	xqrySkipSpace(cntxt);
 	if( currChar(cntxt) != '}')
-		return xqryError(cntxt,"'}' expected\n");
+		return xqryError(cntxt,"'}' expected in CompDocConstructor\n");
 	nextChar(cntxt);
 	@:etrace(parseCompDocConstructor)@
 	return PARSE_OK;
@@ -852,7 +858,7 @@ parseDirPIConstructor(Client cntxt, Xbackend xb){
 	while( currChar(cntxt) != '?' && currChar(cntxt))
 		nextChar(cntxt);
 	if( !xqryKeyphrase2(cntxt,"?>") )
-		return xqryError(cntxt,"'?>' expected\n");
+		return xqryError(cntxt,"'?>' expected in DirPIConstructor\n");
 	@:etrace(parseDirPIConstructor)@
 	return PARSE_OK;
 }
@@ -871,7 +877,7 @@ parseDirCommentConstructor(Client cntxt, Xbackend xb){
 		nextChar(cntxt);
 	} while(currChar(cntxt));
 	if( !xqryKeyphrase1(cntxt,">") )
-		return xqryError(cntxt,"'>' expected\n");
+		return xqryError(cntxt,"'>' expected in DirCommentConstructor\n");
 	@:etrace(parseCommentConstructor)@
 	return PARSE_OK;
 }
@@ -970,7 +976,7 @@ STATIC int parseCommonContent(Client cntxt, Xbackend xb) {
 	/* and the rest */
 	i = cstToken(cntxt, &val);
 	if (i == 0 || val.vtype != TYPE_chr)
-		return xqryError(cntxt,"<CharRef> expected\n");
+		return xqryError(cntxt,"<CharRef> expected in CommonContent\n");
 	advance(cntxt, i);
 	@:etrace(parseCommonContent)@
 	return PARSE_OK;
@@ -1001,9 +1007,9 @@ STATIC int parsePredefinedEntityRef(Client cntxt, Xbackend xb) {
 	else if (xqryKeyword(cntxt, "quot", 4));
 	else if (xqryKeyword(cntxt, "apos", 4));
 	else
-		return xqryError(cntxt,"<PredefinedEntity> expected\n");
+		return xqryError(cntxt,"<PredefinedEntity> expected in PredefinedEntityRef\n");
 	if (currChar(cntxt) != ';')
-		return xqryError(cntxt,"';' expected\n");
+		return xqryError(cntxt,"';' expected in PredefinedEntityRef\n");
 	nextChar(cntxt);
 	@:etrace(parsePredefinedEntityRef)@
 	return PARSE_OK;
@@ -1031,7 +1037,7 @@ STATIC int parseDirElementConstructor(Client cntxt, Xbackend xb) {
 	@:ptrace(parseDirElementConstructor)@
 	nextChar(cntxt);
 	if ( (i=parseQName(cntxt,xb)) <= 0) 
-		return xqryError(cntxt,"<Qname> expected\n");
+		return xqryError(cntxt,"<Qname> expected in DirElementConstructor\n");
 	parseDirAttributeList(cntxt, xb);
 
 	if (xqryKeyphrase2(cntxt, "/>")){
@@ -1040,21 +1046,21 @@ STATIC int parseDirElementConstructor(Client cntxt, Xbackend xb) {
 	}
 
 	if (currChar(cntxt) != '>')
-		return xqryError(cntxt,"'>' expected\n");
+		return xqryError(cntxt,"'>' expected in DirElementConstructor\n");
 	nextChar(cntxt);
 
 	parseDirElementContent(cntxt, xb);
 
 	if (!xqryKeyphrase2(cntxt, "</"))
-		return xqryError(cntxt,"'</' expected\n");
+		return xqryError(cntxt,"'</' expected in DirElementConstructor\n");
 
 	xqrySkipSpace(cntxt);
 	if ( (i=parseQName(cntxt,xb)) <= 0) 
-		return xqryError(cntxt,"<Qname> expected\n");
+		return xqryError(cntxt,"<Qname> expected in DirElementConstructor\n");
 
 	xqrySkipSpace(cntxt);
 	if (currChar(cntxt) != '>')
-		return xqryError(cntxt,"'>' expected\n");
+		return xqryError(cntxt,"'>' expected in DirElementConstructor\n");
 	nextChar(cntxt);
 
 	@:etrace(parseDirElementConstructor)@
@@ -1101,7 +1107,7 @@ STATIC int parseNameTest(Client cntxt, Xbackend xb) {
 		if (currChar(cntxt) == ':') {
 			nextChar(cntxt);
 			if (currChar(cntxt) != '*') {
-				return xqryError(cntxt,"'*' expected\n");
+				return xqryError(cntxt,"'*' expected in NameTest\n");
 			}
 			nextChar(cntxt);
 		} 
@@ -1113,7 +1119,7 @@ STATIC int parseNameTest(Client cntxt, Xbackend xb) {
 		if (currChar(cntxt) == ':') {
 			nextChar(cntxt);
 			if ( (i=parseNCName(cntxt,xb)) <= 0) 
-				return xqryError(cntxt,"<NCname> expected\n");
+				return xqryError(cntxt,"<NCname> expected in NameTest\n");
 		}
 	} else 
 		return PARSE_ERR;
@@ -1141,13 +1147,14 @@ STATIC int parseFunctionCall(Client cntxt, Xbackend xb) {
 		if (currChar(cntxt) == ')')
 			break;
 		if (argc && currChar(cntxt) != ',') 
-			return xqryError(cntxt,"',' expected\n");
-		nextChar(cntxt);
+			return xqryError(cntxt,"',' expected in FunctionCall\n");
+		if( argc)
+			nextChar(cntxt);
 		argc++;
 		xqrySkipSpace(cntxt);
 	} while (parseExprSingle(cntxt, xb) == PARSE_OK);
 	if (currChar(cntxt) != ')') 
-		return xqryError(cntxt,"')' expected\n");
+		return xqryError(cntxt,"')' expected in FunctionCall\n");
 	nextChar(cntxt);
 	@:etrace(parseFunctionCall)@
 	return PARSE_OK;
@@ -1173,7 +1180,7 @@ STATIC int parsePrimaryExpr(Client cntxt, Xbackend xb) {
 		nextChar(cntxt);
 		xqrySkipSpace(cntxt);
 		if ( (i=parseQName(cntxt,xb)) <= 0) 
-			return xqryError(cntxt,"<VarRef> expected\n");
+			return xqryError(cntxt,"<VarRef> expected in PrimaryExpr\n");
 		@:etrace(parsePrimaryExpr)@
 		return PARSE_OK;
 	}
@@ -1189,7 +1196,7 @@ STATIC int parsePrimaryExpr(Client cntxt, Xbackend xb) {
 		xqrySkipSpace(cntxt);
 		parseExpr(cntxt, xb);
 		if (currChar(cntxt) != ')')
-			return xqryError(cntxt,"')' expected\n");
+			return xqryError(cntxt,"')' expected in PrimaryExpr\n");
 		@:etrace(parsePrimaryExpr)@
 		nextChar(cntxt);
 		return PARSE_OK;
@@ -1198,34 +1205,35 @@ STATIC int parsePrimaryExpr(Client cntxt, Xbackend xb) {
 	if (xqryKeyword(cntxt, "ordered", 7)) {
 		xqrySkipSpace(cntxt);
 		if (currChar(cntxt) != '{')
-			return xqryError(cntxt,"'{' expected\n");
+			return xqryError(cntxt,"'{' expected in PrimaryExpr\n");
 		nextChar(cntxt);
 		if (parseExpr(cntxt, xb) == PARSE_ERR)
-			return xqryError(cntxt,"<Expr> expected\n");
+			return xqryError(cntxt,"<Expr> expected in PrimaryExpr\n");
 		xqrySkipSpace(cntxt);
 		if (currChar(cntxt) != '}')
-			return xqryError(cntxt,"'}' expected\n");
+			return xqryError(cntxt,"'}' expected in PrimaryExpr\n");
 	} else
 	/* UnorderedExpr */
 	if (xqryKeyword(cntxt, "unordered", 9)) {
 		xqrySkipSpace(cntxt);
 		if (currChar(cntxt) != '{')
-			return xqryError(cntxt,"'{' expected\n");
+			return xqryError(cntxt,"'{' expected in PrimaryExpr\n");
 		nextChar(cntxt);
 		if (parseExpr(cntxt, xb) == PARSE_ERR)
-			return xqryError(cntxt,"<Expr> expected\n");
+			return xqryError(cntxt,"<Expr> expected in PrimaryExpr\n");
 		xqrySkipSpace(cntxt);
 		if (currChar(cntxt) != '}')
-			return xqryError(cntxt,"'}' expected\n");
+			return xqryError(cntxt,"'}' expected in PrimaryExpr\n");
 	}
 	if (parseConstructor(cntxt, xb) == PARSE_OK ){
 			@:etrace(parsePrimaryExpr Constructor)@
 			return PARSE_OK;
 		}
 	if( parseFunctionCall(cntxt, xb) == PARSE_OK){
-			@:etrace(parsePrimaryExpr function)@
+			@:etrace(parsePrimaryExpr)@
 			return PARSE_OK;
 	}
+	@:etrace(parsePrimaryExpr failed)@
 	return PARSE_ERR;
 }
 
@@ -1237,9 +1245,9 @@ STATIC int parsePredicate(Client cntxt, Xbackend xb) {
 	@:ptrace(parsePredicate)@
 	xqrySkipSpace(cntxt);
 	if (parseExpr(cntxt, xb) == PARSE_ERR)
-		return xqryError(cntxt,"<Expr> expected\n");
+		return xqryError(cntxt,"<Expr> expected in Predicate\n");
 	if (currChar(cntxt) != ']')
-		return xqryError(cntxt,"']' expected\n");
+		return xqryError(cntxt,"']' expected in Predicate\n");
 	nextChar(cntxt);
 	@:etrace(parsePredicate)@
 	return PARSE_OK;
@@ -1303,7 +1311,7 @@ STATIC int parseReverseAxis(Client cntxt, Xbackend xb) {
 		return PARSE_ERR;
 	@:ptrace(parseReverseAxis)@
 	if (!xqryKeyphrase2(cntxt, "::"))
-		return xqryError(cntxt,"'::' expected\n");
+		return xqryError(cntxt,"'::' expected in ReverseAxis\n");
 	(void) ret;
 	@:etrace(parseReverseAxis)@
 	return PARSE_OK;
@@ -1357,7 +1365,7 @@ STATIC int parseForwardAxis(Client cntxt, Xbackend xb) {
 	else
 		return PARSE_ERR;
 	if (!xqryKeyphrase2(cntxt, "::"))
-		return xqryError(cntxt,"'::' expected\n");
+		return xqryError(cntxt,"'::' expectedin ForwardAxis\n");
 	(void) ret;
 	@:etrace(parseForwardAxis)@
 	return PARSE_OK;
@@ -1462,7 +1470,7 @@ int parseVarName(Client cntxt, Xbackend xb) {
 	nextChar(cntxt);
 	xqrySkipSpace(cntxt);
 	if (parseVarQName(cntxt, xb) == PARSE_ERR)
-		return xqryError(cntxt,"<QName> expected\n");
+		return xqryError(cntxt,"<QName> expected in VarName\n");
 	/* has optional type? */
 
 #ifdef _XQRY_DEBUG
@@ -1480,7 +1488,7 @@ STATIC int parsePragma(Client cntxt, Xbackend xb) {
 		return PARSE_ERR;
 	@:ptrace(parsePragma)@
 	if ( (i=parseQName(cntxt,xb)) <= 0) 
-		return xqryError(cntxt,"<QName> expected\n");
+		return xqryError(cntxt,"<QName> expected in Pragma\n");
 	i = 0;
 	do {
 		if (currChar(cntxt) == ')' && i)
@@ -1501,12 +1509,12 @@ STATIC int parseExtensionExpr(Client cntxt, Xbackend xb) {
 		xqrySkipSpace(cntxt);
 	} while (parsePragma(cntxt, xb) == PARSE_OK);
 	if (currChar(cntxt) != '(')
-		return xqryError(cntxt,"'(' expected\n");
+		return xqryError(cntxt,"'(' expected in ExtensionExpr\n");
 	nextChar(cntxt);
 	xqrySkipSpace(cntxt);
 	parseExpr(cntxt, xb);
 	if (currChar(cntxt) != ')')
-		return xqryError(cntxt,"')' expected\n");
+		return xqryError(cntxt,"')' expected in ExtensionExpr\n");
 	nextChar(cntxt);
 	@:etrace(parseExtensionExpr)@
 	return PARSE_OK;
@@ -1521,13 +1529,13 @@ STATIC int parseValidateExpr(Client cntxt, Xbackend xb) {
 	}
 	xqrySkipSpace(cntxt);
 	if (currChar(cntxt) != '(')
-		return xqryError(cntxt,"'(' expected\n");
+		return xqryError(cntxt,"'(' expected in ValidateExpr\n");
 	nextChar(cntxt);
 	xqrySkipSpace(cntxt);
 	if (parseExpr(cntxt, xb) == PARSE_ERR)
-		return xqryError(cntxt,"<Expr> expected\n");
+		return xqryError(cntxt,"<Expr> expected in ValidateExpr\n");
 	if (currChar(cntxt) != ')')
-		return xqryError(cntxt,"')' expected\n");
+		return xqryError(cntxt,"')' expected in ValidateExpr\n");
 	nextChar(cntxt);
 	@:etrace(parseValidateExpr)@
 	return PARSE_OK;
@@ -1537,7 +1545,7 @@ STATIC int parseSingleType(Client cntxt, Xbackend xb) {
 	int i;
 	@:ptrace(parseSingleType)@
 	if ( (i=parseQName(cntxt,xb)) <= 0)
-		return xqryError(cntxt,"<AtomicType> expected\n");
+		return xqryError(cntxt,"<AtomicType> expected in SingleType\n");
 	if (currChar(cntxt) == '?')
 		nextChar(cntxt);
 	@:etrace(parseSingleType)@
@@ -1596,7 +1604,7 @@ STATIC int parseCastExpr(Client cntxt, Xbackend xb) {
 	if (!xqryKeyword(cntxt, "cast", 4))
 		return PARSE_ERR;
 	if (!xqryKeyword(cntxt, "as", 2))
-		return xqryError(cntxt,"'as' expected\n");
+		return xqryError(cntxt,"'as' expected in CastExpr\n");
 	return parseSingleType(cntxt, xb);
 }
 
@@ -1608,7 +1616,7 @@ STATIC int parseCastableExpr(Client cntxt, Xbackend xb) {
 	if (!xqryKeyword(cntxt, "castable", 8))
 		return PARSE_ERR;
 	if (!xqryKeyword(cntxt, "as", 2))
-		return xqryError(cntxt,"'as' expected\n");
+		return xqryError(cntxt,"'as' expected in CatableExpr\n");
 	return parseSingleType(cntxt, xb);
 }
 
@@ -1620,7 +1628,7 @@ STATIC int parseTreatExpr(Client cntxt, Xbackend xb) {
 	if (!xqryKeyword(cntxt, "treat", 5))
 		return PARSE_ERR;
 	if (!xqryKeyword(cntxt, "as", 2))
-		return xqryError(cntxt,"'as' expected\n");
+		return xqryError(cntxt,"'as' expected in TreatExpr\n");
 	return parseSequenceType(cntxt, xb);
 }
 
@@ -1632,7 +1640,7 @@ STATIC int parseInstanceOfExpr(Client cntxt, Xbackend xb) {
 	if (!xqryKeyword(cntxt, "instance", 7))
 		return PARSE_ERR;
 	if (!xqryKeyword(cntxt, "of", 2))
-		return xqryError(cntxt,"'of' expected\n");
+		return xqryError(cntxt,"'of' expected in InstanceOfExpr\n");
 	return parseSequenceType(cntxt, xb);
 }
 
@@ -1852,7 +1860,8 @@ STATIC int parseExprSingle(Client cntxt, Xbackend xb) {
 	if (parseIfExpr(cntxt, xb) == PARSE_OK ||
 		parseTypeswitchExpr(cntxt, xb) == PARSE_OK ||
 		parseQuantifiedExpr(cntxt, xb) == PARSE_OK ||
-		parseEnclosedExpr(cntxt,xb) == PARSE_OK){
+		parseEnclosedExpr(cntxt,xb) == PARSE_OK ||
+		parseOrExpr(cntxt,xb)== PARSE_OK){
 			@:etrace(parseExprSingle)@
 			return PARSE_OK;
 		}
@@ -1881,7 +1890,7 @@ STATIC int parseCaseClause(Client cntxt, Xbackend xb) {
 	xqrySkipSpace(cntxt);
 	if (parseVarName(cntxt, xb) == PARSE_ERR) {
 		if (!xqryKeyword(cntxt, "as", 2))
-			return xqryError(cntxt,"'as' expected\n");
+			return xqryError(cntxt,"'as' expected in CaseClause\n");
 	}
 	if (parseSequenceType(cntxt, xb) == PARSE_ERR)
 		return PARSE_ERR;
@@ -1898,16 +1907,16 @@ STATIC int parseTypeswitchExpr(Client cntxt, Xbackend xb) {
 		nextChar(cntxt);
 		xqrySkipSpace(cntxt);
 	} else
-		return xqryError(cntxt,"'(' expected\n");
+		return xqryError(cntxt,"'(' expected in TypeswitchExpr\n");
 	if (parseExpr(cntxt, xb) == PARSE_ERR)
-		return xqryError(cntxt,"<Expr> expected\n");
+		return xqryError(cntxt,"<Expr> expected in TypeswitchExpr\n");
 	if (currChar(cntxt) != ')')
-		return xqryError(cntxt,"')' expected\n");
+		return xqryError(cntxt,"')' expected in TypeswitchExpr\n");
 	nextChar(cntxt);
 	xqrySkipSpace(cntxt);
 	while (parseCaseClause(cntxt, xb) == PARSE_OK);
 	if (!xqryKeyword(cntxt, "default", 7))
-		return xqryError(cntxt,"'default' expected\n");
+		return xqryError(cntxt,"'default' expected in TypeswitchExpr\n");
 	return parseReturnExprSingle(cntxt, xb);
 }
 
@@ -1917,21 +1926,21 @@ STATIC int parseIfExpr(Client cntxt, Xbackend xb) {
 		return PARSE_ERR;
 	xqrySkipSpace(cntxt);
 	if (currChar(cntxt) != '(') 
-		return xqryError(cntxt,"'(' expected\n");
+		return xqryError(cntxt,"'(' expected in IfExpr\n");
 	nextChar(cntxt);
 	xqrySkipSpace(cntxt);
 	if (parseExpr(cntxt, xb) == PARSE_ERR)
-		return xqryError(cntxt,"<Expr> expected\n");
+		return xqryError(cntxt,"<Expr> expected in IfExpr\n");
 	if (currChar(cntxt) != ')') 
-		return xqryError(cntxt,"')' expected\n");
+		return xqryError(cntxt,"')' expected in IfExpr\n");
 	nextChar(cntxt);
 		
 	if (!xqryKeyword(cntxt, "then", 4))
-		return xqryError(cntxt,"'then' expected\n");
+		return xqryError(cntxt,"'then' expected in IfExpr\n");
 	if (parseExprSingle(cntxt, xb) == PARSE_ERR)
-		return xqryError(cntxt,"<Expr> expected\n");
+		return xqryError(cntxt,"<Expr> expected in IfExpr\n");
 	if (!xqryKeyword(cntxt, "else", 4))
-		return xqryError(cntxt,"'else' expected\n");
+		return xqryError(cntxt,"'else' expected in IfExpr\n");
 	return parseExprSingle(cntxt, xb);
 }
 
@@ -1947,9 +1956,9 @@ STATIC int parseOrderByClause(Client cntxt, Xbackend xb) {
 	@:ptrace(parseOrderByClause)@
 	xqryKeyword(cntxt, "stable", 6);
 	if (!xqryKeyword(cntxt, "order", 5))
-		return xqryError(cntxt,"'order' expected\n");
+		return xqryError(cntxt,"'order' expected in OrderByClause\n");
 	if (!xqryKeyword(cntxt, "by", 2))
-		return xqryError(cntxt,"'by' expected\n");
+		return xqryError(cntxt,"'by' expected in OrderByClause\n");
 	xqrySkipSpace(cntxt);
 	do {
 		if (currChar(cntxt) == ',')
@@ -1987,7 +1996,7 @@ STATIC int parseForClause(Client cntxt, Xbackend xb) {
 			nextChar(cntxt);
 		xqrySkipSpace(cntxt);
 		if (parseVarName(cntxt, xb) == PARSE_ERR)
-			return xqryError(cntxt,"<VarName> expected\n");
+			return xqryError(cntxt,"<VarName> expected in ForClause\n");
 		xqrySkipSpace(cntxt);
 		parseTypeDeclaration(cntxt, xb);
 /* should be optional
@@ -1996,10 +2005,10 @@ STATIC int parseForClause(Client cntxt, Xbackend xb) {
 */
 		xqrySkipSpace(cntxt);
 		if (!xqryKeyword(cntxt, "in", 2))
-			return xqryError(cntxt,"'in' expected\n");
+			return xqryError(cntxt,"'in' expected in ForClause\n");
 		xqrySkipSpace(cntxt);
 		if (parseExprSingle(cntxt, xb) == PARSE_ERR)
-			return xqryError(cntxt,"<ExprSingle> expected\n");
+			return xqryError(cntxt,"<ExprSingle> expected in ForClause\n");
 	} while (currChar(cntxt) == ',');
 	@:etrace(parseForClause done)@
 	return PARSE_OK;
@@ -2012,14 +2021,14 @@ STATIC int parseLetClause(Client cntxt, Xbackend xb) {
 			nextChar(cntxt);
 		xqrySkipSpace(cntxt);
 		if (parseVarName(cntxt, xb) == PARSE_ERR)
-			return xqryError(cntxt,"<VarName> expected\n");
+			return xqryError(cntxt,"<VarName> expected in LetClause\n");
 		xqrySkipSpace(cntxt);
 		parseTypeDeclaration(cntxt, xb);
 		if (!xqryKeyphrase2(cntxt, ":="))
-			return xqryError(cntxt,"':=' expected\n");
+			return xqryError(cntxt,"':=' expected in LetClause\n");
 		xqrySkipSpace(cntxt);
 		if (parseExprSingle(cntxt, xb) == PARSE_ERR)
-			return xqryError(cntxt,"<ExprSingle> expected\n");
+			return xqryError(cntxt,"<ExprSingle> expected in LetClause\n");
 		xqrySkipSpace(cntxt);
 	} while (currChar(cntxt) == ',');
 	@:etrace(parseLetClause done)@
@@ -2043,7 +2052,7 @@ int parseFLWORExpr(Client cntxt, Xbackend xb) {
 		return PARSE_ERR;
 	if (xqryKeyword(cntxt, "where", 5)) {
 		if (parseExprSingle(cntxt, xb) == PARSE_ERR)
-			return xqryError(cntxt,"<ExprSingle> expected\n");
+			return xqryError(cntxt,"<ExprSingle> expected in FLWORExpr\n");
 	}
 	if (xqryKeyword(cntxt, "order", 5))
 		return parseOrderByClause(cntxt, xb);
@@ -2061,7 +2070,7 @@ STATIC int parseParam(Client cntxt, Xbackend xb) {
 	nextChar(cntxt);
 	xqrySkipSpace(cntxt);
 	if ( (i=parseQName(cntxt,xb)) <= 0) 
-		return xqryError(cntxt,"<QName> expected\n");
+		return xqryError(cntxt,"<QName> expected in Param\n");
 	parseTypeDeclaration(cntxt, xb);
 	return PARSE_OK;
 }
@@ -2088,15 +2097,15 @@ STATIC int parseFunctionDecl(Client cntxt, Xbackend xb) {
 		return PARSE_ERR;
 	xqrySkipSpace(cntxt);
 	if ( (i=parseQName(cntxt,xb)) <= 0) 
-		return xqryError(cntxt,"<Qname> expected\n");
+		return xqryError(cntxt,"<Qname> expected in FunctionDecl\n");
 	xqrySkipSpace(cntxt);
 	if (currChar(cntxt) != '(')
-		return xqryError(cntxt,"'(' expected\n");
+		return xqryError(cntxt,"'(' expected in FunctionDecl\n");
 	nextChar(cntxt);
 	parseParamList(cntxt, xb);
 	xqrySkipSpace(cntxt);
 	if (currChar(cntxt) != ')')
-		return xqryError(cntxt,"')' expected\n");
+		return xqryError(cntxt,"')' expected in FunctionDecl\n");
 	nextChar(cntxt);
 
 	if (xqryKeyword(cntxt, "as", 2))
@@ -2105,12 +2114,12 @@ STATIC int parseFunctionDecl(Client cntxt, Xbackend xb) {
 		return PARSE_OK;
 
 	if (currChar(cntxt) != '{')
-		return xqryError(cntxt,"'{' expected\n");
+		return xqryError(cntxt,"'{' expected in FunctionDecl\n");
 	nextChar(cntxt);
 	parseExpr(cntxt, xb);
 	xqrySkipSpace(cntxt);
 	if (currChar(cntxt) != '}')
-		return xqryError(cntxt,"'}' expected\n");
+		return xqryError(cntxt,"'}' expected in FunctionDecl\n");
 	nextChar(cntxt);
 	@:etrace(parseFunctionDecl)@
 	return PARSE_OK;
@@ -2128,7 +2137,7 @@ STATIC int parseConstructionDecl(Client cntxt, Xbackend xb) {
 			@:etrace(parseConstructionDecl)@
 			return PARSE_OK;
 		}
-	return xqryError(cntxt,"'strict' or 'preserve' expected\n");
+	return xqryError(cntxt,"'strict' or 'preserve' expected in ConstructionDecl\n");
 }
 
 STATIC int parseVarDecl(Client cntxt, Xbackend xb) {
@@ -2142,7 +2151,7 @@ STATIC int parseVarDecl(Client cntxt, Xbackend xb) {
 		return PARSE_ERR;
 	nextChar(cntxt);
 	if ( (i=parseQName(cntxt,xb)) <= 0) 
-		return xqryError(cntxt,"<QName> expected\n");
+		return xqryError(cntxt,"<QName> expected in VarDecl\n");
 	xqrySkipSpace(cntxt);
 	parseTypeDeclaration(cntxt, xb);
 
@@ -2154,7 +2163,7 @@ STATIC int parseVarDecl(Client cntxt, Xbackend xb) {
 		xqrySkipSpace(cntxt);
 		return parseSequenceType(cntxt, xb);
 	}
-	return xqryError(cntxt,"'external' or ':=' expected\n");
+	return xqryError(cntxt,"'external' or ':=' expected in VarDecl\n");
 }
 
 STATIC int parseModuleImport(Client cntxt, Xbackend xb) {
@@ -2164,26 +2173,26 @@ STATIC int parseModuleImport(Client cntxt, Xbackend xb) {
 	if (!xqryKeyword(cntxt, "import", 6))
 		return PARSE_ERR;
 	if (!xqryKeyword(cntxt, "module", 6))
-		return xqryError(cntxt,"'module' expected\n");
+		return xqryError(cntxt,"'module' expected in ModuleImport\n");
 
 	if (xqryKeyword(cntxt, "namespace", 9)) {
 		xqrySkipSpace(cntxt);
 		if (currChar(cntxt) != '=')
-			return xqryError(cntxt,"'=' expected\n");
+			return xqryError(cntxt,"'=' expected in ModuleImport\n");
 	}
 	i = stringLength(cntxt);
 	if (i)
 		strCopy(cntxt, i);
 	else
-		return xqryError(cntxt,"<URIliteral> expected\n");
+		return xqryError(cntxt,"<URIliteral> expected in ModuleImport\n");
 	if (!xqryKeyword(cntxt, "at", 2))
-		return xqryError(cntxt,"'at' expected\n");
+		return xqryError(cntxt,"'at' expected in ModuleImport\n");
 	xqrySkipSpace(cntxt);
 	i = stringLength(cntxt);
 	if (i)
 		strCopy(cntxt, i);
 	else
-		return xqryError(cntxt,"<URIliteral> expected\n");
+		return xqryError(cntxt,"<URIliteral> expected in ModuleImport\n");
 
 	xqrySkipSpace(cntxt);
 	while (currChar(cntxt) == ',') {
@@ -2192,7 +2201,7 @@ STATIC int parseModuleImport(Client cntxt, Xbackend xb) {
 		if (i)
 			strCopy(cntxt, i);
 		else
-			return xqryError(cntxt,"<URIliteral> expected\n");
+			return xqryError(cntxt,"<URIliteral> expected in ModuleImport\n");
 		xqrySkipSpace(cntxt);
 	}
 	@:etrace(parseModuleImport)@
@@ -2205,7 +2214,7 @@ STATIC int parseSchemaPrefix(Client cntxt, Xbackend xb) {
 	if (xqryKeyword(cntxt, "namespace", 9)) {
 		xqrySkipSpace(cntxt);
 		if (currChar(cntxt) != '=')
-			return xqryError(cntxt,"=' expected\n");
+			return xqryError(cntxt,"=' expected in SchemaPrefix\n");
 		nextChar(cntxt);
 		@:etrace(parseSchemaPrefix)@
 		return PARSE_OK;
@@ -2217,7 +2226,7 @@ STATIC int parseSchemaPrefix(Client cntxt, Xbackend xb) {
 			}
 		}
 	}
-	return xqryError(cntxt,"'element' 'namespace' expected\n");
+	return xqryError(cntxt,"'element' 'namespace' expected in SchemaPrefix\n");
 }
 
 STATIC int parseSchemaImport(Client cntxt, Xbackend xb) {
@@ -2232,14 +2241,14 @@ STATIC int parseSchemaImport(Client cntxt, Xbackend xb) {
 	i = stringLength(cntxt);
 	if (i)
 		strCopy(cntxt, i);
-	else return xqryError(cntxt,"<URIliteral> expected\n");
+	else return xqryError(cntxt,"<URIliteral> expected in SchemaImport\n");
 
 	if (!xqryKeyword(cntxt, "at", 2))
-		return xqryError(cntxt,"'at' expected\n");
+		return xqryError(cntxt,"'at' expected in SchemaImport\n");
 	xqrySkipSpace(cntxt);
 	if (i)
 		strCopy(cntxt, i);
-	else return xqryError(cntxt,"<URIliteral> expected\n");
+	else return xqryError(cntxt,"<URIliteral> expected in SchemaImport\n");
 
 	xqrySkipSpace(cntxt);
 	while (currChar(cntxt) == ',') {
@@ -2247,7 +2256,7 @@ STATIC int parseSchemaImport(Client cntxt, Xbackend xb) {
 		xqrySkipSpace(cntxt);
 		if (i)
 			strCopy(cntxt, i);
-		else return xqryError(cntxt,"<URIliteral> expected\n");
+		else return xqryError(cntxt,"<URIliteral> expected in SchemaImport\n");
 		xqrySkipSpace(cntxt);
 	}
 	@:etrace(parseSchemaImport)@
@@ -2265,7 +2274,7 @@ STATIC int parseBaseURIDecl(Client cntxt, Xbackend xb) {
 	i = stringLength(cntxt);
 	if (i)
 		strCopy(cntxt, i);
-	else return xqryError(cntxt,"<URIliteral> expected\n");
+	else return xqryError(cntxt,"<URIliteral> expected in BaseURIDecl\n");
 	@:etrace(parseBaseURIDecl)@
 	return PARSE_OK;
 }
@@ -2278,12 +2287,12 @@ STATIC int parseDefaultCollationDecl(Client cntxt, Xbackend xb) {
 	if (!xqryKeyword(cntxt, "default", 7))
 		return PARSE_ERR;
 	if (!xqryKeyword(cntxt, "collation", 9))
-		return xqryError(cntxt,"'collation' expected\n");
+		return xqryError(cntxt,"'collation' expected in DefaultCollationDecl\n");
 	xqrySkipSpace(cntxt);
 	i = stringLength(cntxt);
 	if (i)
 		strCopy(cntxt, i);
-	else return xqryError(cntxt,"<URIliteral> expected\n");
+	else return xqryError(cntxt,"<URIliteral> expected in DefaultCollationDecl\n");
 	@:etrace(parseeDefaultCollationDecl)@
 	return PARSE_OK;
 }
@@ -2296,13 +2305,13 @@ STATIC int parseCopyNamespacesDecl(Client cntxt, Xbackend xb) {
 		return PARSE_ERR;
 	if (xqryKeyword(cntxt, "preserve", 8) != PARSE_OK &&
 	    xqryKeyword(cntxt, "no-preserve", 11) != PARSE_OK)
-		return xqryError(cntxt,"'preserve' or 'no-preserve' expected\n");
+		return xqryError(cntxt,"'preserve' or 'no-preserve' expected in CopyNamespacesDecl\n");
 	xqrySkipSpace(cntxt);
 	if (currChar(cntxt) != ',')
-		return xqryError(cntxt,"',' expected\n");
+		return xqryError(cntxt,"',' expected in CopyNamespacesDecl\n");
 	if (xqryKeyword(cntxt, "inherit", 7) != PARSE_OK &&
 	    xqryKeyword(cntxt, "no-inherit", 10) != PARSE_OK)
-		return xqryError(cntxt,"'inherit' or 'no-inherit' expected\n");
+		return xqryError(cntxt,"'inherit' or 'no-inherit' expected in CopyNamespacesDecl\n");
 	@:etrace(parseCopyNamespacesDecl)@
 	return PARSE_OK;
 }
@@ -2314,12 +2323,12 @@ STATIC int parseEmptyOrderDecl(Client cntxt, Xbackend xb) {
 	if (!xqryKeyword(cntxt, "default", 7))
 		return PARSE_ERR;
 	if (!xqryKeyword(cntxt, "order", 5))
-		return xqryError(cntxt,"'order' expected\n");
+		return xqryError(cntxt,"'order' expected in EmptyOrderDecl\n");
 	if (!xqryKeyword(cntxt, "empty", 5))
-		return xqryError(cntxt,"'empty' expected\n");
+		return xqryError(cntxt,"'empty' expected in EmptyOrderDecl\n");
 	if (xqryKeyword(cntxt, "greatest", 8) != PARSE_OK &&
 	    xqryKeyword(cntxt, "least", 5) != PARSE_OK)
-		return xqryError(cntxt,"'greatest' or 'least' expected\n");
+		return xqryError(cntxt,"'greatest' or 'least' expected in EmptyOrderDecl\n");
 	@:etrace(parseEmptyOrderDecl)@
 	return PARSE_OK;
 }
@@ -2332,7 +2341,7 @@ STATIC int parseOrderingModeDecl(Client cntxt, Xbackend xb) {
 		return PARSE_ERR;
 	if (xqryKeyword(cntxt, "ordered", 7) != PARSE_OK &&
 	    xqryKeyword(cntxt, "unordered", 9) != PARSE_OK)
-		return xqryError(cntxt,"'orderedd' or 'unordered' expected\n");
+		return xqryError(cntxt,"'orderedd' or 'unordered' expected in OrderingModuleDecl\n");
 	@:etrace(parseOrderingModeDecl)@
 	return PARSE_OK;
 }
@@ -2346,13 +2355,13 @@ STATIC int parseOptionDecl(Client cntxt, Xbackend xb) {
 		return PARSE_ERR;
 	xqrySkipSpace(cntxt);
 	if ( (i=parseQName(cntxt,xb)) <= 0) 
-		return xqryError(cntxt,"<QName> expected\n");
+		return xqryError(cntxt,"<QName> expected in OptionDecl\n");
 	xqrySkipSpace(cntxt);
 	i = stringLength(cntxt);
 	if (i > 0)
 		strCopy(cntxt, i);
 	else
-		return xqryError(cntxt,"<URIliteral> expected\n");
+		return xqryError(cntxt,"<URIliteral> expecte in OptionDecld\n");
 	@:etrace(parseOptionDecl)@
 	return PARSE_OK;
 }
@@ -2366,15 +2375,15 @@ STATIC int parseDefaultNamespaceDecl(Client cntxt, Xbackend xb) {
 		return PARSE_ERR;
 	if (xqryKeyword(cntxt, "element", 7) != PARSE_OK &&
 	    xqryKeyword(cntxt, "function", 8) != PARSE_OK)
-		return xqryError(cntxt,"'element' or 'function' expected\n");
+		return xqryError(cntxt,"'element' or 'function' expected in DefaultNamespaceDecl\n");
 	if (!xqryKeyword(cntxt, "namespace", 9))
-		return xqryError(cntxt,"'namespace' expected\n");
+		return xqryError(cntxt,"'namespace' expected in DefaultNamespaceDecl\n");
 	xqrySkipSpace(cntxt);
 	i = stringLength(cntxt);
 	if (i > 0)
 		strCopy(cntxt, i);
 	else
-		return xqryError(cntxt,"<URIliteral> expected\n");
+		return xqryError(cntxt,"<URIliteral> expected in DefaultNamespaceDecl\n");
 	@:etrace(parseDefaultNamespaceDecl)@
 	return PARSE_OK;
 }
@@ -2386,17 +2395,17 @@ STATIC int parseNamespaceDecl(Client cntxt, Xbackend xb) {
 	if (!xqryKeyword(cntxt, "namespace", 9))
 		return PARSE_ERR;
 	if ((i=parseNCName(cntxt,xb)) <= 0) 
-		return xqryError(cntxt,"<NCName> expected\n");
+		return xqryError(cntxt,"<NCName> expected in NamespaceDecl\n");
 	xqrySkipSpace(cntxt);
 	if (currChar(cntxt) != '=')
-		return xqryError(cntxt,"'=' expected\n");
+		return xqryError(cntxt,"'=' expected in NamespaceDecl\n");
 	nextChar(cntxt);
 	xqrySkipSpace(cntxt);
 	i = stringLength(cntxt);
 	if (i > 0)
 		strCopy(cntxt, i);
 	else
-		return xqryError(cntxt,"<URIliteral> expected\n");
+		return xqryError(cntxt,"<URIliteral> expected in NamespaceDecl\n");
 	@:etrace(parseNamespaceDecl)@
 	return PARSE_OK;
 }
@@ -2409,7 +2418,7 @@ STATIC int parseBoundarySpaceDecl(Client cntxt, Xbackend xb) {
 		return PARSE_ERR;
 	if (xqryKeyword(cntxt, "preserve", 8) != PARSE_OK &&
 	    xqryKeyword(cntxt, "split", 5) != PARSE_OK)
-		return xqryError(cntxt,"'preserve' or 'split' expected\n");
+		return xqryError(cntxt,"'preserve' or 'split' expected in BoundarySpaceDecl\n");
 	@:etrace(parseBoundarySpaceDecl)@
 	return PARSE_OK;
 }
@@ -2434,7 +2443,7 @@ STATIC int parseSetter(Client cntxt, Xbackend xb) {
 	    parseOrderingModeDecl(cntxt, xb) != PARSE_OK &&
 	    parseEmptyOrderDecl(cntxt, xb) != PARSE_OK &&
 	    parseCopyNamespacesDecl(cntxt, xb) != PARSE_OK)
-		return xqryError(cntxt,"<Setter> expected\n");
+		return xqryError(cntxt,"<Setter> expected in Setter\n");
 	@:etrace(parseSetter)@
 	return PARSE_OK;
 }
@@ -2477,12 +2486,12 @@ STATIC int parseModuleDecl(Client cntxt, Xbackend xb) {
 	if (!xqryKeyword(cntxt, "module", 6))
 		return PARSE_ERR;
 	if (!xqryKeyword(cntxt, "namespace", 9))
-		return xqryError(cntxt,"'namespace' expected\n");
+		return xqryError(cntxt,"'namespace' expected in ModuleDecl\n");
 	if ((i=parseNCName(cntxt,xb)) <= 0) 
-		return xqryError(cntxt,"<NCName> expected\n");
+		return xqryError(cntxt,"<NCName> expected in ModuleDecl\n");
 	xqrySkipSpace(cntxt);
 	if (currChar(cntxt) != '=')
-		return xqryError(cntxt,"'=' expected\n");
+		return xqryError(cntxt,"'=' expected in ModuleDecl\n");
 	nextChar(cntxt);
 	xqrySkipSpace(cntxt);
 
@@ -2490,10 +2499,10 @@ STATIC int parseModuleDecl(Client cntxt, Xbackend xb) {
 	if (i > 0)
 		strCopy(cntxt, i);
 	else
-		return xqryError(cntxt,"<URILiteral> expected\n");
+		return xqryError(cntxt,"<URILiteral> expected in ModuleDecl\n");
 	xqrySkipSpace(cntxt);
 	if (currChar(cntxt) != ';')
-		return xqryError(cntxt,"';' expected\n");
+		return xqryError(cntxt,"';' expected in ModuleDecl\n");
 	nextChar(cntxt);
 	@:etrace(parseModuleDecl)@
 	return PARSE_OK;
@@ -2532,14 +2541,14 @@ STATIC int parseVersionDecl(Client cntxt, Xbackend xb) {
 		return PARSE_ERR;
 	xqrySkipSpace(cntxt);
 	if (!xqryKeyword(cntxt, "version", 7))
-		return xqryError(cntxt,"'version' expected\n");
+		return xqryError(cntxt,"'version' expected in VersionDecl\n");
 	xqrySkipSpace(cntxt);
 
 	i = stringLength(cntxt);
 	if (i > 0)
 		strCopy(cntxt, i);
 	else
-		return xqryError(cntxt,"<StringLiteral> expected\n");
+		return xqryError(cntxt,"<StringLiteral> expected in VersionDecl\n");
 	xqrySkipSpace(cntxt);
 
 	if (xqryKeyword(cntxt, "encoding", 7)) {
@@ -2548,13 +2557,13 @@ STATIC int parseVersionDecl(Client cntxt, Xbackend xb) {
 		if (i > 0)
 			strCopy(cntxt, i);
 		else
-		return xqryError(cntxt,"<StringLiteral> expected\n");
+		return xqryError(cntxt,"<StringLiteral> expected in VersionDecl\n");
 	}
 	@:etrace(parseVersionDecl)@
 	return PARSE_OK;
 }
 
-STATIC int parseXqueryModule(Client cntxt, Xbackend xb) {
+STATIC int parseXQueryModule(Client cntxt, Xbackend xb) {
 	@:ptrace(parseModule)@
 	xqrySkipSpace(cntxt);
 	parseVersionDecl(cntxt, xb);
@@ -2562,8 +2571,6 @@ STATIC int parseXqueryModule(Client cntxt, Xbackend xb) {
 	    parseMainModule(cntxt, xb) != PARSE_OK)
 		return PARSE_ERR;
 	skipSpace(cntxt);
-	if( currChar(cntxt) != ';')
-		return xqryError(cntxt,"';' expected");
 	nextChar(cntxt);
 	@:etrace(parseModule)@
 	return PARSE_OK;
@@ -2581,13 +2588,12 @@ int parseXQuery(Client cntxt) {
 	else
 	if( xqryKeyword(cntxt,"trace",5))
 		xb->mode= xqry_trace;
-	ret = parseXqueryModule(cntxt, xb);
+	ret = parseXQueryModule(cntxt, xb);
 #ifdef _XQRY_DEBUG
 		stream_printf(cntxt->fdout, "PARSE %s\n",
 				  ret == PARSE_OK ? "OK" : "ERR");
 		stream_flush(cntxt->fdout);
 #endif
-	if( ret == PARSE_ERR)
 	while(*CURRENT(cntxt) && *CURRENT(cntxt) != ';')
 		nextChar(cntxt);
 	return ret;
