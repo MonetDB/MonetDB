@@ -942,23 +942,31 @@ STATIC int
 parseFunctionCall(Client cntxt, Xbackend xb) 
 {
 	int argc = 0;
+	char *fname = NULL;
 
 	@:ptrace(parseFunctionCall)@
 	if (curToken(xb) != XT_FNAME) 
 		return PARSE_ERR;
+	fname = _strdup(xb->sval);
 	nextToken(xb);
 	do {
 		if (curToken(xb) == ')')
 			break;
-		if (argc && curToken(xb) != ',') 
+		if (argc && curToken(xb) != ',') {
+			_DELETE(fname);
 			return xqryError(cntxt,"',' expected in FunctionCall\n");
+		}
 		if (argc)
 			nextToken(xb);
 		argc++;
 	} while (parseExprSingle(cntxt, xb) == PARSE_OK);
-	if (curToken(xb) != ')') 
+	if (curToken(xb) != ')') {
+		_DELETE(fname);
 		return xqryError(cntxt,"')' expected in FunctionCall\n");
+	}
 	@:etrace(parseFunctionCall)@
+	xqryStatement(xb,"xqry",fname,argc);
+	_DELETE(fname);
 	xb->token = -1;
 	return PARSE_OK;
 }
