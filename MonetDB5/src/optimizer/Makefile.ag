@@ -7,13 +7,13 @@ MTSAFE
 lib_optimizer = {
 	DIR = pkglibdir
 	SEP = _
-	SOURCES = mal_crack.mx mal_optimizer.mx optimizer.mx  mal_factorize.mx \
+	SOURCES =  mal_crack.mx mal_optimizer.mx optimizer.mx  mal_factorize.mx \
 		mal_garbageCollector.mx mal_strengthReduction.mx \
 		mal_commonExpressions.mx mal_partitionedQuery.mx \
 		mal_emptyset.mx mal_peephole.mx mal_multiplex.mx \
 		mal_singleton.mx mal_costmodel.mx mal_reduce.mx \
 		mal_qep.mx mal_multitable.mx mal_prelude.mx \
-		mal_generators.mx mal_remoteQueries.mx
+		mal_generators.mx mal_remoteQueries.mx mal_joinsel.mx
 
 	HEADERS = h 
 	#SCRIPTS = mal
