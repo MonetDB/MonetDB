@@ -2363,11 +2363,16 @@ parseVersionDecl(Client cntxt, Xbackend xb)
 		return xqryError(cntxt,"<StringLiteral> expected in VersionDecl\n");
 	/* TODO: use the version string */
 	/* optional encoding string */
-	if (nextToken(xb) != XT_encoding) 
-		return PARSE_OK;
-	if (nextToken(xb) != XT_STR) 
-		return xqryError(cntxt,"<StringLiteral> expected in VersionDecl\n");
-	/* TODO: use the encoding string */
+	if (nextToken(xb) == XT_encoding) {
+		if (nextToken(xb) != XT_STR) {
+			return xqryError(cntxt,"<StringLiteral> expected in VersionDecl\n");
+		} else {
+			/* TODO: use the encoding string */
+			nextToken(xb);
+		}
+	}
+	if (curToken(xb) != ';')
+		return xqryError(cntxt,"';' expected in VersionDecl\n");
 	@:etrace(parseVersionDecl)@
 	xb->token = -1;
 	return PARSE_OK;
