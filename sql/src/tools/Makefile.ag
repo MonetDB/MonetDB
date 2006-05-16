@@ -92,6 +92,7 @@ scripts_h = {
 _monetdb_la_LDFLAGS = -module
 
 lib_monetdb = {
+	COND = HAVE_PYTHON_SWIG
 	PREFIX =
 	NAME = _monetdb
 	SOURCES = monetdb.py.i
@@ -100,6 +101,7 @@ lib_monetdb = {
 }
 
 headers_py = {
+	COND = HAVE_PYTHON_SWIG
         HEADERS = py
         SOURCES = monetdb.py.i
         TARGETS = monetdb.py
