@@ -185,8 +185,8 @@ sql_alter_seq(
 	(void) tpe;
 	if (rid < 0) {
 		return sql_error(sql, 02,
-				 "ALTER SEQUENCE: "
-				 "no such sequence '%s'", name);
+				"ALTER SEQUENCE: "
+				"no such sequence '%s'", name);
 	}
 	if (!schema_privs(sql->role_id, ss)) {
 		return sql_error(sql, 02,
