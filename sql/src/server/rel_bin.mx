@@ -413,7 +413,7 @@ rel2bin_join( mvc *sql, sql_rel *rel )
 				stmt *le = stmt_join(l, ld, cmp_equal);
 				stmt *re = stmt_join(r, rd, cmp_equal);
 
-				sql_subfunc *f = sql_bind_func(sql->trans->module, compare_func(s->flag), tail_type(le), tail_type(le));
+				sql_subfunc *f = sql_bind_func(sql->session->module, compare_func(s->flag), tail_type(le), tail_type(le));
 				stmt * cmp;
 
 				assert(f);
@@ -578,7 +578,7 @@ rel2bin_except( mvc *sql, sql_rel *rel )
 	for (n = right->op1.lval->h; n; n = n->next) 
 		rgrp = grp_create(column(n->data), rgrp, NULL);
 
- 	a = sql_bind_aggr(sql->trans->module, "count", NULL);
+ 	a = sql_bind_aggr(sql->session->module, "count", NULL);
 	ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a); 
 	a = sql_dup_aggr(a);
 	rs = stmt_aggr(stmt_dup(rgrp->grp), grp_dup(rgrp), a); 
@@ -606,7 +606,7 @@ rel2bin_except( mvc *sql, sql_rel *rel )
 		ls = stmt_join(stmt_dup(lm),ls,cmp_equal);
 		rs = stmt_join(stmt_mark(s,0),rs,cmp_equal);
 
- 		sub = sql_bind_func(sql->trans->module, "sql_sub", tail_type(ls), tail_type(rs));
+ 		sub = sql_bind_func(sql->session->module, "sql_sub", tail_type(ls), tail_type(rs));
 		/*s = sql_binop_(sql, NULL, "sql_sub", ls, rs);*/
 		s = stmt_binop(ls, rs, sub);
 		s = stmt_select(s, stmt_atom_int(0), cmp_gt);
@@ -693,7 +693,7 @@ rel2bin_inter( mvc *sql, sql_rel *rel )
 	for (n = right->op1.lval->h; n; n = n->next) 
 		rgrp = grp_create(column(n->data), rgrp, NULL);
 
- 	a = sql_bind_aggr(sql->trans->module, "count", NULL);
+ 	a = sql_bind_aggr(sql->session->module, "count", NULL);
 	ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a); 
 	a = sql_dup_aggr(a);
 	rs = stmt_aggr(stmt_dup(rgrp->grp), grp_dup(rgrp), a); 
@@ -717,7 +717,7 @@ rel2bin_inter( mvc *sql, sql_rel *rel )
 		ls = stmt_join(stmt_dup(lm),ls,cmp_equal);
 		rs = stmt_join(stmt_mark(s,0),rs,cmp_equal);
 
- 		min = sql_bind_func(sql->trans->module, "sql_min", tail_type(ls), tail_type(rs));
+ 		min = sql_bind_func(sql->session->module, "sql_min", tail_type(ls), tail_type(rs));
 		/*s = sql_binop_(sql, NULL, "sql_min", ls, rs);*/
 		s = stmt_binop(ls, rs, min);
 		/* A ids */

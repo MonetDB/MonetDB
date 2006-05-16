@@ -1,4 +1,4 @@
-select name, query, istable, system, clear, "temporary" from (select * from tables where tables.system = 1 union select * from tables where tables.system = 1) as a;
+select name, query, istable, system, commit_action, "temporary" from (select * from tables where tables.system = 1 union select * from tables where tables.system = 1) as a;
 
 SELECT 'null' AS TABLE_CAT,
 	schemas.name AS TABLE_SCHEM,

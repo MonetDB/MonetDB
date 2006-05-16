@@ -417,7 +417,7 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 		if (list_length(colsels) == 1) {
 			/* only one select on this column; simply keep it. */
 			list_append(newsels, stmt_dup(colsels->h->data));
-		} else if (tt->type->localtype == TYPE_str || !(min = sql_bind_func_result(sql->trans->module, "sql_min", tt, tt, tt)) || !(max = sql_bind_func_result(sql->trans->module, "sql_max", tt, tt, tt))) {
+		} else if (tt->type->localtype == TYPE_str || !(min = sql_bind_func_result(sql->session->module, "sql_min", tt, tt, tt)) || !(max = sql_bind_func_result(sql->session->module, "sql_max", tt, tt, tt))) {
 			/* no "min" and/or "max" available on this data type, hence, we cannot apply the following "tricks" */
 			list_merge(newsels, colsels, (fdup) &stmt_dup);
 		} else {
@@ -753,7 +753,7 @@ stmt_hash( mvc *sql, list *l )
 		stmt *s = stmt_dup(m->data);
 
 		if (h) {
-			sql_subfunc *xor = sql_bind_func_result3(sql->trans->module, "rotate_xor_hash", it, it, tail_type(s), it);
+			sql_subfunc *xor = sql_bind_func_result3(sql->session->module, "rotate_xor_hash", it, it, tail_type(s), it);
 
 			h = stmt_Nop(stmt_list( list_append( list_append(
 				list_append(create_stmt_list(), h), 
@@ -762,7 +762,7 @@ stmt_hash( mvc *sql, list *l )
 				xor);
 			bits += 8;
 		} else {
-			sql_subfunc *hf = sql_bind_func_result(sql->trans->module, "hash", tail_type(s), NULL, it);
+			sql_subfunc *hf = sql_bind_func_result(sql->session->module, "hash", tail_type(s), NULL, it);
 			h = stmt_unop(s, hf);
 		}
 	}
@@ -792,7 +792,7 @@ stmt_reljoin_( mvc *sql, list *l1, list *l2 )
 		stmt *re = stmt_join(r, rd, cmp_equal);
 		/* intentional both tail_type's of le (as re sometimes is a
 		   find for bulk loading */
-		sql_subfunc *f=sql_bind_func(sql->trans->module, "=", tail_type(le), tail_type(le));
+		sql_subfunc *f=sql_bind_func(sql->session->module, "=", tail_type(le), tail_type(le));
 
 		stmt * cmp;
 

@@ -21,25 +21,25 @@ Over..
 # 12:48:06 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45579  < insert_delete-bug-sf-904025.sql
 # 12:48:06 >  
 
-[ 22	]
+[ 26	]
 # sys.tmp # table_name
 # count_name # name
 # int # type
 # 2 # length
-[ 22	]
-[ 22	]
+[ 26	]
+[ 26	]
 # sys.tmp # table_name
 # count_name # name
 # int # type
 # 10 # length
 [ 0	]
-[ 22	]
+[ 26	]
 # sys.tmp # table_name
 # count_name # name
 # int # type
 # 2 # length
-[ 22	]
-[ 22	]
+[ 26	]
+[ 26	]
 # sys.tmp # table_name
 # count_name # name
 # int # type

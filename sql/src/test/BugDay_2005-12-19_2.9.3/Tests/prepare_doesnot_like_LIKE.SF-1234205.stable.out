@@ -32,28 +32,32 @@ Over..
 # 10 # length
 [ "modules"	]
 [ "schemas"	]
-[ "ptables"	]
-[ "pcolumns"	]
+[ "types"	]
+[ "functions"	]
+[ "args"	]
+[ "_tables"	]
+[ "_columns"	]
 [ "keys"	]
 [ "idxs"	]
 [ "triggers"	]
 [ "keycolumns"	]
-[ "types"	]
-[ "functions"	]
-[ "args"	]
-[ "ttables"	]
-[ "tcolumns"	]
+[ "_tables"	]
+[ "_columns"	]
+[ "keys"	]
+[ "idxs"	]
+[ "triggers"	]
+[ "keycolumns"	]
 [ "tables"	]
 [ "columns"	]
-[ "profile"	]
-[ "sessions"	]
-[ "env"	]
 [ "sequences"	]
 [ "db_users"	]
 [ "user_role"	]
 [ "auths"	]
 [ "privileges"	]
 [ "users"	]
+[ "env"	]
+[ "profile"	]
+[ "sessions"	]
 # prepare,	prepare,	prepare # table_name
 # type,	digits,	scale # name
 # varchar,	int,	int # type
@@ -63,8 +67,8 @@ Over..
 # varchar # type
 # 9 # length
 [ "schemas"	]
-[ "sessions"	]
 [ "sequences"	]
+[ "sessions"	]
 
 # 15:04:24 >  
 # 15:04:24 >  Done.

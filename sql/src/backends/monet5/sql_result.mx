@@ -427,8 +427,7 @@ BAT *
 mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz, int location)
 {
 	int i = 0;
-	sql_trans *tr = m->trans;
-	sql_table *t = mvc_bind_table(m, tr->schema, tname, location);
+	sql_table *t = mvc_bind_table(m, m->session->schema, tname, location);
 	node *n;
 	BAT *bats = NULL;
 	Tablet as;
@@ -893,7 +892,7 @@ mvc_export_operation(mvc *m, stream *s)
 		if (!s || stream_write(s, "&3\n", 3, 1) != 1)
 			return -1;
 	} else {
-		if (m->auto_commit) {
+		if (m->session->auto_commit) {
 			if (stream_write(s, "&4 t\n", 5, 1) != 1)
 				return -1;
 		} else {
@@ -1096,7 +1095,7 @@ mvc_export_chunk(mvc *m, stream *s, int res_id, unsigned int offset, unsigned in
 int
 mvc_result_table(mvc *m, int nr_cols, int type, BAT *order)
 {
-	res_table *t = res_table_create(m->trans, m->result_id++, nr_cols, type, m->results);
+	res_table *t = res_table_create(m->session->tr, m->result_id++, nr_cols, type, m->results);
 
 	t->order = order->batCacheid;
 	bat_incref(t->order, TRUE, "mvc_result_table");
@@ -1107,7 +1106,7 @@ mvc_result_table(mvc *m, int nr_cols, int type, BAT *order)
 int
 mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b)
 {
-	res_col *c = res_col_create(m->trans, m->results, tn, name, typename, digits, scale);
+	res_col *c = res_col_create(m->session->tr, m->results, tn, name, typename, digits, scale);
 
 	c->b = b->batCacheid;
 	bat_incref(c->b, TRUE, "mvc_result_column");
@@ -1117,7 +1116,7 @@ mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int 
 int
 mvc_result_value(mvc *m, char *tn, char *name, char *typename, int digits, int scale, ptr *p, int mtype)
 {
-	res_col *c = res_col_create(m->trans, m->results, tn, name, typename, digits, scale);
+	res_col *c = res_col_create(m->session->tr, m->results, tn, name, typename, digits, scale);
 
 	c->mtype = mtype;
 	c->p = ATOMdup(mtype, p);

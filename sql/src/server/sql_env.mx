@@ -67,9 +67,10 @@ extern int sql_set_var_value(mvc *sql, char *name, char *value);
 extern char *sql_get_var(mvc *sql, char *name);
 extern char *sql_get_type(mvc *sql, char *name);
 
-extern int sql_create_sessions(mvc *sql, sql_schema *s);
-extern int sql_create_profile(mvc *sql, sql_schema *s);
-extern int sql_session(mvc *sql);
+extern int sql_create_env(mvc *sql, sql_schema *s);
+extern int sql_create_sessions(mvc *sql, sql_schema *tmp);
+extern int sql_create_profile(mvc *sql, sql_schema *tmp);
+extern int sql_sessions(mvc *sql);
 
 #endif /* _SQL_ENV_H_ */
 @c
@@ -96,8 +97,8 @@ mvc_debug_on(mvc *m, int flg)
 char *
 sql_get_var(mvc *m, char *name)
 {
-	sql_trans *tr = m->trans;
-	sql_schema *sys;
+	sql_trans *tr = m->session->tr;
+	sql_schema *tmp;
 	sql_table *sessions;
 	sql_column *s_name;
 	ssize_t rid;
@@ -105,8 +106,8 @@ sql_get_var(mvc *m, char *name)
 
 	if (!tr)
 		return NULL;
-	sys = mvc_bind_schema(m, "sys");
-	sessions = mvc_bind_table(m, sys, "sessions", LOCATION);
+	tmp = mvc_bind_schema(m, "tmp");
+	sessions = mvc_bind_table(m, tmp, "sessions", LOCATION);
 	s_name = mvc_bind_column(m, sessions, "name");
 	rid = column_find_row(tr, s_name, name, NULL);
 
@@ -121,9 +122,9 @@ sql_get_var(mvc *m, char *name)
 char *
 sql_get_type(mvc *m, char *name)
 {
-	sql_trans *tr = m->trans;
-	sql_schema *sys = mvc_bind_schema(m, "sys");
-	sql_table *sessions = mvc_bind_table(m, sys, "sessions", LOCATION);
+	sql_trans *tr = m->session->tr;
+	sql_schema *tmp = mvc_bind_schema(m, "tmp");
+	sql_table *sessions = mvc_bind_table(m, tmp, "sessions", LOCATION);
 	sql_column *s_name = mvc_bind_column(m, sessions, "name");
 	ssize_t rid = column_find_row(tr, s_name, name, NULL);
 	char *type = NULL;
@@ -139,9 +140,9 @@ sql_get_type(mvc *m, char *name)
 int
 sql_get_access(mvc *m, char *name)
 {
-	sql_trans *tr = m->trans;
-	sql_schema *sys = mvc_bind_schema(m, "sys");
-	sql_table *sessions = mvc_bind_table(m, sys, "sessions", LOCATION);
+	sql_trans *tr = m->session->tr;
+	sql_schema *tmp = mvc_bind_schema(m, "tmp");
+	sql_table *sessions = mvc_bind_table(m, tmp, "sessions", LOCATION);
 	sql_column *s_name = mvc_bind_column(m, sessions, "name");
 	ssize_t rid = column_find_row(tr, s_name, name, NULL);
 	int access = -1;
@@ -212,8 +213,8 @@ set_var(mvc *sql, char *name, symbol *val, char *typename)
 {
 	sql_subtype ctype;
 	scope *scp = scope_open(NULL);
-	sql_schema *sys = mvc_bind_schema(sql, "sys");
-	sql_table *sessions = mvc_bind_table(sql, sys, "sessions", LOCATION);
+	sql_schema *tmp = mvc_bind_schema(sql, "tmp");
+	sql_table *sessions = mvc_bind_table(sql, tmp, "sessions", LOCATION);
 	/* sessions bat is a temp ie use INS instead of UPD */
 	tvar *tv = scope_add_table_columns(sql, scp, sessions, sessions->base.name, INS);
 	stmt *st, *v = sql_value_exp(sql, scp, val, NULL, NULL, sql_sel);
@@ -272,9 +273,9 @@ sql_set_var_value(mvc *m, char *name, char *value)
 {
 	int res = -1;
 
-	sql_trans *tr = m->trans;
-	sql_schema *sys = mvc_bind_schema(m, "sys");
-	sql_table *sessions = mvc_bind_table(m, sys, "sessions", LOCATION);
+	sql_trans *tr = m->session->tr;
+	sql_schema *tmp = mvc_bind_schema(m, "tmp");
+	sql_table *sessions = mvc_bind_table(m, tmp, "sessions", LOCATION);
 	sql_column *s_name = mvc_bind_column(m, sessions, "name");
 	ssize_t rid = column_find_row(tr, s_name, name, NULL);
 
@@ -354,9 +355,9 @@ sql_declare_var(mvc *m, symbol *s)
 {
 	if (s->token == SQL_DECLARE) {
 		int rw = SESSION_RW;
-		sql_trans *tr = m->trans;
-		sql_schema *sys = mvc_bind_schema(m, "sys");
-		sql_table *sessions = mvc_bind_table(m, sys, "sessions", LOCATION);
+		sql_trans *tr = m->session->tr;
+		sql_schema *tmp = mvc_bind_schema(m, "tmp");
+		sql_table *sessions = mvc_bind_table(m, tmp, "sessions", LOCATION);
 		sql_column *s_name = mvc_bind_column(m, sessions, "name");
 		dlist *l = s->data.lval;
 		char *name = l->h->data.sval;
@@ -380,12 +381,12 @@ They don't survive session boundaries
 Handling of SQL variables is straightforward.
 @c
 int
-sql_session(mvc *m)
+sql_sessions(mvc *m)
 {
 	char buf[BUFSIZ];
-	sql_trans *tr = m->trans;
-	sql_schema *sys = mvc_bind_schema(m, "sys");
-	sql_table *s = mvc_bind_table(m, sys, "sessions", LOCATION);
+	sql_trans *tr = m->session->tr;
+	sql_schema *tmp = mvc_bind_schema(m, "tmp");
+	sql_table *s = mvc_bind_table(m, tmp, "sessions", LOCATION);
 	int rw = SESSION_RW, ro = SESSION_RO;
 
 	snprintf(buf, BUFSIZ, "%d", m->debug);
@@ -399,7 +400,7 @@ sql_session(mvc *m)
 	else if (m->explain == m_profile)
 		table_insert(tr, s, "explain", "profile", "varchar", &rw, NULL);
 
-	table_insert(tr, s, "current_schema", m->schema, "varchar", &ro, NULL);
+	table_insert(tr, s, "current_schema", m->session->schema_name, "varchar", &ro, NULL);
 
 	/* MonetDB/SQL user/current_user/session_user (authorization id) */
 	table_insert(tr, s, "current_user", m->user, "varchar", &ro, NULL);
@@ -421,10 +422,8 @@ sql_session(mvc *m)
 int
 sql_create_sessions(mvc *m, sql_schema *s)
 {
-	BUN p, q;
-	sql_table *t;
+	sql_table *t = mvc_create_table(m, s, "sessions", 1, SQL_GLOBAL_TEMP, CA_PRESERVE, -1, LOCATION, REPLICATION);
 
-	t = mvc_create_table(m, s, "sessions", 1, 1, 1,1, LOCATION, REPLICATION);
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "value", "varchar", 2048);
 	mvc_create_column_(m, t, "type", "varchar", 1024);
@@ -435,16 +434,24 @@ sql_create_sessions(mvc *m, sql_schema *s)
 	   set role bla
 	   2    read only
 	 */
+	return 0;
+}
 
-	t = mvc_create_table(m, s, "env", 1, 1, 0,1, LOCATION, REPLICATION);
+int
+sql_create_env(mvc *m, sql_schema *s)
+{
+	BUN p, q;
+
+	/* TODO change to view AS BATS ? */
+	sql_table *t = mvc_create_table(m, s, "env", 1, SQL_PERSIST, 0, -1, LOCATION, REPLICATION);
+
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "value", "varchar", 2048);
-
 	BATloop(GDKenv, p, q) {
 		char *name = BUNhead(GDKenv, p);
 		char *val = BUNtail(GDKenv, p);
 
-		table_insert(m->trans, t, name, val, NULL);
+		table_insert(m->session->tr, t, name, val, NULL);
 	}
 	return 0;
 }
@@ -458,7 +465,7 @@ the MonetDB kernel profiler, e.g. using Mknife
 int
 sql_create_profile(mvc *m, sql_schema *s)
 {
-	sql_table *t = mvc_create_table(m, s, "profile", 1, 1, 0,1, LOCATION, REPLICATION);
+	sql_table *t = mvc_create_table(m, s, "profile", 1, SQL_GLOBAL_TEMP, CA_PRESERVE, -1, LOCATION, REPLICATION);
 
 	mvc_create_column_(m, t, "start", "timestamp", 0);
 	mvc_create_column_(m, t, "query", "varchar", 2048);

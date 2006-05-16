@@ -93,24 +93,28 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 	   (ie tableref->data.lval->h->next->data.sym */
 
 	if (tableref->token == SQL_NAME) {
-		/*sql_schema *s = qname_schema(sql, tableref->data.lval->h->data.lval);*/
-		sql_schema *s = qname_schema(sql, tableref->data.lval->h->data.sym);		/*Changed to support replication*/
-			
-
+		char *sname = qname_schema(tableref->data.lval->h->data.sym);		/*Changed to support replication*/
+		sql_schema *s = NULL;
 	/*For replication we need to change here*/
-		/*tname = qname_table(tableref->data.lval->h->data.lval);*/
-		tname = qname_table(tableref->data.lval->h->data.sym);			/*Changed to support replication*/
 		char *host = qname_host(tableref->data.lval->h->data.sym);
 		int location = table_location(sql,host);
 		if(location == -1){
 			(void) sql_error(sql, 02, "SELECT: no such database '%s'", host);
 			return NULL;
 		}		
-		if (!s) {
-			(void) sql_error(sql, 02, "SELECT: no such schema");
+		tname = qname_table(tableref->data.lval->h->data.sym);			/*Changed to support replication*/
+
+		if (sname && !(s=mvc_bind_schema(sql,sname))) {
+			(void) sql_error(sql, 02, "SELECT: no such schema '%s'", sname);
 			return NULL;
 		}
-		t = mvc_bind_table(sql, s, tname,location);
+		if (!s)
+			s = cur_schema(sql);
+		t = mvc_bind_table(sql, s, tname, location);
+		if (!t && !sname) {
+			s = tmp_schema(sql);
+			t = mvc_bind_table(sql, s, tname, location);
+		}
 		if (!t) {
 			(void) sql_error(sql, 02, "SELECT: no such table '%s' for database %s", tname,host);
 
@@ -687,7 +691,7 @@ sql_cast(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		if (tpe->digits > 0) {
 			sql_subtype *st = tail_type(l);
 			sql_subtype *it = sql_bind_localtype("int");
-			sql_subfunc *c = sql_bind_func(sql->trans->module, "truncate", st, it);
+			sql_subfunc *c = sql_bind_func(sql->session->module, "truncate", st, it);
 			if (c)
 				l = stmt_binop(l, stmt_atom_int(tpe->digits), c);
 		}
@@ -711,7 +715,7 @@ sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3)
 	list_append(sl, a3);
 	list_append(tl, tail_type(a3));
 
-	f = sql_bind_func_(sql->trans->module, fname, tl);
+	f = sql_bind_func_(sql->session->module, fname, tl);
 	list_destroy(tl);
 	if (f)
 		return stmt_Nop(stmt_list(sl), f);
@@ -737,12 +741,12 @@ sql_Nop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
 		list_append(sl, op);
 		list_append(tl, tail_type(op));
 	}
-	f = sql_bind_func_(sql->trans->module, l->data.sval, tl);
+	f = sql_bind_func_(sql->session->module, l->data.sval, tl);
 	list_destroy(tl);
 	if (f) {
 		return stmt_Nop(stmt_list(sl), f);
 	} else {
-		if ((f = sql_bind_member(sql->trans->module, l->data.sval, tail_type(sl->h->data), list_length(sl))) != NULL) {
+		if ((f = sql_bind_member(sql->session->module, l->data.sval, tail_type(sl->h->data), list_length(sl))) != NULL) {
 			node *n, *m;
 			list *nsl = create_stmt_list();
 
@@ -787,9 +791,9 @@ sql_binop_(mvc *sql, scope *scp, char *fname, stmt *ls, stmt *rs)
 		ls = stmt_join(scope_find_pivot(scp, ls->h), ls, cmp_equal);
 		rs = stmt_join(scope_find_pivot(scp, rs->h), rs, cmp_equal);
 	}
-	f = sql_bind_func(sql->trans->module, fname, t1, t2);
+	f = sql_bind_func(sql->session->module, fname, t1, t2);
 	if (!f && is_commutative(fname)) {
-		f = sql_bind_func(sql->trans->module, fname, t2, t1);
+		f = sql_bind_func(sql->session->module, fname, t2, t1);
 		if (f) {
 			sql_subtype *tmp = t1;
 			t1 = t2;	
@@ -814,7 +818,7 @@ sql_binop_(mvc *sql, scope *scp, char *fname, stmt *ls, stmt *rs)
 	} else {
 		int digits = t1->digits + t2->digits;
 
-		if ((f = sql_bind_member(sql->trans->module, fname, t1, 2)) != NULL) {
+		if ((f = sql_bind_member(sql->session->module, fname, t1, 2)) != NULL) {
 			/* try finding function based on first argument */
 			node *m = f->func->ops->h;
 			sql_arg *a = m->next->data;
@@ -826,7 +830,7 @@ sql_binop_(mvc *sql, scope *scp, char *fname, stmt *ls, stmt *rs)
 			/* try operators */
 			t1 = tail_type(ls);
 			t2 = tail_type(rs);
-			f = sql_bind_func(sql->trans->module, fname, t1, t2);
+			f = sql_bind_func(sql->session->module, fname, t1, t2);
 			if (f) {
 				if (f->func->res.scale == SCALE_FIX) {
 					ls = fix_scale(sql, t2, ls, 0, 0);
@@ -948,7 +952,7 @@ sql_op(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset)
 	(void) grp;
 	(void) subset;		/* Stefan: unused!? */
 
-	f = sql_bind_func(sql->trans->module, l->data.sval, NULL, NULL);
+	f = sql_bind_func(sql->session->module, l->data.sval, NULL, NULL);
 	if (f) {
 		return stmt_op(f);
 	} else {
@@ -969,11 +973,11 @@ sql_unop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
 	if (!rs)
 		return NULL;
 	rt = tail_type(rs);
-	f = sql_bind_func(sql->trans->module, fname, rt, NULL);
+	f = sql_bind_func(sql->session->module, fname, rt, NULL);
 	/* try to find the function without a type, and convert
 	 * the value to the type needed by this function!
 	 */
-	if (!f && (f = sql_find_func(sql->trans->module, fname, 1)) != NULL) {
+	if (!f && (f = sql_find_func(sql->session->module, fname, 1)) != NULL) {
 		sql_arg *a = f->func->ops->h->data;
 
 		rs = check_types(sql, &a->type, rs, type_equal);
@@ -1028,7 +1032,7 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 			return sql_error(sql, 02, "%s: unable to perform '%s(*)'", toUpper(alloca(strlen(l->h->data.sval) + 1), l->h->data.sval), l->h->data.sval);
 		}
 		if (grp) {
-			a = sql_bind_aggr(sql->trans->module, aggrstr, NULL);
+			a = sql_bind_aggr(sql->session->module, aggrstr, NULL);
 			return stmt_aggr(stmt_dup(grp->grp), grp_dup(grp), a);
 		}
 		cv = scope_first_column(scp);
@@ -1062,7 +1066,7 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 	}
 	if (!s)
 		return NULL;
-	a = sql_bind_aggr(sql->trans->module, aggrstr, tail_type(s));
+	a = sql_bind_aggr(sql->session->module, aggrstr, tail_type(s));
 	if (a) {
 		/* type may have changed, ie. need to 
 			fix_scale (avg(dec(sht)) -> double */
@@ -1565,7 +1569,7 @@ sql_except(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols, int distinct )
 
 			rgrp = grp_create(r, rgrp, NULL);
 		}
- 		a = sql_bind_aggr(sql->trans->module, "count", NULL);
+ 		a = sql_bind_aggr(sql->session->module, "count", NULL);
 		ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a); 
 		a = sql_dup_aggr(a);
 		rs = stmt_aggr(stmt_dup(rgrp->grp), grp_dup(rgrp), a); 
@@ -1675,7 +1679,7 @@ sql_intersect(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols, int distinct )
 
 			rgrp = grp_create(r, rgrp, NULL);
 		}
- 		a = sql_bind_aggr(sql->trans->module, "count", NULL);
+ 		a = sql_bind_aggr(sql->session->module, "count", NULL);
 		ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a); 
 		a = sql_dup_aggr(a);
 		rs = stmt_aggr(stmt_dup(rgrp->grp), grp_dup(rgrp), a); 
@@ -2165,8 +2169,8 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 				char *buf;
 				sql_subtype *it = sql_bind_localtype("int");
 				sql_subtype *bt = sql_bind_localtype("bit");
-				sql_subaggr *cnt = sql_bind_aggr(sql->trans->module, "count", NULL);
-				sql_subfunc *ne = sql_bind_func_result(sql->trans->module, "<>", it, it, bt);
+				sql_subaggr *cnt = sql_bind_aggr(sql->session->module, "count", NULL);
+				sql_subfunc *ne = sql_bind_func_result(sql->session->module, "<>", it, it, bt);
 				stmt *cond = stmt_binop(stmt_aggr(stmt_dup(sqa), NULL, cnt), stmt_atom_int(1), ne);
 				buf = _strdup("SELECT: subquery returned more than one row");
 				sqa = stmt_exception(sqa, cond, buf, 00001);
@@ -2213,8 +2217,8 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 						char *buf;
 						sql_subtype *it = sql_bind_localtype("int");
 						sql_subtype *bt = sql_bind_localtype("bit");
-						sql_subaggr *cnt = sql_bind_aggr(sql->trans->module, "count", NULL);
-						sql_subfunc *ne = sql_bind_func_result(sql->trans->module, "<>", it, it, bt);
+						sql_subaggr *cnt = sql_bind_aggr(sql->session->module, "count", NULL);
+						sql_subfunc *ne = sql_bind_func_result(sql->session->module, "<>", it, it, bt);
 						stmt *cond = stmt_binop(stmt_aggr(stmt_dup(cmp), NULL, cnt), stmt_aggr(stmt_semijoin(stmt_dup(ls), stmt_dup(cmp)), NULL, cnt), ne);
 						buf = _strdup("SELECT: subquery returned more than one row");
 						cmp = stmt_exception(cmp, cond, buf, 00001);
@@ -2411,8 +2415,8 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		rs2 = check_types(sql, ct, rs2, type_equal);
 		if (symmetric) {
 			stmt *tmp = NULL;
-			sql_subfunc *min = sql_bind_func(sql->trans->module, "min", tail_type(rs1), tail_type(rs2));
-			sql_subfunc *max = sql_bind_func(sql->trans->module, "max", tail_type(rs1), tail_type(rs2));
+			sql_subfunc *min = sql_bind_func(sql->session->module, "min", tail_type(rs1), tail_type(rs2));
+			sql_subfunc *max = sql_bind_func(sql->session->module, "max", tail_type(rs1), tail_type(rs2));
 
 			if (!min || !max) {
 				return sql_error(sql, 02, "min or max operator on types %s %s missing", tail_type(rs1)->type->sqlname, tail_type(rs2)->type->sqlname);
@@ -2484,11 +2488,11 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		if (ls->nrcols == 0 || f == sql_sel) {
 			sql_subtype *bt = sql_bind_localtype("bit");
 			sql_subtype *s = sql_bind_localtype("str");
-			sql_subfunc *like = sql_bind_func_result(sql->trans->module, "like", s, s, bt);
+			sql_subfunc *like = sql_bind_func_result(sql->session->module, "like", s, s, bt);
 
 			res = stmt_binop(ls, a, like);
 			if (sc->token != SQL_LIKE) {
-				sql_subfunc *not = sql_bind_func_result(sql->trans->module, "not", bt, NULL, bt);
+				sql_subfunc *not = sql_bind_func_result(sql->session->module, "not", bt, NULL, bt);
 
 				res = stmt_unop(stmt_dup(res), not);
 			}
@@ -2546,7 +2550,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 					sql_subaggr *exist;
 
 					/* exist(temp,ls) */
-					exist = sql_bind_aggr(sql->trans->module, "exist", tp);
+					exist = sql_bind_aggr(sql->session->module, "exist", tp);
 					temp = stmt_reverse(temp);
 					return stmt_aggr2(temp, ls, exist);
 				} else if (f == sql_sel) {
@@ -2554,8 +2558,8 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 					sql_subtype *tp = tail_type(ls);
 					sql_subfunc *isnul, *not;
 
-					isnul = sql_bind_func_result(sql->trans->module, "isnull", tp, NULL, bt);
-					not = sql_bind_func_result(sql->trans->module, "not", bt, NULL, bt);
+					isnul = sql_bind_func_result(sql->session->module, "isnull", tp, NULL, bt);
+					not = sql_bind_func_result(sql->session->module, "not", bt, NULL, bt);
 					return stmt_unop(stmt_unop(stmt_outerjoin(ls, stmt_reverse(temp), cmp_equal), isnul), not);
 				} else {	/* normal subquery */
 					return stmt_reverse(stmt_semijoin(stmt_reverse(ls), stmt_reverse(temp)));
@@ -2569,7 +2573,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 					/* [not_exist](temp,ls) */
 					/* not_exit needed to handle
 					   null correctly */
-					nexist = sql_bind_aggr(sql->trans->module, "not_exist", tp);
+					nexist = sql_bind_aggr(sql->session->module, "not_exist", tp);
 					temp = stmt_reverse(temp);
 					return stmt_aggr2(temp, ls, nexist);
 				} else if (f == sql_sel) {
@@ -2577,7 +2581,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 					sql_subtype *tp = tail_type(ls);
 					sql_subfunc *isnul;
 
-					isnul = sql_bind_func_result(sql->trans->module, "isnull", tp, NULL, bt);
+					isnul = sql_bind_func_result(sql->session->module, "isnull", tp, NULL, bt);
 					return stmt_unop(stmt_outerjoin(ls, stmt_reverse(temp), cmp_equal), isnul);
 				} else {	/* normal subquery */
 					return stmt_diff(stmt_dup(ls), stmt_join(ls, stmt_reverse(temp), cmp_equal));
@@ -2606,10 +2610,10 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 
 					if (sc->token == SQL_IN) {
 						/* exist(rs,ls) */
-						exist = sql_bind_aggr(sql->trans->module, "exist", tp);
+						exist = sql_bind_aggr(sql->session->module, "exist", tp);
 					} else {
 						/* exist(rs,ls) */
-						exist = sql_bind_aggr(sql->trans->module, "not_exist", tp);
+						exist = sql_bind_aggr(sql->session->module, "not_exist", tp);
 					}
 					rs = stmt_reverse(rs);
 					return stmt_aggr2(rs, ls, exist);
@@ -2641,11 +2645,11 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 
 					if (sc->token == SQL_IN) {
 						/* exist(rs,ls) */
-						exist = sql_bind_aggr(sql->trans->module, "exist", tp);
+						exist = sql_bind_aggr(sql->session->module, "exist", tp);
 					} else {
 						/* [not_exist](temp,ls) */
 						/* not_exit needed to handle null correctly */
-						exist = sql_bind_aggr(sql->trans->module, "not_exist", tp);
+						exist = sql_bind_aggr(sql->session->module, "not_exist", tp);
 					}
 					rs = stmt_reverse(rs);
 					return stmt_aggr2(rs, ls, exist);
@@ -2664,9 +2668,9 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 					sql_subtype *tp = tail_type(ls);
 					sql_subfunc *isnul;
 
-					isnul = sql_bind_func_result(sql->trans->module, "isnull", tp, NULL, bt);
+					isnul = sql_bind_func_result(sql->session->module, "isnull", tp, NULL, bt);
 					if (sc->token == SQL_IN) {
-						sql_subfunc *not = sql_bind_func_result(sql->trans->module, "not", bt, NULL, bt);
+						sql_subfunc *not = sql_bind_func_result(sql->session->module, "not", bt, NULL, bt);
 						return stmt_unop(stmt_unop(stmt_outerjoin(ls, stmt_reverse(rs), cmp_equal), isnul), not);
 					} else {
 						return stmt_unop(stmt_outerjoin(ls, stmt_reverse(rs), cmp_equal), isnul);
@@ -2707,15 +2711,15 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 			if (s->nrcols == 0) {
 				s = stmt_append(stmt_temp(tail_type(s)), stmt_dup(s));
 			}
-			cnt = sql_bind_aggr(sql->trans->module, "count", NULL);
+			cnt = sql_bind_aggr(sql->session->module, "count", NULL);
 			res = stmt_dup(s);
 			res = stmt_aggr(res, NULL, cnt);
 			if (sc->token == SQL_EXISTS) {
-				sql_subfunc *ne = sql_bind_func_result(sql->trans->module, "<>", it, it, bt);
+				sql_subfunc *ne = sql_bind_func_result(sql->session->module, "<>", it, it, bt);
 
 				res = stmt_binop(res, stmt_atom_int(0), ne);
 			} else {	/* NOT EXISTS */
-				sql_subfunc *e = sql_bind_func_result(sql->trans->module, "=", it, it, bt);
+				sql_subfunc *e = sql_bind_func_result(sql->session->module, "=", it, it, bt);
 
 				res = stmt_binop(res, stmt_atom_int(0), e);
 			}
@@ -2764,7 +2768,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		symbol *lo = sc->data.sym;
 		stmt *ls = sql_logical_exp(sql, scp, lo, grp, subset, f);
 		sql_subtype *bt = sql_bind_localtype("bit");
-		sql_subfunc *not = sql_bind_func_result(sql->trans->module, "not", bt, NULL, bt);
+		sql_subfunc *not = sql_bind_func_result(sql->session->module, "not", bt, NULL, bt);
 		
 		if (!ls)
 			return NULL;

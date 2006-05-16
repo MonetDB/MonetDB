@@ -33,18 +33,22 @@ phase of the scenario.
 /* #define _SQL_READER_DEBUG */
 /* #define _SQL_PARSER_DEBUG */
 
-sql_export str SQLexitClient(Client c);
-sql_export str SQLinitClient(Client c);
+sql_export str SQLsession(str *ret);
+sql_export str SQLprelude();
+sql_export str SQLepilogue();
+
 sql_export str SQLexit(Client c);
 sql_export str SQLinit(Client c);
+sql_export str SQLexitClient(Client c);
+sql_export str SQLinitClient(Client c);
+sql_export str SQLreader(Client c);
+sql_export str SQLparser(Client c);
+sql_export str SQLengine(Client c);
+
 sql_export str SQLinitEnvironment(int *ret);
 sql_export str SQLcompile(str *ret, str *expr);
 sql_export str SQLstatement(str *ret, str *expr);
-sql_export str SQLepilogue();
 sql_export str SQLtrace(int *ret);
-
-sql_export str SQLparser(Client c);
-sql_export str SQLengine(Client c);
 
 #endif /* _SQL_SCENARIO_H_ */
 
@@ -60,7 +64,7 @@ we update its context descriptor to denote an SQL scenario.
 #include "sql_cache.h"
 #include "sql_env.h"
 #include "sql_readline.h"
-#include "io.h"
+#include "mal_io.h"
 #include "mal_parser.h"
 #include <bat/res_table.h>
 #include "mal_namespace.h"
@@ -111,6 +115,47 @@ monet5_freecode(backend_code code, backend_stack stk, int nr, char *name)
 }
 
 str
+SQLsession(str *ret)
+{
+	str msg = MAL_SUCCEED;
+
+	msg = setScenario(MCgetClient(), "sql");
+	*ret = 0;
+	return msg;
+}
+
+str
+SQLprelude()
+{
+	Scenario s = getFreeScenario();
+	if (!s)
+		return NULL; /* should be an error */
+	s->name = "sql";
+	s->language = "sql";
+	s->initSystem = "SQLinit";
+	s->exitSystem = "SQLexit";
+	s->initClient = "SQLinitClient";
+	s->exitClient = "SQLexitClient";
+	s->reader = "SQLreader";
+	s->parser = "SQLparser";
+	// s->optimizer = "SQLoptimizer";
+	// s->tactics = ..
+	s->engine = "SQLengine";
+	return MAL_SUCCEED;
+}
+
+str
+SQLepilogue()
+{
+	if( SQLinitialized){
+		/*mvc_exit(); 
+		SQLinitialized= FALSE;
+		*/
+	}
+	return MAL_SUCCEED;
+}
+
+str
 SQLinit(Client c)
 {
 	char *gmt = "GMT";
@@ -143,17 +188,6 @@ SQLexit(Client c)
 	if( SQLinitialized == FALSE){
 		return throwMessage("SQLexit",
 			"Catalogue not available\n");
-	}
-	return MAL_SUCCEED;
-}
-
-str
-SQLepilogue()
-{
-	if( SQLinitialized){
-		/*mvc_exit(); 
-		SQLinitialized= FALSE;
-		*/
 	}
 	return MAL_SUCCEED;
 }
@@ -279,16 +313,6 @@ SQLexitClient(Client c)
 	return MAL_SUCCEED;
 }
 
-str
-SQLsession(str *ret)
-{
-	str msg = MAL_SUCCEED;
-
-	msg = setScenario(MCgetClient(), "sql");
-	*ret = 0;
-	return msg;
-}
-
 @-
 A statement received internally is simply appended for
 execution
@@ -353,7 +377,7 @@ SQLcompileInternal(str *ret, str *expr, int flag)
 
 	initSQLreferences();
 	m = sql->mvc;
-	if( !m->trans) {
+	if( !m->session->active) {
 		int schema_nr = mvc_trans(m);
 		if (m->cache && (m->schema_number < schema_nr || m->qc->id > 1000)) {
 			m->schema_number = schema_nr;
@@ -386,7 +410,7 @@ SQLcompileInternal(str *ret, str *expr, int flag)
 	m->params = NULL;
 	m->argc = 0;
 	m->sym = NULL;
-	m->auto_commit = 0;
+	m->session->auto_commit = 0;
 
 @-
 System has been prepared to parse it and generate code
@@ -556,7 +580,7 @@ the duration of these calls.
 @c
 
 int SQLautocommit(Client c, mvc *m){
-	if (m->auto_commit && m->trans) {
+	if (m->session->auto_commit && m->session->active) {
 		if (mvc_status(m) < 0) {
 			mvc_rollback(m, 0, NULL);
 		} else if (mvc_commit(m, 0, NULL) < 0) {
@@ -746,9 +770,9 @@ SQLparser(Client c)
 #endif
 	m = be->mvc;
 	m->type = Q_PARSE;
-	if (!m->trans) 
+	if (!m->session->active) 
 		mvc_trans(m);
-	pstatus = m->status;
+	pstatus = m->session->status;
 
 	/* sqlparse needs sql allocator to be available.  It can be NULL at
 	 * this point if this is a recursive call. */
@@ -784,8 +808,8 @@ SQLparser(Client c)
 		}
 		if( strncmp(in->buf+in->pos,"auto_commit ", 12)==0 ){
 			id= (int) strtol(in->buf+in->pos+12,NULL,10);
-			m->auto_commit = (id)?1:0;
-			m->ac_on_commit = m->auto_commit;
+			m->session->auto_commit = (id)?1:0;
+			m->session->ac_on_commit = m->session->auto_commit;
 			if (mvc_rollback(m, 0, NULL) < 0)
 				return throwMessage("SQLparser", "Xauto_commit failed\n");
 			in->pos = in->len;	/* HACK: should use parsed lenght */
@@ -935,7 +959,7 @@ The default action is to print them out at the end of the
 query block.
 @c
 	if (err == 0) {
-		pushCatchDefault(c->curprg->def, "sqlerror", m->auto_commit);
+		pushCatchDefault(c->curprg->def, "sqlerror", m->session->auto_commit);
 		pushEndInstruction(c->curprg->def);
 
 		chkTypes(c->nspace, c->curprg->def); /* resolve types */
@@ -1129,7 +1153,7 @@ cleanup_engine:
     if (msg) {
         GDKerror(msg);
         showErrors();
-		m->status = -10;
+		m->session->status = -10;
     }
 	be->q = NULL;
 	sqlcleanup(be->mvc, 0);
@@ -1156,7 +1180,7 @@ unless auto_commit has been set.
 		m->mode = m_normal;
 		m->explain = m_normal;
 		/* TODO use sql_prepare/execute */
-		snprintf(buf, BUFSIZ, "insert into sys.profile "
+		snprintf(buf, BUFSIZ, "insert into \"profile\" "
 		 "values(now,'%s'," LLFMT ",0," LLFMT "," LLFMT" ,USER);\n",
 		 qs, be->Tparse, be->Texec, tot);
 @-

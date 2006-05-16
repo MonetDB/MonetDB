@@ -156,7 +156,7 @@ sql_symbol2stmt(mvc *c)
 				printf("# %s\n", c->errstr);
 				return NULL;
 			} else {
-				c->status = 0;
+				c->session->status = 0;
 				printf("# falling back to direct mode \n");
 				s = semantic(c, NULL, c->sym);
 			}
@@ -226,7 +226,7 @@ sqlcleanup(mvc *c, int err)
 	if (c->sa) 
 		c->sa = sa_reset(c->sa);
 	if (err)
-		c->status = err;
+		c->session->status = err;
 	scanner_query_processed(&(c->scanner));
 	return err;
 }
@@ -245,7 +245,7 @@ void backend_profile( backend *be, char *query, lng parse, lng optimize, lng exe
 		q++;
 
 	/* TODO use sql_prepare/execute */
-	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"profile\" "
+	snprintf(buf, BUFSIZ, "INSERT INTO \"profile\" "
 		 "VALUES(now(),'%s',%lld,%lld,%lld,%lld,USER);\n",
 		 q, parse, optimize, exec, total);
 	_DELETE(query);
@@ -268,7 +268,7 @@ sqlexecute(backend *be, stream *out)
 	cq *q = NULL;
 
 	c->type = Q_PARSE;
-	if (!c->trans) {
+	if (!c->session->active) {
 		int schema_nr = mvc_trans(c);
 		if (c->cache && (c->schema_number < schema_nr || c->qc->id > 1000)) {
 			c->schema_number = schema_nr;
@@ -418,7 +418,7 @@ sqlclient(backend *sql, bstream *in, stream *out)
 				language = (sql->console) ? 'S' : 0;
 
 				/* auto_commit on end of statement */
-				if (m->auto_commit && m->trans) {
+				if (m->session->auto_commit && m->session->active) {
 					if (mvc_status(m) < 0) {
 						mvc_rollback(m, 0, NULL);
 					} else if (mvc_commit(m, 0, NULL) < 0) {
@@ -492,8 +492,8 @@ query string with "M".
 				continue;
 			}
 			if (sscanf(in->buf + in->pos, "auto_commit %d", &id) == 1) {
-				m->auto_commit = (id)?1:0;
-				m->ac_on_commit = m->auto_commit;
+				m->session->auto_commit = (id)?1:0;
+				m->session->ac_on_commit = m->session->auto_commit;
 				if (mvc_rollback(m, 0, NULL) < 0)
 					break;
 				in->pos = in->len;	/* HACK: should use parsed lenght */
@@ -508,8 +508,8 @@ query string with "M".
 			break;
 		}
 
-		if (m->trans)
-			pstatus = m->status;
+		if (m->session->active)
+			pstatus = m->session->status;
 
 		m->mode = m->explain;
 		err = sqlexecute(sql, out);
@@ -517,6 +517,8 @@ query string with "M".
 		if (err) /* output error */
 			go = handle_error(m, out, pstatus);
 	}
+	if (m->session->active)
+		mvc_rollback(m, 0, NULL);
 	return GDK_SUCCEED;
 }
 
@@ -546,7 +548,7 @@ sqlstatement(char *cmd, Cntxt stk)
 	mvc_trans(m);		/* start transaction */
 	m->user_id = m->role_id = USER_MONETDB;
 	m->user = _strdup("monetdb");
-	m->trans->schema = mvc_bind_schema(m, "sys");
+	m->session->schema = mvc_bind_schema(m, "sys");
 	m->scanner.mode = LINE_1; 
 	bstream_next(m->scanner.rs);
 	sql = backend_create(m, 1);
@@ -576,8 +578,9 @@ sqlstatement(char *cmd, Cntxt stk)
 int
 mvc_sql(mvc *m, char *cmd)
 {
-	Cntxt stk = (Cntxt) m->stk;
+	Cntxt stk = (Cntxt) m->session->stk;
 	mvc o = *m;
+	int ac = m->session->auto_commit;
 
 	int err = 0;
 	backend *sql;
@@ -633,7 +636,7 @@ mvc_sql(mvc *m, char *cmd)
 	m->params = NULL;
 	m->argc = 0;
 	m->sym = NULL;
-	m->auto_commit = 0;
+	m->session->auto_commit = 0;
 
 	err = sqlexecute(sql, NULL);
 	backend_destroy(sql);
@@ -644,6 +647,7 @@ mvc_sql(mvc *m, char *cmd)
 
 	GDKfree(m->user);
 	*m = o;
+	m->session->auto_commit = ac;
         output->binding.val.pval = m->scanner.ws;
 	if (err)
 		return GDK_FAIL;
@@ -857,7 +861,7 @@ mvc_new(Cntxt stk, YYSTREE lt, ValPtr res)
 	mvc_trans(m);		/* start transaction */
 	m->user_id = m->role_id = USER_MONETDB;
 	m->user = _strdup("monetdb");
-	m->trans->schema = mvc_bind_schema(m, "sys");
+	m->session->schema = mvc_bind_schema(m, "sys");
 
 	res->vtype = TYPE_mvc;
 	res->val.pval = (ptr) m;

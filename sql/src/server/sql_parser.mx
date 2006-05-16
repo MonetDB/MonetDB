@@ -326,7 +326,6 @@ int yydebug=1;
 	ordering_spec
 	simple_table
 	table_ref
-	opt_temp
 	case_exp
 	cast_exp
 	when_value
@@ -438,6 +437,7 @@ int yydebug=1;
 	intval
 	nonzero
 	posint
+	opt_temp
 	opt_nr
 	opt_limit
 	opt_offset
@@ -1190,30 +1190,30 @@ role_def:
  ;
 
 table_def:
-    CREATE opt_temp TABLE qname table_content_source opt_on_commit opt_nr
-
-	{ dlist *l = L();
-	  append_symbol(l, $2);
+    CREATE opt_temp TABLE qname table_content_source opt_on_commit 
+	{ int commit_action = CA_COMMIT;
+	  dlist *l = L();
+	  append_int(l, $2);
 	  append_symbol(l, $4);
 	  append_symbol(l, $5);
-	  append_int(l, $7);
+	  if ($2 != SQL_PERSIST)
+		commit_action = $6;
+	  append_int(l, commit_action);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  ;
 
 opt_temp:
-    /* empty */		{ $$ = NULL; }
- |  TEMPORARY		{ $$ = _symbol_create( SQL_TEMP_LOCAL, NULL); }
- |  LOCAL TEMPORARY	{ $$ = _symbol_create( SQL_TEMP_LOCAL, NULL); }
-/* no support for global temps (ie shared with other transactions) 
- |  GLOBAL TEMPORARY	{ $$ = _symbol_create( SQL_TEMP_GLOBAL, NULL); }
-*/
+    /* empty */		{ $$ = SQL_PERSIST; }
+ |  TEMPORARY		{ $$ = SQL_LOCAL_TEMP; }
+ |  LOCAL TEMPORARY	{ $$ = SQL_LOCAL_TEMP; }
+ |  GLOBAL TEMPORARY	{ $$ = SQL_GLOBAL_TEMP; }
  ;
 
 opt_on_commit: /* only for temporary tables */
-    /* empty */			 { $$ = 0; } /* default delete rows on commit */
- |  ON COMMIT sqlDELETE ROWS	 { $$ = 0; }
- |  ON COMMIT PRESERVE ROWS	 { $$ = 1; }
- |  ON COMMIT DROP	 	 { $$ = 2; }
+    /* empty */			 { $$ = CA_DELETE; } 
+ |  ON COMMIT sqlDELETE ROWS	 { $$ = CA_DELETE; }
+ |  ON COMMIT PRESERVE ROWS	 { $$ = CA_PRESERVE; }
+ |  ON COMMIT DROP	 	 { $$ = CA_DROP; }
  ;
 
 table_content_source:
@@ -3538,6 +3538,7 @@ non_reserved_word:  /* (lexicographically sorted for convenience) */
 | PRIVILEGES	{ $$ = sa_strdup(SA, "privileges"); }	/* sloppy: officially reserved */
 | ROLE		{ $$ = sa_strdup(SA, "role"); }		/* neither reserved nor non-reserv. */
 | TYPE		{ $$ = sa_strdup(SA, "type"); }
+| RELEASE	{ $$ = sa_strdup(SA, "release"); }	/* sloppy: officially reserved */
 | VALUE		{ $$ = sa_strdup(SA, "value"); }	/* sloppy: officially reserved */
 | ZONE		{ $$ = sa_strdup(SA, "zone"); }		/* sloppy: officially reserved */
 
@@ -3831,8 +3832,8 @@ void *sql_error( mvc * sql, int error_code, char *format, ... )
 	va_start (ap,format);
 	if (sql->errstr[0] == '\0') 
 		vsnprintf(sql->errstr, ERRSIZE-1, _(format), ap);
-	if (!sql->status)
-		sql->status = -error_code;
+	if (!sql->session->status)
+		sql->session->status = -error_code;
 	va_end (ap);
 	return NULL;
 }

@@ -69,8 +69,8 @@ extern sql_func *sql_trans_create_func(sql_trans *tr, sql_module * m, char *func
 extern sql_schema *sql_trans_create_schema(sql_trans *tr, char *name, int auth_id);
 extern void sql_trans_drop_schema(sql_trans *tr, char *sname);
 
-extern sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, bit persists, bit clear, int sz, int location, int replication_id);
-extern sql_table *sql_trans_create_view(sql_trans *tr, sql_schema *s, char *name, char *sql, bit system, bit persists, int location, int replication_id);
+extern sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz, int location, int replication_id);
+extern sql_table *sql_trans_create_view(sql_trans *tr, sql_schema *s, char *name, char *sql, bit system, int location, int replication_id);
 extern char *sql_view_on_bats(sql_trans *tr, sql_table *t, char **batnames, int cnt);
 extern void sql_trans_drop_table(sql_trans *tr, sql_schema *s, char *name, int cascade);
 extern size_t sql_trans_clear_table(sql_trans *tr, sql_table *t);
@@ -91,5 +91,11 @@ extern void sql_trans_drop_idx(sql_trans *tr, sql_schema *s, char *name);
 extern sql_trigger * sql_trans_create_trigger(sql_trans *tr, sql_table *t, char *name, sht time, sht orientation, sht event, char *old_name, char *new_name, char *condition, char *statement );
 extern sql_trigger * sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_column *c /*, extra options such as trunc */ );
 extern void sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, char *name);
+
+extern sql_session * sql_session_create(backend_stack stk, int autocommit);
+extern void sql_session_destroy(sql_session *s);
+extern void sql_session_reset(sql_session *s);
+extern void sql_trans_begin(sql_session *s);
+extern void sql_trans_end(sql_session *s);
 
 #endif /*SQL_STORAGE_H */

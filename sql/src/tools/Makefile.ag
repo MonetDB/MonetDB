@@ -15,7 +15,14 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = -I$(MONETDB_INCLUDEDIR)/C $(MONETDB_INCS) $(PTHREAD_INCS)
+
+SWIGFLAGS = $(MONETDB_INCS)
+INCLUDES = -I$(MONETDB_INCLUDEDIR)/C $(MONETDB_INCS) $(PTHREAD_INCS) $(PYTHON_INCS)
+
+# with gcc we could use these
+#X_CFLAGS = -Wno-unused-parameter -Wno-unused-function
+# but we certainly have to override the default X_CFLAGS:
+X_CFLAGS =
 
 GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS)
 EXTRA_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 
@@ -80,3 +87,23 @@ scripts_h = {
 	DIR = includedir
 	SOURCES = embeddedclient.mx
 }
+
+# we need this flag to allow for a name that does not start with "lib"
+_monetdb_la_LDFLAGS = -module
+
+lib_monetdb = {
+	PREFIX =
+	NAME = _monetdb
+	SOURCES = monetdb.py.i
+	LIBS = libembeddedsql $(PYTHON_LIBS) -lMapi -lmutils -lstream
+	DIR = $(prefix)/$(PYTHON_LIBDIR)
+}
+
+headers_py = {
+        HEADERS = py
+        SOURCES = monetdb.py.i
+        TARGETS = monetdb.py
+        DIR = $(prefix)/$(PYTHON_LIBDIR)
+}
+
+EXTRA_DIST = monetdb.py

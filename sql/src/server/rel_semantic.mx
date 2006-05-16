@@ -102,7 +102,6 @@ rel_parse(mvc *m, char *query)
 	m->argc = 0;
 	m->sym = NULL;
 	m->errstr[0] = '\0';
-	m->status = 0;
 	/* via views we give access to protected objects */
 	m->user_id = USER_MONETDB;
 
@@ -114,13 +113,13 @@ rel_parse(mvc *m, char *query)
 	bstream_destroy(m->scanner.rs);
 
 	m->sym = NULL;
-	if (m->status || m->errstr[0]) {
-		int status = m->status;
+	if (m->session->status || m->errstr[0]) {
+		int status = m->session->status;
 		char errstr[ERRSIZE];
 
 		strcpy(errstr, m->errstr);
 		*m = o;
-		m->status = status;
+		m->session->status = status;
 		strcpy(m->errstr, errstr);
 	} else {
 		*m = o;

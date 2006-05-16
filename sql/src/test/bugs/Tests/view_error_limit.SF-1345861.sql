@@ -4,9 +4,9 @@ START TRANSACTION;
 
 -- view based on DVDstore 'hack' reported by Stefan
 CREATE VIEW view1345861 AS
-	SELECT * FROM ptables
+	SELECT * FROM sys._tables
 	UNION ALL
-	SELECT * FROM ttables;
+	SELECT * FROM tmp._tables;
 DROP VIEW view1345861;
 
 -- this view is an artifical example based on what provided in bug #1345861

@@ -175,8 +175,10 @@ sql_trans_bind_type(sql_trans *tr, char *name)
 
 			t = find_sql_type(m, name);
 		}
+/*
 	if (!t && tr->module)
 		t = find_sql_type(tr->module, name);
+*/
 	if (!t)
 		return NULL;
 	/*

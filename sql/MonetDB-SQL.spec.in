@@ -111,6 +111,7 @@ rm -rf $RPM_BUILD_ROOT
 	--with-gcc="%{comp_cc}" \
 	--with-gxx="%{comp_cxx}" \
 	--prefix=%{prefix} \
+	--libdir=%{_libdir} \
 	--with-monet=%{prefix}
 
 make
@@ -131,8 +132,8 @@ rm -rf $RPM_BUILD_ROOT
 
 %files odbc
 %defattr(-,monetdb,monetdb) 
-%{prefix}/lib/libMonetODBC*
-%{prefix}/lib/sql/Tests/odbcsample1
+%{_libdir}/libMonetODBC*
+%{_libdir}/sql/Tests/odbcsample1
 
 %if %{buildjava}
 %files java
@@ -148,9 +149,9 @@ rm -rf $RPM_BUILD_ROOT
 %files server
 %defattr(-,monetdb,monetdb) 
 %{prefix}/bin/Mbeddedsql
-%{prefix}/lib/libembeddedsql.*
-%{prefix}/lib/MonetDB/lib_sql_server*
-%{prefix}/lib/MonetDB/*.mil
+%{_libdir}/libembeddedsql.*
+%{_libdir}/MonetDB/lib_sql_server*
+%{_libdir}/MonetDB/*.mil
 
 %files devel
 %defattr(-,monetdb,monetdb) 
@@ -158,8 +159,8 @@ rm -rf $RPM_BUILD_ROOT
 %{prefix}/include/sql/*.h
 %{prefix}/include/sql/include/*.h
 %{prefix}/include/sql/storage/*.h
-%{prefix}/lib/sql/Tests/*
-%{prefix}/lib/pkgconfig/MonetDB-SQL.pc
+%{_libdir}/sql/Tests/*
+%{_libdir}/pkgconfig/MonetDB-SQL.pc
 
 %if %{builddoc}
 %files docu

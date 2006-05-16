@@ -17,13 +17,13 @@ quit();
 
 Over..
 
-# 22:45:49 >  
-# 22:45:49 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=36139  < insert_into_select-bug-sf-978043.sql
-# 22:45:49 >  
+# 08:07:05 >  
+# 08:07:05 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=32100  < insert_into_select-bug-sf-978043.sql
+# 08:07:05 >  
 
-[ 24	]
+[ 28	]
 
-# 22:45:49 >  
-# 22:45:49 >  Done.
-# 22:45:49 >  
+# 08:07:05 >  
+# 08:07:05 >  Done.
+# 08:07:05 >  
 
