@@ -89,6 +89,12 @@ pattern crack(mod:str, fcn:str):str
 address QOTCRKoptimizerCALL
 comment "Replace algebra select with crackers select";
 
+pattern joinsel():str 
+address QOTJSoptimizer;
+pattern joinsel(mod:str, fcn:str):str 
+address QOTJSoptimizerCALL
+comment "Replace select with join select";
+
 pattern singleton():str 
 address QOTSToptimizer;
 pattern singleton(mod:str, fcn:str):str 
@@ -240,6 +246,7 @@ optimizer.prelude();
 #include "mal_generators.h"
 #include "mal_crack.h"
 #include "mal_remoteQueries.h"
+#include "mal_joinsel.h"
 
 opt_export str QOTMEoptimizerSymbol(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 opt_export str QOTMEoptimizerModule(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -365,6 +372,7 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 @:QOTC(CO, "coercions")@
 @:QOTC(CRK, "crack")@
 @:QOTC(RQ, "remoteQueries")@
+@:QOTC(JS, "joinsel")@
 
 str
 QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
