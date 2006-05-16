@@ -576,10 +576,8 @@ address SQLprelude;
 command epilogue()
 address SQLepilogue;
 
-include sql_cache;
-#include mil_algebra_procs;
-
 sql.prelude();
+include sql_cache;
 @h
 #ifndef _SQL_H
 #define _SQL_H
