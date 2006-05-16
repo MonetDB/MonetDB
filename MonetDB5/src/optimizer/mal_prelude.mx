@@ -74,6 +74,7 @@ opt_export  str sumRef;
 opt_export  str uselectRef;
 opt_export  str unpackRef;
 opt_export  str unsafeRef;
+opt_export  str bind_dbatRef;
 
 opt_export void optimizerInit();
 #endif
@@ -132,6 +133,7 @@ str sumRef;
 str uselectRef;
 str unpackRef;
 str unsafeRef;
+str bind_dbatRef;
 
 
 void optimizerInit(){
@@ -188,5 +190,6 @@ void optimizerInit(){
 		uselectRef = putName("uselect",7);
 		unpackRef = putName("unpack",6);
 		unsafeRef = putName("unsafe",6);
+		bind_dbatRef = putName("bind_dbat",9);
 	}
 }
