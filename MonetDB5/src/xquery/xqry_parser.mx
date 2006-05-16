@@ -1941,7 +1941,7 @@ STATIC int
 parseFunctionDecl(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseFunctionDecl)@
-	if( curToken(xb) != XT_declare) 
+	if (curToken(xb) != XT_declare) 
 		return PARSE_ERR; 
 	if (nextToken(xb) != XT_function)
 		return PARSE_ERR;
@@ -1978,9 +1978,7 @@ STATIC int
 parseConstructionDecl(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseConstructionDecl)@
-	if( curToken(xb) != XT_declare) 
-		return PARSE_ERR; 
-	if (nextToken(xb) != XT_construction)
+	if (curToken(xb) != XT_construction)
 		return PARSE_ERR;
 	if (nextToken(xb) == XT_strip || xb->token == XT_preserve) {
 		@:etrace(parseConstructionDecl)@
@@ -1994,7 +1992,7 @@ STATIC int
 parseVarDecl(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseVarDecl)@
-	if( curToken(xb) != XT_declare) 
+	if (curToken(xb) != XT_declare) 
 		return PARSE_ERR; 
 	if (nextToken(xb) != XT_variable)
 		return PARSE_ERR;
@@ -2020,7 +2018,7 @@ STATIC int
 parseModuleImport(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseModuleImport)@
-	if( curToken(xb) != XT_import) 
+	if (curToken(xb) != XT_import) 
 		return PARSE_ERR; 
 	if (nextToken(xb) != XT_module)
 		return xqryError(cntxt,"'module' expected in ModuleImport\n");
@@ -2092,9 +2090,7 @@ STATIC int
 parseBaseURIDecl(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseBaseURIDecl)@
-	if( curToken(xb) != XT_declare) 
-		return PARSE_ERR; 
-	if (nextToken(xb) != XT_base_uri)
+	if (curToken(xb) != XT_base_uri)
 		return PARSE_ERR;
 	if (nextToken(xb) != XT_STR)
 		return xqryError(cntxt,"<URIliteral> expected in BaseURIDecl\n");
@@ -2107,9 +2103,7 @@ STATIC int
 parseDefaultCollationDecl(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseeDefaultCollationDecl)@
-	if( curToken(xb) != XT_declare) 
-		return PARSE_ERR; 
-	if (nextToken(xb) != XT_default)
+	if (curToken(xb) != XT_default)
 		return PARSE_ERR;
 	if (nextToken(xb) != XT_collation)
 		return xqryError(cntxt,"'collation' expected in DefaultCollationDecl\n");
@@ -2124,15 +2118,13 @@ STATIC int
 parseCopyNamespacesDecl(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseCopyNamespacesDecl)@
-	if( curToken(xb) != XT_declare) 
-		return PARSE_ERR; 
-	if (nextToken(xb) != XT_copy_namespaces)
+	if (curToken(xb) != XT_copy_namespaces)
 		return PARSE_ERR;
-	if (nextToken(xb) != XT_preserve && xb->token != XT_no_preserve) 
+	if (nextToken(xb) != XT_preserve && curToken(xb) != XT_no_preserve) 
 		return xqryError(cntxt,"'preserve' or 'no-preserve' expected in CopyNamespacesDecl\n");
 	if (nextToken(xb) != ',')
 		return xqryError(cntxt,"',' expected in CopyNamespacesDecl\n");
-	if (nextToken(xb) != XT_inherit && xb->token != XT_no_inherit) 
+	if (nextToken(xb) != XT_inherit && curToken(xb) != XT_no_inherit) 
 		return xqryError(cntxt,"'inherit' or 'no-inherit' expected in CopyNamespacesDecl\n");
 	@:etrace(parseCopyNamespacesDecl)@
 	xb->token = -1;
@@ -2143,9 +2135,7 @@ STATIC int
 parseEmptyOrderDecl(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseEmptyOrderDecl)@
-	if( curToken(xb) != XT_declare) 
-		return PARSE_ERR; 
-	if (nextToken(xb) != XT_default)
+	if (curToken(xb) != XT_default)
 		return PARSE_ERR;
 	if (nextToken(xb) != XT_order)
 		return xqryError(cntxt,"'order' expected in EmptyOrderDecl\n");
@@ -2162,9 +2152,7 @@ STATIC int
 parseOrderingModeDecl(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseOrderingModeDecl)@
-	if( curToken(xb) != XT_declare) 
-		return PARSE_ERR; 
-	if (nextToken(xb) != XT_ordering)
+	if (curToken(xb) != XT_ordering)
 		return PARSE_ERR;
 	if (nextToken(xb) != XT_ordered  && xb->token != XT_unordered)
 		return xqryError(cntxt,"'ordered' or 'unordered' expected in OrderingModuleDecl\n");
@@ -2177,7 +2165,7 @@ STATIC int
 parseOptionDecl(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseOptionDecl)@
-	if( curToken(xb) != XT_declare) 
+	if (curToken(xb) != XT_declare) 
 		return PARSE_ERR; 
 	if (nextToken(xb) != XT_option)
 		return PARSE_ERR;
@@ -2195,9 +2183,7 @@ STATIC int
 parseDefaultNamespaceDecl(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseDefaultNamespaceDecl)@
-	if( curToken(xb) != XT_declare) 
-		return PARSE_ERR; 
-	if (nextToken(xb) != XT_default)
+	if (curToken(xb) != XT_default)
 		return PARSE_ERR;
 	if (nextToken(xb) != XT_element && xb->token != XT_function)
 		return xqryError(cntxt,"'element' or 'function' expected in DefaultNamespaceDecl\n");
@@ -2215,9 +2201,7 @@ STATIC int
 parseNamespaceDecl(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseNamespaceDecl)@
-	if( curToken(xb) != XT_declare) 
-		return PARSE_ERR; 
-	if (nextToken(xb) != XT_namespace)
+	if (curToken(xb) != XT_namespace)
 		return PARSE_ERR;
 	if (nextToken(xb) != XT_NCNAME) 
 		return xqryError(cntxt,"<NCName> expected in NamespaceDecl\n");
@@ -2236,9 +2220,7 @@ STATIC int
 parseBoundarySpaceDecl(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseBoundarySpaceDecl)@
-	if( curToken(xb) != XT_declare) 
-		return PARSE_ERR; 
-	if (nextToken(xb) != XT_boundary_space)
+	if (curToken(xb) != XT_boundary_space)
 		return PARSE_ERR;
 	if (nextToken(xb) != XT_preserve && xb->token != XT_strip)
 		return xqryError(cntxt,"'preserve' or 'strip' expected in BoundarySpaceDecl\n");
@@ -2268,7 +2250,7 @@ parseSetter(Client cntxt, Xbackend xb)
 	    parseOrderingModeDecl(cntxt, xb) != PARSE_OK &&
 	    parseEmptyOrderDecl(cntxt, xb) != PARSE_OK &&
 	    parseCopyNamespacesDecl(cntxt, xb) != PARSE_OK)
-		return xqryError(cntxt,"<Setter> expected in Setter\n");
+		return PARSE_ERR;
 	@:etrace(parseSetter)@
 	return PARSE_OK;
 }
@@ -2281,7 +2263,7 @@ parseProlog(Client cntxt, Xbackend xb)
 		if (curToken(xb) == XT_declare) {
 			nextToken(xb);
 			if (parseDefaultNamespaceDecl(cntxt, xb) != PARSE_OK && 
-				parseSetter(cntxt, xb) != PARSE_OK &&
+			    parseSetter(cntxt, xb) != PARSE_OK &&
 			    parseNamespaceDecl(cntxt, xb) != PARSE_OK)
 				break;
 		} else if (parseImport(cntxt, xb) == PARSE_ERR)

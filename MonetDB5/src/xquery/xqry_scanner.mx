@@ -720,6 +720,8 @@ xscanner_string(xscanner *lc, int quote)
 	return LEX_ERROR;
 }
 
+const char *allowedsymbols = "_-.";
+
 static int 
 keyword_or_ident(xscanner * lc, int cur)
 {
@@ -731,7 +733,7 @@ keyword_or_ident(xscanner * lc, int cur)
 	s = lc->yycur;
 	lc->yyval = XT_NCNAME;
 	while ((cur = xscanner_getc(lc)) != EOF) {
-		if ((isascii(cur) && !isalnum(cur)) && cur != '_') {
+		if ((isascii(cur) && !isalnum(cur)) && !strchr(allowedsymbols,cur)) {
 			utf8_putchar(lc, cur);
 			(void)xscanner_token(lc, XT_NCNAME);
 			k = find_keyword_bs(lc,s);
