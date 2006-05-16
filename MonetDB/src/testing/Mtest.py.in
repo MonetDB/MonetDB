@@ -3179,6 +3179,8 @@ def main(argv) :
                 mt = r.match(l)
                 if mt:
                     compiler = mt.group(1)
+
+        # start of times.sql output preparation
         try:
             from mx import DateTime
             now = "timestamp '" + str(DateTime.now()) + "'"
@@ -3194,7 +3196,19 @@ def main(argv) :
         bits = env['TST_BITS'][:2]
         oids = env['TST_OIDS'][-2:]
 
+        # we write in SQL the same codes as testweb uses in the HTML
+        # pages, for readability
         Fcodes = ['o', '-', 'x', 'X']
+
+        # we are not interested in the compiler, not its path, nor its
+        # options.  We do store the options separately, though
+        hasSpace = compiler.find(' ')
+        if hasSpace != -1:
+            ccname = os.path.split(compiler[:hasSpace])[-1]
+            ccopts = compiler[hasSpace + 1:]
+        else:
+            ccname = os.path.split(compiler)[-1]
+            ccopts = ''
 
         for TSTDIR,TST,tt,ms,FtOut,FtErr in TIMES:
             if FtOut == F_SKIP and FtErr == F_SKIP:
@@ -3206,14 +3220,17 @@ def main(argv) :
                 # target is a platform and compilation options etc
                 sql = """
 INSERT INTO mtest (\"date\", \"machine\", \"os\", \"release\",
-    \"compiler\", \"bits\", \"oid\", \"static\", \"product\",
-    \"dir\", \"test\", \"time\", \"stdout\", \"stderr\")
+    \"compiler\", \"compiler_opts\", \"bits\", \"oid\", \"static\",
+    \"product\", \"dir\", \"test\",
+    \"time\", \"stdout\", \"stderr\")
 VALUES (%s, '%s', '%s', '%s',
-    '%s', %s, %s, %s, '%s',
-    '%s', '%s', %s, '%s', '%s');
+    '%s', '%s', %s, %s, %s,
+    '%s', '%s', '%s',
+    %s, '%s', '%s');
 """ %(now, host, env['OS'], env['RELEASE'],
-        compiler, bits, oids, isStatic, product,
-        TSTDIR, TST, tms, Fcodes[FtOut], Fcodes[FtErr])
+        ccname, ccopts, bits, oids, isStatic,
+        product, TSTDIR, TST,
+        tms, Fcodes[FtOut], Fcodes[FtErr])
                 fl.write(sql);
         fl.close()
 
