@@ -135,7 +135,7 @@ address CRKuselectBounds_@1
 comment "Retrieve the subset using a cracker
         index producing preferably a BATview.";
 
-command joinselect(left:bat[:any_1,:oid], right:bat[:any_2,:@1],l:any_3,h:any_4,li:any_5,hi:any_6):bat[:void,:oid]
+command joinuselect(right:bat[:any_1,:@1], l:any_2, h:any_3, li:any_4, hi:any_5, left:bat[:any_6,:void]):bat[:any_7,:void]
 address CRKjoinSelectBounds_@1
 comment "Join left and right on oids. From right only bun that satisfy the 
 	restriction qualify. Result is a new bat.";
@@ -2081,13 +2081,15 @@ CRKuselect_@1(int *vid, int *bid, @1 *low, @1 *hgh)
 	return CRKuselectBounds_@1(vid, bid, low, hgh, &inclusive, &inclusive);
 }
 
-@= JoinSelect
-/* joins a left=[void, oid] bat with a right=[void, any_type] bat on oids. 
-From the right bat only BUNs that pass the range restriction qualify. 
-The result is [void,oid] bat */
-str
-JoinSelectRange_@2_@3_@1(int *res, int *left, int *right, @1 *low, @1 *hgh)
-{
+@= checkIfEmpty
+	if (BATcount(@1) == 0 ){
+		*res = *@2;
+		BBPunfix(*@2);
+		@3
+		return MAL_SUCCEED;
+	}	
+
+@= joinsel
 	BAT *l, *r, *d;
 	BUN lt, rt, rbase, dt;
 	BUN llast;
@@ -2095,25 +2097,29 @@ JoinSelectRange_@2_@3_@1(int *res, int *left, int *right, @1 *low, @1 *hgh)
 
 	if ((l = BATdescriptor(*left)) == NULL)
         	return throwMessage("crackers.crackJoinSelect", "Cannot access descriptor");
+	@:checkIfEmpty(l, left,)@
+
 	if ((r = BATdescriptor(*right)) == NULL)
         	return throwMessage("crackers.crackJoinSelect", "Cannot access descriptor");
+	@:checkIfEmpty(r, right,BBPunfix(*left);)@
+
 
 	lt = BUNtloc(l, BUNfirst(l));
 	llast = BUNtloc(l, BUNlast(l)-1);
 	xx = BUNsize(l);
 
-	rbase = BUNtloc(r, BUNfirst(r));
+	rbase = BUNhloc(r, BUNfirst(r));
 	zz = BUNsize(r);
 
-	d = BATnew(TYPE_void, TYPE_oid, BATcount(l));
-	dt = BUNtloc(d, BUNfirst(d));
-	dd =BUNsize(d);
+	d = BATnew(TYPE_oid, TYPE_void, BATcount(l));
+	dt = BUNhloc(d, BUNfirst(d));
+	dd = BUNsize(d);
 
 	/* For each BUN of the left bat check if the corresponding BUN in the right bat satisfies the restriction.
 	   If yes the respective oid is added to the result */
 	while(lt <= llast){
 		rt = rbase + (*(oid*)lt)*zz;
-		if (*(@1*)rt @4 *low && *(@1*)rt @5 *hgh){
+		if (@2){
 			*(oid*)dt = *(oid*)lt; 
 			dt += dd;	
 		}		
@@ -2130,22 +2136,52 @@ JoinSelectRange_@2_@3_@1(int *res, int *left, int *right, @1 *low, @1 *hgh)
 	BBPunfix(r->batCacheid);
 	
 	return MAL_SUCCEED;
+
+@= JoinSelectR
+/* joins a left=[void, oid] bat with a right=[void, any_type] bat on oids. 
+From the right bat only BUNs that pass the range restriction qualify. 
+The result is [void,oid] bat */
+str
+JoinSelectRange_@2_@3_@1(int *res, int *left, int *right, @1 *low, @1 *hgh)
+{
+	@:joinsel(@1,*(@1*)rt @4 *low && *(@1*)rt @5 *hgh)@
+} 
+@        
+@= JoinSelectS
+str
+JoinSelectSingle_@2_@1(int *res, int *left, int *right, @1 *mid)
+{
+	@:joinsel(@1,*(@1*)rt @3 *mid)@
 }         
 @
 
 @= JoinSelectOperations
-@:JoinSelect(@1,LO,RE,>,<=)@
-@:JoinSelect(@1,LE,RE,>=,<=)@
-@:JoinSelect(@1,LO,RO,>,<)@
-@:JoinSelect(@1,LE,RO,>=,<)@
+@:JoinSelectR(@1,LO,RE,>,<=)@
+@:JoinSelectR(@1,LE,RE,>=,<=)@
+@:JoinSelectR(@1,LO,RO,>,<)@
+@:JoinSelectR(@1,LE,RO,>=,<)@
+@:JoinSelectS(@1,RO,<)@
+@:JoinSelectS(@1,RE,<=)@
+@:JoinSelectS(@1,LO,>)@
+@:JoinSelectS(@1,LE,>=)@
 @
 
 @= JoinSelectFunctions
+mal_export str CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left);
 str
-CRKjoinSelectBounds_@1(int *res, int *left, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh)
+CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclusiveHgh, int *left)
 {
-        if (*(@1*)low == int_nil);
-        else if (*(@1*)hgh == int_nil);
+        if (*(@1*)low == int_nil){
+		if (*inclusiveHgh==TRUE)
+                	JoinSelectSingle_RE_@1(res, left, right, hgh);
+		else 
+                	JoinSelectSingle_RO_@1(res, left, right, hgh);
+	}
+        else if (*(@1*)hgh == int_nil)
+		if (*inclusiveLow==TRUE)
+                	JoinSelectSingle_LE_@1(res, left, right, low);
+		else 
+                	JoinSelectSingle_LO_@1(res, left, right, low);
         else{
 		if ((*inclusiveLow==TRUE) && (*inclusiveHgh==TRUE))
                 	JoinSelectRange_LE_RE_@1(res, left, right, low, hgh);
