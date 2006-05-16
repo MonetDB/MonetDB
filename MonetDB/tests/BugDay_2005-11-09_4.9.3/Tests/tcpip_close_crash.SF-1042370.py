@@ -6,7 +6,7 @@ class Popen:
 		self.stdin,self.stdout = os.popen2(cmd, bufsize=0, mode='t'); 
 
 def server_start(x,dbname):
-    srvcmd = 'catchsegv %s --dbname "%s"' % (os.getenv('MSERVER'),dbname)
+    srvcmd = '%s --dbname "%s"' % (os.getenv('MSERVER'),dbname)
     return Popen(srvcmd);
 
 def server_stop(srv):
