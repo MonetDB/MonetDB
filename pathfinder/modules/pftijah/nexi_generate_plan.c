@@ -1273,7 +1273,7 @@ command_tree **CAS_plan_gen(
 
 	    /* storing terms and phrases */
 
-	    if (alg_type == ASPECT) {
+	    if (alg_type == ASPECT || alg_type == COARSE2) {
 	      
 	      num_term = 0;
 	      num_phrase = 0;
@@ -1464,7 +1464,7 @@ command_tree **CAS_plan_gen(
 	      step_sp--;
 	      p1_command = p_step;
 
-	      if (alg_type == ASPECT) {
+	      if (alg_type == ASPECT || alg_type == COARSE2) {
 
 		while (step_sp > 0 && step_ty == STRUCT_OR) {
 
@@ -1949,6 +1949,199 @@ command_tree **CAS_plan_gen(
 	      }
 
 	    }
+
+	    else if (alg_type == COARSE2) {
+
+	      /* normal term treatment */
+	      
+	      command_tree *p_term;
+
+	      char modifier_term_s[10];
+	      sprintf(modifier_term_s, "%d", s);
+	      
+	      p_term = NULL;
+                
+              com_cnt++;
+	      p_command++;
+		  
+	      p_command->number = com_cnt;
+	      p_command->operator = CREATE_QUERY_OBJECT;
+	      p_command->left = NULL; 
+	      p_command->right = NULL;
+	      strcpy(p_command->argument, "");
+		  
+	      if (log_file) fprintf(log_file, "Q%d := CREATE_QUERY_OBJECT ();\n",  com_cnt);
+	      
+	      term_sp = 0;
+	      
+	      while (term_sp < num_term) {
+ 
+                /* char term[TERM_LENGTH]; */  
+		term_sp++;
+		/*	    printf("%d\n",term_sp); */
+		POP_TERM();
+		
+		//printf("%s\n",t);
+		p1_command = p_command;
+		
+                com_cnt++;
+		p_command++;
+		  
+		p_command->number = com_cnt;
+		p_command->operator = QUERY_ADD_TERM;
+		p_command->left = p1_command; 
+		p_command->right = NULL;
+              
+
+                //convert terms to lower letters 
+                /* ToLowerLetters(t); INCOMPLETE CHECK USAGE RODEH */
+		strcpy(p_command->argument, t);
+		  
+		if (log_file) fprintf(log_file, "Q%d := Q%d QUERY_ADD_TERM (%s);\n",  com_cnt, p1_command->number, p_command->argument);
+	      
+                if (scale_on == TRUE) {
+	      	      sprintf(modifier_term_s, "%d", s);
+		      p1_command = p_command;
+
+		      com_cnt++;
+		      p_command++;
+
+		      p_command->number = com_cnt;
+		      p_command->operator = QUERY_ADD_MODIFIER;
+		      p_command->left = p1_command;
+		      p_command->right = NULL;
+		      strcpy(p_command->argument, modifier_term_s);
+		      
+		      if (log_file) fprintf(log_file, "Q%d := Q%d QUERY_ADD_MODIFIER (%s);\n",  com_cnt, p1_command->number, p_command->argument);
+                }
+              }  	
+
+             //not updated for the new mil plan yet
+   
+	     if (s == IMAGE_ABOUT+NORMAL || s == IMAGE_ABOUT+PLUS || s == IMAGE_ABOUT+MINUS || s == IMAGE_ABOUT+MUST || s == IMAGE_ABOUT+MUST_NOT) {
+
+		  com_cnt++;
+		  p_command++;
+		  
+		  p_command->number = com_cnt;
+		  p_command->operator = P_SELECT_IMAGE;
+		  p_command->left = NULL;
+		  p_command->right = NULL;
+		  strcpy(p_command->argument, parse_nam);
+		  
+		  if (log_file) fprintf(log_file, "R%d := P_SELECT_IMAGE(%s);\n",  com_cnt, t);
+		  
+		  if (s == IMAGE_ABOUT+NORMAL || s == IMAGE_ABOUT+PLUS || s == IMAGE_ABOUT+MUST) {
+		    
+		    p1_command = p_command;
+		    
+		    com_cnt++;
+		    p_command++;
+		    
+		    p_command->number = com_cnt;
+		    p_command->operator = P_CONTAINING_I;
+		    p_command->left = p_ctx_in;
+		    p_command->right = p1_command;
+		    strcpy(p_command->argument, "");
+		    
+		    if (log_file) fprintf(log_file, "R%d := R%d P_CONTAINING_I R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
+		    
+		    if (s == IMAGE_ABOUT+PLUS) {
+		      
+		      p1_command = p_command;
+		      
+		      com_cnt++;
+		      p_command++;
+		      
+		      p_command->number = com_cnt;
+		      p_command->operator = SCALE;
+		      p_command->left = p1_command;
+		      p_command->right = NULL;
+		      strcpy(p_command->argument, modifier_term_s);
+		      
+		      if (log_file) fprintf(log_file, "R%d := R%d SCALE %s;\n",  com_cnt, p1_command->number, p_command->argument);
+		      
+		    }
+		    
+		    else {
+		      
+		      p1_command = p_command;
+		      
+		      com_cnt++;
+		      p_command++;
+		      
+		      p_command->number = com_cnt;
+		      p_command->operator = SCALE;
+		      p_command->left = p1_command;
+		      p_command->right = NULL;
+		      strcpy(p_command->argument, modifier_term_s);
+		      
+		      if (log_file) fprintf(log_file, "R%d := R%d SCALE %s;\n",  com_cnt, p1_command->number, p_command->argument);
+		      
+		    }
+
+		  }
+
+		  else if (s == IMAGE_ABOUT+MINUS || s == IMAGE_ABOUT+MUST_NOT) {
+
+		    p1_command = p_command;
+
+		    com_cnt++;
+		    p_command++;
+		    
+		    p_command->number = com_cnt;
+		    p_command->operator = P_NOT_CONTAINING_I;
+		    p_command->left = p_ctx_in;
+		    p_command->right = p1_command;
+		    strcpy(p_command->argument, "");
+		    
+		    if (log_file) fprintf(log_file, "R%d := R%d P_NOT_CONTAINING_I R%d;\n",  com_cnt, p_ctx_in->number, p1_command->number);
+		    
+		  }
+		  
+	     }
+		
+	     if (term_sp > 1 && p_term != NULL) {
+		  
+		  //p1_command = p_command;
+		  
+		  //com_cnt++;
+		  //p_command++;
+		  
+		  //p_command->number = com_cnt;
+		  //p_command->operator = P_AND_ph;
+		  //p_command->left = p_term;
+		  //p_command->right = p1_command;
+		  //strcpy(p_command->argument, "");
+		  
+		  //fprintf(log_file, "R%d := R%d P_AND_ph R%d;\n",  com_cnt, p_term->number, p1_command->number);
+		  //fprintf(mil_file, "\tR%d := R%d.and(R%d);\n",  com_cnt, p_term->number, p1_command->number);
+		  
+		  //fprintf(mil_file, "\tR%d := nil;\n", p_term->number);
+		  //fprintf(mil_file, "\tR%d := nil;\n", p1_command->number);
+		  
+		//}
+
+		p_term = p_command;
+
+	      }
+	      p1_command = p_command;
+		  
+	      com_cnt++;
+	      p_command++;
+		  
+	      p_command->number = com_cnt;
+	      p_command->operator = P_SELECT_NODE_Q;
+	      p_command->left = p_ctx_in;
+	      p_command->right = p1_command;
+	      strcpy(p_command->argument, "");
+	      
+              if (log_file) fprintf(log_file, "R%d := R%d P_SELECT_NODE_Q (Q%d);\n",  com_cnt, p_ctx_in->number, p1_command->number);
+              
+              //TODO: include phrases		    
+
+	    }
+
 
 	    else if (alg_type == COARSE) {
 

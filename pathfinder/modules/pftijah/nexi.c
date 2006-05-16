@@ -310,6 +310,10 @@ int old_main(int argc, char * const argv[])
 	algebra_type = COARSE;
 	algebra_set = TRUE;
       }
+      else if (strcmp(optarg,"coarse2") == 0 || strcmp(optarg,"COARSE2") == 0) {
+         algebra_type = COARSE2;
+	 algebra_set = TRUE;
+      }
       else {
         LOGPRINTF(LOGFILE,"Incorrect algebra type\n");
 	algebra_set = FALSE;
@@ -402,7 +406,7 @@ int old_main(int argc, char * const argv[])
           "    -p: specifies the <preprocessing type> (default PLAIN).\n\t Options <preprocessing type> : = { plain|PLAIN, no_modifier|NO_MODIFIER, vague_no_phrase|VAGUE_NO_PHRASE, strict_no_phrase|STRICT_NO_PHRASE, vague|VAGUE, strict|STRICT }.\n"
 	  "    -s: specifies if stop word removal and|or stemming should be performed (default NO).\n\t Options <stopword_stem> := { no|NO, stop|STOP, stem|STEM, stop_stem|STOP_STEM }.\n"
 	  "    -l: specifies the language used for querying (default ENGLISH).\n\t Options <language> := { english|ENGLISH, dutch|DUTCH }.\n"
-	  "    -a: specifies the algebra type to be used when generating query plans (defaul ASPECT).\n\t Options <algebra type> := {aspect|ASPECT, coarse|COARSE }.\n"
+	  "    -a: specifies the algebra type to be used when generating query plans (defaul ASPECT).\n\t Options <algebra type> := {aspect|ASPECT, coarse|COARSE|coarse2|COARSE2 }.\n"
 	  "    -u: specifies the file name where text retrieval model parameters are stored.\n\t Format \"<text retrieval model>\" := <record_num> {<query_num> <model> <or_type> <and_type> <up_type> <down_type> <e_class> <stem> <size_type> <param_1> < param_2> <param_3> <l_type> <l_size>}*record_num,\n\t\t see text_retrieval_model.txt file for details.\n"
 	  "    -m: specifies the file name where image retrieval model parameters are stored.\n\t Format \"<image retrieval model>\" := <record_num> {<query_num> <model> <descriptor> <attr_name>}*record_num,\n\t\t see image_retrieval_model.txt file for details.\n"
 	  "    -g: specifies the <generator type>. The exact implementation of these generators depend on the topic type, i.e., CO or CAS (default BASIC).\n\t Options <generator type> := { basic|BASIC, simple|SIMPLE, advanced|ADVANCED }\n\t For CO: \n\t\t 1. basic := //*[about(.,CO)];\n\t\t 2. simple := //article//*[about(.,CO)];\n\t\t 3. advanced := //article[about(.,CO)]//*[about(.,CO)];\n\t For CAS: \n\t\t 1. basic := CAS;\n\t\t 2. simple := All terms in each subquery are expanded to the context element of that subquery;\n\t\t 3. advanced := simple + All terms from both subqueries are expanded to context elements of other subqueries;\n"
@@ -494,6 +498,7 @@ int old_main(int argc, char * const argv[])
 
     if(!algebra_set) {
        algebra_type = ASPECT;
+       /* algebra_type = COARSE2; RODEH CHANGE | BUG */
        LOGPRINTF(LOGFILE,"\tAlgebra type is \"ASPECT\".\n");
     }
 

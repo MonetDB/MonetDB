@@ -37,8 +37,9 @@
 
 
 /* Generator type */
-#define ASPECT 1
-#define COARSE 2
+#define ASPECT  1
+#define COARSE  2
+#define COARSE2 3
 
 
 /* The processing bounds:
@@ -151,6 +152,12 @@
 #define STRUCT_OR 49
 
 #define IMAGE_ABOUT 86
+
+// Coarse 2
+#define CREATE_QUERY_OBJECT 92
+#define QUERY_ADD_TERM 93
+#define QUERY_ADD_MODIFIER 94
+#define P_SELECT_NODE_Q 95
 
 #define NORMAL 71
 #define PLUS 72
