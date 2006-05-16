@@ -46,10 +46,11 @@ xqry_export str XQUERYengine(Client c);
 @c
 #include "xqry_scenario.h"
 #include "xqry_parser.h"
-#include "xqry_scanner.h"
-#include "mal_instruction.h"
-#include "mal_interpreter.h"
-#include "mal_namespace.h"
+#include "xqry_backend.h"
+#include <mal_instruction.h>
+#include <mal_interpreter.h>
+#include <mal_namespace.h>
+#include <mal_parser.h>
 
 static void xqryfreeVariables(MalBlkPtr mb, MalStkPtr glb, int start);
 
@@ -80,7 +81,7 @@ XQUERYprelude()
 	s->optimizer = "XQUERYoptimizer";
 	/* s->tactics = .. */
 	s->engine = "XQUERYengine";
-	XQRYinit();
+
 	xscanner_init_keywords();
 	return MAL_SUCCEED;
 }
@@ -109,7 +110,7 @@ str
 XQUERYinitClient(Client c)
 {
 	if (c->state[PARSER] == NULL) {
-		Xbackend  xb = newXbackend(c->curprg->def);
+		Xbackend  xb = newXbackend(c);
 		c->state[PARSER] = (void*)xb;
 	}
 
@@ -135,10 +136,6 @@ XQUERYreader(Client c)
 	int more = TRUE;
 	bstream *in = c->fdin;
 	int blocked = isa_block_stream(in->s);
-
-	xscanner *xs = xscanner_new(c);
-	int token;
-	YYSTYPE yysval;
 
 	if (c->mode <= FINISHING) {
 		c->mode = FINISHING;
@@ -172,17 +169,10 @@ XQUERYreader(Client c)
 			}
 			go = FALSE;
 			break;
-	} else {
-	while((token = xscanner_lex(xs, &yysval)) != EOF) {
-		if (token > 255) 
-			printf("%s\n", XT2string(token));
-		else
-			printf("%c\n", (char)token);
-	}
 		}
 	    }
 	}
-	if ( !go || (strncmp(CURRENT(c), "quit", 4) == 0)) {
+	if (!go) {
 		in->pos = in->len;	/* skip rest of the input */
 		c->mode = FINISHING;
 		return NULL;

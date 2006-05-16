@@ -22,8 +22,8 @@
 #ifndef _XQRY_SCANNER_H_
 #define _XQRY_SCANNER_H_
 
-#include <stream.h>
 #include "xqry_mem.h"
+#include <mal_client.h>
 
 #define LEX_ERROR -1
 
@@ -32,6 +32,7 @@ typedef enum { LINE_1, LINE_N, BLOCKED } prot;
 typedef struct scanner {
 	Client c;
 	stream *log;
+	int state;
 
 	int yynext;		/* next token, lr(1) isn't powerful enough for xquery */
 	int yylast;		/* previous token, to detect superfluous statement seperators */
@@ -45,17 +46,13 @@ typedef struct scanner {
 	xqry_allocator *xa;	/* allocator */
 } xscanner;
 
-typedef struct YYSTYPE {
-	char *sval;
-	lng  ival;
-	double  dval;
-} YYSTYPE;
-
 enum xquery_tokens {
 	XT_STR = 256,
 	XT_INT,
+	XT_DEC,
 	XT_DBL,
-	XT_IDENT,
+	XT_NCNAME,
+	XT_FNAME,
 	XT_CMP,
 	XT_AGGR,
 	XT_CONCATSTRING,
@@ -65,18 +62,25 @@ enum xquery_tokens {
 	XT_module,
 	XT_namespace,
 	XT_declare,
-	XT_xmlspace,
+	XT_boundary_space,
 	XT_preserve,
+	XT_no_preserve,
+	XT_inherit,
+	XT_no_inherit,
 	XT_strip,
 	XT_default,
 	XT_element,
+	XT_elementconstructor_start,
+	XT_elementconstructor_end,
 	XT_function,
+	XT_option,
 	XT_ordering,
 	XT_ordered,
 	XT_unordered,
 	XT_order,
-	XT_inherit_namespaces,
+	XT_copy_namespaces,
 	XT_empty,
+	XT_empty_sequence,
 	XT_greatest,
 	XT_least,
 	XT_collation,
@@ -115,14 +119,21 @@ enum xquery_tokens {
 	
 	XT_document_node,
 	XT_text,
+	XT_text_constructor,
 	XT_comment,
+	XT_commentconstructor_start,
+	XT_commentconstructor_end,
 	XT_pi,
+	XT_piconstructor_start,
+	XT_piconstructor_end,
 	XT_schema_attribute,
 	XT_schema_element,
 	XT_node,
 	XT_item,
 	XT_document,
 	XT_cdata,
+	XT_cdata_start,
+	XT_cdata_end,
 	XT_encoding,
 	XT_external,
 	XT_in,
@@ -149,6 +160,7 @@ enum xquery_tokens {
 	XT_of,
 	XT_treat,
 	XT_castable,
+	XT_cast,
 	XT_eq,
 	XT_ne,
 	XT_lt,
@@ -156,16 +168,38 @@ enum xquery_tokens {
 	XT_gt,
 	XT_ge,
 	XT_is,
+	XT_ltlt,
+	XT_gtgt,
+	XT_dotdot,
+	XT_amp,
+	XT_quot,
+	XT_apos,
+	XT_2open,
+	XT_2close,
+
+	/* additional tokens */
+	XT_explain,
+	XT_debug,
+	XT_trace,
+	XT_quit,
 } xtoken;
 
+typedef enum xquery_states {
+	XS_INIT,
+	XS_XML,
+} xstate;
 
 extern void xscanner_init_keywords();
 
 extern xscanner *xscanner_new(Client c);
-extern int xscanner_lex(xscanner *xs, YYSTYPE *yysval);
+extern int xscanner_lex(xscanner *xs, char **sval);
+extern int xscanner_pushback(xscanner *xs);
 extern void xscanner_query_processed(xscanner *s);
 
+extern int xscanner_set_state(xscanner *xs, xstate state);
+
 extern char *XT2string(int token);
+
 
 #endif /* _XQRY_SCANNER_H_ */
 
@@ -200,8 +234,10 @@ XT2string(int token)
 #define XT(s) case XT_##s: return #s;
 	XT(STR);
 	XT(INT);
+	XT(DEC);
 	XT(DBL);
-	XT(IDENT);
+	XT(NCNAME);
+	XT(FNAME);
 	XT(CMP);
 	XT(AGGR);
 	XT(CONCATSTRING);
@@ -211,18 +247,25 @@ XT2string(int token)
 	XT(module);
 	XT(namespace);
 	XT(declare);
-	XT(xmlspace);
+	XT(boundary_space);
 	XT(preserve);
+	XT(no_preserve);
+	XT(inherit);
+	XT(no_inherit);
 	XT(strip);
 	XT(default);
 	XT(element);
+	XT(elementconstructor_start);
+	XT(elementconstructor_end);
 	XT(function);
+	XT(option);
 	XT(ordering);
 	XT(ordered);
 	XT(unordered);
 	XT(order);
-	XT(inherit_namespaces);
+	XT(copy_namespaces);
 	XT(empty);
+	XT(empty_sequence);
 	XT(greatest);
 	XT(least);
 	XT(collation);
@@ -261,14 +304,21 @@ XT2string(int token)
 	
 	XT(document_node);
 	XT(text);
+	XT(text_constructor);
 	XT(comment);
+	XT(commentconstructor_start);
+	XT(commentconstructor_end);
 	XT(pi);
+	XT(piconstructor_start);
+	XT(piconstructor_end);
 	XT(schema_attribute);
 	XT(schema_element);
 	XT(node);
 	XT(item);
 	XT(document);
 	XT(cdata);
+	XT(cdata_start);
+	XT(cdata_end);
 	XT(encoding);
 	XT(external);
 	XT(in);
@@ -295,6 +345,7 @@ XT2string(int token)
 	XT(of);
 	XT(treat);
 	XT(castable);
+	XT(cast);
 	XT(eq);
 	XT(ne);
 	XT(lt);
@@ -302,6 +353,19 @@ XT2string(int token)
 	XT(gt);
 	XT(ge);
 	XT(is);
+	XT(ltlt);
+	XT(gtgt);
+	XT(dotdot);
+	XT(amp);
+	XT(quot);
+	XT(apos);
+	XT(2open);
+	XT(2close);
+
+	XT(explain);
+	XT(debug);
+	XT(trace);
+	XT(quit);
 	}
 	return "unknown";
 }
@@ -309,25 +373,29 @@ XT2string(int token)
 void
 xscanner_init_keywords()
 {
-printf("init\n");
 	keyword_init();
 	keywords_insert("xquery", XT_xquery);
 	keywords_insert("version", XT_version);
 	keywords_insert("module", XT_module);
 	keywords_insert("namespace", XT_namespace);
 	keywords_insert("declare", XT_declare);
-	keywords_insert("xmlspace", XT_xmlspace);
+	keywords_insert("boundary-space", XT_boundary_space);
 	keywords_insert("preserve", XT_preserve);
+	keywords_insert("no-preserve", XT_no_preserve);
+	keywords_insert("inherit", XT_inherit);
+	keywords_insert("no-inherit", XT_no_inherit);
 	keywords_insert("strip", XT_strip);
 	keywords_insert("default", XT_default);
 	keywords_insert("element", XT_element);
 	keywords_insert("function", XT_function);
+	keywords_insert("option", XT_option);
 	keywords_insert("ordering", XT_ordering);
 	keywords_insert("ordered", XT_ordered);
 	keywords_insert("unordered", XT_unordered);
 	keywords_insert("order", XT_order);
-	keywords_insert("inherit-namespaces", XT_inherit_namespaces);
+	keywords_insert("copy-namespaces", XT_copy_namespaces);
 	keywords_insert("empty", XT_empty);
+	keywords_insert("empty-sequence", XT_empty_sequence);
 	keywords_insert("greatest", XT_greatest);
 	keywords_insert("least", XT_least);
 	keywords_insert("collation", XT_collation);
@@ -400,6 +468,7 @@ printf("init\n");
 	keywords_insert("of", XT_of);
 	keywords_insert("treat", XT_treat);
 	keywords_insert("castable", XT_castable);
+	keywords_insert("cast", XT_cast);
 	keywords_insert("eq", XT_eq);
 	keywords_insert("ne", XT_ne);
 	keywords_insert("lt", XT_lt);
@@ -407,6 +476,13 @@ printf("init\n");
 	keywords_insert("gt", XT_gt);
 	keywords_insert("ge", XT_ge);
 	keywords_insert("is", XT_is);
+	keywords_insert("amp", XT_amp);
+	keywords_insert("quot", XT_quot);
+	keywords_insert("apos", XT_apos);
+
+	keywords_insert("explain", XT_explain);
+	keywords_insert("debug", XT_debug);
+	keywords_insert("trace", XT_trace);
 }
 
 #define find_keyword_bs(lc, s) find_keyword(lc->c->fdin->buf+lc->c->fdin->pos+s)
@@ -419,6 +495,7 @@ xscanner_new(Client c)
 	s->c = c;
 	s->log = NULL;
 
+	s->state = XS_INIT;
 	s->yynext = 0;
 	s->yylast = 0;
 	s->yyval = 0;
@@ -652,18 +729,18 @@ keyword_or_ident(xscanner * lc, int cur)
 	lc->started = 1;
 	utf8_putchar(lc, cur);
 	s = lc->yycur;
-	lc->yyval = XT_IDENT;
+	lc->yyval = XT_NCNAME;
 	while ((cur = xscanner_getc(lc)) != EOF) {
 		if ((isascii(cur) && !isalnum(cur)) && cur != '_') {
 			utf8_putchar(lc, cur);
-			(void)xscanner_token(lc, XT_IDENT);
+			(void)xscanner_token(lc, XT_NCNAME);
 			k = find_keyword_bs(lc,s);
 			if (k) 
 				lc->yyval = k->token;
 			return lc->yyval;
 		}
 	}
-	(void)xscanner_token(lc, XT_IDENT);
+	(void)xscanner_token(lc, XT_NCNAME);
 	k = find_keyword_bs(lc,s);
 	if (k) 
 		lc->yyval = k->token;
@@ -721,7 +798,7 @@ number(xscanner * lc, int cur)
 	while ((cur = xscanner_getc(lc)) != EOF && isdigit(cur)) 
 		;
 	if (cur == '.') {
-		token = XT_DBL;
+		token = XT_DEC;
 
 		while ((cur = xscanner_getc(lc)) != EOF && isdigit(cur)) 
 			;
@@ -751,7 +828,9 @@ int xscanner_symbol(xscanner * lc, int cur)
 
 	if (cur == '/') {
 		next = xscanner_getc(lc);
-		if (next == '*') {
+		if (next == '>') {
+			return xscanner_token(lc, XT_elementconstructor_end);
+		} else if (next == '*') {
 			cur = skip_c_comment(lc);
 			return tokenize(lc, cur);
 		} else {
@@ -769,30 +848,94 @@ int xscanner_symbol(xscanner * lc, int cur)
 		return xscanner_string(lc, cur);
 	}
 	switch (cur) {
-	case '-':
 	case '+':
-	case '?':
 	case '@':
 	/* TODO expression comments */
 	case '(':
 	case ')':
 	case ',':
 	case '=':
-	case '{':
-	case '}':
 	case '[':
 	case ']':
 		lc->started = 1;
 		return xscanner_token(lc, cur);
+	case '{':
+		lc->started = 0;
+		cur = xscanner_getc(lc);
+		if (cur == '{') {
+			return xscanner_token( lc, XT_2open);
+		}
+		utf8_putchar(lc, cur); 
+		return xscanner_token(lc, '{');
+	case '}':
+		lc->started = 0;
+		cur = xscanner_getc(lc);
+		if (cur == '}') {
+			return xscanner_token( lc, XT_2close);
+		}
+		utf8_putchar(lc, cur); 
+		return xscanner_token(lc, '}');
+	case '-':
+		lc->started = 0;
+		cur = xscanner_getc(lc);
+		if (cur == '-') {
+			cur = xscanner_getc(lc);
+			if (cur != '>') {
+				utf8_putchar(lc, cur); 
+				cur = '-';
+			} else {
+				return xscanner_token( lc, XT_commentconstructor_end);
+			}
+		}
+		utf8_putchar(lc, '-'); 
+		return xscanner_token(lc, '-');
+	case '\\':
+		lc->started = 0;
+		cur = xscanner_getc(lc);
+		if (cur == 'q') 
+			return xscanner_token( lc, XT_quit);
+		return LEX_ERROR;
+	case '?':
+		lc->started = 0;
+		cur = xscanner_getc(lc);
+		if (cur == '>') 
+			return xscanner_token( lc, XT_piconstructor_end);
+		utf8_putchar(lc, cur); 
+		return xscanner_token(lc, '.');
+	case '.':
+		lc->started = 0;
+		cur = xscanner_getc(lc);
+		if (cur == '.') 
+			return xscanner_token( lc, XT_dotdot);
+		utf8_putchar(lc, cur); 
+		return xscanner_token(lc, '.');
 	case ';':
 		lc->started = 0;
 		return xscanner_token(lc, ';');
-	case '<': /* lexer stack of modes */
+	case '<': /* lexer stack of states */
 		lc->started = 1;
 		cur = xscanner_getc(lc);
-		if (cur != '!') { /* todo XML-comments */
+		if (cur != '!') { 
+			cur = xscanner_getc(lc);
+			if (cur != '-') {
+				utf8_putchar(lc, cur); 
+				cur = '!';
+			} else {
+				cur = xscanner_getc(lc);
+				if (cur != '-') {
+					utf8_putchar(lc, cur); 
+					utf8_putchar(lc, '-'); 
+					cur = '!';
+				} else {
+					return xscanner_token( lc, XT_commentconstructor_start);
+				}
+			}
+		} else if (cur == '?') {
+			return xscanner_token( lc, XT_piconstructor_start);
 		} else if (cur == '<') {
-			return xscanner_token( lc, XT_lt);
+			return xscanner_token( lc, XT_ltlt);
+		} else if (cur == '/') {
+			return xscanner_token( lc, XT_elementconstructor_start);
 		} else if (cur == '=') {
 			return xscanner_token( lc, XT_CMP);
 		} else if (cur == '>') {
@@ -805,7 +948,7 @@ int xscanner_symbol(xscanner * lc, int cur)
 		lc->started = 1;
 		cur = xscanner_getc(lc);
 		if (cur == '>') {
-			return xscanner_token( lc, XT_gt);
+			return xscanner_token( lc, XT_gtgt);
 		} else if (cur != '=') {
 			utf8_putchar(lc, cur); 
 			return xscanner_token( lc, XT_CMP);
@@ -889,7 +1032,7 @@ valid_ident(char *s, char *dst)
 }
 
 static INLINE int
-xqry_get_next_token(xscanner *lc, YYSTYPE *yylval) {
+xqry_get_next_token(xscanner *lc, char **sval) {
 	int token = 0;
 
 	if (lc->yynext) {
@@ -908,18 +1051,18 @@ xqry_get_next_token(xscanner *lc, YYSTYPE *yylval) {
 	lc->yylast = lc->yyval;
 	token = tokenize(lc, xscanner_getc(lc));
 
-	yylval->sval = (lc->c->fdin->buf + lc->c->fdin->pos + lc->yysval);
+	*sval = (lc->c->fdin->buf + lc->c->fdin->pos + lc->yysval);
 
-	if (token == XT_IDENT || token == XT_CMP || token == XT_AGGR)
-		yylval->sval = xa_strndup(lc->xa, yylval->sval, lc->yycur-lc->yysval);
+	if (token == XT_NCNAME || token == XT_CMP || token == XT_AGGR)
+		*sval = xa_strndup(lc->xa, *sval, lc->yycur-lc->yysval);
 	if (token == XT_STR) {
-		char quote = *yylval->sval;
+		char quote = **sval;
 		char *str = xa_alloc( lc->xa, (lc->yycur-lc->yysval-2)*2 +1 );
 		assert(quote == '"' || quote == '\'');
 
 		lc->c->fdin->buf[lc->c->fdin->pos+lc->yycur- 1] = 0; 
-		memcpy(str, yylval->sval+1, lc->yycur-lc->yysval - 1);
-		yylval->sval = str;
+		memcpy(str, (*sval)+1, lc->yycur-lc->yysval - 1);
+		*sval = str;
 
 		/* reset original */
 		lc->c->fdin->buf[lc->c->fdin->pos+lc->yycur- 1] = quote; 
@@ -929,7 +1072,7 @@ xqry_get_next_token(xscanner *lc, YYSTYPE *yylval) {
 }
 
 int
-xscanner_lex(xscanner *lc, YYSTYPE * yylval)
+xscanner_lex(xscanner *lc, char **sval)
 {
 	int token;
 	int pos;
@@ -937,8 +1080,28 @@ xscanner_lex(xscanner *lc, YYSTYPE * yylval)
 	/* store position for when view's query ends */
 	pos = lc->c->fdin->pos + lc->yycur;
 
-	token = xqry_get_next_token(lc, yylval);
+	token = xqry_get_next_token(lc, sval);
 
+	if (token == XT_NCNAME) {
+		char *tval;
+		int next = xscanner_lex(lc, &tval);
+
+		if (next == '(') {
+			token = XT_FNAME;
+		} else {
+			lc->yynext = next;
+		}
+	}
+	if (token == XT_text) {
+		char *tval;
+		int next = xscanner_lex(lc, &tval);
+
+		if (next == '{') {
+			token = XT_text_constructor;
+		} else {
+			lc->yynext = next;
+		}
+	}
 	if (lc->log) 
 		stream_write(lc->log, lc->c->fdin->buf+pos, lc->c->fdin->pos + lc->yycur - pos, 1);
 
@@ -947,4 +1110,12 @@ xscanner_lex(xscanner *lc, YYSTYPE * yylval)
 		lc->key ^= token;
 	lc->started += (token != EOF);
 	return token;
+}
+
+int 
+xscanner_set_state(xscanner *xs, xstate state)
+{
+	/* todo check if state is allowed */
+	xs->state = state;
+	return 0;
 }

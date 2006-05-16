@@ -25,11 +25,12 @@ for XQuery plans.
 @h
 #ifndef _XQUERY_GENCODE_H_
 #define _XQUERY_GENCODE_H_
+
 #include "xqry.h"
+#include "xqry_backend.h"
 
 #define _XQRY_GENCODE_DEBUG   1 /* trace it use */
 
-xqry_export Xbackend newXbackend(MalBlkPtr mb);
 xqry_export int XfindId(Xbackend xb, str nme);
 xqry_export int pushXvar(Xbackend xb);
 xqry_export int popXvar(Xbackend xb);
@@ -46,8 +47,8 @@ introduced in a block and issue a bind operation before using them.
 
 @c
 #include "xqry_gencode.h"
-#include "xqry_parser.h"
 #include "mal_instruction.h"
+#include "mal_builder.h"
 
 int
 XfindId(Xbackend xb, str nme)
@@ -61,23 +62,6 @@ XfindId(Xbackend xb, str nme)
             return xb->vars[i].tmpid;
     return 0;
 
-}
-
-@+
-The backend structure contains the state description
-for the code generator.
-@c
-Xbackend
-newXbackend(MalBlkPtr mb){
-    Xbackend xb;
-#ifdef _XQRY_GENCODE_DEBUG
-	stream_printf(GDKout,"#DEBUG newXbackend\n");
-#endif
-    xb = (Xbackend) GDKmalloc( sizeof(XbackendRec));
-    memset((char*) xb, 0, sizeof(XbackendRec));
-	xb->mb= mb;
-	xb->mode = xqry_explain; /* until we have a runtime library */
-    return xb;
 }
 
 @+

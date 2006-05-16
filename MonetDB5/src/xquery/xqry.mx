@@ -150,13 +150,4 @@ typedef struct IDS {
     str path;   /* dataguide entry */
 } Xvariable;
 
-typedef struct {
-    Xvariable vars[MAXXVARS];
-    short vtop;
-    int scopes[MAXSCOPES];  /* keep track of the depth */
-    int stop;
-    int mode;
-	MalBlkPtr mb;
-} *Xbackend, XbackendRec;
-
 #endif /* _XQUERY_H */
