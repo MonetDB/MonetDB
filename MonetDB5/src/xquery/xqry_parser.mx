@@ -970,6 +970,12 @@ parsePrimaryExpr(Client cntxt, Xbackend xb)
 
 	@:ptrace(parsePrimaryExpr)@
 	if (curToken(xb) == XT_STR) {
+		ValRecord val;
+		val.vtype = TYPE_str;
+		val.val.sval = _strdup(xb->sval);
+		p= newAssignment(xb->mb);
+		getArg(p,0) = pushXvar(xb);
+		pushArgument(xb->mb, p, defConstant(xb->mb, val.vtype,&val));
 		xb->token = -1;
 		@:etrace(parsePrimaryExpr)@
 		return PARSE_OK;

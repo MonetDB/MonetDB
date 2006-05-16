@@ -37,6 +37,7 @@ typedef struct {
     xscanner *xs;
     int	      token;	/* current to be parsed token */
     char     *sval;	/* string of current token */
+    char     *path;	/* current path */
 } *Xbackend, XbackendRec;
 
 xqry_export Xbackend newXbackend(Client c);
@@ -53,16 +54,17 @@ for the code generator.
 #include "xqry_backend.h"
 
 Xbackend
-newXbackend(Client c){
-    Xbackend xb;
+newXbackend(Client c)
+{
+	Xbackend xb;
 #ifdef _XQRY_BACKEND_DEBUG
 	stream_printf(GDKout,"#DEBUG newXbackend\n");
 #endif
-    xb = (Xbackend) GDKmalloc( sizeof(XbackendRec));
-    memset((char*) xb, 0, sizeof(XbackendRec));
+	xb = (Xbackend) GDKmalloc( sizeof(XbackendRec));
+	memset((char*) xb, 0, sizeof(XbackendRec));
 	xb->mb = c->curprg->def;
 	xb->mode = xqry_explain; /* until we have a runtime library */
-    xb->xs = xscanner_new(c);
-    return xb;
+	xb->xs = xscanner_new(c);
+	return xb;
 }
 
