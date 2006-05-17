@@ -117,4 +117,8 @@ pcre_replace(mybat, "(^a)", "*", "mi").print();
 # pcre_replace(mybat, "aaaa", "", "")
 pcre_replace(mybat, "aaaa", "", "").print();
 
+# Test pcre_quote
+var s := " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~\t\n";
+pcre_replace(s, pcre_quote(s), "matched", "").print();
+
 quit();

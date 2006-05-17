@@ -365,6 +365,12 @@ pcre_replace(mybat, "aaaa", "", "").print();
 [ 12,	  "babracadabraddc"	  ]
 [ 42,	  "abracadabra"		  ]
 [ 30,	  "abracadabra\nABRACADABRA\nabracadabra\nABRACADABRA"	  ]
+
+# Test pcre_quote
+var s := " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~\t\n";
+pcre_replace(s, pcre_quote(s), "matched", "").print();
+[ "matched" ]
+
 quit();
 
 # 11:55:03 >  

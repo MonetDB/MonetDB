@@ -78,6 +78,9 @@ ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
    \"origin_strs\" with \"replacement\".\n\
    If no matches found in a string, the string is copied to the returned BAT."
 
+.COMMAND pcre_quote(str s) : str = pcre_quote;
+   "Return a PCRE pattern string that matches the argument exactly."
+
 .COMMAND sql2pcre(str pat, str esc) : str = sql2pcre;
    "Convert a SQL like pattern with the given escape character into a PCRE pattern."
 
@@ -525,6 +528,28 @@ pcre_exit(void)
 {
 }
 #endif
+
+int
+pcre_quote(str *res, str s)
+{
+	str p;
+
+	*res = p = GDKmalloc(strlen(s) * 2 + 1); /* certainly long enough */
+	if (p == NULL)
+		return GDK_FAIL;
+	/* quote all non-alphanumeric ASCII characters (i.e. leave
+	   non-ASCII and alphanumeric alone) */
+	while (*s) {
+		if (!((*s & 0x80) != 0 ||
+		      ('a' <= *s && *s <= 'z') ||
+		      ('A' <= *s && *s <= 'Z') ||
+		      ('0' <= *s && *s <= '9')))
+			*p++ = '\\';
+		*p++ = *s++;
+	}
+	*p = 0;
+	return GDK_SUCCEED;
+}
 
 int
 pcre_tostr(str *tostr, int *l, pcre * p)
