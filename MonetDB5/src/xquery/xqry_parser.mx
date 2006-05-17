@@ -156,7 +156,7 @@ parseQName_(Xbackend xb)
 }
 
 STATIC int
-parseQName(Client cntxt, Xbackend xb)
+parseQName__(Client cntxt, Xbackend xb)
 {
 	int ret, id = -1, l;
 
@@ -181,6 +181,17 @@ parseQName(Client cntxt, Xbackend xb)
 #endif
 	xb->vars[xb->vtop++].tmpid = id;
 	return ret;
+}
+
+STATIC int
+parseQName(Client cntxt, Xbackend xb)
+{
+	int res = parseQName_(xb);
+	(void)cntxt;
+#ifdef _XQRY_DEBUG
+		stream_printf(GDKout,"#QName %s\n", xb->sval);
+#endif
+	return res;
 }
 
 STATIC int
@@ -1118,8 +1129,10 @@ STATIC int
 parseAbbrevReverseStep(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseAbbrevReverseStep)@
-	if (curToken(xb) == XT_dotdot) 
+	if (curToken(xb) == XT_dotdot) {
+		@:etrace(parseAbbrevReverseStep)@
 		return PARSE_OK;
+	}
 	return PARSE_ERR;
 }
 
@@ -1252,13 +1265,22 @@ STATIC int
 parseRelativePathExpr(Client cntxt, Xbackend xb) 
 {
 	int res = PARSE_OK;
+	int slash = 0;
 
 	@:ptrace(parseRelativePathExpr)@
 	res = parseStepExpr(cntxt, xb);
 	while (res == PARSE_OK && curToken(xb) == '/') {
-		if (nextToken(xb) == '/')
+		slash++;
+		if (nextToken(xb) == '/') {
+			slash++;
 			nextToken(xb);
+		}
 		res = parseStepExpr(cntxt, xb);
+		if (slash == 1)
+			xqryStatement(xb,"xqry","child",2);
+		else
+			xqryStatement(xb,"xqry","childern",2);
+		slash = 0;
 	}
 	@:etrace(parseRelativePathExpr)@
 	return res;
