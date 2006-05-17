@@ -2560,7 +2560,7 @@ reduce (PFpa_op_t * p, int goalnt)
                 /* Is it a test on attribute kind and local name only? */
                 else if (PFty_subtype (
                             PFty_attr (PFqname (PFns_wild,
-                                                PFty_qname (PFty_defn (ty)).loc),
+                                                PFty_name (PFty_defn (ty)).loc),
                                        PFty_xs_anySimpleType ()),
                             ty))
                     execute (
@@ -2578,7 +2578,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                uselect (var (tmp->name),
                                         lit_str (
                                             PFqname_loc (
-                                                PFty_qname (
+                                                PFty_name (
                                                     PFty_defn (ty)))))),
                         assgn (var (tmp->name),
                                reverse (mark (var (tmp->name), lit_oid (0)))),
@@ -2591,7 +2591,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
                 /* Or maybe a test on attribute kind and namespace only? */
                 else if (PFty_subtype (
-                            PFty_attr (PFqname (PFty_qname (PFty_defn (ty)).ns,
+                            PFty_attr (PFqname (PFty_name (PFty_defn (ty)).ns,
                                                 NULL),
                                        PFty_xs_anySimpleType ()),
                             ty))
@@ -2610,7 +2610,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                uselect (var (tmp->name),
                                         lit_str (
                                             PFqname_uri (
-                                                PFty_qname (
+                                                PFty_name (
                                                     PFty_defn (ty)))))),
                         assgn (var (tmp->name),
                                reverse (mark (var (tmp->name), lit_oid (0)))),
@@ -2623,7 +2623,7 @@ reduce (PFpa_op_t * p, int goalnt)
 
                 /* A test on attribute kind and full QName? */
                 else if (PFty_subtype (
-                            PFty_attr (PFty_qname (PFty_defn (ty)),
+                            PFty_attr (PFty_name (PFty_defn (ty)),
                                        PFty_xs_anySimpleType ()),
                             ty))
                     execute (
@@ -2641,7 +2641,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                uselect (var (tmp->name),
                                         lit_str (
                                             PFqname_loc (
-                                                PFty_qname (
+                                                PFty_name (
                                                     PFty_defn (ty)))))),
                         assgn (var (tmp->name),
                                reverse (mark (var (tmp->name), lit_oid (0)))),
@@ -2665,7 +2665,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                uselect (var (tmp->name),
                                         lit_str (
                                             PFqname_uri (
-                                                PFty_qname (
+                                                PFty_name (
                                                     PFty_defn (ty)))))),
                         assgn (var (tmp->name),
                                reverse (mark (var (tmp->name), lit_oid (0)))),
@@ -3703,32 +3703,32 @@ llscj (enum axis_t axis, const PFpa_op_t *p)
         /* Is it a test on element kind and local name only? */
         else if (PFty_subtype (
                     PFty_elem (PFqname (PFns_wild,
-                                        PFty_qname (PFty_defn (ty)).loc),
+                                        PFty_name (PFty_defn (ty)).loc),
                                PFty_xs_anyType ()),
                     ty))
             scj = llscj_elem_loc (axis, iter, item, frag, var (PF_MIL_VAR_WS), order,
                                   lit_str (PFqname_loc (
-                                               PFty_qname (PFty_defn (ty)))));
+                                               PFty_name (PFty_defn (ty)))));
 
         /* Or maybe a test on element kind and namespace only? */
         else if (PFty_subtype (
-                    PFty_elem (PFqname (PFty_qname (PFty_defn (ty)).ns,
+                    PFty_elem (PFqname (PFty_name (PFty_defn (ty)).ns,
                                         NULL),
                                PFty_xs_anyType ()),
                     ty))
             scj = llscj_elem_ns (axis, iter, item, frag, var (PF_MIL_VAR_WS), order,
                                  lit_str (PFqname_uri (
-                                              PFty_qname (PFty_defn (ty)))));
+                                              PFty_name (PFty_defn (ty)))));
 
         /* A test on element kind and full QName? */
         else if (PFty_subtype (
-                    PFty_elem (PFty_qname (PFty_defn (ty)),
+                    PFty_elem (PFty_name (PFty_defn (ty)),
                                PFty_xs_anyType ()),
                     ty))
             scj = llscj_elem_nsloc (
                     axis, iter, item, frag, var (PF_MIL_VAR_WS), order,
-                    lit_str (PFqname_uri (PFty_qname (PFty_defn (ty)))),
-                    lit_str (PFqname_loc (PFty_qname (PFty_defn (ty)))));
+                    lit_str (PFqname_uri (PFty_name (PFty_defn (ty)))),
+                    lit_str (PFqname_loc (PFty_name (PFty_defn (ty)))));
         /*
          * If we couldn't figure out what element test we got, give up.
          *
@@ -3759,7 +3759,7 @@ llscj (enum axis_t axis, const PFpa_op_t *p)
         else
             scj = llscj_pi_targ (
                     axis, iter, item, frag, var (PF_MIL_VAR_WS), order,
-                    lit_str (PFqname_loc (PFty_qname (PFty_defn (ty)))));
+                    lit_str (PFqname_loc (PFty_name (PFty_defn (ty)))));
     }
     /* If all these cases did not apply, it is probably a node() test. */
     else if (PFty_subtype (PFty_xs_anyNode (), ty)) {

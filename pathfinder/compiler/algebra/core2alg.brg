@@ -1597,13 +1597,6 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* TagName:            CoreExpr */
         case 401:
-            A(p) = (struct  PFla_pair_t) {
-                .rel = project (cast (A(L(p)).rel, att_cast,
-                                      att_item, aat_qname),
-                                proj (att_iter, att_iter),
-                                proj (att_pos, att_pos),
-                                proj (att_item, att_cast)),
-                .frag = PFla_empty_set () };
             break;
 
         /* CoreExpr:           text (CoreExpr) */

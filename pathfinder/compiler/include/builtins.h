@@ -387,6 +387,9 @@ struct PFla_pair_t PFbui_fn_unordered (const PFla_op_t *loop,
                                        bool ordering,
                                        struct PFla_pair_t *args);
 
+struct PFla_pair_t PFbui_fn_resolve_qname
+               (const PFla_op_t *loop, bool ordering, struct PFla_pair_t *args);
+
 #endif   /* BUITLINS_H */
 
 /* vim:set shiftwidth=4 expandtab: */

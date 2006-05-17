@@ -272,6 +272,18 @@ PFty_boolean (void)
 }
 
 PFty_t 
+PFty_qname (void)
+{
+    PFty_t t = { .type = ty_qname,
+                 .name  = { .ns = PFns_wild, .loc = 0 },
+                 .sym_space = 0,           
+                 .child = { 0 } 
+    };
+
+    return t;
+}
+
+PFty_t 
 PFty_stmt (void)
 {
     PFty_t t = { .type  = ty_stmt,
@@ -594,6 +606,13 @@ PFty_xs_double (void)
     return PFty_double ();
 }
 
+/** type xs:QName = qname */
+PFty_t 
+PFty_xs_QName (void)
+{
+    return PFty_qname ();
+}
+
 /** type xs:anyType = item* */
 PFty_t
 PFty_xs_anyType (void)
@@ -753,7 +772,7 @@ PFty_defn (PFty_t t)
  *          an `attribute qn { ... }', or a `processing-instruction qn' type
  */
 PFqname_t
-PFty_qname (PFty_t t)
+PFty_name (PFty_t t)
 {
     assert (t.type == ty_elem || t.type == ty_attr || t.type == ty_pi);
     
@@ -831,6 +850,7 @@ static char* ty_id[] = {
     , [ty_double       ]   = "double"
     , [ty_string       ]   = "string"
     , [ty_boolean      ]   = "boolean"
+    , [ty_qname        ]   = "QName"
     , [ty_node         ]   = "node"
     , [ty_elem         ]   = "element"
     , [ty_attr         ]   = "attribute"
@@ -1039,6 +1059,7 @@ static struct { PFns_t *ns; char *loc; PFty_t (*fn) (void); } predefined[] =
     { .ns = &PFns_xs,  .loc = "boolean",       .fn = PFty_xs_boolean        },
     { .ns = &PFns_xs,  .loc = "decimal",       .fn = PFty_xs_decimal        },
     { .ns = &PFns_xs,  .loc = "double",        .fn = PFty_xs_double         },
+    { .ns = &PFns_xs,  .loc = "QName",         .fn = PFty_xs_QName          },
     { .ns = &PFns_xs,  .loc = "anyType",       .fn = PFty_xs_anyType        },
     { .ns = &PFns_xs,  .loc = "anyItem",       .fn = PFty_xs_anyItem        },
     { .ns = &PFns_xs,  .loc = "anyNode",       .fn = PFty_xs_anyNode        },
@@ -1048,7 +1069,7 @@ static struct { PFns_t *ns; char *loc; PFty_t (*fn) (void); } predefined[] =
     { .ns = &PFns_xdt, .loc = "untypedAtomic", .fn = PFty_xdt_untypedAtomic },
     { .ns = &PFns_xdt, .loc = "untypedAny",    .fn = PFty_xdt_untypedAny    },
     /* end of built-in XML Schema type list */
-    { .ns = 0,        .loc = 0,               .fn = 0                     }
+    { .ns = 0,         .loc = 0,               .fn = 0                      }
 };
 
 

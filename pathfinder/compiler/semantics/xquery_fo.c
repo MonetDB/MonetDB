@@ -1153,6 +1153,16 @@ PFfun_xquery_fo ()
             .par_ty = (PFty_t[]) { PFty_star (PFty_node ())},
             .ret_ty = PFty_star (PFty_node ()) } },
         .alg = PFbui_pf_merge_adjacent_text_nodes }
+
+    , /* fn:resolve-QName (xs:string) as xs:QName */
+      /* Note that we're off the specs here.  Refer to fs.brg for
+       * details (computed element construction). */
+      { .ns = PFns_fn, .loc = "resolve-QName",
+        .arity = 1, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t []) { PFty_xs_string () },
+            .ret_ty = PFty_xs_QName () } },
+        .alg = PFbui_fn_resolve_qname }
+
       /* FIXME: distinct-values should be changed to anyAtomicType* */
     , /* fn:distinct-values (atomic*) as atomic* */
       { .ns = PFns_fn, .loc = "distinct-values",

@@ -3054,12 +3054,44 @@ reduce (PFpnode_t * p, int goalnt)
 
         /* TagName:                Expr */
         case 200:
-            /* in theory this should be translated into
-               'fn:resolve-QName' but we don't know the
-               element argument - therefore internally
-               the string is translated into a qname */
-            C(p) = fs_convert_op_by_type (fn_data (C(p)), PFty_string ());
-            break;
+        {
+            /*
+             * FIXME:
+             *   The specs are a bit odd in this case.  The conversion
+             *   of a string argument to a computed element constructor
+             *   is not formally described.
+             *
+             *   fn:resolve-QName is not actually a solution:
+             *
+             *    (1) fn:resolve-QName() requires a second argument that
+             *        describes the "in-scope namespaces" to resolve the
+             *        prefix in the string argument.  Unfortunately we
+             *        cannot provide one here.
+             *
+             *    (2) "in-scope namespaces" are not actually what we need
+             *        here anyway.  Tag names for computed element
+             *        constructors are based on "statically-known
+             *        namespaces".
+             *
+             *   Hence, we introduce our own fn:resolve-QName (xs:string?)
+             *   here and let the back-end try to give its best.  In
+             *   milprint_summer.c, fn:resolve-QName will simply be the
+             *   identity, as element construction will fiddle with strings
+             *   there anyway.
+             */
+            PFvar_t *v1 = new_var (NULL);
+            PFvar_t *v2 = new_var (NULL);
+            PFfun_t *resolve_qname
+                = function (PFqname (PFns_fn, "resolve-QName"));
+
+            C(p) = flwr (let (letbind (var (v1), fn_data (C(p))), nil ()),
+                         flwr (let (letbind (
+                                     var (v2),
+                                     fs_convert_op_by_type (var (v1),
+                                                            PFty_string ())),
+                                    nil ()),
+                               APPLY (resolve_qname, var (v2))));
+        } break;
 
         /* OptContentExpr:         OptExpr */
         case 201:

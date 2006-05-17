@@ -45,6 +45,8 @@
                               +- atomic -+- boolean
                               |          |
                               |          +- string
+                              |          |
+                              |          +- QName
                               |          
                               |           
                               |            +- comm
@@ -164,6 +166,7 @@ enum PFtytype_t {
   ty_double,                   /**< double                      */
   ty_string,                   /**< string                      */
   ty_boolean,                  /**< boolean                     */
+  ty_qname,                    /**< QName                       */
   ty_node,                     /**< node                        */
   ty_elem,                     /**< elem                        */
   ty_attr,                     /**< attr                        */
@@ -223,6 +226,7 @@ PFty_t PFty_string (void);
 PFty_t PFty_boolean (void);
 PFty_t PFty_decimal (void);
 PFty_t PFty_double (void);
+PFty_t PFty_qname (void);
 PFty_t PFty_stmt (void);
 
 /** 
@@ -254,6 +258,7 @@ PFty_t PFty_xs_string (void);
 PFty_t PFty_xs_boolean (void);
 PFty_t PFty_xs_decimal (void);
 PFty_t PFty_xs_double (void);
+PFty_t PFty_xs_QName (void);
 
 PFty_t PFty_xs_anyType (void);
 PFty_t PFty_xs_anyItem (void);
@@ -290,7 +295,7 @@ PFty_t PFty_defn (PFty_t);
 /**
  * Return QName of an element or attribute type (`element qn { type }').
  */
-PFqname_t PFty_qname (PFty_t t);
+PFqname_t PFty_name (PFty_t t);
 
 /**
  * Return the child of a #PFty_t type with exactly one child.

@@ -826,7 +826,7 @@ reduce (PFcnode_t * p, int goalnt)
             PFty_t t1 = TY(R(p));
             PFqname_t wild = { .ns = PFns_wild, .loc = NULL };
 
-            if (!PFty_promotable (TY(L(p)), PFty_string ()))
+            if (!PFty_promotable (TY(L(p)), PFty_qname ()))
                 PFoops (OOPS_TYPECHECK,
                         "tag name in computed element constructor"
                         " has illegal type `%s'",
@@ -846,7 +846,7 @@ reduce (PFcnode_t * p, int goalnt)
         {
             PFqname_t wild = { .ns = PFns_wild, .loc = NULL };
 
-            if (!PFty_promotable (TY(L(p)), PFty_string ()))
+            if (!PFty_promotable (TY(L(p)), PFty_qname ()))
                 PFoops (OOPS_TYPECHECK,
                         "tag name in computed attribute constructor"
                         " has illegal type '%s'",

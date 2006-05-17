@@ -3074,4 +3074,43 @@ PFbui_fn_unordered (const PFla_op_t *loop __attribute__((unused)),
                     att_pos, att_iter),
         .frag = PFla_empty_set () };
 }
+
+/**
+ * fn:resolve-QName (xs:string)
+ *
+ * Our implementation is actually off the specs.  There, the function
+ * is supposed to require two arguments: a string argument, as well as
+ * node argument that provides "in-scope namespace declarations".  The
+ * latter are then used to resolve namespace prefixes in the string
+ * argument for a proper QName result.  (Currently) we neither have
+ * a suitable element node available during compilation, nor do we
+ * track in-scope namespaces at runtime.  Our back-end implementation
+ * thus "cheats" a bit and simply generates a new URI.  Totally off
+ * the specs---feel free to improve this if you feel like it.
+ *
+ * Note that fs.brg introduces calls the fn:resolve-QName() for
+ * computed element and attribute constructors.  fn:resolve-QName()
+ * is not even the right function to use there, because the constructors
+ * should do their job based on _statically-known namespace declarations_,
+ * not in-scope declarations.
+ */
+struct PFla_pair_t
+PFbui_fn_resolve_qname (const PFla_op_t *loop __attribute__((unused)),
+                        bool ordering __attribute((unused)),
+                        struct PFla_pair_t *args)
+{
+    (void) loop;      /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+    (void) ordering;  /* pacify picky compilers that do not understand
+                         "__attribute__((unused))" */
+
+    /* implement it as a simple cast to xs:QName */
+    return (struct PFla_pair_t) {
+        .rel = project (cast (args[0].rel, att_cast, att_item, aat_qname),
+                        proj (att_iter, att_iter),
+                        proj (att_pos, att_pos),
+                        proj (att_item, att_cast)),
+        .frag = PFla_empty_set () };
+}
+
 /* vim:set shiftwidth=4 expandtab: */

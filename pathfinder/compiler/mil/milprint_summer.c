@@ -2080,7 +2080,7 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
     }
     else if (PFty_subtype (in_ty, PFty_pi (NULL)))
     {
-        char *target = (PFty_qname(in_ty)).loc;
+        char *target = (PFty_name (in_ty)).loc;
         loop_liftedSCJ (f, axis, "PI", 0, target, rev_in, rev_out);
     }
     else if (PFty_subtype (in_ty, PFty_doc (PFty_xs_anyType ())))
@@ -2089,8 +2089,8 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
     }
     else if (PFty_subtype (in_ty, PFty_xs_anyElement ()))
     {
-        ns = (PFty_qname(in_ty)).ns.uri;
-        loc = (PFty_qname(in_ty)).loc;
+        ns = (PFty_name (in_ty)).ns.uri;
+        loc = (PFty_name (in_ty)).loc;
 
         /* translate wildcard '*' as 0 and missing ns as "" */
         if (!ns)
@@ -2134,8 +2134,8 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
             return;
         }
 
-        ns = (PFty_qname(in_ty)).ns.uri;
-        loc = (PFty_qname(in_ty)).loc;
+        ns = (PFty_name (in_ty)).ns.uri;
+        loc = (PFty_name (in_ty)).loc;
 
         /* translate wildcard '*' as 0 and missing ns as "" */
         if (!ns)
@@ -8784,12 +8784,16 @@ var_is_used (PFvar_t *v, PFcnode_t *e)
   return usage;
 }
 
+#define assert_exp(e) (assert (e), (e))
+
+/*
 static bool 
 assert_exp (bool ex)
 {
      assert (ex);
      return ex;
 }
+*/
 
 static void 
 cast_to_expected (PFcnode_t *c, PFty_t expected) 
@@ -9251,6 +9255,18 @@ simplifyCoreTree (PFcnode_t *c)
                                    PFty_atomic ()))
             {
                 *c = *(L(DL(c)));
+            }
+            /*
+             * fn:resolve-QName() translates a string argument into a QName
+             * for computed element constructors.  The element construction
+             * code handles strings there anyway, so we simply omit the
+             * call to fn:resolve-URI().
+             */
+            else if (!PFqname_eq (fun->qname, PFqname (PFns_fn,"resolve-QName"))
+                     && assert_exp (fun->sig_count == 1))
+            {
+                 /* don't use function - omit apply and arg node */
+                 *c = *(DL(c));
             }
             else
             {
