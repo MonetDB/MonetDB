@@ -32,6 +32,7 @@ for XQuery plans.
 #define _XQRY_GENCODE_DEBUG   1 /* trace it use */
 
 xqry_export int XfindId(Xbackend xb, str nme);
+xqry_export void XsetId(Xbackend xb, str nme, int id);
 xqry_export int pushXvar(Xbackend xb);
 xqry_export int popXvar(Xbackend xb);
 xqry_export void xqryCoercion(Xbackend xb);
@@ -58,11 +59,27 @@ XfindId(Xbackend xb, str nme)
 	stream_printf(GDKout,"#DEBUG XfindId %s\n",nme);
 #endif
     for(i=0; i< xb->vtop; i++)
-        if (strcmp(xb->vars[i].nme, nme) == 0)
+        if (xb->vars[i].nme && strcmp(xb->vars[i].nme, nme) == 0)
             return xb->vars[i].tmpid;
     return 0;
 
 }
+
+void XsetId(Xbackend xb, str nme, int id)
+{
+	int i;
+#ifdef _XQRY_GENCODE_DEBUG
+	stream_printf(GDKout,"#DEBUG XfindId %s\n",nme);
+#endif
+	for(i=0; i< xb->vtop; i++) {
+		if (xb->vars[i].nme && strcmp(xb->vars[i].nme, nme) == 0) {
+			assert(xb->vars[i].tmpid == -1);
+			xb->vars[i].tmpid = id;
+			break;
+		}
+	}
+}
+
 
 @+
 The result of statements are represented as variables

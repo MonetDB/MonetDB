@@ -155,8 +155,6 @@ parseQName_(Xbackend xb)
 	return PARSE_ERR;
 }
 
-/* lazy implementation ;-))) */
-#define parseNCName parseQName
 STATIC int
 parseQName(Client cntxt, Xbackend xb)
 {
@@ -169,14 +167,14 @@ parseQName(Client cntxt, Xbackend xb)
 		if( xb->vars[l].nme && 
 			strcmp(xb->sval, xb->vars[l].nme)==0 ){
 			id = xb->vars[l].tmpid; 
-			break;
+			return ret;
 		}
 	if( xb->vtop == MAXXVARS){
 		xqryError(cntxt,"Too many variables");
 		xb->vtop --;
 	}
 	if( id < 0) 
-		id = newVariable(xb->mb,GDKstrdup(xb->sval),TYPE_any);
+		id = newVariable(xb->mb, _strdup(xb->sval), TYPE_any);
 	xb->vars[xb->vtop].nme = xb->mb->var[id]->name;
 #ifdef _XQRY_DEBUG
 		stream_printf(GDKout,"#NCName %d %d %s\n", xb->vtop, id, xb->sval);
@@ -192,8 +190,7 @@ parseVarQName(Client cntxt, Xbackend xb)
 	if (res == PARSE_ERR)
 		return PARSE_ERR;
 	for(l=0; l <xb->vtop; l++)
-		if(xb->vars[l].nme && 
-			strcmp(xb->sval, xb->vars[l].nme)==0 )
+		if(xb->vars[l].nme && strcmp(xb->sval, xb->vars[l].nme)==0 )
 			return PARSE_OK;
 	if( xb->vtop == MAXXVARS){
 		xqryError(cntxt,"Too many variables");
@@ -203,7 +200,7 @@ parseVarQName(Client cntxt, Xbackend xb)
 		stream_printf(GDKout,"#QName %d -1 %s\n", xb->vtop, xb->sval);
 #endif
 	xb->vars[xb->vtop].tmpid = -1;
-	xb->vars[xb->vtop++].nme = GDKstrdup(xb->sval);
+	xb->vars[xb->vtop++].nme = _strdup(xb->sval);
 	return PARSE_OK;
 }
 @-
@@ -397,8 +394,7 @@ parsePITest(Client cntxt, Xbackend xb)
 	@:ptrace(parsePITest)@
 	if (nextToken(xb) != '(')
 		return xqryError(cntxt,"'(' expected in PITest\n");
-	nextToken(xb);
-	if (parseNCName(cntxt,xb) == PARSE_OK) {
+	if (nextToken(xb) != XT_NCNAME) {
 		if (nextToken(xb) == XT_STR) 
 			nextToken(xb);
 	}
@@ -514,8 +510,7 @@ parseCompPIConstructor(Client cntxt, Xbackend xb)
 	if (curToken(xb) != XT_pi)
 		return PARSE_ERR;
 	@:ptrace(parseCompPIConstructor)@
-	nextToken(xb);
-	if (parseNCName(cntxt,xb) == PARSE_ERR) {
+	if (nextToken(xb) != XT_NCNAME) {
 		if (curToken(xb) != '{')
 			return xqryError(cntxt,"'{' expected in PIConstructor\n");
 		nextToken(xb);
@@ -917,18 +912,25 @@ parseNameTest(Client cntxt, Xbackend xb)
 {
 	@:ptrace(parseNameTest)@
 	if (parseQName(cntxt,xb) == PARSE_OK) { 
+		char *name = xb->sval;
 		if (curToken(xb) == ':') {
 			if (nextToken(xb) != '*') 
 				return xqryError(cntxt,"'*' expected in NameTest\n");
 			xb->token = -1;
-		} 
+		} else {
+			ValRecord val;
+			InstrPtr p = newAssignment(xb->mb);
+			val.vtype = TYPE_str;
+			val.val.sval = _strdup(name);
+			getArg(p,0) = pushXvar(xb);
+			pushArgument(xb->mb, p, defConstant(xb->mb, val.vtype, &val));
+		}
 		@:etrace(parseNameTest)@
 		return PARSE_OK;
 	}
 	if (curToken(xb) == '*') {
 		if (nextToken(xb) == ':') {
-			nextToken(xb);
-			if (parseNCName(cntxt,xb) == PARSE_ERR) 
+			if (nextToken(xb) != XT_NCNAME) 
 				return xqryError(cntxt,"<NCname> expected in NameTest\n");
 		}
 	} else 
@@ -947,13 +949,12 @@ parseFunctionCall(Client cntxt, Xbackend xb)
 	@:ptrace(parseFunctionCall)@
 	if (curToken(xb) != XT_FNAME) 
 		return PARSE_ERR;
-	fname = _strdup(xb->sval);
+	fname = xb->sval;
 	nextToken(xb);
 	do {
 		if (curToken(xb) == ')')
 			break;
 		if (argc && curToken(xb) != ',') {
-			_DELETE(fname);
 			return xqryError(cntxt,"',' expected in FunctionCall\n");
 		}
 		if (argc)
@@ -961,12 +962,10 @@ parseFunctionCall(Client cntxt, Xbackend xb)
 		argc++;
 	} while (parseExprSingle(cntxt, xb) == PARSE_OK);
 	if (curToken(xb) != ')') {
-		_DELETE(fname);
 		return xqryError(cntxt,"')' expected in FunctionCall\n");
 	}
 	@:etrace(parseFunctionCall)@
 	xqryStatement(xb,"xqry",fname,argc);
-	_DELETE(fname);
 	xb->token = -1;
 	return PARSE_OK;
 }
@@ -1009,6 +1008,9 @@ parsePrimaryExpr(Client cntxt, Xbackend xb)
 		nextToken(xb);
 		if (parseQName(cntxt,xb) == PARSE_ERR) 
 			return xqryError(cntxt,"<VarRef> expected in PrimaryExpr\n");
+		p= newAssignment(xb->mb);
+		getArg(p,0) = pushXvar(xb);
+		pushArgument(xb->mb, p, XfindId(xb, xb->sval));
 		@:etrace(parsePrimaryExpr)@
 		return PARSE_OK;
 	}
@@ -1636,7 +1638,7 @@ parseComparisonExpr(Client cntxt, Xbackend xb)
 		} else
 		/* ValueComp */
 		if (curToken(xb) == '=') {
-			op= "="; mod="batcalc";
+			op= "=="; mod="batcalc";
 		} else if (curToken(xb) == XT_gt) {
 			op= ">"; mod="batcalc";
 		} else if (curToken(xb) == XT_lt) {
@@ -1855,10 +1857,15 @@ parseForClause(Client cntxt, Xbackend xb)
 {
 	@:ptrace(parseForClause)@
 	do {
+		InstrPtr p;
+		int l,r;
+		char *vname = NULL;
+
 		if (curToken(xb) == ',')
 			nextToken(xb);
 		if (parseVarName(cntxt, xb) == PARSE_ERR)
 			return xqryError(cntxt,"<VarName> expected in ForClause\n");
+		vname = xb->sval;
 		if (curToken(xb) != XT_in) {
 			parseTypeDeclaration(cntxt, xb);
 			parsePositionalVar(cntxt, xb);
@@ -1868,6 +1875,12 @@ parseForClause(Client cntxt, Xbackend xb)
 		nextToken(xb);
 		if (parseExprSingle(cntxt, xb) == PARSE_ERR)
 			return xqryError(cntxt,"<ExprSingle> expected in ForClause\n");
+		l = newVariable(xb->mb, _strdup(vname), TYPE_any);
+		XsetId(xb, vname, l);
+		r = popXvar(xb);
+ 		p = newAssignment(xb->mb);
+		getArg(p,0) = l;
+		pushArgument(xb->mb, p, r);
 	} while (curToken(xb) == ',');
 	@:etrace(parseForClause done)@
 	return PARSE_OK;
@@ -1878,16 +1891,28 @@ parseLetClause(Client cntxt, Xbackend xb)
 {
 	@:ptrace(parseLetClause)@
 	do {
+		InstrPtr p;
+		int l,r;
+		char *vname = NULL;
+
 		if (curToken(xb) == ',')
 			nextToken(xb);
 		if (parseVarName(cntxt, xb) == PARSE_ERR)
 			return xqryError(cntxt,"<VarName> expected in LetClause\n");
+		vname = xb->sval;
 		parseTypeDeclaration(cntxt, xb);
 		if (curToken(xb) != XT_ASSIGN)
 			return xqryError(cntxt,"':=' expected in LetClause\n");
 		xb->token = -1;
 		if (parseExprSingle(cntxt, xb) == PARSE_ERR)
 			return xqryError(cntxt,"<ExprSingle> expected in LetClause\n");
+		l = newVariable(xb->mb, _strdup(vname), TYPE_any);
+		XsetId(xb, vname, l);
+		r = popXvar(xb);
+ 		p = newAssignment(xb->mb);
+		getArg(p,0) = l;
+		pushArgument(xb->mb, p, r);
+		
 	} while (curToken(xb) == ',');
 	@:etrace(parseLetClause done)@
 	return PARSE_OK;

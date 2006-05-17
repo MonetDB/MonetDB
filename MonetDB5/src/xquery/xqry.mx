@@ -36,6 +36,10 @@ address XQUERYepilogue;
 
 xqry.prelude();
 
+command doc(docname:str):bat[:oid,:str]
+address XQRYdoc
+comment "get data guid for the given document";
+
 @-
 The runtime library is based on code initially
 developed by A. Schmidt. It implements a 'dataguide'
@@ -151,3 +155,16 @@ typedef struct IDS {
 } Xvariable;
 
 #endif /* _XQUERY_H */
+
+@c
+#include "xqry.h"
+
+str XQRYdoc( int *r, str doc) 
+{
+	BAT *b = BATnew(TYPE_oid,TYPE_str, BUFSIZ);
+
+	(void)doc;
+	BBPkeepref(*r = b->batCacheid);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+} 
