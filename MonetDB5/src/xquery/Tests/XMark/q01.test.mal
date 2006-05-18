@@ -29,18 +29,24 @@
 mg := mguide.open("auction.xml");
 
 #/site/people/person
-b0:bat[:oid,:oid] := mguide.bind(mg,"site.people.person.id");
+b0:bat[:oid,:oid] := mguide.bind(mg,"site/people/person/id");
 #@id
-b1:bat[:oid,:str] := mguide.bind(mg,"site.people.person.id.str@");
+b1:bat[:/id,:str] := mguide.bind(mg,"site/people/person/id/str@");
 #="person0"
-b2:= algebra.select(b1,"person0");
+b2:= algebra.uselect(b1,"person0");
+
+# DISCUSS
+# make the pivot for the result
+b2a:= algebra.mark(b2);
+b2r:= bat.reverse(b2a);
 
 #$b IN document("auction.xml")/site/people/person[@id="person0"]#
 b3:= algebra.semijoin(b0,b2);
+#END DISCUSS
 
 #RETURN $b/name/text()
 mr:= mguide.new("result",b3);
-x2:bat[:oid,:oid] := xml.bind(mg,"site.people.person.name.cdata.str@");
+x2:bat[:oid,:oid] := mguide.bind(mg,"site/people/person/name/cdata/str@");
 mguide.add(mr,"result.str@",x2);
 
 mguide.serialize(mr);
