@@ -499,16 +499,20 @@ sql_bind_aggr(sql_module *m, char *sqlaname, sql_subtype *type)
 
 		if (strcmp(a->base.name, name) == 0 && (!a->tpe.type || (type && is_subtype(type, &a->tpe )))) {
 			int scale = 0;
+			int digits = 0;
 			sql_subaggr *ares = NEW(sql_subaggr);
 
 			_DELETE(name);
 			sql_ref_init(&(ares->ref));
 			ares->aggr = a;
+			digits = a->res.digits;
 			scale = a->res.scale;
 			/* same scale as the input */
-			if (type)
+			if (type) {
+				digits = type->digits;
 				scale = type->scale;
-			sql_init_subtype(&ares->res, a->res.type, a->res.digits, scale);
+			}
+			sql_init_subtype(&ares->res, a->res.type, digits, scale);
 			return ares;
 		}
 		n = n->next;
