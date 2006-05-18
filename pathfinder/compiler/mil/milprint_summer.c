@@ -5777,8 +5777,8 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
         {
             milprintf(f,
                     "{\n"
-                    "var mapping := outer%03u.reverse().leftfetchjoin(inner%03u);\n",
-                    0, 0);
+                    "var mapping := loop%03u.reverse().mirror();\n",
+                    0);
             for (i = 0; i < cur_level; i++)
             {
                 milprintf(f, 
@@ -5874,19 +5874,10 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
                 fst_res);
     }
 
-    if (!(lev_snd & ~UDF_LEV)) /* default case */
+    if (!(lev_snd & ~UDF_LEV)) /* default case: lev_snd = level 0 */
     /* the above line only works because the current scope 0 is the one
        introduced by the UDF */
     {
-        /* introduce the correct map relation (if lev_snd == UDF_LEV) */
-        if (lev_snd == UDF_LEV)
-        {
-            milprintf(f,
-                    "match_outer%03u := iter.leftfetchjoin(inner%03u.reverse())"
-                                           ".leftfetchjoin(outer%03u);\n",
-                    snd_res, 0, 0);
-        }
-
         milprintf(f,
                 "outer%03u  := outer%03u .copy().access(BAT_WRITE);\n"
                 "order_%03u  := order_%03u .copy().access(BAT_WRITE);\n"
@@ -5975,7 +5966,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
             snd_res, kind_str(rc2),
             snd_res,
             snd_res, cur_level, cur_level);
-        
+
     /* mapBack (f, cur_level); */
     cleanUpLevel (f, cur_level);
     milprintf(f, "}  # end of for-translation\n");
