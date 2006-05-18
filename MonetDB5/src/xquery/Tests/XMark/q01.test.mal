@@ -1,0 +1,46 @@
+# Query Q1:
+# Return the name of the item with ID `item20748' registered in North
+# America
+
+# FOR    $b IN document("auction.xml")/site/people/person[@id="person0"]
+# RETURN $b/name/text()
+
+# This simple query is mainly used to establish a simple performance
+# primitive unit to help establish a `metric' to interpret subsequent
+# queries.  It tests the database ability to handle simple string
+# lookups with a fully specified path
+
+# A real compiler would have access to the data guide as an
+# ordinary catalog. This means that the mapping of the paths
+# to the BATs is known upfront.
+
+#monet_guide := bat("mxml_guide");
+#var b1 := bat(find(monet_guide,"site.people.person.id@"));
+#var b2 := select(b1,"person0");
+#var b3 := reverse(b2);
+#var b4 := join (b3, bat(find(monet_guide,"site.people.person.name")));
+#var b5 := join (b4, bat(find(monet_guide,"site.people.person.name.cdata")));
+#var b6 := join (b5, bat(find(monet_guide,"site.people.person.name.cdata.string@")));
+#b6@batloop() {
+#printf("%s\n",$t);
+#}
+
+#$b IN document("auction.xml"
+mg := mguide.open("auction.xml");
+
+#/site/people/person
+b0:bat[:oid,:oid] := mguide.bind(mg,"site.people.person.id");
+#@id
+b1:bat[:oid,:str] := mguide.bind(mg,"site.people.person.id.str@");
+#="person0"
+b2:= algebra.select(b1,"person0");
+
+#$b IN document("auction.xml")/site/people/person[@id="person0"]#
+b3:= algebra.semijoin(b0,b2);
+
+#RETURN $b/name/text()
+mr:= mguide.new("result",b3);
+x2:bat[:oid,:oid] := xml.bind(mg,"site.people.person.name.cdata.str@");
+mguide.add(mr,"result.str@",x2);
+
+mguide.serialize(mr);

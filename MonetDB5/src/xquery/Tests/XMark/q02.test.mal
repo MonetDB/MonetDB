@@ -1,0 +1,51 @@
+# Query Q2:
+# Return the initial increases of all open auctions.
+
+# FOR    $b IN document("auction.xml")/site/open_auctions/open_auction
+# RETURN <increase> $b/bidder[1]/increase/text() </increase>
+
+# This query evaluates the cost of array look-ups.  Note that this
+# query may actually be harder to evaluate than it looks; especially
+# relational back-ends may have to struggle with rather complex
+# aggregations to select the bidder element with index 1.
+
+#var monet_guide := bat("mxml_guide");
+#var b0 := bat(find(monet_guide,"site.open_auctions.open_auction"));
+#var b1 := bat(find(monet_guide,"site.open_auctions.open_auction.bidder"));
+#var b2 := bat(find(monet_guide,"site.open_auctions.open_auction.bidder.increase"));
+#var b3 := bat(find(monet_guide,"site.open_auctions.open_auction.bidder.increase.cdata"));
+#var b4 := bat(find(monet_guide,"site.open_auctions.open_auction.bidder.increase.cdata.string@"));
+#var b5 := reverse(b0);
+#var b6 := {min}(b1);
+#var b7 := outerjoin(b6,b2);
+#var b8 := outerjoin(b7,b3);
+#var b9 := outerjoin(b8,b4);
+##var b11 := kunion(b9,b10);
+#var b10 := kdiff(b5,b6).project(str(nil));
+#b11.sort()@batloop() {
+#if (isnil($t)) {
+#printf("<increase/>\n");
+#} else {
+#printf("<increase>%s</increase>\n",$t);
+#}
+
+mg:= mguide.open("auctions.xml");
+x0:bat[:oid,:oid]:= xml.bind(mg,"site.open_auctions.open_auction");
+
+# you may only serialize the paths mentioned
+mr:= mguide.new("result");
+e0:= mguide.addElement(mr,"increase",x0);
+x1:bat[:oid,:oid]:= mguide.bind(mg,"site.open_auctions.open_auction.bidder");
+e2:= mguide.addElement(mr,e0,"bidder",x1);
+
+x2:bat[:oid,:oid]:= mguide.bind(mg,"site.open_auctions.open_auction.bidder.increase");
+e3:= mguide.addElement(mr,e2,"increase",x2);
+
+x3:bat[:oid,:str] := mguide.bind(mg,"site.open_auctions.open_auction.bidder.increase.cdata");
+e4:= mguide.addElement(mr,e3,"cdata",x3);
+
+x4:bat[:oid,:str]:= mguide.bind(mg,"site.open_auctions.open_auction.bidder.increase.cdata.str@");
+
+e5:= mguide.addElement(mr,e4,"cdata",x4);
+
+mguide.serialize(mr);
