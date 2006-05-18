@@ -905,7 +905,10 @@ PFbui_fn_string_join (const PFla_op_t *loop __attribute__((unused)),
                                             project (
                                                 args[1].rel,
                                                 proj (att_iter, att_iter),
-                                                proj (att_item, att_item))),
+                                                proj (att_item, att_item)),
+                                            att_iter, att_pos, att_item,
+                                            att_iter, att_item,
+                                            att_iter, att_item),
                             att_pos, lit_nat (1)),
                 .frag = args[0].frag };
 }
@@ -2226,7 +2229,8 @@ PFbui_fn_doc (const PFla_op_t *loop __attribute__((unused)),
 
     PFla_op_t *doc = doc_tbl (project (args[0].rel,
                                        proj (att_iter, att_iter),
-                                       proj (att_item, att_item)));
+                                       proj (att_item, att_item)),
+                              att_iter, att_item, att_item);
 
     return (struct PFla_pair_t) {
         .rel  = attach (roots (doc), att_pos, lit_nat (1)),
@@ -2344,7 +2348,8 @@ PFbui_pf_string_value_elem (const PFla_op_t *loop __attribute__((unused)),
                            project (args[0].rel,
                                     proj (att_iter, att_iter),
                                     proj (att_item, att_item)),
-                           alg_desc_s, PFty_text ()),
+                           alg_desc_s, PFty_text (),
+                           att_iter, att_item, att_item),
                    att_pos, sortby (att_item), att_iter);
 
     /* concatenate all texts within an iteration using
@@ -2363,7 +2368,10 @@ PFbui_pf_string_value_elem (const PFla_op_t *loop __attribute__((unused)),
                         attach (loop, att_pos, lit_nat (1)),
                         att_item, lit_str ("")),
                     proj (att_iter, att_iter),
-                    proj (att_item, att_item)));
+                    proj (att_item, att_item)),
+                att_iter, att_pos, att_item,
+                att_iter, att_item,
+                att_iter, att_item);
 
     /* add empty strings for all empty sequences */
     res = attach (
@@ -2433,7 +2441,8 @@ PFbui_pf_string_value_elem_attr (const PFla_op_t *loop __attribute__((unused)),
                            project (sel_node,
                                     proj (att_iter, att_iter),
                                     proj (att_item, att_item)),
-                           alg_desc_s, PFty_text ()),
+                           alg_desc_s, PFty_text (),
+                           att_iter, att_item, att_item),
                    att_pos, sortby (att_item), att_iter);
 
     /* concatenate all texts within an iteration using
@@ -2455,7 +2464,10 @@ PFbui_pf_string_value_elem_attr (const PFla_op_t *loop __attribute__((unused)),
                                      proj(att_pos, att_pos)),
                         att_item, lit_str ("")),
                     proj (att_iter, att_iter),
-                    proj (att_item, att_item)));
+                    proj (att_item, att_item)),
+                att_iter, att_pos, att_item,
+                att_iter, att_item,
+                att_iter, att_item);
 
     /* add empty strings for all empty sequences */
     res = attach (
@@ -2566,7 +2578,7 @@ fn_data (struct PFla_pair_t (*str_val)
                              proj(att_item, att_cast));
     
     return (struct  PFla_pair_t) {
-        .rel  = disjunion(atomics, res),
+        .rel  = disjunion (atomics, res),
         .frag = PFla_empty_set () };
 }
 
@@ -2764,7 +2776,10 @@ pf_item_seq_to_node_seq_worker_atomic (const PFla_op_t *loop,
                                      attach (loop, att_pos, lit_nat (1)),
                                      att_item, lit_str (" ")),
                                  proj (att_iter, att_iter),
-                                 proj (att_item, att_item)));
+                                 proj (att_item, att_item)),
+                         att_iter, att_pos, att_item,
+                         att_iter, att_item,
+                         att_iter, att_item);
 
     PFla_op_t *t_nodes = textnode (strings, att_res, att_item);
 
@@ -3044,7 +3059,9 @@ PFbui_pf_merge_adjacent_text_nodes (
                          "__attribute__((unused))" */
 
     PFla_op_t *merged
-        = merge_adjacent (PFla_set_to_la (args[0].frag), args[0].rel);
+        = merge_adjacent (PFla_set_to_la (args[0].frag), args[0].rel,
+                          att_iter, att_pos, att_item,
+                          att_iter, att_pos, att_item);
 
     return (struct  PFla_pair_t) {
                  .rel  = roots (merged),

@@ -46,6 +46,19 @@
 /** starting from p, make a step right, then a step left */
 #define RL(p) L(R(p))
 
+/* worker for PFprop_unq_name* */
+static PFalg_att_t
+find_unq_name (PFarray_t *np_list, PFalg_att_t attr)
+{
+    if (!np_list) return 0;
+
+    for (unsigned int i = 0; i < PFarray_last (np_list); i++)
+        if (attr == ((name_pair_t *) PFarray_at (np_list, i))->ori)
+            return ((name_pair_t *) PFarray_at (np_list, i))->unq;
+
+    return 0;
+}
+
 /**
  * Return unique name of attribute @a attr stored
  * in property container @a prop.
@@ -54,73 +67,67 @@ PFalg_att_t
 PFprop_unq_name (const PFprop_t *prop, PFalg_att_t attr)
 {
     assert (prop);
-    assert (prop->name_pairs);
-    
-    for (unsigned int i = 0; i < PFarray_last (prop->name_pairs); i++)
-        if (attr == ((name_pair_t *) PFarray_at (prop->name_pairs, i))->ori)
-            return ((name_pair_t *) PFarray_at (prop->name_pairs, i))->unq;
-
-    return 0;
+    return find_unq_name (prop->name_pairs, attr);
 }
 
 /**
- * Return original name of unique attribute @a attr stored
- * in property container @a prop.
+ * Return unique name of attribute @a attr stored
+ * in the left name mapping field of property container @a prop.
  */
 PFalg_att_t
-PFprop_ori_name (const PFprop_t *prop, PFalg_att_t attr)
+PFprop_unq_name_left (const PFprop_t *prop, PFalg_att_t attr)
 {
     assert (prop);
-    assert (prop->name_pairs);
-    
-    for (unsigned int i = 0; i < PFarray_last (prop->name_pairs); i++)
-        if (attr == ((name_pair_t *) PFarray_at (prop->name_pairs, i))->unq)
-            return ((name_pair_t *) PFarray_at (prop->name_pairs, i))->ori;
-
-    return 0;
+    return  find_unq_name (prop->l_name_pairs, attr);
 }
 
 /**
- * Returns the textual representation of an unique attribute @a attr.
+ * Return unique name of attribute @a attr stored
+ * in the right name mapping field of property container @a prop.
  */
-char *
-PFunq_att_str (PFalg_att_t attr)
+PFalg_att_t
+PFprop_unq_name_right (const PFprop_t *prop, PFalg_att_t attr)
 {
-    assert (attr < 10000);
-    size_t len = sizeof ("0000");
-    char *res = PFmalloc (len);
-    snprintf (res, len, "%u", attr);
-
-    return res;
+    assert (prop);
+    return  find_unq_name (prop->r_name_pairs, attr);
 }
 
 /**
  * Add a new original name/unique name pair to the list of name pairs
- * (stored in property container @a prop).
+ * (@a np_list).
  */
 static void
-add_name_pair (PFprop_t *prop, PFalg_att_t ori, unsigned int unq)
+add_name_pair (PFarray_t *np_list, PFalg_att_t ori, PFalg_att_t unq)
 {
-    assert (prop);
-    assert (prop->name_pairs);
+    assert (np_list);
     
-    *(name_pair_t *) PFarray_add (prop->name_pairs)
-        = (name_pair_t) { .ori = ori, .unq = (PFalg_att_t) unq };
+    *(name_pair_t *) PFarray_add (np_list)
+        = (name_pair_t) { .ori = ori, .unq = unq };
+}
+
+/**
+ * Create new unique name and add it together with the original name
+ * to the name pair list (@a np_list).
+ */ 
+static void
+new_name_pair (PFarray_t *np_list, PFalg_att_t ori, unsigned int id)
+{
+    add_name_pair (np_list, ori, PFalg_unq_name (ori, id));
 }
 
 /**
  * Add all original name/unique name pairs of the node @a child to
- * the list of name pairs (stored in property container @a prop).
+ * the list of name pairs (@a np_list).
  */
 static void
-bulk_add_name_pairs (PFprop_t *prop, PFla_op_t *child)
+bulk_add_name_pairs (PFarray_t *np_list, PFla_op_t *child)
 {
-    assert (prop);
+    assert (np_list);
     assert (child);
     assert (child->prop);
 
     for (unsigned int i = 0; i < child->schema.count; i++) {
-        add_name_pair (prop, 
+        add_name_pair (np_list, 
                        child->schema.items[i].name,
                        PFprop_unq_name (child->prop,
                                         child->schema.items[i].name));
@@ -133,82 +140,200 @@ bulk_add_name_pairs (PFprop_t *prop, PFla_op_t *child)
 static unsigned int
 infer_unq_names (PFla_op_t *n, unsigned int id)
 {
+    PFarray_t *np_list = n->prop->name_pairs;
+
     switch (n->kind) {
         case la_serialize:
-            bulk_add_name_pairs (n->prop, R(n));
+            bulk_add_name_pairs (np_list, R(n));
             break;
 
         case la_lit_tbl:
         case la_empty_tbl:
             /* create new unique names for all attributes */
             for (unsigned int i = 0; i < n->schema.count; i++)
-                add_name_pair (n->prop, n->schema.items[i].name, id++);
+                new_name_pair (np_list, n->schema.items[i].name, id++);
             break;
             
         case la_attach:
-            bulk_add_name_pairs (n->prop, L(n));
-            add_name_pair (n->prop, n->sem.attach.attname, id++);
+            bulk_add_name_pairs (np_list, L(n));
+            new_name_pair (np_list, n->sem.attach.attname, id++);
             break;
 
         case la_cross:
+        {
+            /* To avoid name collisions that arise from applying
+               a cross product on input relations with identical
+               names we create new attribute names.
+               The correspondence between the unique names of the
+               operands and the new unique names is stored in
+               a list of name pairs for each operand. */
+            PFalg_att_t ori, ori_prev, unq, child_unq;
+            PFarray_t *left_np_list, *right_np_list;
+
+            /* initialize left and right name pair list */
+            n->prop->l_name_pairs = PFarray (sizeof (name_pair_t));
+            n->prop->r_name_pairs = PFarray (sizeof (name_pair_t));
+            
+            left_np_list  = n->prop->l_name_pairs;
+            right_np_list = n->prop->r_name_pairs;
+            
+            for (unsigned int i = 0; i < L(n)->schema.count; i++) {
+                ori = L(n)->schema.items[i].name;
+                child_unq = PFprop_unq_name (L(n)->prop, ori);
+                
+                /* Check for multiple occurrences of the same unique
+                   column name. (Use check function of variable
+                   backmapping as it works on the same array) */
+                if ((ori_prev = PFprop_ori_name_left (n->prop, child_unq)))
+                    /* we already have mapped this unique name
+                       - so look up new unique name */
+                    unq = find_unq_name (np_list, ori_prev);
+                else
+                    /* no match */
+                    unq = PFalg_unq_name (ori, id++);
+
+                add_name_pair (np_list, ori, unq);
+                add_name_pair (left_np_list, ori, child_unq);
+            }
+            for (unsigned int i = 0; i < R(n)->schema.count; i++) {
+                ori = R(n)->schema.items[i].name;
+                child_unq = PFprop_unq_name (R(n)->prop, ori);
+
+                /* Check for multiple occurrences of the same unique
+                   column name. (Use check function of variable
+                   backmapping as it works on the same array) */
+                if ((ori_prev = PFprop_ori_name_right (n->prop, child_unq)))
+                    /* we already have mapped this unique name 
+                       - so look up new unique name */
+                    unq = find_unq_name (np_list, ori_prev);
+                else
+                    /* no match */
+                    unq = PFalg_unq_name (ori, id++);
+                                           
+                add_name_pair (np_list, ori, unq);
+                add_name_pair (right_np_list, ori, child_unq);
+            }
+        }   break;
+
         case la_eqjoin:
-            bulk_add_name_pairs (n->prop, L(n));
-            bulk_add_name_pairs (n->prop, R(n));
-            break;
+        {
+            PFalg_att_t ori, join_unq, att1_unq, att2_unq, child_unq;
+            PFarray_t *left_np_list, *right_np_list;
+
+            att1_unq = PFprop_unq_name (L(n)->prop, n->sem.eqjoin.att1);
+            att2_unq = PFprop_unq_name (R(n)->prop, n->sem.eqjoin.att2);
+            /* always use smaller (hopefully original) unique name
+               as name of the both join arguments */
+            if (att1_unq <= att2_unq)
+                join_unq = att1_unq;
+            else
+                join_unq = att2_unq;
+
+            /* initialize left and right name pair list */
+            n->prop->l_name_pairs = PFarray (sizeof (name_pair_t));
+            n->prop->r_name_pairs = PFarray (sizeof (name_pair_t));
+            
+            left_np_list  = n->prop->l_name_pairs;
+            right_np_list = n->prop->r_name_pairs;
+            
+            for (unsigned int i = 0; i < L(n)->schema.count; i++) {
+                ori = L(n)->schema.items[i].name;
+                child_unq = PFprop_unq_name (L(n)->prop, ori);
+
+                /* Inside a relation we don't have any naming
+                   conflicts and thus only have to assign new
+                   names for all columns that are identical to
+                   the join argument column */
+                if (child_unq == att1_unq)
+                    add_name_pair (np_list, ori, join_unq);
+                else
+                    add_name_pair (np_list, ori, child_unq);
+
+                add_name_pair (left_np_list, ori, child_unq);
+            }
+
+            for (unsigned int i = 0; i < R(n)->schema.count; i++) {
+                ori = R(n)->schema.items[i].name;
+                child_unq = PFprop_unq_name (R(n)->prop, ori);
+
+                /* In comparison to the first argument we may
+                   now hit some equally named columns even if they
+                   are not identical to the second join argument
+                   column. In this case we rename the conflicting
+                   columns by introducing a new unique name. */
+                if (child_unq == att2_unq)
+                    add_name_pair (np_list, ori, join_unq);
+                else if (PFprop_ori_name_left (n->prop, child_unq)) {
+                    PFalg_att_t ori_prev, unq;
+
+                    /* like in the cross product case we map equally
+                       named conflicting names to the same replacement */
+                    if ((ori_prev = PFprop_ori_name_right (n->prop, 
+                                                           child_unq)))
+                        /* we already have mapped this unique name 
+                           - so look up new unique name */
+                        unq = find_unq_name (np_list, ori_prev);
+                    else
+                        /* no match */
+                        unq = PFalg_unq_name (ori, id++);
+
+                    add_name_pair (np_list, ori, unq);
+                }
+                else
+                    add_name_pair (np_list, ori, child_unq);
+
+                add_name_pair (right_np_list, ori, child_unq);
+            }
+        }   break;
 
         case la_project:
             /* bind all existing unique names to the possibly new names */
             for (unsigned int i = 0; i < n->schema.count; i++)
-                add_name_pair (n->prop, 
+                add_name_pair (np_list, 
                                n->sem.proj.items[i].new, 
                                PFprop_unq_name (L(n)->prop,
                                                 n->sem.proj.items[i].old));
             break;
 
         case la_select:
-            bulk_add_name_pairs (n->prop, L(n));
+        case la_distinct:
+            bulk_add_name_pairs (np_list, L(n));
             break;
             
         case la_disjunion:
-            /* create new unique attribute names if the unique 
-               names of the children do not match */
-            for (unsigned int i = 0; i < L(n)->schema.count; i++) {
-                unsigned int j;
-                PFalg_att_t unq1, unq2;
-
-                for (j = 0; j < R(n)->schema.count; j++)
-                    if (L(n)->schema.items[i].name ==
-                        R(n)->schema.items[j].name) {
-                        unq1 = PFprop_unq_name (L(n)->prop,
-                                                L(n)->schema.items[i].name);
-                        unq2 = PFprop_unq_name (R(n)->prop,
-                                                R(n)->schema.items[j].name);
-                            
-                        if (unq1 == unq2)
-                            add_name_pair (n->prop,
-                                           L(n)->schema.items[i].name,
-                                           unq1);
-                        else
-                            add_name_pair (n->prop, 
-                                           L(n)->schema.items[i].name,
-                                           id++);
-                        break;
-                    }
-                if (j == R(n)->schema.count)
-                    PFoops (OOPS_FATAL,
-                            "can't find matching columns in "
-                            "unique name property inference.");
-            }
-            break;
-            
         case la_intersect:
         case la_difference:
-        case la_distinct:
-            /* create new unique names for all existing attributes */
-            for (unsigned int i = 0; i < L(n)->schema.count; i++)
-                add_name_pair (n->prop, L(n)->schema.items[i].name, id++);
-            break;
-            
+        {
+            /* To avoid name collisions that arise from applying
+               a set operation on input relations with identical
+               names we create new attribute names.
+               The correspondence between the unique names of the
+               operands and the new unique names is stored in
+               a list of name pairs for each operand. */
+            PFalg_att_t ori, unq, l_unq, r_unq;
+
+            n->prop->l_name_pairs = PFarray (sizeof (name_pair_t));
+            n->prop->r_name_pairs = PFarray (sizeof (name_pair_t));
+
+            for (unsigned int i = 0; i < n->schema.count; i++) {
+                ori = n->schema.items[i].name;
+                l_unq = PFprop_unq_name (L(n)->prop, ori);
+                r_unq = PFprop_unq_name (R(n)->prop, ori);
+
+                /* maintain unique name if it the same for both operands */
+                /*
+                if (n->kind == la_disjunion && l_unq == r_unq)
+                    unq = l_unq;
+                else
+                */
+                    unq = PFalg_unq_name (ori, id++);
+                    
+                add_name_pair (np_list, ori, unq);
+                add_name_pair (n->prop->l_name_pairs, ori, l_unq);
+                add_name_pair (n->prop->r_name_pairs, ori, r_unq);
+            }
+        }   break;
+
         case la_num_add:
         case la_num_subtract:
         case la_num_multiply:
@@ -220,101 +345,91 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
         case la_bool_or:
         case la_concat:
         case la_contains:
-            bulk_add_name_pairs (n->prop, L(n));
-            add_name_pair (n->prop, n->sem.binary.res, id++);
+            bulk_add_name_pairs (np_list, L(n));
+            new_name_pair (np_list, n->sem.binary.res, id++);
             break;
 
         case la_num_neg:
         case la_bool_not:
-            bulk_add_name_pairs (n->prop, L(n));
-            add_name_pair (n->prop, n->sem.unary.res, id++);
+            bulk_add_name_pairs (np_list, L(n));
+            new_name_pair (np_list, n->sem.unary.res, id++);
             break;
 
         case la_avg:
 	case la_max:
 	case la_min:
         case la_sum:
-            add_name_pair (n->prop, n->sem.aggr.res, id++);
-            if (n->sem.aggr.part)
-                add_name_pair (n->prop, n->sem.aggr.part, id++);
-            break;
-
         case la_count:
-            add_name_pair (n->prop, n->sem.count.res, id++);
-            if (n->sem.count.part)
-                add_name_pair (n->prop, n->sem.count.part, id++);
+        case la_seqty1:
+        case la_all:
+            new_name_pair (np_list, n->sem.aggr.res, id++);
+            if (n->sem.aggr.part)
+                add_name_pair (np_list,
+                               n->sem.aggr.part, 
+                               PFprop_unq_name (L(n)->prop,
+                                                n->sem.aggr.part));
             break;
 
         case la_rownum:
-            bulk_add_name_pairs (n->prop, L(n));
-            add_name_pair (n->prop, n->sem.rownum.attname, id++);
+            bulk_add_name_pairs (np_list, L(n));
+            new_name_pair (np_list, n->sem.rownum.attname, id++);
             break;
 
         case la_number:
-            bulk_add_name_pairs (n->prop, L(n));
-            add_name_pair (n->prop, n->sem.number.attname, id++);
+            bulk_add_name_pairs (np_list, L(n));
+            new_name_pair (np_list, n->sem.number.attname, id++);
             break;
 
         case la_type:
-            bulk_add_name_pairs (n->prop, L(n));
-            add_name_pair (n->prop, n->sem.type.res, id++);
+        case la_cast:
+            bulk_add_name_pairs (np_list, L(n));
+            new_name_pair (np_list, n->sem.type.res, id++);
             break;
 
         case la_type_assert:
-            bulk_add_name_pairs (n->prop, L(n));
-            break;
-
-        case la_cast:
-            bulk_add_name_pairs (n->prop, L(n));
-            add_name_pair (n->prop, n->sem.cast.res, id++);
-            break;
-
-        case la_seqty1:
-        case la_all:
-            add_name_pair (n->prop, n->sem.blngroup.res, id++);
-            if (n->sem.blngroup.part)
-                add_name_pair (n->prop, n->sem.blngroup.part, id++);
+            bulk_add_name_pairs (np_list, L(n));
             break;
 
         case la_scjoin:
-            add_name_pair (n->prop, att_iter, id++);
-            add_name_pair (n->prop, att_item, id++);
+            add_name_pair (np_list, 
+                           n->sem.scjoin.iter,
+                           PFprop_unq_name (R(n)->prop,
+                                            n->sem.scjoin.iter));
+            new_name_pair (np_list, n->sem.scjoin.item_res, id++);
             break;
             
         case la_doc_tbl:
-            add_name_pair (n->prop,
-                           att_iter,
-                           PFprop_unq_name (L(n)->prop, att_iter));
-            add_name_pair (n->prop, att_item, id++);
+            add_name_pair (np_list,
+                           n->sem.doc_tbl.iter,
+                           PFprop_unq_name (L(n)->prop,
+                                            n->sem.doc_tbl.iter));
+            new_name_pair (np_list, n->sem.doc_tbl.item_res, id++);
             break;
             
         case la_doc_access:
-            bulk_add_name_pairs (n->prop, R(n));
-            add_name_pair (n->prop, n->sem.doc_access.res, id++);
+            bulk_add_name_pairs (np_list, R(n));
+            new_name_pair (np_list, n->sem.doc_access.res, id++);
             break;
 
         case la_element:
-            add_name_pair (n->prop,
-                           att_iter,
-                           PFprop_unq_name (R(n)->prop, att_iter));
-            add_name_pair (n->prop, att_item, id++);
+            add_name_pair (np_list,
+                           n->sem.elem.iter_res,
+                           PFprop_unq_name (RL(n)->prop, 
+                                            n->sem.elem.iter_qn));
+            new_name_pair (np_list, n->sem.elem.item_res, id++);
             break;
         
         case la_element_tag:
-            add_name_pair (n->prop,
-                           att_iter,
-                           PFprop_unq_name (L(n)->prop, att_iter));
-            add_name_pair (n->prop, att_item, id++);
             break;
             
         case la_attribute:
-            bulk_add_name_pairs (n->prop, L(n));
-            add_name_pair (n->prop, n->sem.attr.res, id++);
+            bulk_add_name_pairs (np_list, L(n));
+            new_name_pair (np_list, n->sem.attr.res, id++);
             break;
 
         case la_textnode:
-            bulk_add_name_pairs (n->prop, L(n));
-            add_name_pair (n->prop, n->sem.textnode.res, id++);
+            bulk_add_name_pairs (np_list, L(n));
+            new_name_pair (np_list, n->sem.textnode.res, id++);
             break;
 
         case la_docnode:
@@ -323,13 +438,19 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             break;
             
         case la_merge_adjacent:
-            add_name_pair (n->prop, att_iter, id++);
-            add_name_pair (n->prop, att_pos, id++);
-            add_name_pair (n->prop, att_item, id++);
+            add_name_pair (np_list,
+                           n->sem.merge_adjacent.iter_res,
+                           PFprop_unq_name (R(n)->prop, 
+                                            n->sem.merge_adjacent.iter_in));
+            add_name_pair (np_list,
+                           n->sem.merge_adjacent.pos_res,
+                           PFprop_unq_name (R(n)->prop, 
+                                            n->sem.merge_adjacent.pos_in));
+            new_name_pair (np_list, n->sem.merge_adjacent.item_res, id++);
             break;
             
         case la_roots:
-            bulk_add_name_pairs (n->prop, L(n));
+            bulk_add_name_pairs (np_list, L(n));
             break;
 
         case la_fragment:
@@ -338,18 +459,25 @@ infer_unq_names (PFla_op_t *n, unsigned int id)
             break;
             
         case la_cond_err:
-            bulk_add_name_pairs (n->prop, L(n));
+            bulk_add_name_pairs (np_list, L(n));
             break;
 
         case la_string_join:
-            add_name_pair (n->prop, att_iter, id++);
-            add_name_pair (n->prop, att_item, id++);
+            add_name_pair (np_list,
+                           n->sem.string_join.iter_res,
+                           PFprop_unq_name (R(n)->prop,
+                                            n->sem.string_join.iter_sep));
+            new_name_pair (np_list, n->sem.string_join.item_res, id++);
             break;
 
-        case la_cross_dup:
+        case la_cross_mvd:
             PFoops (OOPS_FATAL,
-                    "duplicate aware cross product operator is "
+                    "clone column aware cross product operator is "
                     "only allowed inside mvd optimization!");
+        case la_eqjoin_unq:
+            PFoops (OOPS_FATAL,
+                    "clone column aware equi-join operator is "
+                    "only allowed with unique attribute names!");
     }
     return id;
 }
@@ -372,6 +500,8 @@ prop_infer (PFla_op_t *n, unsigned int cur_col_id)
 
     /* reset the unique name information */
     n->prop->name_pairs = PFarray (sizeof (name_pair_t));
+    n->prop->l_name_pairs = NULL;
+    n->prop->r_name_pairs = NULL;
     
     /* infer unique name columns */
     cur_col_id = infer_unq_names (n, cur_col_id);
@@ -385,9 +515,7 @@ prop_infer (PFla_op_t *n, unsigned int cur_col_id)
 void
 PFprop_infer_unq_names (PFla_op_t *root)
 {
-    /* avoid using the bits of iter 1, item 2,
-       and pos 4 and thus start with 8 */
-    prop_infer (root, 8);
+    prop_infer (root, 1);
     PFla_dag_reset (root);
 }
 

@@ -434,7 +434,7 @@ reduce (PFcnode_t * p, int goalnt)
             reduce (kids[1], nts[1]);
             A(p) = (PFla_pair_t) {
                      .rel = serialize (PFla_set_to_la (A(R(p)).frag),
-                                       A(R(p)).rel),
+                                       A(R(p)).rel, att_pos, att_item),
                      .frag = NULL };
             break;
 
@@ -1536,7 +1536,10 @@ reduce (PFcnode_t * p, int goalnt)
              */
 
             PFla_op_t *elem = element (PFla_set_to_la (A(R(p)).frag),
-                                       A(L(p)).rel, A(R(p)).rel);
+                                       A(L(p)).rel, A(R(p)).rel,
+                                       att_iter, att_item,
+                                       att_iter, att_pos, att_item,
+                                       att_iter, att_item);
 
             A(p) = (struct  PFla_pair_t) {
                      .rel = attach (roots (elem),
@@ -1822,8 +1825,7 @@ locstep (PFalg_axis_t axis, PFty_t seqty, struct PFla_pair_t p)
                                 project (p.rel,
                                          proj (att_iter, att_iter),
                                          proj (att_item, att_item)),
-                                axis,
-                                seqty);
+                                axis, seqty, att_iter, att_item, att_item);
 
     if (ordering)
         return (struct  PFla_pair_t) {

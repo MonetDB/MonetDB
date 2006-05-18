@@ -193,7 +193,8 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
         case la_serialize:
             /* infer empty list for fragments */
             n->prop->l_icols = 0;
-            n->prop->r_icols = union_ (att_pos, att_item);
+            n->prop->r_icols = union_ (n->sem.serialize.pos,
+                                       n->sem.serialize.item);
             break;
 
         case la_lit_tbl:
@@ -313,6 +314,8 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 	case la_max:
 	case la_min:
         case la_sum:
+        case la_seqty1:
+        case la_all:
             n->prop->l_icols = n->prop->icols;
 
             /* do not infer input columns if operator is not required */
@@ -330,13 +333,13 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             n->prop->l_icols = n->prop->icols;
 
             /* do not infer input columns if operator is not required */
-            if (!(n->prop->icols & n->sem.count.res))
+            if (!(n->prop->icols & n->sem.aggr.res))
                 break;
 
-            n->prop->l_icols = diff (n->prop->l_icols, n->sem.count.res);
+            n->prop->l_icols = diff (n->prop->l_icols, n->sem.aggr.res);
             /* only infer part if available */
-            if (n->sem.count.part != att_NULL)
-                n->prop->l_icols = union_ (n->prop->l_icols, n->sem.count.part);
+            if (n->sem.aggr.part != att_NULL)
+                n->prop->l_icols = union_ (n->prop->l_icols, n->sem.aggr.part);
             break;
 
         case la_rownum:
@@ -373,6 +376,7 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             break;
 
         case la_type:
+        case la_cast:
             n->prop->l_icols = n->prop->icols;
 
             /* do not infer input columns if operator is not required */
@@ -384,49 +388,26 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             break;
 
         case la_type_assert:
-            /* if n->sem.type_a.att is not present this operator
+            /* if n->sem.type.att is not present this operator
                has to be pruned -- therefore we do not care about
                inferrring this column in icols. */
             n->prop->l_icols = n->prop->icols;
             break;
 
-        case la_cast:
             n->prop->l_icols = n->prop->icols;
-
-            /* do not infer input columns if operator is not required */
-            if (!(n->prop->icols & n->sem.cast.res))
-                break;
-
-            n->prop->l_icols = diff (n->prop->l_icols, n->sem.cast.res);
-            n->prop->l_icols = union_ (n->prop->l_icols, n->sem.cast.att);
-            break;
-
-        case la_seqty1:
-        case la_all:
-            n->prop->l_icols = n->prop->icols;
-
-            /* do not infer input columns if operator is not required */
-            if (!(n->prop->icols & n->sem.blngroup.res))
-                break;
-
-            n->prop->l_icols = diff (n->prop->l_icols, n->sem.blngroup.res);
-            n->prop->l_icols = union_ (n->prop->l_icols, n->sem.blngroup.att);
-            /* only infer part if available */
-            if (n->sem.blngroup.part != att_NULL)
-                n->prop->l_icols = union_ (n->prop->l_icols,
-                                           n->sem.blngroup.part);
-            break;
 
         case la_scjoin:
             /* infer empty list for fragments */
             n->prop->l_icols = 0;
             /* infer iter|item schema for input relation */
-            n->prop->r_icols = union_ (att_iter, att_item);
+            n->prop->r_icols = union_ (n->sem.scjoin.iter,
+                                       n->sem.scjoin.item);
             break;
 
         case la_doc_tbl:
             /* infer iter|item schema for input relation */
-            n->prop->l_icols = union_ (att_iter, att_item);
+            n->prop->l_icols = union_ (n->sem.doc_tbl.iter,
+                                       n->sem.doc_tbl.item);
             break;
 
         case la_doc_access:
@@ -450,21 +431,26 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             prop_infer_icols (L(n), 0);
 
             /* do only infer input columns if operator is not required */
-            if (!(n->prop->icols & att_item))
+            if (!(n->prop->icols & n->sem.elem.item_res))
             {
                 /* infer current icols schema for the qnames as replacement */
-                prop_infer_icols (RL(n), n->prop->icols);
+                if (n->prop->icols & n->sem.elem.iter_res)
+                    prop_infer_icols (RL(n), n->sem.elem.iter_qn);
+                else
+                    prop_infer_icols (RL(n), 0);
 
                 /* infer empty list for missing content */
                 prop_infer_icols (RR(n), 0);
             } else {
                 /* infer iter|item schema for element name relation */
-                prop_infer_icols (RL(n), union_ (att_iter, att_item));
+                prop_infer_icols (RL(n), union_ (n->sem.elem.iter_qn,
+                                                 n->sem.elem.item_qn));
 
                 /* infer iter|pos|item schema for element content relation */
                 prop_infer_icols (RR(n),
-                                  union_ (union_ (att_iter, att_item),
-                                          att_pos));
+                                  union_ (union_ (n->sem.elem.iter_val,
+                                                  n->sem.elem.item_val),
+                                          n->sem.elem.pos_val));
             }
 
             skip_children = true;
@@ -506,7 +492,9 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
             /* infer empty list for fragments */
             n->prop->l_icols = 0;
             /* infer iter|pos|item schema for element content relation */
-            n->prop->r_icols = union_ (union_ (att_iter, att_item), att_pos);
+            n->prop->r_icols = union_ (union_ (n->sem.merge_adjacent.iter_in,
+                                               n->sem.merge_adjacent.item_in),
+                                       n->sem.merge_adjacent.pos_in);
             break;
 
         case la_roots:
@@ -532,9 +520,12 @@ prop_infer_icols (PFla_op_t *n, PFalg_att_t icols)
 
         case la_string_join:
             /* infer iter|pos|item schema for first input relation */
-            n->prop->l_icols = union_ (union_ (att_iter, att_item), att_pos);
+            n->prop->l_icols = union_ (union_ (n->sem.string_join.iter,
+                                               n->sem.string_join.item),
+                                       n->sem.string_join.pos);
             /* infer iter|item schema for second input relation */
-            n->prop->r_icols = union_ (att_iter, att_item);
+            n->prop->r_icols = union_ (n->sem.string_join.iter_sep, 
+                                       n->sem.string_join.item_sep);
             break;
 
         default:

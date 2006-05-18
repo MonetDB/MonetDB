@@ -158,16 +158,16 @@ enum PFalg_att_t {
     , att_sort5   = 0x00002000    /**< sort column 5 */
     , att_sort6   = 0x00004000    /**< sort column 6 */
     , att_sort7   = 0x00008000    /**< sort column 7 */
-    , att_sort8   = 0x00010000    /**< sort column 8 */
-    , att_sort9   = 0x00020000    /**< sort column 9 */
-    , att_sort10  = 0x00040000    /**< sort column 10 */
-    , att_sort11  = 0x00080000    /**< sort column 11 */
-    , att_sort12  = 0x00100000    /**< sort column 12 */
-    , att_sort13  = 0x00200000    /**< sort column 13 */
+    , att_ord     = 0x00010000    /**< ord column */
+    , att_iter2   = 0x00020000    /**< iter column 2 */
+    , att_iter3   = 0x00040000    /**< iter column 3 */
+    , att_iter4   = 0x00080000    /**< iter column 4 */
+    , att_iter5   = 0x00100000    /**< iter column 5 */
+    , att_iter6   = 0x00200000    /**< iter column 6 */
     , att_res     = 0x00400000    /**< res column */
-    , att_ord     = 0x00800000    /**< ord column */
-    , att_res1    = 0x01000000    /**< res1 column */
-    , att_cast    = 0x02000000    /**< cast column */
+    , att_res1    = 0x00800000    /**< res1 column */
+    , att_cast    = 0x01000000    /**< cast column */
+    , att_item2   = 0x02000000    /**< item2 column */
     , att_subty   = 0x04000000    /**< subty column */
     , att_itemty  = 0x08000000    /**< itemty column */
     , att_notsub  = 0x10000000    /**< notsub column */
@@ -207,7 +207,6 @@ struct PFalg_proj_t {
     PFalg_att_t old;   /**< old attribute name */
 };
 typedef struct PFalg_proj_t PFalg_proj_t;
-
 
 
 /* ....... staircase join specs (semantic infos of scj operators) ....... */
@@ -334,6 +333,19 @@ int PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b);
  * Print attribute name
  */
 char * PFatt_str (PFalg_att_t att);
+
+/**
+ * Create a unique name based on an id @a id and 
+ * an original name @a ori that retains the usage information
+ * of the new variable (iter, pos or item).
+ */
+PFalg_att_t PFalg_unq_name (PFalg_att_t ori, unsigned int id);
+
+/**
+ * Create an original column name based on an unique name @a unq
+ * and a list of free original variables @a free.
+ */
+PFalg_att_t PFalg_ori_name (PFalg_att_t unq, PFalg_att_t free);
 
 /**
  * Print simple type name

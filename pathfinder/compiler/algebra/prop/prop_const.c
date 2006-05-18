@@ -52,7 +52,7 @@ bool
 PFprop_const (const PFprop_t *prop, PFalg_att_t attr)
 {
     assert (prop);
-    assert (prop->constants);
+    if (!prop->constants) return false;
 
     for (unsigned int i = 0; i < PFarray_last (prop->constants); i++)
         if (attr == ((const_t *) PFarray_at (prop->constants, i))->attr)
@@ -69,7 +69,7 @@ bool
 PFprop_const_left (const PFprop_t *prop, PFalg_att_t attr)
 {
     assert (prop);
-    assert (prop->l_constants);
+    if (!prop->l_constants) return false;
 
     for (unsigned int i = 0; i < PFarray_last (prop->l_constants); i++)
         if (attr == ((const_t *) PFarray_at (prop->l_constants, i))->attr)
@@ -86,7 +86,7 @@ bool
 PFprop_const_right (const PFprop_t *prop, PFalg_att_t attr)
 {
     assert (prop);
-    assert (prop->r_constants);
+    if (!prop->r_constants) return false;
 
     for (unsigned int i = 0; i < PFarray_last (prop->r_constants); i++)
         if (attr == ((const_t *) PFarray_at (prop->r_constants, i))->attr)
@@ -161,7 +161,7 @@ unsigned int
 PFprop_const_count (const PFprop_t *prop)
 {
     assert (prop);
-    assert (prop->constants);
+    if (!prop->constants) return 0;
 
     return PFarray_last (prop->constants);
 }
@@ -233,6 +233,7 @@ copy_child_constants (PFla_op_t *n)
            both children */
         case la_cross:
         case la_eqjoin:
+        case la_eqjoin_unq:
         case la_disjunion:
         case la_intersect:
         case la_difference:
@@ -298,9 +299,9 @@ copy_child_constants (PFla_op_t *n)
             n->prop->r_constants = PFarray_copy (R(n)->prop->constants);
             break;
 
-        case la_cross_dup:
+        case la_cross_mvd:
             PFoops (OOPS_FATAL,
-                    "duplicate aware cross product operator is "
+                    "clone column aware cross product operator is "
                     "only allowed inside mvd optimization!");
     }
 }
@@ -323,6 +324,7 @@ infer_const (PFla_op_t *n)
         case la_attach:
         case la_cross:
         case la_eqjoin:
+        case la_eqjoin_unq:
         case la_select:
         case la_distinct:
         case la_num_add:
@@ -582,6 +584,9 @@ infer_const (PFla_op_t *n)
                         n->sem.aggr.res,
                         PFprop_const_val (L(n)->prop, n->sem.aggr.att));
         case la_sum:
+        case la_count:
+        case la_seqty1:
+        case la_all:
             if (n->sem.aggr.part &&
                 PFprop_const (L(n)->prop, n->sem.aggr.part))
                 PFprop_mark_const (
@@ -590,74 +595,62 @@ infer_const (PFla_op_t *n)
                         PFprop_const_val (L(n)->prop, n->sem.aggr.part));
             break;
 
-        case la_count:
-            if (n->sem.count.part &&
-                PFprop_const (L(n)->prop, n->sem.count.part))
-                PFprop_mark_const (
-                        n->prop,
-                        n->sem.count.part,
-                        PFprop_const_val (L(n)->prop, n->sem.count.part));
-            break;
-
         case la_cast:
             /* Inference of the constant result columns 
                is not possible as a cast is required. */
 
             /* if the cast does not change the type res equals att */
-            if (PFprop_const (L(n)->prop, n->sem.cast.att) &&
+            if (PFprop_const (L(n)->prop, n->sem.type.att) &&
                 (PFprop_const_val (L(n)->prop, 
-                                   n->sem.cast.att)).type == n->sem.cast.ty)
+                                   n->sem.type.att)).type == n->sem.type.ty)
                 PFprop_mark_const (
                         n->prop,
-                        n->sem.cast.res,
-                        PFprop_const_val (L(n)->prop, n->sem.cast.att));
+                        n->sem.type.res,
+                        PFprop_const_val (L(n)->prop, n->sem.type.att));
             /* In special cases a stable cast (in respect to different
                implementations) is possible (see e.g. from int to dbl). */
-            else if (PFprop_const (L(n)->prop, n->sem.cast.att) &&
+            else if (PFprop_const (L(n)->prop, n->sem.type.att) &&
                      (PFprop_const_val (L(n)->prop, 
-                                        n->sem.cast.att)).type == aat_int &&
-                     n->sem.cast.ty == aat_dbl)
+                                        n->sem.type.att)).type == aat_int &&
+                     n->sem.type.ty == aat_dbl)
                 PFprop_mark_const (
                         n->prop,
-                        n->sem.cast.res,
+                        n->sem.type.res,
                         PFalg_lit_dbl ((PFprop_const_val (
                                             L(n)->prop,
-                                            n->sem.cast.att)).val.int_));
-            break;
-
-        case la_seqty1:
-        case la_all:
-            if (n->sem.blngroup.part &&
-                PFprop_const (L(n)->prop, n->sem.blngroup.part))
-                PFprop_mark_const (
-                        n->prop,
-                        n->sem.blngroup.part,
-                        PFprop_const_val (L(n)->prop, n->sem.blngroup.part));
+                                            n->sem.type.att)).val.int_));
             break;
 
         case la_scjoin:
-            if (PFprop_const (R(n)->prop, att_iter))
+            if (PFprop_const (R(n)->prop, n->sem.scjoin.iter))
                 PFprop_mark_const (
                         n->prop,
-                        att_iter,
-                        PFprop_const_val (R(n)->prop, att_iter));
+                        n->sem.scjoin.iter,
+                        PFprop_const_val (R(n)->prop, n->sem.scjoin.iter));
             break;
 
         case la_doc_tbl:
-        case la_string_join:
-            if (PFprop_const (L(n)->prop, att_iter))
+            if (PFprop_const (L(n)->prop, n->sem.doc_tbl.iter))
                 PFprop_mark_const (
                         n->prop,
-                        att_iter,
-                        PFprop_const_val (L(n)->prop, att_iter));
+                        n->sem.doc_tbl.iter,
+                        PFprop_const_val (L(n)->prop, n->sem.doc_tbl.iter));
             break;
 
         case la_element:
-            if (PFprop_const (RL(n)->prop, att_iter))
+            if (PFprop_const (RL(n)->prop, n->sem.elem.iter_qn))
                 PFprop_mark_const (
                         n->prop,
-                        att_iter,
-                        PFprop_const_val (RL(n)->prop, att_iter));
+                        n->sem.elem.iter_res,
+                        PFprop_const_val (RL(n)->prop, n->sem.elem.iter_qn));
+            break;
+
+        case la_string_join:
+            if (PFprop_const (L(n)->prop, n->sem.string_join.iter))
+                PFprop_mark_const (
+                        n->prop,
+                        n->sem.string_join.iter_res,
+                        PFprop_const_val (L(n)->prop, n->sem.string_join.iter));
             break;
 
 
@@ -665,6 +658,7 @@ infer_const (PFla_op_t *n)
         case la_empty_tbl:
         case la_cross:
         case la_eqjoin:
+        case la_eqjoin_unq:
         case la_distinct:
         /* we also might calculate some result constants.
            Leave it out as it isn't a common case */
@@ -694,9 +688,9 @@ infer_const (PFla_op_t *n)
         case la_contains:
             break;
 
-        case la_cross_dup:
+        case la_cross_mvd:
             PFoops (OOPS_FATAL,
-                    "duplicate aware cross product operator is "
+                    "clone column aware cross product operator is "
                     "only allowed inside mvd optimization!");
     }
 }

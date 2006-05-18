@@ -7,10 +7,10 @@
  * along the DAG structure.)
  *
  * We add a new cross operator that can cope with identical
- * columns (la_cross_dup). This allows us to push down operators
+ * columns (la_cross_mvd). This allows us to push down operators
  * into both operands of the cross product whenever we do not
  * know which operand really requires the operators.
- * A cleaning phase then replaces the duplicate aware cross products
+ * A cleaning phase then replaces the clone column aware cross products
  * by normal ones and adds additional project operators if name
  * conflicts would arise.
  *
@@ -72,9 +72,9 @@
 
 /**
  * Use cross product implementation that copes
- * with duplicate names.
+ * with 'c'loned 'a'ttribute 'n'ames.
  */
-#define cross_dup(a,b) PFla_cross_duplicate ((a),(b))
+#define cross_can(a,b) PFla_cross_clone ((a),(b))
 
 /* Keep track of the ineffective cross product - cross product
    rewrites (cross_changes) and stop if max_cross_changes is reached. */
@@ -84,7 +84,7 @@ static unsigned int max_cross_changes;
 static bool
 is_cross (PFla_op_t *p)
 {
-    return (p->kind == la_cross || p->kind == la_cross_dup);
+    return (p->kind == la_cross || p->kind == la_cross_mvd);
 }
 
 /* check if @a att appears in the schema of operator @a p */
@@ -115,7 +115,7 @@ modify_binary_op (PFla_op_t *p,
                             att_present (LR(p), p->sem.binary.att2);
                            
         if (switch_left && switch_right) {
-            *p = *(cross_dup (op (LL(p),
+            *p = *(cross_can (op (LL(p),
                                   p->sem.binary.res,
                                   p->sem.binary.att1,
                                   p->sem.binary.att2),
@@ -126,7 +126,7 @@ modify_binary_op (PFla_op_t *p,
             modified = true;
         }
         else if (switch_left) {
-            *p = *(cross_dup (op (LL(p),
+            *p = *(cross_can (op (LL(p),
                                   p->sem.binary.res,
                                   p->sem.binary.att1,
                                   p->sem.binary.att2),
@@ -134,7 +134,7 @@ modify_binary_op (PFla_op_t *p,
             modified = true;
         }
         else if (switch_right) {
-            *p = *(cross_dup (LL(p),
+            *p = *(cross_can (LL(p),
                               op (LR(p),
                                   p->sem.binary.res,
                                   p->sem.binary.att1,
@@ -159,7 +159,7 @@ modify_unary_op (PFla_op_t *p,
         bool switch_right = att_present (LR(p), p->sem.unary.att);
                            
         if (switch_left && switch_right) {
-            *p = *(cross_dup (op (LL(p),
+            *p = *(cross_can (op (LL(p),
                                   p->sem.unary.res,
                                   p->sem.unary.att),
                               op (LR(p),
@@ -168,14 +168,14 @@ modify_unary_op (PFla_op_t *p,
             modified = true;
         }
         else if (switch_left) {
-            *p = *(cross_dup (op (LL(p),
+            *p = *(cross_can (op (LL(p),
                                   p->sem.unary.res,
                                   p->sem.unary.att),
                               LR(p)));
             modified = true;
         }
         else if (switch_right) {
-            *p = *(cross_dup (LL(p),
+            *p = *(cross_can (LL(p),
                               op (LR(p),
                                   p->sem.unary.res,
                                   p->sem.unary.att)));
@@ -200,7 +200,7 @@ modify_aggr (PFla_op_t *p,
         p->sem.aggr.part) {
         if (att_present (LL(p), p->sem.aggr.part) &&
             !att_present (LL(p), p->sem.aggr.att)) {
-            *p = *(cross_dup (
+            *p = *(cross_can (
                       LL(p),
                       aggr (kind, 
                             LR(p),
@@ -212,7 +212,7 @@ modify_aggr (PFla_op_t *p,
         /* if not present check the right operand */
         else if (att_present (LR(p), p->sem.aggr.part) &&
                  !att_present (LR(p), p->sem.aggr.att)) {
-            *p = *(cross_dup (
+            *p = *(cross_can (
                       LR(p),
                       aggr (kind, 
                             LL(p),
@@ -247,7 +247,7 @@ opt_mvd (PFla_op_t *p)
 
     /* apply complex optimization for children */
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
-        modified = modified || opt_mvd (p->child[i]);
+        modified = opt_mvd (p->child[i]) || modified ;
 
     /** 
      * In the following action code we try to propagate cross
@@ -290,7 +290,7 @@ opt_mvd (PFla_op_t *p)
            a base table. The idea is to move possibly independent
            expression up the DAG. */
         if (L(p)->kind == la_attach) {
-            *p = *(cross_dup (
+            *p = *(cross_can (
                       LL(p),
                       attach (
                           lit_tbl (attlist (L(p)->sem.attach.attname),
@@ -301,7 +301,7 @@ opt_mvd (PFla_op_t *p)
         }
         else if (is_cross (L(p))) {
             /* push attach into both cross product operands */
-            *p = *(cross_dup (
+            *p = *(cross_can (
                        attach (LL(p),
                                p->sem.attach.attname,
                                p->sem.attach.value),
@@ -313,7 +313,7 @@ opt_mvd (PFla_op_t *p)
         break;
 
     case la_cross:
-    case la_cross_dup:
+    case la_cross_mvd:
         /* If there are two nested cross products make sure that
            each operand has the chance to be propagated up the DAG:
 
@@ -331,29 +331,30 @@ opt_mvd (PFla_op_t *p)
           */
 
         if (is_cross (L(p))) {
-            *p = *(cross_dup (LL(p),
-                              cross_dup (LR(p),
+            *p = *(cross_can (LL(p),
+                              cross_can (LR(p),
                                          R(p))));
             modified = true;
         }
         else if (is_cross (R(p))) {
-            *p = *(cross_dup (RL(p),
-                              cross_dup (RR(p),
+            *p = *(cross_can (RL(p),
+                              cross_can (RR(p),
                                          L(p))));
             modified = true;
         }
         break;
 
+    case la_eqjoin_unq:
     case la_eqjoin:
         /* Move the independent expression (the one without
            join attribute) up the DAG. */
         if (is_cross (L(p))) {
             if (att_present (LL(p), p->sem.eqjoin.att1))
-                *p = *(cross_dup (LR(p), eqjoin (LL(p), R(p), 
+                *p = *(cross_can (LR(p), eqjoin (LL(p), R(p), 
                                                  p->sem.eqjoin.att1,
                                                  p->sem.eqjoin.att2)));
             else
-                *p = *(cross_dup (LL(p), eqjoin (LR(p), R(p),
+                *p = *(cross_can (LL(p), eqjoin (LR(p), R(p),
                                                  p->sem.eqjoin.att1,
                                                  p->sem.eqjoin.att2)));
 
@@ -364,11 +365,11 @@ opt_mvd (PFla_op_t *p)
         }
         if (is_cross (R(p))) {
             if (att_present (RL(p), p->sem.eqjoin.att2))
-                *p = *(cross_dup (RR(p), eqjoin (L(p), RL(p),
+                *p = *(cross_can (RR(p), eqjoin (L(p), RL(p),
                                                  p->sem.eqjoin.att1,
                                                  p->sem.eqjoin.att2)));
             else
-                *p = *(cross_dup (RL(p), eqjoin (L(p), RR(p),
+                *p = *(cross_can (RL(p), eqjoin (L(p), RR(p),
                                                  p->sem.eqjoin.att1,
                                                  p->sem.eqjoin.att2)));
 
@@ -395,7 +396,7 @@ opt_mvd (PFla_op_t *p)
                     }
 
             /* create second projection list */
-            proj_list2 = PFmalloc (LL(p)->schema.count *
+            proj_list2 = PFmalloc (LR(p)->schema.count *
                                    sizeof (*(proj_list1)));
 
             for (unsigned int i = 0; i < LR(p)->schema.count; i++)
@@ -409,7 +410,7 @@ opt_mvd (PFla_op_t *p)
             /* Ensure that both arguments add at least one column to
                the result. */
             if (count1 && count2) {
-                *p = *(cross_dup (
+                *p = *(cross_can (
                           PFla_project_ (LL(p), count1, proj_list1),
                           PFla_project_ (LR(p), count2, proj_list2)));
                 modified = true;
@@ -420,10 +421,10 @@ opt_mvd (PFla_op_t *p)
     case la_select:
         if (is_cross (L(p))) {
             if (att_present (LL(p), p->sem.select.att))
-                *p = *(cross_dup (LR(p), select_ (LL(p),
+                *p = *(cross_can (LR(p), select_ (LL(p),
                                                   p->sem.select.att)));
             else
-                *p = *(cross_dup (LL(p), select_ (LR(p),
+                *p = *(cross_can (LL(p), select_ (LR(p),
                                                   p->sem.select.att)));
 
             modified = true;
@@ -438,7 +439,7 @@ opt_mvd (PFla_op_t *p)
         if (L(p)->kind == la_attach && 
             R(p)->kind == la_attach &&
             LL(p) == RL(p)) {
-            *p = *(cross_dup (
+            *p = *(cross_can (
                       LL(p),
                       disjunion (
                           lit_tbl (attlist (L(p)->sem.attach.attname),
@@ -451,7 +452,7 @@ opt_mvd (PFla_op_t *p)
         else if (L(p)->kind == la_attach &&
                  is_cross (R(p))) {
             if (LL(p) == RL(p)) {
-                *p = *(cross_dup (
+                *p = *(cross_can (
                            LL(p),
                            disjunion (
                                lit_tbl (attlist (L(p)->sem.attach.attname),
@@ -461,7 +462,7 @@ opt_mvd (PFla_op_t *p)
                 break;
             }
             else if (LL(p) == RR(p)) {
-                *p = *(cross_dup (
+                *p = *(cross_can (
                            LL(p),
                            disjunion (
                                lit_tbl (attlist (L(p)->sem.attach.attname),
@@ -474,7 +475,7 @@ opt_mvd (PFla_op_t *p)
         else if (is_cross (L(p)) &&
                  R(p)->kind == la_attach) {
             if (LL(p) == RL(p)) {
-                *p = *(cross_dup (
+                *p = *(cross_can (
                            RL(p),
                            disjunion (
                                lit_tbl (attlist (R(p)->sem.attach.attname),
@@ -484,7 +485,7 @@ opt_mvd (PFla_op_t *p)
                 break;
             }
             else if (LR(p) == RL(p)) {
-                *p = *(cross_dup (
+                *p = *(cross_can (
                            RL(p),
                            disjunion (
                                lit_tbl (attlist (R(p)->sem.attach.attname),
@@ -497,22 +498,22 @@ opt_mvd (PFla_op_t *p)
         else if (is_cross (L(p)) &&
                  is_cross (R(p))) {
             if (LL(p) == RL(p)) {
-                *p = *(cross_dup (LL(p), disjunion (LR(p), RR(p))));
+                *p = *(cross_can (LL(p), disjunion (LR(p), RR(p))));
                 modified = true;
                 break;
             }
             else if (LR(p) == RL(p)) {
-                *p = *(cross_dup (LR(p), disjunion (LL(p), RR(p))));
+                *p = *(cross_can (LR(p), disjunion (LL(p), RR(p))));
                 modified = true;
                 break;
             }
             else if (LL(p) == RR(p)) {
-                *p = *(cross_dup (LL(p), disjunion (LR(p), RL(p))));
+                *p = *(cross_can (LL(p), disjunion (LR(p), RL(p))));
                 modified = true;
                 break;
             }
             else if (LR(p) == RR(p)) {
-                *p = *(cross_dup (LR(p), disjunion (LL(p), RL(p))));
+                *p = *(cross_can (LR(p), disjunion (LL(p), RL(p))));
                 modified = true;
                 break;
             }
@@ -526,22 +527,22 @@ opt_mvd (PFla_op_t *p)
         if (is_cross (L(p)) &&
             is_cross (R(p))) {
             if (LL(p) == RL(p)) {
-                *p = *(cross_dup (LL(p), intersect (LR(p), RR(p))));
+                *p = *(cross_can (LL(p), intersect (LR(p), RR(p))));
                 modified = true;
                 break;
             }
             else if (LR(p) == RL(p)) {
-                *p = *(cross_dup (LR(p), intersect (LL(p), RR(p))));
+                *p = *(cross_can (LR(p), intersect (LL(p), RR(p))));
                 modified = true;
                 break;
             }
             else if (LL(p) == RR(p)) {
-                *p = *(cross_dup (LL(p), intersect (LR(p), RL(p))));
+                *p = *(cross_can (LL(p), intersect (LR(p), RL(p))));
                 modified = true;
                 break;
             }
             else if (LR(p) == RR(p)) {
-                *p = *(cross_dup (LR(p), intersect (LL(p), RL(p))));
+                *p = *(cross_can (LR(p), intersect (LL(p), RL(p))));
                 modified = true;
                 break;
             }
@@ -555,22 +556,22 @@ opt_mvd (PFla_op_t *p)
         if (is_cross (L(p)) &&
             is_cross (R(p))) {
             if (LL(p) == RL(p)) {
-                *p = *(cross_dup (LL(p), difference (LR(p), RR(p))));
+                *p = *(cross_can (LL(p), difference (LR(p), RR(p))));
                 modified = true;
                 break;
             }
             else if (LR(p) == RL(p)) {
-                *p = *(cross_dup (LR(p), difference (LL(p), RR(p))));
+                *p = *(cross_can (LR(p), difference (LL(p), RR(p))));
                 modified = true;
                 break;
             }
             else if (LL(p) == RR(p)) {
-                *p = *(cross_dup (LL(p), difference (LR(p), RL(p))));
+                *p = *(cross_can (LL(p), difference (LR(p), RL(p))));
                 modified = true;
                 break;
             }
             else if (LR(p) == RR(p)) {
-                *p = *(cross_dup (LR(p), difference (LL(p), RL(p))));
+                *p = *(cross_can (LR(p), difference (LL(p), RL(p))));
                 modified = true;
                 break;
             }
@@ -580,7 +581,7 @@ opt_mvd (PFla_op_t *p)
     case la_distinct:
         /* Push distinct into both cross product operands. */
         if (is_cross (L(p))) {
-            *p = *(cross_dup (distinct (LL(p)), distinct (LR(p))));
+            *p = *(cross_can (distinct (LL(p)), distinct (LR(p))));
             modified = true;
         }
         break;
@@ -607,10 +608,10 @@ opt_mvd (PFla_op_t *p)
         modified = modify_binary_op (p, PFla_gt);
         break;
     case la_num_neg:
-        modified = modify_binary_op (p, PFla_gt);
+        modified = modify_unary_op (p, PFla_neg);
         break;
     case la_bool_and:
-        modified = modify_unary_op (p, PFla_neg);
+        modified = modify_binary_op (p, PFla_and);
         break;
     case la_bool_or:
         modified = modify_binary_op (p, PFla_or);
@@ -636,9 +637,9 @@ opt_mvd (PFla_op_t *p)
            expression above the aggregate operator and removes its partitioning
            column. */ 
         if (is_cross (L(p)) &&
-            p->sem.count.part) {
+            p->sem.aggr.part) {
             if (att_present (LL(p), p->sem.aggr.part)) {
-                *p = *(cross_dup (
+                *p = *(cross_can (
                           LL(p),
                           count (LR(p),
                                  p->sem.aggr.res,
@@ -647,7 +648,7 @@ opt_mvd (PFla_op_t *p)
             }
             /* if not present it has to be in the right operand */
             else {
-                *p = *(cross_dup (
+                *p = *(cross_can (
                           LR(p),
                           count (LL(p),
                                  p->sem.aggr.res,
@@ -679,7 +680,7 @@ opt_mvd (PFla_op_t *p)
                     }
             }
             if (part && !sortby) {
-                *p = *(cross_dup (
+                *p = *(cross_can (
                           LL(p),
                           rownum (
                               LR(p),
@@ -702,7 +703,7 @@ opt_mvd (PFla_op_t *p)
                     }
             }
             if (part && !sortby) {
-                *p = *(cross_dup (
+                *p = *(cross_can (
                           LR(p),
                           rownum (
                               LL(p),
@@ -723,7 +724,7 @@ opt_mvd (PFla_op_t *p)
         if (is_cross (L(p)) &&
             p->sem.number.part) {
             if (att_present (LL(p), p->sem.number.part)) {
-                *p = *(cross_dup (
+                *p = *(cross_can (
                           LL(p),
                           number (
                               LR(p),
@@ -734,7 +735,7 @@ opt_mvd (PFla_op_t *p)
             }
             /* if not present it has to be in the right operand */
             else {
-                *p = *(cross_dup (
+                *p = *(cross_can (
                           LR(p),
                           number (
                               LL(p),
@@ -752,7 +753,7 @@ opt_mvd (PFla_op_t *p)
             bool switch_right = att_present (LR(p), p->sem.type.att);
                                
             if (switch_left && switch_right) {
-                *p = *(cross_dup (type (LL(p),
+                *p = *(cross_can (type (LL(p),
                                         p->sem.type.res,
                                         p->sem.type.att,
                                         p->sem.type.ty),
@@ -763,7 +764,7 @@ opt_mvd (PFla_op_t *p)
                 modified = true;
             }
             else if (switch_left) {
-                *p = *(cross_dup (type (LL(p),
+                *p = *(cross_can (type (LL(p),
                                         p->sem.type.res,
                                         p->sem.type.att,
                                         p->sem.type.ty),
@@ -771,7 +772,7 @@ opt_mvd (PFla_op_t *p)
                 modified = true;
             }
             else if (switch_right) {
-                *p = *(cross_dup (LL(p),
+                *p = *(cross_can (LL(p),
                                   type (LR(p),
                                         p->sem.type.res,
                                         p->sem.type.att,
@@ -783,34 +784,34 @@ opt_mvd (PFla_op_t *p)
         
     case la_type_assert:
         if (is_cross (L(p))) {
-            bool switch_left = att_present (LL(p), p->sem.type_a.att);
-            bool switch_right = att_present (LR(p), p->sem.type_a.att);
+            bool switch_left = att_present (LL(p), p->sem.type.att);
+            bool switch_right = att_present (LR(p), p->sem.type.att);
                                
             if (switch_left && switch_right) {
-                *p = *(cross_dup (type_assert_pos (
+                *p = *(cross_can (type_assert_pos (
                                       LL(p),
-                                      p->sem.type_a.att,
-                                      p->sem.type_a.ty),
+                                      p->sem.type.att,
+                                      p->sem.type.ty),
                                   type_assert_pos (
                                       LR(p),
-                                      p->sem.type_a.att,
-                                      p->sem.type_a.ty)));
+                                      p->sem.type.att,
+                                      p->sem.type.ty)));
                 modified = true;
             }
             else if (switch_left) {
-                *p = *(cross_dup (type_assert_pos (
+                *p = *(cross_can (type_assert_pos (
                                       LL(p),
-                                      p->sem.type_a.att,
-                                      p->sem.type_a.ty),
+                                      p->sem.type.att,
+                                      p->sem.type.ty),
                                   LR(p)));
                 modified = true;
             }
             else if (switch_right) {
-                *p = *(cross_dup (LL(p),
+                *p = *(cross_can (LL(p),
                                   type_assert_pos (
                                       LR(p),
-                                      p->sem.type_a.att,
-                                      p->sem.type_a.ty)));
+                                      p->sem.type.att,
+                                      p->sem.type.ty)));
                 modified = true;
             }
         }
@@ -818,34 +819,34 @@ opt_mvd (PFla_op_t *p)
         
     case la_cast:
         if (is_cross (L(p))) {
-            bool switch_left = att_present (LL(p), p->sem.cast.att);
-            bool switch_right = att_present (LR(p), p->sem.cast.att);
+            bool switch_left = att_present (LL(p), p->sem.type.att);
+            bool switch_right = att_present (LR(p), p->sem.type.att);
                                
             if (switch_left && switch_right) {
-                *p = *(cross_dup (cast (LL(p),
-                                        p->sem.cast.res,
-                                        p->sem.cast.att,
-                                        p->sem.cast.ty),
+                *p = *(cross_can (cast (LL(p),
+                                        p->sem.type.res,
+                                        p->sem.type.att,
+                                        p->sem.type.ty),
                                   cast (LR(p),
-                                        p->sem.cast.res,
-                                        p->sem.cast.att,
-                                        p->sem.cast.ty)));
+                                        p->sem.type.res,
+                                        p->sem.type.att,
+                                        p->sem.type.ty)));
                 modified = true;
             }
             else if (switch_left) {
-                *p = *(cross_dup (cast (LL(p),
-                                        p->sem.cast.res,
-                                        p->sem.cast.att,
-                                        p->sem.cast.ty),
+                *p = *(cross_can (cast (LL(p),
+                                        p->sem.type.res,
+                                        p->sem.type.att,
+                                        p->sem.type.ty),
                                   LR(p)));
                 modified = true;
             }
             else if (switch_right) {
-                *p = *(cross_dup (LL(p),
+                *p = *(cross_can (LL(p),
                                   cast (LR(p),
-                                        p->sem.cast.res,
-                                        p->sem.cast.att,
-                                        p->sem.cast.ty)));
+                                        p->sem.type.res,
+                                        p->sem.type.att,
+                                        p->sem.type.ty)));
                 modified = true;
             }
         }
@@ -853,27 +854,27 @@ opt_mvd (PFla_op_t *p)
         
     case la_seqty1:
         if (is_cross (L(p)) &&
-            p->sem.blngroup.part) {
-            if (att_present (LL(p), p->sem.blngroup.part) &&
-                !att_present (LL(p), p->sem.blngroup.att)) {
-                *p = *(cross_dup (
+            p->sem.aggr.part) {
+            if (att_present (LL(p), p->sem.aggr.part) &&
+                !att_present (LL(p), p->sem.aggr.att)) {
+                *p = *(cross_can (
                           LL(p),
                           seqty1 (
                               LR(p),
-                              p->sem.blngroup.res,
-                              p->sem.blngroup.att,
+                              p->sem.aggr.res,
+                              p->sem.aggr.att,
                               att_NULL)));
                 modified = true;
             }
             /* if not present check the right operand */
-            else if (att_present (LR(p), p->sem.blngroup.part) &&
-                     !att_present (LR(p), p->sem.blngroup.att)) {
-                *p = *(cross_dup (
+            else if (att_present (LR(p), p->sem.aggr.part) &&
+                     !att_present (LR(p), p->sem.aggr.att)) {
+                *p = *(cross_can (
                           LR(p),
                           seqty1 (
                               LL(p),
-                              p->sem.blngroup.res,
-                              p->sem.blngroup.att,
+                              p->sem.aggr.res,
+                              p->sem.aggr.att,
                               att_NULL)));
                 modified = true;
             }
@@ -882,27 +883,27 @@ opt_mvd (PFla_op_t *p)
 
     case la_all:
         if (is_cross (L(p)) &&
-            p->sem.blngroup.part) {
-            if (att_present (LL(p), p->sem.blngroup.part) &&
-                !att_present (LL(p), p->sem.blngroup.att)) {
-                *p = *(cross_dup (
+            p->sem.aggr.part) {
+            if (att_present (LL(p), p->sem.aggr.part) &&
+                !att_present (LL(p), p->sem.aggr.att)) {
+                *p = *(cross_can (
                           LL(p),
                           all (
                               LR(p),
-                              p->sem.blngroup.res,
-                              p->sem.blngroup.att,
+                              p->sem.aggr.res,
+                              p->sem.aggr.att,
                               att_NULL)));
                 modified = true;
             }
             /* if not present check the right operand */
-            else if (att_present (LR(p), p->sem.blngroup.part) &&
-                     !att_present (LR(p), p->sem.blngroup.att)) {
-                *p = *(cross_dup (
+            else if (att_present (LR(p), p->sem.aggr.part) &&
+                     !att_present (LR(p), p->sem.aggr.att)) {
+                *p = *(cross_can (
                           LR(p),
                           all (
                               LL(p),
-                              p->sem.blngroup.res,
-                              p->sem.blngroup.att,
+                              p->sem.aggr.res,
+                              p->sem.aggr.att,
                               att_NULL)));
                 modified = true;
             }
@@ -911,26 +912,34 @@ opt_mvd (PFla_op_t *p)
         
     case la_scjoin:
         if (is_cross (R(p))) {
-            if (att_present (RL(p), att_item)) {
-                *p = *(cross_dup (
+            if (att_present (RL(p), p->sem.scjoin.item)) {
+                *p = *(cross_can (
                            RR(p),
                            project (scjoin (L(p),
                                             attach (RL(p),
-                                                    att_iter,
+                                                    p->sem.scjoin.iter,
                                                     lit_nat(1)),
                                             p->sem.scjoin.axis,
-                                            p->sem.scjoin.ty),
-                                    proj (att_item, att_item))));
+                                            p->sem.scjoin.ty,
+                                            p->sem.scjoin.iter,
+                                            p->sem.scjoin.item,
+                                            p->sem.scjoin.item_res),
+                                    proj (p->sem.scjoin.item_res,
+                                          p->sem.scjoin.item_res))));
             } else {
-                *p = *(cross_dup (
+                *p = *(cross_can (
                            RL(p),
                            project (scjoin (L(p),
                                             attach (RR(p),
-                                                    att_iter,
+                                                    p->sem.scjoin.iter,
                                                     lit_nat(1)),
                                             p->sem.scjoin.axis,
-                                            p->sem.scjoin.ty),
-                                    proj (att_item, att_item))));
+                                            p->sem.scjoin.ty,
+                                            p->sem.scjoin.iter,
+                                            p->sem.scjoin.item,
+                                            p->sem.scjoin.item_res),
+                                    proj (p->sem.scjoin.item_res,
+                                          p->sem.scjoin.item_res))));
             }
             modified = true;
         }
@@ -947,7 +956,7 @@ opt_mvd (PFla_op_t *p)
             bool switch_right = att_present (RR(p), p->sem.doc_access.att);
                                
             if (switch_left && switch_right) {
-                *p = *(cross_dup (doc_access (L(p), RL(p),
+                *p = *(cross_can (doc_access (L(p), RL(p),
                                         p->sem.doc_access.res,
                                         p->sem.doc_access.att,
                                         p->sem.doc_access.doc_col),
@@ -958,7 +967,7 @@ opt_mvd (PFla_op_t *p)
                 modified = true;
             }
             else if (switch_left) {
-                *p = *(cross_dup (doc_access (L(p), RL(p),
+                *p = *(cross_can (doc_access (L(p), RL(p),
                                         p->sem.doc_access.res,
                                         p->sem.doc_access.att,
                                         p->sem.doc_access.doc_col),
@@ -966,7 +975,7 @@ opt_mvd (PFla_op_t *p)
                 modified = true;
             }
             else if (switch_right) {
-                *p = *(cross_dup (RL(p),
+                *p = *(cross_can (RL(p),
                                   doc_access (L(p), RR(p),
                                         p->sem.doc_access.res,
                                         p->sem.doc_access.att,
@@ -993,19 +1002,23 @@ opt_mvd (PFla_op_t *p)
            that is no constructor: roots-doc_tbl */
         if (L(p)->kind == la_doc_tbl) {
             if (is_cross (LL(p))) {
-                if (att_present (LL(L(p)), att_item)) {
+                if (att_present (LL(L(p)), L(p)->sem.doc_tbl.item)) {
                     /* save iter relation */
                     PFla_op_t *iter_rel = LR(L(p));
                     /* overwrite doc_tbl node to update
                        both roots and frag operators */
                     *(L(p)) = *(doc_tbl (attach (LL(L(p)),
-                                                 att_iter,
-                                                 lit_nat (1))));
+                                                 L(p)->sem.doc_tbl.iter,
+                                                 lit_nat (1)),
+                                         L(p)->sem.doc_tbl.iter,
+                                         L(p)->sem.doc_tbl.item,
+                                         L(p)->sem.doc_tbl.item_res));
                     /* push roots + doc_tbl through the cross product */
-                    *p = *(cross_dup (
+                    *p = *(cross_can (
                                iter_rel,
                                project (roots (L(p)),
-                                        proj (att_item, att_item))));
+                                        proj (L(p)->sem.doc_tbl.item_res,
+                                              L(p)->sem.doc_tbl.item_res))));
                 }
                 else {
                     /* save iter relation */
@@ -1013,31 +1026,40 @@ opt_mvd (PFla_op_t *p)
                     /* overwrite doc_tbl node to update
                        both roots and frag operators */
                     *(L(p)) = *(doc_tbl (attach (LR(L(p)),
-                                                 att_iter,
-                                                 lit_nat (1))));
+                                                 L(p)->sem.doc_tbl.iter,
+                                                 lit_nat (1)),
+                                         L(p)->sem.doc_tbl.iter,
+                                         L(p)->sem.doc_tbl.item,
+                                         L(p)->sem.doc_tbl.item_res));
                     /* push roots + doc_tbl through the cross product */
-                    *p = *(cross_dup (
+                    *p = *(cross_can (
                                iter_rel,
                                project (roots (L(p)),
-                                        proj (att_item, att_item))));
+                                        proj (L(p)->sem.doc_tbl.item_res,
+                                              L(p)->sem.doc_tbl.item_res))));
                 }
                 modified = true;
             }
             else if (LL(p)->kind == la_attach && 
-                     LL(p)->sem.attach.attname == att_item) {
+                     LL(p)->sem.attach.attname == L(p)->sem.doc_tbl.item) {
                 /* create base table and apply doc_tbl operator 
                    on this table. Afterwards apply the cross product
                    with the possibly huge iter relation. */
-                *p = *(cross_dup (
+                *p = *(cross_can (
                           LL(L(p)),
                           project (
                               roots (
                                   doc_tbl (
                                       lit_tbl (
-                                          attlist (att_iter, att_item),
+                                          attlist (L(p)->sem.doc_tbl.iter,
+                                                   L(p)->sem.doc_tbl.item),
                                           tuple (lit_nat (1),
-                                                 LL(p)->sem.attach.value)))),
-                              proj (att_item, att_item))));
+                                                 LL(p)->sem.attach.value)),
+                                      L(p)->sem.doc_tbl.iter,
+                                      L(p)->sem.doc_tbl.item,
+                                      L(p)->sem.doc_tbl.item_res)),
+                              proj (L(p)->sem.doc_tbl.item_res,
+                                    L(p)->sem.doc_tbl.item_res))));
                 modified = true;
             }
         }
@@ -1052,7 +1074,7 @@ opt_mvd (PFla_op_t *p)
         
     case la_cond_err:
         if (is_cross (L(p))) {
-            *p = *(cross_dup (cond_err (LL(p), R(p), 
+            *p = *(cross_can (cond_err (LL(p), R(p), 
                                         p->sem.err.att,
                                         p->sem.err.str),
                               LR(p)));
@@ -1087,7 +1109,7 @@ opt_mvd (PFla_op_t *p)
 }
 
 /**
- * clean_up_cross replaces all duplicate cross
+ * clean_up_cross replaces all clone column aware cross
  * product operators by normal cross products
  * and introduces additional project operators
  * whenever there are duplicate columns.
@@ -1107,7 +1129,7 @@ clean_up_cross (PFla_op_t *p)
     for (i = 0; i < PFLA_OP_MAXCHILD && p->child[i]; i++)
         clean_up_cross (p->child[i]);
 
-    if (p->kind == la_cross_dup) {
+    if (p->kind == la_cross_mvd) {
         PFalg_proj_t *proj_list;
         unsigned int j;
         unsigned int count = 0;
@@ -1163,10 +1185,12 @@ PFalgopt_mvd (PFla_op_t *root, unsigned int noneffective_tries)
 
     PFla_dag_reset (root);
 
-    /* replace duplicate aware cross
+    /* replace clone column aware cross
        products by normal ones */
     clean_up_cross (root);
     PFla_dag_reset (root);
+    /* ensure that each operator has its own properties */
+    PFprop_create_prop (root);
 
     return root;
 }

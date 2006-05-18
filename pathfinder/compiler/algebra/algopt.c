@@ -33,8 +33,18 @@
 #include <assert.h>
 
 #include "algopt.h"
+#include "map_names.h"
 #include "oops.h"
 #include "timer.h"
+
+static PFla_op_t *
+magic_map_ori_names (PFla_op_t *root, char *phase)
+{
+    PFinfo (OOPS_WARNING,
+            "%s requires original names - "
+            "automatical mapping added", phase);
+    return PFmap_ori_names (root);
+}
 
 /**
  * Invoke algebra optimization.
@@ -46,6 +56,7 @@ PFalgopt (PFla_op_t *root, bool timing)
 
     long tm;
     bool const_no_attach = false;
+    bool unq_names = false;
     char *args = PFstate.opt_alg;
 
     while (*args) {
@@ -64,6 +75,11 @@ PFalgopt (PFla_op_t *root, bool timing)
                 break;
 
             case 'C':
+                if (unq_names) {
+                    root = magic_map_ori_names (root, "complex optimization");
+                    unq_names = false;
+                }
+
                 tm = PFtimer_start ();
                 
                 root = PFalgopt_complex (root);
@@ -111,6 +127,11 @@ PFalgopt (PFla_op_t *root, bool timing)
                 break;
 
             case 'I':
+                if (unq_names) {
+                    root = magic_map_ori_names (root, "icol optimization");
+                    unq_names = false;
+                }
+
                 tm = PFtimer_start ();
                 
                 root = PFalgopt_icol (root);
@@ -121,7 +142,31 @@ PFalgopt (PFla_op_t *root, bool timing)
                            PFtimer_str (tm));
                 break;
 
+            case 'J':
+                if (!unq_names) {
+                    PFinfo (OOPS_WARNING,
+                            "equi-join pushdown requires unique names"
+                            " - automatical mapping added");
+                    root = PFmap_unq_names (root);
+                    unq_names = true;
+                }
+
+                tm = PFtimer_start ();
+                
+                root = PFalgopt_join_pd (root);
+                
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("\tequi-join pushdown:\t\t %s",
+                           PFtimer_str (tm));
+                break;
+
             case 'K':
+                if (unq_names) {
+                    root = magic_map_ori_names (root, "key optimization");
+                    unq_names = false;
+                }
+
                 tm = PFtimer_start ();
                 
                 root = PFalgopt_key (root);
@@ -133,6 +178,11 @@ PFalgopt (PFla_op_t *root, bool timing)
                 break;
 
             case 'M':
+                if (unq_names) {
+                    root = magic_map_ori_names (root, "mvd optimization");
+                    unq_names = false;
+                }
+
                 tm = PFtimer_start ();
 
                 /* give up rewriting after 20 noneffective
@@ -146,6 +196,12 @@ PFalgopt (PFla_op_t *root, bool timing)
                 break;
 
             case 'V':
+                if (unq_names) {
+                    root = magic_map_ori_names (root,
+                                                "required value optimization");
+                    unq_names = false;
+                }
+
                 tm = PFtimer_start ();
                 
                 root = PFalgopt_reqval (root);
@@ -159,11 +215,29 @@ PFalgopt (PFla_op_t *root, bool timing)
             case 'P':
                 tm = PFtimer_start ();
                 
-                PFprop_infer (true /* card */, true /* const */,
-                              true /* dom */, true /* icols */,
-                              true /* key */, true /* ocols */, 
-                              true /* reqval */, true /* unique names */,
-                              root);
+                if (unq_names)
+                    PFprop_infer (true  /* card */,
+                                  true  /* const */,
+                                  true  /* dom */,
+                                  false /* icols */,
+                                  true  /* key */,
+                                  false /* ocols */, 
+                                  false /* reqval */,
+                                  true  /* original names */,
+                                  false /* unique names */,
+                                  root);
+                
+                else
+                    PFprop_infer (true  /* card */,
+                                  true  /* const */,
+                                  true  /* dom */,
+                                  true  /* icols */,
+                                  true  /* key */,
+                                  true  /* ocols */, 
+                                  true  /* reqval */,
+                                  false /* original names */,
+                                  true  /* unique names */,
+                                  root);
                 
                 tm = PFtimer_stop (tm);
                 if (timing)
@@ -171,8 +245,43 @@ PFalgopt (PFla_op_t *root, bool timing)
                            PFtimer_str (tm));
                 break;
 
-            case 'N':
-                return root;
+            case '[':
+                if (unq_names) {
+                    PFinfo (OOPS_WARNING,
+                            "already using unique attribute names");
+                    break;
+                }
+
+                tm = PFtimer_start ();
+                
+                root = PFmap_unq_names (root);
+                
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("\tmap to unique attribute names:\t %s",
+                           PFtimer_str (tm));
+
+                unq_names = true;
+                break;
+
+            case ']':
+                if (!unq_names) {
+                    PFinfo (OOPS_WARNING,
+                            "already using original attribute names");
+                    break;
+                }
+
+                tm = PFtimer_start ();
+                
+                root = PFmap_ori_names (root);
+                
+                tm = PFtimer_stop (tm);
+                if (timing)
+                    PFlog ("\tmap to original attribute names: %s",
+                           PFtimer_str (tm));
+
+                unq_names = false;
+                break;
 
             case ' ':
             case '_':
@@ -186,6 +295,12 @@ PFalgopt (PFla_op_t *root, bool timing)
         }
         args++;
     }
+
+    if (unq_names)
+        PFinfo (OOPS_WARNING,
+                "Physical algebra requires original names. "
+                "Add ']' optimization option (at the end) to "
+                "ensure correct attribute name usage.");
 
     return root;
 }

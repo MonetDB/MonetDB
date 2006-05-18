@@ -512,10 +512,6 @@ reduce (PFla_op_t *p, int goalnt)
 
         /* Rel:    disjunion (Rel, EmptyRel) */
         case 22:
-            /* return left child */
-            *p = *(L(p));
-            break;
-
         /* Rel:    difference (Rel, EmptyRel) */
         case 25:
             /* return left child */
@@ -537,8 +533,8 @@ reduce (PFla_op_t *p, int goalnt)
              */
             bool cast_req = true;
             for (unsigned int i = 0; i < p->schema.count; i++)
-                if (p->sem.cast.att == p->schema.items[i].name &&
-                    p->sem.cast.ty == p->schema.items[i].type) {
+                if (p->sem.type.att == p->schema.items[i].name &&
+                    p->sem.type.ty == p->schema.items[i].type) {
                     cast_req = false;
                     break;
                 }
@@ -549,12 +545,12 @@ reduce (PFla_op_t *p, int goalnt)
                                                * sizeof (PFalg_proj_t));
 
                 for (unsigned int j = 0; j < p->schema.count; j++)
-                    if (p->schema.items[j].name != p->sem.cast.res) {
+                    if (p->schema.items[j].name != p->sem.type.res) {
                         proj[j] = PFalg_proj (p->schema.items[j].name,
                                               p->schema.items[j].name);
                     } else {
-                        proj[j] = PFalg_proj (p->sem.cast.res,
-                                              p->sem.cast.att);
+                        proj[j] = PFalg_proj (p->sem.type.res,
+                                              p->sem.type.att);
                     }
 
                 ret = PFla_project_ (L(p), p->schema.count, proj);
@@ -582,7 +578,9 @@ reduce (PFla_op_t *p, int goalnt)
                 /* rewrite child into descendant
                    and discard descendant-or-self step */
                 PFla_op_t *ret;
-                ret = PFla_scjoin (L(p), RR(p), alg_desc, p->sem.scjoin.ty);
+                ret = PFla_scjoin (L(p), RR(p), alg_desc, p->sem.scjoin.ty,
+                                   p->sem.scjoin.iter, R(p)->sem.scjoin.item,
+                                   p->sem.scjoin.item_res);
                 *p = *(ret);
                 SEEN(p) = false;
                 relabel (p, kids);
@@ -857,6 +855,8 @@ PFalgopt_general (PFla_op_t *root)
     /* Optimize algebra tree */
     while (reduce (root, 1));
     PFla_dag_reset (root);
+    /* ensure that each operator has its own properties */
+    PFprop_create_prop (root);
 
     return root;
 }

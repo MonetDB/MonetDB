@@ -53,7 +53,7 @@ dom_t
 PFprop_dom (const PFprop_t *prop, PFalg_att_t attr)
 {
     assert (prop);
-    assert (prop->domains);
+    if (!prop->domains) return 0;
     
     for (unsigned int i = 0; i < PFarray_last (prop->domains); i++)
         if (attr == ((dom_pair_t *) PFarray_at (prop->domains, i))->attr)
@@ -70,7 +70,7 @@ dom_t
 PFprop_dom_left (const PFprop_t *prop, PFalg_att_t attr)
 {
     assert (prop);
-    assert (prop->l_domains);
+    if (!prop->l_domains) return 0;
     
     for (unsigned int i = 0; i < PFarray_last (prop->l_domains); i++)
         if (attr == ((dom_pair_t *) PFarray_at (prop->l_domains, i))->attr)
@@ -87,7 +87,7 @@ dom_t
 PFprop_dom_right (const PFprop_t *prop, PFalg_att_t attr)
 {
     assert (prop);
-    assert (prop->r_domains);
+    if (!prop->r_domains) return 0;
     
     for (unsigned int i = 0; i < PFarray_last (prop->r_domains); i++)
         if (attr == ((dom_pair_t *) PFarray_at (prop->r_domains, i))->attr)
@@ -354,6 +354,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_eqjoin:
+        case la_eqjoin_unq:
         {   /**
              * Infering the domains of the join attributes results
              * in a common schema, that is either the more general
@@ -473,14 +474,16 @@ infer_dom (PFla_op_t *n, unsigned int id)
                 for (j = 0; j < R(n)->schema.count; j++)
                     if (L(n)->schema.items[i].name ==
                         R(n)->schema.items[j].name) {
-                        add_dom_rel (n->prop,
-                                     PFprop_dom (L(n)->prop, 
-                                                 L(n)->schema.items[i].name),
-                                     id);
-                        add_dom_rel (n->prop,
-                                     PFprop_dom (R(n)->prop, 
-                                                 R(n)->schema.items[j].name),
-                                     id);
+                        add_dom_rel (
+                            n->prop,
+                            PFprop_dom (L(n)->prop, 
+                                        L(n)->schema.items[i].name),
+                            id);
+                        add_dom_rel (
+                            n->prop,
+                            PFprop_dom (R(n)->prop, 
+                                        R(n)->schema.items[j].name),
+                            id);
                         add_dom (n->prop, L(n)->schema.items[i].name, id);
                         id++;
                         break;
@@ -528,6 +531,9 @@ infer_dom (PFla_op_t *n, unsigned int id)
 
         case la_avg:
         case la_sum:
+        case la_count:
+        case la_seqty1:
+        case la_all:
             add_dom (n->prop, n->sem.aggr.res, id++);
             if (n->sem.aggr.part)
                 add_dom (n->prop, 
@@ -547,14 +553,6 @@ infer_dom (PFla_op_t *n, unsigned int id)
                          PFprop_dom (L(n)->prop, n->sem.aggr.part));
             break;
 
-        case la_count:
-            add_dom (n->prop, n->sem.count.res, id++);
-            if (n->sem.count.part)
-                add_dom (n->prop, 
-                         n->sem.count.part,
-                         PFprop_dom (L(n)->prop, n->sem.count.part));
-            break;
-
         case la_rownum:
             bulk_add_dom (n->prop, L(n));
             add_dom (n->prop, n->sem.rownum.attname, id++);
@@ -566,6 +564,7 @@ infer_dom (PFla_op_t *n, unsigned int id)
             break;
 
         case la_type:
+        case la_cast:
             bulk_add_dom (n->prop, L(n));
             add_dom (n->prop, n->sem.type.res, id++);
             break;
@@ -574,33 +573,22 @@ infer_dom (PFla_op_t *n, unsigned int id)
             bulk_add_dom (n->prop, L(n));
             break;
 
-        case la_cast:
-            bulk_add_dom (n->prop, L(n));
-            add_dom (n->prop, n->sem.cast.res, id++);
-            break;
-
-        case la_seqty1:
-        case la_all:
-            add_dom (n->prop, n->sem.blngroup.res, id++);
-            if (n->sem.blngroup.part)
-                add_dom (n->prop, 
-                         n->sem.blngroup.part,
-                         PFprop_dom (L(n)->prop, n->sem.blngroup.part));
-            break;
-
         case la_scjoin:
             /* create new subdomain for attribute iter */
-            add_dom_rel (n->prop, PFprop_dom (R(n)->prop, att_iter), id);
-            add_dom (n->prop, att_iter, id++);
+            add_dom_rel (n->prop, PFprop_dom (R(n)->prop,
+                                              n->sem.scjoin.iter), id);
+            add_dom (n->prop, n->sem.scjoin.iter, id++);
             /* create new domain for attribute item */
-            add_dom (n->prop, att_item, id++);
+            add_dom (n->prop, n->sem.scjoin.item_res, id++);
             break;
             
         case la_doc_tbl:
             /* retain domain for attribute iter */
-            add_dom (n->prop, att_iter, PFprop_dom (L(n)->prop, att_iter));
+            add_dom (n->prop,
+                     n->sem.doc_tbl.iter, 
+                     PFprop_dom (L(n)->prop, n->sem.doc_tbl.iter));
             /* create new domain for attribute item */
-            add_dom (n->prop, att_item, id++);
+            add_dom (n->prop, n->sem.doc_tbl.item_res, id++);
             break;
             
         case la_doc_access:
@@ -610,9 +598,11 @@ infer_dom (PFla_op_t *n, unsigned int id)
 
         case la_element:
             /* retain domain for attribute iter */
-            add_dom (n->prop, att_iter, PFprop_dom (RL(n)->prop, att_iter));
+            add_dom (n->prop, 
+                     n->sem.elem.iter_res, 
+                     PFprop_dom (RL(n)->prop, n->sem.elem.iter_qn));
             /* create new domain for attribute item */
-            add_dom (n->prop, att_item, id++);
+            add_dom (n->prop, n->sem.elem.item_res, id++);
             break;
         
         case la_element_tag:
@@ -635,12 +625,17 @@ infer_dom (PFla_op_t *n, unsigned int id)
             
         case la_merge_adjacent:
             /* retain domain for attribute iter */
-            add_dom (n->prop, att_iter, PFprop_dom (L(n)->prop, att_iter));
+            add_dom (n->prop,
+                     n->sem.merge_adjacent.iter_res,
+                     PFprop_dom (L(n)->prop, n->sem.merge_adjacent.iter_in));
             /* create new subdomain for attribute pos */
-            add_dom_rel (n->prop, PFprop_dom (L(n)->prop, att_pos), id);
-            add_dom (n->prop, att_pos, id++);
+            add_dom_rel (n->prop,
+                         PFprop_dom (L(n)->prop,
+                                     n->sem.merge_adjacent.pos_in),
+                         id);
+            add_dom (n->prop, n->sem.merge_adjacent.pos_res, id++);
             /* create new domain for attribute item */
-            add_dom (n->prop, att_item, id++);
+            add_dom (n->prop, n->sem.merge_adjacent.item_res, id++);
             break;
             
         case la_roots:
@@ -658,14 +653,16 @@ infer_dom (PFla_op_t *n, unsigned int id)
 
         case la_string_join:
             /* retain domain for attribute iter */
-            add_dom (n->prop, att_iter, PFprop_dom (L(n)->prop, att_iter));
+            add_dom (n->prop, 
+                     n->sem.string_join.iter_res,
+                     PFprop_dom (L(n)->prop, n->sem.string_join.iter));
             /* create new domain for attribute item */
-            add_dom (n->prop, att_item, id++);
+            add_dom (n->prop, n->sem.string_join.item_res, id++);
             break;
 
-        case la_cross_dup:
+        case la_cross_mvd:
             PFoops (OOPS_FATAL,
-                    "duplicate aware cross product operator is "
+                    "clone column aware cross product operator is "
                     "only allowed inside mvd optimization!");
     }
     return id;

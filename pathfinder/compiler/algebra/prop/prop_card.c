@@ -117,6 +117,7 @@ infer_card (PFla_op_t *n)
             break;
 
         case la_eqjoin:
+        case la_eqjoin_unq:
         case la_select:
         case la_intersect:
         case la_difference:
@@ -142,22 +143,12 @@ infer_card (PFla_op_t *n)
 	case la_max:
 	case la_min:
         case la_sum:
-            /* if part is not present the
-               aggregation yields only one tuple */
-            n->prop->card = n->sem.aggr.part ? 0 : 1;
-            break;
-
         case la_count:
-            /* if part is not present the
-               aggregation yields only one tuple */
-            n->prop->card = n->sem.count.part ? 0 : 1;
-            break;
-
         case la_seqty1:
         case la_all:
             /* if part is not present the
                aggregation yields only one tuple */
-            n->prop->card = n->sem.blngroup.part ? 0 : 1;
+            n->prop->card = n->sem.aggr.part ? 0 : 1;
             break;
 
         case la_docnode:
@@ -176,9 +167,9 @@ infer_card (PFla_op_t *n)
             n->prop->card = 0;
             break;
 
-        case la_cross_dup:
+        case la_cross_mvd:
             PFoops (OOPS_FATAL,
-                    "duplicate aware cross product operator is "
+                    "clone column aware cross product operator is "
                     "only allowed inside mvd optimization!");
     }
 }
@@ -198,6 +189,9 @@ prop_infer (PFla_op_t *n)
         prop_infer (n->child[i]);
 
     n->bit_dag = true;
+
+    /* reset cardinality property */
+    n->prop->card = 0;
 
     /* infer information on constant columns */
     infer_card (n);

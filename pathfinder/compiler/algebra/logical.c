@@ -151,9 +151,23 @@ la_op_wire2 (PFla_op_kind_t kind, const PFla_op_t *n1, const PFla_op_t *n2)
  * algebra expression.
  */
 PFla_op_t *
-PFla_serialize (const PFla_op_t *doc, const PFla_op_t *alg)
+PFla_serialize (const PFla_op_t *doc, const PFla_op_t *alg,
+                PFalg_att_t pos, PFalg_att_t item)
 {
-    return la_op_wire2 (la_serialize, doc, alg);
+    PFla_op_t *ret = la_op_wire2 (la_serialize, doc, alg);
+
+    ret->sem.serialize.pos  = pos;
+    ret->sem.serialize.item = item;
+
+    ret->schema.count = alg->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
+
+    /* copy schema from alg */
+    for (unsigned int i = 0; i < alg->schema.count; i++)
+        ret->schema.items[i] = alg->schema.items[i];
+
+    return ret;
 }
 
 
@@ -356,9 +370,9 @@ PFla_cross (const PFla_op_t *n1, const PFla_op_t *n2)
  * Arguments @a n1 and @a n2 may have equally named attributes.
  */
 PFla_op_t *
-PFla_cross_duplicate (const PFla_op_t *n1, const PFla_op_t *n2)
+PFla_cross_clone (const PFla_op_t *n1, const PFla_op_t *n2)
 {
-    PFla_op_t   *ret = la_op_wire2 (la_cross_dup, n1, n2);
+    PFla_op_t   *ret = la_op_wire2 (la_cross_mvd, n1, n2);
     unsigned int i;
     unsigned int j;
     unsigned int count;
@@ -383,7 +397,7 @@ PFla_cross_duplicate (const PFla_op_t *n1, const PFla_op_t *n2)
             if (n1->schema.items[i].name == n2->schema.items[j].name)
                 break;
 
-        /* no duplicate found */
+        /* no duplicate attribute found */
         if (i == n1->schema.count)
             ret->schema.items[count++] = n2->schema.items[j];
     }
@@ -462,6 +476,95 @@ PFla_eqjoin (const PFla_op_t *n1, const PFla_op_t *n2,
                         PFatt_str (n2->schema.items[j].name));
 #endif
     }
+
+    return ret;
+}
+/**
+ * Equi-join between two operator nodes.
+ *
+ * Assert that @a att1 is an attribute of @a n1 and @a att2 is an attribute
+ * of @a n2. The schema of the result is:
+ * schema(@a n1) + schema(@a n2) - duplicate columns.
+ */
+PFla_op_t *
+PFla_eqjoin_clone (const PFla_op_t *n1, const PFla_op_t *n2,
+                   PFalg_att_t att1, PFalg_att_t att2, PFalg_att_t res)
+{
+    PFla_op_t    *ret;
+    unsigned int  i;
+    unsigned int  count;
+
+    assert (n1); assert (n2);
+
+    /* verify that att1 is attribute of n1 ... */
+    for (i = 0; i < n1->schema.count; i++)
+        if (att1 == n1->schema.items[i].name)
+            break;
+
+    /* did we find attribute att1? */
+    if (i >= n1->schema.count)
+        PFoops (OOPS_FATAL,
+                "attribute `%s' referenced in join not found", 
+                PFatt_str(att1));
+
+    /* ... and att2 is attribute of n2 */
+    for (i = 0; i < n2->schema.count; i++)
+        if (att2 == n2->schema.items[i].name)
+            break;
+
+    /* did we find attribute att2? */
+    if (i >= n2->schema.count)
+        PFoops (OOPS_FATAL,
+                "attribute `%s' referenced in join not found",
+                PFatt_str (att2));
+
+    /* build new equi-join node */
+    ret = la_op_wire2 (la_eqjoin_unq, n1, n2);
+
+    /* insert semantic value (join attributes) into the result */
+    ret->sem.eqjoin_unq.att1 = att1;
+    ret->sem.eqjoin_unq.att2 = att2;
+    ret->sem.eqjoin_unq.res  = res;
+
+    /* allocate memory for the result schema (schema(n1) + schema(n2)) */
+    ret->schema.count = n1->schema.count + n2->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    count = 0;
+    /* add join attribute to the result */
+    for (i = 0; i < n1->schema.count; i++)
+        if (n1->schema.items[i].name == att1) {
+            ret->schema.items[count] = n1->schema.items[i];
+            ret->schema.items[count++].name = res;
+            break;
+        }
+            
+    /* copy schema from argument 'n1' */
+    for (i = 0; i < n1->schema.count; i++)
+        /* discard join columns - they are already added */
+        if (n1->schema.items[i].name != att1 &&
+            n1->schema.items[i].name != att2)
+            ret->schema.items[count++] = n1->schema.items[i];
+
+    /* copy schema from argument 'n2' */
+    for (i = 0; i < n2->schema.count; i++)
+        /* discard join columns - they are already added */
+        if (n2->schema.items[i].name != att1 &&
+            n2->schema.items[i].name != att2) {
+            /* only include new columns */
+            unsigned int j;
+            for (j = 0; j < count; j++)
+                if (ret->schema.items[j].name 
+                    == n2->schema.items[i].name)
+                    break;
+
+            if (j == count)
+                ret->schema.items[count++] = n2->schema.items[i];
+        }
+
+    /* adjust schema size */
+    ret->schema.count = count;
 
     return ret;
 }
@@ -589,20 +692,23 @@ PFla_select (const PFla_op_t *n, PFalg_att_t att)
 
 
 /**
- * Disjoint union of two relations.
- * Both argument must have the same schema.
- *
+ * worker for PFla_disjunion, PFla_intersect, and PFla_difference;
  */
-PFla_op_t *
-PFla_disjunion (const PFla_op_t *n1, const PFla_op_t *n2)
+static PFla_op_t *
+set_operator (PFla_op_kind_t kind, const PFla_op_t *n1, const PFla_op_t *n2)
 {
-    PFla_op_t    *ret = la_op_wire2 (la_disjunion, n1, n2);
+    PFla_op_t    *ret = la_op_wire2 (kind, n1, n2);
     unsigned int  i, j;
+
+    assert (kind == la_disjunion ||
+            kind == la_intersect ||
+            kind == la_difference);
 
     /* see if both operands have same number of attributes */
     if (n1->schema.count != n2->schema.count)
         PFoops (OOPS_FATAL,
-                "Schema of two arguments of UNION do not match");
+                "Schema of two arguments of set operation (union, "
+                "difference, intersect) do not match");
 
     /* allocate memory for the result schema */
     ret->schema.count = n1->schema.count;
@@ -618,27 +724,44 @@ PFla_disjunion (const PFla_op_t *n1, const PFla_op_t *n2)
                  * for the order of schema items in n1 and n2 to be
                  * different.
                  */
-                ret->schema.items[i] =
-                (struct PFalg_schm_item_t) { .name = n1->schema.items[i].name,
-                                             .type = n1->schema.items[i].type
-                                                 | n2->schema.items[j].type };
+                if (kind == la_disjunion)
+                    ret->schema.items[i] =
+                        (struct PFalg_schm_item_t)
+                            { .name = n1->schema.items[i].name,
+                              .type = n1->schema.items[i].type
+                                    | n2->schema.items[j].type };
+                else if (kind == la_intersect)
+                    ret->schema.items[i] =
+                        (struct PFalg_schm_item_t) 
+                            { .name = n1->schema.items[i].name,
+                              .type = n1->schema.items[i].type
+                                    & n2->schema.items[j].type };
+                else if (kind == la_difference)
+                    ret->schema.items[i] =
+                        (struct PFalg_schm_item_t) 
+                            { .name = n1->schema.items[i].name,
+                              .type = n1->schema.items[i].type };
                 break;
             }
 
         if (j == n2->schema.count)
             PFoops (OOPS_FATAL,
-                    "Schema of two arguments of UNION do not match");
+                    "Schema of two arguments of set operation (union, "
+                    "difference, intersect) do not match");
     }
 
-/* set schema
-    for (i = 0; i < n1->schema.count; i++)
-        ret->schema.items[i] =
-            (struct PFalg_schm_item_t) { .name = n1->schema.items[i].name,
-                                         .type = n1->schema.items[i].type
-                                                 | n2->schema.items[i].type };
-*/
-
     return ret;
+}
+
+
+/**
+ * Disjoint union of two relations.
+ * Both argument must have the same schema.
+ */
+PFla_op_t *
+PFla_disjunion (const PFla_op_t *n1, const PFla_op_t *n2)
+{
+    return set_operator (la_disjunion, n1, n2);
 }
 
 
@@ -646,50 +769,10 @@ PFla_disjunion (const PFla_op_t *n1, const PFla_op_t *n2)
  * Intersection between two relations.
  * Both argument must have the same schema.
  */
-PFla_op_t * PFla_intersect (const PFla_op_t *n1, const PFla_op_t *n2)
+PFla_op_t *
+PFla_intersect (const PFla_op_t *n1, const PFla_op_t *n2)
 {
-    PFla_op_t    *ret = la_op_wire2 (la_intersect, n1, n2);
-    unsigned int  i, j;
-
-    /* see if both operands have same number of attributes */
-    if (n1->schema.count != n2->schema.count)
-        PFoops (OOPS_FATAL,
-                "Schema of two arguments of INTERSECTION do not match");
-
-    /* allocate memory for the result schema */
-    ret->schema.count = n1->schema.count;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    /* see if we find each attribute of n1 also in n2 */
-    for (i = 0; i < n1->schema.count; i++) {
-        for (j = 0; j < n2->schema.count; j++)
-            if (n1->schema.items[i].name == n2->schema.items[j].name) {
-                /* The two attributes match, so include their name
-                 * and type information into the result. This allows
-                 * for the order of schema items in n1 and n2 to be
-                 * different.
-                 */
-                ret->schema.items[i] =
-                (struct PFalg_schm_item_t) { .name = n1->schema.items[i].name,
-                                             .type = n1->schema.items[i].type
-                                                 & n2->schema.items[j].type };
-                break;
-            }
-
-        if (j == n2->schema.count)
-            PFoops (OOPS_FATAL,
-                    "Schema of two arguments of INTERSECTION do not match");
-    }
-
-    /* set schema
-    for (i = 0; i < n1->schema.count; i++)
-        ret->schema.items[i] =
-            (struct PFalg_schm_item_t) { .name = n1->schema.items[i].name,
-                                         .type = n1->schema.items[i].type
-                                               | n2->schema.items[i].type };
-    */
-    return ret;
+    return set_operator (la_intersect, n1, n2);
 }
 
 
@@ -697,49 +780,10 @@ PFla_op_t * PFla_intersect (const PFla_op_t *n1, const PFla_op_t *n2)
  * Difference of two relations.
  * Both argument must have the same schema.
  */
-PFla_op_t * PFla_difference (const PFla_op_t *n1, const PFla_op_t *n2)
+PFla_op_t *
+PFla_difference (const PFla_op_t *n1, const PFla_op_t *n2)
 {
-    PFla_op_t    *ret = la_op_wire2 (la_difference, n1, n2);
-    unsigned int  i, j;
-
-    /* see if both operands have same number of attributes */
-    if (n1->schema.count != n2->schema.count)
-        PFoops (OOPS_FATAL,
-                "Schema of two arguments of DIFFERENCE do not match");
-
-    /* allocate memory for the result schema */
-    ret->schema.count = n1->schema.count;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    /* see if we find each attribute of n1 also in n2 */
-    for (i = 0; i < n1->schema.count; i++) {
-        for (j = 0; j < n2->schema.count; j++)
-            if (n1->schema.items[i].name == n2->schema.items[j].name) {
-                /* The two attributes match, so include their name
-                 * and type information into the result. This allows
-                 * for the order of schema items in n1 and n2 to be
-                 * different.
-                 */
-                ret->schema.items[i] =
-                (struct PFalg_schm_item_t) { .name = n1->schema.items[i].name,
-                                             .type = n1->schema.items[i].type };
-                break;
-            }
-
-        if (j == n2->schema.count)
-            PFoops (OOPS_FATAL,
-                    "Schema of two arguments of DIFFERENCE do not match");
-    }
-
-    /* set schema
-    for (i = 0; i < n1->schema.count; i++)
-        ret->schema.items[i] =
-            (struct PFalg_schm_item_t) { .name = n1->schema.items[i].name,
-                                         .type = n1->schema.items[i].type
-                                               | n2->schema.items[i].type };
-    */
-    return ret;
+    return set_operator (la_difference, n1, n2);
 }
 
 
@@ -1208,7 +1252,7 @@ PFla_op_t * PFla_aggr (PFla_op_kind_t kind, const PFla_op_t *n, PFalg_att_t res,
                 PFatt_str (att));
 
     /* did we find attribute 'part'? */
-    if (!c2)
+    if (!c2 && part != att_NULL)
         PFoops (OOPS_FATAL,
                 "partitioning attribute `%s' referenced in aggregation "
                 "function not found",
@@ -1268,8 +1312,9 @@ PFla_count (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t part)
     /* insert semantic value (partitioning and result attribute) into
      * the result
      */
-    ret->sem.count.part = part;
-    ret->sem.count.res  = res;
+    ret->sem.aggr.part = part;
+    ret->sem.aggr.res  = res;
+    ret->sem.aggr.att  = att_NULL; /* don't use att field */
 
 
     return ret;
@@ -1485,8 +1530,9 @@ PFla_op_t * PFla_type_assert (const PFla_op_t *n, PFalg_att_t att,
     /* insert semantic value (type-tested attribute and its type,
      * result attribute) into the result
      */
-    ret->sem.type_a.att = att;
-    ret->sem.type_a.ty  = assert_ty;
+    ret->sem.type.att = att;
+    ret->sem.type.ty  = assert_ty;
+    ret->sem.type.res = att_NULL; /* don't use res field */
 
     ret->schema.count = n->schema.count;
 
@@ -1541,9 +1587,9 @@ PFla_cast (const PFla_op_t *n, PFalg_att_t res,
      * insert semantic value (type-tested attribute and its type)
      * into the result
      */
-    ret->sem.cast.att = att;
-    ret->sem.cast.ty = ty;
-    ret->sem.cast.res = res;
+    ret->sem.type.att = att;
+    ret->sem.type.ty = ty;
+    ret->sem.type.res = res;
 
     /* allocate memory for the result schema (= schema(n)) */
     ret->schema.count = n->schema.count + 1;
@@ -1615,9 +1661,9 @@ PFla_seqty1 (const PFla_op_t *n,
     /* Now we can actually construct the result node */
     ret = la_op_wire1 (la_seqty1, n);
 
-    ret->sem.blngroup.res  = res;
-    ret->sem.blngroup.att  = att;
-    ret->sem.blngroup.part = part;
+    ret->sem.aggr.res  = res;
+    ret->sem.aggr.att  = att;
+    ret->sem.aggr.part = part;
 
     ret->schema.count = 2;
     ret->schema.items = PFmalloc (2 * sizeof (PFalg_schema_t));
@@ -1685,9 +1731,9 @@ PFla_all (const PFla_op_t *n,
     /* Now we can actually construct the result node */
     ret = la_op_wire1 (la_all, n);
 
-    ret->sem.blngroup.res  = res;
-    ret->sem.blngroup.att  = att;
-    ret->sem.blngroup.part = part;
+    ret->sem.aggr.res  = res;
+    ret->sem.aggr.att  = att;
+    ret->sem.aggr.part = part;
 
     ret->schema.count = 2;
     ret->schema.items = PFmalloc (2 * sizeof (PFalg_schema_t));
@@ -1712,7 +1758,9 @@ PFla_all (const PFla_op_t *n,
  */
 PFla_op_t *
 PFla_scjoin (const PFla_op_t *doc, const PFla_op_t *n,
-             PFalg_axis_t axis, PFty_t seqty)
+             PFalg_axis_t axis, PFty_t seqty, 
+             PFalg_att_t iter, PFalg_att_t item,
+             PFalg_att_t item_res)
 {
     PFla_op_t    *ret;
 #ifndef NDEBUG
@@ -1724,9 +1772,12 @@ PFla_scjoin (const PFla_op_t *doc, const PFla_op_t *n,
     /* create new join node */
     ret = la_op_wire2 (la_scjoin, doc, n);
 
-    /* insert semantic value (axis/kind test) into the result */
-    ret->sem.scjoin.axis = axis;
-    ret->sem.scjoin.ty   = seqty;
+    /* insert semantic value (axis/kind test, col names) into the result */
+    ret->sem.scjoin.axis     = axis;
+    ret->sem.scjoin.ty       = seqty;
+    ret->sem.scjoin.iter     = iter;
+    ret->sem.scjoin.item     = item;
+    ret->sem.scjoin.item_res = item_res;
 
 #ifndef NDEBUG
     /* verify schema of 'n' */
@@ -1735,8 +1786,8 @@ PFla_scjoin (const PFla_op_t *doc, const PFla_op_t *n,
                 "argument of staircase join does not have iter | item schema");
 
     for (i = 0; i < n->schema.count; i++) {
-        if (n->schema.items[i].name == att_iter
-         || n->schema.items[i].name == att_item)
+        if (n->schema.items[i].name == iter
+         || n->schema.items[i].name == item)
             continue;
         else
             PFoops (OOPS_FATAL,
@@ -1751,14 +1802,16 @@ PFla_scjoin (const PFla_op_t *doc, const PFla_op_t *n,
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
     ret->schema.items[0]
-        = (struct PFalg_schm_item_t) { .name = att_iter, .type = aat_nat };
+        = (struct PFalg_schm_item_t) { .name = iter, .type = aat_nat };
     /* the result of an attribute axis is also of type attribute */
     if (ret->sem.scjoin.axis == alg_attr) 
         ret->schema.items[1]
-            = (struct PFalg_schm_item_t) { .name = att_item, .type = aat_anode };
+            = (struct PFalg_schm_item_t) { .name = item_res,
+                                           .type = aat_anode };
     else
         ret->schema.items[1]
-            = (struct PFalg_schm_item_t) { .name = att_item, .type = aat_pnode };
+            = (struct PFalg_schm_item_t) { .name = item_res,
+                                           .type = aat_pnode };
 
     return ret;
 }
@@ -1769,11 +1822,18 @@ PFla_scjoin (const PFla_op_t *doc, const PFla_op_t *n,
  * function.  Returns a (frag, result) pair.
  */
 PFla_op_t *
-PFla_doc_tbl (const PFla_op_t *rel)
+PFla_doc_tbl (const PFla_op_t *rel,
+              PFalg_att_t iter, PFalg_att_t item,
+              PFalg_att_t item_res)
 {
     PFla_op_t         *ret;
 
     ret = la_op_wire1 (la_doc_tbl, rel);
+
+    /* store columns to work on in semantical field */
+    ret->sem.doc_tbl.iter     = iter;
+    ret->sem.doc_tbl.item     = item;
+    ret->sem.doc_tbl.item_res = item_res;
 
     /* The schema of the result part is iter|item */
     ret->schema.count = 2;
@@ -1781,9 +1841,9 @@ PFla_doc_tbl (const PFla_op_t *rel)
         = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
 
     ret->schema.items[0]
-        = (PFalg_schm_item_t) { .name = att_iter, .type = aat_nat };
+        = (PFalg_schm_item_t) { .name = iter, .type = aat_nat };
     ret->schema.items[1]
-        = (PFalg_schm_item_t) { .name = att_item, .type = aat_pnode };
+        = (PFalg_schm_item_t) { .name = item_res, .type = aat_pnode };
 
     return ret;
 }
@@ -1830,11 +1890,24 @@ PFla_doc_access (const PFla_op_t *doc, const PFla_op_t *n,
  * convert this "wire3" operator into two "wire2" operators.
  */
 PFla_op_t * PFla_element (const PFla_op_t *doc,
-                          const PFla_op_t *tag, const PFla_op_t *cont)
+                          const PFla_op_t *tag, const PFla_op_t *cont,
+                          PFalg_att_t iter_qn, PFalg_att_t item_qn,
+                          PFalg_att_t iter_val, PFalg_att_t pos_val, 
+                          PFalg_att_t item_val,
+                          PFalg_att_t iter_res, PFalg_att_t item_res)
 {
     PFla_op_t *ret = la_op_wire2 (la_element, doc,
                                     la_op_wire2 (la_element_tag,
                                                   tag, cont));
+
+    /* store columns to work on in semantical field */
+    ret->sem.elem.iter_qn  = iter_qn;
+    ret->sem.elem.item_qn  = item_qn;
+    ret->sem.elem.iter_val = iter_val;
+    ret->sem.elem.pos_val  = pos_val;
+    ret->sem.elem.item_val = item_val;
+    ret->sem.elem.iter_res = iter_res;
+    ret->sem.elem.item_res = item_res;
 
     /* The schema of the result part is iter|item */
     ret->schema.count = 2;
@@ -1842,9 +1915,9 @@ PFla_op_t * PFla_element (const PFla_op_t *doc,
         = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
 
     ret->schema.items[0]
-        = (PFalg_schm_item_t) { .name = att_iter, .type = aat_nat };
+        = (PFalg_schm_item_t) { .name = iter_res, .type = aat_nat };
     ret->schema.items[1]
-        = (PFalg_schm_item_t) { .name = att_item, .type = aat_pnode };
+        = (PFalg_schm_item_t) { .name = item_res, .type = aat_pnode };
 
     return ret;
 }
@@ -2004,9 +2077,20 @@ PFla_op_t * PFla_processi (const PFla_op_t *cont)
  * created nodes only.
  */
 PFla_op_t *
-PFla_pf_merge_adjacent_text_nodes (const PFla_op_t *doc, const PFla_op_t *n)
+PFla_pf_merge_adjacent_text_nodes (
+    const PFla_op_t *doc, const PFla_op_t *n,
+    PFalg_att_t iter_in, PFalg_att_t pos_in, PFalg_att_t item_in,
+    PFalg_att_t iter_res, PFalg_att_t pos_res, PFalg_att_t item_res)
 {
     PFla_op_t *ret = la_op_wire2 (la_merge_adjacent, doc, n);
+
+    /* store columns to work on in semantical field */
+    ret->sem.merge_adjacent.iter_in  = iter_in;
+    ret->sem.merge_adjacent.pos_in   = pos_in;
+    ret->sem.merge_adjacent.item_in  = item_in;
+    ret->sem.merge_adjacent.iter_res = iter_res;
+    ret->sem.merge_adjacent.pos_res  = pos_res;
+    ret->sem.merge_adjacent.item_res = item_res;
 
     /* The schema of the result part is iter|pos|item */
     ret->schema.count = 3;
@@ -2014,11 +2098,11 @@ PFla_pf_merge_adjacent_text_nodes (const PFla_op_t *doc, const PFla_op_t *n)
         = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
 
     ret->schema.items[0]
-        = (PFalg_schm_item_t) { .name = att_iter, .type = aat_nat };
+        = (PFalg_schm_item_t) { .name = iter_res, .type = aat_nat };
     ret->schema.items[1]
-        = (PFalg_schm_item_t) { .name = att_pos, .type = aat_nat };
+        = (PFalg_schm_item_t) { .name = pos_res, .type = aat_nat };
     ret->schema.items[2]
-        = (PFalg_schm_item_t) { .name = att_item, .type = aat_node };
+        = (PFalg_schm_item_t) { .name = item_res, .type = aat_node };
 
     return ret;
 }
@@ -2364,9 +2448,21 @@ PFla_fn_contains (const PFla_op_t *n,
  * Constructor for builtin function fn:string-join
  */
 PFla_op_t *
-PFla_fn_string_join (const PFla_op_t *text, const PFla_op_t *sep)
+PFla_fn_string_join (const PFla_op_t *text, const PFla_op_t *sep,
+                     PFalg_att_t iter, PFalg_att_t pos, PFalg_att_t item,
+                     PFalg_att_t iter_sep, PFalg_att_t item_sep,
+                     PFalg_att_t iter_res, PFalg_att_t item_res)
 {
     PFla_op_t *ret = la_op_wire2 (la_string_join, text, sep);
+
+    /* store columns to work on in semantical field */
+    ret->sem.string_join.iter     = iter;
+    ret->sem.string_join.pos      = pos;
+    ret->sem.string_join.item     = item;
+    ret->sem.string_join.iter_sep = iter_sep;
+    ret->sem.string_join.item_sep = item_sep;
+    ret->sem.string_join.iter_res = iter_res;
+    ret->sem.string_join.item_res = item_res;
 
     /* The schema of the result part is iter|item */
     ret->schema.count = 2;
@@ -2374,9 +2470,9 @@ PFla_fn_string_join (const PFla_op_t *text, const PFla_op_t *sep)
         = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
 
     ret->schema.items[0]
-        = (PFalg_schm_item_t) { .name = att_iter, .type = aat_nat };
+        = (PFalg_schm_item_t) { .name = iter_res, .type = aat_nat };
     ret->schema.items[1]
-        = (PFalg_schm_item_t) { .name = att_item, .type = aat_str };
+        = (PFalg_schm_item_t) { .name = item_res, .type = aat_str };
 
     return ret;
 }

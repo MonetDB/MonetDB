@@ -118,15 +118,17 @@ opt_const (PFla_op_t *p, bool no_attach)
     switch (p->kind) {
         case la_serialize:
             /* introduce attach if necessary */
-            if (PFprop_const_right (p->prop, att_pos)) {
-                R(p) = add_attach (R(p), att_pos,
-                                   PFprop_const_val_right (p->prop,
-                                                           att_pos));
+            if (PFprop_const_right (p->prop, p->sem.serialize.pos)) {
+                R(p) = add_attach (R(p), p->sem.serialize.pos,
+                                   PFprop_const_val_right (
+                                       p->prop,
+                                       p->sem.serialize.pos));
             }
-            if (PFprop_const_right (p->prop, att_item)) {
-                R(p) = add_attach (R(p), att_item,
-                                   PFprop_const_val_right (p->prop,
-                                                           att_item));
+            if (PFprop_const_right (p->prop, p->sem.serialize.item)) {
+                R(p) = add_attach (R(p), p->sem.serialize.item,
+                                   PFprop_const_val_right (
+                                       p->prop,
+                                       p->sem.serialize.item));
             }
             break;
 
@@ -603,16 +605,16 @@ opt_const (PFla_op_t *p, bool no_attach)
         case la_count:
             /* if partitiong attribute is constant remove it
                and attach it after the operator */
-            if (p->sem.count.part &&
-                PFprop_const_left (p->prop, p->sem.count.part)) {
+            if (p->sem.aggr.part &&
+                PFprop_const_left (p->prop, p->sem.aggr.part)) {
                 PFla_op_t *count = PFla_count (L(p),
-                                               p->sem.count.res,
-                                               p->sem.count.part);
-                PFla_op_t *ret = add_attach (count, p->sem.count.part,
+                                               p->sem.aggr.res,
+                                               p->sem.aggr.part);
+                PFla_op_t *ret = add_attach (count, p->sem.aggr.part,
                                              PFprop_const_val_left (
                                                  p->prop,
-                                                 p->sem.count.part));
-                count->sem.count.part = att_NULL;
+                                                 p->sem.aggr.part));
+                count->sem.aggr.part = att_NULL;
                 *p = *ret;
                 SEEN(p) = true;
             }
@@ -658,6 +660,7 @@ opt_const (PFla_op_t *p, bool no_attach)
             break;
 
         case la_type:
+        case la_cast:
             /* introduce attach if necessary */
             if (PFprop_const_left (p->prop, p->sem.type.att)) {
                 L(p) = add_attach (L(p), p->sem.type.att,
@@ -667,44 +670,34 @@ opt_const (PFla_op_t *p, bool no_attach)
             }
             break;
 
-        case la_cast:
-            /* introduce attach if necessary */
-            if (PFprop_const_left (p->prop, p->sem.cast.att)) {
-                L(p) = add_attach (L(p), p->sem.cast.att,
-                                   PFprop_const_val_left (
-                                       p->prop,
-                                       p->sem.cast.att));
-            }
-            break;
-
         case la_seqty1:
         case la_all:
             /* introduce attach if necessary */
-            if (PFprop_const_left (p->prop, p->sem.blngroup.att)) {
-                L(p) = add_attach (L(p), p->sem.blngroup.att,
+            if (PFprop_const_left (p->prop, p->sem.aggr.att)) {
+                L(p) = add_attach (L(p), p->sem.aggr.att,
                                    PFprop_const_val (p->prop,
-                                                     p->sem.blngroup.att));
+                                                     p->sem.aggr.att));
             }
 
             /* if partitiong attribute is constant remove it
                and attach it after the operator */
-            if (p->sem.blngroup.part &&
-                PFprop_const_left (p->prop, p->sem.blngroup.part)) {
+            if (p->sem.aggr.part &&
+                PFprop_const_left (p->prop, p->sem.aggr.part)) {
                 PFla_op_t *op = p->kind == la_all
                                 ? PFla_all (L(p),
-                                            p->sem.blngroup.res,
-                                            p->sem.blngroup.att,
-                                            p->sem.blngroup.part)
+                                            p->sem.aggr.res,
+                                            p->sem.aggr.att,
+                                            p->sem.aggr.part)
                                 : PFla_seqty1 (L(p),
-                                               p->sem.blngroup.res,
-                                               p->sem.blngroup.att,
-                                               p->sem.blngroup.part);
+                                               p->sem.aggr.res,
+                                               p->sem.aggr.att,
+                                               p->sem.aggr.part);
 
-                PFla_op_t *ret = add_attach (op, p->sem.blngroup.part,
+                PFla_op_t *ret = add_attach (op, p->sem.aggr.part,
                                              PFprop_const_val (
                                                  p->prop,
-                                                 p->sem.blngroup.part));
-                op->sem.blngroup.part = att_NULL;
+                                                 p->sem.aggr.part));
+                op->sem.aggr.part = att_NULL;
                 *p = *ret;
                 SEEN(p) = true;
             }
@@ -727,6 +720,8 @@ PFalgopt_const (PFla_op_t *root, bool no_attach)
     /* Optimize algebra tree */
     opt_const (root, no_attach);
     PFla_dag_reset (root);
+    /* ensure that each operator has its own properties */
+    PFprop_create_prop (root);
 
     return root;
 }

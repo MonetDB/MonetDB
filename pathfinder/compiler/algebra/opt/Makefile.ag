@@ -30,11 +30,14 @@ lib_opt = {
         NOINST
         DIR = libdir
         SOURCES = \
+                map_unq_names.c \
+                map_ori_names.c \
                 opt_complex.c \
                 opt_const.c \
                 opt_dom.c \
                 opt_general.brg \
                 opt_icol.c \
+                opt_join_pd.c \
                 opt_key.c \
                 opt_mvd.c \
                 opt_reqval.c

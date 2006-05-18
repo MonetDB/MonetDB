@@ -59,7 +59,7 @@ struct PFprop_t {
                                   the relationship between different domains */
     PFalg_att_t  icols;      /**< List of attributes required by the
                                   parent operators. */
-    PFalg_att_t  keys;       /**< List of attributes that have
+    PFarray_t   *keys;       /**< List of attributes that have
                                   unique values. */
     reqval_t     reqvals;    /**< List of attributes with their corresponding
                                   required values. */
@@ -80,10 +80,14 @@ struct PFprop_t {
                                   parent operators. */
     PFalg_att_t r_icols;     /**< List of attributes required by the
                                   parent operators. */
-    PFalg_att_t l_keys;      /**< List of attributes that have
+    PFarray_t  *l_keys;      /**< List of attributes that have
                                   unique values. */
-    PFalg_att_t r_keys;      /**< List of attributes that have
+    PFarray_t  *r_keys;      /**< List of attributes that have
                                   unique values. */
+    PFarray_t  *l_name_pairs; /**< List of unique attributes with their
+                                   corresponding new unique names. */
+    PFarray_t  *r_name_pairs; /**< List of unique attributes with their
+                                   corresponding new unique names. */
 };
 
 /* constant item */
@@ -126,7 +130,8 @@ PFprop_t *PFprop (void);
  * rooted in root whose flag is set.
  */
 void PFprop_infer (bool card, bool const_, bool dom, bool icols,
-                   bool key, bool ocols, bool reqval, bool unq_names,
+                   bool key, bool ocols, bool reqval, 
+                   bool ori_names, bool unq_names,
                    PFla_op_t *root);
 
 /**
@@ -147,6 +152,7 @@ void PFprop_infer_key (PFla_op_t *root);
 void PFprop_infer_ocol (PFla_op_t *root);
 void PFprop_infer_reqval (PFla_op_t *root);
 void PFprop_infer_unq_names (PFla_op_t *root);
+void PFprop_infer_ori_names (PFla_op_t *root);
 
 /* --------------------- cardinality propery accessors --------------------- */
 
@@ -349,15 +355,36 @@ bool PFprop_reqval_val (const PFprop_t *prop, PFalg_att_t attr);
 PFalg_att_t PFprop_unq_name (const PFprop_t *prop, PFalg_att_t attr);
 
 /**
+ * Return unique name of attribute @a attr stored
+ * in the left name mapping field of property container @a prop.
+ */
+PFalg_att_t PFprop_unq_name_left (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
+ * Return unique name of attribute @a attr stored
+ * in the right name mapping field of property container @a prop.
+ */
+PFalg_att_t PFprop_unq_name_right (const PFprop_t *prop, PFalg_att_t attr);
+
+/* -------------------- original names property accessors ------------------ */
+
+/**
  * Return original name of unique attribute @a attr stored
  * in property container @a prop.
  */
 PFalg_att_t PFprop_ori_name (const PFprop_t *prop, PFalg_att_t attr);
 
 /**
- * Returns the textual representation of an unique attribute @a attr.
+ * Return original name of attribute @a attr stored
+ * in the left name mapping field of property container @a prop.
  */
-char * PFunq_att_str (PFalg_att_t attr);
+PFalg_att_t PFprop_ori_name_left (const PFprop_t *prop, PFalg_att_t attr);
+
+/**
+ * Return original name of attribute @a attr stored
+ * in the right name mapping field of property container @a prop.
+ */
+PFalg_att_t PFprop_ori_name_right (const PFprop_t *prop, PFalg_att_t attr);
 
 #endif  /* PROPERTIES_H */
 

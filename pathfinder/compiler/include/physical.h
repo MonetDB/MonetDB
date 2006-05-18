@@ -136,6 +136,11 @@ typedef enum PFpa_op_kind_t PFpa_op_kind_t;
 /** semantic content in algebra operators */
 union PFpa_op_sem_t {
 
+    /* semantic content for serialize operator */
+    struct {
+        PFalg_att_t     item;     /**< name of attribute item */
+    } serialize;
+    
     /* semantic content for literal table constr. */
     struct {
         unsigned int    count;    /**< number of tuples */
@@ -264,7 +269,15 @@ union PFpa_op_sem_t {
                                        node test */
         PFord_ordering_t in;      /**< input ordering */
         PFord_ordering_t out;     /**< output ordering */
+        PFalg_att_t      iter;    /**< iter column */
+        PFalg_att_t      item;    /**< item column */
     } scjoin;
+
+    /* reference iter and item columns */
+    struct {
+        PFalg_att_t     iter;     /**< iter column */
+        PFalg_att_t     item;     /**< item column */
+    } ii;
 
     /* reference columns for document access */
     struct {
@@ -341,7 +354,8 @@ typedef struct PFpa_op_t PFpa_op_t;
  * A `serialize' node will be placed on the very top of the algebra
  * expression tree.
  */
-PFpa_op_t * PFpa_serialize (const PFpa_op_t *doc, const PFpa_op_t *alg);
+PFpa_op_t * PFpa_serialize (const PFpa_op_t *doc, const PFpa_op_t *alg,
+                            PFalg_att_t item);
 
 /****************************************************************/
 
@@ -650,64 +664,88 @@ PFpa_op_t *PFpa_llscj_anc (const PFpa_op_t *frag,
                            const PFpa_op_t *ctx,
                            const PFty_t test,
                            const PFord_ordering_t in,
-                           const PFord_ordering_t out);
+                           const PFord_ordering_t out,
+                           PFalg_att_t iter,
+                           PFalg_att_t item);
 PFpa_op_t *PFpa_llscj_anc_self (const PFpa_op_t *frag,
                                 const PFpa_op_t *ctx,
                                 const PFty_t test,
                                 const PFord_ordering_t in,
-                                const PFord_ordering_t out);
+                                const PFord_ordering_t out,
+                                PFalg_att_t iter,
+                                PFalg_att_t item);
 PFpa_op_t *PFpa_llscj_attr (const PFpa_op_t *frag,
                             const PFpa_op_t *ctx,
                             const PFty_t test,
                             const PFord_ordering_t in,
-                            const PFord_ordering_t out);
+                            const PFord_ordering_t out,
+                            PFalg_att_t iter,
+                            PFalg_att_t item);
 PFpa_op_t *PFpa_llscj_child (const PFpa_op_t *frag,
                              const PFpa_op_t *ctx,
                              const PFty_t test,
                              const PFord_ordering_t in,
-                             const PFord_ordering_t out);
+                             const PFord_ordering_t out,
+                             PFalg_att_t iter,
+                             PFalg_att_t item);
 PFpa_op_t *PFpa_llscj_desc (const PFpa_op_t *frag,
                             const PFpa_op_t *ctx,
                             const PFty_t test,
                             const PFord_ordering_t in,
-                            const PFord_ordering_t out);
+                            const PFord_ordering_t out,
+                            PFalg_att_t iter,
+                            PFalg_att_t item);
 PFpa_op_t *PFpa_llscj_desc_self (const PFpa_op_t *frag,
                                  const PFpa_op_t *ctx,
                                  const PFty_t test,
                                  const PFord_ordering_t in,
-                                 const PFord_ordering_t out);
+                                 const PFord_ordering_t out,
+                                 PFalg_att_t iter,
+                                 PFalg_att_t item);
 PFpa_op_t *PFpa_llscj_foll (const PFpa_op_t *frag,
                             const PFpa_op_t *ctx,
                             const PFty_t test,
                             const PFord_ordering_t in,
-                            const PFord_ordering_t out);
+                            const PFord_ordering_t out,
+                            PFalg_att_t iter,
+                            PFalg_att_t item);
 PFpa_op_t *PFpa_llscj_foll_sibl (const PFpa_op_t *frag,
                                  const PFpa_op_t *ctx,
                                  const PFty_t test,
                                  const PFord_ordering_t in,
-                                 const PFord_ordering_t out);
+                                 const PFord_ordering_t out,
+                                 PFalg_att_t iter,
+                                 PFalg_att_t item);
 PFpa_op_t *PFpa_llscj_parent (const PFpa_op_t *frag,
                               const PFpa_op_t *ctx,
                               const PFty_t test,
                               const PFord_ordering_t in,
-                              const PFord_ordering_t out);
+                              const PFord_ordering_t out,
+                              PFalg_att_t iter,
+                              PFalg_att_t item);
 PFpa_op_t *PFpa_llscj_prec (const PFpa_op_t *frag,
                             const PFpa_op_t *ctx,
                             const PFty_t test,
                             const PFord_ordering_t in,
-                            const PFord_ordering_t out);
+                            const PFord_ordering_t out,
+                            PFalg_att_t iter,
+                            PFalg_att_t item);
 PFpa_op_t *PFpa_llscj_prec_sibl (const PFpa_op_t *frag,
                                  const PFpa_op_t *ctx,
                                  const PFty_t test,
                                  const PFord_ordering_t in,
-                                 const PFord_ordering_t out);
+                                 const PFord_ordering_t out,
+                                 PFalg_att_t iter,
+                                 PFalg_att_t item);
 
 /**
  * Access to persistently stored document table.
  *
  * Requires an iter | item schema as its input.
  */
-PFpa_op_t * PFpa_doc_tbl (const PFpa_op_t *);
+PFpa_op_t * PFpa_doc_tbl (const PFpa_op_t *,
+                          PFalg_att_t iter,
+                          PFalg_att_t item);
 
 /**
  * Access to the string content of loaded documents
@@ -726,7 +764,10 @@ PFpa_op_t * PFpa_doc_access (const PFpa_op_t *doc,
  */
 PFpa_op_t * PFpa_element (const PFpa_op_t *, 
                           const PFpa_op_t *,
-                          const PFpa_op_t *);
+                          const PFpa_op_t *,
+                          PFalg_att_t,
+                          PFalg_att_t,
+                          PFalg_att_t);
 
 /**
  * Attribute constructor
@@ -743,7 +784,10 @@ PFpa_op_t * PFpa_textnode (const PFpa_op_t *,
                            PFalg_att_t, PFalg_att_t);
 
 PFpa_op_t * PFpa_merge_adjacent (const PFpa_op_t *fragment,
-                                 const PFpa_op_t *n);
+                                 const PFpa_op_t *n,
+                                 PFalg_att_t,
+                                 PFalg_att_t,
+                                 PFalg_att_t);
 
 /**
  * Extract result part from a (frag, result) pair.
@@ -790,7 +834,9 @@ PFpa_op_t * PFpa_fn_contains (const PFpa_op_t *n, PFalg_att_t res,
  * Concatenation of multiple strings (using seperators)
  */
 PFpa_op_t * PFpa_string_join (const PFpa_op_t *n1, 
-                              const PFpa_op_t *n2);
+                              const PFpa_op_t *n2,
+                              PFalg_att_t,
+                              PFalg_att_t);
 
 
 #endif  /* PHYSICAL_H */

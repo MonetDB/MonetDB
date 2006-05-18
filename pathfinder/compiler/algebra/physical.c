@@ -123,9 +123,12 @@ wire2 (enum PFpa_op_kind_t kind, const PFpa_op_t *n1, const PFpa_op_t *n2)
  * algebra expression.
  */
 PFpa_op_t *
-PFpa_serialize (const PFpa_op_t *doc, const PFpa_op_t *alg)
+PFpa_serialize (const PFpa_op_t *doc, const PFpa_op_t *alg,
+                PFalg_att_t item)
 {
     PFpa_op_t *ret = wire2 (pa_serialize, doc, alg);
+
+    ret->sem.serialize.item = item;
 
     ret->cost = doc->cost + alg->cost;
 
@@ -1983,25 +1986,29 @@ llscj_worker (PFpa_op_kind_t axis,
               const PFpa_op_t *ctx,
               const PFty_t test,
               const PFord_ordering_t in,
-              const PFord_ordering_t out)
+              const PFord_ordering_t out,
+              PFalg_att_t iter, PFalg_att_t item)
 {
     PFpa_op_t *ret = wire2 (axis, frag, ctx);
     PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
+        = PFord_refine (PFord_refine (PFordering (), iter), item);
     PFord_ordering_t item_iter
-        = PFord_refine (PFord_refine (PFordering (), att_item), att_iter);
+        = PFord_refine (PFord_refine (PFordering (), item), iter);
 
 #ifndef NDEBUG
     unsigned short found = 0;
 
     for (unsigned int i = 0; i < ctx->schema.count; i++)
-        if (ctx->schema.items[i].name == att_iter
-            || ctx->schema.items[i].name == att_item)
+        if (ctx->schema.items[i].name == iter
+            || ctx->schema.items[i].name == item)
             found++;
 
     if (found != 2)
         PFoops (OOPS_FATAL, "staircase join requires iter|item schema");
 #endif
+
+    ret->sem.scjoin.iter = iter;
+    ret->sem.scjoin.item = item;
 
     /* The schema of the result part is iter|item */
     ret->schema.count = 2;
@@ -2009,14 +2016,14 @@ llscj_worker (PFpa_op_kind_t axis,
         = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
 
     ret->schema.items[0]
-        = (PFalg_schm_item_t) { .name = att_iter, .type = aat_nat };
+        = (PFalg_schm_item_t) { .name = iter, .type = aat_nat };
     /* the result of an attribute axis is also of type attribute */
     if (axis == pa_llscj_attr)
         ret->schema.items[1]
-            = (PFalg_schm_item_t) { .name = att_item, .type = aat_anode };
+            = (PFalg_schm_item_t) { .name = item, .type = aat_anode };
     else
         ret->schema.items[1]
-            = (PFalg_schm_item_t) { .name = att_item, .type = aat_pnode };
+            = (PFalg_schm_item_t) { .name = item, .type = aat_pnode };
 
     /* store semantic content in node */
     ret->sem.scjoin.ty = test;
@@ -2048,6 +2055,47 @@ llscj_worker (PFpa_op_kind_t axis,
     return ret;
 }
 
+static void
+llscj_cost (PFpa_op_t *n, unsigned long ctx_cost)
+{
+    PFord_ordering_t iter_item
+        = PFord_refine (PFord_refine (PFordering (),
+                                      n->sem.scjoin.iter),
+                        n->sem.scjoin.item);
+
+    /* ---- LLSCJchild: costs ---- */
+
+    if (PFord_implies (n->sem.scjoin.in, iter_item)) {
+        /* input has iter|item ordering */
+
+        if (PFord_implies (n->sem.scjoin.out, iter_item)) {
+            /* output has iter|item ordering */
+            n->cost = 3 * ctx_cost;
+        }
+        else {
+            /* output has item|iter ordering */
+            n->cost = 2 * ctx_cost;
+        }
+
+    }
+    else {
+        /* input has item|iter ordering */
+
+        if (PFord_implies (n->sem.scjoin.out, iter_item)) {
+            /* output has iter|item ordering */
+            n->cost = 1 * ctx_cost;
+        }
+        else {
+            /* output has item|iter ordering */
+
+            /* should be cheapest */
+            n->cost = 0 * ctx_cost;
+        }
+    }
+
+    n->cost += ctx_cost;
+}
+
 /**
  * StaircaseJoin operator.
  *
@@ -2058,44 +2106,12 @@ PFpa_llscj_anc (const PFpa_op_t *frag,
                 const PFpa_op_t *ctx,
                 const PFty_t test,
                 const PFord_ordering_t in,
-                const PFord_ordering_t out)
+                const PFord_ordering_t out,
+                PFalg_att_t iter, PFalg_att_t item)
 {
-    PFpa_op_t *ret = llscj_worker (pa_llscj_anc, frag, ctx, test, in, out);
-
-    PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
-
-    /* ---- LLSCJchild: costs ---- */
-
-    if (PFord_implies (ret->sem.scjoin.in, iter_item)) {
-        /* input has iter|item ordering */
-
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 3 * ctx->cost;
-        }
-        else {
-            /* output has item|iter ordering */
-            ret->cost = 2 * ctx->cost;
-        }
-
-    }
-    else {
-        /* input has item|iter ordering */
-
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 1 * ctx->cost;
-        }
-        else {
-            /* output has item|iter ordering */
-
-            /* should be cheapest */
-            ret->cost = 0 * ctx->cost;
-        }
-    }
-
-    ret->cost += ctx->cost;
+    PFpa_op_t *ret = llscj_worker (pa_llscj_anc, frag, ctx, test, in, out,
+                                   iter, item);
+    llscj_cost (ret, ctx->cost);
 
     return ret;
 }
@@ -2110,44 +2126,12 @@ PFpa_llscj_anc_self (const PFpa_op_t *frag,
                      const PFpa_op_t *ctx,
                      const PFty_t test,
                      const PFord_ordering_t in,
-                     const PFord_ordering_t out)
+                     const PFord_ordering_t out,
+                     PFalg_att_t iter, PFalg_att_t item)
 {
-    PFpa_op_t *ret = llscj_worker (pa_llscj_anc_self, frag, ctx, test, in, out);
-
-    PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
-
-    /* ---- LLSCJchild: costs ---- */
-
-    if (PFord_implies (ret->sem.scjoin.in, iter_item)) {
-        /* input has iter|item ordering */
-
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 3 * ctx->cost;
-        }
-        else {
-            /* output has item|iter ordering */
-            ret->cost = 2 * ctx->cost;
-        }
-
-    }
-    else {
-        /* input has item|iter ordering */
-
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 1 * ctx->cost;
-        }
-        else {
-            /* output has item|iter ordering */
-
-            /* should be cheapest */
-            ret->cost = 0 * ctx->cost;
-        }
-    }
-
-    ret->cost += ctx->cost;
+    PFpa_op_t *ret = llscj_worker (pa_llscj_anc_self, frag, ctx, test, in, out,
+                                   iter, item);
+    llscj_cost (ret, ctx->cost);
 
     return ret;
 }
@@ -2162,12 +2146,12 @@ PFpa_llscj_attr (const PFpa_op_t *frag,
                  const PFpa_op_t *ctx,
                  const PFty_t test,
                  const PFord_ordering_t in,
-                 const PFord_ordering_t out)
+                 const PFord_ordering_t out,
+                 PFalg_att_t iter, PFalg_att_t item)
 {
-    PFpa_op_t *ret = llscj_worker (pa_llscj_attr, frag, ctx, test, in, out);
-
-    /* there is only one implementation */
-    ret->cost = 1 + ctx->cost;
+    PFpa_op_t *ret = llscj_worker (pa_llscj_attr, frag, ctx, test, in, out,
+                                   iter, item);
+    llscj_cost (ret, ctx->cost);
 
     return ret;
 }
@@ -2182,44 +2166,12 @@ PFpa_llscj_child (const PFpa_op_t *frag,
                   const PFpa_op_t *ctx,
                   const PFty_t test,
                   const PFord_ordering_t in,
-                  const PFord_ordering_t out)
+                  const PFord_ordering_t out,
+                  PFalg_att_t iter, PFalg_att_t item)
 {
-    PFpa_op_t *ret = llscj_worker (pa_llscj_child, frag, ctx, test, in, out);
-
-    PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
-
-    /* ---- LLSCJchild: costs ---- */
-
-    if (PFord_implies (ret->sem.scjoin.in, iter_item)) {
-        /* input has iter|item ordering */
-
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 3 * ctx->cost;
-        }
-        else {
-            /* output has item|iter ordering */
-            ret->cost = 2 * ctx->cost;
-        }
-
-    }
-    else {
-        /* input has item|iter ordering */
-
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 1 * ctx->cost;
-        }
-        else {
-            /* output has item|iter ordering */
-
-            /* should be cheapest */
-            ret->cost = 0 * ctx->cost;
-        }
-    }
-
-    ret->cost += ctx->cost;
+    PFpa_op_t *ret = llscj_worker (pa_llscj_child, frag, ctx, test, in, out,
+                                   iter, item);
+    llscj_cost (ret, ctx->cost);
 
     return ret;
 }
@@ -2234,44 +2186,12 @@ PFpa_llscj_desc (const PFpa_op_t *frag,
                  const PFpa_op_t *ctx,
                  const PFty_t test,
                  const PFord_ordering_t in,
-                 const PFord_ordering_t out)
+                 const PFord_ordering_t out,
+                 PFalg_att_t iter, PFalg_att_t item)
 {
-    PFpa_op_t *ret = llscj_worker (pa_llscj_desc, frag, ctx, test, in, out);
-
-    PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
-
-    /* ---- LLSCJchild: costs ---- */
-
-    if (PFord_implies (ret->sem.scjoin.in, iter_item)) {
-        /* input has iter|item ordering */
-
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 3 * ctx->cost;
-        }
-        else {
-            /* output has item|iter ordering */
-            ret->cost = 2 * ctx->cost;
-        }
-
-    }
-    else {
-        /* input has item|iter ordering */
-
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 1 * ctx->cost;
-        }
-        else {
-            /* output has item|iter ordering */
-
-            /* should be cheapest */
-            ret->cost = 0 * ctx->cost;
-        }
-    }
-
-    ret->cost += ctx->cost;
+    PFpa_op_t *ret = llscj_worker (pa_llscj_desc, frag, ctx, test, in, out,
+                                   iter, item);
+    llscj_cost (ret, ctx->cost);
 
     return ret;
 }
@@ -2286,44 +2206,12 @@ PFpa_llscj_desc_self (const PFpa_op_t *frag,
                       const PFpa_op_t *ctx,
                       const PFty_t test,
                       const PFord_ordering_t in,
-                      const PFord_ordering_t out)
+                      const PFord_ordering_t out,
+                      PFalg_att_t iter, PFalg_att_t item)
 {
-    PFpa_op_t *ret = llscj_worker (pa_llscj_desc_self,frag, ctx, test, in, out);
-
-    PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
-
-    /* ---- LLSCJchild: costs ---- */
-
-    if (PFord_implies (ret->sem.scjoin.in, iter_item)) {
-        /* input has iter|item ordering */
-
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 3 * ctx->cost;
-        }
-        else {
-            /* output has item|iter ordering */
-            ret->cost = 2 * ctx->cost;
-        }
-
-    }
-    else {
-        /* input has item|iter ordering */
-
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 1 * ctx->cost;
-        }
-        else {
-            /* output has item|iter ordering */
-
-            /* should be cheapest */
-            ret->cost = 0 * ctx->cost;
-        }
-    }
-
-    ret->cost += ctx->cost;
+    PFpa_op_t *ret = llscj_worker (pa_llscj_desc_self,frag, ctx, test, in, out,
+                                   iter, item);
+    llscj_cost (ret, ctx->cost);
 
     return ret;
 }
@@ -2338,44 +2226,12 @@ PFpa_llscj_foll (const PFpa_op_t *frag,
                  const PFpa_op_t *ctx,
                  const PFty_t test,
                  const PFord_ordering_t in,
-                 const PFord_ordering_t out)
+                 const PFord_ordering_t out,
+                 PFalg_att_t iter, PFalg_att_t item)
 {
-    PFpa_op_t *ret = llscj_worker (pa_llscj_foll, frag, ctx, test, in, out);
-
-    PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
-
-    /* ---- LLSCJchild: costs ---- */
-
-    if (PFord_implies (ret->sem.scjoin.in, iter_item)) {
-        /* input has iter|item ordering */
-
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 3 * ctx->cost;
-        }
-        else {
-            /* output has item|iter ordering */
-            ret->cost = 2 * ctx->cost;
-        }
-
-    }
-    else {
-        /* input has item|iter ordering */
-
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 1 * ctx->cost;
-        }
-        else {
-            /* output has item|iter ordering */
-
-            /* should be cheapest */
-            ret->cost = 0 * ctx->cost;
-        }
-    }
-
-    ret->cost += ctx->cost;
+    PFpa_op_t *ret = llscj_worker (pa_llscj_foll, frag, ctx, test, in, out,
+                                   iter, item);
+    llscj_cost (ret, ctx->cost);
 
     return ret;
 }
@@ -2390,44 +2246,12 @@ PFpa_llscj_foll_sibl (const PFpa_op_t *frag,
                       const PFpa_op_t *ctx,
                       const PFty_t test,
                       const PFord_ordering_t in,
-                      const PFord_ordering_t out)
+                      const PFord_ordering_t out,
+                      PFalg_att_t iter, PFalg_att_t item)
 {
-    PFpa_op_t *ret = llscj_worker (pa_llscj_foll_sibl,frag, ctx, test, in, out);
-
-    PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
-
-    /* ---- LLSCJchild: costs ---- */
-
-    if (PFord_implies (ret->sem.scjoin.in, iter_item)) {
-        /* input has iter|item ordering */
-
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 3 * ctx->cost;
-        }
-        else {
-            /* output has item|iter ordering */
-            ret->cost = 2 * ctx->cost;
-        }
-
-    }
-    else {
-        /* input has item|iter ordering */
-
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 1 * ctx->cost;
-        }
-        else {
-            /* output has item|iter ordering */
-
-            /* should be cheapest */
-            ret->cost = 0 * ctx->cost;
-        }
-    }
-
-    ret->cost += ctx->cost;
+    PFpa_op_t *ret = llscj_worker (pa_llscj_foll_sibl,frag, ctx, test, in, out,
+                                   iter, item);
+    llscj_cost (ret, ctx->cost);
 
     return ret;
 }
@@ -2442,44 +2266,12 @@ PFpa_llscj_parent (const PFpa_op_t *frag,
                    const PFpa_op_t *ctx,
                    const PFty_t test,
                    const PFord_ordering_t in,
-                   const PFord_ordering_t out)
+                   const PFord_ordering_t out,
+                   PFalg_att_t iter, PFalg_att_t item)
 {
-    PFpa_op_t *ret = llscj_worker (pa_llscj_parent, frag, ctx, test, in, out);
-
-    PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
-
-    /* ---- LLSCJchild: costs ---- */
-
-    if (PFord_implies (ret->sem.scjoin.in, iter_item)) {
-        /* input has iter|item ordering */
-
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 3 * ctx->cost;
-        }
-        else {
-            /* output has item|iter ordering */
-            ret->cost = 2 * ctx->cost;
-        }
-
-    }
-    else {
-        /* input has item|iter ordering */
-
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 1 * ctx->cost;
-        }
-        else {
-            /* output has item|iter ordering */
-
-            /* should be cheapest */
-            ret->cost = 0 * ctx->cost;
-        }
-    }
-
-    ret->cost += ctx->cost;
+    PFpa_op_t *ret = llscj_worker (pa_llscj_parent, frag, ctx, test, in, out,
+                                   iter, item);
+    llscj_cost (ret, ctx->cost);
 
     return ret;
 }
@@ -2494,44 +2286,12 @@ PFpa_llscj_prec (const PFpa_op_t *frag,
                  const PFpa_op_t *ctx,
                  const PFty_t test,
                  const PFord_ordering_t in,
-                 const PFord_ordering_t out)
+                 const PFord_ordering_t out,
+                 PFalg_att_t iter, PFalg_att_t item)
 {
-    PFpa_op_t *ret = llscj_worker (pa_llscj_prec, frag, ctx, test, in, out);
-
-    PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
-
-    /* ---- LLSCJchild: costs ---- */
-
-    if (PFord_implies (ret->sem.scjoin.in, iter_item)) {
-        /* input has iter|item ordering */
-
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 3 * ctx->cost;
-        }
-        else {
-            /* output has item|iter ordering */
-            ret->cost = 2 * ctx->cost;
-        }
-
-    }
-    else {
-        /* input has item|iter ordering */
-
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 1 * ctx->cost;
-        }
-        else {
-            /* output has item|iter ordering */
-
-            /* should be cheapest */
-            ret->cost = 0 * ctx->cost;
-        }
-    }
-
-    ret->cost += ctx->cost;
+    PFpa_op_t *ret = llscj_worker (pa_llscj_prec, frag, ctx, test, in, out,
+                                   iter, item);
+    llscj_cost (ret, ctx->cost);
 
     return ret;
 }
@@ -2546,44 +2306,12 @@ PFpa_llscj_prec_sibl (const PFpa_op_t *frag,
                       const PFpa_op_t *ctx,
                       const PFty_t test,
                       const PFord_ordering_t in,
-                      const PFord_ordering_t out)
+                      const PFord_ordering_t out,
+                      PFalg_att_t iter, PFalg_att_t item)
 {
-    PFpa_op_t *ret = llscj_worker (pa_llscj_prec_sibl,frag, ctx, test, in, out);
-
-    PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
-
-    /* ---- LLSCJchild: costs ---- */
-
-    if (PFord_implies (ret->sem.scjoin.in, iter_item)) {
-        /* input has iter|item ordering */
-
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 3 * ctx->cost;
-        }
-        else {
-            /* output has item|iter ordering */
-            ret->cost = 2 * ctx->cost;
-        }
-
-    }
-    else {
-        /* input has item|iter ordering */
-
-        if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
-            /* output has iter|item ordering */
-            ret->cost = 1 * ctx->cost;
-        }
-        else {
-            /* output has item|iter ordering */
-
-            /* should be cheapest */
-            ret->cost = 0 * ctx->cost;
-        }
-    }
-
-    ret->cost += ctx->cost;
+    PFpa_op_t *ret = llscj_worker (pa_llscj_prec_sibl,frag, ctx, test, in, out,
+                                   iter, item);
+    llscj_cost (ret, ctx->cost);
 
     return ret;
 }
@@ -2593,7 +2321,7 @@ PFpa_llscj_prec_sibl (const PFpa_op_t *frag,
  * function.  Returns a (frag, result) pair.
  */
 PFpa_op_t *
-PFpa_doc_tbl (const PFpa_op_t *rel)
+PFpa_doc_tbl (const PFpa_op_t *rel, PFalg_att_t iter, PFalg_att_t item)
 {
     PFpa_op_t         *ret;
 
@@ -2601,8 +2329,8 @@ PFpa_doc_tbl (const PFpa_op_t *rel)
     unsigned short found = 0;
 
     for (unsigned int i = 0; i < rel->schema.count; i++)
-        if (rel->schema.items[i].name == att_iter
-            || rel->schema.items[i].name == att_item)
+        if (rel->schema.items[i].name == iter
+            || rel->schema.items[i].name == item)
             found++;
 
     if (found != 2)
@@ -2611,16 +2339,19 @@ PFpa_doc_tbl (const PFpa_op_t *rel)
 
     ret = wire1 (pa_doc_tbl, rel);
 
+    ret->sem.ii.iter = iter;
+    ret->sem.ii.item = item;
+    
     /* The schema of the result part is iter|item */
     ret->schema.count = 2;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
 
     ret->schema.items[0]
-        = (PFalg_schm_item_t) { .name = att_iter,
+        = (PFalg_schm_item_t) { .name = iter,
                                 .type = aat_nat };
     ret->schema.items[1]
-        = (PFalg_schm_item_t) { .name = att_item,
+        = (PFalg_schm_item_t) { .name = item,
                                 .type = aat_pnode };
 
     /* ---- doc_tbl: orderings ---- */
@@ -2630,20 +2361,20 @@ PFpa_doc_tbl (const PFpa_op_t *rel)
 
     for (unsigned int i = 0; i < PFord_set_count (rel->orderings); i++)
         if (PFord_implies (PFord_set_at (rel->orderings, i),
-                           PFord_refine (PFordering (), att_iter))) {
+                           PFord_refine (PFordering (), iter))) {
             sorted_by_iter = true;
             break;
         }
 
     if (sorted_by_iter) {
-        if (PFprop_const (rel->prop, att_item))
+        if (PFprop_const (rel->prop, item))
             PFord_set_add (ret->orderings,
                            PFord_refine (PFord_refine (PFordering (),
-                                                       att_iter),
-                                         att_item));
+                                                       iter),
+                                         item));
         else
             PFord_set_add (ret->orderings,
-                           PFord_refine (PFordering (), att_iter));
+                           PFord_refine (PFordering (), iter));
     }
 
     /* ---- doc_tbl: costs ---- */
@@ -2676,7 +2407,7 @@ PFpa_doc_access (const PFpa_op_t *doc, const PFpa_op_t *alg,
         ret->schema.items[i] = alg->schema.items[i];
 
     ret->schema.items[i] 
-        = (struct PFalg_schm_item_t) { .type = aat_str, .name = att_res };
+        = (struct PFalg_schm_item_t) { .type = aat_str, .name = res };
 
     ret->sem.doc_access.res = res;
     ret->sem.doc_access.att = att;
@@ -2698,7 +2429,8 @@ PFpa_doc_access (const PFpa_op_t *doc, const PFpa_op_t *alg,
 PFpa_op_t *
 PFpa_element (const PFpa_op_t *fragment,
               const PFpa_op_t *qname, 
-              const PFpa_op_t *content)
+              const PFpa_op_t *content,
+              PFalg_att_t iter, PFalg_att_t pos, PFalg_att_t item)
 {
     PFpa_op_t         *ret;
 
@@ -2706,8 +2438,8 @@ PFpa_element (const PFpa_op_t *fragment,
     unsigned short found = 0;
 
     for (unsigned int i = 0; i < qname->schema.count; i++)
-        if (qname->schema.items[i].name == att_iter
-            || qname->schema.items[i].name == att_item)
+        if (qname->schema.items[i].name == iter
+            || qname->schema.items[i].name == item)
             found++;
 
     if (found != 2)
@@ -2717,9 +2449,9 @@ PFpa_element (const PFpa_op_t *fragment,
     found = 0;
 
     for (unsigned int i = 0; i < content->schema.count; i++)
-        if (content->schema.items[i].name == att_iter
-            || content->schema.items[i].name == att_pos
-            || content->schema.items[i].name == att_item)
+        if (content->schema.items[i].name == iter
+            || content->schema.items[i].name == pos
+            || content->schema.items[i].name == item)
             found++;
 
     if (found != 3)
@@ -2732,29 +2464,32 @@ PFpa_element (const PFpa_op_t *fragment,
                              wire2(pa_element_tag, qname,
                                                    content));
 
+    ret->sem.ii.iter = iter;
+    ret->sem.ii.item = item;
+
     /* The schema of the result part is iter|item */
     ret->schema.count = 2;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
 
     ret->schema.items[0]
-        = (PFalg_schm_item_t) { .name = att_iter,
+        = (PFalg_schm_item_t) { .name = iter,
                                 .type = aat_nat };
     ret->schema.items[1]
-        = (PFalg_schm_item_t) { .name = att_item,
+        = (PFalg_schm_item_t) { .name = item,
                                 .type = aat_pnode };
 
     /* ---- attribute: orderings ---- */
 
     /* the input is sorted by `iter', therefore the output will be as well. */
     PFord_set_add (ret->orderings,
-                   PFord_refine (PFordering (), att_iter));
+                   PFord_refine (PFordering (), iter));
     /* additionally as we return only one value per iteration the output
        is refined by the item order */
     PFord_set_add (ret->orderings,
                    PFord_refine (PFord_refine (PFordering (),
-                                               att_iter),
-                                 att_item));
+                                               iter),
+                                 item));
 
     /* ---- attribute: costs ---- */
     /* dummy costs as we have only this version */
@@ -2845,20 +2580,8 @@ PFpa_textnode (const PFpa_op_t *rel, PFalg_att_t res,
     ret->sem.textnode.res  = res;
 
     /* ---- textnode: orderings ---- */
-
-    /* If the input is sorted by `iter', the output will be as well. */
-    bool sorted_by_iter = false;
-
     for (unsigned int i = 0; i < PFord_set_count (rel->orderings); i++)
-        if (PFord_implies (PFord_set_at (rel->orderings, i),
-                           PFord_refine (PFordering (), att_iter))) {
-            sorted_by_iter = true;
-            break;
-        }
-
-    if (sorted_by_iter)
-        PFord_set_add (ret->orderings,
-                       PFord_refine (PFordering (), att_iter));
+        PFord_set_add (ret->orderings, PFord_set_at (rel->orderings, i));
 
     /* ---- textnode: costs ---- */
     /* dummy costs as we have only this version */
@@ -2868,9 +2591,13 @@ PFpa_textnode (const PFpa_op_t *rel, PFalg_att_t res,
 }
 
 PFpa_op_t *
-PFpa_merge_adjacent (const PFpa_op_t *fragment, const PFpa_op_t *n)
+PFpa_merge_adjacent (const PFpa_op_t *fragment, const PFpa_op_t *n,
+                     PFalg_att_t iter, PFalg_att_t pos, PFalg_att_t item)
 {
     PFpa_op_t *ret = wire2 (pa_merge_adjacent, fragment, n);
+
+    ret->sem.ii.iter = iter;
+    ret->sem.ii.item = item;
 
     /* allocate memory for the result schema */
     ret->schema.count = n->schema.count;
@@ -2883,8 +2610,8 @@ PFpa_merge_adjacent (const PFpa_op_t *fragment, const PFpa_op_t *n)
 
     /* result is in iter|pos order */
     PFord_set_add (ret->orderings,
-                   PFord_refine (PFord_refine (PFordering (), att_iter),
-                                 att_pos));
+                   PFord_refine (PFord_refine (PFordering (), iter),
+                                 pos));
     /* costs */
     ret->cost = fragment->cost + n->cost + 1;
 
@@ -3090,27 +2817,31 @@ PFpa_fn_contains (const PFpa_op_t *n, PFalg_att_t res,
  * @a n1 contains the sets of strings @a n2 stores the separator for each set
  */
 PFpa_op_t *
-PFpa_string_join (const PFpa_op_t *n1, const PFpa_op_t *n2)
+PFpa_string_join (const PFpa_op_t *n1, const PFpa_op_t *n2,
+                  PFalg_att_t iter, PFalg_att_t item)
 {
     PFpa_op_t *ret = wire2 (pa_string_join, n1, n2);
 
+    ret->sem.ii.iter = iter;
+    ret->sem.ii.item = item;
+    
     /* allocate memory for the result schema */
     ret->schema.count = 2;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
     ret->schema.items[0]
-        = (PFalg_schm_item_t) { .name = att_iter, .type = aat_nat };
+        = (PFalg_schm_item_t) { .name = iter, .type = aat_nat };
     ret->schema.items[1]
-        = (PFalg_schm_item_t) { .name = att_item, .type = aat_str };
+        = (PFalg_schm_item_t) { .name = item, .type = aat_str };
 
     /* result is in iter order */
     PFord_set_add (ret->orderings,
-                   PFord_refine (PFordering (), att_iter));
+                   PFord_refine (PFordering (), iter));
     /* ... and automatically also in iter|item order */
     PFord_set_add (ret->orderings,
-                   PFord_refine (PFord_refine (PFordering (), att_iter),
-                                 att_item));
+                   PFord_refine (PFord_refine (PFordering (), iter),
+                                 item));
     /* costs */
     ret->cost = n1->cost + n2->cost + 1;
 

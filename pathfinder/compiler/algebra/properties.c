@@ -44,16 +44,20 @@
 
 /**
  * Create new property container.
+ *
+ * NOTE: This function is called _very_ often. To avoid slowing
+ * down the compilation process (standard optimization phase by
+ * a factor 4!) do _not_ initialize arrays here.
  */
 PFprop_t *
 PFprop (void)
 {
     PFprop_t *ret = PFmalloc (sizeof (PFprop_t));
 
-    /* allocate/initialize different slots for constant property*/
-    ret->constants   = PFarray (sizeof (const_t));
-    ret->l_constants = PFarray (sizeof (const_t));
-    ret->r_constants = PFarray (sizeof (const_t));
+    /* initialize different slots for constant property*/
+    ret->constants   = NULL; 
+    ret->l_constants = NULL; 
+    ret->r_constants = NULL; 
 
     /* initialize icols attribute list */
     ret->icols   = 0;
@@ -61,9 +65,9 @@ PFprop (void)
     ret->r_icols = 0;
 
     /* initialize key attribute list */
-    ret->keys   = 0;
-    ret->l_keys = 0;
-    ret->r_keys = 0;
+    ret->keys   = NULL;
+    ret->l_keys = NULL;
+    ret->r_keys = NULL;
 
     /* initialize cardinality */
     ret->card = 0;
@@ -73,13 +77,15 @@ PFprop (void)
     ret->reqvals.val  = 0;
 
     /* initialize domain information */
-    ret->domains   = PFarray (sizeof (dom_pair_t));
+    ret->domains   = NULL;
     ret->dom_rel   = NULL;
-    ret->l_domains = PFarray (sizeof (dom_pair_t));
-    ret->r_domains = PFarray (sizeof (dom_pair_t));
+    ret->l_domains = NULL;
+    ret->r_domains = NULL;
 
     /* initialize unique name information */
-    ret->name_pairs = PFarray (sizeof (name_pair_t));
+    ret->name_pairs = NULL;
+    ret->l_name_pairs = NULL;
+    ret->r_name_pairs = NULL;
 
     return ret;
 }
@@ -90,7 +96,8 @@ PFprop (void)
  */
 void
 PFprop_infer (bool card, bool const_, bool dom, bool icols,
-              bool key, bool ocols, bool reqval, bool unq_names,
+              bool key, bool ocols, bool reqval, 
+              bool ori_names, bool unq_names,
               PFla_op_t *root)
 {
     PFprop_create_prop (root);
@@ -111,6 +118,8 @@ PFprop_infer (bool card, bool const_, bool dom, bool icols,
         PFprop_infer_ocol (root);
     if (reqval)
         PFprop_infer_reqval (root);
+    if (ori_names)
+        PFprop_infer_ori_names (root);
     if (unq_names)
         PFprop_infer_unq_names (root);
 }

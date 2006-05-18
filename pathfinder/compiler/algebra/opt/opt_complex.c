@@ -112,13 +112,24 @@ opt_complex (PFla_op_t *p)
                 *p = *res;
             }
             /* prune unnecessary attach-project operators */
-            if (p->sem.attach.attname == att_iter &&
-                L(p)->kind == la_project &&
+            if (L(p)->kind == la_project &&
                 L(p)->schema.count == 1 &&
-                (LL(p)->kind == la_scjoin || 
-                 (LL(p)->kind == la_roots &&
-                  LLL(p)->kind == la_doc_tbl)))
+                LL(p)->kind == la_scjoin &&
+                p->sem.attach.attname == LL(p)->sem.scjoin.iter &&
+                L(p)->sem.proj.items[0].new == LL(p)->sem.scjoin.item_res) {
                 *p = *(LL(p));
+                break;
+            }
+            if (L(p)->kind == la_project &&
+                L(p)->schema.count == 1 &&
+                LL(p)->kind == la_roots &&
+                LLL(p)->kind == la_doc_tbl &&
+                p->sem.attach.attname == LLL(p)->sem.doc_tbl.iter &&
+                L(p)->sem.proj.items[0].new == LLL(p)->sem.doc_tbl.item_res) {
+                *p = *(LL(p));
+                break;
+            }
+
             break;
             
         case la_eqjoin:
@@ -135,11 +146,15 @@ opt_complex (PFla_op_t *p)
                    as no rewrite adds more columns to that subtree. */
                 bool left_arg_req = false;
                 bool right_arg_req = false;
+
+                /* discard join attributes as one of them always remains */
                 for (unsigned int i = 0; i < L(p)->schema.count; i++) {
                     left_arg_req = left_arg_req ||
-                                   PFprop_icol (
+                                   (L(p)->schema.items[i].name !=
+                                    p->sem.eqjoin.att1 &&
+                                    PFprop_icol (
                                        p->prop, 
-                                       L(p)->schema.items[i].name);
+                                       L(p)->schema.items[i].name));
                 }
                 if (PFprop_subdom (p->prop, 
                                    PFprop_dom_right (p->prop,
@@ -172,11 +187,14 @@ opt_complex (PFla_op_t *p)
                     break;
                 }
                 
+                /* discard join attributes as one of them always remains */
                 for (unsigned int i = 0; i < R(p)->schema.count; i++) {
                     right_arg_req = right_arg_req ||
-                                    PFprop_icol (
-                                        p->prop, 
-                                        R(p)->schema.items[i].name);
+                                    (R(p)->schema.items[i].name !=
+                                     p->sem.eqjoin.att2 &&
+                                     PFprop_icol (
+                                         p->prop, 
+                                         R(p)->schema.items[i].name));
                 }
                 if (PFprop_subdom (p->prop, 
                                    PFprop_dom_left (p->prop,
@@ -211,6 +229,24 @@ opt_complex (PFla_op_t *p)
             }
             break;
 
+        case la_cross:
+            /* PFprop_icols_count () == 0 is also true 
+               for nodes without inferred properties 
+               (newly created nodes). The cardinality
+               constraint however ensures that the 
+               properties are available. */
+            if (PFprop_card (L(p)->prop) == 1 &&
+                PFprop_icols_count (L(p)->prop) == 0) {
+                *p = *(R(p));
+                break;
+            }
+            if (PFprop_card (R(p)->prop) == 1 &&
+                PFprop_icols_count (R(p)->prop) == 0) {
+                *p = *(L(p));
+                break;
+            }
+            break;
+            
         default:
             break;
     }
@@ -230,6 +266,8 @@ PFalgopt_complex (PFla_op_t *root)
     /* Optimize algebra tree */
     opt_complex (root);
     PFla_dag_reset (root);
+    /* ensure that each operator has its own properties */
+    PFprop_create_prop (root);
 
     /* In addition optimize the resulting DAG using the icols property 
        to remove inconsistencies introduced by changing the types 

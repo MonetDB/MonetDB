@@ -274,14 +274,9 @@ prop_infer_reqvals (PFla_op_t *n, reqval_t reqvals)
             break;
 
         case la_type:
+        case la_cast:
             rv.name = diff (rv.name, n->sem.type.res);
             rv.val = diff (rv.val, n->sem.type.res);
-            prop_infer_reqvals (L(n), rv);
-            break;
-
-        case la_cast:
-            rv.name = diff (rv.name, n->sem.cast.res);
-            rv.val = diff (rv.val, n->sem.cast.res);
             prop_infer_reqvals (L(n), rv);
             break;
 

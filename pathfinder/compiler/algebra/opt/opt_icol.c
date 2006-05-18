@@ -276,6 +276,9 @@ opt_icol (PFla_op_t *p)
 	case la_max:
 	case la_min:
         case la_sum:
+        case la_count:
+        case la_seqty1:
+        case la_all:
             /* replace aggregate function if result column is not required */
             if (!PFprop_icol (p->prop, p->sem.aggr.res)) {
                 PFla_op_t *ret;
@@ -290,30 +293,6 @@ opt_icol (PFla_op_t *p)
                     PFprop_update_ocol (L(ret));
                 } else {
                     ret = PFla_lit_tbl (PFalg_attlist (p->sem.aggr.res),
-                                        PFalg_tuple (PFalg_lit_nat (42)));
-                }
-                *p = *ret;
-                SEEN(p) = true;
-                PFprop_update_ocol (p);
-                break;
-            }
-            break;
-
-        case la_count:
-            /* replace count if result column is not required */
-            if (!PFprop_icol (p->prop, p->sem.count.res)) {
-                PFla_op_t *ret;
-                /* as an aggregate is required we either
-                   (a) evaluate a distinct on the partition (if present) or
-                   (b) create a one tuple literal table with a bogus value
-                       (as it is never referenced) */
-                if (p->sem.count.part) {
-                    PFalg_proj_t *proj = PFmalloc (sizeof (PFalg_proj_t));
-                    proj[0] = PFalg_proj (p->sem.count.part, p->sem.count.part);
-                    ret = PFla_distinct (PFla_project_ (L(p), 1, proj));
-                    PFprop_update_ocol (L(ret));
-                } else {
-                    ret = PFla_lit_tbl (PFalg_attlist (p->sem.count.res),
                                         PFalg_tuple (PFalg_lit_nat (42)));
                 }
                 *p = *ret;
@@ -341,6 +320,8 @@ opt_icol (PFla_op_t *p)
 
         case la_type:
             /* prune type if result column is not required */
+        case la_cast:
+            /* prune cast if result column is not required */
             if (!PFprop_icol (p->prop, p->sem.type.res)) {
                 *p = *(L(p));
                 break;
@@ -350,42 +331,8 @@ opt_icol (PFla_op_t *p)
         case la_type_assert:
             /* prune type assertion if restricted column is not
                used afterwards */
-            if (!PFprop_icol (p->prop, p->sem.type_a.att)) {
+            if (!PFprop_icol (p->prop, p->sem.type.att)) {
                 *p = *(L(p));
-                break;
-            }
-            break;
-
-        case la_cast:
-            /* prune cast if result column is not required */
-            if (!PFprop_icol (p->prop, p->sem.cast.res)) {
-                *p = *(L(p));
-                break;
-            }
-            break;
-
-        case la_seqty1:
-        case la_all:
-            /* prune blngroup if result column is not required */
-            if (!PFprop_icol (p->prop, p->sem.blngroup.res)) {
-                PFla_op_t *ret;
-                /* as an aggregate is required we either
-                   (a) evaluate a distinct on the partition (if present) or
-                   (b) create a one tuple literal table with a bogus value
-                       (as it is never referenced) */
-                if (p->sem.blngroup.part) {
-                    PFalg_proj_t *proj = PFmalloc (sizeof (PFalg_proj_t));
-                    proj[0] = PFalg_proj (p->sem.blngroup.part,
-                                          p->sem.blngroup.part);
-                    ret = PFla_distinct (PFla_project_ (L(p), 1, proj));
-                    PFprop_update_ocol (L(ret));
-                } else {
-                    ret = PFla_lit_tbl (PFalg_attlist (p->sem.blngroup.res),
-                                        PFalg_tuple (PFalg_lit_nat (42)));
-                }
-                *p = *ret;
-                PFprop_update_ocol (p);
-                SEEN(p) = true;
                 break;
             }
             break;
@@ -405,7 +352,7 @@ opt_icol (PFla_op_t *p)
             switch (L(p)->kind) {
                 case la_element:
                     /* prune element if result column is not required */
-                    if (!PFprop_icol (p->prop, att_item)) {
+                    if (!PFprop_icol (p->prop, L(p)->sem.elem.item_res)) {
                         *p = *(LRL(p));
                         break;
                     }
@@ -450,6 +397,8 @@ PFalgopt_icol (PFla_op_t *root)
     /* Optimize algebra tree */
     opt_icol (root);
     PFla_dag_reset (root);
+    /* ensure that each operator has its own properties */
+    PFprop_create_prop (root);
 
     /* Infer ocol properties as the rewrite
        rules introduced inconsistencies */

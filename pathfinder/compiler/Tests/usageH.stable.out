@@ -69,12 +69,14 @@ Usage: pf [OPTION] [FILE]
             - icols based optimization will be applied afterwards.
          G  apply general optimization (without properties)
          V  apply optimization based on required values property
+         [  map column names to unique column names
+         J  push down equi-joins (requires unique column names)
+         ]  map column names back (from unique names to original names)
+         M  apply optimization based on multi-value dependencies
          P  infer all properties
             (used for debug output and physical algebra
-         N  skip the following optimizations
-            (used for avoiding all property analysis and optimization phases
          _  does nothing (used for structuring the options)
-         (default is: '-o OIKDCG_VOIG_MOIGC_KDCGP')
+         (default is: '-o OIKDCG_VOIG_[J]_MOIGC_KDCGP')
 = -e[0|1], --dead-code-elimination=[0|1]: dead code elimination:
          0 disable dead code elimination
          1 enable dead code elimination (default)

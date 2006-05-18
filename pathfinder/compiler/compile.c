@@ -118,7 +118,7 @@ PFstate_t PFstate = {
     .summer_branch       = true,
     .dead_code_el        = true,
 
-    .opt_alg             = "OIKDCG_VOIG_MOIGC_KDCGP",
+    .opt_alg             = "OIKDCG_VOIG_[J]_MOIGC_KDCGP",
     .format              = NULL,
 
     .genType             = "xml"

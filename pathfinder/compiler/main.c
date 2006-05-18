@@ -702,16 +702,21 @@ main (int argc, char *argv[])
                                             "properties)\n");
                 printf ("         V  apply optimization based on required "
                                             "values property\n");
+                printf ("         [  map column names to unique column "
+                                            "names\n");
+                printf ("         J  push down equi-joins (requires unique "
+                                            "column names)\n");
+                printf ("         ]  map column names back (from unique "
+                                            "names to original names)\n");
+                printf ("         M  apply optimization based on multi-value "
+                                            "dependencies\n");
                 printf ("         P  infer all properties\n");
                 printf ("            (used for debug output and physical "
                                             "algebra\n");
-                printf ("         N  skip the following optimizations\n");
-                printf ("            (used for avoiding all property analysis "
-                                            "and optimization phases\n");
                 printf ("         _  does nothing (used for structuring "
                                             "the options)\n");
                 printf ("         (default is: "
-                                            "'-o OIKDCG_VOIG_MOIGC_KDCGP')\n");
+                                  "'-o OIKDCG_VOIG_[J]_MOIGC_KDCGP')\n");
 
                 printf ("  -e[0|1]%s: dead code elimination:\n"
                         "         0 disable dead code elimination\n"

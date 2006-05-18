@@ -335,16 +335,16 @@ infer_ocol (PFla_op_t *n)
              * (if available -- constant optimizations may
              *  have removed it).
              */
-            new_ocols (n, n->sem.count.part ? 2 : 1);
+            new_ocols (n, n->sem.aggr.part ? 2 : 1);
 
             /* insert result attribute into schema */
-            ocol_at (n, 0).name = n->sem.count.res;
+            ocol_at (n, 0).name = n->sem.aggr.res;
             ocol_at (n, 0).type = aat_int;
 
             /* copy the partitioning attribute */
-            if (n->sem.count.part)
+            if (n->sem.aggr.part)
                 for (unsigned int i = 0; i < ocols_count (L(n)); i++)
-                    if (ocol_at (L(n), i).name == n->sem.count.part) {
+                    if (ocol_at (L(n), i).name == n->sem.aggr.part) {
                         ocol_at (n, 1) = ocol_at (L(n), i);
                         break;
                     }
@@ -377,10 +377,10 @@ infer_ocol (PFla_op_t *n)
             /* copy schema from 'n' argument */
             for (unsigned int i = 0; i < ocols_count (L(n)); i++)
             {
-                if (n->sem.type_a.att == ocol_at (L(n), i).name)
+                if (n->sem.type.att == ocol_at (L(n), i).name)
                 {
-                    ocol_at (n, i).name = n->sem.type_a.att;
-                    ocol_at (n, i).type = n->sem.type_a.ty;
+                    ocol_at (n, i).name = n->sem.type.att;
+                    ocol_at (n, i).type = n->sem.type.ty;
                 }
                 else
                     ocol_at (n, i) = ocol_at (L(n), i);
@@ -389,19 +389,19 @@ infer_ocol (PFla_op_t *n)
 
         case la_cast:
             ocols (n) = copy_ocols (ocols (L(n)), ocols_count (L(n)) + 1);
-            ocol_at (n, ocols_count (n)).name = n->sem.cast.res;
-            ocol_at (n, ocols_count (n)).type = n->sem.cast.ty;
+            ocol_at (n, ocols_count (n)).name = n->sem.type.res;
+            ocol_at (n, ocols_count (n)).type = n->sem.type.ty;
             ocols_count (n)++;
             break;
 
         case la_seqty1:
         case la_all:
-            new_ocols (n, n->sem.blngroup.part ? 2 : 1);
+            new_ocols (n, n->sem.aggr.part ? 2 : 1);
             
-            ocol_at (n, 0).name = n->sem.blngroup.res;
+            ocol_at (n, 0).name = n->sem.aggr.res;
             ocol_at (n, 0).type = aat_bln;
-            if (n->sem.blngroup.part) {
-                ocol_at (n, 1).name = n->sem.blngroup.part;
+            if (n->sem.aggr.part) {
+                ocol_at (n, 1).name = n->sem.aggr.part;
                 ocol_at (n, 1).type = aat_nat;
             }
             break;
@@ -410,15 +410,16 @@ infer_ocol (PFla_op_t *n)
             new_ocols (n, 2);
 
             ocol_at (n, 0)
-                = (PFalg_schm_item_t) { .name = att_iter, .type = aat_nat };
+                = (PFalg_schm_item_t) { .name = n->sem.scjoin.iter,
+                                        .type = aat_nat };
 
             if (n->sem.scjoin.axis == alg_attr) 
                 ocol_at (n, 1)
-                    = (PFalg_schm_item_t) { .name = att_item,
+                    = (PFalg_schm_item_t) { .name = n->sem.scjoin.item_res,
                                             .type = aat_anode };
             else
                 ocol_at (n, 1)
-                    = (PFalg_schm_item_t) { .name = att_item,
+                    = (PFalg_schm_item_t) { .name = n->sem.scjoin.item_res,
                                             .type = aat_pnode };
             break;
 
@@ -431,16 +432,30 @@ infer_ocol (PFla_op_t *n)
 
         /* operators with static iter|item schema */
         case la_doc_tbl:
-        case la_element:
-        case la_docnode:
-        case la_comment:
-        case la_processi:
             new_ocols (n, 2);
 
             ocol_at (n, 0)
-                = (PFalg_schm_item_t) { .name = att_iter, .type = aat_nat };
+                = (PFalg_schm_item_t) { .name = n->sem.doc_tbl.iter,
+                                        .type = aat_nat };
             ocol_at (n, 1)
-                = (PFalg_schm_item_t) { .name = att_item, .type = aat_pnode };
+                = (PFalg_schm_item_t) { .name = n->sem.doc_tbl.item_res,
+                                        .type = aat_pnode };
+            break;
+
+        case la_element:
+            new_ocols (n, 2);
+
+            ocol_at (n, 0)
+                = (PFalg_schm_item_t) { .name = n->sem.elem.iter_res,
+                                        .type = aat_nat };
+            ocol_at (n, 1)
+                = (PFalg_schm_item_t) { .name = n->sem.elem.item_res,
+                                        .type = aat_pnode };
+            break;
+
+        case la_docnode:
+        case la_comment:
+        case la_processi:
             break;
 
         case la_attribute:
@@ -462,11 +477,14 @@ infer_ocol (PFla_op_t *n)
             new_ocols (n, 3);
 
             ocol_at (n, 0)
-                = (PFalg_schm_item_t) { .name = att_iter, .type = aat_nat };
+                = (PFalg_schm_item_t) { .name = n->sem.merge_adjacent.iter_res,
+                                        .type = aat_nat };
             ocol_at (n, 1)
-                = (PFalg_schm_item_t) { .name = att_pos,  .type = aat_nat };
+                = (PFalg_schm_item_t) { .name = n->sem.merge_adjacent.pos_res,
+                                        .type = aat_nat };
             ocol_at (n, 2)
-                = (PFalg_schm_item_t) { .name = att_item, .type = aat_node };
+                = (PFalg_schm_item_t) { .name = n->sem.merge_adjacent.item_res,
+                                        .type = aat_node };
             break;
 
         case la_roots:
@@ -503,15 +521,20 @@ infer_ocol (PFla_op_t *n)
             new_ocols (n, 2);
 
             ocol_at (n, 0)
-                = (PFalg_schm_item_t) { .name = att_iter, .type = aat_nat };
+                = (PFalg_schm_item_t) { .name = n->sem.string_join.iter_res,
+                                        .type = aat_nat };
             ocol_at (n, 1)
-                = (PFalg_schm_item_t) { .name = att_item, .type = aat_str };
+                = (PFalg_schm_item_t) { .name = n->sem.string_join.item_res,
+                                        .type = aat_str };
             break;
 
-
-        case la_cross_dup:
+        case la_eqjoin_unq:
             PFoops (OOPS_FATAL,
-                    "duplicate aware cross product operator is "
+                    "clone column aware equi-join operator is "
+                    "only allowed with unique names!");
+        case la_cross_mvd:
+            PFoops (OOPS_FATAL,
+                    "clone column aware cross product operator is "
                     "only allowed inside mvd optimization!");
     }
 }

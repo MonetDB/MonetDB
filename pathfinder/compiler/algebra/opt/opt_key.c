@@ -80,6 +80,8 @@ opt_key (PFla_op_t *p)
 	case la_max:
 	case la_min:
         case la_sum:
+        case la_seqty1:
+        case la_all:
             /* if part is key we already have our aggregate */
             if (p->sem.aggr.part &&
                 PFprop_key_left (p->prop, p->sem.aggr.part)) {
@@ -97,15 +99,15 @@ opt_key (PFla_op_t *p)
 
         case la_count:
             /* if part is key we already have our aggregate */
-            if (p->sem.count.part &&
-                PFprop_key_left (p->prop, p->sem.count.part)) {
+            if (p->sem.aggr.part &&
+                PFprop_key_left (p->prop, p->sem.aggr.part)) {
                 PFla_op_t *ret;
                 ret = PFla_attach (
                           PFla_project (
                               L(p),
-                              PFalg_proj (p->sem.count.part,
-                                          p->sem.count.part)),
-                          p->sem.count.res,
+                              PFalg_proj (p->sem.aggr.part,
+                                          p->sem.aggr.part)),
+                          p->sem.aggr.res,
                           PFalg_lit_int (1));
                 *p = *ret;
                 SEEN(p) = true;                   
@@ -175,23 +177,6 @@ opt_key (PFla_op_t *p)
                 }
             break;
 
-        case la_seqty1:
-        case la_all:
-            /* if part is key we already have our aggregate */
-            if (p->sem.blngroup.part &&
-                PFprop_key_left (p->prop, p->sem.blngroup.part)) {
-                PFla_op_t *ret;
-                ret = PFla_project (
-                          L(p), 
-                          PFalg_proj (p->sem.blngroup.res,
-                                      p->sem.blngroup.att),
-                          PFalg_proj (p->sem.blngroup.part,
-                                      p->sem.blngroup.part));
-                *p = *ret;
-                SEEN(p) = true;                   
-            }
-            break;
-
         default:
             break;
     }
@@ -209,6 +194,8 @@ PFalgopt_key (PFla_op_t *root)
     /* Optimize algebra tree */
     opt_key (root);
     PFla_dag_reset (root);
+    /* ensure that each operator has its own properties */
+    PFprop_create_prop (root);
 
     return root;
 }
