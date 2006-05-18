@@ -23,5 +23,5 @@ Over..
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-<svg:ellipse xmlns:svg="http://www.w3.org/2000/svg" svg:rx="110" svg:ry="130"/>
+<svg:ellipse xmlns:svg="http://www.w3.org/2000/svg" svg:ry="130" svg:rx="110"/>
 </XQueryResult>

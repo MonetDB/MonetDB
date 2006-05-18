@@ -23,7 +23,7 @@ Over..
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-<foo bar="blub" baz=""><bl/><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a></foo>
+<foo baz="" bar="blub"><bl/><a foo="bar"><b>textnode</b><d><e/><f/></d><c foo2="bar"/></a></foo>
 </XQueryResult>
 
 # 23:34:32 >  

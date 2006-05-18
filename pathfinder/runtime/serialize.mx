@@ -898,10 +898,11 @@ static int process_attr(XqueryCtx* ctx, int cont, oid id, int top) {
 }
 
 static int process_node_attr(XqueryCtx* ctx, int nCONT, oid pre, int emptyNode) {
+    hash_t idx;
+    oid base, nid = oid_nil;
+    BUN p, r;
     BAT *b;
-    oid nid = oid_nil;
-    BUN p, q; 
-
+ 
     getWsBAT(b, ctx,ctx->curCONT,PRE_NID);
     BUNfndVOID(p, b, &pre);
     if ( p ) {
@@ -912,17 +913,18 @@ static int process_node_attr(XqueryCtx* ctx, int nCONT, oid pre, int emptyNode) 
                   (size_t)(*(oid*)BUNhead(b,BUNlast(b)-BUNsize(b))));
         return 0;
     }
-    getWsBAT(b, ctx,ctx->curCONT, ATTR_OWN);
-    if ( !(b  = BATuselect(b,&nid,&nid)) )
-        return fatal_err(ctx,"process_node_attr: uselect fails\n");
-    BATloop(b, p, q) {
-        oid id = *(oid*)BUNhead(b, p);
-        if ( ! process_attr(ctx,nCONT,id,0/*top*/) ) {
-            BBPunfix( BBPcacheid( b ) );
-            return 0;
-        }
+
+    getWsBAT(b, ctx, ctx->curCONT, ATTR_OWN);
+    base = b->hseqbase - BUNindex(b, BUNfirst(b));
+    b = BATmirror(b);
+    if (BATprepareHash(b)) {
+        return fatal_err(ctx,"process_node_attr: hash table creation\n");
     }
-    BBPunfix( BBPcacheid( b ) );
+    HASHloop_oid(b, b->hhash, idx, &nid, r) {
+        oid id = base + idx;
+        if ( ! process_attr(ctx,nCONT,id,0/*top*/) )
+            return 0;
+    }
     return ctx->driverFun->handle_attributeEnd(ctx,emptyNode);
 }
 

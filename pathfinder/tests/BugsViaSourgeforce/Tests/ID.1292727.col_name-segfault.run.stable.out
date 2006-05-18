@@ -188,7 +188,7 @@ back greg flay across sickness peter enough royal herb embrace piteous die servi
 </item>
 </africa>
 <asia>
-<item id="item2" featured="yes">
+<item featured="yes" id="item2">
 <location>United States</location>
 <quantity>1</quantity>
 <name>subtle </name>
@@ -255,7 +255,7 @@ preventions high pipes reprieves <bold> sold </bold> marriage sampson safety dis
 </mail>
 </mailbox>
 </item>
-<item id="item4" featured="yes">
+<item featured="yes" id="item4">
 <location>Burkina Faso</location>
 <quantity>1</quantity>
 <name>speaks </name>
@@ -341,7 +341,7 @@ whate lily pilgrim <keyword> similes base railing </keyword> breaths dowry rotte
 </mail>
 </mailbox>
 </item>
-<item id="item6" featured="yes">
+<item featured="yes" id="item6">
 <location>United States</location>
 <quantity>1</quantity>
 <name>marcus betters pitch bay </name>
@@ -913,7 +913,7 @@ preventions pleas <bold> bene </bold> garland rears drink <emph> understand peer
 </item>
 </australia>
 <europe>
-<item id="item23" featured="yes">
+<item featured="yes" id="item23">
 <location>United States</location>
 <quantity>1</quantity>
 <name>outliv grieve </name>
@@ -1014,7 +1014,7 @@ sluttery description little incontinent getting kept sins sympathy distraction s
 </mail>
 </mailbox>
 </item>
-<item id="item27" featured="yes">
+<item featured="yes" id="item27">
 <location>United States</location>
 <quantity>1</quantity>
 <name>sharp beloved </name>
@@ -1088,7 +1088,7 @@ raz excels indeed quote nuptial geese imposition regent repays bore noon cudgel 
 </mail>
 </mailbox>
 </item>
-<item id="item30" featured="yes">
+<item featured="yes" id="item30">
 <location>United States</location>
 <quantity>1</quantity>
 <name>approof whom kent swift </name>
@@ -1399,7 +1399,7 @@ patient company well grove while faulconbridge seel sweetly gouty slumber interp
 <mailbox>
 </mailbox>
 </item>
-<item id="item40" featured="yes">
+<item featured="yes" id="item40">
 <location>United States</location>
 <quantity>1</quantity>
 <name>agree </name>
@@ -1706,7 +1706,7 @@ shakes party obligation theatre past dallying age breastplate together music vou
 </mail>
 </mailbox>
 </item>
-<item id="item51" featured="yes">
+<item featured="yes" id="item51">
 <location>United States</location>
 <quantity>1</quantity>
 <name>tongue marriage </name>
@@ -2381,7 +2381,7 @@ rush purgation capable robin wills worm native <emph> doors long </emph> luck do
 <mailbox>
 </mailbox>
 </item>
-<item id="item72" featured="yes">
+<item featured="yes" id="item72">
 <location>United States</location>
 <quantity>1</quantity>
 <name>worthless round </name>
@@ -2411,7 +2411,7 @@ delicate five ears earth bedclothes sealed worse wind twenty sense growing sever
 <mailbox>
 </mailbox>
 </item>
-<item id="item73" featured="yes">
+<item featured="yes" id="item73">
 <location>United States</location>
 <quantity>2</quantity>
 <name>shaking cloak </name>
@@ -2709,7 +2709,7 @@ attorney serious drop interchangeably pins perfectly bait galley congregation ho
 </mail>
 </mailbox>
 </item>
-<item id="item84" featured="yes">
+<item featured="yes" id="item84">
 <location>United States</location>
 <quantity>1</quantity>
 <name>revel discovery before night </name>
@@ -3153,7 +3153,7 @@ repeat straining travell gracious perseus call calls married boldness quality ni
 <mailbox>
 </mailbox>
 </item>
-<item id="item97" featured="yes">
+<item featured="yes" id="item97">
 <location>United States</location>
 <quantity>1</quantity>
 <name>read livest </name>
@@ -3199,7 +3199,7 @@ again like leads valour bosom schedule wont rites flesh headstrong reek achilles
 </mail>
 </mailbox>
 </item>
-<item id="item99" featured="yes">
+<item featured="yes" id="item99">
 <location>United States</location>
 <quantity>1</quantity>
 <name>stanley </name>
@@ -3640,10 +3640,10 @@ henry passage bernardo grant interruption restless authority softly strangeness 
 </category>
 </categories>
 <catgraph>
-<edge from="category1" to="category1"/>
-<edge from="category1" to="category1"/>
-<edge from="category1" to="category3"/>
-<edge from="category3" to="category0"/>
+<edge to="category1" from="category1"/>
+<edge to="category1" from="category1"/>
+<edge to="category3" from="category1"/>
+<edge to="category0" from="category3"/>
 </catgraph>
 <people>
 <person id="person0">
