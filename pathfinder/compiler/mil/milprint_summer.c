@@ -2809,7 +2809,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "attr_oid := nil;\n"
                 "ws.fetch(ATTR_OWN).fetch(WS).insert(attr_own);\n"
                 "attr_own := nil;\n"
-                "ws.fetch(ATTR_CONT).fetch(WS).insert(attr_qn_cont);\n"
+                "ws.fetch(ATTR_CONT).fetch(WS).insert(attr_cont);\n"
                 "attr_qn_cont := nil;\n"
                 "attr_cont := nil;\n"
       
