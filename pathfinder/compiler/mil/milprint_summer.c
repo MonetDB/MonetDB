@@ -6229,6 +6229,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
             if (translate2MIL (f, NORMAL, cur_level, counter, L(args)) == NORMAL)
             {
                 milprintf(f, 
+                        "iter     := iter.materialize(ipik);\n"
                         "item     := item.materialize(ipik);\n"
                         "rpc_vid  := rpc_vid.append(iter.project(oid(%iLL)));\n"
                         "rpc_iter := rpc_iter.append(iter);\n"
@@ -6262,7 +6263,9 @@ translateUDF (opt_t *f, int cur_level, int counter,
     {
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
+                "iter := iter.materialize(ipik);\n"
                 "item := item.materialize(ipik);\n"
+                "kind := kind.materialize(ipik);\n"
                 "fun_vid%03u := fun_vid%03u.append(item.project(oid(fun_base%03u + %iLL)));\n"
                 "fun_iter%03u := fun_iter%03u.append(iter);\n"
                 "fun_item%03u := fun_item%03u.append(item);\n"
