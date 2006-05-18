@@ -15,4 +15,6 @@ select * from datetest where now() > low and now() < high;
 -- this should always return the one row.
 select * from datetest where low < high;
 
+select max(low), max( CAST (low as timestamp(0))) from datetest;
+
 ROLLBACK;
