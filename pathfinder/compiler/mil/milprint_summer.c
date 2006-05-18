@@ -9562,12 +9562,12 @@ create_join_function (PFcnode_t *fst_for, PFcnode_t *fst_cast, int fst_nested,
     comp->sem.apply.fun = fun;
 
     PFfun_t *join = PFfun_new(PFqname (PFns_pf,"join"), /* name */
-                              10,   /* arity */
-                              true, /* built-in function */
-                              0,    /* argument types */
-                              0,    /* return type */
-                              NULL  /* algebra expression not needed here */,
-                              NULL  /* no parameter variable names */);
+                              10,     /* arity */
+                              true,   /* built-in function */
+                              1,      /* sig_count */
+                              NULL,   /* signatures (don't care here) */
+                              NULL,   /* no algebra equivalent */
+                              NULL);  /* no parameter variable names */
 
     c = PFcore_nil();
     c = PFcore_arg(PFcore_num(fid),c);
