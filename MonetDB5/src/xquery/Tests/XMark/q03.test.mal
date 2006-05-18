@@ -12,13 +12,13 @@
 # aggregates on the index attribute to accelerate the execution.
 
 #var monet_guide := bat("mxml_guide");
-#var b1 := bat(find(monet_guide,"site.open_auctions.open_auction.bidder"));
+#var b1 := bat(find(monet_guide,"site/open_auctions/open_auction.bidder"));
 
-#var b2 := bat(find(monet_guide,"site.open_auctions.open_auction.bidder.increase"));
+#var b2 := bat(find(monet_guide,"site/open_auctions/open_auction/bidder/increase"));
 
-#var b3 := bat(find(monet_guide,"site.open_auctions.open_auction.bidder.increase.cdata"));
+#var b3 := bat(find(monet_guide,"site/open_auctions/open_auction/bidder/increase.cdata"));
 
-#var b4 := bat(find(monet_guide,"site.open_auctions.open_auction.bidder.increase.cdata.string@"));
+#var b4 := bat(find(monet_guide,"site/open_auctions/open_auction/bidder/increase.cdata.string@"));
 #var b6 := {min}(b1);
 #var b7 := {max}(b1);
 #var b8 := join(b6,b2);
@@ -41,41 +41,45 @@
 
 # FOR    $b IN document("auction.xml")/site/open_auctions/open_auction
 mr:= mguide.open("auctions.xml");
-b1 := mguide.bind(mg,"site.open_auctions.open_auction");
+b1 := mguide.bind(mg,"site/open_auctions/open_auction");
 
 # WHERE  $b/bidder[1]
-b2 := mguide.bind(mg,"site.open_auctions.open_auction.bidder");
+b2 := mguide.bind(mg,"site/open_auctions/open_auction/bidder");
 f0 := group.first(b2); # to be implemented
-f1 := algebra.semijoin(f0,b1);
+f1 := algebra.semijoin(b1,f0);
 
 # WHERE  $b/bidder[1]/increase/text()
-b3 := mguide.bind(mg,"site.open_auctions.open_auction.bidder.increase");
-b4 := mguide.bind(mg,"site.open_auctions.open_auction.bidder.increase.cdata.string@");
-v0 := algebra.semijoin(b3,f1);
-v1 := algebra.semijoin(b4,v0);
+b3 := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase");
+f2 := bat.join(f1,b3);
+b4 := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase/cdata");
+f3 := bat.join(f2,b4);
+b5 := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase/cdata/double@");
+f4 := bat.join(f3,b5);
 
 # WHERE  $b/bidder[1]/increase/text() * 2
-v2:= batcalc.flt(v1); # or mguide.flt(mg,...) to use materialized versions
-v3:= batcalc.*(v2,2);
+f5 := batcalc.*(f4,2.0);
+
+# $b/bidder[last()]
+b6 := mguide.bind(mg,"site/open_auctions/open_auction/bidder");
+f6 := group.last(b6); # to be implemented
+f7 := algebra.semijoin(b1,f6);
 
 # $b/bidder[last()]/increase/text()
-b5 := mguide.bind(mg,"site.open_auctions.open_auction.bidder");
-b6 := mguide.bind(mg,"site.open_auctions.open_auction.bidder.increase.cdata.string@");
-l0 := group.last(b5); # to be implemented
-l1 := algebra.semijoin(l0,b5);
-l2 := algebra.semijoin(l1,b6);
-
-# WHERE  $b/bidder[1]/increase/text() 
-v4:= batcalc.flt(l2); # or mguide.flt(mg,...) to use materialized versions
+b7 := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase");
+f8 := bat.join(f7,b7);
+b8 := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase/cdata");
+f9 := bat.join(f8,b8);
+b9 := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase/cdata/double@");
+f10 := bat.join(f9,b9);
 
 # WHERE  $b/bidder[1]/increase/text() *2 <= $b/bidder[last()]/increase/text()
-r  := batcalc.<=(v3,v4);
-r0 := algebra.semijoin(b4,r);
-r1 := algebra.semijoin(b6,r);
+r0 := bat.thetajoin(f5,f10, "<=" );
 
-# should also sort, later
-mr:= mguide.new("result");
-e0:= mguide.addElement(mr,"increase");
-e1:= mguide.addAttribute(mr,e0,"first", r0);
-e2:= mguide.addAttribute(mr,e0."last", r1);
+# sort
+r1 := algebra.sort(r0);
+
+mr := mguide.new("result");
+e0 := mguide.addElement(mr, "increase", r1);
+e1 := mguide.addAttribute(mr, e0, "first@", f4);
+e2 := mguide.addAttribute(mr, e0. "last@", f10);
 mguide.serialize(mr);

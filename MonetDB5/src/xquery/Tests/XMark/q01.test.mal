@@ -35,18 +35,12 @@ b1:bat[:/id,:str] := mguide.bind(mg,"site/people/person/id/str@");
 #="person0"
 b2:= algebra.uselect(b1,"person0");
 
-# DISCUSS
-# make the pivot for the result
-b2a:= algebra.mark(b2);
-b2r:= bat.reverse(b2a);
-
-#$b IN document("auction.xml")/site/people/person[@id="person0"]#
-b3:= algebra.semijoin(b0,b2);
-#END DISCUSS
-
 #RETURN $b/name/text()
-mr:= mguide.new("result",b3);
-x2:bat[:oid,:oid] := mguide.bind(mg,"site/people/person/name/cdata/str@");
-mguide.add(mr,"result.str@",x2);
+mr:= mguide.new("result");
+x2:bat[:oid,:oid] := mguide.bind(mg,"site/people/person/name/cdata");
+r:= algebra.semijoin(x2, b2);
+x3:bat[:oid,:oid] := mguide.bind(mg,"site/people/person/name/cdata/str@");
+mguide.add(mr,"cdata",r);
+mguide.add(mr,"cdata.str@",x3);
 
 mguide.serialize(mr);

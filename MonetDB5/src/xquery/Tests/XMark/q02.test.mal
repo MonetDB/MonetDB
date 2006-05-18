@@ -29,23 +29,27 @@
 #printf("<increase>%s</increase>\n",$t);
 #}
 
+# FOR    $b IN document("auction.xml")/site/open_auctions/open_auction
 mg:= mguide.open("auctions.xml");
-x0:bat[:oid,:oid]:= xml.bind(mg,"site.open_auctions.open_auction");
+x0:bat[:oid,:oid]:= xml.bind(mg,"site/open_auctions/open_auction");
 
-# you may only serialize the paths mentioned
+# RETURN <increase> 
 mr:= mguide.new("result");
-e0:= mguide.addElement(mr,"increase",x0);
-x1:bat[:oid,:oid]:= mguide.bind(mg,"site.open_auctions.open_auction.bidder");
-e2:= mguide.addElement(mr,e0,"bidder",x1);
 
-x2:bat[:oid,:oid]:= mguide.bind(mg,"site.open_auctions.open_auction.bidder.increase");
-e3:= mguide.addElement(mr,e2,"increase",x2);
+# RETURN <increase> $b/bidder[1]
+x0:bat[:oid,:oid]:= mguide.bind(mg,"site/open_auctions/open_auction/bidder");
+g1:= group.first(x0);
 
-x3:bat[:oid,:str] := mguide.bind(mg,"site.open_auctions.open_auction.bidder.increase.cdata");
-e4:= mguide.addElement(mr,e3,"cdata",x3);
+# RETURN <increase> $b/bidder[1]/increase/
+x2:bat[:oid,:oid]:= mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase");
+b2:= algebra.outerjoin(x0,x2);
 
-x4:bat[:oid,:str]:= mguide.bind(mg,"site.open_auctions.open_auction.bidder.increase.cdata.str@");
+# RETURN <increase> $b/bidder[1]/increase/text() </increase>
+x3:bat[:oid,:oid] := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase/cdata");
+x4:bat[:oid,:str] := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase/cdata/str@");
 
-e5:= mguide.addElement(mr,e4,"cdata",x4);
+e0:= mguide.addElement(mr,"increase",b2);
+e2:= mguide.addElement(mr,e0,"cdata",x3);
+e3:= mguide.addAttribute(mr,e2,"str@",x4);
 
 mguide.serialize(mr);
