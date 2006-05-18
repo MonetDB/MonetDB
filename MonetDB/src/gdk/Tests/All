@@ -6,6 +6,7 @@ reload
 BATkey
 semijoin
 intersect_diff_nil
+intersect_diff_void
 binsemijoin
 binsemijoin2
 binsemijoin3

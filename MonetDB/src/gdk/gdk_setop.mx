@@ -648,9 +648,9 @@ BAT@1@2(BAT *l, BAT *r)
 	return bn;
 }
 @c
-#define EMPTYldiff(l) BATnew(ATOMtype(l->htype),l->ttype,10)
+#define EMPTYldiff(l) BATclone(l,10)
 #define EMPTYrdiff(l) BATrcopy(l)
-#define EMPTYlintersect(l) BATnew(ATOMtype(l->htype),l->ttype,10)
+#define EMPTYlintersect(l) BATclone(l,10)
 #define EMPTYrintersect(l) EMPTYlintersect(l)
 
 #define intersect_size(l,r) MIN(BATcount(l), BATcount(r))

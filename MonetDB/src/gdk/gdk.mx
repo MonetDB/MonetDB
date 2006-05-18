@@ -1102,7 +1102,7 @@ gdk_export int HEAP_mmappable(Heap *heap);
 @item @code{BAT* }
 @tab BATnew (int headtype, int tailtype, size_t cap)
 @item @code{BAT* }
-@tab BATtmp (BAT *b, int mode)
+@tab BATclone (BAT *c, size_t cap)
 @item @code{BAT* }
 @tab BATextend (BAT *b, size_t newcap)
 @end multitable
@@ -1115,15 +1115,14 @@ indicated by @%cap@.
 Their extend is automatically incremented upon storage overflow.
 Failure to create the BAT results in a NULL pointer.
 @
-The routine @%BATtmp@ creates an empty BAT storage area with the properties
-inherited from its argument. However, its default retention period is the
-transaction in which it is created.
+The routine @%BATclone@ creates an empty BAT storage area with the properties
+inherited from its argument. 
 @{
 @h
 #define BATDELETE	-9999
 
 gdk_export BAT *BATnew(int hdtype, int tltype, size_t capacity);
-gdk_export BAT *BATtmp(BAT *b, int mode);
+gdk_export BAT *BATclone(BAT *b, size_t capacity);
 gdk_export BAT *BATextend(BAT *b, size_t newcap);
 
 /* internal */
