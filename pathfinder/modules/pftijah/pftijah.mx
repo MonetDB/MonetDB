@@ -92,7 +92,7 @@ const SIZE_ENTITY := 1;
 const SIZE_TERM := 2;
 
 #default
-var scoreBase := 1;
+var scoreBase := 0;
 
 const TERM_NUM := 10000;
 const ENTITY_NUM := 10000;

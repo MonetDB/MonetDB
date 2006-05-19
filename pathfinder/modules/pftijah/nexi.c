@@ -82,8 +82,6 @@ int old_main(int argc, char * const argv[])
 
   bool phrase_in;
 
-  bool optimize;
-
   /* for the type of topics and for the preprocessing */
   int topic_type;
   int preproc_type;
@@ -187,8 +185,6 @@ int old_main(int argc, char * const argv[])
   ofilename_set = FALSE;
   query_set = FALSE;
   scale_on = TRUE;
-
-  optimize = TRUE;
 
   /* structure initialization */
   txt_retr_model = calloc(MAX_QUERIES, sizeof(struct_RMT));
@@ -497,7 +493,7 @@ int old_main(int argc, char * const argv[])
     }
 
     if(!algebra_set) {
-       algebra_type = ASPECT;
+       algebra_type = COARSE2;
        /* algebra_type = COARSE2; RODEH CHANGE | BUG */
        LOGPRINTF(LOGFILE,"\tAlgebra type is \"ASPECT\".\n");
     }
@@ -778,7 +774,7 @@ int old_main(int argc, char * const argv[])
       strcpy(txt_retr_model->e_class, "FALSE");
       txt_retr_model->stemming = TRUE;
       txt_retr_model->size_type = SIZE_TERM;
-      txt_retr_model->param1 = 0.5;
+      txt_retr_model->param1 = 0.8;
       txt_retr_model->param2 = 0.5;
       txt_retr_model->param3 = 0;
       txt_retr_model->prior_type = NO_PRIOR;
@@ -1028,9 +1024,9 @@ int old_main(int argc, char * const argv[])
   }
 
   if (phrase_in == TRUE)
-    plan_ret = SRA_to_MIL(parserCtx, query_num, topic_type, txt_retr_model, img_retr_model, rel_feedback, mil_fname, "INCOMPLETE", base_type, res_table, p_command_array, TRUE, optimize);
+    plan_ret = SRA_to_MIL(parserCtx, query_num, txt_retr_model, img_retr_model, rel_feedback, mil_fname, "INCOMPLETE", p_command_array, TRUE);
   else
-    plan_ret = SRA_to_MIL(parserCtx, query_num, topic_type, txt_retr_model, img_retr_model, rel_feedback, mil_fname, "INCOMPLETE", base_type, res_table, p_command_array, FALSE, optimize);
+    plan_ret = SRA_to_MIL(parserCtx, query_num, txt_retr_model, img_retr_model, rel_feedback, mil_fname, "INCOMPLETE", p_command_array, FALSE);
 
 #ifdef GENMILSTRING
   LOGPRINTF(LOGFILE,"\tGenerated MIL in string, size=%d\n",strlen(parserCtx->milBUFF));

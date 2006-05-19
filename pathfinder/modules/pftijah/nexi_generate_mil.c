@@ -129,10 +129,6 @@ char *split_terms(char *adj_term){
   return term_cut;
 
 }
-
-#define GEN_TOPICS  0
-#define GEN_TIMINGS 0
-
 #ifdef GENMILSTRING
 #define MILPRINTF sprintf
 #define MILOUT    &parserCtx->milBUFF[strlen(parserCtx->milBUFF)]
@@ -141,7 +137,7 @@ char *split_terms(char *adj_term){
 #define MILOUT    parserCtx->milFILE
 #endif
 
-int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int topic_type, struct_RMT *txt_retr_model, struct_RMI *img_retr_model, struct_RF *rel_feedback, char *mil_fname, char *sxqxl_fname, int base, char *result_name, command_tree **p_command_array, bool phrase_in, int optimize)
+int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_retr_model, struct_RMI *img_retr_model, struct_RF *rel_feedback, char *mil_fname, char *sxqxl_fname, command_tree **p_command_array, bool phrase_in)
 {
   (void)rel_feedback;
   (void)mil_fname;
@@ -164,6 +160,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int topic_type, str
   unsigned int com_num;
   unsigned int com_nr_left = 0, com_nr_right = 0;
   float score_mul;
+  int modifier;
 
   /* number of MIL variables */
   int var_num;
@@ -213,46 +210,21 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int topic_type, str
 	p = ++np;
   }
   MILPRINTF(MILOUT, "# %s\n",p);
-  MILPRINTF(MILOUT, "module(pathfinder);\n");
   MILPRINTF(MILOUT, "module(pftijah);\n");
   MILPRINTF(MILOUT, "\tVAR ");
 
-  if (optimize == 0) {
-    for (var_num = 0; var_num < 2*MAX_VARS-1; var_num++) {
-      MILPRINTF(MILOUT, "R%d, ", var_num);
-    }
-    MILPRINTF(MILOUT, "R%d;\n", 2*MAX_VARS-1);
+  for (var_num = 0; var_num < MAX_VARS-1; var_num++) {
+    MILPRINTF(MILOUT, "R%d, ", var_num);
   }
-  else {
-    for (var_num = 0; var_num < MAX_VARS-1; var_num++) {
-      MILPRINTF(MILOUT, "R%d, ", var_num);
-    }
-    MILPRINTF(MILOUT, "R%d;\n", MAX_VARS-1);
-  }
+  MILPRINTF(MILOUT, "R%d;\n", MAX_VARS-1);
 
 
-
-  if ( GEN_TOPICS ) {
-    MILPRINTF(MILOUT, "\tVAR ");
-
-    for (var_num = query_num; var_num < query_num + MAX_QUERIES-1; var_num++) {
-      MILPRINTF(MILOUT, "topic_%d, ", var_num);
-    }
-  
-    MILPRINTF(MILOUT, "topic_%d;\n\n", query_num + MAX_QUERIES-1);
-  }
-
-    /* command array initialization */
+  /* command array initialization */
   p_com_array = p_command_array;
   p1_command = *p_com_array;
 
-  if ( GEN_TOPICS ) {
-    /* default region score setup */
-    if (base == ZERO)
-       MILPRINTF(MILOUT, "var base := ZERO;\n\n");
-    else if (base == ONE)
-       MILPRINTF(MILOUT, "var base := ONE;\n\n");
-  }
+  /* default region score setup */
+  MILPRINTF(MILOUT, "var base := scoreBase;\n\n");
 
   /*   printf("%d\n",p_com_array); */
   /*   printf("%d\n",p1_command); */
@@ -260,1678 +232,798 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, int topic_type, str
   /* for number initialization */
   topic_num = query_num - 1;
 
-  if ( GEN_TOPICS ) {
-    MILPRINTF(MILOUT, "var topics := new(int,str);\n");
-  }
+  MILPRINTF(MILOUT, "var terms;\nvar modifiers;\nvar tid;\n\n");
   MILPRINTF(MILOUT, "\n");
-  if ( GEN_TIMINGS ) {
-    MILPRINTF(MILOUT, "var exe_time;\n");
-    MILPRINTF(MILOUT, "var start_exe_time;\n");
-    MILPRINTF(MILOUT, "var stop_exe_time;\n");
-  }
-  if ( GEN_TOPICS ) {
-    MILPRINTF(MILOUT, "var topic_time;\n");
-    MILPRINTF(MILOUT, "var start_topic_time;\n");
-    MILPRINTF(MILOUT, "var stop_topic_time;\n\n");
-  }
-  if ( GEN_TIMINGS ) {
-    MILPRINTF(MILOUT, "start_exe_time := time();\n\n\n");
-  }
-
-  if (optimize == 0) {
-
-    while (p1_command != NULL) {
-
-      p2_command = p1_command;
-
-      op_num = 0;
-      com_sp = 0;
-      com_num = 0;
-      
-      int i;
-      for (i=0; i<STACK_MAX; i++) {
-	op_number[i] = 0;
-	p_new_op[i] = NULL;
-	op_touched[i] = FALSE;
-      }
-
-      set_reset = FALSE;
-
-      topic_num++;
-
-      /* INEX specific !!!!!!!!!!!!!!!!!! SHOULD BE REMOVED */
-      if (topic_num == 148 || (topic_type == CAS_TOPIC && (topic_num == 206 || topic_num == 209 || topic_num == 221 || topic_num == 227 || topic_num == 235 || topic_num == 237)))
-        topic_num++;
-      if (topic_type == CAS_TOPIC && (topic_num == 217))
-        topic_num+=2;
-      if (topic_type == CAS_TOPIC && (topic_num == 213))
-        topic_num+=3;
-
-
-      if ( GEN_TOPICS ) {
-        MILPRINTF(MILOUT, "printf(\"Executing topic number %d...\\n\");\n", topic_num);
-        MILPRINTF(MILOUT, "topics.insert(%d,\"%s%d_probab\");\n",topic_num, result_name, topic_num);
-
-        MILPRINTF(MILOUT, "start_topic_time := time();\n\n");
-      }
-
-      /* performing tree traversal of SRA query plan */
-      result = tree_traverse_count(p1_command, com_lifo, &com_sp, op_number, &op_num, topic_num);
-
-      com_sp++;
-      PUSH_COMMAND(NULL);
-
-      com_sp = 1;
-
-      POP_COMMAND();
-      com_sp++;
-      /*printf("%d\n",com_sp); */
-      /*printf("%d\n",p_com->operator); */
-
-      /*   if (topic_num == 3) { */
-      /*      for (i=1; i<=94; i++) */
-      /*	printf("H:%d\t%d\n",com_lifo[i]->number,com_lifo[i]->operator); */
-      /*} */
-
-      while (p_com != NULL) {
-
-	com_num = com_sp - 1;
-
-	if (com_num > RESET_NUM && p_com->operator == P_AND && set_reset == FALSE) {
-	  MILPRINTF(MILOUT, "R%d := [*](R%d,dbl(1e+38).pow(dbl(4));\n", p_com->left->number, p_com->left->number);
-	  set_reset = TRUE;
-	}
-
-	switch(p_com->operator){
-	case SELECT_NODE:
-
-	  argument = unquote(p_com->argument);
-
-	  if (p_com->left == NULL && p_com->right == NULL) {
-
-	    if (!strcmp(p_com->argument,"\"Root\"")) {
-	      MILPRINTF(MILOUT, "R%d := select_root();\n", com_num);
-	    }
-	    else {
-	      MILPRINTF(MILOUT, "R%d := select_node(%s,%s);\n", com_num, p_com->argument, txt_retr_model->e_class);
-	    }
-
-	  }
-	  else if (p_com->left != NULL) {
-	    
-	    com_nr_left = p_com->left->number;
-
-	    if (!strcmp(p_com->argument,"")) {
-	      MILPRINTF(MILOUT, "R%d := R%d.select_node();\n", com_num, com_nr_left);
-	    }
-	    else {
-	      MILPRINTF(MILOUT, "R%d := R%d.select_node(%s,%s);\n", com_num, com_nr_left, p_com->argument, txt_retr_model->e_class);
-	    }
-
-	    MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-
-	  }
-
-	  break;
-
-	case SELECT_NODE_VAGUE:
-
-	      MILPRINTF(MILOUT, "R%d := select_node_vague(%s,%s,\"%s\");\n", com_num, p_com->argument, txt_retr_model->e_class, txt_retr_model->exp_class);
-
-	      break;
-
-	case P_SELECT_NODE_T:
-
-	   MILPRINTF(MILOUT, "R%d := p_select_node_t(%s,%d,%d,%d,%d,%d,%s,\"%s\",%d,%d,%f,%f,%d,%d,%d,%d,%s,%s,%d);\n", com_num, p_com->argument, txt_retr_model->model, txt_retr_model->or_comb, txt_retr_model->and_comb, txt_retr_model->up_prop, txt_retr_model->down_prop, txt_retr_model->e_class, txt_retr_model->exp_class, txt_retr_model->stemming, txt_retr_model->size_type, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->param3, txt_retr_model->prior_type, txt_retr_model->prior_size, img_retr_model->model, img_retr_model->descriptor, img_retr_model->attr_name, img_retr_model->computation);
-
-	   break;
-
-	case SELECT_TERM:
-
-	  argument = unquote(p_com->argument);
-
-	  if (p_com->left == NULL && p_com->right == NULL) {
-	    
-	    MILPRINTF(MILOUT, "R%d := select_term(%s,%d);\n", com_num, p_com->argument, txt_retr_model->stemming);
-
-	  }
-	  else if (p_com->left != NULL) {
-
-	    com_nr_left = p_com->left->number;
-	    
-	    if (!strcmp(p_com->argument,"")) {
-	      MILPRINTF(MILOUT, "R%d := R%d.select_term();\n", com_num, com_nr_left);
-	    }
-	    else {
-	      MILPRINTF(MILOUT, "R%d := R%d.select_term(%s,%d);\n", com_num, com_nr_left, p_com->argument, txt_retr_model->stemming);
-	    }
-
-	    MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-	  
-	  }
-
-	  break;
-
-	case SELECT_ADJ:
-
-	  /*printf("RRRRRRRRRRRRRRRRRRRRR:%d\n", p_com->number); */
-	  t_count = 0;
-	
-	  /*printf("X:%s\n", p_com->argument); */
-	  adj_arg = split_terms(p_com->argument);
-	  
-	  t_argument = argument;
-	  
-	  while (*adj_arg != '\0') {
-	    *argument = *adj_arg;
-	    adj_arg++;
-	    argument++;
-	  }
-
-	  *argument = '\0';
-	  
-	  t_count++;
-	  argument = t_argument;
-	  /*printf("ZX:%s\n",argument); */
-	  MILPRINTF(MILOUT, "var phrase := new(int,str);\n");
-	  MILPRINTF(MILOUT, "phrase.insert(%d, \"%s\");\n", t_count, argument);
-	  
-	  adj_arg++;
-
-	  t_argument = argument1;
-	  while (*adj_arg != '\0') {
-	    *argument1 = *adj_arg;
-	    adj_arg++;
-	    argument1++;
-	  }
-	  
-	  *argument1 = '\0';
-
-	  t_count++;
-	  argument1 = t_argument;
-	  /*printf("ZX:%s\n",argument1); */
-	  /*MILPRINTF(MILOUT, "var phrase := new(int,str);\n"); */
-	  MILPRINTF(MILOUT, "phrase.insert(%d, \"%s\");\n", t_count, argument1);
-	  
-	  adj_arg++;
-
-	  while (*adj_arg != '\n') {
-	    t_argument = argument;
-	    while (*adj_arg != '\0') {
-	      *argument = *adj_arg;
-	      adj_arg++;
-	      argument++;
-	    }
-	    
-	    *argument = '\0';
-	    argument = t_argument;
-	    t_count++;
-	    
-	    MILPRINTF(MILOUT, "phrase.insert(%d, \"%s\");\n", t_count, argument);
-	    /*printf("ZX:%s\n",argument); */
-	    /*printf("ZX1:%s\n",argument); */
-	    adj_arg++;
-	    
-	    free(argument1);
-
-	  }
-	  
-	  break;
-
-	case P_SELECT_IMAGE:
-
-	  argument = unquote(p_com->argument);
-
-	  MILPRINTF(MILOUT, "R%d := select_image(\"%s\",\"%s\",%s);\n", com_num, img_retr_model->descriptor, img_retr_model->attr_name, p_com->argument);
-
-	  break;
-
-	case CONTAINING:
-
-	  if (p_com->right != NULL) {
-	    
-	    com_nr_left = p_com->left->number;
-	    com_nr_right = p_com->right->number;
-
-	    MILPRINTF(MILOUT, "R%d := R%d.containing(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-	    MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_right);
-
-	  }
-	  else {
-
-	    com_nr_left = p_com->left->number;
-
-	    MILPRINTF(MILOUT, "R%d := R%d.containing();\n", com_num, com_nr_left);
-	    MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-
-	  }
-
-	  break;
-
-	case CONTAINED_BY:
-
-	  if (p_com->left != NULL) {
-
-	    com_nr_left = p_com->left->number;
-	    com_nr_right = p_com->right->number;
-
-	    MILPRINTF(MILOUT, "R%d := R%d.contained_by(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-	    MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_right);
-
-	  }
-	  else {
-
-	    com_nr_right = p_com->right->number;
-
-	    MILPRINTF(MILOUT, "R%d := R%d.contained_by();\n", com_num, com_nr_right);
-	    MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_right);
-
-	  }
-
-	  break;
-	  
-	case UNION:
-	case P_UNION:
-
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  MILPRINTF(MILOUT, "R%d := R%d.union(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_right);
-	  
-	  break;
-	  
-	case INTERSECT:
-	case P_INTERSECT:
-	  
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  MILPRINTF(MILOUT, "R%d := R%d.intersect(R%d);\n", com_num, com_nr_left, com_nr_right);
-	
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_right);
-
-	  break;
-	  
-	case P_CONTAINING:
-
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  switch (txt_retr_model->up_prop) {
-	  case UP_SUM :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_sum(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case UP_AVG :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_avg(R%d);\n", com_num, com_nr_left, com_nr_right);
-	    
-	    break;
-
-	  case UP_WSUMD :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_wsumd(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
-
-	    break;
-
-	  case UP_WSUMA :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_wsuma(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
-	    
-	    break;
-
-	  }
-
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_right);
-
-	  break;
-
-	case P_CONTAINED_BY:
-
-	  if (p_com->left != NULL) {
-
-	    com_nr_left = p_com->left->number;
-	    com_nr_right = p_com->right->number;
-
-	    switch (txt_retr_model->down_prop) {
-	    case DOWN_SUM :
-
-	      MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_sum(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	      break;
-
-	    case DOWN_AVG :
-
-	      MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_avg(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	      break;
-
-	    case DOWN_WSUMD :
-
-	      MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_wsumd(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
-	      
-	      break;
-	    
-	    case DOWN_WSUMA :
-
-	      MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_wsuma(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
-	    
-	      break;
-
-	    }
-	  
-	    MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-	    MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_right);
-
-	  }
-	  else {
-	    
-	    com_nr_right = p_com->right->number;
-
-	    switch (txt_retr_model->down_prop) {
-	    case DOWN_SUM :
-
-	      MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_sum();\n", com_num, com_nr_right);
-
-	      break;
-
-	    case DOWN_AVG :
-
-	      MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_avg();\n", com_num, com_nr_right);
-
-	      break;
-
-	    case DOWN_WSUMD :
-
-	      MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_wsumd(%d);\n", com_num, com_nr_right, txt_retr_model->size_type);
-
-	      break;
-
-	    case DOWN_WSUMA :
-
-	      MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_wsuma(%d);\n", com_num, com_nr_right, txt_retr_model->size_type);
-
-	      break;
-
-	    }
-
-	    MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_right);
-
-	  }
-
-	  break;
-
-	case P_PRIOR:
-
-	  com_nr_left = p_com->left->number;
-
-	  MILPRINTF(MILOUT, "R%d := R%d.prior_ls(%d);\n", com_num, com_nr_left, txt_retr_model->size_type);
-
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-
-	  break;
-
-	case MUST_CONTAIN_T:
-
-	  MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Bool(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_right);
-
-	  break;
-
-	case MUST_NOT_CONTAIN_T:
-
-	  MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_Bool(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_right);
-
-	  break;
-
-	case P_CONTAINING_T:
-
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  switch (txt_retr_model->model) {
-	  case MODEL_BOOL :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Bool(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case MODEL_LM :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LM(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_LMS :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LMs(R%d, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_TFIDF :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_tfidf(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_OKAPI :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Okapi(R%d, %f, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_GPX :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_GPX(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-
-	  case MODEL_LMA :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LMA(R%d, \"%s\", %f, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->context, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_LMSE :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LMsE(R%d, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_LMVFLT :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LMsVflat(R%d, \"%s\", %f, %f, %f, %d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->context, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->extra, txt_retr_model->param3, txt_retr_model->size_type);
-
-	    break;
-
-          case MODEL_LMVLIN :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LMsVlin(R%d, \"%s\", %f, %f, %f, %d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->context, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->extra, txt_retr_model->param3, txt_retr_model->size_type);
-
-	    break;
-
-	  }
-
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_right);
-
-	  break;
-
-	case P_NOT_CONTAINING_T:
-
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  switch (txt_retr_model->model) {
-	  case MODEL_BOOL :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_Bool(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case MODEL_LM :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_LM(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_LMS :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_LMs(R%d, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_TFIDF :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_tfidf(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_OKAPI :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_Okapi(R%d, %f, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_GPX :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_GPX(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case MODEL_LMA :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_LMA(R%d, \"%s\", %f, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->context,  txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_LMSE :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_LMsE(R%d, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->size_type);
-
-	    break;
-
-	 case MODEL_LMVFLT :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_LMsVflat(R%d, \"%s\", %f, %f, %f, %d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->context, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->extra, txt_retr_model->param3, txt_retr_model->size_type);
-
-	    break;
-
-         case MODEL_LMVLIN :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_LMsVlin(R%d, \"%s\", %f, %f, %f, %d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->context, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->extra, txt_retr_model->param3, txt_retr_model->size_type);
-
-	    break;
-
-	  }
-
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_right);
-
-	  break;
-
-	case P_CONTAINING_I:
-
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  switch (img_retr_model->computation) {
-	  case IMAGE_AVG:
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_i_avg(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  }
-
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_right);
-
-	  break;
-
-	case P_NOT_CONTAINING_I:
-
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  switch (img_retr_model->computation) {
-	  case IMAGE_AVG :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_i_avg(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  }
-
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_right);
-
-	  break;
-
-	case SCALE:
-
-	  com_nr_left = p_com->left->number;
-	  score_mul = atof(p_com->argument);
-	  
-	  MILPRINTF(MILOUT, "R%d := R%d.scale(%f);\n", com_num, com_nr_left, score_mul);
-	  
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-
-	  break;
-
-	case P_AND:
-
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  switch(txt_retr_model->and_comb) {
-	  case AND_PROD :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.and_prod(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case AND_MIN :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.and_min(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case AND_SUM :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.and_sum(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case AND_EXP :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.and_exp(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param3);
-
-	    break;
-
-	  case AND_MAX :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.and_max(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case AND_PROB :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.and_prob(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  }
-
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_right);
-
-	  break;
-
-	case P_OR:
-
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  switch(txt_retr_model->or_comb) {
-	  case OR_SUM :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.or_sum(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case OR_MAX :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.or_max(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case OR_PROB :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.or_prob(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case OR_EXP :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.or_exp(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param3);
-
-	    break;
-
-	  case OR_MIN :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.or_min(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case OR_PROD :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.or_prod(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  }
-
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_right);
-
-	  break;
-
-	case P_SELECT_GR:
-
-	  com_nr_left = p_com->left->number;
-	  argument = unquote(p_com->argument);
-
-	  MILPRINTF(MILOUT, "R%d := R%d.near_val(%d,%s);\n", com_num, com_nr_left, P_SELECT_GR, p_com->argument);
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-	  
-	  break;
-
-	case P_SELECT_LS:
-	  
-	  com_nr_left = p_com->left->number;
-	  argument = unquote(p_com->argument);
-
-	  MILPRINTF(MILOUT, "R%d := R%d.near_val(%d,%s);\n", com_num, com_nr_left, P_SELECT_LS, p_com->argument);
-
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-
-	  break;
-
-	case P_SELECT_EQ:
-
-	  com_nr_left = p_com->left->number;
-	  argument = unquote(p_com->argument);
-
-	  MILPRINTF(MILOUT, "R%d := R%d.near_val(%d,%s);\n", com_num, com_nr_left, P_SELECT_EQ, p_com->argument);
-	
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-
-	  break;
-	  
-	case P_SELECT_GEQ:
-	  
-	  com_nr_left = p_com->left->number;
-	  argument = unquote(p_com->argument);
-
-	  MILPRINTF(MILOUT, "R%d := R%d.near_val(%d,%s);\n", com_num, com_nr_left, P_SELECT_GEQ, p_com->argument);
-
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-
-	  break;
-	  
-	case P_SELECT_LEQ:
-	  
-	  com_nr_left = p_com->left->number;
-	  argument = unquote(p_com->argument);
-
-	  MILPRINTF(MILOUT, "R%d := R%d.near_val(%d,%s);\n", com_num, com_nr_left, P_SELECT_LEQ, p_com->argument);
-
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-
-	  break;
-	  
-	case P_ADJ:
-
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  if (txt_retr_model->model == MODEL_OKAPI)
-	    MILPRINTF(MILOUT, "R%d := R%d.adj_term(phrase,%d,true,0.5);\n", com_num, com_nr_left, txt_retr_model->size_type);
-	  else
-	    MILPRINTF(MILOUT, "R%d := R%d.adj_term(phrase,%d,true,%f);\n", com_num, com_nr_left, txt_retr_model->size_type, txt_retr_model->param2);
-
-	  MILPRINTF(MILOUT, "phrase := nil;\n");
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-
-	  break;
-
-	case P_ADJ_NOT:
-
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  if (txt_retr_model->model == MODEL_OKAPI)
-	    MILPRINTF(MILOUT, "R%d := R%d.adj_term_not(phrase,%d,true,0.5);\n", com_num, com_nr_left, txt_retr_model->size_type);
-	  else
-	    MILPRINTF(MILOUT, "R%d := R%d.adj_term_not(phrase,%d,true,%f);\n", com_num, com_nr_left, txt_retr_model->size_type, txt_retr_model->param2);
-
-	  MILPRINTF(MILOUT, "phrase := nil;\n");
-	  MILPRINTF(MILOUT, "R%d := nil;\n", com_nr_left);
-
-	  break;
-
-	}
-
-	p_com->number = com_num;
-
-	POP_COMMAND();
-	com_sp++;
-
-      }
-
-      /* 
-       *MILPRINTF(MILOUT, "%s_%d := R%d;\n",  result_name, topic_num, com_num);
-       *MILPRINTF(MILOUT, "R%d := nil;\n", com_num);
-       */
-      MILPRINTF(MILOUT, "R%d.persists(true).rename(\"%s\");\n", com_num, NEXI_RESULT_BAT);
-
-      if ( GEN_TOPICS ) {
-        MILPRINTF(MILOUT, "%s_%d.persists(true).rename(\"%s%d_probab\");\n", result_name, topic_num, result_name, topic_num);
-        MILPRINTF(MILOUT, "unload(\"%s%d_probab\");\n\n", result_name, topic_num);
-
-        MILPRINTF(MILOUT, "stop_topic_time := time();\n");
-        MILPRINTF(MILOUT, "topic_time := flt(stop_topic_time - start_topic_time)/1000;\n");
-
-        MILPRINTF(MILOUT, "printf(\"\\t\\tTopic %d finished in %%f seconds.\\n\",topic_time);\n\n\n", topic_num);
-      }
-
-      p_com_array++;
-      p1_command = *p_com_array;
-
-      txt_retr_model = txt_retr_model->next;
-
-      /* printf("%d\n",p_com_array); */
-      /* printf("%d\n",p1_command); */
-
+  
+  while (p1_command != NULL) {
+
+    p2_command = p1_command;
+
+    op_num = 0;
+    com_sp = 0;
+    com_num = 0;
+
+    int i;
+    for (i=0; i<STACK_MAX; i++) {
+      op_number[i] = 0;
+      op_newnum[i] = 0;
+      p_new_op[i] = NULL;
+      op_touched[i] = FALSE;
     }
 
-  }
+    set_reset = FALSE;
 
-  else if (optimize == 1) {
+    topic_num++;
 
-    while (p1_command != NULL) {
+    /* performing tree traversal with optimization of SRA query plan */
+    result = tree_traverse_opt(p1_command, com_lifo, &com_sp, op_number, &op_num, topic_num);
 
-      p2_command = p1_command;
+    com_sp++;
+    PUSH_COMMAND(NULL);
 
-      op_num = 0;
-      com_sp = 0;
-      com_num = 0;
+    com_sp = 1;
 
-      int i;
-      for (i=0; i<STACK_MAX; i++) {
-	op_number[i] = 0;
-	op_newnum[i] = 0;
-	p_new_op[i] = NULL;
-	op_touched[i] = FALSE;
+    POP_COMMAND();
+    com_sp++;
+    /*printf("%d\n",com_sp); */
+    /*printf("%d\n",p_com->operator); */
+
+    /*   if (topic_num == 3) { */
+    /*      for (i=1; i<=94; i++) */
+    /*	printf("H:%d\t%d\n",com_lifo[i]->number,com_lifo[i]->operator); */
+    /*} */
+
+    while (p_com != NULL) {
+
+      com_num = com_sp - 1;
+
+      if (com_num > RESET_NUM && p_com->operator == P_AND && set_reset == FALSE) {
+        MILPRINTF(MILOUT, "R%d := [*](R%d,dbl(1e+38).pow(dbl(4)));\n", p_com->left->number, p_com->left->number);
+        set_reset = TRUE;
       }
 
-      set_reset = FALSE;
+      switch(p_com->operator){
+      case SELECT_NODE:
 
-      topic_num++;
+        argument = unquote(p_com->argument);
 
-      /* INEX specific !!!!!!!!!!!!!!!!!! SHOULD BE REMOVED */
-      if (topic_num == 148 || (topic_type == CAS_TOPIC && (topic_num == 206 || topic_num == 209 || topic_num == 221 || topic_num == 227 || topic_num == 235 || topic_num == 237)))
-        topic_num++;
-      if (topic_type == CAS_TOPIC && (topic_num == 217))
-        topic_num+=2;
-      if (topic_type == CAS_TOPIC && (topic_num == 213))
-        topic_num+=3;
+        if (p_com->left == NULL && p_com->right == NULL) {
+
+          if (!strcmp(p_com->argument,"\"Root\"")) {
+            MILPRINTF(MILOUT, "R%d := select_root();\n", com_num);
+          }
+          else {
+            MILPRINTF(MILOUT, "R%d := select_node(%s,%s);\n", com_num, p_com->argument, txt_retr_model->e_class);
+          }
+
+        }
+        else if (p_com->left != NULL) {
+
+          com_nr_left = p_com->left->number;
+
+          if (!strcmp(p_com->argument,"")) {
+            MILPRINTF(MILOUT, "R%d := R%d.select_node(%d);\n", com_num, com_nr_left,0);
+          }
+          else {
+            MILPRINTF(MILOUT, "R%d := R%d.select_node(%s,%s);\n", com_num, com_nr_left, p_com->argument, txt_retr_model->e_class);
+          }
+
+        }
+
+        break;
+
+      case SELECT_NODE_VAGUE:
+
+         MILPRINTF(MILOUT, "R%d := select_node_vague(%s,%s,\"%s\");\n", com_num, p_com->argument, txt_retr_model->e_class, txt_retr_model->exp_class);
+
+         break;
+
+      case P_SELECT_NODE_T:
+
+      MILPRINTF(MILOUT, "R%d := p_select_node_t(%s,%d,%d,%d,%d,%d,%s,\"%s\",%d,%d,%f,%f,%d,%d,%d,%d,%s,%s,%d);\n", com_num, p_com->argument, txt_retr_model->model, 	txt_retr_model->or_comb, txt_retr_model->and_comb, txt_retr_model->up_prop, txt_retr_model->down_prop, txt_retr_model->e_class, txt_retr_model->exp_class, 		txt_retr_model->stemming, txt_retr_model->size_type, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->param3, txt_retr_model->prior_type, txt_retr_model->prior_size, img_retr_model->model, img_retr_model->descriptor, img_retr_model->attr_name, img_retr_model->computation);
+
+         break;
+
+      case SELECT_TERM:
+
+        argument = unquote(p_com->argument);
+
+        if (p_com->left == NULL && p_com->right == NULL) {
+          
+          MILPRINTF(MILOUT, "R%d := select_term(%s,%d);\n", com_num, p_com->argument, txt_retr_model->stemming);
+
+        }
+        else if (p_com->left != NULL) {
+
+          com_nr_left = p_com->left->number;
+          
+          if (!strcmp(p_com->argument,"")) {
+            MILPRINTF(MILOUT, "R%d := R%d.select_term();\n", com_num, com_nr_left);
+          }
+          else {
+            MILPRINTF(MILOUT, "R%d := R%d.select_term(%s,%d);\n", com_num, com_nr_left, p_com->argument, txt_retr_model->stemming);  
+          }
+          
+        }
+
+        break;
+      
+      case CREATE_QUERY_OBJECT:
+        
+    		MILPRINTF(MILOUT, "terms := new(void,oid).seqbase(oid(0));\n");
+    		MILPRINTF(MILOUT, "modifiers := new(void,int).seqbase(oid(0));\n");
+
+        break;
+      
+      case QUERY_ADD_TERM:
+        
+       MILPRINTF(MILOUT, "tid := bat(\"tj_globalTerms\").select(%s);\n if(tid.count() > 0) terms.append(tid.reverse().fetch(0));\n", p_com->argument);
+
+       break;
 
 
-      if ( GEN_TOPICS ) {
-        MILPRINTF(MILOUT, "printf(\"Executing topic number %d...\\n\");\n", topic_num);
+      case SELECT_ADJ:
 
-        MILPRINTF(MILOUT, "topics.insert(%d,\"%s%d_probab\");\n",topic_num, result_name, topic_num);
+        /*printf("RRRRRRRRRRRRRRRRRRRRR:%d\n", p_com->number); */
+        t_count = 0;
 
-        MILPRINTF(MILOUT, "start_topic_time := time();\n\n");
+        /*printf("X:%s\n", p_com->argument); */
+        adj_arg = split_terms(p_com->argument);
+        
+        t_argument = argument;
+        
+        while (*adj_arg != '\0') {
+          *argument = *adj_arg;
+          adj_arg++;
+          argument++;
+        }
+
+        *argument = '\0';
+        
+        t_count++;
+        argument = t_argument;
+        /*printf("ZX:%s\n",argument); */
+        MILPRINTF(MILOUT, "var phrase := new(int,str);\n");
+        MILPRINTF(MILOUT, "phrase.insert(%d,\"%s\");\n", t_count, argument);
+
+        adj_arg++;
+        
+        t_argument = argument1;
+        while (*adj_arg != '\0') {
+          *argument1 = *adj_arg;
+          adj_arg++;
+          argument1++;
+        }
+        
+        *argument1 = '\0';
+        
+        t_count++;
+        argument1 = t_argument;
+        /*printf("ZX:%s\n",argument1); */
+        /*MILPRINTF(MILOUT, "var phrase := new(int,str);\n"); */
+        MILPRINTF(MILOUT, "phrase.insert(%d, \"%s\");\n", t_count, argument1);
+        
+        adj_arg++;
+        
+        while (*adj_arg != '\n') {
+          t_argument = argument;
+          while (*adj_arg != '\0') {
+            *argument = *adj_arg;
+            adj_arg++;
+            argument++;
+          }
+
+          *argument = '\0';
+          argument = t_argument;
+          t_count++;
+
+          MILPRINTF(MILOUT, "phrase.insert(%d, \"%s\");\n", t_count, argument);
+          /*printf("ZX:%s\n",argument); */
+          /*printf("ZX1:%s\n",argument); */
+          adj_arg++;
+
+          free(argument1);
+
+        }
+        
+        break;
+
+      case P_SELECT_IMAGE:
+
+        argument = unquote(p_com->argument);
+
+        MILPRINTF(MILOUT, "R%d := select_image(\"%s\",\"%s\",%s);\n", com_num, img_retr_model->descriptor, img_retr_model->attr_name, p_com->argument);
+
+        break;
+
+      case CONTAINING:
+
+        if (p_com->right != NULL) {
+
+          com_nr_left = p_com->left->number;
+          com_nr_right = p_com->right->number;
+
+          MILPRINTF(MILOUT, "R%d := R%d.containing(R%d);\n", com_num, com_nr_left, com_nr_right);
+
+        }
+        else {
+
+          com_nr_left = p_com->left->number;
+
+          MILPRINTF(MILOUT, "R%d := R%d.containing();\n", com_num, com_nr_left);
+
+        }
+
+        break;
+
+      case CONTAINED_BY:
+
+        if (p_com->left != NULL) {
+
+          com_nr_left = p_com->left->number;
+          com_nr_right = p_com->right->number;
+
+          MILPRINTF(MILOUT, "R%d := R%d.contained_by(R%d);\n", com_num, com_nr_left, com_nr_right);
+
+        }
+        else {
+
+          com_nr_right = p_com->right->number;
+
+          MILPRINTF(MILOUT, "R%d := R%d.contained_by();\n", com_num, com_nr_right);
+
+        }
+
+        break;
+
+      case UNION:
+      case P_UNION:
+
+        com_nr_left = p_com->left->number;
+        com_nr_right = p_com->right->number;
+
+        MILPRINTF(MILOUT, "R%d := R%d.union(R%d);\n", com_num, com_nr_left, com_nr_right);
+
+        break;
+
+      case INTERSECT:
+      case P_INTERSECT:
+
+        com_nr_left = p_com->left->number;
+        com_nr_right = p_com->right->number;
+
+        MILPRINTF(MILOUT, "R%d := R%d.intersect(R%d);\n", com_num, com_nr_left, com_nr_right);
+      
+        break;
+        
+      case P_CONTAINING:
+        
+        com_nr_left = p_com->left->number;
+        com_nr_right = p_com->right->number;
+
+        switch (txt_retr_model->up_prop) {
+        case UP_SUM :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_sum(R%d);\n", com_num, com_nr_left, com_nr_right);
+          
+          break;
+
+        case UP_AVG :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_avg(R%d);\n", com_num, com_nr_left, com_nr_right);
+          
+          break;
+
+        case UP_WSUMD :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_wsumd(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
+
+          break;
+
+        case UP_WSUMA :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_wsuma(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
+
+          break;
+
+        }
+
+        break;
+
+      case P_CONTAINED_BY:
+
+        if (p_com->left != NULL) {
+
+          com_nr_left = p_com->left->number;
+          com_nr_right = p_com->right->number;
+
+          switch (txt_retr_model->down_prop) {
+          case DOWN_SUM :
+
+            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_sum(R%d);\n", com_num, com_nr_left, com_nr_right);
+
+            break;
+
+          case DOWN_AVG :
+
+            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_avg(R%d);\n", com_num, com_nr_left, com_nr_right);
+
+            break;
+
+          case DOWN_WSUMD :
+
+            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_wsumd(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
+
+            break;
+
+          case DOWN_WSUMA :
+
+            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_wsuma(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
+
+            break;
+
+          }
+
+        }
+        else {
+
+          com_nr_right = p_com->right->number;
+
+
+          switch (txt_retr_model->down_prop) {
+          case DOWN_SUM :
+
+            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_sum();\n", com_num, com_nr_right);
+          
+            break;
+
+          case DOWN_AVG :
+
+            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_avg();\n", com_num, com_nr_right);
+          
+            break;
+
+          case DOWN_WSUMD :
+
+            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_wsumd(%d);\n", com_num, com_nr_right, txt_retr_model->size_type);
+            
+            break;
+
+          case DOWN_WSUMA :
+
+            MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_wsuma(%d);\n", com_num, com_nr_right, txt_retr_model->size_type);
+
+            break;
+
+          }
+
+        }
+        
+        break;
+        
+      case P_PRIOR:
+
+        com_nr_left = p_com->left->number;
+        
+        MILPRINTF(MILOUT, "R%d := R%d.prior_ls(%d);\n", com_num, com_nr_left, txt_retr_model->size_type);
+        
+        break;   
+
+      case MUST_CONTAIN_T:
+
+        MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Bool(R%d);\n", com_num, com_nr_left, com_nr_right);
+
+        break;
+        
+      case MUST_NOT_CONTAIN_T:
+        
+        MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_Bool(R%d);\n", com_num, com_nr_left, com_nr_right);
+
+        break;
+
+      case P_CONTAINING_T:
+        
+        com_nr_left = p_com->left->number;
+        com_nr_right = p_com->right->number;
+
+        switch (txt_retr_model->model) {
+        case MODEL_BOOL :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Bool(R%d);\n", com_num, com_nr_left, com_nr_right);
+
+          break;
+
+        case MODEL_LM :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LM(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
+
+          break;
+
+        case MODEL_LMS :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LMs(R%d, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->size_type);
+
+          break;
+
+        case MODEL_TFIDF :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_tfidf(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
+
+          break;
+
+        case MODEL_OKAPI :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Okapi(R%d, %f, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
+
+          break;
+
+        case MODEL_GPX :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_GPX(R%d);\n", com_num, com_nr_left, com_nr_right);
+
+          break;
+
+        case MODEL_LMA :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LMA(R%d, \"%s\", %f, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->context, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
+
+          break;
+
+ 
+        }
+        
+        break;
+
+      case P_SELECT_NODE_Q:
+        
+        com_nr_left = p_com->left->number;
+        com_nr_right = p_com->right->number;
+
+       //only updated for language models. Bats "terms" and "modifiers" should be replace by the query object.
+        switch (txt_retr_model->model) {
+        case MODEL_BOOL :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Bool(R%d);\n", com_num, com_nr_left, com_nr_right);
+
+          break;
+
+        case MODEL_LM :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q(terms, modifiers, %d, %d);\n", com_num, com_nr_left, txt_retr_model->stemming, txt_retr_model->size_type);
+
+          break;
+
+        case MODEL_LMS :
+         
+/*          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q(terms, modifiers, %f, %d, %d);\n", com_num, com_nr_left, txt_retr_model->param1, txt_retr_model->stemming, txt_retr_model->size_type);
+*/
+	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_NLLR_batloop_aggregation(terms, %f);\n", com_num, com_nr_left, txt_retr_model->param1);
+	  
+          break;
+
+        case MODEL_TFIDF :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_tfidf(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
+
+          break;
+
+        case MODEL_OKAPI :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Okapi(R%d, %f, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
+
+          break;
+
+        case MODEL_GPX :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_GPX(R%d);\n", com_num, com_nr_left, com_nr_right);
+
+          break;
+
+        case MODEL_LMA :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LMA(R%d, %f, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
+
+          break;
+
+        }
+
+        break;
+
+      case P_NOT_CONTAINING_T:
+
+        com_nr_left = p_com->left->number;
+        com_nr_right = p_com->right->number;
+
+        switch (txt_retr_model->model) {
+        case MODEL_BOOL :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_Bool(R%d);\n", com_num, com_nr_left, com_nr_right);
+
+          break;
+
+        case MODEL_LM :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_LM(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
+
+          break;
+
+        case MODEL_LMS :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_LMs(R%d, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->size_type);
+
+          break;
+
+        case MODEL_TFIDF :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_tfidf(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
+
+          break;
+
+        case MODEL_OKAPI :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_Okapi(R%d, %f, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
+
+          break;
+
+        case MODEL_GPX :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_GPX(R%d);\n", com_num, com_nr_left, com_nr_right);
+
+          break;
+
+        case MODEL_LMA :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_LMA(R%d, \"%s\", %f, %f, %d);\n", com_num, com_nr_left, com_nr_right,  txt_retr_model->context, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
+
+          break;
+
+        }
+        
+        break;
+
+      case P_CONTAINING_I:
+
+        com_nr_left = p_com->left->number;
+        com_nr_right = p_com->right->number;
+
+        switch (img_retr_model->computation) {
+        case IMAGE_AVG :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_i_avg(R%d);\n", com_num, com_nr_left, com_nr_right);
+
+          break;
+
+        }
+
+        break;
+
+      case P_NOT_CONTAINING_I:
+
+        com_nr_left = p_com->left->number;
+        com_nr_right = p_com->right->number;
+
+        switch (img_retr_model->computation) {
+        case IMAGE_AVG :
+
+          MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_i_avg(R%d);\n", com_num, com_nr_left, com_nr_right);
+
+          break;
+        
+        }
+        
+      case SCALE:
+        
+        com_nr_left = p_com->left->number;
+        score_mul = atof(p_com->argument);
+
+        MILPRINTF(MILOUT, "R%d := R%d.scale(%f);\n", com_num, com_nr_left, score_mul);
+        
+        break;
+      
+     case QUERY_ADD_MODIFIER:
+        
+        modifier = atoi(p_com->argument);
+
+        MILPRINTF(MILOUT, "modifiers.append(%d);\n", modifier);
+        
+        break;
+
+      case P_AND:
+
+        com_nr_left = p_com->left->number;
+        com_nr_right = p_com->right->number;
+
+        switch(txt_retr_model->and_comb) {
+        case AND_PROD :
+
+          MILPRINTF(MILOUT, "R%d := R%d.and_prod(R%d);\n", com_num, com_nr_left, com_nr_right);
+
+          break;
+
+        case AND_MIN :
+
+          MILPRINTF(MILOUT, "R%d := R%d.and_min(R%d);\n", com_num, com_nr_left, com_nr_right);
+
+          break;
+
+        case AND_SUM :
+
+          MILPRINTF(MILOUT, "R%d := R%d.and_sum(R%d);\n", com_num, com_nr_left, com_nr_right);
+
+          break;
+
+        case AND_EXP :
+
+          MILPRINTF(MILOUT, "R%d := R%d.and_exp(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param3);
+
+          break;
+
+        }
+
+        break;
+
+      case P_OR:
+        
+        com_nr_left = p_com->left->number;
+        com_nr_right = p_com->right->number;
+
+        switch(txt_retr_model->or_comb) {
+        case OR_SUM :
+          
+          MILPRINTF(MILOUT, "R%d := R%d.or_sum(R%d);\n", com_num, com_nr_left, com_nr_right);
+
+          break;
+
+        case OR_MAX :
+
+          MILPRINTF(MILOUT, "R%d := R%d.or_max(R%d);\n", com_num, com_nr_left, com_nr_right);
+
+          break;
+
+        case OR_PROB :
+
+          MILPRINTF(MILOUT, "R%d := R%d.or_prob(R%d);\n", com_num, com_nr_left, com_nr_right);
+
+          break;
+
+        case OR_EXP :
+
+          MILPRINTF(MILOUT, "R%d := R%d.or_exp(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param3);
+
+          break;
+
+        }
+
+        break;
+        
+      case P_SELECT_GR:
+        
+        com_nr_left = p_com->left->number;
+        argument = unquote(p_com->argument);
+
+        MILPRINTF(MILOUT, "R%d := R%d.near_val(%d,%s);\n", com_num, com_nr_left, P_SELECT_GR, p_com->argument);
+
+        break;
+
+      case P_SELECT_LS:
+        
+        com_nr_left = p_com->left->number;
+        argument = unquote(p_com->argument);
+
+        MILPRINTF(MILOUT, "R%d := R%d.near_val(%d,%s);\n", com_num, com_nr_left, P_SELECT_LS, p_com->argument);
+
+        break;
+
+      case P_SELECT_EQ:
+        
+        com_nr_left = p_com->left->number;
+        argument = unquote(p_com->argument);
+        
+        MILPRINTF(MILOUT, "R%d := R%d.near_val(%d,%s);\n", com_num, com_nr_left, P_SELECT_EQ, p_com->argument);
+
+        break;
+        
+      case P_SELECT_GEQ:
+
+        com_nr_left = p_com->left->number;
+        argument = unquote(p_com->argument);
+
+        MILPRINTF(MILOUT, "R%d := R%d.near_val(%d,%s);\n", com_num, com_nr_left, P_SELECT_GEQ, p_com->argument);
+
+        break;
+        
+      case P_SELECT_LEQ:
+        
+        com_nr_left = p_com->left->number;
+        argument = unquote(p_com->argument);
+        
+        MILPRINTF(MILOUT, "R%d := R%d.near_val(%d,%s);\n", com_num, com_nr_left, P_SELECT_LEQ, p_com->argument);
+
+        break;
+        
+      case P_ADJ:
+
+        com_nr_left = p_com->left->number;
+        com_nr_right = p_com->right->number;
+
+        if (txt_retr_model->model == MODEL_OKAPI) 
+          MILPRINTF(MILOUT, "R%d := R%d.adj_term(phrase,%d,true,0.5);\n", com_num, com_nr_left, txt_retr_model->size_type);
+        else
+          MILPRINTF(MILOUT, "R%d := R%d.adj_term(phrase,%d,true,%f);\n", com_num, com_nr_left, txt_retr_model->size_type, txt_retr_model->param2);
+
+        break;
+
+      case P_ADJ_NOT:
+      
+        com_nr_left = p_com->left->number;
+        com_nr_right = p_com->right->number;
+
+        if (txt_retr_model->model == MODEL_OKAPI)
+          MILPRINTF(MILOUT, "R%d := R%d.adj_term_not(phrase,%d,true,0.5);\n", com_num, com_nr_left, txt_retr_model->size_type);
+        else
+          MILPRINTF(MILOUT, "R%d := R%d.adj_term_not(phrase,%d,true,%f);\n", com_num, com_nr_left, txt_retr_model->size_type, txt_retr_model->param2);
+
+        break;
+
       }
+      if (p_com->operator != QUERY_ADD_TERM && p_com->operator != QUERY_ADD_MODIFIER) {
 
-      /* performing tree traversal with optimization of SRA query plan */
-      result = tree_traverse_opt(p1_command, com_lifo, &com_sp, op_number, &op_num, topic_num);
+        if (p_com->operator != P_ADJ && p_com->operator != P_ADJ_NOT) {
 
-      com_sp++;
-      PUSH_COMMAND(NULL);
+          if (p_com->left != NULL) {
+            if (op_newnum[p_com->left->number] == 1) {
+              MILPRINTF(MILOUT, "R%d := nil;\n", p_com->left->number);
+            }
+            op_newnum[p_com->left->number]--;
+          }
 
-      com_sp = 1;
+          if (p_com->right != NULL) {
+            if (op_newnum[p_com->right->number] == 1) {
+              MILPRINTF(MILOUT, "R%d := nil;\n", p_com->right->number);
+            }
+            op_newnum[p_com->right->number]--;
+          }
 
+          if (p_com->operator == P_SELECT_NODE_Q) {
+              MILPRINTF(MILOUT, "terms := nil;\n");
+              MILPRINTF(MILOUT, "modifiers := nil;\n");
+          }
+        }
+
+        else {
+        
+        if (op_newnum[p_com->left->number] == 1) {
+          MILPRINTF(MILOUT, "R%d := nil;\n", p_com->left->number);
+        }
+
+        op_newnum[p_com->left->number]--;
+
+        if (op_newnum[p_com->right->number] == 1) {
+          MILPRINTF(MILOUT, "phrase := nil;\n");
+        }
+
+        op_newnum[p_com->right->number]--;
+
+        }
+      }
+      op_newnum[com_num] = op_number[p_com->number];
+      p_com->number = com_num;
+      
       POP_COMMAND();
       com_sp++;
-      /*printf("%d\n",com_sp); */
-      /*printf("%d\n",p_com->operator); */
 
-      /*   if (topic_num == 3) { */
-      /*      for (i=1; i<=94; i++) */
-      /*	printf("H:%d\t%d\n",com_lifo[i]->number,com_lifo[i]->operator); */
-      /*} */
-
-      while (p_com != NULL) {
-
-	com_num = com_sp - 1;
-
-	if (com_num > RESET_NUM && p_com->operator == P_AND && set_reset == FALSE) {
-	  MILPRINTF(MILOUT, "R%d := [*](R%d,dbl(1e+38).pow(dbl(4)));\n", p_com->left->number, p_com->left->number);
-	  set_reset = TRUE;
-	}
-
-	switch(p_com->operator){
-	case SELECT_NODE:
-
-	  argument = unquote(p_com->argument);
-
-	  if (p_com->left == NULL && p_com->right == NULL) {
-
-	    if (!strcmp(p_com->argument,"\"Root\"")) {
-	      MILPRINTF(MILOUT, "R%d := select_root();\n", com_num);
-	    }
-	    else {
-	      MILPRINTF(MILOUT, "R%d := select_node(%s,%s);\n", com_num, p_com->argument, txt_retr_model->e_class);
-	    }
-
-	  }
-	  else if (p_com->left != NULL) {
-
-	    com_nr_left = p_com->left->number;
-
-	    if (!strcmp(p_com->argument,"")) {
-	      /* INCOMPLETE ASK VOJKAN */
-	      /* MILPRINTF(MILOUT, "R%d := R%d.select_node(%d);\n", com_num, com_nr_left); */
-	      MILPRINTF(MILOUT, "R%d := R%d.select_node(%d);\n", com_num, com_nr_left,0);
-	    }
-	    else {
-	      MILPRINTF(MILOUT, "R%d := R%d.select_node(%s,%s);\n", com_num, com_nr_left, p_com->argument, txt_retr_model->e_class);
-	    }
-
-	  }
-
-	  break;
-
-	case SELECT_NODE_VAGUE:
-
-	   MILPRINTF(MILOUT, "R%d := select_node_vague(%s,%s,\"%s\");\n", com_num, p_com->argument, txt_retr_model->e_class, txt_retr_model->exp_class);
-
-	   break;
-
-	case P_SELECT_NODE_T:
-
-	MILPRINTF(MILOUT, "R%d := p_select_node_t(%s,%d,%d,%d,%d,%d,%s,\"%s\",%d,%d,%f,%f,%d,%d,%d,%d,%s,%s,%d);\n", com_num, p_com->argument, txt_retr_model->model, 	txt_retr_model->or_comb, txt_retr_model->and_comb, txt_retr_model->up_prop, txt_retr_model->down_prop, txt_retr_model->e_class, txt_retr_model->exp_class, 		txt_retr_model->stemming, txt_retr_model->size_type, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->param3, txt_retr_model->prior_type, txt_retr_model->prior_size, img_retr_model->model, img_retr_model->descriptor, img_retr_model->attr_name, img_retr_model->computation);
-
-	   break;
-
-	case SELECT_TERM:
-
-	  argument = unquote(p_com->argument);
-
-	  if (p_com->left == NULL && p_com->right == NULL) {
-	    
-	    MILPRINTF(MILOUT, "R%d := select_term(%s,%d);\n", com_num, p_com->argument, txt_retr_model->stemming);
-
-	  }
-	  else if (p_com->left != NULL) {
-
-	    com_nr_left = p_com->left->number;
-	    
-	    if (!strcmp(p_com->argument,"")) {
-	      MILPRINTF(MILOUT, "R%d := R%d.select_term();\n", com_num, com_nr_left);
-	    }
-	    else {
-	      MILPRINTF(MILOUT, "R%d := R%d.select_term(%s,%d);\n", com_num, com_nr_left, p_com->argument, txt_retr_model->stemming);  
-	    }
-	    
-	  }
-
-	  break;
-
-	case SELECT_ADJ:
-
-	  /*printf("RRRRRRRRRRRRRRRRRRRRR:%d\n", p_com->number); */
-	  t_count = 0;
-
-	  /*printf("X:%s\n", p_com->argument); */
-	  adj_arg = split_terms(p_com->argument);
-	  
-	  t_argument = argument;
-	  
-	  while (*adj_arg != '\0') {
-	    *argument = *adj_arg;
-	    adj_arg++;
-	    argument++;
-	  }
-
-	  *argument = '\0';
-	  
-	  t_count++;
-	  argument = t_argument;
-	  /*printf("ZX:%s\n",argument); */
-	  MILPRINTF(MILOUT, "var phrase := new(int,str);\n");
-	  MILPRINTF(MILOUT, "phrase.insert(%d,\"%s\");\n", t_count, argument);
-
-	  adj_arg++;
-	  
-	  t_argument = argument1;
-	  while (*adj_arg != '\0') {
-	    *argument1 = *adj_arg;
-	    adj_arg++;
-	    argument1++;
-	  }
-	  
-	  *argument1 = '\0';
-	  
-	  t_count++;
-	  argument1 = t_argument;
-	  /*printf("ZX:%s\n",argument1); */
-	  /*MILPRINTF(MILOUT, "var phrase := new(int,str);\n"); */
-	  MILPRINTF(MILOUT, "phrase.insert(%d, \"%s\");\n", t_count, argument1);
-	  
-	  adj_arg++;
-	  
-	  while (*adj_arg != '\n') {
-	    t_argument = argument;
-	    while (*adj_arg != '\0') {
-	      *argument = *adj_arg;
-	      adj_arg++;
-	      argument++;
-	    }
-
-	    *argument = '\0';
-	    argument = t_argument;
-	    t_count++;
-
-	    MILPRINTF(MILOUT, "phrase.insert(%d, \"%s\");\n", t_count, argument);
-	    /*printf("ZX:%s\n",argument); */
-	    /*printf("ZX1:%s\n",argument); */
-	    adj_arg++;
-
-	    free(argument1);
-
-	  }
-	  
-	  break;
-
-	case P_SELECT_IMAGE:
-
-	  argument = unquote(p_com->argument);
-
-	  MILPRINTF(MILOUT, "R%d := select_image(\"%s\",\"%s\",%s);\n", com_num, img_retr_model->descriptor, img_retr_model->attr_name, p_com->argument);
-
-	  break;
-
-	case CONTAINING:
-
-	  if (p_com->right != NULL) {
-
-	    com_nr_left = p_com->left->number;
-	    com_nr_right = p_com->right->number;
-
-	    MILPRINTF(MILOUT, "R%d := R%d.containing(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	  }
-	  else {
-
-	    com_nr_left = p_com->left->number;
-
-	    MILPRINTF(MILOUT, "R%d := R%d.containing();\n", com_num, com_nr_left);
-
-	  }
-
-	  break;
-
-	case CONTAINED_BY:
-
-	  if (p_com->left != NULL) {
-
-	    com_nr_left = p_com->left->number;
-	    com_nr_right = p_com->right->number;
-
-	    MILPRINTF(MILOUT, "R%d := R%d.contained_by(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	  }
-	  else {
-
-	    com_nr_right = p_com->right->number;
-
-	    MILPRINTF(MILOUT, "R%d := R%d.contained_by();\n", com_num, com_nr_right);
-
-	  }
-
-	  break;
-
-	case UNION:
-	case P_UNION:
-
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  MILPRINTF(MILOUT, "R%d := R%d.union(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	  break;
-
-	case INTERSECT:
-	case P_INTERSECT:
-
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  MILPRINTF(MILOUT, "R%d := R%d.intersect(R%d);\n", com_num, com_nr_left, com_nr_right);
-	
-	  break;
-	  
-	case P_CONTAINING:
-	  
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  switch (txt_retr_model->up_prop) {
-	  case UP_SUM :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_sum(R%d);\n", com_num, com_nr_left, com_nr_right);
-	    
-	    break;
-
-	  case UP_AVG :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_avg(R%d);\n", com_num, com_nr_left, com_nr_right);
-	    
-	    break;
-
-	  case UP_WSUMD :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_wsumd(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
-
-	    break;
-
-	  case UP_WSUMA :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_wsuma(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
-
-	    break;
-
-	  }
-
-	  break;
-
-	case P_CONTAINED_BY:
-
-	  if (p_com->left != NULL) {
-
-	    com_nr_left = p_com->left->number;
-	    com_nr_right = p_com->right->number;
-
-	    switch (txt_retr_model->down_prop) {
-	    case DOWN_SUM :
-
-	      MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_sum(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	      break;
-
-	    case DOWN_AVG :
-
-	      MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_avg(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	      break;
-
-	    case DOWN_WSUMD :
-
-	      MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_wsumd(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
-
-	      break;
-
-	    case DOWN_WSUMA :
-
-	      MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_wsuma(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
-
-	      break;
-
-	    }
-
-	  }
-	  else {
-
-	    com_nr_right = p_com->right->number;
-
-
-	    switch (txt_retr_model->down_prop) {
-	    case DOWN_SUM :
-
-	      MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_sum();\n", com_num, com_nr_right);
-	    
-	      break;
-
-	    case DOWN_AVG :
-
-	      MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_avg();\n", com_num, com_nr_right);
-	    
-	      break;
-
-	    case DOWN_WSUMD :
-
-	      MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_wsumd(%d);\n", com_num, com_nr_right, txt_retr_model->size_type);
-	      
-	      break;
-
-	    case DOWN_WSUMA :
-
-	      MILPRINTF(MILOUT, "R%d := R%d.p_contained_by_wsuma(%d);\n", com_num, com_nr_right, txt_retr_model->size_type);
-
-	      break;
-
-	    }
-
-	  }
-	  
-	  break;
-	  
-	case P_PRIOR:
-
-	  com_nr_left = p_com->left->number;
-	  
-	  MILPRINTF(MILOUT, "R%d := R%d.prior_ls(%d);\n", com_num, com_nr_left, txt_retr_model->size_type);
-	  
-	  break;   
-
-	case MUST_CONTAIN_T:
-
-	  MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Bool(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	  break;
-	  
-	case MUST_NOT_CONTAIN_T:
-	  
-	  MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_Bool(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	  break;
-
-	case P_CONTAINING_T:
-	  
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  switch (txt_retr_model->model) {
-	  case MODEL_BOOL :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Bool(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case MODEL_LM :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LM(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_LMS :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LMs(R%d, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_TFIDF :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_tfidf(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_OKAPI :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_Okapi(R%d, %f, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_GPX :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_GPX(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case MODEL_LMA :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LMA(R%d, \"%s\", %f, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->context, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_LMSE :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LMsE(R%d, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->size_type);
-
-	    break;
-
-          case MODEL_LMVFLT :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LMsVflat(R%d, \"%s\", %f, %f, %f, %d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->context, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->extra, txt_retr_model->param3, txt_retr_model->size_type);
-
-	    break;
-
-         case MODEL_LMVLIN :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_LMsVlin(R%d, \"%s\", %f, %f, %f, %d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->context, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->extra, txt_retr_model->param3, txt_retr_model->size_type);
-
-	    break;
-
- 	  }
-
-	  break;
-
-	case P_NOT_CONTAINING_T:
-
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  switch (txt_retr_model->model) {
-	  case MODEL_BOOL :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_Bool(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case MODEL_LM :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_LM(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_LMS :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_LMs(R%d, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_TFIDF :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_tfidf(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_OKAPI :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_Okapi(R%d, %f, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_GPX :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_GPX(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case MODEL_LMA :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_LMA(R%d, \"%s\", %f, %f, %d);\n", com_num, com_nr_left, com_nr_right,  txt_retr_model->context, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_LMSE :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_LMsE(R%d, %f, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param1, txt_retr_model->size_type);
-
-	    break;
-
-	  case MODEL_LMVFLT :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_LMsVflat(R%d, \"%s\", %f, %f, %f, %d, %d);\n", com_num, com_nr_left, com_nr_right,  txt_retr_model->context, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->extra, txt_retr_model->param3, txt_retr_model->size_type);
-
-	    break;
-
-          case MODEL_LMVLIN :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_t_LMsVlin(R%d, \"%s\", %f, %f, %f, %d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->context, txt_retr_model->param1, txt_retr_model->param2, txt_retr_model->extra, txt_retr_model->param3, txt_retr_model->size_type);
-
-	    break;
-
-	  }
-	  
-	  break;
-
-	case P_CONTAINING_I:
-
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  switch (img_retr_model->computation) {
-	  case IMAGE_AVG :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_i_avg(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  }
-
-	  break;
-
-	case P_NOT_CONTAINING_I:
-
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  switch (img_retr_model->computation) {
-	  case IMAGE_AVG :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.p_not_containing_i_avg(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-	  
-	  }
-	  
-	case SCALE:
-	  
-	  com_nr_left = p_com->left->number;
-	  score_mul = atof(p_com->argument);
-
-	  MILPRINTF(MILOUT, "R%d := R%d.scale(%f);\n", com_num, com_nr_left, score_mul);
-	  
-	  break;
-
-	case P_AND:
-
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  switch(txt_retr_model->and_comb) {
-	  case AND_PROD :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.and_prod(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case AND_MIN :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.and_min(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case AND_SUM :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.and_sum(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case AND_EXP :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.and_exp(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param3);
-
-	    break;
-
-	  case AND_MAX :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.and_max(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case AND_PROB :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.and_prob(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  }
-
-	  break;
-
-	case P_OR:
-	  
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  switch(txt_retr_model->or_comb) {
-	  case OR_SUM :
-	    
-	    MILPRINTF(MILOUT, "R%d := R%d.or_sum(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case OR_MAX :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.or_max(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case OR_PROB :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.or_prob(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case OR_EXP :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.or_exp(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->param3);
-
-	    break;
-
-	  case OR_MIN :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.or_min(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  case OR_PROD :
-
-	    MILPRINTF(MILOUT, "R%d := R%d.or_prod(R%d);\n", com_num, com_nr_left, com_nr_right);
-
-	    break;
-
-	  }
-
-	  break;
-	  
-	case P_SELECT_GR:
-	  
-	  com_nr_left = p_com->left->number;
-	  argument = unquote(p_com->argument);
-
-	  MILPRINTF(MILOUT, "R%d := R%d.near_val(%d,%s);\n", com_num, com_nr_left, P_SELECT_GR, p_com->argument);
-
-	  break;
-
-	case P_SELECT_LS:
-	  
-	  com_nr_left = p_com->left->number;
-	  argument = unquote(p_com->argument);
-
-	  MILPRINTF(MILOUT, "R%d := R%d.near_val(%d,%s);\n", com_num, com_nr_left, P_SELECT_LS, p_com->argument);
-
-	  break;
-
-	case P_SELECT_EQ:
-	  
-	  com_nr_left = p_com->left->number;
-	  argument = unquote(p_com->argument);
-	  
-	  MILPRINTF(MILOUT, "R%d := R%d.near_val(%d,%s);\n", com_num, com_nr_left, P_SELECT_EQ, p_com->argument);
-
-	  break;
-	  
-	case P_SELECT_GEQ:
-
-	  com_nr_left = p_com->left->number;
-	  argument = unquote(p_com->argument);
-
-	  MILPRINTF(MILOUT, "R%d := R%d.near_val(%d,%s);\n", com_num, com_nr_left, P_SELECT_GEQ, p_com->argument);
-
-	  break;
-	  
-	case P_SELECT_LEQ:
-	  
-	  com_nr_left = p_com->left->number;
-	  argument = unquote(p_com->argument);
-	  
-	  MILPRINTF(MILOUT, "R%d := R%d.near_val(%d,%s);\n", com_num, com_nr_left, P_SELECT_LEQ, p_com->argument);
-
-	  break;
-	  
-	case P_ADJ:
-
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  if (txt_retr_model->model == MODEL_OKAPI) 
-	    MILPRINTF(MILOUT, "R%d := R%d.adj_term(phrase,%d,true,0.5);\n", com_num, com_nr_left, txt_retr_model->size_type);
-	  else
-	    MILPRINTF(MILOUT, "R%d := R%d.adj_term(phrase,%d,true,%f);\n", com_num, com_nr_left, txt_retr_model->size_type, txt_retr_model->param2);
-
-	  break;
-
-	case P_ADJ_NOT:
-	
-	  com_nr_left = p_com->left->number;
-	  com_nr_right = p_com->right->number;
-
-	  if (txt_retr_model->model == MODEL_OKAPI)
-	    MILPRINTF(MILOUT, "R%d := R%d.adj_term_not(phrase,%d,true,0.5);\n", com_num, com_nr_left, txt_retr_model->size_type);
-	  else
-	    MILPRINTF(MILOUT, "R%d := R%d.adj_term_not(phrase,%d,true,%f);\n", com_num, com_nr_left, txt_retr_model->size_type, txt_retr_model->param2);
-
-	  break;
-
-	}
-	
-	if (p_com->operator != P_ADJ && p_com->operator != P_ADJ_NOT) {
-
-	  if (p_com->left != NULL) {
-	    if (op_newnum[p_com->left->number] == 1) {
-	      MILPRINTF(MILOUT, "R%d := nil;\n", p_com->left->number);
-	    }
-	    op_newnum[p_com->left->number]--;
-	  }
-
-	  if (p_com->right != NULL) {
-	    if (op_newnum[p_com->right->number] == 1) {
-	      MILPRINTF(MILOUT, "R%d := nil;\n", p_com->right->number);
-	    }
-	    op_newnum[p_com->right->number]--;
-	  }
-
-	}
-
-	else {
-	  
-	  if (op_newnum[p_com->left->number] == 1) {
-	    MILPRINTF(MILOUT, "R%d := nil;\n", p_com->left->number);
-	  }
-
-	  op_newnum[p_com->left->number]--;
-
-	  if (op_newnum[p_com->right->number] == 1) {
-	    MILPRINTF(MILOUT, "phrase := nil;\n");
-	  }
-
-	  op_newnum[p_com->right->number]--;
-
-	}
-	
-	op_newnum[com_num] = op_number[p_com->number];
-	p_com->number = com_num;
-	
-	POP_COMMAND();
-	com_sp++;
-	
-      }
-
-      
-      /*
-       *MILPRINTF(MILOUT, "%s_%d := R%d;\n",  result_name, topic_num, com_num);
-       *MILPRINTF(MILOUT, "R%d := nil;\n", com_num);
-       */
-      MILPRINTF(MILOUT, "R%d.persists(true).rename(\"%s\");\n", com_num, NEXI_RESULT_BAT);
-      
-      if ( GEN_TOPICS ) {
-        MILPRINTF(MILOUT, "%s_%d.persists(true).rename(\"%s%d_probab\");\n", result_name, topic_num, result_name, topic_num);
-        MILPRINTF(MILOUT, "unload(\"%s%d_probab\");\n\n", result_name, topic_num);
-
-        MILPRINTF(MILOUT, "stop_topic_time := time();\n");
-        MILPRINTF(MILOUT, "topic_time := flt(stop_topic_time - start_topic_time)/1000;\n");
-
-        MILPRINTF(MILOUT, "printf(\"\\t\\tTopic %d finished in %%f seconds.\\n\",topic_time);\n\n\n", topic_num);
-      }
-
-      p_com_array++;
-      p1_command = *p_com_array;
+    }
     
-      txt_retr_model = txt_retr_model->next;
+    MILPRINTF(MILOUT, "R%d.persists(true).rename(\"nexi_result\");\n", com_num);
+      
+    p_com_array++;
+    p1_command = *p_com_array;
+  
+    txt_retr_model = txt_retr_model->next;
 
-      /* printf("%d\n",p_com_array); */
-      /* printf("%d\n",p1_command);   */
+    /* printf("%d\n",p_com_array); */
+    /* printf("%d\n",p1_command);   */
 
-    }
-
-
-  }
-
-  if ( GEN_TOPICS ) {
-    MILPRINTF(MILOUT, "topics.persists(true).rename(\"topics\");\n");
-    MILPRINTF(MILOUT, "unload(\"topics\");\n");
-  }
-  if ( GEN_TIMINGS ) {
-    MILPRINTF(MILOUT, "\n");
-    MILPRINTF(MILOUT, "stop_exe_time := time();\n");
-    MILPRINTF(MILOUT, "exe_time := flt(stop_exe_time - start_exe_time)/1000;\n");
-
-    MILPRINTF(MILOUT, "printf(\"PFtijah script finished in %%d minutes and %%d seconds.\\n\", int(floor(dbl(exe_time)/dbl(60))), int(floor(dbl(exe_time).fmod(dbl(60)))));\n");
   }
 
   free(term_cut);
