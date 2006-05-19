@@ -769,11 +769,11 @@ reduce (PFcnode_t * p, int goalnt)
 
             /*
              * fn:zero-or-one() applied to something that is of
-             * type empty returns the argument itself.
+             * type item? returns the argument itself.
              */
             if (! PFqname_eq (p->sem.apply.fun->qname,
                               PFqname (PFns_fn, "zero-or-one"))) {
-                if (PFty_subtype (TY(LL(p)), PFty_empty ())) {
+                if (PFty_subtype (TY(LL(p)), PFty_opt (PFty_item ()))) {
                     *p = *LL(p);
                     rewritten = true;
                     break;
@@ -848,7 +848,8 @@ reduce (PFcnode_t * p, int goalnt)
                  * of the argument.
                  */
                 else if (PFty_subtype (TY(LL(p)), PFty_xs_anyNode ())) {
-                    p->sem.apply.fun = function (PFqname (PFns_pf, "string-value"));
+                    p->sem.apply.fun
+                        = function (PFqname (PFns_pf, "string-value"));
                     /* type-check what we just created */
                     PFty_check (p);
 
@@ -875,6 +876,7 @@ reduce (PFcnode_t * p, int goalnt)
                 
                 PFvar_t   *v1 = new_var (NULL);
                 PFvar_t   *v2 = new_var (NULL);
+                PFvar_t   *v3 = new_var (NULL);
                 PFfun_t   *fn_string
                     = function (PFqname (PFns_fn, "string"));
                 PFfun_t   *fn_string_join
@@ -887,11 +889,15 @@ reduce (PFcnode_t * p, int goalnt)
                                                           LL(p)), nil ()),
                                            apply (PFapply(fn_string), 
                                                   arg (var (v2), nil ())))), 
-                                 nil ()),
-                            apply (PFapply(fn_string_join), 
-                                   arg (var (v1),
-                                        arg (str (" "),
-                                             nil ()))));
+                            let (letbind (
+                                    var (v3),
+                                    apply (
+                                        PFapply (fn_string_join),
+                                        arg (var (v1), arg (str (" "),nil())))),
+                                 nil ())),
+                            cast (seqtype (PFty_untypedAtomic ()),
+                                  var (v3)));
+
                 PFty_check (p);
 
                 rewritten = true;
