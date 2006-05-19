@@ -920,7 +920,7 @@ static int process_node_attr(XqueryCtx* ctx, int nCONT, oid pre, int emptyNode) 
     if (BATprepareHash(b)) {
         return fatal_err(ctx,"process_node_attr: hash table creation\n");
     }
-    HASHloop_oid(b, b->hhash, idx, &nid, r) {
+    HASHloop_oid(b, b->hhash, idx, (ptr)(&nid), r) {
         oid id = base + idx;
         if ( ! process_attr(ctx,nCONT,id,0/*top*/) )
             return 0;
