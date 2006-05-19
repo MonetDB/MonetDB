@@ -414,11 +414,11 @@ pointers is NULL it indicates a NULL/nil value.
 @end itemize
 @- Getting Results
 @itemize
-@item int mapi_num_fields(Mapi mid)
+@item int mapi_get_field_count(Mapi mid)
 
 Return the number of fields in the current row.
 
-@item int mapi_num_rows(Mapi mid)
+@item int mapi_get_row_count(Mapi mid)
 
 If possible, return the number of rows in the last select call.  A -1
 is returned if this information is not available.
@@ -1345,6 +1345,8 @@ mapi_ping(Mapi mid)
 		hdl = mapi_query(mid, "select true;");
 		break;
 	case LANG_MAL:
+		hdl = mapi_query(mid, "io.print(1);");
+		break;
 	case LANG_MIL:
 		hdl = mapi_query(mid, "print(1);");
 		break;
