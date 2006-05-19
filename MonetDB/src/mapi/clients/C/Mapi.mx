@@ -3907,6 +3907,14 @@ mapi_quote(const char *msg, int size)
 			*t++ = '\\';
 			*t++ = '\\';
 			break;
+		case '\'':
+			*t++ = '\\';
+			*t++ = '\'';
+			break;
+		case '"':
+			*t++ = '\\';
+			*t++ = '"';
+			break;
 		case '\0':
 			*t++ = '\\';
 			*t++ = '0';
