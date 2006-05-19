@@ -7,7 +7,8 @@ lib_xqry = {
 	SEP = _
 	NAME = xqry
 	SOURCES = xqry_parser.mx xqry_scenario.mx xqry_gencode.mx xqry.mx \
-		  xqry_keyword.mx xqry_mem.mx xqry_scanner.mx xqry_backend.mx
+		  xqry_keyword.mx xqry_mem.mx xqry_scanner.mx xqry_backend.mx \
+		mgcalc.mx
 
 	HEADERS = h
 	#SCRIPTS = mal mil ""
@@ -18,5 +19,5 @@ lib_xqry = {
 
 scripts_mal = {
 	DIR = pkglibdir
-	SOURCES = xqry.mx 
+	SOURCES = xqry.mx mgcalc.mx
 }

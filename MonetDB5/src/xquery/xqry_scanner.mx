@@ -17,7 +17,9 @@
 @f xqry_scanner
 @a N.J. Nes
 @* 
-
+The XQuery scanner code is derived from the SQL scanner code.
+The scanner can be used to incrementally ask for user input
+to complete a parse. 
 @h
 #ifndef _XQRY_SCANNER_H_
 #define _XQRY_SCANNER_H_
