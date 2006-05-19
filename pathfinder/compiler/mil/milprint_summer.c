@@ -8023,12 +8023,33 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
          )
     {
 	int is_node_query = !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-query"));
-        /* get offset */
-        translate2MIL (f, VALUES, cur_level, counter, RL(args));
-        saveResult_ (f, ++counter, STR);
+        if (fun->arity == 3) {
+	  /* translate the first options parameter*/
+          translate2MIL (f, NORMAL, cur_level, counter, L(args));
 
-        /* get main table */
-        rc = translate2MIL (f, code, cur_level, ++counter, L(args));
+	  /* generate the serialization code */
+          milprintf(f, 
+		"      var optbat := serialize_tijah_opt(ws,1,iter,iter,item.materialize(ipik),constant2bat(kind),int_values,dbl_values,str_values);\n");
+
+	} else {
+	  /* no options defined */
+          milprintf(f, 
+                "      var optbat := new(str,str,32);\n");
+	}
+
+        if (fun->arity == 3) { /* get argument string */
+          translate2MIL (f, VALUES, cur_level, counter, RRL(args));
+	} else {
+	  translate2MIL (f, VALUES, cur_level, counter, RL(args));
+	}
+	++counter;
+        saveResult_ (f, counter, STR);
+
+        if (fun->arity == 3) { /* get argument string */
+          rc = translate2MIL (f, code, cur_level, ++counter, RL(args));
+	} else {
+          rc = translate2MIL (f, code, cur_level, ++counter, L(args));
+	}
                
         milprintf(f, 
                 "{ # translate fn:tijah-%s\n"
@@ -8036,13 +8057,16 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "    var lo := 2.0LL;\n"
                 "    var tqarg := item_str_%03d.fetch(0);\n"
 		"    if ( tqarg != tijah_qstring ) {\n"
-		"      tijah_qstring := tqarg;\n"
-                "      tijah_qscore := run_tijah_query(collName,tijah_qstring);\n"
+		"      tijah_qstring := tqarg;\n",
+		(is_node_query?"query ":"score"),cur_level, counter-1);
+        milprintf(f, 
+
+                "      tijah_qscore := run_tijah_query(optbat,tijah_qstring);\n"
 		"      if ( true) tijah_qscore := tijah_qscore.tsort_rev();\n"
 		"    } else {\n"
 		"      if ( false ) printf(\"# tijah_qscore cached!!!\");\n"
 		"    }\n"
-                "    if (lo < 1.0LL) lo := 0.0;\n", (is_node_query?"query":"score"),cur_level, counter-1);
+                "    if (lo < 1.0LL) lo := 0.0;\n");
         milprintf(f, "    var hi := INT_MAX;\n");
 
 	/* PROC tijah2pf(BAT[oid,dbl] tijah_qscore) : BAT := */
@@ -8085,20 +8109,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	    , cur_level
 	  );
 	}
-
-	/*
-         * milprintf(f, 
-         *      "    # select a slice\n"
-         *      "    ipik := ipik.slice(int(lo),hi);\n"
-         *      "    kind := kind.slice(int(lo),hi);\n"
-         *      "    iter := iter.slice(int(lo),hi);\n"
-         *      "    item%s := item%s.slice(int(lo), hi);\n"
-         *      "    pos := ipik.mark(1@0);\n"
-         *      "} else {\n"
-         *      "    error(\"tijah_query(count problem)\");\n"
-         *      "}\n", kind_str(code), kind_str(code));
-	 */
-
         deleteResult_ (f, --counter, STR);
 
         milprintf(f, "} # end of translate fn:tijah_query\n");

@@ -32,7 +32,7 @@
 .COMMAND run_tijah_command(str s) : bit = CMDtijah_command;
  "INCOMPLETE"
 
-.COMMAND run_tijah_query(str p, str q) : BAT[oid,dbl] = CMDtijah_query;
+.COMMAND run_tijah_query(BAT[str,str], str q) : BAT[oid,dbl] = CMDtijah_query;
  "INCOMPLETE"
 
 .COMMAND tj_add2collection(BAT[oid,bat],BAT[oid,bat],str,str) : void = CMDtj_add2collection;
@@ -40,6 +40,19 @@
 
 .COMMAND tj_add2collection_index(BAT[oid,bat],str) : void = CMDtj_add2collection_index;
  "INCOMPLETE"
+
+.COMMAND serialize_tijah_opt(
+                      BAT[void,bat] ws,
+                      int	    niters,
+                      BAT[void,oid] loop,
+                      BAT[void,oid] iter,
+                      BAT[void,oid] item,
+		      BAT[void,int] kind,
+                      BAT[void,lng] int_values,
+		      BAT[void,dbl] dbl_values,
+		      BAT[void,str] str_values)
+		       : BAT[str,str] = serialize_pftijah_options_DRIVER;
+ "C interface to pftijah option serialize"
 
 .COMMAND offsetindex( BAT[void,oid] offset_tid, int res_size)
 		: BAT[void,oid] = CMDoffsetindex;
@@ -181,7 +194,7 @@ PROC select_term(str name) : bat :=
     var result := indexfetchjoin( tids,
     				  bat("tj_" + collName + "_TermIndex"),
     				  bat("tj_" + collName + "_Terms") );
-    result := result.reverse().sort().project(dbl(1)); 
+    result := result.reverse().sort().project(dbl(scoreBase)); 
     
     var end_time := time();
     if (DEBUG) printf( "select_term: \t\t%d ms\n", end_time - start_time );
@@ -219,7 +232,7 @@ PROC select_phrase(bat[void,oid] terms) : bat[oid,dbl] :=
 	i :+= 1;
     }	
     
-    res := res.sort().project(dbl(1)); 
+    res := res.sort().project(dbl(scoreBase)); 
     
     var end_time := time();
     if (DEBUG) printf( "select_phrase: \t\t%d ms\n", end_time - start_time );
@@ -645,6 +658,9 @@ PROC p_containing_t_LMs(bat left, bat right, flt lmbd, int size_type) : bat :=
 
     var res_reg := new(oid,dbl,ENTITY_NUM);
 
+    # Compute the foreground probability: how many regions from right does left contain?
+    # This count is divided by the region size by reg_freq
+    
     forgnd_prob := reg_freq(left,right,size_type);
 
     if (size_type = SIZE_ENTITY) {
@@ -722,7 +738,7 @@ PROC reg_freq(bat left, bat right, int size_type) : bat    :=
     var start_time := time();
     
     var reg_size;
-    var ctx_tmp := new(oid,dbl,ENTITY_NUM);
+    
     var ctx_tmp2 := new( oid, int, ENTITY_NUM );
     
     var items := left.mirror().mark(0@0).reverse();
@@ -734,27 +750,32 @@ PROC reg_freq(bat left, bat right, int size_type) : bat    :=
     # Check the order of the items:
     items.chk_order();
     
-    var res := ll_descendant(items, items, pre_size, candidates, collHeight, false, false, min(items), max(items), false);
+    ctx_tmp2 := ll_descendant(items, items, pre_size, candidates, collHeight, false, false, min(items), max(items), false);
     
-    ctx_tmp2 := {count}(res);
-    
-    var num_terms := ctx_tmp2;
+    # Containment count: for each region from left, count how many regions from right it contains
+    var num_terms := {count}(ctx_tmp2);
     var prob_tmp  := [dbl](num_terms);
     
+    # Region size: Determine the entity or term size of all regions from left that have descendants in right
     if (size_type = SIZE_ENTITY)
-        reg_size := size_entity(left);
+        reg_size := size_entity(prob_tmp);
     else if (size_type = SIZE_TERM)
         reg_size := size_term(prob_tmp);
     
-    prob_tmp := [/](prob_tmp,prob_tmp.mirror().join(reg_size));
+    # prob_tmp := [/](prob_tmp,prob_tmp.mirror().join(reg_size));
 
-    prob_tmp := {sum}(prob_tmp.sunion(ctx_tmp));
+    # Divide the containment count (left) by the region size (left)
+    prob_tmp := [/](prob_tmp,reg_size);
+
+    # Set all to zero regions from left that do not contain regions from right
+	prob_tmp := prob_tmp.kunion( left.project(dbl(0)) );
 
     var end_time := time();
     if (DEBUG) printf( "reg_freq: \t\t%d ms\n", end_time - start_time );
     return prob_tmp;
         
 }
+
 
 # Calculate the term size of the region: how many terms does it contain?
 PROC size_term( bat region ) : bat := 
@@ -786,26 +807,16 @@ PROC size_term( bat region ) : bat :=
     return result;
 }
 
-# Calculate the entity size of the region: how many entities does it contain?
+# Calculate the entity size of the region: how many entities (tags and terms) does it contain?
 PROC size_entity( bat region ) : bat :=
 {
     var start_time := time();
     
     
-    # All entities:
-    var pre_pfpre := bat("tj_" + collName + "_pfpre");
-
-    var items      := region.mirror().mark(0@0).reverse();
-    var candidates := pre_pfpre.mirror().mark(0@0).reverse();
-    
+    # Entity sizes:
     var pre_size := load( "tj_" + collName + "_size");
     
-    # Check the order of the items:
-    items.chk_order();
-    
-    var res := ll_descendant(items, items, pre_size, candidates, collHeight, false, false, min(items), max(items), false);
-    
-    var result := {count}(res);
+    var result := region.mirror().join( pre_size );
 
     var end_time := time();
     if (DEBUG) printf( "size_entity: \t\t%d ms\n", end_time - start_time );
@@ -866,14 +877,9 @@ PROC p_contained_by_sum(bat left, bat right) : bat :=
 
     # ctx_res contains an=>de pairs: their preorder indices!
     
-
     # calculating the score for each region
-    # Get the preorder indexes for the right region
-    #: reg_score := {sum}(ctx_res.reverse().join(right.reverse().join(entity_pre).reverse()));
-    #: reg_score := {sum}(kunion(entity_pre.join(reg_score),ctx));
-
     reg_score := {sum}(ctx_res.reverse().join(right));
-    reg_score := {sum}(kunion(reg_score, ctx));
+    reg_score := kunion(reg_score, ctx);
 
 
 	#: entity_pre :=nil;
@@ -886,86 +892,6 @@ PROC p_contained_by_sum(bat left, bat right) : bat :=
 	return res_reg;
 
 }
-
-
-PROC p_containing_wsumd(bat region, int size_type) : bat :=
-{
-
-	#: var ctx_res := new(oid,oid,ENTITY_NUM);
-	#: var ctx := new(oid,dbl,ENTITY_NUM);
-	#: var size_reg := new(oid,dbl,ENTITY_NUM);
-	#: var norm_reg := new(oid,dbl,ENTITY_NUM);
-	#: var reg_score := new(oid,dbl,ENTITY_NUM);
-	#: var entity_pre := new(oid,oid,ENTITY_NUM);
-	#: entity_pre := load(col_name+"entity_pre");
-	#: var entity_post := new(oid,oid,ENTITY_NUM);
-	#: entity_post := load(col_name+"entity_post");
-	#: var entity_type := new(oid,chr,ENTITY_NUM);
-	#: entity_type := load(col_name+"entity_type");
-
-	#: var res_reg := new(oid,dbl,ENTITY_NUM);
-
-    #: var an := entity_type.uselect('n').mirror().join(entity_pre).reverse().join(entity_post).sort();
-    #: var de := region.mirror().join(entity_pre).reverse().join(entity_post).sort();
-
-    #: entity_post := nil;
-	#: entity_type := nil;
-
-    # use optimized interval inclusion join
-    #: ctx_res:=treemergejoin_sort(an,de,1);
-
-
-    # Items contains the context nodes for the descendant step: this is the right side argument to contained_by.
-    # The table must be [void,oid], so:
-    var items := right.mirror().mark(0@0).reverse();
-    
-    # Candidates contains the left side argument. This must also be [void,oid]:
-    var candidates := left.mirror().mark(0@0).sort().reverse();
-    
-    var pre_size := load( "tj_" + collName + "_size");
-            
-    # Check the order of the items:
-    items.chk_order();
-    
-    # Call the descendant algorithm: it returns [ancestor, descendant] pairs!
-    var ctx_res := ll_descendant(items, items, pre_size, candidates, collHeight, false, false, min(items), max(items), false);
-    
-    var size_reg;
-    var ctx;
-    var reg_score;
-    var res_ref;
-    var norm_reg;
-    
-	if (size_type = SIZE_ENTITY) {
-		size_reg := size_entity(region);
-	}
-	else if (size_type = SIZE_TERM) {
-		size_reg := size_term(region);
-	}
-
-    # Find the node id's again: not necessary for us
-	#: ctx_res := ctx_res.join(entity_pre.reverse());
-
-    # calculating the score for each region
-    reg_score := {sum}(ctx_res.join([*](size_reg,region)));
-
-	ctx := {sum}(ctx_res.join(size_reg));
-
-	norm_reg := ctx.select(dbl(0),dbl(nil),false,true);
-
-	reg_score := norm_reg.mirror().join(reg_score);
-
-	#: res_reg := [/](entity_pre.join(reg_score),entity_pre.join(norm_reg));
-    res_reg := [/](reg_score,norm_reg);
-
-	entity_pre :=nil;
-
-	return res_reg;
-
-}
-#ADDHELP("p_containing_wsumd", "vojkan", "March 29, 2005",
-#"Assings score after score propagation to containing regions in the colection.",
-#"TIJAH");
 
 
 PROC p_containing_wsumd(bat left, bat right, int size_type) : bat :=
@@ -1032,10 +958,9 @@ PROC p_containing_wsumd(bat left, bat right, int size_type) : bat :=
 
 	reg_score := norm_reg.mirror().join(reg_score);
 
-	#: reg_score := [/](entity_pre.join(reg_score),entity_pre.join(norm_reg));
     reg_score := [/](reg_score,norm_reg);
 
-	reg_score := {sum}(sunion(reg_score,ctx));
+	reg_score := sunion(reg_score,ctx);
 
 	if (scoreBase = 0)
 		res_reg := [+](left, reg_score);
@@ -1571,18 +1496,19 @@ int CMDtijah_command(bit* res, str command) {
 	return GDK_SUCCEED;
 }
 
-extern char* tijahParse(char* pfx, char* query, char** errBUFF);
+extern char* tijahParse(BAT* optbat, char* query, char** errBUFF);
 
 static int oldScoreCounter = 0;
 
-int CMDtijah_query(BAT** res, str pfx, str q) {
-	/* INCOMPLETE, complete Collection BAT should be parameter here */
-	if ( 0 ) stream_printf(GDKout,"# tijah_	query(\"%s\",\"%s\")\n",pfx,q);
-	/* */
+int CMDtijah_query(BAT** res, BAT* optbat, str q) {
 	char* err;
 	char* mil;
 
-	if ( !(mil=tijahParse(pfx,q,&err)) ) {
+	if ( !optbat ) {
+            GDKerror("CMDtijah_query: missing option bat.\n");
+	    return GDK_FAIL;
+	}
+	if ( !(mil=tijahParse(optbat,q,&err)) ) {
             GDKerror("CMDtijah_query: %s.\n", err);
 	    return GDK_FAIL;
 	}

@@ -43,6 +43,7 @@ lib__pftijah = {
 		stem_UTF_8_porter.c \
 		pftijah_tokenize.l \
 		serialize_pftijah.mx \
+		serialize_pftijah_options.mx \
 		nexi.c \
 		nexi.y \
 		nexi.l \

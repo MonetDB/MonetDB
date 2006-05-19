@@ -1525,14 +1525,31 @@ PFfun_xquery_fo ()
       { .ns = PFns_fn, .loc = "tijah-query",
         .arity = 2, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
-                                PFty_string () },
-             .ret_ty = PFty_star (PFty_xs_anyNode ()) } } }
+                                    PFty_string () },
+             .ret_ty = PFty_star (PFty_xs_anyNode ()) },
+	     } }
+    , /* fn:tijah-query(item, item*, string) as item* */
+      { .ns = PFns_fn, .loc = "tijah-query",
+        .arity = 3, .sig_count = 1, .sigs = { {
+	     .par_ty = (PFty_t[]) { PFty_xs_anyNode (),
+	     			    PFty_star (PFty_xs_anyNode ()),
+                                    PFty_string () },
+             .ret_ty = PFty_star (PFty_xs_anyNode ()) },
+	     } }
     , /* fn:tijah-score(item*, string) as dbl* */
       { .ns = PFns_fn, .loc = "tijah-score",
         .arity = 2, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
                                 PFty_string () },
              .ret_ty = PFty_star (PFty_double ()) } } }
+    , /* fn:tijah-score(item, item*, string) as dbl* */
+      { .ns = PFns_fn, .loc = "tijah-score",
+        .arity = 3, .sig_count = 1, .sigs = { {
+	     .par_ty = (PFty_t[]) { PFty_xs_anyNode (),
+	     			    PFty_star (PFty_xs_anyNode ()),
+                                    PFty_string () },
+             .ret_ty = PFty_star (PFty_double ()) },
+	     } }
 #else
 #endif
     , { .loc = 0 }

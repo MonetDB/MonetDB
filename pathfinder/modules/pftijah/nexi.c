@@ -32,20 +32,19 @@ TijahParserContext* parserCtx = &parserCtxStruct;
 
 /* main */
 
-extern int old_main(int argc, char * const argv[]);
+extern int old_main(int argc, char * const argv[], BAT* optbat);
 
 static char *dummy[] = {};
 
-char* tijahParse(char* pfx, char* query, char** errBUFF) {
-  (void)pfx;
+char* tijahParse(BAT* optbat, char* query, char** errBUFF) {
   /* setup TijahParserContext structure */
   if ( 0 ) stream_printf(GDKout,"- tijahParse([%s])\n",query);
-  parserCtx->collection= pfx;
+  parserCtx->collection= "PFX";
   parserCtx->queryText = query;
   parserCtx->logFILE   = NULL;
   parserCtx->errBUFF[0]= 0;
   parserCtx->tjCtx     = NULL; /* INCOMPLETE, should be filled here */
-  if ( !old_main(0,dummy) )  {
+  if ( !old_main(0,dummy,optbat) )  {
       if ( errBUFF ) {
 	  if ( parserCtx->errBUFF[0] ) /* a nexi error message is generated */
               *errBUFF = &parserCtx->errBUFF[0];
@@ -58,7 +57,7 @@ char* tijahParse(char* pfx, char* query, char** errBUFF) {
       return &parserCtx->milBUFF[0];
 }
 
-int old_main(int argc, char * const argv[])
+int old_main(int argc, char * const argv[], BAT* optbat)
 {
   /* input argument options */
   int arg_opt;
@@ -190,6 +189,37 @@ int old_main(int argc, char * const argv[])
   txt_retr_model = calloc(MAX_QUERIES, sizeof(struct_RMT));
   img_retr_model = calloc(MAX_QUERIES, sizeof(struct_RMI));
   rel_feedback = calloc(MAX_QUERIES, sizeof(struct_RF));
+
+  /* 
+   *
+   *
+   * THE NEW OPTION HANDLER HERE!!!!!
+   *
+   *
+   */
+   
+  BUN p, q;
+  BATloop(optbat, p, q) {
+   str optName = (str)BUNhead(optbat,p);
+   str optVal  = (str)BUNtail(optbat,p);
+
+   if ( 0 ) {
+     FILE* xx = fopen("/tmp/out","w");
+     fprintf(xx,"TijahOptions: handle: %s=%s\n",optName,optVal);
+     fclose(xx);
+   }
+   if ( strcmp(optName,"collection") == 0 ) {
+      /* handle collection name here */
+   } else if ( strcmp(optName,"top") == 0 ) {
+      /* handle topN here */
+   } else {
+      stream_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
+   }
+  }
+
+  /*
+   *
+   */
 
   while(1){
 
