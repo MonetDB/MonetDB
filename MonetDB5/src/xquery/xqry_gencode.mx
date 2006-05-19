@@ -39,6 +39,14 @@ xqry_export void xqryCoercion(Xbackend xb);
 xqry_export void xqryStatement(Xbackend xb, str mod, str fcn, int argc);
 xqry_export void xqryDefConstant(Xbackend xb, ValPtr val);
 
+xqry_export void xqryPushNameTest(Xbackend xb, char *name);
+xqry_export void xqryPushChild(Xbackend xb);
+xqry_export void xqryPushDescendant(Xbackend xb);
+xqry_export void xqryPushPredicate(Xbackend xb);
+xqry_export void xqryPushAttribute(Xbackend xb);
+
+xqry_export char *xqryXpathFlatten(Xbackend xb);
+
 #endif /* _XQUERY_GENCODE_H_ */
 
 @+ Symbol table
@@ -188,4 +196,116 @@ xqryStatement(Xbackend xb, str mod, str fcn, int argc){
 	err= xb->mb->errors; /* ignore if type check fails */
 	typeChecker(0,xb->mb,p,TRUE);
 	xb->mb->errors= err;
+}
+
+static void
+xpathAdd(Xpath *x, xpath *p) 
+{
+	if (!x->h) {
+		x->h = p;
+	} else {
+		x->t -> l = p;
+	}
+	x->t = p;
+}
+
+void
+xqryPushNameTest(Xbackend xb, char *name)
+{
+	Xpath *X = &xb->vars[xb->vtop-1].xpath;
+	xpath *x = X->t;
+
+	x -> name = name;
+	printf( "name = %s\n", name);
+}
+
+void
+xqryPushChild(Xbackend xb)
+{
+	Xpath *x = &xb->vars[xb->vtop-1].xpath;
+	xpath *p = ZNEW(xpath);
+
+	p -> op = child;
+	xpathAdd(x, p);
+	printf( "/\n");
+}
+
+void
+xqryPushDescendant(Xbackend xb)
+{
+	Xpath *x = &xb->vars[xb->vtop-1].xpath;
+	xpath *p = ZNEW(xpath);
+
+	p -> op = descendant;
+	xpathAdd(x, p);
+	printf( "//\n");
+}
+
+void
+xqryPushPredicate(Xbackend xb)
+{
+	Xpath *x = &xb->vars[xb->vtop-1].xpath;
+	xpath *p = ZNEW(xpath);
+
+	p -> op = predicate;
+	xpathAdd(x, p);
+	printf( "[]\n");
+}
+
+void
+xqryPushAttribute(Xbackend xb)
+{
+	Xpath *x = &xb->vars[xb->vtop-1].xpath;
+	xpath *p = ZNEW(xpath);
+
+	p -> op = attribute;
+	xpathAdd(x, p);
+	printf( "@\n");
+}
+
+char *
+xqryXpathFlatten(Xbackend xb)
+{
+	Xpath *x = &xb->vars[xb->vtop-1].xpath;
+	xpath *p = x->h;
+	int len = 0;
+	char *res, *s;
+
+	for(p = x->h; p; p = p -> l) {
+		switch(p->op) {
+		case descendant:
+			len ++;
+		case child:
+			len ++;
+			break;
+		case attribute:
+			len += 4;
+		default:
+			break;
+		}
+		if (p->name)
+			len += strlen(p->name); 
+	}
+	s = res = GDKmalloc(len + 1);
+	for(p = x->h; p; p = p -> l) {
+		if(p->op == descendant) {
+			*s++ = '/';
+			*s++ = '/';
+		} else if (p->op == child || p->op == attribute) {
+			*s++ = '/';
+		}
+		if (p->name) {
+			len = strlen(p->name);
+			memcpy(s, p->name, len);
+			s+= len;
+		}
+		if(p->op == attribute) {
+			int l = sizeof("@str");
+			strncpy(s, "@str", l);
+			s+=l;
+		}
+	}
+	*s++ = 0;
+	printf("flatten %s\n", res);
+	return res;
 }

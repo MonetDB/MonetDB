@@ -40,6 +40,10 @@ command doc(docname:str):bat[:oid,:str]
 address XQRYdoc
 comment "get data guid for the given document";
 
+command bind(mguide:bat[:oid,:str], xpath:str):bat[:oid,:str]
+address XQRYbind
+comment "get bat from data guide for the given xpath";
+
 @-
 The runtime library is based on code initially
 developed by A. Schmidt. It implements a 'dataguide'
@@ -147,11 +151,29 @@ typedef enum modes_xqry {
 #define MAXXVARS 256
 #define MAXSCOPES 32
 
+typedef enum xpathop {
+	variable, 	/* variable reference */
+	child,	
+	descendant,	
+	predicate,	
+	attribute,	 
+} xpathop;
+
+typedef struct xpath {
+	xpathop op;
+	void *l;
+	char *name;
+} xpath;
+
+typedef struct Xpath {
+	xpath *h;
+	xpath *t;
+} Xpath;
 
 typedef struct IDS {
     str nme;
     int tmpid;  /* MAL equivalent */
-    str path;   /* dataguide entry */
+    Xpath xpath;
 } Xvariable;
 
 #endif /* _XQUERY_H */
@@ -164,6 +186,17 @@ str XQRYdoc( int *r, str doc)
 	BAT *b = BATnew(TYPE_oid,TYPE_str, BUFSIZ);
 
 	(void)doc;
+	BBPkeepref(*r = b->batCacheid);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+} 
+
+str XQRYbind( int *r, int *g, str xpath) 
+{
+	BAT *b = BATnew(TYPE_oid,TYPE_oid, BUFSIZ);
+
+	(void)g;
+	(void)xpath;
 	BBPkeepref(*r = b->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;

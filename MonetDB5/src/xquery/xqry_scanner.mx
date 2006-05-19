@@ -856,11 +856,13 @@ int xscanner_symbol(xscanner * lc, int cur)
 	case '(':
 	case ')':
 	case ',':
-	case '=':
 	case '[':
 	case ']':
 		lc->started = 1;
 		return xscanner_token(lc, cur);
+	case '=':
+		lc->started = 1;
+		return xscanner_token(lc, XT_eq);
 	case '{':
 		lc->started = 0;
 		cur = xscanner_getc(lc);
@@ -917,7 +919,7 @@ int xscanner_symbol(xscanner * lc, int cur)
 	case '<': /* lexer stack of states */
 		lc->started = 1;
 		cur = xscanner_getc(lc);
-		if (cur != '!') { 
+		if (cur == '!') { 
 			cur = xscanner_getc(lc);
 			if (cur != '-') {
 				utf8_putchar(lc, cur); 
@@ -939,23 +941,23 @@ int xscanner_symbol(xscanner * lc, int cur)
 		} else if (cur == '/') {
 			return xscanner_token( lc, XT_elementconstructor_start);
 		} else if (cur == '=') {
-			return xscanner_token( lc, XT_CMP);
+			return xscanner_token( lc, XT_le);
 		} else if (cur == '>') {
-			return xscanner_token( lc, XT_CMP);
+			return xscanner_token( lc, XT_ne);
 		} else {
 			utf8_putchar(lc, cur); 
-			return xscanner_token( lc, XT_CMP);
+			return xscanner_token( lc, XT_lt);
 		}
 	case '>':
 		lc->started = 1;
 		cur = xscanner_getc(lc);
 		if (cur == '>') {
 			return xscanner_token( lc, XT_gtgt);
-		} else if (cur != '=') {
-			utf8_putchar(lc, cur); 
-			return xscanner_token( lc, XT_CMP);
+		} else if (cur == '=') {
+			return xscanner_token( lc, XT_ge);
 		} else {
-			return xscanner_token( lc, XT_CMP);
+			utf8_putchar(lc, cur); 
+			return xscanner_token( lc, XT_gt);
 		}
 	case '|':
 		lc->started = 1;
@@ -963,12 +965,16 @@ int xscanner_symbol(xscanner * lc, int cur)
 		if (cur == '|') {
 			return xscanner_token(lc, XT_CONCATSTRING);
 		}
+		utf8_putchar(lc, cur); 
+		return xscanner_token( lc, '|');
 	case ':':
 		lc->started = 1;
 		cur = xscanner_getc(lc);
 		if (cur == '=') {
 			return xscanner_token(lc, XT_ASSIGN);
 		}
+		utf8_putchar(lc, cur); 
+		return xscanner_token( lc, ':');
 	case '$':
 		lc->started = 1;
 		return xscanner_token(lc, cur);

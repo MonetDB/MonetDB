@@ -802,7 +802,7 @@ parseElementContentChar(Client cntxt, Xbackend xb)
 	switch (curToken(xb)) {
 	case '{':
 	case '}':
-	case '<':
+	case XT_lt:
 	case '&':
 		return PARSE_ERR;
 	}
@@ -852,7 +852,7 @@ parseDirElementContent(Client cntxt, Xbackend xb)
 STATIC int 
 parseDirElementConstructor(Client cntxt, Xbackend xb) 
 {
-	if (curToken(xb) != '<')
+	if (curToken(xb) != XT_lt)
 		return PARSE_ERR;
 	@:ptrace(parseDirElementConstructor)@
 	nextToken(xb);
@@ -865,7 +865,7 @@ parseDirElementConstructor(Client cntxt, Xbackend xb)
 		return PARSE_OK;
 	}
 
-	if (curToken(xb) != '>')
+	if (curToken(xb) != XT_gt)
 		return xqryError(cntxt,"'>' expected in DirElementConstructor\n");
 	nextToken(xb);
 	parseDirElementContent(cntxt, xb);
@@ -875,7 +875,7 @@ parseDirElementConstructor(Client cntxt, Xbackend xb)
 	if (parseQName(cntxt,xb) == PARSE_ERR) 
 		return xqryError(cntxt,"<Qname> expected in DirElementConstructor\n");
 
-	if (curToken(xb) != '>')
+	if (curToken(xb) != XT_gt)
 		return xqryError(cntxt,"'>' expected in DirElementConstructor\n");
 
 	xb->token = -1;
@@ -929,12 +929,7 @@ parseNameTest(Client cntxt, Xbackend xb)
 				return xqryError(cntxt,"'*' expected in NameTest\n");
 			xb->token = -1;
 		} else {
-			ValRecord val;
-			InstrPtr p = newAssignment(xb->mb);
-			val.vtype = TYPE_str;
-			val.val.sval = _strdup(name);
-			getArg(p,0) = pushXvar(xb);
-			pushArgument(xb->mb, p, defConstant(xb->mb, val.vtype, &val));
+			xqryPushNameTest(xb, name);
 		}
 		@:etrace(parseNameTest)@
 		return PARSE_OK;
@@ -1080,6 +1075,7 @@ parsePredicate(Client cntxt, Xbackend xb)
 	if (curToken(xb) != '[')
 		return PARSE_ERR;
 	@:ptrace(parsePredicate)@
+	xqryPushPredicate(xb);
 	nextToken(xb);
 	if (parseExpr(cntxt, xb) == PARSE_ERR)
 		return xqryError(cntxt,"<Expr> expected in Predicate\n");
@@ -1180,12 +1176,26 @@ STATIC int
 parseAbbrevForwardStep(Client cntxt, Xbackend xb) 
 {
 	int ret;
+	int at = 0;
 
 	@:ptrace(parseAbbrevForwardStep)@
 	if (curToken(xb) == '@') {
 		nextToken(xb);
+		xqryPushAttribute(xb);
+		at = 1;
 	}
 	ret = parseNodeTest(cntxt, xb);
+	if (at) {
+		InstrPtr p;
+		ValRecord val;
+
+		val.vtype = TYPE_str;
+		val.val.sval = xqryXpathFlatten(xb);
+		p = newAssignment(xb->mb);
+		getArg(p,0) = pushXvar(xb);
+		pushArgument(xb->mb, p, defConstant(xb->mb, val.vtype, &val));
+		xqryStatement(xb,"xqry","bind",2);
+	}
 	@:etrace(parseAbbrevForwardStep)@
 	return ret;
 }
@@ -1239,8 +1249,8 @@ parseAxisStep(Client cntxt, Xbackend xb)
 {
 	int ret;
 	@:ptrace(parseAxisStep)@
-	if(	parseReverseStep(cntxt, xb) == PARSE_ERR &&
-		parseForwardStep(cntxt, xb) == PARSE_ERR )
+	if (parseReverseStep(cntxt, xb) == PARSE_ERR &&
+	    parseForwardStep(cntxt, xb) == PARSE_ERR )
 		return PARSE_ERR;
 	ret = parsePredicateList(cntxt, xb);
 	@:etrace(parseAxisStep)@
@@ -1275,12 +1285,12 @@ parseRelativePathExpr(Client cntxt, Xbackend xb)
 			slash++;
 			nextToken(xb);
 		}
-		res = parseStepExpr(cntxt, xb);
 		if (slash == 1)
-			xqryStatement(xb,"xqry","child",2);
+			xqryPushChild(xb);
 		else
-			xqryStatement(xb,"xqry","childern",2);
+			xqryPushDescendant(xb);
 		slash = 0;
+		res = parseStepExpr(cntxt, xb);
 	}
 	@:etrace(parseRelativePathExpr)@
 	return res;
@@ -1653,14 +1663,6 @@ parseComparisonExpr(Client cntxt, Xbackend xb)
 			op= "<="; mod="batcalc";
 		} else if (curToken(xb) == XT_ge) {
 			op= ">="; mod="batcalc";
-		} else if (curToken(xb) == XT_gt) {
-			op= ">"; mod="batcalc";
-		} else if (curToken(xb) == XT_lt) {
-			op= "<"; mod="batcalc";
-		} else
-		/* ValueComp */
-		if (curToken(xb) == '=') {
-			op= "=="; mod="batcalc";
 		} else if (curToken(xb) == XT_gt) {
 			op= ">"; mod="batcalc";
 		} else if (curToken(xb) == XT_lt) {
