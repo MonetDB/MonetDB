@@ -49,8 +49,17 @@ command line(msg:str):void
 address MILline
 comment "Produce comment for tracking the MIL code produced";
 
+command prelude()
+address MILprelude;
+
+command epilogue()
+address MILepilogue;
+
 include mil_utils;
 #include mil_commands; needs some work
+
+mil.prelude();
+
 @h
 #ifndef _MIL_SCENARIO_H
 #define _MIL_SCENARIO_H
@@ -74,6 +83,9 @@ mil_export str MILparser(Client c);
 mil_export str MILengine(Client c);
 mil_export void enterMILscope(Client c);
 mil_export void leaveMILscope(Client c);
+
+mil_export str MILprelude();
+mil_export str MILepilogue();
 #endif
 @-
 The MIL compilation environment is tagged with the client record.
@@ -435,3 +447,42 @@ MILline(int *ret, str *msg)
 	stream_printf(GDKout, "#%s\n", *msg);
 	return MAL_SUCCEED;
 }
+
+str
+MILprelude()
+{
+	Scenario s = getFreeScenario();
+	if (!s)
+		return NULL; /* should be an error */
+	s->name = "mil";
+	s->language = "mil";
+	s->initSystem = "MILinit";
+	s->exitSystem = "MILexit";
+	s->initClient = "MILinitClient";
+	s->exitClient = "MILexitClient";
+	s->reader = "MALreader";
+	s->parser = "MILparser";
+	s->optimizer = "XQUERYoptimizer";
+	/* s->tactics = .. */
+	s->engine = "MILengine";
+
+	s = getFreeScenario();
+	if (!s)
+		return NULL; /* should be an error */
+	s->name = "milCompiler";
+	s->language = "mil";
+	s->initSystem = "MILinit";
+	s->exitSystem = "MILexit";
+	s->initClient = "MILinitClient";
+	s->exitClient = "MILexitClient";
+	s->reader = "MALreader";
+	s->parser = "MILparser2";
+	return MAL_SUCCEED;
+}
+
+str
+MILepilogue()
+{
+	return MAL_SUCCEED;
+}
+
