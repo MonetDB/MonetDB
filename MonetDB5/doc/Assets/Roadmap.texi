@@ -63,8 +63,6 @@ provided using table level locks.
 @subsection XQuery Roadmap
 The XQuery compiler is currently only available on MonetDB Version 4.
 It is based on the @url{pathfinder.org,Pathfinder} compiler project.
-
-A novel compiler based on a XQuery algebra is under development.
 We expect that an alpha release for MonetDB Version 5
 becomes available in the fall of 2006.
 
@@ -72,7 +70,7 @@ becomes available in the fall of 2006.
 @subsection Embedded MonetDB Roadmap
 The embedded MonetDB software family provides support for both
 SQL and Xquery (Version 4 only). The software has been tuned to
-run on small scall hardware platforms.
+run on small scale hardware platforms.
 
 A broader deployment of the embedded technology requires both 
 extensions in the distributed MonetDB versions and its replication
