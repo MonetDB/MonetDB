@@ -491,7 +491,7 @@ address CALCbit2lng
 comment "Cast bit to lng ";
 
 #command calc.str( v:any_1, digits:int ) :str 
-pattern str( eclass:int, d1:int, s1:int, has_tz:int, v:any_1, digits:int ) :str 
+pattern calc.str( eclass:int, d1:int, s1:int, has_tz:int, v:any_1, digits:int ) :str 
 address SQLstr_cast
 comment "cast to string and check for overflow";
 
