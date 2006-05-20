@@ -147,12 +147,12 @@ malInclude(Client c, str name, str libname, int listing)
 	int oldlisting = c->listing;
 	int oldmode = c->mode;
 	int oldblkmode = c->blkmode;
-	str oldprompt = c->prompt;
 	ClientInput *oldbak = c->bak;
+	str oldprompt = c->prompt;
 
+	MalStkPtr oldglb = c->glb;
 	Module oldnspace = c->nspace;
 	Symbol oldprg = c->curprg;
-	MalStkPtr oldglb = c->glb;
 
 	c->yycur = 0;
 	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
@@ -167,32 +167,14 @@ malInclude(Client c, str name, str libname, int listing)
 Load any associated module first, because this sets the context for
 resolving addresses. 
 @c
-	} else if (libname) {
-		s = (str) loadModuleLibrary(libname);
-		if (s)
-			stream_printf(c->fdout, "#WARNING: %s\n", s);
+	} else {
+		if (libname) {
+			s = (str) loadModuleLibrary(libname);
+			if (s)
+				stream_printf(c->fdout, "#WARNING: %s\n", s);
+		}
 		MSinitClientPrg(c, "main");	/* re-initialize context */
 		runScenario(c);
-	} else {
-		str msg = MAL_SUCCEED;
-
-		MSinitClientPrg(c, "main");	/* re-initialize context */
-		@:runPhase(READER,restoreClient1)@
-		@:runPhase(PARSER,restoreClient1)@
-		/* restore IO channel */
-		if (c->fdin) {
-			(void) stream_close(c->fdin->s);
-			(void) stream_destroy(c->fdin->s);
-			(void) bstream_destroy(c->fdin);
-		}
-		@:restoreClient1()@
-		c->listing = listing;
-		@:runPhase(OPTIMIZE,restoreClient2)@
-		@:runPhase(SCHEDULER,restoreClient2)@
-		@:runPhase(ENGINE,restoreClient2)@
-		c->listing = oldlisting;
-		@:restoreClient2()@
-		return;
 	}
 
 	if (c->fdin) {

@@ -193,39 +193,6 @@ struct SCENARIO scenarioRec[MAXSCEN] = {
 	 "MALoptimizer", 0, 0,	
 	 0, 0, 0,
 	 "MALengine", (MALfcn) &MALengine, 0, 0},
-#if 0
-	{"mil","mil",
-	 "MILinit", 0,
-	 "MILexit", 0,
-	 "MILinitClient", 0,
-	 "MILexitClient", 0,
-	 "MALreader", 0, 0,
-	 "MILparser", 0, 0,
-	 0, 0, 0,               /* no MILoptimizer */
-	 0, 0, 0,               /* no MILscheduler */
-	 "MILengine", 0, 0, 0},
-	{"milCompiler","mil",
-	 "MILinit", 0,
-	 "MILexit", 0,
-	 "MILinitClient", 0,
-	 "MILexitClient", 0,
-	 "MALreader", 0, 0,
-	 "MILparser2", 0, 0,
-	 0, 0, 0,               /* no MILoptimizer */
-	 0, 0, 0,               /* no MILscheduler */
-	 0, 0, 0, 0             /* don;t execute */
-	},
-#endif
-	{"sql","sql",
-	 "SQLinit", 0,
-	 "SQLexit", 0,
-	 "SQLinitClient", 0,
-	 "SQLexitClient", 0,
-	 "SQLreader", 0, 0,
-	 "SQLparser", 0, 0,
-	 "SQLoptimizer", 0, 0,
-	 0, 0, 0,
-	 "SQLengine", 0, 0, 0},
 	{0,0,			/* name */
 	 0, 0,			/* init */
 	 0, 0,			/* exit */
