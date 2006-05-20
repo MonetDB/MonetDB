@@ -36,6 +36,7 @@ support over the box, which would permit
 multiple clients to exchange (scalar) 
 information easily.
 @mal
+module mil_utils;
 
 pattern mil.open():void
 address MILopen
@@ -73,8 +74,9 @@ command mil.hasMoreElements()(:lng,:str)
 address MILhasMoreElements
 comment "Locate next element in the box";
 
-pattern mil.prelude():void 
-address MILprelude
+
+command prelude():void 
+address MILutils_prelude
 comment "Initialize the const box";
 
 
@@ -125,7 +127,7 @@ mal_export str MILdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MILdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MILclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MILopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str MILprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MILutils_prelude();
 mal_export str MILinsert_bun(int *r, int *bid, ptr h, ptr t);
 mal_export str MILinsert_void_bun(int *r, int *bid, ptr t);
 #endif
@@ -148,7 +150,7 @@ MILinsert_bun(int *r, int *bid, ptr h, ptr t)
 Version 4 contains a series of predefined constants.
 They are stored in a BOX for retrieval.
 @mal
-mil.prelude();
+mil_utils.prelude();
 
 #theta join operator encoding
 EQ :=0;
@@ -186,36 +188,36 @@ M_2_SQRTPI :=1.12837916709551257390LL;
 M_SQRT2 :=1.41421356237309504880LL;
 M_SQRT1_2 :=0.70710678118654752440LL;
 
-mil_utils.deposit("EQ",EQ);
-mil_utils.deposit("LT",LT);
-mil_utils.deposit("LE",LE);
-mil_utils.deposit("GT",GT);
-mil_utils.deposit("GE",GE);
-mil_utils.deposit("STORE_MEM",STORE_MEM);
-mil_utils.deposit("STORE_MMAP",STORE_MMAP);
-mil_utils.deposit("STORE_COMPR",STORE_COMPR);
-mil_utils.deposit("BUF_NORMAL",BUF_NORMAL);
-mil_utils.deposit("BUF_RANDOM",BUF_RANDOM);
-mil_utils.deposit("BUF_SEQUENTIAL",BUF_SEQUENTIAL);
-mil_utils.deposit("BUF_WILLNEED",BUF_WILLNEED);
-mil_utils.deposit("BUF_DONTNEED",BUF_DONTNEED);
-mil_utils.deposit("EBUSY",EBUSY);
-mil_utils.deposit("BAT_READ",BAT_READ);
-mil_utils.deposit("BAT_APPEND",BAT_APPEND);
-mil_utils.deposit("BAT_WRITE",BAT_WRITE);
-mil_utils.deposit("M_E",M_E);
-mil_utils.deposit("M_LOG2E",M_LOG2E);
-mil_utils.deposit("M_LOG10E",M_LOG10E);
-mil_utils.deposit("M_LN2",M_LN2);
-mil_utils.deposit("M_LN10",M_LN10);
-mil_utils.deposit("M_PI",M_PI);
-mil_utils.deposit("M_PI_2",M_PI_2);
-mil_utils.deposit("M_PI_4",M_PI_4);
-mil_utils.deposit("M_1_PI",M_1_PI);
-mil_utils.deposit("M_2_PI",M_2_PI);
-mil_utils.deposit("M_2_SQRTPI",M_2_SQRTPI);
-mil_utils.deposit("M_SQRT2",M_SQRT2);
-mil_utils.deposit("M_SQRT1_2",M_SQRT1_2);
+mil.deposit("EQ",EQ);
+mil.deposit("LT",LT);
+mil.deposit("LE",LE);
+mil.deposit("GT",GT);
+mil.deposit("GE",GE);
+mil.deposit("STORE_MEM",STORE_MEM);
+mil.deposit("STORE_MMAP",STORE_MMAP);
+mil.deposit("STORE_COMPR",STORE_COMPR);
+mil.deposit("BUF_NORMAL",BUF_NORMAL);
+mil.deposit("BUF_RANDOM",BUF_RANDOM);
+mil.deposit("BUF_SEQUENTIAL",BUF_SEQUENTIAL);
+mil.deposit("BUF_WILLNEED",BUF_WILLNEED);
+mil.deposit("BUF_DONTNEED",BUF_DONTNEED);
+mil.deposit("EBUSY",EBUSY);
+mil.deposit("BAT_READ",BAT_READ);
+mil.deposit("BAT_APPEND",BAT_APPEND);
+mil.deposit("BAT_WRITE",BAT_WRITE);
+mil.deposit("M_E",M_E);
+mil.deposit("M_LOG2E",M_LOG2E);
+mil.deposit("M_LOG10E",M_LOG10E);
+mil.deposit("M_LN2",M_LN2);
+mil.deposit("M_LN10",M_LN10);
+mil.deposit("M_PI",M_PI);
+mil.deposit("M_PI_2",M_PI_2);
+mil.deposit("M_PI_4",M_PI_4);
+mil.deposit("M_1_PI",M_1_PI);
+mil.deposit("M_2_PI",M_2_PI);
+mil.deposit("M_2_SQRTPI",M_2_SQRTPI);
+mil.deposit("M_SQRT2",M_SQRT2);
+mil.deposit("M_SQRT1_2",M_SQRT1_2);
 @-
 @{
 @+ Implementation
@@ -238,17 +240,14 @@ The content of this box my only be changed by the Administrator.
 @c
 
 str
-MILprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MILutils_prelude()
 {
 	Box box;
 
-	(void) mb;
-	(void) stk;
-	(void) pci;		/* fool compiler */
 	@:authorize(prelude)@
 	box = openBox("mil");
 	if (box == 0)
-		return throwMessage("mil.prelude", "failed to open box");
+		return throwMessage("mil_utils.prelude", "failed to open box");
 	/* if the box was already filled we can skip initialization */
 	if (box->sym->vtop == 0) {
 		/* old bat.mx and algebra.mx constants */
