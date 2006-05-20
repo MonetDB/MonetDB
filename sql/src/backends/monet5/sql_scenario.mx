@@ -46,7 +46,6 @@ sql_export str SQLparser(Client c);
 sql_export str SQLengine(Client c);
 
 sql_export str SQLinitEnvironment(int *ret);
-sql_export str SQLcompile(str *ret, str *expr);
 sql_export str SQLstatement(str *ret, str *expr);
 sql_export str SQLtrace(int *ret);
 
@@ -74,8 +73,6 @@ we update its context descriptor to denote an SQL scenario.
 /* include mal optimizer */
 #include "optimizer.h"
 #include "mal_authorize.h"
-
-static void pushCatchDefault(MalBlkPtr mb, str nme, int autocommit);
 
 static int SQLinitialized;
 
@@ -324,7 +321,7 @@ SQLinitEnvironment(int *ret)
 	return SQLinitAdmin(MCgetClient());
 }
 @-
-The SQLcompile operation can be used by separate
+The SQLstatement operation can be used by separate
 front-ends to benefit from the SQL functionality.
 It expects a string and returns the name of the
 corresponding MAL block as it is known in the
@@ -353,10 +350,11 @@ freeVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 
 /* #define _SQL_COMPILE */
 str
-SQLcompileInternal(str *ret, str *expr, int flag)
+SQLstatement(str *ret, str *expr)
 {
 	int err = 0;
 	mvc o, *m;
+	int ac;
 	buffer *b;
 	char *n;
 	str msg= MAL_SUCCEED;
@@ -373,10 +371,11 @@ SQLcompileInternal(str *ret, str *expr, int flag)
 		sql= ((backend *) c->state[PARSER]);
 	}
 	if(*ret)
-		return throwMessage("SQLcompile", "Catalogue not available\n");
+		return throwMessage("SQLstatement", "Catalogue not available\n");
 
 	initSQLreferences();
 	m = sql->mvc;
+ 	ac = m->session->auto_commit;
 	if( !m->session->active) {
 		int schema_nr = mvc_trans(m);
 		if (m->cache && (m->schema_number < schema_nr || m->qc->id > 1000)) {
@@ -433,11 +432,9 @@ optimize and produce code.
 We don;t search the cache for a previous incarnation.
 @c
 	{	
-		Symbol curPrg = c->curprg;
-		int vtop = c->curprg->def->vtop;
+		int oldvtop = c->curprg->def->vtop;
+		int oldstop = c->curprg->def->stop;
 		stmt *s = sql_symbol2stmt(m);
-
-		c->curprg = NULL;
 
 		if (!s && (err = mvc_status(m))) {
 			stream_printf(c->fdout, "%s\n", m->errstr);
@@ -448,12 +445,17 @@ We don;t search the cache for a previous incarnation.
 		}
 		assert(s);
 		/* generate MAL code */
-		backend_dumpproc(sql, c, NULL, s);
+		if (oldstop == 2) /* remove main.end */
+			c->curprg->def->stop = 1; 
+		backend_callinline(sql, c, s );
+		pushEndInstruction(c->curprg->def);
 
 		chkTypes(c->nspace, c->curprg->def); /* resolve types */
 
-		/* we know more in this case then
-			chkProgram(c->nspace, c->curprg->def); */
+#ifdef _SQL_COMPILE
+		printFunction(c->fdout, c->curprg->def, c->listing);
+#endif
+
 		if (!c->curprg->def->errors && m->mode != m_prepare &&
 /*
 		    (msg = sql_get_var(m,"optimizer")) == NULL) 
@@ -461,24 +463,17 @@ We don;t search the cache for a previous incarnation.
 		    !m->cache) {
 			OPTmultiplex(c->curprg->def,0,0);
 		}
-		if( flag) { /* execute it as well */
-			if (!c->curprg->def->errors) {
-				backend *be = c->state[PARSER];
-				sql->out = NULL; /* no output */
-				c->state[PARSER] = sql;
-				msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
-				c->state[PARSER] = be;
-			}
+		if (!c->curprg->def->errors) {
+			backend *be = c->state[PARSER];
+			sql->out = NULL; /* no output */
+			c->state[PARSER] = sql;
+			msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
+			c->state[PARSER] = be;
 			MSresetInstructions(c->curprg->def, 1);
-			freeVariables(c->curprg->def, c->glb, vtop);
-		} else
-			*ret= GDKstrdup(getFunctionId(getInstrPtr(c->curprg->def,0)));
-		c->curprg = curPrg;
-
-#ifdef _SQL_COMPILE
-		printFunction(c->fdout, c->curprg->def, c->listing);
-#endif
-		c->curprg = curPrg;
+			if (oldstop == 2) /* put main.end back */
+				pushEndInstruction(c->curprg->def); 
+			freeVariables(c->curprg->def, c->glb, oldvtop);
+		}
 	}
 #ifdef _SQL_COMPILE
 	stream_printf(c->fdout, "#parse result %d\n", err);
@@ -492,24 +487,8 @@ endofcompile:
 	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
 	*m = o;
+	m->session->auto_commit = ac;
 	return msg;
-}
-@-
-Implementation of the execution of a single SQL statement is postponed.
-@c
-str
-SQLcompile(str *ret, str *expr){
-	SQLcompileInternal(ret,expr,0);
-	return MAL_SUCCEED;
-}
-str
-SQLstatement(str *ret, str *cmd)
-{
-#ifdef _SQL_READER_DEBUG
-	stream_printf(GDKout, "#SQLstatement:%s\n", *cmd);
-#endif
-	SQLcompileInternal(ret,cmd,1);
-	return MAL_SUCCEED;
 }
 
 static int
@@ -959,7 +938,6 @@ The default action is to print them out at the end of the
 query block.
 @c
 	if (err == 0) {
-		pushCatchDefault(c->curprg->def, "sqlerror", m->session->auto_commit);
 		pushEndInstruction(c->curprg->def);
 
 		chkTypes(c->nspace, c->curprg->def); /* resolve types */
@@ -1230,74 +1208,4 @@ SQLassertLng(int *ret, lng *flg, str *msg)
 	if (*flg)
 		return throwException("SQLerror", "assert", *msg);
 	return MAL_SUCCEED;
-}
-
-@- Utilities
-Catching errors is a recurring situation. The block below 
-generates the default code block, ie catch it and print
-the error. It should also deal with the auto_commit
-situation. [todo]
-For the time being we do not catch errors. They are
-passed to the environment.
-@c
-static void
-pushCatchDefault(MalBlkPtr mb, str nme, int autocommit)
-{
-/*
-	InstrPtr p;
-*/
-
-/*	int i;*/
-	(void) mb;
-	(void) nme;
-	(void) autocommit;
-
-/*
-	if (autocommit) {
-		p = newInstruction(mb,ASSIGNsymbol);
-		getArg(p,0)= newTmpVariable(mb,TYPE_any);
-		getModuleId(p) = putName("sql",3);
-		getFunctionId(p) = putName("commit",6);
-		pushInstruction(mb, p);
-	}
-*/
-/* no catch
-	p= newInstruction(mb,CATCHsymbol);
-	i= findVariable(mb,nme);
-	if( i< 0) i= newVariable(mb,GDKstrdup(nme),TYPE_str);
-	getDestVar(p) = i;
-	p->argc =1;
-	p->retc = 1;
-	pushInstruction(mb,p);
-
-	p= newInstruction(mb,ASSIGNsymbol);
-	getArg(p,0)= newTmpVariable(mb,TYPE_any);
-	getModuleId(p)= putName("io",2);
-	getFunctionId(p)= putName("print",5);
-	pushArgumentId(mb, p, GDKstrdup(nme));
-	pushInstruction(mb,p);
-*/
-
-/*
-	if (autocommit) {
-		p = newInstruction(mb,ASSIGNsymbol);
-		getArg(p,0)= newTmpVariable(mb,TYPE_any);
-		setModuleId(p, putName("sql",3));
-		setFunctionId(p, putName("rollback",8));
-		pushInstruction(mb, p);
-	}
-*/
-/*       else {
-		p= newInstruction(mb,RAISEsymbol);
-		p->barrier= RAISEsymbol;
-		p->argv[0] = findVariable(mb,GDKstrdup("sqlerror"));
-		pushStr(mb,p,"Transaction abort");
-		pushInstruction(mb,p);
-	}
-
-	p= newInstruction(mb,EXITsymbol);
-	p->argv[0] = findVariable(mb,GDKstrdup(nme));
-	p->barrier= EXITsymbol;
-	pushInstruction(mb,p);
-*/
 }

@@ -43,12 +43,6 @@ address SQLcommit_wrap;
 command rollback():void
 address SQLrollback_wrap;
 
-command compile(cmd:str):str 
-address SQLcompile
-comment "Compile a single sql statement and return a MAL proc.
-If flag >0 then the result is kept in the catalogue. Otherwise
-the catalog is reset before returning.";
-
 command eval(cmd:str):str 
 address SQLstatement
 comment "Execute a single sql statement";
@@ -379,7 +373,7 @@ command calc.stringright(s:str,l:int):str
 address STRsuffix;
 
 command calc.stringlength( s:str ) :int 
-address stringLength;
+address STRstringLength;
 
 # math 
 command calc.acos(x:flt):flt address MATHunary_ACOSflt;

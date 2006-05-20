@@ -1516,6 +1516,8 @@ backend_callinline(backend *be, Client c, stmt *s )
 
 	curInstr = getInstrPtr(curBlk, 0);
 
+	assert(curBlk->stop == 1);
+
 	if (m->argc) { /* we shouldn't come here as we aren't caching statements */
 		int argc=0;
 		char arg[32];
@@ -1597,7 +1599,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	backend_dumpstmt(be, curBlk, s);
 
 	pushEndInstruction(curBlk);
-	addQueryToCache(c);
+	if (cq)
+		addQueryToCache(c);
 	curPrg = c->curprg;
 	if (c->backup) {
 		c->curprg = c->backup;
