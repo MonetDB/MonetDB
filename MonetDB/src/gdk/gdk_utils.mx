@@ -510,11 +510,12 @@ GDKmem_heapcheck(int t)
 	/* correct heap estimate with the real thing */
 	if (mallinfo_ok) {
 		struct mallinfo m = MT_mallinfo();
-		if (m.usmblks < 0 || m.uordblks < 0 || m.hblkhd < 0) {
+#if SIZEOF_VOID_P==8
+		if (m.usmblks < 0 || m.uordblks < 0 || m.hblkhd < 0) 
 			mallinfo_ok = 0; /* incredible POSIX incompetence!! non-64-bit safe mallinfo */
-		} else {
+		else 
+#endif 
 			GDK_mallocedbytes_estimate = (size_t) (m.usmblks + m.uordblks + m.hblkhd);
-		}
 	}
 	GDK_heapcheck_last = t;
 }

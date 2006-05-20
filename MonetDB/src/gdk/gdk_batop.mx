@@ -1481,7 +1481,6 @@ BATsort@3(BAT *b)
 		if (bn == NULL)
 			return bn;
 
-		bn->hsorted = (bit) GDK_SORTED@2;
 		return bn;
 	}
 	bn = batcopy(b, b->htype, tt, TRUE);
@@ -1514,7 +1513,6 @@ BATorder@3(BAT *b)
 	if ((GDK_SORTED@2 == GDK_SORTED_REV && b->htype == TYPE_void) || (b->htype != TYPE_void && BATordered@4(b))) {
 		/* b is ordered in the opposite direction, hence we revert b */
 		b = BATrevert(b);
-		b->hsorted = (bit) GDK_SORTED@2;
 		return b;
 	}
 	GDKqsort@3(BUNfirst(b), (b->hheap)?b->hheap->base:NULL, BATcount(b), BUNsize(b), b->htype, b->hloc);
@@ -1553,7 +1551,18 @@ BATrevert(BAT *b)
 		memcpy(q, buf, xx);
 	}
 	HASHdestroy(b);
-	b->hsorted = b->tsorted = FALSE;
+	if (b->hsorted&GDK_SORTED) 
+		b->hsorted = GDK_SORTED_REV;
+	else if (b->hsorted&GDK_SORTED_REV) 
+		b->hsorted = GDK_SORTED;
+	else
+		b->hsorted = FALSE;
+	if (b->tsorted&GDK_SORTED) 
+		b->tsorted = GDK_SORTED_REV;
+	else if (b->tsorted&GDK_SORTED_REV) 
+		b->tsorted = GDK_SORTED;
+	else
+		b->tsorted = FALSE;
 	GDKfree(buf);
 	return b;
 }
