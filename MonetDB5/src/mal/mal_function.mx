@@ -791,6 +791,10 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 	for(i=0; i<mb->vtop; i++){
 		getVarDepth(mb,i)=0;
 		getVarScope(mb,i)=0;
+		if( mb->var[i]->name == 0 && !isTmpVar(mb,i)){
+			GDKerror("Name missing in variable %d\n",i);
+			mb->errors++;
+		}
 	}
 
 	/* all signature variables are declared at outer level */

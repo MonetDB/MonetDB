@@ -2509,12 +2509,14 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 			}
 			advance(t);
 		} else {
-			if (isTmpVar(mb, getArg(p, i))) {
-				if( ! isTypeVar(mb,getArg(p,i)) )
-					sprintf(t, "%c%d", TMPMARKER, getVarTmp(mb, getArg(p, i)));
-				advance(t);
-			} else
+			if( ! isTypeVar(mb,getArg(p,i)) ){
+				if (isTmpVar(mb, getArg(p, i))) {
+					if( ! isTypeVar(mb,getArg(p,i)) )
+						sprintf(t, "%c%d", TMPMARKER, getVarTmp(mb, getArg(p, i)));
+					advance(t);
+				} else
 				sprintf(t, "%s", mb->var[getArg(p, i)]->name);
+			} 
 		}
 @-
 Dump the type and value information.
