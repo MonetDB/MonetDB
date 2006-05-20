@@ -61,10 +61,10 @@ factory random(seed:int,limit:int):int;
     rnd:=seed;
     lim:= limit;
 barrier lim;
-    LEAVE lim:= lim-1;
+    leave lim:= lim-1;
     rnd:= rnd*125;
-    YIELD rnd:= rnd % 32676;
-    REDO lim;
+    yield rnd:= rnd % 32676;
+    redo lim;
 exit lim;
 end random;
 

@@ -219,7 +219,7 @@ the bbp module as follows:
 barrier (idx,hd,tl):= newIterator(B);
     ...
     redo (idx,hd,tl):= hasMoreElements(B);
-exit i;
+exit (ids,hd,tl);
 @end example
 Where idx is an integer to denote the row in the BAT,
 hd and tl denote values of the current element.

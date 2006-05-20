@@ -432,9 +432,9 @@ return msg;
 The type variables ensure that the return type equals the
 argument type. Type variables can be used at any place
 where a type name is permitted. 
-Beware that polymorphic type variables are propagated
+Beware that polymorphic typed variables are propagated
 throughout the function body. This may invalidate 
-type resolutions taken @ref{Type resolution}.
+type resolutions decisions taken  earlier (See @ref{Type resolution}).
 
 This version of @code{helloWorld} can also be used for
 other arguments types, i.e. @code{bit,sht,lng,flt,dbl,...}.
