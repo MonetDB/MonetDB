@@ -1301,6 +1301,3 @@ pushCatchDefault(MalBlkPtr mb, str nme, int autocommit)
 	pushInstruction(mb,p);
 */
 }
-
-@mal
-# nothing special to do

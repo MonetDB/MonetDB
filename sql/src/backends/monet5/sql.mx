@@ -430,31 +430,29 @@ comment "round off the value v to nearests multiple of r";
 command aggr.exist(b:bat[:any_1,:any_2], h:any_1):bit 
 address ALGexist;
 
-module calc;
-
 @:mal_round(sht)@
 @:mal_round(int)@
 @:mal_round(lng)@
 
-command round( v:flt, r:flt ) :flt 
+command calc.round( v:flt, r:flt ) :flt 
 address dbl_round_wrap
 comment "round off the value v to nearests multiple of r";
-command round( v:dbl, r:dbl ) :dbl 
+command calc.round( v:dbl, r:dbl ) :dbl 
 address dbl_round_wrap
 comment "round off the value v to nearests multiple of r";
 
 @= mal_cast
-command @1( v:str ) :@1 
+command calc.@1( v:str ) :@1 
 address str_2_@1
 comment "Cast to @1";
 #address CALCstr2@1
-#command str( v:@1 ) :str
+#command calc.str( v:@1 ) :str
 #address CALC@12str
 #comment "Cast @1 to str";
-command @1( v:str, digits:int ) :@1 
+command calc.@1( v:str, digits:int ) :@1 
 address str_2num_@1
 comment "cast to @1 and check for overflow";
-command @1( v:str, digits:int, scale:int ) :@1 
+command calc.@1( v:str, digits:int, scale:int ) :@1 
 address str_2dec_@1
 comment "cast to dec(@1) and check for overflow";
 @mal
@@ -464,7 +462,7 @@ comment "cast to dec(@1) and check for overflow";
 
 @= mal_castfromstr
 #address CALCstr2@1
-command @1( v:str ) :@1 
+command calc.@1( v:str ) :@1 
 address str_2_@1
 comment "cast to @1";
 @mal
@@ -475,34 +473,34 @@ comment "cast to @1";
 @:mal_castfromstr(date)@
 
 @mal
-command str( v:bit) :str 
+command calc.str( v:bit) :str 
 address CALCbit2str
 comment "Idempotent cast of strings";
-command str( v:str) :str 
+command calc.str( v:str) :str 
 address CALCstr2str
 comment "Idempotent cast of strings";
 
-command sht( v:bit) :sht 
+command calc.sht( v:bit) :sht 
 address CALCbit2sht
 comment "Cast bit to sht ";
-command int( v:bit) :int 
+command calc.int( v:bit) :int 
 address CALCbit2int
 comment "Cast bit to int ";
-command lng( v:bit) :lng 
+command calc.lng( v:bit) :lng 
 address CALCbit2lng
 comment "Cast bit to lng ";
 
-#command str( v:any_1, digits:int ) :str 
+#command calc.str( v:any_1, digits:int ) :str 
 pattern str( eclass:int, d1:int, s1:int, has_tz:int, v:any_1, digits:int ) :str 
 address SQLstr_cast
 comment "cast to string and check for overflow";
 
 @= mal_cast_2dec
 #address CALC@22@1
-command @1( v:@2) :@1 
+command calc.@1( v:@2) :@1 
 address @2_2_@1
 comment "cast @2 to @1";
-command @1( v:@2, digits:int, scale:int ) :@1 
+command calc.@1( v:@2, digits:int, scale:int ) :@1 
 address @2_num2dec_@1
 comment "cast number to decimal(@1) and check for overflow";
 @mal
@@ -514,10 +512,10 @@ comment "cast number to decimal(@1) and check for overflow";
 @:mal_cast_2dec(lng,dbl)@
 
 @= mal_cast_dec2
-command @1( s1:int, v:@2) :@1 
+command calc.@1( s1:int, v:@2) :@1 
 address @2_dec2_@1
 comment "cast decimal(@2) to @1 and check for overflow";
-command @1( s1:int, v:@2, d2:int, s2:int ) :@1 
+command calc.@1( s1:int, v:@2, d2:int, s2:int ) :@1 
 address @2_dec2dec_@1
 comment "cast decimal(@2) to decimal(@1) and check for overflow";
 @mal
@@ -576,8 +574,9 @@ address SQLprelude;
 command epilogue()
 address SQLepilogue;
 
-sql.prelude();
 include sql_cache;
+sql.prelude();
+
 @h
 #ifndef _SQL_H
 #define _SQL_H
