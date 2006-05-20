@@ -83,7 +83,7 @@ command length( s:str ) :int
 address STRLength
 comment "Return the length of a string.";
 command stringlength( s:str ) :int 
-address stringLength
+address STRstringLength
 comment "Return the length of a right trimed string (SQL semantics).";
 command nbytes( s:str ) :int 
 address STRBytes
@@ -225,7 +225,7 @@ mal_export str STRtostr(str *res, str *src);
 mal_export str STRConcat(str *res, str *val1, str *val2);
 mal_export str STRLength(int *res, str *arg1);
 /* length of rtrimed string, needed for sql */
-mal_export str stringLength(int *res, str *s);
+mal_export str STRstringLength(int *res, str *s);
 mal_export str STRBytes(int *res, str *arg1);
 mal_export str STRTail(str *res, str *arg1, int *offset);
 mal_export str STRSubString(str *res, str *arg1, int *offset, int *length);
@@ -2284,7 +2284,7 @@ STRspace(str *ret, int *l){
 }
 
 str
-stringLength(int *res, str *s)
+STRstringLength(int *res, str *s)
 {
 	str r = NULL;
 	strRtrim(&r, *s);
