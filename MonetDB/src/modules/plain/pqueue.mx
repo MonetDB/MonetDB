@@ -323,6 +323,7 @@ int pqueue_enqueue_any@1(BAT *h, oid *idx, ptr el, int tpe)
     }
     else break;
   }
+  h->hsorted = h->tsorted = FALSE;
   
   return GDK_SUCCEED;
 }
@@ -378,6 +379,7 @@ int pqueue_movedowntop_any@1(BAT *h)
         }
       else break;
     }
+  h->hsorted = h->tsorted = FALSE;
 
   return GDK_SUCCEED;
 }
@@ -420,7 +422,6 @@ int pqueue_topreplace_any@1(BAT *h, oid *idx, ptr el, int tpe)
     BUNinplace(h, hbase, idx, el, 0);
     *(oid*)hbase = *idx;
     pqueue_movedowntop_any@1(h);
-    h->hsorted = h->tsorted = FALSE;
   }
   
   return GDK_SUCCEED;
