@@ -2458,6 +2458,8 @@ PFpa_element (const PFpa_op_t *fragment,
         PFoops (OOPS_FATAL,
                 "Element constructor requires iter|pos|item schema "
                 "for the element content.");
+#else
+    (void) pos; /* pacify compiler */
 #endif
 
     ret = wire2 (pa_element, fragment, 
