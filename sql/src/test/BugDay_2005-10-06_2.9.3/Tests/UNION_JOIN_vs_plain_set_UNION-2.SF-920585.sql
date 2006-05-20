@@ -1,5 +1,6 @@
-select name, query, istable, system, commit_action, "temporary" from (select * from tables where tables.system = 1 union select * from tables where tables.system = 1) as a;
+select name, query, istable, system, commit_action, "temporary" from (select * from tables where tables.system = 1 union select * from tables where tables.system = 1) as a order by name;
 
+select * from (
 SELECT 'null' AS TABLE_CAT,
 	schemas.name AS TABLE_SCHEM,
 	tables.name AS TABLE_NAME,
@@ -44,4 +45,5 @@ SELECT 'null' AS TABLE_CAT,
 FROM tables, schemas
 WHERE tables.schema_id = schemas.id
 	AND tables.istable = 0
-	AND (tables.name = 'ttables' or tables.name = 'tcolumns' or tables.name = 'users');
+	AND (tables.name = 'ttables' or tables.name = 'tcolumns' or tables.name = 'users') 
+) as tables order by TABLE_NAME;
