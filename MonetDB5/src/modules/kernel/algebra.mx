@@ -2536,7 +2536,7 @@ ALGrevert(int *result, int *bid)
 	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.tsort", "Cannot access descriptor");
+		return throwMessage("algebra.revert", "Cannot access descriptor");
 	}
 	bn = BATcopy(b);
 	BBPreleaseref(b->batCacheid);
