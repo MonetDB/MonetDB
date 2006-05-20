@@ -538,9 +538,13 @@ xscanner_query_processed(xscanner *s)
 static int
 xscanner_error(xscanner *lc, int cur)
 {
+	static int seenbefore=0;
 	switch (cur) {
 	case EOF:
+		if ( seenbefore )
+			exit(-1);
 		xqry_error(lc, 1, "unexpected end of input");
+		seenbefore++;
 		return -1;	/* EOF needs -1 result */
 	default:
 		xqry_error(lc, 1, "unexpected control character (%d)", cur);
@@ -684,6 +688,7 @@ xscanner_string(xscanner *lc, int quote)
 	bstream *rs = lc->c->fdin;
 	int cur = quote;
 	int escape = 0;
+	static int seenbefore=0;
 
 	lc->started = 1;
 	while (cur != EOF) {
@@ -718,7 +723,10 @@ xscanner_string(xscanner *lc, int quote)
 			cur = xscanner_getc(lc);
 		}
 	}
+	if ( seenbefore )
+		exit(-1);
 	xqry_error(lc, 2, "unexpected end of input");
+	seenbefore++;
 	return LEX_ERROR;
 }
 
@@ -796,6 +804,7 @@ static int
 number(xscanner * lc, int cur)
 {
 	int token = XT_INT;
+	static int seenbefore=0;
 
 	lc->started = 1;
 	/* TODO start with . */
@@ -820,7 +829,9 @@ number(xscanner * lc, int cur)
 			utf8_putchar(lc, cur);
 		return xscanner_token(lc, token);
 	} else {
+		if( seenbefore) exit(-1);
 		xqry_error( lc, 2, "unexpected symbol %c", cur);
+		seenbefore++;
 		return LEX_ERROR;
 	}
 }
@@ -829,6 +840,7 @@ static
 int xscanner_symbol(xscanner * lc, int cur)
 {
 	int next = 0;
+	static int seenbefore=0;
 
 	if (cur == '/') {
 		next = xscanner_getc(lc);
@@ -981,7 +993,10 @@ int xscanner_symbol(xscanner * lc, int cur)
 		lc->started = 1;
 		return xscanner_token(lc, cur);
 	}
+	if( seenbefore) 
+		exit(-1);
 	xqry_error( lc, 3, "unexpected symbol (%c)", cur);
+	seenbefore++;
 	return LEX_ERROR;
 }
 
