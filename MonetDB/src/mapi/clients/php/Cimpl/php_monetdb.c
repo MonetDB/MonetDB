@@ -839,6 +839,7 @@ PHP_FUNCTION(monetdb_query)
 {
 	zval **query, **monetdb_link = NULL;
 	int id = -1;
+	char *myq;
 	Mconn *monetdb;
 	Mresult *monetdb_result;
 	php_monetdb_result_handle *monetdb_result_h;
@@ -866,11 +867,16 @@ PHP_FUNCTION(monetdb_query)
 
 	ZEND_FETCH_RESOURCE2(monetdb, Mconn *, monetdb_link, id, "MonetDB link", le_link, le_plink);
 
+	/* append ; to the query so it is terminated in those cases where
+	 * the user forgot it */
 	convert_to_string_ex(query);
-	monetdb_result = mapi_query(monetdb, Z_STRVAL_PP(query));
+	myq = alloca(sizeof(char) * (strlen(Z_STRVAL_PP(query)) + 2));
+	memcpy(myq, Z_STRVAL_PP(query), strlen(Z_STRVAL_PP(query)) + 1);
+	strcat(myq, ";");
+	monetdb_result = mapi_query(monetdb, myq);
 	if ((MG(auto_reset_persistent) & 2) && monetdb_result == NULL) {
 		mapi_reconnect(monetdb);
-		monetdb_result = mapi_query(monetdb, Z_STRVAL_PP(query));
+		monetdb_result = mapi_query(monetdb, myq);
 	}
 
 	if (monetdb_result == NULL) {
@@ -1481,9 +1487,19 @@ PHP_FUNCTION(monetdb_fetch_result)
 		PHP_MONETDB_ERROR_RESULT("Can't jump to row: %s", monetdb_result);
 		RETURN_FALSE;
 	}
+	if (mapi_fetch_row(monetdb_result) == 0 &&
+			 mapi_error(monetdb_result_h->conn) != 0)
+	{
+		PHP_MONETDB_ERROR("Can't get row: %s", monetdb_result_h->conn);
+		RETURN_FALSE;
+	}
 	data = mapi_fetch_field(monetdb_result, field_offset);
 
 	if (data == NULL) {
+		if (mapi_error(monetdb_result_h->conn) != 0) {
+			PHP_MONETDB_ERROR("Can't fetch field: %s", monetdb_result_h->conn);
+			RETURN_FALSE;
+		}
 		Z_TYPE_P(return_value) = IS_NULL;
 	} else {
 		Z_STRVAL_P(return_value) = estrndup(data, strlen(data));
@@ -1569,9 +1585,19 @@ static void php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, long result_typ
 			PHP_MONETDB_ERROR_RESULT("Can't jump to row: %s", monetdb_result);
 			RETURN_FALSE;
 		}
+		if (mapi_fetch_row(monetdb_result) == 0 &&
+				mapi_error(monetdb_result_h->conn) != 0)
+		{
+			PHP_MONETDB_ERROR("Can't get row: %s", monetdb_result_h->conn);
+			RETURN_FALSE;
+		}
 		element = mapi_fetch_field(monetdb_result, i);
-		
+
 		if (element == NULL) {
+			if (mapi_error(monetdb_result_h->conn) != 0) {
+				PHP_MONETDB_ERROR("Can't fetch field: %s", monetdb_result_h->conn);
+				RETURN_FALSE;
+			}
 			if (result_type & MONETDB_NUM) {
 				add_index_null(return_value, i);
 			}
@@ -1800,7 +1826,17 @@ static void php_monetdb_data_info(INTERNAL_FUNCTION_PARAMETERS, int entry_type)
 				PHP_MONETDB_ERROR_RESULT("Can't jump to row: %s", monetdb_result);
 				RETURN_FALSE;
 			}
+			if (mapi_fetch_row(monetdb_result) == 0 &&
+					mapi_error(monetdb_result_h->conn) != 0)
+			{
+				PHP_MONETDB_ERROR("Can't get row: %s", monetdb_result_h->conn);
+				RETURN_FALSE;
+			}
 			Z_LVAL_P(return_value) = (mapi_fetch_field(monetdb_result, field_offset) == NULL);
+			if (mapi_error(monetdb_result_h->conn) != 0) {
+				PHP_MONETDB_ERROR("Can't fetch field: %s", monetdb_result_h->conn);
+				RETURN_FALSE;
+			}
 		break;
 	}
 	Z_TYPE_P(return_value) = IS_LONG;
