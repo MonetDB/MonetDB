@@ -802,8 +802,12 @@ parseCommonContent(Client cntxt, Xbackend xb)
 	int res = PARSE_ERR;
 
 	@:ptrace(parseCommonContent)@
-	if (curToken(xb) == XT_2open || curToken(xb) == XT_2close ||
-		parseEnclosedExpr(cntxt,xb) == PARSE_OK){
+	if (curToken(xb) == XT_2open || curToken(xb) == XT_2close) { 
+		xb->token = NO_TOKEN;
+		@:etrace(parseCommonContent)@
+		return PARSE_OK;
+	}
+	if (parseEnclosedExpr(cntxt,xb) == PARSE_OK){
 		@:etrace(parseCommonContent)@
 		return PARSE_OK;
 	}
@@ -1713,13 +1717,14 @@ parseQuantifiedExpr(Client cntxt, Xbackend xb)
 	@:ptrace(parseQuantifiedExpr)@
 	if (curToken(xb) != XT_some && curToken(xb) != XT_every)
 		return PARSE_ERR;
+	nextToken(xb);
 	do {
 		if (curToken(xb) == ',')
 			nextToken(xb);
 		if (parseVarName(cntxt, xb) == PARSE_ERR)
 			return PARSE_ERR;
 		parseTypeDeclaration(cntxt, xb);
-		if (curToken(xb) == XT_in)
+		if (curToken(xb) != XT_in)
 			return PARSE_ERR;
 		xb->token = NO_TOKEN;
 		if (parseExprSingle(cntxt, xb) == PARSE_ERR)
