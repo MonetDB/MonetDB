@@ -223,11 +223,15 @@ They should be evaluated in place
 STATIC int 
 parseEnclosedExpr(Client cntxt, Xbackend xb)
 {
+	int state = xb->xs->state;
 	if (curToken(xb) != '{')
 		return PARSE_ERR;
+
+	xb->xs->state = XS_ENCLOSED_EXPR;
 	@:ptrace(parseEnclosedExpr)@
 	nextToken(xb);
 	parseExpr(cntxt,xb);
+	xb->xs->state = state;
 	if (curToken(xb) != '}')
 		return xqryError(cntxt,"'}' expected in EnclosedExpr\n");
 	xb->token = NO_TOKEN;
@@ -309,11 +313,9 @@ parseSchemaElementTest(Client cntxt, Xbackend xb)
 STATIC int 
 parseElementTest(Client cntxt, Xbackend xb)
 {
-	if (curToken(xb) != XT_element)
+	if (curToken(xb) != XT_element_test)
 		return PARSE_ERR;
 	@:ptrace(parseElementTest)@
-	if (nextToken(xb) != '(')
-		return xqryError(cntxt,"'(' expected in ElementTest\n");
 	if (nextToken(xb) == '*'){
 		nextToken(xb);
 	} else
@@ -532,6 +534,8 @@ parseCompPIConstructor(Client cntxt, Xbackend xb)
 		if (curToken(xb) != '}')
 			return xqryError(cntxt,"'}' expected in PIConstructor\n");
 		nextToken(xb);
+	} else { /* process-instruction NCNAME */
+		nextToken(xb);
 	}
 
 	if (curToken(xb) != '{')
@@ -686,52 +690,94 @@ parseDirPIConstructor(Client cntxt, Xbackend xb)
 	return PARSE_OK;
 }
 
+STATIC int 
+parsePredefinedEntityRef(Client cntxt, Xbackend xb) 
+{
+	int state = xb->xs->state;
+	if (curToken(xb) != '&')
+		return PARSE_ERR;
+	xb->xs->state = XS_CHARREF;
+	@:ptrace(parsePredefinedEntityRef)@
+	if (nextToken(xb) == XT_gt) {
+	} else if (curToken(xb) == XT_lt) {
+	} else if (curToken(xb) == XT_amp) {
+	} else if (curToken(xb) == XT_quot) {
+	} else if (curToken(xb) == XT_apos) {
+	} else if (curToken(xb) == '#') { /* xml CharRef */
+		if (nextToken(xb) == XT_INT) {
+		} else if (curToken(xb) == XT_HEX) {
+		}
+	} else {
+		return xqryError(cntxt,"<PredefinedEntity> expected in PredefinedEntityRef\n");
+	}
+	if (nextToken(xb) != ';')
+		return xqryError(cntxt,"';' expected in PredefinedEntityRef\n");
+	xb->xs->state = state;
+	xb->token = NO_TOKEN;
+	@:etrace(parsePredefinedEntityRef)@
+	return PARSE_OK;
+}
+
+STATIC int 
+parseCommonContent(Client cntxt, Xbackend xb) 
+{
+	int res = PARSE_ERR;
+
+	@:ptrace(parseCommonContent)@
+	if (curToken(xb) == XT_2open || curToken(xb) == XT_2close) { 
+		xb->token = NO_TOKEN;
+		@:etrace(parseCommonContent)@
+		return PARSE_OK;
+	}
+	if (parseEnclosedExpr(cntxt,xb) == PARSE_OK){
+		@:etrace(parseCommonContent)@
+		return PARSE_OK;
+	}
+	if (parsePredefinedEntityRef(cntxt, xb) == PARSE_OK) 
+		res = PARSE_OK;
+	@:etrace(parseCommonContent)@
+	return res;
+}
+
 STATIC int
 parseDirAttributeValue(Client cntxt, Xbackend xb)
 {
-
-/* need special work, is a string now 
+	int state = xb->xs->state;
+	int res = PARSE_OK;
 	if (curToken(xb)== '"'){
 		@:ptrace(parseDirAttributeValue)@
+		xb->xs->state = XS_QUOT_ATTR_CONTENT;
 		nextToken(xb);
-		while( curToken(cntxt) && curToken(cntxt)!= '"')
-		if( curToken(cntxt)=='"' && i){
-			nextToken(cntxt); i=0;
-		} else
-		if( curToken(cntxt)=='"'){
-			nextToken(cntxt); i=1;
-		} else
-		if( curToken(cntxt)=='{'){
-			if( parseEnclosedExpr(cntxt,xb)== PARSE_ERR)
-				nextToken(cntxt); i=0;
-		} else{
-			nextToken(cntxt); i=0;
+		while(curToken(xb) != '"' && res == PARSE_OK) {
+			if (curToken(xb) == XT_quot_attr_content) {
+				nextToken(xb); 
+			} else if ((res = parseCommonContent(cntxt, xb)) == PARSE_OK) {
+			} else {
+				res = PARSE_ERR;
+			}
+			/* add EscapeQuot '""' */
 		}
-		if( curToken(cntxt)== '"') nextToken(cntxt);
-	}  else
-	if( curToken(xb)== '\'') {
+		xb->xs->state = state;
+		if( curToken(xb) != '"') 
+			return xqryError(cntxt,"'\"' expected DirAttributeValue\n");
+	} else if( curToken(xb)== '\'') {
 		@:ptrace(parseDirAttributeValue)@
-		while (nextToken(xb) != '\'') ;
-		if (curToken(cntxt) == '\'' && i) {
-			nextToken(cntxt);
-			i = 0;
-		} else if (curToken(cntxt) == '\'') {
-			nextToken(cntxt);
-			i = 1;
-		} else if( curToken(cntxt)=='{'){
-			if( parseEnclosedExpr(cntxt,xb)== PARSE_ERR)
-				nextToken(cntxt); i=0;
-		} else {
-			nextToken(cntxt);
-			i = 0;
+		xb->xs->state = XS_APOS_ATTR_CONTENT;
+		nextToken(xb);
+		while(curToken(xb) != '\'' && res == PARSE_OK) {
+			if (curToken(xb) == XT_apos_attr_content) {
+				nextToken(xb); 
+			} else if ((res = parseCommonContent(cntxt, xb)) == PARSE_OK) {
+			} else {
+				res = PARSE_ERR;
+			}
+			/* add EscapeApos "''" */
 		}
-		if (curToken(cntxt) == '\'')
-			nextToken(cntxt);
-	} else
-*/
+		xb->xs->state = state;
+		if( curToken(xb) != '\'') 
+			return xqryError(cntxt,"'\'' expected DirAttributeValue\n");
+	} 
 	@:ptrace(parseDirAttributeValue)@
-	if ( curToken(xb) != XT_STR)
-		return xqryError(cntxt,"  DirAttributeValue\n");
 	xb->token = NO_TOKEN;
 	@:etrace(parseDirAttributeValue)@
 	return PARSE_OK;
@@ -774,49 +820,6 @@ parseElementContentChar(Client cntxt, Xbackend xb)
 	xb->token = NO_TOKEN;
 	return PARSE_OK;
 }
-
-STATIC int 
-parsePredefinedEntityRef(Client cntxt, Xbackend xb) 
-{
-	if (curToken(xb) != '&')
-		return PARSE_ERR;
-	@:ptrace(parsePredefinedEntityRef)@
-	if (nextToken(xb) == XT_gt) {
-	} else if (curToken(xb) == XT_lt) {
-	} else if (curToken(xb) == XT_amp) {
-	} else if (curToken(xb) == XT_quot) {
-	} else if (curToken(xb) == XT_apos) {
-	} else {
-		return xqryError(cntxt,"<PredefinedEntity> expected in PredefinedEntityRef\n");
-	}
-	if (nextToken(xb) != ';')
-		return xqryError(cntxt,"';' expected in PredefinedEntityRef\n");
-	xb->token = NO_TOKEN;
-	@:etrace(parsePredefinedEntityRef)@
-	return PARSE_OK;
-}
-
-STATIC int 
-parseCommonContent(Client cntxt, Xbackend xb) 
-{
-	int res = PARSE_ERR;
-
-	@:ptrace(parseCommonContent)@
-	if (curToken(xb) == XT_2open || curToken(xb) == XT_2close) { 
-		xb->token = NO_TOKEN;
-		@:etrace(parseCommonContent)@
-		return PARSE_OK;
-	}
-	if (parseEnclosedExpr(cntxt,xb) == PARSE_OK){
-		@:etrace(parseCommonContent)@
-		return PARSE_OK;
-	}
-	if (parsePredefinedEntityRef(cntxt, xb) == PARSE_OK) 
-		res = PARSE_OK;
-	@:etrace(parseCommonContent)@
-	return res;
-}
-
 
 STATIC int 
 parseDirElementContent(Client cntxt, Xbackend xb) 
@@ -2553,6 +2556,8 @@ xqryError(Client cntxt, str msg)
 #endif
 
 	xb->token = NO_TOKEN;
+	xb->xs->state = XS_DEFAULT;
+
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
 	if (curBlk)
