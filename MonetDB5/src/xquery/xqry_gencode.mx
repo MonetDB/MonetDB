@@ -220,6 +220,11 @@ xqryPushNameTest(Xbackend xb, char *name)
 {
 	xpath *x = xb->X.t;
 
+	if (!x) {
+		x = ZNEW(xpath);
+		x -> op = child;
+		xpathAdd(&xb->X, x);
+	}
 	x -> name = name;
 	printf( "name = %s\n", name);
 }

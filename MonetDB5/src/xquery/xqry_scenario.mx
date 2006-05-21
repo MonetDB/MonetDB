@@ -198,7 +198,7 @@ XQUERYparser(Client c)
 
 	err=parseXQuery(c);
 
-	if( err == 0){
+	if( err == 0 && xb->xs->started){
 		pushEndInstruction(c->curprg->def);
 		chkProgram(c->nspace, c->curprg->def);
 	}
@@ -212,6 +212,7 @@ XQUERYparser(Client c)
 		c->curprg->def->errors = 0;
 		return throwMessage("xquery.parser","Parsing errors\n");
 	} 
+	xscanner_query_processed(xb->xs);
 	return MAL_SUCCEED;
 }
 
@@ -233,7 +234,7 @@ XQUERYengine(Client c)
 	stream_printf(c->fdout,"#start the xquery engine\n");
 #endif
 	xb= (Xbackend) c->state[PARSER];
-	if(xb == NULL || c->curprg->def== NULL|| c->curprg->def->errors)
+	if(xb == NULL || !xb->xs->started || c->curprg->def== NULL|| c->curprg->def->errors)
 		return MAL_SUCCEED;
 
 	if( xb->mode == xqry_explain)

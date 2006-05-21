@@ -54,6 +54,7 @@ enum xquery_tokens {
 	XT_DEC,
 	XT_DBL,
 	XT_NCNAME,
+	XT_QNAME,
 	XT_FNAME,
 	XT_CMP,
 	XT_AGGR,
@@ -242,6 +243,7 @@ XT2string(int token)
 	XT(DEC);
 	XT(DBL);
 	XT(NCNAME);
+	XT(QNAME);
 	XT(FNAME);
 	XT(CMP);
 	XT(AGGR);
@@ -744,24 +746,30 @@ const char *allowedsymbols = "_-.";
 static int 
 keyword_or_ident(xscanner * lc, int cur)
 {
+	int token = XT_NCNAME;
 	keyword *k = NULL;
 	int s;
 
 	lc->started = 1;
 	utf8_putchar(lc, cur);
 	s = lc->yycur;
-	lc->yyval = XT_NCNAME;
 	while ((cur = xscanner_getc(lc)) != EOF) {
 		if ((isascii(cur) && !isalnum(cur)) && !strchr(allowedsymbols,cur)) {
-			utf8_putchar(lc, cur);
-			(void)xscanner_token(lc, XT_NCNAME);
-			k = find_keyword_bs(lc,s);
-			if (k) 
-				lc->yyval = k->token;
-			return lc->yyval;
+			if (cur != ':') {
+				utf8_putchar(lc, cur);
+				(void)xscanner_token(lc, token);
+				if (token == XT_NCNAME) {
+					k = find_keyword_bs(lc,s);
+					if (k) 
+						lc->yyval = k->token;
+				}
+				return lc->yyval;
+			} else {
+				token = XT_QNAME;
+			}
 		}
 	}
-	(void)xscanner_token(lc, XT_NCNAME);
+	(void)xscanner_token(lc, token);
 	k = find_keyword_bs(lc,s);
 	if (k) 
 		lc->yyval = k->token;
@@ -798,14 +806,17 @@ static int
 skip_xqry_comment(xscanner * lc)
 {
 	int cur;
+	int prev = 0;
 
-	while ((cur = xscanner_getc(lc)) != EOF && (cur != '\n'))
-		;
+	while ((cur = xscanner_getc(lc)) != EOF && 
+	       !(cur == ')' && prev == ':')) 
+		prev = cur;
 	lc->yysval = lc->yycur;
-	if (cur == '\n')
+	if (cur == ')')
 		cur = xscanner_getc(lc);
 	return cur;
 }
+
 
 static int tokenize(xscanner * lc, int cur);
 
@@ -865,18 +876,20 @@ int xscanner_symbol(xscanner * lc, int cur)
 		}
 	} else if (isdigit(cur)) {
 		return number(lc, cur);
-	} else if (cur == '#') {
-		if ((cur = skip_xqry_comment(lc)) == EOF)
-			return cur;
-		return tokenize(lc, cur);
 	} else if (cur == '\'' || cur == '"') {
 		return xscanner_string(lc, cur);
+	} else if (cur == '(') {
+		next = xscanner_getc(lc);
+		if (next == ':') {
+			cur = skip_xqry_comment(lc);
+			return tokenize(lc, cur);
+		} 
+		utf8_putchar(lc, next); 
+		return xscanner_token(lc, cur);
 	}
 	switch (cur) {
 	case '+':
 	case '@':
-	/* TODO expression comments */
-	case '(':
 	case ')':
 	case ',':
 	case '[':
@@ -1087,7 +1100,7 @@ xqry_get_next_token(xscanner *lc, char **sval) {
 
 	*sval = (lc->c->fdin->buf + lc->c->fdin->pos + lc->yysval);
 
-	if (token == XT_NCNAME || token == XT_CMP || token == XT_AGGR)
+	if (token == XT_NCNAME || token == XT_QNAME || token == XT_CMP || token == XT_AGGR)
 		*sval = xa_strndup(lc->xa, *sval, lc->yycur-lc->yysval);
 	if (token == XT_STR) {
 		char quote = **sval;
@@ -1116,7 +1129,7 @@ xscanner_lex(xscanner *lc, char **sval)
 
 	token = xqry_get_next_token(lc, sval);
 
-	if (token == XT_NCNAME && lc->mode != XS_XML) {
+	if ((token == XT_NCNAME || token == XT_QNAME) && lc->state != XS_XML) {
 		char *tval;
 		int next = xscanner_lex(lc, &tval);
 
