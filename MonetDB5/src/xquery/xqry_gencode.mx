@@ -44,8 +44,10 @@ xqry_export void xqryPushChild(Xbackend xb);
 xqry_export void xqryPushDescendant(Xbackend xb);
 xqry_export void xqryPushPredicate(Xbackend xb);
 xqry_export void xqryPushAttribute(Xbackend xb);
+xqry_export void xqryPushText(Xbackend xb);
 
 xqry_export char *xqryXpathFlatten(Xbackend xb);
+xqry_export void xqryNew(Xbackend xb);
 
 #endif /* _XQUERY_GENCODE_H_ */
 
@@ -212,11 +214,11 @@ xpathAdd(Xpath *x, xpath *p)
 	x->t = p;
 }
 
+
 void
 xqryPushNameTest(Xbackend xb, char *name)
 {
-	Xpath *X = &xb->vars[xb->vtop-1].xpath;
-	xpath *x = X->t;
+	xpath *x = xb->X.t;
 
 	x -> name = name;
 	printf( "name = %s\n", name);
@@ -225,56 +227,61 @@ xqryPushNameTest(Xbackend xb, char *name)
 void
 xqryPushChild(Xbackend xb)
 {
-	Xpath *x = &xb->vars[xb->vtop-1].xpath;
 	xpath *p = ZNEW(xpath);
 
 	p -> op = child;
-	xpathAdd(x, p);
+	xpathAdd(&xb->X, p);
 	printf( "/\n");
 }
 
 void
 xqryPushDescendant(Xbackend xb)
 {
-	Xpath *x = &xb->vars[xb->vtop-1].xpath;
 	xpath *p = ZNEW(xpath);
 
 	p -> op = descendant;
-	xpathAdd(x, p);
+	xpathAdd(&xb->X, p);
 	printf( "//\n");
 }
 
 void
 xqryPushPredicate(Xbackend xb)
 {
-	Xpath *x = &xb->vars[xb->vtop-1].xpath;
 	xpath *p = ZNEW(xpath);
 
 	p -> op = predicate;
-	xpathAdd(x, p);
+	xpathAdd(&xb->X, p);
 	printf( "[]\n");
 }
 
 void
 xqryPushAttribute(Xbackend xb)
 {
-	Xpath *x = &xb->vars[xb->vtop-1].xpath;
 	xpath *p = ZNEW(xpath);
 
 	p -> op = attribute;
-	xpathAdd(x, p);
+	xpathAdd(&xb->X, p);
 	printf( "@\n");
+}
+
+void
+xqryPushText(Xbackend xb)
+{
+	xpath *p = ZNEW(xpath);
+
+	p -> op = text;
+	xpathAdd(&xb->X, p);
+	printf( "text()\n");
 }
 
 char *
 xqryXpathFlatten(Xbackend xb)
 {
-	Xpath *x = &xb->vars[xb->vtop-1].xpath;
-	xpath *p = x->h;
+	xpath *p = xb->X.h;
 	int len = 0;
 	char *res, *s;
 
-	for(p = x->h; p; p = p -> l) {
+	for(p = xb->X.h; p; p = p -> l) {
 		switch(p->op) {
 		case descendant:
 			len ++;
@@ -283,6 +290,8 @@ xqryXpathFlatten(Xbackend xb)
 			break;
 		case attribute:
 			len += 4;
+		case text: /* /cdata@str */
+			len += 10;
 		default:
 			break;
 		}
@@ -290,7 +299,7 @@ xqryXpathFlatten(Xbackend xb)
 			len += strlen(p->name); 
 	}
 	s = res = GDKmalloc(len + 1);
-	for(p = x->h; p; p = p -> l) {
+	for(p = xb->X.h; p; p = p -> l) {
 		if(p->op == descendant) {
 			*s++ = '/';
 			*s++ = '/';
@@ -307,8 +316,27 @@ xqryXpathFlatten(Xbackend xb)
 			strncpy(s, "@str", l);
 			s+=l;
 		}
+		if(p->op == text) {
+			int l = sizeof("cdata@str");
+			strncpy(s, "cdata@str", l);
+			s+=l;
+		}
 	}
 	*s++ = 0;
 	printf("flatten %s\n", res);
 	return res;
 }
+
+void 
+xqryNew(Xbackend xb)
+{
+	xpath *p = xb->X.h;
+
+	while(p) {
+		xpath *n = p->l;
+		_DELETE(p);
+		p = n;
+	}
+	xb->X.h = xb->X.t = NULL;
+}
+

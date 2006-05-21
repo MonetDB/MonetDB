@@ -69,6 +69,8 @@ enum xquery_tokens {
 	XT_no_preserve,
 	XT_inherit,
 	XT_no_inherit,
+	XT_inherit_namespaces,
+	XT_yes,
 	XT_strip,
 	XT_default,
 	XT_element,
@@ -81,6 +83,7 @@ enum xquery_tokens {
 	XT_unordered,
 	XT_order,
 	XT_copy_namespaces,
+	XT_xmlspace,
 	XT_empty,
 	XT_empty_sequence,
 	XT_greatest,
@@ -254,6 +257,8 @@ XT2string(int token)
 	XT(no_preserve);
 	XT(inherit);
 	XT(no_inherit);
+	XT(inherit_namespaces);
+	XT(yes);
 	XT(strip);
 	XT(default);
 	XT(element);
@@ -266,6 +271,7 @@ XT2string(int token)
 	XT(unordered);
 	XT(order);
 	XT(copy_namespaces);
+	XT(xmlspace);
 	XT(empty);
 	XT(empty_sequence);
 	XT(greatest);
@@ -386,6 +392,8 @@ xscanner_init_keywords()
 	keywords_insert("no-preserve", XT_no_preserve);
 	keywords_insert("inherit", XT_inherit);
 	keywords_insert("no-inherit", XT_no_inherit);
+	keywords_insert("inherit-namespaces", XT_inherit_namespaces);
+	keywords_insert("yes", XT_yes);
 	keywords_insert("strip", XT_strip);
 	keywords_insert("default", XT_default);
 	keywords_insert("element", XT_element);
@@ -396,6 +404,7 @@ xscanner_init_keywords()
 	keywords_insert("unordered", XT_unordered);
 	keywords_insert("order", XT_order);
 	keywords_insert("copy-namespaces", XT_copy_namespaces);
+	keywords_insert("xmlspace", XT_xmlspace);
 	keywords_insert("empty", XT_empty);
 	keywords_insert("empty-sequence", XT_empty_sequence);
 	keywords_insert("greatest", XT_greatest);
@@ -1107,7 +1116,7 @@ xscanner_lex(xscanner *lc, char **sval)
 
 	token = xqry_get_next_token(lc, sval);
 
-	if (token == XT_NCNAME) {
+	if (token == XT_NCNAME && lc->mode != XS_XML) {
 		char *tval;
 		int next = xscanner_lex(lc, &tval);
 

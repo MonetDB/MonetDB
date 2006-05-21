@@ -36,6 +36,7 @@ typedef struct {
     xscanner *xs;
     int	      token;	/* current to be parsed token */
     char     *sval;	/* string of current token */
+    Xpath    X;	/* current X path expression */
 } *Xbackend, XbackendRec;
 
 xqry_export Xbackend newXbackend(Client c);

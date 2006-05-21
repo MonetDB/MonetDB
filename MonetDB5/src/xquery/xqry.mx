@@ -44,6 +44,20 @@ command bind(mguide:bat[:oid,:str], xpath:str):bat[:oid,:str]
 address XQRYbind
 comment "get bat from data guide for the given xpath";
 
+function xqry.=(A:bat[:oid,:str],B:str):bat[:oid,:str];
+        x:= algebra.select(A,B,B);
+	return x;
+end =;
+function xqry.=(A:bat[:oid,:str],B:bat[:oid,:str]):bat[:oid,:oid];
+        Br := bat.reverse(B);
+        x:= algebra.join(A,Br);
+	return x;
+end =;
+#function xqry.=(A:any_1,B:any_2):bit;
+#        x:= calc.==(A,B);
+#	return x;
+#end =;
+
 @-
 The runtime library is based on code initially
 developed by A. Schmidt. It implements a 'dataguide'
@@ -157,6 +171,7 @@ typedef enum xpathop {
 	descendant,	
 	predicate,	
 	attribute,	 
+	text,
 } xpathop;
 
 typedef struct xpath {

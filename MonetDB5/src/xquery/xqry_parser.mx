@@ -435,9 +435,10 @@ parseKindTest(Client cntxt, Xbackend xb)
 
 	if( curToken(xb) == XT_node) 
 		kind= NODE_TEST; 
-	else if( curToken(xb) == XT_text) 
+	else if( curToken(xb) == XT_text) {
 		kind= TEXT_TEST; 
-	else if( curToken(xb) == XT_comment)
+		xqryPushText(xb);
+	} else if( curToken(xb) == XT_comment)
 		kind= COMMENT_TEST; 
 	else 
 		return PARSE_ERR;
@@ -454,8 +455,6 @@ STATIC int
 parseItemType(Client cntxt, Xbackend xb)
 {
 	@:ptrace(parseItemType)@
-	if (parseKindTest(cntxt,xb) == PARSE_OK) 
-		return PARSE_OK;
 	if (curToken(xb) == XT_item) {
 		int i;
 		if (nextToken(xb) != '(')
@@ -468,8 +467,10 @@ parseItemType(Client cntxt, Xbackend xb)
 		xb->token = -1;
 		return PARSE_OK;
 	}
+	if (parseKindTest(cntxt,xb) == PARSE_OK) 
+		return PARSE_OK;
 	/* AtomicType */
-	if (curToken(xb) != XT_STR)
+	if (parseQName(cntxt,xb) == PARSE_ERR) 
 		return xqryError(cntxt,"<AtomicType> expected in ItemType\n");
 	@:etrace(parseItemType)@
 	xb->token = -1;
@@ -496,11 +497,9 @@ parseSequenceType(Client cntxt, Xbackend xb)
 	case '?':
 	case '+':
 	case '*':
+		xb->token = -1;
 		break;
-	default:
-		xqryError(cntxt,"'?', '+', '*' expected in SequenceType\n");
 	}
-	xb->token = -1;
 	@:etrace(parseSequenceType)@
 	return PARSE_OK;
 }
@@ -743,11 +742,10 @@ parseDirAttributeValue(Client cntxt, Xbackend xb)
 			nextToken(cntxt);
 	} else
 */
+	@:ptrace(parseDirAttributeValue)@
 	if ( curToken(xb) != XT_STR)
 		return xqryError(cntxt,"  DirAttributeValue\n");
-	@:ptrace(parseDirAttributeValue)@
-	nextToken(xb);
-
+	xb->token = -1;
 	@:etrace(parseDirAttributeValue)@
 	return PARSE_OK;
 }
@@ -761,17 +759,11 @@ parseDirAttributeList(Client cntxt, Xbackend xb)
 	do {
 		if (parseQName(cntxt,xb) == PARSE_ERR) 
 			break;
-		nextToken(xb);
-printf("GOT name %s %s\n",XT2string(curToken(xb)),xb->sval?xb->sval:"");
-		if (curToken(xb) != '='){
-printf("GOT lost control:%s %s\n",XT2string(curToken(xb)),xb->sval?xb->sval:"");
-assert(0);
+		if (curToken(xb) != XT_eq){
 			return PARSE_ERR;
 		}
-printf("GOT =\n");
 		nextToken(xb);
 	} while ((res = parseDirAttributeValue(cntxt,xb)) == PARSE_OK);
-printf("DONE\n");
 	@:etrace(parseDirAttributeList)@
 	return PARSE_OK;
 }
@@ -863,18 +855,21 @@ parseDirElementContent(Client cntxt, Xbackend xb)
 STATIC int 
 parseDirElementConstructor(Client cntxt, Xbackend xb) 
 {
+	int state = xb->xs->state;
+
 	if (curToken(xb) != XT_lt)
 		return PARSE_ERR;
 	@:ptrace(parseDirElementConstructor)@
+	xb->xs->state = XS_XML;
 	nextToken(xb);
 	if (parseQName(cntxt,xb) == PARSE_ERR) 
 		return xqryError(cntxt,"<Qname> expected in DirElementConstructor\n");
-	nextToken(xb);
 	parseDirAttributeList(cntxt, xb);
 
 	if (curToken(xb) == XT_elementconstructor_end) {
-		nextToken(xb);
+		xb->token = -1;
 		@:etrace(parseDirElementConstructor)@
+		xb->xs->state = state;
 		return PARSE_OK;
 	}
 
@@ -893,6 +888,7 @@ parseDirElementConstructor(Client cntxt, Xbackend xb)
 
 	xb->token = -1;
 	@:etrace(parseDirElementConstructor)@
+	xb->xs->state = state;
 	return PARSE_OK;
 }
 
@@ -1667,7 +1663,7 @@ parseComparisonExpr(Client cntxt, Xbackend xb)
 		} else
 		/* ValueComp | GeneralComp | NodeComp) RangeExpr)? */
 		if (curToken(xb) == XT_eq) {
-			op= "=="; mod="batcalc";
+			op= "="; mod="xqry";
 		} else if (curToken(xb) == XT_ne) {
 			op= "!="; mod="batcalc";
 		} else if (curToken(xb) == XT_le) {
@@ -1686,7 +1682,7 @@ parseComparisonExpr(Client cntxt, Xbackend xb)
 		ret = parseRangeExpr(cntxt, xb);
 		if( ret == PARSE_OK){
 			xqryCoercion(xb);
-			xqryStatement(xb,calcRef,op,2);
+			xqryStatement(xb,mod,op,2);
 		}
 		@:etrace(parseComparisonExpr)@
 		return ret;
@@ -1733,6 +1729,8 @@ parseQuantifiedExpr(Client cntxt, Xbackend xb)
 		xb->token = -1;
 		if (parseExprSingle(cntxt, xb) == PARSE_ERR)
 			return PARSE_ERR;
+		/* clean up */
+		xqryNew(xb);
 	} while (curToken(xb) == ',');
 	if (curToken(xb) != XT_satisfies)
 		return xqryError(cntxt,"'satisfies' expected\n");
@@ -1916,6 +1914,8 @@ parseForClause(Client cntxt, Xbackend xb)
  		p = newAssignment(xb->mb);
 		getArg(p,0) = l;
 		pushArgument(xb->mb, p, r);
+		/* clean up */
+		xqryNew(xb);
 	} while (curToken(xb) == ',');
 	@:etrace(parseForClause done)@
 	return PARSE_OK;
@@ -1947,6 +1947,8 @@ parseLetClause(Client cntxt, Xbackend xb)
  		p = newAssignment(xb->mb);
 		getArg(p,0) = l;
 		pushArgument(xb->mb, p, r);
+		/* clean up */
+		xqryNew(xb);
 		
 	} while (curToken(xb) == ',');
 	@:etrace(parseLetClause done)@
@@ -1980,7 +1982,21 @@ parseFLWORExpr(Client cntxt, Xbackend xb)
 		xb->token = -1;
 		return parseOrderByClause(cntxt, xb);
 	}
-	return parseReturnExprSingle(cntxt, xb);
+	ret = parseReturnExprSingle(cntxt, xb);
+	if (ret == PARSE_OK) {
+		if (xb->X.h) {
+			InstrPtr p;
+			ValRecord val;
+	
+			val.vtype = TYPE_str;
+			val.val.sval = xqryXpathFlatten(xb);
+			p = newAssignment(xb->mb);
+			getArg(p,0) = pushXvar(xb);
+			pushArgument(xb->mb, p, defConstant(xb->mb, val.vtype, &val));
+			xqryStatement(xb,"xqry","bind",2);
+		}
+	}
+	return ret;
 }
 
 STATIC int 
@@ -1989,7 +2005,7 @@ parseParam(Client cntxt, Xbackend xb)
 	@:ptrace(parseParam)@
 	if (curToken(xb) != '$')
 		return PARSE_ERR;
-	xb->token = -1;
+	nextToken(xb);
 	if (parseQName(cntxt,xb) == PARSE_ERR) 
 		return xqryError(cntxt,"<QName> expected in Param\n");
 	parseTypeDeclaration(cntxt, xb);
@@ -2012,40 +2028,33 @@ parseParamList(Client cntxt, Xbackend xb)
 }
 
 STATIC int 
-parseFunctionDecl(Client cntxt, Xbackend xb) 
+parseFunctionDecl(Client cntxt, Xbackend xb, int declare) 
 {
 	@:ptrace(parseFunctionDecl)@
-	if (curToken(xb) != XT_declare) 
-		return PARSE_ERR; 
-	if (nextToken(xb) != XT_function)
+	if (declare) {
+		if (curToken(xb) != XT_declare) 
+			return PARSE_ERR; 
+		else
+			nextToken(xb);
+	}
+	if (curToken(xb) != XT_function)
 		return PARSE_ERR;
-	if (parseQName(cntxt,xb) == PARSE_ERR) 
+	if (nextToken(xb) != XT_FNAME) 
 		return xqryError(cntxt,"<Qname> expected in FunctionDecl\n");
-	if (curToken(xb) != '(')
-		return xqryError(cntxt,"'(' expected in FunctionDecl\n");
-	xb->token = -1;
+	nextToken(xb);
 	parseParamList(cntxt, xb);
 	if (curToken(xb) != ')')
 		return xqryError(cntxt,"')' expected in FunctionDecl\n");
-
-	if (nextToken(xb) != XT_as) {
-		xb->token = -1;
+	if (nextToken(xb) == XT_as) {
+		nextToken(xb);
 		parseSequenceType(cntxt, xb);
 	}
 	if (curToken(xb) == XT_external) {
 		xb->token = -1;
 		return PARSE_OK;
 	}
-
-	if (curToken(xb) != '{')
-		return xqryError(cntxt,"'{' expected in FunctionDecl\n");
-	xb->token = -1;
-	parseExpr(cntxt, xb);
-	if (curToken(xb) != '}')
-		return xqryError(cntxt,"'}' expected in FunctionDecl\n");
 	@:etrace(parseFunctionDecl)@
-	xb->token = -1;
-	return PARSE_OK;
+	return parseEnclosedExpr(cntxt, xb);
 }
 
 STATIC int 
@@ -2063,27 +2072,31 @@ parseConstructionDecl(Client cntxt, Xbackend xb)
 }
 
 STATIC int 
-parseVarDecl(Client cntxt, Xbackend xb) 
+parseVarDecl(Client cntxt, Xbackend xb, int declare) 
 {
 	@:ptrace(parseVarDecl)@
-	if (curToken(xb) != XT_declare) 
-		return PARSE_ERR; 
-	if (nextToken(xb) != XT_variable)
+	if (declare) {
+		if (curToken(xb) != XT_declare) 
+			return PARSE_ERR; 
+		else	 
+			nextToken(xb);
+	}
+	if (curToken(xb) != XT_variable)
 		return PARSE_ERR;
-	if (curToken(xb) != '$')
+	if (nextToken(xb) != '$')
 		return PARSE_ERR;
+	nextToken(xb);
 	if (parseQName(cntxt,xb) == PARSE_ERR) 
 		return xqryError(cntxt,"<QName> expected in VarDecl\n");
-	xb->token = -1;
 	parseTypeDeclaration(cntxt, xb);
 
-	if (curToken(xb) != XT_external) {
+	if (curToken(xb) == XT_external) {
 		xb->token = -1;
 		return PARSE_OK;
 	}
 	if (curToken(xb) == XT_ASSIGN) {
-		xb->token = -1;
-		return parseSequenceType(cntxt, xb);
+		nextToken(xb);
+		return parseExprSingle(cntxt, xb);
 	}
 	return xqryError(cntxt,"'external' or ':=' expected in VarDecl\n");
 }
@@ -2092,13 +2105,11 @@ STATIC int
 parseModuleImport(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseModuleImport)@
-	if (curToken(xb) != XT_import) 
-		return PARSE_ERR; 
-	if (nextToken(xb) != XT_module)
+	if (curToken(xb) != XT_module)
 		return xqryError(cntxt,"'module' expected in ModuleImport\n");
 
 	if (nextToken(xb) ==  XT_namespace) {
-		if (nextToken(xb) != '=')
+		if (nextToken(xb) != XT_eq)
 			return xqryError(cntxt,"'=' expected in ModuleImport\n");
 	}
 	if (nextToken(xb) != XT_STR)
@@ -2119,9 +2130,11 @@ STATIC int
 parseSchemaPrefix(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseSchemaPrefix)@
-	if( curToken(xb) != XT_namespace) {
-		if (nextToken(xb) != '=')
-			return xqryError(cntxt,"=' expected in SchemaPrefix\n");
+	if( curToken(xb) == XT_namespace) {
+		if (nextToken(xb) != XT_NCNAME) 
+			return xqryError(cntxt,"<NCName> expected in SchemaPrefix\n");
+		if (nextToken(xb) != XT_eq)
+			return xqryError(cntxt,"'=' expected in SchemaPrefix\n");
 		@:etrace(parseSchemaPrefix)@
 		xb->token = -1;
 		return PARSE_OK;
@@ -2132,21 +2145,22 @@ parseSchemaPrefix(Client cntxt, Xbackend xb)
 			xb->token = -1;
 			return PARSE_OK;
 		}
+		return xqryError(cntxt,"'element' 'namespace' expected in SchemaPrefix\n");
 	}
-	return xqryError(cntxt,"'element' 'namespace' expected in SchemaPrefix\n");
+	/* parseSchemaPrefix is optional */
+	@:etrace(parseSchemaPrefix)@
+	return PARSE_ERR;
 }
 
 STATIC int 
 parseSchemaImport(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseSchemaImport)@
-	if( curToken(xb) != XT_import) 
-		return PARSE_ERR; 
-	if (nextToken(xb) != XT_schema)
+	if (curToken(xb) != XT_schema)
 		return PARSE_ERR;
-	xb->token = -1;
+	nextToken(xb);
 	parseSchemaPrefix(cntxt, xb);
-	if (nextToken(xb) != XT_STR)
+	if (curToken(xb) != XT_STR)
 		return xqryError(cntxt,"<URIliteral> expected in SchemaImport\n");
 	if (nextToken(xb) != XT_at)
 		return xqryError(cntxt,"'at' expected in SchemaImport\n");
@@ -2176,15 +2190,40 @@ parseBaseURIDecl(Client cntxt, Xbackend xb)
 STATIC int 
 parseDefaultCollationDecl(Client cntxt, Xbackend xb) 
 {
-	@:ptrace(parseeDefaultCollationDecl)@
-	if (curToken(xb) != XT_default)
-		return PARSE_ERR;
-	if (nextToken(xb) != XT_collation)
+	@:ptrace(parseDefaultCollationDecl)@
+	if (curToken(xb) != XT_collation)
 		return xqryError(cntxt,"'collation' expected in DefaultCollationDecl\n");
 	if (nextToken(xb) != XT_STR)
 		return xqryError(cntxt,"<URIliteral> expected in DefaultCollationDecl\n");
-	@:etrace(parseeDefaultCollationDecl)@
+	@:etrace(parseDefaultCollationDecl)@
 	xb->token = -1;
+	return PARSE_OK;
+}
+
+/* pathfinder doesn't have copy-namespaces but xmlspace, for compatibility  */
+STATIC int 
+parseXmlspace(Client cntxt, Xbackend xb) 
+{
+	@:ptrace(parseXmlspace)@
+	if (curToken(xb) != XT_xmlspace)
+		return PARSE_ERR;
+	if (nextToken(xb) != XT_preserve && curToken(xb) != XT_inherit && curToken(xb) != XT_strip) 
+		return xqryError(cntxt,"'preserve', 'inherit' or 'strip' expected in Xmlspace\n");
+	xb->token = -1;
+	@:etrace(parseXmlspace)@
+	return PARSE_OK;
+}
+/* pathfinder has short hand for copy-namespaces inherit, compatibility  */
+STATIC int 
+parseInheritNamespaces(Client cntxt, Xbackend xb) 
+{
+	@:ptrace(parseInheritNamespaces)@
+	if (curToken(xb) != XT_inherit_namespaces)
+		return PARSE_ERR;
+	if (nextToken(xb) != XT_yes) 
+		return xqryError(cntxt,"'yes' expected in InheritNamespaces\n");
+	xb->token = -1;
+	@:etrace(parseInheritNamespaces)@
 	return PARSE_OK;
 }
 
@@ -2209,16 +2248,14 @@ STATIC int
 parseEmptyOrderDecl(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseEmptyOrderDecl)@
-	if (curToken(xb) != XT_default)
+	if (curToken(xb) != XT_order)
 		return PARSE_ERR;
-	if (nextToken(xb) != XT_order)
-		return xqryError(cntxt,"'order' expected in EmptyOrderDecl\n");
 	if (nextToken(xb) != XT_empty)
 		return xqryError(cntxt,"'empty' expected in EmptyOrderDecl\n");
 	if (nextToken(xb) != XT_greatest && xb->token != XT_least)
 		return xqryError(cntxt,"'greatest' or 'least' expected in EmptyOrderDecl\n");
-	@:etrace(parseEmptyOrderDecl)@
 	xb->token = -1;
+	@:etrace(parseEmptyOrderDecl)@
 	return PARSE_OK;
 }
 
@@ -2236,17 +2273,21 @@ parseOrderingModeDecl(Client cntxt, Xbackend xb)
 }
 
 STATIC int 
-parseOptionDecl(Client cntxt, Xbackend xb) 
+parseOptionDecl(Client cntxt, Xbackend xb, int declare) 
 {
 	@:ptrace(parseOptionDecl)@
-	if (curToken(xb) != XT_declare) 
-		return PARSE_ERR; 
-	if (nextToken(xb) != XT_option)
+	if (declare) {
+		if (curToken(xb) != XT_declare) 
+			return PARSE_ERR; 
+		else
+			nextToken(xb);
+	}
+	if (curToken(xb) != XT_option)
 		return PARSE_ERR;
-	xb->token = -1;
+	nextToken(xb);
 	if (parseQName(cntxt,xb) == PARSE_ERR) 
 		return xqryError(cntxt,"<QName> expected in OptionDecl\n");
-	if (nextToken(xb) != XT_STR)
+	if (curToken(xb) != XT_STR)
 		return xqryError(cntxt,"<URIliteral> expecte in OptionDecld\n");
 	@:etrace(parseOptionDecl)@
 	xb->token = -1;
@@ -2257,10 +2298,8 @@ STATIC int
 parseDefaultNamespaceDecl(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseDefaultNamespaceDecl)@
-	if (curToken(xb) != XT_default)
+	if (curToken(xb) != XT_element && curToken(xb) != XT_function)
 		return PARSE_ERR;
-	if (nextToken(xb) != XT_element && xb->token != XT_function)
-		return xqryError(cntxt,"'element' or 'function' expected in DefaultNamespaceDecl\n");
 	if (nextToken(xb) != XT_namespace)
 		return xqryError(cntxt,"'namespace' expected in DefaultNamespaceDecl\n");
 	if (nextToken(xb) != XT_STR)
@@ -2280,7 +2319,7 @@ parseNamespaceDecl(Client cntxt, Xbackend xb)
 	if (nextToken(xb) != XT_NCNAME) 
 		return xqryError(cntxt,"<NCName> expected in NamespaceDecl\n");
 	/* TODO: save namespace name */
-	if (nextToken(xb) != '=')
+	if (nextToken(xb) != XT_eq)
 		return xqryError(cntxt,"'=' expected in NamespaceDecl\n");
 	if (nextToken(xb) != XT_STR)
 		return xqryError(cntxt,"<URIliteral> expected in NamespaceDecl\n");
@@ -2307,6 +2346,9 @@ STATIC int
 parseImport(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseImport)@
+	if( curToken(xb) != XT_import) 
+		return PARSE_ERR; 
+	nextToken(xb);
 	if (parseSchemaImport(cntxt, xb) != PARSE_OK &&
 	    parseModuleImport(cntxt, xb) != PARSE_OK)
 		return PARSE_ERR;
@@ -2318,12 +2360,12 @@ parseSetter(Client cntxt, Xbackend xb)
 {
 	@:ptrace(parseSetter)@
 	if (parseBoundarySpaceDecl(cntxt, xb) != PARSE_OK &&
-	    parseDefaultCollationDecl(cntxt, xb) != PARSE_OK &&
 	    parseBaseURIDecl(cntxt, xb) != PARSE_OK &&
 	    parseConstructionDecl(cntxt, xb) != PARSE_OK &&
 	    parseOrderingModeDecl(cntxt, xb) != PARSE_OK &&
-	    parseEmptyOrderDecl(cntxt, xb) != PARSE_OK &&
-	    parseCopyNamespacesDecl(cntxt, xb) != PARSE_OK)
+	    parseCopyNamespacesDecl(cntxt, xb) != PARSE_OK &&
+	    parseXmlspace(cntxt, xb) != PARSE_OK &&
+	    parseInheritNamespaces(cntxt, xb) != PARSE_OK)
 		return PARSE_ERR;
 	@:etrace(parseSetter)@
 	return PARSE_OK;
@@ -2332,14 +2374,24 @@ parseSetter(Client cntxt, Xbackend xb)
 STATIC int 
 parseProlog(Client cntxt, Xbackend xb) 
 {
+	int declare = 1;
 	@:ptrace(parseProlog)@
 	do {
 		if (curToken(xb) == XT_declare) {
 			nextToken(xb);
-			if (parseDefaultNamespaceDecl(cntxt, xb) != PARSE_OK && 
-			    parseSetter(cntxt, xb) != PARSE_OK &&
-			    parseNamespaceDecl(cntxt, xb) != PARSE_OK)
+			if (curToken(xb) == XT_default) {
+				nextToken(xb);
+				if (parseDefaultNamespaceDecl(cntxt, xb) != PARSE_OK && 
+	    			    parseEmptyOrderDecl(cntxt, xb) != PARSE_OK &&
+	    			    parseDefaultCollationDecl(cntxt, xb) != PARSE_OK) {
+					declare = 0;
+					break;
+				}
+			} else if (parseSetter(cntxt, xb) != PARSE_OK &&
+			           parseNamespaceDecl(cntxt, xb) != PARSE_OK) {
+				declare = 0;
 				break;
+			}
 		} else if (parseImport(cntxt, xb) == PARSE_ERR)
 			break;
 		if (curToken(xb) != ';')
@@ -2348,10 +2400,11 @@ parseProlog(Client cntxt, Xbackend xb)
 	} while (1);
 
 	do {
-		if (parseVarDecl(cntxt, xb) != PARSE_OK &&
-		    parseFunctionDecl(cntxt, xb) != PARSE_OK &&
-		    parseOptionDecl(cntxt, xb) != PARSE_OK)
+		if (parseVarDecl(cntxt, xb, declare) != PARSE_OK &&
+		    parseFunctionDecl(cntxt, xb, declare) != PARSE_OK &&
+		    parseOptionDecl(cntxt, xb, declare) != PARSE_OK)
 			break;
+		declare = 1;
 		if (curToken(xb) != ';')
 			break;
 		nextToken(xb);
@@ -2370,7 +2423,7 @@ parseModuleDecl(Client cntxt, Xbackend xb)
 		return xqryError(cntxt,"'namespace' expected in ModuleDecl\n");
 	if (nextToken(xb) != XT_NCNAME)
 		return xqryError(cntxt,"<NCName> expected in ModuleDecl\n");
-	if (nextToken(xb) != '=')
+	if (nextToken(xb) != XT_eq)
 		return xqryError(cntxt,"'=' expected in ModuleDecl\n");
 
 	/* TODO: add URI parsing */
