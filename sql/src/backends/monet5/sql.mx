@@ -766,16 +766,6 @@ sqlcleanup(mvc *c, int err)
 	if (err)
 		c->session->status = err;
 	scanner_query_processed(&(c->scanner));
-
-	/*
-	 * clear query cache after Transaction boundaries (commit/rollback)
-	 * and on schema changes
-	 */
-	if (c->cache && (c->type == Q_SCHEMA || c->qc->id > 1000)) {
-		if (c->qc)
-			qc_destroy(c->qc);
-		c->qc = qc_create(c->clientid);
-	}
 	return err;
 }
 

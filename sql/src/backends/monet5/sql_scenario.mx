@@ -297,9 +297,6 @@ SQLexitClient(Client c)
 	}
 	if ((backend *) c->state[PARSER] && (mvc *) c->state[OPTIMIZE]) {
 		m= (mvc *) c->state[OPTIMIZE];
-		if (m->qc) 
-			qc_destroy(m->qc);
-		m->qc = qc_create(m->clientid);
 		res_tables_destroy(m->results);
 		mvc_destroy(m);
 		backend_destroy((backend *) c->state[PARSER]);
@@ -482,7 +479,7 @@ We don;t search the cache for a previous incarnation.
 We are done; a MAL procedure recides in the cache.
 @c
 endofcompile:
-	/* backend_destroy(sql);*/
+	backend_destroy(sql);
 	GDKfree(n);
 	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
@@ -749,8 +746,15 @@ SQLparser(Client c)
 #endif
 	m = be->mvc;
 	m->type = Q_PARSE;
-	if (!m->session->active) 
-		mvc_trans(m);
+	if (!m->session->active) {
+		int schema_nr = mvc_trans(m);
+		if (m->cache && (m->schema_number < schema_nr || m->qc->id > 1000)) {
+			m->schema_number = schema_nr;
+			if (m->qc)
+				qc_destroy(m->qc);
+			m->qc = qc_create(m->clientid);
+		}
+	}
 	pstatus = m->session->status;
 
 	/* sqlparse needs sql allocator to be available.  It can be NULL at
@@ -1060,6 +1064,37 @@ SQLexecutePrepared(Client cntxt, backend *be, cq *q )
 			GDKfree(argrec);
 	return ret;
 }
+
+str 
+backend_profile( backend *be, char *query, lng parse, lng optimize, lng exec, lng total )
+{
+	str msg = NULL;
+	mvc *c = be->mvc;
+	int mode = c->mode;
+	int explain = c->explain;
+	char *q = query;
+
+	char buf[BUFSIZ], *stmt = buf;
+
+	/* ltrim query */
+	while(isspace((int)(*q))) 
+		q++;
+
+	/* TODO use sql_prepare/execute */
+	snprintf(buf, BUFSIZ, "INSERT INTO \"profile\" "
+		 "VALUES(now,'%s',%lld,%lld,%lld,%lld,USER);\n",
+		 q, parse, optimize, exec, total);
+	_DELETE(query);
+
+	/* switch of explain to prevent recursion */
+	c->mode = m_normal;
+	c->explain = m_normal;
+	SQLstatement(&msg, &stmt);
+	c->mode = mode;
+	c->explain = explain;
+	return msg;
+}
+
 str
 SQLengine(Client c)
 {
@@ -1128,11 +1163,11 @@ environment.
 	}
 
 cleanup_engine:
-    if (msg) {
-        GDKerror(msg);
-        showErrors();
+    	if (msg) {
+        	GDKerror(msg);
+        	showErrors();
 		m->session->status = -10;
-    }
+    	}
 	be->q = NULL;
 	sqlcleanup(be->mvc, 0);
 	resetMalBlk( c->curprg->def, 1);
@@ -1145,35 +1180,11 @@ unless auto_commit has been set.
 @c
 	c->glb = oldglb;
 	if (m->mode== m_profile) {
-		str ret;
-		int mode = m->mode;
-		int explain = m->explain;
-		lng tot = be->Tparse;
-		char buf[BUFSIZ], *qs, *stmt = buf;
+		lng tot = be->Tparse; 
 
 		tot += be->Texec = GDKusec() - T0;
-		qs = be->qry;
-		while(isspace((int)*qs)) 
-			qs++; 
-		m->mode = m_normal;
-		m->explain = m_normal;
-		/* TODO use sql_prepare/execute */
-		snprintf(buf, BUFSIZ, "insert into \"profile\" "
-		 "values(now,'%s'," LLFMT ",0," LLFMT "," LLFMT" ,USER);\n",
-		 qs, be->Tparse, be->Texec, tot);
-@-
-This code causes a recursion, because the reset of the explain
-triggers the profile action. A better approach is to directly
-update the profile tables, without SQL intervention.
-Then the SQL profile table is just a view over a few basic bats.
-@c
-		if (be->qry)
-			GDKfree(be->qry);
+		msg = backend_profile(be, be->qry, be->Tparse, 0, be->Texec, tot);
 		be->qry = NULL;
-
-		SQLstatement(&ret, &stmt);
-		m->mode = mode;
-		m->explain = explain;
 	}
 
 	return msg;
