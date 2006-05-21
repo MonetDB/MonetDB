@@ -77,6 +77,7 @@ enum xquery_tokens {
 	XT_element,
 	XT_elementconstructor_start,
 	XT_elementconstructor_end,
+	XT_element_content,
 	XT_function,
 	XT_option,
 	XT_ordering,
@@ -127,8 +128,6 @@ enum xquery_tokens {
 	XT_text,
 	XT_text_constructor,
 	XT_comment,
-	XT_commentconstructor_start,
-	XT_commentconstructor_end,
 	XT_pi,
 	XT_piconstructor_start,
 	XT_piconstructor_end,
@@ -138,8 +137,6 @@ enum xquery_tokens {
 	XT_item,
 	XT_document,
 	XT_cdata,
-	XT_cdata_start,
-	XT_cdata_end,
 	XT_encoding,
 	XT_external,
 	XT_in,
@@ -193,6 +190,7 @@ enum xquery_tokens {
 typedef enum xquery_states {
 	XS_INIT,
 	XS_XML,
+	XS_ELEMENT_CONTENT,
 } xstate;
 
 extern void xscanner_init_keywords();
@@ -266,6 +264,7 @@ XT2string(int token)
 	XT(element);
 	XT(elementconstructor_start);
 	XT(elementconstructor_end);
+	XT(element_content);
 	XT(function);
 	XT(option);
 	XT(ordering);
@@ -316,8 +315,6 @@ XT2string(int token)
 	XT(text);
 	XT(text_constructor);
 	XT(comment);
-	XT(commentconstructor_start);
-	XT(commentconstructor_end);
 	XT(pi);
 	XT(piconstructor_start);
 	XT(piconstructor_end);
@@ -327,8 +324,6 @@ XT2string(int token)
 	XT(item);
 	XT(document);
 	XT(cdata);
-	XT(cdata_start);
-	XT(cdata_end);
 	XT(encoding);
 	XT(external);
 	XT(in);
@@ -454,7 +449,6 @@ xscanner_init_keywords()
 	keywords_insert("node", XT_node);
 	keywords_insert("item", XT_item);
 	keywords_insert("document", XT_document);
-	keywords_insert("CDATA", XT_cdata);
 	keywords_insert("encoding", XT_encoding);
 	keywords_insert("external", XT_external);
 	keywords_insert("in", XT_in);
@@ -817,6 +811,22 @@ skip_xqry_comment(xscanner * lc)
 	return cur;
 }
 
+static int 
+skip_xml_comment(xscanner * lc)
+{
+	int cur;
+	int p0 = 0, p1 = 0;
+
+	while ((cur = xscanner_getc(lc)) != EOF && 
+	       !(p0 == '-' && p1 == '-' && cur == '>')) {
+		p0 = p1;
+		p1 = cur;
+	}
+	lc->yysval = lc->yycur;
+	if (cur == '>')
+		cur = xscanner_getc(lc);
+	return cur;
+}
 
 static int tokenize(xscanner * lc, int cur);
 
@@ -856,6 +866,21 @@ number(xscanner * lc, int cur)
 	}
 }
 
+static int
+cdata(xscanner * lc) 
+{
+	int cur = 0;
+	int p0 = 0, p1 = 0;
+
+	while ((cur = xscanner_getc(lc)) != EOF && 
+	       !(p0 == ']' && p1 == ']' && cur == '>')) {
+		p0 = p1;
+		p1 = cur;
+	}
+	return xscanner_token(lc, XT_cdata);
+}
+
+
 static
 int xscanner_symbol(xscanner * lc, int cur)
 {
@@ -894,6 +919,8 @@ int xscanner_symbol(xscanner * lc, int cur)
 	case ',':
 	case '[':
 	case ']':
+	case '*':
+	case '-':
 		lc->started = 1;
 		return xscanner_token(lc, cur);
 	case '=':
@@ -915,20 +942,6 @@ int xscanner_symbol(xscanner * lc, int cur)
 		}
 		utf8_putchar(lc, cur); 
 		return xscanner_token(lc, '}');
-	case '-':
-		lc->started = 0;
-		cur = xscanner_getc(lc);
-		if (cur == '-') {
-			cur = xscanner_getc(lc);
-			if (cur != '>') {
-				utf8_putchar(lc, cur); 
-				cur = '-';
-			} else {
-				return xscanner_token( lc, XT_commentconstructor_end);
-			}
-		}
-		utf8_putchar(lc, '-'); 
-		return xscanner_token(lc, '-');
 	case '\\':
 		lc->started = 0;
 		cur = xscanner_getc(lc);
@@ -957,19 +970,33 @@ int xscanner_symbol(xscanner * lc, int cur)
 		cur = xscanner_getc(lc);
 		if (cur == '!') { 
 			cur = xscanner_getc(lc);
-			if (cur != '-') {
-				utf8_putchar(lc, cur); 
-				cur = '!';
-			} else {
+			if (cur == '-') {
 				cur = xscanner_getc(lc);
 				if (cur != '-') {
 					utf8_putchar(lc, cur); 
 					utf8_putchar(lc, '-'); 
 					cur = '!';
 				} else {
-					return xscanner_token( lc, XT_commentconstructor_start);
+					cur = skip_xml_comment(lc);
+					return tokenize(lc, cur);
 				}
 			}
+			if (cur == '[') {
+				char *cdata_str = "[CDATA[", *s = cdata_str;
+
+				while(*s == cur) {
+					cur = xscanner_getc(lc);
+					s++;
+				}
+				if (!*s) 
+					return cdata(lc);
+				utf8_putchar(lc, cur);
+				s--;
+				while(s <= cdata_str)  
+					utf8_putchar(lc, *s--);
+			}
+			utf8_putchar(lc, cur); 
+			return xscanner_token( lc, XT_lt);
 		} else if (cur == '?') {
 			return xscanner_token( lc, XT_piconstructor_start);
 		} else if (cur == '<') {
@@ -1022,9 +1049,27 @@ int xscanner_symbol(xscanner * lc, int cur)
 	return LEX_ERROR;
 }
 
+static int
+element_content(xscanner * lc, int cur) 
+{
+	int first = lc->yycur;
+	while((isspace(cur) || (cur > 0x20 && cur <= 0xff)) && 
+		cur != '{' && cur != '}' && cur != '<' && cur != '&')
+		cur = xscanner_getc(lc);
+
+	if (first == lc->yycur)
+		return xscanner_symbol(lc, cur);
+	else if (cur == '{' || cur == '}' || cur == '<' || cur == '&')
+		utf8_putchar(lc, cur);
+	return xscanner_token(lc, XT_element_content);
+}
+
 static int 
 tokenize(xscanner * lc, int cur)
 {
+	if (lc->state == XS_ELEMENT_CONTENT) {
+		return element_content(lc, cur);
+	}
 	while (1) {
 		if (isspace(cur)) {
 			if ((cur = skip_white_space(lc)) == EOF)
@@ -1044,38 +1089,6 @@ tokenize(xscanner * lc, int cur)
 		if (iscntrl(cur))
 			return xscanner_error(lc, cur);
 	}
-}
-
-int
-valid_ident(char *s, char *dst)
-{
-	int escaped = 0;
-	int p = 0;
-	
-	if (*s != '_' && !isalpha((int) *s) && *s != ' ')
-		return 0;
-	/* do unescaping in the loop */
-	while (*s && (*s != '"' || escaped)) {
-		if (*s == '\\') {
-			escaped = !escaped;
-			if (!escaped) {
-				dst[p++] = *s;
-			}
-		} else if (*s == '"' && escaped) {
-			escaped = 0;
-			dst[p++] = *s;
-		} else if (*s != '_' && !isalnum((int) *s) && *s != ' ') {
-			return 0;
-		} else {
-			escaped = 0;
-			dst[p++] = *s;
-		}
-		s++;
-		if (p >= 1024)
-			return 0;
-	}
-	dst[p] = '\0';
-	return 1;
 }
 
 static INLINE int
@@ -1100,7 +1113,7 @@ xqry_get_next_token(xscanner *lc, char **sval) {
 
 	*sval = (lc->c->fdin->buf + lc->c->fdin->pos + lc->yysval);
 
-	if (token == XT_NCNAME || token == XT_QNAME || token == XT_CMP || token == XT_AGGR)
+	if (token == XT_NCNAME || token == XT_QNAME || token == XT_CMP || token == XT_AGGR || token == XT_element_content)
 		*sval = xa_strndup(lc->xa, *sval, lc->yycur-lc->yysval);
 	if (token == XT_STR) {
 		char quote = **sval;

@@ -483,7 +483,9 @@ STATIC int
 parseSequenceType(Client cntxt, Xbackend xb)
 {
 	@:ptrace(parseSequenceType)@
-	if (curToken(xb) == XT_empty_sequence) {
+	/* pathfinder has no support for empty-sequence, 
+		for compatibility added empty */
+	if (curToken(xb) == XT_empty_sequence || curToken(xb) == XT_empty) {
 		if (nextToken(xb) != '(') 
 			return xqryError(cntxt,"'(' expected in SequenceType\n");
 		if (nextToken(xb) != ')')
@@ -684,23 +686,6 @@ parseDirPIConstructor(Client cntxt, Xbackend xb)
 	return PARSE_OK;
 }
 
-/* do we need to keep comments ? */
-STATIC int
-parseDirCommentConstructor(Client cntxt, Xbackend xb)
-{
-	if (curToken(xb) != XT_commentconstructor_start)
-		return PARSE_ERR;
-	@:ptrace(parseCommentConstructor)@
-	/* comment */
-	/* TODO parse comment (scan all until ?>) */
-	if (nextToken(xb) != XT_STR)
-		return PARSE_ERR;
-	if (nextToken(xb) != XT_commentconstructor_end)
-		return xqryError(cntxt,"'-->' expected in DirCommentConstructor\n");
-	@:etrace(parseCommentConstructor)@
-	return PARSE_OK;
-}
-
 STATIC int
 parseDirAttributeValue(Client cntxt, Xbackend xb)
 {
@@ -773,30 +758,10 @@ parseDirAttributeList(Client cntxt, Xbackend xb)
 STATIC int 
 parseCDataSection(Client cntxt, Xbackend xb) 
 {
-/* needs a special scan function */
-	if (curToken(xb) != XT_cdata_start)
+	(void)cntxt;
+	if (curToken(xb) != XT_cdata) 
 		return PARSE_ERR;
-	@:ptrace(parseCDataSection)@
-	while (nextToken(xb) != XT_cdata_end);
-
-	@:etrace(parseCDataSection)@
-	return PARSE_OK;
-}
-
-STATIC int 
-parseCommonContent(Client cntxt, Xbackend xb) 
-{
-	@:ptrace(parseCommonContent)@
-	if (curToken(xb) == XT_2open || curToken(xb) == XT_2close ||
-		parseEnclosedExpr(cntxt,xb) == PARSE_OK){
-		@:etrace(parseCommonContent)@
-		return PARSE_OK;
-	}
-	/* check PredefinedEntityRef */
-	/* and the rest */
-	if (curToken(xb) != XT_STR) 
-		return xqryError(cntxt,"<CharRef> expected in CommonContent\n");
-	@:etrace(parseCommonContent)@
+	xb->token = NO_TOKEN;
 	return PARSE_OK;
 }
 
@@ -804,13 +769,8 @@ STATIC int
 parseElementContentChar(Client cntxt, Xbackend xb) 
 {
 	(void)cntxt;
-	switch (curToken(xb)) {
-	case '{':
-	case '}':
-	case XT_lt:
-	case '&':
+	if (curToken(xb) != XT_element_content)
 		return PARSE_ERR;
-	}
 	xb->token = NO_TOKEN;
 	return PARSE_OK;
 }
@@ -837,6 +797,24 @@ parsePredefinedEntityRef(Client cntxt, Xbackend xb)
 }
 
 STATIC int 
+parseCommonContent(Client cntxt, Xbackend xb) 
+{
+	int res = PARSE_ERR;
+
+	@:ptrace(parseCommonContent)@
+	if (curToken(xb) == XT_2open || curToken(xb) == XT_2close ||
+		parseEnclosedExpr(cntxt,xb) == PARSE_OK){
+		@:etrace(parseCommonContent)@
+		return PARSE_OK;
+	}
+	if (parsePredefinedEntityRef(cntxt, xb) == PARSE_OK) 
+		res = PARSE_OK;
+	@:etrace(parseCommonContent)@
+	return res;
+}
+
+
+STATIC int 
 parseDirElementContent(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseDirElementContent)@
@@ -845,10 +823,10 @@ parseDirElementContent(Client cntxt, Xbackend xb)
 			parseEnclosedExpr(cntxt,xb)== PARSE_OK ||
 			parseDirectConstructor(cntxt, xb)== PARSE_OK ||
 			parseCDataSection(cntxt, xb)== PARSE_OK ||
-			parseCommonContent(cntxt, xb) == PARSE_OK ||
-			parseElementContentChar(cntxt, xb)== PARSE_OK
+			parseElementContentChar(cntxt, xb)== PARSE_OK ||
+			parseCommonContent(cntxt, xb) == PARSE_OK 
 		) )
-			return PARSE_ERR;
+			break;
 	} while(1);
 	@:etrace(parseDirElementContent)@
 	return PARSE_OK;
@@ -857,7 +835,7 @@ parseDirElementContent(Client cntxt, Xbackend xb)
 STATIC int 
 parseDirElementConstructor(Client cntxt, Xbackend xb) 
 {
-	int state = xb->xs->state;
+	int state = xb->xs->state, state2;
 
 	if (curToken(xb) != XT_lt)
 		return PARSE_ERR;
@@ -875,13 +853,18 @@ parseDirElementConstructor(Client cntxt, Xbackend xb)
 		return PARSE_OK;
 	}
 
-	if (curToken(xb) != '>') 
+	if (curToken(xb) != XT_gt) 
 		return xqryError(cntxt,"'>' expected in DirElementConstructor\n");
+	state2 = xb->xs->state;
+	xb->xs->state = XS_ELEMENT_CONTENT;
 	nextToken(xb);
 	parseDirElementContent(cntxt, xb);
+	xb->xs->state = state2;
+
 	if (curToken(xb) != XT_elementconstructor_start)
 		return xqryError(cntxt,"'</' expected in DirElementConstructor\n");
 
+	nextToken(xb);
 	if (parseQName(cntxt,xb) == PARSE_ERR) 
 		return xqryError(cntxt,"<Qname> expected in DirElementConstructor\n");
 
@@ -899,10 +882,6 @@ parseDirectConstructor(Client cntxt, Xbackend xb)
 {
 	@:ptrace(parseDirConstructor)@
 	if (parseDirElementConstructor(cntxt, xb) == PARSE_OK ){
-		@:etrace(parseDirConstructor)@
-		return PARSE_OK;
-	}
-	if (parseDirCommentConstructor(cntxt, xb) == PARSE_OK ){
 		@:etrace(parseDirConstructor)@
 		return PARSE_OK;
 	}
@@ -933,6 +912,7 @@ parseNonReservedKeyword(Xbackend xb)
 {
 	switch(curToken(xb)){
 	case XT_encoding:
+	case XT_collation:
 		xb->token = NO_TOKEN;
 		return PARSE_OK;
 	default:
@@ -1365,6 +1345,7 @@ parsePositionalVar(Client cntxt, Xbackend xb)
 
 	if (curToken(xb) != XT_at)
 		return PARSE_ERR;
+	nextToken(xb);
 	@:ptrace(parsePositionalVar)@
 	res = parseVarName(cntxt, xb);
 	@:etrace(parsePositionalVar)@
@@ -1876,16 +1857,21 @@ parseOrderByClause(Client cntxt, Xbackend xb)
 		if (curToken(xb) == ',')
 			nextToken(xb);
 		if (parseExprSingle(cntxt, xb) == PARSE_OK) {
-			/* TODO check order modifier */
 			if (curToken(xb) == XT_ascending) {
-			} else if (curToken(xb) == XT_descending) {
-			} else if (curToken(xb) == XT_empty) {
-			} else if (curToken(xb) == XT_greatest) {
-			} else if (curToken(xb) == XT_least) {
-			} else if (curToken(xb) == XT_collation) {
 				xb->token = NO_TOKEN;
-				/* parse URILiteral */
-				if (curToken(xb) == XT_STR) {
+			} else if (curToken(xb) == XT_descending) {
+				xb->token = NO_TOKEN;
+			}
+			if (curToken(xb) == XT_empty) {
+				if (nextToken(xb) == XT_greatest || 
+				    curToken(xb) == XT_least) {
+					xb->token = NO_TOKEN;
+				}
+			} 
+			if (curToken(xb) == XT_collation) {
+				if (nextToken(xb) == XT_STR) {
+					/* parse URILiteral */
+					xb->token = NO_TOKEN;
 				}
 			}
 		} else {
