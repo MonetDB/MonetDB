@@ -153,8 +153,13 @@ ZEND_DECLARE_MODULE_GLOBALS(monetdb)
 /* {{{ _php_monetdb_trim_message */
 static char * _php_monetdb_trim_message(const char *message, int *len)
 {
-	register int i = strlen(message)-1;
+	register int i;
 	register char* j = message;
+
+	if (message == NULL)
+		return(estrdup("(null)"));
+
+	i = strlen(message)-1;
 
 	/* trim newlines from the end */
 	while (i>0 && (message[i] == '\r' || message[i] == '\n'))
@@ -188,6 +193,12 @@ static inline char * _php_monetdb_trim_result(Mconn * monetdb, char **buf)
 
 #define PHP_MONETDB_ERROR(text, monetdb) { \
 	char *msgbuf = _php_monetdb_trim_message(mapi_error_str(monetdb), NULL); \
+	php_error_docref(NULL TSRMLS_CC, E_WARNING, text, msgbuf); \
+	efree(msgbuf); \
+} \
+
+#define PHP_MONETDB_ERROR_RESULT(text, monetdb) { \
+	char *msgbuf = _php_monetdb_trim_message(mapi_result_error(monetdb), NULL);\
 	php_error_docref(NULL TSRMLS_CC, E_WARNING, text, msgbuf); \
 	efree(msgbuf); \
 } \
@@ -868,7 +879,7 @@ PHP_FUNCTION(monetdb_query)
 		RETURN_FALSE;
 	} else if (mapi_result_error(monetdb_result) != NULL) {
 		/* something went wrong */
-		PHP_MONETDB_ERROR("Query failed: %s", monetdb);
+		PHP_MONETDB_ERROR_RESULT("Query failed: %s", monetdb_result);
 		mapi_close_handle(monetdb_result);
 		RETURN_FALSE;
 	} else {
@@ -1467,7 +1478,7 @@ PHP_FUNCTION(monetdb_fetch_result)
 
 	/* get the data in the field */
 	if (mapi_seek_row(monetdb_result, monetdb_row, MAPI_SEEK_SET) != MOK) {
-		PHP_MONETDB_ERROR("Can't jump to row: %s", monetdb_result_h->conn);
+		PHP_MONETDB_ERROR_RESULT("Can't jump to row: %s", monetdb_result);
 		RETURN_FALSE;
 	}
 	data = mapi_fetch_field(monetdb_result, field_offset);
@@ -1555,7 +1566,7 @@ static void php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, long result_typ
 	for (i = 0, num_fields = mapi_get_field_count(monetdb_result); i < num_fields; i++) {
 		/* get the data in the field */
 		if (mapi_seek_row(monetdb_result, monetdb_row, MAPI_SEEK_SET) != MOK) {
-			PHP_MONETDB_ERROR("Can't jump to row: %s", monetdb_result_h->conn);
+			PHP_MONETDB_ERROR_RESULT("Can't jump to row: %s", monetdb_result);
 			RETURN_FALSE;
 		}
 		element = mapi_fetch_field(monetdb_result, i);
@@ -1786,7 +1797,7 @@ static void php_monetdb_data_info(INTERNAL_FUNCTION_PARAMETERS, int entry_type)
 		case PHP_MONETDB_DATA_ISNULL:
 			/* get the data in the field */
 			if (mapi_seek_row(monetdb_result, monetdb_row, MAPI_SEEK_SET) != MOK) {
-				PHP_MONETDB_ERROR("Can't jump to row: %s", monetdb_result_h->conn);
+				PHP_MONETDB_ERROR_RESULT("Can't jump to row: %s", monetdb_result);
 				RETURN_FALSE;
 			}
 			Z_LVAL_P(return_value) = (mapi_fetch_field(monetdb_result, field_offset) == NULL);
