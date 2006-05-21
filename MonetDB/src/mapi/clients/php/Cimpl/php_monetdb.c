@@ -154,18 +154,26 @@ ZEND_DECLARE_MODULE_GLOBALS(monetdb)
 static char * _php_monetdb_trim_message(const char *message, int *len)
 {
 	register int i = strlen(message)-1;
+	register char* j = message;
 
-	if (i>1 && (message[i-1] == '\r' || message[i-1] == '\n') && message[i] == '.') {
-		--i;
-	}
-	while (i>0 && (message[i] == '\r' || message[i] == '\n')) {
-		--i;
-	}
-	++i;
-	if (len) {
+	/* trim newlines from the end */
+	while (i>0 && (message[i] == '\r' || message[i] == '\n'))
+		i--;
+	i++;
+
+	/* remove (!(ERROR: )?)? from the start */
+	if (*j == '!')
+		j++;
+	if (strncmp(j, "ERROR: ", 7) == 0)
+		j += 7;
+
+	/* correct the length based on the new start */
+	i -= (int)(j - message);
+
+	if (len)
 		*len = i;
-	}
-	return estrndup(message, i);
+
+	return(estrndup(j, i));
 }
 /* }}} */
 
@@ -205,6 +213,7 @@ static void _close_monetdb_link(zend_rsrc_list_entry *rsrc TSRMLS_DC)
 	Mconn *link = (Mconn *)rsrc->ptr;
 
 	mapi_disconnect(link);
+	mapi_destroy(link);
 	MG(num_links)--;
 }
 /* }}} */
@@ -216,6 +225,7 @@ static void _close_monetdb_plink(zend_rsrc_list_entry *rsrc TSRMLS_DC)
 	Mconn *link = (Mconn *)rsrc->ptr;
 
 	mapi_disconnect(link);
+	mapi_destroy(link);
 	MG(num_persistent)--;
 	MG(num_links)--;
 }
@@ -417,10 +427,13 @@ PHP_RSHUTDOWN_FUNCTION(monetdb)
 PHP_MINFO_FUNCTION(monetdb)
 {
 	char buf[256];
+	/* make new Mapi struct with nonsense values in order to obtain the
+	 * Mapi version */
+	Mapi m = mapi_mapi("localhost", 0, "user", "pass", "lang");
 
 	php_info_print_table_start();
 	php_info_print_table_header(2, "MonetDB Support", "enabled");
-	php_info_print_table_row(2, "Mapi Version", mapi_get_mapi_version(NULL));
+	php_info_print_table_row(2, "Mapi Version", mapi_get_mapi_version(m));
 #ifdef HAVE_OPENSSL
 	php_info_print_table_row(2, "SSL support", "enabled");
 #else
@@ -432,6 +445,7 @@ PHP_MINFO_FUNCTION(monetdb)
 	php_info_print_table_row(2, "Active Links", buf);
 	php_info_print_table_end();
 
+	mapi_destroy(m);
 	DISPLAY_INI_ENTRIES();
 }
 /* }}} */
@@ -794,7 +808,7 @@ PHP_FUNCTION(monetdb_ping)
 		RETURN_FALSE;
 	}
 
-	ZEND_FETCH_RESOURCE2(monetdb, Mconn *, monetdb_link, id, "MonetDB link", le_link, le_plink);
+	ZEND_FETCH_RESOURCE2(monetdb, Mconn *, &monetdb_link, id, "MonetDB link", le_link, le_plink);
 
 	/* ping connection and see if the connection is ok */
 	if (mapi_ping(monetdb) == 0)
