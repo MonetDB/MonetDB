@@ -633,8 +633,6 @@ output returned from the server.
 @item  char *mapi_get_host(Mapi mid)
 @item  char *mapi_get_user(Mapi mid)
 @item  char *mapi_get_lang(Mapi mid)
-@item  char *mapi_get_version(Mapi mid)
-@item  int mapi_get_versionId(Mapi mid)
 @item  char *mapi_get_motd(Mapi mid)
 
 @item char **mapi_tables(Mapi mid)
@@ -4392,7 +4390,6 @@ mapi_get_lang(Mapi mid)
 char *
 mapi_get_mapi_version(Mapi mid)
 {
-	mapi_check0(mid, "mapi_get_mapi_version");
 	return mid->mapiversion;
 }
 
