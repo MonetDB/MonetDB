@@ -1118,13 +1118,13 @@ copyfrom(mvc *sql, scope *scp, symbol *symb, dlist *files, dlist *seps, int nr)
 {
 	char *sname = qname_schema(symb);
 	char *tname = qname_table(symb);
+	char *host = qname_host(symb);
 	int location = table_location(sql,host);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	char *tsep = seps->h->data.sval;
 	char *rsep = seps->h->next->data.sval;
 	list *slist;
-	sql_table *t = NULL;
 
 	if(location ==-1){
 		return sql_error(sql, 02, "COPY INTO: no such database '%s'", host);
@@ -1334,6 +1334,7 @@ update_table(mvc *sql, scope *scp, symbol *symb, dlist *assignmentlist, symbol *
 {
 	char *sname = qname_schema(symb);
 	char *tname = qname_table(symb);
+	char *host = qname_host(symb);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	int location = table_location(sql,host);
@@ -1445,6 +1446,7 @@ delete_table(mvc *sql, scope *scp, symbol *symb, symbol *opt_where)
 {
 	char *sname = qname_schema(symb);
 	char *tname = qname_table(symb);
+	char *host = qname_host(symb);
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	int location = table_location(sql,host);

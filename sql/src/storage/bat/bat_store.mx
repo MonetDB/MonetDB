@@ -64,7 +64,6 @@ extern BAT *temp_descriptor(oid b);
 #define CATALOG_VERSION 30001
 
 static struct logger *logger = NULL;
-static int store_oid = 0;
 static MT_Lock bs_lock = NULL;
 static int store_oid = 0;
 static int nr_sessions = 0;

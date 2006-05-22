@@ -670,7 +670,7 @@ create_replication_support(mvc *sql,sql_schema *s, sql_table *view, symbol* quer
 		int in_out = (location>0) ? 0 : 1;
 		int t_rev = 0; 
 		sql_table* t = find_sql_table(s,"replication",LOCATION);
-		table_insert(sql->trans, t, &replication_id, &in_out, tname, &push_pull, &r_time, &t_rev, &t_rev);
+		table_insert(sql->session->tr, t, &replication_id, &in_out, tname, &push_pull, &r_time, &t_rev, &t_rev);
 		view->replication_id = replication_id;
         }
 	else
