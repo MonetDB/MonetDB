@@ -399,8 +399,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushStr(mb, q,dbalias);
 				q = pushInt(mb, q, s->flag);
 				k = getDestVar(q);
-			}
-			else{
+			} else {
 				q = newStmt1(mb, sqlRef, bindRef);
 				getVar(mb,getArg(q,0))->isudftype= 1;
 				setVarType(mb, getArg(q, 0), newBatType(ht, tt));
