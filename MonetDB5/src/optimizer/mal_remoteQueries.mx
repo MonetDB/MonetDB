@@ -202,7 +202,7 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* detect remote variable binding */
 		if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef) ){
 
-			if( p->argc== 6 && getArgType(mb,p,4)== TYPE_str ) {
+			if( p->argc == 6 && getArgType(mb,p,4) == TYPE_str ) {
 				/* a remote sql bind is needed */
 				/* lookup the server connection */
 				r= newInstruction(mb,ASSIGNsymbol);
@@ -245,7 +245,7 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else
 		if(getModuleId(p)== sqlRef && getFunctionId(p)== binddbatRef) {
 
-			if( p->argc== 5) {
+			if( p->argc == 5 && getArgType(mb,p,3) == TYPE_str ) {
 				location[getArg(p,0)]= getArg(p,0);
 				/* a remote sql bind is needed */
 				/* lookup the server connection */
