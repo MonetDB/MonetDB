@@ -1565,11 +1565,12 @@ DESCRIPITON:\n\
 "pf_support");
 
 const UPDATE_INSERT := 1LL;
-const UPDATE_DELETE := 2LL;
-const UPDATE_SETATTR := 3LL;
-const UPDATE_SETTEXT := 4LL;
-const UPDATE_SETCOMMENT := 5LL;
-const UPDATE_SETPI := 6LL;
+const UPDATE_INSERT_REV := 2LL;
+const UPDATE_DELETE := 3LL;
+const UPDATE_SETATTR := 4LL;
+const UPDATE_SETTEXT := 5LL;
+const UPDATE_SETCOMMENT := 6LL;
+const UPDATE_SETPI := 7LL;
 
 proc myinsert(bat[any::1,any::2] oldbat, bat[any::1,any::2] newbat) : bat[any::1,any::2]
 {
@@ -2116,13 +2117,22 @@ proc play_update_tape(bat[void,bat] ws, bat[void, oid] item, bat[void, int] kind
   }
 
   {
-    var insert_update := update_cmd.ord_uselect(UPDATE_INSERT);
+    var insert_update := update_cmd.ord_select(UPDATE_INSERT, UPDATE_INSERT_REV);
     if (insert_update.count() > 0) {
       var update_node_item := [oid]([+]([lng](insert_update.mirror()), 1)).leftfetchjoin(item);
       var update_node_kind := [oid]([+]([lng](insert_update.mirror()), 1)).leftfetchjoin(kind);
       var update_level := [oid]([+]([lng](insert_update.mirror()), 2)).leftfetchjoin(item).leftfetchjoin(int_values);
       var update_insert_node_item := [oid]([+]([lng](insert_update.mirror()), 3)).leftfetchjoin(item);
       var update_insert_node_kind := [oid]([+]([lng](insert_update.mirror()), 3)).leftfetchjoin(kind);
+      # UPDATE_INSERT_REV commands must be executed in reverse order
+      var order := insert_update.ord_uselect(UPDATE_INSERT_REV).mark(0@0);
+      if (order.count() > 0) {
+        update_node_item.access(BAT_WRITE).replace(order.leftjoin(order.mirror().leftjoin(update_node_item).access(BAT_WRITE).revert().tmark(0@0)));
+        update_node_kind.access(BAT_WRITE).replace(order.leftjoin(order.mirror().leftjoin(update_node_kind).access(BAT_WRITE).revert().tmark(0@0)));
+        update_level.access(BAT_WRITE).replace(order.leftjoin(order.mirror().leftjoin(update_level).access(BAT_WRITE).revert().tmark(0@0)));
+        update_insert_node_item.access(BAT_WRITE).replace(order.leftjoin(order.mirror().leftjoin(update_insert_node_item).access(BAT_WRITE).revert().tmark(0@0)));
+        update_insert_node_kind.access(BAT_WRITE).replace(order.leftjoin(order.mirror().leftjoin(update_insert_node_kind).access(BAT_WRITE).revert().tmark(0@0)));
+      }
 
       # unlike the cases above no double elimination here
 

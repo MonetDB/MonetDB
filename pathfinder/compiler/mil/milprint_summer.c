@@ -7598,11 +7598,17 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
              PFqname_eq(fnQname, PFqname (PFns_fn,"insert-after")) == 0)
     {
         char *func = PFqname_loc(fnQname);
+        char *update_cmd;
+
         milprintf(f, "# fn:%s (node, node) as stmt\n", func);
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RL(args));
+        if (strcmp(func, "insert-last") == 0 || strcmp(func, "insert-before") == 0)
+            update_cmd = "UPDATE_INSERT_REV";
+        else
+            update_cmd = "UPDATE_INSERT";
         milprintf(f,
                   "var docitem := item%03u;\n"
                   "var dockind := kind%03u;\n"
@@ -7625,8 +7631,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f,
                   "int_values := int_values.append([lng](doclevel));\n"
                   "doclevel := [lng](doclevel).leftjoin(int_values.reverse());\n"
-                  "int_values := int_values.append(UPDATE_INSERT);\n"
-                  "var insitemID := int_values.reverse().find(UPDATE_INSERT);\n"
+                  "int_values := int_values.append(%s);\n"
+                  "var insitemID := int_values.reverse().find(%s);\n"
                   "var item1 := constant2bat(insitemID);\n"
                   "var item2 := constant2bat(docitem);\n"
                   "var item3 := doclevel;\n"
@@ -7650,7 +7656,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "                          merge1.fetch(3), merge2.fetch(3));\n"
                   "item := merge.fetch(1);\n"
                   "kind := merge.fetch(2);\n"
-                  "iter := merge.fetch(3);\n");
+                  "iter := merge.fetch(3);\n",
+                  update_cmd, update_cmd);
         deleteResult (f, counter);
         return NORMAL;
     }        

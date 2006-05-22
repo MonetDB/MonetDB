@@ -39,7 +39,7 @@ print_result("xml",ws,tunique(iter),iter,item,constant2bat(kind),int_values,dbl_
 <element author="Sjoerd Mullender" title="test element" attr="0007" copyright="CWI" attribute="attribute value">element content 0007</element>
 <element author="Sjoerd Mullender" title="test element" attr="0008" copyright="CWI" attribute="attribute value">element content 0008</element>
 
-<element author="Sjoerd Mullender" title="test element" attr="0010" copyright="CWI" attribute="attribute value">element content 0010</element>
+<element author="Sjoerd Mullender" title="test element" attr="0010" copyright="CWI" attribute="attribute value"><b/><a/>element content 0010</element>
 <element author="Sjoerd Mullender" title="test element" attr="0011" copyright="CWI" attribute="attribute value">element content 0011</element>
 <element author="Sjoerd Mullender" title="test element" attr="0012" copyright="CWI" attribute="attribute value">element content 0012</element>
 <element author="Sjoerd Mullender" title="test element" attr="0013" copyright="CWI" attribute="attribute value">element content 0013</element>
@@ -49,7 +49,7 @@ print_result("xml",ws,tunique(iter),iter,item,constant2bat(kind),int_values,dbl_
 <element author="Sjoerd Mullender" title="test element" attr="0017" copyright="CWI" attribute="attribute value">element content 0017</element>
 <element author="Sjoerd Mullender" title="test element" attr="0018" copyright="CWI" attribute="attribute value">element content 0018</element>
 <element author="Sjoerd Mullender" title="test element" attr="0019" copyright="CWI" attribute="attribute value">element content 0019</element>
-<element author="Sjoerd Mullender" title="test element" attr="0020" copyright="CWI" attribute="attribute value">element content 0020</element>
+<element author="Sjoerd Mullender" title="test element" attr="0020" copyright="CWI" attribute="attribute value">element content 0020<a/><b/></element>
 <element author="Sjoerd Mullender" title="test element" attr="0021" copyright="CWI" attribute="attribute value">element content 0021</element>
 <element author="Sjoerd Mullender" title="test element" attr="0022" copyright="CWI" attribute="attribute value">element content 0022</element>
 <element author="Sjoerd Mullender" title="test element" attr="0023" copyright="CWI" attribute="attribute value">element content 0023</element>
@@ -59,7 +59,7 @@ print_result("xml",ws,tunique(iter),iter,item,constant2bat(kind),int_values,dbl_
 <element author="Sjoerd Mullender" title="test element" attr="0027" copyright="CWI" attribute="attribute value">element content 0027</element>
 <element author="Sjoerd Mullender" title="test element" attr="0028" copyright="CWI" attribute="attribute value">element content 0028</element>
 <element author="Sjoerd Mullender" title="test element" attr="0029" copyright="CWI" attribute="attribute value">element content 0029</element>
-<element author="Sjoerd Mullender" title="test element" attr="0030" copyright="CWI" attribute="attribute value">element content 0030</element>
+<a/><b/><element author="Sjoerd Mullender" title="test element" attr="0030" copyright="CWI" attribute="attribute value">element content 0030</element>
 <element author="Sjoerd Mullender" title="test element" attr="0031" copyright="CWI" attribute="attribute value">element content 0031</element>
 <element author="Sjoerd Mullender" title="test element" attr="0032" copyright="CWI" attribute="attribute value">element content 0032</element>
 <element author="Sjoerd Mullender" title="test element" attr="0033" copyright="CWI" attribute="attribute value">element content 0033</element>
@@ -69,7 +69,7 @@ print_result("xml",ws,tunique(iter),iter,item,constant2bat(kind),int_values,dbl_
 <element author="Sjoerd Mullender" title="test element" attr="0037" copyright="CWI" attribute="attribute value">element content 0037</element>
 <element author="Sjoerd Mullender" title="test element" attr="0038" copyright="CWI" attribute="attribute value">element content 0038</element>
 <element author="Sjoerd Mullender" title="test element" attr="0039" copyright="CWI" attribute="attribute value">element content 0039</element>
-<element author="Sjoerd Mullender" title="test element" attr="0040" copyright="CWI" attribute="attribute value">element content 0040</element>
+<element author="Sjoerd Mullender" title="test element" attr="0040" copyright="CWI" attribute="attribute value">element content 0040</element><b/><a/>
 <element author="Sjoerd Mullender" title="test element" attr="0041" copyright="CWI" attribute="attribute value">element content 0041</element>
 <element author="Sjoerd Mullender" title="test element" attr="0042" copyright="CWI" attribute="attribute value">element content 0042</element>
 <element author="Sjoerd Mullender" title="test element" attr="0043" copyright="CWI" attribute="attribute value">element content 0043</element>

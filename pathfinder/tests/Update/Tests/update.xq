@@ -53,3 +53,25 @@ for $elem in doc("testdoc.xml")/document/element/text()
  delete(exactly-one(doc("testdoc.xml")/document/element[10])),
  delete(exactly-one(doc("testdoc.xml")/document/comment()[3])),
  delete(exactly-one(doc("testdoc.xml")//processing-instruction("pi4000"))))
+,
+(: test insert with the following tests:
+-- test multiple insert-first
+-- test multiple insert-last
+-- test multiple insert-before
+-- test multiple insert-after
+:)
+for $elem in doc("testdoc.xml")/document/element[@attribute = 10]
+  return (insert-first($elem, <a/>),
+	  insert-first($elem, <b/>))
+,
+for $elem in doc("testdoc.xml")/document/element[@attribute = 20]
+  return (insert-last($elem, <a/>),
+	  insert-last($elem, <b/>))
+,
+for $elem in doc("testdoc.xml")/document/element[@attribute = 30]
+  return (insert-before($elem, <a/>),
+	  insert-before($elem, <b/>))
+,
+for $elem in doc("testdoc.xml")/document/element[@attribute = 40]
+  return (insert-after($elem, <a/>),
+	  insert-after($elem, <b/>))
