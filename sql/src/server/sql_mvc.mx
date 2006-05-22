@@ -411,6 +411,7 @@ mvc_rollback(mvc *m, int chain, char *name)
 		while (tr->parent->parent != NULL) {
 			tr = sql_trans_destroy(tr);
 		}
+		m->session-> tr = tr;
 		/* make sure we do not reuse changed data */
 		if (tr->wtime)
 			tr->status = 1;

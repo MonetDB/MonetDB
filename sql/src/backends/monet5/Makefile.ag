@@ -48,5 +48,5 @@ lib__sql_cache = {
 
 scripts_mal = {
 	DIR = libdir/MonetDB5
-	SOURCES = sql.mx sql_scenario.mx sql_cache.mx
+	SOURCES = sql.mx sql_cache.mx
 }
