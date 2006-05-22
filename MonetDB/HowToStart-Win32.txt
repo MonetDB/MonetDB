@@ -53,7 +53,7 @@ Mx, mel, and autogen
 	the MonetDB buildtools.  Check out buildtools with
 	::
 
-	 cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb checkout buildtools
+	 cvs -d:pserver:anonymous@monetdb.cvs.sourceforge.net:/cvsroot/monetdb checkout buildtools
 
 	and follow the Windows-specific instructions in the README
 	file, then proceed with MonetDB.
@@ -162,13 +162,13 @@ repository.
 
 ::
 
- cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb login
+ cvs -d:pserver:anonymous@monetdb.cvs.sourceforge.net:/cvsroot/monetdb login
 
 Just type RETURN when asked for the password.  The actual steps depend
 on your CVS tool, e.g. in WinCVS you have to set the Admin
 preferences.  Then get the software by using the command::
 
- cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb checkout MonetDB
+ cvs -d:pserver:anonymous@monetdb.cvs.sourceforge.net:/cvsroot/monetdb checkout MonetDB
 
 This will create a directory MonetDB in your current working directory.
 

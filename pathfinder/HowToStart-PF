@@ -75,7 +75,7 @@ Pathfinder source.
 
 Get the software by using the command::
 
- cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb checkout pathfinder
+ cvs -d:pserver:anonymous@monetdb.cvs.sourceforge.net:/cvsroot/monetdb checkout pathfinder
 
 This will create a directory ``pathfinder`` in your current working
 directory.
