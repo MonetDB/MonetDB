@@ -504,7 +504,7 @@ PFfun_new (PFqname_t      qn,
     n->sigs   = NULL;
 
     n->sig_count = sig_count;
-    assert (sig_count);
+    /* assert (sig_count); */
     n->sigs =  (PFfun_sig_t *) PFmalloc (sig_count * sizeof (PFfun_sig_t));
     for (unsigned int i = 0; i < sig_count; i++) {
         /* copy array of formal parameter types (if present) */

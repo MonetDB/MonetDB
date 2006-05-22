@@ -7559,9 +7559,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f, "# ignored fn:unordered\n");
         return translate2MIL (f, code, cur_level, counter, L(args));
     }
-    else if (PFqname_eq(fnQname, PFqname (PFns_fn,"delete")) == 0)
+    else if (PFqname_eq(fnQname, PFqname (PFns_upd,"delete")) == 0)
     {
-        milprintf(f, "# fn:delete (node) as stmt\n");
+        milprintf(f, "# upd:delete (node) as stmt\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
                   "int_values := int_values.append(UPDATE_DELETE);\n"

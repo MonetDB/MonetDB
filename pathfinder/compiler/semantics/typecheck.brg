@@ -456,6 +456,18 @@ reduce (PFcnode_t * p, int goalnt)
                         "binding sequence in a for clause has static "
                         "type `empty'");
 
+            /*
+             * XQuery Update Facility disallows updates in the `for'
+             * part.
+             */
+            if (!PFty_disjoint (PFty_stmt (),
+                                PFty_prime (PFty_defn (t1))))
+                PFoops (OOPS_TYPECHECK,
+                        "err:XUST0101: binding sequence may not contain "
+                        "an updating expression (has type `%s')",
+                        PFty_str (t1));
+
+            /* sanity check */
             if (!PFty_subtype (t1, PFty_star (PFty_item ())))
                 PFoops (OOPS_TYPECHECK,
                         "illegal binding in for clause, cannot iterate over "
@@ -507,6 +519,18 @@ reduce (PFcnode_t * p, int goalnt)
                         "binding sequence in a for clause has static "
                         "type `empty'");
 
+            /*
+             * XQuery Update Facility disallows updates in the `for'
+             * part.
+             */
+            if (!PFty_disjoint (PFty_stmt (),
+                                PFty_prime (PFty_defn (t1))))
+                PFoops (OOPS_TYPECHECK,
+                        "err:XUST0101: binding sequence may not contain "
+                        "an updating expression (has type `%s')",
+                        PFty_str (t1));
+
+            /* sanity check */
             if (!PFty_subtype (t1, PFty_star (PFty_item ())))
                 PFoops (OOPS_TYPECHECK,
                         "illegal binding in for clause, cannot iterate over "
@@ -551,6 +575,16 @@ reduce (PFcnode_t * p, int goalnt)
             t1 = TY(LR(p));
             TY(LL(p)) = t1;
 
+            /*
+             * NOTE:
+             *   The XQuery Update Facility disallows updating
+             *   expressions in the `let' part of a FLWOR clause.
+             *   However, our compilation into XQuery Core has
+             *   introduced lots of `let' clauses, such that any
+             *   update expression would fail if we really enforce
+             *   this semantics.
+             */
+
             /* E[Var : t1] |- CoreExpr : t2 */
             assert (LL(p)->sem.var);
             TY( LL(p)->sem.var ) = t1;
@@ -579,6 +613,18 @@ reduce (PFcnode_t * p, int goalnt)
                         "if-then-else condition of type %s (expected %s)",
                         PFty_str (TY(L(p))), PFty_str (PFty_boolean ()));
 
+            /*
+             * no mixture of updates and expressions
+             */
+            if (!PFty_disjoint (PFty_stmt (),
+                                PFty_prime (PFty_defn (TY(p))))
+                && !PFty_disjoint (PFty_item (),
+                                   PFty_prime (PFty_defn (TY(p)))))
+                PFoops (OOPS_TYPECHECK,
+                        "err:XUST0101: illegal mix of updating and "
+                        "non-updating expressions (got type `%s')",
+                        PFty_str (TY(p)));
+
             break;
 
         /* CoreExpr:           seq (Atom, Atom) */
@@ -590,6 +636,19 @@ reduce (PFcnode_t * p, int goalnt)
              *  E |- seq (Atom1, Atom2) : t1, t2
              */
             TY(p) = *PFty_simplify (PFty_seq (TY(L(p)), TY(R(p))));
+
+            /*
+             * no mixture of updates and expressions
+             */
+            if (!PFty_disjoint (PFty_stmt (),
+                                PFty_prime (PFty_defn (TY(p))))
+                && !PFty_disjoint (PFty_item (),
+                                   PFty_prime (PFty_defn (TY(p)))))
+                PFoops (OOPS_TYPECHECK,
+                        "err:XUST0101: illegal mix of updating and "
+                        "non-updating expressions (got type `%s')",
+                        PFty_str (TY(p)));
+
             break;
 
         /* CoreExpr:           typesw (Atom,
@@ -622,12 +681,36 @@ reduce (PFcnode_t * p, int goalnt)
             t1 = TY(L(p));
             t2 = TY(RLL(p));
 
+            /*
+             * XQuery Update Facility disallows updates in the
+             * operand expression of a typeswitch.
+             */
+            if (!PFty_disjoint (PFty_stmt (),
+                                PFty_prime (PFty_defn (t1))))
+                PFoops (OOPS_TYPECHECK,
+                        "err:XUST0101: operand in `typeswitch' may not contain "
+                        "an updating expression (has type `%s')",
+                        PFty_str (t1));
+
             if (PFty_subtype (t1, t2))
                 TY(p) = TY(RLR(p));
             else if (PFty_disjoint (t1, t2))
                 TY(p) = TY(RRL(p));
             else
                 TY(p) = *PFty_simplify (PFty_choice (TY(RLR(p)), TY(RRL(p))));
+
+            /*
+             * no mixture of updates and expressions
+             */
+            if (!PFty_disjoint (PFty_stmt (),
+                                PFty_prime (PFty_defn (TY(p))))
+                && !PFty_disjoint (PFty_item (),
+                                   PFty_prime (PFty_defn (TY(p)))))
+                PFoops (OOPS_TYPECHECK,
+                        "err:XUST0101: illegal mix of updating and "
+                        "non-updating expressions (got type `%s')",
+                        PFty_str (t1));
+
         } break;
 
         /* SequenceTypeCast:   seqcast (SequenceType, CoreExpr) */
@@ -738,8 +821,17 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* LocationStep:       parent (SequenceType) */
         case 27:
-            TY(p) = PFty_opt (TY(L(p)));
-            break;
+        {
+            PFty_t possible_parent_types
+                = PFty_choice (PFty_xs_anyElement (),
+                               PFty_doc (PFty_xs_anyNode ()));
+
+            if (PFty_subtype (possible_parent_types,
+                              TY(L(p))))
+                TY(p) = PFty_opt (possible_parent_types);
+            else
+                TY(p) = PFty_opt (TY(L(p)));
+        } break;
 
         /* LocationStep:       preceding (SequenceType) */
         case 28:
@@ -914,6 +1006,17 @@ reduce (PFcnode_t * p, int goalnt)
         case 49:
         /* OrderSpecs:         orderspecs (CoreExpr, OrderSpecs) */
         case 50:
+            /*
+             * XQuery Update Facility disallows updates in `order by'
+             * clauses.
+             */
+            if (!PFty_disjoint (PFty_stmt (),
+                                PFty_prime (PFty_defn (TY(L(p))))))
+                PFoops (OOPS_TYPECHECK,
+                        "err:XUST0101: `order by' may not contain "
+                        "an updating expression (has type `%s')",
+                        PFty_str (TY(L(p))));
+
             if (!PFty_subtype (TY(L(p)), PFty_opt (PFty_atomic ())))
                 PFoops (OOPS_TYPECHECK,
                         "[err:XPTY0004]"

@@ -109,88 +109,100 @@ typedef struct PFpnode_t *NODEPTR_TYPE;
 %term    except         =  29
 %term    exprseq        =  30
 %term    external       =  31
-%term    flwr           =  32
-%term    fns_decl       =  33
-%term    fun            =  34
-/* %term fun_decl       =  35  eliminated by function checking */
-/* %term fun_ref        =  36  eliminated by function checking */
-%term    fun_sig        =  37
-%term    ge             =  38
-%term    gt             =  39
-%term    gtgt           =  40
-%term    idiv           =  41
-%term    if_            =  42
-%term    inherit_ns     =  43
-%term    instof         =  44
-%term    intersect      =  45
-%term    is             =  46
-%term    item_ty        =  47
-%term    le             =  48
-%term    let            =  49
-%term    lib_mod        =  50
-%term    lit_dbl        =  51
-%term    lit_dec        =  52
-%term    lit_int        =  53
-%term    lit_str        =  54
-%term    locpath        =  55
-%term    lt             =  56
-%term    ltlt           =  57
-%term    main_mod       =  58
-%term    minus          =  59
-%term    mod            =  60
-%term    mod_imp        =  61
-%term    mod_ns         =  62
-%term    mult           =  63
-%term    named_ty       =  64
-%term    ne             =  65
-%term    nil            =  66
-%term    node_ty        =  67
-%term    ns_decl        =  68
-%term    or             =  69
-%term    ord_ret        =  70
-%term    orderby        =  71
-%term    ordered        =  72
-%term    ordering_mode  =  73
-%term    orderspecs     =  74
-%term    param          =  75
-%term    params         =  76
-%term    pi             =  77
-%term    plus           =  78
-%term    pred           =  79
-%term    range          =  80
-%term    req_name       =  81
-%term    req_ty         =  82
-%term    root_          =  83
-%term    schm_ats       =  84
-%term    schm_attr      =  85
-%term    schm_elem      =  86
-%term    schm_imp       =  87
-%term    seq_ty         =  88
-%term    some           =  89
-%term    step           =  90
-%term    tag            =  91
-%term    text           =  92
-%term    then_else      =  93
-%term    treat          =  94
-%term    typeswitch     =  95
-%term    uminus         =  96
-%term    union_         =  97
-%term    unordered      =  98
-%term    uplus          =  99
-%term    val_eq         = 100
-%term    val_ge         = 101
-%term    val_gt         = 102
-%term    val_le         = 103
-%term    val_lt         = 104
-%term    val_ne         = 105
-%term    validate       = 106
-%term    var            = 107
-%term    var_decl       = 108
-%term    var_type       = 109
-/* %term varref         = 110  eliminated by function checking */
-%term    vars           = 111
-%term    where          = 112
-%term    xmls_decl      = 113
+%term    ext_expr       =  32
+%term    flwr           =  33
+%term    fns_decl       =  34
+%term    fun            =  35
+/* %term fun_decl       =  36  eliminated by function checking */
+/* %term fun_ref        =  37  eliminated by function checking */
+%term    fun_sig        =  38
+%term    ge             =  39
+%term    gt             =  40
+%term    gtgt           =  41
+%term    idiv           =  42
+%term    if_            =  43
+%term    copy_ns        =  44
+%term    instof         =  45
+%term    intersect      =  46
+%term    is             =  47
+%term    item_ty        =  48
+%term    le             =  49
+%term    let            =  50
+%term    lib_mod        =  51
+%term    lit_dbl        =  52
+%term    lit_dec        =  53
+%term    lit_int        =  54
+%term    lit_str        =  55
+%term    locpath        =  56
+%term    lt             =  57
+%term    ltlt           =  58
+%term    main_mod       =  59
+%term    minus          =  60
+%term    mod            =  61
+%term    mod_imp        =  62
+%term    mod_ns         =  63
+%term    mult           =  64
+%term    named_ty       =  65
+%term    ne             =  66
+%term    nil            =  67
+%term    node_ty        =  68
+%term    ns_decl        =  69
+%term    or             =  70
+%term    ord_ret        =  71
+%term    orderby        =  72
+%term    ordered        =  73
+%term    ordering_mode  =  74
+%term    orderspecs     =  75
+%term    param          =  76
+%term    params         =  77
+%term    pi             =  78
+%term    plus           =  79
+%term    pragma         =  80
+%term    pragmas        =  81
+%term    pred           =  82
+%term    range          =  83
+%term    req_name       =  84
+%term    req_ty         =  85
+%term    root_          =  86
+%term    schm_ats       =  87
+%term    schm_attr      =  88
+%term    schm_elem      =  89
+%term    schm_imp       =  90
+%term    seq_ty         =  91
+%term    some           =  92
+%term    step           =  93
+%term    tag            =  94
+%term    text           =  95
+%term    then_else      =  96
+%term    treat          =  97
+%term    typeswitch     =  98
+%term    uminus         =  99
+%term    union_         = 100
+%term    unordered      = 101
+%term    uplus          = 102
+%term    val_eq         = 103
+%term    val_ge         = 104
+%term    val_gt         = 105
+%term    val_le         = 106
+%term    val_lt         = 107
+%term    val_ne         = 108
+%term    validate       = 109
+%term    var            = 110
+%term    var_decl       = 111
+%term    var_type       = 112
+/* %term varref         = 113  eliminated by function checking */
+%term    vars           = 114
+%term    where          = 115
+%term    boundspc_decl  = 116
+%term    revalid        = 117
+%term    insert         = 118
+%term    delete         = 119
+%term    replace        = 120
+%term    rename         = 121
+%term    transform      = 122
+%term    modify         = 123
+%term    transbinds     = 124
+%term    stmt_ty        = 125
 
 %%
 
@@ -220,13 +232,13 @@ DeclsImports:           decl_imps (fun (fun_sig (OptParamList_,
 
 
 DeclImport:             DefaultNamespaceDecl                        =  11 (10);
-DeclImport:             XMLSpaceDecl                                =  12 (10);
+DeclImport:             BoundarySpaceDecl                           =  12 (10);
 DeclImport:             DefaultCollationDecl                        =  13 (10);
 DeclImport:             BaseURIDecl                                 =  14 (10);
 DeclImport:             ConstructionDecl                            =  15 (10);
 DeclImport:             OrderingModeDecl                            =  16 (10);
 DeclImport:             EmptyOrderingDecl                           =  17 (10);
-DeclImport:             InheritNamespacesDecl                       =  18 (10);
+DeclImport:             CopyNamespacesDecl                          =  18 (10);
 DeclImport:             NamespaceDecl                               =  19 (10);
 DeclImport:             SchemaImport                                =  20 (10);
 DeclImport:             ModuleImport                                =  21 (10);
@@ -236,7 +248,7 @@ DeclImport:             LibraryModule                               =  23 (10);
 DefaultNamespaceDecl:   ens_decl (lit_str)                          =  24 (10);
 DefaultNamespaceDecl:   fns_decl (lit_str)                          =  25 (10);
 
-XMLSpaceDecl:           xmls_decl                                   =  26 (10);
+BoundarySpaceDecl:      boundspc_decl                               =  26 (10);
 
 DefaultCollationDecl:   coll_decl (lit_str)                         =  27 (10);
 
@@ -248,7 +260,7 @@ OrderingModeDecl:       ordering_mode                               =  30 (10);
 
 EmptyOrderingDecl:      def_order                                   =  31 (10);
 
-InheritNamespacesDecl:  inherit_ns                                  =  32 (10);
+CopyNamespacesDecl:     copy_ns                                     =  32 (10);
 
 NamespaceDecl:          ns_decl (lit_str)                           =  33 (10);
 
@@ -465,101 +477,129 @@ UnaryExpr:              uplus (ValueExpr)                           = 147 (10);
 
 ValueExpr:              ValidateExpr                                = 148 (10);
 ValueExpr:              PathExpr                                    = 149 (10);
+ValueExpr:              ExtensionExpr                               = 150 (10);
 
-ValidateExpr:           validate (OptExpr)                          = 150 (10);
+ValidateExpr:           validate (OptExpr)                          = 151 (10);
 
-PathExpr:               StepExpr                                    = 151 (10);
-PathExpr:               LocationPath                                = 152 (10);
+PathExpr:               StepExpr                                    = 152 (10);
+PathExpr:               LocationPath                                = 153 (10);
 
-LocationPath:           root_                                       = 153 (10);
-LocationPath:           locpath (StepExpr, StepExpr)                = 154 (10);
-LocationPath:           locpath (LocationStep, StepExpr)            = 155 (10);
+LocationPath:           root_                                       = 154 (10);
+LocationPath:           locpath (StepExpr, StepExpr)                = 155 (10);
+LocationPath:           locpath (LocationStep, StepExpr)            = 156 (10);
 
-/*
- * NOTE: Did not exaclty use the normalize.brg rules here.
- *
-PathExpr:               root_                                       = 151 (10);
-PathExpr:               RelativePathExpr                            = 152 (10);
+StepExpr:               LocationStep                                = 157 (10);
+StepExpr:               FilterExpr                                  = 158 (10);
 
-RelativePathExpr:       StepExpr                                    = 153 (10);
-RelativePathExpr:       locpath (RelativePathExpr, StepExpr)        = 154 (10);
- */
+FilterExpr:             PrimaryExpr                                 = 159 (10);
+FilterExpr:             pred (StepExpr, OptExpr)                    = 160 (10);
 
-StepExpr:               LocationStep                                = 156 (10);
-StepExpr:               FilterExpr                                  = 157 (10);
+LocationStep:           step (NodeTest)                             = 161 (10);
 
-FilterExpr:             PrimaryExpr                                 = 158 (10);
-FilterExpr:             pred (StepExpr, OptExpr)                    = 159 (10);
+PrimaryExpr:            Literal                                     = 162 (10);
+PrimaryExpr:            Var                                         = 163 (10);
+PrimaryExpr:            ParenthesizedExpr                           = 164 (10);
+PrimaryExpr:            ContextItemExpr                             = 165 (10);
+PrimaryExpr:            FunctionCall                                = 166 (10);
+PrimaryExpr:            Constructor                                 = 167 (10);
+PrimaryExpr:            OrderedExpr                                 = 168 (10);
+PrimaryExpr:            UnorderedExpr                               = 169 (10);
 
-LocationStep:           step (NodeTest)                             = 160 (10);
+Literal:                NumericLiteral                              = 170 (10);
+Literal:                StringLiteral                               = 171 (10);
 
-PrimaryExpr:            Literal                                     = 161 (10);
-PrimaryExpr:            Var                                         = 162 (10);
-PrimaryExpr:            ParenthesizedExpr                           = 163 (10);
-PrimaryExpr:            ContextItemExpr                             = 164 (10);
-PrimaryExpr:            FunctionCall                                = 165 (10);
-PrimaryExpr:            Constructor                                 = 166 (10);
-PrimaryExpr:            OrderedExpr                                 = 167 (10);
-PrimaryExpr:            UnorderedExpr                               = 168 (10);
+NumericLiteral:         IntegerLiteral                              = 172 (10);
+NumericLiteral:         DecimalLiteral                              = 173 (10);
+NumericLiteral:         DoubleLiteral                               = 174 (10);
 
-Literal:                NumericLiteral                              = 169 (10);
-Literal:                StringLiteral                               = 170 (10);
+IntegerLiteral:         lit_int                                     = 175 (10);
+DecimalLiteral:         lit_dec                                     = 176 (10);
+DoubleLiteral:          lit_dbl                                     = 177 (10);
 
-NumericLiteral:         IntegerLiteral                              = 171 (10);
-NumericLiteral:         DecimalLiteral                              = 172 (10);
-NumericLiteral:         DoubleLiteral                               = 173 (10);
+StringLiteral:          lit_str                                     = 178 (10);
 
-IntegerLiteral:         lit_int                                     = 174 (10);
-DecimalLiteral:         lit_dec                                     = 175 (10);
-DoubleLiteral:          lit_dbl                                     = 176 (10);
+Var:                    var                                         = 179 (10);
 
-StringLiteral:          lit_str                                     = 177 (10);
+ParenthesizedExpr:      OptExpr                                     = 180 (10);
 
-Var:                    var                                         = 178 (10);
+ContextItemExpr:        dot                                         = 181 (10);
 
-ParenthesizedExpr:      OptExpr                                     = 179 (10);
+FunctionCall:           apply (nil)                                 = 182 (10);
+FunctionCall:           apply (FuncArgList)                         = 183 (10);
 
-ContextItemExpr:        dot                                         = 180 (10);
+FuncArgList:            nil                                         = 184 (10);
+FuncArgList:            args (OptExpr, FuncArgList)                 = 185 (10);
 
-FunctionCall:           apply (nil)                                 = 181 (10);
-FunctionCall:           apply (FuncArgList)                         = 182 (10);
+OrderedExpr:            ordered (OptExpr)                           = 186 (10);
+UnorderedExpr:          unordered (OptExpr)                         = 187 (10);
 
-FuncArgList:            nil                                         = 183 (10);
-FuncArgList:            args (OptExpr, FuncArgList)                 = 184 (10);
+Constructor:            ElementConstructor                          = 188 (10);
+Constructor:            AttributeConstructor                        = 189 (10);
+Constructor:            TextConstructor                             = 190 (10);
+Constructor:            CommentConstructor                          = 191 (10);
+Constructor:            PIConstructor                               = 192 (10);
+Constructor:            DocumentConstructor                         = 193 (10);
 
-OrderedExpr:            ordered (OptExpr)                           = 185 (10);
-UnorderedExpr:          unordered (OptExpr)                         = 186 (10);
+ElementConstructor:     elem (TagName, OptContentExpr)              = 194 (10);
 
-Constructor:            ElementConstructor                          = 187 (10);
-Constructor:            AttributeConstructor                        = 188 (10);
-Constructor:            TextConstructor                             = 189 (10);
-Constructor:            CommentConstructor                          = 190 (10);
-Constructor:            PIConstructor                               = 191 (10);
-Constructor:            DocumentConstructor                         = 192 (10);
+AttributeConstructor:   attr (TagName, AttributeValue)              = 195 (10);
 
-ElementConstructor:     elem (TagName, OptContentExpr)              = 193 (10);
+TextConstructor:        text (OptExpr)                              = 196 (10);
 
-AttributeConstructor:   attr (TagName, AttributeValue)              = 194 (10);
+CommentConstructor:     comment (OptExpr)                           = 197 (10);
 
-TextConstructor:        text (OptExpr)                              = 195 (10);
+PIConstructor:          pi (OptExpr, OptContentExpr)                = 198 (10);
 
-CommentConstructor:     comment (OptExpr)                           = 196 (10);
+DocumentConstructor:    doc (OptExpr)                               = 199 (10);
 
-PIConstructor:          pi (OptExpr, OptContentExpr)                = 197 (10);
+TagName:                tag                                         = 200 (10);
+TagName:                OptExpr                                     = 201 (10);
 
-DocumentConstructor:    doc (OptExpr)                               = 198 (10);
+OptContentExpr:         Expr                                        = 202 (10);
+OptContentExpr:         empty_seq                                   = 203 (10);
+OptContentExpr:         contseq (OptContentExpr, OptContentExpr)    = 204 (10);
 
-TagName:                tag                                         = 199 (10);
-TagName:                OptExpr                                     = 200 (10);
+AttributeValue:         Expr                                        = 205 (10);
+AttributeValue:         empty_seq                                   = 206 (10);
+AttributeValue:         contseq (AttributeValue, AttributeValue)    = 207 (10);
 
-OptContentExpr:         Expr                                        = 201 (10);
-OptContentExpr:         empty_seq                                   = 202 (10);
-OptContentExpr:         contseq (OptContentExpr, OptContentExpr)    = 203 (10);
+ExtensionExpr:          ext_expr (Pragmas, nil)                     = 208 (10);
+ExtensionExpr:          ext_expr (Pragmas, Expr)                    = 209 (10);
 
-AttributeValue:         Expr                                        = 204 (10);
-AttributeValue:         empty_seq                                   = 205 (10);
-AttributeValue:         contseq (AttributeValue, AttributeValue)    = 206 (10);
+Pragmas:                nil                                         = 210 (10);
+Pragmas:                pragmas (pragma, Pragmas)                   = 211 (10);
 
+/* --- XQuery Update Facility below --- */
+DeclImport:             RevalidationDecl                            = 212 (10);
+
+RevalidationDecl:       revalid                                     = 213 (10);
+
+ExprSingle:             InsertExpr                                  = 214 (10);
+ExprSingle:             DeleteExpr                                  = 215 (10);
+ExprSingle:             RenameExpr                                  = 216 (10);
+ExprSingle:             ReplaceExpr                                 = 217 (10);
+ExprSingle:             TransformExpr                               = 218 (10);
+
+InsertExpr:             insert (SourceExpr, TargetExpr)             = 219 (10);
+DeleteExpr:             delete (SourceExpr)                         = 220 (10);
+ReplaceExpr:            replace (TargetExpr, ExprSingle)            = 221 (10);
+RenameExpr:             rename (SourceExpr, NewNameExpr)            = 222 (10);
+
+TransformExpr:          transform (TransformBindings,
+                                   modify (ExprSingle, ExprSingle)) = 223 (10);
+
+TransformBindings:      nil                                         = 224 (10);
+TransformBindings:      transbinds (TransformBinding,
+                                    TransformBindings)              = 225 (10);
+
+TransformBinding:       let (var_type (Var, nil), OptExpr)          = 226 (10);
+
+SourceExpr:             ExprSingle                                  = 227 (10);
+TargetExpr:             ExprSingle                                  = 228 (10);
+NewNameExpr:            ExprSingle                                  = 229 (10);
+
+/* statement type for updating functions */
+SequenceType:           seq_ty (stmt_ty (nil))                      = 230 (10);
 
 %%
 
@@ -845,15 +885,15 @@ reduce (PFpnode_t * p, int goalnt)
         /* NodeTest:               node_ty (node_ty (ElemOrAttrType)) */
         case 93:
         /* LocationPath:           locpath (StepExpr, StepExpr) */
-        case 154:
+        case 155:
         /* FilterExpr:             pred (StepExpr, Expr) */
-        case 159:
+        case 160:
         /* FunctionCall:           apply (nil) */
-        case 181:
-        /* FunctionCall:           apply (FuncArgList) */
         case 182:
+        /* FunctionCall:           apply (FuncArgList) */
+        case 183:
         /* FuncArgList:            args (Expr, FuncArgList) */
-        case 184:
+        case 185:
             topdown = true;
             break;
 
@@ -867,6 +907,10 @@ reduce (PFpnode_t * p, int goalnt)
     if (!topdown)
         for (unsigned short i = 0; nts[i]; i++)
             reduce (kids[i], nts[i]);
+
+    /*
+    PFinfo (OOPS_NOTICE, "processing rule %i", rule);
+    */
 
     switch (rule) {
 
@@ -2210,23 +2254,27 @@ reduce (PFpnode_t * p, int goalnt)
         case 149:
             break;
 
-        /* ValidateExpr:           validate (Expr) */
+        /* ValueExpr:              ExtensionExpr */
         case 150:
+            break;
+
+        /* ValidateExpr:           validate (Expr) */
+        case 151:
             PFoops_loc (OOPS_NOTSUPPORTED, p->loc, "validation not supported");
             break;
 
         /* PathExpr:               StepExpr */
-        case 151:
-            assert (C(p));
-            break;
-
-        /* PathExpr:               LocationPath */
         case 152:
             assert (C(p));
             break;
 
-        /* LocationPath:           root_ */
+        /* PathExpr:               LocationPath */
         case 153:
+            assert (C(p));
+            break;
+
+        /* LocationPath:           root_ */
+        case 154:
         {
             PFfun_t *_root = function (PFqname (PFns_fn, "root"));
 
@@ -2273,7 +2321,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* LocationPath:           locpath (StepExpr, StepExpr) */
-        case 154:
+        case 155:
         {
             /* TOPDOWN */
 
@@ -2409,7 +2457,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* LocationPath:           locpath (LocationStep, StepExpr) */
-        case 155:
+        case 156:
         {   /*
              * For regular location steps, we don't actually need the
              * complicated stuff in the above rule.
@@ -2444,19 +2492,22 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* StepExpr:               LocationStep */
-        case 156:
+        case 157:
+            assert (C(p));
             break;
 
         /* StepExpr:               FilterExpr */
-        case 157:
+        case 158:
+            assert (C(p));
             break;
 
         /* FilterExpr:             PrimaryExpr */
-        case 158:
+        case 159:
+            assert (C(p));
             break;
 
         /* FilterExpr:             pred (StepExpr, Expr) */
-        case 159:
+        case 160:
         {   /* TOPDOWN */
 
             /*
@@ -2607,95 +2658,103 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* LocationStep:           step (NodeTest) */
-        case 160:
+        case 161:
             assert (C(L(p)));
             C(p) = step (p->sem.axis, C(L(p)));
             break;
 
         /* PrimaryExpr:            Literal */
-        case 161:
+        case 162:
+            assert (C(p));
             break;
 
         /* PrimaryExpr:            Var */
-        case 162:
+        case 163:
+            assert (C(p));
             break;
 
         /* PrimaryExpr:            ParenthesizedExpr */
-        case 163:
+        case 164:
+            assert (C(p));
             break;
 
         /* PrimaryExpr:            ContextItemExpr */
-        case 164:
+        case 165:
+            assert (C(p));
             break;
 
         /* PrimaryExpr:            FunctionCall */
-        case 165:
+        case 166:
+            assert (C(p));
             break;
 
         /* PrimaryExpr:            Constructor */
-        case 166:
+        case 167:
+            assert (C(p));
             break;
 
         /* PrimaryExpr:            OrderedExpr */
-        case 167:
+        case 168:
+            assert (C(p));
             break;
 
         /* PrimaryExpr:            UnorderedExpr */
-        case 168:
+        case 169:
+            assert (C(p));
             break;
             
         /* Literal:                NumericLiteral */
-        case 169:
-            break;
-
-        /* Literal:                StringLiteral */
         case 170:
             break;
 
-        /* NumericLiteral:         IntegerLiteral */
+        /* Literal:                StringLiteral */
         case 171:
             break;
 
-        /* NumericLiteral:         DecimalLiteral */
+        /* NumericLiteral:         IntegerLiteral */
         case 172:
             break;
 
-        /* NumericLiteral:         DoubleLiteral */
+        /* NumericLiteral:         DecimalLiteral */
         case 173:
             break;
 
-        /* IntegerLiteral:         lit_int */
+        /* NumericLiteral:         DoubleLiteral */
         case 174:
+            break;
+
+        /* IntegerLiteral:         lit_int */
+        case 175:
             C(p) = num (p->sem.num);
             break;
 
         /* DecimalLiteral:         lit_dec */
-        case 175:
+        case 176:
             C(p) = dec (p->sem.dec);
             break;
 
         /* DoubleLiteral:          lit_dbl */
-        case 176:
+        case 177:
             C(p) = dbl (p->sem.dbl);
             break;
 
         /* StringLiteral:          lit_str */
-        case 177:
+        case 178:
             C(p) = str (p->sem.str);
             break;
 
         /* Var:                    var */
-        case 178:
+        case 179:
             C(p) = var (p->sem.var);
             break;
 
         /* ParenthesizedExpr:      Expr */
-        case 179:
+        case 180:
             assert (C(p));
             break;
 
         /* ContextItemExpr:        dot */
-        case 180:
+        case 181:
             if (fs_dot)
                 C(p) = var (fs_dot);
             else
@@ -2703,7 +2762,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* FunctionCall:           apply (nil) */
-        case 181:
+        case 182:
             /*
              * There are some built-in functions with special
              * implicit semantics.
@@ -2792,7 +2851,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* FunctionCall:           apply (FuncArgList) */
-        case 182:
+        case 183:
             /* TOPDOWN */
 
             assert (PFqname_eq (p->sem.apply.fun->qname,
@@ -2832,7 +2891,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* FuncArgList:            nil */
-        case 183:
+        case 184:
         {
             PFapply_t *fun = *(PFapply_t **) PFarray_top (funs);
 
@@ -2841,7 +2900,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* FuncArgList:            args (Expr, FuncArgList) */
-        case 184:
+        case 185:
         {   /* TOPDOWN */
             
             /*
@@ -2935,7 +2994,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* OrderedExpr:            ordered (Expr) */
-        case 185:
+        case 186:
             /* FIXME: Better treatment of `ordered' information?
              *         - Make this rule TOPDOWN
              *         - Keep a state variable during compilation
@@ -2944,36 +3003,36 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* UnorderedExpr:          unordered (Expr) */
-        case 186:
+        case 187:
             C(p) = unordered (C(L(p)));
             break;
 
         /* Constructor:            ElementConstructor */
-        case 187:
-            break;
-
-        /* Constructor:            AttributeConstructor */
         case 188:
             break;
 
-        /* Constructor:            TextConstructor */
+        /* Constructor:            AttributeConstructor */
         case 189:
             break;
 
-        /* Constructor:            CommentConstructor */
+        /* Constructor:            TextConstructor */
         case 190:
             break;
 
-        /* Constructor:            PIConstructor */
+        /* Constructor:            CommentConstructor */
         case 191:
             break;
 
-        /* Constructor:            DocumentConstructor */
+        /* Constructor:            PIConstructor */
         case 192:
             break;
 
-        /* ElementConstructor:     elem (TagName, OptContentExpr) */
+        /* Constructor:            DocumentConstructor */
         case 193:
+            break;
+
+        /* ElementConstructor:     elem (TagName, OptContentExpr) */
+        case 194:
         {
             PFfun_t *pf_matn
                 = function (PFqname (PFns_pf, "merge-adjacent-text-nodes"));
@@ -2983,7 +3042,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* AttributeConstructor:   attr (TagName, AttributeValue) */
-        case 194:
+        case 195:
             /*
              * The translation rules rooted at AttributeValue compile
              * the attribute value into a single string.
@@ -2992,7 +3051,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* TextConstructor:        text (Expr) */
-        case 195:
+        case 196:
         {
             /*
              * FIXME:
@@ -3010,7 +3069,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* CommentConstructor:     comment (Expr) */
-        case 196:
+        case 197:
         {
             PFfun_t *is2uA =
                 function (PFqname (PFns_pf, "item-sequence-to-untypedAtomic"));
@@ -3020,7 +3079,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* PIConstructor:          pi (OptExpr, OptContentExpr) */
-        case 197:
+        case 198:
         {
             PFvar_t *target  = new_var (NULL);
             PFvar_t *content = new_var (NULL);
@@ -3039,7 +3098,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* DocumentConstructor:    doc (Expr) */
-        case 198:
+        case 199:
         {
             PFfun_t *is2ns =
                 function (PFqname (PFns_pf, "item-sequence-to-node-sequence"));
@@ -3048,12 +3107,12 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* TagName:                tag */
-        case 199:
+        case 200:
             C(p) = constr_tag (p->sem.qname);
             break;
 
         /* TagName:                Expr */
-        case 200:
+        case 201:
         {
             /*
              * FIXME:
@@ -3094,7 +3153,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* OptContentExpr:         OptExpr */
-        case 201:
+        case 202:
         {
             PFvar_t *v = new_var (NULL);
             PFfun_t *is2ns =
@@ -3106,12 +3165,12 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* OptContentExpr:         empty_seq */
-        case 202:
+        case 203:
             C(p) = empty ();
             break;
 
         /* OptContentExpr:         contseq (OptContentExpr, OptContentExpr) */
-        case 203:
+        case 204:
         {
             PFvar_t *v1 = new_var (NULL);
             PFvar_t *v2 = new_var (NULL);
@@ -3123,7 +3182,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* AttributeValue:         Expr */
-        case 204:
+        case 205:
         {
             /*
              * Convert enclosed expression in attribute values as described in
@@ -3158,7 +3217,7 @@ reduce (PFpnode_t * p, int goalnt)
         } break;
 
         /* AttributeValue:         empty_seq */
-        case 205:
+        case 206:
             /*
              * An empty attribute value shall result in an empty string.
              */
@@ -3166,7 +3225,7 @@ reduce (PFpnode_t * p, int goalnt)
             break;
 
         /* AttributeValue:         contseq (AttributeValue, AttributeValue) */
-        case 206:
+        case 207:
         {
             /*
              * Both arguments have type xs:string after they had been
@@ -3187,6 +3246,628 @@ reduce (PFpnode_t * p, int goalnt)
 
         } break;
 
+        /* ExtensionExpr:          ext_expr (Pragmas, nil) */
+        case 208:
+            /*
+             * If an extension expression has an empty body we shall
+             * raise a static error (W3C XQuery 3.14) if we don't
+             * understand the pragma.
+             */
+            PFoops (OOPS_NOTSUPPORTED,
+                    "err:XQST0079: pragma(s) not understood and pragma "
+                    "expression body is absent");
+            break;
+
+        /* ExtensionExpr:          ext_expr (Pragmas, Expr) */
+        case 209:
+            /* Just ignore the pragma.  We don't understand it anyway. */
+            C(p) = C(R(p));
+            break;
+
+        /* Pragmas:                nil */
+        case 210:
+            /* We don't understand pragmas anyway */
+            break;
+
+        /* Pragmas:                pragmas (pragma, Pragmas) */
+        case 211:
+            /* We don't understand pragmas anyway */
+            break;
+
+        /* DeclImport:             RevalidationDecl */
+        case 212:
+            break;
+
+        /* RevalidationDecl:       revalid */
+        case 213:
+            break;
+
+        /* ExprSingle:             InsertExpr */
+        case 214:
+            assert (C(p));
+            break;
+
+        /* ExprSingle:             DeleteExpr */
+        case 215:
+            assert (C(p));
+            break;
+
+        /* ExprSingle:             RenameExpr */
+        case 216:
+            assert (C(p));
+            break;
+
+        /* ExprSingle:             ReplaceExpr */
+        case 217:
+            assert (C(p));
+            break;
+
+        /* ExprSingle:             TransformExpr */
+        case 218:
+            assert (C(p));
+            break;
+
+        /* InsertExpr:             insert (SourceExpr, TargetExpr) */
+        case 219:
+        {
+            PFvar_t *target = new_var (NULL);
+            PFvar_t *v1     = new_var (NULL);
+            PFvar_t *v2     = new_var (NULL);
+            PFvar_t *v3     = new_var (NULL);
+            PFvar_t *v4     = new_var (NULL);
+            PFvar_t *ins    = new_var (NULL);
+
+            PFfun_t *is2ns
+                = function (PFqname (PFns_pf,"item-sequence-to-node-sequence"));
+            PFfun_t *matn
+                = function (PFqname (PFns_pf, "merge-adjacent-text-nodes"));
+            PFfun_t *insert = NULL;
+
+            switch (p->sem.insert) {
+
+                case p_first_into:
+                    if (!insert)
+                        insert
+                            = function (PFqname (PFns_upd,"insertIntoAsFirst"));
+                    /* fall through */
+
+                case p_last_into:
+                case p_into:
+                    /*
+                     * With "into", the position is implementation defined.
+                     * we use it as a synonym for "into as last"
+                     */
+                    if (!insert)
+                        insert
+                            = function (PFqname (PFns_upd, "insertIntoAsLast"));
+                    /* fall through */
+
+                case p_after:
+                    if (!insert)
+                        insert
+                            = function (PFqname (PFns_upd, "insertAfter"));
+                    /* fall through */
+
+                case p_before:
+                    if (!insert)
+                        insert
+                            = function (PFqname (PFns_upd, "insertBefore"));
+
+                    /*
+                     *  1. Compile <SourceExpr> as if it were the content
+                     *     of an element constructor.
+                     *
+                     *  2. If the insertion expression contains a document
+                     *     node, replace it in the insertion sequence by
+                     *     its children.
+                     *
+                     *  3. Invoke the respective update operation.
+                     *
+                     * NOTE: We do not guarantee here that (in case of
+                     *   "before" or "after") that parent property of the
+                     *   target expression is not empty.
+                     *
+                     * let $target := [[ <TargetExpr> ]]
+                     * let $v1 := [[ <SourceExpr> ]]
+                     * let $v2 := pf:item-sequence-to-node-sequence ($v1)
+                     * let $v3 := pf:merge-adjacent-text-nodes ($v2)
+                     * let $ins := for $v4 in $v3 return
+                     *               typeswitch ($v4)
+                     *                 case document-node() return $v4/node()
+                     *                 default return $v4
+                     * return
+                     *   upd:insertXXX ($target, $ins)
+                     */
+                    C(p)
+                        = flwr (
+                            let (letbind (var (target), C(R(p))),
+                            let (letbind (var (v1), C(L(p))),
+                            let (letbind (var (v2), APPLY (is2ns, var (v1))),
+                            let (letbind (var (v3), APPLY (matn, var (v2))),
+                            let (
+                                letbind (
+                                    var (ins),
+                                    flwr (
+                                        for_ (
+                                            forbind (
+                                                forvars (var (v4), nil ()),
+                                                var (v3)),
+                                            nil ()),
+                                        typeswitch (
+                                            var (v4),
+                                            cases (
+                                                case_ (
+                                                    seqtype (
+                                                        PFty_doc (
+                                                            PFty_xs_anyType())),
+                                                    locsteps (
+                                                        step (
+                                                            p_child,
+                                                            seqtype (
+                                                                PFty_node())),
+                                                        var (v4))),
+                                                default_ (var (v4)))))),
+                                nil ()))))),
+                            APPLY (insert, var (target), var (ins)));
+                    break;
+            }
+
+        } break;
+
+        /* DeleteExpr:             delete (SourceExpr) */
+        case 220:
+        {   /*
+             * [[ do delete <TargetExpr> ]]
+             *  ==
+             * let $v1 := [[ <TargetExpr> ]] return
+             *   for $v2 in $v1 return
+             *     upd:delete ($v2)
+             */
+            PFvar_t *v1 = new_var (NULL);
+            PFvar_t *v2 = new_var (NULL);
+            PFfun_t *delete = function (PFqname (PFns_upd, "delete"));
+
+            C(p) = flwr (let (letbind (var (v1), C(L(p))), nil ()),
+                         flwr (for_ (forbind (forvars (var (v2), nil ()),
+                                              var (v1)),
+                                     nil ()),
+                               APPLY (delete, var (v2))));
+        } break;
+
+
+        /* ReplaceExpr:            replace (TargetExpr, ExprSingle) */
+        case 221:
+            if (p->sem.tru) {  
+                /*
+                 * The semantics of the expression
+                 *
+                 *   do replace value of <TargetExpr> with <ExprSingle>
+                 *
+                 * is described in the XQuery Update Facility:
+                 *
+                 * 1. <ExprSingle> is evaluated as if it were the content
+                 *    expression of a text node constructor.
+                 *
+                 * 2. The <TargetExpr> must evaluate to a single node.
+                 *
+                 * 3. If <TargetExpr> evaluates to an element node,
+                 *
+                 *    (a) delete all of its children and
+                 *    (b) insert a new text node containing <ExprSingle>
+                 *        as its content.
+                 *
+                 * 4. If <TargetExpr> evaluates to an attribute, text, or
+                 *    processing-instruction node, replace their content
+                 *    with the string obtained in Step 1.
+                 *
+                 * 5. If <TargetExpr> evaluates to a document node, raise
+                 *    an error.
+                 *
+                 * [[ do replace value of <TargetExpr> with <ExprSingle> ]]
+                 *  ==
+                 * let $expr := [[ <ExprSingle> ]]
+                 * let $string := fn:data ($expr)
+                 * let $step1 := pf:item-sequence-to-untypedAtomic($string)
+                 * let $target := [[ <TargetExpr> ]] return
+                 *   typeswitch ($target)
+                 *     case $e as xs:anyElement return
+                 *       let $textnode := text { $step1 }
+                 *       let $clist $e/child::node()
+                 *       let $v1 := for $v in $clist return upd:delete($v)
+                 *       let $v2 := upd:insert ($e, $textnode)
+                 *       return
+                 *         ($v1, $v2)
+                 *     case $a as xs:anyAttribute return
+                 *       upd:replaceValue ($a, $step1)
+                 *     case $t as text() return
+                 *       upd:replaceValue ($t, $step1)
+                 *     case $p as processing-instruction() return
+                 *       upd:replaceValue ($p, $step1)
+                 *     case $c as comment() return
+                 *       upd:replaceValue ($c, $step1)
+                 *     default return
+                 *       error ("illegal expression in `do replace' clause")
+                 */
+                PFvar_t *expr     = new_var (NULL);
+                PFvar_t *string   = new_var (NULL);
+                PFvar_t *step1    = new_var (NULL);
+                PFvar_t *target   = new_var (NULL);
+                PFvar_t *e        = new_var (NULL);
+                PFvar_t *textnode = new_var (NULL);
+                PFvar_t *v        = new_var (NULL);
+                PFvar_t *a        = new_var (NULL);
+                PFvar_t *t        = new_var (NULL);
+                PFvar_t *pi       = new_var (NULL);
+                PFvar_t *c        = new_var (NULL);
+                PFvar_t *clist    = new_var (NULL);
+                PFvar_t *v1       = new_var (NULL);
+                PFvar_t *v2       = new_var (NULL);
+
+                PFfun_t *is2uA
+                    = function (PFqname (PFns_pf,
+                                         "item-sequence-to-untypedAtomic"));
+                PFfun_t *delete  = function (PFqname (PFns_upd, "delete"));
+                PFfun_t *insert
+                    = function (PFqname (PFns_upd, "insertIntoAsLast"));
+                PFfun_t *replace
+                    = function (PFqname (PFns_upd, "replaceValue"));
+                PFfun_t *error   = function (PFqname (PFns_fn, "error"));
+
+                C(p)
+                  = flwr (
+                        let (letbind (var (expr), C(R(p))),
+                            let (letbind (var (string), fn_data (var (expr))),
+                                let (letbind (var (step1),
+                                              APPLY (is2uA, var (string))),
+                                    let (letbind (var (target), C(L(p))),
+                                         nil())))),
+                        typeswitch (
+                            var (target),
+                            cases (
+                                case_ (
+                                    seqtype (PFty_xs_anyElement ()),
+                                    flwr (
+                                        let (letbind (var (e),
+                                                seqcast (
+                                                    seqtype (
+                                                        PFty_xs_anyElement ()),
+                                                    var (target))),
+                                        let (letbind (var (textnode),
+                                                      constr (p_text,
+                                                              var (step1))),
+                                        let (letbind (
+                                                var (clist),
+                                                locsteps (
+                                                    step (
+                                                        p_child,
+                                                        seqtype (PFty_node ())),
+                                                    var (e))),
+                                        let (letbind (var (v1),
+                                                flwr (
+                                                    for_ (
+                                                        forbind (
+                                                            forvars (
+                                                                var (v),
+                                                                nil ()),
+                                                            var (clist)),
+                                                        nil ()),
+                                                    APPLY (delete, var (v)))),
+                                        let (letbind (var (v2),
+                                                APPLY (insert,
+                                                       var (e), var(textnode))),
+                                        nil ()))))),
+                                        seq (var (v1), var (v2)))),
+                            default_ (typeswitch (var (target), cases (
+                                case_ (
+                                    seqtype (PFty_xs_anyAttribute ()),
+                                    flwr (
+                                        let (letbind (var (a),
+                                            seqcast (
+                                                seqtype (
+                                                    PFty_xs_anyAttribute ()),
+                                                var (target))), nil ()),
+                                        APPLY (replace, var (a), var (step1)))),
+                            default_ (typeswitch (var (target), cases (
+                                case_ (
+                                    seqtype (PFty_text ()),
+                                    flwr (
+                                        let (letbind (var (t),
+                                                      seqcast (
+                                                          seqtype (
+                                                              PFty_text ()),
+                                                          var (target))),
+                                             nil ()),
+                                        APPLY (replace, var (t), var (step1)))),
+                            default_ (typeswitch (var (target), cases (
+                                case_ (
+                                    seqtype (PFty_pi (NULL)),
+                                    flwr (
+                                        let (letbind (var (pi),
+                                                      seqcast (
+                                                          seqtype (
+                                                              PFty_pi (NULL)),
+                                                          var (target))),
+                                             nil ()),
+                                        APPLY (replace,
+                                               var (pi), var (step1)))),
+                            default_ (typeswitch (var (target), cases (
+                                case_ (
+                                    seqtype (PFty_comm ()),
+                                    flwr (
+                                        let (letbind (var (c),
+                                                      seqcast (
+                                                          seqtype (
+                                                              PFty_comm ()),
+                                                          var (target))),
+                                             nil ()),
+                                        APPLY (replace, var (c), var (step1)))),
+                            default_ (
+                                APPLY (error,
+                                      str ("illegal expression in `do replace' "
+                                           "clause"))
+                                ))))))))))))))));
+
+            }
+            else {
+                /*
+                 * Evaluate the clause
+                 *
+                 *   do replace <TargetExpr> with <ExprSingle>
+                 *
+                 * as follows:
+                 *
+                 *  1. evaluate <ExprSingle> as if it were enclosed in
+                 *     an element constructor, yielding the "replacement
+                 *     sequence".
+                 *
+                 *  2. If the replacement sequence contains a document
+                 *     node, replace it by its children.
+                 *
+                 * (3. Raise an error if the replacement sequence contains
+                 *     an attribute node that does follow a node that is
+                 *     not an attribute.)
+                 *
+                 *  4. <TargetExpr> must not have an empty parent property.
+                 *
+                 *  5. If <TargetExpr> is an element, text, comment, or
+                 *     processing instruction node, generate the update
+                 *     operations
+                 *
+                 *       upd:insertAttributes ($parent, $alist)
+                 *       upd:insertBefore ($target, $clist)
+                 *       upd:delete ($target)
+                 *
+                 *  6. If <TargetExpr> is an attribute node, generate the
+                 *     operations
+                 *
+                 *       upd:insertAttributes ($parent, $alist)
+                 *       upd:insertIntoAsLast ($parent, $clist)
+                 *       upd:delete ($target).
+                 *
+                 * [[ do replace <TargetExpr> with <ExprSingle> ]]
+                 *  ==
+                 * let $target := [[ <TargetExpr> ]]
+                 * let $v1 := [[ <ExprSingle> ]]
+                 * let $v2 := fs:item-sequence-to-node-sequence ($v1)
+                 * let $v3 := fs:merge-adjacent-text-nodes ($v2)
+                 * let $repl := for $v4 in $v3 return
+                 *                typeswitch ($v4)
+                 *                  case document-node() return $v4/node()
+                 *                  default return $v4
+                 * let $parent := $target/parent::node()
+                 * return
+                 *   typeswitch ($parent)
+                 *     case empty() return error ("parent of `replace' empty")
+                 *     default return
+                 *       typeswitch ($target)
+                 *         case xs:anyAttribute return
+                 *           let $v4 := upd:insertIntoAsLast ($parent, $repl)
+                 *           let $v5 := upd:delete ($target)
+                 *           return
+                 *             ($v4, $v5)
+                 *         case node() return
+                 *           let $v6 := upd:insertBefore ($target, $repl)
+                 *           let $v7 := upd:delete ($target)
+                 *           return
+                 *             ($v6, $v7)
+                 *         default
+                 *           error ("illegal expression in `do replace' expr")
+                 */
+                PFvar_t *target = new_var (NULL);
+                PFvar_t *v1     = new_var (NULL);
+                PFvar_t *v2     = new_var (NULL);
+                PFvar_t *v3     = new_var (NULL);
+                PFvar_t *v4     = new_var (NULL);
+                PFvar_t *v5     = new_var (NULL);
+                PFvar_t *v6     = new_var (NULL);
+                PFvar_t *v7     = new_var (NULL);
+                PFvar_t *repl   = new_var (NULL);
+                PFvar_t *parent = new_var (NULL);
+
+                PFfun_t *is2ns
+                    = function (PFqname (PFns_pf,
+                                         "item-sequence-to-node-sequence"));
+                PFfun_t *matn
+                    = function (PFqname (PFns_pf,
+                                         "merge-adjacent-text-nodes"));
+                PFfun_t *insertlast
+                    = function (PFqname (PFns_upd, "insertIntoAsLast"));
+                PFfun_t *delete  = function (PFqname (PFns_upd, "delete"));
+                PFfun_t *insertbefore
+                    = function (PFqname (PFns_upd, "insertBefore"));
+                PFfun_t *error   = function (PFqname (PFns_fn, "error"));
+
+                C(p)
+                  = flwr (
+                      let (letbind (var (target), C(L(p))),
+                      let (letbind (var (v1), C(R(p))),
+                      let (letbind (var (v2), APPLY (is2ns, var (v1))),
+                      let (letbind (var (v3), APPLY (matn, var (v2))),
+                      let (letbind (
+                          var (repl),
+                          flwr (
+                              for_ (
+                                  forbind (
+                                      forvars (var (v4), nil ()),
+                                      var (v3)),
+                                  nil ()),
+                              typeswitch (
+                                  var (v4),
+                                  cases (
+                                      case_ (
+                                          seqtype (
+                                              PFty_doc(PFty_plus(PFty_node()))),
+                                          locsteps (step (p_child,
+                                                          seqtype(PFty_node())),
+                                                    var (v4))),
+                                      default_ (var (v4)))))),
+                      let (letbind (var (parent),
+                                    locsteps (step (p_parent,
+                                                    seqtype (PFty_node ())),
+                                              var (target))),
+                      nil ())))))),
+                      typeswitch (
+                          var (parent),
+                          cases (
+                            case_ (seqtype (PFty_empty ()),
+                                   APPLY (error,
+                                          str("parent of `do replace' empty"))),
+                            default_ (
+                                typeswitch (
+                                    var (target),
+                                    cases (
+                                        case_ (
+                                            seqtype (PFty_xs_anyAttribute ()),
+                                            flwr (
+                                                let (
+                                                    letbind (
+                                                        var (v4),
+                                                        APPLY (insertlast,
+                                                               var (parent),
+                                                               var (repl))),
+                                                let (
+                                                    letbind (
+                                                        var (v5),
+                                                        APPLY (delete,
+                                                               var (target))),
+                                                nil ())),
+                                                seq (var (v4), var (v5)))),
+                                        default_ (
+                                            typeswitch (var (target), cases (
+                                        case_ (
+                                            seqtype (PFty_node ()),
+                                            flwr (
+                                                let (
+                                                    letbind (
+                                                        var (v6),
+                                                        APPLY (insertbefore,
+                                                               var (target),
+                                                               var (repl))),
+                                                let (
+                                                    letbind (
+                                                        var (v7),
+                                                        APPLY (delete,
+                                                               var (target))),
+                                                nil ())),
+                                                seq (var (v6), var (v7)))),
+                                        default_ (
+                                            APPLY (
+                                                error,
+                                                str ("illegal expression in "
+                                                     "`do replace expression"))
+                                            ))))))))));
+            }
+            
+            break;
+
+        /* RenameExpr:             rename (SourceExpr, NewNameExpr) */
+        case 222:
+        {
+            /*
+             * [[ do rename <TargetExpr> as <NewNameExpr> ]]
+             *  ==
+             * let $target := [[ <TargetExpr> ]] return
+             *   let $newName := [[ <NewNameExpr ]] return
+             *     upd:rename ($target, $newName)
+             */
+            PFvar_t *target  = new_var (NULL);
+            PFvar_t *newName = new_var (NULL);
+            PFfun_t *rename  = function (PFqname (PFns_upd, "rename"));
+
+            C(p) = flwr (let (letbind (var (target), C(L(p))),
+                              nil ()),
+                         flwr (let (letbind (var (newName), C(R(p))),
+                                    nil ()),
+                               APPLY (rename, var (target), var (newName))));
+        } break;
+
+        /* TransformExpr:          transform (TransformBindings,
+                                             modify (ExprSingle, ExprSingle)) */
+        case 223:
+            PFoops (OOPS_NOTSUPPORTED,
+                    "`transform' expressions are not supported in Pathfinder");
+            break;
+
+
+        /* TransformBindings:      nil */
+        case 224:
+            /* we do not support transform expressions anyway */
+            break;
+
+        /* TransformBindings:      transbinds (TransformBinding,
+                                    TransformBindings) */
+        case 225:
+            /* we do not support transform expressions anyway */
+            break;
+
+
+        /* TransformBinding:       let (var_type (Var, nil), OptExpr) */
+        case 226:
+            /* we do not support transform expressions anyway */
+            break;
+
+
+        /* SourceExpr:             ExprSingle */
+        case 227:
+            assert (C(p));
+            break;
+
+        /* TargetExpr:             ExprSingle */
+        case 228:
+            assert (C(p));
+            break;
+
+        /* NewNameExpr:            ExprSingle */
+        case 229:
+        {
+            /*
+             * XQuery Update Facility (May 8, 2006, Sect. 2.3.4):
+             * ``NewNameExpr'' is evaluated as though it were the name
+             * expression of a computed element constructor.''
+             *
+             * (see also Rule TagName: OptExpr)
+             */
+            PFvar_t *v1 = new_var (NULL);
+            PFvar_t *v2 = new_var (NULL);
+            PFfun_t *resolve_qname
+                = function (PFqname (PFns_fn, "resolve-QName"));
+
+            C(p) = flwr (let (letbind (var (v1), fn_data (C(p))), nil ()),
+                         flwr (let (letbind (
+                                     var (v2),
+                                     fs_convert_op_by_type (var (v1),
+                                                            PFty_string ())),
+                                    nil ()),
+                               APPLY (resolve_qname, var (v2))));
+        } break;
+
+        /* SequenceType:           seq_ty (stmt_ty (nil)) */
+        case 230:
+            /*
+             * statement type for updating user-defined functions.
+             */
+            C(p) = seqtype (PFty_star (PFty_stmt ()));
+            break;
 
         default:
             PFoops_loc (OOPS_FATAL, p->loc, "untranslated expression");

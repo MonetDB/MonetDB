@@ -99,15 +99,24 @@ enum PFempty_order_t {
 };
 typedef enum PFempty_order_t PFempty_order_t;
 
+enum PFrevalidation_t {
+      revalid_strict
+    , revalid_lax
+    , revalid_skip
+};
+typedef enum PFrevalidation_t PFrevalidation_t;
+
 /**
  * Declarations given in the input query (encoding, ordering mode, etc.)
  */
 struct PFquery_t {
-    char           *version;        /**< XQuery version in query */
-    char           *encoding;       /**< Encoding specified in query */
-    bool            ordering;       /**< ordering declaration in query */
-    PFempty_order_t empty_order;    /**< `declare default order' */
+    char           *version;             /**< XQuery version in query */
+    char           *encoding;            /**< Encoding specified in query */
+    bool            ordering;            /**< ordering declaration in query */
+    PFempty_order_t empty_order;         /**< `declare default order' */
     bool            inherit_ns;
+    bool            pres_boundary_space; /**< perserve boundary space? */
+    PFrevalidation_t revalid;
 };
 typedef struct PFquery_t PFquery_t;
 
@@ -143,6 +152,24 @@ struct PFsort_t {
   enum { p_greatest, p_least } empty;   /**< empty greatest/empty least */
   char                        *coll;    /**< collation (may be 0) */
 };
+
+#include "qname.h"
+
+/**
+ * Information in a Pragma:
+ *   (# qname content #)
+ */
+struct PFpragma_t {
+    PFqname_t   qname;
+    char       *content;
+};
+typedef struct PFpragma_t PFpragma_t;
+
+/**
+ * We still require the "milprint_summer" code, but started to
+ * wrap it into ENABLE_MILPRINT_SUMMER conditions.
+ */
+#define ENABLE_MILPRINT_SUMMER 1
 
 #endif  /* PATHFINDER_H */
 

@@ -1603,6 +1603,7 @@ PFla_dot (FILE *f, PFla_op_t *root)
         }
 
         PFarray_printf (dot, "}\n");
+
         /* put content of array into file */
         fprintf (f, "%s", (char *) dot->base);
     }

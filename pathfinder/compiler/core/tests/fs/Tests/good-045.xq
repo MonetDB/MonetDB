@@ -1,2 +1,2 @@
-declare xmlspace preserve;
+declare boundary-space preserve;
 <a>   </a>

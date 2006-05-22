@@ -47,7 +47,7 @@
 /** no type of parse tree node will need more than
  *  this many child nodes 
  */
-#define PFPNODE_MAXCHILD 4
+#define PFPNODE_MAXCHILD 2
 
 /** parse tree node type indicators */
 enum PFptype_t {
@@ -82,88 +82,101 @@ enum PFptype_t {
     , p_except           =  29  /**< except */
     , p_exprseq          =  30  /**< e1, e2 (expression sequence) */
     , p_external         =  31  /**< keyword external: var/fun def'd external */
-    , p_flwr             =  32  /**< for-let-where-return */
-    , p_fns_decl         =  33  /**< default function namespace declaration */
-    , p_fun              =  34  /**< function decl. (after fun. ``scoping'') */
-    , p_fun_decl         =  35  /**< function declaration (yet ``unscoped'') */
-    , p_fun_ref          =  36  /**< function appl. (not ``scoped'' yet) */
-    , p_fun_sig          =  37  /**< function signature (parameters and type) */
-    , p_ge               =  38  /**< >= (greater than or equal) */
-    , p_gt               =  39  /**< > (greater than) */
-    , p_gtgt             =  40  /**< >> (greater in doc order) */
-    , p_idiv             =  41  /**< idiv (integer division) */
-    , p_if               =  42  /**< if-then-else */
-    , p_inherit_ns       =  43  /**< inherit-namespaces */
-    , p_instof           =  44  /**< instance of */
-    , p_intersect        =  45  /**< intersect */
-    , p_is               =  46  /**< is (node identity) */
-    , p_item_ty          =  47  /**< item type */
-    , p_le               =  48  /**< <= (less than or equal) */
-    , p_let              =  49  /**< let binding */
-    , p_lib_mod          =  50  /**< library module */
-    , p_lit_dbl          =  51  /**< double literal */
-    , p_lit_dec          =  52  /**< decimal literal */
-    , p_lit_int          =  53  /**< integer literal */
-    , p_lit_str          =  54  /**< string literal */
-    , p_locpath          =  55  /**< location path */
-    , p_lt               =  56  /**< < (less than) */
-    , p_ltlt             =  57  /**< << (less than in doc order) */
-    , p_main_mod         =  58  /**< main module */
-    , p_minus            =  59  /**< binary - */
-    , p_mod              =  60  /**< mod */
-    , p_mod_imp          =  61  /**< Module import */
-    , p_mod_ns           =  62  /**< module namespace */
-    , p_mult             =  63  /**< * (multiplication) */
-    , p_named_ty         =  64  /**< named type */ 
-    , p_ne               =  65  /**< != (inequality) */
-    , p_nil              =  66  /**< end-of-sequence marker */
-    , p_node_ty          =  67  /**< node type */
-    , p_ns_decl          =  68  /**< namespace declaration */
-    , p_or               =  69  /**< or */
-    , p_ord_ret          =  70  /**< `order by'/`return' in FLWOR clauses */
-    , p_orderby          =  71  /**< FLWOR `orderby' clause */
-    , p_ordered          =  72  /**< keyword `ordered {...}' */
-    , p_ordering_mode    =  73  /**< ordering mode declaration */
-    , p_orderspecs       =  74  /**< list of order specifiers (in FLWORs) */
-    , p_param            =  75  /**< (formal) function parameter */
-    , p_params           =  76  /**< list of (formal) function parameters */
-    , p_pi               =  77  /**< <?...?> content */
-    , p_plus             =  78  /**< binary + */
-    , p_pred             =  79  /**< e1[e2] (predicate) */
-    , p_range            =  80  /**< to (range) */
-    , p_req_name         =  81  /**< required name */
-    , p_req_ty           =  82  /**< required type */
-    , p_root             =  83  /**< / (document root) */
-    , p_schm_ats         =  84  /**< list of `at StringLit' in schema imp. */
-    , p_schm_attr        =  85  /**< `schema-attribute()' test */
-    , p_schm_elem        =  86  /**< `schema-element()' test */
-    , p_schm_imp         =  87  /**< schema import */
-    , p_seq_ty           =  88  /**< sequence type */
-    , p_some             =  89  /**< some (existential quantifier) */
-    , p_step             =  90  /**< axis step */
-    , p_tag              =  91  /**< (fixed) tag name */
-    , p_text             =  92  /**< XML text node constructor */
-    , p_then_else        =  93  /**< `then' and `else' in if-then-else */
-    , p_treat            =  94  /**< treat as */
-    , p_typeswitch       =  95  /**< typeswitch */
-    , p_uminus           =  96  /**< unary - */
-    , p_union            =  97  /**< union */
-    , p_unordered        =  98  /**< keyword `unordered {...}' */
-    , p_uplus            =  99  /**< unary + */
-    , p_val_eq           = 100  /**< eq (value equality) */
-    , p_val_ge           = 101  /**< ge (value greter than or equal) */
-    , p_val_gt           = 102  /**< gt (value greater than) */
-    , p_val_le           = 103  /**< le (value less than or equal) */
-    , p_val_lt           = 104  /**< lt (value less than) */
-    , p_val_ne           = 105  /**< ne (value inequality) */
-    , p_validate         = 106  /**< validate */
-    , p_var              = 107  /**< ``real'' scoped variable */
-    , p_var_decl         = 108  /**< variable declaration */
-    , p_var_type         = 109  /**< variable/type combination */
-    , p_varref           = 110  /**< variable reference (no scoping yet) */
-    , p_vars             = 111  /**< parent of two variables in FLWORs */
-    , p_where            = 112  /**< FLWOR `where' clause */
-    , p_xmls_decl        = 113  /**< xmlspace declaration */
+    , p_ext_expr         =  32  /**< extension expression (pragma) */
+    , p_flwr             =  33  /**< for-let-where-return */
+    , p_fns_decl         =  34  /**< default function namespace declaration */
+    , p_fun              =  35  /**< function decl. (after fun. ``scoping'') */
+    , p_fun_decl         =  36  /**< function declaration (yet ``unscoped'') */
+    , p_fun_ref          =  37  /**< function appl. (not ``scoped'' yet) */
+    , p_fun_sig          =  38  /**< function signature (parameters and type) */
+    , p_ge               =  39  /**< >= (greater than or equal) */
+    , p_gt               =  40  /**< > (greater than) */
+    , p_gtgt             =  41  /**< >> (greater in doc order) */
+    , p_idiv             =  42  /**< idiv (integer division) */
+    , p_if               =  43  /**< if-then-else */
+    /* FIXME , p_inherit_ns       =  43  **< inherit-namespaces */
+    , p_copy_ns          =  44  /**< copy-namespaces */
+    , p_instof           =  45  /**< instance of */
+    , p_intersect        =  46  /**< intersect */
+    , p_is               =  47  /**< is (node identity) */
+    , p_item_ty          =  48  /**< item type */
+    , p_le               =  49  /**< <= (less than or equal) */
+    , p_let              =  50  /**< let binding */
+    , p_lib_mod          =  51  /**< library module */
+    , p_lit_dbl          =  52  /**< double literal */
+    , p_lit_dec          =  53  /**< decimal literal */
+    , p_lit_int          =  54  /**< integer literal */
+    , p_lit_str          =  55  /**< string literal */
+    , p_locpath          =  56  /**< location path */
+    , p_lt               =  57  /**< < (less than) */
+    , p_ltlt             =  58  /**< << (less than in doc order) */
+    , p_main_mod         =  59  /**< main module */
+    , p_minus            =  60  /**< binary - */
+    , p_mod              =  61  /**< mod */
+    , p_mod_imp          =  62  /**< Module import */
+    , p_mod_ns           =  63  /**< module namespace */
+    , p_mult             =  64  /**< * (multiplication) */
+    , p_named_ty         =  65  /**< named type */ 
+    , p_ne               =  66  /**< != (inequality) */
+    , p_nil              =  67  /**< end-of-sequence marker */
+    , p_node_ty          =  68  /**< node type */
+    , p_ns_decl          =  69  /**< namespace declaration */
+    , p_or               =  70  /**< or */
+    , p_ord_ret          =  71  /**< `order by'/`return' in FLWOR clauses */
+    , p_orderby          =  72  /**< FLWOR `orderby' clause */
+    , p_ordered          =  73  /**< keyword `ordered {...}' */
+    , p_ordering_mode    =  74  /**< ordering mode declaration */
+    , p_orderspecs       =  75  /**< list of order specifiers (in FLWORs) */
+    , p_param            =  76  /**< (formal) function parameter */
+    , p_params           =  77  /**< list of (formal) function parameters */
+    , p_pi               =  78  /**< <?...?> content */
+    , p_plus             =  79  /**< binary + */
+    , p_pragma           =  80  /**< pragma */
+    , p_pragmas          =  81  /**< list of pragmas */
+    , p_pred             =  82  /**< e1[e2] (predicate) */
+    , p_range            =  83  /**< to (range) */
+    , p_req_name         =  84  /**< required name */
+    , p_req_ty           =  85  /**< required type */
+    , p_root             =  86  /**< / (document root) */
+    , p_schm_ats         =  87  /**< list of `at StringLit' in schema imp. */
+    , p_schm_attr        =  88  /**< `schema-attribute()' test */
+    , p_schm_elem        =  89  /**< `schema-element()' test */
+    , p_schm_imp         =  90  /**< schema import */
+    , p_seq_ty           =  91  /**< sequence type */
+    , p_some             =  92  /**< some (existential quantifier) */
+    , p_step             =  93  /**< axis step */
+    , p_tag              =  94  /**< (fixed) tag name */
+    , p_text             =  95  /**< XML text node constructor */
+    , p_then_else        =  96  /**< `then' and `else' in if-then-else */
+    , p_treat            =  97  /**< treat as */
+    , p_typeswitch       =  98  /**< typeswitch */
+    , p_uminus           =  99  /**< unary - */
+    , p_union            = 100  /**< union */
+    , p_unordered        = 101  /**< keyword `unordered {...}' */
+    , p_uplus            = 102  /**< unary + */
+    , p_val_eq           = 103  /**< eq (value equality) */
+    , p_val_ge           = 104  /**< ge (value greter than or equal) */
+    , p_val_gt           = 105  /**< gt (value greater than) */
+    , p_val_le           = 106  /**< le (value less than or equal) */
+    , p_val_lt           = 107  /**< lt (value less than) */
+    , p_val_ne           = 108  /**< ne (value inequality) */
+    , p_validate         = 109  /**< validate */
+    , p_var              = 110  /**< ``real'' scoped variable */
+    , p_var_decl         = 111  /**< variable declaration */
+    , p_var_type         = 112  /**< variable/type combination */
+    , p_varref           = 113  /**< variable reference (no scoping yet) */
+    , p_vars             = 114  /**< parent of two variables in FLWORs */
+    , p_where            = 115  /**< FLWOR `where' clause */
+    , p_boundspc_decl    = 116  /**< xmlspace declaration */
+    , p_revalid          = 117  /**< revalidation declaration (XQ Updt) */
+    , p_insert           = 118  /**< "do insert" expression (XQ Updt) */
+    , p_delete           = 119  /**< "do delete" expression (XQ Updt) */
+    , p_replace          = 120  /**< "do replace" expression (XQ Updt) */
+    , p_rename           = 121  /**< "do rename" expression (XQ Updt) */
+    , p_transform        = 122  /**< "transform copy $" expressions (XQ Updt) */
+    , p_modify           = 123  /**< modify and return parts of transform */
+    , p_transbinds       = 124  /**< variable bindings in a "transform" */
+    , p_stmt_ty          = 125  /**< "item" type `stmt' (funct. decls.) */
 };
 
 typedef enum PFptype_t PFptype_t;
@@ -222,6 +235,15 @@ enum PFpoci_t {
 
 typedef enum PFpoci_t PFpoci_t;
 
+/** target for an "do insert" update statement */
+enum PFinsertmod_t {
+      p_first_into
+    , p_last_into
+    , p_into
+    , p_after
+    , p_before
+};
+typedef enum PFinsertmod_t PFinsertmod_t;
 
 /** XQuery parse tree node
  */
@@ -243,11 +265,19 @@ union PFpsem_t {
   PFpkind_t  kind;       /**< node kind */
   PFsort_t   mode;       /**< sort modifier */
   PFpoci_t   oci;        /**< occurrence indicator */
+  struct {
+      bool   preserve;   /**< copy-namespace preserve/no-preserve */
+      bool   inherit;    /**< copy-namespace inherit/no-inherit */
+  } copy_ns;             /**< "declare copy-namespaces" setting */
   PFempty_order_t empty; /**< empty ordering declaration */
 
   PFvar_t   *var;        /**< variable information (used after var scoping) */
 
-  PFapply_t apply;       /**< function application information (used after fun checks) */
+  PFapply_t  apply;      /**< function application information
+                              (used after fun checks) */
+  PFpragma_t pragma;     /**< information given in a pragma (# qn cont #) */
+  PFrevalidation_t revalid; /**< revalidation declaration (XQ Update Facil.) */
+  PFinsertmod_t insert;  /**< insertion target for "do insert" (XQ Updt) */
 }; 
 
 

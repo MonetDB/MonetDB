@@ -127,11 +127,12 @@ PFstate_t PFstate = {
 jmp_buf PFexitPoint;
 
 PFquery_t PFquery = {
-    .version            = "1.0",
-    .encoding           = NULL,
-    .ordering           = true,  /* implementation defined: ordered */
-    .empty_order        = undefined,
-    .inherit_ns         = false, /* implementation def'd: inherit-ns: no */
+    .version             = "1.0",
+    .encoding            = NULL,
+    .ordering            = true,  /* implementation defined: ordered */
+    .empty_order         = undefined,
+    .inherit_ns          = false, /* implementation def'd: inherit-ns: no */
+    .pres_boundary_space = false
 };
 
 /** Compilation stage we've last been in. */

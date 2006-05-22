@@ -71,6 +71,8 @@ extern PFns_t PFns_xsi;
 extern PFns_t PFns_xdt;
 /** Predefined namespace `local' (XQuery Local Functions) for any query */
 extern PFns_t PFns_local;
+/** Predefined namespace `upd' for XQuery Update Facility */
+extern PFns_t PFns_upd;
 
 /**
  * XQuery default function namespace (fn:..., this may be overridden 

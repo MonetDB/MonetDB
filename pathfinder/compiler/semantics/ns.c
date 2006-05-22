@@ -31,6 +31,7 @@
    - .../ax::ns:loc           (name test)
    - <ns:loc> ... </ns:loc>   (element construction)
    - <... ns:loc="..." ...>   (attributes)
+   - (# ns:loc ... #) { ... } (pragmas)
 @endverbatim
  *
  * NS declaration attributes of the form `xmlns="uri"' and
@@ -103,6 +104,14 @@ PFns_t PFns_xdt =
 PFns_t PFns_local = 
     { .ns  = "local",
       .uri = "http://www.w3.org/2003/11/xquery-local-functions" };
+/**
+ * XQuery Update Facility.
+ * There's no URI in the specs.  Teggy suggested to use http://www.kicker.de/.
+ * Namespace is not accessible to the user.
+ */
+PFns_t PFns_upd =
+    { .ns  = "upd",
+      .uri = "http://www.kicker.de/" };
 
 
 /**
@@ -124,7 +133,7 @@ PFns_t PFns_op  = { .ns  = "op",
  * This namespace is not accessible for the user.
  */ 
 PFns_t PFns_pf  = { .ns  = "#pf",  
-                    .uri = "http://www.inf.uni-konstanz.de/Pathfinder" };
+                    .uri = "http://www.pathfinder-xquery.org/" };
 
 /**
  * Wildcard namespace.
@@ -779,6 +788,17 @@ ns_resolve (PFpnode_t *n)
         /* NS resolution in attribute value v */
         assert (n->child[1]);
         ns_resolve (n->child[1]);
+
+        break;
+
+    case p_pragma:
+        /* (# ns:loc ... #) { ... }      (pragma)
+         */
+        if (NS_QUAL (n->sem.pragma.qname))
+            if (! ns_lookup (&(n->sem.pragma.qname.ns)))
+                PFoops_loc (OOPS_BADNS, n->loc,
+                            "unknown namespace in pragma %s",
+                            PFqname_str (n->sem.pragma.qname));
 
         break;
 

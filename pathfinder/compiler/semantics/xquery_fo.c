@@ -1433,11 +1433,91 @@ PFfun_xquery_fo ()
                                 PFty_double () },
             .ret_ty = PFty_star (PFty_item ()) } } }
     /* Below are the function declarations for the UpdateX functions */
-    ,  /* fn:delete (node) as stmt */
-      { .ns = PFns_fn, .loc = "delete",
+    ,  /* upd:rename(xs:anyElement | xs:anyAttribute | p-i, xs:QName) as stmt */
+      { .ns = PFns_upd, .loc = "rename",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_choice (PFty_xs_anyElement (),
+                                       PFty_choice (PFty_xs_anyAttribute (),
+                                                    PFty_pi (NULL))),
+                                   PFty_xs_QName () },
+            .ret_ty = PFty_stmt () } } }
+
+    ,  /* upd:delete (node) as stmt */
+      { .ns = PFns_upd, .loc = "delete",
         .arity = 1, .sig_count = 1, .sigs = { {
             .par_ty = (PFty_t[]) { PFty_node () },
             .ret_ty = PFty_stmt () } } }
+
+    ,  /* upd:insertIntoAsFirst ((xs:anyElement | document-node())?,
+                                 node*) as stmt */
+       /* FIXME: should be `elem | doc, node+', which would make
+        *        trouble during type checking.                     */
+      { .ns = PFns_upd, .loc = "insertIntoAsFirst",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_choice (
+                                     PFty_xs_anyElement (),
+                                     PFty_doc (PFty_xs_anyNode ()))),
+                                   PFty_star (PFty_node ()) },
+            .ret_ty = PFty_stmt () } } }
+
+    ,  /* upd:insertIntoAsLast ((xs:anyElement | document-node())?,
+                                node*) as stmt */
+       /* FIXME: should be `elem | doc, node+', which would make
+        *        trouble during type checking.                     */
+      { .ns = PFns_upd, .loc = "insertIntoAsLast",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_opt (PFty_choice (
+                                     PFty_xs_anyElement (),
+                                     PFty_doc (PFty_xs_anyNode ()))),
+                                   PFty_star (PFty_node ()) },
+            .ret_ty = PFty_stmt () } } }
+
+    ,  /* upd:insertBefore (node, node*) as stmt */
+       /* FIXME: should be node+, which would make trouble during
+        *        type checking.                                    */
+      { .ns = PFns_upd, .loc = "insertBefore",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_node (),
+                                   PFty_star (PFty_node ()) },
+            .ret_ty = PFty_stmt () } } }
+
+    ,  /* upd:insertAfter (node, node*) as stmt */
+       /* FIXME: should be node+, which would make trouble during
+        *        type checking.                                    */
+      { .ns = PFns_upd, .loc = "insertAfter",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_node (),
+                                   PFty_star (PFty_node ()) },
+            .ret_ty = PFty_stmt () } } }
+
+    ,  /* upd:replaceValue (xs:anyAttribute, xdt:untypedAtomic) as stmt */
+      { .ns = PFns_upd, .loc = "replaceValue",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_xs_anyAttribute (),
+                                   PFty_xdt_untypedAtomic () },
+            .ret_ty = PFty_stmt () } } }
+
+    ,  /* upd:replaceValue (text(), xdt:untypedAtomic) as stmt */
+      { .ns = PFns_upd, .loc = "replaceValue",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_text (),
+                                   PFty_xdt_untypedAtomic () },
+            .ret_ty = PFty_stmt () } } }
+
+    ,  /* upd:replaceValue (processing-instr(), xdt:untypedAtomic) as stmt */
+      { .ns = PFns_upd, .loc = "replaceValue",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_pi (NULL),
+                                   PFty_xdt_untypedAtomic () },
+            .ret_ty = PFty_stmt () } } }
+
+    ,  /* upd:replaceValue (comment(), xdt:untypedAtomic) as stmt */
+      { .ns = PFns_upd, .loc = "replaceValue",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_comm (),
+                                   PFty_xdt_untypedAtomic () },
+            .ret_ty = PFty_stmt () } } }
+
     ,  /* fn:insert-first (node, node) as stmt */
       { .ns = PFns_fn, .loc = "insert-first",
         .arity = 2, .sig_count = 1, .sigs = { {
