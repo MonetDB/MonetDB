@@ -95,7 +95,7 @@ illegal calls.
 	mb->vtop = cnt;
 	for (i = 0; i < mb->vtop; i++)
 		if ( isTmpVar(mb,i) )
-			isTmpVar(mb,i) = vars[i];
+			getVarTmp(mb,i) = vars[i];
 	(void)stk;
 	if(p)
 		removeInstruction(mb,p); 
