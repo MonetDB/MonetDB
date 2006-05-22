@@ -196,8 +196,9 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		/* detect remote instructions */
 		cnt=0;
-		for(j=0;j<p->argc; j++)
-		if( location[getArg(p,j)]) cnt++;
+		for(j=0; j<p->argc; j++)
+			if (location[getArg(p,j)]) 
+				cnt++;
 
 		/* detect remote variable binding */
 		if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef) ){
@@ -208,7 +209,7 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				r= newInstruction(mb,ASSIGNsymbol);
 				getModuleId(r)= mserverRef;
 				getFunctionId(r)= lookupRef;
-				j= getArg(r,0)= newTmpVariable(mb, TYPE_any);
+				j= getArg(r,0)= newTmpVariable(mb, TYPE_int);
 				location[getArg(p,0)]= j;
 				pushArgument(mb,r, getArg(p,4));
 				pushInstruction(mb,r);
@@ -222,7 +223,7 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				r= newInstruction(mb,ASSIGNsymbol);
 				getModuleId(r)= mserverRef;
 				getFunctionId(r)= rpcRef;
-				getArg(r,0)= newTmpVariable(mb, TYPE_any);
+				getArg(r,0)= newTmpVariable(mb, TYPE_void);
 				pushArgument(mb,r,j);
 
 				for(j=p->retc; j<p->argc; j++)
@@ -252,14 +253,13 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				r= newInstruction(mb,ASSIGNsymbol);
 				getModuleId(r)= mserverRef;
 				getFunctionId(r)= lookupRef;
-				j= getArg(r,0)= newTmpVariable(mb, TYPE_any);
+				j= getArg(r,0)= newTmpVariable(mb, TYPE_int);
 				location[getArg(p,0)]= j;
 				pushArgument(mb,r, getArg(p,3));
 				pushInstruction(mb,r);
 
-				/* a remote sql bind is sometimes needed */
+				/* turn the instruction into a local one */
 				getArg(p,3)= defConstant(mb, TYPE_int, &cst);
-				j= getArg(p,1);
 				delArgument(p,1);
 				getModuleId(p)= sqlRef;
 				getFunctionId(p)= binddbatRef;
@@ -295,7 +295,7 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( getModuleId(p) && strcmp(getModuleId(p),"optimizer")==0 &&
 		    getFunctionId(p) && strcmp(getFunctionId(p),"remoteQueries")==0 )
 			freeInstruction(p);
-		else if( cnt == 0)
+		else if (cnt == 0 /*|| p->barrier*/) /* local only or flow control statement */
 			pushInstruction(mb,p);
 		else {
 @-
@@ -310,7 +310,7 @@ to be shipped should be simple.
 			collectFirst= FALSE;
 			for(j=0; j<p->argc; j++)
 			if( location[getArg(p,j)]){
-				if( remoteSite== 0)
+				if (remoteSite == 0)
 					remoteSite= location[getArg(p,j)];
 				else if( remoteSite != location[getArg(p,j)])
 					collectFirst= TRUE;
@@ -321,10 +321,10 @@ to be shipped should be simple.
 			if( remoteSite && collectFirst== FALSE)
 				for(j=p->retc; j<p->argc; j++)
 				if( location[getArg(p,j)] == 0 &&
-					isaBatType(getVarType(mb,getArg(p,j))) ) 
+					isaBatType(getVarType(mb,getArg(p,j)))) 
 						collectFirst= TRUE;
 
-			if( collectFirst){
+			if (collectFirst){
 				/* perform locally */
 				for(j=p->retc; j<p->argc; j++)
 				if( location[getArg(p,j)]){
@@ -339,8 +339,7 @@ to be shipped should be simple.
 				/* as of now all the targets are also local */
 				for(j=0; j<p->retc; j++)
 					location[getArg(p,j)]= 0;
-			} else
-			if( remoteSite){
+			} else if (remoteSite){
 				/* single remote site involved */
 				r= newInstruction(mb,ASSIGNsymbol);
 				getModuleId(r)= mserverRef;
