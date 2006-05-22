@@ -1162,6 +1162,7 @@ parseReverseAxis(Client cntxt, Xbackend xb)
 	@:ptrace(parseReverseAxis)@
 	if (nextToken(xb) != ':' || nextToken(xb) != ':') 
 		return xqryError(cntxt,"'::' expected in ReverseAxis\n");
+	xb->token = NO_TOKEN;
 	(void) ret;
 	@:etrace(parseReverseAxis)@
 	return PARSE_OK;
@@ -1174,9 +1175,9 @@ parseReverseStep(Client cntxt, Xbackend xb)
 
 	@:ptrace(parseReverseStep)@
 	if (parseReverseAxis(cntxt, xb) == PARSE_OK) {
-		ret= parseNodeTest(cntxt, xb);
+		ret = parseNodeTest(cntxt, xb);
 	} else
-		ret= parseAbbrevReverseStep(cntxt, xb);
+		ret = parseAbbrevReverseStep(cntxt, xb);
 	@:etrace(parseReverseStep)@
 	return ret;
 }
@@ -1232,7 +1233,8 @@ parseForwardAxis(Client cntxt, Xbackend xb)
 	else
 		return PARSE_ERR;
 	if (nextToken(xb) != ':' || nextToken(xb) != ':') 
-		return xqryError(cntxt,"'::' expectedin ForwardAxis\n");
+		return xqryError(cntxt,"'::' expected in ForwardAxis\n");
+	xb->token = NO_TOKEN;
 	(void) ret;
 	@:etrace(parseForwardAxis)@
 	return PARSE_OK;
@@ -1244,10 +1246,9 @@ parseForwardStep(Client cntxt, Xbackend xb)
 	int ret=PARSE_OK;
 	@:ptrace(parseForwardStep)@
 	if (parseForwardAxis(cntxt, xb) == PARSE_OK) {
-		ret= parseNodeTest(cntxt, xb);
-	} else if( parseNodeTest(cntxt, xb)== PARSE_OK){
+		ret = parseNodeTest(cntxt, xb);
 	} else {
-		ret= parseAbbrevForwardStep(cntxt, xb);
+		ret = parseAbbrevForwardStep(cntxt, xb);
 	}
 	@:etrace(parseForwardStep)@
 	return ret;
@@ -2204,33 +2205,6 @@ parseDefaultCollationDecl(Client cntxt, Xbackend xb)
 	return PARSE_OK;
 }
 
-/* pathfinder doesn't have copy-namespaces but xmlspace, for compatibility  */
-STATIC int 
-parseXmlspace(Client cntxt, Xbackend xb) 
-{
-	@:ptrace(parseXmlspace)@
-	if (curToken(xb) != XT_xmlspace)
-		return PARSE_ERR;
-	if (nextToken(xb) != XT_preserve && curToken(xb) != XT_inherit && curToken(xb) != XT_strip) 
-		return xqryError(cntxt,"'preserve', 'inherit' or 'strip' expected in Xmlspace\n");
-	xb->token = NO_TOKEN;
-	@:etrace(parseXmlspace)@
-	return PARSE_OK;
-}
-/* pathfinder has short hand for copy-namespaces inherit, compatibility  */
-STATIC int 
-parseInheritNamespaces(Client cntxt, Xbackend xb) 
-{
-	@:ptrace(parseInheritNamespaces)@
-	if (curToken(xb) != XT_inherit_namespaces)
-		return PARSE_ERR;
-	if (nextToken(xb) != XT_yes) 
-		return xqryError(cntxt,"'yes' expected in InheritNamespaces\n");
-	xb->token = NO_TOKEN;
-	@:etrace(parseInheritNamespaces)@
-	return PARSE_OK;
-}
-
 STATIC int 
 parseCopyNamespacesDecl(Client cntxt, Xbackend xb) 
 {
@@ -2367,9 +2341,7 @@ parseSetter(Client cntxt, Xbackend xb)
 	    parseBaseURIDecl(cntxt, xb) != PARSE_OK &&
 	    parseConstructionDecl(cntxt, xb) != PARSE_OK &&
 	    parseOrderingModeDecl(cntxt, xb) != PARSE_OK &&
-	    parseCopyNamespacesDecl(cntxt, xb) != PARSE_OK &&
-	    parseXmlspace(cntxt, xb) != PARSE_OK &&
-	    parseInheritNamespaces(cntxt, xb) != PARSE_OK)
+	    parseCopyNamespacesDecl(cntxt, xb) != PARSE_OK) 
 		return PARSE_ERR;
 	@:etrace(parseSetter)@
 	return PARSE_OK;
