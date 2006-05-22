@@ -55,7 +55,7 @@ create_column(sql_trans *tr, sql_table* t, char* table, char* type, int digits)
 int
 create_host_table(sql_trans *tr, sql_schema *s){
         sql_table *t;
-        t = sql_trans_create_table(tr, s, "hosts", 1, 1, 1, 1, LOCATION, REPLICATION);
+        t = sql_trans_create_table(tr, s, "hosts", 1, 0, 0, 1, LOCATION, REPLICATION);
         
 	create_column(tr, t, "location", "int",32);
 	create_column(tr, t, "dbname", "varchar",1024);
@@ -71,7 +71,7 @@ create_host_table(sql_trans *tr, sql_schema *s){
 int
 create_replication_table(sql_trans *tr, sql_schema *s){
         sql_table *t;
-        t = sql_trans_create_table(tr, s, "replication", 1, 1, 1, 1, LOCATION, REPLICATION);
+        t = sql_trans_create_table(tr, s, "replication", 1, 0, 0, 1, LOCATION, REPLICATION);
         
 	create_column(tr, t, "replication_id", "int",32); 	
 	create_column(tr, t, "IN/OUT", "int",9); 		/*If the table is used for a remote view(OUT-1) or use a remote table(IN-0)*/
