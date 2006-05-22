@@ -135,8 +135,8 @@ SQLprelude()
 	s->exitClient = "SQLexitClient";
 	s->reader = "SQLreader";
 	s->parser = "SQLparser";
-	// s->optimizer = "SQLoptimizer";
-	// s->tactics = ..
+	/* s->optimizer = "SQLoptimizer";
+	 * s->tactics = .. */
 	s->engine = "SQLengine";
 
 	s = getFreeScenario();
@@ -151,7 +151,7 @@ SQLprelude()
 	s->reader = "MALreader";
 	s->parser = "MALparser";
 	s->optimizer = "MALoptimizer";
-	// s->tactics = ..
+	/* s->tactics = .. */
 	s->engine = "MALengine";
 	return MAL_SUCCEED;
 }
