@@ -844,7 +844,7 @@ struct MapiStruct {
 	int auto_commit;
 	char *noexplain;	/* on error, don't explain, only print result */
 	MapiMsg error;		/* Error occurred */
-	char *errorstr;		/* pointer to constant string */
+	char *errorstr;		/* error from server */
 	const char *action;	/* pointer to constant string */
 
 	struct BlockCache blk;
