@@ -125,7 +125,7 @@ PHP_FUNCTION(monetdb_select);
 
 
 #include "Mapi.h"
-/* typedefs for convenience; not using Mapis as those already are a
+/* typedefs for convenience; not using Mapi's as those already are a
  * pointer to the struct*/
 typedef struct MapiStruct Mconn;
 typedef struct MapiStatement Mresult;
@@ -219,6 +219,7 @@ ZEND_BEGIN_MODULE_GLOBALS(monetdb)
 	long auto_reset_persistent;
 	int le_lofp,le_string;
 	int ignore_notices,log_notices;
+	HashTable errors;  /* error message for each connection */
 	HashTable notices;  /* notice message for each connection */
 	char* default_hostname;
 	char* default_username;

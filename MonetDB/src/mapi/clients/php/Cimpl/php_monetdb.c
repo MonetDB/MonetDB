@@ -182,25 +182,16 @@ static char * _php_monetdb_trim_message(const char *message, int *len)
 }
 /* }}} */
 
-/* {{{ _php_monetdb_trim_result */
-static inline char * _php_monetdb_trim_result(Mconn * monetdb, char **buf)
-{
-	return *buf = _php_monetdb_trim_message(mapi_error_str(monetdb), NULL);
-}
-/* }}} */
-
-#define MErrorMessageTrim(monetdb, buf) _php_monetdb_trim_result(monetdb, buf)
-
 #define PHP_MONETDB_ERROR(text, monetdb) { \
 	char *msgbuf = _php_monetdb_trim_message(mapi_error_str(monetdb), NULL); \
 	php_error_docref(NULL TSRMLS_CC, E_WARNING, text, msgbuf); \
-	efree(msgbuf); \
+	_php_monetdb_error_handler(monetdb, msgbuf); \
 } \
 
-#define PHP_MONETDB_ERROR_RESULT(text, monetdb) { \
-	char *msgbuf = _php_monetdb_trim_message(mapi_result_error(monetdb), NULL);\
+#define PHP_MONETDB_ERROR_RESULT(text, monetdb_rh) { \
+	char *msgbuf = _php_monetdb_trim_message(mapi_result_error(monetdb_rh->result), NULL); \
 	php_error_docref(NULL TSRMLS_CC, E_WARNING, text, msgbuf); \
-	efree(msgbuf); \
+	_php_monetdb_error_handler(monetdb_rh->conn, msgbuf); \
 } \
 
 /* {{{ php_monetdb_set_default_link
@@ -255,7 +246,7 @@ static void _php_monetdb_notice_handler(void *resource_id, const char *message)
 		if (MG(log_notices)) {
 			php_error_docref(NULL TSRMLS_CC, E_NOTICE, "%s", notice->message);
 		}
-		zend_hash_index_update(&MG(notices), (int)resource_id, (void **)&notice, sizeof(php_monetdb_notice *), NULL);
+		zend_hash_index_update(&MG(notices), (ulong)resource_id, (void **)&notice, sizeof(php_monetdb_notice *), NULL);
 	}
 }
 /* }}} */
@@ -274,6 +265,27 @@ static void _php_monetdb_notice_ptr_dtor(void **ptr)
   	}
 }
 /* }}} */
+
+/* {{{ _php_monetdb_error_handler
+ */
+static void _php_monetdb_error_handler(void *resource_id, const char *message)
+{
+	php_monetdb_notice *notice;
+	
+	TSRMLS_FETCH();
+	notice = (php_monetdb_notice *)emalloc(sizeof(php_monetdb_notice));
+	notice->message = _php_monetdb_trim_message(message, &(notice->len));
+	zend_hash_index_update(
+			&MG(errors),
+			(ulong)resource_id,
+			(void **)&notice,
+			sizeof(php_monetdb_notice *),
+			NULL
+		);
+}
+/* }}} */
+
+#define PHP_MONETDB_ERROR_PTR_DTOR (void (*)(void *))_php_monetdb_notice_ptr_dtor
 
 /* {{{ _rollback_transactions
  */
@@ -342,6 +354,7 @@ static void php_monetdb_init_globals(zend_monetdb_globals *monetdb_globals)
 	memset(monetdb_globals, 0, sizeof(zend_monetdb_globals));
 	/* Initialise notice message hash at MINIT only */
 	zend_hash_init_ex(&monetdb_globals->notices, 0, NULL, PHP_MONETDB_NOTICE_PTR_DTOR, 1, 0); 
+	zend_hash_init_ex(&monetdb_globals->errors, 0, NULL, PHP_MONETDB_ERROR_PTR_DTOR, 1, 0); 
 	/* Initialise user, pass, lang, etc defaults */
 	monetdb_globals->default_hostname = "localhost";
 	monetdb_globals->default_username = "monetdb";
@@ -406,6 +419,7 @@ PHP_MSHUTDOWN_FUNCTION(monetdb)
 {
 	UNREGISTER_INI_ENTRIES();
 	zend_hash_destroy(&MG(notices));
+	zend_hash_destroy(&MG(errors));
 
 	return SUCCESS;
 }
@@ -427,6 +441,7 @@ PHP_RSHUTDOWN_FUNCTION(monetdb)
 {
 	/* clean up notice messages */
 	zend_hash_clean(&MG(notices));
+	zend_hash_clean(&MG(errors));
 	/* clean up persistent connection */
 	zend_hash_apply(&EG(persistent_list), (apply_func_t) _rollback_transactions TSRMLS_CC);
 	return SUCCESS;
@@ -718,7 +733,6 @@ static void php_monetdb_get_link_info(INTERNAL_FUNCTION_PARAMETERS, int entry_ty
 	zval **monetdb_link = NULL;
 	int id = -1;
 	Mconn *monetdb;
-	char *msgbuf;
 
 	switch(ZEND_NUM_ARGS()) {
 		case 0:
@@ -736,7 +750,7 @@ static void php_monetdb_get_link_info(INTERNAL_FUNCTION_PARAMETERS, int entry_ty
 	}
 	if (monetdb_link == NULL && id == -1) {
 		RETURN_FALSE;
-	}	
+	}
 
 	ZEND_FETCH_RESOURCE2(monetdb, Mconn *, monetdb_link, id, "MonetDB link", le_link, le_plink);
 
@@ -744,9 +758,18 @@ static void php_monetdb_get_link_info(INTERNAL_FUNCTION_PARAMETERS, int entry_ty
 		case PHP_MONETDB_DBNAME:
 			Z_STRVAL_P(return_value) = mapi_get_dbname(monetdb);
 		break;
-		case PHP_MONETDB_ERROR_MESSAGE:
-			RETURN_STRING(MErrorMessageTrim(monetdb, &msgbuf), 0);
-		return;
+		case PHP_MONETDB_ERROR_MESSAGE: {
+			php_monetdb_notice** error;
+
+			if (zend_hash_index_find(&MG(errors), (ulong)monetdb, (void **)&error) == FAILURE) {
+				RETURN_FALSE;
+			}
+			if ((*error)->message == NULL) {
+				RETURN_STRING(estrdup("(no error message)"), 1);
+			} else {
+				RETURN_STRINGL((*error)->message, (*error)->len, 1);
+			}
+		} return;
 		case PHP_MONETDB_HOST:
 			Z_STRVAL_P(return_value) = mapi_get_host(monetdb);
 		break;
@@ -883,20 +906,19 @@ PHP_FUNCTION(monetdb_query)
 		/* connection appears to be dead */
 		PHP_MONETDB_ERROR("Connection appears to be lost: %s", monetdb);
 		RETURN_FALSE;
-	} else if (mapi_result_error(monetdb_result) != NULL) {
-		/* something went wrong */
-		PHP_MONETDB_ERROR_RESULT("Query failed: %s", monetdb_result);
-		mapi_close_handle(monetdb_result);
-		RETURN_FALSE;
 	} else {
-		/* we have some result?  Cool! */
-		if (monetdb_result) {
-			monetdb_result_h = (php_monetdb_result_handle *) emalloc(sizeof(php_monetdb_result_handle));
-			monetdb_result_h->conn = monetdb;
-			monetdb_result_h->result = monetdb_result;
-			monetdb_result_h->row = 0;
-			ZEND_REGISTER_RESOURCE(return_value, monetdb_result_h, le_result);
+		monetdb_result_h = (php_monetdb_result_handle *) emalloc(sizeof(php_monetdb_result_handle));
+		monetdb_result_h->conn = monetdb;
+		monetdb_result_h->result = monetdb_result;
+		monetdb_result_h->row = 0;
+		if (mapi_result_error(monetdb_result) != NULL) {
+			/* something went wrong */
+			PHP_MONETDB_ERROR_RESULT("Query failed: %s", monetdb_result_h);
+			mapi_close_handle(monetdb_result);
+			efree(monetdb_result_h);
+			RETURN_FALSE;
 		}
+		ZEND_REGISTER_RESOURCE(return_value, monetdb_result_h, le_result);
 	}
 }
 /* }}} */
@@ -1484,7 +1506,7 @@ PHP_FUNCTION(monetdb_fetch_result)
 
 	/* get the data in the field */
 	if (mapi_seek_row(monetdb_result, monetdb_row, MAPI_SEEK_SET) != MOK) {
-		PHP_MONETDB_ERROR_RESULT("Can't jump to row: %s", monetdb_result);
+		PHP_MONETDB_ERROR_RESULT("Can't jump to row: %s", monetdb_result_h);
 		RETURN_FALSE;
 	}
 	if (mapi_fetch_row(monetdb_result) == 0 &&
@@ -1582,7 +1604,7 @@ static void php_monetdb_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, long result_typ
 	for (i = 0, num_fields = mapi_get_field_count(monetdb_result); i < num_fields; i++) {
 		/* get the data in the field */
 		if (mapi_seek_row(monetdb_result, monetdb_row, MAPI_SEEK_SET) != MOK) {
-			PHP_MONETDB_ERROR_RESULT("Can't jump to row: %s", monetdb_result);
+			PHP_MONETDB_ERROR_RESULT("Can't jump to row: %s", monetdb_result_h);
 			RETURN_FALSE;
 		}
 		if (mapi_fetch_row(monetdb_result) == 0 &&
@@ -1823,7 +1845,7 @@ static void php_monetdb_data_info(INTERNAL_FUNCTION_PARAMETERS, int entry_type)
 		case PHP_MONETDB_DATA_ISNULL:
 			/* get the data in the field */
 			if (mapi_seek_row(monetdb_result, monetdb_row, MAPI_SEEK_SET) != MOK) {
-				PHP_MONETDB_ERROR_RESULT("Can't jump to row: %s", monetdb_result);
+				PHP_MONETDB_ERROR_RESULT("Can't jump to row: %s", monetdb_result_h);
 				RETURN_FALSE;
 			}
 			if (mapi_fetch_row(monetdb_result) == 0 &&
