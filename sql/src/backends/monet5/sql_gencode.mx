@@ -387,7 +387,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushInt(mb, q, port);
 				q = pushStr(mb, q, user);
 				q = pushStr(mb, q, password);
-				q = pushStr(mb, q, "mal");
+				q = pushStr(mb, q, "msql");
 				
 				/*do the mserver bind*/
                                 q = newStmt1(mb,sqlRef,bindRef);
@@ -438,7 +438,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
                                 q = pushInt(mb, q, port);
                                 q = pushStr(mb, q, user);
                                 q = pushStr(mb, q, password);
-                                q = pushStr(mb, q, "mal");
+                                q = pushStr(mb, q, "msql");
 
                                 /*do the mserver bind for the dbat*/
                                 q = newStmt1(mb,sqlRef,binddbatRef);

@@ -138,6 +138,21 @@ SQLprelude()
 	// s->optimizer = "SQLoptimizer";
 	// s->tactics = ..
 	s->engine = "SQLengine";
+
+	s = getFreeScenario();
+	if (!s)
+		return NULL; /* should be an error */
+	s->name = "msql";
+	s->language = "msql";
+	s->initSystem = "SQLinit";
+	s->exitSystem = "SQLexit";
+	s->initClient = "SQLinitClient";
+	s->exitClient = "SQLexitClient";
+	s->reader = "MALreader";
+	s->parser = "MALparser";
+	s->optimizer = "MALoptimizer";
+	// s->tactics = ..
+	s->engine = "MALengine";
 	return MAL_SUCCEED;
 }
 
