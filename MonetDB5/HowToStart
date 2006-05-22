@@ -75,13 +75,13 @@ CVS checkout
 This command should be done once.  It records a password on the local
 machine to be used for all subsequent CVS accesses with this server.
 
- cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb login
+ cvs -d:pserver:anonymous@monetdb.cvs.sourceforge.net:/cvsroot/monetdb login
 
 Just type RETURN when asked for the password.
 
 Then get the software by using the command:
 
- cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb checkout MonetDB
+ cvs -d:pserver:anonymous@monetdb.cvs.sourceforge.net:/cvsroot/monetdb checkout MonetDB
 
 This will create a directory MonetDB in your current working directory.
 
