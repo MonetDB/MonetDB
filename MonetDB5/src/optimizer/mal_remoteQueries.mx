@@ -94,6 +94,7 @@ opt_export str RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #include "mal_remoteQueries.h"
 #include "mal_namespace.h"
 #include "mal_interpreter.h"	/* for showErrors() */
+#include "mal_instruction.h"
 #include "mal_builder.h"
 @-
 The instruction sent is produced with a variation of call2str
@@ -116,10 +117,10 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 	len= strlen(msg);
 	for (k = 0; k < p->retc; k++) {
 		VarPtr v = getVar(mb, getArg(p, k));
-		if (v->tmpindex == 0)
-			sprintf(msg+len, "%s", v->name);
-		else
+		if (isTmpVar(mb, getArg(p,k)))
 			sprintf(msg+len, "%c%d", REFMARKER, v->tmpindex);
+		else
+			sprintf(msg+len, "%s", v->name);
 		if (k < p->retc - 1)
 			strcat(msg,",");
 		len= strlen(msg);
@@ -142,11 +143,10 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 					GDKfree(cv);
 				}
 
-			} else
-			if (v->name == 0)
-				sprintf(msg+len, "%s", v->name);
-			else
+			} else if (isTmpVar(mb, getArg(p,k)))
 				sprintf(msg+len, "%c%d", REFMARKER, v->tmpindex);
+			else
+				sprintf(msg+len, "%s", v->name);
 			if (k < p->argc - 1)
 				strcat(msg,",");
 			len= strlen(msg);
