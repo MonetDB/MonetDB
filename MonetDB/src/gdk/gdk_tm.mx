@@ -56,59 +56,119 @@ commit. The only way to abort in such a situation is COLD-abort: quit the server
 restart, so you get the recovered disk images.
 @{
 @c
-int
-TMcommit(void)
-{
-	int i, ret = 0;
+/* in the commit prelude, the delta status in the memory image of all bats is commited */
+static int prelude(int cnt, bat* subcommit) {
+	int i = 0;
+	while(++i < cnt) {
+		bat bid = subcommit?subcommit[i]:i;
+		if (BBP_status(bid) & BBPPERSISTENT) {
+			BAT *b = BBP_cache(bid);
 
-	/* Acquire BBP locks */
-	BBPlock("TMcommit");
-
-	/* commit the delta status of each BAT; we cannot soft-abort after this anymore */
-	for (i = 1; i < BBPsize; i++) {
-		if (BBP_status(i) & BBPPERSISTENT) {
-			BAT *b = BBP_cache(i);
-
-			if (b == NULL && (BBP_status(i) & BBPSWAPPED)) {
-				b = BBPquickdesc(i, TRUE);
-				if (b == NULL) {
-					ret = 1;
-				}
+			if (b == NULL && (BBP_status(bid) & BBPSWAPPED)) {
+				b = BBPquickdesc(bid, TRUE);
+				if (b == NULL) return -1;
 			}
 			if (b) {
 				BATcommit(b);
-			}
-		}
-	}
-	/* make sure the stable image of the persistent bATs is committed to disk */
-	if (ret == 0) {
-		ret = BBPsync(TRUE);
-	}
-	/* in case the commit succeeded; delete the disk images of ex-persistent bats */
-	if (ret == 0) {
-		for (i = 1; i < BBPsize; i++) {
-			if (BBP_status(i) & BBPPERSISTENT) {
-				BBP_status_on(i, BBPEXISTING, "TMcommit");
-			} else if ((BBP_status(i) & (BBPDELETED | BBPTMP)) && BBP_refs(i) <= 0 && BBP_lrefs(i) <= 0) {
-				BAT *b = BBPquickdesc(i, TRUE);
 
-				/* the unloaded ones are deleted without loading */
-				/* delete disk images */
-				BATdelete(b);	
-				if (BBP_cache(i)) {
-					/* those that quickdesc decides to load => free memory */
-					BATfree(b);
+				/* for subcommits, we try to save new bats before the next phase (BBPsync) */
+				if (subcommit && b->batPersistence == PERSISTENT && (BBP_status(bid) & BBPNEW)) {
+					if (BATsave(b) == NULL) return -1;
 				}
-				BBPclear(i);	/* clear with locking */
 			}
-			BBP_status_off(i, BBPDELETED | BBPSWAPPED | BBPNEW, "TMcommit");
 		}
+	}
+	return 0;
+}
+
+/* in the commit epilogue, the BBP-status of the bats is changed to reflect their presence in the succeeded checkpoint. 
+ * Also bats from the previous checkpoint that were deleted now are physically destroyed.
+ */
+static int epilogue(int cnt, bat* subcommit) {
+	int i = 0;
+	while(++i < cnt) {
+		bat bid = subcommit?subcommit[i]:i;
+		if (BBP_status(bid) & BBPPERSISTENT) {
+			BBP_status_on(bid, BBPEXISTING, subcommit?"TMsubcommit":"TMcommit");
+		} else if ((BBP_status(bid) & (BBPDELETED | BBPTMP)) && BBP_refs(bid) <= 0 && BBP_lrefs(bid) <= 0) {
+			BAT *b = BBPquickdesc(bid, TRUE);
+
+			/* the unloaded ones are deleted without loading delete disk images */
+			BATdelete(b);	
+			if (BBP_cache(bid)) {
+				/* those that quickdesc decides to load => free memory */
+				BATfree(b);
+			}
+			BBPclear(bid);	/* clear with locking */
+		}
+		BBP_status_off(bid, BBPDELETED | BBPSWAPPED | BBPNEW, subcommit?"TMsubcommit":"TMcommit");
+	}
+	return 0;
+}
+
+@- TMcommit
+global commit without any multi-threaded access assumptions, thus taking all BBP locks. 
+It creates a new database checkpoint.
+@c
+int
+TMcommit(void) {
+	int ret = -1;
+
+	/* commit with the BBP globally locked */
+	BBPlock("TMcommit");
+	if (prelude(BBPsize, NULL) == 0 && BBPsync(BBPsize, NULL) == 0) {
+		ret = epilogue(BBPsize, NULL);
 	}
 	BBPunlock("TMcommit");
 	return ret;
 }
 
-@- 
+@- TMsubcommit
+
+Create a new checkpoint that is equal to the previous, with the expection that
+for the passed list of batnames, the current state will be reflected in the 
+new checkpoint.
+
+On the bats in this list we assume exclusive access during the operation.
+
+This operation is useful for e.g. adding a new XQuery document or SQL
+table to the committed state (after bulk-load). Or for dropping a table or doc,
+without forcing the total database to be clean, which may require a lot of I/O.
+
+We expect the globally locked phase (BBPsync) to take little time (<100ms)
+as only the BBP.dir is written out; and for the existing bats that were
+modified, only some heap moves are done (moved from BAKDIR to SUBDIR).
+The atomic commit for sub-commit is the rename of SUBDIR to DELDIR.
+
+As it does not take the BBP-locks (thanks to the assumption that access
+is exclusive), the concurrency impact of subcommit is also much lighter to 
+ongoing concurrent query and update facilities than a real global TMcommit.
+@c
+int
+TMsubcommit(BAT* b) {
+	int xx, ret = -1, cnt = 1; /* BBP artifact: slot 0 in the array will be ignored */
+	bat *subcommit = (bat*) alloca((BATcount(b)+1)*sizeof(bat));
+	BUN p, q;
+
+	/* collect the list and save the new bats outside any locking */
+	BATloopFast(b, p, q, xx) {
+		bat bid = BBPindex((str) BUNtail(b,p));
+		if (bid < 0) bid = -bid;
+		if (bid) subcommit[cnt++] = bid;
+	}
+
+	if (prelude(cnt, subcommit) == 0) { /* save the new bats outside the lock */
+		/* lock just prevents BBPtrims, and other global (sub-)commits */
+		gdk_set_lock(GDKtrimLock, "TMsubcommit");
+ 		if (BBPsync(cnt, subcommit) == 0) { /* write BBP.dir (++) */
+			ret = epilogue(cnt, subcommit);
+		}
+		gdk_unset_lock(GDKtrimLock, "TMsubcommit");
+	}
+	return ret;
+}
+
+@- TMabort
 Transaction abort is cheap. We use the delta statuses
 to go back to the previous version of each BAT. Also
 for BATs that are currently swapped out. Persistent BATs 
@@ -172,93 +232,5 @@ TMabort(void)
 	}
 	BBPunlock("TMabort");
 	return 0;
-}
-
-@- TMsubcommit
-
-Routine to quickly add new bats or remove old bats in a commited database state.
-Both cases have in common that rollback actions are not necessary. This
-allows for an implementation that comes down to just writing a new BBP.dir.
-
-We assume that the thread calling this has exclusive write access to the 
-bats it wants to commit (passed in the tail of bl).
-In particular, if another thread updates one of the bats passed here during
-the partial commit (or modifies its persistency status), inconsistent results
-may occur.
-
-Note that this primitive also assumes that the BATs being commited are independent
-of the other persistent BATs. That is, no incosistent state is created by commiting 
-the actual state of this subset of BAT and not committing the rest.
-@c
-int
-TMsubcommit(BAT* bl) {
-	int xx, cnt = 0, *changed = (int*) alloca(BATcount(bl)*sizeof(int));
-	BUN p, q;
-
-	/* first make our new bats persistent and saved on disk */
-	BATloopFast(bl, p, q, xx) {
-		int i = *(int*) BUNtloc(bl,p);
-		BAT *b = NULL;
-		if (i < 0) i = -i;
-		if (BBPfix(i) >= 0) {
-			b = BBPdescriptor(i);
-			if (b) {
-				BATcommit(b);
-				if (b->batPersistence == PERSISTENT) { 
-					/* not-yet-committed persistent bats */
-					if (BBP_status(i) & BBPNEW) {
-						changed[cnt++] = i;
-						if (BBPsave(b)) b = NULL;
-					} else if (BATdirty(b)) {
-						GDKerror("TMsubcommit: %s has already been committed\n", 
-							BBP_logical(i));
-						b = NULL;
-					}
-				} else {
-					/* no longer persistent bats */
-					if (BBP_status(i) & (BBPDELETED|BBPEXISTING)) 
-						changed[cnt++] = -i;
-				}
-			}
-			BBPunfix(i);
-		}
-		if (b == NULL) return -1;
-	}
-	/* if the not-yet-committed count is 0, we don't need to write a new BBP.dir */
-	if (cnt == 0) return 0;
-
-	/* block other commits and BBPtrims that might remove non-persistent bats */
-	gdk_set_lock(GDKtrimLock, "TMsubcommit");
-
-	/* all bats clean on disk, now change their statuses for BBPdir */
-	for(xx=0; xx<cnt; xx++) {
-		int i = changed[xx];
-		if (i > 0) {
-			BBP_status_on(i, BBPEXISTING, "TMsubcommit");
-			BBP_status_off(i, BBPNEW, "TMsubcommit");
-		} else {
-			BBP_status_off(-i, BBPEXISTING, "TMsubcommit");
-			BBP_status_off(-i, BBPDELETED, "TMsubcommit");
-		}
-	}
-
-	/* write the new BPP.dir with those BATs that were in the previous commit */
-	if (BBPdir(TRUE) == 0) 
-		cnt = 0; /* everything ok */
-
-	for(xx=0; xx<cnt; xx++) {
-		/* FAILED: undo the status changes */
-		int i = changed[xx];
-		if (i > 0) {
-			BBP_status_off(i, BBPEXISTING, "TMsubcommit");
-			BBP_status_on(i, BBPNEW, "TMsubcommit");
-		} else {
-			BBP_status_on(-i, BBPEXISTING, "TMsubcommit");
-			BBP_status_on(-i, BBPDELETED, "TMsubcommit");
-		}
-	}
-	gdk_unset_lock(GDKtrimLock, "TMsubcommit");
-
-	return -cnt;
 }
 @}

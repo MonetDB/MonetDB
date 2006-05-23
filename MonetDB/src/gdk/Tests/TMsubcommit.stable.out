@@ -30,22 +30,22 @@ commit();
 #01 move bat/BBP.dir bat/BACKUP/BBP.dir = 0 (0ms)
 
 bat(int,int).insert(3,4).rename("a").persists(true);
-subcommit(bat(int,bat).insert(0,bat("a")));
+subcommit(bat(int,str).insert(0,"a"));
 #01 save a
 #01 HEAPsave(32.buns,storage=0,free=8,size=400)
 #01 GDKsave: name=32, ext=buns, mode 0
 #01 fwrite(buf 0x80bcd68, size 0, fd 8) = 0
 #01 BATsavedesc(32,free=8) = 0
 #01 #BBPdir: writing BBP.dir (30 bats).
-#01 BBPdir start oid=1007960@0 #01 
-[  26, 32, a, 32, 4565 ]
+#01 BBPdir start oid=1008044@0 #01 
+[  26, 64, a, 32, 4541 ]
 [  27, 32, MMO_location, 33, 1 ]
 [  28, 32, b, 34, 4497 ]
 #01 BBPdir end
 #01 unlink bat/BACKUP/BBP.dir = 0
 
 {
-var tmp := bat(int,bat).insert(0,bat("a"));
+var tmp := bat(int,str).insert(0,"a");
 bat("a").persists(false);
 subcommit(tmp);
 }

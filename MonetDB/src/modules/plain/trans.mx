@@ -37,12 +37,8 @@ TODO: move simple 2-phase locking transaction code from ODMG to this module.
  "global commit on all persistent BATs (to disk)"
 .COMMAND abort() : bit = global_abort;
  "brings all BATs back to state at last global commit"
-.COMMAND subcommit(bat[any,bat]) : bit = global_subcommit;
- "commit only a set of BATs, passed in the tail of the bat-of-bats parameter.
-  These BATs should not need any rollback; either these should be new
-  persistent BATs that were not present in the last commit, or no-longer
-  persistent BATs that can be destroyed. Thus subcommit mostly serves to add
-  or remove persistent tables from a database (quickly)."
+.COMMAND subcommit(bat[any,str]) : bit = global_subcommit;
+ "commit only a set of BATnames, passed in the tail (to which you must have exclusive access!)" 
 
 @- delta status
 For each BAT, we can cheaply get the differences (deltas) with respect to a 'previous
@@ -101,7 +97,7 @@ Quitting or crashing MonetDB will lose those changes. Expert use only!
 int
 global_sync(bit *ret)
 {
-	*ret = BBPsync(TRUE)?FALSE:TRUE;
+	*ret = BBPsync(BBPsize, NULL)?FALSE:TRUE;
 	return GDK_SUCCEED;
 }
 
