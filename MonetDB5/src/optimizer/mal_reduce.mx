@@ -81,8 +81,8 @@ MRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				getVarTmp(mb,i) = cnt;
 			mb->var[cnt] = mb->var[i];
 			mb->var[i] = NULL;
-			vars[i] = cnt;
 		}
+		vars[i] = cnt;
 		cnt++;
 	}
 	actions = mb->vtop - cnt;
