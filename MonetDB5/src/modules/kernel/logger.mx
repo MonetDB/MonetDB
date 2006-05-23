@@ -530,7 +530,7 @@ logger_commit(logger *logger)
 
 		/* apply deltas */
 		/* todo extent, default inserts */
-		void_replace_bat(I,U);
+		void_replace_bat(I,U,TRUE);
 		BBPunfix(I->batCacheid);
 		BBPunfix(U->batCacheid);
 	}

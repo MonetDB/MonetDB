@@ -315,36 +315,94 @@ command replace(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2]) :void
 address BKCreplace_bat
 comment "Perform replace for all BUNs of the second BAT into the first.";
 
+command replace(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2], force:bit) :void
+address BKCreplace_bat_force
+comment "Perform replace for all BUNs of the second BAT into the first.";
+
+command replace(b:bat[:void, :any_2], src:bat[:oid,:any_2], force:bit) :void
+address BKCreplace_bat_force
+comment "Perform replace for all BUNs of the second BAT into the first.";
+
 command replace(b:bat[:any_1, :any_2], h:any_1, t:any_2) :void
 address BKCreplace_bun
 comment "Replace the tail value of one BUN that has some head value.";
-command replace(b:bat[:void, :any_2], h:oid, t:any_2) :void
-address BKCreplace_bun;
 
-# The SQL append/replace commands
+command replace(b:bat[:void, :any_2], h:oid, t:any_2) :void
+address BKCreplace_bun
+comment "Replace the tail value of one BUN that has some head value.";
+
+command replace(b:bat[:any_1, :any_2], h:any_1, t:any_2, force:bit) :void
+address BKCreplace_bun_force
+comment "Replace the tail value of one BUN that has some head value.";
+
+command replace(b:bat[:void, :any_2], h:oid, t:any_2, force:bit) :void
+address BKCreplace_bun_force
+comment "Replace the tail value of one BUN that has some head value.";
+
+# The SQL append/inplace commands
 
 command append( i:bat[:oid,:any_1], u:bat[:oid,:any_1]) :void
 address BKCappend_wrap
+comment "append the content of u to i (renumbers u-oids' to unique numbers, starting at i.max()+1)";
+
+command append( i:bat[:oid,:any_1], u:bat[:oid,:any_1], force:bit) :void
+address BKCappend_force_wrap
 comment "append the content of u to i (renumbers u-oids' to unique numbers, starting at i.max()+1)";
 
 command append( i:bat[:void,:any_1], u:bat[:void,:any_1] ) :void
 address BKCappend_wrap
 comment "append the content of u to i";
 
+command append( i:bat[:void,:any_1], u:bat[:void,:any_1], force:bit ) :void
+address BKCappend_force_wrap
+comment "append the content of u to i";
+
 command append( i:bat[:void,:any_1], u:bat[:oid,:any_1] ) :void
 address BKCappend_wrap
+comment "append the content of u to i";
+
+command append( i:bat[:void,:any_1], u:bat[:oid,:any_1], force:bit ) :void
+address BKCappend_force_wrap
 comment "append the content of u to i";
 
 command append(i:bat[:oid,:any_1], u:any_1):void
 address BKCappend_val_wrap
 comment "append the value u to i";
 
+command append(i:bat[:oid,:any_1], u:any_1, force:bit):void
+address BKCappend_val_force_wrap
+comment "append the value u to i";
+
 command append( i:bat[:void,:any_1], u:any_1) :void
 address BKCappend_val_wrap
 comment "append the value u to i";
 
-command replace( o:bat[:void,:any_1], d:bat[:oid,:any_1]) :void
-address BKCbat_replace_oid_bat_wrap
+command append( i:bat[:void,:any_1], u:any_1, force:bit) :void
+address BKCappend_val_force_wrap
+comment "append the value u to i";
+
+command inplace( o:bat[:void,:any_1], id:oid, t:any_1) :void
+address BKCbun_inplace
+comment "inplace replace values on the given locations";
+
+command inplace( o:bat[:void,:any_1], d:bat[:oid,:any_1]) :void
+address BKCbat_inplace
+comment "inplace replace values on the given locations";
+
+command inplace( o:bat[:void,:any_1], d:bat[:void,:any_1]) :void
+address BKCbat_inplace
+comment "inplace replace values on the given locations";
+
+command inplace( o:bat[:void,:any_1], id:oid, t:any_1, force:bit) :void
+address BKCbun_inplace_force
+comment "inplace replace values on the given locations";
+
+command inplace( o:bat[:void,:any_1], d:bat[:oid,:any_1], force:bit) :void
+address BKCbat_inplace_force
+comment "inplace replace values on the given locations";
+
+command inplace( o:bat[:void,:any_1], d:bat[:void,:any_1], force:bit) :void
+address BKCbat_inplace_force
 comment "inplace replace values on the given locations";
 
 #end SQL enhancement
@@ -676,13 +734,20 @@ mal_export str BKCsort_rev(int *ret, int *bid);
 mal_export str BKCinsert_bat(int *r, int *bid, int *sid);
 mal_export str BKCreplace_bun(int *r, int *bid, ptr h, ptr t);
 mal_export str BKCreplace_bat(int *r, int *bid, int *sid);
+mal_export str BKCreplace_bun_force(int *r, int *bid, ptr h, ptr t, bit *force);
+mal_export str BKCreplace_bat_force(int *r, int *bid, int *sid, bit *force);
 mal_export str BKCdelete_all(int *r, int *bid);
 mal_export str BKCdelete_bat_bun(int *r, int *bid, int *sid);
 mal_export str BKCdelete_bat(int *r, int *bid, int *sid);
 mal_export str BKCdestroy_bat(bit *r, str *input);
 mal_export str BKCappend_wrap(int *r, int *bid, int *uid);
 mal_export str BKCappend_val_wrap(int *r, int *bid, ptr u);
-mal_export str BKCbat_replace_oid_bat_wrap(int *r, int *bod, int *did);
+mal_export str BKCappend_force_wrap(int *r, int *bid, int *uid, bit *force);
+mal_export str BKCappend_val_force_wrap(int *r, int *bid, ptr u, bit *force);
+mal_export str BKCbun_inplace(int *r, int *bid, oid *id, ptr t);
+mal_export str BKCbat_inplace(int *r, int *bid, int *rid);
+mal_export str BKCbun_inplace_force(int *r, int *bid, oid *id, ptr t, bit *force);
+mal_export str BKCbat_inplace_force(int *r, int *bid, int *rid, bit *force);
 mal_export str BKCgetCapacity(lng *res, int *bid);
 mal_export str BKCgetHeadType(str *res, int *bid);
 mal_export str BKCgetTailType(str *res, int *bid);
@@ -731,8 +796,8 @@ mal_export str BKCsetSequenceBase(int *r, int *bid, oid *o);
 mal_export str BKCsetSequenceBaseNil(int *r, int *bid, oid *o);
 mal_export str BKCgetSequenceBase(oid *r, int *bid);
 
-mal_export ssize_t void_replace_bat(BAT *b, BAT *u);
-mal_export int void_inplace(BAT *b, oid id, ptr val);
+mal_export ssize_t void_replace_bat(BAT *b, BAT *u, bit force);
+mal_export int void_inplace(BAT *b, oid id, ptr val, bit force);
 
 #endif /*_BAT_H_*/
 
@@ -917,7 +982,7 @@ The next collection of operators fill a hole in the MonetDB kernel libraries.
 It provide handy operations on void-BATs.
 @c
 int
-void_inplace(BAT *b, oid id, ptr val)
+void_inplace(BAT *b, oid id, ptr val, bit force)
 {
 	int res = GDK_SUCCEED;
 	BUN p = NULL;
@@ -931,8 +996,8 @@ void_inplace(BAT *b, oid id, ptr val)
 	BUNfndVOID(p, b, (ptr) &id);
 
 	assert(p >= b->batInserted);	/* we don't want delete/ins */
-	assert(!b->batRestricted);
-	if (!BUNinplace(b, p, (ptr) &id, val, 0))
+	assert(force || !b->batRestricted);
+	if (!BUNinplace(b, p, (ptr) &id, val, force))
 		 res = GDK_FAIL;
 
 	b->batInserted = oldInserted;
@@ -940,16 +1005,25 @@ void_inplace(BAT *b, oid id, ptr val)
 }
 
 int
-bat_inplace(BAT **res, BAT *b, oid *id, ptr val )
+bun_inplace(BAT **res, BAT *b, oid *id, ptr val )
 {
-	int ret = void_inplace(b,*id,val);
+	int ret = void_inplace(b,*id,val,FALSE);
 	*res = b;
 	BBPfix(b->batCacheid);
 	return ret;
 }
- 
+
+int
+bun_inplace_force(BAT **res, BAT *b, oid *id, ptr val, bit *force )
+{
+	int ret = void_inplace(b,*id,val,*force);
+	*res = b;
+	BBPfix(b->batCacheid);
+	return ret;
+}
+
 ssize_t
-void_replace_bat(BAT *b, BAT *u)
+void_replace_bat(BAT *b, BAT *u, bit force)
 {
 	size_t nr = 0;
 	BUN r, s;
@@ -958,7 +1032,7 @@ void_replace_bat(BAT *b, BAT *u)
 		oid updid = *(oid *) BUNhead(u, r);
 		ptr val = BUNtail(u, r);
 
-		if (void_inplace(b, updid, val) == GDK_FAIL)
+		if (void_inplace(b, updid, val, force) == GDK_FAIL)
 			return -1;
 		nr++;
 	}
@@ -966,15 +1040,24 @@ void_replace_bat(BAT *b, BAT *u)
 }
 
 int
-bat_replace_oid_bat_wrap(BAT **res, BAT *o, BAT *d)
+bat_inplace(BAT **res, BAT *o, BAT *d)
 {
 	*res = o;
-	if (void_replace_bat(o, d) < 0)
+	if (void_replace_bat(o, d, FALSE) < 0)
 		return GDK_FAIL;
 	BBPfix(o->batCacheid);
 	return GDK_SUCCEED;
 }
 
+int
+bat_inplace_force(BAT **res, BAT *o, BAT *d, bit *force)
+{
+	*res = o;
+	if (void_replace_bat(o, d, *force) < 0)
+		return GDK_FAIL;
+	BBPfix(o->batCacheid);
+	return GDK_SUCCEED;
+}
 
 /* descriptors may be unloaded by BBPtrim, so secure them with a hotfix while in use */
 static BAT *
@@ -1862,6 +1945,48 @@ BKCreplace_bat(int *r, int *bid, int *sid)
 	return throwMessage("bat.replace_bat", "GDKerror");
 }
 
+str
+BKCreplace_bun_force(int *r, int *bid, ptr h, ptr t, bit *force)
+{
+	BAT *b;
+
+	(void) r;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("bat.replace", "Cannot access descriptor");
+	}
+	@:derefStr(b,h,h)@
+	@:derefStr(b,t,t)@
+	if (BUNreplace(b, h, t, *force) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		return throwMessage("bat.replace", "BUNreplace Failed");
+	}
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+BKCreplace_bat_force(int *r, int *bid, int *sid, bit *force)
+{
+	BAT *b, *s;
+
+	(void) r;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("bat.replace", "Cannot access descriptor");
+	}
+	if ((s = BATdescriptor(*sid)) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		return throwMessage("bat.replace", "Cannot access descriptor");
+	}
+	if (BATreplace(b, s, *force) != NULL) {
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(s->batCacheid);
+		return MAL_SUCCEED;
+	}
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(s->batCacheid);
+	return throwMessage("bat.replace_bat", "GDKerror");
+}
+
 char *
 BKCdelete_bun(int *r, int *bid, ptr h, ptr t)
 {
@@ -2011,14 +2136,14 @@ void_delete_bat(BAT *b, BAT *d, int delta)
 		for (r = d->batInserted; r < BUNlast(d); r = BUNnext(d, r)) {
 			oid delid = *(oid *) BUNtail(d, r);
 
-			void_inplace(b, delid, nil);
+			void_inplace(b, delid, nil, TRUE);
 			nr++;
 		}
 	} else {
 		BATloop(d, r, s) {
 			oid delid = *(oid *) BUNtail(d, r);
 
-			void_inplace(b, delid, nil);
+			void_inplace(b, delid, nil, TRUE);
 			nr++;
 		}
 	}
@@ -2048,7 +2173,7 @@ void_replace_delta(BAT *b, BAT *u)
 		oid updid = *(oid *) BUNhead(u, r);
 		ptr val = BUNtail(u, r);
 
-		void_inplace(b, updid, val);
+		void_inplace(b, updid, val, TRUE);
 		nr++;
 	}
 	return nr;
@@ -2089,21 +2214,102 @@ BKCappend_val_wrap(int *r, int *bid, ptr u)
 	return MAL_SUCCEED;
 }
 
+char *
+BKCappend_force_wrap(int *r, int *bid, int *uid, bit *force)
+{
+	BAT *i, *u;
+
+	(void) r;
+	if ((i = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("bat.append", "Cannot access descriptor");
+	}
+	if ((u = BATdescriptor(*uid)) == NULL) {
+		BBPreleaseref(i->batCacheid);
+		return throwMessage("bat.append", "Cannot access descriptor");
+	}
+	BATappend(i, u, *force);
+	BBPreleaseref(i->batCacheid);
+	BBPreleaseref(u->batCacheid);
+	return MAL_SUCCEED;
+}
+
 str
-BKCbat_replace_oid_bat_wrap(int *r, int *bod, int *did)
+BKCappend_val_force_wrap(int *r, int *bid, ptr u, bit *force)
+{
+	BAT *i;
+
+	(void) r;
+	if ((i = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("bat.append", "Cannot access descriptor");
+	}
+
+	@:derefStr(i,t,u)@
+	BUNappend(i, u, *force);
+	BBPreleaseref(i->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str 
+BKCbun_inplace(int *r, int *bid, oid *id, ptr t)
+{
+	BAT *o;
+
+	(void) r;
+	if ((o = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("bat.inplace", "Cannot access descriptor");
+	}
+	void_inplace(o, *id, t, FALSE);
+	BBPreleaseref(o->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str 
+BKCbun_inplace_force(int *r, int *bid, oid *id, ptr t, bit *force)
+{
+	BAT *o;
+
+	(void) r;
+	if ((o = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("bat.inplace", "Cannot access descriptor");
+	}
+	void_inplace(o, *id, t, *force);
+	BBPreleaseref(o->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+BKCbat_inplace(int *r, int *bid, int *rid)
 {
 	BAT *o, *d;
 
 	(void) r;
-	if ((o = BATdescriptor(*bod)) == NULL) {
-		return throwMessage("bat.replace", "Cannot access descriptor");
+	if ((o = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("bat.inplace", "Cannot access descriptor");
 	}
-	if ((d = BATdescriptor(*did)) == NULL) {
+	if ((d = BATdescriptor(*rid)) == NULL) {
 		BBPreleaseref(o->batCacheid);
-		return throwMessage("bat.replace", "Cannot access descriptor");
+		return throwMessage("bat.inplace", "Cannot access descriptor");
 	}
-	o = BATsetaccess(o, 0);
-	void_replace_bat(o, d);
+	void_replace_bat(o, d, FALSE);
+	BBPreleaseref(o->batCacheid);
+	BBPreleaseref(d->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+BKCbat_inplace_force(int *r, int *bid, int *rid, bit *force)
+{
+	BAT *o, *d;
+
+	(void) r;
+	if ((o = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("bat.inplace", "Cannot access descriptor");
+	}
+	if ((d = BATdescriptor(*rid)) == NULL) {
+		BBPreleaseref(o->batCacheid);
+		return throwMessage("bat.inplace", "Cannot access descriptor");
+	}
+	void_replace_bat(o, d, *force);
 	BBPreleaseref(o->batCacheid);
 	BBPreleaseref(d->batCacheid);
 	return MAL_SUCCEED;
