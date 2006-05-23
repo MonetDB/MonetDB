@@ -53,9 +53,9 @@ function user.main():void;	# 0  (main:void)
     bat.insert(scens,"mal",nil:void);	# 4 BKCinsert_bun (_8:void)<-(scens:bat[:str,:void])(_9:str)(_7:void)
 # this should fail, the monetdb user is already there 	# 5  (_10:str)
     id := clients.addUser("monetdb","Pmonetdb",scens);	# 6 CLTaddUser (id:oid)<-(_12:str)(_13:str)(scens:bat[:str,:void])
-catch MALException;	# 7  (MALException:str) jump 9
-    io.printf(MALException);	# 8 IOprint_str (_15:int)<-(MALException:str)
-exit MALException;	# 9  (MALException:str)
+catch MALexception;	# 7  (MALexception:str) jump 9
+    io.printf(MALexception);	# 8 IOprint_str (_15:int)<-(MALexception:str)
+exit MALexception;	# 9  (MALexception:str)
 # should print 0@1 or something 	# 10  (_16:str)
     id := clients.addUser("test","test",scens);	# 11 CLTaddUser (id:oid)<-(_17:str)(_17:str)(scens:bat[:str,:void])
     io.print(id);	# 12 IOprint_val (_18:int)<-(id:oid)
@@ -71,16 +71,16 @@ exit MALException;	# 9  (MALException:str)
     clients.removeScenario("test","sql");	# 22 CLTremoveScenario (_30:void)<-(_17:str)(_6:str)
 # this one should fail: it's not there 	# 23  (_31:str)
     clients.removeScenario("test","mil");	# 24 CLTremoveScenario (_32:void)<-(_17:str)(_33:str)
-catch MALException;	# 25  (MALException:str) jump 27
-    io.printf(MALException);	# 26 IOprint_str (_34:int)<-(MALException:str)
-exit MALException;	# 27  (MALException:str)
+catch MALexception;	# 25  (MALexception:str) jump 27
+    io.printf(MALexception);	# 26 IOprint_str (_34:int)<-(MALexception:str)
+exit MALexception;	# 27  (MALexception:str)
 # and add a scenario again 	# 28  (_35:str)
     clients.addScenario("test","mal");	# 29 CLTaddScenario (_36:void)<-(_17:str)(_9:str)
 # do it again, see what happens (should fail) 	# 30  (_37:str)
     clients.addScenario("test","mal");	# 31 CLTaddScenario (_38:void)<-(_17:str)(_9:str)
-catch MALException;	# 32  (MALException:str) jump 34
-    io.printf(MALException);	# 33 IOprint_str (_39:int)<-(MALException:str)
-exit MALException;	# 34  (MALException:str)
+catch MALexception;	# 32  (MALexception:str) jump 34
+    io.printf(MALexception);	# 33 IOprint_str (_39:int)<-(MALexception:str)
+exit MALexception;	# 34  (MALexception:str)
 # forcefully set the password of the user test 	# 35  (_40:str)
     clients.setPassword("test","newpass");	# 36 CLTsetPassword (_41:void)<-(_17:str)(_42:str)
 # now try to set the password for ourself, should fail 	# 37  (_43:str)
@@ -113,32 +113,16 @@ catch InvalidCredentialsException;	# 63  (InvalidCredentialsException:str) jump 
     io.printf(InvalidCredentialsException);	# 64 IOprint_str (_66:int)<-(InvalidCredentialsException:str)
 exit InvalidCredentialsException;	# 65  (InvalidCredentialsException:str)
 end main;	# 66  
-MALException:user.main[6]: user 'monetdb' already exists
-    at addUser(clients.mx:375)
-    at addUser(mal_authorize.mx:340)
+MALexception:user.main[6]:addUser:user 'monetdb' already exists
 [ 1@0 ]
 [ 2@0 ]
-MALException:user.main[21]: scenario 'mal' not found for user
-    at removeScenario(clients.mx:469)
-    at removeScenario(mal_authorize.mx:592)
-InvalidCredentialsException:user.main[38]: The administrator cannot set its own password, use changePassword instead
-    at setPassword(clients.mx:427)
-    at setPassword(mal_authorize.mx:517)
-InvalidCredentialsException:user.main[43]: Access denied
-    at changePassword(clients.mx:414)
-    at changePassword(mal_authorize.mx:477)
-InvalidCredentialsException:user.main[50]: Invalid credentials for user 'monetdb'
-    at checkPermission(clients.mx:443)
-    at checkCredentials(mal_authorize.mx:280)
-InvalidCredentialsException:user.main[54]: Invalid credentials for user 'monetdb'
-    at checkPermission(clients.mx:443)
-    at checkCredentials(mal_authorize.mx:280)
-InvalidCredentialsException:user.main[58]: Invalid credentials for user 'monetdb'
-    at checkPermission(clients.mx:443)
-    at checkCredentials(mal_authorize.mx:280)
-InvalidCredentialsException:user.main[62]: Invalid credentials for user 'x'
-    at checkPermission(clients.mx:443)
-    at checkCredentials(mal_authorize.mx:254)
+MALexception:user.main[21]:removeScenario:scenario 'mal' not found for user
+InvalidCredentialsException:user.main[38]:setPassword:The administrator cannot set its own password, use changePassword instead
+InvalidCredentialsException:user.main[43]:changePassword:Access denied
+InvalidCredentialsException:user.main[50]:checkCredentials:Invalid credentials for user 'monetdb'
+InvalidCredentialsException:user.main[54]:checkCredentials:Invalid credentials for user 'monetdb'
+InvalidCredentialsException:user.main[58]:checkCredentials:Invalid credentials for user 'monetdb'
+InvalidCredentialsException:user.main[62]:checkCredentials:Invalid credentials for user 'x'
 
 # 20:34:17 >  
 # 20:34:17 >  Done.

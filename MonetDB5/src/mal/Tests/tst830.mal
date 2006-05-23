@@ -6,9 +6,9 @@
 
 	# this should fail, the monetdb user is already there
 	id := clients.addUser("monetdb", "Pmonetdb", scens);
-catch MALException:str;
-	io.printf(MALException);
-exit MALException;
+catch MALexception:str;
+	io.printf(MALexception);
+exit MALexception;
 
 	# should print 0@1 or something
 	id := clients.addUser("test", "test", scens);
@@ -28,17 +28,17 @@ exit MALException;
 	clients.removeScenario("test", "sql");
 	# this one should fail: it's not there
 	clients.removeScenario("test", "mil");
-catch MALException:str;
-	io.printf(MALException);
-exit MALException;
+catch MALexception:str;
+	io.printf(MALexception);
+exit MALexception;
 
 	# and add a scenario again
 	clients.addScenario("test", "mal");
 	# do it again, see what happens (should fail)
 	clients.addScenario("test", "mal");
-catch MALException:str;
-	io.printf(MALException);
-exit MALException;
+catch MALexception:str;
+	io.printf(MALexception);
+exit MALexception;
 
 	# forcefully set the password of the user test
 	clients.setPassword("test", "newpass");

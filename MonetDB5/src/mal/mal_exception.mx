@@ -127,6 +127,7 @@ mal_export void	showException(MalBlkPtr mb, int pc, str name, str msg);
 #define MALEXCEPTION "MALexception"
 #define throwMessage(Fcn,Msg)   throwException(MALEXCEPTION,Fcn,"%s",Msg)
 /* Fabian's convenience `tools' */
+#ifdef USE_NICE_N_SHINY_EXCEPTIONS
 mal_export str  createException(str name, str func, str file, int line, char *format, ...);
 mal_export str  stackException(str prev, str func, str file, int line);
 mal_export str  getBasename(const str in);
@@ -143,6 +144,18 @@ mal_export str  getBasename(const str in);
 		GDKfree(PRV); \
 		return(TMP); \
 	}
+#else /* no shiny exceptions */
+#define throw(TPE, FCN, MSG) \
+	return(throwException(TPE, FCN, "%s", MSG))
+#define throwf(TPE, FCN, FMT, ARG) \
+	return(throwException(TPE, FCN, FMT, ARG))
+#define throwf2(TPE, FCN, FMT, ARG1, ARG2) \
+	return(throwException(TPE, FCN, FMT, ARG1, ARG2))
+#define throwf3(TPE, FCN, FMT, ARG1, ARG2, ARG3) \
+	return(throwException(TPE, FCN, FMT, ARG1, ARG2, ARG3))
+#define rethrow(FCN, TMP, PRV) \
+	if ((TMP = PRV) != MAL_SUCCEED) return(TMP);
+#endif
 #define throwIllArg(FCN, MSG) \
 	throw("IllegalArgumentException", FCN, MSG);
 #define throwIllArgf(FCN, FMT, ARG) \
@@ -156,9 +169,9 @@ mal_export str  getBasename(const str in);
 #define throwIOf(FCN, FMT, ARG) \
 	throwf("IOException", FCN, FMT, ARG);
 #define throwMal(FCN, MSG) \
-	throw("MALException", FCN, MSG);
+	throw(MALEXCEPTION, FCN, MSG);
 #define throwMalf(FCN, FMT, ARG) \
-	throwf("MALException", FCN, FMT, ARG);
+	throwf(MALEXCEPTION, FCN, FMT, ARG);
 
 #endif /*  _MAL_EXCEPTION_H*/
 
