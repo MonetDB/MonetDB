@@ -8024,12 +8024,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         deleteResult_ (f, counter, STR);
         return NORMAL;
     }
-    else if (
-           !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-query")) ||
-           !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-score"))
-         )
+    else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-query")) )
     {
-	int is_node_query = !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-query"));
+        milprintf(f, 
+                "{ # translate fn:tijah-query\n"
+	);
         if (fun->arity == 3) {
 	  /* translate the first options parameter*/
           translate2MIL (f, NORMAL, cur_level, counter, L(args));
@@ -8059,67 +8058,66 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	}
                
         milprintf(f, 
-                "{ # translate fn:tijah-%s\n"
                 "if (loop%03u.count() = 1) {\n"
                 "    var lo := 2.0LL;\n"
-                "    var tqarg := item_str_%03d.fetch(0);\n"
-		"    if ( tqarg != tijah_qstring ) {\n"
-		"      tijah_qstring := tqarg;\n",
-		(is_node_query?"query ":"score"),cur_level, counter-1);
-        milprintf(f, 
+                "    var nexi_query := item_str_%03d.fetch(0);\n"
+		"    var nexi_score;\n"
+                "    nexi_score := run_tijah_query(optbat,nexi_query);\n"
+		"    nexi_score := nexi_score.tsort_rev();\n"
+		, cur_level, counter-1
+	);
 
-                "      tijah_qscore := run_tijah_query(optbat,tijah_qstring);\n"
-		"      if ( true) tijah_qscore := tijah_qscore.tsort_rev();\n"
-		"    } else {\n"
-		"      if ( false ) printf(\"# tijah_qscore cached!!!\");\n"
-		"    }\n"
-                "    if (lo < 1.0LL) lo := 0.0;\n");
-        milprintf(f, "    var hi := INT_MAX;\n");
-
-	/* PROC tijah2pf(BAT[oid,dbl] tijah_qscore) : BAT := */
+	/* PROC tijah2pf(BAT[oid,dbl] nexi_score) : BAT := */
 	milprintf(f,
           "var docpre := bat(\"tj_\" + collName + \"_doc_firstpre\").[oid]();\n"
           "var pfpre :=  bat(\"tj_\" + collName + \"_pfpre\");\n"
-          "var score := tijah_qscore.tmark(0@0);\n"
-          "item  := tijah_qscore.hmark(0@0);\n"
-          "iter  := item.mirror();\n"
+          "var score := nexi_score.tmark(0@0);\n"
+          "item  := nexi_score.hmark(0@0);\n"
           "var frag := [find_lower](const docpre.reverse().mark(0@0), item);\n"
           "item := item.join(pfpre).sort().tmark(0@0);\n"
 	  );
 
 	/* PROC align_frag() : void := */
-	if ( is_node_query ) {
-	  milprintf(f,
-            "var needed_docs := bat(\"tj_\" + collName + \"_doc_name\").semijoin(frag.tunique());\n"
-            "var loaded_docs := ws.fetch(DOCID_NAME).reverse();\n"
-            "needed_docs@batloop()\n"
-            "{\n"
-            "      if (not(loaded_docs.exist($t))) {\n"
-            "              ws.add_doc($t); }\n"
-            "}\n"
-            "var doc_loaded := ws.fetch(CONT_DOCID).join(ws.fetch(DOCID_NAME));\n"
-            "var fid_pffid := needed_docs.join(doc_loaded.reverse());\n"
-            "frag := frag.join(fid_pffid).sort().tmark(0@0);\n"
-            "kind := set_kind(frag, ELEM);\n"
-	    "iter := iter.cross(loop%03u);\n"
-            "ipik := iter;\n"
-	    "}\n"
-	    , cur_level
-	    );
-        } else {
-	  milprintf(f,
-	    "item := dbl_values.addValues(tijah_qscore).tmark(0@0);\n"
-	    "kind := DBL;\n"
-	    "iter := iter.cross(loop%03u);\n"
-	    "ipik := iter;\n"
-	    "}\n"
-	    , cur_level
-	  );
-	}
+	milprintf(f,
+          "var needed_docs := bat(\"tj_\" + collName + \"_doc_name\").semijoin(frag.tunique());\n"
+          "var loaded_docs := ws.fetch(DOCID_NAME).reverse();\n"
+          "needed_docs@batloop()\n"
+          "{\n"
+          "      if (not(loaded_docs.exist($t))) {\n"
+          "              ws.add_doc($t); }\n"
+          "}\n"
+          "var doc_loaded := ws.fetch(CONT_DOCID).join(ws.fetch(DOCID_NAME));\n"
+          "var fid_pffid := needed_docs.join(doc_loaded.reverse());\n"
+          "frag := frag.join(fid_pffid).sort().tmark(0@0);\n"
+          "kind := set_kind(frag, ELEM);\n"
+	  "iter := item.project(loop%03u.fetch(0));\n"
+          "ipik := iter;\n"
+	  "ws_tijah_score := update_tijah_scores(ws,ws_tijah_score,item,kind,nexi_score.tmark(0@0));\n"
+	  "} else {\n"
+	  "  ERROR(\"unexpected size of loopxxx tijah_query()\"); }\n"
+	  , cur_level
+	);
         deleteResult_ (f, --counter, STR);
 
         milprintf(f, "} # end of translate fn:tijah_query\n");
         return rc;
+    }
+    else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"tijah-score")) ) 
+    {
+        milprintf(f, 
+                "{ # translate fn:tijah-score\n"
+		);
+	/* translate the node sequence parameter*/
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+
+        /* warning:item/kind and dbl values are modified in fill_tijah_scores */
+        milprintf(f, 
+                "item := item.copy();\n"
+                "kind := kind.copy();\n"
+	        "fill_tijah_scores(ws,ws_tijah_score,item,kind,dbl_values);\n"
+                "} # end of fn:tijah-score\n"
+	);
+        return NORMAL;
     }
 #endif /* PFTIJAH */
     PFoops(OOPS_FATAL,"function %s is not supported.", PFqname_str (fnQname));
@@ -10706,9 +10704,8 @@ const char* PFinitMIL(void) {
 #ifdef HAVE_PFTIJAH
         "module(\"pftijah\");\n"
 	"\n"
-	"var tijah_qstring := \"\";\n"
-	"var tijah_qscore  := bat(oid,dbl);\n"
-	"var tijah_qnodes  := bat(void,oid);\n"
+	"var ws_tijah_score:= bat(oid,bat);\n"
+
 #endif
         "\n"
         "# value containers for literal values\n"
@@ -10841,6 +10838,9 @@ static const char* _PFstopMIL(bool is_update) {
     strcat(buf,
            "});\n"
            "destroy_ws(ws);\n"
+#ifdef HAVE_PFTIJAH
+           "if ( ws_tijah_score.count() > 99999) destroy_ws(ws_tijah_score);\n" /* keep alive for the time */
+#endif
            "if (not(isnil(err))) ERROR(err);\n"
            "time_print := time() - time_print;\n"
            "if (genType.search(\"timing\") >= 0)\n"

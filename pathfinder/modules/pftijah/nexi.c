@@ -17,6 +17,7 @@
 #include <getopt.h>
 #include <string.h>
 
+#include "pftijah.h"
 #include "nexi.h"
 
 /*

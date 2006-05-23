@@ -1616,20 +1616,11 @@ PFfun_xquery_fo ()
                                     PFty_string () },
              .ret_ty = PFty_star (PFty_xs_anyNode ()) },
 	     } }
-    , /* fn:tijah-score(item*, string) as dbl* */
+    , /* fn:tijah-score(node*) as node* */
       { .ns = PFns_fn, .loc = "tijah-score",
-        .arity = 2, .sig_count = 1, .sigs = { {
-	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()),
-                                PFty_string () },
-             .ret_ty = PFty_star (PFty_double ()) } } }
-    , /* fn:tijah-score(item, item*, string) as dbl* */
-      { .ns = PFns_fn, .loc = "tijah-score",
-        .arity = 3, .sig_count = 1, .sigs = { {
-	     .par_ty = (PFty_t[]) { PFty_xs_anyNode (),
-	     			    PFty_star (PFty_xs_anyNode ()),
-                                    PFty_string () },
-             .ret_ty = PFty_star (PFty_double ()) },
-	     } }
+        .arity = 1, .sig_count = 1, .sigs = { {
+	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()) },
+             .ret_ty = PFty_star (PFty_xs_anyNode ()) } } }
 #else
 #endif
     , { .loc = 0 }
