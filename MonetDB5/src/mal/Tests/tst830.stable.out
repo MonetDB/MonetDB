@@ -114,31 +114,31 @@ catch InvalidCredentialsException;	# 63  (InvalidCredentialsException:str) jump 
 exit InvalidCredentialsException;	# 65  (InvalidCredentialsException:str)
 end main;	# 66  
 MALException:user.main[6]: user 'monetdb' already exists
-    at addUser(clients.mx:373)
-    at addUser(mal_authorize.mx:337)
+    at addUser(clients.mx:375)
+    at addUser(mal_authorize.mx:340)
 [ 1@0 ]
 [ 2@0 ]
 MALException:user.main[21]: scenario 'mal' not found for user
-    at removeScenario(clients.mx:467)
-    at removeScenario(mal_authorize.mx:589)
+    at removeScenario(clients.mx:469)
+    at removeScenario(mal_authorize.mx:592)
 InvalidCredentialsException:user.main[38]: The administrator cannot set its own password, use changePassword instead
-    at setPassword(clients.mx:425)
-    at setPassword(mal_authorize.mx:514)
+    at setPassword(clients.mx:427)
+    at setPassword(mal_authorize.mx:517)
 InvalidCredentialsException:user.main[43]: Access denied
-    at changePassword(clients.mx:412)
-    at changePassword(mal_authorize.mx:474)
+    at changePassword(clients.mx:414)
+    at changePassword(mal_authorize.mx:477)
 InvalidCredentialsException:user.main[50]: Invalid credentials for user 'monetdb'
-    at checkPermission(clients.mx:441)
-    at checkCredentials(mal_authorize.mx:277)
+    at checkPermission(clients.mx:443)
+    at checkCredentials(mal_authorize.mx:280)
 InvalidCredentialsException:user.main[54]: Invalid credentials for user 'monetdb'
-    at checkPermission(clients.mx:441)
-    at checkCredentials(mal_authorize.mx:277)
+    at checkPermission(clients.mx:443)
+    at checkCredentials(mal_authorize.mx:280)
 InvalidCredentialsException:user.main[58]: Invalid credentials for user 'monetdb'
-    at checkPermission(clients.mx:441)
-    at checkCredentials(mal_authorize.mx:277)
+    at checkPermission(clients.mx:443)
+    at checkCredentials(mal_authorize.mx:280)
 InvalidCredentialsException:user.main[62]: Invalid credentials for user 'x'
-    at checkPermission(clients.mx:441)
-    at checkCredentials(mal_authorize.mx:251)
+    at checkPermission(clients.mx:443)
+    at checkCredentials(mal_authorize.mx:254)
 
 # 20:34:17 >  
 # 20:34:17 >  Done.
