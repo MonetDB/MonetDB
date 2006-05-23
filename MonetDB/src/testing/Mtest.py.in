@@ -2466,13 +2466,13 @@ else:
     HTMLTITLE = ""+THISFILE+" results"+HTMLTITLE+" on "+OSVER       #"+ ("`date`")"
 
 URLPREFIXMAP = {
-    'MonetDB': 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/MonetDB/',
-    'sql': 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/sql/',
-    'pathfinder': 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/pathfinder/',
-    'xml': 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/xml/',
-    'buildtools': 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/buildtools/',
-    'pf-tools': 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/pf-tools/',
-    'pf-haskell': 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/pf-haskell/',
+    'MonetDB': 'http://monetdb.cvs.sourceforge.net/monetdb/MonetDB/',
+    'sql': 'http://monetdb.cvs.sourceforge.net/monetdb/sql/',
+    'pathfinder': 'http://monetdb.cvs.sourceforge.net/monetdb/pathfinder/',
+    'xml': 'http://monetdb.cvs.sourceforge.net/monetdb/xml/',
+    'buildtools': 'http://monetdb.cvs.sourceforge.net/monetdb/buildtools/',
+    'pf-tools': 'http://monetdb.cvs.sourceforge.net/monetdb/pf-tools/',
+    'pf-haskell': 'http://monetdb.cvs.sourceforge.net/monetdb/pf-haskell/',
     }
 URLPREFIX   = None
 ##URLSUFFIX_F = '?cvsroot=Monet-4.3'
