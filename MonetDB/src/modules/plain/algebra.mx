@@ -160,7 +160,11 @@ as substring in the tail."
 @m
 .COMMAND copy ( BAT[any::1,any::2] b) :
 				BAT[any::1, any::2] = CMDcopy;
-"Returns physical copy of a BAT."
+"Returns physical copy of a BAT, with access BAT_WRITE."
+
+.COMMAND rcopy ( BAT[any::1,any::2] b) :
+				BAT[any::1, any::2] = CMDrcopy;
+"Returns physical copy of a BAT, but is read-only."
 
 @- sorted copy
 @m
@@ -1665,6 +1669,7 @@ CMD@1(BAT **result, BAT* b, int *param)
 #define BATmark_default(b) BATmark(b,OIDnew(BATcount(b)))
 #define BATtmark_default(b) BATmirror(BATmark(BATmirror(b),OIDnew(BATcount(b))))
 #define BAThmark_default(b) BATmirror(BATmark(b,OIDnew(BATcount(b))))
+#define BATrcopy(b) batcopy(b, b->htype, b->ttype, 2)
 
 @:unaryint(count,BATcount)@
 @:unary(histogram,BAThistogram)@
@@ -1675,6 +1680,7 @@ CMD@1(BAT **result, BAT* b, int *param)
 @:unary(tsort_rev,BATtsort_rev)@
 @:unary(number,BATnumber)@
 @:unary(copy,BATcopy)@
+@:unary(rcopy,BATrcopy)@
 @:unary(kunique,BATkunique)@
 @:unary(sunique,BATsunique)@
 @:unary(mark_default,BATmark_default)@

@@ -430,7 +430,7 @@ DESCload(int i)
 	/* reconstruct mode from BBP status (BATmode doesn't flush descriptor, so loaded mode may be stale) */
 	b->batPersistence = (BBP_status(b->batCacheid) & BBPTMP) ? TRANSIENT : (BBP_status(b->batCacheid) & (BBPNEW | BBPPERSISTENT)) ? PERSISTENT : SESSION;
 	b->batCopiedtodisk = 1;
-
+	BATcheckmodes(b, BBP_status(i) & BBPEXISTING, FALSE);
 	return b;
 }
 
@@ -473,6 +473,7 @@ BATsave(BAT *bd)
 	BAT *b = bd;
 
 	BATcheck(b, "BATsave");
+
 	/* views cannot be saved, but make an exception for force-remapped views */
 	if (VIEWparent(b) && !(b->batBuns->copied && b->batBuns->storage == STORE_MMAP)) {
 		GDKerror("BATsave: %s is a view on %s; cannot be saved\n", BATgetId(b), BBPname(VIEWparent(b)));

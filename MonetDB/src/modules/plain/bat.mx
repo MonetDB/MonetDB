@@ -1799,8 +1799,7 @@ copy_segment(char* mmap, BAT *bn, BAT *b, int src, int dst, int cnt, int mode) {
 			memcpy(BUNfirst(bn) + dst_off, BUNfirst(b) + src_off, (partial < nbytes)?partial:nbytes);
 		} else if (src_off != dst_off) { /* otherwise it is already mapped so */
 			void *fixed = (bn->batBuns->base + dst_off);
-                        if (GDKmmap(mmap, mode
-, src_off, nbytes, fixed) != fixed) {
+                        if (GDKmmap(mmap, mode, src_off, nbytes, fixed) != fixed) {
 				return 0;
 			}
 		}
@@ -1824,7 +1823,7 @@ CMDremap(BAT **res, BAT *b, BAT *map, bit *force)
 {
 	size_t cnt = BATcount(map), n = BATcount(b), max = (((ssize_t) n) - 1) / REMAP_PAGE_SIZE;
 	int (*fix) (ptr) = BATatoms[b->ttype].atomFix;
-        int mode = (MMAP_READ|MMAP_SEQUENTIAL) + (*force)?MMAP_WRITE:MMAP_COPY;
+        int mode = (MMAP_READ|MMAP_SEQUENTIAL) | ((*force)?MMAP_WRITE:MMAP_COPY);
 	oid* pid = (oid*) alloca(cnt*sizeof(oid));
         size_t xx, yy = 0, zz = 0;
 	char path[PATHLENGTH];
@@ -2083,6 +2082,8 @@ CMDswizzle(BAT **res, BAT *b, BAT *map)
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
+	if (bn->htype) bn->hdense = bn->hsorted = 0;
+	bn->tdense = bn->tsorted = 0;
 	return GDK_SUCCEED;
 }
 @}

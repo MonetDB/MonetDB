@@ -56,12 +56,11 @@ var i := 0;
 var bak := debugmask();
 debugmask(0); # do this quick: 150K times BATpropcheck is not nice
 while(i < 150000) { 
-  b.append(i); 
+  b.append(i); i :+= 1; 
   o.insert(oid(i),i+100); 
   l.insert(lng(i),i+100); 
   if ((i and 4095) = 0) 
     sample.append(oid(i));
-  i :+= 1; 
 }
 debugmask(bak); # set debug to whatever we want it to be
 
@@ -85,36 +84,36 @@ var mmap_oid := b.mk("oid",true);
 var mmap_lng := b.mk("lng",true);
 var mmap_str := b.mk("str",true);
 
-var b0 := file_int.remap(map,FALSE);
+var b0 := file_int.remap(map,false);
 b0.count().print();
 b0.slice(149995,150005).print();
 
 
-var b1 := file_oid.remap(map,FALSE); 
+var b1 := file_oid.remap(map,false); 
     [equal](b0,[int](b1)).uselect(false).count().print(); 
     sample.print(b0,b1);
 
-var b2 := file_lng.remap(map,FALSE); 
+var b2 := file_lng.remap(map,false); 
     [equal](b0,[int](b2)).uselect(false).count().print(); 
     sample.print(b0,b2);
 
-var b3 := file_str.remap(map,FALSE); 
+var b3 := file_str.remap(map,false); 
     [equal](b0,[int](b3)).uselect(false).count().print(); 
     sample.print(b0,b3);
 
-var b4 := mmap_int.remap(map,FALSE); 
+var b4 := mmap_int.remap(map,false); 
     [equal](b0,[int](b4)).uselect(false).count().print(); 
     sample.print(b0,b4);
 
-var b5 := mmap_oid.remap(map,FALSE); 
+var b5 := mmap_oid.remap(map,false); 
     [equal](b0,[int](b5)).uselect(false).count().print(); 
     sample.print(b0,b5);
 
-var b6 := mmap_lng.remap(map,FALSE); 
+var b6 := mmap_lng.remap(map,false); 
     [equal](b0,[int](b6)).uselect(false).count().print(); 
     sample.print(b0,b6);
 
-var b7 := mmap_str.remap(map,FALSE); 
+var b7 := mmap_str.remap(map,false); 
     [equal](b0,[int](b7)).uselect(false).count().print(); 
     sample.print(b0,b7);
 

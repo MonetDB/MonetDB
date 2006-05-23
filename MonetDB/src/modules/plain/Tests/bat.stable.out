@@ -142,9 +142,7 @@ var mmap_oid := b.mk("oid",true);
 var mmap_lng := b.mk("lng",true);
 var mmap_str := b.mk("str",true);
 
-
-var b0 := file_int.remap(map,FALSE);
-
+var b0 := file_int.remap(map,false);
 b0.count().print();
 [ 196608 ]
 b0.slice(149995,150005).print();
@@ -164,7 +162,8 @@ b0.slice(149995,150005).print();
 [ 150004@0,	  nil	  ]
 [ 150005@0,	  nil	  ]
 
-var b1 := file_oid.remap(map,FALSE); 
+
+var b1 := file_oid.remap(map,false); 
     [equal](b0,[int](b1)).uselect(false).count().print(); 
 [ 0 ]
     sample.print(b0,b1);
@@ -209,7 +208,7 @@ var b1 := file_oid.remap(map,FALSE);
 [ 143360@0,	  143360@0,	  143360, 143360@0	  ]
 [ 147456@0,	  147456@0,	  147456, 147456@0	  ]
 
-var b2 := file_lng.remap(map,FALSE); 
+var b2 := file_lng.remap(map,false); 
     [equal](b0,[int](b2)).uselect(false).count().print(); 
 [ 0 ]
     sample.print(b0,b2);
@@ -254,7 +253,7 @@ var b2 := file_lng.remap(map,FALSE);
 [ 143360@0,	  143360@0,	  143360, 143360  ]
 [ 147456@0,	  147456@0,	  147456, 147456  ]
 
-var b3 := file_str.remap(map,FALSE); 
+var b3 := file_str.remap(map,false); 
     [equal](b0,[int](b3)).uselect(false).count().print(); 
 [ 0 ]
     sample.print(b0,b3);
@@ -299,7 +298,7 @@ var b3 := file_str.remap(map,FALSE);
 [ 143360@0,	  143360@0,	  143360, "143360"	  ]
 [ 147456@0,	  147456@0,	  147456, "147456"	  ]
 
-var b4 := mmap_int.remap(map,FALSE); 
+var b4 := mmap_int.remap(map,false); 
     [equal](b0,[int](b4)).uselect(false).count().print(); 
 [ 0 ]
     sample.print(b0,b4);
@@ -344,7 +343,7 @@ var b4 := mmap_int.remap(map,FALSE);
 [ 143360@0,	  143360@0,	  143360, 143360  ]
 [ 147456@0,	  147456@0,	  147456, 147456  ]
 
-var b5 := mmap_oid.remap(map,FALSE); 
+var b5 := mmap_oid.remap(map,false); 
     [equal](b0,[int](b5)).uselect(false).count().print(); 
 [ 0 ]
     sample.print(b0,b5);
@@ -389,7 +388,7 @@ var b5 := mmap_oid.remap(map,FALSE);
 [ 143360@0,	  143360@0,	  143360, 143360@0	  ]
 [ 147456@0,	  147456@0,	  147456, 147456@0	  ]
 
-var b6 := mmap_lng.remap(map,FALSE); 
+var b6 := mmap_lng.remap(map,false); 
     [equal](b0,[int](b6)).uselect(false).count().print(); 
 [ 0 ]
     sample.print(b0,b6);
@@ -434,7 +433,7 @@ var b6 := mmap_lng.remap(map,FALSE);
 [ 143360@0,	  143360@0,	  143360, 143360  ]
 [ 147456@0,	  147456@0,	  147456, 147456  ]
 
-var b7 := mmap_str.remap(map,FALSE); 
+var b7 := mmap_str.remap(map,false); 
     [equal](b0,[int](b7)).uselect(false).count().print(); 
 [ 0 ]
     sample.print(b0,b7);
