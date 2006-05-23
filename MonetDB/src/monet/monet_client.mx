@@ -87,7 +87,7 @@ m_export int closeClient(Client c, int thread);
 m_export void killClient(Client c, int thread);
 m_export void scheduleClient(Client c);
 m_export int readClient(Client c);
-m_export YYSTREE parseClient(Client c, int reschedule, str filename, int *lineno);
+m_export YYSTREE parseClient(Client c, int reschedule);
 m_export int serveClient(Cntxt stk, YYSTREE lt, ValPtr res);
 m_export str moduleClient(Client c, str mod, str parmod);
 m_export int dropClient(Client c, YYSTREE lt);
@@ -692,12 +692,10 @@ extern int yyparse(void);
 extern void ll_flushbuffer(void);
 
 YYSTREE
-parseClient(Client c, int reschedule, str filename, int *lineno)
+parseClient(Client c, int reschedule)
 {
 	Request cur = 0, after = 0;
 	int r;
-	str savefilename;
-	int savelineno;
 
 	if (reschedule) {
 		cur = thisRequest();
@@ -714,16 +712,8 @@ parseClient(Client c, int reschedule, str filename, int *lineno)
 		c->tree = NULL;
 		CNTXTfree2(c->stk, c);
 	}
-	savefilename = mn_filename;
-	savelineno = mn_lineno;
-	mn_filename = filename;
-	mn_lineno = lineno ? *lineno : 1;
 	r = yyparse();
 	ll_flushbuffer();
-	if (lineno)
-		*lineno = mn_lineno;
-	mn_filename = savefilename;
-	mn_lineno = savelineno;
 
 	unlockparser(c);
 
@@ -754,7 +744,6 @@ serveClient(Cntxt stk, YYSTREE lt, ValPtr res)
 	int i = 0;
 	Client c;
 	Thread t;
-	int lineno = 1;
 
 	if (lt->cnt != 1 || interpret(stk, lt->yysons[0], res) < 0 || res->vtype != TYPE_int || ((i = res->val.ival) < 0) || (i > MAXCLIENTS)) {
 		GDKwarning("serveClient: lost\n");
@@ -772,7 +761,7 @@ serveClient(Cntxt stk, YYSTREE lt, ValPtr res)
 		return -1;
 	}
 	if (readClient(c)) {
-		parseClient(c, TRUE, "no file", &lineno);
+		parseClient(c, TRUE);
 	} else {
 		Request q;
 
