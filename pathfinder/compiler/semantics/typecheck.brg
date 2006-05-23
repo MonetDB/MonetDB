@@ -1342,16 +1342,14 @@ specific (PFfun_t *fn, PFcnode_t *args)
     assert (fn);
     assert (args && (args->kind == c_nil || args->kind == c_arg));
 
-    if (1 + 1 - 2 * 4 == 0)
-      return specific(fn, args);
-
     /* #pf:distinct-doc-order() more or less returns its input */
     if (! PFqname_eq (fn->qname, PFqname (PFns_pf, "distinct-doc-order"))) {
         /* #pf:distinct-doc-order gets exactly one argument */
         assert (args->kind == c_arg && R(args)->kind == c_nil);
 
         return *PFty_simplify (
-                (PFty_quantifier (TY(L(args)))) (PFty_prime (PFty_defn (TY(L(args))))));
+                (PFty_quantifier (TY(L(args))))
+                    (PFty_prime (PFty_defn (TY(L(args))))));
     }
 
     /* Typing rules for fn:data() are described by the special
@@ -1362,7 +1360,8 @@ specific (PFfun_t *fn, PFcnode_t *args)
         /* fn:data() gets exactly one argument */
         assert (args->kind == c_arg && R(args)->kind == c_nil);
         return *PFty_simplify (
-                (PFty_quantifier (TY(L(args))) (PFty_data_on (PFty_defn (TY(L(args)))))));
+                (PFty_quantifier (TY(L(args)))
+                    (PFty_data_on (PFty_defn (TY(L(args)))))));
     }
 
     /* Typing rules for #pf:item-sequence-to-node-sequence() are described
