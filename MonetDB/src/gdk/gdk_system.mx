@@ -257,9 +257,14 @@ gdk_export size_t _MT_pagesize;
 #ifdef pid_t
 #undef pid_t
 #endif
-# include <sched.h>
-# include <pthread.h>
+#include <sched.h>
+#include <pthread.h>
+#ifndef WIN32
+/* Linux gprof messes up on multithreaded programs */
+#define pthread_create gprof_pthread_create
 #endif
+#endif
+
 
 #ifdef HAVE_SEMAPHORE_H
 # include <semaphore.h>
