@@ -101,6 +101,7 @@ ALIGNundo(BAT *b)
 int
 ALIGNsetH(BAT *b1, BAT *b2)
 {
+	ssize_t diff = BUNindex(b1, BUNfirst(b1)) - BUNindex(b2, BUNfirst(b2));
 	BATcheck(b1, "ALIGNsetH: bat 1 required");
 	BATcheck(b2, "ALIGNsetH: bat 2 required");
 
@@ -122,6 +123,12 @@ ALIGNsetH(BAT *b1, BAT *b2)
 	b1->hsorted = BAThordered(b2);
 	b1->halign = b2->halign;
 	b1->batDirtydesc = TRUE;
+	b1->H->nosorted_rev = b2->H->nosorted_rev + diff; 
+	b1->H->nokey[0] = b2->H->nokey[0] + diff; 
+	b1->H->nokey[1] = b2->H->nokey[1] + diff; 
+	b1->H->nosorted = b2->H->nosorted + diff; 
+	b1->H->nodense = b2->H->nodense + diff; 
+ 
 	return 0;
 }
 
