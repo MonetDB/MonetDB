@@ -152,9 +152,13 @@ The appended bats tail can not be set key-ed.
 .COMMAND append( BAT[void,any::1] i, any::1 u ) : BAT[void,any::1] = BUNappend_wrap; "append the value u to i"
 .COMMAND append( BAT[void,any::1] i, any::1 u, bit force ) : BAT[void,any::1] = BUNappend_force; "append the value u to i"
 
-.COMMAND inplace( BAT[void,any::1] o, oid id, any::1 val ) : BAT[void,any::1] = bat_inplace; "inplace replace values on the given locations"
+.COMMAND inplace( BAT[void,any::1] o, oid id, any::1 val ) : BAT[void,any::1] = bun_inplace; "inplace replace values on the given locations"
 
-.COMMAND inplace( BAT[void,any::1] o, BAT[oid,any::1] d ) : BAT[void,any::1] = bat_replace_oid_bat_wrap; "inplace replace values on the given locations"
+.COMMAND inplace( BAT[void,any::1] o, BAT[oid,any::1] d ) : BAT[void,any::1] = bat_inplace; "inplace replace values on the given locations"
+
+.COMMAND inplace( BAT[void,any::1] o, oid id, any::1 val, bit force ) : BAT[void,any::1] = bun_inplace_force; "inplace replace values on the given locations"
+
+.COMMAND inplace( BAT[void,any::1] o, BAT[oid,any::1] d, bit force ) : BAT[void,any::1] = bat_inplace_force; "inplace replace values on the given locations"
 
 @- BAT properties
 @T
@@ -618,8 +622,8 @@ these 'sync' OIDs with their own propagation rules.
 #include "monet.h"
 #include "bat.proto.h"
 
-bat_export ssize_t void_replace_bat(BAT *b, BAT *u);
-bat_export int void_inplace(BAT *b, oid id, ptr val);
+bat_export ssize_t void_replace_bat(BAT *b, BAT *u, bit force);
+bat_export int void_inplace(BAT *b, oid id, ptr val, bit force);
 
 #endif /*BAT_H */
 @c
@@ -811,7 +815,7 @@ CMDdelete_bat_head(BAT **r, BAT *b, BAT *s)
 
 
 int
-void_inplace(BAT *b, oid id, ptr val)
+void_inplace(BAT *b, oid id, ptr val, bit force)
 {
 	int res = GDK_SUCCEED;
 	BUN p = NULL;
@@ -825,8 +829,8 @@ void_inplace(BAT *b, oid id, ptr val)
 	BUNfndVOID(p, b, (ptr) &id);
 
 	assert(p >= b->batInserted);	/* we don't want delete/ins */
-	assert(!b->batRestricted);
-	if (!BUNinplace(b, p, (ptr) &id, val, 0))
+	assert(force || !b->batRestricted);
+	if (!BUNinplace(b, p, (ptr) &id, val, force))
 		 res = GDK_FAIL;
 
 	b->batInserted = oldInserted;
@@ -834,16 +838,25 @@ void_inplace(BAT *b, oid id, ptr val)
 }
 
 int
-bat_inplace(BAT **res, BAT *b, oid *id, ptr val )
+bun_inplace(BAT **res, BAT *b, oid *id, ptr val )
 {
-	int ret = void_inplace(b,*id,val);
+	int ret = void_inplace(b,*id,val,FALSE);
 	*res = b;
 	BBPfix(b->batCacheid);
 	return ret;
 }
- 
+
+int
+bun_inplace_force(BAT **res, BAT *b, oid *id, ptr val, bit *force )
+{
+	int ret = void_inplace(b,*id,val,*force);
+	*res = b;
+	BBPfix(b->batCacheid);
+	return ret;
+}
+
 ssize_t
-void_replace_bat(BAT *b, BAT *u)
+void_replace_bat(BAT *b, BAT *u, bit force)
 {
 	size_t nr = 0;
 	BUN r, s;
@@ -852,11 +865,31 @@ void_replace_bat(BAT *b, BAT *u)
 		oid updid = *(oid *) BUNhead(u, r);
 		ptr val = BUNtail(u, r);
 
-		if (void_inplace(b, updid, val) == GDK_FAIL)
+		if (void_inplace(b, updid, val, force) == GDK_FAIL)
 			return -1;
 		nr++;
 	}
 	return nr;
+}
+
+int
+bat_inplace(BAT **res, BAT *o, BAT *d)
+{
+	*res = o;
+	if (void_replace_bat(o, d, FALSE) < 0)
+		return GDK_FAIL;
+	BBPfix(o->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int
+bat_inplace_force(BAT **res, BAT *o, BAT *d, bit *force)
+{
+	*res = o;
+	if (void_replace_bat(o, d, *force) < 0)
+		return GDK_FAIL;
+	BBPfix(o->batCacheid);
+	return GDK_SUCCEED;
 }
 
 int
@@ -893,17 +926,6 @@ BUNappend_wrap(BAT **res, BAT *i, ptr t)
 	bit force = FALSE;
         return BUNappend_force(res, i, t, &force);
 }
-
-int
-bat_replace_oid_bat_wrap(BAT **res, BAT *o, BAT *d)
-{
-	*res = o;
-	if (void_replace_bat(o, d) < 0)
-		return GDK_FAIL;
-	BBPfix(o->batCacheid);
-	return GDK_SUCCEED;
-}
-
 
 /* descriptors may be unloaded by BBPtrim, so secure them with a hotfix while in use */
 static BAT *

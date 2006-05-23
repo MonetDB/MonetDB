@@ -1186,8 +1186,9 @@ TBL_decproc(oid pid)
 @- TBL_newproc
 registers a new MIL procedure.
 @c
-#define PROC_TYPE1(t)	((sht*) (&t->yyval.len))[0]
-#define PROC_TYPE2(t)	((sht*) (&t->yyval.len))[1]
+#define PROC_SET_TYPES(t,t1,t2)   t->yyval.len = (t1&((t2<<16)&0xFFFF))
+#define PROC_TYPE1(t) 	 	 (t->yyval.len&0xFFFF)
+#define PROC_TYPE2(t) 		((t->yyval.len>>16)&0xFFFF)
 
 static int
 format_type(YYSTREE t, str *p)
@@ -1224,9 +1225,9 @@ TBL_newproc(Client client, str nme, str mod, YYSTREE body, YYSTREE sig, YYSTREE 
 			assert(0);
 	} else {
 		sht anynum, *any1 = NULL, *any2 = NULL;
+		sht t1 = 0,t2 = 0;
 		char returntpe[128];
 
-		PROC_TYPE1(body) = PROC_TYPE2(body) = 0;
 		if (ret) {
 			char *p = returntpe;
 
@@ -1234,8 +1235,8 @@ TBL_newproc(Client client, str nme, str mod, YYSTREE body, YYSTREE sig, YYSTREE 
 
 			/* analyze the return type specification */
 			if (ret->token == TOK_ATOM) {
-				PROC_TYPE1(body) = ATOMindex(ret->yyval.val.sval);
-				if (PROC_TYPE1(body) == TYPE_bat) {
+				t1 = ATOMindex(ret->yyval.val.sval);
+				if (t1 == TYPE_bat) {
 					*(p++) = '[';
 					format_type(ret->yysons[0], &p);
 					*(p++) = ',';
@@ -1243,23 +1244,23 @@ TBL_newproc(Client client, str nme, str mod, YYSTREE body, YYSTREE sig, YYSTREE 
 					*(p++) = ']';
 					*(p++) = 0;
 					if (ret->yysons[0]->token == TOK_ATOM) {
-						PROC_TYPE1(body) += 8192 + ATOMindex(ret->yysons[0]->yyval.val.sval);
+						t1 = 8192 + ATOMindex(ret->yysons[0]->yyval.val.sval);
 					} else {	/* TOK_ANY */
-						PROC_TYPE1(body) = ret->yysons[0]->yyval.val.ival;
-						any1 = &PROC_TYPE1(body);
+						t1 = ret->yysons[0]->yyval.val.ival;
+						any1 = &t1;
 					}
 					if (ret->yysons[1]->token == TOK_ATOM) {
-						PROC_TYPE2(body) += 8192 + ATOMindex(ret->yysons[1]->yyval.val.sval);
+						t2 = 8192 + ATOMindex(ret->yysons[1]->yyval.val.sval);
 					} else {	/* TOK_ANY */
-						PROC_TYPE1(body) = ret->yysons[1]->yyval.val.ival;
-						any2 = &PROC_TYPE1(body);
+						t2 = ret->yysons[1]->yyval.val.ival;
+						any2 = &t2;
 					}
 				} else {	/* simple atom */
-					PROC_TYPE1(body) += 8192;
+					t1 += 8192;
 				}
 			} else {	/* TOK_ANY */
-				PROC_TYPE1(body) = ret->yyval.val.ival;
-				any1 = &PROC_TYPE1(body);
+				t1 = ret->yyval.val.ival;
+				any1 = &t1;
 			}
 
 		} else {
@@ -1326,10 +1327,11 @@ TBL_newproc(Client client, str nme, str mod, YYSTREE body, YYSTREE sig, YYSTREE 
 		}
 		if ((any1 && *any1 < 1024) || (any2 && *any2 < 1024)) {
 			if (any1 && *any1 < 1024)
-				PROC_TYPE1(body) = 4096;
+				t1 = 4096;
 			if (any2 && *any2 < 1024)
-				PROC_TYPE2(body) = 4096;
+				t2 = 4096;
 		}
+		PROC_SET_TYPES(body,t1,t2);
 		if (BUNins(TBL_fcn_pro, &pid, returntpe) == NULL)
 			assert(0);
 	}
