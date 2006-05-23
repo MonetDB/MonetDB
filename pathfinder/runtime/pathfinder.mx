@@ -616,16 +616,17 @@ PROC shred_doc_locked(BAT[str,bat] docBAT, str location, str name, str collectio
     doc_height.replace(TEMP_DOC, doc_id);
 
     # add the meta table to the commit set 
-    #docBAT.insert(str(nil),collection_name);
-    #docBAT.insert(str(nil),doc_name);
-    #docBAT.insert(str(nil),doc_location);
-    #docBAT.insert(str(nil),doc_collection);
-    #docBAT.insert(str(nil),doc_root);
-    #docBAT.insert(str(nil),doc_timestamp);
-    #docBAT.insert(str(nil),doc_height);
-    #docBAT.insert(str(nil),doc_size);
-    #if (not(subcommit(docBAT))) 
-    if (not(commit())) ERROR("shred_doc(%s) : commit failed\n", name);
+    docBAT.insert(str(nil),collection_name);
+    docBAT.insert(str(nil),doc_name);
+    docBAT.insert(str(nil),doc_location);
+    docBAT.insert(str(nil),doc_collection);
+    docBAT.insert(str(nil),doc_root);
+    docBAT.insert(str(nil),doc_timestamp);
+    docBAT.insert(str(nil),doc_height);
+    docBAT.insert(str(nil),doc_size);
+    docBAT := [bbpname](docBAT);
+    if (not(subcommit(docBAT))) 
+        ERROR("shred_doc(%s) : commit failed\n", name);
 
     if (not(isnil(ws))) {
         pin_doc(doc_oid, ws);
@@ -722,8 +723,8 @@ PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, str collection,
         ERROR("shredding of multi-document collections is not yet implemented");
     } 
     if (doCommit) {
+        [save](docBAT.[access](BAT_WRITE).[access](BAT_READ)); # flush to disk before locking
         [mmap](docBAT, [ifthenelse]([<]([count](docBAT), 4*int(REMAP_PAGE_SIZE)), STORE_MEM, STORE_MMAP));
-        [save](docBAT); # flush to disk before locking
 
         # add doc to the database locked
         lock_set(pf_lock);
@@ -818,15 +819,15 @@ PROC delete_doc_locked(oid doc_oid) : bit
     }
 
     # also commit the meta bats
-    #docBAT.insert(str(nil), doc_name);
-    #docBAT.insert(str(nil), doc_location);
-    #docBAT.insert(str(nil), doc_collection);
-    #docBAT.insert(str(nil), doc_root);
-    #docBAT.insert(str(nil), doc_timestamp);
-    #docBAT.insert(str(nil), doc_height);
-    #docBAT.insert(str(nil), doc_size);
-    #return subcommit(docBAT);
-    return commit();
+    docBAT := [bbpname](docBAT).access(BAT_WRITE);
+    docBAT.insert(str(nil), "doc_name");
+    docBAT.insert(str(nil), "doc_location");
+    docBAT.insert(str(nil), "doc_collection");
+    docBAT.insert(str(nil), "doc_root");
+    docBAT.insert(str(nil), "doc_timestamp");
+    docBAT.insert(str(nil), "doc_height");
+    docBAT.insert(str(nil), "doc_size");
+    return subcommit(docBAT);
 }
 
 PROC delete_doc(str name) : void
@@ -938,7 +939,7 @@ PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, oid doc_oid, oi
             dsk := [bat]([+](str(int(coll_oid)), ws_dsk));
             var map_pid := dsk.find(oid(_MAP_PID)).select(oid(nil),oid(nil)).reverse().sort().tmark(0@0);
             pre := [remap](reverse(ws_rid).leftjoin(dsk), const map_pid, false);
-            mem := [copy](reverse(ws_mem).leftjoin(dsk));
+            mem := [rcopy](reverse(ws_mem).leftjoin(dsk));
         }
         # use the ws_* bats to add all bats to the working set in a multiplex
         [append](dst, pre.access(BAT_WRITE).insert(mem).insert(dsk));
