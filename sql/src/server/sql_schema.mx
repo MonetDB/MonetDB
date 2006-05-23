@@ -800,7 +800,7 @@ create_user(mvc *sql, char *user, char *passwd, char *fullname, char *schema)
 	char buf[BUFSIZ];
 
 	if (sql_find_auth(sql, user) >= 0) {
-		return sql_error(sql, 02, "CREATE USER: user %s already exists", user);
+		return sql_error(sql, 02, "CREATE USER: user '%s' already exists", user);
 	}
 	if ((schema_id = sql_find_schema(sql, schema)) < 0) {
 		return sql_error(sql, 02, "CREATE USER: no such schema '%s'", schema);
