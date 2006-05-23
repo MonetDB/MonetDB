@@ -77,7 +77,7 @@ mal_export str TRNtrans_delta(int *ret, int *bid);
 int
 global_sync(void)
 {
-	BBPsync(TRUE);
+	BBPsync(TRUE, NULL);
 	return GDK_SUCCEED;
 }
 
@@ -162,7 +162,7 @@ str
 TRNglobal_sync(int *ret)
 {
 	(void) ret;
-	BBPsync(TRUE);
+	BBPsync(TRUE, NULL);
 	return MAL_SUCCEED;
 }
 
