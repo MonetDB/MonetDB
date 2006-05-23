@@ -1280,11 +1280,12 @@ hasSideEffects(InstrPtr p, int strict)
 	if (getFunctionId(p) == printRef ||
 		getFunctionId(p) == depositRef ||
 		getFunctionId(p) == insertRef ||
+		getFunctionId(p) == inplaceRef ||
 		getFunctionId(p) == appendRef ||
+		getFunctionId(p) == replaceRef ||
 		getFunctionId(p) == deleteRef)
 		return TRUE;
 	if( getModuleId(p)== sqlRef){
-		if( getFunctionId(p) == bindRef) return FALSE;
 		if( getFunctionId(p) == getName("resultSet",9)) return FALSE;
 		return TRUE;
 	}
