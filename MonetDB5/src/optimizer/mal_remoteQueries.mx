@@ -293,7 +293,7 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( getModuleId(p) && strcmp(getModuleId(p),"optimizer")==0 &&
 		    getFunctionId(p) && strcmp(getFunctionId(p),"remoteQueries")==0 )
 			freeInstruction(p);
-		else if (cnt == 0 /*|| p->barrier*/) /* local only or flow control statement */
+		else if (cnt == 0 || p->barrier) /* local only or flow control statement */
 			pushInstruction(mb,p);
 		else {
 @-
