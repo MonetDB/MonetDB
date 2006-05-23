@@ -1616,11 +1616,11 @@ PFfun_xquery_fo ()
                                     PFty_string () },
              .ret_ty = PFty_star (PFty_xs_anyNode ()) },
 	     } }
-    , /* fn:tijah-score(node*) as node* */
+    , /* fn:tijah-score(node*) as double* */
       { .ns = PFns_fn, .loc = "tijah-score",
         .arity = 1, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_star (PFty_xs_anyNode ()) },
-             .ret_ty = PFty_star (PFty_xs_anyNode ()) } } }
+             .ret_ty = PFty_star (PFty_double ()) } } }
 #else
 #endif
     , { .loc = 0 }
