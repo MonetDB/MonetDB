@@ -320,18 +320,6 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		str err;
 		oid uid;
 
-		if (findScenario(lang) && findScenario(lang)->initSystemCmd == NULL) {
-@-
-Check if we have loaded already the language library.
-The naming convention is to use the language name as an
-alias for the include file
-@c
-			Client cn = MCinitClient(0, 0, 0);
-			defaultScenario(cn);
-			initScenario(cn, findScenario(lang));
-			MCkillClient(cn);
-		}
-
 		/* access control: verify the credentials supplied by the user,
 		 * no need to check for database stuff, because that is done per
 		 * database itself (one gets a redirect) */

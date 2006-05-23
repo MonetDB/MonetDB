@@ -396,7 +396,7 @@ for separate name space management.
 #define getVarTmp(M,I)      (M)->var[I]->tmpindex
 #define isConstant(M,I) ((M)->var[I]->isaconstant)
 #define isTypeVar(M,I)  ((M)->var[I]->isatypevar)
-#define isTmpVar(M,I)   (!(M)->var[I]->name)
+#define isTmpVar(M,I)   (!(M)->var[I]->name || *(M)->var[I]->name == TMPMARKER)
 #define getVarScope(M,I)   ((M)->var[I]->scope)
 #define getVarProperties(M,I)   ((M)->var[I]->props)
 #define isInOutArgument(M,I)   ((M)->var[I]->inout)

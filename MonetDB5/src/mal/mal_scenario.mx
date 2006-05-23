@@ -248,21 +248,12 @@ initScenario(Client c, Scenario s)
 {
 	str msg = MAL_SUCCEED;
 
+	if (s->initSystemCmd)
+		return(fillScenario(c, s));
+	/* prepare for conclicts */
+	mal_set_lock(mal_contextLock, "Scenario");
 	if (s->initSystem && s->initSystemCmd == 0) {
-		/* prepare for conclicts */
-		mal_set_lock(mal_contextLock, "Scenario");
 		s->initSystemCmd = (MALfcn) getAddress(s->language, s->initSystem, 1);
-@-
-Check if we have loaded already the language library.
-The naming convention is to use the language name as an
-alias for the include file
-@c
-		if (s->initSystemCmd == 0) {
-			mal_unset_lock(mal_contextLock, "Scenario");
-			malInclude(c,s->language,s->language,0);
-			mal_set_lock(mal_contextLock, "Scenario");
-			s->initSystemCmd = (MALfcn) getAddress(s->language, s->initSystem, 1);
-		}
 		if (s->initSystemCmd) {
 			msg = (*s->initSystemCmd) (c);
 		} else {
@@ -270,7 +261,6 @@ alias for the include file
 			snprintf(buf,BUFSIZ,"%s.init",s->language);
 			msg = throwMessage(buf,"Scenario not initialized"); 
 		}
-		mal_unset_lock(mal_contextLock, "Scenario");
 	}
 	if (msg)
 		return msg;
@@ -282,6 +272,7 @@ alias for the include file
 	@:initScen(s, optimizer,s->language)@
 	@:initScen(s, tactics,s->language)@
 	@:initScen(s, engine,s->language)@
+	mal_unset_lock(mal_contextLock, "Scenario");
 	return(fillScenario(c, s));
 }
 
