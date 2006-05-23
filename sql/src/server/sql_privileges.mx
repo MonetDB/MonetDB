@@ -475,9 +475,12 @@ mvc_login(mvc *m, char *user, char *passwd)
 		sql_column *users_passwd = find_sql_column(users, "passwd");
 		char *pwd = column_find_value(m->session->tr, users_passwd, rid);
 
-		/* hack: M5 doesn't use the passwd here, so if it is NULL, don't
-		 *       crash, but silently accept as valid */
-		if (!passwd || (pwd && strcmp(passwd, pwd) == 0)) {
+#ifdef MONET4
+		if (pwd && strcmp(passwd, pwd) == 0) {
+#else
+		/* MonetDB/Five doesn't use the password, as it's in the base tables */
+		(void)passwd;
+#endif
 			sql_column *users_schema = find_sql_column(users, "default_schema");
 			void *p = column_find_value(m->session->tr, users_schema, rid);
 			unsigned int schema_id = *(unsigned int *)p;
@@ -492,7 +495,9 @@ mvc_login(mvc *m, char *user, char *passwd)
 			if (!mvc_set_user(m, user)) {
 				schema = NULL;
 			}
+#ifdef MONET4
 		}
+#endif
 		if (pwd)
 			_DELETE(pwd);
 	}
