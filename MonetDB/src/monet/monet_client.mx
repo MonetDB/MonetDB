@@ -647,7 +647,7 @@ readClient(Client c)
 		}
 		c->top = p;
 		offset = c->top - c->input;	/* where we left off checking */
-	} while (!doflush || bracket > 0);
+	} while (!doflush || bracket > 0 || incomment);
 
 	*c->top = 0;
 	return 1;
