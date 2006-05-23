@@ -359,14 +359,14 @@ void_delete_bat(BAT *b, BAT *d, int delta)
 		for (r = d->batInserted; r < BUNlast(d); r = BUNnext(d, r)) {
 			oid delid = *(oid *) BUNtail(d, r);
 
-			void_inplace(b, delid, nil);
+			void_inplace(b, delid, nil, FALSE);
 			nr++;
 		}
 	} else {
 		BATloop(d, r, s) {
 			oid delid = *(oid *) BUNtail(d, r);
 
-			void_inplace(b, delid, nil);
+			void_inplace(b, delid, nil, FALSE);
 			nr++;
 		}
 	}
@@ -378,7 +378,7 @@ static void
 update_table_bat(BAT *b, BAT *ub, BAT *db)
 {
 	if (ub && BATcount(ub)) {
-		void_replace_bat(b, ub);
+		void_replace_bat(b, ub, FALSE);
 	}
 	(void)db;
 /*
@@ -3556,7 +3556,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			ups = temp_descriptor(cc->bat.ubid);
 			if (BUNlast(ups) > ups->batInserted) {
 
-				void_replace_bat(cur, ups);
+				void_replace_bat(cur, ups, FALSE);
 
 				if (ok == SQL_OK && ttr == gtrans)
 					ok = log_bat(logger, ups, oc->bat.uname);
@@ -3629,7 +3629,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				ups = temp_descriptor(ci->bat.ubid);
 				if (BUNlast(ups) > ups->batInserted) {
 
-					void_replace_bat(cur, ups);
+					void_replace_bat(cur, ups, FALSE);
 
 					if (ttr == gtrans)
 						ok = log_bat(logger, ups, oi->bat.uname);
