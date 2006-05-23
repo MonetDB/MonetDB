@@ -328,8 +328,6 @@ scanner_init_keywords()
 	keywords_insert("OLD", OLD);
 	keywords_insert("EACH", EACH);
 	keywords_insert("REFERENCING", REFERENCING);
-
-	keywords_insert(";", SCOLON);
 }
 
 #define find_keyword_bs(lc, s) find_keyword(lc->rs->buf+lc->rs->pos+s)
@@ -719,6 +717,9 @@ int scanner_symbol(mvc * c, int cur)
 	case '=':
 		lc->started = 1;
 		return scanner_token(lc, cur);
+	case '@':
+		lc->started = 1;
+		return scanner_token(lc, AT);
 	case ';':
 		lc->started = 0;
 		return scanner_token(lc, SCOLON);

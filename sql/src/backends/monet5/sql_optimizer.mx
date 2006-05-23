@@ -65,7 +65,6 @@ sql.assert
 sql.bind
 sql.bind_dbat
 sql.bind_idxbat
-sql.bind_ubat
 sql_cache.???
 sql.clear_table
 sql.column
@@ -121,7 +120,7 @@ FXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr *ns, p;
 	int v;
-	int i, j, k, klim,newssize;/*, argseen=0;*/
+	int i, k, newssize;
 	lng clk = GDKusec();
 
 #ifdef _SQL_OPTIMIZER_DEBUG
@@ -164,27 +163,24 @@ Double bind operations should also be eliminated.
  	setVarType(mb, getArg(ns[0],0), TYPE_bit);
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		if ( (getFunctionId(p)== bindRef || getFunctionId(p)==binddbatRef) && 
-			getModuleId(p)== sqlRef) {
-			ns[k++] = p;
+		if ( (getFunctionId(p) == bindRef || 
+		      getFunctionId(p) == bindidxRef) && 
+			getModuleId(p) == sqlRef) {
+			/*
+			int arg = getArg(p,4);
+			if (getVarConstant(mb,arg).val.ival == 0) 
+			*/
+				ns[k++] = p;
 		}
-@-
-Check if the relation is already made write-enabled in the plan.
-It uses the knowledge that at this stage the plan is still a linear
-sequence of instructions.
-@c
-		if (getFunctionId(p)== setWriteModeRef ) {
-			for (j = 0; j < k; j++)
-				if ( getFunctionId(ns[j]) == setWriteModeRef && 
-						ns[j]->argv[1] == p->argv[1])
-							break;
-				else if (ns[j]->argv[0] == p->argv[1]) {
-					ns[k++] = p;
-					break;
-				}
+		if ( getFunctionId(p) == binddbatRef && 
+		     getModuleId(p) == sqlRef) {
+			/*
+			int arg = getArg(p,3);
+			if (getVarConstant(mb,arg).val.ival == 0) 
+			*/
+				ns[k++] = p;
 		}
 	}
-	klim = k;		/* remember the head */
 @-
 The prelude code has been generated, now we can inject the remaining
 instructions, producing a syntactic correct MAL program again.
@@ -197,18 +193,26 @@ instructions, producing a syntactic correct MAL program again.
 	ns[k++] = p;
 
 	for (i = 1; i < mb->stop - 1; i++) {
-		int doit = 0;
+		int doit = 1;
 
 		p = getInstrPtr(mb, i);
-		if (!( (getFunctionId(p)== bindRef || getFunctionId(p)==binddbatRef) && 
-			  getModuleId(p)== sqlRef))
-			doit = 1;
-@-
-Skip it if the writeMode relates to a base table
-@c
-		for (j = 0; j < klim; j++)
-			if (ns[j] == p)
+		if ( (getFunctionId(p) == bindRef || 
+		      getFunctionId(p) == bindidxRef) && 
+			getModuleId(p) == sqlRef) {
+			/*
+			int arg = getArg(p,4);
+			if (getVarConstant(mb,arg).val.ival == 0) 
+			*/
 				doit = 0;
+		}
+		if ( getFunctionId(p) == binddbatRef && 
+		     getModuleId(p) == sqlRef) {
+			/*
+			int arg = getArg(p,3);
+			if (getVarConstant(mb,arg).val.ival == 0) 
+			*/
+				doit = 0;
+		}
 		if (doit)
 			ns[k++] = p;
 	}
@@ -291,12 +295,12 @@ to allow inspection.
 #endif
 
 	if( optimizer == 0 || strcmp(optimizer,"yes")==0){
-		if( c->debug)
+		if (c->debug)
 			optimizerCheck(c->curprg->def,"sql.baseline",-1,0);
 		COoptimizer(c->curprg->def,0,0);
 		ARoptimizer(c->curprg->def, 0, 0);
 		CXoptimizer(c->curprg->def,0,0);
-		FXoptimizer(c->curprg->def, 0, 0);
+		//FXoptimizer(c->curprg->def, 0, 0);
 		OPTmultiplex(c->curprg->def, 0, 0);
 		MRoptimizer(c->curprg->def,0,0);
 	} else if( optimizer ){
