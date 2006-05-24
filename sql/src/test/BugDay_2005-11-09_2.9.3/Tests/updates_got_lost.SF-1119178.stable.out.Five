@@ -1,19 +1,19 @@
 stdout of test 'updates_got_lost.SF-1119178` in directory 'src/test/BugDay_2005-11-09_2.9.3` itself:
 
 
-# 15:00:47 >  
-# 15:00:47 >  Mtimeout -timeout 180 Mserver "--config=/ufs/mk/opensource/MonetDB/Linux/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/mk/opensource/sql/Linux/lib/MonetDB:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB/log" --set mapi_port=31253 --set sql_port=47378 --set xquery_port=51452 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 15:00:47 >  
+# 01:03:49 >  
+# 01:03:49 >  Mtimeout -timeout 180 mserver5 "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/Linux-x86_64/lib/MonetDB5" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dblogs" --set mapi_port=38352 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.9.3" --dbinit="include sql;" ; echo ; echo Over..
+# 01:03:49 >  
 
-# Monet Database Server V4.9.3
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/niels/scratch/Linux-x86_64/etc/MonetDB5.conf
+# dbfarm:/ufs/niels/scratch/Linux-x86_64/var/MonetDB5/dbfarm
+# dbname:mTests_src_test_BugDay_2005-11-09_2.9.3
+# Visit http://monetdb.cwi.nl/ for further information
 
 Ready.
-quit();
 
 Over..
 
@@ -67,9 +67,8 @@ Over..
 # 2 # id
 [ 2	]
 [ 6	]
-[ 10	]
 [ 7	]
-# 6 # querytype
+[ 10	]
 
 # 15:00:47 >  
 # 15:00:47 >  Done.
