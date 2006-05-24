@@ -21,7 +21,7 @@ set -x
 PWD=`pwd`
 echo $PWD
 
-SQL='MapiClient -lsql -u monetdb -P monetdb'
+SQL='MapiClient -lsql -umonetdb -Pmonetdb'
 if [ $# -eq 1 ]; then
 	SQL="$1"
 fi

@@ -3510,7 +3510,10 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			BAT *ups, *ins, *cur;
 
 			/* for cleared tables the bid is reset */
-			cc -> bat.bid = oc -> bat.bid;
+			if (cc->bat.bid == 0) {
+				cc -> bat.bid = oc -> bat.bid;
+				temp_dup(cc->bat.bid);
+			}
 			if (!cc->base.wtime) {
 				n = n->next;
 				m = m->next;
@@ -3586,7 +3589,10 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					continue;
 	
 				/* for cleared tables the bid is reset */
-				ci -> bat.bid = oi -> bat.bid;
+				if (ci->bat.bid == 0) {
+					ci -> bat.bid = oi -> bat.bid;
+					temp_dup(ci->bat.bid);
+				}
 				cur = temp_descriptor(oi->bat.bid);
 				if (ft->cleared && ttr == gtrans) {
 
@@ -4504,6 +4510,7 @@ sql_trans_clear_table(sql_trans *tr, sql_table *t)
 			sz += BATcount(b);
 			bat_destroy(b);
 				
+			temp_destroy(c->bat.bid);
 			c->bat.bid = 0;
 		}
 		if (c->bat.ubid) { 
@@ -4527,8 +4534,10 @@ sql_trans_clear_table(sql_trans *tr, sql_table *t)
 			BATclear(b);
 			BATcommit(b);
 			bat_destroy(b);
-			if (c->bat.bid) 
+			if (c->bat.bid) {
+				temp_destroy(c->bat.bid);
 				c->bat.bid = 0;
+			}
 			if (c->bat.ubid) {
 				b = temp_descriptor(c->bat.ubid);
 				BATclear(b);
@@ -4547,8 +4556,10 @@ sql_trans_clear_table(sql_trans *tr, sql_table *t)
 					BATcommit(b);
 					bat_destroy(b);
 				}
-				if (ci->bat.bid) 
+				if (ci->bat.bid) {
+					temp_destroy(ci->bat.bid);
 					ci->bat.bid = 0;
+				}
 				if (ci->bat.ubid) {
 					b = temp_descriptor(ci->bat.ubid);
 					BATclear(b);

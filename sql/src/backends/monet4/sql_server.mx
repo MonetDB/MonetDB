@@ -309,7 +309,7 @@ sql_frontend_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 	if (lt->cnt != 0) 
 		return handle_argerror(res, lt->cnt, 0);
 
-	backend_init(&monet4_freestack, &monet4_freecode, &monet4_parse);
+	backend_init(&monet4_freestack, &monet4_freecode, &monet4_parse, NULL, NULL);
 	CNTXTclient(stk, &father);
 	if (father && father->father >= 0) {
 		/* if the father itself is a temporary client, let
@@ -1127,9 +1127,9 @@ module(mapi); # mapi_listen
 #vm_maxsize(0LL);
 
 proc sql_diff (bat[any::1,any::2] b1, bat[any::1,any::3] b2) : bat[any::1,any::2] {
-	if (count(b2) > 0) 
+#	if (count(b2) > 0) 
 		return kdiff(b1,b2);
-	return b1;
+#	return b1;
 }
 
 proc sql_union (bat[any::1,any::2] b1, bat[any::1,any::2] b2) : bat[any::1,any::2] {
