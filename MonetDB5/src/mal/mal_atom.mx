@@ -181,6 +181,10 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci){
 		break;
 	case 'h':
 		if( idcmp("heap",name)==0 && pci->argc==1){
+			/* heap function makes an atom varsized */
+			BATatoms[tpe].size = sizeof(var_t);
+			BATatoms[tpe].varsized = 1;
+			BATatoms[tpe].align = sizeof(var_t);
 			BATatoms[tpe].atomHeap= (void (*)(Heap *, size_t)) pci->fcn;
 			setAtomName(pci);
 			return 1;
@@ -209,9 +213,13 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci){
 		} 
 		break;
 	case 'n':
-/* 64 bit issue
-		  @:setItem("null",atomNull,TYPE_ptr,lng)@ 
-*/
+		if( idcmp("null",name)==0 && pci->argc==1){
+                        ptr atmnull = ((ptr (*)(void)) pci->fcn) ();
+			
+			BATatoms[tpe].atomNull= atmnull;
+			setAtomName(pci);
+			return 1;
+		}
 		if( idcmp("nequal",name)==0 && pci->argc==1){
 			BATatoms[tpe].atomCmp= (int (*)(ptr, ptr)) pci->fcn;
 			setAtomName(pci);
@@ -291,13 +299,15 @@ void malAtomDefinition(str name, int tpe){
 	
 	ATOMproperty(name,"",  (int (*)()) 0);
 	i= ATOMindex(name);
-	memcpy((char*)(BATatoms+i),
-		(char*)(BATatoms+tpe), sizeof(BATatoms[tpe]));
-	strncpy(BATatoms[i].name, name, IDLENGTH);
-	BATatoms[i].storage= BATatoms[tpe].storage;
-	/* cannot overload void atoms */ 
-	if (tpe == 0)
-	BATatoms[i].storage = i;
+	/* overload atom ? */
+	if (tpe) { 
+		memcpy((char*)(BATatoms+i),
+			(char*)(BATatoms+tpe), sizeof(BATatoms[tpe]));
+		strncpy(BATatoms[i].name, name, IDLENGTH);
+		BATatoms[i].storage= BATatoms[tpe].storage;
+	} else { /* cannot overload void atoms */ 
+		BATatoms[i].storage = i;
+	}
 }
 @-
 User defined modules may introduce fixed sized types
