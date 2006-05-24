@@ -57,9 +57,9 @@ AC_SUBST(SQL_BACKEND)
 # define either MONET4 or MONET5 based on the backend chosen, make sure
 # that not both are set!
 AM_CONDITIONAL(MONET4, test "x$backend" = xmonet4)
-test "x$backend" = xmonet4 && AC_DEFINE(MONET_VERSION, 4, [monet backend version major])
+test "x$backend" = xmonet4 && AC_DEFINE(MONET_BACKEND_VERSION, 4, [monet backend version major])
 AM_CONDITIONAL(MONET5, test "x$backend" = xmonet5)
-test "x$backend" = xmonet5 && AC_DEFINE(MONET_VERSION, 5, [monet backend version major])
+test "x$backend" = xmonet5 && AC_DEFINE(MONET_BACKEND_VERSION, 5, [monet backend version major])
 
 dnl AC_CHECK_HEADERS(limits.h malloc.h pwd.h)
 

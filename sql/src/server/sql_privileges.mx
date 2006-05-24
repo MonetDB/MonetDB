@@ -31,8 +31,12 @@ table or column level) overwrite privileges on higher levels.
 /* privileges */
 #include <sql_mvc.h>
 #include <sql_catalog.h>
-#if MONET_VERSION == 5
+#if MONET_BACKEND_VERSION == 5
 #include <mal_authorize.h>
+#elif MONET_BACKEND_VERSION == 4
+/* nothing */
+#else /* something we don't understand */
+#error Unsupported backend!
 #endif
 
 extern int mvc_set_role(mvc *m, char *role);
@@ -51,7 +55,9 @@ extern int sql_create_role(mvc *m, str auth, int grantor);
 extern int sql_drop_role(mvc *m, str auth);
 extern int sql_grant_role(mvc *m, str grantee, str auth);
 extern int sql_revoke_role(mvc *m, str grantee, str auth);
+#if 0
 extern int sql_create_user(mvc *m, str user, str passwd, str fullname, str schema_name, int grantor);
+#endif
 extern int sql_alter_user(mvc *m, str user, str passwd, oid schema_id);
 extern int sql_drop_user(mvc *m, str user);
 extern int sql_create_privileges(mvc *m, sql_schema *s);
@@ -235,6 +241,7 @@ sql_create_user_id(mvc *m, oid id, str user, str passwd, str fullname, str schem
 	return TRUE;
 }
 
+#if 0 /* this code isn't used any more, see sql_schema.mx */
 int
 sql_create_user(mvc *m, str user, str passwd, str fullname, str schema_name, int grantor)
 {
@@ -248,37 +255,10 @@ sql_create_user(mvc *m, str user, str passwd, str fullname, str schema_name, int
 	if ((schema_id = sql_find_schema(m, schema_name)) < 0)
 		return FALSE;
 
-#if MONET_VERSION == 4
 	table_insert(m->session->tr, users, user, passwd, fullname, &schema_id);
-#elif MONET_VERSION == 5
-	{
-		oid *uid;
-		BAT *scens;
-		bat *bid;
-		str ret;
-
-		/* prepare the scens BAT: it should contain the sql scenario */
-		scens = BATnew(TYPE_str, TYPE_void, 1);
-		BUNappend(scens, "sql", 0);
-		*bid = scens->batCacheid;
-		/* add the user to the M5 authorisation administration */
-		if ((ret = AUTHaddUser(uid, &user, &passwd, bid)) != MAL_SUCCEED) {
-			/* unfortunately no way to propagate the message here */
-			GDKfree(ret);
-			BBPunfix(*bid);
-			return FALSE;
-		}
-		BBPunfix(*bid);
-
-		/* if we succeed, add it to the SQL administration */
-		/* TODO: add M5 user id, instead of name */
-		table_insert(m->session->tr, users, user, "!", fullname, &schema_id);
-	}
-#else
-#error Unsupported backend!
-#endif
 	return TRUE;
 }
+#endif
 
 int
 sql_alter_user(mvc *m, str user, str passwd, oid schema_id)
@@ -317,6 +297,22 @@ sql_drop_user(mvc *m, str user)
 	if (rid < 0)
 		return FALSE;
 
+#if MONET_BACKEND_VERSION == 5
+	/* Before dropping from the SQL administration, first drop from the
+	 * M5 system authorisation tables.  We do it kind of dirty, by not
+	 * even checking if the user has other scenarios that it can access,
+	 * but by just removing the bunch.  Certainly a TODO...
+	 */
+	{
+		str err;
+		if ((err = AUTHremoveUser(&user)) != MAL_SUCCEED) {
+			/* unfortunately we cannot propagate the error message at
+			 * this level */
+			GDKfree(err);
+			return FALSE;
+		}
+	}
+#endif
 	sql_drop_role(m, user);
 	table_delete(m->session->tr, users, rid);
 	return TRUE;
@@ -506,9 +502,9 @@ mvc_login(mvc *m, char *user, char *passwd)
 		sql_column *users_passwd = find_sql_column(users, "passwd");
 		char *pwd = column_find_value(m->session->tr, users_passwd, rid);
 
-#ifdef MONET4
+#if MONET_BACKEND_VERSION == 4
 		if (pwd && strcmp(passwd, pwd) == 0) {
-#else
+#elif MONET_BACKEND_VERSION == 5
 		/* MonetDB/Five doesn't use the password, as it's in the base tables */
 		(void)passwd;
 #endif
@@ -526,7 +522,7 @@ mvc_login(mvc *m, char *user, char *passwd)
 			if (!mvc_set_user(m, user)) {
 				schema = NULL;
 			}
-#ifdef MONET4
+#if MONET_BACKEND_VERSION == 4
 		}
 #endif
 		if (pwd)
@@ -610,6 +606,7 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 	t = find_sql_table(s, "idxs");
 	table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
+
 	t = find_sql_table(s, "triggers");
 	table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 	t = find_sql_table(s, "keycolumns");

@@ -42,6 +42,13 @@ extern stmt *schemas(mvc *sql, symbol *sym);
 #include "sql_select.h"
 #include "sql_semantic.h"
 #include "sql_privileges.h"
+#if MONET_BACKEND_VERSION == 5
+#include <mal_authorize.h>
+#elif MONET_BACKEND_VERSION == 4
+/* nothing */
+#else /* something we don't understand */
+#error Unsupported backend!
+#endif
 
 
 static void
@@ -806,9 +813,41 @@ create_user(mvc *sql, char *user, char *passwd, char *fullname, char *schema)
 		return sql_error(sql, 02, "CREATE USER: no such schema '%s'", schema);
 	}
 	l = create_stmt_list();
-	snprintf(buf, BUFSIZ, "insert into sys.db_users values('%s','%s','%s',%d);", user, passwd, fullname, schema_id);
+#if MONET_BACKEND_VERSION == 4
+	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"db_users\" VALUES('%s','%s','%s',%d);", user, passwd, fullname, schema_id);
+#elif MONET_BACKEND_VERSION == 5
+	/* For MonetDB/Five we add the user to the M5 system auth tables
+	 * first.  We could probably improve this integration a bit in the
+	 * future.  We try to add a user with only one allowed scenario:
+	 * sql.  Note that upon removing we need to check if the user wasn't
+	 * modified in this regard.
+	 */
+	{
+		oid *uid;
+		BAT *scens;
+		bat *bid;
+		str ret;
+
+		/* prepare the scens BAT: it should contain the sql scenario */
+		scens = BATnew(TYPE_str, TYPE_void, 1);
+		BUNappend(scens, "sql", 0);
+		*bid = scens->batCacheid;
+		/* add the user to the M5 authorisation administration */
+		if ((ret = AUTHaddUser(uid, &user, &passwd, bid)) != MAL_SUCCEED) {
+			(void)sql_error(sql, 02, "CREATE USER: %s", ret);
+			GDKfree(ret);
+			BBPunfix(*bid); /* BATdestroy or something? */
+			return FALSE;
+		}
+		BBPunfix(*bid);
+	}
+
+	/* if we succeed, add it to the SQL administration */
+	/* TODO: add M5 user id, instead of name */
+	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"db_users\" VALUES('%s','%s','%s',%d);", user, "!", fullname, schema_id);
+#endif
 	list_append(l, stmt_sql(_strdup(buf)));
-	snprintf(buf, BUFSIZ, "insert into sys.auths values(" SZFMT ", '%s', %d);", (size_t)store_next_oid(), user, sql->user_id);
+	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"auths\" VALUES(" SZFMT ", '%s', %d);", (size_t)store_next_oid(), user, sql->user_id);
 	list_append(l, stmt_sql(_strdup(buf)));
 	return stmt_list(l);
 }
