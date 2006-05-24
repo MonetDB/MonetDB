@@ -384,28 +384,34 @@ str
 AUTHremoveUser(str *username) {
 	BUN p;
 	BAT *b;
-	oid *id;
+	oid id;
 	str tmp;
 
-	rethrow("addUser", tmp, AUTHrequireAdmin());
+	rethrow("removeUser", tmp, AUTHrequireAdmin());
 
 	/* pre-condition check */
 	if (*username == NULL || strNil(*username))
-		throwIllArg("addUser", "username cannot be nil");
+		throwIllArg("removeUser", "username cannot be nil");
 
 	/* ensure that the username exists */
 	p = BUNfnd(userrev, *username);
 	if (p == NULL)
-		throwMalf("addUser", "no such user: '%s'", *username);
-	id = (oid*)(BUNtail(userrev, p));
+		throwMalf("removeUser", "no such user: '%s'", *username);
+	id = *(oid*)(BUNtail(userrev, p));
+
+	/* find the name of the administrator and see if it equals username */
+	if (id == MCgetClient()->user)
+		throwMal("removeUser", "cannot remove yourself");
 
 	/* now, we got the oid, start removing the related tuples */
-	b = BATselect(user, id, id);
-	BATdel(user, b);
-	b = BATselect(pass, id, id);
-	BATdel(pass, b);
-	b = BATselect(scen, id, id);
-	BATdel(scen, b);
+	b = BATselect(userrev, &id, &id);
+	assert(BATcount(b) != 0);
+	BATdel(userrev, b);
+	b = BATselect(BATmirror(pass), &id, &id);
+	assert(BATcount(b) != 0);
+	BATdel(BATmirror(pass), b);
+	b = BATselect(BATmirror(scen), &id, &id);
+	BATdel(BATmirror(scen), b);
 
 	/* make the stuff persistent */
 	TMcommit();
@@ -515,7 +521,7 @@ AUTHsetPassword(str *username, str *passwd) {
 	assert (tmp != NULL);
 	if (strcmp(tmp, *username) == 0)
 		throwIC("setPassword", "The administrator cannot set its own password, use changePassword instead");
-	
+
 	/* see if the user is valid */
 	p = BUNfnd(userrev, *username);
 	if (p == NULL)
