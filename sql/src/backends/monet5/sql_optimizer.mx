@@ -163,16 +163,15 @@ Double bind operations should also be eliminated.
  	setVarType(mb, getArg(ns[0],0), TYPE_bit);
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		/* Fabian: bindidxRef doesn't exist && getModuleId(p) results in
-		 *         some compiler error
 		if ( (getFunctionId(p) == bindRef || 
 					getFunctionId(p) == bindidxRef) && 
 				getModuleId(p) == sqlRef) {
+			/*
 			int arg = getArg(p,4);
 			if (getVarConstant(mb,arg).val.ival == 0) 
+			*/
 				ns[k++] = p;
 		}
-		*/
 		if ( getFunctionId(p) == binddbatRef && 
 		     getModuleId(p) == sqlRef) {
 			/*
@@ -197,17 +196,15 @@ instructions, producing a syntactic correct MAL program again.
 		int doit = 1;
 
 		p = getInstrPtr(mb, i);
-		/* Fabian: bindidxRef doesn't exist && getModuleId(p) results in
-		 *         some compiler error
-		 *
 		if ( (getFunctionId(p) == bindRef || 
 					getFunctionId(p) == bindidxRef) &&
 				getModuleId(p) == sqlRef) {
+			/*
 			int arg = getArg(p,4);
 			if (getVarConstant(mb,arg).val.ival == 0) 
+			*/
 				doit = 0;
 		}
-		*/
 		if ( getFunctionId(p) == binddbatRef && 
 		     getModuleId(p) == sqlRef) {
 			/*
