@@ -31,6 +31,9 @@ table or column level) overwrite privileges on higher levels.
 /* privileges */
 #include <sql_mvc.h>
 #include <sql_catalog.h>
+#if MONET_VERSION == 5
+#include <mal_authorize.h>
+#endif
 
 extern int mvc_set_role(mvc *m, char *role);
 extern int mvc_set_schema(mvc *m, char *schema);
@@ -245,7 +248,35 @@ sql_create_user(mvc *m, str user, str passwd, str fullname, str schema_name, int
 	if ((schema_id = sql_find_schema(m, schema_name)) < 0)
 		return FALSE;
 
+#if MONET_VERSION == 4
 	table_insert(m->session->tr, users, user, passwd, fullname, &schema_id);
+#elif MONET_VERSION == 5
+	{
+		oid *uid;
+		BAT *scens;
+		bat *bid;
+		str ret;
+
+		/* prepare the scens BAT: it should contain the sql scenario */
+		scens = BATnew(TYPE_str, TYPE_void, 1);
+		BUNappend(scens, "sql", 0);
+		*bid = scens->batCacheid;
+		/* add the user to the M5 authorisation administration */
+		if ((ret = AUTHaddUser(uid, &user, &passwd, bid)) != MAL_SUCCEED) {
+			/* unfortunately no way to propagate the message here */
+			GDKfree(ret);
+			BBPunfix(*bid);
+			return FALSE;
+		}
+		BBPunfix(*bid);
+
+		/* if we succeed, add it to the SQL administration */
+		/* TODO: add M5 user id, instead of name */
+		table_insert(m->session->tr, users, user, "!", fullname, &schema_id);
+	}
+#else
+#error Unsupported backend!
+#endif
 	return TRUE;
 }
 
@@ -475,9 +506,12 @@ mvc_login(mvc *m, char *user, char *passwd)
 		sql_column *users_passwd = find_sql_column(users, "passwd");
 		char *pwd = column_find_value(m->session->tr, users_passwd, rid);
 
-		/* hack: M5 doesn't use the passwd here, so if it is NULL, don't
-		 *       crash, but silently accept as valid */
-		if (!passwd || (pwd && strcmp(passwd, pwd) == 0)) {
+#ifdef MONET4
+		if (pwd && strcmp(passwd, pwd) == 0) {
+#else
+		/* MonetDB/Five doesn't use the password, as it's in the base tables */
+		(void)passwd;
+#endif
 			sql_column *users_schema = find_sql_column(users, "default_schema");
 			void *p = column_find_value(m->session->tr, users_schema, rid);
 			unsigned int schema_id = *(unsigned int *)p;
@@ -492,7 +526,9 @@ mvc_login(mvc *m, char *user, char *passwd)
 			if (!mvc_set_user(m, user)) {
 				schema = NULL;
 			}
+#ifdef MONET4
 		}
+#endif
 		if (pwd)
 			_DELETE(pwd);
 	}

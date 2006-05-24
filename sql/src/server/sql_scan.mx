@@ -329,7 +329,6 @@ scanner_init_keywords()
 	keywords_insert("EACH", EACH);
 	keywords_insert("REFERENCING", REFERENCING);
 
-	keywords_insert(";", SCOLON);
 	keywords_insert("@", AT);
 	keywords_insert("USING", USING);
 	keywords_insert("R_TIME", R_TIME);

@@ -16,7 +16,7 @@
 
 ## Process this file with automake to produce Makefile.in
 
-INCLUDES = ../include ../common ../storage $(MONETDB_INCS)
+INCLUDES = ../include ../common ../storage $(MONET5_INCS) $(MONETDB_INCS)
 
 YFLAGS = -d -p sql -v
 
@@ -58,6 +58,6 @@ lib_sqlserver = {
 		rel_dump.mx
 
 	WINLIBS = ../storage/bat/libbatstore ../common/libsqlcommon -lbat -lmonet -lstream -l_streams -l_bat -l_builtin -l_ascii_io -l_algebra 
-	LIBS = $(MONETDB_LIBS)
+	LIBS = $(MONET5_LIBS) $(MONETDB_LIBS)
 }
 

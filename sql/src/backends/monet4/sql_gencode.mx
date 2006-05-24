@@ -974,7 +974,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			buf = NEW_ARRAY(char, BUFSIZ + 1);
 
 			if (s->op2.stval->nrcols) {
-				len = snprintf(buf, BUFSIZ, "var s%d := insert(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
+				len = snprintf(buf, BUFSIZ, "var s%d := insert(s%d,s%d);\n", -s->nr, l, r);
 			} else {
 				len = snprintf(buf, BUFSIZ, "var s%d := insert(s%d,s%d);\n", -s->nr, l, r);
 			}
@@ -1009,10 +1009,13 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				assert(len <= buflen);
 				dump(sql, buf, len, -s->nr);
 			} else {
+				char *access = "";
+				if (s->op1.stval->type != st_bat &&
+				    s->op1.stval->type != st_idxbat)
+					access=".access(BAT_WRITE)";
 				l = backend_dumpstmt_(s->op1.stval, nr, sql);
 				buf = NEW_ARRAY(char, BUFSIZ + 1);
-
-				len = snprintf(buf, BUFSIZ, "var s%d := append(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
+				len = snprintf(buf, BUFSIZ, "var s%d := append(s%d%s,s%d);\n", -s->nr, l, access, r);
 				dump(sql, buf, len, -s->nr);
 				backend_dump_nil(sql, s->op1.stval);
 			}
@@ -1028,7 +1031,8 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				"inplace":"replace";
 			buf = NEW_ARRAY(char, BUFSIZ + 1);
 
-			len += snprintf(buf, BUFSIZ, "var s%d := %s(s%d.access(BAT_WRITE),s%d);\n", -s->nr, f, l, r);
+			/* use forced inplace/replace */
+			len += snprintf(buf, BUFSIZ, "var s%d := %s(s%d,s%d,true);\n", -s->nr, f, l, r);
 			dump(sql, buf, len, -s->nr);
 			_DELETE(buf);
 			backend_dump_nil(sql, s->op1.stval);

@@ -310,6 +310,7 @@ int yydebug=1;
 	default_value
 	cast_value
 	aggr_ref
+	var_ref
 	func_ref
 	datetime_funcs
 	string_funcs
@@ -2633,6 +2634,7 @@ scalar_exp:
 value_exp:
     atom
  |  column_ref 		{ $$ = _symbol_create_list( SQL_COLUMN, $1); }
+ |  var_ref		
  |  aggr_ref
  |  func_ref
  |  NEXT VALUE FOR ident	{ $$ = _symbol_create( SQL_NEXT, $4); }
@@ -2641,6 +2643,10 @@ value_exp:
  |  case_exp
  |  cast_exp
  |  '?'			{ $$ = _symbol_create( SQL_PARAMETER, NULL ); }
+ ;
+
+var_ref:
+	AT ident 	{ $$ = _symbol_create( SQL_NAME, $2 ); }
  ;
 
 func_ref:

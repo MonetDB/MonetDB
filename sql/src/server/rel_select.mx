@@ -2815,7 +2815,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, char *fname)
 	return res;
 }
 
-#define MAXDEPTH ((THREAD_STACK_SIZE/4096))
+#define SQLMAXDEPTH ((THREAD_STACK_SIZE/4096))
 
 static sql_exp *
 rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f)
@@ -2824,7 +2824,7 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	sql_exp *l, *r;
 
 	sql->depth++;
-	if (sql->depth > MAXDEPTH)
+	if (sql->depth > SQLMAXDEPTH)
 		return sql_error(sql, 02, "SELECT: too many nested operators");
 
  	l = rel_value_exp(sql, rel, dl->next->data.sym, f);

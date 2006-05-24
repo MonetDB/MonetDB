@@ -181,7 +181,7 @@ grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantee
 	list *l;
 
 	if (!t) {
-		return sql_error(sql, 02, "GRANT Table name %s doesn't exist", tname);
+		return sql_error(sql, 02, "GRANT no such table '%s'", tname);
 	}
 
 	l = create_stmt_list();
@@ -194,7 +194,7 @@ grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantee
 
 		if (!allowed) {
 			list_destroy(l);
-			return sql_error(sql, 02, "GRANTOR %s is not allowed to grant ALL privileges for table %s", sql->user, tname);
+			return sql_error(sql, 02, "GRANTOR '%s' is not allowed to grant ALL privileges for table '%s'", sql->user, tname);
 		}
 
 		for (gn = grantees->h; gn; gn = gn->next) {
@@ -208,7 +208,7 @@ grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantee
 
 			if (grantee_id <= 0) {
 				list_destroy(l);
-				return sql_error(sql, 02, "User/Role %s unknown", grantee);
+				return sql_error(sql, 02, "user/role '%s' unknown", grantee);
 			}
 			sql_insert_all_privs(sql, grantee_id, t->base.id, grantor, grant, l);
 		}
@@ -226,7 +226,7 @@ grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *grantee
 
 		if (grantee_id < 0) {
 			list_destroy(l);
-			return sql_error(sql, 02, "User/Role %s unknown", grantee);
+			return sql_error(sql, 02, "user/role '%s' unknown", grantee);
 		}
 
 		for (opn = privs->h; opn; opn = opn->next) {
@@ -852,7 +852,7 @@ create_user(mvc *sql, char *user, char *passwd, char *fullname, char *schema)
 	char buf[BUFSIZ];
 
 	if (sql_find_auth(sql, user) >= 0) {
-		return sql_error(sql, 02, "CREATE USER: user %s already exists", user);
+		return sql_error(sql, 02, "CREATE USER: user '%s' already exists", user);
 	}
 	if ((schema_id = sql_find_schema(sql, schema)) < 0) {
 		return sql_error(sql, 02, "CREATE USER: no such schema '%s'", schema);

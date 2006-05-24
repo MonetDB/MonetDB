@@ -363,15 +363,13 @@ void_delete_bat(BAT *b, BAT *d, int delta)
 	if (delta) {
 		for (r = d->batInserted; r < BUNlast(d); r = BUNnext(d, r)) {
 			oid delid = *(oid *) BUNtail(d, r);
-
-			void_inplace(b, delid, nil);
+			void_inplace(b, delid, nil, TRUE);
 			nr++;
 		}
 	} else {
 		BATloop(d, r, s) {
 			oid delid = *(oid *) BUNtail(d, r);
-
-			void_inplace(b, delid, nil);
+			void_inplace(b, delid, nil, TRUE);
 			nr++;
 		}
 	}
@@ -383,7 +381,7 @@ static void
 update_table_bat(BAT *b, BAT *ub, BAT *db)
 {
 	if (ub && BATcount(ub)) {
-		void_replace_bat(b, ub);
+		void_replace_bat(b, ub, TRUE);
 	}
 	(void)db;
 /*
@@ -3562,6 +3560,8 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			sql_column *oc = m->data;
 			BAT *ups, *ins, *cur;
 
+			/* for cleared tables the bid is reset */
+			cc -> bat.bid = oc -> bat.bid;
 			if (!cc->base.wtime) {
 				n = n->next;
 				m = m->next;
@@ -3581,7 +3581,8 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				if (bs_debug)
 					fprintf(stderr, "append inserts %d to %d (%s)\n", (int)ins->batCacheid, (int)cur->batCacheid, (ttr==gtrans)?"G":"S");
 				if (BATcount(cur) == 0 && spares == 0 &&
-					transactions == 1) {
+					transactions == 1 && 
+					BATcount(ins) > 100) {
 					/* swap cur and ins */
 					BAT *swpbat = ins;
 					bat swp = cc->bat.ibid;
@@ -3606,9 +3607,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 			ups = temp_descriptor(cc->bat.ubid);
 			if (BUNlast(ups) > ups->batInserted) {
-
-				void_replace_bat(cur, ups);
-
+				void_replace_bat(cur, ups, TRUE);
 				if (ok == SQL_OK && ttr == gtrans)
 					ok = log_bat(logger, ups, oc->bat.uname);
 				BATclear(ups);
@@ -3637,6 +3636,8 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				if (!oi->bat.bid)
 					continue;
 	
+				/* for cleared tables the bid is reset */
+				ci -> bat.bid = oi -> bat.bid;
 				cur = temp_descriptor(oi->bat.bid);
 				if (ft->cleared && ttr == gtrans) {
 
@@ -3657,7 +3658,8 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					if (ttr == gtrans)
 						ok = log_bat(logger, cur, oi->bat.name);
 					if (BATcount(cur) == 0 && spares == 0 &&
-						transactions == 1) {
+						transactions == 1 &&
+						BATcount(ins) > 100) {
 						/* swap cur and ins */
 						BAT *swpbat = ins;
 						bat swp = ci->bat.ibid;
@@ -3679,9 +3681,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				bat_destroy(ins);
 				ups = temp_descriptor(ci->bat.ubid);
 				if (BUNlast(ups) > ups->batInserted) {
-
-					void_replace_bat(cur, ups);
-
+					void_replace_bat(cur, ups, TRUE);
 					if (ttr == gtrans)
 						ok = log_bat(logger, ups, oi->bat.uname);
 					BATclear(ups);

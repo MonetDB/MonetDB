@@ -171,7 +171,7 @@ column_update_value(sql_trans *tr, sql_column *c, oid rid, void *value)
 		bat_destroy(b);
 	} else {
 		b = temp_descriptor(c->bat.ibid);
-		void_inplace(b, rid, value);
+		void_inplace(b, rid, value, FALSE);
 		bat_destroy(b);
 	}
 	c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->stime;
