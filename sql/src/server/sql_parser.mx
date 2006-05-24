@@ -422,6 +422,7 @@ int yydebug=1;
 	triggered_statement
 	procedure_statement_list
 	opt_replication_using_list
+	opt_with_check_option_data
 
 %type <ival>
 	drop_action
@@ -471,7 +472,6 @@ int yydebug=1;
 	opt_chain
 	opt_distinct
 	set_distinct
-	opt_with_check_option
 	push_pull_replication
 
 	opt_with_grant
@@ -1541,12 +1541,12 @@ view_def:
     AS			{ mvc *m = (mvc*)parm;
 			  m->scanner.as = m->scanner.yycur; }
     view_as
-    opt_with_check_option opt_replication_using_list
+    opt_with_check_option_data opt_replication_using_list
 	{  dlist *l = L();
 	  append_symbol(l, $3);
 	  append_list(l, $4);
 	  append_symbol(l, $7);
-	  append_int(l, $8);
+	  append_list(l, $8);
 	  append_list(l, $9);
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
 	}
@@ -1558,9 +1558,20 @@ view_as:
   ;
 
 
-opt_with_check_option:
-    /* empty */			{ $$ = FALSE; }
- |  WITH CHECK OPTION		{ $$ = TRUE; }
+opt_with_check_option_data:
+   /*empty*/						{dlist *l= L();
+							append_int(l,0);
+							append_int(l,0);
+							$$ = l;}
+ |  WITH CHECK OPTION					{dlist *l= L();
+							append_int(l,1);
+							append_int(l,1);
+							$$ = l;}
+
+ |  with_or_without_data				{dlist *l= L();
+							append_int(l,0);
+							append_int(l,$1);
+							$$ = l;}
  ;
 
 
@@ -1581,6 +1592,7 @@ push_pull_replication:
     PULL		{$$ = 1;}
  |  PUSH		{$$ = 0;}
  ; 
+
 
 opt_column_commalist:
     /* empty */			{ $$ = NULL; }

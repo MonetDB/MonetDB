@@ -30,6 +30,7 @@
 extern sql_column* create_column(sql_trans *tr, sql_table* t, char* table, char* type, int digits);
 extern int create_host_table(sql_trans *tr, sql_schema *s);
 extern int create_replication_table(sql_trans *tr, sql_schema *s);
+extern int create_replication_columns(sql_trans *tr, sql_schema *s);
 extern void table_insert_location(sql_trans* tr,sql_schema* s,char *host, char* ip, int port, char* user,char* passwd);
 #endif /*BAT_REPLIC_H */
 
@@ -74,14 +75,28 @@ create_replication_table(sql_trans *tr, sql_schema *s){
         t = sql_trans_create_table(tr, s, "replication", 1, 0, 0, 1, LOCATION, REPLICATION);
         
 	create_column(tr, t, "replication_id", "int",32); 	
-	create_column(tr, t, "IN/OUT", "int",9); 		/*If the table is used for a remote view(OUT-1) or use a remote table(IN-0)*/
-        create_column(tr, t, "table_name", "varchar",1024);		/*remotetable name or the view that uses tehe local table*/
-	create_column(tr, t, "PUSH/PULL", "int",9); 		/*The kind of refresh*/
+        create_column(tr, t, "columns_id", "int",32);		/*id for the columns table where information about all remote columns exist*/
+	create_column(tr, t, "in/out", "int",9); 		/*If the table is used for a remote view(OUT-1) or use a remote table(IN-0)*/
+	create_column(tr, t, "push/pull", "int",9); 		/*The kind of refresh*/
         create_column(tr, t, "refresh_time", "int",32);		/*time for cycle refresh, -1 no cycle refresh*/
         create_column(tr, t, "t_rev_plus", "int",32);		/*t revision for +deltas*/
         create_column(tr, t, "t_rev_min", "int",32);		/*t revision for -deltas*/
 	return 0;
 }
+
+/*Function to create the columns table to contain information about all remote columns for a specific view*/
+int
+create_replication_columns(sql_trans *tr, sql_schema *s){
+        sql_table *t;
+        t = sql_trans_create_table(tr, s, "replication_columns", 1, 0, 0, 1, LOCATION, REPLICATION);
+        
+	create_column(tr, t, "column_id", "int",32); 	
+	create_column(tr, t, "replication_id", "int",32); 	/*To help the refresh operation*/	
+	create_column(tr, t, "column_name", "varchar",1024); 	/*Name of the remote column*/
+        create_column(tr, t, "table_name", "varchar",1024);	/*Name of the remote table from where the column was selected*/
+	return 0;
+}
+
 
 /*Function to help the insertion of new locations*/
 void

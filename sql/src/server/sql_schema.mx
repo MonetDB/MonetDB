@@ -717,13 +717,13 @@ create_view(mvc *sql, sql_schema *ss, symbol *symb, dlist *column_spec, symbol *
 			subquery[sql->scanner.view_end - sql->scanner.as] = ';';
 			subquery[sql->scanner.view_end - sql->scanner.as+1] = 0;
 		}
-
+		printf("%s\n",subquery);
 		t = mvc_create_view(sql, ss, name, subquery, 0, location, replication_id);
+		as_subquery( sql, t, sq, column_spec );
 		if(dlist_length(using)==2)
 			create_replication_support(sql,ss,t,query,using->h->data.ival,using->t->data.ival,replication_id);
 		else
 			create_replication_support(sql,ss,t,query,using->h->data.ival,0, replication_id);
-		as_subquery( sql, t, sq, column_spec );
 		_DELETE(subquery);
 		stmt_destroy(sq);
 		return stmt_none();
@@ -732,7 +732,8 @@ create_view(mvc *sql, sql_schema *ss, symbol *symb, dlist *column_spec, symbol *
 		return sql_error(sql, 02, "CREATE VIEW AS BATS: insufficient privileges for user %s", sql->user);
 	} else {
 		char *err = NULL;
-		sql_table *t = mvc_create_view(sql, ss, name, NULL, 0, location, replication_id);
+		sql_table *t = NULL;
+		t = mvc_create_view(sql, ss, name, NULL, 0, location, replication_id);
 		if(dlist_length(using)==2)
 			create_replication_support(sql,ss,t,query,using->h->data.ival,using->t->data.ival,replication_id);
 		else
@@ -1431,7 +1432,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 /*this function was modified to support replication*/
 static stmt *
-create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_elements_or_subquery, int commit_action)
+create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_elements_or_subquery, int commit_action, int view)
 {
 	char *name = qname_table(symb);
 	char *host = qname_host(symb);
@@ -1471,9 +1472,19 @@ create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_ele
 	} else { /* [col name list] as subquery with or without data */
 		stmt *sq = NULL, *res = NULL;
 		dlist *as_sq = table_elements_or_subquery->data.lval;
-		dlist *column_spec = as_sq->h->data.lval;
-		symbol *subquery = as_sq->h->next->data.sym;
-		int with_data = as_sq->h->next->next->data.ival;
+		dlist *column_spec;
+		symbol* subquery;
+		int with_data;
+		if(view){
+			column_spec = NULL;
+			subquery = table_elements_or_subquery;
+			with_data = 1;
+		}
+		else{
+			column_spec = as_sq->h->data.lval;
+			subquery = as_sq->h->next->data.sym;
+ 			with_data = as_sq->h->next->next->data.ival;
+		}
 		sql_table *t = NULL; 
 
 		sq = scope_subquery(sql, NULL, subquery);
@@ -1655,11 +1666,14 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 			if (n->data.sym->token == SQL_CREATE_TABLE) {
 				dlist *l = n->data.sym->data.lval;
 
-				res = create_table(sql, ss, l->h->data.ival, l->h->next->data.sym, l->h->next->next->data.sym, l->h->next->next->next->data.ival);
+				res = create_table(sql, ss, l->h->data.ival, l->h->next->data.sym, l->h->next->next->data.sym, l->h->next->next->next->data.ival,0);
 			} else if (n->data.sym->token == SQL_CREATE_VIEW) {
 				dlist *l = n->data.sym->data.lval;
 
-				res = create_view(sql, ss, l->h->data.sym, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.ival,l->h->next->next->next->next->data.lval);
+				if(l->h->next->next->next->data.lval->t->data.ival)
+					res = create_table(sql, cur_schema(sql), SQL_PERSIST, l->h->data.sym, l->h->next->next->data.sym, 1,1);
+				else
+					res = create_view(sql, ss, l->h->data.sym, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval->h->data.ival,l->h->next->next->next->next->data.lval);
 			}
 			if (!res) {
 				list_destroy(table_elements);
@@ -1736,15 +1750,17 @@ schemas(mvc *sql, symbol *s)
 
 		dlist *l = s->data.lval;
 
-		ret = create_table(sql, cur_schema(sql), l->h->data.ival, l->h->next->data.sym, l->h->next->next->data.sym, l->h->next->next->next->data.ival);
+		ret = create_table(sql, cur_schema(sql), l->h->data.ival, l->h->next->data.sym, l->h->next->next->data.sym, l->h->next->next->next->data.ival,0);
 		sql->type = Q_SCHEMA;
 	}
 		break;
 	case SQL_CREATE_VIEW:
 	{
 		dlist *l = s->data.lval;
-
-		ret = create_view(sql, cur_schema(sql), l->h->data.sym, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.ival,l->h->next->next->next->next->data.lval);
+		if(l->h->next->next->next->data.lval->t->data.ival)
+			ret = create_table(sql, cur_schema(sql), SQL_PERSIST, l->h->data.sym, l->h->next->next->data.sym, 1,1);
+		else
+			ret = create_view(sql, cur_schema(sql), l->h->data.sym, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval->h->data.ival,l->h->next->next->next->next->data.lval);
 		sql->type = Q_SCHEMA;
 	}
 		break;
