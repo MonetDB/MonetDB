@@ -113,7 +113,6 @@ opt_icol (PFla_op_t *p)
                                          p->sem.lit_tbl.count,
                                          tuples);
                 *p = *res;
-                PFprop_update_ocol (p);
                 SEEN(p) = true;
             } else if (!count && p->schema.count > 1) {
                 /* prune everything except one column */
@@ -141,7 +140,6 @@ opt_icol (PFla_op_t *p)
                 else
                     res = PFla_lit_tbl_ (PFalg_attlist_ (1, atts), 1, tuples);
                 *p = *res;
-                PFprop_update_ocol (p);
                 SEEN(p) = true;
             }
         } break;
@@ -184,7 +182,6 @@ opt_icol (PFla_op_t *p)
                 ret = PFla_project_ (L(p), count, proj);
 
                 *p = *ret;
-                PFprop_update_ocol (p);
                 SEEN(p) = true;
                 break;
             }
@@ -214,7 +211,6 @@ opt_icol (PFla_op_t *p)
                     PFprop_update_ocol (ret);
                     R(p) = ret;
 
-                    PFprop_update_ocol (p);
                     break;
                 }
                 /* use the left and right icols information
@@ -237,7 +233,6 @@ opt_icol (PFla_op_t *p)
                             PFprop_update_ocol (ret);
                             R(p) = ret;
 
-                            PFprop_update_ocol (p);
                             break;
                         }
                     break;
@@ -297,7 +292,6 @@ opt_icol (PFla_op_t *p)
                 }
                 *p = *ret;
                 SEEN(p) = true;
-                PFprop_update_ocol (p);
                 break;
             }
             break;
@@ -380,9 +374,11 @@ opt_icol (PFla_op_t *p)
             break;
             
         default:
-            PFprop_update_ocol (p);
             break;
     }
+
+    /* ensure that we have the correct schema */
+    PFprop_update_ocol (p);
 }
 
 /**
@@ -399,10 +395,6 @@ PFalgopt_icol (PFla_op_t *root)
     PFla_dag_reset (root);
     /* ensure that each operator has its own properties */
     PFprop_create_prop (root);
-
-    /* Infer ocol properties as the rewrite
-       rules introduced inconsistencies */
-    PFprop_infer_ocol (root);
 
     return root;
 }
