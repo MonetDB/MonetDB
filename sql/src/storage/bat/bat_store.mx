@@ -1438,6 +1438,7 @@ sys_bat(struct bm *bm, char *name, int type)
 			fprintf(stderr, "sys_bat loaded %s bid %d\n", name, bid);
 		b = temp_descriptor(bid);
 	}
+	assert(b);
 	return b;
 }
 

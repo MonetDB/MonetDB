@@ -556,11 +556,11 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 		logger->sql_log = bat_new(TYPE_oid, TYPE_int, 1, "logger_new");
 		BATmode(logger->sql_log, PERSISTENT);
 		BBPrename(logger->sql_log->batCacheid, "sql_log");
-		if (TMcommit() != 0)	
-			return NULL;
+		
+		bm_add_bat(bm, logger->sql_log, "sql_log");
 		BUNins(logger->sql_log, &id, &logger->id);
 	} else {
-		logger->sql_log = bat_descriptor(sql_log, "bm_create");
+		logger->sql_log = bat_descriptor(sql_log, "logger_new");
 		if (BATcount(logger->sql_log)) {
 			logger->id = *(int*)BUNtail(logger->sql_log, BUNfnd(logger->sql_log, &id));
 		} else {

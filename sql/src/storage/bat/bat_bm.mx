@@ -185,13 +185,15 @@ bm_create(int debug)
 
 	bm->debug = debug;
 	if (sql_catalog == 0) {
+		oid bid = 0;
 		bm->bat_name = bm_create_bat(TYPE_oid, TYPE_str, BUFSIZ);
 		if (bm->debug)
 			printf("create sql_catalog\n");
 		BATmode(bm->bat_name, PERSISTENT);
 		BBPrename(bm->bat_name->batCacheid, catalog);
 		/* insert catalog bat, to make TMsubcommit calls possible */
-		BUNins(bm->bat_name, &bm->bat_name->batCacheid, catalog);
+		bid = bm->bat_name->batCacheid;
+		BUNins(bm->bat_name, &bid, catalog);
 		if (bm_subcommit(bm->bat_name) != 0)	/* save sql_catalog */
 			return NULL;
 	} else { /* find the persisten sql_catalog. As non persistent bats
