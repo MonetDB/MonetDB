@@ -540,6 +540,17 @@ startProfiler(stream *o)
 	return 0;
 }
 
+void 
+commitProfiler(void)
+{
+	BAT *b = BATnew(TYPE_void, TYPE_str, 3);
+
+	BUNappend(b, BBPname(profilerCount->batCacheid), FALSE);
+	BUNappend(b, BBPname(profilerTicks->batCacheid), FALSE);
+	TMsubcommit(BATmirror(b));
+	BBPreclaim(b);
+}
+
 int
 stopProfiler(void)
 {
@@ -548,7 +559,7 @@ stopProfiler(void)
 	eventstream = NULL;
 	profilemode = 0;
 	if (profilerCount || profilerTicks)
-		TMcommit();
+		commitProfiler();
 	if (profilerLock)
 		monet_unset_lock(profilerLock, "stopProfiler");
 	return 0;
@@ -578,7 +589,7 @@ setProfilerMode(int mode)
 			BBPincref(profilerTicks->batCacheid, TRUE);
 		} else		/* keep it in memory */
 			BBPincref(profilerTicks->batCacheid, TRUE);
-		TMcommit();
+		commitProfiler();
 		/* set default filters */
 		setProfilerFilter("proc", "*");
 		setProfilerFilter("command", "*");
