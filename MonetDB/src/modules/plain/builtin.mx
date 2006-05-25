@@ -934,9 +934,6 @@ CMDquit(Cntxt stk, YYSTREE lt, ValPtr res)
 	while (c->father >= 0) {
 		c = monet_clients + c->father;
 	}
-/* non-DD semantics!
-	TMcommit();
-*/
 	if (c == monet_clients) {
 		int status = 0, *statusp = &status;
 
