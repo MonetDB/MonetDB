@@ -153,12 +153,14 @@ AUTHcommit() {
 	BUNappend(b, BBPname(user->batCacheid), FALSE);
 	BUNappend(b, BBPname(pass->batCacheid), FALSE);
 	BUNappend(b, BBPname(scen->batCacheid), FALSE);
-	TMsubcommit(BATmirror(b));
+
+	TMsubcommit(b);
 	BBPreclaim(b);
 }
 
 str
 AUTHinitTables() {
+	bat bid;
 	BAT *b;
 	int isNew = 1;
 
@@ -172,8 +174,8 @@ AUTHinitTables() {
 	assert (scen == NULL);
 
 	/* load/create users BAT */
-	b = BATdescriptor(BBPindex("M5system_auth_user"));
-	if (b == NULL) {
+	bid = BBPindex("M5system_auth_user");
+	if (!bid) {
 		b = BATnew(TYPE_oid, TYPE_str, 256);
 		if (b == NULL)
 			throwMal("initTables", "could not allocate user table");
@@ -182,14 +184,16 @@ AUTHinitTables() {
 		BBPrename(b->batCacheid, "M5system_auth_user");
 		BATmode(b, PERSISTENT);
 	} else {
+		b = BATdescriptor(bid);
 		isNew = 0;
-	}
+	}	
+	assert(b);
 	user = b;
 	userrev = BATmirror(b);
 
 	/* load/create password BAT */
-	b = BATdescriptor(BBPindex("M5system_auth_passwd"));
-	if (b == NULL) {
+	bid = BBPindex("M5system_auth_passwd");
+	if (!bid) {
 		b = BATnew(TYPE_oid, TYPE_str, 256);
 		if (b == NULL)
 			throwMal("initTables", "could not allocate password table");
@@ -197,13 +201,15 @@ AUTHinitTables() {
 		BBPrename(b->batCacheid, "M5system_auth_passwd");
 		BATmode(b, PERSISTENT);
 	} else {
+		b = BATdescriptor(bid);
 		isNew = 0;
 	}
+	assert(b);
 	pass = b;
 
 	/* load/create scenario BAT */
-	b = BATdescriptor(BBPindex("M5system_auth_scen"));
-	if (b == NULL) {
+	bid = BBPindex("M5system_auth_scen");
+	if (!bid) {
 		b = BATnew(TYPE_oid, TYPE_str, 256);
 		if (b == NULL)
 			throwMal("initTables", "could not allocate scenario table");
@@ -212,8 +218,10 @@ AUTHinitTables() {
 		BBPrename(b->batCacheid, "M5system_auth_scen");
 		BATmode(b, PERSISTENT);
 	} else {
+		b = BATdescriptor(bid);
 		isNew = 0;
 	}
+	assert(b);
 	scen = b;
 
 	if (isNew == 1) {
@@ -228,6 +236,7 @@ AUTHinitTables() {
 		rethrow("initTables", tmp, AUTHaddUser(&uid, &user, &pass, &b));
 		if (uid != 0)
 			throwMal("initTables", "authorisation BATs not empty, but they were just created !?!?!?");
+		AUTHcommit();
 	}
 
 	return(MAL_SUCCEED);

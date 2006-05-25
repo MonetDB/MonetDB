@@ -282,7 +282,7 @@ STATcommit()
 	BUNappend(b, BBPname(STAT_id_min_lng->batCacheid), FALSE);
 	BUNappend(b, BBPname(STAT_id_max_lng->batCacheid), FALSE);
 	BUNappend(b, BBPname(STAT_id_histogram->batCacheid), FALSE);
-	TMsubcommit(BATmirror(b));
+	TMsubcommit(b);
 	BBPreclaim(b);
 }
 
