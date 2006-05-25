@@ -146,6 +146,17 @@ static BAT *user = NULL, *userrev = NULL;
 static BAT *pass = NULL;
 static BAT *scen = NULL;
 
+void
+AUTHcommit() {
+	BAT *b = BATnew(TYPE_void, TYPE_str, 3);
+
+	BUNappend(b, BBPname(user->batCacheid), FALSE);
+	BUNappend(b, BBPname(pass->batCacheid), FALSE);
+	BUNappend(b, BBPname(scen->batCacheid), FALSE);
+	TMsubcommit(BATmirror(b));
+	BBPreclaim(b);
+}
+
 str
 AUTHinitTables() {
 	BAT *b;
@@ -370,7 +381,7 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 	}
 
 	/* make the stuff persistent */
-	TMcommit();
+	AUTHcommit();
 
 	*uid = *id;
 	return(MAL_SUCCEED);
@@ -414,7 +425,7 @@ AUTHremoveUser(str *username) {
 	BATdel(BATmirror(scen), b);
 
 	/* make the stuff persistent */
-	TMcommit();
+	AUTHcommit();
 
 	return(MAL_SUCCEED);
 }
@@ -448,7 +459,7 @@ AUTHchangeUsername(str *olduser, str *newuser) {
 
 	/* ok, just do it! */
 	BUNinplace(userrev, p, *newuser, BUNtail(userrev, p), 0);
-	TMcommit();
+	AUTHcommit();
 
 	return(MAL_SUCCEED);
 }
@@ -484,7 +495,7 @@ AUTHchangePassword(str *oldpass, str *passwd) {
 
 	/* ok, just overwrite the password field for this user */
 	BUNinplace(pass, p, BUNhead(pass, p), *passwd, 0);
-	TMcommit();
+	AUTHcommit();
 
 	return(MAL_SUCCEED);
 }
@@ -531,7 +542,7 @@ AUTHsetPassword(str *username, str *passwd) {
 	p = BUNfnd(pass, &id);
 	assert (p != NULL);
 	BUNinplace(pass, p, BUNhead(pass, p), *passwd, 0);
-	TMcommit();
+	AUTHcommit();
 
 	return(MAL_SUCCEED);
 }
@@ -562,7 +573,7 @@ AUTHaddScenario(str *username, str *scenario) {
 
 	/* add the scenario for this user */
 	BUNins(scen, BUNtail(userrev, p), *scenario);
-	TMcommit();
+	AUTHcommit();
 
 	return(MAL_SUCCEED);
 }
@@ -601,7 +612,7 @@ AUTHremoveScenario(str *username, str *scenario) {
 
 	/* ok, remove it */
 	BATdel(scen, BATmirror(b));
-	TMcommit();
+	AUTHcommit();
 
 	return(MAL_SUCCEED);
 }

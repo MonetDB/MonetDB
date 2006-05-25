@@ -481,7 +481,6 @@ At this stage we should clean out the MAL block
 			if (c->scenario) {
 				exitScenario(c);
 			}
-			TMcommit();
 		}
 	}
 	if (!isAdministrator(c))
