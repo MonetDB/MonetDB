@@ -1198,14 +1198,11 @@ The storage structure is based on a circular buffer. Picking
 the BATs for recycling is also not intelligent yet.
 @{
 @c
-#define MAXBIN 32
+#define BATCACHE_MAXBIN 16
+#define BATCACHE_MAXBUNS 16384
+#define BATCACHE_MAXSIZE BATCACHE_MAXBUNS*32
 
-/* todo change to a nxm matrix of types 
-   nr = (ht<<8+tt)&n-1 (n==2^x)
-   bintop [nr]
-   once sub array is full keep new, free old cached bat 
- */	
-static BAT *batbin[MAXBIN];
+static BAT *batbin[BATCACHE_MAXBIN];
 static int bintop=0;
 
 static void
@@ -1213,34 +1210,27 @@ BBPinitcache()
 {
 	int i;
 
-	for( i = 0; i < MAXBIN; i++) {
+	for( i = 0; i < BATCACHE_MAXBIN; i++) {
 		batbin[i] = NULL;
 	}
 }
 
-/* #define BBPBINTST*/
 static int
 BBPaddtobin(BAT *b)
 {
 	int i = ABS(b->batCacheid);
-	BAT *bn;
+	BAT *bn = NULL;
 
-#ifdef BBPBINTST
-	printf("addtobin %d\n", b->batCacheid);
-#endif
 	/* pre-filter the BATs */
 	assert(BBP_refs(i) == 0);
 	assert(BBP_lrefs(i) == 0);
-	if (b->batCacheid < 0 ||
-	    (b->htype == TYPE_void && !b->hvarsized) ||
-	    (b->ttype == TYPE_void && !b->tvarsized) ||
-	    b->htype >= TYPE_str ||
-	    b->ttype >= TYPE_str ||
-	    BATcount(b) > 16 * 1024 ||
-	    b->batCopiedtodisk) {
+	if (bintop >= BATCACHE_MAXBIN ||
+	    b->batCacheid < 0 || b->htype >= TYPE_str || b->ttype >= TYPE_str ||
+	    BATcapacity(b) > BATCACHE_MAXSIZE || b->batCopiedtodisk) {
 		BATdelete(b);
 		return 1;
 	}
+	BATroles(b, NULL, NULL); /* free any role names */
 	HASHdestroy(b);
 	GDKfree(BATmirror(b));
 	b->batCacheid = 0;
@@ -1250,84 +1240,66 @@ BBPaddtobin(BAT *b)
 	BBPclear(i);
 
 	gdk_set_lock(GDKcacheLock, "BBPaddtobin");
-	bn = batbin[bintop];
-	batbin[bintop] = b;
-	bintop = (bintop + 1) % MAXBIN;
+	if (bintop < BATCACHE_MAXBIN) {
+		batbin[bintop++] = b;
+	} else 
+		bn = b;
 	gdk_unset_lock(GDKcacheLock, "BBPaddtobin");
-
-	if (bn) {
-#ifdef BBPBINTST
-		printf("delete from bin %d\n", bn->batCacheid);
-#endif
+	if (bn) 
 		BATfree(bn);
-	}
-#ifdef BBPBINTST
-	printf("add to bin %d %d\n", b->batCacheid, (int) BATcapacity(b));
-#endif
 	return 0;
 }
 
 BAT *
 BBPrecycle(int ht, int tt, size_t cap)
 {
-	int i;
 	BAT *b;
 
-#ifdef BBPBINTST
-	printf("BBPrecycle\n");
-#endif
+	(void)cap;
+	if (ht >= TYPE_str || tt >= TYPE_str)
+		return NULL;
 	gdk_set_lock(GDKcacheLock, "BBPrecycle");
-	for (i = 0; i < MAXBIN; i++)
-		if ((b = batbin[i]) && b->htype == ht && b->ttype == tt && BATcapacity(b) >= cap) {
-#ifdef BBPBINTST
-			printf("try from bin %d \n", b->batCacheid);
-#endif
-#ifdef BBPBINTST
-			printf("get from bin %d %d %d \n", b->batCacheid, (int) cap, (int) BATcapacity(b));
-#endif
+	if (bintop > 0) {
+		b = batbin[--bintop];
+		batbin[bintop] = NULL;
+		gdk_unset_lock(GDKcacheLock, "BBPrecycle");
 
-			batbin[i] = NULL;
-			gdk_unset_lock(GDKcacheLock, "BBPrecycle");
+		b->htype = ht;
+		b->ttype = tt;
+		b->hkey = FALSE;
+		b->tkey = FALSE;
+		b->halign = OIDnew(2);
+		b->talign = b->halign + 1;
+		b->hseqbase = (ht == TYPE_void) ? oid_nil : 0;
+		b->tseqbase = (tt == TYPE_void) ? oid_nil : 0;
+		b->batPersistence = TRANSIENT;
+		b->batRestricted = 0;
+		if (b->H->props)
+			PROPdestroy(b->H->props);
+		b->H->props = NULL;
+		if (b->T->props)
+			PROPdestroy(b->T->props);
+		b->T->props = NULL;
+		b->void_tid = -1;
+		b->void_cnt = 0;
+		b->void_seq1 = b->void_seq2 = oid_nil;
 
-			/* experimental code to reset the BAT */
-			b->batRestricted = 0;
-			b->batSet = FALSE;
-			b->hdense = b->tdense = 0;
-			b->hsorted = b->tsorted = 0;
-			b->halign = OIDnew(2);
-			b->talign = b->halign + 1;
-			b->hseqbase = (ht == TYPE_void) ? oid_nil : 0;
-			b->tseqbase = (tt == TYPE_void) ? oid_nil : 0;
-			b->hkey = 0;
-			b->tkey = 0;
-
-			if (b->H->props)
-				PROPdestroy(b->H->props);
-			b->H->props = NULL;
-			if (b->T->props)
-				PROPdestroy(b->T->props);
-			b->T->props = NULL;
-			b->H->nosorted = b->T->nosorted = 0;
-			b->H->nosorted_rev = b->T->nosorted_rev = 0;
-			b->H->nokey[0] = b->T->nokey[0] = 0;
-			b->H->nokey[1] = b->T->nokey[1] = 0;
-			b->batPersistence = TRANSIENT;
-			b->void_tid = -1;
-			b->void_cnt = 0;
-			b->void_seq1 = b->void_seq2 = oid_nil;
-			DELTAinit(b);
-			b->batDirty = TRUE;
-			if (++BBP_curstamp < 0)
-				BBP_curstamp = 0;
-			b->batStamp = BBP_curstamp;
-			b->creator_tid = BBP_getpid();
-			b->hsorted = ((bit) ATOMlinear(ht) ? GDK_SORTED : FALSE);
-			b->tsorted = ((bit) ATOMlinear(tt) ? GDK_SORTED : FALSE);
-
-			BBPcacheit(b);
-			assert(BATcount(b) == 0);
-			return b;
-		}
+		b->batSet = FALSE;
+		b->hdense = b->tdense = 0;
+		b->hsorted = b->tsorted = 0;
+		b->H->nosorted = b->T->nosorted = 0;
+		b->H->nosorted_rev = b->T->nosorted_rev = 0;
+		b->H->nokey[0] = b->T->nokey[0] = 0;
+		b->H->nokey[1] = b->T->nokey[1] = 0;
+		b->batPersistence = TRANSIENT;
+		if (++BBP_curstamp < 0)
+			BBP_curstamp = 0;
+		b->batStamp = BBP_curstamp;
+		b->creator_tid = BBP_getpid();
+		b->hsorted = ((bit) ATOMlinear(ht) ? GDK_SORTED : FALSE);
+		b->tsorted = ((bit) ATOMlinear(tt) ? GDK_SORTED : FALSE);
+		return b;
+	}
 	gdk_unset_lock(GDKcacheLock, "BBPrecycle");
 	return NULL;
 }

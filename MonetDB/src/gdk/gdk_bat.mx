@@ -213,49 +213,44 @@ it. To make this possible, we must provide it with filenames.
 BAT *
 BATnewstorage(int ht, int tt, size_t cap)
 {
-	/* experimental code  */
 	BAT *bn = BBPrecycle(ht,tt,cap);
+	int recycled = 0;
 
 	if( bn) {
-		if (bn->hident && !default_ident(bn->hident)) 
-			GDKfree(bn->hident);
-		bn->hident = string_h;
-		if (bn->tident && !default_ident(bn->tident))
-			GDKfree(bn->tident);
-		bn->tident = string_t;
-		return bn;
+		recycled = 1;
+	} else {
+		bn= BATcreatedesc(ht, tt, TRUE);
 	}
-
-	bn= BATcreatedesc(ht, tt, TRUE);
 
 	BATsetdims(bn);
 
-	/* alloc the main heaps */
-	if (HEAPalloc(bn->batBuns, cap, bn->dims.bunwidth) < 0) {
-		BBPclear(bn->batCacheid);
-		return NULL;
-	}
-	if (ATOMheap(ht, bn->hheap, cap) < 0) {
-		HEAPfree(bn->batBuns);
-		GDKfree(bn->hheap);
-		if (bn->theap) GDKfree(bn->theap);
-		BBPclear(bn->batCacheid);
-		return NULL;
-	}
-	if (ATOMheap(tt, bn->theap, cap) < 0) {
-		HEAPfree(bn->batBuns);
-		if (bn->hheap) {
-			HEAPfree(bn->hheap);
-			GDKfree(bn->hheap);
+	if (!recycled) {
+		/* alloc the main heaps */
+		if (HEAPalloc(bn->batBuns, cap, bn->dims.bunwidth) < 0) {
+			return NULL;
 		}
-		GDKfree(bn->theap);
-		BBPclear(bn->batCacheid);
-		return NULL;
+		if (ATOMheap(ht, bn->hheap, cap) < 0) {
+			HEAPfree(bn->batBuns);
+			GDKfree(bn->hheap);
+			if (bn->theap) GDKfree(bn->theap);
+			return NULL;
+		}
+		if (ATOMheap(tt, bn->theap, cap) < 0) {
+			HEAPfree(bn->batBuns);
+			if (bn->hheap) {
+				HEAPfree(bn->hheap);
+				GDKfree(bn->hheap);
+			}
+			GDKfree(bn->theap);
+			return NULL;
+		}
 	}
 	DELTAinit(bn);
 	bn->batDirty = TRUE;
 	BBPcacheit(bn);
-
+	if (recycled && BATcapacity(bn) < cap) {
+		BATextend(bn, cap);
+	}
 	return bn;
 }
 
