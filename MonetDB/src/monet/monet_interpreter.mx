@@ -547,7 +547,7 @@ commitProfiler(void)
 
 	BUNappend(b, BBPname(profilerCount->batCacheid), FALSE);
 	BUNappend(b, BBPname(profilerTicks->batCacheid), FALSE);
-	TMsubcommit(BATmirror(b));
+	TMsubcommit(b);
 	BBPreclaim(b);
 }
 
