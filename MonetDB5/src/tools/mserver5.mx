@@ -204,7 +204,7 @@ monet_init(opt *set, int setlen)
 	strcpy(buf, dbfarmval);
 	mo_substitute(set, setlen, buf);
 
-	if ((p = GDKgetenv("gdk_debug")))
+	if ((p = mo_find_option(set, setlen, "gdk_debug")))
 		GDKdebug = strtol(p, NULL, 10);
 
 	/* determine Monet's kernel settings */
