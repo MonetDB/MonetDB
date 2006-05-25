@@ -270,6 +270,23 @@ STAT_create(str hnme, str tnme, int ht, int tt)
 }
 
 static void
+STATcommit()
+{
+	BAT *b = BATnew(TYPE_void, TYPE_str, 10);
+	BUNappend(b, BBPname(STAT_id_inuse->batCacheid), FALSE);
+	BUNappend(b, BBPname(STAT_id_nme->batCacheid), FALSE);
+	BUNappend(b, BBPname(STAT_id_expire->batCacheid), FALSE);
+	BUNappend(b, BBPname(STAT_id_stamp->batCacheid), FALSE);
+	BUNappend(b, BBPname(STAT_id_count->batCacheid), FALSE);
+	BUNappend(b, BBPname(STAT_id_size->batCacheid), FALSE);
+	BUNappend(b, BBPname(STAT_id_min_lng->batCacheid), FALSE);
+	BUNappend(b, BBPname(STAT_id_max_lng->batCacheid), FALSE);
+	BUNappend(b, BBPname(STAT_id_histogram->batCacheid), FALSE);
+	TMsubcommit(BATmirror(b));
+	BBPreclaim(b);
+}
+
+static void
 STATinit()
 {
 	mal_set_lock(mal_contextLock, "statistics");
@@ -282,8 +299,8 @@ STATinit()
 	STAT_id_min_lng = STAT_create("id", "min_lng", TYPE_int, TYPE_lng);
 	STAT_id_max_lng = STAT_create("id", "max_lng", TYPE_int, TYPE_lng);
 	STAT_id_histogram = STAT_create("id", "histogram", TYPE_int, TYPE_str);
+	STATcommit();
 	mal_unset_lock(mal_contextLock, "statistics");
-	TMcommit();
 }
 
 static void
@@ -300,37 +317,6 @@ STATexit()
 	BBPreclaim(STAT_id_min_lng );
 	BBPreclaim(STAT_id_max_lng );
 	BBPreclaim(STAT_id_histogram );
-	mal_unset_lock(mal_contextLock, "statistics");
-}
-
-@-
-Actually STATcommit is not a real transaction, it may fail during
-execution. The remainder of the code is set up to compensate for
-the situation.
-@c
-static void
-STATcommit()
-{
-	if(STAT_id_inuse ==0) return;
-	mal_set_lock(mal_contextLock, "statistics");
-	BATcommit(STAT_id_nme);
-	BATsave(STAT_id_nme);
-	BATcommit(STAT_id_expire);
-	BATsave(STAT_id_expire);
-	BATcommit(STAT_id_stamp);
-	BATsave(STAT_id_stamp);
-	BATcommit(STAT_id_count);
-	BATsave(STAT_id_count);
-	BATcommit(STAT_id_size);
-	BATsave(STAT_id_size);
-	BATcommit(STAT_id_min_lng);
-	BATsave(STAT_id_min_lng);
-	BATcommit(STAT_id_max_lng);
-	BATsave(STAT_id_max_lng);
-	BATcommit(STAT_id_histogram);
-	BATsave(STAT_id_histogram);
-	BATcommit(STAT_id_inuse);
-	BATsave(STAT_id_inuse);
 	mal_unset_lock(mal_contextLock, "statistics");
 }
 
