@@ -786,8 +786,6 @@ parseDirAttributeValue(Client cntxt, Xbackend xb)
 STATIC int 
 parseDirAttributeList(Client cntxt, Xbackend xb) 
 {
-	int res = PARSE_OK;
-
 	@:ptrace(parseDirAttributeList)@
 	do {
 		if (parseQName(cntxt,xb) == PARSE_ERR) 
@@ -796,7 +794,7 @@ parseDirAttributeList(Client cntxt, Xbackend xb)
 			return PARSE_ERR;
 		}
 		nextToken(xb);
-	} while ((res = parseDirAttributeValue(cntxt,xb)) == PARSE_OK);
+	} while (parseDirAttributeValue(cntxt,xb) == PARSE_OK);
 	@:etrace(parseDirAttributeList)@
 	return PARSE_OK;
 }

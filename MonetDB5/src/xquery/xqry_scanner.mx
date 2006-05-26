@@ -48,7 +48,7 @@ typedef struct scanner {
 	xqry_allocator *xa;	/* allocator */
 } xscanner;
 
-enum xquery_tokens {
+typedef enum xquery_tokens {
 	XT_STR = 256,
 	XT_INT,
 	XT_HEX,
