@@ -97,6 +97,7 @@ zend_function_entry monetdb_functions[] = {
 	PHP_FE(monetdb_num_rows,			NULL)
 	PHP_FE(monetdb_num_fields,			NULL)
 	PHP_FE(monetdb_field_name,			NULL)
+	PHP_FE(monetdb_field_table,			NULL)
 	PHP_FE(monetdb_field_type,			NULL)
 	PHP_FE(monetdb_field_num,			NULL)
 	PHP_FE(monetdb_field_prtlen,		NULL)
@@ -1358,6 +1359,7 @@ PHP_FUNCTION(monetdb_last_notice)
 /* }}} */
 
 #define PHP_MONETDB_FIELD_NAME 1
+#define PHP_MONETDB_FIELD_TABLE 2
 #define PHP_MONETDB_FIELD_TYPE 3
 
 /* {{{ php_monetdb_get_field_info
@@ -1389,6 +1391,12 @@ static void php_monetdb_get_field_info(INTERNAL_FUNCTION_PARAMETERS, int entry_t
 			Z_STRVAL_P(return_value) = estrndup(Z_STRVAL_P(return_value),Z_STRLEN_P(return_value));
 			Z_TYPE_P(return_value) = IS_STRING;
 		break;
+		case PHP_MONETDB_FIELD_TABLE:
+			Z_STRVAL_P(return_value) = mapi_get_table(monetdb_result, Z_LVAL_PP(field));
+			Z_STRLEN_P(return_value) = strlen(Z_STRVAL_P(return_value));
+			Z_STRVAL_P(return_value) = estrndup(Z_STRVAL_P(return_value),Z_STRLEN_P(return_value));
+			Z_TYPE_P(return_value) = IS_STRING;
+		break;
 		case PHP_MONETDB_FIELD_TYPE:
 			Z_STRVAL_P(return_value) = mapi_get_type(monetdb_result, Z_LVAL_PP(field));
 			Z_STRLEN_P(return_value) = strlen(Z_STRVAL_P(return_value));
@@ -1406,6 +1414,14 @@ static void php_monetdb_get_field_info(INTERNAL_FUNCTION_PARAMETERS, int entry_t
 PHP_FUNCTION(monetdb_field_name)
 {
 	php_monetdb_get_field_info(INTERNAL_FUNCTION_PARAM_PASSTHRU,PHP_MONETDB_FIELD_NAME);
+}
+/* }}} */
+
+/* {{{ proto string monetdb_field_table(resource result, int field_number)
+   Returns the name of the table field belongs to */
+PHP_FUNCTION(monetdb_field_table)
+{
+	php_monetdb_get_field_info(INTERNAL_FUNCTION_PARAM_PASSTHRU,PHP_MONETDB_FIELD_TABLE);
 }
 /* }}} */
 

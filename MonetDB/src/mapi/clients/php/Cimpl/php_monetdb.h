@@ -84,6 +84,7 @@ PHP_FUNCTION(monetdb_free_result);
 PHP_FUNCTION(monetdb_num_rows);
 PHP_FUNCTION(monetdb_num_fields);
 PHP_FUNCTION(monetdb_field_name);
+PHP_FUNCTION(monetdb_field_table);
 PHP_FUNCTION(monetdb_field_type);
 PHP_FUNCTION(monetdb_field_num);
 PHP_FUNCTION(monetdb_field_prtlen);
