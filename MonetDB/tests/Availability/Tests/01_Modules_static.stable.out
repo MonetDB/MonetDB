@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 758 ]
+[ 761 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 758 ]
+[ 761 ]
 
 var All:=0;
 
@@ -143,8 +143,8 @@ Module: ""
 
 Module: "algebra"
 
-[ 120 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 121 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																													  # name
 # str		str		str											str																																													  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -157,7 +157,7 @@ Module: "algebra"
 [ "avg",	  "PROC:      ",  "avg(BAT[any,sht]) : dbl",								  "Gives the average of all tail values."																																  ]
 [ "bandjoin",	  "COMMAND:   ",  "bandjoin(BAT[any::1,any::2], BAT[any::2,any::3], any::2, any::2) : BAT[any::1,any::3]", "This is a join() for which the predicate is that two BUNs match if\nthe left-tail value is within the range [right-head - minus,\nright-head + plus]\n\nWorks only for the builtin numerical types, and their derivates."										  ]
 [ "clear",	  "PROC:      ",  "clear(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Backward compatibility. Does a b.delete()"																																  ]
-[ "copy",	  "COMMAND:   ",  "copy(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Returns physical copy of a BAT."																																	  ]
+[ "copy",			  "COMMAND:   ",  "copy(BAT[any::1,any::2]) : BAT[any::1,any::2]",						  "Returns physical copy of a BAT, with access BAT_WRITE."																																																																																										  ]
 [ "count",	  "COMMAND:   ",  "count(BAT[any,any]) : int",								  "Returns the number of elements currently in a BAT."																															  ]
 [ "count",	  "COMMAND:   ",  "count(BAT[any,any], bit) : int",							  "Returns the number of elements currently in a BAT;\n ignores BUNs with nil-tail iff ignore_nils==TRUE."																								  ]
 [ "count_no_nil", "PROC:      ",  "count_no_nil(BAT[any,any]) : int",							  "short-cut for count(b,TRUE)"																																		  ]
@@ -222,6 +222,7 @@ Module: "algebra"
 [ "prod_sht",	  "COMMAND:   ",  "prod_sht(BAT[any,sht]) : sht",							  "Gives the product of all tail values."																																  ]
 [ "project",	  "COMMAND:   ",  "project(BAT[any::1,any], any::2) : BAT[any::1,any::2]",				  "Fill the tail column with a constant value."																																  ]
 [ "rangesplit",	  "COMMAND:   ",  "rangesplit(BAT[any::1,any::2], int) : BAT[any::2,BAT]",				  "Split a BAT on tail column in 'ranges' equally sized\nconsecutive ranges. Returns a recursive BAT, containing the\nfragments in the tail, the higher-bound of the range in the head.\nThe higher bound of the last range is 'nil'."									  ]
+[ "rcopy",			  "COMMAND:   ",  "rcopy(BAT[any::1,any::2]) : BAT[any::1,any::2]",						  "Returns physical copy of a BAT, but is read-only."																																																																																											  ]
 [ "rev_select",	  "PROC:      ",  "rev_select(BAT[any::1,any::2], str, any::2) : BAT[any::1,any::2]",			  "(value OP column) select rather than (column OP value)"																														  ]
 [ "rmax_lower",	  "COMMAND:   ",  "rmax_lower(BAT[any::1,oid], any::1) : oid",						  "find the highest oid that may contain <= the passed value in an rmin() summary."																																																																		  ]
 [ "rmax_summary", "COMMAND:   ",  "rmax_summary(BAT[void,any::1], int) : BAT[any::1,oid]",				  "provide a running-maximum summary of a specified size on the tail. It will be sorted on value and oid."																																																															  ]
@@ -581,8 +582,8 @@ Module: "arith"
 
 Module: "bat"
 
-[ 81 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 83 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																																																																					  # name
 # str		str		str													str																																					  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -632,7 +633,9 @@ Module: "bat"
 [ "htype",	  "COMMAND:   ",  "htype(int) : int",									  "Returns the type of the head column of a BAT."																																																									  ]
 [ "info",	  "COMMAND:   ",  "info(BAT[any,any]) : BAT[str,str]",							  "Produce a BAT containing info about a BAT in \"attribute\",\"value\" format.\n It contains all properties of the BAT record. See the BAT documentation in\n GDK for more information."																																						  ]
 [ "inplace",	  "COMMAND:   ",  "inplace(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]",			  "inplace replace values on the given locations"																																																						  ]
+[ "inplace",	  "COMMAND:   ",  "inplace(BAT[void,any::1], BAT[oid,any::1], bit) : BAT[void,any::1]",			  "inplace replace values on the given locations"																																																														  ]
 [ "inplace",	  "COMMAND:   ",  "inplace(BAT[void,any::1], oid, any::1) : BAT[void,any::1]",				  "inplace replace values on the given locations"																																																																															  ]
+[ "inplace",	  "COMMAND:   ",  "inplace(BAT[void,any::1], oid, any::1, bit) : BAT[void,any::1]",			  "inplace replace values on the given locations"																																																														  ]
 [ "insert",	  "COMMAND:   ",  "insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",			  "Insert all BUNs of the second BAT into the first.\n Returns the modified BAT."																											  ]
 [ "insert",	  "COMMAND:   ",  "insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]",				  "Insert one BUN[h,t] in a BAT.\n Returns the modified BAT."																														  ]
 [ "key",	  "COMMAND:   ",  "key(BAT[any::1,any::2]) : bit",							  "return whether the head column of a BAT is unique (key)."																																																						  ]
@@ -899,11 +902,11 @@ Module: "trans"
 [ "commit",	  "COMMAND:   ",  "commit(BAT[any,any], ..BAT[any,any]..) : void",					  "flush the delta status of a BAT (it is *not* written to disk)."																																																							  ]
 [ "delta",	  "COMMAND:   ",  "delta(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "give list of deletions since the previous state."																																																									  ]
 [ "prev",	  "COMMAND:   ",  "prev(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "the previous state of this BAT"																																																											  ]
-[ "subcommit",	  "COMMAND:   ",  "subcommit(BAT[any,BAT]) : bit",							  "commit only a set of BATs, passed in the tail of the bat-of-bats parameter.\n  These BATs should not need any rollback; either these should be new\n  persistent BATs that were not present in the last commit, or no-longer\n  persistent BATs that can be destroyed. Thus subcommit mostly serves to add\n  or remove persistent tables from a database (quickly)."																		  ]
+[ "subcommit",	  "COMMAND:   ",  "subcommit(BAT[any,str]) : bit",								  "commit only a set of BATnames, passed in the tail (to which you must have exclusive access!)"																																																																									  ]
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 758 ]
+[ 761 ]
 
 quit();
 
