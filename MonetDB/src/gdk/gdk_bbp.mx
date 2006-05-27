@@ -1291,13 +1291,9 @@ BBPrecycle(int ht, int tt, size_t cap)
 		b->H->nosorted_rev = b->T->nosorted_rev = 0;
 		b->H->nokey[0] = b->T->nokey[0] = 0;
 		b->H->nokey[1] = b->T->nokey[1] = 0;
-		b->batPersistence = TRANSIENT;
-		if (++BBP_curstamp < 0)
-			BBP_curstamp = 0;
-		b->batStamp = BBP_curstamp;
-		b->creator_tid = BBP_getpid();
 		b->hsorted = ((bit) ATOMlinear(ht) ? GDK_SORTED : FALSE);
 		b->tsorted = ((bit) ATOMlinear(tt) ? GDK_SORTED : FALSE);
+		b->hheap = b->theap = NULL;
 		return b;
 	}
 	gdk_unset_lock(GDKcacheLock, "BBPrecycle");
