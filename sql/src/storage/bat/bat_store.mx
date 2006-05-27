@@ -3605,14 +3605,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 				ins = temp_descriptor(ci->bat.ibid);
 
-				if (ci->base.rtime)
-					oi->base.rtime = tr->stime;
-				oi->base.wtime = tr->stime;
-				ci->base.rtime = ci->base.wtime = 0;
-
 				if (BUNlast(ins) > ins->batInserted) {
-					if (ttr == gtrans)
-						ok = log_bat(logger, cur, oi->bat.name);
 					if (BATcount(cur) == 0 && spares == 0 &&
 						transactions == 1 &&
 						BATcount(ins) > 100) {
@@ -3633,18 +3626,25 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					}
 					BATseqbase(ins,BATcount(cur));
 					BATcommit(ins);
+					if (ok == SQL_OK && ttr == gtrans)
+						ok = log_bat(logger, cur, oi->bat.name);
 				} 
 				bat_destroy(ins);
 				ups = temp_descriptor(ci->bat.ubid);
 				if (BUNlast(ups) > ups->batInserted) {
 					void_replace_bat(cur, ups, TRUE);
-					if (ttr == gtrans)
+					if (ok == SQL_OK && ttr == gtrans)
 						ok = log_bat(logger, ups, oi->bat.uname);
 					BATclear(ups);
 					BATcommit(ups);
 				}
 				bat_destroy(ups);
 				bat_destroy(cur);
+
+				if (ci->base.rtime)
+					oi->base.rtime = tr->stime;
+				oi->base.wtime = tr->stime;
+				ci->base.rtime = ci->base.wtime = 0;
 			}
 		}
 		ft->cleared = 0;
