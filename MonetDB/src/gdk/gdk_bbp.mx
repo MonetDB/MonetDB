@@ -1260,9 +1260,16 @@ BBPrecycle(int ht, int tt, size_t cap)
 		return NULL;
 	gdk_set_lock(GDKcacheLock, "BBPrecycle");
 	if (bintop > 0) {
+		BATstore *bs;
+		char *nme;
 		b = batbin[--bintop];
 		batbin[bintop] = NULL;
 		gdk_unset_lock(GDKcacheLock, "BBPrecycle");
+		bs = (BATstore*)b;
+		b->H = &bs->H;
+		b->T = &bs->T;
+		b->P = &bs->P;
+		b->U = &bs->U;
 
 		b->htype = ht;
 		b->ttype = tt;
@@ -1274,6 +1281,8 @@ BBPrecycle(int ht, int tt, size_t cap)
 		b->tseqbase = (tt == TYPE_void) ? oid_nil : 0;
 		b->batPersistence = TRANSIENT;
 		b->batRestricted = 0;
+		b->P->sharecnt = 0;
+		b->P->parentid = 0;
 		if (b->H->props)
 			PROPdestroy(b->H->props);
 		b->H->props = NULL;
@@ -1286,14 +1295,17 @@ BBPrecycle(int ht, int tt, size_t cap)
 
 		b->batSet = FALSE;
 		b->hdense = b->tdense = 0;
-		b->hsorted = b->tsorted = 0;
 		b->H->nosorted = b->T->nosorted = 0;
 		b->H->nosorted_rev = b->T->nosorted_rev = 0;
 		b->H->nokey[0] = b->T->nokey[0] = 0;
 		b->H->nokey[1] = b->T->nokey[1] = 0;
-		b->hsorted = ((bit) ATOMlinear(ht) ? GDK_SORTED : FALSE);
-		b->tsorted = ((bit) ATOMlinear(tt) ? GDK_SORTED : FALSE);
 		b->hheap = b->theap = NULL;
+
+		BBPinsert(b);
+		nme = BBP_physical(b->batCacheid);
+		if (!b->batBuns->filename)
+			b->batBuns->filename = GDKmalloc(strlen(nme)+12);
+		GDKfilepath(b->batBuns->filename, NULL, nme, "buns");
 		return b;
 	}
 	gdk_unset_lock(GDKcacheLock, "BBPrecycle");
