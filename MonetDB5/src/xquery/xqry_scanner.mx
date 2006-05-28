@@ -96,6 +96,7 @@ typedef enum xquery_tokens {
 	XT_import,
 	XT_schema,
 	XT_at,
+	XT_at_dollar,
 	XT_variable,
 	XT_construction,
 	XT_as,
@@ -295,6 +296,7 @@ XT2string(int token)
 	XT(import);
 	XT(schema);
 	XT(at);
+	XT(at_dollar);
 	XT(variable);
 	XT(construction);
 	XT(as);
@@ -1215,7 +1217,8 @@ xscanner_lex(xscanner *lc, char **sval)
 		}
 	}
 	/* variable introduction $ */
-	if (!lc->yynext && (token == XT_for || token == XT_let)){ 
+	if (!lc->yynext && 
+	    (token == XT_at || token == XT_for || token == XT_let)){ 
 		char *tval;
 		int next;
 
@@ -1223,6 +1226,7 @@ xscanner_lex(xscanner *lc, char **sval)
 		next = xscanner_lex(lc, &tval);
 		if (next == '$') {
 			switch (token) {
+			case XT_at: token = XT_at_dollar; break;
 			case XT_for: token = XT_for_dollar; break;
 			case XT_let: token = XT_let_dollar; break;
 			default:	

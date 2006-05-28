@@ -1354,9 +1354,9 @@ parsePositionalVar(Client cntxt, Xbackend xb)
 {
 	int res = PARSE_OK;
 
-	if (curToken(xb) != XT_at)
+	if (curToken(xb) != XT_at_dollar)
 		return PARSE_ERR;
-	nextToken(xb);
+	xb->token = '$';
 	@:ptrace(parsePositionalVar)@
 	res = parseVarName(cntxt, xb);
 	@:etrace(parsePositionalVar)@
