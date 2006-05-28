@@ -1603,15 +1603,15 @@ _MMunion_25 := union(_MMsort_21,_MMsort_24);
 _MMnilcast_26 := _MMunion_25.reverse().mark(0@0).reverse();
 var _MMCTOgroup_27 := CTOgroup(_MMnilcast_26);
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_27))),reverse(_MMsunion_18))).print();
-#-------------------------#
-# BAT:	  tmp_180	  #
-# (oid)	  (oid)		  #
-#-------------------------#
-[ 4@0,	  0@0		  ]
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
 [ 5@0,	  5@0		  ]
+[ 4@0,	  0@0	  ]
 [ 6@0,	  8@0		  ]
-[ 5@0,	  6@0		  ]
 [ 7@0,	  7@0		  ]
+[ 5@0,	  6@0	  ]
 [ 3@0,	  1@0		  ]
 [ 2@0,	  2@0		  ]
 [ 1@0,	  3@0		  ]
@@ -1787,11 +1787,11 @@ reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(
 valuesList1.find(100@0).print();
 [ 10 ]
 reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(reverse(select(reverse(reverse(copy_order(reverse(sort(reverse(_MMCTOgroup_2))),reverse(indexList2)))),11@0))))).print();
-#-------------------------#
-# BAT:	  tmp_159	  #
-# (oid)	  (oid)		  #
-#-------------------------#
-[ 11@0,	  101@0		  ]
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 11@0,	  101@0	  ]
 [ 11@0,	  102@0		  ]
 valuesList1.find(101@0).print();
 [ 11 ]

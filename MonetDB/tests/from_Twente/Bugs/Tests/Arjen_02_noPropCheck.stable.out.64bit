@@ -217,7 +217,7 @@ stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 [ "tloc",			  "0",		  "0",		  "0"		  ]
 [ "tnodense",			  "0",		  "0",		  "0"		  ]
 [ "tnokey[0]",		  "0",		  "0",		  "0"		  ]
-[ "tnokey[1]",		  "0",		  "1",		  "1"		  ]
+[ "tnokey[1]",		  "0",		  "1",		  "0"		  ]
 [ "tnosorted",			  "0",		  "0",		  "0"		  ]
 [ "tnosorted_rev",		  "0",		  "0",		  "0"		  ]
 [ "top",		  "3",		  "3",		  "1"		  ]
