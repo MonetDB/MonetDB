@@ -74,9 +74,9 @@ typedef enum xquery_tokens {
 	XT_strip,
 	XT_default,
 	XT_element,
+	XT_element_lparen,
 	XT_elementconstructor_start,
 	XT_elementconstructor_end,
-	XT_element_test,
 	XT_element_content,
 	XT_quot_attr_content,
 	XT_apos_attr_content,
@@ -100,17 +100,21 @@ typedef enum xquery_tokens {
 	XT_construction,
 	XT_as,
 	XT_for,
+	XT_for_dollar,
 	XT_let,
+	XT_let_dollar,
 	XT_some,
 	XT_every,
 	XT_typeswitch,
 	XT_if,
+	XT_if_lparen,
 	XT_validate,
 	XT_lax,
 
 	XT_child,
 	XT_descendant,
 	XT_attribute,
+	XT_attribute_lparen,
 	XT_self,
 	XT_descendant_or_self,
 	XT_following_sibling,
@@ -127,15 +131,19 @@ typedef enum xquery_tokens {
 	
 	XT_document_node,
 	XT_text,
+	XT_text_lparen,
 	XT_text_constructor,
 	XT_comment,
+	XT_comment_lparen,
 	XT_pi,
 	XT_piconstructor_start,
 	XT_piconstructor_end,
 	XT_schema_attribute,
 	XT_schema_element,
 	XT_node,
+	XT_node_lparen,
 	XT_item,
+	XT_item_lparen,
 	XT_document,
 	XT_cdata,
 	XT_encoding,
@@ -265,9 +273,9 @@ XT2string(int token)
 	XT(strip);
 	XT(default);
 	XT(element);
+	XT(element_lparen);
 	XT(elementconstructor_start);
 	XT(elementconstructor_end);
-	XT(element_test);
 	XT(element_content);
 	XT(quot_attr_content);
 	XT(apos_attr_content);
@@ -291,17 +299,21 @@ XT2string(int token)
 	XT(construction);
 	XT(as);
 	XT(for);
+	XT(for_dollar);
 	XT(let);
+	XT(let_dollar);
 	XT(some);
 	XT(every);
 	XT(typeswitch);
 	XT(if);
+	XT(if_lparen);
 	XT(validate);
 	XT(lax);
 
 	XT(child);
 	XT(descendant);
 	XT(attribute);
+	XT(attribute_lparen);
 	XT(self);
 	XT(descendant_or_self);
 	XT(following_sibling);
@@ -318,15 +330,19 @@ XT2string(int token)
 	
 	XT(document_node);
 	XT(text);
+	XT(text_lparen);
 	XT(text_constructor);
 	XT(comment);
+	XT(comment_lparen);
 	XT(pi);
 	XT(piconstructor_start);
 	XT(piconstructor_end);
 	XT(schema_attribute);
 	XT(schema_element);
 	XT(node);
+	XT(node_lparen);
 	XT(item);
+	XT(item_lparen);
 	XT(document);
 	XT(cdata);
 	XT(encoding);
@@ -763,8 +779,8 @@ keyword_or_ident(xscanner * lc, int cur)
 			} else {
 				token = XT_QNAME;
 			}
-			prev = cur;
 		}
+		prev = cur;
 	}
 	(void)xscanner_token(lc, token);
 	k = find_keyword_bs(lc,s);
@@ -781,24 +797,6 @@ skip_white_space(xscanner * lc)
 	lc->yysval = lc->yycur;
 	while ((cur = xscanner_getc(lc)) != EOF && isspace(cur))
 		lc->yysval = lc->yycur;
-	return cur;
-}
-
-static int 
-skip_c_comment(xscanner * lc)
-{
-	int cur;
-	int prev = 0;
-	int started = lc->started;
-
-	lc->started = 1;
-	while ((cur = xscanner_getc(lc)) != EOF && 
-	       !(cur == '/' && prev == '*')) 
-		prev = cur;
-	lc->yysval = lc->yycur;
-	if (cur == '/')
-		cur = xscanner_getc(lc);
-	lc->started = started;
 	return cur;
 }
 
@@ -916,9 +914,6 @@ int xscanner_symbol(xscanner * lc, int cur)
 		next = xscanner_getc(lc);
 		if (next == '>') {
 			return xscanner_token(lc, XT_elementconstructor_end);
-		} else if (next == '*') {
-			cur = skip_c_comment(lc);
-			return tokenize(lc, cur);
 		} else {
 			lc->started = 1;
 			utf8_putchar(lc, next); 
@@ -1177,23 +1172,36 @@ xscanner_lex(xscanner *lc, char **sval)
 	if (!lc->yynext &&
 	    (token == XT_NCNAME || 
 	     token == XT_QNAME ||
-	     token == XT_element) && lc->state != XS_XML) {
+	     token == XT_if ||
+	     token == XT_attribute ||
+	     token == XT_comment ||
+	     token == XT_element ||
+	     token == XT_node || 
+	     token == XT_item || 
+	     token == XT_text) && lc->state != XS_XML) {
 		char *tval;
 		int next;
 
 		lc->yynext = -1; /* make sure we don't do this twice */
 		next = xscanner_lex(lc, &tval);
 		if (next == '(') {
-			if (token == XT_element)
-				token = XT_element_test;
-			else
+			switch(token) {
+			case XT_if: token = XT_if_lparen; break;
+			case XT_attribute: token = XT_attribute_lparen; break;
+			case XT_comment: token = XT_comment_lparen; break;
+			case XT_element: token = XT_element_lparen; break;
+			case XT_node: token = XT_node_lparen; break;
+			case XT_item: token = XT_item_lparen; break;
+			case XT_text: token = XT_text_lparen; break;
+			default:
 				token = XT_FNAME;
+			}
 			lc->yynext = 0;
 		} else {
 			lc->yynext = next;
 		}
 	}
-	if (!lc->yynext && token == XT_text){
+	if (!lc->yynext && token == XT_text){ /* TODO handle all bla { */
 		char *tval;
 		int next;
 
@@ -1201,6 +1209,26 @@ xscanner_lex(xscanner *lc, char **sval)
 		next = xscanner_lex(lc, &tval);
 		if (next == '{') {
 			token = XT_text_constructor;
+			lc->yynext = 0;
+		} else {
+			lc->yynext = next;
+		}
+	}
+	/* variable introduction $ */
+	if (!lc->yynext && (token == XT_for || token == XT_let)){ 
+		char *tval;
+		int next;
+
+		lc->yynext = -1; /* make sure we don't do this twice */
+		next = xscanner_lex(lc, &tval);
+		if (next == '$') {
+			switch (token) {
+			case XT_for: token = XT_for_dollar; break;
+			case XT_let: token = XT_let_dollar; break;
+			default:	
+				break;
+			}
+			lc->yynext = 0;
 		} else {
 			lc->yynext = next;
 		}

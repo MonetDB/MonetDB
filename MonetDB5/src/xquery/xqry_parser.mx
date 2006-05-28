@@ -313,7 +313,7 @@ parseSchemaElementTest(Client cntxt, Xbackend xb)
 STATIC int 
 parseElementTest(Client cntxt, Xbackend xb)
 {
-	if (curToken(xb) != XT_element_test)
+	if (curToken(xb) != XT_element_lparen)
 		return PARSE_ERR;
 	@:ptrace(parseElementTest)@
 	if (nextToken(xb) == '*'){
@@ -360,11 +360,9 @@ parseSchemaAttributeTest(Client cntxt, Xbackend xb)
 STATIC int 
 parseAttributeTest(Client cntxt, Xbackend xb)
 {
-	if (curToken(xb) != XT_attribute)
+	if (curToken(xb) != XT_attribute_lparen)
 		return PARSE_ERR;
 	@:ptrace(parseAttributeTest)@
-	if (nextToken(xb) != '(')
-		return xqryError(cntxt,"'(' expecte AttributeTest\n");
 	if (nextToken(xb) == '*'){
 		nextToken(xb);
 	} else
@@ -437,17 +435,15 @@ parseKindTest(Client cntxt, Xbackend xb)
 		return PARSE_OK;
 	}
 
-	if( curToken(xb) == XT_node) 
+	if( curToken(xb) == XT_node_lparen) 
 		kind= NODE_TEST; 
-	else if( curToken(xb) == XT_text) {
+	else if( curToken(xb) == XT_text_lparen) {
 		kind= TEXT_TEST; 
 		xqryPushText(xb);
-	} else if( curToken(xb) == XT_comment)
+	} else if( curToken(xb) == XT_comment_lparen)
 		kind= COMMENT_TEST; 
 	else 
 		return PARSE_ERR;
-	if( nextToken(xb) != '(') 
-		return xqryError(cntxt,"'(' expected in KindTest\n");
 	if( nextToken(xb) != ')') 
 		return xqryError(cntxt,"')' expected in KindTest\n");
 	xb->token = NO_TOKEN;
@@ -459,10 +455,8 @@ STATIC int
 parseItemType(Client cntxt, Xbackend xb)
 {
 	@:ptrace(parseItemType)@
-	if (curToken(xb) == XT_item) {
+	if (curToken(xb) == XT_item_lparen) {
 		int i;
-		if (nextToken(xb) != '(')
-			return xqryError(cntxt,"'(' expected in ItemType\n");
 		if (nextToken(xb) != ')')
 			return xqryError(cntxt,"')' expected in ItemType\n");
 		i = ITEM_TEST; 
@@ -630,7 +624,8 @@ parseCompElemConstructor(Client cntxt, Xbackend xb)
 	if (curToken(xb) != '{')
 		return xqryError(cntxt,"'{' expected in CompElemConstructor\n");
 	nextToken(xb);
-	parseExpr(cntxt,xb);
+	if (curToken(xb) != '}') 
+		parseExpr(cntxt,xb);
 	if (curToken(xb) != '}')
 		return xqryError(cntxt,"'}' expected in CompElemConstructor\n");
 	xb->token = NO_TOKEN;
@@ -918,6 +913,11 @@ parseNonReservedKeyword(Xbackend xb)
 	switch(curToken(xb)){
 	case XT_encoding:
 	case XT_collation:
+	case XT_let:
+	case XT_for:
+	case XT_if:
+	case XT_then:
+	case XT_else:
 		xb->token = NO_TOKEN;
 		return PARSE_OK;
 	default:
@@ -1029,19 +1029,20 @@ parsePrimaryExpr(Client cntxt, Xbackend xb)
 	}
 	/* ContextItemExpr */
 	if (curToken(xb) == '.') {
-		xb->token = NO_TOKEN;
 		@:etrace(parsePrimaryExpr)@
+		xb->token = NO_TOKEN;
 		return PARSE_OK;
 	} 
 	/* ParenthesizedExpr */
 	if (curToken(xb) == '(') {
 		nextToken(xb);
-		parseExpr(cntxt, xb);
+		/* optional */
+		if (curToken(xb) != ')')
+			parseExpr(cntxt, xb);
 		if (curToken(xb) != ')')
 			return xqryError(cntxt,"')' expected in PrimaryExpr\n");
 		@:etrace(parsePrimaryExpr)@
 		xb->token = NO_TOKEN;
-		@:etrace(parsePrimaryExpr)@
 		return PARSE_OK;
 	} 
 	/* OrderedExpr */
@@ -1054,6 +1055,8 @@ parsePrimaryExpr(Client cntxt, Xbackend xb)
 		if (curToken(xb) != '}')
 			return xqryError(cntxt,"'}' expected in PrimaryExpr\n");
 		xb->token = NO_TOKEN;
+		@:etrace(parsePrimaryExpr)@
+		return PARSE_OK;
 	} else if (curToken(xb) == XT_unordered) {
 		if (nextToken(xb) != '{')
 			return xqryError(cntxt,"'{' expected in PrimaryExpr\n");
@@ -1063,6 +1066,8 @@ parsePrimaryExpr(Client cntxt, Xbackend xb)
 		if (curToken(xb) != '}')
 			return xqryError(cntxt,"'}' expected in PrimaryExpr\n");
 		xb->token = NO_TOKEN;
+		@:etrace(parsePrimaryExpr)@
+		return PARSE_OK;
 	}
 	if (parseConstructor(cntxt, xb) == PARSE_OK ){
 		@:etrace(parsePrimaryExpr Constructor)@
@@ -1391,15 +1396,20 @@ parsePragma(Client cntxt, Xbackend xb)
 STATIC int 
 parseExtensionExpr(Client cntxt, Xbackend xb) 
 {
+	int res = PARSE_OK;
+	int i = 0;
 	@:ptrace(parseExtensionExpr)@
-	do {
-	} while (parsePragma(cntxt, xb) == PARSE_OK);
-	if (curToken(xb) != '(')
-		return xqryError(cntxt,"'(' expected in ExtensionExpr\n");
+	for(i=0; res == PARSE_OK; i++) {
+		res=parsePragma(cntxt, xb);
+	}
+	if (res == PARSE_ERR && i <= 1)
+		return PARSE_ERR;
+	if (curToken(xb) != '{')
+		return xqryError(cntxt,"'{' expected in ExtensionExpr\n");
 	nextToken(xb);
 	parseExpr(cntxt, xb);
-	if (curToken(xb) != ')')
-		return xqryError(cntxt,"')' expected in ExtensionExpr\n");
+	if (curToken(xb) != '}')
+		return xqryError(cntxt,"'}' expected in ExtensionExpr\n");
 	@:etrace(parseExtensionExpr)@
 	xb->token = NO_TOKEN;
 	return PARSE_OK;
@@ -1587,7 +1597,6 @@ parseMultiplicativeExpr(Client cntxt, Xbackend xb)
 		return res;
 	do {
 		if (curToken(xb) == '*') {
-			nextToken(xb);
 			op="*";
 		} else if (curToken(xb) == XT_div) {
 			op= "/";
@@ -1747,7 +1756,7 @@ STATIC int
 parseExprSingle(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseExprSingle)@
-	if (curToken(xb) == XT_for || curToken(xb) == XT_let) 
+	if (curToken(xb) == XT_for_dollar || curToken(xb) == XT_let_dollar) 
 		return parseFLWORExpr(cntxt, xb);
 	if (parseIfExpr(cntxt, xb) == PARSE_OK ||
 	    parseTypeswitchExpr(cntxt, xb) == PARSE_OK ||
@@ -1816,10 +1825,8 @@ STATIC int
 parseIfExpr(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseIfExpr)@
-	if (curToken(xb) != XT_if)
+	if (curToken(xb) != XT_if_lparen)
 		return PARSE_ERR;
-	if (nextToken(xb) != '(') 
-		return xqryError(cntxt,"'(' expected in IfExpr\n");
 	xb->token = NO_TOKEN;
 	if (parseExpr(cntxt, xb) == PARSE_ERR)
 		return xqryError(cntxt,"<Expr> expected in IfExpr\n");
@@ -1831,7 +1838,7 @@ parseIfExpr(Client cntxt, Xbackend xb)
 	xb->token = NO_TOKEN;
 	if (parseExprSingle(cntxt, xb) == PARSE_ERR)
 		return xqryError(cntxt,"<Expr> expected in IfExpr\n");
-	if (nextToken(xb) != XT_else) /* else isn't optional */
+	if (curToken(xb) != XT_else) /* else isn't optional */
 		return xqryError(cntxt,"'else' expected in IfExpr\n");
 	xb->token = NO_TOKEN;
 	return parseExprSingle(cntxt, xb);
@@ -1893,6 +1900,7 @@ STATIC int
 parseForClause(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseForClause)@
+	xb->token = '$';
 	do {
 		InstrPtr p;
 		int l,r;
@@ -1929,6 +1937,7 @@ STATIC int
 parseLetClause(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseLetClause)@
+	xb->token = '$';
 	do {
 		InstrPtr p;
 		int l,r;
@@ -1965,10 +1974,10 @@ parseFLWORExpr(Client cntxt, Xbackend xb)
 	int ret = PARSE_OK;
 	@:ptrace(parseFLWORExpr)@
 	do {
-		if (curToken(xb) == XT_for) {
+		if (curToken(xb) == XT_for_dollar) {
 			xb->token = NO_TOKEN;
 			ret = parseForClause(cntxt, xb);
-		} else if (curToken(xb) == XT_let) {
+		} else if (curToken(xb) == XT_let_dollar) {
 			xb->token = NO_TOKEN;
 			ret = parseLetClause(cntxt, xb);
 		} else {
@@ -2031,15 +2040,9 @@ parseParamList(Client cntxt, Xbackend xb)
 }
 
 STATIC int 
-parseFunctionDecl(Client cntxt, Xbackend xb, int declare) 
+parseFunctionDecl(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseFunctionDecl)@
-	if (declare) {
-		if (curToken(xb) != XT_declare) 
-			return PARSE_ERR; 
-		else
-			nextToken(xb);
-	}
 	if (curToken(xb) != XT_function)
 		return PARSE_ERR;
 	if (nextToken(xb) != XT_FNAME) 
@@ -2075,15 +2078,9 @@ parseConstructionDecl(Client cntxt, Xbackend xb)
 }
 
 STATIC int 
-parseVarDecl(Client cntxt, Xbackend xb, int declare) 
+parseVarDecl(Client cntxt, Xbackend xb ) 
 {
 	@:ptrace(parseVarDecl)@
-	if (declare) {
-		if (curToken(xb) != XT_declare) 
-			return PARSE_ERR; 
-		else	 
-			nextToken(xb);
-	}
 	if (curToken(xb) != XT_variable)
 		return PARSE_ERR;
 	if (nextToken(xb) != '$')
@@ -2114,8 +2111,10 @@ parseModuleImport(Client cntxt, Xbackend xb)
 	if (nextToken(xb) ==  XT_namespace) {
 		if (nextToken(xb) != XT_eq)
 			return xqryError(cntxt,"'=' expected in ModuleImport\n");
+		/* skip XT_eq */
+		nextToken(xb);
 	}
-	if (nextToken(xb) != XT_STR)
+	if (curToken(xb) != XT_STR)
 		return xqryError(cntxt,"<URIliteral> expected in ModuleImport\n");
 	if (nextToken(xb) != XT_at)
 		return xqryError(cntxt,"'at' expected in ModuleImport\n");
@@ -2249,15 +2248,9 @@ parseOrderingModeDecl(Client cntxt, Xbackend xb)
 }
 
 STATIC int 
-parseOptionDecl(Client cntxt, Xbackend xb, int declare) 
+parseOptionDecl(Client cntxt, Xbackend xb) 
 {
 	@:ptrace(parseOptionDecl)@
-	if (declare) {
-		if (curToken(xb) != XT_declare) 
-			return PARSE_ERR; 
-		else
-			nextToken(xb);
-	}
 	if (curToken(xb) != XT_option)
 		return PARSE_ERR;
 	nextToken(xb);
@@ -2353,17 +2346,16 @@ parseProlog(Client cntxt, Xbackend xb)
 	do {
 		if (curToken(xb) == XT_declare) {
 			nextToken(xb);
+			declare = 0;
 			if (curToken(xb) == XT_default) {
 				nextToken(xb);
 				if (parseDefaultNamespaceDecl(cntxt, xb) != PARSE_OK && 
 	    			    parseEmptyOrderDecl(cntxt, xb) != PARSE_OK &&
 	    			    parseDefaultCollationDecl(cntxt, xb) != PARSE_OK) {
-					declare = 0;
 					break;
 				}
 			} else if (parseSetter(cntxt, xb) != PARSE_OK &&
 			           parseNamespaceDecl(cntxt, xb) != PARSE_OK) {
-				declare = 0;
 				break;
 			}
 		} else if (parseImport(cntxt, xb) == PARSE_ERR)
@@ -2371,17 +2363,25 @@ parseProlog(Client cntxt, Xbackend xb)
 		if (curToken(xb) != ';')
 			break;
 		nextToken(xb);
+		declare = 1;
 	} while (1);
 
 	do {
-		if (parseVarDecl(cntxt, xb, declare) != PARSE_OK &&
-		    parseFunctionDecl(cntxt, xb, declare) != PARSE_OK &&
-		    parseOptionDecl(cntxt, xb, declare) != PARSE_OK)
+		if (declare) {
+			if (curToken(xb) == XT_declare) {
+				nextToken(xb);
+			} else {
+				break;
+			}
+		} 
+		if (parseVarDecl(cntxt, xb) != PARSE_OK &&
+		    parseFunctionDecl(cntxt, xb) != PARSE_OK &&
+		    parseOptionDecl(cntxt, xb) != PARSE_OK)
 			break;
-		declare = 1;
 		if (curToken(xb) != ';')
 			break;
 		nextToken(xb);
+		declare = 1;
 	} while (1);
 	@:etrace(parseProlog)@
 	return PARSE_OK;
