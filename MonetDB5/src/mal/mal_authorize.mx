@@ -36,16 +36,17 @@ usernames, passwords and allowed scenarios for users of the server.
 #include "mal_instruction.h"
 #include "mal_client.h"
 
-mal_export str AUTHcheckCredentials(oid *uid, str *user, str *passwd, str *challenge, str *algo, str *scenario);
-mal_export str AUTHaddUser(oid *uid, str *user, str *pass, bat *scenarios);
+mal_export str AUTHcheckCredentials(oid *ret, str *user, str *passwd, str *challenge, str *algo, str *scenario);
+mal_export str AUTHaddUser(oid *ret, str *user, str *pass, bat *scenarios);
 mal_export str AUTHremoveUser(str *username);
 mal_export str AUTHchangeUsername(str *olduser, str *newuser);
 mal_export str AUTHchangePassword(str *oldpass, str *passwd);
 mal_export str AUTHsetPassword(str *username, str *passwd);
 mal_export str AUTHaddScenario(str *username, str *scenario);
 mal_export str AUTHremoveScenario(str *username, str *scenario);
-mal_export str AUTHresolveUser(str *username, oid *uid);
-mal_export str AUTHgetUsername(str *username);
+mal_export str AUTHresolveUser(str *ret, oid *uid);
+mal_export str AUTHgetUsername(str *ret);
+mal_export str AUTHgetUsers(bat *ret, bat *scenarios);
 
 mal_export str AUTHrequireAdmin();
 mal_export str AUTHrequirteAdminOrUser(str *username);
@@ -150,10 +151,9 @@ void
 AUTHcommit() {
 	BAT *b = BATnew(TYPE_void, TYPE_str, 3);
 
-	BUNappend(b, BBPname(user->batCacheid), FALSE);
-	BUNappend(b, BBPname(pass->batCacheid), FALSE);
-	BUNappend(b, BBPname(scen->batCacheid), FALSE);
-
+	BUNappend(b, BATgetId(user), FALSE);
+	BUNappend(b, BATgetId(pass), FALSE);
+	BUNappend(b, BATgetId(scen), FALSE);
 	TMsubcommit(b);
 	BBPreclaim(b);
 }
@@ -181,7 +181,7 @@ AUTHinitTables() {
 			throwMal("initTables", "could not allocate user table");
 
 		BATkey(BATmirror(b), TRUE);
-		BBPrename(b->batCacheid, "M5system_auth_user");
+		BBPrename(BBPcacheid(b), "M5system_auth_user");
 		BATmode(b, PERSISTENT);
 	} else {
 		b = BATdescriptor(bid);
@@ -198,7 +198,7 @@ AUTHinitTables() {
 		if (b == NULL)
 			throwMal("initTables", "could not allocate password table");
 
-		BBPrename(b->batCacheid, "M5system_auth_passwd");
+		BBPrename(BBPcacheid(b), "M5system_auth_passwd");
 		BATmode(b, PERSISTENT);
 	} else {
 		b = BATdescriptor(bid);
@@ -215,7 +215,7 @@ AUTHinitTables() {
 			throwMal("initTables", "could not allocate scenario table");
 
 		BATkey(b, TRUE);
-		BBPrename(b->batCacheid, "M5system_auth_scen");
+		BBPrename(BBPcacheid(b), "M5system_auth_scen");
 		BATmode(b, PERSISTENT);
 	} else {
 		b = BATdescriptor(bid);
@@ -360,8 +360,8 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 		throwMalf("addUser", "user '%s' already exists", *username);
 	
 	/* we assume the BATs are still aligned */
-	BUNappend(user, *username, 0);
 	rethrow("addUser", tmp, AUTHcypherValue(&hash, passwd));
+	BUNappend(user, *username, 0);
 	BUNappend(pass, hash, 0);
 	/* retrieve the oid of the just inserted user */
 	p = BUNfnd(userrev, *username);
@@ -482,6 +482,7 @@ str
 AUTHchangePassword(str *oldpass, str *passwd) {
 	BUN p;
 	str tmp;
+	str hash;
 	oid id;
 
 	/* precondition checks */
@@ -490,20 +491,19 @@ AUTHchangePassword(str *oldpass, str *passwd) {
 	if (*passwd == NULL || strNil(*passwd))
 		throwIllArg("changePassword", "password should not be nil");
 
-	/* In the future a check could be here to see if the password is a
-	 * valid hash.  Using an invalid hash (like prepending a ! in front
-	 * of it) could be used to 'disable' accounts. */
-
 	/* check the old password */
 	id = MCgetClient()->user;
 	p = BUNfnd(pass, &id);
+	assert(p != NULL);
 	tmp = BUNtail(pass, p);
 	assert (tmp != NULL);
 	if (strcmp(tmp, *oldpass) != 0)
 		throwIC("changePassword", "Access denied");
 
+	/* cypher the password */
+	rethrow("setPassword", tmp, AUTHcypherValue(&hash, passwd));
 	/* ok, just overwrite the password field for this user */
-	BUNinplace(pass, p, BUNhead(pass, p), *passwd, 0);
+	BUNinplace(pass, p, BUNhead(pass, p), &hash, 0);
 	AUTHcommit();
 
 	return(MAL_SUCCEED);
@@ -519,6 +519,7 @@ str
 AUTHsetPassword(str *username, str *passwd) {
 	BUN p;
 	str tmp;
+	str hash;
 	oid id;
 
 	rethrow("setPassword", tmp, AUTHrequireAdmin());
@@ -528,10 +529,6 @@ AUTHsetPassword(str *username, str *passwd) {
 		throwIllArg("setPassword", "username should not be nil");
 	if (*passwd == NULL || strNil(*passwd))
 		throwIllArg("setPassword", "password should not be nil");
-
-	/* In the future a check could be here to see if the password is a
-	 * valid hash.  Using an invalid hash (like prepending a ! in front
-	 * of it) could be used to 'disable' accounts. */
 
 	id = MCgetClient()->user;
 	/* find the name of the administrator and see if it equals username */
@@ -545,12 +542,15 @@ AUTHsetPassword(str *username, str *passwd) {
 	/* see if the user is valid */
 	p = BUNfnd(userrev, *username);
 	if (p == NULL)
-		throwMalf("changePassword", "user '%s' does not exist", *username);
+		throwMalf("setPassword", "no such user '%s'", *username);
+	id = *(oid*)BUNtail(userrev, p);
 
+	/* cypher the password */
+	rethrow("setPassword", tmp, AUTHcypherValue(&hash, passwd));
 	/* ok, just overwrite the password field for this user */
 	p = BUNfnd(pass, &id);
 	assert (p != NULL);
-	BUNinplace(pass, p, BUNhead(pass, p), *passwd, 0);
+	BUNinplace(pass, p, BUNhead(pass, p), &hash, 0);
 	AUTHcommit();
 
 	return(MAL_SUCCEED);
@@ -566,8 +566,10 @@ str
 AUTHaddScenario(str *username, str *scenario) {
 	BUN p;
 	str tmp;
+	oid *id;
+	BAT *b;
 
-	rethrow("addUser", tmp, AUTHrequireAdmin());
+	rethrow("addScenario", tmp, AUTHrequireAdmin());
 
 	/* precondition checks */
 	if (*username == NULL || strNil(*username))
@@ -579,6 +581,15 @@ AUTHaddScenario(str *username, str *scenario) {
 	p = BUNfnd(userrev, *username);
 	if (p == NULL)
 		throwMalf("addScenario", "user '%s' does not exist", *username);
+	id = (oid*)BUNtail(userrev, p);
+
+	/* see if this scenario is not already there */
+	b = BATselect(BATmirror(scen), id, id);
+	b = BATselect(BATmirror(b), *scenario, *scenario);
+	if (BATcount(b) == 1)
+		throwMalf("addScenario", "scenario '%s' already exists for user", *scenario);
+	if (BATcount(b) > 1)
+		throwMalf("addScenario", "inconsistent authorisation administration, scenario '%s' multiple times defined", *scenario);
 
 	/* add the scenario for this user */
 	BUNins(scen, BUNtail(userrev, p), *scenario);
@@ -596,9 +607,10 @@ str
 AUTHremoveScenario(str *username, str *scenario) {
 	BUN p;
 	BAT *b;
+	oid *id;
 	str tmp;
 
-	rethrow("addUser", tmp, AUTHrequireAdmin());
+	rethrow("removeScenario", tmp, AUTHrequireAdmin());
 
 	/* precondition checks */
 	if (*username == NULL || strNil(*username))
@@ -610,9 +622,10 @@ AUTHremoveScenario(str *username, str *scenario) {
 	p = BUNfnd(userrev, *username);
 	if (p == NULL)
 		throwMalf("removeScenario", "user '%s' does not exist", *username);
+	id = (oid*)BUNtail(userrev, p);
 
 	/* see if the scenario is valid for this user */
-	b = BATselect(scen, BUNtail(userrev, p), BUNtail(userrev, p));
+	b = BATselect(BATmirror(scen), id, id);
 	b = BATselect(BATmirror(b), *scenario, *scenario);
 	if (BATcount(b) == 0)
 		throwMalf("removeScenario", "scenario '%s' not found for user", *scenario);
@@ -672,6 +685,64 @@ AUTHgetUsername(str *username) {
 
 	*username = BUNtail(user, p);
 	return(MAL_SUCCEED);
+}
+
+/**
+ * Returns a BAT with user names in the tail, and user ids in the head.
+ * Only those users are returned that have access to all of the given
+ * scenarios.
+ */
+str
+AUTHgetUsers(bat *ret, bat *scenarios) {
+	BAT *b, *r;
+	str tmp;
+
+	rethrow("getUsers", tmp, AUTHrequireAdmin());
+
+	if (*scenarios != bat_nil) {
+		b = BATdescriptor(*scenarios);
+		if (b == NULL)
+			throwIllArg("getUsers", "invalid BAT!");
+		if (b->htype != TYPE_str)
+			throwIllArg("getUsers", "BAT should have str head");
+
+		if (BATcount(b) == 0) {
+			/* we can simply copy the whole users table, as there is no
+			 * selection */
+			r = BATrcopy(user);
+		} else {
+			BAT *t1;
+			BAT *t2;
+			
+			/* we have to do some work in order to return the requested
+			 * rows; only those that have the given scenario(s) (all of
+			 * them) */
+
+			/* all users with no scenarios are always in the return
+			 * list, we find them by "inversing" the list of users
+			 * *with* a scenario */
+			t1 = BATkdiff(user, BATkunique(scen));
+			
+			/* find users with one or more scenarios in the given BAT */
+			t2 = BATjoin(
+					VIEWcombine(BATkunique(BATjoin(scen, b, BATcount(scen)))),
+					user,
+					BATcount(user)
+				);
+
+			/* the final result is the union of both (we can discard the
+			 * tail, as they *should* be equal when the heads are equal
+			 * too... */
+			r = BATkunion(t1, t2);
+		}
+		BBPunfix(*scenarios);
+	} else {
+		r = BATrcopy(user);
+		BBPunfix(*scenarios);
+	}
+
+	*ret = BBPcacheid(r);
+	return(NULL);
 }
 
 

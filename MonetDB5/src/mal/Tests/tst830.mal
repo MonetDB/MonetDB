@@ -20,8 +20,20 @@ exit MALexception;
 	id := clients.addUser("checkpoint", "Pcheckpoint", t);
 	io.print(id);
 
+	# do a simple listing of users known
+	u := clients.getUsers(t);
+	io.print(u);
+	bat.insert(t, "mal", nil:void);
+	bat.insert(t, "sql", nil:void);
+	u := clients.getUsers(t);
+	io.print(u);
+
 	# should work, we're the admin here
 	clients.removeUser("checkpoint");
+
+	# do a simple listing of users known
+	u := clients.getUsers(t);
+	io.print(u);
 
 	# just remove the scenarios one by one, should work
 	clients.removeScenario("test", "mal");

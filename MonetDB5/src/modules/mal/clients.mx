@@ -114,6 +114,7 @@ mal_export str CLTsetPassword(int *ret, str *usr, str *new);
 mal_export str CLTcheckPermission(int *ret, str *usr, str *pw, str *sc);
 mal_export str CLTaddScenario(int *ret, str *usr, str *sc);
 mal_export str CLTremoveScenario(int *ret, str *usr, str *sc);
+mal_export str CLTgetUsers(bat *ret, bat *scens);
 
 #endif /* _CLIENTS_H */
 @c
@@ -193,7 +194,7 @@ CLTInfo(int *ret)
 		return throwMessage("catalog.clientInfo", "failed to create BAT");
 
 	BUNins(b, "user", local_itoa((int)c->user));
-	BUNins(b, "password", ""); /* TODO: load from system tables */
+	BUNins(b, "password", ""); /* FIXME: get rid of this */
 	BUNins(b, "permission", local_itoa(c->permission));
 	BUNins(b, "scenario", c->scenario);
 	BUNins(b, "timer", local_itoa((int) c->timer));
@@ -460,13 +461,25 @@ str CLTaddScenario(int *ret, str *usr, str *sc) {
 @mal
 command removeScenario(usr:str, sc:str):void
 address CLTremoveScenario
-comment "remove the given scenario from the allowed scenatios for the given user";
+comment "remove the given scenario from the allowed scenarios for the given user";
 @c
 str CLTremoveScenario(int *ret, str *usr, str *sc) {
 	str tmp;
 	(void) ret;
 
 	rethrow("removeScenario", tmp, AUTHremoveScenario(usr, sc));
+	return(MAL_SUCCEED);
+}
+
+@mal
+command getUsers(s:bat[:str,:any_1]):bat[:oid,:str]
+address CLTgetUsers
+comment "return a BAT with user id and name available in the system with access to the given scenario(s)";
+@c
+str CLTgetUsers(bat *ret, bat *scens) {
+	str tmp;
+
+	rethrow("getUsers", tmp, AUTHgetUsers(ret, scens));
 	return(MAL_SUCCEED);
 }
 @}
