@@ -174,10 +174,10 @@ stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 # h			a		aA		aA2		  # name
 # str			str		str		str		  # type
 #-------------------------------------------------------------------------#
-[ "batBuns.filename",	  "33.buns",	  "32.buns",	  "32.buns"	  ]
+[ "batBuns.filename",	  "33.buns",	  "36.buns",	  "36.buns"	  ]
 [ "batBuns.free",	  "12",		  "3",		  "1"		  ]
-[ "batBuns.maxsize",	  "200",	  "52",		  "1"		  ]
-[ "batBuns.size",	  "200",	  "50",		  "1"		  ]
+[ "batBuns.maxsize",	  "200",	  "200",	  "1"		  ]
+[ "batBuns.size",	  "200",	  "200",	  "1"		  ]
 [ "batBuns.storage",		  "malloced",	  "malloced",	  "malloced"	  ]
 [ "batCacheid",		  "27",		  "30",		  "33"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
@@ -217,7 +217,7 @@ stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 [ "tloc",			  "0",		  "0",		  "0"		  ]
 [ "tnodense",			  "0",		  "0",		  "0"		  ]
 [ "tnokey[0]",		  "0",		  "0",		  "0"		  ]
-[ "tnokey[1]",		  "0",		  "1",		  "1"		  ]
+[ "tnokey[1]",		  "0",		  "1",		  "0"		  ]
 [ "tnosorted",			  "0",		  "0",		  "0"		  ]
 [ "tnosorted_rev",		  "0",		  "0",		  "0"		  ]
 [ "top",		  "3",		  "3",		  "1"		  ]
