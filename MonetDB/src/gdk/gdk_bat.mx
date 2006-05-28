@@ -1703,8 +1703,10 @@ BATseqbase(BAT *b, oid o)
 				if (b->hkey)
 					m->tkey = b->hkey = FALSE;
 			} else {
-				if (!b->hkey)
+				if (!b->hkey) {
 					m->tkey = b->hkey = TRUE;
+					b->H->nokey[0] = b->H->nokey[1] = 0; 
+				}
 			}
 		}
 	}
