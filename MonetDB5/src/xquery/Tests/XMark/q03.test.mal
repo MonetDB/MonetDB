@@ -40,46 +40,63 @@
 #}
 
 # FOR    $b IN document("auction.xml")/site/open_auctions/open_auction
-mr:= mguide.open("auctions.xml");
-b1 := mguide.bind(mg,"site/open_auctions/open_auction");
+mg:= mguide.open("auctions.xml");
+b0:bat[:oid,:oid]:= xml.bind(mg,"site/open_auctions/open_auction");
+# create the context node set
+# b := bat.mirrorTail(b0);
 
-# WHERE  $b/bidder[1]
-b2 := mguide.bind(mg,"site/open_auctions/open_auction/bidder");
-f0 := group.first(b2); # to be implemented
-f1 := algebra.semijoin(b1,f0);
+# WHERE  $b/bidder[1] -> [open_auction,bidder]
+x0:bat[:oid,:oid]:= mguide.bind(mg,"/site/open_auctions/open_auction/bidder");
+# detect that the head of x0 is fully covered by b, which is a path prefix match
+# and no further reduction has been made. Then the next join is trivial.
+X1 := algebra.join(b,x0);
+g0:= group.first(x1);
 
 # WHERE  $b/bidder[1]/increase/text()
 b3 := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase");
-f2 := bat.join(f1,b3);
-b4 := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase/cdata");
+f2 := bat.join(g0,b3);
+b4 := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase/text()");
 f3 := bat.join(f2,b4);
-b5 := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase/cdata/double@");
-f4 := bat.join(f3,b5);
 
 # WHERE  $b/bidder[1]/increase/text() * 2
-f5 := batcalc.*(f4,2.0);
+f4 := batcalc.int(f3);
+# we should probably use .../increase/int() and generate an error if not
+# all text is a legal integer
+f5 := batcalc.*(f4,2);
 
 # $b/bidder[last()]
-b6 := mguide.bind(mg,"site/open_auctions/open_auction/bidder");
-f6 := group.last(b6); # to be implemented
-f7 := algebra.semijoin(b1,f6);
+x2:bat[:oid,:oid] := mguide.bind(mg,"site/open_auctions/open_auction/bidder");
+x3 := algebra.join(b,x2);
+# f6 represents the edge [open_auction,bidder[1]]
+f6 := group.last(x3); # to be implemented
 
 # $b/bidder[last()]/increase/text()
 b7 := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase");
-f8 := bat.join(f7,b7);
-b8 := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase/cdata");
+f8 := bat.join(f6,b7);
+# at this stage we already know we need an integer
+b8 := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase/int()");
 f9 := bat.join(f8,b8);
-b9 := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase/cdata/double@");
-f10 := bat.join(f9,b9);
 
 # WHERE  $b/bidder[1]/increase/text() *2 <= $b/bidder[last()]/increase/text()
-r0 := bat.thetajoin(f5,f10, "<=" );
+# both operands are arbitrary bat[:oid,:int] objects, which call for a more
+# complicated comparison, where the comparison is only made if the oids also match.
+# Furthermore, Xquery only requires for each lhs to find a rhs that satisfies the constraint.
+# What if there are multiple existencials in the same conditions?
+r0 := xq.<=(f5,f9);
 
-# sort
-r1 := algebra.sort(r0);
+# consolidate the result of the expression in the qualifying b-nodes
+b := algebra.semijoin(b,r0);
+# how about the second operand?
+
+
+# sort the documents for retrieval
+b := algebra.sort(b);
 
 mr := mguide.new("result");
-e0 := mguide.addElement(mr, "increase", r1);
-e1 := mguide.addAttribute(mr, e0, "first@", f4);
-e2 := mguide.addAttribute(mr, e0. "last@", f10);
+e0 := mguide.add(mr, "/increase", b);
+# assume the common expression optimizer to take care of some stuff
+mguide.add(mr, "/increase/@first", f3);
+mguide.add(mr, "/increase/@last", f9);
+mguide.add(mg,"/increase/@last/int()",f4);
+mguide.add(mg,"/increase/@last/int()",b8);
 mguide.serialize(mr);

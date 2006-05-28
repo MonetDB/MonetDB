@@ -1,0 +1,37 @@
+# Query Q4:
+# List the reserves of those open auctions where a certain person
+# issued a bid before another person
+
+# FOR    $b IN document("auction.xml")/site/open_auctions/open_auction
+# WHERE  $b/bidder/personref[id="person20"] BEFORE
+#        $b/bidder/personref[id="person51"]
+# RETURN <history> $b/initial/text() </history>
+
+# This time, we stress the textual nature of XML documents by querying
+# the tag order in the source document.
+
+#var monet_guide := bat("mxml_guide");
+
+# FOR    $b IN document("auction.xml")/site/open_auctions/open_auction
+mg:= mguide.open("auctions.xml");
+b0:bat[:oid,:oid]:= xml.bind(mg,"site/open_auctions/open_auction");
+# create the context node set
+# b := bat.mirrorTail(b0);
+
+#$b/bidder/personref-> [bidder,personref] no reduction needed on $b
+b1:bat[:oid,:oid] := mguide.bind(mg","/site/open_auctions/open_auction/bidder/personref/@id/text()");
+#$b/bidder/personref[id="person20"] -> [id,text()]
+t0 := algebra.uselect(b1,"person20");
+
+b2:bat[:oid,:oid] := mguide.bind(mg","/site/open_auctions/open_auction/bidder/personref/@id");
+b3 := xq.ancestor(b1,b2); # produces [personref,id]
+b4:bat[:oid,:oid] := mguide.bind(mg","/site/open_auctions/open_auction/bidder/personref");
+t0 := xq.ancestor(b3,b4); # produces [bidder,personref]
+
+
+# similar for second operand
+
+# limit to the early bidders
+r0 := xq.before(t0,t1);
+
+

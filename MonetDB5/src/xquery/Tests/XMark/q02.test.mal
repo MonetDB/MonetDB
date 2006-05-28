@@ -31,25 +31,37 @@
 
 # FOR    $b IN document("auction.xml")/site/open_auctions/open_auction
 mg:= mguide.open("auctions.xml");
-x0:bat[:oid,:oid]:= xml.bind(mg,"site/open_auctions/open_auction");
+b0:bat[:oid,:oid]:= xml.bind(mg,"site/open_auctions/open_auction");
+# create the context node set
+# b := bat.mirrorTail(b0);
+# you don't need this restriction, because the complete set is used
+# Delay reduction of variables until you really need them for values
+# use b as the alias, or generate code that is easily removed later on
+b := b0;
 
 # RETURN <increase> 
 mr:= mguide.new("result");
 
 # RETURN <increase> $b/bidder[1]
-x0:bat[:oid,:oid]:= mguide.bind(mg,"site/open_auctions/open_auction/bidder");
-g1:= group.first(x0);
+x0:bat[:oid,:oid]:= mguide.bind(mg,"/site/open_auctions/open_auction/bidder");
+# detect that the head of x0 is fully covered by b, which is a path prefix match
+# and no further reduction has been made. Then the next join is trivial.
+X1 := algebra.join(b,x0);
+g0:= group.first(x1);
 
 # RETURN <increase> $b/bidder[1]/increase/
-x2:bat[:oid,:oid]:= mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase");
-b2:= algebra.outerjoin(x0,x2);
+x2:bat[:oid,:oid]:= mguide.bind(mg,"/site/open_auctions/open_auction/bidder/increase");
+# the path represented by g0 is a reduced one, which we have to propagate
+g1 := algebra.join(g0,x2);
+# we now have [open_auction,increase] using bidder[1] as an intermediate.
+# this technique is like building a constrainted path index between arbitrary nodes.
 
 # RETURN <increase> $b/bidder[1]/increase/text() </increase>
-x3:bat[:oid,:oid] := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase/cdata");
-x4:bat[:oid,:str] := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase/cdata/str@");
+x3:bat[:oid,:str] := mguide.bind(mg,"/site/open_auctions/open_auction/bidder/increase/string()");
+# it suffices link the remainder in the guide.
 
-e0:= mguide.addElement(mr,"increase",b2);
-e2:= mguide.addElement(mr,e0,"cdata",x3);
-e3:= mguide.addAttribute(mr,e2,"str@",x4);
+# this example lacks a single doc-id for the result
+e0 := mguide.add(mr,"/increase",g1);
+e1:= mguide.add(mr,"/increase/string()",x3);
 
 mguide.serialize(mr);
