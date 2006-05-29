@@ -20,7 +20,7 @@ package nl.cwi.monetdb.client.util;
 
 import java.io.*;
 import java.sql.*;
-import java.util.*;
+
 
 public abstract class Exporter {
 	protected PrintWriter out;
