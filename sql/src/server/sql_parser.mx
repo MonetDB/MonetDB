@@ -1561,15 +1561,8 @@ view_as:
 opt_with_check_option_data:
    /*empty*/						{dlist *l= L();
 							append_int(l,0);
-							append_int(l,0);
 							$$ = l;}
- |  WITH CHECK OPTION					{dlist *l= L();
-							append_int(l,1);
-							append_int(l,1);
-							$$ = l;}
-
  |  with_or_without_data				{dlist *l= L();
-							append_int(l,0);
 							append_int(l,$1);
 							$$ = l;}
  ;

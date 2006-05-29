@@ -75,7 +75,6 @@ create_replication_table(sql_trans *tr, sql_schema *s){
         t = sql_trans_create_table(tr, s, "replication", 1, 0, 0, 1, LOCATION, REPLICATION);
         
 	create_column(tr, t, "replication_id", "int",32); 	
-        create_column(tr, t, "columns_id", "int",32);		/*id for the columns table where information about all remote columns exist*/
 	create_column(tr, t, "in/out", "int",9); 		/*If the table is used for a remote view(OUT-1) or use a remote table(IN-0)*/
 	create_column(tr, t, "push/pull", "int",9); 		/*The kind of refresh*/
         create_column(tr, t, "refresh_time", "int",32);		/*time for cycle refresh, -1 no cycle refresh*/

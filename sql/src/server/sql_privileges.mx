@@ -479,7 +479,7 @@ mvc_get_schema(mvc *m, char *user)
 	mvc_trans(m);
 
 	sys = find_sql_schema(m->session->tr, "sys");
-	users = find_sql_table(sys, "db_users");
+	users = find_sql_table(sys, "db_users",LOCATION);
 	users_name = find_sql_column(users, "name");
 
 	if ((rid = column_find_row(m->session->tr, users_name, user, NULL)) >= 0) {
@@ -487,7 +487,7 @@ mvc_get_schema(mvc *m, char *user)
 		sql_column *users_schema = find_sql_column(users, "default_schema");
 		void *p = column_find_value(m->session->tr, users_schema, rid);
 		unsigned int schema_id = *(unsigned int *)p;
-		sql_table *schemas = find_sql_table(sys, "schemas");
+		sql_table *schemas = find_sql_table(sys, "schemas",LOCATION);
 		sql_column *schemas_name = find_sql_column(schemas, "name");
 		sql_column *schemas_id = find_sql_column(schemas, "id");
 
