@@ -47,7 +47,8 @@ public class Test_Csavepoints {
 
 		try {
 			System.out.print("2. savepoint...");
-			Savepoint sp1 = con.setSavepoint();
+			/* make a savepoint, and discard it */
+			con.setSavepoint();
 			System.out.println("passed :)");
 
 			stmt.executeUpdate("CREATE TABLE table_Test_Csavepoints ( id int, PRIMARY KEY (id) )");
