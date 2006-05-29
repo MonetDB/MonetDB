@@ -1793,7 +1793,7 @@ SERVERmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			SERVERfieldAnalysis(fld2, tt, &tval);
 			BUNins(b,VALget(&hval),VALget(&tval));
 		}
-	//}
+	/*}*/
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
