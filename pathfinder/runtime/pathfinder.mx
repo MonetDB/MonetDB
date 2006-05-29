@@ -363,9 +363,9 @@ var ws_mem; # of those, all master non-rid_* bats, and their (copy-on-write) upd
 var ws_shr; # all bats delivered by shredder, and their future persistent names
 
 # standoff extensions
-var burkowski := false;
-if (monet_environment.exist("burkowski"))
-    burkowski := =(monet_environment.find("burkowski"),"enabled"); 
+var standoff := false;
+if (monet_environment.exist("standoff"))
+    standoff := =(monet_environment.find("standoff"),"enabled"); 
 
 # initialize doc_query and doc_sema (use BBP as global mechanism to discover initialization)
 # note that this is required for concurrent MapiClient MIL sessions to share each other's variables.
@@ -703,20 +703,21 @@ PROC shred_doc_impl(BAT[str,bat] docBAT, str location, str name, str collection,
     # add indices to the shredded doc, and find out maximum doc height
     var height := index_doc(shredRES, docBAT);
 
-#[BURKOWSKI]
-    if (burkowski) {
-        print("# extracting regions...\n");
-        docBAT := region_extract(docBAT, "lng");
-    } else {
-       var r_pre, r_start, r_end;
-       (r_pre := bat(void, oid).seqbase(0@0)).bbpname("_region_pre");
+#[StandOff] [FIXME: OBSOLETE CODE], we do not use persistent region-indices anymore
+    # TODO: remove REGION_PRE, REGION_START and REGION_END from document-bats
+    #if (standoff) {
+    #    print("# extracting regions...\n");
+    #    docBAT := region_extract(docBAT, "lng");
+    #} else {
+       var r_nid, r_start, r_end;
+       (r_nid := bat(void, oid).seqbase(0@0)).bbpname("_region_pre");
        (r_start := bat(void, lng).seqbase(0@0)).bbpname("_region_start");
        (r_end := bat(void, lng).seqbase(0@0)).bbpname("_region_end");
-       docBAT.access(BAT_WRITE).insert("_region_pre",r_pre); 
+       docBAT.access(BAT_WRITE).insert("_region_pre",r_nid); 
        docBAT.access(BAT_WRITE).insert("_region_start",r_start); 
        docBAT.access(BAT_WRITE).insert("_region_end",r_end); 
-    }
-#[/BURKOWSKI]
+    #}
+#[/StandOff]
     if (collection != name) {
         # TODO: modify shredder such that it adds to the bats rather than creating new ones 
         #       also think of rebuilding/extending to the indices!

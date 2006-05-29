@@ -47,10 +47,10 @@ lib__pf_support = {
 		-l_streams -l_builtin -l_ascii_io -l_algebra -l_constant
 }
 
-lib__pf_burk = {
+lib__pf_standoff = {
 	DIR = libdir/MonetDB
 	SOURCES = \
-		pf_burk.mx 
+		pf_standoff.mx 
 
 	LIBS = \
 		$(PF_LIBS) $(MONETDB_LIBS) \
@@ -95,6 +95,6 @@ lib__xquery_rpc = {
 
 scripts_mil = {
 	DIR = libdir/MonetDB
-	SOURCES = pathfinder.mx pf_support.mx pf_burk.mx xquery_rpc.mx
+	SOURCES = pathfinder.mx pf_support.mx pf_standoff.mx xquery_rpc.mx
 }
 
