@@ -1772,9 +1772,12 @@ SERVERmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	/* hack for virtual ids */
 	if (ht == TYPE_void)
 		BATseqbase(b, 0);
+	/*
 	if (tt == TYPE_void)
 		BATseqbase(BATmirror(b), 0);
+	*/
 	i= 0;
+	/*
 	if (ht== TYPE_void) {
 		while( mapi_fetch_row(hdl)){
 			fld2= mapi_fetch_field(hdl,1);
@@ -1782,6 +1785,7 @@ SERVERmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			BUNappend(b,VALget(&tval), FALSE);
 		}
 	} else {
+	*/
 		while( mapi_fetch_row(hdl)){
 			fld1= mapi_fetch_field(hdl,0);
 			fld2= mapi_fetch_field(hdl,1);
@@ -1789,7 +1793,7 @@ SERVERmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			SERVERfieldAnalysis(fld2, tt, &tval);
 			BUNins(b,VALget(&hval),VALget(&tval));
 		}
-	}
+	//}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);

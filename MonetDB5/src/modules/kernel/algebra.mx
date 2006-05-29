@@ -171,7 +171,7 @@ address ALGgroupby
 comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
 
 command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2, 
-		li:bit, hi:bit) :bat[:any_1,:oid] 
+		li:bit, hi:bit) :bat[:any_1,:void] 
 address ALGuselectInclusive
 comment "See select() but limited to head values";
 
