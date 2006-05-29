@@ -314,7 +314,14 @@ if [ "${os}" = "Darwin" ] ; then
 	fi
 fi
 
-if [ "${os}" = "SunOS" ] ; then
+if [ "${os}" = "SunOS" -a "${hw}" = "i86pc" ] ; then
+	# pkg-get software 
+	softpath="/opt/csw"
+	binpath="$softpath/bin:${binpath}"
+	libpath="$softpath/lib:${libpath}"
+fi
+
+if [ "${os}" = "SunOS" -a "${hw}" != "i86pc" ] ; then
 	# "our" /soft[64] path on apps
 	soft32="/var/tmp${soft32}"
 	soft64="/var/tmp${soft64}"

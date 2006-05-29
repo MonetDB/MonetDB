@@ -169,7 +169,7 @@ sql_symbol2stmt(mvc *c)
 				stmt_destroy(s);
 				s = rel2bin(c, opt);
 				stmt_destroy(opt);
-				return opt;
+				return s;
 			}
 		}
 	}  else {

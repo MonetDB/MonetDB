@@ -505,7 +505,11 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 		node *m;
 		stmt *s;
 
-		/* 1st stage: find out if original contains same values */
+		/* 1st stage: find out if original (without the updated) 
+			do not contain the same values as the updated values. 
+			This is done using a relation join and a count (which 
+			should be zero)
+	 	*/
 		s = stmt_reljoin_init();
 		stmt_reljoin_fill(s, stmt_diff(stmt_idxbat(k->idx, RDONLY), stmt_dup(idx_updates)), stmt_dup(idx_updates));
 		for (m = k->columns->h; m; m = m->next) {
@@ -514,17 +518,16 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 
 			if (updates[c->c->colnr]) {
 				upd = stmt_dup(updates[c->c->colnr]->op2.stval);
-				l = stmt_diff(stmt_dup(updates[c->c->colnr]->op1.stval), stmt_dup(upd));
 			} else {
-				upd = stmt_dup(updates[updcol]->op2.stval);
-				l = stmt_diff(stmt_bat(c->c, stmt_dup(ts), RDONLY), stmt_dup(upd));
+				upd = stmt_semijoin(stmt_bat(c->c, stmt_dup(ts), RDONLY), stmt_dup(updates[updcol]->op2.stval));
 			}
+			l = stmt_diff(stmt_bat(c->c, stmt_dup(ts), RDONLY), stmt_dup(upd));
 			stmt_reljoin_fill(s, l, upd);
 
 		}
 		s = stmt_binop(stmt_aggr(s, NULL, cnt), stmt_atom_int(0), ne);
 
-		/* 2e stage: find out if updated are unique */
+		/* 2e stage: find out if the updated are unique */
 		if (idx_updates->nrcols) {	/* update columns not atoms */
 			sql_subaggr *sum;
 			stmt *count_sum = NULL;
@@ -752,7 +755,7 @@ sql_update_idxs(mvc *sql, sql_table *t, stmt **updates, list *l)
 				list_prepend(l, ckeys);
 		}
 		if (is) 
-			list_append(l, stmt_append(stmt_idxbat(i, INS), is));
+			list_append(l, stmt_insert(stmt_idxbat(i, UPD), is));
 	}
 	return res;
 }
@@ -1169,15 +1172,6 @@ sql_update(mvc *sql, sql_table *t, stmt **updates, list *l)
 	node *n;
 	sql_subaggr *cnt;
 
-	if (!sql_update_triggers(sql, t, updates, l)) {
-		list_destroy(l);
-		return sql_error(sql, 02, "UPDATE: triggers failed for table '%s'", t->base.name);
-	}
-	if (!sql_update_idxs(sql, t, updates, l)) {
-		list_destroy(l);
-		return sql_error(sql, 02, "UPDATE: failed to update indexes for table '%s'", t->base.name);
-	}
-
  	cnt = sql_bind_aggr(sql->session->module, "count", NULL);
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
@@ -1201,6 +1195,16 @@ sql_update(mvc *sql, sql_table *t, stmt **updates, list *l)
 		}
 	}
 	sql_subaggr_destroy(cnt);
+
+	if (!sql_update_triggers(sql, t, updates, l)) {
+		list_destroy(l);
+		return sql_error(sql, 02, "UPDATE: triggers failed for table '%s'", t->base.name);
+	}
+	if (!sql_update_idxs(sql, t, updates, l)) {
+		list_destroy(l);
+		return sql_error(sql, 02, "UPDATE: failed to update indexes for table '%s'", t->base.name);
+	}
+
 	return stmt_list(l);
 }
 

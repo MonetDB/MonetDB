@@ -43,7 +43,6 @@ extern stmt *schemas(mvc *sql, symbol *sym);
 #include "sql_semantic.h"
 #include "sql_privileges.h"
 
-
 static void
 list_append_stmt(list *l, stmt *s)
 {
@@ -848,6 +847,7 @@ drop_index(mvc *sql, symbol *symb)
 static stmt *
 create_user(mvc *sql, char *user, char *passwd, char *fullname, char *schema)
 {
+	char *err; 
 	int schema_id = 0;
 	list *l;
 	char buf[BUFSIZ];
@@ -858,10 +858,17 @@ create_user(mvc *sql, char *user, char *passwd, char *fullname, char *schema)
 	if ((schema_id = sql_find_schema(sql, schema)) < 0) {
 		return sql_error(sql, 02, "CREATE USER: no such schema '%s'", schema);
 	}
+	if ((err = backend_create_user(user,passwd)) != NULL) {
+		(void) sql_error(sql, 02, "CREATE USER: %s", err);
+		_DELETE(err);
+		return FALSE;
+	}
+	/* TODO remove passwd column */
 	l = create_stmt_list();
-	snprintf(buf, BUFSIZ, "insert into sys.db_users values('%s','%s','%s',%d);", user, passwd, fullname, schema_id);
+	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"db_users\" VALUES('%s','%s','%s',%d);", user, passwd, fullname, schema_id);
+
 	list_append(l, stmt_sql(_strdup(buf)));
-	snprintf(buf, BUFSIZ, "insert into sys.auths values(" SZFMT ", '%s', %d);", (size_t)store_next_oid(), user, sql->user_id);
+	snprintf(buf, BUFSIZ, "INSERT INTO \"sys\".\"auths\" VALUES(" SZFMT ", '%s', %d);", (size_t)store_next_oid(), user, sql->user_id);
 	list_append(l, stmt_sql(_strdup(buf)));
 	return stmt_list(l);
 }

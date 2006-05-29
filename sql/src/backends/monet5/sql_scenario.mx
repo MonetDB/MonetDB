@@ -111,6 +111,34 @@ monet5_freecode(backend_code code, backend_stack stk, int nr, char *name)
 #endif
 }
 
+char *
+monet5_drop_user(char *user)
+{
+	return AUTHremoveUser(&user);
+}
+
+char *
+monet5_create_user(char *user, char *passwd)
+{
+	oid uid = 0;
+	bat bid = 0;
+	BAT *scens;
+	str ret;
+
+	/* prepare the scens BAT: it should contain the sql scenario */
+	scens = BATnew(TYPE_void, TYPE_str, 1);
+	BUNappend(scens, "sql", 0);
+	bid = BATmirror(scens)->batCacheid;
+	/* add the user to the M5 authorisation administration */
+	if ((ret = AUTHaddUser(&uid, &user, &passwd, &bid)) != MAL_SUCCEED) {
+		BBPunfix(bid); 
+		return ret;
+	}
+	BBPunfix(bid);
+	return NULL;
+}
+
+
 str
 SQLsession(str *ret)
 {
@@ -182,7 +210,7 @@ SQLinit(Client c)
 	(void) c;		/* not used */
 	MTIMEtimezone(&tz, &gmt);
 	(void) tz;
-	backend_init(&monet5_freestack, &monet5_freecode, &monet5_parse);
+	backend_init(&monet5_freestack, &monet5_freecode, &monet5_parse, &monet5_create_user, &monet5_drop_user);
 	if (mvc_init(FALSE, 0) < 0) {
 		return throwMessage("SQLinit", "Catalogue initialization failed\n");
 	}
@@ -234,7 +262,7 @@ SQLinitAdmin(Client c)
 		m = mvc_create((c-mal_clients), 0, c->fdin, c->fdout);
 		m->cache = 1;
 		/* replace user name with client record setting later on */
-		schema = mvc_login(m, "monetdb", "monetdb");
+		schema = mvc_get_schema(m, "monetdb");
 		if (!schema) {
 			_DELETE(schema);
 			return throwMessage("SQLparser", "No schema defined\n");
@@ -273,7 +301,7 @@ SQLinitClient(Client c)
 		/* pass through credentials of the user if not console */
 		
 		rethrow("SQLinitClient", tmp, AUTHresolveUser(&user, &(c->user)));
-		schema = mvc_login(m, user, NULL);
+		schema = mvc_get_schema(m, user);
 		if (!schema) {
 			_DELETE(schema);
 			throwMal("SQLinitClient", "Schema authorization error");

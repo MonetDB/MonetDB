@@ -41,11 +41,15 @@ for the duration of a session.
 typedef void (*freestack_fptr) (backend_stack stk);
 typedef void (*freecode_fptr) (backend_code code, backend_stack stk, int nr, char *name);
 typedef void (*interpret_fptr) (backend_stack stk, char *code);
+typedef char *(*create_user_fptr) (char *user, char *passwd);
+typedef char *(*drop_user_fptr) (char *user);
 
-extern void backend_init(freestack_fptr fstack, freecode_fptr fcode, interpret_fptr finterpret);
+extern void backend_init(freestack_fptr fstack, freecode_fptr fcode, interpret_fptr finterpret, create_user_fptr fcuser, drop_user_fptr fduser);
 extern void backend_freestack(backend_stack stk);
 extern void backend_freecode(backend_code code, backend_stack stk, int nr, char *name);
 extern void backend_interpret(backend_stack stk, char *code);
+extern char *backend_create_user(char *user, char *passwd);
+extern char *backend_drop_user(char *user);
 
 #endif /* _SQL_BACKEND_H_ */
 @c
@@ -55,13 +59,17 @@ extern void backend_interpret(backend_stack stk, char *code);
 static freestack_fptr _fstack = NULL;
 static freecode_fptr _fcode = NULL;
 static interpret_fptr _finterpret = NULL;
+static create_user_fptr _cuser = NULL;
+static drop_user_fptr   _duser = NULL;
 
 void
-backend_init(freestack_fptr fstack, freecode_fptr fcode, interpret_fptr finterpret)
+backend_init(freestack_fptr fstack, freecode_fptr fcode, interpret_fptr finterpret, create_user_fptr cuser, drop_user_fptr duser)
 {
 	_fstack = fstack;
 	_fcode = fcode;
 	_finterpret = finterpret;
+	_cuser = cuser;
+	_duser = duser;
 }
 
 void
@@ -83,6 +91,22 @@ backend_interpret(backend_stack stk, char *code)
 {
 	if (_finterpret)
 		_finterpret(stk, code);
+}
+
+char *
+backend_create_user(char *user, char *passwd)
+{
+	if (_cuser)
+		_cuser(user, passwd);
+	return NULL;
+}
+
+char *
+backend_drop_user(char *user)
+{
+	if (_duser)
+		_duser(user);
+	return NULL;
 }
 
 @}

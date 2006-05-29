@@ -149,20 +149,52 @@ bm_create_bat(int ht, int tt, size_t size)
 	return b;
 }
 
+static
+int bm_subcommit( BAT * catalog ) 
+{
+	BUN p,q;
+	BAT *n = bat_new(TYPE_void, TYPE_str, BATcount(catalog)*2, "subcommit");
+	BAT *b = catalog;
+	int res;
+
+	BATseqbase(n,0);
+	/* first loop over deleted then over current and new */
+	for (p = b->batDeleted; p < b->batFirst; p = BUNnext(b, p)) {
+		bat col = *(oid*)BUNhead(b,p);
+		str name = BBPname(col);
+		BUNappend(n, name, FALSE);
+	}
+	BATloop(b, p, q) {
+		bat col = *(oid*)BUNhead(b,p);
+		str name = BBPname(col);
+		BUNappend(n, name, FALSE);
+	}
+	/* now commit catalog, so its also up to date on disk */
+	BATcommit(catalog); 
+	res = TMsubcommit(n);
+	BBPreclaim(n);
+	return res;
+}
+
 bm *
 bm_create(int debug)
 {
+	char *catalog = "sql_catalog";
 	bm *bm = NEW(struct bm);
 	bat sql_catalog = BBPindex("sql_catalog");
 
 	bm->debug = debug;
 	if (sql_catalog == 0) {
+		oid bid = 0;
 		bm->bat_name = bm_create_bat(TYPE_oid, TYPE_str, BUFSIZ);
 		if (bm->debug)
 			printf("create sql_catalog\n");
 		BATmode(bm->bat_name, PERSISTENT);
-		BBPrename(bm->bat_name->batCacheid, "sql_catalog");
-		if (TMcommit() != 0)	/* save sql_catalog */
+		BBPrename(bm->bat_name->batCacheid, catalog);
+		/* insert catalog bat, to make TMsubcommit calls possible */
+		bid = bm->bat_name->batCacheid;
+		BUNins(bm->bat_name, &bid, catalog);
+		if (bm_subcommit(bm->bat_name) != 0)	/* save sql_catalog */
 			return NULL;
 	} else { /* find the persisten sql_catalog. As non persistent bats
 		    require a logical reference we also add a logical 
@@ -230,8 +262,7 @@ bm_commit(bm *bm)
 		BATmode(b, PERSISTENT);
 		bat_destroy(b);
 	}
-	BATcommit(bm->bat_name); 
-	if (TMcommit() != 0)	/* save new bats */
+	if (bm_subcommit(bm->bat_name) != 0)	/* save new bats */
 		return SQL_ERR;
 	return 0;
 }

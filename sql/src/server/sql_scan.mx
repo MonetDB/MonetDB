@@ -42,9 +42,9 @@ struct scanner {
 	int yycur;		/* next char in the queue */
 	char yybak;		/* sometimes its needed to write an EOS marker */
 	int as;			/* start of query part of view's etc */
-	int view_end;	/* end of query part of view */
+	int view_end;		/* end of query part of view */
 	int key;		/* query hash */
-	int started;	/* found at least one token */
+	int started;		/* found at least one token */
 	prot mode;		/* which mode (line (1,N), blocked) */
 };
 
