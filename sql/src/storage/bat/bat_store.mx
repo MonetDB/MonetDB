@@ -235,7 +235,7 @@ bind_dbat(sql_trans *tr, sql_table *t, int access)
 	b = temp_descriptor(t->dbid);
 	b->batDirty |= 2;
 	t->s->base.rtime = t->base.rtime = tr->stime;
-	if (access == DEL)
+	if (access == INS)
 		t->base.wtime = t->s->base.wtime = tr->wtime = tr->stime;
 	assert(b);
 	return b;
@@ -2140,7 +2140,7 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name)
 	char bname[BUFSIZ];
 	int istmp = isTempSchema(s);
 	int persistence = istmp?SQL_GLOBAL_TEMP:SQL_PERSIST;
-	int commit_action = istmp?CA_PRESERVE:CA_COMMIT;
+	sht commit_action = istmp?CA_PRESERVE:CA_COMMIT;
 	sql_table *t = create_table_intern(name, 1, 1, persistence, commit_action);
 
 	BAT *b;
@@ -2179,7 +2179,7 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name)
 	BUNins(b, (ptr) &rid, (ptr) &t->system);
 	bat_destroy(b);
 	b = get_bat(bm, Ccc(istmp,"tmp","sys","_tables_commit_action"));
-	BUNins(b, (ptr) &rid, (ptr) &t->commit_action);
+	BUNins(b, (ptr) &rid, (ptr) &commit_action);
 	bat_destroy(b);
 	b = get_bat(bm, Ccc(istmp,"tmp","sys","_tables_query"));
 	BUNins(b, (ptr) &rid, (ptr) ATOMnilptr(TYPE_str));
@@ -4337,6 +4337,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, int
 	sql_table *t = create_table_intern(name, 1, system, persistence, commit_action);
 	sql_schema *syss = find_sql_schema(tr, isGlobalTable(t)?"sys":"tmp");
 	sql_table *systable = find_sql_table(syss, "_tables");
+	sht ca;
 
 	/* temps all belong to a special tmp schema */
 	assert( !isTempTable(t) || (strcmp(s->base.name, "tmp") == 0));
@@ -4354,7 +4355,8 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, int
 
 	cs_add(&s->tables, t, TR_NEW);
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
-	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, ATOMnilptr(TYPE_str), &t->table, &t->system, &t->commit_action);
+	ca = t->commit_action;
+	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, ATOMnilptr(TYPE_str), &t->table, &t->system, &ca);
 	if (isGlobalTable(t)) 
 		tr->schema_updates ++;
 	return t;
@@ -4366,6 +4368,7 @@ sql_trans_create_view(sql_trans *tr, sql_schema *s, char *name, char *sql, bit s
 	sql_table *t = create_table_intern(name, 0, system, SQL_PERSIST, 0);
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *systable = find_sql_table(syss, "_tables");
+	sht ca;
 
 	t->query = NULL;
 	if (sql)
@@ -4373,7 +4376,8 @@ sql_trans_create_view(sql_trans *tr, sql_schema *s, char *name, char *sql, bit s
 	t->s = s;
 	cs_add(&s->tables, t, TR_NEW);
 
-	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, (t->query) ? t->query : ATOMnilptr(TYPE_str), &t->table, &t->system, &t->commit_action);
+	ca = t->commit_action;
+	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, (t->query) ? t->query : ATOMnilptr(TYPE_str), &t->table, &t->system, &ca);
 
 	systable->base.wtime = t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	tr->schema_updates ++;
