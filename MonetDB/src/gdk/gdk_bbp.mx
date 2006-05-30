@@ -750,7 +750,7 @@ BBPdir(int cnt, bat *subcommit)
 			/* but for subcommits, all except the bats in the list retain their existent mode */
 			if (subcommit) {
 				while(j < cnt && subcommit[j] < i) j++;  
-				if (subcommit[j] != i) mask = BBPEXISTING;
+				if (j < cnt && subcommit[j] != i) mask = BBPEXISTING;
 			}
 
 			/* write the entry */
