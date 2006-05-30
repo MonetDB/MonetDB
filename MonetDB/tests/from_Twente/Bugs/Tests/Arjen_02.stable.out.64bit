@@ -51,9 +51,9 @@ print(a.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").delet
 # str			str		str		str		  # type
 #-------------------------------------------------------------------------#
 [ "batBuns.filename",	  "32.buns",	  "34.buns",	  "35.buns"	  ]
-[ "batBuns.free",	  "12",		  "3",		  "4"		  ]
-[ "batBuns.maxsize",	  "1024",	  "256",	  "1024"	  ]
-[ "batBuns.size",	  "1024",	  "256",	  "1024"	  ]
+[ "batBuns.free",	  "12",		  "3",		  "8"		  ]
+[ "batBuns.maxsize",	  "1024",	  "256",	  "2048"	  ]
+[ "batBuns.size",	  "1024",	  "256",	  "2048"	  ]
 [ "batBuns.storage",		  "malloced",	  "malloced",	  "malloced"	  ]
 [ "batCacheid",		  "26",		  "28",		  "30"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
@@ -126,9 +126,9 @@ print(a.info().access(BAT_WRITE).delete("batBuns.base").delete("batStamp").delet
 # str			str		str		str		  # type
 #-------------------------------------------------------------------------#
 [ "batBuns.filename",	  "32.buns",	  "43.buns",	  "44.buns"	  ]
-[ "batBuns.free",	  "12",		  "3",		  "4"		  ]
-[ "batBuns.maxsize",	  "1024",	  "256",	  "1024"	  ]
-[ "batBuns.size",	  "1024",	  "256",	  "1024"	  ]
+[ "batBuns.free",	  "12",		  "3",		  "8"		  ]
+[ "batBuns.maxsize",	  "1024",	  "256",	  "2048"	  ]
+[ "batBuns.size",	  "1024",	  "256",	  "2048"	  ]
 [ "batBuns.storage",		  "malloced",	  "malloced",	  "malloced"	  ]
 [ "batCacheid",		  "26",		  "35",		  "37"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
