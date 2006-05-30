@@ -3840,7 +3840,7 @@ static BAT *BATmark_grp( BAT *b, BAT *g, oid *s )
 			}
 			BATkey(gc, TRUE);
 		} else {
-			gc = batcopy(g, g->htype, g->ttype, TRUE);
+			gc = BATcopy(g, g->htype, g->ttype, TRUE);
 			if (gc == NULL) return NULL;
 		}
 	}
