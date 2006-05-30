@@ -1633,7 +1633,8 @@ str GRP@1_oid_@2(int *retval, int *bid){
 				if( t @3 *val )
 						*val = t;
 		}
-		bn->tsorted = bn->hsorted = 0;
+		bn->hsorted = b->hsorted ;
+		bn->tsorted = b->tsorted ;
 		BBPkeepref(*retval= bn->batCacheid);
 		BBPreleaseref(b->batCacheid);
 		return MAL_SUCCEED;
