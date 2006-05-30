@@ -633,7 +633,7 @@ do inline array[T] inserts.
 BAT *BATcopy(BAT *b, int ht, int tt, int writeable) {
 	ssize_t bunstocopy = -1;
 	size_t cnt;
-	BAT *bn;
+	BAT *bn = NULL;
 
 	BATcheck(b, "BATcopy");
 	cnt = BATcount(b);
