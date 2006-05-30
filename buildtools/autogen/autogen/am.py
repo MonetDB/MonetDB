@@ -141,7 +141,7 @@ def am_list2string(l, pre, post):
         res = res + pre + i + post
     return res
 
-def am_find_srcs(target, deps, am):
+def am_find_srcs(target, deps, am, cond):
     dist = 1;
     base, ext = split_filename(target)
     f = target
@@ -153,7 +153,7 @@ def am_find_srcs(target, deps, am):
             pf = f
 
     # built source if has dep and ext != cur ext
-    if deps.has_key(pf) and pf not in am['BUILT_SOURCES']:
+    if not(cond) and deps.has_key(pf) and pf not in am['BUILT_SOURCES']:
         pfb, pfext = split_filename(pf)
         sfb, sfext = split_filename(deps[pf][0])
         if sfext != pfext:
@@ -505,7 +505,7 @@ def am_binary(fd, var, binmap, am):
             if target not in SCRIPTS:
                 SCRIPTS.append(target)
         else:
-            (dist,src) = am_find_srcs(target, binmap['DEPS'], am)
+            (dist,src) = am_find_srcs(target, binmap['DEPS'], am, cond)
             if (dist):
                 srcs = srcs + " " + src;
             else:
@@ -565,7 +565,7 @@ def am_bins(fd, var, binsmap, am):
                     if target not in SCRIPTS:
                         SCRIPTS.append(target)
                 else:
-                    (dist,src) = am_find_srcs(target, binsmap['DEPS'], am)
+                    (dist,src) = am_find_srcs(target, binsmap['DEPS'], am, None)
                     if dist:
                         srcs = srcs + " " + src
                     else:
@@ -685,7 +685,7 @@ def am_library(fd, var, libmap, am):
             if target not in SCRIPTS:
                 SCRIPTS.append(target)
         else:
-            (dist,src) = am_find_srcs(target, libmap['DEPS'], am)
+            (dist,src) = am_find_srcs(target, libmap['DEPS'], am, cond)
             if dist:
                 srcs = srcs + " " + src
             else:
@@ -761,7 +761,7 @@ def am_libs(fd, var, libsmap, am):
                     if target not in SCRIPTS:
                         SCRIPTS.append(target)
                 else:
-                    (dist,src) = am_find_srcs(target, libsmap['DEPS'], am)
+                    (dist,src) = am_find_srcs(target, libsmap['DEPS'], am, None)
                     if dist:
                         srcs = srcs + " " + src
                     else:
