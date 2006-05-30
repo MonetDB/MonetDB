@@ -639,8 +639,8 @@ BAT *BATcopy(BAT *b, int ht, int tt, int writeable) {
 	cnt = BATcount(b);
 
 	/* maybe a bit ugly to change the requested bat types?? */
-	if (BAThvoid(b) && !writeable) ht = TYPE_void;
-	if (BATtvoid(b) && !writeable) tt = TYPE_void;
+	if (b->htype == TYPE_void && !writeable) ht = TYPE_void;
+	if (b->ttype == TYPE_void && !writeable) tt = TYPE_void;
 
 	if (ht != b->htype && wrongtype(ht, b->htype)) {
 		GDKerror("BATcopy: wrong head-type requested\n");
@@ -661,13 +661,13 @@ BAT *BATcopy(BAT *b, int ht, int tt, int writeable) {
 			BAT *bm = BATmirror(bn);
 			bn->htype = bm->ttype = ht;
 			bn->hvarsized = bm->tvarsized = ATOMvarsized(ht);
-                	b->hseqbase = bm->tseqbase = b->hseqbase;
+                	bn->hseqbase = bm->tseqbase = b->hseqbase;
 		}
 		if (tt != bn->ttype) {
 			BAT *bm = BATmirror(bn);
 			bn->ttype = bm->htype = tt;
 			bn->tvarsized = bm->hvarsized = ATOMvarsized(tt);
-                	b->tseqbase = bm->hseqbase = b->tseqbase;
+                	bn->tseqbase = bm->hseqbase = b->tseqbase;
 		}
 	} else { 
 		if (ATOMsize(ht) != ATOMsize(b->htype) ||
