@@ -1454,16 +1454,16 @@ BATsort@3(BAT *b)
 	BATcheck(b, "BATsort@3: BAT");
 	if (b->htype == TYPE_void && b->hseqbase == oid_nil) {
 		/* b's head is void-nil, hence we return a read-only copy/view of b */
-		return BATrcopy(b);
+		return BATcopy(b, b->htype, b->ttype, FALSE);
 	}
 	if ((GDK_SORTED@2 == GDK_SORTED && b->htype == TYPE_void) || (b->htype != TYPE_void && BATordered@3(b))) {
 		/* b is already ordered as desired, hence we return a read-only copy/view of b */
-		return BATrcopy(b);
+		return BATcopy(b, b->htype, b->ttype, FALSE);
 	}
 	if (BATcount(b) < 2) {
 		/* with less than 2 BUNs, b is ordered, hence we return a read-only copy/view of b */
 		b->hsorted = (bit) GDK_SORTED@2;
-		return BATrcopy(b);
+		return BATcopy(b, b->htype, b->ttype, FALSE);
 	}
 	/* a void tail column 0,1,2,3,... must be materialized to oid before sorting */
 	if (tt == TYPE_void && b->tseqbase != oid_nil) {
@@ -1477,13 +1477,13 @@ BATsort@3(BAT *b)
 		if (ht == TYPE_void && b->hseqbase != oid_nil) {
 			ht = TYPE_oid;
 		}
-		bn = BATrevert(batcopy(b, ht, tt, TRUE));
+		bn = BATrevert(BATcopy(b, ht, tt, TRUE));
 		if (bn == NULL)
 			return bn;
 
 		return bn;
 	}
-	bn = batcopy(b, b->htype, tt, TRUE);
+	bn = BATcopy(b, b->htype, tt, TRUE);
 	if (bn == NULL)
 		return bn;
 	return BATorder@3(bn);
@@ -1495,7 +1495,7 @@ BATorder@3(BAT *b)
 	BATcheck(b, "BATorder@3: BAT");
 	if (b->htype == TYPE_void && b->hseqbase == oid_nil) {
 		/* b's head is void-nil, hence we return b as is */
-		return BATrcopy(b);
+		return BATcopy(b, b->htype, b->ttype, FALSE);
 	}
 	if ((GDK_SORTED@2 == GDK_SORTED && b->htype == TYPE_void) || (b->htype != TYPE_void && BATordered@3(b))) {
 		/* b is already ordered as desired, hence we return b as is */
@@ -1909,7 +1909,7 @@ BATmark(BAT *b, oid oid_base)
 		if (BATrestricted(b) != BAT_READ) {
 			BAT *v = bn;
 
-			bn = BATcopy(v);
+			bn = BATcopy(v, v->htype, v->ttype, TRUE);
 			BBPreclaim(v);
 		}
 	}

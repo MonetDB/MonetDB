@@ -480,7 +480,8 @@ below.  The global variables should not be modified directly.
 #define IDLENGTH	64	/* maximum BAT id length */
 #define OLDLENGTH	32	/* old max  BAT id length */
 #define BATMARGIN	1.2	/* extra free margin for new heaps */
-#define BATTINY		50	/* extra fixed margin for BATS */
+#define BATTINY_BITS 	8
+#define BATTINY		(1<<BATTINY_BITS) /* minimum allocation buncnt for a BAT */
 
 #define TYPE_void	0
 #define TYPE_bit	1
@@ -1436,7 +1437,7 @@ gdk_export int BATcheckmodes(BAT *b, int persistent, int unloadable);
 @item BAT *
 @tab BATclear (BAT *b)
 @item BAT *
-@tab BATcopy (BAT *b)
+@tab BATcopy (BAT *b, int ht, int tt, int writeable)
 @item BAT *
 @tab BATrcopy(BAT *b)
 @item BAT *
@@ -1471,7 +1472,7 @@ exist at the same time.
 @{
 @h
 gdk_export BAT *BATclear(BAT *b);
-gdk_export BAT *BATcopy(BAT *b);
+gdk_export BAT *BATcopy(BAT *b, int ht, int tt, int writeable);
 gdk_export BAT *BATrcopy(BAT *b);
 gdk_export BAT *BATmark(BAT *b, oid base);
 gdk_export BAT *BATnumber(BAT *b);
@@ -1760,7 +1761,7 @@ gdk_export BBPrec *BBP;
 #define BBPrefs(i)	 (BBPcheck((i),"BBPrefs")?BBP_refs(i):-1)
 #define BBPcache(i)	 (BBPcheck((i),"BBPcache")?BBP_cache(i):(BAT*) NULL)
 #define BBPname(i)	 (BBPcheck((i),"BBPname")?((i) > 0 || BBP_logical(i))?BBP_logical(i):BBP_logical(-(i)):"")
-#define BBPvalid(i)      (BBP_logical(i) != NULL)
+#define BBPvalid(i)      (BBP_logical(i) != NULL && *BBP_logical(i) != '.')
 #define BATgetId(b)	 BBPname((b)->batCacheid)
 #define BBPfix(i)	 BBPincref(i, FALSE)
 #define BBPunfix(i)	 BBPdecref(i, FALSE)

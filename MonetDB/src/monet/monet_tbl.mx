@@ -1444,7 +1444,7 @@ TBL_fathercopy(Client client, Client father, str nme)
 		n->constant = TRUE;
 		n->frozen = TRUE;
 		n->binding.vtype = TYPE_bat;
-		b = BATcopy(o);
+		b = BATcopy(o, o->htype, o->ttype, TRUE);
 		BBPincref(b->batCacheid, TRUE);
 		BBPdecref(o->batCacheid, FALSE);
 		n->binding.val.bval = b->batCacheid;
@@ -3031,7 +3031,7 @@ TBL_Deinstall_Function(oid pid)
 
 	/* periodically clean up TBL_fcn_pro */
 	if (BATcount(TBL_fcn_nme) + 100 < TBL_fcn_pro_size) {
-		BAT *b = BATrcopy(TBL_fcn_pro);
+		BAT *b = BATcopy(TBL_fcn_pro, TYPE_oid, TYPE_str, FALSE);
 		BUN p, q, r;
 		int xx;
 

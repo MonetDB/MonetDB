@@ -1466,11 +1466,10 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 		int dense_bak = b->T->dense;
 
 		b->T->dense = FALSE;
-		bn = BATrcopy(b);	/* we do not want smart oid->void conversion */
+		bn = BATcopy(b, b->htype, tpe, FALSE);	/* we do not want smart oid->void conversion */
 		if (bn == NULL)
 			return -1;
 		b->T->dense = dense_bak;
-		bn->ttype = BATmirror(bn)->htype = tpe;
 	} else {
 		int reduce = 0;
 

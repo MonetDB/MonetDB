@@ -197,13 +197,15 @@ with the parent, as they need a modified version.
 BAT *
 VIEWcreate_(BAT *b, int slice_view)
 {
-	BAT *bn;
+	BAT *bn, *recycled;
 	bat parent;
 
 	BATcheck(b, "VIEWcreate_: bat required");
-	bn = BATcreatedesc(b->htype, b->ttype, FALSE);
-	parent = VIEWparent(b);
+	bn = recycled = BBPrecycle(TYPE_void, TYPE_void, 1);
+	if (recycled == NULL)
+		bn = BATcreatedesc(b->htype, b->ttype, FALSE);
 
+	parent = VIEWparent(b);
 	if (parent == 0 || b->batBuns->copied) {
 		parent = b->batCacheid;
 	}
@@ -212,7 +214,6 @@ VIEWcreate_(BAT *b, int slice_view)
 		parent = -parent;
 
 	BBPshare(parent);
-	gdk_set_lock(GDKhashLock[ABS(parent) & BBPLOCKMASK], "VIEWcreate_");
 @-
 the H and T column descriptors are fully copied. We need copies
 because in case of a mark, we are going to override a column with 
@@ -247,8 +248,7 @@ use a copy.
 		bn->hhash = b->hhash;
 		bn->thash = b->thash;
 	}
-	gdk_unset_lock(GDKhashLock[ABS(parent) & BBPLOCKMASK], "VIEWcreate_");
-	BBPcacheit(bn);
+	if (recycled == NULL) BBPcacheit(bn);
 	return bn;
 }
 

@@ -132,13 +132,13 @@ xprint(int_int);
 help("insert");
 COMMAND:   insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]
 MODULE:    bat
-COMPILED:  by adm on Sun Jan  8 22:50:00 2006
+COMPILED:  by adm on Tue May 30 01:50:56 2006
 Insert all BUNs of the second BAT into the first.
  Returns the modified BAT.
 
 COMMAND:   insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]
 MODULE:    bat
-COMPILED:  by adm on Sun Jan  8 22:50:00 2006
+COMPILED:  by adm on Tue May 30 01:50:56 2006
 Insert one BUN[h,t] in a BAT.
  Returns the modified BAT.
 

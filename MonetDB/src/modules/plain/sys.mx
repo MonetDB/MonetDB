@@ -168,6 +168,9 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 .COMMAND check_bbp_size() : lng = check_bbp_size;
 	"Walk the BBP directories, delete leftovers and return total size"
 
+.COMMAND bbp_batcache_minsize(lng minsize) : lng = bbp_batcache_minsize;
+	"set the minimum size (BUN count) for bats to be cached"
+
 @- GDK status
 @m
 .COMMAND view_gdk_env( ): BAT[str,str] = view_gdk_env;
@@ -1864,6 +1867,11 @@ int
 vm_trim(lng *lim)
 {
 	MT_mmap_trim((size_t) *lim, GDKerr);
+	return GDK_SUCCEED;
+}
+
+int bbp_batcache_minsize(lng *ret, lng* val) {
+	*ret = BBPrecycle_minsize(*val);
 	return GDK_SUCCEED;
 }
 @}

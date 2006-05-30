@@ -673,7 +673,7 @@ CMDmirror(BAT **ret, BAT *b)
 	BAT *v = *ret = VIEWcombine(b);
 
 	if (b->batRestricted == BAT_WRITE) {
-		*ret = BATrcopy(v);
+		*ret = BATcopy(v, v->htype, v->ttype, FALSE);
 		BBPreclaim(v);
 	}
 	return (*ret) ? GDK_SUCCEED : GDK_FAIL;
@@ -1963,12 +1963,8 @@ retry:		if (!mmap) failure = (HEAPalloc(bn->batBuns, n, 1) < 0);
 			fix(BUNtail(bn, p));
 		}
 	}
-	/* more safety: make a view to ensure the parent stays alive */
-	bn->batParentid = VIEWparent(b);
-	if (bn->batParentid == 0) bn->batParentid = b->batCacheid;
-	BBPshare(ABS(bn->batParentid));
 	BBPcacheit(bn);
-	bn->batBuns->copied = 1;
+	bn->batBuns->copied = (mmap != NULL);
 	return GDK_SUCCEED;
 }
 

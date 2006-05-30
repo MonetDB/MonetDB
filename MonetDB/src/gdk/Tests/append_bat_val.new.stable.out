@@ -132,52 +132,52 @@ xprint(int_int);
 help("append");
 COMMAND:   append(BAT[void,any::1], any::1, bit) : BAT[void,any::1]
 MODULE:    bat
-COMPILED:  by adm on Tue Mar 21 16:56:09 2006
+COMPILED:  by adm on Tue May 30 01:50:56 2006
 append the value u to i
 
 COMMAND:   append(BAT[void,any::1], any::1) : BAT[void,any::1]
 MODULE:    bat
-COMPILED:  by adm on Tue Mar 21 16:56:09 2006
+COMPILED:  by adm on Tue May 30 01:50:56 2006
 append the value u to i
 
 COMMAND:   append(BAT[oid,any::1], any::1, bit) : BAT[oid,any::1]
 MODULE:    bat
-COMPILED:  by adm on Tue Mar 21 16:56:09 2006
+COMPILED:  by adm on Tue May 30 01:50:56 2006
 append the value u to i
 
 COMMAND:   append(BAT[oid,any::1], any::1) : BAT[oid,any::1]
 MODULE:    bat
-COMPILED:  by adm on Tue Mar 21 16:56:09 2006
+COMPILED:  by adm on Tue May 30 01:50:56 2006
 append the value u to i
 
 COMMAND:   append(BAT[void,any::1], BAT[oid,any::1], bit) : BAT[void,any::1]
 MODULE:    bat
-COMPILED:  by adm on Tue Mar 21 16:56:09 2006
+COMPILED:  by adm on Tue May 30 01:50:56 2006
 append the content of u to i
 
 COMMAND:   append(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]
 MODULE:    bat
-COMPILED:  by adm on Tue Mar 21 16:56:09 2006
+COMPILED:  by adm on Tue May 30 01:50:56 2006
 append the content of u to i
 
 COMMAND:   append(BAT[void,any::1], BAT[void,any::1], bit) : BAT[void,any::1]
 MODULE:    bat
-COMPILED:  by adm on Tue Mar 21 16:56:09 2006
+COMPILED:  by adm on Tue May 30 01:50:56 2006
 append the content of u to i
 
 COMMAND:   append(BAT[void,any::1], BAT[void,any::1]) : BAT[void,any::1]
 MODULE:    bat
-COMPILED:  by adm on Tue Mar 21 16:56:09 2006
+COMPILED:  by adm on Tue May 30 01:50:56 2006
 append the content of u to i
 
 COMMAND:   append(BAT[oid,any::1], BAT[oid,any::1], bit) : BAT[oid,any::1]
 MODULE:    bat
-COMPILED:  by adm on Tue Mar 21 16:56:09 2006
+COMPILED:  by adm on Tue May 30 01:50:56 2006
 append the content of u to i (renumbers u-oids' to unique numbers, starting at i.max()+1)
 
 COMMAND:   append(BAT[oid,any::1], BAT[oid,any::1]) : BAT[oid,any::1]
 MODULE:    bat
-COMPILED:  by adm on Tue Mar 21 16:56:09 2006
+COMPILED:  by adm on Tue May 30 01:50:56 2006
 append the content of u to i (renumbers u-oids' to unique numbers, starting at i.max()+1)
 
 

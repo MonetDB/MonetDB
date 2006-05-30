@@ -260,7 +260,7 @@ BATkunique(BAT *b)
 	BATcheck(b, "BATkunique:");
 
 	if (b->hkey) {
-		bn = BATrcopy(b);
+		bn = BATcopy(b, b->htype, b->ttype, FALSE);
 	} else {
 		size_t cnt = BATcount(b);
 
@@ -320,7 +320,7 @@ BATsunique(BAT *b)
 	BATcheck(b, "BATsnique:");
 
 	if (b->hkey || b->tkey || b->batSet) {
-		bn = BATrcopy(b);
+		bn = BATcopy(b, b->htype, b->ttype, FALSE);
 	} else {
 		size_t cnt = BATcount(b);
 
@@ -649,7 +649,7 @@ BAT@1@2(BAT *l, BAT *r)
 }
 @c
 #define EMPTYldiff(l) BATclone(l,10)
-#define EMPTYrdiff(l) BATrcopy(l)
+#define EMPTYrdiff(l) BATcopy(l, l->htype, l->ttype, FALSE)
 #define EMPTYlintersect(l) BATclone(l,10)
 #define EMPTYrintersect(l) EMPTYlintersect(l)
 
@@ -725,7 +725,7 @@ BAT@1union(BAT *l, BAT *r)
 		r = swap;
 	}
 	if (BATcount(r) == 0) {
-		return BATrcopy(l);
+		return BATcopy(l, l->htype, l->ttype, FALSE);
 	}
 	if (l->htype == TYPE_void && l->hseqbase != oid_nil) {
 		bn = BATmaterialize_(l, BATcount(l)+BATcount(r));
@@ -733,7 +733,7 @@ BAT@1union(BAT *l, BAT *r)
 		bn = BATmirror(BATmaterialize_(BATmirror(l),
 					       BATcount(l)+BATcount(r)));
 	} else {
-		bn = BATcopy(l);
+		bn = BATcopy(l, l->htype, l->ttype, TRUE);
 	}
 	if( bn == NULL)
 		return NULL;

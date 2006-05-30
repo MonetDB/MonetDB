@@ -1936,9 +1936,9 @@ To do that r should be unique. To that end, doubles may sometimes be eliminated 
 							 || (lng) countr * (logl + 8) < (lng) countl);
 
 	if (ALIGNsynced(l, r)) {
-		ALGODEBUG THRprintf(GDKout, "BATsemijoin: BATrcopy(l);\n");
+		ALGODEBUG THRprintf(GDKout, "BATsemijoin: BATcopy(l);\n");
 
-		bn = BATrcopy(l);
+		bn = BATcopy(l, l->htype, l->ttype, FALSE);
 	} else if ((BAThordered(l) & 1) && BAThdense(r)) {
 		oid lo = r->hseqbase;
 		oid hi = r->hseqbase + countr - 1;

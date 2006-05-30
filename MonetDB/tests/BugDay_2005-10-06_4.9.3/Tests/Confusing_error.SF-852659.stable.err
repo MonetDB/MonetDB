@@ -68,7 +68,7 @@ stderr of test 'Confusing_error.SF-852659` in directory 'tests/BugDay_2005-10-06
 # 15:03:44 >  Mtimeout -timeout 60 MapiClient -lmil -u monetdb -P monetdb "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --host=localhost --port=35927 < Confusing_error.SF-852659.milC
 # 15:03:44 >  
 
-MAPI  = monetdb@localhost:35927
+MAPI  = monetdb@localhost:38969
 QUERY = new(int, int).1234567890;
 ERROR = !ERROR: "new(int, int).1234567890;"
         !                                 ^

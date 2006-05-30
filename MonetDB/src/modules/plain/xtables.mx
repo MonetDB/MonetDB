@@ -441,6 +441,8 @@ map2histo(BAT *map)
 	map->ttype = BATmirror(map)->htype = TYPE_int;
 	if (map->tvarsized && map->theap) {
 		HEAPfree(map->theap);
+		GDKfree(map->theap);
+		map->theap = NULL;
 	}
 	BATmirror(map)->hvarsized = map->tvarsized = 0;
 	/* do these in the right order: map->dims.headloc is used, so

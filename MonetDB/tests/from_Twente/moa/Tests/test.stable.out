@@ -824,9 +824,9 @@ reverse(select(reverse(_MMreverse_12),0@0)).print();
 # BAT:	  tmp_70  #
 # (oid)	  (oid)	  #
 #-----------------#
-[ 0@0,	  3@0	  ]
-[ 0@0,	  1@0	  ]
 [ 0@0,	  0@0	  ]
+[ 0@0,	  1@0	  ]
+[ 0@0,	  3@0	  ]
 valuesA.find(0@0).print();
 [ 10 ]
 valuesA.find(1@0).print();
