@@ -1817,6 +1817,9 @@ SERVERput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	case TYPE_bat:
 	case TYPE_ptr:
 		return throwMessage("mserver.glue","Unsupported type");
+        case TYPE_str:
+                snprintf(buf,BUFSIZ,"%s:=%s;",*nme,*(char**)val);
+                break;
 	default:
 		ATOMformat(tpe,val,&w);
 		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,w);
@@ -1844,6 +1847,9 @@ SERVERputLocal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	case TYPE_bat:
 	case TYPE_ptr:
 		return throwMessage("mserver.glue","Unsupported type");
+        case TYPE_str:
+                snprintf(buf,BUFSIZ,"%s:=%s;",*nme,*(char**)val);
+                break;
 	default:
 		ATOMformat(tpe,val,&w);
 		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,w);
