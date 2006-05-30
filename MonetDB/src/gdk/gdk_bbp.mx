@@ -727,7 +727,7 @@ BBPdir(int cnt, bat *subcommit)
 {
 	FILE *fp = NULL;
 	stream *s = NULL;
-	bat i=0, j=0;
+	bat i=0, j=1;
 
 	if (GDKdebug & 17)
 		THRprintf(GDKerr, "#BBPdir: writing BBP.dir (%d bats).\n", (int) BBPsize);
