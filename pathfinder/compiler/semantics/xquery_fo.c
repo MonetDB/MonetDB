@@ -1433,6 +1433,15 @@ PFfun_xquery_fo ()
                                 PFty_double () },
             .ret_ty = PFty_star (PFty_item ()) } } }
     /* Below are the function declarations for the UpdateX functions */
+    ,  /* upd:rename(node, xs:QName) as stmt */
+      { .ns = PFns_upd, .loc = "rename",
+        .arity = 2, .sig_count = 1, .sigs = { {
+            .par_ty = (PFty_t[]) { PFty_node (), PFty_xs_QName () },
+            .ret_ty = PFty_stmt () } } }
+#if 0
+    /* This signature apparently is too strict (or our static type
+     * inference to coarse).  Relaxed the type of the first argument
+     * for the time being (see above). */
     ,  /* upd:rename(xs:anyElement | xs:anyAttribute | p-i, xs:QName) as stmt */
       { .ns = PFns_upd, .loc = "rename",
         .arity = 2, .sig_count = 1, .sigs = { {
@@ -1441,6 +1450,7 @@ PFfun_xquery_fo ()
                                                     PFty_pi (NULL))),
                                    PFty_xs_QName () },
             .ret_ty = PFty_stmt () } } }
+#endif
 
     ,  /* upd:delete (node) as stmt */
       { .ns = PFns_upd, .loc = "delete",
