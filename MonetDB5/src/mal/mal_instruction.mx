@@ -2466,6 +2466,8 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 	case REMsymbol:
 		if(getVar(mb, getArg(p, 0))->value.val.sval) 
 			sprintf(t, "#%s ", getVar(mb, getArg(p, 0))->value.val.sval);
+		else
+			sprintf(t, "# ");
 		break;
 	case IGNOREsymbol:
 		*s = 0;
