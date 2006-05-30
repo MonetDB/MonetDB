@@ -22,16 +22,17 @@ stdout of test 'tst024` in directory 'src/mal` itself:
 #
 !ERROR: '_2' overwrites i
 !ERROR: '_5' overwrites _2
+!ERROR: '_5' overwrites _2
 function user.main():void;	# 0  unknown (main:void)
 #detect illegal use of temporary variables 	# 1  unknown (_1:str)
     i := 12;	# 2  unknown (i:any)<-(_3:int)
 # internal location of i is 3 	# 3  unknown (_4:str)
-    _2 := 55;	# 4  unknown (_2:any)<-(_6:int)
+    _2 := 55;	# 4  unknown (_0:any)<-(_6:int)
 # acceptable 	# 5  unknown (_7:str)
     _3 := 23;	# 6  unknown (_3:int)<-(_8:int)
 # error, overwriting non-temp 	# 7  unknown (_9:str)
-    _5 := 23;	# 8  unknown (_5:any)<-(_8:int)
-    io.print(_5);	# 9  unknown (_11:any)<-(_5:any)
+    _5 := 23;	# 8  unknown (_0:any)<-(_8:int)
+    io.print(_0);	# 9  unknown (_11:any)<-(_0:any)
 end main;	# 10  unknown 
 
 # 07:58:40 >  
