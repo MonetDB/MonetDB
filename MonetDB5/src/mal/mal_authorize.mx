@@ -709,7 +709,8 @@ AUTHgetUsers(bat *ret, bat *scenarios) {
 		if (BATcount(b) == 0) {
 			/* we can simply copy the whole users table, as there is no
 			 * selection */
-			r = BATrcopy(user);
+			BBPincref(BBPcacheid(user), FALSE);
+			r = user;
 		} else {
 			BAT *t1;
 			BAT *t2;
@@ -737,7 +738,8 @@ AUTHgetUsers(bat *ret, bat *scenarios) {
 		}
 		BBPunfix(*scenarios);
 	} else {
-		r = BATrcopy(user);
+		BBPincref(BBPcacheid(user), FALSE);
+		r = user;
 		BBPunfix(*scenarios);
 	}
 

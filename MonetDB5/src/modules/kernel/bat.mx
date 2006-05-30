@@ -854,7 +854,7 @@ CMDmirror(BAT **ret, BAT *b)
 	BAT *v = *ret = VIEWcombine(b);
 
 	if (b->batRestricted == BAT_WRITE) {
-		*ret = BATrcopy(v);
+		*ret = BATcopy(v, v->htype, v->ttype, FALSE);
 		BBPreclaim(v);
 	}
 	return (*ret) ? GDK_SUCCEED : GDK_FAIL;

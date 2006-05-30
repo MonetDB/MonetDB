@@ -566,9 +566,9 @@ str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r)
 	@:chkSize(left,right,CMDbat@2)@
 
 	if (left->ttype == TYPE_@3)
-		dst= BATcopy(left);
+		dst= BATwcopy(left);
 	else
-		dst= BATcopy(right);
+		dst= BATwcopy(right);
 	if( dst == NULL){
 		BBPreleaseref(left->batCacheid);
 		BBPreleaseref(right->batCacheid);
@@ -843,6 +843,7 @@ str CMD@1init_sht(int *ret, sht *size, @1 *cst){
 @c
 #include "batcalc.h"
 
+#define BATwcopy(b) BATcopy(b, b->htype, b->ttype, TRUE)
 BAT *
 newBATresult(BAT *b, int tpe)
 {
@@ -984,9 +985,9 @@ str CMDbat@1_@3_@4_@5(int *ret, int *l, int *r)
 	@:chkSize(left,right,CMDbat@1)@
 
 	if (left->ttype == TYPE_@3)
-		dst= BATcopy(left);
+		dst= BATwcopy(left);
 	else
-		dst= BATcopy(right);
+		dst= BATwcopy(right);
 	if( dst == NULL){
 		return throwMessage("batcalc.@1", "no copy available ");
 	}
@@ -1235,7 +1236,7 @@ str CMDunary@1(int *ret, int *bid){
 	if( (b= BATdescriptor(*bid)) == NULL ){
 		return throwMessage("batcalc.@1", "Cannot access descriptor");
 	}
-	dst= BATcopy(b);
+	dst= BATwcopy(b);
 	if( dst == NULL){
 		BBPreleaseref(b->batCacheid);
 		return throwMessage("batcalc.unary", "no copy available ");
@@ -1552,7 +1553,7 @@ str CMDconvert@1_@1(int *ret, int *bid){
 		return throwMessage("batcalc.convert", "Cannot access descriptor");
 	}
 
-	bn= BATcopy(b);
+	bn= BATwcopy(b);
 	@:tstBat(CMDconvert@1_@1)@
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret= bn->batCacheid;
@@ -1763,7 +1764,7 @@ CMDconvertvoid_int_oid(int *ret, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("batcalc.convert", "Cannot access descriptor");
 	}
-	bn = BATcopy(b);
+	bn = BATwcopy(b);
 	bn->ttype = TYPE_oid;
 	/* simply recast the BAT  without doing anything */
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \

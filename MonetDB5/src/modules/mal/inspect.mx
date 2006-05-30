@@ -734,13 +734,11 @@ INSPECTgetEnvironment(int *ret)
 {
 	BAT *b;
 
-	b= BATcopy(GDKenv);
+	b= GDKenv;
 	if (b == 0)
 		return throwMessage("inspect.getEnvironment", "failed to create BAT");
 
-
-	@:Pseudo(view,env,name)@
-
+	BBPfix(*ret = b->batCacheid);
 	return MAL_SUCCEED;
 }
 

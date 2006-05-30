@@ -498,10 +498,6 @@ For relational processing, some operators are necessary to produce newly
 initiated OID columns, for representing n-ary (intermediary) relations.
 
 @mal
-#command markT( b:bat[:any_1,:any], base:void ) :bat[:any_1,:void] 
-#address ALGtmark
-#comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
-
 command markT( b:bat[:any_1,:any_2], base:oid ) :bat[:any_1,:void] 
 address ALGtmark
 comment "Produces a BAT with fresh unique dense sequense of OIDs in 
@@ -1161,14 +1157,32 @@ CMD@1(BAT **result, BAT* b, int *param)
 	return (*result = @2(b, *param))?GDK_SUCCEED:GDK_FAIL;
 }
 @c
+#define BATtdiff(l,r) BATmirror(BATkdiff(BATmirror(l),BATmirror(r)))
+#define BATtintersect(l,r) BATmirror(BATkintersect(BATmirror(l),BATmirror(r)))
+#define BATtsort(b) BATmirror(BATsort(BATmirror(b)))
+#define BATtsort_rev(b) BATmirror(BATsort_rev(BATmirror(b)))
+#define BAThistogram_rev(b) BAThistogram(BATmirror(b))
+#define BATmark_default(b) BATmark(b,OIDnew(BATcount(b)))
+#define BATtmark_default(b) BATmirror(BATmark(BATmirror(b),OIDnew(BATcount(b))))
+#define BAThmark_default(b) BATmirror(BATmark(b,OIDnew(BATcount(b))))
+#define BATwcopy(b) BATcopy(b, b->htype, b->ttype, 1)
+#define BATrcopy(b) BATcopy(b, b->htype, b->ttype, 2)
+
 @:unaryint(count,BATcount)@
 @:unary(histogram,BAThistogram)@
+@:unary(histogram_rev,BAThistogram_rev)@
 @:unary(sort,BATsort)@
-@:unary(tsort,BATsort_rev)@
+@:unary(sort_rev,BATsort_rev)@
+@:unary(tsort,BATtsort)@
+@:unary(tsort_rev,BATtsort_rev)@
 @:unary(number,BATnumber)@
-@:unary(copy,BATcopy)@
+@:unary(copy,BATwcopy)@
+@:unary(rcopy,BATrcopy)@
 @:unary(kunique,BATkunique)@
 @:unary(sunique,BATsunique)@
+@:unary(mark_default,BATmark_default)@
+@:unary(tmark_default,BATtmark_default)@
+@:unary(hmark_default,BAThmark_default)@
 @:binary(semijoin,BATsemijoin)@
 @:binary(cross,BATcross)@
 @:binary(antijoin,BATantijoin)@
@@ -1178,8 +1192,10 @@ CMD@1(BAT **result, BAT* b, int *param)
 @:binary(kunion,BATkunion)@
 @:binary(sintersect,BATsintersect)@
 @:binary(kintersect,BATkintersect)@
+@:binary(tintersect,BATtintersect)@
 @:binary(sdiff,BATsdiff)@
 @:binary(kdiff,BATkdiff)@
+@:binary(tdiff,BATtdiff)@
 @:binaryint(sample,BATsample)@
 
 int
@@ -1257,12 +1273,17 @@ CMDmark(BAT **res, BAT *b, oid *base)
 }
 
 int
-CMDmark_default(BAT **res, BAT *b)
+CMDtmark(BAT **res, BAT *b, oid *base)
 {
-	oid base = OIDnew(BATcount(b));
-
-	return CMDmark(res, b, &base);
+	return (*res = BATmirror(BATmark(BATmirror(b), *base))) ? GDK_SUCCEED : GDK_FAIL;
 }
+
+int
+CMDhmark(BAT **res, BAT *b, oid *base)
+{
+	return (*res = BATmirror(BATmark(b, *base))) ? GDK_SUCCEED : GDK_FAIL;
+}
+
 
 int
 CMDhashsplit(BAT **res, BAT *b, int *nfrag)
@@ -1287,13 +1308,6 @@ CMDurangesplit(BAT **res, BAT *b, int *nfrag)
 {
 	return (*res = BATrangesplit(b, *nfrag, TRUE)) ? GDK_SUCCEED : GDK_FAIL;
 }
-
-int
-CMDhistogram_rev(BAT **bn, BAT *b)
-{
-	return CMDhistogram(bn, BATmirror(b));
-}
-
 
 @- Substring Select
 The string pattern matching routine has been added. It should be
@@ -2538,7 +2552,7 @@ ALGrevert(int *result, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("algebra.revert", "Cannot access descriptor");
 	}
-	bn = BATcopy(b);
+	bn = BATcopy(b, b->htype, b->ttype, TRUE);
 	BBPreleaseref(b->batCacheid);
 	BATrevert(bn);
 	*result= bn->batCacheid;

@@ -444,7 +444,7 @@ PBMtakeComplete(int *ret, str *grp)
 	b= BBPdescriptor(partitions[i].bid);
 	if( b== NULL)
 		return throwMessage("pbm.take", "PBAT partition not accessible");
-	bn= BATcopy(b);
+	bn= BATcopy(b, b->htype, b->ttype, TRUE);
 	BBPunfix(b->batCacheid);
 
 	for(i= partitions[i].next; i>= 0; i= partitions[i].next){

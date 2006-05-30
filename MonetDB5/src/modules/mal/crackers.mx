@@ -1740,7 +1740,7 @@ CRKRange_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, bit *inclus
 	if (m == -1){
 		if ((bo = BATdescriptor(*bid)) == NULL) 
 			return throwMessage("crackers.crackRange", "Cannot access descriptor");
-		b = BATcopy(bo);
+		b = BATcopy(bo, bo->htype, bo->ttype, TRUE);
 		b = BATmaterializeh(b,BATcount(b));
 		b->hsorted = FALSE;
 		b->tsorted = FALSE;
@@ -1866,7 +1866,7 @@ CRKRange_LeftNil_@1(int *vid, int *bid, @1 *hgh, bit *inclusiveHgh, bit tail)
 	if (m == -1){
 		if ((bo = BATdescriptor(*bid)) == NULL) 
 			return throwMessage("crackers.crackRange", "Cannot access descriptor");
-		b = BATcopy(bo);
+		b = BATcopy(bo, bo->htype, bo->ttype, TRUE);
 		b = BATmaterializeh(b,BATcount(b));
 		b->hsorted = FALSE;
 		b->tsorted = FALSE;
@@ -1957,7 +1957,7 @@ CRKRange_RightNil_@1(int *vid, int *bid, @1 *low, bit *inclusiveLow, bit tail)
 	if (m == -1){
 		if ((bo = BATdescriptor(*bid)) == NULL) 
 			return throwMessage("crackers.crackRange", "Cannot access descriptor");
-		b = BATcopy(bo);
+		b = BATcopy(bo, bo->htype, bo->ttype, TRUE);
 		b = BATmaterializeh(b,BATcount(b));
 		b->hsorted = FALSE;
 		b->tsorted = FALSE;
