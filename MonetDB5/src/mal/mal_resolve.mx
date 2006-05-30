@@ -93,6 +93,7 @@ mal_export int fcnBinder(Module scope, MalBlkPtr mb, InstrPtr p);
 
 extern void typeMismatch(MalBlkPtr mb, InstrPtr p, int lhs, int rhs,int silent);
 extern str traceFcnName;
+mal_export void expandMacro(MalBlkPtr mb, InstrPtr p, MalBlkPtr mc);
 
 #endif /*  _MAL_RESOLVE_H*/
 @+ Function call resolution
@@ -428,6 +429,10 @@ This piece of code may be shared by the separate binder
 			p->token = FACcall; 
 			p->fcn = getSignature(s)->fcn;
 			break;
+		case MACROsymbol:
+			expandMacro(mb, p, s->def);
+			/* re-check the expanded code block */
+			return s1;
 		case FUNCTIONsymbol: 
 			p->token = FCNcall; 
 			if( getSignature(s)->fcn)
@@ -765,6 +770,7 @@ to be seen.
 int fcnBinder(Module scope, MalBlkPtr mb, InstrPtr p){
 	Module m=0;
 	Symbol s;
+	int s1= TYPE_void;
 
 	if( p->token != ASSIGNsymbol) return 0;
 	if( getModuleId(p)== NULL || getFunctionId(p)== NULL) return 0;
@@ -916,4 +922,73 @@ occurring type checks. For example, the type checker for the instruction
 bat.insert(b:bat[:any$1,:any$2],h:any$1,t:any$2):bat[:any$1,:any$2].
 The disadvantage is an abundance of code and less efficient instruction
 cache hits.
+@- Macro expansion
+The macro calls are catched by the type resolver and immediately inserted
+into the code block.
+@c
+
+void
+expandMacro(MalBlkPtr mb, InstrPtr p, MalBlkPtr mc)
+{
+	int i, j, k, l, n, v;
+	InstrPtr *ns, oldpc = p;
+	int *nv;
+
+	ns = GDKmalloc((l = (mb->ssize + mc->ssize)) * sizeof(InstrPtr));
+	nv = alloca(mc->vtop * sizeof(int));
+	v = p->argc - p->retc;
+	k = 0;
+
+	for (n = 0; n < mc->vtop; n++) {
+		if (mc->var[n]->isaconstant ){
+			nv[n] = cpyConstant(mb,getVar(mc,n));
+		} else
+			nv[n] = newTmpVariable(mb, getVarType(mc, n));
+		k++;
+	}
+	for (n = 1; n < p->argc; n++)
+		nv[n] = getArg(p, n);
+#ifdef DEBUG_MAL_RESOLVE 
+	for (n = 1; n < mc->vtop; n++)
+		printf("variable %d %d\n", n, nv[n]);
+#endif
+	k = 0;
+	/* copy the first part */
+	for (j = 0; j < mb->stop; j++){
+		ns[k++] = mb->stmt[j];
+		if( p == mb->stmt[j]){
+			mb->stmt[j]->token= REMsymbol;
+			break;
+		}
+	}
+
+	/* copy the macro statements */
+	for (i = 1; i < mc->stop - 1; i++) {
+		/* copy the instruction and fix variable references */
+		p = mc->stmt[i];
+
+		ns[k] = copyInstruction(p);
+		for (n = 0; n < p->argc; n++) {
+			/* fix the variable */
+#ifdef DEBUG_MAL_RESOLVE 
+			printf("map %d  (%d) ", getArg(p, n), v);
+#endif
+			if (getArg(p, n) >= v) 
+				getArg(ns[k], n) = nv[getArg(p, n)];
+			else
+				getArg(ns[k], n) = getArg(oldpc, n);
+		}
+#ifdef DEBUG_MAL_RESOLVE 
+		printf("\n");
+#endif
+		k++;
+	}
+	/* copy the remainder */
+	for (j++; j < mb->stop; j++)
+		ns[k++] = mb->stmt[j];
+	GDKfree(mb->stmt);
+	mb->stmt = ns;
+	mb->ssize = l;
+	mb->stop = k;
+}
 @}

@@ -1705,9 +1705,11 @@ the information.
 				 cntrl= LEAVEsymbol;
 			  goto allLeft;
 		case 'M': case 'm': 
-			  if( MALkeyword(cntxt,"map",3)) {
-				 cntrl = MAPsymbol; 
-			  } else
+			  if( MALkeyword(cntxt,"macro",5) ){
+				 cntxt->blkmode++;
+				 if( parseFunction(cntxt, MACROsymbol)) 
+					break;
+			  } else 
 			  if( MALkeyword(cntxt,"module",6) &&
 				 parseModule(cntxt)!= 0) break;
 			  goto allLeft;

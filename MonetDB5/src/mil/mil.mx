@@ -167,7 +167,7 @@ The MIL reader collects a (sequence) of statements from the input
 stream, but only when no unresolved 'nxt' character is visible.
 Actually, we can use the MAL reader for this purpose.
 @c
-#define _MIL_SCENARIO_DEBUG
+/* #define _MIL_SCENARIO_DEBUG*/
 str
 MILreader(Client c)
 {

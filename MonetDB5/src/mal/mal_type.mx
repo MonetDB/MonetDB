@@ -77,7 +77,6 @@ derived from the parser to avoid a loop in the define-structure.
 #define LEAVEsymbol     26
 #define YIELDsymbol     27
 #define EXITsymbol      29
-#define MAPsymbol       30
 
 #define ASSIGNsymbol    40	/* interpreter entry points */
 #define ENDsymbol       41
@@ -88,6 +87,7 @@ derived from the parser to avoid a loop in the define-structure.
 #define FUNCTIONsymbol  62	/* the designate the signature start */
 #define FACTORYsymbol   63	/* the co-routine infrastructure */
 #define PATTERNsymbol   64	/* the MAL self-reflection commands */
+#define MACROsymbol     65	/* the MAL macro */
 
 #define FCNcall     50		/* internal symbols */
 #define FACcall     51

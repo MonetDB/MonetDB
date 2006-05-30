@@ -1112,8 +1112,6 @@ getArgDefault(MalBlkPtr mb, InstrPtr p, int idx)
 
 @-
 All variables are implicitly declared upon their first assignment. 
-COMMANDS and FUNCTIONS should pass the types as strings and
-convert them later on to the internal representation.
 
 Lexical constants require some care. They typically appear as arguments
 in operator/function calls. To simplify program analysis later on,
@@ -2289,6 +2287,8 @@ operatorName(int i)
 		return "command";
 	case PATTERNsymbol:
 		return "pattern";
+	case MACROsymbol:
+		return "macro";
 	}
 	return "Undefined";
 }
@@ -2459,11 +2459,13 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 		break;
 	case COMMANDsymbol:
 	case FUNCTIONsymbol:
+	case MACROsymbol:
 	case FACTORYsymbol:
 	case PATTERNsymbol:
 		return fcnDefinition(mb, p, s, flg);
 	case REMsymbol:
-		sprintf(t, "#%s ", getVar(mb, getArg(p, 0))->value.val.sval);
+		if(getVar(mb, getArg(p, 0))->value.val.sval) 
+			sprintf(t, "#%s ", getVar(mb, getArg(p, 0))->value.val.sval);
 		break;
 	case IGNOREsymbol:
 		*s = 0;

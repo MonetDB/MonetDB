@@ -78,7 +78,7 @@ mal_export void printFunction(stream *fd, MalBlkPtr mb, int listing);
 @-
 The MAL function blocks are constructed incrementally while parsing the source.
 The function kind determines its semantics. It is taken from the list
-FUNCTION, FACTORY, COMMAND, PATTERN.
+FUNCTION, FACTORY, COMMAND, PATTERN, and MACRO.
 @c
 #include "mal_function.h"
 #include "mal_resolve.h"	/* for isPolymorphic() & chkProgram() */
@@ -600,10 +600,12 @@ printFunction(GDKout, new->def, LIST_MAL_ALL);
 	/* clear type fixations */
 	for(i=0;i< new->def->vtop; i++)
 		new->def->var[i]->fixtype=0;
-/*
-printf("FUNCTION TO BE CHECKED\n");
-printFunction(GDKout, new->def, LIST_MAL_ALL);
-*/
+
+#ifdef DEBUG_MAL_FCN
+	printf("FUNCTION TO BE CHECKED\n");
+	printFunction(GDKout, new->def, LIST_MAL_ALL);
+#endif
+
 	/* check for errors after fixation , TODO*/
 	/* beware, we should now ignore any cloning */
 	if(proc->def->errors == 0) {

@@ -193,12 +193,11 @@ malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 
 @+ Macro expansions
 The macro expansion routine walks through the MAL code block in search
-the function to be expanded.  
+for the function to be expanded.  
 The macro expansion process is restarted at the first new instruction.
 A global is used to protect at (direct) recursive expansions
 @c
 #define MAXEXPANSION 256
-
 
 int
 inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
@@ -321,7 +320,8 @@ MACROprocessor(MalBlkPtr mb, Symbol t)
 		return msg;
 	for (i = 0; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
-		if (getFunctionId(q) && idcmp(getFunctionId(q), t->name) == 0 && getSignature(t)->token == FUNCTIONsymbol) {
+		if (getFunctionId(q) && idcmp(getFunctionId(q), t->name) == 0 && 
+			getSignature(t)->token == FUNCTIONsymbol) {
 #ifdef DEBUG_MAL_MACRO
 			printf("Hit, replace macro call %s\n", t->name);
 #endif
