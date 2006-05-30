@@ -728,7 +728,6 @@ create_view(mvc *sql, sql_schema *ss, symbol *symb, dlist *column_spec, symbol *
 			subquery[sql->scanner.view_end - sql->scanner.as] = ';';
 			subquery[sql->scanner.view_end - sql->scanner.as+1] = 0;
 		}
-		printf("%s\n",subquery);
 		t = mvc_create_view(sql, ss, name, subquery, 0, location, replication_id);
 		as_subquery( sql, t, sq, column_spec );
 		if(dlist_length(using)==2)
@@ -770,28 +769,7 @@ create_view(mvc *sql, sql_schema *ss, symbol *symb, dlist *column_spec, symbol *
 	return NULL;
 }
 
-static stmt *
-drop_view(mvc *sql, symbol *symb)
-{
-	sql_schema *ss = cur_schema(sql);
-	char *tname = qname_table(symb);
-	char *host = qname_host(symb);
-	int location = table_location(sql,host);
-	sql_table *t = mvc_bind_table(sql, ss, tname, location);
-
-	if (!schema_privs(sql->role_id, ss)) 
-		return sql_error(sql, 02, "DROP VIEW: access denied for %s to schema ;'%s'", sql->user, ss->base.name);
-	if (!t) {
-		return sql_error(sql, 02, "DROP VIEW: unknown view '%s'", tname);
-	} else if (!t->table) {
-		mvc_drop_table(sql, ss, t->base.name, 0);
-		return stmt_none();
-	} else {
-		return sql_error(sql, 02, "DROP VIEW: unable to drop view '%s'", tname);
-	}
-}
-
-static stmt *
+	static stmt *
 create_index(mvc *sql, sql_schema *ss, char *iname, int itype, symbol *symb, dlist *column_list)
 {
 
@@ -836,7 +814,7 @@ create_index(mvc *sql, sql_schema *ss, char *iname, int itype, symbol *symb, dli
 	return NULL;
 }
 
-static stmt *
+	static stmt *
 drop_index(mvc *sql, symbol *symb)
 {
 	stmt *res = NULL;
@@ -856,7 +834,7 @@ drop_index(mvc *sql, symbol *symb)
 	return res;
 }
 
-static stmt *
+	static stmt *
 create_user(mvc *sql, char *user, char *passwd, char *fullname, char *schema)
 {
 	char *err; 
@@ -885,7 +863,7 @@ create_user(mvc *sql, char *user, char *passwd, char *fullname, char *schema)
 	return stmt_list(l);
 }
 
-static stmt *
+	static stmt *
 drop_user(mvc *sql, char *user)
 {
 	if (sql_find_auth(sql, user) < 0)
@@ -895,7 +873,7 @@ drop_user(mvc *sql, char *user)
 	return stmt_none();
 }
 
-static stmt *
+	static stmt *
 alter_user(mvc *sql, char *user, char *passwd, char *schema)
 {
 	int schema_id = 0;
@@ -913,7 +891,7 @@ alter_user(mvc *sql, char *user, char *passwd, char *schema)
 }
 
 /*Function modified to support replication*/
-static stmt *
+	static stmt *
 create_role(mvc *sql, symbol *symb, int grantor)
 {
 	int length = 0;
@@ -931,7 +909,7 @@ create_role(mvc *sql, symbol *symb, int grantor)
 }
 
 /*Function modified to support replication*/
-static stmt *
+	static stmt *
 drop_role(mvc *sql, symbol *symb)
 {
 	int length = 0;
@@ -949,7 +927,7 @@ drop_role(mvc *sql, symbol *symb)
 	return stmt_none();
 }
 
-static int
+	static int
 column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs, int alter)
 {
 	int res = SQL_ERR;
@@ -988,8 +966,8 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 				int location = table_location(sql,host);
 				if(location ==-1){
 					sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: no such database '%s'", host);
-				return SQL_ERR;
-	}
+					return SQL_ERR;
+				}
 				char *rcname = n->next->data.lval->h->data.sval;
 				int ref_actions = n->next->next->next->data.ival; 
 				sql_fkey *fk;
@@ -1040,9 +1018,9 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 
 /* 
 column_option: default | column_constraint ;
-*/
+ */
 
-static char *
+	static char *
 table_constraint_name(symbol *s, sql_table *t)
 {
 	/* create a descriptive name like table_col_pkey */
@@ -1083,7 +1061,7 @@ table_constraint_name(symbol *s, sql_table *t)
 	return buf;
 }
 
-static char *
+	static char *
 column_constraint_name(symbol *s, sql_column *sc, sql_table *t)
 {
 	/* create a descriptive name like table_col_pkey */
@@ -1124,52 +1102,52 @@ column_option(
 	assert(cs);
 	switch (s->token) {
 		case SQL_CONSTRAINT:
-		{
-			dlist *l = s->data.lval;
-			char *opt_name = l->h->data.sval;
-			symbol *sym = l->h->next->data.sym;
+			{
+				dlist *l = s->data.lval;
+				char *opt_name = l->h->data.sval;
+				symbol *sym = l->h->next->data.sym;
 
-			if (!opt_name)
-				opt_name = column_constraint_name(sym, cs, t);
-			res = column_constraint_type(sql, opt_name, sym, ss, t, cs, alter);
-		}
-		break;
-		case SQL_DEFAULT:
-		{
-			char *r;
-			stmt *tmp = sql_value_exp(sql, NULL, s->data.sym, NULL, NULL, sql_sel);
-
-			if (!tmp || (tmp = check_types(sql, &cs->type, tmp, type_equal)) == NULL) 
-				return SQL_ERR;
-			stmt_destroy(tmp);
-
-			r = symbol2string(sql, s->data.sym);
-			mvc_default(sql, cs, r);
-			_DELETE(r);
-			res = SQL_OK;
-		}
-		break;
-		case SQL_ATOM:
-		{
-			AtomNode *an = (AtomNode *) s;
-
-			if (!an || !an->a) {
-				mvc_default(sql, cs, NULL);
-			} else {
-				atom *a = an->a;
-
-				if (a->data.vtype == TYPE_str) {
-					mvc_default(sql, cs, a->data.val.sval);
-				} else {
-					char *r = atom2string(a);
-
-					mvc_default(sql, cs, r);
-					_DELETE(r);
-				}
+				if (!opt_name)
+					opt_name = column_constraint_name(sym, cs, t);
+				res = column_constraint_type(sql, opt_name, sym, ss, t, cs, alter);
 			}
-			res = SQL_OK;
-		}
-		break;
+			break;
+		case SQL_DEFAULT:
+			{
+				char *r;
+				stmt *tmp = sql_value_exp(sql, NULL, s->data.sym, NULL, NULL, sql_sel);
+
+				if (!tmp || (tmp = check_types(sql, &cs->type, tmp, type_equal)) == NULL) 
+					return SQL_ERR;
+				stmt_destroy(tmp);
+
+				r = symbol2string(sql, s->data.sym);
+				mvc_default(sql, cs, r);
+				_DELETE(r);
+				res = SQL_OK;
+			}
+			break;
+		case SQL_ATOM:
+			{
+				AtomNode *an = (AtomNode *) s;
+
+				if (!an || !an->a) {
+					mvc_default(sql, cs, NULL);
+				} else {
+					atom *a = an->a;
+
+					if (a->data.vtype == TYPE_str) {
+						mvc_default(sql, cs, a->data.val.sval);
+					} else {
+						char *r = atom2string(a);
+
+						mvc_default(sql, cs, r);
+						_DELETE(r);
+					}
+				}
+				res = SQL_OK;
+			}
+			break;
 	}
 	if (res == SQL_ERR) {
 		(void) sql_error(sql, 02, "unknown column option (%ld)->token = %s\n", (long) s, token2string(s->token));
@@ -1177,7 +1155,7 @@ column_option(
 	return res;
 }
 
-static int
+	static int
 column_options(mvc *sql, dlist *opt_list, sql_schema *ss, sql_table *t, sql_column *cs, int alter)
 {
 	assert(cs);
@@ -1195,7 +1173,7 @@ column_options(mvc *sql, dlist *opt_list, sql_schema *ss, sql_table *t, sql_colu
 	return SQL_OK;
 }
 
-static stmt *
+	static stmt *
 create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	dlist *l = s->data.lval;
@@ -1240,7 +1218,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	return res;
 }
 
-static stmt *
+	static stmt *
 table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	stmt *res = NULL;
@@ -1310,7 +1288,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t,
 	return res;
 }
 
-static stmt *
+	static stmt *
 table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	stmt *res = NULL;
@@ -1318,29 +1296,29 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 	switch (s->token) {
 		case SQL_UNIQUE:
 		case SQL_PRIMARY_KEY:
-		{
-			key_type kt = (s->token == SQL_PRIMARY_KEY ? pkey : ukey);
-			sql_key *k = mvc_create_key(sql, t, name, kt, NULL);
-			dnode *nms = s->data.lval->h;
+			{
+				key_type kt = (s->token == SQL_PRIMARY_KEY ? pkey : ukey);
+				sql_key *k = mvc_create_key(sql, t, name, kt, NULL);
+				dnode *nms = s->data.lval->h;
 
-			for (; nms; nms = nms->next) {
-				char *nm = nms->data.sval;
-				sql_column *c = mvc_bind_column(sql, t, nm);
+				for (; nms; nms = nms->next) {
+					char *nm = nms->data.sval;
+					sql_column *c = mvc_bind_column(sql, t, nm);
 
-				if (!c) {
-					return sql_error(sql, 02, "no such column '%s' for table '%s'\n", nm, t->base.name);
+					if (!c) {
+						return sql_error(sql, 02, "no such column '%s' for table '%s'\n", nm, t->base.name);
+					}
+					(void) mvc_create_kc(sql, k, c);
 				}
-				(void) mvc_create_kc(sql, k, c);
-			}
-			if (alter) {
-				list *l = create_stmt_list();
+				if (alter) {
+					list *l = create_stmt_list();
 
-				res = sql_insert_add_idx(sql, t, k->idx, l);
-			} else {
-				res = stmt_none();
+					res = sql_insert_add_idx(sql, t, k->idx, l);
+				} else {
+					res = stmt_none();
+				}
 			}
-		}
-		break;
+			break;
 		case SQL_FOREIGN_KEY:
 			res = table_foreign_key(sql, name, s, ss, t, alter);
 			break;
@@ -1351,7 +1329,7 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 	return res;
 }
 
-static stmt *
+	static stmt *
 table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	stmt *res = NULL;
@@ -1372,75 +1350,75 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	return res;
 }
 
-static stmt *
+	static stmt *
 table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	stmt *res = NULL;
 
 	switch (s->token) {
-	case SQL_COLUMN:
-		res = create_column(sql, s, ss, t, alter);
-		break;
-	case SQL_CONSTRAINT:
-		res = table_constraint(sql, s, ss, t, alter);
-		break;
-	case SQL_COLUMN_OPTIONS:
-	{
-		dnode *n = s->data.lval->h;
-		char *cname = n->data.sval;
-		sql_column *c = mvc_bind_column(sql, t, cname);
-		dlist *olist = n->next->data.lval;
+		case SQL_COLUMN:
+			res = create_column(sql, s, ss, t, alter);
+			break;
+		case SQL_CONSTRAINT:
+			res = table_constraint(sql, s, ss, t, alter);
+			break;
+		case SQL_COLUMN_OPTIONS:
+			{
+				dnode *n = s->data.lval->h;
+				char *cname = n->data.sval;
+				sql_column *c = mvc_bind_column(sql, t, cname);
+				dlist *olist = n->next->data.lval;
 
-		if (!c) {
-			return sql_error(sql, 02, "column '%s' not found\n", cname);
-		} else {
-			if (column_options(sql, olist, ss, t, c, alter) == SQL_ERR)
-				return NULL;
-		}
-		res = stmt_none();
-	}
-		break;
-	case SQL_LIKE:
-	{
-		char *name = qname_table(s->data.sym);
-		char *host = qname_host(s->data.sym);
-		int location = table_location(sql,host);
-		sql_table *ot = mvc_bind_table(sql, ss, name, location);
-		node *n;
+				if (!c) {
+					return sql_error(sql, 02, "column '%s' not found\n", cname);
+				} else {
+					if (column_options(sql, olist, ss, t, c, alter) == SQL_ERR)
+						return NULL;
+				}
+				res = stmt_none();
+			}
+			break;
+		case SQL_LIKE:
+			{
+				char *name = qname_table(s->data.sym);
+				char *host = qname_host(s->data.sym);
+				int location = table_location(sql,host);
+				sql_table *ot = mvc_bind_table(sql, ss, name, location);
+				node *n;
 
-		for (n = ot->columns.set->h; n; n = n->next) {
-			sql_column *oc = n->data;
+				for (n = ot->columns.set->h; n; n = n->next) {
+					sql_column *oc = n->data;
 
-			(void)mvc_create_column(sql, t, oc->base.name, &oc->type);
-		}
-		res = stmt_none();
-	} break;
-	case SQL_DROP_COLUMN:
-	{
-		dlist *l = s->data.lval;
-		char *cname = l->h->data.sval;
-		int action = l->h->next->data.ival;
+					(void)mvc_create_column(sql, t, oc->base.name, &oc->type);
+				}
+				res = stmt_none();
+			} break;
+		case SQL_DROP_COLUMN:
+			{
+				dlist *l = s->data.lval;
+				char *cname = l->h->data.sval;
+				int action = l->h->next->data.ival;
 
-		(void)action;
-		if (mvc_bind_column(sql, t, cname) == NULL)
-			return sql_error(sql, 02, "cannot drop unknown column %s\n", cname);
-		if (cs_size(&t->columns) <= 1)
-			return sql_error(sql, 02, "cannot drop column %s (table needs atleast one column)\n", cname);
-		mvc_drop_column(sql, t, cname);
-		res = stmt_none();
-	} break;
-	case SQL_DROP_CONSTRAINT:
-	{
-		dlist *l = s->data.lval;
-		char *kname = l->h->data.sval;
-		int action = l->h->next->data.ival;
+				(void)action;
+				if (mvc_bind_column(sql, t, cname) == NULL)
+					return sql_error(sql, 02, "cannot drop unknown column %s\n", cname);
+				if (cs_size(&t->columns) <= 1)
+					return sql_error(sql, 02, "cannot drop column %s (table needs atleast one column)\n", cname);
+				mvc_drop_column(sql, t, cname);
+				res = stmt_none();
+			} break;
+		case SQL_DROP_CONSTRAINT:
+			{
+				dlist *l = s->data.lval;
+				char *kname = l->h->data.sval;
+				int action = l->h->next->data.ival;
 
-		(void)action;
-		if (mvc_bind_key(sql, ss, kname ) == NULL)
-			return sql_error(sql, 02, "cannot drop unknown constraint %s\n", kname);
-		mvc_drop_key(sql, ss, kname);
-		res = stmt_none();
-	} break;
+				(void)action;
+				if (mvc_bind_key(sql, ss, kname ) == NULL)
+					return sql_error(sql, 02, "cannot drop unknown constraint %s\n", kname);
+				mvc_drop_key(sql, ss, kname);
+				res = stmt_none();
+			} break;
 	}
 	if (!res) {
 		return sql_error(sql, 02, "unknown table element (%ld)->token = %s\n", (long) s, token2string(s->token));
@@ -1450,7 +1428,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 
 /*this function was modified to support replication*/
-static stmt *
+	static stmt *
 create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_elements_or_subquery, int commit_action, int view)
 {
 	char *name = qname_table(symb);
@@ -1472,7 +1450,7 @@ create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_ele
 		return sql_error(sql, 02, "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", sql->user, ss->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) { 
 		/* table element list */
-		t = mvc_create_table(sql, ss, name, 0, temp, commit_action, -1, location, replication_id);
+		t = mvc_create_table(sql, ss, name, NULL, 0, temp, commit_action, -1, location, replication_id);
 		list *new_columns = create_stmt_list();
 		dnode *n;
 		dlist *columns = table_elements_or_subquery->data.lval;
@@ -1494,12 +1472,26 @@ create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_ele
 		dlist *column_spec;
 		symbol* subquery;
 		int with_data;
-		if(view){
+		char *querystring = NULL;
+
+		if (view) {
 			column_spec = NULL;
 			subquery = table_elements_or_subquery;
 			with_data = 1;
-		}
-		else{
+			if (subquery->token == SQL_SELECT) {
+				SelectNode *sn = (SelectNode *) subquery;
+
+				if (sn->limit >= 0)
+					return sql_error(sql, 01, "CREATE VIEW: LIMIT not supported");
+				if (sn->orderby)
+					return sql_error(sql, 01, "CREATE VIEW: ORDER BY not supported");
+			}
+			querystring = _strdup(QUERY(sql->scanner) + sql->scanner.as);
+			if (sql->scanner.view_end) {
+				querystring[sql->scanner.view_end - sql->scanner.as] = ';';
+				querystring[sql->scanner.view_end - sql->scanner.as+1] = 0;
+			}
+		} else {
 			column_spec = as_sq->h->data.lval;
 			subquery = as_sq->h->next->data.sym;
  			with_data = as_sq->h->next->next->data.ival;
@@ -1508,8 +1500,9 @@ create_table(mvc *sql, sql_schema *ss, int temp, symbol *symb, symbol *table_ele
 		sq = scope_subquery(sql, NULL, subquery);
 		if (!sq)
 			return NULL;
+
 		/* create table */
-		t = mvc_create_table(sql, ss, name, 0, temp, commit_action, -1, location, replication_id);
+		t = mvc_create_table(sql, ss, name, querystring, 0, temp, commit_action, -1, location, replication_id);
 		as_subquery( sql, t, sq, column_spec);
 
 		/* insert query result into this table */
@@ -1621,6 +1614,29 @@ drop_table(mvc *sql, symbol *symb, int drop_action)
 }
 
 static stmt *
+drop_view(mvc *sql, symbol *symb)
+{
+	sql_schema *ss = cur_schema(sql);
+	char *tname = qname_table(symb);
+	char *host = qname_host(symb);
+	int location = table_location(sql,host);
+	sql_table *t = mvc_bind_table(sql, ss, tname, location);
+
+	if (!schema_privs(sql->role_id, ss)) 
+		return sql_error(sql, 02, "DROP VIEW: access denied for %s to schema ;'%s'", sql->user, ss->base.name);
+	if (!t) {
+		return sql_error(sql, 02, "DROP VIEW: no such view '%s'", tname);
+	} else if (!t->table) {
+		mvc_drop_table(sql, ss, t->base.name, 0);
+		return stmt_none();
+	} else if (t->query != NULL) {
+		return(drop_table(sql, symb, 0));
+	} else {
+		return sql_error(sql, 02, "DROP VIEW: no such view '%s' (is a table)", tname);
+	}
+}
+
+static stmt *
 alter_table(mvc *sql, sql_schema *ss, symbol *symb, symbol *te)
 {
 	char *name = qname_table(symb);
@@ -1688,10 +1704,18 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 				res = create_table(sql, ss , l->h->data.ival, l->h->next->data.sym, l->h->next->next->data.sym, l->h->next->next->next->data.ival,0);
 			} else if (n->data.sym->token == SQL_CREATE_VIEW) {
 				dlist *l = n->data.sym->data.lval;
-				printf("%d",l->h->next->next->next->data.lval->t->data.ival);
 				if(l->h->next->next->next->data.lval->t->data.ival){
-					res = create_table(sql, cur_schema(sql), SQL_PERSIST, l->h->data.sym, l->h->next->next->data.sym, 1,1);
-					create_replication_support(sql,cur_schema(sql),l->h->data.sym->data.lval->h->data.sval,l->h->next->next->data.sym,l->h->next->next->next->next->data.lval->h->data.ival,l->h->next->next->next->next->data.lval->t->data.ival,replication_id);
+					res = create_table(sql, cur_schema(sql), SQL_PERSIST, l->h->data.sym, l->h->next->next->data.sym, 0,1);
+					
+					create_replication_support(
+							sql,
+							cur_schema(sql),
+							l->h->data.sym->data.lval->h->data.sval,
+							l->h->next->next->data.sym,
+							l->h->next->next->next->next->data.lval->h->data.ival,
+							l->h->next->next->next->next->data.lval->t->data.ival,
+							replication_id
+						);
 				}
 				else
 					res = create_view(sql, ss, l->h->data.sym, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval->h->data.ival,l->h->next->next->next->next->data.lval);
@@ -1769,7 +1793,6 @@ schemas(mvc *sql, symbol *s)
 		break;
 	case SQL_CREATE_TABLE:
 	{
-
 		dlist *l = s->data.lval;
 
 		ret = create_table(sql, cur_schema(sql), l->h->data.ival, l->h->next->data.sym, l->h->next->next->data.sym, l->h->next->next->next->data.ival,0);
@@ -1779,8 +1802,8 @@ schemas(mvc *sql, symbol *s)
 	case SQL_CREATE_VIEW:
 	{
 		dlist *l = s->data.lval;
-		if(l->h->next->next->next->data.lval->t->data.ival){
-			ret = create_table(sql, cur_schema(sql), SQL_PERSIST, l->h->data.sym, l->h->next->next->data.sym, 1,1);
+		if(l->h->next->next->next->data.lval->t->data.ival){	 /* materialised view */
+			ret = create_table(sql, cur_schema(sql), SQL_PERSIST, l->h->data.sym, l->h->next->next->data.sym, 0,1);
 			create_replication_support(sql,cur_schema(sql),l->h->data.sym->data.lval->h->data.sval,l->h->next->next->data.sym,l->h->next->next->next->next->data.lval->h->data.ival,l->h->next->next->next->next->data.lval->t->data.ival,replication_id);
 		}
 		else

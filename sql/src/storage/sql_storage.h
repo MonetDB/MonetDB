@@ -69,7 +69,7 @@ extern sql_func *sql_trans_create_func(sql_trans *tr, sql_module * m, char *func
 extern sql_schema *sql_trans_create_schema(sql_trans *tr, char *name, int auth_id);
 extern void sql_trans_drop_schema(sql_trans *tr, char *sname);
 
-extern sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz, int location, int replication_id);
+extern sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, bit system, int persistence, int commit_action, int sz, int location, int replication_id);
 extern sql_table *sql_trans_create_view(sql_trans *tr, sql_schema *s, char *name, char *sql, bit system, int location, int replication_id);
 extern char *sql_view_on_bats(sql_trans *tr, sql_table *t, char **batnames, int cnt);
 extern void sql_trans_drop_table(sql_trans *tr, sql_schema *s, char *name, int cascade);

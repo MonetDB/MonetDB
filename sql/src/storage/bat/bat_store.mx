@@ -4383,7 +4383,7 @@ sql_trans_drop_schema(sql_trans *tr, char *sname)
 }
 
 sql_table *
-sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz, int location, int replication_id)
+sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, bit system, int persistence, int commit_action, int sz, int location, int replication_id)
 {
 	BAT *b;
 	sql_table *t = create_table_intern(name, 1, system, persistence, commit_action, location, replication_id);
@@ -4395,6 +4395,8 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, int
 
 	t->dbid = 0;
 	t->query = NULL;
+	if (sql)
+		t->query = _strdup(sql);
 	t->s = s;
 	t->sz = sz;
 	if (sz < 0)
@@ -4406,7 +4408,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, int
 
 	cs_add(&s->tables, t, TR_NEW);
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
-	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, ATOMnilptr(TYPE_str), &t->table, &t->system, &t->commit_action, &t->location, &t->replication_id);
+	table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, (t->query) ? t->query : ATOMnilptr(TYPE_str), &t->table, &t->system, &t->commit_action, &t->location, &t->replication_id);
 	if (isGlobalTable(t)) 
 		tr->schema_updates ++;
 	return t;

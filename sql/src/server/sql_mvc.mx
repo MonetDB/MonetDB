@@ -134,7 +134,7 @@ extern void mvc_drop_schema(mvc *c, char *name);
 extern sql_schema *mvc_create_schema(mvc *c, char *name, int auth_id);
 extern void mvc_drop_table(mvc *c, sql_schema *s, char *name, int cascade);
 extern sql_table *mvc_create_view(mvc *c, sql_schema *s, char *name, char *sql, bit system, int location, int replication_id);
-extern sql_table *mvc_create_table(mvc *c, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz, int location, int replication_id);
+extern sql_table *mvc_create_table(mvc *c, sql_schema *s, char *name, char * sql, bit system, int persistence, int commit_action, int sz, int location, int replication_id);
 extern size_t mvc_clear_table(mvc *m, sql_table *t);
 
 extern void mvc_drop_column(mvc *c, sql_table *t, char *name);
@@ -983,14 +983,14 @@ mvc_drop_trigger(mvc *m, sql_schema *s, char *name)
 
 /*this function was modified to support replication*/
 sql_table *
-mvc_create_table(mvc *m, sql_schema *s, char *name, bit system, int persistence, int commit_action, int sz, int location, int replication_id)
+mvc_create_table(mvc *m, sql_schema *s, char *name, char *sql, bit system, int persistence, int commit_action, int sz, int location, int replication_id)
 {
 	sql_table *t = NULL;
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create_table %s %s %d %d %d\n", s->base.name, name, system, persistence, commit_action);
 
-	t = sql_trans_create_table(m->session->tr, s, name, system, persistence, commit_action, sz, location, replication_id);
+	t = sql_trans_create_table(m->session->tr, s, name, sql, system, persistence, commit_action, sz, location, replication_id);
 	m->type = Q_SCHEMA;
 	return t;
 }
