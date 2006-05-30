@@ -1232,7 +1232,7 @@ newVariable(MalBlkPtr mb, str name, malType type)
 		if (i > mb->vtop) {
 			GDKerror("newVariable:variable %s mis-aligned\n", name);
 			mb->errors++;
-		} else if (i < mb->vtop && !isTmpVar(mb, i)) {
+		} else if (i < mb->vtop ) {
 			GDKerror("'%s' overwrites %s\n", name, getVarName(mb, i));
 			mb->errors++;
 		}
