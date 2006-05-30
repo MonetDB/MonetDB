@@ -93,7 +93,7 @@ bat_descriptor(bat bid, char *func)
 BAT *
 bat_copy(BAT *b, char *func)
 {
-	BAT *nb = BATcopy(b);
+	BAT *nb = BATcopy(b, b->htype, b->ttype, TRUE);
 
 	if (bm_debug)
 		printf("bat_copy(%s) %d (%d,%d)\n", func, nb->batCacheid, BBPrefs(nb->batCacheid), BBP_lrefs(nb->batCacheid));
