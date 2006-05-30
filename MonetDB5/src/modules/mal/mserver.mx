@@ -1827,7 +1827,7 @@ SERVERput(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		mapi_close_handle(SERVERsessions[i].hdl);
 	SERVERsessions[i].hdl= mapi_query(mid, buf);
 	if( mapi_error(mid) )
-		return throwMessage("mapi.put",mapi_error_str(mid));
+		return throwMessage("mapi.put",mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
 str
