@@ -1017,23 +1017,26 @@ static int process_attr(XqueryCtx* ctx, int frag, oid id, int top) {
     return handle_attribute(ctx, uri, prefix, loc, val, top);
 }
 
+
 static int process_node_attr(XqueryCtx* ctx, int nFRAG, oid pre, int emptyNode) {
+    hash_t idx;
+    oid base;
+    BUN r;
     BAT *b;
 
     wsBAT(b, ctx, ATTR_OWN);
-    if ( !(b  = BATuselect(b,&pre,&pre)) )
-        return fatal_err(ctx,"process_node_attr: uselect fails\n");
-    BUN p, q;
-    BATloop(b, p, q) {
-        oid id = *(oid*)BUNhead(b, p);
-        if ( ! process_attr(ctx,nFRAG,id,0/*top*/) ) {
-            BBPunfix( BBPcacheid( b ) );
-            return 0;
-        }
+    base = b->hseqbase - BUNindex(b, BUNfirst(b));
+    b = BATmirror(b);
+    if (BATprepareHash(b)) {
+        return fatal_err(ctx,"process_node_attr: hash table creation\n");
     }
-    BBPunfix( BBPcacheid( b ) );
+    HASHloop_oid(b, b->hhash, idx, &pre, r) {
+        oid id = base + idx;
+        if ( ! process_attr(ctx,nFRAG,id,0/*top*/) ) break;
+    }
     return handle_attributeEnd(ctx,emptyNode);
 }
+
 
 /**
  * Handle the generation of the node with oid 'pre'.
