@@ -126,7 +126,7 @@ str pbmRef;
 str plusRef;
 str printRef;
 str putRef;
-str putRef;
+str queryRef;
 str reverseRef;
 str reconnectRef;
 str replaceRef;
