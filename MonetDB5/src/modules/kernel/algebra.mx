@@ -2495,7 +2495,7 @@ ALGhtsort(int *result, int *lid)
 		bc = BATselect(b, p, p);
 		bc = BATsort(bc);
 		bc = (((bc)->batCacheid < 0) ? (bc) : BATmirror(bc));
-		BATins(bn, bc);
+		BATins(bn, bc, FALSE);
 		BBPunfix(bc->batCacheid);
 	}
 	BBPreleaseref(b->batCacheid);
@@ -2530,7 +2530,7 @@ ALGthsort(int *result, int *lid)
 	BATloop(bk, p, q) {
 		bc = BATselect(b, p, p);
 		bc = BATsort(bc);
-		BATins(bn, bc);
+		BATins(bn, bc, FALSE);
 	}
 	BBPunfix(bk->batCacheid);
 	BBPreleaseref(b->batCacheid);

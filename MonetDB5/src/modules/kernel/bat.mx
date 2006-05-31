@@ -269,47 +269,66 @@ Update commands come in many disguises.  Note that we don;t return
 the BAT id, but merely a success/failure code.
 @mal
 command insert(b:bat[:any_1,:oid], src:bat[:any_1,:void]) :void
-address BKCinsert_bat
-comment "Insert all BUNs of the second BAT into the first. This case 
-        should be removed, because it is a hack for SQL";
-
+address BKCinsert_bat;
 command insert(b:bat[:void,:any_2], src:bat[:oid,:any_2]) :void
-address BKCinsert_bat
-comment "Insert all BUNs of the second BAT into the first. This case 
-        should be removed, because it is a hack for SQL";
-
+address BKCinsert_bat;
 command insert(b:bat[:oid,:any_2], src:bat[:void,:any_2]) :void
-address BKCinsert_bat
-comment "Insert all BUNs of the second BAT into the first. This case 
-        should be removed, because it is a hack for SQL";
+address BKCinsert_bat;
 
 command insert(b:bat[:any_1,:any_2], src:bat[:any_1,:any_2]):void
 address BKCinsert_bat
 comment "Insert all BUNs of the second BAT into the first.";
 
+command insert(b:bat[:any_1,:oid], src:bat[:any_1,:void], force:bit) :void
+address BKCinsert_bat_force;
+command insert(b:bat[:void,:any_2], src:bat[:oid,:any_2], force:bit) :void
+address BKCinsert_bat_force;
+command insert(b:bat[:oid,:any_2], src:bat[:void,:any_2], force:bit) :void
+address BKCinsert_bat_force;
+
+command insert(b:bat[:any_1,:any_2], src:bat[:any_1,:any_2], force:bit):void
+address BKCinsert_bat_force
+comment "Insert all BUNs of the second BAT into the first.";
+
 command insert(b:bat[:any_1,:any_2], h:any_1, t:any_2) :void
 address BKCinsert_bun
 comment "Insert one BUN[h,t] in a BAT.";
-command insert(b:bat[:int,:int], h:int, t:int) :void
-address BKCinsert_bun_int_int;
+
+command insert(b:bat[:any_1,:any_2], h:any_1, t:any_2, force:bit) :void
+address BKCinsert_bun_force
+comment "Insert one BUN[h,t] in a BAT.";
+
+@+
+#command insert(b:bat[:int,:int], h:int, t:int) :void
+#address BKCinsert_bun_int_int;
+#address BKCinsert_bun_oid_any;
+#address BKCinsert_bun_oid_any;
+@mal
 command insert(b:bat[:oid,:any_2], h:oid, t:any_2) :void
-address BKCinsert_bun_oid_any;
-command insert(b:bat[:void,:any_2], h:oid, t:any_2) :void
-address BKCinsert_bun_oid_any;
-command insert(b:bat[:void,:str], h:oid, t:str) :void
-address BKCinsert_bun_oid_str;
-command insert(b:bat[:oid,:str], h:oid, t:str) :void
-address BKCinsert_bun_oid_str;
-
-command insert(b:bat[:void,:any_1], v:any_1):void
-address BKCinsert_void_bun
-comment "Insert a value in a 'void' bat";
-
-command insert(b:bat[:any_1,:bat], v:any_1, z:bat[:any_3,:any_4]):void
 address BKCinsert_bun;
-command insert(b:bat[:void,:bat], z:bat[:any_1,:any_2]):void
-address BKCinsert_void_bun
-comment "Insert a value in a 'void' bat";
+command insert(b:bat[:void,:any_2], h:oid, t:any_2) :void
+address BKCinsert_bun;
+@+
+#command insert(b:bat[:void,:str], h:oid, t:str) :void
+#address BKCinsert_bun_oid_str;
+#command insert(b:bat[:oid,:str], h:oid, t:str) :void
+#address BKCinsert_bun_oid_str;
+
+@mal
+command insert(b:bat[:oid,:any_2], h:oid, t:any_2, force:bit) :void
+address BKCinsert_bun_force;
+command insert(b:bat[:void,:any_2], h:oid, t:any_2, force:bit) :void
+address BKCinsert_bun_force;
+
+#command insert(b:bat[:void,:any_1], v:any_1):void
+#address BKCinsert_void_bun
+#comment "Insert a value in a 'void' bat";
+
+#command insert(b:bat[:any_1,:bat], v:any_1, z:bat[:any_3,:any_4]):void
+#address BKCinsert_bun;
+#command insert(b:bat[:void,:bat], z:bat[:any_1,:any_2]):void
+#address BKCinsert_void_bun
+#comment "Insert a value in a 'void' bat";
 
 command replace(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2]) :void
 address BKCreplace_bat
@@ -714,6 +733,7 @@ mal_export char *BKCgetAlpha(int *r, int *bid);
 mal_export char *BKCgetDelta(int *r, int *bid);
 mal_export char *BKCinsert_void_bun(int *r, int *bid, ptr t);
 mal_export char *BKCinsert_bun(int *r, int *bid, ptr h, ptr t);
+mal_export char *BKCinsert_bun_force(int *r, int *bid, ptr h, ptr t, bit *force);
 mal_export char * BKCinsert_bun_oid_any(int *r, int *bid, ptr h, ptr t);
 mal_export char * BKCinsert_bun_int_int(int *r, int *bid, int *h, int *t);
 mal_export char * BKCinsert_bun_oid_str(int *r, int *bid, ptr h, ptr t);
@@ -732,6 +752,7 @@ mal_export str BKCrevert(int *ret, int *bid);
 mal_export str BKCsort(int *ret, int *bid);
 mal_export str BKCsort_rev(int *ret, int *bid);
 mal_export str BKCinsert_bat(int *r, int *bid, int *sid);
+mal_export str BKCinsert_bat_force(int *r, int *bid, int *sid, bit *force);
 mal_export str BKCreplace_bun(int *r, int *bid, ptr h, ptr t);
 mal_export str BKCreplace_bat(int *r, int *bid, int *sid);
 mal_export str BKCreplace_bun_force(int *r, int *bid, ptr h, ptr t, bit *force);
@@ -898,7 +919,7 @@ CMDorder_rev(BAT **ret, BAT *b)
 int
 CMDinsert_bun(BAT **r, BAT *b, ptr h, ptr t)
 {
-	if (BUNins(*r = b, @:batconvert(b,h)@, @:batconvert(b,t)@) == NULL)
+	if (BUNins(*r = b, @:batconvert(b,h)@, @:batconvert(b,t)@, FALSE) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -907,7 +928,7 @@ CMDinsert_bun(BAT **r, BAT *b, ptr h, ptr t)
 int
 CMDinsert_bat(BAT **r, BAT *b, BAT *s)
 {
-	if (BATins(*r = b, s) == NULL)
+	if (BATins(*r = b, s, FALSE) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -1256,9 +1277,9 @@ HASHinfo(BAT *bn, Hash *h, str s)
 	size_t largetot = 0;
 	char buf[32];
 
-	BUNins(bn, pre(s, "type"), ATOMname(h->type));
-	BUNins(bn, pre(s, "mask"), local_utoa(h->mask));
-	BUNins(bn, pre(s, "lim"), local_utoa(h->lim));
+	BUNins(bn, pre(s, "type"), ATOMname(h->type), FALSE);
+	BUNins(bn, pre(s, "mask"), local_utoa(h->mask), FALSE);
+	BUNins(bn, pre(s, "lim"), local_utoa(h->lim), FALSE);
 
 	for (i = 0; i <= COLLISION + 1; i++) {
 		cnt[i] = 0;
@@ -1278,10 +1299,10 @@ HASHinfo(BAT *bn, Hash *h, str s)
 
 	for (i = 0; i <= COLLISION + 1; i++)
 		if (cnt[i]) {
-			BUNins(bn, pre(s, local_utoa(i)), local_utoa(cnt[i]));
+			BUNins(bn, pre(s, local_utoa(i)), local_utoa(cnt[i]), FALSE);
 		}
 	snprintf(buf, 32, SZFMT " on " SZFMT, largetot, largebuckets);
-	BUNins(bn, pre(s, "collision"), buf);
+	BUNins(bn, pre(s, "collision"), buf, FALSE);
 }
 
 static void
@@ -1294,15 +1315,15 @@ infoHeap(BAT *bn, Heap *hp, str nme)
 	while (*nme)
 		*p++ = *nme++;
 	strcpy(p, "free");
-	BUNins(bn, buf, local_utoa(hp->free));
+	BUNins(bn, buf, local_utoa(hp->free), FALSE);
 	strcpy(p, "size");
-	BUNins(bn, buf, local_utoa(hp->size));
+	BUNins(bn, buf, local_utoa(hp->size), FALSE);
 	strcpy(p, "maxsize");
-	BUNins(bn, buf, local_utoa(hp->maxsize));
+	BUNins(bn, buf, local_utoa(hp->maxsize), FALSE);
 	strcpy(p, "storage");
-	BUNins(bn, buf, (hp->base == NULL) ? "absent" : (hp->storage == STORE_MMAP) ? (hp->filename ? "memory mapped" : "anonymous vm") : (hp->storage == STORE_PRIV) ? "private map" : "malloced");
+	BUNins(bn, buf, (hp->base == NULL) ? "absent" : (hp->storage == STORE_MMAP) ? (hp->filename ? "memory mapped" : "anonymous vm") : (hp->storage == STORE_PRIV) ? "private map" : "malloced", FALSE);
 	strcpy(p, "filename");
-	BUNins(bn, buf, hp->filename ? hp->filename : "no file");
+	BUNins(bn, buf, hp->filename ? hp->filename : "no file", FALSE);
 }
 
 static char *
@@ -1350,67 +1371,67 @@ CMDinfo(BAT **retval, BAT *b)
 		access = "unknown";
 	}
 
-	BUNins(bn, "version", local_itoa(b->GDKversion));
-	BUNins(bn, "batId", BATgetId(b));
-	BUNins(bn, "batCacheid", local_itoa(b->batCacheid));
-	BUNins(bn, "batParentid", local_itoa(b->batParentid));
-	BUNins(bn, "batSharecnt", local_itoa(b->batSharecnt));
-	BUNins(bn, "head", ATOMname(b->htype));
-	BUNins(bn, "tail", ATOMname(b->ttype));
-	BUNins(bn, "batPersistence", mode);
-	BUNins(bn, "batRestricted", access);
-	BUNins(bn, "batRefcnt", local_itoa(BBP_refs(b->batCacheid)));
-	BUNins(bn, "batLRefcnt", local_itoa(BBP_lrefs(b->batCacheid)));
-	BUNins(bn, "batDirty", BATdirty(b) ? "dirty" : "clean");
-	BUNins(bn, "batSet", local_itoa(b->batSet));
-	BUNins(bn, "void_tid", local_itoa(b->void_tid));
-	BUNins(bn, "void_cnt", local_itoa(b->void_cnt));
+	BUNins(bn, "version", local_itoa(b->GDKversion), FALSE);
+	BUNins(bn, "batId", BATgetId(b), FALSE);
+	BUNins(bn, "batCacheid", local_itoa(b->batCacheid), FALSE);
+	BUNins(bn, "batParentid", local_itoa(b->batParentid), FALSE);
+	BUNins(bn, "batSharecnt", local_itoa(b->batSharecnt), FALSE);
+	BUNins(bn, "head", ATOMname(b->htype), FALSE);
+	BUNins(bn, "tail", ATOMname(b->ttype), FALSE);
+	BUNins(bn, "batPersistence", mode, FALSE);
+	BUNins(bn, "batRestricted", access, FALSE);
+	BUNins(bn, "batRefcnt", local_itoa(BBP_refs(b->batCacheid)), FALSE);
+	BUNins(bn, "batLRefcnt", local_itoa(BBP_lrefs(b->batCacheid)), FALSE);
+	BUNins(bn, "batDirty", BATdirty(b) ? "dirty" : "clean", FALSE);
+	BUNins(bn, "batSet", local_itoa(b->batSet), FALSE);
+	BUNins(bn, "void_tid", local_itoa(b->void_tid), FALSE);
+	BUNins(bn, "void_cnt", local_itoa(b->void_cnt), FALSE);
 
-	BUNins(bn, "hsorted", local_itoa(BAThordered(b)));
-	BUNins(bn, "hident", b->hident);
-	BUNins(bn, "hdense", local_itoa(BAThdense(b)));
-	BUNins(bn, "hseqbase", oidtostr(b->hseqbase));
-	BUNins(bn, "hkey", local_itoa(b->hkey));
-	BUNins(bn, "hloc", local_itoa(b->hloc));
-	BUNins(bn, "hvarsized", local_itoa(b->hvarsized));
-	BUNins(bn, "halign", local_utoa(b->halign));
-	BUNins(bn, "hnosorted", local_utoa(b->H->nosorted));
-	BUNins(bn, "hnosorted_rev", local_utoa(b->H->nosorted_rev));
-	BUNins(bn, "hnodense", local_utoa(b->H->nodense));
-	BUNins(bn, "hnokey[0]", local_utoa(b->H->nokey[0]));
-	BUNins(bn, "hnokey[1]", local_utoa(b->H->nokey[1]));
+	BUNins(bn, "hsorted", local_itoa(BAThordered(b)), FALSE);
+	BUNins(bn, "hident", b->hident, FALSE);
+	BUNins(bn, "hdense", local_itoa(BAThdense(b)), FALSE);
+	BUNins(bn, "hseqbase", oidtostr(b->hseqbase), FALSE);
+	BUNins(bn, "hkey", local_itoa(b->hkey), FALSE);
+	BUNins(bn, "hloc", local_itoa(b->hloc), FALSE);
+	BUNins(bn, "hvarsized", local_itoa(b->hvarsized), FALSE);
+	BUNins(bn, "halign", local_utoa(b->halign), FALSE);
+	BUNins(bn, "hnosorted", local_utoa(b->H->nosorted), FALSE);
+	BUNins(bn, "hnosorted_rev", local_utoa(b->H->nosorted_rev), FALSE);
+	BUNins(bn, "hnodense", local_utoa(b->H->nodense), FALSE);
+	BUNins(bn, "hnokey[0]", local_utoa(b->H->nokey[0]), FALSE);
+	BUNins(bn, "hnokey[1]", local_utoa(b->H->nokey[1]), FALSE);
 
-	BUNins(bn, "tident", b->tident);
-	BUNins(bn, "tdense", local_itoa(BATtdense(b)));
-	BUNins(bn, "tseqbase", oidtostr(b->tseqbase));
-	BUNins(bn, "tsorted", local_itoa(BATtordered(b)));
-	BUNins(bn, "tkey", local_itoa(b->tkey));
-	BUNins(bn, "tloc", local_itoa(b->tloc));
-	BUNins(bn, "tvarsized", local_itoa(b->tvarsized));
-	BUNins(bn, "talign", local_utoa(b->talign));
-	BUNins(bn, "tnosorted", local_utoa(b->T->nosorted));
-	BUNins(bn, "tnosorted_rev", local_utoa(b->T->nosorted_rev));
-	BUNins(bn, "tnodense", local_utoa(b->T->nodense));
-	BUNins(bn, "tnokey[0]", local_utoa(b->T->nokey[0]));
-	BUNins(bn, "tnokey[1]", local_utoa(b->T->nokey[1]));
+	BUNins(bn, "tident", b->tident, FALSE);
+	BUNins(bn, "tdense", local_itoa(BATtdense(b)), FALSE);
+	BUNins(bn, "tseqbase", oidtostr(b->tseqbase), FALSE);
+	BUNins(bn, "tsorted", local_itoa(BATtordered(b)), FALSE);
+	BUNins(bn, "tkey", local_itoa(b->tkey), FALSE);
+	BUNins(bn, "tloc", local_itoa(b->tloc), FALSE);
+	BUNins(bn, "tvarsized", local_itoa(b->tvarsized), FALSE);
+	BUNins(bn, "talign", local_utoa(b->talign), FALSE);
+	BUNins(bn, "tnosorted", local_utoa(b->T->nosorted), FALSE);
+	BUNins(bn, "tnosorted_rev", local_utoa(b->T->nosorted_rev), FALSE);
+	BUNins(bn, "tnodense", local_utoa(b->T->nodense), FALSE);
+	BUNins(bn, "tnokey[0]", local_utoa(b->T->nokey[0]), FALSE);
+	BUNins(bn, "tnokey[1]", local_utoa(b->T->nokey[1]), FALSE);
 
-	BUNins(bn, "batInserted", local_utoa(BUNindex(b, b->batInserted)));
-	BUNins(bn, "batDeleted", local_utoa(BUNindex(b, b->batDeleted)));
-	BUNins(bn, "batFirst", local_utoa(BUNindex(b, b->batFirst)));
-	BUNins(bn, "top", local_utoa(BUNindex(b, (BUN) ((char *) Bunbase(b) + b->batBuns->free))));
-	BUNins(bn, "batStamp", local_itoa(b->batStamp));
-	BUNins(bn, "lastUsed", local_itoa(BBP_lastused(b->batCacheid)));
-	BUNins(bn, "curStamp", local_itoa(BBPcurstamp()));
-	BUNins(bn, "batCopiedtodisk", local_itoa(b->batCopiedtodisk));
-	BUNins(bn, "batDirtydesc", b->batDirtydesc ? "dirty" : "clean");
+	BUNins(bn, "batInserted", local_utoa(BUNindex(b, b->batInserted)), FALSE);
+	BUNins(bn, "batDeleted", local_utoa(BUNindex(b, b->batDeleted)), FALSE);
+	BUNins(bn, "batFirst", local_utoa(BUNindex(b, b->batFirst)), FALSE);
+	BUNins(bn, "top", local_utoa(BUNindex(b, (BUN) ((char *) Bunbase(b) + b->batBuns->free))), FALSE);
+	BUNins(bn, "batStamp", local_itoa(b->batStamp), FALSE);
+	BUNins(bn, "lastUsed", local_itoa(BBP_lastused(b->batCacheid)), FALSE);
+	BUNins(bn, "curStamp", local_itoa(BBPcurstamp()), FALSE);
+	BUNins(bn, "batCopiedtodisk", local_itoa(b->batCopiedtodisk), FALSE);
+	BUNins(bn, "batDirtydesc", b->batDirtydesc ? "dirty" : "clean", FALSE);
 
-	BUNins(bn, "batDirtybuns", b->batDirtybuns ? "dirty" : "clean");
+	BUNins(bn, "batDirtybuns", b->batDirtybuns ? "dirty" : "clean", FALSE);
 	infoHeap(bn, b->batBuns, "batBuns.");
 
-	BUNins(bn, "hheapdirty", b->hheapdirty ? "dirty" : "clean");
+	BUNins(bn, "hheapdirty", b->hheapdirty ? "dirty" : "clean", FALSE);
 	infoHeap(bn, b->hheap, "hheap.");
 
-	BUNins(bn, "theapdirty", b->theapdirty ? "dirty" : "clean");
+	BUNins(bn, "theapdirty", b->theapdirty ? "dirty" : "clean", FALSE);
 	infoHeap(bn, b->theap, "theap.");
 
 	/* dump index information */
@@ -1834,10 +1855,27 @@ BKCinsert_bun(int *r, int *bid, ptr h, ptr t)
 	}
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
-	BUNins(b, h, t);
+	BUNins(b, h, t, FALSE);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
+
+char *
+BKCinsert_bun_force(int *r, int *bid, ptr h, ptr t, bit *force)
+{
+	BAT *b;
+	(void) r;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("bat.insert", "Cannot access descriptor");
+	}
+	@:derefStr(b,h,h)@
+	@:derefStr(b,t,t)@
+	BUNins(b, h, t, *force);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
 char *
 BKCinsert_bun_oid_any(int *r, int *bid, ptr h, ptr t)
 {
@@ -1848,7 +1886,7 @@ BKCinsert_bun_oid_any(int *r, int *bid, ptr h, ptr t)
 		return throwMessage("bat.insert", "Cannot access descriptor");
 	}
 	/* tail is not(!) a string */
-	BUNins(b, h, t);
+	BUNins(b, h, t, FALSE);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1861,7 +1899,7 @@ BKCinsert_bun_int_int(int *r, int *bid, int *h, int *t)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.insert", "Cannot access descriptor");
 	}
-	BUNins(b, h, t);
+	BUNins(b, h, t, FALSE);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1875,7 +1913,7 @@ BKCinsert_bun_oid_str(int *r, int *bid, ptr h, ptr t)
 		return throwMessage("bat.insert", "Cannot access descriptor");
 	}
 	@:derefStr(b,t,t)@
-	BUNins(b, h, t);
+	BUNins(b, h, t, FALSE);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1893,7 +1931,7 @@ BKCinsert_bat(int *r, int *bid, int *sid)
 		BBPreleaseref(b->batCacheid);
 		return throwMessage("bat.insert", "Cannot access descriptor");
 	}
-	if (BATins(b, s) == NULL) {
+	if (BATins(b, s, FALSE) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(s->batCacheid);
 		return throwMessage("bat.insert", "Failed");
@@ -1902,6 +1940,30 @@ BKCinsert_bat(int *r, int *bid, int *sid)
 	BBPreleaseref(s->batCacheid);
 	return MAL_SUCCEED;
 }
+
+str
+BKCinsert_bat_force(int *r, int *bid, int *sid, bit *force)
+{
+	BAT *b, *s;
+
+	(void) r;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("bat.insert", "Cannot access descriptor");
+	}
+	if ((s = BATdescriptor(*sid)) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		return throwMessage("bat.insert", "Cannot access descriptor");
+	}
+	if (BATins(b, s, *force) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(s->batCacheid);
+		return throwMessage("bat.insert", "Failed");
+	}
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(s->batCacheid);
+	return MAL_SUCCEED;
+}
+
 
 str
 BKCreplace_bun(int *r, int *bid, ptr h, ptr t)

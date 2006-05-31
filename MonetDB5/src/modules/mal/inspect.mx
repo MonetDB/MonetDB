@@ -229,7 +229,7 @@ INSPECTgetModuleIds(int *ret)
 	c = MCgetClient();
 
 	for (s = c->nspace; s; s = s->outer, i++)
-		BUNins(b, (ptr) &int_nil, s->name);
+		BUNins(b, (ptr) &int_nil, s->name, FALSE);
 
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(view,scope,names)@
@@ -258,7 +258,7 @@ INSPECTsymbolFind(int *ret, int kind)
 
 					if (kind && kind != sig->token)
 						continue;
-					BUNins(b, getModuleId(sig), getFunctionId(sig));
+					BUNins(b, getModuleId(sig), getFunctionId(sig), FALSE);
 				}
 			}
 		s = s->outer;
@@ -326,7 +326,7 @@ INSPECTgetAllFunctions(int *ret)
 				for (t = s->subscope[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
 
-					BUNins(b, &k, getFunctionId(sig));
+					BUNins(b, &k, getFunctionId(sig), FALSE);
 					k++;
 				}
 			}
@@ -359,7 +359,7 @@ INSPECTgetAllModules(int *ret)
 				for (t = s->subscope[i]; t; t = t->peer) {
 					InstrPtr sig = getSignature(t);
 
-					BUNins(b, &k, getModuleId(sig));
+					BUNins(b, &k, getModuleId(sig), FALSE);
 					k++;
 				}
 			}
@@ -393,7 +393,7 @@ INSPECTgetkind(int *ret)
 					InstrPtr sig = getSignature(t);
 					str kind = operatorName(sig->token);
 
-					BUNins(b, &k, kind);
+					BUNins(b, &k, kind, FALSE);
 					k++;
 				}
 			}
@@ -428,7 +428,7 @@ INSPECTgetaddress(int *ret)
 
 					if (kind == 0)
 						kind = "";
-					BUNins(b, &k, &kind);
+					BUNins(b, &k, &kind, FALSE);
 					k++;
 				}
 			}
@@ -464,7 +464,7 @@ INSPECTgetAllSignatures(int *ret)
 					fcnDefinition(t->def, getSignature(t), sig, 0);
 					a= strstr(sig,"address");
 					if(a) *a = 0;
-					BUNins(b, &k, strchr(sig, '('));
+					BUNins(b, &k, strchr(sig, '('), FALSE);
 					k++;
 				}
 			}
@@ -500,7 +500,7 @@ INSPECTgetAllAddresses(int *ret)
 					if( a)
 						for( a=a+7; isspace((int) *a); a++)
 							;
-					BUNins(b, &k, (a? a: "nil"));
+					BUNins(b, &k, (a? a: "nil"), FALSE);
 					k++;
 				}
 			}
@@ -530,7 +530,7 @@ INSPECTgetDefinition(int *ret, str *mod, str *fcn)
 
 		for (i = 0; i < s->def->stop; i++) {
 			ps = instruction2str(s->def, getInstrPtr(s->def, i), 0);
-			BUNins(b, buf, ps + 1);
+			BUNins(b, buf, ps + 1, FALSE);
 			GDKfree(ps);
 		}
 		s = s->peer;
@@ -570,7 +570,7 @@ INSPECTgetSignature(int *ret, str *mod, str *fcn)
 				*tail = 0;
 			if (tail && strchr(tail, ';'))
 				*strchr(tail, ';') = 0;
-			BUNins(b, buf, c);
+			BUNins(b, buf, c, FALSE);
 			GDKfree(ps);
 		}
 		s = s->peer;
@@ -611,7 +611,7 @@ INSPECTgetAddress(int *ret, str *mod, str *fcn)
 			}
 			if (tail && strchr(tail, ';'))
 				*strchr(tail, ';') = 0;
-			BUNins(b, buf, (tail? tail: "nil"));
+			BUNins(b, buf, (tail? tail: "nil"), FALSE);
 			GDKfree(ps);
 		}
 		s = s->peer;
@@ -638,7 +638,7 @@ INSPECTgetComment(int *ret, str *mod, str *fcn)
 	snprintf(buf,BUFSIZ,"%s.%s",*mod,*fcn);
 	while (s != NULL) {
 		if (idcmp(s->name, *fcn) == 0) {
-			BUNins(b, buf, s->def->help);
+			BUNins(b, buf, s->def->help, FALSE);
 		}
 		s = s->peer;
 	}
@@ -709,7 +709,7 @@ INSPECTsymbolType(int *ret, str *mod, str *fcn)
 		if (idcmp(s->name, *fcn) == 0) {
 			str t = getTypeName(getDestType(s->def, getSignature(s)));
 
-			BUNins(b, s->name, t);
+			BUNins(b, s->name, t, FALSE);
 			GDKfree(t);
 		}
 		s = s->peer;
@@ -729,7 +729,7 @@ INSPECTatom_names(int *ret)
 		return throwMessage("inspect.getAtomNames", "failed to create BAT");
 
 	for (i = 0; i < GDKatomcnt; i++)
-		BUNins(b, &i, ATOMname(i));
+		BUNins(b, &i, ATOMname(i), FALSE);
 
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(view,atom,name)@
@@ -761,7 +761,7 @@ INSPECTatom_sup_names(int *ret)
 	for (i = 0; i < GDKatomcnt; i++) {
 		for (k = BATatoms[i].storage; k > TYPE_str; k = BATatoms[k].storage)
 			;
-		BUNins(b, &i, ATOMname(k));
+		BUNins(b, &i, ATOMname(k), FALSE);
 	}
 
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -782,7 +782,7 @@ INSPECTatom_sizes(int *ret)
 
 	for (i = 0; i < GDKatomcnt; i++) {
 		s = ATOMsize(i);
-		BUNins(b, &i, &s);
+		BUNins(b, &i, &s, FALSE);
 	}
 
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -835,11 +835,11 @@ INSPECTgetModuleSize(int *ret, str *mod)
 		while (s != NULL) {
 			lng size;
 			total+= (size = INSPECTcalcSize(s->def));
-			BUNins(b, s->name, &size);
+			BUNins(b, s->name, &size, FALSE);
 			s = s->peer;
 		}
 	}
-	BUNins(b, *mod, &total);
+	BUNins(b, *mod, &total, FALSE);
 
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(view,input,result)@

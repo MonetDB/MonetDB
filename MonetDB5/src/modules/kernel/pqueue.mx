@@ -151,7 +151,7 @@ int pqueue_enqueue_@1@2(BAT *h,
   hBUNsize = BUNsize(h);
 
   posel = BATcount(h); /*last position*/
-  BUNins(h, (ptr)idx, (ptr)el);
+  BUNins(h, (ptr)idx, (ptr)el, FALSE);
   ins = hbase+posel*hBUNsize;
   
   while(posel >0) {
@@ -344,7 +344,7 @@ int pqueue_enqueue_any@1(BAT *h, oid *idx, ptr el, int tpe)
   hBUNsize = BUNsize(h);
 
   posel = BATcount(h); /*last position*/
-  BUNins(h, (ptr)idx, (ptr)el);
+  BUNins(h, (ptr)idx, (ptr)el, FALSE);
   ins = hbase+posel*hBUNsize;
   
   while(posel >0) {

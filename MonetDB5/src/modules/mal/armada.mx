@@ -237,7 +237,7 @@ ARMADAaddStep(int *ret, str *func, inet *site) {
 	p = BUNlocate(ARMADA_func_site, *func, site);
 	if (!p) {
 		/* apparently not, so let's add it */
-		BUNins(ARMADA_func_site, *func, site);
+		BUNins(ARMADA_func_site, *func, site, FALSE);
 		/* and look up the just added BUN */
 		p = BUNlocate(ARMADA_func_site, *func, site);
 	}
@@ -295,7 +295,7 @@ ARMADAaddTrail(int *ret, int *pre, int *step) {
 			if (!p)
 				throw("ArmadaException", "addTrail", "pointing to non-existant predecessor step");
 		}
-		BUNins(ARMADA_step_pre, step, pre);
+		BUNins(ARMADA_step_pre, step, pre, FALSE);
 		/* and look up the just added BUN */
 		p = BUNlocate(ARMADA_step_pre, step, pre);
 	} else {

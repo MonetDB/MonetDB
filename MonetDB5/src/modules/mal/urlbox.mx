@@ -274,7 +274,7 @@ Insert the remainder as a new url string
 	for( ; i<depth; i++){
 		/* printf("update [%d]:%s\n",i,parts[i]);*/
 		idx= (int) BATcount(urlBAT[i]);
-		BUNins(urlBAT[i], (ptr) &prv, parts[i]);
+		BUNins(urlBAT[i], (ptr) &prv, parts[i], FALSE);
 		prv=idx;
 	}
 	return MAL_SUCCEED;
@@ -515,7 +515,7 @@ URLBOXgetNames(int *r){
 	if( b== NULL)
 		return throwMessage("urlbox.getNames","Could not create table");
 	for(i=0; i<urlDepth; i++){
-		BUNins(b,&i, BBPname(urlBAT[i]->batCacheid));
+		BUNins(b,&i, BBPname(urlBAT[i]->batCacheid), FALSE);
 	}
 	*r = b->batCacheid;
 	BBPkeepref(*r);
@@ -532,7 +532,7 @@ URLBOXgetCount(int *r){
 		return throwMessage("urlbox.getNames","Could not create table");
 	for(i=0; i<urlDepth; i++){
 		cnt = (lng) BATcount(urlBAT[i]);
-		BUNins(b,&i, &cnt);
+		BUNins(b,&i, &cnt, FALSE);
 	}
 	*r = b->batCacheid;
 	BBPkeepref(*r);
@@ -551,7 +551,7 @@ URLBOXgetCardinality(int *r){
 		bn = (BAT *) BATkunique(BATmirror(urlBAT[i]));
 		cnt = (lng) BATcount(bn);
 		BBPunfix(bn->batCacheid);
-		BUNins(b,&i, &cnt);
+		BUNins(b,&i, &cnt, FALSE);
 	}
 	*r = b->batCacheid;
 	BBPkeepref(*r);
@@ -589,7 +589,7 @@ URLBOXgetSize(int *r){
 		}
 		tot = size;
 		BBPunfix(bn->batCacheid);
-		BUNins(b,&i, &tot);
+		BUNins(b,&i, &tot, FALSE);
 	}
 	*r = b->batCacheid;
 	BBPkeepref(*r);

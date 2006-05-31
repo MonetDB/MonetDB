@@ -97,7 +97,7 @@ MATpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b == NULL)
 			return throwMessage("mat.pack","Could not access component");
-		BATins(bn,b);
+		BATins(bn,b,FALSE);
 		BBPunfix(b->batCacheid);
 	}
 	(void) mb;

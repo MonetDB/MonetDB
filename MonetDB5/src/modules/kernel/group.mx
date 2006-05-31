@@ -799,7 +799,7 @@ CThistosum(BAT **retval,	/* put pointer to BAT[oid,int] record here. */
 
 		BUNfndOID(qb, res, ot);
 		if (qb == NULL) {
-			BUNins(res, ot, &i);
+			BUNins(res, ot, &i, FALSE);
 		} else {
 			z = (int *) BUNtloc(res, qb);
 			*z += i;
@@ -1631,7 +1631,7 @@ str GRP@1_oid_@2(int *retval, int *bid){
 
 				if( h != grp){
 					/* switch to a new group */
-					BUNins(bn, &h, &t);
+					BUNins(bn, &h, &t, FALSE);
 					grp= h;
 					val = (@2*) BUNtail(bn,BUNlast(bn)-xx);
 				} else

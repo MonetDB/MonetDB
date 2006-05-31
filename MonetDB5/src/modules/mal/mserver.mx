@@ -456,6 +456,8 @@ doChallenge(str cmd, int msgsock) {
 			GDKsyserror("SERVERlisten: fdin problems\n");
 			stream_close(fdin);
 			stream_destroy(fdin);
+			stream_close(fdout);
+			stream_destroy(fdout);
 			return;
 		}
 		*user = 0;
@@ -464,6 +466,8 @@ doChallenge(str cmd, int msgsock) {
 		if (GDKembedded && MCcountClients() > 1) {
 			stream_close(fdin);
 			stream_destroy(fdin);
+			stream_close(fdout);
+			stream_destroy(fdout);
 			return;
 		}
 #ifdef DEBUG_SERVER
@@ -475,17 +479,15 @@ doChallenge(str cmd, int msgsock) {
 		if (s) s = strchr(s + 1, ':'); /* language */
 		blocked = s && strncmp(s, ":blocked", 8) == 0;
 		if (blocked) {
-			/* printf("mserver:use blocked mode\n");fflush(stdout); */
 			fdin = block_stream(stream_rstream(fdin));
-			fdout = block_stream(socket_wstream(msgsock, "Server write"));
-		} else {
-			fdout = socket_wastream(msgsock, "Server write");
+			fdout = block_stream(stream_wstream(fdout));
+
+			if (!fdin || !fdout) {
+				GDKsyserror("SERVERlisten:fdout problems\n");
+				return;
+			}
 		}
 
-		if (fdout == 0) {
-			GDKsyserror("SERVERlisten:fdout problems\n");
-			return;
-		}
 #ifdef DEBUG_SERVER
 		THRprintf(GDKerr, "SERVERlisten:client accepted %d\n", msgsock);
 		THRprintf(GDKerr, "SERVERlisten:client string %s\n", name);
@@ -1561,7 +1563,7 @@ SERVERfetch_field_bat(int *bid, int *key){
 	cnt= mapi_get_field_count(SERVERsessions[i].hdl);
 	for(j=0; j< cnt; j++){
 		fld= mapi_fetch_field(SERVERsessions[i].hdl,j);
-		BUNins(b,&o,fld);
+		BUNins(b,&o,fld, FALSE);
 		o++;
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -1786,14 +1788,14 @@ SERVERmapi_rpc_bat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			BATseqbase(b, hval.val.oval);
 		if (ott != tt)
 			BATseqbase(BATmirror(b), tval.val.oval);
-		BUNins(b,VALget(&hval),VALget(&tval));
+		BUNins(b,VALget(&hval),VALget(&tval), FALSE);
 	}
 	while( mapi_fetch_row(hdl)){
 		fld1= mapi_fetch_field(hdl,0);
 		fld2= mapi_fetch_field(hdl,1);
 		SERVERfieldAnalysis(fld1, ht, &hval);
 		SERVERfieldAnalysis(fld2, tt, &tval);
-		BUNins(b,VALget(&hval),VALget(&tval));
+		BUNins(b,VALget(&hval),VALget(&tval), FALSE);
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	*ret = b->batCacheid;

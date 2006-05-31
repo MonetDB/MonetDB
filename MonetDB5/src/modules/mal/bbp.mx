@@ -884,7 +884,7 @@ CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return throwMessage("bbp.getObjects", "Cannot create BAT");
 	for (i = 0; i < box->sym->vtop; i++) {
 		v = &box->val->stk[i];
-		BUNins(b, &v->val.bval, getVarName(box->sym, i));
+		BUNins(b, &v->val.bval, getVarName(box->sym, i), FALSE);
 	}
 
 	ret = (int *) getArgReference(stk, pci, 0);
@@ -907,11 +907,11 @@ CMDbbpNames(int *ret)
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid) {
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)) ) {
-				BUNins(b, &i, BBP_logical(i));
+				BUNins(b, &i, BBP_logical(i), FALSE);
 				if (BBP_logical(-i) && (BBP_refs(-i) || BBP_lrefs(-i))) {
 					int j = -i;
 
-					BUNins(b, &j, BBP_logical(j));
+					BUNins(b, &j, BBP_logical(j), FALSE);
 				}
 			}
 		}
@@ -942,9 +942,9 @@ CMDbbpRNames(int *ret)
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid && BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 			if (BBP_logical(-i)) {
-				BUNins(b, &i, BBP_logical(-i));
+				BUNins(b, &i, BBP_logical(-i), FALSE);
 			} else
-				BUNins(b, &i, BBP_logical(i));
+				BUNins(b, &i, BBP_logical(i), FALSE);
 		}
 	BBPunlock("CMDbbpRNames");
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -969,7 +969,7 @@ CMDbbpCount(int *ret)
 				bn = BATdescriptor(i);
 				if (bn) {
 					l = BATcount(bn);
-					BUNins(b, &i, &l);
+					BUNins(b, &i, &l, FALSE);
 					BBPunfix(bn->batCacheid);
 				}
 			}
@@ -996,7 +996,7 @@ CMDbbpLocation(int *ret)
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid) {
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)))
-				BUNins(b, &i, BBP_physical(i));
+				BUNins(b, &i, BBP_physical(i), FALSE);
 		}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpLocation");
@@ -1024,11 +1024,11 @@ CMDbbpHeat(int *ret)
 			if (BBP_cache(i) && !monet_modulesilent) {
 				int heat = BBP_lastused(i);
 
-				BUNins(b, &i, &heat);
+				BUNins(b, &i, &heat, FALSE);
 			} else if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				int zero = 0;
 
-				BUNins(b, &i, &zero);
+				BUNins(b, &i, &zero, FALSE);
 			}
 		}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -1056,7 +1056,7 @@ CMDbbpDirty(int *ret)
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				BAT *bn = BBP_cache(i);
 
-				BUNins(b, &i, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean");
+				BUNins(b, &i, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", FALSE);
 			}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpDirty");
@@ -1083,7 +1083,7 @@ CMDbbpStatus(int *ret)
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				char *loc = BBP_cache(i) ? "load" : "disk";
 
-				BUNins(b, &i, loc);
+				BUNins(b, &i, loc, FALSE);
 			}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpStatus");
@@ -1112,7 +1112,7 @@ CMDbbpKind(int *ret)
 				else
 					mode = "persistent";
 				if (mode)
-					BUNins(b, &i, mode);
+					BUNins(b, &i, mode, FALSE);
 			}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpKind");
@@ -1135,7 +1135,7 @@ CMDbbpRefCount(int *ret)
 		if (i != b->batCacheid && BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 			int refs = BBP_refs(i);
 
-			BUNins(b, &i, &refs);
+			BUNins(b, &i, &refs, FALSE);
 		}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpRefCount");
@@ -1158,7 +1158,7 @@ CMDbbpLRefCount(int *ret)
 		if (i != b->batCacheid && BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 			int refs = BBP_lrefs(i);
 
-			BUNins(b, &i, &refs);
+			BUNins(b, &i, &refs, FALSE);
 		}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpLRefCount");
@@ -1207,7 +1207,7 @@ str CMDbbp@2( int *ret){
 	for(i=1; i < BBPsize; i++) if (i != b->batCacheid) 
 	if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 		bn= BATdescriptor(i);
-		if(bn) BUNins(b, &i, BATatoms[BAT@1(bn)].name);
+		if(bn) BUNins(b, &i, BATatoms[BAT@1(bn)].name, FALSE);
 		BBPunfix(bn->batCacheid);
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -1264,7 +1264,7 @@ CMDbatpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isaBatType(tt))
 		tt = TYPE_bat;
 	b = BATnew(ht, tt, cap);
-	BUNins(b, (ptr) getArgValue(stk, pci, 1), getArgValue(stk, pci, 2));
+	BUNins(b, (ptr) getArgValue(stk, pci, 1), getArgValue(stk, pci, 2), FALSE);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);

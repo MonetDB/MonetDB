@@ -193,12 +193,12 @@ CLTInfo(int *ret)
 	if (b == 0)
 		return throwMessage("catalog.clientInfo", "failed to create BAT");
 
-	BUNins(b, "user", local_itoa((int)c->user));
-	BUNins(b, "password", ""); /* FIXME: get rid of this */
-	BUNins(b, "permission", local_itoa(c->permission));
-	BUNins(b, "scenario", c->scenario);
-	BUNins(b, "timer", local_itoa((int) c->timer));
-	BUNins(b, "trace", local_itoa(c->itrace));
+	BUNins(b, "user", local_itoa((int)c->user), FALSE);
+	BUNins(b, "password", "", FALSE); /* FIXME: get rid of this */
+	BUNins(b, "permission", local_itoa(c->permission), FALSE);
+	BUNins(b, "scenario", c->scenario, FALSE);
+	BUNins(b, "timer", local_itoa((int) c->timer), FALSE);
+	BUNins(b, "trace", local_itoa(c->itrace), FALSE);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(client,info,)@
 	return MAL_SUCCEED;
@@ -242,7 +242,7 @@ CLTLogin(int *ret)
 #endif
 #endif
 			s[24] = 0;
-			BUNins(b, &i, s);
+			BUNins(b, &i, s, FALSE);
 		}
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -264,7 +264,7 @@ CLTusers(int *ret)
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
 		if (c->mode >= CLAIMED && c->user)
-			b = BUNins(b, &i, local_itoa((int)c->user));
+			b = BUNins(b, &i, local_itoa((int)c->user), FALSE);
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(client,users,)@

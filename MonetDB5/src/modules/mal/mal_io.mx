@@ -832,7 +832,7 @@ Parse the line, and insert a BUN.
 @c
 		@:parsevalue(hconvert,'[',&lh,(ptr *) &h)@
 		@:parsevalue(tconvert,COMMA,&lt,(ptr *) &t)@
-		BUNins(b, h, t);
+		BUNins(b, h, t, FALSE);
 
 @-
 Unmap already parsed memory, to keep the memory usage low.

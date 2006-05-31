@@ -454,7 +454,7 @@ PBMtakeComplete(int *ret, str *grp)
 			BBPunfix(bn->batCacheid);
 			return throwMessage("pbm.take", "PBAT partition not accessible");
 		}
-		BATins(bn,b);
+		BATins(bn,b,FALSE);
 		BBPunfix(b->batCacheid);
 	}
 	*ret = bn->batCacheid;
@@ -508,7 +508,7 @@ PBMgetComponents(int *ret, str *grp)
 	if( b==NULL)
 		return throwMessage("pbm.getComponents", "Could not create BAT");
 	for( i= PBMfindPBAT(*grp); i>=0;  i= partitions[i].next)
-		BUNins(b,grp, partitions[i].elm);
+		BUNins(b,grp, partitions[i].elm, FALSE);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
@@ -524,7 +524,7 @@ PBMgetNames(int *ret)
 		return throwMessage("pbm.getNames", "Could not create BAT");
 	for( i= 0; i<ptop;  i++)
 	if( partitions[i].grp )
-		BUNins(b,partitions[i].grp, partitions[i].elm);
+		BUNins(b,partitions[i].grp, partitions[i].elm, FALSE);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);

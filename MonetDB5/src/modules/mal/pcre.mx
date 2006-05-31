@@ -306,7 +306,7 @@ pcre_select(BAT **res, str pattern, BAT *strs)
 		str s = BUNtail(strs, p);
 
 		if (pcre_exec(re, NULL, s, strlen(s), 0, 0, NULL, 0) >= 0) {
-			BUNins(r, BUNhead(strs, p), s);
+			BUNins(r, BUNhead(strs, p), s, FALSE);
 		}
 	}
 	if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ);
@@ -337,7 +337,7 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 		str s = BUNtail(strs, p);
 
 		if (pcre_exec(re, NULL, s, strlen(s), 0, 0, NULL, 0) >= 0) {
-			BUNins(r, BUNhead(strs, p), NULL);
+			BUNins(r, BUNhead(strs, p), NULL, FALSE);
 		}
 	}
 	my_pcre_free(re);
@@ -559,10 +559,10 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str 
 			strncpy(replaced_str+k, origin_str+capture_offsets[j], len);
 			k += len;
 			replaced_str[k] = '\0';
-			BUNins(tmpbat, BUNhead(origin_strs, p), replaced_str);
+			BUNins(tmpbat, BUNhead(origin_strs, p), replaced_str, FALSE);
 			GDKfree(replaced_str);
 		} else { /* no captured substrings, copy the original string into new bat */
-			BUNins(tmpbat, BUNhead(origin_strs, p), origin_str);
+			BUNins(tmpbat, BUNhead(origin_strs, p), origin_str, FALSE);
 		}
 	}
 
@@ -829,7 +829,7 @@ PCREselect(int *res, str *pattern, int *bid)
 		str s = BUNtail(strs, p);
 
 		if (pcre_exec(re, NULL, s, strlen(s), 0, 0, NULL, 0) >= 0) {
-			BUNins(bn, BUNhead(strs, p), s);
+			BUNins(bn, BUNhead(strs, p), s, FALSE);
 		}
 	}
 	my_pcre_free(re);
@@ -874,7 +874,7 @@ PCREuselect(int *res, str *pattern, int *bid)
 		str s = BUNtail(strs, p);
 
 		if (pcre_exec(re, NULL, s, strlen(s), 0, 0, NULL, 0) >= 0) {
-			BUNins(bn, BUNhead(strs, p), NULL);
+			BUNins(bn, BUNhead(strs, p), NULL, FALSE);
 		}
 	}
 	my_pcre_free(re);

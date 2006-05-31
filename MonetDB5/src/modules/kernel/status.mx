@@ -274,24 +274,24 @@ SYScpuStatistics(int *ret)
 	times(&newst);
 	/* store counters, ignore errors */
 	i = (int) (time(0) - clk);
-	b = BUNins(b, "elapsed", &i);
+	b = BUNins(b, "elapsed", &i, FALSE);
 	i = newst.tms_utime * 1000 / HZ;
-	b = BUNins(b, "user", &i);
+	b = BUNins(b, "user", &i, FALSE);
 	i = (newst.tms_utime - state.tms_utime) * 1000 / HZ;
-	b = BUNins(b, "elapuser", &i);
+	b = BUNins(b, "elapuser", &i, FALSE);
 	i = newst.tms_stime * 1000 / HZ;
-	b = BUNins(b, "system", &i);
+	b = BUNins(b, "system", &i, FALSE);
 	i = (newst.tms_stime - state.tms_stime) * 1000 / HZ;
-	b = BUNins(b, "elapsystem", &i);
+	b = BUNins(b, "elapsystem", &i, FALSE);
 
 	state = newst;
 #else
 	i = int_nil;
-	b = BUNins(b, "elapsed", &i);
-	b = BUNins(b, "user", &i);
-	b = BUNins(b, "elapuser", &i);
-	b = BUNins(b, "system", &i);
-	b = BUNins(b, "elapsystem", &i);
+	b = BUNins(b, "elapsed", &i, FALSE);
+	b = BUNins(b, "user", &i, FALSE);
+	b = BUNins(b, "elapuser", &i, FALSE);
+	b = BUNins(b, "system", &i, FALSE);
+	b = BUNins(b, "elapsystem", &i, FALSE);
 #endif
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(gdk,cpu)@
@@ -323,25 +323,25 @@ SYSmemStatistics(int *ret)
 	i = (MT_heapcur() - memincr);
 
 	memincr = MT_heapcur();
-	b = BUNins(b, "memincr", &i);
+	b = BUNins(b, "memincr", &i, FALSE);
 	i = m.arena;
-	b = BUNins(b, "arena", &i);
+	b = BUNins(b, "arena", &i, FALSE);
 	i = m.ordblks;
-	b = BUNins(b, "ordblks", &i);
+	b = BUNins(b, "ordblks", &i, FALSE);
 	i = m.smblks;
-	b = BUNins(b, "smblks", &i);
+	b = BUNins(b, "smblks", &i, FALSE);
 	i = m.hblkhd;
-	b = BUNins(b, "hblkhd", &i);
+	b = BUNins(b, "hblkhd", &i, FALSE);
 	i = m.hblks;
-	b = BUNins(b, "hblks", &i);
+	b = BUNins(b, "hblks", &i, FALSE);
 	i = m.usmblks;
-	b = BUNins(b, "usmblks", &i);
+	b = BUNins(b, "usmblks", &i, FALSE);
 	i = m.fsmblks;
-	b = BUNins(b, "fsmblks", &i);
+	b = BUNins(b, "fsmblks", &i, FALSE);
 	i = m.uordblks;
-	b = BUNins(b, "uordblks", &i);
+	b = BUNins(b, "uordblks", &i, FALSE);
 	i = m.fordblks;
-	b = BUNins(b, "fordblks", &i);
+	b = BUNins(b, "fordblks", &i, FALSE);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(gdk,mem)@
 	return MAL_SUCCEED;
@@ -455,7 +455,7 @@ set_vm_maxsize(lng *num)
 		sz = HEAP@1size(@3);
 		if (sz > *minsize) {
 			sprintf(buf, "@4/%s", s);
-			BUNins(bn, buf, &sz);
+			BUNins(bn, buf, &sz, FALSE);
 		}
 		@4 += sz; tot += sz;
 	}
@@ -464,7 +464,7 @@ if (@2) {
 	sz = HEAP@1size(@3);
 	if (sz > *minsize) {
 		sprintf(buf, "@4/%s", s); 
-		BUNins(bn, buf, &sz);
+		BUNins(bn, buf, &sz, FALSE);
 	} @4 += sz; tot += sz;
 }
 @c
@@ -504,7 +504,7 @@ SYSmem_usage(int *ret, lng *minsize)
 
 		if (sz > *minsize) {
 			sprintf(buf, "desc/%s", s);
-			BUNins(bn, buf, &sz);
+			BUNins(bn, buf, &sz, FALSE);
 		}
 		tot += (lng) sz;
 
@@ -518,22 +518,22 @@ SYSmem_usage(int *ret, lng *minsize)
 		@:heap(mem,b->theap,b->theap,tail)@
 	}
 	/* totals per category */
-	BUNins(bn, "_tot/buns", &buns);
-	BUNins(bn, "_tot/head", &head);
-	BUNins(bn, "_tot/tail", &tail);
-	BUNins(bn, "_tot/hhsh", &hhsh);
-	BUNins(bn, "_tot/thsh", &thsh);
-	BUNins(bn, "_tot/hind", &hind);
-	BUNins(bn, "_tot/tind", &tind);
+	BUNins(bn, "_tot/buns", &buns, FALSE);
+	BUNins(bn, "_tot/head", &head, FALSE);
+	BUNins(bn, "_tot/tail", &tail, FALSE);
+	BUNins(bn, "_tot/hhsh", &hhsh, FALSE);
+	BUNins(bn, "_tot/thsh", &thsh, FALSE);
+	BUNins(bn, "_tot/hind", &hind, FALSE);
+	BUNins(bn, "_tot/tind", &tind, FALSE);
 
 	/* special area 1: BBP rec */
 	sz = BBPlimit * sizeof(BBPrec) + n;
-	BUNins(bn, "_tot/bbp", &sz);
+	BUNins(bn, "_tot/bbp", &sz, FALSE);
 	tot += sz;
 
 	/* this concludes all major traceable Monet memory usages */
 	tot += sz;
-	BUNins(bn, "_tot/found", &tot);
+	BUNins(bn, "_tot/found", &tot, FALSE);
 
 	/* now look at what the global statistics report (to see if it coincides)
 	 */
@@ -541,20 +541,20 @@ SYSmem_usage(int *ret, lng *minsize)
 	/* how much *used* bytes in heap? */
 	m = MT_mallinfo();
 	sz = (size_t) (m.usmblks + m.uordblks + m.hblkhd);
-	BUNins(bn, "_tot/malloc", &tot);
+	BUNins(bn, "_tot/malloc", &tot, FALSE);
 
 	/* measure actual heap size, includes wasted fragmented space and anon mmap space used by malloc() */
 	sz = GDKvm_heapsize();
-	BUNins(bn, "_tot/heap", &sz);
+	BUNins(bn, "_tot/heap", &sz, FALSE);
 
 	tot = GDKmem_cursize();
 
 	/* allocated swap area memory that is not plain malloc() */
 	sz = MAX(0, sz - tot);
-	BUNins(bn, "_tot/valloc", &sz);
+	BUNins(bn, "_tot/valloc", &sz, FALSE);
 
 	/* swap-area memory is in either GDKvmalloc or heap */
-	BUNins(bn, "_tot/swapmem", &tot);
+	BUNins(bn, "_tot/swapmem", &tot, FALSE);
 
 	BBPunlock("SYSmem_usage");
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -594,27 +594,27 @@ SYSvm_usage(int *ret, lng *minsize)
 		@:heap(vm,b->theap,b->theap,tail)@
 	}
 	/* totals per category */
-	BUNins(bn, "_tot/buns", &buns);
-	BUNins(bn, "_tot/head", &head);
-	BUNins(bn, "_tot/tail", &tail);
-	BUNins(bn, "_tot/hhsh", &hhsh);
-	BUNins(bn, "_tot/thsh", &thsh);
-	BUNins(bn, "_tot/hind", &hind);
-	BUNins(bn, "_tot/tind", &tind);
+	BUNins(bn, "_tot/buns", &buns, FALSE);
+	BUNins(bn, "_tot/head", &head, FALSE);
+	BUNins(bn, "_tot/tail", &tail, FALSE);
+	BUNins(bn, "_tot/hhsh", &hhsh, FALSE);
+	BUNins(bn, "_tot/thsh", &thsh, FALSE);
+	BUNins(bn, "_tot/hind", &hind, FALSE);
+	BUNins(bn, "_tot/tind", &tind, FALSE);
 
 	/* special area 1: BBP rec */
 	sz = BBPmaxsize * sizeof(BBPrec);
-	BUNins(bn, "_tot/bbp", &sz);
+	BUNins(bn, "_tot/bbp", &sz, FALSE);
 	tot += sz;
 
 
 	/* this concludes all major traceable Monet virtual memory usages */
 	tot += sz;
-	BUNins(bn, "_tot/found", &tot);
+	BUNins(bn, "_tot/found", &tot, FALSE);
 
 	/* all VM is either GDKmmap or GDKvmalloc (possibly redirected GDKmalloc), *plus* the heap */
 	sz = GDKvm_cursize();
-	BUNins(bn, "_tot/vm", &sz);
+	BUNins(bn, "_tot/vm", &sz, FALSE);
 
 	BBPunlock("SYSvm_usage");
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -681,31 +681,31 @@ SYSioStatistics(int *ret)
 #ifndef NATIVE_WIN32
 	/* store counters, ignore errors */
 	i = ru.ru_maxrss;
-	BUNins(b, "maxrss", &i);
+	BUNins(b, "maxrss", &i, FALSE);
 	i = ru.ru_minflt;
-	BUNins(b, "minflt", &i);
+	BUNins(b, "minflt", &i, FALSE);
 	i = ru.ru_majflt;
-	BUNins(b, "majflt", &i);
+	BUNins(b, "majflt", &i, FALSE);
 	i = ru.ru_nswap;
-	BUNins(b, "nswap", &i);
+	BUNins(b, "nswap", &i, FALSE);
 	i = ru.ru_inblock;
-	BUNins(b, "inblock", &i);
+	BUNins(b, "inblock", &i, FALSE);
 	i = ru.ru_oublock;
-	BUNins(b, "oublock", &i);
+	BUNins(b, "oublock", &i, FALSE);
 	i = ru.ru_nvcsw;
-	BUNins(b, "nvcsw", &i);
+	BUNins(b, "nvcsw", &i, FALSE);
 	i = ru.ru_nivcsw;
-	BUNins(b, "ninvcsw", &i);
+	BUNins(b, "ninvcsw", &i, FALSE);
 #else
 	i = int_nil;
-	BUNins(b, "maxrss", &i);
-	BUNins(b, "minflt", &i);
-	BUNins(b, "majflt", &i);
-	BUNins(b, "nswap", &i);
-	BUNins(b, "inblock", &i);
-	BUNins(b, "oublock", &i);
-	BUNins(b, "nvcsw", &i);
-	BUNins(b, "ninvcsw", &i);
+	BUNins(b, "maxrss", &i, FALSE);
+	BUNins(b, "minflt", &i, FALSE);
+	BUNins(b, "majflt", &i, FALSE);
+	BUNins(b, "nswap", &i, FALSE);
+	BUNins(b, "inblock", &i, FALSE);
+	BUNins(b, "oublock", &i, FALSE);
+	BUNins(b, "nvcsw", &i, FALSE);
+	BUNins(b, "ninvcsw", &i, FALSE);
 #endif
 
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -742,12 +742,12 @@ SYSgdkEnv(int *ret)
 			}
 		}
 	}
-	b = BUNins(b, "bats", &pbat);
-	b = BUNins(b, "tmpbats", &tmp);
-	b = BUNins(b, "perbats", &per);
-	b = BUNins(b, "ondisk", &pdisk);
-	b = BUNins(b, "todisk", &BBPout);
-	b = BUNins(b, "fromdisk", &BBPin);
+	b = BUNins(b, "bats", &pbat, FALSE);
+	b = BUNins(b, "tmpbats", &tmp, FALSE);
+	b = BUNins(b, "perbats", &per, FALSE);
+	b = BUNins(b, "ondisk", &pdisk, FALSE);
+	b = BUNins(b, "todisk", &BBPout, FALSE);
+	b = BUNins(b, "fromdisk", &BBPin, FALSE);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(gdk,env)@
 	return MAL_SUCCEED;
@@ -766,7 +766,7 @@ SYSgdkThread(int *ret)
 
 	for (i = 0; i < THREADS; i++)
 		if (GDKthreads[i].pid) {
-			BUNins(b, &GDKthreads[i].tid, GDKthreads[i].name);
+			BUNins(b, &GDKthreads[i].tid, GDKthreads[i].name, FALSE);
 		}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(gdk,thread)@
@@ -804,7 +804,7 @@ str SYSgetDatabases(int *ret)
 				snprintf(buf,PATHLENGTH,"../%s/.mguardian.pid",e->d_name);
 			/* not water-proof, PID can exist, and be alive, but not an
 			   mserver, need to check process name */
-			BUNins(b,e->d_name,(access(buf,F_OK)?"sleeping":"running"));
+			BUNins(b,e->d_name,(access(buf,F_OK)?"sleeping":"running"), FALSE);
 			closedir(db);
 		} 
 	}
@@ -840,7 +840,7 @@ str SYSgetPorts(int *ret, str *lang)
 				port= (int) strtol(buf,NULL,10);
 				fclose(f);
 			} else port = 0;
-			BUNins(b, e->d_name, (ptr)(port==0? &int_nil: &port));
+			BUNins(b, e->d_name, (ptr)(port==0? &int_nil: &port), FALSE);
 			closedir(db);
 		} 
 	}

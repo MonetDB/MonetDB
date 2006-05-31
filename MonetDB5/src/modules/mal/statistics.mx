@@ -430,18 +430,18 @@ STATforceUpdate(int *ret, str *nme)
 	p = BUNfnd(STAT_id_nme, &idx);
 	if (p)
 		BUNdelete(STAT_id_nme, p);
-	BUNins(STAT_id_nme, &idx, *nme);
+	BUNins(STAT_id_nme, &idx, *nme, FALSE);
 	cnt = BATcount(b);
 	p = BUNfnd(STAT_id_count, &idx);
 	if (p)
 		BUNdelete(STAT_id_count, p);
-	BUNins(STAT_id_count, &idx, &cnt);
+	BUNins(STAT_id_count, &idx, &cnt, FALSE);
 
 	cnt = BATmemsize(b, 0);
 	p = BUNfnd(STAT_id_size, &idx);
 	if (p)
 		BUNdelete(STAT_id_size, p);
-	BUNins(STAT_id_size, &idx, &cnt);
+	BUNins(STAT_id_size, &idx, &cnt, FALSE);
 
 	p = BUNfnd(STAT_id_min_lng, &idx);
 	if (p)
@@ -452,12 +452,12 @@ STATforceUpdate(int *ret, str *nme)
 
 	if (b->ttype == TYPE_int) {
 		BATmin(b, &cnt);
-		BUNins(STAT_id_min_lng, &idx, &cnt);
+		BUNins(STAT_id_min_lng, &idx, &cnt, FALSE);
 		BATmax(b, &cnt);
-		BUNins(STAT_id_max_lng, &idx, &cnt);
+		BUNins(STAT_id_max_lng, &idx, &cnt, FALSE);
 	} else {
-		BUNins(STAT_id_min_lng, &idx, (ptr)&lng_nil);
-		BUNins(STAT_id_max_lng, &idx, (ptr)&lng_nil);
+		BUNins(STAT_id_min_lng, &idx, (ptr)&lng_nil, FALSE);
+		BUNins(STAT_id_max_lng, &idx, (ptr)&lng_nil, FALSE);
 	}
 	h = BAThistogram(b);
 	if (h == 0)
@@ -471,12 +471,12 @@ STATforceUpdate(int *ret, str *nme)
 	p = BUNfnd(STAT_id_histogram, &idx);
 	if (p)
 		BUNdelete(STAT_id_histogram, p);
-	BUNins(STAT_id_histogram, &idx, BATgetId(h));
+	BUNins(STAT_id_histogram, &idx, BATgetId(h), FALSE);
 
 	p = BUNfnd(STAT_id_inuse, &idx);
 	if (p)
 		BUNdelete(STAT_id_inuse, p);
-	BUNins(STAT_id_inuse, &idx, &idx);
+	BUNins(STAT_id_inuse, &idx, &idx, FALSE);
 	STATcommit();
 	return MAL_SUCCEED;
 }

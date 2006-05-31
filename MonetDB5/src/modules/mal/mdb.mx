@@ -364,7 +364,7 @@ MDBgetFrame(BAT *b, MalBlkPtr mb, MalStkPtr s, int depth)
 		for (i = 0; i < s->stktop; i++, v++) {
 			v = &s->stk[i];
 			ATOMformat(v->vtype, VALget(v), &buf);
-			BUNins(b, getVarName(mb, i), buf);
+			BUNins(b, getVarName(mb, i), buf, FALSE);
 		}
 	return MAL_SUCCEED;
 }
@@ -407,7 +407,7 @@ MDBStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	snprintf(buf,8192,"%s at %s.%s[%d]", msg+5,
 		getModuleId(getInstrPtr(m,0)),
 		getFunctionId(getInstrPtr(m,0)), pc);
-	BUNins(b, &k, buf);
+	BUNins(b, &k, buf, FALSE);
 	GDKfree(msg);
 
 	for (s = s->up, k++; s != NULL; s = s->up, k++) {
@@ -415,7 +415,7 @@ MDBStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		snprintf(buf,8192,"%s at %s.%s[%d]", msg+5,
 			getModuleId(getInstrPtr(s->blk,0)),
 			getFunctionId(getInstrPtr(s->blk,0)), s->pcup);
-		BUNins(b, &k, buf);
+		BUNins(b, &k, buf, FALSE);
 		GDKfree(msg);
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -525,7 +525,7 @@ MDBgetDefinition(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 
 	for (i = 0; i < m->stop; i++) {
 		ps = instruction2str(m, getInstrPtr(m, i), 1);
-		BUNins(b, &i, ps);
+		BUNins(b, &i, ps, FALSE);
 		GDKfree(ps);
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);

@@ -3078,29 +3078,29 @@ counter2bat(BAT **ret, counter *c)
 	*ret = BATnew(TYPE_str, TYPE_lng, 8);
 	if (*ret == NULL)
 		return GDK_FAIL;
-	BUNins(*ret, "status", &c->status);
-	BUNins(*ret, "generation", &c->generation);
-	BUNins(*ret, "microsecs", &c->usec);
-	BUNins(*ret, "millisecs", &ms);
-	BUNins(*ret, "clock_ticks", &c->clocks);
+	BUNins(*ret, "status", &c->status, FALSE);
+	BUNins(*ret, "generation", &c->generation, FALSE);
+	BUNins(*ret, "microsecs", &c->usec, FALSE);
+	BUNins(*ret, "millisecs", &ms, FALSE);
+	BUNins(*ret, "clock_ticks", &c->clocks, FALSE);
 #if defined(HWCOUNTERS)
-	BUNins(*ret, event[(int) (c->event0)].native, &c->count0);
-	BUNins(*ret, event[(int) (c->event1)].native, &c->count1);
+	BUNins(*ret, event[(int) (c->event0)].native, &c->count0, FALSE);
+	BUNins(*ret, event[(int) (c->event1)].native, &c->count1, FALSE);
 #if defined(HW_SunOS)
 	diff = c->count0 - c->count1;
 	if ((event[c->event0].id0 == 4) && (event[c->event1].id1 == 16)) {
-		BUNins(*ret, "L1_inst_misses = IC_REF - IC_HIT", &diff);
+		BUNins(*ret, "L1_inst_misses = IC_REF - IC_HIT", &diff, FALSE);
 	} else if ((event[c->event0].id0 == 5) && (event[c->event1].id1 == 17)) {
-		BUNins(*ret, "L1_read_misses = DC_READ - DC_READ_HIT", &diff);
+		BUNins(*ret, "L1_read_misses = DC_READ - DC_READ_HIT", &diff, FALSE);
 	} else if ((event[c->event0].id0 == 6) && (event[c->event1].id1 == 18)) {
-		BUNins(*ret, "L1_write_misses = DC_WRITE - DC_WRITE_HIT", &diff);
+		BUNins(*ret, "L1_write_misses = DC_WRITE - DC_WRITE_HIT", &diff, FALSE);
 	} else if ((event[c->event0].id0 == 8) && (event[c->event1].id1 == 20)) {
-		BUNins(*ret, "L2_data_misses = EC_REF - EC_HIT", &diff);
+		BUNins(*ret, "L2_data_misses = EC_REF - EC_HIT", &diff, FALSE);
 	} else {
-		BUNins(*ret, (str) &chr_nil, &lng_nil);
+		BUNins(*ret, (str) &chr_nil, &lng_nil, FALSE);
 	}
 #else
-	BUNins(*ret, (str) &chr_nil, (ptr)&lng_nil);
+	BUNins(*ret, (str) &chr_nil, (ptr)&lng_nil, FALSE);
 #endif
 #endif
 /*
@@ -3124,7 +3124,7 @@ show_native_events(BAT **ret)
 		return GDK_FAIL;
 #if defined(HWCOUNTERS)
 	for (i = 0; i < NumEvents; i++)
-		BUNins(*ret, &i, event[i].native);
+		BUNins(*ret, &i, event[i].native, FALSE);
 #endif
 	BATkey(*ret, TRUE);
 	BATname(*ret, "native_events");
@@ -3145,7 +3145,7 @@ show_unified_events(BAT **ret)
 #if defined(HWCOUNTERS)
 	for (i = 0; i < NumEvents; i++)
 		if (event[i].unified != str_nil)
-			BUNins(*ret, &i, event[i].unified);
+			BUNins(*ret, &i, event[i].unified, FALSE);
 #endif
 	BATkey(*ret, TRUE);
 	BATname(*ret, "unified_events");

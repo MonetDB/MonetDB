@@ -2702,11 +2702,11 @@ The Monet V5 API interface is defined here
 @= TIMEZONES
 	ticks= @2;
 	tzone_create((tzone*) &vr.val.lval, &ticks);
-	tz= BUNins(tz,@1,&vr.val.lval);
+	tz= BUNins(tz,@1,&vr.val.lval,FALSE);
 @= TIMEZONES2
 	ticks =@2;
 	tzone_create_dst((tzone*) &vr.val.lval, &ticks,&@3,&@4);
-	tz= BUNins(tz,@1,&vr.val.lval);
+	tz= BUNins(tz,@1,&vr.val.lval,FALSE);
 @-
 Include BAT macros
 @c
