@@ -1190,6 +1190,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
  }
 @
 @= no_pre
+        # this code ensures the correct handling of updates in path steps
 	cands := ws.fetch(PRE_SIZE).fetch(contID).uselect(0,int(nil)).reverse();
 	cands := cands.chk_order();
 @
@@ -3468,17 +3469,19 @@ proc build_indices(bat[void,bat] ws, oid cont) : void
 #define PF_SUPPORT_H
 
 #include <monet.h>
+#include "pathfinder.h"
 #include "pf_support.proto.h"
 #include <monet_interpreter.h>
 #include <monettime.h>
 
 #endif
 @c
-#include "pathfinder.h"
+
 #include "pf_support.h"
 #include <gdk_scanselect.h> /* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
 #include <algebra.h> /* needed for result size estimation in CMDenumerate */
 #include <math.h> /* needed for round_up */
+
 #if SIZEOF_OID == SIZEOF_INT
 #define oidoid_bunfastins(b,h,t) intint_bunfastins(b,h,t);
 #define oidoid_bunfastins_nocheck_noinc(b,p,h,t) intint_bunfastins_nocheck_noinc(b,p,h,t);

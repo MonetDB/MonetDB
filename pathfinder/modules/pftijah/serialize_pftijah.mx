@@ -44,14 +44,9 @@ extern char* normalizeTerm(struct tijahContextStruct *ctx, char* term );
  *
  */
 
-#include <gdk.h>
-#include <monet.h>
-
-#include <pf_config.h>
-
-#include <pathfinder.h>
-#include <pf_support.h>
-#include <serialize.h>
+#include "serialize.h"
+/* contains dummy callback functions */
+#include "serialize_null.h"
 
 #include "serialize_pftijah.h"
 #include "pftijah_stem.h"
@@ -658,9 +653,11 @@ static tjCtx* GLOBAL_TJCTX; /* INCOMPLETE, CODE NOT REENTRANT */
 /**
  * Default driver initialization function
  */
-static int pftijah_init(XqueryCtx* ctx, char* args) {
+static bool
+pftijah_init(XqueryCtx* ctx, char* args, char* restag) {
     (void) ctx;
     (void) args;
+    (void) restag;
     ctx->driverWs = GLOBAL_TJCTX;
 #ifdef TJ_TRACE
     if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:pftijah_init()\n",GLOBAL_TJCTX->name);
@@ -671,7 +668,8 @@ static int pftijah_init(XqueryCtx* ctx, char* args) {
 /**
  * Output generation handler. Handles equivalent of * SAX startDocument() event.
  */
-static int pftijah_handle_startDocument(XqueryCtx* ctx) {
+static bool
+pftijah_handle_startDocument(XqueryCtx* ctx) {
     tjCtx* tjctx = (tjCtx*)ctx->driverWs;
 
     tjctx->doc_height = tjctx->max_doc_height = 0;
@@ -686,11 +684,12 @@ static int pftijah_handle_startDocument(XqueryCtx* ctx) {
  * the usage of an attribute. A sequence of these events will be ended
  * by a handle_attributeEnd() call.
  */
-static int pftijah_handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, str value, int top) {
+static bool
+pftijah_handle_attribute(XqueryCtx* ctx, str prefix, str loc, str value) {
+    (void)ctx;
+    (void)prefix;
     (void)loc;
     (void)value;
-    if ( !checkNsChange(ctx,uri,prefix,top) )
-        return 0;
     return 1;
 }
 
@@ -709,7 +708,8 @@ int checkSelectTag(tjCtx* tjctx, str t, int plusormin) {
 /**
  * Output generation handler. Handles equivalent of * SAX startElement() event.
  */
-static int pftijah_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
+static bool
+pftijah_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
     (void)ns;
     tjCtx* tjctx = (tjCtx*)ctx->driverWs;
     oid termOid, tjPre;
@@ -734,10 +734,10 @@ static int pftijah_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre
 /**
  * Output generation handler. Handles equivalent of * SAX endElement() event.
  */
-static int pftijah_handle_endElement(XqueryCtx* ctx, str ns, str name, int emptyNode) {
+static bool
+pftijah_handle_endElement(XqueryCtx* ctx, str ns, str name) {
     (void)ns;
     (void)name;
-    (void)emptyNode;
     tjCtx* tjctx = (tjCtx*)ctx->driverWs;
     --tjctx->doc_height;
     /* if ( DOEMIT(tjctx) ) { */
@@ -755,8 +755,8 @@ static int pftijah_handle_endElement(XqueryCtx* ctx, str ns, str name, int empty
 /**
  * Output generation handler. Handles equivalent of * SAX characters() event.
  */
-static int pftijah_handle_characters(XqueryCtx* ctx, str ch, str top) {
-    (void)top;
+static bool
+pftijah_handle_characters(XqueryCtx* ctx, str ch) {
     int res = 1;
     tjCtx* tjctx = (tjCtx*)ctx->driverWs;
 
@@ -798,39 +798,46 @@ char* normalizeTerm(struct tijahContextStruct *tjctx, char* term ) {
  * event. I see no reason why it should be used here but I include it for
  * completeness.
  */
-static int pftijah_handle_ignorableWhitespace(XqueryCtx* ctx, str ch) {
-    return pftijah_handle_characters(ctx,ch,0); /* dispatch */
+static bool
+pftijah_handle_ignorableWhitespace(XqueryCtx* ctx, str ch) {
+    return pftijah_handle_characters(ctx,ch); /* dispatch */
 }
 
 /**
  *
  * Definition of the structure containing the functions
  */
-
 struct serializeFunStruct pftijahSerializeFun = {
-	"pftijah",
-	pftijah_init,
-	pftijah_handle_startDocument,
-	null_handle_endDocument,
-	pftijah_handle_attribute,
-	null_handle_attributeEnd,
-	pftijah_handle_startElement,
-	pftijah_handle_endElement,
-	pftijah_handle_characters,
-	pftijah_handle_ignorableWhitespace,
-	null_handle_comment,
-	null_handle_processingInstruction,
-	/* */
-	null_seqStart,
-	null_seqDmAttrStart,
-	null_seqDmAttrEnd,
-	null_seqElementStart,
-	null_seqElementEnd,
-	null_seqEnd,
-	null_seqEmitBool,
-	null_seqEmitInt,
-	null_seqEmitDbl,
-	null_seqEmitStr
+    "pftijah",
+    pftijah_init,
+    null_cleanup,
+
+    pftijah_handle_startDocument,
+    null_handle_endDocument,
+    pftijah_handle_startElement,
+    pftijah_handle_endElement,
+    pftijah_handle_characters,
+    pftijah_handle_ignorableWhitespace,
+    null_handle_comment,
+    null_handle_processingInstruction,
+
+    null_complete_startElement,
+    null_complete_startElementEmpty,
+    pftijah_handle_attribute,
+
+    null_seqEmitBool,
+    null_seqEmitInt,
+    null_seqEmitDbl,
+    null_seqEmitStr,
+    null_handle_attribute,
+    null_handle_characters,
+
+    null_seqStart,
+    null_complete_seqStart,
+    null_seqEnd,
+    null_seqItemStart,
+    null_seqItemEnd,
+    null_seqItemSeparator
 };
 
 /*

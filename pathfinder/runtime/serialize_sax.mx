@@ -21,6 +21,7 @@
 
 @f serialize_sax
 @a Jan Flokstra
+@a Jan Rittinger
 @t serialize_sax
 
 @c
@@ -31,191 +32,250 @@
  *
  */
 
-#include <gdk.h>
-
-#include "pathfinder.h"
-#include "pf_support.proto.h"
 #include "serialize.h"
+#include "serialize_null.h"
 
 #define SAXOPHONE 1
 
-static int emit_SAX_header() {
-    stream_printf(GDKout,"#-------------------------#\n");
-    stream_printf(GDKout,"# h     SAXtape           #\n");
-    stream_printf(GDKout,"# str   str               #\n");
-    stream_printf(GDKout,"#-------------------------#\n");
-    return 1;
+/**
+ * The character translation section responsible for the special
+ * character recognition and XML entity characters.  It consists of a
+ * small main table 'isspecial_tab' containing the flags for every
+ * possible character.
+ *
+ * v=0: no special char
+ * v=1: special char, should be presented as octal char in output
+ * v>1: special char, string repr of char is isspecial_val[v]
+ */
+
+static unsigned char  isspecial_tab[UCHAR_MAX+1] = { 0 }; /* the main table */
+static char*          isspecial_val[32]; /* the values of the special chars */
+
+static void
+sax_init_isspecial() {
+    int i;
+    for(i=0; i<32; i++) isspecial_tab[i] = 1; /* means write as octal */
+
+    isspecial_tab[(int)(unsigned char)'\377'] = 1; /* means write as octal */
+    isspecial_tab[(int)'\t'] = 2;
+    isspecial_tab[(int)'\n'] = 3;
+    isspecial_tab[(int)'\r'] = 3; /* map \r on \n */
+    isspecial_tab[(int)'\\'] = 4;
+    isspecial_tab[(int)'\"'] = 5;
+    isspecial_tab[(int)'\''] = 6;
+    isspecial_tab[(int)'&']  = 7;
+    isspecial_tab[(int)'<']  = 8;
+    isspecial_tab[(int)'>']  = 9;
+
+    isspecial_val[0] = NULL; /* not used */
+    isspecial_val[1] = NULL; /* not used, 1 = write as octal */
+    isspecial_val[2] = "\\t";
+    isspecial_val[3] = "\\n";
+    isspecial_val[4] = "\\\\";
+    isspecial_val[5] = "&quot;";
+    isspecial_val[6] = "&apos;";
+    isspecial_val[7] = "&amp;";
+    isspecial_val[8] = "&lt;";
+    isspecial_val[9] = "&gt;";
 }
 
-static int emit_SAX_footer() {
-    return 1;
+/*
+ * This function is responsible for the presentation of special characters
+ * and XML entity characters in the result.
+ */
+static void
+sax_emit_escaped (char* src)
+{
+    /* Emit a string with all special character escaped. Inspired by
+     * function strToStr() in gdk_atoms.mx
+     */
+    int start = 0, end;
+    unsigned char isspecial_ch;
+
+    for(end = 0; src[end]; end++) {
+        if ( (isspecial_ch = isspecial_tab[(int)(unsigned char)src[end]]) ) {
+            stream_write (GDKout, &src[start], end - start, 1);
+            start = end + 1;
+
+            if ( isspecial_ch == 1 ) {
+                stream_printf(GDKout,"\\%03o",(unsigned char)src[end]);
+            } else {
+                char *emit_val = isspecial_val[(int)isspecial_ch];
+                stream_write (GDKout, emit_val, strlen (emit_val), 1);
+            }
+        }
+    }
+    if ( start < end )
+        stream_write (GDKout, &src[start], end - start, 1);
 }
 
-static int emit_SAX_event(char* eventName, char* val, int escaped) {
+static bool
+emit_SAX_header ()
+{
+    char *s;
+
+    s = "#-------------------------#\n"; stream_write (GDKout, s, strlen(s), 1);
+    s = "# h     SAXtape           #\n"; stream_write (GDKout, s, strlen(s), 1);
+    s = "# str   str               #\n"; stream_write (GDKout, s, strlen(s), 1);
+    s = "#-------------------------#\n"; stream_write (GDKout, s, strlen(s), 1);
+
+    return SUCCESS;
+}
+
+static bool
+emit_SAX_footer ()
+{
+    return SUCCESS;
+}
+
+static bool
+emit_SAX_event (char* eventName, char* val, int escaped)
+{
     if ( val ) {
         if ( escaped ) {
-            stream_printf(GDKout,"[\"%s\",\t\"",eventName);
-            if ( !emit_escaped(val, escaped-1, 0/*ALL*/) )
-                return 0;
-            stream_printf(GDKout,"\"]\n");
+            /* stream_printf(GDKout,"[\"%s\",\t\"",eventName); */
+            stream_write (GDKout, "[\"", 2, 1);
+            stream_write (GDKout, eventName, strlen (eventName), 1);
+            stream_write (GDKout, "\",\t\"", 4, 1);
+
+            sax_emit_escaped(val);
+            stream_write (GDKout, "\"]\n", 3, 1);
         } else {
-            stream_printf(GDKout,"[\"%s\",\t\"%s\"]\n",eventName,val);
+            /* stream_printf(GDKout,"[\"%s\",\t\"%s\"]\n",eventName,val); */
+            stream_write (GDKout, "[\"", 2, 1);
+            stream_write (GDKout, eventName, strlen (eventName), 1);
+            stream_write (GDKout, "\",\t\"", 4, 1);
+            stream_write (GDKout, val, strlen (val), 1);
+            stream_write (GDKout, "\"]\n", 3, 1);
         }
     } else
-        stream_printf(GDKout,"[\"%s\",\tnil]\n",eventName);
-    return 1;
+        /* stream_printf(GDKout,"[\"%s\",\tnil]\n",eventName); */
+        stream_write (GDKout, "[\"", 2, 1);
+        stream_write (GDKout, eventName, strlen (eventName), 1);
+        stream_write (GDKout, "\",\t\"nil]\n", 9, 1);
+
+    return SUCCESS;
 }
 
 /**
  * Default driver initialization function
  */
-static int sax_init(XqueryCtx* ctx, char* args) {
+static bool
+sax_init (XqueryCtx* ctx, char* args, char *restag)
+{
     (void) ctx;
     (void) args;
-    ctx->driverWs = NULL; /* driverWs not used */
-    return 1;
+    ctx->driverWs = (void *) restag; /* store result tag */
+    sax_init_isspecial();
+
+    return SUCCESS;
 }
 
 /**
  * Output generation handler. Handles equivalent of * SAX startDocument() event.
  */
-static int sax_handle_startDocument(XqueryCtx* ctx) {
-    if (ctx->saxMode ) {
-        if ( SAXOPHONE ) {
-            if ( !emit_SAX_header() )
-                return 0;
-        } else
-            stream_printf(GDKout,"<S\n");
-    } else if (ctx->mapiMode) { /* xml mode (mapi) */
-        stream_printf(GDKout,"=<?xml version=\"1.0\" encoding=\"utf-8\"?>\n=");
-    } else if (ctx->printMode) { /* SQL-ish mapi */
-        stream_printf(GDKout,"<?xml version=\"1.0\" encoding=\"utf-8\"?>\\n");
-    } else { /* xml mode */
-        stream_printf(GDKout,"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
-    }
-    return 1;
+static bool
+sax_handle_startDocument (XqueryCtx* ctx)
+{
+    (void)ctx;
+
+    if ( SAXOPHONE )
+        return emit_SAX_header();
+    else
+        /* stream_printf(GDKout,"<S\n"); */
+        stream_write (GDKout, "<S\n", 3, 1);
+
+    return SUCCESS;
 }
 
 /**
  * Output generation handler. Handles equivalent of * SAX endDocument() event.
  */
-static int sax_handle_endDocument(XqueryCtx* ctx) {
-    if (ctx->saxMode ) {
-        if ( SAXOPHONE ) {
-            if ( !emit_SAX_footer() )
-                return 0;
-        } else
-            stream_printf(GDKout,"<E\n");
-    } else { /* xmlMode */
-        stream_printf(GDKout,"\n");
-    }
-    return 1;
-}
-
-/**
- * Output generation handler. This one of my own invented event describing
- * the usage of an attribute. A sequence of these events will be ended
- * by a handle_attributeEnd() call.
- */
-static int sax_handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, str value, int top) {
-    (void)uri;
-    if ( 1 && !checkNsChange(ctx,uri,prefix,top) )
-        return 0;
-    if ( SAXOPHONE ) {
-        if ( loc && *loc) {
-            if (!emit_SAX_event(" attribute",loc,0) )
-                return 0;
-            if ( prefix && *prefix )
-                if ( !emit_SAX_event(" attribute prefix",prefix,0) )
-                    return 0;
-        } else if (prefix && *prefix) {
-            /* default namespace */
-            if (!emit_SAX_event(" attribute",prefix,0) )
-                return 0;
-        }
-        if ( !emit_SAX_event(" attribute value",value,0) )
-            return 0;
-    } else {
-        stream_printf(GDKout,"<A %s=\"%s\"\n",loc,value);
-    }
-    return 1;
-}
-
-/**
- * Output generation handler. This one of my own invented event indicating
- * there will be no more attribute events for this node.
- */
-static int sax_handle_attributeEnd(XqueryCtx* ctx, int emptyNode) {
+static bool
+sax_handle_endDocument (XqueryCtx* ctx)
+{
     (void)ctx;
-    (void)emptyNode;
-    return 1;
+
+    if ( SAXOPHONE )
+        return emit_SAX_footer();
+    else
+        /* stream_printf(GDKout,"<E\n"); */
+        stream_write (GDKout, "<E\n", 3, 1);
+
+    return SUCCESS;
 }
 
 /**
  * Output generation handler. Handles equivalent of * SAX startElement() event.
  */
-static int sax_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
+static bool
+sax_handle_startElement (XqueryCtx* ctx,
+                                     str prefix, str name, oid pre)
+{
     (void)ctx;
     (void)pre; /* the Pathfinder PRE number is not used by this fun */
+
     if ( SAXOPHONE ) {
         if ( !emit_SAX_event("startElement",NULL,0) )
-            return 0;
-        if ( ns && *ns )
-            if ( !emit_SAX_event(" prefix",ns,0) )
-                return 0;
+            return PROBLEM;
+        if ( prefix && *prefix )
+            if ( !emit_SAX_event(" prefix",prefix,0) )
+                return PROBLEM;
         if ( !emit_SAX_event(" localname",name,0) )
-            return 0;
+            return PROBLEM;
     } else {
-        stream_printf(GDKout,"<s %s\n",name);
+        /* stream_printf(GDKout,"<s %s\n",name); */
+        stream_write (GDKout, "<s ", 3, 1);
+        stream_write (GDKout, name, strlen (name), 1);
+        stream_write (GDKout, "\n", 1, 1);
     }
-    return 1;
+    return SUCCESS;
 }
 
 /**
  * Output generation handler. Handles equivalent of * SAX endElement() event.
  */
-static int sax_handle_endElement(XqueryCtx* ctx, str ns, str name, int emptyNode) {
+static bool
+sax_handle_endElement (XqueryCtx* ctx, str prefix, str name)
+{
     (void)ctx;
-    (void)emptyNode;
+
     if ( SAXOPHONE ) {
         if ( !emit_SAX_event("endElement",NULL,0) )
-            return 0;
-        if ( ns && *ns )
-            if ( !emit_SAX_event(" prefix",ns,0) )
-                return 0;
+            return PROBLEM;
+        if ( prefix && *prefix )
+            if ( !emit_SAX_event(" prefix",prefix,0) )
+                return PROBLEM;
         if ( !emit_SAX_event(" localname",name,0) )
-            return 0;
+            return PROBLEM;
     } else {
-        stream_printf(GDKout,"<e %s\n",name);
+        /* stream_printf(GDKout,"<e %s\n",name); */
+        stream_write (GDKout, "<e ", 3, 1);
+        stream_write (GDKout, name, strlen (name), 1);
+        stream_write (GDKout, "\n", 1, 1);
     }
-    return 1;
-}
-
-/**
- * Output generation handler. One on my own again. This one should handle a
- * reference. Don't know wat to to about it now.
- */
-static int sax_handle_reference(XqueryCtx* ctx, str name) {
-    (void)ctx;
-    (void)name;
-    return 1;
+    return SUCCESS;
 }
 
 /**
  * Output generation handler. Handles equivalent of * SAX characters() event.
  */
-static int sax_handle_characters(XqueryCtx* ctx, str ch, str top) {
+static bool
+sax_handle_characters (XqueryCtx* ctx, str chars)
+{
     (void)ctx;
-    (void)top;
+
     if ( SAXOPHONE ) {
         if (!emit_SAX_event("characters",NULL,0))
-            return 0;
-        if (!emit_SAX_event(" pcdata",ch,1))
-            return 0;
+            return PROBLEM;
+        if (!emit_SAX_event(" pcdata",chars,1))
+            return PROBLEM;
     } else {
-        stream_printf(GDKout,"%s\n",ch); /* ESCAPE !! */
+        /* stream_printf(GDKout,"%s\n",chars); / * ESCAPE !! * / */
+        sax_emit_escaped(chars);
+        stream_write (GDKout, "\n", 1, 1);
     }
-    return 1;
+    return SUCCESS;
 }
 
 /**
@@ -223,154 +283,170 @@ static int sax_handle_characters(XqueryCtx* ctx, str ch, str top) {
  * event. I see no reason why it should be used here but I include it for
  * completeness.
  */
-static int sax_handle_ignorableWhitespace(XqueryCtx* ctx, str ch) {
-    return sax_handle_characters(ctx,ch,0); /* dispatch */
+static bool
+sax_handle_ignorableWhitespace(XqueryCtx* ctx, str chars)
+{
+    return sax_handle_characters (ctx, chars); /* dispatch */
 }
 
 /**
  * Output generation handler. Again an own event. But this one should be
- * used I think because the comments are used and stored by  Pathfinder.
+ * used I think because the comments are used and stored by Pathfinder.
  */
-static int sax_handle_comment(XqueryCtx* ctx, str comm) {
-    /* incomplete */
+static bool
+sax_handle_comment (XqueryCtx* ctx, str comm)
+{
     (void)ctx;
     (void)comm;
-    return 1;
+
+    return PROBLEM; /* incomplete */
 }
 
 /**
  * Output generation handler. Handles equivalent of * SAX
  * processingInstruction() event.
  */
-static int sax_handle_processingInstruction(XqueryCtx* ctx, str target, str data) {
-    /* incomplete */
+static bool
+sax_handle_processingInstruction (XqueryCtx* ctx,
+                                              str target, str data)
+{
     (void)ctx;
     (void)target;
     (void)data;
-    return 1;
-}
 
-/*
- *
- * Second the sequence emitting functions are defined
- *
- */
-
-/**
- * Handle the start() of an XQUERY/Pathfinder result sequence.
- */
-static int sax_seqStart(XqueryCtx* ctx, BAT* item) {
-    (void)item;
-    if ( !ctx->norootMode ) {
-        ctx->driverFun->handle_startElement(ctx, NULL, ctx->restag, oid_nil);
-        ctx->nAttrOnLine = 0;
-    }
-    return 1;
-}
-
-static int sax_seqDmAttrStart(XqueryCtx* ctx) {
-    (void)ctx;
-    return 1;
-}
-
-static int sax_seqDmAttrEnd(XqueryCtx* ctx) {
-    (void)ctx;
-    return 1;
+    return PROBLEM; /* incomplete */
 }
 
 /**
- * Handle the end() of an XQUERY/Pathfinder result sequence
+ * Output generation handler. This one of my own invented event describing
+ * the usage of an attribute. 
  */
-static int  sax_seqEnd(XqueryCtx* ctx) {
-    if (!ctx->norootMode) {
-        ctx->driverFun->handle_endElement(ctx, NULL, ctx->restag, 0 /* not empty*/);
-    }
-    return 1;
-}
+static bool
+sax_handle_attribute (XqueryCtx* ctx,
+                                  str prefix, str loc, str value)
+{
+    (void) ctx;
 
+    if ( SAXOPHONE ) {
+        if ( loc && *loc) {
+            if (!emit_SAX_event(" attribute",loc,0) )
+                return PROBLEM;
+            if ( prefix && *prefix )
+                if ( !emit_SAX_event(" attribute prefix",prefix,0) )
+                    return PROBLEM;
+        } else
+            return PROBLEM;
+
+        if ( !emit_SAX_event(" attribute value",value,0) )
+            return PROBLEM;
+    } else {
+        /* stream_printf(GDKout,"<A %s=\"%s\"\n",loc,value); */
+        stream_write (GDKout, "<A ", 3, 1);
+        stream_write (GDKout, loc, strlen (loc), 1);
+        stream_write (GDKout, "=\"", 2, 1);
+        stream_write (GDKout, value, strlen (value), 1);
+        stream_write (GDKout, "\"\n", 2, 1);
+    }
+    return SUCCESS;
+}
 
 /**
  * Emit a Boolean element of an XQUERY/Pathfinder result sequence
  */
-static int  sax_seqEmitBool(XqueryCtx* ctx, int bv, int lastVal) {
+static bool
+sax_seqEmitBool (XqueryCtx* ctx, int bv)
+{
     char *bool_str = (char*)(bv ? "true" : "false");
 
-    (void)lastVal;
-    return ctx->driverFun->handle_characters(ctx,bool_str,0);
+    return sax_handle_characters (ctx, bool_str);
 }
 
 /**
  * Emit a Integer element of an XQUERY/Pathfinder result sequence
  */
-static int  sax_seqEmitInt(XqueryCtx* ctx, lng iv, int lastVal) {
+static bool
+sax_seqEmitInt(XqueryCtx* ctx, lng iv)
+{
     char buff[32];
-
-    (void)lastVal;
     sprintf(buff,"%lld",iv);
-    return ctx->driverFun->handle_characters(ctx,buff,0);
+
+    return sax_handle_characters (ctx, buff);
 }
 
 /**
  * Emit a Double element of an XQUERY/Pathfinder result sequence
  */
-static int  sax_seqEmitDbl(XqueryCtx* ctx, dbl dv, int lastVal) {
-    (void)lastVal;
+static bool
+sax_seqEmitDbl (XqueryCtx* ctx, dbl dv)
+{
     char buff[32];
-
     sprintf(buff,"%f",dv);
-    return ctx->driverFun->handle_characters(ctx,buff,0);
+
+    return sax_handle_characters (ctx, buff);
 }
 
-static int  sax_seqElementStart(XqueryCtx* ctx, int cnt) {
-    (void)ctx;
-    (void)cnt;
-    return 1;
-}
 
-static int  sax_seqElementEnd(XqueryCtx* ctx, int cnt) {
-    (void)ctx;
-    (void)cnt;
-    return 1;
+/**
+ * Handle the start() of an XQUERY/Pathfinder result sequence.
+ */
+static bool
+sax_seqStart (XqueryCtx* ctx, int count)
+{
+    (void)count;
+
+    if ( !(ctx->modes & MODE_NO_ROOT) )
+        sax_handle_startElement (ctx, NULL, (char *) ctx->driverWs, oid_nil);
+
+    return SUCCESS;
 }
 
 /**
- * Emit a String element of an XQUERY/Pathfinder result sequence
+ * Handle the end() of an XQUERY/Pathfinder result sequence
  */
-static int  sax_seqEmitStr(XqueryCtx* ctx, str sv, int lastVal) {
-    (void)lastVal;
-    return ctx->driverFun->handle_characters(ctx,sv,"text");
-}
+static bool
+sax_seqEnd (XqueryCtx* ctx)
+{
+    if ( !(ctx->modes & MODE_NO_ROOT) )
+        sax_handle_endElement (ctx, NULL, (char *) ctx->driverWs);
 
+    return SUCCESS;
+}
 
 /**
  *
  * Definition of the structure containing the functions
  */
-
 struct serializeFunStruct saxSerializeFun = {
-	"sax",
-	sax_init,
-	sax_handle_startDocument,
-	sax_handle_endDocument,
-	sax_handle_attribute,
-	sax_handle_attributeEnd,
-	sax_handle_startElement,
-	sax_handle_endElement,
-	sax_handle_characters,
-	sax_handle_ignorableWhitespace,
-	sax_handle_comment,
-	sax_handle_processingInstruction,
-	/* */
-	sax_seqStart,
-	sax_seqDmAttrStart,
-	sax_seqDmAttrEnd,
-	sax_seqElementStart,
-	sax_seqElementEnd,
-	sax_seqEnd,
-	sax_seqEmitBool,
-	sax_seqEmitInt,
-	sax_seqEmitDbl,
-	sax_seqEmitStr
+    "sax",
+    sax_init,
+    null_cleanup,
+
+    sax_handle_startDocument,
+    sax_handle_endDocument,
+    sax_handle_startElement,
+    sax_handle_endElement,
+    sax_handle_characters,
+    sax_handle_ignorableWhitespace,
+    sax_handle_comment,
+    sax_handle_processingInstruction,
+
+    null_complete_startElement,
+    null_complete_startElementEmpty,
+    sax_handle_attribute,
+
+    sax_seqEmitBool,
+    sax_seqEmitInt,
+    sax_seqEmitDbl,
+    sax_handle_characters,
+    sax_handle_attribute,
+    sax_handle_characters,
+
+    sax_seqStart,
+    null_complete_seqStart,
+    sax_seqEnd,
+    null_seqItemStart,
+    null_seqItemEnd,
+    null_seqItemSeparator
 };
 
 /* vim:set shiftwidth=4 expandtab: */

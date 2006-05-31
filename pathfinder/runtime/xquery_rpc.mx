@@ -461,7 +461,7 @@ ADDHELP("doLoopLiftedRPC", "zhang", "April 2006",
 #include <stdarg.h> /* Functions to handle variable argument lists */
 
 /* CMDshred2bats() and xquery_print_result_main() */
-#include "pf_support.proto.h"
+#include "pf_support.h"
 #include "shredder.h"
 #include "serialize.h"
 #include "shttpd.h"

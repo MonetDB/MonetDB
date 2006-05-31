@@ -45,14 +45,9 @@ extern int serialize_pftijah_options_DRIVER(
  *
  */
 
-#include <gdk.h>
-#include <monet.h>
-
-#include <pf_config.h>
-
-#include <pathfinder.h>
-#include <pf_support.h>
-#include <serialize.h>
+#include "serialize.h"
+/* contains dummy callback functions */
+#include "serialize_null.h"
 
 typedef struct PTOS {
     int  cnt;			/* count the number of tags here */
@@ -66,8 +61,10 @@ static struct PTOS* GLOBAL_PTOS = NULL;
  *
  * Definition of the structure containing the functions
  */
-static int pftijah_options_init(XqueryCtx* ctx, char* args) {
+static bool
+pftijah_options_init(XqueryCtx* ctx, char* args, char *restag) {
     (void) args;
+    (void) restag;
     ctx->driverWs		= GLOBAL_PTOS;
     GLOBAL_PTOS->errorMessage	= NULL;
 #ifdef DEBUG
@@ -79,7 +76,7 @@ static int pftijah_options_init(XqueryCtx* ctx, char* args) {
 /**
  * Output generation handler. Handles equivalent of * SAX startDocument() event.
  */
-static int
+static bool
 pftijah_options_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
     struct PTOS* ptoctx = (struct PTOS*)ctx->driverWs;
     (void)ns;
@@ -108,11 +105,10 @@ pftijah_options_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
  * the usage of an attribute. A sequence of these events will be ended
  * by a handle_attributeEnd() call.
  */
-static int pftijah_options_handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, str value, int top) {
+static bool
+pftijah_options_handle_attribute(XqueryCtx* ctx, str prefix, str loc, str value) {
     struct PTOS* ptoctx = (struct PTOS*)ctx->driverWs;
-    (void)uri;
     (void)prefix;
-    (void)top;
     if ( !BUNins(ptoctx->bat, loc, value) ) {
         stream_printf(GDKout,"pft_opt_deb: pftijah_options_handle_attribute(%s,%s) FAILS[BUNins].\n",loc,value);
         /* error message here */
@@ -125,29 +121,36 @@ static int pftijah_options_handle_attribute(XqueryCtx* ctx, str uri, str prefix,
 }
 
 static struct serializeFunStruct pftijah_optionsSerializeFun = {
-	"pftijah_options",
-	pftijah_options_init,
-	null_handle_startDocument,
-	null_handle_endDocument,
-	pftijah_options_handle_attribute,
-	null_handle_attributeEnd,
-	pftijah_options_handle_startElement,
-	null_handle_endElement,
-	null_handle_characters,
-	null_handle_ignorableWhitespace,
-	null_handle_comment,
-	null_handle_processingInstruction,
-	/* */
-	null_seqStart,
-	null_seqDmAttrStart,
-	null_seqDmAttrEnd,
-	null_seqElementStart,
-	null_seqElementEnd,
-	null_seqEnd,
-	null_seqEmitBool,
-	null_seqEmitInt,
-	null_seqEmitDbl,
-	null_seqEmitStr
+    "pftijah_options",
+    pftijah_options_init,
+    null_cleanup,
+
+    null_handle_startDocument,
+    null_handle_endDocument,
+    pftijah_options_handle_startElement,
+    null_handle_endElement,
+    null_handle_characters,
+    null_handle_ignorableWhitespace,
+    null_handle_comment,
+    null_handle_processingInstruction,
+
+    null_complete_startElement,
+    null_complete_startElementEmpty,
+    pftijah_options_handle_attribute,
+
+    null_seqEmitBool,
+    null_seqEmitInt,
+    null_seqEmitDbl,
+    null_seqEmitStr,
+    null_handle_attribute,
+    null_handle_characters,
+
+    null_seqStart,
+    null_complete_seqStart,
+    null_seqEnd,
+    null_seqItemStart,
+    null_seqItemEnd,
+    null_seqItemSeparator
 };
 
 int serialize_pftijah_options_DRIVER(

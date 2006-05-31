@@ -25,7 +25,12 @@
 @t shredder
 
 @h
+#ifndef SHREDDER_H
+#define SHREDDER_H
+
 pf_support_export int CMDshred2bats(BAT **res2mil, str location, str buffer, str opt);
+
+#endif /* SHREDDER_H */
 @c
 /**********************************************************************
  * shredder.c : xml document shredder for pathfinder
@@ -58,9 +63,9 @@ pf_support_export int CMDshred2bats(BAT **res2mil, str location, str buffer, str
 #include <gdk.h>
 #include <monet.h>
 
-#include "pathfinder.h"
 #include <pf_config.h>
-#include "pf_support.proto.h"
+#include "pathfinder.h"
+#include "pf_support.h"
 #include "serialize.h"
 #include "shredder.h"
 
@@ -1138,7 +1143,7 @@ shred_start_document (void *xmlCtx)
 #ifdef DEBUG
         stream_printf(GDKout,"CALL %s:start_document()\n",shredCtx->serFun->name);
 #endif
-    	shredCtx->serFun->init(shredCtx->serCtx,"");
+    	shredCtx->serFun->init(shredCtx->serCtx,"", NULL);
     	shredCtx->serFun->handle_startDocument(shredCtx->serCtx);
     }
 }
@@ -1199,7 +1204,7 @@ handleXmlCharacters (shredCtxStruct* shredCtx)
         if ( emitString(shredCtx,shredCtx->content_buf) < 0 )
             return -1;
         if ( shredCtx->serFun ) {
-    	    shredCtx->serFun->handle_characters(shredCtx->serCtx,(str)shredCtx->content_buf,0);
+    	    shredCtx->serFun->handle_characters(shredCtx->serCtx,(str)shredCtx->content_buf);
         }
     }
     shredCtx->content = 0;
@@ -1482,12 +1487,12 @@ shred_start_element(void *xmlCtx,
         /* process next attribute */
         shredCtx->nnode_attr++;
         if ( shredCtx->serFun ) {
-    	    shredCtx->serFun->handle_attribute(shredCtx->serCtx,(str)a_uri,(str)a_pfx,(str)a_tag,(str)a_val,0);
+    	    shredCtx->serFun->handle_attribute(shredCtx->serCtx,(str)a_pfx,(str)a_tag,(str)a_val);
         }
     }
     if ( shredCtx->serFun ) {
 	/* INCOMPLETE, should handle this emptyNode better */
-        shredCtx->serFun->handle_attributeEnd(shredCtx->serCtx,0);
+        shredCtx->serFun->complete_startElement(shredCtx->serCtx);
     }
 }
 
@@ -1594,7 +1599,7 @@ shred_end_element (void *xmlCtx, const xmlChar *tag)
         BAILOUT(xmlCtx);
     }
     if ( shredCtx->serFun ) {
-    	shredCtx->serFun->handle_endElement(shredCtx->serCtx,(str)"",(str)tag,0);
+    	shredCtx->serFun->handle_endElement(shredCtx->serCtx,(str)"",(str)tag);
     }
 #ifdef DEBUG
     stream_printf(GDKout," end_element(%s)\n",tag);
