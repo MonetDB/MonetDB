@@ -21,7 +21,6 @@ package nl.cwi.monetdb.jdbc;
 import java.io.*;
 import java.nio.*;
 import java.net.*;
-import java.util.*;
 
 /**
  * A Socket for communicating with the MonetDB database in block mode.

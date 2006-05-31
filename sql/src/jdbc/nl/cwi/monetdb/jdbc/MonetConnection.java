@@ -1083,6 +1083,18 @@ public class MonetConnection implements Connection {
 		typeMap = map;
 	}
 
+	/**
+	 * Returns a string identifying this Connection to the MonetDB
+	 * server.
+	 *
+	 * @return a String representing this Object
+	 */
+	public String toString() {
+		return("MonetDB Connection (jdbc:monetdb://" + hostname +
+				":" + port + "/" + database +") " + 
+				(closed ? "connected" : "disconnected"));
+	}
+
 	//== end methods of interface Connection
 
 	/**
@@ -2087,7 +2099,6 @@ public class MonetConnection implements Connection {
 				String tmpLine = monet.readLine();
 				int linetype = monet.getLineType();
 				Response res = null;
-				int lastState = linetype;
 				while (linetype != MonetSocketBlockMode.PROMPT1) {
 					// each response should start with a start of header
 					// (or error)
@@ -2172,7 +2183,7 @@ public class MonetConnection implements Connection {
 										// response...
 										soh.get();	// skip space
 										int id = parseNumber(soh); 
-										int columncount = parseNumber(soh);
+										parseNumber(soh);	// columncount
 										int rowcount = parseNumber(soh);
 										int offset = parseNumber(soh);
 										ResultSetResponse t =

@@ -100,7 +100,7 @@ column_find_row(sql_trans *tr, sql_column *c, void *value, ...)
 	void *nv;
 
 	if (c->t->dbid) 
-		d = bind_dbat(tr, c->t, RD_DEL);
+		d = bind_dbat(tr, c->t, RDONLY);
 	va_start(va, value);
 	while ((nc = va_arg(va, sql_column *)) != NULL) {
 		nv = va_arg(va, void *);
@@ -135,7 +135,7 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 	void *res = NULL;
 
 	if (c->t->dbid) 
-		d = bind_dbat(tr, c->t, RD_DEL);
+		d = bind_dbat(tr, c->t, RDONLY);
 	b = full_column(c, d, NULL);
 	if (d)
 		bat_destroy(d);

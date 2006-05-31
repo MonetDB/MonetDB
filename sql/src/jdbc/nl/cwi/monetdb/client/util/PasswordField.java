@@ -40,7 +40,6 @@ public class PasswordField {
 
 		char[] lineBuffer;
 		char[] buf;
-		int i;
 
 		buf = lineBuffer = new char[128];
 
