@@ -148,6 +148,43 @@ PROC tj_setScoreBase(int default) : void :=
 const virtRoot := 0@0;
 
 
+##
+# Compute ancestor-descendant relation
+#
+# Returns a bat containing [anc,desc] oid pairs
+##
+PROC anc_desc( bat[oid,any] anc, bat[oid,any] desc ) : bat[oid,oid] :=
+{
+   return anc_desc_llscj(anc,desc);
+}
+
+PROC anc_desc_llscj( bat[oid,any] anc, bat[oid,any] desc ) : bat[oid,oid] :=
+{
+    # Items contains the context nodes for the descendant step: this is the right side argument to contained_by.
+    # The table must be [void,oid], so:
+    var items := anc.mark(0@0).reverse();
+    
+    # Candidates contains the right side argument. This must also be [void,oid]:
+    var candidates := desc.mark(0@0).reverse();
+    
+    # Load the pre-size table
+    var pre_size := load( "tj_" + collName + "_size");
+    
+    # Check the order of the items:
+    items.chk_order();
+    
+    # Call the descendant algorithm: it returns [ancestor, descendant] pairs!
+    var anc_desc := ll_descendant(items, items, pre_size, candidates, collHeight, false, false, min(items), max(items), false);
+    #var anc_desc := desc_anc.reverse();
+    
+    candidates := nil;
+    items := nil;
+    pre_size := nil;
+    
+    return anc_desc;
+}
+
+
 ################################################################################
 # SELECTION
 ################################################################################
@@ -267,25 +304,10 @@ PROC contained_by(bat left, bat right) : bat :=
     if ( and((count( right ) = 1),(right.reverse().fetch(0) = virtRoot))) 
             return left;
     
-    # We use the pathfinder loop-lifted descendant algorithm to calculate containment.
-    
-    # Items contains the context nodes for the descendant step: this is the right side argument to contained_by.
-    # The table must be [void,oid], so:
-    var items := right.mirror().mark(0@0).reverse();
-    
-    # Candidates contains the left side argument. This must also be [void,oid]:
-    var candidates := left.mirror().mark(0@0).reverse();
-    
-    var pre_size := load( "tj_" + collName + "_size");
-            
-    # Check the order of the items:
-    items.chk_order();
-    
-    # Call the descendant algorithm: it returns [ancestor, descendant] pairs!
-    var res := ll_descendant(items, items, pre_size, candidates, collHeight, false, false, min(items), max(items), false);
+    var anc_desc := anc_desc( right, left );
     
     # Attach the scores to the resulting nodes again:
-    var result := res.reverse().mirror().join(left);
+    var result := anc_desc.reverse().mirror().join(left);
     
     var end_time := time();
     if (DEBUG) printf( "contained_by: \t\t%d ms\n", end_time - start_time );
@@ -317,25 +339,10 @@ PROC containing(bat left, bat right) : bat :=
     if ( and((count( right ) = 1),(right.reverse().fetch(0) = virtRoot))) 
             return new(oid,dbl);
     
-    # We use the pathfinder loop-lifted descendant algorithm to calculate containment.
-    
-    # Items contains the context nodes for the descendant step: this is the left side argument to containing.
-    # The table must be [void,oid], so:
-    var items := left.mirror().mark(0@0).reverse();
-    
-    # Candidates contains the right side argument. This must also be [void,oid]:
-    var candidates := right.mirror().mark(0@0).reverse();
-    
-    var pre_size := load( "tj_" + collName + "_size");
-    
-    # Check the order of the items:
-    items.chk_order();
-    
-    # Call the descendant algorithm: it returns [ancestor, descendant] pairs!
-    var res := ll_descendant(items, items, pre_size, candidates, collHeight, false, false, min(items), max(items), false);
-    
+    var anc_desc := anc_desc( left, right );
+
     # Attach the scores to the resulting nodes again:
-    var result := res.mirror().kunique().join(left);
+    var result := anc_desc.mirror().kunique().join(left);
     
     var end_time := time();
     if (DEBUG) printf( "containing: \t\t%d ms\n", end_time - start_time );
@@ -738,17 +745,8 @@ PROC reg_freq(bat left, bat right, int size_type) : bat    :=
     var reg_size;
     
     var ctx_tmp2 := new( oid, int, ENTITY_NUM );
-    
-    var items := left.mirror().mark(0@0).reverse();
-    
-    var candidates := right.mirror().mark(0@0).reverse();
-    
-    var pre_size := load( "tj_" + collName + "_size");
-
-    # Check the order of the items:
-    items.chk_order();
-    
-    ctx_tmp2 := ll_descendant(items, items, pre_size, candidates, collHeight, false, false, min(items), max(items), false);
+   
+    ctx_tmp2 := anc_desc( left, right );
     
     # Containment count: for each region from left, count how many regions from right it contains
     var num_terms := {count}(ctx_tmp2);
@@ -771,13 +769,14 @@ PROC reg_freq(bat left, bat right, int size_type) : bat    :=
     var end_time := time();
     if (DEBUG) printf( "reg_freq: \t\t%d ms\n", end_time - start_time );
     return prob_tmp;
-        
 }
 
 
 # Calculate the term size of the region: how many terms does it contain?
 PROC size_term( bat region ) : bat := 
 {
+    # For now, we use size_term = size_entity
+    return size_entity( region );
     var start_time := time();
     
     # all terms:
@@ -830,57 +829,15 @@ PROC size_entity( bat region ) : bat :=
 PROC p_contained_by_sum(bat left, bat right) : bat := 
 {
 
-    # Items contains the context nodes for the descendant step: this is the right side argument to contained_by.
-    # The table must be [void,oid], so:
-    var items := right.mirror().mark(0@0).reverse();
+    var ctx_res := anc_desc( right, left );
     
-    # Candidates contains the left side argument. This must also be [void,oid]:
-    var candidates := left.mirror().mark(0@0).reverse();
-    
-    var pre_size := load( "tj_" + collName + "_size");
-            
-    # Check the order of the items:
-    items.chk_order();
-    
-    # Call the descendant algorithm: it returns [ancestor, descendant] pairs!
-    var ctx_res := ll_descendant(items, items, pre_size, candidates, collHeight, false, false, min(items), max(items), false);
-    
-    # Attach the scores to the resulting nodes again:
-    #var result := res.reverse().mirror().join(left);
-    
-    
-
-	#: var ctx_res := new(oid,oid,ENTITY_NUM);
-	#: var ctx := new(oid,oid,ENTITY_NUM);
-	#: var reg_score := new(oid,dbl,ENTITY_NUM);
-	#: var entity_pre := new(oid,oid,ENTITY_NUM);
-	#: entity_pre := load(col_name+"entity_pre");
-	#: var entity_post := new(oid,oid,ENTITY_NUM);
-	#: entity_post := load(col_name+"entity_post");
-
-	#: var res_reg := new(oid,dbl,ENTITY_NUM);
-
-    # Get preorder indices for left (de) and right (an)
-    #: var de := left.mirror().join(entity_pre).reverse().join(entity_post).sort();
-    #: var an := right.mirror().join(entity_pre).reverse().join(entity_post).sort();
-
-    #: entity_post := nil;
-
     var reg_score;
     var res_reg;
 	var ctx := left.project(dbl(0));
 
-    # use optimized interval inclusion join
-    #: ctx_res:=treemergejoin_sort(an,de,1);
-
-    # ctx_res contains an=>de pairs: their preorder indices!
-    
     # calculating the score for each region
     reg_score := {sum}(ctx_res.reverse().join(right));
     reg_score := kunion(reg_score, ctx);
-
-
-	#: entity_pre :=nil;
 
 	if (scoreBase = 0)
 		res_reg := [+](left, reg_score);
@@ -894,79 +851,212 @@ PROC p_contained_by_sum(bat left, bat right) : bat :=
 
 PROC p_containing_wsumd(bat left, bat right, int size_type) : bat :=
 {
-    
-	#: var ctx_res := new(oid,oid,ENTITY_NUM);
-	#: var ctx := new(oid,oid,ENTITY_NUM);
-	#: var size_reg := new(oid,dbl,ENTITY_NUM);
-	#: var norm_reg := new(oid,dbl,ENTITY_NUM);
-	#: var reg_score := new(oid,dbl,ENTITY_NUM);
-	#: var entity_pre := new(oid,oid,ENTITY_NUM);
-	#: entity_pre := load(col_name+"entity_pre");
-	#: var entity_post := new(oid,oid,ENTITY_NUM);
-	#: entity_post := load(col_name+"entity_post");
-
-	#: var res_reg := new(oid,dbl,ENTITY_NUM);
-
-    #: var an := left.mirror().join(entity_pre).reverse().join(entity_post).sort();
-    #: var de := right.mirror().join(entity_pre).reverse().join(entity_post).sort();
-
-    #: entity_post := nil;
-
-	var ctx := left.project(dbl(0));
+    var ctx := left.project(dbl(0));
     var size_reg;
     var reg_score;
     var norm_reg;
     var res_reg;
     
     if (size_type = SIZE_ENTITY) {
-		size_reg := size_entity(right);
-	}
-	else if (size_type = SIZE_TERM) {
-		size_reg := size_term(right);
-	}
+        size_reg := size_entity(right);
+    }
+    else if (size_type = SIZE_TERM) {
+        size_reg := size_term(right);
+    }
 
-    # use optimized interval inclusion join
-    #: ctx_res:=treemergejoin_sort(an,de,1);
-
-    # Items contains the context nodes for the descendant step: this is the right side argument to contained_by.
-    # The table must be [void,oid], so:
-    var items := left.mirror().mark(0@0).reverse();
-    
-    # Candidates contains the left side argument. This must also be [void,oid]:
-    var candidates := right.mirror().mark(0@0).reverse();
-    
-    var pre_size := load( "tj_" + collName + "_size");
-            
-    # Check the order of the items:
-    items.chk_order();
-    
     # Call the descendant algorithm: it returns [ancestor, descendant] pairs!
-    var ctx_res := ll_descendant(items, items, pre_size, candidates, collHeight, false, false, min(items), max(items), false);
-    	
-
-    # Find the node id's again: not necessary here
-	#: ctx_res := ctx_res.join(entity_pre.reverse());
-
+    var ctx_res := anc_desc( left, right );
+    
     # calculating the score for each region
     reg_score := {sum}(ctx_res.join([*](size_reg,right)));
+    norm_reg := [dbl]({sum}(ctx_res.join(size_reg)));
 
-	norm_reg := {sum}(ctx_res.join(size_reg));
+    # Select all values > 0
+    norm_reg := norm_reg.select(dbl(0),dbl(nil),false,true);
 
-	norm_reg := norm_reg.select(dbl(0),dbl(nil),false,true);
-
-	reg_score := norm_reg.mirror().join(reg_score);
+    reg_score := norm_reg.mirror().join(reg_score);
 
     reg_score := [/](reg_score,norm_reg);
 
-	reg_score := sunion(reg_score,ctx);
+    reg_score := kunion(reg_score,ctx);
 
-	if (scoreBase = 0)
-		res_reg := [+](left, reg_score);
-	else if (scoreBase = 1)
-		res_reg := [*](left, reg_score);
+    if (scoreBase = 0)
+        res_reg := [+](left, reg_score);
+    else if (scoreBase = 1)
+        res_reg := [*](left, reg_score);
 
-	return res_reg;
+    return res_reg;
+}
 
+#################################################################################
+# SET BASED PROBABILISTIC TERM CONTAINING
+#################################################################################
+
+
+proc p_containing_q(bat ctx, bat Qterms, bat modifiers, int stemming, int size_type) : bat {   
+    return p_containing_q(ctx, Qterms,modifiers, flt(1.0), stemming, size_type);
+}
+
+proc p_containing_q(bat ctx, bat Qterms, bat modifiers, flt lambda, int stemming, int size_type) : bat {   
+    return p_containing_q_LM_basic(ctx, Qterms, modifiers, lambda, stemming, size_type);
+}
+
+proc p_containing_q_LM_basic(bat ctx, bat Qterms, bat modifiers, flt lambda, int stemming, int size_type) : bat {   
+    #var Qpositions :=  [select_term](Qterms,stemming);
+    
+    var result := indexfetchjoin( Qterms,
+    				  bat("tj_" + collName + "_TermIndex"),
+    				  bat("tj_" + collName + "_Terms") );
+    var Qpositions := result.reverse().sort().project(dbl(scoreBase));
+    var context := ctx.sort();
+    print(Qpositions);
+    var termscores := p_containing_t_LMs(const context, Qpositions, lambda, size_type);
+	var results := new(oid,dbl);
+	
+    [insert](const results,termscores);
+   
+    return {prod}(results);
+}
+
+proc p_containing_q_LM_fast(bat ctx, bat Qterms, bat modifiers, flt lambda, int stemming, int size_type) : bat {   
+# Smarter LM implementation that needs only a single treemergejoin per query
+  
+  var Qoids,QoidWeights;
+
+	QoidWeights := Qterms.project(dbl(1)); # TODO: add real weighting to avoid recomputation for duplicate query terms, or for morphological variants when stemming (can also be used to implement the modifiers)
+
+  var enum_word := load(col_name+"enum_word");
+	if (stemming = STEM_OFF) {
+    Qoids := Qterms.join(enum_word);
+    	    }
+  else if (stemming = STEM_ON) {
+    var word_stem := load(col_name+"word_stem");
+    var Qstems := Qterms.join(word_stem.reverse());
+    Qoids := Qstems.join(word_stem).join(enum_word);
+    word_stem:=nil;
+        }
+
+  enum_word := nil;
+  if ( Qoids.count() = 0) {
+	return ctx.[*](min(bat(col_name+"col_freq")));
+  }
+  else
+  {
+ var word_name := load(col_name+"word_name");
+
+	var Qpositions:=[uselect](const word_name,Qoids.reverse().mirror()).[sort]().[project](Qoids.reverse()).[reverse]();
+ word_name := nil;
+    
+  
+	var allpositions:=new(oid,oid);
+	[insert](const allpositions,Qpositions);
+  allpositions.reverse().sort();
+
+  var word_pre := load(col_name+"word_pre");
+  var pre_Qoid := allpositions.join(word_pre).reverse().sort();
+
+  var entity_pre := load(col_name+"entity_pre");  
+  var entity_post := load(col_name+"entity_post");
+	var ctx_oid :=ctx.sort().mark(oid(0)).reverse();
+  var ctx_score := ctx.reverse().mark(oid(0)).reverse();
+	var ctx_pre := ctx_oid.join(entity_pre);
+  var ctx_post := ctx_oid.join(entity_post);
+	entity_post:=nil;
+
+	var res := treemergejoin_sort(ctx_pre,ctx_post,pre_Qoid.hmark(oid(0)),1);
+
+	var res_ctx := res.hmark(oid(0));
+	var res_Qoid := res.tmark(oid(0)).join(pre_Qoid.tmark(oid(0)));
+	var termcounts := res_Qoid.CTgroup(res_ctx).CThistogram();
+
+  var ctx_size;
+
+	if (size_type = SIZE_ENTITY)
+	ctx_size:=res_oid.reverse().kunique().mirror().sort().size_entity();
+	else if (size_type = SIZE_TERM)
+		ctx_size :=ctx_oid.join(BAT(col_name+"entity_text_size"));
+
+  var termprobs:=termcounts.[dbl]().[/](res_ctx.join(ctx_size).[dbl]());
+
+	termprobs:=termprobs.[*](lambda);
+	var prob;	
+
+	if (lambda<1.0)
+	{
+   var BG;
+	if (size_type = SIZE_ENTITY) {
+ var col_root := load(col_name+"col_root");
+		BG := pre_Qoid.reverse().{count}().[/](size_entity(entity_pre.join(col_root)).find(oid(0)));
+
+
+	}
+
+	else if (size_type = SIZE_TERM) {
+
+		BG := pre_Qoid.reverse().{count}().[/](dbl(count(word_pre)));
+
+
+	}
+
+  word_pre := nil;
+  entity_pre := nil;
+
+	 BG:= BG.[*](1-lambda);
+ 
+   var BGprobs := res_Qoid.join(BG);
+
+	 prob := termprobs.[/](BGprobs).[+](1); 	# This is the presence weighting scheme 
+					      	# (cf. for example Eq. 3.22 in thesis Thijs)
+
+	 # Apply query term weights 
+	 # normalisation for number query terms not needed (does not influence ranking)
+
+	 prob:= prob.[dbl]().[pow](join(res_Qoid,QoidWeights));
+
+	 # convert to (ctx_ind,prob)
+	 prob := res_ctx.reverse().join(prob);
+	
+	 # aggregate over query terms (joint probability)
+	 prob := prob.{prod}().sort(); # only scores for matchin nodes
+	
+	 # non matching-score
+   var NMS := BG.[pow](QoidWeights).prod();
+   prob:=prob.[*](NMS); # multiply matching w. NMS (cv. presence weighting scheme)
+   # non matching elements get NMS only;
+   prob:=ctx_oid.project(NMS).access(BAT_WRITE).inplace(prob).access(BAT_READ);
+	}
+	else
+	{
+
+	 # lambda = 1 -> do not use presence weighting to avoid division by zero; 
+	 # compute without rewriting (cf. eq. 3.20 and 3.21 in Thijs' thesis)
+	 prob := termprobs;
+
+	 # Apply query term weights 
+	 # normalisation for number query terms not needed (does not influence ranking)
+
+	 prob:= prob.[dbl]().[pow](join(res_Qoid,QoidWeights).[dbl]());
+
+	 # convert to (entity_oid,prob)
+	 prob := res_ctx.reverse().join(prob);
+	
+	 # aggregate over query terms (joint probability)
+	 prob := prob.{prod}().sort(); # only scores for matchin nodes
+	
+
+	 # add non-matching elements
+	 prob := ctx_oid.project(dbl(0)).access(BAT_WRITE).inplace(prob).access(BAT_READ);
+}
+
+	if (base = ZERO)
+		prob := [+](ctx_score,prob);
+	else if (base = ONE)
+		prob := [*](ctx_score,prob);
+
+	prob := ctx_oid.reverse().join(prob);
+
+	return prob; 
+ }
 }
 
 # The following functions have been copied without change from algebra_procs.mil
@@ -1476,7 +1566,12 @@ extern int executeMIL(char* str);
 int executeMIL(char* str) {
 	Cntxt stk = 0; /* OK??? */
 	ValRecord res;
-
+    
+    FILE *debug = fopen( "/tmp/executeMIL.log", "a" );
+    fprintf( debug, "%s", "\n\n");
+    fprintf( debug, "%s", str );
+    fclose( debug );
+    
 	if ( 0 ) stream_printf(GDKout,"# executeMIL(\"%s\")\n",str);
 	int ret = interpret_str(stk,str,&res);
 	if ( ret==-TOK_RETURN ) {

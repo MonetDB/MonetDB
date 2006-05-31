@@ -55,8 +55,9 @@ extern int serialize_pftijah_options_DRIVER(
 #include <serialize.h>
 
 typedef struct PTOS {
-    int  cnt; /* count the number of tags here */
-    BAT* bat; /* [str,str] result BAT */
+    int  cnt;			/* count the number of tags here */
+    BAT* bat;			/* [str,str] result BAT */
+    const char* errorMessage;	/* error message buffer */
 } PTOS;
 
 static struct PTOS* GLOBAL_PTOS = NULL;
@@ -65,10 +66,10 @@ static struct PTOS* GLOBAL_PTOS = NULL;
  *
  * Definition of the structure containing the functions
  */
-
 static int pftijah_options_init(XqueryCtx* ctx, char* args) {
     (void) args;
-    ctx->driverWs = GLOBAL_PTOS;
+    ctx->driverWs		= GLOBAL_PTOS;
+    GLOBAL_PTOS->errorMessage	= NULL;
 #ifdef DEBUG
     stream_printf(GDKout,"pft_opt_deb: pftijah_options_init() called.\n");
 #endif
@@ -93,9 +94,7 @@ pftijah_options_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
     }
     if ( ++ptoctx->cnt != 1 ) {
         /* error here */
-#ifdef DEBUG
         stream_printf(GDKout,"pft_opt_deb: pftijah_options_handle_startElement(%s) FAILS[badcount].\n",name);
-#endif
 	return 0;
     }
 #ifdef DEBUG
@@ -115,9 +114,7 @@ static int pftijah_options_handle_attribute(XqueryCtx* ctx, str uri, str prefix,
     (void)prefix;
     (void)top;
     if ( !BUNins(ptoctx->bat, loc, value) ) {
-#ifdef DEBUG
         stream_printf(GDKout,"pft_opt_deb: pftijah_options_handle_attribute(%s,%s) FAILS[BUNins].\n",loc,value);
-#endif
         /* error message here */
 	return 0;
     }
