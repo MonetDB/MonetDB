@@ -127,11 +127,17 @@ extern char *pfinput;
 /* If the BURKOWSKI flag was set, the steps should be recognized
    Otherwise, they (select-narrow::, select-wide::, reject-narrow::, and
    reject-wide::,  should return an error */
-#ifdef BURKOWSKI
+
+/* somehow the runtime-flag should be available here to 
+   determine whether StandOff-steps are allowed, or whether
+   the language is restricted to pure XQuery */
+/* #ifdef BURKOWSKI */
 #define burk_yield(t) yield(t);
+/*
 #else
 #define burk_yield(t) yield(invalid_character);
-#endif
+#endif 
+*/
 
 /* lexical state stack */
 static PFarray_t *lexical_stack = NULL;

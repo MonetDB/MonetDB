@@ -77,6 +77,8 @@ struct PFstate_t {
     bool summer_branch;       /**< command line switch: -M */
     bool dead_code_el;        /**< command line switch: -e */
 
+    bool standoff_axis_steps; /**< command line switch: -b */
+
     char *opt_alg;            /**< list of algebraic optimizations 
                                    (command line switch -o) */
     char *format;             /**< dot output format (command line switch -f) */

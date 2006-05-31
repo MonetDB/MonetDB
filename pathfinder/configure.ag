@@ -297,18 +297,18 @@ yes)  AC_DEFINE(HAVE_PFTIJAH, 1, [Define if you want TIJAH])
 esac
 AM_CONDITIONAL(HAVE_PFTIJAH, test "x$enable_pftijah" == xyes)
 
-dnl Check for Burkowski Axis Steps support
-dnl --enable-burk
-AC_ARG_ENABLE(burk,
-	AC_HELP_STRING([--enable-burk],
-		[enable support for Burkowski Axis Steps [default=no]]),
-	enable_burk=$enableval,
-	enable_burk=no)
-case $enable_burk in
-yes)  AC_DEFINE(BURKOWSKI, 1, [Define if you want Burkowski])
-      AC_MSG_NOTICE([Burkowski Axis Steps will be available...])
-;;
-esac
+#dnl Check for Burkowski Axis Steps support
+#dnl --enable-burk
+#AC_ARG_ENABLE(burk,
+#	AC_HELP_STRING([--enable-burk],
+#		[enable support for Burkowski Axis Steps [default=no]]),
+#	enable_burk=$enableval,
+#	enable_burk=no)
+#case $enable_burk in
+#yes)  AC_DEFINE(BURKOWSKI, 1, [Define if you want Burkowski])
+#      AC_MSG_NOTICE([Burkowski Axis Steps will be available...])
+#;;
+#esac
 
 
 dnl The Burg code requires strdup(). We test here if strdup() is

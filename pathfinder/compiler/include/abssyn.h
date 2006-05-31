@@ -195,7 +195,7 @@ enum PFpaxis_t {
     p_preceding,          /**< nodes before context node (document order) */
     p_preceding_sibling,  /**< all preceding nodes with same parent */
     p_self                /**< the context node itself */
-#ifdef BURKOWSKI
+/* #ifdef BURKOWSKI */
     /* Burkowski Axes Steps */
     ,
     p_select_narrow,      /**< give me some bastards (Burkowski stand-off 
@@ -206,7 +206,7 @@ enum PFpaxis_t {
                                stand-off matching) */
     p_reject_wide         /**< give me all but the bastards (Burkowski 
                                stand-off matching) */
-#endif
+/* #endif */
 };
 
 typedef enum PFpaxis_t PFpaxis_t;

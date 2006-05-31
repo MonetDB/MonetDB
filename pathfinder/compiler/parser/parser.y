@@ -1918,43 +1918,43 @@ BurkStep_                 : BurkAxis_ NodeTest
 
 BurkAxis_                 : "select-narrow::"
                             { 
-#ifndef BURKOWSKI
-                              PFoops (OOPS_PARSE,
-                                      "Invalid Axis "
-                                      "(Burkowski was not enabled)");
-#else
-                              $$ = p_select_narrow; 
-#endif
+                              if (!PFstate.standoff_axis_steps) {
+                                PFoops (OOPS_PARSE,
+                                      "invalid character "
+                                      "(StandOff was not enabled)");
+                              } else {
+                                $$ = p_select_narrow; 
+                              }
                             }
                           | "select-wide::"
                             { 
-#ifndef BURKOWSKI
-                              PFoops (OOPS_PARSE,
-                                      "Invalid Axis "
-                                      "(Burkowski was not enabled)");
-#else
-                              $$ = p_select_wide; 
-#endif
+                              if (!PFstate.standoff_axis_steps) {
+                                PFoops (OOPS_PARSE,
+                                      "invalid character "
+                                      "(StandOff was not enabled)");
+                              } else {
+                                $$ = p_select_wide; 
+                              }
                             }
                           | "reject-narrow::"
                             { 
-#ifndef BURKOWSKI
-                              PFoops (OOPS_PARSE,
-                                      "Invalid Axis "
-                                      "(Burkowski was not enabled)");
-#else
-                              $$ = p_reject_narrow; 
-#endif
+                              if (!PFstate.standoff_axis_steps) {
+                                PFoops (OOPS_PARSE,
+                                      "invalid character "
+                                      "(StandOff was not enabled)");
+                              } else {
+                                $$ = p_reject_narrow; 
+                              }
                             }
                           | "reject-wide::"
                             { 
-#ifndef BURKOWSKI
-                              PFoops (OOPS_PARSE,
-                                      "Invalid Axis "
-                                      "(Burkowski was not enabled)");
-#else
-                              $$ = p_reject_wide; 
-#endif
+                              if (!PFstate.standoff_axis_steps) {
+                                PFoops (OOPS_PARSE,
+                                      "invalid character "
+                                      "(StandOff was not enabled)");
+                              } else {
+                                $$ = p_reject_wide; 
+                              }
                             }
                           ;
 

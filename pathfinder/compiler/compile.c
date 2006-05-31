@@ -118,6 +118,8 @@ PFstate_t PFstate = {
     .summer_branch       = true,
     .dead_code_el        = true,
 
+    .standoff_axis_steps = false,
+
     .opt_alg             = "OIKDCG_VOIG_[J]_MOIGC_KDCGP",
     .format              = NULL,
 
@@ -597,6 +599,14 @@ PFcompile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char
 
         PFstate.invocation = invoke_monetdb;
         PFstate.summer_branch = true;
+
+
+        /* FIXME: the state of the standoff_axis_steps
+           support should be passed through the function-arguments.
+           Do we have to extend the function with a new arg, or 
+           can this option be incorporated with the other args 
+           (inside the 'mode' argument maybe??) */
+        PFstate.standoff_axis_steps = false;
 
         PFstate.genType = mode;
         if (setjmp(PFexitPoint) != 0 ) {

@@ -2097,7 +2097,7 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
         case c_self:
             axis = "self";
             break;
-#ifdef BURKOWSKI
+/* #ifdef BURKOWSKI */
         case c_select_narrow:
             axis = "select_narrow";
             break;
@@ -2110,7 +2110,7 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
         case c_reject_wide:
             axis = "reject_wide";
             break; 
-#endif
+/* #endif */
         default:
             PFoops (OOPS_FATAL, "XPath axis is not supported in MIL-translation");
     }

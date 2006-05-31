@@ -457,6 +457,10 @@ static struct option long_options[] = {
     { "timing",                       no_argument,    NULL, 'T' },
     { "print-XML",                    no_argument,    NULL, 'X' },
     { "print-abstract-syntax-tree",   no_argument,    NULL, 'a' },
+/* Wouter: enable-standoff  (with the short-option b (Burkowski ;)
+   sorrt for the confusion, but I'm afraid all other letters
+   have been picked by now... */
+    { "enable-standoff",              no_argument,    NULL, 'b' },
     { "print-core-tree",              no_argument,    NULL, 'c' },
     { "debug",                     optional_argument, NULL, 'd' },
     { "dead-code-elimination",     required_argument, NULL, 'e' },
@@ -722,6 +726,8 @@ main (int argc, char *argv[])
                         "         0 disable dead code elimination\n"
                         "         1 enable dead code elimination (default)\n",
                         long_option (opt_buf, ", --%s=[0|1]", 'e'));
+                printf ("  -b%s: enable StandOff axis steps\n",
+                        long_option (opt_buf, ", --%s", 'b'));
                 printf ("\n");
                 printf ("Enjoy.\n");
                 exit (0);
@@ -748,6 +754,10 @@ main (int argc, char *argv[])
 
             case 'a':
                 status->print_parse_tree = true;
+                break;
+
+            case 'b':
+                status->standoff_axis_steps = true;
                 break;
 
             case 'c':
