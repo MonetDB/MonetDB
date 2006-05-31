@@ -2995,9 +2995,10 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 		}
 
 
-		if (result->fieldcnt) {
+		if (result->fieldcnt > result->maxfields) {
 			REALLOC(result->fields, result->fieldcnt);
-			memset(result->fields, 0, result->fieldcnt * sizeof(*result->fields));
+			memset(result->fields + result->maxfields, 0, (result->fieldcnt - result->maxfields) * sizeof(*result->fields));
+			result->maxfields = result->fieldcnt;
 		}
 
 		/* start of new SQL result */
@@ -3022,9 +3023,12 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 		tag++;
 
 	if (n > result->fieldcnt) {
-		REALLOC(result->fields, n);
-		memset(result->fields + result->fieldcnt, 0, (n - result->fieldcnt) * sizeof(*result->fields));
 		result->fieldcnt = n;
+		if (n > result->maxfields) {
+			REALLOC(result->fields, n);
+			memset(result->fields + result->maxfields, 0, (n - result->maxfields) * sizeof(*result->fields));
+			result->maxfields = n;
+		}
 	}
 
 	if (strcmp(tag, "name") == 0) {
@@ -3181,7 +3185,7 @@ mapi_virtual_result(MapiHdl hdl, int columns, const char **columnnames, const ch
 	assert(hdl->result == NULL);
 	assert(hdl->active == NULL);
 	hdl->active = result = new_result(hdl);
-	result->fieldcnt = columns;
+	result->fieldcnt = result->maxfields = columns;
 	REALLOC(result->fields, columns);
 	memset(result->fields, 0, columns * sizeof(*result->fields));
 	result->querytype = Q_TABLE;
