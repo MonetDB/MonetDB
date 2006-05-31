@@ -8117,6 +8117,32 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	);
         return NORMAL;
     }
+    else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"xtijah-query")) )
+    {
+        milprintf(f, 
+                "{ # translate fn:xtijah-query\n"
+	);
+        if (fun->arity == 3) {
+        }
+        milprintf(f, "} # end of translate fn:xtijah_query\n");
+        return NORMAL;
+    }
+    else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"xtijah-nodes")) )
+    {
+        milprintf(f, 
+                "{ # translate fn:xtijah-nodes\n"
+	);
+        milprintf(f, "} # end of translate fn:xtijah_nodes\n");
+        return NORMAL;
+    }
+    else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"xtijah-score")) )
+    {
+        milprintf(f, 
+                "{ # translate fn:xtijah-score\n"
+	);
+        milprintf(f, "} # end of translate fn:xtijah_score\n");
+        return NORMAL;
+    }
 #endif /* PFTIJAH */
     PFoops(OOPS_FATAL,"function %s is not supported.", PFqname_str (fnQname));
     milprintf(f,
