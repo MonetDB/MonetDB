@@ -53,11 +53,9 @@
 
 #define RDONLY 0
 #define RD_INS 1
-#define RD_DEL 2
-#define RD_UPD 3
-#define INS 4
-#define DEL 5
-#define UPD 6
+#define RD_UPD 2
+#define INS 3
+#define UPD 4
 
 #define cur_user 1
 #define cur_role 2

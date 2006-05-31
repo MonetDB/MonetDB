@@ -1290,7 +1290,7 @@ bathash_wrap(int *res, int *bid )
 		BATloopFast(b,p,q,xx){
 			ptr v = BUNtail(b,p);
 			int h = (hash(v)) & 0xEFFFFFFF;
-			BUNins(dst, BUNhead(b,p), &h);
+			BUNins(dst, BUNhead(b,p), &h, FALSE);
 		}
 	} else {
 		BUN p,q;
@@ -1299,7 +1299,7 @@ bathash_wrap(int *res, int *bid )
 		BATloopFast(b,p,q,xx){
 			ptr v = BUNtail(b,p);
 			int h = (hash(v)) & 0xEFFFFFFF;
-			BUNins(dst, BUNhead(b,p), &h);
+			BUNins(dst, BUNhead(b,p), &h, FALSE);
 		}
 	}
 

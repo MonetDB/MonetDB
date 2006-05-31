@@ -33,6 +33,8 @@ content, the deleted and inserted can then be found using the delta status.
 #include "sql_mem.h"
 #include <gdk.h>
 
+#define SQLBATSIZE 0
+
 extern void bat_destroy(BAT *b);
 extern BAT *bat_descriptor(bat bid, char *func);
 extern BAT *bat_copy(BAT *b, char *func);
@@ -186,14 +188,14 @@ bm_create(int debug)
 	bm->debug = debug;
 	if (sql_catalog == 0) {
 		oid bid = 0;
-		bm->bat_name = bm_create_bat(TYPE_oid, TYPE_str, BUFSIZ);
+		bm->bat_name = bm_create_bat(TYPE_oid, TYPE_str, SQLBATSIZE);
 		if (bm->debug)
 			printf("create sql_catalog\n");
 		BATmode(bm->bat_name, PERSISTENT);
 		BBPrename(bm->bat_name->batCacheid, catalog);
 		/* insert catalog bat, to make TMsubcommit calls possible */
 		bid = bm->bat_name->batCacheid;
-		BUNins(bm->bat_name, &bid, catalog);
+		BUNins(bm->bat_name, &bid, catalog, FALSE);
 		if (bm_subcommit(bm->bat_name) != 0)	/* save sql_catalog */
 			return NULL;
 	} else { /* find the persisten sql_catalog. As non persistent bats
@@ -304,7 +306,7 @@ bm_add_bat(bm *bm, BAT *b, char *name)
 	bid = b->batCacheid;
 	if (bm->debug)
 		printf("create %s\n", name);
-	BUNins(bm->bat_name, &bid, name);
+	BUNins(bm->bat_name, &bid, name, FALSE);
 	bat_incref(bid, TRUE, "bm_add_bat");
 	return bid;
 }

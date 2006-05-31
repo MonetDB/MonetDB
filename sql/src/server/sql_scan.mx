@@ -915,7 +915,7 @@ sqllex(YYSTYPE * yylval, void *parm)
 			lc->yycur -= prev;
 			assert(lc->yycur >= 0);
 		}
-	} else if (token == WITH) {
+	} else if (token == WITH || token == USING) {
 		lc->view_end = pos;
 	}
 
