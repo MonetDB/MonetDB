@@ -922,9 +922,17 @@ occurring type checks. For example, the type checker for the instruction
 bat.insert(b:bat[:any$1,:any$2],h:any$1,t:any$2):bat[:any$1,:any$2].
 The disadvantage is an abundance of code and less efficient instruction
 cache hits.
+
 @- Macro expansion
 The macro calls are catched by the type resolver and immediately inserted
-into the code block.
+into the code block. A potential problem is a recursive macro expansion
+call. This can be avoided with extensive analysis.
+For the moment we abort the compilation when the highwatermark
+for MAL blocks has been reached.
+
+The macro call could be part of a flow-of-control instruction,
+e.g. barriers and returns. These annotations are added to the
+last instruction of the macro call.
 @c
 
 void
@@ -934,6 +942,11 @@ expandMacro(MalBlkPtr mb, InstrPtr p, MalBlkPtr mc)
 	InstrPtr *ns, oldpc = p;
 	int *nv;
 
+	if( mb->ssize + mc->ssize > STMT_MAXIMUM){
+		mb->errors++;
+		GDKerror("mal.resolve: MAL block becomes too large");
+		return ;
+	}
 	ns = GDKmalloc((l = (mb->ssize + mc->ssize)) * sizeof(InstrPtr));
 	nv = alloca(mc->vtop * sizeof(int));
 	v = p->argc - p->retc;
@@ -983,6 +996,7 @@ expandMacro(MalBlkPtr mb, InstrPtr p, MalBlkPtr mc)
 #endif
 		k++;
 	}
+	ns[k-1]->barrier= oldpc->barrier;
 	/* copy the remainder */
 	for (j++; j < mb->stop; j++)
 		ns[k++] = mb->stmt[j];

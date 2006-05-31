@@ -253,7 +253,7 @@ only.
 	obj= (Box) GDKmalloc(sizeof(BoxRecord));
 	memset((char*) obj, 0, sizeof(BoxRecord));
 	obj->name= GDKstrdup(name);
-	obj->sym=  newMalBlk(MAXVARS,MAXSTMTS);
+	obj->sym=  newMalBlk(MAXVARS,STMT_INCREMENT);
 	obj->val = newGlobalStack(MAXVARS);
 	if( GDKprotected)
 		obj->lock= MT_create_lock();

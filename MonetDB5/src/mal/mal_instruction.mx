@@ -270,7 +270,8 @@ instruction in the source.]
 
 #define DEBUG_MAL_INSTR
 #define MAXARG 9
-#define MAXSTMTS 32
+#define STMT_INCREMENT 32
+#define STMT_MAXIMUM  1<<16
 #define MAXVARS 32
 
 typedef struct SYMDEF {
@@ -530,7 +531,7 @@ newSymbol(str nme, int kind)
 	cur->name = nme;
 	cur->kind = kind;
 	cur->peer = NULL;
-	cur->def = newMalBlk(MAXVARS, MAXSTMTS);
+	cur->def = newMalBlk(MAXVARS, STMT_INCREMENT);
 	return cur;
 }
 
@@ -1974,7 +1975,7 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 
 	i = mb->stop;
 	if (i + 1 >= mb->ssize) {
-		int space = (mb->ssize + MAXSTMTS) * sizeof(InstrPtr);
+		int space = (mb->ssize + STMT_INCREMENT) * sizeof(InstrPtr);
 		InstrPtr *newblk = (InstrPtr *) GDKmalloc(space);
 
 		if (newblk == NULL) {
@@ -1985,7 +1986,7 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 		memset((char *) newblk, 0, space);
 		memcpy(newblk, mb->stmt, mb->stop * sizeof(InstrPtr));
 
-		mb->ssize += MAXSTMTS;
+		mb->ssize += STMT_INCREMENT;
 		GDKfree(mb->stmt);
 		mb->stmt = newblk;
 	}
