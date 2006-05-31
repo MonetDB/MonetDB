@@ -1284,7 +1284,8 @@ SERVERreconnectWithoutAlias(int *key,str *host, int *port, str *username, str *p
  if( SERVERsessions[i].c && 
      SERVERsessions[i].key== @1 ) break;
  if( i== MAXSESSIONS)
-	return throwMessage("mserver.@2","Access violation");
+	return throwMessage("mserver.@2","Access violation,"
+		" could not find matching session descriptor");
   mid= SERVERsessions[i].mid;
   (void) mid; /* silence compilers */
 @c
