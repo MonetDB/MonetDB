@@ -1282,7 +1282,7 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		snprintf(buf, 1024, "%s.%s[%d]", 
 			getModuleId(getInstrPtr(mb, 0)), 
 			getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci));
-		BUNins(TRACE_id_pc, &evnt, buf);
+		BUNins(TRACE_id_pc, &evnt, buf, FALSE);
 		if (getModuleId(pci) && getFunctionId(pci)) {
 			snprintf(buf, 1024, "%s.%s", 
 				getModuleId(pci), 
@@ -1290,7 +1290,7 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		} else {
 			snprintf(buf, 1024, "%s", operatorName(pci->token));
 		}
-		BUNins(TRACE_id_modfcn, &evnt, buf);
+		BUNins(TRACE_id_modfcn, &evnt, buf, FALSE);
 	}
 	if (profileCounter[PROFtime].status) {
 		char *tbuf, *c;
@@ -1302,12 +1302,12 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 			c[-4] = 0;
 		}
 		tbuf[10] = '"';
-		BUNins(TRACE_id_time, &evnt, tbuf + 10);
+		BUNins(TRACE_id_time, &evnt, tbuf + 10, FALSE);
 	}
 	if (profileCounter[PROFlabel].status) {
 		int ticks = (int) (GDKusec() - mb->profiler[pc].clk);
 
-		BUNins(TRACE_id_ticks, &evnt, &ticks);
+		BUNins(TRACE_id_ticks, &evnt, &ticks, FALSE);
 	}
 	if (profileCounter[PROFstmt].status) {
 		/* generate actual call statement */
@@ -1316,7 +1316,7 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 
 		while (c && *c && (isspace((int) *c) || *c == '!'))
 			c++;
-		BUNins(TRACE_id_stmt, &evnt, c);
+		BUNins(TRACE_id_stmt, &evnt, c, FALSE);
 		GDKfree(stmt);
 	}
 /* The remainder requires their own BATs

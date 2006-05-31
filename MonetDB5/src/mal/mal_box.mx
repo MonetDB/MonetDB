@@ -582,7 +582,7 @@ getBoxNames(int *bid)
 	b = BATnew(TYPE_int, TYPE_str, (size_t) MAXSPACES);
 	for (i = 0; i < MAXSPACES; i++)
 		if (box[i] != NULL) {
-			BUNins(b, &i, box[i]->name);
+			BUNins(b, &i, box[i]->name, FALSE);
 		}
 	BBPincref(*bid = b->batCacheid, TRUE);
 	BBPunfix(*bid);

@@ -384,7 +384,7 @@ AUTHaddUser(oid *uid, str *username, str *passwd, bat *scenarios) {
 		/* associate scenarios given in the BAT with the user */
 		if (BATcount(b) > 0) {
 			BATloop(b, p, q) {
-				BUNins(scen, id, BUNhead(b, p));
+				BUNins(scen, id, BUNhead(b, p), FALSE);
 			}
 		}
 	}
@@ -592,7 +592,7 @@ AUTHaddScenario(str *username, str *scenario) {
 		throwMalf("addScenario", "inconsistent authorisation administration, scenario '%s' multiple times defined", *scenario);
 
 	/* add the scenario for this user */
-	BUNins(scen, BUNtail(userrev, p), *scenario);
+	BUNins(scen, BUNtail(userrev, p), *scenario, FALSE);
 	AUTHcommit();
 
 	return(MAL_SUCCEED);

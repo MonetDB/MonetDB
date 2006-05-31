@@ -364,10 +364,12 @@ void mal_exit(Client cntxt){
 #endif
 	/* early exit to solve random crashes, needs work */
 	MT_global_exit(0);
+
 	freeBoxes();
 	freeModuleList(cntxt->nspace);
 	mal_scope = 0;
 	unloadModuleLibraries(); 
+
 	finishNamespace();
 	if( cntxt->cwd)
 		GDKfree(cntxt->cwd);

@@ -686,7 +686,7 @@ str SYSgetDatabases(int *ret)
 				snprintf(buf,PATHLENGTH,"../%s/.mguardian.pid",e->d_name);
 			/* not water-proof, PID can exist, and be alive, but not an
 			   mserver, need to check process name */
-			BUNins(b,e->d_name,(access(buf,F_OK)?"sleeping":"running"));
+			BUNins(b,e->d_name,(access(buf,F_OK)?"sleeping":"running"), FALSE);
 			closedir(db);
 		} 
 	}
@@ -721,7 +721,7 @@ str SYSgetPorts(int *ret, str *lang)
 				port= (int) strtol(buf,NULL,10);
 				fclose(f);
 			} else port = 0;
-			BUNins(b, e->d_name, (ptr)(port==0? &int_nil: &port));
+			BUNins(b, e->d_name, (ptr)(port==0? &int_nil: &port), FALSE);
 			closedir(db);
 		} 
 	}
