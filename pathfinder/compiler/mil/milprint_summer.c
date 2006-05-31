@@ -1660,6 +1660,8 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
         exp_type = PFty_child (exp_type);
     }
 
+    milprintf(f, "{ # typeswitch\n");
+
     if (TY_EQ(exp_type, PFty_empty ()))
     {
         milprintf(f,
@@ -1681,11 +1683,71 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
     else if (TY_EQ (exp_type, PFty_string ()))
         kind = "STR";
     else if (TY_EQ (exp_type, PFty_double ()))
-        kind = "DEC";
+        kind = "DBL";
     else if (TY_EQ (exp_type, PFty_boolean ()))
         kind = "BOOL";
     else if (TY_EQ (exp_type, PFty_untypedAtomic ()))
         kind = "U_A";
+    else if (TY_EQ (exp_type, PFty_xs_anyNode ())) {
+        milprintf(f,
+            "kind := kind.[>](ATOMIC);\n");
+        kind = "true";
+    }
+    else if (TY_EQ (exp_type, PFty_xs_anyAttribute ())) {
+        milprintf(f,
+            "kind := kind.get_types();\n");
+        kind = "ATTR";
+    }
+    else if (TY_EQ (exp_type, PFty_doc (PFty_xs_anyType ()))) {
+        milprintf(f,
+            "var oid_node := kind.get_type(ELEM).mark(0@0).reverse();\n"
+            "var oid_item := oid_node.leftfetchjoin(item);\n"
+            "var oid_cont := oid_node.leftfetchjoin(kind).get_container();\n"
+            "var oid_kind := mposjoin(oid_item, oid_cont, ws.fetch(PRE_KIND));\n"
+            "oid_kind := oid_node.reverse().leftfetchjoin(oid_kind);\n"
+            "kind := kind.mirror().outerjoin(oid_kind);\n");
+        kind = "DOCUMENT";
+    }
+    else if (TY_EQ (exp_type, PFty_xs_anyElement ())) {
+        milprintf(f,
+            "var oid_node := kind.get_type(ELEM).mark(0@0).reverse();\n"
+            "var oid_item := oid_node.leftfetchjoin(item);\n"
+            "var oid_cont := oid_node.leftfetchjoin(kind).get_container();\n"
+            "var oid_kind := mposjoin(oid_item, oid_cont, ws.fetch(PRE_KIND));\n"
+            "oid_kind := oid_node.reverse().leftfetchjoin(oid_kind);\n"
+            "kind := kind.mirror().outerjoin(oid_kind);\n");
+        kind = "ELEMENT";
+    }
+    else if (TY_EQ (exp_type, PFty_text ())) {
+        milprintf(f,
+            "var oid_node := kind.get_type(ELEM).mark(0@0).reverse();\n"
+            "var oid_item := oid_node.leftfetchjoin(item);\n"
+            "var oid_cont := oid_node.leftfetchjoin(kind).get_container();\n"
+            "var oid_kind := mposjoin(oid_item, oid_cont, ws.fetch(PRE_KIND));\n"
+            "oid_kind := oid_node.reverse().leftfetchjoin(oid_kind);\n"
+            "kind := kind.mirror().outerjoin(oid_kind);\n");
+        kind = "TEXT";
+    }
+    else if (TY_EQ (exp_type, PFty_comm ())) {
+        milprintf(f,
+            "var oid_node := kind.get_type(ELEM).mark(0@0).reverse();\n"
+            "var oid_item := oid_node.leftfetchjoin(item);\n"
+            "var oid_cont := oid_node.leftfetchjoin(kind).get_container();\n"
+            "var oid_kind := mposjoin(oid_item, oid_cont, ws.fetch(PRE_KIND));\n"
+            "oid_kind := oid_node.reverse().leftfetchjoin(oid_kind);\n"
+            "kind := kind.mirror().outerjoin(oid_kind);\n");
+        kind = "COMMENT";
+    }
+    else if (TY_EQ (exp_type, PFty_pi (NULL))) {
+        milprintf(f,
+            "var oid_node := kind.get_type(ELEM).mark(0@0).reverse();\n"
+            "var oid_item := oid_node.leftfetchjoin(item);\n"
+            "var oid_cont := oid_node.leftfetchjoin(kind).get_container();\n"
+            "var oid_kind := mposjoin(oid_item, oid_cont, ws.fetch(PRE_KIND));\n"
+            "oid_kind := oid_node.reverse().leftfetchjoin(oid_kind);\n"
+            "kind := kind.mirror().outerjoin(oid_kind);\n");
+        kind = "PI";
+    }
     else
         PFoops (OOPS_TYPECHECK,
                 "couldn't solve typeswitch at compile time "
@@ -1696,7 +1758,6 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
     /* match one/multiple values per iteration */
     if (qualifier == 0 || qualifier == 1)
         milprintf(f,
-                "{ # typeswitch\n"
                 "var single_iters := histogram(iter).[=](1).select(true).mirror();\n"
                 "single_iters := single_iters.leftjoin(iter.reverse());\n"
                 "var matching_iters := single_iters.leftfetchjoin(kind).[=](%s).select(true);\n"
@@ -1704,7 +1765,6 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
                 kind);
     else
         milprintf(f,
-                "{ # typeswitch\n"
                 "var iter_count := histogram(iter);\n"
                 "var iter_kind := iter.reverse().leftfetchjoin(kind);\n"
                 "var kind_count := histogram(iter_kind.[=](%s).select(true).reverse());\n"
