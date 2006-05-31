@@ -215,6 +215,11 @@ int old_main(int argc, char * const argv[], BAT* optbat)
        sprintf(&mil_cmd[0], "tj_setCollName(\"%s\");", optVal);	
        if (! executeMIL(mil_cmd))
 	   GDKerror("PF/tijah: cannot set collection name.\n");
+   } else if ( strcmp(optName,"returnNumber") == 0 ) {
+       char mil_cmd[64];
+       sprintf(&mil_cmd[0], "retNum := int(%s);", optVal);	
+       if (! executeMIL(mil_cmd))
+	   GDKerror("PF/tijah: cannot set number of returned nodes.\n");
    } else if ( strcmp(optName,"top") == 0 ) {
        printf("top\n");
        /* handle topN here */
