@@ -223,7 +223,6 @@ a void. Take care to zero the accelerator data, though.
 	*bn->H = *b->H;
 	*bn->T = *b->T;
 	*bn->U = *b->U;
-	bn->batBuns->copied = 0;
 	bn->H->props = bn->T->props = NULL;
 	BATinit_idents(bn);
 @-
@@ -231,7 +230,6 @@ The b->P structure cannot be shared and must be copied individually.
 @c
 	bn->batSet = b->batSet;
 	bn->batDirty = BATdirty(b);
-	bn->batCopiedtodisk = FALSE;
 	bn->batRestricted = BAT_READ;
 @-
 The U record may be shared with the parent; in that case, the
@@ -248,7 +246,12 @@ use a copy.
 		bn->hhash = b->hhash;
 		bn->thash = b->thash;
 	}
-	if (recycled == NULL) BBPcacheit(bn);
+	if (recycled) {
+		/* bat already exists inclusive mirror => propagate dims */
+		BATmirror(bn)->dims = BATmirror(b)->dims;
+	} else {
+		BBPcacheit(bn); /* enter in BBP and create mirror */
+	}
 	return bn;
 }
 
@@ -775,13 +778,13 @@ compensates for outliers.
 void
 VIEWbounds(BAT *view, size_t l, size_t h)
 {
-	BAT *b;
+	bat bid = VIEWparent(view);
+	BAT *b = BBP_cache(bid);
 
-	if (view == NULL) {
+	if (view == NULL || bid == 0) {
 		GDKerror("VIEWbounds: bat required");
 		return;
 	}
-	b = BATdescriptor(view->batParentid);
 	if (l < BUNindex(b, BUNfirst(b)))
 		l = BUNindex(b, BUNfirst(b));
 	view->batBuns->base = BUNptr(b, l);
@@ -802,25 +805,19 @@ VIEWbounds(BAT *view, size_t l, size_t h)
 	if (BATtdense(b)) {
 		BATseqbase(BATmirror(view), b->tseqbase + l);
 	}
-	BBPunfix(b->batCacheid);
 }
 
 @-
 Destroy a view.
 @c
 void
-VIEWdestroy(BAT *v)
+VIEWdestroy(BAT *b)
 {
-	BAT *b = BBP_cache(ABS((v)->batCacheid));
-	if (b) {
-		VIEWunlink(b);
-
-		/* free memory private to this view */
-		if (!b->batBuns->copied) {
-			b->batBuns->base = NULL;
-			b->batBuns->filename = NULL;
-		}
-		BATfree(b);
-	}
+	VIEWunlink(b);
+	b->batBuns->base = NULL;
+	b->batBuns->filename = NULL;
+	b->hheap = NULL;
+	b->theap = NULL;
+	BATfree(b);
 }
 @}

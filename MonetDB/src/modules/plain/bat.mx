@@ -1964,7 +1964,12 @@ retry:		if (!mmap) failure = (HEAPalloc(bn->batBuns, n, 1) < 0);
 		}
 	}
 	BBPcacheit(bn);
-	bn->batBuns->copied = (mmap != NULL);
+	if (mmap) {
+		/* if copy-on-write was used, make bn a logical view on b */
+		bn->batLview = TRUE;
+		bn->batBuns->copied = TRUE;
+		BBPshare(bn->batParentid = ABS(b->batCacheid));
+	}
 	return GDK_SUCCEED;
 }
 

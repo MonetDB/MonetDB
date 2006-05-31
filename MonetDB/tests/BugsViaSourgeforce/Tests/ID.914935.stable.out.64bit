@@ -44,7 +44,7 @@ print(rangesplit(b,1));
 # h	tmp_31		  # name
 # int	BAT		  # type
 #-------------------------#
-[ nil,	  <tmp_32>	  ]
+[ nil,	  <tmp_33>	  ]
 print(rangesplit(b,2));
 #-------------------------#
 # h	tmp_31		  # name
@@ -136,7 +136,7 @@ print(hashsplit(b,1));
 # h	tmp_31		  # name
 # int	BAT		  # type
 #-------------------------#
-[ 0,	  <tmp_32>	  ]
+[ 0,	  <tmp_33>	  ]
 print(hashsplit(b,n));
 #-------------------------#
 # h	tmp_31		  # name
