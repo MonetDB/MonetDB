@@ -112,6 +112,11 @@ brackets as indicated by blkmode.
 It should be reset before continuing.
 @-
 @= restoreClient1
+	if (c->fdin) {
+		(void) stream_close(c->fdin->s);
+		(void) stream_destroy(c->fdin->s);
+		(void) bstream_destroy(c->fdin);
+	}
 	c->fdin = oldfdin; 
 	c->yycur = oldyycur; 
 	c->listing = oldlisting;
@@ -177,11 +182,6 @@ resolving addresses.
 		runScenario(c);
 	}
 
-	if (c->fdin) {
-		(void) stream_close(c->fdin->s);
-		(void) stream_destroy(c->fdin->s);
-		(void) bstream_destroy(c->fdin);
-	}
 	@:restoreClient()@
 }
 
