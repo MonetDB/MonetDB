@@ -37,9 +37,9 @@ stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 # str			str		str		str		  # type
 #-------------------------------------------------------------------------#
 [ "batBuns.filename",	  "32.buns",	  "34.buns",	  "35.buns"	  ]
-[ "batBuns.free",	  "12",		  "3",		  "8"		  ]
-[ "batBuns.maxsize",	  "1024",	  "256",	  "2048"	  ]
-[ "batBuns.size",	  "1024",	  "256",	  "2048"	  ]
+[ "batBuns.free",	  "12",		  "3",		  "4"		  ]
+[ "batBuns.maxsize",	  "1024",	  "256",	  "1024"	  ]
+[ "batBuns.size",	  "1024",	  "256",	  "1024"	  ]
 [ "batBuns.storage",		  "malloced",	  "malloced",	  "malloced"	  ]
 [ "batCacheid",		  "26",		  "28",		  "30"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
@@ -101,14 +101,14 @@ stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 # (oid)	  (void)  #
 #-----------------#
 [ 1@0,	  0@0	  ]
-#-------------------------------------------------------------------------#
-# h			a		aA		aA2		  # name
-# str			str		str		str		  # type
+#---------------------------------------------------------------------------------#
+# h				a		aA		aA2		  # name
+# str				str		str		str		  # type
 #-------------------------------------------------------------------------#
 [ "batBuns.filename",	  "32.buns",	  "43.buns",	  "44.buns"	  ]
-[ "batBuns.free",	  "12",		  "3",		  "8"		  ]
-[ "batBuns.maxsize",	  "1024",	  "256",	  "2048"	  ]
-[ "batBuns.size",	  "1024",	  "256",	  "2048"	  ]
+[ "batBuns.free",	  "12",		  "3",		  "4"		  ]
+[ "batBuns.maxsize",	  "1024",	  "256",	  "1024"	  ]
+[ "batBuns.size",	  "1024",	  "256",	  "1024"	  ]
 [ "batBuns.storage",		  "malloced",	  "malloced",	  "malloced"	  ]
 [ "batCacheid",		  "26",		  "35",		  "37"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
@@ -175,9 +175,9 @@ stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 # str			str		str		str		  # type
 #-------------------------------------------------------------------------#
 [ "batBuns.filename",	  "32.buns",	  "34.buns",	  "46.buns"	  ]
-[ "batBuns.free",	  "12",		  "3",		  "8"		  ]
-[ "batBuns.maxsize",	  "1024",	  "256",	  "2048"	  ]
-[ "batBuns.size",	  "1024",	  "256",	  "2048"	  ]
+[ "batBuns.free",	  "12",		  "3",		  "4"		  ]
+[ "batBuns.maxsize",	  "1024",	  "256",	  "1024"	  ]
+[ "batBuns.size",	  "1024",	  "256",	  "1024"	  ]
 [ "batBuns.storage",		  "malloced",	  "malloced",	  "malloced"	  ]
 [ "batCacheid",		  "26",		  "28",		  "38"		  ]
 [ "batCopiedtodisk",		  "0",		  "0",		  "0"		  ]
