@@ -1020,7 +1020,7 @@ TBL_getdir(void)
 #ifdef STATIC
 	for (i = 0; i < DL_TABLE_MAXLIBS; i++) {
 		if (DL_mod[i])
-			BUNins(b, &i, DL_mod[i] + 1);
+			BUNins(b, &i, DL_mod[i] + 1, FALSE);
 	}
 #else
 	char *mod_path;
@@ -1068,7 +1068,7 @@ TBL_getdir(void)
 		if (len < extlen || strcmp(dent->d_name + len - extlen, MIL_EXT) != 0)
 			continue;
 		dent->d_name[len - extlen] = 0;
-		BUNins(b, &i, dent->d_name);
+		BUNins(b, &i, dent->d_name, FALSE);
 		i++;
 	}
 #endif
@@ -1122,12 +1122,12 @@ SHOULD NEVER OCCUR UNDER NEW 'RECURSIVE LOADING' POLICY! <= P. Boncz
 
 	mid = TBL_oid++;
 
-	if (BUNins(TBL_mod_nme, &mid, name) == NULL)
+	if (BUNins(TBL_mod_nme, &mid, name, FALSE) == NULL)
 		assert(0);
 	{
 		int zero = 0;
 
-		if (BUNins(TBL_mod_cnt, &mid, &zero) == NULL)
+		if (BUNins(TBL_mod_cnt, &mid, &zero, FALSE) == NULL)
 			assert(0);
 	}
 	return mid;
@@ -1221,7 +1221,7 @@ TBL_newproc(Client client, str nme, str mod, YYSTREE body, YYSTREE sig, YYSTREE 
 	TBL_fcn_pro_size++;
 	if (body == sig) {
 		/* forward definitions will never actually match */
-		if (BUNins(TBL_fcn_pro, &pid, "<predefinition>") == NULL)
+		if (BUNins(TBL_fcn_pro, &pid, "<predefinition>", FALSE) == NULL)
 			assert(0);
 	} else {
 		sht anynum, *any1 = NULL, *any2 = NULL;
@@ -1269,7 +1269,7 @@ TBL_newproc(Client client, str nme, str mod, YYSTREE body, YYSTREE sig, YYSTREE 
 
 		/* insert a signature in TBL_fcn_pro */
 		if (sig == NULL) {
-			if (BUNins(TBL_fcn_pro, &pid, "*any") == 0)
+			if (BUNins(TBL_fcn_pro, &pid, "*any", FALSE) == 0)
 				assert(0);
 		} else {
 			YYSTREE cur = sig;
@@ -1320,7 +1320,7 @@ TBL_newproc(Client client, str nme, str mod, YYSTREE body, YYSTREE sig, YYSTREE 
 							*(p++) = 0;
 						}
 					}
-					if (BUNins(TBL_fcn_pro, &pid, tpenme) == NULL)
+					if (BUNins(TBL_fcn_pro, &pid, tpenme, FALSE) == NULL)
 						assert(0);
 				}
 			}
@@ -1332,24 +1332,24 @@ TBL_newproc(Client client, str nme, str mod, YYSTREE body, YYSTREE sig, YYSTREE 
 				t2 = 4096;
 		}
 		PROC_SET_TYPES(body,t1,t2);
-		if (BUNins(TBL_fcn_pro, &pid, returntpe) == NULL)
+		if (BUNins(TBL_fcn_pro, &pid, returntpe, FALSE) == NULL)
 			assert(0);
 	}
 	j = 1;			/* initial reference count */
 	if (mod) {
-		if (BUNins(TBL_mod_proc, mod, &pid) == NULL)
+		if (BUNins(TBL_mod_proc, mod, &pid, FALSE) == NULL)
 			assert(0);
 		j++;		/* extra reference if it belongs to a module */
 	}
-	if (BUNins(TBL_fcn_cnt, &pid, &j) == NULL)
+	if (BUNins(TBL_fcn_cnt, &pid, &j, FALSE) == NULL)
 		assert(0);
-	if (BUNins(TBL_fcn_nme, &pid, nme) == NULL)
+	if (BUNins(TBL_fcn_nme, &pid, nme, FALSE) == NULL)
 		assert(0);
-	if (BUNins(TBL_fcn_imp, &pid, &body) == NULL)
+	if (BUNins(TBL_fcn_imp, &pid, &body, FALSE) == NULL)
 		assert(0);
-	if (BUNins(TBL_fcn_tpe, &pid, &tpe) == NULL)
+	if (BUNins(TBL_fcn_tpe, &pid, &tpe, FALSE) == NULL)
 		assert(0);
-	if (BUNins(client->fcntbl, nme, &pid) == NULL)
+	if (BUNins(client->fcntbl, nme, &pid, FALSE) == NULL)
 		assert(0);
 
 	/* use this space only once, so disguise name str as a ptr */
@@ -1555,7 +1555,7 @@ TBL_M_load(TBLinstall *inst, Client client, str module)
 	}
 	if (BUNdelHead(TBL_mod_hdl, &mid) == NULL)
 		assert(0);
-	if (BUNins(TBL_mod_hdl, &mid, &hdl) == NULL)
+	if (BUNins(TBL_mod_hdl, &mid, &hdl, FALSE) == NULL)
 		assert(0);
 	dlPRINT("TBL_M_load: Everything is ok, let's return...\n");
 	return mid;
@@ -1604,7 +1604,7 @@ TBL_M_client_install(Client client, oid mid)
 		if ((aid = ATOMindex(s)) < 0) {
 			GDKerror("TBL_M_client_install: atom '%s' unknown.\n", s);
 		} else {
-			if (BUNins(client->atomtbl, s, &aid) == NULL)
+			if (BUNins(client->atomtbl, s, &aid, FALSE) == NULL)
 				assert(0);
 		}
 	}
@@ -1616,7 +1616,7 @@ TBL_M_client_install(Client client, oid mid)
 	assert(fcn_mid->hhash);
 	HASHloop_oid(fcn_mid, fcn_mid->hhash, i, midp, r) {
 		fid = *(oid *) BUNtail(fcn_mid, r);
-		if (BUNins(client->fcntbl, BUNtailfnd(char, TBL_fcn_nme, r, &fid), &fid) == NULL)
+		if (BUNins(client->fcntbl, BUNtailfnd(char, TBL_fcn_nme, r, &fid), &fid, FALSE) == NULL)
 			assert(0);
 	}
 	return 1;
@@ -1694,7 +1694,7 @@ TBL_M_incref(Client client, oid mid)
 	int cid = client - monet_clients;
 	int i = TBL_M_countref(mid);
 
-	if (BUNins(TBL_mod_use, &mid, &cid) == NULL)
+	if (BUNins(TBL_mod_use, &mid, &cid, FALSE) == NULL)
 		assert(0);
 	i++;
 	if (BUNreplace(TBL_mod_cnt, &mid, &i, 0) == NULL)
@@ -2775,42 +2775,42 @@ TBL_initclient(Client client, Client father)
 		 */
 		client->atomtbl = TBL_create(client, "atomtbl", TBL_SIZE, TYPE_str, TYPE_int, BOUND2BTRUE, 0);
 		i = TYPE_void;
-		if (BUNins(client->atomtbl, "void", &i) == NULL)
+		if (BUNins(client->atomtbl, "void", &i, FALSE) == NULL)
 			assert(0);
 		i = TYPE_bit;
-		if (BUNins(client->atomtbl, "bit", &i) == NULL)
+		if (BUNins(client->atomtbl, "bit", &i, FALSE) == NULL)
 			assert(0);
 		i = TYPE_chr;
-		if (BUNins(client->atomtbl, "chr", &i) == NULL)
+		if (BUNins(client->atomtbl, "chr", &i, FALSE) == NULL)
 			assert(0);
 		i = TYPE_sht;
-		if (BUNins(client->atomtbl, "sht", &i) == NULL)
+		if (BUNins(client->atomtbl, "sht", &i, FALSE) == NULL)
 			assert(0);
 		i = TYPE_bat;
-		if (BUNins(client->atomtbl, "bat", &i) == NULL)
+		if (BUNins(client->atomtbl, "bat", &i, FALSE) == NULL)
 			assert(0);
-		if (BUNins(client->atomtbl, "BAT", &i) == NULL)
+		if (BUNins(client->atomtbl, "BAT", &i, FALSE) == NULL)
 			assert(0);
 		i = TYPE_int;
-		if (BUNins(client->atomtbl, "int", &i) == NULL)
+		if (BUNins(client->atomtbl, "int", &i, FALSE) == NULL)
 			assert(0);
 		i = TYPE_oid;
-		if (BUNins(client->atomtbl, "oid", &i) == NULL)
+		if (BUNins(client->atomtbl, "oid", &i, FALSE) == NULL)
 			assert(0);
 		i = TYPE_ptr;
-		if (BUNins(client->atomtbl, "ptr", &i) == NULL)
+		if (BUNins(client->atomtbl, "ptr", &i, FALSE) == NULL)
 			assert(0);
 		i = TYPE_flt;
-		if (BUNins(client->atomtbl, "flt", &i) == NULL)
+		if (BUNins(client->atomtbl, "flt", &i, FALSE) == NULL)
 			assert(0);
 		i = TYPE_dbl;
-		if (BUNins(client->atomtbl, "dbl", &i) == NULL)
+		if (BUNins(client->atomtbl, "dbl", &i, FALSE) == NULL)
 			assert(0);
 		i = TYPE_lng;
-		if (BUNins(client->atomtbl, "lng", &i) == NULL)
+		if (BUNins(client->atomtbl, "lng", &i, FALSE) == NULL)
 			assert(0);
 		i = TYPE_str;
-		if (BUNins(client->atomtbl, "str", &i) == NULL)
+		if (BUNins(client->atomtbl, "str", &i, FALSE) == NULL)
 			assert(0);
 	}
 	TBL_M_unlock(client);
@@ -2890,7 +2890,7 @@ static void
 TBL_Insert_Depend(oid mid, str name)
 {
 	if (BUNlocate(TBL_mod_dep, &mid, name) == NULL) {
-		if (BUNins(TBL_mod_dep, &mid, name) == NULL)
+		if (BUNins(TBL_mod_dep, &mid, name, FALSE) == NULL)
 			assert(0);
 	}
 }
@@ -2919,11 +2919,11 @@ TBL_Install_Atom(oid mid, str name, int size,	/* 0 == not fixed size */
 	dlFPRINTF(GDKerr, "  TBL_Install_Atom(%s)\n", name);
 	if ((size == 0) && (align == 0)) {	/* fixed */
 		sprintf(extended, "%s=*", name);
-		if (BUNins(TBL_mod_atm, &mid, extended) == NULL)
+		if (BUNins(TBL_mod_atm, &mid, extended, FALSE) == NULL)
 			assert(0);
 	} else {
 		sprintf(extended, "%s=%d,%d", name, size, ABS(align));
-		if (BUNins(TBL_mod_atm, &mid, extended) == NULL)
+		if (BUNins(TBL_mod_atm, &mid, extended, FALSE) == NULL)
 			assert(0);
 	}
 	GDKfree(extended);
@@ -2973,32 +2973,32 @@ TBL_Install_Function(oid mid, str name, int tpe,	/* some sort of type? fcn_table
 	if (name[0] == 'b' && name[1] == 'a' && name[2] == 't' && name[3] == 0) {
 		name = "BAT";	/* sorry */
 	}
-	if (BUNins(TBL_fcn_nme, &fid, name) == NULL)
+	if (BUNins(TBL_fcn_nme, &fid, name, FALSE) == NULL)
 		assert(0);	/* or &name */
-	if (BUNins(TBL_fcn_fcn, &fid, &orig) == NULL)
+	if (BUNins(TBL_fcn_fcn, &fid, &orig, FALSE) == NULL)
 		assert(0);	/* correct??? */
-	if (BUNins(TBL_fcn_tpe, &fid, &tpe) == NULL)
+	if (BUNins(TBL_fcn_tpe, &fid, &tpe, FALSE) == NULL)
 		assert(0);
-	if (BUNins(TBL_fcn_mid, &fid, &mid) == NULL)
+	if (BUNins(TBL_fcn_mid, &fid, &mid, FALSE) == NULL)
 		assert(0);
-	if (BUNins(TBL_fcn_dsc, &fid, help) == NULL)
+	if (BUNins(TBL_fcn_dsc, &fid, help, FALSE) == NULL)
 		assert(0);
-	if (BUNins(TBL_fcn_aut, &fid, author) == NULL)
+	if (BUNins(TBL_fcn_aut, &fid, author, FALSE) == NULL)
 		assert(0);
-	if (BUNins(TBL_fcn_dat, &fid, date) == NULL)
+	if (BUNins(TBL_fcn_dat, &fid, date, FALSE) == NULL)
 		assert(0);
 
-	if (BUNins(TBL_fcn_cnt, &fid, &zero) == NULL)
+	if (BUNins(TBL_fcn_cnt, &fid, &zero, FALSE) == NULL)
 		assert(0);
 @-
 We want to save pointer to the real function
 for example use in a different interpreter
-if (orig) BUNins(TBL_fcn_org, &fid, &orig);
+if (orig) BUNins(TBL_fcn_org, &fid, &orig, FALSE);
 Its done in TBL_unpacked()
 @c
-	if (pack_imp && BUNins(TBL_fcn_imp, &fid, &pack_imp) == NULL)
+	if (pack_imp && BUNins(TBL_fcn_imp, &fid, &pack_imp, FALSE) == NULL)
 		assert(0);
-	if (signature && BUNins(TBL_fcn_sig, &fid, signature) == NULL)
+	if (signature && BUNins(TBL_fcn_sig, &fid, signature, FALSE) == NULL)
 		assert(0);
 	TBL_fcn_pro_size++;
 
@@ -3056,7 +3056,7 @@ void
 TBL_Install_Function_Vararg(oid fid, str tpe)
 {
 	dlFPRINTF(GDKerr, "    TBL_Install_Function_Vararg(" SZFMT ",%s)\n", (size_t) fid, tpe);
-	if (BUNins(TBL_fcn_pro, &fid, tpe) == NULL)
+	if (BUNins(TBL_fcn_pro, &fid, tpe, FALSE) == NULL)
 		assert(0);
 }
 
@@ -3067,7 +3067,7 @@ void
 TBL_Install_Function_Arg(oid fid, str tpe)
 {
 	dlFPRINTF(GDKerr, "    TBL_Install_Function_Arg(" SZFMT ",%s)\n", (size_t) fid, tpe);
-	if (BUNins(TBL_fcn_pro, &fid, tpe) == NULL)
+	if (BUNins(TBL_fcn_pro, &fid, tpe, FALSE) == NULL)
 		assert(0);
 }
 
@@ -3076,7 +3076,7 @@ void
 TBL_Install_Function_Res(oid fid, str tpe)
 {
 	dlFPRINTF(GDKerr, "    TBL_Install_Function_Res(" SZFMT ",%s)\n", (size_t) fid, tpe);
-	if (BUNins(TBL_fcn_pro, &fid, tpe) == NULL)
+	if (BUNins(TBL_fcn_pro, &fid, tpe, FALSE) == NULL)
 		assert(0);
 }
 
@@ -3088,7 +3088,7 @@ TBL_Install_DropRefs(oid mid, bat *batrefs)
 		return;
 	while (*batrefs) {
 		dlFPRINTF(GDKerr, "  TBL_Install_DropRefs(" SZFMT ",%s)\n", (size_t) mid, BBPname(*batrefs));
-		if (BUNins(TBL_mod_drop, &mid, batrefs) == NULL)
+		if (BUNins(TBL_mod_drop, &mid, batrefs, FALSE) == NULL)
 			assert(0);
 		batrefs++;
 	}
@@ -3098,7 +3098,7 @@ void
 TBL_Install_MilVar(Client client, str mod, ptr v)
 {
 	TBL_M_lock(client);
-	if (BUNins(TBL_mod_var, mod, &v) == NULL)
+	if (BUNins(TBL_mod_var, mod, &v, FALSE) == NULL)
 		assert(0);
 	TBL_M_unlock(client);
 }

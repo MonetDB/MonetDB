@@ -602,10 +602,10 @@ salgebra_cacheIt(clusterhash *ch)
 	name = salgebra_CHadmin(ch);
 	MT_set_lock(salgebra_cacheLock, "cacheIt");
 	MT_set_lock(salgebra_refcntLock, "cacheIt");
-	BUNins(salgebra_refcnt, &bid, &refCnt);
+	BUNins(salgebra_refcnt, &bid, &refCnt, FALSE);
 	MT_unset_lock(salgebra_refcntLock, "cacheIt");
-	BUNins(salgebra_cache, &bid, ch);
-	BUNins(salgebra_namecache, &bid, name);
+	BUNins(salgebra_cache, &bid, ch, FALSE);
+	BUNins(salgebra_namecache, &bid, name, FALSE);
 	MT_unset_lock(salgebra_cacheLock, "cacheIt");
 }
 
@@ -928,12 +928,12 @@ salgebra_CMDinfo(BAT **res, clusterhash *ch)
 	if (!(bn = BATnew(TYPE_str, TYPE_str, 16)))
 		return GDK_FAIL;
 
-	BUNins(bn, "name", clusterhashName(ABS(ch->b)));
-	BUNins(bn, "bname", ch->bname);
-	BUNins(bn, "ttype", ATOMname(ch->bttype));
-	BUNins(bn, "batId", local_itoa(ch->b));
-	BUNins(bn, "perfect", local_itoa(ch->isPerfect));
-	BUNins(bn, "refCnt", local_itoa(salgebra_getRefCnt(ch)));
+	BUNins(bn, "name", clusterhashName(ABS(ch->b)), FALSE);
+	BUNins(bn, "bname", ch->bname, FALSE);
+	BUNins(bn, "ttype", ATOMname(ch->bttype), FALSE);
+	BUNins(bn, "batId", local_itoa(ch->b), FALSE);
+	BUNins(bn, "perfect", local_itoa(ch->isPerfect), FALSE);
+	BUNins(bn, "refCnt", local_itoa(salgebra_getRefCnt(ch)), FALSE);
 	*res = bn;
 	return GDK_SUCCEED;
 }
@@ -954,7 +954,7 @@ salgebra_CMDrename(clusterhash *ch, str name)
 		return GDK_FAIL;
 	}
 	BUNdelHead(salgebra_namecache, &batId);
-	BUNins(salgebra_namecache, &batId, name);
+	BUNins(salgebra_namecache, &batId, name, FALSE);
 	MT_unset_lock(salgebra_cacheLock, "rename");
 	return GDK_SUCCEED;
 }

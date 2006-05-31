@@ -271,7 +271,7 @@ CMDtimers(BAT **retval)
 		strncpy(buf, ctime(&t), sizeof(buf));
 #endif
 #endif
-		BUNins(*retval, buf, timer[k].action ? timer[k].action : "barrier");
+		BUNins(*retval, buf, timer[k].action ? timer[k].action : "barrier", FALSE);
 	}
 	return GDK_SUCCEED;
 }

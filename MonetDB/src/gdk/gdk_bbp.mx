@@ -2224,7 +2224,10 @@ batcache_del() {
 
 	/* revive and free the old bat */
 	*BBP_logical(bid) = 't';
-	BATfree(b);
+	if (b->batParentid)
+		VIEWdestroy(b);
+	else
+		BATfree(b);
 	return i;
 }
 

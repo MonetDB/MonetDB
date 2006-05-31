@@ -763,7 +763,7 @@ VIEWreset(BAT *b)
 		DELTAinit(n);
 
 		/* insert all of v in b, and quit */
-		BATins(b, v);
+		BATins(b, v, FALSE);
 		BBPreclaim(v);
 	}
 	return b;

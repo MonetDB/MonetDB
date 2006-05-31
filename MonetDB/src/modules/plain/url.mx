@@ -259,7 +259,7 @@ url_getDirectory(BAT **retval,	/* put pointer to BAT[int,str] record here. */
 	for (t++; *t; t++) {
 		if (*t == '/') {
 			*s = 0;
-			BUNins(b, &k, buf);
+			BUNins(b, &k, buf, FALSE);
 			k++;
 			s = buf;
 			*s = 0;
@@ -540,7 +540,7 @@ url_getQueryArg(BAT **retval, url t)
 		getword(val, query, '&');
 		plustospace(val);
 		getword(name, val, '=');
-		BUNins(b, name, val);
+		BUNins(b, name, val, FALSE);
 	}
 	@:Pseudo(dir,name)@
 	return GDK_SUCCEED;

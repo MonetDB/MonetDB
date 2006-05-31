@@ -174,7 +174,7 @@ gdk_export void GDKsetenv(str name, str value);
 void
 GDKsetenv(str name, str value)
 {
-	BUNins(GDKenv, name, value);
+	BUNins(GDKenv, name, value, FALSE);
 	BATfakeCommit(GDKenv);
 }
 

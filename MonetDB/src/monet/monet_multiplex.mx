@@ -558,7 +558,7 @@ Do simply an update for [+=]() kind of operations.
 @c
 	if (assignop) {
 		BATclear(assignbat);
-		BATins(assignbat, desc.b);
+		BATins(assignbat, desc.b, FALSE);
 		BBPreclaim(desc.b);
 		res->val.ival = assignbat->batCacheid;
 	} else {
@@ -945,7 +945,7 @@ but rather discard the complete result and return an error.
 	} else {
 		oid bak = b1->halign;
 		BATclear(b1);
-		BATins(b1, retb);
+		BATins(b1, retb, FALSE);
 		BBPreclaim(retb);
 		retb = b1;
 		b1->halign = bak;
@@ -1192,7 +1192,7 @@ but rather discard the complete result and return an error.
 		} else {
 			oid bak = b1->halign;
 			BATclear(b1);
-			BATins(b1, retb);
+			BATins(b1, retb, FALSE);
 			b1->halign = bak;
 		}
 		BBPreclaim(retb);

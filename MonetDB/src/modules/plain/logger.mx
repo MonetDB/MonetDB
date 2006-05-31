@@ -284,7 +284,7 @@ log_read_insdel(logger *logger, logformat *l)
 	if (!u_bun) { 
 		int type = (b->htype != TYPE_void)?b->htype:TYPE_oid;
 		BAT *ubat = BATnew(type, b->ttype, l->nr);
-		BUNins(logger->deltas, &l->bid, &ubat->batCacheid);
+		BUNins(logger->deltas, &l->bid, &ubat->batCacheid, FALSE);
 		BBPunfix(ubat->batCacheid);
 	}
 
@@ -308,7 +308,7 @@ log_read_insdel(logger *logger, logformat *l)
 			void *t = rt(tv, logger->log, 1);
 
 			if (l->flag == LOG_INSERT)
-				BUNins(b, h, t);
+				BUNins(b, h, t, FALSE);
 			else if (l->flag == LOG_DELETE)
 				BUNdel(b, h, t);
 			cnt++;
@@ -336,7 +336,7 @@ log_read_updates(logger *logger, logformat *l)
 		BAT *b = BATdescriptor(l->bid);
 		int type = (b->htype != TYPE_void)?b->htype:TYPE_oid;
 		ubat = BATnew(type, b->ttype, l->nr);
-		BUNins(logger->deltas, &l->bid, &ubat->batCacheid);
+		BUNins(logger->deltas, &l->bid, &ubat->batCacheid, FALSE);
 		BBPunfix(b->batCacheid);
 	}
 
@@ -359,7 +359,7 @@ log_read_updates(logger *logger, logformat *l)
 			void *h = rh(hv, logger->log, 1);
 			void *t = rt(tv, logger->log, 1);
 
-			BUNins(ubat, h, t); /* should become a conditional insert, ie if exist update else insert */
+			BUNins(ubat, h, t, FALSE); /* should become a conditional insert, ie if exist update else insert */
 			cnt++;
 			if (h != hv)
 				GDKfree(h);

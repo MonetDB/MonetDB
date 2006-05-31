@@ -898,7 +898,7 @@ This code assumes that new elements are appended to the BUN list.
 	}
 @c
 BAT *
-BUNins(BAT *b, ptr h, ptr t)
+BUNins(BAT *b, ptr h, ptr t, bit force)
 {
 	BUN p;
 	BAT *bm;
@@ -922,7 +922,7 @@ BUNins(BAT *b, ptr h, ptr t)
 	} else {
 		size_t i;
 
-		ALIGNins(b, "BUNins");
+		ALIGNins(b, "BUNins", force);
 		b->batDirty = 1;
 		p = BUNlast(b);	/* insert at end */
 		i = BUNindex(b, p);
@@ -1462,7 +1462,7 @@ BUNinplace(BAT *b, BUN p, ptr h, ptr t, bit force)
 	} else {
 		/* committed BUN */
 		BUNdelete(b, p);
-		if (BUNins(b, h, t) == NULL) {
+		if (BUNins(b, h, t, force) == NULL) {
 		      bunins_failed:
 			return NULL;
 		}

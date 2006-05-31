@@ -789,7 +789,7 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum, BAT *qt_id, BAT *
 
 			if (st_bunins[1])
 				t = now();
-			BUNins(r_images, (ptr) &soid, (ptr) ioid);
+			BUNins(r_images, (ptr) &soid, (ptr) ioid, FALSE);
 			if (st_bunins[1]) {
 				t = (now() - t) / MS(1);
 				stats_add(&st_bunins[1], &t);
@@ -797,7 +797,7 @@ qt_match(int *crossid, oid *ioid, BAT *qt_ioffs, BAT *qt_inum, BAT *qt_id, BAT *
 
 			if (st_bunins[2])
 				t = now();
-			BUNins(r_ncolors, (ptr) &soid, (ptr) &ncolors);
+			BUNins(r_ncolors, (ptr) &soid, (ptr) &ncolors, FALSE);
 			if (st_bunins[2]) {
 				t = (now() - t) / MS(1);
 				stats_add(&st_bunins[2], &t);

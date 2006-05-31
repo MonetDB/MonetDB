@@ -1567,9 +1567,9 @@ rearrange_chunks(BAT *b, BAT *limits, move_t *mov, BUN base, size_t * dst, size_
 				size_t i2 = i1 - BUNindex(b, cur);
 				size_t i3 = BUNindex(b, nxt) - i1;
 
-				BUNins(limits, &i0, &i2);
+				BUNins(limits, &i0, &i2, FALSE);
 				if (i3)
-					BUNins(limits, &i0, &i3);
+					BUNins(limits, &i0, &i3, FALSE);
 			}
 		} else if (start >= cur && start <= nxt) {
 			/* overlap just before nxt */
@@ -1587,8 +1587,8 @@ rearrange_chunks(BAT *b, BAT *limits, move_t *mov, BUN base, size_t * dst, size_
 				size_t i3 = BUNindex(b, nxt) - i1;
 
 				if (i2)
-					BUNins(limits, &i0, &i2);
-				BUNins(limits, &i0, &i3);
+					BUNins(limits, &i0, &i2, FALSE);
+				BUNins(limits, &i0, &i3, FALSE);
 			}
 		} else {
 			/* no overlap: copy all */
@@ -1600,7 +1600,7 @@ rearrange_chunks(BAT *b, BAT *limits, move_t *mov, BUN base, size_t * dst, size_
 				size_t i1 = BUNindex(b, cur);
 				size_t i2 = BUNindex(b, nxt) - i1;
 
-				BUNins(limits, &i0, &i2);
+				BUNins(limits, &i0, &i2, FALSE);
 			}
 		}
 		start = lim[i];
@@ -2006,7 +2006,7 @@ radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...)
 			ssize_t zero = 0;
 			size_t cnt = BATcount(b);
 
-			BUNins(limits, &zero, &cnt);
+			BUNins(limits, &zero, &cnt, FALSE);
 		}
 	}
 	if (limitid) {

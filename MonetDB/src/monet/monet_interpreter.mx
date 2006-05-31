@@ -1128,7 +1128,7 @@ add it to the expansion cache.
 				BUN pp = BUNfnd(yysubst, fcn_nme);
 				lng add = (LL_CONSTANT(1) << 32) + argv[0].val.ival;
 				if (pp == NULL) {
-					BUNins(yysubst, fcn_nme, &add);
+					BUNins(yysubst, fcn_nme, &add, FALSE);
 				} else {
 					*((lng *) BUNtloc(yysubst, pp)) += add;
 				}
@@ -2506,7 +2506,7 @@ onlineProfilerEvent(char *caller, long clk, long ticks, struct tms *timer, YYSTR
 			BUN cnt = BUNfnd(profilerCount, namebuf);
 
 			if (cnt == NULL)
-				BUNins(profilerCount, namebuf, &one);
+				BUNins(profilerCount, namebuf, &one, FALSE);
 			else {
 				cnt = BUNtail(profilerCount, cnt);
 				*(int *) cnt = *(int *) cnt + 1;
@@ -2516,7 +2516,7 @@ onlineProfilerEvent(char *caller, long clk, long ticks, struct tms *timer, YYSTR
 			if (cnt == NULL) {
 				lng zero = 0;
 
-				BUNins(profilerTicks, namebuf, &zero);
+				BUNins(profilerTicks, namebuf, &zero, FALSE);
 			} else {
 				lng *tik;
 

@@ -560,7 +560,7 @@ ASCIIcollect_bats(ascii *as)
 	if (bats == NULL)
 		return NULL;
 	for (i = 0; i < as->nr_attrs; i++) {
-		BUNins(bats, (ptr) fmt[i].name, (ptr) &fmt[i].c->batCacheid);
+		BUNins(bats, (ptr) fmt[i].name, (ptr) &fmt[i].c->batCacheid, FALSE);
 		BATsetaccess(fmt[i].c, BAT_READ);
 		if (cnt != BATcount(fmt[i].c)) {
 			GDKerror("ASCIIcollect: counts are not equal\n");

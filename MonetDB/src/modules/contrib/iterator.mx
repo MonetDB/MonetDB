@@ -868,7 +868,7 @@ BAT *groupby_@1_@2_@3(ITER *input, BAT *attr) {
         HASHloop_@3(bn,bn->hhash,idx,t,r) break;
         if (r == NULL) {
 	    idx = BUNindex(bn, BUNlast(bn));
-            BUNins(bn, t, &initval);
+            BUNins(bn, t, &initval, FALSE);
             if (++yy >= maxgrps) {
                 cntbuf = (int*) GDKrealloc(cntbuf, (maxgrps*=2)*sizeof(int));
                 cnt = cntbuf - off;

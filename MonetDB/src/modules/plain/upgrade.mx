@@ -319,7 +319,7 @@ fix_heap( BAT *b )
 		DELTAinit(n);
 
 		/* insert all of v in b, and quit */
-		BATins(b, v);
+		BATins(b, v, TRUE);
 		BBPreclaim(v);
 
 		/* TODO free old heaps */

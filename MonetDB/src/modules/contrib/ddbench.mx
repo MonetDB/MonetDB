@@ -844,14 +844,14 @@ bit32stats(BAT **ret, BAT *sel)
 
 				*ret = BATnew(TYPE_str, TYPE_lng, 4);
 				v = (lng) sel->hseqbase;
-				BUNins(*ret, "seqbase", &v);
+				BUNins(*ret, "seqbase", &v, FALSE);
 				v = (lng) size;
-				BUNins(*ret, "size", &v);
+				BUNins(*ret, "size", &v, FALSE);
 				v = (lng) hits;
-				BUNins(*ret, "yes", &v);
+				BUNins(*ret, "yes", &v, FALSE);
 				size -= hits;
 				v = (lng) size;
-				BUNins(*ret, "no", &v);
+				BUNins(*ret, "no", &v, FALSE);
 				return GDK_SUCCEED;
 			}
 		} while (mask <<= 1);
@@ -1391,7 +1391,7 @@ vals_bitselect(BAT **res, BAT *b, ...)
 
 	*res = BATnew(TYPE_int, TYPE_bat, argc);
 	for (i = 0; i < argc; i++)
-		BUNins(*res, &i, &bn[i]->batCacheid);
+		BUNins(*res, &i, &bn[i]->batCacheid, FALSE);
 	return GDK_SUCCEED;
 }
 
@@ -1424,7 +1424,7 @@ rngs_bitselect(BAT **res, BAT *b, ...)
 
 	*res = BATnew(TYPE_int, TYPE_bat, argc);
 	for (i = 0; i < argc; i++)
-		BUNins(*res, &i, &bn[i]->batCacheid);
+		BUNins(*res, &i, &bn[i]->batCacheid, FALSE);
 	return GDK_SUCCEED;
 }
 
@@ -1702,7 +1702,7 @@ vals_oidselect(BAT **res, BAT *b, ...)
 
 	*res = BATnew(TYPE_int, TYPE_bat, argc);
 	for (i = 0; i < argc; i++)
-		BUNins(*res, &i, &bn[i]->batCacheid);
+		BUNins(*res, &i, &bn[i]->batCacheid, FALSE);
 	return GDK_SUCCEED;
 }
 
@@ -1734,7 +1734,7 @@ rngs_oidselect(BAT **res, BAT *b, ...)
 
 	*res = BATnew(TYPE_int, TYPE_bat, argc);
 	for (i = 0; i < argc; i++)
-		BUNins(*res, &i, &bn[i]->batCacheid);
+		BUNins(*res, &i, &bn[i]->batCacheid, FALSE);
 	return GDK_SUCCEED;
 }
 
@@ -2082,7 +2082,7 @@ bits_subhisto(BAT **res, BAT *b, ...)
 
 	*res = BATnew(TYPE_int, TYPE_bat, argc);
 	for (i = 0; i < argc; i++)
-		BUNins(*res, &i, &bn[i]->batCacheid);
+		BUNins(*res, &i, &bn[i]->batCacheid, FALSE);
 	return GDK_SUCCEED;
 }
 

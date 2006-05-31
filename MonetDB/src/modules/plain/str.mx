@@ -1103,7 +1103,7 @@ strPrelude(void)
 			int lower = UTF8_lower_upper[i].lower;
 			int upper = UTF8_lower_upper[i].upper;
 
-			BUNins(UTF8_toupperBat, &lower, &upper);
+			BUNins(UTF8_toupperBat, &lower, &upper, FALSE);
 		}
 		UTF8_tolowerBat = BATmirror(UTF8_toupperBat);
 		BATname(UTF8_toupperBat, "monet_unicode_case");
@@ -1849,7 +1849,7 @@ strSplit(BAT **Res, str s, str sep)
 			break;
 	
 		*e = 0;
-		BUNins(res, (ptr) &n, d);
+		BUNins(res, (ptr) &n, d, FALSE);
 		d = e + seplen;
 	}
 
@@ -1857,7 +1857,7 @@ strSplit(BAT **Res, str s, str sep)
 	   don't return an empty final string if the source ends with
 	   a separator (this is to accommodate Niels) */
 	if (*d)
-		BUNins(res, (ptr) &n, d);
+		BUNins(res, (ptr) &n, d, FALSE);
 
 	GDKfree(x);
 	*Res = res;
@@ -1874,7 +1874,7 @@ chrSplit(BAT **Res, str s)
 	if (res == NULL)
 		return GDK_FAIL;
 	while (*d) 
-		BUNins(res, (ptr) &n, (ptr) d++);
+		BUNins(res, (ptr) &n, (ptr) d++, FALSE);
 	*Res = res;
 	return GDK_SUCCEED;
 }

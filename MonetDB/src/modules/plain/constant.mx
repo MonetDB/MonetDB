@@ -309,7 +309,7 @@ CMDconstUnique(BAT** ret, ptr v, int t)
 	BAT *bn = *ret = BATnew(t, TYPE_void, 1);
         if (bn) {
 		oid nil = oid_nil;
-		if (BUNins(bn, v, &nil)) return GDK_SUCCEED;
+		if (BUNins(bn, v, &nil, FALSE)) return GDK_SUCCEED;
 		BBPreclaim(bn);
 	}
 	return GDK_FAIL;
