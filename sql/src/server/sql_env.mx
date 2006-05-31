@@ -413,9 +413,9 @@ sql_sessions(mvc *m)
 
 	table_insert(tr, s, "cache", "true", "boolean", &rw, NULL);
 
-/* Actually 'factory' and 'cache' are optimizer decisions too
-	table_insert(tr, s, "optimizer", "sql.optimizer();", "varchar", &rw, NULL);
-*/
+/* M5 default session variables */
+	table_insert(tr, s, "optimizer", "on", "varchar", &rw, NULL);
+/* Actually 'factory' and 'cache' are optimizer decisions too */
 	return 0;
 }
 
