@@ -87,7 +87,7 @@ static int snb_porter_init(void* ctx, char* s) {
 static const char* snb_porter_stem(void* ctx, const char* s) {
 	struct SN_env *env = (struct SN_env *)((tjStemCtx*)ctx)->udf;
 
-	SN_set_current(env,strlen(s),s);
+	SN_set_current(env,strlen(s),(unsigned char*)s);
 	if ( !porter_UTF_8_stem(env) ) {
 		fprintf(stderr,"english_stem(\"%s\") FAILS \n",s);
 		return NULL;
@@ -127,7 +127,7 @@ static int snb_english_init(void* ctx, char* s) {
 static const char* snb_english_stem(void* ctx, const char* s) {
 	struct SN_env *env = (struct SN_env *)((tjStemCtx*)ctx)->udf;
 
-	SN_set_current(env,strlen(s),s);
+	SN_set_current(env,strlen(s),(unsigned char*)s);
 	if ( !english_UTF_8_stem(env) ) {
 		fprintf(stderr,"english_stem(\"%s\") FAILS \n",s);
 		return NULL;
@@ -167,7 +167,7 @@ static int snb_dutch_init(void* ctx, char* s) {
 static const char* snb_dutch_stem(void* ctx, const char* s) {
 	struct SN_env *env = (struct SN_env *)((tjStemCtx*)ctx)->udf;
 
-	SN_set_current(env,strlen(s),s);
+	SN_set_current(env,strlen(s),(unsigned char*)s);
 	if ( !dutch_UTF_8_stem(env) ) {
 		fprintf(stderr,"dutch_stem(\"%s\") FAILS \n",s);
 		return NULL;

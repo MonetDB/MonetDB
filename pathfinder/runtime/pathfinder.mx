@@ -1697,7 +1697,7 @@ xquery_resolve(xquery_client *ctx, char *ns, char *method, int argc, int *mincnt
     BATseqbase(ctx->@1, @2);
     if (debug) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.seqbase(" @3 ");\n");
 @= bunins
-    if (BUNins(ctx->@1, @2, @3) == NULL) return "xquery_method: allocation error while inserting in @1";
+    if (BUNins(ctx->@1, @2, @3, FALSE) == NULL) return "xquery_method: allocation error while inserting in @1";
     if (debug) m += snprintf(mil+m, XQUERY_BUFSIZE-l, "@1.append(" @5 @6 ");\n", @4 @3);
 @= bunappend
     if (BUNappend(ctx->@1, @2, FALSE) == NULL) return "xquery_method: allocation error while inserting in @1";
@@ -2354,7 +2354,7 @@ xquery_client_end(xquery_client *ctx, char *err)
 
     /* empty all bats (static variables) */
     BATclear(ctx->loop000);
-    BUNins(ctx->loop000, &zero, &one);
+    BUNins(ctx->loop000, &zero, &one, FALSE);
 
     BATclear(ctx->fun_vid000);
     BATclear(ctx->fun_iter000);
@@ -2803,7 +2803,7 @@ xquery_client_engine(mapi_client *fc )
             view_client_size(&b, &fc->stk);
             if (b) {
                while(fun) {
-                   BUNins(b, fun->def->proc, &fun->def->size);
+                   BUNins(b, fun->def->proc, &fun->def->size, FALSE);
                    fun = fun->next;
                 } 
                 BATprintf(GDKstdout, b);

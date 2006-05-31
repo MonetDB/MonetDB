@@ -307,7 +307,7 @@ tj_tagOid(tjCtx* tjctx, str t) {
     if ( (bun = BUNfnd(tjctx->hm_globalTag,t)) )
         return *(oid*)BUNtail(tjctx->hm_globalTag,bun);
     else {
-    	if ( !BUNins(tjctx->b_globalTag, &tjctx->n_globalTag, (str)t) ) {
+    	if ( !BUNins(tjctx->b_globalTag, &tjctx->n_globalTag, (str)t, FALSE) ) {
     	    GDKerror("INSERT OF \"%s\" in globalTag fails.\n");
     	    return oid_nil;
         } else
@@ -322,7 +322,7 @@ tj_termOid(tjCtx* tjctx, char *t) {
     if ( (bun = BUNfnd(tjctx->hm_globalTerm,t)) )
         return *(oid*)BUNtail(tjctx->hm_globalTerm,bun);
     else {
-    	if ( !BUNins(tjctx->b_globalTerm, &tjctx->n_globalTerm, (str)t) ) {
+    	if ( !BUNins(tjctx->b_globalTerm, &tjctx->n_globalTerm, (str)t, FALSE)){
     	    GDKerror("INSERT OF \"%s\" in globalTerm fails.\n");
     	    return oid_nil;
         } else 
@@ -348,7 +348,7 @@ handleTijahTerm(struct tijahContextStruct *tjctx, char* term) {
     /* is this DOEMIT here really necessary ??? */
     if ( DOEMIT(tjctx) ) {
         if ( tjctx->stemCtx->stem) {
-    	    if ( !(term = (char*)tjctx->stemCtx->stem(tjctx->stemCtx,(unsigned char*)term)) ) {
+    	    if ( !(term = (char*)tjctx->stemCtx->stem(tjctx->stemCtx,(char*)term)) ) {
 	        /* must be a stopword */
 	        return 1;
 	    }
@@ -433,7 +433,7 @@ static int loadSelectionTagList(tjCtx* tjctx, char *l) {
 	}
 	str v = (str)t;
 	oid my_oid_nil = oid_nil;
-	if ( !BUNins(tjctx->b_selectTags, &my_oid_nil, v) )
+	if ( !BUNins(tjctx->b_selectTags, &my_oid_nil, v, FALSE) )
 	     return 0;
     } while ( (t=strtok(NULL,delchars2)) );
     return 1;
@@ -726,7 +726,7 @@ pftijah_handle_startElement(XqueryCtx* ctx, str ns, str name, oid pre) {
 #ifdef TJ_TRACE
         if ( TJ_TRACE ) stream_printf(GDKout,"C[%s]:TAG: \"%s\", termoid=%d, Tijah pre#=%d, Pathfinder pre#=%d\n",tjctx->name,name,termOid,tjPre,pre);
 #endif
-        if ( !BUNins(tjctx->b_collPfPre, &tjPre, &pre) ) return 0;
+        if ( !BUNins(tjctx->b_collPfPre, &tjPre, &pre, FALSE) ) return 0;
     /* } */
     return 1;
 }
@@ -785,7 +785,7 @@ char* normalizeTerm(struct tijahContextStruct *tjctx, char* term ) {
 #endif
 	/* INCOMPLETE, should make shure tijahContext is always avail. here */
         if ( res && tjctx && tjctx->stemCtx->stem) {
-    	    if ( !(res = (char*)tjctx->stemCtx->stem(tjctx->stemCtx,(unsigned char*)res)) ) {
+    	    if ( !(res = (char*)tjctx->stemCtx->stem(tjctx->stemCtx,(char*)res)) ) {
 	        /* must be a stopword */
 	        return NULL;
 	    }

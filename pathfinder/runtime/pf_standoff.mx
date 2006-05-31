@@ -371,12 +371,12 @@ CMD@1_@2_join_sort_@3(BAT **result, BAT *source_start, BAT *source_end, BAT *reg
             /* insert nodes which are not contained */
             // FIXME: we need to include the iters not on the heap...
             index = BUNindex(region_start,iter_start) - BUNindex(region_start, BUNfirst(region_start));
-            BUNins(bn, (ptr)(&(heap[i].iter)), (ptr)(&index));
+            BUNins(bn, (ptr)(&(heap[i].iter)), (ptr)(&index), FALSE);
 @
 @= ll_select_inside
             /* insert nodes which are contained */
             index = BUNindex(region_start,iter_start) - BUNindex(region_start, BUNfirst(region_start)); 
-            BUNins(bn, (ptr)(&(heap[i].iter)), (ptr)(&index));
+            BUNins(bn, (ptr)(&(heap[i].iter)), (ptr)(&index), FALSE);
 @
 @= ll_reject_inside
             /* skip nodes which are contained */

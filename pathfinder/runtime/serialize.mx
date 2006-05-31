@@ -1055,6 +1055,7 @@ process_node_attr (XqueryCtx* ctx, int cont, oid pre) {
         if ( ! process_attr (ctx, cont, id) )
             return PROBLEM;
     }
+    return SUCCESS;
 }
 
 /**

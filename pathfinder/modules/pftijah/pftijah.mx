@@ -1656,7 +1656,7 @@ static BAT* createScoreBAT(BAT* wts, oid idx) {
 	res = BATnew(TYPE_oid,TYPE_dbl,1024);
 	if ( res && BATkey(res,TRUE)) {
 	    BBPfix(BBPcacheid(res));
-            if ( !BUNins(wts,&idx,&BBPcacheid(res)) ) 
+            if ( !BUNins(wts,&idx,&BBPcacheid(res),FALSE) ) 
 	        res = NULL;
 	}
 	return res;
@@ -1713,7 +1713,7 @@ int CMDupdate_tijah_scores(BAT** res, BAT* ws, BAT* ws_tijah_score, BAT* item, B
 		}
 	    }
 	    if ( !BUNfnd(scoreBAT[cont],&pfpre) ) {
-	      if ( !BUNins(scoreBAT[cont],&pfpre,&sval) ) {
+	      if ( !BUNins(scoreBAT[cont],&pfpre,&sval,FALSE) ) {
 		stream_printf(GDKout,"CMDupdate_tijah_scores: score replace failed.\n");
                 return GDK_FAIL;
 	       }

@@ -1159,10 +1159,10 @@ int CMDhttp_post(BAT **res,
 
                         node_item = BUNins(BATnew(TYPE_void, TYPE_oid, 1),
                                 BUNhead(fun_item, BUNptr(fun_item, a)),
-                                BUNtail(fun_item, BUNptr(fun_item, a)) );
+                                BUNtail(fun_item, BUNptr(fun_item, a)), FALSE);
                         node_kind = BUNins(BATnew(TYPE_void, TYPE_int, 1),
                                 BUNhead(fun_kind, BUNptr(fun_kind, a)),
-                                BUNtail(fun_kind, BUNptr(fun_kind, a)) );
+                                BUNtail(fun_kind, BUNptr(fun_kind, a)), FALSE);
                         if (!(bs = buffer_wastream(b, "shred_node_param"))) {
                             GDKerror("CMDhttp_post: failed to create buffer_wastream"
                                     " to shred node parameter\n");

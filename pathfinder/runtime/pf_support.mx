@@ -3671,7 +3671,7 @@ CMDinsertConvert(BAT** res, BAT *b, ptr h, ptr t, int tpe)
 	assert(h);
 	assert(t);
 	if (CMDfakeProject(&bn, t, tpe) == GDK_SUCCEED) {
-		if (BUNins(*res = b, BAThtype(b) == TYPE_bat ? (ptr) &((BAT *) h)->batCacheid : h, &bn->batCacheid)) {
+		if (BUNins(*res = b, BAThtype(b) == TYPE_bat ? (ptr) &((BAT *) h)->batCacheid : h, &bn->batCacheid, FALSE)) {
 			BBPfix(b->batCacheid);
 			ret = GDK_SUCCEED;
 		}

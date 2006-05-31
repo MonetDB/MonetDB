@@ -665,7 +665,7 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
             sb->bat = BATsetaccess( sb->bat, BAT_READ );
         }
         bat bbb = BBPcacheid( sb->bat );
-        if ( ! BUNins(res, &i, &bbb) ) {
+        if ( ! BUNins(res, &i, &bbb, FALSE) ) {
             GDKerror("shredder.mx:finalizeShredCtx: copy2result fails\n");
             return NULL;
         }
@@ -957,7 +957,7 @@ static INLINE nat append_str_oid2bat(shredCtxStruct* shredCtx, int idx, str s, o
 #ifdef VERBOSE
     stream_printf(GDKout,"APPEND-STR-OID[%s](%s,%d)\n",sb->def->name,s,o);
 #endif
-    if ( !BUNins(sb->bat,(ptr)s,(ptr)&o) ) {
+    if ( !BUNins(sb->bat,(ptr)s,(ptr)&o, FALSE) ) {
         return NATNIL;
     }
     return sb->cnt++;
@@ -1243,7 +1243,7 @@ static nat store_PfxLoc4SAX1(shredCtxStruct* shredCtx, char* pfxloc) {
     }
 #ifdef USE_COMPRESSION
     res_oid = (oid)res;
-    if ( !BUNins(shredCtx->pfxlocBAT,pfxloc,&res_oid) ) {
+    if ( !BUNins(shredCtx->pfxlocBAT,pfxloc,&res_oid, FALSE) ) {
         GDKerror("shredder.mx:store_PfxLoc: compression table insert fails\n");
         return NATNIL;
     }
@@ -1298,7 +1298,7 @@ static nat store_PfxLocNEW(
     }
 #ifdef USE_COMPRESSION
     res_oid = (oid)res;
-    if ( !BUNins(shredCtx->pfxlocBAT,pfxloc,&res_oid) ) {
+    if ( !BUNins(shredCtx->pfxlocBAT,pfxloc,&res_oid, FALSE) ) {
         GDKerror("shredder.mx:store_PfxLoc: compression table insert fails\n");
         return NATNIL;
     }
