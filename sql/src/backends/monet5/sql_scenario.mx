@@ -902,10 +902,6 @@ produce code.
 		}
 		assert(s);
 		/* generate and call the MAL code */
-/*
-		if (m->mode != m_prepare &&
-		   (msg = sql_get_var(m,"optimizer")) == NULL) {
-*/
 		if( m->explain== m_explain)
 			SQLshowPlan(c);
 		if( m->mode == m_trace || m->explain == m_trace)

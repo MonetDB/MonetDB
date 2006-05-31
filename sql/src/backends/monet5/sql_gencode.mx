@@ -1579,9 +1579,9 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 	}
 	backend_dumpstmt(be, curBlk, s);
 
-	pushEndInstruction(curBlk);
 	if (cq)
 		addQueryToCache(c);
+	pushEndInstruction(curBlk);
 	curPrg = c->curprg;
 	if (c->backup) {
 		c->curprg = c->backup;
