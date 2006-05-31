@@ -102,10 +102,6 @@ module("pathfinder");
 
 const DEBUG := false;
 
-# Stemming setup
-const STEM_OFF := 1;
-const STEM_ON := 2;
-
 # Type of the size used
 const SIZE_ENTITY := 1;
 const SIZE_TERM := 2;
@@ -113,11 +109,11 @@ const SIZE_TERM := 2;
 #default
 var scoreBase := 0;
 
-const TERM_NUM := 10000;
 const ENTITY_NUM := 10000;
 
 var collName := "PFX";
 var collHeight := 10;
+var retNum := 100;
 
 if (view_bbp_name().reverse().exist("tj_collName")) {
 	if (bat("tj_collName").count() > 0) {
@@ -138,10 +134,10 @@ PROC tj_setCollName(str name) : void :=
 	}
 	collName := name;
 	collHeight := bat("tj_" + collName + "_param").find("height").int();
-	if ( DEBUG ) {
-        printf("Work collection is set to %s (with height %d)\n", collName, collHeight);
-        fflush(stdout());
-    }
+	if ( DEBUG ) { 
+        	printf("Work collection is set to %s (with height %d)\n", collName, collHeight);
+        	fflush(stdout());
+        } 
 }
 
 PROC tj_setScoreBase(int default) : void :=
@@ -209,10 +205,6 @@ PROC select_term(str name) : bat :=
 
 PROC select_term(str name, int stemming) : bat := 
 {
-    # perform stemming
-    
-    if ( stemming = STEM_ON ) printf( "WARNING: stemming is not yet supported!\n" );
-    
     return select_term( name );
 }
 
@@ -1473,10 +1465,8 @@ PROC align_frag() : void :=
 }
 
 @h
-
 extern int executeMIL(char* str);
 
-/* empty */
 @c
 #include <monet.h>
 #include <gdk.h>

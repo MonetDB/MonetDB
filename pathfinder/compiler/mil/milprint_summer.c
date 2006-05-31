@@ -8044,23 +8044,22 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	}
 
         if (fun->arity == 3) { /* get argument string */
-          translate2MIL (f, VALUES, cur_level, counter, RRL(args));
+          rc = translate2MIL (f, NORMAL, cur_level, counter, RRL(args));
 	} else {
-	  translate2MIL (f, VALUES, cur_level, counter, RL(args));
+	  rc = translate2MIL (f, NORMAL, cur_level, counter, RL(args));
 	}
 	++counter;
-        saveResult_ (f, counter, STR);
+        saveResult (f, counter);
 
         if (fun->arity == 3) { /* get argument string */
-          rc = translate2MIL (f, code, cur_level, ++counter, RL(args));
+          translate2MIL (f, code, cur_level, ++counter, RL(args));
 	} else {
-          rc = translate2MIL (f, code, cur_level, ++counter, L(args));
+          translate2MIL (f, code, cur_level, ++counter, L(args));
 	}
-               
-        milprintf(f, 
+       
+	milprintf(f,
                 "if (loop%03u.count() = 1) {\n"
-                "    var lo := 2.0LL;\n"
-                "    var nexi_query := item_str_%03d.fetch(0);\n"
+                "    var nexi_query := str_values.fetch(item%03u);\n"
 		"    var nexi_score;\n"
                 "    nexi_score := run_tijah_query(optbat,nexi_query);\n"
 		"    nexi_score := nexi_score.tsort_rev();\n"
@@ -8071,7 +8070,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 	milprintf(f,
           "var docpre := bat(\"tj_\" + collName + \"_doc_firstpre\").[oid]();\n"
           "var pfpre :=  bat(\"tj_\" + collName + \"_pfpre\");\n"
-          "var score := nexi_score.tmark(0@0);\n"
           "item  := nexi_score.hmark(0@0);\n"
           "var frag := [find_lower](const docpre.reverse().mark(0@0), item);\n"
           "item := item.join(pfpre).sort().tmark(0@0);\n"

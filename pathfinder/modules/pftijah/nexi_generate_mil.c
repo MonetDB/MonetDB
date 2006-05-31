@@ -1014,6 +1014,8 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
 
     }
     
+    MILPRINTF(MILOUT, "R%d := R%d.tsort_rev();\n", com_num, com_num);
+    MILPRINTF(MILOUT, "R%d := R%d.slice(0, retNum - 1);\n", com_num, com_num);
     MILPRINTF(MILOUT, "R%d.persists(true).rename(\"nexi_result\");\n", com_num);
       
     p_com_array++;

@@ -19,6 +19,7 @@
 
 #include "pftijah.h"
 #include "nexi.h"
+#include "pftijah.h"
 
 /*
  * #define LOGFILE   parserCtx->logFILE
@@ -210,9 +211,13 @@ int old_main(int argc, char * const argv[], BAT* optbat)
      fclose(xx);
    }
    if ( strcmp(optName,"collection") == 0 ) {
-      /* handle collection name here */
+       char mil_cmd[64];
+       sprintf(&mil_cmd[0], "tj_setCollName(\"%s\");", optVal);	
+       if (! executeMIL(mil_cmd))
+	   GDKerror("PF/tijah: cannot set collection name.\n");
    } else if ( strcmp(optName,"top") == 0 ) {
-      /* handle topN here */
+       printf("top\n");
+       /* handle topN here */
    } else {
       stream_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
    }
@@ -1075,7 +1080,7 @@ int old_main(int argc, char * const argv[], BAT* optbat)
     return 0;
   }
 
-  /* memory cleaniing */
+  /* memory cleaning */
   p_command_array = NULL;
   free(p_command_array);
   txt_retr_model = NULL;
