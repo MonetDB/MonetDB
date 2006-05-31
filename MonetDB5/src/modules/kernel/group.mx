@@ -191,6 +191,8 @@ comment "Grouped count of true values";
 We need a few routines to support MonetDB/XQ implementation.
 They are focussed on edge BATs [:oid,:oid] where the tail is
 assumed a sequence and the head denotes a group.
+Finding the first and last element maps into finding
+the min/max oid within a group.
 @= xqMinMaxDef
 command min(b:bat[:oid,:@1]):bat[:oid,:@1]
 address GRPmin_oid_@1
@@ -202,6 +204,11 @@ comment "Select the minimum element of each group";
 
 @mal
  @:xqMinMaxDef(oid)@
+ @:xqMinMaxDef(sht)@
+ @:xqMinMaxDef(int)@
+ @:xqMinMaxDef(lng)@
+ @:xqMinMaxDef(flt)@
+ @:xqMinMaxDef(dbl)@
 
 command prelude()
 address GRPprelude;
@@ -1601,7 +1608,7 @@ str GRP@1_oid_@2(int *retval, int *bid){
 		BAT *bn;
 		oid grp= oid_nil;
 		@2 *val= 0;
-		int xx, yy;
+		int xx;
 		BUN p, q;
 
 		if( (b= BATdescriptor(*bid)) == NULL ){
@@ -1617,8 +1624,6 @@ str GRP@1_oid_@2(int *retval, int *bid){
 		@:chkHeader(b,GRP@1_oid_@2)@
 
 		bn = BATnew(BAThtype(b), BATttype(b), BATcount(b));
-		yy = 0; 
-
 
 		BATloopFast(b, p, q, xx) {
 				oid h = *(oid*) BUNhead(b,p);
@@ -1641,7 +1646,17 @@ str GRP@1_oid_@2(int *retval, int *bid){
 }
 @c
  @:xqMinMaxImpl(min,oid,<)@
+ @:xqMinMaxImpl(min,sht,<)@
+ @:xqMinMaxImpl(min,int,<)@
+ @:xqMinMaxImpl(min,lng,<)@
+ @:xqMinMaxImpl(min,flt,<)@
+ @:xqMinMaxImpl(min,dbl,<)@
  @:xqMinMaxImpl(max,oid,>)@
+ @:xqMinMaxImpl(max,sht,>)@
+ @:xqMinMaxImpl(max,int,>)@
+ @:xqMinMaxImpl(max,lng,>)@
+ @:xqMinMaxImpl(max,flt,>)@
+ @:xqMinMaxImpl(max,dbl,>)@
 
 @-
 @= large_aggr_count

@@ -38,9 +38,9 @@ end doit;	# 4
 #
 function user.main():void;	# 0  (main:void)
 #some tests to illustrate MAL macro  	# 1  (_1:str)
-user.hello()	# 2  (_2:void)
+# user.hello()	# 2  (_2:void)
     io.print("hello world\n");	# 3 IOprint_val (_7:int)<-(_8:str)
-user.doit(1,"help")	# 4  (z:int)<-(_4:int)(_5:str)
+# user.doit(1,"help")	# 4  (z:int)<-(_4:int)(_5:str)
     io.print(1);	# 5 IOprint_val (_12:int)<-(_4:int)
     io.print("help");	# 6 IOprint_val (_13:int)<-(_5:str)
     z := 3;	# 7  (z:int)<-(_14:int)
