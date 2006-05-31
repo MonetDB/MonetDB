@@ -83,7 +83,7 @@ test = (
                 # remove wine errors:
 		    r"^fixme:.*$",
 		# ignore big- vs. little-endian byte-orders in test tests/BugDay_2005-10-06_4.8/Tests/print_CTgroup.SF-1315791.*:
-		    r"^\[ \\[0-9][0-9][0-9]\\000\\000\\[0-9][0-9][0-9] ?\\000\\000\\000 ? \]$",
+		    r"^\[ .?\\000\\000\\000.?\\000\\000\\000.? \]$",
                 # ignore compile date/time in helps messages:
                     r"^COMPILED:  by adm on .*$",
                  ])+')',  re.MULTILINE),

@@ -21,11 +21,7 @@ Over..
 # 15:23:56 >  Mtimeout -timeout 60 MapiClient -lmil -u monetdb -P monetdb "--config=/ufs/sjoerd/Monet/etc/MonetDB.conf" --host=localhost --port=32331 < print_CTgroup.SF-1315791.milC
 # 15:23:56 >  
 
-# Monet Database Server V4.9.3
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
-[ \000\000\000\000 \000\000\000 ]
+[ %\000\000\000&\000\000\000 ]
 #-----------------#
 # h	t	  # name
 # void	oid	  # type
