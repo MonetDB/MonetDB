@@ -1482,6 +1482,10 @@ lookup_bun (BAT *b, oid offset)
     return res;
 }
 
+/* misuse the SET_CONT_KIND macro to overload
+   the kind values with the node kind */
+#define COMBN_NKIND_KIND(X,Y) SET_CONT_KIND(X,Y)
+
 #define BATloop_off(b,p,q,w,o,s)\
         for(w=BUNsize(b), p=BUNptr(b,BUNindex(b,BUNfirst(b))+o), q=p+s*w; \
             p<q; \
@@ -1550,7 +1554,8 @@ xquery_print_result_DRIVER (
         oid index, valoid;
         BUN p, q;
         ptr res;
-        int old_kind, cmbn_cont_kind, cont;
+        int cmbn_cont_kind, cur_kind, old_kind, cont = 0;
+        char node_kind = 0;
 
         /* modify buncnt (only necessary for multiple iterations) */
         if (niters > 1) {
@@ -1612,18 +1617,31 @@ xquery_print_result_DRIVER (
             valoid = *(oid*)BUNtail(item, p);
             findTailValue2 (fun_k, res, kind, index);
             cmbn_cont_kind = *(int*) res;
+            cur_kind = XTRACT_KIND(cmbn_cont_kind);
+            
+            /* get the node kind information for correct
+               item start/end printing */
+            if (cur_kind == ELEM) {
+                cont = XTRACT_CONT(cmbn_cont_kind);
+                /* lookup node kind */
+                getWsValue (res, ctx, cont, PRE_KIND, valoid);
+                node_kind = *(chr*) res;
+            }
             
             if (old_kind) /* skip the first iteration */
                 /* add an item separator */
                 if ( !ctx->driverFun->seqItemSeparator(
-                               ctx, old_kind, cmbn_cont_kind) )
+                               ctx, old_kind, cur_kind) )
                     return GDK_FAIL;
                 
             /* start of item callback */
-            if ( !ctx->driverFun->seqItemStart(ctx, cmbn_cont_kind) )
+            if ( !ctx->driverFun->seqItemStart(
+                                      ctx, 
+                                      COMBN_NKIND_KIND (node_kind,
+                                                        cur_kind)) )
                 return GDK_FAIL;
                  
-            switch( XTRACT_KIND(cmbn_cont_kind) ) {
+            switch( cur_kind ) {
                 case ATTR:
                     /* print attributes for all modes that were skipped
                        before */
@@ -1639,13 +1657,8 @@ xquery_print_result_DRIVER (
                     break;
                 case ELEM:
                     {
-                        char node_kind;
-                        
-                        cont = XTRACT_CONT(cmbn_cont_kind);
+                        /* node_kind and cont have been already looked up */
 
-                        /* lookup node kind */
-                        getWsValue (res, ctx, cont, PRE_KIND, valoid);
-                        node_kind = *(chr*) res;
                         /* print top level text nodes */
                         if (node_kind == (char)1 /* TEXT */) {
                             oid prop, val_cont;
@@ -1721,7 +1734,7 @@ xquery_print_result_DRIVER (
                 default:
                     GDKerror ("serialize.mx:xquery_print_result_main: "
                               "[kind=%d, cont=%d]\n",
-                              XTRACT_KIND(cmbn_cont_kind),
+                              cur_kind,
                               XTRACT_CONT(cmbn_cont_kind));
                     fatal_err (ctx, "UNKNOW_TYPE(\'%c\'ch(%d))\n",
                                cmbn_cont_kind, cmbn_cont_kind);
@@ -1729,12 +1742,21 @@ xquery_print_result_DRIVER (
             }
 
             /* end of item callback */
-            if ( !ctx->driverFun->seqItemEnd(ctx, cmbn_cont_kind) )
+            if ( !ctx->driverFun->seqItemEnd(
+                                      ctx, 
+                                      COMBN_NKIND_KIND (node_kind,
+                                                        cur_kind)) )
                 return GDK_FAIL;
 
-            /* the kind value in 'cmbn_cont_kind' 
-               is the old one for the next iteration */
-            old_kind = cmbn_cont_kind;
+            /* this avoids the separator printing for attributes
+               in the XML mode (without the typed xml mode) that
+               have been removed from the result sequence */
+            if (!(ctx->modes & (MODE_XML | MODE_SAX)) ||
+                ctx->modes & MODE_TYPED ||
+                cur_kind != ATTR)
+                /* the kind value in 'cur_kind' 
+                   is the old one for the next iteration */
+                old_kind = cur_kind;
         }
 
         /* end of item sequence callback */

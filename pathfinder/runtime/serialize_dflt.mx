@@ -294,8 +294,17 @@ dflt_cleanup (XqueryCtx* ctx)
 static bool
 dflt_handle_startDocument (XqueryCtx* ctx)
 {
-    char *init = "<?xml version=\"1.0\" encoding=\"utf-8\"?>";
-    stream_write (GDKout, init, strlen (init), 1);
+    char *tmp;
+    /* print string: <?xml version="1.0" encoding="utf-8"?> */ 
+    tmp = "<?xml version="; stream_write (GDKout, tmp, strlen (tmp), 1);
+    stream_write (GDKout, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    tmp = "1.0";            stream_write (GDKout, tmp, strlen (tmp), 1);
+    stream_write (GDKout, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    tmp = " encoding=";     stream_write (GDKout, tmp, strlen (tmp), 1);
+    stream_write (GDKout, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    tmp = "utf-8";          stream_write (GDKout, tmp, strlen (tmp), 1);
+    stream_write (GDKout, dflt_ws->esc_quote, dflt_ws->esq_sz, 1);
+    tmp = "?>";             stream_write (GDKout, tmp, strlen (tmp), 1);
     stream_write (GDKout, dflt_ws->newline, dflt_ws->nl_sz, 1);
 
     return SUCCESS;
@@ -781,8 +790,29 @@ typed_xml_seqItemStart (XqueryCtx* ctx, int kind)
                          "xsi:type=\"xdt:untypedAtomic\">";
             break;
         case ELEM:
-            item_start = "<result:element>";
-            break;
+        {   
+            /* extract node kind from overloaded kind */
+            switch ((char) XTRACT_CONT(kind)) {
+                case 0 /* ELEMENT */:
+                    item_start = "<result:element>";
+                    break;
+                case 1 /* TEXT */:
+                    item_start = "<result:text>";
+                    break;
+                case 2 /* COMMENT */:
+                    item_start = "<result:comment>";
+                    break;
+                case 3 /* PI */:
+                    item_start = "<result:processing-instruction>";
+                    break;
+                case 4 /* DOCUMENT */:
+                    item_start = "<result:document>";
+                    break;
+                default:
+                    return PROBLEM;
+                    break;
+            }
+        }   break;
         case ATTR:
             item_start = "<result:attribute";
             break;
@@ -811,8 +841,29 @@ typed_xml_seqItemEnd (XqueryCtx* ctx, int kind)
             item_end = "</result:atomic-value>";
             break;
         case ELEM:
-            item_end = "</result:element>";
-            break;
+        {   
+            /* extract node kind from overloaded kind */
+            switch (XTRACT_CONT(kind)) {
+                case 0 /* ELEMENT */:
+                    item_end = "</result:element>";
+                    break;
+                case 1 /* TEXT */:
+                    item_end = "</result:text>";
+                    break;
+                case 2 /* COMMENT */:
+                    item_end = "</result:comment>";
+                    break;
+                case 3 /* PI */:
+                    item_end = "</result:processing-instruction>";
+                    break;
+                case 4 /* DOCUMENT */:
+                    item_end = "</result:document>";
+                    break;
+                default:
+                    return PROBLEM;
+                    break;
+            }
+        }   break;
         case ATTR:
             item_end = "/>";
             break;

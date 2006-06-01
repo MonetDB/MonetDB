@@ -1140,8 +1140,9 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
 @:ws(c_decl)@
 @:decl(c)@
 
-#define XTRACT_KIND(X)  (X & 63)
-#define XTRACT_CONT(X)  (X >> 6)
+#define XTRACT_KIND(X)     (X & 63)
+#define XTRACT_CONT(X)     (X >> 6)
+#define SET_CONT_KIND(X,Y) (X << 6 | Y)
 
 /* xquery_method : execute a loop-lifted xquery function
  *
