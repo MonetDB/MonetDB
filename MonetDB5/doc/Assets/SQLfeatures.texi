@@ -262,22 +262,60 @@ The code produced by MonetDB/SQL is massaged by several code optimizers
 to arrive at the best possible plan for evaluation.
 However, for development purposes and the rare case that more control
 is needed, the SQL session variable @code{optimizer} can be set
-to a MAL instruction list to identify the optimizer steps needed. [todo]
+to a list of optimizers to identify the steps needed. 
 
 @example
+>set optimizer='commonExpressionRemoval,garbageCollector';
 >select optimizer;
-#--------------------#
-# t                  # name
-# str                # type
-#--------------------#
-[ "optimizer.sql();" ]
->set optimizer="optimizer.factorize();";
->explain select 1;
+#-----------------------------------------------#
+# t                                             # name
+# str                                           # type
+#-----------------------------------------------#
+[ "commonExpressionRemoval,garbageCollector"    ]
 @end example
 
+The optimizers available, in various stages of maturity, are:
+commonExpressionRemoval")@
+@multitable @columnfractions .2 .8
+@item aliasRemoval
+@tab Remove alias assignments
+@item deadCodeRemoval
+@tab Remove all code not leading to used results
+@item garbageCollector
+@tab
+@item partitionedQuery
+@tab
+@item expressionAccumulation
+@tab
+@item factorize
+@tab
+@item strengthReduction
+@tab
+@item emptySet
+@tab
+@item singleton
+@tab
+@item peephole
+@tab
+@item costEstimation
+@tab
+@item multitable
+@tab
+@item generators
+@tab
+@item reduce
+@tab
+@item coercions
+@tab
+@item remoteQueries
+@tab
+@end multitable 
+
+
 The final result the optimizer steps become visible using the @code{explain}
-statement modifier. Alternatively, the optimizer script line may include
-a call to @code{optimizer.showPlan();}.
+statement modifier.  Alternatively, the @code{debug} statement modifier
+in combination with the 'o' command provides access to the intermediate
+optimizer results.
 
 @node Overlaying the BAT storage,XQuery, Optimizer Control,  MonetDB/SQL Features
 @section Overlaying the BAT storage
