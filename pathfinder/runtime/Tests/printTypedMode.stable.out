@@ -12,23 +12,7 @@ stdout of test 'printTypedMode` in directory 'runtime` itself:
 module(pathfinder);
 
 xquery("xml-typed-root-PrintTypedMode", "(<a><b/></a>, \"hello\", \"hi\", 1, 2.3, <bla><d/><e/></bla>, 34, <foo><bar>\"hello\"</bar></foo>)", 0).printf();
-<?xml version="1.0" encoding="utf-8"?>
-<PrintTypedMode>
-<xs:anyNode>
-<a><b/></a>
-</xs:anyNode>
-<xs:string>hello</xs:string>
-<xs:string>hi</xs:string>
-<xs:integer>1 </xs:integer>
-<xs:double>2.300000 </xs:double>
-<xs:anyNode>
-<bla><d/><e/></bla>
-</xs:anyNode>
-<xs:integer>34 </xs:integer>
-<xs:anyNode>
-<foo><bar>"hello"</bar></foo>
-</xs:anyNode>
-</PrintTypedMode>
+<result:sequence xmlns:result="http://monetdb.cwi.nl/xquery-results" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><result:element><a><b/></a></result:element><result:atomic-value xsi:type="xs:string">hello</result:atomic-value><result:atomic-value xsi:type="xs:string">hi</result:atomic-value><result:atomic-value xsi:type="xs:integer">1</result:atomic-value><result:atomic-value xsi:type="xs:decimal">2.300000</result:atomic-value><result:element><bla><d/><e/></bla></result:element><result:atomic-value xsi:type="xs:integer">34</result:atomic-value><result:element><foo><bar>"hello"</bar></foo></result:element></result:sequence>
 quit();
 
 # 17:12:39 >  

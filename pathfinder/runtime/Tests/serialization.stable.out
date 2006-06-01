@@ -1,0 +1,72 @@
+stdout of test 'serialization` in directory 'runtime` itself:
+
+
+# 14:46:37 >  
+# 14:46:37 >  Mtimeout -timeout 60 Mserver "--config=/local_tmp/MonetDB/Linux/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/local_tmp/pathfinder/Linux/lib/MonetDB:/local_tmp/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/local_tmp/MonetDB/Linux/var/MonetDB/dbfarm" --set "sql_logdir=/local_tmp/MonetDB/Linux/var/MonetDB/log" --set mapi_port=39040 --set monet_prompt= --trace --dbname=mTests_runtime  < serialization.milS
+# 14:46:37 >  
+
+# Monet Database Server V4.11.3
+# Copyright (c) 1993-2006, CWI. All rights reserved.
+# Compiled for i686-suse-linux/32bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+module("pathfinder"); # value containers for literal values
+
+xquery("xml"           ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())", 0).printf();
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult attr="val">
+1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?>
+</XQueryResult>
+xquery("xml typed"     ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())", 0).printf();
+<result:sequence xmlns:result="http://monetdb.cwi.nl/xquery-results" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><result:atomic-value xsi:type="xs:integer">1</result:atomic-value><result:atomic-value xsi:type="xs:decimal">2.300000</result:atomic-value><result:attribute attr="val"/><result:atomic-value xsi:type="xs:double">30.000000</result:atomic-value><result:atomic-value xsi:type="xs:string">string</result:atomic-value><result:document><elem>text<!--comment--><?pi_tgt pi_data?></elem></result:document><result:element><elem>text<!--comment--><?pi_tgt pi_data?></elem></result:element><result:text>text</result:text><result:comment><!--comment--></result:comment><result:processing-instruction><?pi_tgt pi_data?></result:processing-instruction></result:sequence>
+xquery("xml typed-old" ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())", 0).printf();
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult attr="val">
+<xs:integer>1</xs:integer>
+<xs:double>2.300000</xs:double>
+<xs:double>30.000000</xs:double>
+<xs:string>string</xs:string>
+<xs:anyNode><elem>text<!--comment--><?pi_tgt pi_data?></elem></xs:anyNode>
+<xs:anyNode><elem>text<!--comment--><?pi_tgt pi_data?></elem></xs:anyNode>
+<xs:anyNode>text</xs:anyNode>
+<xs:anyNode><!--comment--></xs:anyNode>
+<xs:anyNode><?pi_tgt pi_data?></xs:anyNode>
+</XQueryResult>
+xquery("xml mapi"      ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())", 0).printf();
+=<?xml version="1.0" encoding="utf-8"?>
+=<XQueryResult attr="val">
+=1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?>
+=</XQueryResult>
+xquery("dm"            ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())", 0).printf();
+1,
+2.300000,
+attribute attr { val },
+30.000000,
+"string",
+<?xml version="1.0" encoding="utf-8"?>
+<elem>text<!--comment--><?pi_tgt pi_data?></elem>
+,
+<elem>text<!--comment--><?pi_tgt pi_data?></elem>,
+text {"text"},
+<!--comment-->,
+<?pi_tgt pi_data?>
+xquery("seq"           ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())", 0).printf();
+&1 0 10 1 10
+# xquery_result # table_name
+# xml   # name
+# varchar       # type
+# 60    # length
+[ "1"   ]
+[ "2.300000"    ]
+[ "attribute attr { val }"      ]
+[ "30.000000"   ]
+[ "\"string\""  ]
+[ "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<elem>text<!--comment--><?pi_tgt pi_data?></elem>\n"     ]
+[ "<elem>text<!--comment--><?pi_tgt pi_data?></elem>"   ]
+[ "text {\"text\"}"     ]
+[ "<!--comment-->"      ]
+[ "<?pi_tgt pi_data?>"  ]
+
+# 14:46:37 >  
+# 14:46:37 >  Done.
+# 14:46:37 >  
+
