@@ -582,7 +582,7 @@ check@1NsChange (XqueryCtx* ctx, str par_uri, str par_prefix)
 }
 @c
 @:checkElemNsChange(Elem,handle_attribute,@:addNsLink@)@
-@:checkElemNsChange(TopAttrHelper,seqEmitAttribute,)@
+@:checkElemNsChange(TopAttrHelper,seqEmitAttribute,(void)xnf; /* pacify compiler */)@
 
 @= checkAttrNsChange
 static bool
@@ -709,7 +709,7 @@ check@1AttrNsChange (XqueryCtx* ctx,
 }        
 @c
 @:checkAttrNsChange(,   handle_attribute,0,Elem,         @:addNsLink@)@
-@:checkAttrNsChange(Top,seqEmitAttribute,1,TopAttrHelper,)@
+@:checkAttrNsChange(Top,seqEmitAttribute,1,TopAttrHelper,(void)xnf; /* pacify compiler */)@
 
 
 /**
