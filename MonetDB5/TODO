@@ -40,6 +40,7 @@ facilitate flow analysis
 
 MIL 5
 - make sure the sorted bit is set in batcalc routines where appropriate
+- make sure BAT producing operations leave them as readonly behind
 
 MIL 4 'loss' in M5
 - M2mal is only meant to enable transition between systems.
@@ -49,6 +50,9 @@ MIL 4 'loss' in M5
 MAL language issues
 - BATs entered into a box should become persistent? (tst1004,1005,1014)
 - use a process buffer pool to avoid expensive client starts.
+- let modules define theire throwable exceptions, which
+are included in the caller environment.
+- extend str.mx with replace operation
 
 Implementation
 - GDK should switch to private-bats unless stated otherwise.
