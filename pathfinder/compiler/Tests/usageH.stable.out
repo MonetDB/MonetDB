@@ -80,6 +80,7 @@ Usage: pf [OPTION] [FILE]
 = -e[0|1], --dead-code-elimination=[0|1]: dead code elimination:
          0 disable dead code elimination
          1 enable dead code elimination (default)
+= -b, --enable-standoff: enable StandOff axis steps
 
 Enjoy.
 
