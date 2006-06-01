@@ -44,6 +44,7 @@ Over..
 [ "current_role",	"monetdb",	"varchar",	0	]
 [ "current_timezone",	"0",	"sec_interval",	0	]
 [ "cache",	"true",	"boolean",	0	]
+[ "optimizer",	"on",	"varchar",	0	]
 
 # 12:37:13 >  
 # 12:37:13 >  Done.

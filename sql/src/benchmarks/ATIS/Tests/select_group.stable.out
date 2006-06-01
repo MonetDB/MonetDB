@@ -761,8 +761,8 @@ Over..
 # from_airport,	to_airport,	fare_class,	night,	one_way_cost,	rnd_trip_cost,	class_days # name
 # char,	char,	char,	char,	real,	real,	char # type
 # 3,	3,	3,	3,	13,	13,	7 # length
-[ "SFO",	"DFW",	"Y",	"NO",	328,	0,	"1234567"	]
 [ "SFO",	"DFW",	"B",	"NO",	328,	0,	"1234567"	]
+[ "SFO",	"DFW",	"Y",	"NO",	328,	0,	"1234567"	]
 [ "SFO",	"DFW",	"YN",	"YES",	381,	762,	"1234567"	]
 [ "SFO",	"DFW",	"YN",	"YES",	386,	772,	"1234567"	]
 [ "SFO",	"DFW",	"Y",	"NO",	473,	946,	"1234567"	]

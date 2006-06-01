@@ -265,6 +265,7 @@ addQueryToCache(Client c)
 	Module cache;
 	backend *be = ((backend *) c->state[PARSER]);
 	str optimizer;
+	MalBlkPtr mb;
 
 	cache = findModule(c->nspace, putName("sql_cache",9));
 	if (cache == 0) {
@@ -273,23 +274,24 @@ addQueryToCache(Client c)
 	insertSymbol(cache, c->curprg);
 	trimMalBlk(c->curprg->def);
 	c->blkmode = 0;
-	chkProgram(c->nspace, c->curprg->def);
+	mb= c->curprg->def;
+	chkProgram(c->nspace, mb);
 #ifdef _SQL_OPTIMIZER_DEBUG
 	printf("ADD QUERY TO CACHE\n");
-	printFunction(GDKout,c->curprg->def,LIST_MAL_ALL);
+	printFunction(GDKout,mb,LIST_MAL_ALL);
 #endif
 @-
 An error in the compilation should be reported to the user.
 And if the debugging option is set, the debugger is called
 to allow inspection.
 @c
-	if (c->curprg->def->errors) {
+	if (mb->errors) {
 		mvc *m;
 		m = ((mvc *) c->state[OPTIMIZE]);
 		showErrors();
 
 		if (c->listing)
-			printFunction(c->fdout, c->curprg->def, c->listing);
+			printFunction(c->fdout, mb, c->listing);
 		if ( m->debug )
 			runMALDebugger(c->curprg);
 		return;
@@ -301,18 +303,40 @@ to allow inspection.
 		stream_printf(c->fdout,"optimizer=%s\n",optimizer);
 #endif
 
-	if( optimizer == 0 || strcmp(optimizer,"yes")==0){
+	if( optimizer == 0 || strcmp(optimizer,"on")==0){
 		if (c->debug)
-			optimizerCheck(c->curprg->def,"sql.baseline",-1,0);
-		COoptimizer(c->curprg->def,0,0);
-		ARoptimizer(c->curprg->def, 0, 0);
-		CXoptimizer(c->curprg->def,0,0);
-		//FXoptimizer(c->curprg->def, 0, 0);
-		OPTmultiplex(c->curprg->def, 0, 0);
-		MRoptimizer(c->curprg->def,0,0);
-		RQoptimizer(c->curprg->def,0,0);
+			optimizerCheck(mb,"sql.baseline",-1,0);
+		COoptimizer(mb,0,0);
+		ARoptimizer(mb, 0, 0);
+		CXoptimizer(mb,0,0);
+		//FXoptimizer(mb, 0, 0);
+		OPTmultiplex(mb, 0, 0);
+		MRoptimizer(mb,0,0);
+		RQoptimizer(mb,0,0);
+	} else if( optimizer && strcmp(optimizer,"off")==0 ){
+		/* no optimization needed */
 	} else if( optimizer ){
-		/* interpret the optimizer control statement */
+		/* the optimizer control is a comma separated list */
+		char *nxt, *nme;
+		while(optimizer && *optimizer )
+		{
+			nxt= strchr(optimizer,',');
+			if( nxt){
+				*nxt= 0;
+				nxt++;
+			}
+			if( (nme = getName(optimizer,strlen(optimizer))) == 0) {
+				GDKerror("optimizer '%s' does not exist\n",optimizer);
+				mb->errors++;
+			} else{
+				InstrPtr call;
+				call=  newFcnCall(mb,getName("optimizer",9),nme);
+				typeChecker(c->nspace, mb,call,TRUE);
+			}
+			optimizer =nxt;
+		} 
+		optimizerCheck(mb,"sql.baseline",-1,0);
+		optimizeMALBlock(mb);
 	}
 }
 

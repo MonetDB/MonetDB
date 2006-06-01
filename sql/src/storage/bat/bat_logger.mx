@@ -260,7 +260,7 @@ log_read_updates(logger *logger, logformat *l, char *name)
 				if (!h && !t)
 					break;
 				if (l->flag == SQL_LOG_INSERT)
-					BUNins(b, h, t);
+					BUNins(b, h, t, FALSE);
 				else if (l->flag == SQL_LOG_DELETE)
 					BUNdel(b, h, t);
 				if (h != hv)
@@ -317,7 +317,7 @@ log_read_create(logger *logger, char *name)
 		} else {
 			tt = ATOMindex(ta);
 		}
-		b = BATnew(ht, tt, BUFSIZ);
+		b = BATnew(ht, tt, SQLBATSIZE);
 
 		if (hseq)
 			BATseqbase(b, 0);
@@ -506,7 +506,7 @@ logger_commit(logger *logger)
 		fprintf(stderr, "logger_commit\n");
 
 	BUNdelHead(logger->sql_log, &id);
-	BUNins(logger->sql_log, &id, &logger->id);
+	BUNins(logger->sql_log, &id, &logger->id, FALSE);
 	return bm_commit(logger->bm);
 }
 
@@ -558,13 +558,13 @@ logger_new(int debug, char *logdir, char *dbname, int version, struct bm *bm)
 		BBPrename(logger->sql_log->batCacheid, "sql_log");
 		
 		bm_add_bat(bm, logger->sql_log, "sql_log");
-		BUNins(logger->sql_log, &id, &logger->id);
+		BUNins(logger->sql_log, &id, &logger->id, FALSE);
 	} else {
 		logger->sql_log = bat_descriptor(sql_log, "logger_new");
 		if (BATcount(logger->sql_log)) {
 			logger->id = *(int*)BUNtail(logger->sql_log, BUNfnd(logger->sql_log, &id));
 		} else {
-			BUNins(logger->sql_log, &id, &logger->id);
+			BUNins(logger->sql_log, &id, &logger->id, FALSE);
 		}
 	}
 

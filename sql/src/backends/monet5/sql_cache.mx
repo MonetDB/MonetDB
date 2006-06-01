@@ -107,7 +107,7 @@ SQLCacheGetDefinition(int *ret, str *nme)
 
 		for (i = 0; i < s->def->stop; i++) {
 			ps = instruction2str(s->def, getInstrPtr(s->def, i), 0);
-			BUNins(b, &i, ps + 1);
+			BUNins(b, &i, ps + 1, FALSE);
 			GDKfree(ps);
 		}
 	}
