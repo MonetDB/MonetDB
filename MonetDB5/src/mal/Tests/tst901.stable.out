@@ -25,7 +25,7 @@ function user.main():void;	# 0  (main:void)
 # the multiplex code blocks. 	# 1  (_1:str)
     b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_3:int)(_3:int)
 barrier (v,i):= language.newRange(0:int);	# 3 RNGnewRange_int (v:bit)(i:int)<-(_6:int) jump 6
-    bat.insert(b,i,i);	# 4 BKCinsert_bun_int_int (_7:void)<-(b:bat[:int,:int])(i:int)(i:int)
+    bat.insert(b,i,i);	# 4 BKCinsert_bun (_7:void)<-(b:bat[:int,:int])(i:int)(i:int)
     redo (v,i):= language.nextElement(1:int,10:int);	# 5 RNGnextElement_int (v:bit)(i:int)<-(_8:int)(_9:int) jump 4
 exit (v,i);	# 6  (v:bit)(i:int)
     c := algebra.copy(b);	# 7 ALGcopy (c:bat[:int,:int])<-(b:bat[:int,:int])

@@ -26,9 +26,9 @@ stdout of test 'CTrefine_not_sorted.981374` in directory 'tests/BugDay_2005-10-0
 #
 function user.main():void;	# 0  (main:void)
     var_usage := bat.new(:oid,:oid);	# 1 CMDBATnew (var_usage:bat[:oid,:oid])<-(_2:oid)(_2:oid)
-    bat.insert(var_usage,0@0,1@0);	# 2 BKCinsert_bun_oid_any (_3:void)<-(var_usage:bat[:oid,:oid])(_4:oid)(_5:oid)
-    bat.insert(var_usage,1@0,1@0);	# 3 BKCinsert_bun_oid_any (_6:void)<-(var_usage:bat[:oid,:oid])(_5:oid)(_5:oid)
-# without the next line it doesn't crash 	# 4  (_8:str)
+    bat.insert(var_usage,0@0,1@0);	# 2 BKCinsert_bun (_3:void)<-(var_usage:bat[:oid,:oid])(_4:oid)(_5:oid)
+    bat.insert(var_usage,1@0,1@0);	# 3 BKCinsert_bun (_6:void)<-(var_usage:bat[:oid,:oid])(_5:oid)(_5:oid)
+# without the next line it doesn't crash 	# 4  (_7:str)
     var_usage0 := algebra.unique(var_usage);	# 5 ALGsunique (var_usage0:bat[:oid,:oid])<-(var_usage:bat[:oid,:oid])
     var_usage := bat.reverse(var_usage0);	# 6 BKCreverse (var_usage:bat[:oid,:oid])<-(var_usage0:bat[:oid,:oid])
     vu_vid0 := bat.reverse(var_usage);	# 7 BKCreverse (vu_vid0:bat[:oid,:oid])<-(var_usage:bat[:oid,:oid])

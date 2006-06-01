@@ -11,19 +11,19 @@ tablet.setColumnName(0,"Eerste");
 #tablet.setRowBracket("|","|");
 
 b1:= bat.new(:void,:int);
-bat.insert(b1,42);
-bat.insert(b1,49);
+bat.append(b1,42);
+bat.append(b1,49);
 b2:= bat.new(:void,:str);
-bat.insert(b2,"hello world");
-bat.insert(b2,"goodbye world");
+bat.append(b2,"hello world");
+bat.append(b2,"goodbye world");
 
 tablet.setProperties("name,type,dense,sorted,key,min,max");
 tablet.display(b1,b2);
 
 in:= calc.int(nil);
 sn := calc.str(nil);
-bat.insert(b1,in);
-bat.insert(b2,sn);
+bat.append(b1,in);
+bat.append(b2,sn);
 tablet.setProperties(sn);
 tablet.setColumnDecimal(0,3,1);
 tablet.setColumnNull(1,"unknown");

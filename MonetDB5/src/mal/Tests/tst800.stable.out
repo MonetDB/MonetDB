@@ -40,7 +40,7 @@ stdout of test 'tst800` in directory 'src/mal` itself:
 function user.main():void;	# 0  (main:void)
 #testing simple stuff around type BAT 	# 1  (_1:str)
     z := bat.new(:int,:int);	# 2 CMDBATnew (z:bat[:int,:int])<-(_3:int)(_3:int)
-    bat.insert(z,1,2);	# 3 BKCinsert_bun_int_int (_4:void)<-(z:bat[:int,:int])(_5:int)(_6:int)
+    bat.insert(z,1,2);	# 3 BKCinsert_bun (_4:void)<-(z:bat[:int,:int])(_5:int)(_6:int)
     io.print(z);	# 4 IOprint_val (_7:int)<-(z:bat[:int,:int])
     b := bat.new(:int,:BAT);	# 5 CMDBATnew (b:bat[:int,:BAT])<-(_3:int)(_9:BAT)
     zid := calc.bat(z);	# 6 CALCbat2BAT (zid:BAT)<-(z:bat[:int,:int])

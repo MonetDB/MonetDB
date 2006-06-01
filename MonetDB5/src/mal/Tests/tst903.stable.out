@@ -243,7 +243,7 @@ exit (go,i);	# 9  (go:bit)(i:lng)
 barrier (_91,_92,_93):= chopper.newIterator(b);	# 112 CHPbunIterator (_91:lng)(_92:oid)(_93:lng)<-(b:bat[:void,:lng]) jump 119
     _95 := algebra.find(c,_92);	# 113 ALGfind (_95:lng)<-(c:bat[:void,:lng])(_92:oid)
     _97 := calc.+(_93,_95);	# 114 CALCbinaryADDlnglng (_97:lng)<-(_93:lng)(_95:lng)
-    bat.insert(_89,_92,_97);	# 115 BKCinsert_bun_oid_any (_98:void)<-(_89:bat[:void,:lng])(_92:oid)(_97:lng)
+    bat.insert(_89,_92,_97);	# 115 BKCinsert_bun (_98:void)<-(_89:bat[:void,:lng])(_92:oid)(_97:lng)
 catch MALexception;	# 116  (MALexception:str) jump 117
 exit MALexception;	# 117  (MALexception:str)
     redo (_91,_92,_93):= chopper.hasMoreElements(b);	# 118 CHPbunHasMoreElements (_91:lng)(_92:oid)(_93:lng)<-(b:bat[:void,:lng]) jump 113

@@ -74,18 +74,18 @@ function user.main():void;	# 0  (main:void)
     io.print(binfo);	# 18 IOprint_val (_28:int)<-(binfo:bat[:str,:str])
     io.printf("#~EndVariableOutput~#\n");	# 19 IOprint_str (_29:int)<-(_30:str)
     profiler.start();	# 20 CMDstartProfiler (_31:void)
-    err := bat.insert(b,1,15);	# 21 BKCinsert_bun_int_int (err:void)<-(b:bat[:int,:int])(_33:int)(_34:int)
-    err := bat.insert(b,2,4);	# 22 BKCinsert_bun_int_int (err:void)<-(b:bat[:int,:int])(_35:int)(_36:int)
+    err := bat.insert(b,1,15);	# 21 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_33:int)(_34:int)
+    err := bat.insert(b,2,4);	# 22 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_35:int)(_36:int)
     n0 := calc.int(nil);	# 23 CALCnil2int (n0:int)<-(_38:void)
-    err := bat.insert(b,3,n0);	# 24 BKCinsert_bun_int_int (err:void)<-(b:bat[:int,:int])(_39:int)(n0:int)
-    err := bat.insert(b,4,16);	# 25 BKCinsert_bun_int_int (err:void)<-(b:bat[:int,:int])(_36:int)(_40:int)
-    err := bat.insert(b,5,25);	# 26 BKCinsert_bun_int_int (err:void)<-(b:bat[:int,:int])(_41:int)(_42:int)
-    err := bat.insert(b,6,36);	# 27 BKCinsert_bun_int_int (err:void)<-(b:bat[:int,:int])(_43:int)(_44:int)
-    err := bat.insert(b,7,49);	# 28 BKCinsert_bun_int_int (err:void)<-(b:bat[:int,:int])(_45:int)(_46:int)
-    err := bat.insert(b,8,64);	# 29 BKCinsert_bun_int_int (err:void)<-(b:bat[:int,:int])(_47:int)(_48:int)
-    err := bat.insert(b,9,n0);	# 30 BKCinsert_bun_int_int (err:void)<-(b:bat[:int,:int])(_49:int)(n0:int)
-    err := bat.insert(b,n0,n0);	# 31 BKCinsert_bun_int_int (err:void)<-(b:bat[:int,:int])(n0:int)(n0:int)
-    err := bat.insert(b,n0,81);	# 32 BKCinsert_bun_int_int (err:void)<-(b:bat[:int,:int])(n0:int)(_50:int)
+    err := bat.insert(b,3,n0);	# 24 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_39:int)(n0:int)
+    err := bat.insert(b,4,16);	# 25 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_36:int)(_40:int)
+    err := bat.insert(b,5,25);	# 26 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_41:int)(_42:int)
+    err := bat.insert(b,6,36);	# 27 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_43:int)(_44:int)
+    err := bat.insert(b,7,49);	# 28 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_45:int)(_46:int)
+    err := bat.insert(b,8,64);	# 29 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_47:int)(_48:int)
+    err := bat.insert(b,9,n0);	# 30 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(_49:int)(n0:int)
+    err := bat.insert(b,n0,n0);	# 31 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(n0:int)(n0:int)
+    err := bat.insert(b,n0,81);	# 32 BKCinsert_bun (err:void)<-(b:bat[:int,:int])(n0:int)(_50:int)
     io.print(b);	# 33 IOprint_val (_51:int)<-(b:bat[:int,:int])
     io.print(b,b,b);	# 34 IOtable (_52:int)<-(b:bat[:int,:int])(b:bat[:int,:int])(b:bat[:int,:int])
     profiler.stop();	# 35 CMDstopProfiler (_53:void)
@@ -98,8 +98,8 @@ end main;	# 38
 # str				str		  # type
 #-----------------------------------------#
 [ "version",		  "20749"	  ]
-[ "batId",		  "tmp_4"	  ]
-[ "batCacheid",		  "4"		  ]
+[ "batId",		  "tmp_7"	  ]
+[ "batCacheid",		  "7"		  ]
 [ "batParentid",		  "0"		  ]
 [ "batSharecnt",		  "0"		  ]
 [ "head",			  "int"		  ]
@@ -110,7 +110,7 @@ end main;	# 38
 [ "batLRefcnt",			  "1"		  ]
 [ "batDirty",			  "dirty"	  ]
 [ "batSet",			  "0"		  ]
-[ "void_tid",			  "0"		  ]
+[ "void_tid",		  "-1"		  ]
 [ "void_cnt",			  "0"		  ]
 [ "hsorted",		  "65"		  ]
 [ "hident",			  "h"		  ]
@@ -143,16 +143,16 @@ end main;	# 38
 [ "batFirst",		  "0"		  ]
 [ "top",		  "0"		  ]
 [ "batStamp",		  "4"		  ]
-[ "lastUsed",		  "154"		  ]
+[ "lastUsed",		  "165"		  ]
 [ "curStamp",		  "5"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
-[ "batDirtydesc",		  "clean"	  ]
+[ "batDirtydesc",	  "dirty"	  ]
 [ "batDirtybuns",		  "clean"	  ]
 [ "batBuns.free",	  "0"		  ]
-[ "batBuns.size",	  "400"		  ]
-[ "batBuns.maxsize",	  "400"		  ]
+[ "batBuns.size",	  "2048"	  ]
+[ "batBuns.maxsize",	  "2048"	  ]
 [ "batBuns.storage",		  "malloced"	  ]
-[ "batBuns.filename",	  "4.buns"	  ]
+[ "batBuns.filename",	  "7.buns"	  ]
 [ "hheapdirty",			  "clean"	  ]
 [ "theapdirty",			  "clean"	  ]
 #~EndVariableOutput~#
