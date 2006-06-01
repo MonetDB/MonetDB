@@ -368,8 +368,9 @@ BBPinithash(void)
 	BBP_mask--;
 
 	while (--i > 0) {
-		if (BBPvalid(i)) {
-			if (BBPnamecheck(BBP_logical(i)) == 0) {
+		str s = BBP_logical(i);
+		if (s) {
+			if (*s != '.' && BBPnamecheck(BBP_logical(i)) == 0) {
 				BBP_insert(i);
 			}
 			if (BBP_logical(-i)) {
@@ -928,10 +929,11 @@ BBPinsert(BAT *b)
 
 	/* find an empty slot */
 	if (BBP_free <= 0) {
-		if (++BBPsize >= BBPlimit)
+		if (++BBPsize >= BBPlimit) {
 			BBPextend(BATMARGIN, TRUE);
-		else
+		} else {
 			BBP_free = BBPsize - 1;
+		}
 	}
 	i = BBP_free;
 	BBP_free = BBP_next(BBP_free);
@@ -2224,10 +2226,9 @@ batcache_del() {
 
 	/* revive and free the old bat */
 	*BBP_logical(bid) = 't';
-	if (b->batParentid)
-		VIEWdestroy(b);
-	else
-		BATfree(b);
+	assert(b->batParentid == 0);
+	BATfree(b);
+	BBPclear(bid);
 	return i;
 }
 
@@ -2341,10 +2342,11 @@ BBPaddtobin(BAT *b)
 		/* take care of mirror views */
 		b->H = m->T = &bs->H;
 		b->T = m->H = &bs->T;
-		b->batBuns->base = NULL; /* was shared with parent! */
 
 		/* make it a void,void bat */ 
 		b->dims = m->dims = batcache_dims;
+		b->batBuns->base = NULL; /* was shared with parent! */
+		b->hheap = b->theap = NULL;
 	}
 
 	/* free non-reusable stuff that has to be freed anyway */

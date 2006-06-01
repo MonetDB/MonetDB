@@ -15,6 +15,7 @@ void
 casts
 qsort
 cross
+cache
 TMsubcommit
 #insert_bat_bun.old # disabled; kept for comparison
 insert_bat_bun.new
