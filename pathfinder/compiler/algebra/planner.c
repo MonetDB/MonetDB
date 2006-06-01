@@ -263,18 +263,10 @@ plan_empty_tbl (const PFla_op_t *n)
     PFplanlist_t  *ret  = new_planlist ();
     plan_t        *plan = NULL;
 
-    PFalg_attlist_t attlist;
-
-    attlist.count = n->schema.count;
-    attlist.atts  = PFmalloc (attlist.count * sizeof (*attlist.atts));
-
-    for (unsigned int i = 0; i < attlist.count; i++)
-        attlist.atts[i] = n->schema.items[i].name;
-
     /*
      * There is exactly this one plan.
      */
-    plan = empty_tbl (attlist);
+    plan = empty_tbl (n->schema);
 
     /* Add this plan to the return set of plans. */
     add_plan (ret, plan);

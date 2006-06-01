@@ -595,15 +595,7 @@ reduce (PFla_op_t *p, int goalnt)
              * Replace any sub-tree that we determined empty with these
              * rules by the literal empty table.
              */
-            PFla_op_t *ret;
-            PFalg_att_t *atts = PFmalloc (p->schema.count *
-	                                      sizeof (PFalg_att_t));
-
-            for (unsigned int i = 0; i < p->schema.count; i++)
-                 atts[i] = p->schema.items[i].name;
-
-            ret = PFla_empty_tbl (PFalg_attlist_ (p->schema.count, atts));
-            *p = *ret;
+            *p = *PFla_empty_tbl_ (p->schema);
             SEEN(p) = true;
             relabel (p, kids);
         } break;

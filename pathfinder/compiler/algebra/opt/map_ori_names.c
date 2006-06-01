@@ -208,15 +208,18 @@ map_ori_names (PFla_op_t *p, PFarray_t *map)
 
         case la_empty_tbl:
         {
-            PFalg_attlist_t attlist;
-            attlist.count = p->schema.count;
-            attlist.atts  = PFmalloc (attlist.count *
-                                      sizeof (PFalg_attlist_t));
+            PFalg_schema_t schema;
+            schema.count = p->schema.count;
+            schema.items  = PFmalloc (schema.count *
+                                      sizeof (PFalg_schema_t));
 
             for (unsigned int i = 0; i < p->schema.count; i++)
-                attlist.atts[i] = ONAME(p, p->schema.items[i].name);
+                schema.items[i] = 
+                    (struct PFalg_schm_item_t)
+                        { .name = ONAME(p, p->schema.items[i].name),
+                          .type = p->schema.items[i].type };
                                                    
-            res = empty_tbl (attlist);
+            res = PFla_empty_tbl_ (schema);
         }   break;
 
         case la_attach:

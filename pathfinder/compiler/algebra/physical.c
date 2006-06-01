@@ -241,12 +241,10 @@ PFpa_lit_tbl (PFalg_attlist_t attlist,
  * preference over a literal table with no tuples) to trigger
  * optimization rules concerning empty relations.
  *
- * @param attlist Attribute list, similar to the literal table
- *                constructor PFpa_lit_tbl(), see also
- *                PFalg_attlist().
+ * @param schema Attribute list with annotated types (schema)
  */
 PFpa_op_t *
-PFpa_empty_tbl (PFalg_attlist_t attlist)
+PFpa_empty_tbl (PFalg_schema_t schema)
 {
     PFpa_op_t   *ret;      /* return value we are building */
 
@@ -254,21 +252,20 @@ PFpa_empty_tbl (PFalg_attlist_t attlist)
     ret = leaf (pa_empty_tbl);
 
     /* set its schema */
+    ret->schema.count = schema.count;
     ret->schema.items
-        = PFmalloc (attlist.count * sizeof (*(ret->schema.items)));
-    for (unsigned int i = 0; i < attlist.count; i++) {
-        ret->schema.items[i].name = attlist.atts[i];
-        ret->schema.items[i].type = 0;
-    }
-    ret->schema.count = attlist.count;
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+    /* copy schema */
+    for (unsigned int i = 0; i < schema.count; i++)
+        ret->schema.items[i] = schema.items[i];
 
     /* play safe: set these fields */
     ret->sem.lit_tbl.count  = 0;
     ret->sem.lit_tbl.tuples = NULL;
 
     PFord_ordering_t ord = PFordering ();
-    for (unsigned int i = 0; i < attlist.count; i++)
-        ord = PFord_refine (ord, attlist.atts[i]);
+    for (unsigned int i = 0; i < schema.count; i++)
+        ord = PFord_refine (ord, schema.items[i].name);
     ret->orderings = PFord_permutations (ord);
 
     ret->cost = 1;

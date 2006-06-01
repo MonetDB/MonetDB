@@ -186,15 +186,7 @@ opt_const (PFla_op_t *p, bool no_attach)
                         /* replace join by cross product */
                         ret = PFla_cross (L(p), R(p));
                     } else {
-                        /* replace join by empty table */
-                        PFalg_att_t   *atts = PFmalloc (p->schema.count *
-                                                    sizeof (PFalg_att_t));
-
-                        for (unsigned int i = 0; i < p->schema.count; i++)
-                             atts[i] = p->schema.items[i].name;
-
-                        ret = PFla_empty_tbl (PFalg_attlist_ (p->schema.count,
-                                                              atts));
+                        ret = PFla_empty_tbl_ (p->schema);
                     }
                     *p = *ret;
                     SEEN(p) = true;
@@ -357,16 +349,7 @@ opt_const (PFla_op_t *p, bool no_attach)
                     *p = *(L(p));
                     break;
                 } else {
-                    PFla_op_t *ret;
-                    PFalg_att_t   *atts = PFmalloc (p->schema.count *
-                                                sizeof (PFalg_att_t));
-
-                    for (unsigned int i = 0; i < p->schema.count; i++)
-                         atts[i] = p->schema.items[i].name;
-
-                    ret = PFla_empty_tbl (PFalg_attlist_ (p->schema.count, atts));
-
-                    *p = *ret;
+                    *p = *PFla_empty_tbl_ (p->schema);
                     SEEN(p) = true;
                     break;
                 }
@@ -414,16 +397,7 @@ opt_const (PFla_op_t *p, bool no_attach)
                     /* for each tuple in the left argument there
                        exists one in the right argument - thus
                        return empty_tbl */
-                    PFla_op_t *ret;
-                    PFalg_att_t   *atts = PFmalloc (p->schema.count *
-                                                sizeof (PFalg_att_t));
-
-                    for (unsigned int i = 0; i < p->schema.count; i++)
-                         atts[i] = p->schema.items[i].name;
-
-                    ret = PFla_empty_tbl (PFalg_attlist_ (p->schema.count,
-                                                          atts));
-                    *p = *ret;
+                    *p = *PFla_empty_tbl_ (p->schema);
                     SEEN(p) = true;
                 } else {
                     /* we have no matches -- thus the left argument

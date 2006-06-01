@@ -265,6 +265,38 @@ PFla_lit_tbl_ (PFalg_attlist_t attlist,
  * preference over a literal table with no tuples) to trigger
  * optimization rules concerning empty relations.
  *
+ * @param schema Attribute list with annotated types.
+ * 
+ * This variant of the empty table constructor is meant to be
+ * be used as replacement for algebra expressions for whom we.
+ * can infer an empty result at compile time. For consistency
+ * reasons we maintain the single column types.
+ */
+PFla_op_t *
+PFla_empty_tbl_ (PFalg_schema_t schema)
+{
+    PFla_op_t     *ret;      /* return value we are building */
+    unsigned int    i;
+
+    /* instantiate the new algebra operator node */
+    ret = la_op_leaf (la_empty_tbl);
+
+    /* set its schema */
+    ret->schema.items
+        = PFmalloc (schema.count * sizeof (*(ret->schema.items)));
+    for (i = 0; i < (unsigned int) schema.count; i++) {
+        ret->schema.items[i] = schema.items[i];
+    }
+    ret->schema.count = schema.count;
+
+    return ret;
+}
+
+/**
+ * Constructor for an empty table.  Use this constructor (in
+ * preference over a literal table with no tuples) to trigger
+ * optimization rules concerning empty relations.
+ *
  * @param attlist Attribute list, similar to the literal table
  *                constructor PFla_lit_tbl(), see also
  *                PFalg_attlist().
@@ -730,12 +762,19 @@ set_operator (PFla_op_kind_t kind, const PFla_op_t *n1, const PFla_op_t *n2)
                             { .name = n1->schema.items[i].name,
                               .type = n1->schema.items[i].type
                                     | n2->schema.items[j].type };
-                else if (kind == la_intersect)
+                else if (kind == la_intersect) {
+                    /* return empty table if we have already
+                       a type mismatch */
+                    if (!(n1->schema.items[i].type &
+                          n2->schema.items[i].type))
+                        return PFla_empty_tbl_ (n1->schema); 
+
                     ret->schema.items[i] =
                         (struct PFalg_schm_item_t) 
                             { .name = n1->schema.items[i].name,
                               .type = n1->schema.items[i].type
                                     & n2->schema.items[j].type };
+                }
                 else if (kind == la_difference)
                     ret->schema.items[i] =
                         (struct PFalg_schm_item_t) 

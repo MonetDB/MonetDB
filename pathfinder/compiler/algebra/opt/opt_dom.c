@@ -90,16 +90,7 @@ opt_dom (PFla_op_t *p)
                     }
 
             if (all_subdom == p->schema.count) {
-                PFla_op_t *ret;
-                PFalg_att_t   *atts = PFmalloc (p->schema.count *
-                                            sizeof (PFalg_att_t));
-
-                for (unsigned int i = 0; i < p->schema.count; i++)
-                     atts[i] = p->schema.items[i].name;
-
-                ret = PFla_empty_tbl (PFalg_attlist_ (p->schema.count, atts));
-
-                *p = *ret;
+                *p = *PFla_empty_tbl_ (p->schema);
                 SEEN(p) = true;
                 break;
             }

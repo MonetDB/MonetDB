@@ -61,15 +61,7 @@ opt_reqvals (PFla_op_t *p)
             (PFprop_const_val (p->prop, att)).val.bln !=
             PFprop_reqval_val (p->prop, att)) {
             /* create an empty table instead */
-            PFla_op_t *ret;
-            PFalg_att_t *atts = PFmalloc (p->schema.count *
-	                                      sizeof (PFalg_att_t));
-
-            for (unsigned int i = 0; i < p->schema.count; i++)
-                 atts[i] = p->schema.items[i].name;
-
-            ret = PFla_empty_tbl (PFalg_attlist_ (p->schema.count, atts));
-            *p = *ret;
+            *p = *PFla_empty_tbl_ (p->schema);
             return;
         }
     }

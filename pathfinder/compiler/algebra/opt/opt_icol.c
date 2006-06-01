@@ -73,7 +73,6 @@ opt_icol (PFla_op_t *p)
     /* action code */
     switch (p->kind) {
         case la_lit_tbl:
-        case la_empty_tbl:
         {
             unsigned int count = PFprop_icols_count (p->prop);
 
@@ -106,12 +105,9 @@ opt_icol (PFla_op_t *p)
                 for (unsigned int i = 0; i < p->sem.lit_tbl.count; i++)
                     tuples[i].count = count;
 
-                if (p->kind == la_empty_tbl)
-                    res = PFla_empty_tbl (PFalg_attlist_ (count, atts));
-                else
-                    res = PFla_lit_tbl_ (PFalg_attlist_ (count, atts),
-                                         p->sem.lit_tbl.count,
-                                         tuples);
+                res = PFla_lit_tbl_ (PFalg_attlist_ (count, atts),
+                                     p->sem.lit_tbl.count,
+                                     tuples);
                 *p = *res;
                 SEEN(p) = true;
             } else if (!count && p->schema.count > 1) {
@@ -135,11 +131,44 @@ opt_icol (PFla_op_t *p)
                     tuples[j].count = 1;
                 }
 
-                if (p->kind == la_empty_tbl)
-                    res = PFla_empty_tbl (PFalg_attlist_ (1, atts));
-                else
-                    res = PFla_lit_tbl_ (PFalg_attlist_ (1, atts), 1, tuples);
+                res = PFla_lit_tbl_ (PFalg_attlist_ (1, atts), 1, tuples);
                 *p = *res;
+                SEEN(p) = true;
+            }
+        } break;
+
+        case la_empty_tbl:
+        {
+            unsigned int count = PFprop_icols_count (p->prop);
+
+            /* prune columns that are not required as long as
+               at least one column remains. */
+            if (count && count < p->schema.count) {
+                /* create new schema */
+                PFalg_schema_t schema;
+                schema.count = count;
+                schema.items = PFmalloc (schema.count * 
+                                         sizeof (*(schema.items)));
+                count = 0;
+                /* throw out all columns that are not in the icols list */
+                for (unsigned int i = 0; i < p->schema.count; i++)
+                    if (PFprop_icol (p->prop, p->schema.items[i].name)) {
+                        schema.items[count++] = p->schema.items[i];
+                    }
+
+                *p = *PFla_empty_tbl_ (schema);
+                SEEN(p) = true;
+
+            } else if (!count && p->schema.count > 1) {
+                /* prune everything except one column */
+                PFalg_schema_t schema;
+                schema.count = 1;
+                schema.items = PFmalloc (schema.count * 
+                                         sizeof (*(schema.items)));
+                /* just use first column */
+                schema.items[0] = p->schema.items[0];
+
+                *p = *PFla_empty_tbl_ (schema);
                 SEEN(p) = true;
             }
         } break;

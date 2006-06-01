@@ -373,6 +373,7 @@ PFla_op_t *PFla_lit_tbl_ (PFalg_attlist_t a,
  * without any tuples to facilitate optimization.
  */
 PFla_op_t *PFla_empty_tbl (PFalg_attlist_t a);
+PFla_op_t *PFla_empty_tbl_ (PFalg_schema_t s);
 
 PFla_op_t *PFla_attach (const PFla_op_t *n,
                         PFalg_att_t attname, PFalg_atom_t value);

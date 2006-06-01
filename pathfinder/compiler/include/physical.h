@@ -366,7 +366,7 @@ PFpa_op_t *PFpa_lit_tbl (PFalg_attlist_t attlist,
  * Empty table constructor.  Use this instead of an empty table
  * without any tuples to facilitate optimization.
  */
-PFpa_op_t *PFpa_empty_tbl (PFalg_attlist_t attlist);
+PFpa_op_t *PFpa_empty_tbl (PFalg_schema_t schema);
 
 PFpa_op_t *PFpa_attach (const PFpa_op_t *n,
                         PFalg_att_t attname, PFalg_atom_t value);
