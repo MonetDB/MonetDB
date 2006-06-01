@@ -333,6 +333,15 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			s->nr = -(*nr)++;
 
 		switch (s->type) {
+		case st_remote:{
+			s = s->op1.stval;
+			int buflen = SMALLBUFSIZ;
+			buf = NEW_ARRAY(char, buflen + 1);
+
+			strcpy(buf, "var none := \"none\";\n");
+			dump(sql, buf, -1, -s->nr);
+			_DELETE(buf);
+		}	break;
 		case st_none:{
 			int buflen = SMALLBUFSIZ;
 			buf = NEW_ARRAY(char, buflen + 1);

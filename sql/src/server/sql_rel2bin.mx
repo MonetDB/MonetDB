@@ -195,6 +195,7 @@ head_column(stmt *st)
 	case st_ptable:
 	case st_groupby:
 	case st_idxbat:
+	case st_remote:
 		return NULL;
 
 		/* stmts without head column which also are not expected */
@@ -933,6 +934,7 @@ rel2bin(mvc *c, stmt *s)
 		 * such as schema manipulation, transaction managment, 
 		 * and user authentication.
 		 */
+	case st_remote:
 	case st_none:
 	case st_sql:
 	case st_dbat:

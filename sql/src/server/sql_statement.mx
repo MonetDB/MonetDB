@@ -50,6 +50,7 @@ typedef union stmtdata {
 typedef enum stmt_type {
 	st_none,
 	st_sql,			/* sometimes a query rewrite is easier */
+	st_remote,			/* sometimes a query rewrite is easier */
 	st_var,			/* still needs work */
 	st_update_var,
 	st_seq_next,		
@@ -156,6 +157,8 @@ typedef struct stmt {
 	struct stmt *t;
 	int optimized;
 	struct stmt *rewritten;
+
+	int location; 		/*location id to know for who the catalog information need to be send*/
 } stmt;
 
 typedef struct group {
@@ -172,6 +175,7 @@ extern int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp);
 
 extern stmt *stmt_none();
 extern stmt *stmt_sql(char *query);
+extern stmt *stmt_remote(char *query,int location,stmt* st);
 extern stmt *stmt_var(char *varname, sql_subtype *t);
 extern stmt *stmt_varnr(int nr, sql_subtype *t);
 extern stmt *stmt_update_var(char *varname);
@@ -303,6 +307,7 @@ st_type2string(st_type type)
 #define ST(TYPE) case st_##TYPE : return #TYPE
 		ST(none);
 		ST(sql);
+		ST(remote);
 		ST(var);
 		ST(update_var);
 		ST(seq_next);
@@ -636,6 +641,7 @@ stmt_destroy(stmt *s)
 		case st_bat:
 		case st_dbat:
 		case st_idxbat:
+		case st_remote:
 		case st_none:
 			break;
 
@@ -760,6 +766,17 @@ stmt_sql(char *query)
 	stmt *s = stmt_create(st_sql);
 
 	s->op1.stval = stmt_atom_string(query);
+	return s;
+}
+
+stmt *
+stmt_remote(char *query, int location,stmt* st)
+{
+	stmt *s = stmt_create(st_remote);
+
+	s->op1.sval = query;
+	s->op2.stval = st;
+	s->location = location;
 	return s;
 }
 
@@ -2287,6 +2304,7 @@ int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 				s->op1.idxval->base.name, -(s->optimized));
 			break;
 
+		case st_remote:
 		case st_none:
 			break;
 

@@ -2213,11 +2213,11 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name, int location, i
 	bat_destroy(b);
 
 	b = get_bat(bm, Ccc(istmp,"tmp","sys","_tables_location"));
-	BUNins(b, (ptr) &rid, (ptr) &t->location);
+	BUNins(b, (ptr) &rid, (ptr) &t->location,FALSE);
 	bat_destroy(b);
 
 	b = get_bat(bm, Ccc(istmp,"tmp","sys","_tables_replication_id"));
-	BUNins(b, (ptr) &rid, (ptr) &t->replication_id);
+	BUNins(b, (ptr) &rid, (ptr) &t->replication_id,FALSE);
 	bat_destroy(b);
 
 	b = get_bat(bm, Ccc(istmp,"tmp","sys","_tables_query"));

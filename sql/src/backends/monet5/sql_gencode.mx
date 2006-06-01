@@ -313,6 +313,37 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			return s->nr;	/* stmt already handled */
 
 		switch (s->type) {
+		case st_remote: {
+
+			int port;
+			char *ip,*user,*password,*dbalias;
+			table_location_info(sql->mvc,s->location,&dbalias,&ip,&port,&user,&password);
+
+			/*create the mserver reconnect*/
+			q = newStmt1(mb,mserverRef,reconnectRef);
+			getVar(mb,getArg(q,0))->isudftype= 1;
+			setVarType(mb, getArg(q, 0), TYPE_int);
+			q = pushStr(mb, q,dbalias);	
+			q = pushStr(mb, q, ip);
+			q = pushInt(mb, q, port);
+			q = pushStr(mb, q, user);
+			q = pushStr(mb, q, password);
+			q = pushStr(mb, q, "msql");
+				
+			int mid = getDestVar(q);
+			/*do the mserver query*/
+			q = newStmt1(mb,mserverRef,queryRef);
+			getVar(mb,getArg(q,0))->isudftype= 1;
+			q = pushArgument(mb, q, mid);
+			q = pushStr(mb, q,((char *) _strdup(s->op1.sval)));
+
+			s = s->op1.stval;
+			if(s){
+				q = newAssignment(mb);
+				q = pushInt(mb, q, 1);
+			}
+			s->nr = getDestVar(q);
+		}	break;
 		case st_none: {
 			q = newAssignment(mb);
 			s->nr = getDestVar(q);

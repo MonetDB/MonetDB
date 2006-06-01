@@ -330,7 +330,6 @@ scanner_init_keywords()
 	keywords_insert("REFERENCING", REFERENCING);
 
 	keywords_insert("@", AT);
-	keywords_insert("USING", USING);
 	keywords_insert("R_TIME", R_TIME);
 	keywords_insert("PULL", PULL);
 	keywords_insert("PUSH", PUSH);

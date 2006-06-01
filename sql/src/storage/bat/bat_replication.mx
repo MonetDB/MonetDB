@@ -93,6 +93,7 @@ create_replication_columns(sql_trans *tr, sql_schema *s){
 	create_column(tr, t, "replication_id", "int",32); 	/*To help the refresh operation*/	
 	create_column(tr, t, "column_name", "varchar",1024); 	/*Name of the remote column*/
         create_column(tr, t, "table_name", "varchar",1024);	/*Name of the remote table from where the column was selected*/
+        create_column(tr, t, "schema", "varchar",1024);		/*Name of the remote schema*/
 	return 0;
 }
 
