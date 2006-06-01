@@ -50,6 +50,7 @@
 /** starting from p, make two steps left */
 #define LL(p) L(L(p))
 /** and so on... */
+#define RL(p) L(R(p))
 #define LRL(p) L(R(L(p)))
 
 #define SEEN(p) ((p)->bit_dag)
@@ -375,31 +376,73 @@ opt_icol (PFla_op_t *p)
             switch (L(p)->kind) {
                 case la_element:
                     /* prune element if result column is not required */
-                    if (!PFprop_icol (p->prop, L(p)->sem.elem.item_res)) {
+                    if (!PFprop_icol (p->prop, L(p)->sem.elem.item_res))
                         *p = *(LRL(p));
-                        break;
-                    }
                     break;
-
                 case la_attribute:
                     /* prune attribute if result column is not required */
-                    if (!PFprop_icol (p->prop, L(p)->sem.attr.res)) {
+                    if (!PFprop_icol (p->prop, L(p)->sem.attr.res))
                         *p = *(LL(p));
-                        break;
-                    }
                     break;
-
                 case la_textnode:
                     /* prune textnode if result column is not required */
-                    if (!PFprop_icol (p->prop, L(p)->sem.textnode.res)) {
+                    if (!PFprop_icol (p->prop, L(p)->sem.textnode.res))
                         *p = *(LL(p));
-                        break;
-                    }
                     break;
-                    
                 default:
                     break;
             } 
+            break;
+
+        case la_frag_union:
+            if (L(p)->kind == la_fragment) {
+                switch (LL(p)->kind) {
+                    case la_element:
+                        /* prune reference to element
+                           if result column is not required */
+                        if (!PFprop_icol (LL(p)->prop, LL(p)->sem.elem.item_res))
+                            *p = *R(p);
+                        break;
+                    case la_attribute:
+                        /* prune reference to attribute
+                           if result column is not required */
+                        if (!PFprop_icol (LL(p)->prop, LL(p)->sem.attr.res))
+                            *p = *R(p);
+                        break;
+                    case la_textnode:
+                        /* prune reference to textnode 
+                           if result column is not required */
+                        if (!PFprop_icol (LL(p)->prop, LL(p)->sem.textnode.res))
+                            *p = *R(p);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            else if (R(p)->kind == la_fragment) {
+                switch (RL(p)->kind) {
+                    case la_element:
+                        /* prune reference to element
+                           if result column is not required */
+                        if (!PFprop_icol (RL(p)->prop, RL(p)->sem.elem.item_res))
+                            *p = *L(p);
+                        break;
+                    case la_attribute:
+                        /* prune reference to attribute
+                           if result column is not required */
+                        if (!PFprop_icol (RL(p)->prop, RL(p)->sem.attr.res))
+                            *p = *L(p);
+                        break;
+                    case la_textnode:
+                        /* prune reference to textnode 
+                           if result column is not required */
+                        if (!PFprop_icol (RL(p)->prop, RL(p)->sem.textnode.res))
+                            *p = *L(p);
+                        break;
+                    default:
+                        break;
+                }
+            }
             break;
             
         default:

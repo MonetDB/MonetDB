@@ -804,9 +804,10 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
             n->child[c]->node_id =  node_id++;
 
         /* FIXME: the next line is only used to make
-           the printed graph more readable. */ 
+           the printed graph more readable.
         if (n->child[c]->kind == la_frag_union ||
             n->child[c]->kind == la_empty_frag) continue;
+        */ 
 
         PFarray_printf (dot, "node%i -> node%i;\n",
                         n->node_id, n->child[c]->node_id);
@@ -817,9 +818,10 @@ la_dot (PFarray_t *dot, PFla_op_t *n, unsigned int node_id)
 
     for (c = 0; c < PFLA_OP_MAXCHILD && n->child[c]; c++) {
         /* FIXME: the next line is only used to make
-           the printed graph more readable. */
+           the printed graph more readable.
         if (n->child[c]->kind == la_frag_union ||
             n->child[c]->kind == la_empty_frag) continue;
+        */ 
 
         if (!n->child[c]->bit_dag)
             node_id = la_dot (dot, n->child[c], node_id);
