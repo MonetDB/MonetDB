@@ -1947,9 +1947,17 @@ if test "x$have_php" != xno; then
 	php_prefix="`$PHP_CONFIG --prefix`"
 	if test -z "$php_prefix"; then
 		have_php=no
-		AC_MSG_RESULT($have_php)
 	else
 		PHP_INCS=" `$PHP_CONFIG --includes`"
+
+		dnl check for the appropriate php 5 header files
+		save_CPPFLAGS="$CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $PHP_INCS"
+		AC_CHECK_HEADERS([php.h Zend/zend_exceptions.h], [], [have_php=no;]) 
+		CPPFLAGS="$save_CPPFLAGS"
+	fi
+		
+	if test "x$have_php" != xno; then
 		have_php=yes
 		have_php_extensiondir=auto
 		AC_ARG_WITH(php-extensiondir,
@@ -1969,6 +1977,8 @@ if test "x$have_php" != xno; then
 			;;
 		esac
 		AC_MSG_RESULT($have_php: PHP_INCS="$PHP_INCS" PHP_EXTENSIONDIR="\$prefix/$PHP_EXTENSIONDIR")
+	else	
+		AC_MSG_RESULT($have_php)
 	fi
 fi
 AC_SUBST(PHP_INCS)
