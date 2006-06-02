@@ -1200,6 +1200,11 @@ emitNodesInRange (XqueryCtx* ctx, oid pre, oid to, BAT* pre_cont, oid cont)
     return SUCCESS;
 }
 
+/**
+ *
+ * VI. INITIALIZATION AND CLEANUP FUNCTIONS OF THE MAIN ROUTINES 
+ *
+ */
 char* match(char* mode, char* key) {
 	char *s = strstr(mode, key);
 	char *t = s + strlen(key);
@@ -1208,11 +1213,6 @@ char* match(char* mode, char* key) {
 	return NULL;
 }
 
-/**
- *
- * VI. INITIALIZATION AND CLEANUP FUNCTIONS OF THE MAIN ROUTINES 
- *
- */
 static bool
 createWsContext (XqueryCtx*        ctx,
                  BAT*              ws,

@@ -729,7 +729,7 @@ typed_xml_seqStart (XqueryCtx* ctx, int count)
     (void)count;
 
     char *seq_start = "<result:sequence "
-                      "xmlns:result=\"http://monetdb.cwi.nl/xquery-results\" "
+                      "xmlns:result=\"http://monetdb.cwi.nl/XQuery/results\" "
                       "xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" "
                       "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-"
                       "instance\">";
@@ -740,6 +740,12 @@ typed_xml_seqStart (XqueryCtx* ctx, int count)
        newline string 'newline')->
        In addition we print one '=' at the beginning-> */
         stream_write (GDKout, &e_, 1, 1);
+
+    if ( !(ctx->modes & MODE_NO_HEADER) ) {
+        char *init = "<?xml version=\"1.0\" encoding=\"utf-8\"?>";
+        stream_write (GDKout, init, strlen (init), 1);
+        stream_write (GDKout, dflt_ws->newline, dflt_ws->nl_sz, 1);
+    }
 
     stream_write (GDKout, seq_start, strlen (seq_start), 1);
 
