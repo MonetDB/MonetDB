@@ -37,6 +37,7 @@ usernames, passwords and allowed scenarios for users of the server.
 #include "mal_client.h"
 
 mal_export str AUTHcheckCredentials(oid *ret, str *user, str *passwd, str *challenge, str *algo, str *scenario);
+mal_export str AUTHcheckUser(int *ret, str *user, str *passwd);
 mal_export str AUTHaddUser(oid *ret, str *user, str *pass, bat *scenarios);
 mal_export str AUTHremoveUser(str *username);
 mal_export str AUTHchangeUsername(str *olduser, str *newuser);
@@ -240,6 +241,24 @@ AUTHinitTables() {
 	}
 
 	return(MAL_SUCCEED);
+}
+
+/**
+ * Check if the user/password combination aligns with
+ * a given uid.
+*/
+
+str
+AUTHcheckUser(
+	int *ret,
+	str *username,
+	str *passwd)
+{
+
+	/* to be filled */
+	(void) username; (void) passwd;
+	*ret =1;
+	return MAL_SUCCEED;
 }
 
 /**
