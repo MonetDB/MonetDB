@@ -80,17 +80,18 @@ result is needed.
 #ifndef _MAL_REMOTE_
 #define _MAL_REMOTE_
 #include "mal_optimizer.h"
+#include "mal_prelude.h"
 
 /* #define DEBUG_MAL_REMOTE     show partial result */
 
 opt_export str RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str RQcall2str(MalBlkPtr mb, InstrPtr p);
 
 #define match(X,M,F) ( (X) && getFunctionId(X) && strcmp(getFunctionId(X),F)==0 && \
 	getModuleId(X) && strcmp(getModuleId(X),M)==0)
 #endif
 
 @c
-#include "mal_prelude.h"
 #include "mal_remoteQueries.h"
 #include "mal_namespace.h"
 #include "mal_interpreter.h"	/* for showErrors() */
@@ -201,7 +202,43 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				cnt++;
 
 		/* detect remote variable binding */
-		if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef) ){
+		
+		if( (getModuleId(p)== sqlRef && getFunctionId(p)==evalRef) ){
+			if( p->argc == 3){
+				  /* a remote sql eval is needed */
+                                /* lookup the server connection */
+                                r= newInstruction(mb,ASSIGNsymbol);
+                                getModuleId(r)= mserverRef;
+                                getFunctionId(r)= lookupRef;
+                                j= getArg(r,0)= newTmpVariable(mb, TYPE_int);
+                                location[getArg(p,0)]= j;
+                                pushArgument(mb,r, getArg(p,1));
+                                pushInstruction(mb,r);
+				getArg(p,1)= defConstant(mb, TYPE_int, &cst);
+
+                                /* turn the instruction into a local one */
+                                q = newInstruction(mb,ASSIGNsymbol);
+                                getModuleId(q)= sqlRef;
+                                getFunctionId(q)= evalRef;
+                                getArg(q,0)= newTmpVariable(mb, TYPE_str);
+				VarPtr v = getVar(mb, getArg(p, 2));
+                                q = pushStr(mb,q,v->value.val.sval);
+                                freeInstruction(p);
+
+                                r= newInstruction(mb,ASSIGNsymbol);
+                                getModuleId(r)= mserverRef;
+                                getFunctionId(r)= rpcRef;
+                                getArg(r,0)= newTmpVariable(mb, TYPE_void);
+                                pushArgument(mb,r,j);
+
+                                s= RQcall2str(mb,q);
+                                pushStr(mb,r,s+1);
+                                GDKfree(s);
+                                pushInstruction(mb,r);
+                                freeInstruction(q);
+	
+			}
+		}else if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef) ){
 
 			if( p->argc == 6 && getArgType(mb,p,4) == TYPE_str ) {
 				/* a remote sql bind is needed */
