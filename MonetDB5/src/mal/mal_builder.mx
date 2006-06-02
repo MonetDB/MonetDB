@@ -254,7 +254,7 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 	int _t,idx;
 	ValRecord cst;
 
-	idx= getTypeIndex(tpe, strlen(tpe), TYPE_any);
+	idx= getTypeIndex(tpe, -1, TYPE_any);
 	cst.vtype=TYPE_void;
 	cst.val.oval= oid_nil;
 	convertConstant(idx, &cst);

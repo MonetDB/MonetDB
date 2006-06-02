@@ -1095,7 +1095,7 @@ getType(MalBlkPtr mb, str nme)
 
 	i = findVariable(mb, nme);
 	if (i < 0)
-		return getTypeIndex(nme, strlen(nme), TYPE_any);
+		return getTypeIndex(nme, -1, TYPE_any);
 	if (i >= 0)
 		return getVarType(mb, i);
 	return TYPE_any;
@@ -1877,7 +1877,7 @@ pushArgumentId(MalBlkPtr mb, InstrPtr p, str name)
 
 	v = findVariable(mb, name);
 	if (v < 0)
-		v = newVariable(mb, name, getTypeIndex(name, strlen(name), TYPE_any));
+		v = newVariable(mb, name, getTypeIndex(name, -1, TYPE_any));
 	else
 		GDKfree(name);
 	return pushArgument(mb, p, v);

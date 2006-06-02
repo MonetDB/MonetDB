@@ -318,12 +318,15 @@ getTypeIndex(str nme, int len, int deftype)
 		}
 	if( nme[0]=='v' && qt("voi") && nme[3] == 'd')
 				return TYPE_void;
-	old=  nme[k = MIN(IDLENGTH, len)];
-	nme[k] = 0;
+	if( len > 0 ){
+		old=  nme[k = MIN(IDLENGTH, len)];
+		nme[k] = 0;
+	}
 	for(i= TYPE_str; i< GDKatomcnt; i++)
 	if( BATatoms[i].name[0]==nme[0] &&
 		strcmp(nme,BATatoms[i].name)==0) break;
-	nme[k]=old;
+	if( len > 0)
+		nme[k]=old;
 	/*stream_printf(GDKout,"getTypeIndex %s %d %d\n",nme,i, GDKatomcnt); */
 	if (i == GDKatomcnt)
 		i = deftype;
