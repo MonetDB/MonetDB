@@ -1546,7 +1546,7 @@ xquery_print_result_DRIVER (
 
     /* loop over the iterations (usually only 1) */
     for(yy=0; yy < niters; yy++, curcnt += buncnt, maxcnt -= buncnt) {
-        oid cur_iter = *(oid*) BUNtail(
+        oid cur_iter = *(oid*) BUNhead(
                                    loop, 
                                    BUNptr(
                                        loop, 
