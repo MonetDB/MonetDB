@@ -16,9 +16,10 @@ xquery("xml"           ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", d
 <XQueryResult attr="val">
 1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?>
 </XQueryResult>
-xquery("xml typed"     ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())", 0).printf();
-<result:sequence xmlns:result="http://monetdb.cwi.nl/xquery-results" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><result:atomic-value xsi:type="xs:integer">1</result:atomic-value><result:atomic-value xsi:type="xs:decimal">2.300000</result:atomic-value><result:attribute attr="val"/><result:atomic-value xsi:type="xs:double">30.000000</result:atomic-value><result:atomic-value xsi:type="xs:string">string</result:atomic-value><result:document><elem>text<!--comment--><?pi_tgt pi_data?></elem></result:document><result:element><elem>text<!--comment--><?pi_tgt pi_data?></elem></result:element><result:text>text</result:text><result:comment><!--comment--></result:comment><result:processing-instruction><?pi_tgt pi_data?></result:processing-instruction></result:sequence>
-xquery("xml soap"      ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())", 0).printf();
+xquery("xml-typed"     ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())", 0).printf();
+<?xml version="1.0" encoding="utf-8"?>
+<result:sequence xmlns:result="http://monetdb.cwi.nl/XQuery/results" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><result:atomic-value xsi:type="xs:integer">1</result:atomic-value><result:atomic-value xsi:type="xs:decimal">2.300000</result:atomic-value><result:attribute attr="val"/><result:atomic-value xsi:type="xs:double">30.000000</result:atomic-value><result:atomic-value xsi:type="xs:string">string</result:atomic-value><result:document><elem>text<!--comment--><?pi_tgt pi_data?></elem></result:document><result:element><elem>text<!--comment--><?pi_tgt pi_data?></elem></result:element><result:text>text</result:text><result:comment><!--comment--></result:comment><result:processing-instruction><?pi_tgt pi_data?></result:processing-instruction></result:sequence>
+xquery("xml-soap"      ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())", 0).printf();
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult attr="val">
 <xs:integer>1</xs:integer>
@@ -31,7 +32,7 @@ xquery("xml soap"      ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", d
 <xs:anyNode><!--comment--></xs:anyNode>
 <xs:anyNode><?pi_tgt pi_data?></xs:anyNode>
 </XQueryResult>
-xquery("xml mapi"      ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())", 0).printf();
+xquery("xml-mapi"      ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())", 0).printf();
 =<?xml version="1.0" encoding="utf-8"?>
 =<XQueryResult attr="val">
 =1 2.300000 30.000000 string<elem>text<!--comment--><?pi_tgt pi_data?></elem><elem>text<!--comment--><?pi_tgt pi_data?></elem>text<!--comment--><?pi_tgt pi_data?>
@@ -65,6 +66,7 @@ xquery("seq"           ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", d
 [ "text {\"text\"}"     ]
 [ "<!--comment-->"      ]
 [ "<?pi_tgt pi_data?>"  ]
+quit();
 
 # 14:46:37 >  
 # 14:46:37 >  Done.
