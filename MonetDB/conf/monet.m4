@@ -1953,7 +1953,11 @@ if test "x$have_php" != xno; then
 		dnl check for the appropriate php 5 header files
 		save_CPPFLAGS="$CPPFLAGS"
 		CPPFLAGS="$CPPFLAGS $PHP_INCS"
-		AC_CHECK_HEADERS([php.h Zend/zend_exceptions.h], [], [have_php=no;], [#include <stdlib.h>]) 
+		AC_CHECK_HEADERS([Zend/zend_exceptions.h], [], [have_php=no;], [
+#define _GNU_SOURCE
+#include <stdlib.h>
+#include <php.h>
+]) 
 		CPPFLAGS="$save_CPPFLAGS"
 	fi
 		
@@ -1977,9 +1981,9 @@ if test "x$have_php" != xno; then
 			;;
 		esac
 		AC_MSG_RESULT($have_php: PHP_INCS="$PHP_INCS" PHP_EXTENSIONDIR="\$prefix/$PHP_EXTENSIONDIR")
-	else	
-		AC_MSG_RESULT($have_php)
 	fi
+else	
+	AC_MSG_RESULT($have_php)
 fi
 AC_SUBST(PHP_INCS)
 AC_SUBST(PHP_EXTENSIONDIR)
