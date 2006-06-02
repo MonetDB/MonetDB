@@ -877,12 +877,12 @@ typed_xml_seqItemEnd (XqueryCtx* ctx, int kind)
 
 /**
  *
- * item sequence handlers for the old _typed_ XML output format
+ * item sequence handlers for the soap XML output format
  *
  */
  
 static bool
-old_typed_xml_seqItemStart (XqueryCtx* ctx, int kind)
+soap_xml_seqItemStart (XqueryCtx* ctx, int kind)
 {
     char *item_start;
     (void)ctx;
@@ -918,7 +918,7 @@ old_typed_xml_seqItemStart (XqueryCtx* ctx, int kind)
 }
 
 static bool
-old_typed_xml_seqItemEnd (XqueryCtx* ctx, int kind)
+soap_xml_seqItemEnd (XqueryCtx* ctx, int kind)
 {
     char *item_end;
     (void)ctx;
@@ -954,7 +954,7 @@ old_typed_xml_seqItemEnd (XqueryCtx* ctx, int kind)
 }
 
 static bool
-old_typed_xml_seqItemSeparator (XqueryCtx* ctx, int kind1, int kind2)
+soap_xml_seqItemSeparator (XqueryCtx* ctx, int kind1, int kind2)
 {
     (void) ctx;
     (void) kind1;
@@ -1215,8 +1215,8 @@ struct serializeFunStruct mapi_typed_xmlSerializeFun = {
     null_seqItemSeparator
 };
 
-struct serializeFunStruct old_typed_xmlSerializeFun = {
-    "old xml typed",
+struct serializeFunStruct soap_xmlSerializeFun = {
+    "soap xml",
     dflt_init,
     dflt_cleanup,
 
@@ -1243,13 +1243,13 @@ struct serializeFunStruct old_typed_xmlSerializeFun = {
     xml_seqStart,
     xml_complete_seqStart,
     xml_seqEnd,
-    old_typed_xml_seqItemStart,
-    old_typed_xml_seqItemEnd,
-    old_typed_xml_seqItemSeparator
+    soap_xml_seqItemStart,
+    soap_xml_seqItemEnd,
+    soap_xml_seqItemSeparator
 };
 
-struct serializeFunStruct old_mapi_typed_xmlSerializeFun = {
-    "old xml mapi typed",
+struct serializeFunStruct mapi_soap_xmlSerializeFun = {
+    "xml mapi soap",
     mapi_init,
     dflt_cleanup,
 
@@ -1276,9 +1276,9 @@ struct serializeFunStruct old_mapi_typed_xmlSerializeFun = {
     xml_seqStart,
     xml_complete_seqStart,
     xml_seqEnd,
-    old_typed_xml_seqItemStart,
-    old_typed_xml_seqItemEnd,
-    old_typed_xml_seqItemSeparator
+    soap_xml_seqItemStart,
+    soap_xml_seqItemEnd,
+    soap_xml_seqItemSeparator
 };
 
 struct serializeFunStruct seqSerializeFun = {

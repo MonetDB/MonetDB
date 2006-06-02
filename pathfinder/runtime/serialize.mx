@@ -96,7 +96,7 @@
 #define MODE_NO_ROOT   (1 << 5)
 #define MODE_NO_HEADER (1 << 6)
 #define MODE_TYPED     (1 << 7)
-#define MODE_OLD_TYPED (1 << 8)
+#define MODE_SOAP      (1 << 8)
 
 struct XmlNsFrame; /* forward */
 typedef struct XmlNsFrame {
@@ -210,8 +210,8 @@ extern struct serializeFunStruct
     mapi_xmlSerializeFun,
     typed_xmlSerializeFun,
     mapi_typed_xmlSerializeFun,
-    old_typed_xmlSerializeFun,
-    old_mapi_typed_xmlSerializeFun,
+    soap_xmlSerializeFun,
+    mapi_soap_xmlSerializeFun,
     seqSerializeFun;
 
 pf_support_export int
@@ -1200,6 +1200,13 @@ emitNodesInRange (XqueryCtx* ctx, oid pre, oid to, BAT* pre_cont, oid cont)
     return SUCCESS;
 }
 
+char* match(char* mode, char* key) {
+	char *s = strstr(mode, key);
+	char *t = s + strlen(key);
+	if ((s != NULL) && (s == mode || s[-1] == '-') && (*t == 0 || *t == '-'))
+		return s;
+	return NULL;
+}
 
 /**
  *
@@ -1233,55 +1240,52 @@ createWsContext (XqueryCtx*        ctx,
     ctx->modes = 0;
 
     /* choose a mode: {xml, dm, sax} */ 
-    if (strstr(mode,"xml")) {
+    if (match(mode,"xml")) {
         ctx->modes = MODE_XML;
 
         /* four special options for xml mode:
            noroot, root-name, noheader, and typed */
-        if (strstr(mode,"noroot"))
-            ctx->modes = ctx->modes | MODE_NO_ROOT;
-        else {
-            /* user specified result tag */
-            restag = strstr(mode,"root-");
-            if (restag == NULL) {
-                restag = "XQueryResult"; /* default root tag */
-            } else {
-                restag += 5; /* rest of mode is root tag */
-            }
+        /* user specified result tag */
+        restag = match(mode,"root");
+	if (restag && restag[4]) {
+	    *restag = 0; /* cut off the suffix not to have false matches later */
+            restag += 5; /* rest of mode is root tag */
+        } else {
+            restag = "XQueryResult"; /* default root tag */
         }
+        if (match(mode,"noroot"))
+            ctx->modes = ctx->modes | MODE_NO_ROOT;
 
         /* we may omit the synthetic root element */ 
-        if (strstr(mode,"noheader"))
+        if (match(mode,"noheader"))
             ctx->modes = ctx->modes | MODE_NO_HEADER;
 
         /* we may wrap each item in an element
            specifying its type */
-        if (strstr(mode, "typed-old"))
-            ctx->modes = ctx->modes | MODE_OLD_TYPED;
-        else if (strstr(mode, "typed"))
+        if (match(mode, "soap"))
+            ctx->modes = ctx->modes | MODE_SOAP;
+        else if (match(mode, "typed"))
             ctx->modes = ctx->modes | MODE_TYPED;
     }
     /* list seq mode before dm mode as it might be used a subclass */
-    else if (strstr(mode, "seq"))
+    else if (match(mode, "seq"))
         ctx->modes = MODE_SEQ;
-    else if (strstr(mode,"dm"))
+    else if (match(mode,"dm"))
         ctx->modes = MODE_DM;
-    else if (strstr(mode,"sax")) {
+    else if (match(mode,"sax")) {
         ctx->modes = MODE_SAX;
 
         /* sax stream can be also enclosed
            in additional root element (or not) */
-        if (strstr(mode,"noroot"))
-            ctx->modes = ctx->modes | MODE_NO_ROOT;
-        else {
-            /* user specified result tag */
-            restag = strstr(mode,"root-");
-            if (restag == NULL) {
-                restag = "XQueryResult"; /* default root tag */
-            } else {
-                restag += 5; /* rest of mode is root tag */
-            }
+        restag = match(mode,"root");
+	if (restag && restag[4]) {
+	    *restag = 0; /* cut off the suffix not to have false matches later */
+            restag += 5; /* rest of mode is root tag */
+        } else {
+            restag = "XQueryResult"; /* default root tag */
         }
+        if (match(mode,"noroot"))
+            ctx->modes = ctx->modes | MODE_NO_ROOT;
     }
     else {
         /* no format chosen - use xml (with default root tag) */
@@ -1290,8 +1294,7 @@ createWsContext (XqueryCtx*        ctx,
     }
 
     /* add mapi = characters at the start of each line */
-    if ((ctx->modes & (MODE_DM | MODE_XML)) &&
-        strstr(mode,"mapi"))
+    if ((ctx->modes & (MODE_DM | MODE_XML)) && match(mode,"mapi"))
         ctx->modes = ctx->modes | MODE_MAPI;
 
 
@@ -1315,12 +1318,12 @@ createWsContext (XqueryCtx*        ctx,
     else if ( ctx->modes & MODE_XML ) {
         if ( ctx->modes & MODE_MAPI &&  ctx->modes & MODE_TYPED )
             ctx->driverFun = & mapi_typed_xmlSerializeFun;
-        else if ( ctx->modes & MODE_MAPI && ctx->modes & MODE_OLD_TYPED )
-            ctx->driverFun = & old_mapi_typed_xmlSerializeFun;
+        else if ( ctx->modes & MODE_MAPI && ctx->modes & MODE_SOAP )
+            ctx->driverFun = & mapi_soap_xmlSerializeFun;
         else if ( ctx->modes & MODE_TYPED )
             ctx->driverFun = & typed_xmlSerializeFun;
-        else if ( ctx->modes & MODE_OLD_TYPED )
-            ctx->driverFun = & old_typed_xmlSerializeFun;
+        else if ( ctx->modes & MODE_SOAP )
+            ctx->driverFun = & soap_xmlSerializeFun;
         else if ( ctx->modes & MODE_MAPI )
             ctx->driverFun = & mapi_xmlSerializeFun;
         else
