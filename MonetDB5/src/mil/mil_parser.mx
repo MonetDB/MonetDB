@@ -522,7 +522,7 @@ parseMILvariable(Client cntxt, MalBlkPtr currBlk, str nme)
 			char buf[64];
 
 			snprintf(buf, 64, ":%s", nme);
-			varid = newTypeVariable(currBlk, getTypeIndex(nme, strlen(nme), TYPE_any));
+			varid = newTypeVariable(currBlk, getTypeIndex(nme, -1, TYPE_any));
 			newId(cntxt, nme, varid);
 			if (BE(cntxt)->constantdeclaration) {
 				isConstant(currBlk, varid) = 1;
@@ -1148,7 +1148,7 @@ parseMILtype(Client cntxt, MalBlkPtr currBlk, str tnme)
 {
 	int len, tpe, ht, tt;
 
-	tpe = getTypeIndex(tnme, strlen(tnme), -1);
+	tpe = getTypeIndex(tnme, -1, -1);
 	if (tpe == TYPE_bat) {
 		if (currChar(cntxt) == '[') {
 			advanceMore(cntxt, 1);

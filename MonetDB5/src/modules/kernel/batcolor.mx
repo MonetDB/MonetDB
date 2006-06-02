@@ -154,7 +154,7 @@ str CLRbat@1(int *ret, int *l)
 	@4 y, *yp = &y;
 
 	prepareOperand(b,l,"@1");
-	prepareResult(bn,b,getTypeIndex("@4",strlen("@4"),TYPE_int),"@1");
+	prepareResult(bn,b,getTypeIndex("@4",-1,TYPE_int),"@1");
 
 	BATloopFast(b, p, q, xx) {
 		ptr h = BUNhead(b,p);
@@ -211,7 +211,7 @@ str CLRbat@1(int *ret, int *l, int *bid2, int *bid3)
 	b3= BATdescriptor(*bid3);
 	if(b3== NULL) 
 		return throwMessage("batcolor.@1","can not access BAT");
-	prepareResult(bn,b,getTypeIndex("@4",strlen("@4"),TYPE_int),"@1");
+	prepareResult(bn,b,getTypeIndex("@4",-1,TYPE_int),"@1");
 
 	p2= BUNfirst(b2);
 	p3= BUNfirst(b3);

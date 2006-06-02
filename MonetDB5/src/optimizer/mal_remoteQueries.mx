@@ -161,6 +161,12 @@ printf("#RQcall:%s\n",msg);
 The algorithm follows the common scheme used so far.
 Instructions are taken out one-by-one and copied
 to the new block.
+
+A local cache of connections is established, because
+the statements related to a single remote database
+should be executed in the same stack context.
+A pitfall is to create multiple connections with
+their isolated runtime environment.
 @c
 str
 RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -205,51 +211,56 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		
 		if( (getModuleId(p)== sqlRef && getFunctionId(p)==evalRef) ){
 			if( p->argc == 3){
-				  /* a remote sql eval is needed */
-                                /* lookup the server connection */
-                                r= newInstruction(mb,ASSIGNsymbol);
-                                getModuleId(r)= mserverRef;
-                                getFunctionId(r)= lookupRef;
-                                j= getArg(r,0)= newTmpVariable(mb, TYPE_int);
-                                location[getArg(p,0)]= j;
-                                pushArgument(mb,r, getArg(p,1));
-                                pushInstruction(mb,r);
-				getArg(p,1)= defConstant(mb, TYPE_int, &cst);
+				VarPtr v;
+				/* a remote sql eval is needed */
+				/* lookup the server connection */
+				if( location[getArg(p,0)] == 0){
+					r= newInstruction(mb,ASSIGNsymbol);
+					getModuleId(r)= mserverRef;
+					getFunctionId(r)= lookupRef;
+					j= getArg(r,0)= newTmpVariable(mb, TYPE_int);
+					location[getArg(p,0)]= j;
+					pushArgument(mb,r, getArg(p,1));
+					pushInstruction(mb,r);
+					getArg(p,1)= defConstant(mb, TYPE_int, &cst);
+				} else j= location[getArg(p,0)];
 
-                                /* turn the instruction into a local one */
-                                q = newInstruction(mb,ASSIGNsymbol);
-                                getModuleId(q)= sqlRef;
-                                getFunctionId(q)= evalRef;
-                                getArg(q,0)= newTmpVariable(mb, TYPE_str);
-				VarPtr v = getVar(mb, getArg(p, 2));
-                                q = pushStr(mb,q,v->value.val.sval);
-                                freeInstruction(p);
+				/* turn the instruction into a local one */
+				q = newInstruction(mb,ASSIGNsymbol);
+				getModuleId(q)= sqlRef;
+				getFunctionId(q)= evalRef;
+				getArg(q,0)= newTmpVariable(mb, TYPE_str);
+				v = getVar(mb, getArg(p, 2));
+				q = pushStr(mb,q,v->value.val.sval);
+				freeInstruction(p);
 
-                                r= newInstruction(mb,ASSIGNsymbol);
-                                getModuleId(r)= mserverRef;
-                                getFunctionId(r)= rpcRef;
-                                getArg(r,0)= newTmpVariable(mb, TYPE_void);
-                                pushArgument(mb,r,j);
+				r= newInstruction(mb,ASSIGNsymbol);
+				getModuleId(r)= mserverRef;
+				getFunctionId(r)= rpcRef;
+				getArg(r,0)= newTmpVariable(mb, TYPE_void);
+				pushArgument(mb,r,j);
 
-                                s= RQcall2str(mb,q);
-                                pushStr(mb,r,s+1);
-                                GDKfree(s);
-                                pushInstruction(mb,r);
-                                freeInstruction(q);
-	
+				s= RQcall2str(mb,q);
+				pushStr(mb,r,s+1);
+				GDKfree(s);
+				pushInstruction(mb,r);
+				freeInstruction(q);
+				doit++;
 			}
 		}else if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef) ){
 
 			if( p->argc == 6 && getArgType(mb,p,4) == TYPE_str ) {
 				/* a remote sql bind is needed */
 				/* lookup the server connection */
-				r= newInstruction(mb,ASSIGNsymbol);
-				getModuleId(r)= mserverRef;
-				getFunctionId(r)= lookupRef;
-				j= getArg(r,0)= newTmpVariable(mb, TYPE_int);
-				location[getArg(p,0)]= j;
-				pushArgument(mb,r, getArg(p,4));
-				pushInstruction(mb,r);
+				if( location[getArg(p,0)] == 0){
+					r= newInstruction(mb,ASSIGNsymbol);
+					getModuleId(r)= mserverRef;
+					getFunctionId(r)= lookupRef;
+					j= getArg(r,0)= newTmpVariable(mb, TYPE_int);
+					location[getArg(p,0)]= j;
+					pushArgument(mb,r, getArg(p,4));
+					pushInstruction(mb,r);
+				} else j = location[getArg(p,0)];
 
 				/* turn the instruction into a local one */
 				getArg(p,4)= defConstant(mb, TYPE_int, &cst);
@@ -276,9 +287,9 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				GDKfree(s);
 				pushInstruction(mb,r);
 				freeInstruction(p);
+				doit++;
 			} else
 				pushInstruction(mb,p);
-			doit++;
 		} else
 		if(getModuleId(p)== sqlRef && getFunctionId(p)== binddbatRef) {
 
@@ -286,13 +297,15 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				location[getArg(p,0)]= getArg(p,0);
 				/* a remote sql bind is needed */
 				/* lookup the server connection */
-				r= newInstruction(mb,ASSIGNsymbol);
-				getModuleId(r)= mserverRef;
-				getFunctionId(r)= lookupRef;
-				j= getArg(r,0)= newTmpVariable(mb, TYPE_int);
-				location[getArg(p,0)]= j;
-				pushArgument(mb,r, getArg(p,3));
-				pushInstruction(mb,r);
+				if( location[getArg(p,0)] == 0){
+					r= newInstruction(mb,ASSIGNsymbol);
+					getModuleId(r)= mserverRef;
+					getFunctionId(r)= lookupRef;
+					j= getArg(r,0)= newTmpVariable(mb, TYPE_int);
+					location[getArg(p,0)]= j;
+					pushArgument(mb,r, getArg(p,3));
+					pushInstruction(mb,r);
+				} else j= location[getArg(p,0)];
 
 				/* turn the instruction into a local one */
 				getArg(p,3)= defConstant(mb, TYPE_int, &cst);
@@ -319,9 +332,9 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				GDKfree(s);
 				pushInstruction(mb,r);
 				freeInstruction(p);
+				doit++;
 			} else
 				pushInstruction(mb,p);
-			doit++;
 #ifdef DEBUG_MAL_REMOTE
 			printf("found remote variable %s ad %d\n", 
 				getVarName(mb,getArg(p,0)), location[getArg(p,0)]);
@@ -374,6 +387,7 @@ to be shipped should be simple.
 				/* as of now all the targets are also local */
 				for(j=0; j<p->retc; j++)
 					location[getArg(p,j)]= 0;
+				doit++;
 			} else if (remoteSite){
 				/* single remote site involved */
 				r= newInstruction(mb,ASSIGNsymbol);
@@ -397,6 +411,7 @@ to be shipped should be simple.
 				for(j=0; j<p->retc; j++)
 					location[getArg(p,j)]= remoteSite;
 				freeInstruction(p);
+				doit++;
 			} else
 				pushInstruction(mb,p);
 		}
