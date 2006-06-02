@@ -2937,7 +2937,7 @@ xquery_method(stream *out,
     int msec = GDKms();
     MT_Id XQthread_id = THRgettid();
     Thread XQthread = THRget(XQthread_id);
-    char *err = NULL, *ns = "fn", *mode = "xml-noheader-typed-old-root-iter";
+    char *err = NULL, *ns = "fn", *mode = "xml-noheader-soap-root-iter";
     stream *s = NULL;
     mapi_client *mc = MAPIclient(GDKin, out, "xquery" );
     xquery_client *ctx;
@@ -2946,7 +2946,7 @@ xquery_method(stream *out,
         return "xquery_method: out of client slots.\n";
 
     if (rpctiming){
-        mode = "xml-rpcservertime-timing-noheader-typed-old-root-iter";
+        mode = "xml-rpcservertime-timing-noheader-soap-root-iter";
     }
     
     ctx = mc->fc; 
@@ -2961,9 +2961,9 @@ xquery_method(stream *out,
         if (s) {
             ctx->fderr = s;
             if (rpctiming){
-                mode = "xml-rpcservertime-timing-debug-noheader-typed-old-root-iter";
+                mode = "xml-rpcservertime-timing-debug-noheader-soap-root-iter";
             } else {
-                mode = "xml-debug-noheader-typed-old-root-iter";
+                mode = "xml-debug-noheader-soap-root-iter";
             }
         }
         stream_write(ctx->fderr, prologue, strlen(prologue), 1);

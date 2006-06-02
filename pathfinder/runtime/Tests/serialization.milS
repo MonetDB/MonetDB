@@ -2,7 +2,7 @@ module("pathfinder"); # value containers for literal values
 
 xquery("xml"           ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())", 0).printf();
 xquery("xml typed"     ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())", 0).printf();
-xquery("xml typed-old" ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())", 0).printf();
+xquery("xml soap"      ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())", 0).printf();
 xquery("xml mapi"      ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())", 0).printf();
 xquery("dm"            ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())", 0).printf();
 xquery("seq"           ,"(1, 2.3, attribute attr { \"val\" }, 3E1, \"string\", doc(\"nodekinds.xml\")/descendant-or-self::node())", 0).printf();
