@@ -1064,15 +1064,9 @@ BBPuncacheit_(bat i, int unloaddesc)
 @- BBPclear
 @%BBPclear@ removes a BAT from the BBP directory forever.
 @c
-void
-BBPclear(bat i)
+static INLINE void 
+bbpclear(bat i) 
 {
-	int lock = locked_by ? BBP_getpid() != locked_by : 1;
-
-	if (BBPcheck(i, "BBPclear")) {
-		i = ABS(i);
-		if (lock)
-			gdk_set_lock(GDKcacheLock, "BBPclear");
 		BATDEBUG {
 			THRprintf(GDKerr, "clear %d (%s)\n", (int) i, BBPname(i));
 		}
@@ -1094,6 +1088,17 @@ BBPclear(bat i)
 		BBP_lrefs(i) = 0;
 		BBP_next(i) = BBP_free;
 		BBP_free = i;
+}
+
+void
+BBPclear(bat i)
+{
+	int lock = locked_by ? BBP_getpid() != locked_by : 1;
+
+	if (BBPcheck(i, "BBPclear")) {
+		if (lock)
+			gdk_set_lock(GDKcacheLock, "BBPclear");
+		bbpclear(ABS(i));
 		if (lock)
 			gdk_unset_lock(GDKcacheLock, "BBPclear");
 	}
@@ -2228,7 +2233,7 @@ batcache_del() {
 	*BBP_logical(bid) = 't';
 	assert(b->batParentid == 0);
 	BATfree(b);
-	BBPclear(bid);
+	bbpclear(bid);
 	return i;
 }
 
