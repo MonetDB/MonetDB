@@ -157,7 +157,7 @@ DCgetReceptorStatus(int *ret)
 
 	for (p = pumps; p < pumps + pumplimit; p++)
 		if (p->name && p->kind == RECEPTOR) {
-			BUNins(bn, &o, &p->status);
+			BUNins(bn, &o, &p->status,FALSE);
 		}
 	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(*ret);
@@ -434,7 +434,7 @@ singleRecognition(void *extra, int type, char *s, char *e, char quote)
 	i = TABLETadt_frStr(extra, type, s,s,0);
 	/* insert a time stamp */
 	MTIMEcurrent_timestamp(&ts);
-	BUNins(p->private[0], &o, &ts);
+	BUNins(p->private[0], &o, &ts,FALSE);
 	return i;
 }
 
@@ -455,7 +455,7 @@ endRecognition(void *extra, int type, char *s,char *e, char quote)
 
 	/* insert a time stamp */
 	MTIMEcurrent_timestamp(&ts);
-	BUNins(p->private[0], &o, &ts);
+	BUNins(p->private[0], &o, &ts,FALSE);
 	return TABLETadt_frStr(extra, type, s,s,0);
 }
 
@@ -480,13 +480,13 @@ DCstartChannel(DCpump p, bstream *bs)
 	/* it should contain the timestamps */
 	for (i = 1; i < p->cols; i++) {
 		fmt[k].name = p->columns[i];
-		fmt[k].bval = p->private[i];
+		/* fmt[k].bval = p->private[i];*/
 #ifdef DEBUG_DC_RECEPTOR
 		stream_printf(GDKerr, "#added field %s\n", fmt[k].name);
 #endif
 		fmt[k].sep = GDKstrdup((char *) ",");
 		fmt[k].seplen = (int) strlen(fmt[k].sep);
-		fmt[k].adt = fmt[k].bval->ttype;
+		fmt[k].adt = p->private[i]->ttype;
 		fmt[k].type = (char *) getTypeName(fmt[k].adt);
 		fmt[k].tostr = &TABLETadt_toStr;
 		fmt[k].frstr = &TABLETadt_frStr;

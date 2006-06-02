@@ -149,7 +149,7 @@ DCgetEmitterStatus(int *ret)
 
 	for (p = pumps; p < pumps + pumplimit; p++)
 		if (p->name && p->kind == EMITTER) {
-			BUNins(bn, &o, &p->status);
+			BUNins(bn, &o, &p->status,FALSE);
 		}
 	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(*ret);

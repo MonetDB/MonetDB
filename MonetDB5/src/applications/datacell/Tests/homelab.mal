@@ -1,5 +1,6 @@
 # The setup demonstration for a home lab environment
 # using the MonetDB DataCell
+include sql;
 include datacell;
 include dc_compiler;
 

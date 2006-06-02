@@ -153,7 +153,7 @@ void
 DCnaiveLoop(int v)
 {
 	DCpump p, plimit;
-	Client c = getClient();
+	Client c = MCgetClient();
 	str msg;
 	timestamp ts;
 	int duration;
@@ -181,9 +181,9 @@ DCnaiveLoop(int v)
 					stream_printf(GDKout, "%s", msg);
 				p->calls++;
 				MTIMEcurrent_timestamp(&ts);
-				BUNins(p->public[0], &o, &ts);
-				BUNins(p->public[1], &o, &duration);
-				BUNins(p->public[2], &o, msg ? msg : "OK");
+				BUNins(p->public[0], &o, &ts,FALSE);
+				BUNins(p->public[1], &o, &duration,FALSE);
+				BUNins(p->public[2], &o, msg ? msg : "OK",FALSE);
 			}
 		MT_sleep_ms(schedulers[1].delay);
 	}

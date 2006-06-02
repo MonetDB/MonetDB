@@ -44,7 +44,6 @@ comment "Define a data pump query.";
 #include "mal.h"
 #include "datacell.h"
 
-dc_export str SQLcompile(str *ret, str *expr);
 dc_export str SQLstatement(str *ret, str *expr);
 dc_export str DCmakePlans(int *ret, str *nme, str *newname);
 dc_export str DCsqlReshuffle(MalBlkPtr mb, str newname);
@@ -66,7 +65,6 @@ dc_export void DCflowDependencies(DCpump p);
 #include "../modules/mal/tablet.h"
 
 #define _DC_COMPILE_DEBUG
-mal_export str SQLcompile(str *ret, str *expr);
 mal_export str SQLstatement(str *ret, str *expr);
 mal_export str DCcompileQuery(str *ret, str *expr, str *name);
 mal_export str DCsqlCompiler(str *ret, str *name, str *expr);
@@ -151,7 +149,7 @@ DCcompileQuery(str *ret, str *expr, str *name)
 				if (msg)
 					stream_printf(GDKout, "%s", msg);
 				/* ignore possible errors raised by duplicate definition */
-				getClient()->errbuf[0] = 0;
+				MCgetClient()->errbuf[0] = 0;
 			}
 #ifdef _DC_COMPILE_DEBUG
 			stream_printf(GDKout, "SQL:\n%s\n", buf);
@@ -175,7 +173,8 @@ DCcompileQuery(str *ret, str *expr, str *name)
 	stream_printf(GDKout, "datacell.compile:%s\n", *expr);
 	stream_printf(GDKout, "SQL:\n%s\n", buf);
 #endif
-	msg = SQLcompile(ret, &buf);
+	/* msg = SQLcompile(ret, &buf);*/
+	msg = SQLstatement(ret, &buf);
 	if (msg == MAL_SUCCEED) {
 		msg = DCmakePlans(&flag, ret, name);
 	}
@@ -241,8 +240,8 @@ This cleanup involves removal of all sql.column and sql.output
 statements, while the sql.bind instruction should be replaced
 with the datacell bind operation.
 @= tstName
-	( getName(@2,strlen(@2)) == moduleId(@1) &&
-	  getName(@3,strlen(@3)) == functionId(@1) )
+	( getName(@2,strlen(@2)) == getModuleId(@1) &&
+	  getName(@3,strlen(@3)) == getFunctionId(@1) )
 @-
 The code should comply with the optimizer policies, such
 as performing double checks before the function returns
@@ -312,7 +311,7 @@ The dbat can only be dropped for connection points.[todo]
 				setFunctionId(p, putName("bindEmitter", 11));
 			}
 			setModuleId(p, putName("datacell", 8));
-			typeChecker(getClient()->nspace, mb, p, TRUE);
+			typeChecker(MCgetClient()->nspace, mb, p, TRUE);
 		}
 		getInstrPtr(mb, j) = p;
 		j++;
@@ -410,7 +409,7 @@ first receptor argument.
 	setModuleId(p, putName("pumps", 5));
 	setFunctionId(p, putName(*newname, strlen(*newname)));
 	s->def->var[i]->name = GDKstrdup(*newname);
-	insertSymbol(getClient()->nspace, s);
+	insertSymbol(MCgetClient()->nspace, s);
 
 #ifdef _DC_COMPILE_DEBUG
 	stream_printf(GDKout, "start reduction %s:\n", (mb->errors ? "errors" : ""));
@@ -440,7 +439,7 @@ with the empty set and singleton set.
 	setModuleId(p, putName("pumps", 5));
 	setFunctionId(p, putName(buf, strlen(buf)));
 	s->def->var[i]->name = GDKstrdup(buf);
-	insertSymbol(getClient()->nspace, s);
+	insertSymbol(MCgetClient()->nspace, s);
 
 	snprintf(buf, 128, "%s1", *newname);
 	pump->mal[2] = GDKstrdup(buf);
@@ -451,7 +450,7 @@ with the empty set and singleton set.
 	setModuleId(p, putName("pumps", 5));
 	setFunctionId(p, putName(buf, strlen(buf)));
 	s->def->var[i]->name = GDKstrdup(buf);
-	insertSymbol(getClient()->nspace, s);
+	insertSymbol(MCgetClient()->nspace, s);
 
 #ifdef _DC_COMPILE_DEBUG
 	printf("\n\nPLAN[1] OPTIMIZE EMPTYSET ON ARGUMENT %d\n", es[0]);
@@ -489,7 +488,7 @@ isEmitterDestination(MalBlkPtr mb, int varid)
 
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		if (getArg(p, 0) == varid && strcmp(functionId(p), "bindEmitter") == 0) {
+		if (getArg(p, 0) == varid && strcmp(getFunctionId(p), "bindEmitter") == 0) {
 			return GETDCNAME(mb, getArg(p, 1));
 		}
 	}
@@ -520,8 +519,8 @@ DCsqlReshuffle(MalBlkPtr mb, str newname)
 First step is to collect the receptor/emitter bindings.
 @c
 	for (i = 1; i < limit - 1; i++)
-		if (functionId(old[i]) && strncmp(functionId(old[i]), "bind", 4) == 0 && 
-			moduleId(old[i]) && strcmp(moduleId(old[i]), "datacell") == 0) {
+		if (getFunctionId(old[i]) && strncmp(getFunctionId(old[i]), "bind", 4) == 0 && 
+			getModuleId(old[i]) && strcmp(getModuleId(old[i]), "datacell") == 0) {
 			pushInstruction(mb, old[i]);
 			unit = GETDCNAME(mb, getArg(old[i], 1));
 			for (j = 0; j < u; j++)
@@ -544,7 +543,7 @@ First step is to collect the receptor/emitter bindings.
 The receptor can be released, because we have consumed all
 relevant information.
 @c
-	if( functionId(getInstrPtr(mb,i-1)) != getName("release",7))
+	if( getFunctionId(getInstrPtr(mb,i-1)) != getName("release",7))
 	for (j = u - 1; j >= 0; j--) {
 		p = newFcnCall(mb, getName("datacell", 8), getName("release", 7));
 		pushStr(mb, p, points[j]);

@@ -232,6 +232,7 @@ and analyse the data.
 #define MAXEVENTFIELDS 256
 
 #include "mal.h"
+#include "mal_authorize.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include "../modules/mal/tablet.h"
@@ -596,20 +597,26 @@ DCshowContainer(int *ret, str *cname, int *first, int *last)
 
 @- Module initializaton
 The content of this box my only be changed by the Administrator.
+Authorization is not worked out yet.
 @= authorize
 	/* if( !isAuthorized("Admin"))
 		return throwMessage("datacell.@1","unauthorized access to 'datacell' box");*/
 @c
 
 int
-isAuthorized(str nme)
+isAuthorized(str nme, str passwd)
 {
-	Client c;
+	int ret;
+	str msg;
 
 	if (nme == 0)
-		return 1;
-	c = getClient();
-	return idcmp(c->user, nme) == 0;
+		return  FALSE;
+	msg= AUTHcheckUser(&ret, &nme, &passwd);
+	if( msg) {
+		/* deliver it */
+		GDKfree(msg);
+	}
+	return msg== MAL_SUCCEED;
 }
 
 @- Operator implementation
@@ -883,7 +890,7 @@ DCgetKind(int *bid, int kind)
 
 	for (p = pumps; p < pumps + pumplimit; p++)
 		if (p->name && p->kind == kind) {
-			BUNins(bn, &o, p->name);
+			BUNins(bn, &o, p->name,FALSE);
 		}
 	BBPincref(*bid = bn->batCacheid, TRUE);
 	BBPunfix(*bid);
@@ -916,7 +923,7 @@ DCgetPumps(int *bid)
 
 	for (p = pumps; p < pumps + pumpindex; p++)
 		if (p->name)
-			BUNins(bn, cellKind[p->kind], p->name);
+			BUNins(bn, cellKind[p->kind], p->name,FALSE);
 	BBPincref(*bid = bn->batCacheid, TRUE);
 	BBPunfix(*bid);
 	return MAL_SUCCEED;
@@ -930,7 +937,7 @@ DCgetQueries(int *bid)
 
 	for (p = pumps; p < pumps + pumpindex; p++)
 		if (p->name)
-			BUNins(bn, p->name, p->query ? p->query : "");
+			BUNins(bn, p->name, p->query ? p->query : "",FALSE);
 	BBPincref(*bid = bn->batCacheid, TRUE);
 	BBPunfix(*bid);
 	return MAL_SUCCEED;
@@ -949,7 +956,7 @@ DCgetSource(int *bid, str *name)
 		return throwMessage("datacell.getSource", "Cannot find pump");
 	bn = DCcontainer(TYPE_str, pumplimit);
 	for (i = 0; i < p->cap && p->source[i]; i++)
-		BUNins(bn, &o, p->source[i]);
+		BUNins(bn, &o, p->source[i],FALSE);
 	BBPincref(*bid = bn->batCacheid, TRUE);
 	BBPunfix(*bid);
 	return MAL_SUCCEED;
@@ -968,7 +975,7 @@ DCgetSink(int *bid, str *name)
 		return throwMessage("datacell.getSource", "Cannot find pump");
 	bn = DCcontainer(TYPE_str, pumplimit);
 	for (i = 0; i < p->cap && p->sink[i]; i++)
-		BUNins(bn, &o, p->sink[i]);
+		BUNins(bn, &o, p->sink[i],FALSE);
 	BBPincref(*bid = bn->batCacheid, TRUE);
 	BBPunfix(*bid);
 	return MAL_SUCCEED;
@@ -990,7 +997,7 @@ DCgetProperties(int *bid, str *name)
 		return throwMessage("datacell.getProperties", "Cannot create container");
 	for (i = 0; i < p->cols; i++) {
 		tname = getTypeName(p->types[i]);
-		BUNins(bn, p->columns[i], tname);
+		BUNins(bn, p->columns[i], tname,FALSE);
 		GDKfree(tname);
 	}
 	BBPincref(*bid = bn->batCacheid, TRUE);
@@ -1015,24 +1022,24 @@ DCgetDynamicProperties(int *bid, str *name)
 		return throwMessage("datacell.getDynamicProperties", "Cannot create container");
 
 	if (p->host) {
-		BUNins(bn, "host", p->host);
+		BUNins(bn, "host", p->host,FALSE);
 		snprintf(buf, 128, "%d", p->port);
-		BUNins(bn, "port", buf);
+		BUNins(bn, "port", buf,FALSE);
 	}
 
 	if (p->delay) {
 		snprintf(buf, 128, "%d", p->delay);
-		BUNins(bn, "delay", buf);
+		BUNins(bn, "delay", buf,FALSE);
 	}
 	if (p->timeout) {
 		snprintf(buf, 128, "%d", p->timeout);
-		BUNins(bn, "timeout", buf);
+		BUNins(bn, "timeout", buf,FALSE);
 	}
 	snprintf(buf, 128, "%d", p->status);
-	BUNins(bn, "status", buf);
+	BUNins(bn, "status", buf,FALSE);
 	if (p->pending) {
 		snprintf(buf, 128, "%d", p->pending);
-		BUNins(bn, "pending", buf);
+		BUNins(bn, "pending", buf,FALSE);
 	}
 	/* locate first and list timestamp in private */
 	if (BATcount(p->private[0]) > 0) {
@@ -1045,11 +1052,11 @@ DCgetDynamicProperties(int *bid, str *name)
 		ts = *(timestamp *) BUNtail(p->private[0], BUNptr(p->private[0], BATcount(p->private[0]) - 1));
 		timestamp_tostr(&msg2, &len, &ts);
 		if (strncmp(msg1, msg2, 10) == 0) {
-			BUNins(bn, "first", msg1 + 10);
-			BUNins(bn, "last", msg2 + 10);
+			BUNins(bn, "first", msg1 + 10,FALSE);
+			BUNins(bn, "last", msg2 + 10,FALSE);
 		} else {
-			BUNins(bn, "first", msg1);
-			BUNins(bn, "last", msg2);
+			BUNins(bn, "first", msg1,FALSE);
+			BUNins(bn, "last", msg2,FALSE);
 		}
 		GDKfree(msg1);
 		GDKfree(msg2);
@@ -1057,14 +1064,14 @@ DCgetDynamicProperties(int *bid, str *name)
 	if (p->status >= 0) {
 		snprintf(buf, 128, "%d", p->received);
 		if (p->kind == RECEPTOR)
-			BUNins(bn, "received", buf);
+			BUNins(bn, "received", buf,FALSE);
 		else
-			BUNins(bn, "sent", buf);
+			BUNins(bn, "sent", buf,FALSE);
 		snprintf(buf, 128, "%d", p->calls);
 		if (p->kind == NUCLEUS)
-			BUNins(bn, "runs", buf);
+			BUNins(bn, "runs", buf,FALSE);
 		else
-			BUNins(bn, "batches", buf);
+			BUNins(bn, "batches", buf,FALSE);
 		if (p->ticks > 0) {
 			double rate = (p->received + 0.0) / (p->ticks / 1000.0);
 
@@ -1072,7 +1079,7 @@ DCgetDynamicProperties(int *bid, str *name)
 				snprintf(buf, 128, "%4.2f/sec", rate * 1000.0);
 			else
 				snprintf(buf, 128, "%4.2f/ms", rate);
-			BUNins(bn, "rate", buf);
+			BUNins(bn, "rate", buf,FALSE);
 		}
 	}
 
@@ -1152,7 +1159,7 @@ DCgetPorts(int *ret, int kind)
 
 	for (p = pumps; p < pumps + pumplimit; p++)
 		if (p->name && p->kind == kind) {
-			BUNins(bn, &o, &p->port);
+			BUNins(bn, &o, &p->port,FALSE);
 		}
 	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(*ret);
@@ -1272,7 +1279,7 @@ DCgetHosts(int *ret, int kind)
 
 	for (p = pumps; p < pumps + pumplimit; p++)
 		if (p->name && p->kind == kind) {
-			BUNins(bn, &o, p->host);
+			BUNins(bn, &o, p->host,FALSE);
 		}
 	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(*ret);
@@ -1300,7 +1307,7 @@ DCgetStatus(int *ret)
 
 	for (p = pumps; p < pumps + pumpindex; p++)
 		if (p->name) {
-			BUNins(bn, &o, &p->status);
+			BUNins(bn, &o, &p->status,FALSE);
 		}
 	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(*ret);
@@ -1334,7 +1341,7 @@ DCkeep(int *ret, str *name, int *dst, int *src)
 	if (p == 0 || p->kind != EMITTER)
 		return throwMessage("datacell.append", "Pump lost");
 	/* mal_set_lock(p->lock,"datacell.append"); */
-	msg = BKCbat_append_void_bat_wrap(ret, dst, src);
+	msg = BKCappend_wrap(ret, dst, src);
 	/* mal_unset_lock(p->lock,"datacell.append"); */
 	return msg;
 }
@@ -1349,7 +1356,7 @@ DCkeepTuple(int *ret, str *name, int *dst, void *src)
 	if (p == 0 || p->kind != EMITTER)
 		return throwMessage("datacell.append", "Pump lost");
 	/* mal_set_lock(p->lock,"datacell.append"); */
-	msg = BKCbat_append_val_wrap(ret, dst, src);
+	msg = BKCappend_val_wrap(ret, dst, src);
 	/* mal_unset_lock(p->lock,"datacell.append"); */
 	return msg;
 }

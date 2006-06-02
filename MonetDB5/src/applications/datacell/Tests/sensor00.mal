@@ -1,4 +1,5 @@
 # the sensor event collector
+include sql;
 include datacell;
 include dc_compiler;
 
