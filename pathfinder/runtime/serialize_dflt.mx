@@ -691,13 +691,12 @@ xml_complete_seqStart (XqueryCtx* ctx)
 static bool
 xml_seqEnd (XqueryCtx* ctx)
 {
-    stream_write (GDKout, dflt_ws->newline, dflt_ws->nl_sz, 1);
-    
     if ( !(ctx->modes & MODE_NO_ROOT) ) {
+        stream_write (GDKout, dflt_ws->newline, dflt_ws->nl_sz, 1);
         dflt_handle_endElement (ctx, NULL, dflt_ws->restag);
 
-        stream_write (GDKout, "\n", 1, 1);
     }
+    stream_write (GDKout, "\n", 1, 1);
 
     return SUCCESS;
 }
