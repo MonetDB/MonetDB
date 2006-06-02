@@ -1,4 +1,4 @@
-stdout of test 'printTypedMode-old` in directory 'runtime` itself:
+stdout of test 'printTypedMode-soap` in directory 'runtime` itself:
 
 
 # 17:12:38 >  
@@ -11,7 +11,7 @@ stdout of test 'printTypedMode-old` in directory 'runtime` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 module(pathfinder);
 
-xquery("xml-typed-old-root-PrintTypedMode", "(<a><b/></a>, \"hello\", \"hi\", 1, 2.3, <bla><d/><e/></bla>, 34, <foo><bar>\"hello\"</bar></foo>)", 0).printf();
+xquery("xml-soap-root-PrintTypedMode", "(<a><b/></a>, \"hello\", \"hi\", 1, 2.3, <bla><d/><e/></bla>, 34, <foo><bar>\"hello\"</bar></foo>)", 0).printf();
 <?xml version="1.0" encoding="utf-8"?>
 <PrintTypedMode>
 <xs:anyNode><a><b/></a></xs:anyNode>
