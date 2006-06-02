@@ -1456,6 +1456,9 @@ shred_start_element(void *xmlCtx,
         stream_printf(GDKout,",val=\"%s\"",a_val);
         stream_printf(GDKout,")\n");
 #endif
+	if ( !a_pfx && a_uri) { 
+	  a_uri = NULL; /* attribute without prefix cannot have a namespace */
+	}
         qn_id  = store_PfxLocNEW(shredCtx,a_uri,a_pfx,a_tag);
 
         /* INCOMPLETE, this value stuff should be done properly by libxml2, but how? */
