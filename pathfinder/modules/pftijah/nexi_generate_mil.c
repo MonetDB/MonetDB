@@ -129,13 +129,6 @@ char *split_terms(char *adj_term){
   return term_cut;
 
 }
-#ifdef GENMILSTRING
-#define MILPRINTF sprintf
-#define MILOUT    &parserCtx->milBUFF[strlen(parserCtx->milBUFF)]
-#else
-#define MILPRINTF fprintf
-#define MILOUT    parserCtx->milFILE
-#endif
 
 int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_retr_model, struct_RMI *img_retr_model, struct_RF *rel_feedback, char *mil_fname, char *sxqxl_fname, command_tree **p_command_array, bool phrase_in)
 {
@@ -198,8 +191,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
 
   /* formating the mil header */
 
-  MILPRINTF(MILOUT, "#\n# Generated NEXI MIL by Pathfinder PFTIJAH package \n#\n");
-  MILPRINTF(MILOUT, "# COLLECTION: \"%s\"\n",parserCtx->collection);
+  MILPRINTF(MILOUT, "#\n# COLLECTION: \"%s\"\n",parserCtx->collection);
   MILPRINTF(MILOUT, "# NEXI-QUERY:\n");
   char *np;
   char *p = (char*)parserCtx->queryText;
@@ -210,7 +202,6 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
 	p = ++np;
   }
   MILPRINTF(MILOUT, "# %s\n",p);
-  MILPRINTF(MILOUT, "module(pftijah);\n");
   MILPRINTF(MILOUT, "\tVAR ");
 
   for (var_num = 0; var_num < MAX_VARS-1; var_num++) {

@@ -295,7 +295,15 @@ struct struct_RF {
 #define QUERY_SIZE 1024
 
 #define GENMILSTRING
+
+#ifdef GENMILSTRING
 #define MAXMILSIZE	32000
+#define MILPRINTF sprintf
+#define MILOUT    &parserCtx->milBUFF[strlen(parserCtx->milBUFF)]
+#else
+#define MILPRINTF fprintf
+#define MILOUT    parserCtx->milFILE
+#endif
 
 typedef struct TijahParserContext {
     FILE*	logFILE; /* debugging log stream */
@@ -306,7 +314,9 @@ typedef struct TijahParserContext {
     const char* collection;
     const char* queryText;
     char	errBUFF[QUERY_SIZE];
+#ifdef GENMILSTRING
     char        milBUFF[MAXMILSIZE];
+#endif
     /* */
     struct tijahContextStruct* tjCtx;
 } TijahParserContext;

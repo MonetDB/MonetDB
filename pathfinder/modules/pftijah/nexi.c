@@ -45,6 +45,15 @@ char* tijahParse(BAT* optbat, char* query, char** errBUFF) {
   parserCtx->queryText = query;
   parserCtx->logFILE   = NULL;
   parserCtx->errBUFF[0]= 0;
+#ifdef GENMILSTRING
+  parserCtx->milBUFF[0] = 0;
+#else
+  ERROR: should open de miloutput file here
+#endif
+  /* */
+  MILPRINTF(MILOUT, "#\n# Generated NEXI MIL by Pathfinder-PFTIJAH package \n#\n\n");
+  MILPRINTF(MILOUT, "module(pftijah);\n\n");
+  /* */
   parserCtx->tjCtx     = NULL; /* INCOMPLETE, should be filled here */
   if ( !old_main(0,dummy,optbat) )  {
       if ( errBUFF ) {
@@ -211,17 +220,25 @@ int old_main(int argc, char * const argv[], BAT* optbat)
      fclose(xx);
    }
    if ( strcmp(optName,"collection") == 0 ) {
-       char mil_cmd[64];
-       sprintf(&mil_cmd[0], "tj_setCollName(\"%s\");", optVal);	
-       if (! executeMIL(mil_cmd))
+       if ( 1 ) {
+         MILPRINTF(MILOUT, "tj_setCollName(\"%s\");\n", optVal);
+       } else {
+         char mil_cmd[64];
+         sprintf(&mil_cmd[0], "tj_setCollName(\"%s\");", optVal);	
+         if (! executeMIL(mil_cmd))
 	   GDKerror("PF/tijah: cannot set collection name.\n");
+       }
    } else if ( strcmp(optName,"returnNumber") == 0 ) {
-       char mil_cmd[64];
-       sprintf(&mil_cmd[0], "retNum := int(%s);", optVal);	
-       if (! executeMIL(mil_cmd))
+       if ( 1 ) {
+         MILPRINTF(MILOUT, "retNum := int(%s);\n", optVal);
+       } else {
+         char mil_cmd[64];
+         sprintf(&mil_cmd[0], "retNum := int(%s);", optVal);	
+         if (! executeMIL(mil_cmd))
 	   GDKerror("PF/tijah: cannot set number of returned nodes.\n");
+       }
    } else if ( strcmp(optName,"top") == 0 ) {
-       printf("top\n");
+       /* printf("top\n"); */
        /* handle topN here */
    } else {
       stream_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
@@ -1056,9 +1073,6 @@ int old_main(int argc, char * const argv[], BAT* optbat)
   else
     phrase_in = FALSE;
 
-#ifdef GENMILSTRING
-  parserCtx->milBUFF[0] = 0;
-#endif
   if ( !(parserCtx->milFILE = fopen(myfileName(WORKDIR,mil_fname),"w")) ) {
     LOGPRINTF(LOGFILE,"Error: cannot find file for writing mil code.\n");
     return 0;
