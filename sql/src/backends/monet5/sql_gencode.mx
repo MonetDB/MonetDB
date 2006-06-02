@@ -306,6 +306,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 {
 	InstrPtr q = NULL;
 	node *n;
+	//char *str;
 	//int mid;
 
 	if (s) {
@@ -330,15 +331,16 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushStr(mb, q, password);
 			q = pushStr(mb, q, "msql");
 				
-			int mid = getDestVar(q);
-			/*do the mserver query*/
-			q = newStmt1(mb,mserverRef,queryRef);
-			getVar(mb,getArg(q,0))->isudftype= 1;
-			q = pushArgument(mb, q, mid);
+			/*int mid = getDestVar(q);*/
+			q= newStmt1(mb,sqlRef,"eval");
+			getArg(q,0)= newTmpVariable(mb, TYPE_str);
+			q = pushStr(mb, q, dbalias);
 			q = pushStr(mb, q,((char *) _strdup(s->op1.sval)));
-
-			s = s->op1.stval;
-			if(s){
+			/*str = (char*) RQcall2str(mb,r);*/
+			/*GDKfree(str);*/
+			/*pushInstruction(mb,q);*/
+			if(s->op1.stval){
+				s = s->op1.stval;	
 				q = newAssignment(mb);
 				q = pushInt(mb, q, 1);
 			}

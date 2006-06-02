@@ -43,6 +43,10 @@ address SQLcommit_wrap;
 command rollback():void
 address SQLrollback_wrap;
 
+pattern eval(dbalias:str, cmd:str):str 
+address SQLstatement
+comment "Execute a single sql statement";
+
 command eval(cmd:str):str 
 address SQLstatement
 comment "Execute a single sql statement";

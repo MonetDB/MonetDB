@@ -641,9 +641,13 @@ stmt_destroy(stmt *s)
 		case st_bat:
 		case st_dbat:
 		case st_idxbat:
-		case st_remote:
 		case st_none:
 			break;
+		case st_remote:
+				_DELETE(s->op1.sval);
+				if(s->op2.stval)
+					stmt_destroy(s->op2.stval);
+				break;
 
 			/* special cases */
 		case st_temp:
@@ -774,7 +778,7 @@ stmt_remote(char *query, int location,stmt* st)
 {
 	stmt *s = stmt_create(st_remote);
 
-	s->op1.sval = query;
+	s->op1.sval = _strdup(query);
 	s->op2.stval = st;
 	s->location = location;
 	return s;
