@@ -2236,12 +2236,9 @@ STRlocate2(int *ret, str *s1, str *s2, int *start){
 str
 STRinsert(str *ret, str *s, int *start, int *l, str *s2){
 	str v;
-	if(strcmp(*s,str_nil)==0){
-		if(strcmp(*s2,str_nil) ==0 )
-			*ret = (str)str_nil;
-		else 
-			*ret = GDKstrdup(*s2);
-	} else {
+	if(strcmp(*s2,str_nil) ==0 || strcmp(*s,str_nil)==0 )
+		*ret = (str)str_nil;
+	else {
 		if( *start <0) *start =1;
 		v= *ret = GDKmalloc(strlen(*s)+strlen(*s2)+1 );
 		strncpy(v, *s,*start);
