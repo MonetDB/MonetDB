@@ -2,7 +2,7 @@
 # Return the name of the item with ID `item20748' registered in North
 # America
 
-# FOR    $b IN document("auction.xml")/site/people/person[@id="person0"]
+# FOR    $b IN doc("auction.xml")/site/people/person[@id="person0"]
 # RETURN $b/name/text()
 
 # This simple query is mainly used to establish a simple performance
@@ -14,6 +14,7 @@
 # ordinary catalog. This means that the mapping of the paths
 # to the BATs is known upfront.
 
+# Albrecht's code
 #monet_guide := bat("mxml_guide");
 #var b1 := bat(find(monet_guide,"site.people.person.id@"));
 #var b2 := select(b1,"person0");
@@ -25,51 +26,47 @@
 #printf("%s\n",$t);
 #}
 
-# why the extra redirection through cdata. It seems we can use string@ directly
-# if necessary it will materialize the concatenated the values of its elements.
+# Why the extra redirection in elm/cdata/string@ ?
+# This is necessary if there are more children in elm
+# or elm contains multiple independent text children.
 
-#$b IN document("auction.xml")
+#$b IN doc("auction.xml")
 mg := mguide.open("auction.xml");
 
-#/site/people/person and obtain single context [person,self::person]
-b0:bat[:oid,:oid] := mguide.bind(mg,"/site/people/person/");
-b = bat.mirror(b0);
+# Recursive parse brings you directly to the id string
+b1:bat[:oid,:str] := mguide.bind(mg,"/site/people/person/id/cdata/text()");
+# b1 represents the edge cdata/text()
 
-b1:bat[:oid,:oid] := mguide.bind(mg,"/site/people/person/id");
-#[site/people/person/id = "person0"] ->[id,text()]
-b2:bat[:oid,:str] := mguide.bind(mg,"/site/people/person/id/text()");
-# why this one, because .../id/{int,double,..}() does not exist and = <str> is the goal 
-b3:= algebra.uselect(b2,"person0");
-# propagate the restriction back to the context persons [person,id] step
-b4:= algebra.semijoin(b1,b3);
-# this can be optimized away, because it sufficies to do a mirror on b2
-# to produce the self-reference bat [person, self::person]
-b:= algebra.semijoin(b,b4);
+# Limit this set to all person0
+b2:= algebra.uselect(b2,"person0");
 
-# alternative, combined back propagation from b2 to [person,self::person]
-#b3 := mguide.ancestor(b0,b2);
+# Backtracking in the recursion means we have to fix the path
+# /site/people/person, because it is the last context decision
+# This is a guide specific action and can be optimized by not
+# using materialized intermediates
+b4:bat[:oid,:oid] := mguide.ancestor(mg, b2,
+		"/site/people/person/id/cdata/text()", "/site/people/person");
+
+# b4 represents the edge person/id
+# it can be reached by a double join.
+# the context binding for $b now is just
+b := bat.mirror(b4);
 
 #RETURN $b/name/text()
 mr:= mguide.new("result");
+
 # propagate the context restriction to the child
-x2:bat[:oid,:oid] := mguide.bind(mg,"/site/people/person/name");
-r0 := algebra.join(b,x2);
+x2:bat[:oid,:str] := mguide.descendant(mg,b, 
+		"/site/people/person", "/site/people/person/name/cdata/text()");
+# all valid strings are collected
 
-# construct a new document
-dn := oid.new();
-r1 := bat.setHead(r0,dn);
-
-# add this as the root(s) of the new
-mguide.add(mr,"/",r1);
-
-# don't do anything with the strings expect mentioning it as a target
-# visible in the result guide.
-x3:bat[:oid,:str] := mguide.bind(mg,"/site/people/person/name/text()");
-mguide.add(mr,"/text()", x3);
-# beware that the new document itself is inconsistent, because there
-# are children without parents in mr.
+# construct a new guide structure
+# we have to introduce a new document id
+# it is assumed handled by inspection of the path
+mguide.add(mr, "/",x2);
+xr := bat.reverse(x2);
+xm := bat.mirror(xr);
+mguide.add(mr, "/cdata",xm);
+mguide.add(mr, "/cdata/text()",x2);
 
 mguide.serialize(mr);
-
-# The result guide contains the following information
-# doc("result")/string()	ordered?
