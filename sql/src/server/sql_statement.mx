@@ -644,10 +644,10 @@ stmt_destroy(stmt *s)
 		case st_none:
 			break;
 		case st_remote:
-				_DELETE(s->op1.sval);
-				if(s->op2.stval)
-					stmt_destroy(s->op2.stval);
-				break;
+			_DELETE(s->op1.sval);
+			if(s->op2.stval)
+				stmt_destroy(s->op2.stval);
+			break;
 
 			/* special cases */
 		case st_temp:

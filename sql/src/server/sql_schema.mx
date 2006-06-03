@@ -665,7 +665,6 @@ create_replication_support(mvc *sql,sql_schema *s, symbol *sym, symbol* query,in
 	char* schema = ((sql_schema*) cur_schema(sql))->base.name;
 	sql_table* view = find_sql_table(s,qname_table(sym),table_location(sql,qname_host(sym)));
 	int location = table_location(sql,host);
-	char* subquery = NULL;
 	char string_query[BUFSIZ + 1];
 	string_query[BUFSIZ] = '\0';
 	int port;
@@ -687,7 +686,6 @@ create_replication_support(mvc *sql,sql_schema *s, symbol *sym, symbol* query,in
 		table_insert(sql->session->tr, replication, &replication_id, &in_out, &push_pull, &r_time, &t_rev, &t_rev);
 		view->replication_id = replication_id;
 
-		subquery = _strdup(QUERY(sql->scanner) + sql->scanner.as);
 		snprintf(
 			string_query,
 			BUFSIZ,
@@ -695,11 +693,11 @@ create_replication_support(mvc *sql,sql_schema *s, symbol *sym, symbol* query,in
 			schema,
 			qname_table(sym),
 			qname_host(sym),
-			subquery
+			QUERY(sql->scanner) + sql->scanner.as
 		);
 		if(location > 0){
 			table_location_info(sql,location,&dbalias,&ip,&port,&user,&password);
-			return stmt_remote(_strdup(string_query),location,res);
+			return stmt_remote(string_query,location,res);
 			/*int mid = reconnet(dbalias,ip,port,user,password,"msql");
 			query(mid,string_query);*/
 		}
@@ -731,6 +729,7 @@ create_view(mvc *sql, sql_schema *ss, symbol *symb, dlist *column_spec, symbol *
 		return sql_error(sql, 02, "CREATE VIEW: access denied for %s to schema ;'%s'", sql->user, ss->base.name);
 	} else if (query) {
 		stmt *sq = NULL;
+		int len = 0;
 		char *subquery = NULL;
 		sql_table *t = NULL;
 
@@ -746,19 +745,24 @@ create_view(mvc *sql, sql_schema *ss, symbol *symb, dlist *column_spec, symbol *
 		sq = scope_subquery(sql, NULL, query);
 		if (!sq)
 			return NULL;
-		subquery = _strdup(QUERY(sql->scanner) + sql->scanner.as);
 		if (sql->scanner.view_end) {
+			char *q = QUERY(sql->scanner) + sql->scanner.as;
+			len = sql->scanner.view_end - sql->scanner.as;
+			subquery = NEW_ARRAY(char,len+2);
+			strncpy(subquery, q, len);
 			subquery[sql->scanner.view_end - sql->scanner.as] = ';';
 			subquery[sql->scanner.view_end - sql->scanner.as+1] = 0;
+		} else {
+			subquery = _strdup(QUERY(sql->scanner) + sql->scanner.as);
 		}
 		t = mvc_create_view(sql, ss, name, subquery, 0, location, replication_id);
+		_DELETE(subquery);
 		as_subquery( sql, t, sq, column_spec );
+		stmt_destroy(sq);
 		if(dlist_length(using)==2)
 			res = create_replication_support(sql,ss,symb,query,using->h->data.ival,using->t->data.ival,replication_id,res);
 		else
 			res = create_replication_support(sql,ss,symb,query,using->h->data.ival,0, replication_id,res);
-		_DELETE(subquery);
-		stmt_destroy(sq);
 		return res;
 		/* only db admin can create views on bats */
 	} else if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN) {

@@ -339,8 +339,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			/*str = (char*) RQcall2str(mb,r);*/
 			/*GDKfree(str);*/
 			/*pushInstruction(mb,q);*/
-			if(s->op1.stval){
-				s = s->op1.stval;	
+			if(s->op2.stval){
+				s = s->op2.stval;	
 				q = newAssignment(mb);
 				q = pushInt(mb, q, 1);
 			}

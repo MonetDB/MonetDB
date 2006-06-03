@@ -195,12 +195,12 @@ head_column(stmt *st)
 	case st_ptable:
 	case st_groupby:
 	case st_idxbat:
-	case st_remote:
 		return NULL;
 
 		/* stmts without head column which also are not expected */
 	case st_none:
 	case st_sql:
+	case st_remote:
 
 	case st_dbat:
 

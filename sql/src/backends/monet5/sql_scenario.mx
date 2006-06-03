@@ -487,6 +487,8 @@ We don;t search the cache for a previous incarnation.
 		/* generate MAL code */
 		if (oldstop == 2) /* remove main.end */
 			c->curprg->def->stop = 1; 
+		if (oldstop == 3) /* recursive call via SQLstatement */
+			c->curprg->def->stop = 1; 
 		backend_callinline(sql, c, s );
 		pushEndInstruction(c->curprg->def);
 
