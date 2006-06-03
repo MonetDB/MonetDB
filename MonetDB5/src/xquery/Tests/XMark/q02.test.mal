@@ -32,12 +32,9 @@
 # FOR    $b IN document("auction.xml")/site/open_auctions/open_auction
 mg:= mguide.open("auctions.xml");
 b0:bat[:oid,:oid]:= xml.bind(mg,"site/open_auctions/open_auction");
-# create the context node set
-# b := bat.mirrorTail(b0);
-# you don't need this restriction, because the complete set is used
-# Delay reduction of variables until you really need them for values
-# use b as the alias, or generate code that is easily removed later on
-b := b0;
+# create the context node set using the tail of the open_auctions/open_auction
+br:= bat.reverse(b0);
+b := bat.mirror(br);
 
 # RETURN <increase> 
 mr:= mguide.new("result");
@@ -49,19 +46,12 @@ x0:bat[:oid,:oid]:= mguide.bind(mg,"/site/open_auctions/open_auction/bidder");
 X1 := algebra.join(b,x0);
 g0:= group.first(x1);
 
-# RETURN <increase> $b/bidder[1]/increase/
-x2:bat[:oid,:oid]:= mguide.bind(mg,"/site/open_auctions/open_auction/bidder/increase");
-# the path represented by g0 is a reduced one, which we have to propagate
-g1 := algebra.join(g0,x2);
-# we now have [open_auction,increase] using bidder[1] as an intermediate.
-# this technique is like building a constrainted path index between arbitrary nodes.
-
-# RETURN <increase> $b/bidder[1]/increase/text() </increase>
-x3:bat[:oid,:str] := mguide.bind(mg,"/site/open_auctions/open_auction/bidder/increase/string()");
-# it suffices link the remainder in the guide.
+# RETURN <increase> $b/bidder[1]/increase/text()
+x3:bat[:oid,:str] := mguide.descendant(mb,g0,"/site/open_auctions/open_auction/bidder","/site/open_auctions/open_auction/bidder/increase/text()");
 
 # this example lacks a single doc-id for the result
-e0 := mguide.add(mr,"/increase",g1);
-e1:= mguide.add(mr,"/increase/string()",x3);
+mguide.add(mr,"/",g1);	# generate document head oid
+mguide.add(mr,"/increase",g1);
+mguide.add(mr,"/increase/string()",x3);
 
 mguide.serialize(mr);
