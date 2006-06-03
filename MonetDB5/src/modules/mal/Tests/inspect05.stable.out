@@ -269,7 +269,7 @@ end main;	# 8
 [ 233@0,  "command",	  "inspect",	  "getAtomSizes",		  "():bat[:int,:int] ",											  "INSPECTatom_sizes;"			  ]
 [ 234@0,  "command",	  "inspect",	  "getAtomSuperNames",		  "():bat[:int,:str] ",											  "INSPECTatom_sup_names;"		  ]
 [ 235@0,  "command",	  "inspect",	  "getAtomNames",		  "():bat[:int,:str] ",											  "INSPECTatom_names;"			  ]
-[ 236@0,  "command",	  "inspect",	  "getTypeIndex",		  "(v:str):int ",											  "INSPECTtypeIndex;"			  ]
+[ 236@0,  "pattern",	  "inspect",	  "getTypeIndex",		  "(v:any_1):int ",											  "INSPECTtypeIndex;"				  ]
 [ 237@0,  "command",	  "inspect",	  "getTypeName",		  "(v:int):str ",											  "INSPECTtypename;"			  ]
 [ 238@0,  "pattern",	  "inspect",	  "getType",			  "(v:any_1):str ",											  "INSPECTtypeName;"			  ]
 [ 239@0,  "pattern",	  "inspect",	  "getType",			  "(v:bat[:any_1,:any_2]) (ht:str,tt:str) ",								  "INSPECTtypeName;"			  ]
