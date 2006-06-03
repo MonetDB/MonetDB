@@ -182,13 +182,13 @@ their isolated runtime environment.
 			getModuleId(r)= mserverRef;
 			getFunctionId(r)= lookupRef;
 			j= getArg(r,0)= newTmpVariable(mb, TYPE_int);
-			location[getArg(p,0)]= j;
 			pushArgument(mb,r, getArg(p,1));
 			pushInstruction(mb,r);
 			dbalias[dbtop].dbhdl= j;
 			dbalias[dbtop++].dbname= db;
 			if( dbtop== 127) dbtop--;
 		} else j= dbalias[k].dbhdl;
+		location[getArg(p,0)]= j;
 	} else j= location[getArg(p,0)];
 @= prepareRemote
 	r= newInstruction(mb,ASSIGNsymbol);
