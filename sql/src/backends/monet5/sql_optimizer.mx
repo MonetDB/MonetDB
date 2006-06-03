@@ -261,9 +261,9 @@ addQueryToCache(Client c)
 	MalBlkPtr mb;
 
 	cache = findModule(c->nspace, putName("sql_cache",9));
-	if (cache == 0) {
+	if (cache == 0) 
 		return;
-	}
+	
 	insertSymbol(cache, c->curprg);
 	trimMalBlk(c->curprg->def);
 	c->blkmode = 0;
@@ -295,20 +295,26 @@ to allow inspection.
 	if( optimizer)
 		stream_printf(c->fdout,"optimizer=%s\n",optimizer);
 #endif
-
+@-
+A few optimizations are always needed. First, the multiplex
+code should be turned into a proper MAL blocks before
+other optimizations take place.
+And before we actually execute the program, we should
+expand the macros (unless this has already been taken
+care of.
+@c
 	if( optimizer == 0 || strcmp(optimizer,"on")==0){
 		if (c->debug)
 			optimizerCheck(mb,"sql.baseline",-1,0);
-		COoptimizer(mb,0,0);
-		ARoptimizer(mb, 0, 0);
-		CXoptimizer(mb,0,0);
-		//FXoptimizer(mb, 0, 0);
-		OPTmultiplex(mb, 0, 0);
-		MRoptimizer(mb,0,0);
+		COoptimizer(mb,0,0);	/* coercions */
+		ARoptimizer(mb, 0, 0);	/* alias removal */
+		CXoptimizer(mb,0,0);	/* common expressions */
+		/* FXoptimizer(mb, 0, 0);	 factory code */
+		MRoptimizer(mb,0,0);	/* reduce stack space */
 	} else if( optimizer && strcmp(optimizer,"off")==0 ){
 		/* no optimization needed */
 	} else if( optimizer ){
-		/* the optimizer control is a comma separated list */
+		/* the optimizer control is a comma separated list of names */
 		char *nxt, *nme;
 		while(optimizer && *optimizer )
 		{
@@ -327,9 +333,11 @@ to allow inspection.
 			}
 			optimizer =nxt;
 		} 
-		optimizerCheck(mb,"sql.baseline",-1,0);
+		if( c->debug)
+			optimizerCheck(mb,"sql.baseline",-1,0);
 		optimizeMALBlock(mb);
 	}
+	OPTmultiplex(mb,0,0);	/* multiplex expansions */
 }
 
 @-

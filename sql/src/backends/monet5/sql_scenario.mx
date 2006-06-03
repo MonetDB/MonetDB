@@ -47,6 +47,7 @@ sql_export str SQLengine(Client c);
 
 sql_export str SQLinitEnvironment(int *ret);
 sql_export str SQLstatement(str *ret, str *expr);
+sql_export str SQLcompile(str *ret, str *expr);
 sql_export str SQLtrace(int *ret);
 
 #endif /* _SQL_SCENARIO_H_ */
@@ -375,7 +376,7 @@ freeVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 
 /* #define _SQL_COMPILE */
 str
-SQLstatement(str *ret, str *expr)
+SQLstatementIntern(str *ret, str *expr, int execute)
 {
 	int err = 0;
 	mvc o, *m;
@@ -481,14 +482,12 @@ We don;t search the cache for a previous incarnation.
 		printFunction(c->fdout, c->curprg->def, c->listing);
 #endif
 
-		if (!c->curprg->def->errors && m->mode != m_prepare &&
 /*
-		    (msg = sql_get_var(m,"optimizer")) == NULL) 
-*/
-		    !m->cache) {
+		if (!c->curprg->def->errors && m->mode != m_prepare && !m->cache) {
 			OPTmultiplex(c->curprg->def,0,0);
 		}
-		if (!c->curprg->def->errors) {
+*/
+		if (!c->curprg->def->errors && execute) {
 			backend *be = c->state[PARSER];
 			sql->out = NULL; /* no output */
 			c->state[PARSER] = sql;
@@ -514,6 +513,17 @@ endofcompile:
 	*m = o;
 	m->session->auto_commit = ac;
 	return msg;
+}
+
+str
+SQLstatement(str *ret, str *expr)
+{
+	return SQLstatementIntern(ret,expr, TRUE);
+}
+
+str
+SQLcompile(str *ret, str *expr){
+	return SQLstatementIntern(ret,expr, FALSE);
 }
 
 static int
@@ -972,13 +982,13 @@ query block.
 		chkTypes(c->nspace, c->curprg->def); /* resolve types */
 		/* we know more in this case then
 			chkProgram(c->nspace, c->curprg->def); */
-		if (!c->curprg->def->errors && m->mode != m_prepare &&
 /*
+		if (!c->curprg->def->errors && m->mode != m_prepare &&
 		    (msg = sql_get_var(m,"optimizer")) == NULL) 
-*/
 		    !m->cache) {
 			OPTmultiplex(c->curprg->def,0,0);
 		}
+*/
 		if (c->curprg->def->errors) {
 			if( m->mode == m_debug){
 				/* switch to differnt language mode */
