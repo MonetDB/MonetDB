@@ -38,7 +38,7 @@ b1:bat[:oid,:str] := mguide.bind(mg,"/site/people/person/id/cdata/text()");
 # b1 represents the edge cdata/text()
 
 # Limit this set to all person0
-b2:= algebra.uselect(b2,"person0");
+b2:= algebra.uselect(b1,"person0");
 
 # Backtracking in the recursion means we have to fix the path
 # /site/people/person, because it is the last context decision
