@@ -135,7 +135,7 @@ pattern reduce():str
 address QOTMRoptimizer;
 pattern reduce(mod:str, fcn:str):str 
 address QOTMRoptimizerCALL
-comment "Estimate the cost of a relational expression";
+comment "Reduce the stack space claims";
 
 pattern multitable():str 
 address QOTMToptimizer;
@@ -176,17 +176,17 @@ The macro processors are also be called during optimizer time
 @mal
 pattern macroExpansion():void 
 address QOTMEoptimizer
-comment "Inliner of any function";
+comment "Inline each function";
 pattern macroExpansion(mod:str):void 
 address QOTMEoptimizerModule
-comment "Inliner of functions in a specific module";
+comment "Inline functions known a specific module";
 pattern macroExpansion(mod:str, fcn:str):void
 address QOTMEoptimizerSymbol
-comment "Inliner of a specific function";
+comment "Inline a specific function";
 
 pattern macroContraction():void
 address QOTMCoptimizer
-comment "Inliner of any function";
+comment "Inline of a function";
 pattern macroContraction(mod:str):void
 address QOTMCoptimizerModule
 comment "Inliner of functions in a specific module";
@@ -353,26 +353,26 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return MAL_SUCCEED;
 }
 @c
-@:QOTC(CX, "commonExpressionRemoval")@
 @:QOTC(AR, "aliasRemoval")@
-@:QOTC(DC, "deadCodeRemoval")@
-@:QOTC(HR, "heuristics")@
-@:QOTC(GC, "garbageCollector")@
-@:QOTC(BPT, "partitionedQuery")@
 @:QOTC(AE, "expressionAccumulation")@
-@:QOTC(FT, "factorize")@
-@:QOTC(SR, "strengthReduction")@
-@:QOTC(ES, "emptySet")@
-@:QOTC(ST, "singleton")@
-@:QOTC(PH, "peephole")@
-@:QOTC(RM, "costEstimation")@
-@:QOTC(MT, "multitable")@
 @:QOTC(BG, "generators")@
-@:QOTC(MR, "reduce")@
+@:QOTC(BPT, "partitionedQuery")@
 @:QOTC(CO, "coercions")@
 @:QOTC(CRK, "crack")@
-@:QOTC(RQ, "remoteQueries")@
+@:QOTC(CX, "commonExpressionRemoval")@
+@:QOTC(DC, "deadCodeRemoval")@
+@:QOTC(ES, "emptySet")@
+@:QOTC(FT, "factorize")@
+@:QOTC(GC, "garbageCollector")@
+@:QOTC(HR, "heuristics")@
 @:QOTC(JS, "joinsel")@
+@:QOTC(MR, "reduce")@
+@:QOTC(MT, "multitable")@
+@:QOTC(PH, "peephole")@
+@:QOTC(RM, "costEstimation")@
+@:QOTC(RQ, "remoteQueries")@
+@:QOTC(SR, "strengthReduction")@
+@:QOTC(ST, "singleton")@
 
 str
 QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
