@@ -112,11 +112,11 @@ end main;	# 49
 [ nil ]
 [ "hellobrave new world" ]
 [ "brave new " ]
-[ "brave new " ]
+[ nil ]
 [ "brave new " ]
 [ "brave new " ]
 [ "helloworld" ]
-[ "hello€world" ]
+[ nil ]
 [ "hello brave new world" ]
 
 # 22:29:41 >  
