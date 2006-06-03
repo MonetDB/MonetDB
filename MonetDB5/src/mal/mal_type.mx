@@ -87,7 +87,6 @@ derived from the parser to avoid a loop in the define-structure.
 #define FUNCTIONsymbol  62	/* the designate the signature start */
 #define FACTORYsymbol   63	/* the co-routine infrastructure */
 #define PATTERNsymbol   64	/* the MAL self-reflection commands */
-#define MACROsymbol     65	/* the MAL macro */
 
 #define FCNcall     50		/* internal symbols */
 #define FACcall     51

@@ -78,7 +78,7 @@ mal_export void printFunction(stream *fd, MalBlkPtr mb, int listing);
 @-
 The MAL function blocks are constructed incrementally while parsing the source.
 The function kind determines its semantics. It is taken from the list
-FUNCTION, FACTORY, COMMAND, PATTERN, and MACRO.
+FUNCTION, FACTORY, COMMAND, and PATTERN.
 @c
 #include "mal_function.h"
 #include "mal_resolve.h"	/* for isPolymorphic() & chkProgram() */

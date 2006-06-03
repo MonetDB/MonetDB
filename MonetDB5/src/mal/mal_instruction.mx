@@ -2288,8 +2288,6 @@ operatorName(int i)
 		return "command";
 	case PATTERNsymbol:
 		return "pattern";
-	case MACROsymbol:
-		return "macro";
 	}
 	return "Undefined";
 }
@@ -2460,7 +2458,6 @@ instruction2str(MalBlkPtr mb, InstrPtr p, int flg)
 		break;
 	case COMMANDsymbol:
 	case FUNCTIONsymbol:
-	case MACROsymbol:
 	case FACTORYsymbol:
 	case PATTERNsymbol:
 		return fcnDefinition(mb, p, s, flg);
