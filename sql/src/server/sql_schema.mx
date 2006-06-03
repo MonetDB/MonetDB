@@ -662,6 +662,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 		return sql_error(sql, 02, "CREATE VIEW: access denied for %s to schema ;'%s'", sql->user, ss->base.name);
 	} else if (query) {
 		stmt *sq = NULL;
+		int len = 0;
 		char *subquery = NULL;
 		sql_table *t = NULL;
 
@@ -677,15 +678,19 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 		sq = scope_subquery(sql, NULL, query);
 		if (!sq)
 			return NULL;
-		subquery = _strdup(QUERY(sql->scanner) + sql->scanner.as);
 		if (sql->scanner.view_end) {
+			char *q = QUERY(sql->scanner) + sql->scanner.as;
+			len = sql->scanner.view_end - sql->scanner.as;
+			subquery = NEW_ARRAY(char,len+2);
+			strncpy(subquery, q, len);
 			subquery[sql->scanner.view_end - sql->scanner.as] = ';';
 			subquery[sql->scanner.view_end - sql->scanner.as+1] = 0;
+		} else {
+			subquery = _strdup(QUERY(sql->scanner) + sql->scanner.as);
 		}
-
 		t = mvc_create_view(sql, ss, name, subquery, 0);
-		as_subquery( sql, t, sq, column_spec );
 		_DELETE(subquery);
+		as_subquery( sql, t, sq, column_spec );
 		stmt_destroy(sq);
 		return stmt_none();
 		/* only db admin can create views on bats */
