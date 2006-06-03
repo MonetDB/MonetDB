@@ -19,5 +19,5 @@
 # Future versions might inspect a database of eligible servers
 # to direct the interaction to the proper ports.
 
-exec MapiClient -u monetdb -P monetdb $*
+exec MapiClient -umonetdb -Pmonetdb $*
 
