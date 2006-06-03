@@ -445,9 +445,14 @@ System has been prepared to parse it and generate code
 	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
 		if (!err)
 			err = mvc_status(m);
+		if( m->errstr){
+			char *msgbuf= alloca((strlen(m->errstr)+128) *sizeof(char));
+			sprintf(msgbuf,"Parser errors:%s\n",m->errstr);
+			msg = throwMessage("SQLparser", msgbuf);
+		} else 
+			msg = throwMessage("SQLparser", "Parser errors\n");
 		sqlcleanup(m, err);
 		*m->errstr = 0;
-		msg = throwMessage("SQLparser", "Parser errors\n");
 		goto endofcompile;
 	}
 @-
@@ -484,11 +489,6 @@ We don;t search the cache for a previous incarnation.
 		printFunction(c->fdout, c->curprg->def, c->listing);
 #endif
 
-/*
-		if (!c->curprg->def->errors && m->mode != m_prepare && !m->cache) {
-			OPTmultiplex(c->curprg->def,0,0);
-		}
-*/
 		if (!c->curprg->def->errors && execute) {
 			backend *be = c->state[PARSER];
 			sql->out = NULL; /* no output */
@@ -984,13 +984,6 @@ query block.
 		chkTypes(c->nspace, c->curprg->def); /* resolve types */
 		/* we know more in this case then
 			chkProgram(c->nspace, c->curprg->def); */
-/*
-		if (!c->curprg->def->errors && m->mode != m_prepare &&
-		    (msg = sql_get_var(m,"optimizer")) == NULL) 
-		    !m->cache) {
-			OPTmultiplex(c->curprg->def,0,0);
-		}
-*/
 		if (c->curprg->def->errors) {
 			if( m->mode == m_debug){
 				/* switch to differnt language mode */
