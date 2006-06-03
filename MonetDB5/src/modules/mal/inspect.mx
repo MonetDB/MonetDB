@@ -178,7 +178,6 @@ mal_export str INSPECTgetModuleIds(int *ret);
 mal_export str INSPECTsymbolFind(int *ret, int kind);
 mal_export str INSPECTfactoryNames(int *ret);
 mal_export str INSPECTgetFunctionIds(int *ret);
-mal_export str INSPECTgetMacroIds(int *ret);
 mal_export str INSPECTpatternNames(int *ret);
 mal_export str INSPECTcommandNames(int *ret);
 mal_export str INSPECTgetFunction(int *ret);
@@ -279,12 +278,6 @@ str
 INSPECTgetFunctionIds(int *ret)
 {
 	return INSPECTsymbolFind(ret, FUNCTIONsymbol);
-}
-
-str
-INSPECTgetMacroIds(int *ret)
-{
-	return INSPECTsymbolFind(ret, MACROsymbol);
 }
 
 str
