@@ -643,6 +643,8 @@ typedef struct backend {
 	MalBlkPtr code;
 	int	vtop;		/* top of the variable stack before the current function */
 	cq *q;			/* pointer to the cached query */
+	char **locations;	/* array of dbaliases ie locations of dbs */
+	int nr_locations;	/* length of array of dbaliases */
 @-
 Some statistics are gathered during the execution of a query
 and added to the SQL history table for post analysis when the

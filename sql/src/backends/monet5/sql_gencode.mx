@@ -297,6 +297,42 @@ dump_3(backend *sql, MalBlkPtr mb, stmt *s, char *mod, char *name)
 	@:SQLpostlude@
 }
 
+static char* 
+reconnect(backend *sql, MalBlkPtr mb, stmt *s, int loc)
+{
+	InstrPtr q = NULL;
+	char *dbalias = NULL;
+
+	if (sql->nr_locations > s->location && sql->locations[loc]) {
+		dbalias = sql->locations[loc];
+	} else {
+		int port;
+		char *ip,*user,*password;
+
+		table_location_info(sql->mvc,loc,&dbalias,&ip,&port,&user,&password);
+		/*create the mserver reconnect*/
+		q = newStmt1(mb,mserverRef,reconnectRef);
+		getVar(mb,getArg(q,0))->isudftype= 1;
+		setVarType(mb, getArg(q, 0), TYPE_int);
+		q = pushStr(mb, q, dbalias);	
+		q = pushStr(mb, q, ip);
+		q = pushInt(mb, q, port);
+		q = pushStr(mb, q, user);
+		q = pushStr(mb, q, password);
+		q = pushStr(mb, q, "msql");
+		if (!sql->locations) {
+			sql->locations = ZNEW_ARRAY(char*,loc*2);
+			sql->nr_locations = loc*2;
+		}
+		if (sql->nr_locations <= loc) {
+			sql->locations = RENEW_ARRAY(char*, sql->locations, loc*2);
+			sql->nr_locations = loc*2;
+		}
+		sql->locations[loc] = dbalias;
+	}
+	return dbalias;
+}
+
 @-
 The big code generation switch. The sections are aligned to the
 Monet version4 code generation block for ease of comparison.
@@ -306,8 +342,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 {
 	InstrPtr q = NULL;
 	node *n;
-	//char *str;
-	//int mid;
 
 	if (s) {
 		if (s->nr > 0)
@@ -315,31 +349,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 		switch (s->type) {
 		case st_remote: {
-
-			int port;
-			char *ip,*user,*password,*dbalias;
-			table_location_info(sql->mvc,s->location,&dbalias,&ip,&port,&user,&password);
-
-			/*create the mserver reconnect*/
-			q = newStmt1(mb,mserverRef,reconnectRef);
-			getVar(mb,getArg(q,0))->isudftype= 1;
-			setVarType(mb, getArg(q, 0), TYPE_int);
-			q = pushStr(mb, q,dbalias);	
-			q = pushStr(mb, q, ip);
-			q = pushInt(mb, q, port);
-			q = pushStr(mb, q, user);
-			q = pushStr(mb, q, password);
-			q = pushStr(mb, q, "msql");
+			char *dbalias = reconnect(sql, mb, s, s->location);
 				
-			/*int mid = getDestVar(q);*/
 			q= newStmt1(mb,sqlRef,"eval");
 			getArg(q,0)= newTmpVariable(mb, TYPE_str);
-			q = pushStr(mb, q, dbalias);
-			q = pushStr(mb, q,((char *) _strdup(s->op1.sval)));
-			/*str = (char*) RQcall2str(mb,r);*/
-			/*GDKfree(str);*/
-			/*pushInstruction(mb,q);*/
-			if(s->op2.stval){
+			q = pushStr(mb, q, _strdup(dbalias));
+			q = pushStr(mb, q, _strdup(s->op1.sval));
+			if(s->op2.stval) {
 				s = s->op2.stval;	
 				q = newAssignment(mb);
 				q = pushInt(mb, q, 1);
@@ -400,87 +416,44 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_bat: {
 			int ht = TYPE_void;
 			int tt = s->op1.cval->type.type->localtype;
+			char *dbalias = NULL;
+			int loc = s->op1.cval->t->location;
 
 			if (s->flag == UPD || s->flag == RD_UPD)
 				ht = TYPE_oid;
 			@:SQLprelude@
-			if(s->op1.cval->t->location >0){
-				int port;
-				char *ip,*user,*password,*dbalias;
-
-				table_location_info(sql->mvc,s->op1.cval->t->location,&dbalias,&ip,&port,&user,&password);
-
-				/*create the mserver reconnect*/
-				q = newStmt1(mb,mserverRef,reconnectRef);
-				getVar(mb,getArg(q,0))->isudftype= 1;
-				setVarType(mb, getArg(q, 0), TYPE_int);
-				q = pushStr(mb, q,dbalias);	
-				q = pushStr(mb, q, ip);
-				q = pushInt(mb, q, port);
-				q = pushStr(mb, q, user);
-				q = pushStr(mb, q, password);
-				q = pushStr(mb, q, "msql");
+			if (loc > 0)
+				dbalias = reconnect(sql, mb, s, loc);
 				
-				/*do the mserver bind*/
-                                q = newStmt1(mb,sqlRef,bindRef);
-				getVar(mb,getArg(q,0))->isudftype= 1;
-				setVarType(mb, getArg(q, 0), newBatType(ht, tt));
-				q = pushStr(mb, q,s->op1.cval->t->s->base.name);
-				q = pushStr(mb, q,s->op1.cval->t->base.name);
-				q = pushStr(mb, q,s->op1.cval->base.name);
-				q = pushStr(mb, q,dbalias);
-				q = pushInt(mb, q, s->flag);
-			} else {
-				q = newStmt1(mb, sqlRef, bindRef);
-				getVar(mb,getArg(q,0))->isudftype= 1;
-				setVarType(mb, getArg(q, 0), newBatType(ht, tt));
-				q = pushStr(mb, q, s->op1.cval->t->s->base.name);
-				q = pushStr(mb, q, s->op1.cval->t->base.name);
-				q = pushStr(mb, q, s->op1.cval->base.name);
-				q = pushInt(mb, q, s->op1.cval->t->location);
-				q = pushInt(mb, q, s->flag);
-			}
+                        q = newStmt1(mb,sqlRef,bindRef);
+			getVar(mb,getArg(q,0))->isudftype= 1;
+			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
+			q = pushStr(mb, q,s->op1.cval->t->s->base.name);
+			q = pushStr(mb, q,s->op1.cval->t->base.name);
+			q = pushStr(mb, q,s->op1.cval->base.name);
+			if (dbalias)
+				q = pushStr(mb, q, dbalias);
+			q = pushInt(mb, q, s->flag);
 			s->nr = getDestVar(q);
 			@:SQLpostlude@
 		}
 			break;
 		case st_dbat:{
 			int ht = TYPE_void;
+			char *dbalias = NULL;
+			int loc = s->op1.tval->location;
 			@:SQLprelude@
-			if(s->op1.tval->location >0){
-                                int port;
-                                char *ip,*user,*password,*dbalias;
+			if(loc > 0)
+				dbalias = reconnect(sql, mb, s, loc);
 
-                                table_location_info(sql->mvc,s->op1.tval->location,&dbalias,&ip,&port,&user,&password);
-
-                                /*create the mserver reconnect*/
-                                q = newStmt1(mb,mserverRef,reconnectRef);
-                                getVar(mb,getArg(q,0))->isudftype= 1;
-                                setVarType(mb, getArg(q, 0), TYPE_int);
-                                q = pushStr(mb, q,dbalias);
-                                q = pushStr(mb, q, ip);
-                                q = pushInt(mb, q, port);
-                                q = pushStr(mb, q, user);
-                                q = pushStr(mb, q, password);
-                                q = pushStr(mb, q, "msql");
-
-                                /*do the mserver bind for the dbat*/
-                                q = newStmt1(mb,sqlRef,binddbatRef);
-                                getVar(mb,getArg(q,0))->isudftype= 1;
-				setVarType(mb,getArg(q,0),newBatType(TYPE_void,TYPE_oid));
-                                q = pushStr(mb, q,s->op1.tval->s->base.name);
-				q = pushStr(mb, q,s->op1.tval->base.name);
-                                q = pushStr(mb, q,dbalias);
-				q = pushInt(mb, q, s->flag);
-                        } else{
-				q = newStmt1(mb, sqlRef, binddbatRef);
-				getVar(mb,getArg(q,0))->isudftype= 1;
-				setVarType(mb,getArg(q,0),newBatType(ht,TYPE_oid));
-				q = pushStr(mb, q, s->op1.tval->s->base.name);
-				q = pushStr(mb, q, s->op1.tval->base.name);
-				q = pushInt(mb, q, s->op1.tval->location);
-				q = pushInt(mb, q, s->flag);
-			}
+                        q = newStmt1(mb,sqlRef,binddbatRef);
+                        getVar(mb,getArg(q,0))->isudftype= 1;
+			setVarType(mb,getArg(q,0),newBatType(ht,TYPE_oid));
+                        q = pushStr(mb, q,s->op1.tval->s->base.name);
+			q = pushStr(mb, q,s->op1.tval->base.name);
+			if (dbalias)
+                        	q = pushStr(mb, q, dbalias);
+			q = pushInt(mb, q, s->flag);
 			s->nr = getDestVar(q);
 			@:SQLpostlude@
 		}
@@ -488,10 +461,15 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_idxbat:{
 			int tt;
 			int ht = TYPE_void;
+			char *dbalias = NULL;
+			int loc = s->op1.idxval->t->location;
 
 			if (s->flag == UPD || s->flag == RD_UPD)
 				ht = TYPE_oid;
 			@:SQLprelude@
+			if(loc > 0)
+				dbalias = reconnect(sql, mb, s, loc);
+
 			q = newStmt1(mb, sqlRef, "bind_idxbat");
 			getVar(mb,getArg(q,0))->isudftype= 1;
 			tt = tail_type(s)->type->localtype;
@@ -499,6 +477,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushStr(mb, q, s->op1.idxval->t->s->base.name);
 			q = pushStr(mb, q, s->op1.idxval->t->base.name);
 			q = pushStr(mb, q, s->op1.idxval->base.name);
+			if (dbalias)
+                                q = pushStr(mb, q, dbalias);
 			q = pushInt(mb, q, s->flag);
 			s->nr = getDestVar(q);
 			@:SQLpostlude@
@@ -1572,9 +1552,19 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 {
-	int nr = _dumpstmt(be, mb, s);
+	int nr;
 	mvc *c = be->mvc;
 
+	be->locations = NULL;
+	be->nr_locations = 0;
+ 	nr = _dumpstmt(be, mb, s);
+	if (be->locations) {
+		int i;
+		for(i=0; i<be->nr_locations; i++)
+			if (be->locations[i])
+				_DELETE(be->locations[i]);
+		_DELETE(be->locations);
+	}
 	if (c->cache && (c->type == Q_SCHEMA || c->type == Q_TRANS)) {
 		InstrPtr q = newStmt2(mb, sqlRef, exportOperationRef);
 		return getDestVar(q);
