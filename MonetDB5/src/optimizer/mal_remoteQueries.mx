@@ -167,7 +167,58 @@ the statements related to a single remote database
 should be executed in the same stack context.
 A pitfall is to create multiple connections with
 their isolated runtime environment.
+@= lookupServer
+	/* lookup the server connection */
+	if( location[getArg(p,0)] == 0){
+		db = 0;
+		if( isConstant(mb,getArg(p,1)) )
+			db= getVarConstant(mb, getArg(p,1)).val.sval;
+		for(k=0; k<dbtop; k++)
+			if( strcmp(db, dbalias[k].dbname)== 0)
+				break;
+		
+		if( k== dbtop){
+			r= newInstruction(mb,ASSIGNsymbol);
+			getModuleId(r)= mserverRef;
+			getFunctionId(r)= lookupRef;
+			j= getArg(r,0)= newTmpVariable(mb, TYPE_int);
+			location[getArg(p,0)]= j;
+			pushArgument(mb,r, getArg(p,1));
+			pushInstruction(mb,r);
+			dbalias[dbtop].dbhdl= j;
+			dbalias[dbtop++].dbname= db;
+			if( dbtop== 127) dbtop--;
+		} else j= dbalias[k].dbhdl;
+	} else j= location[getArg(p,0)];
+@= prepareRemote
+	r= newInstruction(mb,ASSIGNsymbol);
+	getModuleId(r)= mserverRef;
+	getFunctionId(r)= rpcRef;
+	getArg(r,0)= newTmpVariable(mb, TYPE_void);
+	pushArgument(mb,r,j);
+
+@= putRemoteVariables
+	for(j=p->retc; j<p->argc; j++)
+	if( location[getArg(p,j)] == 0 && !isConstant(mb,getArg(p,j)) ){
+		q= newStmt(mb,mserverRef,putRef);
+		getArg(q,0)= newTmpVariable(mb, TYPE_void);
+		pushArgument(mb,q,location[getArg(p,j)]);
+		pushStr(mb,q, getRefName(mb,getArg(p,j)));
+		pushArgument(mb,q,getArg(p,j));
+	}
+@= remoteAction
+	s= RQcall2str(mb,p);
+	pushStr(mb,r,s+1);
+	GDKfree(s);
+	pushInstruction(mb,r);
+	freeInstruction(p);
+	doit++;
 @c
+typedef struct{
+	str dbname;
+	int dbhdl;
+} DBalias;
+
 str
 RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -176,7 +227,9 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int remoteSite,collectFirst;
 	lng clk = GDKusec();
 	int *location;
-	char buf[BUFSIZ],*s;
+	DBalias *dbalias;
+	int dbtop,k;
+	char buf[BUFSIZ],*s, *db;
 	ValRecord cst;
 	cst.vtype= TYPE_int;
 	cst.val.ival= 0;
@@ -196,6 +249,9 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	location= alloca(mb->vsize * sizeof(int));
 	memset((char*) location, 0, mb->vsize * sizeof(int));
+	dbalias= (DBalias*) alloca(128 * sizeof(DBalias));
+	memset((char*) dbalias, 0, 128 * sizeof(DBalias));
+	dbtop= 0;
 
 	newMalBlkStmt(mb, mb->stop);
 	for (i = 0; i < limit; i++) {
@@ -212,16 +268,7 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( (getModuleId(p)== sqlRef && getFunctionId(p)==evalRef) ){
 			if( p->argc == 3){
 				/* a remote sql eval is needed */
-				/* lookup the server connection */
-				if( location[getArg(p,0)] == 0){
-					r= newInstruction(mb,ASSIGNsymbol);
-					getModuleId(r)= mserverRef;
-					getFunctionId(r)= lookupRef;
-					j= getArg(r,0)= newTmpVariable(mb, TYPE_int);
-					location[getArg(p,0)]= j;
-					pushArgument(mb,r, getArg(p,1));
-					pushInstruction(mb,r);
-				} else j= location[getArg(p,0)];
+				@:lookupServer()@
 
 				/* turn the instruction into a local one */
 				/* one argument less */
@@ -229,11 +276,7 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				/* only use the second argument (string) */
 				getArg(p,1)= getArg(p,2);
 
-				r= newInstruction(mb,ASSIGNsymbol);
-				getModuleId(r)= mserverRef;
-				getFunctionId(r)= rpcRef;
-				getArg(r,0)= newTmpVariable(mb, TYPE_void);
-				pushArgument(mb,r,j);
+				@:prepareRemote()@
 
 				s= RQcall2str(mb,p);
 				pushStr(mb,r,s+1);
@@ -245,84 +288,28 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}else if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef) ){
 
 			if( p->argc == 6 && getArgType(mb,p,4) == TYPE_str ) {
-				/* a remote sql bind is needed */
-				/* lookup the server connection */
-				if( location[getArg(p,0)] == 0){
-					r= newInstruction(mb,ASSIGNsymbol);
-					getModuleId(r)= mserverRef;
-					getFunctionId(r)= lookupRef;
-					j= getArg(r,0)= newTmpVariable(mb, TYPE_int);
-					location[getArg(p,0)]= j;
-					pushArgument(mb,r, getArg(p,4));
-					pushInstruction(mb,r);
-				} else j = location[getArg(p,0)];
+				@:lookupServer()@
 
 				/* turn the instruction into a local one */
 				getArg(p,4)= defConstant(mb, TYPE_int, &cst);
 
-				r= newInstruction(mb,ASSIGNsymbol);
-				getModuleId(r)= mserverRef;
-				getFunctionId(r)= rpcRef;
-				getArg(r,0)= newTmpVariable(mb, TYPE_void);
-				pushArgument(mb,r,j);
-
-				for(j=p->retc; j<p->argc; j++)
-				if( location[getArg(p,j)] == 0 && !isConstant(mb,getArg(p,j)) ){
-					q= newStmt(mb,mserverRef,putRef);
-					getArg(q,0)= newTmpVariable(mb, TYPE_void);
-					pushArgument(mb,q,location[getArg(p,j)]);
-					pushStr(mb,q, getRefName(mb,getArg(p,j)));
-					pushArgument(mb,q,getArg(p,j));
-				}
-
-				s= RQcall2str(mb,p);
-				pushStr(mb,r,s+1);
-				GDKfree(s);
-				pushInstruction(mb,r);
-				freeInstruction(p);
-				doit++;
+				@:prepareRemote()@
+				@:putRemoteVariables()@
+				@:remoteAction()@
 			} else
 				pushInstruction(mb,p);
 		} else
 		if(getModuleId(p)== sqlRef && getFunctionId(p)== binddbatRef) {
 
 			if( p->argc == 5 && getArgType(mb,p,3) == TYPE_str ) {
-				/* a remote sql bind is needed */
-				/* lookup the server connection */
-				if( location[getArg(p,0)] == 0){
-					r= newInstruction(mb,ASSIGNsymbol);
-					getModuleId(r)= mserverRef;
-					getFunctionId(r)= lookupRef;
-					j= getArg(r,0)= newTmpVariable(mb, TYPE_int);
-					location[getArg(p,0)]= j;
-					pushArgument(mb,r, getArg(p,3));
-					pushInstruction(mb,r);
-				} else j= location[getArg(p,0)];
+				@:lookupServer()@
 
 				/* turn the instruction into a local one */
 				getArg(p,3)= defConstant(mb, TYPE_int, &cst);
 
-				r= newInstruction(mb,ASSIGNsymbol);
-				getModuleId(r)= mserverRef;
-				getFunctionId(r)= rpcRef;
-				getArg(r,0)= newTmpVariable(mb, TYPE_void);
-				pushArgument(mb,r,j);
-
-				for(j=p->retc; j<p->argc; j++)
-				if( location[getArg(p,j)] == 0 && !isConstant(mb,getArg(p,j)) ){
-					q= newStmt(mb,mserverRef,putRef);
-					getArg(q,0)= newTmpVariable(mb, TYPE_void);
-					pushArgument(mb,q,location[getArg(p,j)]);
-					pushStr(mb,q, getRefName(mb,getArg(p,j)));
-					pushArgument(mb,q,getArg(p,j));
-				}
-
-				s= RQcall2str(mb,p);
-				pushStr(mb,r,s+1);
-				GDKfree(s);
-				pushInstruction(mb,r);
-				freeInstruction(p);
-				doit++;
+				@:prepareRemote()@
+				@:putRemoteVariables()@
+				@:remoteAction()@
 			} else
 				pushInstruction(mb,p);
 #ifdef DEBUG_MAL_REMOTE
