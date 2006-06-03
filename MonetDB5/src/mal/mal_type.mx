@@ -264,8 +264,8 @@ be integrated with the kernel.
 int
 getTypeIndex(str nme, int len, int deftype)
 {
-	int i,k;
-	char old;
+	int i,k=0;
+	char old=0;
 
 	if (len == 3)
 		switch (*nme) {
