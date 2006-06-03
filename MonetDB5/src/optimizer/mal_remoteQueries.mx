@@ -171,8 +171,8 @@ their isolated runtime environment.
 	/* lookup the server connection */
 	if( location[getArg(p,0)] == 0){
 		db = 0;
-		if( isConstant(mb,getArg(p,1)) )
-			db= getVarConstant(mb, getArg(p,1)).val.sval;
+		if( isConstant(mb,getArg(p,@1)) )
+			db= getVarConstant(mb, getArg(p,@1)).val.sval;
 		for(k=0; k<dbtop; k++)
 			if( strcmp(db, dbalias[k].dbname)== 0)
 				break;
@@ -182,7 +182,7 @@ their isolated runtime environment.
 			getModuleId(r)= mserverRef;
 			getFunctionId(r)= lookupRef;
 			j= getArg(r,0)= newTmpVariable(mb, TYPE_int);
-			pushArgument(mb,r, getArg(p,1));
+			pushArgument(mb,r, getArg(p,@1));
 			pushInstruction(mb,r);
 			dbalias[dbtop].dbhdl= j;
 			dbalias[dbtop++].dbname= db;
@@ -268,7 +268,7 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( (getModuleId(p)== sqlRef && getFunctionId(p)==evalRef) ){
 			if( p->argc == 3){
 				/* a remote sql eval is needed */
-				@:lookupServer()@
+				@:lookupServer(1)@
 
 				/* turn the instruction into a local one */
 				/* one argument less */
@@ -288,7 +288,7 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}else if( (getModuleId(p)== sqlRef && getFunctionId(p)==bindRef) ){
 
 			if( p->argc == 6 && getArgType(mb,p,4) == TYPE_str ) {
-				@:lookupServer()@
+				@:lookupServer(4)@
 
 				/* turn the instruction into a local one */
 				getArg(p,4)= defConstant(mb, TYPE_int, &cst);
@@ -302,7 +302,7 @@ RQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(getModuleId(p)== sqlRef && getFunctionId(p)== binddbatRef) {
 
 			if( p->argc == 5 && getArgType(mb,p,3) == TYPE_str ) {
-				@:lookupServer()@
+				@:lookupServer(3)@
 
 				/* turn the instruction into a local one */
 				getArg(p,3)= defConstant(mb, TYPE_int, &cst);
@@ -341,7 +341,8 @@ to be shipped should be simple.
 					collectFirst= TRUE;
 			}
 			if( getModuleId(p)== ioRef || (getModuleId(p)== sqlRef 
-		            && getFunctionId(p)== resultSetRef))
+		            && (getFunctionId(p)== resultSetRef ||
+				getFunctionId(p)== rsColumnRef)))
 				 collectFirst= TRUE; 
 
 			/* local BATs are not shipped */
