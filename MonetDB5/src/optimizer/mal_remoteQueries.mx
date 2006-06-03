@@ -340,7 +340,9 @@ to be shipped should be simple.
 				else if( remoteSite != location[getArg(p,j)])
 					collectFirst= TRUE;
 			}
-			if( getModuleId(p)== ioRef) collectFirst= TRUE;
+			if( getModuleId(p)== ioRef || (getModuleId(p)== sqlRef 
+		            && getFunctionId(p)== resultSetRef))
+				 collectFirst= TRUE; 
 
 			/* local BATs are not shipped */
 			if( remoteSite && collectFirst== FALSE)
