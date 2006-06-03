@@ -135,6 +135,7 @@ tst3030
 tst304
 tst305
 tst3050
+tst3060
 tst307
 tst308
 HAVE_PCRE?tst350
