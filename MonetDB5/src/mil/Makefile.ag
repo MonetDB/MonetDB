@@ -1,6 +1,6 @@
 INCLUDES = ../mal $(MONETDB_INCS)
 
-#YFLAGS = -v -p mil -d
+#YFLAGS = -v -d
 
 lib_mil = {
 	DIR = pkglibdir
@@ -20,3 +20,11 @@ scripts_mal = {
 	DIR = pkglibdir
 	SOURCES = mil.mx mil_commands.mx
 }
+
+#bin_M2m = {
+#	SOURCES = M2m.mx  mil_parser.mx mil_compiler.mx mil_conformance.mx \
+#		mil_commands.mx mil.mx
+#	LIBS = $(MONETDB_LIBS) -lbat -lstream \
+#                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+#                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../mal/libmal
+#}
