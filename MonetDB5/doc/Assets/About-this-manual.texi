@@ -67,7 +67,7 @@ Feedback on the current set is highly
 appreciated, especially before you embark on a complex programming
 project. If the envisioned functionality is generally applicable it makes
 sense to contribute it to the community.
-Share your comments, thoughts, and comments through the
+Share your comments and thoughts through the
 @url{mailto:monetdb-users@@lists.sourceforge.net,MonetDB mailing list}
 held at SourceForge.
 

@@ -73,7 +73,7 @@ A summary of those operating systems and the compiler toolkits is shown below.
 
 The MonetDB development team uses many of these platforms to perform
 automated nightly regression testing. For more details
-see pxref(The Test Web).
+see @url{http://monetdb.cwi.nl/Development/TestWeb/index.html,The Test Web}.
 
 @node Standard Distribution, Source Distribution, Software Versions, Download and Installation
 @subsection Standard Distribution

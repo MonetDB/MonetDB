@@ -1,5 +1,5 @@
 @section A Brief History of MonetDB
-@strong{The Dark Ages [1979-2002]}
+@strong{The Dark Ages [1979-1992]}
 The development of the MonetDB software family goes back as far as the
 early eighties when the first relational kernel, called Troll, was delivered to
 a larger audience. It was spread over ca 1000 sites world-wide and became part
@@ -19,8 +19,8 @@ to develop database technology from a different perspective.
 A more detailed account on the experiences can be found in REF.
 
 @strong{The Early Days [1993-1995]}
-Immediately after the PRISMA project was termed dead, the basis
-for a new database kernel based on Binary Association Tables (BATs) 
+Immediately after the PRISMA project was termed dead, 
+a new database kernel based on Binary Association Tables (BATs) 
 was laid out.
 The original target was to aim for better support of scientific databases
 with their then archaic file structures. 
@@ -47,7 +47,7 @@ the result of a multi-year activity to clean up the software
 stack and to better support for simple database requests.
 (See @ref{Backward Compatibility})
 
-@strong{The future: X100, Armada}
+@strong{The Future}
 New versions in the MonetDB software family are 
 under development.
 Extensions and renovation of the kernel are tackled in

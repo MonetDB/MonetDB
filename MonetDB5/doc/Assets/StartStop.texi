@@ -66,7 +66,7 @@ given in @ref{Architecture overview}.
 At any time you can inspect the status of the (running) servers
 using the default command option @code{--status}.
 @example
->monetdb --status
+> monetdb --status
 DBNAME  SERVER  GUARD   DELAY   STARTED
 voc     21488   21502   12      Sun Dec 18 09:05:36 2005
 @end example

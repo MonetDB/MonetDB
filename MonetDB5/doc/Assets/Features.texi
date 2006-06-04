@@ -142,11 +142,15 @@ For the SQL front-end:
 @item
 It is based on the SQL'99 standard core.
 @item
+It supports foreign key constraints.
+@item
 It supports nested queries.
 @item
-It supports views.
+It supports (materialized) views.
 @item
 It supports sequence types from the SQL'03 standard.
+@item
+It supports user defined functions in C.
 @end itemize
 
 For the XQuery front-end:
@@ -184,7 +188,7 @@ A fully decomposed storage scheme using memory mapped files.
 @item
 It supports scalable databases, 32- and 64-bit platforms.
 @item
-Connectivity is provided through TCP/IP sockets on many platforms.
+Connectivity is provided through TCP/IP sockets and SSH on many platforms.
 @item
 Index selection, creation, and maintenance is automatic.
 @item

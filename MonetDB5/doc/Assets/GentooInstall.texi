@@ -1,4 +1,7 @@
-This section helps you to install the MonetDB source using Gentoo
-on all platforms, MacOs in particular.
+Gentoo is a free operating system based on either Linux or FreeBSD.
+It excells in extreme configurability, performance and claims 
+a top-notch user and developer community.
+
+Gentoo Linux users can simple type @emph{emerge monetdb}.
 [To be documented by Fabian]
 
