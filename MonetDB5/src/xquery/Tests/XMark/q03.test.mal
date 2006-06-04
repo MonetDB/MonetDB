@@ -42,10 +42,11 @@
 # FOR    $b IN document("auction.xml")/site/open_auctions/open_auction
 mg:= mguide.open("auctions.xml");
 b0:bat[:oid,:oid]:= xml.bind(mg,"site/open_auctions/open_auction");
-# create the context node set
-# b := bat.mirrorTail(b0);
+# create the context node set using the tail of the open_auctions/open_auction
+br:= bat.reverse(b0);
+b := bat.mirror(br);
 
-# WHERE  $b/bidder[1] -> [open_auction,bidder]
+# WHERE  $b/bidder[1] -> open_auction/bidder
 x0:bat[:oid,:oid]:= mguide.bind(mg,"/site/open_auctions/open_auction/bidder");
 # detect that the head of x0 is fully covered by b, which is a path prefix match
 # and no further reduction has been made. Then the next join is trivial.
@@ -53,13 +54,12 @@ X1 := algebra.join(b,x0);
 g0:= group.first(x1);
 
 # WHERE  $b/bidder[1]/increase/text()
-b3 := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase");
-f2 := bat.join(g0,b3);
-b4 := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase/text()");
-f3 := bat.join(f2,b4);
+b3 := mguide.descendant(mg,g0,
+	"site/open_auctions/open_auction/bidder/",
+	"site/open_auctions/open_auction/bidder/increase/string@");
 
 # WHERE  $b/bidder[1]/increase/text() * 2
-f4 := batcalc.int(f3);
+f4 := batcalc.int(b3);
 # we should probably use .../increase/int() and generate an error if not
 # all text is a legal integer
 f5 := batcalc.*(f4,2);
@@ -71,32 +71,35 @@ x3 := algebra.join(b,x2);
 f6 := group.last(x3); # to be implemented
 
 # $b/bidder[last()]/increase/text()
-b7 := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase");
-f8 := bat.join(f6,b7);
-# at this stage we already know we need an integer
-b8 := mguide.bind(mg,"site/open_auctions/open_auction/bidder/increase/int()");
-f9 := bat.join(f8,b8);
+b7 := mguide.descendant(mg,f6,
+	"site/open_auctions/open_auction/bidder",
+	"site/open_auctions/open_auction/bidder/increase/string@");
+f9:= batcalc.int(b7);
+#in this case we should retain the mapping $b/string@ instead
+# of the increase/string@ step
 
 # WHERE  $b/bidder[1]/increase/text() *2 <= $b/bidder[last()]/increase/text()
 # both operands are arbitrary bat[:oid,:int] objects, which call for a more
 # complicated comparison, where the comparison is only made if the oids also match.
-# Furthermore, Xquery only requires for each lhs to find a rhs that satisfies the constraint.
+# Furthermore, Xquery only requires for each lhs to find a single
+# rhs that satisfies the constraint.
 # What if there are multiple existencials in the same conditions?
-r0 := xq.<=(f5,f9);
+r0 := mguide.<=(f5,f9);
+# the result should be the subset of f5 that qualifies
 
 # consolidate the result of the expression in the qualifying b-nodes
 b := algebra.semijoin(b,r0);
 # how about the second operand?
 
-
 # sort the documents for retrieval
 b := algebra.sort(b);
 
 mr := mguide.new("result");
-e0 := mguide.add(mr, "/increase", b);
+mguide.add(mr, "/", b);
+mguide.add(mr, "/increase", b);
 # assume the common expression optimizer to take care of some stuff
 mguide.add(mr, "/increase/@first", f3);
 mguide.add(mr, "/increase/@last", f9);
-mguide.add(mg,"/increase/@last/int()",f4);
-mguide.add(mg,"/increase/@last/int()",b8);
+mguide.add(mg,"/increase/@last/int@",f4);
+mguide.add(mg,"/increase/@last/int@",b8);
 mguide.serialize(mr);

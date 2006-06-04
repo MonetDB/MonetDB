@@ -47,7 +47,7 @@ X1 := algebra.join(b,x0);
 g0:= group.first(x1);
 
 # RETURN <increase> $b/bidder[1]/increase/text()
-x3:bat[:oid,:str] := mguide.descendant(mb,g0,"/site/open_auctions/open_auction/bidder","/site/open_auctions/open_auction/bidder/increase/text()");
+x3:bat[:oid,:str] := mguide.descendant(mb,g0,"/site/open_auctions/open_auction/bidder","/site/open_auctions/open_auction/bidder/increase/string@");
 
 # this example lacks a single doc-id for the result
 mguide.add(mr,"/",g1);	# generate document head oid
