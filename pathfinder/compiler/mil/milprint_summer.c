@@ -1665,7 +1665,6 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
     if (TY_EQ(exp_type, PFty_empty ()))
     {
         milprintf(f,
-                "{ # typeswitch\n"
                 "var unique_iter := iter.tunique();\n"
                 "item := loop%03u.outerjoin(project(unique_iter,false)).[isnil]().[oid]();\n"
                 "iter := loop%03u;\n"
@@ -11075,7 +11074,9 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, char *
         timing = PFtimer_stop(timing);
         milprintf(f, "iter := 1@0;\n");
         milprintf(f, "time_compile := %d;\n" , (int) (timing/1000));
-        milprintf(f, _PFstopMIL(PFty_subtype(TY(R(c)), PFty_star(PFty_stmt()))));
+        milprintf(f, _PFstopMIL(PFty_subtype (TY(R(c)), PFty_empty ())
+                                    ? false /* only the empty sequence has type empty and is not updateable */
+                                    : PFty_subtype(TY(R(c)), PFty_star(PFty_stmt()))));
     }
 
     if (opt_close(f, prologue, query, epilogue)) {
