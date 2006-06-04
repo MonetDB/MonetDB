@@ -208,7 +208,6 @@ s_export str STATdrop(str nme);
 s_export str STATforceUpdateAll(int *ret);
 s_export str STATenroll(int *ret, str *nme);
 s_export str STATenrollHistogram(int *ret, str *nme);
-s_export str STATdiscard2(int *ret, int *bid);
 s_export str STATupdateAll(int *ret, int forced);
 s_export str STATupdate(int *ret);
 s_export str STATforceUpdate(int *ret, str *nme);
@@ -326,11 +325,12 @@ STATdrop(str nme)
 	ptr p;
 	int idx;
 
-	if(STAT_id_inuse ==0) return MAL_SUCCEED;
+	if(STAT_id_inuse ==0) 
+		return throwMessage("statistics.drop","Statistics not initialized");
 	p = BUNfnd(BATmirror(STAT_id_nme), nme);
 	if (p == 0)
 		return throwMessage("statistics.drop", "BAT not enrolled");
-	idx = *(int *) p;
+	idx = *(int *) BUNhead(STAT_id_nme,p);
 	BUNdelHead(STAT_id_nme, &idx);
 	BUNdelHead(STAT_id_expire, &idx);
 	BUNdelHead(STAT_id_stamp, &idx);
