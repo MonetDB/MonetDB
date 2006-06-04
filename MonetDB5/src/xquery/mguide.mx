@@ -33,6 +33,11 @@ address MGtobedefined
 comment "Introduce a new data guide and creates the root. 
 	The document id is returned for future reference.";
 
+command add(id:oid, path:str, val:any_1)
+address MGtobedefined
+comment "If path='/a' then the document id is matched with the value.
+	If path='/a/b' then all 'a' objects receive the value.";
+
 command add(id:oid, path:str, edge:bat[:oid,:any_1])
 address MGtobedefined
 comment "If path='/a' then the document id is matched with each oid in edge.

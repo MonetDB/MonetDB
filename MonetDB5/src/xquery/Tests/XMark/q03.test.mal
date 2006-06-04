@@ -95,7 +95,6 @@ b := algebra.semijoin(b,r0);
 b := algebra.sort(b);
 
 mr := mguide.new("result");
-mguide.add(mr, "/", b);
 mguide.add(mr, "/increase", b);
 # assume the common expression optimizer to take care of some stuff
 mguide.add(mr, "/increase/@first", f3);

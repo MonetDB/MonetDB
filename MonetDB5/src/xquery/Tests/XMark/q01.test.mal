@@ -61,12 +61,7 @@ x2:bat[:oid,:str] := mguide.descendant(mg,b,
 # all valid strings are collected
 
 # construct a new guide structure
-# we have to introduce a new document id
-# it is assumed handled by inspection of the path
-mguide.add(mr, "/",x2);
-xr := bat.reverse(x2);
-xm := bat.mirror(xr);
-mguide.add(mr, "/cdata",xm);
+mguide.add(mr, "/cdata",x2);
 mguide.add(mr, "/cdata/string@",x2);
 
 mguide.serialize(mr);
