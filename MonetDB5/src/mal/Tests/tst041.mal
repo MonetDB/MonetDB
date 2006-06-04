@@ -24,6 +24,7 @@ d:= calc.flt("7.14");	io.print(d);
 e:= "hello";	io.print(e);
 e:= calc.str(nil);	io.print(e);
 e:= calc.str("nil");	io.print(e);
+io.print(nil:str);
 
 f:= 'Z';	io.print(f);
 f:= calc.chr(nil);	io.print(f);

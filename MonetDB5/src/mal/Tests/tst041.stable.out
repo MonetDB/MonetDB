@@ -90,17 +90,18 @@ function user.main():void;	# 0  (main:void)
     io.print(e);	# 41 IOprint_val (_43:int)<-(e:str)
     e := calc.str("nil");	# 42 CALCstr2str (e:str)<-(_44:str)
     io.print(e);	# 43 IOprint_val (_45:int)<-(e:str)
-    f := 'Z';	# 44  (f:chr)<-(_47:chr)
-    io.print(f);	# 45 IOprint_val (_48:int)<-(f:chr)
-    f := calc.chr(nil);	# 46 CALCnil2chr (f:chr)<-(_42:void)
-    io.print(f);	# 47 IOprint_val (_49:int)<-(f:chr)
-    f := calc.chr("X");	# 48 CALCstr2chr (f:chr)<-(_50:str)
-    io.print(f);	# 49 IOprint_val (_51:int)<-(f:chr)
-    p := 0:ptr;	# 50  (p:ptr)<-(_53:ptr)
-    io.print(p);	# 51 IOprint_val (_54:int)<-(p:ptr)
-    p := 1:ptr;	# 52  (p:ptr)<-(_55:ptr)
-    io.print(p);	# 53 IOprint_val (_56:int)<-(p:ptr)
-end main;	# 54  
+    io.print(nil:str);	# 44 IOprint_val (_46:int)<-(_47:str)
+    f := 'Z';	# 45  (f:chr)<-(_49:chr)
+    io.print(f);	# 46 IOprint_val (_50:int)<-(f:chr)
+    f := calc.chr(nil);	# 47 CALCnil2chr (f:chr)<-(_42:void)
+    io.print(f);	# 48 IOprint_val (_51:int)<-(f:chr)
+    f := calc.chr("X");	# 49 CALCstr2chr (f:chr)<-(_52:str)
+    io.print(f);	# 50 IOprint_val (_53:int)<-(f:chr)
+    p := 0:ptr;	# 51  (p:ptr)<-(_55:ptr)
+    io.print(p);	# 52 IOprint_val (_56:int)<-(p:ptr)
+    p := 1:ptr;	# 53  (p:ptr)<-(_57:ptr)
+    io.print(p);	# 54 IOprint_val (_58:int)<-(p:ptr)
+end main;	# 55  
 [ nil ]
 [ 23 ]
 [ nil ]
@@ -122,6 +123,7 @@ end main;	# 54
 [ "hello" ]
 [ nil ]
 [ "nil" ]
+[ nil ]
 [ 'Z' ]
 [ nil ]
 [ 'X' ]
