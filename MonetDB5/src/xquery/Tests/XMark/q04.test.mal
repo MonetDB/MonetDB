@@ -14,24 +14,30 @@
 
 # FOR    $b IN document("auction.xml")/site/open_auctions/open_auction
 mg:= mguide.open("auctions.xml");
-b0:bat[:oid,:oid]:= xml.bind(mg,"site/open_auctions/open_auction");
-# create the context node set
-# b := bat.mirrorTail(b0);
 
-#$b/bidder/personref-> [bidder,personref] no reduction needed on $b
-b1:bat[:oid,:oid] := mguide.bind(mg","/site/open_auctions/open_auction/bidder/personref/@id/text()");
+# just inline the $b path in place
+# $b/bidder/personref/id/string@-> id/string@ 
+b1:bat[:oid,:oid] := mguide.bind(mg,"/site/open_auctions/open_auction/bidder/personref/@id/string@");
 #$b/bidder/personref[id="person20"] -> [id,text()]
 t0 := algebra.uselect(b1,"person20");
 
-b2:bat[:oid,:oid] := mguide.bind(mg","/site/open_auctions/open_auction/bidder/personref/@id");
-b3 := xq.ancestor(b1,b2); # produces [personref,id]
-b4:bat[:oid,:oid] := mguide.bind(mg","/site/open_auctions/open_auction/bidder/personref");
-t0 := xq.ancestor(b3,b4); # produces [bidder,personref]
-
-
 # similar for second operand
+b2:bat[:oid,:oid] := mguide.bind(mg,"/site/open_auctions/open_auction/bidder/personref/@id/string@");
+#$b/bidder/personref[id="person51"] -> id/string@
+t1 := algebra.uselect(b1,"person51");
+
 
 # limit to the early bidders
-r0 := xq.before(t0,t1);
+r0 := mguide.before(t0,t1);
 
+mr := mguide.new("result");
+# walk back to open_auctions/open_auction
+b3 := mguide.ancestor(mg, r0,
+	"/site/open_auctions/open_auction/bidder/personref/@id/string@"
+	"/site/open_auctions/open_auction/");
+# link to the value  open_auction/string@
+b4:= mguide.link(mg,b3,
+	"/site/open_auctions/open_auction/"
+	"/site/open_auctions/open_auction/initial/string@");
+mguide.add(mr,"/history",b4);
 

@@ -1,0 +1,72 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2006 CWI.
+@' All Rights Reserved.
+
+@f mgcalc
+@a N. Nes, M.L. Kersten
+@+ MonetDB Guide Library
+The MonetDB Guide library provides the routines to manage
+and inspect the data guide.
+
+@mal
+module mguide;
+
+command open(nme:str):oid
+address MGtobedefined
+comment "Locate the guide associated with a named document. 
+	Return its document id.";
+
+command new(nme:str):oid
+address MGtobedefined
+comment "Introduce a new data guide and creates the root. 
+	The document id is returned for future reference.";
+
+command add(id:oid, path:str, edge:bat[:oid,:any_1])
+address MGtobedefined
+comment "If path='/a' then the document id is matched with each oid in edge.
+	If path='/a/b' then the edge represents the step a/b.";
+
+
+command descendant(id:oid, E:bat[:oid,:any_1], F:str, T:str):bat[:oid,:any_2]
+address MGtobedefined
+comment "F and T denote walks in the guide, such that F is
+a proper prefix of T. The routine initiates a sequence of joins starting
+with the head of E to find the last edge in T.";
+
+command ancestor(id:oid, E:bat[:oid,:any_1], F:str, T:str):bat[:oid,:any_2]
+address MGtobedefined
+comment "F and T denote ancestor walks in the guide, such that T is
+a proper prefix of F. The routine initiates a sequence of joins starting
+with the head of E to find the last edge in T.";
+
+command link(id:oid, E:bat[:oid,:any_1], F:str, T:str):bat[:oid,:any_2]
+address MGtobedefined
+comment "F and T denote walks in the guide. The target is to link
+the head of E with the tail object in T. Or conversely, use E as the target
+of the last object in T, i.e. walking the ancestor trail.";
+@h
+#ifndef _MGUIDE
+#define _MGUIDE
+
+#endif
+@c
+#include "mguide.h"
+
+str
+MGtobedefined(int *ret)
+{
+	(void) ret;
+	return throwMessage("mguide","tobedefined");
+}
