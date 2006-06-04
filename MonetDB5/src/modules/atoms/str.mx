@@ -2237,7 +2237,7 @@ str
 STRinsert(str *ret, str *s, int *start, int *l, str *s2){
 	str v;
 	if(strcmp(*s2,str_nil) ==0 || strcmp(*s,str_nil)==0 )
-		*ret = (str)str_nil;
+		*ret = GDKstrdup( (str)str_nil);
 	else {
 		if( *start <0) *start =1;
 		v= *ret = GDKmalloc(strlen(*s)+strlen(*s2)+1 );
