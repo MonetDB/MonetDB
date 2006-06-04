@@ -66,6 +66,7 @@ we update its context descriptor to denote an SQL scenario.
 #include "sql_readline.h"
 #include "mal_io.h"
 #include "mal_parser.h"
+#include "mal_builder.h"
 #include <bat/res_table.h>
 #include "mal_namespace.h"
 #include "mal_debugger.h"
@@ -445,14 +446,12 @@ System has been prepared to parse it and generate code
 	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
 		if (!err)
 			err = mvc_status(m);
-		if( m->errstr){
-			char *msgbuf= alloca((strlen(m->errstr)+128) *sizeof(char));
-			sprintf(msgbuf,"Parser errors:%s\n",m->errstr);
-			msg = throwMessage("SQLparser", msgbuf);
-		} else 
+		if( m->errstr)
+			msg = throwMessage("SQLparser", m->errstr);
+		 else 
 			msg = throwMessage("SQLparser", "Parser errors\n");
-		sqlcleanup(m, err);
 		*m->errstr = 0;
+		sqlcleanup(m, err);
 		goto endofcompile;
 	}
 @-
@@ -469,9 +468,11 @@ We don;t search the cache for a previous incarnation.
 
 		if (!s && (err = mvc_status(m))) {
 			stream_printf(c->fdout, "%s\n", m->errstr);
+			if( m->errstr)
+				msg = throwMessage("SQLparser", m->errstr);
+			else msg = throwMessage("SQLparser", "Semantic errors\n");
 			*m->errstr = 0;
 			sqlcleanup(m, err);
-			msg = throwMessage("SQLparser", "Semantic errors\n");
 			goto endofcompile;
 		}
 		assert(s);

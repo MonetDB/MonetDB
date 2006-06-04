@@ -102,11 +102,14 @@ The current heuristic is geared at avoiding trivial
 factory structures.
 @c
 #include "mal_macro.h"
+#include "mal_builder.h"
 #include "mal_prelude.h"
 #include "mal_optimizer.h"
 #include "mal_peephole.h"
 #include "mal_debugger.h"
 #include "mal_namespace.h"
+#include "mal_reduce.h"
+#include "mal_multiplex.h"
 #include "sql_mvc.h"
 #include "sql_optimizer.h"
 #include "sql_scenario.h"
