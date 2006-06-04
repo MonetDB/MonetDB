@@ -425,10 +425,15 @@ command join( left:bat[:any_1,:oid], right:bat[:void,:any_3],
 		estimate:lng) :bat[:any_1,:any_3] 
 address ALGjoinestimate;
 
-command fetchjoin ( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3] )
+command fetchjoin ( left:bat[:any_1,:oid], right:bat[:void,:any_3] )
 		:bat[:any_1,:any_3] 
 address ALGfetchjoin
 comment "Hook directly into the fetch implementation of the join.";
+
+command leftfetchjoin ( left:bat[:any_1,:oid], right:bat[:void,:any_3] )
+		:bat[:any_1,:any_3] 
+address ALGleftfetchjoin
+comment "Hook directly into the left fetch join implementation.";
 
 command mergejoin (left:bat[:any_1,:any_2], right:bat[:any_2,:any_3])
 		:bat[:any_1,:any_3] 
@@ -1187,6 +1192,8 @@ CMD@1(BAT **result, BAT* b, int *param)
 @:binary(cross,BATcross)@
 @:binary(antijoin,BATantijoin)@
 @:binaryestimate(join,BATjoin)@
+@:binaryestimate(fetchjoin,BATfetchjoin)@
+@:binaryestimate(leftfetchjoin,BATleftfetchjoin)@
 @:binaryestimate(outerjoin,BATouterjoin)@
 @:binary(sunion,BATsunion)@
 @:binary(kunion,BATkunion)@
@@ -2400,6 +2407,8 @@ str ALG@1(int *result, int* bid, int *param) {
 @:ALGbinary(cross)@
 @:ALGbinary(antijoin)@
 @:ALGbinaryestimate(join)@
+@:ALGbinaryestimate(fetchjoin)@
+@:ALGbinaryestimate(leftfetchjoin)@
 @:ALGbinaryestimate(outerjoin)@
 @:ALGbinary(semijoin)@
 @:ALGbinary(sunion)@
@@ -3002,38 +3011,6 @@ ALGfind(ptr ret, int *bid, ptr val)
 	return MAL_SUCCEED;
 }
 
-mal_export str ALGfetchjoin(int *result, int *lid, int *rid);
-str
-ALGfetchjoin(int *result, int *lid, int *rid)
-{
-	BAT *left, *right, *bn = 0;
-	int rfetch, lfetch;
-
-	if ((left = BATdescriptor(*lid)) == NULL) {
-		return throwMessage("algebra.fetchjoin", "Cannot access descriptor");
-	}
-	if ((right = BATdescriptor(*rid)) == NULL) {
-		BBPreleaseref(left->batCacheid);
-		return throwMessage("algebra.fetchjoin", "Cannot access descriptor");
-	}
-
-	rfetch = (BAThdense(right) && ATOMstorage(left->ttype) <= TYPE_int);
-	lfetch = (BATtdense(left) && ATOMstorage(right->htype) <= TYPE_int);
-	if (lfetch && !(rfetch && BATcount(left) < BATcount(right))) {
-		bn = BATfetchjoin(left, right, oid_nil);
-	} else if (rfetch)
-		bn = BATmirror(BATfetchjoin(BATmirror(right), BATmirror(left), oid_nil));
-
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(right->batCacheid);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		return MAL_SUCCEED;
-	}
-	return throwMessage("algebra.fetchjoin", "can not perform a fetchjoin");
-}
 
 mal_export str ALGhashjoin(int *result, int *lid, int *rid);
 str
