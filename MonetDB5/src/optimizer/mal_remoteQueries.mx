@@ -76,6 +76,12 @@ this code can be further improved by glueing
 the instructions together when until the first
 result is needed. 
 @{
+@mal
+pattern optimizer.remoteQueries():str
+address QOTRQoptimizer;
+pattern optimizer.remoteQueries(mod:str, fcn:str):str
+address QOTRQoptimizer
+comment "Resolve the multi-table definitions";
 @h
 #ifndef _MAL_REMOTE_
 #define _MAL_REMOTE_
@@ -407,4 +413,47 @@ to be shipped should be simple.
 	return MAL_SUCCEED;
 }
 
+@- Optimizer code wrapper
+@c
+mal_export str QOTRQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str QOTRQoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	str	modnme;
+	str	fcnnme;
+	Module  scope=NULL;
+	Symbol s= NULL;
+	Client c= MCgetClient();
+	lng clk= GDKusec();
+
+	/* handle the empty argument list */
+	if( p->argc== 1){
+		/* setLifespan(mb); they should do it themselves*/
+		optimizerInit();
+		RQoptimizer(mb, stk, p);
+		return MAL_SUCCEED;
+	}
+	if( stk != 0){
+		modnme= (str)getArgValue(stk,p,1);
+		fcnnme= (str)getArgValue(stk,p,2);
+	} else {
+		modnme= getArgDefault(mb,p,1);
+		fcnnme= getArgDefault(mb,p,2);
+	}
+	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
+	if( scope)
+		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
+
+	if( s == NULL) {
+		char buf[1024];
+		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
+		return throwMessage("optimizer.remoteQueries",buf);
+	}
+	
+	if( s->def->errors == 0){
+		optimizerInit();
+		RQoptimizer(s->def,0,0);
+		optimizerCheck(s->def,"remoteQueries",1,GDKusec()-clk);
+	}
+	removeInstruction(mb, p);
+	return MAL_SUCCEED;
+}
 @}

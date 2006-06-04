@@ -41,120 +41,6 @@ pattern optimize(mod:str, fcn:str)
 address QOToptimize
 comment "Optimize a specific operation";
 
-pattern commonExpressionRemoval():str 
-address QOTCXoptimizer;
-pattern commonExpressionRemoval(mod:any_1, fcn:any_2):str 
-address QOTCXoptimizerCALL
-comment "Common subexpression optimizer";
-
-pattern aliasRemoval():str 
-address QOTARoptimizer;
-pattern aliasRemoval(mod:str, fcn:str):str 
-address QOTARoptimizerCALL
-comment "Alias removal optimizer";
-
-pattern deadCodeRemoval():str 
-address QOTDCoptimizer;
-pattern deadCodeRemoval(mod:str, fcn:str):str 
-address QOTDCoptimizerCALL
-comment "Dead code optimizer";
-
-pattern expressionAccumulation():str 
-address QOTAEoptimizer;
-pattern expressionAccumulation(mod:str, fcn:str):str 
-address QOTAEoptimizerCALL
-comment "Replace calculations with accumulator model";
-
-pattern strengthReduction():str 
-address QOTSRoptimizer;
-pattern strengthReduction(mod:str, fcn:str):str 
-address QOTSRoptimizerCALL
-comment "Move constant expressions out of the loop";
-
-pattern emptySet():str 
-address QOTESoptimizer;
-pattern emptySet(mod:str, fcn:str):str 
-address QOTESoptimizerCALL
-comment "Move constant expressions out of the blocks";
-
-pattern peephole():str 
-address QOTPHoptimizer;
-pattern peephole(mod:str, fcn:str):str 
-address QOTPHoptimizerCALL
-comment "Perform local rewrites";
-
-pattern crack():str 
-address QOTCRKoptimizer;
-pattern crack(mod:str, fcn:str):str 
-address QOTCRKoptimizerCALL
-comment "Replace algebra select with crackers select";
-
-pattern joinsel():str 
-address QOTJSoptimizer;
-pattern joinsel(mod:str, fcn:str):str 
-address QOTJSoptimizerCALL
-comment "Replace select with join select";
-
-pattern singleton():str 
-address QOTSToptimizer;
-pattern singleton(mod:str, fcn:str):str 
-address QOTSToptimizerCALL
-comment "Perform singleton optimization";
-
-pattern garbageCollector():str 
-address QOTGCoptimizer;
-pattern garbageCollector(mod:str, fcn:str):str 
-address QOTGCoptimizerCALL
-comment "Garbage collector optimizer";
-
-pattern factorize():str 
-address QOTFToptimizer;
-pattern factorize(mod:str, fcn:str):str 
-address QOTFToptimizerCALL
-comment "Turn function into a factory";
-
-pattern partitionedQuery():str 
-address QOTBPToptimizer;
-pattern partitionedQuery(mod:str, fcn:str):str 
-address QOTBPToptimizerCALL
-comment "Experiment with partitioned databases";
-
-pattern coercions():str 
-address QOTCOoptimizer;
-pattern coercions(mod:str, fcn:str):str 
-address QOTCOoptimizerCALL
-comment "Experiment with partitioned databases";
-
-pattern costEstimation():str 
-address QOTRMoptimizer;
-pattern costEstimation(mod:str, fcn:str):str 
-address QOTRMoptimizerCALL
-comment "Estimate the cost of a relational expression";
-
-pattern reduce():str 
-address QOTMRoptimizer;
-pattern reduce(mod:str, fcn:str):str 
-address QOTMRoptimizerCALL
-comment "Reduce the stack space claims";
-
-pattern multitable():str 
-address QOTMToptimizer;
-pattern multitable(mod:str, fcn:str):str 
-address QOTMToptimizerCALL
-comment "Resolve the multi-table definitions";
-
-pattern remoteQueries():str 
-address QOTRQoptimizer;
-pattern remoteQueries(mod:str, fcn:str):str 
-address QOTRQoptimizerCALL
-comment "Resolve the multi-table definitions";
-
-pattern generators():str 
-address QOTBGoptimizer;
-pattern generators(mod:str, fcn:str):str 
-address QOTBGoptimizerCALL
-comment "Resolve the multi-table definitions";
-
 pattern setDebug():void 
 address QOTdebugOptimizers;
 pattern clrDebug():void 
@@ -194,16 +80,6 @@ pattern macroContraction(mod:str, fcn:str):void
 address QOTMCoptimizerSymbol
 comment "Inliner of a specific function";
 
-pattern multiplex(CMD:str, a:any...):any
-address OPTmultiplex
-comment "Compiler for multiplexed instructions.";
-
-@-
-The query execution graph primitives.
-@mal
-pattern dumpQEP()
-address QEPtreedump
-comment "Produce an indented tree visualisation";
 @-
 The remainder of this file contains dynamic optimization
 routines, i.e. those not covered by the current backend.
@@ -227,26 +103,9 @@ optimizer.prelude();
 #include "mal_optimizer.h"
 
 #include "mal_interpreter.h"
-#include "mal_commonExpressions.h"
-#include "mal_garbageCollector.h"
-#include "mal_factorize.h"
-#include "mal_multiplex.h"
-#include "mal_partitionedQuery.h"
-#include "mal_strengthReduction.h"
 #include "mal_scenario.h"
 #include "mal_namespace.h"
-#include "mal_peephole.h"
-#include "mal_singleton.h"
-#include "mal_multiplex.h"
-#include "mal_emptyset.h"
-#include "mal_costmodel.h"
 #include "mal_macro.h"
-#include "mal_reduce.h"
-#include "mal_multitable.h"
-#include "mal_generators.h"
-#include "mal_crack.h"
-#include "mal_remoteQueries.h"
-#include "mal_joinsel.h"
 
 opt_export str QOTMEoptimizerSymbol(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 opt_export str QOTMEoptimizerModule(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -263,7 +122,6 @@ opt_export str QOTshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 opt_export str QOTshowPlan(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 opt_export size_t QOTjoinEstimate(BAT *l, BAT *r);
 opt_export str QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _OPTIMIZER_H */
 @c
@@ -284,7 +142,7 @@ optimizer_prelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 
-static int debugOpt = 0;
+int debugOpt = 0;
 str
 QOTdebugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -307,72 +165,7 @@ QOTclrdebugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 MAL functions can be optimized explicitly using the routines below.
 Beware, the function names should be known as literalstrings, because
 you may not know the runtime situation.
-@= QOTC
-mal_export str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str	modnme;
-	str	fcnnme;
-	Module  scope=NULL;
-	Symbol s= NULL;
-	Client c= MCgetClient();
-	lng clk= GDKusec();
-	char cmd= 0;
-
-	if( stk != 0){
-		modnme= (str)getArgValue(stk,p,1);
-		fcnnme= (str)getArgValue(stk,p,2);
-	} else {
-		modnme= getArgDefault(mb,p,1);
-		fcnnme= getArgDefault(mb,p,2);
-	}
-	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
-	if( scope)
-		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
-
-	if( s == NULL) {
-		char buf[1024];
-		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
-		return throwMessage(@2".optimizer",buf);
-	}
-	
-	if(debugOpt) { cmd= c->itrace; c->itrace='n';}
-	if( s->def->errors == 0){
-		optimizerInit();
-		@1optimizer(s->def,0,0);
-		optimizerCheck(s->def,@2 "",1,GDKusec()-clk);
-		if(debugOpt) { c->itrace= cmd;}
-	}
-	removeInstruction(mb, p);
-	return MAL_SUCCEED;
-}
-mal_export str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	setLifespan(mb);
-	optimizerInit();
-	@1optimizer(mb, stk, pci);
-	return MAL_SUCCEED;
-}
 @c
-@:QOTC(AR, "aliasRemoval")@
-@:QOTC(AE, "expressionAccumulation")@
-@:QOTC(BG, "generators")@
-@:QOTC(BPT, "partitionedQuery")@
-@:QOTC(CO, "coercions")@
-@:QOTC(CRK, "crack")@
-@:QOTC(CX, "commonExpressionRemoval")@
-@:QOTC(DC, "deadCodeRemoval")@
-@:QOTC(ES, "emptySet")@
-@:QOTC(FT, "factorize")@
-@:QOTC(GC, "garbageCollector")@
-@:QOTC(HR, "heuristics")@
-@:QOTC(JS, "joinsel")@
-@:QOTC(MR, "reduce")@
-@:QOTC(MT, "multitable")@
-@:QOTC(PH, "peephole")@
-@:QOTC(RM, "costEstimation")@
-@:QOTC(RQ, "remoteQueries")@
-@:QOTC(SR, "strengthReduction")@
-@:QOTC(ST, "singleton")@
 
 str
 QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -640,47 +433,4 @@ str QOT@1optimizer( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 @:macroOptimizer(ME, MACRO)@
 @:macroOptimizer(MC, ORCAM)@
 
-static str optimizerRef;
-static str multiplexRef;
-str
-OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-
-	InstrPtr *old, p;
-	int i,j, limit,doit= 0, init=0;
-	lng clk = GDKusec();
-
-	if( optimizerRef == 0) 
-		optimizerRef = putName("optimizer", 9);
-	if( multiplexRef == 0) 
-		multiplexRef = putName("multiplex", 9);
-	(void) stk;
-	(void) pci;
-	if( mb->errors) 
-		return MAL_SUCCEED;
-	old = mb->stmt;
-
-	limit = mb->stop;
-	for (i = 0; i < limit; i++) {
-		p = old[i];
-		if (getModuleId(p) == optimizerRef && getFunctionId(p) == multiplexRef) {
-			if(init==0){
-				newMalBlkStmt(mb, mb->stop);
-				for(j= 0; j<i; j++)
-					pushInstruction(mb,old[j]);
-				init++;
-			}
-			OPTexpandMultiplex(mb, stk, p);
-			/* freeInstruction(p);*/
-			doit++;
-		} else
-		if( init )
-			pushInstruction(mb, p);
-	}
-	if( init){
-		GDKfree(old);
-		optimizerCheck(mb, "optimizer.multiplex", doit, GDKusec() - clk);
-	}
-	return MAL_SUCCEED;
-}
 @}

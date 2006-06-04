@@ -4,5 +4,5 @@ function qry():void;
 	c:= batcalc.*(b,4);
 end qry;
 
-optimizer.expressionAccumulation("user","qry");
+optimizer.accumulators("user","qry");
 mdb.List("user","qry");

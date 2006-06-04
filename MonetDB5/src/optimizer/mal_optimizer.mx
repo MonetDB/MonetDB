@@ -427,6 +427,38 @@ One of the easiest pitfalls is to derive an optimized
 version of a MAL function while it is already referenced by or
 when polymorphic typechecking is required afterwards.
 @{
+The optimizers defined here are registered to the optimizer module.
+@mal
+pattern optimizer.aliasRemoval():str
+address QOTARoptimizer;
+pattern optimizer.aliasRemoval(mod:str, fcn:str):str
+address QOTARoptimizer
+comment "Alias removal optimizer";
+
+pattern optimizer.deadCodeRemoval():str
+address QOTDCoptimizer;
+pattern optimizer.deadCodeRemoval(mod:str, fcn:str):str
+address QOTDCoptimizer
+comment "Dead code optimizer";
+
+pattern optimizer.coercions():str
+address QOTCOoptimizer;
+pattern optimizer.coercions(mod:str, fcn:str):str
+address QOTCOoptimizer
+comment "Handle simple type coercions";
+
+pattern optimizer.heuristics():str
+address QOTHRoptimizer;
+pattern optimizer.heuristics(mod:str, fcn:str):str
+address QOTHRoptimizer
+comment "Handle simple replacements";
+
+pattern optimizer.accumulators():str
+address QOTAEoptimizer;
+pattern optimizer.accumulators(mod:str, fcn:str):str
+address QOTAEoptimizer
+comment "Replace calculations with accumulator model";
+
 @h
 #include "mal.h"
 #include "mal_function.h"
@@ -1412,7 +1444,7 @@ For example, consider the program snippet
 @example
 	t3:= batcalc.*(64,t2);
 	t4:= batcalc,+(t1,t3);
-	optimizer.expressionAccumulation();
+	optimizer.accumulators();
 @end example
 If variable t2 is not used any further and retains its type throughout
 the program block, we can re-use its storage space
@@ -1673,7 +1705,7 @@ at the end of the optimization attempt.
 	if (errlen)
 		strncpy(cntxt->errbuf, olderr, errlen);
 	/* remove the AEoptimizer request */
-	optimizerCheck(mb, "mal.expressionAccumulation", actions, GDKusec() - clk);
+	optimizerCheck(mb, "mal.accumulators", actions, GDKusec() - clk);
 	if (mb->errors) {
 		showErrors();
 		return throwMessage("AEoptimizer", "Optimization raised errors");
@@ -1886,4 +1918,53 @@ AMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		removeInstruction(mb, pci);
 	return MAL_SUCCEED;
 }
+@- Optimizer code wrapper
+@= QOTC
+mal_export str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	str	modnme;
+	str	fcnnme;
+	Module  scope=NULL;
+	Symbol s= NULL;
+	Client c= MCgetClient();
+	lng clk= GDKusec();
+
+	/* handle the empty argument list */
+	if( p->argc== 1){
+		/* setLifespan(mb); they should do it themselves*/
+		optimizerInit();
+		@1optimizer(mb, stk, p);
+		return MAL_SUCCEED;
+	}
+	if( stk != 0){
+		modnme= (str)getArgValue(stk,p,1);
+		fcnnme= (str)getArgValue(stk,p,2);
+	} else {
+		modnme= getArgDefault(mb,p,1);
+		fcnnme= getArgDefault(mb,p,2);
+	}
+	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
+	if( scope)
+		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
+
+	if( s == NULL) {
+		char buf[1024];
+		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
+		return throwMessage(@2".optimizer",buf);
+	}
+	
+	if( s->def->errors == 0){
+		optimizerInit();
+		@1optimizer(s->def,0,0);
+		optimizerCheck(s->def,@2 "",1,GDKusec()-clk);
+	}
+	removeInstruction(mb, p);
+	return MAL_SUCCEED;
+}
+@c
+@:QOTC(AR, "aliasRemoval")@
+@:QOTC(AE, "accumulators")@
+@:QOTC(CO, "coercions")@
+@:QOTC(DC, "deadCodeRemoval")@
+@:QOTC(HR, "heuristics")@
 @}

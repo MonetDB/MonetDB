@@ -27,6 +27,12 @@ for the compilers 'mistakes'.
 The collection of peephole patterns should grow over time and
 front-end specific variations are foreseen.
 @{
+@mal
+pattern optimizer.peephole():str
+address QOTPHoptimizer;
+pattern optimizer.peephole(mod:str, fcn:str):str
+address QOTPHoptimizer
+comment "Perform local rewrites";
 @h
 #ifndef _MAL_PEEPHOLE_
 #define _MAL_PEEPHOLE_
@@ -207,4 +213,47 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+@- Optimizer code wrapper
+@c
+mal_export str QOTPHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str QOTPHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	str	modnme;
+	str	fcnnme;
+	Module  scope=NULL;
+	Symbol s= NULL;
+	Client c= MCgetClient();
+	lng clk= GDKusec();
+
+	/* handle the empty argument list */
+	if( p->argc== 1){
+		/* setLifespan(mb); they should do it themselves*/
+		optimizerInit();
+		PHoptimizer(mb, stk, p);
+		return MAL_SUCCEED;
+	}
+	if( stk != 0){
+		modnme= (str)getArgValue(stk,p,1);
+		fcnnme= (str)getArgValue(stk,p,2);
+	} else {
+		modnme= getArgDefault(mb,p,1);
+		fcnnme= getArgDefault(mb,p,2);
+	}
+	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
+	if( scope)
+		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
+
+	if( s == NULL) {
+		char buf[1024];
+		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
+		return throwMessage("optimizer.peephole",buf);
+	}
+	
+	if( s->def->errors == 0){
+		optimizerInit();
+		PHoptimizer(s->def,0,0);
+		optimizerCheck(s->def,"peephole",1,GDKusec()-clk);
+	}
+	removeInstruction(mb, p);
+	return MAL_SUCCEED;
+}
 @}

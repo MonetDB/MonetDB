@@ -86,5 +86,5 @@ exit always;
 	return always;
 end qry1;
 
-optimizer.costEstimation("user","qry1");
+optimizer.costModel("user","qry1");
 mdb.list("user","qry1");

@@ -17,6 +17,12 @@
 @f mal_commonExpressions
 @a M. Kersten
 @{
+@mal
+pattern optimizer.commonExpressionRemoval():str
+address QOTCXoptimizer;
+pattern optimizer.commonExpressionRemoval(mod:any_1, fcn:any_2):str
+address QOTCXoptimizer
+comment "Common subexpression optimizer"
 @h
 #ifndef _MAL_STRENGTHREDUCTION_
 #define _MAL_STRENGTHREDUCTION_
@@ -162,4 +168,47 @@ CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+@- Optimizer code wrapper
+@c
+mal_export str QOTCXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str QOTCXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	str	modnme;
+	str	fcnnme;
+	Module  scope=NULL;
+	Symbol s= NULL;
+	Client c= MCgetClient();
+	lng clk= GDKusec();
+
+	/* handle the empty argument list */
+	if( p->argc== 1){
+		/* setLifespan(mb); they should do it themselves*/
+		optimizerInit();
+		CXoptimizer(mb, stk, p);
+		return MAL_SUCCEED;
+	}
+	if( stk != 0){
+		modnme= (str)getArgValue(stk,p,1);
+		fcnnme= (str)getArgValue(stk,p,2);
+	} else {
+		modnme= getArgDefault(mb,p,1);
+		fcnnme= getArgDefault(mb,p,2);
+	}
+	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
+	if( scope)
+		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
+
+	if( s == NULL) {
+		char buf[1024];
+		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
+		return throwMessage("commonExpressionRemoval.optimizer",buf);
+	}
+	
+	if( s->def->errors == 0){
+		optimizerInit();
+		CXoptimizer(s->def,0,0);
+		optimizerCheck(s->def,"commonExpressionRemoval",1,GDKusec()-clk);
+	}
+	removeInstruction(mb, p);
+	return MAL_SUCCEED;
+}
 @}

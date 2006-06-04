@@ -75,9 +75,17 @@ Caveats. The factorize operation interferes with
 because that may overwrite the arguments.
 For the time being this is captured in a local routine.
 @{
+@mal
+pattern optimizer.factorize():str
+address QOTFToptimizer;
+pattern optimizer.factorize(mod:str, fcn:str):str
+address QOTFToptimizer
+comment "Turn function into a factory";
+
 @h
 #ifndef _MAL_FACTORY_
 #define _MAL_FACTORY_
+#include "mal_prelude.h"
 #include "mal_optimizer.h"
 
 /* #define DEBUG_MAL_FACTORY     show partial result */
@@ -244,4 +252,47 @@ FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+@- Optimizer code wrapper
+@c
+mal_export str QOTFToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str QOTFToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	str	modnme;
+	str	fcnnme;
+	Module  scope=NULL;
+	Symbol s= NULL;
+	Client c= MCgetClient();
+	lng clk= GDKusec();
+
+	/* handle the empty argument list */
+	if( p->argc== 1){
+		/* setLifespan(mb); they should do it themselves*/
+		optimizerInit();
+		FToptimizer(mb, stk, p);
+		return MAL_SUCCEED;
+	}
+	if( stk != 0){
+		modnme= (str)getArgValue(stk,p,1);
+		fcnnme= (str)getArgValue(stk,p,2);
+	} else {
+		modnme= getArgDefault(mb,p,1);
+		fcnnme= getArgDefault(mb,p,2);
+	}
+	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
+	if( scope)
+		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
+
+	if( s == NULL) {
+		char buf[1024];
+		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
+		return throwMessage("optimizer.factorize",buf);
+	}
+	
+	if( s->def->errors == 0){
+		optimizerInit();
+		FToptimizer(s->def,0,0);
+		optimizerCheck(s->def,"factorize",1,GDKusec()-clk);
+	}
+	removeInstruction(mb, p);
+	return MAL_SUCCEED;
+}
 @}

@@ -5,6 +5,6 @@ barrier (go,i1) := language.newRange(1:int);
 	redo (go,i1) := language.nextElement(1:int,500:int);
 exit (go,i1);
 end f3;
-	#optimizer.expressionAccumulation("user","f3");
+	#optimizer.accumulators("user","f3");
 	optimizer.strengthReduction("user","f3");
 	mdb.list("user","f3");

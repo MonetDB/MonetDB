@@ -40,7 +40,7 @@ A snippet of a the effect of the garbage collector:
     t5 := batcalc.+(t2,t4);
     t6 := batcalc.oid(t5);
     t7 := algebra.join(t6,t1);
-    optimizer.setGarbageCollector();
+    optimizer.garbageCollector();
 @end verbatim
 is translated into the following code block:
 @verbatim
@@ -77,6 +77,12 @@ anyway.
 
 This optimizer should not be called when the scheduler
 intends to keep intermediates around for re-use.
+@mal
+pattern optimizer.garbageCollector():str
+address QOTGCoptimizer;
+pattern optimizer.garbageCollector(mod:str, fcn:str):str
+address QOTGCoptimizer
+comment "Garbage collector optimizer";
 @h
 #ifndef _MAL_GARBAGE_
 #define _MAL_GARBAGE_
@@ -121,6 +127,8 @@ GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			removeInstruction(mb, pci);
 		return MAL_SUCCEED;
 	}
+	setLifespan(mb);
+
 	stmt = (InstrPtr *) GDKmalloc(mb->ssize * sizeof(InstrPtr));
 	memcpy(stmt, mb->stmt, mb->ssize * sizeof(InstrPtr));
 	memset((char*) mb->stmt,0, mb->ssize * sizeof(InstrPtr));
@@ -180,4 +188,47 @@ GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+@- Optimizer code wrapper
+@c
+mal_export str QOTGCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str QOTGCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	str	modnme;
+	str	fcnnme;
+	Module  scope=NULL;
+	Symbol s= NULL;
+	Client c= MCgetClient();
+	lng clk= GDKusec();
+
+	/* handle the empty argument list */
+	if( p->argc== 1){
+		/* setLifespan(mb); they should do it themselves*/
+		optimizerInit();
+		GCoptimizer(mb, stk, p);
+		return MAL_SUCCEED;
+	}
+	if( stk != 0){
+		modnme= (str)getArgValue(stk,p,1);
+		fcnnme= (str)getArgValue(stk,p,2);
+	} else {
+		modnme= getArgDefault(mb,p,1);
+		fcnnme= getArgDefault(mb,p,2);
+	}
+	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
+	if( scope)
+		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
+
+	if( s == NULL) {
+		char buf[1024];
+		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
+		return throwMessage("optimizer.garbageCollector",buf);
+	}
+	
+	if( s->def->errors == 0){
+		optimizerInit();
+		GCoptimizer(s->def,0,0);
+		optimizerCheck(s->def,"garbageCollector",1,GDKusec()-clk);
+	}
+	removeInstruction(mb, p);
+	return MAL_SUCCEED;
+}
 @}

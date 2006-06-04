@@ -78,7 +78,10 @@ to produce a query plan section that can not easily be moved
 around.
 [give dot examples]
 @{
-
+@mal
+pattern optimizer.dumpQEP()
+address QEPtreedump
+comment "Produce an indented tree visualisation";
 @h
 #ifndef _MAL_QEP_
 #define _MAL_QEP_

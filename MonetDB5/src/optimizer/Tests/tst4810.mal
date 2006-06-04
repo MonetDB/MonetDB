@@ -6,7 +6,7 @@ function f1():void;
 	bat.setPersistent(top);
 	transaction.commit();
 end f1;
-	optimizer.expressionAccumulation("user","f1");
+	optimizer.accumulators("user","f1");
 	optimizer.garbageCollector("user","f1");
 	#f1();
 
@@ -23,7 +23,7 @@ function f2():void;
 	bat.setPersistent(top);
 	transaction.commit();
 end f2;
-	optimizer.expressionAccumulation("user","f2");
+	optimizer.accumulators("user","f2");
 	optimizer.garbageCollector("user","f2");
 	#f2();
 
@@ -81,7 +81,7 @@ exit (go,i1);
 	bat.setPersistent(top);
 	transaction.commit();
 end f3;
-	optimizer.expressionAccumulation("user","f3");
+	optimizer.accumulators("user","f3");
 	optimizer.commonExpressionRemoval("user","f3");
 	optimizer.strengthReduction("user","f3");
 	optimizer.garbageCollector("user","f3");
@@ -93,7 +93,7 @@ function f4():void;
 	bat.setPersistent(SIM_bat,false);
 	transaction.commit();
 end f4;
-	optimizer.expressionAccumulation("user","f4");
+	optimizer.accumulators("user","f4");
 	optimizer.garbageCollector("user","f4");
 #	f4();
 

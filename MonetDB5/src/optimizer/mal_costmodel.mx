@@ -40,7 +40,7 @@ to avoid overwriting information produced by the front-end compiler.
     rs:= algebra.select(s,1,1);
     rr:= bat.reverse(r);
     j:= algebra.join(rs,rr);
-    optimizer.costEstimation();
+    optimizer.costModel();
 @end verbatim
 changes the properties of the instructions as follows:
 @verbatim
@@ -56,6 +56,12 @@ data distribution yet. It just applies a few heuristic cost
 estimators.
 @{
 @+ Implementation section
+@mal
+pattern costModel():str
+address QOTRMoptimizer;
+pattern costModel(mod:str, fcn:str):str
+address QOTRMoptimizer
+comment "Estimate the cost of a relational expression";
 @h
 #ifndef _MAL_COSTMODEL_H_
 #define _MAL_COSTMODEL_H_
@@ -215,4 +221,47 @@ getCost(MalBlkPtr mb, int varid)
 	return c;
 }
 
+@- Optimizer code wrapper
+@c
+mal_export str QOTRMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str QOTRMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	str	modnme;
+	str	fcnnme;
+	Module  scope=NULL;
+	Symbol s= NULL;
+	Client c= MCgetClient();
+	lng clk= GDKusec();
+
+	/* handle the empty argument list */
+	if( p->argc== 1){
+		/* setLifespan(mb); they should do it themselves*/
+		optimizerInit();
+		RMoptimizer(mb, stk, p);
+		return MAL_SUCCEED;
+	}
+	if( stk != 0){
+		modnme= (str)getArgValue(stk,p,1);
+		fcnnme= (str)getArgValue(stk,p,2);
+	} else {
+		modnme= getArgDefault(mb,p,1);
+		fcnnme= getArgDefault(mb,p,2);
+	}
+	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
+	if( scope)
+		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
+
+	if( s == NULL) {
+		char buf[1024];
+		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
+		return throwMessage("optimizer.costModel",buf);
+	}
+	
+	if( s->def->errors == 0){
+		optimizerInit();
+		RMoptimizer(s->def,0,0);
+		optimizerCheck(s->def,"costModel",1,GDKusec()-clk);
+	}
+	removeInstruction(mb, p);
+	return MAL_SUCCEED;
+}
 @}

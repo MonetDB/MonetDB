@@ -64,6 +64,10 @@ operators we assume aligned BATs and the script version does
 not deal with duplicates in the head of the bats.
 [/WARNING]
 @{
+@mal
+pattern optimizer.multiplex(CMD:str, a:any...):any
+address OPTmultiplex
+comment "Compiler for multiplexed instructions.";
 @h
 #ifndef _OPT_MULTIPLEX_H_
 #define _OPT_MULTIPLEX_H_
@@ -72,6 +76,7 @@ not deal with duplicates in the head of the bats.
 #include "optimizer.h"
 
 opt_export str OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _OPT_MULTIPLEX_H_ */
 
 @+ Code generation
@@ -235,4 +240,47 @@ find the actual arguments at the proper place of the callee.
 	return msg;
 }
 
+static str optimizerRef;
+static str multiplexRef;
+str
+OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+
+	InstrPtr *old, p;
+	int i,j, limit,doit= 0, init=0;
+	lng clk = GDKusec();
+
+	if( optimizerRef == 0) 
+		optimizerRef = putName("optimizer", 9);
+	if( multiplexRef == 0) 
+		multiplexRef = putName("multiplex", 9);
+	(void) stk;
+	(void) pci;
+	if( mb->errors) 
+		return MAL_SUCCEED;
+	old = mb->stmt;
+
+	limit = mb->stop;
+	for (i = 0; i < limit; i++) {
+		p = old[i];
+		if (getModuleId(p) == optimizerRef && getFunctionId(p) == multiplexRef) {
+			if(init==0){
+				newMalBlkStmt(mb, mb->stop);
+				for(j= 0; j<i; j++)
+					pushInstruction(mb,old[j]);
+				init++;
+			}
+			OPTexpandMultiplex(mb, stk, p);
+			/* freeInstruction(p);*/
+			doit++;
+		} else
+		if( init )
+			pushInstruction(mb, p);
+	}
+	if( init){
+		GDKfree(old);
+		optimizerCheck(mb, "optimizer.multiplex", doit, GDKusec() - clk);
+	}
+	return MAL_SUCCEED;
+}
 @}

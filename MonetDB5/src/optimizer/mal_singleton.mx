@@ -49,6 +49,13 @@ is translated by into the code block
 	io.print(d);
 @end verbatim
 @{
+@mal
+pattern optimizer.singleton():str
+address QOTSToptimizer;
+pattern optimizer.singleton(mod:str, fcn:str):str
+address QOTSToptimizer
+comment "Perform singleton optimization";
+
 @h
 #ifndef _MAL_SINGLETON_
 #define _MAL_SINGLETON_
@@ -361,5 +368,48 @@ SToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	STevaluate(mb, cnt, vars);
 	(void) stk;
+	return MAL_SUCCEED;
+}
+@- Optimizer code wrapper
+@c
+mal_export str QOTSToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str QOTSToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	str	modnme;
+	str	fcnnme;
+	Module  scope=NULL;
+	Symbol s= NULL;
+	Client c= MCgetClient();
+	lng clk= GDKusec();
+
+	/* handle the empty argument list */
+	if( p->argc== 1){
+		/* setLifespan(mb); they should do it themselves*/
+		optimizerInit();
+		SToptimizer(mb, stk, p);
+		return MAL_SUCCEED;
+	}
+	if( stk != 0){
+		modnme= (str)getArgValue(stk,p,1);
+		fcnnme= (str)getArgValue(stk,p,2);
+	} else {
+		modnme= getArgDefault(mb,p,1);
+		fcnnme= getArgDefault(mb,p,2);
+	}
+	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
+	if( scope)
+		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
+
+	if( s == NULL) {
+		char buf[1024];
+		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
+		return throwMessage("optimizer.singleton",buf);
+	}
+	
+	if( s->def->errors == 0){
+		optimizerInit();
+		SToptimizer(s->def,0,0);
+		optimizerCheck(s->def,"singleton",1,GDKusec()-clk);
+	}
+	removeInstruction(mb, p);
 	return MAL_SUCCEED;
 }

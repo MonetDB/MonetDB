@@ -30,7 +30,7 @@ the function resolution scheme.
 
 @mal
 # less important stuff
-include crackers;
+include crackers; # not in alpha5
 
 #include pcl;
 include mdb;
@@ -85,6 +85,27 @@ include statistics;
 
 include mat;
 include optimizer;
+# here follows all the optimizer modules
+include mal_optimizer;
+include mal_commonExpressions;
+include mal_costmodel;
+include mal_emptyset;
+include mal_factorize;
+include mal_garbageCollector;
+include mal_generators;
+include mal_multiplex;
+include mal_multitable;
+include mal_partitionedQuery;
+include mal_peephole;
+include mal_qep;
+include mal_reduce;
+include mal_singleton;
+include mal_strengthReduction;
+
+include mal_crack;	#  not in alpha5
+include mal_joinselect;	#  not in alpha5
+include mal_remoteQueries; # not in alpha5
+
 include chopper;
 #include logger;
 include transaction;

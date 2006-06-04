@@ -60,9 +60,17 @@ the block condition.
 For example, it doesn't make sense to move creation of objects
 outside the barrier.
 @{
+@mal
+pattern optimizer.strengthReduction():str
+address QOTSRoptimizer;
+pattern optimizer.strengthReduction(mod:str, fcn:str):str
+address QOTSRoptimizer
+comment "Move constant expressions out of the loop";
+
 @h
 #ifndef _MAL_STRENGTHREDUCTION_
 #define _MAL_STRENGTHREDUCTION_
+#include "mal_prelude.h"
 #include "mal_optimizer.h"
 
 /* #define DEBUG_MAL_STRENGTHREDUCTION     show partial result */
@@ -253,4 +261,47 @@ after the loop, because then you may not simple move an expression.
 	return MAL_SUCCEED;
 }
 
+@- Optimizer code wrapper
+@c
+mal_export str QOTSRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str QOTSRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	str	modnme;
+	str	fcnnme;
+	Module  scope=NULL;
+	Symbol s= NULL;
+	Client c= MCgetClient();
+	lng clk= GDKusec();
+
+	/* handle the empty argument list */
+	if( p->argc== 1){
+		/* setLifespan(mb); they should do it themselves*/
+		optimizerInit();
+		SRoptimizer(mb, stk, p);
+		return MAL_SUCCEED;
+	}
+	if( stk != 0){
+		modnme= (str)getArgValue(stk,p,1);
+		fcnnme= (str)getArgValue(stk,p,2);
+	} else {
+		modnme= getArgDefault(mb,p,1);
+		fcnnme= getArgDefault(mb,p,2);
+	}
+	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
+	if( scope)
+		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
+
+	if( s == NULL) {
+		char buf[1024];
+		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
+		return throwMessage("optimizer.strengthReduction",buf);
+	}
+	
+	if( s->def->errors == 0){
+		optimizerInit();
+		SRoptimizer(s->def,0,0);
+		optimizerCheck(s->def, "strengthReduction",1,GDKusec()-clk);
+	}
+	removeInstruction(mb, p);
+	return MAL_SUCCEED;
+}
 @}

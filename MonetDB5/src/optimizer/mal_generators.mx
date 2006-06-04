@@ -81,6 +81,13 @@ The implementation may even decide to pack components together.
 To minimize the impact of the generators, it is adviced to
 first normalize the query plan, moving related instructions close
 together.
+@mal
+pattern optimizer.generators():str
+address QOTBGoptimizer;
+pattern optimizer.generators(mod:str, fcn:str):str
+address QOTBGoptimizer
+comment "Resolve the multi-table definitions";
+
 @h
 #ifndef _MAL_BATLOOPS_
 #define _MAL_BATLOOPS_
@@ -407,6 +414,49 @@ At this stage we should close any open generators.
 	printFunction(GDKout, mb, 0);
 #endif
 
+	return MAL_SUCCEED;
+}
+@- Optimizer code wrapper
+@c
+mal_export str QOTBGoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str QOTBGoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	str	modnme;
+	str	fcnnme;
+	Module  scope=NULL;
+	Symbol s= NULL;
+	Client c= MCgetClient();
+	lng clk= GDKusec();
+
+	/* handle the empty argument list */
+	if( p->argc== 1){
+		/* setLifespan(mb); they should do it themselves*/
+		optimizerInit();
+		BGoptimizer(mb, stk, p);
+		return MAL_SUCCEED;
+	}
+	if( stk != 0){
+		modnme= (str)getArgValue(stk,p,1);
+		fcnnme= (str)getArgValue(stk,p,2);
+	} else {
+		modnme= getArgDefault(mb,p,1);
+		fcnnme= getArgDefault(mb,p,2);
+	}
+	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
+	if( scope)
+		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
+
+	if( s == NULL) {
+		char buf[1024];
+		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
+		return throwMessage("optimizer.generators",buf);
+	}
+	
+	if( s->def->errors == 0){
+		optimizerInit();
+		BGoptimizer(s->def,0,0);
+		optimizerCheck(s->def,"generators",1,GDKusec()-clk);
+	}
+	removeInstruction(mb, p);
 	return MAL_SUCCEED;
 }
 @}
