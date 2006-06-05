@@ -65,6 +65,7 @@ we update its context descriptor to denote an SQL scenario.
 #include "sql_readline.h"
 #include "mal_io.h"
 #include "mal_parser.h"
+#include "mal_builder.h"
 #include <bat/res_table.h>
 #include "mal_namespace.h"
 #include "mal_debugger.h"
@@ -498,13 +499,6 @@ We don;t search the cache for a previous incarnation.
 		printFunction(c->fdout, c->curprg->def, c->listing);
 #endif
 
-		if (!c->curprg->def->errors && m->mode != m_prepare &&
-/*
-		    (msg = sql_get_var(m,"optimizer")) == NULL) 
-*/
-		    !m->cache) {
-			OPTmultiplex(c->curprg->def,0,0);
-		}
 		if (!c->curprg->def->errors) {
 			backend *be = c->state[PARSER];
 			sql->out = NULL; /* no output */
@@ -989,13 +983,6 @@ query block.
 		chkTypes(c->nspace, c->curprg->def); /* resolve types */
 		/* we know more in this case then
 			chkProgram(c->nspace, c->curprg->def); */
-		if (!c->curprg->def->errors && m->mode != m_prepare &&
-/*
-		    (msg = sql_get_var(m,"optimizer")) == NULL) 
-*/
-		    !m->cache) {
-			OPTmultiplex(c->curprg->def,0,0);
-		}
 		if (c->curprg->def->errors) {
 			if( m->mode == m_debug){
 				/* switch to differnt language mode */

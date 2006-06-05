@@ -99,21 +99,18 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 To speedup code generation we freeze the references to the major modules.
 This safes table lookups.
 @c
-static str resultSetRef;
 static str exportValueRef;
 static str exportResultRef;
 static str exportOperationRef;
 static str sql_cacheRef;
 
 void initSQLreferences(){
-	if( resultSetRef != 0) return;
 	optimizerInit();
 	exportValueRef = putName("exportValue",11);
-	resultSetRef= putName("resultSet",9);
 	exportResultRef= putName("exportResult",12);
 	exportOperationRef= putName("exportOperation",15);
 	sql_cacheRef= putName("sql_cache",9);
-	if( algebraRef==NULL || resultSetRef==NULL || exportValueRef==NULL ||
+	if( algebraRef==NULL || exportValueRef==NULL ||
 		exportResultRef==NULL || exportOperationRef==NULL || 
 		sql_cacheRef== NULL)
 			GDKfatal("error initSQLreferences");
@@ -433,6 +430,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushStr(mb, q,s->op1.cval->base.name);
 			if (dbalias)
 				q = pushStr(mb, q, dbalias);
+			else 
+				q = pushInt(mb, q, 0);
 			q = pushInt(mb, q, s->flag);
 			s->nr = getDestVar(q);
 			@:SQLpostlude@
@@ -453,6 +452,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushStr(mb, q,s->op1.tval->base.name);
 			if (dbalias)
                         	q = pushStr(mb, q, dbalias);
+			else 
+				q = pushInt(mb, q, 0);
 			q = pushInt(mb, q, s->flag);
 			s->nr = getDestVar(q);
 			@:SQLpostlude@
@@ -479,6 +480,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushStr(mb, q, s->op1.idxval->base.name);
 			if (dbalias)
                                 q = pushStr(mb, q, dbalias);
+			else 
+				q = pushInt(mb, q, 0);
 			q = pushInt(mb, q, s->flag);
 			s->nr = getDestVar(q);
 			@:SQLpostlude@

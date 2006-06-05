@@ -309,8 +309,7 @@ to allow inspection.
 		COoptimizer(mb,0,0);
 		ARoptimizer(mb, 0, 0);
 		CXoptimizer(mb,0,0);
-		//FXoptimizer(mb, 0, 0);
-		OPTmultiplex(mb, 0, 0);
+		/* FXoptimizer(mb, 0, 0);	 factory code */
 		MRoptimizer(mb,0,0);
 		RQoptimizer(mb,0,0);
 	} else if( optimizer && strcmp(optimizer,"off")==0 ){
