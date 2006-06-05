@@ -6,22 +6,7 @@ concerning testing.
 
 test suites in this directory:
 
-- Availability:	testing the availability of modules and their MIL commands
-
 - BugReports:	test scripts extracted from bug reports
 
-- sigs:		old version of Availability
-
 - suite_??:	older (partly outdated) test scripts
-
-- FIX.suite_??:	same as suite_??, but with out performance output, so output
-		should be identical on any system
-
-
-	Stefan Manegold
---
-| Stefan Manegold     | mailto:Stefan.Manegold@cwi.nl |
-| CWI,  P.O.Box 94079 | http://www.cwi.nl/~manegold/  |
-| 1090 GB Amsterdam   | Tel.: +31 (20) 592-4212       |
-| The Netherlands     | Fax : +31 (20) 592-4199       |
 
