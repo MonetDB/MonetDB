@@ -451,9 +451,10 @@ STATforceUpdate(int *ret, str *nme)
 		BUNdelete(STAT_id_max_lng, p);
 
 	if (b->ttype == TYPE_int) {
-		BATmin(b, &cnt);
+		int val;
+		BATmin(b, &val); cnt = val;
 		BUNins(STAT_id_min_lng, &idx, &cnt, FALSE);
-		BATmax(b, &cnt);
+		BATmax(b, &val); cnt = val;
 		BUNins(STAT_id_max_lng, &idx, &cnt, FALSE);
 	} else {
 		BUNins(STAT_id_min_lng, &idx, (ptr)&lng_nil, FALSE);
