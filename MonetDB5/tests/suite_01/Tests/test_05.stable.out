@@ -81,81 +81,75 @@ stdout of test 'test_05` in directory 'tests/suite_01` itself:
 #	va_a := clients.quit();
 #
 function user.main():void;	# 0  (main:void)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_31:str)
-#Predefined code segment 	# 2  (_32:str)
-#The compiler can not guarantee an accurate compilation, 	# 3  (_33:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 4  (_34:str)
-#A few guidelines to maximize usefullness. 	# 5  (_35:str)
-#- make the type of variables explicit, in particular 'nil' 	# 6  (_36:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  (_37:str)
-#use the "mil_schema" for additional support routines 	# 8  (_38:str)
-    mil.line("setoid(oid(20000000));");	# 9 MILline (_39:void)<-(_40:str)
-    aa_a := calc.oid(20000000);	# 10 CALCint2oid (aa_a:oid)<-(_42:int)
-    ba_a := calc.setoid(aa_a);	# 11 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-    mil.line("# escape sequences\n");	# 12 MILline (_44:void)<-(_45:str)
-    mil.line("# first some basics, escaped characters are normalized\n");	# 13 MILline (_46:void)<-(_47:str)
-    mil.line("print(\"got single quote ' .\");\t# remove superfluous escapes");	# 14 MILline (_48:void)<-(_49:str)
-    ca_a := io.print("got single quote ' .");	# 15 IOprint_val (ca_a:int)<-(_51:str)
-    mil.line("# remove superfluous escapes\n");	# 16 MILline (_52:void)<-(_53:str)
-    da_a := io.print("got single quote ' without escape");	# 17 IOprint_val (da_a:int)<-(_55:str)
-    mil.line("print(\"got tab \t and single newline \n .\");");	# 18 MILline (_56:void)<-(_57:str)
-    ea_a := io.print("got tab \t and single newline \n .");	# 19 IOprint_val (ea_a:int)<-(_59:str)
-    mil.line("print(\"problem signalled before \\\"\");");	# 20 MILline (_60:void)<-(_61:str)
-    fa_a := io.print("problem signalled before \\\"");	# 21 IOprint_val (fa_a:int)<-(_63:str)
-    mil.line("var t0:= \"got single quote ' .\";\tt0.print();");	# 22 MILline (_64:void)<-(_65:str)
-    t0 := "got single quote ' .";	# 23  (t0:str)<-(_51:str)
-    ga_a := io.print(t0);	# 24 IOprint_val (ga_a:int)<-(t0:str)
-    mil.line("var t1:= \"got single quote ' without escape\";\tt1.print();");	# 25 MILline (_68:void)<-(_69:str)
-    t1 := "got single quote ' without escape";	# 26  (t1:str)<-(_55:str)
-    ha_a := io.print(t1);	# 27 IOprint_val (ha_a:int)<-(t1:str)
-    mil.line("var t2:= \"got tab \t and single newline \n .\"; t2.print();");	# 28 MILline (_72:void)<-(_73:str)
-    t2 := "got tab \t and single newline \n .";	# 29  (t2:str)<-(_59:str)
-    ia_a := io.print(t2);	# 30 IOprint_val (ia_a:int)<-(t2:str)
-    mil.line("var t3:= \"problem signalled before \\\"\"; t3.print();");	# 31 MILline (_76:void)<-(_77:str)
-    t3 := "problem signalled before \\\"";	# 32  (t3:str)<-(_63:str)
-    ja_a := io.print(t3);	# 33 IOprint_val (ja_a:int)<-(t3:str)
-    mil.line("# character constants\n");	# 34 MILline (_80:void)<-(_81:str)
-    c0 := "\\n";	# 35  (c0:str)<-(_83:str)
-    ka_a := io.print(c0);	# 36 IOprint_val (ka_a:int)<-(c0:str)
-    mil.line("var c1:= \"'\"; c1.print();");	# 37 MILline (_85:void)<-(_86:str)
-    c1 := "'";	# 38  (c1:str)<-(_88:str)
-    la_a := io.print(c1);	# 39 IOprint_val (la_a:int)<-(c1:str)
-    mil.line("var c2:= \"\\\"; c2.print();");	# 40 MILline (_90:void)<-(_91:str)
-    c2 := "\\";	# 41  (c2:str)<-(_93:str)
-    ma_a := io.print(c2);	# 42 IOprint_val (ma_a:int)<-(c2:str)
-    mil.line("var s:=new(int,str,100);");	# 43 MILline (_95:void)<-(_96:str)
-    s := bat.new(nil:int,nil:str,100);	# 44 CMDBATnewint (s:bat[:int,:str])<-(_98:int)(_99:str)(_100:int)
-    mil.line("s.insert(2,\" single quote ' got it\");");	# 45 MILline (_101:void)<-(_102:str)
-    na_a := bat.insert(s,2," single quote ' got it");	# 46 BKCinsert_bun (na_a:void)<-(s:bat[:int,:str])(_104:int)(_105:str)
-    mil.line("s.insert(4,\" backslash  \\ \");");	# 47 MILline (_106:void)<-(_107:str)
-    oa_a := bat.insert(s,4," backslash   ");	# 48 BKCinsert_bun (oa_a:void)<-(s:bat[:int,:str])(_109:int)(_110:str)
-    mil.line("s.insert(3,\" single quote ' \");");	# 49 MILline (_111:void)<-(_112:str)
-    pa_a := bat.insert(s,3," single quote ' ");	# 50 BKCinsert_bun (pa_a:void)<-(s:bat[:int,:str])(_114:int)(_115:str)
-    mil.line("s.print();");	# 51 MILline (_116:void)<-(_117:str)
-    qa_a := io.print(s);	# 52 IOprint_val (qa_a:int)<-(s:bat[:int,:str])
-    mil.line("# Monet printf should behave as in C\n");	# 53 MILline (_119:void)<-(_120:str)
-    ra_a := io.printf("got single quote ' .\n");	# 54 IOprint_str (ra_a:int)<-(_122:str)
-    mil.line("# remove superfluous escapes\n");	# 55 MILline (_123:void)<-(_124:str)
-    sa_a := io.printf("got single quote ' without escape\n");	# 56 IOprint_str (sa_a:int)<-(_126:str)
-    mil.line("printf(\"got tab \t and newline \n .\n\");");	# 57 MILline (_127:void)<-(_128:str)
-    ta_a := io.printf("got tab \t and newline \n .\n");	# 58 IOprint_str (ta_a:int)<-(_130:str)
-    mil.line("printf(\"problem signalled before \\\"\n\");");	# 59 MILline (_131:void)<-(_132:str)
-    ua_a := io.printf("problem signalled before \\\"\n");	# 60 IOprint_str (ua_a:int)<-(_134:str)
-    mil.line("quit();");	# 61 MILline (_135:void)<-(_136:str)
-    va_a := clients.quit();	# 62 CLTquit (va_a:void)
-end main;	# 63  
-#setoid(oid(20000000));
-## escape sequences
-
-## first some basics, escaped characters are normalized
-
-#print("got single quote ' .");	# remove superfluous escapes
+# Monet Mil to Mal compiler 	# 1  (_1:str)
+#include mil; 	# 2  (_2:str)
+# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 3  (_3:str)
+#Predefined code segment 	# 4  (_4:str)
+#The compiler can not guarantee an accurate compilation, 	# 5  (_5:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 6  (_6:str)
+#A few guidelines to maximize usefullness. 	# 7  (_7:str)
+#- make the type of variables explicit, in particular 'nil' 	# 8  (_8:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 9  (_9:str)
+#use the "mil_schema" for additional support routines 	# 10  (_10:str)
+#	mil.line("setoid(oid(20000000));"); 	# 11  (_11:str)
+    aa_a := calc.oid(20000000);	# 12 CALCint2oid (aa_a:oid)<-(_13:int)
+    ba_a := calc.setoid(aa_a);	# 13 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
+#	mil.line("# escape sequences\n"); 	# 14  (_15:str)
+#	mil.line("# first some basics, escaped characters are normalized\n"); 	# 15  (_16:str)
+#	mil.line("print(\"got single quote ' .\");\t# remove superfluous escapes"); 	# 16  (_17:str)
+    ca_a := io.print("got single quote ' .");	# 17 IOprint_val (ca_a:int)<-(_19:str)
+#	mil.line("# remove superfluous escapes\n"); 	# 18  (_20:str)
+    da_a := io.print("got single quote ' without escape");	# 19 IOprint_val (da_a:int)<-(_22:str)
+#	mil.line("print(\"got tab \t and single newline \n .\");"); 	# 20  (_23:str)
+    ea_a := io.print("got tab \t and single newline \n .");	# 21 IOprint_val (ea_a:int)<-(_25:str)
+#	mil.line("print(\"problem signalled before \\\"\");"); 	# 22  (_26:str)
+    fa_a := io.print("problem signalled before \\\"");	# 23 IOprint_val (fa_a:int)<-(_28:str)
+#	mil.line("var t0:= \"got single quote ' .\";\tt0.print();"); 	# 24  (_29:str)
+    t0 := "got single quote ' .";	# 25  (t0:str)<-(_19:str)
+    ga_a := io.print(t0);	# 26 IOprint_val (ga_a:int)<-(t0:str)
+#	mil.line("var t1:= \"got single quote ' without escape\";\tt1.print();"); 	# 27  (_32:str)
+    t1 := "got single quote ' without escape";	# 28  (t1:str)<-(_22:str)
+    ha_a := io.print(t1);	# 29 IOprint_val (ha_a:int)<-(t1:str)
+#	mil.line("var t2:= \"got tab \t and single newline \n .\"; t2.print();"); 	# 30  (_35:str)
+    t2 := "got tab \t and single newline \n .";	# 31  (t2:str)<-(_25:str)
+    ia_a := io.print(t2);	# 32 IOprint_val (ia_a:int)<-(t2:str)
+#	mil.line("var t3:= \"problem signalled before \\\"\"; t3.print();"); 	# 33  (_38:str)
+    t3 := "problem signalled before \\\"";	# 34  (t3:str)<-(_28:str)
+    ja_a := io.print(t3);	# 35 IOprint_val (ja_a:int)<-(t3:str)
+#	mil.line("# character constants\n"); 	# 36  (_41:str)
+    c0 := "\\n";	# 37  (c0:str)<-(_43:str)
+    ka_a := io.print(c0);	# 38 IOprint_val (ka_a:int)<-(c0:str)
+#	mil.line("var c1:= \"'\"; c1.print();"); 	# 39  (_45:str)
+    c1 := "'";	# 40  (c1:str)<-(_47:str)
+    la_a := io.print(c1);	# 41 IOprint_val (la_a:int)<-(c1:str)
+#	mil.line("var c2:= \"\\\"; c2.print();"); 	# 42  (_49:str)
+    c2 := "\\";	# 43  (c2:str)<-(_51:str)
+    ma_a := io.print(c2);	# 44 IOprint_val (ma_a:int)<-(c2:str)
+#	mil.line("var s:=new(int,str,100);"); 	# 45  (_53:str)
+    s := bat.new(nil:int,nil:str,100);	# 46 CMDBATnewint (s:bat[:int,:str])<-(_55:int)(_56:str)(_57:int)
+#	mil.line("s.insert(2,\" single quote ' got it\");"); 	# 47  (_58:str)
+    na_a := bat.insert(s,2," single quote ' got it");	# 48 BKCinsert_bun (na_a:void)<-(s:bat[:int,:str])(_60:int)(_61:str)
+#	mil.line("s.insert(4,\" backslash  \\ \");"); 	# 49  (_62:str)
+    oa_a := bat.insert(s,4," backslash   ");	# 50 BKCinsert_bun (oa_a:void)<-(s:bat[:int,:str])(_64:int)(_65:str)
+#	mil.line("s.insert(3,\" single quote ' \");"); 	# 51  (_66:str)
+    pa_a := bat.insert(s,3," single quote ' ");	# 52 BKCinsert_bun (pa_a:void)<-(s:bat[:int,:str])(_68:int)(_69:str)
+#	mil.line("s.print();"); 	# 53  (_70:str)
+    qa_a := io.print(s);	# 54 IOprint_val (qa_a:int)<-(s:bat[:int,:str])
+#	mil.line("# Monet printf should behave as in C\n"); 	# 55  (_72:str)
+    ra_a := io.printf("got single quote ' .\n");	# 56 IOprint_str (ra_a:int)<-(_74:str)
+#	mil.line("# remove superfluous escapes\n"); 	# 57  (_75:str)
+    sa_a := io.printf("got single quote ' without escape\n");	# 58 IOprint_str (sa_a:int)<-(_77:str)
+#	mil.line("printf(\"got tab \t and newline \n .\n\");"); 	# 59  (_78:str)
+    ta_a := io.printf("got tab \t and newline \n .\n");	# 60 IOprint_str (ta_a:int)<-(_80:str)
+#	mil.line("printf(\"problem signalled before \\\"\n\");"); 	# 61  (_81:str)
+    ua_a := io.printf("problem signalled before \\\"\n");	# 62 IOprint_str (ua_a:int)<-(_83:str)
+#	mil.line("quit();"); 	# 63  (_84:str)
+    va_a := clients.quit();	# 64 CLTquit (va_a:void)
+end main;	# 65  
 [ "got single quote ' ." ]
 ## remove superfluous escapes
 
 [ "got single quote ' without escape" ]
-#print("got tab 	 and single newline 
- .");
 [ "got tab \t and single newline \n ." ]
 #print("problem signalled before \"");
 [ "problem signalled before \\\"" ]
@@ -163,8 +157,6 @@ end main;	# 63
 [ "got single quote ' ." ]
 #var t1:= "got single quote ' without escape";	t1.print();
 [ "got single quote ' without escape" ]
-#var t2:= "got tab 	 and single newline 
- ."; t2.print();
 [ "got tab \t and single newline \n ." ]
 #var t3:= "problem signalled before \""; t3.print();
 [ "problem signalled before \\\"" ]
@@ -193,13 +185,8 @@ got single quote ' .
 ## remove superfluous escapes
 
 got single quote ' without escape
-#printf("got tab 	 and newline 
- .
-");
 got tab 	 and newline 
  .
-#printf("problem signalled before \"
-");
 problem signalled before \"
 #quit();
 

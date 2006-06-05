@@ -1,5 +1,5 @@
 # Monet Mil to Mal compiler
-include mil;
+#include mil;
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment
@@ -9,16 +9,16 @@ include mil;
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
-	mil.line("setoid(oid(20000000));");
+#	mil.line("setoid(oid(20000000));");
 	aa_a := calc.oid(20000000);
 	ba_a := calc.setoid(aa_a);
-	mil.line("commit(); printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
+#	mil.line("commit(); printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	ca_a := transaction.commit();
 	da_a := io.printf("#~BeginVariableOutput~#\n");
 	ea_a := status.ioStatistics();
 	fa_a := io.print(ea_a);
 	ga_a := io.printf("#~EndVariableOutput~#\n");
-	mil.line("commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();");
+#	mil.line("commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();");
 	ha_a := transaction.commit();
 	ia_a := transaction.commit();
 	ja_a := transaction.commit();
@@ -27,7 +27,7 @@ include mil;
 	ma_a := transaction.commit();
 	na_a := transaction.commit();
 	oa_a := transaction.commit();
-	mil.line("transaction.commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();");
+#	mil.line("transaction.commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();");
 	pa_a := transaction.commit();
 	qa_a := transaction.commit();
 	ra_a := transaction.commit();
@@ -36,15 +36,15 @@ include mil;
 	ua_a := transaction.commit();
 	va_a := transaction.commit();
 	wa_a := transaction.commit();
-	mil.line("transaction.commit(); commit(); commit(); commit(); ");
+#	mil.line("transaction.commit(); commit(); commit(); commit(); ");
 	xa_a := transaction.commit();
 	ya_a := transaction.commit();
 	ab_a := transaction.commit();
 	bb_a := transaction.commit();
-	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
+#	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	cb_a := io.printf("#~BeginVariableOutput~#\n");
 	db_a := status.ioStatistics();
 	eb_a := io.print(db_a);
 	fb_a := io.printf("#~EndVariableOutput~#\n");
-	mil.line("quit();");
+#	mil.line("quit();");
 	gb_a := clients.quit();
