@@ -188,19 +188,16 @@ This causes the following problems: 1) how to get rid of global variables
 and 2) how to deal with variables that can take 'any' type.
 It is illustrated as follows:
 @example
-f:= mil.take("GT");
+f:= const.take("dbname");
 io.print(f);
 @end example
 When executed in the context of a function, the answer will be
-simple [ 1 ]. The variable type need not be defined, because
-the print operation can handle any type using the concrete
-type associated with f on the stack.
-
-However, when executed interactively, statement by statement,
-the answer printed will be [ 0 ]. The reason is that both
-statements are converted into a function and executed independently.
-Between function calls the variables are reset, i.e. temporary
-variables are removed and others are re-initialized. [check]
+simple [ nil ]. The reason is that the expecteed type is not known
+at compilation time. The correct definition would have been
+@example
+f:str:= const.take("dbname");
+io.print(f);
+@end example
 
 @{
 @h
