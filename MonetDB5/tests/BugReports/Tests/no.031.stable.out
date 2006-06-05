@@ -106,84 +106,58 @@ stdout of test 'no.031` in directory 'tests/BugReports` itself:
 #	fa_a := quit();
 #
 function user.main():void;	# 0  (main:void)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_31:str)
-#Predefined code segment 	# 2  (_32:str)
-#The compiler can not guarantee an accurate compilation, 	# 3  (_33:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 4  (_34:str)
-#A few guidelines to maximize usefullness. 	# 5  (_35:str)
-#- make the type of variables explicit, in particular 'nil' 	# 6  (_36:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  (_37:str)
-#use the "mil_schema" for additional support routines 	# 8  (_38:str)
-    mil.line("# >Number:         31\n");	# 9 MILline (_39:void)<-(_40:str)
-    mil.line("# >Category:       Mserver\n");	# 10 MILline (_41:void)<-(_42:str)
-    mil.line("# >Synopsis:       Import does not work.\n");	# 11 MILline (_43:void)<-(_44:str)
-    mil.line("# >Confidential:   no\n");	# 12 MILline (_45:void)<-(_46:str)
-    mil.line("# >Severity:       serious\n");	# 13 MILline (_47:void)<-(_48:str)
-    mil.line("# >Priority:       medium\n");	# 14 MILline (_49:void)<-(_50:str)
-    mil.line("# >Responsible:    quak\n");	# 15 MILline (_51:void)<-(_52:str)
-    mil.line("# >State:          closed\n");	# 16 MILline (_53:void)<-(_54:str)
-    mil.line("# >Class:          sw-bug\n");	# 17 MILline (_55:void)<-(_56:str)
-    mil.line("# >Submitter-Id:   unknown\n");	# 18 MILline (_57:void)<-(_58:str)
-    mil.line("# >Arrival-Date:   Fri Sep 19 16:00:42 1997\n");	# 19 MILline (_59:void)<-(_60:str)
-    mil.line("# >Originator:     quak\n");	# 20 MILline (_61:void)<-(_62:str)
-    mil.line("# >Organization:\n");	# 21 MILline (_63:void)<-(_64:str)
-    mil.line("# >Release:        970101\n");	# 22 MILline (_65:void)<-(_66:str)
-    mil.line("# >Environment:\n");	# 23 MILline (_67:void)<-(_68:str)
-    mil.line("# ALL\n");	# 24 MILline (_69:void)<-(_70:str)
-    mil.line("# >Description:\n");	# 25 MILline (_71:void)<-(_72:str)
-    mil.line("# The following script, which creates a bat exports\n");	# 26 MILline (_73:void)<-(_74:str)
-    mil.line("# it and then tries to import it again fails:\n");	# 27 MILline (_75:void)<-(_76:str)
-    mil.line("# \n");	# 28 MILline (_77:void)<-(_78:str)
-    mil.line("# > a := bat.new(int,int);\n");	# 29 MILline (_79:void)<-(_80:str)
-    mil.line("# > a.insert(1,1);\n");	# 30 MILline (_81:void)<-(_82:str)
-    mil.line("# > a.export(\"/home/quak/tmp/testt\");\n");	# 31 MILline (_83:void)<-(_84:str)
-    mil.line("# > b := bat.new(int,int);\n");	# 32 MILline (_85:void)<-(_86:str)
-    mil.line("# > b.import(\"/home/quak/tmp/testt\");\n");	# 33 MILline (_87:void)<-(_88:str)
-    mil.line("var a := bat.new(int,int);");	# 34 MILline (_89:void)<-(_90:str)
-    a := bat.new(nil:int,nil:int);	# 35 CMDBATnew (a:bat[:int,:int])<-(_92:int)(_92:int)
-    mil.line("a.insert(1,1);");	# 36 MILline (_93:void)<-(_94:str)
-    aa_a := bat.insert(a,1,1);	# 37 BKCinsert_bun (aa_a:void)<-(a:bat[:int,:int])(_96:int)(_96:int)
-    mil.line("a.print();");	# 38 MILline (_97:void)<-(_98:str)
-    ba_a := io.print(a);	# 39 IOprint_val (ba_a:int)<-(a:bat[:int,:int])
-    mil.line("a.export(\"testt\");");	# 40 MILline (_100:void)<-(_101:str)
-    ca_a := io.export(a,"testt");	# 41 IOexport (ca_a:bit)<-(a:bat[:int,:int])(_103:str)
-    mil.line("var b := bat.new(int,int);");	# 42 MILline (_104:void)<-(_105:str)
-    b := bat.new(nil:int,nil:int);	# 43 CMDBATnew (b:bat[:int,:int])<-(_92:int)(_92:int)
-    mil.line("b.import(\"testt\");");	# 44 MILline (_107:void)<-(_108:str)
-    da_a := io.import(b,"testt");	# 45 IOimport (da_a:bit)<-(b:bat[:int,:int])(_103:str)
-    mil.line("b.print();");	# 46 MILline (_110:void)<-(_111:str)
-    ea_a := io.print(b);	# 47 IOprint_val (ea_a:int)<-(b:bat[:int,:int])
-    mil.line("quit();");	# 48 MILline (_113:void)<-(_114:str)
-    fa_a := clients.quit();	# 49 CLTquit (fa_a:void)
-end main;	# 50  
-## >Number:         31\n
-## >Category:       Mserver\n
-## >Synopsis:       Import does not work.\n
-## >Confidential:   no\n
-## >Severity:       serious\n
-## >Priority:       medium\n
-## >Responsible:    quak\n
-## >State:          closed\n
-## >Class:          sw-bug\n
-## >Submitter-Id:   unknown\n
-## >Arrival-Date:   Fri Sep 19 16:00:42 1997\n
-## >Originator:     quak\n
-## >Organization:\n
-## >Release:        970101\n
-## >Environment:\n
-## ALL\n
-## >Description:\n
-## The following script, which creates a bat exports\n
-## it and then tries to import it again fails:\n
-## \n
-## > a := bbp.new(int,int);\n
-## > a.insert(1,1);\n
-## > a.export(\"/home/quak/tmp/testt\");\n
-## > b := bbp.new(int,int);\n
-## > b.import(\"/home/quak/tmp/testt\");\n
-#var a := bbp.new(int,int);
-#a.insert(1,1);
-#a.print();
+# Monet Mil to Mal compiler 	# 1  (_1:str)
+#include mil; 	# 2  (_2:str)
+# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 3  (_3:str)
+#Predefined code segment 	# 4  (_4:str)
+#The compiler can not guarantee an accurate compilation, 	# 5  (_5:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 6  (_6:str)
+#A few guidelines to maximize usefullness. 	# 7  (_7:str)
+#- make the type of variables explicit, in particular 'nil' 	# 8  (_8:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 9  (_9:str)
+#use the "mil_schema" for additional support routines 	# 10  (_10:str)
+#	mil.line("# >Number:         31\n"); 	# 11  (_11:str)
+#	mil.line("# >Category:       Mserver\n"); 	# 12  (_12:str)
+#	mil.line("# >Synopsis:       Import does not work.\n"); 	# 13  (_13:str)
+#	mil.line("# >Confidential:   no\n"); 	# 14  (_14:str)
+#	mil.line("# >Severity:       serious\n"); 	# 15  (_15:str)
+#	mil.line("# >Priority:       medium\n"); 	# 16  (_16:str)
+#	mil.line("# >Responsible:    quak\n"); 	# 17  (_17:str)
+#	mil.line("# >State:          closed\n"); 	# 18  (_18:str)
+#	mil.line("# >Class:          sw-bug\n"); 	# 19  (_19:str)
+#	mil.line("# >Submitter-Id:   unknown\n"); 	# 20  (_20:str)
+#	mil.line("# >Arrival-Date:   Fri Sep 19 16:00:42 1997\n"); 	# 21  (_21:str)
+#	mil.line("# >Originator:     quak\n"); 	# 22  (_22:str)
+#	mil.line("# >Organization:\n"); 	# 23  (_23:str)
+#	mil.line("# >Release:        970101\n"); 	# 24  (_24:str)
+#	mil.line("# >Environment:\n"); 	# 25  (_25:str)
+#	mil.line("# ALL\n"); 	# 26  (_26:str)
+#	mil.line("# >Description:\n"); 	# 27  (_27:str)
+#	mil.line("# The following script, which creates a bat exports\n"); 	# 28  (_28:str)
+#	mil.line("# it and then tries to import it again fails:\n"); 	# 29  (_29:str)
+#	mil.line("# \n"); 	# 30  (_30:str)
+#	mil.line("# > a := bat.new(int,int);\n"); 	# 31  (_31:str)
+#	mil.line("# > a.insert(1,1);\n"); 	# 32  (_32:str)
+#	mil.line("# > a.export(\"/home/quak/tmp/testt\");\n"); 	# 33  (_33:str)
+#	mil.line("# > b := bat.new(int,int);\n"); 	# 34  (_34:str)
+#	mil.line("# > b.import(\"/home/quak/tmp/testt\");\n"); 	# 35  (_35:str)
+#	mil.line("var a := bat.new(int,int);"); 	# 36  (_36:str)
+    a := bat.new(nil:int,nil:int);	# 37 CMDBATnew (a:bat[:int,:int])<-(_38:int)(_38:int)
+#	mil.line("a.insert(1,1);"); 	# 38  (_39:str)
+    aa_a := bat.insert(a,1,1);	# 39 BKCinsert_bun (aa_a:void)<-(a:bat[:int,:int])(_41:int)(_41:int)
+#	mil.line("a.print();"); 	# 40  (_42:str)
+    ba_a := io.print(a);	# 41 IOprint_val (ba_a:int)<-(a:bat[:int,:int])
+#	mil.line("a.export(\"testt\");"); 	# 42  (_44:str)
+    ca_a := io.export(a,"testt");	# 43 IOexport (ca_a:bit)<-(a:bat[:int,:int])(_46:str)
+#	mil.line("var b := bat.new(int,int);"); 	# 44  (_47:str)
+    b := bat.new(nil:int,nil:int);	# 45 CMDBATnew (b:bat[:int,:int])<-(_38:int)(_38:int)
+#	mil.line("b.import(\"testt\");"); 	# 46  (_49:str)
+    da_a := io.import(b,"testt");	# 47 IOimport (da_a:bit)<-(b:bat[:int,:int])(_46:str)
+#	mil.line("b.print();"); 	# 48  (_51:str)
+    ea_a := io.print(b);	# 49 IOprint_val (ea_a:int)<-(b:bat[:int,:int])
+#	mil.line("quit();"); 	# 50  (_53:str)
+    fa_a := clients.quit();	# 51 CLTquit (fa_a:void)
+end main;	# 52  
 #-----------------#
 # BAT:	  tmp_25  #
 # (int)	  (int)	  #

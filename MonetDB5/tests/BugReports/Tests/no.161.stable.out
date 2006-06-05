@@ -91,9 +91,9 @@ stdout of test 'no.161` in directory 'tests/BugReports` itself:
 #	da_a := printf("test_inner.in: %s\n",ca_a);
 #end test_inner;
 function user.test_inner(in:str):void;	# 0  (test_inner:void)<-(in:str)
-    mil.line("   printf(\"test_inner.in: %s\\n\",str(in));");	# 1 MILline (_2:void)<-(_3:str)
+#	mil.line("   printf(\"test_inner.in: %s\\n\",str(in));"); 	# 1  (_2:str)
     ca_a := calc.str(in);	# 2 CALCstr2str (ca_a:str)<-(in:str)
-    da_a := io.printf("test_inner.in: %s\n",ca_a);	# 3 IOprint_formatted_str (da_a:int)<-(_6:str)(ca_a:str)
+    da_a := io.printf("test_inner.in: %s\n",ca_a);	# 3 IOprint_formatted_str (da_a:int)<-(_5:str)(ca_a:str)
 end test_inner;	# 4  
 #	mil.line("PROC test_outer(any in) : void {");
 #function test_outer(in:any):void;
@@ -104,10 +104,10 @@ end test_inner;	# 4
 #	ga_a := test_inner(in);
 #end test_outer;
 function user.test_outer(in:any_1):void;	# 0  (test_outer:void)<-(in:any_1)
-    mil.line("   printf(\"test_outer.in: %s\\n\",str(in));");	# 1 MILline (_2:void)<-(_3:str)
+#	mil.line("   printf(\"test_outer.in: %s\\n\",str(in));"); 	# 1  (_2:str)
     ea_a := calc.str(in);	# 2  (ea_a:any)<-(in:any_1)
-    fa_a := io.printf("test_outer.in: %s\n",ea_a);	# 3  (fa_a:any)<-(_6:str)(ea_a:any)
-    mil.line("   test_inner(in);");	# 4 MILline (_7:void)<-(_8:str)
+    fa_a := io.printf("test_outer.in: %s\n",ea_a);	# 3  (fa_a:any)<-(_5:str)(ea_a:any)
+#	mil.line("   test_inner(in);"); 	# 4  (_6:str)
     ga_a := user.test_inner(in);	# 5  (ga_a:any)<-(in:any_1)
 end test_outer;	# 6  
 #	mil.line("test_outer(\"chr\");");
@@ -118,115 +118,70 @@ end test_outer;	# 6
 #	ja_a := quit();
 #  
 function user.main():void;	# 0  (main:void)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_31:str)
-#Predefined code segment 	# 2  (_32:str)
-#The compiler can not guarantee an accurate compilation, 	# 3  (_33:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 4  (_34:str)
-#A few guidelines to maximize usefullness. 	# 5  (_35:str)
-#- make the type of variables explicit, in particular 'nil' 	# 6  (_36:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  (_37:str)
-#use the "mil_schema" for additional support routines 	# 8  (_38:str)
-    mil.line("# >Number:         161\n");	# 9 MILline (_39:void)<-(_40:str)
-    mil.line("# >Category:       Mserver\n");	# 10 MILline (_41:void)<-(_42:str)
-    mil.line("# >Synopsis:       tostr problem when str module is loaded\n");	# 11 MILline (_43:void)<-(_44:str)
-    mil.line("# >Confidential:   no\n");	# 12 MILline (_45:void)<-(_46:str)
-    mil.line("# >Severity:       critical\n");	# 13 MILline (_47:void)<-(_48:str)
-    mil.line("# >Priority:       high\n");	# 14 MILline (_49:void)<-(_50:str)
-    mil.line("# >Responsible:    boncz (Peter Boncz)\n");	# 15 MILline (_51:void)<-(_52:str)
-    mil.line("# >State:          open\n");	# 16 MILline (_53:void)<-(_54:str)
-    mil.line("# >Class:          sw-bug\n");	# 17 MILline (_55:void)<-(_56:str)
-    mil.line("# >Submitter-Id:   unknown\n");	# 18 MILline (_57:void)<-(_58:str)
-    mil.line("# >Arrival-Date:   Wed Jul 15 15:24:01 1998\n");	# 19 MILline (_59:void)<-(_60:str)
-    mil.line("# >Originator:     windhouw@cwi.nl\n");	# 20 MILline (_61:void)<-(_62:str)
-    mil.line("# >Organization:\n");	# 21 MILline (_63:void)<-(_64:str)
-    mil.line("# CWI\n");	# 22 MILline (_65:void)<-(_66:str)
-    mil.line("# >Release:        980101\n");	# 23 MILline (_67:void)<-(_68:str)
-    mil.line("# >Environment:\n");	# 24 MILline (_69:void)<-(_70:str)
-    mil.line("# \n");	# 25 MILline (_71:void)<-(_72:str)
-    mil.line("# >Description:\n");	# 26 MILline (_73:void)<-(_74:str)
-    mil.line("# In the following script the string becomes different\n");	# 27 MILline (_75:void)<-(_76:str)
-    mil.line("# in the inner procedure (when the str module is loaded):\n");	# 28 MILline (_77:void)<-(_78:str)
-    mil.line("# \n");	# 29 MILline (_79:void)<-(_72:str)
-    mil.line("# Script\n");	# 30 MILline (_80:void)<-(_81:str)
-    mil.line("# 8<-----\n");	# 31 MILline (_82:void)<-(_83:str)
-    mil.line("# PROC test_inner(any in) : void {\n");	# 32 MILline (_84:void)<-(_85:str)
-    mil.line("#    printf(\"test_inner.in: %s\\n\",str(in));\n");	# 33 MILline (_86:void)<-(_87:str)
-    mil.line("# }\n");	# 34 MILline (_88:void)<-(_89:str)
-    mil.line("#  \n");	# 35 MILline (_90:void)<-(_91:str)
-    mil.line("# PROC test_outer(any in) : void {\n");	# 36 MILline (_92:void)<-(_93:str)
-    mil.line("#    printf(\"test_outer.in: %s\\n\",str(in));\n");	# 37 MILline (_94:void)<-(_95:str)
-    mil.line("#    test_inner(in);\n");	# 38 MILline (_96:void)<-(_97:str)
-    mil.line("# }\n");	# 39 MILline (_98:void)<-(_89:str)
-    mil.line("# 8<-----\n");	# 40 MILline (_99:void)<-(_83:str)
-    mil.line("# Output\n");	# 41 MILline (_100:void)<-(_101:str)
-    mil.line("# 8<-----\n");	# 42 MILline (_102:void)<-(_83:str)
-    mil.line("# >test_outer(\"chr\");\n");	# 43 MILline (_103:void)<-(_104:str)
-    mil.line("# test_outer.in: chr\n");	# 44 MILline (_105:void)<-(_106:str)
-    mil.line("# test_inner.in: chr\n");	# 45 MILline (_107:void)<-(_108:str)
-    mil.line("# >module(str);\n");	# 46 MILline (_109:void)<-(_110:str)
-    mil.line("# >test_outer(\"chr\");\n");	# 47 MILline (_111:void)<-(_104:str)
-    mil.line("# test_outer.in: chr\n");	# 48 MILline (_112:void)<-(_106:str)
-    mil.line("# test_inner.in: test_inner.in: %s\n");	# 49 MILline (_113:void)<-(_114:str)
-    mil.line("# 8<----\n");	# 50 MILline (_115:void)<-(_116:str)
-    mil.line("setoid(oid(20000000));");	# 51 MILline (_117:void)<-(_118:str)
-    aa_a := calc.oid(20000000);	# 52 CALCint2oid (aa_a:oid)<-(_120:int)
-    ba_a := calc.setoid(aa_a);	# 53 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-    mil.line("PROC test_inner(any in) : void {");	# 54 MILline (_122:void)<-(_123:str)
-    mil.line("PROC test_outer(any in) : void {");	# 55 MILline (_124:void)<-(_125:str)
-    mil.line("test_outer(\"chr\");");	# 56 MILline (_126:void)<-(_127:str)
-    ha_a := user.test_outer("chr");	# 57  (ha_a:void)<-(_129:str)
-    mil.line("test_outer(\"chr\");");	# 58 MILline (_130:void)<-(_127:str)
-    ia_a := user.test_outer("chr");	# 59  (ia_a:void)<-(_129:str)
-    mil.line("quit();");	# 60 MILline (_132:void)<-(_133:str)
-    ja_a := clients.quit();	# 61 CLTquit (ja_a:void)
-end main;	# 62  
-## >Number:         161\n
-## >Category:       Mserver\n
-## >Synopsis:       tostr problem when str module is loaded\n
-## >Confidential:   no\n
-## >Severity:       critical\n
-## >Priority:       high\n
-## >Responsible:    boncz (Peter Boncz)\n
-## >State:          open\n
-## >Class:          sw-bug\n
-## >Submitter-Id:   unknown\n
-## >Arrival-Date:   Wed Jul 15 15:24:01 1998\n
-## >Originator:     windhouw@cwi.nl\n
-## >Organization:\n
-## CWI\n
-## >Release:        980101\n
-## >Environment:\n
-## \n
-## >Description:\n
-## In the following script the string becomes different\n
-## in the inner procedure (when the str module is loaded):\n
-## \n
-## Script\n
-## 8<-----\n
-## PROC test_inner(any in) : void {\n
-##    printf(\"test_inner.in: %s\\n\",str(in));\n
-## }\n
-##  \n
-## PROC test_outer(any in) : void {\n
-##    printf(\"test_outer.in: %s\\n\",str(in));\n
-##    test_inner(in);\n
-## }\n
-## 8<-----\n
-## Output\n
-## 8<-----\n
-## >test_outer(\"chr\");\n
-## test_outer.in: chr\n
-## test_inner.in: chr\n
-## >module(str);\n
-## >test_outer(\"chr\");\n
-## test_outer.in: chr\n
-## test_inner.in: test_inner.in: %s\n
-## 8<----\n
-#setoid(oid(20000000));
-#PROC test_inner(any in) : void {
-#PROC test_outer(any in) : void {
-#test_outer(\"chr\");
-#   printf(\"test_outer.in: %s\\n\",str(in));
+# Monet Mil to Mal compiler 	# 1  (_1:str)
+#include mil; 	# 2  (_2:str)
+# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 3  (_3:str)
+#Predefined code segment 	# 4  (_4:str)
+#The compiler can not guarantee an accurate compilation, 	# 5  (_5:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 6  (_6:str)
+#A few guidelines to maximize usefullness. 	# 7  (_7:str)
+#- make the type of variables explicit, in particular 'nil' 	# 8  (_8:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 9  (_9:str)
+#use the "mil_schema" for additional support routines 	# 10  (_10:str)
+#	mil.line("# >Number:         161\n"); 	# 11  (_11:str)
+#	mil.line("# >Category:       Mserver\n"); 	# 12  (_12:str)
+#	mil.line("# >Synopsis:       tostr problem when str module is loaded\n"); 	# 13  (_13:str)
+#	mil.line("# >Confidential:   no\n"); 	# 14  (_14:str)
+#	mil.line("# >Severity:       critical\n"); 	# 15  (_15:str)
+#	mil.line("# >Priority:       high\n"); 	# 16  (_16:str)
+#	mil.line("# >Responsible:    boncz (Peter Boncz)\n"); 	# 17  (_17:str)
+#	mil.line("# >State:          open\n"); 	# 18  (_18:str)
+#	mil.line("# >Class:          sw-bug\n"); 	# 19  (_19:str)
+#	mil.line("# >Submitter-Id:   unknown\n"); 	# 20  (_20:str)
+#	mil.line("# >Arrival-Date:   Wed Jul 15 15:24:01 1998\n"); 	# 21  (_21:str)
+#	mil.line("# >Originator:     windhouw@cwi.nl\n"); 	# 22  (_22:str)
+#	mil.line("# >Organization:\n"); 	# 23  (_23:str)
+#	mil.line("# CWI\n"); 	# 24  (_24:str)
+#	mil.line("# >Release:        980101\n"); 	# 25  (_25:str)
+#	mil.line("# >Environment:\n"); 	# 26  (_26:str)
+#	mil.line("# \n"); 	# 27  (_27:str)
+#	mil.line("# >Description:\n"); 	# 28  (_28:str)
+#	mil.line("# In the following script the string becomes different\n"); 	# 29  (_29:str)
+#	mil.line("# in the inner procedure (when the str module is loaded):\n"); 	# 30  (_30:str)
+#	mil.line("# \n"); 	# 31  (_27:str)
+#	mil.line("# Script\n"); 	# 32  (_31:str)
+#	mil.line("# 8<-----\n"); 	# 33  (_32:str)
+#	mil.line("# PROC test_inner(any in) : void {\n"); 	# 34  (_33:str)
+#	mil.line("#    printf(\"test_inner.in: %s\\n\",str(in));\n"); 	# 35  (_34:str)
+#	mil.line("# }\n"); 	# 36  (_35:str)
+#	mil.line("#  \n"); 	# 37  (_36:str)
+#	mil.line("# PROC test_outer(any in) : void {\n"); 	# 38  (_37:str)
+#	mil.line("#    printf(\"test_outer.in: %s\\n\",str(in));\n"); 	# 39  (_38:str)
+#	mil.line("#    test_inner(in);\n"); 	# 40  (_39:str)
+#	mil.line("# }\n"); 	# 41  (_35:str)
+#	mil.line("# 8<-----\n"); 	# 42  (_32:str)
+#	mil.line("# Output\n"); 	# 43  (_40:str)
+#	mil.line("# 8<-----\n"); 	# 44  (_32:str)
+#	mil.line("# >test_outer(\"chr\");\n"); 	# 45  (_41:str)
+#	mil.line("# test_outer.in: chr\n"); 	# 46  (_42:str)
+#	mil.line("# test_inner.in: chr\n"); 	# 47  (_43:str)
+#	mil.line("# >module(str);\n"); 	# 48  (_44:str)
+#	mil.line("# >test_outer(\"chr\");\n"); 	# 49  (_41:str)
+#	mil.line("# test_outer.in: chr\n"); 	# 50  (_42:str)
+#	mil.line("# test_inner.in: test_inner.in: %s\n"); 	# 51  (_45:str)
+#	mil.line("# 8<----\n"); 	# 52  (_46:str)
+#	mil.line("setoid(oid(20000000));"); 	# 53  (_47:str)
+    aa_a := calc.oid(20000000);	# 54 CALCint2oid (aa_a:oid)<-(_49:int)
+    ba_a := calc.setoid(aa_a);	# 55 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
+#	mil.line("PROC test_inner(any in) : void {"); 	# 56  (_51:str)
+#	mil.line("PROC test_outer(any in) : void {"); 	# 57  (_52:str)
+#	mil.line("test_outer(\"chr\");"); 	# 58  (_53:str)
+    ha_a := user.test_outer("chr");	# 59  (ha_a:void)<-(_55:str)
+#	mil.line("test_outer(\"chr\");"); 	# 60  (_53:str)
+    ia_a := user.test_outer("chr");	# 61  (ia_a:void)<-(_55:str)
+#	mil.line("quit();"); 	# 62  (_57:str)
+    ja_a := clients.quit();	# 63 CLTquit (ja_a:void)
+end main;	# 64  
 test_outer.in: chr
 #   test_inner(in);
 #   printf(\"test_inner.in: %s\\n\",str(in));

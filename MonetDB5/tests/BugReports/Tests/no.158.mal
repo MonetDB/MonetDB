@@ -1,5 +1,5 @@
 # Monet Mil to Mal compiler
-include mil;
+#include mil;
 # Copyright (c) 2001-2004, CWI. All rights reserved.
 
 #Predefined code segment
@@ -9,18 +9,18 @@ include mil;
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
-	mil.line("setoid(oid(20000000));");
+#	mil.line("setoid(oid(20000000));");
 	aa_a := calc.oid(20000000);
 	ba_a := setoid(aa_a);
-	mil.line("test1.print();");
+#	mil.line("test1.print();");
 	test1:= mil.take("test1");
 	ca_a := bat.print(test1);
-	mil.line("source(getenv(\"TSTTRGDIR\")+\"/no.158.source.mil\");");
+#	mil.line("source(getenv(\"TSTTRGDIR\")+\"/no.158.source.mil\");");
 	da_a := getenv("TSTTRGDIR");
 	ea_a := +(da_a,"/no.158.source.mil");
 	fa_a := source(ea_a);
-	mil.line("test2.print();");
+#	mil.line("test2.print();");
 	test2:= mil.take("test2");
 	ga_a := bat.print(test2);
-	mil.line("quit();");
+#	mil.line("quit();");
 	ha_a := clients.quit();

@@ -32,153 +32,94 @@ stdout of test 'no.162` in directory 'tests/BugReports` itself:
 # A ghost BUN appears in the following script:
 # 
 function user.main():void;	# 0  (main:void)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_31:str)
-#Predefined code segment 	# 2  (_32:str)
-#The compiler can not guarantee an accurate compilation, 	# 3  (_33:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 4  (_34:str)
-#A few guidelines to maximize usefullness. 	# 5  (_35:str)
-#- make the type of variables explicit, in particular 'nil' 	# 6  (_36:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  (_37:str)
-#use the "mil_schema" for additional support routines 	# 8  (_38:str)
-    mil.line("# >Number:         162\n");	# 9 MILline (_39:void)<-(_40:str)
-    mil.line("# >Category:       Mserver\n");	# 10 MILline (_41:void)<-(_42:str)
-    mil.line("# >Synopsis:       ghost BUN in join result\n");	# 11 MILline (_43:void)<-(_44:str)
-    mil.line("# >Confidential:   no\n");	# 12 MILline (_45:void)<-(_46:str)
-    mil.line("# >Severity:       critical\n");	# 13 MILline (_47:void)<-(_48:str)
-    mil.line("# >Priority:       high\n");	# 14 MILline (_49:void)<-(_50:str)
-    mil.line("# >Responsible:    boncz (Peter Boncz)\n");	# 15 MILline (_51:void)<-(_52:str)
-    mil.line("# >State:          open\n");	# 16 MILline (_53:void)<-(_54:str)
-    mil.line("# >Class:          sw-bug\n");	# 17 MILline (_55:void)<-(_56:str)
-    mil.line("# >Submitter-Id:   unknown\n");	# 18 MILline (_57:void)<-(_58:str)
-    mil.line("# >Arrival-Date:   Wed Jul 15 16:13:00 1998\n");	# 19 MILline (_59:void)<-(_60:str)
-    mil.line("# >Originator:     windhouw@cwi.nl\n");	# 20 MILline (_61:void)<-(_62:str)
-    mil.line("# >Organization:\n");	# 21 MILline (_63:void)<-(_64:str)
-    mil.line("# CWI\n");	# 22 MILline (_65:void)<-(_66:str)
-    mil.line("# >Release:        980101\n");	# 23 MILline (_67:void)<-(_68:str)
-    mil.line("# >Environment:\n");	# 24 MILline (_69:void)<-(_70:str)
-    mil.line("# \n");	# 25 MILline (_71:void)<-(_72:str)
-    mil.line("# >Description:\n");	# 26 MILline (_73:void)<-(_74:str)
-    mil.line("# A ghost BUN appears in the following script:\n");	# 27 MILline (_75:void)<-(_76:str)
-    mil.line("# \n");	# 28 MILline (_77:void)<-(_72:str)
-    mil.line("# script\n");	# 29 MILline (_78:void)<-(_79:str)
-    mil.line("# 8<-----\n");	# 30 MILline (_80:void)<-(_81:str)
-    mil.line("# VAR left := bat.new(int,int);\n");	# 31 MILline (_82:void)<-(_83:str)
-    mil.line("# left.insert(4,-3);\n");	# 32 MILline (_84:void)<-(_85:str)
-    mil.line("# left.insert(3,-2);\n");	# 33 MILline (_86:void)<-(_87:str)
-    mil.line("# left.insert(2,-1);\n");	# 34 MILline (_88:void)<-(_89:str)
-    mil.line("# left.insert(1,0);\n");	# 35 MILline (_90:void)<-(_91:str)
-    mil.line("#  \n");	# 36 MILline (_92:void)<-(_93:str)
-    mil.line("# VAR right := bat.new(int,str);\n");	# 37 MILline (_94:void)<-(_95:str)
-    mil.line("# right.insert(-3,\"vier\");\n");	# 38 MILline (_96:void)<-(_97:str)
-    mil.line("# right.insert(-2,\"drie\");\n");	# 39 MILline (_98:void)<-(_99:str)
-    mil.line("# right.insert(-1,\"twee\");\n");	# 40 MILline (_100:void)<-(_101:str)
-    mil.line("# right.insert(0,\"een\");\n");	# 41 MILline (_102:void)<-(_103:str)
-    mil.line("# \n");	# 42 MILline (_104:void)<-(_72:str)
-    mil.line("# algebra.join(left,right).print;\n");	# 43 MILline (_105:void)<-(_106:str)
-    mil.line("# \n");	# 44 MILline (_107:void)<-(_72:str)
-    mil.line("# 8<-----\n");	# 45 MILline (_108:void)<-(_81:str)
-    mil.line("# output\n");	# 46 MILline (_109:void)<-(_110:str)
-    mil.line("# 8<-----\n");	# 47 MILline (_111:void)<-(_81:str)
-    mil.line("# >join(left,right).print;\n");	# 48 MILline (_112:void)<-(_113:str)
-    mil.line("# #-----------------#\n");	# 49 MILline (_114:void)<-(_115:str)
-    mil.line("# # BAT:    tmp_37  #\n");	# 50 MILline (_116:void)<-(_117:str)
-    mil.line("# # (int)   (str)   #\n");	# 51 MILline (_118:void)<-(_119:str)
-    mil.line("# #-----------------#\n");	# 52 MILline (_120:void)<-(_115:str)
-    mil.line("# [ 4,      \"vier\"  ]\n");	# 53 MILline (_121:void)<-(_122:str)
-    mil.line("# [ 3,      \"drie\"  ]\n");	# 54 MILline (_123:void)<-(_124:str)
-    mil.line("# [ 2,      \"twee\"  ]\n");	# 55 MILline (_125:void)<-(_126:str)
-    mil.line("# [ 1,      \"een\"   ]\n");	# 56 MILline (_127:void)<-(_128:str)
-    mil.line("# [ 1,      \"\"      ]\n");	# 57 MILline (_129:void)<-(_130:str)
-    mil.line("setoid(oid(20000000));");	# 58 MILline (_131:void)<-(_132:str)
-    aa_a := calc.oid(20000000);	# 59 CALCint2oid (aa_a:oid)<-(_134:int)
-    ba_a := calc.setoid(aa_a);	# 60 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-    mil.line("VAR left := bat.new(int,int);");	# 61 MILline (_136:void)<-(_137:str)
-    left := bat.new(nil:int,nil:int);	# 62 CMDBATnew (left:bat[:int,:int])<-(_139:int)(_139:int)
-    mil.line("left.insert(4,-3);");	# 63 MILline (_140:void)<-(_141:str)
-    ca_a := bat.insert(left,4,-3);	# 64 BKCinsert_bun (ca_a:void)<-(left:bat[:int,:int])(_143:int)(_144:int)
-    mil.line("left.insert(3,-2);");	# 65 MILline (_145:void)<-(_146:str)
-    da_a := bat.insert(left,3,-2);	# 66 BKCinsert_bun (da_a:void)<-(left:bat[:int,:int])(_148:int)(_149:int)
-    mil.line("left.insert(2,-1);");	# 67 MILline (_150:void)<-(_151:str)
-    ea_a := bat.insert(left,2,-1);	# 68 BKCinsert_bun (ea_a:void)<-(left:bat[:int,:int])(_153:int)(_154:int)
-    mil.line("left.insert(1,0);");	# 69 MILline (_155:void)<-(_156:str)
-    fa_a := bat.insert(left,1,0);	# 70 BKCinsert_bun (fa_a:void)<-(left:bat[:int,:int])(_158:int)(_159:int)
-    mil.line("VAR right := bat.new(int,str);");	# 71 MILline (_160:void)<-(_161:str)
-    right := bat.new(nil:int,nil:str);	# 72 CMDBATnew (right:bat[:int,:str])<-(_139:int)(_163:str)
-    mil.line("right.insert(-3,\"vier\");");	# 73 MILline (_164:void)<-(_165:str)
-    ga_a := bat.insert(right,-3,"vier");	# 74 BKCinsert_bun (ga_a:void)<-(right:bat[:int,:str])(_144:int)(_167:str)
-    mil.line("right.insert(-2,\"drie\");");	# 75 MILline (_168:void)<-(_169:str)
-    ha_a := bat.insert(right,-2,"drie");	# 76 BKCinsert_bun (ha_a:void)<-(right:bat[:int,:str])(_149:int)(_171:str)
-    mil.line("right.insert(-1,\"twee\");");	# 77 MILline (_172:void)<-(_173:str)
-    ia_a := bat.insert(right,-1,"twee");	# 78 BKCinsert_bun (ia_a:void)<-(right:bat[:int,:str])(_154:int)(_175:str)
-    mil.line("right.insert(0,\"een\");");	# 79 MILline (_176:void)<-(_177:str)
-    ja_a := bat.insert(right,0,"een");	# 80 BKCinsert_bun (ja_a:void)<-(right:bat[:int,:str])(_159:int)(_179:str)
-    mil.line("join(left,right).print();");	# 81 MILline (_180:void)<-(_181:str)
-    ka_a := algebra.join(left,right);	# 82 ALGjoin (ka_a:bat[:int,:str])<-(left:bat[:int,:int])(right:bat[:int,:str])
-    la_a := io.print(ka_a);	# 83 IOprint_val (la_a:int)<-(ka_a:bat[:int,:str])
-    mil.line("quit();");	# 84 MILline (_184:void)<-(_185:str)
-    ma_a := clients.quit();	# 85 CLTquit (ma_a:void)
-end main;	# 86  
-## >Number:         162\n
-## >Category:       Mserver\n
-## >Synopsis:       ghost BUN in join result\n
-## >Confidential:   no\n
-## >Severity:       critical\n
-## >Priority:       high\n
-## >Responsible:    boncz (Peter Boncz)\n
-## >State:          open\n
-## >Class:          sw-bug\n
-## >Submitter-Id:   unknown\n
-## >Arrival-Date:   Wed Jul 15 16:13:00 1998\n
-## >Originator:     windhouw@cwi.nl\n
-## >Organization:\n
-## CWI\n
-## >Release:        980101\n
-## >Environment:\n
-## \n
-## >Description:\n
-## A ghost BUN appears in the following script:\n
-## \n
-## script\n
-## 8<-----\n
-## VAR left := bbp.new(int,int);\n
-## left.insert(4,-3);\n
-## left.insert(3,-2);\n
-## left.insert(2,-1);\n
-## left.insert(1,0);\n
-##  \n
-## VAR right := bbp.new(int,str);\n
-## right.insert(-3,\"vier\");\n
-## right.insert(-2,\"drie\");\n
-## right.insert(-1,\"twee\");\n
-## right.insert(0,\"een\");\n
-## \n
-## algebra.join(left,right).print;\n
-## \n
-## 8<-----\n
-## output\n
-## 8<-----\n
-## >join(left,right).print;\n
-## #-----------------#\n
-## # BAT:    tmp_37  #\n
-## # (int)   (str)   #\n
-## #-----------------#\n
-## [ 4,      \"vier\"  ]\n
-## [ 3,      \"drie\"  ]\n
-## [ 2,      \"twee\"  ]\n
-## [ 1,      \"een\"   ]\n
-## [ 1,      \"\"      ]\n
-#setoid(oid(20000000));
-#VAR left := new(int,int);
-#left.insert(4,-3);
-#left.insert(3,-2);
-#left.insert(2,-1);
-#left.insert(1,0);
-#VAR right := new(int,str);
-#right.insert(-3,"vier");
-#right.insert(-2,"drie");
-#right.insert(-1,"twee");
-#right.insert(0,"een");
-#join(left,right).print();
+# Monet Mil to Mal compiler 	# 1  (_1:str)
+#include mil; 	# 2  (_2:str)
+# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 3  (_3:str)
+#Predefined code segment 	# 4  (_4:str)
+#The compiler can not guarantee an accurate compilation, 	# 5  (_5:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 6  (_6:str)
+#A few guidelines to maximize usefullness. 	# 7  (_7:str)
+#- make the type of variables explicit, in particular 'nil' 	# 8  (_8:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 9  (_9:str)
+#use the "mil_schema" for additional support routines 	# 10  (_10:str)
+#	mil.line("# >Number:         162\n"); 	# 11  (_11:str)
+#	mil.line("# >Category:       Mserver\n"); 	# 12  (_12:str)
+#	mil.line("# >Synopsis:       ghost BUN in join result\n"); 	# 13  (_13:str)
+#	mil.line("# >Confidential:   no\n"); 	# 14  (_14:str)
+#	mil.line("# >Severity:       critical\n"); 	# 15  (_15:str)
+#	mil.line("# >Priority:       high\n"); 	# 16  (_16:str)
+#	mil.line("# >Responsible:    boncz (Peter Boncz)\n"); 	# 17  (_17:str)
+#	mil.line("# >State:          open\n"); 	# 18  (_18:str)
+#	mil.line("# >Class:          sw-bug\n"); 	# 19  (_19:str)
+#	mil.line("# >Submitter-Id:   unknown\n"); 	# 20  (_20:str)
+#	mil.line("# >Arrival-Date:   Wed Jul 15 16:13:00 1998\n"); 	# 21  (_21:str)
+#	mil.line("# >Originator:     windhouw@cwi.nl\n"); 	# 22  (_22:str)
+#	mil.line("# >Organization:\n"); 	# 23  (_23:str)
+#	mil.line("# CWI\n"); 	# 24  (_24:str)
+#	mil.line("# >Release:        980101\n"); 	# 25  (_25:str)
+#	mil.line("# >Environment:\n"); 	# 26  (_26:str)
+#	mil.line("# \n"); 	# 27  (_27:str)
+#	mil.line("# >Description:\n"); 	# 28  (_28:str)
+#	mil.line("# A ghost BUN appears in the following script:\n"); 	# 29  (_29:str)
+#	mil.line("# \n"); 	# 30  (_27:str)
+#	mil.line("# script\n"); 	# 31  (_30:str)
+#	mil.line("# 8<-----\n"); 	# 32  (_31:str)
+#	mil.line("# VAR left := bat.new(int,int);\n"); 	# 33  (_32:str)
+#	mil.line("# left.insert(4,-3);\n"); 	# 34  (_33:str)
+#	mil.line("# left.insert(3,-2);\n"); 	# 35  (_34:str)
+#	mil.line("# left.insert(2,-1);\n"); 	# 36  (_35:str)
+#	mil.line("# left.insert(1,0);\n"); 	# 37  (_36:str)
+#	mil.line("#  \n"); 	# 38  (_37:str)
+#	mil.line("# VAR right := bat.new(int,str);\n"); 	# 39  (_38:str)
+#	mil.line("# right.insert(-3,\"vier\");\n"); 	# 40  (_39:str)
+#	mil.line("# right.insert(-2,\"drie\");\n"); 	# 41  (_40:str)
+#	mil.line("# right.insert(-1,\"twee\");\n"); 	# 42  (_41:str)
+#	mil.line("# right.insert(0,\"een\");\n"); 	# 43  (_42:str)
+#	mil.line("# \n"); 	# 44  (_27:str)
+#	mil.line("# algebra.join(left,right).print;\n"); 	# 45  (_43:str)
+#	mil.line("# \n"); 	# 46  (_27:str)
+#	mil.line("# 8<-----\n"); 	# 47  (_31:str)
+#	mil.line("# output\n"); 	# 48  (_44:str)
+#	mil.line("# 8<-----\n"); 	# 49  (_31:str)
+#	mil.line("# >join(left,right).print;\n"); 	# 50  (_45:str)
+#	mil.line("# #-----------------#\n"); 	# 51  (_46:str)
+#	mil.line("# # BAT:    tmp_37  #\n"); 	# 52  (_47:str)
+#	mil.line("# # (int)   (str)   #\n"); 	# 53  (_48:str)
+#	mil.line("# #-----------------#\n"); 	# 54  (_46:str)
+#	mil.line("# [ 4,      \"vier\"  ]\n"); 	# 55  (_49:str)
+#	mil.line("# [ 3,      \"drie\"  ]\n"); 	# 56  (_50:str)
+#	mil.line("# [ 2,      \"twee\"  ]\n"); 	# 57  (_51:str)
+#	mil.line("# [ 1,      \"een\"   ]\n"); 	# 58  (_52:str)
+#	mil.line("# [ 1,      \"\"      ]\n"); 	# 59  (_53:str)
+#	mil.line("setoid(oid(20000000));"); 	# 60  (_54:str)
+    aa_a := calc.oid(20000000);	# 61 CALCint2oid (aa_a:oid)<-(_56:int)
+    ba_a := calc.setoid(aa_a);	# 62 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
+#	mil.line("VAR left := bat.new(int,int);"); 	# 63  (_58:str)
+    left := bat.new(nil:int,nil:int);	# 64 CMDBATnew (left:bat[:int,:int])<-(_60:int)(_60:int)
+#	mil.line("left.insert(4,-3);"); 	# 65  (_61:str)
+    ca_a := bat.insert(left,4,-3);	# 66 BKCinsert_bun (ca_a:void)<-(left:bat[:int,:int])(_63:int)(_64:int)
+#	mil.line("left.insert(3,-2);"); 	# 67  (_65:str)
+    da_a := bat.insert(left,3,-2);	# 68 BKCinsert_bun (da_a:void)<-(left:bat[:int,:int])(_67:int)(_68:int)
+#	mil.line("left.insert(2,-1);"); 	# 69  (_69:str)
+    ea_a := bat.insert(left,2,-1);	# 70 BKCinsert_bun (ea_a:void)<-(left:bat[:int,:int])(_71:int)(_72:int)
+#	mil.line("left.insert(1,0);"); 	# 71  (_73:str)
+    fa_a := bat.insert(left,1,0);	# 72 BKCinsert_bun (fa_a:void)<-(left:bat[:int,:int])(_75:int)(_76:int)
+#	mil.line("VAR right := bat.new(int,str);"); 	# 73  (_77:str)
+    right := bat.new(nil:int,nil:str);	# 74 CMDBATnew (right:bat[:int,:str])<-(_60:int)(_79:str)
+#	mil.line("right.insert(-3,\"vier\");"); 	# 75  (_80:str)
+    ga_a := bat.insert(right,-3,"vier");	# 76 BKCinsert_bun (ga_a:void)<-(right:bat[:int,:str])(_64:int)(_82:str)
+#	mil.line("right.insert(-2,\"drie\");"); 	# 77  (_83:str)
+    ha_a := bat.insert(right,-2,"drie");	# 78 BKCinsert_bun (ha_a:void)<-(right:bat[:int,:str])(_68:int)(_85:str)
+#	mil.line("right.insert(-1,\"twee\");"); 	# 79  (_86:str)
+    ia_a := bat.insert(right,-1,"twee");	# 80 BKCinsert_bun (ia_a:void)<-(right:bat[:int,:str])(_72:int)(_88:str)
+#	mil.line("right.insert(0,\"een\");"); 	# 81  (_89:str)
+    ja_a := bat.insert(right,0,"een");	# 82 BKCinsert_bun (ja_a:void)<-(right:bat[:int,:str])(_76:int)(_91:str)
+#	mil.line("join(left,right).print();"); 	# 83  (_92:str)
+    ka_a := algebra.join(left,right);	# 84 ALGjoin (ka_a:bat[:int,:str])<-(left:bat[:int,:int])(right:bat[:int,:str])
+    la_a := io.print(ka_a);	# 85 IOprint_val (la_a:int)<-(ka_a:bat[:int,:str])
+#	mil.line("quit();"); 	# 86  (_95:str)
+    ma_a := clients.quit();	# 87 CLTquit (ma_a:void)
+end main;	# 88  
 #-----------------#
 # BAT:	  tmp_71  #
 # (int)	  (str)	  #

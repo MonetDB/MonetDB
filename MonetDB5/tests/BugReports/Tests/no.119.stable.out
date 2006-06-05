@@ -122,162 +122,89 @@ stdout of test 'no.119` in directory 'tests/BugReports` itself:
 #	mil.line("quit();");
 #	ua_a := quit();
 #
+
+
+
+
+
 function user.main():void;	# 0  (main:void)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_31:str)
-#Predefined code segment 	# 2  (_32:str)
-#The compiler can not guarantee an accurate compilation, 	# 3  (_33:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 4  (_34:str)
-#A few guidelines to maximize usefullness. 	# 5  (_35:str)
-#- make the type of variables explicit, in particular 'nil' 	# 6  (_36:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  (_37:str)
-#use the "mil_schema" for additional support routines 	# 8  (_38:str)
-    mil.line("# >Number:         119\n");	# 9 MILline (_39:void)<-(_40:str)
-    mil.line("# >Category:       Module_kernel\n");	# 10 MILline (_41:void)<-(_42:str)
-    mil.line("# >Synopsis:       thetajoin gives incorrect output\n");	# 11 MILline (_43:void)<-(_44:str)
-    mil.line("# >Confidential:   no\n");	# 12 MILline (_45:void)<-(_46:str)
-    mil.line("# >Severity:       serious\n");	# 13 MILline (_47:void)<-(_48:str)
-    mil.line("# >Priority:       medium\n");	# 14 MILline (_49:void)<-(_50:str)
-    mil.line("# >Responsible:    boncz\n");	# 15 MILline (_51:void)<-(_52:str)
-    mil.line("# >State:          open\n");	# 16 MILline (_53:void)<-(_54:str)
-    mil.line("# >Class:          sw-bug\n");	# 17 MILline (_55:void)<-(_56:str)
-    mil.line("# >Submitter-Id:   unknown\n");	# 18 MILline (_57:void)<-(_58:str)
-    mil.line("# >Arrival-Date:   Wed Feb 11 11:26:18 1998\n");	# 19 MILline (_59:void)<-(_60:str)
-    mil.line("# >Originator:     niels\n");	# 20 MILline (_61:void)<-(_62:str)
-    mil.line("# >Organization:\n");	# 21 MILline (_63:void)<-(_64:str)
-    mil.line("# CWI\n");	# 22 MILline (_65:void)<-(_66:str)
-    mil.line("# >Release:        971007\n");	# 23 MILline (_67:void)<-(_68:str)
-    mil.line("# >Environment:\n");	# 24 MILline (_69:void)<-(_70:str)
-    mil.line("# All\n");	# 25 MILline (_71:void)<-(_72:str)
-    mil.line("# >Description:\n");	# 26 MILline (_73:void)<-(_74:str)
-    mil.line("# Simple script \n");	# 27 MILline (_75:void)<-(_76:str)
-    mil.line("# a.insert(1,2);\n");	# 28 MILline (_77:void)<-(_78:str)
-    mil.line("# a.insert(2,1);\n");	# 29 MILline (_79:void)<-(_80:str)
-    mil.line("# a.thetajoin(a,LT).print();\n");	# 30 MILline (_81:void)<-(_82:str)
-    mil.line("# 2 1\n");	# 31 MILline (_83:void)<-(_84:str)
-    mil.line("# 2 2\n");	# 32 MILline (_85:void)<-(_86:str)
-    mil.line("# 1 1 \n");	# 33 MILline (_87:void)<-(_88:str)
-    mil.line("# 1 2\n");	# 34 MILline (_89:void)<-(_90:str)
-    mil.line("# Since this report was submitted, thetajoin has grown a 4th argument:\n");	# 35 MILline (_91:void)<-(_92:str)
-    mil.line("# the estimated length of the result\n");	# 36 MILline (_93:void)<-(_94:str)
-    mil.line("setoid(oid(20000000));");	# 37 MILline (_95:void)<-(_96:str)
-    aa_a := calc.oid(20000000);	# 38 CALCint2oid (aa_a:oid)<-(_98:int)
-    ba_a := calc.setoid(aa_a);	# 39 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-    mil.line("var a := bat.new(int,int);");	# 40 MILline (_100:void)<-(_101:str)
-    a := bat.new(nil:int,nil:int);	# 41 CMDBATnew (a:bat[:int,:int])<-(_103:int)(_103:int)
-    mil.line("a.insert(1,3);");	# 42 MILline (_104:void)<-(_105:str)
-    ca_a := bat.insert(a,1,3);	# 43 BKCinsert_bun (ca_a:void)<-(a:bat[:int,:int])(_107:int)(_108:int)
-    mil.line("a.insert(2,2);");	# 44 MILline (_109:void)<-(_110:str)
-    da_a := bat.insert(a,2,2);	# 45 BKCinsert_bun (da_a:void)<-(a:bat[:int,:int])(_112:int)(_112:int)
-    mil.line("a.insert(3,1);");	# 46 MILline (_113:void)<-(_114:str)
-    ea_a := bat.insert(a,3,1);	# 47 BKCinsert_bun (ea_a:void)<-(a:bat[:int,:int])(_108:int)(_107:int)
-    mil.line("a.thetajoin(a,LT,calc.lng(nil)).print();");	# 48 MILline (_116:void)<-(_117:str)
-    LT := mil.take("LT");	# 49 MILtake (LT:int)<-(_118:str)
-    fa_a := calc.lng(nil);	# 50 CALCnil2lng (fa_a:lng)<-(_120:void)
-    ga_a := algebra.thetajoin(a,a,LT,fa_a);	# 51 ALGthetajoinEstimate (ga_a:bat[:int,:int])<-(a:bat[:int,:int])(a:bat[:int,:int])(LT:int)(fa_a:lng)
-    ha_a := io.print(ga_a);	# 52 IOprint_val (ha_a:int)<-(ga_a:bat[:int,:int])
-    mil.line("a.thetajoin(a,LE,calc.lng(nil)).print();");	# 53 MILline (_123:void)<-(_124:str)
-    LE := mil.take("LE");	# 54 MILtake (LE:int)<-(_125:str)
-    ia_a := calc.lng(nil);	# 55 CALCnil2lng (ia_a:lng)<-(_120:void)
-    ja_a := algebra.thetajoin(a,a,LE,ia_a);	# 56 ALGthetajoinEstimate (ja_a:bat[:int,:int])<-(a:bat[:int,:int])(a:bat[:int,:int])(LE:int)(ia_a:lng)
-    ka_a := io.print(ja_a);	# 57 IOprint_val (ka_a:int)<-(ja_a:bat[:int,:int])
-    mil.line("a.thetajoin(a,EQ,calc.lng(nil)).print();");	# 58 MILline (_129:void)<-(_130:str)
-    EQ := mil.take("EQ");	# 59 MILtake (EQ:int)<-(_131:str)
-    la_a := calc.lng(nil);	# 60 CALCnil2lng (la_a:lng)<-(_120:void)
-    ma_a := algebra.thetajoin(a,a,EQ,la_a);	# 61 ALGthetajoinEstimate (ma_a:bat[:int,:int])<-(a:bat[:int,:int])(a:bat[:int,:int])(EQ:int)(la_a:lng)
-    na_a := io.print(ma_a);	# 62 IOprint_val (na_a:int)<-(ma_a:bat[:int,:int])
-    mil.line("a.thetajoin(a,GE,calc.lng(nil)).print();");	# 63 MILline (_135:void)<-(_136:str)
-    GE := mil.take("GE");	# 64 MILtake (GE:int)<-(_137:str)
-    oa_a := calc.lng(nil);	# 65 CALCnil2lng (oa_a:lng)<-(_120:void)
-    pa_a := algebra.thetajoin(a,a,GE,oa_a);	# 66 ALGthetajoinEstimate (pa_a:bat[:int,:int])<-(a:bat[:int,:int])(a:bat[:int,:int])(GE:int)(oa_a:lng)
-    qa_a := io.print(pa_a);	# 67 IOprint_val (qa_a:int)<-(pa_a:bat[:int,:int])
-    mil.line("a.thetajoin(a,GT,calc.lng(nil)).print();");	# 68 MILline (_141:void)<-(_142:str)
-    GT := mil.take("GT");	# 69 MILtake (GT:int)<-(_143:str)
-    ra_a := calc.lng(nil);	# 70 CALCnil2lng (ra_a:lng)<-(_120:void)
-    sa_a := algebra.thetajoin(a,a,GT,ra_a);	# 71 ALGthetajoinEstimate (sa_a:bat[:int,:int])<-(a:bat[:int,:int])(a:bat[:int,:int])(GT:int)(ra_a:lng)
-    ta_a := io.print(sa_a);	# 72 IOprint_val (ta_a:int)<-(sa_a:bat[:int,:int])
-    mil.line("quit();");	# 73 MILline (_147:void)<-(_148:str)
-    ua_a := clients.quit();	# 74 CLTquit (ua_a:void)
-end main;	# 75  
-## >Number:         119\n
-## >Category:       Module_kernel\n
-## >Synopsis:       thetajoin gives incorrect output\n
-## >Confidential:   no\n
-## >Severity:       serious\n
-## >Priority:       medium\n
-## >Responsible:    boncz\n
-## >State:          open\n
-## >Class:          sw-bug\n
-## >Submitter-Id:   unknown\n
-## >Arrival-Date:   Wed Feb 11 11:26:18 1998\n
-## >Originator:     niels\n
-## >Organization:\n
-## CWI\n
-## >Release:        971007\n
-## >Environment:\n
-## All\n
-## >Description:\n
-## Simple script \n
-## a.insert(1,2);\n
-## a.insert(2,1);\n
-## a.thetajoin(a,LT).print();\n
-## 2 1\n
-## 2 2\n
-## 1 1 \n
-## 1 2\n
-## Since this report was submitted, thetajoin has grown a 4th argument:\n
-## the estimated length of the result\n
-#setoid(oid(20000000));
-#var a := new(int,int);
-#a.insert(1,3);
-#a.insert(2,2);
-#a.insert(3,1);
-#a.thetajoin(a,LT,calc.lng(nil)).print();
-#-----------------#
-# h	tmp_14	  # name
-# int	int	  # type
-#-----------------#
-[ 2,	  1	  ]
-[ 3,	  2	  ]
-[ 3,	  1	  ]
-#a.thetajoin(a,LE,calc.lng(nil)).print();
-#-----------------#
-# h	tmp_15	  # name
-# int	int	  # type
-#-----------------#
-[ 1,	  1	  ]
-[ 2,	  2	  ]
-[ 2,	  1	  ]
-[ 3,	  3	  ]
-[ 3,	  2	  ]
-[ 3,	  1	  ]
-#a.thetajoin(a,EQ,calc.lng(nil)).print();
-#-----------------#
-# h	tmp_16	  # name
-# int	int	  # type
-#-----------------#
-[ 1,	  1	  ]
-[ 2,	  2	  ]
-[ 3,	  3	  ]
-#a.thetajoin(a,GE,calc.lng(nil)).print();
-#-----------------#
-# h	tmp_17	  # name
-# int	int	  # type
-#-----------------#
-[ 1,	  3	  ]
-[ 1,	  2	  ]
-[ 1,	  1	  ]
-[ 2,	  3	  ]
-[ 2,	  2	  ]
-[ 3,	  3	  ]
-#a.thetajoin(a,GT,calc.lng(nil)).print();
-#-----------------#
-# h	tmp_18	  # name
-# int	int	  # type
-#-----------------#
-[ 1,	  3	  ]
-[ 1,	  2	  ]
-[ 2,	  3	  ]
-#quit();
+# Monet Mil to Mal compiler 	# 1  (_1:str)
+#include mil; 	# 2  (_2:str)
+# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 3  (_3:str)
+#Predefined code segment 	# 4  (_4:str)
+#The compiler can not guarantee an accurate compilation, 	# 5  (_5:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 6  (_6:str)
+#A few guidelines to maximize usefullness. 	# 7  (_7:str)
+#- make the type of variables explicit, in particular 'nil' 	# 8  (_8:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 9  (_9:str)
+#use the "mil_schema" for additional support routines 	# 10  (_10:str)
+#	mil.line("# >Number:         119\n"); 	# 11  (_11:str)
+#	mil.line("# >Category:       Module_kernel\n"); 	# 12  (_12:str)
+#	mil.line("# >Synopsis:       thetajoin gives incorrect output\n"); 	# 13  (_13:str)
+#	mil.line("# >Confidential:   no\n"); 	# 14  (_14:str)
+#	mil.line("# >Severity:       serious\n"); 	# 15  (_15:str)
+#	mil.line("# >Priority:       medium\n"); 	# 16  (_16:str)
+#	mil.line("# >Responsible:    boncz\n"); 	# 17  (_17:str)
+#	mil.line("# >State:          open\n"); 	# 18  (_18:str)
+#	mil.line("# >Class:          sw-bug\n"); 	# 19  (_19:str)
+#	mil.line("# >Submitter-Id:   unknown\n"); 	# 20  (_20:str)
+#	mil.line("# >Arrival-Date:   Wed Feb 11 11:26:18 1998\n"); 	# 21  (_21:str)
+#	mil.line("# >Originator:     niels\n"); 	# 22  (_22:str)
+#	mil.line("# >Organization:\n"); 	# 23  (_23:str)
+#	mil.line("# CWI\n"); 	# 24  (_24:str)
+#	mil.line("# >Release:        971007\n"); 	# 25  (_25:str)
+#	mil.line("# >Environment:\n"); 	# 26  (_26:str)
+#	mil.line("# All\n"); 	# 27  (_27:str)
+#	mil.line("# >Description:\n"); 	# 28  (_28:str)
+#	mil.line("# Simple script \n"); 	# 29  (_29:str)
+#	mil.line("# a.insert(1,2);\n"); 	# 30  (_30:str)
+#	mil.line("# a.insert(2,1);\n"); 	# 31  (_31:str)
+#	mil.line("# a.thetajoin(a,LT).print();\n"); 	# 32  (_32:str)
+#	mil.line("# 2 1\n"); 	# 33  (_33:str)
+#	mil.line("# 2 2\n"); 	# 34  (_34:str)
+#	mil.line("# 1 1 \n"); 	# 35  (_35:str)
+#	mil.line("# 1 2\n"); 	# 36  (_36:str)
+#	mil.line("# Since this report was submitted, thetajoin has grown a 4th argument:\n"); 	# 37  (_37:str)
+#	mil.line("# the estimated length of the result\n"); 	# 38  (_38:str)
+#	mil.line("setoid(oid(20000000));"); 	# 39  (_39:str)
+    aa_a := calc.oid(20000000);	# 40 CALCint2oid (aa_a:oid)<-(_41:int)
+    ba_a := calc.setoid(aa_a);	# 41 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
+#	mil.line("var a := bat.new(int,int);"); 	# 42  (_43:str)
+    a := bat.new(nil:int,nil:int);	# 43 CMDBATnew (a:bat[:int,:int])<-(_45:int)(_45:int)
+#	mil.line("a.insert(1,3);"); 	# 44  (_46:str)
+    ca_a := bat.insert(a,1,3);	# 45 BKCinsert_bun (ca_a:void)<-(a:bat[:int,:int])(_48:int)(_49:int)
+#	mil.line("a.insert(2,2);"); 	# 46  (_50:str)
+    da_a := bat.insert(a,2,2);	# 47 BKCinsert_bun (da_a:void)<-(a:bat[:int,:int])(_52:int)(_52:int)
+#	mil.line("a.insert(3,1);"); 	# 48  (_53:str)
+    ea_a := bat.insert(a,3,1);	# 49 BKCinsert_bun (ea_a:void)<-(a:bat[:int,:int])(_49:int)(_48:int)
+#	mil.line("a.thetajoin(a,LT,calc.lng(nil)).print();"); 	# 50  (_55:str)
+    LT := mil.take("LT");	# 51  unknown (LT:any)<-(_57:str)
+    fa_a := calc.lng(nil);	# 52 CALCnil2lng (fa_a:lng)<-(_59:void)
+    ga_a := algebra.thetajoin(a,a,LT,fa_a);	# 53 ALGthetajoinEstimate (ga_a:bat[:int,:int])<-(a:bat[:int,:int])(a:bat[:int,:int])(LT:any)(fa_a:lng)
+    ha_a := io.print(ga_a);	# 54 IOprint_val (ha_a:int)<-(ga_a:bat[:int,:int])
+#	mil.line("a.thetajoin(a,LE,calc.lng(nil)).print();"); 	# 55  (_62:str)
+    LE := mil.take("LE");	# 56  unknown (LE:any)<-(_64:str)
+    ia_a := calc.lng(nil);	# 57 CALCnil2lng (ia_a:lng)<-(_59:void)
+    ja_a := algebra.thetajoin(a,a,LE,ia_a);	# 58 ALGthetajoinEstimate (ja_a:bat[:int,:int])<-(a:bat[:int,:int])(a:bat[:int,:int])(LE:any)(ia_a:lng)
+    ka_a := io.print(ja_a);	# 59 IOprint_val (ka_a:int)<-(ja_a:bat[:int,:int])
+#	mil.line("a.thetajoin(a,EQ,calc.lng(nil)).print();"); 	# 60  (_68:str)
+    EQ := mil.take("EQ");	# 61  unknown (EQ:any)<-(_70:str)
+    la_a := calc.lng(nil);	# 62 CALCnil2lng (la_a:lng)<-(_59:void)
+    ma_a := algebra.thetajoin(a,a,EQ,la_a);	# 63 ALGthetajoinEstimate (ma_a:bat[:int,:int])<-(a:bat[:int,:int])(a:bat[:int,:int])(EQ:any)(la_a:lng)
+    na_a := io.print(ma_a);	# 64 IOprint_val (na_a:int)<-(ma_a:bat[:int,:int])
+#	mil.line("a.thetajoin(a,GE,calc.lng(nil)).print();"); 	# 65  (_74:str)
+    GE := mil.take("GE");	# 66  unknown (GE:any)<-(_76:str)
+    oa_a := calc.lng(nil);	# 67 CALCnil2lng (oa_a:lng)<-(_59:void)
+    pa_a := algebra.thetajoin(a,a,GE,oa_a);	# 68 ALGthetajoinEstimate (pa_a:bat[:int,:int])<-(a:bat[:int,:int])(a:bat[:int,:int])(GE:any)(oa_a:lng)
+    qa_a := io.print(pa_a);	# 69 IOprint_val (qa_a:int)<-(pa_a:bat[:int,:int])
+#	mil.line("a.thetajoin(a,GT,calc.lng(nil)).print();"); 	# 70  (_80:str)
+    GT := mil.take("GT");	# 71  unknown (GT:any)<-(_82:str)
+    ra_a := calc.lng(nil);	# 72 CALCnil2lng (ra_a:lng)<-(_59:void)
+    sa_a := algebra.thetajoin(a,a,GT,ra_a);	# 73 ALGthetajoinEstimate (sa_a:bat[:int,:int])<-(a:bat[:int,:int])(a:bat[:int,:int])(GT:any)(ra_a:lng)
+    ta_a := io.print(sa_a);	# 74 IOprint_val (ta_a:int)<-(sa_a:bat[:int,:int])
+#	mil.line("quit();"); 	# 75  (_86:str)
+    ua_a := clients.quit();	# 76 CLTquit (ua_a:void)
+end main;	# 77  
 
 # 17:06:57 >  
 # 17:06:57 >  Done.
