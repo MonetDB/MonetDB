@@ -1377,10 +1377,10 @@ SERVERquery(int *ret, int *key, str *qry){
 	if( SERVERsessions[i].hdl)
 		mapi_close_handle(SERVERsessions[i].hdl);
 	SERVERsessions[i].hdl= mapi_query(mid, *qry);
-	*ret = *key;
 	if( mapi_error(mid) ) 
 		return throwMessage("mserver.query",
 			mapi_result_error(SERVERsessions[i].hdl));
+	*ret = *key;
 	return MAL_SUCCEED;
 }
 str 
@@ -1389,13 +1389,16 @@ SERVERquery_handle(int *ret, int *key, str *qry){
 	int i;
 	@:accessTest(*key,query_handle)@
 	mapi_query_handle(SERVERsessions[i].hdl, *qry);
+	if( mapi_error(mid) ) 
+		return throwMessage("mserver.query_handle",
+			mapi_result_error(SERVERsessions[i].hdl));
 	*ret = *key;
 	return MAL_SUCCEED;
 }
 str
 SERVERquery_array(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc){
 	(void) mb; (void) stk; (void) pc;
-	return MAL_SUCCEED;
+	return throwMessage("mserver.query_array","not yet implemented");
 }
 str 
 SERVERprepare(int *ret, int *key, str *qry){
@@ -1405,6 +1408,9 @@ SERVERprepare(int *ret, int *key, str *qry){
 	if( SERVERsessions[i].hdl)
 		mapi_close_handle(SERVERsessions[i].hdl);
 	SERVERsessions[i].hdl= mapi_prepare(mid, *qry);
+	if( mapi_error(mid) ) 
+		return throwMessage("mserver.prepare",
+			mapi_result_error(SERVERsessions[i].hdl));
 	*ret = *key;
 	return MAL_SUCCEED;
 }
@@ -1414,6 +1420,9 @@ SERVERexecute(int *ret, int *key){
 	int i;
 	@:accessTest(*key,execute)@
 	mapi_execute(SERVERsessions[i].hdl);
+	if( mapi_error(mid) ) 
+		return throwMessage("mserver.execute",
+			mapi_result_error(SERVERsessions[i].hdl));
 	*ret = *key;
 	return MAL_SUCCEED;
 }
@@ -1423,6 +1432,9 @@ SERVERfinish(int *ret, int *key){
 	int i;
 	@:accessTest(*key,finish)@
 	mapi_finish(SERVERsessions[i].hdl);
+	if( mapi_error(mid) ) 
+		return throwMessage("mserver.finish",
+			mapi_result_error(SERVERsessions[i].hdl));
 	*ret = *key;
 	return MAL_SUCCEED;
 }
@@ -1432,6 +1444,9 @@ SERVERget_row_count(int *ret, int *key){
 	int i;
 	@:accessTest(*key,get_row_count)@
 	*ret= mapi_get_row_count(SERVERsessions[i].hdl);
+	if( mapi_error(mid) ) 
+		return throwMessage("mserver.get_row_count",
+			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
 str 
@@ -1440,6 +1455,9 @@ SERVERget_field_count(int *ret, int *key){
 	int i;
 	@:accessTest(*key,get_field_count)@
 	*ret= mapi_get_field_count(SERVERsessions[i].hdl);
+	if( mapi_error(mid) ) 
+		return throwMessage("mserver.get_field_count",
+			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
 str 
@@ -1474,6 +1492,9 @@ SERVERfetch_field_str(str *ret, int *key, int *fnr){
 	@:accessTest(*key,fetch_field)@
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	*ret= GDKstrdup(fld? fld: str_nil);
+	if( mapi_error(mid) ) 
+		return throwMessage("mserver.fetch_field_str",
+			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
 str 
@@ -1484,6 +1505,9 @@ SERVERfetch_field_int(int *ret, int *key, int *fnr){
 	@:accessTest(*key,fetch_field)@
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	*ret= fld? (int) atol(fld): int_nil;
+	if( mapi_error(mid) ) 
+		return throwMessage("mserver.fetch_field_int",
+			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
 str 
@@ -1494,6 +1518,9 @@ SERVERfetch_field_lng(lng *ret, int *key, int *fnr){
 	@:accessTest(*key,fetch_field)@
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	*ret= fld? atol(fld): lng_nil;
+	if( mapi_error(mid) ) 
+		return throwMessage("mserver.fetch_field_lng",
+			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
 str 
@@ -1504,6 +1531,9 @@ SERVERfetch_field_sht(sht *ret, int *key, int *fnr){
 	@:accessTest(*key,fetch_field)@
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	*ret= fld? (sht) atol(fld): sht_nil;
+	if( mapi_error(mid) ) 
+		return throwMessage("mserver.fetch_field",
+			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
 str 
@@ -1513,7 +1543,7 @@ SERVERfetch_field_void(oid *ret, int *key, int *fnr){
 	@:accessTest(*key,fetch_field)@
 	(void) fnr;
 	*ret = oid_nil;
-	return MAL_SUCCEED;
+	return throwMessage("mserver.fetch_field_void","defaults to nil");
 }
 str 
 SERVERfetch_field_oid(oid *ret, int *key, int *fnr){
@@ -1522,6 +1552,9 @@ SERVERfetch_field_oid(oid *ret, int *key, int *fnr){
 	str fld;
 	@:accessTest(*key,fetch_field)@
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
+	if( mapi_error(mid) ) 
+		return throwMessage("mserver.fetch_field_oid",
+			mapi_result_error(SERVERsessions[i].hdl));
 	if(fld==0 || strcmp(fld,"nil")==0)
 		*(oid*) ret= void_nil;
 	else *(oid*) ret = (oid) atol(fld);
@@ -1534,6 +1567,9 @@ SERVERfetch_field_chr(chr *ret, int *key, int *fnr){
 	str fld;
 	@:accessTest(*key,fetch_field)@
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
+	if( mapi_error(mid) ) 
+		return throwMessage("mserver.fetch_field_chr",
+			mapi_result_error(SERVERsessions[i].hdl));
 	if(fld==0 || strcmp(fld,"nil")==0)
 		*(chr*) ret= chr_nil;
 	else *(chr*) ret = *fld;
@@ -1546,6 +1582,9 @@ SERVERfetch_line(str *ret, int *key){
 	str fld;
 	@:accessTest(*key,fetch_line)@
 	fld= mapi_fetch_line(SERVERsessions[i].hdl);
+	if( mapi_error(mid) ) 
+		return throwMessage("mserver.fetch_line",
+			mapi_result_error(SERVERsessions[i].hdl));
 	*ret= GDKstrdup(fld? fld:str_nil);
 	return MAL_SUCCEED;
 }
@@ -1555,6 +1594,9 @@ SERVERnext_result(int *ret, int *key){
 	int i;
 	@:accessTest(*key,next_result)@
 	mapi_next_result(SERVERsessions[i].hdl);
+	if( mapi_error(mid) ) 
+		return throwMessage("mserver.next_result",
+			mapi_result_error(SERVERsessions[i].hdl));
 	*ret= *key;
 	return MAL_SUCCEED;
 }
@@ -1564,6 +1606,9 @@ SERVERfetch_reset(int *ret, int *key){
 	int i;
 	@:accessTest(*key,fetch_reset)@
 	mapi_fetch_reset(SERVERsessions[i].hdl);
+	if( mapi_error(mid) ) 
+		return throwMessage("mserver.fetch_reset",
+			mapi_result_error(SERVERsessions[i].hdl));
 	*ret= *key;
 	return MAL_SUCCEED;
 }
@@ -1580,6 +1625,12 @@ SERVERfetch_field_bat(int *bid, int *key){
 	cnt= mapi_get_field_count(SERVERsessions[i].hdl);
 	for(j=0; j< cnt; j++){
 		fld= mapi_fetch_field(SERVERsessions[i].hdl,j);
+		if( mapi_error(mid) ) {
+			*bid = b->batCacheid;
+			BBPkeepref(*bid);
+			return throwMessage("mserver.fetch_field_bat",
+				mapi_result_error(SERVERsessions[i].hdl));
+		}
 		BUNins(b,&o,fld, FALSE);
 		o++;
 	}
