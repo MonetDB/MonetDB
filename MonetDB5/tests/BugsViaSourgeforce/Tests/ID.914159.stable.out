@@ -1,19 +1,19 @@
 stdout of test 'ID.914159` in directory 'tests/BugsViaSourgeforce` itself:
 
 
-# 22:18:31 >  
-# 22:18:31 >  Mtimeout -timeout 60 Mserver "--config=/var/tmp/_4.3.16_PREFIX_MONET_GNU_32_d__/etc/monet.conf" --debug=10 --set "monet_mod_path=/var/tmp/_4.3.16_PREFIX_MONET_GNU_32_d__/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_4.3.16_PREFIX_MONET_GNU_32_d__/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_4.3.16_PREFIX_MONET_GNU_32_d__/var/MonetDB/log" --set mapi_port=46316 --set sql_port=58861 --set monet_prompt= --trace --dbname=mTests_tests_BugsViaSourgeforce  < ID.914159.milS
-# 22:18:31 >  
+# 07:27:17 >  
+# 07:27:17 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=35545 --set monet_prompt= --trace --dbname=mTests_tests_BugsViaSourgeforce  ID.914159.mal < /dev/null
+# 07:27:17 >  
 
-# Monet Database Server V4.3.16_rc05
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit; dynamically linked.
-# config:/home/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/home/mk/monet5/Linux/var/MonetDB5/dbfarm
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_tests_BugsViaSourgeforce
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information
 ## Monet Mil to Mal compiler
-#include mil;
+##include mil;
 ## Copyright (c) 2001-2004, CWI. All rights reserved.
 #
 ##Predefined code segment
@@ -23,45 +23,40 @@ stdout of test 'ID.914159` in directory 'tests/BugsViaSourgeforce` itself:
 ##- make the type of variables explicit, in particular 'nil'
 ##- upon advice of M2m to remap identifiers, change it in your program directly
 ##use the "mil_schema" for additional support routines
-#	mil.line("PROC crash() : void");
+##	mil.line("PROC crash() : void");
 #function crash():void;
 #
-##ERROR: no iterator 'T' on stack
-#
-##ERROR: no iterator 'T' on stack
-#	mil.line("\tprint($t);");
+##	mil.line("\tprint($t);\n");
 #	unknown:= mil.take("unknown");
-#	aa_a := print(unknown);
+#	aa_a := io.print(unknown);
 #end crash;
 function user.crash():void;	# 0  (crash:void)
-    mil.line("\\tprint($t);\n");	# 1 MILline (_1:void)<-(_2:str)
-    unknown := mil.take("unknown");	# 2 MILtake (unknown:any)<-(_4:str)
+#	mil.line("\tprint($t);\n"); 	# 1  (_1:str)
+    unknown := mil.take("unknown");	# 2  unknown (unknown:any)<-(_3:str)
     aa_a := io.print(unknown);	# 3 IOprint_val (aa_a:int)<-(unknown:any)
 end crash;	# 4  
-#	mil.line("crash();");
-#	ba_a := crash();
+!ERROR: 'mil.take' undefined in user.crash[2] unknown:any := mil.take(_3:str)
+##	mil.line("crash();");
+#	ba_a := user.crash();
 #
 function user.main():void;	# 0  (main:void)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_31:str)
-#Predefined code segment 	# 2  (_32:str)
-#The compiler can not guarantee an accurate compilation, 	# 3  (_33:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 4  (_34:str)
-#A few guidelines to maximize usefullness. 	# 5  (_35:str)
-#- make the type of variables explicit, in particular 'nil' 	# 6  (_36:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  (_37:str)
-#use the "mil_schema" for additional support routines 	# 8  (_38:str)
-    mil.line("PROC crash() : void");	# 9 MILline (_39:void)<-(_40:str)
-    mil.line("crash();");	# 10 MILline (_41:void)<-(_42:str)
-    ba_a := user.crash();	# 11  (ba_a:void)
-end main;	# 12  
-#PROC crash() : void
-#crash();
-#\tprint($t);
+# Monet Mil to Mal compiler 	# 1  (_1:str)
+#include mil; 	# 2  (_2:str)
+# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 3  (_3:str)
+#Predefined code segment 	# 4  (_4:str)
+#The compiler can not guarantee an accurate compilation, 	# 5  (_5:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 6  (_6:str)
+#A few guidelines to maximize usefullness. 	# 7  (_7:str)
+#- make the type of variables explicit, in particular 'nil' 	# 8  (_8:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 9  (_9:str)
+#use the "mil_schema" for additional support routines 	# 10  (_10:str)
+#	mil.line("PROC crash() : void"); 	# 11  (_11:str)
+#	mil.line("crash();"); 	# 12  (_12:str)
+    ba_a := user.crash();	# 13  (ba_a:void)
+end main;	# 14  
+!ERROR: SyntaxError:user.crash[0]:'user.crash' contains errors
 
-!ERROR: MALexception:mil.take:failed to take 'unknown' from box
-
-
-# 13:48:53 >  
-# 13:48:53 >  Done.
-# 13:48:53 >  
+# 07:27:17 >  
+# 07:27:17 >  Done.
+# 07:27:17 >  
 

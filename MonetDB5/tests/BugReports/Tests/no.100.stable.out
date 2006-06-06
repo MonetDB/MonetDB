@@ -1,18 +1,19 @@
 stdout of test 'no.100` in directory 'tests/BugReports` itself:
 
 
-# 04:45:15 >  
-# 04:45:15 >  Mtimeout -timeout 432 Mserver -monetrc /export/scratch1/monet/tmp/monet.GNU_32-d.15730/monet/.GNU_32-d/Linux2.4.2-0.1.28smp/share/Monet/monet.Mtest.conf -db Tests_tests_BugReports  < no.100.milS
-# 04:45:15 >  
+# 07:27:15 >  
+# 07:27:15 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=35545 --set monet_prompt= --trace --dbname=mTests_tests_BugReports  no.100.mal < /dev/null
+# 07:27:15 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit; dynamically linked.
-# config:/home/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/home/mk/monet5/Linux/var/MonetDB5/dbfarm
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_tests_BugReports
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information
 ## Monet Mil to Mal compiler
+##include mil;
 ## Copyright (c) 2001-2004, CWI. All rights reserved.
 #
 ##Predefined code segment
@@ -22,85 +23,85 @@ stdout of test 'no.100` in directory 'tests/BugReports` itself:
 ##- make the type of variables explicit, in particular 'nil'
 ##- upon advice of M2m to remap identifiers, change it in your program directly
 ##use the "mil_schema" for additional support routines
-#	mil.line("# >Number:         100\n");
-#	mil.line("# >Category:       MIL\n");
-#	mil.line("# >Synopsis:       Virtual oids behave in a strange way.\n");
-#	mil.line("# >Confidential:   no\n");
-#	mil.line("# >Severity:       serious\n");
-#	mil.line("# >Priority:       medium\n");
-#	mil.line("# >Responsible:    boncz\n");
-#	mil.line("# >State:          open\n");
-#	mil.line("# >Class:          sw-bug\n");
-#	mil.line("# >Submitter-Id:   unknown\n");
-#	mil.line("# >Arrival-Date:   Mon Dec 15 11:47:39 1997\n");
-#	mil.line("# >Originator:     quak\n");
-#	mil.line("# >Organization:\n");
-#	mil.line("# UvA\n");
-#	mil.line("# >Release:        971007\n");
-#	mil.line("# >Environment:\n");
-#	mil.line("# all\n");
-#	mil.line("# >Description:\n");
-#	mil.line("# Try this out:\n");
-#	mil.line("# > a := new(int,str);\n");
-#	mil.line("# > a.insert(1,\"hello world\");\n");
-#	mil.line("# > a.seqbase(100@0);\n");
-#	mil.line("# > [oid]([a~]).reverse.print();\n");
-#	mil.line("# #-----------------#\n");
-#	mil.line("# # oid   | tmp_92  #\n");
-#	mil.line("# #-----------------#\n");
-#	mil.line("# [ 100@0,  1       ]\n");
-#	mil.line("# > [oid]([a~]).reverse.copy.print();\n");
-#	mil.line("# #-----------------#\n");
-#	mil.line("# # oid   | tmp_93  #\n");
-#	mil.line("# #-----------------#\n");
-#	mil.line("# [ 1@0,    100     ]\n");
-#	mil.line("# \n");
-#	mil.line("setoid(oid(20000000));");
-#	aa_a := oid(20000000);
-#	ba_a := setoid(aa_a);
-#	mil.line("var a := new(int,str);");
-#	a := new(nil:int,nil:str);
-#	mil.line("a.insert(1,\"hello world\");");
-#	ca_a := insert(a,1,"hello world");
-#	mil.line("a.print();");
-#	da_a := print(a);
-#	mil.line("a.mark(nil).print();");
-#	ea_a := mark(a,nil);
-#	fa_a := print(ea_a);
-#	mil.line("a.mark(nil).reverse().print();");
-#	ga_a := mark(a,nil);
-#	ha_a := reverse(ga_a);
-#	ia_a := print(ha_a);
-#	mil.line("[oid](a.mark(nil)).reverse().print();");
-#	ja_a := mark(a,nil);
-#	ka_a := multiplex.tactics("oid",ja_a);
-#	la_a := reverse(ka_a);
-#	ma_a := print(la_a);
-#	mil.line("a.seqbase(100@0);");
+##	mil.line("# >Number:         100\n");
+##	mil.line("# >Category:       MIL\n");
+##	mil.line("# >Synopsis:       Virtual oids behave in a strange way.\n");
+##	mil.line("# >Confidential:   no\n");
+##	mil.line("# >Severity:       serious\n");
+##	mil.line("# >Priority:       medium\n");
+##	mil.line("# >Responsible:    boncz\n");
+##	mil.line("# >State:          open\n");
+##	mil.line("# >Class:          sw-bug\n");
+##	mil.line("# >Submitter-Id:   unknown\n");
+##	mil.line("# >Arrival-Date:   Mon Dec 15 11:47:39 1997\n");
+##	mil.line("# >Originator:     quak\n");
+##	mil.line("# >Organization:\n");
+##	mil.line("# UvA\n");
+##	mil.line("# >Release:        971007\n");
+##	mil.line("# >Environment:\n");
+##	mil.line("# all\n");
+##	mil.line("# >Description:\n");
+##	mil.line("# Try this out:\n");
+##	mil.line("# > a := bat.new(int,str);\n");
+##	mil.line("# > a.insert(1,\"hello world\");\n");
+##	mil.line("# > a.seqbase(100@0);\n");
+##	mil.line("# > [oid]([a~]).reverse.print();\n");
+##	mil.line("# #-----------------#\n");
+##	mil.line("# # oid   | tmp_92  #\n");
+##	mil.line("# #-----------------#\n");
+##	mil.line("# [ 100@0,  1       ]\n");
+##	mil.line("# > [oid]([a~]).reverse.copy.print();\n");
+##	mil.line("# #-----------------#\n");
+##	mil.line("# # oid   | tmp_93  #\n");
+##	mil.line("# #-----------------#\n");
+##	mil.line("# [ 1@0,    100     ]\n");
+##	mil.line("# \n");
+##	mil.line("setoid(oid(20000000));");
+#	aa_a := calc.oid(20000000);
+#	ba_a := calc.setoid(aa_a);
+##	mil.line("var a := bat.new(int,str);");
+#	a := bat.new(nil:int,nil:str);
+##	mil.line("a.insert(1,\"hello world\");");
+#	ca_a := bat.insert(a,1,"hello world");
+##	mil.line("a.print();");
+#	da_a := io.print(a);
+##	mil.line("a.mark(nil).print();");
+#	ea_a := algebra.markT(a);
+#	fa_a := io.print(ea_a);
+##	mil.line("a.mark(nil).reverse().print();");
+#	ga_a := algebra.markT(a);
+#	ha_a := bat.reverse(ga_a);
+#	ia_a := io.print(ha_a);
+##	mil.line("[oid](a.mark(nil)).reverse().print();");
+#	ja_a := algebra.markT(a);
+#	ka_a := batcalc.oid(ja_a);
+#	la_a := bat.reverse(ka_a);
+#	ma_a := io.print(la_a);
+##	mil.line("a.seqbase(100@0);");
 #	na_a := bat.setSequenceBase(a,100@0);
-#	mil.line("[oid](a.mark(nil)).reverse().print();");
-#	oa_a := mark(a,nil);
-#	pa_a := multiplex.tactics("oid",oa_a);
-#	qa_a := reverse(pa_a);
-#	ra_a := print(qa_a);
-#	mil.line("[oid](a.mark(nil)).reverse().copy().print();");
-#	sa_a := mark(a,nil);
-#	ta_a := multiplex.tactics("oid",sa_a);
-#	ua_a := reverse(ta_a);
-#	va_a := copy(ua_a);
-#	wa_a := print(va_a);
-#	mil.line("quit();");
-#	xa_a := quit();
+##	mil.line("[oid](a.mark(nil)).reverse().print();");
+#	oa_a := algebra.markT(a);
+#	pa_a := batcalc.oid(oa_a);
+#	qa_a := bat.reverse(pa_a);
+#	ra_a := io.print(qa_a);
+##	mil.line("[oid](a.mark(nil)).reverse().copy().print();");
+#	sa_a := algebra.markT(a);
+#	ta_a := batcalc.oid(sa_a);
+#	ua_a := bat.reverse(ta_a);
+#	va_a := algebra.copy(ua_a);
+#	wa_a := io.print(va_a);
+##	mil.line("quit();");
+#	xa_a := clients.quit();
 ##Identifer 'seqbase' mapped to 'bat.setSequenceBase'
 #
-
-
-
-
-
-
-
-
+!ERROR: 'batcalc.oid' undefined in user.main[62] ka_a:any := batcalc.oid(ja_a:bat[:int,:void])
+!ERROR: 'bat.reverse' undefined in user.main[63] la_a:any := bat.reverse(ka_a:any)
+!ERROR: 'bat.setSequenceBase' undefined in user.main[66] na_a:any := bat.setSequenceBase(a:bat[:int,:str], _69:oid)
+!ERROR: 'batcalc.oid' undefined in user.main[69] pa_a:any := batcalc.oid(oa_a:bat[:int,:void])
+!ERROR: 'bat.reverse' undefined in user.main[70] qa_a:any := bat.reverse(pa_a:any)
+!ERROR: 'batcalc.oid' undefined in user.main[74] ta_a:any := batcalc.oid(sa_a:bat[:int,:void])
+!ERROR: 'bat.reverse' undefined in user.main[75] ua_a:any := bat.reverse(ta_a:any)
+!ERROR: 'algebra.copy' undefined in user.main[76] va_a:any := algebra.copy(ua_a:any)
 function user.main():void;	# 0  (main:void)
 # Monet Mil to Mal compiler 	# 1  (_1:str)
 #include mil; 	# 2  (_2:str)
@@ -184,7 +185,7 @@ function user.main():void;	# 0  (main:void)
 #Identifer 'seqbase' mapped to 'bat.setSequenceBase' 	# 80  (_82:str)
 end main;	# 81  
 
-# 22:47:45 >  
-# 22:47:45 >  Done.
-# 22:47:45 >  
+# 07:27:15 >  
+# 07:27:15 >  Done.
+# 07:27:15 >  
 

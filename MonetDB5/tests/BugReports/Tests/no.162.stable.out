@@ -1,36 +1,106 @@
 stdout of test 'no.162` in directory 'tests/BugReports` itself:
 
-#> Mtest:	milS no.162 milS
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_BugReports -single no.162.milS
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
-#script:no.162.milS
 
+# 07:27:16 >  
+# 07:27:16 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=35545 --set monet_prompt= --trace --dbname=mTests_tests_BugReports  no.162.mal < /dev/null
+# 07:27:16 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-# >Number:         162
-# >Category:       Mserver
-# >Synopsis:       ghost BUN in join result
-# >Confidential:   no
-# >Severity:       critical
-# >Priority:       high
-# >Responsible:    boncz (Peter Boncz)
-# >State:          open
-# >Class:          sw-bug
-# >Submitter-Id:   unknown
-# >Arrival-Date:   Wed Jul 15 16:13:00 1998
-# >Originator:     windhouw@cwi.nl
-# >Organization:
-# CWI
-# >Release:        980101
-# >Environment:
-# 
-# >Description:
-# A ghost BUN appears in the following script:
-# 
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_tests_BugReports
+# Visit http://monetdb.cwi.nl/ for further information
+## Monet Mil to Mal compiler
+##include mil;
+## Copyright (c) 2001-2004, CWI. All rights reserved.
+#
+##Predefined code segment
+##The compiler can not guarantee an accurate compilation,
+##because MIL unlike MAL is a dynamically typed language.
+##A few guidelines to maximize usefullness.
+##- make the type of variables explicit, in particular 'nil'
+##- upon advice of M2m to remap identifiers, change it in your program directly
+##use the "mil_schema" for additional support routines
+##	mil.line("# >Number:         162\n");
+##	mil.line("# >Category:       Mserver\n");
+##	mil.line("# >Synopsis:       ghost BUN in join result\n");
+##	mil.line("# >Confidential:   no\n");
+##	mil.line("# >Severity:       critical\n");
+##	mil.line("# >Priority:       high\n");
+##	mil.line("# >Responsible:    boncz (Peter Boncz)\n");
+##	mil.line("# >State:          open\n");
+##	mil.line("# >Class:          sw-bug\n");
+##	mil.line("# >Submitter-Id:   unknown\n");
+##	mil.line("# >Arrival-Date:   Wed Jul 15 16:13:00 1998\n");
+##	mil.line("# >Originator:     windhouw@cwi.nl\n");
+##	mil.line("# >Organization:\n");
+##	mil.line("# CWI\n");
+##	mil.line("# >Release:        980101\n");
+##	mil.line("# >Environment:\n");
+##	mil.line("# \n");
+##	mil.line("# >Description:\n");
+##	mil.line("# A ghost BUN appears in the following script:\n");
+##	mil.line("# \n");
+##	mil.line("# script\n");
+##	mil.line("# 8<-----\n");
+##	mil.line("# VAR left := bat.new(int,int);\n");
+##	mil.line("# left.insert(4,-3);\n");
+##	mil.line("# left.insert(3,-2);\n");
+##	mil.line("# left.insert(2,-1);\n");
+##	mil.line("# left.insert(1,0);\n");
+##	mil.line("#  \n");
+##	mil.line("# VAR right := bat.new(int,str);\n");
+##	mil.line("# right.insert(-3,\"vier\");\n");
+##	mil.line("# right.insert(-2,\"drie\");\n");
+##	mil.line("# right.insert(-1,\"twee\");\n");
+##	mil.line("# right.insert(0,\"een\");\n");
+##	mil.line("# \n");
+##	mil.line("# algebra.join(left,right).print;\n");
+##	mil.line("# \n");
+##	mil.line("# 8<-----\n");
+##	mil.line("# output\n");
+##	mil.line("# 8<-----\n");
+##	mil.line("# >join(left,right).print;\n");
+##	mil.line("# #-----------------#\n");
+##	mil.line("# # BAT:    tmp_37  #\n");
+##	mil.line("# # (int)   (str)   #\n");
+##	mil.line("# #-----------------#\n");
+##	mil.line("# [ 4,      \"vier\"  ]\n");
+##	mil.line("# [ 3,      \"drie\"  ]\n");
+##	mil.line("# [ 2,      \"twee\"  ]\n");
+##	mil.line("# [ 1,      \"een\"   ]\n");
+##	mil.line("# [ 1,      \"\"      ]\n");
+##	mil.line("setoid(oid(20000000));");
+#	aa_a := calc.oid(20000000);
+#	ba_a := calc.setoid(aa_a);
+##	mil.line("VAR left := bat.new(int,int);");
+#	left := bat.new(nil:int,nil:int);
+##	mil.line("left.insert(4,-3);");
+#	ca_a := bat.insert(left,4,-3);
+##	mil.line("left.insert(3,-2);");
+#	da_a := bat.insert(left,3,-2);
+##	mil.line("left.insert(2,-1);");
+#	ea_a := bat.insert(left,2,-1);
+##	mil.line("left.insert(1,0);");
+#	fa_a := bat.insert(left,1,0);
+##	mil.line("VAR right := bat.new(int,str);");
+#	right := bat.new(nil:int,nil:str);
+##	mil.line("right.insert(-3,\"vier\");");
+#	ga_a := bat.insert(right,-3,"vier");
+##	mil.line("right.insert(-2,\"drie\");");
+#	ha_a := bat.insert(right,-2,"drie");
+##	mil.line("right.insert(-1,\"twee\");");
+#	ia_a := bat.insert(right,-1,"twee");
+##	mil.line("right.insert(0,\"een\");");
+#	ja_a := bat.insert(right,0,"een");
+##	mil.line("join(left,right).print();");
+#	ka_a := algebra.join(left,right);
+#	la_a := io.print(ka_a);
+##	mil.line("quit();");
+#	ma_a := clients.quit();
+#
 function user.main():void;	# 0  (main:void)
 # Monet Mil to Mal compiler 	# 1  (_1:str)
 #include mil; 	# 2  (_2:str)
@@ -121,15 +191,15 @@ function user.main():void;	# 0  (main:void)
     ma_a := clients.quit();	# 87 CLTquit (ma_a:void)
 end main;	# 88  
 #-----------------#
-# BAT:	  tmp_71  #
-# (int)	  (str)	  #
+# h	t	  # name
+# int	str	  # type
 #-----------------#
 [ 4,	  "vier"  ]
 [ 3,	  "drie"  ]
 [ 2,	  "twee"  ]
 [ 1,	  "een"	  ]
 
-# 08:27:51 >  
-# 08:27:51 >  Done.
-# 08:27:51 >  
+# 07:27:16 >  
+# 07:27:16 >  Done.
+# 07:27:16 >  
 

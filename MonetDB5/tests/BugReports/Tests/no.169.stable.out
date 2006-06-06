@@ -1,86 +1,63 @@
 stdout of test 'no.169` in directory 'tests/BugReports` itself:
 
-#> Mtest:	milS no.169 milS
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_BugReports -single no.169.milS
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
-#script:no.169.milS
 
+# 07:27:16 >  
+# 07:27:16 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=35545 --set monet_prompt= --trace --dbname=mTests_tests_BugReports  no.169.mal < /dev/null
+# 07:27:16 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-# 
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_tests_BugReports
+# Visit http://monetdb.cwi.nl/ for further information
+## Monet Mil to Mal compiler
+##include mil;
+## Copyright (c) 2001-2004, CWI. All rights reserved.
+#
 ##Predefined code segment
 ##The compiler can not guarantee an accurate compilation,
 ##because MIL unlike MAL is a dynamically typed language.
 ##A few guidelines to maximize usefullness.
 ##- make the type of variables explicit, in particular 'nil'
 ##- upon advice of M2m to remap identifiers, change it in your program directly
-##include "mil_prelude";
-#	mil.line("# \n");
-#	mil.line("#>Number:         169");
-#	mil.line("#>Number:         169\n");
-#	mil.line("#>Category:       Mserver");
-#	mil.line("#>Category:       Mserver\n");
-#	mil.line("#>Synopsis:       str(nil).print hangs");
-#	mil.line("#>Synopsis:       str(nil).print hangs\n");
-#	mil.line("#>Confidential:   no");
-#	mil.line("#>Confidential:   no\n");
-#	mil.line("#>Severity:       critical");
-#	mil.line("#>Severity:       critical\n");
-#	mil.line("#>Priority:       high");
-#	mil.line("#>Priority:       high\n");
-#	mil.line("#>Responsible:    boncz (Peter Boncz)");
-#	mil.line("#>Responsible:    boncz (Peter Boncz)\n");
-#	mil.line("#>State:          open");
-#	mil.line("#>State:          open\n");
-#	mil.line("#>Class:          sw-bug");
-#	mil.line("#>Class:          sw-bug\n");
-#	mil.line("#>Submitter-Id:   unknown");
-#	mil.line("#>Submitter-Id:   unknown\n");
-#	mil.line("#>Arrival-Date:   Thu Sep  3 15:30:20 1998");
-#	mil.line("#>Arrival-Date:   Thu Sep  3 15:30:20 1998\n");
-#	mil.line("#>Originator:     windhouw@cwi.nl");
-#	mil.line("#>Originator:     windhouw@cwi.nl\n");
-#	mil.line("#>Organization:");
-#	mil.line("#>Organization:\n");
-#	mil.line("#CWI");
-#	mil.line("#CWI\n");
-#	mil.line("#>Release:        980101");
-#	mil.line("#>Release:        980101\n");
-#	mil.line("#>Environment:");
-#	mil.line("#>Environment:\n");
-#	mil.line("#IRIX646.5");
-#	mil.line("#IRIX646.5\n");
-#	mil.line("#>Description:");
-#	mil.line("#>Description:\n");
-#	mil.line("#On the medusa (IRIX646.5 64bit) the following");
-#	mil.line("#On the medusa (IRIX646.5 64bit) the following\n");
-#	mil.line("#script hangs Mserver:");
-#	mil.line("#script hangs Mserver:\n");
-#	mil.line("#> str(nil).print;");
-#	mil.line("#> str(nil).print;\n");
-#	mil.line("#[ nil ]");
-#	mil.line("#[ nil ]\n");
-#	mil.line("#>How-To-Repeat:");
-#	mil.line("#>How-To-Repeat:\n");
-#	mil.line("#>Fix:");
-#	mil.line("#>Fix:\n");
-#	mil.line("#>Audit-Trail:");
-#	mil.line("#>Audit-Trail:\n");
-#	mil.line("#>Unformatted:");
-#	mil.line("#>Unformatted:\n");
-#	mil.line("");
-#	mil.line("setoid(oid(20000000));");
-#	aa_a := oid(20000000);
-#	ba_a := setoid(aa_a);
-#	mil.line("str(nil).print();");
-#	ca_a := str(nil);
-#	da_a := print(ca_a);
-#	mil.line("quit();");
-#	ea_a := quit();
+##use the "mil_schema" for additional support routines
+##	mil.line("# \n");
+##	mil.line("#>Number:         169\n");
+##	mil.line("#>Category:       Mserver\n");
+##	mil.line("#>Synopsis:       calc.str(nil).print hangs\n");
+##	mil.line("#>Confidential:   no\n");
+##	mil.line("#>Severity:       critical\n");
+##	mil.line("#>Priority:       high\n");
+##	mil.line("#>Responsible:    boncz (Peter Boncz)\n");
+##	mil.line("#>State:          open\n");
+##	mil.line("#>Class:          sw-bug\n");
+##	mil.line("#>Submitter-Id:   unknown\n");
+##	mil.line("#>Arrival-Date:   Thu Sep  3 15:30:20 1998\n");
+##	mil.line("#>Originator:     windhouw@cwi.nl\n");
+##	mil.line("#>Organization:\n");
+##	mil.line("#CWI\n");
+##	mil.line("#>Release:        980101\n");
+##	mil.line("#>Environment:\n");
+##	mil.line("#IRIX646.5\n");
+##	mil.line("#>Description:\n");
+##	mil.line("#On the medusa (IRIX646.5 64bit) the following\n");
+##	mil.line("#script hangs Mserver:\n");
+##	mil.line("#> calc.str(nil).print;\n");
+##	mil.line("#[ nil ]\n");
+##	mil.line("#>How-To-Repeat:\n");
+##	mil.line("#>Fix:\n");
+##	mil.line("#>Audit-Trail:\n");
+##	mil.line("#>Unformatted:\n");
+##	mil.line("setoid(oid(20000000));");
+#	aa_a := calc.oid(20000000);
+#	ba_a := calc.setoid(aa_a);
+##	mil.line("str(nil).print();");
+#	ca_a := calc.str(nil);
+#	da_a := io.print(ca_a);
+##	mil.line("quit();");
+#	ea_a := clients.quit();
 #
 function user.main():void;	# 0  (main:void)
 # Monet Mil to Mal compiler 	# 1  (_1:str)
@@ -131,7 +108,7 @@ function user.main():void;	# 0  (main:void)
 end main;	# 46  
 [ nil ]
 
-# 08:27:59 >  
-# 08:27:59 >  Done.
-# 08:27:59 >  
+# 07:27:16 >  
+# 07:27:16 >  Done.
+# 07:27:16 >  
 

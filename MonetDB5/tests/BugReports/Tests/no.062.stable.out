@@ -1,56 +1,98 @@
 stdout of test 'no.062` in directory 'tests/BugReports` itself:
 
-#> Mtest:	milS no.062 milS
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_BugReports -single no.062.milS
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 19:36:03 MET 2000.
-#script:no.062.milS
 
+# 07:27:15 >  
+# 07:27:15 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=35545 --set monet_prompt= --trace --dbname=mTests_tests_BugReports  no.062.mal < /dev/null
+# 07:27:15 >  
 
-# Monet Database Server V4.7.3
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/src/mal/Tests/All.conf
-# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_tests_BugReports
-# Visit http://monetdb.cwi.nl/ for further information.
+# Visit http://monetdb.cwi.nl/ for further information
 ## Monet Mil to Mal compiler
-#include mil;
+##include mil;
 ## Copyright (c) 2001-2004, CWI. All rights reserved.
-# 
-# >Description:
-# Handlin>t:= new(int,int);
-# >t.insert(0,0);
-# >t.insert(1+1,0);
-# >t.insert(-1,-0);
-# >print(t);
-# #-----------------#
-# # int   | tmp_32  #
-# #-----------------#
-# [ 0,      0       ]
-# [ 2,      0       ]
-# [ -1,     0       ]
-# ># alles zover is goed
-# >t.insert(-1+1,0);
-# >t.insert(-1-1,0);
-# !ERROR: in syntax at "t.insert(-1-1,0);"
-# !                                      ^
-# >t.insert(-1 -1, 0);
-# !ERROR: in syntax at "t.insert(-1 -1, 0);"
-# !                                        ^
-# >#not what is expected from nested expression
-# >t.print;
-# #-----------------#
-# # int   | tmp_32  #
-# #-----------------#
-# [ 0,      0       ]
-# [ 2,      0       ]
-# [ -1,     0       ]
-# [ 0,      0       ]
-# >t.insert(0-1+ -1, 0);
-# !ERROR: in syntax at "t.insert(0-1+ -1, 0);"
-# 
+#
+##Predefined code segment
+##The compiler can not guarantee an accurate compilation,
+##because MIL unlike MAL is a dynamically typed language.
+##A few guidelines to maximize usefullness.
+##- make the type of variables explicit, in particular 'nil'
+##- upon advice of M2m to remap identifiers, change it in your program directly
+##use the "mil_schema" for additional support routines
+##	mil.line("# >Number:         62\n");
+##	mil.line("# >Category:       MIL\n");
+##	mil.line("# >Synopsis:       Handling of nested arithmetic expressions is inconsistent\n");
+##	mil.line("# >Confidential:   no\n");
+##	mil.line("# >Severity:       critical\n");
+##	mil.line("# >Priority:       high\n");
+##	mil.line("# >Responsible:    mk\n");
+##	mil.line("# >State:          feedback\n");
+##	mil.line("# >Class:          sw-bug\n");
+##	mil.line("# >Submitter-Id:   unknown\n");
+##	mil.line("# >Arrival-Date:   Fri Oct 24 14:09:23 1997\n");
+##	mil.line("# >Originator:     mk\n");
+##	mil.line("# >Organization:\n");
+##	mil.line("# >Release:        971007\n");
+##	mil.line("# >Environment:\n");
+##	mil.line("# \n");
+##	mil.line("# >Description:\n");
+##	mil.line("# Handlin>t:= bat.new(int,int);\n");
+##	mil.line("# >t.insert(0,0);\n");
+##	mil.line("# >t.insert(1+1,0);\n");
+##	mil.line("# >t.insert(-1,-0);\n");
+##	mil.line("# >print(t);\n");
+##	mil.line("# #-----------------#\n");
+##	mil.line("# # int   | tmp_32  #\n");
+##	mil.line("# #-----------------#\n");
+##	mil.line("# [ 0,      0       ]\n");
+##	mil.line("# [ 2,      0       ]\n");
+##	mil.line("# [ -1,     0       ]\n");
+##	mil.line("# ># alles zover is goed\n");
+##	mil.line("# >t.insert(-1+1,0);\n");
+##	mil.line("# >t.insert(-1 - 1,0);\n");
+##	mil.line("# !ERROR: in syntax at \"t.insert(-1 - 1,0);\"\n");
+##	mil.line("# !                                      ^\n");
+##	mil.line("# >t.insert(-1 -1, 0);\n");
+##	mil.line("# !ERROR: in syntax at \"t.insert(-1 -1, 0);\"\n");
+##	mil.line("# !                                        ^\n");
+##	mil.line("# >#not what is expected from nested expression\n");
+##	mil.line("# >t.print;\n");
+##	mil.line("# #-----------------#\n");
+##	mil.line("# # int   | tmp_32  #\n");
+##	mil.line("# #-----------------#\n");
+##	mil.line("# [ 0,      0       ]\n");
+##	mil.line("# [ 2,      0       ]\n");
+##	mil.line("# [ -1,     0       ]\n");
+##	mil.line("# [ 0,      0       ]\n");
+##	mil.line("# >t.insert(0-1+ -1, 0);\n");
+##	mil.line("# !ERROR: in syntax at \"t.insert(0-1+ -1, 0);\"\n");
+##	mil.line("# \n");
+##	mil.line("# This is not what a user would expect\n");
+##	mil.line("setoid(oid(20000000));");
+#	aa_a := calc.oid(20000000);
+#	ba_a := calc.setoid(aa_a);
+##	mil.line("var t:= bat.new(int,int);");
+#	t := bat.new(nil:int,nil:int);
+##	mil.line("t.insert(0,0);");
+#	ca_a := bat.insert(t,0,0);
+##	mil.line("t.insert(1+1,0);");
+#	da_a := calc.+(1,1);
+#	ea_a := bat.insert(t,da_a,0);
+##	mil.line("t.insert(-1,-0);");
+#	fa_a := bat.insert(t,-1,-0);
+##	mil.line("t.insert(0,0);");
+#	ga_a := bat.insert(t,0,0);
+##	mil.line("t.insert(-1+1,0);");
+#	ha_a := calc.+(-1,1);
+#	ia_a := bat.insert(t,ha_a,0);
+##	mil.line("print(t);");
+#	ja_a := io.print(t);
+##	mil.line("# alles zover is goed\n");
+#
 function user.main():void;	# 0  (main:void)
 # Monet Mil to Mal compiler 	# 1  (_1:str)
 #include mil; 	# 2  (_2:str)
@@ -133,17 +175,16 @@ function user.main():void;	# 0  (main:void)
 #	mil.line("# alles zover is goed\n"); 	# 79  (_74:str)
 end main;	# 80  
 #-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
+# h	t	  # name
+# int	int	  # type
 #-----------------#
 [ 0,	  0	  ]
 [ 2,	  0	  ]
 [ -1,	  0	  ]
 [ 0,	  0	  ]
 [ 0,	  0	  ]
-## alles zover is goed
 
-# 22:47:44 >  
-# 22:47:44 >  Done.
-# 22:47:44 >  
+# 07:27:15 >  
+# 07:27:15 >  Done.
+# 07:27:15 >  
 

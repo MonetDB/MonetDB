@@ -1,109 +1,69 @@
 stdout of test 'no.031` in directory 'tests/BugReports` itself:
 
-#> Mtest:	milS no.031 milS
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_BugReports -single no.031.milS
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
-#script:no.031.milS
 
+# 07:27:14 >  
+# 07:27:14 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=35545 --set monet_prompt= --trace --dbname=mTests_tests_BugReports  no.031.mal < /dev/null
+# 07:27:14 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-# >Number:         31
-# >Category:       Mserver
-# >Synopsis:       Import does not work.
-# >Confidential:   no
-# >Severity:       serious
-# >Priority:       medium
-# >Responsible:    quak
-# >State:          closed
-# >Class:          sw-bug
-# >Submitter-Id:   unknown
-# >Arrival-Date:   Fri Sep 19 16:00:42 1997
-# >Originator:     quak
-# >Organization:
-# >Release:        970101
-# >Environment:
-# ALL
-# >Description:
-# The following script, which creates a bat exports
-# it and then tries to import it again fails:
-# 
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_tests_BugReports
+# Visit http://monetdb.cwi.nl/ for further information
+## Monet Mil to Mal compiler
+##include mil;
+## Copyright (c) 2001-2004, CWI. All rights reserved.
+#
 ##Predefined code segment
 ##The compiler can not guarantee an accurate compilation,
 ##because MIL unlike MAL is a dynamically typed language.
 ##A few guidelines to maximize usefullness.
 ##- make the type of variables explicit, in particular 'nil'
 ##- upon advice of M2m to remap identifiers, change it in your program directly
-##include "mil_prelude";
-#	mil.line("# >Number:         31\n");
-#	mil.line("# >Category:       Mserver");
-#	mil.line("# >Category:       Mserver\n");
-#	mil.line("# >Synopsis:       Import does not work.");
-#	mil.line("# >Synopsis:       Import does not work.\n");
-#	mil.line("# >Confidential:   no");
-#	mil.line("# >Confidential:   no\n");
-#	mil.line("# >Severity:       serious");
-#	mil.line("# >Severity:       serious\n");
-#	mil.line("# >Priority:       medium");
-#	mil.line("# >Priority:       medium\n");
-#	mil.line("# >Responsible:    quak");
-#	mil.line("# >Responsible:    quak\n");
-#	mil.line("# >State:          closed");
-#	mil.line("# >State:          closed\n");
-#	mil.line("# >Class:          sw-bug");
-#	mil.line("# >Class:          sw-bug\n");
-#	mil.line("# >Submitter-Id:   unknown");
-#	mil.line("# >Submitter-Id:   unknown\n");
-#	mil.line("# >Arrival-Date:   Fri Sep 19 16:00:42 1997");
-#	mil.line("# >Arrival-Date:   Fri Sep 19 16:00:42 1997\n");
-#	mil.line("# >Originator:     quak");
-#	mil.line("# >Originator:     quak\n");
-#	mil.line("# >Organization:");
-#	mil.line("# >Organization:\n");
-#	mil.line("# >Release:        970101");
-#	mil.line("# >Release:        970101\n");
-#	mil.line("# >Environment:");
-#	mil.line("# >Environment:\n");
-#	mil.line("# ALL");
-#	mil.line("# ALL\n");
-#	mil.line("# >Description:");
-#	mil.line("# >Description:\n");
-#	mil.line("# The following script, which creates a bat exports");
-#	mil.line("# The following script, which creates a bat exports\n");
-#	mil.line("# it and then tries to import it again fails:");
-#	mil.line("# it and then tries to import it again fails:\n");
-#	mil.line("# ");
-#	mil.line("# \n");
-#	mil.line("# > a := new(int,int);");
-#	mil.line("# > a := new(int,int);\n");
-#	mil.line("# > a.insert(1,1);");
-#	mil.line("# > a.insert(1,1);\n");
-#	mil.line("# > a.export(\"/home/quak/tmp/testt\");");
-#	mil.line("# > a.export(\"/home/quak/tmp/testt\");\n");
-#	mil.line("# > b := new(int,int);");
-#	mil.line("# > b := new(int,int);\n");
-#	mil.line("# > b.import(\"/home/quak/tmp/testt\");");
-#	mil.line("# > b.import(\"/home/quak/tmp/testt\");\n");
-#	mil.line("");
-#	mil.line("var a := new(int,int);");
-#	a := new(nil:int,nil:int);
-#	mil.line("a.insert(1,1);");
-#	aa_a := insert(a,1,1);
-#	mil.line("a.print();");
-#	ba_a := print(a);
-#	mil.line("a.export(\"testt\");");
-#	ca_a := export(a,"testt");
-#	mil.line("var b := new(int,int);");
-#	b := new(nil:int,nil:int);
-#	mil.line("b.import(\"testt\");");
-#	da_a := import(b,"testt");
-#	mil.line("b.print();");
-#	ea_a := print(b);
-#	mil.line("quit();");
-#	fa_a := quit();
+##use the "mil_schema" for additional support routines
+##	mil.line("# >Number:         31\n");
+##	mil.line("# >Category:       Mserver\n");
+##	mil.line("# >Synopsis:       Import does not work.\n");
+##	mil.line("# >Confidential:   no\n");
+##	mil.line("# >Severity:       serious\n");
+##	mil.line("# >Priority:       medium\n");
+##	mil.line("# >Responsible:    quak\n");
+##	mil.line("# >State:          closed\n");
+##	mil.line("# >Class:          sw-bug\n");
+##	mil.line("# >Submitter-Id:   unknown\n");
+##	mil.line("# >Arrival-Date:   Fri Sep 19 16:00:42 1997\n");
+##	mil.line("# >Originator:     quak\n");
+##	mil.line("# >Organization:\n");
+##	mil.line("# >Release:        970101\n");
+##	mil.line("# >Environment:\n");
+##	mil.line("# ALL\n");
+##	mil.line("# >Description:\n");
+##	mil.line("# The following script, which creates a bat exports\n");
+##	mil.line("# it and then tries to import it again fails:\n");
+##	mil.line("# \n");
+##	mil.line("# > a := bat.new(int,int);\n");
+##	mil.line("# > a.insert(1,1);\n");
+##	mil.line("# > a.export(\"/home/quak/tmp/testt\");\n");
+##	mil.line("# > b := bat.new(int,int);\n");
+##	mil.line("# > b.import(\"/home/quak/tmp/testt\");\n");
+##	mil.line("var a := bat.new(int,int);");
+#	a := bat.new(nil:int,nil:int);
+##	mil.line("a.insert(1,1);");
+#	aa_a := bat.insert(a,1,1);
+##	mil.line("a.print();");
+#	ba_a := io.print(a);
+##	mil.line("a.export(\"testt\");");
+#	ca_a := io.export(a,"testt");
+##	mil.line("var b := bat.new(int,int);");
+#	b := bat.new(nil:int,nil:int);
+##	mil.line("b.import(\"testt\");");
+#	da_a := io.import(b,"testt");
+##	mil.line("b.print();");
+#	ea_a := io.print(b);
+##	mil.line("quit();");
+#	fa_a := clients.quit();
 #
 function user.main():void;	# 0  (main:void)
 # Monet Mil to Mal compiler 	# 1  (_1:str)
@@ -159,22 +119,17 @@ function user.main():void;	# 0  (main:void)
     fa_a := clients.quit();	# 51 CLTquit (fa_a:void)
 end main;	# 52  
 #-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
+# h	t	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  1	  ]
-#a.export("testt");
-#var b := new(int,int);
-#b.import("testt");
-#b.print();
 #-----------------#
-# BAT:	  tmp_26  #
-# (int)	  (int)	  #
+# h	t	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  1	  ]
-#quit();
 
-# 17:06:47 >  
-# 17:06:47 >  Done.
-# 17:06:47 >  
+# 07:27:14 >  
+# 07:27:14 >  Done.
+# 07:27:14 >  
 

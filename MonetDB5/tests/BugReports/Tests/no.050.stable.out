@@ -1,21 +1,19 @@
 stdout of test 'no.050` in directory 'tests/BugReports` itself:
 
-#> Mtest:	milS no.050 milS
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_BugReports -single no.050.milS
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
-#script:no.050.milS
 
+# 07:27:14 >  
+# 07:27:14 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=35545 --set monet_prompt= --trace --dbname=mTests_tests_BugReports  no.050.mal < /dev/null
+# 07:27:14 >  
 
-# Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit; dynamically linked.
-# config:/home/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/home/mk/monet5/Linux/var/MonetDB5/dbfarm
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_tests_BugReports
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information
 ## Monet Mil to Mal compiler
+##include mil;
 ## Copyright (c) 2001-2004, CWI. All rights reserved.
 #
 ##Predefined code segment
@@ -25,58 +23,58 @@ stdout of test 'no.050` in directory 'tests/BugReports` itself:
 ##- make the type of variables explicit, in particular 'nil'
 ##- upon advice of M2m to remap identifiers, change it in your program directly
 ##use the "mil_schema" for additional support routines
-#	mil.line("# >Number:         50\n");
-#	mil.line("# >Category:       MIL\n");
-#	mil.line("# >Confidential:   no\n");
-#	mil.line("# >Severity:       critical\n");
-#	mil.line("# >Priority:       high\n");
-#	mil.line("# >Responsible:    boncz\n");
-#	mil.line("# >State:          closed\n");
-#	mil.line("# >Class:          sw-bug\n");
-#	mil.line("# >Submitter-Id:   unknown\n");
-#	mil.line("# >Arrival-Date:   Wed Oct 15 10:23:33 1997\n");
-#	mil.line("# >Originator:     niels\n");
-#	mil.line("# >Organization:\n");
-#	mil.line("# >Release:        971007\n");
-#	mil.line("# >Environment:\n");
-#	mil.line("# SunOS5.5.1\n");
-#	mil.line("# >Description:\n");
-#	mil.line("# a := new (oid,int);\n");
-#	mil.line("# a.insert( oid(1), 100 );\n");
-#	mil.line("# a.insert( oid(2), 1000 );\n");
-#	mil.line("# a.insert( oid(4), 10 );\n");
-#	mil.line("# a.insert( oid(5), 15 );\n");
-#	mil.line("# a.select( 94, 110 ).print;\n");
-#	mil.line("# #output\n");
-#	mil.line("# #-----------------#\n");
-#	mil.line("# # oid   | tmp_27  #\n");
-#	mil.line("# #-----------------#\n");
-#	mil.line("# [ 1@0,    100     ]\n");
-#	mil.line("# [ 2@0,    1000    ]\n");
-#	mil.line("var a := new (oid,int);");
-#	a := new(nil:oid,nil:int);
-#	mil.line("a.insert( oid(1), 100 );");
-#	aa_a := oid(1);
-#	ba_a := insert(a,aa_a,100);
-#	mil.line("a.insert( oid(2), 1000 );");
-#	ca_a := oid(2);
-#	da_a := insert(a,ca_a,1000);
-#	mil.line("a.insert( oid(4), 10 );");
-#	ea_a := oid(4);
-#	fa_a := insert(a,ea_a,10);
-#	mil.line("a.insert( oid(5), 15 );");
-#	ga_a := oid(5);
-#	ha_a := insert(a,ga_a,15);
-#	mil.line("a.print();");
-#	ia_a := print(a);
-#	ja_a := reverse(a);
-#	mil.line("a.print();");
-#	la_a := print(a);
-#	mil.line("a.select( 94, 110 ).print();");
-#	ma_a := select(a,94,110);
-#	na_a := print(ma_a);
-#	mil.line("quit();");
-#	oa_a := quit();
+##	mil.line("# >Number:         50\n");
+##	mil.line("# >Category:       MIL\n");
+##	mil.line("# >Confidential:   no\n");
+##	mil.line("# >Severity:       critical\n");
+##	mil.line("# >Priority:       high\n");
+##	mil.line("# >Responsible:    boncz\n");
+##	mil.line("# >State:          closed\n");
+##	mil.line("# >Class:          sw-bug\n");
+##	mil.line("# >Submitter-Id:   unknown\n");
+##	mil.line("# >Arrival-Date:   Wed Oct 15 10:23:33 1997\n");
+##	mil.line("# >Originator:     niels\n");
+##	mil.line("# >Organization:\n");
+##	mil.line("# >Release:        971007\n");
+##	mil.line("# >Environment:\n");
+##	mil.line("# SunOS5.5.1\n");
+##	mil.line("# >Description:\n");
+##	mil.line("# a := new (oid,int);\n");
+##	mil.line("# a.insert( calc.oid(1), 100 );\n");
+##	mil.line("# a.insert( calc.oid(2), 1000 );\n");
+##	mil.line("# a.insert( calc.oid(4), 10 );\n");
+##	mil.line("# a.insert( calc.oid(5), 15 );\n");
+##	mil.line("# a.select( 94, 110 ).print;\n");
+##	mil.line("# #output\n");
+##	mil.line("# #-----------------#\n");
+##	mil.line("# # oid   | tmp_27  #\n");
+##	mil.line("# #-----------------#\n");
+##	mil.line("# [ 1@0,    100     ]\n");
+##	mil.line("# [ 2@0,    1000    ]\n");
+##	mil.line("var a := new (oid,int);");
+#	a := bat.new(nil:oid,nil:int);
+##	mil.line("a.insert( calc.oid(1), 100 );");
+#	aa_a := calc.oid(1);
+#	ba_a := bat.insert(a,aa_a,100);
+##	mil.line("a.insert( calc.oid(2), 1000 );");
+#	ca_a := calc.oid(2);
+#	da_a := bat.insert(a,ca_a,1000);
+##	mil.line("a.insert( calc.oid(4), 10 );");
+#	ea_a := calc.oid(4);
+#	fa_a := bat.insert(a,ea_a,10);
+##	mil.line("a.insert( calc.oid(5), 15 );");
+#	ga_a := calc.oid(5);
+#	ha_a := bat.insert(a,ga_a,15);
+##	mil.line("a.print();");
+#	ia_a := io.print(a);
+#	ja_a := bat.reverse(a);
+##	mil.line("a.print();");
+#	la_a := io.print(a);
+##	mil.line("a.select( 94, 110 ).print();");
+#	ma_a := algebra.select(a,94,110);
+#	na_a := io.print(ma_a);
+##	mil.line("quit();");
+#	oa_a := clients.quit();
 #
 function user.main():void;	# 0  (main:void)
 # Monet Mil to Mal compiler 	# 1  (_1:str)
@@ -143,31 +141,28 @@ function user.main():void;	# 0  (main:void)
     oa_a := clients.quit();	# 62 CLTquit (oa_a:void)
 end main;	# 63  
 #-----------------#
-# BAT:	  tmp_25  #
-# (oid)	  (int)	  #
+# h	t	  # name
+# oid	int	  # type
 #-----------------#
 [ 1@0,	  100	  ]
 [ 2@0,	  1000	  ]
 [ 4@0,	  10	  ]
 [ 5@0,	  15	  ]
-#a.print();
 #-----------------#
-# BAT:	  tmp_25  #
-# (oid)	  (int)	  #
+# h	t	  # name
+# oid	int	  # type
 #-----------------#
 [ 1@0,	  100	  ]
 [ 2@0,	  1000	  ]
 [ 4@0,	  10	  ]
 [ 5@0,	  15	  ]
-#a.select( 94, 110 ).print();
 #-----------------#
-# BAT:	  tmp_26  #
-# (oid)	  (int)	  #
+# h	t	  # name
+# oid	int	  # type
 #-----------------#
 [ 1@0,	  100	  ]
-#quit();
 
-# 17:06:48 >  
-# 17:06:48 >  Done.
-# 17:06:48 >  
+# 07:27:15 >  
+# 07:27:15 >  Done.
+# 07:27:15 >  
 

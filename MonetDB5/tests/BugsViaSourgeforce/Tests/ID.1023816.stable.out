@@ -1,18 +1,19 @@
 stdout of test 'ID.1023816` in directory 'tests/BugsViaSourgeforce` itself:
 
 
-# 21:53:59 >  
-# 21:53:59 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/opensource/MonetDB/Linux/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB/log" --set mapi_port=46183 --set sql_port=57777 --set monet_prompt= --trace --dbname=mTests_tests_BugsViaSourgeforce  < ID.1023816.milS
-# 21:53:59 >  
+# 07:27:17 >  
+# 07:27:17 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=35545 --set monet_prompt= --trace --dbname=mTests_tests_BugsViaSourgeforce  ID.1023816.mal < /dev/null
+# 07:27:17 >  
 
-# Monet Database Server V4.3.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit; dynamically linked.
-# config:/home/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/home/mk/monet5/Linux/var/MonetDB5/dbfarm
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_tests_BugsViaSourgeforce
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information
 ## Monet Mil to Mal compiler
+##include mil;
 ## Copyright (c) 2001-2004, CWI. All rights reserved.
 #
 ##Predefined code segment
@@ -22,58 +23,55 @@ stdout of test 'ID.1023816` in directory 'tests/BugsViaSourgeforce` itself:
 ##- make the type of variables explicit, in particular 'nil'
 ##- upon advice of M2m to remap identifiers, change it in your program directly
 ##use the "mil_schema" for additional support routines
-#	mil.line("var x:=new(void,int);");
-#	x := new(nil:void,nil:int);
-#	mil.line("x.insert(void(nil),2);");
-#	aa_a := void(nil);
-#	ba_a := insert(x,aa_a,2);
-#	mil.line("x.insert(void(nil),4);");
-#	ca_a := void(nil);
-#	da_a := insert(x,ca_a,4);
-#	mil.line("x:=x.reverse().mark(0@0).reverse();");
-#	ea_a := reverse(x);
-#	fa_a := mark(ea_a,0@0);
-#	x := reverse(fa_a);
-#	mil.line("table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);");
-#	ga_a := table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);
+##	mil.line("var x:=new(void,int);");
+#	x := bat.new(:void,:int);
+##	mil.line("x.insert(void(nil),2);");
+#	aa_a := calc.void(nil);
+#	ba_a := bat.insert(x,aa_a,2);
+##	mil.line("x.insert(void(nil),4);");
+#	ca_a := calc.void(nil);
+#	da_a := bat.insert(x,ca_a,4);
+##	mil.line("x:=x.reverse().mark(0@0).reverse();");
+#	ea_a := bat.reverse(x);
+#	fa_a := algebra.markT(ea_a,0@0);
+#	x := bat.reverse(fa_a);
+##	mil.line("table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);");
+#	ga_a := io.table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);
 #
 function user.main():void;	# 0  (main:void)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_31:str)
-#Predefined code segment 	# 2  (_32:str)
-#The compiler can not guarantee an accurate compilation, 	# 3  (_33:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 4  (_34:str)
-#A few guidelines to maximize usefullness. 	# 5  (_35:str)
-#- make the type of variables explicit, in particular 'nil' 	# 6  (_36:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  (_37:str)
-#use the "mil_schema" for additional support routines 	# 8  (_38:str)
-    mil.line("var x:=new(void,int);");	# 9 MILline (_39:void)<-(_40:str)
-    x := bat.new(:void,:int);	# 10 CMDBATnew (x:bat[:void,:int])<-(_42:void)(_43:int)
-    mil.line("x.insert(void(nil),2);");	# 11 MILline (_44:void)<-(_45:str)
-    aa_a := calc.void(nil);	# 12 CALCnil2void (aa_a:void)<-(_47:void)
-    ba_a := bat.insert(x,aa_a,2);	# 13 BKCinsert_bun (ba_a:void)<-(x:bat[:void,:int])(aa_a:void)(_49:int)
-    mil.line("x.insert(void(nil),4);");	# 14 MILline (_50:void)<-(_51:str)
-    ca_a := calc.void(nil);	# 15 CALCnil2void (ca_a:void)<-(_47:void)
-    da_a := bat.insert(x,ca_a,4);	# 16 BKCinsert_bun (da_a:void)<-(x:bat[:void,:int])(ca_a:void)(_54:int)
-    mil.line("x:=x.reverse().mark(0@0).reverse();");	# 17 MILline (_55:void)<-(_56:str)
-    ea_a := bat.reverse(x);	# 18 BKCreverse (ea_a:bat[:int,:void])<-(x:bat[:void,:int])
-    fa_a := algebra.markT(ea_a,0@0);	# 19 ALGtmark (fa_a:bat[:int,:void])<-(ea_a:bat[:int,:void])(_59:oid)
-    x := bat.reverse(fa_a);	# 20 BKCreverse (x:bat[:void,:int])<-(fa_a:bat[:int,:void])
-    mil.line("table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);");	# 21 MILline (_60:void)<-(_61:str)
-    ga_a := io.table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);	# 22 IOttable (ga_a:int)<-(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])
-end main;	# 23  
-#var x:=new(void,int);
-#x.insert(void(nil),2);
-#x.insert(void(nil),4);
-#x:=x.reverse().mark(0@0).reverse();
-#table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);
+# Monet Mil to Mal compiler 	# 1  (_1:str)
+#include mil; 	# 2  (_2:str)
+# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 3  (_3:str)
+#Predefined code segment 	# 4  (_4:str)
+#The compiler can not guarantee an accurate compilation, 	# 5  (_5:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 6  (_6:str)
+#A few guidelines to maximize usefullness. 	# 7  (_7:str)
+#- make the type of variables explicit, in particular 'nil' 	# 8  (_8:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 9  (_9:str)
+#use the "mil_schema" for additional support routines 	# 10  (_10:str)
+#	mil.line("var x:=new(void,int);"); 	# 11  (_11:str)
+    x := bat.new(:void,:int);	# 12 CMDBATnew (x:bat[:void,:int])<-(_13:void)(_14:int)
+#	mil.line("x.insert(void(nil),2);"); 	# 13  (_15:str)
+    aa_a := calc.void(nil);	# 14 CALCnil2void (aa_a:void)<-(_17:void)
+    ba_a := bat.insert(x,aa_a,2);	# 15 BKCinsert_bun (ba_a:void)<-(x:bat[:void,:int])(aa_a:void)(_19:int)
+#	mil.line("x.insert(void(nil),4);"); 	# 16  (_20:str)
+    ca_a := calc.void(nil);	# 17 CALCnil2void (ca_a:void)<-(_17:void)
+    da_a := bat.insert(x,ca_a,4);	# 18 BKCinsert_bun (da_a:void)<-(x:bat[:void,:int])(ca_a:void)(_23:int)
+#	mil.line("x:=x.reverse().mark(0@0).reverse();"); 	# 19  (_24:str)
+    ea_a := bat.reverse(x);	# 20 BKCreverse (ea_a:bat[:int,:void])<-(x:bat[:void,:int])
+    fa_a := algebra.markT(ea_a,0@0);	# 21 ALGtmark (fa_a:bat[:int,:void])<-(ea_a:bat[:int,:void])(_27:oid)
+    x := bat.reverse(fa_a);	# 22 BKCreverse (x:bat[:void,:int])<-(fa_a:bat[:int,:void])
+#	mil.line("table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);"); 	# 23  (_28:str)
+    ga_a := io.table(x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x);	# 24 IOttable (ga_a:int)<-(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])(x:bat[:void,:int])
+end main;	# 25  
 #---------------------------------------------------------------------------------------------------------------------------------#
-# tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	tmp_6	  # name
+# h	h	h	h	h	h	h	h	h	h	h	h	h	h	h	h	  # name
 # int	int	int	int	int	int	int	int	int	int	int	int	int	int	int	int	  # type
 #---------------------------------------------------------------------------------------------------------------------------------#
 [ 2,	  2,	  2,	  2,	  2,	  2,	  2,	  2,	  2,	  2,	  2,	  2,	  2,	  2,	  2,	  2	  ]
 [ 4,	  4,	  4,	  4,	  4,	  4,	  4,	  4,	  4,	  4,	  4,	  4,	  4,	  4,	  4,	  4	  ]
 
-# 22:47:53 >  
-# 22:47:53 >  Done.
-# 22:47:53 >  
+# 07:27:18 >  
+# 07:27:18 >  Done.
+# 07:27:18 >  
 

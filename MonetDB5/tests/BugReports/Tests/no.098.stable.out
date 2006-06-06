@@ -1,41 +1,84 @@
 stdout of test 'no.098` in directory 'tests/BugReports` itself:
 
-#> Mtest:	milS no.098 milS
-#> Mtest:	Mtimeout -timeout 210 Mserver -modulesilent -yaccsilent -d8 -db tests_BugReports -single no.098.milS
-# Monet Database Server V4.1
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for IRIX646.5/32bit on Fri Jan 14 01:04:33 MET 2000.
-#script:no.098.milS
 
+# 07:27:15 >  
+# 07:27:15 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=35545 --set monet_prompt= --trace --dbname=mTests_tests_BugReports  no.098.mal < /dev/null
+# 07:27:15 >  
 
-# Monet Database Server V4.3.5
-# Copyright (c) 1993-2002, CWI. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-# >Number:         98
-# >Category:       Mserver
-# >Synopsis:       wrong select when a BAT contains one BUN
-# >Confidential:   no
-# >Severity:       critical
-# >Priority:       high
-# >Responsible:    boncz
-# >State:          open
-# >Class:          sw-bug
-# >Submitter-Id:   unknown
-# >Arrival-Date:   Fri Dec 12 19:56:04 1997
-# >Originator:     windhouw
-# >Organization:
-# UvA
-# >Release:        971007
-# >Environment:
-# 
-# >Description:
-# When a BAT contains only one BUN a select returns this BUN,
-# even when it's not in the selection range:
-# 
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_tests_BugReports
+# Visit http://monetdb.cwi.nl/ for further information
+## Monet Mil to Mal compiler
+##include mil;
+## Copyright (c) 2001-2004, CWI. All rights reserved.
+#
+##Predefined code segment
+##The compiler can not guarantee an accurate compilation,
+##because MIL unlike MAL is a dynamically typed language.
+##A few guidelines to maximize usefullness.
+##- make the type of variables explicit, in particular 'nil'
+##- upon advice of M2m to remap identifiers, change it in your program directly
+##use the "mil_schema" for additional support routines
+##	mil.line("# >Number:         98\n");
+##	mil.line("# >Category:       Mserver\n");
+##	mil.line("# >Synopsis:       wrong select when a BAT contains one BUN\n");
+##	mil.line("# >Confidential:   no\n");
+##	mil.line("# >Severity:       critical\n");
+##	mil.line("# >Priority:       high\n");
+##	mil.line("# >Responsible:    boncz\n");
+##	mil.line("# >State:          open\n");
+##	mil.line("# >Class:          sw-bug\n");
+##	mil.line("# >Submitter-Id:   unknown\n");
+##	mil.line("# >Arrival-Date:   Fri Dec 12 19:56:04 1997\n");
+##	mil.line("# >Originator:     windhouw\n");
+##	mil.line("# >Organization:\n");
+##	mil.line("# UvA\n");
+##	mil.line("# >Release:        971007\n");
+##	mil.line("# >Environment:\n");
+##	mil.line("# \n");
+##	mil.line("# >Description:\n");
+##	mil.line("# When a BAT contains only one BUN a select returns this BUN,\n");
+##	mil.line("# even when it's not in the selection range:\n");
+##	mil.line("# \n");
+##	mil.line("# #You are system administrator (adm)!\n");
+##	mil.line("# >b:=new(oid,oid);\n");
+##	mil.line("# >b.insert(oid(1),oid(2));\n");
+##	mil.line("# >b.select(oid(3)).print;\n");
+##	mil.line("# #-----------------#\n");
+##	mil.line("# # oid   | tmp_25  #\n");
+##	mil.line("# #-----------------#\n");
+##	mil.line("# [ 1@0,    2@0     ]\n");
+##	mil.line("# >b.select(oid(3)).print;\n");
+##	mil.line("# #-----------------#\n");
+##	mil.line("# # oid   | tmp_25  #\n");
+##	mil.line("# #-----------------#\n");
+##	mil.line("setoid(oid(20000000));");
+#	aa_a := calc.oid(20000000);
+#	ba_a := setoid(aa_a);
+#	b := bat.new(nil:oid,nil:oid);
+##	mil.line("b.insert(oid(1),oid(2));");
+#	ca_a := calc.oid(1);
+#	da_a := calc.oid(2);
+#	ea_a := bat.insert(b,ca_a,da_a);
+##	mil.line("b.select(oid(3)).print();");
+#	fa_a := calc.oid(3);
+#	ga_a := algebra.select(b,fa_a);
+#	ha_a := io.print(ga_a);
+##	mil.line("b.select(oid(3)).print();");
+#	ia_a := calc.oid(3);
+#	ja_a := algebra.select(b,ia_a);
+#	ka_a := io.print(ja_a);
+##	mil.line("quit();");
+#	la_a := clients.quit();
+#
 !ERROR: 	ba_a := setoid(aa_a);
 !	                     ^module name missing
-
-!	                                  	  ^<identifier> expected
+!ERROR: #	mil.line("var b:=new(oid,oid);");
+! 	                                  	  ^<identifier> expected
 function user.main():void;	# 0  unknown (main:void)
 # Monet Mil to Mal compiler 	# 1  unknown (_1:str)
 #include mil; 	# 2  unknown (_2:str)
@@ -101,7 +144,7 @@ function user.main():void;	# 0  unknown (main:void)
     la_a := clients.quit();	# 62  unknown (la_a:any)
 end main;	# 63  unknown 
 
-# 17:06:53 >  
-# 17:06:53 >  Done.
-# 17:06:53 >  
+# 07:27:15 >  
+# 07:27:15 >  Done.
+# 07:27:15 >  
 
