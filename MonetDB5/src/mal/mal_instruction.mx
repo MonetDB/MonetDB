@@ -1645,11 +1645,11 @@ convertConstant(malType type, ValPtr vr)
 			return 0;
 		}
 		if (vr->vtype == TYPE_int) {
-			char buf[32];
+			char buf[BUFSIZ];
 			int ll = 0;
 			ptr d = NULL;
 
-			snprintf(buf, 32, "%d", vr->val.ival);
+			snprintf(buf, BUFSIZ, "%d", vr->val.ival);
 			(*BATatoms[type].atomFromStr) (buf, &ll, &d);
 			if( d==0 ){
 				VALset(vr, type, BATatoms[type].atomNull);

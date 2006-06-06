@@ -257,8 +257,8 @@ initScenario(Client c, Scenario s)
 		if (s->initSystemCmd) {
 			msg = (*s->initSystemCmd) (c);
 		} else {
-			char buf[128];
-			snprintf(buf,128,"%s.init",s->language);
+			char buf[BUFSIZ];
+			snprintf(buf,BUFSIZ,"%s.init",s->language);
 			msg = throwMessage(buf,"Scenario not initialized"); 
 		}
 	}
