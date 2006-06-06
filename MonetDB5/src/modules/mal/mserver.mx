@@ -88,6 +88,10 @@ an index in a locally maintained table. It provides a handle
 to easily detect havoc clients.
 @mal
 
+command trace(mid:int,flag:int):void
+address SERVERtrace
+comment "Toggle the Mapi library tracer";
+
 command reconnect(alias:str, host:str, port:int, usr:str, passwd:str,lang:str):int
 address SERVERreconnectAlias
 comment "Re-establish connection with a remote mserver";
@@ -322,6 +326,7 @@ m_export str SERVERconnect(int *ret, str *host, int *port, str *username, str *p
 m_export str SERVERreconnectAlias(int *ret, str *dbalias, str *host, int *port, str *username, str *password, str *lang);
 m_export str SERVERreconnectWithoutAlias(int *ret, str *host, int *port, str *username, str *password, str *lang);
 m_export str SERVERconnectssl(int *ret, str *host, int *port, str *username, str *password, str *lang);
+m_export str SERVERtrace(int *ret, int *mid, int *flag);
 m_export str SERVERdisconnect(int *ret, int *mid);
 m_export str SERVERsetAlias(int *ret, int *mid, str *dbalias);
 m_export str SERVERlookup(int *ret, str *dbalias);
@@ -1235,6 +1240,9 @@ SERVERconnectAll(int *key, str *host, int *port, str *username, str *password, s
 #endif
 	SERVERsessions[i].mid= mid;
 	*key = SERVERsessions[i].key;
+#ifdef MAPI_TEST_RG
+	mapi_trace_log(mid,"/tmp/romuloGhosts");
+#endif
 	return MAL_SUCCEED;
 }
 str
@@ -1311,6 +1319,12 @@ SERVERlookup(int *ret, str *dbalias)
 		return MAL_SUCCEED;
 	}
 	return throwMessage("mserver.lookup","Could not find database connection");
+}
+str
+SERVERtrace(int *ret, int *key, int *flag){
+	(void )ret;
+	mapi_trace(SERVERsessions[*key].mid,*flag);
+	return MAL_SUCCEED;
 }
 str
 SERVERdisconnect(int *ret, int *key){
