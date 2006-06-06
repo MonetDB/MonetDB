@@ -1364,6 +1364,9 @@ SERVERquery(int *ret, int *key, str *qry){
 		mapi_close_handle(SERVERsessions[i].hdl);
 	SERVERsessions[i].hdl= mapi_query(mid, *qry);
 	*ret = *key;
+	if( mapi_error(mid) ) 
+		return throwMessage("mserver.query",
+			mapi_result_error(SERVERsessions[i].hdl));
 	return MAL_SUCCEED;
 }
 str 
