@@ -47,6 +47,7 @@ sql_export str SQLengine(Client c);
 
 sql_export str SQLinitEnvironment(int *ret);
 sql_export str SQLstatement(str *ret, str *expr);
+sql_export str SQLcompile(str *ret, str *expr);
 sql_export str SQLtrace(int *ret);
 
 #endif /* _SQL_SCENARIO_H_ */
@@ -391,7 +392,7 @@ freeVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 
 /* #define _SQL_COMPILE */
 str
-SQLstatement(str *ret, str *expr)
+SQLstatementIntern(str *ret, str *expr, int execute)
 {
 	int err = 0;
 	mvc o, *m;
@@ -460,9 +461,12 @@ System has been prepared to parse it and generate code
 	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
 		if (!err)
 			err = mvc_status(m);
-		sqlcleanup(m, err);
+		if( m->errstr)
+			msg = throwMessage("SQLparser", m->errstr);
+		 else 
+			msg = throwMessage("SQLparser", "Parser errors\n");
 		*m->errstr = 0;
-		msg = throwMessage("SQLparser", "Parser errors\n");
+		sqlcleanup(m, err);
 		goto endofcompile;
 	}
 @-
@@ -479,16 +483,18 @@ We don;t search the cache for a previous incarnation.
 
 		if (!s && (err = mvc_status(m))) {
 			stream_printf(c->fdout, "%s\n", m->errstr);
+			if( m->errstr)
+				msg = throwMessage("SQLparser", m->errstr);
+			else msg = throwMessage("SQLparser", "Semantic errors\n");
 			*m->errstr = 0;
 			sqlcleanup(m, err);
-			msg = throwMessage("SQLparser", "Semantic errors\n");
 			goto endofcompile;
 		}
 		assert(s);
 		/* generate MAL code */
 		if (oldstop == 2) /* remove main.end */
 			c->curprg->def->stop = 1; 
-		if (oldstop == 3) /* recursive call via SQLstatement */
+		if (oldstop == 3) /* recursive call to SQLstatement */
 			c->curprg->def->stop = 1; 
 		backend_callinline(sql, c, s );
 		pushEndInstruction(c->curprg->def);
@@ -499,7 +505,7 @@ We don;t search the cache for a previous incarnation.
 		printFunction(c->fdout, c->curprg->def, c->listing);
 #endif
 
-		if (!c->curprg->def->errors) {
+		if (!c->curprg->def->errors && execute) {
 			backend *be = c->state[PARSER];
 			sql->out = NULL; /* no output */
 			c->state[PARSER] = sql;
@@ -525,6 +531,17 @@ endofcompile:
 	*m = o;
 	m->session->auto_commit = ac;
 	return msg;
+}
+
+str
+SQLstatement(str *ret, str *expr)
+{
+	return SQLstatementIntern(ret,expr, TRUE);
+}
+
+str
+SQLcompile(str *ret, str *expr){
+	return SQLstatementIntern(ret,expr, FALSE);
 }
 
 static int
