@@ -1615,7 +1615,7 @@ str GRP@1_oid_@2(int *retval, int *bid){
 			return throwMessage("group.@1", "Cannot access descriptor");
 		}
 		/* use expensive operation when the BAT is not ordered on the head */
-		if( !b->hsorted ){
+		if( !(b->hsorted&1) ){
 			/* determine groups first */
 			BBPreleaseref(b->batCacheid);
 			return throwMessage("group","not yet implemented");

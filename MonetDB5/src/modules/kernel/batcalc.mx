@@ -1332,7 +1332,8 @@ str CMDcmp@1(int *ret, int *l, int *r)
 	}
 bunins_failed:
 	dst->hsorted= BAThordered(left);
-	dst->tsorted= (BATtordered(left)&BATtordered(right))?GDK_SORTED_REV:0;
+	/* StM: left & right tail sorted _ascending_  ==>  dst tail sorted _descending_ ??? */
+	dst->tsorted= (BATtordered(left)&BATtordered(right)&1)?GDK_SORTED_REV:0;
 	msg = compareaccum@1(dst,left,right);
 	if (!(dst->batDirty&2)) dst = BATsetaccess(dst, BAT_READ); \
 	*ret = dst->batCacheid;

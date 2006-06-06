@@ -2173,7 +2173,7 @@ TABshowHeader(Tablet * t)
 					prop = GDKstrdup(buf);
 				}
 				if (strcmp(p, "sorted") == 0) {
-					if (BATtordered(c->c))
+					if (BATtordered(c->c)&1)
 						prop = GDKstrdup("true");
 					else
 						prop = GDKstrdup("false");
