@@ -877,6 +877,14 @@ static int incrBATsize(shredBAT* sb, nat i) {
             return -1;
         }
     }
+    /* FIXME: the line below is added as a temporary hack  
+     * to fix bug [1499097] and bug [1483706]. It is a pure 
+     * guess, made without proper knowledge of the surrounding
+     * code. It does however fix the examples provided with the
+     * bugs.
+     */
+    sb->bat->batBuns->free = sb->size * sizeof(oid); 
+    /* end-of-hack */
     sb->size= newsize;
     if ( !(sb->bat = BATextend(sb->bat,newsize)) ) {
         GDKerror("shredder.mx:incrBATsize: BATextend[\"%s\"](%d to %d) fails\n",sb->def->name,sb->size,newsize);
