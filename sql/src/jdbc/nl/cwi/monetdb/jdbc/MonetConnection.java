@@ -317,7 +317,7 @@ public class MonetConnection implements Connection {
 			commandTempl[1] = null;		// post
 			commandTempl[2] = "\nX";	// separator
 		} else if (lang == LANG_XQUERY) {
-			queryTempl[0] = "seq\n";
+			queryTempl[0] = "mapi-seq\n";
 			queryTempl[1] = null;
 			queryTempl[2] = ",";
 
