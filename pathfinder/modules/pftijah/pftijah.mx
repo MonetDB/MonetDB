@@ -492,6 +492,7 @@ PROC p_containing_q_NLLR_batloop_aggregation(bat[oid,dbl] left, bat[void,oid] te
      var collFrq := bat("tj_" + collName + "_Terms").count();
      _lmbd :*= collFrq; 
      var t2 := time();
+     terms := terms.tsort().tmark(0@0);
      var tid_pre := indexfetchjoin(terms, bat("tj_" + collName + "_TermIndex"), bat("tj_" + collName + "_Terms") );
      var t3 := time();
 

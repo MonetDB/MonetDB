@@ -162,7 +162,8 @@ int old_main(int argc, char * const argv[], BAT* optbat)
 
   /* retrieval model and relevance feedback variables */
   struct_RMT *txt_retr_model;
-  struct_RMI *img_retr_model , *img_retr_model1 ;
+  /* struct_RMI *img_retr_model , *img_retr_model1 ; */
+  struct_RMI *img_retr_model;
   struct_RF *rel_feedback, *rel_feedback1;;
 
   /* files that store parser command and token output */
@@ -1044,7 +1045,7 @@ int old_main(int argc, char * const argv[], BAT* optbat)
   }
 
   img_retr_model = NULL;
-  img_retr_model = img_retr_model1;
+ /*img_retr_model = img_retr_model1;*/
 
 
   /*

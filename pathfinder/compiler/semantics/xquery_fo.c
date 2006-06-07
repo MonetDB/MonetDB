@@ -1651,12 +1651,12 @@ PFfun_xquery_fo ()
         .arity = 1, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_integer () },
              .ret_ty = PFty_star (PFty_xs_anyNode ()) } } }
-    , /* fn:xtijah-score(integer, node*) as double* */
+    , /* fn:xtijah-score(integer, node) as double */
       { .ns = PFns_fn, .loc = "xtijah-score",
         .arity = 2, .sig_count = 1, .sigs = { {
 	     .par_ty = (PFty_t[]) { PFty_integer (),
-	                            PFty_star (PFty_xs_anyNode ()) },
-             .ret_ty = PFty_star (PFty_double ()) } } }
+	                            PFty_xs_anyNode () },
+             .ret_ty = PFty_double () } } }
 #else
 #endif
     , { .loc = 0 }

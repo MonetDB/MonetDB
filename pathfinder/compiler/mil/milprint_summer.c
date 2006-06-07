@@ -8178,29 +8178,205 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }
     else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"xtijah-query")) )
     {
-        milprintf(f, 
+        int opt_counter = 0;
+	int str_counter = 0;
+	int ctx_counter = 0;
+        char *item_ext = kind_str(STR);
+	
+	milprintf(f, 
                 "{ # translate fn:xtijah-query\n"
 	);
         if (fun->arity == 3) {
+	  /* translate the first options parameter*/
+          translate2MIL (f, NORMAL, cur_level, counter, L(args));
+	  saveResult(f, ++counter);
+	  opt_counter = counter;
+
+          /* get query string */
+	  rc = translate2MIL (f, VALUES, cur_level, counter, RRL(args));
+          if (rc == NORMAL)
+             milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
+          add_empty_strings (f, STR, cur_level);
+          saveResult_ (f, ++counter, STR);
+	  str_counter = counter;
+	  
+	  /* get nodes to start from */ 
+	  translate2MIL (f, code, cur_level, ++counter, RL(args));
+	  saveResult(f, ++counter);
+	  ctx_counter = counter;
+	
+	} else {
+          /* get query string */
+	  rc = translate2MIL (f, VALUES, cur_level, counter, RL(args));
+          if (rc == NORMAL)
+             milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
+          add_empty_strings (f, STR, cur_level);
+          saveResult_ (f, ++counter, STR);
+	  str_counter = counter;
+	  
+	  /* get nodes to start from */ 
+	  translate2MIL (f, code, cur_level, ++counter, L(args));
+	  saveResult(f, ++counter);
+	  ctx_counter = counter;
         }
+
+	milprintf(f,
+	        "var result_id := new(void,lng).seqbase(0@0);"
+	        "loop%03u@batloop() { # begin batloop over queries\n", cur_level);
+
+	/* generate the serialization code */
+        if (opt_counter)
+	  milprintf(f,
+	        "    iter := iter%03u.slice(int($h),int($h));\n"
+	        "    item := item%03u.slice(int($h),int($h));\n"
+		"    kind := constant2bat(kind%03u).slice(int($h),int($h));\n"
+		"    var optbat := serialize_tijah_opt(ws,1,iter,iter,item,kind,int_values,dbl_values,str_values);\n",
+		opt_counter, opt_counter, opt_counter);
+	else  
+          milprintf(f, 
+                "    var optbat := new(str,str,32);\n");
+          
+	
+	/* execute tijah query */
+	milprintf(f,
+                "    var nexi_score := run_tijah_query(optbat, item%s%03u.fetch(int($h)));\n"
+		, item_ext, str_counter);
+	
+	/* translate tijah-pre to pf-pre */
+	milprintf(f,
+                "    var docpre := bat(\"tj_\" + collName + \"_doc_firstpre\").[oid]();\n"
+                "    var pfpre :=  bat(\"tj_\" + collName + \"_pfpre\");\n"
+                "    item  := nexi_score.hmark(0@0);\n"
+                "    var frag := [find_lower](const docpre.reverse().mark(0@0), item);\n"
+                "    item := item.join(pfpre).sort().tmark();\n"
+                "    var needed_docs := bat(\"tj_\" + collName + \"_doc_name\").semijoin(frag.tunique());\n"
+                "    var loaded_docs := ws.fetch(DOCID_NAME).reverse();\n"
+                "    needed_docs@batloop()\n"
+                "    {\n"
+                "          if (not(loaded_docs.exist($t))) {\n"
+                "                  ws.add_doc($t); }\n"
+                "    }\n"
+                "    var doc_loaded := ws.fetch(CONT_DOCID).join(ws.fetch(DOCID_NAME));\n"
+                "    var fid_pffid := needed_docs.join(doc_loaded.reverse());\n"
+                "    frag := frag.join(fid_pffid).sort().tmark();\n");
+
+	/* store scores and nodes */
+	milprintf(f,
+	        "    tID := oid(int(tID) + 1);\n" 
+	        "    tijah_tID.append(item.project(tID));\n"
+	        "    tijah_frag.append(frag);\n"
+	        "    tijah_pre.append(item);\n"
+	        "    tijah_score.append(nexi_score.tmark());\n"
+		"    result_id.append(lng(tID));\n"
+		"} # end batloop over queries\n");
+
+	/* return query identifier */
+        item_ext = (code)?kind_str(INT):"";
+        if (code)
+            milprintf(f, "item%s := result_id;\n", item_ext);
+        else 
+            addValues (f, int_container(), "result_id", "item");
+
+        milprintf(f,
+                "iter := loop%03u.tmark(0@0);\n"
+                "ipik := iter;\n"
+                "pos := 1@0;\n"
+                "kind := INT;\n"
+                , cur_level);
+	
+	/* clean up */
+	deleteResult(f, ctx_counter);
+        deleteResult_ (f, str_counter, STR);
+	deleteResult(f, opt_counter);
         milprintf(f, "} # end of translate fn:xtijah_query\n");
-        return NORMAL;
+        return (code)?INT:NORMAL;
     }
     else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"xtijah-nodes")) )
     {
-        milprintf(f, 
+        char *item_int = kind_str(INT);
+        
+	milprintf(f, 
                 "{ # translate fn:xtijah-nodes\n"
 	);
-        milprintf(f, "} # end of translate fn:xtijah_nodes\n");
-        return NORMAL;
+        /* get query id */
+        rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
+        if (rc == NORMAL)
+        {
+            milprintf(f, "item%s := item%s;\n", item_int, val_join(INT));
+        }
+        
+	/* get nodes and create iter|item|.... */
+	milprintf(f,
+		"item := new(void,oid).seqbase(0@0);"
+		"iter := new(void,oid).seqbase(0@0);"
+		"pos := new(void,oid).seqbase(0@0);"
+		"var frag := new(void,oid).seqbase(0@0);"
+		"loop%03u@batloop() { # begin of query batloop\n"
+                "    var qid := oid(item%s.fetch(int($h)));\n"
+		"    var tmp := tijah_tID.ord_uselect(qid);\n"
+		"    item.append(tmp.mirror().leftfetchjoin(tijah_pre));\n"
+		"    iter.append(tmp.project(loop%03u.fetch(int($h))));\n"
+		"    frag.append(tmp.mirror().leftfetchjoin(tijah_frag));\n"
+	        "    pos.append(tmp.mark(1@0));\n"
+	        "} # end of query batloop \n"
+	        , cur_level, item_int, cur_level);
+        
+	milprintf(f,
+                "ipik := iter;\n"
+                "kind := set_kind(frag, ELEM);\n"
+	        "} # end of translate fn:xtijah_nodes\n");
+        
+	return NORMAL;
     }
     else if ( !PFqname_eq(fnQname, PFqname (PFns_fn,"xtijah-score")) )
     {
+        char *item_int = kind_str(INT);
         milprintf(f, 
                 "{ # translate fn:xtijah-score\n"
 	);
+        /* get query id */
+        translate2MIL (f, VALUES, cur_level, counter, L(args));
+	saveResult_(f, ++counter, INT);
+        
+	/* get node */
+        rc = translate2MIL (f, code, cur_level, counter, RL(args));
+        
+	/* get scores */
+        milprintf(f, 
+		"pos := new(void,oid).seqbase(0@0);"
+		"var score := new(void,dbl).seqbase(0@0);"
+                "item%s%03u@batloop() { # begin query batloop\n"
+                "    var qid := oid(item%s%03u.fetch(int($h)));\n"
+		"    var tmp := tijah_tID.uselect(qid);\n"
+		"    var tmp1 := tijah_pre.semijoin(tmp);\n"
+		"    tmp1 := tmp1.join(item.reverse());\n"
+		"    var tmp2 := tmp1.join(kind.get_container());\n"
+		"    var tmp3 := tijah_frag.semijoin(tmp)\n;"
+		"    tmp := tmp1.semijoin(intersect(tmp3,tmp2));\n"
+		"    tmp1 := nil; tmp2 := nil; tmp3:= nil;\n"
+		"    score.append(tmp.reverse().leftfetchjoin(tijah_score).sort().tmark(0@0));\n"
+	        "    pos.append(tmp.mark(1@0).tmark(0@0));\n"
+		"} # end query batloop\n"
+		, item_int, counter, item_int, counter, item_int, counter);
+	
+	/* return score */
+        item_ext = (code)?kind_str(DBL):"";
+        if (code)
+            milprintf(f, "item%s := score;\n", item_ext);
+        else 
+            addValues (f, dbl_container(), "score", "item");
+
+        milprintf(f,
+                "iter := loop%03u.tmark(0@0);\n"
+                "pos := 1@0;"
+		"ipik := iter;\n"
+                "kind := DBL;\n"
+		, cur_level);
+	
+	/* clean up */
+	deleteResult_(f, counter, INT);
         milprintf(f, "} # end of translate fn:xtijah_score\n");
-        return NORMAL;
+        return (code)?DBL:NORMAL;
     }
 #endif /* PFTIJAH */
     PFoops(OOPS_FATAL,"function %s is not supported.", PFqname_str (fnQname));
@@ -10795,6 +10971,11 @@ const char* PFinitMIL(void) {
 #ifdef HAVE_PFTIJAH
         "module(\"pftijah\");\n"
 	"\n"
+	"var tID := 9999@0; # start counter at an arbitrary number\n"
+	"var tijah_tID := new(void,oid).seqbase(0@0);\n"
+	"var tijah_frag := new(void,oid).seqbase(0@0);\n"
+	"var tijah_pre := new(void,oid).seqbase(0@0);\n"
+	"var tijah_score := new(void,dbl).seqbase(0@0);\n"
 	"var ws_tijah_score:= bat(oid,bat);\n"
 
 #endif
