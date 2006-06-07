@@ -583,7 +583,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
  * Runtime environment uses a lock to stay stable under concurrent requests. 
  */
 char*
-PFcompile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char** epilogue)
+PFcompile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char** epilogue, int options)
 {
 	PFpnode_t  *proot  = NULL;
 	PFcnode_t  *croot  = NULL;
@@ -598,15 +598,13 @@ PFcompile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char
         pf_alloc = pa_create();
 
         PFstate.invocation = invoke_monetdb;
+
         PFstate.summer_branch = true;
 
-
-        /* FIXME: the state of the standoff_axis_steps
-           support should be passed through the function-arguments.
-           Do we have to extend the function with a new arg, or 
-           can this option be incorporated with the other args 
-           (inside the 'mode' argument maybe??) */
-        PFstate.standoff_axis_steps = false;
+        /* the state of the standoff_axis_steps support should be 
+         * passed through the function-arguments.
+         */
+        PFstate.standoff_axis_steps = (options & 1);
 
         PFstate.genType = mode;
         if (setjmp(PFexitPoint) != 0 ) {

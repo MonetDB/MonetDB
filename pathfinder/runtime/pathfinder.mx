@@ -1460,6 +1460,11 @@ xquery_compile_exec(xquery_client *ctx,
     char *mapi = strstr(mode, "mapi")?"=":"";
     char *err = NULL;
 
+    int options = 0;
+    /* Setting the StandOff flag based on runtime settings */
+    if ((GDKgetenv("standoff") != NULL) && (strcmp(GDKgetenv("standoff"),"enabled") == 0))
+        options += 1;
+
     MT_set_lock(pf_compiler_lock, "xquery_compile_exec");
     if (is_url) {
         int l = strlen(xquery);
@@ -1471,7 +1476,7 @@ xquery_compile_exec(xquery_client *ctx,
         if (is_mil && query == NULL) {
             *prologue = xquery; *epilogue = NULL;
         } else {
-            err = PFcompile_MonetDB(xquery, mode, prologue, &del, epilogue);
+            err = PFcompile_MonetDB(xquery, mode, prologue, &del, epilogue, options);
             if (err == NULL && nsurl != NULL){
                 /* get the module namespace URL Y from pattern: "module namespace X = Y" */
                 char *p0 = xquery_parse_space(xquery); 
