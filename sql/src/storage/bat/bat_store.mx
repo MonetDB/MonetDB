@@ -76,7 +76,7 @@ static int schema_number = 0; /* each committed schema change triggers a new
 static struct bm *bm = NULL;
 static int bs_debug = 0;
 
-#define MAX_SPARES 4
+#define MAX_SPARES 32
 static sql_trans *spare_trans[MAX_SPARES];
 static int spares = 0;
 
@@ -5038,6 +5038,7 @@ sql_session_destroy(sql_session *s)
 		sql_trans_destroy(s->tr);
 	if (s->schema_name)
 		_DELETE(s->schema_name);
+	_DELETE(s);
 	nr_sessions--;
 }
 
