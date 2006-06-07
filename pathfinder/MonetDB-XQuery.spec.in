@@ -13,11 +13,12 @@ BuildRoot: /var/tmp/%{name}-root
 Packager: Niels Nes <Niels.Nes@cwi.nl>
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 
-%if !%buildsystem
+%{!?buildsystem: %define buildsystem 0}
+%if !%{?buildsystem}
 BuildRequires: MonetDB-devel 
-%define buildjava 1
-%define comp_cc gcc
 %endif
+
+%define comp_cc @CC@
 
 %define builddoc 0
 
@@ -66,7 +67,6 @@ rm -rf $RPM_BUILD_ROOT
 	--enable-optimize \
 	--enable-bits=%{bits} \
 	--with-gcc="%{comp_cc}" \
-	--with-gxx="%{comp_cxx}" \
 	--prefix=%{prefix} \
 	--libdir=%{_libdir} \
 	--with-monet=%{prefix}
