@@ -45,7 +45,7 @@ Extending MonetDB is achieved by writing an {\em extension module} in
 the MonetDB Extension Language (MEL). The MEL is a 
 {\bf specification-only language}. 
 
-A MEL module states with what types, accelerators, and  
+A MEL module states with what types, and  
 commands the extension programmer wants to extend MonetDB. A MEL module
 also contains help texts on these new primitives which will be inserted
 into MonetDB's on-line help system. Finally, a MEL module contains references
@@ -63,13 +63,6 @@ do some execution, and return one value.  MIL allows for overloading
 of algebraic commands and operators. You specify a type-signature 
 (with any-wildcarding and lambda expressions allowed), and MIL chooses at
 run-time on the basis of the actual parameters.
-\item {\em new search accelerators}
-Some operations on tables need additional -- persistent -- data structures
-for efficient execution. Well-known examples are B-trees or Hash-tables.
-You provide @[<acronym title="Abstract Data Type">ADT</acronym>@ operations to create, destroy, and traverse such tables.
-The database needs to keep these tables consistent under updates; therefore,
-additional update @[<acronym title="Abstract Data Type">ADT</acronym>@ operations are required from the extension 
-programmer. 
 \end{itemize}
 This document describes MEL, and the C/C++ extension programmers
 interface for implementing extensions.
@@ -219,8 +212,7 @@ module ::=
  
             { atomdef | 
               command | unop | binop |
-              accelerator | 
-              builtin | iterator | object }
+              builtin }
         .END <IDENT: module name> ';'
 
 modulelist:
@@ -477,93 +469,6 @@ is chosen for execution.
 MonetDB will recognize each new command and operator as a MIL keyword. 
 It will also add new commands to the virtual user table {\small\tt monet\_fcntbl}.
 
-@+ New Search Accelerators
-@T
-A {\em search accelerator}  is defined as 'a data structure that
-is associated with a database column, and is kept up to date 
-with changes in this column'. A common motive for maintaining
-such data structures is to achieve better speed on common database
-operations.
-
-Well-known search accelerators for traditional business data types
-are the B-tree, or hash-tables. Well-known example from the GIS
-application domain are Grid-files or R-trees. Many variants exist.
-Every new application domain for database systems seems to come
-with new types of search accelerators.
-
-For this reason the MEL extension mechanism allows for the addition
-of new search accelerators to the MonetDB system. A BAT can hold
-two user-defined search accelerators: one for the head and one for 
-the tail. MonetDB automatically provides two standard search accelerators
-oriented towards main-memory relational processing (the {\tt index}
-binary tree index and the {\tt hash} chained bucket hash-tables).
-
-{\small\begin{verbatim}
-accelerator ::=
-	.ACCELERATOR <ident: accelerator name> (<empty> | signature ) ';'
-		{ acceleratorADTrequiredOps ';' }
-		{ acceleratorADToptionalOps ';' }
-        .END;
-
-acceleratorADTrequiredOps ::=
-	.BUILD	  = <ident: C routine implementing heap create/init>  
- |	.DESTROY  = <ident: C routine implementing heap destroy>  
- |	.SAVE	  = <ident: C routine implementing pre-save rearrange>  
- |	.INSERT   = <ident: C routine implementing value insert propagate>  
- |	.DELETE   = <ident: C routine implementing value delete propagate>
-
-acceleratorADToptionalOps ::=
- 	.MOVE     = <ident: C routine implementing value move (del+ins)>
-
-signature ::=
-	atom | atom ',' signature
-\end{verbatim}} 
-
-Above we show the @[<acronym title="Abstract Data Type">ADT</acronym>@ interface that needs to be implemented.
-In @[<a target="_self" href="#mod_3_2_0">Section 3.2</a>@ we will discuss 
-the details (exact semantics and parameter conventions) for them.
-
-MonetDB will recognize each new accelerators as MIL keywords. 
-It will also add new commands to the virtual user table {\small\tt monet\_acctbl}.
-
-@+ Special Primitives
-
-Only advanced MonetDB extension programmers may need the extensibility
-features discussed in this section.
-
-@- Iterators
-@T
-Iterators are primitives that iterate to some subset of a BAT. MonetDB
-provides the following iterators automatically:
-
-\begin{description}
-\item[{\small\tt bat[HTPE,TTPE] \@ batloop()}] iterates over all BUNs.
-\item[{\small\tt bat[HTPE,TTPE] \@ batloop(INT from, INT to)}]
-iterates over the BUNS from position '{\tt from}' to '{\tt to}'.
-\item[{\small\tt bat[HTPE,TTPE] \@ hashloop(HTPE value)}]
-iterates only over the BUNs that have head-value '{\tt value}'.
-\end{description}
-
-After the iterator, any MIL block can follow. This MIL block is
-then executed for each BUN that the iterator wants to iterate over.
-The MIL block can have special variables '{\tt \$h}' and '{\tt \$t}'.
-These special variables are substituted on every iteration to
-the current head and tail value.
-
-Though this is not thought to occur very frequently, extension 
-programmers can add their own iterators:  
-
-{\small\begin{verbatim}
-iterator ::=
-	.ITERATOR <IDENT: iterator name> '(' BAT[atom,atom] ',' argumentlist ')'
-		'=' <IDENT: C implementation for this iterator> ';'
-		<STRING: help text about this iterator>
-\end{verbatim}} 
-
-In the C implementation, the programmer has to invoke MIL 
-execution on the block using some special magic. Details 
-are discussed in @[<a target="_self" href="#mod_3_6_0">Section 3.6</a>@.
-
 @- Free-form Primitives
 @T
 To fork a new process that executes some piece of MIL, MonetDB has
@@ -650,9 +555,7 @@ supports a standard collection of
 @[<a href="../gdk/index.html#mod_1_5_1">atoms</a>@ 
 {\tt \{ void, bit, chr, sht, int,
 oid, flt, bat, lng, dbl, str \}}. All relational operators are
-optimized for these atoms and use the two standard 
-@[<a href="../gdk/index.html#mod_1_5_6">accelerators</a>@ 
-{\tt index}, and {\tt hash}.
+optimized for these atoms and use the standard {\tt hash}.
 
 Of special interest is the section on how 
 @[<a href="../gdk/index.html#mod_1_3_0">BATs</a>@
@@ -1237,183 +1140,6 @@ To discover run-time whether a type needs internal or external storage,
 you can use the
 @[<a href="../gdk/index.html#mod_1_2_4">ATOMextern(type) : int</a>@
 macro, which returns TRUE for external atoms, and FALSE otherwise. 
-
-@+ Implementing Accelerators
-@T
-Accelerators are data structures attached to a BAT column, that
-are maintained over updates. 
-
-The obligatory interface that should be implemented consists
-of BUILD, DESTROY, INSERT and DELETE. 
-A very simplistic implementation can even implement the latter
-two as a DESTROY (throw away on updates).
-
-To give a very simple example
-we will create the {\small\tt\bf mean} search accelerator, which maintains
-a precomputed mean value on a column of integer values. 
-
-{\small\begin{verbatim}
-typedef struct {
-	int base; /* sum of stable items */
-	int plus; /* sum of inserted items */
-	int minus; /* sum of deleted items */
-} mean;
-\end{verbatim}}
-
-A user defined accelerator like {\small\tt\bf mean} would end up in the
-{\small\tt BAT*} fields {\small\tt b->haccelerator} and {\small\tt b->taccelerator} 
-for head and tail column respectively.
-In this design a command:
-
-{\small\begin{verbatim}
-.COMMAND compute_mean(BAT[int:any]) : int = mean_impl;
-\end{verbatim}}
-
-could be implemented like:
-
-{\small\begin{verbatim}
-int mean_impl(flt *retval, BAT*b) {
-	if (b->hacctype == ACC_mean) {
-		mean *h = b->haccelerator; 
-		*retval = h->base + h->plus;
-	} else {
-		BATsum_int(&retval, b);
-	}
-	*retval /= BATcount(b);
-	return GDK_SUCCEED;
-}
-\end{verbatim}}
-
-So here we have a MIL command that benefits from the presence of the
-search accelerator {\tt\small\bf mean} (presumably it is cheaper to have the 
-information precomputed, than having to do a table scan with 
-{\tt\small BATsum\_int()})!
-
-Notice that {\small\tt b->hacctype} contains the type integer for the accelerator
-in the head, and that the automatically generated integer {\small\tt ACC\_mean}
-contains the type identifier (currently) assigned to {\small\tt mean}. 
-
-@- BUILD: create a search accelerator
-@T
-{\small\begin{verbatim} 
-void meanBuild(Heap *h, BAT *b){
-	BUN p,q;
-	mean *m;
-
-	HEAPalloc(h, 1 /*nitems*/, sizeof(mean) /*itemsize*/);
-	m = (mean*) h->base;
-	m->base = m->plus = m->minus = 0;
-
-	DELloop(b,p,q) {
-		m->minus += *(int*) BUNhead(b,p);
-	}
-	BATloop(b,p,q) {
-		if (p < b->batInserted) { /* committed bun? */
-			m->base += *(int*) BUNhead(b,p);
-		} else {
-			m->plus += *(int*) BUNhead(b,p);
-		}
-	}
-}
-\end{verbatim}}
-
-This routine creates the standard GDK
-@[<a href="../gdk/index.html#mod_1_3_2">HEAP</a>@
-interface for managing heaps.
-
-It then iterates first over all deleted records of the BAT,
-and calculates the sum of the head values.
-Then it iterates over all elements of the BATs and sums all stable 
-elements and all inserted elements.
-
-The @[<a href="../gdk/index.html#mod_1_9_1">BATloopFast</a>@ and
-@[<a href="../gdk/index.html#mod_1_9_3">DELloop</a>@ and
-iterator macros are described in the 
-@[<a href="../gdk/index.html">GDK interface document</a>@.
-
-{\bf Please don't confuse the HEAP interface with the HEAP\_ interface!} 
-
-The former is GDK's standard way of allocating bulk data, in its
-@[<a href="../gdk/index.html#mod_1_3_2">Heap</a>@ type.
-The latter is like a small {\bf malloc} library that manages allocating 
-and free-ing small chunks from within one
-@[<a href="../gdk/index.html#mod_1_3_2">Heap</a>@ structure. 
-
-@- DESTROY: destroy a search accelerator
-@T
-{\small\begin{verbatim} 
-void meanDestroy(Heap *h, BAT* b){
-	HEAPfree(h);
-	b->hacctype = 0;
-}
-\end{verbatim}}
-
-Frees the heap, and also sets the {\small\tt hacctype} to zero 
-(TODO: ugly and might change in the future).
-
-@- INSERT: adapt structure under insert
-@T
-{\small\begin{verbatim} 
-void meanInsert(Heap *h, BAT* b, int* val) {
-	m->plus += *val;
-}
-\end{verbatim}}
-Incorporates the addition of a value to the BAT head column.
-
-@- DELETE: adapt structure under delete
-@T
-{\small\begin{verbatim} 
-void meanInsert(Heap *h, BAT* b, int* val) {
-	m->minus += *val;
-}
-\end{verbatim}}
-Incorporates the deletion of a value from the BAT head column.
-
-@- SAVE: prepare for disk storage
-@T
-{\small\begin{verbatim} 
-extern void meanSave(Heap *h, BAT *b);
-\end{verbatim}}
-
-This function might be useful for rearranging complex structures
-just before a commit point.
-
-@+ Implementing Iterators
-@T
-An iterator is a command that loops through a subset of a BAT and
-for each pair of values in a BUN executes a MIL block. You can
-declare iterators in MEL like this: 
-
-{\small\begin{verbatim} 
-.ITERATOR revloop(BAT b, ptr cntxt) = revloop_impl;
-\end{verbatim}}
-
-The above is a declaration of a new iterator. It will loop backwards
-through all elements of a BAT. The below example shows how iterators
-should be implemented:
-
-{\small\begin{verbatim} 
-int revloop_impl(BAT *b, ptr h) {
-	Iteration magic = *(Iteration*) h;
-	BUN base = BUNfirst(b);
-	BUN cur = BUNlast(b);
-	
- 	while((cur -= BUNsize(b) >= base) {
-                int i = ITERATE(BUNhead(b,cur), BUNtail(b,cur), magic);
-		if (i < 0) return i;
-        }
-	return GDK_SUCCEED;
-}
-\end{verbatim}}
-
-What springs to the eye is the second parameter. It is a pointer to
-a so-called {\em iteration record} that is created by the MIL interpreter.
-This {\em iteration record} links the iterator to the MIL block that
-must be executed. This is activated by the special purpose macro
-{\small\tt ITERATE(val, val, Iteration)}. If it returns a value
-smaller than zero, than some exception occurred in the MIL execution
-and the loop should be stopped. By returning the same value, the
-exception is passed upward.
 
 @+ Implementing Built-ins
 @T

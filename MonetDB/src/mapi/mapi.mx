@@ -509,7 +509,6 @@ mapi_client_engine(void *FC )
 		mapi_client_end(fc);
 		/* possible race condition, but net result is limited */
 		if (f->clients > f->cache_limit) { 
-			fc->inuse = 2;
 			break;
 		}
 		fc->inuse = 0;

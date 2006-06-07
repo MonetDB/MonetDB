@@ -903,7 +903,6 @@ else
 AM_CONDITIONAL(HAVE_PERL_SWIG,  test "x$PERL_LIBDIR" != x)
 fi
 
-
 dnl to shut up automake (.m files are used for mel not for objc)
 AC_CHECK_TOOL(OBJC,objc)
 
@@ -2038,7 +2037,6 @@ else
 fi
 AC_SUBST(XPHP_PEARDIR)
 AM_CONDITIONAL(HAVE_PEAR, test x"$have_pear" != xno)
-
 
 AC_SUBST(CFLAGS)
 

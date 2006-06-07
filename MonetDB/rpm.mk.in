@@ -36,28 +36,16 @@ rpm:	MonetDB.spec $(top_builddir)/$(distdir).tar.gz
 	echo "%tmpdir            %{_tmppath}"         >> $(rpmtopdir)/rpmmacros
 	echo "%rpmcflags         -O2 "                >> $(rpmtopdir)/rpmmacros
 	echo "#%top_builddirroot %{_topdir}/INSTALL/" >> $(rpmtopdir)/rpmmacros
-	#( if [ "@DOCTOOLS_FALSE@" = "#" ] ; then \
-	#	echo "%builddoc  1"                   >> $(rpmtopdir)/rpmmacros ; \
-	# else \
-	#	echo "%builddoc  0"                   >> $(rpmtopdir)/rpmmacros ; \
-	#fi )
-	( if [ "@HAVE_PEAR_FALSE@" = "#" ] ; then \
-		echo "%buildphp  1"                   >> $(rpmtopdir)/rpmmacros ; \
-	 else \
-		echo "%buildphp  0"                   >> $(rpmtopdir)/rpmmacros ; \
-	fi )
-	( if [ "@HAVE_PERL_SWIG_FALSE@" = "#" ] ; then \
-		echo "%buildperl  1"                  >> $(rpmtopdir)/rpmmacros ; \
-	 else \
-		echo "%buildperl  0"                  >> $(rpmtopdir)/rpmmacros ; \
-	fi )
-	( if [ "@HAVE_PYTHON_SWIG_FALSE@" = "#" ] ; then \
-		echo "%buildpython  1"                >> $(rpmtopdir)/rpmmacros ; \
-	 else \
-		echo "%buildpython  0"                >> $(rpmtopdir)/rpmmacros ; \
-	fi )
-	echo "%comp_cc  $(CC)"                 	      >> $(rpmtopdir)/rpmmacros ; 
 
-	$(RPMBUILD) --target `uname -m` --rcfile $(rpmtopdir)/rpmrc -ta $(top_builddir)/$(distdir).tar.gz
+	php='--without-php';
+	( if [ "@HAVE_PEAR_FALSE@" = "#" ] ; then php=''; fi )
+	perl='--without-perl';
+	( if [ "@HAVE_PERL_SWIG_FALSE@" = "#" ] ; then perl=''; fi )
+	python='--without-python';
+	( if [ "@HAVE_PYTHON_SWIG_FALSE@" = "#" ] ; then python=''; fi )
+	java='--without-java';
+	( if [ "@HAVE_JAVA_FALSE@" = "#" ] ; then java=''; fi )
+
+	$(RPMBUILD) ${php} ${perl} ${python} ${java} --target `uname -m` --rcfile $(rpmtopdir)/rpmrc -ta $(top_builddir)/$(distdir).tar.gz
 
 	rm -rf $(rpmtopdir)/BUILD
