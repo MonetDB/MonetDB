@@ -14,11 +14,13 @@ Packager: Niels Nes <Niels.Nes@cwi.nl>
 License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 Requires: python
 
-%if !%buildsystem
+%{!?buildsystem: %define buildsystem 0}
+%if !%{?buildsystem}
 BuildRequires: MonetDB-devel 
-%define buildjava 1
-%define comp_cc gcc
 %endif
+
+%{!?_with_java: %{!?_without_java: %define _with_java --with-java}}
+%define comp_cc @CC@
 
 %define builddoc 0
 
@@ -35,7 +37,7 @@ BuildRequires: MonetDB-devel
 Summary: MonetDB SQL odbc
 Group: System
 
-%if %{buildjava}
+%if %{?_with_java:1}%{!?_with_java:0}
 %package java
 Summary: MonetDB SQL java interface
 Group: System
@@ -70,7 +72,7 @@ accellerators, SQL- and XML- frontends.
 Add the MonetDB SQL odbc description here
 Requires: MonetDB-client
 
-%if %{buildjava}
+%if %{?_with_java:1}%{!?_with_java:0}
 %description java
 Add the MonetDB SQL java description here
 %endif
@@ -108,10 +110,10 @@ rm -rf $RPM_BUILD_ROOT
 	--enable-optimize \
 	--enable-bits=%{bits} \
 	--with-gcc="%{comp_cc}" \
-	--with-gxx="%{comp_cxx}" \
 	--prefix=%{prefix} \
 	--libdir=%{_libdir} \
-	--with-monet=%{prefix}
+	--with-monet=%{prefix} \
+	 %{?_with_java} %{?_without_java} \
 
 make
 
@@ -134,7 +136,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/libMonetODBC*
 %{_libdir}/sql/Tests/odbcsample1
 
-%if %{buildjava}
+%if %{?_with_java:1}%{!?_with_java:0}
 %files java
 %defattr(-,monetdb,monetdb)
 %{prefix}/share/MonetDB/lib/*.jar
