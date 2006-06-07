@@ -65,6 +65,8 @@
 #define MODEL_LMVFLT 9
 #define MODEL_LMVLIN 10
 
+#define MODEL_NLLR 11
+
 #define MODEL_I_GMM 8
 
 #define OR_SUM 1

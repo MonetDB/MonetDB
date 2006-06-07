@@ -348,7 +348,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
       
       case QUERY_ADD_TERM:
         
-       MILPRINTF(MILOUT, "tid := bat(\"tj_globalTerms\").select(%s);\n if(tid.count() > 0) terms.append(tid.reverse().fetch(0));\n", p_com->argument);
+       MILPRINTF(MILOUT, "tid := bat(\"tj_globalTerms\").select(%s);\nif(tid.count() > 0) terms.append(tid.reverse().fetch(0));\n", p_com->argument);
 
        break;
 
@@ -686,12 +686,16 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
 
         case MODEL_LMS :
          
-/*          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q(terms, modifiers, %f, %d, %d);\n", com_num, com_nr_left, txt_retr_model->param1, txt_retr_model->stemming, txt_retr_model->size_type);
-*/
-	    MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_NLLR_batloop_aggregation(terms, %f);\n", com_num, com_nr_left, txt_retr_model->param1);
-	  
-          break;
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q(terms, modifiers, %f, %d, %d);\n", com_num, com_nr_left, txt_retr_model->param1, txt_retr_model->stemming, txt_retr_model->size_type);
 
+          break;
+        
+        case MODEL_NLLR :
+            
+          MILPRINTF(MILOUT, "R%d := R%d.p_containing_q_NLLR_batloop_aggregation(terms, %f);\n", com_num, com_nr_left, txt_retr_model->param1);
+        
+          break;
+        
         case MODEL_TFIDF :
 
           MILPRINTF(MILOUT, "R%d := R%d.p_containing_t_tfidf(R%d, %d);\n", com_num, com_nr_left, com_nr_right, txt_retr_model->size_type);
@@ -1006,7 +1010,7 @@ int SRA_to_MIL(TijahParserContext* parserCtx, int query_num, struct_RMT *txt_ret
     }
     
     MILPRINTF(MILOUT, "R%d := R%d.tsort_rev();\n", com_num, com_num);
-    MILPRINTF(MILOUT, "R%d := R%d.slice(0, retNum - 1);\n", com_num, com_num);
+    MILPRINTF(MILOUT, "if ( retNum >= 0 ) { R%d := R%d.slice(0, retNum - 1); }\n", com_num, com_num);
     MILPRINTF(MILOUT, "R%d.persists(true).rename(\"nexi_result\");\n", com_num);
       
     p_com_array++;

@@ -119,7 +119,7 @@ int old_main(int argc, char * const argv[], BAT* optbat)
 
   /* for the retrieval models and for the relevance feedback */
   int qnum_tmp;
-
+/*
   int rmt_number;
   int rmt_qnumber;
   unsigned int rmt_model;
@@ -137,7 +137,7 @@ int old_main(int argc, char * const argv[], BAT* optbat)
   int rmt_ptype;
   int rmt_psize;
   char rmt_context[TERM_LENGTH];
-  float rmt_extra;
+  float rmt_extra;*/
 
   int rmi_number;
   int rmi_qnumber;
@@ -161,7 +161,7 @@ int old_main(int argc, char * const argv[], BAT* optbat)
   int plan_ret;
 
   /* retrieval model and relevance feedback variables */
-  struct_RMT *txt_retr_model , *txt_retr_model1 ;
+  struct_RMT *txt_retr_model;
   struct_RMI *img_retr_model , *img_retr_model1 ;
   struct_RF *rel_feedback, *rel_feedback1;;
 
@@ -172,7 +172,7 @@ int old_main(int argc, char * const argv[], BAT* optbat)
   FILE *command_file;
   FILE *token_file;
   /* files for retrieval model and relevance feedback */
-  FILE *rmt_file;
+  //FILE *rmt_file;
   FILE *rmi_file;
   FILE *rf_file;
 
@@ -196,57 +196,176 @@ int old_main(int argc, char * const argv[], BAT* optbat)
   query_set = FALSE;
   scale_on = TRUE;
 
-  /* structure initialization */
-  txt_retr_model = calloc(MAX_QUERIES, sizeof(struct_RMT));
-  img_retr_model = calloc(MAX_QUERIES, sizeof(struct_RMI));
-  rel_feedback = calloc(MAX_QUERIES, sizeof(struct_RF));
+    /* structure initialization */
+    txt_retr_model = calloc(MAX_QUERIES, sizeof(struct_RMT));
+    img_retr_model = calloc(MAX_QUERIES, sizeof(struct_RMI));
+    rel_feedback = calloc(MAX_QUERIES, sizeof(struct_RF));
 
-  /* 
-   *
-   *
-   * THE NEW OPTION HANDLER HERE!!!!!
-   *
-   *
-   */
-   
-  BUN p, q;
-  BATloop(optbat, p, q) {
-   str optName = (str)BUNhead(optbat,p);
-   str optVal  = (str)BUNtail(optbat,p);
+    /*** Set default configuration values here: ***/
+    
+    /** Text retrieval model parameters **/
+    txt_retr_model->qnumber     = 0;
+    txt_retr_model->model       = MODEL_LMS;
+    txt_retr_model->or_comb     = OR_SUM;
+    txt_retr_model->and_comb    = AND_PROD;
+    txt_retr_model->up_prop     = UP_WSUMD;
+    txt_retr_model->down_prop   = DOWN_SUM;
+    strcpy(txt_retr_model->e_class, "TRUE");
+    strcpy(txt_retr_model->e_class, "FALSE");
+    txt_retr_model->stemming    = TRUE;
+    txt_retr_model->size_type   = SIZE_TERM;
+    txt_retr_model->param1      = 0.8;
+    txt_retr_model->param2      = 0.5;
+    txt_retr_model->param3      = 0;
+    txt_retr_model->prior_type  = NO_PRIOR;
+    txt_retr_model->prior_size  = 0;
+    strcpy(txt_retr_model->context, "");
+    txt_retr_model->extra       = 0.0;
+    txt_retr_model->next        = NULL;
+    
+    /** Compiler parameters **/
+    // The number of elements to return
+    int retNum          = -1; // -1 = unlimited
+    algebra_type        = ASPECT;
+    preproc_type        = PLAIN;
+    pptype_set          = TRUE;
+    scale_on            = FALSE;
+    processing_type     = NO_STOP_STEM;
+    rewrite_type        = BASIC;
+    language_type       = ENGLISH;
+    base_type           = ZERO;
+    
+    BUN p, q;
+    BATloop(optbat, p, q) {
+        str optName = (str)BUNhead(optbat,p);
+        str optVal  = (str)BUNtail(optbat,p);
 
-   if ( 0 ) {
-     FILE* xx = fopen("/tmp/out","w");
-     fprintf(xx,"TijahOptions: handle: %s=%s\n",optName,optVal);
-     fclose(xx);
-   }
-   if ( strcmp(optName,"collection") == 0 ) {
-       if ( 1 ) {
-         MILPRINTF(MILOUT, "tj_setCollName(\"%s\");\n", optVal);
-       } else {
-         char mil_cmd[64];
-         sprintf(&mil_cmd[0], "tj_setCollName(\"%s\");", optVal);	
-         if (! executeMIL(mil_cmd))
-	   GDKerror("PF/tijah: cannot set collection name.\n");
-       }
-   } else if ( strcmp(optName,"returnNumber") == 0 ) {
-       if ( 1 ) {
-         MILPRINTF(MILOUT, "retNum := int(%s);\n", optVal);
-       } else {
-         char mil_cmd[64];
-         sprintf(&mil_cmd[0], "retNum := int(%s);", optVal);	
-         if (! executeMIL(mil_cmd))
-	   GDKerror("PF/tijah: cannot set number of returned nodes.\n");
-       }
-   } else if ( strcmp(optName,"top") == 0 ) {
-       /* printf("top\n"); */
-       /* handle topN here */
-   } else {
-      stream_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
-   }
-  }
+        if ( 1 ) {
+            FILE* xx = fopen("/tmp/TijahOptions.log","a");
+            fprintf(xx,"TijahOptions: handle: %s=%s\n",optName,optVal);
+            fclose(xx);
+        }
+        
+        if ( strcmp(optName,"collection") == 0 ) {
+            parserCtx->collection = optVal;
+            
+        } else if ( strcmp(optName,"returnNumber") == 0 || 
+                    strcmp(optName,"retNum") == 0 || 
+                    strcmp(optName,"top") == 0 ) {
+            retNum = atoi( optVal );
+            
+        } else if ( strcmp(optName,"algebraType") == 0 ) {
+            if ( strcmp( optVal, "ASPECT" ) == 0 ) {
+                algebra_type = ASPECT;
+            } else if ( strcmp( optVal, "COARSE" ) == 0 ) {
+                algebra_type = COARSE;
+            } else if ( strcmp( optVal, "COARSE2" ) == 0 ) {
+                algebra_type = COARSE2;
+            }
+        
+        } else if ( strcmp(optName,"txtmodel_model") == 0 ) {
+            if ( strcmp(optVal,"BOOL") == 0 ) {
+                txt_retr_model->model = MODEL_BOOL;
+            } else if ( strcmp(optVal,"LM") == 0 ) {
+                txt_retr_model->model = MODEL_LM;
+            } else if ( strcmp(optVal,"LMS") == 0 ) {
+                txt_retr_model->model = MODEL_LMS;
+            } else if ( strcmp(optVal,"TFIDF") == 0 ) {
+                txt_retr_model->model = MODEL_TFIDF;
+            } else if ( strcmp(optVal,"OKAPI") == 0 ) {
+                txt_retr_model->model = MODEL_OKAPI;
+            } else if ( strcmp(optVal,"GPX") == 0 ) {
+                txt_retr_model->model = MODEL_GPX;
+            } else if ( strcmp(optVal,"LMA") == 0 ) {
+                txt_retr_model->model = MODEL_LMA;
+            } else if ( strcmp(optVal,"LMSE") == 0 ) {
+                txt_retr_model->model = MODEL_LMSE;
+            } else if ( strcmp(optVal,"LMVFLT") == 0 ) {
+                txt_retr_model->model = MODEL_LMVFLT;
+            } else if ( strcmp(optVal,"LMVFLT") == 0 ) {
+                txt_retr_model->model = MODEL_LMVLIN;
+            } else if ( strcmp(optVal,"NLLR") == 0 ) {
+                txt_retr_model->model = MODEL_NLLR;
+            }
+            
+        } else if ( strcmp(optName,"txtmodel_orcomb") == 0 ) {
+            if ( strcmp(optVal,"SUM") == 0 ) {
+                txt_retr_model->or_comb = OR_SUM;
+            } else if ( strcmp(optVal,"MAX") == 0 ) {
+                txt_retr_model->or_comb = OR_MAX;
+            } else if ( strcmp(optVal,"PROB") == 0 ) {
+                txt_retr_model->or_comb = OR_PROB;
+            } else if ( strcmp(optVal,"EXP") == 0 ) {
+                txt_retr_model->or_comb = OR_EXP;
+            } else if ( strcmp(optVal,"MIN") == 0 ) {
+                txt_retr_model->or_comb = OR_MIN;
+            } else if ( strcmp(optVal,"PROD") == 0 ) {
+                txt_retr_model->or_comb = OR_PROD;
+            }
+            
+        } else if ( strcmp(optName,"txtmodel_andcomb") == 0 ) {
+            if ( strcmp(optVal,"SUM") == 0 ) {
+                txt_retr_model->and_comb = AND_SUM;
+            } else if ( strcmp(optVal,"MAX") == 0 ) {
+                txt_retr_model->and_comb = AND_MAX;
+            } else if ( strcmp(optVal,"PROB") == 0 ) {
+                txt_retr_model->and_comb = AND_PROB;
+            } else if ( strcmp(optVal,"EXP") == 0 ) {
+                txt_retr_model->and_comb = AND_EXP;
+            } else if ( strcmp(optVal,"MIN") == 0 ) {
+                txt_retr_model->and_comb = AND_MIN;
+            } else if ( strcmp(optVal,"PROD") == 0 ) {
+                txt_retr_model->and_comb = AND_PROD;
+            }
 
+        } else if ( strcmp(optName,"txtmodel_upprop") == 0 ) {        
+            if ( strcmp(optVal,"SUM") == 0 ) {
+                txt_retr_model->up_prop = UP_SUM;
+            } else if ( strcmp(optVal,"AVG") == 0 ) {
+                txt_retr_model->up_prop = UP_AVG;
+            } else if ( strcmp(optVal,"WSUMD") == 0 ) {
+                txt_retr_model->up_prop = UP_WSUMD;
+            } else if ( strcmp(optVal,"WSUMA") == 0 ) {
+                txt_retr_model->up_prop = UP_WSUMA;
+            }
+
+        } else if ( strcmp(optName,"txtmodel_downprop") == 0 ) {
+            if ( strcmp(optVal,"SUM") == 0 ) {
+                txt_retr_model->down_prop = DOWN_SUM;
+            } else if ( strcmp(optVal,"AVG") == 0 ) {
+                txt_retr_model->down_prop = DOWN_AVG;
+            } else if ( strcmp(optVal,"WSUMD") == 0 ) {
+                txt_retr_model->down_prop = DOWN_WSUMD;
+            } else if ( strcmp(optVal,"WSUMA") == 0 ) {
+                txt_retr_model->down_prop = DOWN_WSUMA;
+            }
+            
+        } else if ( strcmp(optName,"txtmodel_collectionLambda") == 0 || 
+                    strcmp(optName,"txtmodel_param1") == 0) {
+            txt_retr_model->param1 = atof( optVal );
+
+        } else if ( strcmp(optName,"txtmodel_param2") == 0 ) {
+            txt_retr_model->param2 = atof( optVal );
+            
+        } else if ( strcmp(optName,"txtmodel_param3") == 0 ) {
+            txt_retr_model->param3 = atof( optVal );
+            
+        } else {
+            stream_printf(GDKout,"TijahOptions: should handle: %s=%s\n",optName,optVal);
+        }
+    }
+    
+    // Switch to COARSE2 algebra for NLLR
+    if ( txt_retr_model->model == MODEL_NLLR )
+        algebra_type = COARSE2;
+    
+    // Prepend some variables to the MIL code.
+    MILPRINTF(MILOUT, "tj_setCollName(\"%s\");\n", parserCtx->collection);
+    MILPRINTF(MILOUT, "retNum := %d;\n", retNum);
+    
+    
   /*
-   *
+   * Original option handling code. Comment out cases that have been implemented above.
    */
 
   while(1){
@@ -353,7 +472,7 @@ int old_main(int argc, char * const argv[], BAT* optbat)
 	language_set = FALSE;
       }
       break;
-
+/*
     case 'a':
 
       if (strcmp(optarg,"aspect") == 0 || strcmp(optarg,"ASPECT") == 0) {
@@ -373,7 +492,7 @@ int old_main(int argc, char * const argv[], BAT* optbat)
 	algebra_set = FALSE;
       }
 
-      break;
+      break;*/
     case 'u' :
 
       strncpy(rmt_fname,optarg,FILENAME_SIZE);
@@ -550,11 +669,11 @@ int old_main(int argc, char * const argv[], BAT* optbat)
        LOGPRINTF(LOGFILE,"\tLanguage is English.\n");
     }
 
+    /*
     if(!algebra_set) {
-       algebra_type = COARSE2;
-       /* algebra_type = COARSE2; RODEH CHANGE | BUG */
+       algebra_type = ASPECT;
        LOGPRINTF(LOGFILE,"\tAlgebra type is \"ASPECT\".\n");
-    }
+    }*/
 
     if(!base_set) {
        base_type = ONE;
@@ -708,7 +827,7 @@ int old_main(int argc, char * const argv[], BAT* optbat)
     topic_type = plan_ret;
   }
   /* specifying retrieval models */
-
+/*
   txt_retr_model1 = txt_retr_model;
   img_retr_model1 = img_retr_model;
 
@@ -847,7 +966,7 @@ int old_main(int argc, char * const argv[], BAT* optbat)
   }
 
   txt_retr_model = NULL;
-  txt_retr_model = txt_retr_model1;
+  txt_retr_model = txt_retr_model1;*/
 
   if (rmifname_set) {
  LOGPRINTF(LOGFILE,"%s\n",rmi_fname);
