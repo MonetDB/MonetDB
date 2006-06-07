@@ -18,7 +18,6 @@ Requires: python
 BuildRequires: MonetDB-devel 
 %define buildjava 1
 %define comp_cc gcc
-%define comp_cxx g++
 %endif
 
 %define builddoc 0

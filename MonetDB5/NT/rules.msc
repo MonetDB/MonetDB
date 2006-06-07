@@ -115,12 +115,6 @@ HAVE_PEAR = 1
 .mx.c:
 	$(MX) $(MXFLAGS) -x c $<
 
-{$(SRCDIR)}.mx.cxx:
-	$(MX) $(MXFLAGS) -x C $<
-
-.mx.cxx:
-	$(MX) $(MXFLAGS) -x C $<
-
 {$(SRCDIR)}.mx.m:
 	$(MX) $(MXFLAGS) -x m $<
 
@@ -194,15 +188,5 @@ HAVE_PEAR = 1
 .c.$O:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
 
-{$(SRCDIR)}.cxx.$O:
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $<
-
-.cxx.$O:
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $<
-
-# needed for yacc/lex output generated under unix 
-.cc.cxx:
-	rename $< $@
-
-.SUFFIXES: .m .mx .proto_h .mil .glue_c .cxx .cc
+.SUFFIXES: .m .mx .proto_h .mil .glue_c
 .PRECIOUS: .m 

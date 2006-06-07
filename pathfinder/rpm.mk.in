@@ -48,7 +48,6 @@ rpm:	MonetDB-XQuery.spec $(top_builddir)/$(distdir).tar.gz
 		echo "%buildjava  1"                   >> $(rpmtopdir)/rpmmacros ; \
 	fi )
 	echo "%comp_cc  $(CC)"                 	       >> $(rpmtopdir)/rpmmacros ; 
-	echo "%comp_cxx $(CXX)"                	       >> $(rpmtopdir)/rpmmacros ; 
 	echo "%buildsystem 1"                	       >> $(rpmtopdir)/rpmmacros ; 
 
 

@@ -26,7 +26,6 @@ BuildRequires: python
 %define buildperl 1
 %define buildpython 1
 %define comp_cc gcc
-%define comp_cxx g++
 %endif
 
 # groups of related archs

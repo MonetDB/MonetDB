@@ -57,7 +57,6 @@ rpm:	MonetDB.spec $(top_builddir)/$(distdir).tar.gz
 		echo "%buildpython  0"                >> $(rpmtopdir)/rpmmacros ; \
 	fi )
 	echo "%comp_cc  $(CC)"                 	      >> $(rpmtopdir)/rpmmacros ; 
-	echo "%comp_cxx $(CXX)"                	      >> $(rpmtopdir)/rpmmacros ; 
 
 	$(RPMBUILD) --target `uname -m` --rcfile $(rpmtopdir)/rpmrc -ta $(top_builddir)/$(distdir).tar.gz
 
