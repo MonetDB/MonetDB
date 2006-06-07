@@ -1463,7 +1463,7 @@ xquery_compile_exec(xquery_client *ctx,
     int options = 0;
     /* Setting the StandOff flag based on runtime settings */
     if ((GDKgetenv("standoff") != NULL) && (strcmp(GDKgetenv("standoff"),"enabled") == 0))
-        options += 1;
+        options |= COMPILE_OPTION_STANDOFF;
 
     MT_set_lock(pf_compiler_lock, "xquery_compile_exec");
     if (is_url) {

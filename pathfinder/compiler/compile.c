@@ -604,7 +604,7 @@ PFcompile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char
         /* the state of the standoff_axis_steps support should be 
          * passed through the function-arguments.
          */
-        PFstate.standoff_axis_steps = (options & 1);
+        PFstate.standoff_axis_steps = (options & COMPILE_OPTION_STANDOFF);
 
         PFstate.genType = mode;
         if (setjmp(PFexitPoint) != 0 ) {
