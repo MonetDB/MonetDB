@@ -1652,7 +1652,9 @@ reduce (PFpnode_t * p, int goalnt)
                              cases (
                                  case_ (
                                      C(RLLR(p)),
-                                     flwr (let (letbind (C(RLLL(p)), var (v)),
+                                     flwr (let (letbind (C(RLLL(p)),
+                                                         seqcast (C(RLLR(p)),
+                                                                  var (v))),
                                                 nil ()),
                                            C(RLR(p)))),
                                  default_ (

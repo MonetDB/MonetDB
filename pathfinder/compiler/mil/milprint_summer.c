@@ -9149,6 +9149,14 @@ simplifyCoreTree (PFcnode_t *c)
             {
                 *c = *(R(c));
             }
+            /* don't cast nodes - node type was only needed
+               for static typing */
+            else if (c->kind == c_seqcast &&
+                     PFty_subtype (input_type, PFty_xs_anyNode ()) &&
+                     PFty_subtype (cast_type, PFty_xs_anyNode ()))
+            {
+                *c = *(R(c));
+            }
             /* tests if a type is castable */
             else if (castable (input_type, cast_type));
             else if (!PFty_subtype (input_type, cast_type))
