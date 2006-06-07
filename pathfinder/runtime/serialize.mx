@@ -1591,7 +1591,9 @@ xquery_print_result_DRIVER (
 
         /* some serialization modes may print all attributes up front
            (here xml and sax mode, where xml mode is not typed) */
-        if (ctx->modes & (MODE_XML | MODE_SAX) && !(ctx->modes & MODE_TYPED)) {
+        if (ctx->modes & (MODE_XML | MODE_SAX) && !(ctx->modes & MODE_TYPED) &&
+            /* forget top-level attributes if we have no root nodes */
+            !(ctx->modes & (MODE_NO_ROOT))) {
 
             /* scan of all attributes here and generate the appropriate
                calls to connect them to the head tag of the result document */
